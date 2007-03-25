@@ -1,0 +1,32 @@
+
+{
+module Gen.AsdlConcreteSyn where
+
+import Base.PrimitiveTypes
+
+}
+
+INCLUDE "AsdlConcreteSynDEFS.ag"
+
+
+{
+
+
+type Property = String
+type TextValue = String
+
+-- Alternative type for a files contents.
+-- (Naturally) it looses the order they appeared in the file
+
+data Defns = Defns 
+  { tdefs :: [ModuleDefn]
+  , prims :: [PrimModule]
+  , views :: [ViewDefn]
+  }
+
+
+}
+
+DERIVING *  : Show
+DERIVING Cardinality    : Ord,Eq
+

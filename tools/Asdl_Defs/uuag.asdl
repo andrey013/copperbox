@@ -1,0 +1,36 @@
+
+module Uuag {
+
+  ag = (elem*)
+
+  -- The grammar in AGman is out of date - to handle Maybe & Tuple 
+  -- type we have a distinct element type_body
+  elem = Data(conid name, data_alts alternatives)
+       | Type(conid name, type_body type_body)
+  
+  type_body = TB_List (typ typ)
+            | TB_Maybe (typ typ)
+            | TB_Tuple (fields fields)
+  
+  
+  typ = NamedType (conid conid)
+      | CodeBlock (identifier codeblock)  -- should be (string codeblock)
+                  
+  
+  data_alts = (data_alt*)
+  
+  data_alt = DataAlt(conid name, fields fields)
+  
+  fields = (field*)
+  
+  field = LabelledField (varid name, typ typ)
+        | ConstrField (conid conid)
+        
+  
+
+  -- starts with Upper
+  -- conid = (identifier)
+  
+  -- starts with lower
+  -- varid = (identifier)   
+}

@@ -1,0 +1,11 @@
+Name:           MicroAsdl
+Version:        0.0
+License:        MIT
+Author:         Stephen Peter Tetley
+Synopsis:       Alternative implementation of AsdlGen
+Build-Depends:  UUAG
+
+Executable:     microasdl
+Main-Is:        Main.hs
+Hs-Source-Dirs: .
+

@@ -1,0 +1,56 @@
+
+
+{
+module Gen.OutputHtml
+  ( outputHtml
+  ) where
+
+import Base.PrimitiveTypes
+import Base.AsdlConcreteSyn
+
+
+import Text.XHtml.Transitional
+
+
+}
+
+
+INCLUDE "AsdlConcreteSynDEFS.ag"
+
+ATTR ModuleDefn [ | | output : {(Maybe Html)} ]
+            
+
+SEM ModuleDefn
+  | Module      lhs.output    = Just $ @loc.html
+                loc.html      = header (outputTitle @name)
+                                  +++ (outputH1 @name)
+                                  
+
+  
+  
+
+{
+
+outputHtml :: ModuleDefn -> Maybe Html
+outputHtml defn = output_Syn_ModuleDefn synthesized
+  where synthesized = wrap_ModuleDefn (sem_ModuleDefn defn) inherited
+        inherited   = Inh_ModuleDefn
+
+--------------------------------------------------------------------------------
+
+-- Helpers
+--------------------------------------------------------------------------------
+
+outputTitle :: String -> Html
+outputTitle name = thetitle $ stringToHtml $ "Description of Module " ++ name
+
+outputH1 :: String -> Html
+outputH1 name = h1 $ stringToHtml $ "Description of Module " ++ name
+
+
+html_localDefs = h2 $ stringToHtml $ "Locally defined types"
+
+
+       
+}
+

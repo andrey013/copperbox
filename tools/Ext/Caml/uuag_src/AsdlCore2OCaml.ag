@@ -1,0 +1,122 @@
+
+
+{
+module Gen.AsdlCore2OCaml 
+  ( transformToOCaml
+  ) where
+
+
+import Base.Lib
+import qualified Gen.OCamlAbsSyn as OC
+import Util.Naming
+
+}
+
+INCLUDE "AsdlCoreAbsSynDEFS.ag"
+
+
+ATTR AsdlSpec [ | | toTyDefsList : {[OC.TypeDefinition]} ]
+
+SEM AsdlSpec
+  | AsdlSpec    lhs.toTyDefsList = @decls.toTyDefs
+
+ATTR Decls [ | | toTyDefs USE {:} {[]} : {[OC.TypeDefinition]} ] 
+
+ATTR Decl [ | | toTyDefs : {OC.TypeDefinition} ] 
+
+SEM Decl
+  | Module      lhs.toTyDefs    = OC.TypeDefinition @defs.toTyDef 
+
+ATTR Definitions [ | | toTyDef USE {:} {[]} : {[OC.Typedef]} ]
+  
+ATTR Definition [ | |  toTyDef : {OC.Typedef } ]
+
+SEM Definition 
+  | Def         lhs.toTyDef     = ([], @name, @dtype.toTyInfo)
+
+
+ATTR AsdlType  [ | | toTyInfo : {OC.TyInfo} ]
+
+SEM AsdlType
+  | Sum         lhs.toTyInfo    = (Nothing, cine OC.ConstrRep @constrs.toConstrDecl)
+  | Prod        lhs.toTyInfo    = (Nothing, cine OC.RecordRep @fields.toFieldDecl)
+                fields.number   = 1
+
+
+ATTR Constrs [ | | toConstrDecl USE {:} {[]} : {[OC.ConstrDecl]} ]  
+
+
+ATTR Constr [ | | toConstrDecl : {OC.ConstrDecl} ]
+
+SEM Constr
+  | Constr      lhs.toConstrDecl  = (@label, cine OC.TyExprTuple @fields.toTypeExpr) 
+                fields.number     = 1
+
+ATTR Fields [ | | toTypeExpr USE {:} {[]} : {[OC.TypeExpr]} ]
+
+ATTR Field [ | | toTypeExpr : {OC.TypeExpr} ]
+
+SEM Field 
+  | Field       lhs.toTypeExpr    = cardField @card.identity @loc.expr1
+                loc.expr1         = OC.TyExprConstr @ptype.name
+
+
+
+ATTR Fields [ | number : {Int} | ]
+
+SEM Fields 
+  | Cons      tl.number   = @lhs.number + 1
+
+ATTR Field [ number : {Int} | | ]
+
+ATTR Fields [ | | toFieldDecl USE {:} {[]} : {[OC.FieldDecl]} ]
+
+ATTR Field [ | | toFieldDecl : {OC.FieldDecl} ]
+
+SEM Field
+  | Field       lhs.toFieldDecl   = (strOpt @opt_name.identity @lhs.number, cardField @card.identity @loc.expr1)  
+
+                
+ATTR AsdlPrim   [ | | name : {String} ]
+
+SEM AsdlPrim 
+  | TyUnit          lhs.name          = "unit"
+  | TyString        lhs.name          = "string"
+  | TyInt           lhs.name          = "int"
+  | TyIdentifier    lhs.name          = "string"
+  | TyRef           lhs.name          = @name
+  | TyExternalPrim  lhs.name          = @name
+
+
+ATTR Cardinality  [ | | identity : SELF ]
+
+ATTR OptIdentifier [ | | identity : SELF ]
+  
+{
+
+transformToOCaml :: AsdlSpec -> [OC.TypeDefinition]
+transformToOCaml spec = toTyDefsList_Syn_AsdlSpec synthesized
+    where synthesized = wrap_AsdlSpec (sem_AsdlSpec spec) inherited
+          inherited   = Inh_AsdlSpec
+
+-- (c)onstruct (i)f (n)ot (e)mpty
+
+
+cine _        []      = Nothing
+cine constr   xs      = Just $ constr xs
+
+
+cardField :: Cardinality -> OC.TypeExpr -> OC.TypeExpr
+cardField Zom expr = OC.TyExprConstrApp expr (OC.TyExprConstr "list")
+cardField Opt expr = OC.TyExprConstrApp expr (OC.TyExprConstr "option")
+cardField _   expr = expr
+
+strOpt :: Maybe String -> Int -> String
+strOpt (Just s) _  = s
+strOpt Nothing  i  = 'x' : show i
+
+
+}   
+
+
+         

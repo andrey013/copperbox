@@ -1,0 +1,134 @@
+-- small eough subset of occaml for asdl 
+-- type and pickler generation
+
+module OCaml {
+  
+  program = Program (defs defs)
+  
+  defs = (def *)
+  
+  def = MLet (let_bindings binds)
+      | MLetrec (let_bindings binds)
+  
+  value_path = (opt_identifier module_path, identifier value_name)
+  
+  value_name = IdVal (identifier value_name)
+             | OpVal (identifier op_name)
+  
+  -- 6.8 type definitions
+  
+  type_definition = TypeDefinition (typedefs defs)
+  
+  typedefs  = (typedef *)
+  
+  typedef = (ty_params ty_params, identifier tycon_name, ty_info ty_info)
+  
+  -- do not handle with co(contra)variant labelling
+  ty_params = (identifier*)
+  
+  -- do not handle type constraints
+  ty_info = (opt_ty_equation opt_ty_equation, 
+             opt_ty_rep opt_ty_rep)
+
+  opt_ty_equation = (type_expr ?)
+  
+  opt_ty_rep = (ty_rep ?)
+  
+  ty_rep = ConstrRep (constr_decls constr_decls)
+         | RecordRep (field_decls field_decls)
+             
+  constr_decls = (constr_decl *)
+  
+  constr_decl = (identifier constr_name, opt_type_expr opt_type_expr)
+  
+  field_decls = (field_decl *)
+  
+  field_decl = (identifier field_name, type_expr ty_expr)
+  
+  -- 6.3 names
+  
+  constr = (opt_identifier module_path, identifier constr_name)
+  
+  field = (opt_identifier module_path, identifier field_name)
+  
+  opt_identifier = (identifier ? name)
+  
+  -- 6.4 type expressions
+  type_expr 
+    = TyExprVar (identifier label)            -- ' ident
+    | TyExprAnon
+    | TyExprConstr (identifier constr_name)     -- typeconstr: eg int, bool
+    | TyExprConstrApp (type_expr ty_expr,  
+                       type_expr ty_constr)     -- application of a type constructor e.g. list or option  
+    | TyExprTuple (type_exprs ty_exprs)
+  
+  opt_type_expr = (type_expr ?)
+  
+  type_exprs = (type_expr *)
+  
+  
+
+  -- 6.7 expresions
+  exprs = (expr *)
+  
+  opt_expr = (expr ?)
+  
+  expr = ValuePathExpr (value_path value_path)
+       | ConstantExpr (constant value)
+       | ParenExpr (expr expr)
+       | TupleExpr (exprs exprs)
+       | ConstrApp (constr constr, expr expr)
+       | ListExpr (exprs exprs)
+       | App (expr expr, arguments args)
+       | FieldAccess (expr expr, field field)                       -- expr . field
+       | IfExpr (expr cond_expr, expr then_expr, opt_expr opt_else)
+       | Seq (expr expr1, expr expr2)                               -- expr ; expr
+       | Match (expr expr, pattern_matching pat_match)
+       | Let (let_bindings binds, expr expr)
+       | Letrec (let_bindings binds, expr expr)
+
+  arguments = (argument *)
+  
+  argument = ArgExpr (expr expr)
+
+  pattern_matching = (pattern_clause *)
+  
+  pattern_clause = (pattern pat, opt_expr opt_guard, expr expr)
+  
+  let_bindings = (let_binding *) 
+         
+  let_binding = PatternBinding (pattern pat, expr expr)
+              | ValueBinding (identifier val_name, 
+                              parameters params,
+                              opt_type_expr opt_ty,
+                              expr expr)
+
+  parameters = (parameter *)
+  
+  parameter = ParamPat (pattern pat)
+
+  -- 6.6 patterns
+  patterns = (pattern *)
+  
+  pattern = ValuePat (identifier name)
+          | AnonPat
+          | ConstantPat (constant constant)
+          | ParenPat (pattern pat, OCaml_types.opt_type_expr opt_ty_expr)
+          | ConstrPat (constr constr, pattern pat)
+          | TuplePat (patterns pats)
+          
+
+  -- 6.5 constants (subset)
+  
+  constant = IntegerLiteral (int value)
+           | FloatLiteral (float value)
+           | StringLiteral (string value)
+           | Val_True
+           | Val_False
+           | Unit
+           | Nil
+           
+             
+  
+}
+

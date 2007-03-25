@@ -1,0 +1,13 @@
+
+{
+module Gen.OCamlAbsSyn where
+
+import Base.PrimitiveTypes
+
+}
+
+INCLUDE "OCamlAbsSynDEFS.ag"
+
+
+
+DERIVING * : Show

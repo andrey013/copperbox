@@ -1,0 +1,8 @@
+
+
+{
+module Gen.HsGenDatatypes
+  ( makeHsDatatypes
+  ) where
+  
+}

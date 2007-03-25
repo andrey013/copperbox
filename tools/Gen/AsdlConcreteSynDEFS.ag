@@ -1,0 +1,94 @@
+-- Sun Jan 28 15:04:22 GMT Standard Time 2007
+
+TYPE AsdlSpec = [AltThree]
+
+DATA AltThree
+  | Alt1             a                : ModuleDefn
+  | Alt2             a                : PrimModule
+  | Alt3             a                : ViewDefn
+
+TYPE ModuleDefns = [ModuleDefn]
+
+DATA ModuleDefn
+  | Module           name             : String
+                     importlist       : ImportStmts
+                     defs             : Definitions
+
+DATA PrimModule
+  | PrimModule       name             : String
+                     prims            : {[String]}
+
+DATA ViewDefn
+  | View             lang_id          : String
+                     decls            : ViewDecls
+
+TYPE ImportStmts = [ImportStmt]
+
+DATA ImportStmt
+  | ImportStmt       name             : String
+
+TYPE ViewDecls = [ViewDecl]
+
+DATA ViewDecl
+  | View_Plain       entity           : ViewEntity
+                     kv_pair          : ViewPair
+  | View_Many_to_One entities         : {[ViewEntity]}
+                     kv_pair          : ViewPair
+  | View_One_to_Many entity           : ViewEntity
+                     kv_pairs         : {[ViewPair]}
+  | View_Many_to_Many entities         : {[ViewEntity]}
+                      kv_pairs         : {[ViewPair]}
+
+DATA ViewEntity
+  | TypeView         module_qual      : String
+                     type_id          : String
+  | ConstrView       module_qual      : String
+                     con_id           : String
+  | ModuleView       name             : String
+
+TYPE ViewPair = (prop:Property,value:TextValue)
+
+TYPE Definitions = [Definition]
+
+DATA Definition
+  | Def              name             : String
+                     dtype            : AsdlType
+
+DATA AsdlType
+  | Sum              constrs          : Constrs
+                     opt_attribs      : OptAttribs
+  | Prod             fields           : Fields
+
+TYPE Constrs = [Constr]
+
+DATA Constr
+  | Constr           label            : String
+                     fields           : Fields
+
+TYPE OptAttribs = MAYBE Attribs
+
+TYPE Attribs = [Field]
+
+TYPE Fields = [Field]
+
+DATA Field
+  | Field            qual             : OptQualifier
+                     ptype            : AsdlPrim
+                     card             : Cardinality
+                     opt_name         : OptIdentifier
+
+TYPE OptIdentifier = MAYBE String
+
+TYPE OptQualifier = MAYBE String
+
+DATA AsdlPrim
+  | TyUnit           
+  | TyString         
+  | TyInt            
+  | TyIdentifier     
+  | TyRef            name             : String
+
+DATA Cardinality
+  | One              
+  | Zom              
+  | Opt              

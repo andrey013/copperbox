@@ -1,0 +1,41 @@
+
+-- ASDL reduced to just types 
+
+module AsdlCore {
+
+  asdl_spec = AsdlSpec (decls decls)
+    
+  decls = (decl *)
+  
+  decl = Module (identifier name, definitions defs)
+  
+  definitions = (definition*) 
+  
+  definition = Def (identifier name, asdl_type dtype)
+  
+  asdl_type = Sum(constrs constrs )
+            | Prod(fields fields)
+            
+  constrs = (constr*)
+  
+  constr = Constr(identifier label, fields fields)
+  
+  fields = (field*)
+  
+  field = Field(opt_qualifier qual, asdl_prim ptype, cardinality card, opt_identifier opt_name)
+  
+  opt_qualifier = (identifier?)
+  
+  opt_identifier = (identifier?)
+  
+  asdl_prim = TyUnit
+            | TyString
+            | TyInt
+            | TyIdentifier
+            | TyRef (identifier name)
+            | TyExternalPrim (identifier name)
+  
+  cardinality = One | Zom | Opt          
+
+
+}

@@ -1,0 +1,136 @@
+-- maybe one file for outputting picklers 
+-- and one for outputting types
+
+
+{
+module Gen.OutputOCamlTypes
+  ( outputOCamlTypes
+  ) where
+
+import Base.PrimitiveTypes
+
+import Gen.OCamlAbsSyn
+
+import Util.PPExt
+
+import PPrint
+
+
+}
+
+
+INCLUDE "OCamlAbsSynDEFS.ag"
+
+
+ATTR TypeDefinition Typedef TyInfo 
+     OptTyEquation OptTyRep TypeExpr
+     TyRep ConstrDecl FieldDecl
+  [ | | pp : Doc ]
+
+
+ATTR Typedefs ConstrDecls TypeExprs FieldDecls  
+  [ | | pp USE {:} {[]} : {[Doc]} ]
+
+SEM TypeDefinition 
+  | TypeDefinition 
+      lhs.pp      = encloseSepAlt (text "type ")
+                                  empty
+                                  (line <> text "and ")
+                                  @defs.pp
+
+SEM Typedef
+  | Tuple
+      lhs.pp      = parens2 (map text @ty_params.names) 
+                      <> text @tycon_name 
+                      <> @ty_info.pp
+                      
+SEM TyInfo 
+  | Tuple
+      lhs.pp      = @opt_ty_equation.pp <> @opt_ty_rep                     
+
+
+ATTR TyParams [ | | names : {[String]} ]
+
+SEM TyParams
+  | Cons      
+      lhs.names   = @hd : @tl.names
+  | Nil
+      lhs.names   = []    
+
+
+SEM OptTyEquation
+  | Just
+      lhs.pp      = space <> equals <+> @just.pp <> space
+  | Nothing
+      lhs.pp      = empty
+      
+SEM OptTyRep          
+  | Just
+      lhs.pp      = space <> equals <+> @just.pp <> space
+  | Nothing
+      lhs.pp      = empty
+      
+      
+SEM TypeExpr
+  | TyExprVar      
+      lhs.pp      = text @label
+  | TyExprAnon      
+      lhs.pp      = char '_'      
+  | TyExprConstr
+      lhs.pp      = text @constr_name
+  | TyExprConstrApp   
+      lhs.pp      = @ty_expr.pp <+> @ty_constr.pp
+  | TyExprTuple
+      lhs.pp      = starSep @ty_exprs.pp      
+  
+
+
+
+SEM TyRep
+  | ConstrRep
+      lhs.pp      = line <> indent 2 (encloseSepAlt (text "  ")
+                                                    empty
+                                                    (line <> text "| ")                              
+                                                    (@constr_decls.pp) )
+  | RecordRep   
+      lhs.pp      = lbrace <> line 
+                           <> (indent 2 (vsep $ punctuate semi @field_decls.pp))
+                           <> rbrace
+
+ATTR OptTypeExpr [ | | pp_cdecl : Doc ]
+      
+SEM OptTypeExpr
+  | Just
+      lhs.pp_cdecl      = space <> text "of" <+> @just.pp
+  | Nothing
+      lhs.pp_cdecl      = empty  
+      
+SEM ConstrDecl  
+  | Tuple 
+      lhs.pp            = text @constr_name <> @opt_type_expr.pp_cdecl
+  
+
+SEM FieldDecl
+  | Tuple
+      lhs.pp            = fill 12 (text @field_name) <+> colon <+> @ty_expr.pp
+        
+{
+
+-- not quite the same as tupled0
+parens2 :: [Doc] -> Doc
+parens2 []  = empty
+parens2 [a] = a <> space
+parens2 as  = tupled as <> space
+
+
+
+outputOCamlTypes :: [TypeDefinition] -> Doc
+outputOCamlTypes xs = vsep $ map outputOCamlTypes' xs
+
+outputOCamlTypes' decl = pp_Syn_TypeDefinition synthesized
+  where synthesized = wrap_TypeDefinition (sem_TypeDefinition decl) inherited
+        inherited   = Inh_TypeDefinition
+
+          
+}
+

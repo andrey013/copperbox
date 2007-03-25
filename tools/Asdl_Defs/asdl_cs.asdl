@@ -1,0 +1,80 @@
+
+-- ASDL concrete syntax
+
+module AsdlCS {
+  
+  asdl_spec = (alt_three *)
+  
+  
+  -- Having module , prim_module and view as alternatives
+  -- in a sum type makes further processing messier.
+  -- So we use whats essentially a three-way Either 
+  -- - Either a (Either b c) - {AltThree a b c}
+  
+  alt_three = Alt1 (module_defn a)
+            | Alt2 (prim_module a)
+            | Alt3 (view_defn a)
+            
+  module_defns = (module_defn *)            
+  
+  module_defn = Module(identifier name, 
+                       import_stmts importlist,
+                       definitions defs)
+                       
+  prim_module = PrimModule(identifier name, identifier* prims)
+  
+  view_defn = View(identifier lang_id, view_decls decls)
+
+  import_stmts = (import_stmt*)                     
+  import_stmt = ImportStmt(identifier name)
+
+         
+  view_decls = (view_decl*)                 
+  view_decl = View_Plain (view_entity entity, view_pair kv_pair)
+            | View_Many_to_One (view_entity * entities, view_pair kv_pair)
+            | View_One_to_Many (view_entity entity, view_pair * kv_pairs)
+            | View_Many_to_Many (view_entity * entities, view_pair * kv_pairs)
+            
+  view_entity = TypeView(identifier module_qual, identifier type_id)
+              | ConstrView(identifier module_qual, identifier con_id)
+              | ModuleView(identifier name)
+  
+  view_pair = (property prop, text_value value)
+  
+  definitions = (definition*) 
+  
+  definition = Def(identifier name, asdl_type dtype)
+  
+  asdl_type = Sum(constrs constrs, opt_attribs opt_attribs)
+            | Prod(fields fields)
+  
+  
+  constrs = (constr*)
+  
+  constr = Constr(identifier label, fields fields)
+  
+  opt_attribs = (attribs?)
+  attribs = (field*)
+  
+  fields = (field*)
+  
+  field = Field(opt_qualifier qual, 
+                asdl_prim ptype, 
+                cardinality card, 
+                opt_identifier opt_name)
+
+  opt_identifier = (identifier?)
+
+  opt_qualifier = (identifier?)
+  
+  asdl_prim = TyUnit
+            | TyString
+            | TyInt
+            | TyIdentifier
+            | TyRef (identifier name)
+  
+  cardinality = One | Zom | Opt
+  
+  
+}
+

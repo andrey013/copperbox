@@ -1,0 +1,31 @@
+-- Sun Jan 28 15:04:22 GMT Standard Time 2007
+
+TYPE Ag = [Elem]
+
+DATA Elem
+  | Data             name             : Conid
+                     alternatives     : DataAlts
+  | Type             name             : Conid
+                     type_body        : TypeBody
+
+DATA TypeBody
+  | TB_List          typ              : Typ
+  | TB_Maybe         typ              : Typ
+  | TB_Tuple         fields           : Fields
+
+DATA Typ
+  | NamedType        conid            : Conid
+  | CodeBlock        codeblock        : String
+
+TYPE DataAlts = [DataAlt]
+
+DATA DataAlt
+  | DataAlt          name             : Conid
+                     fields           : Fields
+
+TYPE Fields = [Field]
+
+DATA Field
+  | LabelledField    name             : Varid
+                     typ              : Typ
+  | ConstrField      conid            : Conid

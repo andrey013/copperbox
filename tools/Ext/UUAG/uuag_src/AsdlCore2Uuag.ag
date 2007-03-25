@@ -1,0 +1,127 @@
+
+
+{
+module Gen.AsdlCore2Uuag 
+  ( transformToUuag
+  ) where
+
+
+import Base.Lib
+import qualified Gen.UuagAbsSyn as AG
+import Util.Naming
+
+import Data.Either
+
+}
+
+INCLUDE "AsdlCoreAbsSynDEFS.ag"
+
+ATTR AsdlSpec [ | | toElems : {[AG.Elem]} ]
+
+SEM AsdlSpec
+  | AsdlSpec    lhs.toElems   = concat @decls.toElems
+   
+ATTR Decls  [ | | toElems USE {:} {[]} : {[[AG.Elem]]} ] 
+
+
+ATTR Decl [ | | toElems : {[AG.Elem]} ]
+
+SEM Decl
+  | Module      lhs.toElems  = @defs.toElem
+
+                    
+ATTR Definitions [ | | toElem USE {:} {[]} : {[AG.Elem]} ]
+ATTR Definition  [ | | toElem : {AG.Elem} ]
+
+SEM Definition
+  | Def         lhs.toElem      = @dtype.conv
+                dtype.name      = @name
+
+ATTR AsdlType [ name : String | | conv : {AG.Elem} ]
+
+SEM AsdlType
+  | Sum         lhs.conv      = AG.Data (haskellName @lhs.name) @constrs.toDataAlt
+
+  | Prod        lhs.conv      = AG.Type (haskellName @lhs.name) 
+                                        (buildBody @fields.ftriple)
+
+  
+ATTR Constrs  [ | | toDataAlt USE {:} {[]} : {[AG.DataAlt]} ]  
+ATTR Constr   [ | | toDataAlt : {AG.DataAlt} ]
+
+SEM Constr
+  | Constr      lhs.toDataAlt  = let xs::(AG.Fields)
+                                     xs = map buildLabelledField (nameLabel @fields.ftriple)
+                                 in  AG.DataAlt @label xs
+
+
+
+ATTR Fields [ | | ftriple USE {:} {[]} : {[(Cardinality, Maybe String, String)]} ]
+
+ATTR Field [ | | ftriple : {(Cardinality, Maybe String, String)} ] 
+
+SEM Field
+  | Field
+      lhs.ftriple   = (@card.identity , @opt_name.identity, @ptype.typename)
+
+
+ATTR AsdlPrim   [ | | typename : String ]
+
+SEM AsdlPrim
+  | TyUnit            lhs.typename = "()"
+  | TyString          lhs.typename = "String"
+  | TyInt             lhs.typename = "Int"
+  | TyIdentifier      lhs.typename = "String"
+  | TyRef             lhs.typename = @name
+  | TyExternalPrim    lhs.typename = @name
+  
+  
+
+
+ATTR Cardinality  [ | | identity : SELF ]
+ATTR OptIdentifier [ | | identity : SELF ]
+  
+
+
+
+{
+
+transformToUuag :: AsdlSpec -> AG.Ag
+transformToUuag spec = toElems_Syn_AsdlSpec synthesized
+    where synthesized = wrap_AsdlSpec (sem_AsdlSpec spec) inherited
+          inherited   = Inh_AsdlSpec
+
+
+buildBody :: [(Cardinality, Maybe String, String)] -> AG.TypeBody
+buildBody [(Zom,Nothing,conid)]     = AG.TB_List (AG.NamedType $ haskellName conid)
+buildBody [(Opt,Nothing,conid)]     = AG.TB_Maybe (AG.NamedType $ haskellName conid)
+buildBody xs                        = AG.TB_Tuple (tupleFields xs)
+
+
+typeFromField (AG.LabelledField _ typ)   = typ
+typeFromField (AG.ConstrField conid)     = AG.NamedType conid
+        
+buildLabelledField :: (Cardinality, String, String) -> AG.Field
+buildLabelledField (Zom,name,tyname)  
+  = AG.LabelledField name (AG.CodeBlock $ "[" ++ haskellName tyname ++ "]")
+buildLabelledField (Opt,name,tyname)  
+  = AG.LabelledField name (AG.CodeBlock $ "(Maybe " ++ haskellName tyname ++ ")")        
+buildLabelledField (_,name,tyname)  
+  = AG.LabelledField name (AG.NamedType $ haskellName tyname)
+
+
+
+nameLabel :: [(Cardinality, Maybe String, String)] -> [(Cardinality, String, String)]
+nameLabel xs = reverse $ fst $ foldl fn ([],1) xs
+  where fn (acc,i) (c,Nothing,t) = ((c,'x':show i,t):acc,i+1)
+        fn (acc,i) (c,Just s, t) = ((c,s,t):acc,i+1)
+  
+
+tupleFields :: [(Cardinality, Maybe String, String)] -> [AG.Field]
+tupleFields xs = map buildLabelledField (nameLabel xs)
+ 
+
+
+                       
+  
+}  
