@@ -1,14 +1,15 @@
 ## This make file will be copied into the Gen directory
 ## It is located outside it so that the Gen directory can be 'rm *'-ed easily
 
+
 GHC_OPTS=../template/ghc_opts.txt
 
 
 all: base compiler ocaml attg haskell
 
 ## Make Base
-base: AsdlConcreteSyn.hs AsdlCoreAbsSyn.hs OutputAsdl.hs \
-      OutputHtml.hs
+base: AsdlConcreteSyn.hs AsdlCoreAbsSyn.hs \
+      OutputAsdl.hs OutputHtml.hs 
 
 
 # this neeeds tidying up once we can pass file names to microasdl
@@ -20,8 +21,7 @@ AsdlConcreteSyn.hs: AsdlCoreAbsSynDEFS.ag
 AsdlCoreAbsSyn.hs: AsdlCoreAbsSynDEFS.ag
 	cp ../Base/uuag_src/AsdlCoreAbsSyn.ag . 
 	uuagc -d AsdlCoreAbsSyn.ag -o AsdlCoreAbsSyn.hs
-	
-		
+			
 OutputAsdl.hs: AsdlCoreAbsSynDEFS.ag
 	cp ../Base/uuag_src/OutputAsdl.ag .
 	uuagc -cfsp --wrapper OutputAsdl.ag	
@@ -87,12 +87,24 @@ AsdlCore2Uuag.hs: UuagAbsSynDEFS.ag
 	rm AsdlCore2Uuag.TEMP.hs
 	
 ## Make Haskell extension	
-haskell: HsGenPickler.hs
+haskell: HaskellAbsSyn.hs OutputHaskell.hs HsGenPickler.hs HsGenDatatypes.hs
 
+HaskellAbsSyn.hs: HaskellAbsSynDEFS.ag
+	cp ../Ext/Haskell/uuag_src/HaskellAbsSyn.ag . 
+	uuagc -d HaskellAbsSyn.ag -o HaskellAbsSyn.hs
+	
+
+OutputHaskell.hs: HaskellAbsSynDEFS.ag
+	cp ../Ext/Haskell/uuag_src/OutputHaskell.ag .
+	uuagc -cfsp --wrapper OutputHaskell.ag
+	
+		
 HsGenPickler.hs: UuagAbsSynDEFS.ag
 	cp ../Ext/Haskell/uuag_src/HsGenPickler.ag .
 	uuagc -cfsp --wrapper HsGenPickler.ag  -o HsGenPickler.hs
 
-
+HsGenDatatypes.hs: UuagAbsSynDEFS.ag
+	cp ../Ext/Haskell/uuag_src/HsGenDatatypes.ag .
+	uuagc -cfsp --wrapper HsGenDatatypes.ag  -o HsGenDatatypes.hs
 
 

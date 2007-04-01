@@ -4,5 +4,69 @@
 module Gen.HsGenDatatypes
   ( makeHsDatatypes
   ) where
+
+import Base.Lib
+import Base.Lib
+
+
+import Util.Naming
+
+import Gen.HaskellAbsSyn
   
 }
+
+INCLUDE "AsdlCoreAbsSynDEFS.ag"
+
+ATTR AsdlSpec [ | | mkModule : {HsModule} ]
+
+SEM AsdlSpec
+  | AsdlSpec    
+      lhs.mkModule        = HsModule "ToDo"
+                                     @decls.mkHsDecl 
+                                     NoAnno  
+                                                                  
+
+
+ATTR Decls [ | | mkHsDecl USE {++} {[]} : {[HsDecl]} ]
+
+ATTR Decl [ | | mkHsDecl : {[HsDecl]} ]
+
+SEM Decl
+  | Module
+      lhs.mkHsDecl        = @defs.mkHsDecl
+ 
+ ATTR Definitions [ | | mkHsDecl USE {:} {[]} : {[HsDecl]} ]
+      
+ATTR Definition [ | | mkHsDecl : {HsDecl} ]
+
+SEM Definition
+  | Def 
+      lhs.mkHsDecl        = @dtype.mkHsDecl
+      dtype.def_name      = @name
+
+ATTR AsdlType [ def_name : String | | mkHsDecl : {HsDecl} ]
+
+
+SEM AsdlType
+  | Sum
+      lhs.mkHsDecl        = HsDataDecl (haskellName @lhs.def_name) 
+                                       []
+                                       []
+                                       ["Eq", "Show"]
+  | Prod  
+      lhs.mkHsDecl        = HsTypeDecl (haskellName @lhs.def_name) [] (HsTyVar "todo")
+            
+      
+      
+{
+
+
+makeHsDatatypes :: AsdlSpec -> HsModule
+makeHsDatatypes defn = mkModule_Syn_AsdlSpec synthesized
+  where synthesized = wrap_AsdlSpec (sem_AsdlSpec defn) inherited
+        inherited   = Inh_AsdlSpec
+
+
+
+
+} 

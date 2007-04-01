@@ -17,6 +17,7 @@ regenerate :
 	$(ASDL) --uuag -d Gen/ Asdl_Defs/asdl_core.asdl
 	$(ASDL) --uuag -d Gen/ Asdl_Defs/uuag.asdl
 	$(ASDL) --uuag -d Gen/ Asdl_Defs/ocaml.asdl
+	$(ASDL) --uuag -d Gen/ Asdl_Defs/haskell.asdl
 	cp Gen-Makefile Gen/Makefile
 	cd Gen && \
 	make
@@ -33,7 +34,8 @@ clean :
 	cd Compiler/ ; rm *.o ; rm *.hi 
 	cd Compiler/Views ; rm *.o ; rm *.hi 
 	cd Ext/Caml/ ; rm *.o ; rm *.hi 	
-	cd Ext/UUAG/ ; rm *.o ; rm *.hi 
+	cd Ext/UUAG/ ; rm *.o ; rm *.hi
+	cd Ext/Haskell/ ; rm *.o ; rm *.hi 
 	cd External/ ; rm *.o ; rm *.hi 
 	cd Gen/ ; rm *.o ; rm *.hi 
 	cd Util/ ; rm *.o ; rm *.hi

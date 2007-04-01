@@ -1,0 +1,86 @@
+
+
+{
+module Gen.OutputHaskell
+  ( outputHaskell
+  ) where
+
+import Base.PrimitiveTypes
+
+import Gen.HaskellAbsSyn
+
+import Ext.Haskell.PPHaskell 
+
+
+import PPrint
+
+
+}
+
+INCLUDE "HaskellAbsSynDEFS.ag"
+
+ATTR HsModule HsDecl HsType HsConsDecl HsBangType HsRecField
+  [ | | pp : {Doc} ]
+
+
+ATTR HsDecls HsTypes HsConsDecls HsBangTypes HsRecFields
+  [ | | pp USE {:} {[]} : {[Doc]} ]
+  
+  
+
+SEM HsModule 
+  | HsModule        lhs.pp    = text "module" <+> text @mod_name <+> text "where" 
+                                  <$> vsep @decls.pp
+  
+SEM HsDecl
+  | HsTypeDecl      lhs.pp    = typeDecl @name @typarams.names 
+                                               @typ.pp
+                                               
+  | HsDataDecl      lhs.pp    = dataDecl @name @typarams.names 
+                                               @hs_cons_decls.pp 
+                                               @derivables.names 
+
+SEM HsType 
+  | HsTyFun         lhs.pp    = @left.pp <+> text "->" <+> @right.pp
+  | HsTyList        lhs.pp    = brackets @ty.pp
+  | HsTyTuple       lhs.pp    = tupled @tys.pp
+  | HsTyApp         lhs.pp    = @left.pp <+> @right.pp
+  | HsTyVar         lhs.pp    = text @name
+  | HsTyCon         lhs.pp    = text @name
+
+
+SEM HsConsDecl 
+  | HsConDecl       lhs.pp    = conDecl @name [] -- hs_bangtypes hs_bangtypes)
+  | HsRecDecl       lhs.pp    = recDecl @name [] -- hs_rec_fields hs_recfields)
+               
+               
+ 
+SEM HsRecField
+  | Tuple           lhs.pp    = text @name <+> text "::" <+> @hs_bang_type.pp
+ 
+               
+SEM HsBangType
+  | HsBangType      lhs.pp    = char '!' <> @hs_type.pp
+  | HsUnBangedType  lhs.pp    = @hs_type.pp
+              
+              
+ATTR Derivs Typarams [ | | names : {[String]} ]
+
+SEM Derivs
+  | Cons            lhs.names   = @hd : @tl.names
+  | Nil             lhs.names   = [] 
+
+SEM Typarams
+  | Cons            lhs.names   = @hd : @tl.names
+  | Nil             lhs.names   = [] 
+  
+{
+
+
+outputHaskell :: HsModule -> Doc
+outputHaskell prog = pp_Syn_HsModule synthesized
+  where synthesized = wrap_HsModule (sem_HsModule prog) inherited
+        inherited   = Inh_HsModule
+          
+}
+           

@@ -9,9 +9,10 @@ import Compiler.CompilerMonad
 import Compiler.ParseAsdl
 import Compiler.ProcessOpts
 import Compiler.Views.ViewBase
-
+import Compiler.WriteOutput
 import qualified Base.AsdlConcreteSyn as CS
 import Base.Lib
+import Base.Backend
 
 -- (2DO) Do we want to explicitly import from the Gen directory?
 import Gen.Asdl2Core
@@ -19,6 +20,12 @@ import Gen.Asdl2Core
 import Ext.UUAG.Lib
 import Ext.Caml.Lib
 import Ext.Haskell.Lib
+import Ext.Haskell.HaskellDatatypesBE
+
+-- import qualified Gen.MiniHaskellAbsSyn as MiniH
+-- import qualified Gen.OutputHaskell as MiniPP
+
+import Util.Naming
 
 import PPrint
 
@@ -27,7 +34,7 @@ import Control.Monad.Trans
 import Data.Maybe
 import System.Exit
 import System.IO
-import System.Time
+-- import System.Time
 
 
 runCompile :: [Flag] -> [FilePath] -> IO ()
@@ -39,7 +46,9 @@ runCompile opts files = do
   where compileSteps = runCompilerM $ do
           processCmdLineOpts opts files
           spec <- processAsdlFiles files
+          -- further is not so good...
           further generateOutput spec
+          further ((flip gen2) haskell_datatypes) spec
           
 
 
@@ -111,6 +120,21 @@ reduceToCore tdefs = return $ transformToCore tdefs
 -- Output
 --------------------------------------------------------------------------------
 
+gen2 :: AsdlSpec -> Backend a -> CompilerM ()
+gen2 spec be = do
+  output_dir <- query output_directory
+  prefix <- query output_prefix
+  reportEllipsis $ "Pretend..."
+  let outfile = (filename be) output_dir prefix
+  let ast = (generate be) spec
+  let doc = (prettyprint be) ast
+  let text = displayS (renderPretty 0.9 80 doc) ""
+  report $ "generating..." ++ outfile
+  report $ text
+  
+
+
+
 generateOutput :: AsdlSpec -> CompilerM ()
 generateOutput spec = do
   output_dir <- query output_directory
@@ -118,9 +142,12 @@ generateOutput spec = do
   reportEllipsis $ "Generating " ++ prefix 
   mkUuagOutput (output_dir ++ prefix)  spec
   mkOCamlOutput (output_dir ++ prefix)  spec
-  makeHaskellOutput (output_dir ++ prefix)  spec
+--  makeHaskellOutput (output_dir ++ prefix)  spec
+--  makeHaskellDatatypes (output_dir ++ prefix)  spec
+
+
   
-  
+    
   
 data GenT a b = GenT
   { fileName          :: String -> String
@@ -140,7 +167,7 @@ data GenP a = GenP
   
 uuag_gen :: GenT Ag b  
 uuag_gen = GenT
-  { fileName            = \s -> s ++ "AbsSynDEFS.ag"
+  { fileName            = \s -> (u1 s) ++ "AbsSynDEFS.ag"
   , textComment         = commentUuag
   , fromCore            = transformToUuag 
   , toDoc               = outputUuag
@@ -196,6 +223,7 @@ mkOCamlOutput name spec = do
 mkUuagOutput :: String -> AsdlSpec -> CompilerM ()
 mkUuagOutput name spec = generateTypeDesc uuag_gen name spec
 
+{-
 makeHaskellOutput :: String -> AsdlSpec -> CompilerM ()
 makeHaskellOutput name spec = do
   reportEllipsis $ "Creating file " ++ path
@@ -205,8 +233,18 @@ makeHaskellOutput name spec = do
   where
     -- text = error (show spec)
     text = ppHsModule $ makeHsPicklerCode spec ("Cil")
-    path = name ++ "Pkl.hs"
+    path = u1 name ++ "Pkl.hs"
     
+
+makeHaskellDatatypes :: String -> AsdlSpec -> CompilerM ()
+makeHaskellDatatypes name spec = do
+  reportEllipsis $ "Creating file " ++ path
+  outputDocument doc commentHaskell Nothing Nothing path
+  where
+    -- text = error (show spec)
+    doc = MiniPP.outputMiniHaskell $ makeHsDatatypes spec
+    path = u1 name ++ "Syntax.hs"
+-}    
 
 outputDocument :: Doc -> Commenter -> (Maybe String) -> (Maybe String) 
                       -> FilePath -> CompilerM ()
@@ -218,23 +256,7 @@ outputDocument doc commenter opt_prolog opt_epilog path = do
     text line_width doc = displayS (renderPretty 0.9 line_width doc) ""
     
 
-       
+     
   
-genTimeStamp :: Commenter -> IO String
-genTimeStamp commenter = do
-  t <- getClockTime
-  t' <- toCalendarTime t  
-  return $ commenter (calendarTimeToString t') 
-    
-hPutBlankLine h = hPutStrLn h ""
 
-outputToFile text commenter opt_prolog opt_epilog path = do
-  h <- openFile path WriteMode
-  comment <- genTimeStamp commenter
-  hPutStrLn h comment
-  hPutStrLn h (fromMaybe "\n" opt_prolog) 
-  hPutStr h text
-  replicateM_ 2 (hPutBlankLine h)
-  hPutStrLn h (fromMaybe "\n" opt_epilog) 
-  hClose h
       

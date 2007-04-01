@@ -1,0 +1,12 @@
+
+{
+module Gen.HaskellAbsSyn where
+
+import Base.PrimitiveTypes
+
+}
+
+INCLUDE "HaskellAbsSynDEFS.ag"
+
+DERIVING * : Show
+

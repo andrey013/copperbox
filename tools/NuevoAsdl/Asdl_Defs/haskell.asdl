@@ -1,0 +1,44 @@
+-- The 'Language.Haskell.Syntax' AST without source locations
+
+module Haskell {
+  
+  hs_module = HsModule (identifier mod_name, hs_decls decls, annotation anno) 
+  
+  hs_decls = (hs_decl *)
+  
+  hs_decl = HsTypeDecl (identifier name, typarams typarams, hs_type typ)
+          | HsDataDecl (identifier name, 
+                        typarams typarams,
+                        hs_cons_decls hs_cons_decls,
+                        derivs derivables)
+  
+  hs_types = (hs_type *)
+  
+  hs_type = HsTyFun (hs_type left, hs_type right)
+          | HsTyList (hs_type ty)
+          | HsTyTuple (hs_types tys)
+          | HsTyApp (hs_type left, hs_type right)
+          | HsTyVar (identifier name)
+          | HsTyCon (identifier name)
+  
+  hs_cons_decls = (hs_cons_decl *)
+
+  hs_cons_decl = HsConDecl (identifier name, hs_bang_types hs_bang_types)
+               | HsRecDecl (identifier name, hs_rec_fields hs_rec_fields)
+  
+  hs_rec_fields = (hs_rec_field *)
+  
+  hs_rec_field = (identifier name, hs_bang_type hs_bang_type)
+  
+  hs_bang_types = (hs_bang_type *)
+  
+  hs_bang_type = HsBangType (hs_type hs_type) -- strict
+               | HsUnBangedType (hs_type hs_type)
+  
+  
+  typarams = (identifier *)
+  derivs = (identifier *)
+  
+  
+}
+  
