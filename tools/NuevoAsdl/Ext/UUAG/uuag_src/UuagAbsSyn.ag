@@ -1,12 +1,12 @@
 
 {
-module Gen.UuagAbsSyn where
+module Gen.Ext.UUAG.UuagAbsSyn where
 
 import Base.PrimitiveTypes
 
 }
 
-INCLUDE "UuagAbsSynDEFS.ag"
+INCLUDE "Gen/Ext/UUAG/UuagAbsSynDEFS.ag"
 
 DERIVING * : Show
 

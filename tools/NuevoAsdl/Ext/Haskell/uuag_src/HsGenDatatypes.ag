@@ -1,7 +1,7 @@
 
 
 {
-module Gen.HsGenDatatypes
+module Gen.Ext.Haskell.HsGenDatatypes
   ( makeHsDatatypes
   ) where
 
@@ -11,11 +11,11 @@ import Base.Lib
 
 import Util.Naming
 
-import Gen.HaskellAbsSyn
+import Gen.Ext.Haskell.HaskellAbsSyn
   
 }
 
-INCLUDE "AsdlCoreAbsSynDEFS.ag"
+INCLUDE "Gen/Base/AsdlCoreAbsSynDEFS.ag"
 
 ATTR AsdlSpec [ | | mkModule : {HsModule} ]
 
@@ -51,15 +51,61 @@ SEM AsdlType
   | Sum
       lhs.mkHsDecl        = HsDataDecl (haskellName @lhs.def_name) 
                                        []
-                                       []
+                                       @constrs.mkHsConsDecl
                                        ["Eq", "Show"]
   | Prod  
-      lhs.mkHsDecl        = HsTypeDecl (haskellName @lhs.def_name) [] (HsTyVar "todo")
+      lhs.mkHsDecl        = HsTypeDecl (haskellName @lhs.def_name) 
+                                       [] 
+                                       (HsTyTuple @fields.mkHsType)
+
+ATTR Constrs [ | | mkHsConsDecl USE {:} {[]} : {[HsConsDecl]} ]
+
+ATTR Constr [ | | mkHsConsDecl : {HsConsDecl} ]
+
+SEM Constr
+  | Constr  
+      lhs.mkHsConsDecl    = HsConDecl @label @fields.mkHsBangType
+
+
+ATTR Fields [ | | mkHsType USE {:} {[]} : {[HsType]} ]
+ATTR Fields [ | | mkHsBangType USE {:} {[]} : {[HsBangType]} ]
+
+ATTR Field [ | | mkHsType : {HsType} ]
             
+SEM Field
+  | Field
+      lhs.mkHsType        = cardinality @card.identity @ptype.identity
+
+ATTR Field [ | | mkHsBangType : {HsBangType} ]
+            
+SEM Field
+  | Field
+      lhs.mkHsBangType    = HsUnBangedType $ cardinality @card.identity @ptype.identity
       
+            
+ATTR Cardinality  [ | | identity : SELF ]
+ATTR AsdlPrim     [ | | identity : SELF ]
+            
       
 {
 
+class TypeTS ty where 
+  cardinality :: Cardinality -> AsdlPrim -> ty
+  item :: AsdlPrim -> ty 
+
+
+instance TypeTS HsType where
+  cardinality One a = item a
+  cardinality Zom a = HsTyList (item a)
+  cardinality Opt a = HsTyApp (HsTyCon "Maybe") (item a)
+  
+  item TyUnit                   = HsTyCon "()"
+  item TyString                 = HsTyCon "String"
+  item TyInt                    = HsTyCon "Int"
+  item TyIdentifier             = HsTyCon "String"
+  item (TyRef name)             = HsTyCon name
+  item (TyExternalPrim name)    = HsTyCon name
+  
 
 makeHsDatatypes :: AsdlSpec -> HsModule
 makeHsDatatypes defn = mkModule_Syn_AsdlSpec synthesized

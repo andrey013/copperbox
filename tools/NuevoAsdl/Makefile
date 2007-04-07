@@ -1,6 +1,12 @@
 
-include config.mk
+default: explanation
 
+include config.mk
+include Base/base.mk
+include Compiler/compiler.mk
+include Ext/OCaml/ext-ocaml.mk
+include Ext/Haskell/ext-haskell.mk
+include Ext/UUAG/ext-uuag.mk
 
 explanation :
 	@echo "make nuevoasdl"
@@ -12,20 +18,22 @@ nuevoasdl : Main.hs ./Gen/Makefile ./Compiler/Compile.hs
 	ghc --make Main.hs -i./External
 	mv main.exe nuevoasdl.exe
 	
-regenerate :
-	$(ASDL) --uuag -d Gen/ Asdl_Defs/asdl_cs.asdl
-	$(ASDL) --uuag -d Gen/ Asdl_Defs/asdl_core.asdl
-	$(ASDL) --uuag -d Gen/ Asdl_Defs/uuag.asdl
-	$(ASDL) --uuag -d Gen/ Asdl_Defs/ocaml.asdl
-	$(ASDL) --uuag -d Gen/ Asdl_Defs/haskell.asdl
-	cp Gen-Makefile Gen/Makefile
-	cd Gen && \
-	make
+regenerate : make-base	make-compiler make-ext-ocaml \
+  make-ext-haskell make-ext-uuag
+	
+gen_makedirs:
+	mkdir $(TOP_PREFIX)/Gen/Base
+	mkdir $(TOP_PREFIX)/Gen/Compiler	
+	mkdir $(TOP_PREFIX)/Gen/Ext
+	mkdir $(TOP_PREFIX)/Gen/Ext/Haskell
+	mkdir $(TOP_PREFIX)/Gen/Ext/OCaml
+	mkdir $(TOP_PREFIX)/Gen/Ext/UUAG
+
 	
 		
 # Makefile note	- rm needs to be on the same line as cd (seperated by a semi ; )
 gen-clean :
-	cd Gen/ ; rm *
+	cd Gen/ ; rm -rf *
 
 .PHONY : clean
 clean :

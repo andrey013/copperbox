@@ -1,7 +1,7 @@
 
-module Ext.Caml.AstConstruction where
+module Ext.OCaml.AstConstruction where
 
-import Gen.OCamlAbsSyn
+import Gen.Ext.OCaml.OCamlAbsSyn
 import qualified Base.Lib as B
 
 constrCode :: Int -> [(String, B.Cardinality)] -> Expr

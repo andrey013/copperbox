@@ -1,7 +1,7 @@
 
 
 {
-module Gen.Asdl2Core 
+module Gen.Compiler.Asdl2Core 
   ( transformToCore
   ) where
 
@@ -9,13 +9,13 @@ module Gen.Asdl2Core
 import Base.PrimitiveTypes
 import Base.AsdlConcreteSyn
 
-import qualified Gen.AsdlCoreAbsSyn as AS
+import qualified Gen.Base.AsdlCoreAbsSyn as AS
 
 import Data.Maybe
 
 }
 
-INCLUDE "AsdlConcreteSynDEFS.ag"
+INCLUDE "Gen/Base/AsdlConcreteSynAbsSynDEFS.ag"
 
 
 
@@ -123,7 +123,7 @@ SEM Attribs
 {
 
 transformToCore :: [ModuleDefn] -> AS.AsdlSpec
-transformToCore defs = AS.AsdlSpec $ conv_Syn_ModuleDefns synthesized
+transformToCore defs = AS.AsdlSpec (conv_Syn_ModuleDefns synthesized) NoAnno
     where synthesized = wrap_ModuleDefns (sem_ModuleDefns defs) inherited
           inherited   = Inh_ModuleDefns
 

@@ -2,13 +2,13 @@
 
 module Base.Lib 
   ( module Base.PrimitiveTypes
-  , module Gen.AsdlCoreAbsSyn
-  , module Gen.OutputAsdl
-  , module Gen.OutputHtml  
+  , module Gen.Base.AsdlCoreAbsSyn
+  , module Gen.Base.OutputAsdl
+  , module Gen.Base.OutputHtml  
   ) 
   where
 
 import Base.PrimitiveTypes  
-import Gen.AsdlCoreAbsSyn
-import Gen.OutputAsdl
-import Gen.OutputHtml
+import Gen.Base.AsdlCoreAbsSyn
+import Gen.Base.OutputAsdl
+import Gen.Base.OutputHtml

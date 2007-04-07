@@ -1,7 +1,7 @@
 
 
 {
-module Gen.HsGenPickler
+module Gen.Ext.Haskell.HsGenPickler
   ( makeHsPicklerCode
   ) where
 
@@ -19,7 +19,7 @@ import qualified Language.Haskell.Syntax as HS
 
 
 
-INCLUDE "AsdlCoreAbsSynDEFS.ag"
+INCLUDE "Gen/Base/AsdlCoreAbsSynDEFS.ag"
 
 
 ATTR AsdlSpec [ base_name : {String} | | mkModule : {ModuleS} ]

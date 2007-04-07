@@ -1,12 +1,12 @@
 
 module Ext.UUAG.Lib 
-  ( module Gen.UuagAbsSyn
-  , module Gen.AsdlCore2Uuag
-  , module Gen.OutputUuagTypes 
+  ( module Gen.Ext.UUAG.UuagAbsSyn
+  , module Gen.Ext.UUAG.AsdlCore2Uuag
+  , module Gen.Ext.UUAG.OutputUuagTypes 
   
   ) where
 
-import Gen.UuagAbsSyn
-import Gen.AsdlCore2Uuag 
-import Gen.OutputUuagTypes 
+import Gen.Ext.UUAG.UuagAbsSyn
+import Gen.Ext.UUAG.AsdlCore2Uuag 
+import Gen.Ext.UUAG.OutputUuagTypes 
  

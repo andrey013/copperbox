@@ -2,7 +2,7 @@
 
 module Base.Backend (Backend(..)) where
 
-import Gen.AsdlCoreAbsSyn
+import Gen.Base.AsdlCoreAbsSyn
 
 import PPrint
 

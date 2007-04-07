@@ -1,20 +1,20 @@
 
 
 {
-module Gen.AsdlCore2Uuag 
+module Gen.Ext.UUAG.AsdlCore2Uuag 
   ( transformToUuag
   ) where
 
 
 import Base.Lib
-import qualified Gen.UuagAbsSyn as AG
+import qualified Gen.Ext.UUAG.UuagAbsSyn as AG
 import Util.Naming
 
 import Data.Either
 
 }
 
-INCLUDE "AsdlCoreAbsSynDEFS.ag"
+INCLUDE "Gen/Base/AsdlCoreAbsSynDEFS.ag"
 
 ATTR AsdlSpec [ | | toElems : {[AG.Elem]} ]
 

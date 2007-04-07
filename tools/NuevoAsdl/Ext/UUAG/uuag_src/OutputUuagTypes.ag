@@ -2,12 +2,12 @@
 
 {
 
-module Gen.OutputUuagTypes 
+module Gen.Ext.UUAG.OutputUuagTypes 
   ( outputUuag
   ) where
 
 import Base.PrimitiveTypes
-import Gen.UuagAbsSyn
+import Gen.Ext.UUAG.UuagAbsSyn
 import Util.PPExt
 
 import PPrint
@@ -17,7 +17,7 @@ import PPrint
 }
 
 
-INCLUDE "UuagAbsSynDEFS.ag"
+INCLUDE "Gen/Ext/UUAG/UuagAbsSynDEFS.ag"
 
 ATTR Elem Typ DataAlt TypeBody Field [ | | pp : Doc ]
 

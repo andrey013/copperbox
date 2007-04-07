@@ -1,12 +1,12 @@
 
 {
-module Gen.HaskellAbsSyn where
+module Gen.Ext.Haskell.HaskellAbsSyn where
 
 import Base.PrimitiveTypes
 
 }
 
-INCLUDE "HaskellAbsSynDEFS.ag"
+INCLUDE "Gen/Ext/Haskell/HaskellAbsSynDEFS.ag"
 
 DERIVING * : Show
 

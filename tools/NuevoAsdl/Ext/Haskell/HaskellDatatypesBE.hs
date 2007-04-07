@@ -5,9 +5,9 @@ module Ext.Haskell.HaskellDatatypesBE where
 import Base.Backend
 import Util.Naming
 
-import Gen.HaskellAbsSyn
-import Gen.HsGenDatatypes
-import Gen.OutputHaskell
+import Gen.Ext.Haskell.HaskellAbsSyn
+import Gen.Ext.Haskell.HsGenDatatypes
+import Gen.Ext.Haskell.OutputHaskell
 
 haskell_datatypes :: Backend HsModule
 

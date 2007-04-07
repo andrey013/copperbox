@@ -2,8 +2,8 @@
 
 
 module Base.AsdlConcreteSyn 
-  ( module Gen.AsdlConcreteSyn ) 
+  ( module Gen.Base.AsdlConcreteSyn ) 
   where
   
-import Gen.AsdlConcreteSyn  
+import Gen.Base.AsdlConcreteSyn  
 

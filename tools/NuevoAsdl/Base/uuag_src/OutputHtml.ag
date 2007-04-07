@@ -1,7 +1,7 @@
 
 
 {
-module Gen.OutputHtml
+module Gen.Base.OutputHtml
   ( outputHtml
   ) where
 
@@ -15,7 +15,7 @@ import Text.XHtml.Transitional
 }
 
 
-INCLUDE "AsdlConcreteSynDEFS.ag"
+INCLUDE "Gen/Base/AsdlConcreteSynAbsSynDEFS.ag"
 
 ATTR ModuleDefn [ | | output : {(Maybe Html)} ]
             

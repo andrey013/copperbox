@@ -1,12 +1,12 @@
 
 {
-module Gen.AsdlConcreteSyn where
+module Gen.Base.AsdlConcreteSyn where
 
 import Base.PrimitiveTypes
 
 }
 
-INCLUDE "AsdlConcreteSynDEFS.ag"
+INCLUDE "Gen/Base/AsdlConcreteSynAbsSynDEFS.ag"
 
 
 {

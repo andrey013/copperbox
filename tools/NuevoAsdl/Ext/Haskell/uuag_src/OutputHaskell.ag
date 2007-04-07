@@ -1,13 +1,13 @@
 
 
 {
-module Gen.OutputHaskell
+module Gen.Ext.Haskell.OutputHaskell
   ( outputHaskell
   ) where
 
 import Base.PrimitiveTypes
 
-import Gen.HaskellAbsSyn
+import Gen.Ext.Haskell.HaskellAbsSyn
 
 import Ext.Haskell.PPHaskell 
 
@@ -17,7 +17,7 @@ import PPrint
 
 }
 
-INCLUDE "HaskellAbsSynDEFS.ag"
+INCLUDE "Gen/Ext/Haskell/HaskellAbsSynDEFS.ag"
 
 ATTR HsModule HsDecl HsType HsConsDecl HsBangType HsRecField
   [ | | pp : {Doc} ]
@@ -50,8 +50,8 @@ SEM HsType
 
 
 SEM HsConsDecl 
-  | HsConDecl       lhs.pp    = conDecl @name [] -- hs_bangtypes hs_bangtypes)
-  | HsRecDecl       lhs.pp    = recDecl @name [] -- hs_rec_fields hs_recfields)
+  | HsConDecl       lhs.pp    = conDecl @name @hs_bang_types.pp
+  | HsRecDecl       lhs.pp    = recDecl @name @hs_rec_fields.pp
                
                
  

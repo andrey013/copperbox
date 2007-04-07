@@ -2,7 +2,7 @@
 
 
 {
-module Gen.OutputAsdl
+module Gen.Base.OutputAsdl
   ( outputAsdl
   ) where
 
@@ -17,7 +17,7 @@ import PPrint
 }
 
 
-INCLUDE "AsdlConcreteSynDEFS.ag"
+INCLUDE "Gen/Base/AsdlConcreteSynAbsSynDEFS.ag"
 
 
 

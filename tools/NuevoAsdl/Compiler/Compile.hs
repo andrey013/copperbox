@@ -15,10 +15,10 @@ import Base.Lib
 import Base.Backend
 
 -- (2DO) Do we want to explicitly import from the Gen directory?
-import Gen.Asdl2Core
+import Gen.Compiler.Asdl2Core
 
 import Ext.UUAG.Lib
-import Ext.Caml.Lib
+import Ext.OCaml.Lib
 import Ext.Haskell.Lib
 import Ext.Haskell.HaskellDatatypesBE
 
