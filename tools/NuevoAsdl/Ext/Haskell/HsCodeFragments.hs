@@ -1,3 +1,4 @@
+-- OLD - uses Language.Haskell.Syntax
 
 module Ext.Haskell.HsCodeFragments where
 

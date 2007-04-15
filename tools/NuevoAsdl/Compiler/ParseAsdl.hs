@@ -5,26 +5,22 @@ module Compiler.ParseAsdl
   ) where
 
 
+import Compiler.Util
+
 import qualified Base.AsdlConcreteSyn as CS
 
-import Compiler.CompilerMonad
-
+import Control.Monad.Trans
 import Data.Char
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Language
 import qualified Text.ParserCombinators.Parsec.Token as P
 
-
--- There is no 'real' logging through the writer monad here.
--- We just tuple a message reporting which file we have parsed
-
-  
-  
+ 
  
 
-parseAsdl :: FilePath -> IO (Either String [CS.AltThree])
+parseAsdl :: (MonadIO m) => FilePath -> m (ResultE [CS.AltThree])
 parseAsdl file = do
-  ans <- parseFromFile parseAsdlSpec file
+  ans <- liftIO $ parseFromFile parseAsdlSpec file
   case ans of
     Left err -> return (Left (show err))
     Right def -> return (Right def)

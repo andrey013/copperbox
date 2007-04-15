@@ -1,0 +1,47 @@
+
+
+module LambdaCore {
+
+  program = Program (exprs exprs)
+  
+--  type_decl = Data (var ty_var, vars constrs)
+  
+--  var = VarDecl (identifier name, expr expr)
+  
+  exprs = (expr *)
+  
+  expr = Var (identifier name)
+       | Const (literal lit)
+       | App (expr func, expr arg)
+       | Let (var_decls var_decls, expr body)
+       | Lam (argument arg, expr body)
+       | Case (expr val, matches matches)
+       
+  var_decl = TySig (identifier name, ty_expr ty_expr)
+           | Val (pat_expr pat_expr, expr expr)
+       
+  var_decls = (var_decl *)
+  
+  argument = (pat_expr pat, ty_expr ty)
+  
+  pat_expr = ConstP (literal lit)
+           | VarP (identifier name)
+           | ConP (identifier con_name, pat_exprs pats)
+           | TupP (pat_exprs pats)
+  
+  pat_exprs = (pat_expr *)         
+           
+  ty_expr = TyCon (identifier name)
+          | TyApp (ty_expr func, ty_expr arg)
+          | TyParens (ty_expr ty_expr)
+  
+  match = (pat_expr pat_expr, expr expr)
+  
+  matches = (match *)
+          
+  literal = IntL (int val)
+          | CharL (char val)
+          | LitString (string val)
+                    
+          
+}

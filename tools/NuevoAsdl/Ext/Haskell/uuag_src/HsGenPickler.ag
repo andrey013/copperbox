@@ -7,13 +7,11 @@ module Gen.Ext.Haskell.HsGenPickler
 
 
 import Base.Lib
-import Ext.Haskell.HsSyntax
-import Ext.Haskell.HsCodeFragments
-import Ext.Haskell.CodeGen
+
 import Util.Naming
 
 
-import qualified Language.Haskell.Syntax as HS
+import Gen.Ext.Haskell.HaskellAbsSyn
   
 }
 
@@ -22,33 +20,33 @@ import qualified Language.Haskell.Syntax as HS
 INCLUDE "Gen/Base/AsdlCoreAbsSynDEFS.ag"
 
 
-ATTR AsdlSpec [ base_name : {String} | | mkModule : {ModuleS} ]
+ATTR AsdlSpec [ base_name : {String} | | mkModule : {HsModule} ]
 
 SEM AsdlSpec
   | AsdlSpec    
-      lhs.mkModule        = moduleD (moduleN @loc.hs_mod_name) 
-                                    [] 
-                                    [ importD (moduleN "AsdlBase") False Nothing Nothing
-                                    , importD (moduleN (@lhs.base_name ++ "AbsSyn")) False Nothing Nothing
+      lhs.mkModule        = HsModule (haskellName @loc.hs_mod_name) 
+                                    [ HsImportDecl "AsdlBase"
+                                    , HsImportDecl (@lhs.base_name ++ "AbsSyn")
                                     ]
-                                    @decls.mkHsDecl                                   
+                                    [] -- @decls.mkHsDecl
+                                    NoAnno                                   
                                     
       loc.hs_mod_name     = @lhs.base_name ++ "Pkl"
                                                             
       
+{-
+ATTR Decls [ | | mkHsDecl USE {++} {[]} : {[HsDecl]} ]
 
-ATTR Decls [ | | mkHsDecl USE {++} {[]} : {[DeclS]} ]
-
-ATTR Decl [ | | mkHsDecl : {[DeclS]} ]
+ATTR Decl [ | | mkHsDecl : {[HsDecl]} ]
 
 SEM Decl
   | Module
       lhs.mkHsDecl        = @defs.mkHsDecl
 
-ATTR Definitions [ | | mkHsDecl USE {++} {[]} : {[DeclS]} ]
+ATTR Definitions [ | | mkHsDecl USE {++} {[]} : {[HsDecl]} ]
 
 
-ATTR Definition [ | | mkHsDecl : {[DeclS]} ]
+ATTR Definition [ | | mkHsDecl : {[HsDecl]} ]
 
 SEM Definition
   | Def 
@@ -63,8 +61,8 @@ SEM Definition
 
 ATTR AsdlType Constrs  Constr [ defname : {String} | | ]
                               
-ATTR AsdlType [  | | writeD : {[DeclS]} ]
-ATTR AsdlType [  | | readD : {DeclS} ]
+ATTR AsdlType [  | | writeD : {[HsDecl]} ]
+ATTR AsdlType [  | | readD : {HsDecl} ]
 
 
 SEM AsdlType
@@ -76,7 +74,7 @@ SEM AsdlType
       lhs.writeD          = [tuplePicklerD @lhs.defname @fields.picklr]
       lhs.readD           = tupleReadD @lhs.defname @fields.unpick
 
-ATTR Constrs [ | | writeD USE {:} {[]} : {[DeclS]} ]
+ATTR Constrs [ | | writeD USE {:} {[]} : {[HsDecl]} ]
 
 ATTR Constrs [ | | readElt USE {:} {[]} : {[(String,[(String, Cardinality)])]} ]
 
@@ -90,7 +88,7 @@ SEM Constrs
 
 
 ATTR Constr [ number : Int | | ]
-ATTR Constr [ | | writeD : {DeclS} ]
+ATTR Constr [ | | writeD : {HsDecl} ]
 
 SEM Constr
   | Constr
@@ -138,7 +136,7 @@ SEM AsdlPrim
   
 
 ATTR Cardinality  [ | | identity : SELF ]
-  
+-}  
       
 {
 
@@ -159,8 +157,8 @@ pname "Int64"   = "pint64"
 pname s         = "write" ++ s
 
 
-makeHsPicklerCode :: AsdlSpec -> String -> HS.HsModule
-makeHsPicklerCode defn name = runCode $ mkModule_Syn_AsdlSpec synthesized
+makeHsPicklerCode :: AsdlSpec -> String -> HsModule
+makeHsPicklerCode defn name = mkModule_Syn_AsdlSpec synthesized
   where synthesized = wrap_AsdlSpec (sem_AsdlSpec defn) inherited
         inherited   = Inh_AsdlSpec name
 

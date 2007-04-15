@@ -3,7 +3,8 @@ HS_GEN_DIR=$(GEN_DIR)/Ext/Haskell
 
 
 ## Make Haskell extension	
-make-ext-haskell: HaskellAbsSyn.hs OutputHaskell.hs HsGenPickler.hs HsGenDatatypes.hs
+make-ext-haskell: HaskellAbsSyn.hs OutputHaskell.hs HsGenPickler.hs \
+  HsGenDatatypes.hs LambdaCore2Haskell.hs
 
 HaskellAbsSyn.hs: $(DEFS_DIR)/haskell.asdl
 	$(ASDL) --uuag -d $(HS_GEN_DIR) $(DEFS_DIR)/haskell.asdl
@@ -21,4 +22,6 @@ HsGenPickler.hs: $(DEFS_DIR)/haskell.asdl
 HsGenDatatypes.hs: $(DEFS_DIR)/haskell.asdl
 	uuagc -cfsp --wrapper $(EXT_HS_AG_SRC)/HsGenDatatypes.ag  -o $(HS_GEN_DIR)/HsGenDatatypes.hs
 	
+LambdaCore2Haskell.hs: $(DEFS_DIR)/haskell.asdl
+	uuagc -cfsp --wrapper $(EXT_HS_AG_SRC)/LambdaCore2Haskell.ag  -o $(HS_GEN_DIR)/LambdaCore2Haskell.hs
 	

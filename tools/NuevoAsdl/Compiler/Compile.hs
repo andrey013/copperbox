@@ -5,7 +5,7 @@ module Compiler.Compile
 
 import Compiler.Env
 import Compiler.Language
-import Compiler.CompilerMonad
+import Compiler.Util
 import Compiler.ParseAsdl
 import Compiler.ProcessOpts
 import Compiler.Views.ViewBase
@@ -25,6 +25,8 @@ import Ext.Haskell.HaskellDatatypesBE
 -- import qualified Gen.MiniHaskellAbsSyn as MiniH
 -- import qualified Gen.OutputHaskell as MiniPP
 
+import qualified LambdaCore.Lib as LCore
+
 import Util.Naming
 
 import PPrint
@@ -37,27 +39,17 @@ import System.IO
 -- import System.Time
 
 
+
+
 runCompile :: [Flag] -> [FilePath] -> IO ()
 runCompile opts files = do
-  ans <- compileSteps
-  case ans of 
-    (Left errmsg, st) -> compileFailure errmsg st
-    (Right _,st) -> postmortem st
-  where compileSteps = runCompilerM $ do
-          processCmdLineOpts opts files
-          spec <- processAsdlFiles files
-          -- further is not so good...
-          further generateOutput spec
-          further ((flip gen2) haskell_datatypes) spec
-          
-
-
-compileFailure :: [Char] -> Compiler.CompilerMonad.CState -> IO ()
-compileFailure err st = do 
-  postmortem st
-  putStrLn $ "Processing Failed: " ++ err
-  exitFailure
-                   
+  env <- exitIfLeft $ processCmdLineOpts opts files
+  (spec,views) <- processAsdlFiles files
+  generateOutput spec env
+  gen2 spec haskell_datatypes env
+  genCore spec
+  return ()
+                 
                    
 --------------------------------------------------------------------------------
 -- Step 1 
@@ -65,8 +57,8 @@ compileFailure err st = do
 -- Process the command line options and build the __ environment.
 -- All the work done in the ProcessOpts module
 --------------------------------------------------------------------------------                     
-processCmdLineOpts :: [Flag] -> [FilePath] -> CompilerM ()
-processCmdLineOpts opts fs = buildEnv opts fs
+-- processCmdLineOpts :: (MonadIO m) => [Flag] -> [FilePath] -> CompilerM ()
+-- processCmdLineOpts opts fs = buildEnv opts fs
 
 
 --------------------------------------------------------------------------------
@@ -75,32 +67,19 @@ processCmdLineOpts opts fs = buildEnv opts fs
 -- Parse the asdl files and post-process them 
 --------------------------------------------------------------------------------
 
-processAsdlFiles :: [FilePath] -> CompilerM (ResultF AsdlSpec)
+processAsdlFiles :: (MonadIO m) => [FilePath] -> m (AsdlSpec,[CS.ViewDefn])
 processAsdlFiles files = do
-  ans  <-  readAsdlFiles files
-  further postProcess ans
-
-postProcess :: [CS.AltThree] ->  CompilerM (AsdlSpec)
-postProcess xs = do
-  reportEllipsis "Postprocessing input files..."
-  (ts,ps,vs) <- partitionSpecs xs
-  update (\s -> s { view_table = (buildViewTable vs)} )
+  ans <- readAsdlFiles files
+  (ts,ps,vs) <- partitionSpecs ans
+  -- update (\s -> s { view_table = (buildViewTable vs)} )
   -- primitive types to do
   coredefs <- reduceToCore ts
-  return (coredefs)
- 
+  return (coredefs,vs)
 
-readAsdlFiles :: [FilePath] -> CompilerM (ResultF [CS.AltThree])
-readAsdlFiles files = readAcc files []
-  where
-  readAcc []         acc = return (Right (concat acc))
-  readAcc (file:xs)  acc = do
-    reportEllipsis $ "Parsing " ++ file 
-    ans <- liftIO $ parseAsdl file
-    case ans of
-      Left err -> return (Left err)
-      Right a  -> readAcc xs (a:acc)
 
+readAsdlFiles :: (MonadIO m) => [FilePath] -> m [CS.AltThree]
+readAsdlFiles files = do xss <- sequenceM_failure $ map parseAsdl files
+                         return (concat xss)
 
 
 
@@ -120,30 +99,48 @@ reduceToCore tdefs = return $ transformToCore tdefs
 -- Output
 --------------------------------------------------------------------------------
 
-gen2 :: AsdlSpec -> Backend a -> CompilerM ()
-gen2 spec be = do
-  output_dir <- query output_directory
-  prefix <- query output_prefix
-  reportEllipsis $ "Pretend..."
+gen2 :: (MonadIO m) => AsdlSpec -> Backend a -> CompilerEnv -> m ()
+gen2 spec be env = do
+  let output_dir = output_directory env
+  let prefix = output_prefix env
   let outfile = (filename be) output_dir prefix
   let ast = (generate be) spec
   let doc = (prettyprint be) ast
   let text = displayS (renderPretty 0.9 80 doc) ""
-  report $ "generating..." ++ outfile
-  report $ text
+  liftIO $ putStrLn $ "generating..." ++ outfile
+  liftIO $ putStrLn $ text
   
+genCore :: (MonadIO m) => AsdlSpec -> m ()
+genCore spec = do
+  let lc = LCore.makePickler spec
+  let doc = LCore.outputLambdaCore lc
+  let text = displayS (renderPretty 0.9 80 doc) ""
+  liftIO $ putStrLn $ text
+  --
+  -- let lc' = fromJust $ splitCase lc
+  -- splitCase maybe best as Maybe!
+  let lc' = splitCase lc
+  let doc' = LCore.outputLambdaCore lc'
+  let text' = displayS (renderPretty 0.9 80 doc') ""
+  liftIO $ putStrLn $ text'
+{-  
+  let hs = translateToHaskell lc "Dummy"
+  let doc' = outputHaskell hs
+  let text' = displayS (renderPretty 0.9 80 doc') ""
+  report $ text'
+-}
 
 
+generateOutput :: (MonadIO m) => AsdlSpec -> CompilerEnv -> m ()
+generateOutput spec env = do
+  mkUuagOutput (output_dir ++ prefix) spec env
+  mkOCamlOutput (output_dir ++ prefix) spec env
+--  makeHaskellOutput (output_dir ++ prefix) spec env
+--  makeHaskellDatatypes (output_dir ++ prefix) spec env
+  where prefix      = output_prefix env
+        output_dir  = output_directory env
 
-generateOutput :: AsdlSpec -> CompilerM ()
-generateOutput spec = do
-  output_dir <- query output_directory
-  prefix <- query output_prefix
-  reportEllipsis $ "Generating " ++ prefix 
-  mkUuagOutput (output_dir ++ prefix)  spec
-  mkOCamlOutput (output_dir ++ prefix)  spec
---  makeHaskellOutput (output_dir ++ prefix)  spec
---  makeHaskellDatatypes (output_dir ++ prefix)  spec
+ 
 
 
   
@@ -190,45 +187,49 @@ ocaml_pickler = GenP
   , toDocPkl            = outputOCamlExprs
   }
 
-generateTypeDesc :: (GenT a b) -> String -> AsdlSpec -> CompilerM ()
+generateTypeDesc :: (MonadIO m) => (GenT a b) -> String -> AsdlSpec -> CompilerEnv -> m ()
 generateTypeDesc (GenT {fileName=fileName', 
                        textComment=textComment',
                        fromCore=fromCore', toDoc=toDoc'})  
-                 name spec 
-  = outputDocument doc textComment' opt_prolog opt_epilog path
+                 name spec env  
+  = outputDocument doc textComment' opt_prolog opt_epilog path env 
   where doc = toDoc' $ fromCore' spec
         opt_prolog = Nothing
         opt_epilog = Nothing
         path = fileName' name 
 
 
-generatePickler :: (GenT a b) -> String -> AsdlSpec -> CompilerM ()
-generatePickler (GenT {optPickler=Nothing}) name decl = return ()
+generatePickler :: (MonadIO m) => (GenT a b) -> String -> AsdlSpec -> CompilerEnv 
+                      -> m ()
+generatePickler (GenT {optPickler=Nothing}) name decl env = return ()
 generatePickler (GenT {textComment=textComment',
-                       optPickler = Just pklr }) name spec = do
-  opt_prolog <- askView OCaml (Vw_Module "Cil") "pickler_prolog"
-  opt_epilog <- askView OCaml (Vw_Module "Cil") "pickler_epilog"
-  outputDocument doc textComment' opt_prolog opt_epilog path
+                       optPickler = Just pklr }) name spec env = do
+  opt_prolog <- askView OCaml (Vw_Module "Cil") "pickler_prolog" env
+  opt_epilog <- askView OCaml (Vw_Module "Cil") "pickler_epilog" env
+  outputDocument doc textComment' opt_prolog opt_epilog path env
   where doc = pp' $ codeGen' spec
         path = (pklFileName pklr) name         
         pp' = toDocPkl pklr
         codeGen' = toPklCode pklr
         
-          
-mkOCamlOutput :: String -> AsdlSpec -> CompilerM ()
-mkOCamlOutput name spec = do 
-  generateTypeDesc ocaml_gen name spec
-  generatePickler ocaml_gen name spec
+
+askView l k1 k2 env = return $ textEntry l k1 k2 (view_table env)
   
-mkUuagOutput :: String -> AsdlSpec -> CompilerM ()
-mkUuagOutput name spec = generateTypeDesc uuag_gen name spec
+  
+          
+mkOCamlOutput :: (MonadIO m) => String -> AsdlSpec -> CompilerEnv -> m ()
+mkOCamlOutput name spec env = do 
+  generateTypeDesc ocaml_gen name spec env
+  generatePickler ocaml_gen name spec env 
+  
+mkUuagOutput :: (MonadIO m) => String -> AsdlSpec -> CompilerEnv -> m ()
+mkUuagOutput name spec env = generateTypeDesc uuag_gen name spec env
 
 {-
-makeHaskellOutput :: String -> AsdlSpec -> CompilerM ()
-makeHaskellOutput name spec = do
-  reportEllipsis $ "Creating file " ++ path
-  opt_prolog <- askView Haskell (Vw_Module "Cil") "pickler_prolog"
-  opt_epilog <- askView Haskell (Vw_Module "Cil") "pickler_epilog" 
+makeHaskellOutput :: (MonadIO m) => String -> AsdlSpec -> CompilerEnv -> m ()
+makeHaskellOutput name spec env = do
+  opt_prolog <- askView Haskell (Vw_Module "Cil") "pickler_prolog" env 
+  opt_epilog <- askView Haskell (Vw_Module "Cil") "pickler_epilog" env  
   liftIO $ outputToFile text commentHaskell opt_prolog opt_epilog path
   where
     -- text = error (show spec)
@@ -236,9 +237,8 @@ makeHaskellOutput name spec = do
     path = u1 name ++ "Pkl.hs"
     
 
-makeHaskellDatatypes :: String -> AsdlSpec -> CompilerM ()
-makeHaskellDatatypes name spec = do
-  reportEllipsis $ "Creating file " ++ path
+makeHaskellDatatypes :: (MonadIO m) => String -> AsdlSpec -> CompilerEnv -> m ()
+makeHaskellDatatypes name spec env = do
   outputDocument doc commentHaskell Nothing Nothing path
   where
     -- text = error (show spec)
@@ -246,15 +246,13 @@ makeHaskellDatatypes name spec = do
     path = u1 name ++ "Syntax.hs"
 -}    
 
-outputDocument :: Doc -> Commenter -> (Maybe String) -> (Maybe String) 
-                      -> FilePath -> CompilerM ()
-outputDocument doc commenter opt_prolog opt_epilog path = do
-  reportEllipsis $ "Creating file " ++ path
-  lw <- query line_width
+outputDocument :: (MonadIO m) => Doc -> Commenter -> (Maybe String) -> (Maybe String) 
+                      -> FilePath -> CompilerEnv -> m ()
+outputDocument doc commenter opt_prolog opt_epilog path env = do
   liftIO $ outputToFile (text lw doc) commenter opt_prolog opt_epilog path
   where
     text line_width doc = displayS (renderPretty 0.9 line_width doc) ""
-    
+    lw = line_width env
 
      
   

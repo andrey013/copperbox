@@ -1,7 +1,7 @@
 
 -- ASDL concrete syntax
 
-module AsdlCS {
+module AsdlConcreteSyn {
   
   asdl_spec = (alt_three *)
   

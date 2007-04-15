@@ -1,0 +1,75 @@
+
+
+{
+module Gen.LambdaCore.OutputLambdaCore
+  ( outputLambdaCore
+  ) where
+
+
+import Gen.LambdaCore.LambdaCoreAbsSyn
+
+
+import Util.PPExt
+
+import PPrint
+
+
+
+}
+
+INCLUDE "Gen/LambdaCore/LambdaCoreAbsSynDEFS.ag"
+
+
+ATTR Program Expr VarDecl Argument PatExpr TyExpr Literal Match [ | | pp : Doc ]
+
+ATTR Exprs VarDecls PatExprs Matches [ | | pp USE {:} {[]} : {[Doc]} ]
+
+SEM Program
+  | Program   lhs.pp        = vsep @exprs.pp
+
+SEM Expr
+  | Var       lhs.pp        = text @name
+  | Const     lhs.pp        = @lit.pp
+  | App       lhs.pp        = @func.pp <+> @arg.pp
+  | Let       lhs.pp        = text "let" <+> (align $ vsep @var_decls.pp)
+                                <$> text "in" <+> @body.pp
+  | Lam       lhs.pp        = parens $ char '\\' <> @arg.pp <+> text "->" <+> @body.pp
+  | Case      lhs.pp        = text "case" <+> @val.pp <+> text "of"
+                                <$> indent 2 (vsep $ @matches.pp)
+
+SEM VarDecl 
+  | TySig     lhs.pp        = text @name <+> colon <+> @ty_expr.pp
+  | Val       lhs.pp        = text "??" -- (pat_expr pat_expr, expr expr)
+       
+
+SEM Argument
+  | Tuple     lhs.pp        = @pat.pp <+> colon <+> @ty.pp
+  
+SEM PatExpr 
+  | ConstP    lhs.pp        = @lit.pp
+  | VarP      lhs.pp        = text @name
+  | ConP      lhs.pp        = encloseSepAlt lparen rparen space (text @con_name : @pats.pp)
+  | TupP      lhs.pp        = encloseSepAlt lparen rparen comma @pats.pp
+           
+SEM TyExpr 
+  | TyCon     lhs.pp        = text @name
+  | TyApp     lhs.pp        = @func.pp <+> text "->" <+> @arg.pp
+  | TyParens  lhs.pp        = parens @ty_expr.pp
+
+SEM Match
+  | Tuple     lhs.pp        = @pat_expr.pp <+> text "->" <+> @expr.pp <> semi
+
+SEM Literal
+  | IntL      lhs.pp        = int @val
+  | CharL     lhs.pp        = squotes $ char @val
+  | LitString lhs.pp        = dquotes $ text @val
+          
+          
+{
+
+outputLambdaCore :: Program -> Doc
+outputLambdaCore prog = pp_Syn_Program synthesized
+  where synthesized = wrap_Program (sem_Program prog) inherited
+        inherited   = Inh_Program
+
+}

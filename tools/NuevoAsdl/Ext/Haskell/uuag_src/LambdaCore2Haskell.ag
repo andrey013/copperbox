@@ -1,0 +1,79 @@
+
+
+{
+module Gen.Ext.Haskell.LambdaCore2Haskell
+  ( translateToHaskell
+  ) where
+
+import Base.Lib
+
+import Ext.Haskell.HsSynHelper
+import Gen.LambdaCore.LambdaCoreAbsSyn
+import Gen.Ext.Haskell.HaskellAbsSyn 
+
+import Data.Maybe
+
+}
+
+INCLUDE "Gen/LambdaCore/LambdaCoreAbsSynDEFS.ag"
+
+ATTR Program [ mod_name : String | | ]
+
+ATTR Program [ | | translate : {HsModule} ]
+
+SEM Program
+  | Program         lhs     .   translate   = HsModule @lhs.mod_name
+                                                       [hsImport "AsdlBase"]
+                                                       (catMaybes @exprs.toDecl)
+                                                       NoAnno
+
+ATTR Exprs [ | | toDecl USE {:} {[]} : {[(Maybe HsDecl)]} ]
+
+   
+
+ATTR Expr [ | | toDecl : {(Maybe HsDecl)} ]
+
+SEM Expr
+  | Let             lhs     .   toDecl      = Just $ HsFunBind [@loc.match]
+                    loc     .   match       = HsMatch @fun_name @ps @rhs @ws
+                            .   (ps,rhs,ws) = @body.toMatch
+                            .   fun_name    = case @var_decls.varname of
+                                                [a] -> a
+                                                xs -> error $ show xs        
+  | * - Let         lhs     .   toDecl      = Nothing
+
+
+
+ATTR Expr [ | | toMatch : {(HsPats, HsRhs, HsDecls)} ]
+
+SEM Expr 
+  | Case            lhs     .   toMatch     = ([], @rhs, [])
+                    loc     .   rhs         = HsUnGuardedRhs (HsVar "2DO")
+                    
+  | Lam             lhs     .   toMatch     = ([], @rhs, [])
+                    loc     .   rhs         = HsUnGuardedRhs (HsVar "2DO-lam") 
+                            
+  | * - Case  Lam      lhs     .   toMatch     = error "here"
+
+ATTR VarDecls [ | | varname USE {:} {[]} : {[String]} ]
+
+ATTR VarDecl [ | | varname : {String} ]
+
+SEM VarDecl
+  | TySig           lhs     .   varname     = @name
+  | Val             lhs     .   varname     = error "2DO" 
+
+-- SEM HsMatch [ fun_name : String | | ]
+
+
+{
+
+
+translateToHaskell :: Program -> String -> HsModule
+translateToHaskell prog mod_name = translate_Syn_Program synthesized
+  where synthesized = wrap_Program (sem_Program prog) inherited
+        inherited   = Inh_Program mod_name
+          
+}
+  
+  

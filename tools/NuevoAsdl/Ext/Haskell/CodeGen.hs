@@ -1,5 +1,7 @@
 {-# OPTIONS -fglasgow-exts #-}
 
+-- OLD - uses Language.Haskell.Syntax
+
 module Ext.Haskell.CodeGen where
 
 import Ext.Haskell.HsSyntax
@@ -140,4 +142,24 @@ readTypeS (s,Zom) i = bindS (varP (mkName $ 'x': show i))
 readTypeS (s,Opt) i = bindS (varP (mkName $ 'x': show i))
                             (appE (varE $ mkQName "umaybe")
                                   (varE (mkQName s)))                                  
-                                       
+
+
+
+dataDeclS :: String -> DeclS 
+dataDeclS tyname = do 
+  ctx <- ctx'
+  ns <- ns'
+  cs <- cs'
+  ds <- ds'
+  dataD ctx typename ns cs ds
+  where ctx' = return empty_ctx
+        typename = mkName tyname
+        ns'  = return []
+        cs' = return []
+
+        ds' = return $ (map mkQName ["Eq,Show"])
+        
+        
+typeDeclS :: String -> DeclS
+typeDeclS tyname = tyD typename [] (tupleT [])
+  where typename = mkName tyname                                      

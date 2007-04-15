@@ -1,4 +1,4 @@
--- :set -i./External
+-- :set -i./External:./External/reclib
 
 
 -- :set args -w 80 --dir=./test/output --name=Cil ../../resources/cil.asdl ../../resources/cil-views.asdl

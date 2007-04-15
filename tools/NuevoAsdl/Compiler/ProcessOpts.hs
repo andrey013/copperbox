@@ -1,19 +1,21 @@
+{-# OPTIONS -fglasgow-exts #-}
 
 module Compiler.ProcessOpts
   ( Flag (..)
   , header
   , options
-  , buildEnv
+  , processCmdLineOpts
   ) where
 
 -- import Compiler.Datatypes
 import Compiler.Env
-import Compiler.CompilerMonad
+import Compiler.Util
 import Compiler.Language
 import Util.ParseExt
 
 import qualified Control.Exception as C
 import Control.Monad.Error
+import Control.Monad.Writer
 import Data.List
 import System.Console.GetOpt
 import System.Directory 
@@ -64,24 +66,24 @@ options =
       "name prefix for the type and pickle files"            
     ]
       
+type BuildResult = ResultE CompilerEnv 
 
 
 
--- buildEnv :: [Flag] -> [FilePath] -> IO (ResultFL CompilerEnv)
-buildEnv opts files = do
-  reportSep
-  report "Validating the command line arguments"
-  processFiles files
-  processOptions opts
-  checkForDefaultTarget
+processCmdLineOpts :: (MonadIO m) => [Flag] -> [FilePath] -> m BuildResult
+processCmdLineOpts opts files = do
+  e1 <- exitIfLeft $ processFiles files default_env
+  e2 <- exitIfLeft $ processOptions opts e1
+  checkForDefaultTarget e2
+
               
 
 -- note: missing files are causeing a real exception and are not
 -- caught in the monad...
-processFiles :: [FilePath] -> CompilerM () 
-processFiles files = do
-  fs <- lift $ do{ lift $ checkFiles files}
-  update (\s -> s {input_files=fs})
+processFiles :: (MonadIO m) => [FilePath] -> CompilerEnv -> m BuildResult 
+processFiles files env = do
+  fs <- liftIO $ checkFiles files
+  return (Right $ env {input_files=fs})
 
 
 
@@ -96,43 +98,59 @@ checkFiles fs = foldM chk [] fs
                       
 
   
-processOptions :: [Flag] -> CompilerM ()
-processOptions opts = mapM_ processOpt opts
+processOptions :: (MonadIO m) => [Flag] -> CompilerEnv -> m BuildResult 
+processOptions opts env = next (Right env) opts
+  where
+    next :: (MonadIO m) => BuildResult -> [Flag] -> m BuildResult 
+    next (Right env) (o:opts) = do { ans <- processOpt o env
+                                   ; next ans opts }
+    next ans         []       = return ans
+    next err         _        = return err
 
 
 
 
-processOpt :: Flag -> CompilerM ()
-processOpt (Flag_target_all)      = update (\s -> s{ targets = all_targets })
 
-processOpt (Flag_target_asdl)     = addTarget Asdl_1_2
-processOpt (Flag_target_uuag)     = addTarget Uuag
-processOpt (Flag_target_ocaml)    = addTarget OCaml
+processOpt :: (MonadIO m) => Flag -> CompilerEnv -> m BuildResult 
+processOpt (Flag_target_all)      env   = return $ Right (env { targets = all_targets })
+
+processOpt (Flag_target_asdl)     env   = addTarget Asdl_1_2 env
+processOpt (Flag_target_uuag)     env   = addTarget Uuag env
+processOpt (Flag_target_ocaml)    env   = addTarget OCaml env
+
+processOpt (Flag_out_dir dir)     env   = setOutDir dir env
+
+processOpt (Flag_pp_width s)      env   = setWidth s env
 
 
-processOpt (Flag_out_dir dir)     = setOutDir dir
-processOpt (Flag_pp_width s)      = setWidth s
-
-processOpt (Flag_prefix_name str) = update (\s -> s { output_prefix = str })
+processOpt (Flag_prefix_name str) env   = return $ Right (env { output_prefix = str })
 
 -- some flags (e.g.) Flag_silent_mode aren't build into the env
 -- so ignore them
-processOpt _                      = return ()
+processOpt _                      env   = return $ Right env
 
         
 
+addTarget :: (MonadIO m) => Lang -> CompilerEnv -> m BuildResult
+addTarget t env = case (t `elem` ts) of 
+    True -> return $ Right env
+    False -> return $ Right (env {targets=(t:ts)})
+  where ts = targets env
+
+    
+    
   
-setWidth :: String -> CompilerM ()
-setWidth s = update (\s -> s { line_width = i})
+setWidth :: (Monad m) => String -> CompilerEnv -> m BuildResult 
+setWidth s env = return $ Right (env { line_width = i})
   where i = readIntDefault 80 s
     
 
-setOutDir :: String -> CompilerM ()
-setOutDir dir = do  
+setOutDir :: (MonadIO m) => String -> CompilerEnv -> m BuildResult 
+setOutDir dir env = do  
   b <- liftIO $ doesDirectoryExist dir
   case b of
-    True -> update (\s -> s { output_directory = (endInSlash dir) })
-    _ -> throwError $ "--dir - bad arg '" ++ dir ++ "' using current"
+    True -> return $ Right (env { output_directory = (endInSlash dir) })
+    _ -> return $ Left $ "--dir - bad arg '" ++ dir ++ "' using current"
   where
     endInSlash path 
       | last path == '/'    = path
@@ -140,12 +158,13 @@ setOutDir dir = do
 
 
 
-checkForDefaultTarget :: CompilerM ()
-checkForDefaultTarget = do
-  xs <- query input_files
-  ys <- query targets
-  case (not $ null xs) && (null ys) of
-    True -> update (\s -> s  { targets = all_targets })
+checkForDefaultTarget :: (MonadIO m) => CompilerEnv -> m BuildResult
+checkForDefaultTarget env   
+  | null (input_files env)  = return $ Left "No input files"
+  | null (targets env)      = return $ Right (env { targets = all_targets })
+  | otherwise               = return $ Right env
+
+
 
 
 

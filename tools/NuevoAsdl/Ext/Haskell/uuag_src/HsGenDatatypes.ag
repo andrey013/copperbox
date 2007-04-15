@@ -22,6 +22,7 @@ ATTR AsdlSpec [ | | mkModule : {HsModule} ]
 SEM AsdlSpec
   | AsdlSpec    
       lhs.mkModule        = HsModule "ToDo"
+                                     []
                                      @decls.mkHsDecl 
                                      NoAnno  
                                                                   
@@ -103,8 +104,8 @@ instance TypeTS HsType where
   item TyString                 = HsTyCon "String"
   item TyInt                    = HsTyCon "Int"
   item TyIdentifier             = HsTyCon "String"
-  item (TyRef name)             = HsTyCon name
-  item (TyExternalPrim name)    = HsTyCon name
+  item (TyRef name)             = HsTyCon (haskellName name)
+  item (TyExternalPrim name)    = HsTyCon (haskellName name)
   
 
 makeHsDatatypes :: AsdlSpec -> HsModule

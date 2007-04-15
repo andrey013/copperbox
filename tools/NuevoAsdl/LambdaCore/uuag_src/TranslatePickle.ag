@@ -1,0 +1,137 @@
+
+{
+module Gen.LambdaCore.TranslatePickle
+  ( makePickler
+  ) where
+
+
+import Base.Lib
+
+import Gen.LambdaCore.LambdaCoreAbsSyn
+import LambdaCore.Shorthand
+
+import Util.Naming
+
+}
+
+INCLUDE "Gen/Base/AsdlCoreAbsSynDEFS.ag"
+
+
+ATTR AsdlSpec [ | | gen : {Program} ]
+
+SEM AsdlSpec
+  | AsdlSpec  lhs     .   gen           = Program $ concat @decls.gen
+
+ATTR Decls  [ | | gen USE {:} {[]} : {[[Expr]]} ]
+
+ATTR Decl [ | | gen : {[Expr]} ]
+
+SEM Decl
+  | Module    lhs     .   gen           = @defs.letexpr
+
+
+ATTR Definitions [ | | letexpr USE {:} {[]} : {[Expr]} ]
+
+ATTR Definition  [ | | letexpr : {Expr} ]
+
+
+ATTR Definition [ | | pkl_name : String ]  
+
+  
+  
+SEM Definition 
+  | Def       lhs     .     letexpr       = Let [@tysig] @dtype.lambody
+              
+              loc     .     tyexp         = TyCon @uname
+                      .     tysig         = TySig @pkl_name (@tyexp `tFn` tUnit)
+                      .     pkl_name      = "write" ++ @uname
+                      .     uname         = u1 @name
+              dtype   .     tyexp         = @tyexp
+
+
+ATTR AsdlType [ tyexp : {TyExpr} | | lambody : {Expr} ]
+
+SEM AsdlType
+  | Sum       lhs     .     lambody       = Lam @arg @body
+              loc     .     arg           = (VarP "x", @lhs.tyexp)
+                      .     body          = Case (Var "x") @constrs.match
+              constrs .     seqnum        = 1
+      
+  | Prod      lhs     .     lambody       = Lam @arg @body
+              loc     .     arg           = (@pat, @lhs.tyexp)
+                      .     pat           = case @fields.size of 
+                                              1 -> head @fields.pat
+                                              _ -> TupP @fields.pat
+                      .     body          = eSeqn @fields.pkl_expr
+              fields  .     seqnum        = 1
+
+ATTR Constrs [ | seqnum : Int | ]
+
+SEM Constrs
+  | Cons      tl      .      seqnum       = @lhs.seqnum + 1
+  
+ATTR Constrs [ | | match USE {:} {[]} : {[Match]} ]
+
+ATTR Constr [ | | match : {Match} ]
+
+ATTR Constr [ seqnum : Int | | ] 
+
+SEM Constr
+  | Constr    fields  .     seqnum        = 1
+              lhs     .     match         = (@pat, @expr)
+              loc     .     pat           = ConP (u1 @label) @fields.pat
+                      .     expr          = eSeqn (@tag_expr : @fields.pkl_expr)
+                      .     tag_expr      = App (Var "writeTag") (Const $ IntL @lhs.seqnum)
+
+ATTR Fields [ | seqnum : Int | ]
+
+SEM Fields
+  | Cons      tl      .      seqnum       = @lhs.seqnum + 1
+
+ATTR Fields [ | | size : Int]
+
+
+SEM Fields
+  | Cons      lhs     .       size        = @tl.size + 1
+  | Nil       lhs     .       size        = 0
+
+ATTR Fields [ | | pat USE {:} {[]} : {[PatExpr]} ]
+ATTR Fields [ | | pkl_expr USE {:} {[]} : {[Expr]} ]
+
+ATTR Field [ | | pat : {PatExpr} ] 
+ATTR Field [ | | pkl_expr : {Expr} ] 
+ATTR Field [ seqnum : Int | | ] 
+
+SEM Field 
+  | Field     lhs     .     pat           = VarP $ "x" ++ show @lhs.seqnum
+              lhs     .     pkl_expr      = case @card.identity of
+                                              One -> @pkl_one
+                                              Zom -> App (Var "writeList") @pkl_one
+                                              Opt -> App (Var "writeOpt") @pkl_one
+                                              
+                                             
+              loc     .     fname         = "write" ++ @ptype.tyname
+                      .     pkl_one       =  App (Var $ @fname) (Var $ "x" ++ show @lhs.seqnum)
+ 
+ATTR AsdlPrim [ | | tyname : {String} ] 
+
+SEM AsdlPrim 
+  | TyUnit            lhs     .     tyname        = "Unit"
+  | TyString          lhs     .     tyname        = "String"
+  | TyInt             lhs     .     tyname        = "Int"
+  | TyIdentifier      lhs     .     tyname        = "String"
+  | TyRef             lhs     .     tyname        = u1 @name
+  | TyExternalPrim    lhs     .     tyname        = u1 @name
+
+
+ATTR Cardinality [ | | identity : SELF ]            
+            
+  
+{
+
+makePickler :: AsdlSpec -> Program
+makePickler spec = gen_Syn_AsdlSpec synthesized
+  where synthesized = wrap_AsdlSpec (sem_AsdlSpec spec) inherited
+        inherited   = Inh_AsdlSpec
+          
+}          

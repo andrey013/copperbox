@@ -19,11 +19,12 @@ import PPrint
 
 INCLUDE "Gen/Ext/Haskell/HaskellAbsSynDEFS.ag"
 
-ATTR HsModule HsDecl HsType HsConsDecl HsBangType HsRecField
+ATTR HsModule HsDecl HsType HsConsDecl HsBangType HsRecField HsPat HsMatch
+     HsRhs HsExp HsLiteral
   [ | | pp : {Doc} ]
 
 
-ATTR HsDecls HsTypes HsConsDecls HsBangTypes HsRecFields
+ATTR HsDecls HsTypes HsConsDecls HsBangTypes HsRecFields HsPats HsMatches
   [ | | pp USE {:} {[]} : {[Doc]} ]
   
   
@@ -38,13 +39,14 @@ SEM HsDecl
                                                
   | HsDataDecl      lhs.pp    = dataDecl @name @typarams.names 
                                                @hs_cons_decls.pp 
-                                               @derivables.names 
+                                               @derivables.names
+  | HsFunBind       lhs.pp    = vsep @hs_matches.pp                                                
 
 SEM HsType 
   | HsTyFun         lhs.pp    = @left.pp <+> text "->" <+> @right.pp
   | HsTyList        lhs.pp    = brackets @ty.pp
   | HsTyTuple       lhs.pp    = tupled @tys.pp
-  | HsTyApp         lhs.pp    = @left.pp <+> @right.pp
+  | HsTyApp         lhs.pp    = parens $ @left.pp <+> @right.pp
   | HsTyVar         lhs.pp    = text @name
   | HsTyCon         lhs.pp    = text @name
 
@@ -62,7 +64,24 @@ SEM HsRecField
 SEM HsBangType
   | HsBangType      lhs.pp    = char '!' <> @hs_type.pp
   | HsUnBangedType  lhs.pp    = @hs_type.pp
-              
+
+SEM HsPat 
+  | HsPVar          lhs.pp    = text @hs_name
+  | HsPLit          lhs.pp    = @hs_literal.pp
+         
+SEM HsMatch
+  | HsMatch         lhs.pp    = text @name <+> hsep @hs_pats.pp <+> equals <+> @hs_rhs.pp
+                                  <$> optWhere @hs_decls.pp              
+SEM HsRhs
+  | HsUnGuardedRhs  lhs.pp    = @hs_exp.pp 
+
+SEM HsExp
+  | HsVar           lhs.pp    = text @name
+
+SEM HsLiteral
+  | HsChar          lhs.pp    = squotes (char @lit)
+  | HsString        lhs.pp    = dquotes (text @lit)
+  | HsInt           lhs.pp    = int @lit
               
 ATTR Derivs Typarams [ | | names : {[String]} ]
 

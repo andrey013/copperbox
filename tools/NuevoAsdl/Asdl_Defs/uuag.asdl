@@ -1,7 +1,7 @@
 
 module Uuag {
 
-  ag = (elem*)
+  ag = (elem *)
 
   -- The grammar in AGman is out of date - to handle Maybe & Tuple 
   -- type we have a distinct element type_body
@@ -17,11 +17,11 @@ module Uuag {
       | CodeBlock (identifier codeblock)  -- should be (string codeblock)
                   
   
-  data_alts = (data_alt*)
+  data_alts = (data_alt *)
   
   data_alt = DataAlt(conid name, fields fields)
   
-  fields = (field*)
+  fields = (field *)
   
   field = LabelledField (varid name, typ typ)
         | ConstrField (conid conid)

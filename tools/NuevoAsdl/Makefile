@@ -7,6 +7,8 @@ include Compiler/compiler.mk
 include Ext/OCaml/ext-ocaml.mk
 include Ext/Haskell/ext-haskell.mk
 include Ext/UUAG/ext-uuag.mk
+include LambdaCore/lambdacore.mk
+
 
 explanation :
 	@echo "make nuevoasdl"
@@ -18,7 +20,7 @@ nuevoasdl : Main.hs ./Gen/Makefile ./Compiler/Compile.hs
 	ghc --make Main.hs -i./External
 	mv main.exe nuevoasdl.exe
 	
-regenerate : make-base	make-compiler make-ext-ocaml \
+regenerate : make-base make-compiler make-lambda-core make-ext-ocaml \
   make-ext-haskell make-ext-uuag
 	
 gen_makedirs:
@@ -28,6 +30,7 @@ gen_makedirs:
 	mkdir $(TOP_PREFIX)/Gen/Ext/Haskell
 	mkdir $(TOP_PREFIX)/Gen/Ext/OCaml
 	mkdir $(TOP_PREFIX)/Gen/Ext/UUAG
+	mkdir $(TOP_PREFIX)/Gen/LambdaCore
 
 	
 		

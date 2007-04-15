@@ -1,0 +1,22 @@
+
+
+
+{
+module Gen.LambdaCore.LambdaCoreAbsSyn where
+
+import Base.PrimitiveTypes
+
+import Data.Typeable
+import Data.Generics
+
+}
+
+INCLUDE "Gen/LambdaCore/LambdaCoreAbsSynDEFS.ag"
+
+
+
+DERIVING *  : Eq, Show, Typeable, Data
+
+
+
+
