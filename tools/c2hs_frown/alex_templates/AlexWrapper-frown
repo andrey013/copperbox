@@ -1,0 +1,85 @@
+
+-- WARNING: Don't use the expected flag!
+
+-- -----------------------------------------------------------------------------
+-- The input type
+
+
+
+type AlexInput = (AlexPosn, 	-- current position,
+		  Char,		-- previous char
+		  String)	-- current input string
+
+alexInputPrevChar :: AlexInput -> Char
+alexInputPrevChar (p,c,s) = c
+
+alexGetChar :: AlexInput -> Maybe (Char,AlexInput)
+alexGetChar (p,c,[]) = Nothing
+alexGetChar (p,_,(c:s))  = let p' = alexMove p c in p' `seq`
+				Just (c, (p', c, s))
+
+
+-- -----------------------------------------------------------------------------
+-- Token positions
+
+-- `Posn' records the location of a token in the input text.  It has three
+-- fields: the address (number of chacaters preceding the token), line number
+-- and column of a token within the file. `start_pos' gives the position of the
+-- start of the file and `eof_pos' a standard encoding for the end of file.
+-- `move_pos' calculates the new position after traversing a given character,
+-- assuming the usual eight character tab stops.
+
+data AlexPosn = AlexPn !Int !Int !Int
+	deriving (Eq,Show)
+
+alexStartPos :: AlexPosn
+alexStartPos = AlexPn 0 1 1
+
+alexMove :: AlexPosn -> Char -> AlexPosn
+alexMove (AlexPn a l c) '\t' = AlexPn (a+1)  l     (((c+7) `div` 8)*8+1)
+alexMove (AlexPn a l c) '\n' = AlexPn (a+1) (l+1)   1
+alexMove (AlexPn a l c) _    = AlexPn (a+1)  l     (c+1)
+
+
+
+-- -----------------------------------------------------------------------------
+type StartCode = Int
+
+initialInput :: String -> AlexInput
+initialInput str = (alexStartPos, undefined, str)
+
+type CPS a answer = (a -> answer) -> answer
+
+newtype Lex m a = Lex { unLex :: forall ans . CPS a (AlexInput -> StartCode -> m ans) }
+
+-- Supply your own type signature
+-- get :: (Monad m) => Lex m <token-type>
+
+get = Lex (\cont input sc -> 
+        let lexer inp code = case alexScan inp code of
+                              AlexEOF -> cont alexEOF inp code
+                              AlexError inp' -> fail ("\n*** lexical error at "
+                                                      ++ position inp')
+                              AlexSkip  inp' len -> lexer inp' code
+                              AlexToken inp' len action -> cont (action inp len) inp' code
+        in lexer input sc)
+
+instance (Monad m) => Monad (Lex m) where
+  return a  =   Lex (\cont -> cont a)
+  m >>= k   =   Lex (\cont -> unLex m (\a -> unLex (k a) cont))
+  fail s    =   lift (fail s)
+
+lift    ::  (Monad m) => m a -> Lex m a
+lift m  =   Lex (\cont inp sc -> m >>= \ a -> cont a inp sc)
+
+run :: (Monad m) => Lex m a -> (String -> m a)
+run parser str = unLex parser (\a inp sc -> return a) (initialInput str) 0
+
+frown :: (Monad m) => t -> Lex m a
+frown t = Lex (\cont input sc -> fail ("\n*** syntax error at " 
+                                        ++ position input ++ ":\n"))
+
+
+position :: AlexInput -> String
+position ((AlexPn _ line col),_,_) 
+  = "(line " ++ show line ++ ", column " ++ show col ++ ")"
