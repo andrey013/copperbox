@@ -10,15 +10,18 @@ import CAST
 import CLexerAlt
 import CTokens
  
-main = run header "int main(void) {int x; x=1+2;}"
+main = parse "int main(void) {int x; x=1+2;}"
 
-demo = tokens "int main(void) {int x; x=1+2;}"
+demo = runAlex "int main(void) {int x; x=1+2;}" tokens
 
-more xs = do 
-  x <- get
-  case x of
-    CTokEof -> return (reverse xs) 
-    _ -> more (x:xs)
+parse str = case runAlex str header of
+              Left err -> putStr err
+              Right ans -> print ans
+              
 
-tokens :: String -> IO [CToken]
-tokens = run (more []) 
+tokens :: Alex [CToken]
+tokens = tokens' []
+  where tokens' acc = do { x <- get
+                         ; case x of
+                            CTokEof -> return (reverse acc) 
+                            _ -> tokens' (x:acc)}

@@ -12,7 +12,7 @@ import MakeToken
 
 }
 
-%wrapper "frown"
+%wrapper "monadfrown"
 
 $nondigit           = [A-Za-z_]
 $digit              = [0-9]
@@ -242,36 +242,36 @@ tokens :-
 
 {
 
-get :: (Monad m) => Lex m CToken
+get = alexMonadScan
 
 alexEOF :: CToken
 alexEOF = CTokEof
 
-punctuator :: CToken -> AlexInput -> Int -> CToken
-punctuator tok (p,_,_) len = tok
+punctuator :: CToken -> AlexInput -> Int -> Alex CToken
+punctuator tok (p,_,_) len = return tok
 
-identifier :: AlexInput -> Int -> CToken
-identifier (p,_,str) len = CTokIdent ident
+identifier :: AlexInput -> Int -> Alex CToken
+identifier (p,_,str) len = return (CTokIdent ident)
   where ident = take len str
 
-keyword :: CToken -> AlexInput -> Int -> CToken
-keyword tok (p,_,_) len = tok
+keyword :: CToken -> AlexInput -> Int -> Alex CToken
+keyword tok (p,_,_) len = return tok
 
-intLiteral :: AlexInput -> Int -> CToken
-intLiteral (p,_,str) len = CTokILit lit
+intLiteral :: AlexInput -> Int -> Alex CToken
+intLiteral (p,_,str) len = return (CTokILit lit)
   where lit = read $ take len str 
 
 --DODGY
-charLiteral :: AlexInput -> Int -> CToken
-charLiteral (p,_,str) len = CTokCLit lit
+charLiteral :: AlexInput -> Int -> Alex CToken
+charLiteral (p,_,str) len = return (CTokCLit lit)
   where lit = read $ take len str 
 
-stringLiteral :: AlexInput -> Int -> CToken
-stringLiteral (p,_,str) len = CTokSLit lit
+stringLiteral :: AlexInput -> Int -> Alex CToken
+stringLiteral (p,_,str) len = return (CTokSLit lit)
   where lit = take len str 
 
 
-
+-- demo = runAlex "1+2" get
 
 
 }

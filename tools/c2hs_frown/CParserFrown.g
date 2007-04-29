@@ -24,7 +24,7 @@ type Ident = String
 type Terminal   = CToken
 
 
-type Result a = Lex IO a
+type Result a = Alex a
 
 
 %{
@@ -1755,6 +1755,8 @@ attribute_params
   { () }            | attribute_params {ps}, ",", constant_expression {e};
 
 }%
+
+frown t = fail $ "frown " ++ show t
 
 
 type AppCDeclr = CDeclr -> CDeclr
