@@ -184,32 +184,32 @@ function_definition
   {CFunDef t d [] s}
                     | type_specifier {t}, function_declarator {d}, compound_statement {s};
 
-  {error "here"}
+  {CFunDef (reverse ds) d [] s}
                     | declaration_qualifier_list {ds}, function_declarator {d}, compound_statement {s};
 
-  {error "here"}
+  {CFunDef (liftTypeQuals ts) d [] s}
                     | type_qualifier_list {ts}, function_declarator {d}, compound_statement {s};
 
-  {error "here"}
+  {CFunDef [] d (reverse ds) s}
                     | old_function_declarator {d}, declaration_list {ds}, compound_statement {s};
 
-  {error "here"}
+  {CFunDef d1 d2 (reverse ds) s}
                     | declaration_specifier {d1}, old_function_declarator {d2}, declaration_list {ds}, compound_statement {s};
 
-  {error "here"}
+  {CFunDef t d (reverse ds) s }
                     | type_specifier {t}, old_function_declarator {d}, declaration_list {ds}, compound_statement {s};
 
-  {error "here"}
+  {CFunDef (reverse qs) d (reverse ds) s}
                     | declaration_qualifier_list {qs}, old_function_declarator {d}, declaration_list {ds}, compound_statement {s};
 
-  {error "here"}
+  {CFunDef (liftTypeQuals qs) d (reverse ds) s}
                     | type_qualifier_list {qs}, old_function_declarator {d}, declaration_list {ds}, compound_statement {s};
     
     
 
 function_declarator { CDeclr };
 function_declarator
-  {error "here"}
+  {d}
                     : identifier_declarator {d};
 
 
@@ -424,16 +424,20 @@ asm_clobbers
 --
 declaration { CDecl };
 declaration
-  {error "here" }
+  {CDecl (reverse s) []}
                   : sue_declaration_specifier {s}, ";";
 
-  {error "here" }
+  {CDecl (reverse s) []}
                   | sue_type_specifier {s}, ";";
 
-  {error "here" }
+  {case ds of
+            CDecl declspecs dies ->
+              CDecl declspecs (List.reverse dies)}
                   | declaring_list {ds}, ";";
 
-  {error "here" }
+  { case ds of
+            CDecl declspecs dies->
+              CDecl declspecs (List.reverse dies)}
                   | default_declaring_list {ds}, ";";
               
               
@@ -460,13 +464,14 @@ default_declaring_list
                
 declaring_list { CDecl };
 declaring_list
-  {error "here" }
+  {CDecl ds [(Just d, io, Nothing)]}
                     : declaration_specifier {ds}, declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
 
-  {error "here" }
+  {CDecl t [(Just d, io, Nothing)]}
                     | type_specifier {t}, declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
 
-  {error "here" }
+  {case ds of
+             CDecl declspecs dies -> CDecl declspecs ((Just d, io, Nothing) : dies)}
                     | declaring_list {ds}, ",", declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
                
                
@@ -505,7 +510,7 @@ declaration_qualifier_list
   {singleton (CStorageSpec sc)}
                     : storage_class {sc} ;
 
-  {error "here"}
+  {rmap CTypeQual qs `snoc` CStorageSpec sc}
                     | type_qualifier_list {qs}, storage_class {sc};
 
   {qs `snoc` q}
@@ -614,7 +619,7 @@ basic_type_specifier
   {singleton (CTypeSpec tn)}
                     : basic_type_name {tn};
 
-  {error "here"}
+  {rmap CTypeQual qs `snoc` CTypeSpec tn}
                     | type_qualifier_list {qs}, basic_type_name {tn};
 
   {ts `snoc` CTypeQual q}
@@ -665,7 +670,7 @@ sue_type_specifier
   { singleton (CTypeSpec tn) }
                     : elaborated_type_name {tn};
 
-  {error "here"}
+  {rmap CTypeQual qs `snoc` CTypeSpec tn}
                     | type_qualifier_list {qs}, elaborated_type_name {tn};
 
   {ts `snoc` CTypeQual q}
@@ -693,13 +698,13 @@ typedef_declaration_specifier
   {t `snoc` CStorageSpec sc}
                     : typedef_type_specifier {t}, storage_class {sc};
 
-  {error "here"}
+  {qs `snoc` CTypeSpec (CTypeDef t)}
                     | declaration_qualifier_list {qs}, "tyident" {t};
 
-  {error "here"}
+  {qs `snoc` CTypeSpec (CTypeOfExpr e) }
                     | declaration_qualifier_list {qs}, "typeof", "(", expression {e}, ")";
 
-  {error "here"}
+  {qs `snoc` CTypeSpec (CTypeOfType tn)}
                     | declaration_qualifier_list {qs}, "typeof", "(", type_name {tn}, ")";
 
   {ds `snoc` q}     | typedef_declaration_specifier {ds}, declaration_qualifier {q};
@@ -716,22 +721,22 @@ typedef_declaration_specifier
 --
 typedef_type_specifier {(Reversed [CDeclSpec])};
 typedef_type_specifier
-  {error "here"}
+  {singleton (CTypeSpec (CTypeDef t))}
                     : "tyident" {t};
     
-  {error "here"}
+  {singleton (CTypeSpec (CTypeOfExpr e))}
                     | "typeof", "(", expression {e}, ")";
 
-  {error "here"}
+  {singleton (CTypeSpec (CTypeOfType tn))}
                     | "typeof", "(", type_name {tn}, ")";
 
-  {error "here"}
+  {rmap CTypeQual qs `snoc` CTypeSpec (CTypeDef t)}
                     | type_qualifier_list {qs}, "tyident" {t};
 
-  {error "here"}
+  {rmap CTypeQual qs `snoc` CTypeSpec (CTypeOfExpr e)}
                     | type_qualifier_list {qs}, "typeof", "(", expression {e}, ")";
 
-  {error "here"}
+  {rmap CTypeQual qs `snoc` CTypeSpec (CTypeOfType tn) }
                     | type_qualifier_list {qs}, "typeof", "(", type_name {tn}, ")";
 
   {t `snoc` CTypeQual q}
@@ -760,20 +765,22 @@ elaborated_type_name
 --
 struct_or_union_specifier {CStructUnion};
 struct_or_union_specifier
-  {error "here" }
+  {CStruct s (Just n) (reverse ds)}
                     : struct_or_union {s}, attrs_opt {ao}, identifier {n}, "{", struct_declaration_list {ds}, "}";
 
-  {error "here" }
+  {CStruct s Nothing   (reverse ds)}
                     | struct_or_union {s}, attrs_opt {ao}, "{", struct_declaration_list {ds}, "}";
 
-  {error "here" }
+  {CStruct s (Just n) []}
                     | struct_or_union {s}, attrs_opt {ao}, identifier {n};
 
 
-struct_or_union {(Located CStructTag)};
+struct_or_union {CStructTag};
 struct_or_union
-  {error "here" } : "struct";
-  {error "here" }  | "union";
+  {CStructTag}      
+                    : "struct";
+  {CUnionTag}  
+                    | "union";
 
 
 struct_declaration_list {(Reversed [CDecl])};
@@ -789,10 +796,10 @@ struct_declaration_list
 --
 struct_declaration { CDecl };
 struct_declaration
-  {error "here" }
+  {case ds of CDecl declspecs dies -> CDecl declspecs (List.reverse dies)}
                     : struct_declaring_list {ds}, ";";
 
-  {error "here" }
+  {case ds of CDecl declspecs dies -> CDecl declspecs (List.reverse dies)}
                     | struct_default_declaring_list {ds}, ";";
 
   {d}               | "__extension__", struct_declaration {d};
@@ -801,10 +808,13 @@ struct_declaration
 -- doesn't redeclare typedef
 struct_default_declaring_list { CDecl };
 struct_default_declaring_list
-  {error "here" }
+  {case d of (d,s) -> CDecl (liftTypeQuals qs) [(d,Nothing,s)]}
                     : attrs_opt {ao}, type_qualifier_list {qs}, struct_identifier_declarator {d}, attrs_opt {ao'};
 
-  {error "here" }
+  {case ds of
+            CDecl declspecs dies ->
+              case d of
+                (d,s) -> CDecl declspecs ((d,Nothing,s) : dies)}
                     | struct_default_declaring_list {ds}, ",", attrs_opt {ao}, struct_identifier_declarator {d}, attrs_opt {ao'};
                 
                 
@@ -815,10 +825,13 @@ struct_default_declaring_list
 --
 struct_declaring_list { CDecl };
 struct_declaring_list
-  {error "here" }
+  {case d of (d,s) -> CDecl t [(d,Nothing,s)]}
                   : attrs_opt {ao}, type_specifier {t}, struct_declarator {d}, attrs_opt {ao'};
 
-  {error "here" }
+  {case ds of
+            CDecl declspecs dies ->
+              case d of
+                (d,s) -> CDecl declspecs ((d,Nothing,s) : dies)}
                 
                   | struct_declaring_list {ds}, ",", attrs_opt {ao}, struct_declarator {d}, attrs_opt {ao2} ;
 
@@ -952,13 +965,13 @@ clean_typedef_declarator
   {CPtrDeclr [] d}
                     | "*", parameter_typedef_declarator {d};
   
-  {error "here"}
+  {CPtrDeclr [reverse qs] d}
                     | "*", type_qualifier_list {qs}, parameter_typedef_declarator {d};
 
   {CPtrDeclr [] d}
                     | "*", attrs {zs}, parameter_typedef_declarator {d};
 
-  {error "here"}
+  {CPtrDeclr [reverse qs] d}
                     | "*", attrs {zs}, type_qualifier_list {qs}, parameter_typedef_declarator {d};
 
 
@@ -982,26 +995,26 @@ paren_typedef_declarator
                     | "*", "(", simple_paren_typedef_declarator {d}, ")";
 
   -- redundant paren
-  {error "here"}
+  {CPtrDeclr [reverse qs] d}
                     | "*", type_qualifier_list {qs}, "(", simple_paren_typedef_declarator {d}, ")";
 
   {CPtrDeclr [] d}
                     | "*", paren_typedef_declarator {d};
 
-  {error "here"}
+  {CPtrDeclr [reverse qs] d}
                     | "*", type_qualifier_list {qs}, paren_typedef_declarator {d};
 
   {CPtrDeclr [[]] d}
                     | "*", attrs {zs}, "(", simple_paren_typedef_declarator {d}, ")";
 
   -- redundant paren
-  {error "here"}
+  {CPtrDeclr [reverse qs] d}
                     | "*", attrs {zs}, type_qualifier_list {qs}, "(", simple_paren_typedef_declarator {d}, ")";
 
   {CPtrDeclr [] d}
                     | "*", attrs {zs}, paren_typedef_declarator {d};
 
-  {error "here"}
+  { CPtrDeclr [reverse qs] d}
                     | "*", attrs {zs}, type_qualifier_list {qs}, paren_typedef_declarator {d};
 
 
@@ -1042,13 +1055,13 @@ unary_identifier_declarator
   {CPtrDeclr [[]] d}
                     | "*", identifier_declarator {d};
 
-  {error "here"}
+  {CPtrDeclr [reverse qs] d}
                     | "*", type_qualifier_list {qs}, identifier_declarator {d};
 
   {CPtrDeclr [[]] d}
                     | "*", attrs {zs}, identifier_declarator {d};
 
-  {error "here"}
+  {CPtrDeclr [reverse qs] d}
                     | "*", attrs {zs}, type_qualifier_list {qs}, identifier_declarator {d};
     
     
@@ -1084,7 +1097,7 @@ old_function_declarator
   {CPtrDeclr [[]] d}
                     | "*", old_function_declarator {d};
 
-  {error "here"}
+  {CPtrDeclr [reverse qs] d}
                     | "*", type_qualifier_list {qs}, old_function_declarator {d};
     
     
@@ -1096,7 +1109,8 @@ postfix_old_function_declarator
 
   {d}               | "(", old_function_declarator {d}, ")";
 
-  {d' d}            | "(", old_function_declarator {d}, ")", postfixing_abstract_declarator {d'};
+  {d2 d1}            
+                    | "(", old_function_declarator {d1}, ")", postfixing_abstract_declarator {d2};
 
 
 type_qualifier_list {(Reversed [CTypeQual])};
@@ -1129,45 +1143,45 @@ parameter_list
 
 parameter_declaration { CDecl };
 parameter_declaration
-  {error "here"}
+  {CDecl s []}
                     : declaration_specifier {s};
 
-  {error "here"}
+  {CDecl s [(Just d, Nothing, Nothing)]}
                     | declaration_specifier {s}, abstract_declarator {d};
 
-  {error "here"}
+  {CDecl s [(Just d, Nothing, Nothing)]}
                     | declaration_specifier {s}, identifier_declarator {d}, attrs_opt {zo};
 
-  {error "here"}
+  {CDecl s [(Just d, Nothing, Nothing)]}
                     | declaration_specifier {s}, parameter_typedef_declarator {d}, attrs_opt {zo};
 
-  {error "here"}
+  {CDecl (reverse ds) []}
                     | declaration_qualifier_list {ds};
 
-  {error "here"}
+  {CDecl (reverse ds) [(Just d, Nothing, Nothing)]}
                     | declaration_qualifier_list {ds}, abstract_declarator {d};
 
-  {error "here"}
+  {CDecl (reverse ds) [(Just d, Nothing, Nothing)] }
                     | declaration_qualifier_list {ds}, identifier_declarator {d}, attrs_opt {zo};
 
-  {error "here"}     | type_specifier {t};
+  {CDecl t [] }     | type_specifier {t};
 
-  {error "here"}
+  {CDecl t [(Just d, Nothing, Nothing)]}
                     | type_specifier {t}, abstract_declarator {d};
 
-  {error "here"}
+  {CDecl t [(Just d, Nothing, Nothing)]}
                     | type_specifier {t}, identifier_declarator {d}, attrs_opt {zo};
 
-  {error "here"}
+  {CDecl t [(Just d, Nothing, Nothing)]}
                     | type_specifier {t}, parameter_typedef_declarator {d}, attrs_opt {zo};
 
-  {error "here"}
+  {CDecl (liftTypeQuals qs) []}
                     | type_qualifier_list {qs};
 
-  {error "here" }
+  {CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)]}
                     | type_qualifier_list {qs}, abstract_declarator {d};
 
-  {error "here" }
+  {CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)]}
                     | type_qualifier_list {qs}, identifier_declarator {d}, attrs_opt {zo};
 
 
@@ -1208,7 +1222,8 @@ postfixing_abstract_declarator { AppCDeclr };
 postfixing_abstract_declarator
   {d}               : array_abstract_declarator {d};
 
-  {error "here" }             
+  {\declr -> case ps of
+             (params, variadic) -> CFunDeclr declr params variadic }             
                     | "(", parameter_type_list {ps}, ")" ;
 
 
@@ -1221,60 +1236,60 @@ array_abstract_declarator { AppCDeclr };
 array_abstract_declarator
   {d}               : postfix_array_abstract_declarator {d};
 
-  {error "here" }
+  {\decl -> d2 (d1 decl)}
                     | array_abstract_declarator {d1}, postfix_array_abstract_declarator {d2};
     
     
     
 postfix_array_abstract_declarator {AppCDeclr};
 postfix_array_abstract_declarator
-  {error "here" }
+  {\declr -> CArrDeclr declr [] eo}
                     : "[", assignment_expression_opt {eo}, "]";
 
-  {error "here" }
+  {\declr -> CArrDeclr declr (reverse qs) eo}
                     | "[", type_qualifier_list {qs}, assignment_expression_opt {eo}, "]";
 
-  {error "here" }
+  {\declr -> CArrDeclr declr [] (Just e)}
                     | "[", "static", assignment_expression {e}, "]";
 
-  {error "here" }
+  {\declr -> CArrDeclr declr (reverse qs) (Just e)}
                     | "[", "static", type_qualifier_list {qs}, assignment_expression {e}, "]";
 
-  {error "here" }
+  {\declr -> CArrDeclr declr (reverse qs) (Just e)}
                     | "[", type_qualifier_list {qs}, "static", assignment_expression {e}, "]";
 
-  {error "here" }
+  {\declr -> CArrDeclr declr [] Nothing}
                     | "[", "*", "]";
 
-  {error "here" }
+  {\declr -> CArrDeclr declr (reverse qs) Nothing}
                     | "[", type_qualifier_list {qs}, "*", "]";
     
     
     
 unary_abstract_declarator {CDeclr};
 unary_abstract_declarator
-  {error "here" }
+  {CPtrDeclr [[]] emptyDeclr}
                     : "*";
 
-  {error "here" }
+  {CPtrDeclr [reverse qs] emptyDeclr}
                     | "*", type_qualifier_list {qs};
 
   {CPtrDeclr [] d}
                     | "*", abstract_declarator {d};
 
-  {error "here" }
+  {CPtrDeclr [reverse qs] d}
                     | "*", type_qualifier_list {qs}, abstract_declarator {d};
 
-  {error "here" }
+  {CPtrDeclr [[]] emptyDeclr}
                     | "*", attrs {zs};
 
-  {error "here" }
+  {CPtrDeclr [reverse qs] emptyDeclr}
                     | "*", attrs {zs}, type_qualifier_list {qs};
 
   {CPtrDeclr [] d}
                     | "*", attrs {zs}, abstract_declarator {d};
 
-  {error "here" }
+  {CPtrDeclr [reverse qs] d}
                     | "*", attrs {zs}, type_qualifier_list {qs}, abstract_declarator {d};
     
     
@@ -1441,7 +1456,7 @@ unary_expression
   {CUnary CPreDecOp e}
                     | "--", unary_expression {e};
   {e}               | "__extension__", cast_expression {e};
-  {CUnary (unL o) e}
+  {CUnary o e}
                     | unary_operator {o}, cast_expression {e};
   {CSizeofExpr e} 
                     | "sizeof", unary_expression {e};
@@ -1455,14 +1470,14 @@ unary_expression
                     | "&&", identifier {s};
 
 
-unary_operator {(Located CUnaryOp)};
+unary_operator {CUnaryOp};
 unary_operator
-  {error "here"}   : "&";
-  {error "here"}   | "*";
-  {error "here"}   | "+";
-  {error "here"}   | "-";
-  {error "here"}   | "~";
-  {error "here"}   | "!";
+  {CAdrOp}          : "&";
+  {CIndOp}          | "*";
+  {CPlusOp}         | "+";
+  {CMinOp}          | "-";
+  {CCompOp}         | "~";
+  {CNegOp}          | "!";
 
 
 -- parse C cast expression (C99 6.5.4)
@@ -1623,23 +1638,23 @@ assignment_expression { CExpr };
 assignment_expression
   {e}               : conditional_expression {e};
 
-  { CAssign (unL e2) e1 e3 }
+  { CAssign e2 e1 e3 }
                     | unary_expression {e1}, assignment_operator {e2}, assignment_expression {e3};
     
     
-assignment_operator {(Located CAssignOp)};
+assignment_operator {CAssignOp};
 assignment_operator
-  {Loc CAssignOp pos}   : "=";
-  {Loc CMulAssOp pos}   | "*=";
-  {Loc CDivAssOp pos}   | "/=";
-  {Loc CRmdAssOp pos}   | "%=";
-  {Loc CAddAssOp pos}   | "+=";
-  {Loc CSubAssOp pos}   | "-=";
-  {Loc CShlAssOp pos}   | "<<=";
-  {Loc CShrAssOp pos}   | ">>=";
-  {Loc CAndAssOp pos}   | "&=";
-  {Loc CXorAssOp pos}   | "^=";
-  {Loc COrAssOp  pos}   | "|=";
+  {CAssignOp}       : "=";
+  {CMulAssOp}       | "*=";
+  {CDivAssOp}       | "/=";
+  {CRmdAssOp}       | "%=";
+  {CAddAssOp}       | "+=";
+  {CSubAssOp}       | "-=";
+  {CShlAssOp}       | "<<=";
+  {CShrAssOp}       | ">>=";
+  {CAndAssOp}       | "&=";
+  {CXorAssOp}       | "^=";
+  {COrAssOp}        | "|=";
   
   
   
@@ -1649,7 +1664,7 @@ expression { CExpr };
 expression
   {e}               : assignment_expression {e};
 
-  {error "here" }
+  {CComma (e1 : reverse e2)}
                     | assignment_expression {e1}, ",", comma_expression {e2};
     
     
@@ -1684,28 +1699,28 @@ constant_expression
 --
 constant {CConst};
 constant
-  {error "here" }
+  {CIntConst c}
                   : "cint" {c}  ;
-  {error "here" }
+  {CCharConst c}
                   | "cchar" {c};
-  {error "here" }
+  {CFloatConst c}
                   | "cfloat" {c};
   
   
 string_literal {CConst};
 string_literal
-  {error "here" }
+  {CStrConst s}
                     : "cstr" {s};
-  {error "here" }
+  {CStrConst (concat (s : reverse ss))}
                     | "cstr" {s}, string_literal_list {ss};
 
 
 
 string_literal_list {(Reversed [String])};
 string_literal_list
-  {error "here" }
+  {singleton s}
                     : "cstr" {s};
-  {error "here" }                    
+  {ss `snoc` s}                    
                     | string_literal_list {ss}, "cstr" {s};
   
   
@@ -1756,7 +1771,7 @@ attribute_params
 
 }%
 
-frown t = fail $ "frown " ++ show t
+
 
 
 type AppCDeclr = CDeclr -> CDeclr
@@ -1785,6 +1800,12 @@ rmap f (Reversed xs) = Reversed (map f xs)
 reverse :: Reversed [a] -> [a]
 reverse (Reversed xs) = List.reverse xs
 
+liftTypeQuals :: Reversed [CTypeQual] -> [CDeclSpec]
+liftTypeQuals (Reversed xs) = revmap [] xs
+  where revmap a []     = a
+        revmap a (x:xs) = revmap (CTypeQual x : a) xs
+        
+        
 -- We occasionally need things to have a location when they don't naturally
 -- have one built in as tokens and most AST elements do.
 --

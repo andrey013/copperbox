@@ -3,7 +3,7 @@
 
 {
 
-module CLexerAlt  where
+module CLexerAlt (Alex(..), runAlex, frown, get) where
 
 import CTokens
 import MakeToken
@@ -78,12 +78,15 @@ $character_escape_code = [n t b r f v \\ \' \" a \?]
 
 tokens :-
 
+<0> {
+  $white { skip }
+}
 
 -- decimal floating-point constants
 <0> { 
-  @digit_sequence @exponent $floating_suffix?   { error "decimal floating constant" }
+  @digit_sequence @exponent $floating_suffix?   { floatLiteral }
   
-  @dotted_digits @exponent? $floating_suffix?   { error "decimal floating constant" } 
+  @dotted_digits @exponent? $floating_suffix?   { floatLiteral } 
 }
 
 -- hexadecimal floating-point constants
@@ -217,9 +220,9 @@ tokens :-
   
   $nonzero_digit $digit* @integer_suffix?       { intLiteral }
   
-  0 $octal_digit* @integer_suffix?              { error "octal constant" }
+  0 $octal_digit* @integer_suffix?              { octLiteral }
   
-  @hex_prefix $hex_digit @integer_suffix?       { error "hex constant" }
+  @hex_prefix $hex_digit @integer_suffix?       { hexLiteral }
 
 } 
 
@@ -242,6 +245,14 @@ tokens :-
 
 {
 
+-- frown t = fail $ "frown " ++ show t
+
+frown t = do input <- alexGetInput
+             line <- alexGetLine
+             fail ("\n*** syntax error at " ++ position input ++ ":\n"
+                    ++ context input line
+                    ++ show t)
+                                        
 get = alexMonadScan
 
 alexEOF :: CToken
@@ -261,7 +272,15 @@ intLiteral :: AlexInput -> Int -> Alex CToken
 intLiteral (p,_,str) len = return (CTokILit lit)
   where lit = read $ take len str 
 
---DODGY
+octLiteral :: AlexInput -> Int -> Alex CToken
+octLiteral (p,_,str) len = return (CTokILit lit)
+  where lit = read $ take len str 
+
+hexLiteral :: AlexInput -> Int -> Alex CToken
+hexLiteral (p,_,str) len = return (CTokILit lit)
+  where lit = read $ take len str 
+
+-- <DODGY>
 charLiteral :: AlexInput -> Int -> Alex CToken
 charLiteral (p,_,str) len = return (CTokCLit lit)
   where lit = read $ take len str 
@@ -269,6 +288,13 @@ charLiteral (p,_,str) len = return (CTokCLit lit)
 stringLiteral :: AlexInput -> Int -> Alex CToken
 stringLiteral (p,_,str) len = return (CTokSLit lit)
   where lit = take len str 
+
+floatLiteral :: AlexInput -> Int -> Alex CToken
+floatLiteral (p,_,str) len = return (CTokFLit lit)
+  where lit = read $ take len str 
+
+  
+-- </DODGY>  
 
 
 -- demo = runAlex "1+2" get
