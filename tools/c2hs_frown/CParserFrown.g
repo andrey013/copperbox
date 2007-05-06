@@ -19,8 +19,6 @@ import qualified Data.List as List
 
 
 
-type Ident = String 
-
 type Terminal   = CToken
 
 
@@ -252,24 +250,25 @@ labeled_statement
 --
 -- * GNU extension: '__label__ ident;' declarations
 --
-compound_statement { CStat };
+* compound_statement { CStat };
 compound_statement
   {CCompound (reverse xs)}
-                    : "{", enter_scope {sc_}, block_item_list {xs}, leave_scope {_sc}, "}";
+                    : "{", block_item_list {xs}, "}";
 
   {CCompound (reverse xs) }
-                    | "{", enter_scope {sc_}, label_declarations {ds_}, block_item_list {xs}, leave_scope {_sc}, "}";
+                    | "{", label_declarations {ds_}, block_item_list {xs}, "}";
 
 
 -- No syntax for these, just side effecting semantic actions.
 --
-enter_scope { () };
-enter_scope
-  {error "here"}      : ;
-  
-leave_scope { () };
-leave_scope
-  {error "here"}      : ;
+--    
+--    enter_scope { () };
+--    enter_scope
+--      {error "enter_scope"}      : ;
+--      
+--    leave_scope { () };
+--    leave_scope
+--      {error "leave_scope"}      : ;
 
 
 
@@ -296,17 +295,17 @@ nested_declaration
 
 nested_function_definition  { CFunDef };
 nested_function_definition
-  {error "here" }
+  {CFunDef d fd [] s}
                     : declaration_specifier {d}, function_declarator {fd}, compound_statement {s};
 
-  {error "here" }
+  {CFunDef t fd [] s}
                     | type_specifier {t}, function_declarator {fd}, compound_statement {s};
 
-  {error "here" }
+  {CFunDef (reverse qs) fd [] s}
                     | declaration_qualifier_list {qs}, function_declarator {fd}, compound_statement {s};
 
-  {error "here" }
-                    | type_qualifier_list {qs},        function_declarator {fd}, compound_statement {s};
+  {CFunDef (liftTypeQuals qs) fd [] s}
+                    | type_qualifier_list {qs}, function_declarator {fd}, compound_statement {s};
 
 
 label_declarations { () };
@@ -353,7 +352,7 @@ iteration_statement
                     | "for", "(", expression_opt {e1}, ";", expression_opt {e2}, ";", expression_opt {e3}, ")", statement {s};
 
   {CFor (Right d) e1 e2 s}
-                    | "for", "(", enter_scope {sc_}, declaration {d}, expression_opt {e1}, ";", expression_opt {e2}, ")", statement {s}, leave_scope {_sc};
+                    | "for", "(", declaration {d}, expression_opt {e1}, ";", expression_opt {e2}, ")", statement {s};
   
   
   
@@ -449,14 +448,15 @@ declaration
 --
 default_declaring_list { CDecl };
 default_declaring_list
-  {error "here" }
+  {CDecl (reverse qs) [(Just d, io, Nothing)]}
                     : declaration_qualifier_list {qs}, identifier_declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
 
   
-  {error "here" }
+  {CDecl (liftTypeQuals qs) [(Just d, io, Nothing)]}
                     | type_qualifier_list {qs}, identifier_declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
 
-  {error "here" }
+  {case ds of
+             CDecl declspecs dies -> CDecl declspecs ((Just d, io, Nothing) : dies) }
                
                     | default_declaring_list {ds}, ",", identifier_declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
                
@@ -487,7 +487,7 @@ declaring_list
 --     ) && 1 >= storage_class
 --   }
 --
-declaration_specifier { [CDeclSpec] };
+* declaration_specifier { [CDeclSpec] };
 declaration_specifier
   {reverse ds}      : basic_declaration_specifier {ds};  -- Arithmetic or void
   {reverse ds}      | sue_declaration_specifier {ds};  -- Struct/Union/Enum
@@ -555,7 +555,7 @@ storage_class
 --     |x| 1 == tyident
 --   }
 --
-type_specifier { [CDeclSpec] };
+* type_specifier { [CDeclSpec] };
 type_specifier
   {reverse ts}      : basic_type_specifier {ts};    -- Arithmetic or void
   {reverse ts}      | sue_type_specifier {ts};      -- Struct/Union/Enum
@@ -588,7 +588,7 @@ basic_type_name
 --     1 >= storage_class && 1 >= basic_type_name
 --   }
 --
-basic_declaration_specifier {(Reversed [CDeclSpec])};
+* basic_declaration_specifier {(Reversed [CDeclSpec])};
 basic_declaration_specifier
   {qs `snoc` CTypeSpec tn} 
                     : declaration_qualifier_list {qs}, basic_type_name {tn};
@@ -613,7 +613,7 @@ basic_declaration_specifier
 -- * summary:
 --   [type_qualifier | basic_type_name]{ 1 >= basic_type_name }
 --
-basic_type_specifier {(Reversed [CDeclSpec])};
+* basic_type_specifier {(Reversed [CDeclSpec])};
 basic_type_specifier
   -- Arithmetic or void
   {singleton (CTypeSpec tn)}
@@ -947,7 +947,7 @@ parameter_typedef_declarator
   {CVarDeclr (Just t)}
                     : "tyident" {t};
 
-  {error "here"}
+  {d (CVarDeclr (Just t))}
                     | "tyident" {t}, postfixing_abstract_declarator {d};
 
   {d}               | clean_typedef_declarator {d};
@@ -1122,16 +1122,16 @@ type_qualifier_list
 
 -- parse C parameter type list (C99 6.7.5)
 --
-parameter_type_list { ([CDecl], Bool) };
+* parameter_type_list { ([CDecl], Bool) };
 parameter_type_list
   { ([], False)}    : ;
   {(reverse ps, False)} 
-                    | parameter_list {ps}      ;
+                    | parameter_list {ps};
   {(reverse ps, True)}
                     | parameter_list {ps}, ",", "...";
 
 
-parameter_list {(Reversed [CDecl])};
+* parameter_list {(Reversed [CDecl])};
 parameter_list
   {singleton d}     : parameter_declaration {d};
   {singleton d}     | attrs {zs}, parameter_declaration {d};
@@ -1141,7 +1141,7 @@ parameter_list
   
 
 
-parameter_declaration { CDecl };
+* parameter_declaration { CDecl };
 parameter_declaration
   {CDecl s []}
                     : declaration_specifier {s};
@@ -1198,27 +1198,27 @@ type_name
   {CDecl ts []}
                     : attrs_opt {ao}, type_specifier {ts};
 
-  {error "here" }
+  {CDecl t [(Just d, Nothing, Nothing)]}
                     | attrs_opt {ao}, type_specifier {t}, abstract_declarator {d};
 
-  {error "here"}
+  {CDecl (liftTypeQuals qs) []}
                     | attrs_opt {ao}, type_qualifier_list {qs};
 
-  {error "here" }
+  {CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)]}
                     | attrs_opt {ao}, type_qualifier_list {qs}, abstract_declarator {d};
     
     
     
 -- parse C abstract declarator (C99 6.7.6)
 --
-abstract_declarator  { CDeclr };
+* abstract_declarator  { CDeclr };
 abstract_declarator
   {d}               : unary_abstract_declarator {d};
   {d}               | postfix_abstract_declarator {d};
-  {emptyDeclr}      | postfixing_abstract_declarator {d}, attrs_opt {ao};
+  {d emptyDeclr}    | postfixing_abstract_declarator {d}, attrs_opt {ao};
 
 
-postfixing_abstract_declarator { AppCDeclr };
+* postfixing_abstract_declarator { AppCDeclr };
 postfixing_abstract_declarator
   {d}               : array_abstract_declarator {d};
 
@@ -1294,11 +1294,11 @@ unary_abstract_declarator
     
     
     
-postfix_abstract_declarator { CDeclr };
+* postfix_abstract_declarator { CDeclr };
 postfix_abstract_declarator
   {d}               : "(", unary_abstract_declarator {d}, ")";
   {d}               | "(", postfix_abstract_declarator {d}, ")";
-  {emptyDeclr}      | "(", postfixing_abstract_declarator {d}, ")";
+  {d emptyDeclr}      | "(", postfixing_abstract_declarator {d}, ")";
   {d2 d1}           | "(", unary_abstract_declarator {d1}, ")", postfixing_abstract_declarator {d2};
   {d}               | "(", attrs {zs}, unary_abstract_declarator {d}, ")";
   {d}               | "(", attrs {zs}, postfix_abstract_declarator {d}, ")";
