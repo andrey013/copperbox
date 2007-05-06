@@ -44,7 +44,8 @@ module CAST (CHeader(..), CExtDecl(..), CFunDef(..), CStat(..), CBlockItem(..),
              CDecl(..), CDeclSpec(..), CStorageSpec(..), CTypeSpec(..),
              CTypeQual(..), CStructUnion(..),  CStructTag(..), CEnum(..),
              CDeclr(..), CInit(..), CInitList, CDesignator(..), CExpr(..),
-             CAssignOp(..), CBinaryOp(..), CUnaryOp(..), CConst (..))
+             CAssignOp(..), CBinaryOp(..), CUnaryOp(..), CConst (..), 
+             Ident, identToLexeme)
 where
 
 
@@ -411,3 +412,10 @@ data CConst = CIntConst   Integer
             | CFloatConst String
             | CStrConst   String
             deriving (Eq,Show) 
+
+            
+            -- given an abstract identifier, yield its lexeme (EXPORTED)
+--
+identToLexeme         :: Ident -> String
+identToLexeme s  = s 
+              

@@ -9,16 +9,40 @@ import CParserFrown
 import CAST
 import CLexerAlt
 import CTokens
- 
-main = parse "static int x = 8;" 
+import CPretty
 
-test01 = "int main(void) {int x; x=1+2;}"
-
-
-x001 = parse "static int x = 8;"
+import Text.PrettyPrint.HughesPJ
+import System.Environment
 
 
-demo = tokens "int main(void) {int x; x=1+2;}"
+
+main = do 
+  args <- getArgs
+  case args of 
+    [a] -> parseAndPrint a
+    _   -> putStrLn "Usage: Demo <filename>"
+  where parseAndPrint :: String -> IO ()
+        parseAndPrint fname = do text <- readFile fname
+                                 case runAlex text header of
+                                    Left err -> do { putStr err
+                                                   ; putStrLn ""
+                                                   ; showToks text
+                                                   }
+                                    Right ans -> putStr $ render $ pretty ans
+        showToks :: String -> IO ()
+        showToks text = let ans = tokens text
+                        in case ans of 
+                          Left err -> putStr $ "ERR: " ++ err
+                          Right toks -> do { putStrLn "Tokens:" 
+                                           ; mapM_ (putStrLn . show) toks }
+
+                           
+
+test01 = tokens "int main(void) {int x; x=1+2;}"
+test02 = parse "static int x = 8;"
+
+text_01 = "int main(void) {int x; x=1+2;}"
+
 
 parse str = case runAlex str header of
               Left err -> putStr err

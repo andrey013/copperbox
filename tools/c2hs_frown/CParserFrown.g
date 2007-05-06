@@ -27,8 +27,8 @@ type Result a = Alex a
 
 %{
 
-Terminal        = CTokLParen    as ")"
-                | CTokRParen    as "("
+Terminal        = CTokLParen    as "("
+                | CTokRParen    as ")"
                 | CTokLBracket  as "["
                 | CTokRBracket  as "]"
                 | CTokArrow     as "->"
@@ -250,7 +250,7 @@ labeled_statement
 --
 -- * GNU extension: '__label__ ident;' declarations
 --
-* compound_statement { CStat };
+compound_statement { CStat };
 compound_statement
   {CCompound (reverse xs)}
                     : "{", block_item_list {xs}, "}";
@@ -487,7 +487,7 @@ declaring_list
 --     ) && 1 >= storage_class
 --   }
 --
-* declaration_specifier { [CDeclSpec] };
+declaration_specifier { [CDeclSpec] };
 declaration_specifier
   {reverse ds}      : basic_declaration_specifier {ds};  -- Arithmetic or void
   {reverse ds}      | sue_declaration_specifier {ds};  -- Struct/Union/Enum
@@ -555,7 +555,7 @@ storage_class
 --     |x| 1 == tyident
 --   }
 --
-* type_specifier { [CDeclSpec] };
+type_specifier { [CDeclSpec] };
 type_specifier
   {reverse ts}      : basic_type_specifier {ts};    -- Arithmetic or void
   {reverse ts}      | sue_type_specifier {ts};      -- Struct/Union/Enum
@@ -588,7 +588,7 @@ basic_type_name
 --     1 >= storage_class && 1 >= basic_type_name
 --   }
 --
-* basic_declaration_specifier {(Reversed [CDeclSpec])};
+basic_declaration_specifier {(Reversed [CDeclSpec])};
 basic_declaration_specifier
   {qs `snoc` CTypeSpec tn} 
                     : declaration_qualifier_list {qs}, basic_type_name {tn};
@@ -613,7 +613,7 @@ basic_declaration_specifier
 -- * summary:
 --   [type_qualifier | basic_type_name]{ 1 >= basic_type_name }
 --
-* basic_type_specifier {(Reversed [CDeclSpec])};
+basic_type_specifier {(Reversed [CDeclSpec])};
 basic_type_specifier
   -- Arithmetic or void
   {singleton (CTypeSpec tn)}
@@ -1122,7 +1122,7 @@ type_qualifier_list
 
 -- parse C parameter type list (C99 6.7.5)
 --
-* parameter_type_list { ([CDecl], Bool) };
+parameter_type_list { ([CDecl], Bool) };
 parameter_type_list
   { ([], False)}    : ;
   {(reverse ps, False)} 
@@ -1131,7 +1131,7 @@ parameter_type_list
                     | parameter_list {ps}, ",", "...";
 
 
-* parameter_list {(Reversed [CDecl])};
+parameter_list {(Reversed [CDecl])};
 parameter_list
   {singleton d}     : parameter_declaration {d};
   {singleton d}     | attrs {zs}, parameter_declaration {d};
@@ -1141,7 +1141,7 @@ parameter_list
   
 
 
-* parameter_declaration { CDecl };
+parameter_declaration { CDecl };
 parameter_declaration
   {CDecl s []}
                     : declaration_specifier {s};
@@ -1211,14 +1211,14 @@ type_name
     
 -- parse C abstract declarator (C99 6.7.6)
 --
-* abstract_declarator  { CDeclr };
+abstract_declarator  { CDeclr };
 abstract_declarator
   {d}               : unary_abstract_declarator {d};
   {d}               | postfix_abstract_declarator {d};
   {d emptyDeclr}    | postfixing_abstract_declarator {d}, attrs_opt {ao};
 
 
-* postfixing_abstract_declarator { AppCDeclr };
+postfixing_abstract_declarator { AppCDeclr };
 postfixing_abstract_declarator
   {d}               : array_abstract_declarator {d};
 
@@ -1294,7 +1294,7 @@ unary_abstract_declarator
     
     
     
-* postfix_abstract_declarator { CDeclr };
+postfix_abstract_declarator { CDeclr };
 postfix_abstract_declarator
   {d}               : "(", unary_abstract_declarator {d}, ")";
   {d}               | "(", postfix_abstract_declarator {d}, ")";

@@ -2,6 +2,8 @@
 
 all: CLexerAlt.hs CParserFrown.hs
 
+demo: Demo.hs CLexerAlt.hs CParserFrown.hs
+	ghc --make Demo.hs
 	
 CLexerAlt.hs: CLexerAlt.x
 	alex --ghc --template=./alex_templates CLexerAlt.x
