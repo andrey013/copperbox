@@ -22,8 +22,10 @@ import qualified Data.List as List
 type Terminal   = CToken
 
 
-type Result a = Alex a
+type Result a = Lexer a
 
+
+get = getToken
 
 %{
 

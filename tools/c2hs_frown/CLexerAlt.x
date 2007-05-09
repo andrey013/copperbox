@@ -3,16 +3,18 @@
 
 {
 
-module CLexerAlt (Alex(..), runAlex, frown, get) where
+module CLexerAlt (Lexer, runLex, frown, getToken) where
 
 import CTokens
 import MakeToken
 
-
+import Control.Monad
+import Control.Monad.State
+import Control.Monad.Error
 
 }
 
-%wrapper "monadfrown"
+%wrapper "errstate"
 
 $nondigit           = [A-Za-z_]
 $digit              = [0-9]
@@ -235,6 +237,8 @@ tokens :-
 }
 
 -- string constants
+-- (Assumption: the preprocessor has concatenated multi-line strings)
+
 <0> {
 
   \" @s_char_sequence? \"        { stringLiteral }
@@ -253,10 +257,12 @@ frown t = do input <- alexGetInput
                     ++ context input line
                     ++ show t)
                                         
-get = alexMonadScan
+getToken = alexMonadScan
 
 alexEOF :: CToken
 alexEOF = CTokEof
+
+type Alex = Lexer
 
 punctuator :: CToken -> AlexInput -> Int -> Alex CToken
 punctuator tok (p,_,_) len = return tok
@@ -284,6 +290,7 @@ hexLiteral (p,_,str) len = return (CTokILit lit)
 charLiteral :: AlexInput -> Int -> Alex CToken
 charLiteral (p,_,str) len = return (CTokCLit lit)
   where lit = read $ take len str 
+-- </DODGY> 
 
 stringLiteral :: AlexInput -> Int -> Alex CToken
 stringLiteral (p,_,str) len = return (CTokSLit lit)
@@ -291,10 +298,10 @@ stringLiteral (p,_,str) len = return (CTokSLit lit)
 
 floatLiteral :: AlexInput -> Int -> Alex CToken
 floatLiteral (p,_,str) len = return (CTokFLit lit)
-  where lit = read $ take len str 
+  where lit = take len str 
 
   
--- </DODGY>  
+ 
 
 
 -- demo = runAlex "1+2" get
