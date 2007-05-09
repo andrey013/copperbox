@@ -61,31 +61,33 @@ alexMove (AlexPn a l c) _    = AlexPn (a+1)  l     (c+1)
 
 
 data AlexState = AlexState {
-  alex_pos 	:: !AlexPosn,   -- position at current input location
-  alex_inp 	:: String,		  -- the current input
-  alex_chr 	:: !Char,       -- the character before the input
-  alex_scd 	:: !Int,        -- the current startcode
-  alex_line :: String,      -- the current line for error messages
-  tyidents	:: (Set Ident)
+  alex_file     :: FilePath,    -- the current file name
+  alex_pos      :: !AlexPosn,   -- position at current input location
+  alex_inp      :: String,      -- the current input
+  alex_chr      :: !Char,       -- the character before the input
+  alex_scd      :: !Int,        -- the current startcode
+  alex_line     :: String,      -- the current line for error messages
+  tyidents      :: (Set Ident)
   }
   deriving (Show)
-  
+
 
 
 type Lexer = StateT AlexState (Either String)
 
 
-current :: String -> String 
+current :: String -> String
 current s = takeWhile (/= '\n') s
 
-mkAlexState :: String -> AlexState
-mkAlexState input = AlexState 
-  { alex_pos = alexStartPos,
-    alex_inp = input, 
-    alex_chr = '\n',
-    alex_scd = 0,
-    alex_line = current input,
-    tyidents = Set.empty }
+mkAlexState :: String -> FilePath -> AlexState
+mkAlexState input filename = AlexState
+  { alex_file   = filename,
+    alex_pos    = alexStartPos,
+    alex_inp    = input,
+    alex_chr    = '\n',
+    alex_scd    = 0,
+    alex_line   = current input,
+    tyidents    = Set.empty }
 
 
 alexSetInput :: AlexInput -> Lexer ()
@@ -104,6 +106,13 @@ alexGetInput = do
   c     <- gets alex_chr
   inp   <- gets alex_inp
   return (pos,c,inp)
+
+
+alexGetPosition :: Lexer (String,Int,Int)
+alexGetPosition = do
+  (AlexPn _ l c) <- gets alex_pos
+  s              <- gets alex_file
+  return (s,l,c)
 
 alexError :: String -> Lexer a
 alexError message = lift (throwError message)
@@ -175,10 +184,11 @@ context ((AlexPn _ _ col),_,rest) line = unlines (line:cursor:nextfive)
         
   
 
-runLex :: String -> Lexer a -> Either String a
-runLex input f = case runStateT f (mkAlexState input) of
-                  Left err -> Left err
-                  Right (a,_) -> Right a
+runLex :: String -> FilePath -> Lexer a -> Either String a
+runLex input filename f 
+  = case runStateT f (mkAlexState input filename) of
+      Left err -> Left err
+      Right (a,_) -> Right a
 
 
 

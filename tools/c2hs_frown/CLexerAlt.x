@@ -4,7 +4,7 @@
 {
 
 module CLexerAlt 
-  (Lexer, runLex, frown, getToken,
+  (Lexer, runLex, frown, getToken, getPosition,
    isTypeIdent, addTypedef) 
  where
 
@@ -324,7 +324,7 @@ addTypedef ident = do
 
                              
                               
-
+getPosition = alexGetPosition
 
 -- demo = runAlex "1+2" get
 

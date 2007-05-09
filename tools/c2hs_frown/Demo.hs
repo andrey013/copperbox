@@ -23,7 +23,7 @@ main = do
     _   -> putStrLn "Usage: Demo <filename>"
   where parseAndPrint :: String -> IO ()
         parseAndPrint fname = do text <- readFile fname
-                                 case runLex text header of
+                                 case runLex text fname header of
                                     Left err -> do { putStr err
                                                    ; putStrLn ""
                                                    ; showToks text
@@ -46,11 +46,11 @@ test02 = parse "static int x = 8;"
 text_01 = "int main(void) {int x; x=1+2;}"
 
 
-parse str = case runLex str header of
+parse str = case runLex str "" header of
               Left err -> putStr err
               Right ans -> print ans
 
-tokens s = runLex s toks              
+tokens s = runLex s "" toks              
 
 toks :: Lexer [CToken]
 toks = toks' []

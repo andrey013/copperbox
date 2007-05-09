@@ -45,9 +45,11 @@ module CAST (CHeader(..), CExtDecl(..), CFunDef(..), CStat(..), CBlockItem(..),
              CTypeQual(..), CStructUnion(..),  CStructTag(..), CEnum(..),
              CDeclr(..), CInit(..), CInitList, CDesignator(..), CExpr(..),
              CAssignOp(..), CBinaryOp(..), CUnaryOp(..), CConst (..), 
-             Ident, identToLexeme)
+             Ident, identToLexeme,
+             Attrs(..))
 where
 
+import Position
 
 type Ident = String
 
@@ -407,13 +409,20 @@ data CUnaryOp = CPreIncOp                 -- prefix increment operator
 --
 -- * we do not list enumeration constants here, as they are identifiers
 --
-data CConst = CIntConst   Integer
-            | CCharConst  Char
-            | CFloatConst String
-            | CStrConst   String
+data CConst = CIntConst   Integer Attrs
+            | CCharConst  Char Attrs
+            | CFloatConst String Attrs
+            | CStrConst   String Attrs
             deriving (Eq,Show) 
 
-            
+
+
+data Attrs = OnlyPos Position
+  deriving (Eq,Show)
+
+
+  
+              
             -- given an abstract identifier, yield its lexeme (EXPORTED)
 --
 identToLexeme         :: Ident -> String

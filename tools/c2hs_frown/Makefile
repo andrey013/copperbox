@@ -13,6 +13,7 @@ CLexerAlt.hs: CLexerAlt.x ./alex_templates/AlexWrapper-clexer
 # Don't use --code=compact
 # 'compact' doesn't generate type signatures and without them GHC spins 
 # out of control
+
 CParserFrown.hs: CParserFrown.g
 	frown --ghc --lexer --optimize --signature=poly --code=stackless --verbose CParserFrown.g
 

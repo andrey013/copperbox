@@ -1707,19 +1707,19 @@ constant_expression
 --
 constant {CConst};
 constant
-  {CIntConst c}
+  {% withPos (CIntConst c) }
                   : "cint" {c}  ;
-  {CCharConst c}
+  {% withPos (CCharConst c) }
                   | "cchar" {c};
-  {CFloatConst c}
+  {% withPos (CFloatConst c) }
                   | "cfloat" {c};
   
   
 string_literal {CConst};
 string_literal
-  {CStrConst s}
+  {% withPos (CStrConst s)}
                     : "cstr" {s};
-  {CStrConst (concat (s : reverse ss))}
+  {% withPos (CStrConst (concat (s : reverse ss)))}
                     | "cstr" {s}, string_literal_list {ss};
 
 
@@ -1857,3 +1857,9 @@ getCDeclrIdent (CVarDeclr optIde    ) = optIde
 getCDeclrIdent (CPtrDeclr _ declr   ) = getCDeclrIdent declr
 getCDeclrIdent (CArrDeclr declr _ _ ) = getCDeclrIdent declr
 getCDeclrIdent (CFunDeclr declr _ _ ) = getCDeclrIdent declr        
+
+
+withPos fun = do
+  (f,l,c) <- getPosition
+  return (fun (OnlyPos (Position f l c)))
+  
