@@ -139,7 +139,7 @@ Terminal        = CTokLParen    as "("
 --
 * header { CHeader };
 header 
-  {CHeader (reverse xs)} 
+  {% withPos (CHeader (reverse xs))} 
                     : translation_unit {xs} ;
 
 
@@ -167,7 +167,8 @@ external_declaration
   {CFDefExt f}      : attrs_opt {ao}, function_definition {f};
   {CDeclExt d}      | attrs_opt {ao}, declaration {d}    ;
   {e}               | "__extension__", external_declaration {e}  ;
-  {CAsmExt a}       | "asm", "(", string_literal {a}, ")", ";"    ;
+  {% withPos (CAsmExt) }       
+                    | "asm", "(", string_literal {a}, ")", ";"    ;
   
   
 
@@ -175,34 +176,34 @@ external_declaration
 --
 function_definition { CFunDef };
 function_definition
-  {CFunDef [] fd [] s}  
+  {% withPos (CFunDef [] fd [] s)}  
                     : function_declarator {fd}, compound_statement {s};
 
-  {CFunDef d fd [] s} 
+  {% withPos (CFunDef d fd [] s)} 
                     | declaration_specifier {d}, function_declarator {fd}, compound_statement {s};
 
-  {CFunDef t d [] s}
+  {% withPos (CFunDef t d [] s)}
                     | type_specifier {t}, function_declarator {d}, compound_statement {s};
 
-  {CFunDef (reverse ds) d [] s}
+  {% withPos (CFunDef (reverse ds) d [] s)}
                     | declaration_qualifier_list {ds}, function_declarator {d}, compound_statement {s};
 
-  {CFunDef (liftTypeQuals ts) d [] s}
+  {% withPos (CFunDef (liftTypeQuals ts) d [] s)}
                     | type_qualifier_list {ts}, function_declarator {d}, compound_statement {s};
 
-  {CFunDef [] d (reverse ds) s}
+  {% withPos (CFunDef [] d (reverse ds) s)}
                     | old_function_declarator {d}, declaration_list {ds}, compound_statement {s};
 
-  {CFunDef d1 d2 (reverse ds) s}
+  {% withPos (CFunDef d1 d2 (reverse ds) s)}
                     | declaration_specifier {d1}, old_function_declarator {d2}, declaration_list {ds}, compound_statement {s};
 
-  {CFunDef t d (reverse ds) s }
+  {% withPos (CFunDef t d (reverse ds) s)}
                     | type_specifier {t}, old_function_declarator {d}, declaration_list {ds}, compound_statement {s};
 
-  {CFunDef (reverse qs) d (reverse ds) s}
+  {% withPos (CFunDef (reverse qs) d (reverse ds) s)}
                     | declaration_qualifier_list {qs}, old_function_declarator {d}, declaration_list {ds}, compound_statement {s};
 
-  {CFunDef (liftTypeQuals qs) d (reverse ds) s}
+  {% withPos (CFunDef (liftTypeQuals qs) d (reverse ds) s)}
                     | type_qualifier_list {qs}, old_function_declarator {d}, declaration_list {ds}, compound_statement {s};
     
     
@@ -240,10 +241,14 @@ statement
 --
 labeled_statement { CStat };
 labeled_statement
-  {CLabel n s}      : identifier {n}, ":", attrs_opt {ao}, statement {s};
-  {CCase e s}       | "case", constant_expression {e}, ":", statement {s};
-  {CDefault s}      | "default", ":", statement {s};
-  {CCases e1 e2 s}  | "case", constant_expression {e1}, "...", constant_expression {e2}, ":", statement {s};
+  {% withPos (CLabel n s)}      
+                    : identifier {n}, ":", attrs_opt {ao}, statement {s};
+  {% withPos (CCase e s)}
+                    | "case", constant_expression {e}, ":", statement {s};
+  {% withPos (CDefault s)}
+                    | "default", ":", statement {s};
+  {% withPos (CCases e1 e2 s)}
+                    | "case", constant_expression {e1}, "...", constant_expression {e2}, ":", statement {s};
     
     
     
@@ -254,10 +259,10 @@ labeled_statement
 --
 compound_statement { CStat };
 compound_statement
-  {CCompound (reverse xs)}
+  {% withPos (CCompound (reverse xs))}
                     : "{", block_item_list {xs}, "}";
 
-  {CCompound (reverse xs) }
+  {% withPos (CCompound (reverse xs))}
                     | "{", label_declarations {ds_}, block_item_list {xs}, "}";
 
 
@@ -297,16 +302,16 @@ nested_declaration
 
 nested_function_definition  { CFunDef };
 nested_function_definition
-  {CFunDef d fd [] s}
+  {% withPos (CFunDef d fd [] s)}
                     : declaration_specifier {d}, function_declarator {fd}, compound_statement {s};
 
-  {CFunDef t fd [] s}
+  {% withPos (CFunDef t fd [] s)}
                     | type_specifier {t}, function_declarator {fd}, compound_statement {s};
 
-  {CFunDef (reverse qs) fd [] s}
+  {% withPos (CFunDef (reverse qs) fd [] s)}
                     | declaration_qualifier_list {qs}, function_declarator {fd}, compound_statement {s};
 
-  {CFunDef (liftTypeQuals qs) fd [] s}
+  {% withPos (CFunDef (liftTypeQuals qs) fd [] s)}
                     | type_qualifier_list {qs}, function_declarator {fd}, compound_statement {s};
 
 
@@ -320,21 +325,23 @@ label_declarations
 --
 expression_statement { CStat };
 expression_statement
-  {CExpr Nothing }  : ";" ;
-  {CExpr (Just e)}  | expression {e}, ";";
+  {% withPos (CExpr Nothing)}  
+                    : ";" ;
+  {% withPos (CExpr (Just e))}  
+                    | expression {e}, ";";
 
 
 -- parse C selection statement (C99 6.8.4)
 --
 selection_statement { CStat };
 selection_statement
-  {CIf e s Nothing} 
+  {% withPos (CIf e s Nothing)} 
                     : "if", "(", expression {e}, ")", statement {s};
 
-  {CIf e s1 (Just s2)}
+  {% withPos (CIf e s1 (Just s2))}
                     | "if", "(", expression {e}, ")", statement {s1}, "else", statement {s2};
 
-  {CSwitch e s}
+  {% withPos (CSwitch e s)}
                     | "switch", "(", expression {e}, ")", statement {s};
   
   
@@ -344,16 +351,16 @@ selection_statement
 --
 iteration_statement { CStat };
 iteration_statement
-  {CWhile e s False}
+  {% withPos (CWhile e s False)}
                     : "while", "(", expression {e}, ")", statement {s};
 
-  {CWhile e s True} 
+  {% withPos (CWhile e s True)} 
                     | "do", statement {s}, "while", "(", expression {e}, ")", ";";
 
-  {CFor (Left e1) e2 e3 s}
+  {% withPos (CFor (Left e1) e2 e3 s)}
                     | "for", "(", expression_opt {e1}, ";", expression_opt {e2}, ";", expression_opt {e3}, ")", statement {s};
 
-  {CFor (Right d) e1 e2 s}
+  {% withPos (CFor (Right d) e1 e2 s)}
                     | "for", "(", declaration {d}, expression_opt {e1}, ";", expression_opt {e2}, ")", statement {s};
   
   
@@ -364,11 +371,16 @@ iteration_statement
 --
 jump_statement { CStat };
 jump_statement
-  {CGoto s}         : "goto", identifier {s}, ";";
-  {CGotoPtr e}      | "goto", "*", expression {e}, ";";
-  {CCont}           | "continue", ";";
-  {CBreak}          | "break", ";";
-  {CReturn e}       | "return", expression_opt {e}, ";";
+  {% withPos (CGoto s)}
+                    : "goto", identifier {s}, ";";
+  {% withPos (CGotoPtr e)}
+                    | "goto", "*", expression {e}, ";";
+  {% withPos (CCont)}
+                    | "continue", ";";
+  {% withPos (CBreak)}
+                    | "break", ";";
+  {% withPos (CReturn e)}
+                    | "return", expression_opt {e}, ";";
   
   
   
@@ -376,13 +388,17 @@ jump_statement
 --
 asm_statement { CStat };
 asm_statement
-  {CAsm}            : "asm", maybe_type_qualifier {qo}, "(", expression {e}, ")", ";";
+  {% withPos (CAsm)} 
+                    : "asm", maybe_type_qualifier {qo}, "(", expression {e}, ")", ";";
 
-  {CAsm}            | "asm", maybe_type_qualifier {qo}, "(", expression {e}, ":", asm_operands {asm}, ")", ";";
+  {% withPos (CAsm)}
+                    | "asm", maybe_type_qualifier {qo}, "(", expression {e}, ":", asm_operands {asm}, ")", ";";
 
-  {CAsm}            | "asm", maybe_type_qualifier {qo}, "(", expression {e}, ":", asm_operands {asm},
+  {% withPos (CAsm)}
+                    | "asm", maybe_type_qualifier {qo}, "(", expression {e}, ":", asm_operands {asm},
                         ":", asm_operands {asm'}, ")", ";" ;
-  {CAsm}            | "asm", maybe_type_qualifier {qo}, "(", expression {e}, ":", asm_operands {asm}, 
+  {% withPos (CAsm)}
+                    | "asm", maybe_type_qualifier {qo}, "(", expression {e}, ":", asm_operands {asm}, 
                         ":", asm_operands {asm'},
                         ":", asm_clobbers {asm''}, ")", ";" ;
 
@@ -425,20 +441,20 @@ asm_clobbers
 --
 declaration { CDecl };
 declaration
-  {CDecl (reverse s) []}
+  {% withPos (CDecl (reverse s) [])}
                   : sue_declaration_specifier {s}, ";";
 
-  {CDecl (reverse s) []}
+  {% withPos (CDecl (reverse s) [])}
                   | sue_type_specifier {s}, ";";
 
   {case ds of
-            CDecl declspecs dies ->
-              CDecl declspecs (List.reverse dies)}
+           CDecl declspecs dies attr ->
+                        CDecl declspecs (List.reverse dies) attr}
                   | declaring_list {ds}, ";";
 
   { case ds of
-            CDecl declspecs dies->
-              CDecl declspecs (List.reverse dies)}
+            CDecl declspecs dies attr ->
+              CDecl declspecs (List.reverse dies) attr }
                   | default_declaring_list {ds}, ";";
               
               
@@ -451,17 +467,21 @@ declaration
 default_declaring_list { CDecl };
 default_declaring_list
   {% let declspecs = reverse qs in
-      doDeclIdent declspecs d >> return (CDecl (reverse qs) [(Just d, io, Nothing)]) }
+     do { doDeclIdent declspecs d 
+        ; attr <- getPosAttr
+        ; return (CDecl (reverse qs) [(Just d, io, Nothing)] attr) }}
                     : declaration_qualifier_list {qs}, identifier_declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
 
   
   {% let declspecs = liftTypeQuals qs in
-      doDeclIdent declspecs d >> return (CDecl (liftTypeQuals qs) [(Just d, io, Nothing)])}
+      do { doDeclIdent declspecs d 
+         ; attr <- getPosAttr
+         ; return (CDecl (liftTypeQuals qs) [(Just d, io, Nothing)] attr) }}
                     | type_qualifier_list {qs}, identifier_declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
 
   {% case ds of
-      CDecl declspecs dies -> do { doDeclIdent declspecs d
-                                 ; return (CDecl declspecs ((Just d, io, Nothing) : dies))} }
+      CDecl declspecs dies attr -> do { doDeclIdent declspecs d
+                                      ; return (CDecl declspecs ((Just d, io, Nothing) : dies) attr)} }
                
                     | default_declaring_list {ds}, ",", identifier_declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
                
@@ -469,17 +489,19 @@ default_declaring_list
                
 declaring_list { CDecl };
 declaring_list
-  {% doDeclIdent ds d
-      >> return (CDecl ds [(Just d, io, Nothing)]) }
+  {% do { doDeclIdent ds d
+        ; attr <- getPosAttr
+        ; return (CDecl ds [(Just d, io, Nothing)] attr) }}
                     : declaration_specifier {ds}, declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
 
-  {% doDeclIdent t d
-      >> return (CDecl t [(Just d, io, Nothing)]) }
+  {% do { doDeclIdent t d
+        ; attr <- getPosAttr
+        ; return (CDecl t [(Just d, io, Nothing)] attr) }}
                     | type_specifier {t}, declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
 
   {% case ds of
-      CDecl declspecs dies -> do { doDeclIdent declspecs d
-                                 ; return (CDecl declspecs ((Just d, io, Nothing) : dies))} }
+      CDecl declspecs dies attr -> do { doDeclIdent declspecs d
+                                      ; return (CDecl declspecs ((Just d, io, Nothing) : dies) attr)} }
                     | declaring_list {ds}, ",", declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
                
                
@@ -540,12 +562,23 @@ declaration_qualifier
 --
 storage_class { CStorageSpec };
 storage_class
-  {CTypedef}        : "typedef";
-  {CExtern}         | "extern";
-  {CStatic}         | "static";
-  {CAuto}           | "auto";
-  {CRegister}       | "register";
-  {CThread}         | "__thread";
+  {% withPos (CTypedef)}
+                    : "typedef";
+
+  {% withPos (CExtern)}
+                    | "extern";
+                    
+  {% withPos (CStatic)}
+                    | "static";
+                    
+  {% withPos (CAuto)}
+                    | "auto";
+                    
+  {% withPos (CRegister)}
+                    | "register";
+
+  {% withPos (CThread)}
+                    | "__thread";
 
 
 
@@ -573,17 +606,39 @@ type_specifier
 
 basic_type_name { CTypeSpec };
 basic_type_name
-  {CVoidType}       : "void";
-  {CCharType}       | "char";
-  {CShortType}      | "short";
-  {CIntType}        | "int";
-  {CLongType}       | "long";
-  {CFloatType}      | "float";
-  {CDoubleType}     | "double";
-  {CSignedType}     | "signed";
-  {CUnsigType}      | "unsigned";
-  {CBoolType}       | "_Bool";
-  {CComplexType}    | "_Complex";
+  {% withPos (CVoidType)}
+                    : "void";
+                    
+  {% withPos (CCharType)}
+                    | "char";
+                    
+  {% withPos (CShortType)}
+                    | "short";
+  
+  {% withPos (CIntType)}
+                    | "int";
+  
+  {% withPos (CLongType)}
+                    | "long";
+  
+  {% withPos (CFloatType)}      
+                    | "float";
+  
+  {% withPos (CDoubleType)}
+                    | "double";
+  
+  {% withPos (CSignedType)}
+                    | "signed";
+  
+  {% withPos (CUnsigType)}
+                    | "unsigned";
+  
+  {% withPos (CBoolType)}
+                    | "_Bool";
+  
+  {% withPos (CComplexType)}
+                    | "_Complex";
+  
   
   
   
@@ -598,15 +653,15 @@ basic_type_name
 --
 basic_declaration_specifier {(Reversed [CDeclSpec])};
 basic_declaration_specifier
-  {qs `snoc` CTypeSpec tn} 
+  {qs `snoc` (CTypeSpec tn)} 
                     : declaration_qualifier_list {qs}, basic_type_name {tn};
 
-  {ts `snoc` CStorageSpec sc} 
+  {ts `snoc` (CStorageSpec sc)} 
                     | basic_type_specifier  {ts}, storage_class {sc};
 
   {ds `snoc` q}     | basic_declaration_specifier {ds}, declaration_qualifier {q};
 
-  {ds `snoc` CTypeSpec tn}
+  {ds `snoc` (CTypeSpec tn)}
                     | basic_declaration_specifier {ds}, basic_type_name {tn};
 
   {ds}              | basic_declaration_specifier {ds}, attr {a};
@@ -706,13 +761,13 @@ typedef_declaration_specifier
   {t `snoc` CStorageSpec sc}
                     : typedef_type_specifier {t}, storage_class {sc};
 
-  {qs `snoc` CTypeSpec (CTypeDef t)}
+  {% withPos (\pos -> qs `snoc` (CTypeSpec (CTypeDef t pos)))}
                     | declaration_qualifier_list {qs}, "tyident" {t};
 
-  {qs `snoc` CTypeSpec (CTypeOfExpr e) }
+  {% withPos (\pos -> qs `snoc` (CTypeSpec (CTypeOfExpr e pos)))}
                     | declaration_qualifier_list {qs}, "typeof", "(", expression {e}, ")";
 
-  {qs `snoc` CTypeSpec (CTypeOfType tn)}
+  {% withPos (\pos -> qs `snoc` (CTypeSpec (CTypeOfType tn pos)))}
                     | declaration_qualifier_list {qs}, "typeof", "(", type_name {tn}, ")";
 
   {ds `snoc` q}     | typedef_declaration_specifier {ds}, declaration_qualifier {q};
@@ -729,22 +784,22 @@ typedef_declaration_specifier
 --
 typedef_type_specifier {(Reversed [CDeclSpec])};
 typedef_type_specifier
-  {singleton (CTypeSpec (CTypeDef t))}
+  {% withPos (\pos -> singleton (CTypeSpec (CTypeDef t pos)))}
                     : "tyident" {t};
     
-  {singleton (CTypeSpec (CTypeOfExpr e))}
+  {% withPos (\pos -> singleton (CTypeSpec (CTypeOfExpr e pos)))}
                     | "typeof", "(", expression {e}, ")";
 
-  {singleton (CTypeSpec (CTypeOfType tn))}
+  {% withPos (\pos -> singleton (CTypeSpec (CTypeOfType tn pos)))}
                     | "typeof", "(", type_name {tn}, ")";
 
-  {rmap CTypeQual qs `snoc` CTypeSpec (CTypeDef t)}
+  {% withPos (\pos -> rmap CTypeQual qs `snoc` (CTypeSpec (CTypeDef t pos)))}
                     | type_qualifier_list {qs}, "tyident" {t};
 
-  {rmap CTypeQual qs `snoc` CTypeSpec (CTypeOfExpr e)}
+  {% withPos (\pos -> rmap CTypeQual qs `snoc` (CTypeSpec (CTypeOfExpr e pos)))}
                     | type_qualifier_list {qs}, "typeof", "(", expression {e}, ")";
 
-  {rmap CTypeQual qs `snoc` CTypeSpec (CTypeOfType tn) }
+  {% withPos (\pos -> rmap CTypeQual qs `snoc` (CTypeSpec (CTypeOfType tn pos)))}
                     | type_qualifier_list {qs}, "typeof", "(", type_name {tn}, ")";
 
   {t `snoc` CTypeQual q}
@@ -761,8 +816,11 @@ typedef_type_specifier
 --
 elaborated_type_name { CTypeSpec };
 elaborated_type_name
-  {CSUType s }      : struct_or_union_specifier {s};
-  {CEnumType s}     | enum_specifier {s};
+  {% withPos (CSUType s)}
+                    : struct_or_union_specifier {s};
+                    
+  {% withPos (CEnumType s)}
+                    | enum_specifier {s};
   
   
   
@@ -773,13 +831,13 @@ elaborated_type_name
 --
 struct_or_union_specifier {CStructUnion};
 struct_or_union_specifier
-  {CStruct s (Just n) (reverse ds)}
+  {% withPos (CStruct s (Just n) (reverse ds))}
                     : struct_or_union {s}, attrs_opt {ao}, identifier {n}, "{", struct_declaration_list {ds}, "}";
 
-  {CStruct s Nothing   (reverse ds)}
+  {% withPos (CStruct s Nothing   (reverse ds))}
                     | struct_or_union {s}, attrs_opt {ao}, "{", struct_declaration_list {ds}, "}";
 
-  {CStruct s (Just n) []}
+  {% withPos (CStruct s (Just n) [])}
                     | struct_or_union {s}, attrs_opt {ao}, identifier {n};
 
 
@@ -804,10 +862,10 @@ struct_declaration_list
 --
 struct_declaration { CDecl };
 struct_declaration
-  {case ds of CDecl declspecs dies -> CDecl declspecs (List.reverse dies)}
+  {case ds of CDecl declspecs dies attr -> CDecl declspecs (List.reverse dies) attr}
                     : struct_declaring_list {ds}, ";";
 
-  {case ds of CDecl declspecs dies -> CDecl declspecs (List.reverse dies)}
+  {case ds of CDecl declspecs dies attr -> CDecl declspecs (List.reverse dies) attr}
                     | struct_default_declaring_list {ds}, ";";
 
   {d}               | "__extension__", struct_declaration {d};
@@ -816,13 +874,13 @@ struct_declaration
 -- doesn't redeclare typedef
 struct_default_declaring_list { CDecl };
 struct_default_declaring_list
-  {case d of (d,s) -> CDecl (liftTypeQuals qs) [(d,Nothing,s)]}
+  {% withPos (\pos -> case d of (d,s) -> CDecl (liftTypeQuals qs) [(d,Nothing,s)] pos)}
                     : attrs_opt {ao}, type_qualifier_list {qs}, struct_identifier_declarator {d}, attrs_opt {ao'};
 
   {case ds of
-            CDecl declspecs dies ->
+            CDecl declspecs dies attr ->
               case d of
-                (d,s) -> CDecl declspecs ((d,Nothing,s) : dies)}
+                (d,s) -> CDecl declspecs ((d,Nothing,s) : dies) attr}
                     | struct_default_declaring_list {ds}, ",", attrs_opt {ao}, struct_identifier_declarator {d}, attrs_opt {ao'};
                 
                 
@@ -833,13 +891,13 @@ struct_default_declaring_list
 --
 struct_declaring_list { CDecl };
 struct_declaring_list
-  {case d of (d,s) -> CDecl t [(d,Nothing,s)]}
+  {% withPos (\pos -> case d of (d,s) -> CDecl t [(d,Nothing,s)] pos)}
                   : attrs_opt {ao}, type_specifier {t}, struct_declarator {d}, attrs_opt {ao'};
 
   {case ds of
-            CDecl declspecs dies ->
+            CDecl declspecs dies attr ->
               case d of
-                (d,s) -> CDecl declspecs ((d,Nothing,s) : dies)}
+                (d,s) -> CDecl declspecs ((d,Nothing,s) : dies) attr}
                 
                   | struct_declaring_list {ds}, ",", attrs_opt {ao}, struct_declarator {d}, attrs_opt {ao2} ;
 
@@ -848,7 +906,7 @@ struct_declaring_list
   -- unnamed struct member. Making it allow only unnamed structs or unions in
   -- the parser is far too tricky, it makes things ambiguous. So we'll have to
   -- diagnose unnamed fields that are not structs/unions in a later stage.
-  {CDecl t []}
+  {% withPos (CDecl t [])}
                     | attrs_opt {ao}, type_specifier {t};
         
         
@@ -885,19 +943,19 @@ struct_identifier_declarator
 --
 enum_specifier { CEnum };
 enum_specifier
-  { CEnum Nothing (reverse es)}
+  {% withPos (CEnum Nothing (reverse es))}
                     : "enum", attrs_opt {ao}, "{", enumerator_list {es}, "}";
 
-  {CEnum Nothing (reverse es)}
+  {% withPos (CEnum Nothing (reverse es))}
                     | "enum", attrs_opt {ao}, "{", enumerator_list {es}, ",", "}";
 
-  {CEnum (Just s) (reverse es) }
+  {% withPos (CEnum (Just s) (reverse es))}
                     | "enum", attrs_opt {ao}, identifier {s}, "{", enumerator_list {es}, "}";
 
-  {CEnum (Just s) (reverse es) }
+  {% withPos (CEnum (Just s) (reverse es))}
                     | "enum", attrs_opt {ao}, identifier {s}, "{", enumerator_list {es}, ",", "}";
 
-  {CEnum (Just s) []}
+  {% withPos (CEnum (Just s) [])}
                     | "enum", attrs_opt {ao}, identifier {s};
     
     
@@ -918,10 +976,17 @@ enumerator
 --
 type_qualifier { CTypeQual };
 type_qualifier
-  {CConstQual}      : "const";
-  {CVolatQual}      | "volatile";
-  {CRestrQual}      | "restrict";
-  {CInlinQual}      | "inline";
+  {% withPos (CConstQual)}
+                    : "const";
+                    
+  {% withPos (CVolatQual)}
+                    | "volatile";
+                    
+  {% withPos (CRestrQual)}
+                    | "restrict";
+                    
+  {% withPos (CInlinQual)}
+                    | "inline";
 
 
 -- parse C declarator (C99 6.7.5)
@@ -952,10 +1017,10 @@ typedef_declarator
 
 parameter_typedef_declarator { CDeclr };
 parameter_typedef_declarator
-  {CVarDeclr (Just t)}
+  {% withPos (CVarDeclr (Just t))}
                     : "tyident" {t};
 
-  {d (CVarDeclr (Just t))}
+  {% withPos (\pos -> d (CVarDeclr (Just t) pos))}
                     | "tyident" {t}, postfixing_abstract_declarator {d};
 
   {d}               | clean_typedef_declarator {d};
@@ -970,16 +1035,16 @@ clean_typedef_declarator { CDeclr };
 clean_typedef_declarator
   {d}               : clean_postfix_typedef_declarator {d};
 
-  {CPtrDeclr [] d}
+  {% withPos (CPtrDeclr [] d)}
                     | "*", parameter_typedef_declarator {d};
   
-  {CPtrDeclr [reverse qs] d}
+  {% withPos (CPtrDeclr [reverse qs] d)}
                     | "*", type_qualifier_list {qs}, parameter_typedef_declarator {d};
 
-  {CPtrDeclr [] d}
+  {% withPos (CPtrDeclr [] d)}
                     | "*", attrs {zs}, parameter_typedef_declarator {d};
 
-  {CPtrDeclr [reverse qs] d}
+  {% withPos (CPtrDeclr [reverse qs] d)}
                     | "*", attrs {zs}, type_qualifier_list {qs}, parameter_typedef_declarator {d};
 
 
@@ -999,30 +1064,30 @@ paren_typedef_declarator
   {d}               : paren_postfix_typedef_declarator {d};
 
   -- redundant paren
-  {CPtrDeclr [[]] d }
+  {% withPos (CPtrDeclr [[]] d)}
                     | "*", "(", simple_paren_typedef_declarator {d}, ")";
 
   -- redundant paren
-  {CPtrDeclr [reverse qs] d}
+  {% withPos (CPtrDeclr [reverse qs] d)}
                     | "*", type_qualifier_list {qs}, "(", simple_paren_typedef_declarator {d}, ")";
 
-  {CPtrDeclr [] d}
+  {% withPos (CPtrDeclr [] d)}
                     | "*", paren_typedef_declarator {d};
 
-  {CPtrDeclr [reverse qs] d}
+  {% withPos (CPtrDeclr [reverse qs] d)}
                     | "*", type_qualifier_list {qs}, paren_typedef_declarator {d};
 
-  {CPtrDeclr [[]] d}
+  {% withPos (CPtrDeclr [[]] d)}
                     | "*", attrs {zs}, "(", simple_paren_typedef_declarator {d}, ")";
 
   -- redundant paren
-  {CPtrDeclr [reverse qs] d}
+  {% withPos (CPtrDeclr [reverse qs] d)}
                     | "*", attrs {zs}, type_qualifier_list {qs}, "(", simple_paren_typedef_declarator {d}, ")";
 
-  {CPtrDeclr [] d}
+  {% withPos (CPtrDeclr [] d)}
                     | "*", attrs {zs}, paren_typedef_declarator {d};
 
-  { CPtrDeclr [reverse qs] d}
+  {% withPos (CPtrDeclr [reverse qs] d)}
                     | "*", attrs {zs}, type_qualifier_list {qs}, paren_typedef_declarator {d};
 
 
@@ -1044,7 +1109,7 @@ paren_postfix_typedef_declarator
 --
 simple_paren_typedef_declarator { CDeclr };
 simple_paren_typedef_declarator
-  {CVarDeclr (Just s)}
+  {% withPos (CVarDeclr (Just s))}
                     : "tyident" {s};
 
   {d}               | "(", simple_paren_typedef_declarator {d}, ")";
@@ -1060,16 +1125,16 @@ unary_identifier_declarator { CDeclr };
 unary_identifier_declarator
   {d}               : postfix_identifier_declarator {d};
 
-  {CPtrDeclr [[]] d}
+  {% withPos (CPtrDeclr [[]] d)}
                     | "*", identifier_declarator {d};
 
-  {CPtrDeclr [reverse qs] d}
+  {% withPos (CPtrDeclr [reverse qs] d)}
                     | "*", type_qualifier_list {qs}, identifier_declarator {d};
 
-  {CPtrDeclr [[]] d}
+  {% withPos (CPtrDeclr [[]] d)}
                     | "*", attrs {zs}, identifier_declarator {d};
 
-  {CPtrDeclr [reverse qs] d}
+  {% withPos (CPtrDeclr [reverse qs] d)}
                     | "*", attrs {zs}, type_qualifier_list {qs}, identifier_declarator {d};
     
     
@@ -1092,7 +1157,7 @@ postfix_identifier_declarator
 
 paren_identifier_declarator { CDeclr };
 paren_identifier_declarator
-  {CVarDeclr (Just s)} 
+  {% withPos (CVarDeclr (Just s))} 
                     : "ident" {s};
 
   {d}               | "(", paren_identifier_declarator {d}, ")";
@@ -1102,17 +1167,17 @@ old_function_declarator { CDeclr };
 old_function_declarator
   {d}               : postfix_old_function_declarator {d};
 
-  {CPtrDeclr [[]] d}
+  {% withPos (CPtrDeclr [[]] d)}
                     | "*", old_function_declarator {d};
 
-  {CPtrDeclr [reverse qs] d}
+  {% withPos (CPtrDeclr [reverse qs] d)}
                     | "*", type_qualifier_list {qs}, old_function_declarator {d};
     
     
 
 postfix_old_function_declarator { CDeclr };
 postfix_old_function_declarator
-  {CFunDeclr d [] False}
+  {% withPos (CFunDeclr d [] False) }
                     : paren_identifier_declarator {d}, "(", identifier_list {ns}, ")";
 
   {d}               | "(", old_function_declarator {d}, ")";
@@ -1151,45 +1216,46 @@ parameter_list
 
 parameter_declaration { CDecl };
 parameter_declaration
-  {CDecl s []}
+  {% withPos (CDecl s [])}
                     : declaration_specifier {s};
 
-  {CDecl s [(Just d, Nothing, Nothing)]}
+  {% withPos (CDecl s [(Just d, Nothing, Nothing)])}
                     | declaration_specifier {s}, abstract_declarator {d};
 
-  {CDecl s [(Just d, Nothing, Nothing)]}
+  {% withPos (CDecl s [(Just d, Nothing, Nothing)])}
                     | declaration_specifier {s}, identifier_declarator {d}, attrs_opt {zo};
 
-  {CDecl s [(Just d, Nothing, Nothing)]}
+  {% withPos (CDecl s [(Just d, Nothing, Nothing)])}
                     | declaration_specifier {s}, parameter_typedef_declarator {d}, attrs_opt {zo};
 
-  {CDecl (reverse ds) []}
+  {% withPos (CDecl (reverse ds) [])}
                     | declaration_qualifier_list {ds};
 
-  {CDecl (reverse ds) [(Just d, Nothing, Nothing)]}
+  {% withPos (CDecl (reverse ds) [(Just d, Nothing, Nothing)])}
                     | declaration_qualifier_list {ds}, abstract_declarator {d};
 
-  {CDecl (reverse ds) [(Just d, Nothing, Nothing)] }
+  {% withPos (CDecl (reverse ds) [(Just d, Nothing, Nothing)])}
                     | declaration_qualifier_list {ds}, identifier_declarator {d}, attrs_opt {zo};
 
-  {CDecl t [] }     | type_specifier {t};
+  {% withPos (CDecl t [])}
+                    | type_specifier {t};
 
-  {CDecl t [(Just d, Nothing, Nothing)]}
+  {% withPos (CDecl t [(Just d, Nothing, Nothing)])}
                     | type_specifier {t}, abstract_declarator {d};
 
-  {CDecl t [(Just d, Nothing, Nothing)]}
+  {% withPos (CDecl t [(Just d, Nothing, Nothing)])}
                     | type_specifier {t}, identifier_declarator {d}, attrs_opt {zo};
 
-  {CDecl t [(Just d, Nothing, Nothing)]}
+  {% withPos (CDecl t [(Just d, Nothing, Nothing)])}
                     | type_specifier {t}, parameter_typedef_declarator {d}, attrs_opt {zo};
 
-  {CDecl (liftTypeQuals qs) []}
+  {% withPos (CDecl (liftTypeQuals qs) [])}
                     | type_qualifier_list {qs};
 
-  {CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)]}
+  {% withPos (CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)])}
                     | type_qualifier_list {qs}, abstract_declarator {d};
 
-  {CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)]}
+  {% withPos (CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)])}
                     | type_qualifier_list {qs}, identifier_declarator {d}, attrs_opt {zo};
 
 
@@ -1203,16 +1269,16 @@ identifier_list
 --
 type_name { CDecl };
 type_name
-  {CDecl ts []}
+  {% withPos (CDecl ts [])}
                     : attrs_opt {ao}, type_specifier {ts};
 
-  {CDecl t [(Just d, Nothing, Nothing)]}
+  {% withPos (CDecl t [(Just d, Nothing, Nothing)])}
                     | attrs_opt {ao}, type_specifier {t}, abstract_declarator {d};
 
-  {CDecl (liftTypeQuals qs) []}
+  {% withPos (CDecl (liftTypeQuals qs) [])}
                     | attrs_opt {ao}, type_qualifier_list {qs};
 
-  {CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)]}
+  {% withPos (CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)])}
                     | attrs_opt {ao}, type_qualifier_list {qs}, abstract_declarator {d};
     
     
@@ -1223,15 +1289,17 @@ abstract_declarator  { CDeclr };
 abstract_declarator
   {d}               : unary_abstract_declarator {d};
   {d}               | postfix_abstract_declarator {d};
-  {d emptyDeclr}    | postfixing_abstract_declarator {d}, attrs_opt {ao};
+
+  {% withPos (\pos -> d (emptyDeclr pos))}    
+                    | postfixing_abstract_declarator {d}, attrs_opt {ao};
 
 
 postfixing_abstract_declarator { AppCDeclr };
 postfixing_abstract_declarator
   {d}               : array_abstract_declarator {d};
 
-  {\declr -> case ps of
-             (params, variadic) -> CFunDeclr declr params variadic }             
+  {% withPos (\pos -> (\declr -> case ps of
+                                  (params, variadic) -> CFunDeclr declr params variadic pos)) }             
                     | "(", parameter_type_list {ps}, ")" ;
 
 
@@ -1251,53 +1319,53 @@ array_abstract_declarator
     
 postfix_array_abstract_declarator {AppCDeclr};
 postfix_array_abstract_declarator
-  {\declr -> CArrDeclr declr [] eo}
+  {% withPos (\pos -> (\declr -> CArrDeclr declr [] eo pos))}
                     : "[", assignment_expression_opt {eo}, "]";
 
-  {\declr -> CArrDeclr declr (reverse qs) eo}
+  {% withPos (\pos -> (\declr -> CArrDeclr declr (reverse qs) eo pos))}
                     | "[", type_qualifier_list {qs}, assignment_expression_opt {eo}, "]";
 
-  {\declr -> CArrDeclr declr [] (Just e)}
+  {% withPos (\pos -> (\declr -> CArrDeclr declr [] (Just e) pos))}
                     | "[", "static", assignment_expression {e}, "]";
 
-  {\declr -> CArrDeclr declr (reverse qs) (Just e)}
+  {% withPos (\pos -> (\declr -> CArrDeclr declr (reverse qs) (Just e) pos))}
                     | "[", "static", type_qualifier_list {qs}, assignment_expression {e}, "]";
 
-  {\declr -> CArrDeclr declr (reverse qs) (Just e)}
+  {% withPos (\pos -> (\declr -> CArrDeclr declr (reverse qs) (Just e) pos))}
                     | "[", type_qualifier_list {qs}, "static", assignment_expression {e}, "]";
 
-  {\declr -> CArrDeclr declr [] Nothing}
+  {% withPos (\pos -> (\declr -> CArrDeclr declr [] Nothing pos))}
                     | "[", "*", "]";
 
-  {\declr -> CArrDeclr declr (reverse qs) Nothing}
+  {% withPos (\pos -> (\declr -> CArrDeclr declr (reverse qs) Nothing pos))}
                     | "[", type_qualifier_list {qs}, "*", "]";
     
     
     
 unary_abstract_declarator {CDeclr};
 unary_abstract_declarator
-  {CPtrDeclr [[]] emptyDeclr}
+  {% withPos (\pos -> CPtrDeclr [[]] (emptyDeclr pos) pos)}
                     : "*";
 
-  {CPtrDeclr [reverse qs] emptyDeclr}
+  {% withPos (\pos -> CPtrDeclr [reverse qs] (emptyDeclr pos) pos)}
                     | "*", type_qualifier_list {qs};
 
-  {CPtrDeclr [] d}
+  {% withPos (CPtrDeclr [] d)}
                     | "*", abstract_declarator {d};
 
-  {CPtrDeclr [reverse qs] d}
+  {% withPos (CPtrDeclr [reverse qs] d)}
                     | "*", type_qualifier_list {qs}, abstract_declarator {d};
 
-  {CPtrDeclr [[]] emptyDeclr}
+  {% withPos (\pos -> CPtrDeclr [[]] (emptyDeclr pos) pos )}
                     | "*", attrs {zs};
 
-  {CPtrDeclr [reverse qs] emptyDeclr}
+  {% withPos (\pos -> CPtrDeclr [reverse qs] (emptyDeclr pos) pos)}
                     | "*", attrs {zs}, type_qualifier_list {qs};
 
-  {CPtrDeclr [] d}
+  {% withPos (CPtrDeclr [] d)}
                     | "*", attrs {zs}, abstract_declarator {d};
 
-  {CPtrDeclr [reverse qs] d}
+  {% withPos (CPtrDeclr [reverse qs] d)}
                     | "*", attrs {zs}, type_qualifier_list {qs}, abstract_declarator {d};
     
     
@@ -1306,11 +1374,16 @@ postfix_abstract_declarator { CDeclr };
 postfix_abstract_declarator
   {d}               : "(", unary_abstract_declarator {d}, ")";
   {d}               | "(", postfix_abstract_declarator {d}, ")";
-  {d emptyDeclr}      | "(", postfixing_abstract_declarator {d}, ")";
+  
+  {% withPos (\pos -> d (emptyDeclr pos))}
+                    | "(", postfixing_abstract_declarator {d}, ")";
   {d2 d1}           | "(", unary_abstract_declarator {d1}, ")", postfixing_abstract_declarator {d2};
   {d}               | "(", attrs {zs}, unary_abstract_declarator {d}, ")";
   {d}               | "(", attrs {zs}, postfix_abstract_declarator {d}, ")";
-  {d emptyDeclr}    | "(", attrs {zs}, postfixing_abstract_declarator {d}, ")";
+
+  {% withPos (\pos -> d (emptyDeclr pos))}    
+                    | "(", attrs {zs}, postfixing_abstract_declarator {d}, ")";
+                    
   {d2 d1}           | "(", attrs {zs}, unary_abstract_declarator {d1}, ")", postfixing_abstract_declarator {d2};
   {d}               | postfix_abstract_declarator {d}, attr {z};
 
@@ -1321,10 +1394,11 @@ postfix_abstract_declarator
 --
 initializer {CInit};
 initializer
-  {CInitExpr e}     : assignment_expression {e};
-  {CInitList (reverse xs)}
+  {% withPos (CInitExpr e)}
+                    : assignment_expression {e};
+  {% withPos (CInitList (reverse xs))}
                     | "{", initializer_list {xs}, "}" ;
-  {CInitList (reverse xs)}
+  {% withPos (CInitList (reverse xs))}
                     | "{", initializer_list {xs}, ",", "}";
 
 
@@ -1356,7 +1430,7 @@ initializer_list
 designation {[CDesignator]};
 designation
   {reverse ds}      : designator_list {ds}, "=";
-  {[CMemberDesig s]}
+  {% withPos (\pos -> [CMemberDesig s pos])}
                     | identifier {s}, ":";
   {[d]}             | array_designator {d};
 
@@ -1369,14 +1443,18 @@ designator_list
 
 designator {CDesignator};
 designator
-  {CArrDesig e}     : "[", constant_expression {e}, "]";
-  {CMemberDesig s}  | ".", identifier {s};
+  {% withPos (CArrDesig e)}
+                    : "[", constant_expression {e}, "]";
+                    
+  {% withPos (CMemberDesig s)}
+                    | ".", identifier {s};
+                    
   {d}               | array_designator {d};
 
 
 array_designator {CDesignator};
 array_designator
-  {CRangeDesig e1 e2}
+  {% withPos (CRangeDesig e1 e2)}
                     : "[", constant_expression {e1}, "...", constant_expression {e2}, "]";
     
     
@@ -1390,17 +1468,28 @@ array_designator
 --
 primary_expression {CExpr};
 primary_expression
-  {CVar s}          : "ident" {s};
-  {CConst c}        | constant {c};
-  {CConst s}        | string_literal {s};
+  {% withPos (CVar s)}          
+                    : "ident" {s};
+                    
+  {% withPos (CConst c)}        
+                    | constant {c};
+                    
+  {% withPos (CConst s)}        
+                    | string_literal {s};
+                    
   {e}               | "(", expression {e}, ")"  ;
-  {CStatExpr s}     | "(", compound_statement {s}, ")";
+  
+  {% withPos (CStatExpr s)}     
+                    | "(", compound_statement {s}, ")";
 
-  {CBuiltinExpr}    | "__builtin_va_arg", "(", assignment_expression {a}, ",", type_name {tn}, ")";
+  {% withPos (CBuiltinExpr)}    
+                    | "__builtin_va_arg", "(", assignment_expression {a}, ",", type_name {tn}, ")";
 
-  {CBuiltinExpr}    | "__builtin_offsetof", "(", type_name {tn}, ",", offsetof_member_designator {d}, ")";
+  {% withPos (CBuiltinExpr)}    
+                    | "__builtin_offsetof", "(", type_name {tn}, ",", offsetof_member_designator {d}, ")";
 
-  {CBuiltinExpr}    | "__builtin_types_compatible_p", "(", type_name {tn1}, ",", type_name {tn2}, ")";
+  {% withPos (CBuiltinExpr)}    
+                    | "__builtin_types_compatible_p", "(", type_name {tn1}, ",", type_name {tn2}, ")";
 
 
 offsetof_member_designator { () };
@@ -1416,29 +1505,31 @@ postfix_expression {CExpr};
 postfix_expression
   {e}               : primary_expression {e};
 
-  {CIndex e1 e2}    | postfix_expression {e1}, "[", expression {e2}, "]";
+  {% withPos (CIndex e1 e2)}    
+                    | postfix_expression {e1}, "[", expression {e2}, "]";
 
-  {CCall e []}      | postfix_expression {e}, "(", ")";
+  {% withPos (CCall e [])}
+                    | postfix_expression {e}, "(", ")";
 
-  {CCall e (reverse es)}
+  {% withPos (CCall e (reverse es))}
                     | postfix_expression {e}, "(", argument_expression_list {es}, ")";
 
-  {CMember e s False}
+  {% withPos (CMember e s False)}
                     | postfix_expression {e}, ".", identifier {s};
 
-  {CMember e s True}
+  {% withPos (CMember e s True)}
                     | postfix_expression {e}, "->", identifier {s};
 
-  {CUnary CPostIncOp e}
+  {% withPos (CUnary CPostIncOp e)}
                     | postfix_expression {e}, "++";
 
-  {CUnary CPostDecOp e}
+  {% withPos (CUnary CPostDecOp e)}
                     | postfix_expression {e}, "--";
 
-  {CCompoundLit t (reverse xs)}
+  {% withPos (CCompoundLit t (reverse xs))}
                     | "(", type_name {t}, ")", "{", initializer_list {xs}, "}";
 
-  {CCompoundLit t (reverse xs)}
+  {% withPos (CCompoundLit t (reverse xs))}
                     | "(", type_name {t}, ")", "{", initializer_list {xs}, ",", "}";
 
 
@@ -1459,22 +1550,31 @@ argument_expression_list
 unary_expression { CExpr };
 unary_expression
   {e}               : postfix_expression  {e};
-  {CUnary CPreIncOp e}
+
+  {% withPos (CUnary CPreIncOp e)}
                     | "++", unary_expression {e};
-  {CUnary CPreDecOp e}
+
+  {% withPos (CUnary CPreDecOp e)}
                     | "--", unary_expression {e};
+
   {e}               | "__extension__", cast_expression {e};
-  {CUnary o e}
+
+  {% withPos (CUnary o e)}
                     | unary_operator {o}, cast_expression {e};
-  {CSizeofExpr e} 
+
+  {% withPos (CSizeofExpr e)} 
                     | "sizeof", unary_expression {e};
-  {CSizeofType t}
+
+  {% withPos (CSizeofType t)}
                     | "sizeof", "(", type_name {t}, ")";
-  {CAlignofExpr e}
+
+  {% withPos (CAlignofExpr e)}
                     | "alignof", unary_expression {e};
-  {CAlignofType t}
+
+  {% withPos (CAlignofType t)}
                     | "alignof", "(", type_name {t}, ")";
-  {CLabAddrExpr s }
+                    
+  {% withPos (CLabAddrExpr s)}
                     | "&&", identifier {s};
 
 
@@ -1493,7 +1593,8 @@ unary_operator
 cast_expression { CExpr };
 cast_expression
   {e}               : unary_expression {e};
-  {CCast t e}       | "(", type_name {t}, ")", cast_expression {e};
+  {% withPos (CCast t e)}
+                    | "(", type_name {t}, ")", cast_expression {e};
   
   
 
@@ -1503,13 +1604,13 @@ multiplicative_expression { CExpr };
 multiplicative_expression
   {e}               : cast_expression {e};
 
-  {CBinary CMulOp e1 e2} 
+  {% withPos (CBinary CMulOp e1 e2)} 
                     | multiplicative_expression {e1}, "*", cast_expression {e2};
 
-  {CBinary CDivOp e1 e2}
+  {% withPos (CBinary CDivOp e1 e2)}
                     | multiplicative_expression {e1}, "/", cast_expression {e2};
 
-  {CBinary CRmdOp e1 e2}
+  {% withPos (CBinary CRmdOp e1 e2)}
                     | multiplicative_expression {e1}, "%", cast_expression {e2};
     
     
@@ -1519,10 +1620,10 @@ additive_expression { CExpr };
 additive_expression
   {e}               : multiplicative_expression {e};
 
-  {CBinary CAddOp e1 e2} 
+  {% withPos (CBinary CAddOp e1 e2)} 
                     | additive_expression {e1}, "+", multiplicative_expression {e2};
 
-  {CBinary CSubOp e1 e2}
+  {% withPos (CBinary CSubOp e1 e2)}
                     | additive_expression {e1}, "-", multiplicative_expression {e2};
     
     
@@ -1533,10 +1634,10 @@ shift_expression { CExpr };
 shift_expression
   {e}               : additive_expression {e};
 
-  {CBinary CShlOp e1 e2}
+  {% withPos (CBinary CShlOp e1 e2)}
                     | shift_expression {e1}, "<<", additive_expression {e2};
 
-  {CBinary CShrOp e1 e2}
+  {% withPos (CBinary CShrOp e1 e2)}
                     | shift_expression {e1}, ">>", additive_expression {e2};
     
     
@@ -1546,16 +1647,16 @@ relational_expression { CExpr };
 relational_expression
   {e}               : shift_expression {e};
 
-  {CBinary CLeOp e1 e2}
+  {% withPos (CBinary CLeOp e1 e2)}
                     | relational_expression {e1}, "<", shift_expression {e2};
 
-  {CBinary CGrOp e1 e2}
+  {% withPos (CBinary CGrOp e1 e2)}
                     | relational_expression {e1}, ">", shift_expression {e2};
 
-  {CBinary CLeqOp e1 e2}
+  {% withPos (CBinary CLeqOp e1 e2)}
                     | relational_expression {e1}, "<=", shift_expression {e2};
 
-  {CBinary CGeqOp e1 e2 }
+  {% withPos (CBinary CGeqOp e1 e2)}
                     | relational_expression {e1}, ">=", shift_expression {e2};
 
 
@@ -1565,10 +1666,10 @@ equality_expression { CExpr };
 equality_expression
   {e}               : relational_expression {e};
 
-  {CBinary CEqOp  e1 e2}
+  {% withPos (CBinary CEqOp  e1 e2)}
                     | equality_expression {e1}, "==", relational_expression {e2};
 
-  {CBinary CNeqOp e1 e2}
+  {% withPos (CBinary CNeqOp e1 e2)}
                     | equality_expression {e1}, "!=", relational_expression {e2};
     
     
@@ -1578,7 +1679,7 @@ and_expression { CExpr };
 and_expression
   {e}               : equality_expression {e};
 
-  {CBinary CAndOp e1 e2}
+  {% withPos (CBinary CAndOp e1 e2)}
                     | and_expression{e1}, "&", equality_expression{e2};
 
 
@@ -1588,7 +1689,7 @@ exclusive_or_expression { CExpr };
 exclusive_or_expression
   {e}               : and_expression {e};
 
-  {CBinary CXorOp e1 e2}
+  {% withPos (CBinary CXorOp e1 e2)}
                     | exclusive_or_expression {e1}, "^", and_expression {e2};
 
 
@@ -1598,7 +1699,7 @@ inclusive_or_expression { CExpr };
 inclusive_or_expression
   {e}               : exclusive_or_expression {e};
 
-  {CBinary COrOp e1 e2}
+  {% withPos (CBinary COrOp e1 e2)}
                     | inclusive_or_expression {e1}, "|", exclusive_or_expression {e2};
     
     
@@ -1609,7 +1710,7 @@ logical_and_expression { CExpr };
 logical_and_expression
   {e}               : inclusive_or_expression {e};
 
-  {CBinary CLndOp e1 e2}
+  {% withPos (CBinary CLndOp e1 e2)}
                     | logical_and_expression {e1}, "&&", inclusive_or_expression {e2};
     
     
@@ -1619,7 +1720,7 @@ logical_or_expression { CExpr };
 logical_or_expression
   {e}               : logical_and_expression {e};
 
-  {CBinary CLorOp e1 e2}
+  {% withPos (CBinary CLorOp e1 e2)}
                     | logical_or_expression {e1}, "||", logical_and_expression {e2};
     
     
@@ -1632,10 +1733,10 @@ conditional_expression { CExpr };
 conditional_expression
   {e}               : logical_or_expression {e};
 
-  {CCond e1 (Just e2) e3}
+  {% withPos (CCond e1 (Just e2) e3)}
                     | logical_or_expression {e1}, "?", expression {e2}, ":", conditional_expression {e3};
 
-  {CCond e1 Nothing e2 }
+  {% withPos (CCond e1 Nothing e2)}
                     | logical_or_expression {e1}, "?", ":", conditional_expression {e2};
     
     
@@ -1646,7 +1747,7 @@ assignment_expression { CExpr };
 assignment_expression
   {e}               : conditional_expression {e};
 
-  { CAssign e2 e1 e3 }
+  {% withPos (CAssign e2 e1 e3)}
                     | unary_expression {e1}, assignment_operator {e2}, assignment_expression {e3};
     
     
@@ -1672,7 +1773,7 @@ expression { CExpr };
 expression
   {e}               : assignment_expression {e};
 
-  {CComma (e1 : reverse e2)}
+  {% withPos (CComma (e1 : reverse e2))}
                     | assignment_expression {e1}, ",", comma_expression {e2};
     
     
@@ -1830,7 +1931,7 @@ instance Pos (Located a) where
 
 pos = nopos
 
-emptyDeclr = CVarDeclr Nothing
+emptyDeclr pos = CVarDeclr Nothing pos
 
 mkCTokSemic = CTokSemic
 
@@ -1847,19 +1948,24 @@ doDeclIdent declspecs declr =
     Just ident | any isTypeDef declspecs -> addTypedef ident
                | otherwise               -> return () -- shadowTypedef ident
 
-  where isTypeDef (CStorageSpec (CTypedef)) = True
+  where isTypeDef (CStorageSpec (CTypedef _)) = True
         isTypeDef _                           = False
         
         
 -- extract all identifiers
 getCDeclrIdent :: CDeclr -> Maybe Ident
-getCDeclrIdent (CVarDeclr optIde    ) = optIde
-getCDeclrIdent (CPtrDeclr _ declr   ) = getCDeclrIdent declr
-getCDeclrIdent (CArrDeclr declr _ _ ) = getCDeclrIdent declr
-getCDeclrIdent (CFunDeclr declr _ _ ) = getCDeclrIdent declr        
+getCDeclrIdent (CVarDeclr optIde    _) = optIde
+getCDeclrIdent (CPtrDeclr _ declr   _) = getCDeclrIdent declr
+getCDeclrIdent (CArrDeclr declr _ _ _) = getCDeclrIdent declr
+getCDeclrIdent (CFunDeclr declr _ _ _) = getCDeclrIdent declr        
 
 
 withPos fun = do
   (f,l,c) <- getPosition
   return (fun (OnlyPos (Position f l c)))
+
+getPosAttr = do
+  (f,l,c) <- getPosition
+  return (OnlyPos (Position f l c))
+
   

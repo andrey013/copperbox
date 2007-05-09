@@ -62,7 +62,7 @@ class Pretty a where
 -- --------------------------------
 
 instance Pretty CDecl where
-  pretty (CDecl specs declrs ) =
+  pretty (CDecl specs declrs _) =
     hsep (map pretty specs) `hang` 2 $
       hsep (punctuate comma (map prettyDeclr declrs)) -- <> semi
 
@@ -72,30 +72,30 @@ instance Pretty CDeclSpec where
   pretty (CTypeQual    qspec) = pretty qspec
 
 instance Pretty CStorageSpec where
-  pretty (CAuto     ) = text "auto"
-  pretty (CRegister ) = text "register"
-  pretty (CStatic   ) = text "static"
-  pretty (CExtern   ) = text "extern"
-  pretty (CTypedef  ) = text "typedef"
+  pretty (CAuto     _) = text "auto"
+  pretty (CRegister _) = text "register"
+  pretty (CStatic   _) = text "static"
+  pretty (CExtern   _) = text "extern"
+  pretty (CTypedef  _) = text "typedef"
 
 instance Pretty CTypeSpec where
-  pretty (CVoidType      ) = text "void"
-  pretty (CCharType      ) = text "char"
-  pretty (CShortType     ) = text "short"
-  pretty (CIntType       ) = text "int"
-  pretty (CLongType      ) = text "long"
-  pretty (CFloatType     ) = text "float"
-  pretty (CDoubleType    ) = text "double"
-  pretty (CSignedType    ) = text "signed"
-  pretty (CUnsigType     ) = text "unsigned"
-  pretty (CSUType struct ) = prettySU struct
-  pretty (CEnumType enum ) = prettyEnum enum
-  pretty (CTypeDef ide   ) = ident ide
+  pretty (CVoidType      _) = text "void"
+  pretty (CCharType      _) = text "char"
+  pretty (CShortType     _) = text "short"
+  pretty (CIntType       _) = text "int"
+  pretty (CLongType      _) = text "long"
+  pretty (CFloatType     _) = text "float"
+  pretty (CDoubleType    _) = text "double"
+  pretty (CSignedType    _) = text "signed"
+  pretty (CUnsigType     _) = text "unsigned"
+  pretty (CSUType struct _) = prettySU struct
+  pretty (CEnumType enum _) = prettyEnum enum
+  pretty (CTypeDef ide   _) = ident ide
 
 instance Pretty CTypeQual where
-  pretty (CConstQual ) = text "const"
-  pretty (CVolatQual ) = text "volatile"
-  pretty (CRestrQual ) = text "restrict"
+  pretty (CConstQual _) = text "const"
+  pretty (CVolatQual _) = text "volatile"
+  pretty (CRestrQual _) = text "restrict"
 
 prettyDeclr :: (Maybe CDeclr, Maybe CInit, Maybe CExpr) -> Doc
 prettyDeclr (odeclr, oinit, oexpr) =
@@ -104,15 +104,18 @@ prettyDeclr (odeclr, oinit, oexpr) =
   <+> maybe empty ((text ":" <+>) . pretty) oexpr
 
 instance Pretty CDeclr where
-  pretty (CVarDeclr oide                   ) = maybe empty ident oide
-  pretty (CPtrDeclr inds declr             ) = 
+  pretty (CVarDeclr oide                  _) = maybe empty ident oide
+
+  pretty (CPtrDeclr inds declr            _) = 
     let
       oneLevel ind = parens . (hsep (map pretty ind) <+>) . (text "*" <>)
     in
     oneLevel inds (pretty declr)
-  pretty (CArrDeclr declr _ oexpr          ) =
+
+  pretty (CArrDeclr declr _ oexpr          _) =
     pretty declr <> brackets (maybe empty pretty oexpr)
-  pretty (CFunDeclr declr decls isVariadic ) =
+
+  pretty (CFunDeclr declr decls isVariadic _) =
     let
       varDoc = if isVariadic then text ", ..." else empty
     in
@@ -134,7 +137,7 @@ optName :: (Maybe Ident) -> String
 optName = maybe "" $ (++" ").identToLexeme
 
 prettyEnum :: CEnum -> Doc
-prettyEnum (CEnum name ms ) = header <> if ms == [] then empty else body ms
+prettyEnum (CEnum name ms _) = header <> if ms == [] then empty else body ms
        where header = text "enum " <+> maybe empty ident name
              body :: [(Ident, Maybe CExpr)] -> Doc
              body = braces.nest 1.sep.punctuate comma.(map p)
@@ -142,7 +145,7 @@ prettyEnum (CEnum name ms ) = header <> if ms == [] then empty else body ms
              p (ide, exp) = ident ide <+> maybe empty ((<+> text "=").pretty) exp
 
 prettySU :: CStructUnion -> Doc
-prettySU (CStruct t name ms ) = header <> if ms == [] then empty else body ms
+prettySU (CStruct t name ms _) = header <> if ms == [] then empty else body ms
     where header = text $ tag t ++ optName name
           tag CStructTag = "struct "
           tag CUnionTag = "union "
@@ -170,7 +173,7 @@ lineSep = (foldr ($+$) empty) . (map pretty)
 
 
 instance Pretty CHeader where
-  pretty (CHeader extdecls) = lineSep extdecls
+  pretty (CHeader extdecls _) = lineSep extdecls
   
 instance Pretty CExtDecl where
   pretty (CDeclExt decl)    = pretty decl <> semi
@@ -181,7 +184,7 @@ instance Pretty [CTypeQual] where
   pretty _ = text "<<CPretty: [CTypeQual] not yet implemented!>>"
 
 instance Pretty CFunDef where
-  pretty (CFunDef specs declr decls stat) = 
+  pretty (CFunDef specs declr decls stat _) = 
         spaceSep specs
     <+> pretty declr  
     <+> spaceSep specs
@@ -189,42 +192,46 @@ instance Pretty CFunDef where
   
 
 instance Pretty CStat where
-  pretty (CLabel name stat ) = 
+  pretty (CLabel name stat _) = 
     ident name <> colon <> pretty stat
     
-  pretty (CCase expr stat ) = 
+  pretty (CCase expr stat _) = 
     text "case" <> colon <> pretty expr <+> pretty stat
     
-  pretty (CDefault stat ) = 
+  pretty (CDefault stat _) = 
     text "default" <> colon <+> pretty stat
     
-  pretty (CExpr oexpr ) = maybe empty pretty oexpr <+> semi
+  pretty (CExpr oexpr _) = maybe empty pretty oexpr <+> semi
   
-  pretty (CCompound items ) = 
+  pretty (CCompound items _) = 
     braces (spaceSep items)
     
-  pretty (CIf expr stat ostat ) = 
+  pretty (CIf expr stat ostat _) = 
     text "if" <> parens (pretty expr) <+> pretty stat <+> maybe empty pretty ostat
     
-  pretty (CSwitch expr stat ) = 
+  pretty (CSwitch expr stat _) = 
     text "switch" <> parens (pretty expr) <+> pretty stat 
   
   -- do while has terminating semi  
-  pretty (CWhile expr stat True ) = 
+  pretty (CWhile expr stat True _) = 
     text "do" <+> pretty stat <+> text "while" <+> parens (pretty expr) <> semi
     
-  pretty (CWhile expr stat False ) = 
+  pretty (CWhile expr stat False _) = 
     text "while" <+> parens (pretty expr) <+> pretty stat 
      
-  pretty (CFor expr1 expr2 expr3 stat ) = 
+  pretty (CFor expr1 expr2 expr3 stat _) = 
     text "for" <+> parens (hsep (punctuate semi (text "<<expr1>>" : map (maybe empty pretty) [expr2, expr3])))
-
       
-  pretty (CGoto name ) = text "goto" <+> ident name <> semi
-  pretty (CCont ) = text "continue" <> semi
-  pretty (CBreak ) = text "break" <> semi
-  pretty (CReturn oexpr ) = text "return" <+> maybe empty pretty oexpr <> semi
-  pretty (CAsm ) = text "/* CAsm */"
+  pretty (CGoto name _) = text "goto" <+> ident name <> semi
+  
+  pretty (CCont _) = text "continue" <> semi
+
+  pretty (CBreak _) = text "break" <> semi
+
+  pretty (CReturn oexpr _) = 
+    text "return" <+> maybe empty pretty oexpr <> semi
+
+  pretty (CAsm _) = text "/* CAsm */"
   
 instance Pretty CBlockItem where
   pretty (CBlockStmt    stat)   = pretty stat
@@ -233,84 +240,87 @@ instance Pretty CBlockItem where
 
 
 instance Pretty CInit where
-  pretty (CInitExpr expr)     = pretty expr
-  pretty (CInitList initlist) = braces (spaceSep initlist)
+  pretty (CInitExpr expr _)     = pretty expr
+  pretty (CInitList initlist _) = braces (spaceSep initlist)
     
 instance Pretty ([CDesignator], CInit) where
   pretty (desigs,cinit) = spaceSep desigs <+> pretty cinit
 
 
 instance Pretty CDesignator where 
-  pretty (CArrDesig     expr)         = pretty expr                                 
-  pretty (CMemberDesig  ident)        = text ident                                 
-  pretty (CRangeDesig   expr1 expr2)  = pretty expr1 <+> pretty expr2
+  pretty (CArrDesig     expr _)         = pretty expr                                 
+  pretty (CMemberDesig  ident _)        = text ident                                 
+  pretty (CRangeDesig   expr1 expr2 _)  = pretty expr1 <+> pretty expr2
                                  
 
 instance Pretty CExpr where
-  pretty (CComma exprs)   
+  pretty (CComma exprs _)   
     = commaSep exprs
     
-  pretty (CAssign op lval rval) 
+  pretty (CAssign op lval rval _) 
     = pretty lval <+> pretty op <+> pretty rval
     
-  pretty (CCond expr1 (Just expr2) expr3)
+  pretty (CCond expr1 (Just expr2) expr3 _)
     = pretty expr1 <+> char '?' <+> pretty expr2 <+> char ':' <+> pretty expr3
 
-  pretty (CCond expr1 Nothing expr3)
+  pretty (CCond expr1 Nothing expr3 _)
     = pretty expr1 <+> char '?' <+> empty <+> char ':' <+> pretty expr3
 
-  pretty (CBinary op expr1 expr2)
+  pretty (CBinary op expr1 expr2 _)
     = pretty expr1 <+> pretty op <+> pretty expr2
 
-  pretty (CCast decl expr)
+  pretty (CCast decl expr _)
     = parens (pretty decl) <+> pretty expr
 
-  pretty (CUnary op expr)
+  pretty (CUnary op expr _)
     = case isPrefixOp op of 
         True -> pretty op <+> pretty expr
         False -> pretty expr <+> pretty op
     
-  pretty (CSizeofExpr  expr)
+  pretty (CSizeofExpr  expr _)
     = text "sizeof" <+> pretty expr
     
-  pretty (CSizeofType  decl)
+  pretty (CSizeofType  decl _)
     = text "sizeof" <+> parens (pretty decl)
 
-  pretty (CAlignofExpr expr)
+  pretty (CAlignofExpr expr _)
     = text "alignof" <+> pretty expr
     
-  pretty (CAlignofType decl)
+  pretty (CAlignofType decl _)
     = text "alignof" <+> parens (pretty decl)
     
-  pretty (CIndex arrexpr idxexpr) 
+  pretty (CIndex arrexpr idxexpr _) 
     = pretty arrexpr <> lbrack <> pretty idxexpr <> rbrack                          
 
-  pretty (CCall funexpr []) 
+  pretty (CCall funexpr [] _) 
     = pretty funexpr <> parens empty
         
-  pretty (CCall funexpr args) 
+  pretty (CCall funexpr args _) 
     = pretty funexpr <> parens (commaSep args)
 
-  pretty (CMember expr name True) 
+  pretty (CMember expr name True _) 
     = pretty expr <> text "->" <> ident name
   
-  pretty (CMember expr name False) 
+  pretty (CMember expr name False _) 
     = pretty expr <> char '.' <> ident name
                           
-  pretty (CVar name)   = ident name
+  pretty (CVar name _)   
+    = ident name
   
-  pretty (CConst cconst) = pretty cconst
+  pretty (CConst cconst _) 
+    = pretty cconst
 
-  pretty (CCompoundLit decl initlist)
+  pretty (CCompoundLit decl initlist _)
     = parens (pretty decl) <+> braces (spaceSep initlist)
 
-  pretty (CStatExpr stat)
+  pretty (CStatExpr stat _)
     = parens (pretty stat)
 
-  pretty (CLabAddrExpr name)
+  pretty (CLabAddrExpr name _)
     = text "&&" <> ident name
 
-  pretty (CBuiltinExpr) = text "<<CPretty: CExpr#CBuiltinExpr not yet implemented!>>"
+  pretty (CBuiltinExpr _) 
+    = text "<<CPretty: CExpr#CBuiltinExpr not yet implemented!>>"
 
   
   

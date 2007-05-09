@@ -56,15 +56,16 @@ type Ident = String
 -- a complete C header file (K&R A10) (EXPORTED)
 --
 data CHeader = CHeader [CExtDecl]
+                       Attrs
              deriving (Eq,Show) 
 
 
 -- external C declaration (K&R A10) (EXPORTED)
 --
-data CExtDecl = CDeclExt CDecl
-              | CFDefExt CFunDef
-              | CAsmExt CConst -- a chunk of assembly code (which is
-              deriving (Eq,Show)                          -- not itself recorded)
+data CExtDecl = CDeclExt  CDecl
+              | CFDefExt  CFunDef
+              | CAsmExt   Attrs     -- a chunk of assembly code (which is
+              deriving (Eq,Show)    -- not itself recorded)
 
 
 -- C function definition (K&R A10.1) (EXPORTED)
@@ -82,40 +83,54 @@ data CFunDef = CFunDef [CDeclSpec]        -- type specifier and qualifier
                        CDeclr             -- declarator
                        [CDecl]            -- optional declaration list
                        CStat              -- compound statement
+                       Attrs
              deriving (Eq,Show)                        
 
 
 -- C statement (A9) (EXPORTED)
 --
-data CStat = CLabel    Ident              -- label
-                       CStat
-           | CCase     CExpr              -- constant expression
-                       CStat
-           | CCases    CExpr              -- case range
-                       CExpr              -- `case lower .. upper :'
-                       CStat
-           | CDefault  CStat              -- default case
-           | CExpr     (Maybe CExpr)      -- expression statement, maybe empty
-           | CCompound [CBlockItem]       -- list of declarations and statements
-           | CIf       CExpr              -- conditional expression
-                       CStat
-                       (Maybe CStat)      -- optional "else" case
-           | CSwitch   CExpr              -- selector
-                       CStat
-           | CWhile    CExpr
-                       CStat
-                       Bool               -- `True' implies "do-while" statement
-           | CFor      (Either (Maybe CExpr)
-                               CDecl)
-                       (Maybe CExpr)
-                       (Maybe CExpr)
-                       CStat
-           | CGoto     Ident              -- label
-           | CGotoPtr  CExpr              -- computed address
-           | CCont                        -- continue statement
-           | CBreak                       -- break statement
-           | CReturn   (Maybe CExpr)
-           | CAsm                         -- a chunk of assembly code (which is
+data CStat = CLabel     Ident             -- label
+                        CStat
+                        Attrs
+           | CCase      CExpr             -- constant expression
+                        CStat
+                        Attrs
+           | CCases     CExpr             -- case range
+                        CExpr             -- `case lower .. upper :'
+                        CStat
+                        Attrs
+           | CDefault   CStat             -- default case
+                        Attrs
+           | CExpr      (Maybe CExpr)     -- expression statement, maybe empty
+                        Attrs
+           | CCompound  [CBlockItem]      -- list of declarations and statements
+                        Attrs
+           | CIf        CExpr             -- conditional expression
+                        CStat
+                        (Maybe CStat)     -- optional "else" case
+                        Attrs
+           | CSwitch    CExpr             -- selector
+                        CStat
+                        Attrs
+           | CWhile     CExpr
+                        CStat
+                        Bool              -- `True' implies "do-while" statement
+                        Attrs
+           | CFor       (Either (Maybe CExpr)
+                                CDecl)
+                        (Maybe CExpr)
+                        (Maybe CExpr)
+                        CStat
+                        Attrs
+           | CGoto      Ident             -- label
+                        Attrs
+           | CGotoPtr   CExpr             -- computed address
+                        Attrs
+           | CCont      Attrs             -- continue statement
+           | CBreak     Attrs             -- break statement
+           | CReturn    (Maybe CExpr)
+                        Attrs
+           | CAsm       Attrs             -- a chunk of assembly code (which is
                                           -- not itself recorded)
            deriving (Eq,Show) 
 
@@ -173,6 +188,7 @@ data CDecl = CDecl [CDeclSpec]                -- type specifier and qualifier
                    [(Maybe CDeclr,        -- declarator (may be omitted)
                      Maybe CInit,        -- optional initializer
                      Maybe CExpr)]        -- optional size (const expr)
+                   Attrs
            deriving (Eq,Show)
 
 
@@ -187,33 +203,38 @@ data CDeclSpec = CStorageSpec CStorageSpec
 
 -- C storage class specifier (K&R A8.1) (EXPORTED)
 --
-data CStorageSpec = CAuto     
-                  | CRegister 
-                  | CStatic   
-                  | CExtern   
-                  | CTypedef              -- syntactic awkwardness of C
-                  | CThread               -- GNUC thread local storage
+data CStorageSpec = CAuto     Attrs     
+                  | CRegister Attrs 
+                  | CStatic   Attrs   
+                  | CExtern   Attrs   
+                  | CTypedef  Attrs       -- syntactic awkwardness of C
+                  | CThread   Attrs       -- GNUC thread local storage
                   deriving (Eq,Show)
 
 
 -- C type specifier (K&R A8.2) (EXPORTED)
 --
-data CTypeSpec = CVoidType      
-               | CCharType      
-               | CShortType     
-               | CIntType       
-               | CLongType      
-               | CFloatType     
-               | CDoubleType    
-               | CSignedType    
-               | CUnsigType     
-               | CBoolType      
-               | CComplexType   
+data CTypeSpec = CVoidType    Attrs      
+               | CCharType    Attrs      
+               | CShortType   Attrs     
+               | CIntType     Attrs       
+               | CLongType    Attrs      
+               | CFloatType   Attrs     
+               | CDoubleType  Attrs    
+               | CSignedType  Attrs    
+               | CUnsigType   Attrs     
+               | CBoolType    Attrs      
+               | CComplexType Attrs   
                | CSUType      CStructUnion
+                              Attrs  
                | CEnumType    CEnum
+                              Attrs
                | CTypeDef     Ident                -- typedef name                              
-               | CTypeOfExpr  CExpr                              
-               | CTypeOfType  CDecl                              
+                              Attrs
+               | CTypeOfExpr  CExpr
+                              Attrs                              
+               | CTypeOfType  CDecl
+                              Attrs                              
                deriving (Eq,Show)
 
 
@@ -221,10 +242,10 @@ data CTypeSpec = CVoidType
 --
 -- * plus `restrict' from C99 and `inline'
 --
-data CTypeQual = CConstQual 
-               | CVolatQual 
-               | CRestrQual 
-               | CInlinQual 
+data CTypeQual = CConstQual Attrs
+               | CVolatQual Attrs
+               | CRestrQual Attrs
+               | CInlinQual Attrs
                deriving (Eq,Show)
 
 
@@ -236,6 +257,7 @@ data CTypeQual = CConstQual
 data CStructUnion = CStruct CStructTag
                             (Maybe Ident)
                             [CDecl]       -- *structure* declaration
+                            Attrs
                   deriving (Eq,Show)
 
 
@@ -251,6 +273,7 @@ data CStructTag = CStructTag
 data CEnum = CEnum (Maybe Ident)
                    [(Ident,                        -- variant name
                      Maybe CExpr)]                -- explicit variant value
+                   Attrs
            deriving (Eq,Show)                   
 
 
@@ -282,21 +305,26 @@ data CEnum = CEnum (Maybe Ident)
 --   variant for functions.
 --
 data CDeclr = CVarDeclr (Maybe Ident)                -- declared identifier                        
+                        Attrs
             | CPtrDeclr [[CTypeQual]]                -- indirections (non-empty)
-                        CDeclr                        
+                        CDeclr
+                        Attrs                        
             | CArrDeclr CDeclr
                         [CTypeQual]
                         (Maybe CExpr)                -- array size                        
+                        Attrs
             | CFunDeclr CDeclr
                         [CDecl]                        -- *parameter* declarations
                         Bool                        -- is variadic?                        
+                        Attrs
             deriving (Eq,Show) 
 
 -- C initializer (K&R A8.7) (EXPORTED)
 --
 data CInit = CInitExpr CExpr
-                                       -- assignment expression
+                       Attrs                        -- assignment expression
            | CInitList CInitList
+                       Attrs
            deriving (Eq,Show)                        
 
 type CInitList = [([CDesignator], CInit)]
@@ -305,10 +333,13 @@ type CInitList = [([CDesignator], CInit)]
 
 -- C initializer designator (EXPORTED)
 --
-data CDesignator = CArrDesig     CExpr                                 
-                 | CMemberDesig  Ident                                 
+data CDesignator = CArrDesig     CExpr 
+                                 Attrs                                
+                 | CMemberDesig  Ident
+                                 Attrs                                 
                  | CRangeDesig   CExpr        -- GNUC array range designator
-                                 CExpr                                
+                                 CExpr
+                                 Attrs                                
                  deriving (Eq,Show) 
 
 
@@ -320,37 +351,55 @@ data CDesignator = CArrDesig     CExpr
 -- * GNU C extension: `alignof'
 --
 data CExpr = CComma       [CExpr]         -- comma expression list, n >= 2
+                          Attrs                        
            | CAssign      CAssignOp       -- assignment operator
                           CExpr           -- l-value
                           CExpr           -- r-value
+                          Attrs
            | CCond        CExpr           -- conditional
                    (Maybe CExpr)          -- true-expression (GNU allows omitting)
                           CExpr           -- false-expression
+                          Attrs
            | CBinary      CBinaryOp       -- binary operator
                           CExpr           -- lhs
                           CExpr           -- rhs
+                          Attrs
            | CCast        CDecl           -- type name
                           CExpr
+                          Attrs
            | CUnary       CUnaryOp        -- unary operator
                           CExpr
+                          Attrs
            | CSizeofExpr  CExpr
+                          Attrs
            | CSizeofType  CDecl           -- type name
+                          Attrs
            | CAlignofExpr CExpr
+                          Attrs
            | CAlignofType CDecl           -- type name
+                          Attrs
            | CIndex       CExpr           -- array
                           CExpr           -- index
+                          Attrs
            | CCall        CExpr           -- function
                           [CExpr]         -- arguments
+                          Attrs
            | CMember      CExpr           -- structure
                           Ident           -- member name
                           Bool            -- deref structure? (True for `->')
+                          Attrs
            | CVar         Ident           -- identifier (incl. enumeration const)
+                          Attrs
            | CConst       CConst          -- includes strings
+                          Attrs
            | CCompoundLit CDecl           -- C99 compound literal
                           CInitList       -- type name & initialiser list
+                          Attrs
            | CStatExpr    CStat           -- GNUC compound statement as expr
+                          Attrs
            | CLabAddrExpr Ident           -- GNUC address of label
-           | CBuiltinExpr                 -- place holder for GNUC builtin exprs
+                          Attrs
+           | CBuiltinExpr Attrs           -- place holder for GNUC builtin exprs
            deriving (Eq,Show) 
 
 
