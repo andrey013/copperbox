@@ -3,8 +3,8 @@
 
 
 -- Generate with 'stackless' 
--- 'compact' doesn't generate type signatures, without them GHC spins 
--- out of control
+-- 'compact' doesn't generate type signatures, and without them 
+-- GHC spins out of control
 
 
 module CParserFrown (header) where

@@ -10,7 +10,6 @@ module CLexerAlt
 
 import CTokens
 import CAST (Ident)
-import MakeToken
 
 import Control.Monad
 import Control.Monad.State
