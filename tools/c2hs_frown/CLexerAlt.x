@@ -3,18 +3,25 @@
 
 {
 
-module CLexerAlt (Lexer, runLex, frown, getToken) where
+module CLexerAlt 
+  (Lexer, runLex, frown, getToken,
+   isTypeIdent, addTypedef) 
+ where
 
 import CTokens
+import CAST (Ident)
 import MakeToken
 
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.Error
+import Data.Set  (Set)
+import qualified Data.Set as Set (fromList, insert, member, delete, empty)
+
 
 }
 
-%wrapper "errstate"
+%wrapper "clexer"
 
 $nondigit           = [A-Za-z_]
 $digit              = [0-9]
@@ -264,30 +271,34 @@ alexEOF = CTokEof
 
 type Alex = Lexer
 
-punctuator :: CToken -> AlexInput -> Int -> Alex CToken
+punctuator :: CToken -> AlexInput -> Int -> Lexer CToken
 punctuator tok (p,_,_) len = return tok
 
-identifier :: AlexInput -> Int -> Alex CToken
-identifier (p,_,str) len = return (CTokIdent ident)
-  where ident = take len str
+identifier :: AlexInput -> Int -> Lexer CToken
+identifier (p,_,str) len = 
+  let ident = take len str in 
+  do { is_tydef <- isTypeIdent ident
+     ; case is_tydef of 
+        True -> return (CTokTyIdent ident) 
+        False -> return (CTokIdent ident) }
 
-keyword :: CToken -> AlexInput -> Int -> Alex CToken
+keyword :: CToken -> AlexInput -> Int -> Lexer CToken
 keyword tok (p,_,_) len = return tok
 
-intLiteral :: AlexInput -> Int -> Alex CToken
+intLiteral :: AlexInput -> Int -> Lexer CToken
 intLiteral (p,_,str) len = return (CTokILit lit)
   where lit = read $ take len str 
 
-octLiteral :: AlexInput -> Int -> Alex CToken
+octLiteral :: AlexInput -> Int -> Lexer CToken
 octLiteral (p,_,str) len = return (CTokILit lit)
   where lit = read $ take len str 
 
-hexLiteral :: AlexInput -> Int -> Alex CToken
+hexLiteral :: AlexInput -> Int -> Lexer CToken
 hexLiteral (p,_,str) len = return (CTokILit lit)
   where lit = read $ take len str 
 
 -- <DODGY>
-charLiteral :: AlexInput -> Int -> Alex CToken
+charLiteral :: AlexInput -> Int -> Lexer CToken
 charLiteral (p,_,str) len = return (CTokCLit lit)
   where lit = read $ take len str 
 -- </DODGY> 
@@ -296,12 +307,23 @@ stringLiteral :: AlexInput -> Int -> Alex CToken
 stringLiteral (p,_,str) len = return (CTokSLit lit)
   where lit = take len str 
 
-floatLiteral :: AlexInput -> Int -> Alex CToken
+floatLiteral :: AlexInput -> Int -> Lexer CToken
 floatLiteral (p,_,str) len = return (CTokFLit lit)
   where lit = take len str 
 
   
- 
+isTypeIdent :: Ident -> Lexer Bool
+isTypeIdent ident = do
+  tyids <- gets tyidents
+  return (Set.member ident tyids)
+
+addTypedef :: Ident -> Lexer ()
+addTypedef ident = do
+  tyids <- gets tyidents
+  modify (\s -> s{tyidents = ident `Set.insert` tyids})
+
+                             
+                              
 
 
 -- demo = runAlex "1+2" get

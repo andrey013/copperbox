@@ -450,15 +450,18 @@ declaration
 --
 default_declaring_list { CDecl };
 default_declaring_list
-  {CDecl (reverse qs) [(Just d, io, Nothing)]}
+  {% let declspecs = reverse qs in
+      doDeclIdent declspecs d >> return (CDecl (reverse qs) [(Just d, io, Nothing)]) }
                     : declaration_qualifier_list {qs}, identifier_declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
 
   
-  {CDecl (liftTypeQuals qs) [(Just d, io, Nothing)]}
+  {% let declspecs = liftTypeQuals qs in
+      doDeclIdent declspecs d >> return (CDecl (liftTypeQuals qs) [(Just d, io, Nothing)])}
                     | type_qualifier_list {qs}, identifier_declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
 
-  {case ds of
-             CDecl declspecs dies -> CDecl declspecs ((Just d, io, Nothing) : dies) }
+  {% case ds of
+      CDecl declspecs dies -> do { doDeclIdent declspecs d
+                                 ; return (CDecl declspecs ((Just d, io, Nothing) : dies))} }
                
                     | default_declaring_list {ds}, ",", identifier_declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
                
@@ -466,14 +469,17 @@ default_declaring_list
                
 declaring_list { CDecl };
 declaring_list
-  {CDecl ds [(Just d, io, Nothing)]}
+  {% doDeclIdent ds d
+      >> return (CDecl ds [(Just d, io, Nothing)]) }
                     : declaration_specifier {ds}, declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
 
-  {CDecl t [(Just d, io, Nothing)]}
+  {% doDeclIdent t d
+      >> return (CDecl t [(Just d, io, Nothing)]) }
                     | type_specifier {t}, declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
 
-  {case ds of
-             CDecl declspecs dies -> CDecl declspecs ((Just d, io, Nothing) : dies)}
+  {% case ds of
+      CDecl declspecs dies -> do { doDeclIdent declspecs d
+                                 ; return (CDecl declspecs ((Just d, io, Nothing) : dies))} }
                     | declaring_list {ds}, ",", declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
                
                
@@ -1827,3 +1833,27 @@ pos = nopos
 emptyDeclr = CVarDeclr Nothing
 
 mkCTokSemic = CTokSemic
+
+
+
+-- Take the identifiers and use them to update the typedef'ed identifier set
+-- if the decl is defining a typedef then we add it to the set,
+-- if it's a var decl then that shadows typedefed identifiers
+--
+doDeclIdent :: [CDeclSpec] -> CDeclr -> Lexer ()
+doDeclIdent declspecs declr =
+  case getCDeclrIdent declr of
+    Nothing -> return ()
+    Just ident | any isTypeDef declspecs -> addTypedef ident
+               | otherwise               -> return () -- shadowTypedef ident
+
+  where isTypeDef (CStorageSpec (CTypedef)) = True
+        isTypeDef _                           = False
+        
+        
+-- extract all identifiers
+getCDeclrIdent :: CDeclr -> Maybe Ident
+getCDeclrIdent (CVarDeclr optIde    ) = optIde
+getCDeclrIdent (CPtrDeclr _ declr   ) = getCDeclrIdent declr
+getCDeclrIdent (CArrDeclr declr _ _ ) = getCDeclrIdent declr
+getCDeclrIdent (CFunDeclr declr _ _ ) = getCDeclrIdent declr        
