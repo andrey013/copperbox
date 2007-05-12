@@ -193,7 +193,7 @@ tokens :-
   "for"             { keyword CTokFor }
   "goto"            { keyword CTokGoto }
   "if"              { keyword CTokIf }
---  "_Imaginary"      { keyword undefined }
+  "_Imaginary"      { keyword CTokImaginary }
   "inline"          { keyword CTokInline }
   "int"             { keyword CTokInt }
   "long"            { keyword CTokLong }

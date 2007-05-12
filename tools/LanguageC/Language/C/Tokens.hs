@@ -104,6 +104,7 @@ data CToken = CTokLParen          -- `('
  	    | CTokFor                 -- `for'
  	    | CTokGoto                -- `goto'
  	    | CTokIf                  -- `if'
+      | CTokImaginary           -- `_Imaginary'
 	    | CTokInline              -- `inline'
 						-- (or `__inline', 
 						-- `__inline__')
@@ -219,6 +220,7 @@ instance Repr CToken where
   repr CTokFor                  = "for"
   repr CTokGoto                 = "goto"
   repr CTokIf                   = "if"
+  repr CTokImaginary            = "_Imaginary"
   repr CTokInline               = "inline"
   repr CTokInt                  = "int"
   repr CTokLong                 = "long"

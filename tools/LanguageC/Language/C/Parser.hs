@@ -1,8 +1,9 @@
 
 module Language.C.Parser (
   parseTranslationUnit,
-  parseTranslationUnitWithMode )
-  where
+  parseTranslationUnitWithMode,
+  ParseMode(..) 
+  ) where
 
 {-
 -- HAPPY
@@ -24,5 +25,9 @@ data ParseMode = ParseMode {
 parseTranslationUnit :: String -> Either String CTranslationUnit
 parseTranslationUnit text = frownParseTranslationUnit text ""
 
+parseTranslationUnitWithMode :: String -> ParseMode -> Either String CTranslationUnit
+parseTranslationUnitWithMode text (ParseMode {parseFilename=filename}) 
+  = frownParseTranslationUnit text filename
 
-parseTranslationUnitWithMode = error "todo"
+  
+  
