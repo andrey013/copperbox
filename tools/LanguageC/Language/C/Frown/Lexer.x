@@ -5,7 +5,10 @@
 {
 
 module Language.C.Frown.Lexer
-  (Lexer, runLex, frown, getToken, getPosition,
+  (Lexer, runLex, frown,
+   shadowTypedef, 
+   enterScope, leaveScope,
+   getToken, getPosition,
    isTypeIdent, addTypedef) 
  where
 
@@ -272,6 +275,33 @@ getToken = alexMonadScan
 alexEOF :: CToken
 alexEOF = CTokEof
 
+
+shadowTypedef :: Ident -> Lexer ()
+shadowTypedef ident = do
+  tyids <- gets tyidents
+  -- optimisation: mostly the ident will not be in
+  -- the tyident set so do a member lookup to avoid
+  --  churn induced by calling delete
+  modify (\s -> s{tyidents = if ident `Set.member` tyids
+                             then ident `Set.delete` tyids
+                             else tyids})
+  
+                                                
+                                                
+enterScope :: Lexer ()
+enterScope = do
+  tyids <- gets tyidents
+  ss    <- gets scopes
+  modify (\s -> s{scopes=tyids:ss})
+
+
+leaveScope :: Lexer ()
+leaveScope = do
+  ss <- gets scopes
+  case ss of 
+    [] -> fail "leaveScope: already in global scope"
+    (tyidents:ss') -> modify (\s -> s{tyidents=tyidents, scopes=ss'})
+  
 
 punctuator :: CToken -> AlexInput -> Int -> Lexer CToken
 punctuator tok (p,_,_) len = return tok

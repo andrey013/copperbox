@@ -7,7 +7,11 @@
 -- GHC spins out of control
 
 
-module Language.C.Frown.Parser (frownParseTranslationUnit) where
+module Language.C.Frown.Parser 
+
+-- (frownParseTranslationUnit) 
+
+where
 
 import Language.C.Frown.Lexer
 import Language.C.Tokens
@@ -215,7 +219,9 @@ function_definition
 
 function_declarator { CDeclr };
 function_declarator
-  {d}
+  {% do { enterScope
+        ; doFuncParamDeclIdent d
+        ; return d } }
                     : identifier_declarator {d};
 
 
@@ -265,22 +271,23 @@ labeled_statement
 compound_statement { CStat };
 compound_statement
   {% withPos (CCompound (reverse xs))}
-                    : "{", block_item_list {xs}, "}";
+                    : "{", enter_scope{_}, block_item_list {xs}, leave_scope{_}, "}";
 
   {% withPos (CCompound (reverse xs))}
-                    | "{", label_declarations {ds_}, block_item_list {xs}, "}";
+                    | "{", enter_scope{_}, label_declarations {ds_}, block_item_list {xs}, leave_scope{_}, "}";
 
 
 -- No syntax for these, just side effecting semantic actions.
 --
 --    
---    enter_scope { () };
---    enter_scope
---      {error "enter_scope"}      : ;
---      
---    leave_scope { () };
---    leave_scope
---      {error "leave_scope"}      : ;
+
+enter_scope { () };
+enter_scope
+  {% leaveScope}    : ;
+    
+leave_scope { () };
+leave_scope
+  {% enterScope}    : ;
 
 
 
@@ -366,7 +373,7 @@ iteration_statement
                     | "for", "(", expression_opt {e1}, ";", expression_opt {e2}, ";", expression_opt {e3}, ")", statement {s};
 
   {% withPos (CFor (Right d) e1 e2 s)}
-                    | "for", "(", declaration {d}, expression_opt {e1}, ";", expression_opt {e2}, ")", statement {s};
+                    | "for", "(", enter_scope{_}, declaration {d}, expression_opt {e1}, ";", expression_opt {e2}, ")", statement {s}, leave_scope{_};
   
   
   
@@ -1933,11 +1940,14 @@ instance Pos (Located a) where
   
 
 
-
+pos :: Position
 pos = nopos
 
+
+emptyDeclr :: Attrs -> CDeclr
 emptyDeclr pos = CVarDeclr Nothing pos
 
+mkCTokSemic :: CToken
 mkCTokSemic = CTokSemic
 
 
@@ -1951,11 +1961,24 @@ doDeclIdent declspecs declr =
   case getCDeclrIdent declr of
     Nothing -> return ()
     Just ident | any isTypeDef declspecs -> addTypedef ident
-               | otherwise               -> return () -- shadowTypedef ident
+               | otherwise               -> shadowTypedef ident
 
   where isTypeDef (CStorageSpec (CTypedef _)) = True
         isTypeDef _                           = False
         
+
+doFuncParamDeclIdent :: CDeclr -> Lexer ()
+doFuncParamDeclIdent (CFunDeclr _ params _ _) =
+  sequence_
+    [ case getCDeclrIdent declr of
+        Nothing -> return ()
+        Just ident -> shadowTypedef ident
+    | CDecl _ dle _ <- params
+    , (Just declr, _, _) <- dle ]
+    
+doFuncParamDeclIdent (CPtrDeclr _ declr _ ) = doFuncParamDeclIdent declr
+doFuncParamDeclIdent _ = return ()
+
         
 -- extract all identifiers
 getCDeclrIdent :: CDeclr -> Maybe Ident
@@ -1964,11 +1987,12 @@ getCDeclrIdent (CPtrDeclr _ declr   _) = getCDeclrIdent declr
 getCDeclrIdent (CArrDeclr declr _ _ _) = getCDeclrIdent declr
 getCDeclrIdent (CFunDeclr declr _ _ _) = getCDeclrIdent declr        
 
-
+withPos :: (Attrs -> a) -> Lexer a
 withPos fun = do
   (f,l,c) <- getPosition
   return (fun (OnlyPos (Position f l c)))
 
+getPosAttr :: Lexer Attrs
 getPosAttr = do
   (f,l,c) <- getPosition
   return (OnlyPos (Position f l c))
