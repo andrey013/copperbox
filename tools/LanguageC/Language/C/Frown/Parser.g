@@ -7,11 +7,9 @@
 -- GHC spins out of control
 
 
-module Language.C.Frown.Parser 
-
--- (frownParseTranslationUnit) 
-
-where
+module Language.C.Frown.Parser (
+  frownParseTranslationUnit
+  ) where
 
 import Language.C.Frown.Lexer
 import Language.C.Tokens

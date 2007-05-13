@@ -42,7 +42,8 @@ main = do
       input <- readFile outFile
       
       start <- getCPUTime
-      case parseTranslationUnitWithMode input (ParseMode cfile) of 
+      let parse_mode = ParseMode {parseFilename=cfile, parserType=Frown} 
+      case parseTranslationUnitWithMode input parse_mode of 
         Left errmsg -> do
           removeFile outFile
           (reportFile, hnd) <- openTempFile logdir "cc-wrapper.report"

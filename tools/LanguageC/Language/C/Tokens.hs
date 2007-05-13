@@ -23,134 +23,124 @@
 --  C Tokens for the C lexer.
 --
 
-module Language.C.Tokens (CToken(..), Repr(..)) where 
+module Language.C.Tokens (
+  -- * Tokens
+  CToken(..),
+  -- * Repr (representation)
+  Repr(..)
+  ) where 
 
 
 
 
--- token definition
--- ----------------
-
+-- | token definition
 -- possible tokens (EXPORTED)
---
-data CToken = CTokLParen          -- `('
-	    | CTokRParen              -- `)'
-	    | CTokLBracket            -- `['
-	    | CTokRBracket            -- `]'
-	    | CTokArrow	              -- `->'
-	    | CTokDot	              -- `.'
-	    | CTokExclam              -- `!'
-	    | CTokTilde	              -- `~'
-	    | CTokInc	              -- `++'
-	    | CTokDec	              -- `--'
-	    | CTokPlus	              -- `+'
-	    | CTokMinus	              -- `-'
-	    | CTokStar	              -- `*'
-	    | CTokSlash	              -- `/'
-	    | CTokPercent             -- `%'
-	    | CTokAmper               -- `&'
-	    | CTokShiftL              -- `<<'
-	    | CTokShiftR              -- `>>'
-	    | CTokLess	              -- `<'
-	    | CTokLessEq              -- `<='
-	    | CTokHigh	              -- `>'
-	    | CTokHighEq              -- `>='
-	    | CTokEqual	              -- `=='
-	    | CTokUnequal             -- `!='
-	    | CTokHat	              -- `^'
-	    | CTokBar	              -- `|'
-	    | CTokAnd	              -- `&&'
-	    | CTokOr	              -- `||'
-	    | CTokQuest	              -- `?'
-	    | CTokColon	              -- `:'
-	    | CTokAssign              -- `='
-	    | CTokPlusAss             -- `+='
-	    | CTokMinusAss            -- `-='
-	    | CTokStarAss             -- `*='
-	    | CTokSlashAss            -- `/='
-	    | CTokPercAss             -- `%='
-	    | CTokAmpAss              -- `&='
-	    | CTokHatAss              -- `^='
-	    | CTokBarAss              -- `|='
-	    | CTokSLAss	              -- `<<='
-	    | CTokSRAss	              -- `>>='
-	    | CTokComma               -- `,'
-	    | CTokSemic               -- `;'
-	    | CTokLBrace              -- `{'
-	    | CTokRBrace              --
-	    | CTokEllipsis            -- `...'
-	    | CTokAlignof             -- `alignof' 
-						-- (or `__alignof', 
-						-- `__alignof__')
-	    | CTokAsm                 -- `asm'
-	    					-- (or `__asm',
-						-- `__asm__')
-	    | CTokAuto                -- `auto'
-	    | CTokBreak               -- `break'
-	    | CTokBool                -- `_Bool'
-	    | CTokCase                -- `case'
-	    | CTokChar                -- `char'
-	    | CTokConst               -- `const' 
-						-- (or `__const', `__const__')
-	    | CTokContinue            -- `continue' 
-	    | CTokComplex             -- `_Complex' 
-	    | CTokDefault             -- `default'
-	    | CTokDo                  -- `do'
-	    | CTokDouble              -- `double'
-	    | CTokElse                -- `else'
-	    | CTokEnum                -- `enum'
-	    | CTokExtern              -- `extern'
- 	    | CTokFloat               -- `float'
- 	    | CTokFor                 -- `for'
- 	    | CTokGoto                -- `goto'
- 	    | CTokIf                  -- `if'
-      | CTokImaginary           -- `_Imaginary'
-	    | CTokInline              -- `inline'
-						-- (or `__inline', 
-						-- `__inline__')
-	    | CTokInt                 -- `int'
-	    | CTokLong                -- `long'
-	    | CTokLabel               -- `__label__'
-	    | CTokRegister            -- `register'
-	    | CTokRestrict            -- `restrict'
-						-- (or `__restrict', 
-						-- `__restrict__')
-	    | CTokReturn              -- `return'
-	    | CTokShort               -- `short'
-	    | CTokSigned              -- `signed'
-						-- (or `__signed', 
-						-- `__signed__')
-	    | CTokSizeof              -- `sizeof'
-	    | CTokStatic              -- `static'
-	    | CTokStruct              -- `struct'
-	    | CTokSwitch              -- `switch'
-	    | CTokTypedef             -- `typedef'
-	    | CTokTypeof              -- `typeof'
-	    | CTokThread              -- `__thread'
-	    | CTokUnion               -- `union'
-	    | CTokUnsigned            -- `unsigned'
-	    | CTokVoid                -- `void'
-	    | CTokVolatile            -- `volatile'
-						-- (or `__volatile', 
-						-- `__volatile__')
-	    | CTokWhile               -- `while'
-	    | CTokCLit	       !Char	-- character constant
-	    | CTokILit	       !Integer	-- integer constant
-	    | CTokFLit	       String	-- float constant
-	    | CTokSLit	       String	-- string constant (no escapes)
-	    | CTokIdent	       String	-- identifier
+data CToken = CTokLParen                  -- ^ (
+            | CTokRParen                  -- ^ )
+            | CTokLBracket                -- ^ \[
+            | CTokRBracket                -- ^ \]
+            | CTokArrow	                  -- ^ \->
+            | CTokDot	                    -- ^ .
+            | CTokExclam                  -- ^ !
+            | CTokTilde                   -- ^ ~
+            | CTokInc                     -- ^ ++
+            | CTokDec                     -- ^ \-\-
+            | CTokPlus                    -- ^ +
+            | CTokMinus                   -- ^ \-
+            | CTokStar                    -- ^ \*
+            | CTokSlash                   -- ^ \/
+            | CTokPercent                 -- ^ %
+            | CTokAmper                   -- ^ &
+            | CTokShiftL                  -- ^ \<\<
+            | CTokShiftR                  -- ^ \>\>
+            | CTokLess                    -- ^ \<
+            | CTokLessEq                  -- ^ \<=
+            | CTokHigh                    -- ^ \>
+            | CTokHighEq                  -- ^ \>=
+            | CTokEqual                   -- ^ ==
+            | CTokUnequal                 -- ^ !=
+            | CTokHat                     -- ^ \^
+            | CTokBar                     -- ^ |
+            | CTokAnd                     -- ^ &&
+            | CTokOr                      -- ^ ||
+            | CTokQuest                   -- ^ ?
+            | CTokColon                   -- ^ :
+            | CTokAssign                  -- ^ =
+            | CTokPlusAss                 -- ^ +=
+            | CTokMinusAss                -- ^ \-=
+            | CTokStarAss                 -- ^ \*=
+            | CTokSlashAss                -- ^ \/=
+            | CTokPercAss                 -- ^ %=
+            | CTokAmpAss                  -- ^ &=
+            | CTokHatAss                  -- ^ \^=
+            | CTokBarAss                  -- ^ |=
+            | CTokSLAss                   -- ^ \<\<=
+            | CTokSRAss                   -- ^ \>\>=
+            | CTokComma                   -- ^ \,
+            | CTokSemic                   -- ^ ;
+            | CTokLBrace                  -- ^ {
+            | CTokRBrace                  -- ^ }
+            | CTokEllipsis                -- ^ ...
+            | CTokAlignof                 -- ^ alignof (or __alignof\, __alignof__)
+            | CTokAsm                     -- ^ asm (or __asm\, __asm__)
+            | CTokAuto                    -- ^ auto
+            | CTokBreak                   -- ^ break
+            | CTokBool                    -- ^ _Bool
+            | CTokCase                    -- ^ case
+            | CTokChar                    -- ^ char
+            | CTokConst                   -- ^ const (or __const\, __const__)
+            | CTokContinue                -- ^ continue
+            | CTokComplex                 -- ^ _Complex
+            | CTokDefault                 -- ^ default
+            | CTokDo                      -- ^ do
+            | CTokDouble                  -- ^ double
+            | CTokElse                    -- ^ else
+            | CTokEnum                    -- ^ enum
+            | CTokExtern                  -- ^ extern
+            | CTokFloat                   -- ^ float
+            | CTokFor                     -- ^ for
+            | CTokGoto                    -- ^ goto
+            | CTokIf                      -- ^ if
+            | CTokImaginary               -- ^ _Imaginary
+            | CTokInline                  -- ^ inline (or __inline\, __inline__)
+            | CTokInt                     -- ^ int
+            | CTokLong                    -- ^ long
+            | CTokLabel                   -- ^ __label__
+            | CTokRegister                -- ^ register
+            | CTokRestrict                -- ^ restrict (or __restrict\, __restrict__)
+            | CTokReturn                  -- ^ return
+            | CTokShort                   -- ^ short
+            | CTokSigned                  -- ^ signed (or __signed\, __signed__)
+            | CTokSizeof                  -- ^ sizeof
+            | CTokStatic                  -- ^ static
+            | CTokStruct                  -- ^ struct
+            | CTokSwitch                  -- ^ switch
+            | CTokTypedef                 -- ^ typedef
+            | CTokTypeof                  -- ^ typeof
+            | CTokThread                  -- ^ __thread
+            | CTokUnion                   -- ^ union
+            | CTokUnsigned                -- ^ unsigned
+            | CTokVoid                    -- ^ void
+            | CTokVolatile                -- ^ volatile (or __volatile\, __volatile__)
+            | CTokWhile                   -- ^ while
+            | CTokCLit      !Char         -- ^ character constant
+            | CTokILit      !Integer      -- ^ integer constant
+            | CTokFLit      String        -- ^ float constant
+            | CTokSLit      String        -- ^ string constant (no escapes)
+            | CTokIdent     String        -- ^ identifier
 
-	      -- not generated here, but in `CParser.parseCHeader'
-	    | CTokTyIdent      String	-- `typedef-name' identifier
-       -- special GNU C tokens (GnuCTok)
-      | GnuCAttrTok             -- `__attribute__'
-      | GnuCExtTok              -- `__extension__'
-      | GnuCVaArg               -- `__builtin_va_arg'
-      | GnuCOffsetof            -- `__builtin_offsetof'
-      | GnuCTyCompat            -- `__builtin_types_compatible_p'
-	    | CTokEof				          -- end of file
+            | CTokTyIdent   String        -- ^ not generated here, but in CParser.parseCHeader  typedef-name identifier
+             
+            | GnuCAttrTok                 -- ^ special GNU C token  __attribute__
+            | GnuCExtTok                  -- ^  \'\' __extension__
+            | GnuCVaArg                   -- ^  \'\' __builtin_va_arg
+            | GnuCOffsetof                -- ^  \'\' __builtin_offsetof
+            | GnuCTyCompat                -- ^  \'\' __builtin_types_compatible_p
+            | CTokEof                     -- ^ end of file
       deriving (Eq,Show)
 
+-- | Repr - print a string respresentation of the token.
+-- Don\'t use Show which will print the constructor.
 class Repr a where repr :: a -> String
 
 instance Repr CToken where

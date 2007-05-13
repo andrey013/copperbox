@@ -19,7 +19,7 @@
 --
 --- DESCRIPTION ---------------------------------------------------------------
 --
---  Abstract syntax of C header files.
+--  Abstract syntax of C files.
 --
 --- DOCU ----------------------------------------------------------------------
 --
@@ -41,43 +41,50 @@
 --
 
 module Language.C.Syntax (
-  CTranslationUnit(..), CExtDecl(..), CFunDef(..), CStat(..), CBlockItem(..),
-             CDecl(..), CDeclSpec(..), CStorageSpec(..), CTypeSpec(..),
-             CTypeQual(..), CStructUnion(..),  CStructTag(..), CEnum(..),
-             CDeclr(..), CInit(..), CInitList, CDesignator(..), CExpr(..),
-             CAssignOp(..), CBinaryOp(..), CUnaryOp(..), CConst (..), 
-             Ident, identToLexeme,
-             
-             
-             Attrs(..)) where
+  -- * External Declarations
+  CTranslationUnit(..), CExtDecl(..), CFunDef(..),
+  -- * Statements
+  CStat(..), CBlockItem(..),
+  -- * Declarations
+  CDecl(..), CDeclSpec(..), CStorageSpec(..), CTypeSpec(..),
+  CTypeQual(..), CStructUnion(..),  CStructTag(..), CEnum(..),
+  CDeclr(..), CInit(..), CInitList, CDesignator(..), 
+  -- * Expressions             
+  CExpr(..), CAssignOp(..), CBinaryOp(..), CUnaryOp(..), CConst (..), 
+  -- * Identifiers
+  Ident, identToLexeme,
+  -- * Source location
+  Attrs(..)
+  ) where
 
 import Language.C.Position
 
 type Ident = String
 
--- a complete C header file (K&R A10) (EXPORTED)
+-- | A complete C translation unit (K&R A10) (EXPORTED)
 --
 data CTranslationUnit = CTranslationUnit [CExtDecl]
                        Attrs
              deriving (Eq,Show) 
 
 
--- external C declaration (K&R A10) (EXPORTED)
+-- | external C declaration (K&R A10) (EXPORTED)
 --
 data CExtDecl = CDeclExt  CDecl
               | CFDefExt  CFunDef
-              | CAsmExt   Attrs     -- a chunk of assembly code (which is
-              deriving (Eq,Show)    -- not itself recorded)
+              -- | a chunk of assembly code (which is not itself recorded)
+              | CAsmExt   Attrs     
+              deriving (Eq,Show)     
 
 
--- C function definition (K&R A10.1) (EXPORTED)
+-- | C function definition (K&R A10.1) (EXPORTED)
 --
--- * The only type specifiers allowed are `extern' and `static'.
+-- * The only type specifiers allowed are \'extern\' and \'static\'.
 --
 -- * The declarator must specify explicitly that the declared identifier has
 --   function type.
 --
--- * The optional declaration list is for old-style function declarations.
+-- * The optional declaration list is for old\-style function declarations.
 --
 -- * The statement must be a compound statement.
 --
@@ -89,25 +96,30 @@ data CFunDef = CFunDef [CDeclSpec]        -- type specifier and qualifier
              deriving (Eq,Show)                        
 
 
--- C statement (A9) (EXPORTED)
+-- | C statement (A9) (EXPORTED)
 --
-data CStat = CLabel     Ident             -- label
+data CStat 
+           -- | label            
+           = CLabel     Ident             
                         CStat
-                        Attrs
-           | CCase      CExpr             -- constant expression
+                        Attrs             
+           -- | constant expression 
+           | CCase      CExpr             -- 
                         CStat
                         Attrs
            | CCases     CExpr             -- case range
                         CExpr             -- `case lower .. upper :'
                         CStat
                         Attrs
-           | CDefault   CStat             -- default case
+           -- | default case             
+           | CDefault   CStat             
                         Attrs
            | CExpr      (Maybe CExpr)     -- expression statement, maybe empty
                         Attrs
            | CCompound  [CBlockItem]      -- list of declarations and statements
                         Attrs
-           | CIf        CExpr             -- conditional expression
+           -- | conditional expression
+           | CIf        CExpr             
                         CStat
                         (Maybe CStat)     -- optional "else" case
                         Attrs
@@ -128,23 +140,26 @@ data CStat = CLabel     Ident             -- label
                         Attrs
            | CGotoPtr   CExpr             -- computed address
                         Attrs
-           | CCont      Attrs             -- continue statement
-           | CBreak     Attrs             -- break statement
+           -- | continue statement
+           | CCont      Attrs             
+           -- | break statement
+           | CBreak     Attrs             
            | CReturn    (Maybe CExpr)
                         Attrs
-           | CAsm       Attrs             -- a chunk of assembly code (which is
-                                          -- not itself recorded)
+           -- | a chunk of assembly code (which is not itself recorded)          
+           | CAsm       Attrs             
            deriving (Eq,Show) 
 
--- C99 Block items, things that may appear in compound statements
+-- | C99 Block items, things that may appear in compound statements
 data CBlockItem = CBlockStmt    CStat
                 | CBlockDecl    CDecl
-                | CNestedFunDef CFunDef                -- GNU C has nested functions
+                -- | GNU C has nested functions
+                | CNestedFunDef CFunDef               
                 deriving (Eq,Show) 
 
 
 
--- C declaration (K&R A8), structure declaration (K&R A8.3), parameter
+-- | C declaration (K&R A8), structure declaration (K&R A8.3), parameter
 -- declaration (K&R A8.6.3), and type name (K&R A8.8) (EXPORTED) 
 --
 -- * Toplevel declarations (K&R A8): 
@@ -155,8 +170,8 @@ data CBlockItem = CBlockStmt    CStat
 --   - at most one storage class specifier is allowed per declaration;
 --   - declarators must be present and size expressions are not allowed, ie,
 --     the elements of K&R's init-declarator-list are represented by triples
---     of the form `(Just declr, oinit, Nothing)', where `oinit' maybe
---     `Nothing' or `Just init'; and
+--     of the form \'(Just declr, oinit, Nothing)\', where \'oinit\' maybe
+--     Nothing\' or \'Just init\'; and
 --   - abstract declarators are not allowed.
 --
 -- * Structure declarations (K&R A8.3):
@@ -186,16 +201,16 @@ data CBlockItem = CBlockStmt    CStat
 --     where the declarator must be abstract, ie, must not contain a declared
 --     identifier. 
 --
-data CDecl = CDecl [CDeclSpec]                -- type specifier and qualifier
+data CDecl = CDecl [CDeclSpec]            -- type specifier and qualifier
                    [(Maybe CDeclr,        -- declarator (may be omitted)
-                     Maybe CInit,        -- optional initializer
+                     Maybe CInit,         -- optional initializer
                      Maybe CExpr)]        -- optional size (const expr)
                    Attrs
            deriving (Eq,Show)
 
 
 
--- C declaration specifiers and qualifiers (EXPORTED)
+-- | C declaration specifiers and qualifiers (EXPORTED)
 --
 data CDeclSpec = CStorageSpec CStorageSpec
                | CTypeSpec    CTypeSpec
@@ -203,7 +218,7 @@ data CDeclSpec = CStorageSpec CStorageSpec
                deriving (Eq,Show)
 
 
--- C storage class specifier (K&R A8.1) (EXPORTED)
+-- | C storage class specifier (K&R A8.1) (EXPORTED)
 --
 data CStorageSpec = CAuto     Attrs     
                   | CRegister Attrs 
@@ -214,7 +229,7 @@ data CStorageSpec = CAuto     Attrs
                   deriving (Eq,Show)
 
 
--- C type specifier (K&R A8.2) (EXPORTED)
+-- | C type specifier (K&R A8.2) (EXPORTED)
 --
 data CTypeSpec = CVoidType    Attrs      
                | CCharType    Attrs      
@@ -240,9 +255,9 @@ data CTypeSpec = CVoidType    Attrs
                deriving (Eq,Show)
 
 
--- C type qualifier (K&R A8.2) (EXPORTED)
+-- | C type qualifier (K&R A8.2) (EXPORTED)
 --
--- * plus `restrict' from C99 and `inline'
+-- * plus \'restrict\' from C99 and \'inline\'
 --
 data CTypeQual = CConstQual Attrs
                | CVolatQual Attrs
@@ -251,14 +266,14 @@ data CTypeQual = CConstQual Attrs
                deriving (Eq,Show)
 
 
--- C structure of union declaration (K&R A8.3) (EXPORTED)
+-- | C structure of union declaration (K&R A8.3) (EXPORTED)
 --
 -- * in both case, either the identifier is present or the list must be
 --   non-empty 
 --
 data CStructUnion = CStruct CStructTag
                             (Maybe Ident)
-                            [CDecl]       -- *structure* declaration
+                            [CDecl]       -- structure declaration
                             Attrs
                   deriving (Eq,Show)
 
@@ -270,7 +285,7 @@ data CStructTag = CStructTag
                 | CUnionTag
                 deriving (Eq,Show)
 
--- C enumeration declaration (K&R A8.4) (EXPORTED)
+-- | C enumeration declaration (K&R A8.4) (EXPORTED)
 --
 data CEnum = CEnum (Maybe Ident)
                    [(Ident,                        -- variant name
@@ -280,18 +295,18 @@ data CEnum = CEnum (Maybe Ident)
 
 
 
--- C declarator (K&R A8.5) and abstract declarator (K&R A8.8) (EXPORTED)
+-- | C declarator (K&R A8.5) and abstract declarator (K&R A8.8) (EXPORTED)
 --
 -- * We have one type qualifer list `[CTypeQual]' for each indirection (ie,
---   each occurrence of `*' in the concrete syntax).
+--   each occurrence of \'*\' in the concrete syntax).
 --
 -- * We unfold K&R's direct-declarators nonterminal into declarators.  Note
---   that `*(*x)' is equivalent to `**x'.
+--   that \'*(*x)\' is equivalent to \'**x\'.
 --
 -- * Declarators (A8.5) and abstract declarators (A8.8) are represented in the 
 --   same structure.  In the case of a declarator, the identifier in
 --   `CVarDeclr' must be present; in an abstract declarator it misses.
---   `CVarDeclr Nothing ...' on its own is meaningless, it may only occur as
+--   \'CVarDeclr Nothing ...' on its own is meaningless, it may only occur as
 --   part of a larger type (ie, there must be a pointer, an array, or function
 --   declarator around).
 --
@@ -299,9 +314,9 @@ data CEnum = CEnum (Maybe Ident)
 --
 -- * Old and new style function definitions are merged into a single case
 --   `CFunDeclr'.  In case of an old style definition, the parameter list is
---   empty and the variadic flag is `False' (ie, the parameter names are not
+--   empty and the variadic flag is \'False\' (ie, the parameter names are not
 --   stored in the tree).  Remember, a new style definition with no parameters 
---   requires a single `void' in the argument list (according to the standard).
+--   requires a single \'void\' in the argument list (according to the standard).
 --
 -- * We unfold K&R's parameter-type-list nonterminal into the declarator
 --   variant for functions.
@@ -316,12 +331,12 @@ data CDeclr = CVarDeclr (Maybe Ident)                -- declared identifier
                         (Maybe CExpr)                -- array size                        
                         Attrs
             | CFunDeclr CDeclr
-                        [CDecl]                        -- *parameter* declarations
+                        [CDecl]                      --  parameter declarations
                         Bool                        -- is variadic?                        
                         Attrs
             deriving (Eq,Show) 
 
--- C initializer (K&R A8.7) (EXPORTED)
+-- | C initializer (K&R A8.7) (EXPORTED)
 --
 data CInit = CInitExpr CExpr
                        Attrs                        -- assignment expression
@@ -333,7 +348,7 @@ type CInitList = [([CDesignator], CInit)]
 
 
 
--- C initializer designator (EXPORTED)
+-- | C initializer designator (EXPORTED)
 --
 data CDesignator = CArrDesig     CExpr 
                                  Attrs                                
@@ -345,12 +360,12 @@ data CDesignator = CArrDesig     CExpr
                  deriving (Eq,Show) 
 
 
--- C expression (K&R A7) (EXPORTED)
+-- | C expression (K&R A7) (EXPORTED)
 --
--- * these can be arbitrary expression, as the argument of `sizeof' can be
+-- * these can be arbitrary expression, as the argument of \'sizeof\' can be
 --   arbitrary, even if appearing in a constant expression
 --
--- * GNU C extension: `alignof'
+-- * GNU C extension: \'alignof\'
 --
 data CExpr = CComma       [CExpr]         -- comma expression list, n >= 2
                           Attrs                        
@@ -405,7 +420,7 @@ data CExpr = CComma       [CExpr]         -- comma expression list, n >= 2
            deriving (Eq,Show) 
 
 
--- C assignment operators (K&R A7.17) (EXPORTED)
+-- | C assignment operators (K&R A7.17) (EXPORTED)
 --
 data CAssignOp = CAssignOp
                | CMulAssOp
@@ -420,7 +435,7 @@ data CAssignOp = CAssignOp
                | COrAssOp
                deriving (Eq,Show)
 
--- C binary operators (K&R A7.6-15) (EXPORTED)
+-- | C binary operators (K&R A7.6-15) (EXPORTED)
 --
 data CBinaryOp = CMulOp
                | CDivOp
@@ -442,7 +457,7 @@ data CBinaryOp = CMulOp
                | CLorOp                   -- logical or
                deriving (Eq,Show)
 
--- C unary operator (K&R A7.3-4) (EXPORTED)
+-- | C unary operator (K&R A7.3-4) (EXPORTED)
 --
 data CUnaryOp = CPreIncOp                 -- prefix increment operator
               | CPreDecOp                 -- prefix decrement operator
@@ -456,7 +471,7 @@ data CUnaryOp = CPreIncOp                 -- prefix increment operator
               | CNegOp                    -- logical negation
               deriving (Eq,Show)
 
--- C constant (K&R A2.5 & A7.2) (EXPORTED)
+-- | C constant (K&R A2.5 & A7.2) (EXPORTED)
 --
 -- * we do not list enumeration constants here, as they are identifiers
 --
@@ -467,14 +482,15 @@ data CConst = CIntConst   Integer Attrs
             deriving (Eq,Show) 
 
 
-
+-- | For the time being we only use a limited version of Attrs from the 
+-- Compiler ToolKit (CTK) that only track source position
 data Attrs = OnlyPos Position
   deriving (Eq,Show)
 
 
   
               
-            -- given an abstract identifier, yield its lexeme (EXPORTED)
+-- | given an abstract identifier, yield its lexeme (EXPORTED)
 --
 identToLexeme         :: Ident -> String
 identToLexeme s  = s 

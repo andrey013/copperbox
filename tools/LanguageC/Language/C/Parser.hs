@@ -1,8 +1,11 @@
 
 module Language.C.Parser (
+  -- * Parse functions
   parseTranslationUnit,
   parseTranslationUnitWithMode,
-  ParseMode(..) 
+  -- * Parse mode
+  ParseMode(..),
+  Parser(..)
   ) where
 
 {-
@@ -19,15 +22,24 @@ import Language.C.Syntax
 
 
 data ParseMode = ParseMode {
-  parseFilename :: String
-}
+  parseFilename :: String,
+  parserType    :: Parser
+  }
+  deriving (Eq,Show)
+
+-- | It should be possible to parameterize this module on which parser to use.
+-- (Not currently implemented).
+data Parser = Frown | Happy
+  deriving (Eq,Show)
 
 parseTranslationUnit :: String -> Either String CTranslationUnit
 parseTranslationUnit text = frownParseTranslationUnit text ""
 
 parseTranslationUnitWithMode :: String -> ParseMode -> Either String CTranslationUnit
-parseTranslationUnitWithMode text (ParseMode {parseFilename=filename}) 
-  = frownParseTranslationUnit text filename
+parseTranslationUnitWithMode text mode@(ParseMode {parseFilename=filename}) 
+  = case (parserType mode) of
+      Frown -> frownParseTranslationUnit text filename
+      Happy -> Left "Happy parser not yet integrated"
 
   
   

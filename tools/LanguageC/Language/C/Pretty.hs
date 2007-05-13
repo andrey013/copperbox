@@ -32,7 +32,9 @@
 --  * So far, only covers a small fraction of the abstract tree definition
 --
 
-module Language.C.Pretty ( Pretty(..)
+module Language.C.Pretty ( 
+  -- * Pretty
+  Pretty(..)
   -- we are just providing instances to the class `Pretty'
   ) where
 
