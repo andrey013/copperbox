@@ -8,9 +8,12 @@ module Main where
 import Language.C.Parser
 import Language.C.Syntax
 import Language.C.Tokens
-import Language.C.Pretty
+import Language.C.AG.Pretty
 
-import Text.PrettyPrint.HughesPJ
+-- import Text.PrettyPrint.HughesPJ
+import PPrint
+
+import System.IO (stdout)
 import System.Environment
 
 
@@ -23,10 +26,13 @@ main = do
   where parseAndPrint :: String -> IO ()
         parseAndPrint fname = do text <- readFile fname
                                  case parseTranslationUnit text of
-                                    Left err -> do { putStr err
-                                                   }
-                                    Right ans -> do { putStr $ render $ pretty ans
-                                                    ; putStrLn "\nAST:"
-                                                    ; putStr $ show ans }
+                                    Left err -> putStr err
+                                    Right ans -> outputPP ans
+                                                    
+-- Output function if using PJ pretty printer
+-- outputPJ tu = putStr $ render $ pretty tu  
 
+-- Output function if using PPrint
+outputPP ans = let doc = prettyCTranslationUnit ans
+               in displayIO stdout (renderPretty 0.9 100 doc)
 

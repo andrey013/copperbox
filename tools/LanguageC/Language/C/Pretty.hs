@@ -157,6 +157,9 @@ prettySU (CStruct t name ms _) = header <> if ms == [] then empty else body ms
 -- additions (spt)
 -- --------------------
 
+line :: Doc
+line = char '\n'
+
 noSep :: (Pretty a) => [a] -> Doc
 noSep = hcat . (map pretty)
 
@@ -173,9 +176,13 @@ semiSep = hsep . (punctuate semi) . (map pretty)
 lineSep :: (Pretty a) => [a] -> Doc
 lineSep = (foldr ($+$) empty) . (map pretty)
 
+-- | Line separate with a blank line inbetween
+lineSep2 :: (Pretty a) => [a] -> Doc
+lineSep2 = (foldr ($+$) empty) . (punctuate line) . (map pretty)
+
 
 instance Pretty CTranslationUnit where
-  pretty (CTranslationUnit extdecls _) = lineSep extdecls
+  pretty (CTranslationUnit extdecls _) = lineSep2 extdecls
   
 instance Pretty CExtDecl where
   pretty (CDeclExt decl)    = pretty decl <> semi
@@ -198,8 +205,12 @@ instance Pretty CStat where
     ident name <> colon <> pretty stat
     
   pretty (CCase expr stat _) = 
-    text "case" <> colon <> pretty expr <+> pretty stat
-    
+    text "case" <+> pretty expr <+> char ':' <+> pretty stat
+  
+  pretty (CCases lower upper stat _) = 
+    text "case" <+> pretty lower <+> text "..." 
+      <+> pretty upper <+> char ':' <+> pretty stat    
+      
   pretty (CDefault stat _) = 
     text "default" <> colon <+> pretty stat
     

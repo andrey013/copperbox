@@ -1,0 +1,341 @@
+
+{
+module Language.C.AG.Pretty (prettyCTranslationUnit) where
+
+import Language.C.Syntax
+import Language.C.AG.SyntaxExtra hiding (CInitList)
+import Language.C.Position
+
+import PPrint
+import PPExt
+
+import Data.Maybe
+
+
+}
+
+INCLUDE "SyntaxBase.ag"
+INCLUDE "SyntaxExtraDEFS.ag"
+
+
+ATTR CTranslationUnit CExtDecl CDecl CFunDef CDeclSpec CDeclr
+     CTypeSpec CStat CExpr CConst
+  [ | | pp : {Doc} ]
+
+ATTR CExtDecls CDeclSpecs CDeclParams CDecls CBlockItems
+     CExprs CInitList
+  [ | | pp USE {:} {[]} : {[Doc]} ]
+     
+ATTR OptCExpr OptCStat
+  [ | | pp : {(Maybe Doc)} ]     
+
+
+
+SEM CTranslationUnit
+  | CTranslationUnit
+        lhs.pp      = vcat2 @ext_decls.pp
+        
+
+SEM CExtDecl
+  | CDeclExt  
+        lhs.pp      = @decl.pp
+  | CFDefExt  
+        lhs.pp      = @fun_def.pp
+  | CAsmExt   
+        lhs.pp      = text "/* ASM */"
+
+SEM CDecl 
+  | CDecl 
+        lhs.pp      = hang 2 ( (hsep @decl_specs.pp)  
+                               <$> (sepWith commaSpace @decl_params.pp))
+
+
+SEM CFunDef 
+  | CFunDef 
+        lhs.pp      = sep @decl_specs.pp <+> @declarator.pp
+                       <+> sep @declaration_list.pp <+> @stat.pp
+
+
+SEM CDeclSpec 
+  | CStorageSpec 
+        lhs.pp      = pretty @storage_spec
+  | CTypeSpec    
+        lhs.pp      = @type_spec.pp
+  | CTypeQual    
+        lhs.pp      = pretty @type_qual
+
+
+
+SEM CDeclr 
+  | CVarDeclr 
+        lhs.pp      = empty -- opt_ident                 : OptIdent                -- declared identifier                        
+  | CPtrDeclr 
+        lhs.pp      = empty -- indirections              : {[[CTypeQual]]}                -- indirections (non-empty)
+                            -- declr                     : CDeclr                     
+  | CArrDeclr
+        lhs.pp      = empty -- declr                     : CDeclr
+                            -- type_quals                : CTypeQuals
+                            -- opt_expr                  : OptCExpr                -- array size                        
+
+  | CFunDeclr 
+        lhs.pp      = empty  -- declr                     : CDeclr
+                            -- decls                     : CDecls                        -- *parameter* declarations
+                            -- is_variadic               : Bool                          -- is variadic?                        
+
+
+
+
+SEM CTypeSpec 
+  | CVoidType    
+        lhs.pp      = text "void"
+  | CCharType    
+        lhs.pp      = text "char"
+  | CShortType   
+        lhs.pp      = text "short"
+  | CIntType     
+        lhs.pp      = text "int"
+  | CLongType    
+        lhs.pp      = text "long"
+  | CFloatType   
+        lhs.pp      = text "float"
+  | CDoubleType  
+        lhs.pp      = text "double"
+  | CSignedType  
+        lhs.pp      = text "signed"
+  | CUnsigType   
+        lhs.pp      = text "unsigned"
+  | CBoolType    
+        lhs.pp      = text "_Bool"
+  | CComplexType 
+        lhs.pp      = text "_Complex"
+  | CSUType      
+        lhs.pp      = empty -- su_type                   : CStructUnion
+  | CEnumType    
+        lhs.pp      = empty -- enum                      : CEnum
+  | CTypeDef     
+        lhs.pp      = empty -- name                       : Ident                -- typedef name                              
+  | CTypeOfExpr  
+        lhs.pp      = empty -- expr                      : CExpr                           
+  | CTypeOfType  
+        lhs.pp      = empty -- decl                      : CDecl                             
+
+
+SEM CStat 
+  | CLabel 
+        lhs.pp      = ident @label <> colon <> @stat.pp
+  | CCase 
+        lhs.pp      = text "case" <+> @expr.pp <> colon <+> @stat.pp
+          
+  | CCases 
+        lhs.pp      = text "case" <+> @lower_expr.pp 
+                        <+> text "..." <+> @upper_expr.pp <> colon <+> @stat.pp
+    
+  | CDefault  
+        lhs.pp      = text "default" <> colon <+> @stat.pp
+    
+  | CExpr 
+        lhs.pp      =  fromMaybe empty @opt_expr.pp <+> semi
+  
+  | CCompound 
+        lhs.pp      = encloseSep lbrace rbrace space @block_items.pp
+    
+  | CIf 
+        lhs.pp      = text "if" <> parens @cond_expr.pp <+> @then_stat.pp <+> fromMaybe empty @opt_else.pp
+    
+  | CSwitch 
+        lhs.pp      = text "switch" <> parens @expr.pp <+> @stat.pp
+  
+  | CWhile 
+        lhs.pp      = case @is_dowhile of
+                        True -> text "do" <+> @stat.pp <+> text "while" <+> parens @expr.pp <> semi
+                        False -> text "while" <+> parens @expr.pp <+> @stat.pp
+     
+  | CFor 
+        lhs.pp      = text "for" <+> text "TODO"
+                        --  parens (hsep (punctuate semi (text "<<expr1>>" : map (maybe empty pretty) [expr2, expr3])))
+      
+  | CGoto 
+        lhs.pp      = text "goto" <+> ident @ident <> semi
+  
+  | CCont 
+        lhs.pp      = text "continue" <> semi
+
+  | CBreak 
+        lhs.pp      = text "break" <> semi
+
+  | CReturn 
+        lhs.pp      = text "return" <+> fromMaybe empty @opt_expr.pp <> semi
+
+  | CAsm 
+        lhs.pp      = text "/* CAsm */"
+
+
+
+SEM CExpr
+  | CComma 
+        lhs.pp      = sepWith commaSpace @exprs.pp
+    
+  | CAssign 
+        lhs.pp      = @lvalue.pp <+> pretty @assign_op <+> @rvalue.pp
+    
+  | CCond 
+        lhs.pp      = @cond_expr.pp
+                        <+> char '?' <+> fromMaybe empty @opt_true_expr.pp 
+                        <+> char ':' <+> @false_expr.pp
+  | CBinary 
+        lhs.pp      = @left_expr.pp <+> pretty @binary_op <+> @right_expr.pp
+
+  | CCast 
+        lhs.pp      = parens @type_decl.pp <+> @expr.pp
+
+  | CUnary 
+        lhs.pp      = case isPrefixOp @unary_op of 
+                        True -> pretty @unary_op <+> @expr.pp
+                        False -> @expr.pp <+> pretty @unary_op
+    
+  | CSizeofExpr 
+        lhs.pp      = text "sizeof" <+> @expr.pp
+    
+  | CSizeofType 
+        lhs.pp      = text "sizeof" <+> parens @decl.pp
+
+  | CAlignofExpr 
+        lhs.pp      = text "alignof" <+> @expr.pp
+    
+  | CAlignofType 
+        lhs.pp      = text "alignof" <+> parens @decl.pp
+    
+  | CIndex 
+        lhs.pp      = @expr.pp <> lbracket <> @index_expr.pp <> rbracket                          
+
+  | CCall 
+        lhs.pp      = @expr.pp 
+                        <> encloseSep1 lparen rparen commaSpace @args.pp       
+
+  | CMember 
+        lhs.pp      = case @is_deref of
+                        True -> @expr.pp <> text "->" <> ident @ident
+                        False -> @expr.pp <> char '.' <> ident @ident
+                                                  
+  | CVar 
+        lhs.pp      = ident @ident
+        
+  | CConst 
+        lhs.pp      = @constant.pp
+        
+  | CCompoundLit 
+        lhs.pp      = parens @decl.pp 
+                        <+> encloseSep lbrace rbrace space @init_list.pp
+                        
+  | CStatExpr 
+        lhs.pp      = parens @stat.pp
+        
+  | CLabAddrExpr 
+        lhs.pp      = text "&&" <> ident @ident
+        
+  | CBuiltinExpr 
+        lhs.pp      = text "<<CPretty: CExpr#CBuiltinExpr not yet implemented!>>"
+
+ 
+
+SEM CConst
+  | CIntConst 
+        lhs.pp      = integer @value 
+  | CCharConst 
+        lhs.pp      = squotes (char @value)
+  | CFloatConst 
+        lhs.pp      = text @value
+  | CStrConst 
+        lhs.pp      = dquotes (text @value)
+
+
+  
+SEM OptCExpr
+  | Just 
+        lhs.pp      = Just @just.pp
+  | Nothing  
+        lhs.pp      = Nothing
+
+SEM OptCStat
+  | Just 
+        lhs.pp      = Just @just.pp
+  | Nothing  
+        lhs.pp      = Nothing    
+{
+
+
+instance Pretty CStorageSpec where
+  pretty (CAuto     _) = text "auto"
+  pretty (CRegister _) = text "register"
+  pretty (CStatic   _) = text "static"
+  pretty (CExtern   _) = text "extern"
+  pretty (CTypedef  _) = text "typedef"
+  
+  
+instance Pretty CTypeQual where
+  pretty (CConstQual _) = text "const"
+  pretty (CVolatQual _) = text "volatile"
+  pretty (CRestrQual _) = text "restrict"
+  
+  
+instance Pretty CAssignOp where
+  pretty CAssignOp    = char '='
+  pretty CMulAssOp    = text "*="
+  pretty CDivAssOp    = text "/="
+  pretty CRmdAssOp    = text "%="
+  pretty CAddAssOp    = text "+="
+  pretty CSubAssOp    = text "-="
+  pretty CShlAssOp    = text "<<="
+  pretty CShrAssOp    = text ">>="
+  pretty CAndAssOp    = text "&="
+  pretty CXorAssOp    = text "^="
+  pretty COrAssOp     = text "|="
+         
+           
+instance Pretty CBinaryOp where
+  pretty CMulOp     = char '*'
+  pretty CDivOp     = char '/'
+  pretty CRmdOp     = char '%'
+  pretty CAddOp     = char '+'
+  pretty CSubOp     = char '-'
+  pretty CShlOp     = text "<<"
+  pretty CShrOp     = text ">>"
+  pretty CLeOp      = char '<'
+  pretty CGrOp      = char '>'
+  pretty CLeqOp     = text "<="
+  pretty CGeqOp     = text ">="
+  pretty CEqOp      = text "=="
+  pretty CNeqOp     = text "!="
+  pretty CAndOp     = char '&'
+  pretty CXorOp     = char '^'
+  pretty COrOp      = char '|'
+  pretty CLndOp     = text "&&"
+  pretty CLorOp     = text "||"
+  
+instance Pretty CUnaryOp where 
+  pretty CPreIncOp    = text "++"
+  pretty CPreDecOp    = text "--"
+  pretty CPostIncOp   = text "++"
+  pretty CPostDecOp   = text "--"
+  pretty CAdrOp       = char '&'
+  pretty CIndOp       = char '*'
+  pretty CPlusOp      = char '+'
+  pretty CMinOp       = char '-'
+  pretty CCompOp      = char '~'
+  pretty CNegOp       = char '!'  
+
+isPrefixOp :: CUnaryOp -> Bool
+isPrefixOp CPostIncOp   = False
+isPrefixOp CPostDecOp   = False
+isPrefixOp _            = True
+
+ident :: Ident -> Doc
+ident  = text . identToLexeme
+
+
+prettyCTranslationUnit :: CTranslationUnit -> Doc
+prettyCTranslationUnit header = pp_Syn_CTranslationUnit synthesized
+  where synthesized = wrap_CTranslationUnit (sem_CTranslationUnit header) inherited
+        inherited   = Inh_CTranslationUnit
+          
+}  

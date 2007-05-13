@@ -1,0 +1,40 @@
+
+
+TYPE CExtDecls                    = [CExtDecl]
+
+TYPE OptCDeclr                    = MAYBE CDeclr
+
+TYPE OptCInit                     = MAYBE CInit
+
+TYPE OptIdent                     = MAYBE Ident
+
+TYPE OptCExpr                     = MAYBE CExpr  
+
+TYPE CDesignators                 = [CDesignator]
+
+TYPE CInitList                    = [CInitListElem]
+
+TYPE CInitListElem                = (designators : CDesignators,
+                                     cinit : CInit)
+
+TYPE CDeclParams                  = [CDeclParam ]        -- optional size (const expr)
+
+TYPE CBlockItems                  = [CBlockItem]
+
+TYPE CDeclParam                   = ( opt_declarator : OptCDeclr,        -- declarator (may be omitted)
+                                      opt_initializer : OptCInit,        -- optional initializer
+                                      opt_expr : OptCExpr)
+
+TYPE CExprs                       = [CExpr]
+
+TYPE CDecls                       = [CDecl]
+
+TYPE OptCStat                     = MAYBE CStat 
+
+TYPE CDeclSpecs                   = [CDeclSpec]
+
+TYPE CTypeQuals                   = [CTypeQual]
+
+
+
+                                                                      

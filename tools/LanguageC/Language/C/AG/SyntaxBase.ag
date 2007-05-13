@@ -1,0 +1,414 @@
+
+
+-- a complete C header file (K&R A10) (EXPORTED)
+--
+DATA CTranslationUnit 
+  | CTranslationUnit 
+        ext_decls                 : CExtDecls
+        attrs                     : Attrs
+ 
+
+
+
+-- external C declaration (K&R A10) (EXPORTED)
+--
+DATA CExtDecl 
+  | CDeclExt  
+        decl                      : CDecl
+  | CFDefExt  
+        fun_def                   : CFunDef
+  | CAsmExt   
+        attrs                     : Attrs
+        
+
+--
+DATA CFunDef 
+  | CFunDef 
+        decl_specs                : CDeclSpecs
+        declarator                : CDeclr
+        declaration_list          : CDecls
+        stat                      : CStat
+        attrs                     : Attrs                     
+
+
+-- C statement (A9) (EXPORTED)
+--
+
+DATA CStat 
+  | CLabel     
+        label                     : Ident
+        stat                      : CStat
+        attrs                     : Attrs
+  | CCase      
+        expr                      : CExpr             -- constant expression
+        stat                      : CStat
+        attrs                     : Attrs
+  | CCases     
+        lower_expr                : CExpr             
+        upper_expr                : CExpr             
+        stat                      : CStat
+        attrs                     : Attrs
+  | CDefault   
+        stat                      : CStat             -- default case
+        attrs                     : Attrs
+  | CExpr      
+        opt_expr                  : OptCExpr     -- expression statement, maybe empty
+        attrs                     : Attrs
+  | CCompound  
+        block_items               : CBlockItems      -- list of declarations and statements
+        attrs                     : Attrs
+  | CIf 
+        cond_expr                 : CExpr             -- conditional expression
+        then_stat                 : CStat
+        opt_else                  : OptCStat     -- optional "else" case
+        attrs                     : Attrs
+  | CSwitch    
+        expr                      : CExpr             -- selector
+        stat                      : CStat
+        attrs                     : Attrs
+  | CWhile     
+        expr                      : CExpr
+        stat                      : CStat
+        is_dowhile                : Bool              -- `True' implies "do-while" statement
+        attrs                     : Attrs
+  | CFor 
+        initial                   : {(Either (Maybe CExpr) CDecl)}
+        opt_test_expr             : OptCExpr
+        opt_upd_expr              : OptCExpr
+        stat                      : CStat
+        attrs                     : Attrs
+  | CGoto      
+        ident                     : Ident             -- label
+        attrs                     : Attrs
+  | CGotoPtr   
+        expr                      : CExpr             -- computed address
+        attrs                     : Attrs
+  | CCont      
+        attrs                     : Attrs
+  | CBreak     
+        attrs                     : Attrs
+  | CReturn    
+        opt_expr                  : OptCExpr
+        attrs                     : Attrs
+  | CAsm       
+        attrs                     : Attrs
+
+-- C99 Block items, things that may appear in compound statements
+DATA CBlockItem 
+  | CBlockStmt    
+        stat                      : CStat
+  | CBlockDecl    
+        decl                      : CDecl
+  | CNestedFunDef 
+        fundef                    : CFunDef                -- GNU C has nested functions
+
+
+
+
+DATA CDecl 
+  | CDecl 
+        decl_specs                : CDeclSpecs                -- type specifier and qualifier
+        decl_params               : CDeclParams
+        attrs                     : Attrs
+
+
+
+
+-- C declaration specifiers and qualifiers (EXPORTED)
+--
+DATA CDeclSpec 
+  | CStorageSpec 
+        storage_spec              : CStorageSpec
+  | CTypeSpec    
+        type_spec                 : CTypeSpec
+  | CTypeQual    
+        type_qual                 : CTypeQual
+
+
+
+-- C storage class specifier (K&R A8.1) (EXPORTED)
+-- CStorageSpec: all unary construtors, but the single element
+-- is attrs so don't define here
+
+
+
+-- C type specifier (K&R A8.2) (EXPORTED)
+--
+DATA CTypeSpec 
+  | CVoidType    
+        attrs                     : Attrs      
+  | CCharType    
+        attrs                     : Attrs     
+  | CShortType   
+        attrs                     : Attrs     
+  | CIntType     
+        attrs                     : Attrs       
+  | CLongType    
+        attrs                     : Attrs      
+  | CFloatType   
+        attrs                     : Attrs    
+  | CDoubleType  
+        attrs                     : Attrs    
+  | CSignedType  
+        attrs                     : Attrs    
+  | CUnsigType   
+        attrs                     : Attrs     
+  | CBoolType    
+        attrs                     : Attrs      
+  | CComplexType 
+        attrs                     : Attrs   
+  | CSUType      
+        su_type                   : CStructUnion
+        attrs                     : Attrs 
+  | CEnumType    
+        enum                      : CEnum
+        attrs                     : Attrs
+  | CTypeDef     
+        name                      : Ident                -- typedef name                              
+        attrs                     : Attrs
+  | CTypeOfExpr  
+        expr                      : CExpr
+        attrs                     : Attrs                             
+  | CTypeOfType  
+        decl                      : CDecl
+        attrs                     : Attrs                              
+
+
+
+-- C type qualifier (K&R A8.2) (EXPORTED)
+--
+-- * plus `restrict' from C99 and `inline'
+-- CTypeQual: all unary construtors, but the single element
+-- is attrs so don't define here
+
+
+
+-- C structure of union declaration (K&R A8.3) (EXPORTED)
+--
+-- * in both case, either the identifier is present or the list must be
+--   non-empty 
+--
+DATA CStructUnion 
+  | CStruct 
+        tag                       : CStructTag
+        opt_ident                 : OptIdent
+        decls                     : CDecls       -- *structure* declaration
+        attrs                     : Attrs
+
+-- (EXPORTED)
+-- CStructTag - all nullary construtors, so don't define here
+
+
+-- C enumeration declaration (K&R A8.4) (EXPORTED)
+--
+DATA CEnum 
+  | CEnum 
+        opt_ident                 : OptIdent
+        unknown                   : {[(Ident,Maybe CExpr)]} -- (variant name, explicit variant value)
+        attrs                     : Attrs
+                  
+
+
+
+-- C declarator (K&R A8.5) and abstract declarator (K&R A8.8) (EXPORTED)
+--
+-- * We have one type qualifer list `[CTypeQual]' for each indirection (ie,
+--   each occurrence of `*' in the concrete syntax).
+--
+-- * We unfold K&R's direct-declarators nonterminal into declarators.  Note
+--   that `*(*x)' is equivalent to `**x'.
+--
+-- * Declarators (A8.5) and abstract declarators (A8.8) are represented in the 
+--   same structure.  In the case of a declarator, the identifier in
+--   `CVarDeclr' must be present; in an abstract declarator it misses.
+--   `CVarDeclr Nothing ...' on its own is meaningless, it may only occur as
+--   part of a larger type (ie, there must be a pointer, an array, or function
+--   declarator around).
+--
+-- * The qualifiers list in a `CPtrDeclr' may not be empty.
+--
+-- * Old and new style function definitions are merged into a single case
+--   `CFunDeclr'.  In case of an old style definition, the parameter list is
+--   empty and the variadic flag is `False' (ie, the parameter names are not
+--   stored in the tree).  Remember, a new style definition with no parameters 
+--   requires a single `void' in the argument list (according to the standard).
+--
+-- * We unfold K&R's parameter-type-list nonterminal into the declarator
+--   variant for functions.
+--
+DATA CDeclr 
+  | CVarDeclr 
+        opt_ident                 : OptIdent                -- declared identifier                        
+        attrs                     : Attrs
+  | CPtrDeclr 
+        indirections              : {[[CTypeQual]]}                -- indirections (non-empty)
+        declr                     : CDeclr
+        attrs                     : Attrs                       
+  | CArrDeclr 
+        declr                     : CDeclr
+        type_quals                : CTypeQuals
+        opt_expr                  : OptCExpr                -- array size                        
+        attrs                     : Attrs
+  | CFunDeclr 
+        declr                     : CDeclr
+        decls                     : CDecls                        -- *parameter* declarations
+        is_variadic               : Bool                          -- is variadic?                        
+        attrs                     : Attrs
+
+
+-- C initializer (K&R A8.7) (EXPORTED)
+--
+DATA CInit 
+  | CInitExpr 
+        expr                      : CExpr
+        attrs                     : Attrs                       -- assignment expression
+  | CInitList 
+        init_list                 : CInitList
+        attrs                     : Attrs
+                       
+
+
+                      
+
+
+-- C initializer designator (EXPORTED)
+--
+DATA CDesignator 
+  | CArrDesig     
+        expr                      : CExpr 
+        attrs                     : Attrs                                
+  | CMemberDesig  
+        ident                     : Ident
+        attrs                     : Attrs                                 
+  | CRangeDesig   
+        range_expr                : CExpr        -- GNUC array range designator
+        expr                      : CExpr
+        attrs                     : Attrs                                
+
+
+
+-- C expression (K&R A7) (EXPORTED)
+--
+-- * these can be arbitrary expression, as the argument of `sizeof' can be
+--   arbitrary, even if appearing in a constant expression
+--
+-- * GNU C extension: `alignof'
+--
+
+ 
+
+DATA CExpr 
+  | CComma       
+        exprs                     : CExprs         -- comma expression list, n >= 2
+        attrs                     : Attrs                        
+  | CAssign      
+        assign_op                 : CAssignOp       -- assignment operator
+        lvalue                    : CExpr           -- l-value
+        rvalue                    : CExpr           -- r-value
+        attrs                     : Attrs
+  | CCond        
+        cond_expr                 : CExpr           -- conditional
+        opt_true_expr             : OptCExpr          -- true-expression (GNU allows omitting)
+        false_expr                : CExpr           -- false-expression
+        attrs                     : Attrs
+  | CBinary      
+        binary_op                 : CBinaryOp       -- binary operator
+        left_expr                 : CExpr           -- lhs
+        right_expr                : CExpr           -- rhs
+        attrs                     : Attrs
+  | CCast        
+        type_decl                 : CDecl           -- type name
+        expr                      : CExpr
+        attrs                     : Attrs
+  | CUnary       
+        unary_op                  : CUnaryOp        -- unary operator
+        expr                      : CExpr
+        attrs                     : Attrs
+  | CSizeofExpr  
+        expr                      : CExpr
+        attrs                     : Attrs
+  | CSizeofType  
+        decl                      :  CDecl           -- type name
+        attrs                     : Attrs
+  | CAlignofExpr 
+        expr                      : CExpr
+        attrs                     : Attrs
+  | CAlignofType 
+        decl                      : CDecl           -- type name
+        attrs                     : Attrs
+  | CIndex       
+        expr                      : CExpr           -- array                
+        index_expr                : CExpr           -- index
+        attrs                     : Attrs
+  | CCall        
+        expr                      : CExpr           -- function                
+        args                      : CExprs         -- arguments
+        attrs                     : Attrs
+  | CMember      
+        expr                      : CExpr           -- structure
+        ident                     : Ident           -- member name
+        is_deref                  : Bool            -- deref structure? (True for `->')
+        attrs                     : Attrs
+  | CVar         
+        ident                     : Ident           -- identifier (incl. enumeration const)
+        attrs                     : Attrs
+  | CConst       
+        constant                  : CConst          -- includes strings
+        attrs                     : Attrs
+  | CCompoundLit 
+        decl                      : CDecl           -- C99 compound literal
+        init_list                 : CInitList       -- type name & initialiser list
+        attrs                     : Attrs
+  | CStatExpr    
+        stat                      : CStat           -- GNUC compound statement as expr
+        attrs                     : Attrs
+  | CLabAddrExpr 
+        ident                     : Ident           -- GNUC address of label
+        attrs                     : Attrs
+  | CBuiltinExpr 
+        attrs                     : Attrs           -- place holder for GNUC builtin exprs
+
+
+
+-- C assignment operators (K&R A7.17) (EXPORTED)
+-- CAssignOp - all nullary construtors, so don't define here
+
+
+-- C binary operators (K&R A7.6-15) (EXPORTED)
+-- CBinaryOp - all nullary construtors, so don't define here
+
+
+-- C unary operator (K&R A7.3-4) (EXPORTED)
+-- CUnaryOp - all nullary construtors, so don't define here
+
+
+
+-- C constant (K&R A2.5 & A7.2) (EXPORTED)
+--
+-- * we do not list enumeration constants here, as they are identifiers
+--
+DATA CConst 
+  | CIntConst   
+        value                     : Integer 
+        attrs                     : Attrs
+  | CCharConst  
+        value                     : Char 
+        attrs                     : Attrs
+  | CFloatConst 
+        value                     : String 
+        attrs                     : Attrs
+  | CStrConst   
+        value                     : String 
+        attrs                     : Attrs
+
+
+
+
+DATA Attrs 
+  | OnlyPos 
+        pos                       : Position
+
+
+
+  
+  

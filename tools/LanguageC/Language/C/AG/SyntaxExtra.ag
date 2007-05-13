@@ -1,0 +1,8 @@
+
+{
+module Language.C.AG.SyntaxExtra where
+
+import Language.C.Syntax
+}
+
+INCLUDE "SyntaxExtraDEFS.ag"
