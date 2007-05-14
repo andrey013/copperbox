@@ -241,7 +241,7 @@ DATA CDeclr
         opt_ident                 : OptIdent                -- declared identifier                        
         attrs                     : Attrs
   | CPtrDeclr 
-        indirections              : {[[CTypeQual]]}                -- indirections (non-empty)
+        indirections              : CTypeQuals                -- indirections (non-empty)
         declr                     : CDeclr
         attrs                     : Attrs                       
   | CArrDeclr 

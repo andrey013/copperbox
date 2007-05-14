@@ -1048,13 +1048,13 @@ clean_typedef_declarator
   {% withPos (CPtrDeclr [] d)}
                     | "*", parameter_typedef_declarator {d};
   
-  {% withPos (CPtrDeclr [reverse qs] d)}
+  {% withPos (CPtrDeclr (reverse qs) d)}
                     | "*", type_qualifier_list {qs}, parameter_typedef_declarator {d};
 
   {% withPos (CPtrDeclr [] d)}
                     | "*", attrs {zs}, parameter_typedef_declarator {d};
 
-  {% withPos (CPtrDeclr [reverse qs] d)}
+  {% withPos (CPtrDeclr (reverse qs) d)}
                     | "*", attrs {zs}, type_qualifier_list {qs}, parameter_typedef_declarator {d};
 
 
@@ -1074,30 +1074,30 @@ paren_typedef_declarator
   {d}               : paren_postfix_typedef_declarator {d};
 
   -- redundant paren
-  {% withPos (CPtrDeclr [[]] d)}
+  {% withPos (CPtrDeclr [] d)}
                     | "*", "(", simple_paren_typedef_declarator {d}, ")";
 
   -- redundant paren
-  {% withPos (CPtrDeclr [reverse qs] d)}
+  {% withPos (CPtrDeclr (reverse qs) d)}
                     | "*", type_qualifier_list {qs}, "(", simple_paren_typedef_declarator {d}, ")";
 
   {% withPos (CPtrDeclr [] d)}
                     | "*", paren_typedef_declarator {d};
 
-  {% withPos (CPtrDeclr [reverse qs] d)}
+  {% withPos (CPtrDeclr (reverse qs) d)}
                     | "*", type_qualifier_list {qs}, paren_typedef_declarator {d};
 
-  {% withPos (CPtrDeclr [[]] d)}
+  {% withPos (CPtrDeclr [] d)}
                     | "*", attrs {zs}, "(", simple_paren_typedef_declarator {d}, ")";
 
   -- redundant paren
-  {% withPos (CPtrDeclr [reverse qs] d)}
+  {% withPos (CPtrDeclr (reverse qs) d)}
                     | "*", attrs {zs}, type_qualifier_list {qs}, "(", simple_paren_typedef_declarator {d}, ")";
 
   {% withPos (CPtrDeclr [] d)}
                     | "*", attrs {zs}, paren_typedef_declarator {d};
 
-  {% withPos (CPtrDeclr [reverse qs] d)}
+  {% withPos (CPtrDeclr (reverse qs) d)}
                     | "*", attrs {zs}, type_qualifier_list {qs}, paren_typedef_declarator {d};
 
 
@@ -1135,16 +1135,16 @@ unary_identifier_declarator { CDeclr };
 unary_identifier_declarator
   {d}               : postfix_identifier_declarator {d};
 
-  {% withPos (CPtrDeclr [[]] d)}
+  {% withPos (CPtrDeclr [] d)}
                     | "*", identifier_declarator {d};
 
-  {% withPos (CPtrDeclr [reverse qs] d)}
+  {% withPos (CPtrDeclr (reverse qs) d)}
                     | "*", type_qualifier_list {qs}, identifier_declarator {d};
 
-  {% withPos (CPtrDeclr [[]] d)}
+  {% withPos (CPtrDeclr [] d)}
                     | "*", attrs {zs}, identifier_declarator {d};
 
-  {% withPos (CPtrDeclr [reverse qs] d)}
+  {% withPos (CPtrDeclr (reverse qs) d)}
                     | "*", attrs {zs}, type_qualifier_list {qs}, identifier_declarator {d};
     
     
@@ -1177,10 +1177,10 @@ old_function_declarator { CDeclr };
 old_function_declarator
   {d}               : postfix_old_function_declarator {d};
 
-  {% withPos (CPtrDeclr [[]] d)}
+  {% withPos (CPtrDeclr [] d)}
                     | "*", old_function_declarator {d};
 
-  {% withPos (CPtrDeclr [reverse qs] d)}
+  {% withPos (CPtrDeclr (reverse qs) d)}
                     | "*", type_qualifier_list {qs}, old_function_declarator {d};
     
     
@@ -1354,28 +1354,28 @@ postfix_array_abstract_declarator
     
 unary_abstract_declarator {CDeclr};
 unary_abstract_declarator
-  {% withPos (\pos -> CPtrDeclr [[]] (emptyDeclr pos) pos)}
+  {% withPos (\pos -> CPtrDeclr [] (emptyDeclr pos) pos)}
                     : "*";
 
-  {% withPos (\pos -> CPtrDeclr [reverse qs] (emptyDeclr pos) pos)}
+  {% withPos (\pos -> CPtrDeclr (reverse qs) (emptyDeclr pos) pos)}
                     | "*", type_qualifier_list {qs};
 
   {% withPos (CPtrDeclr [] d)}
                     | "*", abstract_declarator {d};
 
-  {% withPos (CPtrDeclr [reverse qs] d)}
+  {% withPos (CPtrDeclr (reverse qs) d)}
                     | "*", type_qualifier_list {qs}, abstract_declarator {d};
 
-  {% withPos (\pos -> CPtrDeclr [[]] (emptyDeclr pos) pos )}
+  {% withPos (\pos -> CPtrDeclr [] (emptyDeclr pos) pos )}
                     | "*", attrs {zs};
 
-  {% withPos (\pos -> CPtrDeclr [reverse qs] (emptyDeclr pos) pos)}
+  {% withPos (\pos -> CPtrDeclr (reverse qs) (emptyDeclr pos) pos)}
                     | "*", attrs {zs}, type_qualifier_list {qs};
 
   {% withPos (CPtrDeclr [] d)}
                     | "*", attrs {zs}, abstract_declarator {d};
 
-  {% withPos (CPtrDeclr [reverse qs] d)}
+  {% withPos (CPtrDeclr (reverse qs) d)}
                     | "*", attrs {zs}, type_qualifier_list {qs}, abstract_declarator {d};
     
     

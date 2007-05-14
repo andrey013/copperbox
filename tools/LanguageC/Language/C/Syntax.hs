@@ -323,7 +323,7 @@ data CEnum = CEnum (Maybe Ident)
 --
 data CDeclr = CVarDeclr (Maybe Ident)                -- declared identifier                        
                         Attrs
-            | CPtrDeclr [[CTypeQual]]                -- indirections (non-empty)
+            | CPtrDeclr [CTypeQual]                -- indirections (non-empty)
                         CDeclr
                         Attrs                        
             | CArrDeclr CDeclr
