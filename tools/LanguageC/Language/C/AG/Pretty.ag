@@ -19,21 +19,21 @@ INCLUDE "SyntaxExtraDEFS.ag"
 
 
 ATTR CTranslationUnit CExtDecl CDecl CFunDef CDeclSpec CDeclr
-     CTypeSpec CStat CExpr CConst
+     CTypeSpec CStat CExpr CConst CDeclParam CInit
   [ | | pp : {Doc} ]
 
-ATTR CExtDecls CDeclSpecs CDeclParams CDecls CBlockItems
+ATTR CExtDecls CDeclSpecs CDeclParams CTypeQuals CDecls CBlockItems
      CExprs CInitList
   [ | | pp USE {:} {[]} : {[Doc]} ]
      
-ATTR OptCExpr OptCStat
+ATTR OptCExpr OptCStat OptIdent OptCInit OptCDeclr
   [ | | pp : {(Maybe Doc)} ]     
 
 
 
 SEM CTranslationUnit
   | CTranslationUnit
-        lhs.pp      = vcat2 @ext_decls.pp
+        lhs.pp      = vcat2 (postPunctuate semi @ext_decls.pp)
         
 
 SEM CExtDecl
@@ -68,20 +68,18 @@ SEM CDeclSpec
 
 SEM CDeclr 
   | CVarDeclr 
-        lhs.pp      = empty -- opt_ident                 : OptIdent                -- declared identifier                        
+        lhs.pp      = fromMaybe empty @opt_ident.pp
   | CPtrDeclr 
-        lhs.pp      = empty -- indirections              : {[[CTypeQual]]}                -- indirections (non-empty)
-                            -- declr                     : CDeclr                     
+        lhs.pp      = parens (hsep @indirections.pp) <+> @declr.pp                
   | CArrDeclr
-        lhs.pp      = empty -- declr                     : CDeclr
-                            -- type_quals                : CTypeQuals
-                            -- opt_expr                  : OptCExpr                -- array size                        
+        lhs.pp      = @declr.pp <> brackets (fromMaybe empty @opt_expr.pp)
 
   | CFunDeclr 
-        lhs.pp      = empty  -- declr                     : CDeclr
-                            -- decls                     : CDecls                        -- *parameter* declarations
-                            -- is_variadic               : Bool                          -- is variadic?                        
-
+        lhs.pp      = @declr.pp <+> parens (hsep (punctuate comma (@decls.pp)) <> @var_doc)
+        loc.var_doc = case @is_variadic of 
+                        True -> text ", ..."
+                        False -> empty
+                
 
 
 
@@ -134,7 +132,7 @@ SEM CStat
         lhs.pp      = text "default" <> colon <+> @stat.pp
     
   | CExpr 
-        lhs.pp      =  fromMaybe empty @opt_expr.pp <+> semi
+        lhs.pp      = fromMaybe empty @opt_expr.pp <+> semi
   
   | CCompound 
         lhs.pp      = encloseSep lbrace rbrace space @block_items.pp
@@ -249,6 +247,21 @@ SEM CConst
         lhs.pp      = dquotes (text @value)
 
 
+SEM CDeclParam 
+  | Tuple   
+        lhs.pp      = fromMaybe empty @opt_declarator.pp
+                      <+> fromMaybe empty @opt_initializer.pp
+                      <+> fromMaybe empty @opt_expr.pp
+                                      
+
+SEM CInit 
+  | CInitExpr 
+        lhs.pp      = @expr.pp 
+  | CInitList 
+        lhs.pp      = hsep @init_list.pp
+        
+        
+                                              
   
 SEM OptCExpr
   | Just 
@@ -260,7 +273,29 @@ SEM OptCStat
   | Just 
         lhs.pp      = Just @just.pp
   | Nothing  
-        lhs.pp      = Nothing    
+        lhs.pp      = Nothing   
+        
+SEM OptIdent 
+  | Just 
+        lhs.pp      = Just (ident @just)
+  | Nothing  
+        lhs.pp      = Nothing   
+
+
+SEM OptCInit
+  | Just 
+        lhs.pp      = Just @just.pp
+  | Nothing  
+        lhs.pp      = Nothing 
+
+SEM OptCDeclr
+  | Just 
+        lhs.pp      = Just @just.pp
+  | Nothing  
+        lhs.pp      = Nothing 
+        
+        
+
 {
 
 
