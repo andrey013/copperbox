@@ -27,8 +27,14 @@ main = do
         parseAndPrint fname = do text <- readFile fname
                                  case parseTranslationUnit text of
                                     Left err -> putStr err
-                                    Right ans -> outputPP ans
-                                                    
+                                    Right ans -> do { putStrLn "" -- (show ans)
+                                                    ; putStrLn $ "\n" ++ linesep
+                                                    ; outputPP ans }
+                                 putStrLn $ "\n" ++ linesep
+                                 putStrLn text
+                                 
+        linesep = replicate 80 '-'                                   
+                                                  
 -- Output function if using PJ pretty printer
 -- outputPJ tu = putStr $ render $ pretty tu  
 

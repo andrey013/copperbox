@@ -3,6 +3,10 @@
 module Language.C.AG.SyntaxExtra where
 
 import Language.C.Syntax
+
+
+type CInitialClause = Either (Maybe CExpr) CDecl
+
 }
 
 INCLUDE "SyntaxExtraDEFS.ag"

@@ -37,6 +37,11 @@ TYPE CDeclSpecs                   = [CDeclSpec]
 
 TYPE CTypeQuals                   = [CTypeQual]
 
+TYPE CEnumDefs                    = [CEnumDef]
+
+TYPE CEnumDef                     = ( name : Ident,
+                                      opt_value : OptCExpr)   -- (variant name, explicit variant value)
 
 
-                                                                      
+        
+                                                                        

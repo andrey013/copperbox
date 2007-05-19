@@ -72,7 +72,7 @@ DATA CStat
         is_dowhile                : Bool              -- `True' implies "do-while" statement
         attrs                     : Attrs
   | CFor 
-        initial                   : {(Either (Maybe CExpr) CDecl)}
+        initial_clause            : CInitialClause
         opt_test_expr             : OptCExpr
         opt_upd_expr              : OptCExpr
         stat                      : CStat
@@ -204,7 +204,7 @@ DATA CStructUnion
 DATA CEnum 
   | CEnum 
         opt_ident                 : OptIdent
-        unknown                   : {[(Ident,Maybe CExpr)]} -- (variant name, explicit variant value)
+        enum_defs                 : CEnumDefs
         attrs                     : Attrs
                   
 
@@ -409,6 +409,12 @@ DATA Attrs
         pos                       : Position
 
 
-
+-- There is only one Either type in the abstract syntax
+-- So we can manage to define it
+DATA CInitialClause   
+  | Left  
+        opt_expr                  : OptCExpr
+  | Right  
+        decl                      : CDecl   
   
   

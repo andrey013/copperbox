@@ -281,11 +281,11 @@ compound_statement
 
 enter_scope { () };
 enter_scope
-  {% leaveScope}    : ;
+  {% enterScope}    : ;
     
 leave_scope { () };
 leave_scope
-  {% enterScope}    : ;
+  {% leaveScope}    : ;
 
 
 

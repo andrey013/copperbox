@@ -19,11 +19,14 @@ INCLUDE "SyntaxExtraDEFS.ag"
 
 
 ATTR CTranslationUnit CExtDecl CDecl CFunDef CDeclSpec CDeclr
-     CTypeSpec CStat CExpr CConst CDeclParam CInit
+     CTypeSpec CStat CExpr CConst CDeclParam CInit CStructUnion
+     CEnum CEnumDef CBlockItem CInitialClause
   [ | | pp : {Doc} ]
 
-ATTR CExtDecls CDeclSpecs CDeclParams CTypeQuals CDecls CBlockItems
-     CExprs CInitList
+ATTR CTypeQuals [ | | pp : {[Doc]} ]
+
+ATTR CExtDecls CDeclSpecs CDeclParams CDecls CBlockItems
+     CExprs CInitList CEnumDefs
   [ | | pp USE {:} {[]} : {[Doc]} ]
      
 ATTR OptCExpr OptCStat OptIdent OptCInit OptCDeclr
@@ -46,14 +49,14 @@ SEM CExtDecl
 
 SEM CDecl 
   | CDecl 
-        lhs.pp      = hang 2 ( (hsep @decl_specs.pp)  
-                               <$> (sepWith commaSpace @decl_params.pp))
+        lhs.pp      = spaceSep @decl_specs.pp
+                               <+> commaSep @decl_params.pp
 
 
 SEM CFunDef 
   | CFunDef 
         lhs.pp      = sep @decl_specs.pp <+> @declarator.pp
-                       <+> sep @declaration_list.pp <+> @stat.pp
+                       <+> sep @declaration_list.pp <$$> @stat.pp
 
 
 SEM CDeclSpec 
@@ -68,14 +71,14 @@ SEM CDeclSpec
 
 SEM CDeclr 
   | CVarDeclr 
-        lhs.pp      = fromMaybe empty @opt_ident.pp
+        lhs.pp      = optEmpty @opt_ident.pp
   | CPtrDeclr 
-        lhs.pp      = parens (hsep @indirections.pp) <+> @declr.pp                
+        lhs.pp      = char '*' <> hsep @indirections.pp <> @declr.pp                
   | CArrDeclr
-        lhs.pp      = @declr.pp <> brackets (fromMaybe empty @opt_expr.pp)
+        lhs.pp      = @declr.pp <> brackets (optEmpty @opt_expr.pp)
 
   | CFunDeclr 
-        lhs.pp      = @declr.pp <+> parens (hsep (punctuate comma (@decls.pp)) <> @var_doc)
+        lhs.pp      = @declr.pp <> parensComma @decls.pp <> @var_doc
         loc.var_doc = case @is_variadic of 
                         True -> text ", ..."
                         False -> empty
@@ -107,17 +110,18 @@ SEM CTypeSpec
   | CComplexType 
         lhs.pp      = text "_Complex"
   | CSUType      
-        lhs.pp      = empty -- su_type                   : CStructUnion
+        lhs.pp      = @su_type.pp
   | CEnumType    
-        lhs.pp      = empty -- enum                      : CEnum
+        lhs.pp      = text "enum" <+> @enum.pp
   | CTypeDef     
-        lhs.pp      = empty -- name                       : Ident                -- typedef name                              
+        lhs.pp      = ident @name
   | CTypeOfExpr  
-        lhs.pp      = empty -- expr                      : CExpr                           
+        lhs.pp      = text "typeof" <> parens @expr.pp            
   | CTypeOfType  
-        lhs.pp      = empty -- decl                      : CDecl                             
+        lhs.pp      = text "typeof" <> parens @decl.pp
 
-
+-- | Statements are responsible for terminating themselves with a semi 
+-- if necessary.
 SEM CStat 
   | CLabel 
         lhs.pp      = ident @label <> colon <> @stat.pp
@@ -132,11 +136,10 @@ SEM CStat
         lhs.pp      = text "default" <> colon <+> @stat.pp
     
   | CExpr 
-        lhs.pp      = fromMaybe empty @opt_expr.pp <+> semi
+        lhs.pp      = optEmpty @opt_expr.pp <> semi
   
   | CCompound 
-        lhs.pp      = encloseSep lbrace rbrace space @block_items.pp
-    
+        lhs.pp      = bracesEmptyLinesIndent 3 @block_items.pp                        
   | CIf 
         lhs.pp      = text "if" <> parens @cond_expr.pp <+> @then_stat.pp <+> fromMaybe empty @opt_else.pp
     
@@ -149,9 +152,10 @@ SEM CStat
                         False -> text "while" <+> parens @expr.pp <+> @stat.pp
      
   | CFor 
-        lhs.pp      = text "for" <+> text "TODO"
-                        --  parens (hsep (punctuate semi (text "<<expr1>>" : map (maybe empty pretty) [expr2, expr3])))
-      
+        lhs.pp      = (text "for" <> parensSemi [@initial_clause.pp,
+                                                optEmpty @opt_test_expr.pp,
+                                                optEmpty @opt_upd_expr.pp])
+                        <$$> @stat.pp  
   | CGoto 
         lhs.pp      = text "goto" <+> ident @ident <> semi
   
@@ -171,14 +175,14 @@ SEM CStat
 
 SEM CExpr
   | CComma 
-        lhs.pp      = sepWith commaSpace @exprs.pp
+        lhs.pp      = commaSep @exprs.pp
     
   | CAssign 
         lhs.pp      = @lvalue.pp <+> pretty @assign_op <+> @rvalue.pp
     
   | CCond 
         lhs.pp      = @cond_expr.pp
-                        <+> char '?' <+> fromMaybe empty @opt_true_expr.pp 
+                        <+> char '?' <+> optEmpty @opt_true_expr.pp 
                         <+> char ':' <+> @false_expr.pp
   | CBinary 
         lhs.pp      = @left_expr.pp <+> pretty @binary_op <+> @right_expr.pp
@@ -188,8 +192,8 @@ SEM CExpr
 
   | CUnary 
         lhs.pp      = case isPrefixOp @unary_op of 
-                        True -> pretty @unary_op <+> @expr.pp
-                        False -> @expr.pp <+> pretty @unary_op
+                        True -> pretty @unary_op <> @expr.pp
+                        False -> @expr.pp <> pretty @unary_op
     
   | CSizeofExpr 
         lhs.pp      = text "sizeof" <+> @expr.pp
@@ -223,7 +227,7 @@ SEM CExpr
         
   | CCompoundLit 
         lhs.pp      = parens @decl.pp 
-                        <+> encloseSep lbrace rbrace space @init_list.pp
+                        <+> bracesSpace @init_list.pp
                         
   | CStatExpr 
         lhs.pp      = parens @stat.pp
@@ -249,9 +253,9 @@ SEM CConst
 
 SEM CDeclParam 
   | Tuple   
-        lhs.pp      = fromMaybe empty @opt_declarator.pp
-                      <+> fromMaybe empty @opt_initializer.pp
-                      <+> fromMaybe empty @opt_expr.pp
+        lhs.pp      = optEmpty @opt_declarator.pp
+                      <+?> @opt_initializer.pp
+                      <+?> @opt_expr.pp
                                       
 
 SEM CInit 
@@ -260,9 +264,40 @@ SEM CInit
   | CInitList 
         lhs.pp      = hsep @init_list.pp
         
+
+SEM CStructUnion 
+  | CStruct
+        lhs.pp      = pretty @tag <+?> @opt_ident.pp
+                        <+?> structSep @decls.pp 
+
+SEM CEnum 
+  | CEnum
+        lhs.pp      = fromMaybe empty @opt_ident.pp
+                        <+?> enumSep @enum_defs.pp 
+
         
-                                              
-  
+                                                  
+SEM CEnumDef
+  | Tuple
+        lhs.pp      = ident @name <> (text " = " `prefixJust` @opt_value.pp)
+
+
+-- | Declarations inside blocks must terminate with a semi
+SEM CBlockItem 
+  | CBlockStmt    
+        lhs.pp      = @stat.pp
+  | CBlockDecl    
+        lhs.pp      = @decl.pp <> semi
+  | CNestedFunDef 
+        lhs.pp      = @fundef.pp
+
+SEM CInitialClause   
+  | Left  
+        lhs.pp      = optEmpty @opt_expr.pp
+  | Right  
+        lhs.pp      = @decl.pp
+        
+                                        
 SEM OptCExpr
   | Just 
         lhs.pp      = Just @just.pp
@@ -294,10 +329,18 @@ SEM OptCDeclr
   | Nothing  
         lhs.pp      = Nothing 
         
-        
+SEM CTypeQuals
+  | Cons
+        lhs.pp      = pretty @hd : @tl.pp
+  | Nil 
+        lhs.pp      = []
+                
 
 {
 
+instance Pretty CStructTag where
+  pretty CStructTag   = text "struct"
+  pretty CUnionTag    = text "union"
 
 instance Pretty CStorageSpec where
   pretty (CAuto     _) = text "auto"
