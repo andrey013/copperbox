@@ -1,6 +1,6 @@
 
 
-Pretty.hs: Pretty.ag SyntaxExtra.ag SyntaxExtraDEFS.ag
+Pretty.hs: Pretty.ag SyntaxBase.ag SyntaxExtra.ag SyntaxExtraDEFS.ag
 	uuagc -d SyntaxExtra.ag -o SyntaxExtra.hs
 	uuagc -cfsp --wrapper Pretty.ag	-o Pretty.hs
 

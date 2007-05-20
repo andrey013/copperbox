@@ -5,7 +5,7 @@
 DATA CTranslationUnit 
   | CTranslationUnit 
         ext_decls                 : CExtDecls
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
  
 
 
@@ -15,10 +15,12 @@ DATA CTranslationUnit
 DATA CExtDecl 
   | CDeclExt  
         decl                      : CDecl
+        attr_specs                : CAttributeSpecs
   | CFDefExt  
         fun_def                   : CFunDef
+        attr_specs                : CAttributeSpecs
   | CAsmExt   
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
         
 
 --
@@ -28,7 +30,7 @@ DATA CFunDef
         declarator                : CDeclr
         declaration_list          : CDecls
         stat                      : CStat
-        attrs                     : Attrs                     
+        src_loc                   : SrcLoc                     
 
 
 -- C statement (A9) (EXPORTED)
@@ -38,60 +40,61 @@ DATA CStat
   | CLabel     
         label                     : Ident
         stat                      : CStat
-        attrs                     : Attrs
+        attr_specs                : CAttributeSpecs
+        src_loc                   : SrcLoc
   | CCase      
         expr                      : CExpr             -- constant expression
         stat                      : CStat
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CCases     
         lower_expr                : CExpr             
         upper_expr                : CExpr             
         stat                      : CStat
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CDefault   
         stat                      : CStat             -- default case
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CExpr      
         opt_expr                  : OptCExpr     -- expression statement, maybe empty
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CCompound  
         block_items               : CBlockItems      -- list of declarations and statements
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CIf 
         cond_expr                 : CExpr             -- conditional expression
         then_stat                 : CStat
         opt_else                  : OptCStat     -- optional "else" case
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CSwitch    
         expr                      : CExpr             -- selector
         stat                      : CStat
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CWhile     
         expr                      : CExpr
         stat                      : CStat
         is_dowhile                : Bool              -- `True' implies "do-while" statement
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CFor 
         initial_clause            : CInitialClause
         opt_test_expr             : OptCExpr
         opt_upd_expr              : OptCExpr
         stat                      : CStat
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CGoto      
         ident                     : Ident             -- label
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CGotoPtr   
         expr                      : CExpr             -- computed address
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CCont      
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CBreak     
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CReturn    
         opt_expr                  : OptCExpr
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CAsm       
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
 
 -- C99 Block items, things that may appear in compound statements
 DATA CBlockItem 
@@ -99,8 +102,10 @@ DATA CBlockItem
         stat                      : CStat
   | CBlockDecl    
         decl                      : CDecl
+        attr_specs                : CAttributeSpecs
   | CNestedFunDef 
         fundef                    : CFunDef                -- GNU C has nested functions
+        attr_specs                : CAttributeSpecs
 
 
 
@@ -109,7 +114,8 @@ DATA CDecl
   | CDecl 
         decl_specs                : CDeclSpecs                -- type specifier and qualifier
         decl_params               : CDeclParams
-        attrs                     : Attrs
+        attr_specs                : CAttributeSpecs
+        src_loc                   : SrcLoc
 
 
 
@@ -136,42 +142,42 @@ DATA CDeclSpec
 --
 DATA CTypeSpec 
   | CVoidType    
-        attrs                     : Attrs      
+        src_loc                   : SrcLoc      
   | CCharType    
-        attrs                     : Attrs     
+        src_loc                   : SrcLoc     
   | CShortType   
-        attrs                     : Attrs     
+        src_loc                   : SrcLoc     
   | CIntType     
-        attrs                     : Attrs       
+        src_loc                   : SrcLoc       
   | CLongType    
-        attrs                     : Attrs      
+        src_loc                   : SrcLoc      
   | CFloatType   
-        attrs                     : Attrs    
+        src_loc                   : SrcLoc    
   | CDoubleType  
-        attrs                     : Attrs    
+        src_loc                   : SrcLoc    
   | CSignedType  
-        attrs                     : Attrs    
+        src_loc                   : SrcLoc    
   | CUnsigType   
-        attrs                     : Attrs     
+        src_loc                   : SrcLoc     
   | CBoolType    
-        attrs                     : Attrs      
+        src_loc                   : SrcLoc      
   | CComplexType 
-        attrs                     : Attrs   
+        src_loc                   : SrcLoc   
   | CSUType      
         su_type                   : CStructUnion
-        attrs                     : Attrs 
+        src_loc                   : SrcLoc 
   | CEnumType    
         enum                      : CEnum
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CTypeDef     
         name                      : Ident                -- typedef name                              
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CTypeOfExpr  
         expr                      : CExpr
-        attrs                     : Attrs                             
+        src_loc                   : SrcLoc                             
   | CTypeOfType  
         decl                      : CDecl
-        attrs                     : Attrs                              
+        src_loc                   : SrcLoc                              
 
 
 
@@ -193,7 +199,8 @@ DATA CStructUnion
         tag                       : CStructTag
         opt_ident                 : OptIdent
         decls                     : CDecls       -- *structure* declaration
-        attrs                     : Attrs
+        attr_specs                : CAttributeSpecs
+        src_loc                   : SrcLoc
 
 -- (EXPORTED)
 -- CStructTag - all nullary construtors, so don't define here
@@ -205,7 +212,8 @@ DATA CEnum
   | CEnum 
         opt_ident                 : OptIdent
         enum_defs                 : CEnumDefs
-        attrs                     : Attrs
+        attr_specs                : CAttributeSpecs
+        src_loc                   : SrcLoc
                   
 
 
@@ -239,21 +247,22 @@ DATA CEnum
 DATA CDeclr 
   | CVarDeclr 
         opt_ident                 : OptIdent                -- declared identifier                        
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CPtrDeclr 
         indirections              : CTypeQuals                -- indirections (non-empty)
         declr                     : CDeclr
-        attrs                     : Attrs                       
+        attr_specs                : CAttributeSpecs
+        src_loc                   : SrcLoc                       
   | CArrDeclr 
         declr                     : CDeclr
         type_quals                : CTypeQuals
         opt_expr                  : OptCExpr                -- array size                        
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CFunDeclr 
         declr                     : CDeclr
         decls                     : CDecls                        -- *parameter* declarations
         is_variadic               : Bool                          -- is variadic?                        
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
 
 
 -- C initializer (K&R A8.7) (EXPORTED)
@@ -261,10 +270,10 @@ DATA CDeclr
 DATA CInit 
   | CInitExpr 
         expr                      : CExpr
-        attrs                     : Attrs                       -- assignment expression
+        src_loc                   : SrcLoc                       -- assignment expression
   | CInitList 
         init_list                 : CInitList
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
                        
 
 
@@ -276,14 +285,14 @@ DATA CInit
 DATA CDesignator 
   | CArrDesig     
         expr                      : CExpr 
-        attrs                     : Attrs                                
+        src_loc                   : SrcLoc                                
   | CMemberDesig  
         ident                     : Ident
-        attrs                     : Attrs                                 
+        src_loc                   : SrcLoc                                 
   | CRangeDesig   
         range_expr                : CExpr        -- GNUC array range designator
         expr                      : CExpr
-        attrs                     : Attrs                                
+        src_loc                   : SrcLoc                                
 
 
 
@@ -300,73 +309,73 @@ DATA CDesignator
 DATA CExpr 
   | CComma       
         exprs                     : CExprs         -- comma expression list, n >= 2
-        attrs                     : Attrs                        
+        src_loc                   : SrcLoc                        
   | CAssign      
         assign_op                 : CAssignOp       -- assignment operator
         lvalue                    : CExpr           -- l-value
         rvalue                    : CExpr           -- r-value
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CCond        
         cond_expr                 : CExpr           -- conditional
         opt_true_expr             : OptCExpr          -- true-expression (GNU allows omitting)
         false_expr                : CExpr           -- false-expression
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CBinary      
         binary_op                 : CBinaryOp       -- binary operator
         left_expr                 : CExpr           -- lhs
         right_expr                : CExpr           -- rhs
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CCast        
         type_decl                 : CDecl           -- type name
         expr                      : CExpr
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CUnary       
         unary_op                  : CUnaryOp        -- unary operator
         expr                      : CExpr
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CSizeofExpr  
         expr                      : CExpr
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CSizeofType  
         decl                      :  CDecl           -- type name
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CAlignofExpr 
         expr                      : CExpr
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CAlignofType 
         decl                      : CDecl           -- type name
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CIndex       
         expr                      : CExpr           -- array                
         index_expr                : CExpr           -- index
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CCall        
         expr                      : CExpr           -- function                
         args                      : CExprs         -- arguments
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CMember      
         expr                      : CExpr           -- structure
         ident                     : Ident           -- member name
         is_deref                  : Bool            -- deref structure? (True for `->')
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CVar         
         ident                     : Ident           -- identifier (incl. enumeration const)
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CConst       
         constant                  : CConst          -- includes strings
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CCompoundLit 
         decl                      : CDecl           -- C99 compound literal
         init_list                 : CInitList       -- type name & initialiser list
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CStatExpr    
         stat                      : CStat           -- GNUC compound statement as expr
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CLabAddrExpr 
         ident                     : Ident           -- GNUC address of label
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CBuiltinExpr 
-        attrs                     : Attrs           -- place holder for GNUC builtin exprs
+        src_loc                   : SrcLoc           -- place holder for GNUC builtin exprs
 
 
 
@@ -390,22 +399,36 @@ DATA CExpr
 DATA CConst 
   | CIntConst   
         value                     : Integer 
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CCharConst  
         value                     : Char 
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CFloatConst 
         value                     : String 
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
   | CStrConst   
         value                     : String 
-        attrs                     : Attrs
+        src_loc                   : SrcLoc
 
 
 
+-- | GCC attribute specifier
+DATA CAttributeSpec 
+  | CAttributeSpec 
+        attr_list                 : CAttributes
+        src_loc                   : SrcLoc
 
-DATA Attrs 
-  | OnlyPos 
+
+-- | GCC attribute
+DATA CAttribute 
+  | CAttribute 
+        name                      : Ident
+        constant_exprs            : CExprs
+        src_loc                   : SrcLoc
+                             
+
+DATA SrcLoc 
+  | SrcLoc 
         pos                       : Position
 
 

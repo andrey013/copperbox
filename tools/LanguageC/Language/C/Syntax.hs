@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fglasgow-exts #-}
+--------------------------------------------------------------------------------
 --  C -> Haskell Compiler: Abstract Syntax for Source Files
 --
 --  Author : Manuel M T Chakravarty
@@ -53,28 +55,35 @@ module Language.C.Syntax (
   CExpr(..), CAssignOp(..), CBinaryOp(..), CUnaryOp(..), CConst (..), 
   -- * Identifiers
   Ident, identToLexeme,
+  -- * GCC Attributes
+  CAttributeSpec(..), CAttribute(..), 
   -- * Source location
-  Attrs(..)
+  SrcLoc(..)
   ) where
 
 import Language.C.Position
+
+import Data.Generics.Basics
+import Data.Generics.Instances
 
 type Ident = String
 
 -- | A complete C translation unit (K&R A10) (EXPORTED)
 --
 data CTranslationUnit = CTranslationUnit [CExtDecl]
-                       Attrs
-             deriving (Eq,Show) 
+                       SrcLoc
+             deriving (Eq,Ord,Show,Typeable,Data) 
 
 
 -- | external C declaration (K&R A10) (EXPORTED)
 --
 data CExtDecl = CDeclExt  CDecl
-              | CFDefExt  CFunDef
+                          [CAttributeSpec]
+              | CFDefExt  CFunDef 
+                          [CAttributeSpec]
               -- | a chunk of assembly code (which is not itself recorded)
-              | CAsmExt   Attrs     
-              deriving (Eq,Show)     
+              | CAsmExt   SrcLoc     
+              deriving (Eq,Ord,Show,Typeable,Data)     
 
 
 -- | C function definition (K&R A10.1) (EXPORTED)
@@ -92,8 +101,8 @@ data CFunDef = CFunDef [CDeclSpec]        -- type specifier and qualifier
                        CDeclr             -- declarator
                        [CDecl]            -- optional declaration list
                        CStat              -- compound statement
-                       Attrs
-             deriving (Eq,Show)                        
+                       SrcLoc
+             deriving (Eq,Ord,Show,Typeable,Data)                        
 
 
 -- | C statement (A9) (EXPORTED)
@@ -102,60 +111,63 @@ data CStat
            -- | label            
            = CLabel     Ident             
                         CStat
-                        Attrs             
+                        [CAttributeSpec]
+                        SrcLoc             
            -- | constant expression 
            | CCase      CExpr             -- 
                         CStat
-                        Attrs
+                        SrcLoc
            | CCases     CExpr             -- case range
                         CExpr             -- `case lower .. upper :'
                         CStat
-                        Attrs
+                        SrcLoc
            -- | default case             
            | CDefault   CStat             
-                        Attrs
+                        SrcLoc
            | CExpr      (Maybe CExpr)     -- expression statement, maybe empty
-                        Attrs
+                        SrcLoc
            | CCompound  [CBlockItem]      -- list of declarations and statements
-                        Attrs
+                        SrcLoc
            -- | conditional expression
            | CIf        CExpr             
                         CStat
                         (Maybe CStat)     -- optional "else" case
-                        Attrs
+                        SrcLoc
            | CSwitch    CExpr             -- selector
                         CStat
-                        Attrs
+                        SrcLoc
            | CWhile     CExpr
                         CStat
                         Bool              -- `True' implies "do-while" statement
-                        Attrs
+                        SrcLoc
            | CFor       (Either (Maybe CExpr)
                                 CDecl)
                         (Maybe CExpr)
                         (Maybe CExpr)
                         CStat
-                        Attrs
+                        SrcLoc
            | CGoto      Ident             -- label
-                        Attrs
+                        SrcLoc
            | CGotoPtr   CExpr             -- computed address
-                        Attrs
+                        SrcLoc
            -- | continue statement
-           | CCont      Attrs             
+           | CCont      SrcLoc             
            -- | break statement
-           | CBreak     Attrs             
+           | CBreak     SrcLoc             
            | CReturn    (Maybe CExpr)
-                        Attrs
+                        SrcLoc
            -- | a chunk of assembly code (which is not itself recorded)          
-           | CAsm       Attrs             
-           deriving (Eq,Show) 
+           | CAsm       SrcLoc             
+           deriving (Eq,Ord,Show,Typeable,Data) 
 
 -- | C99 Block items, things that may appear in compound statements
 data CBlockItem = CBlockStmt    CStat
                 | CBlockDecl    CDecl
+                                [CAttributeSpec]
                 -- | GNU C has nested functions
-                | CNestedFunDef CFunDef               
-                deriving (Eq,Show) 
+                | CNestedFunDef CFunDef
+                                [CAttributeSpec]               
+                deriving (Eq,Ord,Show,Typeable,Data) 
 
 
 
@@ -205,8 +217,9 @@ data CDecl = CDecl [CDeclSpec]            -- type specifier and qualifier
                    [(Maybe CDeclr,        -- declarator (may be omitted)
                      Maybe CInit,         -- optional initializer
                      Maybe CExpr)]        -- optional size (const expr)
-                   Attrs
-           deriving (Eq,Show)
+                   [CAttributeSpec]
+                   SrcLoc
+           deriving (Eq,Ord,Show,Typeable,Data)
 
 
 
@@ -215,55 +228,55 @@ data CDecl = CDecl [CDeclSpec]            -- type specifier and qualifier
 data CDeclSpec = CStorageSpec CStorageSpec
                | CTypeSpec    CTypeSpec
                | CTypeQual    CTypeQual
-               deriving (Eq,Show)
+               deriving (Eq,Ord,Show,Typeable,Data)
 
 
 -- | C storage class specifier (K&R A8.1) (EXPORTED)
 --
-data CStorageSpec = CAuto     Attrs     
-                  | CRegister Attrs 
-                  | CStatic   Attrs   
-                  | CExtern   Attrs   
-                  | CTypedef  Attrs       -- syntactic awkwardness of C
-                  | CThread   Attrs       -- GNUC thread local storage
-                  deriving (Eq,Show)
+data CStorageSpec = CAuto     SrcLoc     
+                  | CRegister SrcLoc 
+                  | CStatic   SrcLoc   
+                  | CExtern   SrcLoc   
+                  | CTypedef  SrcLoc       -- syntactic awkwardness of C
+                  | CThread   SrcLoc       -- GNUC thread local storage
+                  deriving (Eq,Ord,Show,Typeable,Data)
 
 
 -- | C type specifier (K&R A8.2) (EXPORTED)
 --
-data CTypeSpec = CVoidType    Attrs      
-               | CCharType    Attrs      
-               | CShortType   Attrs     
-               | CIntType     Attrs       
-               | CLongType    Attrs      
-               | CFloatType   Attrs     
-               | CDoubleType  Attrs    
-               | CSignedType  Attrs    
-               | CUnsigType   Attrs     
-               | CBoolType    Attrs      
-               | CComplexType Attrs   
+data CTypeSpec = CVoidType    SrcLoc      
+               | CCharType    SrcLoc      
+               | CShortType   SrcLoc     
+               | CIntType     SrcLoc       
+               | CLongType    SrcLoc      
+               | CFloatType   SrcLoc     
+               | CDoubleType  SrcLoc    
+               | CSignedType  SrcLoc    
+               | CUnsigType   SrcLoc     
+               | CBoolType    SrcLoc      
+               | CComplexType SrcLoc   
                | CSUType      CStructUnion
-                              Attrs  
+                              SrcLoc  
                | CEnumType    CEnum
-                              Attrs
+                              SrcLoc
                | CTypeDef     Ident                -- typedef name                              
-                              Attrs
+                              SrcLoc
                | CTypeOfExpr  CExpr
-                              Attrs                              
+                              SrcLoc                              
                | CTypeOfType  CDecl
-                              Attrs                              
-               deriving (Eq,Show)
+                              SrcLoc                              
+               deriving (Eq,Ord,Show,Typeable,Data)
 
 
 -- | C type qualifier (K&R A8.2) (EXPORTED)
 --
 -- * plus \'restrict\' from C99 and \'inline\'
 --
-data CTypeQual = CConstQual Attrs
-               | CVolatQual Attrs
-               | CRestrQual Attrs
-               | CInlinQual Attrs
-               deriving (Eq,Show)
+data CTypeQual = CConstQual SrcLoc
+               | CVolatQual SrcLoc
+               | CRestrQual SrcLoc
+               | CInlinQual SrcLoc
+               deriving (Eq,Ord,Show,Typeable,Data)
 
 
 -- | C structure of union declaration (K&R A8.3) (EXPORTED)
@@ -274,8 +287,9 @@ data CTypeQual = CConstQual Attrs
 data CStructUnion = CStruct CStructTag
                             (Maybe Ident)
                             [CDecl]       -- structure declaration
-                            Attrs
-                  deriving (Eq,Show)
+                            [CAttributeSpec]
+                            SrcLoc
+                  deriving (Eq,Ord,Show,Typeable,Data)
 
 
 
@@ -283,15 +297,16 @@ data CStructUnion = CStruct CStructTag
 --
 data CStructTag = CStructTag
                 | CUnionTag
-                deriving (Eq,Show)
+                deriving (Eq,Ord,Show,Typeable,Data)
 
 -- | C enumeration declaration (K&R A8.4) (EXPORTED)
 --
 data CEnum = CEnum (Maybe Ident)
                    [(Ident,                        -- variant name
                      Maybe CExpr)]                -- explicit variant value
-                   Attrs
-           deriving (Eq,Show)                   
+                   [CAttributeSpec]
+                   SrcLoc
+           deriving (Eq,Ord,Show,Typeable,Data)                   
 
 
 
@@ -322,27 +337,28 @@ data CEnum = CEnum (Maybe Ident)
 --   variant for functions.
 --
 data CDeclr = CVarDeclr (Maybe Ident)                -- declared identifier                        
-                        Attrs
+                        SrcLoc
             | CPtrDeclr [CTypeQual]                -- indirections (non-empty)
                         CDeclr
-                        Attrs                        
+                        [CAttributeSpec]
+                        SrcLoc                        
             | CArrDeclr CDeclr
                         [CTypeQual]
                         (Maybe CExpr)                -- array size                        
-                        Attrs
+                        SrcLoc
             | CFunDeclr CDeclr
                         [CDecl]                      --  parameter declarations
                         Bool                        -- is variadic?                        
-                        Attrs
-            deriving (Eq,Show) 
+                        SrcLoc
+            deriving (Eq,Ord,Show,Typeable,Data) 
 
 -- | C initializer (K&R A8.7) (EXPORTED)
 --
 data CInit = CInitExpr CExpr
-                       Attrs                        -- assignment expression
+                       SrcLoc                        -- assignment expression
            | CInitList CInitList
-                       Attrs
-           deriving (Eq,Show)                        
+                       SrcLoc
+           deriving (Eq,Ord,Show,Typeable,Data)                        
 
 type CInitList = [([CDesignator], CInit)]
 
@@ -351,13 +367,13 @@ type CInitList = [([CDesignator], CInit)]
 -- | C initializer designator (EXPORTED)
 --
 data CDesignator = CArrDesig     CExpr 
-                                 Attrs                                
+                                 SrcLoc                                
                  | CMemberDesig  Ident
-                                 Attrs                                 
+                                 SrcLoc                                 
                  | CRangeDesig   CExpr        -- GNUC array range designator
                                  CExpr
-                                 Attrs                                
-                 deriving (Eq,Show) 
+                                 SrcLoc                                
+                 deriving (Eq,Ord,Show,Typeable,Data) 
 
 
 -- | C expression (K&R A7) (EXPORTED)
@@ -368,56 +384,56 @@ data CDesignator = CArrDesig     CExpr
 -- * GNU C extension: \'alignof\'
 --
 data CExpr = CComma       [CExpr]         -- comma expression list, n >= 2
-                          Attrs                        
+                          SrcLoc                        
            | CAssign      CAssignOp       -- assignment operator
                           CExpr           -- l-value
                           CExpr           -- r-value
-                          Attrs
+                          SrcLoc
            | CCond        CExpr           -- conditional
                    (Maybe CExpr)          -- true-expression (GNU allows omitting)
                           CExpr           -- false-expression
-                          Attrs
+                          SrcLoc
            | CBinary      CBinaryOp       -- binary operator
                           CExpr           -- lhs
                           CExpr           -- rhs
-                          Attrs
+                          SrcLoc
            | CCast        CDecl           -- type name
                           CExpr
-                          Attrs
+                          SrcLoc
            | CUnary       CUnaryOp        -- unary operator
                           CExpr
-                          Attrs
+                          SrcLoc
            | CSizeofExpr  CExpr
-                          Attrs
+                          SrcLoc
            | CSizeofType  CDecl           -- type name
-                          Attrs
+                          SrcLoc
            | CAlignofExpr CExpr
-                          Attrs
+                          SrcLoc
            | CAlignofType CDecl           -- type name
-                          Attrs
+                          SrcLoc
            | CIndex       CExpr           -- array
                           CExpr           -- index
-                          Attrs
+                          SrcLoc
            | CCall        CExpr           -- function
                           [CExpr]         -- arguments
-                          Attrs
+                          SrcLoc
            | CMember      CExpr           -- structure
                           Ident           -- member name
                           Bool            -- deref structure? (True for `->')
-                          Attrs
+                          SrcLoc
            | CVar         Ident           -- identifier (incl. enumeration const)
-                          Attrs
+                          SrcLoc
            | CConst       CConst          -- includes strings
-                          Attrs
+                          SrcLoc
            | CCompoundLit CDecl           -- C99 compound literal
                           CInitList       -- type name & initialiser list
-                          Attrs
+                          SrcLoc
            | CStatExpr    CStat           -- GNUC compound statement as expr
-                          Attrs
+                          SrcLoc
            | CLabAddrExpr Ident           -- GNUC address of label
-                          Attrs
-           | CBuiltinExpr Attrs           -- place holder for GNUC builtin exprs
-           deriving (Eq,Show) 
+                          SrcLoc
+           | CBuiltinExpr SrcLoc           -- place holder for GNUC builtin exprs
+           deriving (Eq,Ord,Show,Typeable,Data) 
 
 
 -- | C assignment operators (K&R A7.17) (EXPORTED)
@@ -433,7 +449,7 @@ data CAssignOp = CAssignOp
                | CAndAssOp
                | CXorAssOp
                | COrAssOp
-               deriving (Eq,Show)
+               deriving (Eq,Ord,Show,Typeable,Data)
 
 -- | C binary operators (K&R A7.6-15) (EXPORTED)
 --
@@ -455,7 +471,7 @@ data CBinaryOp = CMulOp
                | COrOp                    -- inclusive bitwise or
                | CLndOp                   -- logical and
                | CLorOp                   -- logical or
-               deriving (Eq,Show)
+               deriving (Eq,Ord,Show,Typeable,Data)
 
 -- | C unary operator (K&R A7.3-4) (EXPORTED)
 --
@@ -469,23 +485,37 @@ data CUnaryOp = CPreIncOp                 -- prefix increment operator
               | CMinOp                    -- prefix minus
               | CCompOp                   -- one's complement
               | CNegOp                    -- logical negation
-              deriving (Eq,Show)
+              deriving (Eq,Ord,Show,Typeable,Data)
 
 -- | C constant (K&R A2.5 & A7.2) (EXPORTED)
 --
 -- * we do not list enumeration constants here, as they are identifiers
 --
-data CConst = CIntConst   Integer Attrs
-            | CCharConst  Char Attrs
-            | CFloatConst String Attrs
-            | CStrConst   String Attrs
-            deriving (Eq,Show) 
+data CConst = CIntConst   Integer SrcLoc
+            | CCharConst  Char SrcLoc
+            | CFloatConst String SrcLoc
+            | CStrConst   String SrcLoc
+            deriving (Eq,Ord,Show,Typeable,Data) 
 
 
--- | For the time being we only use a limited version of Attrs from the 
--- Compiler ToolKit (CTK) that only track source position
-data Attrs = OnlyPos Position
-  deriving (Eq,Show)
+-- | GCC attribute specifier
+data CAttributeSpec = CAttributeSpec [CAttribute]
+                                     SrcLoc
+                    deriving (Eq,Ord,Show,Typeable,Data)
+
+-- | GCC attribute
+data CAttribute = CAttribute Ident
+                             [CExpr]
+                             SrcLoc
+                  deriving (Eq,Ord,Show,Typeable,Data)
+                             
+
+
+-- | Renamed Attrs from C2Hs to SrcLoc - this is to be distinct 
+-- from GCC attributes. Also, SrcLoc is more limited than C2Hs
+-- attrs.
+data SrcLoc = SrcLoc Position
+  deriving (Eq,Ord,Show,Typeable,Data)
 
 
   

@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fglasgow-exts #-}
+--------------------------------------------------------------------------------
 --  Compiler Toolkit: some basic definitions used all over the place
 --
 --  Author : Manuel M. T. Chakravarty
@@ -43,6 +45,8 @@ module Language.C.Position (
   incPos, tabPos, retPos,
 ) where
 
+import Data.Generics.Basics
+import Data.Generics.Instances
 
 -- | uniform representation of source file positions; the order of the arguments
 -- is important as it leads to the desired ordering of source positions
@@ -51,10 +55,9 @@ module Language.C.Position (
 data Position = Position String		-- file name
 	{-# UNPACK #-}	 !Int		-- row
 	{-# UNPACK #-}	 !Int		-- column
-  deriving (Eq, Ord)
+  deriving (Eq,Ord,Show,Typeable,Data) 
 
-instance Show Position where
-  show (Position fname row col) = show (fname, row, col)
+
 
 -- | no position (for unknown position information) (EXPORTED)
 --

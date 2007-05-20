@@ -36,12 +36,12 @@ ATTR OptCExpr OptCStat OptIdent OptCInit OptCDeclr
 
 SEM CTranslationUnit
   | CTranslationUnit
-        lhs.pp      = vcat2 (postPunctuate semi @ext_decls.pp)
+        lhs.pp      = vcat2 @ext_decls.pp
         
-
+-- | Declarations are terminated with a semi, definitions aren't.
 SEM CExtDecl
   | CDeclExt  
-        lhs.pp      = @decl.pp
+        lhs.pp      = @decl.pp <> semi
   | CFDefExt  
         lhs.pp      = @fun_def.pp
   | CAsmExt   
@@ -185,7 +185,7 @@ SEM CExpr
                         <+> char '?' <+> optEmpty @opt_true_expr.pp 
                         <+> char ':' <+> @false_expr.pp
   | CBinary 
-        lhs.pp      = @left_expr.pp <+> pretty @binary_op <+> @right_expr.pp
+        lhs.pp      = @left_expr.pp <> pretty @binary_op <> @right_expr.pp
 
   | CCast 
         lhs.pp      = parens @type_decl.pp <+> @expr.pp
