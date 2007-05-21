@@ -1,0 +1,16 @@
+21 May 2007
+
+
+Test drivers
+
+Demo parses a post-processed C file and pretty prints it
+> ghc --make -i./Language/C/AG Demo.hs
+
+CCWrapper.hs is the original test driver from C2HS
+> ghc --make CCWrapper.hs
+
+To regenerate Demo needs Frown & UUAG, CCWrapper needs Frown.
+At the moment there is no top level makefile or cabal file to regenerate, cd to 
+Language/C/Frown and type make. For Demo you must also remake the pretty 
+printer, cd to Language/C/AG and type make.
+
