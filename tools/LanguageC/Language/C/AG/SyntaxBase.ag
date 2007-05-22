@@ -114,7 +114,7 @@ DATA CDecl
   | CDecl 
         decl_specs                : CDeclSpecs                -- type specifier and qualifier
         decl_params               : CDeclParams
-        attr_specs                : CAttributeSpecs
+        attr_specs                : CDeclAttrSpecs      -- might include prefix and suffix attr_specs
         src_loc                   : SrcLoc
 
 

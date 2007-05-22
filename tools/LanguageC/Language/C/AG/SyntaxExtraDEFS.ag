@@ -46,5 +46,6 @@ TYPE CAttributeSpecs              = [CAttributeSpec]
 
 TYPE CAttributes                  = [CAttribute]
 
-        
+TYPE CDeclAttrSpecs               = ( prefix : CAttributeSpecs, 
+                                      suffix : CAttributeSpecs)        
                                                                         

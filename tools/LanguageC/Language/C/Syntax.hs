@@ -217,7 +217,7 @@ data CDecl = CDecl [CDeclSpec]            -- type specifier and qualifier
                    [(Maybe CDeclr,        -- declarator (may be omitted)
                      Maybe CInit,         -- optional initializer
                      Maybe CExpr)]        -- optional size (const expr)
-                   [CAttributeSpec]
+                   ([CAttributeSpec],[CAttributeSpec]) -- a attributes might prefix or suffix the decl
                    SrcLoc
            deriving (Eq,Ord,Show,Typeable,Data)
 

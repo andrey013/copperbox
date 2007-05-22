@@ -458,10 +458,10 @@ asm_clobbers
 --
 declaration { CDecl };
 declaration
-  {% withLoc (CDecl (reverse s) [] [])}
+  {% withLoc (CDecl (reverse s) [] ([],[]))}
                   : sue_declaration_specifier {s}, ";";
 
-  {% withLoc (CDecl (reverse s) [] [])}
+  {% withLoc (CDecl (reverse s) [] ([],[]))}
                   | sue_type_specifier {s}, ";";
 
   {case ds of
@@ -486,21 +486,21 @@ default_declaring_list
   {% let declspecs = reverse qs in
      do { doDeclIdent declspecs d 
         ; loc <- getSrcLoc
-        ; return (CDecl (reverse qs) [(Just d, io, Nothing)] (reverse ao) loc) }}
-                    : declaration_qualifier_list {qs}, identifier_declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
+        ; return (CDecl (reverse qs) [(Just d, io, Nothing)] ([],reverse as) loc) }}
+                    : declaration_qualifier_list {qs}, identifier_declarator {d}, asm_opt {asmo}, attrs_opt {as}, initializer_opt {io};
 
   
   {% let declspecs = liftTypeQuals qs in
       do { doDeclIdent declspecs d 
          ; loc <- getSrcLoc
-         ; return (CDecl (liftTypeQuals qs) [(Just d, io, Nothing)] (reverse ao) loc) }}
-                    | type_qualifier_list {qs}, identifier_declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
+         ; return (CDecl (liftTypeQuals qs) [(Just d, io, Nothing)] ([],reverse as) loc) }}
+                    | type_qualifier_list {qs}, identifier_declarator {d}, asm_opt {asmo}, attrs_opt {as}, initializer_opt {io};
 
   {% case ds of
       CDecl declspecs dies attrs loc -> do { doDeclIdent declspecs d
-                                           ; return (CDecl declspecs ((Just d, io, Nothing) : dies) ((reverse ao) ++ attrs) loc)} }
+                                           ; return (CDecl declspecs ((Just d, io, Nothing) : dies) (([], reverse as) `pairCat` attrs) loc)} }
                
-                    | default_declaring_list {ds}, ",", identifier_declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
+                    | default_declaring_list {ds}, ",", identifier_declarator {d}, asm_opt {asmo}, attrs_opt {as}, initializer_opt {io};
                
                
                
@@ -508,18 +508,18 @@ declaring_list { CDecl };
 declaring_list
   {% do { doDeclIdent ds d
         ; loc <- getSrcLoc
-        ; return (CDecl ds [(Just d, io, Nothing)] (reverse ao) loc) }}
-                    : declaration_specifier {ds}, declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
+        ; return (CDecl ds [(Just d, io, Nothing)] ([],reverse as) loc) }}
+                    : declaration_specifier {ds}, declarator {d}, asm_opt {asmo}, attrs_opt {as}, initializer_opt {io};
 
   {% do { doDeclIdent t d
         ; loc <- getSrcLoc
-        ; return (CDecl t [(Just d, io, Nothing)] (reverse ao) loc) }}
-                    | type_specifier {t}, declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
+        ; return (CDecl t [(Just d, io, Nothing)] ([],reverse as) loc) }}
+                    | type_specifier {t}, declarator {d}, asm_opt {asmo}, attrs_opt {as}, initializer_opt {io};
 
   {% case ds of
       CDecl declspecs dies attrs loc -> do { doDeclIdent declspecs d
-                                      ; return (CDecl declspecs ((Just d, io, Nothing) : dies) ((reverse ao) ++ attrs) loc)} }
-                    | declaring_list {ds}, ",", declarator {d}, asm_opt {asmo}, attrs_opt {ao}, initializer_opt {io};
+                                      ; return (CDecl declspecs ((Just d, io, Nothing) : dies) (([],reverse as) `pairCat` attrs) loc)} }
+                    | declaring_list {ds}, ",", declarator {d}, asm_opt {asmo}, attrs_opt {as}, initializer_opt {io};
                
                
                
@@ -891,10 +891,10 @@ struct_declaration_list
 --
 struct_declaration { CDecl };
 struct_declaration
-  {case ds of CDecl declspecs dies ao loc -> CDecl declspecs (List.reverse dies) ao loc}
+  {case ds of CDecl declspecs dies attrs loc -> CDecl declspecs (List.reverse dies) attrs loc}
                     : struct_declaring_list {ds}, ";";
 
-  {case ds of CDecl declspecs dies ao loc -> CDecl declspecs (List.reverse dies) ao loc}
+  {case ds of CDecl declspecs dies attrs loc -> CDecl declspecs (List.reverse dies) attrs loc}
                     | struct_default_declaring_list {ds}, ";";
 
   {d}               | "__extension__", struct_declaration {d};
@@ -903,14 +903,14 @@ struct_declaration
 -- doesn't redeclare typedef
 struct_default_declaring_list { CDecl };
 struct_default_declaring_list
-  {% withLoc (\loc -> case d of (d,s) -> CDecl (liftTypeQuals qs) [(d,Nothing,s)] ((reverse ao) ++(reverse ao')) loc)}
-                    : attrs_opt {ao}, type_qualifier_list {qs}, struct_identifier_declarator {d}, attrs_opt {ao'};
+  {% withLoc (\loc -> case d of (d,s) -> CDecl (liftTypeQuals qs) [(d,Nothing,s)] ((reverse ap), (reverse as)) loc)}
+                    : attrs_opt {ap}, type_qualifier_list {qs}, struct_identifier_declarator {d}, attrs_opt {as};
 
   {case ds of
             CDecl declspecs dies attrs loc ->
               case d of
-                (d,s) -> CDecl declspecs ((d,Nothing,s) : dies) ((reverse ao) ++ (reverse ao') ++ attrs) loc}
-                    | struct_default_declaring_list {ds}, ",", attrs_opt {ao}, struct_identifier_declarator {d}, attrs_opt {ao'};
+                (d,s) -> CDecl declspecs ((d,Nothing,s) : dies) ((reverse ap, reverse as) `pairCat` attrs) loc}
+                    | struct_default_declaring_list {ds}, ",", attrs_opt {ap}, struct_identifier_declarator {d}, attrs_opt {as};
                 
                 
                 
@@ -920,23 +920,23 @@ struct_default_declaring_list
 --
 struct_declaring_list { CDecl };
 struct_declaring_list
-  {% withLoc (\loc -> case d of (d,s) -> CDecl t [(d,Nothing,s)] ((reverse ao) ++(reverse ao')) loc)}
-                  : attrs_opt {ao}, type_specifier {t}, struct_declarator {d}, attrs_opt {ao'};
+  {% withLoc (\loc -> case d of (d,s) -> CDecl t [(d,Nothing,s)] (reverse ap, reverse as) loc)}
+                  : attrs_opt {ap}, type_specifier {t}, struct_declarator {d}, attrs_opt {as};
 
   {case ds of
             CDecl declspecs dies attr loc ->
               case d of
-                (d,s) -> CDecl declspecs ((d,Nothing,s) : dies) ((reverse ao) ++(reverse ao') ++ attr) loc}
+                (d,s) -> CDecl declspecs ((d,Nothing,s) : dies) ((reverse ap,reverse as) `pairCat` attr) loc}
                 
-                  | struct_declaring_list {ds}, ",", attrs_opt {ao}, struct_declarator {d}, attrs_opt {ao'} ;
+                  | struct_declaring_list {ds}, ",", attrs_opt {ap}, struct_declarator {d}, attrs_opt {as} ;
 
   -- We're being far too liberal in the parsing here, we realyl want to just
   -- allow unnamed struct and union fields but we're actually allowing any
   -- unnamed struct member. Making it allow only unnamed structs or unions in
   -- the parser is far too tricky, it makes things ambiguous. So we'll have to
   -- diagnose unnamed fields that are not structs/unions in a later stage.
-  {% withLoc (CDecl t [] (reverse ao))}
-                    | attrs_opt {ao}, type_specifier {t};
+  {% withLoc (CDecl t [] (reverse ap,[]))}
+                    | attrs_opt {ap}, type_specifier {t};
         
         
         
@@ -1252,47 +1252,47 @@ parameter_list
 
 parameter_declaration { CDecl };
 parameter_declaration
-  {% withLoc (CDecl s [] [])}
+  {% withLoc (CDecl s [] ([],[]))}
                     : declaration_specifier {s};
 
-  {% withLoc (CDecl s [(Just d, Nothing, Nothing)] [])}
+  {% withLoc (CDecl s [(Just d, Nothing, Nothing)] ([],[]))}
                     | declaration_specifier {s}, abstract_declarator {d};
 
-  {% withLoc (CDecl s [(Just d, Nothing, Nothing)] (reverse ao))}
-                    | declaration_specifier {s}, identifier_declarator {d}, attrs_opt {ao};
+  {% withLoc (CDecl s [(Just d, Nothing, Nothing)] ([],reverse as))}
+                    | declaration_specifier {s}, identifier_declarator {d}, attrs_opt {as};
 
-  {% withLoc (CDecl s [(Just d, Nothing, Nothing)] (reverse ao))}
-                    | declaration_specifier {s}, parameter_typedef_declarator {d}, attrs_opt {ao};
+  {% withLoc (CDecl s [(Just d, Nothing, Nothing)] ([],reverse as))}
+                    | declaration_specifier {s}, parameter_typedef_declarator {d}, attrs_opt {as};
 
-  {% withLoc (CDecl (reverse ds) [] [])}
+  {% withLoc (CDecl (reverse ds) [] ([],[]))}
                     | declaration_qualifier_list {ds};
 
-  {% withLoc (CDecl (reverse ds) [(Just d, Nothing, Nothing)] [])}
+  {% withLoc (CDecl (reverse ds) [(Just d, Nothing, Nothing)] ([],[]))}
                     | declaration_qualifier_list {ds}, abstract_declarator {d};
 
-  {% withLoc (CDecl (reverse ds) [(Just d, Nothing, Nothing)] (reverse ao))}
-                    | declaration_qualifier_list {ds}, identifier_declarator {d}, attrs_opt {ao};
+  {% withLoc (CDecl (reverse ds) [(Just d, Nothing, Nothing)] ([],reverse as))}
+                    | declaration_qualifier_list {ds}, identifier_declarator {d}, attrs_opt {as};
 
-  {% withLoc (CDecl t [] [])}
+  {% withLoc (CDecl t [] ([],[]))}
                     | type_specifier {t};
 
-  {% withLoc (CDecl t [(Just d, Nothing, Nothing)] [])}
+  {% withLoc (CDecl t [(Just d, Nothing, Nothing)] ([],[]))}
                     | type_specifier {t}, abstract_declarator {d};
 
-  {% withLoc (CDecl t [(Just d, Nothing, Nothing)] (reverse ao))}
-                    | type_specifier {t}, identifier_declarator {d}, attrs_opt {ao};
+  {% withLoc (CDecl t [(Just d, Nothing, Nothing)] ([],reverse as))}
+                    | type_specifier {t}, identifier_declarator {d}, attrs_opt {as};
 
-  {% withLoc (CDecl t [(Just d, Nothing, Nothing)] (reverse ao))}
-                    | type_specifier {t}, parameter_typedef_declarator {d}, attrs_opt {ao};
+  {% withLoc (CDecl t [(Just d, Nothing, Nothing)] ([],reverse as))}
+                    | type_specifier {t}, parameter_typedef_declarator {d}, attrs_opt {as};
 
-  {% withLoc (CDecl (liftTypeQuals qs) [] [])}
+  {% withLoc (CDecl (liftTypeQuals qs) [] ([],[]))}
                     | type_qualifier_list {qs};
 
-  {% withLoc (CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)] [])}
+  {% withLoc (CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)] ([],[]))}
                     | type_qualifier_list {qs}, abstract_declarator {d};
 
-  {% withLoc (CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)] (reverse ao))}
-                    | type_qualifier_list {qs}, identifier_declarator {d}, attrs_opt {ao};
+  {% withLoc (CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)] ([],reverse as))}
+                    | type_qualifier_list {qs}, identifier_declarator {d}, attrs_opt {as};
 
 
 identifier_list {(Reversed [Ident])};
@@ -1305,17 +1305,17 @@ identifier_list
 --
 type_name { CDecl };
 type_name
-  {% withLoc (CDecl ts [] (reverse ao))}
-                    : attrs_opt {ao}, type_specifier {ts};
+  {% withLoc (CDecl ts [] (reverse ap,[]))}
+                    : attrs_opt {ap}, type_specifier {ts};
 
-  {% withLoc (CDecl t [(Just d, Nothing, Nothing)] (reverse ao))}
-                    | attrs_opt {ao}, type_specifier {t}, abstract_declarator {d};
+  {% withLoc (CDecl t [(Just d, Nothing, Nothing)] (reverse ap,[]))}
+                    | attrs_opt {ap}, type_specifier {t}, abstract_declarator {d};
 
-  {% withLoc (CDecl (liftTypeQuals qs) [] (reverse ao))}
-                    | attrs_opt {ao}, type_qualifier_list {qs};
+  {% withLoc (CDecl (liftTypeQuals qs) [] (reverse ap,[]))}
+                    | attrs_opt {ap}, type_qualifier_list {qs};
 
-  {% withLoc (CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)] (reverse ao))}
-                    | attrs_opt {ao}, type_qualifier_list {qs}, abstract_declarator {d};
+  {% withLoc (CDecl (liftTypeQuals qs) [(Just d, Nothing, Nothing)] (reverse ap,[]))}
+                    | attrs_opt {ap}, type_qualifier_list {qs}, abstract_declarator {d};
     
     
     
@@ -2035,4 +2035,6 @@ getSrcLoc = do
   (f,l,c) <- getPosition
   return (SrcLoc (Position f l c))
 
+
+pairCat (a,b) (x,y) = (a++x,b++y)
   
