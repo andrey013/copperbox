@@ -178,6 +178,7 @@ tokens :-
 
 -- keywords  
 <0> {
+  "__attribute__"   { keyword GnuCAttrTok } 
   "auto"            { keyword CTokAuto }
   "_Bool"           { keyword CTokBool }
   "break"           { keyword CTokBreak }

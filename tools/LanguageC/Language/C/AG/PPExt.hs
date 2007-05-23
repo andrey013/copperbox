@@ -24,6 +24,8 @@ prefixJust _ Nothing    = empty
 commaSpace :: Doc
 commaSpace = text ", "
 
+dparens d = (text "((") <> d <> (text "))")
+
 vcat2 :: [Doc] -> Doc
 vcat2 = vcat . (punctuate line)
 
@@ -117,3 +119,9 @@ structSep ds  = Just $ line <> lbrace <$> indent 3 (vcat (postPunctuate semi ds)
 
 enumSep []   = Nothing
 enumSep ds  = Just $ line <> lbrace <$> indent 3 (vcat (punctuate comma ds)) <$> rbrace
+
+attribSep []  = Nothing
+attribSep ds  = Just $ encloseSep lparen rparen comma ds 
+
+optSpaceSep [] = Nothing
+optSpaceSep ds = Just $ encloseSep empty empty space ds

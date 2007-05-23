@@ -21,12 +21,13 @@ INCLUDE "SyntaxExtraDEFS.ag"
 ATTR CTranslationUnit CExtDecl CDecl CFunDef CDeclSpec CDeclr
      CTypeSpec CStat CExpr CConst CDeclParam CInit CStructUnion
      CEnum CEnumDef CBlockItem CInitialClause
+     CAttributeSpec CAttribute
   [ | | pp : {Doc} ]
 
 ATTR CTypeQuals [ | | pp : {[Doc]} ]
 
 ATTR CExtDecls CDeclSpecs CDeclParams CDecls CBlockItems
-     CExprs CInitList CEnumDefs
+     CExprs CInitList CEnumDefs CAttributeSpecs CAttributes
   [ | | pp USE {:} {[]} : {[Doc]} ]
      
 ATTR OptCExpr OptCStat OptIdent OptCInit OptCDeclr
@@ -267,12 +268,14 @@ SEM CInit
 
 SEM CStructUnion 
   | CStruct
-        lhs.pp      = pretty @tag <+?> @opt_ident.pp
-                        <+?> structSep @decls.pp 
+        lhs.pp      = pretty @tag <+?> optSpaceSep @attr_specs.pp
+                                  <+?> @opt_ident.pp
+                                  <+?> structSep @decls.pp 
 
 SEM CEnum 
   | CEnum
-        lhs.pp      = fromMaybe empty @opt_ident.pp
+        lhs.pp      = hsep @attr_specs.pp 
+                        <+?> @opt_ident.pp
                         <+?> enumSep @enum_defs.pp 
 
         
@@ -296,7 +299,20 @@ SEM CInitialClause
         lhs.pp      = optEmpty @opt_expr.pp
   | Right  
         lhs.pp      = @decl.pp
-        
+
+
+SEM CAttributeSpec 
+  | CAttributeSpec 
+        lhs.pp      = text "__attribute__" <> dparens (hsep @attr_list.pp)
+
+
+SEM CAttribute 
+  | CAttribute
+        lhs.pp      = ident @name 
+                        <> fromMaybe empty (attribSep @constant_exprs.pp)
+
+      
+                
                                         
 SEM OptCExpr
   | Just 
