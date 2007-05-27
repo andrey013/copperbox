@@ -1,3 +1,17 @@
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Text.Diff.Unified.Parser 
+-- Copyright   :  (c) Stephen Tetley 2007
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  experimental
+-- Portability :  portable
+--
+-- Parse diffs
+
+--------------------------------------------------------------------------------
+
 
 module Text.Diff.Unified.Parser 
   ( parseUDiffFile

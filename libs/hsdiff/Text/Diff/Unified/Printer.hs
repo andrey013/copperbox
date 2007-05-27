@@ -1,4 +1,18 @@
 
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Text.Diff.Unified.Printer
+-- Copyright   :  (c) Stephen Tetley 2007
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  experimental
+-- Portability :  portable
+--
+-- Print diffs
+
+--------------------------------------------------------------------------------
+
 module Text.Diff.Unified.Printer
   (Render (..)
   ) where

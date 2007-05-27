@@ -1,4 +1,17 @@
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Text.Diff.Unified.Datatypes
+-- Copyright   :  (c) Stephen Tetley 2007
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  experimental
+-- Portability :  portable
+--
 -- Datatypes for Unified Diff format
+
+--------------------------------------------------------------------------------
+
 
 module Text.Diff.Unified.Datatypes where
 
