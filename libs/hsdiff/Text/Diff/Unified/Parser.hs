@@ -45,10 +45,12 @@ udFile =
 
 udFileHeader :: Parser UdFileHeader
 udFileHeader = 
-  do{ reserved "---"
+  do{ string "---"
+    ; spaceChar
     ; ln <- srcFileName
     ; lt <- timeStamp
-    ; reserved "+++"
+    ; string "+++"
+    ; spaceChar
     ; rn <- srcFileName
     ; rt <- timeStamp  
     ; return $ UdFileHeader { left_name=ln
@@ -67,10 +69,12 @@ udHunk  =
 
 udHunkHeader :: Parser UdHunkHeader
 udHunkHeader = 
-  do{ reserved "@@"
+  do{ string "@@"
+    ; spaceChar
     ; r1 <- rangeP (char '-')
     ; r2 <- rangeP (char '+')
-    ; reserved "@@"
+    ; string "@@"
+    ; restOfLine
     ; return (UdHunkHeader r1 r2)
     }
 
@@ -89,19 +93,19 @@ udLine = added <|> removed <|> common <|> incomplete
 
 added =
   do{ char '+'
-    ; cs <- manyTill anyChar newline
+    ; cs <- restOfLine
     ; return (Added cs)
     }
 
 removed =
   do{ char '-'
-    ; cs <- manyTill anyChar newline
+    ; cs <- restOfLine
     ; return (Removed cs)
     }
     
 common =
-  do{ char ' '
-    ; cs <- manyTill anyChar newline
+  do{ spaceChar
+    ; cs <- restOfLine
     ; return (Common cs)
     }    
     
@@ -160,7 +164,10 @@ timeZone =
     ; as <- count 4 digit
     ; return (read (a:as))
     }
-  
+
+restOfLine =  manyTill anyChar newline
+spaceChar = char ' '
+ 
 -- handily filenames are terminated by a tab
 -- so we can easily handle spaces in them
 srcFileName :: Parser SrcFileName
