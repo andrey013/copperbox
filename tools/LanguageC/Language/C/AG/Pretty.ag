@@ -1,6 +1,9 @@
 
 {
-module Language.C.AG.Pretty (prettyCTranslationUnit) where
+module Language.C.AG.Pretty (
+  -- * Pretty instances
+  Pretty(..)
+  ) where
 
 import Language.C.Syntax
 import Language.C.AG.SyntaxExtra hiding (CInitList)
@@ -500,9 +503,116 @@ ident :: Ident -> Doc
 ident  = text . identToLexeme
 
 
+{-
 prettyCTranslationUnit :: CTranslationUnit -> Doc
 prettyCTranslationUnit header = pp_Syn_CTranslationUnit synthesized
   where synthesized = wrap_CTranslationUnit (sem_CTranslationUnit header) inherited
         inherited   = Inh_CTranslationUnit
-          
+-}
+
+        
+instance Pretty CTranslationUnit where
+  pretty header = 
+    let synthesized = wrap_CTranslationUnit (sem_CTranslationUnit header) inherited
+        inherited   = Inh_CTranslationUnit
+    in pp_Syn_CTranslationUnit synthesized
+
+        
+instance Pretty CExtDecl where
+  pretty decl = 
+    let synthesized = wrap_CExtDecl (sem_CExtDecl decl) inherited
+        inherited   = Inh_CExtDecl
+    in pp_Syn_CExtDecl synthesized
+
+instance Pretty CDecl where
+  pretty decl = 
+    let synthesized = wrap_CDecl (sem_CDecl decl) inherited
+        inherited   = Inh_CDecl
+    in pp_Syn_CDecl synthesized
+
+instance Pretty CFunDef where
+  pretty def = 
+    let synthesized = wrap_CFunDef (sem_CFunDef def) inherited
+        inherited   = Inh_CFunDef
+    in pp_Syn_CFunDef synthesized
+    
+     
+instance Pretty CDeclSpec where
+  pretty declspec = 
+    let synthesized = wrap_CDeclSpec (sem_CDeclSpec declspec) inherited
+        inherited   = Inh_CDeclSpec
+    in pp_Syn_CDeclSpec synthesized
+    
+
+instance Pretty CDeclr where
+  pretty declr = 
+    let synthesized = wrap_CDeclr (sem_CDeclr declr) inherited
+        inherited   = Inh_CDeclr
+    in pp_Syn_CDeclr synthesized
+    
+instance Pretty CTypeSpec where
+  pretty typespec = 
+    let synthesized = wrap_CTypeSpec (sem_CTypeSpec typespec) inherited
+        inherited   = Inh_CTypeSpec
+    in pp_Syn_CTypeSpec synthesized
+    
+instance Pretty CStat where
+  pretty stat = 
+    let synthesized = wrap_CStat (sem_CStat stat) inherited
+        inherited   = Inh_CStat
+    in pp_Syn_CStat synthesized
+    
+instance Pretty CExpr where
+  pretty expr = 
+    let synthesized = wrap_CExpr (sem_CExpr expr) inherited
+        inherited   = Inh_CExpr
+    in pp_Syn_CExpr synthesized
+    
+instance Pretty CConst where
+  pretty cconst = 
+    let synthesized = wrap_CConst (sem_CConst cconst) inherited
+        inherited   = Inh_CConst
+    in pp_Syn_CConst synthesized
+
+    
+instance Pretty CInit where
+  pretty cinit = 
+    let synthesized = wrap_CInit (sem_CInit cinit) inherited
+        inherited   = Inh_CInit
+    in pp_Syn_CInit synthesized
+    
+instance Pretty CStructUnion where
+  pretty structunion = 
+    let synthesized = wrap_CStructUnion (sem_CStructUnion structunion) inherited
+        inherited   = Inh_CStructUnion
+    in pp_Syn_CStructUnion synthesized
+    
+instance Pretty CEnum where
+  pretty enum = 
+    let synthesized = wrap_CEnum (sem_CEnum enum) inherited
+        inherited   = Inh_CEnum
+    in pp_Syn_CEnum synthesized
+    
+    
+instance Pretty CBlockItem where
+  pretty blockitem = 
+    let synthesized = wrap_CBlockItem (sem_CBlockItem blockitem) inherited
+        inherited   = Inh_CBlockItem
+    in pp_Syn_CBlockItem synthesized
+
+
+    
+instance Pretty CAttributeSpec where
+  pretty attrspec = 
+    let synthesized = wrap_CAttributeSpec (sem_CAttributeSpec attrspec) inherited
+        inherited   = Inh_CAttributeSpec
+    in pp_Syn_CAttributeSpec synthesized
+    
+instance Pretty CAttribute where
+  pretty attribute = 
+    let synthesized = wrap_CAttribute (sem_CAttribute attribute) inherited
+        inherited   = Inh_CAttribute
+    in pp_Syn_CAttribute synthesized
+         
+
 }  

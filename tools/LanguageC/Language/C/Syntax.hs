@@ -58,7 +58,7 @@ module Language.C.Syntax (
   -- * GCC Attributes
   CAttributeSpec(..), CAttribute(..), 
   -- * Source location
-  SrcLoc(..)
+  SrcLoc(..), noloc
   ) where
 
 import Language.C.Position
@@ -518,6 +518,7 @@ data SrcLoc = SrcLoc Position
   deriving (Eq,Ord,Show,Typeable,Data)
 
 
+noloc = SrcLoc nopos
   
               
 -- | given an abstract identifier, yield its lexeme (EXPORTED)
