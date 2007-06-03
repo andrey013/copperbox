@@ -26,6 +26,9 @@ commaSpace = text ", "
 
 dparens d = (text "((") <> d <> (text "))")
 
+subscript e e' = e <> char '[' <> e' <> char ']'
+
+
 vcat2 :: [Doc] -> Doc
 vcat2 = vcat . (punctuate line)
 

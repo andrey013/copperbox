@@ -121,6 +121,7 @@ SEM CTypeSpec
   | CTypeOfType  
         lhs.pp      = text "typeof" <> parens @decl.pp
 
+
 -- | Statements are responsible for terminating themselves with a semi 
 -- if necessary.
 SEM CStat 
@@ -173,72 +174,99 @@ SEM CStat
         lhs.pp      = text "/* CAsm */"
 
 
+ATTR CExpr  [  |  | rator : {Operator} ]
 
+  
 SEM CExpr
   | CComma 
         lhs.pp      = commaSep @exprs.pp
+        loc.rator   = ("<comma>", 1, Infix LR) 
+        
     
   | CAssign 
-        lhs.pp      = @lvalue.pp <+> pretty @assign_op <+> @rvalue.pp
+        lhs.pp      = @lvalue.pp <+> text (first @loc.rator) <+> @rvalue.pp
+        loc.rator   = operator @assign_op
     
   | CCond 
         lhs.pp      = @cond_expr.pp
-                        <+> char '?' <+> optEmpty @opt_true_expr.pp 
-                        <+> char ':' <+> @false_expr.pp
+                            <+> char '?' <+> optEmpty @opt_true_expr.pp 
+                            <+> char ':' <+> @false_expr.pp
+        loc.rator   = ("<ternary>", 3, Primary)
+                                  
   | CBinary 
-        lhs.pp      = @left_expr.pp <> pretty @binary_op <> @right_expr.pp
+        lhs.pp      = @exp_l <+> text (first @loc.rator) <+> @exp_r
+        loc.exp_l   = bracket (@left_expr.rator,@left_expr.pp) LR @loc.rator
+        loc.exp_r   = bracket (@right_expr.rator,@right_expr.pp) RL @loc.rator
+        loc.rator   = operator @binary_op
 
   | CCast 
         lhs.pp      = parens @type_decl.pp <+> @expr.pp
+        loc.rator   = ("<cast>", 3, Infix RL)
 
   | CUnary 
-        lhs.pp      = case isPrefixOp @unary_op of 
-                        True -> pretty @unary_op <> @expr.pp
-                        False -> @expr.pp <> pretty @unary_op
+        lhs.pp      = case (third @loc.rator) of 
+                          Postfix -> @e  <> text (first @loc.rator)
+                          Prefix -> text (first @loc.rator) <> @e
+                          _ -> error "Unary expression not deemed tyo be pre-post fixed"
+        
+        loc.e       = bracket (@expr.rator,@expr.pp) NA @loc.rator
+        loc.rator   = operator @unary_op                        
     
   | CSizeofExpr 
-        lhs.pp      = text "sizeof" <+> @expr.pp
+        lhs.pp      = text "sizeof" <+> parens @expr.pp
+        loc.rator   = ("<sizeof_expr>", 15, Infix RL)
     
   | CSizeofType 
         lhs.pp      = text "sizeof" <+> parens @decl.pp
+        loc.rator   = ("<sizeof_type>", 15, Infix RL)
 
   | CAlignofExpr 
-        lhs.pp      = text "alignof" <+> @expr.pp
+        lhs.pp      = text "alignof" <+> parens @expr.pp
+        loc.rator   = ("<alignof_expr>", 15, Infix RL)
     
   | CAlignofType 
         lhs.pp      = text "alignof" <+> parens @decl.pp
+        loc.rator   = ("<alignof_type>", 15, Infix RL)
     
   | CIndex 
-        lhs.pp      = @expr.pp <> lbracket <> @index_expr.pp <> rbracket                          
-
+        lhs.pp      = subscript @expr.pp @index_expr.pp
+        loc.rator   = ("<subscript>", 16, Postfix)
+        
   | CCall 
         lhs.pp      = @expr.pp 
-                        <> encloseSep1 lparen rparen commaSpace @args.pp       
-
+                       <> encloseSep1 lparen rparen commaSpace @args.pp       
+        loc.rator   = ("<function_call>", 16, Postfix)
+        
   | CMember 
         lhs.pp      = case @is_deref of
                         True -> @expr.pp <> text "->" <> ident @ident
                         False -> @expr.pp <> char '.' <> ident @ident
+        loc.rator   = ("<selection>", 16, Postfix)
                                                   
   | CVar 
         lhs.pp      = ident @ident
+        loc.rator   = ("<variable>", 16, Primary)
         
   | CConst 
         lhs.pp      = @constant.pp
+        loc.rator   = ("<constant>", 16, Primary)
         
   | CCompoundLit 
         lhs.pp      = parens @decl.pp 
-                        <+> bracesSpace @init_list.pp
+                              <+> bracesSpace @init_list.pp
+        loc.rator   = ("<comp_lit>", 16, Postfix)
                         
   | CStatExpr 
         lhs.pp      = parens @stat.pp
+        loc.rator   = ("<stat_expr>", 15, Infix RL)
         
   | CLabAddrExpr 
         lhs.pp      = text "&&" <> ident @ident
+        loc.rator   = ("<addr_expr>", 15, Prefix)
         
   | CBuiltinExpr 
         lhs.pp      = text "<<CPretty: CExpr#CBuiltinExpr not yet implemented!>>"
-
+        loc.rator   = ("<builtin>", 15, Prefix)
  
 
 SEM CConst
@@ -350,9 +378,82 @@ SEM CTypeQuals
         lhs.pp      = pretty @hd : @tl.pp
   | Nil 
         lhs.pp      = []
-                
+
+
+
 
 {
+
+data Assoc = LR | RL | NA
+  deriving (Eq,Show)
+
+data Fixity = Prefix | Postfix | Infix Assoc | Primary
+  deriving (Eq,Show)
+
+type Precedence = Int 
+
+type Operator = (String,Precedence, Fixity)
+
+
+
+maxprec = 16
+maxrator = ("<max-precedence sentinel>", maxprec, Infix NA)
+
+
+first  (a,_,_) = a
+second (_,b,_) = b
+third  (_,_,c) = c
+
+
+class Rator a where
+  operator :: a -> Operator
+
+instance Rator CUnaryOp where 
+  operator CPostIncOp   = ("++", 16, Postfix)
+  operator CPostDecOp   = ("--", 16, Postfix)
+  operator CPreIncOp    = ("++", 15, Prefix)
+  operator CPreDecOp    = ("--", 15, Prefix)
+  operator CAdrOp       = ("&",  15, Prefix)
+  operator CIndOp       = ("*",  15, Prefix)
+  operator CPlusOp      = ("+",  15, Prefix)
+  operator CMinOp       = ("-",  15, Prefix)
+  operator CCompOp      = ("~",  15, Prefix)
+  operator CNegOp       = ("!",  15, Prefix)  
+  
+instance Rator CBinaryOp where
+  operator CMulOp     = ("*",  13, Infix LR)
+  operator CDivOp     = ("/",  13, Infix LR)
+  operator CRmdOp     = ("%",  13, Infix LR)
+  operator CAddOp     = ("+",  12, Infix LR)
+  operator CSubOp     = ("-",  12, Infix LR)
+  operator CShlOp     = ("<<", 11, Infix LR)
+  operator CShrOp     = (">>", 11, Infix LR)
+  operator CLeOp      = ("<",  10, Infix LR)
+  operator CGrOp      = (">",  10, Infix LR)
+  operator CLeqOp     = ("<=", 10, Infix LR)
+  operator CGeqOp     = (">=", 10, Infix LR)
+  operator CEqOp      = ("==",  9, Infix LR)
+  operator CNeqOp     = ("!=",  9, Infix LR)
+  operator CAndOp     = ("&",   8, Infix LR)
+  operator CXorOp     = ("^",   7, Infix LR)
+  operator COrOp      = ("|",   6, Infix LR)
+  operator CLndOp     = ("&&",  5, Infix LR)
+  operator CLorOp     = ("||",  4, Infix LR)
+  
+instance Rator CAssignOp where
+  operator CAssignOp    = ("=",   2, Infix RL)
+  operator CMulAssOp    = ("*=",  2, Infix RL)
+  operator CDivAssOp    = ("/=",  2, Infix RL)
+  operator CRmdAssOp    = ("%=",  2, Infix RL)
+  operator CAddAssOp    = ("+=",  2, Infix RL)
+  operator CSubAssOp    = ("-=",  2, Infix RL)
+  operator CShlAssOp    = ("<<=", 2, Infix RL)
+  operator CShrAssOp    = (">>=", 2, Infix RL)
+  operator CAndAssOp    = ("&=",  2, Infix RL)
+  operator CXorAssOp    = ("^=",  2, Infix RL)
+  operator COrAssOp     = ("|=",  2, Infix RL)
+          
+  
 
 instance Pretty CStructTag where
   pretty CStructTag   = text "struct"
@@ -371,57 +472,29 @@ instance Pretty CTypeQual where
   pretty (CVolatQual _) = text "volatile"
   pretty (CRestrQual _) = text "restrict"
   
-  
-instance Pretty CAssignOp where
-  pretty CAssignOp    = char '='
-  pretty CMulAssOp    = text "*="
-  pretty CDivAssOp    = text "/="
-  pretty CRmdAssOp    = text "%="
-  pretty CAddAssOp    = text "+="
-  pretty CSubAssOp    = text "-="
-  pretty CShlAssOp    = text "<<="
-  pretty CShrAssOp    = text ">>="
-  pretty CAndAssOp    = text "&="
-  pretty CXorAssOp    = text "^="
-  pretty COrAssOp     = text "|="
-         
-           
-instance Pretty CBinaryOp where
-  pretty CMulOp     = char '*'
-  pretty CDivOp     = char '/'
-  pretty CRmdOp     = char '%'
-  pretty CAddOp     = char '+'
-  pretty CSubOp     = char '-'
-  pretty CShlOp     = text "<<"
-  pretty CShrOp     = text ">>"
-  pretty CLeOp      = char '<'
-  pretty CGrOp      = char '>'
-  pretty CLeqOp     = text "<="
-  pretty CGeqOp     = text ">="
-  pretty CEqOp      = text "=="
-  pretty CNeqOp     = text "!="
-  pretty CAndOp     = char '&'
-  pretty CXorOp     = char '^'
-  pretty COrOp      = char '|'
-  pretty CLndOp     = text "&&"
-  pretty CLorOp     = text "||"
-  
-instance Pretty CUnaryOp where 
-  pretty CPreIncOp    = text "++"
-  pretty CPreDecOp    = text "--"
-  pretty CPostIncOp   = text "++"
-  pretty CPostDecOp   = text "--"
-  pretty CAdrOp       = char '&'
-  pretty CIndOp       = char '*'
-  pretty CPlusOp      = char '+'
-  pretty CMinOp       = char '-'
-  pretty CCompOp      = char '~'
-  pretty CNegOp       = char '!'  
 
-isPrefixOp :: CUnaryOp -> Bool
-isPrefixOp CPostIncOp   = False
-isPrefixOp CPostDecOp   = False
-isPrefixOp _            = True
+
+
+type Fragment = (Operator, Doc)  
+
+bracket :: Fragment -> Assoc -> Operator -> Doc
+bracket (inner,doc) side outer 
+    | noparens inner outer side == True = doc
+    | otherwise                         = parens doc
+
+                              
+noparens :: Operator -> Operator -> Assoc -> Bool              
+noparens (_,pi,fi) (_,po, fo) side
+  | pi > po   = True
+  | otherwise = 
+    case (fi, side) of
+      (Primary,   _) -> True
+      (Postfix,  LR) -> True
+      (Prefix,   RL) -> True
+      (Infix LR, LR) -> pi == po && fo == Infix LR
+      (Infix RL, RL) -> pi == po && fo == Infix RL
+      (_,        NA) -> fi == fo
+      _              -> False
 
 ident :: Ident -> Doc
 ident  = text . identToLexeme
