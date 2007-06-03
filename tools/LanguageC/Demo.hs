@@ -39,6 +39,6 @@ main = do
 -- outputPJ tu = putStr $ render $ pretty tu  
 
 -- Output function if using PPrint
-outputPP ans = let doc = prettyCTranslationUnit ans
+outputPP ans = let doc = pretty ans
                in displayIO stdout (renderPretty 0.9 100 doc)
 
