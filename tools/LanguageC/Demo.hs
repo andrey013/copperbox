@@ -10,8 +10,8 @@ import Language.C.Syntax
 import Language.C.Tokens
 import Language.C.AG.Pretty
 
--- import Text.PrettyPrint.HughesPJ
-import PPrint
+
+import Language.C.AG.EBPretty
 
 import System.IO (stdout)
 import System.Environment
