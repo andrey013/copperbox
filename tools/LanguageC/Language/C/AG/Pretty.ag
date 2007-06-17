@@ -23,7 +23,8 @@ INCLUDE "SyntaxExtraDEFS.ag"
 ATTR CTranslationUnit CExtDecl CDecl CFunDef CDeclSpec CDeclr
      CTypeSpec CStat CExpr CConst CDeclParam CInit CStructUnion
      CEnum CEnumDef CBlockItem CInitialClause OptCInit
-     CAttributeSpec CAttribute
+     CAttributeSpec CAttribute 
+     OptIdent OptCExpr OptCStat  OptCDeclr
   [ | | pp : {Doc} ]
 
 ATTR CTypeQuals [ | | pp : {[Doc]} ]
@@ -32,8 +33,7 @@ ATTR CExtDecls CDeclSpecs CDeclParams CDecls CBlockItems
      CExprs CInitList CEnumDefs CAttributeSpecs CAttributes 
   [ | | pp USE {:} {[]} : {[Doc]} ]
      
-ATTR OptCExpr OptCStat OptIdent OptCDeclr
-  [ | | pp : {(Maybe Doc)} ]     
+   
 
 
 
@@ -79,11 +79,11 @@ SEM CDeclSpec
 
 SEM CDeclr 
   | CVarDeclr 
-        lhs.pp      = optEmpty @opt_ident.pp
+        lhs.pp      = @opt_ident.pp
   | CPtrDeclr 
-        lhs.pp      = char '*' !>! spaceSep @indirections.pp !>! @declr.pp                
+        lhs.pp      = char '*' !>! spaceSep @indirections.pp !*>! @declr.pp                
   | CArrDeclr
-        lhs.pp      = @declr.pp !>! brackets (optEmpty @opt_expr.pp)
+        lhs.pp      = @declr.pp !>! brackets @opt_expr.pp
 
   | CFunDeclr 
         lhs.pp      = @declr.pp !>! tupleSep @decls.pp !>! @var_doc
@@ -145,14 +145,14 @@ SEM CStat
         lhs.pp      = text "default" !>! colon !*>! @stat.pp
     
   | CExpr 
-        lhs.pp      = optEmpty @opt_expr.pp !>! semi
+        lhs.pp      = @opt_expr.pp !>! semi
   
   | CCompound 
         lhs.pp      = encloseSep lbrace rbrace line @block_items.pp                        
   | CIf 
         lhs.pp      = text "if" !>! parens @cond_expr.pp 
                                 !*>! @then_stat.pp 
-                                !*>! fromMaybe empty @opt_else.pp
+                                !*>! @opt_else.pp
     
   | CSwitch 
         lhs.pp      = text "switch" !>! parens @expr.pp !*>! @stat.pp
@@ -168,8 +168,8 @@ SEM CStat
   | CFor 
         lhs.pp      = (text "for" !>! encloseSep lparen rparen semi
                                                  [@initial_clause.pp,
-                                                  optEmpty @opt_test_expr.pp,
-                                                  optEmpty @opt_upd_expr.pp])
+                                                  @opt_test_expr.pp,
+                                                  @opt_upd_expr.pp])
                         !^! @stat.pp  
   | CGoto 
         lhs.pp      = text "goto" !*>! ident @ident !>! semi
@@ -181,7 +181,7 @@ SEM CStat
         lhs.pp      = text "break" !>! semi
 
   | CReturn 
-        lhs.pp      = text "return" !*>! fromMaybe empty @opt_expr.pp !>! semi
+        lhs.pp      = text "return" !*>! @opt_expr.pp !>! semi
 
   | CAsm 
         lhs.pp      = text "/* CAsm */"
@@ -202,7 +202,7 @@ SEM CExpr
     
   | CCond 
         lhs.pp      = @cond_expr.pp
-                            !*>! char '?' !*>! optEmpty @opt_true_expr.pp 
+                            !*>! char '?' !*>! @opt_true_expr.pp 
                             !*>! char ':' !*>! @false_expr.pp
         loc.rator   = ("<ternary>", 3, Primary)
                                   
@@ -295,9 +295,9 @@ SEM CConst
 
 SEM CDeclParam 
   | Tuple   
-        lhs.pp      = optEmpty @opt_declarator.pp
+        lhs.pp      = @opt_declarator.pp
                       !*>! @opt_initializer.pp
-                      !*>! optEmpty @opt_expr.pp
+                      !*>! @opt_expr.pp
                                       
 
 SEM CInit 
@@ -310,20 +310,20 @@ SEM CInit
 SEM CStructUnion 
   | CStruct
         lhs.pp      = pretty @tag !*>! spaceSep @attr_specs.pp
-                                  !*>! optEmpty @opt_ident.pp
-                                  !*>! structSep @decls.pp 
+                                  !*>! @opt_ident.pp
+                                  !*>! structSepE @decls.pp 
 
 SEM CEnum 
   | CEnum
         lhs.pp      = spaceSep @attr_specs.pp 
-                        !*>! optEmpty @opt_ident.pp
+                        !*>! @opt_ident.pp
                         !*>! enumSep @enum_defs.pp 
 
         
                                                   
 SEM CEnumDef
   | Tuple
-        lhs.pp      = ident @name !>! (text " = " !<*?! optEmpty @opt_value.pp)
+        lhs.pp      = ident @name !>! (text " = " !<*?! @opt_value.pp)
 
 
 -- | Declarations inside blocks must terminate with a semi
@@ -337,7 +337,7 @@ SEM CBlockItem
 
 SEM CInitialClause   
   | Left  
-        lhs.pp      = optEmpty @opt_expr.pp
+        lhs.pp      = @opt_expr.pp
   | Right  
         lhs.pp      = @decl.pp
 
@@ -357,21 +357,22 @@ SEM CAttribute
                                         
 SEM OptCExpr
   | Just 
-        lhs.pp      = Just @just.pp
+        lhs.pp      = @just.pp
   | Nothing  
-        lhs.pp      = Nothing
+        lhs.pp      = empty
 
 SEM OptCStat
   | Just 
-        lhs.pp      = Just @just.pp
+        lhs.pp      = @just.pp
   | Nothing  
-        lhs.pp      = Nothing   
-        
+        lhs.pp      = empty   
+
+       
 SEM OptIdent 
   | Just 
-        lhs.pp      = Just (ident @just)
+        lhs.pp      = ident @just
   | Nothing  
-        lhs.pp      = Nothing   
+        lhs.pp      = empty   
 
 
 SEM OptCInit
@@ -382,9 +383,9 @@ SEM OptCInit
 
 SEM OptCDeclr
   | Just 
-        lhs.pp      = Just @just.pp
+        lhs.pp      = @just.pp
   | Nothing  
-        lhs.pp      = Nothing 
+        lhs.pp      = empty
         
 SEM CTypeQuals
   | Cons

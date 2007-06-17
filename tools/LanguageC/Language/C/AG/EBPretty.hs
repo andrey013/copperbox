@@ -226,7 +226,7 @@ encloseSep left right sep ds
                     
 
 encloseSepE l r s [] = empty
-encloseSepE l r s ds = encloseSep lparen rparen comma ds 
+encloseSepE l r s ds = encloseSep l r s ds 
         
 
 attribSep   = encloseSep lparen rparen comma
