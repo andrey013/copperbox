@@ -44,7 +44,7 @@ SEM CTranslationUnit
 -- | Declarations are terminated with a semi, definitions aren't.
 SEM CExtDecl
   | CDeclExt  
-        lhs.pp      = @decl.pp !>! semi
+        lhs.pp      = @decl.pp ||. semi
   | CFDefExt  
         lhs.pp      = @fun_def.pp
   | CAsmExt   
@@ -55,16 +55,16 @@ SEM CExtDecl
 SEM CDecl 
   | CDecl 
         lhs.pp      = spaceSep @decl_specs.pp
-                               !*>! commaSep @decl_params.pp
+                               ||- commaSep @decl_params.pp
 
 
 -- ?? eh
 SEM CFunDef 
   | CFunDef 
         lhs.pp      = (suffixes space @decl_specs.pp)
-                         !>! @declarator.pp
-                         !>! (prefixes space @declaration_list.pp)
-                         !^! @stat.pp
+                         ||. @declarator.pp
+                         ||. (prefixes space @declaration_list.pp)
+                         |^| @stat.pp
 
 
 SEM CDeclSpec 
@@ -81,12 +81,12 @@ SEM CDeclr
   | CVarDeclr 
         lhs.pp      = @opt_ident.pp
   | CPtrDeclr 
-        lhs.pp      = char '*' !>! spaceSep @indirections.pp !*>! @declr.pp                
+        lhs.pp      = char '*' ||. spaceSep @indirections.pp ||- @declr.pp                
   | CArrDeclr
-        lhs.pp      = @declr.pp !>! brackets @opt_expr.pp
+        lhs.pp      = @declr.pp ||. brackets @opt_expr.pp
 
   | CFunDeclr 
-        lhs.pp      = @declr.pp !>! tupleSep @decls.pp !>! @var_doc
+        lhs.pp      = @declr.pp ||. tupleSep @decls.pp ||. @var_doc
         loc.var_doc = case @is_variadic of 
                         True -> text ", ..."
                         False -> empty
@@ -120,68 +120,68 @@ SEM CTypeSpec
   | CSUType      
         lhs.pp      = @su_type.pp
   | CEnumType    
-        lhs.pp      = text "enum" !*>! @enum.pp
+        lhs.pp      = text "enum" ||- @enum.pp
   | CTypeDef     
         lhs.pp      = ident @name
   | CTypeOfExpr  
-        lhs.pp      = text "typeof" !>! parens @expr.pp            
+        lhs.pp      = text "typeof" ||. parens @expr.pp            
   | CTypeOfType  
-        lhs.pp      = text "typeof" !>! parens @decl.pp
+        lhs.pp      = text "typeof" ||. parens @decl.pp
 
 
 -- | Statements are responsible for terminating themselves with a semi 
 -- if necessary.
 SEM CStat 
   | CLabel 
-        lhs.pp      = ident @label !>! colon !>! @stat.pp
+        lhs.pp      = ident @label ||. colon ||. @stat.pp
   | CCase 
-        lhs.pp      = text "case" !*>! @expr.pp !>! colon !*>! @stat.pp
+        lhs.pp      = text "case" ||- @expr.pp ||. colon ||- @stat.pp
           
   | CCases 
-        lhs.pp      = text "case" !*>! @lower_expr.pp 
-                        !*>! text "..." !*>! @upper_expr.pp !>! colon !*>! @stat.pp
+        lhs.pp      = text "case" ||- @lower_expr.pp 
+                        ||- text "..." ||- @upper_expr.pp ||. colon ||- @stat.pp
     
   | CDefault  
-        lhs.pp      = text "default" !>! colon !*>! @stat.pp
+        lhs.pp      = text "default" ||. colon ||- @stat.pp
     
   | CExpr 
-        lhs.pp      = @opt_expr.pp !>! semi
+        lhs.pp      = @opt_expr.pp ||. semi
   
   | CCompound 
         lhs.pp      = encloseSep lbrace rbrace line @block_items.pp                        
   | CIf 
-        lhs.pp      = text "if" !>! parens @cond_expr.pp 
-                                !*>! @then_stat.pp 
-                                !*>! @opt_else.pp
+        lhs.pp      = text "if" ||. parens @cond_expr.pp 
+                                ||- @then_stat.pp 
+                                ||- @opt_else.pp
     
   | CSwitch 
-        lhs.pp      = text "switch" !>! parens @expr.pp !*>! @stat.pp
+        lhs.pp      = text "switch" ||. parens @expr.pp ||- @stat.pp
   
   | CWhile 
         lhs.pp      = case @is_dowhile of
-                        True -> text "do" !*>! @stat.pp 
-                                          !*>! text "while" 
-                                          !*>! parens @expr.pp !>! semi
-                        False -> text "while" !*>! parens @expr.pp 
-                                              !*>! @stat.pp
+                        True -> text "do" ||- @stat.pp 
+                                          ||- text "while" 
+                                          ||- parens @expr.pp ||. semi
+                        False -> text "while" ||- parens @expr.pp 
+                                              ||- @stat.pp
      
   | CFor 
-        lhs.pp      = (text "for" !>! encloseSep lparen rparen semi
+        lhs.pp      = (text "for" ||. encloseSep lparen rparen semi
                                                  [@initial_clause.pp,
                                                   @opt_test_expr.pp,
                                                   @opt_upd_expr.pp])
-                        !^! @stat.pp  
+                        |^| @stat.pp  
   | CGoto 
-        lhs.pp      = text "goto" !*>! ident @ident !>! semi
+        lhs.pp      = text "goto" ||- ident @ident ||. semi
   
   | CCont 
-        lhs.pp      = text "continue" !>! semi
+        lhs.pp      = text "continue" ||. semi
 
   | CBreak 
-        lhs.pp      = text "break" !>! semi
+        lhs.pp      = text "break" ||. semi
 
   | CReturn 
-        lhs.pp      = text "return" !*>! @opt_expr.pp !>! semi
+        lhs.pp      = text "return" ||- @opt_expr.pp ||. semi
 
   | CAsm 
         lhs.pp      = text "/* CAsm */"
@@ -197,48 +197,48 @@ SEM CExpr
         
     
   | CAssign 
-        lhs.pp      = @lvalue.pp !*>! text (first @loc.rator) !*>! @rvalue.pp
+        lhs.pp      = @lvalue.pp ||- text (first @loc.rator) ||- @rvalue.pp
         loc.rator   = operator @assign_op
     
   | CCond 
         lhs.pp      = @cond_expr.pp
-                            !*>! char '?' !*>! @opt_true_expr.pp 
-                            !*>! char ':' !*>! @false_expr.pp
+                            ||- char '?' ||- @opt_true_expr.pp 
+                            ||- char ':' ||- @false_expr.pp
         loc.rator   = ("<ternary>", 3, Primary)
                                   
   | CBinary 
-        lhs.pp      = @exp_l !*>! text (first @loc.rator) !*>! @exp_r
+        lhs.pp      = @exp_l ||- text (first @loc.rator) ||- @exp_r
         loc.exp_l   = bracket (@left_expr.rator,@left_expr.pp) LR @loc.rator
         loc.exp_r   = bracket (@right_expr.rator,@right_expr.pp) RL @loc.rator
         loc.rator   = operator @binary_op
 
   | CCast 
-        lhs.pp      = parens @type_decl.pp !*>! @expr.pp
+        lhs.pp      = parens @type_decl.pp ||- @expr.pp
         loc.rator   = ("<cast>", 3, Infix RL)
 
   | CUnary 
         lhs.pp      = case (third @loc.rator) of 
-                          Postfix -> @e  !>! text (first @loc.rator)
-                          Prefix -> text (first @loc.rator) !>! @e
+                          Postfix -> @e  ||. text (first @loc.rator)
+                          Prefix -> text (first @loc.rator) ||. @e
                           _ -> error "Unary expression not deemed tyo be pre-post fixed"
         
         loc.e       = bracket (@expr.rator,@expr.pp) NA @loc.rator
         loc.rator   = operator @unary_op                        
     
   | CSizeofExpr 
-        lhs.pp      = text "sizeof" !*>! parens @expr.pp
+        lhs.pp      = text "sizeof" ||- parens @expr.pp
         loc.rator   = ("<sizeof_expr>", 15, Infix RL)
     
   | CSizeofType 
-        lhs.pp      = text "sizeof" !*>! parens @decl.pp
+        lhs.pp      = text "sizeof" ||- parens @decl.pp
         loc.rator   = ("<sizeof_type>", 15, Infix RL)
 
   | CAlignofExpr 
-        lhs.pp      = text "alignof" !*>! parens @expr.pp
+        lhs.pp      = text "alignof" ||- parens @expr.pp
         loc.rator   = ("<alignof_expr>", 15, Infix RL)
     
   | CAlignofType 
-        lhs.pp      = text "alignof" !*>! parens @decl.pp
+        lhs.pp      = text "alignof" ||- parens @decl.pp
         loc.rator   = ("<alignof_type>", 15, Infix RL)
     
   | CIndex 
@@ -247,13 +247,13 @@ SEM CExpr
         
   | CCall 
         lhs.pp      = @expr.pp 
-                       !>! tupleSep @args.pp       
+                       ||. tupleSep @args.pp       
         loc.rator   = ("<function_call>", 16, Postfix)
         
   | CMember 
         lhs.pp      = case @is_deref of
-                        True -> @expr.pp !>! text "->" !>! ident @ident
-                        False -> @expr.pp !>! char '.' !>! ident @ident
+                        True -> @expr.pp ||. text "->" ||. ident @ident
+                        False -> @expr.pp ||. char '.' ||. ident @ident
         loc.rator   = ("<selection>", 16, Postfix)
                                                   
   | CVar 
@@ -266,7 +266,7 @@ SEM CExpr
         
   | CCompoundLit 
         lhs.pp      = parens @decl.pp 
-                              !*>! encloseSep lbrace rbrace space @init_list.pp
+                              ||- encloseSep lbrace rbrace space @init_list.pp
         loc.rator   = ("<comp_lit>", 16, Postfix)
                         
   | CStatExpr 
@@ -274,7 +274,7 @@ SEM CExpr
         loc.rator   = ("<stat_expr>", 15, Infix RL)
         
   | CLabAddrExpr 
-        lhs.pp      = text "&&" !>! ident @ident
+        lhs.pp      = text "&&" ||. ident @ident
         loc.rator   = ("<addr_expr>", 15, Prefix)
         
   | CBuiltinExpr 
@@ -296,8 +296,8 @@ SEM CConst
 SEM CDeclParam 
   | Tuple   
         lhs.pp      = @opt_declarator.pp
-                      !*>! @opt_initializer.pp
-                      !*>! @opt_expr.pp
+                      ||- @opt_initializer.pp
+                      ||- @opt_expr.pp
                                       
 
 SEM CInit 
@@ -309,21 +309,21 @@ SEM CInit
 
 SEM CStructUnion 
   | CStruct
-        lhs.pp      = pretty @tag !*>! spaceSep @attr_specs.pp
-                                  !*>! @opt_ident.pp
-                                  !*>! structSepE @decls.pp 
+        lhs.pp      = pretty @tag ||- spaceSep @attr_specs.pp
+                                  ||- @opt_ident.pp
+                                  ||- structSepE @decls.pp 
 
 SEM CEnum 
   | CEnum
         lhs.pp      = spaceSep @attr_specs.pp 
-                        !*>! @opt_ident.pp
-                        !*>! enumSep @enum_defs.pp 
+                        ||- @opt_ident.pp
+                        ||- enumSep @enum_defs.pp 
 
         
                                                   
 SEM CEnumDef
   | Tuple
-        lhs.pp      = ident @name !>! (text " = " !<*?! @opt_value.pp)
+        lhs.pp      = ident @name <+|| equals ||+> @opt_value.pp
 
 
 -- | Declarations inside blocks must terminate with a semi
@@ -331,7 +331,7 @@ SEM CBlockItem
   | CBlockStmt    
         lhs.pp      = @stat.pp
   | CBlockDecl    
-        lhs.pp      = @decl.pp !>! semi
+        lhs.pp      = @decl.pp ||. semi
   | CNestedFunDef 
         lhs.pp      = @fundef.pp
 
@@ -344,13 +344,13 @@ SEM CInitialClause
 
 SEM CAttributeSpec 
   | CAttributeSpec 
-        lhs.pp      = text "__attribute__" !>! dparens (spaceSep @attr_list.pp)
+        lhs.pp      = text "__attribute__" ||. dparens (spaceSep @attr_list.pp)
 
 
 SEM CAttribute 
   | CAttribute
         lhs.pp      = ident @name 
-                        !>! attribSep @constant_exprs.pp
+                        ||. attribSep @constant_exprs.pp
 
       
                 

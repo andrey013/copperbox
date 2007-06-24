@@ -51,36 +51,47 @@ caten           = dfold cat
 
 
 
+-- Grow a document from the left
+infixr 6 ||., ||-
 
-infixr 6 !>!, !*>!
--- | Beside - 
-x !>! y     | blank x   = y
-            | blank y   = x
+
+x ||. y     | blank x   = y
             | otherwise = x `cat` y 
 
 
-x !*>! y    | blank x   = y
-            | blank y   = x
-            | otherwise = x `cat` space `cat` y 
+x ||- y    | blank x   = y
+           | otherwise = x `cat` space `cat` y 
 
-infixr 5 !^!
+
+
+
+infixr 5 |^|
 -- | Below
-x !^! y     | blank x   = y
-            | blank y   = x
+x |^| y     | blank x   = y
             | otherwise = x `cat` line `cat` y 
 
-x .^. y         = x `cat` linebreak `cat` y 
 
 
-infixl 7 !<?!, !<*?!
 
-x !<?! y    | blank y   = empty
-            | otherwise = x `cat` y
+-- suffix iff the left doc is not empty
+-- otherwise empty
+infixl 3 <||, <+||
+
+x <|| y    | blank x   = empty
+           | otherwise = x `cat` y
             
-x !<*?! y   | blank y   = empty
-            | otherwise = x `cat` space `cat` y
+x <+|| y   | blank x   = empty
+           | otherwise = x `cat` space `cat` y
                         
+-- prefix iff the right doc is not empty
+-- otherwise empty
+infixr 4 ||>, ||+>
+
+x ||> y    | blank y   = empty
+           | otherwise = x `cat` y
             
+x ||+> y   | blank y   = empty
+           | otherwise = x `cat` space `cat` y            
 
 
 
@@ -96,7 +107,7 @@ catr a b         = Cat a b
 
 softline        = group line
 
-x !%! y         = x !>! softline !>! y
+x !%! y         = x ||. softline ||. y
 
 
 -- | paragraph is fillSep
@@ -113,9 +124,9 @@ paragraph       = dfold (!%!)
 
 -- string is like "text" but replaces '\n' by "line"
 string ""       = empty
-string ('\n':s) = line !>! string s
+string ('\n':s) = line ||. string s
 string s        = case (span (/='\n') s) of
-                    (xs,ys) -> text xs !>! string ys
+                    (xs,ys) -> text xs ||. string ys
                     
                     
                                       
@@ -171,7 +182,7 @@ rbracket    = char ']'
 -----------------------------------------------------------
 -- bracketing, quoting, etc (largely from PPrint)
 -----------------------------------------------------------
-enclose l r d = l !>! d !>! r
+enclose l r d = l ||. d ||. r
 
 parens      = enclose lparen rparen
 angles      = enclose langle rangle
@@ -219,10 +230,10 @@ suffixes p = caten . map ((flip cat) p)
 
 encloseSep left right sep ds
     = case ds of
-        []  -> left !>! right
-        [d] -> left !>! d !>! right
+        []  -> left ||. right
+        [d] -> left ||. d ||. right
         _   -> let fn = column . caten . (intersperse sep) 
-               in left !>! (fn ds) !>! right 
+               in left ||. (fn ds) ||. right 
                     
 
 encloseSepE l r s [] = empty
@@ -242,7 +253,7 @@ tupleSep    = encloseSep lparen rparen comma
 tupleSepE   = encloseSepE lparen rparen comma
 
 -- | subscript - array subscripting
-subscript e e' = e !>! char '[' !>! e' !>! char ']'
+subscript e e' = e ||. char '[' ||. e' ||. char ']'
 
 -- | add n line feeds
 linefeed :: Int -> Doc
@@ -260,9 +271,12 @@ linesep n ds = caten $ intersperse (linefeed (n+1)) ds
 class Pretty a where
   pretty        :: a -> Doc 
   prettyList    :: [a] -> Doc
-  -- prettyList    = list . map pretty
+  prettyMaybe   :: Maybe a -> Doc
+  
   prettyList    = caten . map pretty
   
+  prettyMaybe Nothing  = empty
+  prettyMaybe (Just a) = pretty a 
 
 instance Pretty a => Pretty [a] where
   pretty        = prettyList
