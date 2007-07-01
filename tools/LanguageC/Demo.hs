@@ -8,10 +8,9 @@ module Main where
 import Language.C.Parser
 import Language.C.Syntax
 import Language.C.Tokens
-import Language.C.AG.Pretty
+import Language.C.Pretty
 
-
-import Language.C.AG.EBPretty
+import Language.C.Pretty.EBPretty
 
 import System.IO (stdout)
 import System.Environment
@@ -39,6 +38,6 @@ main = do
 -- outputPJ tu = putStr $ render $ pretty tu  
 
 -- Output function if using PPrint
-outputPP ans = let doc = pretty ans
+outputPP ans = let doc = pp ans
                in displayIO stdout (renderPretty 0.9 100 doc)
 

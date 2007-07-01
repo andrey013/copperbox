@@ -1,399 +1,418 @@
-{-# OPTIONS -fglasgow-exts #-}
 
---  C->Haskell Compiler: pretty printing of C abstract syntax
---
---  Author : Manuel M T Chakravarty
---  Created: 25 August 1
---
---  Version $Revision: 1.2 $ from $Date: 2004/06/11 07:10:16 $
---
---  Copyright (c) [2001..2004] Manuel M T Chakravarty
---
---  This file is free software; you can redistribute it and/or modify
---  it under the terms of the GNU General Public License as published by
---  the Free Software Foundation; either version 2 of the License, or
---  (at your option) any later version.
---
---  This file is distributed in the hope that it will be useful,
---  but WITHOUT ANY WARRANTY; without even the implied warranty of
---  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---  GNU General Public License for more details.
---
---- DESCRIPTION ---------------------------------------------------------------
---
---  Pretty printing support for abstract C trees.
---
---- DOCU ----------------------------------------------------------------------
---
---  language: Haskell 98
---
---- TODO ----------------------------------------------------------------------
---
---  * So far, only covers a small fraction of the abstract tree definition
---
-
-module Language.C.Pretty ( 
-  -- * Pretty
-  Pretty(..)
-  -- we are just providing instances to the class `Pretty'
-  ) where
-
--- import Idents (Ident, identToLexeme)
-import Text.PrettyPrint.HughesPJ
+module Language.C.Pretty where
 
 import Language.C.Syntax
+import Language.C.Pretty.EBPretty
+
+import Data.Maybe
+
+data Assoc = LR | RL | NA
+  deriving (Eq,Show)
+
+data Fixity = Prefix | Postfix | Infix Assoc | Primary
+  deriving (Eq,Show)
+
+type Precedence = Int 
+
+type Operator = (String,Precedence, Fixity)
+
+maxprec = 16
+maxrator = ("<max-precedence sentinel>", maxprec, Infix NA)
 
 
--- pretty printing of AST nodes
--- ----------------------------
-{-
-instance Show CDecl where
-  showsPrec _ = showString . render . pretty
--}
--- overloaded pretty-printing function (EXPORTED)
---
-class Pretty a where
-  pretty     :: a -> Doc
-  prettyPrec :: Int -> a -> Doc
-
-  pretty       = prettyPrec 0
-  prettyPrec _ = pretty
+stringrep  (a,_,_) = a
+precedence (_,b,_) = b
+fixity  (_,_,c) = c
 
 
--- actual structure tree traversals
--- --------------------------------
+class Rator a where
+  rator :: a -> Operator
 
-instance Pretty CDecl where
-  pretty (CDecl specs declrs _) =
-    hsep (map pretty specs) `hang` 2 $
-      hsep (punctuate comma (map prettyDeclr declrs)) -- <> semi
+instance Rator CUnaryOp where 
+  rator CPostIncOp   = ("++", 16, Postfix)
+  rator CPostDecOp   = ("--", 16, Postfix)
+  rator CPreIncOp    = ("++", 15, Prefix)
+  rator CPreDecOp    = ("--", 15, Prefix)
+  rator CAdrOp       = ("&",  15, Prefix)
+  rator CIndOp       = ("*",  15, Prefix)
+  rator CPlusOp      = ("+",  15, Prefix)
+  rator CMinOp       = ("-",  15, Prefix)
+  rator CCompOp      = ("~",  15, Prefix)
+  rator CNegOp       = ("!",  15, Prefix)  
+  
+instance Rator CBinaryOp where
+  rator CMulOp     = ("*",  13, Infix LR)
+  rator CDivOp     = ("/",  13, Infix LR)
+  rator CRmdOp     = ("%",  13, Infix LR)
+  rator CAddOp     = ("+",  12, Infix LR)
+  rator CSubOp     = ("-",  12, Infix LR)
+  rator CShlOp     = ("<<", 11, Infix LR)
+  rator CShrOp     = (">>", 11, Infix LR)
+  rator CLeOp      = ("<",  10, Infix LR)
+  rator CGrOp      = (">",  10, Infix LR)
+  rator CLeqOp     = ("<=", 10, Infix LR)
+  rator CGeqOp     = (">=", 10, Infix LR)
+  rator CEqOp      = ("==",  9, Infix LR)
+  rator CNeqOp     = ("!=",  9, Infix LR)
+  rator CAndOp     = ("&",   8, Infix LR)
+  rator CXorOp     = ("^",   7, Infix LR)
+  rator COrOp      = ("|",   6, Infix LR)
+  rator CLndOp     = ("&&",  5, Infix LR)
+  rator CLorOp     = ("||",  4, Infix LR)
+  
+instance Rator CAssignOp where
+  rator CAssignOp    = ("=",   2, Infix RL)
+  rator CMulAssOp    = ("*=",  2, Infix RL)
+  rator CDivAssOp    = ("/=",  2, Infix RL)
+  rator CRmdAssOp    = ("%=",  2, Infix RL)
+  rator CAddAssOp    = ("+=",  2, Infix RL)
+  rator CSubAssOp    = ("-=",  2, Infix RL)
+  rator CShlAssOp    = ("<<=", 2, Infix RL)
+  rator CShrAssOp    = (">>=", 2, Infix RL)
+  rator CAndAssOp    = ("&=",  2, Infix RL)
+  rator CXorAssOp    = ("^=",  2, Infix RL)
+  rator COrAssOp     = ("|=",  2, Infix RL)
+  
+type Fragment = (Operator, Doc)  
 
-instance Pretty CDeclSpec where
-  pretty (CStorageSpec sspec) = pretty sspec
-  pretty (CTypeSpec    tspec) = pretty tspec
-  pretty (CTypeQual    qspec) = pretty qspec
+bracket :: Fragment -> Assoc -> Operator -> Doc
+bracket (inner,doc) side outer 
+    | noparens inner outer side == True = doc
+    | otherwise                         = parens doc
 
-instance Pretty CStorageSpec where
-  pretty (CAuto     _) = text "auto"
-  pretty (CRegister _) = text "register"
-  pretty (CStatic   _) = text "static"
-  pretty (CExtern   _) = text "extern"
-  pretty (CTypedef  _) = text "typedef"
-
-instance Pretty CTypeSpec where
-  pretty (CVoidType      _) = text "void"
-  pretty (CCharType      _) = text "char"
-  pretty (CShortType     _) = text "short"
-  pretty (CIntType       _) = text "int"
-  pretty (CLongType      _) = text "long"
-  pretty (CFloatType     _) = text "float"
-  pretty (CDoubleType    _) = text "double"
-  pretty (CSignedType    _) = text "signed"
-  pretty (CUnsigType     _) = text "unsigned"
-  pretty (CSUType struct _) = prettySU struct
-  pretty (CEnumType enum _) = prettyEnum enum
-  pretty (CTypeDef ide   _) = ident ide
-
-instance Pretty CTypeQual where
-  pretty (CConstQual _) = text "const"
-  pretty (CVolatQual _) = text "volatile"
-  pretty (CRestrQual _) = text "restrict"
-
-prettyDeclr :: (Maybe CDeclr, Maybe CInit, Maybe CExpr) -> Doc
-prettyDeclr (odeclr, oinit, oexpr) =
-      maybe empty pretty odeclr
-  <+> maybe empty ((text "=" <+>) . pretty) oinit
-  <+> maybe empty ((text ":" <+>) . pretty) oexpr
-
-instance Pretty CDeclr where
-  pretty (CVarDeclr oide                  _) = maybe empty ident oide
-
-  pretty (CPtrDeclr inds declr            _) = 
-    let
-      oneLevel ind = parens . (hsep (map pretty ind) <+>) . (text "*" <>)
-    in
-    oneLevel inds (pretty declr)
-
-  pretty (CArrDeclr declr _ oexpr          _) =
-    pretty declr <> brackets (maybe empty pretty oexpr)
-
-  pretty (CFunDeclr declr decls isVariadic _) =
-    let
-      varDoc = if isVariadic then text ", ..." else empty
-    in
-    pretty declr 
-    <+> parens (hsep (punctuate comma (map pretty decls)) <> varDoc)
-
-
-
-
-
-
--- auxilliary functions
--- --------------------
-
-ident :: Ident -> Doc
-ident  = text . identToLexeme
-
-optName :: (Maybe Ident) -> String
-optName = maybe "" $ (++" ").identToLexeme
-
-prettyEnum :: CEnum -> Doc
-prettyEnum (CEnum name ms _) = header <> if ms == [] then empty else body ms
-       where header = text "enum " <+> maybe empty ident name
-             body :: [(Ident, Maybe CExpr)] -> Doc
-             body = braces.nest 1.sep.punctuate comma.(map p)
-             p :: (Ident, Maybe CExpr) -> Doc
-             p (ide, exp) = ident ide <+> maybe empty ((<+> text "=").pretty) exp
-
-prettySU :: CStructUnion -> Doc
-prettySU (CStruct t name ms _) = header <> if ms == [] then empty else body ms
-    where header = text $ tag t ++ optName name
-          tag CStructTag = "struct "
-          tag CUnionTag = "union "
-          body :: [CDecl] -> Doc
-          body = braces.nest 1.sep.map pretty
-
--- additions (spt)
--- --------------------
-
-line :: Doc
-line = char '\n'
-
-noSep :: (Pretty a) => [a] -> Doc
-noSep = hcat . (map pretty)
-
-spaceSep :: (Pretty a) => [a] -> Doc
-spaceSep = hsep . (map pretty)
-
-commaSep :: (Pretty a) => [a] -> Doc
-commaSep = hsep . (punctuate comma) . (map pretty)
-
-semiSep :: (Pretty a) => [a] -> Doc
-semiSep = hsep . (punctuate semi) . (map pretty)
-
-
-lineSep :: (Pretty a) => [a] -> Doc
-lineSep = (foldr ($+$) empty) . (map pretty)
-
--- | Line separate with a blank line inbetween
-lineSep2 :: (Pretty a) => [a] -> Doc
-lineSep2 = (foldr ($+$) empty) . (punctuate line) . (map pretty)
+                              
+noparens :: Operator -> Operator -> Assoc -> Bool              
+noparens (_,pi,fi) (_,po, fo) side
+  | pi > po   = True
+  | otherwise = 
+    case (fi, side) of
+      (Primary,   _) -> True
+      (Postfix,  LR) -> True
+      (Prefix,   RL) -> True
+      (Infix LR, LR) -> pi == po && fo == Infix LR
+      (Infix RL, RL) -> pi == po && fo == Infix RL
+      (_,        NA) -> fi == fo
+      _              -> False
+        
 
 
 instance Pretty CTranslationUnit where
-  pretty (CTranslationUnit extdecls _) = lineSep2 extdecls
-  
+  pp (CTranslationUnit ext_decls _) = linesep 2 (docs ext_decls)
+        
 instance Pretty CExtDecl where
-  pretty (CDeclExt decl)    = pretty decl <> semi
-  pretty (CFDefExt fundef)  = pretty fundef
-  pretty (CAsmExt _)        = text "<<CPretty: CExtDecl#CAsmExt not yet implemented!>>"
-  
-instance Pretty [CTypeQual] where
-  pretty _ = text "<<CPretty: [CTypeQual] not yet implemented!>>"
-
+  pp (CDeclExt decl _) = pp decl ||. semi
+  pp (CFDefExt fun_def _) = pp fun_def
+  pp (CAsmExt _) = text "/* ASM */"
+        
 instance Pretty CFunDef where
-  pretty (CFunDef specs declr decls stat _) = 
-        spaceSep specs
-    <+> pretty declr  
-    <+> spaceSep specs
-    <+> pretty stat
-  
+  pp (CFunDef specs declr decls stat _) =
+    (suffixes space (docs specs))         -- style poor here 
+      ||. (pp declr)
+      ||. (prefixes space (docs decls))
+      |^| pp stat
 
+                                          
 instance Pretty CStat where
-  pretty (CLabel name stat _) = 
-    ident name <> colon <> pretty stat
+  pp (CLabel ident stat attrs _) = 
+    text ident ||. colon ||. pp stat
+   
+  pp (CCase expr stat _) = 
+    text "case" ||- pp expr ||. colon ||-  pp stat
+          
+  pp (CCases lexpr uexpr stat _) = 
+    text "case" ||- pp lexpr ||- text "..." ||- pp uexpr 
+                ||. colon ||- pp stat
     
-  pretty (CCase expr stat _) = 
-    text "case" <+> pretty expr <+> char ':' <+> pretty stat
+  pp (CDefault stat _) = text "default" ||. colon ||- pp stat
+    
+  pp (CExpr oexpr _) = ppo oexpr ||. semi
   
-  pretty (CCases lower upper stat _) = 
-    text "case" <+> pretty lower <+> text "..." 
-      <+> pretty upper <+> char ':' <+> pretty stat    
-      
-  pretty (CDefault stat _) = 
-    text "default" <> colon <+> pretty stat
+  pp (CCompound blockitems _) = 
+    encloseSep lbrace rbrace line (docs blockitems)
     
-  pretty (CExpr oexpr _) = maybe empty pretty oexpr <+> semi
+  pp (CIf condexpr thenstat oelse _) = 
+    text "if" ||. parens (pp condexpr) ||- pp thenstat <-|| ppo oelse
+    
+  pp (CSwitch expr stat _) =  text "switch" ||. parens (pp expr) ||- pp stat
   
-  pretty (CCompound items _) = 
-    braces (spaceSep items)
+  pp (CWhile expr stat True _) = 
+    text "do" ||- pp stat ||- text "while" ||- parens (pp expr) ||. semi
     
-  pretty (CIf expr stat ostat _) = 
-    text "if" <> parens (pretty expr) <+> pretty stat <+> maybe empty pretty ostat
-    
-  pretty (CSwitch expr stat _) = 
-    text "switch" <> parens (pretty expr) <+> pretty stat 
-  
-  -- do while has terminating semi  
-  pretty (CWhile expr stat True _) = 
-    text "do" <+> pretty stat <+> text "while" <+> parens (pretty expr) <> semi
-    
-  pretty (CWhile expr stat False _) = 
-    text "while" <+> parens (pretty expr) <+> pretty stat 
+  pp (CWhile expr stat False _) =     
+    text "while" ||- parens (pp expr) ||- pp stat
      
-  pretty (CFor expr1 expr2 expr3 stat _) = 
-    text "for" <+> parens (hsep (punctuate semi (text "<<expr1>>" : map (maybe empty pretty) [expr2, expr3])))
-      
-  pretty (CGoto name _) = text "goto" <+> ident name <> semi
-  
-  pretty (CCont _) = text "continue" <> semi
+  pp (CFor initial otestexpr oupdexpr stat _) = 
+    text "for" ||. encloseSep lparen rparen semi clauses
+               |^| pp stat
+    where clauses = [ppInitialClause initial, f otestexpr, f oupdexpr]
+          f = maybe space pp 
+          
+  pp (CGoto ident _) = text "goto" ||- text ident ||. semi
+ 
+  pp (CCont _) = text "continue" ||. semi
 
-  pretty (CBreak _) = text "break" <> semi
+  pp (CBreak _) = text "break" ||. semi
 
-  pretty (CReturn oexpr _) = 
-    text "return" <+> maybe empty pretty oexpr <> semi
+  pp (CReturn oexpr _) = text "return" ||- ppo oexpr ||. semi
 
-  pretty (CAsm _) = text "/* CAsm */"
-  
+  pp (CAsm _) = text "/* CAsm */"
+
+
 instance Pretty CBlockItem where
-  pretty (CBlockStmt    stat)   = pretty stat
-  pretty (CBlockDecl    decl)   = pretty decl
-  pretty (CNestedFunDef fundef) = pretty fundef
+  pp (CBlockStmt stat)            = pp stat
+  pp (CBlockDecl decl attrs)      = pp decl ||. semi
+  pp (CNestedFunDef fundef attrs) = pp fundef
 
-
-instance Pretty CInit where
-  pretty (CInitExpr expr _)     = pretty expr
-  pretty (CInitList initlist _) = braces (spaceSep initlist)
+  
+instance Pretty CDecl where
+  pp (CDecl specs params _ _) = 
+    spaceSep (docs specs) ||- commaSep (map ppDeclParam params)
     
-instance Pretty ([CDesignator], CInit) where
-  pretty (desigs,cinit) = spaceSep desigs <+> pretty cinit
+                             
+instance Pretty CDeclSpec where
+  pp (CStorageSpec spec) = pp spec
+  pp (CTypeSpec spec)    = pp spec
+  pp (CTypeQual qual)    = pp qual
 
 
-instance Pretty CDesignator where 
-  pretty (CArrDesig     expr _)         = pretty expr                                 
-  pretty (CMemberDesig  ident _)        = text ident                                 
-  pretty (CRangeDesig   expr1 expr2 _)  = pretty expr1 <+> pretty expr2
+
+instance Pretty CStorageSpec where
+  pp (CAuto     _)  = text "auto"
+  pp (CRegister _)  = text "register"
+  pp (CStatic   _)  = text "static"
+  pp (CExtern   _)  = text "extern"
+  pp (CTypedef  _)  = text "typedef"
+  pp (CThread   _)  = text "thread"
+
+instance Pretty CTypeSpec where
+  pp (CVoidType _)        = text "void"
+  pp (CCharType _)        = text "char"
+  pp (CShortType _)       = text "short"
+  pp (CIntType _)         = text "int"
+  pp (CLongType _)        = text "long"
+  pp (CFloatType _)       = text "float"
+  pp (CDoubleType _)      = text "double"
+  pp (CSignedType _)      = text "signed"
+  pp (CUnsigType _)       = text "unsigned"
+  pp (CBoolType _)        = text "_Bool"
+  pp (CComplexType _)     = text "_Complex"
+  pp (CSUType su _)       = pp su
+  pp (CEnumType enum _)   = text "enum" ||- pp enum
+  pp (CTypeDef name _)    = text name
+  pp (CTypeOfExpr expr _) = text "typeof" ||. parens (pp expr)
+  pp (CTypeOfType decl _) = text "typeof" ||. parens (pp decl)
+                    
+instance Pretty CTypeQual where
+  pp (CConstQual _) = text "const"
+  pp (CVolatQual _) = text "volatile"
+  pp (CRestrQual _) = text "restrict"
+  pp (CInlinQual _) = text "inline"
                                  
 
+instance Pretty CStructUnion where
+  pp (CStruct tag oident decls attrs _) = 
+    pp tag ||- spaceSep (docs attrs) ||- ppOptIdent oident 
+           ||- structSepE (docs decls)
+
+instance Pretty CStructTag where 
+  pp CStructTag   = text "struct"
+  pp CUnionTag    = text "union"
+                                  
+
+instance Pretty CEnum where
+  pp (CEnum oident elts attrs _) = 
+    spaceSep (docs attrs) ||- ppOptIdent oident ||- enumSep (map ppEnumElt elts)
+
+                                            
+instance Pretty CDeclr where
+  pp (CVarDeclr oi _) = ppOptIdent oi
+  pp (CPtrDeclr quals declr _ _) = 
+    char '*' ||. spaceSep (docs quals) ||- pp declr
+  pp (CArrDeclr declr quals oexpr _) = 
+    pp declr ||. brackets (ppo oexpr)       -- what about quals??
+
+  pp (CFunDeclr declr decls True _) =
+    pp declr ||. tupleSep (docs decls) ||. text ", ..."
+    
+  pp (CFunDeclr declr decls False _) =
+    pp declr ||. tupleSep (docs decls) 
+
+instance Pretty CInit where
+  pp (CInitExpr expr _) = pp expr
+  pp (CInitList inits _) = commaSep (map ppInit inits)
+
+  
+
+
+instance Pretty CDesignator where
+  pp (CArrDesig expr _) = brackets (pp expr)
+  pp (CMemberDesig ident _) = dot ||. text ident
+  pp (CRangeDesig lexpr rexpr _) = 
+    brackets $ pp lexpr ||. text "..." ||. pp rexpr
+
+
+instance Rator CExpr where
+  rator (CComma _ _)          = ("<comma>", 1, Infix LR) 
+  rator (CCond _ _ _ _)       = ("<ternary>", 3, Primary)                 
+  rator (CBinary op _ _ _)    = rator op
+  rator (CCast _ _ _)         = ("<cast>", 3, Infix RL)
+  rator (CUnary op _ _)       = rator op 
+  rator (CSizeofExpr _ _)     = ("<sizeof_expr>", 15, Infix RL)
+  rator (CSizeofType _ _)     = ("<sizeof_type>", 15, Infix RL)
+  rator (CAlignofExpr _ _)    = ("<alignof_expr>", 15, Infix RL)
+  rator (CAlignofType _ _)    = ("<alignof_type>", 15, Infix RL)
+  rator (CIndex _ _ _)        = ("<subscript>", 16, Postfix)
+  rator (CCall _ _ _)         = ("<function_call>", 16, Postfix)
+  rator (CMember _ _ _ _)     = ("<selection>", 16, Postfix)
+  rator (CVar _ _)            = ("<variable>", 16, Primary)
+  rator (CConst _ _)          = ("<constant>", 16, Primary)
+  rator (CCompoundLit _ _ _)  = ("<comp_lit>", 16, Postfix)
+  rator (CStatExpr _ _)       = ("<stat_expr>", 15, Infix RL)
+  rator (CLabAddrExpr _ _)    = ("<addr_expr>", 15, Prefix)
+  rator (CBuiltinExpr _)      = ("<builtin>", 15, Prefix)
+
+
 instance Pretty CExpr where
-  pretty (CComma exprs _)   
-    = commaSep exprs
-    
-  pretty (CAssign op lval rval _) 
-    = pretty lval <+> pretty op <+> pretty rval
-    
-  pretty (CCond expr1 (Just expr2) expr3 _)
-    = pretty expr1 <+> char '?' <+> pretty expr2 <+> char ':' <+> pretty expr3
-
-  pretty (CCond expr1 Nothing expr3 _)
-    = pretty expr1 <+> char '?' <+> empty <+> char ':' <+> pretty expr3
-
-  pretty (CBinary op expr1 expr2 _)
-    = pretty expr1 <+> pretty op <+> pretty expr2
-
-  pretty (CCast decl expr _)
-    = parens (pretty decl) <+> pretty expr
-
-  pretty (CUnary op expr _)
-    = case isPrefixOp op of 
-        True -> pretty op <+> pretty expr
-        False -> pretty expr <+> pretty op
-    
-  pretty (CSizeofExpr  expr _)
-    = text "sizeof" <+> pretty expr
-    
-  pretty (CSizeofType  decl _)
-    = text "sizeof" <+> parens (pretty decl)
-
-  pretty (CAlignofExpr expr _)
-    = text "alignof" <+> pretty expr
-    
-  pretty (CAlignofType decl _)
-    = text "alignof" <+> parens (pretty decl)
-    
-  pretty (CIndex arrexpr idxexpr _) 
-    = pretty arrexpr <> lbrack <> pretty idxexpr <> rbrack                          
-
-  pretty (CCall funexpr [] _) 
-    = pretty funexpr <> parens empty
+  pp (CComma exprs _) = commaSep (docs exprs)
+  
+  pp (CAssign op lexpr rexpr _) = 
+    pp lexpr ||- text (stringrep $ rator op) ||- pp rexpr
+   
+  pp (CCond cexpr otexpr fexpr _) = 
+    pp cexpr ||- char '?' ||- ppo otexpr ||- char ':' ||- pp fexpr
         
-  pretty (CCall funexpr args _) 
-    = pretty funexpr <> parens (commaSep args)
+                                  
+  pp e@(CBinary op lexpr rexpr _) = left_e ||- text (stringrep rtr) ||- right_e
+    where rtr = rator e
+          left_e = bracket (rator lexpr, pp lexpr) LR rtr
+          right_e = bracket (rator rexpr, pp rexpr) RL rtr
+        
 
-  pretty (CMember expr name True _) 
-    = pretty expr <> text "->" <> ident name
-  
-  pretty (CMember expr name False _) 
-    = pretty expr <> char '.' <> ident name
-                          
-  pretty (CVar name _)   
-    = ident name
-  
-  pretty (CConst cconst _) 
-    = pretty cconst
 
-  pretty (CCompoundLit decl initlist _)
-    = parens (pretty decl) <+> braces (spaceSep initlist)
+  pp (CCast decl expr _) = parens (pp decl) ||- pp expr
+        
 
-  pretty (CStatExpr stat _)
-    = parens (pretty stat)
-
-  pretty (CLabAddrExpr name _)
-    = text "&&" <> ident name
-
-  pretty (CBuiltinExpr _) 
-    = text "<<CPretty: CExpr#CBuiltinExpr not yet implemented!>>"
-
-  
-  
+  pp e@(CUnary op expr _) = 
+    case (fixity rtr) of 
+      Postfix -> expr'  ||. text (stringrep rtr)
+      Prefix -> text (stringrep rtr) ||. expr'
+      _ -> error "Unary expression not deemed tyo be pre-post fixed"
+    where rtr = rator e
+          expr' = bracket (rator expr, pp expr) NA rtr
                                    
+  pp (CSizeofExpr expr _) = text "sizeof" ||- parens (pp expr)
+            
+  pp (CSizeofType decl _) = text "sizeof" ||- parens (pp decl)
+        
+  pp (CAlignofExpr expr _) = text "alignof" ||- parens (pp expr)
+    
+  pp (CAlignofType decl _) = text "alignof" ||- parens (pp decl)
+    
+  pp (CIndex arrexpr idxexpr _) = subscript (pp arrexpr) (pp idxexpr)
+        
+  pp (CCall expr exprs _) = pp expr ||. tupleSep (docs exprs)
+                
+  pp (CMember expr ident True _) = pp expr ||. text "->" ||. text ident
+  
+  pp (CMember expr ident False _) = pp expr ||. char '.' ||. text ident
+                           
+  pp (CVar ident _) = text ident
+        
+  pp (CConst cst _) = pp cst
+
+  pp (CCompoundLit decl inits _) =  
+    parens (pp decl) ||- encloseSep lbrace rbrace space (map ppInit inits)
+        
+  pp (CStatExpr stat _) = parens (pp stat)
+        
+  pp (CLabAddrExpr ident _) = text "&&" ||. text ident
+                
+  pp (CBuiltinExpr _) = text "<<CPretty: CExpr#CBuiltinExpr not yet implemented!>>"
+        
+                                       
 instance Pretty CAssignOp where
-  pretty CAssignOp    = char '='
-  pretty CMulAssOp    = text "*="
-  pretty CDivAssOp    = text "/="
-  pretty CRmdAssOp    = text "%="
-  pretty CAddAssOp    = text "+="
-  pretty CSubAssOp    = text "-="
-  pretty CShlAssOp    = text "<<="
-  pretty CShrAssOp    = text ">>="
-  pretty CAndAssOp    = text "&="
-  pretty CXorAssOp    = text "^="
-  pretty COrAssOp     = text "|="
+  pp CAssignOp    = char '='
+  pp CMulAssOp    = text "*="
+  pp CDivAssOp    = text "/="
+  pp CRmdAssOp    = text "%="
+  pp CAddAssOp    = text "+="
+  pp CSubAssOp    = text "-="
+  pp CShlAssOp    = text "<<="
+  pp CShrAssOp    = text ">>="
+  pp CAndAssOp    = text "&="
+  pp CXorAssOp    = text "^="
+  pp COrAssOp     = text "|="
          
            
 instance Pretty CBinaryOp where
-  pretty CMulOp     = char '*'
-  pretty CDivOp     = char '/'
-  pretty CRmdOp     = char '%'
-  pretty CAddOp     = char '+'
-  pretty CSubOp     = char '-'
-  pretty CShlOp     = text "<<"
-  pretty CShrOp     = text ">>"
-  pretty CLeOp      = char '<'
-  pretty CGrOp      = char '>'
-  pretty CLeqOp     = text "<="
-  pretty CGeqOp     = text ">="
-  pretty CEqOp      = text "=="
-  pretty CNeqOp     = text "!="
-  pretty CAndOp     = char '&'
-  pretty CXorOp     = char '^'
-  pretty COrOp      = char '|'
-  pretty CLndOp     = text "&&"
-  pretty CLorOp     = text "||"
+  pp CMulOp     = char '*'
+  pp CDivOp     = char '/'
+  pp CRmdOp     = char '%'
+  pp CAddOp     = char '+'
+  pp CSubOp     = char '-'
+  pp CShlOp     = text "<<"
+  pp CShrOp     = text ">>"
+  pp CLeOp      = char '<'
+  pp CGrOp      = char '>'
+  pp CLeqOp     = text "<="
+  pp CGeqOp     = text ">="
+  pp CEqOp      = text "=="
+  pp CNeqOp     = text "!="
+  pp CAndOp     = char '&'
+  pp CXorOp     = char '^'
+  pp COrOp      = char '|'
+  pp CLndOp     = text "&&"
+  pp CLorOp     = text "||"
 
 instance Pretty CUnaryOp where 
-  pretty CPreIncOp    = text "++"
-  pretty CPreDecOp    = text "--"
-  pretty CPostIncOp   = text "++"
-  pretty CPostDecOp   = text "--"
-  pretty CAdrOp       = char '&'
-  pretty CIndOp       = char '*'
-  pretty CPlusOp      = char '+'
-  pretty CMinOp       = char '-'
-  pretty CCompOp      = char '~'
-  pretty CNegOp       = char '!'  
-
-
+  pp CPreIncOp    = text "++"
+  pp CPreDecOp    = text "--"
+  pp CPostIncOp   = text "++"
+  pp CPostDecOp   = text "--"
+  pp CAdrOp       = char '&'
+  pp CIndOp       = char '*'
+  pp CPlusOp      = char '+'
+  pp CMinOp       = char '-'
+  pp CCompOp      = char '~'
+  pp CNegOp       = char '!'  
+  
 instance Pretty CConst where
-  pretty (CIntConst   i _)   = integer i 
-  pretty (CCharConst  c _)   = quotes (char c)
-  pretty (CFloatConst s _)   = text s
-  pretty (CStrConst   s _)   = doubleQuotes (text s)
+  pp (CIntConst   i _)   = integer i 
+  pp (CCharConst  c _)   = squotes (char c)
+  pp (CFloatConst s _)   = text s
+  pp (CStrConst   s _)   = dquotes (text s)
     
-isPrefixOp :: CUnaryOp -> Bool
-isPrefixOp CPostIncOp   = False
-isPrefixOp CPostDecOp   = False
-isPrefixOp _            = True
 
-             
+instance Pretty CAttributeSpec where
+  pp (CAttributeSpec attrs _) = 
+    text "__attribute__" ||. dparens (spaceSep $ docs attrs)
+
+instance Pretty CAttribute where
+  pp (CAttribute "" [] _) = empty
+  
+  pp (CAttribute s [] _) = text s
+  
+  pp (CAttribute s ps _) = text s ||. parens (spaceSep $ docs ps)
+
+                 
+
+ppDeclParam :: (Maybe CDeclr, Maybe CInit, Maybe CExpr) -> Doc
+ppDeclParam (odeclr, oinit, oexpr) = ppo odeclr ||- ppo oinit ||- ppo oexpr
+
+ppOptIdent :: (Maybe Ident) -> Doc
+ppOptIdent = maybe empty text 
+
+ppInitialClause :: Either (Maybe CExpr) CDecl -> Doc
+ppInitialClause (Left Nothing)     = space
+ppInitialClause (Left (Just expr)) = pp expr
+ppInitialClause (Right decl)       = pp decl
+
+ppEnumElt :: (Ident, Maybe CExpr) -> Doc
+ppEnumElt (ident, Nothing) = text ident
+ppEnumElt (ident, Just e)  = text ident ||. equals ||. pp e
+
+ppInit :: ([CDesignator], CInit) -> Doc
+ppInit (desigs, cinit) = spaceSep (docs desigs) ||- pp cinit
+
+
+
