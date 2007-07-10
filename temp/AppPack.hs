@@ -4,6 +4,7 @@
 module AppPack where
 
 import Control.Applicative
+import Data.Monoid
 
 
 data Result v = Parsed v Derivs
@@ -43,7 +44,12 @@ stary (P p) (P q) = P $ \d ->
     Parsed f d' -> case q d' of
                      NoParse -> NoParse
                      Parsed v d'' -> Parsed (f v) d''
-   
+
+
+
+-- Don't have an instance of Alternative as we would have to have the result
+-- type fixed as an instance of Monoid
+ 
 infixl 3 </>
 
 
@@ -70,13 +76,13 @@ eval (P f) s = case f (parse s) of
   _ -> error "Parse error"    
 
 pAdditive  :: Par Int
-pAdditive  = (+) <$> pPrimary <* pChar '+' <*> pAdditive </> pMultitive 
+pAdditive  = (+) <$> pPrimary <*  pChar '+' <*> pAdditive  </> pMultitive 
 
 pMultitive :: Par Int
-pMultitive = (*) <$> pPrimary <* pChar '*' <*> pMultitive </> pPrimary 
+pMultitive = (*) <$> pPrimary <*  pChar '*' <*> pMultitive </> pPrimary 
 
 pPrimary   :: Par Int
-pPrimary   = id <$ pChar '(' <*> pAdditive <* pChar ')' </> pDecimal
+pPrimary   = id  <$ pChar '(' <*> pAdditive <*  pChar ')'  </> pDecimal
 
 
 -- Parse a decimal digit
@@ -99,6 +105,42 @@ pChar c = P $ \d -> case dvChar d of
   Parsed c' d' -> if (c == c') then (Parsed c' d') else NoParse
   _ -> NoParse
   
+satisfy :: Par v -> (v -> Bool) -> Par v
+satisfy (P p) f = P $ \d -> case p d of
+  NoParse -> NoParse
+  ans@(Parsed a d') -> if (f a) then ans else NoParse
+
+dis :: Par v -> (v -> Bool) -> Par v  
+dis p f = satisfy p (not . f)  
+
+anyChar :: Par Char
+anyChar = P $ \d -> dvChar d
+
+literal :: String -> Par String
+literal s = iter s
+  where iter []     = pure []
+        iter (c:cs) = pure (:) <*> pChar c <*> iter cs  
+
+oneof cs = satisfy anyChar  (flip elem cs)
+noneof cs = satisfy anyChar (not . flip elem cs)
+
+
+-- many and some are in Control.Applicative
+
+manyof :: Par a -> Par [a]
+manyof (P p) = P $ \ d -> iter [] d
+  where iter acc d = case p d of
+                       NoParse -> (Parsed (reverse acc) d)
+                       Parsed v d' -> iter (v:acc) d' 
+
+manyone :: Par a -> Par [a]
+manyone(P p) = P $ \ d -> iter [] d
+  where iter acc d = case p d of
+                       NoParse -> if (null acc) 
+                                  then NoParse 
+                                  else (Parsed (reverse acc) d)
+                       Parsed v d' -> iter (v:acc) d' 
+                       
   
 demo01 = eval pAdditive "2*(3+4)"
 
