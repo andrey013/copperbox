@@ -8,12 +8,10 @@ import Data.Word
 data MidiFile = MidiFile Header [Track]
   deriving (Eq,Show,Read)
 
-data Header = Header {track_type :: HFormat,
-                      num_tracks :: Word16,
-                      time_div   :: TimeDivision }
+data Header = Header HFormat Word16 TimeDivision
   deriving (Eq,Show,Read)
               
-newtype Track = Track {events :: [Event]}
+newtype Track = Track [Event]
   deriving (Eq,Show,Read)
            
 data HFormat 
@@ -39,31 +37,28 @@ data TextType
   | CUE_POINT 
   deriving (Eq,Show,Enum,Read) 
   
-data Event = Event { time_stamp :: DeltaTime,
-                     event_type :: EventType}  
+data Event = Event DeltaTime EventType 
   deriving (Eq,Show,Read)
 
 type DeltaTime = Word32
 
 
 data EventType 
-  = NoteOff             {channel::Word8,   note::Word8,     velocity::Word8}
-  | NoteOn              {channel::Word8,   note::Word8,     velocity::Word8}
-  | NoteAftertouch      {channel::Word8,   note::Word8,     value::Word8}
-  | Controller          {channel::Word8,   ctype::Word8,    value::Word8}
-  | ProgramChange       {channel::Word8,   number::Word8}  
-  | ChanAftertouch      {channel::Word8,   value::Word8}
-  | PitchBend           {channel::Word8,   cvalue::Word16}
-  | TextEvent           {text_type::TextType, text_contents::String}
-  | SequenceNumber      {sequence_number::Word16}
-  | ChannelPrefix       {channel::Word8} 
-  | EndOfTrack          -- no contents
-  | SetTempo            {mspqn::Word32}   
-  | SMPTEOffset         {hour::Word8,     minute::Word8,        second::Word8, 
-                         frac::Word8,    subfrac::Word8}
-  | TimeSignature       {numer::Word8,  denom::Word8,     metro::Word8, 
-                         nps32::Word8}
-  | KeySignature        {key_type::Int8, scale_type::Scale}
+  = NoteOff             Word8 Word8 Word8   -- chan x note x velocity
+  | NoteOn              Word8 Word8 Word8   -- chan x note x velocity
+  | NoteAftertouch      Word8 Word8 Word8   -- chan x note x value
+  | Controller          Word8 Word8 Word8   -- chan x type x value
+  | ProgramChange       Word8 Word8         -- chan x num  
+  | ChanAftertouch      Word8 Word8         -- chan x value
+  | PitchBend           Word8 Word16        -- chan x value 
+  | TextEvent           TextType String     -- text_type x contents
+  | SequenceNumber      Word16              -- sequence_number
+  | ChannelPrefix       Word8               -- channel
+  | EndOfTrack                              -- no contents
+  | SetTempo            Word32              -- mspqn
+  | SMPTEOffset         Word8 Word8 Word8 Word8 Word8   -- hour x minute x second x frac x subfrac
+  | TimeSignature       Word8 Word8 Word8 Word8         -- numer x denom x metro x nps32
+  | KeySignature        Int8 Scale          -- key_type x scale_type
   deriving (Eq,Show,Read)
 
 

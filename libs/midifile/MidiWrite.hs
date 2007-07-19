@@ -85,11 +85,11 @@ putEventType (Controller ch nt val) = do
   putWord8 nt
   putWord8 val
   
-putEventType (ProgramChange ch num)    = do
+putEventType (ProgramChange ch num) = do
   putWord8 (0xC `chShift` ch)
   putWord8 num
   
-putEventType (ChanAftertouch ch val)    = do
+putEventType (ChanAftertouch ch val) = do
   putWord8 (0xD `chShift` ch)
   putWord8 val
   
@@ -115,7 +115,7 @@ putEventType (ChannelPrefix ch) = do
   putWord8 1
   putWord8 ch
   
-putEventType (EndOfTrack)           = do
+putEventType (EndOfTrack) = do
   putWord8 0xFF
   putWord8 0x2F
   putWord8 0
@@ -206,7 +206,7 @@ infixr 5 `chShift`
 
 
 -- to do ... a better version ...
-chShift :: (Integral a, Integral b) => a -> b -> Word8
+chShift :: Word8 -> Word8 -> Word8
 a `chShift` b = val'
   where val =  ((toInteger a) `shiftL` 4) +  toInteger b
         val' = case val < 256 of

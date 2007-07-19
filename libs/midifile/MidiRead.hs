@@ -22,8 +22,8 @@ readMidi path = do
                     
 getMidiFile :: Get MidiFile  
 getMidiFile = do
-  hdr <- getHeader
-  mts <- replicateM (fromIntegral $ num_tracks hdr) getTrack
+  hdr@(Header _ n _) <- getHeader
+  mts <- replicateM (fromIntegral n) getTrack
   return $ MidiFile hdr (catMaybes mts)
 
 getHeader :: Get Header  
