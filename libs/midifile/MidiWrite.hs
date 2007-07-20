@@ -1,5 +1,8 @@
 
-module MidiWrite (writeMidi) where
+module MidiWrite (
+    -- * Write a Midi structure to file
+    writeMidi
+  ) where
 
 import MidiDatatypes
 
@@ -151,6 +154,14 @@ putEventType (KeySignature ky sc) = do
   putWord8 2 
   putWord8 (wrapint ky)
   putScale sc
+
+putEventType (SSME i bs) = do
+  putVarlen i
+  putByteString bs
+    
+putEventType (Sysex i bs) = do
+  putVarlen i
+  putByteString bs
   
     
 putScale :: Scale -> Put

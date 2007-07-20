@@ -1,6 +1,11 @@
 
 
-module MidiRead (readMidi) where
+-- add exception handling...
+
+module MidiRead (
+    -- * Read a Midi structure from file
+    readMidi
+  ) where
 
 import MidiDatatypes
 
@@ -96,14 +101,23 @@ chanEvt 0xA ch = eventWithTwoParams NoteAftertouch ch
 chanEvt 0xB ch = eventWithTwoParams Controller ch
 chanEvt 0xC ch = eventWithOneParam  ProgramChange ch
 chanEvt 0xD ch = eventWithOneParam  ChanAftertouch ch
+
 chanEvt 0xE ch = do
   a <- getWord8 
   b <- getWord8
   let lsb = fromIntegral (clearBit a 7)
   let msb = fromIntegral (clearBit b 7)
   return $ PitchBend ch ((msb `shiftL` 7) + lsb)
-  
-chanEvt evt _   = error $ "chanEvt match on " ++ show evt                           
+
+chanEvt 0xF _ = do
+  i <- getVarlen
+  body <- getByteString (fromIntegral i)
+  return $ Sysex i body  
+
+chanEvt evt ch   = do
+  l <- bytesRead
+  r <- remaining
+  error $ "chanEvt match on " ++ show evt ++ " " ++ show ch ++ " " ++ show (l,r)                         
 
 eventWithOneParam :: (Word8 -> Word8 -> EventType) -> Word8 -> Get EventType                          
 eventWithOneParam cnstr ch = do
@@ -159,15 +173,23 @@ getMetaEvent 0x59 = do
   ky <- getWord8
   sc <- getWord8
   return (KeySignature (unwrapint ky) (undscale sc)) 
+
+getMetaEvent 0x7F = do
+  i <- getVarlen
+  body <- getByteString (fromIntegral i)
+  return $ SSME i body
+
   
 getMetaEvent i = do
-  error $ "unregonized match in getMetaEvent " ++ show i
+  l <- bytesRead
+  r <- remaining
+  error $ "unregonized match in getMetaEvent " ++ show i ++ " " ++ show (l,r)                         
 
 
 getTextEvt :: TextType -> Get EventType  
 getTextEvt ty = do
-  len <- getVarlen
-  bs <- getLazyByteString (fromIntegral len)
+  i <- getVarlen
+  bs <- getLazyByteString (fromIntegral i)
   return $ TextEvent ty (L.unpack bs)
   
   
