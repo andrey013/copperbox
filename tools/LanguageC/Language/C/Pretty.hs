@@ -100,80 +100,79 @@ instance Pretty CTranslationUnit where
   pp (CTranslationUnit ext_decls _) = linesep 2 (docs ext_decls)
         
 instance Pretty CExtDecl where
-  pp (CDeclExt decl _) = pp decl ||. semi
+  pp (CDeclExt decl _) = pp decl >~< semi
   pp (CFDefExt fun_def _) = pp fun_def
   pp (CAsmExt _) = text "/* ASM */"
         
 instance Pretty CFunDef where
   pp (CFunDef specs declr decls stat _) =
     (suffixes space (docs specs))         -- style poor here 
-      ||. (pp declr)
-      ||. (prefixes space (docs decls))
-      |^| pp stat
+      >~< (pp declr)
+      >~< (prefixes space (docs decls))
+      ^+^ pp stat
 
                                           
 instance Pretty CStat where
   pp (CLabel ident stat attrs _) = 
-    text ident ||. colon ||. pp stat
+    text ident >~< colon >~< pp stat
    
   pp (CCase expr stat _) = 
-    text "case" ||- pp expr ||. colon ||-  pp stat
+    text "case" >+< pp expr >~< colon >+<  pp stat
           
   pp (CCases lexpr uexpr stat _) = 
-    text "case" ||- pp lexpr ||- text "..." ||- pp uexpr 
-                ||. colon ||- pp stat
+    text "case" >+< pp lexpr >+< text "..." >+< pp uexpr 
+                >~< colon >+< pp stat
     
-  pp (CDefault stat _) = text "default" ||. colon ||- pp stat
+  pp (CDefault stat _) = text "default" >~< colon >+< pp stat
     
-  pp (CExpr oexpr _) = ppo oexpr ||. semi
+  pp (CExpr oexpr _) = ppo oexpr >~< semi
   
   pp (CCompound blockitems _) = 
     encloseSep lbrace rbrace line (docs blockitems)
     
   pp (CIf condexpr thenstat oelse _) = 
-    text "if" ||. parens (pp condexpr) ||- pp thenstat <-|| ppo oelse
+    text "if" >~< parens (pp condexpr) >+< pp thenstat <+| ppo oelse
     
-  pp (CSwitch expr stat _) =  text "switch" ||. parens (pp expr) ||- pp stat
+  pp (CSwitch expr stat _) =  text "switch" >~< parens (pp expr) >+< pp stat
   
   pp (CWhile expr stat True _) = 
-    text "do" ||- pp stat ||- text "while" ||- parens (pp expr) ||. semi
+    text "do" >+< pp stat >+< text "while" >+< parens (pp expr) >~< semi
     
   pp (CWhile expr stat False _) =     
-    text "while" ||- parens (pp expr) ||- pp stat
+    text "while" >+< parens (pp expr) >+< pp stat
      
   pp (CFor initial otestexpr oupdexpr stat _) = 
-    text "for" ||. encloseSep lparen rparen semi clauses
-               |^| pp stat
+    text "for" >~< encloseSep lparen rparen semi clauses
+               ^+^ pp stat
     where clauses = [ppInitialClause initial, f otestexpr, f oupdexpr]
           f = maybe space pp 
           
-  pp (CGoto ident _) = text "goto" ||- text ident ||. semi
+  pp (CGoto ident _) = text "goto" >+< text ident >~< semi
  
-  pp (CCont _) = text "continue" ||. semi
+  pp (CCont _) = text "continue" >~< semi
 
-  pp (CBreak _) = text "break" ||. semi
+  pp (CBreak _) = text "break" >~< semi
 
-  pp (CReturn oexpr _) = text "return" ||- ppo oexpr ||. semi
+  pp (CReturn oexpr _) = text "return" >+< ppo oexpr >~< semi
 
   pp (CAsm _) = text "/* CAsm */"
 
 
 instance Pretty CBlockItem where
   pp (CBlockStmt stat)            = pp stat
-  pp (CBlockDecl decl attrs)      = pp decl ||. semi
+  pp (CBlockDecl decl attrs)      = pp decl >~< semi
   pp (CNestedFunDef fundef attrs) = pp fundef
 
   
 instance Pretty CDecl where
   pp (CDecl specs params _ _) = 
-    spaceSep (docs specs) ||- commaSep (map ppDeclParam params)
+    spaceSep (docs specs) >+< commaSep (map ppDeclParam params)
     
                              
 instance Pretty CDeclSpec where
   pp (CStorageSpec spec) = pp spec
   pp (CTypeSpec spec)    = pp spec
   pp (CTypeQual qual)    = pp qual
-
 
 
 instance Pretty CStorageSpec where
@@ -197,10 +196,10 @@ instance Pretty CTypeSpec where
   pp (CBoolType _)        = text "_Bool"
   pp (CComplexType _)     = text "_Complex"
   pp (CSUType su _)       = pp su
-  pp (CEnumType enum _)   = text "enum" ||- pp enum
+  pp (CEnumType enum _)   = text "enum" >+< pp enum
   pp (CTypeDef name _)    = text name
-  pp (CTypeOfExpr expr _) = text "typeof" ||. parens (pp expr)
-  pp (CTypeOfType decl _) = text "typeof" ||. parens (pp decl)
+  pp (CTypeOfExpr expr _) = text "typeof" >~< parens (pp expr)
+  pp (CTypeOfType decl _) = text "typeof" >~< parens (pp decl)
                     
 instance Pretty CTypeQual where
   pp (CConstQual _) = text "const"
@@ -211,8 +210,8 @@ instance Pretty CTypeQual where
 
 instance Pretty CStructUnion where
   pp (CStruct tag oident decls attrs _) = 
-    pp tag ||- spaceSep (docs attrs) ||- ppOptIdent oident 
-           ||- structSepE (docs decls)
+    pp tag >+< spaceSep (docs attrs) >+< ppOptIdent oident 
+           >+< structSepE (docs decls)
 
 instance Pretty CStructTag where 
   pp CStructTag   = text "struct"
@@ -221,21 +220,21 @@ instance Pretty CStructTag where
 
 instance Pretty CEnum where
   pp (CEnum oident elts attrs _) = 
-    spaceSep (docs attrs) ||- ppOptIdent oident ||- enumSep (map ppEnumElt elts)
+    spaceSep (docs attrs) >+< ppOptIdent oident >+< enumSep (map ppEnumElt elts)
 
                                             
 instance Pretty CDeclr where
   pp (CVarDeclr oi _) = ppOptIdent oi
   pp (CPtrDeclr quals declr _ _) = 
-    char '*' ||. spaceSep (docs quals) ||- pp declr
+    char '*' >~< spaceSep (docs quals) >+< pp declr
   pp (CArrDeclr declr quals oexpr _) = 
-    pp declr ||. brackets (ppo oexpr)       -- what about quals??
+    pp declr >~< brackets (ppo oexpr)       -- what about quals??
 
   pp (CFunDeclr declr decls True _) =
-    pp declr ||. tupleSep (docs decls) ||. text ", ..."
+    pp declr >~< tupleSep (docs decls) >~< text ", ..."
     
   pp (CFunDeclr declr decls False _) =
-    pp declr ||. tupleSep (docs decls) 
+    pp declr >~< tupleSep (docs decls) 
 
 instance Pretty CInit where
   pp (CInitExpr expr _) = pp expr
@@ -246,9 +245,9 @@ instance Pretty CInit where
 
 instance Pretty CDesignator where
   pp (CArrDesig expr _) = brackets (pp expr)
-  pp (CMemberDesig ident _) = dot ||. text ident
+  pp (CMemberDesig ident _) = dot >~< text ident
   pp (CRangeDesig lexpr rexpr _) = 
-    brackets $ pp lexpr ||. text "..." ||. pp rexpr
+    brackets $ pp lexpr >~< text "..." >~< pp rexpr
 
 
 instance Rator CExpr where
@@ -276,56 +275,56 @@ instance Pretty CExpr where
   pp (CComma exprs _) = commaSep (docs exprs)
   
   pp (CAssign op lexpr rexpr _) = 
-    pp lexpr ||- text (stringrep $ rator op) ||- pp rexpr
+    pp lexpr >+< text (stringrep $ rator op) >+< pp rexpr
    
   pp (CCond cexpr otexpr fexpr _) = 
-    pp cexpr ||- char '?' ||- ppo otexpr ||- char ':' ||- pp fexpr
+    pp cexpr >+< char '?' >+< ppo otexpr >+< char ':' >+< pp fexpr
         
                                   
-  pp e@(CBinary op lexpr rexpr _) = left_e ||- text (stringrep rtr) ||- right_e
+  pp e@(CBinary op lexpr rexpr _) = left_e >+< text (stringrep rtr) >+< right_e
     where rtr = rator e
           left_e = bracket (rator lexpr, pp lexpr) LR rtr
           right_e = bracket (rator rexpr, pp rexpr) RL rtr
         
 
 
-  pp (CCast decl expr _) = parens (pp decl) ||- pp expr
+  pp (CCast decl expr _) = parens (pp decl) >+< pp expr
         
 
   pp e@(CUnary op expr _) = 
     case (fixity rtr) of 
-      Postfix -> expr'  ||. text (stringrep rtr)
-      Prefix -> text (stringrep rtr) ||. expr'
+      Postfix -> expr'  >~< text (stringrep rtr)
+      Prefix -> text (stringrep rtr) >~< expr'
       _ -> error "Unary expression not deemed tyo be pre-post fixed"
     where rtr = rator e
           expr' = bracket (rator expr, pp expr) NA rtr
                                    
-  pp (CSizeofExpr expr _) = text "sizeof" ||- parens (pp expr)
+  pp (CSizeofExpr expr _) = text "sizeof" >+< parens (pp expr)
             
-  pp (CSizeofType decl _) = text "sizeof" ||- parens (pp decl)
+  pp (CSizeofType decl _) = text "sizeof" >+< parens (pp decl)
         
-  pp (CAlignofExpr expr _) = text "alignof" ||- parens (pp expr)
+  pp (CAlignofExpr expr _) = text "alignof" >+< parens (pp expr)
     
-  pp (CAlignofType decl _) = text "alignof" ||- parens (pp decl)
+  pp (CAlignofType decl _) = text "alignof" >+< parens (pp decl)
     
   pp (CIndex arrexpr idxexpr _) = subscript (pp arrexpr) (pp idxexpr)
         
-  pp (CCall expr exprs _) = pp expr ||. tupleSep (docs exprs)
+  pp (CCall expr exprs _) = pp expr >~< tupleSep (docs exprs)
                 
-  pp (CMember expr ident True _) = pp expr ||. text "->" ||. text ident
+  pp (CMember expr ident True _) = pp expr >~< text "->" >~< text ident
   
-  pp (CMember expr ident False _) = pp expr ||. char '.' ||. text ident
+  pp (CMember expr ident False _) = pp expr >~< char '.' >~< text ident
                            
   pp (CVar ident _) = text ident
         
   pp (CConst cst _) = pp cst
 
   pp (CCompoundLit decl inits _) =  
-    parens (pp decl) ||- encloseSep lbrace rbrace space (map ppInit inits)
+    parens (pp decl) >+< encloseSep lbrace rbrace space (map ppInit inits)
         
   pp (CStatExpr stat _) = parens (pp stat)
         
-  pp (CLabAddrExpr ident _) = text "&&" ||. text ident
+  pp (CLabAddrExpr ident _) = text "&&" >~< text ident
                 
   pp (CBuiltinExpr _) = text "<<CPretty: CExpr#CBuiltinExpr not yet implemented!>>"
         
@@ -385,19 +384,19 @@ instance Pretty CConst where
 
 instance Pretty CAttributeSpec where
   pp (CAttributeSpec attrs _) = 
-    text "__attribute__" ||. dparens (spaceSep $ docs attrs)
+    text "__attribute__" >~< dparens (spaceSep $ docs attrs)
 
 instance Pretty CAttribute where
   pp (CAttribute "" [] _) = empty
   
   pp (CAttribute s [] _) = text s
   
-  pp (CAttribute s ps _) = text s ||. parens (spaceSep $ docs ps)
+  pp (CAttribute s ps _) = text s >~< parens (spaceSep $ docs ps)
 
                  
 
 ppDeclParam :: (Maybe CDeclr, Maybe CInit, Maybe CExpr) -> Doc
-ppDeclParam (odeclr, oinit, oexpr) = ppo odeclr ||- ppo oinit ||- ppo oexpr
+ppDeclParam (odeclr, oinit, oexpr) = ppo odeclr >+< ppo oinit >+< ppo oexpr
 
 ppOptIdent :: (Maybe Ident) -> Doc
 ppOptIdent = maybe empty text 
@@ -409,10 +408,10 @@ ppInitialClause (Right decl)       = pp decl
 
 ppEnumElt :: (Ident, Maybe CExpr) -> Doc
 ppEnumElt (ident, Nothing) = text ident
-ppEnumElt (ident, Just e)  = text ident ||. equals ||. pp e
+ppEnumElt (ident, Just e)  = text ident >~< equals >~< pp e
 
 ppInit :: ([CDesignator], CInit) -> Doc
-ppInit (desigs, cinit) = spaceSep (docs desigs) ||- pp cinit
+ppInit (desigs, cinit) = spaceSep (docs desigs) >+< pp cinit
 
 
 
