@@ -2,7 +2,39 @@
 
 
 
-module Language.C.Pretty.EBPretty where
+module Language.C.Pretty.EBPretty (
+  Doc, 
+  cat, char, text, empty, group, line,
+  linebreak, nest, column,
+  
+  blank, dfold, caten,
+
+  (>+<), (>~<), (>+), (>~),  (^+^), (^^^),
+  (<~|), (<+|), (|~>), (|+>),
+  
+  paragraph,
+  
+  string, bool, int, integer, float, double, rational,
+  
+  semi, colon, dot, comma, backslash, equals, space, squote, dquote,
+  lparen, rparen, langle, rangle, lbrace, rbrace, lbracket, rbracket,
+
+  enclose, parens, angles, brackets, braces, squotes, dquotes, dparens,
+
+  encloseE, parensE, anglesE, bracketsE, bracesE, squotesE, dquotesE, dparensE,
+
+  optE, 
+
+  prefixes, suffixes,
+  
+  sepSep, spaceSep, commaSep,
+  encloseSep, encloseSepE,
+  
+  linefeed, linesep,
+  
+  renderPretty, displayIO, putDoc, hPutDoc
+
+  ) where
 
 
 import Data.List (intersperse)
@@ -74,7 +106,7 @@ x >~ y    | blank x   = y
           | otherwise = x `cat` y 
 
 
-infixr 5 ^+^
+infixr 5 ^+^, ^^^
 -- | Below
 x ^+^ y     | blank x   = y
             | blank y   = x
@@ -118,6 +150,7 @@ catr a b         = Cat a b
 
 softline        = group line
 
+infixr 5 |%|
 x |%| y         = x >~< softline >~< y
 
 
@@ -221,10 +254,14 @@ dparensE    = encloseE dparens
 
 
 
-optEmpty :: Maybe Doc -> Doc
-optEmpty = fromMaybe empty
+optE :: Maybe Doc -> Doc
+optE = fromMaybe empty
 
 
+-- | prefix or suffix each member in a list
+prefixes, suffixes :: Doc -> [Doc] -> Doc
+prefixes p = caten . map (cat p) 
+suffixes p = caten . map ((flip cat) p)   
 
 
 sepSep sep = caten . (intersperse sep)
@@ -232,8 +269,7 @@ sepSep sep = caten . (intersperse sep)
 spaceSep = sepSep space
 commaSep = sepSep comma
 
-prefixes p = caten . map (cat p) 
-suffixes p = caten . map ((flip cat) p)   
+
 
 
 
@@ -251,20 +287,7 @@ encloseSepE l r s [] = empty
 encloseSepE l r s ds = encloseSep l r s ds 
         
 
-attribSep   = encloseSep lparen rparen comma
-attribSepE  = encloseSepE lparen rparen comma
 
-enumSep     = encloseSep lbrace rbrace comma 
-enumSepE    = encloseSepE lbrace rbrace comma 
-
-structSep   = encloseSep lbrace rbrace semi 
-structSepE  = encloseSepE lbrace rbrace semi 
-
-tupleSep    = encloseSep lparen rparen comma
-tupleSepE   = encloseSepE lparen rparen comma
-
--- | subscript - array subscripting
-subscript e e' = e >~< char '[' >~< e' >~< char ']'
 
 -- | add n line feeds
 linefeed :: Int -> Doc
@@ -276,66 +299,7 @@ linesep n ds = caten $ intersperse (linefeed (n+1)) ds
 
 
 
------------------------------------------------------------
--- The pretty type class as per PPrint
------------------------------------------------------------
-class Pretty a where
-  pp :: a -> Doc
-  ppl :: [a] -> Doc
-  ppo :: Maybe a -> Doc
-  
-  ppl    = caten . map pp
-  
-  ppo Nothing  = empty
-  ppo (Just a) = pp a
-   
-  
-instance Pretty Doc where
-  pp        = id  
-  
-instance Pretty () where
-  pp ()     = text "()"
 
-instance Pretty Bool where
-  pp        = text . show
-
-  
-instance Pretty Char where
-  pp c      = char c
-  ppl s     = string s
-    
-instance Pretty Int where
-  pp i      = int i
-  
-instance Pretty Integer where
-  pp i      = integer i
-
-instance Pretty Float where
-  pp f      = float f
-
-instance Pretty Double where
-  pp d      = double d
-  
-
-
-docs :: Pretty a => [a] -> [Doc]
-docs = map pp
-
-{-
---instance Pretty Rational where
---  pretty r      = rational r  
-
-instance (Pretty a,Pretty b) => Pretty (a,b) where
-  pretty (x,y)  = tupled [pretty x, pretty y]
-
-instance (Pretty a,Pretty b,Pretty c) => Pretty (a,b,c) where
-  pretty (x,y,z)= tupled [pretty x, pretty y, pretty z]
-
-instance Pretty a => Pretty (Maybe a) where
-  pretty Nothing        = empty
-  pretty (Just x)       = pretty x
-  
--}
   
   
 flatten :: Doc -> Doc

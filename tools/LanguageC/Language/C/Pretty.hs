@@ -2,7 +2,8 @@
 module Language.C.Pretty where
 
 import Language.C.Syntax
-import Language.C.Pretty.EBPretty
+import Language.C.Pretty.MonadicEBP
+
 
 import Data.Maybe
 
@@ -22,7 +23,7 @@ maxrator = ("<max-precedence sentinel>", maxprec, Infix NA)
 
 stringrep  (a,_,_) = a
 precedence (_,b,_) = b
-fixity  (_,_,c) = c
+fixity     (_,_,c) = c
 
 
 class Rator a where
@@ -100,9 +101,9 @@ instance Pretty CTranslationUnit where
   pp (CTranslationUnit ext_decls _) = linesep 2 (docs ext_decls)
         
 instance Pretty CExtDecl where
-  pp (CDeclExt decl _) = pp decl >~< semi
+  pp (CDeclExt decl _)    = pp decl >~< semi
   pp (CFDefExt fun_def _) = pp fun_def
-  pp (CAsmExt _) = text "/* ASM */"
+  pp (CAsmExt _)          = text "/* ASM */"
         
 instance Pretty CFunDef where
   pp (CFunDef specs declr decls stat _) =
@@ -142,7 +143,7 @@ instance Pretty CStat where
     text "while" >+< parens (pp expr) >+< pp stat
      
   pp (CFor initial otestexpr oupdexpr stat _) = 
-    text "for" >~< encloseSep lparen rparen semi clauses
+    text "for" >~< encloseSep lparen rparen semi (sequence clauses)
                ^+^ pp stat
     where clauses = [ppInitialClause initial, f otestexpr, f oupdexpr]
           f = maybe space pp 
@@ -166,7 +167,7 @@ instance Pretty CBlockItem where
   
 instance Pretty CDecl where
   pp (CDecl specs params _ _) = 
-    spaceSep (docs specs) >+< commaSep (map ppDeclParam params)
+    spaceSep (docs specs) >+< commaSep (mapM ppDeclParam params)
     
                              
 instance Pretty CDeclSpec where
@@ -220,7 +221,7 @@ instance Pretty CStructTag where
 
 instance Pretty CEnum where
   pp (CEnum oident elts attrs _) = 
-    spaceSep (docs attrs) >+< ppOptIdent oident >+< enumSep (map ppEnumElt elts)
+    spaceSep (docs attrs) >+< ppOptIdent oident >+< enumSep (mapM ppEnumElt elts)
 
                                             
 instance Pretty CDeclr where
@@ -238,7 +239,7 @@ instance Pretty CDeclr where
 
 instance Pretty CInit where
   pp (CInitExpr expr _) = pp expr
-  pp (CInitList inits _) = commaSep (map ppInit inits)
+  pp (CInitList inits _) = commaSep (mapM ppInit inits)
 
   
 
@@ -320,7 +321,7 @@ instance Pretty CExpr where
   pp (CConst cst _) = pp cst
 
   pp (CCompoundLit decl inits _) =  
-    parens (pp decl) >+< encloseSep lbrace rbrace space (map ppInit inits)
+    parens (pp decl) >+< encloseSep lbrace rbrace space (mapM ppInit inits)
         
   pp (CStatExpr stat _) = parens (pp stat)
         
@@ -389,28 +390,28 @@ instance Pretty CAttributeSpec where
 instance Pretty CAttribute where
   pp (CAttribute "" [] _) = empty
   
-  pp (CAttribute s [] _) = text s
+  pp (CAttribute s [] _)  = text s
   
-  pp (CAttribute s ps _) = text s >~< parens (spaceSep $ docs ps)
+  pp (CAttribute s ps _)  = text s >~< parens (spaceSep $ docs ps)
 
                  
 
-ppDeclParam :: (Maybe CDeclr, Maybe CInit, Maybe CExpr) -> Doc
+ppDeclParam :: (Maybe CDeclr, Maybe CInit, Maybe CExpr) -> PDoc
 ppDeclParam (odeclr, oinit, oexpr) = ppo odeclr >+< ppo oinit >+< ppo oexpr
 
 ppOptIdent :: (Maybe Ident) -> Doc
 ppOptIdent = maybe empty text 
 
-ppInitialClause :: Either (Maybe CExpr) CDecl -> Doc
+ppInitialClause :: Either (Maybe CExpr) CDecl -> PDoc
 ppInitialClause (Left Nothing)     = space
 ppInitialClause (Left (Just expr)) = pp expr
 ppInitialClause (Right decl)       = pp decl
 
-ppEnumElt :: (Ident, Maybe CExpr) -> Doc
+ppEnumElt :: (Ident, Maybe CExpr) -> PDoc
 ppEnumElt (ident, Nothing) = text ident
 ppEnumElt (ident, Just e)  = text ident >~< equals >~< pp e
 
-ppInit :: ([CDesignator], CInit) -> Doc
+ppInit :: ([CDesignator], CInit) -> PDoc
 ppInit (desigs, cinit) = spaceSep (docs desigs) >+< pp cinit
 
 

@@ -10,7 +10,8 @@ import Language.C.Syntax
 import Language.C.Tokens
 import Language.C.Pretty
 
-import Language.C.Pretty.EBPretty
+import Language.C.Pretty.MonadicEBP
+
 
 import System.IO (stdout)
 import System.Environment
@@ -28,16 +29,15 @@ main = do
                                     Left err -> putStr err
                                     Right ans -> do { putStrLn "" -- (show ans)
                                                     ; putStrLn $ "\n" ++ linesep
-                                                    ; outputPP ans }
+                                                    ; outputEBP ans }
                                  putStrLn $ "\n" ++ linesep
                                  putStrLn text
                                  
         linesep = replicate 80 '-'                                   
                                                   
--- Output function if using PJ pretty printer
--- outputPJ tu = putStr $ render $ pretty tu  
+
 
 -- Output function if using PPrint
-outputPP ans = let doc = pp ans
-               in displayIO stdout (renderPretty 0.9 100 doc)
+outputEBP ans = let doc = runPretty (pp ans) plainStyle
+                in displayIO stdout (renderPretty 0.9 100 doc)
 
