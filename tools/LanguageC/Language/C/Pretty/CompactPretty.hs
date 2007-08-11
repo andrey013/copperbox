@@ -1,14 +1,14 @@
+{-# OPTIONS_GHC -fglasgow-exts #-}
+
 -- A pretty printer that `compacts` empty docs
 
 
-module Language.C.Pretty.CompactPretty where
-{-
-module Language.C.Pretty.AEBPrint (
-  Doc, 
-  cat, char, text, empty, group, line,
+module Language.C.Pretty.CompactPretty (
+  Doc(..), 
+  cat, char, text, nulldoc, group, line,
   linebreak, nest, column,
   
-  blank, dfold, caten,
+  blankA, dfold, catenate,
 
   (>+<), (>~<), (>+), (>~),  (^+^), (^^^),
   (<~|), (<+|), (|~>), (|+>),
@@ -33,10 +33,12 @@ module Language.C.Pretty.AEBPrint (
   
   linefeed, linesep,
   
-  renderPretty, displayIO, putDoc, hPutDoc
+  renderPretty, displayIO, putDoc, hPutDoc,
+  
+  Pretty(..), docs
 
   ) where
--}
+
 
 import Control.Applicative
 import Control.Monad
@@ -44,42 +46,13 @@ import Data.List (intersperse)
 import Data.Maybe (fromMaybe, fromJust, isJust)
 import System.IO (Handle, hPutStr, stdout)
 
-iffy :: Applicative f => f Bool -> f a -> f a -> f a
-iffy ae at af = cond <$> ae <*> at <*> af
-  where cond e t f = if e then t else f
 
-andA :: Applicative f => f Bool -> f Bool -> f Bool
-andA aa ab = (&&) <$> aa <*> ab  
+sequenceA :: Applicative f => [f a] -> f [a]
+sequenceA []     = pure []
+sequenceA (c:cs) = (:) <$> c <*> sequenceA cs
 
-orA :: Applicative f => f Bool -> f Bool -> f Bool
-orA aa ab = (||) <$> aa <*> ab
 
-infixl 3 ~>
-infixl 2 |>
 
-(~>) :: (Applicative f) => f Bool -> f a -> f (Maybe a)
-ae ~> at = cond <$> ae <*> at
-  where cond e t = if e then (Just t) else Nothing
-
-(|>) :: (Applicative f) => f (Maybe a) -> f (Maybe a) -> f (Maybe a)
-aa |> ab = cond <$> aa <*> ab
-  where cond (Just a) _ = Just a
-        cond Nothing b = b
-  
-
-conditional :: (Applicative f) => f (Maybe a) -> f a
-conditional e = ans <$> e
-  where ans (Just a) = a
-        ans Nothing = error "conditional failure"
-
-truth :: (Applicative f) => f Bool
-truth = pure True
-  
-squeeze :: (Applicative f) => (f a -> Doc) -> (f a -> Doc) -> f a -> Doc
-x `squeeze` y = conditional $ 
-      (blankA x) ~> y 
-   |> (blankA y) ~> x 
-   |> truth      ~> x `cat` y
 
 
 data Doc = EmptyDoc
@@ -93,146 +66,153 @@ data Doc = EmptyDoc
          deriving (Eq,Show)
          
 
-demo = doc1 id
-doc1 = group (char 'a' `cat` text "bb") 
+mkText :: String -> Doc
+mkText s = Text (length s) s
 
-beside          :: Applicative f => (f a -> Doc) -> (f a -> Doc) -> f a -> Doc
+
+
+beside          :: Applicative f => f Doc -> f Doc -> f Doc
 beside a b      = Cat <$> a <*> b
 
-cat             :: Applicative f => (f a -> Doc) -> (f a -> Doc) -> f a -> Doc
+cat             :: Applicative f => f Doc -> f Doc -> f Doc
 cat             = beside
 
-char            :: Applicative f => Char -> f a -> Doc    
+char            :: Applicative f => Char -> f Doc    
 char            = pure . Char
 
-text            :: Applicative f => String -> f a -> Doc
-text s          = pure (Text (length s) s)
+text            :: Applicative f => String -> f Doc
+text            = pure . mkText
 
-nulldoc         :: Applicative f => f a -> Doc
+nulldoc         :: Applicative f => f Doc
 nulldoc         = pure EmptyDoc
 
-group           :: Applicative f => (f a -> Doc) -> f a -> Doc
-group x         = Union <$> (x >>= flatten) <*> x
+group           :: Applicative f => f Doc -> f Doc
+group x         = f <$> x
+  where f a = Union (flatten a) a
 
-line            :: Applicative f => f a -> Doc
+line            :: Applicative f => f Doc
 line            = pure (Line False)
 
-linebreak       :: Applicative f => f a -> Doc
+linebreak       :: Applicative f => f Doc
 linebreak       = pure (Line True)
 
-nest            :: Applicative f => Int -> (f a -> Doc) -> f a -> Doc
+nest            :: Applicative f => Int -> f Doc -> f Doc
 nest i d        = Nest i <$> d
 
-column          :: Applicative f => (f a -> Doc) -> f a -> Doc
+column          :: Applicative f => f Doc -> f Doc
 column d        = Column <$> d
 
 -- | Provide blank as a predicate to test for emptiness
-blank EmptyDoc = True
-blank _        = False
 
 blankA          :: Applicative f => f Doc -> f Bool
 blankA          = liftA blank
+
+blank           :: Doc -> Bool
+blank EmptyDoc  = True
+blank _         = False
+
+
 
 isJustA         :: Applicative f => f (Maybe Doc) -> f Bool
 isJustA         = liftA isJust
 
 
-dfold           :: Applicative f =>
-  ((f a -> Doc) -> (f a -> Doc) -> f a -> Doc) -> [f a -> Doc] -> f a -> Doc
+dfold           :: Applicative f => (f Doc -> f Doc -> f Doc) -> [f Doc] -> f Doc
 dfold f []      = nulldoc
 dfold f ds      = foldr1 f ds
 
 
-caten           :: Applicative f => [f a -> Doc] -> f a -> Doc
-caten           = dfold cat
+catenate        :: Applicative f => [f Doc] -> f Doc
+catenate        = dfold cat
 
+squashSep a b sep | blank a   = b
+                  | blank b   = a
+                  | otherwise = a `Cat` sep `Cat` b
+                  
+squash      a b | blank a   = b
+                | blank b   = a
+                | otherwise = a `Cat` b                  
 
+leftSquash a b | blank a   = b
+               | otherwise = a `Cat` b  
 
+leftSquashSep a b sep | blank a   = b
+                      | otherwise = a `Cat` sep `Cat` b  
+
+leftHole a b | blank a = EmptyDoc
+             | otherwise = a `Cat` b
+             
+leftHoleSep a b sep | blank a = EmptyDoc
+                    | otherwise = a `Cat` sep `Cat` b   
+             
+                                         
+rightHole a b | blank b = EmptyDoc
+              | otherwise = a `Cat` b
+             
+rightHoleSep a b sep | blank b = EmptyDoc
+                     | otherwise = a `Cat` sep `Cat` b                 
 -- Construct documents from non-empty documents
 -- if either side is empty take the opposite
 infixr 6 >+<, >~<
+(>+<), (>~<)    :: Applicative f => f Doc -> f Doc -> f Doc
+x >+< y         = squashSep <$> x <*> y <*> space
 
-(>+<)           :: Applicative f => (f a -> Doc) -> (f a -> Doc) -> f a -> Doc
-x >+< y = conditional $ 
-     blankA x ~> y 
-  |> blankA y ~> x 
-  |> truth    ~> x `cat` space `cat` space `cat` y
+x >~< y         = squash <$> x <*> y
 
-
-          
-
-x >~< y = conditional $ 
-     blankA x ~> y
-  |> blankA y ~> x
-  |> truth    ~> x `cat` y 
+                  
 
  
 
 -- Left-biased versions - the left side is ignored if blank
 -- but the right is used regardless
 infixr 6 >+, >~
-x >+ y  = conditional $ 
-     blankA x  ~> y
-  |> truth     ~> x `cat` space `cat` y 
+(>+), (>~)      :: Applicative f => f Doc -> f Doc -> f Doc
+x >+ y          = leftSquashSep <$> x <*> y <*> space
 
-x >~ y  = conditional $ 
-     blankA x  ~> y
-  |> truth     ~> x `cat` y 
+x >~ y          = leftSquash <$> x <*> y 
+
 
 
 
 
 infixr 5 ^+^, ^^^
 -- | Below
-x ^+^ y = conditional $ 
-     blankA x   ~> y
-  |> blankA y   ~> x
-  |> truth     ~> x `cat` line `cat` y 
+(^+^), (^^^)    :: Applicative f => f Doc -> f Doc -> f Doc
+x ^+^ y         = squashSep <$> x <*> y <*> line 
 
-x ^^^ y = conditional $ 
-     blankA x  ~> y
-  |> truth     ~> x `cat` line `cat` y 
-
+x ^^^ y         = leftSquashSep <$> x <*> y <*> line 
 
 
 -- suffix iff the left doc is not empty
 -- otherwise empty
 infixl 3 <~|, <+|
-
-x <~| y = conditional $ 
-     blankA x  ~> empty
-  |> truth     ~> x `cat` y
+(<~|), (<+|)    :: Applicative f => f Doc -> f Doc -> f Doc
+x <~| y         = leftHole <$> x <*> y
             
-x <+| y = conditional $ 
-     blankA x  ~> empty
-  |> truth     ~> x `cat` space `cat` y
+x <+| y         = leftHoleSep <$> x <*> y <*> space
                         
 -- prefix iff the right doc is not empty
 -- otherwise empty
 infixr 4 |~>, |+>
-
-x |~> y = conditional $ 
-     blankA y  ~> empty
-  |> truth     ~> x `cat` y
+(|~>), (|+>)    :: Applicative f => f Doc -> f Doc -> f Doc
+x |~> y         = rightHole <$> x <*> y
             
-x |+> y = conditional $ 
-     blankA y  ~> empty
-  |> truth     ~> x `cat` space `cat` y            
+x |+> y         = rightHoleSep <$> x <*> y <*> space          
 
 
+catl, catr      :: Applicative f => f Doc -> f Doc -> f Doc
+catl x y        = f <$> x <*> y 
+  where f a b   | blank a   = b
+                | otherwise = a `Cat` b
 
-catl a b = conditional $
-     blankA a  ~> b         
-  |> truth     ~> a `cat` b
-
-catr a b = conditional $
-     blankA b  ~> a         
-  |> truth     ~> a `cat` b
+catr x y        = f <$> x <*> y 
+  where f a b   | blank b   = a
+                | otherwise = a `Cat` b
 
 
 
 
-softline        :: Applicative f => f a -> Doc
+softline        :: Applicative f => f Doc
 softline        = group line
 
 infixr 5 |%|
@@ -240,7 +220,7 @@ x |%| y         = x >~< softline >~< y
 
 
 -- | paragraph is fillSep
-paragraph       :: Applicative f => [f a -> Doc] -> f a -> Doc
+paragraph       :: Applicative f => [f Doc] -> f Doc
 paragraph       = dfold (|%|)
 
 
@@ -253,30 +233,30 @@ paragraph       = dfold (|%|)
 -----------------------------------------------------------
 
 -- string is like "text" but replaces '\n' by "line"
-string          :: Applicative f => String -> f a -> Doc
+string          :: Applicative f => String -> f Doc
 string ""       = nulldoc
 string ('\n':s) = line >~< string s
 string s        = case (span (/='\n') s) of
                     (xs,ys) -> text xs >~< string ys
                     
                     
-bool          :: Applicative f => Bool -> f a -> Doc                                  
+bool          :: Applicative f => Bool -> f Doc                                  
 bool          = text . show
 
 
-int           :: Applicative f => Int -> f a -> Doc                   
+int           :: Applicative f => Int -> f Doc                   
 int           = text . show
 
-integer       :: Applicative f => Integer -> f a -> Doc 
+integer       :: Applicative f => Integer -> f Doc 
 integer       = text . show
 
-float         :: Applicative f => Float -> f a -> Doc 
+float         :: Applicative f => Float -> f Doc 
 float         = text . show
 
-double        :: Applicative f => Double -> f a -> Doc 
+double        :: Applicative f => Double -> f Doc 
 double        = text . show
 
-rational      :: Applicative f => Rational -> f a -> Doc 
+rational      :: Applicative f => Rational -> f Doc 
 rational      = text . show
 
 
@@ -287,7 +267,7 @@ rational      = text . show
 -- punctuation
 --------------------------------------------------------------------------------
 semi, colon, dot, comma, backslash, equals, space, squote, dquote                  
-            :: Applicative f => f a -> Doc
+            :: Applicative f => f Doc
 
 
 semi        = char ';'
@@ -306,7 +286,7 @@ dquote      = char '"'
 -----------------------------------------------------------
 
 lparen, rparen, langle, rangle, lbrace, rbrace, lbracket, rbracket
-            :: Applicative f => f a -> Doc
+            :: Applicative f => f Doc
 lparen      = char '('
 rparen      = char ')'
 langle      = char '<'
@@ -322,11 +302,11 @@ rbracket    = char ']'
 -- bracketing, quoting, etc (largely from PPrint)
 -----------------------------------------------------------
 enclose     :: Applicative f => 
-                (f a -> Doc) -> (f a -> Doc) -> (f a -> Doc) -> f a -> Doc
+                f Doc -> f Doc -> f Doc -> f Doc
 enclose l r d = l >~< d >~< r
 
 parens, angles, brackets, braces, squotes, dquotes, dparens     
-            :: Applicative f => (f a -> Doc) -> f a -> Doc
+            :: Applicative f => f Doc -> f Doc
 
 parens      = enclose lparen rparen
 angles      = enclose langle rangle
@@ -343,16 +323,18 @@ dparens     = enclose (text "((") (text "))")
 -- empty variants for bracketing, quoting, etc 
 --------------------------------------------------------------------------------
 
+blanky      :: Doc -> Doc -> Doc
+blanky EmptyDoc d = EmptyDoc
+blanky _        d = d
+
 encloseE     :: Applicative f => 
-                ((f a -> Doc) -> f a -> Doc) -> (f a -> Doc) -> f a -> Doc
-encloseE f d = conditional $
-     blankA d  ~> d
-  |> truth     ~> f d
+                (f Doc -> f Doc) -> f Doc -> f Doc
+encloseE f d = blanky <$> d <*> f d
 
 
 
 parensE, anglesE, bracketsE, bracesE, squotesE, dquotesE, dparensE     
-            :: Applicative f => (f a -> Doc) -> f a -> Doc
+            :: Applicative f => f Doc -> f Doc 
                         
 parensE     = encloseE parens
 anglesE     = encloseE angles
@@ -363,68 +345,71 @@ dquotesE    = encloseE dquotes
 dparensE    = encloseE dparens
 
 
-{-
-optE :: Applicative f => (f a -> (Maybe Doc)) -> f a -> Doc
-optE d = conditional $ 
-     isJustA d ~> d
-  |> truth     ~> nulldoc
--}  
+
+optE        :: (Applicative f) => Maybe (f Doc) -> f Doc
+optE (Just d) = d
+optE Nothing  = nulldoc
+  
   
 
 
-{-
+
 -- | prefix or suffix each member in a list
 prefixes, suffixes 
-            :: Applicative f => (f a -> f Doc) -> [f a -> f Doc] -> f a -> Doc
-prefixes p  = caten . fmap (cat p) 
-suffixes p  = caten . fmap ((flip cat) p)   
+            :: Applicative f => f Doc -> [f Doc] -> f Doc
+           
+prefixes p  = catenate <$> map (cat p) 
+suffixes p  = catenate <$> map ((flip cat) p)   
+
+sepSep      :: Applicative f => f Doc -> [f Doc] -> f Doc
+sepSep sep  = catenate <$> (intersperse sep)
+
+spaceSep, commaSep
+            :: Applicative f => [f Doc] -> f Doc
+spaceSep    = sepSep space
+commaSep    = sepSep comma
 
 
-sepSep sep = caten . (intersperse sep)
-
-spaceSep = sepSep space
-commaSep = sepSep comma
 
 
 
 
-
-
-
+encloseSep  :: Applicative f => 
+    f Doc -> f Doc -> f Doc -> [f Doc] -> f Doc
 encloseSep left right sep ds
     = case ds of
         []  -> left >~< right
         [d] -> left >~< d >~< right
-        _   -> let fn = column . caten . (intersperse sep) 
+        _   -> let fn = column . catenate . (intersperse sep) 
                in left >~< (fn ds) >~< right 
                     
-
-encloseSepE l r s [] = empty
+encloseSepE  :: Applicative f => 
+    f Doc -> f Doc -> f Doc -> [f Doc] -> f Doc
+encloseSepE l r s [] = nulldoc   
 encloseSepE l r s ds = encloseSep l r s ds 
-        
+
 
 
 
 -- | add n line feeds
-linefeed :: Int -> Doc
-linefeed n = foldr cat empty (replicate n line)
+linefeed    :: Applicative f => Int ->  f Doc
+linefeed n  = foldr cat nulldoc (replicate n line)
+
 
 -- | separate with n blank lines
-linesep :: Int -> [Doc] -> Doc
-linesep n ds = caten $ intersperse (linefeed (n+1)) ds
+linesep     :: Applicative f => Int -> [f Doc] -> f Doc
+linesep n ds = catenate $ intersperse (linefeed (n+1)) ds
 
 
-
--}
-
-flatten :: Applicative f => Doc -> f a -> Doc
-flatten (Cat x y) = Cat <$> (flatten x) <*> (flatten y)
+flatten                 :: Doc -> Doc
+flatten (Cat x y)       = Cat (flatten x) (flatten y)
 flatten (Union x y)     = flatten x
-flatten (Line break)    | break == True   = pure EmptyDoc 
-                        | otherwise       = text " "
-flatten (Nest i x)      = Nest i <$> (flatten x)
-flatten (Column x)      = Column <$> (flatten x)
-flatten other           = pure other   
+flatten (Line break)    
+  | break == True       = EmptyDoc 
+  | otherwise           = mkText " "
+flatten (Nest i x)      = Nest i (flatten x)
+flatten (Column x)      = Column (flatten x)
+flatten other           = other   
   
 
 
@@ -516,25 +501,54 @@ hPutDoc :: Handle -> Doc -> IO ()
 hPutDoc handle doc      = displayIO handle (renderPretty 0.8 80 doc)
 
 
+-----------------------------------------------------------
+-- The pretty type class as per PPrint
+-----------------------------------------------------------
+class (Applicative f) => Pretty f a where
+  pp :: a -> f Doc  
+  
+  ppl :: [a] -> f Doc
+  
+  ppo :: Maybe a -> f Doc
+  
+  ppl ds  = catenate $ map pp ds
+
+   
+  ppo Nothing  = nulldoc
+  ppo (Just a) = pp a
 
 
 
+instance (Applicative f) => Pretty f Doc where
+  pp        = pure . id  
+  
+instance (Applicative f) => Pretty f () where
+  pp ()     = text "()"
+
+instance (Applicative f) => Pretty f Bool where
+  pp        = text . show
+ 
+instance (Applicative f) => Pretty f Char where
+  pp c      = char c
+  ppl s     = string s
+   
+instance (Applicative f) => Pretty f Int where
+  pp i      = int i
+  
+instance (Applicative f) => Pretty f Integer where
+  pp i      = integer i
+
+instance (Applicative f) => Pretty f Float where
+  pp f      = float f
+
+instance (Applicative f) => Pretty f Double where
+  pp d      = double d
+  
+docs :: (Applicative f, Pretty f a) => [a] -> [f Doc]
+docs = (map pp)
 
   
-{-
-
-breakdist (SEmpty)      a = a 
-breakdist (SText l s x) a = l + breakdist x a
-breakdist (SBreak _ _)  a = 0
-                        
-
-          
-size (SBlock l _ _) = l
-size (SText l s)    = l
-size (SBreak l)     = l
-
-
--}
+  
 
 
 fits w x              | w < 0       = False
