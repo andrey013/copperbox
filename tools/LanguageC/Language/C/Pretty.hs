@@ -107,7 +107,7 @@ instance Rator CAssignOp where
   
 type Fragment = (Operator, PM Doc)  
 
--- runPretty :: 
+
 runPretty :: PM Doc -> PPStyle -> Doc
 runPretty d style = runReader d style 
 
@@ -202,10 +202,9 @@ instance Pretty PM CStat where
   pp (CIf condexpr thenstat Nothing _) = asks indentBlock >>= \f ->
     f (text "if" >~< parens (pp condexpr)) (pp thenstat)
 
-  pp (CIf condexpr tstmt (Just estmt) _) = do
-    brace <- asks indentBlock
-    brace (text "if" >~< parens (pp condexpr)) (pp tstmt)
-      ^+^ brace (text "else")  (pp estmt)
+  pp (CIf condexpr tstmt (Just estmt) _) = asks indentBlock >>= \f ->
+    f (text "if" >~< parens (pp condexpr)) (pp tstmt)
+      ^+^ f (text "else")  (pp estmt)
     
   pp (CSwitch expr stmt _) =  text "switch" >~< parens (pp expr) >+< pp stmt
   
@@ -299,10 +298,15 @@ instance Pretty PM CEnum where
                                             
 instance Pretty PM CDeclr where
   pp (CVarDeclr oi _) = ppOptIdent oi
+  
   pp (CPtrDeclr quals declr _ _) = 
     char '*' >~< spaceSep (docs quals) >+< pp declr
+  
+  pp (CArrDeclr declr [] oexpr _) = 
+    pp declr >~< brackets (ppo oexpr)
+
   pp (CArrDeclr declr quals oexpr _) = 
-    pp declr >~< brackets (ppo oexpr)       -- what about quals??
+    pp declr >~< brackets (spaceSep (map pp quals) >+< ppo oexpr)   
 
   pp (CFunDeclr declr decls True _) =
     pp declr >~< tupleSep (docs decls) >~< text ", ..."
@@ -371,7 +375,7 @@ instance Pretty PM CExpr where
     case (fixity rtr) of 
       Postfix -> expr'  >~< text (stringrep rtr)
       Prefix -> text (stringrep rtr) >~< expr'
-      _ -> error "Unary expression not deemed tyo be pre-post fixed"
+      _ -> error "Unary expression not deemed to be pre/post-fix"
     where rtr = rator e
           expr' = bracket (rator expr, pp expr) NA rtr
                                    
