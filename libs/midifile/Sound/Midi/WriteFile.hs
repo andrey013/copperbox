@@ -1,10 +1,11 @@
 
-module MidiWrite (
+module Sound.Midi.WriteFile (
     -- * Write a Midi structure to file
     writeMidi
   ) where
 
-import MidiDatatypes
+import Sound.Midi.Datatypes
+
 
 import Data.Bits
 import Data.Word
@@ -14,8 +15,11 @@ import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.ByteString.Char8 as SBS
 
 writeMidi :: FilePath -> MidiFile -> IO ()
-writeMidi path mf = let lbs = runPut $ putMidiFile mf in
-                    L.writeFile path lbs     
+writeMidi path mf = do 
+  error "here" 
+{-  
+  let lbs = runPut (putMidiFile mf)
+  L.writeFile path lbs     
                     
 
 putMidiFile :: MidiFile -> Put
@@ -171,6 +175,7 @@ putScale MINOR = putWord8 1
 putVarlen :: Integral a => a -> Put
 putVarlen i = mapM_ putWord8 (varlen i)
 
+-}
 
 --------------------------------------------------------------------------------
 -- Helpers 
