@@ -46,7 +46,7 @@ instance Pretty AbcField where
 
 
 ppField :: Char -> Doc -> Doc
-ppField ch doc = text [ch,':'] <$> doc
+ppField ch doc = text [ch,':'] <+> doc
             
 instance Pretty AbcKey where
   pretty (AbcKey keyspec)             = pretty keyspec
@@ -124,11 +124,11 @@ instance Pretty AbcValue where
 instance Pretty AbcPitch where
   pretty (AbcPitch bn oa oom)         = prefix oa <> pretty bn <> suffix oom
     where prefix = maybe empty pretty
-          suffix = maybe empty (\a -> char '/' <> pretty a)
+          suffix = maybe empty pretty
 
 instance Pretty AbcOctave where
-  pretty (AbcLowOctave i)             = text $ replicate i '\''
-  pretty (AbcHighOctave i)            = text $ replicate i ','
+  pretty (AbcLowOctave i)             = text $ replicate i ','
+  pretty (AbcHighOctave i)            = text $ replicate i '\''
 
                       
 instance Pretty AbcAccidental where

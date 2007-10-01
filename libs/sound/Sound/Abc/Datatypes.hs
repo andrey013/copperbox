@@ -36,7 +36,7 @@ data AbcField
     | AbcGroupField String
     | AbcHistoryField [String]
     | AbcInformationField String
-    | AbcDefaultLengthField Note_length
+    | AbcDefaultLengthField Note_length_strict
     | AbcMeterField AbcMeter
     | AbcNotesField String
     | AbcOriginField String
