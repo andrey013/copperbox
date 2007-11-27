@@ -6,12 +6,12 @@
 
 -- http://www.sonicspot.com/guide/midifiles.html
 
-module Sound.Midi.ReadFile (
+module Sound.Bala.Format.Midi.ReadFile (
     -- * Read a Midi structure from file
     readMidi
   ) where
 
-import Sound.Midi.Datatypes
+import Sound.Bala.Format.Midi.Datatypes
 
 import Control.Applicative
 import Control.Monad

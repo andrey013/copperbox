@@ -1,10 +1,10 @@
 
-module Sound.Midi.WriteFile (
+module Sound.Bala.Format.Midi.WriteFile (
     -- * Write a Midi structure to file
     writeMidi
   ) where
 
-import Sound.Midi.Datatypes
+import Sound.Bala.Format.Midi.Datatypes
 
 
 import Data.Bits

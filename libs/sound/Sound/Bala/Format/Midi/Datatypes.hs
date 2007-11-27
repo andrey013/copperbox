@@ -1,5 +1,5 @@
 
-module Sound.Midi.Datatypes (
+module Sound.Bala.Format.Midi.Datatypes (
     -- * MidiFile representation
     MidiFile(..),
     -- * File header with basic information
