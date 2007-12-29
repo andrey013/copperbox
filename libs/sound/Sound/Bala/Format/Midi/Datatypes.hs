@@ -58,7 +58,7 @@ data TimeDivision
 
 data TextType 
   = GENERIC_TEXT 
-  | COPYWRIGHT_NOTICE 
+  | COPYRIGHT_NOTICE 
   | SEQUENCE_NAME 
   | INSTRUMENT_NAME
   | LYRICS 

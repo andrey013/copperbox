@@ -1,4 +1,4 @@
-
+-- Hmm, just a sketch at the moment
 
 module Sound.Bala.Format.LilyPond.LilyPondOutput where
 

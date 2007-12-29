@@ -145,7 +145,7 @@ getMetaEvent = applyER <$> pure MetaEvent <*> (getWord8 >>= metaEvent)
 
 metaEvent :: Word8 -> Result MetaEvent
 metaEvent 0x01 = textEvent <$> pure GENERIC_TEXT      <*> getText
-metaEvent 0x02 = textEvent <$> pure COPYWRIGHT_NOTICE <*> getText
+metaEvent 0x02 = textEvent <$> pure COPYRIGHT_NOTICE <*> getText
 metaEvent 0x03 = textEvent <$> pure SEQUENCE_NAME     <*> getText
 metaEvent 0x04 = textEvent <$> pure INSTRUMENT_NAME   <*> getText
 metaEvent 0x05 = textEvent <$> pure LYRICS            <*> getText

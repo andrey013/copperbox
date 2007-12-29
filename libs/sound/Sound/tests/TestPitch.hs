@@ -1,0 +1,24 @@
+
+-- :set -i../../..
+
+
+
+module TestPitch where
+
+
+import Sound.Bala.Base.PitchRep
+import Sound.Bala.Base.PitchClass
+import Sound.Bala.Base.Triad
+
+phasing_trope :: [Pitch]
+phasing_trope = map read (words phase)
+  where phase = "E4 F#4 B4 C#5 D5 F#4 E4 C#5 B4 F#4 D5 C#5"
+
+demo = print (map pc phasing_trope)
+
+demo02 :: PC
+demo02 = transpose 2 (pc n)
+  where n::Pitch
+        n = read "C4"
+        
+   

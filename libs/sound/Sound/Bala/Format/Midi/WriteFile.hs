@@ -57,7 +57,7 @@ putTimeDivision (TPB n) = putWord16be (n `clearBit` 15)
 
 putTextType :: TextType -> Put
 putTextType GENERIC_TEXT       = putWord8 1
-putTextType COPYWRIGHT_NOTICE  = putWord8 2 
+putTextType COPYRIGHT_NOTICE  = putWord8 2 
 putTextType SEQUENCE_NAME      = putWord8 3
 putTextType INSTRUMENT_NAME    = putWord8 4
 putTextType LYRICS             = putWord8 5
