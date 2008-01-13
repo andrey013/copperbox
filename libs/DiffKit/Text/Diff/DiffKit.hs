@@ -1,12 +1,12 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Text.Diff.UnifiedDiff
+-- Module      :  Text.Diff.DiffKit
 -- Copyright   :  (c) Stephen Tetley 2007
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  experimental
+-- Stability   :  unstable
 -- Portability :  portable
 --
 -- A library to parse and print diffs files in the unified format
@@ -14,13 +14,13 @@
 --------------------------------------------------------------------------------
 
 
-module Text.Diff.UnifiedDiff 
-  ( module Text.Diff.Unified.Datatypes
-  , module Text.Diff.Unified.Printer  
-  , module Text.Diff.Unified.Parser  
+module Text.Diff.DiffKit
+  ( module Text.Diff.DiffKit.Datatypes
+  , module Text.Diff.DiffKit.Printer  
+  , module Text.Diff.DiffKit.Parser  
   )
   where
   
-import Text.Diff.Unified.Datatypes
-import Text.Diff.Unified.Printer  
-import Text.Diff.Unified.Parser
+import Text.Diff.DiffKit.Datatypes
+import Text.Diff.DiffKit.Printer  
+import Text.Diff.DiffKit.Parser (parseContext, parseUnified, parseNormal)
