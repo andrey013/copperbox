@@ -1,17 +1,31 @@
 {-# OPTIONS_GHC -fglasgow-exts #-}
 
--- add exception handling...
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Format.Midi.ReadFile
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Parse MIDI files 
+-- |
+--------------------------------------------------------------------------------
+
+-- TODO: add exception handling...
 
 -- note applicative is portable...
 
 -- http://www.sonicspot.com/guide/midifiles.html
 
-module Sound.Bala.Format.Midi.ReadFile (
+module Bala.Format.Midi.ReadFile (
     -- * Read a Midi structure from file
     readMidi
   ) where
 
-import Sound.Bala.Format.Midi.Datatypes
+import Bala.Format.Midi.Datatypes
 
 import Control.Applicative
 import Control.Monad
@@ -119,7 +133,7 @@ getMessage = getVarlen >>= \dt ->
     f2 a = applyER ((,) a)
  
     split :: Word8 -> (Word8,Word8) 
-    split i = ((i .&. 0xF0), i .&. 0xF0)
+    split i = (i .&. 0xF0, i .&. 0x0F)
 
 
 
@@ -175,7 +189,9 @@ metaEvent 0x7F = getVarlen >>=  \i ->
                  guardedGetStrict (fromIntegral i) `nextWith` \body ->
                  success (SSME i body)
 
-
+metaEvent er   = error $ "unreconized meta-event " ++ show er
+                 
+                 
 {-  
 -- obsolete (FF 20 01 cc) 
 -- http://www.borg.com/~jglatt/tech/midifile/obsolete.htm

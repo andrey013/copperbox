@@ -1,7 +1,21 @@
 
-module Sound.Bala.Base.PitchRep where
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Base.PitchRep
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- A datatypes for representing pitch
+-- |
+--------------------------------------------------------------------------------
 
-import Sound.Bala.Base.ReadPExtra
+module Bala.Base.PitchRep where
+
+import Bala.Base.BaseExtra
 
 import Control.Applicative hiding (many, optional)
 import Control.Monad (ap)

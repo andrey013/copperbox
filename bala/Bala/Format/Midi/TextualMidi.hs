@@ -1,7 +1,22 @@
 
-module Sound.Bala.Format.Midi.TextualMidi where
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Format.Midi.TextualMidi
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- A textual representaton of MIDI files 
+-- |
+--------------------------------------------------------------------------------
 
-import Sound.Bala.Format.Midi.Datatypes
+
+module Bala.Format.Midi.TextualMidi where
+
+import Bala.Format.Midi.Datatypes
 
 import Data.Tuple
 import Numeric

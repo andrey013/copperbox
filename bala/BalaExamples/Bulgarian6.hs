@@ -1,15 +1,17 @@
 
+
 -- This tune is `Bulgarian (?) 6` from the Exotic ABC songbook
 
--- :set -i../..
+-- :set -i..
 
 module Bulgarian6 where
 
-import Sound.Bala.Format.Midi.MidiFile
+import Bala.Format.Midi.MidiFile
+import Bala.Base.Base
 
-import Sound.Bala.Base.Base
+import qualified Bala.Base.PerformPitch as PP
 
-import Sound.Bala.Format.Midi.PerformMidi
+import Bala.Format.Midi.PerformMidi
 
 bars1_4 :: [Pitch]
 bars1_4 = elements $
@@ -19,7 +21,7 @@ bars1_4 = elements $
   ++ " A4 B4 B4 A4 A4" -- rest
 
 env =  default_env {
-  output_file = "bulgarian6.mid" 
+  output_file = "bulgarian6.midi" 
   }
   
 main = output bars1_4 env  

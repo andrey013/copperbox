@@ -1,8 +1,25 @@
 
 
-module Sound.Bala.Base.Interval where
 
-import Sound.Bala.Base.PitchRep
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Base.Perform
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Interval representation
+-- |
+--------------------------------------------------------------------------------
+
+
+
+module Bala.Base.Interval where
+
+import Bala.Base.PitchRep
 
 data NamedInterval = Unison | Second | Third | Fourth | Fifth | Sixth
                    | Seventh | Octave

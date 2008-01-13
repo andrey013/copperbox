@@ -1,6 +1,22 @@
+
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Format.LilyPond.LilyPondOutput
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Output to LilyPond
+-- |
+--------------------------------------------------------------------------------
+
+
 -- Hmm, just a sketch at the moment
 
-module Sound.Bala.Format.LilyPond.LilyPondOutput where
+module Bala.Format.LilyPond.LilyPondOutput where
 
 
 import Text.PrettyPrint.Leijen hiding (dot)

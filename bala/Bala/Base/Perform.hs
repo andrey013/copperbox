@@ -1,19 +1,35 @@
+{-# OPTIONS_GHC -XMultiParamTypeClasses #-}
+{-# OPTIONS_GHC -XFlexibleInstances #-}
 
-module Sound.Bala.Base.Perform where
+
+
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Base.Perform
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Type class for `performing` a music representation
+-- |
+--------------------------------------------------------------------------------
+
+
+module Bala.Base.Perform where
+
 
 output :: [evt] -> env -> Perform evt env out -> IO ()
-output xs env (Perform {render=r,perform=p}) 
+output xs env (Perform {render=r,perform=p})
   = let o = r xs env in p o env
 
 data Perform evt env out = Perform {
-  render :: [evt] -> env -> out,
-  perform :: out  -> env -> IO ()
-  }  
-  
-{-
-class Render evt env out where 
-  render :: [evt] -> env -> out
-  
-class Perform out where 
-  perform :: out -> IO ()
--}
+    render :: [evt] -> env -> out,
+    perform :: out  -> env -> IO ()
+  }
+
+
+
+

@@ -1,20 +1,35 @@
 
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Base.Base
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Import module for the base libs
+-- |
+--------------------------------------------------------------------------------
 
-module Sound.Bala.Base.Base 
-  ( module Sound.Bala.Base.PitchRep
-  , module Sound.Bala.Base.PitchClass
-  , module Sound.Bala.Base.PitchConversion
-  , module Sound.Bala.Base.Interval
-  , module Sound.Bala.Base.Triad
+
+module Bala.Base.Base 
+  ( module Bala.Base.PitchRep
+  , module Bala.Base.PitchClass
+  , module Bala.Base.PitchConversion
+  , module Bala.Base.Interval
+  , module Bala.Base.Triad
   -- do we want none 'music' libraries in Base?
-  , module Sound.Bala.Base.ReadPExtra
+  , module Bala.Base.BaseExtra
   )
   where
   
-import Sound.Bala.Base.PitchRep
-import Sound.Bala.Base.PitchClass
-import Sound.Bala.Base.PitchConversion
-import Sound.Bala.Base.Interval
-import Sound.Bala.Base.Triad
+import Bala.Base.PitchRep
+import Bala.Base.PitchClass
+import Bala.Base.PitchConversion
+import Bala.Base.Interval
+import Bala.Base.Triad
 
-import Sound.Bala.Base.ReadPExtra
+import Bala.Base.BaseExtra
+

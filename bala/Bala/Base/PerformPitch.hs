@@ -1,8 +1,10 @@
 
 
+
+
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.Triad
+-- Module      :  Bala.Base.PerformPitch
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -10,28 +12,27 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Triad representation
+-- Perform the pitch representation
 -- |
 --------------------------------------------------------------------------------
 
 
-module Bala.Base.Triad where
+
+-- for a list of pitches turn them into events with an onset time
+
+
+module Bala.Base.PerformPitch where
 
 import Bala.Base.PitchRep
-import Bala.Base.BaseExtra
+import Bala.Base.Perform
 
-import Control.Applicative hiding (many, optional)
-import Control.Monad (ap)
-import Text.ParserCombinators.ReadP
+import Data.Ratio
 
-
-newtype Triad = Triad {unTriad :: (Int,Int,Int)}
-
-instance Read Triad where 
-  readsPrec i s = readP_to_S readTriad s
-
-readTriad :: ReadP Triad  
-readTriad = undefined
-
-
-
+data PitchEnv = PitchEnv {
+  default_note_length :: Ratio Int
+  }
+  
+default_env = PitchEnv {
+  default_note_length = 1 / 4
+  }
+    

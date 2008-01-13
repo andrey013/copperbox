@@ -1,8 +1,24 @@
 {-# OPTIONS_GHC -XFlexibleInstances #-}
 
-module Sound.Bala.Base.PitchClass where
 
-import Sound.Bala.Base.PitchRep
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Base.PitchClass
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Operations on pitch classes
+-- |
+--------------------------------------------------------------------------------
+
+
+module Bala.Base.PitchClass where
+
+import Bala.Base.PitchRep
 
 import Numeric (showInt)
 

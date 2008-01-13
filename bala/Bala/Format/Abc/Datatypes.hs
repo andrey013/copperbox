@@ -1,5 +1,19 @@
 
-module Sound.Bala.Format.Abc.Datatypes  where
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Format.Abc.Datatypes
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Datatypes for ABC format
+-- |
+--------------------------------------------------------------------------------
+
+module Bala.Format.Abc.Datatypes  where
 
 
 type AbcFile = [AbcFileElement]

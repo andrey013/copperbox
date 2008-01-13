@@ -1,12 +1,26 @@
 
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Format.Midi.PerformMidi
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- `Perform` MIDI 
+-- |
+--------------------------------------------------------------------------------
 
-module Sound.Bala.Format.Midi.PerformMidi where
 
-import Sound.Bala.Format.Midi.Datatypes
-import Sound.Bala.Format.Midi.WriteFile
-  
-import qualified Sound.Bala.Base.Perform as P  
-import Sound.Bala.Base.Base
+module Bala.Format.Midi.PerformMidi where
+
+import Bala.Format.Midi.Datatypes
+import Bala.Format.Midi.WriteFile
+import Bala.Format.Midi.GeneralMidiInstruments
+import qualified Bala.Base.Perform as P  
+import Bala.Base.Base
 
 
 import Data.List (sortBy)
@@ -17,12 +31,14 @@ output evts env = P.output evts env perform_midi
 
 data MidiEnv = MidiEnv {
   output_file :: FilePath,
-  tempo       :: Int
+  tempo       :: Int,
+  gm_inst     :: GMInst
   }
 
 default_env = MidiEnv {
   output_file = "temp.mid",
-  tempo       = 120
+  tempo       = 120,
+  gm_inst     = Acoustic_grand_piano
   }
  
 
@@ -42,7 +58,7 @@ data SimpleEvt = SimpleEvt
   , keynum    :: Int -- midi pitch
   , duration  :: Int -- Int for Ticks 
   , amplitude :: Int
-  , channel   :: Int
+--  , channel   :: Int
   }
   deriving (Eq,Show)
   
@@ -50,7 +66,7 @@ data SimpleEvt = SimpleEvt
 renderMidi evts menv = MidiFile header1 [track1]
   where
     header1 = Header MF0 1 (TPB 480)    
-    ss = notesToSE evts 0.5 0
+    ss = notesToSE evts 0.5
     track1 = Track $ evt_SetTempo : (toMidi ss)
 
 performMidi out env = do
@@ -58,7 +74,7 @@ performMidi out env = do
   writeMidi (output_file env) out
 
 
-notesToSE evts amp chan = map mkSimpleEvt (zip evts zs)
+notesToSE evts amp = map mkSimpleEvt (zip evts zs)
   where 
     zs = [n * 0.5 | n <- [0..] ]
     mkSimpleEvt (n,start) = SimpleEvt 
@@ -66,7 +82,7 @@ notesToSE evts amp chan = map mkSimpleEvt (zip evts zs)
       , keynum    = unMidi $ fromPitch n
       , duration  = 480
       , amplitude = conv amp
-      , channel   = chan} 
+      } 
 
     conv _ = 60
 
@@ -91,12 +107,12 @@ simple xs = sortBy fn $ foldr (\a acc -> (midiOn a : midiOff a : acc) ) [] xs
 
 
 midiOn :: SimpleEvt -> Message
-midiOn (SimpleEvt {time=start',keynum=note', channel=ch, amplitude=a}) 
-  = (fromIntegral $ start', VoiceEvent $ NoteOn (fromIntegral ch) (fromIntegral note') (fromIntegral a))
+midiOn (SimpleEvt {time=start',keynum=note',amplitude=a}) 
+  = (fromIntegral $ start', VoiceEvent $ NoteOn 0 (fromIntegral note') (fromIntegral a))
 
 midiOff :: SimpleEvt -> Message
-midiOff (SimpleEvt {time=start',duration=dur',keynum=note', channel=ch, amplitude=a}) 
-  = (fromIntegral $ start' + dur', VoiceEvent $ NoteOff (fromIntegral ch) (fromIntegral note') 0x7f)
+midiOff (SimpleEvt {time=start',duration=dur',keynum=note',amplitude=a}) 
+  = (fromIntegral $ start' + dur', VoiceEvent $ NoteOff 0 (fromIntegral note') 0x7f)
 
 
 

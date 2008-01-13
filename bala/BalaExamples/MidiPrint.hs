@@ -1,10 +1,13 @@
 
--- ghci> :set -i../..
+
+-- ghci> :set -i..
 -- ghci> :set args ../Variant/bulgarian6ly.midi
+
+-- or shell> ghc --make MidiPrint.hs -i..
 
 module Main where
 
-import Sound.Bala.Format.Midi.MidiFile 
+import Bala.Format.Midi.MidiFile 
 
 import System.Environment
 import Text.PrettyPrint.Leijen

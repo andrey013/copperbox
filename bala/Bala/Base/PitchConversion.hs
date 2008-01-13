@@ -1,7 +1,21 @@
 
-module Sound.Bala.Base.PitchConversion where
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Base.PitchConversion
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Convert pitch representations to other representations
+-- |
+--------------------------------------------------------------------------------
 
-import Sound.Bala.Base.PitchRep
+module Bala.Base.PitchConversion where
+
+import Bala.Base.PitchRep
 
 
 

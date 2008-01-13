@@ -1,5 +1,20 @@
 
-module Sound.Bala.Format.Midi.Datatypes (
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Format.Midi.Datatypes
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Datatypes for MIDI representation
+-- |
+--------------------------------------------------------------------------------
+
+
+module Bala.Format.Midi.Datatypes (
     -- * MidiFile representation
     MidiFile(..),
     -- * File header with basic information
