@@ -19,9 +19,9 @@ module Bala.Format.Abc.Datatypes  where
 type AbcFile = [AbcFileElement]
 
 data AbcFileElement
-    = AbcTuneElement AbcTune
-    | AbcTexCommandElement Tex_command
-    | AbcFileFieldsElement [AbcField]
+    = AbcTuneElement       AbcTune
+    | AbcTexCommandElement TexCommand
+    | AbcFileFieldsElement [Field]
   deriving (Eq, Show)
 
 
@@ -31,86 +31,88 @@ type AbcTune = (AbcHeader, AbcMusic)
 
 
 data AbcHeader = AbcHeader {
-        field_number :: AbcField,       -- 'X' field
-        field_title :: [AbcField],      -- 'T' fields
-        other_fields :: [AbcField],
-        field_key :: AbcField           -- 'K' field
-        }
+    field_number  :: Field,       -- 'X' field
+    field_title   :: [Field],     -- 'T' fields
+    other_fields  :: [Field],
+    field_key     :: Field        -- 'K' field
+  }
   deriving (Eq, Show)
 
-data AbcField 
-    = AbcFileField String
-    | AbcNumberField Int
-    | AbcTitleField String
-    | AbcAreaField String
-    | AbcBookField String
-    | AbcComposerField String
-    | AbcDiscographyField String
-    | AbcElemskipField String
-    | AbcGroupField String
-    | AbcHistoryField [String]
-    | AbcInformationField String
-    | AbcDefaultLengthField Note_length_strict
-    | AbcMeterField AbcMeter
-    | AbcNotesField String
-    | AbcOriginField String
-    | AbcPartsField [AbcPart]
-    | AbcTempoField AbcTempo
-    | AbcRhythmField String
-    | AbcSourceField String
-    | AbcTranscrNotesField String
-    | AbcKeyField AbcKey
-    | AbcPartField AbcPart
-    | AbcWordsField String
+data Field 
+    = FieldFile           String
+    | FieldNumber         Int
+    | FieldTitle          String
+    | FieldArea           String
+    | FieldBook           String
+    | FieldComposer       String
+    | FieldDiscography    String
+    | FieldElemskip       String
+    | FieldGroup          String
+    | FieldHistory        [String]
+    | FieldInformation    String
+    | FieldDefaultLength  NoteLengthStrict
+    | FieldMeter          Meter
+    | FieldNotes          String
+    | FieldOrigin         String
+    | FieldParts          [Part]
+    | FieldTempo          Tempo
+    | FieldRhythm         String
+    | FieldSource         String
+    | FieldTranscrNotes   String
+    | FieldKey            Key
+    | FieldPart           Part
+    | FieldWords          String
   deriving (Eq, Show)
 
-data AbcKey
-    = AbcKey Key_spec 
-    | AbcHighlandNoKey          -- HP
-    | AbcHighlandMixolydian     -- Hp
+data Key
+    = Key KeySpec 
+    | HighlandNoKey          -- HP
+    | HighlandMixolydian     -- Hp
   deriving (Eq, Show)
 
-type Key_spec = (Key_note, Maybe Mode_spec, [Global_accidental])
+type KeySpec = (KeyNote, Maybe ModeSpec, [GlobalAccidental])
 
-type Key_note = (Basenote, Maybe AbcKeyAccidental)  
+type KeyNote = (BaseNote, Maybe KeyAccidental)  
 
-data AbcKeyAccidental
-    = AbcSharpKey
-    | AbcFlatKey
+data KeyAccidental
+    = KeySharp
+    | KeyFlat
   deriving (Eq, Show)
 
-type Mode_spec = (AbcMode, String)
+type ModeSpec = (Mode, String)
 
-data AbcMode 
-    = AbcMinorMode
-    | AbcMajorMode
-    | AbcLydianMode
-    | AbcIonianMode
-    | AbcMixolydianMode
-    | AbcDorianMode
-    | AbcAeolianMode
-    | AbcPhrygianMode
-    | AbcLocrianMode
+data Mode 
+    = ModeMinor
+    | ModeMajor
+    | ModeLydian
+    | ModeIonian
+    | ModeMixolydian
+    | ModeDorian
+    | ModeAeolian
+    | ModePhrygian
+    | ModeLocrian
   deriving (Eq, Show)      
 
-data AbcMeter
-    = AbcMeter Int Int
-    | AbcCommonTimeMeter    -- 'C'
-    | AbcCutTimeMeter       -- "C|"
+data Meter
+    = Meter MeterFraction
+    | MeterCommonTime       -- 'C'
+    | MeterCutTime          -- "C|"
   deriving (Eq, Show)
+
+type MeterFraction = (Int,Int)
   
-data AbcTempo
-    = AbcTempo Int
-    | AbcCTempo Note_length  Int
-    | AbcAbsoluteTempo Note_length_strict Int
+data Tempo
+    = Tempo Int
+    | TempoC NoteLength Int
+    | TempoAbsolute NoteLengthStrict Int
   deriving (Eq, Show)  
   
-type Note_length_strict = (Int, Int)
+type NoteLengthStrict = (Int, Int)
 
 -- parts can be nested like a rose tree
-data AbcPart
-    = AbcPartTree Int [AbcPart]
-    | AbcPartElem Int Char
+data Part
+    = PartTree Int [Part]
+    | PartElem Int Char
   deriving (Eq, Show)
   
 --------------------------------------------------------------------------------
@@ -118,122 +120,122 @@ data AbcPart
 type AbcMusic = [AbcLine]
 
 data AbcLine
-    = AbcElements [AbcElement]
-    | AbcMidTexCommand Tex_command
-    | AbcMidTuneField AbcField
+    = Elements        [Element]
+    | MidTexCommand   TexCommand
+    | MidTuneField    Field
   deriving (Eq, Show)
 
-data AbcElement 
-    = AbcNoteElement Note_element
-    | AbcTupletElement Tuplet_spec [Note_element]
-    | AbcBarlineElement AbcBarline
-    | AbcRepeatElement AbcRepeatMark
-    | AbcSlurElement AbcSlur
-    | AbcSpaceElement
-    | AbcUserDefinedElement String
+data Element 
+    = NoteElement   NoteElement
+    | TupletElement TupletSpec [NoteElement]
+    | Barline       Barline
+    | NthRepeat     RepeatMark
+    | Slur          Slur
+    | Space
+    | UserDefined   String
   deriving (Eq, Show)
     
-type Tuplet_spec = [Int]
+type TupletSpec = [Int]
 
-type Note_element = (Note_stem, Maybe AbcBrokenRhythm)
+type NoteElement = (NoteStem, Maybe BrokenRhythm)
 
-type Note_stem 
-  = (Maybe AbcGuitarChord, Maybe Grace_notes, [AbcGracing], [AbcNote])
+type NoteStem 
+  = (Maybe GuitarChord, Maybe GraceNotes, [Gracing], [Note])
   
-data AbcNote = AbcNote {
-      note_value :: AbcValue,
-      opt_note_length :: Maybe Note_length, 
-      opt_tie :: Maybe AbcTie
-      }
+data Note = Note {
+    note_value      :: NoteOrRest,
+    opt_note_length :: Maybe NoteLength, 
+    opt_tie         :: Maybe Tie
+  }
   deriving (Eq,Show)
 
 
--- aka Note or rest
-data AbcValue
-    = AbcPitchValue AbcPitch
-    | AbcRest
+
+data NoteOrRest
+    = Pitch PitchSpec
+    | Rest
   deriving (Eq, Show)
   
-data AbcPitch = AbcPitch {
-        pitch_base :: Basenote,
-        opt_accidental :: Maybe AbcAccidental,
-        opt_octave_mark :: Maybe AbcOctave 
-        }
+data PitchSpec = PitchSpec {
+    pitch_base      :: BaseNote,
+    opt_accidental  :: Maybe Accidental,
+    opt_octave_mark :: Maybe Octave 
+  }
   deriving (Eq,Show)        
 
-data AbcOctave
-    = AbcLowOctave Int
-    | AbcHighOctave Int
+data Octave
+    = OctaveLow  Int
+    | OctaveHigh Int
   deriving (Eq, Show)
   
-data AbcAccidental
-    = AbcSharp
-    | AbcDoubleSharp
-    | AbcFlat
-    | AbcDoubleFlat
-    | AbcNatural
+data Accidental
+    = Sharp
+    | DoubleSharp
+    | Flat
+    | DoubleFlat
+    | Natural
   deriving (Eq, Show)
 
 
-type Basenote = Char
+type BaseNote = Char
 
-data AbcBrokenRhythm
-    = AbcDottedLeft Int     -- '>' left note dotted, right note halved
-    | AbcDottedRight Int    -- '<' left note halved, right note dotted
+data BrokenRhythm
+    = DottedLeft  Int    -- '>' left note dotted, right note halved
+    | DottedRight Int    -- '<' left note halved, right note dotted
   deriving (Eq, Show)  
 
   
-data AbcTie = AbcTie
+data Tie = Tie
   deriving (Eq, Show)
 
-data AbcGracing
-    = AbcTilde
-    | AbcStacatto
-    | AbcDownBow
-    | AbcUpDown
+data Gracing
+    = Tilde
+    | Stacatto
+    | DownBow
+    | UpDown
   deriving (Eq, Show)
   
-type Grace_notes = [AbcPitch]
+type GraceNotes = [PitchSpec]
 
 -----
 
-data AbcGuitarChord 
-    = AbcFormalChord Basenote (Maybe Chord_type) (Maybe Basenote)
-    | AbcUninterpretedChord String
+data GuitarChord 
+    = FormalChord BaseNote (Maybe ChordType) (Maybe BaseNote)
+    | UninterpretedChord String
   deriving (Eq, Show)
   
 
 
-data AbcBarline 
-    = AbcSingleBar
-    | AbcDoubleBar
-    | AbcThick_ThinBar
-    | AbcThin_ThickBar
-    | AbcLeftRepeat
-    | AbcRightRepeat
-    | AbcBothRepeat
+data Barline 
+    = BarSingle
+    | BarDouble
+    | BarThickThin
+    | BarThinThick
+    | RepeatLeft
+    | RepeatRight
+    | RepeatBoth
   deriving (Eq, Show)
 
-data AbcRepeatMark 
-    = AbcFirstRepeat
-    | AbcSecondRepeat
-    | AbcFirstEnding
-    | AbcSecondEnding
+data RepeatMark 
+    = RepeatFirst
+    | RepeatSecond
+    | EndingFirst
+    | EndingSecond
   deriving (Eq, Show)
   
-data AbcSlur
-    = AbcBeginSlur
-    | AbcEndSlur
+data Slur
+    = SlurBegin
+    | SlurEnd
   deriving (Eq, Show)    
     
 
 
-type Global_accidental = (AbcAccidental, Basenote)
+type GlobalAccidental = (Accidental, BaseNote)
 
-type Note_length = (Int, Maybe Int)
+type NoteLength = (Int, Maybe Int)
 
-type Chord_type = String
+type ChordType = String
 
-type Tex_command = String
+type TexCommand = String
 
 

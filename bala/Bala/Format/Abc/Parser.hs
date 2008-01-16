@@ -19,7 +19,7 @@ import Bala.Format.Abc.Datatypes
 import Control.Applicative hiding (many, optional, (<|>) )
 import Control.Monad
 
-import Data.Char
+import Data.Char hiding (Space)
 import Data.List (sortBy)
 import Text.ParserCombinators.Parsec hiding ( {- token, -} space)
 
@@ -52,15 +52,15 @@ fileElement = choice [ fieldsElement, tuneElement, texElement,
   
   
 
-fileFields :: Parser [AbcField]
+fileFields :: Parser [Field]
 fileFields = many1 $ choice 
                     [ fieldFile,      fieldBook,        fieldGroup 
                     , fieldHistory,   fieldInformation, fieldMeter 
                     , fieldOrigin,    fieldRhythm
                     ]
 
-fieldFile :: Parser AbcField
-fieldFile = readField 'F' text AbcFileField
+fieldFile :: Parser Field
+fieldFile = readField 'F' text FieldFile
 
 abcTune :: Parser AbcTune
 abcTune = (,) <$> abcHeader <*> abcMusic
@@ -73,12 +73,12 @@ abcHeader = AbcHeader <$> fieldNumber <*  optional comment <*> many1 fieldTitle
  
   
 
-fieldNumber = readField 'X' readNat AbcNumberField
+fieldNumber = readField 'X' readNat FieldNumber
 
-fieldTitle  = readField 'T' text AbcTitleField  
+fieldTitle  = readField 'T' text FieldTitle
 
 
-otherFields :: Parser AbcField
+otherFields :: Parser Field
 otherFields = choice [ fieldArea,         fieldBook,        fieldComposer 
                      , fieldDiscography,  fieldElemskip,    fieldGroup
                      , fieldHistory,      fieldInformation, fieldDefaultLength
@@ -91,52 +91,52 @@ otherFields = choice [ fieldArea,         fieldBook,        fieldComposer
 
 readField ch fn constr = constr <$> (char ch *> char ':' *> fn <* endOfLine)
    
-fieldArea           = readField 'A' text  AbcAreaField
-fieldBook           = readField 'B' text  AbcBookField
-fieldComposer       = readField 'C' text  AbcComposerField
-fieldDiscography    = readField 'D' text  AbcDiscographyField
-fieldElemskip       = readField 'E' text  AbcElemskipField
-fieldGroup          = readField 'G' text  AbcGroupField
-fieldHistory        = readField 'H' (text `sepBy` endOfLine) AbcHistoryField    
-fieldInformation    = readField 'I' text  AbcInformationField
-fieldDefaultLength  = readField 'L' noteLengthStrict AbcDefaultLengthField
-fieldMeter          = readField 'M' meter AbcMeterField
-fieldNotes          = readField 'N' text  AbcNotesField
-fieldOrigin         = readField 'O' text  AbcOriginField
-fieldParts          = readField 'P' parts AbcPartsField  
-fieldTempo          = readField 'Q' tempo AbcTempoField
-fieldRhythm         = readField 'R' text  AbcRhythmField
-fieldSource         = readField 'S' text  AbcSourceField
-fieldTranscrnotes   = readField 'Z' text  AbcTranscrNotesField
-fieldKey            = readField 'K' key   AbcKeyField
+fieldArea           = readField 'A' text  FieldArea
+fieldBook           = readField 'B' text  FieldBook
+fieldComposer       = readField 'C' text  FieldComposer
+fieldDiscography    = readField 'D' text  FieldDiscography
+fieldElemskip       = readField 'E' text  FieldElemskip
+fieldGroup          = readField 'G' text  FieldGroup
+fieldHistory        = readField 'H' (text `sepBy` endOfLine) FieldHistory    
+fieldInformation    = readField 'I' text  FieldInformation
+fieldDefaultLength  = readField 'L' noteLengthStrict FieldDefaultLength
+fieldMeter          = readField 'M' meter FieldMeter
+fieldNotes          = readField 'N' text  FieldNotes
+fieldOrigin         = readField 'O' text  FieldOrigin
+fieldParts          = readField 'P' parts FieldParts  
+fieldTempo          = readField 'Q' tempo FieldTempo
+fieldRhythm         = readField 'R' text  FieldRhythm
+fieldSource         = readField 'S' text  FieldSource
+fieldTranscrnotes   = readField 'Z' text  FieldTranscrNotes
+fieldKey            = readField 'K' key   FieldKey
 
 
        
 
-key :: Parser AbcKey
+key :: Parser Key
 key = keySpec <|> hp
   where
     hp = char 'H' *> (pu <|> pl)
-    pu = AbcHighlandNoKey      <$ char 'P'
-    pl = AbcHighlandMixolydian <$ char 'p'
+    pu = HighlandNoKey      <$ char 'P'
+    pl = HighlandMixolydian <$ char 'p'
     
 
 
-keySpec :: Parser AbcKey
-keySpec = AbcKey <$> inner
+keySpec :: Parser Key
+keySpec = Key <$> inner
   where inner      = (,,) <$> keynote <*> (pmaybe modeSpec) <*>  many accidental
         accidental = char ' ' *> globalAccidental
   
 
 keynote = (,) <$> basenote <*> pmaybe keyAccidental
 
-keyAccidental :: Parser AbcKeyAccidental
+keyAccidental :: Parser KeyAccidental
 keyAccidental = sharp <|> flat
-  where sharp = AbcSharpKey <$ char '#'
-        flat  = AbcFlatKey  <$ char 'b'
+  where sharp = KeySharp <$ char '#'
+        flat  = KeyFlat  <$ char 'b'
 
    
-modeSpec :: Parser Mode_spec    
+modeSpec :: Parser ModeSpec    
 modeSpec = (,) <$> ospaceMode <*> extratext 
   where ospaceMode = pmaybe (char ' ') *> mode
 
@@ -144,68 +144,69 @@ extratext :: Parser String
 extratext = many (satisfy isAlpha)
 
 
-globalAccidental :: Parser Global_accidental
+globalAccidental :: Parser GlobalAccidental
 globalAccidental = (,) <$> accidental <*> basenote
 
 
-mode :: Parser AbcMode
+mode :: Parser Mode
 mode = choice [ modeMajor, modeLydian, modeIonian, modeMixolydian, 
                  modeDorian, modeAeolian, modePhrygian,
                  modeLocrian, modeMinor]
   where
-    modeMinor       = AbcMinorMode      <$ chooseString ["min", "MIN", "m", "M"] 
-    modeMajor       = AbcMajorMode      <$ chooseString ["maj", "MAJ"]
-    modeLydian      = AbcLydianMode     <$ chooseString ["lyd", "LYD"]
-    modeIonian      = AbcIonianMode     <$ chooseString ["ion", "ION"]
-    modeMixolydian  = AbcMixolydianMode <$ chooseString ["mix", "MIX"]
-    modeDorian      = AbcDorianMode     <$ chooseString ["dor", "DOR"]
-    modeAeolian     = AbcAeolianMode    <$ chooseString ["aeo", "AEO"]
-    modePhrygian    = AbcPhrygianMode   <$ chooseString ["phr", "PHR"]
-    modeLocrian     = AbcLocrianMode    <$ chooseString ["loc", "LOC"]
+    modeMinor       = ModeMinor      <$ chooseString ["min", "MIN", "m", "M"] 
+    modeMajor       = ModeMajor      <$ chooseString ["maj", "MAJ"]
+    modeLydian      = ModeLydian     <$ chooseString ["lyd", "LYD"]
+    modeIonian      = ModeIonian     <$ chooseString ["ion", "ION"]
+    modeMixolydian  = ModeMixolydian <$ chooseString ["mix", "MIX"]
+    modeDorian      = ModeDorian     <$ chooseString ["dor", "DOR"]
+    modeAeolian     = ModeAeolian    <$ chooseString ["aeo", "AEO"]
+    modePhrygian    = ModePhrygian   <$ chooseString ["phr", "PHR"]
+    modeLocrian     = ModeLocrian    <$ chooseString ["loc", "LOC"]
 
 -- maybe modes should handle full names e.g. Gmajor
 
 
-meter :: Parser AbcMeter
+meter :: Parser Meter
 meter = cutTime <|> commonTime <|> meterFraction
-  where cutTime     = AbcCutTimeMeter    <$ string "C|"
-        commonTime  = AbcCommonTimeMeter <$ char 'C'
+  where cutTime     = MeterCutTime    <$ string "C|"
+        commonTime  = MeterCommonTime <$ char 'C'
 
 
 
-meterFraction :: Parser AbcMeter
-meterFraction = AbcMeter <$> readNat <* char '/' <*> readNat
+meterFraction :: Parser Meter
+meterFraction = Meter <$> fraction
+  where fraction = (,) <$> readNat <* char '/' <*> readNat
  
 
 
 -- left rec ??
-tempo :: Parser AbcTempo
+tempo :: Parser Tempo
 tempo = ta <|> tb <|> tc
   where eqk = char '=' *> readNat
   
-        ta = AbcCTempo <$> (char 'C' *> noteLength) <*> eqk
+        ta = TempoC <$> (char 'C' *> noteLength) <*> eqk
         
-        tb = AbcAbsoluteTempo <$> noteLengthStrict <*> eqk
+        tb = TempoAbsolute <$> noteLengthStrict <*> eqk
              
-        tc = AbcTempo <$> readNat
+        tc = Tempo <$> readNat
 
-noteLengthStrict :: Parser Note_length_strict
+noteLengthStrict :: Parser NoteLengthStrict
 noteLengthStrict = (,) <$> readNat <*> (char '/' *> readNat)
 
 
 
 
-parts :: Parser [AbcPart]
+parts :: Parser [Part]
 parts = many1 partSpec
 
 
-partSpec :: Parser AbcPart
+partSpec :: Parser Part
 partSpec = unaryPart <|> nestedPart <|> repeatedPart
-  where unaryPart     = AbcPartElem 0 <$> part 
+  where unaryPart     = PartElem 0 <$> part 
         
-        nestedPart    = AbcPartTree <$> readNat <*> parens (many1 partSpec)
+        nestedPart    = PartTree <$> readNat <*> parens (many1 partSpec)
         
-        repeatedPart  = AbcPartElem <$> readNat <*> part
+        repeatedPart  = PartElem <$> readNat <*> part
 
 part :: Parser Char
 part = satisfy $ (flip elem) ['A'..'Z']
@@ -230,19 +231,19 @@ abcMusic = (many1 abcLine) <* linefeed
 
 abcLine :: Parser AbcLine
 abcLine = elementList <|> mtf <|> tcmd
-  where elementList = AbcElements      <$> many1 element <* lineEnder
-        mtf         = AbcMidTuneField  <$> midTuneField
-        tcmd        = AbcMidTexCommand <$> texCommand
+  where elementList = Elements      <$> many1 element <* lineEnder
+        mtf         = MidTuneField  <$> midTuneField
+        tcmd        = MidTexCommand <$> texCommand
 
-element :: Parser AbcElement
+element :: Parser Element
 element = choice [ noteElem, tupletElem, barElem, repElem, slurElem,
                    spaceElem ]  -- <|> userElem
-  where noteElem    = AbcNoteElement      <$> noteElement
-        tupletElem  = AbcTupletElement    <$> tupletSpec <*> many1 noteElement
-        barElem     = AbcBarlineElement   <$> barline
-        repElem     = AbcRepeatElement    <$> nthRepeat
-        slurElem    = AbcSlurElement      <$> (beginSlur <|> endSlur)
-        spaceElem   = AbcSpaceElement     <$  space
+  where noteElem    = NoteElement   <$> noteElement
+        tupletElem  = TupletElement <$> tupletSpec <*> many1 noteElement
+        barElem     = Barline       <$> barline
+        repElem     = NthRepeat     <$> nthRepeat
+        slurElem    = Slur          <$> (beginSlur <|> endSlur)
+        spaceElem   = Space         <$  space
         userElem    = undefined  -- AbcUserDefinedElement
 
 
@@ -254,16 +255,16 @@ lineEnder = comment <|> linefeed <|> lineBreak <|> noLineBreak
 tupletElement = (,) <$> tupletSpec <*> many1 noteElement
 
 
-tupletSpec :: Parser Tuplet_spec
+tupletSpec :: Parser TupletSpec
 tupletSpec = (char '(') *> tups 
   where tups = readNat `sepBy` (char ':')
 
 
-noteElement :: Parser Note_element
+noteElement :: Parser NoteElement
 noteElement = (,) <$> noteStem <*> pmaybe brokenRhythm
 
 
-noteStem :: Parser Note_stem
+noteStem :: Parser NoteStem
 noteStem = build <$> pmaybe guitarChord <*> pmaybe graceNotes <*> many gracings
                                         <*> noteOrMulti
 
@@ -276,94 +277,93 @@ noteStem = build <$> pmaybe guitarChord <*> pmaybe graceNotes <*> many gracings
 
 
 
-multiNote :: Parser [AbcNote]
+multiNote :: Parser [Note]
 multiNote = squares $ many1 note
   where squares = between (char '[') (char ']')
 
 
-note :: Parser AbcNote
-note = AbcNote <$> noteOrRest <*> pmaybe noteLength <*> pmaybe tie
+note :: Parser Note
+note = Note <$> noteOrRest <*> pmaybe noteLength <*> pmaybe tie
 
 
 
 
-noteOrRest :: Parser AbcValue
-noteOrRest = choice [ (AbcPitchValue <$> pitch), (AbcRest <$ rest) ]
+noteOrRest :: Parser NoteOrRest
+noteOrRest = choice [ (Pitch <$> pitch), (Rest <$ rest) ]
 
 
 
 
-pitch :: Parser AbcPitch
+pitch :: Parser PitchSpec
 pitch = build <$> pmaybe accidental <*> basenote <*> pmaybe octave
-  where build ma n mo  = AbcPitch n ma mo
+  where build ma n mo  = PitchSpec n ma mo
 
 
-octave :: Parser AbcOctave    
-octave = lowOctave <|> highOctave
-  where lowOctave   = AbcLowOctave  <$> counting1 (char ',')
-        highOctave  = AbcHighOctave <$> counting1 (char '\'')
+octave :: Parser Octave    
+octave = octaveLow <|> octaveHigh
+  where octaveLow   = OctaveLow  <$> counting1 (char ',')
+        octaveHigh  = OctaveHigh <$> counting1 (char '\'')
 
 
 
-noteLength :: Parser Note_length    
+noteLength :: Parser NoteLength    
 noteLength = (,) <$> readNat <*> pmaybe readNat
 
 
-accidental :: Parser AbcAccidental
+accidental :: Parser Accidental
 accidental = choice [dblSharp, sharp, dblFlat, flat]
-  where dblSharp = AbcDoubleSharp <$ string "^^" 
-        sharp    = AbcSharp       <$ string "^"  
-        dblFlat  = AbcDoubleFlat  <$ string "__" 
-        flat     = AbcFlat        <$ string "_"  
-        natural  = AbcNatural     <$ string "="
+  where dblSharp = DoubleSharp <$ string "^^" 
+        sharp    = Sharp       <$ string "^"  
+        dblFlat  = DoubleFlat  <$ string "__" 
+        flat     = Flat        <$ string "_"  
+        natural  = Natural     <$ string "="
 
 
-basenote :: Parser Basenote
+basenote :: Parser BaseNote
 basenote = satisfy ((flip elem) "CDEFGABcdefgab")
 
  
-rest :: Parser AbcValue
-rest = AbcRest <$ char 'z'
+rest :: Parser NoteOrRest
+rest = Rest <$ char 'z'
 
 
 
-brokenRhythm :: Parser AbcBrokenRhythm
+brokenRhythm :: Parser BrokenRhythm
 brokenRhythm = dnext <|> dprev
-  where dnext = AbcDottedRight <$> counting1 (char '<')
-        dprev = AbcDottedLeft  <$> counting1 (char '>')
+  where dnext = DottedRight <$> counting1 (char '<')
+        dprev = DottedLeft  <$> counting1 (char '>')
 
   
 
 
-tie :: Parser AbcTie
-tie = char '-' >> return AbcTie
+tie :: Parser Tie
+tie = char '-' >> return Tie
 
 
-
-gracings :: Parser AbcGracing
+gracings :: Parser Gracing
 gracings = tilde <|> stacatto <|> downBow <|> upBow
-  where tilde     = AbcTilde    <$ char '~'
-        stacatto  = AbcStacatto <$ char '.'
-        downBow   = AbcDownBow  <$ char 'v'
-        upBow     = AbcUpDown   <$ char 'u'
+  where tilde     = Tilde    <$ char '~'
+        stacatto  = Stacatto <$ char '.'
+        downBow   = DownBow  <$ char 'v'
+        upBow     = UpDown   <$ char 'u'
 
 
-graceNotes :: Parser Grace_notes  
+graceNotes :: Parser GraceNotes  
 graceNotes = braces $ many1 pitch
   where braces = between (char '{') (char '}') 
 
 
 
-guitarChord :: Parser AbcGuitarChord
+guitarChord :: Parser GuitarChord
 guitarChord = fchord <|> unchord
   where 
     fchord  = dblQuoted formalChord
-    unchord = AbcUninterpretedChord <$> dblQuoted text
+    unchord = UninterpretedChord <$> dblQuoted text
 
 
-formalChord :: Parser AbcGuitarChord
-formalChord = AbcFormalChord <$> basenote <*> pmaybe chordType 
-                                          <*> pmaybe (char '/' >> basenote)
+formalChord :: Parser GuitarChord
+formalChord = FormalChord <$> basenote <*> pmaybe chordType 
+                                       <*> pmaybe (char '/' >> basenote)
 
     
 chordType :: Parser String
@@ -375,40 +375,40 @@ chordType = choice $ map string
 
 
 
-barline :: Parser AbcBarline
+barline :: Parser Barline
 barline = choice [ barDbl, barThickThin, barThinThick,
                     repLeft, repRight, repBoth, barSgl ]
-  where barSgl       = AbcSingleBar     <$ char '|'
-        barDbl       = AbcDoubleBar     <$ string "||" 
-        barThickThin = AbcThick_ThinBar <$ string "[|"
-        barThinThick = AbcThin_ThickBar <$ string "|]"
-        repLeft      = AbcLeftRepeat    <$ string ":|"
-        repRight     = AbcRightRepeat   <$ string "|:"
-        repBoth      = AbcBothRepeat    <$ string "::"
+  where barSgl       = BarSingle     <$ char '|'
+        barDbl       = BarDouble     <$ string "||" 
+        barThickThin = BarThickThin  <$ string "[|"
+        barThinThick = BarThinThick  <$ string "|]"
+        repLeft      = RepeatLeft    <$ string ":|"
+        repRight     = RepeatRight   <$ string "|:"
+        repBoth      = RepeatBoth    <$ string "::"
 
 
 
   
-nthRepeat :: Parser AbcRepeatMark 
+nthRepeat :: Parser RepeatMark 
 nthRepeat = choice [firstRep, secondRep, firstEnd, secondEnd]
   where 
-    firstRep     = AbcFirstRepeat  <$ string "[1"
-    secondRep    = AbcSecondRepeat <$ string "[2"
-    firstEnd     = AbcFirstEnding  <$ string "|1"
-    secondEnd    = AbcSecondEnding <$ string ":|2"
+    firstRep     = RepeatFirst  <$ string "[1"
+    secondRep    = RepeatSecond <$ string "[2"
+    firstEnd     = EndingFirst  <$ string "|1"
+    secondEnd    = EndingSecond <$ string ":|2"
 
 
                   
-beginSlur, endSlur :: Parser AbcSlur                
-beginSlur   = AbcBeginSlur <$ char '('
-endSlur     = AbcEndSlur   <$ char ')'
+beginSlur, endSlur :: Parser Slur                
+beginSlur   = SlurBegin <$ char '('
+endSlur     = SlurEnd   <$ char ')'
 
 
-midTuneField :: Parser AbcField
+midTuneField :: Parser Field
 midTuneField = tuneField
 
 
-tuneField :: Parser AbcField
+tuneField :: Parser Field
 tuneField = choice [ fieldElemskip, fieldKey, fieldDefaultLength,
                       fieldMeter, fieldPart, fieldTempo, fieldTitle, 
                       fieldWords ]
@@ -416,16 +416,16 @@ tuneField = choice [ fieldElemskip, fieldKey, fieldDefaultLength,
 
 
 
-fieldPart, fieldWords :: Parser AbcField
-fieldPart = readField 'P' partSpec AbcPartField
+fieldPart, fieldWords :: Parser Field
+fieldPart = readField 'P' partSpec FieldPart
   
-fieldWords = readField 'W' ws AbcWordsField
+fieldWords = readField 'W' ws FieldWords
   where ws = text >>= \cs -> endOfLine >> return cs
 
 
 userDefined = satisfy $ (flip elem) ['H'..'Z']
 
-texCommand :: Parser Tex_command
+texCommand :: Parser TexCommand
 texCommand = (char '\\') *> text <* linefeed
 
 

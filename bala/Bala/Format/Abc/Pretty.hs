@@ -32,30 +32,30 @@ instance Pretty AbcHeader where
   pretty (AbcHeader fn fts ofs fk) 
       = vsep (map pretty ((fn:fts) ++ ofs)) <$> pretty fk
                                               
-instance Pretty AbcField where
-  pretty (AbcFileField str)           = ppField 'F' (text str)
-  pretty (AbcNumberField i)           = ppField 'X' (int i)
-  pretty (AbcTitleField str)          = ppField 'T' (text str)
-  pretty (AbcAreaField str)           = ppField 'A' (text str)
-  pretty (AbcBookField str)           = ppField 'B' (text str)
-  pretty (AbcComposerField str)       = ppField 'C' (text str)
-  pretty (AbcDiscographyField str)    = ppField 'D' (text str)
-  pretty (AbcElemskipField str)       = ppField 'E' (text str)
-  pretty (AbcGroupField str)          = ppField 'G' (text str)
-  pretty (AbcHistoryField ss)         = ppField 'H' (vsep $ map text ss)
-  pretty (AbcInformationField str)    = ppField 'I' (text str)
-  pretty (AbcDefaultLengthField snl)  = ppField 'L' (ppFrac snl)
-  pretty (AbcMeterField meter)        = ppField 'M' (pretty meter)
-  pretty (AbcNotesField str)          = ppField 'N' (text str)
-  pretty (AbcOriginField str)         = ppField 'O' (text str)
-  pretty (AbcPartsField parts)        = ppField 'P' (hsep $ map pretty parts)
-  pretty (AbcTempoField tempo)        = ppField 'Q' (pretty tempo)
-  pretty (AbcRhythmField str)         = ppField 'R' (text str)
-  pretty (AbcSourceField str)         = ppField 'S' (text str)
-  pretty (AbcTranscrNotesField str)   = ppField 'Z' (text str)
-  pretty (AbcKeyField key)            = ppField 'K' (pretty key)
-  pretty (AbcPartField part)          = ppField 'P' (pretty part)
-  pretty (AbcWordsField str)          = ppField 'W' (text str)
+instance Pretty Field where
+  pretty (FieldFile str)           = ppField 'F' (text str)
+  pretty (FieldNumber i)           = ppField 'X' (int i)
+  pretty (FieldTitle str)          = ppField 'T' (text str)
+  pretty (FieldArea str)           = ppField 'A' (text str)
+  pretty (FieldBook str)           = ppField 'B' (text str)
+  pretty (FieldComposer str)       = ppField 'C' (text str)
+  pretty (FieldDiscography str)    = ppField 'D' (text str)
+  pretty (FieldElemskip str)       = ppField 'E' (text str)
+  pretty (FieldGroup str)          = ppField 'G' (text str)
+  pretty (FieldHistory ss)         = ppField 'H' (vsep $ map text ss)
+  pretty (FieldInformation str)    = ppField 'I' (text str)
+  pretty (FieldDefaultLength snl)  = ppField 'L' (ppFrac snl)
+  pretty (FieldMeter meter)        = ppField 'M' (pretty meter)
+  pretty (FieldNotes str)          = ppField 'N' (text str)
+  pretty (FieldOrigin str)         = ppField 'O' (text str)
+  pretty (FieldParts parts)        = ppField 'P' (hsep $ map pretty parts)
+  pretty (FieldTempo tempo)        = ppField 'Q' (pretty tempo)
+  pretty (FieldRhythm str)         = ppField 'R' (text str)
+  pretty (FieldSource str)         = ppField 'S' (text str)
+  pretty (FieldTranscrNotes str)   = ppField 'Z' (text str)
+  pretty (FieldKey key)            = ppField 'K' (pretty key)
+  pretty (FieldPart part)          = ppField 'P' (pretty part)
+  pretty (FieldWords str)          = ppField 'W' (text str)
 
 
 ppField :: Char -> Doc -> Doc
@@ -64,148 +64,149 @@ ppField ch doc = text [ch,':'] <+> doc
 ppFrac :: (Int,Int) -> Doc
 ppFrac (a,b) = int a <> char '/' <> int b
             
-instance Pretty AbcKey where
-  pretty (AbcKey keyspec)             = ppKeySpec keyspec
-  pretty AbcHighlandNoKey             = text "HP" 
-  pretty AbcHighlandMixolydian        = text "Hp"
+instance Pretty Key where
+  pretty (Key keyspec)             = ppKeySpec keyspec
+  pretty HighlandNoKey             = text "HP" 
+  pretty HighlandMixolydian        = text "Hp"
 
-ppKeySpec :: Key_spec -> Doc
+ppKeySpec :: KeySpec -> Doc
 ppKeySpec (kn, oms, []) = ppKeyNote kn <> maybe empty ppModeSpec oms
 ppKeySpec (kn, oms, xs) = ppKeyNote kn <> maybe empty ppModeSpec oms <+> pretty xs
 
-ppKeyNote :: Key_note -> Doc 
+ppKeyNote :: KeyNote -> Doc 
 ppKeyNote (bn, oac) = pretty bn <> maybe empty pretty oac
 
 
-ppModeSpec :: Mode_spec -> Doc
+ppModeSpec :: ModeSpec -> Doc
 ppModeSpec (m, str) = pretty m <> text str
   
-instance Pretty AbcKeyAccidental where
-  pretty AbcSharpKey                  = char '#' 
-  pretty AbcFlatKey                   = char 'b'
+instance Pretty KeyAccidental where
+  pretty KeySharp                  = char '#' 
+  pretty KeyFlat                   = char 'b'
 
 
-instance Pretty AbcMode where
-  pretty AbcMinorMode                 = char 'm'
-  pretty AbcMajorMode                 = text "maj"
-  pretty AbcLydianMode                = text "lyd"
-  pretty AbcIonianMode                = text "ion"
-  pretty AbcMixolydianMode            = text "mix"
-  pretty AbcDorianMode                = text "dor"
-  pretty AbcAeolianMode               = text "aeo"
-  pretty AbcPhrygianMode              = text "phr"
-  pretty AbcLocrianMode               = text "loc"
+instance Pretty Mode where
+  pretty ModeMinor                 = char 'm'
+  pretty ModeMajor                 = text "maj"
+  pretty ModeLydian                = text "lyd"
+  pretty ModeIonian                = text "ion"
+  pretty ModeMixolydian            = text "mix"
+  pretty ModeDorian                = text "dor"
+  pretty ModeAeolian               = text "aeo"
+  pretty ModePhrygian              = text "phr"
+  pretty ModeLocrian               = text "loc"
   
-instance Pretty AbcMeter where
-  pretty (AbcMeter i j)               = int i <> char '/' <> int j
-  pretty AbcCommonTimeMeter           = char 'C'
-  pretty AbcCutTimeMeter              = text "C|"
+instance Pretty Meter where
+  pretty (Meter (i,j))             = int i <> char '/' <> int j
+  pretty MeterCommonTime           = char 'C'
+  pretty MeterCutTime              = text "C|"
 
   
-instance Pretty AbcTempo where
-  pretty (AbcTempo i)                 = int i
-  pretty (AbcCTempo nl i)             = char 'C' <> pretty nl <> equals <> int i
-  pretty (AbcAbsoluteTempo snl i)     = pretty snl <> equals <> int i
+instance Pretty Tempo where
+  pretty (Tempo i)                 = int i
+  pretty (TempoC nl i)             = char 'C' <> pretty nl <> equals <> int i
+  pretty (TempoAbsolute snl i)     = pretty snl <> equals <> int i
     
       
-instance Pretty AbcPart where
-  pretty (AbcPartTree i ps)
+instance Pretty Part where
+  pretty (PartTree i ps)
       | i == 0                        = parens (hcat $ map pretty ps)
       | otherwise                     = int i <> parens (hcat $ map pretty ps)
       
-  pretty (AbcPartElem i c)            
+  pretty (PartElem i c)            
       | i == 0                        = char c
       | otherwise                     = int i <> char c
       
       
 instance Pretty AbcLine where
-  pretty (AbcElements elems)          = hcat (map pretty elems)
-  pretty (AbcMidTexCommand cmd)       = text cmd
-  pretty (AbcMidTuneField fld)        = pretty fld
+  pretty (Elements elems)          = hcat (map pretty elems)
+  pretty (MidTexCommand cmd)       = text cmd
+  pretty (MidTuneField fld)        = pretty fld
     
-instance Pretty AbcElement where
-  pretty (AbcNoteElement nelem)         = ppNoteElem nelem
-  pretty (AbcTupletElement tupspec ns)  = pretty tupspec <> hcat (map ppNoteElem ns)
-  pretty (AbcBarlineElement barline)    = pretty barline
-  pretty (AbcRepeatElement repmark)     = pretty repmark
-  pretty (AbcSlurElement slur)          = pretty slur
-  pretty AbcSpaceElement                = char ' '
-  pretty (AbcUserDefinedElement str)    = undefined
+instance Pretty Element where
+  pretty (NoteElement nelem)        = ppNoteElem nelem
+  pretty (TupletElement tupspec ns) = pretty tupspec <> hcat (map ppNoteElem ns)
+  pretty (Barline barline)          = pretty barline
+  pretty (NthRepeat repmark)        = pretty repmark
+  pretty (Slur slur)                = pretty slur
+  pretty Space                      = char ' '
+  pretty (UserDefined str)          = undefined
 
-ppNoteElem :: Note_element -> Doc 
+ppNoteElem :: NoteElement -> Doc 
 ppNoteElem (stem, opt_br) = ppNoteStem stem <> maybe empty pretty opt_br
 
+ppNoteStem :: NoteStem -> Doc 
 ppNoteStem (opt_gchord, opt_gracenotes, gs, ns) 
     = maybe empty pretty opt_gchord <> maybe empty (hcat . map pretty) opt_gracenotes
       <> hcat (map pretty gs) <> hcat (map pretty ns)
     
-instance Pretty AbcNote where
-  pretty (AbcNote nv onl ot)          = pretty nv <> maybe empty pretty onl 
+instance Pretty Note where
+  pretty (Note nv onl ot)          = pretty nv <> maybe empty pretty onl 
                                                   <> maybe empty pretty ot 
 
-instance Pretty AbcValue where
-  pretty (AbcPitchValue pch)          = pretty pch
-  pretty AbcRest                      = char 'z'      
+instance Pretty NoteOrRest where
+  pretty (Pitch pch)          = pretty pch
+  pretty Rest                 = char 'z'      
 
 
-instance Pretty AbcPitch where
-  pretty (AbcPitch bn oa oom)         = prefix oa <> pretty bn <> suffix oom
+instance Pretty PitchSpec where
+  pretty (PitchSpec bn oa oom)         = prefix oa <> pretty bn <> suffix oom
     where prefix = maybe empty pretty
           suffix = maybe empty pretty
 
-instance Pretty AbcOctave where
-  pretty (AbcLowOctave i)             = text $ replicate i ','
-  pretty (AbcHighOctave i)            = text $ replicate i '\''
+instance Pretty Octave where
+  pretty (OctaveLow i)             = text $ replicate i ','
+  pretty (OctaveHigh i)            = text $ replicate i '\''
 
                       
-instance Pretty AbcAccidental where
-  pretty AbcSharp                     = char '^'
-  pretty AbcDoubleSharp               = text "^^"
-  pretty AbcFlat                      = char '_'
-  pretty AbcDoubleFlat                = text "__"
-  pretty AbcNatural                   = char '='
+instance Pretty Accidental where
+  pretty Sharp                     = char '^'
+  pretty DoubleSharp               = text "^^"
+  pretty Flat                      = char '_'
+  pretty DoubleFlat                = text "__"
+  pretty Natural                   = char '='
 
 
-instance Pretty AbcBrokenRhythm where
-  pretty (AbcDottedLeft i)            = text $ replicate i '>'
-  pretty (AbcDottedRight i)           = text $ replicate i '<'
+instance Pretty BrokenRhythm where
+  pretty (DottedLeft i)            = text $ replicate i '>'
+  pretty (DottedRight i)           = text $ replicate i '<'
 
 
-instance Pretty AbcTie where
-  pretty AbcTie                       = char '-'
+instance Pretty Tie where
+  pretty Tie                       = char '-'
 
 
-instance Pretty AbcGracing where
-  pretty AbcTilde                     = char '~' 
-  pretty AbcStacatto                  = char '.'
-  pretty AbcDownBow                   = char 'v'
-  pretty AbcUpDown                    = char 'u'
+instance Pretty Gracing where
+  pretty Tilde                     = char '~' 
+  pretty Stacatto                  = char '.'
+  pretty DownBow                   = char 'v'
+  pretty UpDown                    = char 'u'
 
 
-instance Pretty AbcGuitarChord where
-  pretty (AbcFormalChord bn oct obn) 
+instance Pretty GuitarChord where
+  pretty (FormalChord bn oct obn) 
       = pretty bn <> maybe empty text oct 
                   <> maybe empty (\a -> char '/' <> pretty a) obn
-  pretty (AbcUninterpretedChord str) = dquotes $ text str
+  pretty (UninterpretedChord str) = dquotes $ text str
     
-instance Pretty AbcBarline where
-  pretty AbcSingleBar                 = char '|'
-  pretty AbcDoubleBar                 = text "||"
-  pretty AbcThick_ThinBar             = text "[|"
-  pretty AbcThin_ThickBar             = text "|]"
-  pretty AbcLeftRepeat                = text ":|"
-  pretty AbcRightRepeat               = text "|:"
-  pretty AbcBothRepeat                = text "::"
+instance Pretty Barline where
+  pretty BarSingle                = char '|'
+  pretty BarDouble                = text "||"
+  pretty BarThickThin             = text "[|"
+  pretty BarThinThick             = text "|]"
+  pretty RepeatLeft               = text ":|"
+  pretty RepeatRight              = text "|:"
+  pretty RepeatBoth               = text "::"
   
-instance Pretty AbcRepeatMark where
-  pretty AbcFirstRepeat               = text "[1"
-  pretty AbcSecondRepeat              = text "[2"
-  pretty AbcFirstEnding               = text "|1"
-  pretty AbcSecondEnding              = text ":|2"
+instance Pretty RepeatMark where
+  pretty RepeatFirst               = text "[1"
+  pretty RepeatSecond              = text "[2"
+  pretty EndingFirst               = text "|1"
+  pretty EndingSecond              = text ":|2"
   
-instance Pretty AbcSlur where
-  pretty AbcBeginSlur                 = char '(' 
-  pretty AbcEndSlur                   = char ')'
+instance Pretty Slur where
+  pretty SlurBegin                 = char '(' 
+  pretty SlurEnd                   = char ')'
   
             
   
