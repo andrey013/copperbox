@@ -3,6 +3,9 @@
 -- ghci> :set -i..
 -- ghci> :set args ../Variant/bulgarian6ly.midi
 
+-- to get a parse failure
+-- ghci> :set args ../Variant/tintal.mid
+
 -- or shell> ghc --make MidiPrint.hs -i..
 
 module Main where

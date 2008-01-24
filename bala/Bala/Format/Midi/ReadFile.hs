@@ -29,168 +29,176 @@ import Bala.Format.Midi.Datatypes
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Error
 
 
-
--- import Data.Maybe
 import Data.Bits
-import Data.List (unfoldr)
 import Data.Word
 import Data.Int
-import Data.Binary.Get
+import qualified Data.Binary.Get as BG
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as L
 import Numeric
 
-
-instance Applicative Get where
+instance Applicative BG.Get where
   pure = return 
   (<*>) = ap
+    
+instance Applicative (ErrorT ErrorMsg BG.Get) where
+  pure = lift . pure
+  (<*>) = ap  
+
+  
+type ErrorMsg = String
+
+type Parse a = ErrorT ErrorMsg BG.Get a
 
 
 
-type Result a = Get (Either String a)
-success = return . Right
-failure = return . Left 
+runParse p bs = BG.runGet (runErrorT p) bs               
 
-readMidi :: FilePath -> IO (Either String MidiFile)
+readMidi :: FilePath -> IO (Either ErrorMsg MidiFile)
 readMidi path = do
   bs <- L.readFile path
-  let ans =  runGet getMidiFile bs
-  return ans                  
-                   
+  return $ runParse getMidiFile bs
+  
 
-                 
-getMidiFile :: Result MidiFile  
-getMidiFile = getHeader `nextWith` \hdr@(Header _ n _) ->
-              replicateM (fromIntegral n) getTrack >>= \ts ->
-              either fk (sk hdr) (catEithers ts)
-  where fk err = return $ Left err
-        sk hdr xs = return $ Right $ MidiFile hdr xs
+getMidiFile :: Parse MidiFile  
+getMidiFile = (uncurry MidiFile) <$> contents
+  where contents = do
+          hdr@(Header _ n _) <- getHeader 
+          ts <- replicateM (fromIntegral n) getTrack
+          return (hdr,ts)
+          
+          -- liftA2 ?
 
+     
 
-getHeader :: Result Header  
-getHeader = assertChars "MThd" `nextSkip` assertSix `nextSkip` header
-  where header = getFormat `nextWith` \fmt ->
-                 getWord16be >>= \nm ->
-                 getTimeDivision `nextWith` \td ->
-                 success $ Header fmt nm td
                                           
-                                          
-        assertSix = getWord32be >>= \i -> return $
-                    if (i==6) then (Right 6) 
-                              else (Left "header incorrect length value")
 
-getFormat :: Result HFormat
-getFormat = fmt <$> getWord16be
-  where fmt 0 = Right MF0
-        fmt 1 = Right MF1
-        fmt 2 = Right MF2
-        fmt z = Left $ "getFormat - unrecognized file format " ++ show z
+getHeader :: Parse Header  
+getHeader = Header <$> (assertString "MThd"  *> assertDigit6      *> getFormat)
+                   <*> getWord16be          <*> getTimeDivision 
 
 
 
-
-getTimeDivision :: Result TimeDivision
-getTimeDivision = division <$> getWord16be
-  where division i | i `testBit` 15 = Right $ FPS (i `clearBit` 15)
-                   | otherwise      = Right $ TPB i
+assertDigit6 = f =<< getWord32be
+  where 
+    f 6 = return 6
+    f _ = throwError $ "header incorrect length value"
     
-getTrack :: Result Track
-getTrack =  assertChars "MTrk" `nextSkip` track
-  where track = getWord32be >>= \i ->
-                remaining >>= \j ->
-                extractTrack (fromIntegral i) j
-        extractTrack i j | i <= j = do bs <- getLazyByteString (fromIntegral i)
-                                       let evts = runGet getMessages bs
-                                       either failure (success . Track) evts
-                         | otherwise = failure $ 
-                              "getTrack - not enough data remaining - expecting "
-                              ++ show i ++ " remaining " ++ show j
+    
+getFormat :: Parse HFormat
+getFormat = fmt =<< getWord16be
+  where fmt 0 = return MF0
+        fmt 1 = return MF1
+        fmt 2 = return MF2
+        fmt z = throwError $ "getFormat - unrecognized file format " ++ show z
 
 
-
-           
-getMessages :: Result [Message]
+getTimeDivision :: Parse TimeDivision
+getTimeDivision = division <$> getWord16be
+  where division i | i `testBit` 15 = FPS (i `clearBit` 15)
+                   | otherwise      = TPB i
+                   
+                       
+getTrack :: Parse Track
+getTrack = assertString "MTrk" >>
+           getWord32be         >>= \i ->
+           remaining           >>= \j ->
+           extractTrack (fromIntegral i) j
+  where           
+    extractTrack i j | i <= j = do bs <- getLazyByteString (fromIntegral i)
+                                   let ans = runParse getMessages bs
+                                   case ans of
+                                      Left err -> throwError err
+                                      Right ms -> return $ Track ms
+  
+                     | otherwise = throwError $ 
+                                "getTrack - not enough data remaining - expecting "
+                                ++ show i ++ " remaining " ++ show j
+       
+             
+getMessages :: Parse [Message]
 getMessages = recGetEvts []
   where
     recGetEvts acc = do
-      end <- isEmpty
-      if end then (return (catEithers (reverse acc)))
+      end <- lift BG.isEmpty
+      if end then (return (reverse acc))
              else (getMessage >>= \e -> recGetEvts (e:acc))
 
 
-                     
-getMessage :: Result Message
+
+getMessage :: Parse Message
 getMessage = getVarlen >>= \dt ->
-             getWord8 >>= \i ->
+             getWord8  >>= \i ->
              f dt i
   where  
-    f dt i  | i == 0xFF               = f2 <$> pure dt <*> getMetaEvent 
-            | i >= 0x80 && i < 0xF0   = f2 <$> pure dt <*> getVoiceEvent (split i)
-            | i >= 0xF0 && i <= 0xFF  = f2 <$> pure dt <*> getSystemEvent i
-            | otherwise               = pure (Left $ "unrecognized message " ++ show i)
-    f2 a = applyER ((,) a)
- 
-    split :: Word8 -> (Word8,Word8) 
-    split i = (i .&. 0xF0, i .&. 0x0F)
+    f dt i  | i == 0xFF               = (,) <$> pure dt <*> getMetaEvent 
+            | i >= 0x80 && i < 0xF0   = (,) <$> pure dt <*> getVoiceEvent (w8split i)
+            | i >= 0xF0 && i <= 0xFF  = (,) <$> pure dt <*> getSystemEvent i
+            | otherwise               = throwError $ "unrecognized message " ++ show i
 
-
-
-vEvt fn a = Right $ VoiceEvent $ fn a
-vEvt2 fn a b = Right $ VoiceEvent $ fn a b
-vEvt3 fn a b c = Right $ VoiceEvent $ fn a b c
-
-
-
-getVoiceEvent :: (Word8,Word8) -> Result Event
-getVoiceEvent (0x80,ch) = vEvt2 (NoteOff ch)        <$> getWord8 <*> getWord8
-getVoiceEvent (0x90,ch) = vEvt2 (NoteOn ch)         <$> getWord8 <*> getWord8
-getVoiceEvent (0xA0,ch) = vEvt2 (NoteAftertouch ch) <$> getWord8 <*> getWord8
-getVoiceEvent (0xB0,ch) = vEvt2 (Controller ch)     <$> getWord8 <*> getWord8
-getVoiceEvent (0xC0,ch) = vEvt  (ProgramChange ch)  <$> getWord8 
-getVoiceEvent (0xD0,ch) = vEvt  (ChanAftertouch ch) <$> getWord8 
-  
-
-
-
-getMetaEvent :: Result Event
-getMetaEvent = applyER <$> pure MetaEvent <*> (getWord8 >>= metaEvent)
-
-metaEvent :: Word8 -> Result MetaEvent
-metaEvent 0x01 = textEvent <$> pure GENERIC_TEXT      <*> getText
-metaEvent 0x02 = textEvent <$> pure COPYRIGHT_NOTICE <*> getText
-metaEvent 0x03 = textEvent <$> pure SEQUENCE_NAME     <*> getText
-metaEvent 0x04 = textEvent <$> pure INSTRUMENT_NAME   <*> getText
-metaEvent 0x05 = textEvent <$> pure LYRICS            <*> getText
-metaEvent 0x06 = textEvent <$> pure MARKER            <*> getText
-metaEvent 0x07 = textEvent <$> pure CUE_POINT         <*> getText
-
-metaEvent 0x2F = assertWord8 0 `nextSkip` success EndOfTrack
-
-metaEvent 0x51 = assertWord8 3 `nextSkip` setTempo
-  where setTempo = getWord24be >>= success . SetTempo
-
-metaEvent 0x54 = assertWord8 5 `nextSkip` smpteOffset
-  where smpteOffset = val >>= success 
-        val = SMPTEOffset <$> getWord8 <*> getWord8 <*> getWord8 
-                                       <*> getWord8 <*> getWord8
-                                  
-metaEvent 0x58 = assertWord8 4 `nextSkip` timeSig
-  where timeSig = val >>= success
-        val = TimeSignature <$> getWord8 <*> getWord8 <*> getWord8 <*> getWord8 
     
-metaEvent 0x59 = assertWord8 2 `nextSkip` keySig 
-  where keySig = val >>= success 
-        val = cnstr <$> getWord8 <*> getWord8
-        cnstr ky sc = KeySignature (unwrapint ky) (undscale sc)
+     
+w8split :: Word8 -> (Word8,Word8) 
+w8split i = (i .&. 0xF0, i .&. 0x0F)
 
-metaEvent 0x7F = getVarlen >>=  \i -> 
-                 guardedGetStrict (fromIntegral i) `nextWith` \body ->
-                 success (SSME i body)
 
-metaEvent er   = error $ "unreconized meta-event " ++ show er
-                 
+ve1 fn a = VoiceEvent $ fn a
+ve2 fn a b = VoiceEvent $ fn a b
+ve3 fn a b c = VoiceEvent $ fn a b c
+
+getVoiceEvent :: (Word8,Word8) -> Parse Event
+getVoiceEvent (0x80,ch) = (ve3 NoteOff ch)        <$> getWord8 <*> getWord8
+getVoiceEvent (0x90,ch) = (ve3 NoteOn ch)         <$> getWord8 <*> getWord8
+getVoiceEvent (0xA0,ch) = (ve3 NoteAftertouch ch) <$> getWord8 <*> getWord8
+getVoiceEvent (0xB0,ch) = (ve3 Controller ch)     <$> getWord8 <*> getWord8
+getVoiceEvent (0xC0,ch) = (ve2 ProgramChange ch)  <$> getWord8 
+getVoiceEvent (0xD0,ch) = (ve2 ChanAftertouch ch) <$> getWord8 
+ 
+  
+    
+getMetaEvent :: Parse Event
+getMetaEvent = MetaEvent <$> (getWord8 >>= metaEvent)
+
+metaEvent  :: Word8 -> Parse MetaEvent 
+metaEvent 0x01 = textEvent GENERIC_TEXT
+metaEvent 0x02 = textEvent COPYRIGHT_NOTICE
+metaEvent 0x03 = textEvent SEQUENCE_NAME
+metaEvent 0x04 = textEvent INSTRUMENT_NAME
+metaEvent 0x05 = textEvent LYRICS
+metaEvent 0x06 = textEvent MARKER
+metaEvent 0x07 = textEvent CUE_POINT
+
+metaEvent 0x2F = EndOfTrack <$ assertWord8 0
+
+metaEvent 0x51 = SetTempo <$> (assertWord8 3  *> getWord24be)
+    
+metaEvent 0x54 = SMPTEOffset <$> (assertWord8 5  *> getWord8) 
+                             <*> getWord8       <*> getWord8
+                             <*> getWord8       <*> getWord8
+                                  
+                                  
+                                  
+metaEvent 0x58 = TimeSignature <$> (assertWord8 4  *> getWord8)
+                               <*> getWord8       <*> getWord8 
+                               <*> getWord8
+    
+metaEvent 0x59 = cnstr <$> (assertWord8 2 *> getWord8) <*> getWord8
+  where
+    cnstr ky sc = KeySignature (unwrapint ky) (undscale sc)
+    
+    
+metaEvent 0x7F = 
+  (uncurry SSME) <$> getVarlen `carry` (guardedGetStrict . fromIntegral)
+
+metaEvent er   = throwError $ "unreconized meta-event " ++ show er
+
+
+-- helpful?                 
+pairA :: Applicative f => f a -> f b -> f (a,b) 
+pairA = liftA2 (,)                                  
                  
 {-  
 -- obsolete (FF 20 01 cc) 
@@ -200,130 +208,66 @@ getMetaEvent 0x20 = do
 -}
 
 
-getSystemEvent :: Word8 -> Result Event
-getSystemEvent 0xF0 = getVarlen >>=  \i -> 
-                 guardedGetStrict (fromIntegral i) `nextWith` \body ->
-                 success (SystemEvent (SysEx i body))
+getSystemEvent :: Word8 -> Parse Event
+getSystemEvent 0xF0 = 
+    fn <$> (getVarlen `carry` (guardedGetStrict . fromIntegral))
+  where fn (i,xs) = SystemEvent $ SysEx i xs   
 
+textEvent :: TextType -> Parse MetaEvent
+textEvent ty = (TextEvent ty) <$> getText
 
-  
-textEvent :: TextType -> Either String String -> Either String MetaEvent
-textEvent ty = applyER (TextEvent ty)
-
-             
-
-
-getText :: Result String  
-getText = getVarlen >>= \i ->  
-          guardedGetLazy (fromIntegral i) `nextWith` \bs ->
-          success (L.unpack bs)
-    
 
     
+getText :: Parse String  
+getText = L.unpack <$> (getVarlen >>= guardedGetLazy . fromIntegral)
+    
 
-
-
-  
 --------------------------------------------------------------------------------
 -- Helpers 
 --------------------------------------------------------------------------------
 
-nextSkip :: Monad m => m (Either a b) -> m (Either a c) -> m (Either a c)
-nextSkip a b = a >>= \ a' -> 
-               case a' of 
-                 Left l -> return (Left l)
-                 Right _ -> b
-
-nextWith :: Monad m => m (Either a b) ->  (b -> m (Either a c)) -> m (Either a c)
-nextWith a f = a >>= \ a' -> 
-               case a' of 
-                 Left l -> return (Left l)
-                 Right r -> f r
-
-applyER :: (r -> a) -> Either l r -> Either l a  
-applyER f (Left l)  = Left l
-applyER f (Right a) = Right (f a)
+carry :: Monad m => m a -> (a -> m b) -> m (a,b)
+carry f g = f >>= \a -> g a >>= \b -> return (a,b) 
 
 
-                 
-{-                 
-nextER :: Either l a -> Either l b -> Either l b
-nextER (Left l)  _   = Left l
-nextER (Right _) b   = b
-
-
-replaceER :: a -> Either l r -> Either l a
-replaceER a (Left l)  = Left l
-replaceER a (Right _) = Right a
-
-replaceERM :: Monad m => a -> m (Either l r) -> m (Either l a)
-replaceERM a b  = b >>= fn 
-  where fn (Left l)  = return $ Left l
-        fn (Right _) = return $ Right a
-
-applyERM :: Monad m => (r -> a) -> m (Either l r) -> m (Either l a)
-applyERM f a  = a >>= fn
-  where fn (Left l)  = return $ Left l
-        fn (Right a) = return $ Right (f a)
-
--}
-
-
-
-
-
-
-catEithers :: [Either a b] -> Either a [b]
-catEithers ls = next ls []
-  where next ((Left err):_) acc = Left err
-        next ((Right a):xs) acc = next xs (a:acc)
-        next [] acc             = Right (reverse acc)
-        
-guardedGetLazy :: Int64 -> Result L.ByteString
+guardedGetLazy :: Int64 -> Parse L.ByteString
 guardedGetLazy i = do
-  j <- remaining 
+  j <- lift BG.remaining 
   if (i <= j)
-    then (getLazyByteString i >>= success)
-    else (failure "guardedGetLazy - not enough data remaining")
+    then  lift $ BG.getLazyByteString i
+    else  throwError $ "guardedGetLazy - not enough data remaining"
 
-guardedGetStrict :: Int -> Result ByteString
+
+
+
+guardedGetStrict :: Int -> Parse ByteString
 guardedGetStrict i = do
-  j <- remaining 
+  j <- lift BG.remaining 
   if (fromIntegral i <= j)
-    then (getByteString i >>= success)
-    else (failure "guardedGetStrict - not enough data remaining")
+    then lift $ BG.getByteString i
+    else throwError $ "guardedGetStrict - not enough data remaining"
 
-getTwoParams :: Get (Word8,Word8)
-getTwoParams = do
-  a <- getWord8
-  b <- getWord8
-  return (a,b)
 
-getThreeParams :: Get (Word8,Word8,Word8)
-getThreeParams = do
-  a <- getWord8
-  b <- getWord8
-  c <- getWord8
-  return (a,b,c)
-  
-  
-getWord24be :: Get Word32
-getWord24be = do
-  hi8 <- getWord8
-  lo16 <- getWord16be
-  return $ ((fromIntegral hi8) `shiftL` 8) + (fromIntegral lo16)
 
+
+getWord24be :: Parse Word32
+getWord24be =  fn <$> getWord8 <*> getWord16be
+  where 
+    fn :: Word8 -> Word16 -> Word32
+    fn hi8 lo16 = ((fromIntegral hi8) `shiftL` 8) + (fromIntegral lo16)
 
   
-getVarlen :: Get Word32
+getVarlen :: Parse Word32
 getVarlen = recVarlen 0
   where
     recVarlen acc = do
       i <- getWord8
-      case (i `testBit` 7) of
-        True -> recVarlen ((acc `shiftL` 7) + ((fromIntegral i) .&. 0x7F))
+      case (bitHigh i) of
+        True  -> recVarlen ((acc `shiftL` 7) + ((fromIntegral i) .&. 0x7F))
         False -> return ((acc `shiftL` 7) + (fromIntegral i))
+    bitHigh i = i `testBit` 7        
         
+                
           
 unwrapint :: Word8 -> Int8
 unwrapint i 
@@ -336,18 +280,40 @@ undscale 1 = MINOR
 undscale i = error $ "undscale " ++ show i
 
 
--- this does nothing useful (yet), really we need position tracking
-assertWord8 :: Word8 -> Result Word8
-assertWord8 i = fn <$> getWord8
-  where fn j | j == i    = Right i
-             | otherwise = Left "assertWord8 failed"
+
+
+
+assertWord8 :: Word8 -> Parse Word8
+assertWord8 i = fn =<< getWord8
+  where fn j | j == i    = return i
+             | otherwise = throwError $  "assertWord8 failed"
+
+assertString :: String -> Parse String
+assertString s = fn =<< lift (BG.getLazyByteString $ lengthi64 s) 
+  where 
+    fn bs = if (s == L.unpack bs)
+              then return s
+              else throwError $ "assertChars failed"
+
+getWord8 :: Parse Word8
+getWord8 = lift BG.getWord8
+
+getWord16be :: Parse Word16
+getWord16be = lift BG.getWord16be
+
+getWord32be :: Parse Word32
+getWord32be = lift BG.getWord32be
+
+getLazyByteString :: Int64 -> Parse L.ByteString
+getLazyByteString = lift . BG.getLazyByteString
+
+
+remaining :: Parse Int64
+remaining = lift BG.remaining
              
+lengthi64 :: [a] -> Int64
+lengthi64 = fromIntegral . length
 
 
-assertChars :: String -> Result String
-assertChars s = let i = fromIntegral $ length s in fn <$> getLazyByteString i
-  where fn bs = case (s == L.unpack bs) of
-                  True -> Right s
-                  False -> Left "assertChars failed"
                   
     
