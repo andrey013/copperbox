@@ -41,9 +41,11 @@ module Bala.Format.Midi.Datatypes (
     TextType(..),
     
     -- * Scale type - used for setting key signature
-    Scale(..)
+    Scale(..),
+    varlenSplit
   ) where
 
+import Data.Bits
 import Data.Int
 import Data.Word
 import Data.ByteString (ByteString)
@@ -126,5 +128,17 @@ data MetaEvent
 data Scale = MAJOR | MINOR
   deriving (Eq,Enum,Show,Read)
 
+--------------------------------------------------------------------------------
+-- helper for varlen
+--------------------------------------------------------------------------------
 
+varlenSplit :: Word32 -> [Word8]
+varlenSplit i | i < 0x80        = [fromIntegral i]
+              | i < 0x4000      = [wise i 7, wise i 0]
+              | i < 0x200000    = [wise i 14, wise i 7, wise i 0] 
+              | otherwise       = [wise i 21, wise i 14, wise i 7, wise i 0] 
+  where         
+    wise i 0 = fromIntegral $ i .&. 0x7F
+    wise i n = fromIntegral $ i `shiftR` n   .&.  0x7F  .|.  0x80;
+    
 

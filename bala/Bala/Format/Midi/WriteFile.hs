@@ -230,15 +230,8 @@ putWord24be i = do
 
 
 varlen :: Integral a => a -> [Word8]
-varlen a = varlen' $ fromIntegral a
-  where varlen' :: Word32 -> [Word8]
-        varlen' i | i < 0x80        = [fromIntegral i]
-                  | i < 0x4000      = [wise i 7, wise i 0]
-                  | i < 0x200000    = [wise i 14, wise i 7, wise i 0] 
-                  | otherwise       = [wise i 21, wise i 14, wise i 7, wise i 0] 
-        wise i 0 = fromIntegral $ i .&. 0x7F
-        wise i n = fromIntegral $ i `shiftR` n   .&.  0x7F  .|.  0x80;
-     
+varlen a = varlenSplit $ fromIntegral a
+
       
 infixr 5 `chShift`
 

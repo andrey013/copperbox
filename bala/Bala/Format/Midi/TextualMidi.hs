@@ -18,7 +18,11 @@ module Bala.Format.Midi.TextualMidi where
 
 import Bala.Format.Midi.Datatypes
 
+
+import Data.Bits
+import Data.Char
 import Data.Tuple
+import Data.Word
 import Numeric
 import Text.PrettyPrint.Leijen
 
@@ -132,3 +136,93 @@ instance Pretty TextType where
   pretty MARKER               = text "marker"
   pretty CUE_POINT            = text "cue-point"
   
+--------------------------------------------------------------------------------
+-- `binary text`
+--------------------------------------------------------------------------------
+showSpace :: ShowS
+showSpace = showChar ' '
+
+showDot :: ShowS
+showDot = showChar '.'
+
+showNl = showChar '\n'
+
+withParens :: ShowS -> ShowS
+withParens f = showChar '(' . f . showChar ')'
+
+bchar :: Char -> ShowS
+bchar c | isPrint c == True = showChar c
+        | otherwise         = showDot
+
+bword :: Word8 -> ShowS
+bword i | i < 16    = showChar '0' . showHex i
+        | otherwise = showHex i
+
+
+word16be :: Word16 -> (Word8,Word8)
+word16be i = (a,b)
+  where a = fromIntegral $ 0xff .&. i `shiftR` 8
+        b = fromIntegral $ 0xff .&. i 
+         
+word32be :: Word32 -> (Word8,Word8,Word8,Word8)
+word32be i = (a,b,c,d)
+  where a = fromIntegral $ 0xff .&. i `shiftR` 24
+        b = fromIntegral $ 0xff .&. i `shiftR` 16
+        c = fromIntegral $ 0xff .&. i `shiftR` 8
+        d = fromIntegral $ 0xff .&. i      
+        
+class ByteShow a where 
+  byteChar :: a -> ShowS
+  byteHex  :: a -> ShowS
+
+instance ByteShow Char where
+  byteChar = bchar
+  byteHex  = bword . fromIntegral . ord
+
+ 
+instance ByteShow Word8 where
+  byteChar = byteChar . chr . fromIntegral
+  byteHex  = bword 
+
+instance ByteShow Word16 where
+  byteChar i = let (a,b) = word16be i in byteChar a . byteChar b
+  byteHex  i = let (a,b) = word16be i in byteHex a . showSpace . byteHex b
+  
+instance ByteShow Word32 where
+  byteChar i = let (a,b,c,d) = word32be i in 
+               byteChar a . byteChar b . byteChar c . byteChar d
+  byteHex  i = let (a,b,c,d) = word32be i in 
+               byteHex a . showSpace . byteHex b . showSpace . 
+               byteHex c . showSpace . byteHex d
+
+instance ByteShow a => ByteShow [a] where
+  byteChar []     = id
+  byteChar (c:cs) = foldl (\acc a -> acc . byteChar a) (byteChar c) cs
+  
+  byteHex []      = id
+  byteHex (c:cs)  = foldl (\acc a -> acc . showSpace . byteHex a) (byteHex c) cs
+  
+
+bytestr :: String -> ShowS
+bytestr (c:cs) = bchar c . bytestr cs
+bytestr []     = id
+
+strhex []     = id
+strhex (c:cs) = foldl (\acc a -> acc . showSpace . byteHex a) (byteHex c) cs
+
+
+brep1 :: (ByteShow a, Show a) => (a -> ShowS) -> a -> ShowS
+brep1 f a = byteHex a . showSpace . withParens (f a)
+
+brepStr = brep1 showString
+brepChr = brep1 showChar
+
+
+-- incorrect
+brepVarlen :: Word32 -> ShowS
+brepVarlen 0 = bword 0 . showSpace . withParens (shows 0)
+brepVarlen a = (byteHex $ varlenSplit a) . showSpace . withParens (shows a) . showString " -- check"
+
+
+demo = brep1 shows (1000::Word32) []
+

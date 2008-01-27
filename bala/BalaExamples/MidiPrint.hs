@@ -6,6 +6,7 @@
 -- to get a parse failure
 -- ghci> :set args ../Variant/tintal.mid
 
+
 -- or shell> ghc --make MidiPrint.hs -i..
 
 module Main where
@@ -25,10 +26,18 @@ main = do
 
 process :: FilePath -> IO ()
 process filename = do
-  ans <- readMidi filename
+  (ans,w) <- readMidi filename
+  putStr w
   case ans of
     Left err -> putStrLn $ "Parse error " ++ err
     Right mf@(MidiFile _ ts) -> do 
       putDoc (pretty mf)
 
+process' :: FilePath -> IO ()
+process' filename = do
+  (ans,w) <- readWords filename
+  putStr w
+  case ans of
+    Left err -> putStrLn $ "Parse error " ++ err
+    Right a -> putStrLn $ "Parse end, " ++ show (length a) ++ " words read"
  
