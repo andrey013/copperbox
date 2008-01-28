@@ -1,7 +1,7 @@
 
-module Sound.Bala.Test.TestInterval where
+module TestInterval where
 
-import Sound.Bala.Base.Base
+import Bala
 
 b4 = unMidi (fromPitch b4')
   where b4' :: Pitch
@@ -23,19 +23,19 @@ a5 = unMidi (fromPitch a5')
   where a5' :: Pitch
         a5' = read "A5"
 
-uni1 = ad (read "F4") (read "F4")
+uni1 = mspan (read "F4") (read "F4")
 
-sec1 = ad (read "F4") (read "G4")
+sec1 = mspan (read "F4") (read "G4")
 
-thi1 = ad (read "F4") (read "A4")
+thi1 = mspan (read "F4") (read "A4")
 
-fou1 = ad (read "F4") (read "B4")
+fou1 = mspan (read "F4") (read "B4")
 
-fif1 = ad (read "F4") (read "C5")
+fif1 = mspan (read "F4") (read "C5")
 
-six1 = ad (read "F4") (read "D5")
+six1 = mspan (read "F4") (read "D5")
 
-sev1 = ad (read "F4") (read "E5")
+sev1 = mspan (read "F4") (read "E5")
 
-oct1 = ad (read "F4") (read "F5") 
+oct1 = mspan (read "F4") (read "F5") 
 

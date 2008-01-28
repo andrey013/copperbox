@@ -39,6 +39,10 @@ zam f (x:y:ys) = f x y : zam f (y:ys)
 zam f _        = []
 
 
+mod12 i = i `mod` 12
+mod7  i = i `mod` 7  
+
+
 {-
 
 elt :: Show a => [(a,String)] -> a

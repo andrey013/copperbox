@@ -39,23 +39,8 @@ instance Show PC where
 class PitchClass a where pc :: a -> PC
 
 instance PitchClass Pitch where
-  pc (Pitch n a _ _) = pitchClass $ base n + step a
-    where
-      base C = 0
-      base D = 2
-      base E = 4
-      base F = 5
-      base G = 7
-      base A = 9
-      base B = 11
-      
-      step Nat        = 0
-      step Sharp      = 1
-      step SharpSharp = 2
-      step Flat       = -1
-      step FlatFlat   = -2
-      step (Sharpi i) = i
-      step (Flati i)  = (0-i)
+  pc (Pitch n a _ _) = pitchClass $ semis n + semis a
+
   
 class Transpose a where transpose :: Int -> a -> a
 

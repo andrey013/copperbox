@@ -22,11 +22,11 @@ import Control.Monad (ap)
 import Data.Char
 import Text.ParserCombinators.ReadP
 
-data Pitch = Pitch
-  { pitch       :: PitchLetter
-  , accidental  :: Accidental
-  , octave      :: Int 
-  , cents       :: Int 
+data Pitch = Pitch { 
+    pitch       :: PitchLetter,
+    accidental  :: Accidental,
+    octave      :: Int,
+    cents       :: Int 
   }
   deriving Eq
     
@@ -44,33 +44,44 @@ newtype Cents = Cents {unCents :: Int}
   deriving (Eq,Ord,Show)
 
 toCents (Pitch l a o c) = Cents $ 
-  (octaveDisplacement o * 100) + ((root l + alteration a) * 100) + c
+  (octaveDisplacement o * 100) + ((semis l + semis a) * 100) + c
 
-root C = 0
-root D = 2
-root E = 4
-root F = 5
-root G = 7
-root A = 9
-root B = 11
- 
-alteration Nat        = 0
-alteration Sharp      = 1
-alteration SharpSharp = 2
-alteration Flat       = (-1)
-alteration FlatFlat   = (-2)
-alteration (Sharpi i) = i
-alteration (Flati i)  = 0 - i
+
+class SemiToneCount a where semis :: a -> Int
+
+-- The semitone displacement upwards from C
+instance SemiToneCount PitchLetter where
+  semis C = 0
+  semis D = 2
+  semis E = 4
+  semis F = 5
+  semis G = 7
+  semis A = 9
+  semis B = 11
+
+-- How many semitones is the pitch changed by its accidental? 
+instance SemiToneCount Accidental where
+  semis Nat        = 0
+  semis Sharp      = 1
+  semis SharpSharp = 2
+  semis Flat       = (-1)
+  semis FlatFlat   = (-2)
+  semis (Sharpi i) = i
+  semis (Flati i)  = 0 - i
 
 octaveDisplacement oct            = (oct - 4) * 12  
   
-mod12 i = i `mod` 12
-mod7  i = i `mod` 7  
+
 
   
 class EncodePitch a where 
   toPitch :: a -> Pitch  
   fromPitch :: Pitch -> a
+
+
+--------------------------------------------------------------------------------
+-- Read instances
+--------------------------------------------------------------------------------
 
 instance Read Pitch where 
   readsPrec i s = readP_to_S readPitch s
@@ -109,7 +120,16 @@ readAccidental = accident <$> munch1 ((==) '#') +++ munch ((==) 'b')
         accident "bb"     = FlatFlat
         accident ('#':xs) = Sharpi (1+ length xs)
         accident ('b':xs) = Flati (1+ length xs)
+--------------------------------------------------------------------------------
+-- Show instances
+--------------------------------------------------------------------------------
 
+instance Show Pitch where
+  showsPrec _ (Pitch p a o i) | i == 0    = root
+                              | i < 0     = root . shows i
+                              | otherwise = root . showChar '+' . shows i
+    where root = shows p . shows a . shows o
+    
 instance Show Accidental where
   showsPrec _ Nat         = showString ""
   showsPrec _ Sharp       = showChar '#'
@@ -122,12 +142,11 @@ instance Show Accidental where
   showsPrec _ (Flati i)   = showString (replicate i 'b')
 
 
-instance Show Pitch where
-  showsPrec _ (Pitch p a o i) | i == 0    = root
-                              | i < 0     = root . shows i
-                              | otherwise = root . showChar '+' . shows i
-    where root = shows p . shows a . shows o
+
   
+--------------------------------------------------------------------------------
+-- operations... (new file?)
+--------------------------------------------------------------------------------
 
 
 data ParsonsCode = PaR | PaU | PaD    

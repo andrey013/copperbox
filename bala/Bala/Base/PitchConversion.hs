@@ -19,11 +19,33 @@ import Bala.Base.PitchRep
 
 
 
+
   
 newtype MidiPitch = M {unMidi :: Int}
 
+newtype Hertz = Hz {unHertz :: Float}
+
+-- pitch class with an octave designation
+newtype OctavePC = OPC {unOPC :: Float}
+
+newtype OctaveRep = OR {unOR :: Float}
+
+
+hertzFrom :: Float -> Hertz
+hertzFrom = Hz
+
+midiForm :: Int -> MidiPitch
+midiForm = M 
+
+picthClassForm :: Float -> OctavePC
+picthClassForm = OPC
+
+octaveForm :: Float -> OctaveRep
+octaveForm = OR
+
+
 instance EncodePitch MidiPitch where
-  fromPitch (Pitch l a o _) = mkMidi (root l) a o
+  fromPitch (Pitch l a o _) = mkMidi (semis l) a o
 
   toPitch (M a) = Pitch pch shp oct 0
     where 
@@ -48,19 +70,13 @@ instance EncodePitch MidiPitch where
     
 
 
-mkMidi offst accdt octv = M $ offst + alteration accdt + octaveMidi octv
+mkMidi offst accdt octv = M $ offst + semis accdt + octaveMidi octv
   where octaveMidi oct            = (1 + oct) * 12
 
 
 
-
-
-
-
-
-
-hzPC :: Float -> Float
-hzPC hz = y + (12.0*z) / 100.0
+hzPC :: Hertz -> OctavePC
+hzPC (Hz hz) = OPC $ y + (12.0*z) / 100.0
   where
     k :: Float
     k = 8.75 + logBase 2.0 (hz / 440.0)
@@ -69,64 +85,64 @@ hzPC hz = y + (12.0*z) / 100.0
     
     z = k - y
 
-hzMidi :: Float -> Int
-hzMidi hz = round $ (12*((log hz / log 2.0)-a)) - 3
+hzMidi :: Hertz -> MidiPitch
+hzMidi (Hz hz) = M $ round $ (12*((log hz / log 2.0)-a)) - 3
   where
     a = log 6.875 / log 2.0
       
 
-hzOct :: Float -> Float
-hzOct hz = log (hz / 1.021975) / 0.69314718
+hzOct :: Hertz -> OctaveRep
+hzOct (Hz hz) = OR $ log (hz / 1.021975) / 0.69314718
 
-midiHz :: Int -> Float 
-midiHz m = 6.875 * (2.0 ** ((fromIntegral $ m+3) / 12)) 
+midiHz :: MidiPitch -> Hertz 
+midiHz (M m) = Hz $ 6.875 * (2.0 ** ((fromIntegral $ m+3) / 12)) 
 
-midiOct :: Int -> Float 
-midiOct m = 8.0 + (fromIntegral m -60)/12.0
+midiOct :: MidiPitch -> OctaveRep 
+midiOct (M m) = OR $ 8.0 + (fromIntegral m -60)/12.0
   
 
-midiPC :: Int -> Float
-midiPC m = ((frac*12.0) / 100.0) + fromIntegral i
+midiPC :: MidiPitch -> OctavePC
+midiPC (M m) = OPC $ ((frac*12.0) / 100.0) + fromIntegral i
   where
     i :: Int
     i = 8 +  floor ((fromIntegral m - 60.0) / 12.0)
     frac :: Float
     frac = (fromIntegral $ m - (60 +(12*(i-8)))) / 12.0
     
-octHz :: Float -> Float
-octHz oct = 1.021975 * (2.0 ** x)
+octHz :: OctaveRep -> Hertz
+octHz (OR oct) = Hz $ 1.021975 * (2.0 ** x)
   where
     x = fromIntegral $ floor oct
 
-octMidi :: Float -> Int
-octMidi oct = floor $ k + 0.5
+octMidi :: OctaveRep -> MidiPitch
+octMidi (OR oct) = M $ floor $ k + 0.5
   where
     k = (12.0*(oct-8.0)) + 60.0
   
 
-octPC :: Float -> Float
-octPC oct = (0.12*(oct-x)) + x
+octPC :: OctaveRep -> OctavePC
+octPC (OR oct) = OPC $ (0.12*(oct-x)) + x
   where
     x = fromIntegral $ floor oct 
 
 
         
-pcMidi :: Float -> Int
-pcMidi pc = 60 + (12*(i-8)) + fromEnum ((100.0*(pc - (fromIntegral i)))+0.5)
+pcMidi :: OctavePC -> MidiPitch
+pcMidi (OPC pc) = M $ 60 + (12*(i-8)) + fromEnum ((100.0*(pc - (fromIntegral i)))+0.5)
   where i ::Int
         i = floor pc
     
 
 
-pcHz :: Float -> Float
-pcHz pc = (2.0 ** (oct + (8.333333 * (pc - oct)))) * 1.021975
+pcHz :: OctavePC -> Hertz
+pcHz (OPC pc)  = Hz $ (2.0 ** (oct + (8.333333 * (pc - oct)))) * 1.021975
   where
     oct :: Float
     oct = fromIntegral $ floor pc
   
         
-pcOct :: Float -> Float        
-pcOct pc = x + (8.33333 * (pc - x))
+pcOct :: OctavePC -> OctaveRep        
+pcOct (OPC pc) = OR $ x + (8.33333 * (pc - x))
   where
     x = fromIntegral $ floor pc
     
