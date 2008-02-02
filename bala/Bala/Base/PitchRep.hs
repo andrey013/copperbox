@@ -69,6 +69,9 @@ instance SemiToneCount Accidental where
   semis (Sharpi i) = i
   semis (Flati i)  = 0 - i
 
+instance SemiToneCount Pitch where
+  semis (Pitch p a o _) = semis p + semis a + (12 * o)
+   
 octaveDisplacement oct            = (oct - 4) * 12  
   
 
