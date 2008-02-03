@@ -18,7 +18,6 @@ module Bala.Base.PitchRep where
 import Bala.Base.BaseExtra
 
 import Control.Applicative hiding (many, optional)
-import Control.Monad (ap)
 import Data.Char
 import Text.ParserCombinators.ReadP
 
@@ -87,7 +86,7 @@ class EncodePitch a where
 --------------------------------------------------------------------------------
 
 instance Read Pitch where 
-  readsPrec i s = readP_to_S readPitch s
+  readsPrec _ s = readP_to_S readPitch s
 
 readPitch :: ReadP Pitch
 readPitch = Pitch <$> readPitchLetter 
@@ -99,7 +98,7 @@ readPitch = Pitch <$> readPitchLetter
         sign        = (char '+') +++ (char '-')                
                 
 instance Read PitchLetter where 
-  readsPrec i s = readP_to_S readPitchLetter s
+  readsPrec _ s = readP_to_S readPitchLetter s
   
 readPitchLetter = letter <$> satisfy (\c -> c >= 'A' && c <= 'G') 
   where 
@@ -113,7 +112,7 @@ readPitchLetter = letter <$> satisfy (\c -> c >= 'A' && c <= 'G')
 
 
 instance Read Accidental where 
-  readsPrec i s = readP_to_S readAccidental s
+  readsPrec _ s = readP_to_S readAccidental s
   
 readAccidental = accident <$> munch1 ((==) '#') +++ munch ((==) 'b')
   where accident ""       = Nat

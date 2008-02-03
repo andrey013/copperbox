@@ -22,19 +22,23 @@ module Bala.Base.Interval where
 import Bala.Base.PitchRep
 import Bala.Base.BaseExtra 
 
+import Control.Applicative hiding (many, optional)
+import Data.Char
+import Text.ParserCombinators.ReadP
+
 
 data Interval = Interval {
     arithmetic_distance :: Int,
     semitone_count      :: Int
   }
-  deriving (Eq,Show)
+  deriving (Eq)
   
 data IntervalSize = Unison | Second | Third | Fourth | Fifth | Sixth
                   | Seventh | Octave
-  deriving (Eq,Enum,Ord,Show)
+  deriving (Eq,Enum,Ord)
 
 data IntervalQuality = Perfect | Major | Minor | Augmented | Diminished
-  deriving (Eq,Enum,Ord,Show)
+  deriving (Eq,Enum,Ord)
 
 data IntervalDistance = Simple | Compound
   deriving (Eq,Enum,Ord,Show)
@@ -42,6 +46,74 @@ data IntervalDistance = Simple | Compound
 
 type NamedInterval = (IntervalQuality, IntervalSize)
 
+--------------------------------------------------------------------------------
+-- Read instances
+--------------------------------------------------------------------------------
+
+instance Read Interval where 
+  readsPrec _ s = readP_to_S readInterval s
+
+instance Read IntervalQuality where 
+  readsPrec _ s = readP_to_S readIntervalQuality s
+
+
+instance Read IntervalSize where 
+  readsPrec _ s = readP_to_S readIntervalSize s
+   
+readInterval :: ReadP Interval
+readInterval = namedInterval <$> readIntervalQuality <*> readIntervalSize
+
+readIntervalQuality :: ReadP IntervalQuality
+readIntervalQuality = letter <$> satisfy (\c -> c `elem` "PMmAd")
+  where 
+    letter 'P' = Perfect
+    letter 'M' = Major
+    letter 'm' = Minor
+    letter 'A' = Augmented
+    letter 'd' = Diminished
+
+readIntervalSize :: ReadP IntervalSize
+readIntervalSize = number <$> satisfy isDigit
+  where
+    number '1' = Unison
+    number '2' = Second
+    number '3' = Third
+    number '4' = Fourth
+    number '5' = Fifth
+    number '6' = Sixth
+    number '7' = Seventh
+    number '8' = Octave
+
+--------------------------------------------------------------------------------
+-- Show instances
+--------------------------------------------------------------------------------
+
+-- TODO - handle intervals without names
+instance Show Interval where
+  showsPrec _ a = let (qy,sz) = intervalName a
+                  in shows qy . shows sz
+
+instance Show IntervalQuality where
+  showsPrec _ Perfect     = showChar 'P'
+  showsPrec _ Major       = showChar 'M'
+  showsPrec _ Minor       = showChar 'm'
+  showsPrec _ Augmented   = showChar 'A'
+  showsPrec _ Diminished  = showChar 'd'
+  
+instance Show IntervalSize where
+  showsPrec _ Unison  = showChar '1'
+  showsPrec _ Second  = showChar '2'
+  showsPrec _ Third   = showChar '3'
+  showsPrec _ Fourth  = showChar '4'
+  showsPrec _ Fifth   = showChar '5'
+  showsPrec _ Sixth   = showChar '6'
+  showsPrec _ Seventh = showChar '7'
+  showsPrec _ Octave  = showChar '8'
+        
+
+
+    
+--------------------------------------------------------------------------------
 
 arithmeticDistance :: Pitch -> Pitch -> Int
 arithmeticDistance (Pitch p1 a1 o1 _) (Pitch p2 a2 o2 _) =
@@ -82,4 +154,22 @@ intervalName (Interval 6 9)   = (Major, Sixth)
 intervalName (Interval 7 10)  = (Minor, Seventh)
 intervalName (Interval 7 11)  = (Major, Seventh)
 intervalName (Interval 8 12)  = (Perfect, Octave)
+intervalName _                = undefined
+
+namedInterval :: IntervalQuality -> IntervalSize -> Interval
+namedInterval Perfect   Unison  = Interval 1 0
+namedInterval Minor     Second  = Interval 2 1
+namedInterval Major     Second  = Interval 2 2
+namedInterval Minor     Third   = Interval 3 3
+namedInterval Major     Third   = Interval 3 4
+namedInterval Perfect   Fourth  = Interval 4 5  
+namedInterval Augmented Fourth  = Interval 4 6
+namedInterval Perfect   Fifth   = Interval 5 6
+namedInterval Augmented Fifth   = Interval 5 8
+namedInterval Minor     Sixth   = Interval 6 8
+namedInterval Major     Sixth   = Interval 6 9
+namedInterval Minor     Seventh = Interval 7 10
+namedInterval Major     Seventh = Interval 7 11
+namedInterval Perfect   Octave  = Interval 8 12
+namedInterval _         _       = undefined
 
