@@ -19,7 +19,7 @@ module Bala.Base.Base
   , module Bala.Base.PitchClass
   , module Bala.Base.PitchConversion
   , module Bala.Base.Interval
-  , module Bala.Base.Triad
+  , module Bala.Base.Chord
   -- do we want none 'music' libraries in Base?
   , module Bala.Base.BaseExtra
   )
@@ -29,7 +29,7 @@ import Bala.Base.PitchRep
 import Bala.Base.PitchClass
 import Bala.Base.PitchConversion
 import Bala.Base.Interval
-import Bala.Base.Triad
+import Bala.Base.Chord
 
 import Bala.Base.BaseExtra
 

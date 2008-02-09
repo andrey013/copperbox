@@ -22,9 +22,8 @@ module Bala.Base.Interval where
 import Bala.Base.PitchRep
 import Bala.Base.BaseExtra 
 
-import Control.Applicative hiding (many, optional)
-import Data.Char
-import Text.ParserCombinators.ReadP
+import Control.Applicative hiding (many, optional, (<|>) )
+import Text.ParserCombinators.Parsec 
 
 
 data Interval = Interval {
@@ -51,20 +50,20 @@ type NamedInterval = (IntervalQuality, IntervalSize)
 --------------------------------------------------------------------------------
 
 instance Read Interval where 
-  readsPrec _ s = readP_to_S readInterval s
+  readsPrec _ s = readsParsec readInterval s
 
 instance Read IntervalQuality where 
-  readsPrec _ s = readP_to_S readIntervalQuality s
+  readsPrec _ s = readsParsec readIntervalQuality s
 
 
 instance Read IntervalSize where 
-  readsPrec _ s = readP_to_S readIntervalSize s
+  readsPrec _ s = readsParsec readIntervalSize s
    
-readInterval :: ReadP Interval
+readInterval :: Parser Interval
 readInterval = namedInterval <$> readIntervalQuality <*> readIntervalSize
 
-readIntervalQuality :: ReadP IntervalQuality
-readIntervalQuality = letter <$> satisfy (\c -> c `elem` "PMmAd")
+readIntervalQuality :: Parser IntervalQuality
+readIntervalQuality = letter <$> oneOf "PMmAd"
   where 
     letter 'P' = Perfect
     letter 'M' = Major
@@ -72,8 +71,8 @@ readIntervalQuality = letter <$> satisfy (\c -> c `elem` "PMmAd")
     letter 'A' = Augmented
     letter 'd' = Diminished
 
-readIntervalSize :: ReadP IntervalSize
-readIntervalSize = number <$> satisfy isDigit
+readIntervalSize :: Parser IntervalSize
+readIntervalSize = number <$> digit
   where
     number '1' = Unison
     number '2' = Second

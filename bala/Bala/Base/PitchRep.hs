@@ -17,9 +17,8 @@ module Bala.Base.PitchRep where
 
 import Bala.Base.BaseExtra
 
-import Control.Applicative hiding (many, optional)
-import Data.Char
-import Text.ParserCombinators.ReadP
+import Control.Applicative hiding (many, optional, (<|>) )
+import Text.ParserCombinators.Parsec 
 
 data Pitch = Pitch { 
     pitch       :: PitchLetter,
@@ -86,21 +85,21 @@ class EncodePitch a where
 --------------------------------------------------------------------------------
 
 instance Read Pitch where 
-  readsPrec _ s = readP_to_S readPitch s
+  readsPrec _ s = readsParsec readPitch s
 
-readPitch :: ReadP Pitch
+readPitch :: Parser Pitch
 readPitch = Pitch <$> readPitchLetter 
                   <*> readAccidental
                   <*> option 4 positiveInt 
                   <*> option 0 signedInt
-  where positiveInt = read <$> many1 (satisfy isDigit) 
-        signedInt   = (\ a b -> read (a:b)) <$> sign <*> many1 (satisfy isDigit)
-        sign        = (char '+') +++ (char '-')                
+  where positiveInt = read <$> many1 digit
+        signedInt   = (\ a b -> read (a:b)) <$> sign <*> many1 digit
+        sign        = oneOf "+-"
                 
 instance Read PitchLetter where 
-  readsPrec _ s = readP_to_S readPitchLetter s
+  readsPrec _ s = readsParsec readPitchLetter s
   
-readPitchLetter = letter <$> satisfy (\c -> c >= 'A' && c <= 'G') 
+readPitchLetter = letter <$> oneOf "ABCDEFG" 
   where 
     letter 'A' = A
     letter 'B' = B
@@ -112,16 +111,18 @@ readPitchLetter = letter <$> satisfy (\c -> c >= 'A' && c <= 'G')
 
 
 instance Read Accidental where 
-  readsPrec _ s = readP_to_S readAccidental s
+  readsPrec _ s = readsParsec readAccidental s
   
-readAccidental = accident <$> munch1 ((==) '#') +++ munch ((==) 'b')
-  where accident ""       = Nat
-        accident "#"      = Sharp
-        accident "##"     = SharpSharp
-        accident "b"      = Flat
-        accident "bb"     = FlatFlat
-        accident ('#':xs) = Sharpi (1+ length xs)
-        accident ('b':xs) = Flati (1+ length xs)
+readAccidental = accident <$> option "" sf
+  where 
+    sf = many1 (char '#') <|> many1 (char 'b')
+    accident ""       = Nat
+    accident "#"      = Sharp
+    accident "##"     = SharpSharp
+    accident "b"      = Flat
+    accident "bb"     = FlatFlat
+    accident ('#':xs) = Sharpi (1+ length xs)
+    accident ('b':xs) = Flati (1+ length xs)
 --------------------------------------------------------------------------------
 -- Show instances
 --------------------------------------------------------------------------------

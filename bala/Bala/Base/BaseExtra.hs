@@ -19,20 +19,17 @@ module Bala.Base.BaseExtra where
 
 import Control.Applicative hiding (many, optional)
 import Control.Monad (ap)
-import Data.Char
-import Data.List (find)
-import Text.ParserCombinators.ReadP
+import Text.ParserCombinators.Parsec
 
-instance Applicative ReadP where
-  pure = return
-  (<*>) = ap
-  
+
+
+
+    
 elements :: Read a => String -> [a]
 elements = map read . words
 
   
-token :: ReadP a -> ReadP a
-token p = p <* skipSpaces
+
 
 zam :: (a -> a -> b) -> [a] -> [b]
 zam f (x:y:ys) = f x y : zam f (y:ys)
@@ -42,24 +39,25 @@ zam f _        = []
 mod12 i = i `mod` 12
 mod7  i = i `mod` 7  
 
-
-{-
-
-elt :: Show a => [(a,String)] -> a
-elt xs = case find (\(_,s) -> s=="") xs of
-          Just (a,_) -> a
-          Nothing -> error $ show xs
+--------------------------------------------------------------------------------
+-- Parsec helpers
+--------------------------------------------------------------------------------
 
 
-
-parse1 :: (Show a, ElementParse a) => String -> a
-parse1 s = elt $ readP_to_S parseElt s
-
-parseMany1WhiteSep :: ElementParse a => ReadS [a]
-parseMany1WhiteSep s = readP_to_S (many1 $ token parseElt) s
-
-class ElementParse a where 
-  parseElt :: ReadP a 
+instance Applicative (GenParser tok st) where
+  pure = return
+  (<*>) = ap
   
--}
+  
+readsParsec :: (Parser a) -> String -> [(a,String)]
+readsParsec p s = case parse pfn "" s of
+                    Left _ -> []
+                    Right a -> [a] 
+  where pfn = (,) <$> p <*> getInput
+
+token :: Parser a -> Parser a
+token p = p <* many1 (oneOf " \t\n")
+
+optOneOf :: [Char] -> Parser (Maybe Char)    
+optOneOf cs = option Nothing (Just <$> oneOf cs)
   

@@ -5,10 +5,7 @@
 
 module TestPitch where
 
-
-import Sound.Bala.Base.PitchRep
-import Sound.Bala.Base.PitchClass
-import Sound.Bala.Base.Triad
+import Bala
 
 phasing_trope :: [Pitch]
 phasing_trope = map read (words phase)
