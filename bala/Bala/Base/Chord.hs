@@ -34,25 +34,25 @@ data RomanChord = RomanChord {
     chord_variation   :: Maybe Variation,    
     inversion_label   :: InversionLabel
   }
-  deriving (Eq,Show)
+  deriving (Eq)
 
 data RootAlteration = RSharp | RFlat
-  deriving (Eq,Show) 
+  deriving (Eq) 
   
 data ChordQuality = RMinor | RMajor 
-  deriving (Eq,Show)
+  deriving (Eq)
 
 data Variation = Dim | Aug
-  deriving (Eq,Show)
+  deriving (Eq)
   
 data InversionLabel = IRoot | IFirst | ISecond | IThird
-  deriving (Eq,Show)
+  deriving (Eq)
 
 
     
   
 --------------------------------------------------------------------------------
--- Read instances
+-- Read instance
 --------------------------------------------------------------------------------
 
 instance Read RomanChord where 
@@ -106,7 +106,8 @@ romanNumeral a (i',v',x') = tryDigit >>= kont 0 >>= valid
     kont i od | oI od   = kontI i 
     
     
-    kontI i | i >= 5  && i < 8    = tryDigit >>= kont (i+1)
+    kontI i | i >= 1  && i < 4    = tryDigit >>= kont (i+1)
+            | i >= 5  && i < 8    = tryDigit >>= kont (i+1)
             | i >= 10 && i < 14   = tryDigit >>= kont (i+1)
             | otherwise           = return i
             
@@ -124,8 +125,56 @@ inversionLabel = choice [root,first,second,third]
     second  = ISecond <$ char 'c'
     third   = IThird  <$ char 'd'
     
+--------------------------------------------------------------------------------
+-- Show instance
+--------------------------------------------------------------------------------
 
     
+instance Show RomanChord where
+  showsPrec _ (RomanChord oa i q v inv) = 
+    showOpt oa . showNumeral i q . showOpt v . shows inv
+
+showNumeral i RMinor = showLowerNumeral i
+showNumeral i RMajor = showUpperNumeral i
+
+showLowerNumeral 1  = showChar   'i'
+showLowerNumeral 2  = showString "ii"
+showLowerNumeral 3  = showString "iii"
+showLowerNumeral 4  = showString "iv"
+showLowerNumeral 5  = showChar   'v'
+showLowerNumeral 6  = showString "vi"
+showLowerNumeral 7  = showString "vii"
+showLowerNumeral 8  = showString "viii"
+showLowerNumeral 9  = showString "ix"
+showLowerNumeral _  = showString "_"
+
+showUpperNumeral 1  = showChar   'I'
+showUpperNumeral 2  = showString "II"
+showUpperNumeral 3  = showString "III"
+showUpperNumeral 4  = showString "IV"
+showUpperNumeral 5  = showChar   'V'
+showUpperNumeral 6  = showString "VI"
+showUpperNumeral 7  = showString "VII"
+showUpperNumeral 8  = showString "VIII"
+showUpperNumeral 9  = showString "IX"
+showUpperNumeral _  = showString "_"
+
+instance Show RootAlteration where
+  showsPrec _ RSharp = showChar '#'
+  showsPrec _ RFlat  = showChar 'b'
 
   
+
+instance Show Variation where
+  showsPrec _ Dim = showChar 'o'
+  showsPrec _ Aug = showChar '+'
+
   
+instance Show InversionLabel where
+  showsPrec _ IRoot   = id
+  showsPrec _ IFirst  = showChar 'b'     
+  showsPrec _ ISecond = showChar 'c'
+  showsPrec _ IThird  = showChar 'd'
+
+  
+       

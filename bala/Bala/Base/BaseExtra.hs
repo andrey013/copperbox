@@ -56,11 +56,20 @@ readsParsec p s = case parse pfn "" s of
   where pfn = (,) <$> p <*> getInput
 
 token :: Parser a -> Parser a
-token p = p <* many1 (oneOf " \t\n")
+token p = p <* many (oneOf " \t\n")
 
 optOneOf :: [Char] -> Parser (Maybe Char)    
 optOneOf cs = optparse $ oneOf cs
 
 optparse :: Parser a -> Parser (Maybe a)
 optparse p = option Nothing (Just <$> p)
+
+--------------------------------------------------------------------------------
+-- Show helpers
+--------------------------------------------------------------------------------
+
+showOpt :: (Show a) => Maybe a -> ShowS
+showOpt Nothing = id
+showOpt (Just a) = shows a
+
   
