@@ -59,5 +59,8 @@ token :: Parser a -> Parser a
 token p = p <* many1 (oneOf " \t\n")
 
 optOneOf :: [Char] -> Parser (Maybe Char)    
-optOneOf cs = option Nothing (Just <$> oneOf cs)
+optOneOf cs = optparse $ oneOf cs
+
+optparse :: Parser a -> Parser (Maybe a)
+optparse p = option Nothing (Just <$> p)
   

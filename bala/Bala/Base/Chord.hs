@@ -26,24 +26,63 @@ import Text.ParserCombinators.Parsec
 
 newtype Chord = Chord {unChord :: [Int]}
 
-{-
-instance Read Triad where 
-  readsPrec i s = readP_to_S readTriad s
 
-readTriad :: ReadP Triad  
-readTriad = undefined
--}
-
-data RomanCase = RUpper | RLower 
+data RomanChord = RomanChord {
+    root_alteration   :: Maybe RootAlteration, 
+    scale_degree      :: Int,
+    chord_quality     :: ChordQuality,
+    chord_variation   :: Maybe Variation,    
+    inversion_label   :: InversionLabel
+  }
   deriving (Eq,Show)
 
-readNumeral = lowerNumeral <|> upperNumeral
+data RootAlteration = RSharp | RFlat
+  deriving (Eq,Show) 
+  
+data ChordQuality = RMinor | RMajor 
+  deriving (Eq,Show)
 
-lowerNumeral :: Parser (Int, RomanCase)
-lowerNumeral = romanNumeral Lower ('i', 'v', 'x')
+data Variation = Dim | Aug
+  deriving (Eq,Show)
+  
+data InversionLabel = IRoot | IFirst | ISecond | IThird
+  deriving (Eq,Show)
 
-upperNumeral :: Parser (Int, RomanCase)
-upperNumeral = romanNumeral Upper ('I', 'V', 'X')
+
+    
+  
+--------------------------------------------------------------------------------
+-- Read instances
+--------------------------------------------------------------------------------
+
+instance Read RomanChord where 
+  readsPrec _ s = readsParsec romanChord s
+  
+  
+romanChord :: Parser RomanChord  
+romanChord = fn <$> optparse rootAlteration 
+                <*> chordNumeral 
+                <*> optparse variation
+                <*> option IRoot inversionLabel    
+  where fn a (b,c) d e = RomanChord a b c d e
+
+  
+rootAlteration = sharp <|> flat
+  where
+    sharp = RSharp <$ char '#'
+    flat  = RFlat  <$ char 'b' 
+  
+
+
+
+    
+chordNumeral = lowerNumeral <|> upperNumeral
+
+lowerNumeral :: Parser (Int, ChordQuality)
+lowerNumeral = romanNumeral RMinor ('i', 'v', 'x')
+
+upperNumeral :: Parser (Int, ChordQuality)
+upperNumeral = romanNumeral RMajor ('I', 'V', 'X')
 
 
 romanNumeral :: a -> (Char,Char,Char) -> Parser (Int,a)
@@ -71,22 +110,22 @@ romanNumeral a (i',v',x') = tryDigit >>= kont 0 >>= valid
             | i >= 10 && i < 14   = tryDigit >>= kont (i+1)
             | otherwise           = return i
             
-
-
+variation :: Parser Variation
+variation = choice [dim,aug]
+  where  
+    dim = Dim <$ char 'o' 
+    aug = Aug <$ char '+'
     
-    
-readNumeral' = choice [two,one]
+inversionLabel :: Parser InversionLabel
+inversionLabel = choice [root,first,second,third]
   where
-    one = 1 <$ count 1 (char 'i')
-    two = 2 <$ count 2 (char 'i')
-
-data Numeral = N Int 
-  deriving Show
+    root    = IRoot   <$ string "(a)"
+    first   = IFirst  <$ char 'b'
+    second  = ISecond <$ char 'c'
+    third   = IThird  <$ char 'd'
     
-readNumeralParsec :: Parser Numeral
-readNumeralParsec = (N . length) <$> many1 (char 'i')
 
-instance Read Numeral where 
-  readsPrec i s = readsParsec readNumeralParsec s
+    
+
   
   
