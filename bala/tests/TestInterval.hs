@@ -1,32 +1,33 @@
 
 module TestInterval where
 
+import ArbitraryInstances
 import Bala
+
+import Control.Applicative
+import Test.QuickCheck
+
+        
+                
+prop_Unison a = arithmeticDistance a a == 1 
+prop_Octave a = arithmeticDistance a (a `ove` 1) == 8
+
+main = mapM_ quickCheck [prop_Unison, prop_Octave]
+
 
 iq01 = semitoneDistance (read "C4") (read "C5")
 
-b4 = unMidi (fromPitch b4')
-  where b4' :: Pitch
-        b4' = read "B4"
-        
-c4 = unMidi (fromPitch c4')
-  where c4' :: Pitch
-        c4' = read "C4"
-        
-f4 = unMidi (fromPitch f4')
-  where f4' :: Pitch
-        f4' = read "F4"
-
-a4 = unMidi (fromPitch a4')
-  where a4' :: Pitch
-        a4' = read "A4"
-                
-a5 = unMidi (fromPitch a5')
-  where a5' :: Pitch
-        a5' = read "A5"
+b4,c4,f4,a4,a5 :: Pitch
+b4 = read "B4"
+c4 = read "C4"
+f4 = read "F4"
+a4 = read "A4"
+a5 = read "A5"
 
 -- o01 = countingDistance' F F
 -- o02 = countingDistance  F F 
+
+{-
 
 uni1 = mspan (read "F4") (read "F4")
 
@@ -44,3 +45,4 @@ sev1 = mspan (read "F4") (read "E5")
 
 oct1 = mspan (read "F4") (read "F5") 
 
+-}

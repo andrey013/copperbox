@@ -42,6 +42,7 @@ class PitchClass a where pc :: a -> PC
 instance PitchClass Pitch where
   pc (Pitch n a _ _) = pitchClass $ semis n + semis a
 
+
   
 class Transpose a where transpose :: Int -> a -> a
 

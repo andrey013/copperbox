@@ -25,9 +25,9 @@ import Text.ParserCombinators.Parsec.Language
 
 
 
-    
-elements :: Read a => String -> [a]
-elements = map read . words
+-- clashes with QuickCheck and needs a better name anyway    
+-- elements :: Read a => String -> [a]
+-- elements = map read . words
 
   
 
@@ -40,6 +40,9 @@ zam f _        = []
 mod12 i = i `mod` 12
 mod7  i = i `mod` 7  
 
+
+  
+  
 --------------------------------------------------------------------------------
 -- Parsec helpers
 --------------------------------------------------------------------------------

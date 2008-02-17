@@ -149,6 +149,10 @@ instance Show Accidental where
 -- operations... (new file?)
 --------------------------------------------------------------------------------
 
+-- pitch ops -- adding intervals etc need a naming scheme
+
+ove :: Pitch -> Int -> Pitch
+ove p@(Pitch {octave=o'}) i = p {octave=o'+i} -- (\s -> s {octave=o'+i}) p
 
 data ParsonsCode = PaR | PaU | PaD    
   deriving (Eq,Ord,Show)
