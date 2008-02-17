@@ -14,7 +14,9 @@
 
 module Bala.Format.Abc.Parser where
 
+import Bala.Base.BaseExtra
 import Bala.Format.Abc.Datatypes
+
 
 import Control.Applicative hiding (many, optional, (<|>) )
 import Control.Monad
@@ -22,18 +24,6 @@ import Control.Monad
 import Data.Char hiding (Space)
 import Data.List (sortBy)
 import Text.ParserCombinators.Parsec hiding ( {- token, -} space)
-
-
-
-
-instance Applicative (GenParser tok st) where
-  pure = return
-  (<*>) = ap
-   
-
-{- parse = readP_to_S -}
-
-  
 
 
 abcFile :: Parser [AbcFileElement]
@@ -485,7 +475,7 @@ readNat =  many1 (satisfy isDigit) >>= return . read
 pmaybe :: Parser a -> Parser (Maybe a)
 pmaybe p = option Nothing (p >>= return . Just)
 
-parens = between (char '(') (char ')')
+
 
 
 

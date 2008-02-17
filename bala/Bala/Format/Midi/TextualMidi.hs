@@ -16,6 +16,7 @@
 
 module Bala.Format.Midi.TextualMidi where
 
+import Bala hiding (int,integer)
 import Bala.Format.Midi.Datatypes
 
 
@@ -139,16 +140,7 @@ instance Pretty TextType where
 --------------------------------------------------------------------------------
 -- `binary text`
 --------------------------------------------------------------------------------
-showSpace :: ShowS
-showSpace = showChar ' '
 
-showDot :: ShowS
-showDot = showChar '.'
-
-showNl = showChar '\n'
-
-withParens :: ShowS -> ShowS
-withParens f = showChar '(' . f . showChar ')'
 
 bchar :: Char -> ShowS
 bchar c | isPrint c == True = showChar c

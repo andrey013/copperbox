@@ -20,7 +20,8 @@ module Bala.Base.BaseExtra where
 import Control.Applicative hiding (many, optional)
 import Control.Monad (ap)
 import Text.ParserCombinators.Parsec
-
+import qualified Text.ParserCombinators.Parsec.Token as P
+import Text.ParserCombinators.Parsec.Language
 
 
 
@@ -64,6 +65,25 @@ optOneOf cs = optparse $ oneOf cs
 optparse :: Parser a -> Parser (Maybe a)
 optparse p = option Nothing (Just <$> p)
 
+positiveInt :: Parser Int
+positiveInt = read <$> many1 digit
+
+signedInt :: Parser Int
+signedInt   = (\ a b -> read (a:b)) <$> sign <*> many1 digit
+  where sign        = oneOf "+-"
+
+
+baseLex             = P.makeTokenParser emptyDef
+
+
+whiteSpace        = P.whiteSpace baseLex 
+parens            = P.parens baseLex
+integer           = P.integer baseLex
+
+int               :: Parser Int
+int               = fromIntegral <$> integer 
+
+
 --------------------------------------------------------------------------------
 -- Show helpers
 --------------------------------------------------------------------------------
@@ -71,5 +91,16 @@ optparse p = option Nothing (Just <$> p)
 showOpt :: (Show a) => Maybe a -> ShowS
 showOpt Nothing = id
 showOpt (Just a) = shows a
+
+showSpace :: ShowS
+showSpace = showChar ' '
+
+showDot :: ShowS
+showDot = showChar '.'
+
+showNl = showChar '\n'
+
+withParens :: ShowS -> ShowS
+withParens f = showChar '(' . f . showChar ')'
 
   

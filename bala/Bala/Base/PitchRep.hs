@@ -92,9 +92,7 @@ readPitch = Pitch <$> readPitchLetter
                   <*> readAccidental
                   <*> option 4 positiveInt 
                   <*> option 0 signedInt
-  where positiveInt = read <$> many1 digit
-        signedInt   = (\ a b -> read (a:b)) <$> sign <*> many1 digit
-        sign        = oneOf "+-"
+
                 
 instance Read PitchLetter where 
   readsPrec _ s = readsParsec readPitchLetter s

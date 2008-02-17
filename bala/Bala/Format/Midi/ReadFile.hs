@@ -77,7 +77,7 @@ report :: ShowS -> Parse ()
 report = Parse . lift . tell 
 
 reportLine :: ShowS -> Parse ()
-reportLine f = Parse $ lift $ tell  (f . showNl) 
+reportLine f = Parse $ lift $ tell  (f . showChar '\n') 
 
 
 -- Weirdly it seems lazy bytestrings aren't always reading the full contents 

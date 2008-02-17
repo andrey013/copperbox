@@ -22,6 +22,7 @@ import Bala.Base.PitchRep
 
 import Numeric (showInt)
 
+-- | Int must be between 1 & 12
 newtype PC = PC {unPC :: Int}
 
 type PCSet = [PC]

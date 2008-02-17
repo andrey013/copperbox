@@ -20,10 +20,11 @@
 module Bala.Base.Interval where
 
 import Bala.Base.PitchRep
+import Bala.Base.PitchClass
 import Bala.Base.BaseExtra 
 
 import Control.Applicative hiding (many, optional, (<|>) )
-import Text.ParserCombinators.Parsec 
+import Text.ParserCombinators.Parsec hiding (token)
 
 
 data Interval = Interval {
@@ -31,19 +32,128 @@ data Interval = Interval {
     semitone_count      :: Int
   }
   deriving (Eq)
+
+type NamedInterval = (IntervalQuality, IntervalSize)
+
   
 data IntervalSize = Unison | Second | Third | Fourth | Fifth | Sixth
                   | Seventh | Octave
-  deriving (Eq,Enum,Ord)
+  deriving (Eq,Enum,Ord,Show)
 
 data IntervalQuality = Perfect | Major | Minor | Augmented | Diminished
   deriving (Eq,Enum,Ord)
 
-data IntervalDistance = Simple | Compound
-  deriving (Eq,Enum,Ord,Show)
+data IntervalDistance = Simple | Compound Int
+  deriving (Eq,Ord,Show)
 
 
-type NamedInterval = (IntervalQuality, IntervalSize)
+
+
+
+        
+
+
+    
+--------------------------------------------------------------------------------
+-- | count of 'letter names' inclusive between two pitches (ordered,multioctave)
+arithmeticDistance :: Pitch -> Pitch -> Int
+arithmeticDistance (Pitch p1 a1 o1 _) (Pitch p2 a2 o2 _) =
+    letterDist p1 p2 + oveDist o1 o2  
+  where
+    letterDist :: PitchLetter -> PitchLetter -> Int
+    letterDist a b = 1 + mod7 (7 + fromEnum b - fromEnum a)
+    
+    oveDist :: Int -> Int -> Int
+    oveDist o1 o2 | o1 == o2 = 0
+                  | o1 <  o2 = (o2 - o1) * 7 
+                  | o1 >  o2 = (o2 - o1) * 7 - 2
+
+-- | count of semitones between two pitches (ordered,multioctave)                    
+semitoneDistance :: Pitch -> Pitch -> Int
+semitoneDistance p1 p2 = semis p2 - semis p1
+
+-- | synonym of semitoneDistance
+orderedPitchInterval :: Pitch -> Pitch -> Int
+orderedPitchInterval = semitoneDistance
+
+
+-- | absolute value of semitone distance
+unorderedPitchInterval :: Pitch -> Pitch -> Int
+unorderedPitchInterval p1 p2 = abs $ semitoneDistance p1 p2
+
+
+-- | count of semitones between two pitches (ordered,single-octave)
+orderedPCInterval :: PC -> PC -> Int
+orderedPCInterval (PC p1) (PC p2) = p2 - p1 
+
+-- http://www.music.iastate.edu/courses/337/PostTonalTerms.html
+-- http://www.robertkelleyphd.com/atnltrms.htm
+-- | count of semitones between two pitches (unordered,single-octave)                    
+unorderedPCInterval (PC p1) (PC p2)
+  | p1 < p2   = p2 - p1
+  | otherwise = p1 - p2 
+
+-- countingDistance' :: PitchLetter -> PitchLetter -> IntervalSize
+-- countingDistance' a b = mkIntervalSize $ (fromEnum a - fromEnum b) `mod` 12 --  + mod7 (7 + fromEnum b - fromEnum a)
+
+-- mkIntervalSize :: Int -> IntervalSize
+-- mkIntervalSize a = toEnum a -- (a-1)
+
+
+
+                     
+
+diatonic, chromatic :: Interval -> Bool
+diatonic _ = undefined -- perfect major or minor
+
+chromatic = not . diatonic
+
+intervalClass :: Interval -> Bool
+intervalClass = undefined
+ 
+-- mspan 
+mspan :: Pitch -> Pitch -> Int
+mspan pch1 pch2 = 1 + mod7 (7 + p2 - p1) + (7 * od)
+  where fn = fromEnum . pitch
+        p1 = fn pch1
+        p2 = fn pch2
+        od = octave pch2 - octave pch1
+         
+intervalName :: Interval -> Maybe NamedInterval
+intervalName (Interval 1 0)   = Just (Perfect, Unison)
+intervalName (Interval 2 1)   = Just (Minor, Second)
+intervalName (Interval 2 2)   = Just (Major, Second)
+intervalName (Interval 3 3)   = Just (Minor, Third)
+intervalName (Interval 3 4)   = Just (Major, Third)
+intervalName (Interval 4 5)   = Just (Perfect, Fourth)
+intervalName (Interval 4 6)   = Just (Augmented, Fourth)
+intervalName (Interval 5 6)   = Just (Perfect, Fifth)
+intervalName (Interval 5 8)   = Just (Augmented, Fifth)
+intervalName (Interval 6 8)   = Just (Minor, Sixth)
+intervalName (Interval 6 9)   = Just (Major, Sixth)
+intervalName (Interval 7 10)  = Just (Minor, Seventh)
+intervalName (Interval 7 11)  = Just (Major, Seventh)
+intervalName (Interval 8 12)  = Just (Perfect, Octave)
+intervalName _                = Nothing
+
+namedInterval :: IntervalQuality -> IntervalSize -> Interval
+namedInterval Perfect   Unison  = Interval 1 0
+namedInterval Minor     Second  = Interval 2 1
+namedInterval Major     Second  = Interval 2 2
+namedInterval Minor     Third   = Interval 3 3
+namedInterval Major     Third   = Interval 3 4
+namedInterval Perfect   Fourth  = Interval 4 5  
+namedInterval Augmented Fourth  = Interval 4 6
+namedInterval Perfect   Fifth   = Interval 5 6
+namedInterval Augmented Fifth   = Interval 5 8
+namedInterval Minor     Sixth   = Interval 6 8
+namedInterval Major     Sixth   = Interval 6 9
+namedInterval Minor     Seventh = Interval 7 10
+namedInterval Major     Seventh = Interval 7 11
+namedInterval Perfect   Octave  = Interval 8 12
+namedInterval _         _       = undefined
+
+ 
 
 --------------------------------------------------------------------------------
 -- Read instances
@@ -83,15 +193,25 @@ readIntervalSize = number <$> digit
     number '7' = Seventh
     number '8' = Octave
 
+readIntervalConstr :: Parser Interval
+readIntervalConstr = parens inner
+  where
+    inner = Interval <$> (token (string "Interval") *> token int)
+                     <*> token int
 --------------------------------------------------------------------------------
 -- Show instances
 --------------------------------------------------------------------------------
 
 -- TODO - handle intervals without names
 instance Show Interval where
-  showsPrec _ a = let (qy,sz) = intervalName a
-                  in shows qy . shows sz
+  showsPrec _ a = case intervalName a of
+                    Just (qy,sz) -> shows qy . shows (1 + fromEnum sz)
+                    Nothing -> ic a 
+    where 
+      ic (Interval d c) = showParen True $ 
+            showString "Interval " . shows d . showSpace . shows c
 
+  
 instance Show IntervalQuality where
   showsPrec _ Perfect     = showChar 'P'
   showsPrec _ Major       = showChar 'M'
@@ -99,76 +219,7 @@ instance Show IntervalQuality where
   showsPrec _ Augmented   = showChar 'A'
   showsPrec _ Diminished  = showChar 'd'
   
-instance Show IntervalSize where
-  showsPrec _ Unison  = showChar '1'
-  showsPrec _ Second  = showChar '2'
-  showsPrec _ Third   = showChar '3'
-  showsPrec _ Fourth  = showChar '4'
-  showsPrec _ Fifth   = showChar '5'
-  showsPrec _ Sixth   = showChar '6'
-  showsPrec _ Seventh = showChar '7'
-  showsPrec _ Octave  = showChar '8'
-        
 
+  
 
-    
---------------------------------------------------------------------------------
-
-arithmeticDistance :: Pitch -> Pitch -> Int
-arithmeticDistance (Pitch p1 a1 o1 _) (Pitch p2 a2 o2 _) =
-    countingDistance p1 p2 + octaveDistance o1 o2  
-
-countingDistance :: PitchLetter -> PitchLetter -> Int
-countingDistance a b = 1 + mod7 (7 + fromEnum b - fromEnum a)
-
-octaveDistance :: Int -> Int -> Int
-octaveDistance o1 o2 | o1 == o2 = 0
-                     | o1 <  o2 = (o2 - o1) * 7 
-                     | o1 >  o2 = (o2 - o1) * 7 - 2
-                     
-intervalQuality :: Pitch -> Pitch -> Int
-intervalQuality p1 p2 = semis p2 - semis p1
-
- 
--- mspan 
-mspan :: Pitch -> Pitch -> Int
-mspan pch1 pch2 = 1 + mod7 (7 + p2 - p1) + (7 * od)
-  where fn = fromEnum . pitch
-        p1 = fn pch1
-        p2 = fn pch2
-        od = octave pch2 - octave pch1
-         
-intervalName :: Interval -> NamedInterval
-intervalName (Interval 1 0)   = (Perfect, Unison)
-intervalName (Interval 2 1)   = (Minor, Second)
-intervalName (Interval 2 2)   = (Major, Second)
-intervalName (Interval 3 3)   = (Minor, Third)
-intervalName (Interval 3 4)   = (Major, Third)
-intervalName (Interval 4 5)   = (Perfect, Fourth)
-intervalName (Interval 4 6)   = (Augmented, Fourth)
-intervalName (Interval 5 6)   = (Perfect, Fifth)
-intervalName (Interval 5 8)   = (Augmented, Fifth)
-intervalName (Interval 6 8)   = (Minor, Sixth)
-intervalName (Interval 6 9)   = (Major, Sixth)
-intervalName (Interval 7 10)  = (Minor, Seventh)
-intervalName (Interval 7 11)  = (Major, Seventh)
-intervalName (Interval 8 12)  = (Perfect, Octave)
-intervalName _                = undefined
-
-namedInterval :: IntervalQuality -> IntervalSize -> Interval
-namedInterval Perfect   Unison  = Interval 1 0
-namedInterval Minor     Second  = Interval 2 1
-namedInterval Major     Second  = Interval 2 2
-namedInterval Minor     Third   = Interval 3 3
-namedInterval Major     Third   = Interval 3 4
-namedInterval Perfect   Fourth  = Interval 4 5  
-namedInterval Augmented Fourth  = Interval 4 6
-namedInterval Perfect   Fifth   = Interval 5 6
-namedInterval Augmented Fifth   = Interval 5 8
-namedInterval Minor     Sixth   = Interval 6 8
-namedInterval Major     Sixth   = Interval 6 9
-namedInterval Minor     Seventh = Interval 7 10
-namedInterval Major     Seventh = Interval 7 11
-namedInterval Perfect   Octave  = Interval 8 12
-namedInterval _         _       = undefined
-
+                    
