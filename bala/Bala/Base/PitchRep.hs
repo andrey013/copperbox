@@ -20,6 +20,10 @@ import Bala.Base.BaseExtra
 import Control.Applicative hiding (many, optional, (<|>) )
 import Text.ParserCombinators.Parsec 
 
+--------------------------------------------------------------------------------
+-- Datatypes
+--------------------------------------------------------------------------------
+
 data Pitch = Pitch { 
     pitch       :: PitchLetter,
     accidental  :: Accidental,
@@ -41,6 +45,18 @@ instance Ord Pitch where
 newtype Cents = Cents {unCents :: Int}
   deriving (Eq,Ord,Show)
 
+-- a simple representation (for typography ?)
+data SimplePitch = SimplePitch PitchLetter Accidental
+  
+--------------------------------------------------------------------------------
+-- Operations
+--------------------------------------------------------------------------------
+
+-- pitch ops -- adding intervals etc need a naming scheme
+
+
+  
+  
 toCents (Pitch l a o c) = Cents $ 
   (octaveDisplacement o * 100) + ((semis l + semis a) * 100) + c
 
@@ -79,6 +95,22 @@ class EncodePitch a where
   toPitch :: a -> Pitch  
   fromPitch :: Pitch -> a
 
+
+ove :: Pitch -> Int -> Pitch
+ove p@(Pitch {octave=o'}) i = p {octave=o'+i} -- (\s -> s {octave=o'+i}) p
+
+data ParsonsCode = PaR | PaU | PaD    
+  deriving (Eq,Ord,Show)
+  
+contour :: [Pitch] -> [ParsonsCode]  
+contour = zam diff
+  where diff a b = case a `compare` b of
+                    EQ -> PaR
+                    LT -> PaU
+                    GT -> PaD
+  
+data RefinedContour = ReR | ReUS | ReUL | ReDS | ReDL
+  deriving (Eq,Ord,Show)
 
 --------------------------------------------------------------------------------
 -- Read instances
@@ -121,6 +153,12 @@ readAccidental = accident <$> option "" sf
     accident "bb"     = FlatFlat
     accident ('#':xs) = Sharpi (1+ length xs)
     accident ('b':xs) = Flati (1+ length xs)
+    
+instance Read SimplePitch where
+  readsPrec _ s = readsParsec readSimplePitch s
+  
+readSimplePitch = SimplePitch <$> readPitchLetter <*> readAccidental
+    
 --------------------------------------------------------------------------------
 -- Show instances
 --------------------------------------------------------------------------------
@@ -143,27 +181,7 @@ instance Show Accidental where
   showsPrec _ (Flati i)   = showString (replicate i 'b')
 
 
+instance Show SimplePitch where
+  showsPrec _ (SimplePitch p a) = shows p . shows a
 
-  
---------------------------------------------------------------------------------
--- operations... (new file?)
---------------------------------------------------------------------------------
-
--- pitch ops -- adding intervals etc need a naming scheme
-
-ove :: Pitch -> Int -> Pitch
-ove p@(Pitch {octave=o'}) i = p {octave=o'+i} -- (\s -> s {octave=o'+i}) p
-
-data ParsonsCode = PaR | PaU | PaD    
-  deriving (Eq,Ord,Show)
-  
-contour :: [Pitch] -> [ParsonsCode]  
-contour = zam diff
-  where diff a b = case a `compare` b of
-                    EQ -> PaR
-                    LT -> PaU
-                    GT -> PaD
-  
-data RefinedContour = ReR | ReUS | ReUL | ReDS | ReDL
-  deriving (Eq,Ord,Show)
   

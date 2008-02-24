@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.Triad
+-- Module      :  Bala.Base.Chord
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -18,17 +18,21 @@
 module Bala.Base.Chord where
 
 import Bala.Base.PitchRep
+import Bala.Base.Interval
+import Bala.Base.PitchClass
 import Bala.Base.BaseExtra
 
 import Control.Applicative hiding (many, optional, (<|>) )
+import Data.List (mapAccumL)
 import Text.ParserCombinators.Parsec 
 
-
+-- a chord is like a pitch class set, but with >12
 newtype Chord = Chord {unChord :: [Int]}
+  deriving (Eq,Show)
 
 
 data RomanChord = RomanChord {
-    root_alteration   :: Maybe RootAlteration, 
+    root_alteration   :: Maybe Alteration, 
     scale_degree      :: Int,
     chord_quality     :: ChordQuality,
     chord_variation   :: Maybe Variation,    
@@ -36,10 +40,10 @@ data RomanChord = RomanChord {
   }
   deriving (Eq)
 
-data RootAlteration = RSharp | RFlat
+data Alteration = RSharp | RFlat
   deriving (Eq) 
   
-data ChordQuality = RMinor | RMajor 
+data ChordQuality = RMajor | RMinor
   deriving (Eq)
 
 data Variation = Dim | Aug
@@ -48,9 +52,50 @@ data Variation = Dim | Aug
 data InversionLabel = IRoot | IFirst | ISecond | IThird
   deriving (Eq)
 
-
-    
+data GuitarChord = GuitarChord {
+    guiord_pitch :: SimplePitch,
+    guiord_type  :: String, -- todo
+    guiord_bass  :: Maybe SimplePitch 
+  }
+ 
   
+  
+--------------------------------------------------------------------------------
+-- operations
+--------------------------------------------------------------------------------
+
+buildChord :: Pitch -> IntervalPattern -> Chord
+buildChord a (IP xs) = Chord $ zack (fixedPitch a) xs
+
+  
+
+-- | Build a triad from a roman chord (within a scale ?)
+triad :: RomanChord -> () -> Chord
+triad rc@(RomanChord {scale_degree=d}) () = buildChord (tstart d) (tip rc)
+  where
+    tstart :: Int -> Pitch
+    tstart 1 = read "C4"
+    tstart 2 = read "D4"
+    tstart 3 = read "E4"
+    tstart 4 = read "F4"
+    tstart 5 = read "G4"
+    tstart 6 = read "A4"
+    tstart 7 = read "B4"
+
+-- triad interval pattern
+tip :: RomanChord -> IntervalPattern
+tip (RomanChord {chord_quality=qual,chord_variation=var} ) = 
+    alter (base_pattern qual) var 
+  where 
+    base_pattern RMajor = IP [5,4]
+    base_pattern RMinor = IP [4,5]
+    
+    alter pat opt = maybe pat (variation pat) opt
+    variation (IP [a,b]) Dim = IP [a, b - 1]
+    variation (IP [a,b]) Aug = IP [a, b + 1]
+    
+    
+    
 --------------------------------------------------------------------------------
 -- Read instance
 --------------------------------------------------------------------------------
@@ -60,14 +105,14 @@ instance Read RomanChord where
   
   
 romanChord :: Parser RomanChord  
-romanChord = fn <$> optparse rootAlteration 
+romanChord = fn <$> optparse alteration 
                 <*> chordNumeral 
                 <*> optparse variation
                 <*> option IRoot inversionLabel    
   where fn a (b,c) d e = RomanChord a b c d e
 
   
-rootAlteration = sharp <|> flat
+alteration = sharp <|> flat
   where
     sharp = RSharp <$ char '#'
     flat  = RFlat  <$ char 'b' 
@@ -124,7 +169,24 @@ inversionLabel = choice [root,first,second,third]
     first   = IFirst  <$ char 'b'
     second  = ISecond <$ char 'c'
     third   = IThird  <$ char 'd'
-    
+
+
+instance Read GuitarChord where 
+  readsPrec _ s = readsParsec guitarChord s
+  
+guitarChord :: Parser GuitarChord
+guitarChord = GuitarChord <$> readSimplePitch 
+                          <*> (guitarChordType <|> blank)
+                          <*> optparse baseNote
+  where
+    blank = return ""
+
+-- incomplete...
+guitarChordType = choice $ map string
+  ["m", "min", "maj", "sus", "dim", "+", "7", "9", "11","#5" ]
+
+baseNote = char '/' *> readSimplePitch
+  
 --------------------------------------------------------------------------------
 -- Show instance
 --------------------------------------------------------------------------------
@@ -159,7 +221,7 @@ showUpperNumeral 8  = showString "VIII"
 showUpperNumeral 9  = showString "IX"
 showUpperNumeral _  = showString "_"
 
-instance Show RootAlteration where
+instance Show Alteration where
   showsPrec _ RSharp = showChar '#'
   showsPrec _ RFlat  = showChar 'b'
 
@@ -176,5 +238,10 @@ instance Show InversionLabel where
   showsPrec _ ISecond = showChar 'c'
   showsPrec _ IThird  = showChar 'd'
 
-  
+instance Show GuitarChord where
+  showsPrec _ (GuitarChord sp q obn) = 
+      shows sp . showString q . maybe id fn obn
+    where
+      fn :: SimplePitch -> ShowS
+      fn a = showChar '/' . shows a
        

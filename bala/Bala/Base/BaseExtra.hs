@@ -19,6 +19,9 @@ module Bala.Base.BaseExtra where
 
 import Control.Applicative hiding (many, optional)
 import Control.Monad (ap)
+
+import Data.List (mapAccumL)
+
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language
@@ -29,9 +32,19 @@ import Text.ParserCombinators.Parsec.Language
 -- elements :: Read a => String -> [a]
 -- elements = map read . words
 
-  
 
+-- zac, build a list from the intial value adding the interval in the list
+zac :: (Num a) => a -> [a] -> [a]
+zac i xs = snd $ mapAccumL fn i (0:xs)
+  where fn acc n  = (acc + n, acc + n)
 
+-- zack, like zac but the interval measure is counts from 1 
+-- (i.e 4-4 has an interval of 1, 4-5 interval 2, 4-6 interval 3)
+zack :: (Num a) => a -> [a] -> [a]
+zack i xs = snd $ mapAccumL fn i (0:xs)
+  where fn acc n  = (acc + n - 1, acc + n)
+
+-- zam - zippy map
 zam :: (a -> a -> b) -> [a] -> [b]
 zam f (x:y:ys) = f x y : zam f (y:ys)
 zam f _        = []
@@ -82,9 +95,15 @@ baseLex             = P.makeTokenParser emptyDef
 whiteSpace        = P.whiteSpace baseLex 
 parens            = P.parens baseLex
 integer           = P.integer baseLex
+double            = P.float baseLex
+
+
+float             :: Parser Float
+float             = fromRational . toRational <$> double
 
 int               :: Parser Int
 int               = fromIntegral <$> integer 
+
 
 
 --------------------------------------------------------------------------------

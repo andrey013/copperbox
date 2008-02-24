@@ -20,7 +20,7 @@ instance Applicative Gen where
 -- Arbitrary instances
 --------------------------------------------------------------------------------
 
-  
+-- PitchRep
 instance Arbitrary PitchLetter where
   arbitrary = elements [A, B, C, D, E, F, G]
   coarbitrary = error "no coarbitrary for PitchLetter"
@@ -34,4 +34,24 @@ instance Arbitrary Accidental where
     [Nat, Sharp, SharpSharp, Flat, FlatFlat, Sharpi 3, Flati 3]
   coarbitrary = error "no coarbitrary for Accidental"  
   
+
+-- PitchConversion
+instance Arbitrary MidiPitch where
+  arbitrary = M <$> arbitrary 
+  coarbitrary = error "no coarbitrary for MidiPitch"
+
+instance Arbitrary Hertz where
+  arbitrary = Hz <$> arbitrary 
+  coarbitrary = error "no coarbitrary for Hertz"
+
   
+-- pitch class with an octave designation
+instance Arbitrary OctavePC where
+  arbitrary = OPC <$> arbitrary 
+  coarbitrary = error "no coarbitrary for OctavePC"
+    
+
+instance Arbitrary OctaveRep where
+  arbitrary = OR <$> arbitrary 
+  coarbitrary = error "no coarbitrary for OctaveRep"  
+    

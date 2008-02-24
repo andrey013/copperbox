@@ -15,8 +15,19 @@
 
 module Bala.Base.Scale where
 
-data ScaleDegrees = Tonic | SuperTonic | Mediant | Subdominant | Dominant
-                  | Submediant | LeadingTone 
+import Bala.Base.PitchRep
+
+--------------------------------------------------------------------------------
+-- Datatypes
+--------------------------------------------------------------------------------
+
+data Scale = Scale {
+    scale_root  :: Pitch,
+    scale_notes :: [Pitch]
+    }
+  
+data ScaleDegree = Tonic | SuperTonic | Mediant | Subdominant | Dominant
+                 | Submediant | LeadingTone 
   deriving (Eq)
   
-                    
+                   

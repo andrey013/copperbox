@@ -27,6 +27,13 @@ import Control.Applicative hiding (many, optional, (<|>) )
 import Text.ParserCombinators.Parsec hiding (token)
 
 
+--------------------------------------------------------------------------------
+-- Datatypes
+--------------------------------------------------------------------------------
+
+newtype IntervalPattern = IP {unIP :: [Int]}
+  deriving (Eq,Show)
+
 data Interval = Interval {
     arithmetic_distance :: Int,
     semitone_count      :: Int
@@ -48,13 +55,10 @@ data IntervalDistance = Simple | Compound Int
 
 
 
-
-
-        
-
-
-    
 --------------------------------------------------------------------------------
+-- Operations
+--------------------------------------------------------------------------------
+
 -- | count of 'letter names' inclusive between two pitches (ordered,multioctave)
 arithmeticDistance :: Pitch -> Pitch -> Int
 arithmeticDistance (Pitch p1 a1 o1 _) (Pitch p2 a2 o2 _) =

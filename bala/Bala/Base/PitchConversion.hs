@@ -16,20 +16,30 @@
 module Bala.Base.PitchConversion where
 
 import Bala.Base.PitchRep
+import Bala.Base.BaseExtra
 
 
-
+--------------------------------------------------------------------------------
+-- Datatypes
+--------------------------------------------------------------------------------
 
   
 newtype MidiPitch = M {unMidi :: Int}
+  deriving (Eq)
 
 newtype Hertz = Hz {unHertz :: Float}
-
+  deriving (Eq)
+  
 -- pitch class with an octave designation
 newtype OctavePC = OPC {unOPC :: Float}
-
+  deriving (Eq)
+  
 newtype OctaveRep = OR {unOR :: Float}
-
+  deriving (Eq)
+  
+--------------------------------------------------------------------------------
+-- Operations
+--------------------------------------------------------------------------------
 
 hertzFrom :: Float -> Hertz
 hertzFrom = Hz
@@ -145,8 +155,37 @@ pcOct :: OctavePC -> OctaveRep
 pcOct (OPC pc) = OR $ x + (8.33333 * (pc - x))
   where
     x = fromIntegral $ floor pc
+
+--------------------------------------------------------------------------------
+-- Read instances
+--------------------------------------------------------------------------------
+
+instance Read MidiPitch where 
+  readsPrec _ s = readsParsec (int >>= return . M) s
+  
+instance Read Hertz where 
+  readsPrec _ s = readsParsec (float >>= return . Hz) s
+  
+instance Read OctavePC where 
+  readsPrec _ s = readsParsec (float >>= return . OPC) s
     
-    
+instance Read OctaveRep where 
+  readsPrec _ s = readsParsec (float >>= return . OR) s
+  
+--------------------------------------------------------------------------------
+-- Show instances
+--------------------------------------------------------------------------------
+instance Show MidiPitch where
+  showsPrec _ (M i) = shows i
+
+instance Show Hertz where
+  showsPrec _ (Hz d) = shows d
+  
+instance Show OctavePC where
+  showsPrec _ (OPC d) = shows d
+
+instance Show OctaveRep where
+  showsPrec _ (OR d) = shows d
 
     
     

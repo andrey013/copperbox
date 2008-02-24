@@ -22,10 +22,26 @@ import Bala.Base.PitchRep
 
 import Numeric (showInt)
 
+
+--------------------------------------------------------------------------------
+-- Datatypes
+--------------------------------------------------------------------------------
+
+
 -- | Int must be between 1 & 12
 newtype PC = PC {unPC :: Int}
 
 type PCSet = [PC]
+
+
+
+--------------------------------------------------------------------------------
+-- Operations
+--------------------------------------------------------------------------------
+
+-- | pitch displacement relative to middle C (which is 0)
+fixedPitch :: Pitch -> Int
+fixedPitch = unPC . pc
 
 pitchClass i | i >= 0 && i <= 11 = PC i
              | otherwise         = PC $ i `mod` 12

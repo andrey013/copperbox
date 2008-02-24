@@ -1,18 +1,19 @@
 
-module TestInterval where
+module TestInterval 
+  ( testInterval
+  ) where
 
 import ArbitraryInstances
 import Bala
 
-import Control.Applicative
 import Test.QuickCheck
 
         
-                
+prop_Unison,prop_Octave :: Pitch -> Bool          
 prop_Unison a = arithmeticDistance a a == 1 
 prop_Octave a = arithmeticDistance a (a `ove` 1) == 8
 
-main = mapM_ quickCheck [prop_Unison, prop_Octave]
+testInterval = mapM_ quickCheck [prop_Unison, prop_Octave]
 
 
 iq01 = semitoneDistance (read "C4") (read "C5")

@@ -20,15 +20,16 @@
 
 module Bala.Base.Perform where
 
+data Perform evt env out = Perform {
+    render :: [evt] -> env -> out,
+    perform :: out  -> env -> IO ()
+  }
 
 output :: [evt] -> env -> Perform evt env out -> IO ()
 output xs env (Perform {render=r,perform=p})
   = let o = r xs env in p o env
 
-data Perform evt env out = Perform {
-    render :: [evt] -> env -> out,
-    perform :: out  -> env -> IO ()
-  }
+
 
 
 
