@@ -97,7 +97,7 @@ tip (RomanChord {chord_quality=qual,chord_variation=var} ) =
     
     
 --------------------------------------------------------------------------------
--- Read instance
+-- Read instances
 --------------------------------------------------------------------------------
 
 instance Read RomanChord where 
@@ -188,7 +188,7 @@ guitarChordType = choice $ map string
 baseNote = char '/' *> readSimplePitch
   
 --------------------------------------------------------------------------------
--- Show instance
+-- Show instances
 --------------------------------------------------------------------------------
 
     

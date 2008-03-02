@@ -20,6 +20,7 @@ module Bala.Base.BaseExtra where
 import Control.Applicative hiding (many, optional)
 import Control.Monad (ap)
 
+import Data.Char (ord)
 import Data.List (mapAccumL)
 
 import Text.ParserCombinators.Parsec
@@ -104,6 +105,8 @@ float             = fromRational . toRational <$> double
 int               :: Parser Int
 int               = fromIntegral <$> integer 
 
+digiti            :: Parser Int
+digiti            = (flip (-) 48) . ord  <$> digit
 
 
 --------------------------------------------------------------------------------
@@ -124,5 +127,11 @@ showNl = showChar '\n'
 
 withParens :: ShowS -> ShowS
 withParens f = showChar '(' . f . showChar ')'
+
+
+showTogether :: (Show a) => [a] -> ShowS
+showTogether = foldr cat id
+  where cat :: (Show a) => a -> ShowS -> ShowS
+        cat a acc = (shows a) . acc
 
   

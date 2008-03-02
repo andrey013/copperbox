@@ -54,12 +54,61 @@ data SimplePitch = SimplePitch PitchLetter Accidental
 
 -- pitch ops -- adding intervals etc need a naming scheme
 
-
+class SemiDisplacement a where 
+  addSemi :: a -> Int -> a
+  subSemi :: a -> Int -> a
+  sharp   :: a -> a
+  flat    :: a -> a
   
+  sharp a = a `addSemi` 1
+  flat a  = a `subSemi` 1
+
+class OctaveDisplacement a where   
+  addOve  :: a -> Int -> a
+  subOve  :: a -> Int -> a
+ 
+
+
+spellWithSharps :: SimplePitch -> SimplePitch
+spellWithSharps (SimplePitch l a)   = 
+  toEnum $ semis l + semis a
+
+
+instance SemiDisplacement SimplePitch where
+  addSemi (SimplePitch l a) i = toEnum $ semis l + semis a + i
+  subSemi (SimplePitch l a) i = toEnum $ semis l + semis a - i
+
+
+
+instance SemiDisplacement Pitch where 
+  (Pitch l a o c) `addSemi` i = 
+    let od = i `div` 12
+        (SimplePitch l' a') = toEnum $ semis l + semis a + (i `mod` 12)
+    in Pitch l' a' (o + od) c
+  
+  -- wrong !!?? (check)
+  (Pitch l a o c) `subSemi` i = 
+    let od = i `div` 12 
+        (SimplePitch l' a') = toEnum $ semis l + semis a - (i `mod` 12)
+    in Pitch l' a' (o - od) c
+  
+  
+    
+instance OctaveDisplacement Pitch where   
+  (Pitch l a o c) `addOve` i = Pitch l a (o + i) c
+  (Pitch l a o c) `subOve` i = Pitch l a (o - i) c
+  
+centValue :: Pitch -> Int
+centValue (Pitch l a o c) 
+  = (octaveDisplacement o * 100) + ((semis l + semis a) * 100) + c
+
+pitchValue :: Int -> Pitch
+pitchValue i = Pitch C Nat 0 0
   
 toCents (Pitch l a o c) = Cents $ 
   (octaveDisplacement o * 100) + ((semis l + semis a) * 100) + c
 
+fromCents (Cents i) = undefined
 
 class SemiToneCount a where semis :: a -> Int
 
@@ -95,7 +144,13 @@ class EncodePitch a where
   toPitch :: a -> Pitch  
   fromPitch :: Pitch -> a
 
+instance EncodePitch Int where
+  toPitch i = pitchValue i
+  fromPitch p = centValue p 
 
+sem :: Pitch -> Int -> Pitch
+sem p i = toPitch $ i + unCents (toCents p)
+ 
 ove :: Pitch -> Int -> Pitch
 ove p@(Pitch {octave=o'}) i = p {octave=o'+i} -- (\s -> s {octave=o'+i}) p
 
@@ -184,4 +239,39 @@ instance Show Accidental where
 instance Show SimplePitch where
   showsPrec _ (SimplePitch p a) = shows p . shows a
 
+--------------------------------------------------------------------------------
+-- Enum instances
+--------------------------------------------------------------------------------
+
+instance Enum SimplePitch where 
+  fromEnum = fromEnumSimple . spellWithSharps
+    where
+      fromEnumSimple (SimplePitch C Nat)   = 0
+      fromEnumSimple (SimplePitch C Sharp) = 1
+      fromEnumSimple (SimplePitch D Nat)   = 2
+      fromEnumSimple (SimplePitch D Sharp) = 3
+      fromEnumSimple (SimplePitch E Nat)   = 4
+      fromEnumSimple (SimplePitch F Nat)   = 5
+      fromEnumSimple (SimplePitch F Sharp) = 6
+      fromEnumSimple (SimplePitch G Nat)   = 7
+      fromEnumSimple (SimplePitch G Sharp) = 8
+      fromEnumSimple (SimplePitch A Nat)   = 9
+      fromEnumSimple (SimplePitch A Sharp) = 10
+      fromEnumSimple (SimplePitch B Nat)   = 11
+  
+  toEnum 0   = SimplePitch C Nat
+  toEnum 1   = SimplePitch C Sharp
+  toEnum 2   = SimplePitch D Nat
+  toEnum 3   = SimplePitch D Sharp
+  toEnum 4   = SimplePitch E Nat
+  toEnum 5   = SimplePitch F Nat
+  toEnum 6   = SimplePitch F Sharp
+  toEnum 7   = SimplePitch G Nat
+  toEnum 8   = SimplePitch G Sharp
+  toEnum 9   = SimplePitch A Nat
+  toEnum 10  = SimplePitch A Sharp
+  toEnum 11  = SimplePitch B Nat
+
+  toEnum i  = toEnum $ i `mod` 12
+  
   

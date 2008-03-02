@@ -1,11 +1,15 @@
 
--- :set -i../../..
+-- :set -i..
 
 
 
 module TestPitch where
 
 import Bala
+
+middle_c :: Pitch
+middle_c = read "C4"
+
 
 phasing_trope :: [Pitch]
 phasing_trope = map read (words phase)
