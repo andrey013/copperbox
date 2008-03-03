@@ -1,5 +1,20 @@
 
 
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Korda
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Guitar chords / fingering positions
+-- |
+--------------------------------------------------------------------------------
+
+
 module Korda where
 
 import Bala
@@ -8,10 +23,15 @@ import Data.Maybe
 import Control.Applicative hiding (many, optional, (<|>) )
 import Text.ParserCombinators.Parsec 
 
-data FingerPos = FPos Int | NotF 
 
+
+type FingerPos = Maybe Int
   
 data Fingering = Fingering (Maybe Int) [FingerPos] 
+
+
+c_var2 :: Fingering
+c_var2 = read "3@(013331)"
 
 c_slash_d :: Fingering
 c_slash_d = read "(xx0010)"
@@ -22,18 +42,25 @@ c_slash_b = read "(x22010)"
 
 lower_e :: Pitch
 lower_e = read "E4"
-    
+
+standard_tuning :: [Pitch]    
 standard_tuning = map (addSemi lower_e) (zac 0 [5,5,5,4,5])
 
--- evalFingering :: Fingering -> [Int]
-evalFingering (Fingering _ xs) = map (addSemi lower_e) $ offsets xs
-  where 
 
-    offsets xs    = catMaybes $ zipWith fn xs (zac 0 [5,5,5,4,5])
-    fn NotF     _ = Nothing
-    fn (FPos i) j = Just (i + j)
+evalFingering :: Fingering -> [Pitch] -> [Pitch]
+evalFingering fin tuning = 
+  catMaybes $ zipWith (fmap . addSemi) tuning $ offsetToRoot fin
+
+
+
+offsetToRoot (Fingering Nothing xs)  = xs
+offsetToRoot (Fingering (Just i) xs) = map (root i) xs
+  where root i = fmap (\a -> if (a==0) then 0 else a+(i-1))
+
+
         
-demo = evalFingering c_slash_d
+demo  = evalFingering c_slash_d standard_tuning
+demo2 = evalFingering c_var2 standard_tuning 
 
 --------------------------------------------------------------------------------
 -- Read instances
@@ -46,12 +73,9 @@ fingering = Fingering <$> optparse fretpos <*> parens (many1 fingerPos)
   where fretpos = int <* char '@'
 
   
-instance Read FingerPos where 
-  readsPrec _ s = readsParsec fingerPos s  
-  
 fingerPos = fingered <|> notfingered
-  where fingered    = FPos <$> digiti
-        notfingered = NotF <$  char 'x'
+  where fingered    = Just <$> digiti
+        notfingered = Nothing <$  char 'x'
           
 
  
@@ -61,13 +85,11 @@ fingerPos = fingered <|> notfingered
   
 instance Show Fingering where
   showsPrec _ (Fingering fret xs) 
-      = prefix fret . (withParens $ showTogether xs)
+      = prefix fret . (withParens $ caten $ map showsFingerPos xs)
     where
       prefix Nothing  = id
-      prefix (Just i) = showChar '@' . shows i
+      prefix (Just i) = shows i . showChar '@' 
     
-instance Show FingerPos where
-  showsPrec _ NotF     = showChar 'x'
-  showsPrec _ (FPos i) = shows i
-
+showsFingerPos Nothing  = showChar 'x'
+showsFingerPos (Just i) = shows i
 

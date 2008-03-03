@@ -134,4 +134,5 @@ showTogether = foldr cat id
   where cat :: (Show a) => a -> ShowS -> ShowS
         cat a acc = (shows a) . acc
 
-  
+caten :: [ShowS] -> ShowS
+caten = foldr (.) id
