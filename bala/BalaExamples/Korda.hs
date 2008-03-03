@@ -41,10 +41,10 @@ c_slash_b = read "(x22010)"
 
 
 lower_e :: Pitch
-lower_e = read "E4"
+lower_e = read "E3"
 
 standard_tuning :: [Pitch]    
-standard_tuning = map (addSemi lower_e) (zac 0 [5,5,5,4,5])
+standard_tuning = scanl addSemi lower_e [5,5,5,4,5]
 
 
 evalFingering :: Fingering -> [Pitch] -> [Pitch]

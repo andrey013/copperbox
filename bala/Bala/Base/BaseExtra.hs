@@ -34,10 +34,15 @@ import Text.ParserCombinators.Parsec.Language
 -- elements = map read . words
 
 
+-- zac looks like scanl (+)...
+{-
 -- zac, build a list from the intial value adding the interval in the list
 zac :: (Num a) => a -> [a] -> [a]
 zac i xs = snd $ mapAccumL fn i (0:xs)
   where fn acc n  = (acc + n, acc + n)
+-}
+  
+  
 
 -- zack, like zac but the interval measure is counts from 1 
 -- (i.e 4-4 has an interval of 1, 4-5 interval 2, 4-6 interval 3)

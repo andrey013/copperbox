@@ -32,7 +32,7 @@ data Pitch = Pitch {
   }
   deriving Eq
     
-data PitchLetter = A | B | C | D | E | F | G 
+data PitchLetter = C | D | E | F | G | A | B
   deriving (Eq,Enum,Ord,Show)
 
 data Accidental = Nat | Sharp | SharpSharp | Flat | FlatFlat  
@@ -80,17 +80,21 @@ instance SemiDisplacement SimplePitch where
 
 
 
-instance SemiDisplacement Pitch where 
+instance SemiDisplacement Pitch where
+  -- oc is "octave-carry" this isn't a very descriptive implementation
+  -- and at some point should be done better
   (Pitch l a o c) `addSemi` i = 
     let od = i `div` 12
         (SimplePitch l' a') = toEnum $ semis l + semis a + (i `mod` 12)
-    in Pitch l' a' (o + od) c
+        oc = if (l' < l) then 1 else 0
+    in Pitch l' a' (o + od + oc) c
   
-  -- wrong !!?? (check)
+  
   (Pitch l a o c) `subSemi` i = 
     let od = i `div` 12 
         (SimplePitch l' a') = toEnum $ semis l + semis a - (i `mod` 12)
-    in Pitch l' a' (o - od) c
+        oc = if (l' > l) then 1 else 0
+    in Pitch l' a' (o - (od + oc)) c
   
   
     

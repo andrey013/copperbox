@@ -60,13 +60,13 @@ pentatonic_minor  = mkIS "WWA2WA2"
 octaveComplete (IntervalStructure xs) = 12 == foldr (+) 0 xs
 
 
-c_pentatonic_major' = map (addSemi middle_c) (zac 0 (unIS pentatonic_major) )
+c_pentatonic_major' = scanl addSemi middle_c (unIS pentatonic_major)
   where middle_c :: Pitch
         middle_c = read "C4"
 
 
 makeScale :: Pitch -> IntervalStructure -> Scale
-makeScale p (IntervalStructure xs) = Scale p $ map (p `addSemi`) (zac 0 xs)
+makeScale p (IntervalStructure xs) = Scale p $ scanl addSemi p xs
 
 c_pentatonic_major = makeScale (read "C4") pentatonic_major
  
