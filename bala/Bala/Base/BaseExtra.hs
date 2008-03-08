@@ -34,21 +34,19 @@ import Text.ParserCombinators.Parsec.Language
 -- elements = map read . words
 
 
--- zac looks like scanl (+)...
+  
 {-
--- zac, build a list from the intial value adding the interval in the list
-zac :: (Num a) => a -> [a] -> [a]
-zac i xs = snd $ mapAccumL fn i (0:xs)
-  where fn acc n  = (acc + n, acc + n)
--}
-  
-  
-
 -- zack, like zac but the interval measure is counts from 1 
 -- (i.e 4-4 has an interval of 1, 4-5 interval 2, 4-6 interval 3)
 zack :: (Num a) => a -> [a] -> [a]
 zack i xs = snd $ mapAccumL fn i (0:xs)
   where fn acc n  = (acc + n - 1, acc + n)
+-}
+
+-- ,scanl shiftyPlus, replaces zack  
+shiftyPlus :: (Num a) => a -> a -> a
+shiftyPlus a b = a - 1 + b  
+  
 
 -- zam - zippy map
 zam :: (a -> a -> b) -> [a] -> [b]
@@ -78,8 +76,8 @@ readsParsec p s = case parse pfn "" s of
                     Right a -> [a] 
   where pfn = (,) <$> p <*> getInput
 
-token :: Parser a -> Parser a
-token p = p <* many (oneOf " \t\n")
+lexeme :: Parser a -> Parser a
+lexeme p = p <* many (oneOf " \t\n")
 
 optOneOf :: [Char] -> Parser (Maybe Char)    
 optOneOf cs = optparse $ oneOf cs
@@ -141,3 +139,9 @@ showTogether = foldr cat id
 
 caten :: [ShowS] -> ShowS
 caten = foldr (.) id
+
+
+catenSep :: [ShowS] -> ShowS
+catenSep [] = id
+catenSep (x:xs) = foldl fn x xs
+  where fn e acc = e . showSpace . acc

@@ -1,6 +1,5 @@
 {-# OPTIONS_GHC -XFlexibleInstances #-}
 
-
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.Base.PitchClass

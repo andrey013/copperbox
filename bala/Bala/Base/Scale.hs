@@ -1,4 +1,5 @@
 
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.Base.Scale
@@ -56,13 +57,10 @@ marwa             = mkIS "HA2WHWWH"
 bhairav           = mkIS "HA2HWHA2H"
 pentatonic_major  = mkIS "WWA2WA2"
 pentatonic_minor  = mkIS "WWA2WA2"
+chromatic         = mkIS "HHHHHHHHHHHH"
 
 octaveComplete (IntervalStructure xs) = 12 == foldr (+) 0 xs
 
-
-c_pentatonic_major' = scanl addSemi middle_c (unIS pentatonic_major)
-  where middle_c :: Pitch
-        middle_c = read "C4"
 
 
 makeScale :: Pitch -> IntervalStructure -> Scale

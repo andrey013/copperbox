@@ -1,6 +1,5 @@
 
 
-
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.Base.Perform
@@ -24,15 +23,14 @@ import Bala.Base.PitchClass
 import Bala.Base.BaseExtra 
 
 import Control.Applicative hiding (many, optional, (<|>) )
-import Text.ParserCombinators.Parsec hiding (token)
+import Text.ParserCombinators.Parsec
 
 
 --------------------------------------------------------------------------------
 -- Datatypes
 --------------------------------------------------------------------------------
 
-newtype IntervalPattern = IP {unIP :: [Int]}
-  deriving (Eq,Show)
+
 
 data Interval = Interval {
     arithmetic_distance :: Int,
@@ -42,6 +40,12 @@ data Interval = Interval {
 
 type NamedInterval = (IntervalQuality, IntervalSize)
 
+newtype IntervalPattern = IntervalPattern [Int]
+  deriving (Eq,Show)
+
+newtype ScaleDegreePattern = ScaleDegreePattern [(Int,Accidental)]
+
+  
   
 data IntervalSize = Unison | Second | Third | Fourth | Fifth | Sixth
                   | Seventh | Octave
@@ -107,10 +111,10 @@ unorderedPCInterval (PC p1) (PC p2)
 
                      
 
-diatonic, chromatic :: Interval -> Bool
-diatonic _ = undefined -- perfect major or minor
+diatonicInterval, chromaticInterval :: Interval -> Bool
+diatonicInterval _ = undefined -- perfect major or minor
 
-chromatic = not . diatonic
+chromaticInterval = not . diatonicInterval
 
 intervalClass :: Interval -> Bool
 intervalClass = undefined
@@ -200,8 +204,18 @@ readIntervalSize = number <$> digit
 readIntervalConstr :: Parser Interval
 readIntervalConstr = parens inner
   where
-    inner = Interval <$> (token (string "Interval") *> token int)
-                     <*> token int
+    inner = Interval <$> (lexeme (string "Interval") *> lexeme int)
+                     <*> lexeme int
+                     
+instance Read ScaleDegreePattern where
+  readsPrec _ s = readsParsec readScaleDegreePattern s
+  
+readScaleDegreePattern = ScaleDegreePattern <$> sepBy1 scaleDegree whiteSpace 
+
+scaleDegree = flip (,) <$> readAccidental <*> int    
+  
+  
+                     
 --------------------------------------------------------------------------------
 -- Show instances
 --------------------------------------------------------------------------------
@@ -224,6 +238,10 @@ instance Show IntervalQuality where
   showsPrec _ Diminished  = showChar 'd'
   
 
-  
+instance Show ScaleDegreePattern where
+  showsPrec _ (ScaleDegreePattern xs) = catenSep $ map fn xs
+    where fn (i,alt) = shows alt . shows i
+    
+    
 
                     
