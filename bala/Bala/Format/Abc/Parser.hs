@@ -23,7 +23,7 @@ import Control.Monad
 
 import Data.Char hiding (Space)
 import Data.List (sortBy)
-import Text.ParserCombinators.Parsec hiding ( {- token, -} space)
+import Text.ParserCombinators.Parsec hiding (space)
 
 
 abcFile :: Parser [AbcFileElement]
@@ -279,13 +279,13 @@ note = Note <$> noteOrRest <*> pmaybe noteLength <*> pmaybe tie
 
 
 noteOrRest :: Parser NoteOrRest
-noteOrRest = choice [ (Pitch <$> pitch), (Rest <$ rest) ]
+noteOrRest = choice [ (NotePitch <$> notePitch), (Rest <$ rest) ]
 
 
 
 
-pitch :: Parser PitchSpec
-pitch = build <$> pmaybe accidental <*> basenote <*> pmaybe octave
+notePitch :: Parser PitchSpec
+notePitch = build <$> pmaybe accidental <*> basenote <*> pmaybe octave
   where build ma n mo  = PitchSpec n ma mo
 
 
@@ -339,7 +339,7 @@ gracings = tilde <|> stacatto <|> downBow <|> upBow
 
 
 graceNotes :: Parser GraceNotes  
-graceNotes = braces $ many1 pitch
+graceNotes = braces $ many1 notePitch
   where braces = between (char '{') (char '}') 
 
 

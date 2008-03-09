@@ -26,13 +26,13 @@ test04 = scanl shiftyPlus 10 [5,4]
 test04' = scanl fn 10 [5,4]
   where fn a b = a + b - 1
 
-test05 :: GuitarChord
+test05 :: LabelledChord
 test05 = read "G7"
 
-test06 :: GuitarChord
+test06 :: LabelledChord
 test06 = read "A/Ab"     
 
-demo = mapM (parseTest readGuitarChord) $ 
+demo = mapM (parseTest readLabelledChord) $ 
   [ -- major
     "Cmaj", "Cma",  "CM" 
   , "C6",  "Cmaj6", "Cma6"

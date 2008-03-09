@@ -55,12 +55,12 @@ data Variation = Dim | Aug
 data InversionLabel = IRoot | IFirst | ISecond | IThird
   deriving (Eq)
 
-data GuitarChord = GuitarChord {
-    guiord_pitch :: PitchLetter,
-    guiord_type  :: LabelledChord
+data LabelledChord = LabelledChord {
+    chord_pitch  :: PitchLetter,
+    chord_suffix :: ChordSuffix
   }
 
-data LabelledChord 
+data ChordSuffix 
   = -- Major   
     Maj' | Maj6 | Maj7 | Maj9 | Maj11 | Maj13 | MajAdd9 | Maj6_9
     -- Minor 
@@ -125,8 +125,16 @@ tip (RomanChord {chord_quality=qual,chord_variation=var} ) =
     variation (IntervalPattern [a,b]) Dim = IntervalPattern [a, b - 1]
     variation (IntervalPattern [a,b]) Aug = IntervalPattern [a, b + 1]
     
+
+-- would it be better to use a call to `read` here?
+-- e.g.  scaleDegrees Maj' = read "1-3-5"
     
+scaleDegrees :: ChordSuffix -> ScaleDegreePattern
+scaleDegrees Maj' = ScaleDegreePattern [(1,Nat), (3,Nat), (5,Nat)]
+scaleDegrees _    = undefined
+
     
+        
 --------------------------------------------------------------------------------
 -- Read instances
 --------------------------------------------------------------------------------
@@ -202,11 +210,11 @@ inversionLabel = choice [root,first,second,third]
     third   = IThird  <$ char 'd'
 
 
-instance Read GuitarChord where 
-  readsPrec _ s = readsParsec readGuitarChord s
+instance Read LabelledChord where 
+  readsPrec _ s = readsParsec readLabelledChord s
   
-readGuitarChord :: Parser GuitarChord
-readGuitarChord = GuitarChord <$> readPitchLetter <*> withLex lexChord
+readLabelledChord :: Parser LabelledChord
+readLabelledChord = LabelledChord <$> readPitchLetter <*> withLex lexChordSuffix
 
 withLex :: (String -> Parser (a, String)) -> Parser a
 withLex f = do
@@ -224,36 +232,36 @@ updatePosWith s = do
 continue :: String -> Parser a -> Parser a 
 continue s f = updatePosWith s >> f
 
-lexChord :: String -> Parser (LabelledChord, String)
-lexChord ('m':'a':'j':xs) = "maj"     `continue` (lexMaj xs)
-lexChord ('m':'a':xs)     = "ma"      `continue` (lexMaj xs)
-lexChord ('M':xs)         = "M"       `continue` (lexMaj xs)
-lexChord ('a':'d':'d':'9':xs) =
+lexChordSuffix :: String -> Parser (ChordSuffix, String)
+lexChordSuffix ('m':'a':'j':xs) = "maj"     `continue` (lexMaj xs)
+lexChordSuffix ('m':'a':xs)     = "ma"      `continue` (lexMaj xs)
+lexChordSuffix ('M':xs)         = "M"       `continue` (lexMaj xs)
+lexChordSuffix ('a':'d':'d':'9':xs) =
                             "add9"    `continue` return (MajAdd9,xs)
-lexChord ('/':'9':xs)     = "/9"      `continue` return (MajAdd9,xs)
-lexChord ('6':'/':'9':xs) = "6/9"     `continue` return (Maj6_9,xs)
-lexChord ('6':xs)         = "6"       `continue` return (Maj6,xs)
-lexChord ('7':xs)         = "7"       `continue` (lex7 xs)
-lexChord ('9':'/':'6':xs) = "9/6"     `continue` return (Maj6_9,xs)
-lexChord ('9':xs)         = "9"       `continue` return (Dom9, xs)
-lexChord ('1':'1':xs)     = "11"      `continue` return (Dom11, xs)
-lexChord ('1':'3':xs)     = "13"      `continue` return (Dom13, xs)
+lexChordSuffix ('/':'9':xs)     = "/9"      `continue` return (MajAdd9,xs)
+lexChordSuffix ('6':'/':'9':xs) = "6/9"     `continue` return (Maj6_9,xs)
+lexChordSuffix ('6':xs)         = "6"       `continue` return (Maj6,xs)
+lexChordSuffix ('7':xs)         = "7"       `continue` (lex7 xs)
+lexChordSuffix ('9':'/':'6':xs) = "9/6"     `continue` return (Maj6_9,xs)
+lexChordSuffix ('9':xs)         = "9"       `continue` return (Dom9, xs)
+lexChordSuffix ('1':'1':xs)     = "11"      `continue` return (Dom11, xs)
+lexChordSuffix ('1':'3':xs)     = "13"      `continue` return (Dom13, xs)
 
-lexChord ('m':'i':'n':xs) = "min"     `continue` (lexMin xs)
-lexChord ('m':'i':xs)     = "mi"      `continue` (lexMin xs)
-lexChord ('m':xs)         = "m"       `continue` (lexMin xs)
-lexChord ('+':'5':xs)     = "+"       `continue` return (Aug',xs)
-lexChord ('+':xs)         = "+"       `continue` return (Aug',xs)
-lexChord ('-':xs)         = "-"       `continue` return (Min',xs)
+lexChordSuffix ('m':'i':'n':xs) = "min"     `continue` (lexMin xs)
+lexChordSuffix ('m':'i':xs)     = "mi"      `continue` (lexMin xs)
+lexChordSuffix ('m':xs)         = "m"       `continue` (lexMin xs)
+lexChordSuffix ('+':'5':xs)     = "+"       `continue` return (Aug',xs)
+lexChordSuffix ('+':xs)         = "+"       `continue` return (Aug',xs)
+lexChordSuffix ('-':xs)         = "-"       `continue` return (Min',xs)
 
-lexChord ('d':'i':'m':xs) = "dim"     `continue` (lexDim xs)
-lexChord ('a':'u':'g':xs) = "aug"     `continue` (lexAug xs)
+lexChordSuffix ('d':'i':'m':xs) = "dim"     `continue` (lexDim xs)
+lexChordSuffix ('a':'u':'g':xs) = "aug"     `continue` (lexAug xs)
 
-lexChord ('s':'u':'s':xs) = "sus"     `continue` (lexSus xs)
+lexChordSuffix ('s':'u':'s':xs) = "sus"     `continue` (lexSus xs)
 
-lexChord ('j':xs)         = "j"       `continue` (lexj xs)
+lexChordSuffix ('j':xs)         = "j"       `continue` (lexj xs)
 
-lexChord _                = fail "malformed chord"
+lexChordSuffix _                = fail "malformed chord suffix"
 
 
 lexMaj ('1':'3':xs)       = "13"      `continue` return (Maj13,xs)
@@ -363,12 +371,12 @@ instance Show InversionLabel where
   showsPrec _ ISecond = showChar 'c'
   showsPrec _ IThird  = showChar 'd'
 
-instance Show GuitarChord where
-  showsPrec _ (GuitarChord p q) = 
+instance Show LabelledChord where
+  showsPrec _ (LabelledChord p q) = 
       shows p . shows q
 
 
-instance Show LabelledChord where
+instance Show ChordSuffix where
   showsPrec _ Maj'      = showString "maj"
   showsPrec _ Maj6      = showString "maj6"
   showsPrec _ Maj7      = showString "maj7"

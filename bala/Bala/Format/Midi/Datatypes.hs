@@ -41,7 +41,7 @@ module Bala.Format.Midi.Datatypes (
     TextType(..),
     
     -- * Scale type - used for setting key signature
-    Scale(..),
+    ScaleType(..),
     varlenSplit
   ) where
 
@@ -121,11 +121,11 @@ data MetaEvent
     | SetTempo            Word32              -- ^ microseconds per quarter-note
     | SMPTEOffset         Word8 Word8 Word8 Word8 Word8   -- ^ hour x minute x second x frac x subfrac
     | TimeSignature       Word8 Word8 Word8 Word8         -- ^ numerator x denominator x metronome x number of 32nd notes
-    | KeySignature        Int8 Scale          -- ^ key_type x scale_type
+    | KeySignature        Int8 ScaleType      -- ^ key_type x scale_type
     | SSME                Word32 ByteString   -- ^ sequencer specific meta-event - length x data
   deriving (Eq,Show)
   
-data Scale = MAJOR | MINOR
+data ScaleType = MAJOR | MINOR
   deriving (Eq,Enum,Show,Read)
 
 --------------------------------------------------------------------------------

@@ -190,7 +190,7 @@ putSystemEvent (SysEx i bs) = do
   putByteString bs
   
     
-putScale :: Scale -> Put
+putScale :: ScaleType -> Put
 putScale MAJOR = putWord8 0
 putScale MINOR = putWord8 1
   

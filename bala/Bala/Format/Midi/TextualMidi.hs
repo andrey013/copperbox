@@ -124,7 +124,7 @@ instance Pretty MetaEvent where
   pretty (KeySignature i sc)  = text "key-sig" <-> integral i <-> pretty sc   
   pretty (SSME i _)           = text "ssme" <-> ppHex i <+> text "..."
 
-instance Pretty Scale where
+instance Pretty ScaleType where
   pretty MAJOR  = text "major"
   pretty MINOR  = text "minor"
   

@@ -44,20 +44,7 @@ newtype IntervalStructure = IntervalStructure { unIS :: [Int] }
 mkIS :: String -> IntervalStructure
 mkIS = read
 
-major :: IntervalStructure
-major             = mkIS "WWHWWWH"   -- bilaval
-mixolydian        = mkIS "WWHWWHW"   -- khamaj
-dorian            = mkIS "WHWWWHW"   -- kafi
-aeolian           = mkIS "WHWWHWW"   -- asavari
-phrygian          = mkIS "HWWWHWW"   -- bhairavi
-lydian            = mkIS "WWWHWWH"   -- kaylan
-todi              = mkIS "HWA2HHA2H"
-purvi             = mkIS "HA2WHHA2H"
-marwa             = mkIS "HA2WHWWH"
-bhairav           = mkIS "HA2HWHA2H"
-pentatonic_major  = mkIS "WWA2WA2"
-pentatonic_minor  = mkIS "WWA2WA2"
-chromatic         = mkIS "HHHHHHHHHHHH"
+
 
 octaveComplete (IntervalStructure xs) = 12 == foldr (+) 0 xs
 
@@ -66,7 +53,7 @@ octaveComplete (IntervalStructure xs) = 12 == foldr (+) 0 xs
 makeScale :: Pitch -> IntervalStructure -> Scale
 makeScale p (IntervalStructure xs) = Scale p $ scanl addSemi p xs
 
-c_pentatonic_major = makeScale (read "C4") pentatonic_major
+
  
 --------------------------------------------------------------------------------
 -- Read instances

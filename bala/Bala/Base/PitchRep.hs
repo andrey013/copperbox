@@ -157,7 +157,7 @@ sem :: Pitch -> Int -> Pitch
 sem p i = toPitch $ i + unCents (toCents p)
  
 ove :: Pitch -> Int -> Pitch
-ove p@(Pitch {octave=o'}) i = p {octave=o'+i} -- (\s -> s {octave=o'+i}) p
+ove p@(Pitch {octave=o'}) i = p {octave=o'+i} 
 
 data ParsonsCode = PaR | PaU | PaD    
   deriving (Eq,Ord,Show)

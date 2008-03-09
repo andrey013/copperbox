@@ -354,7 +354,7 @@ unwrapint i
   | i > 128   = (fromIntegral i) - 256
   | otherwise = fromIntegral i
   
-undscale :: Word8 -> Scale
+undscale :: Word8 -> ScaleType
 undscale 0 = MAJOR
 undscale 1 = MINOR
 undscale i = error $ "undscale " ++ show i

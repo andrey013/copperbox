@@ -65,17 +65,26 @@ data IntervalDistance = Simple | Compound Int
 
 -- | count of 'letter names' inclusive between two pitches (ordered,multioctave)
 arithmeticDistance :: Pitch -> Pitch -> Int
-arithmeticDistance (Pitch p1 a1 o1 _) (Pitch p2 a2 o2 _) =
-    letterDist p1 p2 + oveDist o1 o2  
-  where
-    letterDist :: PitchLetter -> PitchLetter -> Int
-    letterDist a b = 1 + mod7 (7 + fromEnum b - fromEnum a)
-    
-    oveDist :: Int -> Int -> Int
-    oveDist o1 o2 | o1 == o2 = 0
-                  | o1 <  o2 = (o2 - o1) * 7 
-                  | o1 >  o2 = (o2 - o1) * 7 - 2
+arithmeticDistance p1 p2 | p1 > p2   = orderedDist p2 p1
+                         | otherwise = orderedDist p1 p2
 
+  where
+    orderedDist (Pitch pl1 _ o1 _) (Pitch pl2 _ o2 _) = 
+      let (ld,wrapped) = letterDist pl1 pl2
+          ove          = oveDist o1 o2 wrapped
+      in ld + ove  
+    
+
+    oveDist :: Int -> Int -> Bool -> Int
+    oveDist o1 o2 True  = 7 * (o2 - o1 - 1)
+    oveDist o1 o2 False = 7 * (o2 - o1)
+    
+    -- calc distance and whether it has wrapped around
+    letterDist :: PitchLetter -> PitchLetter -> (Int,Bool)
+    letterDist x y = (dist, not (x <= y)) 
+      where dist = 1 + mod7 (7 + fromEnum y - fromEnum x)
+
+    
 -- | count of semitones between two pitches (ordered,multioctave)                    
 semitoneDistance :: Pitch -> Pitch -> Int
 semitoneDistance p1 p2 = semis p2 - semis p1
@@ -118,14 +127,7 @@ chromaticInterval = not . diatonicInterval
 
 intervalClass :: Interval -> Bool
 intervalClass = undefined
- 
--- mspan 
-mspan :: Pitch -> Pitch -> Int
-mspan pch1 pch2 = 1 + mod7 (7 + p2 - p1) + (7 * od)
-  where fn = fromEnum . pitch
-        p1 = fn pch1
-        p2 = fn pch2
-        od = octave pch2 - octave pch1
+
          
 intervalName :: Interval -> Maybe NamedInterval
 intervalName (Interval 1 0)   = Just (Perfect, Unison)

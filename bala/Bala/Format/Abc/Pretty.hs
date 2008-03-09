@@ -145,7 +145,7 @@ instance Pretty Note where
                                                   <> maybe empty pretty ot 
 
 instance Pretty NoteOrRest where
-  pretty (Pitch pch)          = pretty pch
+  pretty (NotePitch pch)      = pretty pch
   pretty Rest                 = char 'z'      
 
 

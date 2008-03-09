@@ -152,7 +152,7 @@ data Note = Note {
 
 
 data NoteOrRest
-    = Pitch PitchSpec
+    = NotePitch PitchSpec
     | Rest
   deriving (Eq, Show)
   
@@ -169,11 +169,11 @@ data Octave
   deriving (Eq, Show)
   
 data Accidental
-    = Sharp
+    = Natural
+    | Sharp
     | DoubleSharp
     | Flat
     | DoubleFlat
-    | Natural
   deriving (Eq, Show)
 
 

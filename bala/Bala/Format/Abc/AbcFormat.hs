@@ -19,10 +19,12 @@ module Bala.Format.Abc.AbcFormat
   ( module Bala.Format.Abc.Datatypes
   , module Bala.Format.Abc.Parser 
   , module Bala.Format.Abc.Pretty
+  , module Bala.Format.Abc.Conversion
   )
   where
   
 import Bala.Format.Abc.Datatypes
 import Bala.Format.Abc.Parser 
 import Bala.Format.Abc.Pretty
+import Bala.Format.Abc.Conversion
 
