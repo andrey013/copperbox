@@ -16,7 +16,7 @@
 
 module Bala.Format.Midi.TextualMidi where
 
-import Bala hiding (int,integer)
+import Bala hiding (int,integer,brackets)
 import Bala.Format.Midi.Datatypes
 
 
