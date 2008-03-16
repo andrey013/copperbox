@@ -29,21 +29,8 @@ import Text.ParserCombinators.Parsec.Language
 
 
 
--- clashes with QuickCheck and needs a better name anyway    
--- elements :: Read a => String -> [a]
--- elements = map read . words
 
 
-  
-{-
--- zack, like zac but the interval measure is counts from 1 
--- (i.e 4-4 has an interval of 1, 4-5 interval 2, 4-6 interval 3)
-zack :: (Num a) => a -> [a] -> [a]
-zack i xs = snd $ mapAccumL fn i (0:xs)
-  where fn acc n  = (acc + n - 1, acc + n)
--}
-
--- ,scanl shiftyPlus, replaces zack  
 shiftyPlus :: (Num a) => a -> a -> a
 shiftyPlus a b = a - 1 + b  
   
@@ -85,6 +72,11 @@ optOneOf cs = optparse $ oneOf cs
 optparse :: Parser a -> Parser (Maybe a)
 optparse p = option Nothing (Just <$> p)
 
+counting, counting1 :: Parser a -> Parser Int
+counting  p = length <$> many p
+counting1 p = length <$> many1 p
+
+
 positiveInt :: Parser Int
 positiveInt = read <$> many1 digit
 
@@ -98,8 +90,12 @@ baseLex             = P.makeTokenParser emptyDef
 
 whiteSpace        = P.whiteSpace baseLex 
 parens            = P.parens baseLex
+brackets          = P.brackets baseLex
+angles            = P.angles baseLex
 integer           = P.integer baseLex
 double            = P.float baseLex
+stringLiteral     = P.stringLiteral baseLex
+
 
 
 float             :: Parser Float

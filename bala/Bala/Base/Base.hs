@@ -25,7 +25,7 @@ module Bala.Base.Base
   , module Bala.Base.NamedElems
   )
   where
-  
+
 import Bala.Base.PitchRep
 import Bala.Base.PitchClass
 import Bala.Base.PitchConversion

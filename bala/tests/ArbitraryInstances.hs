@@ -24,14 +24,19 @@ instance Applicative Gen where
 instance Arbitrary PitchLetter where
   arbitrary = elements [A, B, C, D, E, F, G]
   coarbitrary = error "no coarbitrary for PitchLetter"
+
+instance Arbitrary PitchLabel where
+  arbitrary = PitchLabel <$> arbitrary <*> arbitrary
+  coarbitrary = error "no coarbitrary for PitchLabel"
   
+    
 instance Arbitrary Pitch where
   arbitrary = Pitch <$> arbitrary <*> arbitrary <*> choose (3,6) <*> pure 0  
   coarbitrary = error "no coarbitrary for Pitch"
   
 instance Arbitrary Accidental where
   arbitrary = elements $ 
-    [Nat, Sharp, SharpSharp, Flat, FlatFlat, Sharpi 3, Flati 3]
+    [Nat, Sharpi 1, Sharpi 2, Flati 1, Flati 2]
   coarbitrary = error "no coarbitrary for Accidental"  
   
 

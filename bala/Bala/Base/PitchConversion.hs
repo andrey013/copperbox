@@ -56,26 +56,26 @@ octaveForm = OR
 
 
 instance EncodePitch MidiPitch where
-  fromPitch (Pitch l a o _) = mkMidi (semis l) a o
+  fromPitch (Pitch l o s c) = undefined -- mkMidi (semis l) a o
 
-  toPitch (M a) = Pitch pch shp oct 0
+  toPitch (M i) = undefined -- Pitch l o Nat 0
     where 
-      (pch,shp) = noteOf a
-      oct       = (a `div` 12) - 1 
+      l = sharpNote i
+      o       = (i `div` 12) - 1 
       noteOf m = sharpNote (m `mod` 12)
-
-      sharpNote 0   = (C,Nat)
-      sharpNote 1   = (C,Sharp)
-      sharpNote 2   = (D,Nat)
-      sharpNote 3   = (D,Sharp)
-      sharpNote 4   = (E,Nat)
-      sharpNote 5   = (F,Nat)
-      sharpNote 6   = (F,Sharp)
-      sharpNote 7   = (G,Nat)
-      sharpNote 8   = (G,Sharp)
-      sharpNote 9   = (A,Nat)
-      sharpNote 10  = (A,Sharp)
-      sharpNote 11  = (B,Nat)
+      sharp = Sharpi 1
+      sharpNote 0   = PitchLabel C Nat
+      sharpNote 1   = PitchLabel C sharp
+      sharpNote 2   = PitchLabel D Nat
+      sharpNote 3   = PitchLabel D sharp
+      sharpNote 4   = PitchLabel E Nat
+      sharpNote 5   = PitchLabel F Nat
+      sharpNote 6   = PitchLabel F sharp
+      sharpNote 7   = PitchLabel G Nat
+      sharpNote 8   = PitchLabel G sharp
+      sharpNote 9   = PitchLabel A Nat
+      sharpNote 10  = PitchLabel A sharp
+      sharpNote 11  = PitchLabel B Nat
       sharpNote _   = error "noteOf"
       
     

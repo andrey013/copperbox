@@ -69,11 +69,12 @@ arithmeticDistance p1 p2 | p1 > p2   = orderedDist p2 p1
                          | otherwise = orderedDist p1 p2
 
   where
-    orderedDist (Pitch pl1 _ o1 _) (Pitch pl2 _ o2 _) = 
-      let (ld,wrapped) = letterDist pl1 pl2
+    orderedDist (Pitch l o s _) (Pitch l' o' s' _) = undefined
+{-    
+      let (ld,wrapped) = letterDist l1 l2
           ove          = oveDist o1 o2 wrapped
       in ld + ove  
-    
+-}    
 
     oveDist :: Int -> Int -> Bool -> Int
     oveDist o1 o2 True  = 7 * (o2 - o1 - 1)
