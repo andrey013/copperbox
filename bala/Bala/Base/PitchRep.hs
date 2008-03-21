@@ -33,21 +33,31 @@ data Pitch = Pitch {
     seimtones :: Int,
     cents     :: Int 
   }
-  deriving Eq 
+  deriving (Eq,Read,Show)
   
 data PitchLabel = PitchLabel PitchLetter Accidental
-  deriving Eq 
+  deriving (Eq,Read,Show) 
   
     
 data PitchLetter = C | D | E | F | G | A | B
-  deriving (Eq,Enum,Ord,Show)
+  deriving (Eq,Enum,Ord,Read,Show)
 
-data Accidental = Nat | Sharpi Int | Flati Int
-  deriving Eq
+data Accidental = Nat | Sharp Int | Flat Int
+  deriving (Eq,Read,Show)
   
 --------------------------------------------------------------------------------
 -- Operations
 --------------------------------------------------------------------------------
+
+instance Enum Accidental where
+  fromEnum Nat       = 0
+  fromEnum (Sharp i) = i
+  fromEnum (Flat i)  = negate i
+  
+  toEnum i | i  == 0   = Nat
+           | i > 0     = Sharp i
+           | otherwise = Flat $ negate i
+
 
 -- pitch ops -- adding intervals etc need a naming scheme
 
@@ -104,7 +114,7 @@ centValue (Pitch l o s c)
   = (octaveDisplacement o * 100) + (s * 100) + c
 
 pitchValue :: Int -> Pitch
-pitchValue i = undefined
+pitchValue i = error "pitchValue"
 
 {-  
 toCents (Pitch o l a c) = Cents $ 
@@ -129,8 +139,8 @@ instance Semitones PitchLetter where
 -- How many semitones is the pitch changed by its accidental? 
 instance Semitones Accidental where
   semitones Nat        = 0
-  semitones (Sharpi i) = i
-  semitones (Flati i)  = negate i
+  semitones (Sharp i) = i
+  semitones (Flat i)  = negate i
 
 instance Semitones PitchLabel where
   semitones (PitchLabel l a) = semitones l + semitones a
@@ -176,7 +186,7 @@ instance EncodePitch Int where
   fromPitch p = centValue p 
 
 sem :: Pitch -> Int -> Pitch
-sem p i = undefined -- toPitch $ i + unCents (toCents p)
+sem p i = error "sem" -- toPitch $ i + unCents (toCents p)
  
 ove :: Pitch -> Int -> Pitch
 ove p@(Pitch {octave=o'}) i = p {octave=o'+i} 
@@ -195,82 +205,16 @@ data RefinedContour = ReR | ReUS | ReUL | ReDS | ReDL
   deriving (Eq,Ord,Show)
 
 --------------------------------------------------------------------------------
--- Read instances
+-- Ord instances
 --------------------------------------------------------------------------------
 
 instance Ord Pitch where
-  p1 `compare` p2 = undefined -- (toCents p1) `compare` (toCents p2)
+  p1 `compare` p2 = error "Ord Pitch" -- (toCents p1) `compare` (toCents p2)
 
 
 
---------------------------------------------------------------------------------
--- Read instances
---------------------------------------------------------------------------------
-
-instance Read Pitch where 
-  readsPrec _ s = readsParsec readPitch s
-
-readPitch :: Parser Pitch
-readPitch = buildPitch <$> readPitchLabel
-                       <*> option 4 positiveInt 
-                       <*> option 0 signedInt
-                
 
 
-
-instance Read PitchLabel where 
-  readsPrec _ s = readsParsec readPitchLabel s
-  
-
-readPitchLabel = PitchLabel <$> readPitchLetter <*> readAccidental
-                
-instance Read PitchLetter where 
-  readsPrec _ s = readsParsec readPitchLetter s
-  
-readPitchLetter = letter <$> oneOf "ABCDEFG" 
-  where 
-    letter 'A' = A
-    letter 'B' = B
-    letter 'C' = C
-    letter 'D' = D
-    letter 'E' = E
-    letter 'F' = F
-    letter 'G' = G
-
-
-instance Read Accidental where 
-  readsPrec _ s = readsParsec readAccidental s
-  
-readAccidental = accident <$> option "" sf
-  where 
-    sf = many1 (char '#') <|> many1 (char 'b')
-    accident ""       = Nat
-    accident ('#':xs) = Sharpi (1 + length xs)
-    accident ('b':xs) = Flati (1 + length xs)
-    
-      
-    
-instance Show Accidental where
-  showsPrec _ Nat         = showString ""
-  showsPrec _ (Sharpi i)  | mod i 2 == 0  = root 
-                          | otherwise     = root . showChar '#'
-    where root = showString (replicate (i `div` 2) 'x')                          
-  showsPrec _ (Flati i)   = showString (replicate i 'b')
-    
---------------------------------------------------------------------------------
--- Show instances
---------------------------------------------------------------------------------
-
-instance Show Pitch where
-  showsPrec _ (Pitch o p a i) | i == 0    = root
-                              | i < 0     = root . shows i
-                              | otherwise = root . showChar '+' . shows i
-    where root = shows p . shows a . shows o
-
-
-
-instance Show PitchLabel where
-  showsPrec _ (PitchLabel p a) = shows p . shows a
 
 --------------------------------------------------------------------------------
 -- Enum instances
@@ -280,29 +224,29 @@ instance Enum PitchLabel where
   fromEnum = fromEnumPitchLabel . spellWithSharps
     where
       fromEnumPitchLabel (PitchLabel C Nat)   = 0
-      fromEnumPitchLabel (PitchLabel C (Sharpi 1)) = 1
+      fromEnumPitchLabel (PitchLabel C (Sharp 1)) = 1
       fromEnumPitchLabel (PitchLabel D Nat)   = 2
-      fromEnumPitchLabel (PitchLabel D (Sharpi 1)) = 3
+      fromEnumPitchLabel (PitchLabel D (Sharp 1)) = 3
       fromEnumPitchLabel (PitchLabel E Nat)   = 4
       fromEnumPitchLabel (PitchLabel F Nat)   = 5
-      fromEnumPitchLabel (PitchLabel F (Sharpi 1)) = 6
+      fromEnumPitchLabel (PitchLabel F (Sharp 1)) = 6
       fromEnumPitchLabel (PitchLabel G Nat)   = 7
-      fromEnumPitchLabel (PitchLabel G (Sharpi 1)) = 8
+      fromEnumPitchLabel (PitchLabel G (Sharp 1)) = 8
       fromEnumPitchLabel (PitchLabel A Nat)   = 9
-      fromEnumPitchLabel (PitchLabel A (Sharpi 1)) = 10
+      fromEnumPitchLabel (PitchLabel A (Sharp 1)) = 10
       fromEnumPitchLabel (PitchLabel B Nat)   = 11
   
   toEnum 0   = PitchLabel C Nat
-  toEnum 1   = PitchLabel C (Sharpi 1)
+  toEnum 1   = PitchLabel C (Sharp 1)
   toEnum 2   = PitchLabel D Nat
-  toEnum 3   = PitchLabel D (Sharpi 1)
+  toEnum 3   = PitchLabel D (Sharp 1)
   toEnum 4   = PitchLabel E Nat
   toEnum 5   = PitchLabel F Nat
-  toEnum 6   = PitchLabel F (Sharpi 1)
+  toEnum 6   = PitchLabel F (Sharp 1)
   toEnum 7   = PitchLabel G Nat
-  toEnum 8   = PitchLabel G (Sharpi 1)
+  toEnum 8   = PitchLabel G (Sharp 1)
   toEnum 9   = PitchLabel A Nat
-  toEnum 10  = PitchLabel A (Sharpi 1)
+  toEnum 10  = PitchLabel A (Sharp 1)
   toEnum 11  = PitchLabel B Nat
 
   toEnum i  = toEnum $ i `mod` 12

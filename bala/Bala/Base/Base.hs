@@ -23,6 +23,7 @@ module Bala.Base.Base
   , module Bala.Base.Scale
   , module Bala.Base.BaseExtra
   , module Bala.Base.NamedElems
+  , module Bala.Base.AffiDecoInstances
   )
   where
 
@@ -34,3 +35,4 @@ import Bala.Base.Chord
 import Bala.Base.Scale
 import Bala.Base.BaseExtra
 import Bala.Base.NamedElems
+import Bala.Base.AffiDecoInstances

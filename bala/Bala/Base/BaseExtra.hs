@@ -27,10 +27,31 @@ import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language
 
+--------------------------------------------------------------------------------
+-- Affi(cher) & Deco(uper) -- alternatives to Read & Show for prettier representations
+--------------------------------------------------------------------------------
+
+class Affi a where
+  affi :: a -> ShowS
+
+class Deco a where
+  deco :: Parser a
+  
+afficher :: Affi a => a -> String
+afficher a = affi a []
+
+decouper :: Deco a => String -> a
+decouper s = case parse deco "" s of
+                Left err -> error $ "parse error" ++ show err
+                Right a -> a 
 
 
-
-
+spacedElements :: Deco a => String -> [a]
+spacedElements s = case parse (many1 $ lexeme deco) "" s of
+                     Left err -> error $ "parse error" ++ show err
+                     Right a -> a                     
+                    
+  
 shiftyPlus :: (Num a) => a -> a -> a
 shiftyPlus a b = a - 1 + b  
   
@@ -109,35 +130,65 @@ digiti            = (flip (-) 48) . ord  <$> digit
 
 
 --------------------------------------------------------------------------------
--- Show helpers
+-- Show helpers 
+-- acknowledgement - Daan Leijen's pprint combinators recast for ShowS 
 --------------------------------------------------------------------------------
 
-showOpt :: (Show a) => Maybe a -> ShowS
-showOpt Nothing = id
-showOpt (Just a) = shows a
+optS :: (Show a) => Maybe a -> ShowS
+optS Nothing = id
+optS (Just a) = shows a
 
-showSpace :: ShowS
-showSpace = showChar ' '
+punctuateS s []      = []
+punctuateS s [x]     = [x]
+punctuateS s (x:xs)  = (x . s) : punctuateS s xs
 
-showDot :: ShowS
-showDot = showChar '.'
+encloseSepS l r s []  = l . r
+encloseSepS l r s [x] = l . x . r
+encloseSepS l r s xs  = l . hcatS (punctuateS s xs) . r
 
-showNl = showChar '\n'
-
-withParens :: ShowS -> ShowS
-withParens f = showChar '(' . f . showChar ')'
-
-
-showTogether :: (Show a) => [a] -> ShowS
-showTogether = foldr cat id
-  where cat :: (Show a) => a -> ShowS -> ShowS
-        cat a acc = (shows a) . acc
-
-caten :: [ShowS] -> ShowS
-caten = foldr (.) id
+listS           = encloseSepS lbracketS rbracketS commaS
+tupledS         = encloseSepS lparenS   rparenS   commaS
+semiBraceS      = encloseSepS lbraceS   rbraceS   semiS
 
 
-catenSep :: [ShowS] -> ShowS
-catenSep [] = id
-catenSep (x:xs) = foldl fn x xs
-  where fn e acc = e . showSpace . acc
+hcatS           = foldS (.)
+hsepS           = foldS sepS
+vsepS           = foldS lineS
+
+foldS f []      = id
+foldS f xs      = foldr1 f xs
+
+
+x `sepS`  y     = x . spaceS . y  
+x `lineS` y     = x . newlineS . y
+
+squoteS         = encloseS sglquoteS sglquoteS
+dquoteS         = encloseS dblquoteS dblquoteS
+braceS          = encloseS lbraceS rbraceS
+parenS          = encloseS lparenS rparenS
+angleS          = encloseS langleS rangleS
+bracketS        = encloseS lbracketS rbracketS
+encloseS l r x  = l . x . r
+
+lparenS         = showChar '('
+rparenS         = showChar ')'
+langleS         = showChar '<'
+rangleS         = showChar '>'
+lbraceS         = showChar '{'
+rbraceS         = showChar '}'
+lbracketS       = showChar '['
+rbracketS       = showChar ']'     
+
+sglquoteS       = showChar '\''
+dblquoteS       = showChar '"'
+semiS           = showChar ':'
+colonS          = showChar ';'
+commaS          = showChar ','
+spaceS          = showChar ' '
+dotS            = showChar '.'
+equalS          = showChar '='
+backslashS      = showChar '\\'
+newlineS        = showChar '\n'
+
+
+

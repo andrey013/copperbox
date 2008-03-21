@@ -56,29 +56,12 @@ octaveForm = OR
 
 
 instance EncodePitch MidiPitch where
-  fromPitch (Pitch l o s c) = undefined -- mkMidi (semis l) a o
+  fromPitch p@(Pitch l o s c) = M $ 12 * (o + 1) + s  -- cents to work out
 
-  toPitch (M i) = undefined -- Pitch l o Nat 0
+  toPitch m@(M i) = Pitch l (o - 1) s 0
     where 
-      l = sharpNote i
-      o       = (i `div` 12) - 1 
-      noteOf m = sharpNote (m `mod` 12)
-      sharp = Sharpi 1
-      sharpNote 0   = PitchLabel C Nat
-      sharpNote 1   = PitchLabel C sharp
-      sharpNote 2   = PitchLabel D Nat
-      sharpNote 3   = PitchLabel D sharp
-      sharpNote 4   = PitchLabel E Nat
-      sharpNote 5   = PitchLabel F Nat
-      sharpNote 6   = PitchLabel F sharp
-      sharpNote 7   = PitchLabel G Nat
-      sharpNote 8   = PitchLabel G sharp
-      sharpNote 9   = PitchLabel A Nat
-      sharpNote 10  = PitchLabel A sharp
-      sharpNote 11  = PitchLabel B Nat
-      sharpNote _   = error "noteOf"
-      
-    
+      (o,s) = i `divMod` 12
+      l     = toEnum s
 
 
 mkMidi offst accdt octv = M $ offst + semis accdt + octaveMidi octv
