@@ -19,6 +19,7 @@
 module Bala.Base.Interval where
 
 import Bala.Base.PitchRep
+import Bala.Base.PitchOps
 import Bala.Base.PitchClass
 import Bala.Base.BaseExtra 
 
@@ -166,85 +167,4 @@ namedInterval _         _       = undefined
 
  
 
---------------------------------------------------------------------------------
--- Read instances
---------------------------------------------------------------------------------
-
-instance Read Interval where 
-  readsPrec _ s = readsParsec readInterval s
-
-instance Read IntervalQuality where 
-  readsPrec _ s = readsParsec readIntervalQuality s
-
-
-instance Read IntervalSize where 
-  readsPrec _ s = readsParsec readIntervalSize s
-   
-readInterval :: Parser Interval
-readInterval = namedInterval <$> readIntervalQuality <*> readIntervalSize
-
-readIntervalQuality :: Parser IntervalQuality
-readIntervalQuality = letter <$> oneOf "PMmAd"
-  where 
-    letter 'P' = Perfect
-    letter 'M' = Major
-    letter 'm' = Minor
-    letter 'A' = Augmented
-    letter 'd' = Diminished
-
-readIntervalSize :: Parser IntervalSize
-readIntervalSize = number <$> digit
-  where
-    number '1' = Unison
-    number '2' = Second
-    number '3' = Third
-    number '4' = Fourth
-    number '5' = Fifth
-    number '6' = Sixth
-    number '7' = Seventh
-    number '8' = Octave
-
-readIntervalConstr :: Parser Interval
-readIntervalConstr = parens inner
-  where
-    inner = Interval <$> (lexeme (string "Interval") *> lexeme int)
-                     <*> lexeme int
-                     
-instance Read ScaleDegreePattern where
-  readsPrec _ s = readsParsec readScaleDegreePattern s
-  
-readScaleDegreePattern = ScaleDegreePattern <$> sepBy1 scaleDegree whiteSpace 
-
-scaleDegree = flip (,) <$> readAccidental <*> int    
-  
-  
-                     
---------------------------------------------------------------------------------
--- Show instances
---------------------------------------------------------------------------------
-
--- TODO - handle intervals without names
-instance Show Interval where
-  showsPrec _ a = case intervalName a of
-                    Just (qy,sz) -> shows qy . shows (1 + fromEnum sz)
-                    Nothing -> ic a 
-    where 
-      ic (Interval d c) = showParen True $ 
-            showString "Interval " . shows d . showSpace . shows c
-
-  
-instance Show IntervalQuality where
-  showsPrec _ Perfect     = showChar 'P'
-  showsPrec _ Major       = showChar 'M'
-  showsPrec _ Minor       = showChar 'm'
-  showsPrec _ Augmented   = showChar 'A'
-  showsPrec _ Diminished  = showChar 'd'
-  
-
-instance Show ScaleDegreePattern where
-  showsPrec _ (ScaleDegreePattern xs) = catenSep $ map fn xs
-    where fn (i,alt) = shows alt . shows i
-    
-    
-
-                    
+                

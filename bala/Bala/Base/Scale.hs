@@ -17,6 +17,7 @@
 module Bala.Base.Scale where
 
 import Bala.Base.PitchRep
+import Bala.Base.PitchOps
 import Bala.Base.BaseExtra
 
 import Control.Applicative hiding (many, optional, (<|>) )
@@ -82,7 +83,7 @@ instance Show Scale where
     
       
 instance Show IntervalStructure where
-  showsPrec _ (IntervalStructure xs) = caten $ map step xs
+  showsPrec _ (IntervalStructure xs) = hsepS $ map step xs
     where
       step 1 = showChar 'H'
       step 2 = showChar 'W'

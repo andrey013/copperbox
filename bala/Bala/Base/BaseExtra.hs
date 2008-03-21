@@ -51,6 +51,19 @@ spacedElements s = case parse (many1 $ lexeme deco) "" s of
                      Left err -> error $ "parse error" ++ show err
                      Right a -> a                     
                     
+--------------------------------------------------------------------------------
+
+
+explode12 i       = i `divMod` 12
+collapse12 (o,d)  = d + 12 * o
+normalize12 (o,d) = let (c, d') = explode12 d in (o + c, d')
+
+
+explode100 i       = i `divMod` 100
+collapse100 (o,d)  = d + 100 * o
+normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
+
+
   
 shiftyPlus :: (Num a) => a -> a -> a
 shiftyPlus a b = a - 1 + b  

@@ -10,6 +10,8 @@ runhaskell -i.. Bulgarian6.hs
 # read what you have written
 runhaskell -i.. MidiPrint.hs bulgarian6.midi > /dev/null
 
+runhaskell -i.. Korda.hs 
+
 cd ../tests
 
 runhaskell -i.. QCTests.hs

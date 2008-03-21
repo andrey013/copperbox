@@ -16,6 +16,7 @@
 
 module Bala.Base.Base 
   ( module Bala.Base.PitchRep
+  , module Bala.Base.PitchOps
   , module Bala.Base.PitchClass
   , module Bala.Base.PitchConversion
   , module Bala.Base.Interval
@@ -28,6 +29,7 @@ module Bala.Base.Base
   where
 
 import Bala.Base.PitchRep
+import Bala.Base.PitchOps
 import Bala.Base.PitchClass
 import Bala.Base.PitchConversion
 import Bala.Base.Interval

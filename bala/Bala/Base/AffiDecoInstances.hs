@@ -19,6 +19,7 @@ module Bala.Base.AffiDecoInstances where
 
 import Bala.Base.BaseExtra
 import Bala.Base.PitchRep
+import Bala.Base.PitchOps
 import Bala.Base.Interval
 
 import Control.Applicative hiding (many, optional, (<|>) )
@@ -89,7 +90,10 @@ decoScaleDegreePattern = ScaleDegreePattern <$> sepBy1 scaleDegree whiteSpace
 --------------------------------------------------------------------------------
 -- Affi instances
 --------------------------------------------------------------------------------
-
+instance Affi Pitch where
+  affi (Pitch l o s c) = affi l
+    
+    
 instance Affi PitchLabel where 
     affi (PitchLabel l a) = affi l . affi a
         

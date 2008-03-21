@@ -17,6 +17,7 @@
 module Bala.Base.PitchConversion where
 
 import Bala.Base.PitchRep
+import Bala.Base.PitchOps
 import Bala.Base.BaseExtra
 
 

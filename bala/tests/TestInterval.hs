@@ -29,6 +29,6 @@ a5 = read "A5"
 -}
 
 
-dominant7 :: ScaleDegreePattern
-dominant7 = decouper "1 3 5 b7"
+-- dominant7 :: ScaleDegreePattern
+-- dominant7 = decouper "1 3 5 b7"
 
