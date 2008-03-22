@@ -91,7 +91,9 @@ decoScaleDegreePattern = ScaleDegreePattern <$> sepBy1 scaleDegree whiteSpace
 -- Affi instances
 --------------------------------------------------------------------------------
 instance Affi Pitch where
-  affi (Pitch l o s c) = affi l
+  affi (Pitch l o s c) | c == 0    = affi l . shows o 
+                       | c > 0     = affi l . shows o . showChar '+' . shows c
+                       | otherwise = affi l . shows o . shows c
     
     
 instance Affi PitchLabel where 

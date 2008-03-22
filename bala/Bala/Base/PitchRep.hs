@@ -45,11 +45,7 @@ data PitchLetter = C | D | E | F | G | A | B
 data Accidental = Nat | Sharp Int | Flat Int
   deriving (Eq,Read,Show)
 
---------------------------------------------------------------------------------
--- semitones is the basis for Pitch arithmetic
---------------------------------------------------------------------------------
 
-class Semitones a where semitones :: a -> Int
 
 -- The semitone displacement upwards from C
 instance Semitones PitchLetter where
@@ -70,6 +66,10 @@ instance Semitones Accidental where
 instance Semitones PitchLabel where
   semitones (PitchLabel l a) = semitones l + semitones a
 
+instance Semitones Pitch where
+  semitones (Pitch l o s c) = 
+    let (cc,_) = explode100 c in  12 * o + s + cc
+  
 
 --------------------------------------------------------------------------------
 -- Enum instances
@@ -150,14 +150,39 @@ instance Num Accidental where
     
   fromInteger = toEnum . fromIntegral   
   
+instance Num Pitch where
+  (Pitch l o s c) + (Pitch _ o' s' c') = Pitch l' (o + o' + co) s'' c''
+    where (cs,c'') = explode100 (c + c')
+          (co,s'') = explode12 (s + s' + cs)
+          l' = toEnum $ s'' + fromEnum l
 
 
-plusPitch (Pitch l o s c) (Pitch _ o' s' c') = 
-  let (cs,c'') = explode100 (c+c')
-      (co,s'') = explode12 (s + s' + cs)
-      l' = toEnum $ s'' + fromEnum l
-  in Pitch l' (o+o'+co) s'' c''
-
+  (Pitch l o s c) - (Pitch _ o' s' c') = 
+    let (cs,c'') = explode100 (c - c')
+        (co,s'') = explode12 (s - s' + cs)
+        l' = toEnum $ s'' - fromEnum l
+    in Pitch l' (o - o' + co) s'' c''
   
-   
+  p * p' = 
+    let semil     = fromIntegral $ semitones p
+        semir     = fromIntegral $ semitones p'
+        centl     = (fromIntegral $ cents p) / 100.0
+        centr     = (fromIntegral $ cents p') / 100.0
+        sp        = (semil + centl) * (semir + centr)
+        (semis,c) = properFraction $ (semil + centl) * (semir + centr)
+        (o,s)     = explode12 semis
+    in Pitch (toEnum semis) o s (round (100 * c)) 
+  
+  abs p     = let (Pitch l o s _) = fromInteger $ fromIntegral $ abs $ semitones p
+              in Pitch l o s (cents p)
+              
+  signum p  = case semitones p `compare` 0 of
+                EQ -> Pitch (toEnum 0) 0 0 0
+                GT -> Pitch (toEnum 0) 0 1 0
+                LT -> Pitch (toEnum (-1)) (-1) 11 0
+                
+  
+  -- note, this is different to midi - middle C here is 48 (in midi it is 60)
+  fromInteger i = let i' = fromIntegral i; (o,s) = explode12  i'; l = toEnum i'
+                  in Pitch l o s 0   
   

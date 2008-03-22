@@ -34,8 +34,8 @@ import Text.ParserCombinators.Parsec
 
 
 data Interval = Interval {
-    arithmetic_distance :: Int,
-    semitone_count      :: Int
+    scale_degrees   :: Int,
+    semitone_count  :: Int
   }
   deriving (Eq)
 
@@ -59,6 +59,15 @@ data IntervalDistance = Simple | Compound Int
   deriving (Eq,Ord,Show)
 
 
+--------------------------------------------------------------------------------
+-- Operations
+--------------------------------------------------------------------------------
+
+instance Semitones Interval where
+  semitones (Interval _ sc) = sc
+  
+-- how do you build/normalize intervals?
+  
 
 --------------------------------------------------------------------------------
 -- Operations

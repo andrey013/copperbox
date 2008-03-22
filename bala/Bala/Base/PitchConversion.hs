@@ -55,14 +55,11 @@ picthClassForm = OPC
 octaveForm :: Float -> OctaveRep
 octaveForm = OR
 
-
+-- Midi middle C is 60, whereas for Pitch it is 48
 instance EncodePitch MidiPitch where
-  fromPitch p@(Pitch l o s c) = M $ 12 * (o + 1) + s  -- cents to work out
+  fromPitch p = M $ semitones p + 12
 
-  toPitch m@(M i) = Pitch l (o - 1) s 0
-    where 
-      (o,s) = i `divMod` 12
-      l     = toEnum s
+  toPitch m@(M i) = fromInteger $ fromIntegral (i - 12)
 
 
 mkMidi offst accdt octv = M $ offst + semis accdt + octaveMidi octv

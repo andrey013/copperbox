@@ -16,10 +16,18 @@ instance Applicative Gen where
   pure = return
   (<*>) = ap
 
+
+abs_signum_Prop x = abs x * signum x == x
+
+
 --------------------------------------------------------------------------------
 -- Arbitrary instances
 --------------------------------------------------------------------------------
 
+
+instance Arbitrary Pitch where
+  arbitrary = fromInteger <$> choose (-12,72)
+  coarbitrary = error "no coarbitrary for Pitch"
 -- PitchRep
 instance Arbitrary PitchLetter where
   arbitrary = elements [A, B, C, D, E, F, G]
@@ -30,13 +38,10 @@ instance Arbitrary PitchLabel where
   coarbitrary = error "no coarbitrary for PitchLabel"
   
     
-instance Arbitrary Pitch where
-  arbitrary = Pitch <$> arbitrary <*> arbitrary <*> choose (3,6) <*> pure 0  
-  coarbitrary = error "no coarbitrary for Pitch"
   
 instance Arbitrary Accidental where
   arbitrary = elements $ 
-    [Nat, Sharpi 1, Sharpi 2, Flati 1, Flati 2]
+    [Nat, Sharp 1, Sharp 2, Flat 1, Flat 2]
   coarbitrary = error "no coarbitrary for Accidental"  
   
 

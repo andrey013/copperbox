@@ -50,17 +50,26 @@ spacedElements :: Deco a => String -> [a]
 spacedElements s = case parse (many1 $ lexeme deco) "" s of
                      Left err -> error $ "parse error" ++ show err
                      Right a -> a                     
+
+--------------------------------------------------------------------------------
+-- semitones is the basis for Pitch arithmetic
+--------------------------------------------------------------------------------
+
+class Semitones a where semitones :: a -> Int
+
                     
 --------------------------------------------------------------------------------
 
-
+explode12, explode100  :: (Integral a) => a -> (a, a)
 explode12 i       = i `divMod` 12
+explode100 i      = i `divMod` 100
+
+collapse12, collapse100  :: (Integral a) => (a, a) -> a
 collapse12 (o,d)  = d + 12 * o
-normalize12 (o,d) = let (c, d') = explode12 d in (o + c, d')
+collapse100 (o,d) = d + 100 * o
 
-
-explode100 i       = i `divMod` 100
-collapse100 (o,d)  = d + 100 * o
+normalize12, normalize100 :: (Integral a) => (a, a) -> (a, a) 
+normalize12 (o,d)  = let (c, d') = explode12 d in (o + c, d')
 normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
 
 
