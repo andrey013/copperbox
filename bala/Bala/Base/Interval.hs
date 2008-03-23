@@ -34,19 +34,12 @@ import Text.ParserCombinators.Parsec
 
 
 data Interval = Interval { 
-    arith_dist :: Shifty, 
+    arith_dist :: Int, 
     half_steps :: Int 
     }
-  deriving (Eq,Show)
+  deriving (Show,Eq)
 
 
--- arithmetic distances use the Shifty number type  
--- it has no zero and 'shifts' when counting.
--- Thats to say, when counting from a to b it counts a as 1 
--- rather than (succ a) as 1
-
-newtype Shifty = Shifty Int
-  deriving (Eq,Ord,Show)
   
 
 type NamedInterval = (IntervalQuality, IntervalSize)
@@ -69,73 +62,55 @@ data IntervalDistance = Simple | Compound Int
   deriving (Eq,Ord,Show)
 
 --------------------------------------------------------------------------------
--- Enum and Num instances for Shifty
---------------------------------------------------------------------------------
-
-instance Enum Shifty where
-  toEnum 0 = Shifty 1
-  toEnum i = Shifty i
-  
-  fromEnum (Shifty i) = i
-  
-  succ (-1) = 1
-  succ i    = i + 1
-  
-  pred 1    = (-1)
-  pred i    = i - 1
-  
-  
-instance Num Shifty where
-  (Shifty a) + (Shifty b) = Shifty $ a `shiftyPlus` b
-  (Shifty a) - (Shifty b) = Shifty $ a `shiftyMinus` b 
-  (Shifty a) * (Shifty b) = Shifty $ a * b
-  
-  abs (Shifty a) = Shifty (abs a)
-  
-  -- Dubious?
-  signum (Shifty a) | a > 0     = Shifty 1
-                    | otherwise = Shifty (-1)
-  
-  negate (Shifty a) = Shifty (negate a)
-   
-  fromInteger 0 = Shifty 1
-  fromInteger i = Shifty $ fromIntegral i
-  
-
---------------------------------------------------------------------------------
 -- Instances for Interval
 --------------------------------------------------------------------------------
- 
+
 instance Num Interval where
   
   (Interval d s) + (Interval d' s') = 
-    Interval (d + d') (s + s')
+    Interval (d `countfwd` d') (s + s')
 
   (Interval d s) - (Interval d' s') =  
-      Interval (d - d') (s - s')
+      Interval (d `countbackNZ` d') (s `backtrack` s')
   
   (Interval d s) * (Interval d' s') =  
       Interval (d * d') (s * s')
     
-  abs (Interval d s) = Interval (abs d) (abs s)
+  abs  = id
   
-  negate (Interval d s) = Interval (negate d) (negate s)
+  negate _ = Interval 1 0
   
-  -- Dubious
-  signum (Interval (Shifty d) s)
-      | d < 0     = Interval (Shifty (-1)) 0
-      | otherwise = Interval (Shifty 1) 0
-      
+  signum (Interval d s) = Interval 1 0
   
-  fromInteger i = let i' = fromIntegral i in interval (stepy i') i'        
+  fromInteger = fromSemis      
            
 instance Semitones Interval where
   semitones (Interval _ sc) = sc
     
 
 --------------------------------------------------------------------------------
+-- Helpers
+--------------------------------------------------------------------------------
+
+countfwd :: (Num a) => a -> a -> a
+countfwd a i = a + (i - 1)
+
+countback, countbackNZ :: (Num a, Ord a) => a -> a -> a
+countback   a i = abs $ a - (i - 1)
+countbackNZ a i | a > i     = countback a i
+                | otherwise = countback i a
+
+backtrack, backtrackNZ :: (Num a) => a -> a -> a
+backtrack a i = abs $ a - i
+backtrackNZ a i = 
+  let a' = a - i in case signum a' of (-1) -> (abs a') + 1 ; _ -> a'
+  
+  
+--------------------------------------------------------------------------------
 -- Operations
 --------------------------------------------------------------------------------
+
+
 
 -- Smart constructor for Intervals
 -- TODO - Intervals be can constructed if the arithmetic distance and the 
@@ -144,17 +119,20 @@ instance Semitones Interval where
 -- (unless of course wild pitch spelling is considered)
 
 interval d s 
-    | d > 0 && s >= 0 = Interval (Shifty d) s
-    | d < 0 && s <= 0 = Interval (Shifty d) s
+    | d > 0 && s >= 0 = Interval d s
     | d == 0          = error dzero_msg
     | otherwise       = error mixed_msg
  where
   dzero_msg = "Cannot create an Interval with an arithmetic distance of 0"
-  mixed_msg = "Cannot create an Interval with a mix of positive and negative \n"
-           ++ "numbers for arithmetic distance and semitone count" 
+  mixed_msg = "Cannot create an Interval with negative numbers for\n"
+           ++ "arithmetic distance or semitone count" 
+
+-- fromSemis is biased 
+-- it produces m6 rather than A5 & A4 and A4 rather than d4
+fromSemis i = let i' = fromIntegral (abs i) in interval (stepy i') i'  
 
 stepy :: (Num a, Ord a) => a -> a
-stepy i | i < 0       = negate $ stp $ abs i
+stepy i | i < 0       = stp $ abs i
         | otherwise   = stp i
   where
     stp i | i == 0                      = 1

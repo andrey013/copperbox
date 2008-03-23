@@ -79,13 +79,13 @@ normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
 -- "Counting" includes the current position and there is no zero
   
 shiftyPlus :: (Num a, Ord a) => a -> a -> a
-shiftyPlus a b = a + shifty b
+shiftyPlus a b = a + shiftyStep b
 
 shiftyMinus :: (Num a, Ord a) => a -> a -> a
-shiftyMinus a b = a - shifty b
+shiftyMinus a b = a - shiftyStep b
       
-shifty a | a < 0     = a + 1
-         | otherwise = a - 1
+shiftyStep a | a < 0     = a + 1
+             | otherwise = a - 1
 
 
   

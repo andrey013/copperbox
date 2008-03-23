@@ -24,11 +24,15 @@ abs_signum_Prop x = abs x * signum x == x
 -- Arbitrary instances
 --------------------------------------------------------------------------------
 
-
+instance Arbitrary Interval where
+  arbitrary = fromInteger <$> choose (0,12)
+  coarbitrary = error "no coarbitrary for Interval"
+  
+    
 instance Arbitrary Pitch where
   arbitrary = fromInteger <$> choose (-12,72)
   coarbitrary = error "no coarbitrary for Pitch"
--- PitchRep
+
 instance Arbitrary PitchLetter where
   arbitrary = elements [A, B, C, D, E, F, G]
   coarbitrary = error "no coarbitrary for PitchLetter"
