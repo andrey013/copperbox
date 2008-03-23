@@ -33,11 +33,21 @@ import Text.ParserCombinators.Parsec
 
 
 
-data Interval = Interval {
-    scale_degrees   :: Int,
-    semitone_count  :: Int
-  }
-  deriving (Eq)
+data Interval = Interval { 
+    arith_dist :: Shifty, 
+    half_steps :: Int 
+    }
+  deriving (Eq,Show)
+
+
+-- arithmetic distances use the Shifty number type  
+-- it has no zero and 'shifts' when counting.
+-- Thats to say, when counting from a to b it counts a as 1 
+-- rather than (succ a) as 1
+
+newtype Shifty = Shifty Int
+  deriving (Eq,Ord,Show)
+  
 
 type NamedInterval = (IntervalQuality, IntervalSize)
 
@@ -58,21 +68,119 @@ data IntervalQuality = Perfect | Major | Minor | Augmented | Diminished
 data IntervalDistance = Simple | Compound Int
   deriving (Eq,Ord,Show)
 
+--------------------------------------------------------------------------------
+-- Enum and Num instances for Shifty
+--------------------------------------------------------------------------------
+
+instance Enum Shifty where
+  toEnum 0 = Shifty 1
+  toEnum i = Shifty i
+  
+  fromEnum (Shifty i) = i
+  
+  succ (-1) = 1
+  succ i    = i + 1
+  
+  pred 1    = (-1)
+  pred i    = i - 1
+  
+  
+instance Num Shifty where
+  (Shifty a) + (Shifty b) = Shifty $ a `shiftyPlus` b
+  (Shifty a) - (Shifty b) = Shifty $ a `shiftyMinus` b 
+  (Shifty a) * (Shifty b) = Shifty $ a * b
+  
+  abs (Shifty a) = Shifty (abs a)
+  
+  -- Dubious?
+  signum (Shifty a) | a > 0     = Shifty 1
+                    | otherwise = Shifty (-1)
+  
+  negate (Shifty a) = Shifty (negate a)
+   
+  fromInteger 0 = Shifty 1
+  fromInteger i = Shifty $ fromIntegral i
+  
 
 --------------------------------------------------------------------------------
--- Operations
+-- Instances for Interval
 --------------------------------------------------------------------------------
+ 
+instance Num Interval where
+  
+  (Interval d s) + (Interval d' s') = 
+    Interval (d + d') (s + s')
 
+  (Interval d s) - (Interval d' s') =  
+      Interval (d - d') (s - s')
+  
+  (Interval d s) * (Interval d' s') =  
+      Interval (d * d') (s * s')
+    
+  abs (Interval d s) = Interval (abs d) (abs s)
+  
+  negate (Interval d s) = Interval (negate d) (negate s)
+  
+  -- Dubious
+  signum (Interval (Shifty d) s)
+      | d < 0     = Interval (Shifty (-1)) 0
+      | otherwise = Interval (Shifty 1) 0
+      
+  
+  fromInteger i = let i' = fromIntegral i in interval (stepy i') i'        
+           
 instance Semitones Interval where
   semitones (Interval _ sc) = sc
-  
--- how do you build/normalize intervals?
-  
+    
 
 --------------------------------------------------------------------------------
 -- Operations
 --------------------------------------------------------------------------------
 
+-- Smart constructor for Intervals
+-- TODO - Intervals be can constructed if the arithmetic distance and the 
+-- semitone count don't make sense 
+-- eg (1,8) should only have (1,1) or (1,0)
+-- (unless of course wild pitch spelling is considered)
+
+interval d s 
+    | d > 0 && s >= 0 = Interval (Shifty d) s
+    | d < 0 && s <= 0 = Interval (Shifty d) s
+    | d == 0          = error dzero_msg
+    | otherwise       = error mixed_msg
+ where
+  dzero_msg = "Cannot create an Interval with an arithmetic distance of 0"
+  mixed_msg = "Cannot create an Interval with a mix of positive and negative \n"
+           ++ "numbers for arithmetic distance and semitone count" 
+
+stepy :: (Num a, Ord a) => a -> a
+stepy i | i < 0       = negate $ stp $ abs i
+        | otherwise   = stp i
+  where
+    stp i | i == 0                      = 1
+          | i == 1 || i == 2            = 2
+          | i == 3 || i == 4 || i == 5  = 3
+          | i == 6                      = 4
+          | i == 7                      = 5
+          | i == 8 || i == 9            = 6
+          | i == 10 || i == 11          = 7
+          | i == 12                     = 8
+          | otherwise                   = 7 + stp (i - 13)
+  
+    
+
+--------------------------------------------------------------------------------
+-- Ord Instance
+--------------------------------------------------------------------------------
+
+instance Ord Interval where
+  (Interval _ s) `compare` (Interval _ s') = s `compare` s'
+  
+
+--------------------------------------------------------------------------------
+-- Operations
+--------------------------------------------------------------------------------
+  
 -- | count of 'letter names' inclusive between two pitches (ordered,multioctave)
 arithmeticDistance :: Pitch -> Pitch -> Int
 arithmeticDistance p1 p2 | p1 > p2   = orderedDist p2 p1

@@ -72,10 +72,22 @@ normalize12, normalize100 :: (Integral a) => (a, a) -> (a, a)
 normalize12 (o,d)  = let (c, d') = explode12 d in (o + c, d')
 normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
 
+--------------------------------------------------------------------------------
+-- shifty arithmetic numbers for counting intervals
+--------------------------------------------------------------------------------
 
+-- "Counting" includes the current position and there is no zero
   
-shiftyPlus :: (Num a) => a -> a -> a
-shiftyPlus a b = a - 1 + b  
+shiftyPlus :: (Num a, Ord a) => a -> a -> a
+shiftyPlus a b = a + shifty b
+
+shiftyMinus :: (Num a, Ord a) => a -> a -> a
+shiftyMinus a b = a - shifty b
+      
+shifty a | a < 0     = a + 1
+         | otherwise = a - 1
+
+
   
 
 -- zam - zippy map

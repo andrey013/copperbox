@@ -17,6 +17,7 @@ module Bala.Base.NamedElems where
 
 import Bala.Base.BaseExtra
 import Bala.Base.PitchRep
+import Bala.Base.Interval
 import Bala.Base.AffiDecoInstances
 import Bala.Base.Scale
 
@@ -69,3 +70,24 @@ chromatic_intervals         = mkIS "HHHHHHHHHHHH"
 
 c_pentatonic_major = makeScale c4 pentatonic_major_intervals
 
+perfect_unison    = interval 1 0
+perfect_fourth    = interval 4 5
+perfect_fifth     = interval 5 7
+perfect_octave    = interval 8 12
+
+major_second      = interval 2 2
+major_third       = interval 3 4
+major_sixth       = interval 6 9
+major_seventh     = interval 7 11
+
+minor_second      = interval 2 1
+minor_third       = interval 3 3
+minor_sixth       = interval 6 8
+minor_seventh     = interval 7 10 
+
+diminished_third  = interval 3 2
+diminished_fifth  = interval 5 6
+
+augmented_third   = interval 3 5 
+augmented_fourth  = interval 4 6
+augmented_fifth   = interval 5 8

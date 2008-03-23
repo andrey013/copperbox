@@ -15,6 +15,21 @@ prop_Octave a = arithmeticDistance a (a `ove` 1) == 8
 
 testInterval = mapM_ quickCheck [prop_Unison, prop_Octave]
 
+p5 = minor_third + major_third
+
+
+-- c_to_c'sharp = arithmetic distance 8, 13 semitones
+c_to_c'sharp :: Interval
+c_to_c'sharp = fromInteger 13
+
+-- c_to_c'sharp = arithmetic distance9, 14 semitones
+c_to_d' :: Interval
+c_to_d' = fromInteger 14
+
+d'_to_c :: Interval
+d'_to_c = fromInteger (-14)
+
+
 -- interval addition (Duckworth):
 -- M3 + m3 = P5
 -- m3 + M3 = P5
