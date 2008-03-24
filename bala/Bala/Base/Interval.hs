@@ -40,10 +40,28 @@ data Interval = Interval {
   deriving (Show,Eq)
 
 
+data NamedInterval = NamedInterval {
+    interval_measure :: IntervalMeasure,
+    interval_quality :: IntervalQuality,
+    interval_size    :: IntervalSize
+  }
+  deriving (Eq,Show)  
   
 
-type NamedInterval = (IntervalQuality, IntervalSize)
 
+  
+data IntervalSize = Unison | Second | Third | Fourth | Fifth | Sixth
+                  | Seventh | Octave
+  deriving (Eq,Enum,Ord,Show)
+
+data IntervalQuality = Perfect | Major | Minor | Augmented | Diminished
+  deriving (Eq,Enum,Ord,Show)
+
+data IntervalMeasure = Simple | Compound Int
+  deriving (Eq,Ord,Show)
+
+
+-- these look like they should be somewhere else
 newtype IntervalPattern = IntervalPattern [Int]
   deriving (Eq,Show)
 
@@ -51,16 +69,7 @@ newtype ScaleDegreePattern = ScaleDegreePattern [(Int,Accidental)]
 
   
   
-data IntervalSize = Unison | Second | Third | Fourth | Fifth | Sixth
-                  | Seventh | Octave
-  deriving (Eq,Enum,Ord,Show)
-
-data IntervalQuality = Perfect | Major | Minor | Augmented | Diminished
-  deriving (Eq,Enum,Ord)
-
-data IntervalDistance = Simple | Compound Int
-  deriving (Eq,Ord,Show)
-
+  
 --------------------------------------------------------------------------------
 -- Instances for Interval
 --------------------------------------------------------------------------------
@@ -87,6 +96,20 @@ instance Num Interval where
 instance Semitones Interval where
   semitones (Interval _ sc) = sc
     
+
+--------------------------------------------------------------------------------
+-- Enum 
+--------------------------------------------------------------------------------
+
+instance Enum IntervalMeasure where
+  fromEnum Simple       = 0 
+  fromEnum (Compound i) = i 
+  
+
+  toEnum i | i == 0    = Simple
+           | i >  0    = Compound i
+           | otherwise = Compound (abs i)
+           
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -183,6 +206,61 @@ buildInterval :: Pitch -> Pitch -> Interval
 buildInterval p  p' = 
   interval (p `arithmeticDistance` p') (p `semitoneDistance` p')
 
+
+invert :: Interval -> Interval
+invert (Interval a s) | a < 9     = Interval (9-a) (12-s)
+                      | otherwise = error "todo invert on large intervals ..."
+ 
+simplify :: Interval -> (IntervalMeasure,Interval)
+simplify (Interval a s) 
+  | a > 8 && s > 12 = let (i,s') = s `divMod` 12 
+                      in (Compound i, Interval (a `mod` 8) s')
+  | otherwise       = (Simple, Interval a s) 
+
+
+
+intervalName :: Interval -> Maybe NamedInterval
+intervalName invl = let (measure, simple) = simplify invl in fn measure simple
+  where     
+    fn m (Interval 1 0)   = Just (NamedInterval m Perfect Unison)
+    fn m (Interval 2 1)   = Just (NamedInterval m Minor Second)
+    fn m (Interval 2 2)   = Just (NamedInterval m Major Second)
+    fn m (Interval 3 3)   = Just (NamedInterval m Minor Third)
+    fn m (Interval 3 4)   = Just (NamedInterval m Major Third)
+    fn m (Interval 4 5)   = Just (NamedInterval m Perfect Fourth)
+    fn m (Interval 4 6)   = Just (NamedInterval m Augmented Fourth)
+    fn m (Interval 5 6)   = Just (NamedInterval m Perfect Fifth)
+    fn m (Interval 5 8)   = Just (NamedInterval m Augmented Fifth)
+    fn m (Interval 6 8)   = Just (NamedInterval m Minor Sixth)
+    fn m (Interval 6 9)   = Just (NamedInterval m Major Sixth)
+    fn m (Interval 7 10)  = Just (NamedInterval m Minor Seventh)
+    fn m (Interval 7 11)  = Just (NamedInterval m Major Seventh)
+    fn m (Interval 8 12)  = Just (NamedInterval m Perfect Octave)
+    fn m _                = Nothing
+
+namedInterval :: NamedInterval -> Maybe Interval
+namedInterval (NamedInterval msr qlty sz) = fmap (mk msr) (fn qlty sz)
+  where 
+    mk Simple       (a,s) = Interval a s
+    mk (Compound i) (a,s) = Interval (a + 8 * i) (s + 12 * i)
+
+    fn Perfect   Unison  = Just (1,0)
+    fn Minor     Second  = Just (2,1)
+    fn Major     Second  = Just (2,2)
+    fn Minor     Third   = Just (3,3)
+    fn Major     Third   = Just (3,4)
+    fn Perfect   Fourth  = Just (4,5) 
+    fn Augmented Fourth  = Just (4,6)
+    fn Perfect   Fifth   = Just (5,6)
+    fn Augmented Fifth   = Just (5,8)
+    fn Minor     Sixth   = Just (6,8)
+    fn Major     Sixth   = Just (6,9)
+    fn Minor     Seventh = Just (7,10)
+    fn Major     Seventh = Just (7,11)
+    fn Perfect   Octave  = Just (8,12)
+    fn  _         _      = Nothing 
+
+
 --------------------------------------------------------------------------------
 -- old.... 
 
@@ -203,15 +281,6 @@ orderedPCInterval (PC p1) (PC p2) = p2 - p1
 unorderedPCInterval (PC p1) (PC p2)
   | p1 < p2   = p2 - p1
   | otherwise = p1 - p2 
-
--- countingDistance' :: PitchLetter -> PitchLetter -> IntervalSize
--- countingDistance' a b = mkIntervalSize $ (fromEnum a - fromEnum b) `mod` 12 --  + mod7 (7 + fromEnum b - fromEnum a)
-
--- mkIntervalSize :: Int -> IntervalSize
--- mkIntervalSize a = toEnum a -- (a-1)
-
-
-
                      
 
 diatonicInterval, chromaticInterval :: Interval -> Bool
@@ -223,39 +292,9 @@ intervalClass :: Interval -> Bool
 intervalClass = undefined
 
          
-intervalName :: Interval -> Maybe NamedInterval
-intervalName (Interval 1 0)   = Just (Perfect, Unison)
-intervalName (Interval 2 1)   = Just (Minor, Second)
-intervalName (Interval 2 2)   = Just (Major, Second)
-intervalName (Interval 3 3)   = Just (Minor, Third)
-intervalName (Interval 3 4)   = Just (Major, Third)
-intervalName (Interval 4 5)   = Just (Perfect, Fourth)
-intervalName (Interval 4 6)   = Just (Augmented, Fourth)
-intervalName (Interval 5 6)   = Just (Perfect, Fifth)
-intervalName (Interval 5 8)   = Just (Augmented, Fifth)
-intervalName (Interval 6 8)   = Just (Minor, Sixth)
-intervalName (Interval 6 9)   = Just (Major, Sixth)
-intervalName (Interval 7 10)  = Just (Minor, Seventh)
-intervalName (Interval 7 11)  = Just (Major, Seventh)
-intervalName (Interval 8 12)  = Just (Perfect, Octave)
-intervalName _                = Nothing
 
-namedInterval :: IntervalQuality -> IntervalSize -> Interval
-namedInterval Perfect   Unison  = Interval 1 0
-namedInterval Minor     Second  = Interval 2 1
-namedInterval Major     Second  = Interval 2 2
-namedInterval Minor     Third   = Interval 3 3
-namedInterval Major     Third   = Interval 3 4
-namedInterval Perfect   Fourth  = Interval 4 5  
-namedInterval Augmented Fourth  = Interval 4 6
-namedInterval Perfect   Fifth   = Interval 5 6
-namedInterval Augmented Fifth   = Interval 5 8
-namedInterval Minor     Sixth   = Interval 6 8
-namedInterval Major     Sixth   = Interval 6 9
-namedInterval Minor     Seventh = Interval 7 10
-namedInterval Major     Seventh = Interval 7 11
-namedInterval Perfect   Octave  = Interval 8 12
-namedInterval _         _       = undefined
+
+
 
  
 
