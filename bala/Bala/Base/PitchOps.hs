@@ -40,6 +40,13 @@ buildPitch lbl o c = Pitch lbl o (semitones lbl) c
 -- pitch ops -- adding intervals etc need a naming scheme
 
 
+alter :: Accidental -> Int -> Accidental
+alter a i  = toEnum $ fromEnum a + i
+
+spell :: PitchLabel -> PitchLetter -> PitchLabel
+spell lbl l' = let d  = semitones lbl - semitones (PitchLabel l' Nat)
+                   a' = alter Nat d
+               in PitchLabel l' a'
 
 
 class SemiDisplacement a where 

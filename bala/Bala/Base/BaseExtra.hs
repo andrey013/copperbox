@@ -59,7 +59,16 @@ class Semitones a where semitones :: a -> Int
 
                     
 --------------------------------------------------------------------------------
+successor i a | i < 0     = predecessor (abs i) a
+              | i == 0    = a
+              | otherwise = successor (i-1) (succ a)
 
+
+predecessor i a | i < 0     = successor (abs i) a
+                | i == 0    = a
+                | otherwise = predecessor (i-1) (pred a)
+              
+              
 explode12, explode100  :: (Integral a) => a -> (a, a)
 explode12 i       = i `divMod` 12
 explode100 i      = i `divMod` 100

@@ -28,10 +28,10 @@ import Text.ParserCombinators.Parsec
 -- Cache the pitch letter & accidental for spelling only, and store semitones 
 -- for calculations  
 data Pitch = Pitch {
-    label     :: PitchLabel,
-    octave    :: Int,
-    seimtones :: Int,
-    cents     :: Int 
+    pitch_label   :: PitchLabel,
+    octave        :: Int,
+    seimtones     :: Int,
+    cents         :: Int 
   }
   deriving (Eq,Read,Show)
   

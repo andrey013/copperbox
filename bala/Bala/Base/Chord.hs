@@ -135,4 +135,48 @@ scaleDegrees Maj' = ScaleDegreePattern [(1,Nat), (3,Nat), (5,Nat)]
 scaleDegrees _    = undefined
 
     
+{-
+
+-- new idea
+
+data Chord = Triad Pitch Pitch Pitch Ext
+
+data Ext = ENil | Ext :< Pitch
+
+infixr 4 <<
+(<<) (Triad a b c ext) pch = Triad a b c (ext :< pch)
+
+c_major = Triad c4 (c4 `extr` major_third) (c4 `extr` perfect_fifth) ENil 
+  
+e_minor = Triad e4 g4 b4 ENil 
+
+e_minor_minor = e_minor << e5
+
+-- but things are buried inside.....
+
+instance Affi Chord where
+  affi (Triad a b c ext) = affi a . dotS . affi b . dotS . affi c . affi ext
+
+instance Affi Ext where
+  affi ENil          = id
+  affi (base :< ext) = dotS . affi base . affi ext
+
+ 
+-- (?) 
+root, third, fifth :: Chord -> Pitch
+root  (Triad a _ _ _) = a
+third (Triad _ b _ _) = b
+fifth (Triad _ _ c _) = c
+
+
+
+
+-- don't like this as it doesn't compose 
+invert1 (Triad a b c ext) = Triad (a `addOve` 1) b c  ext
+invert2 (Triad a b c ext) = Triad (a `addOve` 1) (b `addOve` 1) c  ext
+
+
+-- seventh a-3rd-b, a-5th-c, a-7th-d
+
+-}
         

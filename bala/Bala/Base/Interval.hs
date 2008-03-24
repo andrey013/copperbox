@@ -24,7 +24,7 @@ import Bala.Base.PitchClass
 import Bala.Base.BaseExtra 
 
 import Control.Applicative hiding (many, optional, (<|>) )
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec 
 
 
 --------------------------------------------------------------------------------
@@ -184,10 +184,12 @@ instance Ord Interval where
 
 
 -- | counts from left to right
-letterCount :: PitchLetter -> PitchLetter -> Int
-letterCount l l' = let diff = (fromEnum l') - (fromEnum l) in 
-                   if (signum diff == (-1)) then 8 + diff else 1 + diff
+letterDistance :: PitchLetter -> PitchLetter -> Int
+letterDistance l l' = let diff = (fromEnum l') - (fromEnum l) in 
+                      if (signum diff == (-1)) then 8 + diff else 1 + diff
   
+letterSucc :: Int -> PitchLetter -> PitchLetter
+letterSucc i l = successor (i `mod` 8) l
 
  
 -- | number of 'letter names' inclusive between the highest and lowest pitch
@@ -197,7 +199,7 @@ arithmeticDistance p@(Pitch l o _ _)  p'@(Pitch l' o' _ _)
     | p < p'    = orderedDist (pitch_letter l, o)   (pitch_letter l', o')
     | otherwise = orderedDist (pitch_letter l', o') (pitch_letter l, o) 
   where
-    orderedDist (p,o) (p',o') = let pd = letterCount p p'
+    orderedDist (p,o) (p',o') = let pd = letterDistance p p'
                                 in pd + 7 * (o' - o)
 
 
@@ -260,6 +262,13 @@ namedInterval (NamedInterval msr qlty sz) = fmap (mk msr) (fn qlty sz)
     fn Perfect   Octave  = Just (8,12)
     fn  _         _      = Nothing 
 
+
+extr :: Pitch -> Interval -> Pitch
+extr p@(Pitch (PitchLabel l a) o s c) (Interval ad sc) =
+    let (oc,s') = explode12 $ s + sc
+        l'      = letterSucc (ad - 1) l       
+        lbl     = spell (pitch_label $ p `addSemi` sc) l'
+    in Pitch lbl (oc + o) s' c
 
 --------------------------------------------------------------------------------
 -- old.... 
