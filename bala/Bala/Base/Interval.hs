@@ -158,42 +158,39 @@ instance Ord Interval where
 --------------------------------------------------------------------------------
 -- Operations
 --------------------------------------------------------------------------------
+
+
+-- | counts from left to right
+letterCount :: PitchLetter -> PitchLetter -> Int
+letterCount l l' = let diff = (fromEnum l') - (fromEnum l) in 
+                   if (signum diff == (-1)) then 8 + diff else 1 + diff
   
--- | count of 'letter names' inclusive between two pitches (ordered,multioctave)
+
+ 
+-- | number of 'letter names' inclusive between the highest and lowest pitch
 arithmeticDistance :: Pitch -> Pitch -> Int
-arithmeticDistance p1 p2 | p1 > p2   = orderedDist p2 p1
-                         | otherwise = orderedDist p1 p2
-
+arithmeticDistance p@(Pitch l o _ _)  p'@(Pitch l' o' _ _)
+    | p == p'   = 1
+    | p < p'    = orderedDist (pitch_letter l, o)   (pitch_letter l', o')
+    | otherwise = orderedDist (pitch_letter l', o') (pitch_letter l, o) 
   where
-    orderedDist (Pitch l o s _) (Pitch l' o' s' _) = undefined
-{-    
-      let (ld,wrapped) = letterDist l1 l2
-          ove          = oveDist o1 o2 wrapped
-      in ld + ove  
--}    
+    orderedDist (p,o) (p',o') = let pd = letterCount p p'
+                                in pd + 7 * (o' - o)
 
-    oveDist :: Int -> Int -> Bool -> Int
-    oveDist o1 o2 True  = 7 * (o2 - o1 - 1)
-    oveDist o1 o2 False = 7 * (o2 - o1)
-    
-    -- calc distance and whether it has wrapped around
-    letterDist :: PitchLetter -> PitchLetter -> (Int,Bool)
-    letterDist x y = (dist, not (x <= y)) 
-      where dist = 1 + mod7 (7 + fromEnum y - fromEnum x)
 
-    
--- | count of semitones between two pitches (ordered,multioctave)                    
-semitoneDistance :: Pitch -> Pitch -> Int
-semitoneDistance p1 p2 = semis p2 - semis p1
 
--- | synonym of semitoneDistance
-orderedPitchInterval :: Pitch -> Pitch -> Int
-orderedPitchInterval = semitoneDistance
+buildInterval :: Pitch -> Pitch -> Interval
+buildInterval p  p' = 
+  interval (p `arithmeticDistance` p') (p `semitoneDistance` p')
+
+--------------------------------------------------------------------------------
+-- old.... 
+
 
 
 -- | absolute value of semitone distance
 unorderedPitchInterval :: Pitch -> Pitch -> Int
-unorderedPitchInterval p1 p2 = abs $ semitoneDistance p1 p2
+unorderedPitchInterval p1 p2 = abs $ semitones p1 - semitones p2
 
 
 -- | count of semitones between two pitches (ordered,single-octave)

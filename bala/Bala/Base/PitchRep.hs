@@ -35,7 +35,10 @@ data Pitch = Pitch {
   }
   deriving (Eq,Read,Show)
   
-data PitchLabel = PitchLabel PitchLetter Accidental
+data PitchLabel = PitchLabel {
+    pitch_letter :: PitchLetter,
+    accidental   :: Accidental
+  }
   deriving (Eq,Read,Show) 
   
     

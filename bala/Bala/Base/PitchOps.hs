@@ -18,6 +18,11 @@ import Bala.Base.PitchRep
 
 import Bala.Base.BaseExtra
 
+
+semitoneDistance :: (Semitones a) => a -> a -> Int
+semitoneDistance a a' = abs $ semitones a - semitones a'
+
+
 -- a 'smart constructor'
 
 buildPitch :: PitchLabel -> Int -> Int -> Pitch
@@ -54,7 +59,7 @@ class OctaveDisplacement a where
 
 spellWithSharps :: PitchLabel -> PitchLabel
 spellWithSharps (PitchLabel l a)   = 
-  toEnum $ semis l + semis a
+  toEnum $ semitones l + semitones a
 
 
 instance SemiDisplacement PitchLabel where
@@ -96,23 +101,6 @@ fromCents (Cents i) = undefined
 -}
 
 
-
-
-
-
-class SemiToneCount a where semis :: a -> Int
-
--- The semitone displacement upwards from C
-instance SemiToneCount PitchLetter where
-  semis a        = semitones a
-
--- How many semitones is the pitch changed by its accidental? 
-instance SemiToneCount Accidental where
-  semis a        = semitones a
-
-
-instance SemiToneCount Pitch where
-  semis (Pitch l o s _) = s + (12 * o)
    
 octaveDisplacement oct            = (oct - 4) * 12  
   
@@ -145,3 +133,5 @@ contour = zam diff
   
 data RefinedContour = ReR | ReUS | ReUL | ReDS | ReDL
   deriving (Eq,Ord,Show)  
+  
+  

@@ -62,7 +62,7 @@ instance EncodePitch MidiPitch where
   toPitch m@(M i) = fromInteger $ fromIntegral (i - 12)
 
 
-mkMidi offst accdt octv = M $ offst + semis accdt + octaveMidi octv
+mkMidi offst accdt octv = M $ offst + semitones accdt + octaveMidi octv
   where octaveMidi oct            = (1 + oct) * 12
 
 
