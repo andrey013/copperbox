@@ -107,7 +107,8 @@ shiftyStep a | a < 0     = a + 1
 -- alternatively, counting in various ways
 --------------------------------------------------------------------------------
 
-newtype Count a = Count { unCount :: Int }
+newtype Count a = Count { unCount :: Int } 
+  deriving (Eq,Ord)
 
 instance Show (Count a) where
   showsPrec _ (Count i) = shows i 
@@ -154,6 +155,10 @@ instance Countable (Count RNnNz) where
                        | i        >  (abs j)  = rnnnz $ i + (j + 1)
                        | otherwise            = rnnnz $ i + (j - 1)
                        
+
+countPlus a b = a `forward` (unCount b)
+
+countMinus a b = a `backward` (unCount b)
                            
 --------------------------------------------------------------------------------
 -- functions

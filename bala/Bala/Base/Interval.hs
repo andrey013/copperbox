@@ -34,9 +34,9 @@ import Text.ParserCombinators.Parsec
 
 
 data Interval = Interval { 
-    arith_dist :: Int, 
-    half_steps :: Int 
-    }
+    arith_dist :: Count RNnNz, 
+    half_steps :: Count NonNeg 
+  }
   deriving (Show,Eq)
 
 
@@ -77,28 +77,28 @@ newtype ScaleDegreePattern = ScaleDegreePattern [(Int,Accidental)]
 instance Num Interval where
   
   (Interval d s) + (Interval d' s') = 
-    Interval (d `countfwd` d') (s + s')
+    Interval (d `countPlus` d') (s `countPlus` s')
 
   (Interval d s) - (Interval d' s') =  
-      Interval (d `countbackNZ` d') (s `backtrack` s')
+      Interval (d `countMinus` d') (s `countMinus` s')
   
-  (Interval d s) * (Interval d' s') =  
-      Interval (d * d') (s * s')
+  (Interval (Count d) (Count s)) * (Interval (Count d') (Count s')) =  
+      interval (d * d') (s * s')
     
   abs  = id
   
-  negate _ = Interval 1 0
+  negate _ = interval 1 0
   
-  signum (Interval d s) = Interval 1 0
+  signum (Interval d s) = interval 1 0
   
   fromInteger = fromSemis      
            
 instance Semitones Interval where
-  semitones (Interval _ sc) = sc
+  semitones (Interval _ (Count sc)) = sc
     
 instance SemiDisplacement Interval where 
-  addSemi (Interval d s) i = Interval d (s + i)
-  subSemi (Interval d s) i = Interval d (abs $ s - i)
+  addSemi (Interval d s) i = Interval d (s `forward` i)
+  subSemi (Interval d s) i = Interval d (s `backward` i)
   
   
 --------------------------------------------------------------------------------
@@ -119,26 +119,6 @@ instance Enum IntervalMeasure where
 -- Helpers
 --------------------------------------------------------------------------------
 
-countfwd :: (Num a) => a -> a -> a
-countfwd a i = a + (i - 1)
-
-countback, countbackNZ :: (Num a, Ord a) => a -> a -> a
-countback   a i = abs $ a - (i - 1)
-countbackNZ a i | a > i     = countback a i
-                | otherwise = countback i a
-
-backtrack, backtrackNZ :: (Num a) => a -> a -> a
-backtrack a i = abs $ a - i
-backtrackNZ a i = 
-  let a' = a - i in case signum a' of (-1) -> (abs a') + 1 ; _ -> a'
-  
-  
---------------------------------------------------------------------------------
--- Operations
---------------------------------------------------------------------------------
-
-
-
 -- Smart constructor for Intervals
 -- TODO - Intervals be can constructed if the arithmetic distance and the 
 -- semitone count don't make sense 
@@ -146,13 +126,17 @@ backtrackNZ a i =
 -- (unless of course wild pitch spelling is considered)
 
 interval d s 
-    | d > 0 && s >= 0 = Interval d s
+    | d > 0 && s >= 0 = Interval (Count d) (Count s)
     | d == 0          = error dzero_msg
     | otherwise       = error mixed_msg
  where
   dzero_msg = "Cannot create an Interval with an arithmetic distance of 0"
   mixed_msg = "Cannot create an Interval with negative numbers for\n"
-           ++ "arithmetic distance or semitone count" 
+           ++ "arithmetic distance or semitone count"  
+  
+--------------------------------------------------------------------------------
+-- Operations
+--------------------------------------------------------------------------------
 
 -- fromSemis is biased 
 -- it produces m6 rather than A5 & A4 and A4 rather than d4
@@ -162,15 +146,15 @@ stepy :: (Num a, Ord a) => a -> a
 stepy i | i < 0       = stp $ abs i
         | otherwise   = stp i
   where
-    stp i | i == 0                      = 1
-          | i == 1 || i == 2            = 2
-          | i == 3 || i == 4 || i == 5  = 3
-          | i == 6                      = 4
-          | i == 7                      = 5
-          | i == 8 || i == 9            = 6
-          | i == 10 || i == 11          = 7
-          | i == 12                     = 8
-          | otherwise                   = 7 + stp (i - 13)
+    stp i | i == 0                       = 1
+          | i == 1  || i == 2            = 2
+          | i == 3  || i == 4 || i == 5  = 3
+          | i == 6                       = 4
+          | i == 7                       = 5
+          | i == 8  || i == 9            = 6
+          | i == 10 || i == 11           = 7
+          | i == 12                      = 8
+          | otherwise                    = 7 + stp (i - 13)
   
     
 
@@ -186,24 +170,34 @@ instance Ord Interval where
 -- Operations
 --------------------------------------------------------------------------------
 
+retroCount :: (Eq a) => (a -> a) -> a -> a -> Int
+retroCount fn x y = snd $ until p f (x,1)
+  where 
+    p (a,_) = a == y
+    f (a,i) | i > 1000  = error "retrocount - recursion limit 1000"
+            | otherwise = (fn a, i+1)
+ 
+
+
 -- 'retrograde' C-C is 1, C-D is 2 ..
 letterCount :: PitchLetter -> PitchLetter -> Int
-letterCount l l' = snd $ until p f (l,1)
-  where p (l'',_) = l'' == l'
-        f (l'',i) = (succ l'', i+1)
+letterCount = retroCount succ
 
 
--- | number of 'letter names' inclusive between the highest and lowest pitch
+
+-- | number of 'letter names' inclusive between the lowest and highest pitch
 arithmeticDistance :: Pitch -> Pitch -> Int
-arithmeticDistance p@(Pitch l o _ _)  p'@(Pitch l' o' _ _)
-    | p == p'   = 1
-    | p < p'    = orderedDist (pitch_letter l, o)   (pitch_letter l', o')
-    | otherwise = orderedDist (pitch_letter l', o') (pitch_letter l, o) 
+arithmeticDistance p  p' | p < p'    = aCount p  p'
+                         | otherwise = aCount p' p
   where
-    orderedDist (p,o) (p',o') = let pd = letterCount p p'
-                                in pd + 7 * (o' - o)
+    aCount (Pitch (PitchLabel l _) o _ _) (Pitch (PitchLabel l' _) o' _ _) = 
+      retroCount succPair (o,l) (o',l')
+    
+    succPair (o,B) = (o+1,C)
+    succPair (o,l) = (o,succ l)
+    
 
-
+                                
 
 buildInterval :: Pitch -> Pitch -> Interval
 buildInterval p  p' = 
@@ -211,42 +205,47 @@ buildInterval p  p' =
 
 
 invert :: Interval -> Interval
-invert (Interval a s) | a < 9     = Interval (9-a) (12-s)
-                      | otherwise = error "todo invert on large intervals ..."
+invert (Interval (Count d) (Count s)) 
+  | d < 9     = interval (9-d) (12-s)
+  | otherwise = error "todo invert on large intervals ..."
  
 simplify :: Interval -> (IntervalMeasure,Interval)
-simplify (Interval a s) 
-  | a > 8 && s > 12 = let (i,s') = s `divMod` 12 
-                      in (Compound i, Interval (a `mod` 8) s')
-  | otherwise       = (Simple, Interval a s) 
+simplify (Interval (Count d) (Count s)) 
+  | d > 8 && s > 12 = let (i,s') = s `divMod` 12 
+                      in (Compound i, interval (d `mod` 8) s')
+  | otherwise       = (Simple, interval d s) 
 
 
+unWrapInterval (Interval (Count d) (Count s)) = (d,s) 
 
 intervalName :: Interval -> Maybe NamedInterval
-intervalName invl = let (measure, simple) = simplify invl in fn measure simple
-  where     
-    fn m (Interval 1 0)   = Just (NamedInterval m Perfect Unison)
-    fn m (Interval 2 1)   = Just (NamedInterval m Minor Second)
-    fn m (Interval 2 2)   = Just (NamedInterval m Major Second)
-    fn m (Interval 3 3)   = Just (NamedInterval m Minor Third)
-    fn m (Interval 3 4)   = Just (NamedInterval m Major Third)
-    fn m (Interval 4 5)   = Just (NamedInterval m Perfect Fourth)
-    fn m (Interval 4 6)   = Just (NamedInterval m Augmented Fourth)
-    fn m (Interval 5 6)   = Just (NamedInterval m Diminished Fifth)
-    fn m (Interval 5 7)   = Just (NamedInterval m Perfect Fifth)
-    fn m (Interval 5 8)   = Just (NamedInterval m Augmented Fifth)
-    fn m (Interval 6 8)   = Just (NamedInterval m Minor Sixth)
-    fn m (Interval 6 9)   = Just (NamedInterval m Major Sixth)
-    fn m (Interval 7 10)  = Just (NamedInterval m Minor Seventh)
-    fn m (Interval 7 11)  = Just (NamedInterval m Major Seventh)
-    fn m (Interval 8 12)  = Just (NamedInterval m Perfect Octave)
-    fn m _                = Nothing
+intervalName invl = 
+    let (measure, simple) = simplify invl in fn measure (unWrapInterval simple)
+  where
+    fn m (1,0)   = Just (NamedInterval m Perfect Unison)   
+    fn m (2,1)   = Just (NamedInterval m Minor Second)
+    fn m (2,2)   = Just (NamedInterval m Major Second)
+    fn m (3,3)   = Just (NamedInterval m Minor Third)
+    fn m (3,4)   = Just (NamedInterval m Major Third)
+    fn m (4,5)   = Just (NamedInterval m Perfect Fourth)
+    fn m (4,6)   = Just (NamedInterval m Augmented Fourth)
+    fn m (5,6)   = Just (NamedInterval m Diminished Fifth)
+    fn m (5,7)   = Just (NamedInterval m Perfect Fifth)
+    fn m (5,8)   = Just (NamedInterval m Augmented Fifth)
+    fn m (6,8)   = Just (NamedInterval m Minor Sixth)
+    fn m (6,9)   = Just (NamedInterval m Major Sixth)
+    fn m (7,10)  = Just (NamedInterval m Minor Seventh)
+    fn m (7,11)  = Just (NamedInterval m Major Seventh)
+    fn m (8,12)  = Just (NamedInterval m Perfect Octave)
+    fn m _       = Nothing
+
+
 
 namedInterval :: NamedInterval -> Maybe Interval
 namedInterval (NamedInterval msr qlty sz) = fmap (mk msr) (fn qlty sz)
   where 
-    mk Simple       (a,s) = Interval a s
-    mk (Compound i) (a,s) = Interval (a + 8 * i) (s + 12 * i)
+    mk Simple       (a,s) = interval a s
+    mk (Compound i) (a,s) = interval (a + 8 * i) (s + 12 * i)
 
     fn Perfect    Unison  = Just (1,0)
     fn Minor      Second  = Just (2,1)
@@ -267,8 +266,9 @@ namedInterval (NamedInterval msr qlty sz) = fmap (mk msr) (fn qlty sz)
 
 
 extr :: Pitch -> Interval -> Pitch
-extr p@(Pitch (PitchLabel l a) o s c) (Interval ad sc) =
-    let (oc,s') = explode12 $ s + sc
+extr p@(Pitch (PitchLabel l a) o s c) inval =
+    let (ad,sc) = unWrapInterval inval
+        (oc,s') = explode12 $ s + sc
         l'      = successor l (ad - 1)        
         lbl     = spell (pitch_label $ p `addSemi` sc) l'
     in Pitch lbl (oc + o) s' c
