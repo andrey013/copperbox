@@ -22,15 +22,15 @@ import Bala.Base.Base
 import Data.Char
 
 instance EncodePitch PitchSpec where
-  fromPitch (Pitch l a o _) = 
-    let alt = case valueAlt a of Abc.Natural -> Nothing ; a' -> Just a'
+  fromPitch (Pitch (PitchLabel l a) o s _) = 
+    let alt = Nothing -- case valueAlt s of Abc.Natural -> Nothing ; a' -> Just a'
         (ch,ov) = valuePch l o
     in PitchSpec ch alt ov
 
   toPitch (PitchSpec ch oa oo) =
     let (pl,ove) = pchValue ch oo
         alt      = maybe Nat altValue oa 
-    in Pitch pl alt ove 0
+    in Pitch (PitchLabel pl alt) ove 0  0
 
 pchValue 'A' ove = (A, oveValue ove)
 pchValue 'B' ove = (B, oveValue ove)
@@ -69,18 +69,18 @@ oveValue = maybe 4 f
 
 altValue :: Abc.Accidental -> Accidental
 altValue (Abc.Natural)      = Nat
-altValue (Abc.Sharp)        = Sharp
-altValue (Abc.DoubleSharp)  = SharpSharp       
-altValue (Abc.Flat)         = Flat 
-altValue (Abc.DoubleFlat)   = FlatFlat
+altValue (Abc.Sharp)        = Sharpi 1
+altValue (Abc.DoubleSharp)  = Sharpi 2       
+altValue (Abc.Flat)         = Flati 1 
+altValue (Abc.DoubleFlat)   = Flati 2
 
 
 valueAlt :: Accidental -> Abc.Accidental
 valueAlt Nat          = Abc.Natural
-valueAlt Sharp        = Abc.Sharp 
-valueAlt SharpSharp   = Abc.DoubleSharp 
-valueAlt Flat         = Abc.Flat 
-valueAlt FlatFlat     = Abc.DoubleFlat
-valueAlt (Sharpi i)   = undefined
-valueAlt (Flati i)    = undefined
+valueAlt (Sharpi 1)   = Abc.Sharp 
+valueAlt (Sharpi 2)   = Abc.DoubleSharp 
+valueAlt (Flati 1)    = Abc.Flat 
+valueAlt (Flati 2)    = Abc.DoubleFlat
+valueAlt _            = undefined
+
      

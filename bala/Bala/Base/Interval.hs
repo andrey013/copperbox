@@ -19,11 +19,12 @@
 module Bala.Base.Interval where
 
 import Bala.Base.PitchRep
+import Bala.Base.PitchOps
 import Bala.Base.PitchClass
 import Bala.Base.BaseExtra 
 
 import Control.Applicative hiding (many, optional, (<|>) )
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec 
 
 
 --------------------------------------------------------------------------------
@@ -32,14 +33,35 @@ import Text.ParserCombinators.Parsec
 
 
 
-data Interval = Interval {
-    arithmetic_distance :: Int,
-    semitone_count      :: Int
+data Interval = Interval { 
+    arith_dist :: Int, 
+    half_steps :: Int 
+    }
+  deriving (Show,Eq)
+
+
+data NamedInterval = NamedInterval {
+    interval_measure :: IntervalMeasure,
+    interval_quality :: IntervalQuality,
+    interval_size    :: IntervalSize
   }
-  deriving (Eq)
+  deriving (Eq,Show)  
+  
 
-type NamedInterval = (IntervalQuality, IntervalSize)
 
+  
+data IntervalSize = Unison | Second | Third | Fourth | Fifth | Sixth
+                  | Seventh | Octave
+  deriving (Eq,Enum,Ord,Show)
+
+data IntervalQuality = Perfect | Major | Minor | Augmented | Diminished
+  deriving (Eq,Enum,Ord,Show)
+
+data IntervalMeasure = Simple | Compound Int
+  deriving (Eq,Ord,Show)
+
+
+-- these look like they should be somewhere else
 newtype IntervalPattern = IntervalPattern [Int]
   deriving (Eq,Show)
 
@@ -47,56 +69,218 @@ newtype ScaleDegreePattern = ScaleDegreePattern [(Int,Accidental)]
 
   
   
-data IntervalSize = Unison | Second | Third | Fourth | Fifth | Sixth
-                  | Seventh | Octave
-  deriving (Eq,Enum,Ord,Show)
+  
+--------------------------------------------------------------------------------
+-- Instances for Interval
+--------------------------------------------------------------------------------
 
-data IntervalQuality = Perfect | Major | Minor | Augmented | Diminished
-  deriving (Eq,Enum,Ord)
+instance Num Interval where
+  
+  (Interval d s) + (Interval d' s') = 
+    Interval (d `countfwd` d') (s + s')
 
-data IntervalDistance = Simple | Compound Int
-  deriving (Eq,Ord,Show)
+  (Interval d s) - (Interval d' s') =  
+      Interval (d `countbackNZ` d') (s `backtrack` s')
+  
+  (Interval d s) * (Interval d' s') =  
+      Interval (d * d') (s * s')
+    
+  abs  = id
+  
+  negate _ = Interval 1 0
+  
+  signum (Interval d s) = Interval 1 0
+  
+  fromInteger = fromSemis      
+           
+instance Semitones Interval where
+  semitones (Interval _ sc) = sc
+    
+instance SemiDisplacement Interval where 
+  addSemi (Interval d s) i = Interval d (s + i)
+  subSemi (Interval d s) i = Interval d (abs $ s - i)
+  
+  
+--------------------------------------------------------------------------------
+-- Enum 
+--------------------------------------------------------------------------------
+
+instance Enum IntervalMeasure where
+  fromEnum Simple       = 0 
+  fromEnum (Compound i) = i 
+  
+
+  toEnum i | i == 0    = Simple
+           | i >  0    = Compound i
+           | otherwise = Compound (abs i)
+           
+
+--------------------------------------------------------------------------------
+-- Helpers
+--------------------------------------------------------------------------------
+
+countfwd :: (Num a) => a -> a -> a
+countfwd a i = a + (i - 1)
+
+countback, countbackNZ :: (Num a, Ord a) => a -> a -> a
+countback   a i = abs $ a - (i - 1)
+countbackNZ a i | a > i     = countback a i
+                | otherwise = countback i a
+
+backtrack, backtrackNZ :: (Num a) => a -> a -> a
+backtrack a i = abs $ a - i
+backtrackNZ a i = 
+  let a' = a - i in case signum a' of (-1) -> (abs a') + 1 ; _ -> a'
+  
+  
+--------------------------------------------------------------------------------
+-- Operations
+--------------------------------------------------------------------------------
 
 
+
+-- Smart constructor for Intervals
+-- TODO - Intervals be can constructed if the arithmetic distance and the 
+-- semitone count don't make sense 
+-- eg (1,8) should only have (1,1) or (1,0)
+-- (unless of course wild pitch spelling is considered)
+
+interval d s 
+    | d > 0 && s >= 0 = Interval d s
+    | d == 0          = error dzero_msg
+    | otherwise       = error mixed_msg
+ where
+  dzero_msg = "Cannot create an Interval with an arithmetic distance of 0"
+  mixed_msg = "Cannot create an Interval with negative numbers for\n"
+           ++ "arithmetic distance or semitone count" 
+
+-- fromSemis is biased 
+-- it produces m6 rather than A5 & A4 and A4 rather than d4
+fromSemis i = let i' = fromIntegral (abs i) in interval (stepy i') i'  
+
+stepy :: (Num a, Ord a) => a -> a
+stepy i | i < 0       = stp $ abs i
+        | otherwise   = stp i
+  where
+    stp i | i == 0                      = 1
+          | i == 1 || i == 2            = 2
+          | i == 3 || i == 4 || i == 5  = 3
+          | i == 6                      = 4
+          | i == 7                      = 5
+          | i == 8 || i == 9            = 6
+          | i == 10 || i == 11          = 7
+          | i == 12                     = 8
+          | otherwise                   = 7 + stp (i - 13)
+  
+    
+
+--------------------------------------------------------------------------------
+-- Ord Instance
+--------------------------------------------------------------------------------
+
+instance Ord Interval where
+  (Interval _ s) `compare` (Interval _ s') = s `compare` s'
+  
 
 --------------------------------------------------------------------------------
 -- Operations
 --------------------------------------------------------------------------------
 
--- | count of 'letter names' inclusive between two pitches (ordered,multioctave)
+-- 'retrograde' C-C is 1, C-D is 2 ..
+letterCount :: PitchLetter -> PitchLetter -> Int
+letterCount l l' = snd $ until p f (l,1)
+  where p (l'',_) = l'' == l'
+        f (l'',i) = (succ l'', i+1)
+
+
+-- | number of 'letter names' inclusive between the highest and lowest pitch
 arithmeticDistance :: Pitch -> Pitch -> Int
-arithmeticDistance p1 p2 | p1 > p2   = orderedDist p2 p1
-                         | otherwise = orderedDist p1 p2
-
+arithmeticDistance p@(Pitch l o _ _)  p'@(Pitch l' o' _ _)
+    | p == p'   = 1
+    | p < p'    = orderedDist (pitch_letter l, o)   (pitch_letter l', o')
+    | otherwise = orderedDist (pitch_letter l', o') (pitch_letter l, o) 
   where
-    orderedDist (Pitch pl1 _ o1 _) (Pitch pl2 _ o2 _) = 
-      let (ld,wrapped) = letterDist pl1 pl2
-          ove          = oveDist o1 o2 wrapped
-      in ld + ove  
-    
+    orderedDist (p,o) (p',o') = let pd = letterCount p p'
+                                in pd + 7 * (o' - o)
 
-    oveDist :: Int -> Int -> Bool -> Int
-    oveDist o1 o2 True  = 7 * (o2 - o1 - 1)
-    oveDist o1 o2 False = 7 * (o2 - o1)
-    
-    -- calc distance and whether it has wrapped around
-    letterDist :: PitchLetter -> PitchLetter -> (Int,Bool)
-    letterDist x y = (dist, not (x <= y)) 
-      where dist = 1 + mod7 (7 + fromEnum y - fromEnum x)
 
-    
--- | count of semitones between two pitches (ordered,multioctave)                    
-semitoneDistance :: Pitch -> Pitch -> Int
-semitoneDistance p1 p2 = semis p2 - semis p1
 
--- | synonym of semitoneDistance
-orderedPitchInterval :: Pitch -> Pitch -> Int
-orderedPitchInterval = semitoneDistance
+buildInterval :: Pitch -> Pitch -> Interval
+buildInterval p  p' = 
+  interval (p `arithmeticDistance` p') (p `semitoneDistance` p')
+
+
+invert :: Interval -> Interval
+invert (Interval a s) | a < 9     = Interval (9-a) (12-s)
+                      | otherwise = error "todo invert on large intervals ..."
+ 
+simplify :: Interval -> (IntervalMeasure,Interval)
+simplify (Interval a s) 
+  | a > 8 && s > 12 = let (i,s') = s `divMod` 12 
+                      in (Compound i, Interval (a `mod` 8) s')
+  | otherwise       = (Simple, Interval a s) 
+
+
+
+intervalName :: Interval -> Maybe NamedInterval
+intervalName invl = let (measure, simple) = simplify invl in fn measure simple
+  where     
+    fn m (Interval 1 0)   = Just (NamedInterval m Perfect Unison)
+    fn m (Interval 2 1)   = Just (NamedInterval m Minor Second)
+    fn m (Interval 2 2)   = Just (NamedInterval m Major Second)
+    fn m (Interval 3 3)   = Just (NamedInterval m Minor Third)
+    fn m (Interval 3 4)   = Just (NamedInterval m Major Third)
+    fn m (Interval 4 5)   = Just (NamedInterval m Perfect Fourth)
+    fn m (Interval 4 6)   = Just (NamedInterval m Augmented Fourth)
+    fn m (Interval 5 6)   = Just (NamedInterval m Diminished Fifth)
+    fn m (Interval 5 7)   = Just (NamedInterval m Perfect Fifth)
+    fn m (Interval 5 8)   = Just (NamedInterval m Augmented Fifth)
+    fn m (Interval 6 8)   = Just (NamedInterval m Minor Sixth)
+    fn m (Interval 6 9)   = Just (NamedInterval m Major Sixth)
+    fn m (Interval 7 10)  = Just (NamedInterval m Minor Seventh)
+    fn m (Interval 7 11)  = Just (NamedInterval m Major Seventh)
+    fn m (Interval 8 12)  = Just (NamedInterval m Perfect Octave)
+    fn m _                = Nothing
+
+namedInterval :: NamedInterval -> Maybe Interval
+namedInterval (NamedInterval msr qlty sz) = fmap (mk msr) (fn qlty sz)
+  where 
+    mk Simple       (a,s) = Interval a s
+    mk (Compound i) (a,s) = Interval (a + 8 * i) (s + 12 * i)
+
+    fn Perfect    Unison  = Just (1,0)
+    fn Minor      Second  = Just (2,1)
+    fn Major      Second  = Just (2,2)
+    fn Minor      Third   = Just (3,3)
+    fn Major      Third   = Just (3,4)
+    fn Perfect    Fourth  = Just (4,5) 
+    fn Augmented  Fourth  = Just (4,6)
+    fn Diminished Fifth   = Just (5,6)
+    fn Perfect    Fifth   = Just (5,7)
+    fn Augmented  Fifth   = Just (5,8)
+    fn Minor      Sixth   = Just (6,8)
+    fn Major      Sixth   = Just (6,9)
+    fn Minor      Seventh = Just (7,10)
+    fn Major      Seventh = Just (7,11)
+    fn Perfect    Octave  = Just (8,12)
+    fn  _         _       = Nothing 
+
+
+extr :: Pitch -> Interval -> Pitch
+extr p@(Pitch (PitchLabel l a) o s c) (Interval ad sc) =
+    let (oc,s') = explode12 $ s + sc
+        l'      = successor l (ad - 1)        
+        lbl     = spell (pitch_label $ p `addSemi` sc) l'
+    in Pitch lbl (oc + o) s' c
+
+--------------------------------------------------------------------------------
+-- old.... 
+
 
 
 -- | absolute value of semitone distance
 unorderedPitchInterval :: Pitch -> Pitch -> Int
-unorderedPitchInterval p1 p2 = abs $ semitoneDistance p1 p2
+unorderedPitchInterval p1 p2 = abs $ semitones p1 - semitones p2
 
 
 -- | count of semitones between two pitches (ordered,single-octave)
@@ -109,15 +293,6 @@ orderedPCInterval (PC p1) (PC p2) = p2 - p1
 unorderedPCInterval (PC p1) (PC p2)
   | p1 < p2   = p2 - p1
   | otherwise = p1 - p2 
-
--- countingDistance' :: PitchLetter -> PitchLetter -> IntervalSize
--- countingDistance' a b = mkIntervalSize $ (fromEnum a - fromEnum b) `mod` 12 --  + mod7 (7 + fromEnum b - fromEnum a)
-
--- mkIntervalSize :: Int -> IntervalSize
--- mkIntervalSize a = toEnum a -- (a-1)
-
-
-
                      
 
 diatonicInterval, chromaticInterval :: Interval -> Bool
@@ -129,121 +304,10 @@ intervalClass :: Interval -> Bool
 intervalClass = undefined
 
          
-intervalName :: Interval -> Maybe NamedInterval
-intervalName (Interval 1 0)   = Just (Perfect, Unison)
-intervalName (Interval 2 1)   = Just (Minor, Second)
-intervalName (Interval 2 2)   = Just (Major, Second)
-intervalName (Interval 3 3)   = Just (Minor, Third)
-intervalName (Interval 3 4)   = Just (Major, Third)
-intervalName (Interval 4 5)   = Just (Perfect, Fourth)
-intervalName (Interval 4 6)   = Just (Augmented, Fourth)
-intervalName (Interval 5 6)   = Just (Perfect, Fifth)
-intervalName (Interval 5 8)   = Just (Augmented, Fifth)
-intervalName (Interval 6 8)   = Just (Minor, Sixth)
-intervalName (Interval 6 9)   = Just (Major, Sixth)
-intervalName (Interval 7 10)  = Just (Minor, Seventh)
-intervalName (Interval 7 11)  = Just (Major, Seventh)
-intervalName (Interval 8 12)  = Just (Perfect, Octave)
-intervalName _                = Nothing
 
-namedInterval :: IntervalQuality -> IntervalSize -> Interval
-namedInterval Perfect   Unison  = Interval 1 0
-namedInterval Minor     Second  = Interval 2 1
-namedInterval Major     Second  = Interval 2 2
-namedInterval Minor     Third   = Interval 3 3
-namedInterval Major     Third   = Interval 3 4
-namedInterval Perfect   Fourth  = Interval 4 5  
-namedInterval Augmented Fourth  = Interval 4 6
-namedInterval Perfect   Fifth   = Interval 5 6
-namedInterval Augmented Fifth   = Interval 5 8
-namedInterval Minor     Sixth   = Interval 6 8
-namedInterval Major     Sixth   = Interval 6 9
-namedInterval Minor     Seventh = Interval 7 10
-namedInterval Major     Seventh = Interval 7 11
-namedInterval Perfect   Octave  = Interval 8 12
-namedInterval _         _       = undefined
+
+
 
  
 
---------------------------------------------------------------------------------
--- Read instances
---------------------------------------------------------------------------------
-
-instance Read Interval where 
-  readsPrec _ s = readsParsec readInterval s
-
-instance Read IntervalQuality where 
-  readsPrec _ s = readsParsec readIntervalQuality s
-
-
-instance Read IntervalSize where 
-  readsPrec _ s = readsParsec readIntervalSize s
-   
-readInterval :: Parser Interval
-readInterval = namedInterval <$> readIntervalQuality <*> readIntervalSize
-
-readIntervalQuality :: Parser IntervalQuality
-readIntervalQuality = letter <$> oneOf "PMmAd"
-  where 
-    letter 'P' = Perfect
-    letter 'M' = Major
-    letter 'm' = Minor
-    letter 'A' = Augmented
-    letter 'd' = Diminished
-
-readIntervalSize :: Parser IntervalSize
-readIntervalSize = number <$> digit
-  where
-    number '1' = Unison
-    number '2' = Second
-    number '3' = Third
-    number '4' = Fourth
-    number '5' = Fifth
-    number '6' = Sixth
-    number '7' = Seventh
-    number '8' = Octave
-
-readIntervalConstr :: Parser Interval
-readIntervalConstr = parens inner
-  where
-    inner = Interval <$> (lexeme (string "Interval") *> lexeme int)
-                     <*> lexeme int
-                     
-instance Read ScaleDegreePattern where
-  readsPrec _ s = readsParsec readScaleDegreePattern s
-  
-readScaleDegreePattern = ScaleDegreePattern <$> sepBy1 scaleDegree whiteSpace 
-
-scaleDegree = flip (,) <$> readAccidental <*> int    
-  
-  
-                     
---------------------------------------------------------------------------------
--- Show instances
---------------------------------------------------------------------------------
-
--- TODO - handle intervals without names
-instance Show Interval where
-  showsPrec _ a = case intervalName a of
-                    Just (qy,sz) -> shows qy . shows (1 + fromEnum sz)
-                    Nothing -> ic a 
-    where 
-      ic (Interval d c) = showParen True $ 
-            showString "Interval " . shows d . showSpace . shows c
-
-  
-instance Show IntervalQuality where
-  showsPrec _ Perfect     = showChar 'P'
-  showsPrec _ Major       = showChar 'M'
-  showsPrec _ Minor       = showChar 'm'
-  showsPrec _ Augmented   = showChar 'A'
-  showsPrec _ Diminished  = showChar 'd'
-  
-
-instance Show ScaleDegreePattern where
-  showsPrec _ (ScaleDegreePattern xs) = catenSep $ map fn xs
-    where fn (i,alt) = shows alt . shows i
-    
-    
-
-                    
+                

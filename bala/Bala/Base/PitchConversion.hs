@@ -17,6 +17,7 @@
 module Bala.Base.PitchConversion where
 
 import Bala.Base.PitchRep
+import Bala.Base.PitchOps
 import Bala.Base.BaseExtra
 
 
@@ -54,34 +55,14 @@ picthClassForm = OPC
 octaveForm :: Float -> OctaveRep
 octaveForm = OR
 
-
+-- Midi middle C is 60, whereas for Pitch it is 48
 instance EncodePitch MidiPitch where
-  fromPitch (Pitch l a o _) = mkMidi (semis l) a o
+  fromPitch p = M $ semitones p + 12
 
-  toPitch (M a) = Pitch pch shp oct 0
-    where 
-      (pch,shp) = noteOf a
-      oct       = (a `div` 12) - 1 
-      noteOf m = sharpNote (m `mod` 12)
-
-      sharpNote 0   = (C,Nat)
-      sharpNote 1   = (C,Sharp)
-      sharpNote 2   = (D,Nat)
-      sharpNote 3   = (D,Sharp)
-      sharpNote 4   = (E,Nat)
-      sharpNote 5   = (F,Nat)
-      sharpNote 6   = (F,Sharp)
-      sharpNote 7   = (G,Nat)
-      sharpNote 8   = (G,Sharp)
-      sharpNote 9   = (A,Nat)
-      sharpNote 10  = (A,Sharp)
-      sharpNote 11  = (B,Nat)
-      sharpNote _   = error "noteOf"
-      
-    
+  toPitch m@(M i) = fromInteger $ fromIntegral (i - 12)
 
 
-mkMidi offst accdt octv = M $ offst + semis accdt + octaveMidi octv
+mkMidi offst accdt octv = M $ offst + semitones accdt + octaveMidi octv
   where octaveMidi oct            = (1 + oct) * 12
 
 

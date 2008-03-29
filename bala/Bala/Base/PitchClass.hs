@@ -55,7 +55,7 @@ instance Show PC where
 class PitchClass a where pc :: a -> PC
 
 instance PitchClass Pitch where
-  pc (Pitch n a _ _) = pitchClass $ semis n + semis a
+  pc (Pitch l o s _) = pitchClass $ (12 * o) + s
 
 
   

@@ -25,258 +25,187 @@ import Text.ParserCombinators.Parsec
 -- Datatypes
 --------------------------------------------------------------------------------
 
-data Pitch = Pitch { 
-    pitch       :: PitchLetter,
-    accidental  :: Accidental,
-    octave      :: Int,
-    cents       :: Int 
+-- Cache the pitch letter & accidental for spelling only, and store semitones 
+-- for calculations  
+data Pitch = Pitch {
+    pitch_label   :: PitchLabel,
+    octave        :: Int,
+    seimtones     :: Int,
+    cents         :: Int 
   }
-  deriving Eq
+  deriving (Eq,Read,Show)
+  
+data PitchLabel = PitchLabel {
+    pitch_letter :: PitchLetter,
+    accidental   :: Accidental
+  }
+  deriving (Eq,Read,Show) 
+  
     
 data PitchLetter = C | D | E | F | G | A | B
-  deriving (Eq,Enum,Ord,Show)
+  deriving (Eq,Ord,Read,Show)
 
-data Accidental = Nat | Sharp | SharpSharp | Flat | FlatFlat  
-                | Sharpi Int | Flati Int
-  deriving Eq
-
-instance Ord Pitch where
-  p1 `compare` p2 = (toCents p1) `compare` (toCents p2)
-
-newtype Cents = Cents {unCents :: Int}
-  deriving (Eq,Ord,Show)
-
--- a simple representation (for typography ?)
-data SimplePitch = SimplePitch PitchLetter Accidental
-  
---------------------------------------------------------------------------------
--- Operations
---------------------------------------------------------------------------------
-
--- pitch ops -- adding intervals etc need a naming scheme
-
-class SemiDisplacement a where 
-  addSemi :: a -> Int -> a
-  subSemi :: a -> Int -> a
-  sharp   :: a -> a
-  flat    :: a -> a
-  
-  sharp a = a `addSemi` 1
-  flat a  = a `subSemi` 1
-
-class OctaveDisplacement a where   
-  addOve  :: a -> Int -> a
-  subOve  :: a -> Int -> a
- 
+data Accidental = Nat | Sharp Int | Flat Int
+  deriving (Eq,Read,Show)
 
 
-spellWithSharps :: SimplePitch -> SimplePitch
-spellWithSharps (SimplePitch l a)   = 
-  toEnum $ semis l + semis a
-
-
-instance SemiDisplacement SimplePitch where
-  addSemi (SimplePitch l a) i = toEnum $ semis l + semis a + i
-  subSemi (SimplePitch l a) i = toEnum $ semis l + semis a - i
-
-
-
-instance SemiDisplacement Pitch where
-  -- oc is "octave-carry" this isn't a very descriptive implementation
-  -- and at some point should be done better
-  (Pitch l a o c) `addSemi` i = 
-    let od = i `div` 12
-        (SimplePitch l' a') = toEnum $ semis l + semis a + (i `mod` 12)
-        oc = if (l' < l) then 1 else 0
-    in Pitch l' a' (o + od + oc) c
-  
-  
-  (Pitch l a o c) `subSemi` i = 
-    let od = i `div` 12 
-        (SimplePitch l' a') = toEnum $ semis l + semis a - (i `mod` 12)
-        oc = if (l' > l) then 1 else 0
-    in Pitch l' a' (o - (od + oc)) c
-  
-  
-    
-instance OctaveDisplacement Pitch where   
-  (Pitch l a o c) `addOve` i = Pitch l a (o + i) c
-  (Pitch l a o c) `subOve` i = Pitch l a (o - i) c
-  
-centValue :: Pitch -> Int
-centValue (Pitch l a o c) 
-  = (octaveDisplacement o * 100) + ((semis l + semis a) * 100) + c
-
-pitchValue :: Int -> Pitch
-pitchValue i = Pitch C Nat 0 0
-  
-toCents (Pitch l a o c) = Cents $ 
-  (octaveDisplacement o * 100) + ((semis l + semis a) * 100) + c
-
-fromCents (Cents i) = undefined
-
-class SemiToneCount a where semis :: a -> Int
 
 -- The semitone displacement upwards from C
-instance SemiToneCount PitchLetter where
-  semis C = 0
-  semis D = 2
-  semis E = 4
-  semis F = 5
-  semis G = 7
-  semis A = 9
-  semis B = 11
+instance Semitones PitchLetter where
+  semitones C = 0
+  semitones D = 2
+  semitones E = 4
+  semitones F = 5
+  semitones G = 7
+  semitones A = 9
+  semitones B = 11
 
 -- How many semitones is the pitch changed by its accidental? 
-instance SemiToneCount Accidental where
-  semis Nat        = 0
-  semis Sharp      = 1
-  semis SharpSharp = 2
-  semis Flat       = (-1)
-  semis FlatFlat   = (-2)
-  semis (Sharpi i) = i
-  semis (Flati i)  = 0 - i
+instance Semitones Accidental where
+  semitones Nat       = 0
+  semitones (Sharp i) = i
+  semitones (Flat i)  = negate i
 
-instance SemiToneCount Pitch where
-  semis (Pitch p a o _) = semis p + semis a + (12 * o)
-   
-octaveDisplacement oct            = (oct - 4) * 12  
+instance Semitones PitchLabel where
+  semitones (PitchLabel l a) = semitones l + semitones a
+
+instance Semitones Pitch where
+  semitones (Pitch l o s c) = 
+    let (cc,_) = explode100 c in  12 * o + s + cc
   
-
-
-  
-class EncodePitch a where 
-  toPitch :: a -> Pitch  
-  fromPitch :: Pitch -> a
-
-instance EncodePitch Int where
-  toPitch i = pitchValue i
-  fromPitch p = centValue p 
-
-sem :: Pitch -> Int -> Pitch
-sem p i = toPitch $ i + unCents (toCents p)
- 
-ove :: Pitch -> Int -> Pitch
-ove p@(Pitch {octave=o'}) i = p {octave=o'+i} 
-
-data ParsonsCode = PaR | PaU | PaD    
-  deriving (Eq,Ord,Show)
-  
-contour :: [Pitch] -> [ParsonsCode]  
-contour = zam diff
-  where diff a b = case a `compare` b of
-                    EQ -> PaR
-                    LT -> PaU
-                    GT -> PaD
-  
-data RefinedContour = ReR | ReUS | ReUL | ReDS | ReDL
-  deriving (Eq,Ord,Show)
-
---------------------------------------------------------------------------------
--- Read instances
---------------------------------------------------------------------------------
-
-instance Read Pitch where 
-  readsPrec _ s = readsParsec readPitch s
-
-readPitch :: Parser Pitch
-readPitch = Pitch <$> readPitchLetter 
-                  <*> readAccidental
-                  <*> option 4 positiveInt 
-                  <*> option 0 signedInt
-
-                
-instance Read PitchLetter where 
-  readsPrec _ s = readsParsec readPitchLetter s
-  
-readPitchLetter = letter <$> oneOf "ABCDEFG" 
-  where 
-    letter 'A' = A
-    letter 'B' = B
-    letter 'C' = C
-    letter 'D' = D
-    letter 'E' = E
-    letter 'F' = F
-    letter 'G' = G
-
-
-instance Read Accidental where 
-  readsPrec _ s = readsParsec readAccidental s
-  
-readAccidental = accident <$> option "" sf
-  where 
-    sf = many1 (char '#') <|> many1 (char 'b')
-    accident ""       = Nat
-    accident "#"      = Sharp
-    accident "##"     = SharpSharp
-    accident "b"      = Flat
-    accident "bb"     = FlatFlat
-    accident ('#':xs) = Sharpi (1+ length xs)
-    accident ('b':xs) = Flati (1+ length xs)
-    
-instance Read SimplePitch where
-  readsPrec _ s = readsParsec readSimplePitch s
-  
-readSimplePitch = SimplePitch <$> readPitchLetter <*> readAccidental
-    
---------------------------------------------------------------------------------
--- Show instances
---------------------------------------------------------------------------------
-
-instance Show Pitch where
-  showsPrec _ (Pitch p a o i) | i == 0    = root
-                              | i < 0     = root . shows i
-                              | otherwise = root . showChar '+' . shows i
-    where root = shows p . shows a . shows o
-    
-instance Show Accidental where
-  showsPrec _ Nat         = showString ""
-  showsPrec _ Sharp       = showChar '#'
-  showsPrec _ SharpSharp  = showChar 'x'
-  showsPrec _ Flat        = showChar 'b'
-  showsPrec _ FlatFlat    = showString "bb"
-  showsPrec _ (Sharpi i)  | mod i 2 == 0  = root 
-                          | otherwise     = root . showChar '#'
-    where root = showString (replicate (i `div` 2) 'x')                          
-  showsPrec _ (Flati i)   = showString (replicate i 'b')
-
-
-instance Show SimplePitch where
-  showsPrec _ (SimplePitch p a) = shows p . shows a
 
 --------------------------------------------------------------------------------
 -- Enum instances
 --------------------------------------------------------------------------------
 
-instance Enum SimplePitch where 
-  fromEnum = fromEnumSimple . spellWithSharps
-    where
-      fromEnumSimple (SimplePitch C Nat)   = 0
-      fromEnumSimple (SimplePitch C Sharp) = 1
-      fromEnumSimple (SimplePitch D Nat)   = 2
-      fromEnumSimple (SimplePitch D Sharp) = 3
-      fromEnumSimple (SimplePitch E Nat)   = 4
-      fromEnumSimple (SimplePitch F Nat)   = 5
-      fromEnumSimple (SimplePitch F Sharp) = 6
-      fromEnumSimple (SimplePitch G Nat)   = 7
-      fromEnumSimple (SimplePitch G Sharp) = 8
-      fromEnumSimple (SimplePitch A Nat)   = 9
-      fromEnumSimple (SimplePitch A Sharp) = 10
-      fromEnumSimple (SimplePitch B Nat)   = 11
+instance Enum PitchLetter where 
+  fromEnum C = 0
+  fromEnum D = 1
+  fromEnum E = 2
+  fromEnum F = 3
+  fromEnum G = 4
+  fromEnum A = 5
+  fromEnum B = 6
   
-  toEnum 0   = SimplePitch C Nat
-  toEnum 1   = SimplePitch C Sharp
-  toEnum 2   = SimplePitch D Nat
-  toEnum 3   = SimplePitch D Sharp
-  toEnum 4   = SimplePitch E Nat
-  toEnum 5   = SimplePitch F Nat
-  toEnum 6   = SimplePitch F Sharp
-  toEnum 7   = SimplePitch G Nat
-  toEnum 8   = SimplePitch G Sharp
-  toEnum 9   = SimplePitch A Nat
-  toEnum 10  = SimplePitch A Sharp
-  toEnum 11  = SimplePitch B Nat
+  toEnum 0   = C
+  toEnum 1   = D
+  toEnum 2   = E
+  toEnum 3   = F
+  toEnum 4   = G
+  toEnum 5   = A
+  toEnum 6   = B
+
+  toEnum i  = toEnum $ i `mod` 7
+  
+  
+instance Enum PitchLabel where 
+  fromEnum pl = semitones pl
+
+  
+  toEnum 0   = PitchLabel C Nat
+  toEnum 1   = PitchLabel C (Sharp 1)
+  toEnum 2   = PitchLabel D Nat
+  toEnum 3   = PitchLabel D (Sharp 1)
+  toEnum 4   = PitchLabel E Nat
+  toEnum 5   = PitchLabel F Nat
+  toEnum 6   = PitchLabel F (Sharp 1)
+  toEnum 7   = PitchLabel G Nat
+  toEnum 8   = PitchLabel G (Sharp 1)
+  toEnum 9   = PitchLabel A Nat
+  toEnum 10  = PitchLabel A (Sharp 1)
+  toEnum 11  = PitchLabel B Nat
 
   toEnum i  = toEnum $ i `mod` 12
   
+instance Enum Accidental where
+  fromEnum Nat       = 0
+  fromEnum (Sharp i) = i
+  fromEnum (Flat i)  = negate i
+  
+  toEnum i | i  == 0   = Nat
+           | i > 0     = Sharp i
+           | otherwise = Flat $ negate i
+
+
+
+--------------------------------------------------------------------------------
+-- Ord instances
+--------------------------------------------------------------------------------
+
+semiCompare :: (Semitones a) => a -> a -> Ordering
+semiCompare a b = semitones a `compare` semitones b
+
+
+instance Ord Accidental where
+  compare = semiCompare
+
+instance Ord PitchLabel where
+  compare = semiCompare
+  
+instance Ord Pitch where
+  compare (Pitch _ o s c) (Pitch _ o' s' c') = a `compare` b
+    where 
+      (sc,cc)   = c  `divMod` 100
+      (sc',cc') = c' `divMod` 100
+      a         = (fromIntegral $ (12 * o) + s + sc) + ((fromIntegral cc) / 100.0)
+      b         = (fromIntegral $ (12 * o') + s' + sc') + ((fromIntegral cc') / 100.0) 
+    
+
+--------------------------------------------------------------------------------
+-- Num instances
+--------------------------------------------------------------------------------
+
+instance Num Accidental where
+  a + b = toEnum $ fromEnum a + fromEnum b
+                           
+  a - b = toEnum $ fromEnum a - fromEnum b
+    
+  a * b = toEnum $ fromEnum a * fromEnum a
+
+  abs (Flat i) = Sharp i  
+  abs a        = a
+  
+  
+  signum Nat       = Nat
+  signum (Sharp _) = Sharp 1
+  signum _         = Flat 1
+
+    
+  fromInteger = toEnum . fromIntegral   
+  
+instance Num Pitch where
+  (Pitch l o s c) + (Pitch _ o' s' c') = Pitch l' (o + o' + co) s'' c''
+    where (cs,c'') = explode100 (c + c')
+          (co,s'') = explode12 (s + s' + cs)
+          l' = toEnum $ s'' + fromEnum l
+
+
+  (Pitch l o s c) - (Pitch _ o' s' c') = 
+    let (cs,c'') = explode100 (c - c')
+        (co,s'') = explode12 (s - s' + cs)
+        l' = toEnum $ s'' - fromEnum l
+    in Pitch l' (o - o' + co) s'' c''
+  
+  p * p' = 
+    let semil     = fromIntegral $ semitones p
+        semir     = fromIntegral $ semitones p'
+        centl     = (fromIntegral $ cents p) / 100.0
+        centr     = (fromIntegral $ cents p') / 100.0
+        sp        = (semil + centl) * (semir + centr)
+        (semis,c) = properFraction $ (semil + centl) * (semir + centr)
+        (o,s)     = explode12 semis
+    in Pitch (toEnum semis) o s (round (100 * c)) 
+  
+  abs p     = let (Pitch l o s _) = fromInteger $ fromIntegral $ abs $ semitones p
+              in Pitch l o s (cents p)
+              
+  signum p  = case semitones p `compare` 0 of
+                EQ -> Pitch (toEnum 0) 0 0 0
+                GT -> Pitch (toEnum 0) 0 1 0
+                LT -> Pitch (toEnum (-1)) (-1) 11 0
+                
+  
+  -- note, this is different to midi - middle C here is 48 (in midi it is 60)
+  fromInteger i = let i' = fromIntegral i; (o,s) = explode12  i'; l = toEnum i'
+                  in Pitch l o s 0   
   

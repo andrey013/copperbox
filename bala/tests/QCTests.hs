@@ -1,10 +1,11 @@
 
 
-module QCTests where
+module Main where
 
 import TestInterval
-import TestPitchConversion
+-- import TestPitchConversion
 
 main = do
-  testPitchConversion
   testInterval
+  -- testPitchConversion
+  

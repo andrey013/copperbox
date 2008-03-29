@@ -1,4 +1,5 @@
-
+{-# OPTIONS_GHC -XEmptyDataDecls #-}
+{-# OPTIONS_GHC -XFlexibleInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -27,26 +28,136 @@ import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language
 
+--------------------------------------------------------------------------------
+-- Affi(cher) & Deco(uper) -- alternatives to Read & Show for prettier representations
+--------------------------------------------------------------------------------
 
+class Affi a where
+  affi :: a -> ShowS
 
--- clashes with QuickCheck and needs a better name anyway    
--- elements :: Read a => String -> [a]
--- elements = map read . words
-
-
+class Deco a where
+  deco :: Parser a
   
-{-
--- zack, like zac but the interval measure is counts from 1 
--- (i.e 4-4 has an interval of 1, 4-5 interval 2, 4-6 interval 3)
-zack :: (Num a) => a -> [a] -> [a]
-zack i xs = snd $ mapAccumL fn i (0:xs)
-  where fn acc n  = (acc + n - 1, acc + n)
--}
+afficher :: Affi a => a -> String
+afficher a = affi a []
 
--- ,scanl shiftyPlus, replaces zack  
-shiftyPlus :: (Num a) => a -> a -> a
-shiftyPlus a b = a - 1 + b  
+decouper :: Deco a => String -> a
+decouper s = case parse deco "" s of
+                Left err -> error $ "parse error" ++ show err
+                Right a -> a 
+
+
+spacedElements :: Deco a => String -> [a]
+spacedElements s = case parse (many1 $ lexeme deco) "" s of
+                     Left err -> error $ "parse error" ++ show err
+                     Right a -> a                     
+
+--------------------------------------------------------------------------------
+-- semitones is the basis for Pitch arithmetic
+--------------------------------------------------------------------------------
+
+class Semitones a where semitones :: a -> Int
+
+                    
+--------------------------------------------------------------------------------
+
+successor, predecessor :: (Enum a) => a -> Int -> a
+
+successor a i = applyi f a i
+  where f = if (i >= 0) then succ else pred
+
+
+
+predecessor a i = applyi f a i
+  where f = if (i >= 0) then pred else succ
+              
+applyi :: (a -> a) -> a -> Int -> a
+applyi f a i | i <= 0    = a
+             | otherwise = applyi f (f a) (i-1)
+             
+              
+explode12, explode100  :: (Integral a) => a -> (a, a)
+explode12 i       = i `divMod` 12
+explode100 i      = i `divMod` 100
+
+collapse12, collapse100  :: (Integral a) => (a, a) -> a
+collapse12 (o,d)  = d + 12 * o
+collapse100 (o,d) = d + 100 * o
+
+normalize12, normalize100 :: (Integral a) => (a, a) -> (a, a) 
+normalize12 (o,d)  = let (c, d') = explode12 d in (o + c, d')
+normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
+
+--------------------------------------------------------------------------------
+-- shifty arithmetic numbers for counting intervals
+--------------------------------------------------------------------------------
+
+-- "Counting" includes the current position and there is no zero
   
+shiftyPlus :: (Num a, Ord a) => a -> a -> a
+shiftyPlus a b = a + shiftyStep b
+
+shiftyMinus :: (Num a, Ord a) => a -> a -> a
+shiftyMinus a b = a - shiftyStep b
+      
+shiftyStep a | a < 0     = a + 1
+             | otherwise = a - 1
+
+--------------------------------------------------------------------------------
+-- alternatively, counting in various ways
+--------------------------------------------------------------------------------
+
+newtype Count a = Count { unCount :: Int }
+
+instance Show (Count a) where
+  showsPrec _ (Count i) = shows i 
+  
+class Countable a where 
+  forward  :: a -> Int -> a
+  backward :: a -> Int -> a
+  
+  backward a i =  a `forward` (negate i)
+
+
+data NonNeg
+
+nonneg :: Int -> Count NonNeg
+nonneg = Count . abs
+
+instance Countable (Count NonNeg) where
+  forward (Count i) j  = nonneg $ i + j
+
+-- non negative & non zero  
+data NnNz
+
+nnnz :: Int -> Count NnNz
+nnnz 0 = error "Cannot create a nonzero from zero"
+nnnz i = Count $ abs i
+
+instance Countable (Count NnNz) where
+  forward (Count i) j  | signum j == 1        = nnnz $ i + j
+                       | i        >  (abs j)  = nnnz $ i + j
+                       | otherwise            = nnnz $ i + (j - 2)
+
+-- 'Retrograde' non negative & non zero 
+-- counting includes the current position
+data RNnNz
+
+rnnnz :: Int -> Count RNnNz
+rnnnz 0 = error "Cannot create a nonzero from zero"
+rnnnz i = Count $ abs i
+
+
+instance Countable (Count RNnNz) where
+  forward (Count i) j  | j == 0 || abs j == 1 = Count i
+                       | signum j == 1        = rnnnz $ i + (j - 1)
+                       | i        >  (abs j)  = rnnnz $ i + (j + 1)
+                       | otherwise            = rnnnz $ i + (j - 1)
+                       
+                           
+--------------------------------------------------------------------------------
+-- functions
+--------------------------------------------------------------------------------
 
 -- zam - zippy map
 zam :: (a -> a -> b) -> [a] -> [b]
@@ -85,6 +196,11 @@ optOneOf cs = optparse $ oneOf cs
 optparse :: Parser a -> Parser (Maybe a)
 optparse p = option Nothing (Just <$> p)
 
+counting, counting1 :: Parser a -> Parser Int
+counting  p = length <$> many p
+counting1 p = length <$> many1 p
+
+
 positiveInt :: Parser Int
 positiveInt = read <$> many1 digit
 
@@ -98,8 +214,12 @@ baseLex             = P.makeTokenParser emptyDef
 
 whiteSpace        = P.whiteSpace baseLex 
 parens            = P.parens baseLex
+brackets          = P.brackets baseLex
+angles            = P.angles baseLex
 integer           = P.integer baseLex
 double            = P.float baseLex
+stringLiteral     = P.stringLiteral baseLex
+
 
 
 float             :: Parser Float
@@ -113,35 +233,67 @@ digiti            = (flip (-) 48) . ord  <$> digit
 
 
 --------------------------------------------------------------------------------
--- Show helpers
+-- Show helpers 
+-- acknowledgement - Daan Leijen's pprint combinators recast for ShowS 
 --------------------------------------------------------------------------------
 
-showOpt :: (Show a) => Maybe a -> ShowS
-showOpt Nothing = id
-showOpt (Just a) = shows a
+optS :: (Show a) => Maybe a -> ShowS
+optS Nothing = id
+optS (Just a) = shows a
 
-showSpace :: ShowS
-showSpace = showChar ' '
+punctuateS s []      = []
+punctuateS s [x]     = [x]
+punctuateS s (x:xs)  = (x . s) : punctuateS s xs
 
-showDot :: ShowS
-showDot = showChar '.'
+encloseSepS l r s []  = l . r
+encloseSepS l r s [x] = l . x . r
+encloseSepS l r s xs  = l . hcatS (punctuateS s xs) . r
 
-showNl = showChar '\n'
-
-withParens :: ShowS -> ShowS
-withParens f = showChar '(' . f . showChar ')'
-
-
-showTogether :: (Show a) => [a] -> ShowS
-showTogether = foldr cat id
-  where cat :: (Show a) => a -> ShowS -> ShowS
-        cat a acc = (shows a) . acc
-
-caten :: [ShowS] -> ShowS
-caten = foldr (.) id
+listS           = encloseSepS lbracketS rbracketS commaS
+tupledS         = encloseSepS lparenS   rparenS   commaS
+semiBraceS      = encloseSepS lbraceS   rbraceS   semiS
 
 
-catenSep :: [ShowS] -> ShowS
-catenSep [] = id
-catenSep (x:xs) = foldl fn x xs
-  where fn e acc = e . showSpace . acc
+hcatS           = foldS (.)
+hsepS           = foldS sepS
+vsepS           = foldS lineS
+
+foldS f []      = id
+foldS f xs      = foldr1 f xs
+
+
+x `sepS`  y     = x . spaceS . y  
+x `lineS` y     = x . newlineS . y
+
+squoteS         = encloseS sglquoteS sglquoteS
+dquoteS         = encloseS dblquoteS dblquoteS
+braceS          = encloseS lbraceS rbraceS
+parenS          = encloseS lparenS rparenS
+angleS          = encloseS langleS rangleS
+bracketS        = encloseS lbracketS rbracketS
+encloseS l r x  = l . x . r
+
+lparenS         = showChar '('
+rparenS         = showChar ')'
+langleS         = showChar '<'
+rangleS         = showChar '>'
+lbraceS         = showChar '{'
+rbraceS         = showChar '}'
+lbracketS       = showChar '['
+rbracketS       = showChar ']'     
+
+sglquoteS       = showChar '\''
+dblquoteS       = showChar '"'
+semiS           = showChar ':'
+colonS          = showChar ';'
+commaS          = showChar ','
+spaceS          = showChar ' '
+dotS            = showChar '.'
+equalS          = showChar '='
+backslashS      = showChar '\\'
+newlineS        = showChar '\n'
+
+replicateS :: Int -> ShowS -> ShowS
+replicateS i x = hcatS $ replicate i x
+
+
