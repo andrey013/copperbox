@@ -1,4 +1,5 @@
-
+{-# OPTIONS_GHC -XEmptyDataDecls #-}
+{-# OPTIONS_GHC -XFlexibleInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -59,15 +60,21 @@ class Semitones a where semitones :: a -> Int
 
                     
 --------------------------------------------------------------------------------
-successor i a | i < 0     = predecessor (abs i) a
-              | i == 0    = a
-              | otherwise = successor (i-1) (succ a)
+
+successor, predecessor :: (Enum a) => a -> Int -> a
+
+successor a i = applyi f a i
+  where f = if (i >= 0) then succ else pred
 
 
-predecessor i a | i < 0     = successor (abs i) a
-                | i == 0    = a
-                | otherwise = predecessor (i-1) (pred a)
+
+predecessor a i = applyi f a i
+  where f = if (i >= 0) then pred else succ
               
+applyi :: (a -> a) -> a -> Int -> a
+applyi f a i | i <= 0    = a
+             | otherwise = applyi f (f a) (i-1)
+             
               
 explode12, explode100  :: (Integral a) => a -> (a, a)
 explode12 i       = i `divMod` 12
@@ -96,8 +103,61 @@ shiftyMinus a b = a - shiftyStep b
 shiftyStep a | a < 0     = a + 1
              | otherwise = a - 1
 
+--------------------------------------------------------------------------------
+-- alternatively, counting in various ways
+--------------------------------------------------------------------------------
 
+newtype Count a = Count { unCount :: Int }
+
+instance Show (Count a) where
+  showsPrec _ (Count i) = shows i 
   
+class Countable a where 
+  forward  :: a -> Int -> a
+  backward :: a -> Int -> a
+  
+  backward a i =  a `forward` (negate i)
+
+
+data NonNeg
+
+nonneg :: Int -> Count NonNeg
+nonneg = Count . abs
+
+instance Countable (Count NonNeg) where
+  forward (Count i) j  = nonneg $ i + j
+
+-- non negative & non zero  
+data NnNz
+
+nnnz :: Int -> Count NnNz
+nnnz 0 = error "Cannot create a nonzero from zero"
+nnnz i = Count $ abs i
+
+instance Countable (Count NnNz) where
+  forward (Count i) j  | signum j == 1        = nnnz $ i + j
+                       | i        >  (abs j)  = nnnz $ i + j
+                       | otherwise            = nnnz $ i + (j - 2)
+
+-- 'Retrograde' non negative & non zero 
+-- counting includes the current position
+data RNnNz
+
+rnnnz :: Int -> Count RNnNz
+rnnnz 0 = error "Cannot create a nonzero from zero"
+rnnnz i = Count $ abs i
+
+
+instance Countable (Count RNnNz) where
+  forward (Count i) j  | j == 0 || abs j == 1 = Count i
+                       | signum j == 1        = rnnnz $ i + (j - 1)
+                       | i        >  (abs j)  = rnnnz $ i + (j + 1)
+                       | otherwise            = rnnnz $ i + (j - 1)
+                       
+                           
+--------------------------------------------------------------------------------
+-- functions
+--------------------------------------------------------------------------------
 
 -- zam - zippy map
 zam :: (a -> a -> b) -> [a] -> [b]
@@ -233,5 +293,7 @@ equalS          = showChar '='
 backslashS      = showChar '\\'
 newlineS        = showChar '\n'
 
+replicateS :: Int -> ShowS -> ShowS
+replicateS i x = hcatS $ replicate i x
 
 

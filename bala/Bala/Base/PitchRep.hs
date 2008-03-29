@@ -43,7 +43,7 @@ data PitchLabel = PitchLabel {
   
     
 data PitchLetter = C | D | E | F | G | A | B
-  deriving (Eq,Enum,Ord,Read,Show)
+  deriving (Eq,Ord,Read,Show)
 
 data Accidental = Nat | Sharp Int | Flat Int
   deriving (Eq,Read,Show)
@@ -78,6 +78,26 @@ instance Semitones Pitch where
 -- Enum instances
 --------------------------------------------------------------------------------
 
+instance Enum PitchLetter where 
+  fromEnum C = 0
+  fromEnum D = 1
+  fromEnum E = 2
+  fromEnum F = 3
+  fromEnum G = 4
+  fromEnum A = 5
+  fromEnum B = 6
+  
+  toEnum 0   = C
+  toEnum 1   = D
+  toEnum 2   = E
+  toEnum 3   = F
+  toEnum 4   = G
+  toEnum 5   = A
+  toEnum 6   = B
+
+  toEnum i  = toEnum $ i `mod` 7
+  
+  
 instance Enum PitchLabel where 
   fromEnum pl = semitones pl
 

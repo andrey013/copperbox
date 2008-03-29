@@ -96,7 +96,11 @@ instance Num Interval where
 instance Semitones Interval where
   semitones (Interval _ sc) = sc
     
-
+instance SemiDisplacement Interval where 
+  addSemi (Interval d s) i = Interval d (s + i)
+  subSemi (Interval d s) i = Interval d (abs $ s - i)
+  
+  
 --------------------------------------------------------------------------------
 -- Enum 
 --------------------------------------------------------------------------------
@@ -182,16 +186,13 @@ instance Ord Interval where
 -- Operations
 --------------------------------------------------------------------------------
 
+-- 'retrograde' C-C is 1, C-D is 2 ..
+letterCount :: PitchLetter -> PitchLetter -> Int
+letterCount l l' = snd $ until p f (l,1)
+  where p (l'',_) = l'' == l'
+        f (l'',i) = (succ l'', i+1)
 
--- | counts from left to right
-letterDistance :: PitchLetter -> PitchLetter -> Int
-letterDistance l l' = let diff = (fromEnum l') - (fromEnum l) in 
-                      if (signum diff == (-1)) then 8 + diff else 1 + diff
-  
-letterSucc :: Int -> PitchLetter -> PitchLetter
-letterSucc i l = successor (i `mod` 8) l
 
- 
 -- | number of 'letter names' inclusive between the highest and lowest pitch
 arithmeticDistance :: Pitch -> Pitch -> Int
 arithmeticDistance p@(Pitch l o _ _)  p'@(Pitch l' o' _ _)
@@ -199,7 +200,7 @@ arithmeticDistance p@(Pitch l o _ _)  p'@(Pitch l' o' _ _)
     | p < p'    = orderedDist (pitch_letter l, o)   (pitch_letter l', o')
     | otherwise = orderedDist (pitch_letter l', o') (pitch_letter l, o) 
   where
-    orderedDist (p,o) (p',o') = let pd = letterDistance p p'
+    orderedDist (p,o) (p',o') = let pd = letterCount p p'
                                 in pd + 7 * (o' - o)
 
 
@@ -231,7 +232,8 @@ intervalName invl = let (measure, simple) = simplify invl in fn measure simple
     fn m (Interval 3 4)   = Just (NamedInterval m Major Third)
     fn m (Interval 4 5)   = Just (NamedInterval m Perfect Fourth)
     fn m (Interval 4 6)   = Just (NamedInterval m Augmented Fourth)
-    fn m (Interval 5 6)   = Just (NamedInterval m Perfect Fifth)
+    fn m (Interval 5 6)   = Just (NamedInterval m Diminished Fifth)
+    fn m (Interval 5 7)   = Just (NamedInterval m Perfect Fifth)
     fn m (Interval 5 8)   = Just (NamedInterval m Augmented Fifth)
     fn m (Interval 6 8)   = Just (NamedInterval m Minor Sixth)
     fn m (Interval 6 9)   = Just (NamedInterval m Major Sixth)
@@ -246,27 +248,28 @@ namedInterval (NamedInterval msr qlty sz) = fmap (mk msr) (fn qlty sz)
     mk Simple       (a,s) = Interval a s
     mk (Compound i) (a,s) = Interval (a + 8 * i) (s + 12 * i)
 
-    fn Perfect   Unison  = Just (1,0)
-    fn Minor     Second  = Just (2,1)
-    fn Major     Second  = Just (2,2)
-    fn Minor     Third   = Just (3,3)
-    fn Major     Third   = Just (3,4)
-    fn Perfect   Fourth  = Just (4,5) 
-    fn Augmented Fourth  = Just (4,6)
-    fn Perfect   Fifth   = Just (5,6)
-    fn Augmented Fifth   = Just (5,8)
-    fn Minor     Sixth   = Just (6,8)
-    fn Major     Sixth   = Just (6,9)
-    fn Minor     Seventh = Just (7,10)
-    fn Major     Seventh = Just (7,11)
-    fn Perfect   Octave  = Just (8,12)
-    fn  _         _      = Nothing 
+    fn Perfect    Unison  = Just (1,0)
+    fn Minor      Second  = Just (2,1)
+    fn Major      Second  = Just (2,2)
+    fn Minor      Third   = Just (3,3)
+    fn Major      Third   = Just (3,4)
+    fn Perfect    Fourth  = Just (4,5) 
+    fn Augmented  Fourth  = Just (4,6)
+    fn Diminished Fifth   = Just (5,6)
+    fn Perfect    Fifth   = Just (5,7)
+    fn Augmented  Fifth   = Just (5,8)
+    fn Minor      Sixth   = Just (6,8)
+    fn Major      Sixth   = Just (6,9)
+    fn Minor      Seventh = Just (7,10)
+    fn Major      Seventh = Just (7,11)
+    fn Perfect    Octave  = Just (8,12)
+    fn  _         _       = Nothing 
 
 
 extr :: Pitch -> Interval -> Pitch
 extr p@(Pitch (PitchLabel l a) o s c) (Interval ad sc) =
     let (oc,s') = explode12 $ s + sc
-        l'      = letterSucc (ad - 1) l       
+        l'      = successor l (ad - 1)        
         lbl     = spell (pitch_label $ p `addSemi` sc) l'
     in Pitch lbl (oc + o) s' c
 
