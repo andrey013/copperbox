@@ -19,6 +19,8 @@ module Main where
 
 import Bala
 
+import Bala.Format.Ascii.AsciiGuitar
+
 import Data.List
 import Data.Maybe
 import Control.Applicative hiding (many, optional, (<|>) )
@@ -107,60 +109,7 @@ e3s :: Pitch
 e3s = decouper "E#3"
 
 
---------------------------------------------------------------------------------
--- ascii_fretboard 
---------------------------------------------------------------------------------
 
-
--- fn :: Fingering -> FretBoard
-
-data FretBoard = Fretboard {
-    top_line        :: Fretting OpenMark,
-    fret_start      :: Int,
-    fretted_strings :: Fretting FretMark
-  }
-  
-
-data Fretting a = Fretting a a a a a a
-
-data OpenMark = OO | XX | No
-
-data FretMark = YY | NN
-
-
-
-nutLine = replicateS 11 (showChar '=')
-
-fretLine :: ShowS 
-fretLine = showChar '+' . replicateS 5 (showString "-+")
-
-markedLine :: (a -> ShowS) -> Fretting a -> ShowS
-markedLine fn (Fretting a b c d e f) = 
-  fn a `sepS` fn b `sepS` fn c `sepS` fn d `sepS` fn e `sepS` fn f
-
-fingeredLine :: Fretting FretMark -> ShowS
-fingeredLine = markedLine fingered
-
-openLine :: Fretting OpenMark -> ShowS
-openLine = markedLine open
-
-fingered YY = showChar '@'
-fingered NN = showChar '|'
-
-open No = spaceS
-open OO = showChar 'O'
-open XX = showChar 'X'
-
-
-
-
--- Fmaj7...
-demoo = vsepS [
-  openLine (Fretting No XX No No No OO), 
-  nutLine, 
-  fingeredLine (Fretting YY NN NN NN YY NN), 
-  fretLine
-  ]
 
 
 --------------------------------------------------------------------------------
