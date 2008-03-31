@@ -139,44 +139,89 @@ scaleDegrees _    = undefined
 
 -- new idea
 
-data Chord = Triad Pitch Pitch Pitch Ext
+data Alt = Nt | Sh Int | Fl Int | Inv Alt
 
-data Ext = ENil | Ext :< Pitch
 
-infixr 4 <<
-(<<) (Triad a b c ext) pch = Triad a b c (ext :< pch)
 
-c_major = Triad c4 (c4 `extr` major_third) (c4 `extr` perfect_fifth) ENil 
+data Chord = Chord { 
+      chord_root  :: Pitch,
+      chord_elems :: Map.Map Int Alt 
+   }
+
+n i p (Chord r m)  = Chord r (Map.insert i p m)
+
+flatten = transp flatten'
+  where flatten' Nt       = Fl 1
+        flatten' (Sh 1)   = Nt
+        flatten' (Sh i)   = Sh (i-1)
+        flatten' (Fl i)   = Fl (i+1)
+        flatten' (Inv a) = Inv $ flatten' a
+        
+
   
-e_minor = Triad e4 g4 b4 ENil 
-
-e_minor_minor = e_minor << e5
-
--- but things are buried inside.....
-
 instance Affi Chord where
-  affi (Triad a b c ext) = affi a . dotS . affi b . dotS . affi c . affi ext
-
-instance Affi Ext where
-  affi ENil          = id
-  affi (base :< ext) = dotS . affi base . affi ext
-
- 
--- (?) 
-root, third, fifth :: Chord -> Pitch
-root  (Triad a _ _ _) = a
-third (Triad _ b _ _) = b
-fifth (Triad _ _ c _) = c
+  affi (Chord r m) = let xs = Map.toAscList m in
+    affi r `sepS` hsepS (map (\(i,a) -> affi a . shows i) xs)
 
 
+instance Affi Alt where
+  affi Nt      = id
+  affi (Sh i)  = showString (replicate i '#')
+  affi (Fl i)  = showString (replicate i 'b')
+  affi (Inv a) = showChar '^' . affi a
+
+base = Chord c4 $ Map.fromAscList [(1,Nt),(3,Nt),(5,Nt)]
 
 
--- don't like this as it doesn't compose 
-invert1 (Triad a b c ext) = Triad (a `addOve` 1) b c  ext
-invert2 (Triad a b c ext) = Triad (a `addOve` 1) (b `addOve` 1) c  ext
+major = base
+
+minor = flatten 3 major
+
+add6 (Chord r m)   = Chord r $ Map.insert 6 Nt m
+
+add9 (Chord r m)  = Chord r $ Map.insert 9 Nt m
 
 
--- seventh a-3rd-b, a-5th-c, a-7th-d
+transp fn i c@(Chord r m) = 
+  maybe c (\a -> Chord r (Map.insert i (fn a) m)) (Map.lookup i m)
+
+firstInversion = transp invert 1
+secondInversion = firstInversion . transp invert 3
+
+
+invert (Inv a) = Inv a
+invert a       = Inv a
+
+renderChord :: Chord -> [Pitch]
+renderChord (Chord r m) = let xs = Map.toAscList m in
+  map (step1 r) xs
+
+-- problem addSemi loses the pitch spelling of arithmetic step
+step1 :: Pitch -> (Int,Alt) -> Pitch
+step1 p (i,a) = (p `arithmeticStep` i) `addSemi` (semitones a)
+
+
+instance Semitones Alt where
+  semitones Nt = 0
+  semitones (Sh i) = i
+  semitones (Fl i) = negate i
+  semitones (Inv i) = 12 - semitones i
+
+
+
+
+
+
+
+print_ans = afficherL . renderChord
+
+-- Want we want in the `Chord` data structure
+-- positional access - e.g. to flatten the third
+-- access to the front
+-- so use a finite map
+
+-- Don't get hung up on order of ops, this should hold:
+-- addNine $ addSix major == addSix $ addNine major
 
 -}
         

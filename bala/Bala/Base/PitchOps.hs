@@ -68,7 +68,8 @@ spellWithSharps :: PitchLabel -> PitchLabel
 spellWithSharps (PitchLabel l a)   = 
   toEnum $ semitones l + semitones a
 
-
+-- (31/3/08) this is most likely wrong, we should keep the letter 
+-- and extend the alteration
 instance SemiDisplacement PitchLabel where
   addSemi pl i = toEnum $ (fromEnum pl) + i
   subSemi pl i = toEnum $ (fromEnum pl) - i

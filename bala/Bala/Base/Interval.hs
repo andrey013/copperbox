@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -XFlexibleInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -184,6 +184,15 @@ letterCount :: PitchLetter -> PitchLetter -> Int
 letterCount = retroCount succ
 
 
+instance Enum (Int,PitchLetter) where
+  succ (o,B) = (o+1,C)
+  succ (o,l) = (o,succ l)
+  
+  pred (o,C) = (o-1,B)
+  pred (o,l) = (o, pred l)
+  
+  fromEnum (o,l) = o * 8 + fromEnum l
+  toEnum i = let (o,il) = i `divMod` 8 in (o, toEnum il)
 
 -- | number of 'letter names' inclusive between the lowest and highest pitch
 arithmeticDistance :: Pitch -> Pitch -> Int
@@ -191,13 +200,17 @@ arithmeticDistance p  p' | p < p'    = aCount p  p'
                          | otherwise = aCount p' p
   where
     aCount (Pitch (PitchLabel l _) o _ _) (Pitch (PitchLabel l' _) o' _ _) = 
-      retroCount succPair (o,l) (o',l')
-    
-    succPair (o,B) = (o+1,C)
-    succPair (o,l) = (o,succ l)
+      retroCount succ (o,l) (o',l')
+   
     
 
-                                
+arithmeticStep :: Pitch -> Int -> Pitch                                
+arithmeticStep (Pitch (PitchLabel l _) o _ _) i = 
+    buildPitch (PitchLabel l' Nat) o' 0
+  where
+    (o',l') = applyi succ (o,l) (i - 1)
+
+
 
 buildInterval :: Pitch -> Pitch -> Interval
 buildInterval p  p' = 

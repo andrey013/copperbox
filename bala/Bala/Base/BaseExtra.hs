@@ -41,6 +41,9 @@ class Deco a where
 afficher :: Affi a => a -> String
 afficher a = affi a []
 
+afficherL :: Affi a => [a] -> String
+afficherL as = (hsepS $ map affi as) []
+
 decouper :: Deco a => String -> a
 decouper s = case parse deco "" s of
                 Left err -> error $ "parse error" ++ show err
@@ -62,14 +65,12 @@ class Semitones a where semitones :: a -> Int
 --------------------------------------------------------------------------------
 
 successor, predecessor :: (Enum a) => a -> Int -> a
-
 successor a i = applyi f a i
   where f = if (i >= 0) then succ else pred
-
-
-
+  
 predecessor a i = applyi f a i
   where f = if (i >= 0) then pred else succ
+  
               
 applyi :: (a -> a) -> a -> Int -> a
 applyi f a i | i <= 0    = a
