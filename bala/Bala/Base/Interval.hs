@@ -133,7 +133,15 @@ interval d s
   dzero_msg = "Cannot create an Interval with an arithmetic distance of 0"
   mixed_msg = "Cannot create an Interval with negative numbers for\n"
            ++ "arithmetic distance or semitone count"  
+
+
+-- extractors
+arithDist, halfSteps :: Interval -> Int
+arithDist (Interval (Count d) _) = d
+halfSteps (Interval _ (Count s)) = s
+
   
+    
 --------------------------------------------------------------------------------
 -- Operations
 --------------------------------------------------------------------------------

@@ -52,6 +52,15 @@ g5 = decouper "G5"
 a5 = decouper "A5"
 b5 = decouper "B5"
 
+c6,d6,e6,f6,g6,a6,b6 :: Pitch
+c6 = decouper "C6"
+d6 = decouper "D6"
+e6 = decouper "E6"
+f6 = decouper "F6"
+g6 = decouper "G6"
+a6 = decouper "A6"
+b6 = decouper "B6"
+
 
 major_intervals :: IntervalStructure
 major_intervals             = mkIS "WWHWWWH"   -- bilaval
@@ -88,6 +97,8 @@ minor_seventh     = interval 7 10
 diminished_third  = interval 3 2
 diminished_fifth  = interval 5 6
 
+augmented_second  = interval 2 3
 augmented_third   = interval 3 5 
 augmented_fourth  = interval 4 6
 augmented_fifth   = interval 5 8
+

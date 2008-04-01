@@ -73,8 +73,11 @@ spellWithSharps (PitchLabel l a)   =
 instance SemiDisplacement PitchLabel where
   addSemi pl i = toEnum $ (fromEnum pl) + i
   subSemi pl i = toEnum $ (fromEnum pl) - i
-
-
+  
+{-
+  addSemi (PitchLabel l a) i = PitchLabel l (a `successor` i)
+  subSemi (PitchLabel l a) i = PitchLabel l (a `predecessor` i)
+-}
 
 instance SemiDisplacement Pitch where
   -- oc is "octave-carry" this isn't a very descriptive implementation
