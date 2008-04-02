@@ -18,6 +18,9 @@ import Bala.Base.PitchRep
 
 import Bala.Base.BaseExtra
 
+import Control.Applicative hiding (many, optional, (<|>) )
+import Text.ParserCombinators.Parsec
+
 
 semitoneDistance :: (Semitones a) => a -> a -> Int
 semitoneDistance a a' = abs $ semitones a - semitones a'
@@ -52,11 +55,12 @@ spell lbl l' = let d  = semitones lbl - semitones (PitchLabel l' Nat)
 class SemiDisplacement a where 
   addSemi :: a -> Int -> a
   subSemi :: a -> Int -> a
+  
+class AlterPitch a where  
   sharp   :: a -> a
   flat    :: a -> a
   
-  sharp a = a `addSemi` 1
-  flat a  = a `subSemi` 1
+
 
 class OctaveDisplacement a where   
   addOve  :: a -> Int -> a
@@ -67,6 +71,24 @@ class OctaveDisplacement a where
 spellWithSharps :: PitchLabel -> PitchLabel
 spellWithSharps (PitchLabel l a)   = 
   toEnum $ semitones l + semitones a
+
+
+
+instance AlterPitch Accidental where  
+  sharp a = succ a
+  flat a  = pred a
+  
+instance AlterPitch PitchLabel where  
+  sharp (PitchLabel l a) = PitchLabel l (sharp a)
+  flat (PitchLabel l a)  = PitchLabel l (flat a)
+  
+instance AlterPitch Pitch where  
+  sharp (Pitch l o s c) = let (oc,s') = explode12 $ s + 1
+                          in Pitch (sharp l) (o+oc) s' c
+  flat (Pitch l o s c)  = let (oc,s') = explode12 $ s - 1
+                          in Pitch (flat l) (o+oc) s' c
+  
+    
 
 -- (31/3/08) this is most likely wrong, we should keep the letter 
 -- and extend the alteration
@@ -145,4 +167,83 @@ contour = zam diff
 data RefinedContour = ReR | ReUS | ReUL | ReDS | ReDL
   deriving (Eq,Ord,Show)  
   
+--------------------------------------------------------------------------------
+-- Deco instances
+--------------------------------------------------------------------------------
+
+
+instance Deco Pitch where 
+  deco = decoPitch
+
+decoPitch :: Parser Pitch
+decoPitch = buildPitch <$> deco
+                       <*> option 4 positiveInt 
+                       <*> option 0 signedInt
+                       
+                       
+instance Deco PitchLabel where
+  deco = decoPitchLabel
+
+decoPitchLabel = PitchLabel <$> decoPitchLetter <*> decoAccidental
+-- or decoPitchLabel = PitchLabel <$> deco <*> deco
+
+decoPitchLabel' = deco2 PitchLabel
+ 
+deco2 :: (Deco a, Deco b) => (a -> b -> c) -> Parser c
+deco2 fn = fn <$> deco <*> deco 
+
+
+instance Deco PitchLetter where
+  deco = decoPitchLetter
+    
+decoPitchLetter = letter <$> oneOf "ABCDEFG" 
+  where 
+    letter 'A' = A
+    letter 'B' = B
+    letter 'C' = C
+    letter 'D' = D
+    letter 'E' = E
+    letter 'F' = F
+    letter 'G' = G 
+    
+instance Deco Accidental where 
+  deco = decoAccidental
+
+-- accidental either all '#' or 
+-- "#" (1), "x" (2), "x#" (3), "xx" (4), "xx#" (5), "xxx" (6), etc...
+decoAccidental = choice [sharp, flat, nat]
+  where 
+    sharp         = plainsharp <|> doublesharp
+    plainsharp    = Sharp <$> countChar '#'
+    doublesharp   = mkDbl <$> countChar 'x' <*> option 0 (countChar '#')
+    flat          = Flat  <$> countChar 'b'
+    nat           = return Nat
+    mkDbl dbl sgl = Sharp $ dbl * 2 + sgl
+    countChar    = counting . char 
+
+
+
+
+--------------------------------------------------------------------------------
+-- Affi instances
+--------------------------------------------------------------------------------
+instance Affi Pitch where
+  affi (Pitch l o s c) | c == 0    = affi l . shows o 
+                       | c > 0     = affi l . shows o . showChar '+' . shows c
+                       | otherwise = affi l . shows o . shows c
+    
+    
+instance Affi PitchLabel where 
+    affi (PitchLabel l a) = affi l . affi a
+        
+-- print sharps as with muliple '#'s only
+instance Affi Accidental where
+  affi Nat        = showString ""
+  affi (Sharp i)  = showString (replicate i '#')                          
+  affi (Flat i)   = showString (replicate i 'b')     
   
+  
+instance Affi PitchLetter where
+    affi = shows
+    
+        

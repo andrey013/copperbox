@@ -20,7 +20,6 @@ import Bala.Base.PitchRep
 import Bala.Base.Interval
 import Bala.Base.PitchOps
 import Bala.Base.BaseExtra
-import Bala.Base.AffiDecoInstances
 
 import Control.Applicative hiding (many, optional, (<|>) )
 import Text.ParserCombinators.Parsec 

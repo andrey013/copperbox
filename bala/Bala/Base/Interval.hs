@@ -61,11 +61,9 @@ data IntervalMeasure = Simple | Compound Int
   deriving (Eq,Ord,Show)
 
 
--- these look like they should be somewhere else
-newtype IntervalPattern = IntervalPattern [Int]
-  deriving (Eq,Show)
 
-newtype ScaleDegreePattern = ScaleDegreePattern [(Int,Accidental)]
+
+
 
   
   
@@ -323,9 +321,6 @@ chromaticInterval = not . diatonicInterval
 
 intervalClass :: Interval -> Bool
 intervalClass = undefined
-
-         
-
 
 
 

@@ -18,7 +18,6 @@ module Bala.Base.NamedElems where
 import Bala.Base.BaseExtra
 import Bala.Base.PitchRep
 import Bala.Base.Interval
-import Bala.Base.AffiDecoInstances
 import Bala.Base.Scale
 
 

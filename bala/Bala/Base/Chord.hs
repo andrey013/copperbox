@@ -77,8 +77,12 @@ data ChordSuffix
   | Sus2 | Sus4 | Sus7
   deriving (Eq)
 
+newtype ScaleDegreePattern = ScaleDegreePattern [(Int,Accidental)]
 
-                   
+-- obsolete - change to IntervalStructure 
+-- (actually rename IntervalStructure to IntervalPattern removing the 
+-- definition below)
+newtype IntervalPattern = IntervalPattern [Int]                   
   
   
 --------------------------------------------------------------------------------
@@ -134,7 +138,14 @@ scaleDegrees :: ChordSuffix -> ScaleDegreePattern
 scaleDegrees Maj' = ScaleDegreePattern [(1,Nat), (3,Nat), (5,Nat)]
 scaleDegrees _    = undefined
 
-    
+
+instance Deco ScaleDegreePattern where
+  deco = decoScaleDegreePattern
+  
+decoScaleDegreePattern = ScaleDegreePattern <$> sepBy1 scaleDegree whiteSpace 
+  where scaleDegree = flip (,) <$> decoAccidental <*> int  
+  
+      
 {-
 
 -- new idea

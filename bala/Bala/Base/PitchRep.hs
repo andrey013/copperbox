@@ -208,4 +208,4 @@ instance Num Pitch where
   -- note, this is different to midi - middle C here is 48 (in midi it is 60)
   fromInteger i = let i' = fromIntegral i; (o,s) = explode12  i'; l = toEnum i'
                   in Pitch l o s 0   
-  
+
