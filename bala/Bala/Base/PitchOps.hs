@@ -22,9 +22,45 @@ import Control.Applicative hiding (many, optional, (<|>) )
 import Text.ParserCombinators.Parsec
 
 
-semitoneDistance :: (Semitones a) => a -> a -> Int
-semitoneDistance a a' = abs $ semitones a - semitones a'
 
+class SemiExtension a where 
+  addSemi :: a -> Int -> a
+  subSemi :: a -> Int -> a
+  
+class AlterPitch a where  
+  sharp   :: a -> a
+  flat    :: a -> a
+
+class OctaveDisplacement a where   
+  addOve  :: a -> Int -> a
+  subOve  :: a -> Int -> a
+ 
+class Enharmonic a where
+  enharmonic :: a -> a -> Bool
+
+class SemitoneDisplacement a where 
+  semitoneDisplacement :: a -> a -> (Direction,Int)
+  semitoneDistance     :: a -> a -> Int   
+  semitoneDirection    :: a -> a -> Direction
+  
+  semitoneDistance  a a' = snd $ semitoneDisplacement a a'
+  semitoneDirection a a' = fst $ semitoneDisplacement a a'
+  
+    
+-- works for ordered elts not rotated ones
+instance SemitoneDisplacement Pitch where
+  semitoneDisplacement p p' = 
+    let d = semitones p - semitones p'
+    in case signum d of
+      (-1) -> (Downwards, abs d)
+      _    -> (Upwards, d)
+
+-- must handle rotation
+instance SemitoneDisplacement PitchLabel where
+  semitoneDisplacement l l' = 
+    let d = countTo succ l l'
+    in if (d > 6) then (Downwards, 12 - d) else (Upwards, abs d)
+                          
 
 -- a 'smart constructor'
 
@@ -39,6 +75,10 @@ buildPitch lbl o c = Pitch lbl o (semitones lbl) c
     semis A = 9
     semis B = 11
     
+
+-- destructor
+unwrapPitchLabel (Pitch l _ _ _) = l
+
     
 -- pitch ops -- adding intervals etc need a naming scheme
 
@@ -47,25 +87,13 @@ alter :: Accidental -> Int -> Accidental
 alter a i  = toEnum $ fromEnum a + i
 
 spell :: PitchLabel -> PitchLetter -> PitchLabel
-spell lbl l' = let d  = semitones lbl - semitones (PitchLabel l' Nat)
-                   a' = alter Nat d
-               in PitchLabel l' a'
+spell lbl l' = 
+  let (dr,d) = semitoneDisplacement lbl (PitchLabel l' Nat)
+      dist   = case dr of Upwards -> negate d; _ -> d
+      a'     = alter Nat dist
+  in PitchLabel l' a'
 
 
-class SemiDisplacement a where 
-  addSemi :: a -> Int -> a
-  subSemi :: a -> Int -> a
-  
-class AlterPitch a where  
-  sharp   :: a -> a
-  flat    :: a -> a
-  
-
-
-class OctaveDisplacement a where   
-  addOve  :: a -> Int -> a
-  subOve  :: a -> Int -> a
- 
 
 
 spellWithSharps :: PitchLabel -> PitchLabel
@@ -92,7 +120,7 @@ instance AlterPitch Pitch where
 
 -- (31/3/08) this is most likely wrong, we should keep the letter 
 -- and extend the alteration
-instance SemiDisplacement PitchLabel where
+instance SemiExtension PitchLabel where
   addSemi pl i = toEnum $ (fromEnum pl) + i
   subSemi pl i = toEnum $ (fromEnum pl) - i
   
@@ -101,7 +129,7 @@ instance SemiDisplacement PitchLabel where
   subSemi (PitchLabel l a) i = PitchLabel l (a `predecessor` i)
 -}
 
-instance SemiDisplacement Pitch where
+instance SemiExtension Pitch where
   -- oc is "octave-carry" this isn't a very descriptive implementation
   -- and at some point should be done better
   (Pitch l o s c) `addSemi` i = 
@@ -214,12 +242,12 @@ instance Deco Accidental where
 decoAccidental = choice [sharp, flat, nat]
   where 
     sharp         = plainsharp <|> doublesharp
-    plainsharp    = Sharp <$> countChar '#'
-    doublesharp   = mkDbl <$> countChar 'x' <*> option 0 (countChar '#')
-    flat          = Flat  <$> countChar 'b'
+    plainsharp    = Sharp <$> countChar1 '#'
+    doublesharp   = mkDbl <$> countChar1 'x' <*> option 0 (countChar1 '#')
+    flat          = Flat  <$> countChar1 'b'
     nat           = return Nat
     mkDbl dbl sgl = Sharp $ dbl * 2 + sgl
-    countChar    = counting . char 
+    countChar1    = counting1 . char 
 
 
 

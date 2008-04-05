@@ -28,6 +28,15 @@ import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language
 
+
+--------------------------------------------------------------------------------
+-- Counting may need to consider its direction
+--------------------------------------------------------------------------------
+
+data Direction = Upwards | Downwards
+  deriving (Eq,Read,Show)
+  
+  
 --------------------------------------------------------------------------------
 -- Affi(cher) & Deco(uper) -- alternatives to Read & Show for prettier representations
 --------------------------------------------------------------------------------
@@ -63,6 +72,21 @@ class Semitones a where semitones :: a -> Int
 
                     
 --------------------------------------------------------------------------------
+
+
+countUntil :: (Eq a) => Int -> (a -> Bool) -> (a -> a) -> a -> Int
+countUntil lim p f a = snd $ until p' f' (a,0)
+  where p' (a,i) = if (i < lim) 
+                     then (p a) 
+                     else (error $ "countUtil diverges at " ++ show lim)
+        f' (a,i) = (f a, i+1)
+
+countTo :: (Eq a) => (a -> a) -> a -> a -> Int
+countTo fn x y = countUntil 1000 (== y) fn x 
+
+retroCountTo :: (Eq a) => (a -> a) -> a -> a -> Int
+retroCountTo fn x y = 1 + countUntil 1000 (== y) fn x 
+
 
 successor, predecessor :: (Enum a) => a -> Int -> a
 successor a i = applyi f a i

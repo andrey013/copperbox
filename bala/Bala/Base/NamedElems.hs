@@ -78,6 +78,8 @@ chromatic_intervals         = mkIS "HHHHHHHHHHHH"
 
 c_pentatonic_major = makeScale c4 pentatonic_major_intervals
 
+
+
 perfect_unison    = interval 1 0
 perfect_fourth    = interval 4 5
 perfect_fifth     = interval 5 7

@@ -21,6 +21,7 @@ import Bala.Base.Interval
 import Bala.Base.PitchOps
 import Bala.Base.BaseExtra
 
+
 import Control.Applicative hiding (many, optional, (<|>) )
 import Text.ParserCombinators.Parsec 
 
@@ -31,7 +32,8 @@ import Text.ParserCombinators.Parsec
 data Scale = Scale {
     scale_root  :: Pitch,
     scale_notes :: [Pitch]
-    }
+  }
+  deriving (Show)
   
 data ScaleDegree = Tonic | SuperTonic | Mediant | Subdominant | Dominant
                  | Submediant | LeadingTone 
@@ -55,7 +57,7 @@ octaveComplete (IntervalStructure xs) = 12 == foldr fn 0 xs
 
 
 makeScale :: Pitch -> IntervalStructure -> Scale
-makeScale p (IntervalStructure xs) = Scale p $ scanl extr p xs
+makeScale p (IntervalStructure xs) = Scale p $ scanl extUp p xs
 
  
 --------------------------------------------------------------------------------
@@ -68,10 +70,10 @@ instance Deco IntervalStructure where
   deco = decoIntervalStructure
   
 decoIntervalStructure  = IntervalStructure <$> many1 step
-  where step = choice [whole,half,augsecond]
-        whole = interval 2 2 <$ char 'W'
-        half  = interval 2 1 <$ char 'H'
-        augsecond = interval 2 3 <$ string "A2"
+  where step = choice [whole,half,a2]
+        whole = whole_step <$ char 'W'
+        half  = half_step  <$ char 'H'
+        a2    = interval 2 3 <$ string "A2"
 
          
 --------------------------------------------------------------------------------

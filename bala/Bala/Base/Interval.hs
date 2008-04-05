@@ -94,7 +94,7 @@ instance Num Interval where
 instance Semitones Interval where
   semitones (Interval _ (Count sc)) = sc
     
-instance SemiDisplacement Interval where 
+instance SemiExtension Interval where 
   addSemi (Interval d s) i = Interval d (s `forward` i)
   subSemi (Interval d s) i = Interval d (s `backward` i)
   
@@ -143,7 +143,12 @@ halfSteps (Interval _ (Count s)) = s
 --------------------------------------------------------------------------------
 -- Operations
 --------------------------------------------------------------------------------
-
+  
+class ExtByInterval a where
+  extUp   :: a -> Interval -> a
+  extDown :: a -> Interval -> a 
+  
+  
 -- fromSemis is biased 
 -- it produces m6 rather than A5 & A4 and A4 rather than d4
 fromSemis i = let i' = fromIntegral (abs i) in interval (stepy i') i'  
@@ -176,18 +181,13 @@ instance Ord Interval where
 -- Operations
 --------------------------------------------------------------------------------
 
-retroCount :: (Eq a) => (a -> a) -> a -> a -> Int
-retroCount fn x y = snd $ until p f (x,1)
-  where 
-    p (a,_) = a == y
-    f (a,i) | i > 1000  = error "retrocount - recursion limit 1000"
-            | otherwise = (fn a, i+1)
- 
+
+
 
 
 -- 'retrograde' C-C is 1, C-D is 2 ..
-letterCount :: PitchLetter -> PitchLetter -> Int
-letterCount = retroCount succ
+letterCountTo :: PitchLetter -> PitchLetter -> Int
+letterCountTo = retroCountTo succ
 
 
 instance Enum (Int,PitchLetter) where
@@ -206,7 +206,7 @@ arithmeticDistance p  p' | p < p'    = aCount p  p'
                          | otherwise = aCount p' p
   where
     aCount (Pitch (PitchLabel l _) o _ _) (Pitch (PitchLabel l' _) o' _ _) = 
-      retroCount succ (o,l) (o',l')
+      retroCountTo succ (o,l) (o',l')
    
     
 
@@ -235,11 +235,11 @@ simplify (Interval (Count d) (Count s))
   | otherwise       = (Simple, interval d s) 
 
 
-unWrapInterval (Interval (Count d) (Count s)) = (d,s) 
+unwrapInterval (Interval (Count d) (Count s)) = (d,s) 
 
 intervalName :: Interval -> Maybe NamedInterval
 intervalName invl = 
-    let (measure, simple) = simplify invl in fn measure (unWrapInterval simple)
+    let (measure, simple) = simplify invl in fn measure (unwrapInterval simple)
   where
     fn m (1,0)   = Just (NamedInterval m Perfect Unison)   
     fn m (2,1)   = Just (NamedInterval m Minor Second)
@@ -283,14 +283,39 @@ namedInterval (NamedInterval msr qlty sz) = fmap (mk msr) (fn qlty sz)
     fn Perfect    Octave  = Just (8,12)
     fn  _         _       = Nothing 
 
-
-extr :: Pitch -> Interval -> Pitch
-extr p@(Pitch (PitchLabel l a) o s c) inval =
-    let (ad,sc) = unWrapInterval inval
+instance ExtByInterval PitchLabel where
+  extUp lbl@(PitchLabel l a) inval = 
+    let (ad,sc) = unwrapInterval inval
+        l' = successor l (ad - 1)
+    in spell (lbl `addSemi` sc) l'
+    
+  extDown lbl@(PitchLabel l a) inval = 
+    let (ad,sc) = unwrapInterval inval
+        l' = predecessor l (ad - 1)
+    in spell (lbl `subSemi` sc) l'
+    
+instance ExtByInterval Pitch where
+  extUp (Pitch l o s c) inval =
+    let (_,sc)  = unwrapInterval inval
         (oc,s') = explode12 $ s + sc
-        l'      = successor l (ad - 1)        
-        lbl     = spell (pitch_label $ p `addSemi` sc) l'
-    in Pitch lbl (oc + o) s' c
+        l'      = l `extUp` inval        
+    in Pitch l' (o + oc) s' c
+    
+  extDown (Pitch l o s c) inval =
+    let (_,sc)  = unwrapInterval inval
+        (oc,s') = explode12 $ s - sc
+        l'      = l `extDown` inval        
+    in Pitch l' (o - oc) s' c
+
+instance ExtByInterval Interval where
+  extUp   = (+)
+  extDown = (-)
+
+
+half_step  = interval 2 1
+whole_step = interval 2 2 
+    
+
 
 --------------------------------------------------------------------------------
 -- old.... 
