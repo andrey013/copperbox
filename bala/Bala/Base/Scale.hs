@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -XFlexibleInstances #-}
+{-# OPTIONS_GHC -XMultiParamTypeClasses #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -38,55 +40,43 @@ data ScaleDegree = Tonic | SuperTonic | Mediant | Subdominant | Dominant
                  | Submediant | LeadingTone 
   deriving (Eq,Show)
 
-newtype IntervalStructure = IntervalStructure { unIS :: [Interval] }
-  deriving (Show)
 
+
+instance Extract Scale [Pitch] where
+  extract = scale_notes
 
 
 
 -- Interval patterns
-mkIS :: String -> IntervalStructure
+mkIS :: String -> IntervalPattern
 mkIS = decouper
 
-
-
-octaveComplete (IntervalStructure xs) = 12 == foldr fn 0 xs
+-- | Does the interval pattern generate a one octave scale?
+octaveComplete :: IntervalPattern -> Bool
+octaveComplete (IntervalPattern xs) = 12 == foldr fn 0 xs
   where fn ival n = n + halfSteps ival
 
 
 
-makeScale :: Pitch -> IntervalStructure -> Scale
-makeScale p (IntervalStructure xs) = Scale p $ scanl extUp p xs
+makeScale :: Pitch -> IntervalPattern -> Scale
+makeScale p (IntervalPattern xs) = Scale p $ scanl extUp p xs
 
  
 --------------------------------------------------------------------------------
--- Read instances
+-- Deco instances
 --------------------------------------------------------------------------------
 
 
-        
-instance Deco IntervalStructure where 
-  deco = decoIntervalStructure
-  
-decoIntervalStructure  = IntervalStructure <$> many1 step
-  where step = choice [whole,half,a2]
-        whole = whole_step   <$ char 'W'
-        half  = half_step    <$ char 'H'
-        a2    = interval 2 3 <$ string "A2"
+
 
          
 --------------------------------------------------------------------------------
--- Show instances
+-- Affi instances
 --------------------------------------------------------------------------------
 instance Affi Scale where
   affi (Scale r ps) = hsepS $ map affi ps
 
     
       
-instance Affi IntervalStructure where
-  affi (IntervalStructure xs) = hsepS $ map (step . halfSteps) xs
-    where
-      step 1 = showChar 'H'
-      step 2 = showChar 'W'
-      step 3 = showString "A2"  
+
                    

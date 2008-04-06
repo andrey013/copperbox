@@ -106,16 +106,12 @@ instance SemitoneDisplacement Pitch where
       (-1) -> (Downwards, abs d)
       _    -> (Upwards, d)
 
--- must handle rotation
+-- | Pitch labels must handle rotation
 instance SemitoneDisplacement PitchLabel where
   semitoneDisplacement l l' = 
     let d = countTo succ l l'
     in if (d > 6) then (Downwards, 12 - d) else (Upwards, abs d)
                           
-
-
-
-
 
 instance AlterPitch Accidental where  
   sharp a = succ a
@@ -369,6 +365,7 @@ decoAccidental = choice [sharp, flat, nat]
 --------------------------------------------------------------------------------
 -- Affi instances
 --------------------------------------------------------------------------------
+
 instance Affi Pitch where
   affi (Pitch l o s c) | c == 0    = affi l . shows o 
                        | c > 0     = affi l . shows o . showChar '+' . shows c
@@ -378,7 +375,7 @@ instance Affi Pitch where
 instance Affi PitchLabel where 
     affi (PitchLabel l a) = affi l . affi a
         
--- print sharps as with muliple '#'s only
+-- | Print sharps as with muliple '#'s only
 instance Affi Accidental where
   affi Nat        = showString ""
   affi (Sharp i)  = showString (replicate i '#')                          

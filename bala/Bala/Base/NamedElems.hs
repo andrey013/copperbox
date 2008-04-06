@@ -61,43 +61,67 @@ a6 = decouper "A6"
 b6 = decouper "B6"
 
 
-major_intervals :: IntervalStructure
-major_intervals             = mkIS "WWHWWWH"   -- bilaval
-mixolydian_intervals        = mkIS "WWHWWHW"   -- khamaj
-dorian_intervals            = mkIS "WHWWWHW"   -- kafi
-aeolian_intervals           = mkIS "WHWWHWW"   -- asavari
-phrygian_intervals          = mkIS "HWWWHWW"   -- bhairavi
-lydian_intervals            = mkIS "WWWHWWH"   -- kaylan
-todi_intervals              = mkIS "HWA2HHA2H"
-purvi_intervals             = mkIS "HA2WHHA2H"
-marwa_intervals             = mkIS "HA2WHWWH"
-bhairav_intervals           = mkIS "HA2HWHA2H"
-pentatonic_major_intervals  = mkIS "WWA2WA2"
-pentatonic_minor_intervals  = mkIS "WWA2WA2"
-chromatic_intervals         = mkIS "HHHHHHHHHHHH"
+major_intervals, mixolydian_intervals, dorian_intervals, aeolian_intervals,
+                 phrygian_intervals, lydian_intervals
+    :: IntervalPattern
+major_intervals             = decouper "WWHWWWH"   -- bilaval
+mixolydian_intervals        = decouper "WWHWWHW"   -- khamaj
+dorian_intervals            = decouper "WHWWWHW"   -- kafi
+aeolian_intervals           = decouper "WHWWHWW"   -- asavari
+phrygian_intervals          = decouper "HWWWHWW"   -- bhairavi
+lydian_intervals            = decouper "WWWHWWH"   -- kaylan
 
-c_pentatonic_major = makeScale c4 pentatonic_major_intervals
+todi_intervals, purvi_intervals, marwa_intervals, bhairav_intervals
+   :: IntervalPattern
+todi_intervals              = decouper "HWA2HHA2H"
+purvi_intervals             = decouper "HA2WHHA2H"
+marwa_intervals             = decouper "HA2WHWWH"
+bhairav_intervals           = decouper "HA2HWHA2H"
+
+
+-- | Scale pattern M2M2m3M2m3
+pentatonic_major_intervals :: IntervalPattern
+pentatonic_major_intervals  = decouper "M2M2m3M2m3"
+
+
+-- | Scale pattern m3M2M2m3M2
+pentatonic_minor_intervals :: IntervalPattern
+pentatonic_minor_intervals  = decouper "m3M2M2m3M2"
 
 
 
+-- | The interval pattern of 12 half steps HHHHHHHHHHHH
+chromatic_intervals :: IntervalPattern 
+chromatic_intervals         = decouper "HHHHHHHHHHHH"
+
+-- c_pentatonic_major :: Scale
+-- c_pentatonic_major = makeScale c4 pentatonic_major_intervals
+
+
+perfect_unison, perfect_fourth, perfect_fifth, perfect_octave :: Interval
 perfect_unison    = interval 1 0
 perfect_fourth    = interval 4 5
 perfect_fifth     = interval 5 7
 perfect_octave    = interval 8 12
 
+major_second, major_third, major_sixth, major_seventh :: Interval
 major_second      = interval 2 2
 major_third       = interval 3 4
 major_sixth       = interval 6 9
 major_seventh     = interval 7 11
 
+minor_second, minor_third, minor_sixth, minor_seventh :: Interval
 minor_second      = interval 2 1
 minor_third       = interval 3 3
 minor_sixth       = interval 6 8
 minor_seventh     = interval 7 10 
 
+diminished_third, diminished_fifth :: Interval
 diminished_third  = interval 3 2
 diminished_fifth  = interval 5 6
 
+augmented_second, augmented_third, augmented_fourth, augmented_fifth 
+    :: Interval
 augmented_second  = interval 2 3
 augmented_third   = interval 3 5 
 augmented_fourth  = interval 4 6

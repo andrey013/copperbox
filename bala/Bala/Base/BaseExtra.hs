@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -XEmptyDataDecls #-}
 {-# OPTIONS_GHC -XFlexibleInstances #-}
 {-# OPTIONS_GHC -XMultiParamTypeClasses #-}
+{-# OPTIONS_GHC -XFlexibleContexts #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -152,6 +153,8 @@ shiftyStep a | a < 0     = a + 1
 -- alternatively, counting in various ways
 --------------------------------------------------------------------------------
 
+-- | Wrap up integers that have /funny/ counting semantics with 
+-- a phantom type.
 newtype Count a = Count { unCount :: Int } 
   deriving (Eq,Ord)
 
@@ -164,18 +167,20 @@ class Countable a where
   
   backward a i =  a `forward` (negate i)
 
-
+-- | Phantom placeholder for non-negative numbers.
 data NonNeg
 
+-- | Smart constructor for non-negative numbers.
 nonneg :: Int -> Count NonNeg
 nonneg = Count . abs
 
 instance Countable (Count NonNeg) where
   forward (Count i) j  = nonneg $ i + j
 
--- non negative & non zero  
+-- | Phantom placeholder for non-negative, non-zero numbers.
 data NnNz
 
+-- | Smart constructor for non-negative, non-zero numbers.
 nnnz :: Int -> Count NnNz
 nnnz 0 = error "Cannot create a nonzero from zero"
 nnnz i = Count $ abs i
@@ -185,10 +190,12 @@ instance Countable (Count NnNz) where
                        | i        >  (abs j)  = nnnz $ i + j
                        | otherwise            = nnnz $ i + (j - 2)
 
--- 'Retrograde' non negative & non zero 
--- counting includes the current position
+-- | Phantom placeholder for /retrograde/ non-negative, non-zero numbers.
+-- Retrograde in this instances means that counting includes the current 
+-- position.
 data RNnNz
 
+-- | Smart constructor for retrograde non-negative, non-zero numbers.
 rnnnz :: Int -> Count RNnNz
 rnnnz 0 = error "Cannot create a nonzero from zero"
 rnnnz i = Count $ abs i
@@ -199,23 +206,29 @@ instance Countable (Count RNnNz) where
                        | signum j == 1        = rnnnz $ i + (j - 1)
                        | i        >  (abs j)  = rnnnz $ i + (j + 1)
                        | otherwise            = rnnnz $ i + (j - 1)
-                       
 
+
+-- | Addition by counting.                       
+countPlus :: (Countable (Count a)) => Count a -> Count a -> Count a 
 countPlus a b = a `forward` (unCount b)
 
+-- | Subtraction by counting.  
+countMinus :: (Countable (Count a)) => Count a -> Count a -> Count a 
 countMinus a b = a `backward` (unCount b)
                            
 --------------------------------------------------------------------------------
 -- functions
 --------------------------------------------------------------------------------
 
--- zam - zippy map
+-- | zam - zippy map
 zam :: (a -> a -> b) -> [a] -> [b]
 zam f (x:y:ys) = f x y : zam f (y:ys)
 zam f _        = []
 
-
+mod12 :: (Integral a) => a -> a
 mod12 i = i `mod` 12
+
+mod7 :: (Integral a) => a -> a
 mod7  i = i `mod` 7  
 
 
@@ -258,8 +271,14 @@ signedInt :: Parser Int
 signedInt   = (\ a b -> read (a:b)) <$> sign <*> many1 digit
   where sign        = oneOf "+-"
 
+lexString :: String -> Parser String
+lexString   = lexeme . string
 
-baseLex             = P.makeTokenParser emptyDef
+lexChar :: Char -> Parser Char
+lexChar   = lexeme . char
+
+    
+baseLex           = P.makeTokenParser emptyDef
 
 
 whiteSpace        = P.whiteSpace baseLex 

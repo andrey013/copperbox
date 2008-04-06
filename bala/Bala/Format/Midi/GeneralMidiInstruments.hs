@@ -16,6 +16,7 @@
 
 module Bala.Format.Midi.GeneralMidiInstruments where
 
+-- | Enumeration of the General MIDI instruments.
 data GMInst
     -- | Piano
     = Acoustic_grand_piano
@@ -178,6 +179,7 @@ data GMInst
     | Gunshot
   deriving (Eq,Ord,Enum,Read,Show)
 
+-- | Enumeration of the General MIDI drum types.
 data GMDrum
     = Acoustic_bass_drum
     | Bass_drum_1

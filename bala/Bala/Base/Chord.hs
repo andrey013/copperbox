@@ -35,6 +35,15 @@ data Chord = Chord {
   deriving (Eq,Show)
 
 
+data Triad = Triad {
+    tfirst :: Pitch,
+    tthird :: Pitch,
+    tfifth :: Pitch
+  }
+  deriving (Eq,Show)
+  
+    
+
 data RomanChord = RomanChord {
     root_alteration   :: Maybe Alteration, 
     scale_degree      :: Int,
@@ -78,11 +87,7 @@ data ChordSuffix
   deriving (Eq)
 
 newtype ScaleDegreePattern = ScaleDegreePattern [(Int,Accidental)]
-
--- obsolete - change to IntervalStructure 
--- (actually rename IntervalStructure to IntervalPattern removing the 
--- definition below)
-newtype IntervalPattern = IntervalPattern [Int]                   
+                
   
   
 --------------------------------------------------------------------------------
@@ -90,7 +95,7 @@ newtype IntervalPattern = IntervalPattern [Int]
 --------------------------------------------------------------------------------
 
 buildChord :: Pitch -> IntervalPattern -> Chord
-buildChord a (IntervalPattern xs) = Chord a (scanl shiftyPlus (fixedPitch a) xs)
+buildChord a (IntervalPattern xs) = undefined -- Chord a (scanl shiftyPlus (fixedPitch a) xs)
 
 -- these would be better as scale degrees (e.g. major triad 1-3-5), so 
 -- we need a new parser

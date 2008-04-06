@@ -18,6 +18,8 @@ module Bala.Base.Unfiled where
 
 import Bala.Base.BaseExtra
 import Bala.Base.PitchRep
+import Bala.Base.Interval
+import Bala.Base.NamedElems
 
 data ParsonsCode = PaR | PaU | PaD    
   deriving (Eq,Ord,Show)
@@ -30,4 +32,14 @@ contour = zam diff
                     GT -> PaD
   
 data RefinedContour = ReR | ReUS | ReUL | ReDS | ReDL
-  deriving (Eq,Ord,Show)  
+  deriving (Eq,Ord,Show)
+
+
+-- | Pitch spelling not not same as Duckworth.  
+circle_of_fifths :: [PitchLabel]
+circle_of_fifths = take 12 $ iterate (`extUp` perfect_fifth) (extract c4)
+
+
+  
+  
+ 

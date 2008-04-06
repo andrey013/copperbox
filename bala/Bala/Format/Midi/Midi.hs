@@ -9,11 +9,12 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Import module for MIDI representation
+-- Imports for MIDI representation
 --
 --------------------------------------------------------------------------------
 
-module Bala.Format.Midi.Midi
+
+module Bala.Format.Midi.Midi 
   ( module Bala.Format.Midi.Datatypes
   , module Bala.Format.Midi.ReadFile 
   , module Bala.Format.Midi.WriteFile
