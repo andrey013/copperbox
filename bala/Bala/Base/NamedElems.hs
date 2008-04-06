@@ -10,7 +10,7 @@
 -- Portability :  to be determined.
 --
 -- Named elements
--- |
+--
 --------------------------------------------------------------------------------
 
 module Bala.Base.NamedElems where

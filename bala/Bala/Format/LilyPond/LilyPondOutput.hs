@@ -10,7 +10,7 @@
 -- Portability :  to be determined.
 --
 -- Output to LilyPond
--- |
+--
 --------------------------------------------------------------------------------
 
 
@@ -69,8 +69,8 @@ title = elt "title" . qtext
 
 relative note doc = cmd "relative" <+> note <+> doc
 
-(#) = (<+>)
-(##) = (<$>)
+a # b = a <+> b
+a ## b = a <$> b
 
 bar :: String -> Doc
 bar str = cmd "bar" <+> qtext str

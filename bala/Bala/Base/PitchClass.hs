@@ -11,7 +11,7 @@
 -- Portability :  to be determined.
 --
 -- Operations on pitch classes
--- |
+--
 --------------------------------------------------------------------------------
 
 

@@ -1,5 +1,4 @@
 
-
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.Base.Scale
@@ -10,8 +9,8 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- A datatypes for representing pitch
--- |
+-- Scale representation
+--
 --------------------------------------------------------------------------------
 
 module Bala.Base.Scale where
@@ -71,8 +70,8 @@ instance Deco IntervalStructure where
   
 decoIntervalStructure  = IntervalStructure <$> many1 step
   where step = choice [whole,half,a2]
-        whole = whole_step <$ char 'W'
-        half  = half_step  <$ char 'H'
+        whole = whole_step   <$ char 'W'
+        half  = half_step    <$ char 'H'
         a2    = interval 2 3 <$ string "A2"
 
          

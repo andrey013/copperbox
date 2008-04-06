@@ -10,7 +10,7 @@
 -- Portability :  to be determined.
 --
 -- Datatypes for ABC format
--- |
+--
 --------------------------------------------------------------------------------
 
 module Bala.Format.Abc.Datatypes  where

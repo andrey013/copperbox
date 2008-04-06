@@ -8,8 +8,8 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- A datatypes for representing pitch
--- |
+-- Pitch operations
+--
 --------------------------------------------------------------------------------
 
 module Bala.Base.PitchOps where
@@ -22,18 +22,21 @@ import Control.Applicative hiding (many, optional, (<|>) )
 import Text.ParserCombinators.Parsec
 
 
+--------------------------------------------------------------------------------
+-- typeclasses
+--------------------------------------------------------------------------------
 
-class SemiExtension a where 
+class SemitoneExtension a where 
   addSemi :: a -> Int -> a
   subSemi :: a -> Int -> a
-  
+
+class OctaveExtension a where   
+  addOve  :: a -> Int -> a
+  subOve  :: a -> Int -> a
+    
 class AlterPitch a where  
   sharp   :: a -> a
   flat    :: a -> a
-
-class OctaveDisplacement a where   
-  addOve  :: a -> Int -> a
-  subOve  :: a -> Int -> a
  
 class Enharmonic a where
   enharmonic :: a -> a -> Bool
@@ -45,7 +48,19 @@ class SemitoneDisplacement a where
   
   semitoneDistance  a a' = snd $ semitoneDisplacement a a'
   semitoneDirection a a' = fst $ semitoneDisplacement a a'
+
+class EncodePitch a where 
+  toPitch :: a -> Pitch  
+  fromPitch :: Pitch -> a
+
+instance EncodePitch Int where
+  toPitch i = pitchValue i
+  fromPitch p = centValue p 
   
+--------------------------------------------------------------------------------
+-- instances
+--------------------------------------------------------------------------------
+ 
     
 -- works for ordered elts not rotated ones
 instance SemitoneDisplacement Pitch where
@@ -61,6 +76,59 @@ instance SemitoneDisplacement PitchLabel where
     let d = countTo succ l l'
     in if (d > 6) then (Downwards, 12 - d) else (Upwards, abs d)
                           
+
+
+
+
+
+instance AlterPitch Accidental where  
+  sharp a = succ a
+  flat a  = pred a
+  
+instance AlterPitch PitchLabel where  
+  sharp (PitchLabel l a) = PitchLabel l (sharp a)
+  flat (PitchLabel l a)  = PitchLabel l (flat a)
+  
+instance AlterPitch Pitch where  
+  sharp (Pitch l o s c) = let (oc,s') = explode12 $ s + 1
+                          in Pitch (sharp l) (o+oc) s' c
+  flat (Pitch l o s c)  = let (oc,s') = explode12 $ s - 1
+                          in Pitch (flat l) (o+oc) s' c
+  
+    
+
+-- (31/3/08) this is most likely wrong, we should keep the letter 
+-- and extend the alteration
+instance SemitoneExtension PitchLabel where
+  addSemi pl i = toEnum $ (fromEnum pl) + i
+  subSemi pl i = toEnum $ (fromEnum pl) - i
+  
+{-
+  addSemi (PitchLabel l a) i = PitchLabel l (a `successor` i)
+  subSemi (PitchLabel l a) i = PitchLabel l (a `predecessor` i)
+-}
+
+instance SemitoneExtension Pitch where
+  -- oc is "octave-carry" this isn't a very descriptive implementation
+  -- and at some point should be done better
+  (Pitch l o s c) `addSemi` i = 
+    let (oc,s') = explode12 $ s + i
+    in Pitch (l `addSemi` i) (o + oc) s' c
+  
+  
+  (Pitch l o s c) `subSemi` i = 
+    let (oc,s') = explode12 $ s - i
+    in Pitch (l `subSemi` i) (o - oc) s' c
+  
+  
+    
+instance OctaveExtension Pitch where   
+  (Pitch l o s c) `addOve` i = Pitch l (o + i) s c
+  (Pitch l o s c) `subOve` i = Pitch l (o - i) s c
+
+instance Enharmonic PitchLabel where
+  l `enharmonic` l' = semitones l == semitones l'
+  
 
 -- a 'smart constructor'
 
@@ -99,54 +167,8 @@ spell lbl l' =
 spellWithSharps :: PitchLabel -> PitchLabel
 spellWithSharps (PitchLabel l a)   = 
   toEnum $ semitones l + semitones a
-
-
-
-instance AlterPitch Accidental where  
-  sharp a = succ a
-  flat a  = pred a
-  
-instance AlterPitch PitchLabel where  
-  sharp (PitchLabel l a) = PitchLabel l (sharp a)
-  flat (PitchLabel l a)  = PitchLabel l (flat a)
-  
-instance AlterPitch Pitch where  
-  sharp (Pitch l o s c) = let (oc,s') = explode12 $ s + 1
-                          in Pitch (sharp l) (o+oc) s' c
-  flat (Pitch l o s c)  = let (oc,s') = explode12 $ s - 1
-                          in Pitch (flat l) (o+oc) s' c
-  
     
-
--- (31/3/08) this is most likely wrong, we should keep the letter 
--- and extend the alteration
-instance SemiExtension PitchLabel where
-  addSemi pl i = toEnum $ (fromEnum pl) + i
-  subSemi pl i = toEnum $ (fromEnum pl) - i
-  
-{-
-  addSemi (PitchLabel l a) i = PitchLabel l (a `successor` i)
-  subSemi (PitchLabel l a) i = PitchLabel l (a `predecessor` i)
--}
-
-instance SemiExtension Pitch where
-  -- oc is "octave-carry" this isn't a very descriptive implementation
-  -- and at some point should be done better
-  (Pitch l o s c) `addSemi` i = 
-    let (oc,s') = explode12 $ s + i
-    in Pitch (l `addSemi` i) (o + oc) s' c
-  
-  
-  (Pitch l o s c) `subSemi` i = 
-    let (oc,s') = explode12 $ s - i
-    in Pitch (l `subSemi` i) (o - oc) s' c
-  
-  
     
-instance OctaveDisplacement Pitch where   
-  (Pitch l o s c) `addOve` i = Pitch l (o + i) s c
-  (Pitch l o s c) `subOve` i = Pitch l (o - i) s c
-  
 centValue :: Pitch -> Int
 centValue (Pitch l o s c) 
   = (octaveDisplacement o * 100) + (s * 100) + c
@@ -167,20 +189,6 @@ octaveDisplacement oct            = (oct - 4) * 12
   
 
 
-  
-class EncodePitch a where 
-  toPitch :: a -> Pitch  
-  fromPitch :: Pitch -> a
-
-instance EncodePitch Int where
-  toPitch i = pitchValue i
-  fromPitch p = centValue p 
-
-sem :: Pitch -> Int -> Pitch
-sem p i = error "sem" -- toPitch $ i + unCents (toCents p)
- 
-ove :: Pitch -> Int -> Pitch
-ove p@(Pitch {octave=o'}) i = p {octave=o'+i} 
 
 data ParsonsCode = PaR | PaU | PaD    
   deriving (Eq,Ord,Show)

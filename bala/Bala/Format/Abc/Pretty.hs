@@ -9,7 +9,7 @@
 -- Portability :  to be determined.
 --
 -- Pretty printer for ABC format
--- |
+--
 --------------------------------------------------------------------------------
 
 module Bala.Format.Abc.Pretty where

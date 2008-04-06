@@ -10,7 +10,7 @@
 -- Portability :  to be determined.
 --
 -- Datatypes for MIDI representation
--- |
+--
 --------------------------------------------------------------------------------
 
 

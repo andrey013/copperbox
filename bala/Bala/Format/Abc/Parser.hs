@@ -1,3 +1,4 @@
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.Format.Abc.Parser
@@ -9,7 +10,7 @@
 -- Portability :  to be determined.
 --
 -- (INCOMPLETE) Parser for ABC format files
--- |
+--
 --------------------------------------------------------------------------------
 
 module Bala.Format.Abc.Parser where
@@ -459,11 +460,7 @@ text = many1 (satisfy isTextChar)
 
 chooseString = choice . map string
 
-counting, counting1 :: Parser a -> Parser Int
 
-counting p = length <$> many p
-
-counting1 p = length <$> many1 p
 
 dblQuoted = between (char '"') (char '"')
 

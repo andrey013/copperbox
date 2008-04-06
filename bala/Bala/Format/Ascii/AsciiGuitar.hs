@@ -1,3 +1,16 @@
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Bala.Format.Ascii.AsciiGuitar
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Pretty print ascii guitar chords
+--
+--------------------------------------------------------------------------------
 
 
 module Bala.Format.Ascii.AsciiGuitar where
@@ -29,12 +42,15 @@ spaces :: [Char] -> String
 spaces = intersperse ' '
 
 fretl = spaces . map rewrite
-  where rewrite 'o' = '@'
-        rewrite '.' = '|'
+  where 
+    rewrite 'o' = '@'
+    rewrite '.' = '|'
+    rewrite ch  = ch
 
 topl = spaces . map rewrite
-  where rewrite '.' = ' '
-        rewrite ch  = ch
+  where 
+    rewrite '.' = ' '
+    rewrite ch  = ch
         
         
 chord :: Maybe Int -> String -> [String] -> String

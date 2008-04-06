@@ -10,8 +10,8 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Convert pitch representations to other representations
--- |
+-- Convert between pitch representations
+--
 --------------------------------------------------------------------------------
 
 module Bala.Base.PitchConversion where

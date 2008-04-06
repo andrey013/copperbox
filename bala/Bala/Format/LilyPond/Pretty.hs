@@ -1,10 +1,6 @@
-
-
-
-
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.PerformPitch
+-- Module      :  Bala.Format.LilyPond.Pretty
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -12,27 +8,17 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Perform the pitch representation
+-- Pretty printer for a subset of LilyPond files
 --
 --------------------------------------------------------------------------------
 
+module Bala.Format.LilyPond.Pretty where
+
+import Bala.Format.LilyPond.Datatypes
+
+import Text.PrettyPrint.Leijen
+
+ppStringMark :: String -> Doc
+ppStringMark ss = char '^' <> dquotes (text ss)
 
 
--- for a list of pitches turn them into events with an onset time
-
-
-module Bala.Base.PerformPitch where
-
-import Bala.Base.PitchRep
-import Bala.Base.Perform
-
-import Data.Ratio
-
-data PitchEnv = PitchEnv {
-  default_note_length :: Ratio Int
-  }
-  
-default_env = PitchEnv {
-  default_note_length = 1 / 4
-  }
-    

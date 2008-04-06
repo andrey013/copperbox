@@ -1,8 +1,6 @@
 {-# OPTIONS_GHC -XMultiParamTypeClasses #-}
 {-# OPTIONS_GHC -XFlexibleInstances #-}
 
-
-
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.Base.Perform
@@ -14,7 +12,7 @@
 -- Portability :  to be determined.
 --
 -- Type class for `performing` a music representation
--- |
+--
 --------------------------------------------------------------------------------
 
 

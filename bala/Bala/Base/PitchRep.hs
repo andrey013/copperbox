@@ -1,5 +1,4 @@
 
-
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.Base.PitchRep
@@ -10,8 +9,8 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- A datatypes for representing pitch
--- |
+-- Pitch represention
+--
 --------------------------------------------------------------------------------
 
 module Bala.Base.PitchRep where

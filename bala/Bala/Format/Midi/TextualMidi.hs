@@ -10,7 +10,7 @@
 -- Portability :  to be determined.
 --
 -- A textual representaton of MIDI files 
--- |
+--
 --------------------------------------------------------------------------------
 
 
@@ -108,7 +108,7 @@ instance Pretty VoiceEvent where
   
 
 instance Pretty SystemEvent where
-  pretty (SysEx _ _)    = text "sysex"   -- ^ system exclusive event - length x data               
+  pretty (SysEx _ _)    = text "sysex"   -- system exclusive event - length x data
   pretty (DataEvent i)  = text "data" <+> ppHex i
 
 instance Pretty MetaEvent where
@@ -116,7 +116,7 @@ instance Pretty MetaEvent where
   pretty (SequenceNumber i)   = text "sequence-number" <-> integral i
   pretty (ChannelPrefix ch)   = text "channel-prefix"  <-> integral ch
   pretty (EndOfTrack)         = text "end-of-track"
-  pretty (SetTempo mspqn)     = text "set-tempo" <-> integral mspqn              -- ^ microseconds per quarter-note
+  pretty (SetTempo mspqn)     = text "set-tempo" <-> integral mspqn  -- microseconds per quarter-note
   pretty (SMPTEOffset h m s f sf) = 
     text "smpte" <-> fli h <-> fli m <-> fli s <-> fli f <-> fli sf
   pretty (TimeSignature n d m ns) = 

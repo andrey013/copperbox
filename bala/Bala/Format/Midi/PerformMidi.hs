@@ -9,8 +9,8 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- `Perform` MIDI 
--- |
+-- 'Perform' MIDI 
+--
 --------------------------------------------------------------------------------
 
 

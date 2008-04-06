@@ -1,10 +1,7 @@
 
-
-
-
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.PerformPitch
+-- Module      :  Bala.Format.LilyPond.Datatypes
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -12,27 +9,24 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Perform the pitch representation
+-- Datatypes for a subset of LilyPond format
 --
 --------------------------------------------------------------------------------
 
+module Bala.Format.LilyPond.Datatypes  where
 
 
--- for a list of pitches turn them into events with an onset time
+data Rest = Rest Int
 
 
-module Bala.Base.PerformPitch where
+data Pitch = Pitch Char (Maybe OctaveSpec)
+  deriving (Eq, Show)
 
-import Bala.Base.PitchRep
-import Bala.Base.Perform
-
-import Data.Ratio
-
-data PitchEnv = PitchEnv {
-  default_note_length :: Ratio Int
-  }
+data OctaveSpec = Raised Int | Lowered Int
+  deriving (Eq, Show)
   
-default_env = PitchEnv {
-  default_note_length = 1 / 4
-  }
-    
+data Accidental = Sharp | Flat | DoubleSharp | DoubleFlat 
+  deriving (Eq, Show)
+  
+data MicroTone =  HalfFlat | HalfSharp 
+  deriving (Eq, Show) 

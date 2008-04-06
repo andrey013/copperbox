@@ -10,7 +10,7 @@
 -- Portability :  to be determined.
 --
 -- Conversion to and from ABC format
--- |
+--
 --------------------------------------------------------------------------------
 
 module Bala.Format.Abc.Conversion  where

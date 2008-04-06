@@ -11,16 +11,13 @@
 -- Portability :  to be determined.
 --
 -- Parse MIDI files 
--- |
+--
 --------------------------------------------------------------------------------
 
 
 -- http://www.sonicspot.com/guide/midifiles.html
 
-module Bala.Format.Midi.ReadFile 
-    -- * Read a Midi structure from file
---    readMidi
-   where
+module Bala.Format.Midi.ReadFile where
 
 import Bala.Format.Midi.Datatypes
 import Bala.Format.Midi.TextualMidi

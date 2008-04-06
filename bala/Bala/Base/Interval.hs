@@ -11,7 +11,7 @@
 -- Portability :  to be determined.
 --
 -- Interval representation
--- |
+--
 --------------------------------------------------------------------------------
 
 
@@ -94,7 +94,7 @@ instance Num Interval where
 instance Semitones Interval where
   semitones (Interval _ (Count sc)) = sc
     
-instance SemiExtension Interval where 
+instance SemitoneExtension Interval where 
   addSemi (Interval d s) i = Interval d (s `forward` i)
   subSemi (Interval d s) i = Interval d (s `backward` i)
   
@@ -144,7 +144,7 @@ halfSteps (Interval _ (Count s)) = s
 -- Operations
 --------------------------------------------------------------------------------
   
-class ExtByInterval a where
+class IntervalExtension a where
   extUp   :: a -> Interval -> a
   extDown :: a -> Interval -> a 
   
@@ -180,9 +180,6 @@ instance Ord Interval where
 --------------------------------------------------------------------------------
 -- Operations
 --------------------------------------------------------------------------------
-
-
-
 
 
 -- 'retrograde' C-C is 1, C-D is 2 ..
@@ -283,7 +280,7 @@ namedInterval (NamedInterval msr qlty sz) = fmap (mk msr) (fn qlty sz)
     fn Perfect    Octave  = Just (8,12)
     fn  _         _       = Nothing 
 
-instance ExtByInterval PitchLabel where
+instance IntervalExtension PitchLabel where
   extUp lbl@(PitchLabel l a) inval = 
     let (ad,sc) = unwrapInterval inval
         l' = successor l (ad - 1)
@@ -294,7 +291,7 @@ instance ExtByInterval PitchLabel where
         l' = predecessor l (ad - 1)
     in spell (lbl `subSemi` sc) l'
     
-instance ExtByInterval Pitch where
+instance IntervalExtension Pitch where
   extUp (Pitch l o s c) inval =
     let (_,sc)  = unwrapInterval inval
         (oc,s') = explode12 $ s + sc
@@ -307,7 +304,7 @@ instance ExtByInterval Pitch where
         l'      = l `extDown` inval        
     in Pitch l' (o - oc) s' c
 
-instance ExtByInterval Interval where
+instance IntervalExtension Interval where
   extUp   = (+)
   extDown = (-)
 
@@ -320,11 +317,6 @@ whole_step = interval 2 2
 --------------------------------------------------------------------------------
 -- old.... 
 
-
-
--- | absolute value of semitone distance
-unorderedPitchInterval :: Pitch -> Pitch -> Int
-unorderedPitchInterval p1 p2 = abs $ semitones p1 - semitones p2
 
 
 -- | count of semitones between two pitches (ordered,single-octave)
