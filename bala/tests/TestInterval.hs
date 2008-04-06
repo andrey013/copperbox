@@ -19,7 +19,7 @@ nthSucc x i | i > 0     = nthSucc (succ x) (i-1)
 
 prop_Unison,prop_Octave :: Pitch -> Bool          
 prop_Unison a = arithmeticDistance a a == 1 
-prop_Octave a = arithmeticDistance a (a `ove` 1) == 8
+prop_Octave a = arithmeticDistance a (a `addOve` 1) == 8
 
 testInterval = mapM_ quickCheck [prop_Unison, prop_Octave]
 

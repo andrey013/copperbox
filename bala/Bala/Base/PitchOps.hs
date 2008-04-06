@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -XMultiParamTypeClasses #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.Base.PitchOps
@@ -26,24 +28,42 @@ import Text.ParserCombinators.Parsec
 -- typeclasses
 --------------------------------------------------------------------------------
 
-class SemitoneExtension a where 
+-- | Semitones is the basis for Pitch arithmetic
+class Semitones a where semitones :: a -> Int
+
+-- | Add and subtract semitones
+class SemitoneExtension a where
+  -- | Add a semitone to a /pitched value/.
   addSemi :: a -> Int -> a
+  -- | Subtract a semitone from a /pitched value/.
   subSemi :: a -> Int -> a
 
-class OctaveExtension a where   
+class OctaveExtension a where
+  -- | Add an octave to a /pitched value/.  
   addOve  :: a -> Int -> a
+  -- | Subtract an octave from a /pitched value/.
   subOve  :: a -> Int -> a
-    
+
+
+-- | Sharpen or flatten a /pitched value/.
 class AlterPitch a where  
   sharp   :: a -> a
   flat    :: a -> a
- 
+
+-- | Are two /pitched values/ enharmonically equal? 
 class Enharmonic a where
   enharmonic :: a -> a -> Bool
 
-class SemitoneDisplacement a where 
+class SemitoneDisplacement a where
+  -- | The semitone distance from one element to another, and the direction 
+  -- of the distance. 'Upwards' if the second element had a higher pitch than 
+  -- the first, otherwise 'Downwards'
   semitoneDisplacement :: a -> a -> (Direction,Int)
-  semitoneDistance     :: a -> a -> Int   
+  
+  -- | As per 'semitoneDisplacement' but just return the distance.
+  semitoneDistance     :: a -> a -> Int
+  
+  -- | As per 'semitoneDisplacement' but just return the direction.   
   semitoneDirection    :: a -> a -> Direction
   
   semitoneDistance  a a' = snd $ semitoneDisplacement a a'
@@ -53,14 +73,30 @@ class EncodePitch a where
   toPitch :: a -> Pitch  
   fromPitch :: Pitch -> a
 
-instance EncodePitch Int where
-  toPitch i = pitchValue i
-  fromPitch p = centValue p 
+
   
 --------------------------------------------------------------------------------
 -- instances
 --------------------------------------------------------------------------------
- 
+
+-- The semitone displacement upwards from C
+instance Semitones PitchLetter where
+  semitones l = fromEnum (PitchLabel l Nat)
+
+
+-- How many semitones is the pitch changed by its accidental? 
+instance Semitones Accidental where
+  semitones Nat       = 0
+  semitones (Sharp i) = i
+  semitones (Flat i)  = negate i
+
+instance Semitones PitchLabel where
+  semitones (PitchLabel l a) = semitones l + semitones a
+
+instance Semitones Pitch where
+  semitones (Pitch l o s c) = 
+    let (cc,_) = explode100 c in  12 * o + s + cc
+     
     
 -- works for ordered elts not rotated ones
 instance SemitoneDisplacement Pitch where
@@ -129,9 +165,18 @@ instance OctaveExtension Pitch where
 instance Enharmonic PitchLabel where
   l `enharmonic` l' = semitones l == semitones l'
   
+instance EncodePitch Int where
+  toPitch i = pitchValue i
+  fromPitch p = centValue p 
 
--- a 'smart constructor'
 
+instance Extract Pitch PitchLabel where
+  extract (Pitch l _ _ _) = l
+
+  
+  
+-- | A /smart constructor/. It doesn't need semitones stating as it 
+-- derives semitones from the 'PitchLabel'.
 buildPitch :: PitchLabel -> Int -> Int -> Pitch
 buildPitch lbl o c = Pitch lbl o (semitones lbl) c
   where
@@ -143,23 +188,26 @@ buildPitch lbl o c = Pitch lbl o (semitones lbl) c
     semis A = 9
     semis B = 11
     
-
--- destructor
-unwrapPitchLabel (Pitch l _ _ _) = l
-
     
 -- pitch ops -- adding intervals etc need a naming scheme
 
-
-alter :: Accidental -> Int -> Accidental
-alter a i  = toEnum $ fromEnum a + i
-
+-- | Spell the 'PitchLabel' according to the 'PitchLetter', changing the 
+-- accidental as required, for instance:
+--
+-- >   spell (PitchLabel F (Sharp 1)) G = (PitchLabel G (Flat 1))
 spell :: PitchLabel -> PitchLetter -> PitchLabel
 spell lbl l' = 
   let (dr,d) = semitoneDisplacement lbl (PitchLabel l' Nat)
       dist   = case dr of Upwards -> negate d; _ -> d
       a'     = alter Nat dist
   in PitchLabel l' a'
+  
+  
+  
+alter :: Accidental -> Int -> Accidental
+alter a i  = toEnum $ fromEnum a + i
+
+
 
 
 
@@ -189,19 +237,66 @@ octaveDisplacement oct            = (oct - 4) * 12
   
 
 
+--------------------------------------------------------------------------------
+-- Num instances
+--------------------------------------------------------------------------------
 
-data ParsonsCode = PaR | PaU | PaD    
-  deriving (Eq,Ord,Show)
+instance Num Accidental where
+  a + b = toEnum $ fromEnum a + fromEnum b
+                           
+  a - b = toEnum $ fromEnum a - fromEnum b
+    
+  a * b = toEnum $ fromEnum a * fromEnum a
+
+  abs (Flat i) = Sharp i  
+  abs a        = a
   
-contour :: [Pitch] -> [ParsonsCode]  
-contour = zam diff
-  where diff a b = case a `compare` b of
-                    EQ -> PaR
-                    LT -> PaU
-                    GT -> PaD
   
-data RefinedContour = ReR | ReUS | ReUL | ReDS | ReDL
-  deriving (Eq,Ord,Show)  
+  signum Nat       = Nat
+  signum (Sharp _) = Sharp 1
+  signum _         = Flat 1
+
+    
+  fromInteger = toEnum . fromIntegral   
+  
+instance Num Pitch where
+  (Pitch l o s c) + (Pitch _ o' s' c') = Pitch l' (o + o' + co) s'' c''
+    where (cs,c'') = explode100 (c + c')
+          (co,s'') = explode12 (s + s' + cs)
+          l' = toEnum $ s'' + fromEnum l
+
+
+  (Pitch l o s c) - (Pitch _ o' s' c') = 
+    let (cs,c'') = explode100 (c - c')
+        (co,s'') = explode12 (s - s' + cs)
+        l' = toEnum $ s'' - fromEnum l
+    in Pitch l' (o - o' + co) s'' c''
+  
+  p * p' = 
+    let semil     = fromIntegral $ semitones p
+        semir     = fromIntegral $ semitones p'
+        centl     = (fromIntegral $ cents p) / 100.0
+        centr     = (fromIntegral $ cents p') / 100.0
+        sp        = (semil + centl) * (semir + centr)
+        (semis,c) = properFraction $ (semil + centl) * (semir + centr)
+        (o,s)     = explode12 semis
+    in Pitch (toEnum semis) o s (round (100 * c)) 
+  
+  abs p     = let (Pitch l o s _) = fromInteger $ fromIntegral $ abs $ semitones p
+              in Pitch l o s (cents p)
+              
+  signum p  = case semitones p `compare` 0 of
+                EQ -> Pitch (toEnum 0) 0 0 0
+                GT -> Pitch (toEnum 0) 0 1 0
+                LT -> Pitch (toEnum (-1)) (-1) 11 0
+                
+  
+  -- note, this is different to midi - middle C here is 48 (in midi it is 60)
+  fromInteger i = let i' = fromIntegral i; (o,s) = explode12  i'; l = toEnum i'
+                  in Pitch l o s 0   
+
+
+
   
 --------------------------------------------------------------------------------
 -- Deco instances
@@ -211,6 +306,7 @@ data RefinedContour = ReR | ReUS | ReUL | ReDS | ReDL
 instance Deco Pitch where 
   deco = decoPitch
 
+-- | Parsec parser for 'Pitch'.
 decoPitch :: Parser Pitch
 decoPitch = buildPitch <$> deco
                        <*> option 4 positiveInt 
@@ -220,18 +316,25 @@ decoPitch = buildPitch <$> deco
 instance Deco PitchLabel where
   deco = decoPitchLabel
 
+-- | Parsec parser for 'PitchLabel'.
+decoPitchLabel :: Parser PitchLabel
 decoPitchLabel = PitchLabel <$> decoPitchLetter <*> decoAccidental
--- or decoPitchLabel = PitchLabel <$> deco <*> deco
 
-decoPitchLabel' = deco2 PitchLabel
- 
-deco2 :: (Deco a, Deco b) => (a -> b -> c) -> Parser c
-deco2 fn = fn <$> deco <*> deco 
+
+-- hyper abstract - but is it simpler, clearer? 
+-- 
+-- decoPitchLabel = PitchLabel <$> deco <*> deco
+-- or, 
+-- decoPitchLabel' = deco2 PitchLabel
+-- deco2 :: (Deco a, Deco b) => (a -> b -> c) -> Parser c
+-- deco2 fn = fn <$> deco <*> deco 
 
 
 instance Deco PitchLetter where
   deco = decoPitchLetter
-    
+
+-- | Parsec parser for 'PitchLetter'.
+decoPitchLetter :: Parser PitchLetter    
 decoPitchLetter = letter <$> oneOf "ABCDEFG" 
   where 
     letter 'A' = A
@@ -245,8 +348,11 @@ decoPitchLetter = letter <$> oneOf "ABCDEFG"
 instance Deco Accidental where 
   deco = decoAccidental
 
--- accidental either all '#' or 
--- "#" (1), "x" (2), "x#" (3), "xx" (4), "xx#" (5), "xxx" (6), etc...
+-- | Parsec parser for 'Accidental'.
+--
+-- A flat is one or more /b/, a sharp is either all /\#/ or 
+-- /\#/ [1],  /x/ [2], /x\#/ [3], /xx/ [4], /xx\#/ [5], /xxx/ [6], etc... 
+decoAccidental :: Parser Accidental 
 decoAccidental = choice [sharp, flat, nat]
   where 
     sharp         = plainsharp <|> doublesharp

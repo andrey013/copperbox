@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -XEmptyDataDecls #-}
 {-# OPTIONS_GHC -XFlexibleInstances #-}
+{-# OPTIONS_GHC -XMultiParamTypeClasses #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -41,39 +42,56 @@ data Direction = Upwards | Downwards
 -- Affi(cher) & Deco(uper) -- alternatives to Read & Show for prettier representations
 --------------------------------------------------------------------------------
 
+-- | An alternative to Show - to be used for pretty formatting keeping Show
+-- for outputting Haskell readable constructors 
 class Affi a where
   affi :: a -> ShowS
 
+-- | An alternative to Read - to be used for reading 'Affi' output 
 class Deco a where
   deco :: Parser a
-  
+
+-- | Pretty print an 'Affi' instance  
 afficher :: Affi a => a -> String
 afficher a = affi a []
 
+-- | Pretty print a list seperated by spaces when the element type is 
+-- an instance of 'Affi'.
 afficherL :: Affi a => [a] -> String
 afficherL as = (hsepS $ map affi as) []
 
+-- | Parse a string when the target datatype is an instance of 'Deco'.
 decouper :: Deco a => String -> a
 decouper s = case parse deco "" s of
                 Left err -> error $ "parse error" ++ show err
                 Right a -> a 
 
-
-spacedElements :: Deco a => String -> [a]
-spacedElements s = case parse (many1 $ lexeme deco) "" s of
+-- | Parse a list of elements seperated by whitespace. The target element 
+-- must be an instance of 'Deco'.
+decouperL :: Deco a => String -> [a]
+decouperL s = case parse (many1 $ lexeme deco) "" s of
                      Left err -> error $ "parse error" ++ show err
                      Right a -> a                     
 
 --------------------------------------------------------------------------------
--- semitones is the basis for Pitch arithmetic
+-- Unwrap
 --------------------------------------------------------------------------------
 
-class Semitones a where semitones :: a -> Int
+-- | Extract an element from a constructor by a type. This only works if the 
+-- types carried by the constructor are disjoint.
+class Extract a b where extract :: a -> b
 
                     
 --------------------------------------------------------------------------------
 
-
+-- | An apologia - the pitch arithmetic in Bala has been a source of many 
+-- errors, probably because my maths has got rusty. Many arithmetic operations
+-- are easy to think of as counting, rather than addition, subtraction... etc 
+-- with quixotic number bases. Counting is of course much slower...
+-- The first argument to countUntil is a limit incase the count diverges, 
+-- otherwise the it is essentially until from the Prelude except it returns a 
+-- count for how many times f has been applied rather than the result of 
+-- repeatedly applying f.
 countUntil :: (Eq a) => Int -> (a -> Bool) -> (a -> a) -> a -> Int
 countUntil lim p f a = snd $ until p' f' (a,0)
   where p' (a,i) = if (i < lim) 
@@ -87,11 +105,13 @@ countTo fn x y = countUntil 1000 (== y) fn x
 retroCountTo :: (Eq a) => (a -> a) -> a -> a -> Int
 retroCountTo fn x y = 1 + countUntil 1000 (== y) fn x 
 
-
-successor, predecessor :: (Enum a) => a -> Int -> a
+-- | Repeat succ i times.
+successor :: (Enum a) => a -> Int -> a
 successor a i = applyi f a i
   where f = if (i >= 0) then succ else pred
-  
+
+-- | Repeat pred i times.
+predecessor :: (Enum a) => a -> Int -> a  
 predecessor a i = applyi f a i
   where f = if (i >= 0) then pred else succ
   

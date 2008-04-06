@@ -11,7 +11,7 @@
 
 module Main where
 
-import Bala.Format.Midi.MidiFile 
+import Bala.Format.Midi.Midi
 
 import System.Environment
 import Text.PrettyPrint.Leijen
