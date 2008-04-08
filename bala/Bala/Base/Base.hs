@@ -21,6 +21,7 @@ module Bala.Base.Base
   , module Bala.Base.PitchConversion
   , module Bala.Base.Interval
   , module Bala.Base.Chord
+  , module Bala.Base.ChordSynonyms
   , module Bala.Base.Scale
   , module Bala.Base.BaseExtra
   , module Bala.Base.NamedElems
@@ -34,7 +35,10 @@ import Bala.Base.PitchClass
 import Bala.Base.PitchConversion
 import Bala.Base.Interval
 import Bala.Base.Chord
+import Bala.Base.ChordSynonyms
 import Bala.Base.Scale
 import Bala.Base.BaseExtra
 import Bala.Base.NamedElems
 import Bala.Base.Unfiled
+
+

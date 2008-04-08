@@ -24,69 +24,26 @@ import Bala.Base.PitchClass
 import Bala.Base.BaseExtra
 
 import Control.Applicative hiding (many, optional, (<|>) )
+import qualified Data.Map as Map
+
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Pos
 
--- a chord is like a pitch class set, but with possible intervals > 12
-data Chord = Chord {
-    chord_root       :: Pitch,
-    semitone_interval_pattern :: [Int]
+data Inversion = RootPosition | FirstInversion | SecondInversion 
+               | ThirdInversion | NthInversion Int
+  deriving (Eq,Read,Show)
+
+data Chord = Chord { 
+    chord_root  :: Pitch,
+    inversion   :: Inversion,
+    chord_elems :: Map.Map Int IntervalQuality 
   }
-  deriving (Eq,Show)
+  deriving (Show)
+   
 
 
-data Triad = Triad {
-    tfirst :: Pitch,
-    tthird :: Pitch,
-    tfifth :: Pitch
-  }
-  deriving (Eq,Show)
   
     
-
-data RomanChord = RomanChord {
-    root_alteration   :: Maybe Alteration, 
-    scale_degree      :: Int,
-    chord_quality     :: ChordQuality,
-    chord_variation   :: Maybe Variation,    
-    inversion_label   :: InversionLabel
-  }
-  deriving (Eq)
-
-data Alteration = RSharp | RFlat
-  deriving (Eq) 
-  
-data ChordQuality = RMajor | RMinor
-  deriving (Eq)
-
-data Variation = Dim | Aug
-  deriving (Eq)
-  
-data InversionLabel = IRoot | IFirst | ISecond | IThird
-  deriving (Eq)
-
-data LabelledChord = LabelledChord {
-    chord_pitch  :: PitchLetter,
-    chord_suffix :: ChordSuffix
-  }
-
-data ChordSuffix 
-  = -- Major   
-    Maj' | Maj6 | Maj7 | Maj9 | Maj11 | Maj13 | MajAdd9 | Maj6_9
-    -- Minor 
-  | Min' | Min6 | Min7 | Min9 | Min11 | Min13 | MinAdd9 | Min6_9
-  | MinMaj7 | MinMaj9 
-    -- Dominant
-  | Dom7 | Dom9 | Dom11 | Dom13  
-  -- Diminished
-  | Dim' | Dim7 | HalfDim7
-  -- Augmented
-  | Aug' | Aug7
-  -- Suspended 
-  | Sus2 | Sus4 | Sus7
-  deriving (Eq)
-
-newtype ScaleDegreePattern = ScaleDegreePattern [(Int,Accidental)]
                 
   
   
@@ -94,150 +51,51 @@ newtype ScaleDegreePattern = ScaleDegreePattern [(Int,Accidental)]
 -- operations
 --------------------------------------------------------------------------------
 
-buildChord :: Pitch -> IntervalPattern -> Chord
-buildChord a (IntervalPattern xs) = undefined -- Chord a (scanl shiftyPlus (fixedPitch a) xs)
-
--- these would be better as scale degrees (e.g. major triad 1-3-5), so 
--- we need a new parser
-major_triad_pattern = IntervalPattern [5,4]
-minor_triad_pattern = IntervalPattern [4,5]
-diminished_pattern  = IntervalPattern [4,4]
-augmented_pattern   = IntervalPattern [5,5]
-
-
-
-pitches :: Chord -> [Pitch]
-pitches (Chord root xs) = map (addSemi root) xs
-  
-
--- | Build a triad from a roman chord (within a scale ?)
-triad :: RomanChord -> () -> Chord
-triad rc@(RomanChord {scale_degree=d}) () = buildChord (tstart d) (tip rc)
+-- | doen't yet handle inversions
+-- notes :: Chord -> [Pitch]
+notes (Chord p i m) 
+    | i /= RootPosition = error $ "inversions to do"
+    | otherwise         = map (extUp p) intervals
   where
-    tstart :: Int -> Pitch
-    tstart 1 = read "C4"
-    tstart 2 = read "D4"
-    tstart 3 = read "E4"
-    tstart 4 = read "F4"
-    tstart 5 = read "G4"
-    tstart 6 = read "A4"
-    tstart 7 = read "B4"
-
--- triad interval pattern
-tip :: RomanChord -> IntervalPattern
-tip (RomanChord {chord_quality=qual,chord_variation=var} ) = 
-    alter (base_pattern qual) var 
-  where 
-    base_pattern RMajor = IntervalPattern [5,4]
-    base_pattern RMinor = IntervalPattern [4,5]
-    
-    alter pat opt = maybe pat (variation pat) opt
-    variation (IntervalPattern [a,b]) Dim = IntervalPattern [a, b - 1]
-    variation (IntervalPattern [a,b]) Aug = IntervalPattern [a, b + 1]
-    
-
--- would it be better to use a call to `read` here?
--- e.g.  scaleDegrees Maj' = read "1-3-5"
-    
-scaleDegrees :: ChordSuffix -> ScaleDegreePattern
-scaleDegrees Maj' = ScaleDegreePattern [(1,Nat), (3,Nat), (5,Nat)]
-scaleDegrees _    = undefined
+    intervals = map (uncurry $ flip interval') (Map.toAscList m)
 
 
-instance Deco ScaleDegreePattern where
-  deco = decoScaleDegreePattern
+majorTriad :: Pitch -> Chord
+majorTriad p = Chord p RootPosition $ 
+  Map.fromAscList [(1,Perfect),(3,Major),(5,Perfect)]
+
+minorTriad :: Pitch -> Chord
+minorTriad p = Chord p RootPosition $ 
+  Map.fromAscList [(1,Perfect),(3,Minor),(5,Perfect)]
   
-decoScaleDegreePattern = ScaleDegreePattern <$> sepBy1 scaleDegree whiteSpace 
-  where scaleDegree = flip (,) <$> decoAccidental <*> int  
-  
-      
-{-
 
--- new idea
+-- | replace or add
+roa :: Int -> IntervalQuality -> Chord -> Chord
+roa idx qual (Chord p i m) = Chord p i (Map.insert idx qual m)
 
-data Alt = Nt | Sh Int | Fl Int | Inv Alt
+del :: Int -> Chord -> Chord
+del idx (Chord p i m) = Chord p i (Map.delete idx m)
 
+dim i = roa i Diminished
+aug i = roa i Augmented
 
+noRoot       = del 1
+noThird      = del 3
+noFifth      = del 5
+noSeventh    = del 7
+noNinth      = del 9
+noEleventh   = del 11
+noThirteenth = del 13
 
-data Chord = Chord { 
-      chord_root  :: Pitch,
-      chord_elems :: Map.Map Int Alt 
-   }
+diminishedFitfh = dim 5
+augmentedFifth = aug 5
 
-n i p (Chord r m)  = Chord r (Map.insert i p m)
-
-flatten = transp flatten'
-  where flatten' Nt       = Fl 1
-        flatten' (Sh 1)   = Nt
-        flatten' (Sh i)   = Sh (i-1)
-        flatten' (Fl i)   = Fl (i+1)
-        flatten' (Inv a) = Inv $ flatten' a
-        
-
-  
-instance Affi Chord where
-  affi (Chord r m) = let xs = Map.toAscList m in
-    affi r `sepS` hsepS (map (\(i,a) -> affi a . shows i) xs)
+minorSeventh = roa 7 Minor
+majorSeventh = roa 7 Major
+diminishedSeventh = dim 7
 
 
-instance Affi Alt where
-  affi Nt      = id
-  affi (Sh i)  = showString (replicate i '#')
-  affi (Fl i)  = showString (replicate i 'b')
-  affi (Inv a) = showChar '^' . affi a
-
-base = Chord c4 $ Map.fromAscList [(1,Nt),(3,Nt),(5,Nt)]
-
-
-major = base
-
-minor = flatten 3 major
-
-add6 (Chord r m)   = Chord r $ Map.insert 6 Nt m
-
-add9 (Chord r m)  = Chord r $ Map.insert 9 Nt m
-
-
-transp fn i c@(Chord r m) = 
-  maybe c (\a -> Chord r (Map.insert i (fn a) m)) (Map.lookup i m)
-
-firstInversion = transp invert 1
-secondInversion = firstInversion . transp invert 3
-
-
-invert (Inv a) = Inv a
-invert a       = Inv a
-
-renderChord :: Chord -> [Pitch]
-renderChord (Chord r m) = let xs = Map.toAscList m in
-  map (step1 r) xs
-
--- problem addSemi loses the pitch spelling of arithmetic step
-step1 :: Pitch -> (Int,Alt) -> Pitch
-step1 p (i,a) = (p `arithmeticStep` i) `addSemi` (semitones a)
-
-
-instance Semitones Alt where
-  semitones Nt = 0
-  semitones (Sh i) = i
-  semitones (Fl i) = negate i
-  semitones (Inv i) = 12 - semitones i
+-- Csus2 <C D G> and Csus4 <C F G>
 
 
 
-
-
-
-
-print_ans = afficherL . renderChord
-
--- Want we want in the `Chord` data structure
--- positional access - e.g. to flatten the third
--- access to the front
--- so use a finite map
-
--- Don't get hung up on order of ops, this should hold:
--- addNine $ addSix major == addSix $ addNine major
-
--}
-        

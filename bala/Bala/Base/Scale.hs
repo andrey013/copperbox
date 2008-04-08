@@ -61,6 +61,8 @@ octaveComplete (IntervalPattern xs) = 12 == foldr fn 0 xs
 makeScale :: Pitch -> IntervalPattern -> Scale
 makeScale p (IntervalPattern xs) = Scale p $ scanl extUp p xs
 
+makeDescendingScale :: Pitch -> IntervalPattern -> Scale
+makeDescendingScale p (IntervalPattern xs) = Scale p $ scanl extDown p xs
  
 --------------------------------------------------------------------------------
 -- Deco instances

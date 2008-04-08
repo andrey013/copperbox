@@ -62,6 +62,7 @@ data IntervalSize = Unison | Second | Third | Fourth | Fifth | Sixth
 
 -- | Commonly named interval qualities.  
 data IntervalQuality = Perfect | Major | Minor | Augmented | Diminished
+                     | DoublyAugmented | DoublyDiminished
   deriving (Eq,Enum,Ord,Show,Read)
 
 -- | Length of the arithmetic distance 
@@ -194,10 +195,20 @@ interval d s
   mixed_msg = "Cannot create an Interval with negative numbers for\n"
            ++ "arithmetic distance or semitone count"  
 
+interval' :: IntervalQuality -> Int -> Interval
+interval' Perfect           = iperfect    . toEnum . (flip (-) 1)
+interval' Major             = imajor      . toEnum . (flip (-) 1)
+interval' Minor             = iminor      . toEnum . (flip (-) 1)
+interval' Augmented         = iaugmented  . toEnum . (flip (-) 1)
+interval' Diminished        = idiminished . toEnum . (flip (-) 1)
+interval' DoublyAugmented   = undefined
+interval' DoublyDiminished  = undefined
+
+
 
 -- | Get the first element ('arith_dist') of the 'Interval' 
 -- unwrapping the 'Count'.
-arithDist:: Interval -> Int
+arithDist :: Interval -> Int
 arithDist (Interval (Count d) _) = d
 
 -- | Get the second element ('half_steps') of the 'Interval' 
@@ -323,9 +334,9 @@ namedInterval (NamedInterval msr qlty sz) = fmap (mk msr) (fn qlty sz)
     fn Perfect    Octave  = Just (8,12)
     fn  _         _       = Nothing 
 
-
-half_step  = interval 2 1
-whole_step = interval 2 2 
+-- 
+half_step_m2  = interval 2 1
+whole_step_M2 = interval 2 2 
 
 -- | Build a perfect interval from a size.
 iperfect :: IntervalSize -> Interval
@@ -341,7 +352,7 @@ imajor :: IntervalSize -> Interval
 imajor Second   = interval 2 2
 imajor Third    = interval 3 4
 imajor Sixth    = interval 6 9
-imajor Seventh  = interval 7 10
+imajor Seventh  = interval 7 11
 imajor z        = error $ 
     "cannot build a major interval for " ++ show z
     
@@ -407,12 +418,13 @@ instance Affi IntervalSize where
 
 
 instance Affi IntervalQuality where
-  affi Perfect    = showString "perfect"
-  affi Major      = showString "major"
-  affi Minor      = showString "minor"
-  affi Augmented  = showString "augmented"
-  affi Diminished = showString "diminished"
-
+  affi Perfect          = showString "perfect"
+  affi Major            = showString "major"
+  affi Minor            = showString "minor"
+  affi Augmented        = showString "augmented"
+  affi Diminished       = showString "diminished"
+  affi DoublyAugmented  = showString "doubly-augmented"
+  affi DoublyDiminished = showString "doubly-diminished"
 
 instance Affi IntervalMeasure where
   affi Simple       = id
@@ -462,13 +474,15 @@ instance Deco IntervalQuality where
 -- | Parsec parser for 'IntervalQuality'.
 decoIntervalQuality :: Parser IntervalQuality
 decoIntervalQuality = 
-    choice [perfect,major,minor,augmented,diminished]
+    choice [perfect,major,minor,augmented,diminished,dblaug,dbldim]
   where
-    perfect     = Perfect    <$ lexString "perfect"
-    major       = Major      <$ lexString "major"
-    minor       = Minor      <$ lexString "minor"
-    augmented   = Augmented  <$ lexString "augmented"
-    diminished  = Diminished <$ lexString "diminished"
+    perfect     = Perfect          <$ lexString "perfect"
+    major       = Major            <$ lexString "major"
+    minor       = Minor            <$ lexString "minor"
+    augmented   = Augmented        <$ lexString "augmented"
+    diminished  = Diminished       <$ lexString "diminished"
+    dblaug      = DoublyAugmented  <$ lexString "doubly-diminished" 
+    dbldim      = DoublyDiminished <$ lexString "doubly-diminished"
           
 instance Deco IntervalSize where
   deco = decoIntervalSize
@@ -497,13 +511,13 @@ decoIntervalPattern  = IntervalPattern <$> many1 shortfromInterval
 shortfromInterval :: Parser Interval
 shortfromInterval = choice [whole,half,aug,majr,minr,perf,dim]
   where 
-    whole = whole_step  <$  lexChar 'W'
-    half  = half_step   <$  lexChar 'H'
-    aug   = iaugmented  <$> (lexChar 'A' *> intIntervalSize)
-    majr  = imajor      <$> (lexChar 'M' *> intIntervalSize)        
-    minr  = iminor      <$> (lexChar 'm' *> intIntervalSize)
-    perf  = iperfect    <$> (lexChar 'P' *> intIntervalSize)
-    dim   = idiminished <$> (lexChar 'd' *> intIntervalSize)
+    whole = whole_step_M2 <$  lexChar 'W'
+    half  = half_step_m2  <$  lexChar 'H'
+    aug   = iaugmented    <$> (lexChar 'A' *> intIntervalSize)
+    majr  = imajor        <$> (lexChar 'M' *> intIntervalSize)        
+    minr  = iminor        <$> (lexChar 'm' *> intIntervalSize)
+    perf  = iperfect      <$> (lexChar 'P' *> intIntervalSize)
+    dim   = idiminished   <$> (lexChar 'd' *> intIntervalSize)
     
 intIntervalSize :: Parser IntervalSize
 intIntervalSize = 

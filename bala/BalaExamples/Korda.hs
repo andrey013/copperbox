@@ -11,7 +11,7 @@
 -- Portability :  to be determined.
 --
 -- Guitar chords / fingering positions
--- |
+--
 --------------------------------------------------------------------------------
 
 
@@ -75,6 +75,8 @@ c_slash_d = decouper "(xx0010)"
 c_slash_b :: Fingering
 c_slash_b = decouper "(x22010)"
 
+c_maj7 :: Fingering
+c_maj7 = decouper "(x32000)"
 
 f_maj7 :: Fingering
 f_maj7 = decouper "(x33210)"
