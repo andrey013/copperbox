@@ -23,11 +23,10 @@ import Bala.Base.Interval
 import Bala.Base.PitchClass
 import Bala.Base.BaseExtra
 
-import Control.Applicative hiding (many, optional, (<|>) )
+
 import qualified Data.Map as Map
 
-import Text.ParserCombinators.Parsec 
-import Text.ParserCombinators.Parsec.Pos
+
 
 data Inversion = RootPosition | FirstInversion | SecondInversion 
                | ThirdInversion | NthInversion Int
