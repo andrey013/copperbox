@@ -1,10 +1,7 @@
 
-
-
-
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.PerformPitch
+-- Module      :  Bala.Perform.PerformPitch
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -16,15 +13,13 @@
 --
 --------------------------------------------------------------------------------
 
-
-
 -- for a list of pitches turn them into events with an onset time
 
 
-module Bala.Base.PerformPitch where
+module Bala.Perform.PerformPitch where
 
 import Bala.Base.PitchRep
-import Bala.Base.Perform
+import Bala.Perform.Perform
 
 import Data.Ratio
 

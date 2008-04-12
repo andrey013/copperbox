@@ -66,8 +66,8 @@ class SemitoneDisplacement a where
   -- | As per 'semitoneDisplacement' but just return the direction.   
   semitoneDirection    :: a -> a -> Direction
   
-  semitoneDistance  a a' = snd $ semitoneDisplacement a a'
-  semitoneDirection a a' = fst $ semitoneDisplacement a a'
+  semitoneDistance  = snd `dyap` semitoneDisplacement
+  semitoneDirection = fst `dyap` semitoneDisplacement
 
 class EncodePitch a where 
   toPitch :: a -> Pitch  

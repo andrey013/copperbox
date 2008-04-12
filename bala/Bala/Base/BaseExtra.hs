@@ -232,7 +232,26 @@ mod7 :: (Integral a) => a -> a
 mod7  i = i `mod` 7  
 
 
-  
+sub1 :: Integral a => a -> a
+sub1 = flip (-) 1
+
+
+-- | pointsfree or
+ora :: (a -> Bool) -> (a -> Bool) -> a -> Bool
+ora f g a = f a || g a
+
+-- | pointsfree and
+anda :: (a -> Bool) -> (a -> Bool) -> a -> Bool
+anda f g a = f a && g a
+
+-- | dyadic apply
+dyap :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+dyap f g a b = f (g a b) 
+
+-- | triadic apply
+triap :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
+triap f g a b c = f (g a b c) 
+
   
 --------------------------------------------------------------------------------
 -- Parsec helpers

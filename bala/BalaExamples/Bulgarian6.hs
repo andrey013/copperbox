@@ -9,7 +9,7 @@ module Main where
 import Bala.Format.Midi.Midi
 import Bala.Base.Base
 
-import qualified Bala.Base.PerformPitch as PP
+import qualified Bala.Perform.PerformPitch as PP
 
 import Bala.Format.Midi.PerformMidi
 

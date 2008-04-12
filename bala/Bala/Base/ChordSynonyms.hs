@@ -45,7 +45,7 @@ data ChordQuality = RMajor | RMinor
 data Variation = Dim | Aug
   deriving (Eq)
   
--- | Jazz / guitar style labelled chords.
+-- | Jazz - guitar style labelled chords.
 data LabelledChord = LabelledChord {
     chord_pitch  :: PitchLetter,
     chord_suffix :: ChordSuffix
