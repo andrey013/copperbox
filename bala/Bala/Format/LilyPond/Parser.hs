@@ -20,6 +20,8 @@ import Bala.Format.LilyPond.Datatypes
 import Control.Applicative hiding (many, optional, (<|>) )
 import Control.Monad
 
+
+
 import Text.ParserCombinators.Parsec hiding (space)
 
 
@@ -30,9 +32,11 @@ duration :: Parser Int
 duration = int
 
 
+
+
 pitch = Pitch <$> pitchLetter <*> optparse octaveSpec
 
-pitchLetter = oneOf "cdefgab"
+
 
 octaveSpec :: Parser OctaveSpec
 octaveSpec = raised <|> lowered
@@ -63,6 +67,95 @@ stringMark = char '^' *> stringLiteral
 
 chord :: Parser [Pitch]
 chord = angles (sepBy1 pitch whiteSpace)
+
+--------------------------------------------------------------------------------
+-- commands
+--------------------------------------------------------------------------------
+
+type Command = (String,String) -- to improve...
+
+
+bar :: Parser Command
+bar = (,) <$> command "bar" <*> doubleQuoted barMark
+
+version :: Parser Command
+version = (,) <$> command "version" <*> doubleQuoted deweyNumber
+  where deweyNumber = many1 $ oneOf "0123456789."
+
+header :: Parser Command
+header = (,) <$> command "header" <*> bracedWater 
+  
+        
+
+
+--------------------------------------------------------------------------------
+-- other
+--------------------------------------------------------------------------------
+
+bracedWater :: Parser String
+bracedWater = fst <$> (braceOpen *> collectWater braceClose)
+
+barMark :: Parser String
+barMark = longestString
+        [ "unbroken ||:", "broken ||:"
+        , ".|.", ":|:", "||", "|.", ".|", "|:", ":|", "|" , ":"] 
+        
+comment :: Parser ()
+comment = char '%' *> text *> lineEnd
+  where lineEnd = () <$ choice [char '\r',  char '\n']
+        text    = noneOf "\n\r"
+
+
+
+        
+--------------------------------------------------------------------------------
+-- lexer combinators 
+--------------------------------------------------------------------------------
+
+command :: String -> CharParser st String
+command ss = lexeme $ (:) <$> char '\\' <*> string ss
+
+
+        
+        
+
+tie :: CharParser st Char
+tie = char '~'
+
+
+doubleQuote :: CharParser st Char
+doubleQuote = char '"'
+
+singleQuote :: CharParser st Char
+singleQuote = char '\''
+
+
+pitchLetter :: CharParser st Char
+pitchLetter = oneOf "cdefgab"
+
+doubleAngleOpen :: CharParser st String
+doubleAngleOpen = string "<<"
+
+doubleAngleClose :: CharParser st String
+doubleAngleClose = string ">>"
+
+angleOpen :: CharParser st Char
+angleOpen = char '<'
+
+angleClose :: CharParser st Char
+angleClose = char '>'
+
+beamOpen :: CharParser st Char
+beamOpen = char '['
+
+beamClose :: CharParser st Char
+beamClose = char ']'
+
+braceOpen :: CharParser st Char
+braceOpen = char '{'
+
+braceClose :: CharParser st Char
+braceClose = char '}'
 
 
 

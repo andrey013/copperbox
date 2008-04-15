@@ -20,11 +20,11 @@
 
 module Bala.Base.BaseExtra where
 
-import Control.Applicative hiding (many, optional)
+import Control.Applicative hiding (many, optional, (<|>))
 import Control.Monad (ap)
 
 import Data.Char (ord)
-import Data.List (mapAccumL)
+import Data.List (mapAccumL, sortBy)
 
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
@@ -269,9 +269,11 @@ readsParsec p s = case parse pfn "" s of
                     Right a -> [a] 
   where pfn = (,) <$> p <*> getInput
 
-lexeme :: Parser a -> Parser a
-lexeme p = p <* many (oneOf " \t\n")
+longestString :: [String] -> Parser String
+longestString = choice . map string . reverse . sortBy longer
+  where longer a b = compare (length b) (length a) -- args flipped!
 
+  
 optOneOf :: [Char] -> Parser (Maybe Char)    
 optOneOf cs = optparse $ oneOf cs
 
@@ -300,7 +302,8 @@ lexChar   = lexeme . char
 baseLex           = P.makeTokenParser emptyDef
 
 
-whiteSpace        = P.whiteSpace baseLex 
+whiteSpace        = P.whiteSpace baseLex
+lexeme            = P.lexeme baseLex 
 parens            = P.parens baseLex
 brackets          = P.brackets baseLex
 angles            = P.angles baseLex
@@ -319,6 +322,24 @@ int               = fromIntegral <$> integer
 digiti            :: Parser Int
 digiti            = (flip (-) 48) . ord  <$> digit
 
+
+-- | more general type than stringLiteral
+doubleQuoted :: Parser a -> Parser a
+doubleQuoted p = char '"' *> p <* char '"'
+
+-- | island parsing (if it works...)
+water :: Parser a -> Parser a
+water p = p <|> (glob *> water p)
+  where
+    glob = manyTill (noneOf " \t\n") (oneOf " \t\n")
+
+-- | collect the water as a string until p parses     
+collectWater :: Parser a -> Parser (String,a)
+collectWater p = colwater []
+  where
+    colwater acc  =  (p >>= \a -> return (unlines $ reverse acc,a) )
+                 <|> (restOfLine >>= \s -> colwater (s:acc))
+    restOfLine    = manyTill anyChar newline
 
 --------------------------------------------------------------------------------
 -- Show helpers 

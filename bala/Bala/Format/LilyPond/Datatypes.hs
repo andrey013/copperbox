@@ -29,4 +29,7 @@ data Accidental = Sharp | Flat | DoubleSharp | DoubleFlat
   deriving (Eq, Show)
   
 data MicroTone =  HalfFlat | HalfSharp 
-  deriving (Eq, Show) 
+  deriving (Eq, Show)
+
+  
+  
