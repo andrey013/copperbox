@@ -33,9 +33,12 @@ duration = int
 
 
 
-
+pitch :: Parser Pitch
 pitch = Pitch <$> pitchLetter <*> optparse octaveSpec
 
+-- | temporary expedience
+pitchstring :: Parser String
+pitchstring = show <$> pitch
 
 
 octaveSpec :: Parser OctaveSpec
@@ -72,20 +75,110 @@ chord = angles (sepBy1 pitch whiteSpace)
 -- commands
 --------------------------------------------------------------------------------
 
-type Command = (String,String) -- to improve...
+
+
+command0 :: (Command) -> String -> Parser Command
+command0 f name = f <$ command name
+
+nullaryCommand :: String -> Parser Command
+nullaryCommand name = command0 (NullaryCommand name) name
+
+command1 :: (a -> Command) -> String -> Parser a -> Parser Command
+command1 f name p = f <$> (command name *> lexeme p)
+
+unaryCommand :: String -> Parser String -> Parser Command
+unaryCommand name = command1 (UnaryCommand name) name
+
+command2 :: (a -> b -> Command) -> String -> Parser a -> Parser b -> Parser Command
+command2 f name p p' = f <$> (command name *> lexeme p) <*> lexeme p'
+
+binaryCommand :: String -> Parser String -> Parser String -> Parser Command
+binaryCommand name = command2 (BinaryCommand name) name 
+
 
 
 bar :: Parser Command
-bar = (,) <$> command "bar" <*> doubleQuoted barMark
+bar = unaryCommand "bar" (doubleQuoted barMark)
+
 
 version :: Parser Command
-version = (,) <$> command "version" <*> doubleQuoted deweyNumber
-  where deweyNumber = many1 $ oneOf "0123456789."
+version = command1 CmdVersion "version" (doubleQuoted deweyNumber)
+  where deweyNumber = sepBy1 int (char '.')
 
 header :: Parser Command
-header = (,) <$> command "header" <*> bracedWater 
+header = unaryCommand "header" bracedWater 
+
+
+-- | TODO rendering pitch back to string BAD! 
+key :: Parser Command
+key = command2 CmdKey "key" pitch (keytype <|> mode)
+ 
+
+keytype :: Parser Command
+keytype = nullaryCommand "major" <|> nullaryCommand "minor"
+
+mode :: Parser Command
+mode = choice $ map nullaryCommand [ "ionian", "locrian",
+          "aeolian", "mixolydian", "lydian", "phrygian", "dorian" ]
   
         
+clef :: Parser Command
+clef = unaryCommand "clef" clefname 
+  where
+    clefname = longestString clefs <|> quotedclef
+    
+    quotedclef = doubleQuoted $ many1 (alphaNum <|> oneOf "_^")
+     
+    clefs = ["treble", "violin", "G", "G2",
+             "alto", "C", "tenor", "bass", "F",            
+             "french", "soprano", "mezzosoprano",
+             "baritone", "varbaritone", "subbass",
+             "percussion", "tab"
+             ]
+
+dynamic :: Parser Command
+dynamic = NullaryCommand <$> (longestString dynamic_mark)  
+  where
+    dynamic_mark = ["ppppp", "pppp", "ppp", "pp", "p", 
+                    "mp", "mf", "f", "ff", "fff", "ffff", 
+                    "fp", "sf", "sff", "sp", "spp", "sfz", "rfz"
+                    ]
+
+espressivo :: Parser Command
+espressivo = nullaryCommand "espressivo"
+
+breath :: Parser Command
+breath = nullaryCommand "breath"
+
+glissando :: Parser Command
+glissando = nullaryCommand "glissando"
+
+arpeggio :: Parser Command
+arpeggio = nullaryCommand "arpeggio"
+
+arpeggioBracket :: Parser Command
+arpeggioBracket = nullaryCommand "arpeggioBracket"
+
+arpeggioUp :: Parser Command
+arpeggioUp = nullaryCommand "arpeggioUp"
+
+arpeggioDown :: Parser Command
+arpeggioDown = nullaryCommand "arpeggioDown"
+
+arpeggioNeutral :: Parser Command
+arpeggioNeutral = nullaryCommand "arpeggioNeutral"
+
+ 
+time :: Parser Command
+time = command1 (uncurry CmdTimeSignature) "time" fraction
+
+
+partial :: Parser Command
+partial = unaryCommand "partial" (show <$> int)
+
+italianGrace :: Parser Command
+italianGrace =  nullaryCommand "appoggiatura" 
+            <|> nullaryCommand "acciaccatura"
 
 
 --------------------------------------------------------------------------------
@@ -94,6 +187,9 @@ header = (,) <$> command "header" <*> bracedWater
 
 bracedWater :: Parser String
 bracedWater = fst <$> (braceOpen *> collectWater braceClose)
+
+fraction :: Parser (Int,Int)
+fraction = (,) <$> (int <* char '/') <*> int
 
 barMark :: Parser String
 barMark = longestString

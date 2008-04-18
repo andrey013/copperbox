@@ -31,5 +31,13 @@ data Accidental = Sharp | Flat | DoubleSharp | DoubleFlat
 data MicroTone =  HalfFlat | HalfSharp 
   deriving (Eq, Show)
 
-  
+data Command = CmdKey Pitch Command
+             | CmdVersion [Int]
+             | CmdTimeSignature Int Int
+             | NullaryCommand String
+             | UnaryCommand String String
+             | BinaryCommand String String String
+  deriving (Eq, Show)
+             
+             
   

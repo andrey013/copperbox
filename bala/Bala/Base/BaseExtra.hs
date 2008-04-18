@@ -271,7 +271,7 @@ readsParsec p s = case parse pfn "" s of
 
 longestString :: [String] -> Parser String
 longestString = choice . map string . reverse . sortBy longer
-  where longer a b = compare (length b) (length a) -- args flipped!
+  where longer a b = (length a) `compare` (length b)
 
   
 optOneOf :: [Char] -> Parser (Maybe Char)    
