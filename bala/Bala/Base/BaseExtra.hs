@@ -270,15 +270,19 @@ readsParsec p s = case parse pfn "" s of
   where pfn = (,) <$> p <*> getInput
 
 longestString :: [String] -> Parser String
-longestString = choice . map string . reverse . sortBy longer
+longestString = choice . map (try . string) . reverse . sortBy longer
   where longer a b = (length a) `compare` (length b)
 
   
 optOneOf :: [Char] -> Parser (Maybe Char)    
 optOneOf cs = optparse $ oneOf cs
 
+
 optparse :: Parser a -> Parser (Maybe a)
-optparse p = option Nothing (Just <$> p)
+optparse p = option Nothing (try $ Just <$> p)
+
+eitherparse :: Parser a -> Parser b -> Parser (Either a b)
+eitherparse p p' = (Left <$> p) <|> (Right <$> p')
 
 counting, counting1 :: Parser a -> Parser Int
 counting  p = length <$> many p
@@ -303,7 +307,8 @@ baseLex           = P.makeTokenParser emptyDef
 
 
 whiteSpace        = P.whiteSpace baseLex
-lexeme            = P.lexeme baseLex 
+lexeme            = P.lexeme baseLex
+symbol            = P.symbol baseLex  
 parens            = P.parens baseLex
 brackets          = P.brackets baseLex
 angles            = P.angles baseLex
@@ -327,19 +332,28 @@ digiti            = (flip (-) 48) . ord  <$> digit
 doubleQuoted :: Parser a -> Parser a
 doubleQuoted p = char '"' *> p <* char '"'
 
--- | island parsing (if it works...)
+-- | island parsing (does it work?)
+-- It generates a parse error if we get to eof without parsing p
+-- which is what we want.
 water :: Parser a -> Parser a
-water p = p <|> (glob *> water p)
-  where
-    glob = manyTill (noneOf " \t\n") (oneOf " \t\n")
+water p = do
+    a <- optparse p    
+    case a of
+      Just a -> return $ a
+      Nothing -> anyChar >> water p 
+
 
 -- | collect the water as a string until p parses     
 collectWater :: Parser a -> Parser (String,a)
 collectWater p = colwater []
   where
-    colwater acc  =  (p >>= \a -> return (unlines $ reverse acc,a) )
-                 <|> (restOfLine >>= \s -> colwater (s:acc))
-    restOfLine    = manyTill anyChar newline
+    colwater cs  =  do
+      a <- optparse p
+      case a of 
+        Just a -> return (reverse cs, a)
+        Nothing -> anyChar >>= \c -> colwater (c:cs)
+        
+      
 
 --------------------------------------------------------------------------------
 -- Show helpers 

@@ -20,21 +20,36 @@ import Bala.Format.LilyPond.Datatypes
 import Control.Applicative hiding (many, optional, (<|>) )
 import Control.Monad
 
-
-
 import Text.ParserCombinators.Parsec hiding (space)
 
+-- note need to be careful with lexeme parser 
+
+-- permutations?
+
+parseLilyPond :: Parser LilyPondFile
+parseLilyPond = many $ choice [version,header]
+
+
+
+
+note :: Parser Note
+note = (,) <$> pitch <*> optparse duration
 
 rest :: Parser Rest
 rest = Rest <$> (char 'r' *> duration)
 
-duration :: Parser Int
-duration = int
+duration :: Parser Duration
+duration = f <$> int <*> optparse (char '.')
+  where 
+    f i Nothing  = Duration i
+    f i (Just _) = Dotted i
+  
 
-
+expression :: Parser String
+expression = bracedWater
 
 pitch :: Parser Pitch
-pitch = Pitch <$> pitchLetter <*> optparse octaveSpec
+pitch = Pitch <$> pitchLetter <*> optparse accidental <*> optparse octaveSpec
 
 -- | temporary expedience
 pitchstring :: Parser String
@@ -48,29 +63,73 @@ octaveSpec = raised <|> lowered
     lowered = Lowered <$> counting1 (char ',')
     
 accidental :: Parser Accidental
-accidental = choice [ss, ff, s, f] 
+accidental = f <$> longestString accidentals
   where
-    ss = fn DoubleSharp "isis"
-    ff = fn DoubleFlat  "eses"
-    s  = fn Sharp       "is"
-    f  = fn Flat        "es"
     
-    fn cnstr str = cnstr <$ lexeme (string str)
+    accidentals = [ "isis", "eses", "is", "es" ]
+    f "isis" = DoubleSharp
+    f "eses" = DoubleFlat
+    f "is"   = Sharp
+    f "es"   = Flat
+
+
+articulation :: Parser Articulation 
+articulation = f <$> verticalPlacement <*>  eitherparse amark int
+  where 
+    amark = oneOf ".->^+_"
+    
+    f a (Left ch) = Articulation a ch
+    f a (Right i) = Fingering a i 
+
+
+verticalPlacement :: Parser VerticalPlacement
+verticalPlacement = choice $ map (uncurry f)  [('^',VAbove), ('_',VBelow), ('-',VDefault)] 
+  where
+    f ch constr = constr <$ char ch
+
+
     
 microTone :: Parser MicroTone
-microTone = choice [hs, hf] 
+microTone = choice $ map (uncurry f) [("ih",HalfSharp), ("eh", HalfFlat)] 
   where
-    hs = fn HalfSharp "ih"
-    hf = fn HalfFlat  "eh"
-    
-    fn cnstr str = cnstr <$ lexeme (string str)  
+    f str constr = constr <$ lexeme (string str)  
     
 stringMark :: Parser String
 stringMark = char '^' *> stringLiteral
 
-chord :: Parser [Pitch]
-chord = angles (sepBy1 pitch whiteSpace)
+chord :: Parser Chord
+chord = Chord <$> angles (many1 $ lexeme pitch) <*> duration
 
+guitarNote :: Parser (Pitch,Int)
+guitarNote = (,) <$> pitch <*> guitarString
+
+guitarString :: Parser Int
+guitarString = char '\\' *> int
+
+
+--------------------------------------------------------------------------------
+-- marks
+--------------------------------------------------------------------------------
+
+
+mark = choice [MarkTie <$ tie, MarkSlur <$> slur, MarkBeam <$> beam]
+
+
+-- Careful do not consume the placement prefix if it isn't followed by a slur
+slur :: Parser Slur
+slur = choice [(try placedSlur), slurStart, slurEnd]
+  where 
+    placedSlur = (SlurStart . Just) <$> (verticalPlacement <* symbol "(")
+    slurStart  = SlurStart Nothing  <$  symbol "("
+    slurEnd    = SlurEnd            <$  symbol ")"
+    
+beam :: Parser Beam
+beam = choice [beamStart, beamEnd]
+  where 
+    beamStart  = BeamStart  <$  symbol "["
+    beamEnd    = BeamEnd    <$  symbol "]"
+    
+        
 --------------------------------------------------------------------------------
 -- commands
 --------------------------------------------------------------------------------
@@ -85,6 +144,9 @@ nullaryCommand name = command0 (NullaryCommand name) name
 
 command1 :: (a -> Command) -> String -> Parser a -> Parser Command
 command1 f name p = f <$> (command name *> lexeme p)
+
+exprCommand :: String -> Parser Command
+exprCommand name = command1 (ExprCommand name) name bracedWater
 
 unaryCommand :: String -> Parser String -> Parser Command
 unaryCommand name = command1 (UnaryCommand name) name
@@ -106,7 +168,7 @@ version = command1 CmdVersion "version" (doubleQuoted deweyNumber)
   where deweyNumber = sepBy1 int (char '.')
 
 header :: Parser Command
-header = unaryCommand "header" bracedWater 
+header = exprCommand "header" 
 
 
 -- | TODO rendering pitch back to string BAD! 
@@ -180,6 +242,26 @@ italianGrace :: Parser Command
 italianGrace =  nullaryCommand "appoggiatura" 
             <|> nullaryCommand "acciaccatura"
 
+tempo :: Parser Command 
+tempo = command2 CmdTempo "tempo" (duration) ((symbol "=") *> int)
+
+
+crescendoStart :: Parser Command
+crescendoStart = nullaryCommand "<"
+
+decrescendoStart :: Parser Command
+decrescendoStart = nullaryCommand ">"
+
+crescendoEnd :: Parser Command
+crescendoEnd = nullaryCommand "!"
+
+phrasingSlurStart :: Parser Command
+phrasingSlurStart = nullaryCommand "("
+
+phrasingSlurEnd :: Parser Command
+phrasingSlurEnd = nullaryCommand ")"
+
+
 
 --------------------------------------------------------------------------------
 -- other
@@ -202,22 +284,29 @@ comment = char '%' *> text *> lineEnd
         text    = noneOf "\n\r"
 
 
-
+doubleAngles :: Parser a -> Parser a
+doubleAngles = between (symbol "<<") (symbol ">>")  
         
 --------------------------------------------------------------------------------
 -- lexer combinators 
 --------------------------------------------------------------------------------
 
+-- | command - note using try is essential otherwise we might the forward
+-- slash will be consumed 
 command :: String -> CharParser st String
-command ss = lexeme $ (:) <$> char '\\' <*> string ss
+command ss = lexeme $ try $ string ('\\':ss)
 
 
-        
+-- | e.g "Voice"
+context :: CharParser st String
+context = (:) <$> upper <*> many (upper <|> lower) 
         
 
 tie :: CharParser st Char
 tie = char '~'
 
+equals :: CharParser st Char
+equals = char '='
 
 doubleQuote :: CharParser st Char
 doubleQuote = char '"'
