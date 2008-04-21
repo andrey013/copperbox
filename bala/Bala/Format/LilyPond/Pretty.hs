@@ -26,6 +26,22 @@ import Data.List hiding (group)
 ppLilyPondFile :: LilyPondFile -> Doc
 ppLilyPondFile = vsep . map pretty
 
+
+instance Pretty Glyph where
+  pretty (GlyphEvent a)     = pretty a 
+  pretty (GlyphCommmand a)  = pretty a
+  pretty (GlyphMark a)      = pretty a
+           
+instance Pretty GlyphEvent where
+  pretty (GEvtNote a)       = pretty a 
+  pretty (GEvtChord a)      = pretty a 
+  pretty (GEvtRest a)       = pretty a 
+                
+instance Pretty Rest where
+  pretty (Rest a) = group (char 'r' <> pretty a)
+
+  
+                             
 ppStringMark :: String -> Doc
 ppStringMark ss = char '^' <> dquotes (text ss)
 
@@ -62,10 +78,10 @@ instance Pretty Chord where
 
 -- marks
 instance Pretty  Mark where
-  pretty MarkTie      = char '~'
-  pretty (MarkSlur a) = pretty a
-  pretty (MarkBeam a) = pretty a 
-
+  pretty MarkTie        = char '~'
+  pretty (MarkSlur a)   = pretty a
+  pretty (MarkBeam a)   = pretty a 
+  pretty MarkBarCheck   = char '|'
           
           
 instance Pretty Slur where

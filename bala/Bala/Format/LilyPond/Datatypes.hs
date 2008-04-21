@@ -25,11 +25,15 @@ type Water = String
 type Either3 a b c = Either a (Either b c)
 
 
-data Glyph = GlyphEvent (Either3 Note Chord Rest)
+data Glyph = GlyphEvent GlyphEvent
            | GlyphCommmand Command
            | GlyphMark Mark
   deriving (Eq,Show)          
 
+data GlyphEvent = GEvtNote Note
+                | GEvtChord Chord
+                | GEvtRest Rest
+  deriving (Eq,Show) 
 
 type Note = (Pitch,Maybe Duration) 
 
@@ -64,7 +68,7 @@ data MicroTone =  HalfFlat | HalfSharp
   deriving (Eq, Show)
 
 
-data Chord = Chord [Pitch] Duration
+data Chord = Chord [Pitch] (Maybe Duration)
   deriving (Eq,Show)
   
    
@@ -83,6 +87,7 @@ data Command = CmdNew String  String String  -- type music expression
 data Mark = MarkTie
           | MarkSlur Slur
           | MarkBeam Beam
+          | MarkBarCheck
   deriving (Eq,Show)
 
 data Slur = SlurStart (Maybe VerticalPlacement)

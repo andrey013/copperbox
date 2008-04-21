@@ -17,6 +17,8 @@ module Bala.Format.LilyPond.Parser where
 import Bala.Base.BaseExtra
 import Bala.Format.LilyPond.Datatypes
 
+import Prelude hiding (break)
+
 import Control.Applicative hiding (many, optional, (<|>) )
 import Control.Monad
 
@@ -30,8 +32,20 @@ parseLilyPond :: Parser LilyPondFile
 parseLilyPond = many $ choice [version,header]
 
 
+glyph :: Parser Glyph
+glyph = choice [ GlyphEvent <$> glyphEvent, GlyphMark <$> mark, GlyphCommmand <$> glyphCommand]
 
 
+
+glyphCommand = choice 
+  [ bar, crescendoStart, decrescendoStart,  crescendoEnd, break, noBreak
+  ]
+
+
+glyphEvent :: Parser GlyphEvent
+glyphEvent = choice [ GEvtNote <$> note, GEvtChord <$> chord, GEvtRest <$> rest]
+                
+                    
 note :: Parser Note
 note = (,) <$> pitch <*> optparse duration
 
@@ -98,7 +112,7 @@ stringMark :: Parser String
 stringMark = char '^' *> stringLiteral
 
 chord :: Parser Chord
-chord = Chord <$> angles (many1 $ lexeme pitch) <*> duration
+chord = Chord <$> angles (many1 $ lexeme pitch) <*> optparse duration
 
 guitarNote :: Parser (Pitch,Int)
 guitarNote = (,) <$> pitch <*> guitarString
@@ -111,8 +125,9 @@ guitarString = char '\\' *> int
 -- marks
 --------------------------------------------------------------------------------
 
-
-mark = choice [MarkTie <$ tie, MarkSlur <$> slur, MarkBeam <$> beam]
+mark :: Parser Mark
+mark = choice 
+  [ MarkTie <$ tie, MarkSlur <$> slur, MarkBeam <$> beam, barCheck ]
 
 
 -- Careful do not consume the placement prefix if it isn't followed by a slur
@@ -128,7 +143,9 @@ beam = choice [beamStart, beamEnd]
   where 
     beamStart  = BeamStart  <$  symbol "["
     beamEnd    = BeamEnd    <$  symbol "]"
-    
+
+barCheck :: Parser Mark
+barCheck = MarkBarCheck <$ symbol "|"
         
 --------------------------------------------------------------------------------
 -- commands
@@ -157,6 +174,12 @@ command2 f name p p' = f <$> (command name *> lexeme p) <*> lexeme p'
 binaryCommand :: String -> Parser String -> Parser String -> Parser Command
 binaryCommand name = command2 (BinaryCommand name) name 
 
+
+break :: Parser Command
+break = nullaryCommand "break" 
+
+noBreak :: Parser Command
+noBreak = nullaryCommand "noBreak" 
 
 
 bar :: Parser Command
