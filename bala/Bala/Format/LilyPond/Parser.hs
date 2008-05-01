@@ -32,6 +32,9 @@ parseLilyPond :: Parser LilyPondFile
 parseLilyPond = many $ choice [version,header]
 
 
+glyphs :: Parser Glyphs
+glyphs = Glyphs <$> many1 (lexeme glyph)
+
 glyph :: Parser Glyph
 glyph = choice [ GlyphEvent <$> glyphEvent, GlyphMark <$> mark, GlyphCommmand <$> glyphCommand]
 
@@ -47,7 +50,7 @@ glyphEvent = choice [ GEvtNote <$> note, GEvtChord <$> chord, GEvtRest <$> rest]
                 
                     
 note :: Parser Note
-note = (,) <$> pitch <*> optparse duration
+note = Note <$> pitch <*> optparse duration
 
 rest :: Parser Rest
 rest = Rest <$> (char 'r' *> duration)
@@ -59,8 +62,8 @@ duration = f <$> int <*> optparse (char '.')
     f i (Just _) = Dotted i
   
 
-expression :: Parser String
-expression = bracedWater
+-- expression :: Parser String
+-- expression = bracedWater
 
 pitch :: Parser Pitch
 pitch = Pitch <$> pitchLetter <*> optparse accidental <*> optparse octaveSpec
@@ -114,11 +117,7 @@ stringMark = char '^' *> stringLiteral
 chord :: Parser Chord
 chord = Chord <$> angles (many1 $ lexeme pitch) <*> optparse duration
 
-guitarNote :: Parser (Pitch,Int)
-guitarNote = (,) <$> pitch <*> guitarString
 
-guitarString :: Parser Int
-guitarString = char '\\' *> int
 
 
 --------------------------------------------------------------------------------
@@ -175,6 +174,9 @@ binaryCommand :: String -> Parser String -> Parser String -> Parser Command
 binaryCommand name = command2 (BinaryCommand name) name 
 
 
+new :: Parser NewDecl -> Parser Command
+new = command1 CmdNew "new" 
+
 break :: Parser Command
 break = nullaryCommand "break" 
 
@@ -194,7 +196,6 @@ header :: Parser Command
 header = exprCommand "header" 
 
 
--- | TODO rendering pitch back to string BAD! 
 key :: Parser Command
 key = command2 CmdKey "key" pitch (keytype <|> mode)
  
@@ -284,12 +285,191 @@ phrasingSlurStart = nullaryCommand "("
 phrasingSlurEnd :: Parser Command
 phrasingSlurEnd = nullaryCommand ")"
 
+chordmode :: Parser Command
+chordmode = command1 CmdChordmode "chordmode" (braces $ many1 chordname)
+
+--------------------------------------------------------------------------------
+-- Chordmode
+--------------------------------------------------------------------------------
+
+chordname :: Parser Chordname
+chordname = Chordname <$> note <*> optparse (colon *> chordSuffix)
 
 
+chordSuffix :: Parser ChordSuffix
+chordSuffix = ChordSuffix <$> optparse altint <*> chordModifier <*> chordSteps
+
+altint = (,) <$> int <*> optparse chordAlt
+
+
+chordModifier :: Parser ChordModifier
+chordModifier = option CModM (choice [minor])
+  where      
+    minor = CModMinor <$ char 'm'
+
+
+chordSteps :: Parser [ChordStep]
+chordSteps = option [] (dot *> sepBy chordStep dot)
+ 
+chordStep :: Parser ChordStep 
+chordStep = choice [cstepAdd, cstepRemove ]
+  where 
+    cstepAdd    = CStepAdd <$> int <*> optparse chordAlt
+    cstepRemove = CStepRemove <$> int
+    
+chordAlt :: Parser ChordAlt 
+chordAlt = choice [ CAltPlus <$ char '+', CAltMinus <$ char '-']
+
+--------------------------------------------------------------------------------
+-- Guitar 
+--------------------------------------------------------------------------------
+
+cmdNewTabStaff :: Parser Command
+cmdNewTabStaff = new newTabStaff
+
+newTabStaff = NewTabStaff <$>  (litTabStaff *> chexpr)
+  where 
+    litTabStaff  = lexeme $ string "TabStaff"
+    chexpr       = braces $ many1 (lexeme guitarNote)
+    
+guitarNote :: Parser GuitarNote
+guitarNote = GuitarNote <$> note <*> guitarString
+
+guitarString :: Parser Int
+guitarString = char '\\' *> int
+
+--------------------------------------------------------------------------------
+-- vocal music
+--------------------------------------------------------------------------------
+
+cmdAddlyrics :: Parser Command
+cmdAddlyrics = command1 CmdAddlyrics "addlyrics" bracedWater
+
+{-
+A word in Lyrics mode begins with: an alphabetic character, _, ?, !, :, ', the control 
+characters ^A through ^F, ^Q through ^W, ^Y, ^^, any 8-bit character with ASCII code over 127, 
+or a two-character combination of a backslash followed by one of Ô, ', ", or ^.\
+-}
+
+lyricWord = (:) <$> choice [letter, oneOf lyric_special] <*> many letter
+  where
+    lyric_special = "_?!:'"
+
+lyricContent = choice [syllable, centeredHyphen, extenderLine]    
+  where 
+    syllable       = Syllable       <$> many1 letter  
+                                    <*> syllableCont 
+                                    <*> optparse int
+    centeredHyphen = CenteredHyphen <$ symbol "--"
+    extenderLine   = ExtenderLine   <$ symbol "__"
+
+syllableCont :: Parser SyllableCont      
+syllableCont = option NoSyllableCont (SyllableCont <$ symbol "-")
+
+
+cmdMelisma :: Parser Command
+cmdMelisma = nullaryCommand "melisma" 
+
+cmdMelismaEnd :: Parser Command
+cmdMelismaEnd = nullaryCommand "melismaEnd" 
+
+--------------------------------------------------------------------------------
+-- percussion
+--------------------------------------------------------------------------------
+
+cmdDrums :: Parser Command
+cmdDrums = command1 CmdDrums "drums" p
+  where
+    p = expression (many1 $ lexeme drumnote)
+
+drumnote :: Parser Drumnote
+drumnote = Drumnote <$> drumname <*> optparse duration
+
+drumname :: Parser String
+drumname = longestString
+  [ "bda",    "acousticbassdrum"
+  , "bd",     "bassdrum"
+  , "ssh",    "hisidestick"
+  , "ss",     "sidestick"
+  , "ssl",    "losidestick"
+  , "sna",    "acousticsnare"
+  , "sn",     "snare"
+  , "hc",     "handclap"
+  , "sne",    "electricsnare"
+  , "tomfl",  "lowfloortom"
+  , "hhc",    "closedhihat"
+  , "hh",     "hihat"
+  , "tomfh",  "highfloortom"
+  , "hhp",    "pedalhihat"
+  , "toml",   "lowtom"
+  , "hho",    "openhihat"
+  , "hhho",   "halfopenhihat"
+  , "tomml",  "lowmidtom"
+  , "tommh",  "himidtom"
+  , "cymca",  "crashcymbala"
+  , "cymc",   "crashcymbal"
+  , "tomh",   "hightom"
+  , "cymra",  "ridecymbala"
+  , "cymr",   "ridecymbal"
+  , "cymch",  "chinesecymbal"
+  , "rb",     "ridebell"
+  , "tamb",   "tambourine"
+  , "cyms",   "splashcymbal"
+  , "cb",     "cowbell"
+  , "cymcb",  "crashcymbalb"
+  , "vibs",   "vibraslap"
+  , "cymrb",  "ridecymbalb"
+  , "bohm",   "mutehibongo"
+  , "boh",    "hibongo"
+  , "boho",   "openhibongo"
+  , "bolm",   "mutelobongo"
+  , "bol",    "lobongo"
+  , "bolo",   "openlobongo"
+  , "cghm",   "mutehiconga"
+  , "cglm",   "muteloconga"
+  , "cgho",   "openhiconga"
+  , "cgh",    "hiconga"
+  , "cglo",   "openloconga"
+  , "cgl",    "loconga"
+  , "timh",   "hitimbale"
+  , "timl",   "lotimbale"
+  , "agh",    "hiagogo"
+  , "agl",    "loagogo"
+  , "cab",    "cabasa"
+  , "mar",    "maracas"
+  , "whs",    "shortwhistle"
+  , "whl",    "longwhistle"
+  , "guis",   "shortguiro"
+  , "guil",   "longguiro"
+  , "gui",    "guiro"
+  , "cl",     "claves"
+  , "wbh",    "hiwoodblock"
+  , "wbl",    "lowoodblock"
+  , "cuim",   "mutecuica"
+  , "cuio",   "opencuica"
+  , "trim",   "mutetriangle"
+  , "tri",    "triangle"
+  , "trio",   "opentriangle"
+  , "tt",     "tamtam"
+  , "ua",     "oneup"
+  , "ub",     "twoup"
+  , "uc",     "threeup"
+  , "ud",     "fourup"
+  , "ue",     "fiveup"
+  , "da",     "onedown"
+  , "db",     "twodown"
+  , "dc",     "threedown"
+  , "dd",     "fourdown"
+  , "de",     "fivedown"
+  ] 
+   
 --------------------------------------------------------------------------------
 -- other
 --------------------------------------------------------------------------------
 
+expression :: Parser a -> Parser a
+expression = between (lexeme braceOpen) (lexeme braceClose) 
+         
 bracedWater :: Parser String
 bracedWater = fst <$> (braceOpen *> collectWater braceClose)
 
@@ -330,6 +510,12 @@ tie = char '~'
 
 equals :: CharParser st Char
 equals = char '='
+
+dot :: CharParser st Char
+dot = char '.'
+
+colon :: CharParser st Char
+colon = char ':'
 
 doubleQuote :: CharParser st Char
 doubleQuote = char '"'

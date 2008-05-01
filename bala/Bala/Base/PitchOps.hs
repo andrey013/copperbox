@@ -101,7 +101,7 @@ instance Semitones Pitch where
 -- works for ordered elts not rotated ones
 instance SemitoneDisplacement Pitch where
   semitoneDisplacement p p' = 
-    let d = semitones p - semitones p'
+    let d = semitones p' - semitones p
     in case signum d of
       (-1) -> (Downwards, abs d)
       _    -> (Upwards, d)
@@ -230,7 +230,9 @@ fromCents (Cents i) = undefined
 
    
 octaveDisplacement oct            = (oct - 4) * 12  
-  
+
+unaltered :: PitchLabel -> Bool  
+unaltered p = accidental p == Nat
 
 
 --------------------------------------------------------------------------------

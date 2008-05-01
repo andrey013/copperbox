@@ -15,6 +15,8 @@
 
 module Bala.Format.Ascii.AsciiGuitar where
 
+import Bala.Base.Base
+
 import Data.List
 
 --------------------------------------------------------------------------------
@@ -64,7 +66,37 @@ chord mi ss xs =
 
 demm = chord (Just 8) "x....." [".o.o.o", "....o.", "..o..."]
 
+{-
+
+  E.|--F--+-----+--G--+
+  B.|--C--+-----+--D--+
+  G.|-----+--A--+-----+
+  D.|-----+--E--+--F--+
+  A.|-----+--B--+--C--+
+  E.|--F--+-----+--G--+
+
+-}  
 
 
-  
-  
+-- Fretboard
+
+fretboard :: [Pitch] -> Int -> String
+fretboard ps i = unlines $ map mkline ps
+  where 
+    mkline p = take i $ fbstring p $ []
+
+fbstring :: Pitch -> ShowS
+fbstring p = affi (pitch_label p) . dotS . barS . fn p
+  where 
+    fn p = let p' = p `addSemi` 1
+           in str1 (mkfun p') . fn p'
+    
+    mkfun p = let lbl = pitch_label p in
+              if (unaltered lbl) then (Just $ affi lbl) else Nothing
+                  
+
+    str1 :: (Maybe ShowS) -> ShowS
+    str1 Nothing  = showString "-----+"
+    str1 (Just f) = showString "--" . f . showString "--+"
+    
+demm' = putStr $ fretboard [e5,b4,g4,d4,a3,e3] 70    

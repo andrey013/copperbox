@@ -61,6 +61,11 @@ afficher a = affi a []
 afficherL :: Affi a => [a] -> String
 afficherL as = (hsepS $ map affi as) []
 
+
+afficherP :: (Affi a, Affi b) => (a,b) -> String
+afficherP (a,b) = (parenS $ hcatS [affi a, commaS , affi b]) []
+
+
 -- | Parse a string when the target datatype is an instance of 'Deco'.
 decouper :: Deco a => String -> a
 decouper s = case parse deco "" s of
@@ -312,6 +317,7 @@ symbol            = P.symbol baseLex
 parens            = P.parens baseLex
 brackets          = P.brackets baseLex
 angles            = P.angles baseLex
+braces            = P.braces baseLex
 integer           = P.integer baseLex
 double            = P.float baseLex
 stringLiteral     = P.stringLiteral baseLex
@@ -415,6 +421,7 @@ dotS            = showChar '.'
 equalS          = showChar '='
 backslashS      = showChar '\\'
 newlineS        = showChar '\n'
+barS            = showChar '|'
 
 replicateS :: Int -> ShowS -> ShowS
 replicateS i x = hcatS $ replicate i x
