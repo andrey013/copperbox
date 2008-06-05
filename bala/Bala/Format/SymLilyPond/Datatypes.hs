@@ -18,63 +18,49 @@
 -- Use the 'Finally Tagless...' approach
 -- as it gives us open datatypes
 
+-- Where commands are likely to clash with existing names they are prefixed 
+-- with - c' or cmd
+
 
 module Bala.Format.SymLilyPond.Datatypes  where
 
 -- | Basic expression syntax
-class SymE repr where
-  cmd   :: String -> repr a -> repr b
-  emp   :: repr ()
-  (##)  :: repr a -> repr b -> repr c
 
+data Expr
+class SymExpr repr where
+  emp   :: repr Expr
+  (##)  :: repr a -> repr b -> repr Expr
 
+-- Nullary commands can share the same representation
+data CmdZero
+class SymCmdZero repr where
+  cmdZero :: String -> repr CmdZero
+  
+  
 class SymMaybe repr where
   just :: repr a -> repr (Maybe (repr a))
   nothing  :: repr (Maybe (repr a))
 
   
-  
-  
-data Duration  
-class SymDuration repr where
-  dur :: Int -> repr Duration
-  dot :: Int -> repr Duration
-  
-
-data Rest
-class SymRest repr where
-  rest :: repr Duration -> repr Rest
 
 
-data Pitch = C | D | E | F | G | A | B 
+-- pitches (6.1)
+
+data PitchName = C | D | E | F | G | A | B 
   deriving (Eq,Show)
 
-class SymPitch repr where
-  pitch :: Pitch -> repr Pitch 
+class SymPitchName repr where
+  pitchName :: PitchName -> repr PitchName 
 
 -- alternatively we could have all theses as members of class pitch...
-c_, d_, e_, f_, g_ , a_, b_ :: (SymPitch repr) => repr Pitch
-c_  = pitch C
-d_  = pitch D
-e_  = pitch E
-f_  = pitch F
-g_  = pitch G
-a_  = pitch A
-b_  = pitch B
-
-
-data Note
-class SymNote repr where
-  note :: repr Pitch -> repr (Maybe (repr Duration)) -> repr Note
-  
- 
-data Accidental
-class SymAccidental repr where
-  sharp       :: repr Accidental
-  flat        :: repr Accidental
-  doubleSharp :: repr Accidental
-  doubleFlat  :: repr Accidental
-
+c_, d_, e_, f_, g_ , a_, b_ :: (SymPitchName repr) => repr PitchName
+c_  = pitchName C
+d_  = pitchName D
+e_  = pitchName E
+f_  = pitchName F
+g_  = pitchName G
+a_  = pitchName A
+b_  = pitchName B
 
   
 data OctaveSpec
@@ -82,26 +68,71 @@ class SymOctaveSpec repr where
   raised  :: Int -> repr OctaveSpec
   lowered :: Int -> repr OctaveSpec
   
-   
-data Articulation 
-class SymArticulation repr where
-  articulation :: repr VerticalPlacement -> Char -> repr Articulation
-  fingering    :: repr VerticalPlacement -> Int  -> repr Articulation
-    
-
--- ~ Placement of an articulation, slur ...
-data VerticalPlacement 
-class SymVerticalPlacement repr where
-  vAbove   :: repr VerticalPlacement
-  vBelow   :: repr VerticalPlacement
-  vDefault :: repr VerticalPlacement
-
+  
+data Pitch  
+class SymPitch repr where
+  pitch :: repr PitchName -> repr (Maybe (repr Accidental)) 
+              -> repr (Maybe (repr OctaveSpec)) -> repr Pitch 
+              
+data Note
+class SymNote repr where
+  note :: repr Pitch -> repr (Maybe (repr Duration)) -> repr Note
   
     
+-- accidentals (6.1.2)  
+data Accidental
+class SymAccidental repr where
+  sharp       :: repr Accidental
+  flat        :: repr Accidental
+  doubleSharp :: repr Accidental
+  doubleFlat  :: repr Accidental
+
+-- cautionary accidentals (6.1.3)
+data CautionaryAccidental
+class SymCautionaryAccidental repr where
+  reminderAccidental    :: repr CautionaryAccidental
+  cautionaryAccidental  :: repr CautionaryAccidental
+
+
+-- micro tones (6.1.4)    
 data MicroTone
 class SymMicroTone repr where
   halfFlat  :: repr MicroTone 
   halfSharp :: repr MicroTone
+
+  
+ 
+-- rests (6.1.9)
+data Rest
+class SymRest repr where
+  rest :: repr Duration -> repr Rest
+  
+-- skips (6.1.10)
+skip                    :: (SymCmdZero repr) => repr CmdZero  
+skip                    = cmdZero "skip" 
+  
+  
+-- durations (6.2)
+data Duration  
+class SymDuration repr where
+  dur :: Int -> repr Duration
+  dot :: Int -> repr Duration  
+  
+longa                   :: (SymCmdZero repr) => repr CmdZero  
+longa                   = cmdZero "longa"  
+
+breve                   :: (SymCmdZero repr) => repr CmdZero  
+breve                   = cmdZero "breve"      
+  
+  
+-- tuplets (6.2.3)
+data Times
+class SymTimes repr where
+  times :: Int -> Int -> repr Expr -> repr Times
+
+
+  
+-- chords (6.3.1)
   
 data Chord
 -- Use '[repr Pitch]' as the list of pitches (not 'repr [repr Pitch]')
@@ -112,17 +143,50 @@ class SymChord repr where
   chord :: [repr Pitch] -> repr (Maybe (repr Duration)) -> repr Chord
 
 
+-- stems (6.3.2)
 
--- are Commands actually better handled outside SymE ?
-data CmdTime
+stemUp                  :: (SymCmdZero repr) => repr CmdZero  
+stemUp                  = cmdZero "stemUp"  
 
-class SymCmdTime repr where
-  cmdTime :: Int -> Int -> repr CmdTime
+stemDown                :: (SymCmdZero repr) => repr CmdZero  
+stemDown                = cmdZero "stemDown"    
 
--- Nullary commands can share the same representation
-data CmdZero
-class SymCmdZero repr where
-  cmdZero :: String -> repr CmdZero
+stemNeutral             :: (SymCmdZero repr) => repr CmdZero  
+stemNeutral             = cmdZero "stemNeutral"  
+
+-- polyphony (6.3.3)
+-- (Again this datatype should handle context)
+data PolyCat
+class SymPolyCat repr where
+  (\\) :: repr a -> repr a -> repr PolyCat
+
+-- clef (6.4.1)
+data CmdClef 
+class SymCmdClef repr where
+  cmdClef :: repr Clef -> repr CmdClef
+  
+data Clef 
+
+class SymClef repr where
+  clef :: String -> repr Clef
+
+treble, alto, tenor, bass, french, soprano, mezzosoprano, baritone, 
+  varbaritone, subbass, percussion, tabClef
+              :: SymClef repr => repr Clef
+treble        = clef "treble"
+alto          = clef "alto"
+tenor         = clef "temor"
+bass          = clef "bass"
+french        = clef "french"
+soprano       = clef "soprano"
+mezzosoprano  = clef "mezzosoprano"
+baritone      = clef "baritone"
+varbaritone   = clef "varbaritone"
+subbass       = clef "subbass" 
+percussion    = clef "percussion" 
+tabClef       = clef "tabClef" 
+
+    
 
 
 -- key signature (6.4.2)
@@ -151,8 +215,34 @@ phrygian                :: (SymCmdZero repr) => repr CmdZero
 phrygian                = cmdZero "phrygian" 
 
 dorian                  :: (SymCmdZero repr) => repr CmdZero  
-dorian                   = cmdZero "dorian" 
+dorian                  = cmdZero "dorian" 
 
+
+-- time signature (6.4.3)
+data CmdTime
+
+class SymCmdTime repr where
+  cmdTime :: Int -> Int -> repr CmdTime
+
+
+-- barlines (6.4.5)
+data CmdBar
+
+class SymCmdBar repr where
+  cmdBar :: String -> repr CmdBar
+  
+-- "|", "|:", "||", ":|", ".|", ".|.", ":|:", "|.", ":", "unbroken ||:",
+-- "broken ||:"
+
+-- unmetered music (6.4.6)
+cadenzaOn               :: (SymCmdZero repr) => repr CmdZero  
+cadenzaOn               = cmdZero "cadenzaOn" 
+
+cadenzaOff              :: (SymCmdZero repr) => repr CmdZero  
+cadenzaOff              = cmdZero "cadenzaOff" 
+ 
+    
+  
 
 -- ties (6.5.1)
 data Tie
@@ -185,6 +275,15 @@ class SymBeam repr where
   
 
 -- articulations (6.6.1)
+
+-- ~ Placement of an articulation, slur ...
+data VerticalPlacement 
+class SymVerticalPlacement repr where
+  vAbove   :: repr VerticalPlacement
+  vBelow   :: repr VerticalPlacement
+  vDefault :: repr VerticalPlacement
+  
+  
 accent                  :: (SymCmdZero repr) => repr CmdZero  
 accent                  = cmdZero "accent"  
 
@@ -303,9 +402,104 @@ coda                    = cmdZero "coda"
 varcoda                 :: (SymCmdZero repr) => repr CmdZero  
 varcoda                 = cmdZero "varcoda" 
 
+
+
+-- fingering instructions (6.6.2) [these seem to imply that 'note' is a context]
+data FingeringInst 
+class SymFingeringInst repr where
+  fingeringInst :: Int -> repr FingeringInst 
+
+
+
+-- dynamics (6.6.3)
+-- nullary commands (use the prefix c' for commands)
+
+c'ppppp                 :: (SymCmdZero repr) => repr CmdZero  
+c'ppppp                 = cmdZero "ppppp" 
+
+c'pppp                  :: (SymCmdZero repr) => repr CmdZero  
+c'pppp                  = cmdZero "pppp" 
+
+c'ppp                   :: (SymCmdZero repr) => repr CmdZero  
+c'ppp                   = cmdZero "ppp" 
+
+c'pp                    :: (SymCmdZero repr) => repr CmdZero  
+c'pp                    = cmdZero "pp" 
+
+c'mp                    :: (SymCmdZero repr) => repr CmdZero  
+c'mp                    = cmdZero "mp" 
+
+c'mf                    :: (SymCmdZero repr) => repr CmdZero  
+c'mf                    = cmdZero "mf" 
+
+c'f                     :: (SymCmdZero repr) => repr CmdZero 
+c'f                     = cmdZero "f"
+
+c'ff                    :: (SymCmdZero repr) => repr CmdZero 
+c'ff                    = cmdZero "ff"
+
+c'fff                  :: (SymCmdZero repr) => repr CmdZero 
+c'fff                   = cmdZero "fff"
+
+c'ffff                 :: (SymCmdZero repr) => repr CmdZero 
+c'ffff                  = cmdZero "ffff"
+
+c'fp                    :: (SymCmdZero repr) => repr CmdZero 
+c'fp                    = cmdZero "fp"
+
+c'sf                    :: (SymCmdZero repr) => repr CmdZero 
+c'sf                    = cmdZero "sf"
+
+c'sff                   :: (SymCmdZero repr) => repr CmdZero 
+c'sff                   = cmdZero "sff"
+
+c'sp                    :: (SymCmdZero repr) => repr CmdZero 
+c'sp                    = cmdZero "sp"
+
+c'spp                   :: (SymCmdZero repr) => repr CmdZero 
+c'spp                   = cmdZero "spp"
+
+c'sfz                   :: (SymCmdZero repr) => repr CmdZero 
+c'sfz                   = cmdZero "sfz"
+
+c'rfz                   :: (SymCmdZero repr) => repr CmdZero 
+c'rfz                   = cmdZero "rfz"
+
+data DynamicMark
+class SymDynamicMark repr where
+  closeDynamic    :: repr DynamicMark
+  openCrescendo   :: repr DynamicMark
+  openDecrescendo :: repr DynamicMark
   
+-- breath marks (6.6.4)
+
+breathe                 :: (SymCmdZero repr) => repr CmdZero 
+breathe                 = cmdZero "breathe"
+
+-- glissando (6.6.6)
+glissando               :: (SymCmdZero repr) => repr CmdZero 
+glissando               = cmdZero "glissando"
+
+
+-- arpeggio (6.6.7) -- indicates 'chord context'
+
+arpeggio                :: (SymCmdZero repr) => repr CmdZero 
+arpeggio                = cmdZero "arpeggio"
+
+arpeggioBracket         :: (SymCmdZero repr) => repr CmdZero 
+arpeggioBracket         = cmdZero "arpeggioBracket"
+
+arpeggioUp              :: (SymCmdZero repr) => repr CmdZero 
+arpeggioUp              = cmdZero "arpeggioUp"
+
+arpeggioDown            :: (SymCmdZero repr) => repr CmdZero 
+arpeggioDown            = cmdZero "arpeggioDown"
+
+-- falls and doits (6.6.8)
+
+bendAfter               :: (SymCmdZero repr) => repr CmdZero 
+bendAfter               = cmdZero "bendAfter"
 
 
 
-
-
+  

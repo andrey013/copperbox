@@ -25,10 +25,17 @@ import Text.ParserCombinators.Parsec hiding (space)
 
 
 
-pitchLetter :: (SymPitch repr) => Parser (repr Pitch)
-pitchLetter = pC 
+pitchName_ :: (SymPitchName repr) => Parser (repr PitchName)
+pitchName_ = choice $ map fn xs
   where
-    pC = c_ <$ char 'c' 
+    fn (ch,cnstr) = cnstr <$ char ch   
+    xs = [('c',      c_),
+          ('d',      d_),
+          ('e',      e_),
+          ('f',      f_),
+          ('g',      g_),
+          ('a',      a_),
+          ('b',      b_)]
     
     
 nullaryCommand :: (SymCmdZero repr) => 
