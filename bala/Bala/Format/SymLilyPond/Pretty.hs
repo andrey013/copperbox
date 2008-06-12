@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.Format.SymLilyPond.Pretty
@@ -32,10 +34,24 @@ ppfraction :: Int -> Int -> Doc
 ppfraction n d = group $ int n <> char '/' <> int d 
 
 
-instance SymExpr P where
-  emp         = P $ empty
-  (##) l r    = P $ (unP l) <+> (unP r)
+instance SymConcatenation Ctx_Prologue P where
+  (+++) l r    = P $ (unP l) <$> (unP r)
 
+instance SymConcatenation Ctx_Note P where
+  (+++) l r    = P $ (unP l) <+> (unP r)  
+
+
+instance SymConcatenation Ctx_NoteAttr P where
+  (+++) l r    = P $ group $ (unP l) <> (unP r) 
+
+  
+instance SymString P where
+  withString s = P $ text s
+  
+instance SymInt P where
+  withInt i = P $ int i  
+  
+  
 instance SymMaybe P where
   just a  = P $ unP a
   nothing = P $ empty  
@@ -43,8 +59,30 @@ instance SymMaybe P where
   
 
 instance SymCmdZero P where
-  cmdZero s = P $ ppcommand s    
-    
+  cmdZero s = P $ ppcommand s   
+
+instance SymCmdOne P where
+  cmdOne s a = P $ ppcommand s <+> unP a 
+
+
+instance SymEquation P where
+  equation s a = P $ text s <+> equals <+> unP a
+  
+instance SymDoubleQuotes P where
+  doubleQuotes s = P $ dquotes $ text s 
+       
+  
+-- comments and versioning (2.12)  
+instance SymLineComment P where
+  lineComment s = P $ char '%' <+> text s <> line
+
+instance SymBlockComment P where
+  blockComment s = P $ enclose (text "%{ ") (text " %}") (text s) 
+
+
+ 
+  
+  
 -- pitches (6.1)
 instance SymPitchName P where
   pitchName a = P $ (text . map toLower . show) a   
@@ -178,4 +216,9 @@ instance SymDynamicMark P where
   openDecrescendo   = P $ ppcommand ">"
   
     
+-- titles and headers (10.2)
+
+instance SymHeaderBlock P where
+  headerBlock xs = P $ lbrace <$> indent 2 ((vsep $ map unP xs) <$> rbrace)
+  
   
