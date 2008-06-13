@@ -15,6 +15,8 @@
 module Bala.Format.SymLilyPond.Parser where
 
 import Bala.Format.SymLilyPond.Datatypes
+import Bala.Format.SymLilyPond.SyntaxElements
+
 import Bala.Base.BaseExtra
 
 import Prelude hiding (break)
@@ -59,7 +61,7 @@ mode = choice $ map (uncurry nullaryCommand) xs
           ("dorian",      dorian)]
      
 
-openBeam_, closeBeam_ :: (SymBeam repr) => Parser (repr Beam) 
+openBeam_, closeBeam_ :: (SymBeam repr) => Parser (repr (Beam ctx)) 
 openBeam_   = openBeam  <$ lchar '['
 closeBeam_  = closeBeam <$ lchar ']'
 

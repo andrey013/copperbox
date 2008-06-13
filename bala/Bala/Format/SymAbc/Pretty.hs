@@ -47,9 +47,11 @@ instance SymConcatenation Ctx_Element P where
   (+++) l r    = P $ (unP l) <+> (unP r)  
  
   
-  
+{-  
 instance SymField P where
   field c e = P $ ppfield c (unP e)
+-}
+
 
 instance SynNumberField P where
   num_ i                = P  $ ppfield 'X' (int i)
@@ -67,7 +69,7 @@ instance SymTextFields P where
   origin_ s             = P $ ppfield 'O' (text s)
   rhythm_ s             = P $ ppfield 'R' (text s)
   source_ s             = P $ ppfield 'S' (text s)
-  text_ s               = P $ ppfield 'S' (text s)
+  title_ s              = P $ ppfield 'S' (text s)
   words_ s              = P $ ppfield 'W' (text s)
   transcriberNotes_ s   = P $ ppfield 'Z' (text s)
 
@@ -84,12 +86,14 @@ instance SymDefaultLengthField P where
 instance SymMeterField P where
   meter_ m              = P $ ppfield 'M' (unP m)  
 
+-- simplified
+instance SymPartsField P where 
+  parts_ cs             = P $ ppfield 'P' (text cs)
+  
+  
 instance SymTempoField P where
   tempo_ t              = P $ ppfield 'Q' (unP t)
 
-instance SymAbcMusic P where
-  abcmusic e            = P $ unP e
-  
   
         
 instance SymTempo P where
@@ -117,7 +121,15 @@ instance SymKeySpec P where
 instance SymAttrMode P where
   mode s a                    = P $ unP a <+> text s
   
+instance SymAbcMusic P where
+  abcmusic e            = P $ unP e
   
+  
+instance SymAbcLine P where
+  elements e            = P $ unP e
+  midtuneField a        = P $ unP a
+  
+    
 instance SymKeyAccidental P where
   keySharp    = P $ char '#' 
   keyFlat     = P $ char 'b'

@@ -26,8 +26,8 @@ class SymConcatenation ctx repr where
  
     
 data Ctx_Field
+data Ctx_Line
  
-data Ctx_KeyField
   
 -- | notes, rest, slurs, barlines...
 data Ctx_Element 
@@ -37,53 +37,60 @@ data Ctx_Element
 
 
 data Field ctx
-class SymField repr where
-  field :: Char -> repr a -> repr (Field Ctx_Field)
-  
+data MidTuneField ctx 
+
 
 class SynNumberField repr where
-  num_                :: Int -> repr (Field Ctx_Field)        -- 'X'
+  num_                :: Int -> repr (Field Ctx_Field)                -- 'X'
 
 class SymTextFields repr where
-  area_               :: String -> repr (Field Ctx_Field)     -- 'A'
-  book_               :: String -> repr (Field Ctx_Field)     -- 'B'
-  composer_           :: String -> repr (Field Ctx_Field)     -- 'C' 
-  discography_        :: String -> repr (Field Ctx_Field)     -- 'D'
-  elemskip_           :: String -> repr (Field Ctx_Field)     -- 'E'
-  group_              :: String -> repr (Field Ctx_Field)     -- 'G'
-  information_        :: String -> repr (Field Ctx_Field)     -- 'I'
-  notes_              :: String -> repr (Field Ctx_Field)     -- 'N'
-  origin_             :: String -> repr (Field Ctx_Field)     -- 'O'
-  rhythm_             :: String -> repr (Field Ctx_Field)     -- 'R'
-  source_             :: String -> repr (Field Ctx_Field)     -- 'S'
-  text_               :: String -> repr (Field Ctx_Field)     -- 'T'
-  words_              :: String -> repr (Field Ctx_Field)     -- 'W'
-  transcriberNotes_   :: String -> repr (Field Ctx_Field)     -- 'Z'
+  area_               :: String -> repr (Field Ctx_Field)             -- 'A'
+  book_               :: String -> repr (Field Ctx_Field)             -- 'B'
+  composer_           :: String -> repr (Field Ctx_Field)             -- 'C' 
+  discography_        :: String -> repr (Field Ctx_Field)             -- 'D'
+  elemskip_           :: String -> repr (MidTuneField Ctx_Field)      -- 'E'
+  group_              :: String -> repr (Field Ctx_Field)             -- 'G'
+  information_        :: String -> repr (Field Ctx_Field)             -- 'I'
+  notes_              :: String -> repr (Field Ctx_Field)             -- 'N'
+  origin_             :: String -> repr (Field Ctx_Field)             -- 'O'
+  rhythm_             :: String -> repr (Field Ctx_Field)             -- 'R'
+  source_             :: String -> repr (Field Ctx_Field)             -- 'S'
+  title_              :: String -> repr (MidTuneField Ctx_Field)      -- 'T'
+  words_              :: String -> repr (MidTuneField Ctx_Field)      -- 'W'
+  transcriberNotes_   :: String -> repr (Field Ctx_Field)             -- 'Z'
 
 class SymHistoryField repr where
-  history_       :: [String] -> repr (Field Ctx_Field)         -- 'H'
+  history_      :: [String] -> repr (Field Ctx_Field)                 -- 'H'
 
 
 class SymKeyField repr where
-  key_                :: repr (Key ctx) -> repr (Field Ctx_Field)         -- 'K'
+  key_          :: repr (Key ctx) -> repr (MidTuneField Ctx_Field)    -- 'K'
   
  
 class SymDefaultLengthField repr where
-  defaultLength_      :: Rational -> repr (Field Ctx_Field)         -- 'L'
- 
- 
+  defaultLength_    :: Rational -> repr (MidTuneField Ctx_Field)      -- 'L'
+
+
+-- simplified
+class SymPartsField repr where 
+  parts_        :: [Char] -> repr (MidTuneField Ctx_Field)            -- 'P'
+  
+  
 class SymTempoField repr where
-  tempo_              :: repr (Tempo ctx) -> repr (Field Ctx_Field) -- 'Q'  
+  tempo_        :: repr (Tempo ctx) -> repr (MidTuneField Ctx_Field)  -- 'Q'  
 
 class SymMeterField repr where
-  meter_              :: repr (Meter ctx) -> repr (Field Ctx_Field) -- 'M'  
+  meter_        :: repr (Meter ctx) -> repr (MidTuneField Ctx_Field)  -- 'M'  
 
 data AbcMusic ctx
 class SymAbcMusic repr where
-  abcmusic         :: repr (a ctx) -> repr (AbcMusic Ctx_Field)
+  abcmusic :: repr (AbcLine Ctx_Line) -> repr (AbcMusic Ctx_Field)
+
+data AbcLine ctx
+class SymAbcLine repr where
+  elements          :: repr (a ctx) -> repr (AbcLine Ctx_Line)
+  midtuneField      :: repr (MidTuneField Ctx_Field) -> repr (AbcLine Ctx_Line) 
   
-  
-   
   
 data Tempo ctx
 class SymTempo repr where
@@ -120,11 +127,7 @@ class SymKeyAccidental repr where
 class AttrMode ctx
 class SymAttrMode repr where
   mode :: (AttrMode a) => String -> repr (a ctx) -> repr (a ctx)
-{-
-locrian 
-    ::  (AttrMode a, SymAttrMode repr) => repr (a ctx) -> repr (a ctx)   
-locrian       = mode "loc"
--}
+
 
 major, minor, lydian, ionian, mixolydian, dorian, aeolian, phrygian, locrian 
     ::  (AttrMode a, SymAttrMode repr) => repr (a ctx) -> repr (a ctx)   

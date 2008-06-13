@@ -92,19 +92,19 @@ instance SymOctaveSpec P where
   lowered i     = P $ string (replicate i ',')
 
 instance SymPitch P where
-  pitch n oa oo = P $ group $ unP n <> unP oa <> unP oo  
+  pitch n = P $ unP n
 
     
 instance SymNote P where
-  note p d = P $  group $ unP p <> unP d 
+  note p = P $ unP p 
   
       
 -- accidentals (6.1.2)  
-instance SymAccidental P where
-  sharp         = P $ string "is"
-  flat          = P $ string "es"
-  doubleSharp   = P $ string "isis"
-  doubleFlat    = P $ string "eses"
+instance SymAttrAccidental P where
+  sharp e        = P $ group $ unP e <> string "is"
+  flat e         = P $ group $ unP e <> string "es"
+  doubleSharp e  = P $ group $ unP e <> string "isis"
+  doubleFlat e   = P $ group $ unP e <> string "eses"
 
 -- cautionary accidentals (6.1.3)
 instance SymCautionaryAccidental P where
@@ -121,12 +121,12 @@ instance SymMicroTone P where
   
 -- rests (6.1.9)
 instance SymRest P where
-  rest a = P $ group $ char 'r' <> unP a
+  rest = P $ char 'r'
 
 -- durations (6.2)
 instance SymDuration P where
-  dur i = P $ int i
-  dot i = P $ group $ int i <> char '.'
+  dur i e = P $ group $ unP e <> int i
+  dot i e = P $ group $ unP e <> int i <> char '.'
 
 -- tuplets (6.2.3)
 instance SymTimes P where
@@ -135,7 +135,7 @@ instance SymTimes P where
   
 -- chords (6.3.1)  
 instance SymChord P where
-  chord xs d = P $ (angles $ hsep $ map unP xs) <> unP d
+  chord xs = P $ (angles $ hsep $ map unP xs)
 
   
 
