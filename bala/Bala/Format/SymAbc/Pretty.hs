@@ -16,27 +16,17 @@
 
 module Bala.Format.SymAbc.Pretty where
 
+import Bala.Format.Base.SymBase
 import Bala.Format.SymAbc.Datatypes
-
-import Data.Ratio
 
 import Text.PrettyPrint.Leijen
 
 
 
-newtype P a = P { unP :: Doc }
-
-putDocP x = putDoc $ unP (x ())
-
 ppfield :: Char -> Doc -> Doc
 ppfield ch doc = text [ch,':'] <+> doc
 
-pprational :: Rational -> Doc
-pprational r = ppfraction (numerator r) (denominator r)
 
-ppfraction :: (Integral a , Integral b) => a -> b -> Doc
-ppfraction n d = 
-  group $ (int . fromIntegral) n <> char '/' <> (int . fromIntegral) d
 
 
 instance SymConcatenation Ctx_Field P where

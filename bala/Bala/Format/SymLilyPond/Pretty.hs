@@ -16,22 +16,19 @@
 
 module Bala.Format.SymLilyPond.Pretty where
 
+import Bala.Format.Base.SymBase
 import Bala.Format.SymLilyPond.Datatypes
 
 import Text.PrettyPrint.Leijen
 import Data.Char
+import Data.Ratio
 
 
-newtype P a = P { unP :: Doc }
-
-putDocP x = putDoc $ unP (x ())
 
 
 ppcommand :: String -> Doc
 ppcommand =  text . ('\\' :)
 
-ppfraction :: Int -> Int -> Doc
-ppfraction n d = group $ int n <> char '/' <> int d 
 
 
 instance SymConcatenation Ctx_Prologue P where
@@ -44,29 +41,29 @@ instance SymConcatenation Ctx_Note P where
 instance SymConcatenation Ctx_NoteAttr P where
   (+++) l r    = P $ group $ (unP l) <> (unP r) 
 
-  
-instance SymString P where
-  withString s = P $ text s
-  
-instance SymInt P where
-  withInt i = P $ int i  
+instance SymConcatenation Ctx_Element P where
+  (+++) l r    = P $ (unP l) <+> (unP r) 
   
   
-instance SymMaybe P where
-  just a  = P $ unP a
-  nothing = P $ empty  
-
+ 
   
-
+instance Attr P where
+  attr a e  = P $ group $ unP e <> unP a 
+  
+  
 instance SymCmdZero P where
   cmdZero s = P $ ppcommand s   
 
+
+  
+  
 instance SymCmdOne P where
   cmdOne s a = P $ ppcommand s <+> unP a 
 
 
 instance SymEquation P where
   equation s a = P $ text s <+> equals <+> unP a
+
   
 instance SymDoubleQuotes P where
   doubleQuotes s = P $ dquotes $ text s 
@@ -84,15 +81,13 @@ instance SymBlockComment P where
   
   
 -- pitches (6.1)
-instance SymPitchName P where
-  pitchName a = P $ (text . map toLower . show) a   
-
-instance SymOctaveSpec P where
-  raised i      = P $ string (replicate i '\'')
-  lowered i     = P $ string (replicate i ',')
-
 instance SymPitch P where
-  pitch n = P $ unP n
+  pitch a       = P $ (text . map toLower . show) a   
+
+instance SymAttrOctaveSpec P where
+  raised i a     = P $ group $ unP a <> string (replicate i '\'')
+  lowered i a    = P $ group $ unP a <> string (replicate i ',')
+
 
     
 instance SymNote P where
@@ -121,12 +116,17 @@ instance SymMicroTone P where
   
 -- rests (6.1.9)
 instance SymRest P where
-  rest = P $ char 'r'
+  rest          = P $ char 'r'
 
+-- skips (6.1.10)
+instance SymSkip P where
+  skip          = P $ char 's' 
+  
+  
 -- durations (6.2)
 instance SymDuration P where
   dur i e = P $ group $ unP e <> int i
-  dot i e = P $ group $ unP e <> int i <> char '.'
+  dot e   = P $ group $ unP e <> char '.'
 
 -- tuplets (6.2.3)
 instance SymTimes P where
@@ -162,7 +162,7 @@ instance SymClef P where
 
 -- time signature (6.4.3)  
 instance SymCmdTime P where
-  cmdTime n d = P $ ppcommand "time" <+> ppfraction n d
+  cmdTime r = P $ ppcommand "time" <+> pprational r
 
 -- barlines (6.4.5)
 instance SymCmdBar P where
@@ -199,15 +199,15 @@ instance SymBeam P where
 -- articulations (6.6.1) 
 
 instance SymVerticalPlacement P where
-  vAbove   = P $ char '^'
-  vBelow   = P $ char '_'
-  vDefault = P $ char '-'
+  vabove   = P $ char '^'
+  vbelow   = P $ char '_'
+  vdefault = P $ char '-'
 
 -- accent, marcato etc. are all nullary commands so handled generically  
       
 -- fingering instructions (6.6.2)
-instance SymFingeringInst P where
-  fingeringInst i   = P $ group (char '-' <> int i) 
+instance SymAttrFingering P where
+  fingering i e     = P $ group $ unP e <> char '-' <> int i 
   
 -- dynamics (6.6.3)
 instance SymDynamicMark P where

@@ -17,6 +17,7 @@
 
 module Bala.Format.SymLilyPond.SyntaxElements where
 
+import Bala.Format.Base.SymBase
 import Bala.Format.SymLilyPond.Datatypes
 
 
@@ -29,27 +30,51 @@ version s               = cmdOne "version" (doubleQuotes s)
 
 -- pitches (6.1)
 
-c_, d_, e_, f_, g_ , a_, b_ :: (SymPitchName repr) => repr PitchName
-c_  = pitchName C
-d_  = pitchName D
-e_  = pitchName E
-f_  = pitchName F
-g_  = pitchName G
-a_  = pitchName A
-b_  = pitchName B
+_c, _d, _e, _f, _g , _a, _b :: (SymPitch repr) => repr (Pitch ctx)
+_c      = pitch C
+_d      = pitch D
+_e      = pitch E
+_f      = pitch F
+_g      = pitch G
+_a      = pitch A
+_b      = pitch B
+
+
+-- pch'c
+
+-- rests (6.1.9)
+r1, r2, r4, r8, r16, r32, r64 :: (SymRest repr, SymDuration repr) => repr (Rest ctx)
+r1      = rest # dur 1
+r2      = rest # dur 2
+r4      = rest # dur 4
+r8      = rest # dur 8
+r16     = rest # dur 16
+r32     = rest # dur 32
+r64     = rest # dur 64
 
 
 -- skips (6.1.10)
-skip                    :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-skip                    = cmdZero "skip" 
+skip_                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
+skip_                   = cmdZero "skip" 
+
+s1, s2, s4, s8, s16, s32, s64 :: (SymSkip repr, SymDuration repr) => repr (Skip ctx)
+s1      = skip # dur 1
+s2      = skip # dur 2
+s4      = skip # dur 4
+s8      = skip # dur 8
+s16     = skip # dur 16
+s32     = skip # dur 32
+s64     = skip # dur 64
 
 
 -- durations (6.2)
-longa                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-longa                   = cmdZero "longa"  
+longa :: (Attr repr, SymCmdZero repr) => 
+    repr (b Ctx_Element) -> repr (b Ctx_Element) 
+longa                   = attr $ cmdZero "longa"  
 
-breve                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-breve                   = cmdZero "breve"
+breve :: (Attr repr, SymCmdZero repr) => 
+    repr (b Ctx_Element) -> repr (b Ctx_Element) 
+breve                   = attr $ cmdZero "breve"
 
 -- stems (6.3.2)
 
@@ -121,126 +146,60 @@ cadenzaOff              = cmdZero "cadenzaOff"
 repeatTie               :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)   
 repeatTie               = cmdZero "repeatTie" 
 
+
 -- articulations (6.6.1)
-
   
-accent                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-accent                  = cmdZero "accent"  
-
-marcato                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-marcato                 = cmdZero "marcato" 
-
-staccatissimo           :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-staccatissimo           = cmdZero "staccatissimo" 
-
-espressivo              :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-espressivo              = cmdZero "espressivo"  
-
-staccato                :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-staccato                = cmdZero "staccato" 
- 
-tenuto                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-tenuto                  = cmdZero "tenuto" 
-
-portato                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-portato                 = cmdZero "portato"
-  
-upbow                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-upbow                   = cmdZero "upbow"
- 
-downbow                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-downbow                 = cmdZero "downbow" 
-      
-flageolet               :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-flageolet               = cmdZero "flageolet" 
-
-thumb                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-thumb                   = cmdZero "thumb" 
-  
-lheel                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-lheel                   = cmdZero "lheel" 
-
-rheel                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-rheel                   = cmdZero "rheel" 
-
-ltoe                    :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-ltoe                    = cmdZero "ltoe" 
-      
-rtoe                    :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-rtoe                    = cmdZero "rtoe" 
-
-open                    :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-open                    = cmdZero "open"
- 
-stopped                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-stopped                 = cmdZero "stopped"
- 
-turn                    :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-turn                    = cmdZero "turn" 
-
-reverseturn             :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-reverseturn             = cmdZero "reverseturn"      
-
-trill                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-trill                   = cmdZero "trill"  
-
-prall                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-prall                   = cmdZero "prall" 
- 
-mordent                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-mordent                 = cmdZero "mordent"  
- 
-prallprall              :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-prallprall              = cmdZero "prallprall"
-  
-prallmordent            :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-prallmordent            = cmdZero "prallmordent"  
-
-upprall                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-upprall                 = cmdZero "upprall"  
-
-downprall               :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-downprall               = cmdZero "downprall"
- 
-upmordent               :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-upmordent               = cmdZero "upmordent"
- 
-downmordent             :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-downmordent             = cmdZero "downmordent" 
-
-  
-pralldown               :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-pralldown               = cmdZero "pralldown" 
-
-prallup                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-prallup                 = cmdZero "prallup" 
-
-lineprall               :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-lineprall               = cmdZero "lineprall" 
-
-signumcongruentiae      :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-signumcongruentiae      = cmdZero "signumcongruentiae" 
-
-shortfermata            :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-shortfermata            = cmdZero "shortfermata"  
-
-fermata                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-fermata                 = cmdZero "fermata" 
-
-longfermata             :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-longfermata             = cmdZero "longfermata" 
-
-verylongfermata         :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-verylongfermata         = cmdZero "verylongfermata" 
-
-segno                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-segno                   = cmdZero "segno" 
-
-coda                    :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-coda                    = cmdZero "coda" 
-
-varcoda                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-varcoda                 = cmdZero "varcoda" 
+accent, marcato, staccatissimo, espressivo, 
+    staccato, tenuto, portato, upbow,  downbow, 
+    flageolet, thumb, lheel, rheel, ltoe, 
+    rtoe, open, stopped, turn, reverseturn, 
+    trill, prall, mordent, prallprall, prallmordent, 
+    upprall, downprall, upmordent, downmordent,
+    pralldown, prallup, lineprall, signumcongruentiae,
+    shortfermata, fermata, longfermata, verylongfermata,
+    segno, coda, varcoda
+  :: (Attr repr, SymCmdZero repr) => repr (b Ctx_Element) -> repr (b Ctx_Element) 
+    
+             
+accent                  = attr $ cmdZero "accent"  
+marcato                 = attr $ cmdZero "marcato" 
+staccatissimo           = attr $ cmdZero "staccatissimo" 
+espressivo              = attr $ cmdZero "espressivo"  
+staccato                = attr $ cmdZero "staccato" 
+tenuto                  = attr $ cmdZero "tenuto" 
+portato                 = attr $ cmdZero "portato"
+upbow                   = attr $ cmdZero "upbow"
+downbow                 = attr $ cmdZero "downbow" 
+flageolet               = attr $ cmdZero "flageolet" 
+thumb                   = attr $ cmdZero "thumb" 
+lheel                   = attr $ cmdZero "lheel" 
+rheel                   = attr $ cmdZero "rheel" 
+ltoe                    = attr $ cmdZero "ltoe" 
+rtoe                    = attr $ cmdZero "rtoe" 
+open                    = attr $ cmdZero "open"
+stopped                 = attr $ cmdZero "stopped"
+turn                    = attr $ cmdZero "turn" 
+reverseturn             = attr $ cmdZero "reverseturn"      
+trill                   = attr $ cmdZero "trill"  
+prall                   = attr $ cmdZero "prall"  
+mordent                 = attr $ cmdZero "mordent"   
+prallprall              = attr $ cmdZero "prallprall" 
+prallmordent            = attr $ cmdZero "prallmordent"  
+upprall                 = attr $ cmdZero "upprall"   
+downprall               = attr $ cmdZero "downprall" 
+upmordent               = attr $ cmdZero "upmordent"  
+downmordent             = attr $ cmdZero "downmordent" 
+pralldown               = attr $ cmdZero "pralldown"   
+prallup                 = attr $ cmdZero "prallup"  
+lineprall               = attr $ cmdZero "lineprall" 
+signumcongruentiae      = attr $ cmdZero "signumcongruentiae"  
+shortfermata            = attr $ cmdZero "shortfermata"  
+fermata                 = attr $ cmdZero "fermata" 
+longfermata             = attr $ cmdZero "longfermata" 
+verylongfermata         = attr $ cmdZero "verylongfermata"    
+segno                   = attr $ cmdZero "segno" 
+coda                    = attr $ cmdZero "coda" 
+varcoda                 = attr $ cmdZero "varcoda" 
 
 
 -- dynamics (6.6.3)

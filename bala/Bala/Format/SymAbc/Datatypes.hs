@@ -16,13 +16,10 @@
 
 module Bala.Format.SymAbc.Datatypes  where
 
+import Bala.Format.Base.SymBase
+
 import Data.Ratio
 
-data Concatenation ctx
-
-infixl 5 +++
-class SymConcatenation ctx repr where
-  (+++)  :: repr (a ctx) -> repr (b ctx) -> repr (Concatenation ctx)
  
     
 data Ctx_Field

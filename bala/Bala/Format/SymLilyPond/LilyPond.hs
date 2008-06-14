@@ -16,13 +16,15 @@
 
 
 module Bala.Format.SymLilyPond.LilyPond 
-  ( module Bala.Format.SymLilyPond.Datatypes
+  ( module Bala.Format.Base.SymBase
+  , module Bala.Format.SymLilyPond.Datatypes
   , module Bala.Format.SymLilyPond.SyntaxElements
   , module Bala.Format.SymLilyPond.Parser
   , module Bala.Format.SymLilyPond.Pretty
   )
   where
-  
+
+import Bala.Format.Base.SymBase  
 import Bala.Format.SymLilyPond.Datatypes
 import Bala.Format.SymLilyPond.SyntaxElements
 import Bala.Format.SymLilyPond.Parser

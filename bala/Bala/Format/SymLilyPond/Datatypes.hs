@@ -19,21 +19,15 @@
 -- Use the 'Finally Tagless...' approach
 -- as it gives us open datatypes
 
--- Where commands are likely to clash with existing names they are prefixed 
--- with - c' or cmd
+
 
 
 module Bala.Format.SymLilyPond.Datatypes  where
 
+import Bala.Format.Base.SymBase
 
+import Data.Ratio
 
-infixl 7 #
-(#) :: a -> (a -> b) -> b
-x # f = f x
-
-infixr 6 << 
-(<<) ::(a -> b) -> a ->  b
-f << a = f a 
 
 
 -- | Contexts
@@ -42,33 +36,17 @@ data Ctx_Header
 data Ctx_Note 
 data Ctx_NoteAttr
 
+data Ctx_Element -- rest note skip etc
 
 
-data Concatenation ctx
-
-infixl 5 +++
-class SymConcatenation ctx repr where
-  (+++)  :: repr (a ctx) -> repr (b ctx) -> repr (Concatenation ctx)
-  
-
-
-class SymString repr where
-  withString :: String -> repr String
-  
-class SymInt repr where
-  withInt :: Int -> repr Int  
-
-
-class SymMaybe repr where
-  just :: repr a -> repr (Maybe (repr a))
-  nothing  :: repr (Maybe (repr a))
-  
+ 
+ 
   
 -- Nullary commands can share the same representation
 data CmdZero ctx
 class SymCmdZero repr where
   cmdZero :: String -> repr (CmdZero ctx)
- 
+  
  
 data CmdOne ctx
 class SymCmdOne repr where
@@ -102,37 +80,29 @@ class SymBlockComment repr where
 
 
 
-    
-    
-
-   
-
 -- pitches (6.1)
 
 data PitchName = C | D | E | F | G | A | B 
   deriving (Eq,Show)
 
-class SymPitchName repr where
-  pitchName :: PitchName -> repr PitchName 
-
-
-  
-data OctaveSpec ctx
-class SymOctaveSpec repr where  
-  raised  :: Int -> repr (OctaveSpec ctx)
-  lowered :: Int -> repr (OctaveSpec ctx)
-  
-
--- rather than the implementation below,
--- can accidentals and octavespec be attributes of a note?
-  
 data Pitch ctx  
 class SymPitch repr where
-  pitch :: repr PitchName -> repr (Pitch ctx) 
+  pitch :: PitchName -> repr (Pitch ctx) 
+
+
+  
+class AttrOctaveSpec ctx
+class SymAttrOctaveSpec repr where  
+  raised      :: (AttrOctaveSpec a) => Int -> repr (a ctx) -> repr (a ctx)
+  lowered     :: (AttrOctaveSpec a) => Int -> repr (a ctx) -> repr (a ctx)
+  
+instance AttrOctaveSpec Pitch
+  
+
               
 data Note ctx
 class SymNote repr where
-  note :: repr (Pitch ctx) -> repr (Note ctx)
+  note :: repr (Pitch ctx) -> repr (Note Ctx_Element)
 
  
     
@@ -168,14 +138,20 @@ class SymRest repr where
   rest :: repr (Rest ctx)
   
 -- skips (6.1.10)
--- nullary command
+-- silent rest or nullary command
+data Skip ctx
+class SymSkip repr where
+  skip :: repr (Skip ctx)
+  
+instance AttrDuration Skip  
+  
   
   
 -- durations (6.2)
 class AttrDuration ctx
 class SymDuration repr where
   dur :: (AttrDuration a) => Int -> repr (a ctx) -> repr (a ctx)
-  dot :: (AttrDuration a) => Int -> repr (a ctx) -> repr (a ctx) 
+  dot :: (AttrDuration a) => repr (a ctx) -> repr (a ctx) 
      
 instance AttrDuration Rest
 instance AttrDuration Note
@@ -191,7 +167,7 @@ class SymTimes repr where
 -- chords (6.3.1)
   
 data Chord ctx
--- Use '[repr Pitch]' as the list of pitches (not 'repr [repr Pitch]')
+-- Use '[repr (Pitch ctx)]' as the list of pitches (not 'repr [repr (Pitch ctx)]')
 -- For lists it is handy to keep the special constructor syntax and pattern 
 -- matching (whereas with the Maybe type there is no special syntax so 
 -- the final-tagless version is preferred).
@@ -219,10 +195,6 @@ class SymClef repr where
   clef :: String -> repr (Clef ctx)
 
 
-
-    
-
-
 -- key signature (6.4.2)
 -- nullary commands 
 
@@ -231,7 +203,7 @@ class SymClef repr where
 -- time signature (6.4.3)
 data CmdTime ctx
 class SymCmdTime repr where
-  cmdTime :: Int -> Int -> repr (CmdTime Ctx_Note)
+  cmdTime :: Rational -> repr (CmdTime Ctx_Note)
 
 
 -- barlines (6.4.5)
@@ -282,17 +254,17 @@ class SymBeam repr where
 -- ~ Placement of an articulation, slur ...
 data VerticalPlacement ctx
 class SymVerticalPlacement repr where
-  vAbove   :: repr (VerticalPlacement ctx)
-  vBelow   :: repr (VerticalPlacement ctx)
-  vDefault :: repr (VerticalPlacement ctx)
+  vabove   :: repr (VerticalPlacement ctx)
+  vbelow   :: repr (VerticalPlacement ctx)
+  vdefault :: repr (VerticalPlacement ctx)
   
 
--- fingering instructions (6.6.2) [these seem to imply that 'note' is a context]
-data FingeringInst ctx
-class SymFingeringInst repr where
-  fingeringInst :: Int -> repr (FingeringInst Ctx_Note) 
+-- fingering instructions (6.6.2) 
+class AttrFingering ctx
+class SymAttrFingering repr where
+  fingering :: (AttrFingering a) => Int -> repr (a ctx) -> repr (a ctx) 
 
-
+instance AttrFingering Note
 
 -- dynamics (6.6.3)
 -- nullary commands 

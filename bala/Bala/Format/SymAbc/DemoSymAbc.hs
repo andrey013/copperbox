@@ -6,15 +6,6 @@ import Bala.Format.SymAbc.AbcFormat
 
 import Data.Ratio
 
--- these infix operators should be in a common file
-
-infixl 7 #
-(#) :: a -> (a -> b) -> b
-x # f = f x
-
-infixr 6 << 
-(<<) ::(a -> b) -> a ->  b
-f << a = f a 
 
 
 
@@ -42,11 +33,14 @@ demo_004 () =     book_ "My song book"
               +++ defaultLength_ (2%4)
               +++ words_ "la di da"
               
-              +++ abcmusic << x1
+              +++ abcmusic << elements << x1             
+              +++ abcmusic << midtuneField << words_ "lolalalo"
+              +++ abcmusic << elements << x1
+
   where 
     x1 = note C # sharp # octaveHigh 2 +++ firstRepeat 
               
 dem'' () = keySpec (c_ # sharp) # locrian
 
 
- 
+main = printP demo_004 
