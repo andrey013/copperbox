@@ -34,13 +34,9 @@ instance SymConcatenation Ctx_Field P where
   
   
 instance SymConcatenation Ctx_Element P where
-  (+++) l r    = P $ (unP l) <+> (unP r)  
+  (+++) l r    = P $ (unP l) <> (unP r)  
  
   
-{-  
-instance SymField P where
-  field c e = P $ ppfield c (unP e)
--}
 
 
 instance SynNumberField P where
@@ -59,7 +55,7 @@ instance SymTextFields P where
   origin_ s             = P $ ppfield 'O' (text s)
   rhythm_ s             = P $ ppfield 'R' (text s)
   source_ s             = P $ ppfield 'S' (text s)
-  title_ s              = P $ ppfield 'S' (text s)
+  title_ s              = P $ ppfield 'T' (text s)
   words_ s              = P $ ppfield 'W' (text s)
   transcriberNotes_ s   = P $ ppfield 'Z' (text s)
 
@@ -71,7 +67,7 @@ instance SymKeyField P where
   
    
 instance SymDefaultLengthField P where
- defaultLength_ r       = P $ ppfield 'L' (pprational r) 
+ defaultLength_ r       = P $ ppfield 'L' (pretty r) 
    
 instance SymMeterField P where
   meter_ m              = P $ ppfield 'M' (unP m)  
@@ -89,12 +85,12 @@ instance SymTempoField P where
 instance SymTempo P where
   tempo i               = P $ int i
   ctempo l i            = P $ group $ char 'C' <> (unP l) <> equals <> int i
-  stempo r i            = P $ group $ pprational r <> equals <> int i
+  stempo r i            = P $ group $ pretty r <> equals <> int i
               
 
 instance SymLength P where
   ilength i             = P $ int i
-  flength r             = P $ pprational r 
+  flength r             = P $ pretty r 
   
   
 instance SymKey P where
@@ -126,7 +122,7 @@ instance SymKeyAccidental P where
   
   
 instance SymMeter P where
-  meter r                     = P $ pprational r
+  meter r                     = P $ pretty r
   commonTime                  = P $ char 'C'
   cutTime                     = P $ text "C|"
     
@@ -154,14 +150,20 @@ instance SymAttrAccidental P where
 
   
 instance Pretty PitchLetter where
-  pretty C  = char 'c';  pretty D   = char 'd'
-  pretty E  = char 'e';  pretty F   = char 'f'
-  pretty G  = char 'g';  pretty A   = char 'a'
-  pretty B  = char 'b';  
-  pretty C2 = char 'C';  pretty D2  = char 'D'
-  pretty E2 = char 'E';  pretty F2  = char 'F'
-  pretty G2 = char 'G';  pretty A2  = char 'A'
-  pretty B2 = char 'B';  
+  pretty C    = char 'C'
+  pretty D    = char 'D'
+  pretty E    = char 'E'
+  pretty F    = char 'F'
+  pretty G    = char 'G'
+  pretty A    = char 'A'
+  pretty B    = char 'B'  
+  pretty C2   = char 'c'
+  pretty D2   = char 'd'
+  pretty E2   = char 'e'
+  pretty F2   = char 'f'
+  pretty G2   = char 'g'
+  pretty A2   = char 'a'
+  pretty B2   = char 'b'  
   
 
 
@@ -178,12 +180,16 @@ instance SymBrokenRhythm P where
 instance SymTie P where
   tie                         = P $ char '-'
     
-instance SymGrace P where
-  tilde                     = P $ char '~' 
-  stacatto                  = P $ char '.'
-  downBow                   = P $ char 'v'
-  upBow                     = P $ char 'u'
-      
+instance SymAttrGrace P where
+  tilde e                   = P $ group $ char '~' <> unP e 
+  stacatto e                = P $ group $ char '.' <> unP e 
+  downbow e                 = P $ group $ char 'v' <> unP e 
+  upbow e                   = P $ group $ char 'u' <> unP e 
+
+
+instance SymNPlet P where
+  nplet i = P $ group $ char '(' <> int i
+        
   
 instance SymRepeatMark P where
   repeatMark s  = P $ text s
@@ -194,7 +200,9 @@ instance SymSlur P where
   endSlur       = P $ rparen
   
 
-  
+instance SymAttrGraceNotes P where
+  gracenotes xs a  = let gns = braces $ hcat $ map unP xs in
+                     P $ gns <> unP a
     
   
   

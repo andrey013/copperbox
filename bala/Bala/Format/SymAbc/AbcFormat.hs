@@ -18,11 +18,13 @@
 module Bala.Format.SymAbc.AbcFormat 
   ( module Bala.Format.Base.SymBase
   , module Bala.Format.SymAbc.Datatypes
+  , module Bala.Format.SymAbc.SyntaxElements
   , module Bala.Format.SymAbc.Pretty
   )
   where
 
 import Bala.Format.Base.SymBase  
 import Bala.Format.SymAbc.Datatypes
+import Bala.Format.SymAbc.SyntaxElements
 import Bala.Format.SymAbc.Pretty
 

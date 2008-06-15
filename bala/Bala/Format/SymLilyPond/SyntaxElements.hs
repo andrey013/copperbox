@@ -43,7 +43,7 @@ _b      = pitch B
 -- pch'c
 
 -- rests (6.1.9)
-r1, r2, r4, r8, r16, r32, r64 :: (SymRest repr, SymDuration repr) => repr (Rest ctx)
+r1, r2, r4, r8, r16, r32, r64 :: (SymRest repr, SymAttrDuration repr) => repr (Rest ctx)
 r1      = rest # dur 1
 r2      = rest # dur 2
 r4      = rest # dur 4
@@ -57,7 +57,7 @@ r64     = rest # dur 64
 skip_                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
 skip_                   = cmdZero "skip" 
 
-s1, s2, s4, s8, s16, s32, s64 :: (SymSkip repr, SymDuration repr) => repr (Skip ctx)
+s1, s2, s4, s8, s16, s32, s64 :: (SymSkip repr, SymAttrDuration repr) => repr (Skip ctx)
 s1      = skip # dur 1
 s2      = skip # dur 2
 s4      = skip # dur 4

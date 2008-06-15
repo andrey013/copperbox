@@ -17,9 +17,6 @@
 module Bala.Format.SymAbc.Datatypes  where
 
 import Bala.Format.Base.SymBase
-
-import Data.Ratio
-
  
     
 data Ctx_Field
@@ -65,7 +62,7 @@ class SymKeyField repr where
   
  
 class SymDefaultLengthField repr where
-  defaultLength_    :: Rational -> repr (MidTuneField Ctx_Field)      -- 'L'
+  defaultLength_    :: MeterFraction -> repr (MidTuneField Ctx_Field)      -- 'L'
 
 
 -- simplified
@@ -93,12 +90,12 @@ data Tempo ctx
 class SymTempo repr where
   tempo               :: Int -> repr (Tempo ctx)
   ctempo              :: repr (Length ctx) -> Int -> repr (Tempo ctx)
-  stempo              :: Rational -> Int -> repr (Tempo ctx)
+  stempo              :: MeterFraction -> Int -> repr (Tempo ctx)
   
 data Length ctx
 class SymLength repr where
   ilength             :: Int -> repr (Length ctx)
-  flength             :: Rational -> repr (Length ctx) 
+  flength             :: MeterFraction -> repr (Length ctx) 
 
   
   
@@ -146,7 +143,7 @@ instance AttrMode KeySpec
 
 data Meter ctx
 class SymMeter repr where
-  meter      :: Rational -> repr (Meter ctx) 
+  meter      :: MeterFraction -> repr (Meter ctx) 
   commonTime :: repr (Meter ctx)
   cutTime    :: repr (Meter ctx)
 
@@ -193,27 +190,11 @@ data PitchLetter = C | D | E | F | G | A | B | C2 | D2 | E2 | F2 | G2 | A2 | B2
 
 data BaseNote ctx
 class SymBaseNote repr where
-  note          :: PitchLetter -> repr (BaseNote ctx)
+  note          :: PitchLetter -> repr (BaseNote Ctx_Element)
 
 
 
-c_, d_, e_, f_, g_, a_, b_ :: (SymBaseNote repr) =>  repr (BaseNote ctx)
-c_  = note C
-d_  = note D
-e_  = note E
-f_  = note F
-g_  = note G
-a_  = note A
-b_  = note B
 
-c__, d__, e__, f__, g__, a__, b__ :: (SymBaseNote repr) =>  repr (BaseNote ctx)
-c__  = note C2
-d__  = note D2
-e__  = note E2
-f__  = note F2
-g__  = note G2
-a__  = note A2
-b__  = note B2
 
 
 data BrokenRhythm ctx
@@ -232,14 +213,19 @@ class SymTie repr where
 
   
       
-data Grace ctx
-class SymGrace repr where
-    tilde       :: repr (Grace ctx)
-    stacatto    :: repr (Grace ctx)
-    downBow     :: repr (Grace ctx)
-    upBow       :: repr (Grace ctx)
+class AttrGrace ctx
+class SymAttrGrace repr where
+    tilde       :: (AttrGrace a) => repr (a ctx) -> repr (a ctx)
+    stacatto    :: (AttrGrace a) => repr (a ctx) -> repr (a ctx)
+    downbow     :: (AttrGrace a) => repr (a ctx) -> repr (a ctx)
+    upbow       :: (AttrGrace a) => repr (a ctx) -> repr (a ctx)
+
+instance AttrGrace BaseNote
     
-    
+data NPlet ctx
+class SymNPlet repr where
+  nplet :: Int -> repr (NPlet Ctx_Element)
+     
         
 data RepeatMark ctx
 class SymRepeatMark repr where
@@ -258,8 +244,19 @@ data Slur ctx
 class SymSlur repr where
   beginSlur :: repr (Slur Ctx_Element)
   endSlur   :: repr (Slur Ctx_Element)
-  
-  
+
+
+-- | gracenotes are a prefix attibute of a note
+class AttrGraceNotes ctx
+class SymAttrGraceNotes repr where
+  gracenotes :: (AttrGraceNotes a) => [repr (BaseNote ctx)] -> repr (a ctx) -> repr (a ctx)
+
+instance AttrGraceNotes BaseNote  
+
+data MultiNote ctx
+class SymMultiNote repr where
+  multinote :: [repr (BaseNote ctx)] -> repr (MultiNote ctx)
+
   
 data TexCommand ctx
 class SymTexComamnd repr where

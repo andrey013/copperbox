@@ -21,7 +21,6 @@ import Bala.Format.SymLilyPond.Datatypes
 
 import Text.PrettyPrint.Leijen
 import Data.Char
-import Data.Ratio
 
 
 
@@ -124,14 +123,13 @@ instance SymSkip P where
   
   
 -- durations (6.2)
-instance SymDuration P where
+instance SymAttrDuration P where
   dur i e = P $ group $ unP e <> int i
   dot e   = P $ group $ unP e <> char '.'
 
 -- tuplets (6.2.3)
 instance SymTimes P where
-  times n d e = P $ ppcommand "times" <+> ppfraction n d 
-                      <+> braces (unP e)
+  times r e = P $ ppcommand "times" <+> pretty r <+> braces (unP e)
   
 -- chords (6.3.1)  
 instance SymChord P where
@@ -162,7 +160,7 @@ instance SymClef P where
 
 -- time signature (6.4.3)  
 instance SymCmdTime P where
-  cmdTime r = P $ ppcommand "time" <+> pprational r
+  cmdTime r = P $ ppcommand "time" <+> pretty r
 
 -- barlines (6.4.5)
 instance SymCmdBar P where
@@ -221,4 +219,6 @@ instance SymDynamicMark P where
 instance SymHeaderBlock P where
   headerBlock xs = P $ lbrace <$> indent 2 ((vsep $ map unP xs) <$> rbrace)
   
-  
+instance SymBlock P where
+  block e = P $ braces $ unP e
+   

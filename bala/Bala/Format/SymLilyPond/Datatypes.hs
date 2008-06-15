@@ -26,8 +26,6 @@ module Bala.Format.SymLilyPond.Datatypes  where
 
 import Bala.Format.Base.SymBase
 
-import Data.Ratio
-
 
 
 -- | Contexts
@@ -149,7 +147,7 @@ instance AttrDuration Skip
   
 -- durations (6.2)
 class AttrDuration ctx
-class SymDuration repr where
+class SymAttrDuration repr where
   dur :: (AttrDuration a) => Int -> repr (a ctx) -> repr (a ctx)
   dot :: (AttrDuration a) => repr (a ctx) -> repr (a ctx) 
      
@@ -160,7 +158,7 @@ instance AttrDuration Chord
 -- tuplets (6.2.3)
 data Times ctx
 class SymTimes repr where
-  times :: Int -> Int -> repr (a ctx) -> repr (Times ctx)
+  times :: MeterFraction -> repr (a ctx) -> repr (Times ctx)
 
 
   
@@ -203,7 +201,7 @@ class SymClef repr where
 -- time signature (6.4.3)
 data CmdTime ctx
 class SymCmdTime repr where
-  cmdTime :: Rational -> repr (CmdTime Ctx_Note)
+  cmdTime :: MeterFraction -> repr (CmdTime Ctx_Note)
 
 
 -- barlines (6.4.5)
@@ -297,7 +295,7 @@ class SymHeaderBlock repr where
   headerBlock :: [repr (Equation Ctx_Header)] -> repr (HeaderBlock ctx)
   
 
-
-
-
+data Block ctx
+class SymBlock repr where
+  block :: repr (a subctx) -> repr (b superctx)
   
