@@ -19,7 +19,6 @@
 module Bala.Format.Base.SymBase where
 
 import Text.PrettyPrint.Leijen
-import Data.Ratio
 
 
 data Concatenation ctx
@@ -45,6 +44,16 @@ infixr 6 <<
 f << a = f a 
 
 
+-- Data.Rational normalizes when possible 4/4 becomes 1/1, naturally this means
+-- we need an alternative
+data MeterFraction = Int :% Int
+
+infixl 2 %
+
+(%) :: Int -> Int -> MeterFraction
+(%) n d = n :% d
+  
+  
 --------------------------------------------------------------------------------
 -- Pretty printing
 --------------------------------------------------------------------------------
@@ -55,11 +64,9 @@ newtype P a = P { unP :: Doc }
 printP x = putDoc $ unP (x ())
 
 
-pprational :: Rational -> Doc
-pprational r = ppfraction (numerator r) (denominator r)
+instance Pretty MeterFraction where
+  pretty (n :% d) = group $ int n <> char '/' <> int d
 
-ppfraction :: (Integral a , Integral b) => a -> b -> Doc
-ppfraction n d = 
-  group $ (int . fromIntegral) n <> char '/' <> (int . fromIntegral) d
+
   
   
