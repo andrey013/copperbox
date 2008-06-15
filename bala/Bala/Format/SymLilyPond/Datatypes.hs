@@ -29,7 +29,9 @@ import Bala.Format.Base.SymBase
 
 
 -- | Contexts
-data Ctx_Prologue
+data Ctx_Top
+data Ctx_Book
+
 data Ctx_Header
 data Ctx_Note 
 data Ctx_NoteAttr
@@ -48,8 +50,13 @@ class SymCmdZero repr where
  
 data CmdOne ctx
 class SymCmdOne repr where
-  cmdOne :: String -> repr a -> repr (CmdOne ctx)
-   
+  cmdOne :: String -> repr (a ctxa) -> repr (CmdOne ctx)
+
+data CmdTwo ctx
+class SymCmdTwo repr where
+  cmdTwo :: String -> repr (a ctxa) -> repr (b ctxb) -> repr (CmdTwo ctx)
+  
+     
 -- Equations (atributes or user named elements) can share the same 
 -- representation  
 data Equation ctx
@@ -57,6 +64,11 @@ class SymEquation repr where
   equation :: String -> repr a -> repr (Equation ctx)
   
 
+-- this mandates flexible instances and contexts 
+data LiftRepr ctx
+class SymLiftRepr a repr where
+  liftRepr :: a -> repr (LiftRepr ctx)
+  
 
 -- This seems a bit of an unfortunated hack just so we can override
 -- the pretty printer to output quoted strings  
@@ -95,6 +107,9 @@ class SymAttrOctaveSpec repr where
   lowered     :: (AttrOctaveSpec a) => Int -> repr (a ctx) -> repr (a ctx)
   
 instance AttrOctaveSpec Pitch
+
+-- is this wise? It would make things a bit more polymorphic
+-- instance AttrOctaveSpec Note   
   
 
               
@@ -128,6 +143,10 @@ class SymMicroTone repr where
   halfFlat  :: repr (MicroTone ctx) 
   halfSharp :: repr (MicroTone ctx)
 
+
+-- Relative octaves (6.1.6)
+-- binary command (pitch x musicexpr)
+
   
  
 -- rests (6.1.9)
@@ -139,21 +158,33 @@ class SymRest repr where
 -- silent rest or nullary command
 data Skip ctx
 class SymSkip repr where
-  skip :: repr (Skip ctx)
-  
-instance AttrDuration Skip  
+  skip :: repr (Skip ctx)  
   
   
   
 -- durations (6.2)
+
+data Duration ctx
+
+class SymDuration repr where
+  duration :: Int -> repr (Duration ctx)
+
 class AttrDuration ctx
 class SymAttrDuration repr where
-  dur :: (AttrDuration a) => Int -> repr (a ctx) -> repr (a ctx)
-  dot :: (AttrDuration a) => repr (a ctx) -> repr (a ctx) 
-     
+  attrduration :: (AttrDuration a) => repr (Duration ctx) -> repr (a ctx) -> repr (a ctx)
+
+class AttrDotted ctx
+class SymAttrDotted repr where
+  dotted :: (AttrDotted a) => Int -> repr (a ctx) -> repr (a ctx)
+
+instance AttrDotted Duration
+
+
+   
 instance AttrDuration Rest
 instance AttrDuration Note
 instance AttrDuration Chord
+instance AttrDuration Skip
   
 -- tuplets (6.2.3)
 data Times ctx
@@ -184,14 +215,23 @@ class SymPolyCat repr where
   (\\) :: repr (a ctx) -> repr (a ctx) -> repr (PolyCat ctx)
 
 -- clef (6.4.1)
-data CmdClef ctx
-class SymCmdClef repr where
-  cmdClef :: repr (Clef ctx) -> repr (CmdClef ctx)
-  
-data Clef ctx
-class SymClef repr where
-  clef :: String -> repr (Clef ctx)
+-- clef binary command
+ 
+data ClefType ctx
+class SymClefType repr where
+  cleftype :: String -> repr (ClefType ctx)
 
+
+class AttrClefTransposition ctx
+class SymAttrClefTransposition repr where  
+  clefUp8     :: (AttrClefTransposition a) => repr (a ctx) -> repr (a ctx)
+  clefUp15    :: (AttrClefTransposition a) => repr (a ctx) -> repr (a ctx)
+  clefDown8   :: (AttrClefTransposition a) => repr (a ctx) -> repr (a ctx)
+  clefDown15  :: (AttrClefTransposition a) => repr (a ctx) -> repr (a ctx)
+  
+-- Unfortunately this has to be an attibute of Pitch rather than ClefType
+-- because of the pretty printing rules 
+instance AttrClefTransposition Pitch
 
 -- key signature (6.4.2)
 -- nullary commands 
@@ -287,6 +327,28 @@ class SymDynamicMark repr where
 -- falls and doits (6.6.8)
 -- nullary command
 
+
+-- Metronome marks (8.8.2)
+-- tempo is a binary command (duration x int) wrapped as Metro so we can print
+-- the equals sign
+
+
+data Metro ctx
+class SymMetro repr where
+  metro :: repr (Duration ctx) -> Int -> repr (Metro ctx)
+  
+
+-- Creating contexts (9.2.2)
+-- new is a binary command (type x music-expr)
+
+data ContextType ctx
+class SymContextType repr where
+  contextType :: String -> repr (ContextType ctx)
+
+
+-- Multiple scores in a book (10.1.2)
+
+-- score book and markup are all commands
 
 -- titles and headers (10.2)
 

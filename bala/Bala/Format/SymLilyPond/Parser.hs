@@ -44,12 +44,12 @@ nullaryCommand :: (SymCmdZero repr) =>
     String -> (repr (CmdZero ctx)) -> Parser (repr (CmdZero ctx)) 
 nullaryCommand name cstr = cstr <$ command name
 
-major_, minor_    :: (SymCmdZero repr) => Parser (repr (CmdZero Ctx_Note))  
+major_, minor_    :: (SymCmdZero repr) => Parser (repr (CmdZero Ctx_Element))  
 major_            = nullaryCommand "major" major
 minor_            = nullaryCommand "minor" minor 
 
 
-mode :: (SymCmdZero repr) => Parser (repr (CmdZero Ctx_Note)) 
+mode :: (SymCmdZero repr) => Parser (repr (CmdZero Ctx_Element)) 
 mode = choice $ map (uncurry nullaryCommand) xs
   where  
     xs = [("ionian",      ionian),

@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleContexts #-}
 
 
 --------------------------------------------------------------------------------
@@ -24,7 +24,7 @@ import Bala.Format.SymLilyPond.Datatypes
 -- comments and versioning (2.12)
     
 version :: (SymCmdOne repr, SymDoubleQuotes repr) => 
-    String -> repr (CmdOne Ctx_Prologue)  
+    String -> repr (CmdOne Ctx_Top)  
 version s               = cmdOne "version" (doubleQuotes s) 
 
 
@@ -42,8 +42,17 @@ _b      = pitch B
 
 -- pch'c
 
+-- Relative octaves (6.1.6)
+-- binary command (pitch x musicexpr)
+
+relative               :: (SymCmdTwo repr, SymBlock repr) => 
+    repr (Pitch ctx) -> repr (b ctx) -> repr (CmdTwo Ctx_Note)  
+relative a b   = cmdTwo "relative" a (block b)
+
+
 -- rests (6.1.9)
-r1, r2, r4, r8, r16, r32, r64 :: (SymRest repr, SymAttrDuration repr) => repr (Rest ctx)
+r1, r2, r4, r8, r16, r32, r64 
+    :: (SymRest repr, SymDuration repr, SymAttrDuration repr) => repr (Rest ctx)
 r1      = rest # dur 1
 r2      = rest # dur 2
 r4      = rest # dur 4
@@ -57,7 +66,8 @@ r64     = rest # dur 64
 skip_                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
 skip_                   = cmdZero "skip" 
 
-s1, s2, s4, s8, s16, s32, s64 :: (SymSkip repr, SymAttrDuration repr) => repr (Skip ctx)
+s1, s2, s4, s8, s16, s32, s64 
+  :: (SymSkip repr, SymDuration repr, SymAttrDuration repr) => repr (Skip ctx)
 s1      = skip # dur 1
 s2      = skip # dur 2
 s4      = skip # dur 4
@@ -68,8 +78,23 @@ s64     = skip # dur 64
 
 
 -- durations (6.2)
+dur :: (SymAttrDuration repr, AttrDuration a, SymDuration repr) =>
+       Int -> repr (a ctx) -> repr (a ctx)
+dur i = attrduration $ duration i
+
+dot :: (SymAttrDuration repr, AttrDuration a, SymDuration repr, SymAttrDotted repr) =>
+       Int -> repr (a ctx) -> repr (a ctx)
+dot i = attrduration $ dotted 1 $ duration i
+
+
+dotdot :: (SymAttrDuration repr, AttrDuration a, SymDuration repr, SymAttrDotted repr) =>
+       Int -> repr (a ctx) -> repr (a ctx)
+dotdot i = attrduration $ dotted 2 $ duration i
+
+-- dotted could store an Int of the dot count
+
 longa :: (Attr repr, SymCmdZero repr) => 
-    repr (b Ctx_Element) -> repr (b Ctx_Element) 
+         repr (b Ctx_Element) -> repr (b Ctx_Element) 
 longa                   = attr $ cmdZero "longa"  
 
 breve :: (Attr repr, SymCmdZero repr) => 
@@ -89,50 +114,66 @@ stemNeutral             = cmdZero "stemNeutral"
 
 
 -- clef (6.4.1)
+clef :: (SymCmdOne repr) => 
+    repr (ClefType ctx) -> repr (CmdOne Ctx_Element)
+clef a              = cmdOne "clef" a
+
+
 treble, alto, tenor, bass, french, soprano, mezzosoprano, baritone, 
   varbaritone, subbass, percussion, tabClef
-              :: SymClef repr => repr (Clef ctx)
-treble        = clef "treble"
-alto          = clef "alto"
-tenor         = clef "temor"
-bass          = clef "bass"
-french        = clef "french"
-soprano       = clef "soprano"
-mezzosoprano  = clef "mezzosoprano"
-baritone      = clef "baritone"
-varbaritone   = clef "varbaritone"
-subbass       = clef "subbass" 
-percussion    = clef "percussion" 
-tabClef       = clef "tabClef" 
+              :: SymClefType repr => repr (ClefType ctx)
+treble        = cleftype "treble"
+alto          = cleftype "alto"
+tenor         = cleftype "temor"
+bass          = cleftype "bass"
+french        = cleftype "french"
+soprano       = cleftype "soprano"
+mezzosoprano  = cleftype "mezzosoprano"
+baritone      = cleftype "baritone"
+varbaritone   = cleftype "varbaritone"
+subbass       = cleftype "subbass" 
+percussion    = cleftype "percussion" 
+tabClef       = cleftype "tabClef" 
 
 -- key signature (6.4.2)
 
-major                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
+key :: (SymCmdTwo repr) => 
+    repr (Pitch ctx) -> repr (CmdZero Ctx_Element) -> repr (CmdTwo Ctx_Element)
+key                     = cmdTwo "key"
+
+major                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
 major                   = cmdZero "major"  
 
-minor                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
+minor                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
 minor                   = cmdZero "minor"  
 
-ionian                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
+ionian                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
 ionian                  = cmdZero "ionian"
   
-locrian                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
+locrian                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
 locrian                 = cmdZero "locrian" 
  
-aeolian                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
+aeolian                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
 aeolian                 = cmdZero "aeolian"
   
-mixolydian              :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
+mixolydian              :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
 mixolydian              = cmdZero "mixolydian"
   
-lydian                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
+lydian                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
 lydian                  = cmdZero "lydian"
  
-phrygian                :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
+phrygian                :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
 phrygian                = cmdZero "phrygian" 
 
-dorian                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
+dorian                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
 dorian                  = cmdZero "dorian" 
+
+-- Time signature (6.4.3)
+
+time :: (SymCmdOne repr, SymLiftRepr MeterFraction repr) => 
+    MeterFraction -> repr (CmdOne Ctx_Element)
+time fr                = cmdOne "time" (liftRepr fr)
+
 
 -- unmetered music (6.4.6)
 cadenzaOn               :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
@@ -290,10 +331,46 @@ arpeggioDown            = cmdZero "arpeggioDown"
 bendAfter               :: (SymCmdZero repr) => repr (CmdZero Ctx_Note) 
 bendAfter               = cmdZero "bendAfter"
 
+
+-- Metronome marks (8.8.2)
+tempo :: (SymMetro repr, SymCmdOne repr) =>
+         repr (Duration ctx) -> Int -> repr (CmdOne Ctx_Element)
+tempo d i = cmdOne "tempo" (metro d i)
+
+-- Creating contexts (9.2.2)
+
+staff :: (SymContextType repr) => repr (ContextType ctx)
+staff = contextType "Staff"
+
+voice :: (SymContextType repr) => repr (ContextType ctx)
+voice = contextType "Voice"
+
+tabStaff :: (SymContextType repr) => repr (ContextType ctx)
+tabStaff = contextType "TabStaff"
+
+
+newContext :: (SymContextType repr, SymCmdTwo repr) => 
+              repr (ContextType ctx) -> repr (a ctx') -> repr (CmdTwo ctx'')
+newContext ct = cmdTwo "new" ct 
+
+
+-- Multiple scores in a book (10.1.2)
+
+score :: (SymBlock repr, SymCmdOne repr) => repr (a subctx) -> repr (CmdOne Ctx_Book)
+score e  = cmdOne "score" (block e)  
+
+
+markup :: (SymBlock repr, SymCmdOne repr, SymLiftRepr String repr) => 
+          String -> repr (CmdOne Ctx_Book)
+markup e  = cmdOne "markup" (block $ liftRepr e)  
+
+book :: (SymBlock repr, SymCmdOne repr) => repr (a subctx) -> repr (CmdOne Ctx_Top)
+book e  = cmdOne "book" (block e)  
+
 -- titles and headers (10.2)
 
 header :: (SymCmdOne repr, SymHeaderBlock repr) => 
-          [repr (Equation Ctx_Header)] -> repr (CmdOne Ctx_Prologue)  
+          [repr (Equation Ctx_Header)] -> repr (CmdOne Ctx_Top)  
 header xs               = cmdOne "header" (headerBlock xs)
 
 

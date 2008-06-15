@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -30,9 +30,15 @@ ppcommand =  text . ('\\' :)
 
 
 
-instance SymConcatenation Ctx_Prologue P where
+instance SymConcatenation Ctx_Top P where
   (+++) l r    = P $ (unP l) <$> (unP r)
 
+
+
+instance SymConcatenation Ctx_Book P where
+  (+++) l r    = P $ (unP l) <$> (unP r)
+  
+  
 instance SymConcatenation Ctx_Note P where
   (+++) l r    = P $ (unP l) <+> (unP r)  
 
@@ -44,22 +50,28 @@ instance SymConcatenation Ctx_Element P where
   (+++) l r    = P $ (unP l) <+> (unP r) 
   
   
- 
+instance (Pretty a) => SymLiftRepr a P where
+  liftRepr  a = P $ pretty a
+
+-- instance SymLiftRepr [Char] P where
+--   liftRepr  a = P $ text a
   
+    
 instance Attr P where
   attr a e  = P $ group $ unP e <> unP a 
   
   
+    
 instance SymCmdZero P where
-  cmdZero s = P $ ppcommand s   
-
-
-  
+  cmdZero s         = P $ ppcommand s   
   
 instance SymCmdOne P where
-  cmdOne s a = P $ ppcommand s <+> unP a 
+  cmdOne s a        = P $ ppcommand s <+> unP a 
 
-
+instance SymCmdTwo P where
+  cmdTwo s a b      = P $ ppcommand s <+> unP a <+> unP b
+  
+  
 instance SymEquation P where
   equation s a = P $ text s <+> equals <+> unP a
 
@@ -123,10 +135,20 @@ instance SymSkip P where
   
   
 -- durations (6.2)
-instance SymAttrDuration P where
-  dur i e = P $ group $ unP e <> int i
-  dot e   = P $ group $ unP e <> char '.'
 
+instance SymDuration P where
+  duration i = P $ int i
+  
+  
+instance SymAttrDuration P where
+  attrduration d e = P $ group $ unP e <> unP d
+
+
+
+instance SymAttrDotted P where
+  dotted i a   = P $ group $ unP a <> text (replicate i '.') 
+  
+  
 -- tuplets (6.2.3)
 instance SymTimes P where
   times r e = P $ ppcommand "times" <+> pretty r <+> braces (unP e)
@@ -148,12 +170,21 @@ instance SymPolyCat P where
 
 
 -- clef (6.4.1)
-instance SymCmdClef P where
-  cmdClef a = P $ ppcommand "clef" <+> unP a
-  
 
-instance SymClef P where
-  clef s = P $ text s
+instance SymClefType P where
+  cleftype s = P $ text s
+
+transposeClefUp, transposeClefDown :: Doc -> Int -> Doc
+transposeClefUp d i   = group $ d <> char '^' <> int i
+transposeClefDown d i = group $ d <> char '_' <> int i
+
+instance SymAttrClefTransposition P where  
+  clefUp8 a       = P $ transposeClefUp (unP a) 8
+  clefUp15 a      = P $ transposeClefUp (unP a) 15
+  clefDown8 a     = P $ transposeClefDown (unP a) 8
+  clefDown15 a    = P $ transposeClefDown (unP a) 15
+
+
 
 -- key signature (6.4.2)
 -- major, minor, ionian etc. are all nullary commands so handled generically 
@@ -213,7 +244,18 @@ instance SymDynamicMark P where
   openCrescendo     = P $ ppcommand "<"
   openDecrescendo   = P $ ppcommand ">"
   
-    
+-- Metronome marks (8.8.2)
+
+instance SymMetro P where
+  metro a i         = P $ group $ unP a <> equals <> int i
+
+
+-- Creating contexts (9.2.2)
+
+instance SymContextType P where
+  contextType s     = P $ text s
+  
+      
 -- titles and headers (10.2)
 
 instance SymHeaderBlock P where
