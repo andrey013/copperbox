@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -24,6 +24,15 @@ import Data.Char
 
 
 
+cmd :: String -> Doc
+cmd =  text . ('\\' :)
+
+
+bracesSpaced :: Doc -> Doc
+bracesSpaced = enclose (lbrace <> space) (space <> rbrace)
+
+bracesHanging :: Doc -> Doc
+bracesHanging d = lbrace <$> indent 2 (d <$> rbrace)
 
 ppcommand :: String -> Doc
 ppcommand =  text . ('\\' :)
@@ -38,6 +47,9 @@ instance SymConcatenation Ctx_Top P where
 instance SymConcatenation Ctx_Book P where
   (+++) l r    = P $ (unP l) <$> (unP r)
   
+instance SymConcatenation Ctx_Header P where
+  (+++) l r    = P $ (unP l) <$> (unP r)
+
   
 instance SymConcatenation Ctx_Note P where
   (+++) l r    = P $ (unP l) <+> (unP r)  
@@ -49,38 +61,19 @@ instance SymConcatenation Ctx_NoteAttr P where
 instance SymConcatenation Ctx_Element P where
   (+++) l r    = P $ (unP l) <+> (unP r) 
   
-  
-instance (Pretty a) => SymLiftRepr a P where
-  liftRepr  a = P $ pretty a
 
--- instance SymLiftRepr [Char] P where
---   liftRepr  a = P $ text a
   
     
 instance Attr P where
   attr a e  = P $ group $ unP e <> unP a 
-  
-  
-    
-instance SymCmdZero P where
-  cmdZero s         = P $ ppcommand s   
-  
-instance SymCmdOne P where
-  cmdOne s a        = P $ ppcommand s <+> unP a 
-
-instance SymCmdTwo P where
-  cmdTwo s a b      = P $ ppcommand s <+> unP a <+> unP b
-  
-  
-instance SymEquation P where
-  equation s a = P $ text s <+> equals <+> unP a
-
-  
-instance SymDoubleQuotes P where
-  doubleQuotes s = P $ dquotes $ text s 
-       
+        
   
 -- comments and versioning (2.12)  
+
+instance SymCmdVersion P where 
+  version s       = P $ cmd "version" <+> dquotes (text s)
+  
+  
 instance SymLineComment P where
   lineComment s = P $ char '%' <+> text s <> line
 
@@ -118,11 +111,15 @@ instance SymCautionaryAccidental P where
   cautionaryAccidental  = P $ char '?'
   
   
--- micro tones (6.1.4)    
-instance SymMicroTone P where
-  halfFlat      = P $ string "ih" 
-  halfSharp     = P $ string "es"
+-- Micro tones (6.1.4)    
+instance SymAttrMicroTone P where
+  halfFlat a      = P $ group $ unP a <> string "ih" 
+  halfSharp a     = P $ group $ unP a <> string "es"
 
+-- Relative octaves (6.1.6)
+
+instance SymCmdReleative P where
+  relative p e  = P $ cmd "relative" <+> unP p <+> bracesHanging (unP e) 
 
   
 -- rests (6.1.9)
@@ -130,8 +127,11 @@ instance SymRest P where
   rest          = P $ char 'r'
 
 -- skips (6.1.10)
-instance SymSkip P where
-  skip          = P $ char 's' 
+instance SymCmdSkip P where
+  cmdSkip s        = P $ text s
+  
+instance SymSkipDuration P where
+  skipDuration d    = P $ group $ char 's' <> unP d
   
   
 -- durations (6.2)
@@ -148,6 +148,8 @@ instance SymAttrDuration P where
 instance SymAttrDotted P where
   dotted i a   = P $ group $ unP a <> text (replicate i '.') 
   
+instance SymAttrCmdLongDuration P where
+  cmdLongDuration s a = P $ group $ unP a <> cmd s
   
 -- tuplets (6.2.3)
 instance SymTimes P where
@@ -161,7 +163,8 @@ instance SymChord P where
 
 
 -- stems (6.3.2)
--- stemUp etc are all nullary commands so handled generically
+instance SymCmdStem P where
+  cmdStem s   = P $ cmd s
 
 -- polyphony (6.3.3)
 
@@ -170,97 +173,182 @@ instance SymPolyCat P where
 
 
 -- clef (6.4.1)
-
+instance SymCmdClef P where
+  clef ct       = P $ cmd "clef" <+> unP ct
+  
 instance SymClefType P where
   cleftype s = P $ text s
 
-transposeClefUp, transposeClefDown :: Doc -> Int -> Doc
-transposeClefUp d i   = group $ d <> char '^' <> int i
-transposeClefDown d i = group $ d <> char '_' <> int i
+transpClef :: Doc -> Int -> Doc
+transpClef d i   
+    | i > 0           = dquotes $ group $ d <> char '^' <> int i
+    | i == 0          = d
+    | otherwise       = dquotes $ group $ d <> char '_' <> int (abs i)
 
 instance SymAttrClefTransposition P where  
-  clefUp8 a       = P $ transposeClefUp (unP a) 8
-  clefUp15 a      = P $ transposeClefUp (unP a) 15
-  clefDown8 a     = P $ transposeClefDown (unP a) 8
-  clefDown15 a    = P $ transposeClefDown (unP a) 15
+  clefTransposition n a      = P $ transpClef (unP a) n
 
 
 
--- key signature (6.4.2)
--- major, minor, ionian etc. are all nullary commands so handled generically 
 
--- time signature (6.4.3)  
+-- Key signature (6.4.2)
+
+instance SymCmdKey P where
+  key a b         = P $ cmd "key" <+> unP a <+> unP b
+
+instance SymCmdKeyType P where
+  keyType s       = P $ cmd s
+  
+
+-- Time signature (6.4.3) 
 instance SymCmdTime P where
-  cmdTime r = P $ ppcommand "time" <+> pretty r
+  time r = P $ cmd "time" <+> pretty r
 
--- barlines (6.4.5)
+-- Bar lines (6.4.5)
 instance SymCmdBar P where
-  cmdBar s    = P $ ppcommand "bar" <+> text s 
+  bar s    = P $ cmd "bar" <+> text s 
 
--- unmetered music (6.4.6)
--- cadenzaOn, cadenzaOff are nullary commands so handled generically 
+-- Unmetered music (6.4.6)
+
+instance SymCmdCadenza P where
+  cmdCadenza s     = P $ cmd s
+
     
 
--- ties (6.5.1)
+-- Ties (6.5.1)
 instance SymTie P where
   tie         = P $ char '~'
   
-
--- slurs (6.5.2)
+instance SymCmdTie P where
+  cmdTie s      = P $ cmd s  
+  
+  
+-- Slurs (6.5.2)
 instance SymSlur P where
   openSlur    = P $ char '('
   closeSlur   = P $ char ')'
-  
-  
--- phrasing slurs (6.5.3)
-instance SymPhrasingSlur P where
-  openPhrasingSlur    = P $ ppcommand "("
-  closePhrasingSlur   = P $ ppcommand ")"
-  
-  
 
--- beams (6.5.6)  
+
+instance SymCmdSlur P where
+  cmdSlur s      = P $ cmd s  
+  
+    
+  
+-- Phrasing slurs (6.5.3)
+instance SymCmdPhrasingSlur P where
+  cmdPhrasingSlur s      = P $ cmd s
+
+
+-- Laissez vibrer ties (6.5.4)
+instance SymAttrCmdLaissezVibrer P where
+  laissezVibrer e   = P $ group $ unP e <> cmd "laissezVibrer"
+  
+  
+-- Automatic beams (6.5.5)  
+instance SymAttrCmdNoBeam P where
+  noBeam e    = P $ group $ unP e <> cmd "noBeam"
+
+-- Manual beams (6.5.6)  
 instance SymBeam P where
   openBeam  = P $ char '['
   closeBeam = P $ char ']'
+
+-- Grace notes (6.5.7)
+
+instance SymCmdGrace P where
+  cmdGrace s            = P $ cmd s
+
   
 
--- articulations (6.6.1) 
+-- Articulations (6.6.1) 
 
+instance SymCmdArticulation P where
+  cmdArticulation s    = P $ cmd s
+  
+  
 instance SymVerticalPlacement P where
   vabove   = P $ char '^'
   vbelow   = P $ char '_'
   vdefault = P $ char '-'
-
--- accent, marcato etc. are all nullary commands so handled generically  
+ 
       
--- fingering instructions (6.6.2)
+-- Fingering instructions (6.6.2)
 instance SymAttrFingering P where
   fingering i e     = P $ group $ unP e <> char '-' <> int i 
   
--- dynamics (6.6.3)
-instance SymDynamicMark P where
-  closeDynamic      = P $ ppcommand "!"
-  openCrescendo     = P $ ppcommand "<"
-  openDecrescendo   = P $ ppcommand ">"
-  
--- Metronome marks (8.8.2)
+-- Dynamics (6.6.3)
 
-instance SymMetro P where
-  metro a i         = P $ group $ unP a <> equals <> int i
+instance SymCmdDynamic P where
+  cmdDynamic s         = P $ cmd s
+  
+
+
+-- Breath marks (6.6.4)
+
+instance SymCmdBreathe P where
+  cmdBreathe s         = P $ cmd s
+  
+-- glissando (6.6.6)
+
+instance SymCmdGlissando P where
+  cmdGlissando s       = P $ cmd s
+  
+-- arpeggio (6.6.7)
+
+instance SymCmdArpeggio P where
+  cmdArpeggio s        = P $ cmd s
+
+  
+-- falls and doits (6.6.8)
+
+instance SymCmdBendAfter P where
+  bendAfter         = P $ cmd "bendAfter"
+  
+    
+-- Metronome marks (8.2.2)
+
+instance SymCmdTempo P where
+  tempo a i         = P $ cmd "tempo" <+> group (unP a <> equals <> int i)
 
 
 -- Creating contexts (9.2.2)
 
+instance SymCmdNew P where
+  newContext ct e  = P $ cmd "new" <+> unP ct <+> braces (unP e)   
+  
 instance SymContextType P where
   contextType s     = P $ text s
+
+
+-- Multiple scores in a book (10.1.2)
+
+instance SymCmdScore P where
+  score e     = P $ cmd "score" <+> bracesHanging (unP e)
+
+instance SymCmdMarkup P where
+  markup s    = P $ cmd "markup" <+> bracesSpaced (text s)
+
+
+instance SymCmdBook P where
+  book e      = P $ cmd "book" <+> bracesHanging (unP e)
   
       
 -- titles and headers (10.2)
 
-instance SymHeaderBlock P where
-  headerBlock xs = P $ lbrace <$> indent 2 ((vsep $ map unP xs) <$> rbrace)
+instance SymCmdHeader P where
+  header a       = P $ cmd "header" <+> bracesHanging (unP a) 
+        
   
+    
 instance SymBlock P where
   block e = P $ braces $ unP e
-   
+
+equation :: String -> Doc -> Doc
+equation var d = text var <+> equals <+> d
+
+instance SymEqnTitle P where
+  title s = P $ equation "title" (dquotes $ text s)
+  
+instance SymEqnDedication P where
+  dedication s = P $ equation "dedication" (dquotes $ text s)
+    

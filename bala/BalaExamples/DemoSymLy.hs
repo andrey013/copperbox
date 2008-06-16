@@ -18,7 +18,7 @@ demo_pp1 = printP demo_01
 demo_02 ()  = chord [_c,_e,_g] # dur 4 
 demo_pp2 = printP demo_02
 
-demo_03 () = cmdTime (3%4)
+demo_03 () = time (3%4)
 demo_pp3 = printP demo_03 
 
 demo_03b () = longfermata
@@ -26,7 +26,7 @@ demo_03b () = longfermata
 demo_04 () = version "2.10.3"
 demo_pp4 = printP demo_04
 
-demo_05 () = header [title "Bulgarian 6", dedication "unknown"]
+demo_05 () = header (title "Bulgarian 6" +++ dedication "unknown")
 demo_pp5 = printP demo_05
 
 
@@ -39,7 +39,7 @@ demo_pp7 = printP demo_07
 
 
            
-lilypond_test () = version "2.10.3" +++ header [title "Bala LilyPond test"]
+lilypond_test () = version "2.10.3" +++ header (title "Bala LilyPond test")
                    +++ block e
   where 
     e = relative (_c # raised 2) 
@@ -55,4 +55,5 @@ outputDoc e lypath = let sdoc = renderPretty 0.8 80 (unP (e ())) in do
     waitForProcess ph
     return ()
     
-main = outputDoc lilypond_test "lilypond_test.ly"  
+main = outputDoc lilypond_test "lilypond_test.ly"
+

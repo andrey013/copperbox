@@ -1,4 +1,4 @@
-{-# LANGUAGE EmptyDataDecls, MultiParamTypeClasses #-}
+{-# LANGUAGE EmptyDataDecls #-}
 
 
 --------------------------------------------------------------------------------
@@ -32,53 +32,22 @@ import Bala.Format.Base.SymBase
 data Ctx_Top
 data Ctx_Book
 
-data Ctx_Header
+data Ctx_Header  -- elements inside header block e.g. title dedication
+
 data Ctx_Note 
 data Ctx_NoteAttr
 
 data Ctx_Element -- rest note skip etc
-
-
  
- 
-  
--- Nullary commands can share the same representation
-data CmdZero ctx
-class SymCmdZero repr where
-  cmdZero :: String -> repr (CmdZero ctx)
-  
- 
-data CmdOne ctx
-class SymCmdOne repr where
-  cmdOne :: String -> repr (a ctxa) -> repr (CmdOne ctx)
-
-data CmdTwo ctx
-class SymCmdTwo repr where
-  cmdTwo :: String -> repr (a ctxa) -> repr (b ctxb) -> repr (CmdTwo ctx)
-  
-     
--- Equations (atributes or user named elements) can share the same 
--- representation  
-data Equation ctx
-class SymEquation repr where
-  equation :: String -> repr a -> repr (Equation ctx)
-  
-
--- this mandates flexible instances and contexts 
-data LiftRepr ctx
-class SymLiftRepr a repr where
-  liftRepr :: a -> repr (LiftRepr ctx)
-  
-
--- This seems a bit of an unfortunated hack just so we can override
--- the pretty printer to output quoted strings  
-data DoubleQuotes ctx
-class SymDoubleQuotes repr where
-  doubleQuotes :: String -> repr (DoubleQuotes ctx)
-
 
 -- comments and versioning (2.12)
 
+
+data CmdVersion ctx
+class SymCmdVersion repr where 
+  version :: String -> repr (CmdVersion Ctx_Top)
+  
+  
 
 data LineComment ctx
 class SymLineComment repr where
@@ -110,8 +79,6 @@ instance AttrOctaveSpec Pitch
 
 -- is this wise? It would make things a bit more polymorphic
 -- instance AttrOctaveSpec Note   
-  
-
               
 data Note ctx
 class SymNote repr where
@@ -137,15 +104,20 @@ class SymCautionaryAccidental repr where
   cautionaryAccidental  :: repr (CautionaryAccidental ctx)
 
 
--- micro tones (6.1.4)    
-data MicroTone ctx
-class SymMicroTone repr where
-  halfFlat  :: repr (MicroTone ctx) 
-  halfSharp :: repr (MicroTone ctx)
+-- Micro tones (6.1.4)    
+class AttrMicroTone ctx
+class SymAttrMicroTone repr where
+  halfFlat  :: (AttrMicroTone a) => repr (a ctx) -> repr (a ctx)
+  halfSharp :: (AttrMicroTone a) => repr (a ctx) -> repr (a ctx)
+  
+instance AttrMicroTone Pitch 
 
 
 -- Relative octaves (6.1.6)
--- binary command (pitch x musicexpr)
+
+data CmdRelative ctx
+class SymCmdReleative repr where
+  relative :: repr (Pitch ctx) -> repr (b ctx) -> repr (CmdRelative Ctx_Note) 
 
   
  
@@ -154,13 +126,17 @@ data Rest ctx
 class SymRest repr where
   rest :: repr (Rest ctx)
   
--- skips (6.1.10)
--- silent rest or nullary command
-data Skip ctx
-class SymSkip repr where
-  skip :: repr (Skip ctx)  
+-- Skips (6.1.10)
+
+-- "\skip"
+data CmdSkip ctx
+class SymCmdSkip repr where
+  cmdSkip :: String -> repr (CmdSkip ctx)  
   
-  
+-- "s1", "s2", eyc  
+data SkipDuration ctx
+class SymSkipDuration repr where
+  skipDuration :: repr (Duration ctx) -> repr (SkipDuration ctx)
   
 -- durations (6.2)
 
@@ -184,7 +160,17 @@ instance AttrDotted Duration
 instance AttrDuration Rest
 instance AttrDuration Note
 instance AttrDuration Chord
-instance AttrDuration Skip
+
+
+class AttrCmdLongDuration ctx
+class SymAttrCmdLongDuration repr where
+  cmdLongDuration :: (AttrCmdLongDuration a) => String -> repr (a ctx) -> repr (a ctx)
+
+instance AttrCmdLongDuration Rest
+instance AttrCmdLongDuration Note
+instance AttrCmdLongDuration Chord
+
+
   
 -- tuplets (6.2.3)
 data Times ctx
@@ -205,7 +191,9 @@ class SymChord repr where
 
 
 -- stems (6.3.2)
--- nullary commands
+data CmdStem ctx
+class SymCmdStem repr where
+  cmdStem :: String -> repr (CmdStem ctx)
 
 
 -- polyphony (6.3.3)
@@ -214,8 +202,11 @@ data PolyCat ctx
 class SymPolyCat repr where
   (\\) :: repr (a ctx) -> repr (a ctx) -> repr (PolyCat ctx)
 
--- clef (6.4.1)
--- clef binary command
+-- Clef (6.4.1)
+data CmdClef ctx
+class SymCmdClef repr where
+  clef :: repr (ClefType ctx) -> repr (CmdClef Ctx_Element)
+
  
 data ClefType ctx
 class SymClefType repr where
@@ -224,70 +215,114 @@ class SymClefType repr where
 
 class AttrClefTransposition ctx
 class SymAttrClefTransposition repr where  
-  clefUp8     :: (AttrClefTransposition a) => repr (a ctx) -> repr (a ctx)
-  clefUp15    :: (AttrClefTransposition a) => repr (a ctx) -> repr (a ctx)
-  clefDown8   :: (AttrClefTransposition a) => repr (a ctx) -> repr (a ctx)
-  clefDown15  :: (AttrClefTransposition a) => repr (a ctx) -> repr (a ctx)
+  clefTransposition :: (AttrClefTransposition a) => Int -> repr (a ctx) -> repr (a ctx) 
+
+
   
 -- Unfortunately this has to be an attibute of Pitch rather than ClefType
 -- because of the pretty printing rules 
 instance AttrClefTransposition Pitch
 
 -- key signature (6.4.2)
--- nullary commands 
+data CmdKey ctx
+class SymCmdKey repr where
+  key :: repr (Pitch ctx) -> repr (CmdKeyType Ctx_Element) -> repr (CmdKey Ctx_Element)
+
+data CmdKeyType ctx
+class SymCmdKeyType repr where
+  keyType :: String -> repr (CmdKeyType Ctx_Element)
+  
 
 
-
--- time signature (6.4.3)
+-- Time signature (6.4.3)
 data CmdTime ctx
 class SymCmdTime repr where
-  cmdTime :: MeterFraction -> repr (CmdTime Ctx_Note)
+  time :: MeterFraction -> repr (CmdTime Ctx_Element)
 
 
--- barlines (6.4.5)
+-- Bar lines (6.4.5)
 data CmdBar ctx
-
 class SymCmdBar repr where
-  cmdBar :: String -> repr (CmdBar ctx)
+  bar :: String -> repr (CmdBar ctx)
   
 -- "|", "|:", "||", ":|", ".|", ".|.", ":|:", "|.", ":", "unbroken ||:",
 -- "broken ||:"
 
--- unmetered music (6.4.6)
--- nullary commands
- 
+-- Unmetered music (6.4.6)
+
+data CmdCadenza ctx
+class SymCmdCadenza repr where
+  cmdCadenza     :: String -> repr (CmdCadenza ctx)
+
     
   
 
--- ties (6.5.1)
+-- Ties (6.5.1)
 data Tie ctx
 class SymTie repr where
   tie :: repr (Tie ctx)
 
+data CmdTie ctx
+class SymCmdTie repr where
+  cmdTie :: String -> repr (CmdTie ctx)  
 
--- slurs (6.5.2)
+
+
+
+-- Slurs (6.5.2)
 data Slur ctx
 class SymSlur repr where
   openSlur  :: repr (Slur ctx)
   closeSlur :: repr (Slur ctx)
+  
+data CmdSlur ctx
+class SymCmdSlur repr where
+  cmdSlur :: String -> repr (CmdSlur ctx)  
 
--- phrasing slurs (6.5.3)
+-- Phrasing slurs (6.5.3)
+-- { ATTRIBUTE OF NOTE ? }
 
-data PhrasingSlur ctx
-class SymPhrasingSlur repr where
-  openPhrasingSlur  :: repr (PhrasingSlur ctx)
-  closePhrasingSlur :: repr (PhrasingSlur ctx)
+data CmdPhrasingSlur ctx
+class SymCmdPhrasingSlur repr where
+  cmdPhrasingSlur             :: String -> repr (CmdPhrasingSlur ctx)
 
 
+-- Laissez vibrer ties (6.5.4)
+class AttrCmdLaissezVibrer ctx
+class SymAttrCmdLaissezVibrer repr where
+  laissezVibrer :: (AttrCmdLaissezVibrer a) => repr (a ctx) -> repr (a ctx)
 
--- beams (6.5.6)
+instance AttrCmdLaissezVibrer Note
+instance AttrCmdLaissezVibrer Chord
+
+-- Automatic beams (6.5.5)
+-- noBeam is a note attribute
+
+class AttrCmdNoBeam ctx
+class SymAttrCmdNoBeam repr where
+  noBeam :: (AttrCmdNoBeam a) => repr (a ctx) -> repr (a ctx)
+
+instance AttrCmdNoBeam Note 
+
+-- Manual beams (6.5.6)
 data Beam ctx
 class SymBeam repr where
   openBeam  :: repr (Beam ctx)
   closeBeam :: repr (Beam ctx)
   
+-- Grace notes (6.5.7)
+data CmdGrace ctx
+class SymCmdGrace repr where
+  cmdGrace         :: String -> repr (CmdGrace ctx)
 
--- articulations (6.6.1)
+
+  
+
+-- Articulations (6.6.1)
+data CmdArticulation ctx
+class SymCmdArticulation repr where
+  cmdArticulation :: String -> repr (CmdArticulation ctx)
+
 
 -- ~ Placement of an articulation, slur ...
 data VerticalPlacement ctx
@@ -297,67 +332,110 @@ class SymVerticalPlacement repr where
   vdefault :: repr (VerticalPlacement ctx)
   
 
--- fingering instructions (6.6.2) 
+-- Fingering instructions (6.6.2) 
 class AttrFingering ctx
 class SymAttrFingering repr where
   fingering :: (AttrFingering a) => Int -> repr (a ctx) -> repr (a ctx) 
 
 instance AttrFingering Note
 
--- dynamics (6.6.3)
--- nullary commands 
+-- Dynamics (6.6.3)
 
-data DynamicMark ctx
-class SymDynamicMark repr where
-  closeDynamic    :: repr (DynamicMark ctx)
-  openCrescendo   :: repr (DynamicMark ctx)
-  openDecrescendo :: repr (DynamicMark ctx)
+-- so many dynamics that we parameterize the SymCmdDynamic signture with String
+-- rather than have a seperate clause for each one
+data CmdDynamic ctx
+class SymCmdDynamic repr where
+  cmdDynamic :: String -> repr (CmdDynamic ctx)
+ 
+
+-- Breath marks (6.6.4)
+-- { COULD JUST BE SINGLE CMD breathe ? } 
+data CmdBreathe ctx
+class SymCmdBreathe repr where
+  cmdBreathe :: String -> repr (CmdBreathe ctx) 
+
+
+-- Glissando (6.6.6)
+-- { COULD JUST BE SINGLE CMD glissando ? } 
+data CmdGlissando ctx
+class SymCmdGlissando repr where
+  cmdGlissando :: String -> repr (CmdGlissando ctx)
   
--- breath marks (6.6.4)
--- nullary command
 
 
--- glissando (6.6.6)
--- nullary command
+-- Arpeggio (6.6.7)
+data CmdArpeggio ctx
+class SymCmdArpeggio repr where
+  cmdArpeggio          :: String -> repr (CmdArpeggio ctx)
 
 
--- arpeggio (6.6.7)
--- nullary commands
 
--- falls and doits (6.6.8)
--- nullary command
+-- Falls and doits (6.6.8)
 
-
--- Metronome marks (8.8.2)
--- tempo is a binary command (duration x int) wrapped as Metro so we can print
--- the equals sign
+data CmdBendAfter ctx 
+class SymCmdBendAfter repr where
+  bendAfter   :: repr (CmdBendAfter Ctx_Note) 
 
 
-data Metro ctx
-class SymMetro repr where
-  metro :: repr (Duration ctx) -> Int -> repr (Metro ctx)
-  
+
+
+-- Metronome marks (8.2.2)
+
+data CmdTempo ctx
+class SymCmdTempo repr where
+  tempo :: repr (Duration ctx) -> Int -> repr (CmdTempo ctx)
+
 
 -- Creating contexts (9.2.2)
 -- new is a binary command (type x music-expr)
+
+data CmdNew ctx
+class SymCmdNew repr where
+  newContext  :: repr (ContextType ctx) -> repr (a ctx') -> repr (CmdNew ctx'')
+
 
 data ContextType ctx
 class SymContextType repr where
   contextType :: String -> repr (ContextType ctx)
 
 
+
+
 -- Multiple scores in a book (10.1.2)
 
--- score book and markup are all commands
+data CmdScore ctx
+class SymCmdScore repr where
+  score :: repr (a subctx) -> repr (CmdScore Ctx_Book)
+
+data CmdMarkup ctx
+class SymCmdMarkup repr where
+  markup  :: String -> repr (CmdMarkup ctx)
+
+data CmdBook ctx
+class SymCmdBook repr where
+  book :: repr (a subctx) -> repr (CmdBook Ctx_Top)
+ 
+
+
 
 -- titles and headers (10.2)
 
-data HeaderBlock ctx
-class SymHeaderBlock repr where
-  headerBlock :: [repr (Equation Ctx_Header)] -> repr (HeaderBlock ctx)
+data CmdHeader ctx
+class SymCmdHeader repr where
+  header :: repr (a Ctx_Header) -> repr (CmdHeader Ctx_Top)  
   
 
 data Block ctx
 class SymBlock repr where
   block :: repr (a subctx) -> repr (b superctx)
+  
+data EqnTitle ctx
+class SymEqnTitle repr where
+  title :: String -> repr (EqnTitle Ctx_Header)  
+  
+data EqnDedication ctx
+class SymEqnDedication repr where
+  dedication :: String -> repr (EqnDedication Ctx_Header) 
+  
+     
   

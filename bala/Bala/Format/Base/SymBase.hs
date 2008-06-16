@@ -38,6 +38,8 @@ infixl 7 #
 (#) :: a -> (a -> b) -> b
 x # f = f x
 
+
+-- CAN WE DO WITHOUT?
 -- | high precedence application
 infixr 6 << 
 (<<) ::(a -> b) -> a ->  b

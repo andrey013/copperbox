@@ -27,8 +27,8 @@ import Text.ParserCombinators.Parsec hiding (space)
 
 
 
-pitchName_ :: (SymPitch repr) => Parser (repr (Pitch ctx))
-pitchName_ = choice $ map fn xs
+pPitch :: (SymPitch repr) => Parser (repr (Pitch ctx))
+pPitch = choice $ map fn xs
   where
     fn (ch,cnstr) = cnstr <$ char ch   
     xs = [('c',      _c),
@@ -39,31 +39,37 @@ pitchName_ = choice $ map fn xs
           ('a',      _a),
           ('b',      _b)]
     
-    
-nullaryCommand :: (SymCmdZero repr) => 
-    String -> (repr (CmdZero ctx)) -> Parser (repr (CmdZero ctx)) 
-nullaryCommand name cstr = cstr <$ command name
-
-major_, minor_    :: (SymCmdZero repr) => Parser (repr (CmdZero Ctx_Element))  
-major_            = nullaryCommand "major" major
-minor_            = nullaryCommand "minor" minor 
+   
 
 
-mode :: (SymCmdZero repr) => Parser (repr (CmdZero Ctx_Element)) 
-mode = choice $ map (uncurry nullaryCommand) xs
+
+pKeySignature :: (SymCmdKeyType repr) => Parser (repr (CmdKeyType Ctx_Element)) 
+pKeySignature = choice $ map (uncurry nullaryCommand) xs
   where  
-    xs = [("ionian",      ionian),
+    xs = [("major",       major),
+          ("minor",       minor),
+          ("ionian",      ionian),
           ("locrian",     locrian),
           ("aeolian",     aeolian),
           ("mixolydian",  mixolydian),
           ("lydian",      lydian),
           ("phrygian",    phrygian),
           ("dorian",      dorian)]
-     
+          
 
-openBeam_, closeBeam_ :: (SymBeam repr) => Parser (repr (Beam ctx)) 
-openBeam_   = openBeam  <$ lchar '['
-closeBeam_  = closeBeam <$ lchar ']'
+    
+
+pOpenBeam, pCloseBeam :: (SymBeam repr) => Parser (repr (Beam ctx)) 
+pOpenBeam   = openBeam  <$ lchar '['
+pCloseBeam  = closeBeam <$ lchar ']'
+
+--------------------------------------------------------------------------------
+-- helpers 
+--------------------------------------------------------------------------------
+
+nullaryCommand :: String -> (repr (a ctx)) -> Parser (repr (a ctx)) 
+nullaryCommand name cstr = cstr <$ command name
+
 
 --------------------------------------------------------------------------------
 -- lexer combinators 

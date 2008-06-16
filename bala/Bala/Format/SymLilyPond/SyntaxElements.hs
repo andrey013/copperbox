@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleContexts #-}
+
 
 
 --------------------------------------------------------------------------------
@@ -22,10 +22,6 @@ import Bala.Format.SymLilyPond.Datatypes
 
 
 -- comments and versioning (2.12)
-    
-version :: (SymCmdOne repr, SymDoubleQuotes repr) => 
-    String -> repr (CmdOne Ctx_Top)  
-version s               = cmdOne "version" (doubleQuotes s) 
 
 
 -- pitches (6.1)
@@ -43,11 +39,6 @@ _b      = pitch B
 -- pch'c
 
 -- Relative octaves (6.1.6)
--- binary command (pitch x musicexpr)
-
-relative               :: (SymCmdTwo repr, SymBlock repr) => 
-    repr (Pitch ctx) -> repr (b ctx) -> repr (CmdTwo Ctx_Note)  
-relative a b   = cmdTwo "relative" a (block b)
 
 
 -- rests (6.1.9)
@@ -63,21 +54,23 @@ r64     = rest # dur 64
 
 
 -- skips (6.1.10)
-skip_                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-skip_                   = cmdZero "skip" 
+skip :: (SymCmdSkip repr) => repr (CmdSkip ctx) 
+skip = cmdSkip "skip"
+
+
 
 s1, s2, s4, s8, s16, s32, s64 
-  :: (SymSkip repr, SymDuration repr, SymAttrDuration repr) => repr (Skip ctx)
-s1      = skip # dur 1
-s2      = skip # dur 2
-s4      = skip # dur 4
-s8      = skip # dur 8
-s16     = skip # dur 16
-s32     = skip # dur 32
-s64     = skip # dur 64
+  :: (SymSkipDuration repr, SymDuration repr) => repr (SkipDuration ctx)
+s1      = skipDuration $ duration 1
+s2      = skipDuration $ duration 2
+s4      = skipDuration $ duration 4
+s8      = skipDuration $ duration 8
+s16     = skipDuration $ duration 16
+s32     = skipDuration $ duration 32
+s64     = skipDuration $ duration 64
 
 
--- durations (6.2)
+-- durations (6.2.1)
 dur :: (SymAttrDuration repr, AttrDuration a, SymDuration repr) =>
        Int -> repr (a ctx) -> repr (a ctx)
 dur i = attrduration $ duration i
@@ -93,32 +86,27 @@ dotdot i = attrduration $ dotted 2 $ duration i
 
 -- dotted could store an Int of the dot count
 
-longa :: (Attr repr, SymCmdZero repr) => 
-         repr (b Ctx_Element) -> repr (b Ctx_Element) 
-longa                   = attr $ cmdZero "longa"  
+longa :: (AttrCmdLongDuration a, SymAttrCmdLongDuration repr) => 
+         repr (a Ctx_Element) -> repr (a Ctx_Element) 
+longa   = cmdLongDuration "longa"  
 
-breve :: (Attr repr, SymCmdZero repr) => 
-    repr (b Ctx_Element) -> repr (b Ctx_Element) 
-breve                   = attr $ cmdZero "breve"
+breve :: (AttrCmdLongDuration a, SymAttrCmdLongDuration repr) => 
+         repr (a Ctx_Element) -> repr (a Ctx_Element) 
+breve   = cmdLongDuration "breve"
 
 -- stems (6.3.2)
 
-stemUp                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-stemUp                  = cmdZero "stemUp"  
+stemUp                  :: (SymCmdStem repr) => repr (CmdStem Ctx_Note)  
+stemUp                  = cmdStem "stemUp"  
 
-stemDown                :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-stemDown                = cmdZero "stemDown"    
+stemDown                :: (SymCmdStem repr) => repr (CmdStem Ctx_Note)  
+stemDown                = cmdStem "stemDown"    
 
-stemNeutral             :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-stemNeutral             = cmdZero "stemNeutral"  
-
-
--- clef (6.4.1)
-clef :: (SymCmdOne repr) => 
-    repr (ClefType ctx) -> repr (CmdOne Ctx_Element)
-clef a              = cmdOne "clef" a
+stemNeutral             :: (SymCmdStem repr) => repr (CmdStem Ctx_Note)  
+stemNeutral             = cmdStem "stemNeutral"  
 
 
+-- Clef (6.4.1)
 treble, alto, tenor, bass, french, soprano, mezzosoprano, baritone, 
   varbaritone, subbass, percussion, tabClef
               :: SymClefType repr => repr (ClefType ctx)
@@ -135,60 +123,102 @@ subbass       = cleftype "subbass"
 percussion    = cleftype "percussion" 
 tabClef       = cleftype "tabClef" 
 
+
+clefUp8     :: (AttrClefTransposition a, SymAttrClefTransposition repr) => 
+               repr (a ctx) -> repr (a ctx)
+clefUp8     = clefTransposition 8
+
+clefUp15    :: (AttrClefTransposition a, SymAttrClefTransposition repr) => 
+               repr (a ctx) -> repr (a ctx)
+clefUp15    = clefTransposition 15
+
+clefDown8   :: (AttrClefTransposition a, SymAttrClefTransposition repr) => 
+               repr (a ctx) -> repr (a ctx)
+clefDown8   = clefTransposition (-8)
+
+clefDown15  :: (AttrClefTransposition a, SymAttrClefTransposition repr) => 
+               repr (a ctx) -> repr (a ctx)
+clefDown15  = clefTransposition (-15)
+  
 -- key signature (6.4.2)
 
-key :: (SymCmdTwo repr) => 
-    repr (Pitch ctx) -> repr (CmdZero Ctx_Element) -> repr (CmdTwo Ctx_Element)
-key                     = cmdTwo "key"
 
-major                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
-major                   = cmdZero "major"  
-
-minor                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
-minor                   = cmdZero "minor"  
-
-ionian                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
-ionian                  = cmdZero "ionian"
-  
-locrian                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
-locrian                 = cmdZero "locrian" 
- 
-aeolian                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
-aeolian                 = cmdZero "aeolian"
-  
-mixolydian              :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
-mixolydian              = cmdZero "mixolydian"
-  
-lydian                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
-lydian                  = cmdZero "lydian"
- 
-phrygian                :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
-phrygian                = cmdZero "phrygian" 
-
-dorian                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Element)  
-dorian                  = cmdZero "dorian" 
+major, minor, ionian, locrian, aeolian, mixolydian, lydian, phrygian, dorian
+      :: (SymCmdKeyType repr) => repr (CmdKeyType Ctx_Element)  
+major                   = keyType "major"    
+minor                   = keyType "minor"   
+ionian                  = keyType "ionian"
+locrian                 = keyType "locrian" 
+aeolian                 = keyType "aeolian"
+mixolydian              = keyType "mixolydian"
+lydian                  = keyType "lydian"
+phrygian                = keyType "phrygian"  
+dorian                  = keyType "dorian" 
 
 -- Time signature (6.4.3)
 
-time :: (SymCmdOne repr, SymLiftRepr MeterFraction repr) => 
-    MeterFraction -> repr (CmdOne Ctx_Element)
-time fr                = cmdOne "time" (liftRepr fr)
+-- Bar lines (6.4.5)
+
+-- Unmetered music (6.4.6)
+
+cadenzaOn     :: (SymCmdCadenza repr) => repr (CmdCadenza ctx)
+cadenzaOn     = cmdCadenza "cadenzaOn"
+
+cadenzaOff    :: (SymCmdCadenza repr) => repr (CmdCadenza ctx)
+cadenzaOff    = cmdCadenza "cadenzaOff"
+  
+-- Ties (6.5.1)
+
+repeatTie               :: (SymCmdTie repr) => repr (CmdTie Ctx_Note)   
+repeatTie               = cmdTie "repeatTie" 
+
+tieUp, tieDown, tieNeutral, tieDotted, tieDashed, tieSolid
+    :: (SymCmdTie repr) => repr (CmdTie Ctx_Note) 
+    
+tieUp         = cmdTie "tieUp"
+tieDown       = cmdTie "tieDown"
+tieNeutral    = cmdTie "tieNeutral"
+tieDotted     = cmdTie "tieDotted"
+tieDashed     = cmdTie "tieDashed"
+tieSolid      = cmdTie "tieSolid"
 
 
--- unmetered music (6.4.6)
-cadenzaOn               :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-cadenzaOn               = cmdZero "cadenzaOn" 
+-- Slurs (6.5.2)
 
-cadenzaOff              :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-cadenzaOff              = cmdZero "cadenzaOff" 
+slurUp, slurDown, slurNeutral, slurDashed, slurDotted, slurSolid 
+    :: (SymCmdSlur repr) => repr (CmdSlur ctx)
+slurUp        = cmdSlur "slurUp"
+slurDown      = cmdSlur "slurDown"
+slurNeutral   = cmdSlur "slurNeutral"
+slurDashed    = cmdSlur "slurDashed"
+slurDotted    = cmdSlur "slurDotted"
+slurSolid     = cmdSlur "slurSolid"
 
--- ties (6.5.1)
+-- Phrasing slurs (6.5.3)
+openPhrasingSlur, closePhrasingSlur 
+    :: SymCmdPhrasingSlur repr => repr (CmdPhrasingSlur ctx)
+openPhrasingSlur      = cmdPhrasingSlur "("
+closePhrasingSlur     = cmdPhrasingSlur ")"
 
-repeatTie               :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)   
-repeatTie               = cmdZero "repeatTie" 
+phrasingSlurUp, phrasingSlurDown, phrasingSlurNeutral
+    :: SymCmdPhrasingSlur repr => repr (CmdPhrasingSlur ctx) 
+phrasingSlurUp        = cmdPhrasingSlur "phrasingSlurUp"
+phrasingSlurDown      = cmdPhrasingSlur "phrasingSlurDown"
+phrasingSlurNeutral   = cmdPhrasingSlur "phrasingSlurNeutral"
+  
 
+-- Grace notes (6.5.7)
 
--- articulations (6.6.1)
+grace         :: SymCmdGrace repr => repr (CmdGrace ctx)
+grace         = cmdGrace "grace"
+
+acciaccatura  :: SymCmdGrace repr => repr (CmdGrace ctx)
+acciaccatura  = cmdGrace "acciaccatura"
+
+appoggiatura  :: SymCmdGrace repr => repr (CmdGrace ctx)
+appoggiatura  = cmdGrace "appoggiatura" 
+  
+-- Articulations (6.6.1)
   
 accent, marcato, staccatissimo, espressivo, 
     staccato, tenuto, portato, upbow,  downbow, 
@@ -199,143 +229,147 @@ accent, marcato, staccatissimo, espressivo,
     pralldown, prallup, lineprall, signumcongruentiae,
     shortfermata, fermata, longfermata, verylongfermata,
     segno, coda, varcoda
-  :: (Attr repr, SymCmdZero repr) => repr (b Ctx_Element) -> repr (b Ctx_Element) 
+  :: (Attr repr, SymCmdArticulation repr) => repr (b Ctx_Element) -> repr (b Ctx_Element) 
     
              
-accent                  = attr $ cmdZero "accent"  
-marcato                 = attr $ cmdZero "marcato" 
-staccatissimo           = attr $ cmdZero "staccatissimo" 
-espressivo              = attr $ cmdZero "espressivo"  
-staccato                = attr $ cmdZero "staccato" 
-tenuto                  = attr $ cmdZero "tenuto" 
-portato                 = attr $ cmdZero "portato"
-upbow                   = attr $ cmdZero "upbow"
-downbow                 = attr $ cmdZero "downbow" 
-flageolet               = attr $ cmdZero "flageolet" 
-thumb                   = attr $ cmdZero "thumb" 
-lheel                   = attr $ cmdZero "lheel" 
-rheel                   = attr $ cmdZero "rheel" 
-ltoe                    = attr $ cmdZero "ltoe" 
-rtoe                    = attr $ cmdZero "rtoe" 
-open                    = attr $ cmdZero "open"
-stopped                 = attr $ cmdZero "stopped"
-turn                    = attr $ cmdZero "turn" 
-reverseturn             = attr $ cmdZero "reverseturn"      
-trill                   = attr $ cmdZero "trill"  
-prall                   = attr $ cmdZero "prall"  
-mordent                 = attr $ cmdZero "mordent"   
-prallprall              = attr $ cmdZero "prallprall" 
-prallmordent            = attr $ cmdZero "prallmordent"  
-upprall                 = attr $ cmdZero "upprall"   
-downprall               = attr $ cmdZero "downprall" 
-upmordent               = attr $ cmdZero "upmordent"  
-downmordent             = attr $ cmdZero "downmordent" 
-pralldown               = attr $ cmdZero "pralldown"   
-prallup                 = attr $ cmdZero "prallup"  
-lineprall               = attr $ cmdZero "lineprall" 
-signumcongruentiae      = attr $ cmdZero "signumcongruentiae"  
-shortfermata            = attr $ cmdZero "shortfermata"  
-fermata                 = attr $ cmdZero "fermata" 
-longfermata             = attr $ cmdZero "longfermata" 
-verylongfermata         = attr $ cmdZero "verylongfermata"    
-segno                   = attr $ cmdZero "segno" 
-coda                    = attr $ cmdZero "coda" 
-varcoda                 = attr $ cmdZero "varcoda" 
+accent                  = attr $ cmdArticulation "accent"  
+marcato                 = attr $ cmdArticulation "marcato" 
+staccatissimo           = attr $ cmdArticulation "staccatissimo" 
+espressivo              = attr $ cmdArticulation "espressivo"  
+staccato                = attr $ cmdArticulation "staccato" 
+tenuto                  = attr $ cmdArticulation "tenuto" 
+portato                 = attr $ cmdArticulation "portato"
+upbow                   = attr $ cmdArticulation "upbow"
+downbow                 = attr $ cmdArticulation "downbow" 
+flageolet               = attr $ cmdArticulation "flageolet" 
+thumb                   = attr $ cmdArticulation "thumb" 
+lheel                   = attr $ cmdArticulation "lheel" 
+rheel                   = attr $ cmdArticulation "rheel" 
+ltoe                    = attr $ cmdArticulation "ltoe" 
+rtoe                    = attr $ cmdArticulation "rtoe" 
+open                    = attr $ cmdArticulation "open"
+stopped                 = attr $ cmdArticulation "stopped"
+turn                    = attr $ cmdArticulation "turn" 
+reverseturn             = attr $ cmdArticulation "reverseturn"      
+trill                   = attr $ cmdArticulation "trill"  
+prall                   = attr $ cmdArticulation "prall"  
+mordent                 = attr $ cmdArticulation "mordent"   
+prallprall              = attr $ cmdArticulation "prallprall" 
+prallmordent            = attr $ cmdArticulation "prallmordent"  
+upprall                 = attr $ cmdArticulation "upprall"   
+downprall               = attr $ cmdArticulation "downprall" 
+upmordent               = attr $ cmdArticulation "upmordent"  
+downmordent             = attr $ cmdArticulation "downmordent" 
+pralldown               = attr $ cmdArticulation "pralldown"   
+prallup                 = attr $ cmdArticulation "prallup"  
+lineprall               = attr $ cmdArticulation "lineprall" 
+signumcongruentiae      = attr $ cmdArticulation "signumcongruentiae"  
+shortfermata            = attr $ cmdArticulation "shortfermata"  
+fermata                 = attr $ cmdArticulation "fermata" 
+longfermata             = attr $ cmdArticulation "longfermata" 
+verylongfermata         = attr $ cmdArticulation "verylongfermata"    
+segno                   = attr $ cmdArticulation "segno" 
+coda                    = attr $ cmdArticulation "coda" 
+varcoda                 = attr $ cmdArticulation "varcoda" 
 
 
 -- dynamics (6.6.3)
 -- nullary commands (use underscore suffix _ for commands)
 
-ppppp_                  :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-ppppp_                  = cmdZero "ppppp" 
+ppppp_                  :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+ppppp_                  = cmdDynamic "ppppp" 
 
-pppp_                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-pppp_                   = cmdZero "pppp" 
+pppp_                   :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+pppp_                   = cmdDynamic "pppp" 
 
-ppp_                    :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-ppp_                    = cmdZero "ppp" 
+ppp_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+ppp_                    = cmdDynamic "ppp" 
 
-pp_                     :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-pp_                     = cmdZero "pp" 
+pp_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+pp_                     = cmdDynamic "pp" 
 
-piano                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-piano                   = cmdZero "p" 
+piano                   :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+piano                   = cmdDynamic "p" 
 
-mp_                     :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-mp_                     = cmdZero "mp" 
+mp_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+mp_                     = cmdDynamic "mp" 
 
-mf_                     :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-mf_                     = cmdZero "mf" 
+mf_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+mf_                     = cmdDynamic "mf" 
+
+forte                   :: (SymCmdDynamic repr) => repr (CmdDynamic ctx) 
+forte                   = cmdDynamic "f"
+
+ff_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx) 
+ff_                     = cmdDynamic "ff"
+
+fff_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx) 
+fff_                    = cmdDynamic "fff"
+
+ffff_                   :: (SymCmdDynamic repr) => repr (CmdDynamic ctx) 
+ffff_                   = cmdDynamic "ffff"
+
+fp_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx) 
+fp_                     = cmdDynamic "fp"
+
+sf_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+sf_                     = cmdDynamic "sf"
+
+sff_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+sff_                    = cmdDynamic "sff"
+
+sp_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+sp_                     = cmdDynamic "sp"
+
+spp_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+spp_                    = cmdDynamic "spp"
+
+sfz_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+sfz_                    = cmdDynamic "sfz"
+
+rfz_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+rfz_                    = cmdDynamic "rfz"
+
+openCrescendo           :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)
+openCrescendo           = cmdDynamic "<"
+
+openDecrescendo         :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)
+openDecrescendo         = cmdDynamic ">"
+ 
+closeDynamic            :: (SymCmdDynamic repr) => repr (CmdDynamic ctx) 
+closeDynamic            = cmdDynamic "!"
 
 
-forte                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note) 
-forte                   = cmdZero "f"
+cr_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)
+cr_                     = cmdDynamic "cr" 
 
-ff_                     :: (SymCmdZero repr) => repr (CmdZero Ctx_Note) 
-ff_                     = cmdZero "ff"
-
-fff_                    :: (SymCmdZero repr) => repr (CmdZero Ctx_Note) 
-fff_                    = cmdZero "fff"
-
-ffff_                   :: (SymCmdZero repr) => repr (CmdZero Ctx_Note) 
-ffff_                   = cmdZero "ffff"
-
-fp_                     :: (SymCmdZero repr) => repr (CmdZero Ctx_Note) 
-fp_                     = cmdZero "fp"
-
-sf_                     :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-sf_                     = cmdZero "sf"
-
-sff_                    :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-sff_                    = cmdZero "sff"
-
-sp_                     :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-sp_                     = cmdZero "sp"
-
-spp_                    :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-spp_                    = cmdZero "spp"
-
-sfz_                    :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-sfz_                    = cmdZero "sfz"
-
-rfz_                    :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-rfz_                    = cmdZero "rfz"
-
+decr_                   :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)
+decr_                   = cmdDynamic "decr"   
+  
+  
 -- breath marks (6.6.4)
 
-breathe                 :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-breathe                 = cmdZero "breathe"
-
+breathe       :: SymCmdBreathe repr => repr (CmdBreathe ctx) 
+breathe       = cmdBreathe "breathe"
 
 -- glissando (6.6.6)
-glissando               :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-glissando               = cmdZero "glissando"
 
-
--- arpeggio (6.6.7) -- indicates 'chord context'
-
-arpeggio                :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-arpeggio                = cmdZero "arpeggio"
-
-arpeggioBracket         :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-arpeggioBracket         = cmdZero "arpeggioBracket"
-
-arpeggioUp              :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-arpeggioUp              = cmdZero "arpeggioUp"
-
-arpeggioDown            :: (SymCmdZero repr) => repr (CmdZero Ctx_Note)  
-arpeggioDown            = cmdZero "arpeggioDown"
-
+glissando :: SymCmdGlissando repr => repr (CmdGlissando ctx)
+glissando = cmdGlissando "glissando"  
+  
+-- arpeggio (6.6.7)
+arpeggio, arpeggioUp, arpeggioDown, arpeggioNeutral, arpeggioBracket 
+    :: SymCmdArpeggio repr => repr (CmdArpeggio ctx)
+arpeggio          = cmdArpeggio "arpeggio"
+arpeggioUp        = cmdArpeggio "arpeggioUp"
+arpeggioDown      = cmdArpeggio "arpeggioDown"
+arpeggioNeutral   = cmdArpeggio "arpeggioNeutral"  
+arpeggioBracket   = cmdArpeggio "arpeggioBracket"
+  
+  
 -- falls and doits (6.6.8)
 
-bendAfter               :: (SymCmdZero repr) => repr (CmdZero Ctx_Note) 
-bendAfter               = cmdZero "bendAfter"
-
-
 -- Metronome marks (8.8.2)
-tempo :: (SymMetro repr, SymCmdOne repr) =>
-         repr (Duration ctx) -> Int -> repr (CmdOne Ctx_Element)
-tempo d i = cmdOne "tempo" (metro d i)
 
 -- Creating contexts (9.2.2)
 
@@ -349,38 +383,9 @@ tabStaff :: (SymContextType repr) => repr (ContextType ctx)
 tabStaff = contextType "TabStaff"
 
 
-newContext :: (SymContextType repr, SymCmdTwo repr) => 
-              repr (ContextType ctx) -> repr (a ctx') -> repr (CmdTwo ctx'')
-newContext ct = cmdTwo "new" ct 
-
-
 -- Multiple scores in a book (10.1.2)
 
-score :: (SymBlock repr, SymCmdOne repr) => repr (a subctx) -> repr (CmdOne Ctx_Book)
-score e  = cmdOne "score" (block e)  
 
-
-markup :: (SymBlock repr, SymCmdOne repr, SymLiftRepr String repr) => 
-          String -> repr (CmdOne Ctx_Book)
-markup e  = cmdOne "markup" (block $ liftRepr e)  
-
-book :: (SymBlock repr, SymCmdOne repr) => repr (a subctx) -> repr (CmdOne Ctx_Top)
-book e  = cmdOne "book" (block e)  
 
 -- titles and headers (10.2)
 
-header :: (SymCmdOne repr, SymHeaderBlock repr) => 
-          [repr (Equation Ctx_Header)] -> repr (CmdOne Ctx_Top)  
-header xs               = cmdOne "header" (headerBlock xs)
-
-
--- These are simplifications, header attributes can have e.g \markup cmds
-dedication :: (SymEquation repr, SymDoubleQuotes repr) => 
-    String -> repr (Equation Ctx_Header)
-dedication s = equation "dedication" (doubleQuotes s)
-
-
-
-title :: (SymEquation repr, SymDoubleQuotes repr) => 
-    String -> repr (Equation Ctx_Header)   
-title s = equation "title" (doubleQuotes s)
