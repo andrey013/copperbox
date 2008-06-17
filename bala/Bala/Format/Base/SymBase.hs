@@ -35,7 +35,8 @@ class Attr repr where
   
 -- | reverse application  
 infixl 7 #
-(#) :: a -> (a -> b) -> b
+
+( # ) :: a -> (a -> b) -> b
 x # f = f x
 
 

@@ -24,7 +24,7 @@ import Bala.Format.SymLilyPond.Datatypes
 -- comments and versioning (2.12)
 
 
--- pitches (6.1)
+-- * Pitches (6.1)
 
 _c, _d, _e, _f, _g , _a, _b :: (SymPitch repr) => repr (Pitch ctx)
 _c      = pitch C
@@ -38,10 +38,10 @@ _b      = pitch B
 
 -- pch'c
 
--- Relative octaves (6.1.6)
+-- * Relative octaves (6.1.6)
 
 
--- rests (6.1.9)
+-- * Rests (6.1.9)
 r1, r2, r4, r8, r16, r32, r64 
     :: (SymRest repr, SymDuration repr, SymAttrDuration repr) => repr (Rest ctx)
 r1      = rest # dur 1
@@ -53,7 +53,7 @@ r32     = rest # dur 32
 r64     = rest # dur 64
 
 
--- skips (6.1.10)
+-- * Skips (6.1.10)
 skip :: (SymCmdSkip repr) => repr (CmdSkip ctx) 
 skip = cmdSkip "skip"
 
@@ -70,21 +70,12 @@ s32     = skipDuration $ duration 32
 s64     = skipDuration $ duration 64
 
 
--- durations (6.2.1)
+-- * Durations (6.2.1)
 dur :: (SymAttrDuration repr, AttrDuration a, SymDuration repr) =>
        Int -> repr (a ctx) -> repr (a ctx)
 dur i = attrduration $ duration i
 
-dot :: (SymAttrDuration repr, AttrDuration a, SymDuration repr, SymAttrDotted repr) =>
-       Int -> repr (a ctx) -> repr (a ctx)
-dot i = attrduration $ dotted 1 $ duration i
 
-
-dotdot :: (SymAttrDuration repr, AttrDuration a, SymDuration repr, SymAttrDotted repr) =>
-       Int -> repr (a ctx) -> repr (a ctx)
-dotdot i = attrduration $ dotted 2 $ duration i
-
--- dotted could store an Int of the dot count
 
 longa :: (AttrCmdLongDuration a, SymAttrCmdLongDuration repr) => 
          repr (a Ctx_Element) -> repr (a Ctx_Element) 
@@ -94,7 +85,19 @@ breve :: (AttrCmdLongDuration a, SymAttrCmdLongDuration repr) =>
          repr (a Ctx_Element) -> repr (a Ctx_Element) 
 breve   = cmdLongDuration "breve"
 
--- stems (6.3.2)
+
+-- * Augmentation dots (6.2.2)
+dot :: (SymAttrDuration repr, AttrDuration a, SymDuration repr, SymAttrDotted repr) =>
+       Int -> repr (a ctx) -> repr (a ctx)
+dot i = attrduration $ dotted 1 $ duration i
+
+
+dotdot :: (SymAttrDuration repr, AttrDuration a, SymDuration repr, SymAttrDotted repr) =>
+       Int -> repr (a ctx) -> repr (a ctx)
+dotdot i = attrduration $ dotted 2 $ duration i
+
+
+-- * Stems (6.3.2)
 
 stemUp                  :: (SymCmdStem repr) => repr (CmdStem Ctx_Note)  
 stemUp                  = cmdStem "stemUp"  
@@ -106,7 +109,7 @@ stemNeutral             :: (SymCmdStem repr) => repr (CmdStem Ctx_Note)
 stemNeutral             = cmdStem "stemNeutral"  
 
 
--- Clef (6.4.1)
+-- * Clef (6.4.1)
 treble, alto, tenor, bass, french, soprano, mezzosoprano, baritone, 
   varbaritone, subbass, percussion, tabClef
               :: SymClefType repr => repr (ClefType ctx)
@@ -140,7 +143,7 @@ clefDown15  :: (AttrClefTransposition a, SymAttrClefTransposition repr) =>
                repr (a ctx) -> repr (a ctx)
 clefDown15  = clefTransposition (-15)
   
--- key signature (6.4.2)
+-- * Key signature (6.4.2)
 
 
 major, minor, ionian, locrian, aeolian, mixolydian, lydian, phrygian, dorian
@@ -155,11 +158,11 @@ lydian                  = keyType "lydian"
 phrygian                = keyType "phrygian"  
 dorian                  = keyType "dorian" 
 
--- Time signature (6.4.3)
+-- * Time signature (6.4.3)
 
--- Bar lines (6.4.5)
+-- * Bar lines (6.4.5)
 
--- Unmetered music (6.4.6)
+-- * Unmetered music (6.4.6)
 
 cadenzaOn     :: (SymCmdCadenza repr) => repr (CmdCadenza ctx)
 cadenzaOn     = cmdCadenza "cadenzaOn"
@@ -167,7 +170,7 @@ cadenzaOn     = cmdCadenza "cadenzaOn"
 cadenzaOff    :: (SymCmdCadenza repr) => repr (CmdCadenza ctx)
 cadenzaOff    = cmdCadenza "cadenzaOff"
   
--- Ties (6.5.1)
+-- * Ties (6.5.1)
 
 repeatTie               :: (SymCmdTie repr) => repr (CmdTie Ctx_Note)   
 repeatTie               = cmdTie "repeatTie" 
@@ -183,7 +186,7 @@ tieDashed     = cmdTie "tieDashed"
 tieSolid      = cmdTie "tieSolid"
 
 
--- Slurs (6.5.2)
+-- * Slurs (6.5.2)
 
 slurUp, slurDown, slurNeutral, slurDashed, slurDotted, slurSolid 
     :: (SymCmdSlur repr) => repr (CmdSlur ctx)
@@ -194,7 +197,7 @@ slurDashed    = cmdSlur "slurDashed"
 slurDotted    = cmdSlur "slurDotted"
 slurSolid     = cmdSlur "slurSolid"
 
--- Phrasing slurs (6.5.3)
+-- * Phrasing slurs (6.5.3)
 openPhrasingSlur, closePhrasingSlur 
     :: SymCmdPhrasingSlur repr => repr (CmdPhrasingSlur ctx)
 openPhrasingSlur      = cmdPhrasingSlur "("
@@ -207,7 +210,7 @@ phrasingSlurDown      = cmdPhrasingSlur "phrasingSlurDown"
 phrasingSlurNeutral   = cmdPhrasingSlur "phrasingSlurNeutral"
   
 
--- Grace notes (6.5.7)
+-- * Grace notes (6.5.7)
 
 grace         :: SymCmdGrace repr => repr (CmdGrace ctx)
 grace         = cmdGrace "grace"
@@ -218,7 +221,7 @@ acciaccatura  = cmdGrace "acciaccatura"
 appoggiatura  :: SymCmdGrace repr => repr (CmdGrace ctx)
 appoggiatura  = cmdGrace "appoggiatura" 
   
--- Articulations (6.6.1)
+-- * Articulations (6.6.1)
   
 accent, marcato, staccatissimo, espressivo, 
     staccato, tenuto, portato, upbow,  downbow, 
@@ -273,7 +276,7 @@ coda                    = attr $ cmdArticulation "coda"
 varcoda                 = attr $ cmdArticulation "varcoda" 
 
 
--- dynamics (6.6.3)
+-- * Dynamics (6.6.3)
 -- nullary commands (use underscore suffix _ for commands)
 
 ppppp_                  :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
@@ -347,17 +350,17 @@ decr_                   :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)
 decr_                   = cmdDynamic "decr"   
   
   
--- breath marks (6.6.4)
+-- * Breath marks (6.6.4)
 
 breathe       :: SymCmdBreathe repr => repr (CmdBreathe ctx) 
 breathe       = cmdBreathe "breathe"
 
--- glissando (6.6.6)
+-- * Glissando (6.6.6)
 
 glissando :: SymCmdGlissando repr => repr (CmdGlissando ctx)
 glissando = cmdGlissando "glissando"  
   
--- arpeggio (6.6.7)
+-- * Arpeggio (6.6.7)
 arpeggio, arpeggioUp, arpeggioDown, arpeggioNeutral, arpeggioBracket 
     :: SymCmdArpeggio repr => repr (CmdArpeggio ctx)
 arpeggio          = cmdArpeggio "arpeggio"
@@ -367,11 +370,11 @@ arpeggioNeutral   = cmdArpeggio "arpeggioNeutral"
 arpeggioBracket   = cmdArpeggio "arpeggioBracket"
   
   
--- falls and doits (6.6.8)
+-- * Falls and doits (6.6.8)
 
--- Metronome marks (8.8.2)
+-- * Metronome marks (8.8.2)
 
--- Creating contexts (9.2.2)
+-- * Creating contexts (9.2.2)
 
 staff :: (SymContextType repr) => repr (ContextType ctx)
 staff = contextType "Staff"
@@ -383,9 +386,11 @@ tabStaff :: (SymContextType repr) => repr (ContextType ctx)
 tabStaff = contextType "TabStaff"
 
 
--- Multiple scores in a book (10.1.2)
+-- * Multiple scores in a book (10.1.2)
 
 
 
--- titles and headers (10.2)
+-- * Titles and headers (10.2)
+
+-- * Creating titles (10.2.1)
 
