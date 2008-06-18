@@ -31,24 +31,20 @@ import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language
 
 
---------------------------------------------------------------------------------
--- Counting may need to consider its direction
---------------------------------------------------------------------------------
 
-data Direction = Upwards | Downwards
-  deriving (Eq,Read,Show)
   
   
 --------------------------------------------------------------------------------
--- Affi(cher) & Deco(uper) -- alternatives to Read & Show for prettier representations
+-- * Affi(cher) & Deco(uper) 
+-- ** Alternatives to Read & Show for prettier representations
 --------------------------------------------------------------------------------
 
--- | An alternative to Show - to be used for pretty formatting keeping Show
--- for outputting Haskell readable constructors 
+-- | Affi - alternative to 'Show' - to be used for pretty formatting keeping Show
+-- for outputting Haskell readable constructors. 
 class Affi a where
   affi :: a -> ShowS
 
--- | An alternative to Read - to be used for reading 'Affi' output 
+-- | Deco - alternative to Read - to be used for reading 'Affi' output 
 class Deco a where
   deco :: Parser a
 
@@ -61,7 +57,7 @@ afficher a = affi a []
 afficherL :: Affi a => [a] -> String
 afficherL as = (hsepS $ map affi as) []
 
-
+-- | Pretty print a pair when left and right are both instances of 'Affi'.
 afficherP :: (Affi a, Affi b) => (a,b) -> String
 afficherP (a,b) = (parenS $ hcatS [affi a, commaS , affi b]) []
 
@@ -90,6 +86,16 @@ class Extract a b where extract :: a -> b
                     
 --------------------------------------------------------------------------------
 
+--------------------------------------------------------------------------------
+-- * Counting 
+--------------------------------------------------------------------------------
+
+
+-- | Direction - counting may need to consider its direction
+data Direction = Upwards | Downwards
+  deriving (Eq,Read,Show)
+  
+  
 -- | An apologia - the pitch arithmetic in Bala has been a source of many 
 -- errors, probably because my maths has got rusty. Many arithmetic operations
 -- are easy to think of as counting, rather than addition, subtraction... etc 
@@ -111,36 +117,25 @@ countTo fn x y = countUntil 1000 (== y) fn x
 retroCountTo :: (Eq a) => (a -> a) -> a -> a -> Int
 retroCountTo fn x y = 1 + countUntil 1000 (== y) fn x 
 
--- | Repeat succ i times.
+-- | Repeat succ n times.
 successor :: (Enum a) => a -> Int -> a
-successor a i = applyi f a i
-  where f = if (i >= 0) then succ else pred
+successor a n = applyi f a n
+  where f = if (n >= 0) then succ else pred
 
--- | Repeat pred i times.
+-- | Repeat pred n times.
 predecessor :: (Enum a) => a -> Int -> a  
-predecessor a i = applyi f a i
-  where f = if (i >= 0) then pred else succ
+predecessor a n = applyi f a n
+  where f = if (n >= 0) then pred else succ
   
-              
+-- | Apply a function i times.              
 applyi :: (a -> a) -> a -> Int -> a
 applyi f a i | i <= 0    = a
              | otherwise = applyi f (f a) (i-1)
              
-              
-explode12, explode100  :: (Integral a) => a -> (a, a)
-explode12 i       = i `divMod` 12
-explode100 i      = i `divMod` 100
 
-collapse12, collapse100  :: (Integral a) => (a, a) -> a
-collapse12 (o,d)  = d + 12 * o
-collapse100 (o,d) = d + 100 * o
-
-normalize12, normalize100 :: (Integral a) => (a, a) -> (a, a) 
-normalize12 (o,d)  = let (c, d') = explode12 d in (o + c, d')
-normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
 
 --------------------------------------------------------------------------------
--- shifty arithmetic numbers for counting intervals
+-- * Shifty arithmetic numbers for counting intervals
 --------------------------------------------------------------------------------
 
 -- "Counting" includes the current position and there is no zero
@@ -222,88 +217,138 @@ countMinus :: (Countable (Count a)) => Count a -> Count a -> Count a
 countMinus a b = a `backward` (unCount b)
                            
 --------------------------------------------------------------------------------
--- functions
+-- * Utility unctions
 --------------------------------------------------------------------------------
 
--- | zam - zippy map
+-- | zam - zippy map.
 zam :: (a -> a -> b) -> [a] -> [b]
 zam f (x:y:ys) = f x y : zam f (y:ys)
 zam f _        = []
 
+-- | mod12 - modulus 12.
 mod12 :: (Integral a) => a -> a
 mod12 i = i `mod` 12
 
+-- | mod12 - modulus 7.
 mod7 :: (Integral a) => a -> a
 mod7  i = i `mod` 7  
 
-
+-- | sub1 - subtract 1. 
 sub1 :: Integral a => a -> a
 sub1 = flip (-) 1
 
 
--- | pointsfree or
+-- | (||) with 'apply' - test a with f, if it fails test it with g.
 ora :: (a -> Bool) -> (a -> Bool) -> a -> Bool
 ora f g a = f a || g a
 
--- | pointsfree and
+-- | (&&) with 'apply' - test a with both f and g.
 anda :: (a -> Bool) -> (a -> Bool) -> a -> Bool
 anda f g a = f a && g a
 
--- | dyadic apply
+-- | Dyadic apply \/ compose - apply the binary function g to a and b, 
+-- then apply the unary function f to the result.
 dyap :: (c -> d) -> (a -> b -> c) -> a -> b -> d
 dyap f g a b = f (g a b) 
 
--- | triadic apply
+-- | Triadic apply \/ compose - apply the ternary function g to a, b and c, 
+-- then apply the unary function f to the result.
 triap :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
 triap f g a b c = f (g a b c) 
 
+--------------------------------------------------------------------------------
+-- * Helpers for modulo 12 and modulo 100.
+-- $explodedoc
+--------------------------------------------------------------------------------
+
+-- $explodedoc
+-- Useful for semitone arithmetic (base 12) and cent arithmetic (base 100).
+-- The divMod pair makes a /fraction/. 
+
+-- | divMod for base 12.              
+explode12 :: (Integral a) => a -> (a, a) 
+explode12 i       = i `divMod` 12
+
+-- | divMod for base 100. 
+explode100  :: (Integral a) => a -> (a, a)
+explode100 i      = i `divMod` 100
+
+-- | Collapse an 'explode12' pair back to an integral.
+collapse12  :: (Integral a) => (a, a) -> a
+collapse12 (o,d)  = d + 12 * o
+
+-- | Collapse an 'collapse100' pair back to an integral.
+collapse100  :: (Integral a) => (a, a) -> a
+collapse100 (o,d) = d + 100 * o
+
+-- | Normalize an 'explode12' pair so that the right hand size is less than 12.
+normalize12 :: (Integral a) => (a, a) -> (a, a) 
+normalize12 (o,d)  = let (c, d') = explode12 d in (o + c, d')
+
+-- | Normalize an 'explode100' pair so that the right hand size is less than 100.
+normalize100 :: (Integral a) => (a, a) -> (a, a) 
+normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
+
   
 --------------------------------------------------------------------------------
--- Parsec helpers
+-- * Parsec helpers
 --------------------------------------------------------------------------------
 
-
+-- | An applicative instance 
 instance Applicative (GenParser tok st) where
   pure = return
   (<*>) = ap
   
-  
+-- | Use a Parsec parser like a ReadS parser 
 readsParsec :: (Parser a) -> String -> [(a,String)]
 readsParsec p s = case parse pfn "" s of
                     Left _ -> []
                     Right a -> [a] 
   where pfn = (,) <$> p <*> getInput
 
+-- | Match the longest string
 longestString :: [String] -> Parser String
 longestString = choice . map (try . string) . reverse . sortBy longer
   where longer a b = (length a) `compare` (length b)
 
-  
+-- | Wrap Parsec's oneOf with a Maybe to handle failure. 
 optOneOf :: [Char] -> Parser (Maybe Char)    
 optOneOf cs = optparse $ oneOf cs
 
-
+-- | An alternative to Parsec's option parser. Whereas option returns a default
+-- value if the parse fails, optparse wraps success and failure in a Maybe.
 optparse :: Parser a -> Parser (Maybe a)
 optparse p = option Nothing (try $ Just <$> p)
 
+-- | Wrap Parser's alterative (\<|\>) combinator with the Either type to 
+-- get different types for the left and right parse.
 eitherparse :: Parser a -> Parser b -> Parser (Either a b)
 eitherparse p p' = (Left <$> p) <|> (Right <$> p')
 
-counting, counting1 :: Parser a -> Parser Int
+-- | Return the count of the number of parses, rather than a list of elements.
+-- (Note the count combinator in Parsec works differently, it will parse a 
+-- element n times).
+counting :: Parser a -> Parser Int
 counting  p = length <$> many p
+
+-- | Version of counting that must succeed at least once.
+counting1 :: Parser a -> Parser Int
 counting1 p = length <$> many1 p
 
-
+-- | A digit seuence, returning Int.
 positiveInt :: Parser Int
 positiveInt = read <$> many1 digit
 
+-- | A signed digit sequence, returning Int.
 signedInt :: Parser Int
 signedInt   = (\ a b -> read (a:b)) <$> sign <*> many1 digit
   where sign        = oneOf "+-"
 
+-- | Wrap Parsec's string parser to consume trailing whitespace.
 lexString :: String -> Parser String
 lexString   = lexeme . string
 
+-- | Wrap Parsec's char parser to consume trailing whitespace.
 lexChar :: Char -> Parser Char
 lexChar   = lexeme . char
 
@@ -323,10 +368,11 @@ double            = P.float baseLex
 stringLiteral     = P.stringLiteral baseLex
 
 
-
+-- | Parsec's double parser, coerced to return float.
 float             :: Parser Float
 float             = fromRational . toRational <$> double
 
+-- | Parsec's integer parser, coerced to return Int.
 int               :: Parser Int
 int               = fromIntegral <$> integer 
 
@@ -334,11 +380,11 @@ digiti            :: Parser Int
 digiti            = (flip (-) 48) . ord  <$> digit
 
 
--- | more general type than stringLiteral
+-- | Like Parsec's stringLiteral but with a  more general type.
 doubleQuoted :: Parser a -> Parser a
 doubleQuoted p = char '"' *> p <* char '"'
 
--- | island parsing (does it work?)
+-- | Island parsing (does it work?)
 -- It generates a parse error if we get to eof without parsing p
 -- which is what we want.
 water :: Parser a -> Parser a
@@ -349,7 +395,7 @@ water p = do
       Nothing -> anyChar >> water p 
 
 
--- | collect the water as a string until p parses     
+-- | Collect the water as a string until p parses.     
 collectWater :: Parser a -> Parser (String,a)
 collectWater p = colwater []
   where
@@ -362,38 +408,43 @@ collectWater p = colwater []
       
 
 --------------------------------------------------------------------------------
--- Show helpers 
--- acknowledgement - Daan Leijen's pprint combinators recast for ShowS 
+-- * Show helpers 
+-- ** Acknowledgement - Daan Leijen's pprint combinators recast for ShowS 
 --------------------------------------------------------------------------------
 
 optS :: (Show a) => Maybe a -> ShowS
 optS Nothing = id
 optS (Just a) = shows a
 
+punctuateS :: ShowS -> [ShowS] -> [ShowS]
 punctuateS s []      = []
 punctuateS s [x]     = [x]
 punctuateS s (x:xs)  = (x . s) : punctuateS s xs
 
+encloseSepS :: ShowS -> ShowS -> ShowS -> [ShowS] -> ShowS
 encloseSepS l r s []  = l . r
 encloseSepS l r s [x] = l . x . r
 encloseSepS l r s xs  = l . hcatS (punctuateS s xs) . r
 
+listS, tupledS, semiBraceS :: [ShowS] -> ShowS
 listS           = encloseSepS lbracketS rbracketS commaS
 tupledS         = encloseSepS lparenS   rparenS   commaS
 semiBraceS      = encloseSepS lbraceS   rbraceS   semiS
 
-
+hcatS, hsepS, vsepS :: [ShowS] -> ShowS
 hcatS           = foldS (.)
 hsepS           = foldS sepS
 vsepS           = foldS lineS
 
+foldS :: (ShowS -> ShowS -> ShowS) -> [ShowS] -> ShowS
 foldS f []      = id
 foldS f xs      = foldr1 f xs
 
-
+sepS, lineS :: ShowS -> ShowS -> ShowS
 x `sepS`  y     = x . spaceS . y  
 x `lineS` y     = x . newlineS . y
 
+squoteS, dquoteS, braceS, parenS, angleS, bracketS :: ShowS -> ShowS
 squoteS         = encloseS sglquoteS sglquoteS
 dquoteS         = encloseS dblquoteS dblquoteS
 braceS          = encloseS lbraceS rbraceS
@@ -402,6 +453,8 @@ angleS          = encloseS langleS rangleS
 bracketS        = encloseS lbracketS rbracketS
 encloseS l r x  = l . x . r
 
+lparenS, rparenS, langleS, rangleS, lbraceS, rbraceS, lbracketS, rbracketS
+  :: ShowS
 lparenS         = showChar '('
 rparenS         = showChar ')'
 langleS         = showChar '<'
@@ -411,6 +464,9 @@ rbraceS         = showChar '}'
 lbracketS       = showChar '['
 rbracketS       = showChar ']'     
 
+sglquoteS, dblquoteS, semiS, colonS, commaS, spaceS, dotS, equalS, 
+  backslashS, newlineS, barS 
+  :: ShowS
 sglquoteS       = showChar '\''
 dblquoteS       = showChar '"'
 semiS           = showChar ':'
