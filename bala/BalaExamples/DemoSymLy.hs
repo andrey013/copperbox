@@ -1,4 +1,5 @@
 
+-- Make sure lilypond is in your path
 
 module DemoSymLy where
 
@@ -51,7 +52,7 @@ lilypond_test () = version "2.10.3" +++ header (title "Bala LilyPond test")
 outputDoc :: (() -> P a) -> FilePath -> IO ()
 outputDoc e lypath = let sdoc = renderPretty 0.8 80 (unP (e ())) in do
     writeFile lypath ((displayS sdoc []) ++ "\n")
-    ph <- runCommand ("/usr/local/bin/lilypond " ++ lypath)  
+    ph <- runCommand ("lilypond " ++ lypath)  
     waitForProcess ph
     return ()
     

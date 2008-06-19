@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  multi-parameter typeclasses
 --
 -- Pretty printer for ABC format
 --
@@ -39,45 +39,69 @@ instance SymConcatenation Ctx_Element P where
   
 
 
-instance SynNumberField P where
+instance SymFieldNumber P where
   num_ i                = P  $ ppfield 'X' (int i)
-  
-  
-instance SymTextFields P where
-  area_ s               = P $ ppfield 'A' (text s)
-  book_ s               = P $ ppfield 'B' (text s)
-  composer_ s           = P $ ppfield 'C' (text s)
-  discography_ s        = P $ ppfield 'D' (text s)
-  elemskip_ s           = P $ ppfield 'E' (text s) 
-  group_ s              = P $ ppfield 'G' (text s)
-  information_ s        = P $ ppfield 'I' (text s)
-  notes_ s              = P $ ppfield 'N' (text s)
-  origin_ s             = P $ ppfield 'O' (text s)
-  rhythm_ s             = P $ ppfield 'R' (text s)
-  source_ s             = P $ ppfield 'S' (text s)
-  title_ s              = P $ ppfield 'T' (text s)
-  words_ s              = P $ ppfield 'W' (text s)
-  transcriberNotes_ s   = P $ ppfield 'Z' (text s)
 
-instance SymHistoryField P where
+instance SymFieldTitle P where  
+  title_ s              = P $ ppfield 'T' (text s)
+   
+instance SymFieldArea P where
+  area_ s               = P $ ppfield 'A' (text s)
+  
+instance SymFieldBook P where
+  book_ s               = P $ ppfield 'B' (text s)
+  
+instance SymFieldComposer P where
+  composer_ s           = P $ ppfield 'C' (text s)
+
+instance SymFieldDiscography P where  
+  discography_ s        = P $ ppfield 'D' (text s)
+
+instance SymFieldElemskip P where  
+  elemskip_ s           = P $ ppfield 'E' (text s) 
+
+instance SymFieldGroup P where  
+  group_ s              = P $ ppfield 'G' (text s)
+
+instance SymFieldInformation P where  
+  information_ s        = P $ ppfield 'I' (text s)
+
+instance SymFieldNotes P where  
+  notes_ s              = P $ ppfield 'N' (text s)
+
+instance SymFieldOrigin P where  
+  origin_ s             = P $ ppfield 'O' (text s)
+
+instance SymFieldRhythm P where  
+  rhythm_ s             = P $ ppfield 'R' (text s)
+
+instance SymFieldSource P where  
+  source_ s             = P $ ppfield 'S' (text s)
+
+instance SymFieldWords P where  
+  words_ s              = P $ ppfield 'W' (text s)
+
+instance SymFieldTranscrNotes P where  
+  transcrNotes_ s       = P $ ppfield 'Z' (text s)
+
+instance SymFieldHistory P where
  history_ xs            = P $ ppfield 'H' (align $ vsep $ map text xs)
  
-instance SymKeyField P where
+instance SymFieldKey P where
   key_ k                = P $ ppfield 'K' (unP k)
-  
+     
+instance SymFieldDefaultNoteLength P where
+ defaultNoteLength_ r       = P $ ppfield 'L' (pretty r) 
    
-instance SymDefaultLengthField P where
- defaultLength_ r       = P $ ppfield 'L' (pretty r) 
-   
-instance SymMeterField P where
+instance SymFieldMeter P where
   meter_ m              = P $ ppfield 'M' (unP m)  
 
 -- simplified
-instance SymPartsField P where 
+instance SymFieldParts P where 
   parts_ cs             = P $ ppfield 'P' (text cs)
   
   
-instance SymTempoField P where
+instance SymFieldTempo P where
   tempo_ t              = P $ ppfield 'Q' (unP t)
 
   

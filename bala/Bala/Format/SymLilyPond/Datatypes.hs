@@ -9,16 +9,12 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  empty data declarations
 --
--- Datatypes for a subset of LilyPond format
+-- Datatypes for a subset of LilyPond format in the final-tagless 
+-- (Symantics) style of Carette, Kiselyov, and Shan.
 --
 --------------------------------------------------------------------------------
-
-
--- Use the 'Finally Tagless...' approach
--- as it gives us open datatypes
-
 
 
 
@@ -41,7 +37,7 @@ data Ctx_NoteAttr
 -- | Glyphs - e.g. rest, note, skip etc
 data Ctx_Element 
  
-
+--------------------------------------------------------------------------------
 -- * Commenting input files (2.12)
 
 
@@ -60,7 +56,7 @@ class SymBlockComment repr where
   blockComment :: String -> repr (BlockComment ctx)
 
 
-
+--------------------------------------------------------------------------------
 -- * Pitches (6.1)
 
 data PitchName = C | D | E | F | G | A | B 
@@ -87,7 +83,7 @@ class SymNote repr where
   note :: repr (Pitch ctx) -> repr (Note Ctx_Element)
 
  
-    
+--------------------------------------------------------------------------------
 -- * Accidentals (6.1.2)  
 class AttrAccidental ctx
 class SymAttrAccidental repr where
@@ -99,14 +95,17 @@ class SymAttrAccidental repr where
   
 instance AttrAccidental Pitch  
 
+--------------------------------------------------------------------------------
 -- * Cautionary accidentals (6.1.3)
+
 data CautionaryAccidental ctx
 class SymCautionaryAccidental repr where
   reminderAccidental    :: repr (CautionaryAccidental ctx)
   cautionaryAccidental  :: repr (CautionaryAccidental ctx)
 
+--------------------------------------------------------------------------------
+-- * Micro tones (6.1.4)
 
--- * Micro tones (6.1.4)    
 class AttrMicroTone ctx
 class SymAttrMicroTone repr where
   halfFlat  :: (AttrMicroTone a) => repr (a ctx) -> repr (a ctx)
@@ -114,7 +113,7 @@ class SymAttrMicroTone repr where
   
 instance AttrMicroTone Pitch 
 
-
+--------------------------------------------------------------------------------
 -- * Relative octaves (6.1.6)
 
 data CmdRelative ctx
@@ -122,12 +121,14 @@ class SymCmdReleative repr where
   relative :: repr (Pitch ctx) -> repr (b ctx) -> repr (CmdRelative Ctx_Note) 
 
   
- 
+--------------------------------------------------------------------------------
 -- * Rests (6.1.9)
+
 data Rest ctx
 class SymRest repr where
   rest :: repr (Rest ctx)
-  
+
+--------------------------------------------------------------------------------  
 -- * Skips (6.1.10)
 
 -- \skip
@@ -139,7 +140,8 @@ class SymCmdSkip repr where
 data SkipDuration ctx
 class SymSkipDuration repr where
   skipDuration :: repr (Duration ctx) -> repr (SkipDuration ctx)
-  
+
+--------------------------------------------------------------------------------  
 -- * Durations (6.2.1)
 
 data Duration ctx
@@ -168,21 +170,24 @@ instance AttrCmdLongDuration Rest
 instance AttrCmdLongDuration Note
 instance AttrCmdLongDuration Chord
 
+--------------------------------------------------------------------------------
 -- * Augmentation dots (6.2.2)
+
 class AttrDotted ctx
 class SymAttrDotted repr where
   dotted :: (AttrDotted a) => Int -> repr (a ctx) -> repr (a ctx)
 
 instance AttrDotted Duration
 
-  
+--------------------------------------------------------------------------------
 -- * Tuplets (6.2.3)
+
 data Times ctx
 class SymTimes repr where
   times :: MeterFraction -> repr (a ctx) -> repr (Times ctx)
 
 
-  
+--------------------------------------------------------------------------------
 -- * Chords (6.3.1)
   
 data Chord ctx
@@ -193,19 +198,23 @@ data Chord ctx
 class SymChord repr where
   chord :: [repr (Pitch ctx)] -> repr (Chord ctx)
 
-
+--------------------------------------------------------------------------------
 -- * Stems (6.3.2)
+
 data CmdStem ctx
 class SymCmdStem repr where
   cmdStem :: String -> repr (CmdStem ctx)
 
-
+--------------------------------------------------------------------------------
 -- * Basic polyphony (6.3.3)
+
 data PolyCat ctx
 class SymPolyCat repr where
   (\\) :: repr (a ctx) -> repr (a ctx) -> repr (PolyCat ctx)
 
+--------------------------------------------------------------------------------
 -- * Clef (6.4.1)
+
 data CmdClef ctx
 class SymCmdClef repr where
   clef :: repr (ClefType ctx) -> repr (CmdClef Ctx_Element)
@@ -226,7 +235,9 @@ class SymAttrClefTransposition repr where
 -- because of the pretty printing rules 
 instance AttrClefTransposition Pitch
 
+--------------------------------------------------------------------------------
 -- * Key signature (6.4.2)
+
 data CmdKey ctx
 class SymCmdKey repr where
   key :: repr (Pitch ctx) -> repr (CmdKeyType Ctx_Element) -> repr (CmdKey Ctx_Element)
@@ -236,14 +247,16 @@ class SymCmdKeyType repr where
   keyType :: String -> repr (CmdKeyType Ctx_Element)
   
 
-
+--------------------------------------------------------------------------------
 -- * Time signature (6.4.3)
+
 data CmdTime ctx
 class SymCmdTime repr where
   time :: MeterFraction -> repr (CmdTime Ctx_Element)
 
-
+--------------------------------------------------------------------------------
 -- * Bar lines (6.4.5)
+
 data CmdBar ctx
 class SymCmdBar repr where
   bar :: String -> repr (CmdBar ctx)
@@ -251,6 +264,7 @@ class SymCmdBar repr where
 -- "|", "|:", "||", ":|", ".|", ".|.", ":|:", "|.", ":", "unbroken ||:",
 -- "broken ||:"
 
+--------------------------------------------------------------------------------
 -- * Unmetered music (6.4.6)
 
 data CmdCadenza ctx
@@ -259,10 +273,12 @@ class SymCmdCadenza repr where
 
     
   
-
+--------------------------------------------------------------------------------
 -- * Ties (6.5.1)
+
 data Tie ctx
 class SymTie repr where
+  -- | tie is printed as @~@.
   tie :: repr (Tie ctx)
 
 data CmdTie ctx
@@ -271,8 +287,9 @@ class SymCmdTie repr where
 
 
 
-
+--------------------------------------------------------------------------------
 -- * Slurs (6.5.2)
+
 data Slur ctx
 class SymSlur repr where
   openSlur  :: repr (Slur ctx)
@@ -282,6 +299,7 @@ data CmdSlur ctx
 class SymCmdSlur repr where
   cmdSlur :: String -> repr (CmdSlur ctx)  
 
+--------------------------------------------------------------------------------
 -- * Phrasing slurs (6.5.3)
 -- { ATTRIBUTE OF NOTE ? }
 
@@ -289,8 +307,9 @@ data CmdPhrasingSlur ctx
 class SymCmdPhrasingSlur repr where
   cmdPhrasingSlur             :: String -> repr (CmdPhrasingSlur ctx)
 
-
+--------------------------------------------------------------------------------
 -- * Laissez vibrer ties (6.5.4)
+
 class AttrCmdLaissezVibrer ctx
 class SymAttrCmdLaissezVibrer repr where
   laissezVibrer :: (AttrCmdLaissezVibrer a) => repr (a ctx) -> repr (a ctx)
@@ -298,6 +317,7 @@ class SymAttrCmdLaissezVibrer repr where
 instance AttrCmdLaissezVibrer Note
 instance AttrCmdLaissezVibrer Chord
 
+--------------------------------------------------------------------------------
 -- * Automatic beams (6.5.5)
 -- noBeam is a note attribute
 
@@ -307,21 +327,26 @@ class SymAttrCmdNoBeam repr where
 
 instance AttrCmdNoBeam Note 
 
+--------------------------------------------------------------------------------
 -- * Manual beams (6.5.6)
+
 data Beam ctx
 class SymBeam repr where
   openBeam  :: repr (Beam ctx)
   closeBeam :: repr (Beam ctx)
-  
+
+--------------------------------------------------------------------------------  
 -- * Grace notes (6.5.7)
+
 data CmdGrace ctx
 class SymCmdGrace repr where
   cmdGrace         :: String -> repr (CmdGrace ctx)
 
 
   
-
+--------------------------------------------------------------------------------
 -- * Articulations (6.6.1)
+
 data CmdArticulation ctx
 class SymCmdArticulation repr where
   cmdArticulation :: String -> repr (CmdArticulation ctx)
@@ -330,18 +355,22 @@ class SymCmdArticulation repr where
 -- placement of an articulation, slur ...
 data VerticalPlacement ctx
 class SymVerticalPlacement repr where
+  -- | Place a mark above the note with @^@.
   vabove   :: repr (VerticalPlacement ctx)
+  -- | Place a mark below the note with @_@.
   vbelow   :: repr (VerticalPlacement ctx)
   vdefault :: repr (VerticalPlacement ctx)
   
+--------------------------------------------------------------------------------
+-- * Fingering instructions (6.6.2)
 
--- * Fingering instructions (6.6.2) 
 class AttrFingering ctx
 class SymAttrFingering repr where
   fingering :: (AttrFingering a) => Int -> repr (a ctx) -> repr (a ctx) 
 
 instance AttrFingering Note
 
+--------------------------------------------------------------------------------
 -- * Dynamics (6.6.3)
 
 -- so many dynamics that we parameterize the SymCmdDynamic signture with String
@@ -350,29 +379,31 @@ data CmdDynamic ctx
 class SymCmdDynamic repr where
   cmdDynamic :: String -> repr (CmdDynamic ctx)
  
-
+--------------------------------------------------------------------------------
 -- * Breath marks (6.6.4)
--- { COULD JUST BE SINGLE CMD breathe ? } 
+
+
 data CmdBreathe ctx
 class SymCmdBreathe repr where
   cmdBreathe :: String -> repr (CmdBreathe ctx) 
 
-
+--------------------------------------------------------------------------------
 -- * Glissando (6.6.6)
--- { COULD JUST BE SINGLE CMD glissando ? } 
+
 data CmdGlissando ctx
 class SymCmdGlissando repr where
   cmdGlissando :: String -> repr (CmdGlissando ctx)
   
 
-
+--------------------------------------------------------------------------------
 -- * Arpeggio (6.6.7)
+
 data CmdArpeggio ctx
 class SymCmdArpeggio repr where
   cmdArpeggio          :: String -> repr (CmdArpeggio ctx)
 
 
-
+--------------------------------------------------------------------------------
 -- * Falls and doits (6.6.8)
 
 data CmdBendAfter ctx 
@@ -381,14 +412,14 @@ class SymCmdBendAfter repr where
 
 
 
-
+--------------------------------------------------------------------------------
 -- * Metronome marks (8.2.2)
 
 data CmdTempo ctx
 class SymCmdTempo repr where
   tempo :: repr (Duration ctx) -> Int -> repr (CmdTempo ctx)
 
-
+--------------------------------------------------------------------------------
 -- * Creating contexts (9.2.2)
 -- new is a binary command (type x music-expr)
 
@@ -403,7 +434,7 @@ class SymContextType repr where
 
 
 
-
+--------------------------------------------------------------------------------
 -- * Multiple scores in a book (10.1.2)
 
 data CmdScore ctx
@@ -420,7 +451,7 @@ class SymCmdBook repr where
  
 
 
-
+--------------------------------------------------------------------------------
 -- * Titles and headers (10.2)
 
 data CmdHeader ctx
@@ -430,8 +461,10 @@ class SymCmdHeader repr where
 data Block ctx
 class SymBlock repr where
   block :: repr (a subctx) -> repr (b superctx)
-    
+
+--------------------------------------------------------------------------------    
 -- * Creating titles (10.2.1)
+
 data EqnTitle ctx
 class SymEqnTitle repr where
   title :: String -> repr (EqnTitle Ctx_Header)  

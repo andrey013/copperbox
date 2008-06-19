@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  multi-parameter typeclasses
 --
 -- Pretty printer for a subset of LilyPond files
 --

@@ -1,4 +1,4 @@
-{-# LANGUAGE EmptyDataDecls, MultiParamTypeClasses #-}
+{-# LANGUAGE EmptyDataDecls #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -8,9 +8,10 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  empty data declarations
 --
--- Datatypes for ABC format
+-- Datatypes for ABC format in the final-tagless (Symantics) style of
+-- Carette, Kiselyov, and Shan.
 --
 --------------------------------------------------------------------------------
 
@@ -33,48 +34,91 @@ data Ctx_Element
 data Field ctx
 data MidTuneField ctx 
 
+-- * Fields
+-- | @X field@ - reference \/ tune number.
+class SymFieldNumber repr where
+  num_                :: Int -> repr (Field Ctx_Field)
 
-class SynNumberField repr where
-  num_                :: Int -> repr (Field Ctx_Field)                -- 'X'
+-- | @T field@ - title. 
+class SymFieldTitle repr where
+  title_              :: String -> repr (MidTuneField Ctx_Field)
 
-class SymTextFields repr where
-  area_               :: String -> repr (Field Ctx_Field)             -- 'A'
-  book_               :: String -> repr (Field Ctx_Field)             -- 'B'
-  composer_           :: String -> repr (Field Ctx_Field)             -- 'C' 
-  discography_        :: String -> repr (Field Ctx_Field)             -- 'D'
-  elemskip_           :: String -> repr (MidTuneField Ctx_Field)      -- 'E'
-  group_              :: String -> repr (Field Ctx_Field)             -- 'G'
-  information_        :: String -> repr (Field Ctx_Field)             -- 'I'
-  notes_              :: String -> repr (Field Ctx_Field)             -- 'N'
-  origin_             :: String -> repr (Field Ctx_Field)             -- 'O'
-  rhythm_             :: String -> repr (Field Ctx_Field)             -- 'R'
-  source_             :: String -> repr (Field Ctx_Field)             -- 'S'
-  title_              :: String -> repr (MidTuneField Ctx_Field)      -- 'T'
-  words_              :: String -> repr (MidTuneField Ctx_Field)      -- 'W'
-  transcriberNotes_   :: String -> repr (Field Ctx_Field)             -- 'Z'
+-- | @A field@ - area.
+class SymFieldArea repr where
+  area_               :: String -> repr (Field Ctx_Field)
 
-class SymHistoryField repr where
-  history_      :: [String] -> repr (Field Ctx_Field)                 -- 'H'
+-- | @B field@ - book.
+class SymFieldBook repr where  
+  book_               :: String -> repr (Field Ctx_Field)
 
+-- | @C field@ - composer name.
+class SymFieldComposer repr where  
+  composer_           :: String -> repr (Field Ctx_Field)
 
-class SymKeyField repr where
-  key_          :: repr (Key ctx) -> repr (MidTuneField Ctx_Field)    -- 'K'
+-- | @D field@ - discography.
+class SymFieldDiscography repr where  
+  discography_        :: String -> repr (Field Ctx_Field)
+
+-- | @E field@ - elemskip.
+class SymFieldElemskip repr where
+  elemskip_           :: String -> repr (MidTuneField Ctx_Field)
+
+-- | @G field@ - group.
+class SymFieldGroup repr where  
+  group_              :: String -> repr (Field Ctx_Field)
+
+-- | @I field@ - information.
+class SymFieldInformation repr where
+  information_        :: String -> repr (Field Ctx_Field)
+
+-- | @N field@ - notes.
+class SymFieldNotes repr where  
+  notes_              :: String -> repr (Field Ctx_Field)
+
+-- | @O field@ - origin.
+class SymFieldOrigin repr where  
+  origin_             :: String -> repr (Field Ctx_Field)
+
+-- | @R field@ - rhythm.
+class SymFieldRhythm repr where  
+  rhythm_             :: String -> repr (Field Ctx_Field)
+
+-- | @S field@ - source.
+class SymFieldSource repr where  
+  source_             :: String -> repr (Field Ctx_Field)
+
+-- | @W field@ - words.
+class SymFieldWords repr where    
+  words_              :: String -> repr (MidTuneField Ctx_Field)
+
+-- | @Z field@ - transcriber notes.  
+class SymFieldTranscrNotes repr where
+  transcrNotes_   :: String -> repr (Field Ctx_Field)
+
+-- | @H field@ - history.
+class SymFieldHistory repr where
+  history_      :: [String] -> repr (Field Ctx_Field)
+
+-- | @K field@ - key.
+class SymFieldKey repr where
+  key_          :: repr (Key ctx) -> repr (MidTuneField Ctx_Field)
   
- 
-class SymDefaultLengthField repr where
-  defaultLength_    :: MeterFraction -> repr (MidTuneField Ctx_Field)      -- 'L'
+-- | @L field@ - default note length.
+class SymFieldDefaultNoteLength repr where
+  defaultNoteLength_    :: MeterFraction -> repr (MidTuneField Ctx_Field)
 
 
--- simplified
-class SymPartsField repr where 
-  parts_        :: [Char] -> repr (MidTuneField Ctx_Field)            -- 'P'
+-- | @P field@ - parts, simplified - parts are just represented as a string.
+class SymFieldParts repr where 
+  parts_        :: [Char] -> repr (MidTuneField Ctx_Field)
   
-  
-class SymTempoField repr where
-  tempo_        :: repr (Tempo ctx) -> repr (MidTuneField Ctx_Field)  -- 'Q'  
+-- | @Q field@ - tempo.
+class SymFieldTempo repr where
+  tempo_        :: repr (Tempo ctx) -> repr (MidTuneField Ctx_Field)
 
-class SymMeterField repr where
-  meter_        :: repr (Meter ctx) -> repr (MidTuneField Ctx_Field)  -- 'M'  
+-- | @M field@ - meter.
+class SymFieldMeter repr where
+  meter_        :: repr (Meter ctx) -> repr (MidTuneField Ctx_Field)  
 
 data AbcMusic ctx
 class SymAbcMusic repr where

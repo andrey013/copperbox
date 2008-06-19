@@ -9,7 +9,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  empty data declarations, multi-parameter typeclasses
 --
 -- Common functions and types for syntax trees represented in the 
 -- final-tagless style.
@@ -20,50 +20,56 @@ module Bala.Format.Base.SymBase where
 
 import Text.PrettyPrint.Leijen
 
-
+-- * Concatenation
+-- | Concatenate two compatible elements.
 data Concatenation ctx
 
 infixl 5 +++
 class SymConcatenation ctx repr where
   (+++)  :: repr (a ctx) -> repr (b ctx) -> repr (Concatenation ctx)
 
-
--- | turn an element into an attribute
+-- * Attributes
+-- | Wrap an element as an attribute.
 class Attr repr where
   attr :: repr (a ctx) -> repr (b ctx) -> repr (b ctx)
   
   
--- | reverse application  
+-- * Composition 
 infixl 7 #
-
+-- | Reverse application.
 ( # ) :: a -> (a -> b) -> b
 x # f = f x
 
 
--- CAN WE DO WITHOUT?
--- | high precedence application
+-- CAN WE DO WITHOUT << ?
+
 infixr 6 << 
+
+-- | Higher precedence version of the application operator ($).
 (<<) ::(a -> b) -> a ->  b
 f << a = f a 
 
-
--- Data.Rational normalizes when possible 4/4 becomes 1/1, naturally this means
--- we need an alternative
+-- * Meter fraction
+-- | An alternative to Data.Rational which normalizes where possible
+-- e.g. 4\/4 becomes 1\/1. For time signatures we don't want to noramlize.
 data MeterFraction = Int :% Int
 
 infixl 2 %
 
+-- | Synonym for the infix constructor (:%).
 (%) :: Int -> Int -> MeterFraction
 (%) n d = n :% d
   
   
 --------------------------------------------------------------------------------
--- Pretty printing
---------------------------------------------------------------------------------
+-- * Pretty printing
 
-
+-- | To generate output we need a pretty printing interpretation.
 newtype P a = P { unP :: Doc }
 
+-- | Print a document with a unit argument. Documents taking () as an argument
+-- do not have to be explicitly typed and avoid the monomorphism restriction.
+printP :: (() -> P a) -> IO ()
 printP x = putDoc $ unP (x ())
 
 
