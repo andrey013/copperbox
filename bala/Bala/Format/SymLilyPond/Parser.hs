@@ -43,7 +43,7 @@ pPitch = choice $ map fn xs
 
 
 
-pKeySignature :: (SymCmdKeyType repr) => Parser (repr (CmdKeyType Ctx_Element)) 
+pKeySignature :: (SymCmdKeyType repr) => Parser (repr (CmdKeyType CT_Element)) 
 pKeySignature = choice $ map (uncurry nullaryCommand) xs
   where  
     xs = [("major",       major),

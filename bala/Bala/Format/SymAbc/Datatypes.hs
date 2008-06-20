@@ -34,7 +34,9 @@ data Ctx_Element
 data Field ctx
 data MidTuneField ctx 
 
+--------------------------------------------------------------------------------
 -- * Fields
+
 -- | @X field@ - reference \/ tune number.
 class SymFieldNumber repr where
   num_                :: Int -> repr (Field Ctx_Field)
