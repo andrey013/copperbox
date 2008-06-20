@@ -369,6 +369,34 @@ instance SymCtxRhythmicStaff P where
 instance SymCmdDrums P where
   drums e             = P $ cmd "drums" <+> bracesHanging (unP e)
   
+--------------------------------------------------------------------------------
+-- ** Guitar (7.5)
+
+-- *** Tablatures basic (7.5.2)
+
+-- | stringnum corresponds to @\\@ in LilyPond.
+
+instance SymAttrStringnum P where
+  stringnum a i       = P $ group $ (unP a) <> char '\\' <> int i
+
+instance SymCtxTabStaff P where  
+  tabStaff          = P $ text "TabStaff"
+  
+instance SymCtxTabVoice P where  
+  tabVoice          = P $ text "TabVoice"
+  
+-- *** Right hand fingerings (7.5.6)
+
+instance SymAttrRightHandFinger P where
+  rightHandFinger a i   = 
+      P $ group $ (unP a) <> text "-\rightHandFinger" <+> char '#' <+> int i
+
+--------------------------------------------------------------------------------
+-- ** Other instrument specific notation (7.8)
+-- *** Artificial harmonics (strings) (7.8.1)
+
+instance SymAttrCmdHarmonic P where
+  cmdHarmonic a         = P $ group $ (unP a) <> cmd "harmonic"
   
 --------------------------------------------------------------------------------
 -- * Advanced notation (8)
@@ -381,8 +409,12 @@ instance SymAttrText P where
 instance SymCmdFatText P where
   fatText           = P $ cmd "fatText"
  
+-- *** Text markup (8.1.4)
 
+instance SymCmdMarkup P where
+  markup s          = P $ cmd "markup" <+> bracesSpaced (text s)
   
+    
 --------------------------------------------------------------------------------
 -- ** Preparing parts (8.2)
 -- *** Metronome marks (8.2.2)
@@ -405,8 +437,7 @@ instance SymCtxStaff P where
 instance SymCtxVoice P where  
   voice             = P $ text "Voice"
   
-instance SymCtxTabStaff P where  
-  tabStaff          = P $ text "TabStaff"
+
   
   
 {-  
@@ -424,8 +455,6 @@ instance SymContextType P where
 instance SymCmdScore P where
   score e     = P $ cmd "score" <+> bracesHanging (unP e)
 
-instance SymCmdMarkup P where
-  markup s    = P $ cmd "markup" <+> bracesSpaced (text s)
 
 
 instance SymCmdBook P where

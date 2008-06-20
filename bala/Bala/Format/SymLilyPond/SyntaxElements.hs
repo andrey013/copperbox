@@ -1364,12 +1364,24 @@ dd                    = drumPitchName "dd"
 de                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
 de                    = drumPitchName "de"
 
+--------------------------------------------------------------------------------
+-- ** Guitar (7.5)
 
-  
+-- *** Tablatures basic (7.5.2)
+-- *** Right hand fingerings (7.5.6)
+
+--------------------------------------------------------------------------------
+-- ** Other instrument specific notation (7.8)
+-- *** Artificial harmonics (strings) (7.8.1)
+
+
 --------------------------------------------------------------------------------
 -- * Advanced notation (8)
 -- ** Text (8.1)
 -- *** Text scripts (8.1.1)
+
+-- *** Text markup (8.1.4)
+
 
 -- ** Preparing parts (8.2)
 -- *** Metronome marks (8.8.2)

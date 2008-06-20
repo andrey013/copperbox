@@ -473,6 +473,46 @@ class SymDrumPitchName repr where
   drumPitchName   :: String -> repr (DrumPitchName ctx) 
   
   
+--------------------------------------------------------------------------------
+-- ** Guitar (7.5)
+
+-- *** Tablatures basic (7.5.2)
+
+-- | stringnum corresponds to @\\@ in LilyPond.
+class AttrStringnum a
+class SymAttrStringnum repr where
+  stringnum :: (AttrStringnum a) => repr (a ctx) -> Int -> repr (a ctx)
+ 
+instance AttrStringnum Note
+
+data CtxTabStaff ctx
+class SymCtxTabStaff repr where
+  tabStaff     :: repr (CtxTabStaff ctx)
+  
+instance ContextType CtxTabStaff
+
+data CtxTabVoice ctx
+class SymCtxTabVoice repr where
+  tabVoice     :: repr (CtxTabVoice ctx)
+  
+instance ContextType CtxTabVoice
+
+-- *** Right hand fingerings (7.5.6)
+class AttrRightHandFinger a
+class SymAttrRightHandFinger repr where
+  rightHandFinger   :: (AttrRightHandFinger a) => 
+                       repr (a ctx) -> Int -> repr (a ctx)
+
+instance AttrRightHandFinger Note
+
+--------------------------------------------------------------------------------
+-- ** Other instrument specific notation (7.8)
+-- *** Artificial harmonics (strings) (7.8.1)
+class AttrCmdHarmonic a
+class SymAttrCmdHarmonic repr where
+  cmdHarmonic   :: (AttrCmdHarmonic a) => repr (a ctx) -> repr (a ctx)
+
+instance AttrCmdHarmonic Note
   
 --------------------------------------------------------------------------------
 -- * Advanced notation (8)
@@ -486,6 +526,14 @@ class SymAttrText repr where
 data CmdFatText ctx 
 class SymCmdFatText repr where
   fatText     :: repr (CmdFatText ctx) 
+  
+
+-- *** Text markup (8.1.4)
+
+data CmdMarkup ctx 
+class SymCmdMarkup repr where
+  -- | Simplified for now - the body is a String.
+  markup     :: String -> repr (CmdFatText ctx) 
   
   
 --------------------------------------------------------------------------------
@@ -522,11 +570,7 @@ class SymCtxVoice repr where
 instance ContextType CtxVoice 
 
 
-data CtxTabStaff ctx
-class SymCtxTabStaff repr where
-  tabStaff     :: repr (CtxTabStaff ctx)
-  
-instance ContextType CtxTabStaff
+
 
 
 
@@ -540,9 +584,6 @@ data CmdScore ctx
 class SymCmdScore repr where
   score :: repr (a subctx) -> repr (CmdScore CT_Book)
 
-data CmdMarkup ctx
-class SymCmdMarkup repr where
-  markup  :: String -> repr (CmdMarkup ctx)
 
 data CmdBook ctx
 class SymCmdBook repr where
