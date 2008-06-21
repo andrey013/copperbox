@@ -14,6 +14,7 @@
 
 module Bala.Format.SymLilyPond.Parser where
 
+import Bala.Format.Base.SymBase
 import Bala.Format.SymLilyPond.Datatypes
 import Bala.Format.SymLilyPond.SyntaxElements
 
@@ -26,6 +27,15 @@ import Control.Monad
 import Text.ParserCombinators.Parsec hiding (space)
 
 
+
+
+-- | Pitch, plus attributes (knot tied).
+pitchA :: (SymPitch repr, 
+           SymAttrAccidental repr, 
+           SymAttrMicroTone repr,
+           SymAttrOctaveSpec repr) => 
+          Parser (repr (Pitch ctx))
+pitchA = pPitch >>= pAccidental >>= pMicroTone>>= pOctaveSpec 
 
 pPitch :: (SymPitch repr) => Parser (repr (Pitch ctx))
 pPitch = choice $ map fn xs
@@ -40,35 +50,71 @@ pPitch = choice $ map fn xs
           ('b',      _b)]
     
    
+pOctaveSpec :: (AttrOctaveSpec a, SymAttrOctaveSpec repr) =>
+               repr (a ctx) -> Parser (repr (a ctx))
+pOctaveSpec a = pRaised <|> pLowered
+  where
+    pRaised  = ((flip raised) a)  <$> counting1 (char '\'')
+    pLowered = ((flip lowered) a) <$> counting1 (char ',')
 
 
+pAccidental :: (SymAttrAccidental repr, AttrAccidental a) =>
+               repr (a ctx) -> Parser (repr (a ctx))
+pAccidental a = f <$> longestString accidentals
+  where
+    
+    accidentals = [ "isis", "eses", "is", "es" ]
+    f "isis" = a # doubleSharp 
+    f "eses" = a # doubleFlat
+    f "is"   = a # sharp
+    f "es"   = a # flat
 
-pKeySignature :: (SymCmdKeyType repr) => Parser (repr (CmdKeyType CT_Element)) 
-pKeySignature = choice $ map (uncurry nullaryCommand) xs
-  where  
-    xs = [("major",       major),
-          ("minor",       minor),
-          ("ionian",      ionian),
-          ("locrian",     locrian),
-          ("aeolian",     aeolian),
-          ("mixolydian",  mixolydian),
-          ("lydian",      lydian),
-          ("phrygian",    phrygian),
-          ("dorian",      dorian)]
+
+pMicroTone :: (SymAttrMicroTone repr, AttrMicroTone a) =>
+               repr (a ctx) -> Parser (repr (a ctx))
+pMicroTone a = fchoice string $ 
+  [("ih", a # halfFlat), ("eh", a # halfFlat)] 
+
+    
+        
+    
+pKeyType :: (SymCmdKeyType repr) => Parser (repr (CmdKeyType CT_Element)) 
+pKeyType = fchoice command $ 
+  [ ("major",       major),   ("minor",       minor),
+    ("ionian",      ionian),  ("locrian",     locrian),
+    ("aeolian",     aeolian), ("mixolydian",  mixolydian),
+    ("lydian",      lydian),  ("phrygian",    phrygian),
+    ("dorian",      dorian)]
           
 
     
+-- *** Manual beams (6.5.6)
 
 pOpenBeam, pCloseBeam :: (SymBeam repr) => Parser (repr (Beam ctx)) 
-pOpenBeam   = openBeam  <$ lchar '['
-pCloseBeam  = closeBeam <$ lchar ']'
+pOpenBeam   = openBeam <$ lexChar '['
+pCloseBeam  = closeBeam <$ lexChar ']'
 
+
+-- ***  Articulations (6.6.1)
+verticalPlacement :: (SymVerticalPlacement repr) => 
+                     Parser (repr (VerticalPlacement ctx)) 
+verticalPlacement = fchoice char $
+  [('^',vabove), ('_',vbelow), ('-',vdefault)] 
+
+
+    
 --------------------------------------------------------------------------------
 -- helpers 
 --------------------------------------------------------------------------------
 
-nullaryCommand :: String -> (repr (a ctx)) -> Parser (repr (a ctx)) 
-nullaryCommand name cstr = cstr <$ command name
+
+fchoice f xs = choice $ map (interp f) xs
+  where
+    interp f (a,b) = b <$ f a
+
+
+
+
 
 
 --------------------------------------------------------------------------------
@@ -80,6 +126,5 @@ nullaryCommand name cstr = cstr <$ command name
 command :: String -> CharParser st String
 command ss = lexeme $ try $ string ('\\':ss)
 
-lchar ::Char -> CharParser st Char
-lchar ch = lexeme (char ch)
+
     
