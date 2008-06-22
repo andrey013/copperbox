@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses, PatternSignatures #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -41,8 +41,11 @@ bracesHanging :: Doc -> Doc
 bracesHanging d = lbrace <$> indent 2 (d <$> rbrace)
 
 
-
-
+{-
+instance SymCList P CT_Toplevel where
+  cNil                = P $ empty
+  cCons x xs          = P $ unP x <$> unP xs
+-}
 
 instance SymConcatenation CT_Toplevel P where
   (+++) l r    = P $ (unP l) <$> (unP r)

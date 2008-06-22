@@ -28,6 +28,17 @@ infixl 5 +++
 class SymConcatenation ctx repr where
   (+++)  :: repr (a ctx) -> repr (b ctx) -> repr (Concatenation ctx)
 
+-- * Alternative concatenation - as a snoc list.
+data CList ctx
+class SymCList repr ctx where
+  cNil :: repr (CList ctx)
+  cSnoc :: repr (CList ctx) -> repr (a ctx) ->  repr (CList ctx) 
+{-  
+data CCons ctx
+class SymCCons repr ctx where
+  cCons :: repr (a ctx) -> repr (b ctx) -> repr (CCons ctx) 
+-}
+
 -- * Attributes
 -- | Wrap an element as an attribute.
 class Attr repr where

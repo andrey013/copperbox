@@ -68,6 +68,18 @@ meterFraction :: Parser MeterFraction
 meterFraction = (%) <$> (int <* char '/') <*> lexeme int
 
 
+many1Cat :: (SymCList repr ctx) 
+         => repr (CList ctx) -> Parser (repr (a ctx)) -> Parser (repr (CList ctx))
+many1Cat cxnil p = do 
+    a <- p
+    step1 p (cSnoc cxnil a)
+  where
+    step1 p acc = do
+      a <- optparse p    
+      case a of      
+        Nothing -> return acc
+        Just a  -> step1 p (cSnoc acc a)
+
 
 --------------------------------------------------------------------------------
 -- * Lexer combinators
@@ -209,9 +221,10 @@ pDotted a = (a #. dotted) <$> counting1 (char '.')
 --------------------------------------------------------------------------------
 -- *** Tuplets (6.2.3)
 
-pTimes :: (SymCmdTimes repr, SymBlock repr)
-       => Parser (repr (CmdTimes ctx))
-pTimes = times <$> (command "times" *> meterFraction) <*> noBlock
+-- pTimes :: (SymCmdTimes repr, SymBlock repr)
+--       => Para repr ->  Parser (repr (CmdTimes ctx))
+pTimes px = times <$> (command "times" *> meterFraction) 
+                  <*> braces (many1Cat elementCtx (pNote px))  
 
 
 --------------------------------------------------------------------------------

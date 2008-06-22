@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -17,6 +18,17 @@ module Bala.Format.SymLilyPond.SyntaxElements where
 
 import Bala.Format.Base.SymBase
 import Bala.Format.SymLilyPond.Datatypes
+
+
+--------------------------------------------------------------------------------
+-- * Contexts for lists
+
+elementCtx :: (SymCList repr CT_Element) => repr (CList CT_Element)
+elementCtx = cNil
+
+toplevelCtx :: (SymCList repr CT_Toplevel) => repr (CList CT_Toplevel)
+toplevelCtx = cNil
+
 
 
 -- comments and versioning (2.12)
@@ -142,7 +154,7 @@ dotdot i = attrduration $ dotted 2 $ duration i
 
 
 times :: SymCmdTimes repr
-      => MeterFraction -> repr (Block ctxa) -> repr (CmdTimes ctxb)
+      => MeterFraction -> repr (CList ctxa) -> repr (CmdTimes ctxb)
 times = cmdTimes  
   
 --------------------------------------------------------------------------------

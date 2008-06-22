@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, FlexibleContexts #-}
 
 -- Make sure lilypond is in your path
 
@@ -6,7 +7,7 @@ module DemoSymLy where
 import Bala.Format.SymLilyPond.LilyPond
 
 import System.Process (runCommand, waitForProcess)
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec (parse, parseTest)
 import Text.PrettyPrint.Leijen hiding (dot)
 
 
@@ -38,6 +39,14 @@ demo_pp6 = printP demo_06
 
 demo_07 () = note _c # fermata 
 demo_pp7 = printP demo_07
+
+-- Snoc list rather than concatenation
+demo_08 () = elementCtx `cSnoc` (note _g) `cSnoc` (note _c)
+
+-- Correctly fails with a type error
+-- pitches_002 () = toplevelCtx `cSnoc` (note _g) `cSnoc` (note _c)
+
+demo_pp8 = printP demo_08
 
 
            
@@ -83,7 +92,30 @@ p_demo03    = lyparse (pChord para) "<c e g>"
 p_demo04    = lyparse ((pNote para) ## (pAttrduration para)) "c''4."
 
 -- "\\times 2/3 {c'4 c' c'} " - should get *** Exception: Prelude.undefined
-p_demo05    = lyparse pTimes "\\times 2/3 { } "
+p_demo05    = lyparse (pTimes para) "\\times 2/3 { c' } "
+
+
+newtype Empty a = Empty { unEmpty :: Bool }
+
+instance SymCList Empty ctx where
+  cNil                = Empty True
+  cSnoc xs x          = Empty False
+
+
+instance SymCList P ctx where
+  cNil                = P $ empty
+  -- | Unfortunately prefixes an extra space.
+  cSnoc xs x          = P $ unP xs <+> unP x 
+
+
+
+
+
+pitchList = many1Cat elementCtx pitchA
+  
+p_demo06 = lyparse pitchList "c d e"
+
+
 
 
 

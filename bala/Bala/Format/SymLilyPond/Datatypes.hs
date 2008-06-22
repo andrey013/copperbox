@@ -202,7 +202,7 @@ instance AttrDotted Duration
 
 data CmdTimes ctx
 class SymCmdTimes repr where
-  cmdTimes :: MeterFraction -> repr (Block ctxa) -> repr (CmdTimes ctxb)
+  cmdTimes :: MeterFraction -> repr (CList ctxa) -> repr (CmdTimes ctxb)
 
 
 --------------------------------------------------------------------------------
