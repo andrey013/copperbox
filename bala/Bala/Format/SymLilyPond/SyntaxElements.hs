@@ -109,34 +109,42 @@ s64     = skipDuration $ duration 64
 --------------------------------------------------------------------------------
 -- ** Rhythms (6.2)
 -- *** Durations (6.2.1)
-dur :: (SymAttrDuration repr, AttrDuration a, SymDuration repr) =>
-       Int -> repr (a ctx) -> repr (a ctx)
+dur :: (SymAttrDuration repr, AttrDuration a, SymDuration repr) 
+    => Int -> repr (a ctx) -> repr (a ctx)
 dur i = attrduration $ duration i
 
 
 -- | @\\longa@.
-longa :: (AttrCmdLongDuration a, SymAttrCmdLongDuration repr) => 
-         repr (a CT_Element) -> repr (a CT_Element) 
+longa :: (AttrCmdLongDuration a, SymAttrCmdLongDuration repr) 
+      => repr (a CT_Element) -> repr (a CT_Element) 
 longa   = cmdLongDuration "longa"  
 
 -- | @\\breve@.
-breve :: (AttrCmdLongDuration a, SymAttrCmdLongDuration repr) => 
-         repr (a CT_Element) -> repr (a CT_Element) 
+breve :: (AttrCmdLongDuration a, SymAttrCmdLongDuration repr)
+      => repr (a CT_Element) -> repr (a CT_Element) 
 breve   = cmdLongDuration "breve"
 
 --------------------------------------------------------------------------------
 -- *** Augmentation dots (6.2.2)
 dot :: (SymAttrDuration repr, AttrDuration a, 
-        SymDuration repr, SymAttrDotted repr) =>
-       Int -> repr (a ctx) -> repr (a ctx)
+        SymDuration repr, SymAttrDotted repr) 
+    => Int -> repr (a ctx) -> repr (a ctx)
 dot i = attrduration $ dotted 1 $ duration i
 
 
 dotdot :: (SymAttrDuration repr, AttrDuration a, 
-           SymDuration repr, SymAttrDotted repr) =>
-          Int -> repr (a ctx) -> repr (a ctx)
+           SymDuration repr, SymAttrDotted repr) 
+       => Int -> repr (a ctx) -> repr (a ctx)
 dotdot i = attrduration $ dotted 2 $ duration i
 
+--------------------------------------------------------------------------------
+-- *** Tuplets (6.2.3)
+
+
+times :: SymCmdTimes repr
+      => MeterFraction -> repr (Block ctxa) -> repr (CmdTimes ctxb)
+times = cmdTimes  
+  
 --------------------------------------------------------------------------------
 -- ** Mutliple notes at once (6.3)
 -- *** Stems (6.3.2)
@@ -205,23 +213,23 @@ tabClef         :: SymClefType repr => repr (ClefType ctx)
 tabClef         = cleftype "tabClef" 
 
 -- | Clef attribute - transpose a clef up an octave.
-clefUp8     :: (AttrClefTransposition a, SymAttrClefTransposition repr) => 
-               repr (a ctx) -> repr (a ctx)
+clefUp8     :: (AttrClefTransposition a, SymAttrClefTransposition repr) 
+            => repr (a ctx) -> repr (a ctx)
 clefUp8     = clefTransposition 8
 
 -- | Clef attribute - transpose a clef up two octaves.
-clefUp15    :: (AttrClefTransposition a, SymAttrClefTransposition repr) => 
-               repr (a ctx) -> repr (a ctx)
+clefUp15    :: (AttrClefTransposition a, SymAttrClefTransposition repr)
+            => repr (a ctx) -> repr (a ctx)
 clefUp15    = clefTransposition 15
 
 -- | Clef attribute - transpose a clef down an octave.
-clefDown8   :: (AttrClefTransposition a, SymAttrClefTransposition repr) => 
-               repr (a ctx) -> repr (a ctx)
+clefDown8   :: (AttrClefTransposition a, SymAttrClefTransposition repr)
+            => repr (a ctx) -> repr (a ctx)
 clefDown8   = clefTransposition (-8)
 
 -- | Clef attribute - transpose a clef down two octaves.
-clefDown15  :: (AttrClefTransposition a, SymAttrClefTransposition repr) => 
-               repr (a ctx) -> repr (a ctx)
+clefDown15  :: (AttrClefTransposition a, SymAttrClefTransposition repr)
+            => repr (a ctx) -> repr (a ctx)
 clefDown15  = clefTransposition (-15)
 
 --------------------------------------------------------------------------------  
@@ -382,198 +390,198 @@ appoggiatura  = cmdGrace "appoggiatura"
 -- *** Articulations (6.6.1)
 
 -- | @\\accent@.
-accent                  :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)           
+accent                  :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element)           
 accent                  = attr $ cmdArticulation "accent"  
 
 -- | @\\marcato@.
-marcato                 :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+marcato                 :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 marcato                 = attr $ cmdArticulation "marcato" 
 
 -- | @\\staccatissimo@.
-staccatissimo           :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+staccatissimo           :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element)  
 staccatissimo           = attr $ cmdArticulation "staccatissimo" 
 
 -- | @\\espressivo@.
-espressivo              :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+espressivo              :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element)   
 espressivo              = attr $ cmdArticulation "espressivo"  
 
 -- | @\\staccato@.
-staccato                :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+staccato                :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 staccato                = attr $ cmdArticulation "staccato" 
 
 -- | @\\tenuto@.
-tenuto                  :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+tenuto                  :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 tenuto                  = attr $ cmdArticulation "tenuto" 
 
 -- | @\\portato@.
-portato                 :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+portato                 :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 portato                 = attr $ cmdArticulation "portato"
 
 -- | @\\upbow@.
-upbow                   :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+upbow                   :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 upbow                   = attr $ cmdArticulation "upbow"
 
 -- | @\\downbow@.
-downbow                 :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+downbow                 :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 downbow                 = attr $ cmdArticulation "downbow" 
 
 -- | @\\flageolet@.
-flageolet               :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+flageolet               :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 flageolet               = attr $ cmdArticulation "flageolet" 
 
 -- | @\\thumb@.
-thumb                   :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+thumb                   :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 thumb                   = attr $ cmdArticulation "thumb" 
 
 -- | @\\lheel@.
-lheel                   :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+lheel                   :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 lheel                   = attr $ cmdArticulation "lheel" 
 
 -- | @\\rheel@.
-rheel                   :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+rheel                   :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 rheel                   = attr $ cmdArticulation "rheel" 
 
 -- | @\\ltoe@.
-ltoe                    :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+ltoe                    :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 ltoe                    = attr $ cmdArticulation "ltoe" 
 
 -- | @\\rtoe@.
-rtoe                    :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+rtoe                    :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 rtoe                    = attr $ cmdArticulation "rtoe" 
 
 -- | @\\open@.
-open                    :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+open                    :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 open                    = attr $ cmdArticulation "open"
 
 -- | @\\stopped@.
-stopped                 :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+stopped                 :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 stopped                 = attr $ cmdArticulation "stopped"
 
 -- | @\\turn@.
-turn                    :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+turn                    :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 turn                    = attr $ cmdArticulation "turn" 
 
 -- | @\\reverseturn@.
-reverseturn             :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+reverseturn             :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 reverseturn             = attr $ cmdArticulation "reverseturn"      
 
 -- | @\\trill@.
-trill                   :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+trill                   :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 trill                   = attr $ cmdArticulation "trill"  
 
 -- | @\\prall@.
-prall                   :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+prall                   :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 prall                   = attr $ cmdArticulation "prall"  
 
 -- | @\\mordent@.
-mordent                 :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+mordent                 :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 mordent                 = attr $ cmdArticulation "mordent"   
 
 -- | @\\prallprall@.
-prallprall              :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+prallprall              :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 prallprall              = attr $ cmdArticulation "prallprall" 
 
 -- | @\\prallmordent@.
-prallmordent            :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+prallmordent            :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 prallmordent            = attr $ cmdArticulation "prallmordent"  
 
 -- | @\\upprall@.
-upprall                 :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+upprall                 :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 upprall                 = attr $ cmdArticulation "upprall"   
 
 -- | @\\downprall@.
-downprall               :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+downprall               :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 downprall               = attr $ cmdArticulation "downprall" 
 
 -- | @\\upmordent@.
-upmordent               :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+upmordent               :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 upmordent               = attr $ cmdArticulation "upmordent"  
 
 -- | @\\downmordent@.
-downmordent             :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+downmordent             :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 downmordent             = attr $ cmdArticulation "downmordent" 
 
 -- | @\\pralldown@.
-pralldown               :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+pralldown               :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 pralldown               = attr $ cmdArticulation "pralldown"   
 
 -- | @\\prallup@.
-prallup                 :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+prallup                 :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 prallup                 = attr $ cmdArticulation "prallup"  
 
 -- | @\\lineprall@.
-lineprall               :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+lineprall               :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 lineprall               = attr $ cmdArticulation "lineprall" 
 
 -- | @\\signumcongruentiae@.
-signumcongruentiae      :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+signumcongruentiae      :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 signumcongruentiae      = attr $ cmdArticulation "signumcongruentiae"  
 
 -- | @\\shortfermata@.
-shortfermata            :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+shortfermata            :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 shortfermata            = attr $ cmdArticulation "shortfermata"  
 
 -- | @\\fermata@.
-fermata                 :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+fermata                 :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 fermata                 = attr $ cmdArticulation "fermata" 
 
 -- | @\\longfermata@.
-longfermata             :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+longfermata             :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 longfermata             = attr $ cmdArticulation "longfermata" 
 
 -- | @\\verylongfermata@.
-verylongfermata         :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+verylongfermata         :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 verylongfermata         = attr $ cmdArticulation "verylongfermata"    
 
 -- | @\\segno@.
-segno                   :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element)
+segno                   :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 segno                   = attr $ cmdArticulation "segno" 
 
 -- | @\\coda@.
-coda                    :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element) 
+coda                    :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 coda                    = attr $ cmdArticulation "coda" 
 
 -- | @\\varcoda@.
-varcoda                 :: (Attr repr, SymCmdArticulation repr) => 
-                           repr (b CT_Element) -> repr (b CT_Element) 
+varcoda                 :: (Attr repr, SymCmdArticulation repr) 
+                        => repr (a CT_Element) -> repr (a CT_Element) 
 varcoda                 = attr $ cmdArticulation "varcoda" 
 
 
@@ -732,33 +740,33 @@ arpeggioBracket   = cmdArpeggio "arpeggioBracket"
 
 -- *** Pedals (7.1.2)  
 -- | @\\sustainDown@.
-sustainDown       :: (AttrCmdPedal a, SymAttrCmdPedal repr) => 
-                     repr (a CT_Element) -> repr (a CT_Element) 
+sustainDown       :: (AttrCmdPedal a, SymAttrCmdPedal repr)
+                  => repr (a CT_Element) -> repr (a CT_Element) 
 sustainDown       = cmdPedal "sustainDown"  
 
 -- | @\\sustainUp@.
-sustainUp         :: (AttrCmdPedal a, SymAttrCmdPedal repr) => 
-                     repr (a CT_Element) -> repr (a CT_Element) 
+sustainUp         :: (AttrCmdPedal a, SymAttrCmdPedal repr)
+                  => repr (a CT_Element) -> repr (a CT_Element)  
 sustainUp         = cmdPedal "sustainUp"  
 
 -- | @\\unaCorda@.
-unaCorda          :: (AttrCmdPedal a, SymAttrCmdPedal repr) => 
-                     repr (a CT_Element) -> repr (a CT_Element) 
+unaCorda          :: (AttrCmdPedal a, SymAttrCmdPedal repr)
+                  => repr (a CT_Element) -> repr (a CT_Element)  
 unaCorda          = cmdPedal "unaCorda"  
 
 -- | @\\treCorde@.
-treCorde          :: (AttrCmdPedal a, SymAttrCmdPedal repr) => 
-                     repr (a CT_Element) -> repr (a CT_Element) 
+treCorde          :: (AttrCmdPedal a, SymAttrCmdPedal repr)
+                  => repr (a CT_Element) -> repr (a CT_Element) 
 treCorde          = cmdPedal "treCorde"  
 
 -- | @\\sostenutoDown@.
-sostenutoDown   :: (AttrCmdPedal a, SymAttrCmdPedal repr) => 
-                   repr (a CT_Element) -> repr (a CT_Element) 
+sostenutoDown   :: (AttrCmdPedal a, SymAttrCmdPedal repr)
+                  => repr (a CT_Element) -> repr (a CT_Element)  
 sostenutoDown   = cmdPedal "sostenutoDown"  
 
 -- | @\\sostenutoUp@.
-sostenutoUp       :: (AttrCmdPedal a, SymAttrCmdPedal repr) => 
-                     repr (a CT_Element) -> repr (a CT_Element) 
+sostenutoUp       :: (AttrCmdPedal a, SymAttrCmdPedal repr)
+                  => repr (a CT_Element) -> repr (a CT_Element)  
 sostenutoUp       = cmdPedal "sostenutoUp"  
 
 
@@ -1109,6 +1117,9 @@ sne                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
 sne                   = drumPitchName "sne"
 
 -- | @tomfl@ - abbreviated name for 'lowfloortom'.
+tomfl                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+tomfl                 = drumPitchName "tomfl"
+
 -- | @hhc@ - abbreviated name for 'closedhihat'.
 hhc                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
 hhc                   = drumPitchName "hhc"
@@ -1127,6 +1138,9 @@ hhp                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
 hhp                   = drumPitchName "hhp"
 
 -- | @toml@ - abbreviated name for 'lowtom'.
+toml                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+toml                  = drumPitchName "toml"
+
 -- | @hho@ - abbreviated name for 'openhihat'.
 hho                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
 hho                   = drumPitchName "hho"
@@ -1391,16 +1405,6 @@ de                    = drumPitchName "de"
 -- ** Interpretation contexts (9.2)
 -- *** Creating contexts (9.2.2)
 
-{-
-staff :: (SymContextType repr) => repr (ContextType ctx)
-staff = contextType "Staff"
-
-voice :: (SymContextType repr) => repr (ContextType ctx)
-voice = contextType "Voice"
-
-tabStaff :: (SymContextType repr) => repr (ContextType ctx)
-tabStaff = contextType "TabStaff"
--}
 
 --------------------------------------------------------------------------------
 -- * Non-musical notation (10)

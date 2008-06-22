@@ -61,18 +61,22 @@ class SymBlockComment repr where
 -- ** Pitches (6.1)
 -- *** Normal pitches (6.1.1)
 
+
 data PitchName = C | D | E | F | G | A | B 
   deriving (Eq,Show)
 
 data Pitch ctx  
 class SymPitch repr where
+  -- | Printed as @c d e f g a b@
   pitch :: PitchName -> repr (Pitch ctx) 
 
 
   
 class AttrOctaveSpec a
 class SymAttrOctaveSpec repr where  
+  -- | Printed as @'@, @''@, @'''@, etc. - e.g. @c''@
   raised      :: (AttrOctaveSpec a) => Int -> repr (a ctx) -> repr (a ctx)
+  -- | Printed as @,@, @,,@, @,,,@, etc. - e.g. @d,,@
   lowered     :: (AttrOctaveSpec a) => Int -> repr (a ctx) -> repr (a ctx)
   
 instance AttrOctaveSpec Pitch
@@ -89,9 +93,13 @@ class SymNote repr where
 -- *** Accidentals (6.1.2)  
 class AttrAccidental a
 class SymAttrAccidental repr where
+  -- | Printed as @is@.
   sharp       :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
+  -- | Printed as @es@.
   flat        :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
+  -- | Printed as @isis@.
   doubleSharp :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
+  -- | Printed as @eses@.
   doubleFlat  :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
   
   
@@ -100,11 +108,18 @@ instance AttrAccidental Pitch
 --------------------------------------------------------------------------------
 -- *** Cautionary accidentals (6.1.3)
 
-data CautionaryAccidental ctx
-class SymCautionaryAccidental repr where
-  reminderAccidental    :: repr (CautionaryAccidental ctx)
-  cautionaryAccidental  :: repr (CautionaryAccidental ctx)
-
+class AttrCautionaryAccidental ctx
+class SymAttrCautionaryAccidental repr where
+  -- | Printed as @!@.
+  reminderAccidental    :: (AttrCautionaryAccidental a) => repr (a ctx) 
+                        -> repr (a ctx)
+                        
+  -- | Printed as @?@.
+  cautionaryAccidental  :: (AttrCautionaryAccidental a) => repr (a ctx) 
+                        -> repr (a ctx)
+                           
+instance AttrCautionaryAccidental Pitch 
+                           
 --------------------------------------------------------------------------------
 -- *** Micro tones (6.1.4)
 
@@ -119,8 +134,9 @@ instance AttrMicroTone Pitch
 -- *** Relative octaves (6.1.6)
 
 data CmdRelative ctx
-class SymCmdReleative repr where
-  relative :: repr (Pitch ctx) -> repr (b ctx) -> repr (CmdRelative CT_Note) 
+class SymCmdRelative repr where
+  -- | Printed as: \\relative c'' { ... expr ... }
+  relative :: repr (Pitch ctx) -> repr (b ctxa) -> repr (CmdRelative ctxb) 
 
   
 --------------------------------------------------------------------------------
@@ -184,9 +200,9 @@ instance AttrDotted Duration
 --------------------------------------------------------------------------------
 -- *** Tuplets (6.2.3)
 
-data Times ctx
-class SymTimes repr where
-  times :: MeterFraction -> repr (a ctx) -> repr (Times ctx)
+data CmdTimes ctx
+class SymCmdTimes repr where
+  cmdTimes :: MeterFraction -> repr (Block ctxa) -> repr (CmdTimes ctxb)
 
 
 --------------------------------------------------------------------------------
@@ -451,6 +467,12 @@ data CmdAddlyrics ctx
 class SymCmdAddlyrics repr where
   addlyrics       :: String -> repr (CmdChordmode ctx)
 
+-- *** Melismata (7.3.5)
+data Melismata ctx
+class SymMelismata repr where
+  melisma         :: repr (Melismata ctx)
+  melismaEnd      :: repr (Melismata ctx)
+
 --------------------------------------------------------------------------------
 -- ** Rhythmic music (7.4)
 -- *** Showing melody rhythms (7.4.1)
@@ -600,7 +622,7 @@ class SymCmdHeader repr where
 
 data Block ctx
 class SymBlock repr where
-  block         :: repr (a subctx) -> repr (b superctx)
+  block         :: repr (a subctx) -> repr (Block superctx)
 
 --------------------------------------------------------------------------------    
 -- *** Creating titles (10.2.1)
@@ -622,3 +644,12 @@ data CmdMidi ctx
 class SymCmdMidi repr where
   midi          :: repr (CmdMidi ctx)
   
+--------------------------------------------------------------------------------    
+-- * Placeholder
+
+data Placeholder ctx
+class SymPlaceholder repr where
+  undef          :: repr (Placeholder ctx)
+  
+  
+

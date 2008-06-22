@@ -114,9 +114,9 @@ instance SymAttrAccidental P where
 
 --------------------------------------------------------------------------------
 -- *** Cautionary accidentals (6.1.3)
-instance SymCautionaryAccidental P where
-  reminderAccidental    = P $ char '!'
-  cautionaryAccidental  = P $ char '?'
+instance SymAttrCautionaryAccidental P where
+  reminderAccidental e   = P $ group $ unP e <> char '!'
+  cautionaryAccidental e = P $ group $ unP e <> char '?'
   
 --------------------------------------------------------------------------------
 -- *** Micro tones (6.1.4)    
@@ -127,7 +127,7 @@ instance SymAttrMicroTone P where
 --------------------------------------------------------------------------------
 -- *** Relative octaves (6.1.6)
 
-instance SymCmdReleative P where
+instance SymCmdRelative P where
   relative p e  = P $ cmd "relative" <+> unP p <+> bracesHanging (unP e) 
 
 --------------------------------------------------------------------------------  
@@ -164,8 +164,8 @@ instance SymAttrDotted P where
   
 --------------------------------------------------------------------------------
 -- *** Tuplets (6.2.3)
-instance SymTimes P where
-  times r e = P $ cmd "times" <+> pretty r <+> braces (unP e)
+instance SymCmdTimes P where
+  cmdTimes r e = P $ cmd "times" <+> pretty r <+> braces (unP e)
 
 --------------------------------------------------------------------------------
 -- ** Mutliple notes at once (6.3)
@@ -354,8 +354,14 @@ instance SymCmdChordmode P where
 -- *** Setting simple songs (7.3.1)
 
 instance SymCmdAddlyrics P where
-  addlyrics s      = P $ cmd "addlyrics" <+> bracesSpaced (text s)
+  addlyrics s       = P $ cmd "addlyrics" <+> bracesSpaced (text s)
 
+-- *** Melismata (7.3.5)
+instance SymMelismata P where
+  melisma           = P $ cmd "melisma"
+  melismaEnd        = P $ cmd "melismaEnd"
+  
+  
 --------------------------------------------------------------------------------
 -- ** Rhythmic music (7.4)
 -- *** Showing melody rhythms(7.4.1)
@@ -487,3 +493,11 @@ instance SymEqnDedication P where
 
 instance SymCmdMidi P where
   midi            = P $ cmd "midi"
+
+
+--------------------------------------------------------------------------------    
+-- * Placeholder
+
+instance SymPlaceholder P where
+  undef          = P $ text "undefined"
+  

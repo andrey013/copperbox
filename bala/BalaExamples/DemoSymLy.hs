@@ -6,6 +6,7 @@ module DemoSymLy where
 import Bala.Format.SymLilyPond.LilyPond
 
 import System.Process (runCommand, waitForProcess)
+import Text.ParserCombinators.Parsec
 import Text.PrettyPrint.Leijen hiding (dot)
 
 
@@ -57,4 +58,32 @@ outputDoc e lypath = let sdoc = renderPretty 0.8 80 (unP (e ())) in do
     return ()
     
 main = outputDoc lilypond_test "lilypond_test.ly"
+
+--------------------------------------------------------------------------------
+-- Test the parser...
+
+para = Para { parsePitch = pitchA
+            , parseDuration = pDuration ## pDotted }
+
+lyparse p s = case (parse p "" s) of
+                Left err -> print err
+                Right val -> putDoc $ unP val
+                
+mf = parseTest meterFraction "2/3 a"
+                
+
+p_demo01    = lyparse (parsePitch para) "aes''"
+p_demo01b   = lyparse pitchA "d''"
+
+-- should get *** Exception: Prelude.undefined rather than a parse failure
+p_demo02    = lyparse (pRelative para) "\\relative c'' { } "
+
+p_demo03    = lyparse (pChord para) "<c e g>"
+
+p_demo04    = lyparse ((pNote para) ## (pAttrduration para)) "c''4."
+
+-- "\\times 2/3 {c'4 c' c'} " - should get *** Exception: Prelude.undefined
+p_demo05    = lyparse pTimes "\\times 2/3 { } "
+
+
 

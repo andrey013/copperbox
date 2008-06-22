@@ -76,6 +76,6 @@ printP x = putDoc $ unP (x ())
 instance Pretty MeterFraction where
   pretty (n :% d) = group $ int n <> char '/' <> int d
 
-
-  
+instance Show MeterFraction where
+  showsPrec _ (n :% d) = shows n . showChar '/' . shows d
   
