@@ -26,17 +26,16 @@ import Text.PrettyPrint.Leijen
 ppfield :: Char -> Doc -> Doc
 ppfield ch doc = text [ch,':'] <+> doc
 
+instance SymCList P CT_Field where
+  cNil                = P $ empty
+  -- | Unfortunately prefixes an extra space.
+  cSnoc xs x          = P $ unP xs <$> unP x 
 
 
-
-instance SymConcatenation Ctx_Field P where
-  (+++) l r    = P $ (unP l) <$> (unP r)  
-  
-  
-instance SymConcatenation Ctx_Element P where
-  (+++) l r    = P $ (unP l) <> (unP r)  
- 
-  
+instance SymCList P CT_Element where
+  cNil                = P $ empty
+  cSnoc xs x          = P $ unP xs <> unP x 
+    
 
 
 instance SymFieldNumber P where

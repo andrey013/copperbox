@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, FlexibleContexts #-}
+
 
 -- Make sure lilypond is in your path
 
@@ -12,7 +12,7 @@ import Text.PrettyPrint.Leijen hiding (dot)
 
 
 _ces :: (SymAttrAccidental repr, SymPitch repr) => repr (Pitch ctx)
-_ces = _c # sharp 
+_ces = _c # flat 
 
 
 demo_01 () = note _c # dur 4 
@@ -29,12 +29,16 @@ demo_03b () = longfermata
 demo_04 () = version "2.10.3"
 demo_pp4 = printP demo_04
 
-demo_05 () = header (title "Bulgarian 6" +++ dedication "unknown")
+demo_05 () = header (headerCtx +++ title "Bulgarian 6" +++ dedication "unknown")
 demo_pp5 = printP demo_05
 
 
 
-demo_06 () = note (_ces # raised 1) # dot 4 # fingering 4 +++ note _ces # breve
+demo_06 () = elementCtx +++ note (_ces # raised 1) # dot 4 # fingering 4 +++ note _ces # breve
+
+demo_06a () = elementCtx `cSnoc` note (_ces # raised 1) # dot 4 # fingering 4 
+                         `cSnoc` note _ces # breve
+
 demo_pp6 = printP demo_06
 
 demo_07 () = note _c # fermata 
@@ -50,11 +54,13 @@ demo_pp8 = printP demo_08
 
 
            
-lilypond_test () = version "2.10.3" +++ header (title "Bala LilyPond test")
-                   +++ block e
+lilypond_test () = 
+  toplevelCtx +++ version "2.10.3" 
+              +++ header (headerCtx +++ title "Bala LilyPond test")
+              +++ block e
   where 
-    e = relative (_c # raised 2) 
-          (key _g major +++ clef treble +++ time (2%4) +++ tempo (duration 4) 120  
+    e = elementCtx +++ relative (_c # raised 2) 
+          (elementCtx +++ key _g major +++ clef treble +++ time (2%4) +++ tempo (duration 4) 120  
            +++ note _g # dur 8 +++ openBeam +++ note _a # dur 8 
            +++ note _b # dur 8 +++ closeBeam +++ note _a # dur 8  )                
 
@@ -93,20 +99,6 @@ p_demo04    = lyparse ((pNote para) ## (pAttrduration para)) "c''4."
 
 -- "\\times 2/3 {c'4 c' c'} " - should get *** Exception: Prelude.undefined
 p_demo05    = lyparse (pTimes para) "\\times 2/3 { c' } "
-
-
-newtype Empty a = Empty { unEmpty :: Bool }
-
-instance SymCList Empty ctx where
-  cNil                = Empty True
-  cSnoc xs x          = Empty False
-
-
-instance SymCList P ctx where
-  cNil                = P $ empty
-  -- | Unfortunately prefixes an extra space.
-  cSnoc xs x          = P $ unP xs <+> unP x 
-
 
 
 

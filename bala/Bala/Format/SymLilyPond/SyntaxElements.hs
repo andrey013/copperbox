@@ -29,7 +29,8 @@ elementCtx = cNil
 toplevelCtx :: (SymCList repr CT_Toplevel) => repr (CList CT_Toplevel)
 toplevelCtx = cNil
 
-
+headerCtx :: (SymCList repr CT_Header) => repr (CList CT_Header)
+headerCtx = cNil
 
 -- comments and versioning (2.12)
 

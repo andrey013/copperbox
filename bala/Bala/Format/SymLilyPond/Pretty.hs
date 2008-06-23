@@ -41,35 +41,20 @@ bracesHanging :: Doc -> Doc
 bracesHanging d = lbrace <$> indent 2 (d <$> rbrace)
 
 
-{-
+
 instance SymCList P CT_Toplevel where
   cNil                = P $ empty
-  cCons x xs          = P $ unP x <$> unP xs
--}
-
-instance SymConcatenation CT_Toplevel P where
-  (+++) l r    = P $ (unP l) <$> (unP r)
+  cSnoc xs x          = P $ unP xs <$> unP x
 
 
+instance SymCList P CT_Element where
+  cNil                = P $ empty
+  cSnoc xs x          = P $ unP xs <+> unP x
 
-instance SymConcatenation CT_Book P where
-  (+++) l r    = P $ (unP l) <$> (unP r)
+instance SymCList P CT_Header where
+  cNil                = P $ empty
+  cSnoc xs x          = P $ unP xs <$> unP x
   
-instance SymConcatenation CT_Header P where
-  (+++) l r    = P $ (unP l) <$> (unP r)
-
-  
-instance SymConcatenation CT_Note P where
-  (+++) l r    = P $ (unP l) <+> (unP r)  
-
-
-instance SymConcatenation CT_NoteAttr P where
-  (+++) l r    = P $ group $ (unP l) <> (unP r) 
-
-instance SymConcatenation CT_Element P where
-  (+++) l r    = P $ (unP l) <+> (unP r) 
-  
-
   
     
 instance Attr P where

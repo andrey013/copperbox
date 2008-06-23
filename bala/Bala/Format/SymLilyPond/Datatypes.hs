@@ -622,7 +622,7 @@ class SymCmdHeader repr where
 
 data Block ctx
 class SymBlock repr where
-  block         :: repr (a subctx) -> repr (Block superctx)
+  block         :: repr (CList subctx) -> repr (Block superctx)
 
 --------------------------------------------------------------------------------    
 -- *** Creating titles (10.2.1)

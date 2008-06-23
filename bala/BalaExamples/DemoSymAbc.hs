@@ -10,22 +10,27 @@ import System.Process (runCommand, waitForProcess)
 import Text.PrettyPrint.Leijen
 
 
-demo_001 () =  firstRepeat +++ beginSlur
-
+demo_001 () =  elementCtx +++ firstRepeat +++ beginSlur
+demo_pp1 = printP demo_001
 
 -- double attr application is unfortunately allowed
-demo_002 () = rest # dur 2 # dur 4 +++ firstRepeat
+demo_002 () = elementCtx +++ rest # dur 2 # dur 4 +++ firstRepeat
+demo_pp2 = printP demo_002
 
-demo_002a () = rest +++ firstRepeat
 
-demo_003 () = note C # sharp # octaveHigh 2 +++ firstRepeat 
+demo_002a () = elementCtx +++ rest +++ firstRepeat
+
+demo_003 () = elementCtx +++ note C # sharp # octaveHigh 2 +++ firstRepeat 
 demo_003a () = sharp (note C) 
+
+demo_pp3 = printP demo_003
 
 -- these two should fail if uncommented
 -- demo_003b () = rest # octaveHigh 2
 -- demo_003c () = rest # flat
 
-demo_004 () =     book_ "My song book" 
+demo_004 () =     fieldCtx
+              +++ book_ "My song book" 
               +++ area_ "area" 
               +++ tempo_ << stempo (1%2) 2 
               +++ meter_ << meter  (2%3)
@@ -39,19 +44,23 @@ demo_004 () =     book_ "My song book"
               +++ abcmusic << elements << x1
 
   where 
-    x1 = note C # sharp # octaveHigh 2 +++ firstRepeat 
-              
+    x1 = elementCtx +++ note C # sharp # octaveHigh 2 +++ firstRepeat 
+
+demo_pp4 = printP demo_004
+
+        
 demo_005 () = keySpec (c_ # sharp) # locrian
+demo_pp5 = printP demo_005
 
-
-bala_test () =      num_ 1
+bala_test () =      fieldCtx
+                +++ num_ 1
                 +++ title_ "Bala Abc test"
                 +++ meter_ << meter (4%4)
                 +++ key_ << key << keySpec << note C
                 +++ defaultNoteLength_ (1%1)
                 +++ abcmusic << elements << e1
   where
-    e1 = nplet 2 +++ note C +++ note E +++ note G # sharp +++ z1
+    e1 = elementCtx +++ nplet 2 +++ note C +++ note E +++ note G # sharp +++ z1
           +++ gracenotes [c_, f_, a_] << note C +++ z1 
           +++ upbow << c_
 

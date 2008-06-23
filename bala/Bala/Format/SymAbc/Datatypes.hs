@@ -20,14 +20,13 @@ module Bala.Format.SymAbc.Datatypes  where
 import Bala.Format.Base.SymBase
  
     
-data Ctx_Field
-data Ctx_Line
- 
+data CT_Field
+
   
 -- | notes, rest, slurs, barlines...
-data Ctx_Element 
+data CT_Element 
 
-
+data CT_Line
 
 
 
@@ -39,97 +38,97 @@ data MidTuneField ctx
 
 -- | @X field@ - reference \/ tune number.
 class SymFieldNumber repr where
-  num_                :: Int -> repr (Field Ctx_Field)
+  num_                :: Int -> repr (Field CT_Field)
 
 -- | @T field@ - title. 
 class SymFieldTitle repr where
-  title_              :: String -> repr (MidTuneField Ctx_Field)
+  title_              :: String -> repr (MidTuneField CT_Field)
 
 -- | @A field@ - area.
 class SymFieldArea repr where
-  area_               :: String -> repr (Field Ctx_Field)
+  area_               :: String -> repr (Field CT_Field)
 
 -- | @B field@ - book.
 class SymFieldBook repr where  
-  book_               :: String -> repr (Field Ctx_Field)
+  book_               :: String -> repr (Field CT_Field)
 
 -- | @C field@ - composer name.
 class SymFieldComposer repr where  
-  composer_           :: String -> repr (Field Ctx_Field)
+  composer_           :: String -> repr (Field CT_Field)
 
 -- | @D field@ - discography.
 class SymFieldDiscography repr where  
-  discography_        :: String -> repr (Field Ctx_Field)
+  discography_        :: String -> repr (Field CT_Field)
 
 -- | @E field@ - elemskip.
 class SymFieldElemskip repr where
-  elemskip_           :: String -> repr (MidTuneField Ctx_Field)
+  elemskip_           :: String -> repr (MidTuneField CT_Field)
 
 -- | @G field@ - group.
 class SymFieldGroup repr where  
-  group_              :: String -> repr (Field Ctx_Field)
+  group_              :: String -> repr (Field CT_Field)
 
 -- | @I field@ - information.
 class SymFieldInformation repr where
-  information_        :: String -> repr (Field Ctx_Field)
+  information_        :: String -> repr (Field CT_Field)
 
 -- | @N field@ - notes.
 class SymFieldNotes repr where  
-  notes_              :: String -> repr (Field Ctx_Field)
+  notes_              :: String -> repr (Field CT_Field)
 
 -- | @O field@ - origin.
 class SymFieldOrigin repr where  
-  origin_             :: String -> repr (Field Ctx_Field)
+  origin_             :: String -> repr (Field CT_Field)
 
 -- | @R field@ - rhythm.
 class SymFieldRhythm repr where  
-  rhythm_             :: String -> repr (Field Ctx_Field)
+  rhythm_             :: String -> repr (Field CT_Field)
 
 -- | @S field@ - source.
 class SymFieldSource repr where  
-  source_             :: String -> repr (Field Ctx_Field)
+  source_             :: String -> repr (Field CT_Field)
 
 -- | @W field@ - words.
 class SymFieldWords repr where    
-  words_              :: String -> repr (MidTuneField Ctx_Field)
+  words_              :: String -> repr (MidTuneField CT_Field)
 
 -- | @Z field@ - transcriber notes.  
 class SymFieldTranscrNotes repr where
-  transcrNotes_   :: String -> repr (Field Ctx_Field)
+  transcrNotes_   :: String -> repr (Field CT_Field)
 
 -- | @H field@ - history.
 class SymFieldHistory repr where
-  history_      :: [String] -> repr (Field Ctx_Field)
+  history_      :: [String] -> repr (Field CT_Field)
 
 -- | @K field@ - key.
 class SymFieldKey repr where
-  key_          :: repr (Key ctx) -> repr (MidTuneField Ctx_Field)
+  key_          :: repr (Key ctx) -> repr (MidTuneField CT_Field)
   
 -- | @L field@ - default note length.
 class SymFieldDefaultNoteLength repr where
-  defaultNoteLength_    :: MeterFraction -> repr (MidTuneField Ctx_Field)
+  defaultNoteLength_    :: MeterFraction -> repr (MidTuneField CT_Field)
 
 
 -- | @P field@ - parts, simplified - parts are just represented as a string.
 class SymFieldParts repr where 
-  parts_        :: [Char] -> repr (MidTuneField Ctx_Field)
+  parts_        :: [Char] -> repr (MidTuneField CT_Field)
   
 -- | @Q field@ - tempo.
 class SymFieldTempo repr where
-  tempo_        :: repr (Tempo ctx) -> repr (MidTuneField Ctx_Field)
+  tempo_        :: repr (Tempo ctx) -> repr (MidTuneField CT_Field)
 
 -- | @M field@ - meter.
 class SymFieldMeter repr where
-  meter_        :: repr (Meter ctx) -> repr (MidTuneField Ctx_Field)  
+  meter_        :: repr (Meter ctx) -> repr (MidTuneField CT_Field)  
 
 data AbcMusic ctx
 class SymAbcMusic repr where
-  abcmusic :: repr (AbcLine Ctx_Line) -> repr (AbcMusic Ctx_Field)
+  abcmusic :: repr (AbcLine CT_Line) -> repr (AbcMusic CT_Field)
 
 data AbcLine ctx
 class SymAbcLine repr where
-  elements          :: repr (a ctx) -> repr (AbcLine Ctx_Line)
-  midtuneField      :: repr (MidTuneField Ctx_Field) -> repr (AbcLine Ctx_Line) 
+  elements          :: repr (a ctx) -> repr (AbcLine CT_Line)
+  midtuneField      :: repr (MidTuneField CT_Field) -> repr (AbcLine CT_Line) 
   
   
 data Tempo ctx
@@ -206,7 +205,7 @@ instance AttrDuration Rest
 
 data Rest ctx
 class SymRest repr where
-  rest :: repr (Rest Ctx_Element)
+  rest :: repr (Rest CT_Element)
 
 class AttrOctave ctx
 class SymAttrOctave repr where
@@ -236,7 +235,7 @@ data PitchLetter = C | D | E | F | G | A | B | C2 | D2 | E2 | F2 | G2 | A2 | B2
 
 data BaseNote ctx
 class SymBaseNote repr where
-  note          :: PitchLetter -> repr (BaseNote Ctx_Element)
+  note          :: PitchLetter -> repr (BaseNote CT_Element)
 
 
 
@@ -270,15 +269,15 @@ instance AttrGrace BaseNote
     
 data NPlet ctx
 class SymNPlet repr where
-  nplet :: Int -> repr (NPlet Ctx_Element)
+  nplet :: Int -> repr (NPlet CT_Element)
      
         
 data RepeatMark ctx
 class SymRepeatMark repr where
-  repeatMark :: String -> repr (RepeatMark Ctx_Element)
+  repeatMark :: String -> repr (RepeatMark CT_Element)
 
 firstRepeat, secondRepeat, firstEnding, secondEnding 
-    :: (SymRepeatMark repr) => repr (RepeatMark Ctx_Element)
+    :: (SymRepeatMark repr) => repr (RepeatMark CT_Element)
 firstRepeat   = repeatMark "[1"
 secondRepeat  = repeatMark "[2"
 firstEnding   = repeatMark "|1"
@@ -288,8 +287,8 @@ secondEnding  = repeatMark ":|2"
 
 data Slur ctx
 class SymSlur repr where
-  beginSlur :: repr (Slur Ctx_Element)
-  endSlur   :: repr (Slur Ctx_Element)
+  beginSlur :: repr (Slur CT_Element)
+  endSlur   :: repr (Slur CT_Element)
 
 
 -- | gracenotes are a prefix attibute of a note

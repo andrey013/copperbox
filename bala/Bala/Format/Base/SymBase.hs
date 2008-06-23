@@ -20,29 +20,26 @@ module Bala.Format.Base.SymBase where
 
 import Text.PrettyPrint.Leijen
 
--- * Concatenation
--- | Concatenate two compatible elements.
-data Concatenation ctx
 
-infixl 5 +++
-class SymConcatenation ctx repr where
-  (+++)  :: repr (a ctx) -> repr (b ctx) -> repr (Concatenation ctx)
+infixl 5 `cSnoc`
 
--- * Alternative concatenation - as a snoc list.
 data CList ctx
 class SymCList repr ctx where
   cNil :: repr (CList ctx)
   cSnoc :: repr (CList ctx) -> repr (a ctx) ->  repr (CList ctx) 
-{-  
-data CCons ctx
-class SymCCons repr ctx where
-  cCons :: repr (a ctx) -> repr (b ctx) -> repr (CCons ctx) 
--}
+
+
+infixl 5 +++
+
+-- | (+++) - alias for cSnoc.
+(+++) :: (SymCList repr ctx) 
+      => repr (CList ctx) -> repr (a ctx) ->  repr (CList ctx) 
+(+++) es e = cSnoc es e
 
 -- * Attributes
 -- | Wrap an element as an attribute.
 class Attr repr where
-  attr :: repr (a ctx) -> repr (b ctx) -> repr (b ctx)
+  attr :: repr (a ctx) -> repr (e ctx) -> repr (e ctx)
   
   
 -- * Composition 
