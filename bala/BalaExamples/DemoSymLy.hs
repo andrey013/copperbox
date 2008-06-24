@@ -52,6 +52,17 @@ demo_08 () = elementCtx `cSnoc` (note _g) `cSnoc` (note _c)
 
 demo_pp8 = printP demo_08
 
+demo_09 () = note _c # dashHat
+demo_pp9 = printP demo_09
+
+demo_09b () = note _c  # vdefault # marcato
+demo_pp9b = printP demo_09b
+
+demo_09c () = note _c  .# marcato
+demo_pp9c = printP demo_09c
+
+
+
 
            
 lilypond_test () = 

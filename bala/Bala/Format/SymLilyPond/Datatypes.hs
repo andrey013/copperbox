@@ -373,16 +373,32 @@ data CmdArticulation ctx
 class SymCmdArticulation repr where
   cmdArticulation :: String -> repr (CmdArticulation ctx)
 
+class AttrArticulation a
+class SymAttrArticulation repr where
+  attrArticulation :: (AttrArticulation a) 
+                   => String -> repr (a ctx) -> repr (a ctx)
+  
+instance AttrArticulation Note
+
+
 
 -- placement of an articulation, slur ...
-data VerticalPlacement ctx
-class SymVerticalPlacement repr where
+class AttrVerticalPlacement a
+class SymAttrVerticalPlacement repr where
   -- | Place a mark above the note with @^@.
-  vabove   :: repr (VerticalPlacement ctx)
+  vabove   :: (AttrVerticalPlacement a) => repr (a ctx) -> repr (a ctx)
   -- | Place a mark below the note with @_@.
-  vbelow   :: repr (VerticalPlacement ctx)
-  vdefault :: repr (VerticalPlacement ctx)
-  
+  vbelow   :: (AttrVerticalPlacement a) => repr (a ctx) -> repr (a ctx)
+  -- | Place a mark below the note with @-@.
+  vdefault :: (AttrVerticalPlacement a) => repr (a ctx) -> repr (a ctx)
+
+-- | Not ideal -- vertical placement should be an attribute of
+-- an attribute, as some attributes (e.g. duration) cannot have 
+-- their placement changed.
+instance AttrVerticalPlacement Note
+
+ 
+    
 --------------------------------------------------------------------------------
 -- *** Fingering instructions (6.6.2)
 

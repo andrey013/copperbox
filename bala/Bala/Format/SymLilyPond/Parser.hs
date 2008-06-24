@@ -236,6 +236,7 @@ pChord px = chord <$> angles (many1 (parsePitch px))
 
 
 --------------------------------------------------------------------------------
+-- ** Staff notation (6.4)
 -- *** Key signature (6.4.2)
 
 pKeyType :: (SymCmdKeyType repr) => Parser (repr (CmdKeyType CT_Element)) 
@@ -247,7 +248,7 @@ pKeyType = fchoice command $
     ("dorian",      dorian)]
           
 --------------------------------------------------------------------------------
-    
+-- ** Connecting notes (6.5)
 -- *** Manual beams (6.5.6)
 
 pOpenBeam, pCloseBeam :: (SymBeam repr) => Parser (repr (Beam ctx)) 
@@ -255,12 +256,13 @@ pOpenBeam   = openBeam <$ lexChar '['
 pCloseBeam  = closeBeam <$ lexChar ']'
 
 --------------------------------------------------------------------------------
-
+-- ** Expressive marks (6.6)
 -- ***  Articulations (6.6.1)
-pVerticalPlacement  :: (SymVerticalPlacement repr) 
-                    => Parser (repr (VerticalPlacement ctx)) 
-pVerticalPlacement = fchoice char $
-  [('^',vabove), ('_',vbelow), ('-',vdefault)] 
+
+pVerticalPlacement  :: (SymAttrVerticalPlacement repr, AttrVerticalPlacement a) 
+                    => repr (a ctx) -> Parser (repr (a ctx)) 
+pVerticalPlacement a = fchoice char $
+  [('^', a # vabove), ('_', a # vbelow), ('-', a # vdefault)] 
 
 --------------------------------------------------------------------------------
 
@@ -431,4 +433,6 @@ pDrumPitchName = fchoice lexString $
   , ("dc",                dc)
   , ("dd",                dd)
   , ("de",                de)
-  ]    
+  ] 
+  
+     

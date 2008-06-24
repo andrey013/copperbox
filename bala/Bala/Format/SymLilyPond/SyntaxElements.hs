@@ -402,6 +402,53 @@ appoggiatura  = cmdGrace "appoggiatura"
 -- ** Expressive marks (6.6)
 -- *** Articulations (6.6.1)
 
+-- | Reverse apply an attribute with @vabove@.
+( ^# ) :: (AttrVerticalPlacement a, SymAttrVerticalPlacement repr)
+       => repr (a ctx) -> (repr (a ctx) -> repr (a ctx)) -> repr (a ctx)
+x ^# f = x # vabove # f
+
+-- | Reverse apply an attribute with @vbelow@.
+( .# ) :: (AttrVerticalPlacement a, SymAttrVerticalPlacement repr)
+       => repr (a ctx) -> (repr (a ctx) -> repr (a ctx)) -> repr (a ctx)
+x .# f = x # vbelow # f
+
+-- | @-^@ - dashHat, aka @marcato@.
+dashHat           :: (AttrArticulation a, SymAttrArticulation repr)
+                  => repr (a ctx) -> repr (a ctx)
+dashHat           = attrArticulation "-^"
+
+-- | @-+@ - dashPlus, aka @stopped@.
+dashPlus          :: (AttrArticulation a, SymAttrArticulation repr)
+                  => repr (a ctx) -> repr (a ctx)
+dashPlus          = attrArticulation "-+"
+
+-- | @--@ - dashDash, aka @tenuto@.
+dashDash          :: (AttrArticulation a, SymAttrArticulation repr)
+                  => repr (a ctx) -> repr (a ctx)
+dashDash          = attrArticulation "--"
+
+-- | @-|@ - dashBar, aka @staccatissimo@.
+dashBar           :: (AttrArticulation a, SymAttrArticulation repr)
+                  => repr (a ctx) -> repr (a ctx)
+dashBar           = attrArticulation "-|"
+
+-- | @->@ - dashLarger, aka @accent@.
+dashLarger        :: (AttrArticulation a, SymAttrArticulation repr)
+                  => repr (a ctx) -> repr (a ctx)
+dashLarger        = attrArticulation "->"
+
+-- | @-.@ - dashDot, aka @staccato@.
+dashDot           :: (AttrArticulation a, SymAttrArticulation repr)
+                  => repr (a ctx) -> repr (a ctx)
+dashDot           = attrArticulation "-."
+
+-- | @-_@ - dashUnderscore, aka @portato@.
+dashUnderscore    :: (AttrArticulation a, SymAttrArticulation repr)
+                  => repr (a ctx) -> repr (a ctx)
+dashUnderscore    = attrArticulation "-_"
+
+
+
 -- | @\\accent@.
 accent                  :: (Attr repr, SymCmdArticulation repr) 
                         => repr (a CT_Element) -> repr (a CT_Element)           

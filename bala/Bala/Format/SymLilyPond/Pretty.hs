@@ -275,11 +275,15 @@ instance SymCmdGrace P where
 instance SymCmdArticulation P where
   cmdArticulation s    = P $ cmd s
   
+instance SymAttrArticulation P where
+  attrArticulation s e  = P $ group $ unP e <> text s
+                   
+                     
+instance SymAttrVerticalPlacement P where
+  vabove e      = P $ group $ unP e <> char '^'
+  vbelow e      = P $ group $ unP e <> char '_'
+  vdefault e    = P $ group $ unP e <> char '-'
   
-instance SymVerticalPlacement P where
-  vabove   = P $ char '^'
-  vbelow   = P $ char '_'
-  vdefault = P $ char '-'
  
 --------------------------------------------------------------------------------
 -- *** Fingering instructions (6.6.2)
