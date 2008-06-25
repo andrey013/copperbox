@@ -1,4 +1,4 @@
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls, MultiParamTypeClasses #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  empty data declarations
+-- Portability :  empty data declarations, multi-parameter typeclasses
 --
 -- Datatypes for ABC format in the final-tagless (Symantics) style of
 -- Carette, Kiselyov, and Shan.
@@ -163,26 +163,12 @@ class SymKeyAccidental repr where
   keyFlat   :: repr (KeyAccidental ctx)
     
 
-class AttrMode ctx
-class SymAttrMode repr where
-  mode :: (AttrMode a) => String -> repr (a ctx) -> repr (a ctx)
+data Mode ctx
+class SymMode repr where
+  mode :: String -> repr (Mode ctx)
 
 
-major, minor, lydian, ionian, mixolydian, dorian, aeolian, phrygian, locrian 
-    ::  (AttrMode a, SymAttrMode repr) => repr (a ctx) -> repr (a ctx)   
-major         = mode "maj"
-minor         = mode "min"
-lydian        = mode "lyd"
-ionian        = mode "ion"
-mixolydian    = mode "mix"
-dorian        = mode "dor"
-aeolian       = mode "aeo"
-phrygian      = mode "phr"
-locrian       = mode "loc"
-
-
-
-instance AttrMode KeySpec
+instance Attribute KeySpec Mode 
 
 
 
@@ -194,12 +180,12 @@ class SymMeter repr where
 
     
 
-class AttrDuration ctx
-class SymAttrDuration repr where
-  dur :: (AttrDuration a) => Int -> repr (a ctx)  -> repr (a ctx)     
+data Duration ctx
+class SymDuration repr where
+  dur :: Int -> repr (Duration ctx)     
 
-instance AttrDuration BaseNote
-instance AttrDuration Rest
+instance Attribute BaseNote Duration
+instance Attribute Rest Duration
 
 
 
@@ -207,25 +193,25 @@ data Rest ctx
 class SymRest repr where
   rest :: repr (Rest CT_Element)
 
-class AttrOctave ctx
-class SymAttrOctave repr where
-  octaveLow     :: (AttrOctave a) => Int -> repr (a ctx) -> repr (a ctx) 
-  octaveHigh    :: (AttrOctave a) => Int -> repr (a ctx) -> repr (a ctx) 
+data Octave ctx
+class SymOctave repr where
+  octaveLow     :: Int -> repr (Octave ctx) 
+  octaveHigh    :: Int -> repr (Octave ctx)
     
-instance AttrOctave BaseNote
+instance Attribute BaseNote Octave
 
 
-class AttrAccidental ctx
-class SymAttrAccidental repr where 
-  natural       :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
-  sharp         :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
-  doubleSharp   :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
-  flat          :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
-  doubleFlat    :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
+data Accidental ctx
+class SymAccidental repr where 
+  natural       :: repr (Accidental ctx)
+  sharp         :: repr (Accidental ctx)
+  doubleSharp   :: repr (Accidental ctx)
+  flat          :: repr (Accidental ctx)
+  doubleFlat    :: repr (Accidental ctx)
 
 
 
-instance AttrAccidental BaseNote
+instance Attribute BaseNote Accidental
 
 
 -- Abc has pitches in a two octave range and then uses octave specs for higher
@@ -258,14 +244,14 @@ class SymTie repr where
 
   
       
-class AttrGrace ctx
-class SymAttrGrace repr where
-    tilde       :: (AttrGrace a) => repr (a ctx) -> repr (a ctx)
-    stacatto    :: (AttrGrace a) => repr (a ctx) -> repr (a ctx)
-    downbow     :: (AttrGrace a) => repr (a ctx) -> repr (a ctx)
-    upbow       :: (AttrGrace a) => repr (a ctx) -> repr (a ctx)
+data Grace ctx
+class SymGrace repr where
+    tilde       :: repr (Grace ctx)
+    stacatto    :: repr (Grace ctx)
+    downbow     :: repr (Grace ctx)
+    upbow       :: repr (Grace ctx)
 
-instance AttrGrace BaseNote
+instance Attribute BaseNote Grace
     
 data NPlet ctx
 class SymNPlet repr where
@@ -276,12 +262,7 @@ data RepeatMark ctx
 class SymRepeatMark repr where
   repeatMark :: String -> repr (RepeatMark CT_Element)
 
-firstRepeat, secondRepeat, firstEnding, secondEnding 
-    :: (SymRepeatMark repr) => repr (RepeatMark CT_Element)
-firstRepeat   = repeatMark "[1"
-secondRepeat  = repeatMark "[2"
-firstEnding   = repeatMark "|1"
-secondEnding  = repeatMark ":|2"
+
 
  
 
@@ -292,11 +273,11 @@ class SymSlur repr where
 
 
 -- | gracenotes are a prefix attibute of a note
-class AttrGraceNotes ctx
-class SymAttrGraceNotes repr where
-  gracenotes :: (AttrGraceNotes a) => [repr (BaseNote ctx)] -> repr (a ctx) -> repr (a ctx)
+data GraceNotes ctx
+class SymGraceNotes repr where
+  gracenotes :: [repr (BaseNote ctx)] -> repr (GraceNotes ctx)
 
-instance AttrGraceNotes BaseNote  
+instance Attribute BaseNote GraceNotes  
 
 data MultiNote ctx
 class SymMultiNote repr where

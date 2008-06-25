@@ -52,7 +52,29 @@ b__  = note B2
 
 
 -- rests 
-z1, z2 :: (SymRest repr, SymAttrDuration repr) => repr (Rest CT_Element)
-z1 = rest # dur 1
-z2 = rest # dur 2
+z1, z2 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest CT_Element)
+z1 = rest #@ dur 1
+z2 = rest #@ dur 2
+
+
+major, minor, lydian, ionian, mixolydian, dorian, aeolian, phrygian, locrian 
+    ::  (SymMode repr) => repr (Mode ctx)   
+major         = mode "maj"
+minor         = mode "min"
+lydian        = mode "lyd"
+ionian        = mode "ion"
+mixolydian    = mode "mix"
+dorian        = mode "dor"
+aeolian       = mode "aeo"
+phrygian      = mode "phr"
+locrian       = mode "loc"
+
+
+
+firstRepeat, secondRepeat, firstEnding, secondEnding 
+    :: (SymRepeatMark repr) => repr (RepeatMark CT_Element)
+firstRepeat   = repeatMark "[1"
+secondRepeat  = repeatMark "[2"
+firstEnding   = repeatMark "|1"
+secondEnding  = repeatMark ":|2"
 

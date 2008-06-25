@@ -37,10 +37,11 @@ fchoice f xs = choice $ map (interp f) xs
   where
     interp f (a,b) = b <$ f a
 
-attrParse :: (repr (a ctx) -> Parser (repr (a ctx))) 
-          -> repr (a ctx) 
-          -> Parser (repr (a ctx))
-attrParse p a = option a (p a)
+attrParse :: (Attribute elt att, SymAttr repr) 
+          => Parser (repr (att ctx_a))
+          -> repr (elt ctx_e) 
+          -> Parser (repr (elt ctx_e))
+attrParse p elt = option elt (do {att <- p; return (elt #@ att)})
 
 -- For Haddock infix operators starting with # need spacing.
 
@@ -48,20 +49,16 @@ infixl 6 ##
 
 -- | @##@ - attribute bind - chain attribute parsers like bind (>>=),
 -- but the steps in the chain are optional.
-( ## ) :: Parser (repr (a ctx)) 
-      -> (repr (a ctx) -> Parser (repr (a ctx))) 
-      -> Parser (repr (a ctx)) 
+( ## ) :: (Attribute elt att, SymAttr repr) 
+       => Parser (repr (elt ctx_e)) 
+       -> Parser (repr (att ctx_a))
+       -> Parser (repr (elt ctx_e)) 
 ( ## ) p pa = p >>= attrParse pa
 
 
 -- | Placeholder
 noBlock :: (SymBlock repr) => Parser (repr (Block ctx))
 noBlock = undefined <$ (lexChar '{') <*> (lexChar '}')
-
--- | Reverse apply with compose.
-( #. ) :: a -> (b -> a -> a) -> b -> a
-( #. ) a f = \b -> a # (f b)
-
 
 
 meterFraction :: Parser MeterFraction
@@ -111,10 +108,11 @@ data Para repr = Para {
   
 
 -- | Pitch, plus attributes (knot tied).
-pitchA :: (SymPitch repr, 
-           SymAttrAccidental repr, 
-           SymAttrMicroTone repr,
-           SymAttrOctaveSpec repr) 
+pitchA :: (SymPitch repr,
+           SymAttr repr, 
+           SymAccidental repr, 
+           SymMicroTone repr,
+           SymOctaveSpec repr) 
        => Parser (repr (Pitch ctx))
 pitchA = lexeme $ pPitch ## pAccidental ## pMicroTone ## pOctaveSpec 
 
@@ -132,12 +130,11 @@ pPitch = choice $ map fn xs
           ('b',      _b)]
     
    
-pOctaveSpec :: (AttrOctaveSpec a, SymAttrOctaveSpec repr) 
-            => repr (a ctx) -> Parser (repr (a ctx))
-pOctaveSpec e = pRaised <|> pLowered
+pOctaveSpec :: (SymOctaveSpec repr) => Parser (repr (OctaveSpec ctx))
+pOctaveSpec = pRaised <|> pLowered
   where
-    pRaised  = (e #. raised)  <$> counting1 (char '\'')
-    pLowered = (e #. lowered) <$> counting1 (char ',')
+    pRaised  = raised  <$> counting1 (char '\'')
+    pLowered = lowered <$> counting1 (char ',')
     
 
 pNote :: (SymNote repr) 
@@ -146,32 +143,29 @@ pNote px = note <$> (parsePitch px)
 
 --------------------------------------------------------------------------------
 -- *** Accidentals (6.1.2)
-pAccidental :: (SymAttrAccidental repr, AttrAccidental a) 
-            => repr (a ctx) -> Parser (repr (a ctx))
-pAccidental e = f <$> longestString [ "isis", "eses", "is", "es" ]
+pAccidental :: (SymAccidental repr) => Parser (repr (Accidental ctx))
+pAccidental= f <$> longestString [ "isis", "eses", "is", "es" ]
   where
-    f "isis" = e # doubleSharp 
-    f "eses" = e # doubleFlat
-    f "is"   = e # sharp
-    f "es"   = e # flat
+    f "isis" = doubleSharp 
+    f "eses" = doubleFlat
+    f "is"   = sharp
+    f "es"   = flat
 
 --------------------------------------------------------------------------------
 -- *** Cautionary accidentals (6.1.3)
 
-pCautionaryAccidental 
-    :: (SymAttrCautionaryAccidental repr, AttrCautionaryAccidental a) 
-    => repr (a ctx) -> Parser (repr (a ctx))
-pCautionaryAccidental a = fchoice lexChar $ 
-  [('!', a # reminderAccidental), ('^', a # cautionaryAccidental)]
+pCautionaryAccidental :: (SymCautionaryAccidental repr) 
+                      => Parser (repr (CautionaryAccidental ctx))
+pCautionaryAccidental= fchoice lexChar $ 
+  [('!', reminderAccidental), ('^', cautionaryAccidental)]
   
   
 --------------------------------------------------------------------------------
 -- *** Micro tones (6.1.4)
 
-pMicroTone :: (SymAttrMicroTone repr, AttrMicroTone a) 
-           => repr (a ctx) -> Parser (repr (a ctx))
-pMicroTone a = fchoice string $ 
-  [("ih", a # halfFlat), ("eh", a # halfFlat)] 
+pMicroTone :: (SymMicroTone repr) => Parser (repr (MicroTone ctx))
+pMicroTone = fchoice string $ 
+  [("ih", halfFlat), ("eh", halfFlat)] 
 
 
 --------------------------------------------------------------------------------
@@ -207,16 +201,12 @@ pDuration :: SymDuration repr => Parser (repr (Duration ctx))
 pDuration = duration <$> int
 
 
-pAttrduration :: (SymAttrDuration repr, AttrDuration a) 
-              => Para repr -> repr (a ctx) -> Parser (repr (a ctx))
-pAttrduration px a = (a #. attrduration) <$> (parseDuration px)
 
 --------------------------------------------------------------------------------
 -- *** Augmentation dots (6.2.2)
 
-pDotted :: (SymAttrDotted repr, AttrDotted a) 
-        => repr (a ctx) -> Parser (repr (a ctx))
-pDotted a = (a #. dotted) <$> counting1 (char '.')  
+pDotted :: (SymDotted repr) => Parser (repr (Dotted ctx))
+pDotted = dotted <$> counting1 (char '.')  
 
 --------------------------------------------------------------------------------
 -- *** Tuplets (6.2.3)
@@ -259,10 +249,12 @@ pCloseBeam  = closeBeam <$ lexChar ']'
 -- ** Expressive marks (6.6)
 -- ***  Articulations (6.6.1)
 
-pVerticalPlacement  :: (SymAttrVerticalPlacement repr, AttrVerticalPlacement a) 
-                    => repr (a ctx) -> Parser (repr (a ctx)) 
-pVerticalPlacement a = fchoice char $
-  [('^', a # vabove), ('_', a # vbelow), ('-', a # vdefault)] 
+pVerticalPlacement  :: (SymVerticalPlacement repr) 
+                    => Parser (repr (VerticalPlacement ctx)) 
+pVerticalPlacement = fchoice char $
+  [('^', verticalPlacement VAbove), 
+   ('_', verticalPlacement VBelow), 
+   ('-', verticalPlacement VDefault)] 
 
 --------------------------------------------------------------------------------
 

@@ -1,4 +1,4 @@
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls, MultiParamTypeClasses #-}
 
 
 --------------------------------------------------------------------------------
@@ -9,7 +9,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  empty data declarations
+-- Portability :  empty data declarations, multi-parameter typeclasses
 --
 -- Datatypes for a subset of LilyPond format in the final-tagless 
 -- (Symantics) style of Carette, Kiselyov, and Shan.
@@ -23,7 +23,18 @@ module Bala.Format.SymLilyPond.Datatypes  where
 import Bala.Format.Base.SymBase
 
 
-
+-- * Prefix Attributes
+-- | Normally the P (pretty-print interpretation) prints all attributes as a 
+-- suffix to their element. We meed a special case for prefix attributes 
+-- (e.g. vertical placement).
+class PrefixAttribute elt attrib
+class SymPrefixAttr repr where
+  prefixAttr  :: PrefixAttribute elt att 
+              =>  repr (att ctx_att) -> repr (elt ctx_elt) -> repr (elt ctx_elt)
+       
+       
+       
+       
 -- | Contexts
 data CT_Toplevel
 data CT_Book
@@ -72,14 +83,14 @@ class SymPitch repr where
 
 
   
-class AttrOctaveSpec a
-class SymAttrOctaveSpec repr where  
+data OctaveSpec ctx
+class SymOctaveSpec repr where  
   -- | Printed as @'@, @''@, @'''@, etc. - e.g. @c''@
-  raised      :: (AttrOctaveSpec a) => Int -> repr (a ctx) -> repr (a ctx)
+  raised      :: Int -> repr (OctaveSpec ctx)
   -- | Printed as @,@, @,,@, @,,,@, etc. - e.g. @d,,@
-  lowered     :: (AttrOctaveSpec a) => Int -> repr (a ctx) -> repr (a ctx)
+  lowered     :: Int -> repr (OctaveSpec ctx)
   
-instance AttrOctaveSpec Pitch
+instance Attribute Pitch OctaveSpec
 
 -- is this wise? It would make things a bit more polymorphic
 -- instance AttrOctaveSpec Note   
@@ -91,44 +102,42 @@ class SymNote repr where
  
 --------------------------------------------------------------------------------
 -- *** Accidentals (6.1.2)  
-class AttrAccidental a
-class SymAttrAccidental repr where
+data Accidental ctx
+class SymAccidental repr where
   -- | Printed as @is@.
-  sharp       :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
+  sharp       :: repr (Accidental ctx)
   -- | Printed as @es@.
-  flat        :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
+  flat        :: repr (Accidental ctx)
   -- | Printed as @isis@.
-  doubleSharp :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
+  doubleSharp :: repr (Accidental ctx)
   -- | Printed as @eses@.
-  doubleFlat  :: (AttrAccidental a) => repr (a ctx) -> repr (a ctx)
+  doubleFlat  :: repr (Accidental ctx)
   
   
-instance AttrAccidental Pitch  
+instance Attribute Pitch Accidental
 
 --------------------------------------------------------------------------------
 -- *** Cautionary accidentals (6.1.3)
 
-class AttrCautionaryAccidental ctx
-class SymAttrCautionaryAccidental repr where
+data CautionaryAccidental ctx
+class SymCautionaryAccidental repr where
   -- | Printed as @!@.
-  reminderAccidental    :: (AttrCautionaryAccidental a) => repr (a ctx) 
-                        -> repr (a ctx)
+  reminderAccidental    :: repr (CautionaryAccidental ctx)
                         
   -- | Printed as @?@.
-  cautionaryAccidental  :: (AttrCautionaryAccidental a) => repr (a ctx) 
-                        -> repr (a ctx)
+  cautionaryAccidental  :: repr (CautionaryAccidental ctx)
                            
-instance AttrCautionaryAccidental Pitch 
+instance Attribute Pitch CautionaryAccidental 
                            
 --------------------------------------------------------------------------------
 -- *** Micro tones (6.1.4)
 
-class AttrMicroTone a
-class SymAttrMicroTone repr where
-  halfFlat  :: (AttrMicroTone a) => repr (a ctx) -> repr (a ctx)
-  halfSharp :: (AttrMicroTone a) => repr (a ctx) -> repr (a ctx)
+data MicroTone ctx
+class SymMicroTone repr where
+  halfFlat  :: repr (MicroTone ctx)
+  halfSharp :: repr (MicroTone ctx)
   
-instance AttrMicroTone Pitch 
+instance Attribute Pitch MicroTone
 
 --------------------------------------------------------------------------------
 -- *** Relative octaves (6.1.6)
@@ -167,35 +176,29 @@ data Duration ctx
 class SymDuration repr where
   duration :: Int -> repr (Duration ctx)
 
-class AttrDuration a
-class SymAttrDuration repr where
-  attrduration :: (AttrDuration a) => repr (Duration ctx) -> repr (a ctx) -> repr (a ctx)
-
-
-
 
    
-instance AttrDuration Rest
-instance AttrDuration Note
-instance AttrDuration Chord
+instance Attribute Rest Duration
+instance Attribute Note Duration
+instance Attribute Chord Duration
 
 
-class AttrCmdLongDuration a
-class SymAttrCmdLongDuration repr where
-  cmdLongDuration :: (AttrCmdLongDuration a) => String -> repr (a ctx) -> repr (a ctx)
+data CmdLongDuration ctx
+class SymCmdLongDuration repr where
+  cmdLongDuration :: String -> repr (CmdLongDuration ctx)
 
-instance AttrCmdLongDuration Rest
-instance AttrCmdLongDuration Note
-instance AttrCmdLongDuration Chord
+instance Attribute Rest CmdLongDuration
+instance Attribute Note CmdLongDuration
+instance Attribute Chord CmdLongDuration
 
 --------------------------------------------------------------------------------
 -- *** Augmentation dots (6.2.2)
 
-class AttrDotted a
-class SymAttrDotted repr where
-  dotted :: (AttrDotted a) => Int -> repr (a ctx) -> repr (a ctx)
+data Dotted ctx
+class SymDotted repr where
+  dotted :: Int -> repr (Dotted ctx)
 
-instance AttrDotted Duration
+instance Attribute Duration Dotted
 
 --------------------------------------------------------------------------------
 -- *** Tuplets (6.2.3)
@@ -245,15 +248,15 @@ class SymClefType repr where
   cleftype :: String -> repr (ClefType ctx)
 
 
-class AttrClefTransposition a
-class SymAttrClefTransposition repr where  
-  clefTransposition :: (AttrClefTransposition a) => Int -> repr (a ctx) -> repr (a ctx) 
+data ClefTransposition ctx
+class SymClefTransposition repr where  
+  clefTransposition :: Int -> repr (ClefTransposition ctx) 
 
 
   
 -- Unfortunately this has to be an attibute of Pitch rather than ClefType
 -- because of the pretty printing rules 
-instance AttrClefTransposition Pitch
+instance Attribute Pitch ClefTransposition
 
 --------------------------------------------------------------------------------
 -- *** Key signature (6.4.2)
@@ -331,22 +334,22 @@ class SymCmdPhrasingSlur repr where
 --------------------------------------------------------------------------------
 -- *** Laissez vibrer ties (6.5.4)
 
-class AttrCmdLaissezVibrer a
-class SymAttrCmdLaissezVibrer repr where
-  laissezVibrer :: (AttrCmdLaissezVibrer a) => repr (a ctx) -> repr (a ctx)
+data CmdLaissezVibrer ctx
+class SymCmdLaissezVibrer repr where
+  laissezVibrer :: repr (CmdLaissezVibrer ctx)
 
-instance AttrCmdLaissezVibrer Note
-instance AttrCmdLaissezVibrer Chord
+instance Attribute Note CmdLaissezVibrer
+instance Attribute Chord CmdLaissezVibrer
 
 --------------------------------------------------------------------------------
 -- *** Automatic beams (6.5.5)
 -- noBeam is a note attribute
 
-class AttrCmdNoBeam a
-class SymAttrCmdNoBeam repr where
-  noBeam :: (AttrCmdNoBeam a) => repr (a ctx) -> repr (a ctx)
+data CmdNoBeam ctx
+class SymCmdNoBeam repr where
+  noBeam :: repr (CmdNoBeam ctx)
 
-instance AttrCmdNoBeam Note 
+instance Attribute Note CmdNoBeam
 
 --------------------------------------------------------------------------------
 -- *** Manual beams (6.5.6)
@@ -373,40 +376,37 @@ data CmdArticulation ctx
 class SymCmdArticulation repr where
   cmdArticulation :: String -> repr (CmdArticulation ctx)
 
-class AttrArticulation a
-class SymAttrArticulation repr where
-  attrArticulation :: (AttrArticulation a) 
-                   => String -> repr (a ctx) -> repr (a ctx)
+instance Attribute Note CmdArticulation
+instance PrefixAttribute CmdArticulation VerticalPlacement
+
+data Articulation ctx
+class SymArticulation repr where
+  articulation :: String -> repr (Articulation ctx)
   
-instance AttrArticulation Note
+instance Attribute Note Articulation
 
 
+data VPlacement = VAbove | VBelow | VDefault
 
 -- placement of an articulation, slur ...
-class AttrVerticalPlacement a
-class SymAttrVerticalPlacement repr where
-  -- | Place a mark above the note with @^@.
-  vabove   :: (AttrVerticalPlacement a) => repr (a ctx) -> repr (a ctx)
-  -- | Place a mark below the note with @_@.
-  vbelow   :: (AttrVerticalPlacement a) => repr (a ctx) -> repr (a ctx)
-  -- | Place a mark below the note with @-@.
-  vdefault :: (AttrVerticalPlacement a) => repr (a ctx) -> repr (a ctx)
+data VerticalPlacement ctx
+class SymVerticalPlacement repr where
+  verticalPlacement   :: VPlacement -> repr (VerticalPlacement ctx)
 
--- | Not ideal -- vertical placement should be an attribute of
--- an attribute, as some attributes (e.g. duration) cannot have 
--- their placement changed.
-instance AttrVerticalPlacement Note
+
+
+instance Attribute Fingering VerticalPlacement
 
  
     
 --------------------------------------------------------------------------------
 -- *** Fingering instructions (6.6.2)
 
-class AttrFingering a
-class SymAttrFingering repr where
-  fingering       :: (AttrFingering a) => Int -> repr (a ctx) -> repr (a ctx) 
+data Fingering ctx
+class SymFingering repr where
+  fingering       :: Int -> repr (Fingering ctx) 
 
-instance AttrFingering Note
+instance Attribute Note Fingering
 
 --------------------------------------------------------------------------------
 -- *** Dynamics (6.6.3)
@@ -458,14 +458,14 @@ class SymCmdAutochange repr where
   autochange      :: repr (CmdAutochange CT_Note) 
 
 -- *** Pedals (7.1.2)
-class AttrCmdPedal a
-class SymAttrCmdPedal repr where
-  cmdPedal :: (AttrCmdPedal a) => String -> repr (a ctx) -> repr (a ctx)
+data CmdPedal ctx
+class SymCmdPedal repr where
+  cmdPedal :: String -> repr (CmdPedal ctx)
 
 
 
-instance AttrCmdPedal Note
-instance AttrCmdPedal Chord
+instance Attribute Note CmdPedal
+instance Attribute Chord CmdPedal
 
 --------------------------------------------------------------------------------
 -- ** Chord names (7.2)
@@ -517,11 +517,11 @@ class SymDrumPitchName repr where
 -- *** Tablatures basic (7.5.2)
 
 -- | stringnum corresponds to @\\@ in LilyPond.
-class AttrStringnum a
-class SymAttrStringnum repr where
-  stringnum :: (AttrStringnum a) => repr (a ctx) -> Int -> repr (a ctx)
+data Stringnum ctx
+class SymStringnum repr where
+  stringnum :: Int -> repr (Stringnum ctx)
  
-instance AttrStringnum Note
+instance Attribute Note Stringnum
 
 data CtxTabStaff ctx
 class SymCtxTabStaff repr where
@@ -536,30 +536,29 @@ class SymCtxTabVoice repr where
 instance ContextType CtxTabVoice
 
 -- *** Right hand fingerings (7.5.6)
-class AttrRightHandFinger a
-class SymAttrRightHandFinger repr where
-  rightHandFinger   :: (AttrRightHandFinger a) => 
-                       repr (a ctx) -> Int -> repr (a ctx)
+data RightHandFinger ctx
+class SymRightHandFinger repr where
+  rightHandFinger   :: Int -> repr (RightHandFinger ctx)
 
-instance AttrRightHandFinger Note
+instance Attribute Note RightHandFinger
 
 --------------------------------------------------------------------------------
 -- ** Other instrument specific notation (7.8)
 -- *** Artificial harmonics (strings) (7.8.1)
-class AttrCmdHarmonic a
-class SymAttrCmdHarmonic repr where
-  cmdHarmonic   :: (AttrCmdHarmonic a) => repr (a ctx) -> repr (a ctx)
+data CmdHarmonic ctx
+class SymCmdHarmonic repr where
+  cmdHarmonic   :: repr (CmdHarmonic ctx)
 
-instance AttrCmdHarmonic Note
+instance Attribute Note CmdHarmonic
   
 --------------------------------------------------------------------------------
 -- * Advanced notation (8)
 -- ** Text (8.1)
 -- *** Text scripts (8.1.1)
 
-class AttrText a
-class SymAttrText repr where
-  attrtext        :: (AttrText a) => String -> repr (a ctx) -> repr (a ctx) 
+data TextSript ctx
+class SymTextSript repr where
+  textSript        :: String -> repr (TextSript ctx) 
 
 data CmdFatText ctx 
 class SymCmdFatText repr where

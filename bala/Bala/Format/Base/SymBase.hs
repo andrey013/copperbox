@@ -37,16 +37,24 @@ infixl 5 +++
 (+++) es e = cSnoc es e
 
 -- * Attributes
--- | Wrap an element as an attribute.
-class Attr repr where
-  attr :: repr (a ctx) -> repr (e ctx) -> repr (e ctx)
-  
-  
--- * Composition 
-infixl 7 #
--- | Reverse application.
-( # ) :: a -> (a -> b) -> b
-x # f = f x
+-- | An instance to declares an attribute relation.
+class Attribute elt attrib
+
+
+class SymAttr repr where
+  attr        :: Attribute elt att 
+              => repr (elt ctx_elt) -> repr (att ctx_att) -> repr (elt ctx_elt)
+
+
+
+infixl 7 #@
+
+-- | Reverse application forming an attribute.
+( #@ ) :: (Attribute elt att, SymAttr repr)
+       => repr (elt ctx_elt) -> repr (att ctx_att) -> repr (elt ctx_elt)
+e #@ a = attr e a
+
+
 
 
 -- CAN WE DO WITHOUT << ?

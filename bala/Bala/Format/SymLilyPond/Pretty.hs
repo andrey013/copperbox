@@ -57,21 +57,26 @@ instance SymCList P CT_Header where
   
   
     
-instance Attr P where
-  attr a e  = P $ group $ unP e <> unP a 
+instance SymAttr P where
+  attr e a              = P $ group $ unP e <> unP a 
+
+instance SymPrefixAttr P where
+  prefixAttr a e        = P $ group $ unP a <> unP e 
+  
+  
         
 --------------------------------------------------------------------------------
 -- *** Commenting input files (2.12)  
 
 instance SymCmdVersion P where 
-  version s       = P $ cmd "version" <+> dquotes (text s)
+  version s             = P $ cmd "version" <+> dquotes (text s)
   
   
 instance SymLineComment P where
-  lineComment s = P $ char '%' <+> text s <> line
+  lineComment s         = P $ char '%' <+> text s <> line
 
 instance SymBlockComment P where
-  blockComment s = P $ enclose (text "%{ ") (text " %}") (text s) 
+  blockComment s        = P $ enclose (text "%{ ") (text " %}") (text s) 
 
 
  
@@ -81,163 +86,162 @@ instance SymBlockComment P where
 -- ** Pitches (6.1)
 -- *** Normal pitches (6.1.1) (6.1)
 instance SymPitch P where
-  pitch a       = P $ (text . map toLower . show) a   
+  pitch a               = P $ (text . map toLower . show) a   
 
-instance SymAttrOctaveSpec P where
-  raised i a     = P $ group $ unP a <> string (replicate i '\'')
-  lowered i a    = P $ group $ unP a <> string (replicate i ',')
+instance SymOctaveSpec P where
+  raised i              = P $ string (replicate i '\'')
+  lowered i             = P $ string (replicate i ',')
 
 
     
 instance SymNote P where
-  note p = P $ unP p 
+  note p                = P $ unP p 
   
 --------------------------------------------------------------------------------      
 -- *** Accidentals (6.1.2)  
-instance SymAttrAccidental P where
-  sharp e        = P $ group $ unP e <> string "is"
-  flat e         = P $ group $ unP e <> string "es"
-  doubleSharp e  = P $ group $ unP e <> string "isis"
-  doubleFlat e   = P $ group $ unP e <> string "eses"
+instance SymAccidental P where
+  sharp                 = P $ string "is"
+  flat                  = P $ string "es"
+  doubleSharp           = P $ string "isis"
+  doubleFlat            = P $ string "eses"
 
 --------------------------------------------------------------------------------
 -- *** Cautionary accidentals (6.1.3)
-instance SymAttrCautionaryAccidental P where
-  reminderAccidental e   = P $ group $ unP e <> char '!'
-  cautionaryAccidental e = P $ group $ unP e <> char '?'
+instance SymCautionaryAccidental P where
+  reminderAccidental    = P $ char '!'
+  cautionaryAccidental  = P $ char '?'
   
 --------------------------------------------------------------------------------
 -- *** Micro tones (6.1.4)    
-instance SymAttrMicroTone P where
-  halfFlat a      = P $ group $ unP a <> string "ih" 
-  halfSharp a     = P $ group $ unP a <> string "es"
+instance SymMicroTone P where
+  halfFlat              = P $ string "ih" 
+  halfSharp             = P $ string "es"
 
 --------------------------------------------------------------------------------
 -- *** Relative octaves (6.1.6)
 
 instance SymCmdRelative P where
-  relative p e  = P $ cmd "relative" <+> unP p <+> bracesHanging (unP e) 
+  relative p e          = P $ cmd "relative" <+> unP p <+> bracesHanging (unP e) 
 
 --------------------------------------------------------------------------------  
 -- *** Rests (6.1.9)
 instance SymRest P where
-  rest          = P $ char 'r'
+  rest                  = P $ char 'r'
 
 --------------------------------------------------------------------------------
 -- *** Skips (6.1.10)
 instance SymCmdSkip P where
-  cmdSkip s        = P $ text s
+  cmdSkip s             = P $ text s
   
 instance SymSkipDuration P where
-  skipDuration d    = P $ group $ char 's' <> unP d
+  skipDuration d        = P $ group $ char 's' <> unP d
   
 --------------------------------------------------------------------------------
 -- ** Rhythms (6.2)
 -- *** Durations (6.2)
 
+  
 instance SymDuration P where
-  duration i = P $ int i
-  
-  
-instance SymAttrDuration P where
-  attrduration d e = P $ group $ unP e <> unP d
+  duration i            = P $ int i
 
-instance SymAttrCmdLongDuration P where
-  cmdLongDuration s a = P $ group $ unP a <> cmd s
+instance SymCmdLongDuration P where
+  cmdLongDuration s     = P $ cmd s
 
 --------------------------------------------------------------------------------
 -- *** Augmentation dots (6.2.2)
-instance SymAttrDotted P where
-  dotted i a   = P $ group $ unP a <> text (replicate i '.') 
+instance SymDotted P where
+  dotted i              = P $ text (replicate i '.') 
   
 --------------------------------------------------------------------------------
 -- *** Tuplets (6.2.3)
 instance SymCmdTimes P where
-  cmdTimes r e = P $ cmd "times" <+> pretty r <+> braces (unP e)
+  cmdTimes r e          = P $ cmd "times" <+> pretty r <+> braces (unP e)
 
 --------------------------------------------------------------------------------
 -- ** Mutliple notes at once (6.3)
 -- *** Chords (6.3.1)  
 instance SymChord P where
-  chord xs = P $ (angles $ hsep $ map unP xs)
+  chord xs              = P $ (angles $ hsep $ map unP xs)
 
   
 
 --------------------------------------------------------------------------------
 -- *** Stems (6.3.2)
 instance SymCmdStem P where
-  cmdStem s   = P $ cmd s
+  cmdStem s             = P $ cmd s
 
 --------------------------------------------------------------------------------
 -- *** Polyphony (6.3.3)
 
 instance SymPolyCat P where
-  a \\ b = P $ unP a <+> text "\\\\" <$> unP b
+  a \\ b                = P $ unP a <+> text "\\\\" <$> unP b
 
 --------------------------------------------------------------------------------
 -- ** Staff notation (6.4)
 -- *** Clef (6.4.1)
 instance SymCmdClef P where
-  clef ct       = P $ cmd "clef" <+> unP ct
+  clef ct               = P $ cmd "clef" <+> unP ct
   
 instance SymClefType P where
-  cleftype s = P $ text s
+  cleftype s            = P $ text s
 
+-- *** Clef Transposition - TODO
+{-
 transpClef :: Doc -> Int -> Doc
 transpClef d i   
     | i > 0           = dquotes $ group $ d <> char '^' <> int i
     | i == 0          = d
     | otherwise       = dquotes $ group $ d <> char '_' <> int (abs i)
 
-instance SymAttrClefTransposition P where  
-  clefTransposition n a      = P $ transpClef (unP a) n
-
+instance SymClefTransposition P where  
+  clefTransposition n   = P $ transpClef (unP a) n
+-}
 
 
 --------------------------------------------------------------------------------
 -- *** Key signature (6.4.2)
 
 instance SymCmdKey P where
-  key a b         = P $ cmd "key" <+> unP a <+> unP b
+  key a b               = P $ cmd "key" <+> unP a <+> unP b
 
 instance SymCmdKeyType P where
-  keyType s       = P $ cmd s
+  keyType s             = P $ cmd s
   
 --------------------------------------------------------------------------------
 -- *** Time signature (6.4.3) 
 instance SymCmdTime P where
-  time r = P $ cmd "time" <+> pretty r
+  time r                = P $ cmd "time" <+> pretty r
 
 --------------------------------------------------------------------------------
 -- *** Bar lines (6.4.5)
 instance SymCmdBar P where
-  bar s    = P $ cmd "bar" <+> text s 
+  bar s                 = P $ cmd "bar" <+> text s 
 
 --------------------------------------------------------------------------------
 -- *** Unmetered music (6.4.6)
 
 instance SymCmdCadenza P where
-  cmdCadenza s     = P $ cmd s
+  cmdCadenza s          = P $ cmd s
 
     
 --------------------------------------------------------------------------------
 -- ** Connecting notes (6.5)
 -- *** Ties (6.5.1)
 instance SymTie P where
-  tie         = P $ char '~'
+  tie                   = P $ char '~'
   
 instance SymCmdTie P where
-  cmdTie s      = P $ cmd s  
+  cmdTie s              = P $ cmd s  
   
 --------------------------------------------------------------------------------
 -- *** Slurs (6.5.2)
 instance SymSlur P where
-  openSlur    = P $ char '('
-  closeSlur   = P $ char ')'
+  openSlur              = P $ char '('
+  closeSlur             = P $ char ')'
 
 
 instance SymCmdSlur P where
-  cmdSlur s      = P $ cmd s  
+  cmdSlur s             = P $ cmd s  
   
     
 --------------------------------------------------------------------------------
@@ -247,19 +251,19 @@ instance SymCmdPhrasingSlur P where
 
 --------------------------------------------------------------------------------
 -- *** Laissez vibrer ties (6.5.4)
-instance SymAttrCmdLaissezVibrer P where
-  laissezVibrer e   = P $ group $ unP e <> cmd "laissezVibrer"
+instance SymCmdLaissezVibrer P where
+  laissezVibrer         = P $ cmd "laissezVibrer"
   
 --------------------------------------------------------------------------------
 -- *** Automatic beams (6.5.5)  
-instance SymAttrCmdNoBeam P where
-  noBeam e    = P $ group $ unP e <> cmd "noBeam"
+instance SymCmdNoBeam P where
+  noBeam                = P $ cmd "noBeam"
 
 --------------------------------------------------------------------------------
 -- *** Manual beams (6.5.6)  
 instance SymBeam P where
-  openBeam  = P $ char '['
-  closeBeam = P $ char ']'
+  openBeam              = P $ char '['
+  closeBeam             = P $ char ']'
 
 --------------------------------------------------------------------------------
 -- *** Grace notes (6.5.7)
@@ -273,28 +277,28 @@ instance SymCmdGrace P where
 -- *** Articulations (6.6.1) 
 
 instance SymCmdArticulation P where
-  cmdArticulation s    = P $ cmd s
+  cmdArticulation s     = P $ cmd s
   
-instance SymAttrArticulation P where
-  attrArticulation s e  = P $ group $ unP e <> text s
+instance SymArticulation P where
+  articulation s        = P $ text s
                    
-                     
-instance SymAttrVerticalPlacement P where
-  vabove e      = P $ group $ unP e <> char '^'
-  vbelow e      = P $ group $ unP e <> char '_'
-  vdefault e    = P $ group $ unP e <> char '-'
+    
+instance SymVerticalPlacement P where
+  verticalPlacement VAbove     = P $ char '^'
+  verticalPlacement VBelow     = P $ char '_'
+  verticalPlacement VDefault   = P $ char '-'
   
  
 --------------------------------------------------------------------------------
 -- *** Fingering instructions (6.6.2)
-instance SymAttrFingering P where
-  fingering i e     = P $ group $ unP e <> char '-' <> int i 
+instance SymFingering P where
+  fingering i           = P $ group $ char '-' <> int i 
 
 --------------------------------------------------------------------------------
 -- *** Dynamics (6.6.3)
 
 instance SymCmdDynamic P where
-  cmdDynamic s         = P $ cmd s
+  cmdDynamic s          = P $ cmd s
   
 
 --------------------------------------------------------------------------------
@@ -319,7 +323,7 @@ instance SymCmdArpeggio P where
 -- *** Falls and doits (6.6.8)
 
 instance SymCmdBendAfter P where
-  bendAfter         = P $ cmd "bendAfter"
+  bendAfter             = P $ cmd "bendAfter"
 
 --------------------------------------------------------------------------------
 -- * Instrument-specific notation (7)
@@ -327,11 +331,11 @@ instance SymCmdBendAfter P where
 -- *** Automatic staff changes (7.1.1)
 
 instance SymCmdAutochange P where
-  autochange        = P $ cmd "autochange"
+  autochange            = P $ cmd "autochange"
   
 -- *** Pedals (7.1.2)
-instance SymAttrCmdPedal P where
-  cmdPedal s a      = P $ group $ unP a <> cmd s
+instance SymCmdPedal P where
+  cmdPedal s            = P $ cmd s
   
 --------------------------------------------------------------------------------
 -- ** Chord names (7.2)
@@ -374,35 +378,35 @@ instance SymCmdDrums P where
 
 -- | stringnum corresponds to @\\@ in LilyPond.
 
-instance SymAttrStringnum P where
-  stringnum a i       = P $ group $ (unP a) <> char '\\' <> int i
+instance SymStringnum P where
+  stringnum i           = P $ group $ char '\\' <> int i
 
 instance SymCtxTabStaff P where  
-  tabStaff          = P $ text "TabStaff"
+  tabStaff              = P $ text "TabStaff"
   
 instance SymCtxTabVoice P where  
-  tabVoice          = P $ text "TabVoice"
+  tabVoice              = P $ text "TabVoice"
   
 -- *** Right hand fingerings (7.5.6)
 
-instance SymAttrRightHandFinger P where
-  rightHandFinger a i   = 
-      P $ group $ (unP a) <> text "-\rightHandFinger" <+> char '#' <+> int i
+instance SymRightHandFinger P where
+  rightHandFinger i     =  P $ group $ 
+                               text "-\rightHandFinger" <+> char '#' <+> int i
 
 --------------------------------------------------------------------------------
 -- ** Other instrument specific notation (7.8)
 -- *** Artificial harmonics (strings) (7.8.1)
 
-instance SymAttrCmdHarmonic P where
-  cmdHarmonic a         = P $ group $ (unP a) <> cmd "harmonic"
+instance SymCmdHarmonic P where
+  cmdHarmonic           = P $ cmd "harmonic"
   
 --------------------------------------------------------------------------------
 -- * Advanced notation (8)
 -- ** Text (8.1)
 -- *** Text scripts (8.1.1)
 
-instance SymAttrText P where
-  attrtext s a      = P $ (unP a) <> dquotes (text s)   
+instance SymTextSript P where
+  textSript s       = P $ dquotes (text s)   
   
 instance SymCmdFatText P where
   fatText           = P $ cmd "fatText"

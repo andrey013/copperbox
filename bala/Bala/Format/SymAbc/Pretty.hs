@@ -27,15 +27,16 @@ ppfield :: Char -> Doc -> Doc
 ppfield ch doc = text [ch,':'] <+> doc
 
 instance SymCList P CT_Field where
-  cNil                = P $ empty
-  cSnoc xs x          = P $ unP xs <$> unP x 
+  cNil                  = P $ empty
+  cSnoc xs x            = P $ unP xs <$> unP x 
 
 
 instance SymCList P CT_Element where
-  cNil                = P $ empty
-  cSnoc xs x          = P $ unP xs <> unP x 
+  cNil                  = P $ empty
+  cSnoc xs x            = P $ unP xs <> unP x 
     
-
+instance SymAttr P where
+  attr e a              = P $ group $ unP e <> unP a 
 
 instance SymFieldNumber P where
   num_ i                = P  $ ppfield 'X' (int i)
@@ -89,7 +90,7 @@ instance SymFieldKey P where
   key_ k                = P $ ppfield 'K' (unP k)
      
 instance SymFieldDefaultNoteLength P where
- defaultNoteLength_ r       = P $ ppfield 'L' (pretty r) 
+ defaultNoteLength_ r   = P $ ppfield 'L' (pretty r) 
    
 instance SymFieldMeter P where
   meter_ m              = P $ ppfield 'M' (unP m)  
@@ -116,18 +117,18 @@ instance SymLength P where
   
   
 instance SymKey P where
-  key s               = P $ unP s
-  highlandNoKey       = P $ text "HP" 
-  highlandMixolydian  = P $ text "Hp"
+  key s                 = P $ unP s
+  highlandNoKey         = P $ text "HP" 
+  highlandMixolydian    = P $ text "Hp"
 
 
 
 instance SymKeySpec P where
-  keySpec n           = P $ unP n
+  keySpec n             = P $ unP n
       
 
-instance SymAttrMode P where
-  mode s a                    = P $ unP a <+> text s
+instance SymMode P where
+  mode s                = P $ text s
   
 instance SymAbcMusic P where
   abcmusic e            = P $ unP e
@@ -139,35 +140,35 @@ instance SymAbcLine P where
   
     
 instance SymKeyAccidental P where
-  keySharp    = P $ char '#' 
-  keyFlat     = P $ char 'b'
+  keySharp              = P $ char '#' 
+  keyFlat               = P $ char 'b'
   
   
 instance SymMeter P where
-  meter r                     = P $ pretty r
-  commonTime                  = P $ char 'C'
-  cutTime                     = P $ text "C|"
+  meter r               = P $ pretty r
+  commonTime            = P $ char 'C'
+  cutTime               = P $ text "C|"
     
     
-instance SymAttrDuration P where
-  dur i a                      = P $ group $ unP a <> int i
+instance SymDuration P where
+  dur i                 = P $ int i
   
   
 instance SymRest P where
-  rest                        = P $ char 'z'
+  rest                  = P $ char 'z'
 
  
-instance SymAttrOctave P where
-  octaveHigh  i a              = P $ group $ unP a <> text (replicate i '\'')
-  octaveLow   i a              = P $ group $ unP a <> text (replicate i ',')  
+instance SymOctave P where
+  octaveHigh  i         = P $ text (replicate i '\'')
+  octaveLow   i         = P $ text (replicate i ',')  
            
              
-instance SymAttrAccidental P where 
-  natural a                    = P $ group $ char '='  <> unP a 
-  sharp a                      = P $ group $ char '^'  <> unP a 
-  doubleSharp a                = P $ group $ text "^^" <> unP a 
-  flat a                       = P $ group $ char '_'  <> unP a 
-  doubleFlat a                 = P $ group $ text "__" <> unP a 
+instance SymAccidental P where 
+  natural               = P $ char '='
+  sharp                 = P $ char '^'
+  doubleSharp           = P $ text "^^"
+  flat                  = P $ char '_'
+  doubleFlat            = P $ text "__"
 
 
   
@@ -191,40 +192,39 @@ instance Pretty PitchLetter where
 
 
 instance SymBaseNote P where
-  note p         = P $ pretty p
+  note p                = P $ pretty p
   
     
 instance SymBrokenRhythm P where
-  dottedLeft i                = P $ text $ replicate i '>'
-  dottedRight i               = P $ text $ replicate i '<'
+  dottedLeft i          = P $ text $ replicate i '>'
+  dottedRight i         = P $ text $ replicate i '<'
 
 
 instance SymTie P where
-  tie                         = P $ char '-'
+  tie                   = P $ char '-'
     
-instance SymAttrGrace P where
-  tilde e                   = P $ group $ char '~' <> unP e 
-  stacatto e                = P $ group $ char '.' <> unP e 
-  downbow e                 = P $ group $ char 'v' <> unP e 
-  upbow e                   = P $ group $ char 'u' <> unP e 
+instance SymGrace P where
+  tilde                 = P $ char '~'
+  stacatto              = P $ char '.'
+  downbow               = P $ char 'v'
+  upbow                 = P $ char 'u'
 
 
 instance SymNPlet P where
-  nplet i = P $ group $ char '(' <> int i
+  nplet i               = P $ group $ char '(' <> int i
         
   
 instance SymRepeatMark P where
-  repeatMark s  = P $ text s
+  repeatMark s          = P $ text s
   
   
 instance SymSlur P where
-  beginSlur     = P $ lparen
-  endSlur       = P $ rparen
+  beginSlur             = P $ lparen
+  endSlur               = P $ rparen
   
 
-instance SymAttrGraceNotes P where
-  gracenotes xs a  = let gns = braces $ hcat $ map unP xs in
-                     P $ gns <> unP a
+instance SymGraceNotes P where
+  gracenotes xs         = P $  braces $ hcat $ map unP xs
     
   
   
