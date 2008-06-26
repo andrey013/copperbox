@@ -1,5 +1,4 @@
-{-# OPTIONS_GHC -XFlexibleInstances #-}
-{-# OPTIONS_GHC -XMultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 
 --------------------------------------------------------------------------------
 -- |

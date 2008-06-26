@@ -657,7 +657,7 @@ pppp_                   = cmdDynamic "pppp"
 ppp_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
 ppp_                    = cmdDynamic "ppp" 
 
--- | @\\p@.
+-- | @\\pp@.
 pp_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
 pp_                     = cmdDynamic "pp" 
 

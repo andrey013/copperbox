@@ -124,6 +124,8 @@ pitchList = many1Cat elementCtx pitchA
   
 p_demo06 = lyparse pitchList "c d e"
 
+p_demo07 = lyparse pCmdArticulation "\\prallprall "
+
 
 
 

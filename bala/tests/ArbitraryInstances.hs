@@ -59,7 +59,7 @@ instance Arbitrary PitchLabel where
   
 instance Arbitrary Accidental where
   arbitrary = elements $ 
-    [Nat, Sharp 1, Sharp 2, Flat 1, Flat 2]
+    [Nat, Sharp, Flat, DoubleSharp, DoubleFlat]
   coarbitrary = error "no coarbitrary for Accidental"  
   
 

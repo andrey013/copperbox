@@ -1,5 +1,4 @@
-{-# OPTIONS_GHC -XFlexibleInstances #-}
-{-# OPTIONS_GHC -XMultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -137,8 +136,8 @@ instance Enum (Int,PitchLetter) where
   toEnum i = let (o,il) = i `divMod` 8 in (o, toEnum il)
   
 
-instance Semitones Interval where
-  semitones (Interval _ (Count sc)) = sc
+instance SemitoneCount Interval where
+  semitoneCount (Interval _ (Count sc)) = sc
     
 instance SemitoneExtension Interval where 
   addSemi (Interval d s) i = Interval d (s `forward` i)
@@ -216,7 +215,8 @@ arithDist (Interval (Count d) _) = d
 halfSteps :: Interval -> Int
 halfSteps (Interval _ (Count s)) = s
 
-  
+intervalSize :: Interval -> Int
+intervalSize = arithDist
     
 --------------------------------------------------------------------------------
 -- Operations
@@ -261,7 +261,7 @@ arithmeticDistance p  p' | p < p'    = aCount p  p'
 
 arithmeticStep :: Pitch -> Int -> Pitch                                
 arithmeticStep (Pitch (PitchLabel l _) o _ _) i = 
-    buildPitch (PitchLabel l' Nat) o' 0
+    pitch (PitchLabel l' Nat) o'
   where
     (o',l') = applyi succ (o,l) (i - 1)
 

@@ -22,6 +22,7 @@ import Bala.Format.SymLilyPond.SyntaxElements
 
 import Bala.Base.BaseExtra
 
+import Data.List (sortBy)
 import Prelude hiding (break)
 import Control.Applicative hiding (many, optional, (<|>) )
 import Control.Monad
@@ -37,6 +38,12 @@ fchoice f xs = choice $ map (interp f) xs
   where
     interp f (a,b) = b <$ f a
 
+longestChoice :: (String -> Parser b) ->  [(String,a)] -> Parser a
+longestChoice f = choice . map (interp f) . reverse . sortBy longer
+  where 
+    longer (a,_) (b,_) = (length a) `compare` (length b)
+    interp f (a,b) = b <$ f a
+  
 attrParse :: (Attribute elt att, SymAttr repr) 
           => Parser (repr (att ctx_a))
           -> repr (elt ctx_e) 
@@ -144,12 +151,13 @@ pNote px = note <$> (parsePitch px)
 --------------------------------------------------------------------------------
 -- *** Accidentals (6.1.2)
 pAccidental :: (SymAccidental repr) => Parser (repr (Accidental ctx))
-pAccidental= f <$> longestString [ "isis", "eses", "is", "es" ]
-  where
-    f "isis" = doubleSharp 
-    f "eses" = doubleFlat
-    f "is"   = sharp
-    f "es"   = flat
+pAccidental= longestChoice lexString $
+  [ ("isis",  doubleSharp)
+  , ("eses",  doubleFlat)
+  , ("is",    sharp)
+  , ("es",    flat) 
+  ]
+
 
 --------------------------------------------------------------------------------
 -- *** Cautionary accidentals (6.1.3)
@@ -164,7 +172,7 @@ pCautionaryAccidental= fchoice lexChar $
 -- *** Micro tones (6.1.4)
 
 pMicroTone :: (SymMicroTone repr) => Parser (repr (MicroTone ctx))
-pMicroTone = fchoice string $ 
+pMicroTone = longestChoice string $ 
   [("ih", halfFlat), ("eh", halfFlat)] 
 
 
@@ -230,12 +238,17 @@ pChord px = chord <$> angles (many1 (parsePitch px))
 -- *** Key signature (6.4.2)
 
 pKeyType :: (SymCmdKeyType repr) => Parser (repr (CmdKeyType CT_Element)) 
-pKeyType = fchoice command $ 
-  [ ("major",       major),   ("minor",       minor),
-    ("ionian",      ionian),  ("locrian",     locrian),
-    ("aeolian",     aeolian), ("mixolydian",  mixolydian),
-    ("lydian",      lydian),  ("phrygian",    phrygian),
-    ("dorian",      dorian)]
+pKeyType = longestChoice command $ 
+  [ ("major",       major)
+  , ("minor",       minor)
+  , ("ionian",      ionian)
+  , ("locrian",     locrian)
+  , ("aeolian",     aeolian)
+  , ("mixolydian",  mixolydian)
+  , ("lydian",      lydian)
+  , ("phrygian",    phrygian)
+  , ("dorian",      dorian)
+  ]
           
 --------------------------------------------------------------------------------
 -- ** Connecting notes (6.5)
@@ -252,10 +265,90 @@ pCloseBeam  = closeBeam <$ lexChar ']'
 pVerticalPlacement  :: (SymVerticalPlacement repr) 
                     => Parser (repr (VerticalPlacement ctx)) 
 pVerticalPlacement = fchoice char $
-  [('^', verticalPlacement VAbove), 
-   ('_', verticalPlacement VBelow), 
-   ('-', verticalPlacement VDefault)] 
+  [ ('^', verticalPlacement VAbove)
+  , ('_', verticalPlacement VBelow)
+  , ('-', verticalPlacement VDefault)
+  ] 
 
+pCmdArticulation  :: (SymCmdArticulation repr) 
+                  => Parser (repr (CmdArticulation CT_Element))
+pCmdArticulation = longestChoice command $ 
+  [ ("accent",              accent)
+  , ("marcato",             marcato)
+  , ("staccatissimo",       staccatissimo)
+  , ("espressivo",          espressivo)
+  , ("staccato",            staccato)
+  , ("tenuto",              tenuto)
+  , ("portato",             portato)
+  , ("upbow",               upbow)
+  , ("downbow",             downbow)
+  , ("flageolet",           flageolet)
+  , ("thumb",               thumb)
+  , ("lheel",               lheel)
+  , ("rheel",               rheel)
+  , ("ltoe",                ltoe)
+  , ("rtoe",                rtoe)
+  , ("open",                open)
+  , ("stopped",             stopped)
+  , ("turn",                turn)
+  , ("reverseturn",         reverseturn)
+  , ("trill",               trill)
+  , ("prall",               prall)
+  , ("mordent",             mordent)
+  , ("prallprall",          prallprall)
+  , ("prallmordent",        prallmordent)
+  , ("upprall",             upprall)
+  , ("downprall",           downprall)
+  , ("upmordent",           upmordent)
+  , ("downmordent",         downmordent)
+  , ("pralldown",           pralldown)
+  , ("prallup",             prallup)
+  , ("lineprall",           lineprall)
+  , ("signumcongruentiae",  signumcongruentiae)
+  , ("shortfermata",        shortfermata)
+  , ("fermata",             fermata)
+  , ("longfermata",         longfermata)
+  , ("verylongfermata",     verylongfermata)
+  , ("segno",               segno)
+  , ("coda",                coda)
+  , ("varcoda",             varcoda) 
+  ]
+    
+    
+--------------------------------------------------------------------------------
+-- *** Dynamics (6.6.3)
+-- nullary commands (use underscore suffix _ for commands)
+
+pCmdDynamic :: (SymCmdDynamic repr) 
+                  => Parser (repr (CmdDynamic ctx))
+pCmdDynamic = longestChoice command $
+  [ ("ppppp",           ppppp_)
+  , ("pppp",            pppp_)
+  , ("ppp",             ppp_)
+  , ("pp",              pp_)
+  , ("p",               piano)
+  , ("mp",              mp_)
+  , ("mf",              mf_)
+  , ("fp",              fp_)
+  , ("ffff",            ffff_)
+  , ("fff",             fff_)  
+  , ("ff",              ff_)
+  , ("f",               forte)
+  , ("sff",             sff_)
+  , ("sfz",             sfz_)
+  , ("sf",              sf_)
+  , ("spp",             spp_)
+  , ("sp",              sp_)
+  , ("rfz",             rfz_)
+  , ("<",               openCrescendo)
+  , (">",               openDecrescendo)
+  , ("!",               closeDynamic)
+  , ("cr",              cr_)
+  , ("decr",            decr_)
+  , ("dynamicUp",       dynamicUp)
+  , ("dynamicDown",     dynamicDown)
+  , ("dynamicNeutral",  dynamicNeutral)
+  ]
 --------------------------------------------------------------------------------
 
 
@@ -266,7 +359,7 @@ pVerticalPlacement = fchoice char $
 
 -- *** Melismata (7.3.5)
 pMelismata :: (SymMelismata repr) => Parser (repr (Melismata ctx)) 
-pMelismata = fchoice command $
+pMelismata = longestChoice command $
   [("melisma", melisma), ("melismaEnd", melismaEnd)]
   
   
@@ -275,9 +368,8 @@ pMelismata = fchoice command $
 
 -- *** Entering percussion (7.4.2)
 
--- | NEEDS A LONGEST MATCH. 
 pDrumPitchName :: SymDrumPitchName repr => Parser (repr (DrumPitchName ctx))
-pDrumPitchName = fchoice lexString $ 
+pDrumPitchName = longestChoice lexString $ 
   [ ("acousticbassdrum",  acousticbassdrum)
   , ("bassdrum",          bassdrum)
   , ("hisidestick",       hisidestick)

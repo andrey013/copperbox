@@ -1,7 +1,6 @@
-{-# OPTIONS_GHC -XEmptyDataDecls #-}
-{-# OPTIONS_GHC -XFlexibleInstances #-}
-{-# OPTIONS_GHC -XMultiParamTypeClasses #-}
-{-# OPTIONS_GHC -XFlexibleContexts #-}
+{-# LANGUAGE EmptyDataDecls, FlexibleInstances, FlexibleContexts,
+             MultiParamTypeClasses #-}
+
 
 --------------------------------------------------------------------------------
 -- |
@@ -233,9 +232,13 @@ mod12 i = i `mod` 12
 mod7 :: (Integral a) => a -> a
 mod7  i = i `mod` 7  
 
+-- | sub - flipped (-) 
+sub :: Num a => a -> (a -> a)
+sub = flip (-)
+
 -- | sub1 - subtract 1. 
-sub1 :: Integral a => a -> a
-sub1 = flip (-) 1
+sub1 :: Num a => a -> a 
+sub1 = sub 1
 
 
 -- | (||) with 'apply' - test a with f, if it fails test it with g.

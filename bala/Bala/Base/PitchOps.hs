@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -XMultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -28,21 +28,11 @@ import Text.ParserCombinators.Parsec
 -- typeclasses
 --------------------------------------------------------------------------------
 
--- | Semitones is the basis for Pitch arithmetic
-class Semitones a where semitones :: a -> Int
 
--- | Add and subtract semitones
-class SemitoneExtension a where
-  -- | Add a semitone to a /pitched value/.
-  addSemi :: a -> Int -> a
-  -- | Subtract a semitone from a /pitched value/.
-  subSemi :: a -> Int -> a
 
-class OctaveExtension a where
-  -- | Add an octave to a /pitched value/.  
-  addOve  :: a -> Int -> a
-  -- | Subtract an octave from a /pitched value/.
-  subOve  :: a -> Int -> a
+
+
+
 
 
 -- | Sharpen or flatten a /pitched value/.
@@ -79,29 +69,16 @@ class EncodePitch a where
 -- instances
 --------------------------------------------------------------------------------
 
--- The semitone displacement upwards from C
-instance Semitones PitchLetter where
-  semitones l = fromEnum (PitchLabel l Nat)
 
 
--- How many semitones is the pitch changed by its accidental? 
-instance Semitones Accidental where
-  semitones Nat       = 0
-  semitones (Sharp i) = i
-  semitones (Flat i)  = negate i
 
-instance Semitones PitchLabel where
-  semitones (PitchLabel l a) = semitones l + semitones a
 
-instance Semitones Pitch where
-  semitones (Pitch l o s c) = 
-    let (cc,_) = explode100 c in  12 * o + s + cc
      
     
 -- works for ordered elts not rotated ones
 instance SemitoneDisplacement Pitch where
   semitoneDisplacement p p' = 
-    let d = semitones p' - semitones p
+    let d = semitoneCount p' - semitoneCount p
     in case signum d of
       (-1) -> (Downwards, abs d)
       _    -> (Upwards, d)
@@ -153,13 +130,10 @@ instance SemitoneExtension Pitch where
     in Pitch (l `subSemi` i) (o - oc) s' c
   
   
-    
-instance OctaveExtension Pitch where   
-  (Pitch l o s c) `addOve` i = Pitch l (o + i) s c
-  (Pitch l o s c) `subOve` i = Pitch l (o - i) s c
+   
 
 instance Enharmonic PitchLabel where
-  l `enharmonic` l' = semitones l == semitones l'
+  l `enharmonic` l' = semitoneCount l == semitoneCount l'
   
 instance EncodePitch Int where
   toPitch i = pitchValue i
@@ -171,18 +145,7 @@ instance Extract Pitch PitchLabel where
 
   
   
--- | A /smart constructor/. It doesn't need semitones stating as it 
--- derives semitones from the 'PitchLabel'.
-buildPitch :: PitchLabel -> Int -> Int -> Pitch
-buildPitch lbl o c = Pitch lbl o (semitones lbl) c
-  where
-    semis C = 0
-    semis D = 2
-    semis E = 4
-    semis F = 5
-    semis G = 7
-    semis A = 9
-    semis B = 11
+
     
     
 -- pitch ops -- adding intervals etc need a naming scheme
@@ -210,7 +173,7 @@ alter a i  = toEnum $ fromEnum a + i
 
 spellWithSharps :: PitchLabel -> PitchLabel
 spellWithSharps (PitchLabel l a)   = 
-  toEnum $ semitones l + semitones a
+  toEnum $ semitoneCount l + semitoneCount a
     
     
 centValue :: Pitch -> Int
@@ -232,13 +195,14 @@ fromCents (Cents i) = undefined
 octaveDisplacement oct            = (oct - 4) * 12  
 
 unaltered :: PitchLabel -> Bool  
-unaltered p = accidental p == Nat
+unaltered p = pch_label_accidental p == Nat
 
 
 --------------------------------------------------------------------------------
 -- Num instances
 --------------------------------------------------------------------------------
 
+{-
 instance Num Accidental where
   a + b = toEnum $ fromEnum a + fromEnum b
                            
@@ -256,6 +220,8 @@ instance Num Accidental where
 
     
   fromInteger = toEnum . fromIntegral   
+-}
+
   
 instance Num Pitch where
   (Pitch l o s c) + (Pitch _ o' s' c') = Pitch l' (o + o' + co) s'' c''
@@ -271,19 +237,19 @@ instance Num Pitch where
     in Pitch l' (o - o' + co) s'' c''
   
   p * p' = 
-    let semil     = fromIntegral $ semitones p
-        semir     = fromIntegral $ semitones p'
-        centl     = (fromIntegral $ cents p) / 100.0
-        centr     = (fromIntegral $ cents p') / 100.0
+    let semil     = fromIntegral $ semitoneCount p
+        semir     = fromIntegral $ semitoneCount p'
+        centl     = (fromIntegral $ pch_cents p) / 100.0
+        centr     = (fromIntegral $ pch_cents p') / 100.0
         sp        = (semil + centl) * (semir + centr)
         (semis,c) = properFraction $ (semil + centl) * (semir + centr)
         (o,s)     = explode12 semis
     in Pitch (toEnum semis) o s (round (100 * c)) 
   
-  abs p     = let (Pitch l o s _) = fromInteger $ fromIntegral $ abs $ semitones p
-              in Pitch l o s (cents p)
+  abs p     = let (Pitch l o s _) = fromInteger $ fromIntegral $ abs $ semitoneCount p
+              in Pitch l o s (pch_cents p)
               
-  signum p  = case semitones p `compare` 0 of
+  signum p  = case semitoneCount p `compare` 0 of
                 EQ -> Pitch (toEnum 0) 0 0 0
                 GT -> Pitch (toEnum 0) 0 1 0
                 LT -> Pitch (toEnum (-1)) (-1) 11 0
@@ -306,9 +272,9 @@ instance Deco Pitch where
 
 -- | Parsec parser for 'Pitch'.
 decoPitch :: Parser Pitch
-decoPitch = buildPitch <$> deco
-                       <*> option 4 positiveInt 
-                       <*> option 0 signedInt
+decoPitch = fn <$> deco <*> option 4 positiveInt <*> option 0 signedInt
+  where
+    fn pl o c = pitch pl o `withCents` c                       
                        
                        
 instance Deco PitchLabel where
@@ -347,22 +313,14 @@ instance Deco Accidental where
   deco = decoAccidental
 
 -- | Parsec parser for 'Accidental'.
---
--- A flat is one or more /b/, a sharp is either all /\#/ or 
--- /\#/ [1],  /x/ [2], /x\#/ [3], /xx/ [4], /xx\#/ [5], /xxx/ [6], etc... 
 decoAccidental :: Parser Accidental 
-decoAccidental = choice [sharp, flat, nat]
-  where 
-    sharp         = plainsharp <|> doublesharp
-    plainsharp    = Sharp <$> countChar1 '#'
-    doublesharp   = mkDbl <$> countChar1 'x' <*> option 0 (countChar1 '#')
-    flat          = Flat  <$> countChar1 'b'
+decoAccidental = choice [dblsharp, sharp, dblflat, flat, nat]
+  where
+    dblsharp      = DoubleSharp <$ lexString "##" 
+    sharp         = Sharp       <$ lexChar '#'
+    dblflat       = DoubleFlat  <$ lexString "bb" 
+    flat          = Flat        <$ lexChar 'b'
     nat           = return Nat
-    mkDbl dbl sgl = Sharp $ dbl * 2 + sgl
-    countChar1    = counting1 . char 
-
-
-
 
 --------------------------------------------------------------------------------
 -- Affi instances
@@ -379,10 +337,11 @@ instance Affi PitchLabel where
         
 -- | Print sharps as with muliple '#'s only
 instance Affi Accidental where
-  affi Nat        = showString ""
-  affi (Sharp i)  = showString (replicate i '#')                          
-  affi (Flat i)   = showString (replicate i 'b')     
-  
+  affi Nat          = id
+  affi Sharp        = showChar '#'
+  affi DoubleSharp  = showString "##" 
+  affi Flat         = showChar 'b'     
+  affi DoubleFlat   = showString "bb" 
   
 instance Affi PitchLetter where
     affi = shows
