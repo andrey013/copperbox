@@ -16,7 +16,22 @@
 
 
 
-module Bala.Base.Interval where
+module Bala.Base.Interval (
+  -- * Datatypes (Interval is opaque) 
+  Interval, NamedInterval(..), IntervalQuality(..), IntervalPattern(..), 
+  
+  -- * smart constructor, destructor and selectors
+  interval, unInterval, intervalType, halfSteps,
+  
+  -- * Typeclasses
+  IntervalExtension(..),
+  
+  -- * operations
+  interval', buildInterval, arithmeticDistance
+
+
+    
+  ) where
 
 import Bala.Base.Pitch
 import Bala.Base.PitchClass
@@ -35,14 +50,42 @@ import Text.ParserCombinators.Parsec
 -- To make interval addition and especially subtraction easier, the integers
 -- are wrapped by 'Count'. Subtraction does not produce negative intervals! 
 data Interval = Interval { 
-    -- | Count of arithmetic distance, it is /retrograde/ on the first note.
-    -- i.e. C to C counts 1 (rather than 0), C to D counts 2, etc.
-    arith_dist :: Count RNnNz,
+    -- | Count of pitch letters, it is /retrograde/ on the first note.
+    -- i.e. C to C - a unison - counts 1 (rather than 0), 
+    --      C to D - a second - counts 2, etc.
+    interval_type :: Count RNnNz,
     -- | The number of half steps between pitched values. 
     half_steps :: Count NonNeg 
   }
   deriving (Eq,Show)
 
+
+-- | Smart constructor for Intervals.
+interval :: Int -> Int -> Interval
+interval d s 
+    | d > 0 && s >= 0 = Interval (Count d) (Count s)
+    | d == 0          = error dzero_msg
+    | otherwise       = error mixed_msg
+ where
+  dzero_msg = "Cannot create an Interval with an interval type of 0"
+  mixed_msg = "Cannot create an Interval with negative numbers for\n"
+           ++ "interval type or semitone count"  
+
+-- | Destructor for intervals.           
+unInterval :: Interval -> (Int,Int)
+unInterval (Interval (Count ad) (Count hs)) = (ad,hs)
+
+-- | Selector for interval type (unison, second, etc. - the pitch letter count) 
+-- of an @Interval@.
+intervalType :: Interval -> Int
+intervalType (Interval (Count d) _) = d
+
+-- | Selector for @half_steps@ (semitone count) of an @Interval@.
+halfSteps :: Interval -> Int
+halfSteps (Interval _ (Count s)) = s
+
+
+           
 -- | A named interval 
 data NamedInterval = NamedInterval {
     interval_measure :: IntervalMeasure,
@@ -85,116 +128,14 @@ class IntervalExtension a where
   
   
   
---------------------------------------------------------------------------------
--- Instances
---------------------------------------------------------------------------------
 
-instance Num Interval where
-  
-  (Interval d s) + (Interval d' s') = 
-    Interval (d `countPlus` d') (s `countPlus` s')
-
-  (Interval d s) - (Interval d' s') =  
-      Interval (d `countMinus` d') (s `countMinus` s')
-  
-  (Interval (Count d) (Count s)) * (Interval (Count d') (Count s')) =  
-      interval (d * d') (s * s')
-    
-  abs  = id
-  
-  negate _ = interval 1 0
-  
-  signum (Interval d s) = interval 1 0
-  
-  fromInteger = fromSemis      
-           
-
-  
-  
-instance Enum IntervalMeasure where
-  fromEnum Simple       = 0 
-  fromEnum (Compound i) = i 
-  
-
-  toEnum i | i == 0    = Simple
-           | i >  0    = Compound i
-           | otherwise = Compound (abs i)
-           
-instance Ord Interval where
-  (Interval _ s) `compare` (Interval _ s') = s `compare` s'
-
-
-instance Enum (Int,PitchLetter) where
-  succ (o,B) = (o+1,C)
-  succ (o,l) = (o,succ l)
-  
-  pred (o,C) = (o-1,B)
-  pred (o,l) = (o, pred l)
-  
-  fromEnum (o,l) = o * 8 + fromEnum l
-  toEnum i = let (o,il) = i `divMod` 8 in (o, toEnum il)
-  
-
-instance SemitoneCount Interval where
-  semitoneCount (Interval _ (Count sc)) = sc
-    
-instance SemitoneExtension Interval where 
-  addSemi (Interval d s) i = Interval d (s `forward` i)
-  subSemi (Interval d s) i = Interval d (s `backward` i)
-  
-      
-instance Extract Interval (Int,Int) where
-  extract (Interval (Count d) (Count s)) = (d,s) 
-
-instance IntervalExtension Interval where
-  extUp   = (+)
-  extDown = (-)
-    
-instance Extract IntervalPattern [Interval] where
-  extract = unIntervalPattern
-
-instance IntervalExtension PitchName where
-  extUp lbl@(PitchName l _) (Interval ad sc) = 
-    let l' = successor l (unCount ad - 1)
-    in spell (lbl `addSemi` (unCount sc)) l'
-    
-  extDown lbl@(PitchName l _) (Interval ad sc) = 
-    let l' = predecessor l (unCount ad - 1)
-    in spell (lbl `subSemi` (unCount sc)) l'
-
-
--- | {SPELLING ? }  
-
-instance IntervalExtension Pitch where
-  extUp pch inval =
-    let lbl = extUp (pitchName pch) inval
-        (o,s,c) = pitchMeasures pch
-        sc      = halfSteps inval
-        (oc,_)  = explode12 $ s + sc       
-    in pitch lbl (o + oc) `withCents` c
-    
-  extDown pch inval =
-    let lbl = extDown (pitchName pch) inval
-        (o,s,c) = pitchMeasures pch 
-        sc      = halfSteps inval
-        (oc,_) = explode12 $ s - sc      
-    in pitch lbl (o - oc) `withCents` c
    
         
 --------------------------------------------------------------------------------
 -- Helpers
 --------------------------------------------------------------------------------
 
--- | Smart constructor for Intervals.
-interval :: Int -> Int -> Interval
-interval d s 
-    | d > 0 && s >= 0 = Interval (Count d) (Count s)
-    | d == 0          = error dzero_msg
-    | otherwise       = error mixed_msg
- where
-  dzero_msg = "Cannot create an Interval with an arithmetic distance of 0"
-  mixed_msg = "Cannot create an Interval with negative numbers for\n"
-           ++ "arithmetic distance or semitone count"  
+
 
 interval' :: IntervalQuality -> Int -> Interval
 interval' Perfect           = iperfect    . toEnum . (flip (-) 1)
@@ -207,18 +148,6 @@ interval' DoublyDiminished  = undefined
 
 
 
--- | Get the first element ('arith_dist') of the 'Interval' 
--- unwrapping the 'Count'.
-arithDist :: Interval -> Int
-arithDist (Interval (Count d) _) = d
-
--- | Get the second element ('half_steps') of the 'Interval' 
--- unwrapping the 'Count'.
-halfSteps :: Interval -> Int
-halfSteps (Interval _ (Count s)) = s
-
-intervalSize :: Interval -> Int
-intervalSize = arithDist
     
 --------------------------------------------------------------------------------
 -- Operations
@@ -261,19 +190,16 @@ arithmeticDistance p  p' | p < p'    = aCount p  p'
                       l   = pitchLetter p
                       l'  = pitchLetter p'
                   in retroCountTo succ (o,l) (o',l')
+--                   
    
 
 arithmeticStep :: Pitch -> Int -> Pitch                                
-arithmeticStep pch i =  undefined
+arithmeticStep pch i = 
+  let name        = pitchLetter pch
+      o           = octaveMeasure pch
+      (o',name')  = applyi succ (o,name) (i - 1)
+  in pitch (PitchName name' Nat) o
    
-{-
-arithmeticStep :: Pitch -> Int -> Pitch                                
-arithmeticStep (Pitch (PitchLabel l _) o _ _) i = 
-    pitch (PitchLabel l' Nat) o'
-  where
-    (o',l') = applyi succ (o,l) (i - 1)
--}
-
 
 
 buildInterval :: Pitch -> Pitch -> Interval
@@ -403,7 +329,128 @@ intervalList :: IntervalPattern -> [Interval]
 intervalList s = let ivals = extract s in
   scanl extUp (interval 1 0) ivals
   
+--------------------------------------------------------------------------------
+-- old.... 
+
+
+
+-- | count of semitones between two pitches (ordered,single-octave)
+orderedPCInterval :: PC -> PC -> Int
+orderedPCInterval (PC p1) (PC p2) = p2 - p1 
+
+-- http://www.music.iastate.edu/courses/337/PostTonalTerms.html
+-- http://www.robertkelleyphd.com/atnltrms.htm
+-- | count of semitones between two pitches (unordered,single-octave)                    
+unorderedPCInterval (PC p1) (PC p2)
+  | p1 < p2   = p2 - p1
+  | otherwise = p1 - p2 
+                     
+
+diatonicInterval, chromaticInterval :: Interval -> Bool
+diatonicInterval _ = undefined -- perfect major or minor
+
+chromaticInterval = not . diatonicInterval
+
+intervalClass :: Interval -> Bool
+intervalClass = undefined
+
+
+--------------------------------------------------------------------------------
+-- Instances
+--------------------------------------------------------------------------------
+
+instance Num Interval where
   
+  (Interval d s) + (Interval d' s') = 
+    Interval (d `countPlus` d') (s `countPlus` s')
+
+  (Interval d s) - (Interval d' s') =  
+      Interval (d `countMinus` d') (s `countMinus` s')
+  
+  (Interval (Count d) (Count s)) * (Interval (Count d') (Count s')) =  
+      interval (d * d') (s * s')
+    
+  abs  = id
+  
+  negate _ = interval 1 0
+  
+  signum (Interval d s) = interval 1 0
+  
+  fromInteger = fromSemis      
+           
+
+  
+  
+instance Enum IntervalMeasure where
+  fromEnum Simple       = 0 
+  fromEnum (Compound i) = i 
+  
+
+  toEnum i | i == 0    = Simple
+           | i >  0    = Compound i
+           | otherwise = Compound (abs i)
+           
+instance Ord Interval where
+  (Interval _ s) `compare` (Interval _ s') = s `compare` s'
+
+
+instance Enum (Int,PitchLetter) where
+  succ (o,B) = (o+1,C)
+  succ (o,l) = (o,succ l)
+  
+  pred (o,C) = (o-1,B)
+  pred (o,l) = (o, pred l)
+  
+  fromEnum (o,l) = o * 8 + fromEnum l
+  toEnum i = let (o,il) = i `divMod` 8 in (o, toEnum il)
+  
+
+instance SemitoneCount Interval where
+  semitoneCount (Interval _ (Count sc)) = sc
+    
+instance SemitoneExtension Interval where 
+  addSemi (Interval d s) i = Interval d (s `forward` i)
+  subSemi (Interval d s) i = Interval d (s `backward` i)
+  
+      
+instance Extract Interval (Int,Int) where
+  extract (Interval (Count d) (Count s)) = (d,s) 
+
+instance IntervalExtension Interval where
+  extUp   = (+)
+  extDown = (-)
+    
+instance Extract IntervalPattern [Interval] where
+  extract = unIntervalPattern
+
+instance IntervalExtension PitchName where
+  extUp lbl@(PitchName l _) (Interval ad sc) = 
+    let l' = successor l (unCount ad - 1)
+    in spell (lbl `addSemi` (unCount sc)) l'
+    
+  extDown lbl@(PitchName l _) (Interval ad sc) = 
+    let l' = predecessor l (unCount ad - 1)
+    in spell (lbl `subSemi` (unCount sc)) l'
+
+
+-- | {SPELLING ? }  
+
+instance IntervalExtension Pitch where
+  extUp pch inval =
+    let lbl = extUp (pitchName pch) inval
+        (o,s,c) = pitchMeasures pch
+        sc      = halfSteps inval
+        (oc,_)  = explode12 $ s + sc       
+    in pitch lbl (o + oc) `withCents` c
+    
+  extDown pch inval =
+    let lbl = extDown (pitchName pch) inval
+        (o,s,c) = pitchMeasures pch 
+        sc      = halfSteps inval
+        (oc,_) = explode12 $ s - sc      
+    in pitch lbl (o - oc) `withCents` c
+    
+      
 --------------------------------------------------------------------------------
 -- Affi instances
 --------------------------------------------------------------------------------
@@ -542,30 +589,7 @@ intIntervalSize =
     octave      = Octave  <$ lexChar '8'
                   
                   
---------------------------------------------------------------------------------
--- old.... 
 
-
-
--- | count of semitones between two pitches (ordered,single-octave)
-orderedPCInterval :: PC -> PC -> Int
-orderedPCInterval (PC p1) (PC p2) = p2 - p1 
-
--- http://www.music.iastate.edu/courses/337/PostTonalTerms.html
--- http://www.robertkelleyphd.com/atnltrms.htm
--- | count of semitones between two pitches (unordered,single-octave)                    
-unorderedPCInterval (PC p1) (PC p2)
-  | p1 < p2   = p2 - p1
-  | otherwise = p1 - p2 
-                     
-
-diatonicInterval, chromaticInterval :: Interval -> Bool
-diatonicInterval _ = undefined -- perfect major or minor
-
-chromaticInterval = not . diatonicInterval
-
-intervalClass :: Interval -> Bool
-intervalClass = undefined
 
 
 

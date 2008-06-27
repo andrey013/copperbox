@@ -14,12 +14,12 @@
 --------------------------------------------------------------------------------
 
 module Bala.Base.Pitch (
-  -- * Datatypes for pitch, (Pitch and PitchName are opaque) 
+  -- * Datatypes (Pitch is opaque) 
   Pitch, PitchName(..), PitchLetter(..), Accidental(..),
   
   -- * Construct and deconstruct pitches
   pitch, withCents, 
-  pitchName, pitchLetter, pitchAccidental, 
+  unPitch, pitchName, pitchLetter, pitchAccidental, 
   octaveMeasure, semitoneMeasure, centMeasure,
   pitchMeasures,
   
@@ -92,6 +92,8 @@ pitch lbl o = Pitch lbl o (semitoneCount lbl) 0
 withCents :: Pitch -> Int -> Pitch
 withCents p i = let c = pch_cents p in p {pch_cents=c+i}
 
+unPitch :: Pitch -> (PitchName,Int,Int,Int)
+unPitch (Pitch lbl o s c) = (lbl,o,s,c)
 
 pitchName :: Pitch -> PitchName
 pitchName (Pitch lbl _ _ _) = lbl
