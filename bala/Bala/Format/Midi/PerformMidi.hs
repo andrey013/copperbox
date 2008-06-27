@@ -19,7 +19,7 @@ module Bala.Format.Midi.PerformMidi where
 import Bala.Format.Midi.Datatypes
 import Bala.Format.Midi.WriteFile
 import Bala.Format.Midi.GeneralMidiInstruments
-import qualified Bala.Base.Perform as P  
+import qualified Bala.Perform.Perform as P  
 import Bala.Base.Base
 
 

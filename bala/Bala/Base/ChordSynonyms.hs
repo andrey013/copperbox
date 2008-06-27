@@ -17,8 +17,7 @@
 module Bala.Base.ChordSynonyms where
 
 import Bala.Base.BaseExtra
-import Bala.Base.PitchRep
-import Bala.Base.PitchOps
+import Bala.Base.Pitch
 import Bala.Base.Chord
 
 import Control.Applicative hiding (many, optional, (<|>) )
@@ -137,7 +136,7 @@ inversionLabel = choice [root,first,second,third]
 
     
 readLabelledChord :: Parser LabelledChord
-readLabelledChord = LabelledChord <$> decoPitchLetter <*> withLex lexChordSuffix
+readLabelledChord = LabelledChord <$> deco <*> withLex lexChordSuffix
 
 withLex :: (String -> Parser (a, String)) -> Parser a
 withLex f = do

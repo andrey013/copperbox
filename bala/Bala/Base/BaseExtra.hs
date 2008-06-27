@@ -314,6 +314,14 @@ longestString :: [String] -> Parser String
 longestString = choice . map (try . string) . reverse . sortBy longer
   where longer a b = (length a) `compare` (length b)
 
+
+withLongestString :: (String -> Parser b) ->  [(String,a)] -> Parser a
+withLongestString f = choice . map (try . interp f) . reverse . sortBy longer
+  where 
+    longer (a,_) (b,_) = (length a) `compare` (length b)
+    interp f (a,b) = b <$ f a
+    
+    
 -- | Wrap Parsec's oneOf with a Maybe to handle failure. 
 optOneOf :: [Char] -> Parser (Maybe Char)    
 optOneOf cs = optparse $ oneOf cs

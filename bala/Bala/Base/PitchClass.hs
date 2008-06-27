@@ -17,7 +17,7 @@
 
 module Bala.Base.PitchClass where
 
-import Bala.Base.PitchRep
+import Bala.Base.Pitch
 
 import Numeric (showInt)
 
@@ -55,7 +55,7 @@ instance Show PC where
 class PitchClass a where pc :: a -> PC
 
 instance PitchClass Pitch where
-  pc (Pitch l o s _) = pitchClass $ (12 * o) + s
+  pc p = pitchClass $ (12 * octaveMeasure p) + semitoneMeasure p
 
 
   

@@ -86,12 +86,12 @@ fretboard ps i = unlines $ map mkline ps
     mkline p = take i $ fbstring p $ []
 
 fbstring :: Pitch -> ShowS
-fbstring p = affi (pitch_label p) . dotS . barS . fn p
+fbstring p = affi (pitchName p) . dotS . barS . fn p
   where 
     fn p = let p' = p `addSemi` 1
            in str1 (mkfun p') . fn p'
     
-    mkfun p = let lbl = pitch_label p in
+    mkfun p = let lbl = pitchName p in
               if (unaltered lbl) then (Just $ affi lbl) else Nothing
                   
 

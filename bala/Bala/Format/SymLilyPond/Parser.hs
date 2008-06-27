@@ -39,10 +39,7 @@ fchoice f xs = choice $ map (interp f) xs
     interp f (a,b) = b <$ f a
 
 longestChoice :: (String -> Parser b) ->  [(String,a)] -> Parser a
-longestChoice f = choice . map (interp f) . reverse . sortBy longer
-  where 
-    longer (a,_) (b,_) = (length a) `compare` (length b)
-    interp f (a,b) = b <$ f a
+longestChoice = withLongestString
   
 attrParse :: (Attribute elt att, SymAttr repr) 
           => Parser (repr (att ctx_a))

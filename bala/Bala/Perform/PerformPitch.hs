@@ -18,7 +18,7 @@
 
 module Bala.Perform.PerformPitch where
 
-import Bala.Base.PitchRep
+import Bala.Base.Pitch
 import Bala.Perform.Perform
 
 import Data.Ratio

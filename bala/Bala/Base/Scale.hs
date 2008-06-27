@@ -16,9 +16,8 @@
 
 module Bala.Base.Scale where
 
-import Bala.Base.PitchRep
+import Bala.Base.Pitch
 import Bala.Base.Interval
-import Bala.Base.PitchOps
 import Bala.Base.BaseExtra
 
 

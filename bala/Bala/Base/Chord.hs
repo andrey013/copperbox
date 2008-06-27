@@ -17,8 +17,7 @@
 
 module Bala.Base.Chord where
 
-import Bala.Base.PitchRep
-import Bala.Base.PitchOps
+import Bala.Base.Pitch
 import Bala.Base.Interval
 import Bala.Base.PitchClass
 import Bala.Base.BaseExtra

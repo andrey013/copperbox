@@ -17,7 +17,7 @@
 module Bala.Base.Unfiled where
 
 import Bala.Base.BaseExtra
-import Bala.Base.PitchRep
+import Bala.Base.Pitch
 import Bala.Base.Interval
 import Bala.Base.NamedElems
 
@@ -36,8 +36,8 @@ data RefinedContour = ReR | ReUS | ReUL | ReDS | ReDL
 
 
 -- | Pitch spelling not not same as Duckworth.  
-circle_of_fifths :: [PitchLabel]
-circle_of_fifths = take 12 $ iterate (`extUp` perfect_fifth) (extract c4)
+circle_of_fifths :: [PitchName]
+circle_of_fifths = map pitchName $ take 12 $ iterate (`extUp` perfect_fifth) c4
 
 
   

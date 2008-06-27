@@ -18,8 +18,7 @@
 
 module Bala.Base.Interval where
 
-import Bala.Base.PitchRep
-import Bala.Base.PitchOps
+import Bala.Base.Pitch
 import Bala.Base.PitchClass
 import Bala.Base.BaseExtra 
 
@@ -153,31 +152,34 @@ instance IntervalExtension Interval where
     
 instance Extract IntervalPattern [Interval] where
   extract = unIntervalPattern
-  
-instance IntervalExtension PitchLabel where
-  extUp lbl@(PitchLabel l a) inval = 
-    let (ad,sc) = extract inval
-        l' = successor l (ad - 1)
-    in spell (lbl `addSemi` sc) l'
+
+instance IntervalExtension PitchName where
+  extUp lbl@(PitchName l _) (Interval ad sc) = 
+    let l' = successor l (unCount ad - 1)
+    in spell (lbl `addSemi` (unCount sc)) l'
     
-  extDown lbl@(PitchLabel l a) inval = 
-    let (ad,sc) = extract inval
-        l' = predecessor l (ad - 1)
-    in spell (lbl `subSemi` sc) l'
-    
+  extDown lbl@(PitchName l _) (Interval ad sc) = 
+    let l' = predecessor l (unCount ad - 1)
+    in spell (lbl `subSemi` (unCount sc)) l'
+
+
+-- | {SPELLING ? }  
+
 instance IntervalExtension Pitch where
-  extUp (Pitch l o s c) inval =
-    let sc      = halfSteps inval
-        (oc,s') = explode12 $ s + sc
-        l'      = l `extUp` inval        
-    in Pitch l' (o + oc) s' c
+  extUp pch inval =
+    let lbl = extUp (pitchName pch) inval
+        (o,s,c) = pitchMeasures pch
+        sc      = halfSteps inval
+        (oc,_)  = explode12 $ s + sc       
+    in pitch lbl (o + oc) `withCents` c
     
-  extDown (Pitch l o s c) inval =
-    let sc      = halfSteps inval
-        (oc,s') = explode12 $ s - sc
-        l'      = l `extDown` inval        
-    in Pitch l' (o - oc) s' c
-    
+  extDown pch inval =
+    let lbl = extDown (pitchName pch) inval
+        (o,s,c) = pitchMeasures pch 
+        sc      = halfSteps inval
+        (oc,_) = explode12 $ s - sc      
+    in pitch lbl (o - oc) `withCents` c
+   
         
 --------------------------------------------------------------------------------
 -- Helpers
@@ -254,16 +256,23 @@ arithmeticDistance :: Pitch -> Pitch -> Int
 arithmeticDistance p  p' | p < p'    = aCount p  p'
                          | otherwise = aCount p' p
   where
-    aCount (Pitch (PitchLabel l _) o _ _) (Pitch (PitchLabel l' _) o' _ _) = 
-      retroCountTo succ (o,l) (o',l')
+    aCount p p' = let o   = octaveMeasure p
+                      o'  = octaveMeasure p'
+                      l   = pitchLetter p
+                      l'  = pitchLetter p'
+                  in retroCountTo succ (o,l) (o',l')
    
-    
 
+arithmeticStep :: Pitch -> Int -> Pitch                                
+arithmeticStep pch i =  undefined
+   
+{-
 arithmeticStep :: Pitch -> Int -> Pitch                                
 arithmeticStep (Pitch (PitchLabel l _) o _ _) i = 
     pitch (PitchLabel l' Nat) o'
   where
     (o',l') = applyi succ (o,l) (i - 1)
+-}
 
 
 
