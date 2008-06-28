@@ -65,21 +65,21 @@ instance Arbitrary Accidental where
 
 -- PitchConversion
 instance Arbitrary MidiPitch where
-  arbitrary = M <$> arbitrary 
+  arbitrary = midiPitch <$> arbitrary 
   coarbitrary = error "no coarbitrary for MidiPitch"
 
 instance Arbitrary Hertz where
-  arbitrary = Hz <$> arbitrary 
+  arbitrary = hertz <$> arbitrary 
   coarbitrary = error "no coarbitrary for Hertz"
 
   
 -- pitch class with an octave designation
-instance Arbitrary OctavePC where
-  arbitrary = OPC <$> arbitrary 
-  coarbitrary = error "no coarbitrary for OctavePC"
+instance Arbitrary OctavePitchClass where
+  arbitrary = octavePitchClass <$> arbitrary 
+  coarbitrary = error "no coarbitrary for OctavePitchClass"
     
 
-instance Arbitrary OctaveRep where
-  arbitrary = OR <$> arbitrary 
-  coarbitrary = error "no coarbitrary for OctaveRep"  
+instance Arbitrary OctaveFractional where
+  arbitrary = octaveFractional <$> arbitrary 
+  coarbitrary = error "no coarbitrary for OctaveFractional"  
     

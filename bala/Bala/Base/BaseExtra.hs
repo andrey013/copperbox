@@ -17,7 +17,54 @@
 --------------------------------------------------------------------------------
 
 
-module Bala.Base.BaseExtra where
+module Bala.Base.BaseExtra (
+  -- * Typeclasses - Affi & Deco
+  -- ** Alternatives to Read & Show for prettier representations
+  Affi(..), Deco(..),
+  
+  -- * Helpers for Affi & Deco 
+  afficher, afficherL, afficherP, decouper, decouperL,
+  
+  -- * Extract - obsolete remove soon...
+  Extract(..),
+  
+  -- * Counting
+  Direction(..), countUntil, countTo, retroCountTo,
+  successor, predecessor, shiftyPlus, shiftyMinus,
+  Count(..), Countable(..), 
+  NonNeg, nonneg, NnNz, nnnz, RNnNz, rnnnz,
+  countPlus, countMinus, 
+  
+  -- * Utility functions 
+  applyi, zam, 
+  mod12, mod7,
+  sub, sub1, 
+  ora, anda, 
+  dyap, triap, 
+  explode12, explode100, collapse12, collapse100,
+  normalize12, normalize100, 
+  
+  -- * Parsec helpers
+  readsParsec, longestString, withLongestString,
+  optOneOf, optparse, eitherparse, counting, counting1,
+  whiteSpace, lexeme, symbol, stringLiteral,
+  parens, brackets, angles, braces, integer, double, 
+  positiveInt, signedInt, float, int, digiti, 
+  doubleQuoted, lexString, lexChar,  
+  water, collectWater,
+
+  -- * Show helpers 
+  -- ** Acknowledgement - Daan Leijen's pprint combinators recast for ShowS   
+  optS, punctuateS, encloseSepS, listS,
+  tupledS, semiBraceS, hcatS, hsepS, vsepS,
+  foldS, sepS, lineS,
+  squoteS, dquoteS, braceS, parenS, angleS, bracketS,
+  lparenS, rparenS, langleS, rangleS, lbraceS, rbraceS,
+  lbracketS, rbracketS, sglquoteS, dblquoteS, 
+  semiS, colonS, commaS, spaceS, dotS, equalS, 
+  backslashS, newlineS, barS, replicateS
+
+  ) where
 
 import Control.Applicative hiding (many, optional, (<|>))
 import Control.Monad (ap)
@@ -34,8 +81,8 @@ import Text.ParserCombinators.Parsec.Language
   
   
 --------------------------------------------------------------------------------
--- * Affi(cher) & Deco(uper) 
--- ** Alternatives to Read & Show for prettier representations
+-- Affi(cher) & Deco(uper) 
+-- Alternatives to Read & Show for prettier representations
 --------------------------------------------------------------------------------
 
 -- | Affi - alternative to 'Show' - to be used for pretty formatting keeping Show
@@ -126,10 +173,7 @@ predecessor :: (Enum a) => a -> Int -> a
 predecessor a n = applyi f a n
   where f = if (n >= 0) then pred else succ
   
--- | Apply a function i times.              
-applyi :: (a -> a) -> a -> Int -> a
-applyi f a i | i <= 0    = a
-             | otherwise = applyi f (f a) (i-1)
+
              
 
 
@@ -216,9 +260,15 @@ countMinus :: (Countable (Count a)) => Count a -> Count a -> Count a
 countMinus a b = a `backward` (unCount b)
                            
 --------------------------------------------------------------------------------
--- * Utility unctions
+-- Utility functions
 --------------------------------------------------------------------------------
 
+-- | Apply a function i times.              
+applyi :: (a -> a) -> a -> Int -> a
+applyi f a i | i <= 0    = a
+             | otherwise = applyi f (f a) (i-1)
+             
+             
 -- | zam - zippy map.
 zam :: (a -> a -> b) -> [a] -> [b]
 zam f (x:y:ys) = f x y : zam f (y:ys)
@@ -297,24 +347,24 @@ normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
 -- * Parsec helpers
 --------------------------------------------------------------------------------
 
--- | An applicative instance 
+-- | An Applicative instance for Parsec. 
 instance Applicative (GenParser tok st) where
   pure = return
   (<*>) = ap
   
--- | Use a Parsec parser like a ReadS parser 
+-- | Use a Parsec parser like a ReadS parser. 
 readsParsec :: (Parser a) -> String -> [(a,String)]
 readsParsec p s = case parse pfn "" s of
                     Left _ -> []
                     Right a -> [a] 
   where pfn = (,) <$> p <*> getInput
 
--- | Match the longest string
+-- | Match the longest string.
 longestString :: [String] -> Parser String
 longestString = choice . map (try . string) . reverse . sortBy longer
   where longer a b = (length a) `compare` (length b)
 
-
+-- | Match the longest string and apply f to interpret it.
 withLongestString :: (String -> Parser b) ->  [(String,a)] -> Parser a
 withLongestString f = choice . map (try . interp f) . reverse . sortBy longer
   where 
@@ -322,12 +372,13 @@ withLongestString f = choice . map (try . interp f) . reverse . sortBy longer
     interp f (a,b) = b <$ f a
     
     
--- | Wrap Parsec's oneOf with a Maybe to handle failure. 
+-- | Wrap Parsec's @oneOf@ with a Maybe to handle failure. 
 optOneOf :: [Char] -> Parser (Maybe Char)    
 optOneOf cs = optparse $ oneOf cs
 
--- | An alternative to Parsec's option parser. Whereas option returns a default
--- value if the parse fails, optparse wraps success and failure in a Maybe.
+-- | An alternative to Parsec's @option@ parser. Whereas option returns a 
+-- default value if the parse fails, optparse wraps success and failure in
+-- a Maybe.
 optparse :: Parser a -> Parser (Maybe a)
 optparse p = option Nothing (try $ Just <$> p)
 
@@ -337,12 +388,12 @@ eitherparse :: Parser a -> Parser b -> Parser (Either a b)
 eitherparse p p' = (Left <$> p) <|> (Right <$> p')
 
 -- | Return the count of the number of parses, rather than a list of elements.
--- (Note the count combinator in Parsec works differently, it will parse a 
+-- (Note the @count@ combinator in Parsec works differently, it will parse a 
 -- element n times).
 counting :: Parser a -> Parser Int
 counting  p = length <$> many p
 
--- | Version of counting that must succeed at least once.
+-- | Version of @counting@ that must succeed at least once.
 counting1 :: Parser a -> Parser Int
 counting1 p = length <$> many1 p
 
@@ -355,45 +406,32 @@ signedInt :: Parser Int
 signedInt   = (\ a b -> read (a:b)) <$> sign <*> many1 digit
   where sign        = oneOf "+-"
 
--- | Wrap Parsec's string parser to consume trailing whitespace.
-lexString :: String -> Parser String
-lexString   = lexeme . string
-
--- | Wrap Parsec's char parser to consume trailing whitespace.
-lexChar :: Char -> Parser Char
-lexChar   = lexeme . char
-
-    
-baseLex           = P.makeTokenParser emptyDef
 
 
-whiteSpace        = P.whiteSpace baseLex
-lexeme            = P.lexeme baseLex
-symbol            = P.symbol baseLex  
-parens            = P.parens baseLex
-brackets          = P.brackets baseLex
-angles            = P.angles baseLex
-braces            = P.braces baseLex
-integer           = P.integer baseLex
-double            = P.float baseLex
-stringLiteral     = P.stringLiteral baseLex
-
-
--- | Parsec's double parser, coerced to return float.
+-- | Parsec's @double@ parser, coerced to return float.
 float             :: Parser Float
 float             = fromRational . toRational <$> double
 
--- | Parsec's integer parser, coerced to return Int.
+-- | Parsec's @integer@ parser, coerced to return Int.
 int               :: Parser Int
 int               = fromIntegral <$> integer 
 
+-- | Parsec's @digit@ parser, coerced to return Int rather than Char.
 digiti            :: Parser Int
 digiti            = (flip (-) 48) . ord  <$> digit
 
 
--- | Like Parsec's stringLiteral but with a  more general type.
+-- | Like Parsec's @stringLiteral@ but with a more general type.
 doubleQuoted :: Parser a -> Parser a
 doubleQuoted p = char '"' *> p <* char '"'
+
+-- | Wrap Parsec's @string@ parser to consume trailing whitespace.
+lexString :: String -> Parser String
+lexString   = lexeme . string
+
+-- | Wrap Parsec's @char@ parser to consume trailing whitespace.
+lexChar :: Char -> Parser Char
+lexChar   = lexeme . char
 
 -- | Island parsing (does it work?)
 -- It generates a parse error if we get to eof without parsing p
@@ -416,6 +454,52 @@ collectWater p = colwater []
         Just a -> return (reverse cs, a)
         Nothing -> anyChar >>= \c -> colwater (c:cs)
         
+
+
+
+baseLex           = P.makeTokenParser emptyDef
+
+-- | @whiteSpace@ from ParsecChar.
+whiteSpace        :: CharParser st ()
+whiteSpace        = P.whiteSpace baseLex
+
+-- | @lexeme@ from ParsecChar.
+lexeme            :: CharParser st a -> CharParser st a
+lexeme            = P.lexeme baseLex
+
+-- | @symbol@ from ParsecChar.
+symbol            :: String -> CharParser st String
+symbol            = P.symbol baseLex
+
+-- | @stringLiteral@ from ParsecChar.
+stringLiteral     :: CharParser st String
+stringLiteral     = P.stringLiteral baseLex
+
+-- | @parens@ from ParsecChar.
+parens            :: CharParser st a -> CharParser st a  
+parens            = P.parens baseLex
+
+-- | @brackets@ from ParsecChar.
+brackets          :: CharParser st a -> CharParser st a  
+brackets          = P.brackets baseLex
+
+-- | @angles@ from ParsecChar.
+angles            :: CharParser st a -> CharParser st a  
+angles            = P.angles baseLex
+
+-- | @braces@ from ParsecChar.
+braces            :: CharParser st a -> CharParser st a  
+braces            = P.braces baseLex
+
+-- | @integer@ from ParsecChar.
+integer           :: CharParser st Integer  
+integer           = P.integer baseLex
+
+-- | @double@ from ParsecChar.
+double            :: CharParser st Double  
+double            = P.float baseLex
+
+
       
 
 --------------------------------------------------------------------------------

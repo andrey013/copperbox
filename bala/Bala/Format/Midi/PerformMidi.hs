@@ -79,7 +79,7 @@ notesToSE evts amp = map mkSimpleEvt (zip evts zs)
     zs = [n * 0.5 | n <- [0..] ]
     mkSimpleEvt (n,start) = SimpleEvt 
       { time      = deltaTime start
-      , keynum    = unMidi $ fromPitch n
+      , keynum    = midiValue $ fromPitch n
       , duration  = 480
       , amplitude = conv amp
       } 
