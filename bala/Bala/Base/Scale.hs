@@ -39,9 +39,8 @@ data ScaleDegree = Tonic | SuperTonic | Mediant | Subdominant | Dominant
   deriving (Eq,Show)
 
 
-
-instance Extract Scale [Pitch] where
-  extract = scale_notes
+scaleNotes :: Scale -> [Pitch]
+scaleNotes = scale_notes
 
 
 

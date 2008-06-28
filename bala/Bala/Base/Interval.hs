@@ -218,14 +218,10 @@ simplify (Interval (Count d) (Count s))
                       in (Compound i, interval (d `mod` 8) s')
   | otherwise       = (Simple, interval d s) 
 
--- | Unfortunately 'extract' plays badly if we just want the second element 
--- (half_steps), so . 
-extractInterval :: Interval -> (Int,Int)
-extractInterval = extract
 
 intervalName :: Interval -> Maybe NamedInterval
 intervalName invl = 
-    let (measure, simple) = simplify invl in fn measure (extractInterval simple)
+    let (measure, simple) = simplify invl in fn measure (unInterval simple)
   where
     fn m (1,0)   = Just (NamedInterval m Perfect Unison)   
     fn m (2,1)   = Just (NamedInterval m Minor Second)
@@ -326,7 +322,7 @@ idiminished z = error $
 
 
 intervalList :: IntervalPattern -> [Interval]
-intervalList s = let ivals = extract s in
+intervalList s = let ivals = unIntervalPattern s in
   scanl extUp (interval 1 0) ivals
   
 --------------------------------------------------------------------------------
@@ -405,24 +401,20 @@ instance Enum (Int,PitchLetter) where
   toEnum i = let (o,il) = i `divMod` 8 in (o, toEnum il)
   
 
-instance SemitoneCount Interval where
+instance Semitones Interval where
   semitoneCount (Interval _ (Count sc)) = sc
-    
+
+{-    
 instance SemitoneExtension Interval where 
   addSemi (Interval d s) i = Interval d (s `forward` i)
   subSemi (Interval d s) i = Interval d (s `backward` i)
   
-      
-instance Extract Interval (Int,Int) where
-  extract (Interval (Count d) (Count s)) = (d,s) 
+-}
 
 instance IntervalExtension Interval where
   extUp   = (+)
   extDown = (-)
-    
-instance Extract IntervalPattern [Interval] where
-  extract = unIntervalPattern
-
+  
 instance IntervalExtension PitchName where
   extUp lbl@(PitchName l _) (Interval ad sc) = 
     let l' = successor l (unCount ad - 1)

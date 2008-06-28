@@ -24,12 +24,11 @@ module Bala.Base.Pitch (
   pitchMeasures,
   
   -- * Typeclasses
-  SemitoneCount(..),  SemitoneExtension(..),
-  SemitoneDisplacement(..), EncodePitch(..),
+  Semitones(..),  Pitched(..), EncodePitch(..),
   
   spell,
   
-  addOve, subOve,
+  addOve, subOve, semitoneDistance, semitoneDirection,
   
   unaltered
 
@@ -69,7 +68,7 @@ data PitchLetter = C | D | E | F | G | A | B
   deriving (Eq,Ord,Read,Show)
 
 data Accidental = Nat | Sharp | Flat | DoubleSharp | DoubleFlat
-  deriving (Eq,Read,Show)
+  deriving (Eq,Enum,Read,Show)
 
 
 
@@ -121,110 +120,50 @@ pitchMeasures (Pitch _ o s c) = (o,s,c)
 --------------------------------------------------------------------------------
 -- * Typeclasses for pitched values
 
-  
 -- | Semitones are the basis for Pitch arithmetic
-class SemitoneCount a where semitoneCount :: a -> Int
+class Semitones a where semitoneCount   :: a -> Int
 
--- | Add and subtract semitones
-class SemitoneExtension a where
-  -- | Add a semitone to a /pitched value/.
-  addSemi :: a -> Int -> a
-  -- | Subtract a semitone from a /pitched value/.
-  subSemi :: a -> Int -> a
+-- | Pitch operations, minimal complete definition:
+-- addSemi, subSemi, semitoneDisplacement.
+class (Semitones a) => Pitched a where
+    
+    -- | Add a semitone to a pitched value.
+    addSemi               :: a -> Int -> a
+    
+    -- | Subtract a semitone from a pitched value.
+    subSemi               :: a -> Int -> a
   
-  
-  
--- | Sharpen or flatten a /pitched value/.
-class AlterPitch a where  
-  sharp   :: a -> a
-  flat    :: a -> a
+    -- | Sharpen a pitched value.
+    sharpen               :: a -> a
+    
+    -- | Flatten a pitched value.
+    flatten               :: a -> a
+    
+    -- | Are two pitched values enharmonically equal? 
+    enharmonic            :: a -> a -> Bool
+    
+    -- | The semitone distance from one element to another, and the direction 
+    -- of the distance. 'Upwards' if the second element had a higher pitch than 
+    -- the first, otherwise 'Downwards'
+    semitoneDisplacement  :: a -> a -> (Direction,Int)
+    
 
--- | Are two /pitched values/ enharmonically equal? 
-class Enharmonic a where
-  enharmonic :: a -> a -> Bool
   
-
-class SemitoneDisplacement a where
-  -- | The semitone distance from one element to another, and the direction 
-  -- of the distance. 'Upwards' if the second element had a higher pitch than 
-  -- the first, otherwise 'Downwards'
-  semitoneDisplacement :: a -> a -> (Direction,Int)
-  
-  -- | As per 'semitoneDisplacement' but just return the distance.
-  semitoneDistance     :: a -> a -> Int
-  
-  -- | As per 'semitoneDisplacement' but just return the direction.   
-  semitoneDirection    :: a -> a -> Direction
-  
-  semitoneDistance  = snd `dyap` semitoneDisplacement
-  semitoneDirection = fst `dyap` semitoneDisplacement
+ 
+    
+    sharpen             = (flip addSemi) 1
+    flatten             = (flip subSemi) 1
+    enharmonic a b      = semitoneCount a == semitoneCount b     
 
 
+
+-- | Convert to and from the primary pitch representation.
 class EncodePitch a where 
-  toPitch :: a -> Pitch  
-  fromPitch :: Pitch -> a
+    -- | Convert to a Pitch.
+    toPitch       :: a -> Pitch 
+    -- | Convert from a Pitch. 
+    fromPitch     :: Pitch -> a
   
-  
-
-
-
-
-     
-    
--- works for ordered elts not rotated ones
-instance SemitoneDisplacement Pitch where
-  semitoneDisplacement p p' = 
-    let d = semitoneCount p' - semitoneCount p
-    in case signum d of
-      (-1) -> (Downwards, abs d)
-      _    -> (Upwards, d)
-
--- | Pitch labels must handle rotation
-instance SemitoneDisplacement PitchName where
-  semitoneDisplacement l l' = 
-    let d = countTo succ l l'
-    in if (d > 6) then (Downwards, 12 - d) else (Upwards, abs d)
-                          
-
-instance AlterPitch Accidental where  
-  sharp a = succ a
-  flat a  = pred a
-  
-instance AlterPitch PitchName where  
-  sharp (PitchName l a) = PitchName l (sharp a)
-  flat (PitchName l a)  = PitchName l (flat a)
-  
-instance AlterPitch Pitch where  
-  sharp (Pitch l o s c) = let (oc,s') = explode12 $ s + 1
-                          in Pitch (sharp l) (o+oc) s' c
-  flat (Pitch l o s c)  = let (oc,s') = explode12 $ s - 1
-                          in Pitch (flat l) (o+oc) s' c
-  
-    
-
--- (31/3/08) this is most likely wrong, we should keep the letter 
--- and extend the alteration
-instance SemitoneExtension PitchName where
-  addSemi pl i = toEnum $ (fromEnum pl) + i
-  subSemi pl i = toEnum $ (fromEnum pl) - i
-  
-{-
-  addSemi (PitchName l a) i = PitchName l (a `successor` i)
-  subSemi (PitchName l a) i = PitchName l (a `predecessor` i)
--}
-
-instance SemitoneExtension Pitch where
-  -- oc is "octave-carry" this isn't a very descriptive implementation
-  -- and at some point should be done better
-  (Pitch l o s c) `addSemi` i = 
-    let (oc,s') = explode12 $ s + i
-    in Pitch (l `addSemi` i) (o + oc) s' c
-  
-  
-  (Pitch l o s c) `subSemi` i = 
-    let (oc,s') = explode12 $ s - i
-    in Pitch (l `subSemi` i) (o - oc) s' c
-    
     
         
 --------------------------------------------------------------------------------
@@ -264,40 +203,80 @@ centValue :: Pitch -> Int
 centValue (Pitch l o s c) 
   = (octaveDisplacement o * 100) + (s * 100) + c
   
-  
-  
+semitonesToCents :: Int -> Int
+semitonesToCents = (1000 *)
+
+octaveToCents :: Int -> Int
+octaveToCents   = (12 * 1000 *)
 
   
 
 -- | Add an octave to a /pitched value/.  
-addOve  :: SemitoneExtension a => a -> Int -> a
+addOve  :: Pitched a => a -> Int -> a
 addOve e = addSemi e . (12 *)
 
 -- | Subtract an octave from a /pitched value/.
-subOve  :: SemitoneExtension a => a -> Int -> a
+subOve  :: Pitched a => a -> Int -> a
 subOve e = subSemi e . (12 *)
 
 
+-- | As per 'semitoneDisplacement' but just return the distance.
+semitoneDistance    :: Pitched a => a -> a -> Int
+semitoneDistance    = snd `dyap` semitoneDisplacement
 
--- The semitone displacement upwards from C
-instance SemitoneCount PitchLetter where
+-- | As per 'semitoneDisplacement' but just return the direction.   
+semitoneDirection   :: Pitched a => a -> a -> Direction
+semitoneDirection   = fst `dyap` semitoneDisplacement  
+
+--------------------------------------------------------------------------------
+-- Instances
+
+instance Semitones Pitch where
+  semitoneCount (Pitch l o s c) = 
+    let (cc,_) = explode100 c in  (12 * o) + s + cc
+    
+    
+instance Pitched Pitch where
+  addSemi (Pitch l o s c) i = 
+    let (oc,s') = explode12 $ s + i in Pitch (l `addSemi` i) (o + oc) s' c
+    
+  subSemi (Pitch l o s c) i = 
+    let (oc,s') = explode12 $ s - i in Pitch (l `subSemi` i) (o - oc) s' c
+
+  semitoneDisplacement p p' = 
+    let d = semitoneCount p' - semitoneCount p
+    in case signum d of
+      (-1) -> (Downwards, abs d)
+      _    -> (Upwards, d)
+      
+      
+      
+-- C-nat = 0 
+instance Semitones PitchLetter where
   semitoneCount l = fromEnum (PitchName l Nat)
 
--- How many semitones is the pitch changed by its accidental? 
-instance SemitoneCount Accidental where
-  semitoneCount a       = fromEnum a
+instance Semitones Accidental where
+  semitoneCount Nat          = 0
+  semitoneCount Sharp        = 1
+  semitoneCount DoubleSharp  = 2
+  semitoneCount Flat         = (-1)
+  semitoneCount DoubleFlat   = (-2)
 
-instance SemitoneCount PitchName where
+instance Semitones PitchName where
   semitoneCount (PitchName l a) = semitoneCount l + semitoneCount a
-
-instance SemitoneCount Pitch where
-  semitoneCount (Pitch l o s c) = 
-    let (cc,_) = explode100 c in  12 * o + s + cc
-    
-
-instance Enharmonic PitchName where
-  l `enharmonic` l' = semitoneCount l == semitoneCount l'
   
+
+
+-- | The names generated by toEnum favour sharps, pitches may need re-spelling.     
+instance Pitched PitchName where
+  addSemi l i = toEnum $ (fromEnum l) + i
+  subSemi l i = toEnum $ (fromEnum l) - i
+  
+  semitoneDisplacement l l' = 
+    let d = countTo succ l l'
+    in if (d > 6) then (Downwards, 12 - d) else (Upwards, abs d)
+
+
       
 --------------------------------------------------------------------------------
 -- Enum instances
@@ -320,23 +299,11 @@ instance Enum PitchLetter where
   toEnum 5   = A
   toEnum 6   = B
 
-  toEnum i  = toEnum $ i `mod` 7
+  toEnum i  = toEnum $ mod7 i
 
-instance Enum Accidental where
-  fromEnum Nat          = 0
-  fromEnum Sharp        = 1
-  fromEnum DoubleSharp  = 2
-  fromEnum Flat         = (-1)
-  fromEnum DoubleFlat   = (-2)
-  
-  toEnum 0    = Nat
-  toEnum 1    = Sharp
-  toEnum 2    = DoubleSharp
-  toEnum (-1) = Flat
-  toEnum (-2) = DoubleFlat
   
 instance Enum PitchName where 
-  fromEnum (PitchName l a) = fn l + fromEnum a
+  fromEnum (PitchName l a) = mod12 $ fn l + semitoneCount a
     where fn C = 0
           fn D = 2
           fn E = 4
@@ -359,7 +326,7 @@ instance Enum PitchName where
   toEnum 10  = PitchName A Sharp
   toEnum 11  = PitchName B Nat
 
-  toEnum i  = toEnum $ i `mod` 12
+  toEnum i  = toEnum $ mod12 i
   
 
 
@@ -384,8 +351,7 @@ instance Ord Pitch where
       a         = octaveToCents o + semitonesToCents (s + sc) + cc
       b         = octaveToCents o' + semitonesToCents (s' + sc') + cc'
     
-semitonesToCents = (1000 *)
-octaveToCents   = (12 * 1000 *)
+
 
 
 --------------------------------------------------------------------------------

@@ -1,5 +1,4 @@
-{-# LANGUAGE EmptyDataDecls, FlexibleInstances, FlexibleContexts,
-             MultiParamTypeClasses #-}
+{-# LANGUAGE EmptyDataDecls, FlexibleInstances, FlexibleContexts #-}
 
 
 --------------------------------------------------------------------------------
@@ -24,9 +23,7 @@ module Bala.Base.BaseExtra (
   
   -- * Helpers for Affi & Deco 
   afficher, afficherL, afficherP, decouper, decouperL,
-  
-  -- * Extract - obsolete remove soon...
-  Extract(..),
+
   
   -- * Counting
   Direction(..), countUntil, countTo, retroCountTo,
@@ -121,13 +118,6 @@ decouperL s = case parse (many1 $ lexeme deco) "" s of
                      Left err -> error $ "parse error" ++ show err
                      Right a -> a                     
 
---------------------------------------------------------------------------------
--- Unwrap
---------------------------------------------------------------------------------
-
--- | Extract an element from a constructor by a type. This only works if the 
--- types carried by the constructor are disjoint.
-class Extract a b where extract :: a -> b
 
                     
 --------------------------------------------------------------------------------
