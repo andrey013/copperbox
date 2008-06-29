@@ -18,7 +18,7 @@
 
 module Bala.Base.BaseExtra (
   -- * Typeclasses - Affi & Deco
-  -- ** Alternatives to Read & Show for prettier representations
+  -- $affidoc 
   Affi(..), Deco(..),
   
   -- * Helpers for Affi & Deco 
@@ -26,6 +26,7 @@ module Bala.Base.BaseExtra (
 
   
   -- * Counting
+  -- $countingdoc 
   Direction(..), countUntil, countTo, retroCountTo,
   successor, predecessor, shiftyPlus, shiftyMinus,
   Count(..), Countable(..), 
@@ -36,8 +37,10 @@ module Bala.Base.BaseExtra (
   applyi, zam, 
   mod12, mod7,
   sub, sub1, 
-  ora, anda, 
+  andthen, ora, anda, 
   dyap, triap, 
+  -- ** Helpers for modulo 12 and modulo 100.
+  -- $explodedoc 
   explode12, explode100, collapse12, collapse100,
   normalize12, normalize100, 
   
@@ -51,7 +54,7 @@ module Bala.Base.BaseExtra (
   water, collectWater,
 
   -- * Show helpers 
-  -- ** Acknowledgement - Daan Leijen's pprint combinators recast for ShowS   
+  -- $showsdoc  
   optS, punctuateS, encloseSepS, listS,
   tupledS, semiBraceS, hcatS, hsepS, vsepS,
   foldS, sepS, lineS,
@@ -79,8 +82,9 @@ import Text.ParserCombinators.Parsec.Language
   
 --------------------------------------------------------------------------------
 -- Affi(cher) & Deco(uper) 
--- Alternatives to Read & Show for prettier representations
---------------------------------------------------------------------------------
+
+-- $affidoc 
+-- Alternatives to Read & Show for prettier representations.
 
 -- | Affi - alternative to 'Show' - to be used for pretty formatting keeping Show
 -- for outputting Haskell readable constructors. 
@@ -89,6 +93,7 @@ class Affi a where
 
 -- | Deco - alternative to Read - to be used for reading 'Affi' output 
 class Deco a where
+  -- | @Parser@ is the a Parsec parser, rather than a ReadS one. 
   deco :: Parser a
 
 -- | Pretty print an 'Affi' instance  
@@ -123,23 +128,24 @@ decouperL s = case parse (many1 $ lexeme deco) "" s of
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
--- * Counting 
---------------------------------------------------------------------------------
+-- Counting 
 
+-- $countingdoc
+-- An apologia - the pitch arithmetic in Bala has been a source of many 
+-- errors, probably because my maths has got rusty. Many arithmetic operations
+-- are easy to think of as counting, rather than addition, subtraction... etc 
+-- with quixotic number bases. Counting is of course much slower...
+-- The first argument to countUntil is a limit in case the count diverges, 
+-- otherwise the it is essentially until from the Prelude except it returns a 
+-- count for how many times f has been applied rather than the result of 
+-- repeatedly applying f.
 
 -- | Direction - counting may need to consider its direction
 data Direction = Upwards | Downwards
   deriving (Eq,Read,Show)
   
   
--- | An apologia - the pitch arithmetic in Bala has been a source of many 
--- errors, probably because my maths has got rusty. Many arithmetic operations
--- are easy to think of as counting, rather than addition, subtraction... etc 
--- with quixotic number bases. Counting is of course much slower...
--- The first argument to countUntil is a limit incase the count diverges, 
--- otherwise the it is essentially until from the Prelude except it returns a 
--- count for how many times f has been applied rather than the result of 
--- repeatedly applying f.
+
 countUntil :: (Eq a) => Int -> (a -> Bool) -> (a -> a) -> a -> Int
 countUntil lim p f a = snd $ until p' f' (a,0)
   where p' (a,i) = if (i < lim) 
@@ -224,7 +230,7 @@ instance Countable (Count NnNz) where
                        | otherwise            = nnnz $ i + (j - 2)
 
 -- | Phantom placeholder for /retrograde/ non-negative, non-zero numbers.
--- Retrograde in this instances means that counting includes the current 
+-- Retrograde in this context means that counting includes the current 
 -- position.
 data RNnNz
 
@@ -251,7 +257,6 @@ countMinus a b = a `backward` (unCount b)
                            
 --------------------------------------------------------------------------------
 -- Utility functions
---------------------------------------------------------------------------------
 
 -- | Apply a function i times.              
 applyi :: (a -> a) -> a -> Int -> a
@@ -280,14 +285,20 @@ sub = flip (-)
 sub1 :: Num a => a -> a 
 sub1 = sub 1
 
+-- | Apply @f@ then @g@ to @a@ combining the results with @op@.
+-- 
+-- > andthen op f g a = f a `op` g a 
+andthen :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
+andthen op f g a = f a `op` g a 
 
 -- | (||) with 'apply' - test a with f, if it fails test it with g.
 ora :: (a -> Bool) -> (a -> Bool) -> a -> Bool
-ora f g a = f a || g a
+ora = andthen (||) 
 
 -- | (&&) with 'apply' - test a with both f and g.
 anda :: (a -> Bool) -> (a -> Bool) -> a -> Bool
-anda f g a = f a && g a
+anda = andthen (&&)
+
 
 -- | Dyadic apply \/ compose - apply the binary function g to a and b, 
 -- then apply the unary function f to the result.
@@ -300,9 +311,7 @@ triap :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
 triap f g a b c = f (g a b c) 
 
 --------------------------------------------------------------------------------
--- * Helpers for modulo 12 and modulo 100.
--- $explodedoc
---------------------------------------------------------------------------------
+-- Helpers for modulo 12 and modulo 100.
 
 -- $explodedoc
 -- Useful for semitone arithmetic (base 12) and cent arithmetic (base 100).
@@ -334,8 +343,7 @@ normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
 
   
 --------------------------------------------------------------------------------
--- * Parsec helpers
---------------------------------------------------------------------------------
+-- Parsec helpers
 
 -- | An Applicative instance for Parsec. 
 instance Applicative (GenParser tok st) where
@@ -493,9 +501,10 @@ double            = P.float baseLex
       
 
 --------------------------------------------------------------------------------
--- * Show helpers 
--- ** Acknowledgement - Daan Leijen's pprint combinators recast for ShowS 
---------------------------------------------------------------------------------
+-- Show helpers 
+
+-- $showsdoc
+-- Acknowledgement - Daan Leijen's pprint combinators recast for ShowS 
 
 optS :: (Show a) => Maybe a -> ShowS
 optS Nothing = id

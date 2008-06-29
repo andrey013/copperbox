@@ -18,17 +18,29 @@
 
 module Bala.Base.Interval (
   -- * Datatypes (Interval is opaque) 
-  Interval, NamedInterval(..), IntervalQuality(..), IntervalPattern(..), 
+  Interval, NamedInterval, IntervalSize(..), IntervalQuality(..), 
+  IntervalPattern(..), 
   
-  -- * smart constructor, destructor and selectors
+  -- * Construct and deconstruct intervals
   interval, unInterval, intervalType, halfSteps,
+  intervalSize,
   
   -- * Typeclasses
   IntervalExtension(..),
   
   -- * operations
-  interval', buildInterval, arithmeticDistance
-
+  perfectInterval, majorInterval, minorInterval, augmentedInterval, 
+  diminishedInterval,
+  
+  pitchDifference, arithmeticDistance,
+  
+  
+  -- * Named elements
+  perfect_unison, perfect_fourth, perfect_fifth, perfect_octave,
+  major_second, major_third, major_sixth, major_seventh,
+  minor_second, minor_third, minor_sixth, minor_seventh,
+  diminished_third, diminished_fifth,
+  augmented_second, augmented_third, augmented_fourth, augmented_fifth
 
     
   ) where
@@ -46,7 +58,7 @@ import Text.ParserCombinators.Parsec
 --------------------------------------------------------------------------------
 
 
--- | Represent intervals with a pair of integers. 
+-- | Represent intervals as a pair of integers.
 -- To make interval addition and especially subtraction easier, the integers
 -- are wrapped by 'Count'. Subtraction does not produce negative intervals! 
 data Interval = Interval { 
@@ -59,17 +71,51 @@ data Interval = Interval {
   }
   deriving (Eq,Show)
 
+           
+-- | Commonly named interval qualities.  
+data IntervalQuality = Perfect | Major | Minor | Augmented | Diminished
+                     | DoublyAugmented | DoublyDiminished
+  deriving (Eq,Enum,Ord,Show,Read)
+  
+             
+-- | A named interval 
+data NamedInterval = NamedInterval {
+    -- | Zero is a simple interval, 1 - one octave compound, 
+    -- 2 - two octave compound, etc.
+    interval_measure :: Int,
+    interval_quality :: IntervalQuality,
+    interval_size    :: IntervalSize
+  }
+  deriving (Eq,Show)  
+  
 
--- | Smart constructor for Intervals.
-interval :: Int -> Int -> Interval
-interval d s 
-    | d > 0 && s >= 0 = Interval (Count d) (Count s)
-    | d == 0          = error dzero_msg
-    | otherwise       = error mixed_msg
- where
-  dzero_msg = "Cannot create an Interval with an interval type of 0"
-  mixed_msg = "Cannot create an Interval with negative numbers for\n"
-           ++ "interval type or semitone count"  
+
+-- | Commonly named interval sizes.  
+data IntervalSize = Unison | Second | Third | Fourth | Fifth | Sixth
+                  | Seventh | Octave
+  deriving (Eq,Enum,Ord,Show,Read)
+
+
+newtype IntervalPattern = IntervalPattern { unIntervalPattern :: [Interval] }
+  deriving (Show)
+
+--------------------------------------------------------------------------------
+-- Constructors and selectors
+
+interval :: IntervalQuality -> IntervalSize -> Interval
+interval Perfect           = perfectInterval
+interval Major             = majorInterval
+interval Minor             = minorInterval
+interval Augmented         = augmentedInterval
+interval Diminished        = diminishedInterval
+interval DoublyAugmented   = error "interval DoublyAugmented" 
+interval DoublyDiminished  = error "interval DoublyDiminished"
+
+
+buildInterval :: Int -> Int -> Interval
+buildInterval d s = Interval (Count d) (Count s) 
+
+
 
 -- | Destructor for intervals.           
 unInterval :: Interval -> (Int,Int)
@@ -85,38 +131,33 @@ halfSteps :: Interval -> Int
 halfSteps (Interval _ (Count s)) = s
 
 
-           
--- | A named interval 
-data NamedInterval = NamedInterval {
-    interval_measure :: IntervalMeasure,
-    interval_quality :: IntervalQuality,
-    interval_size    :: IntervalSize
-  }
-  deriving (Eq,Show)  
-  
-
-
--- | Commonly named interval sizes.  
-data IntervalSize = Unison | Second | Third | Fourth | Fifth | Sixth
-                  | Seventh | Octave
-  deriving (Eq,Enum,Ord,Show,Read)
-
--- | Commonly named interval qualities.  
-data IntervalQuality = Perfect | Major | Minor | Augmented | Diminished
-                     | DoublyAugmented | DoublyDiminished
-  deriving (Eq,Enum,Ord,Show,Read)
-
--- | Length of the arithmetic distance 
-data IntervalMeasure = Simple | Compound Int
-  deriving (Eq,Ord,Show)
-
-newtype IntervalPattern = IntervalPattern { unIntervalPattern :: [Interval] }
-  deriving (Show)
+namedInterval :: Interval -> Maybe NamedInterval
+namedInterval ivl = 
+    let (oc, simple) = reduceInterval ivl in fn oc (unInterval simple)
+  where
+    fn m (1,0)   = Just (NamedInterval m Perfect Unison)   
+    fn m (2,1)   = Just (NamedInterval m Minor Second)
+    fn m (2,2)   = Just (NamedInterval m Major Second)
+    fn m (3,3)   = Just (NamedInterval m Minor Third)
+    fn m (3,4)   = Just (NamedInterval m Major Third)
+    fn m (4,5)   = Just (NamedInterval m Perfect Fourth)
+    fn m (4,6)   = Just (NamedInterval m Augmented Fourth)
+    fn m (5,6)   = Just (NamedInterval m Diminished Fifth)
+    fn m (5,7)   = Just (NamedInterval m Perfect Fifth)
+    fn m (5,8)   = Just (NamedInterval m Augmented Fifth)
+    fn m (6,8)   = Just (NamedInterval m Minor Sixth)
+    fn m (6,9)   = Just (NamedInterval m Major Sixth)
+    fn m (7,10)  = Just (NamedInterval m Minor Seventh)
+    fn m (7,11)  = Just (NamedInterval m Major Seventh)
+    fn m (8,12)  = Just (NamedInterval m Perfect Octave)
+    fn m _       = Nothing
+    
+intervalSize :: Int -> IntervalSize    
+intervalSize i | i > 0 = toEnum $ sub1 i 
 
 
 --------------------------------------------------------------------------------
 -- Type classes
---------------------------------------------------------------------------------
 
 -- | Extend a \pitched value\ by an 'Interval'.
 class IntervalExtension a where
@@ -131,20 +172,8 @@ class IntervalExtension a where
 
    
         
---------------------------------------------------------------------------------
--- Helpers
---------------------------------------------------------------------------------
 
 
-
-interval' :: IntervalQuality -> Int -> Interval
-interval' Perfect           = iperfect    . toEnum . (flip (-) 1)
-interval' Major             = imajor      . toEnum . (flip (-) 1)
-interval' Minor             = iminor      . toEnum . (flip (-) 1)
-interval' Augmented         = iaugmented  . toEnum . (flip (-) 1)
-interval' Diminished        = idiminished . toEnum . (flip (-) 1)
-interval' DoublyAugmented   = undefined
-interval' DoublyDiminished  = undefined
 
 
 
@@ -152,13 +181,80 @@ interval' DoublyDiminished  = undefined
 --------------------------------------------------------------------------------
 -- Operations
 --------------------------------------------------------------------------------
-  
-  
+
+-- | Build a perfect interval from a size.
+perfectInterval :: IntervalSize -> Interval
+perfectInterval Unison   = buildInterval 1 0
+perfectInterval Fourth   = buildInterval 4 5
+perfectInterval Fifth    = buildInterval 5 7
+perfectInterval Octave   = buildInterval 8 12
+perfectInterval z        = error $ 
+    "cannot build a major interval for " ++ show z
+    
+-- | Build a major interval from a size.
+majorInterval :: IntervalSize -> Interval
+majorInterval Second   = buildInterval 2 2
+majorInterval Third    = buildInterval 3 4
+majorInterval Sixth    = buildInterval 6 9
+majorInterval Seventh  = buildInterval 7 11
+majorInterval z        = error $ 
+    "cannot build a major interval for " ++ show z
+    
+-- | Build a minor interval from a size.
+minorInterval :: IntervalSize -> Interval
+minorInterval Second   = buildInterval 2 1
+minorInterval Third    = buildInterval 3 3
+minorInterval Sixth    = buildInterval 6 8
+minorInterval Seventh  = buildInterval 7 9
+minorInterval z        = error $ 
+    "cannot build a minor interval for " ++ show z
+    
+-- | Build an augmented interval from a size.
+augmentedInterval :: IntervalSize -> Interval
+augmentedInterval Unison   = buildInterval 1 1
+augmentedInterval Second   = buildInterval 2 3
+augmentedInterval Third    = buildInterval 3 4
+augmentedInterval Fourth   = buildInterval 4 6
+augmentedInterval Fifth    = buildInterval 5 8
+augmentedInterval Sixth    = buildInterval 6 10
+augmentedInterval z        = error $ 
+    "cannot build an augmented interval for " ++ show z
+
+-- | Build a diminished interval from a size.
+diminishedInterval :: IntervalSize -> Interval
+diminishedInterval Second    = buildInterval 2 1  -- aka minor second
+diminishedInterval Third     = buildInterval 3 2
+diminishedInterval Fourth    = buildInterval 4 4
+diminishedInterval Fifth     = buildInterval 5 6
+diminishedInterval Sixth     = buildInterval 6 7
+diminishedInterval Seventh   = buildInterval 7 9
+diminishedInterval Octave    = buildInterval 8 11
+diminishedInterval z = error $ 
+    "cannot build an diminished interval for " ++ show z
+    
+
+-- | Is it a compound interval? 
+compound :: Interval -> Bool
+compound ivl = 12 < halfSteps ivl
+
+-- | Is it a simple interval? 
+simple :: Interval -> Bool
+simple ivl = 12 >= halfSteps ivl
+
+
+reduceInterval :: Interval -> (Int,Interval)
+reduceInterval ivl = rec 0 ivl
+  where  
+    rec i ivl | simple ivl  = (i,ivl)
+              | otherwise   = rec (i+1) (ivl - p8) 
+    p8 = interval Perfect Octave 
+
+          
   
 -- | fromSemis is biased, it produces m6 rather than A5 & A4 and A4 
 -- rather than d4.
 fromSemis :: (Integral a) => a -> Interval
-fromSemis i = let i' = fromIntegral (abs i) in interval (stepy i') i'  
+fromSemis i = let i' = fromIntegral (abs i) in buildInterval (stepy i') i'  
 
 stepy :: (Num a, Ord a) => a -> a
 stepy i | i < 0       = stp $ abs i
@@ -202,128 +298,29 @@ arithmeticStep pch i =
    
 
 
-buildInterval :: Pitch -> Pitch -> Interval
-buildInterval p  p' = 
-  interval (p `arithmeticDistance` p') (p `semitoneDistance` p')
+pitchDifference :: Pitch -> Pitch -> Interval
+pitchDifference p  p' = 
+  buildInterval (p `arithmeticDistance` p') (p `semitoneDistance` p')
 
 
 invert :: Interval -> Interval
 invert (Interval (Count d) (Count s)) 
-  | d < 9     = interval (9-d) (12-s)
+  | d < 9     = buildInterval (9-d) (12-s)
   | otherwise = error "todo invert on large intervals ..."
- 
-simplify :: Interval -> (IntervalMeasure,Interval)
-simplify (Interval (Count d) (Count s)) 
-  | d > 8 && s > 12 = let (i,s') = s `divMod` 12 
-                      in (Compound i, interval (d `mod` 8) s')
-  | otherwise       = (Simple, interval d s) 
 
 
-intervalName :: Interval -> Maybe NamedInterval
-intervalName invl = 
-    let (measure, simple) = simplify invl in fn measure (unInterval simple)
-  where
-    fn m (1,0)   = Just (NamedInterval m Perfect Unison)   
-    fn m (2,1)   = Just (NamedInterval m Minor Second)
-    fn m (2,2)   = Just (NamedInterval m Major Second)
-    fn m (3,3)   = Just (NamedInterval m Minor Third)
-    fn m (3,4)   = Just (NamedInterval m Major Third)
-    fn m (4,5)   = Just (NamedInterval m Perfect Fourth)
-    fn m (4,6)   = Just (NamedInterval m Augmented Fourth)
-    fn m (5,6)   = Just (NamedInterval m Diminished Fifth)
-    fn m (5,7)   = Just (NamedInterval m Perfect Fifth)
-    fn m (5,8)   = Just (NamedInterval m Augmented Fifth)
-    fn m (6,8)   = Just (NamedInterval m Minor Sixth)
-    fn m (6,9)   = Just (NamedInterval m Major Sixth)
-    fn m (7,10)  = Just (NamedInterval m Minor Seventh)
-    fn m (7,11)  = Just (NamedInterval m Major Seventh)
-    fn m (8,12)  = Just (NamedInterval m Perfect Octave)
-    fn m _       = Nothing
-
-
-
-namedInterval :: NamedInterval -> Maybe Interval
-namedInterval (NamedInterval msr qlty sz) = fmap (mk msr) (fn qlty sz)
-  where 
-    mk Simple       (a,s) = interval a s
-    mk (Compound i) (a,s) = interval (a + 8 * i) (s + 12 * i)
-
-    fn Perfect    Unison  = Just (1,0)
-    fn Minor      Second  = Just (2,1)
-    fn Major      Second  = Just (2,2)
-    fn Minor      Third   = Just (3,3)
-    fn Major      Third   = Just (3,4)
-    fn Perfect    Fourth  = Just (4,5) 
-    fn Augmented  Fourth  = Just (4,6)
-    fn Diminished Fifth   = Just (5,6)
-    fn Perfect    Fifth   = Just (5,7)
-    fn Augmented  Fifth   = Just (5,8)
-    fn Minor      Sixth   = Just (6,8)
-    fn Major      Sixth   = Just (6,9)
-    fn Minor      Seventh = Just (7,10)
-    fn Major      Seventh = Just (7,11)
-    fn Perfect    Octave  = Just (8,12)
-    fn  _         _       = Nothing 
 
 -- 
-half_step_m2  = interval 2 1
-whole_step_M2 = interval 2 2 
+half_step_m2  = buildInterval 2 1
+whole_step_M2 = buildInterval 2 2 
 
--- | Build a perfect interval from a size.
-iperfect :: IntervalSize -> Interval
-iperfect Unison   = interval 1 0
-iperfect Fourth   = interval 4 5
-iperfect Fifth    = interval 5 7
-iperfect Octave   = interval 8 12
-iperfect z        = error $ 
-    "cannot build a major interval for " ++ show z
-    
--- | Build a major interval from a size.
-imajor :: IntervalSize -> Interval
-imajor Second   = interval 2 2
-imajor Third    = interval 3 4
-imajor Sixth    = interval 6 9
-imajor Seventh  = interval 7 11
-imajor z        = error $ 
-    "cannot build a major interval for " ++ show z
-    
--- | Build a minor interval from a size.
-iminor :: IntervalSize -> Interval
-iminor Second   = interval 2 1
-iminor Third    = interval 3 3
-iminor Sixth    = interval 6 8
-iminor Seventh  = interval 7 9
-iminor z        = error $ 
-    "cannot build a minor interval for " ++ show z
-    
--- | Build an augmented interval from a size.
-iaugmented :: IntervalSize -> Interval
-iaugmented Unison   = interval 1 1
-iaugmented Second   = interval 2 3
-iaugmented Third    = interval 3 4
-iaugmented Fourth   = interval 4 6
-iaugmented Fifth    = interval 5 8
-iaugmented Sixth    = interval 6 10
-iaugmented z        = error $ 
-    "cannot build an augmented interval for " ++ show z
 
--- | Build a diminished interval from a size.
-idiminished :: IntervalSize -> Interval
-idiminished Second    = interval 2 1  -- aka minor second
-idiminished Third     = interval 3 2
-idiminished Fourth    = interval 4 4
-idiminished Fifth     = interval 5 6
-idiminished Sixth     = interval 6 7
-idiminished Seventh   = interval 7 9
-idiminished Octave    = interval 8 11
-idiminished z = error $ 
-    "cannot build an diminished interval for " ++ show z
 
 
 
 intervalList :: IntervalPattern -> [Interval]
 intervalList s = let ivals = unIntervalPattern s in
-  scanl extUp (interval 1 0) ivals
+  scanl extUp (buildInterval 1 0) ivals
   
 --------------------------------------------------------------------------------
 -- old.... 
@@ -350,6 +347,41 @@ chromaticInterval = not . diatonicInterval
 intervalClass :: Interval -> Bool
 intervalClass = undefined
 
+--------------------------------------------------------------------------------
+-- | Named elements
+
+
+perfect_unison, perfect_fourth, perfect_fifth, perfect_octave :: Interval
+perfect_unison    = perfectInterval Unison
+perfect_fourth    = perfectInterval Fourth
+perfect_fifth     = perfectInterval Fifth
+perfect_octave    = perfectInterval Octave
+
+major_second, major_third, major_sixth, major_seventh :: Interval
+major_second      = majorInterval Second
+major_third       = majorInterval Third
+major_sixth       = majorInterval Sixth
+major_seventh     = majorInterval Seventh
+
+minor_second, minor_third, minor_sixth, minor_seventh :: Interval
+minor_second      = minorInterval Second
+minor_third       = minorInterval Third
+minor_sixth       = minorInterval Sixth
+minor_seventh     = minorInterval Seventh
+
+diminished_third, diminished_fifth :: Interval
+diminished_third  = diminishedInterval Third
+diminished_fifth  = diminishedInterval Fifth
+
+augmented_second, augmented_third, augmented_fourth, augmented_fifth 
+    :: Interval
+augmented_second  = augmentedInterval Second
+augmented_third   = augmentedInterval Third
+augmented_fourth  = augmentedInterval Fourth
+augmented_fifth   = augmentedInterval Fifth
+
+
+
 
 --------------------------------------------------------------------------------
 -- Instances
@@ -364,27 +396,17 @@ instance Num Interval where
       Interval (d `countMinus` d') (s `countMinus` s')
   
   (Interval (Count d) (Count s)) * (Interval (Count d') (Count s')) =  
-      interval (d * d') (s * s')
+      buildInterval (d * d') (s * s')
     
   abs  = id
   
-  negate _ = interval 1 0
+  negate _ = buildInterval 1 0
   
-  signum (Interval d s) = interval 1 0
+  signum (Interval d s) = buildInterval 1 0
   
   fromInteger = fromSemis      
            
 
-  
-  
-instance Enum IntervalMeasure where
-  fromEnum Simple       = 0 
-  fromEnum (Compound i) = i 
-  
-
-  toEnum i | i == 0    = Simple
-           | i >  0    = Compound i
-           | otherwise = Compound (abs i)
            
 instance Ord Interval where
   (Interval _ s) `compare` (Interval _ s') = s `compare` s'
@@ -448,10 +470,10 @@ instance IntervalExtension Pitch where
 --------------------------------------------------------------------------------
 
 instance Affi Interval where
-  affi = (maybe id affi) . intervalName
+  affi = (maybe id affi) . namedInterval
   
 instance Affi NamedInterval where
-  affi (NamedInterval m q s) = affi m . affi q . showChar '-' . affi s 
+  affi (NamedInterval m q s) = affiIntervalMeasure m . affi q . showChar '-' . affi s 
     
     
 instance Affi IntervalSize where
@@ -474,9 +496,8 @@ instance Affi IntervalQuality where
   affi DoublyAugmented  = showString "doubly-augmented"
   affi DoublyDiminished = showString "doubly-diminished"
 
-instance Affi IntervalMeasure where
-  affi Simple       = id
-  affi (Compound i) = shows i . showChar 'x'
+affiIntervalMeasure i | i == 0    = id
+                      | otherwise = shows i . showChar 'x'
 
 instance Affi IntervalPattern where
   affi (IntervalPattern xs) = hsepS $ map (step . halfSteps) xs
@@ -491,12 +512,15 @@ instance Affi IntervalPattern where
 --------------------------------------------------------------------------------
 
 instance Deco Interval where
-  deco = decoInterval
+  deco = undefined -- decoInterval
 
+{-
 -- | Parsec parser for 'Interval'. Needs more work...
 decoInterval :: Parser Interval 
 decoInterval = (maybe err id . namedInterval) <$> decoNamedInterval
   where err = error $ "could not build an interval"
+-}
+
   
 instance Deco NamedInterval where
   deco = decoNamedInterval
@@ -508,12 +532,10 @@ decoNamedInterval = NamedInterval <$> decoIntervalMeasure
                                   <*> (lexString "-" *> decoIntervalSize)
 
     
-instance Deco IntervalMeasure where
-  deco = decoIntervalMeasure
 
 -- | Parsec parser for 'IntervalMeasure'.
-decoIntervalMeasure :: Parser IntervalMeasure  
-decoIntervalMeasure = option Simple (Compound <$> (int <* lexString "x")) 
+decoIntervalMeasure :: Parser Int  
+decoIntervalMeasure = option 0 (int <* lexString "x")
   
   
 instance Deco IntervalQuality where
@@ -561,11 +583,11 @@ shortfromInterval = choice [whole,half,aug,majr,minr,perf,dim]
   where 
     whole = whole_step_M2 <$  lexChar 'W'
     half  = half_step_m2  <$  lexChar 'H'
-    aug   = iaugmented    <$> (lexChar 'A' *> intIntervalSize)
-    majr  = imajor        <$> (lexChar 'M' *> intIntervalSize)        
-    minr  = iminor        <$> (lexChar 'm' *> intIntervalSize)
-    perf  = iperfect      <$> (lexChar 'P' *> intIntervalSize)
-    dim   = idiminished   <$> (lexChar 'd' *> intIntervalSize)
+    aug   = augmentedInterval    <$> (lexChar 'A' *> intIntervalSize)
+    majr  = majorInterval        <$> (lexChar 'M' *> intIntervalSize)        
+    minr  = minorInterval        <$> (lexChar 'm' *> intIntervalSize)
+    perf  = perfectInterval      <$> (lexChar 'P' *> intIntervalSize)
+    dim   = diminishedInterval   <$> (lexChar 'd' *> intIntervalSize)
     
 intIntervalSize :: Parser IntervalSize
 intIntervalSize = 

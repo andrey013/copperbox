@@ -26,12 +26,29 @@ module Bala.Base.Pitch (
   -- * Typeclasses
   Semitones(..),  Pitched(..), EncodePitch(..),
   
+  -- * Operations
   spell,
   
   addOve, subOve, semitoneDistance, semitoneDirection,
   
-  unaltered
-
+  unaltered,
+  
+  -- * Named elements
+  -- $nameddoc 
+  middle_c,
+  c4, d4, e4, f4, g4, a4, b4,
+  c4is, d4es, d4is, e4es, f4is, g4es, g4is, a4es, a4is, b4es,
+  
+  c3, d3, e3, f3, g3, a3, b3,
+  c3is, d3es, d3is, e3es, f3is, g3es, g3is, a3es, a3is, b3es,
+  
+  c5, d5, e5, f5, g5, a5, b5,
+  c5is, d5es, d5is, e5es, f5is, g5es, g5is, a5es, a5is, b5es,
+  
+  c6, d6, e6, f6, g6, a6, b6,
+  c6is, d6es, d6is, e6es, f6is, g6es, g6is, a6es, a6is, b6es
+  
+  
   ) where
 
 import Bala.Base.BaseExtra
@@ -42,7 +59,6 @@ import Text.ParserCombinators.Parsec
 
 --------------------------------------------------------------------------------
 -- Datatypes
---------------------------------------------------------------------------------
 
 -- | Note - there is redundancy between pitch_label and semitones, operations
 -- on Pitch must take care to account for both.
@@ -72,7 +88,8 @@ data Accidental = Nat | Sharp | Flat | DoubleSharp | DoubleFlat
 
 
 
--- * Constructors and selectors
+--------------------------------------------------------------------------------
+-- | Constructors and selectors
 
 
 -- | A /smart constructor/. It doesn't need semitones stating as it 
@@ -115,6 +132,15 @@ centMeasure (Pitch _ _ _ c) = c
 
 pitchMeasures :: Pitch -> (Int,Int,Int)
 pitchMeasures (Pitch _ o s c) = (o,s,c)
+
+naturalNote     :: PitchLetter -> PitchName
+naturalNote z   = PitchName z Nat
+
+sharpNote       :: PitchLetter -> PitchName
+sharpNote z     = PitchName z Sharp
+
+flatNote        :: PitchLetter -> PitchName
+flatNote z      = PitchName z Flat
 
 
 --------------------------------------------------------------------------------
@@ -201,21 +227,21 @@ octaveDisplacement oct            = (oct - 4) * 12
 
 centValue :: Pitch -> Int
 centValue (Pitch l o s c) 
-  = (octaveDisplacement o * 100) + (s * 100) + c
+  = octaveToCents o  + semitonesToCents s + c
   
 semitonesToCents :: Int -> Int
-semitonesToCents = (1000 *)
+semitonesToCents = (100 *)
 
 octaveToCents :: Int -> Int
-octaveToCents   = (12 * 1000 *)
+octaveToCents   = (12 * 100 *)
 
   
 
--- | Add an octave to a /pitched value/.  
+-- | Add an octave to a pitched value.  
 addOve  :: Pitched a => a -> Int -> a
 addOve e = addSemi e . (12 *)
 
--- | Subtract an octave from a /pitched value/.
+-- | Subtract an octave from a pitched value.
 subOve  :: Pitched a => a -> Int -> a
 subOve e = subSemi e . (12 *)
 
@@ -227,6 +253,8 @@ semitoneDistance    = snd `dyap` semitoneDisplacement
 -- | As per 'semitoneDisplacement' but just return the direction.   
 semitoneDirection   :: Pitched a => a -> a -> Direction
 semitoneDirection   = fst `dyap` semitoneDisplacement  
+
+
 
 --------------------------------------------------------------------------------
 -- Instances
@@ -501,6 +529,100 @@ instance Affi Accidental where
 instance Affi PitchLetter where
     affi = shows
     
+--------------------------------------------------------------------------------
+-- Named elements
+-- $nameddoc 
+-- Pre-defined pitches. Middle c is @c4@, octaves start on c. 
+-- Sharp and flat notes follow the LilyPond convention with suffix of @is@ for 
+-- a sharp and @es@ for a flat.
+
+pchNat n o    = pitch (naturalNote n) o
+pchSharp n o  = pitch (sharpNote n) o
+pchFlat n o   = pitch (flatNote n) o
+
+middle_c :: Pitch
+middle_c = pchNat C 4
+
+c4, d4, e4, f4, g4, a4, b4, 
+    c4is, d4es, d4is, e4es, f4is, g4es, g4is, a4es, a4is, b4es :: Pitch
+c4    = pchNat C 4
+d4    = pchNat D 4
+e4    = pchNat E 4
+f4    = pchNat F 4
+g4    = pchNat G 4
+a4    = pchNat A 4
+b4    = pchNat B 4
+c4is  = pchSharp C 4
+d4es  = pchFlat D 4
+d4is  = pchSharp D 4
+e4es  = pchFlat E 4
+f4is  = pchSharp F 4
+g4es  = pchFlat G 4
+g4is  = pchSharp G 4
+a4es  = pchFlat A 4
+a4is  = pchSharp A 4
+b4es  = pchFlat B 4
+
+
+c3, d3, e3, f3, g3, a3, b3, 
+    c3is, d3es, d3is, e3es, f3is, g3es, g3is, a3es, a3is, b3es :: Pitch
+c3    = pchNat C 3
+d3    = pchNat D 3
+e3    = pchNat E 3
+f3    = pchNat F 3
+g3    = pchNat G 3
+a3    = pchNat A 3
+b3    = pchNat B 3
+c3is  = pchSharp C 3
+d3es  = pchFlat D 3
+d3is  = pchSharp D 3
+e3es  = pchFlat E 3
+f3is  = pchSharp F 3
+g3es  = pchFlat G 3
+g3is  = pchSharp G 3
+a3es  = pchFlat A 3
+a3is  = pchSharp A 3
+b3es  = pchFlat B 3
+
+c5, d5, e5, f5, g5, a5, b5, 
+    c5is, d5es, d5is, e5es, f5is, g5es, g5is, a5es, a5is, b5es :: Pitch
+c5    = pchNat C 5
+d5    = pchNat D 5
+e5    = pchNat E 5
+f5    = pchNat F 5
+g5    = pchNat G 5
+a5    = pchNat A 5
+b5    = pchNat B 5
+c5is  = pchSharp C 5
+d5es  = pchFlat D 5
+d5is  = pchSharp D 5
+e5es  = pchFlat E 5
+f5is  = pchSharp F 5
+g5es  = pchFlat G 5
+g5is  = pchSharp G 5
+a5es  = pchFlat A 5
+a5is  = pchSharp A 5
+b5es  = pchFlat B 5
+
+c6, d6, e6, f6, g6, a6, b6, 
+    c6is, d6es, d6is, e6es, f6is, g6es, g6is, a6es, a6is, b6es :: Pitch
+c6    = pchNat C 6
+d6    = pchNat D 6
+e6    = pchNat E 6
+f6    = pchNat F 6
+g6    = pchNat G 6
+a6    = pchNat A 6
+b6    = pchNat B 6
+c6is  = pchSharp C 6
+d6es  = pchFlat D 6
+d6is  = pchSharp D 6
+e6es  = pchFlat E 6
+f6is  = pchSharp F 6
+g6es  = pchFlat G 6
+g6is  = pchSharp G 6
+a6es  = pchFlat A 6
+a6is  = pchSharp A 6
+b6es  = pchFlat B 6
 
 
 

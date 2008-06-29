@@ -15,7 +15,12 @@
 --------------------------------------------------------------------------------
 
 
-module Bala.Base.Chord where
+module Bala.Base.Chord (
+  -- * Datatypes (Chord is opaque)
+  Chord, Inversion(..)
+  
+   
+  ) where
 
 import Bala.Base.Pitch
 import Bala.Base.Interval
@@ -25,20 +30,20 @@ import Bala.Base.BaseExtra
 
 import qualified Data.Map as Map
 
-
+data Chord = Chord { 
+    chord_root  :: Pitch,
+    inversion   :: Inversion,
+    chord_elems :: IntervalMap
+  }
+  deriving (Show)
 
 data Inversion = RootPosition | FirstInversion | SecondInversion 
                | ThirdInversion | NthInversion Int
   deriving (Eq,Read,Show)
 
-data Chord = Chord { 
-    chord_root  :: Pitch,
-    inversion   :: Inversion,
-    chord_elems :: Map.Map Int IntervalQuality 
-  }
-  deriving (Show)
-   
 
+   
+type IntervalMap = Map.Map Int IntervalQuality 
 
   
     
@@ -55,17 +60,23 @@ notes (Chord p i m)
     | i /= RootPosition = error $ "inversions to do"
     | otherwise         = map (extUp p) intervals
   where
-    intervals = map (uncurry $ flip interval') (Map.toAscList m)
+    intervals = map (\(i,a) -> interval a (intervalSize i)) (Map.toAscList m)
 
 
 majorTriad :: Pitch -> Chord
-majorTriad p = Chord p RootPosition $ 
-  Map.fromAscList [(1,Perfect),(3,Major),(5,Perfect)]
+majorTriad p = Chord p RootPosition $ buildMap
+  [perfect_unison, major_third, perfect_fifth]
 
 minorTriad :: Pitch -> Chord
-minorTriad p = Chord p RootPosition $ 
-  Map.fromAscList [(1,Perfect),(3,Minor),(5,Perfect)]
+minorTriad p = Chord p RootPosition $ buildMap
+  [perfect_unison, minor_third, perfect_fifth]
   
+
+buildMap :: [Interval] -> IntervalMap
+buildMap = Map.fromAscList . map fn
+  where
+    fn ivl = (intervalType ivl, undefined)
+
 
 -- | replace or add
 roa :: Int -> IntervalQuality -> Chord -> Chord

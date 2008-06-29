@@ -39,9 +39,14 @@ import System.IO (openFile, hClose, IOMode(..), hFileSize )
 
 import Data.Char (chr)
 
+{-
+
+-- no longer necessary in binary-0.4.2...
 instance Applicative BG.Get where
   pure = return 
   (<*>) = ap
+-}
+
     
 instance Applicative (ErrorT ErrorMsg BG.Get) where
   pure = lift . pure
