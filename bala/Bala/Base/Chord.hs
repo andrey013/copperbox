@@ -17,9 +17,15 @@
 
 module Bala.Base.Chord (
   -- * Datatypes (Chord is opaque)
-  Chord, Inversion(..)
+  Chord, Inversion(..),
   
-   
+  -- * operations
+  extractNotes, 
+ 
+  majorTriad, minorTriad, diminishedFifth, augmentedFifth, 
+
+  minorSeventh, majorSeventh, diminishedSeventh
+ 
   ) where
 
 import Bala.Base.Pitch
@@ -43,7 +49,7 @@ data Inversion = RootPosition | FirstInversion | SecondInversion
 
 
    
-type IntervalMap = Map.Map Int IntervalQuality 
+type IntervalMap = Map.Map Int Interval 
 
   
     
@@ -55,12 +61,12 @@ type IntervalMap = Map.Map Int IntervalQuality
 --------------------------------------------------------------------------------
 
 -- | doen't yet handle inversions
--- notes :: Chord -> [Pitch]
-notes (Chord p i m) 
+extractNotes :: Chord -> [Pitch]
+extractNotes (Chord p i m) 
     | i /= RootPosition = error $ "inversions to do"
     | otherwise         = map (extUp p) intervals
   where
-    intervals = map (\(i,a) -> interval a (intervalSize i)) (Map.toAscList m)
+    intervals = map snd (Map.toAscList m)
 
 
 majorTriad :: Pitch -> Chord
@@ -75,18 +81,18 @@ minorTriad p = Chord p RootPosition $ buildMap
 buildMap :: [Interval] -> IntervalMap
 buildMap = Map.fromAscList . map fn
   where
-    fn ivl = (intervalType ivl, undefined)
+    fn ivl = (intervalType ivl, ivl)
 
 
 -- | replace or add
-roa :: Int -> IntervalQuality -> Chord -> Chord
-roa idx qual (Chord p i m) = Chord p i (Map.insert idx qual m)
+roa :: Int -> Interval -> Chord -> Chord
+roa idx ivl (Chord p i m) = Chord p i (Map.insert idx ivl m)
 
 del :: Int -> Chord -> Chord
 del idx (Chord p i m) = Chord p i (Map.delete idx m)
 
-dim i = roa i Diminished
-aug i = roa i Augmented
+dim i = roa i $ interval Diminished (intervalSize i) 
+aug i = roa i $ interval Augmented (intervalSize i)
 
 noRoot       = del 1
 noThird      = del 3
@@ -96,11 +102,11 @@ noNinth      = del 9
 noEleventh   = del 11
 noThirteenth = del 13
 
-diminishedFitfh = dim 5
+diminishedFifth = dim 5
 augmentedFifth = aug 5
 
-minorSeventh = roa 7 Minor
-majorSeventh = roa 7 Major
+minorSeventh = roa 7 minor_seventh
+majorSeventh = roa 7 major_seventh
 diminishedSeventh = dim 7
 
 
