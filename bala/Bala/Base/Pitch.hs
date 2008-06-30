@@ -83,7 +83,7 @@ data PitchName = PitchName {
 data PitchLetter = C | D | E | F | G | A | B
   deriving (Eq,Ord,Read,Show)
 
-data Accidental = Nat | Sharp | Flat | DoubleSharp | DoubleFlat
+data Accidental = DoubleFlat | Flat | Nat | Sharp | DoubleSharp 
   deriving (Eq,Enum,Read,Show)
 
 
@@ -201,17 +201,22 @@ class EncodePitch a where
 -- accidental as required, for instance:
 --
 -- >   spell (PitchName F (Sharp 1)) G = (PitchName G (Flat 1))
+--
+-- If the pitch distance is greater than two semitones, return the original 
+-- spelling 
 spell :: PitchName -> PitchLetter -> PitchName
-spell lbl l' = 
-  let (dr,d) = semitoneDisplacement lbl (PitchName l' Nat)
-      dist   = case dr of Upwards -> negate d; _ -> d
-      a'     = alter Nat dist
-  in PitchName l' a'
-  
-  
-  
-alter :: Accidental -> Int -> Accidental
-alter a i  = toEnum $ fromEnum a + i
+spell lbl l' = if (abs dist > 2) then lbl else PitchName l' (alter dist)
+  where
+    (dr,d) = semitoneDisplacement lbl (PitchName l' Nat)
+    dist   = case dr of Upwards -> negate d; _ -> d 
+
+    alter :: Int -> Accidental
+    alter 0     = Nat
+    alter (-1)  = Flat
+    alter 1     = Sharp
+    alter  (-2) = DoubleFlat
+    alter 2     = DoubleSharp
+    alter z     = error $ "alter " ++ show z
 
 
 spellWithSharps :: PitchName -> PitchName

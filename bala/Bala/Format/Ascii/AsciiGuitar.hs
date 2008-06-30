@@ -98,5 +98,13 @@ fbstring p = affi (pitchName p) . dotS . barS . fn p
     str1 :: (Maybe ShowS) -> ShowS
     str1 Nothing  = showString "-----+"
     str1 (Just f) = showString "--" . f . showString "--+"
-    
-demm' = putStr $ fretboard [e5,b4,g4,d4,a3,e3] 70    
+
+
+standard_tuning = [e5,b4,g4,d4,a3,e3]     
+
+drawStdFretboard :: Int -> IO ()
+drawStdFretboard = putStr . fretboard standard_tuning
+
+ 
+
+ 

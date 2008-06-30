@@ -347,38 +347,7 @@ chromaticInterval = not . diatonicInterval
 intervalClass :: Interval -> Bool
 intervalClass = undefined
 
---------------------------------------------------------------------------------
--- | Named elements
 
-
-perfect_unison, perfect_fourth, perfect_fifth, perfect_octave :: Interval
-perfect_unison    = perfectInterval Unison
-perfect_fourth    = perfectInterval Fourth
-perfect_fifth     = perfectInterval Fifth
-perfect_octave    = perfectInterval Octave
-
-major_second, major_third, major_sixth, major_seventh :: Interval
-major_second      = majorInterval Second
-major_third       = majorInterval Third
-major_sixth       = majorInterval Sixth
-major_seventh     = majorInterval Seventh
-
-minor_second, minor_third, minor_sixth, minor_seventh :: Interval
-minor_second      = minorInterval Second
-minor_third       = minorInterval Third
-minor_sixth       = minorInterval Sixth
-minor_seventh     = minorInterval Seventh
-
-diminished_third, diminished_fifth :: Interval
-diminished_third  = diminishedInterval Third
-diminished_fifth  = diminishedInterval Fifth
-
-augmented_second, augmented_third, augmented_fourth, augmented_fifth 
-    :: Interval
-augmented_second  = augmentedInterval Second
-augmented_third   = augmentedInterval Third
-augmented_fourth  = augmentedInterval Fourth
-augmented_fifth   = augmentedInterval Fifth
 
 
 
@@ -602,7 +571,39 @@ intIntervalSize =
     seventh     = Seventh <$ lexChar '7'
     octave      = Octave  <$ lexChar '8'
                   
-                  
+--------------------------------------------------------------------------------
+-- | Named elements
+
+
+perfect_unison, perfect_fourth, perfect_fifth, perfect_octave :: Interval
+perfect_unison    = perfectInterval Unison
+perfect_fourth    = perfectInterval Fourth
+perfect_fifth     = perfectInterval Fifth
+perfect_octave    = perfectInterval Octave
+
+major_second, major_third, major_sixth, major_seventh :: Interval
+major_second      = majorInterval Second
+major_third       = majorInterval Third
+major_sixth       = majorInterval Sixth
+major_seventh     = majorInterval Seventh
+
+minor_second, minor_third, minor_sixth, minor_seventh :: Interval
+minor_second      = minorInterval Second
+minor_third       = minorInterval Third
+minor_sixth       = minorInterval Sixth
+minor_seventh     = minorInterval Seventh
+
+diminished_third, diminished_fifth :: Interval
+diminished_third  = diminishedInterval Third
+diminished_fifth  = diminishedInterval Fifth
+
+augmented_second, augmented_third, augmented_fourth, augmented_fifth 
+    :: Interval
+augmented_second  = augmentedInterval Second
+augmented_third   = augmentedInterval Third
+augmented_fourth  = augmentedInterval Fourth
+augmented_fifth   = augmentedInterval Fifth
+            
 
 
 

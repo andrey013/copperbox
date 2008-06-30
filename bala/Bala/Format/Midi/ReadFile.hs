@@ -17,7 +17,9 @@
 
 -- http://www.sonicspot.com/guide/midifiles.html
 
-module Bala.Format.Midi.ReadFile where
+module Bala.Format.Midi.ReadFile (
+  readMidi, readWords
+  ) where
 
 import Bala.Format.Midi.Datatypes
 import Bala.Format.Midi.TextualMidi

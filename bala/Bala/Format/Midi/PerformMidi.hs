@@ -14,7 +14,9 @@
 --------------------------------------------------------------------------------
 
 
-module Bala.Format.Midi.PerformMidi where
+module Bala.Format.Midi.PerformMidi (
+  MidiEnv(..), default_env, output
+) where
 
 import Bala.Format.Midi.Datatypes
 import Bala.Format.Midi.WriteFile
@@ -62,18 +64,19 @@ data SimpleEvt = SimpleEvt
   }
   deriving (Eq,Show)
   
-  
+renderMidi :: [Pitch] -> MidiEnv -> MidiFile
 renderMidi evts menv = MidiFile header1 [track1]
   where
     header1 = Header MF0 1 (TPB 480)    
     ss = notesToSE evts 0.5
     track1 = Track $ evt_SetTempo : (toMidi ss)
 
+performMidi :: MidiFile -> MidiEnv -> IO ()
 performMidi out env = do
   putStrLn $ "Writing " ++ (output_file env) ++ "..."
   writeMidi (output_file env) out
 
-
+notesToSE :: [Pitch] -> Float -> [SimpleEvt]
 notesToSE evts amp = map mkSimpleEvt (zip evts zs)
   where 
     zs = [n * 0.5 | n <- [0..] ]

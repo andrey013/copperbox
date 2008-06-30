@@ -34,12 +34,6 @@ data Fingering = Fingering (Maybe Int) [FingerPos]
 
 
 
- 
-standard_tuning :: [Pitch]    
-standard_tuning = scanl addSemi lower_e [5,5,5,4,5]
-  where lower_e :: Pitch
-        lower_e = decouper "E3"
-
 withStdTuning = (flip evalFingering) standard_tuning
 
 evalFingering :: Fingering -> [Pitch] -> [Pitch]

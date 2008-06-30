@@ -14,7 +14,14 @@
 --------------------------------------------------------------------------------
 
 
-module Bala.Format.Midi.GeneralMidiInstruments where
+module Bala.Format.Midi.GeneralMidiInstruments (
+  -- * General MIDI instruments
+  GMInst(..),
+  
+  -- * General MIDI drums
+  GMDrum(..)
+  
+  ) where
 
 -- | Enumeration of the General MIDI instruments.
 data GMInst

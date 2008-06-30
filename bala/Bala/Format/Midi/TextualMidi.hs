@@ -14,7 +14,13 @@
 --------------------------------------------------------------------------------
 
 
-module Bala.Format.Midi.TextualMidi where
+module Bala.Format.Midi.TextualMidi (
+  -- * Print a readable text representation
+  printMidi, ppMidiFile,
+  
+  brep1, brepVarlen, brepStr
+  
+  ) where
 
 import Bala hiding (int,integer,brackets)
 import Bala.Format.Midi.Datatypes
@@ -26,6 +32,10 @@ import Data.Tuple
 import Data.Word
 import Numeric
 import Text.PrettyPrint.Leijen
+
+
+printMidi :: MidiFile -> IO ()
+printMidi = putDoc . pretty 
 
 
 ppMidiFile :: MidiFile -> Doc
@@ -208,7 +218,10 @@ strhex = hsepS . map byteHex
 brep1 :: (ByteShow a, Show a) => (a -> ShowS) -> a -> ShowS
 brep1 f a = byteHex a `sepS` parenS (f a)
 
+brepStr :: String -> ShowS
 brepStr = brep1 showString
+
+brepChr :: Char -> ShowS
 brepChr = brep1 showChar
 
 
@@ -218,5 +231,5 @@ brepVarlen 0 = bword 0 . spaceS . parenS (shows 0)
 brepVarlen a = (byteHex $ varlenSplit a) . spaceS . parenS (shows a) . showString " -- check"
 
 
-demo = brep1 shows (1000::Word32) []
+
 

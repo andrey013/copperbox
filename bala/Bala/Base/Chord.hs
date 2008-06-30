@@ -20,11 +20,15 @@ module Bala.Base.Chord (
   Chord, Inversion(..),
   
   -- * operations
-  extractNotes, 
+  extractNotes, invert,
  
-  majorTriad, minorTriad, diminishedFifth, augmentedFifth, 
-
-  minorSeventh, majorSeventh, diminishedSeventh
+  majorTriad, minorTriad, dim5, aug5, 
+  
+  noRoot, no3, no5, no7, no9, no11, no13,
+  
+  min7, maj7, dim7,
+  
+  dim, aug
  
   ) where
 
@@ -37,9 +41,9 @@ import Bala.Base.BaseExtra
 import qualified Data.Map as Map
 
 data Chord = Chord { 
-    chord_root  :: Pitch,
-    inversion   :: Inversion,
-    chord_elems :: IntervalMap
+    chord_root        :: Pitch,
+    chord_inversion   :: Inversion,
+    chord_elems       :: IntervalMap
   }
   deriving (Show)
 
@@ -60,13 +64,19 @@ type IntervalMap = Map.Map Int Interval
 -- operations
 --------------------------------------------------------------------------------
 
--- | doen't yet handle inversions
+-- | Can't handle inversions, yet
 extractNotes :: Chord -> [Pitch]
-extractNotes (Chord p i m) 
-    | i /= RootPosition = error $ "inversions to do"
-    | otherwise         = map (extUp p) intervals
-  where
-    intervals = map snd (Map.toAscList m)
+extractNotes (Chord p i m)  = 
+  let pchs = map (extUp p) $ map snd (Map.toAscList m)
+  {- NO!!! only works if you have a proper sequence c.f. <1,3,5> -}
+  in inversion i pchs 
+      
+
+
+inversion :: Inversion -> [Pitch] -> [Pitch]
+inversion RootPosition   xs       = xs
+inversion i              (x:xs)   = inversion (pred i) (xs ++ [x `addOve` 1])
+inversion _              []       = []       
 
 
 majorTriad :: Pitch -> Chord
@@ -84,33 +94,71 @@ buildMap = Map.fromAscList . map fn
     fn ivl = (intervalType ivl, ivl)
 
 
+invert :: Chord -> Chord
+invert (Chord p i m) = Chord p (succ i) m
+
 -- | replace or add
-roa :: Int -> Interval -> Chord -> Chord
-roa idx ivl (Chord p i m) = Chord p i (Map.insert idx ivl m)
+roa :: Interval -> Chord -> Chord
+roa ivl (Chord p i m) = 
+  let idx = intervalType ivl in Chord p i (Map.insert idx ivl m)
 
 del :: Int -> Chord -> Chord
 del idx (Chord p i m) = Chord p i (Map.delete idx m)
 
-dim i = roa i $ interval Diminished (intervalSize i) 
-aug i = roa i $ interval Augmented (intervalSize i)
+dim i = roa $ interval Diminished (intervalSize i) 
+aug i = roa $ interval Augmented (intervalSize i)
 
-noRoot       = del 1
-noThird      = del 3
-noFifth      = del 5
-noSeventh    = del 7
-noNinth      = del 9
-noEleventh   = del 11
-noThirteenth = del 13
+-- | A chord without a root @\<C4 E4 G4\>@ would be @\<E4 G4\>@.
+noRoot    :: Chord -> Chord
+noRoot    = del 1
 
-diminishedFifth = dim 5
-augmentedFifth = aug 5
+-- | A chord without a third @\<C4 E4 G4\>@ would be @\<C4 G4\>@.
+no3       :: Chord -> Chord
+no3       = del 3
 
-minorSeventh = roa 7 minor_seventh
-majorSeventh = roa 7 major_seventh
-diminishedSeventh = dim 7
+-- | A chord without a fifth @\<C4 E4 G4\>@ would be @\<C4 E4\>@.
+no5       :: Chord -> Chord
+no5     = del 5
+
+-- | A chord without a seventh.
+no7       :: Chord -> Chord
+no7     = del 7
+
+-- | A chord without a nineth.
+no9       :: Chord -> Chord
+no9     = del 9
+
+-- | A chord without a eleventh.
+no11      :: Chord -> Chord
+no11    = del 11
+
+-- | A chord without a thirteenth.
+no13      :: Chord -> Chord
+no13    = del 13
+
+dim5 = dim 5
+aug5 = aug 5
+
+min7 = roa minor_seventh
+maj7 = roa major_seventh
+dim7 = dim 7
 
 
 -- Csus2 <C D G> and Csus4 <C F G>
 
 
-
+instance Enum Inversion where 
+  fromEnum RootPosition     = 0
+  fromEnum FirstInversion   = 1
+  fromEnum SecondInversion  = 2
+  fromEnum ThirdInversion   = 3 
+  fromEnum (NthInversion i) = i
+  
+  toEnum i | i == 0     = RootPosition
+           | i == 1     = FirstInversion
+           | i == 2     = SecondInversion
+           | i == 3     = ThirdInversion 
+           | i >= 4     = NthInversion i
+      
+               
+               
