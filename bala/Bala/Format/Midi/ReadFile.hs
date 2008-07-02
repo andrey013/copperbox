@@ -135,11 +135,12 @@ assertDigit6 = f =<< getWord32be
     
     
 getFormat :: Parse HFormat
-getFormat = fmt =<< getWord16be
-  where fmt 0 = return MF0
-        fmt 1 = return MF1
-        fmt 2 = return MF2
-        fmt z = parseError $ "getFormat - unrecognized file format " ++ show z
+getFormat = getWord16be >>= fn
+  where 
+    fn 0 = return MF0
+    fn 1 = return MF1
+    fn 2 = return MF2
+    fn z = fail $ "getFormat - unrecognized file format " ++ show z
 
 
 getTimeDivision :: Parse TimeDivision
@@ -255,8 +256,9 @@ metaEvent 0x59 = cnstr <$> (assertWord8 2 *> getWord8) <*> getWord8
     cnstr ky sc = KeySignature (unwrapint ky) (undscale sc)
     
     
-metaEvent 0x7F = 
-  (uncurry SSME) <$> getVarlen `carry` (getSlowByteString . fromIntegral)
+metaEvent 0x7F  = getVarlen  >>= \i -> 
+                  getBytes i >>= \ws ->
+                  return (SSME i ws)
 
 metaEvent er   = parseError $ "unreconized meta-event " ++ show er
 
@@ -277,9 +279,10 @@ getMetaEvent 0x20 = do
 
 
 getSystemEvent :: Word8 -> Parse Event
-getSystemEvent 0xF0 = 
-    fn <$> (getVarlen `carry` (getSlowByteString . fromIntegral))
-  where fn (i,xs) = SystemEvent $ SysEx i xs   
+getSystemEvent 0xF0 = getVarlen  >>= \i -> 
+                      getBytes i >>= \ws ->
+                      return (SystemEvent $ SysEx i ws)
+  
 
 textEvent :: TextType -> Parse MetaEvent
 textEvent ty = (TextEvent ty) <$> getText
@@ -331,11 +334,8 @@ getSlowString :: Int -> Parse String
 getSlowString i = packPlainString <$> replicateM (fromIntegral i) getWord8        
   
 
-getWord24be :: Parse Word32
-getWord24be =  fn <$> getWord8 <*> getWord16be
-  where 
-    fn :: Word8 -> Word16 -> Word32
-    fn hi8 lo16 = ((fromIntegral hi8) `shiftL` 8) + (fromIntegral lo16)
+getBytes :: Integral a => a -> Parse [Word8]
+getBytes i = replicateM (fromIntegral i) getWord8
 
 
   
@@ -345,11 +345,14 @@ getVarlen = do a <- recVarlen 0
                return a               
   where
     recVarlen acc = do
-      i <- getWord8norep
-      case (bitHigh i) of
-        True  -> recVarlen $ (acc `shiftL` 7) + ((fromIntegral i) .&. 0x7F)
-        False -> return $ (acc `shiftL` 7) + (fromIntegral i)
-    bitHigh i = i `testBit` 7        
+        i <- getWord8
+        if (varBitHigh i == False)
+          then (return $ merge acc i)
+          else (recVarlen $ merge acc i)
+    
+    varBitHigh i = i `testBit` 7
+        
+    merge acc i = (acc `shiftL` 7) + ((fromIntegral i) .&. 0x7F)       
         
                 
           
@@ -388,8 +391,8 @@ s0 = L.pack ""
 s12 = L.pack "12"
 
 
-getBytes :: Int -> Parse ByteString
-getBytes = Parse . lift . lift . BG.getBytes
+-- getBytes :: Int -> Parse ByteString
+-- getBytes = Parse . lift . lift . BG.getBytes
 
 isEmpty :: Parse Bool
 isEmpty = Parse $ lift $ lift BG.isEmpty
@@ -414,6 +417,13 @@ getWord32be = (Parse $ lift $ lift BG.getWord32be) >>= \a ->
               reportLine (brep1 shows a) >>
               return a
 
+getWord24be :: Parse Word32
+getWord24be =  fn <$> getWord8 <*> getWord16be
+  where 
+    fn :: Word8 -> Word16 -> Word32
+    fn a b = ((fromIntegral a) `shiftL` 16) + (fromIntegral b)
+    
+    
 packPlainString :: [Word8] -> String
 packPlainString = foldr (\e acc -> f e : acc) [] 
   where f = chr . fromIntegral

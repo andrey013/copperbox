@@ -92,35 +92,35 @@ putEvent (MetaEvent   evt) = putMetaEvent evt
     
 putVoiceEvent :: VoiceEvent -> Put 
 putVoiceEvent (NoteOff ch nt vel) = do
-  putWord8 (0x8 `chShift` ch)
+  putWord8 (0x8 `chanShift` ch)
   putWord8 nt
   putWord8 vel 
   
 putVoiceEvent (NoteOn ch nt vel) = do
-  putWord8 (0x9 `chShift` ch)
+  putWord8 (0x9 `chanShift` ch)
   putWord8 nt
   putWord8 vel 
   
 putVoiceEvent (NoteAftertouch ch nt val) = do
-  putWord8 (0xA `chShift` ch)
+  putWord8 (0xA `chanShift` ch)
   putWord8 nt
   putWord8 val
   
 putVoiceEvent (Controller ch nt val) = do
-  putWord8 (0xB `chShift` ch)
+  putWord8 (0xB `chanShift` ch)
   putWord8 nt
   putWord8 val
   
 putVoiceEvent (ProgramChange ch num) = do
-  putWord8 (0xC `chShift` ch)
+  putWord8 (0xC `chanShift` ch)
   putWord8 num
   
 putVoiceEvent (ChanAftertouch ch val) = do
-  putWord8 (0xD `chShift` ch)
+  putWord8 (0xD `chanShift` ch)
   putWord8 val
   
 putVoiceEvent (PitchBend ch val) = do
-  putWord8 ( (0xE::Word8) `chShift` ch)
+  putWord8 ( (0xE::Word8) `chanShift` ch)
   putWord16be val              -- 2DO
 
 
@@ -180,14 +180,14 @@ putMetaEvent (KeySignature ky sc) = do
   putWord8 (wrapint ky)
   putScale sc
 
-putMetaEvent (SSME i bs) = do
+putMetaEvent (SSME i ws) = do
   putVarlen i
-  putByteString bs
+  putBytes ws
 
 putSystemEvent :: SystemEvent -> Put    
-putSystemEvent (SysEx i bs) = do
+putSystemEvent (SysEx i ws) = do
   putVarlen i
-  putByteString bs
+  putBytes ws
   
     
 putScale :: ScaleType -> Put
@@ -207,6 +207,9 @@ wrapint :: Int8 -> Word8
 wrapint i
   | i < 0     = fromIntegral $ i + 256
   | otherwise = fromIntegral i
+
+putBytes :: [Word8] -> Put
+putBytes xs = mapM_ putWord8 xs
 
 
 putString :: String -> Put
@@ -233,15 +236,15 @@ varlen :: Integral a => a -> [Word8]
 varlen a = varlenSplit $ fromIntegral a
 
       
-infixr 5 `chShift`
+infixr 5 `chanShift`
 
 
 -- to do ... a better version ...
-chShift :: Word8 -> Word8 -> Word8
-a `chShift` b = val'
+chanShift :: Word8 -> Word8 -> Word8
+a `chanShift` b = val'
   where val =  ((toInteger a) `shiftL` 4) +  toInteger b
         val' = case val < 256 of
                   True -> fromIntegral val
-                  False -> error $ "chShift applied to values that produce " ++ show val
+                  False -> error $ "chanShift applied to values that produce " ++ show val
               
                

@@ -32,11 +32,12 @@ module Bala.Base.PitchConversion (
   octHz, octMidi, octPC,
   pcMidi, pcHz, pcOct
   
-  
   ) where
 
 import Bala.Base.Pitch
 import Bala.Base.BaseExtra
+
+import Data.Word
 
 
 --------------------------------------------------------------------------------
@@ -171,6 +172,19 @@ pcOct :: OctavePitchClass -> OctaveFractional
 pcOct (OvePC pc) = OveFr $ x + (8.33333 * (pc - x))
   where
     x = fromIntegral $ floor pc
+
+
+-- | A Word8 pitch will always be a MIDI value
+
+instance EncodePitch Word8 where
+  fromPitch p = fromIntegral $ unMidiPitch p'
+    where 
+      p' = fromPitch p
+
+  toPitch i  = toPitch (M $ fromIntegral i)
+  
+  
+
 
 --------------------------------------------------------------------------------
 -- Read instances

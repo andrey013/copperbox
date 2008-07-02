@@ -39,6 +39,8 @@ module Bala.Base.BaseExtra (
   sub, sub1, 
   andthen, ora, anda, 
   dyap, triap, 
+  hexStr, 
+  
   -- ** Helpers for modulo 12 and modulo 100.
   -- $explodedoc 
   explode12, explode100, collapse12, collapse100,
@@ -71,7 +73,7 @@ import Control.Monad (ap)
 
 import Data.Char (ord)
 import Data.List (mapAccumL, sortBy)
-
+import Numeric (showHex)
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language
@@ -310,6 +312,11 @@ dyap f g a b = f (g a b)
 triap :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
 triap f g a b c = f (g a b c) 
 
+-- | Show as a hexadecimal string, prefixed with @0x@.
+hexStr :: Integral a => a -> String
+hexStr a = (showString "0x" . showHex a) []
+
+ 
 --------------------------------------------------------------------------------
 -- Helpers for modulo 12 and modulo 100.
 

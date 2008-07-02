@@ -48,7 +48,7 @@ module Bala.Format.Midi.Datatypes (
 import Data.Bits
 import Data.Int
 import Data.Word
-import Data.ByteString (ByteString)
+-- import Data.ByteString (ByteString)
 
 
 data MidiFile = MidiFile Header [Track]
@@ -109,7 +109,7 @@ data VoiceEvent
   
   
 data SystemEvent 
-    = SysEx               Word32 ByteString   -- ^ system exclusive event - length x data               
+    = SysEx               Word32 [Word8]      -- ^ system exclusive event - length x data               
     | DataEvent           Word8               -- 0..127
   deriving (Eq,Show)
 
@@ -122,7 +122,7 @@ data MetaEvent
     | SMPTEOffset         Word8 Word8 Word8 Word8 Word8   -- ^ hour x minute x second x frac x subfrac
     | TimeSignature       Word8 Word8 Word8 Word8         -- ^ numerator x denominator x metronome x number of 32nd notes
     | KeySignature        Int8 ScaleType      -- ^ key_type x scale_type
-    | SSME                Word32 ByteString   -- ^ sequencer specific meta-event - length x data
+    | SSME                Word32 [Word8]      -- ^ sequencer specific meta-event - length x data
   deriving (Eq,Show)
   
 data ScaleType = MAJOR | MINOR
