@@ -4,7 +4,11 @@
 -- ghci> :set args bulgarian6.midi
 
 
--- or shell> ghc --make MidiPrint.hs -i..
+-- shell> ghc --make MidiPrint.hs -i..
+--
+-- shell> runhaskell.exe -i.. MidiPrint.hs bulgarian6.midi
+
+
 
 module Main where
 
