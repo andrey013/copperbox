@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- A textual representaton of MIDI files 
+-- Pretty print a textual representaton of MIDI files. 
 --
 --------------------------------------------------------------------------------
 

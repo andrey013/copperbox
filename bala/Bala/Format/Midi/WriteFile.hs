@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Output MIDI files 
+-- Write a MIDI file using Binary.Put.
 --
 --------------------------------------------------------------------------------
 

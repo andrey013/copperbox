@@ -10,19 +10,22 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- An alternative MIDI file parser that doesn't use Data.Binary and
--- ByteString 
+-- An alternative MIDI file parser that uses Parsec rather than
+-- Data.Binary and ByteString. 
 --
 --------------------------------------------------------------------------------
 
-module Bala.Format.Midi.ReadFileAlt where
+module Bala.Format.Midi.ReadFileAlt (
+  -- * Read a MIDI file
+  -- $readmididoc
+  readMidi
+  ) where
 
 import Bala.Format.Midi.Datatypes
 import Bala.Base.BaseExtra  
 
 
 import Control.Applicative hiding (many, optional, (<|>))
-import Control.Monad
 import Data.Bits
 import Data.Char (ord,chr)
 import Data.Int
@@ -31,6 +34,9 @@ import System.IO
 import Text.ParserCombinators.Parsec
 
 
+-- $readmididoc
+-- Read a MIDI file with a Parsec based parser. Seems to work better on Windows
+-- than the Data.Binary version.
 
 readMidi :: FilePath -> IO MidiFile  
 readMidi name = do 
@@ -54,8 +60,8 @@ midiFile = do
     hdr@(Header _ n _) <- header 
     ts <- count (fromIntegral n) track
     return (MidiFile hdr ts)
-          
-          
+
+
 header :: Parser Header  
 header = Header <$> (assertString "MThd"  *> assertLength 6   *> format)
                 <*> getWord16be          <*> timeDivision 
@@ -70,7 +76,7 @@ getMessages = rec []
   where
     rec acc = do
         end <- endOfFile
-        if end then fail $ "no end-of-track message befor end of input"
+        if end then fail $ "no end-of-track message before end of input"
                else do step1 acc
     
     step1 acc = do
@@ -80,10 +86,6 @@ getMessages = rec []
 
     eot (_, (MetaEvent EndOfTrack)) = True
     eot _                           = False
-
-
-endOfFile :: Parser Bool
-endOfFile = option False (True <$ eof)
 
 
 message :: Parser Message
@@ -204,9 +206,15 @@ textEvent :: TextType -> Parser MetaEvent
 textEvent ty = (TextEvent ty) <$> getText
 
 
+--------------------------------------------------------------------------------
+-- Helpers 
+
+endOfFile :: Parser Bool
+endOfFile = option False (True <$ eof)
+
 getText :: Parser String  
 getText = getVarlen >>= \i -> count (fromIntegral i) anyChar
-             
+
 getChars :: Integral a => a -> Parser String  
 getChars i = count (fromIntegral i) anyChar          
 
@@ -233,7 +241,7 @@ getInt8 = unwrap <$> getWord8
   where
     unwrap i | i > 128   = (fromIntegral i) - 256
              | otherwise = fromIntegral i
-  
+
 
 getWord8 :: Parser Word8
 getWord8 = fromIntegral . ord <$> anyChar
@@ -255,7 +263,8 @@ getWord8split :: Parser (Word8,Word8)
 getWord8split = f <$> getWord8 
   where
     f i = ((i .&. 0xF0) `shiftR` 4, i .&. 0x0F)
-    
+
+  
 
 w16be :: Word8 -> Word8 -> Word16
 w16be a b = let a' = (fromIntegral a) `shiftL` 8
@@ -285,4 +294,9 @@ assertString s  = getChars (length s) >>= fn
     fn ss | ss == s   = return s
           | otherwise = fail $ "assertString " ++ (showString s []) 
                                      ++ " /= " ++ (showString ss [])
+
+
+
+
+                                     
               

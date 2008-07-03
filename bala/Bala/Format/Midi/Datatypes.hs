@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Datatypes for MIDI representation
+-- Syntax tree for MIDI files.
 --
 --------------------------------------------------------------------------------
 
@@ -48,31 +48,55 @@ module Bala.Format.Midi.Datatypes (
 import Data.Bits
 import Data.Int
 import Data.Word
--- import Data.ByteString (ByteString)
+
 
 
 data MidiFile = MidiFile Header [Track]
   deriving (Eq,Show)
 
+-- | @'Header' fmt nt td@ 
+--
+-- @fmt@ - file format - see @'HFormat'@, 
+-- @nt@  - number of tracks,
+-- @td@  - @'TimeDivision'@, often 480 ticks per beat.
+-- The header is the start of a MIDI file, it is indicated by the 
+-- marker \'@MThd@\'.   
 data Header = Header HFormat Word16 TimeDivision
   deriving (Eq,Show)
-              
+
+-- | @'Track' xs@ 
+--
+-- @xs@ - list of @'Message'@. In MIDI files, the start of a track is
+-- indicated by the marker \'@MTrk@\'.  
 newtype Track = Track [Message]
   deriving (Eq,Show)
-           
+
+-- | @'HFormat'@ 
+--
+-- The file format - in a MIDI file this is a big-endian word16 with 0,1 or 2
+-- being the only valid values. 
 data HFormat 
-    = MF0     -- ^ single multi-channel track 
-    | MF1     -- ^ 1 or more simultaneous tracks
-    | MF2     -- ^ 1 or more sequential tracks
+    -- | Format 0 file - single multi-channel track.
+    = MF0 
+    -- | Format 1 file - 1 or more tracks, played simultaneously.
+    | MF1
+    -- | Format 2 file - 1 or more independent tracks.
+    | MF2
   deriving (Eq, Enum, Show) 
 
-
+-- | @'TimeDivision'@ 
+--
+-- Defines the default unit of time in the MIDI file.
 data TimeDivision 
-    = FPS Word16    -- ^ frames per second
-    | TPB Word16    -- ^ ticks per beat
+    -- | frames per second.
+    = FPS Word16
+    -- | ticks per beat, i.e. the number of units for a quater note.
+    | TPB Word16    
   deriving (Eq,Show)
                                              
-
+-- | @'TextType'@ 
+--
+-- Signal the type of a text meta event.
 data TextType 
     = GENERIC_TEXT 
     | COPYRIGHT_NOTICE 
@@ -82,56 +106,120 @@ data TextType
     | MARKER 
     | CUE_POINT 
   deriving (Eq,Enum,Show) 
-  
+
+-- | @'Message'@ 
+--
+-- MIDI messages are pairs of @'DeltaTime'@ and @'Event'@. 
+-- Sequential messages with delta time 0 will be played simultaneously.  
 type Message = (DeltaTime, Event)
 
-
+-- | @'DeltaTime'@ 
+--
+-- All time values in a MIDI track are represented as a \delta\ from the 
+-- previous event rather than an absolute time. 
+-- Although DeltaTime is a type synonym for Word32, in MIDI files it is 
+-- represented as a @varlen@ to save space. 
 type DeltaTime = Word32
 
-
+-- | @'Event'@ 
+--
+-- MIDI has three types of event.
 data Event 
+    -- | Voice events (e.g @note-on@, @note-off@) are relayed to specific
+    -- channels.
     = VoiceEvent        VoiceEvent
+    -- | SysEx - system exclusive - events. Usually synthesizer specific.
     | SystemEvent       SystemEvent
+    -- | Meta events - usually interpretable (e.g. @end-of-track@, @set-tempo@).
     | MetaEvent         MetaEvent
   deriving (Eq,Show)
 
--- type StatusByte = (Word8,Word8) -- ^ event-type x channel-number
-
+-- | @'VoiceEvent'@ 
+--
+-- Voice events control the output of the synthesizer.
 data VoiceEvent 
-    = NoteOff             Word8 Word8 Word8   -- ^ chan x note x velocity
-    | NoteOn              Word8 Word8 Word8   -- ^ chan x note x velocity
-    | NoteAftertouch      Word8 Word8 Word8   -- ^ chan x note x value
-    | Controller          Word8 Word8 Word8   -- ^ chan x type x value
-    | ProgramChange       Word8 Word8         -- ^ chan x num  
-    | ChanAftertouch      Word8 Word8         -- ^ chan x value
-    | PitchBend           Word8 Word16        -- ^ chan x value
+    -- | @NoteOff chan note velocity@ - turn off a sounding note.
+    = NoteOff             Word8 Word8 Word8   
+    -- | @NoteOn chan note velocity@ - start playing a note.
+    | NoteOn              Word8 Word8 Word8
+    -- | @NoteAftertouch chan note value@ - change in pressure applied to 
+    -- the synthesizer key. 
+    | NoteAftertouch      Word8 Word8 Word8   
+    -- | @Controller chan type value@ - controller change to the channel,
+    -- e.g. by a footswitch.
+    | Controller          Word8 Word8 Word8
+    -- | @ProgramChange chan num@ - change the instrument playing on the 
+    -- specified channel. See 'GMInst' for the instruments available with
+    -- General MIDI.
+    | ProgramChange       Word8 Word8  
+    -- | @ChanAftertouch chan value@ - 
+    | ChanAftertouch      Word8 Word8
+    -- | @PitchBend chan value@ - change the pitch of a sounding note. 
+    -- Often used to approxiamate microtonal tunings.
+    | PitchBend           Word8 Word16
   deriving (Eq,Show)
   
-  
+-- | @'SystemEvent'@ 
+--
+-- \SysEx\ events - these are generally uninterpreted. 
 data SystemEvent 
-    = SysEx               Word32 [Word8]      -- ^ system exclusive event - length x data               
-    | DataEvent           Word8               -- 0..127
+    -- | @SysEx length data@ - an uninterpreted sysex event.          
+    = SysEx               Word32 [Word8]
+    -- | @DataEvent value@ - value should be in the range 0..127.
+    | DataEvent           Word8 
   deriving (Eq,Show)
 
+-- | @'MetaEvent'@ 
+--
+-- Meta events - in Format 1 files \general\ events (e.g. text events) should
+-- only appear in track 1. \Specific\ events (e.g. end-of-track) should appear
+-- in any track where necessary. 
 data MetaEvent
-    = TextEvent           TextType String     -- ^ text_type x contents
-    | SequenceNumber      Word16              -- ^ sequence_number
-    | ChannelPrefix       Word8               -- ^ channel
-    | EndOfTrack                              -- ^ no contents
-    | SetTempo            Word32              -- ^ microseconds per quarter-note
-    | SMPTEOffset         Word8 Word8 Word8 Word8 Word8   -- ^ hour x minute x second x frac x subfrac
-    | TimeSignature       Word8 Word8 Word8 Word8         -- ^ numerator x denominator x metronome x number of 32nd notes
-    | KeySignature        Int8 ScaleType      -- ^ key_type x scale_type
-    | SSME                Word32 [Word8]      -- ^ sequencer specific meta-event - length x data
+    -- | @TextEvent text_type contents@ - a free text field (e.g. copyright).
+    -- The contents can notionally be any length.
+    = TextEvent           TextType String
+    -- | @SequenceNumber value@ - Format 1 files - only track 1 should have a 
+    -- sequence number. Format 2 files - a sequence number should identify 
+    -- each track. 
+    -- This should occur at the start of a track, before any non-zero time 
+    -- events.
+    | SequenceNumber      Word16
+    -- | @ChannelPrefix chan@ - relay all meta and sysex events to the 
+    -- given channel.
+    | ChannelPrefix       Word8
+    -- | @EndOfTrack@ - indicated end of track. 
+    | EndOfTrack
+    -- | @SetTempo mspqn@ - microseconds per quarter-note.
+    | SetTempo            Word32
+    -- | @SMPTEOffset hour  minute second frac subfrac@ - the SMPTE time when 
+    -- a track should start. This should occur at the start of a track,
+    -- before any non-zero time events.
+    | SMPTEOffset         Word8 Word8 Word8 Word8 Word8
+    
+    -- | @TimeSignature numerator denominator metro num-32nd-notes@ - time 
+    -- signature.
+    | TimeSignature       Word8 Word8 Word8 Word8
+    
+    -- | @KeySignature key_type scale_type@ - key_type is the number of 
+    -- sharps (postive numbers) or flats (negative numbers), 
+    -- e.g. (-1) is 1 flat.
+    -- 'ScaleType' indicates major or minor.  
+    | KeySignature        Int8 ScaleType
+    
+    -- | @SSME length data@ - sequencer specific meta-event.
+    | SSME                Word32 [Word8]
   deriving (Eq,Show)
-  
+
+-- | @'ScaleType'@ 
+--
+-- Scale type - @major@ or @minor@.  
 data ScaleType = MAJOR | MINOR
   deriving (Eq,Enum,Show,Read)
 
 --------------------------------------------------------------------------------
 -- helper for varlen
 --------------------------------------------------------------------------------
-
+-- | @varlenSplit@ - reduce a varlen into a list of Word8. 
 varlenSplit :: Word32 -> [Word8]
 varlenSplit i | i < 0x80        = [fromIntegral i]
               | i < 0x4000      = [wise i 7, wise i 0]

@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Datatypes for general MIDI instruments
+-- Datatypes for general MIDI instruments.
 --
 --------------------------------------------------------------------------------
 

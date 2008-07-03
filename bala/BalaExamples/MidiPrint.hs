@@ -27,18 +27,8 @@ main = do
 
 process :: FilePath -> IO ()
 process filename = do
-  (ans,w) <- readMidi filename
-  putStr w
-  case ans of
-    Left err -> putStrLn $ "Parse error " ++ err
-    Right mf@(MidiFile _ ts) -> do 
-      putDoc (pretty mf)
+  ans <- readMidi filename
+  putDoc (pretty ans)
 
-process' :: FilePath -> IO ()
-process' filename = do
-  (ans,w) <- readWords filename
-  putStr w
-  case ans of
-    Left err -> putStrLn $ "Parse error " ++ err
-    Right a -> putStrLn $ "Parse end, " ++ show (length a) ++ " words read"
+
  

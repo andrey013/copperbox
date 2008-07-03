@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Imports for MIDI representation
+-- Imports for MIDI representation.
 --
 --------------------------------------------------------------------------------
 
