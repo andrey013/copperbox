@@ -79,9 +79,14 @@ instance Pretty TimeDivision where
   pretty (TPB i)   = text "ticks" <+> integral i
 
 
-prettyTrack (Track messages) i = 
-  brackets (text "Track" <+> int i) <$> vcat (map prettyMessage messages) 
+prettyTrack (Track msgs) i = 
+    brackets (text "Track" <+> int i) <$> (snd $ foldl fn (0,empty) msgs)
+  where
+    fn (gt,doc) msg@(dt,_)  = 
+      (gt+dt, doc <$> (fill 8 (integral $ gt+dt) <-> prettyMessage msg))    
 
+
+prettyMessage :: Message -> Doc
 prettyMessage (dt,evt) = fill 5 (integral dt) <-> pretty evt      
 
 

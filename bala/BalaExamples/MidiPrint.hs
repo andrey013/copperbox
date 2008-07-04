@@ -13,6 +13,7 @@
 module Main where
 
 import Bala.Format.Midi.Midi
+import qualified Bala.Format.Midi.ReadFileAlt as Alt
 
 import System.Environment
 import Text.PrettyPrint.Leijen
@@ -27,7 +28,7 @@ main = do
 
 process :: FilePath -> IO ()
 process filename = do
-  ans <- readMidi filename
+  ans <- Alt.readMidi filename
   putDoc (pretty ans)
 
 

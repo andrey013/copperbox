@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.Duration
+-- Module      :  Bala.Base.Meter
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -8,7 +8,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Durations
+-- Meter (currently somewhat subsumed by Duration)
 --
 --------------------------------------------------------------------------------
 
@@ -26,7 +26,7 @@ data Meter = Meter {
   }
   deriving (Eq,Show,Read)
 
-
+{-
 data MeasureValue = DoubleWhole | Whole | Half | Quarter | Eighth | Sixteenth
                   | ThirtySecond | SixtyFourth 
   deriving (Eq,Enum,Show,Read)
@@ -36,7 +36,7 @@ data Duration = Unit MeasureValue
               | Tied Duration Duration
   deriving (Eq,Show,Read)
 
-
+-}
 
   
 {-
@@ -54,6 +54,7 @@ meter :: Int -> Int -> Meter
 meter i j = if (power2 j) then Meter i j else error msg
  where msg = "Cannot create a meter where the denominator is not a power of 2"
 
+{-
 -- | \smart enum\ enum on the measures size not its index
 measureValue :: Int -> MeasureValue
 measureValue i | power2 i  = (toEnum . (+1) . fromIntegral . fn) i
@@ -62,6 +63,7 @@ measureValue i | power2 i  = (toEnum . (+1) . fromIntegral . fn) i
     fn  = (flip (countTo (flip (/)  2.0))  1.0) . fromIntegral
     msg = "Cannot create a measured value where the denominator is not a power of 2"
 
+-}
 
 
 power2 :: Int -> Bool
@@ -104,9 +106,10 @@ reduces i j | i == j    = True
                             (i',0) -> reduces i' j
                             _      -> False
 
+{-
 division :: MeasureValue -> Float
 division = (2 **) . negate . fromIntegral . (flip (-) 1) . fromEnum
-
+-}
 
 {-
 -- simple and compound are not mutually exclusive 
