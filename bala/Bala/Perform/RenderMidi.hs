@@ -48,40 +48,71 @@ default_st = ProcessSt lilypond_ticks 1 500000
 
 
 runProcess  = evalState
+
   
-duration :: Duration -> ProcessM Integer
-duration d = gets tick_value >>= \t -> 
-             return $ calculateTicks t d
+class Renderable a where 
+    duration           :: a -> Duration
+    generates          :: a -> Maybe (a -> ProcessM (Either Pitch MIDI.Event))
+  
+calcDuration :: Renderable a => a -> ProcessM Integer
+calcDuration e = let d = duration e in 
+                 gets tick_value >>= \t -> 
+                 return $ calculateTicks t d
              
 channel ::  ProcessM Word8
 channel = gets track_number   
 
 newTrack :: ProcessM ()
 newTrack = gets track_number >>= \t -> modify (\s -> s { track_number = t+1 })   
+
+{-
+infixl 5 |>->
+
+(|>->) :: Seq a -> Maybe a -> Seq a
+(|>->) s Nothing = s
+(|>->) s (Just a) = s |> a
+-}
+
+generatesEvent :: Renderable evt => evt -> ProcessM (Maybe (Either Pitch MIDI.Event))
+generatesEvent evt = 
+  case generates evt of 
+    Just f -> f evt >>= (return . Just) 
+    Nothing -> return Nothing
+
   
 -- | Flatten the event tree into a sequence of events paired with global time.
-oflat :: (Integer,Seq (ClockedEvent (Pitch, Integer))) -> 
-         EventTree (Pitch, Duration) -> 
-         ProcessM (Integer,Seq (ClockedEvent (Pitch, Integer)))  
+oflat :: Renderable evt =>
+         (Integer,Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer))) -> 
+         EventTree evt -> 
+         ProcessM (Integer,Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer)))  
+
 oflat (i,ksq) EmptyTree     = return (i, ksq)
 
  
-oflat (i,ksq) (Next t (p,d))    = do 
-    (i',ksq') <- oflat (i,ksq) t
-    d'        <- duration d
-    return  (i'+d', ksq' |> (i',(p,d')))
+oflat (i,ksq) (Next t evt)    = do 
+    (i',ksq')   <- oflat (i,ksq) t
+    d'          <- calcDuration evt
+    oe          <- generatesEvent evt
+    case oe of 
+      Nothing -> return (i'+d', ksq')
+      Just e  -> return (i'+d', ksq' |> (i',(e,d')))
 
  
-oflat (i,ksq) (Par t (p,d))     = do 
-    (i',ksq') <- oflat (i,ksq) t
-    d'        <- duration d
-    return (i', ksq' |> (i',(p,d'))) 
-
-
-oflat (i,ksq) (Prefix (p,d) t)    = do 
+oflat (i,ksq) (Par t evt)     = do 
     (i',ksq')   <- oflat (i,ksq) t
-    d'          <- duration d
-    return (i', ksq' |> (i'-d', (p,d')))
+    d'          <- calcDuration evt
+    oe          <- generatesEvent evt
+    case oe of 
+      Nothing -> return (i', ksq') 
+      Just e  -> return (i', ksq' |> (i',(e,d'))) 
+
+oflat (i,ksq) (Prefix evt t)    = do 
+    (i',ksq')   <- oflat (i,ksq) t
+    d'          <- calcDuration evt
+    oe          <- generatesEvent evt
+    case oe of 
+      Nothing -> return (i', ksq')
+      Just e  -> return (i', ksq' |> (i'-d', (e,d')))
   
 oflat (i,ksq) (Sequence t ts) = do
    (i',ksq') <- oflat (i,ksq) t
@@ -93,7 +124,9 @@ merge (i,sq) xs = (undefined, foldl (><) sq (map snd xs))
 
 
 
-oflatPass :: EventTree (Pitch, Duration) -> ProcessM (Seq (ClockedEvent (Pitch, Integer)))  
+oflatPass :: Renderable evt 
+          => EventTree evt 
+          -> ProcessM (Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer)))  
 oflatPass t = snd <$> oflat (0,empty) t
 
 
@@ -119,21 +152,25 @@ noteOff' p = let p' = fromPitch p in do
     ch <- channel 
     return $ noteOff ch p' 127
 
-noteOnOff :: (ClockedEvent (Pitch, Integer)) -> ProcessM (MidiMessage, MidiMessage)
-noteOnOff (gt,(n,d)) = do 
-  no    <- noteOn' n
-  noff  <- noteOff' n
+noteOnOff :: Integer -> Pitch -> Integer -> ProcessM (MidiMessage, MidiMessage)
+noteOnOff gt p d = do 
+  no    <- noteOn' p
+  noff  <- noteOff' p
   return $ (MidiMessage gt no, MidiMessage (gt+d) noff)
 
   
 splitNoteStep  :: (Seq MidiMessage)
-               -> ClockedEvent (Pitch, Integer) 
+               -> ClockedEvent ((Either Pitch MIDI.Event), Integer) 
                -> ProcessM (Seq MidiMessage)
-splitNoteStep sq e@(gt,(p,d)) = do 
-    (on,off)  <- noteOnOff e 
+splitNoteStep sq e@(gt,(Left p,d)) = do 
+    (on,off)  <- noteOnOff gt p d 
     return $  sq |> on |> off
 
-splitNotePass :: Seq (ClockedEvent (Pitch, Integer)) -> ProcessM (Seq MidiMessage)
+splitNoteStep sq e@(gt,(Right msg,d)) = do 
+    return $  sq |> (MidiMessage gt msg)
+    
+    
+splitNotePass :: Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer)) -> ProcessM (Seq MidiMessage)
 splitNotePass = F.foldlM splitNoteStep empty 
     
     
@@ -145,9 +182,10 @@ sortPass sq = return (mergesort compareMessages sq)
  
 compareMessages m m' = compare m m'
 
+{-
 demo02 :: EventTree (Pitch, Duration) -> ProcessM (Seq MidiMessage)
 demo02 = sortPass <=< splitNotePass <=< oflatPass
-
+-}
 
 deltaStep 
     :: (Integer, Seq MIDI.Message) -> MidiMessage -> ProcessM (Integer, Seq MIDI.Message)
@@ -162,8 +200,6 @@ finalizeTrack :: Seq MIDI.Message -> ProcessM (Seq MIDI.Message)
 finalizeTrack s = return $ s |> endOfTrack_zero
 
  
-demo03 = deltaPass <=< sortPass <=< splitNotePass <=< oflatPass
-
 toList :: Seq a -> [a]
 toList = F.foldr (:) []
 
@@ -172,14 +208,14 @@ listPass = return . toList
 
 
 
-processTrack :: EventTree (Pitch, Duration) -> ProcessM MIDI.Track
+processTrack :: Renderable evt => EventTree evt -> ProcessM MIDI.Track
 processTrack = (return . MIDI.Track) 
                     <=< listPass      <=< finalizeTrack 
                     <=< deltaPass     <=< sortPass  
                     <=< splitNotePass <=< oflatPass
 
 
-processPerformance :: Performance (Pitch, Duration) -> ProcessM MIDI.MidiFile
+processPerformance :: Renderable evt => Performance evt -> ProcessM MIDI.MidiFile
 processPerformance p@(Perf xs) = do 
     hdr <- midiHeader p
     t0 <- trackZero 
@@ -189,7 +225,7 @@ processPerformance p@(Perf xs) = do
     fn acc a = processTrack a >>= \t -> newTrack >> return (t : acc)
 
 
-midiHeader :: Performance (Pitch, Duration) -> ProcessM MIDI.Header
+midiHeader :: Renderable evt => Performance evt -> ProcessM MIDI.Header
 midiHeader (Perf xs) = do 
     tpqn <- gets tick_value
     return $ format1_header (1 + length xs) (tpb tpqn) 

@@ -42,8 +42,15 @@ data EventTree evt = EmptyTree
 root            :: EventTree evt
 root            = EmptyTree
 
+-- note is redundant use event 
+{-
 note            :: evt -> EventTree evt -> EventTree evt
 note e t        = Next t e 
+-}
+
+
+event           :: evt -> EventTree evt -> EventTree evt
+event e t       = Next t e
 
 chord           :: [evt] -> EventTree evt -> EventTree evt
 chord (e:es) t  = let t' = Prelude.foldl (Par) t es in Next t' e
