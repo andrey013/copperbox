@@ -105,7 +105,7 @@ data TextType
     | LYRICS 
     | MARKER 
     | CUE_POINT 
-  deriving (Eq,Enum,Show) 
+  deriving (Eq,Enum,Ord,Show) 
 
 -- | @'Message'@ 
 --
@@ -125,14 +125,14 @@ type DeltaTime = Word32
 --
 -- MIDI has three types of event.
 data Event 
+    -- | Meta events - usually interpretable (e.g. @end-of-track@, @set-tempo@).
+    = MetaEvent         MetaEvent
     -- | Voice events (e.g @note-on@, @note-off@) are relayed to specific
     -- channels.
-    = VoiceEvent        VoiceEvent
+    | VoiceEvent        VoiceEvent
     -- | SysEx - system exclusive - events. Usually synthesizer specific.
     | SystemEvent       SystemEvent
-    -- | Meta events - usually interpretable (e.g. @end-of-track@, @set-tempo@).
-    | MetaEvent         MetaEvent
-  deriving (Eq,Show)
+  deriving (Eq,Show,Ord)
 
 -- | @'VoiceEvent'@ 
 --
@@ -157,7 +157,7 @@ data VoiceEvent
     -- | @PitchBend chan value@ - change the pitch of a sounding note. 
     -- Often used to approxiamate microtonal tunings.
     | PitchBend           Word8 Word16
-  deriving (Eq,Show)
+  deriving (Eq,Show,Ord)
   
 -- | @'SystemEvent'@ 
 --
@@ -167,7 +167,7 @@ data SystemEvent
     = SysEx               Word32 [Word8]
     -- | @DataEvent value@ - value should be in the range 0..127.
     | DataEvent           Word8 
-  deriving (Eq,Show)
+  deriving (Eq,Show,Ord)
 
 -- | @'MetaEvent'@ 
 --
@@ -208,13 +208,13 @@ data MetaEvent
     
     -- | @SSME length data@ - sequencer specific meta-event.
     | SSME                Word32 [Word8]
-  deriving (Eq,Show)
+  deriving (Eq,Show,Ord)
 
 -- | @'ScaleType'@ 
 --
 -- Scale type - @major@ or @minor@.  
 data ScaleType = MAJOR | MINOR
-  deriving (Eq,Enum,Show,Read)
+  deriving (Eq,Enum,Ord,Show)
 
 --------------------------------------------------------------------------------
 -- helper for varlen
