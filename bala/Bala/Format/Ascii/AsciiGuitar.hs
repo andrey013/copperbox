@@ -81,7 +81,7 @@ demm = chord (Just 8) "x....." [".o.o.o", "....o.", "..o..."]
 -- Fretboard
 
 fretboard :: [Pitch] -> Int -> String
-fretboard ps i = unlines $ map mkline ps
+fretboard ps i = unlines $ map mkline (reverse ps)
   where 
     mkline p = take i $ fbstring p $ []
 
@@ -99,8 +99,8 @@ fbstring p = affi (pitchName p) . dotS . barS . fn p
     str1 Nothing  = showString "-----+"
     str1 (Just f) = showString "--" . f . showString "--+"
 
-
-standard_tuning = [e5,b4,g4,d4,a3,e3]     
+standard_tuning :: [Pitch]
+standard_tuning = [e3,a3,d4,g4,b4,e5]   
 
 drawStdFretboard :: Int -> IO ()
 drawStdFretboard = putStr . fretboard standard_tuning

@@ -65,13 +65,6 @@ channel = gets track_number
 newTrack :: ProcessM ()
 newTrack = gets track_number >>= \t -> modify (\s -> s { track_number = t+1 })   
 
-{-
-infixl 5 |>->
-
-(|>->) :: Seq a -> Maybe a -> Seq a
-(|>->) s Nothing = s
-(|>->) s (Just a) = s |> a
--}
 
 generatesEvent :: Renderable evt => evt -> ProcessM (Maybe (Either Pitch MIDI.Event))
 generatesEvent evt = 
@@ -115,9 +108,9 @@ oflat (i,ksq) (Prefix evt t)    = do
       Just e  -> return (i', ksq' |> (i'-d', (e,d')))
   
 oflat (i,ksq) (Sequence t ts) = do
-   (i',ksq') <- oflat (i,ksq) t
-   xs <- mapM (oflat (i',empty)) ts
-   return (merge (i',ksq') xs) 
+    (i',ksq')   <- oflat (i,ksq) t
+    xs          <- mapM (oflat (i',empty)) ts
+    return (merge (i',ksq') xs) 
 
 merge :: (Integer, Seq a) -> [(Integer, Seq a)] -> (Integer, Seq a)
 merge (i,sq) xs = (undefined, foldl (><) sq (map snd xs)) 
@@ -255,6 +248,6 @@ output' tree filename =
   let mf = runProcess (processPerformance (Perf [tree])) default_st
   in MIDI.writeMidi filename mf
   
-  
+
 
       

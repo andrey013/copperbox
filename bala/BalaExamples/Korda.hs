@@ -101,8 +101,7 @@ f_maj7_c = decouper "(x33210)"
 c_triad :: Fingering
 c_triad = decouper "(x320xx)"
 
-e3s :: Pitch
-e3s = decouper "E#3"
+
 
 
 

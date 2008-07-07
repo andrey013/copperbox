@@ -173,7 +173,9 @@ instance SymCmdStem P where
 --------------------------------------------------------------------------------
 -- *** Polyphony (6.3.3)
 
-instance SymPolyCat P where
+instance SymPoly P where
+  openPoly              = P $ text "<< "
+  closePoly             = P $ text " >>"
   a \\ b                = P $ unP a <+> text "\\\\" <$> unP b
 
 --------------------------------------------------------------------------------
@@ -469,7 +471,7 @@ instance SymCmdHeader P where
   header a       = P $ cmd "header" <+> bracesHanging (unP a) 
         
 instance SymBlock P where
-  block e = P $ braces $ unP e
+  block e = P $ bracesSpaced $ unP e
 
 --------------------------------------------------------------------------------
 -- *** Creating titles (10.2.1)

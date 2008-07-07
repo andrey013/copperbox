@@ -67,10 +67,19 @@ demo_pp9b = printP demo_09b
 demo_09c () = note _c  #@ (vabove $ marcato)
 demo_pp9c = printP demo_09c
 
+demo_10 () = (block a) \\ (block b)
+  where 
+    a = elementCtx +++ note _c +++ note _d +++ note _e +++ note _c 
+    b = elementCtx +++ note _g +++ note _b +++ note _g +++ note _b 
+
+demo_pp10 = printP demo_10
 
 
-
-       
+merge k xs = foldl fn (block k) xs
+  where
+    fn acc a = (\\) acc (block a)
+  
+           
 lilypond_test () = 
   toplevelCtx +++ version "2.10.3" 
               +++ header (headerCtx +++ title "Bala LilyPond test")

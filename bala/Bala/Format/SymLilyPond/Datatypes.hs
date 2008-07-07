@@ -74,7 +74,7 @@ class SymBlockComment repr where
 
 
 data PitchName = C | D | E | F | G | A | B 
-  deriving (Eq,Show)
+  deriving (Eq,Enum,Ord,Show)
 
 data Pitch ctx  
 class SymPitch repr where
@@ -230,9 +230,12 @@ class SymCmdStem repr where
 --------------------------------------------------------------------------------
 -- *** Basic polyphony (6.3.3)
 
-data PolyCat ctx
-class SymPolyCat repr where
-  (\\) :: repr (a ctx) -> repr (a ctx) -> repr (PolyCat ctx)
+-- Don't constrain the result type otherwise we can't fold (\\)
+
+class SymPoly repr where
+  openPoly    :: repr (a ctx)
+  closePoly   :: repr (a ctx)
+  (\\) :: repr (a ctx) -> repr (a ctx) -> repr (a ctx)
 
 --------------------------------------------------------------------------------
 -- ** Staff notation (6.4)
