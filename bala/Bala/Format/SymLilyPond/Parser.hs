@@ -45,7 +45,7 @@ attrParse :: (Attribute elt att, SymAttr repr)
           => Parser (repr (att ctx_a))
           -> repr (elt ctx_e) 
           -> Parser (repr (elt ctx_e))
-attrParse p elt = option elt (do {att <- p; return (elt #@ att)})
+attrParse p elt = option elt (do {att <- p; return (elt %% att)})
 
 -- For Haddock infix operators starting with # need spacing.
 

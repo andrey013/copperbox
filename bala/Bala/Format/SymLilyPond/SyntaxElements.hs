@@ -57,31 +57,31 @@ _b      = pitch B
 
 -- | @r1@ - whole rest.
 r1 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
-r1      = rest #@ duration 1
+r1      = rest `attr` duration 1
 
 -- | @r2@ - half rest.
 r2 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
-r2      = rest #@ duration 2
+r2      = rest `attr` duration 2
 
 -- | @r4@ - quarter rest.
 r4 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
-r4      = rest #@ duration 4
+r4      = rest %% duration 4
 
 -- | @r8@ - 8th rest.
 r8 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
-r8      = rest #@ duration 8
+r8      = rest %% duration 8
 
 -- | @r16@ - 16th rest.
 r16 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
-r16     = rest #@ duration 16
+r16     = rest %% duration 16
 
 -- | @r4@ - 32nd rest.
 r32 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
-r32     = rest #@ duration 32
+r32     = rest %% duration 32
 
 -- | @r4@ - 64th rest.
 r64 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
-r64     = rest #@ duration 64
+r64     = rest %% duration 64
 
 --------------------------------------------------------------------------------
 -- *** Skips (6.1.10)
@@ -127,6 +127,9 @@ dur :: (SymDuration repr) => Int -> repr (Duration ctx)
 dur = duration
 
 
+
+-- breve and longa could be members of SymDuration
+
 -- | @\\longa@.
 longa   :: (SymCmdLongDuration repr) => repr (CmdLongDuration CT_Element) 
 longa   = cmdLongDuration "longa"  
@@ -134,6 +137,8 @@ longa   = cmdLongDuration "longa"
 -- | @\\breve@.
 breve   :: (SymCmdLongDuration repr) => repr (CmdLongDuration CT_Element)
 breve   = cmdLongDuration "breve"
+
+
 
 --------------------------------------------------------------------------------
 -- *** Augmentation dots (6.2.2)

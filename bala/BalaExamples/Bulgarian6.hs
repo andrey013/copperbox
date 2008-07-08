@@ -75,7 +75,27 @@ printDoc :: (() -> P a) -> IO ()
 printDoc e = let sdoc = renderPretty 0.8 80 (unP (e ())) in do
     putStr ((displayS sdoc []) ++ "\n")
     
+
+
+instance RLy.LyRenderable NrEvent where
+    pitchOf (Note p _)        = p
     
+    durationOf (Note _ d)     = d
+    durationOf (Rest d)       = d 
+     
+    isPitch (Note _ _)        = True
+    isPitch (Rest _)          = False
+     
+    isRest (Note _ _)         = False
+    isRest (Rest _)           = True
+    
+        
+{-    
+
+data NrEvent = Note Pitch Duration
+             | Rest Duration
+             
+             
 -- only handles pitches at the moment
 
 extractPitches :: [NrEvent] -> [Pitch]
@@ -88,9 +108,11 @@ buildPitchTree :: [Pitch] -> E.EventTree Pitch
 buildPitchTree = foldl (flip E.event) E.root  
 
 tree1_4 = buildPitchTree $ extractPitches events_bars1_4
-                       
+
+-}
+
 bulgarian6_ly () = 
-  RLy.runRenderLy (RLy.run'oflat () tree1_4) (RLy.relative c4 RLy.st_zero) 
+  RLy.runRenderLy (RLy.run'oflat () bars1_4) (RLy.relative c4 RLy.st_zero) 
 
 
     

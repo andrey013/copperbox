@@ -174,13 +174,21 @@ class SymSkipDuration repr where
 
 data Duration ctx
 class SymDuration repr where
-  duration :: Int -> repr (Duration ctx)
+  duration  :: Int -> repr (Duration ctx)
 
+-- Design choice - breve and longa could be members of SymDuration
+-- In lilypond dotting works on them as per normal durations, and
+-- it would give them the same time - useful if we have a function
+-- that builds durations e.g. f :: a -> repr (Duration ctx)
+--
+--  breve     :: repr (Duration ctx)
+--  longa     :: repr (Duration ctx)
 
    
 instance Attribute Rest Duration
 instance Attribute Note Duration
 instance Attribute Chord Duration
+
 
 
 data CmdLongDuration ctx
@@ -191,6 +199,8 @@ instance Attribute Rest CmdLongDuration
 instance Attribute Note CmdLongDuration
 instance Attribute Chord CmdLongDuration
 
+
+
 --------------------------------------------------------------------------------
 -- *** Augmentation dots (6.2.2)
 
@@ -199,6 +209,7 @@ class SymDotted repr where
   dotted :: Int -> repr (Dotted ctx)
 
 instance Attribute Duration Dotted
+instance Attribute CmdLongDuration Dotted
 
 --------------------------------------------------------------------------------
 -- *** Tuplets (6.2.3)

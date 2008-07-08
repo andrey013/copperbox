@@ -46,14 +46,12 @@ class SymAttr repr where
               => repr (elt ctx_elt) -> repr (att ctx_att) -> repr (elt ctx_elt)
 
 
+infixl 7 %%
 
-infixl 7 #@
-
--- | Reverse application forming an attribute.
-( #@ ) :: (Attribute elt att, SymAttr repr)
+-- | shorthand for attr
+( %% ) :: (Attribute elt att, SymAttr repr)
        => repr (elt ctx_elt) -> repr (att ctx_att) -> repr (elt ctx_elt)
-e #@ a = attr e a
-
+e %% a = attr e a
 
 
 

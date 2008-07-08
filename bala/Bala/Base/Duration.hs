@@ -17,6 +17,11 @@ module Bala.Base.Duration (
   -- * Datatype
   Duration, 
   
+  -- * Destructor
+  unDuration, simplifyDuration,
+  
+ 
+  
   -- * Operations
   dot, dotdot, dotdotdot,
   
@@ -31,6 +36,8 @@ module Bala.Base.Duration (
   -- $engdoc
   breve, semibreve, minim, crochet, quaver, semiquaver, demisemiquaver,
   hemidemisemiquaver, semihemidemisemiquaver, 
+  
+  longa
 
   ) where
 
@@ -38,27 +45,55 @@ import Bala.Base.BaseExtra
 import Data.Ratio
 
 
-newtype Duration = Dur { unDur :: Ratio Integer }
+data Duration = Dur { 
+    ratio :: Ratio Integer, 
+    dots  :: Integer
+  }
   deriving (Eq,Ord)
+
+
+-- | Extract a \simple\ ratio plus dotting count 
+unDuration :: Duration -> (Ratio Integer, Integer)
+unDuration (Dur r d) = (r,d)
+
+
+nr :: Integral a => Ratio a -> (a,a)
+nr a = (numerator a, denominator a)
+
+
+-- | Simplify a duration into \simple\ duration plus dotting count.
+-- This can be used for matching. 
+simplifyDuration :: Duration -> (Duration, Integer)
+simplifyDuration d = let (r,dots) = unDuration d in (Dur r 0, dots)
+
 
 
 -- | Augment the duration with a dot.
 dot :: Duration -> Duration
-dot (Dur r) = Dur $ r + (r/2)   
+dot (Dur r d)       = Dur r (d+1)
          
 -- | Augment the duration with double dots.
 dotdot :: Duration -> Duration
-dotdot (Dur r) = Dur $ r + (3 * r / 4)   
+dotdot (Dur r d)    = Dur r (d+2)  
 
 -- | Augment the duration with triple dots.
 dotdotdot :: Duration -> Duration
-dotdotdot (Dur r) = Dur $ r + (7 * r / 8)
+dotdotdot (Dur r d) = Dur r (d+3)
 
 -- | @'calculateTicks' tpqn dur@ - calculate the integer duration respective
 -- to the ticks-per-quarter-note @tqpn@. 
 calculateTicks :: Integer -> Duration -> Integer
-calculateTicks tpqn (Dur r) = let (n,d) = (numerator r, denominator r)
+calculateTicks tpqn dur = 
+  let r     = rationalize dur
+      (n,d) = (numerator r, denominator r)
   in (tpqn * 4 * n) `div` d
+
+rationalize :: Duration -> Ratio Integer
+rationalize (Dur r n) = dotr r (n,r)
+  where
+    dotr a (i,r) | i < 1      = a 
+                 | otherwise  = dotr (a + r/2) (i-1, r/2)
+
 
 
 --------------------------------------------------------------------------------
@@ -67,8 +102,16 @@ calculateTicks tpqn (Dur r) = let (n,d) = (numerator r, denominator r)
 
 
 instance Show Duration where
-    showsPrec p (Dur r)   = showsPrec p r
-  
+    showsPrec p d   = showsPrec p (rationalize d)
+
+instance Affi Duration where
+    affi d = shows d    
+
+{-
+
+-- Now that Duration type tracks dots until 'rendering' time
+-- arithmetic isn't simple.
+   
 instance Num Duration where
     (+) (Dur a) (Dur b)   = Dur $ a + b
     (-) (Dur a) (Dur b)   = Dur $ a - b
@@ -91,37 +134,46 @@ instance Fractional Duration where
 instance RealFrac Duration where  
   properFraction (Dur a)  =  let (i,f) = properFraction a in (i, Dur f)
 
+-}
+
+
+
+    
+    
 --------------------------------------------------------------------------------
 -- Named elements
+
+durZero :: Ratio Integer -> Duration
+durZero r = Dur r 0
 
 -- $amerdoc
 -- American naming.
 double_whole                :: Duration
-double_whole                = Dur (2%1)
+double_whole                = durZero (2%1)
 
 whole                       :: Duration
-whole                       = Dur (1%1)
+whole                       = durZero (1%1)
 
 half                        :: Duration
-half                        = Dur (1%2)
+half                        = durZero (1%2)
 
 quarter                     :: Duration
-quarter                     = Dur (1%4)
+quarter                     = durZero (1%4)
 
 eighth                      :: Duration
-eighth                      = Dur (1%8)
+eighth                      = durZero (1%8)
 
 sixteenth                   :: Duration
-sixteenth                   = Dur (1%16)
+sixteenth                   = durZero (1%16)
 
 thirty_second               :: Duration
-thirty_second               = Dur (1%32)
+thirty_second               = durZero (1%32)
 
 sixty_fourth                :: Duration
-sixty_fourth                = Dur (1%64)
+sixty_fourth                = durZero (1%64)
 
 one_hundred_twenty_eighth   :: Duration
-one_hundred_twenty_eighth   = Dur (1%128)
+one_hundred_twenty_eighth   = durZero (1%128)
 
 -- $engdoc
 -- English naming.
@@ -153,9 +205,7 @@ semihemidemisemiquaver      :: Duration
 semihemidemisemiquaver      = one_hundred_twenty_eighth
 
 
-instance Affi Duration where
-    affi d = shows d
-
-  
+longa                       :: Duration
+longa                       = durZero (4%1)
   
   

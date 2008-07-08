@@ -53,8 +53,8 @@ b__  = note B2
 
 -- rests 
 z1, z2 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest CT_Element)
-z1 = rest #@ dur 1
-z2 = rest #@ dur 2
+z1 = rest `attr` dur 1
+z2 = rest `attr` dur 2
 
 
 major, minor, lydian, ionian, mixolydian, dorian, aeolian, phrygian, locrian 

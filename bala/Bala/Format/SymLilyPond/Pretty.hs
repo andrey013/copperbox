@@ -144,8 +144,15 @@ instance SymSkipDuration P where
 instance SymDuration P where
   duration i            = P $ int i
 
+-- breve and longa could be members of SymDuration  
+--  breve                 = P $ cmd "breve"
+--  longa                 = P $ cmd "longa"
+
+
 instance SymCmdLongDuration P where
   cmdLongDuration s     = P $ cmd s
+
+
 
 --------------------------------------------------------------------------------
 -- *** Augmentation dots (6.2.2)
@@ -174,8 +181,8 @@ instance SymCmdStem P where
 -- *** Polyphony (6.3.3)
 
 instance SymPoly P where
-  openPoly              = P $ text "<< "
-  closePoly             = P $ text " >>"
+  openPoly              = P $ text "<< " <> line
+  closePoly             = P $ line <> text " >>"
   a \\ b                = P $ unP a <+> text "\\\\" <$> unP b
 
 --------------------------------------------------------------------------------
