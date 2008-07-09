@@ -23,16 +23,16 @@ import Bala.Format.SymAbc.Datatypes
 --------------------------------------------------------------------------------
 -- * Contexts for lists
 
-fieldCtx :: (SymCList repr CT_Field) => repr (CList CT_Field)
-fieldCtx = cNil
+fieldCtx :: (CSnocList repr CT_Field) => repr (SnocList CT_Field)
+fieldCtx = snil
 
-elementCtx :: (SymCList repr CT_Element) => repr (CList CT_Element)
-elementCtx = cNil
+elementCtx :: (CSnocList repr CT_Element) => repr (SnocList CT_Element)
+elementCtx = snil
 
 
 --------------------------------------------------------------------------------
 
-c_, d_, e_, f_, g_, a_, b_ :: (SymBaseNote repr) =>  repr (BaseNote CT_Element)
+c_, d_, e_, f_, g_, a_, b_ :: (CBaseNote repr) =>  repr BaseNote
 c_  = note C
 d_  = note D
 e_  = note E
@@ -41,7 +41,7 @@ g_  = note G
 a_  = note A
 b_  = note B
 
-c__, d__, e__, f__, g__, a__, b__ :: (SymBaseNote repr) =>  repr (BaseNote CT_Element)
+c__, d__, e__, f__, g__, a__, b__ :: (CBaseNote repr) =>  repr BaseNote
 c__  = note C2
 d__  = note D2
 e__  = note E2
@@ -52,13 +52,13 @@ b__  = note B2
 
 
 -- rests 
-z1, z2 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest CT_Element)
+z1, z2 :: (CRest repr, CDuration repr, CAttr repr) => repr Rest
 z1 = rest `attr` dur 1
 z2 = rest `attr` dur 2
 
 
 major, minor, lydian, ionian, mixolydian, dorian, aeolian, phrygian, locrian 
-    ::  (SymMode repr) => repr (Mode ctx)   
+    ::  (CMode repr) => repr Mode 
 major         = mode "maj"
 minor         = mode "min"
 lydian        = mode "lyd"
@@ -72,7 +72,7 @@ locrian       = mode "loc"
 
 
 firstRepeat, secondRepeat, firstEnding, secondEnding 
-    :: (SymRepeatMark repr) => repr (RepeatMark CT_Element)
+    :: (CRepeatMark repr) => repr RepeatMark
 firstRepeat   = repeatMark "[1"
 secondRepeat  = repeatMark "[2"
 firstEnding   = repeatMark "|1"

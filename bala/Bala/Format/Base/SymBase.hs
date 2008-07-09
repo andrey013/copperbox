@@ -21,36 +21,37 @@ module Bala.Format.Base.SymBase where
 import Text.PrettyPrint.Leijen
 
 
-infixl 5 `cSnoc`
+infixl 5 `snoc`
 
-data CList ctx
-class SymCList repr ctx where
-  cNil :: repr (CList ctx)
-  cSnoc :: repr (CList ctx) -> repr (a ctx) ->  repr (CList ctx) 
+class ListContext ctx a
+  
+data SnocList ctx
+class CSnocList repr ctx where
+  snil :: repr (SnocList ctx)
+  snoc :: (ListContext ctx a) 
+              => repr (SnocList ctx) -> repr a ->  repr (SnocList ctx) 
 
 
 infixl 5 +++
 
 -- | (+++) - alias for cSnoc.
-(+++) :: (SymCList repr ctx) 
-      => repr (CList ctx) -> repr (a ctx) ->  repr (CList ctx) 
-(+++) es e = cSnoc es e
+(+++) :: (ListContext ctx a, CSnocList repr ctx) 
+      => repr (SnocList ctx) -> repr a ->  repr (SnocList ctx) 
+(+++) es e = snoc es e
 
 -- * Attributes
 -- | An instance to declares an attribute relation.
 class Attribute elt attrib
 
 
-class SymAttr repr where
-  attr        :: Attribute elt att 
-              => repr (elt ctx_elt) -> repr (att ctx_att) -> repr (elt ctx_elt)
+class CAttr repr where
+  attr        :: Attribute elt att => repr elt -> repr att -> repr elt
 
 
 infixl 7 %%
 
 -- | shorthand for attr
-( %% ) :: (Attribute elt att, SymAttr repr)
-       => repr (elt ctx_elt) -> repr (att ctx_att) -> repr (elt ctx_elt)
+( %% ) :: (Attribute elt att, CAttr repr) => repr elt -> repr att -> repr elt
 e %% a = attr e a
 
 

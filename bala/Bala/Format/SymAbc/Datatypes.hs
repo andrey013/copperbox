@@ -30,184 +30,196 @@ data CT_Line
 
 
 
-data Field ctx
-data MidTuneField ctx 
+
+
 
 --------------------------------------------------------------------------------
 -- * Fields
 
+data Field
+data MidTuneField
+
+instance ListContext CT_Field Field
+instance ListContext CT_Field MidTuneField
+
+
 -- | @X field@ - reference \/ tune number.
-class SymFieldNumber repr where
-  num_                :: Int -> repr (Field CT_Field)
+class CFieldNumber repr where
+  num_                :: Int -> repr Field
 
 -- | @T field@ - title. 
-class SymFieldTitle repr where
-  title_              :: String -> repr (MidTuneField CT_Field)
+class CFieldTitle repr where
+  title_              :: String -> repr MidTuneField
 
 -- | @A field@ - area.
-class SymFieldArea repr where
-  area_               :: String -> repr (Field CT_Field)
+class CFieldArea repr where
+  area_               :: String -> repr Field
 
 -- | @B field@ - book.
-class SymFieldBook repr where  
-  book_               :: String -> repr (Field CT_Field)
+class CFieldBook repr where  
+  book_               :: String -> repr Field
 
 -- | @C field@ - composer name.
-class SymFieldComposer repr where  
-  composer_           :: String -> repr (Field CT_Field)
+class CFieldComposer repr where  
+  composer_           :: String -> repr Field
 
 -- | @D field@ - discography.
-class SymFieldDiscography repr where  
-  discography_        :: String -> repr (Field CT_Field)
+class CFieldDiscography repr where  
+  discography_        :: String -> repr Field
 
 -- | @E field@ - elemskip.
-class SymFieldElemskip repr where
-  elemskip_           :: String -> repr (MidTuneField CT_Field)
+class CFieldElemskip repr where
+  elemskip_           :: String -> repr MidTuneField
 
 -- | @G field@ - group.
-class SymFieldGroup repr where  
-  group_              :: String -> repr (Field CT_Field)
+class CFieldGroup repr where  
+  group_              :: String -> repr Field
 
 -- | @I field@ - information.
-class SymFieldInformation repr where
-  information_        :: String -> repr (Field CT_Field)
+class CFieldInformation repr where
+  information_        :: String -> repr Field
 
 -- | @N field@ - notes.
-class SymFieldNotes repr where  
-  notes_              :: String -> repr (Field CT_Field)
+class CFieldNotes repr where  
+  notes_              :: String -> repr Field
 
 -- | @O field@ - origin.
-class SymFieldOrigin repr where  
-  origin_             :: String -> repr (Field CT_Field)
+class CFieldOrigin repr where  
+  origin_             :: String -> repr Field
 
 -- | @R field@ - rhythm.
-class SymFieldRhythm repr where  
-  rhythm_             :: String -> repr (Field CT_Field)
+class CFieldRhythm repr where  
+  rhythm_             :: String -> repr Field
 
 -- | @S field@ - source.
-class SymFieldSource repr where  
-  source_             :: String -> repr (Field CT_Field)
+class CFieldSource repr where  
+  source_             :: String -> repr Field
 
 -- | @W field@ - words.
-class SymFieldWords repr where    
-  words_              :: String -> repr (MidTuneField CT_Field)
+class CFieldWords repr where    
+  words_              :: String -> repr MidTuneField
 
 -- | @Z field@ - transcriber notes.  
-class SymFieldTranscrNotes repr where
-  transcrNotes_   :: String -> repr (Field CT_Field)
+class CFieldTranscrNotes repr where
+  transcrNotes_   :: String -> repr Field
 
 -- | @H field@ - history.
-class SymFieldHistory repr where
-  history_      :: [String] -> repr (Field CT_Field)
+class CFieldHistory repr where
+  history_      :: [String] -> repr Field
 
 -- | @K field@ - key.
-class SymFieldKey repr where
-  key_          :: repr (Key ctx) -> repr (MidTuneField CT_Field)
+class CFieldKey repr where
+  key_          :: repr Key -> repr MidTuneField
   
 -- | @L field@ - default note length.
-class SymFieldDefaultNoteLength repr where
-  defaultNoteLength_    :: MeterFraction -> repr (MidTuneField CT_Field)
+class CFieldDefaultNoteLength repr where
+  defaultNoteLength_    :: MeterFraction -> repr MidTuneField
 
 
 -- | @P field@ - parts, simplified - parts are just represented as a string.
-class SymFieldParts repr where 
-  parts_        :: [Char] -> repr (MidTuneField CT_Field)
+class CFieldParts repr where 
+  parts_        :: [Char] -> repr MidTuneField
   
 -- | @Q field@ - tempo.
-class SymFieldTempo repr where
-  tempo_        :: repr (Tempo ctx) -> repr (MidTuneField CT_Field)
+class CFieldTempo repr where
+  tempo_        :: repr Tempo -> repr MidTuneField
 
 -- | @M field@ - meter.
-class SymFieldMeter repr where
-  meter_        :: repr (Meter ctx) -> repr (MidTuneField CT_Field)  
+class CFieldMeter repr where
+  meter_        :: repr Meter -> repr MidTuneField  
 
-data AbcMusic ctx
-class SymAbcMusic repr where
-  abcmusic :: repr (AbcLine CT_Line) -> repr (AbcMusic CT_Field)
+data AbcMusic
+class CAbcMusic repr where
+  abcmusic :: repr AbcLine -> repr AbcMusic
 
-data AbcLine ctx
-class SymAbcLine repr where
-  elements          :: repr (a ctx) -> repr (AbcLine CT_Line)
-  midtuneField      :: repr (MidTuneField CT_Field) -> repr (AbcLine CT_Line) 
-  
-  
-data Tempo ctx
-class SymTempo repr where
-  tempo               :: Int -> repr (Tempo ctx)
-  ctempo              :: repr (Length ctx) -> Int -> repr (Tempo ctx)
-  stempo              :: MeterFraction -> Int -> repr (Tempo ctx)
-  
-data Length ctx
-class SymLength repr where
-  ilength             :: Int -> repr (Length ctx)
-  flength             :: MeterFraction -> repr (Length ctx) 
-
-  
-  
-data Key ctx
-class SymKey repr where
-  key                 :: repr (KeySpec ctx) -> repr (Key ctx)
-  highlandNoKey       :: repr (Key ctx)
-  highlandMixolydian  :: repr (Key ctx)
+instance ListContext CT_Field AbcMusic
 
 
-data KeySpec ctx
-class SymKeySpec repr where
-  keySpec :: repr (BaseNote ctx) -> repr (KeySpec ctx)
+data AbcLine
+class CAbcLine repr where
+  elements          :: repr a -> repr AbcLine
+  midtuneField      :: repr MidTuneField -> repr AbcLine
+    
+  
+data Tempo
+class CTempo repr where
+  tempo               :: Int -> repr Tempo
+  ctempo              :: repr Length -> Int -> repr Tempo
+  stempo              :: MeterFraction -> Int -> repr Tempo
+  
+data Length
+class CLength repr where
+  ilength             :: Int -> repr Length
+  flength             :: MeterFraction -> repr Length
+
+  
+  
+data Key
+class CKey repr where
+  key                 :: repr KeySpec -> repr Key
+  highlandNoKey       :: repr Key
+  highlandMixolydian  :: repr Key
+
+
+data KeySpec
+class CKeySpec repr where
+  keySpec :: repr BaseNote -> repr KeySpec
       
   
-data KeyAccidental ctx
-
-class SymKeyAccidental repr where
-  keySharp  :: repr (KeyAccidental ctx)
-  keyFlat   :: repr (KeyAccidental ctx)
+data KeyAccidental
+class CKeyAccidental repr where
+  keySharp  :: repr KeyAccidental
+  keyFlat   :: repr KeyAccidental
     
 
-data Mode ctx
-class SymMode repr where
-  mode :: String -> repr (Mode ctx)
+data Mode
+class CMode repr where
+  mode :: String -> repr Mode
 
 
 instance Attribute KeySpec Mode 
 
 
 
-data Meter ctx
-class SymMeter repr where
-  meter      :: MeterFraction -> repr (Meter ctx) 
-  commonTime :: repr (Meter ctx)
-  cutTime    :: repr (Meter ctx)
+data Meter
+class CMeter repr where
+  meter      :: MeterFraction -> repr Meter
+  commonTime :: repr Meter
+  cutTime    :: repr Meter
 
     
 
-data Duration ctx
-class SymDuration repr where
-  dur :: Int -> repr (Duration ctx)     
+data Duration
+class CDuration repr where
+  dur :: Int -> repr Duration
 
 instance Attribute BaseNote Duration
 instance Attribute Rest Duration
 
 
 
-data Rest ctx
-class SymRest repr where
-  rest :: repr (Rest CT_Element)
+data Rest
+class CRest repr where
+  rest :: repr Rest
 
-data Octave ctx
-class SymOctave repr where
-  octaveLow     :: Int -> repr (Octave ctx) 
-  octaveHigh    :: Int -> repr (Octave ctx)
+instance ListContext CT_Element Rest
+
+
+data Octave
+class COctave repr where
+  octaveLow     :: Int -> repr Octave
+  octaveHigh    :: Int -> repr Octave
     
 instance Attribute BaseNote Octave
 
 
-data Accidental ctx
-class SymAccidental repr where 
-  natural       :: repr (Accidental ctx)
-  sharp         :: repr (Accidental ctx)
-  doubleSharp   :: repr (Accidental ctx)
-  flat          :: repr (Accidental ctx)
-  doubleFlat    :: repr (Accidental ctx)
+data Accidental
+class CAccidental repr where 
+  natural       :: repr Accidental
+  sharp         :: repr Accidental
+  doubleSharp   :: repr Accidental
+  flat          :: repr Accidental
+  doubleFlat    :: repr Accidental
 
 
 
@@ -219,73 +231,76 @@ instance Attribute BaseNote Accidental
 data PitchLetter = C | D | E | F | G | A | B | C2 | D2 | E2 | F2 | G2 | A2 | B2
   deriving (Eq,Show) 
 
-data BaseNote ctx
-class SymBaseNote repr where
-  note          :: PitchLetter -> repr (BaseNote CT_Element)
+data BaseNote
+class CBaseNote repr where
+  note          :: PitchLetter -> repr BaseNote
+
+instance ListContext CT_Element BaseNote
 
 
 
 
-
-
-data BrokenRhythm ctx
-class SymBrokenRhythm repr where
+data BrokenRhythm
+class CBrokenRhythm repr where
   -- '>' left note dotted, right note halved
-  dottedLeft    :: Int -> repr (BrokenRhythm ctx)
+  dottedLeft    :: Int -> repr BrokenRhythm
     
   -- '<' left note halved, right note dotted 
-  dottedRight   :: Int -> repr (BrokenRhythm ctx)   
+  dottedRight   :: Int -> repr BrokenRhythm
   
 
   
-data Tie ctx
-class SymTie repr where
-  tie         :: repr (Tie ctx)
+data Tie
+class CTie repr where
+  tie         :: repr Tie
 
   
       
-data Grace ctx
-class SymGrace repr where
-    tilde       :: repr (Grace ctx)
-    stacatto    :: repr (Grace ctx)
-    downbow     :: repr (Grace ctx)
-    upbow       :: repr (Grace ctx)
+data Grace
+class CGrace repr where
+    tilde       :: repr Grace
+    stacatto    :: repr Grace
+    downbow     :: repr Grace
+    upbow       :: repr Grace
 
 instance Attribute BaseNote Grace
     
-data NPlet ctx
-class SymNPlet repr where
-  nplet :: Int -> repr (NPlet CT_Element)
+data NPlet
+class CNPlet repr where
+  nplet :: Int -> repr NPlet
+
+instance ListContext CT_Element NPlet
      
         
-data RepeatMark ctx
-class SymRepeatMark repr where
-  repeatMark :: String -> repr (RepeatMark CT_Element)
+data RepeatMark
+class CRepeatMark repr where
+  repeatMark :: String -> repr RepeatMark
 
-
+instance ListContext CT_Element RepeatMark
 
  
 
-data Slur ctx
-class SymSlur repr where
-  beginSlur :: repr (Slur CT_Element)
-  endSlur   :: repr (Slur CT_Element)
+data Slur
+class CSlur repr where
+  beginSlur :: repr Slur
+  endSlur   :: repr Slur
 
+instance ListContext CT_Element Slur
 
 -- | gracenotes are a prefix attibute of a note
-data GraceNotes ctx
-class SymGraceNotes repr where
-  gracenotes :: [repr (BaseNote ctx)] -> repr (GraceNotes ctx)
+data GraceNotes
+class CGraceNotes repr where
+  gracenotes :: [repr BaseNote] -> repr GraceNotes
 
 instance Attribute BaseNote GraceNotes  
 
-data MultiNote ctx
-class SymMultiNote repr where
-  multinote :: [repr (BaseNote ctx)] -> repr (MultiNote ctx)
+data MultiNote
+class CMultiNote repr where
+  multinote :: [repr BaseNote] -> repr MultiNote
 
   
-data TexCommand ctx
-class SymTexComamnd repr where
-  texCommand :: String -> repr (TexCommand ctx)
+data TexCommand
+class CTexComamnd repr where
+  texCommand :: String -> repr TexCommand
   
   

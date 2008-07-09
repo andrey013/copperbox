@@ -41,10 +41,10 @@ fchoice f xs = choice $ map (interp f) xs
 longestChoice :: (String -> Parser b) ->  [(String,a)] -> Parser a
 longestChoice = withLongestString
   
-attrParse :: (Attribute elt att, SymAttr repr) 
-          => Parser (repr (att ctx_a))
-          -> repr (elt ctx_e) 
-          -> Parser (repr (elt ctx_e))
+attrParse :: (Attribute elt att, CAttr repr) 
+          => Parser (repr att)
+          -> repr elt 
+          -> Parser (repr elt)
 attrParse p elt = option elt (do {att <- p; return (elt %% att)})
 
 -- For Haddock infix operators starting with # need spacing.
@@ -53,15 +53,15 @@ infixl 6 ##
 
 -- | @##@ - attribute bind - chain attribute parsers like bind (>>=),
 -- but the steps in the chain are optional.
-( ## ) :: (Attribute elt att, SymAttr repr) 
-       => Parser (repr (elt ctx_e)) 
-       -> Parser (repr (att ctx_a))
-       -> Parser (repr (elt ctx_e)) 
+( ## ) :: (Attribute elt att, CAttr repr) 
+       => Parser (repr elt) 
+       -> Parser (repr att)
+       -> Parser (repr elt) 
 ( ## ) p pa = p >>= attrParse pa
 
 
 -- | Placeholder
-noBlock :: (SymBlock repr) => Parser (repr (Block ctx))
+noBlock :: (CBlock repr) => Parser (repr Block)
 noBlock = undefined <$ (lexChar '{') <*> (lexChar '}')
 
 
@@ -69,17 +69,19 @@ meterFraction :: Parser MeterFraction
 meterFraction = (%) <$> (int <* char '/') <*> lexeme int
 
 
-many1Cat :: (SymCList repr ctx) 
-         => repr (CList ctx) -> Parser (repr (a ctx)) -> Parser (repr (CList ctx))
+many1Cat :: (CSnocList repr ctx, ListContext ctx a) 
+         => repr (SnocList ctx) 
+         -> Parser (repr a) 
+         -> Parser (repr (SnocList ctx))
 many1Cat cxnil p = do 
     a <- p
-    step1 p (cSnoc cxnil a)
+    step1 p (snoc cxnil a)
   where
     step1 p acc = do
       a <- optparse p    
       case a of      
         Nothing -> return acc
-        Just a  -> step1 p (cSnoc acc a)
+        Just a  -> step1 p (snoc acc a)
 
 
 --------------------------------------------------------------------------------
@@ -96,8 +98,8 @@ command ss = lexeme $ try $ string ('\\':ss)
 -- NOTE this will need some thought...
 
 data Para repr = Para { 
-      parseDuration :: forall ctx. Parser (repr (Duration ctx))
-    , parsePitch    :: forall ctx. Parser (repr (Pitch ctx)) 
+      parseDuration :: Parser (repr Duration)
+    , parsePitch    :: Parser (repr Pitch) 
     }
 
 
@@ -112,16 +114,16 @@ data Para repr = Para {
   
 
 -- | Pitch, plus attributes (knot tied).
-pitchA :: (SymPitch repr,
-           SymAttr repr, 
-           SymAccidental repr, 
-           SymMicroTone repr,
-           SymOctaveSpec repr) 
-       => Parser (repr (Pitch ctx))
+pitchA :: (CPitch repr,
+           CAttr repr, 
+           CAccidental repr, 
+           CMicroTone repr,
+           COctaveSpec repr) 
+       => Parser (repr Pitch)
 pitchA = lexeme $ pPitch ## pAccidental ## pMicroTone ## pOctaveSpec 
 
 
-pPitch :: (SymPitch repr) => Parser (repr (Pitch ctx))
+pPitch :: (CPitch repr) => Parser (repr Pitch)
 pPitch = choice $ map fn xs
   where
     fn (ch,cnstr) = cnstr <$ char ch   
@@ -134,20 +136,19 @@ pPitch = choice $ map fn xs
           ('b',      _b)]
     
    
-pOctaveSpec :: (SymOctaveSpec repr) => Parser (repr (OctaveSpec ctx))
+pOctaveSpec :: (COctaveSpec repr) => Parser (repr OctaveSpec)
 pOctaveSpec = pRaised <|> pLowered
   where
     pRaised  = raised  <$> counting1 (char '\'')
     pLowered = lowered <$> counting1 (char ',')
     
 
-pNote :: (SymNote repr) 
-      => Para repr -> Parser (repr (Note CT_Element))
+pNote :: (CNote repr) => Para repr -> Parser (repr Note)
 pNote px = note <$> (parsePitch px)
 
 --------------------------------------------------------------------------------
 -- *** Accidentals (6.1.2)
-pAccidental :: (SymAccidental repr) => Parser (repr (Accidental ctx))
+pAccidental :: (CAccidental repr) => Parser (repr Accidental)
 pAccidental= longestChoice lexString $
   [ ("isis",  doubleSharp)
   , ("eses",  doubleFlat)
@@ -159,8 +160,8 @@ pAccidental= longestChoice lexString $
 --------------------------------------------------------------------------------
 -- *** Cautionary accidentals (6.1.3)
 
-pCautionaryAccidental :: (SymCautionaryAccidental repr) 
-                      => Parser (repr (CautionaryAccidental ctx))
+pCautionaryAccidental :: (CCautionaryAccidental repr) 
+                      => Parser (repr CautionaryAccidental)
 pCautionaryAccidental= fchoice lexChar $ 
   [('!', reminderAccidental), ('^', cautionaryAccidental)]
   
@@ -168,7 +169,7 @@ pCautionaryAccidental= fchoice lexChar $
 --------------------------------------------------------------------------------
 -- *** Micro tones (6.1.4)
 
-pMicroTone :: (SymMicroTone repr) => Parser (repr (MicroTone ctx))
+pMicroTone :: (CMicroTone repr) => Parser (repr MicroTone)
 pMicroTone = longestChoice string $ 
   [("ih", halfFlat), ("eh", halfFlat)] 
 
@@ -176,8 +177,8 @@ pMicroTone = longestChoice string $
 --------------------------------------------------------------------------------
 -- *** Relative octaves (6.1.6)
 
-pRelative :: (SymCmdRelative repr, SymPlaceholder repr, SymBlock repr)
-          => Para repr -> Parser (repr (CmdRelative ctx))
+pRelative :: (CCmdRelative repr, CPlaceholder repr, CBlock repr)
+          => Para repr -> Parser (repr CmdRelative)
 pRelative px = relative <$> (command "relative" *> (parsePitch px)) <*> noBlock
   
   
@@ -185,15 +186,15 @@ pRelative px = relative <$> (command "relative" *> (parsePitch px)) <*> noBlock
 --------------------------------------------------------------------------------
 -- *** Rests (6.1.9)
 
-pRest :: (SymRest repr) => Parser (repr (Rest ctx))
+pRest :: (CRest repr) => Parser (repr Rest)
 pRest = rest <$ lexChar 'r'
 
 
 --------------------------------------------------------------------------------  
 -- *** Skips (6.1.10)
 
-pSkipDuration :: (SymSkipDuration repr, SymDuration repr) 
-              => Para repr -> Parser (repr (SkipDuration ctx))
+pSkipDuration :: (CSkipDuration repr, CDuration repr) 
+              => Para repr -> Parser (repr SkipDuration)
 pSkipDuration px = skipDuration <$> (char 's' *> (parseDuration px))
   
 --------------------------------------------------------------------------------  
@@ -202,7 +203,7 @@ pSkipDuration px = skipDuration <$> (char 's' *> (parseDuration px))
 
 
 
-pDuration :: SymDuration repr => Parser (repr (Duration ctx))
+pDuration :: CDuration repr => Parser (repr Duration)
 pDuration = duration <$> int
 
 
@@ -210,13 +211,13 @@ pDuration = duration <$> int
 --------------------------------------------------------------------------------
 -- *** Augmentation dots (6.2.2)
 
-pDotted :: (SymDotted repr) => Parser (repr (Dotted ctx))
+pDotted :: (CDotted repr) => Parser (repr Dotted)
 pDotted = dotted <$> counting1 (char '.')  
 
 --------------------------------------------------------------------------------
 -- *** Tuplets (6.2.3)
 
--- pTimes :: (SymCmdTimes repr, SymBlock repr)
+-- pTimes :: (CCmdTimes repr, CBlock repr)
 --       => Para repr ->  Parser (repr (CmdTimes ctx))
 pTimes px = times <$> (command "times" *> meterFraction) 
                   <*> braces (many1Cat elementCtx (pNote px))  
@@ -226,7 +227,7 @@ pTimes px = times <$> (command "times" *> meterFraction)
 -- ** Mutliple notes at once (6.3)
 -- *** Chords (6.3.1)
 
-pChord :: (SymChord repr) => Para repr -> Parser (repr (Chord ctx))
+pChord :: (CChord repr) => Para repr -> Parser (repr Chord)
 pChord px = chord <$> angles (many1 (parsePitch px))
 
 
@@ -234,7 +235,7 @@ pChord px = chord <$> angles (many1 (parsePitch px))
 -- ** Staff notation (6.4)
 -- *** Key signature (6.4.2)
 
-pKeyType :: (SymCmdKeyType repr) => Parser (repr (CmdKeyType CT_Element)) 
+pKeyType :: (CCmdKeyType repr) => Parser (repr CmdKeyType) 
 pKeyType = longestChoice command $ 
   [ ("major",       major)
   , ("minor",       minor)
@@ -251,7 +252,7 @@ pKeyType = longestChoice command $
 -- ** Connecting notes (6.5)
 -- *** Manual beams (6.5.6)
 
-pOpenBeam, pCloseBeam :: (SymBeam repr) => Parser (repr (Beam ctx)) 
+pOpenBeam, pCloseBeam :: (CBeam repr) => Parser (repr Beam) 
 pOpenBeam   = openBeam <$ lexChar '['
 pCloseBeam  = closeBeam <$ lexChar ']'
 
@@ -259,16 +260,16 @@ pCloseBeam  = closeBeam <$ lexChar ']'
 -- ** Expressive marks (6.6)
 -- ***  Articulations (6.6.1)
 
-pVerticalPlacement  :: (SymVerticalPlacement repr) 
-                    => Parser (repr (VerticalPlacement ctx)) 
+pVerticalPlacement  :: (CVerticalPlacement repr) 
+                    => Parser (repr VerticalPlacement) 
 pVerticalPlacement = fchoice char $
   [ ('^', verticalPlacement VAbove)
   , ('_', verticalPlacement VBelow)
   , ('-', verticalPlacement VDefault)
   ] 
 
-pCmdArticulation  :: (SymCmdArticulation repr) 
-                  => Parser (repr (CmdArticulation CT_Element))
+pCmdArticulation  :: (CCmdArticulation repr) 
+                  => Parser (repr CmdArticulation)
 pCmdArticulation = longestChoice command $ 
   [ ("accent",              accent)
   , ("marcato",             marcato)
@@ -316,8 +317,8 @@ pCmdArticulation = longestChoice command $
 -- *** Dynamics (6.6.3)
 -- nullary commands (use underscore suffix _ for commands)
 
-pCmdDynamic :: (SymCmdDynamic repr) 
-                  => Parser (repr (CmdDynamic ctx))
+pCmdDynamic :: (CCmdDynamic repr) 
+                  => Parser (repr CmdDynamic)
 pCmdDynamic = longestChoice command $
   [ ("ppppp",           ppppp_)
   , ("pppp",            pppp_)
@@ -355,7 +356,7 @@ pCmdDynamic = longestChoice command $
 -- ** Vocal music (7.3)
 
 -- *** Melismata (7.3.5)
-pMelismata :: (SymMelismata repr) => Parser (repr (Melismata ctx)) 
+pMelismata :: (CMelismata repr) => Parser (repr Melismata) 
 pMelismata = longestChoice command $
   [("melisma", melisma), ("melismaEnd", melismaEnd)]
   
@@ -365,7 +366,7 @@ pMelismata = longestChoice command $
 
 -- *** Entering percussion (7.4.2)
 
-pDrumPitchName :: SymDrumPitchName repr => Parser (repr (DrumPitchName ctx))
+pDrumPitchName :: CDrumPitchName repr => Parser (repr DrumPitchName)
 pDrumPitchName = longestChoice lexString $ 
   [ ("acousticbassdrum",  acousticbassdrum)
   , ("bassdrum",          bassdrum)

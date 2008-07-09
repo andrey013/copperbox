@@ -23,14 +23,14 @@ import Bala.Format.SymLilyPond.Datatypes
 --------------------------------------------------------------------------------
 -- * Contexts for lists
 
-elementCtx :: (SymCList repr CT_Element) => repr (CList CT_Element)
-elementCtx = cNil
+elementCtx :: (CSnocList repr CT_Element) => repr (SnocList CT_Element)
+elementCtx    = snil
 
-toplevelCtx :: (SymCList repr CT_Toplevel) => repr (CList CT_Toplevel)
-toplevelCtx = cNil
+toplevelCtx :: (CSnocList repr CT_Toplevel) => repr (SnocList CT_Toplevel)
+toplevelCtx   = snil
 
-headerCtx :: (SymCList repr CT_Header) => repr (CList CT_Header)
-headerCtx = cNil
+headerCtx :: (CSnocList repr CT_Header) => repr (SnocList CT_Header)
+headerCtx     = snil
 
 -- comments and versioning (2.12)
 
@@ -39,7 +39,7 @@ headerCtx = cNil
 -- ** Pitches (6.1)
 -- *** Normal pitches (6.1.1)
 
-_c, _d, _e, _f, _g , _a, _b :: (SymPitch repr) => repr (Pitch ctx)
+_c, _d, _e, _f, _g , _a, _b :: (CPitch repr) => repr Pitch
 _c      = pitch C
 _d      = pitch D
 _e      = pitch E
@@ -56,120 +56,120 @@ _b      = pitch B
 -- *** Rests (6.1.9)
 
 -- | @r1@ - whole rest.
-r1 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
+r1 :: (CRest repr, CDuration repr, CAttr repr) => repr Rest
 r1      = rest `attr` duration 1
 
 -- | @r2@ - half rest.
-r2 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
+r2 :: (CRest repr, CDuration repr, CAttr repr) => repr Rest
 r2      = rest `attr` duration 2
 
 -- | @r4@ - quarter rest.
-r4 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
+r4 :: (CRest repr, CDuration repr, CAttr repr) => repr Rest
 r4      = rest %% duration 4
 
 -- | @r8@ - 8th rest.
-r8 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
+r8 :: (CRest repr, CDuration repr, CAttr repr) => repr Rest
 r8      = rest %% duration 8
 
 -- | @r16@ - 16th rest.
-r16 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
+r16 :: (CRest repr, CDuration repr, CAttr repr) => repr Rest
 r16     = rest %% duration 16
 
 -- | @r4@ - 32nd rest.
-r32 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
+r32 :: (CRest repr, CDuration repr, CAttr repr) => repr Rest
 r32     = rest %% duration 32
 
 -- | @r4@ - 64th rest.
-r64 :: (SymRest repr, SymDuration repr, SymAttr repr) => repr (Rest ctx)
+r64 :: (CRest repr, CDuration repr, CAttr repr) => repr Rest
 r64     = rest %% duration 64
 
 --------------------------------------------------------------------------------
 -- *** Skips (6.1.10)
 
 -- | @\\skip@.
-skip :: (SymCmdSkip repr) => repr (CmdSkip ctx) 
+skip :: (CCmdSkip repr) => repr CmdSkip 
 skip = cmdSkip "skip"
 
 
 -- | @s1@ - whole skip.
-s1 :: (SymSkipDuration repr, SymDuration repr) => repr (SkipDuration ctx)
+s1 :: (CSkipDuration repr, CDuration repr) => repr SkipDuration
 s1      = skipDuration $ duration 1
 
 -- | @s2@ - half skip.
-s2 :: (SymSkipDuration repr, SymDuration repr) => repr (SkipDuration ctx)
+s2 :: (CSkipDuration repr, CDuration repr) => repr SkipDuration
 s2      = skipDuration $ duration 2
 
 -- | @s4@ - quarter skip.
-s4 :: (SymSkipDuration repr, SymDuration repr) => repr (SkipDuration ctx)
+s4 :: (CSkipDuration repr, CDuration repr) => repr SkipDuration
 s4      = skipDuration $ duration 4
 
 -- | @s8@ - 8th skip.
-s8 :: (SymSkipDuration repr, SymDuration repr) => repr (SkipDuration ctx)
+s8 :: (CSkipDuration repr, CDuration repr) => repr SkipDuration
 s8      = skipDuration $ duration 8
 
 -- | @s16@ - 16th skip.
-s16 :: (SymSkipDuration repr, SymDuration repr) => repr (SkipDuration ctx)
+s16 :: (CSkipDuration repr, CDuration repr) => repr SkipDuration
 s16     = skipDuration $ duration 16
 
 -- | @s32@ - 32nd skip.
-s32 :: (SymSkipDuration repr, SymDuration repr) => repr (SkipDuration ctx)
+s32 :: (CSkipDuration repr, CDuration repr) => repr SkipDuration
 s32     = skipDuration $ duration 32
 
 -- | @s64@ - 64th skip.
-s64 :: (SymSkipDuration repr, SymDuration repr) => repr (SkipDuration ctx)
+s64 :: (CSkipDuration repr, CDuration repr) => repr SkipDuration
 s64     = skipDuration $ duration 64
 
 --------------------------------------------------------------------------------
 -- ** Rhythms (6.2)
 -- *** Durations (6.2.1)
 
-dur :: (SymDuration repr) => Int -> repr (Duration ctx)
+dur :: (CDuration repr) => Int -> repr Duration
 dur = duration
 
 
 
--- breve and longa could be members of SymDuration
+-- breve and longa could be members of CDuration
 
 -- | @\\longa@.
-longa   :: (SymCmdLongDuration repr) => repr (CmdLongDuration CT_Element) 
+longa   :: (CCmdLongDuration repr) => repr CmdLongDuration
 longa   = cmdLongDuration "longa"  
 
 -- | @\\breve@.
-breve   :: (SymCmdLongDuration repr) => repr (CmdLongDuration CT_Element)
+breve   :: (CCmdLongDuration repr) => repr CmdLongDuration
 breve   = cmdLongDuration "breve"
 
 
 
 --------------------------------------------------------------------------------
 -- *** Augmentation dots (6.2.2)
-dot :: (SymDotted repr) => repr (Dotted ctx)
+dot :: (CDotted repr) => repr Dotted
 dot = dotted 1
 
 
-dotdot :: (SymDotted repr) => repr (Dotted ctx)
+dotdot :: (CDotted repr) => repr Dotted
 dotdot = dotted 2
 
 --------------------------------------------------------------------------------
 -- *** Tuplets (6.2.3)
 
 
-times :: SymCmdTimes repr
-      => MeterFraction -> repr (CList ctxa) -> repr (CmdTimes ctxb)
+times :: (CCmdTimes repr)
+      => MeterFraction -> repr (SnocList ctx) -> repr CmdTimes
 times = cmdTimes  
   
 --------------------------------------------------------------------------------
 -- ** Mutliple notes at once (6.3)
 -- *** Stems (6.3.2)
 -- | @\\stemUp@.
-stemUp                  :: (SymCmdStem repr) => repr (CmdStem CT_Note)  
+stemUp                  :: (CCmdStem repr) => repr CmdStem
 stemUp                  = cmdStem "stemUp"  
 
 -- | @\\stemDown@.
-stemDown                :: (SymCmdStem repr) => repr (CmdStem CT_Note)  
+stemDown                :: (CCmdStem repr) => repr CmdStem
 stemDown                = cmdStem "stemDown"    
 
 -- | @\\stemNeutral@.
-stemNeutral             :: (SymCmdStem repr) => repr (CmdStem CT_Note)  
+stemNeutral             :: (CCmdStem repr) => repr CmdStem
 stemNeutral             = cmdStem "stemNeutral"  
 
 --------------------------------------------------------------------------------
@@ -177,106 +177,106 @@ stemNeutral             = cmdStem "stemNeutral"
 -- *** Clef (6.4.1)
 
 -- | @treble@.
-treble          :: SymClefType repr => repr (ClefType ctx)
+treble          :: CClefType repr => repr ClefType
 treble          = cleftype "treble"
 
 -- | @alto@.
-alto            :: SymClefType repr => repr (ClefType ctx)
+alto            :: CClefType repr => repr ClefType
 alto            = cleftype "alto"
 
 -- | @tenor@.
-tenor           :: SymClefType repr => repr (ClefType ctx)
+tenor           :: CClefType repr => repr ClefType
 tenor           = cleftype "tenor"
 
 -- | @bass@.
-bass            :: SymClefType repr => repr (ClefType ctx)
+bass            :: CClefType repr => repr ClefType
 bass            = cleftype "bass"
 
 -- | @french@.
-french          :: SymClefType repr => repr (ClefType ctx)
+french          :: CClefType repr => repr ClefType
 french          = cleftype "french"
 
 -- | @soprano@.
-soprano         :: SymClefType repr => repr (ClefType ctx)
+soprano         :: CClefType repr => repr ClefType
 soprano         = cleftype "soprano"
 
 -- | @mezzosoprano@.
-mezzosoprano    :: SymClefType repr => repr (ClefType ctx)
+mezzosoprano    :: CClefType repr => repr ClefType
 mezzosoprano    = cleftype "mezzosoprano"
 
 -- | @baritone@.
-baritone        :: SymClefType repr => repr (ClefType ctx)
+baritone        :: CClefType repr => repr ClefType
 baritone        = cleftype "baritone"
 
 -- | @varbaritone@.
-varbaritone     :: SymClefType repr => repr (ClefType ctx)
+varbaritone     :: CClefType repr => repr ClefType
 varbaritone     = cleftype "varbaritone"
 
 -- | @subbass@.
-subbass         :: SymClefType repr => repr (ClefType ctx)
+subbass         :: CClefType repr => repr ClefType
 subbass         = cleftype "subbass" 
 
 -- | @percussion@.
-percussion      :: SymClefType repr => repr (ClefType ctx)
+percussion      :: CClefType repr => repr ClefType
 percussion      = cleftype "percussion" 
 
 -- | @tabClef@.
-tabClef         :: SymClefType repr => repr (ClefType ctx)
+tabClef         :: CClefType repr => repr ClefType
 tabClef         = cleftype "tabClef" 
 
 -- | Clef attribute - transpose a clef up an octave.
-clefUp8     :: (SymClefTransposition repr) => repr (ClefTransposition ctx)
+clefUp8     :: (CClefTransposition repr) => repr ClefTransposition
 clefUp8     = clefTransposition 8
 
 -- | Clef attribute - transpose a clef up two octaves.
-clefUp15    :: (SymClefTransposition repr) => repr (ClefTransposition ctx)
+clefUp15    :: (CClefTransposition repr) => repr ClefTransposition
 clefUp15    = clefTransposition 15
 
 -- | Clef attribute - transpose a clef down an octave.
-clefDown8   :: (SymClefTransposition repr) => repr (ClefTransposition ctx)
+clefDown8   :: (CClefTransposition repr) => repr ClefTransposition
 clefDown8   = clefTransposition (-8)
 
 -- | Clef attribute - transpose a clef down two octaves.
-clefDown15  :: (SymClefTransposition repr) => repr (ClefTransposition ctx)
+clefDown15  :: (CClefTransposition repr) => repr ClefTransposition
 clefDown15  = clefTransposition (-15)
 
 --------------------------------------------------------------------------------  
 -- *** Key signature (6.4.2)
 
 -- | @\\major@.
-major           :: (SymCmdKeyType repr) => repr (CmdKeyType CT_Element)  
+major           :: (CCmdKeyType repr) => repr CmdKeyType
 major           = keyType "major"
 
 -- | @\\minor@.
-minor           :: (SymCmdKeyType repr) => repr (CmdKeyType CT_Element) 
+minor           :: (CCmdKeyType repr) => repr CmdKeyType
 minor           = keyType "minor"
 
 -- | @\\ionian@.
-ionian          :: (SymCmdKeyType repr) => repr (CmdKeyType CT_Element) 
+ionian          :: (CCmdKeyType repr) => repr CmdKeyType
 ionian          = keyType "ionian"
 
 -- | @\\locrian@.
-locrian         :: (SymCmdKeyType repr) => repr (CmdKeyType CT_Element) 
+locrian         :: (CCmdKeyType repr) => repr CmdKeyType
 locrian         = keyType "locrian"
 
 -- | @\\aeolian@.
-aeolian         :: (SymCmdKeyType repr) => repr (CmdKeyType CT_Element) 
+aeolian         :: (CCmdKeyType repr) => repr CmdKeyType
 aeolian         = keyType "aeolian"
 
 -- | @\\mixolydian@.
-mixolydian      :: (SymCmdKeyType repr) => repr (CmdKeyType CT_Element) 
+mixolydian      :: (CCmdKeyType repr) => repr CmdKeyType
 mixolydian      = keyType "mixolydian"
 
 -- | @\\lydian@.
-lydian          :: (SymCmdKeyType repr) => repr (CmdKeyType CT_Element) 
+lydian          :: (CCmdKeyType repr) => repr CmdKeyType
 lydian          = keyType "lydian"
 
 -- | @\\phrygian@.
-phrygian        :: (SymCmdKeyType repr) => repr (CmdKeyType CT_Element) 
+phrygian        :: (CCmdKeyType repr) => repr CmdKeyType
 phrygian        = keyType "phrygian"
 
 -- | @\\dorian@.
-dorian          :: (SymCmdKeyType repr) => repr (CmdKeyType CT_Element) 
+dorian          :: (CCmdKeyType repr) => repr CmdKeyType
 dorian          = keyType "dorian"
 
 --------------------------------------------------------------------------------
@@ -289,11 +289,11 @@ dorian          = keyType "dorian"
 -- *** Unmetered music (6.4.6)
 
 -- | @\\cadenzaOn@.
-cadenzaOn     :: (SymCmdCadenza repr) => repr (CmdCadenza ctx)
+cadenzaOn     :: (CCmdCadenza repr) => repr CmdCadenza
 cadenzaOn     = cmdCadenza "cadenzaOn"
 
 -- | @\\cadenzaOff@.
-cadenzaOff    :: (SymCmdCadenza repr) => repr (CmdCadenza ctx)
+cadenzaOff    :: (CCmdCadenza repr) => repr CmdCadenza
 cadenzaOff    = cmdCadenza "cadenzaOff"
 
 --------------------------------------------------------------------------------  
@@ -301,96 +301,96 @@ cadenzaOff    = cmdCadenza "cadenzaOff"
 -- *** Ties (6.5.1)
 
 -- | @\\repeatTie@.
-repeatTie               :: (SymCmdTie repr) => repr (CmdTie CT_Note)   
-repeatTie               = cmdTie "repeatTie" 
+repeatTie       :: (CCmdTie repr) => repr CmdTie  
+repeatTie       = cmdTie "repeatTie" 
 
 -- | @\\tieUp@.
-tieUp           :: (SymCmdTie repr) => repr (CmdTie CT_Note) 
+tieUp           :: (CCmdTie repr) => repr CmdTie
 tieUp           = cmdTie "tieUp"
 
 -- | @\\tieDown@.
-tieDown         :: (SymCmdTie repr) => repr (CmdTie CT_Note) 
+tieDown         :: (CCmdTie repr) => repr CmdTie
 tieDown         = cmdTie "tieDown"
 
 -- | @\\tieNeutral@.
-tieNeutral      :: (SymCmdTie repr) => repr (CmdTie CT_Note) 
+tieNeutral      :: (CCmdTie repr) => repr CmdTie
 tieNeutral      = cmdTie "tieNeutral"
 
 -- | @\\tieDotted@.
-tieDotted       :: (SymCmdTie repr) => repr (CmdTie CT_Note) 
+tieDotted       :: (CCmdTie repr) => repr CmdTie
 tieDotted       = cmdTie "tieDotted"
 
 -- | @\\tieDashed@.
-tieDashed       :: (SymCmdTie repr) => repr (CmdTie CT_Note) 
+tieDashed       :: (CCmdTie repr) => repr CmdTie
 tieDashed       = cmdTie "tieDashed"
 
 -- | @\\tieSolid@.
-tieSolid        :: (SymCmdTie repr) => repr (CmdTie CT_Note) 
+tieSolid        :: (CCmdTie repr) => repr CmdTie
 tieSolid        = cmdTie "tieSolid"
 
 --------------------------------------------------------------------------------
 -- *** Slurs (6.5.2)
 
 -- | @\\slurUp@.
-slurUp          :: (SymCmdSlur repr) => repr (CmdSlur ctx)
+slurUp          :: (CCmdSlur repr) => repr CmdSlur
 slurUp          = cmdSlur "slurUp"
 
 -- | @\\slurDown@.
-slurDown        :: (SymCmdSlur repr) => repr (CmdSlur ctx)
+slurDown        :: (CCmdSlur repr) => repr CmdSlur
 slurDown        = cmdSlur "slurDown"
 
 -- | @\\slurNeutral@.
-slurNeutral     :: (SymCmdSlur repr) => repr (CmdSlur ctx)
+slurNeutral     :: (CCmdSlur repr) => repr CmdSlur
 slurNeutral     = cmdSlur "slurNeutral"
 
 -- | @\\slurDashed@.
-slurDashed      :: (SymCmdSlur repr) => repr (CmdSlur ctx)
+slurDashed      :: (CCmdSlur repr) => repr CmdSlur
 slurDashed      = cmdSlur "slurDashed"
 
 -- | @\\slurDotted@.
-slurDotted      :: (SymCmdSlur repr) => repr (CmdSlur ctx)
+slurDotted      :: (CCmdSlur repr) => repr CmdSlur
 slurDotted      = cmdSlur "slurDotted"
 
 -- | @\\slurSolid@.
-slurSolid       :: (SymCmdSlur repr) => repr (CmdSlur ctx)
+slurSolid       :: (CCmdSlur repr) => repr CmdSlur
 slurSolid       = cmdSlur "slurSolid"
 
 --------------------------------------------------------------------------------
 -- *** Phrasing slurs (6.5.3)
 
 -- | @\\(@.
-openPhrasingSlur      :: SymCmdPhrasingSlur repr => repr (CmdPhrasingSlur ctx)
+openPhrasingSlur      :: (CCmdPhrasingSlur repr) => repr CmdPhrasingSlur
 openPhrasingSlur      = cmdPhrasingSlur "("
 
 -- | @\\)@.
-closePhrasingSlur     :: SymCmdPhrasingSlur repr => repr (CmdPhrasingSlur ctx)
+closePhrasingSlur     :: (CCmdPhrasingSlur repr) => repr CmdPhrasingSlur
 closePhrasingSlur     = cmdPhrasingSlur ")"
 
 -- | @\\phrasingSlurUp@.
-phrasingSlurUp        :: SymCmdPhrasingSlur repr => repr (CmdPhrasingSlur ctx)
+phrasingSlurUp        :: (CCmdPhrasingSlur repr) => repr CmdPhrasingSlur
 phrasingSlurUp        = cmdPhrasingSlur "phrasingSlurUp"
 
 -- | @\\phrasingSlurDown@.
-phrasingSlurDown      :: SymCmdPhrasingSlur repr => repr (CmdPhrasingSlur ctx)
+phrasingSlurDown      :: (CCmdPhrasingSlur repr) => repr CmdPhrasingSlur
 phrasingSlurDown      = cmdPhrasingSlur "phrasingSlurDown"
 
 -- | @\\phrasingSlurNeutral@.
-phrasingSlurNeutral   :: SymCmdPhrasingSlur repr => repr (CmdPhrasingSlur ctx)
+phrasingSlurNeutral   :: (CCmdPhrasingSlur repr) => repr CmdPhrasingSlur
 phrasingSlurNeutral   = cmdPhrasingSlur "phrasingSlurNeutral"
   
 --------------------------------------------------------------------------------
 -- *** Grace notes (6.5.7)
 
 -- | @\\grace@.
-grace         :: SymCmdGrace repr => repr (CmdGrace ctx)
+grace         :: CCmdGrace repr => repr CmdGrace
 grace         = cmdGrace "grace"
 
 -- | @\\acciaccatura@.
-acciaccatura  :: SymCmdGrace repr => repr (CmdGrace ctx)
+acciaccatura  :: CCmdGrace repr => repr CmdGrace
 acciaccatura  = cmdGrace "acciaccatura"
 
 -- | @\\appoggiatura@.
-appoggiatura  :: SymCmdGrace repr => repr (CmdGrace ctx)
+appoggiatura  :: CCmdGrace repr => repr CmdGrace
 appoggiatura  = cmdGrace "appoggiatura" 
   
 --------------------------------------------------------------------------------
@@ -398,251 +398,212 @@ appoggiatura  = cmdGrace "appoggiatura"
 -- *** Articulations (6.6.1)
 
 -- | Place a mark above the note with @^@.
-vabove    :: (SymVerticalPlacement repr, SymPrefixAttr repr,
+vabove    :: (CVerticalPlacement repr, CPrefixAttr repr,
               PrefixAttribute a VerticalPlacement) 
-          => repr (a ctx) -> repr (a ctx)
+          => repr a -> repr a
 vabove    = prefixAttr (verticalPlacement VAbove)
 
 
 -- | Place a mark below the note with @_@.
-vbelow    :: (SymVerticalPlacement repr, SymPrefixAttr repr,
+vbelow    :: (CVerticalPlacement repr, CPrefixAttr repr,
               PrefixAttribute a VerticalPlacement) 
-          => repr (a ctx) -> repr (a ctx)
+          => repr a -> repr a
 vbelow    = prefixAttr (verticalPlacement VAbove)
 
 
 -- | Place a mark about the note with @-@. The renderer will decide where 
 -- it goes.
-vdefault  :: (SymVerticalPlacement repr, SymPrefixAttr repr,
+vdefault  :: (CVerticalPlacement repr, CPrefixAttr repr,
               PrefixAttribute a VerticalPlacement) 
-          => repr (a ctx) -> repr (a ctx)
+          => repr a -> repr a
 vdefault  = prefixAttr (verticalPlacement VAbove)
 
 
 
 -- | @-^@ - dashHat, aka @marcato@.
-dashHat           :: (SymArticulation repr) => repr (Articulation ctx)
+dashHat           :: (CArticulation repr) => repr Articulation
 dashHat           = articulation "-^"
 
 -- | @-+@ - dashPlus, aka @stopped@.
-dashPlus          :: (SymArticulation repr) => repr (Articulation ctx)
+dashPlus          :: (CArticulation repr) => repr Articulation
 dashPlus          = articulation "-+"
 
 -- | @--@ - dashDash, aka @tenuto@.
-dashDash          :: (SymArticulation repr) => repr (Articulation ctx)
+dashDash          :: (CArticulation repr) => repr Articulation
 dashDash          = articulation "--"
 
 -- | @-|@ - dashBar, aka @staccatissimo@.
-dashBar           :: (SymArticulation repr) => repr (Articulation ctx)
+dashBar           :: (CArticulation repr) => repr Articulation
 dashBar           = articulation "-|"
 
 -- | @->@ - dashLarger, aka @accent@.
-dashLarger        :: (SymArticulation repr) => repr (Articulation ctx)
+dashLarger        :: (CArticulation repr) => repr Articulation
 dashLarger        = articulation "->"
 
 -- | @-.@ - dashDot, aka @staccato@.
-dashDot           :: (SymArticulation repr) => repr (Articulation ctx)
+dashDot           :: (CArticulation repr) => repr Articulation
 dashDot           = articulation "-."
 
 -- | @-_@ - dashUnderscore, aka @portato@.
-dashUnderscore    :: (SymArticulation repr) => repr (Articulation ctx)
+dashUnderscore    :: (CArticulation repr) => repr Articulation
 dashUnderscore    = articulation "-_"
 
 
 
 -- | @\\accent@.
-accent                  :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element)           
+accent                  :: (CCmdArticulation repr) => repr CmdArticulation          
 accent                  = cmdArticulation "accent"  
 
 -- | @\\marcato@.
-marcato                 :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+marcato                 :: (CCmdArticulation repr) => repr CmdArticulation
 marcato                 = cmdArticulation "marcato" 
 
 -- | @\\staccatissimo@.
-staccatissimo           :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+staccatissimo           :: (CCmdArticulation repr) => repr CmdArticulation
 staccatissimo           = cmdArticulation "staccatissimo" 
 
 -- | @\\espressivo@.
-espressivo              :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element)   
+espressivo              :: (CCmdArticulation repr) => repr CmdArticulation  
 espressivo              = cmdArticulation "espressivo"  
 
 -- | @\\staccato@.
-staccato                :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+staccato                :: (CCmdArticulation repr) => repr CmdArticulation
 staccato                = cmdArticulation "staccato" 
 
 -- | @\\tenuto@.
-tenuto                  :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+tenuto                  :: (CCmdArticulation repr) => repr CmdArticulation
 tenuto                  = cmdArticulation "tenuto" 
 
 -- | @\\portato@.
-portato                 :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+portato                 :: (CCmdArticulation repr) => repr CmdArticulation
 portato                 = cmdArticulation "portato"
 
 -- | @\\upbow@.
-upbow                   :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element)
+upbow                   :: (CCmdArticulation repr) => repr CmdArticulation
 upbow                   = cmdArticulation "upbow"
 
 -- | @\\downbow@.
-downbow                 :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+downbow                 :: (CCmdArticulation repr) => repr CmdArticulation
 downbow                 = cmdArticulation "downbow" 
 
 -- | @\\flageolet@.
-flageolet               :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+flageolet               :: (CCmdArticulation repr) => repr CmdArticulation
 flageolet               = cmdArticulation "flageolet" 
 
 -- | @\\thumb@.
-thumb                   :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+thumb                   :: (CCmdArticulation repr) => repr CmdArticulation
 thumb                   = cmdArticulation "thumb" 
 
 -- | @\\lheel@.
-lheel                   :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+lheel                   :: (CCmdArticulation repr) => repr CmdArticulation
 lheel                   = cmdArticulation "lheel" 
 
 -- | @\\rheel@.
-rheel                   :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element)
+rheel                   :: (CCmdArticulation repr) => repr CmdArticulation
 rheel                   = cmdArticulation "rheel" 
 
 -- | @\\ltoe@.
-ltoe                    :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+ltoe                    :: (CCmdArticulation repr) => repr CmdArticulation
 ltoe                    = cmdArticulation "ltoe" 
 
 -- | @\\rtoe@.
-rtoe                    :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+rtoe                    :: (CCmdArticulation repr) => repr CmdArticulation
 rtoe                    = cmdArticulation "rtoe" 
 
 -- | @\\open@.
-open                    :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+open                    :: (CCmdArticulation repr) => repr CmdArticulation
 open                    = cmdArticulation "open"
 
 -- | @\\stopped@.
-stopped                 :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+stopped                 :: (CCmdArticulation repr) => repr CmdArticulation
 stopped                 = cmdArticulation "stopped"
 
 -- | @\\turn@.
-turn                    :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+turn                    :: (CCmdArticulation repr) => repr CmdArticulation
 turn                    = cmdArticulation "turn" 
 
 -- | @\\reverseturn@.
-reverseturn             :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+reverseturn             :: (CCmdArticulation repr) => repr CmdArticulation
 reverseturn             = cmdArticulation "reverseturn"      
 
 -- | @\\trill@.
-trill                   :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+trill                   :: (CCmdArticulation repr) => repr CmdArticulation
 trill                   = cmdArticulation "trill"  
 
 -- | @\\prall@.
-prall                   :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+prall                   :: (CCmdArticulation repr) => repr CmdArticulation
 prall                   = cmdArticulation "prall"  
 
 -- | @\\mordent@.
-mordent                 :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+mordent                 :: (CCmdArticulation repr) => repr CmdArticulation
 mordent                 = cmdArticulation "mordent"   
 
 -- | @\\prallprall@.
-prallprall              :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+prallprall              :: (CCmdArticulation repr) => repr CmdArticulation
 prallprall              = cmdArticulation "prallprall" 
 
 -- | @\\prallmordent@.
-prallmordent            :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+prallmordent            :: (CCmdArticulation repr) => repr CmdArticulation
 prallmordent            = cmdArticulation "prallmordent"  
 
 -- | @\\upprall@.
-upprall                 :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+upprall                 :: (CCmdArticulation repr) => repr CmdArticulation
 upprall                 = cmdArticulation "upprall"   
 
 -- | @\\downprall@.
-downprall               :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+downprall               :: (CCmdArticulation repr) => repr CmdArticulation
 downprall               = cmdArticulation "downprall" 
 
 -- | @\\upmordent@.
-upmordent               :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+upmordent               :: (CCmdArticulation repr) => repr CmdArticulation
 upmordent               = cmdArticulation "upmordent"  
 
 -- | @\\downmordent@.
-downmordent             :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element)
+downmordent             :: (CCmdArticulation repr) => repr CmdArticulation
 downmordent             = cmdArticulation "downmordent" 
 
 -- | @\\pralldown@.
-pralldown               :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+pralldown               :: (CCmdArticulation repr) => repr CmdArticulation
 pralldown               = cmdArticulation "pralldown"   
 
 -- | @\\prallup@.
-prallup                 :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+prallup                 :: (CCmdArticulation repr) => repr CmdArticulation
 prallup                 = cmdArticulation "prallup"  
 
 -- | @\\lineprall@.
-lineprall               :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+lineprall               :: (CCmdArticulation repr) => repr CmdArticulation
 lineprall               = cmdArticulation "lineprall" 
 
 -- | @\\signumcongruentiae@.
-signumcongruentiae      :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+signumcongruentiae      :: (CCmdArticulation repr) => repr CmdArticulation
 signumcongruentiae      = cmdArticulation "signumcongruentiae"  
 
 -- | @\\shortfermata@.
-shortfermata            :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+shortfermata            :: (CCmdArticulation repr) => repr CmdArticulation
 shortfermata            = cmdArticulation "shortfermata"  
 
 -- | @\\fermata@.
-fermata                 :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+fermata                 :: (CCmdArticulation repr) => repr CmdArticulation
 fermata                 = cmdArticulation "fermata" 
 
 -- | @\\longfermata@.
-longfermata             :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element)
+longfermata             :: (CCmdArticulation repr) => repr CmdArticulation
 longfermata             = cmdArticulation "longfermata" 
 
 -- | @\\verylongfermata@.
-verylongfermata         :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element)  
+verylongfermata         :: (CCmdArticulation repr) => repr CmdArticulation 
 verylongfermata         = cmdArticulation "verylongfermata"    
 
 -- | @\\segno@.
-segno                   :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+segno                   :: (CCmdArticulation repr) => repr CmdArticulation
 segno                   = cmdArticulation "segno" 
 
 -- | @\\coda@.
-coda                    :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+coda                    :: (CCmdArticulation repr) => repr CmdArticulation
 coda                    = cmdArticulation "coda" 
 
 -- | @\\varcoda@.
-varcoda                 :: (SymCmdArticulation repr) 
-                        => repr (CmdArticulation CT_Element) 
+varcoda                 :: (CCmdArticulation repr) => repr CmdArticulation
 varcoda                 = cmdArticulation "varcoda" 
 
 
@@ -651,143 +612,143 @@ varcoda                 = cmdArticulation "varcoda"
 -- nullary commands (use underscore suffix _ for commands)
 
 -- | @\\ppppp@.
-ppppp_                  :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+ppppp_                  :: (CCmdDynamic repr) => repr CmdDynamic
 ppppp_                  = cmdDynamic "ppppp" 
 
 -- | @\\pppp@.
-pppp_                   :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+pppp_                   :: (CCmdDynamic repr) => repr CmdDynamic
 pppp_                   = cmdDynamic "pppp" 
 
 -- | @\\ppp@.
-ppp_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+ppp_                    :: (CCmdDynamic repr) => repr CmdDynamic
 ppp_                    = cmdDynamic "ppp" 
 
 -- | @\\pp@.
-pp_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+pp_                     :: (CCmdDynamic repr) => repr CmdDynamic
 pp_                     = cmdDynamic "pp" 
 
 -- | @\\p@ - renamed piano.
-piano                   :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+piano                   :: (CCmdDynamic repr) => repr CmdDynamic
 piano                   = cmdDynamic "p" 
 
 -- | @\\mp@.
-mp_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+mp_                     :: (CCmdDynamic repr) => repr CmdDynamic
 mp_                     = cmdDynamic "mp" 
 
 -- | @\\mf@.
-mf_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+mf_                     :: (CCmdDynamic repr) => repr CmdDynamic
 mf_                     = cmdDynamic "mf" 
 
 -- | @\\f@ - renamed forte.
-forte                   :: (SymCmdDynamic repr) => repr (CmdDynamic ctx) 
+forte                   :: (CCmdDynamic repr) => repr CmdDynamic
 forte                   = cmdDynamic "f"
 
 -- | @\\ff@.
-ff_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx) 
+ff_                     :: (CCmdDynamic repr) => repr CmdDynamic
 ff_                     = cmdDynamic "ff"
 
 -- | @\\fff@.
-fff_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx) 
+fff_                    :: (CCmdDynamic repr) => repr CmdDynamic
 fff_                    = cmdDynamic "fff"
 
 -- | @\\ffff@.
-ffff_                   :: (SymCmdDynamic repr) => repr (CmdDynamic ctx) 
+ffff_                   :: (CCmdDynamic repr) => repr CmdDynamic
 ffff_                   = cmdDynamic "ffff"
 
 -- | @\\fp@.
-fp_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx) 
+fp_                     :: (CCmdDynamic repr) => repr CmdDynamic
 fp_                     = cmdDynamic "fp"
 
 -- | @\\sf@.
-sf_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+sf_                     :: (CCmdDynamic repr) => repr CmdDynamic
 sf_                     = cmdDynamic "sf"
 
 -- | @\\sff@.
-sff_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+sff_                    :: (CCmdDynamic repr) => repr CmdDynamic
 sff_                    = cmdDynamic "sff"
 
 -- | @\\sp@.
-sp_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+sp_                     :: (CCmdDynamic repr) => repr CmdDynamic
 sp_                     = cmdDynamic "sp"
 
 -- | @\\spp@.
-spp_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+spp_                    :: (CCmdDynamic repr) => repr CmdDynamic
 spp_                    = cmdDynamic "spp"
 
 -- | @\\sfz@.
-sfz_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+sfz_                    :: (CCmdDynamic repr) => repr CmdDynamic
 sfz_                    = cmdDynamic "sfz"
 
 -- | @\\rfz@.
-rfz_                    :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)  
+rfz_                    :: (CCmdDynamic repr) => repr CmdDynamic
 rfz_                    = cmdDynamic "rfz"
 
 -- | @\\<@.
-openCrescendo           :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)
+openCrescendo           :: (CCmdDynamic repr) => repr CmdDynamic
 openCrescendo           = cmdDynamic "<"
 
 -- | @\\>@.
-openDecrescendo         :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)
+openDecrescendo         :: (CCmdDynamic repr) => repr CmdDynamic
 openDecrescendo         = cmdDynamic ">"
  
 -- | @\\!@. 
-closeDynamic            :: (SymCmdDynamic repr) => repr (CmdDynamic ctx) 
+closeDynamic            :: (CCmdDynamic repr) => repr CmdDynamic 
 closeDynamic            = cmdDynamic "!"
 
 -- | @\\cr@ - alias of \\<. 
-cr_                     :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)
+cr_                     :: (CCmdDynamic repr) => repr CmdDynamic
 cr_                     = cmdDynamic "cr" 
 
 -- | @\\decr@ - alias of \\>. 
-decr_                   :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)
+decr_                   :: (CCmdDynamic repr) => repr CmdDynamic
 decr_                   = cmdDynamic "decr"   
 
 -- | @\\dynamicUp@. 
-dynamicUp               :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)
+dynamicUp               :: (CCmdDynamic repr) => repr CmdDynamic
 dynamicUp               = cmdDynamic "dynamicUp"  
 
 -- | @\\dynamicDown@. 
-dynamicDown             :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)
+dynamicDown             :: (CCmdDynamic repr) => repr CmdDynamic
 dynamicDown             = cmdDynamic "dynamicDown"  
 
 -- | @\\dynamicNeutral@. 
-dynamicNeutral          :: (SymCmdDynamic repr) => repr (CmdDynamic ctx)
+dynamicNeutral          :: (CCmdDynamic repr) => repr CmdDynamic
 dynamicNeutral          = cmdDynamic "dynamicNeutral"  
 
   
 --------------------------------------------------------------------------------
 -- *** Breath marks (6.6.4)
 -- | @\\breathe@.
-breathe       :: SymCmdBreathe repr => repr (CmdBreathe ctx) 
+breathe       :: CCmdBreathe repr => repr CmdBreathe
 breathe       = cmdBreathe "breathe"
 
 --------------------------------------------------------------------------------
 -- *** Glissando (6.6.6)
 -- | @\\glissando@.
-glissando :: SymCmdGlissando repr => repr (CmdGlissando ctx)
+glissando :: CCmdGlissando repr => repr CmdGlissando
 glissando = cmdGlissando "glissando"  
 
 --------------------------------------------------------------------------------
 -- *** Arpeggio (6.6.7)
 
 -- | @\\arpeggio@.
-arpeggio          :: SymCmdArpeggio repr => repr (CmdArpeggio ctx)
+arpeggio          :: CCmdArpeggio repr => repr CmdArpeggio
 arpeggio          = cmdArpeggio "arpeggio"
 
 -- | @\\arpeggioUp@.
-arpeggioUp        :: SymCmdArpeggio repr => repr (CmdArpeggio ctx)
+arpeggioUp        :: CCmdArpeggio repr => repr CmdArpeggio
 arpeggioUp        = cmdArpeggio "arpeggioUp"
 
 -- | @\\arpeggioDown@.
-arpeggioDown      :: SymCmdArpeggio repr => repr (CmdArpeggio ctx)
+arpeggioDown      :: CCmdArpeggio repr => repr CmdArpeggio
 arpeggioDown      = cmdArpeggio "arpeggioDown"
 
 -- | @\\arpeggioNeutral@.
-arpeggioNeutral   :: SymCmdArpeggio repr => repr (CmdArpeggio ctx)
+arpeggioNeutral   :: CCmdArpeggio repr => repr CmdArpeggio
 arpeggioNeutral   = cmdArpeggio "arpeggioNeutral"  
 
 -- | @\\arpeggioBracket@.
-arpeggioBracket   :: SymCmdArpeggio repr => repr (CmdArpeggio ctx)
+arpeggioBracket   :: CCmdArpeggio repr => repr CmdArpeggio
 arpeggioBracket   = cmdArpeggio "arpeggioBracket"
   
 --------------------------------------------------------------------------------  
@@ -801,27 +762,27 @@ arpeggioBracket   = cmdArpeggio "arpeggioBracket"
 
 -- *** Pedals (7.1.2)  
 -- | @\\sustainDown@.
-sustainDown       :: (SymCmdPedal repr) => repr (CmdPedal CT_Element) 
+sustainDown       :: (CCmdPedal repr) => repr CmdPedal
 sustainDown       = cmdPedal "sustainDown"  
 
 -- | @\\sustainUp@.
-sustainUp         :: (SymCmdPedal repr) => repr (CmdPedal CT_Element)  
+sustainUp         :: (CCmdPedal repr) => repr CmdPedal 
 sustainUp         = cmdPedal "sustainUp"  
 
 -- | @\\unaCorda@.
-unaCorda          :: (SymCmdPedal repr) => repr (CmdPedal CT_Element)  
+unaCorda          :: (CCmdPedal repr) => repr CmdPedal 
 unaCorda          = cmdPedal "unaCorda"  
 
 -- | @\\treCorde@.
-treCorde          :: (SymCmdPedal repr) => repr (CmdPedal CT_Element)  
+treCorde          :: (CCmdPedal repr) => repr CmdPedal 
 treCorde          = cmdPedal "treCorde"  
 
 -- | @\\sostenutoDown@.
-sostenutoDown     :: (SymCmdPedal repr) => repr (CmdPedal CT_Element)  
+sostenutoDown     :: (CCmdPedal repr) => repr CmdPedal 
 sostenutoDown     = cmdPedal "sostenutoDown"  
 
 -- | @\\sostenutoUp@.
-sostenutoUp       :: (SymCmdPedal repr) => repr (CmdPedal CT_Element)  
+sostenutoUp       :: (CCmdPedal repr) => repr CmdPedal 
 sostenutoUp       = cmdPedal "sostenutoUp"  
 
 
@@ -841,596 +802,596 @@ sostenutoUp       = cmdPedal "sostenutoUp"
 -- *** Entering percussion (7.4.2)
 
 -- | @acousticbassdrum@. 
-acousticbassdrum      :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+acousticbassdrum      :: (CDrumPitchName repr) => repr DrumPitchName
 acousticbassdrum      = drumPitchName "acousticbassdrum"
 
 -- | @bassdrum@. 
-bassdrum              :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+bassdrum              :: (CDrumPitchName repr) => repr DrumPitchName
 bassdrum              = drumPitchName "bassdrum"
 
 -- | @hisidestick@. 
-hisidestick           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hisidestick           :: (CDrumPitchName repr) => repr DrumPitchName
 hisidestick           = drumPitchName "hisidestick"
 
 -- | @sidestick@. 
-sidestick             :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+sidestick             :: (CDrumPitchName repr) => repr DrumPitchName
 sidestick             = drumPitchName "sidestick"
 
 -- | @losidestick@. 
-losidestick           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+losidestick           :: (CDrumPitchName repr) => repr DrumPitchName
 losidestick           = drumPitchName "losidestick"
 
 -- | @acousticsnare@. 
-acousticsnare         :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+acousticsnare         :: (CDrumPitchName repr) => repr DrumPitchName
 acousticsnare         = drumPitchName "acousticbassdrum"
 
 -- | @snare@. 
-snare                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+snare                 :: (CDrumPitchName repr) => repr DrumPitchName
 snare                 = drumPitchName "snare"
 
 -- | @handclap@.
-handclap              :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+handclap              :: (CDrumPitchName repr) => repr DrumPitchName
 handclap              = drumPitchName "handclap"
 
 -- | @electricsnare@.
-electricsnare         :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+electricsnare         :: (CDrumPitchName repr) => repr DrumPitchName
 electricsnare         = drumPitchName "electricsnare"
 
 -- | @lowfloortom@.
-lowfloortom           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+lowfloortom           :: (CDrumPitchName repr) => repr DrumPitchName
 lowfloortom           = drumPitchName "lowfloortom"
 
 -- | @closedhihat@.
-closedhihat           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+closedhihat           :: (CDrumPitchName repr) => repr DrumPitchName
 closedhihat           = drumPitchName "closedhihat"
 
 -- | @hihat@.
-hihat                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hihat                 :: (CDrumPitchName repr) => repr DrumPitchName
 hihat                 = drumPitchName "hihat"
 
 -- | @highfloortom@.
-highfloortom          :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+highfloortom          :: (CDrumPitchName repr) => repr DrumPitchName
 highfloortom          = drumPitchName "highfloortom"
 
 -- | @pedalhihat@.
-pedalhihat            :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+pedalhihat            :: (CDrumPitchName repr) => repr DrumPitchName
 pedalhihat            = drumPitchName "pedalhihat"
 
 -- | @lowtom@.
-lowtom                :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+lowtom                :: (CDrumPitchName repr) => repr DrumPitchName
 lowtom                = drumPitchName "lowtom"
 
 -- | @openhihat@.
-openhihat             :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+openhihat             :: (CDrumPitchName repr) => repr DrumPitchName
 openhihat             = drumPitchName "openhihat"
 
 -- | @halfopenhihat@.
-halfopenhihat         :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+halfopenhihat         :: (CDrumPitchName repr) => repr DrumPitchName
 halfopenhihat         = drumPitchName "halfopenhihat"
 
 -- | @lowmidtom@.
-lowmidtom             :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+lowmidtom             :: (CDrumPitchName repr) => repr DrumPitchName
 lowmidtom             = drumPitchName "lowmidtom"
 
 -- | @himidtom@.
-himidtom              :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+himidtom              :: (CDrumPitchName repr) => repr DrumPitchName
 himidtom              = drumPitchName "himidtom"
 
 -- | @crashcymbala@.
-crashcymbala          :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+crashcymbala          :: (CDrumPitchName repr) => repr DrumPitchName
 crashcymbala          = drumPitchName "crashcymbala"
 
 -- | @crashcymbal@.
-crashcymbal           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+crashcymbal           :: (CDrumPitchName repr) => repr DrumPitchName
 crashcymbal           = drumPitchName "crashcymbal"
 
 -- | @hightom@.
-hightom               :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hightom               :: (CDrumPitchName repr) => repr DrumPitchName
 hightom               = drumPitchName "hightom"
 
 -- | @ridecymbala@.
 
-ridecymbala           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+ridecymbala           :: (CDrumPitchName repr) => repr DrumPitchName
 ridecymbala           = drumPitchName "ridecymbala"
 
 -- | @ridecymbal@.
-ridecymbal            :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+ridecymbal            :: (CDrumPitchName repr) => repr DrumPitchName
 ridecymbal            = drumPitchName "ridecymbal"
 
 -- | @chinesecymbal@.
-chinesecymbal         :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+chinesecymbal         :: (CDrumPitchName repr) => repr DrumPitchName
 chinesecymbal         = drumPitchName "chinesecymbal"
 
 -- | @ridebell@.
-ridebell              :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+ridebell              :: (CDrumPitchName repr) => repr DrumPitchName
 ridebell              = drumPitchName "ridebell"
 
 -- | @tambourine@.
-tambourine            :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+tambourine            :: (CDrumPitchName repr) => repr DrumPitchName
 tambourine            = drumPitchName "tambourine"
 
 -- | @splashcymbal@.
-splashcymbal          :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+splashcymbal          :: (CDrumPitchName repr) => repr DrumPitchName
 splashcymbal          = drumPitchName "splashcymbal"
 
 -- | @cowbell@.
-cowbell               :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cowbell               :: (CDrumPitchName repr) => repr DrumPitchName
 cowbell               = drumPitchName "cowbell"
 
 -- | @crashcymbalb@.
-crashcymbalb          :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+crashcymbalb          :: (CDrumPitchName repr) => repr DrumPitchName
 crashcymbalb          = drumPitchName "crashcymbalb"
 
 -- | @vibraslap@.
-vibraslap             :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+vibraslap             :: (CDrumPitchName repr) => repr DrumPitchName
 vibraslap             = drumPitchName "vibraslap"
 
 -- | @ridecymbalb@.
-ridecymbalb           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+ridecymbalb           :: (CDrumPitchName repr) => repr DrumPitchName
 ridecymbalb           = drumPitchName "ridecymbalb"
 
 -- | @mutehibongo@.
-mutehibongo           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+mutehibongo           :: (CDrumPitchName repr) => repr DrumPitchName
 mutehibongo           = drumPitchName "mutehibongo"
 
 -- | @hibongo@.
-hibongo               :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hibongo               :: (CDrumPitchName repr) => repr DrumPitchName
 hibongo               = drumPitchName "hibongo"
 
 -- | @openhibongo@.
-openhibongo           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+openhibongo           :: (CDrumPitchName repr) => repr DrumPitchName
 openhibongo           = drumPitchName "openhibongo"
 
 -- | @mutelobongo@.
-mutelobongo           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+mutelobongo           :: (CDrumPitchName repr) => repr DrumPitchName
 mutelobongo           = drumPitchName "mutelobongo"
 
 -- | @lobongo@.
-lobongo               :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+lobongo               :: (CDrumPitchName repr) => repr DrumPitchName
 lobongo               = drumPitchName "lobongo"
 
 -- | @openlobongo@.
-openlobongo           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+openlobongo           :: (CDrumPitchName repr) => repr DrumPitchName
 openlobongo           = drumPitchName "openlobongo"
 
 -- | @mutehiconga@.
-mutehiconga           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+mutehiconga           :: (CDrumPitchName repr) => repr DrumPitchName
 mutehiconga           = drumPitchName "mutehiconga"
 
 -- | @muteloconga@.
-muteloconga           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+muteloconga           :: (CDrumPitchName repr) => repr DrumPitchName
 muteloconga           = drumPitchName "muteloconga"
 
 -- | @openhiconga@.
-openhiconga           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+openhiconga           :: (CDrumPitchName repr) => repr DrumPitchName
 openhiconga           = drumPitchName "openhiconga"
 
 -- | @hiconga@.
-hiconga               :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hiconga               :: (CDrumPitchName repr) => repr DrumPitchName
 hiconga               = drumPitchName "hiconga"
 
 -- | @openloconga@.
-openloconga           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+openloconga           :: (CDrumPitchName repr) => repr DrumPitchName
 openloconga           = drumPitchName "openloconga"
 
 -- | @loconga@.
-loconga               :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+loconga               :: (CDrumPitchName repr) => repr DrumPitchName
 loconga               = drumPitchName "loconga"
 
 -- | @hitimbale@.
-hitimbale             :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hitimbale             :: (CDrumPitchName repr) => repr DrumPitchName
 hitimbale             = drumPitchName "hitimbale"
 
 -- | @lotimbale@.
-lotimbale             :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+lotimbale             :: (CDrumPitchName repr) => repr DrumPitchName
 lotimbale             = drumPitchName "lotimbale"
 
 -- | @hiagogo@.
-hiagogo               :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hiagogo               :: (CDrumPitchName repr) => repr DrumPitchName
 hiagogo               = drumPitchName "hiagogo"
 
 -- | @loagogo@.
-loagogo               :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+loagogo               :: (CDrumPitchName repr) => repr DrumPitchName
 loagogo               = drumPitchName "loagogo"
 
 -- | @cabasa@.
-cabasa                :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cabasa                :: (CDrumPitchName repr) => repr DrumPitchName
 cabasa                = drumPitchName "cabasa"
 
 -- | @maracas@.
-maracas               :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+maracas               :: (CDrumPitchName repr) => repr DrumPitchName
 maracas               = drumPitchName "maracas"
 
 -- | @shortwhistle@.
-shortwhistle          :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+shortwhistle          :: (CDrumPitchName repr) => repr DrumPitchName
 shortwhistle          = drumPitchName "shortwhistle"
 
 -- | @longwhistle@.
-longwhistle           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+longwhistle           :: (CDrumPitchName repr) => repr DrumPitchName
 longwhistle           = drumPitchName "longwhistle"
 
 -- | @shortguiro@.
-shortguiro            :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+shortguiro            :: (CDrumPitchName repr) => repr DrumPitchName
 shortguiro            = drumPitchName "shortguiro"
 
 -- | @longguiro@.
-longguiro             :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+longguiro             :: (CDrumPitchName repr) => repr DrumPitchName
 longguiro             = drumPitchName "longguiro"
 
 -- | @guiro@.
-guiro                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+guiro                 :: (CDrumPitchName repr) => repr DrumPitchName
 guiro                 = drumPitchName "guiro"
 
 -- | @claves@.
-claves                :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+claves                :: (CDrumPitchName repr) => repr DrumPitchName
 claves                = drumPitchName "claves"
 
 -- | @hiwoodblock@.
-hiwoodblock           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hiwoodblock           :: (CDrumPitchName repr) => repr DrumPitchName
 hiwoodblock           = drumPitchName "hiwoodblock"
 
 -- | @lowoodblock@.
-lowoodblock           :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+lowoodblock           :: (CDrumPitchName repr) => repr DrumPitchName
 lowoodblock           = drumPitchName "lowoodblock"
 
 -- | @mutecuica@.
-mutecuica             :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+mutecuica             :: (CDrumPitchName repr) => repr DrumPitchName
 mutecuica             = drumPitchName "mutecuica"
 
 -- | @opencuica@.
-opencuica             :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+opencuica             :: (CDrumPitchName repr) => repr DrumPitchName
 opencuica             = drumPitchName "opencuica"
 
 -- | @mutetriangle@.
-mutetriangle          :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+mutetriangle          :: (CDrumPitchName repr) => repr DrumPitchName
 mutetriangle          = drumPitchName "mutetriangle"
 
 -- | @triangle@.
-triangle              :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+triangle              :: (CDrumPitchName repr) => repr DrumPitchName
 triangle              = drumPitchName "triangle"
 
 -- | @opentriangle@.
-opentriangle          :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+opentriangle          :: (CDrumPitchName repr) => repr DrumPitchName
 opentriangle          = drumPitchName "opentriangle"
 
 -- | @oneup@.
-oneup                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+oneup                 :: (CDrumPitchName repr) => repr DrumPitchName
 oneup                 = drumPitchName "oneup"
 
 -- | @twoup@.
-twoup                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+twoup                 :: (CDrumPitchName repr) => repr DrumPitchName
 twoup                 = drumPitchName "twoup"
 
 -- | @threeup@.
-threeup               :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+threeup               :: (CDrumPitchName repr) => repr DrumPitchName
 threeup               = drumPitchName "threeup"
 
 -- | @fourup@.
-fourup                :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+fourup                :: (CDrumPitchName repr) => repr DrumPitchName
 fourup                = drumPitchName "fourup"
 
 -- | @fiveup@.
-fiveup                :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+fiveup                :: (CDrumPitchName repr) => repr DrumPitchName
 fiveup                = drumPitchName "fiveup"
 
 -- | @onedown@.
-onedown               :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+onedown               :: (CDrumPitchName repr) => repr DrumPitchName
 onedown               = drumPitchName "onedown"
 
 -- | @twodown@.
-twodown               :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+twodown               :: (CDrumPitchName repr) => repr DrumPitchName
 twodown               = drumPitchName "twodown"
 
 -- | @threedown@.
-threedown             :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+threedown             :: (CDrumPitchName repr) => repr DrumPitchName
 threedown             = drumPitchName "threedown"
 
 -- | @fourdown@.
-fourdown              :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+fourdown              :: (CDrumPitchName repr) => repr DrumPitchName
 fourdown              = drumPitchName "fourdown"
 
 -- | @fivedown@.
-fivedown              :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+fivedown              :: (CDrumPitchName repr) => repr DrumPitchName
 fivedown              = drumPitchName "fivedown"
    
 
 
 -- | @bda@ - abbreviated name for 'acousticbassdrum'. 
-bda                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+bda                   :: (CDrumPitchName repr) => repr DrumPitchName
 bda                   = drumPitchName "bda"
 
 -- | @bd@ - abbreviated name for 'bassdrum'.
-bd                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+bd                    :: (CDrumPitchName repr) => repr DrumPitchName
 bd                    = drumPitchName "bd"
 
 -- | @ssh@ - abbreviated name for 'hisidestick'.
-ssh                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+ssh                   :: (CDrumPitchName repr) => repr DrumPitchName
 ssh                   = drumPitchName "ssh"
 
 -- | @ss@ - abbreviated name for 'sidestick'.
-ss                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+ss                    :: (CDrumPitchName repr) => repr DrumPitchName
 ss                    = drumPitchName "ss"
 
 -- | @ssl@ - abbreviated name for 'losidestick'.
-ssl                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+ssl                   :: (CDrumPitchName repr) => repr DrumPitchName
 ssl                   = drumPitchName "ssl"
 
 -- | @sna@ - abbreviated name for 'acousticsnare'.
-sna                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+sna                   :: (CDrumPitchName repr) => repr DrumPitchName
 sna                   = drumPitchName "sna"
 
 -- | @sn@ - abbreviated name for 'snare'.
-sn                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+sn                    :: (CDrumPitchName repr) => repr DrumPitchName
 sn                    = drumPitchName "sn"
 
 -- | @hc@ - abbreviated name for 'handclap'.
-hc                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hc                    :: (CDrumPitchName repr) => repr DrumPitchName
 hc                    = drumPitchName "hc"
 
 -- | @sne@ - abbreviated name for 'electricsnare'.
-sne                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+sne                   :: (CDrumPitchName repr) => repr DrumPitchName
 sne                   = drumPitchName "sne"
 
 -- | @tomfl@ - abbreviated name for 'lowfloortom'.
-tomfl                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+tomfl                 :: (CDrumPitchName repr) => repr DrumPitchName
 tomfl                 = drumPitchName "tomfl"
 
 -- | @hhc@ - abbreviated name for 'closedhihat'.
-hhc                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hhc                   :: (CDrumPitchName repr) => repr DrumPitchName
 hhc                   = drumPitchName "hhc"
 
 -- | @hh@ - abbreviated name for 'hihat'.
-hh                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hh                    :: (CDrumPitchName repr) => repr DrumPitchName
 hh                    = drumPitchName "hh"
 
 -- | @tomfh@ - abbreviated name for 'highfloortom'.
-tomfh                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+tomfh                 :: (CDrumPitchName repr) => repr DrumPitchName
 tomfh                 = drumPitchName "tomfh"
 
 
 -- | @hhp@ - abbreviated name for 'pedalhihat'.
-hhp                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hhp                   :: (CDrumPitchName repr) => repr DrumPitchName
 hhp                   = drumPitchName "hhp"
 
 -- | @toml@ - abbreviated name for 'lowtom'.
-toml                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+toml                  :: (CDrumPitchName repr) => repr DrumPitchName
 toml                  = drumPitchName "toml"
 
 -- | @hho@ - abbreviated name for 'openhihat'.
-hho                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hho                   :: (CDrumPitchName repr) => repr DrumPitchName
 hho                   = drumPitchName "hho"
 
 -- | @hhho@ - abbreviated name for 'halfopenhihat'.
-hhho                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+hhho                  :: (CDrumPitchName repr) => repr DrumPitchName
 hhho                  = drumPitchName "hhho"
 
 -- | @tomml@ - abbreviated name for 'lowmidtom'.
-tomml                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+tomml                 :: (CDrumPitchName repr) => repr DrumPitchName
 tomml                 = drumPitchName "tomml"
 
 -- | @tommh@ - abbreviated name for 'himidtom'.
-tommh                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+tommh                 :: (CDrumPitchName repr) => repr DrumPitchName
 tommh                 = drumPitchName "tommh"
 
 -- | @cymca@ - abbreviated name for 'crashcymbala'.
-cymca                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cymca                 :: (CDrumPitchName repr) => repr DrumPitchName
 cymca                 = drumPitchName "cymca"
 
 -- | @cymc@ - abbreviated name for 'crashcymbal'.
-cymc                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cymc                  :: (CDrumPitchName repr) => repr DrumPitchName
 cymc                  = drumPitchName "cymc"
 
 -- | @tomh@ - abbreviated name for 'hightom'.
-tomh                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+tomh                  :: (CDrumPitchName repr) => repr DrumPitchName
 tomh                  = drumPitchName "tomh"
 
 -- | @cymra@ - abbreviated name for 'ridecymbala'.
-cymra                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cymra                 :: (CDrumPitchName repr) => repr DrumPitchName
 cymra                 = drumPitchName "cymra"
 
 -- | @cymr@ - abbreviated name for 'ridecymbal'.
-cymr                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cymr                  :: (CDrumPitchName repr) => repr DrumPitchName
 cymr                  = drumPitchName "cymr"
 
 -- | @cymch@ - abbreviated name for 'chinesecymbal'.
-cymch                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cymch                 :: (CDrumPitchName repr) => repr DrumPitchName
 cymch                 = drumPitchName "cymch"
 
 -- | @rb@ - abbreviated name for 'ridebell'.
-rb                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+rb                    :: (CDrumPitchName repr) => repr DrumPitchName
 rb                    = drumPitchName "rb"
 
 -- | @tamb@ - abbreviated name for 'tambourine'.
-tamb                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+tamb                  :: (CDrumPitchName repr) => repr DrumPitchName
 tamb                  = drumPitchName "tamb"
 
 -- | @cyms@ - abbreviated name for 'splashcymbal'.
-cyms                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cyms                  :: (CDrumPitchName repr) => repr DrumPitchName
 cyms                  = drumPitchName "cyms"
 
 -- | @cb@ - abbreviated name for 'cowbell'.
-cb                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cb                    :: (CDrumPitchName repr) => repr DrumPitchName
 cb                    = drumPitchName "cb"
 
 -- | @cymcb@ - abbreviated name for 'crashcymbalb'.
-cymcb                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cymcb                 :: (CDrumPitchName repr) => repr DrumPitchName
 cymcb                 = drumPitchName "cymcb"
 
 -- | @vibs@ - abbreviated name for 'vibraslap'.
-vibs                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+vibs                  :: (CDrumPitchName repr) => repr DrumPitchName
 vibs                  = drumPitchName "vibs"
 
 -- | @cymrb@ - abbreviated name for 'ridecymbalb'.
-cymrb                 :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cymrb                 :: (CDrumPitchName repr) => repr DrumPitchName
 cymrb                 = drumPitchName "cymrb"
 
 -- | @bohm@ - abbreviated name for 'mutehibongo'.
-bohm                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+bohm                  :: (CDrumPitchName repr) => repr DrumPitchName
 bohm                  = drumPitchName "bohm"
 
 -- | @boh@ - abbreviated name for 'hibongo'.
-boh                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+boh                   :: (CDrumPitchName repr) => repr DrumPitchName
 boh                   = drumPitchName "boh"
 
 -- | @boho@ - abbreviated name for 'openhibongo'.
-boho                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+boho                  :: (CDrumPitchName repr) => repr DrumPitchName
 boho                  = drumPitchName "boho"
 
 -- | @bolm@ - abbreviated name for 'mutelobongo'.
-bolm                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+bolm                  :: (CDrumPitchName repr) => repr DrumPitchName
 bolm                  = drumPitchName "bolm"
 
 -- | @bol@ - abbreviated name for 'lobongo'.
-bol                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+bol                   :: (CDrumPitchName repr) => repr DrumPitchName
 bol                   = drumPitchName "bol"
 
 -- | @bolo@ - abbreviated name for 'openlobongo'.
-bolo                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+bolo                  :: (CDrumPitchName repr) => repr DrumPitchName
 bolo                  = drumPitchName "bolo"
 
 -- | @cghm@ - abbreviated name for 'mutehiconga'.
-cghm                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cghm                  :: (CDrumPitchName repr) => repr DrumPitchName
 cghm                  = drumPitchName "cghm"
 
 -- | @cglm@ - abbreviated name for 'muteloconga'.
-cglm                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cglm                  :: (CDrumPitchName repr) => repr DrumPitchName
 cglm                  = drumPitchName "cglm"
 
 -- | @cgho@ - abbreviated name for 'openhiconga'.
-cgho                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cgho                  :: (CDrumPitchName repr) => repr DrumPitchName
 cgho                  = drumPitchName "cgho"
 
 -- | @cgh@ - abbreviated name for 'hiconga'.
-cgh                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cgh                   :: (CDrumPitchName repr) => repr DrumPitchName
 cgh                   = drumPitchName "cgh"
 
 -- | @cglo@ - abbreviated name for 'openloconga'.
-cglo                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cglo                  :: (CDrumPitchName repr) => repr DrumPitchName
 cglo                  = drumPitchName "cglo"
 
 -- | @cgl@ - abbreviated name for 'loconga'.
-cgl                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cgl                   :: (CDrumPitchName repr) => repr DrumPitchName
 cgl                   = drumPitchName "cgl"
 
 -- | @timh@ - abbreviated name for 'hitimbale'.
-timh                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+timh                  :: (CDrumPitchName repr) => repr DrumPitchName
 timh                  = drumPitchName "timh"
 
 -- | @timl@ - abbreviated name for 'lotimbale'.
-timl                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+timl                  :: (CDrumPitchName repr) => repr DrumPitchName
 timl                  = drumPitchName "timl"
 
 -- | @agh@ - abbreviated name for 'hiagogo'.
-agh                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+agh                   :: (CDrumPitchName repr) => repr DrumPitchName
 agh                   = drumPitchName "agh"
 
 -- | @agl@ - abbreviated name for 'loagogo'.
-agl                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+agl                   :: (CDrumPitchName repr) => repr DrumPitchName
 agl                   = drumPitchName "agl"
 
 -- | @cab@ - abbreviated name for 'cabasa'.
-cab                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cab                   :: (CDrumPitchName repr) => repr DrumPitchName
 cab                   = drumPitchName "cab"
 
 -- | @mar@ - abbreviated name for 'maracas'.
-mar                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+mar                   :: (CDrumPitchName repr) => repr DrumPitchName
 mar                   = drumPitchName "mar"
 
 -- | @whs@ - abbreviated name for 'shortwhistle'.
-whs                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+whs                   :: (CDrumPitchName repr) => repr DrumPitchName
 whs                   = drumPitchName "whs"
 
 -- | @whl@ - abbreviated name for 'longwhistle'.
-whl                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+whl                   :: (CDrumPitchName repr) => repr DrumPitchName
 whl                   = drumPitchName "whl"
 
 -- | @guis@ - abbreviated name for 'shortguiro'.
-guis                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+guis                  :: (CDrumPitchName repr) => repr DrumPitchName
 guis                  = drumPitchName "guis"
 
 -- | @guil@ - abbreviated name for 'longguiro'.
-guil                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+guil                  :: (CDrumPitchName repr) => repr DrumPitchName
 guil                  = drumPitchName "guil"
 
 -- | @gui@ - abbreviated name for 'guiro'.
-gui                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+gui                   :: (CDrumPitchName repr) => repr DrumPitchName
 gui                   = drumPitchName "gui"
 
 -- | @cl@ - abbreviated name for 'claves'.
-cl                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cl                    :: (CDrumPitchName repr) => repr DrumPitchName
 cl                    = drumPitchName "cl"
 
 -- | @wbh@ - abbreviated name for 'hiwoodblock'.
-wbh                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+wbh                   :: (CDrumPitchName repr) => repr DrumPitchName
 wbh                   = drumPitchName "wbh"
 
 -- | @wbl@ - abbreviated name for 'lowoodblock'.
-wbl                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+wbl                   :: (CDrumPitchName repr) => repr DrumPitchName
 wbl                   = drumPitchName "wbl"
 
 -- | @cuim@ - abbreviated name for 'mutecuica'.
-cuim                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cuim                  :: (CDrumPitchName repr) => repr DrumPitchName
 cuim                  = drumPitchName "cuim"
 
 -- | @cuio@ - abbreviated name for 'opencuica'.
-cuio                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+cuio                  :: (CDrumPitchName repr) => repr DrumPitchName
 cuio                  = drumPitchName "cuio"
 
 
 -- | @trim@ - abbreviated name for 'mutetriangle'.
-trim                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+trim                  :: (CDrumPitchName repr) => repr DrumPitchName
 trim                  = drumPitchName "trim"
 
 -- | @tri@ - abbreviated name for 'triangle'.
-tri                   :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+tri                   :: (CDrumPitchName repr) => repr DrumPitchName
 tri                   = drumPitchName "tri"
 
 -- | @trio@ - abbreviated name for 'opentriangle'.
-trio                  :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+trio                  :: (CDrumPitchName repr) => repr DrumPitchName
 trio                  = drumPitchName "trio"
 
 -- | @tt@ - abbreviated name for 'tamtam'.
-tt                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+tt                    :: (CDrumPitchName repr) => repr DrumPitchName
 tt                    = drumPitchName "tt"
 
 -- | @ua@ - abbreviated name for 'oneup'.
-ua                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+ua                    :: (CDrumPitchName repr) => repr DrumPitchName
 ua                    = drumPitchName "ua"
 
 -- | @ub@ - abbreviated name for 'twoup'.
-ub                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+ub                    :: (CDrumPitchName repr) => repr DrumPitchName
 ub                    = drumPitchName "ub"
 
 -- | @uc@ - abbreviated name for 'threeup'.
-uc                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+uc                    :: (CDrumPitchName repr) => repr DrumPitchName
 uc                    = drumPitchName "uc"
 
 -- | @ud@ - abbreviated name for 'fourup'.
-ud                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+ud                    :: (CDrumPitchName repr) => repr DrumPitchName
 ud                    = drumPitchName "ud"
 
 -- | @ue@ - abbreviated name for 'fiveup'.
-ue                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+ue                    :: (CDrumPitchName repr) => repr DrumPitchName
 ue                    = drumPitchName "ue"
 
 -- | @da@ - abbreviated name for 'onedown'.
-da                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+da                    :: (CDrumPitchName repr) => repr DrumPitchName
 da                    = drumPitchName "da"
 
 -- | @db@ - abbreviated name for 'twodown'.
-db                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+db                    :: (CDrumPitchName repr) => repr DrumPitchName
 db                    = drumPitchName "db"
 
 -- | @dc@ - abbreviated name for 'threedown'.
-dc                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+dc                    :: (CDrumPitchName repr) => repr DrumPitchName
 dc                    = drumPitchName "dc"
 
 -- | @dd@ - abbreviated name for 'fourdown'.
-dd                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+dd                    :: (CDrumPitchName repr) => repr DrumPitchName
 dd                    = drumPitchName "dd"
 
 -- | @de@ - abbreviated name for 'fivedown'.
-de                    :: (SymDrumPitchName repr) => repr (DrumPitchName ctx)
+de                    :: (CDrumPitchName repr) => repr DrumPitchName
 de                    = drumPitchName "de"
 
 --------------------------------------------------------------------------------

@@ -34,7 +34,7 @@ demo_004 () =     fieldCtx
               +++ area_ "area" 
               +++ tempo_ << stempo (1%2) 2 
               +++ meter_ << meter  (2%3)
-              +++ key_ << key << keySpec c_ %% locrian %% dorian
+              +++ key_ << key << keySpec c_ %% locrian
               +++ history_ ["All tunes", "written in", "the past"]
               +++ defaultNoteLength_ (2%4)
               +++ words_ "la di da"

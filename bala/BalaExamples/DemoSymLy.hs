@@ -11,7 +11,7 @@ import Text.ParserCombinators.Parsec (parse, parseTest, Parser)
 import Text.PrettyPrint.Leijen hiding (dot)
 
 
-_ces :: (SymAccidental repr, SymPitch repr, SymAttr repr) => repr (Pitch ctx)
+_ces :: (CAccidental repr, CPitch repr, CAttr repr) => repr Pitch
 _ces = _c %% flat 
 
 
@@ -41,8 +41,8 @@ demo_06 () = elementCtx
     +++ note _ces %% breve
 
 demo_06a () = elementCtx 
-    `cSnoc` note (_ces %% raised 1) %% (dur 4 %% dot) %% fingering 4 
-    `cSnoc` note _ces %% breve
+    `snoc` note (_ces %% raised 1) %% (dur 4 %% dot) %% fingering 4 
+    `snoc` note _ces %% breve
 
 demo_pp6 = printP demo_06
 
@@ -51,10 +51,10 @@ demo_07 () = note _c %% fermata
 demo_pp7 = printP demo_07
 
 -- Snoc list rather than concatenation
-demo_08 () = elementCtx `cSnoc` (note _g) `cSnoc` (note _c)
+demo_08 () = elementCtx `snoc` (note _g) `snoc` (note _c)
 
 -- Correctly fails with a type error
--- pitches_002 () = toplevelCtx `cSnoc` (note _g) `cSnoc` (note _c)
+-- pitches_002 () = toplevelCtx `snoc` (note _g) `snoc` (note _c)
 
 demo_pp8 = printP demo_08
 
@@ -128,10 +128,15 @@ p_demo05    = lyparse (pTimes para) "\\times 2/3 { c' } "
 
 
 
+{-
+-- should be notes at the elementCtx not pitches
 
-pitchList = many1Cat elementCtx pitchA
+-- pitchList = many1Cat elementCtx pitchA
   
-p_demo06 = lyparse pitchList "c d e"
+-- p_demo06 = lyparse pitchList "c d e"
+
+-}
+
 
 p_demo07 = lyparse pCmdArticulation "\\prallprall "
 

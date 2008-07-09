@@ -42,25 +42,25 @@ bracesHanging d = lbrace <$> indent 2 (d <$> rbrace)
 
 
 
-instance SymCList P CT_Toplevel where
-  cNil                = P $ empty
-  cSnoc xs x          = P $ unP xs <$> unP x
+instance CSnocList P CT_Toplevel where
+  snil                = P $ empty
+  snoc xs x           = P $ unP xs <$> unP x
 
 
-instance SymCList P CT_Element where
-  cNil                = P $ empty
-  cSnoc xs x          = P $ unP xs <+> unP x
+instance CSnocList P CT_Element where
+  snil                = P $ empty
+  snoc xs x           = P $ unP xs <+> unP x
 
-instance SymCList P CT_Header where
-  cNil                = P $ empty
-  cSnoc xs x          = P $ unP xs <$> unP x
+instance CSnocList P CT_Header where
+  snil                = P $ empty
+  snoc xs x           = P $ unP xs <$> unP x
   
   
     
-instance SymAttr P where
+instance CAttr P where
   attr e a              = P $ group $ unP e <> unP a 
 
-instance SymPrefixAttr P where
+instance CPrefixAttr P where
   prefixAttr a e        = P $ group $ unP a <> unP e 
   
   
@@ -68,14 +68,14 @@ instance SymPrefixAttr P where
 --------------------------------------------------------------------------------
 -- *** Commenting input files (2.12)  
 
-instance SymCmdVersion P where 
+instance CCmdVersion P where 
   version s             = P $ cmd "version" <+> dquotes (text s)
   
   
-instance SymLineComment P where
+instance CLineComment P where
   lineComment s         = P $ char '%' <+> text s <> line
 
-instance SymBlockComment P where
+instance CBlockComment P where
   blockComment s        = P $ enclose (text "%{ ") (text " %}") (text s) 
 
 
@@ -85,21 +85,21 @@ instance SymBlockComment P where
 -- * Basic notation (6)
 -- ** Pitches (6.1)
 -- *** Normal pitches (6.1.1) (6.1)
-instance SymPitch P where
+instance CPitch P where
   pitch a               = P $ (text . map toLower . show) a   
 
-instance SymOctaveSpec P where
+instance COctaveSpec P where
   raised i              = P $ string (replicate i '\'')
   lowered i             = P $ string (replicate i ',')
 
 
     
-instance SymNote P where
+instance CNote P where
   note p                = P $ unP p 
   
 --------------------------------------------------------------------------------      
 -- *** Accidentals (6.1.2)  
-instance SymAccidental P where
+instance CAccidental P where
   sharp                 = P $ string "is"
   flat                  = P $ string "es"
   doubleSharp           = P $ string "isis"
@@ -107,33 +107,33 @@ instance SymAccidental P where
 
 --------------------------------------------------------------------------------
 -- *** Cautionary accidentals (6.1.3)
-instance SymCautionaryAccidental P where
+instance CCautionaryAccidental P where
   reminderAccidental    = P $ char '!'
   cautionaryAccidental  = P $ char '?'
   
 --------------------------------------------------------------------------------
 -- *** Micro tones (6.1.4)    
-instance SymMicroTone P where
+instance CMicroTone P where
   halfFlat              = P $ string "ih" 
   halfSharp             = P $ string "es"
 
 --------------------------------------------------------------------------------
 -- *** Relative octaves (6.1.6)
 
-instance SymCmdRelative P where
+instance CCmdRelative P where
   relative p e          = P $ cmd "relative" <+> unP p <+> bracesHanging (unP e) 
 
 --------------------------------------------------------------------------------  
 -- *** Rests (6.1.9)
-instance SymRest P where
+instance CRest P where
   rest                  = P $ char 'r'
 
 --------------------------------------------------------------------------------
 -- *** Skips (6.1.10)
-instance SymCmdSkip P where
+instance CCmdSkip P where
   cmdSkip s             = P $ text s
   
-instance SymSkipDuration P where
+instance CSkipDuration P where
   skipDuration d        = P $ group $ char 's' <> unP d
   
 --------------------------------------------------------------------------------
@@ -141,7 +141,7 @@ instance SymSkipDuration P where
 -- *** Durations (6.2)
 
   
-instance SymDuration P where
+instance CDuration P where
   duration i            = P $ int i
 
 -- breve and longa could be members of SymDuration  
@@ -149,38 +149,38 @@ instance SymDuration P where
 --  longa                 = P $ cmd "longa"
 
 
-instance SymCmdLongDuration P where
+instance CCmdLongDuration P where
   cmdLongDuration s     = P $ cmd s
 
 
 
 --------------------------------------------------------------------------------
 -- *** Augmentation dots (6.2.2)
-instance SymDotted P where
+instance CDotted P where
   dotted i              = P $ text (replicate i '.') 
   
 --------------------------------------------------------------------------------
 -- *** Tuplets (6.2.3)
-instance SymCmdTimes P where
+instance CCmdTimes P where
   cmdTimes r e          = P $ cmd "times" <+> pretty r <+> braces (unP e)
 
 --------------------------------------------------------------------------------
 -- ** Mutliple notes at once (6.3)
 -- *** Chords (6.3.1)  
-instance SymChord P where
+instance CChord P where
   chord xs              = P $ (angles $ hsep $ map unP xs)
 
   
 
 --------------------------------------------------------------------------------
 -- *** Stems (6.3.2)
-instance SymCmdStem P where
+instance CCmdStem P where
   cmdStem s             = P $ cmd s
 
 --------------------------------------------------------------------------------
 -- *** Polyphony (6.3.3)
 
-instance SymPoly P where
+instance CPoly P where
   openPoly              = P $ text "<< " <> line
   closePoly             = P $ line <> text " >>"
   a \\ b                = P $ unP a <+> text "\\\\" <$> unP b
@@ -188,10 +188,10 @@ instance SymPoly P where
 --------------------------------------------------------------------------------
 -- ** Staff notation (6.4)
 -- *** Clef (6.4.1)
-instance SymCmdClef P where
+instance CCmdClef P where
   clef ct               = P $ cmd "clef" <+> unP ct
   
-instance SymClefType P where
+instance CClefType P where
   cleftype s            = P $ text s
 
 -- *** Clef Transposition - TODO
@@ -202,7 +202,7 @@ transpClef d i
     | i == 0          = d
     | otherwise       = dquotes $ group $ d <> char '_' <> int (abs i)
 
-instance SymClefTransposition P where  
+instance CClefTransposition P where  
   clefTransposition n   = P $ transpClef (unP a) n
 -}
 
@@ -210,74 +210,74 @@ instance SymClefTransposition P where
 --------------------------------------------------------------------------------
 -- *** Key signature (6.4.2)
 
-instance SymCmdKey P where
+instance CCmdKey P where
   key a b               = P $ cmd "key" <+> unP a <+> unP b
 
-instance SymCmdKeyType P where
+instance CCmdKeyType P where
   keyType s             = P $ cmd s
   
 --------------------------------------------------------------------------------
 -- *** Time signature (6.4.3) 
-instance SymCmdTime P where
+instance CCmdTime P where
   time r                = P $ cmd "time" <+> pretty r
 
 --------------------------------------------------------------------------------
 -- *** Bar lines (6.4.5)
-instance SymCmdBar P where
+instance CCmdBar P where
   bar s                 = P $ cmd "bar" <+> text s 
 
 --------------------------------------------------------------------------------
 -- *** Unmetered music (6.4.6)
 
-instance SymCmdCadenza P where
+instance CCmdCadenza P where
   cmdCadenza s          = P $ cmd s
 
     
 --------------------------------------------------------------------------------
 -- ** Connecting notes (6.5)
 -- *** Ties (6.5.1)
-instance SymTie P where
+instance CTie P where
   tie                   = P $ char '~'
   
-instance SymCmdTie P where
+instance CCmdTie P where
   cmdTie s              = P $ cmd s  
   
 --------------------------------------------------------------------------------
 -- *** Slurs (6.5.2)
-instance SymSlur P where
+instance CSlur P where
   openSlur              = P $ char '('
   closeSlur             = P $ char ')'
 
 
-instance SymCmdSlur P where
+instance CCmdSlur P where
   cmdSlur s             = P $ cmd s  
   
     
 --------------------------------------------------------------------------------
 -- *** Phrasing slurs (6.5.3)
-instance SymCmdPhrasingSlur P where
+instance CCmdPhrasingSlur P where
   cmdPhrasingSlur s      = P $ cmd s
 
 --------------------------------------------------------------------------------
 -- *** Laissez vibrer ties (6.5.4)
-instance SymCmdLaissezVibrer P where
+instance CCmdLaissezVibrer P where
   laissezVibrer         = P $ cmd "laissezVibrer"
   
 --------------------------------------------------------------------------------
 -- *** Automatic beams (6.5.5)  
-instance SymCmdNoBeam P where
+instance CCmdNoBeam P where
   noBeam                = P $ cmd "noBeam"
 
 --------------------------------------------------------------------------------
 -- *** Manual beams (6.5.6)  
-instance SymBeam P where
+instance CBeam P where
   openBeam              = P $ char '['
   closeBeam             = P $ char ']'
 
 --------------------------------------------------------------------------------
 -- *** Grace notes (6.5.7)
 
-instance SymCmdGrace P where
+instance CCmdGrace P where
   cmdGrace s            = P $ cmd s
 
   
@@ -285,14 +285,14 @@ instance SymCmdGrace P where
 -- ** Expressive marks (6.6)
 -- *** Articulations (6.6.1) 
 
-instance SymCmdArticulation P where
+instance CCmdArticulation P where
   cmdArticulation s     = P $ cmd s
   
-instance SymArticulation P where
+instance CArticulation P where
   articulation s        = P $ text s
                    
     
-instance SymVerticalPlacement P where
+instance CVerticalPlacement P where
   verticalPlacement VAbove     = P $ char '^'
   verticalPlacement VBelow     = P $ char '_'
   verticalPlacement VDefault   = P $ char '-'
@@ -300,38 +300,38 @@ instance SymVerticalPlacement P where
  
 --------------------------------------------------------------------------------
 -- *** Fingering instructions (6.6.2)
-instance SymFingering P where
+instance CFingering P where
   fingering i           = P $ group $ char '-' <> int i 
 
 --------------------------------------------------------------------------------
 -- *** Dynamics (6.6.3)
 
-instance SymCmdDynamic P where
+instance CCmdDynamic P where
   cmdDynamic s          = P $ cmd s
   
 
 --------------------------------------------------------------------------------
 -- *** Breath marks (6.6.4)
 
-instance SymCmdBreathe P where
+instance CCmdBreathe P where
   cmdBreathe s         = P $ cmd s
 
 --------------------------------------------------------------------------------
 -- *** Glissando (6.6.6)
 
-instance SymCmdGlissando P where
+instance CCmdGlissando P where
   cmdGlissando s       = P $ cmd s
 
 --------------------------------------------------------------------------------
 -- *** Arpeggio (6.6.7)
 
-instance SymCmdArpeggio P where
+instance CCmdArpeggio P where
   cmdArpeggio s        = P $ cmd s
 
 --------------------------------------------------------------------------------
 -- *** Falls and doits (6.6.8)
 
-instance SymCmdBendAfter P where
+instance CCmdBendAfter P where
   bendAfter             = P $ cmd "bendAfter"
 
 --------------------------------------------------------------------------------
@@ -339,11 +339,11 @@ instance SymCmdBendAfter P where
 -- ** Piano music (7.1)
 -- *** Automatic staff changes (7.1.1)
 
-instance SymCmdAutochange P where
+instance CCmdAutochange P where
   autochange            = P $ cmd "autochange"
   
 -- *** Pedals (7.1.2)
-instance SymCmdPedal P where
+instance CCmdPedal P where
   cmdPedal s            = P $ cmd s
   
 --------------------------------------------------------------------------------
@@ -351,18 +351,18 @@ instance SymCmdPedal P where
 -- *** Chords mode (7.2.2)
 
 
-instance SymCmdChordmode P where
+instance CCmdChordmode P where
   chordmode a      = P $ cmd "chordmode" <+> bracesHanging (unP a)
   
 --------------------------------------------------------------------------------
 -- ** Vocal music (7.3)
 -- *** Setting simple songs (7.3.1)
 
-instance SymCmdAddlyrics P where
+instance CCmdAddlyrics P where
   addlyrics s       = P $ cmd "addlyrics" <+> bracesSpaced (text s)
 
 -- *** Melismata (7.3.5)
-instance SymMelismata P where
+instance CMelismata P where
   melisma           = P $ cmd "melisma"
   melismaEnd        = P $ cmd "melismaEnd"
   
@@ -371,13 +371,13 @@ instance SymMelismata P where
 -- ** Rhythmic music (7.4)
 -- *** Showing melody rhythms(7.4.1)
   
-instance SymCtxRhythmicStaff P where  
+instance CCtxRhythmicStaff P where  
   rhythmicStaff       = P $ text "RhythmicStaff"
   
 --------------------------------------------------------------------------------
 -- *** Entering percussion (7.4.2)
 
-instance SymCmdDrums P where
+instance CCmdDrums P where
   drums e             = P $ cmd "drums" <+> bracesHanging (unP e)
   
 --------------------------------------------------------------------------------
@@ -387,18 +387,18 @@ instance SymCmdDrums P where
 
 -- | stringnum corresponds to @\\@ in LilyPond.
 
-instance SymStringnum P where
+instance CStringnum P where
   stringnum i           = P $ group $ char '\\' <> int i
 
-instance SymCtxTabStaff P where  
+instance CCtxTabStaff P where  
   tabStaff              = P $ text "TabStaff"
   
-instance SymCtxTabVoice P where  
+instance CCtxTabVoice P where  
   tabVoice              = P $ text "TabVoice"
   
 -- *** Right hand fingerings (7.5.6)
 
-instance SymRightHandFinger P where
+instance CRightHandFinger P where
   rightHandFinger i     =  P $ group $ 
                                text "-\rightHandFinger" <+> char '#' <+> int i
 
@@ -406,7 +406,7 @@ instance SymRightHandFinger P where
 -- ** Other instrument specific notation (7.8)
 -- *** Artificial harmonics (strings) (7.8.1)
 
-instance SymCmdHarmonic P where
+instance CCmdHarmonic P where
   cmdHarmonic           = P $ cmd "harmonic"
   
 --------------------------------------------------------------------------------
@@ -414,15 +414,15 @@ instance SymCmdHarmonic P where
 -- ** Text (8.1)
 -- *** Text scripts (8.1.1)
 
-instance SymTextSript P where
-  textSript s       = P $ dquotes (text s)   
+instance CTextScript P where
+  textScript s       = P $ dquotes (text s)   
   
-instance SymCmdFatText P where
+instance CCmdFatText P where
   fatText           = P $ cmd "fatText"
  
 -- *** Text markup (8.1.4)
 
-instance SymCmdMarkup P where
+instance CCmdMarkup P where
   markup s          = P $ cmd "markup" <+> bracesSpaced (text s)
   
     
@@ -430,7 +430,7 @@ instance SymCmdMarkup P where
 -- ** Preparing parts (8.2)
 -- *** Metronome marks (8.2.2)
 
-instance SymCmdTempo P where
+instance CCmdTempo P where
   tempo a i         = P $ cmd "tempo" <+> group (unP a <> equals <> int i)
 
 --------------------------------------------------------------------------------
@@ -438,21 +438,21 @@ instance SymCmdTempo P where
 -- ** Interpretation contexts (9.2)
 -- *** Creating contexts (9.2.2)
 
-instance SymCmdNew P where
+instance CCmdNew P where
   newContext ct e   = P $ cmd "new" <+> unP ct <+> braces (unP e)   
 
 
-instance SymCtxStaff P where
+instance CCtxStaff P where
   staff             = P $ text "Staff"
 
-instance SymCtxVoice P where  
+instance CCtxVoice P where  
   voice             = P $ text "Voice"
   
 
   
   
 {-  
-instance SymContextType P where
+instance CContextType P where
   contextType s     = P $ text s
 -}
 
@@ -463,21 +463,21 @@ instance SymContextType P where
 -- ** Titles and headers (10.2)
 -- *** Multiple scores in a book (10.1.2)
 
-instance SymCmdScore P where
+instance CCmdScore P where
   score e     = P $ cmd "score" <+> bracesHanging (unP e)
 
 
 
-instance SymCmdBook P where
+instance CCmdBook P where
   book e      = P $ cmd "book" <+> bracesHanging (unP e)
   
 --------------------------------------------------------------------------------
 -- *** Titles and headers (10.2)
 
-instance SymCmdHeader P where
+instance CCmdHeader P where
   header a       = P $ cmd "header" <+> bracesHanging (unP a) 
         
-instance SymBlock P where
+instance CBlock P where
   block e = P $ bracesSpaced $ unP e
 
 --------------------------------------------------------------------------------
@@ -486,23 +486,23 @@ instance SymBlock P where
 equation :: String -> Doc -> Doc
 equation var d = text var <+> equals <+> d
 
-instance SymEqnTitle P where
+instance CEqnTitle P where
   title s         = P $ equation "title" (dquotes $ text s)
   
-instance SymEqnDedication P where
+instance CEqnDedication P where
   dedication s    = P $ equation "dedication" (dquotes $ text s)
 
 --------------------------------------------------------------------------------    
 -- ** MIDI output (10.3)
 -- *** Creating MIDI files (10.3.1)
 
-instance SymCmdMidi P where
+instance CCmdMidi P where
   midi            = P $ cmd "midi"
 
 
 --------------------------------------------------------------------------------    
 -- * Placeholder
 
-instance SymPlaceholder P where
+instance CPlaceholder P where
   undef          = P $ text "undefined"
   

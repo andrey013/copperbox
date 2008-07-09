@@ -26,144 +26,144 @@ import Text.PrettyPrint.Leijen
 ppfield :: Char -> Doc -> Doc
 ppfield ch doc = text [ch,':'] <+> doc
 
-instance SymCList P CT_Field where
-  cNil                  = P $ empty
-  cSnoc xs x            = P $ unP xs <$> unP x 
+instance CSnocList P CT_Field where
+  snil                  = P $ empty
+  snoc xs x             = P $ unP xs <$> unP x 
 
 
-instance SymCList P CT_Element where
-  cNil                  = P $ empty
-  cSnoc xs x            = P $ unP xs <> unP x 
+instance CSnocList P CT_Element where
+  snil                  = P $ empty
+  snoc xs x             = P $ unP xs <> unP x 
     
-instance SymAttr P where
+instance CAttr P where
   attr e a              = P $ group $ unP e <> unP a 
 
-instance SymFieldNumber P where
+instance CFieldNumber P where
   num_ i                = P  $ ppfield 'X' (int i)
 
-instance SymFieldTitle P where  
+instance CFieldTitle P where  
   title_ s              = P $ ppfield 'T' (text s)
    
-instance SymFieldArea P where
+instance CFieldArea P where
   area_ s               = P $ ppfield 'A' (text s)
   
-instance SymFieldBook P where
+instance CFieldBook P where
   book_ s               = P $ ppfield 'B' (text s)
   
-instance SymFieldComposer P where
+instance CFieldComposer P where
   composer_ s           = P $ ppfield 'C' (text s)
 
-instance SymFieldDiscography P where  
+instance CFieldDiscography P where  
   discography_ s        = P $ ppfield 'D' (text s)
 
-instance SymFieldElemskip P where  
+instance CFieldElemskip P where  
   elemskip_ s           = P $ ppfield 'E' (text s) 
 
-instance SymFieldGroup P where  
+instance CFieldGroup P where  
   group_ s              = P $ ppfield 'G' (text s)
 
-instance SymFieldInformation P where  
+instance CFieldInformation P where  
   information_ s        = P $ ppfield 'I' (text s)
 
-instance SymFieldNotes P where  
+instance CFieldNotes P where  
   notes_ s              = P $ ppfield 'N' (text s)
 
-instance SymFieldOrigin P where  
+instance CFieldOrigin P where  
   origin_ s             = P $ ppfield 'O' (text s)
 
-instance SymFieldRhythm P where  
+instance CFieldRhythm P where  
   rhythm_ s             = P $ ppfield 'R' (text s)
 
-instance SymFieldSource P where  
+instance CFieldSource P where  
   source_ s             = P $ ppfield 'S' (text s)
 
-instance SymFieldWords P where  
+instance CFieldWords P where  
   words_ s              = P $ ppfield 'W' (text s)
 
-instance SymFieldTranscrNotes P where  
+instance CFieldTranscrNotes P where  
   transcrNotes_ s       = P $ ppfield 'Z' (text s)
 
-instance SymFieldHistory P where
+instance CFieldHistory P where
  history_ xs            = P $ ppfield 'H' (align $ vsep $ map text xs)
  
-instance SymFieldKey P where
+instance CFieldKey P where
   key_ k                = P $ ppfield 'K' (unP k)
      
-instance SymFieldDefaultNoteLength P where
+instance CFieldDefaultNoteLength P where
  defaultNoteLength_ r   = P $ ppfield 'L' (pretty r) 
    
-instance SymFieldMeter P where
+instance CFieldMeter P where
   meter_ m              = P $ ppfield 'M' (unP m)  
 
 -- simplified
-instance SymFieldParts P where 
+instance CFieldParts P where 
   parts_ cs             = P $ ppfield 'P' (text cs)
   
   
-instance SymFieldTempo P where
+instance CFieldTempo P where
   tempo_ t              = P $ ppfield 'Q' (unP t)
 
   
         
-instance SymTempo P where
+instance CTempo P where
   tempo i               = P $ int i
   ctempo l i            = P $ group $ char 'C' <> (unP l) <> equals <> int i
   stempo r i            = P $ group $ pretty r <> equals <> int i
               
 
-instance SymLength P where
+instance CLength P where
   ilength i             = P $ int i
   flength r             = P $ pretty r 
   
   
-instance SymKey P where
+instance CKey P where
   key s                 = P $ unP s
   highlandNoKey         = P $ text "HP" 
   highlandMixolydian    = P $ text "Hp"
 
 
 
-instance SymKeySpec P where
+instance CKeySpec P where
   keySpec n             = P $ unP n
       
 
-instance SymMode P where
+instance CMode P where
   mode s                = P $ text s
   
-instance SymAbcMusic P where
+instance CAbcMusic P where
   abcmusic e            = P $ unP e
   
   
-instance SymAbcLine P where
+instance CAbcLine P where
   elements e            = P $ unP e
   midtuneField a        = P $ unP a
   
     
-instance SymKeyAccidental P where
+instance CKeyAccidental P where
   keySharp              = P $ char '#' 
   keyFlat               = P $ char 'b'
   
   
-instance SymMeter P where
+instance CMeter P where
   meter r               = P $ pretty r
   commonTime            = P $ char 'C'
   cutTime               = P $ text "C|"
     
     
-instance SymDuration P where
+instance CDuration P where
   dur i                 = P $ int i
   
   
-instance SymRest P where
+instance CRest P where
   rest                  = P $ char 'z'
 
  
-instance SymOctave P where
+instance COctave P where
   octaveHigh  i         = P $ text (replicate i '\'')
   octaveLow   i         = P $ text (replicate i ',')  
            
              
-instance SymAccidental P where 
+instance CAccidental P where 
   natural               = P $ char '='
   sharp                 = P $ char '^'
   doubleSharp           = P $ text "^^"
@@ -191,39 +191,39 @@ instance Pretty PitchLetter where
 
 
 
-instance SymBaseNote P where
+instance CBaseNote P where
   note p                = P $ pretty p
   
     
-instance SymBrokenRhythm P where
+instance CBrokenRhythm P where
   dottedLeft i          = P $ text $ replicate i '>'
   dottedRight i         = P $ text $ replicate i '<'
 
 
-instance SymTie P where
+instance CTie P where
   tie                   = P $ char '-'
     
-instance SymGrace P where
+instance CGrace P where
   tilde                 = P $ char '~'
   stacatto              = P $ char '.'
   downbow               = P $ char 'v'
   upbow                 = P $ char 'u'
 
 
-instance SymNPlet P where
+instance CNPlet P where
   nplet i               = P $ group $ char '(' <> int i
         
   
-instance SymRepeatMark P where
+instance CRepeatMark P where
   repeatMark s          = P $ text s
   
   
-instance SymSlur P where
+instance CSlur P where
   beginSlur             = P $ lparen
   endSlur               = P $ rparen
   
 
-instance SymGraceNotes P where
+instance CGraceNotes P where
   gracenotes xs         = P $  braces $ hcat $ map unP xs
     
   

@@ -48,16 +48,6 @@ st_zero = RenderSt {
 
 lyPitch' () = lyPitch
 
-{-
-    mkPitch             :: forall repr ctx.  
-                           (SymOctaveSpec repr,
-                           SymAccidental repr,
-                           SymAttr repr,
-                           SymPitch repr)
-                           => B.Pitch -> RenderM (repr (Pitch ctx))
-                           
--}
-
                            
 relative :: B.Pitch -> RenderSt -> RenderSt
 relative p st = st { relative_pitch = p } 
@@ -66,13 +56,13 @@ relative p st = st { relative_pitch = p }
 runRenderLy  = evalState  
 
 
-withAttr :: (SymAttr repr, Attribute a att) 
-         => repr (att ctx_att) -> repr (a ctx) -> repr (a ctx)    
+withAttr :: (CAttr repr, Attribute elt att) 
+         => repr att -> repr elt -> repr elt    
 withAttr a e = e %% a
 
 
-optAttr :: (SymAttr repr, Attribute a att) 
-        => repr (a ctx) -> Maybe (repr (att ctx_att)) -> repr (a ctx)           
+optAttr :: (CAttr repr, Attribute elt att) 
+        => repr elt -> Maybe (repr att) -> repr elt
 optAttr e Nothing   = e
 optAttr e (Just a)  = e `attr` a
 
@@ -97,22 +87,22 @@ currentOctave p = do
     return $ odisp p' p
   
 
-accidental :: (SymAccidental repr) 
-           => B.Accidental -> Maybe (repr (Accidental ctx))
+accidental :: (CAccidental repr) 
+           => B.Accidental -> Maybe (repr Accidental)
 accidental B.Flat          = Just flat
 accidental B.Sharp         = Just sharp
 accidental B.DoubleSharp   = Just doubleSharp
 accidental B.DoubleFlat    = Just doubleFlat
 accidental _               = Nothing
 
-octaveSpec :: (SymOctaveSpec repr) => Int -> Maybe (repr (OctaveSpec ctx))             
+octaveSpec :: (COctaveSpec repr) => Int -> Maybe (repr OctaveSpec)             
 octaveSpec i
     | i == 0    = Nothing
     | i <  0    = Just $ lowered (abs i)
     | otherwise = Just $ raised i
     
-lyPitch :: (SymPitch repr, SymAttr repr, SymAccidental repr, SymOctaveSpec repr) 
-         => B.Pitch -> RenderM (repr (Pitch ctx))    
+lyPitch :: (CPitch repr, CAttr repr, CAccidental repr, COctaveSpec repr) 
+         => B.Pitch -> RenderM (repr Pitch)    
 lyPitch p = currentOctave p >>= \spec -> 
             return $ pch `optAttr` actl `optAttr` (octaveSpec spec)
   where
@@ -161,13 +151,13 @@ currentDuration d = do
 -- The type of a Duration is complicated by breve and longa not having the
 -- same type as duration
     
-type AltDuration repr ctx = Either (repr (Duration ctx)) (repr (CmdLongDuration CT_Element))
+type AltDuration repr = Either (repr Duration) (repr CmdLongDuration)
   
-lyDuration :: (SymCmdLongDuration repr,
-               SymDuration repr,
-               SymDotted repr,
-               SymAttr repr) 
-           => B.Duration -> RenderM (Maybe (AltDuration repr ctx))
+lyDuration :: (CCmdLongDuration repr,
+               CDuration repr,
+               CDotted repr,
+               CAttr repr) 
+           => B.Duration -> RenderM (Maybe (AltDuration repr))
                       
 lyDuration d = currentDuration d >>= mkD
   where 
@@ -213,13 +203,7 @@ close k xs@((_,d):_)    = k +++ khord xs
 
 
    
-{-
-oflat :: (SymChord repr, SymCList repr CT_Element, SymPoly repr, SymBlock repr) 
-      => (t -> RenderM (repr (Note CT_Element)))
-      -> (repr (CList CT_Element), [repr (Note CT_Element)])
-      -> EventTree t
-      -> RenderM (repr (CList CT_Element), [repr (Note CT_Element)])
--}         
+       
 oflat (lyk,pstk)  EmptyTree     = return (lyk,pstk) 
 
 
@@ -247,8 +231,8 @@ oflat (lyk,pstk) (Sequence t ts) = do
 
 
 
-merge :: (SymBlock repr, SymPoly repr, SymCList repr ctx) 
-      => repr (CList ctx) -> [repr (CList subctx)] -> repr (CList ctx)
+merge :: (CBlock repr, CPoly repr, CSnocList repr CT_Element)
+      => repr (SnocList CT_Element) -> [repr (SnocList CT_Element)] -> repr (SnocList CT_Element)
 merge k []     = k
 merge k (x:xs) = let poly = foldl fn (block x) xs in 
     k +++ openPoly +++ poly +++ closePoly
@@ -257,7 +241,7 @@ merge k (x:xs) = let poly = foldl fn (block x) xs in
 
 
 run'oflat () t = do 
-  (lyk,pstk) <- oflat (elementCtx,[]) t 
-  return (close lyk pstk)
+    (lyk,pstk) <- oflat (elementCtx,[]) t 
+    return (close lyk pstk)
 
  
