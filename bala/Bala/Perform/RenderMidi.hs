@@ -74,43 +74,56 @@ generatesEvent evt =
 
   
 -- | Flatten the event tree into a sequence of events paired with global time.
+{-
 oflat :: Renderable evt =>
          (Integer,Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer))) -> 
          EventTree evt -> 
          ProcessM (Integer,Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer)))  
-
-oflat (i,ksq) EmptyTree     = return (i, ksq)
-
+-}
  
-oflat (i,ksq) (Next t evt)    = do 
-    (i',ksq')   <- oflat (i,ksq) t
-    d'          <- calcDuration evt
-    oe          <- generatesEvent evt
-    case oe of 
-      Nothing -> return (i'+d', ksq')
-      Just e  -> return (i'+d', ksq' |> (i',(e,d')))
 
- 
-oflat (i,ksq) (Par t evt)     = do 
-    (i',ksq')   <- oflat (i,ksq) t
-    d'          <- calcDuration evt
-    oe          <- generatesEvent evt
-    case oe of 
-      Nothing -> return (i', ksq') 
-      Just e  -> return (i', ksq' |> (i',(e,d'))) 
+oflat (i,ksq) EmptyL     = return (i, ksq)
 
-oflat (i,ksq) (Prefix evt t)    = do 
-    (i',ksq')   <- oflat (i,ksq) t
-    d'          <- calcDuration evt
+    
+oflat (i,ksq) (Evt evt :< sq)    = do 
+    d           <- calcDuration evt
     oe          <- generatesEvent evt
     case oe of 
-      Nothing -> return (i', ksq')
-      Just e  -> return (i', ksq' |> (i'-d', (e,d')))
+      Nothing -> oflat (i+d, ksq) (viewl sq)
+      Just e  -> oflat (i+d, ksq |> (i,(e,d))) (viewl sq)
+
+
+oflat (i,ksq) (StartPar :< sq)      =
+    oflatPar (i,ksq) (viewl sq)
+   
+oflat (i,ksq) (StartPre :< sq)      =
+    oflatPre (i,ksq) (viewl sq)
+    
+oflat (i,ksq) (Sequence ts :< sq) = do
+    xs          <- mapM (oflat (i,empty)) (map viewl ts)   
+    oflat (merge (i,ksq) xs) (viewl sq)
+    
+
+
+oflatPar (i,ksq) (Evt evt :< sq) = do
+    d           <- calcDuration evt
+    oe          <- generatesEvent evt
+    case oe of 
+      Nothing -> oflatPar (i, ksq)              (viewl sq)
+      Just e  -> oflatPar (i, ksq |> (i,(e,d))) (viewl sq) 
   
-oflat (i,ksq) (Sequence t ts) = do
-    (i',ksq')   <- oflat (i,ksq) t
-    xs          <- mapM (oflat (i',empty)) ts
-    return (merge (i',ksq') xs) 
+oflatPar (i,ksq) (EndPar :< sq) = 
+    oflat (i,ksq) (viewl sq)
+      
+
+oflatPre (i,ksq) (Evt evt :< sq)  = do
+    -- to do - currently do nothing
+    oflatPre (i,ksq) (viewl sq)
+  
+oflatPre (i,ksq) (EndPre :< sq) = 
+    oflat (i,ksq) (viewl sq)
+    
+
 
 merge :: (Integer, Seq a) -> [(Integer, Seq a)] -> (Integer, Seq a)
 merge (i,sq) xs = (undefined, foldl (><) sq (map snd xs)) 
@@ -120,7 +133,7 @@ merge (i,sq) xs = (undefined, foldl (><) sq (map snd xs))
 oflatPass :: Renderable evt 
           => EventTree evt 
           -> ProcessM (Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer)))  
-oflatPass t = snd <$> oflat (0,empty) t
+oflatPass t = snd <$> oflat (0,empty) (viewl t)
 
 
 
@@ -234,7 +247,8 @@ trackZero = do
 
 notes :: EventTree (Pitch,a) -> String
 notes = afficherL . F.foldr note []
-  where note (n,_) acc = n:acc
+  where note (Evt (n,_)) acc = n:acc
+        note _           acc = acc
 
 runDemo perf = MIDI.printMidi $ runProcess (processPerformance perf) default_st
 

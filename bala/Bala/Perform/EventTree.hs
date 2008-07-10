@@ -9,103 +9,67 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- A complicated tree 
+-- A tree representation in a sequence. 
 --
 --------------------------------------------------------------------------------
 
 module Bala.Perform.EventTree where
 
 
-import Control.Applicative
-import Data.Monoid
-import Data.Foldable
-import Data.Traversable
-
-
-
-
-import Prelude hiding (sequence)
-
+import Data.Sequence
 
 -- Tracks in MIDI and multiple staffs are represented as a list of
 -- Event trees
 newtype Performance evt = Perf { unPerf :: [EventTree evt] }
   deriving Show
   
-data EventTree evt = EmptyTree
-                   | Next (EventTree evt) evt 
-                   | Par  (EventTree evt) evt
-                   | Prefix evt (EventTree evt)
-                   | Sequence (EventTree evt) [EventTree evt]                   
+type EventTree evt = Seq (EvtPosition evt)
+
+
+data EvtPosition evt = Evt evt 
+                     | StartPar | EndPar
+                     | StartPre | EndPre
+                     | Sequence [EventTree evt]
   deriving Show
 
-root            :: EventTree evt
-root            = EmptyTree
+instance Functor EvtPosition where
+  fmap f (Evt e)        = Evt (f e) 
+  fmap f StartPar       = StartPar
+  fmap f EndPar         = EndPar
+  fmap f StartPre       = StartPre
+  fmap f EndPre         = EndPre  
+  fmap f (Sequence ts)  = Sequence (map (fmap (fmap f)) ts) 
 
--- note is redundant use event 
-{-
-note            :: evt -> EventTree evt -> EventTree evt
-note e t        = Next t e 
--}
+  
 
-
-event           :: evt -> EventTree evt -> EventTree evt
-event e t       = Next t e
-
-chord           :: [evt] -> EventTree evt -> EventTree evt
-chord (e:es) t  = let t' = Prelude.foldl (Par) t es in Next t' e
-
-
--- maybe grace should take an event 
--- and do its subtractions before it is added to the tree
-grace           :: [evt] -> EventTree evt -> EventTree evt
-grace es t      = Prelude.foldl (flip Prefix) t es
-
-parallel        :: [EventTree evt] -> EventTree evt -> EventTree evt
-parallel ts t   = Sequence t ts
-
+  
+  
 
 infixl 7 #
 
 x # f = f x
 
-instance Functor EventTree where
-  fmap f EmptyTree          = EmptyTree
-  fmap f (Next t e)         = Next (fmap f t) (f e) 
-  fmap f (Par t e)          = Par (fmap f t) (f e)
-  fmap f (Prefix e t)       = Prefix (f e) (fmap f t) 
-  fmap f (Sequence t ts)    = Sequence (fmap f t) (map (fmap f) ts)
+root :: EventTree evt
+root = empty
 
-instance Foldable EventTree where
-  foldMap f EmptyTree       = mempty
-  foldMap f (Next t e)      = foldMap f t `mappend` f e
-  foldMap f (Par t e)       = foldMap f t `mappend` f e
-  foldMap f (Prefix e t)    = f e `mappend` foldMap f t
-  foldMap f (Sequence t ts) = foldMap f t `mappend` foldMap (foldMap f) ts
-  
-  
-instance Traversable EventTree where
-  traverse f EmptyTree        = pure EmptyTree
-  traverse f (Next t e)       = Next     <$> (traverse f t) <*> (f e)
-  traverse f (Par t e)        = Par      <$> (traverse f t) <*> (f e)
-  traverse f (Prefix e t)     = Prefix   <$> (f e) <*> (traverse f t)
-  traverse f (Sequence t ts)  = Sequence <$> (traverse f t) 
-                                         <*> traverse (traverse f) ts
+event           :: evt -> EventTree evt -> EventTree evt
+event e t       = t |> Evt e
 
-instance Functor Performance where
-  fmap f (Perf xs)            = Perf (map (fmap f) xs) 
+chord           :: [evt] -> EventTree evt -> EventTree evt
+chord [] t      = t
+chord es t      = seal $ foldl (flip event) (t |> StartPar) es
+  where 
+    seal t      = t |> EndPar 
 
-instance Foldable Performance where
-  foldMap f (Perf xs)         = foldMap (foldMap f) xs
-  
-instance Traversable Performance where
-  traverse f (Perf xs)        = Perf <$> traverse (traverse f) xs
-  
-accumulate :: (Traversable t, Monoid o) => (a -> o) -> t a -> o
-accumulate f = getConst . traverse (Const . f)
+grace           :: [evt] -> EventTree evt -> EventTree evt
+grace [] t      = t
+grace es t      = seal $ foldl (flip event) (t |> StartPre) es
+  where 
+    seal t      = t |> EndPre
 
-                         
-flatten :: EventTree a -> [a]
-flatten = accumulate (:[])
+parallel        :: [EventTree evt] -> EventTree evt -> EventTree evt
+parallel [] t   = t
+parallel ts t   = t |> (Sequence ts)
 
-  
+
+               

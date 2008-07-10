@@ -16,13 +16,14 @@
 
 module Bala.Perform.RenderLilyPond where
 
-import Bala.Perform.EventTree hiding (chord)
+import Bala.Perform.EventTree hiding (chord, grace)
 
 import qualified Bala.Base.Base as B
 import Bala.Format.SymLilyPond.LilyPond
 
 import Control.Applicative 
 import Control.Monad.State
+import Data.Sequence
 
 type RenderM a = State RenderSt a
 
@@ -188,46 +189,66 @@ pitchOrRest'duration evt
     | isRest evt    = rest'duration evt >>= \d -> return (Right (),d)
     | otherwise     = pitch'duration evt >>= \(p,d) -> return (Left p,d) 
 
-push e es = e:es
 
-close k []              = k
-close k [(Left n,d)]    = k +++ (note n `applyDuration` d)
-close k [(Right (),d)]  = k +++ (rest `applyDuration` d)
-close k xs@((_,d):_)    = k +++ khord xs
+
+suffix k (Left n,d)     = k +++ (note n `applyDuration` d)
+suffix k (Right (),d)   = k +++ (rest `applyDuration` d)
+
+suffixChord k []              = k
+suffixChord k xs@((_,d):_)    = k +++ khord xs
   where
     khord ps = let ps' = foldl fn [] ps 
                in chord ps' `applyDuration` d
     fn acc (Left p,_) = p : acc
     fn acc _          = acc
+    
+suffixGrace k []    = k
+suffixGrace k xs    = k +++ grace +++ gblock
+  where
+    gblock = block $ foldr (flip suffix) elementCtx xs
 
 
-
-   
        
-oflat (lyk,pstk)  EmptyTree     = return (lyk,pstk) 
+       
+oflat lyk  EmptyL     = return lyk 
 
 
 -- Next pushes its element on the stack and closes it.
 -- It might be the first note of a chord
-oflat (lyk,pstk) (Next t evt)    = do 
-    (lyk',pstk')    <- oflat (lyk,pstk) t
-    e'              <- pitchOrRest'duration evt
-    return (close lyk' (e':pstk'), [])
+oflat lyk (Evt e :< sq)         = do
+    e'        <- pitchOrRest'duration e
+    oflat (suffix lyk e') (viewl sq)
 
+oflat lyk (Sequence ts :< sq)   = do
+    lyk'      <- oflat lyk (viewl sq) 
+    xs        <- mapM (oflat elementCtx) (map viewl ts)
+    return (merge lyk' xs)  
+    
 
--- Par pushes onto the stack
-oflat (lyk,pstk) (Par t evt)     = do 
-    (lyk',pstk')    <- oflat (lyk,pstk) t
-    e'              <- pitchOrRest'duration evt
-    return (lyk', push e' pstk')
+oflat lyk (StartPar :< sq)      =
+    oflatPar (lyk,[]) (viewl sq)
+   
+oflat lyk (StartPre :< sq)      =
+    oflatPre (lyk,[]) (viewl sq)
+
+            
+oflatPar (lyk,stk) (Evt e :< sq) = do
+    e'              <- pitchOrRest'duration e
+    oflatPar (lyk, (e':stk)) (viewl sq)
+  
+oflatPar (lyk,stk) (EndPar :< sq) = 
+    oflat (suffixChord lyk stk) (viewl sq)
       
-         
-oflat (lyk,pstk) (Sequence t ts) = do
-    (lyk',pstk')  <- oflat (lyk,pstk) t
-    xs            <- mapM (oflat (elementCtx,[])) ts
-    return (merge (close lyk' pstk') (map pclose xs), [])     
-  where
-    pclose (k,st) = close k st
+
+oflatPre (lyk,stk) (Evt e :< sq)  = do
+    e'              <- pitchOrRest'duration e
+    oflatPre (lyk, (e':stk)) (viewl sq)
+  
+oflatPre (lyk,stk) (EndPre :< sq) = 
+    oflat (suffixGrace lyk stk) (viewl sq)
+                        
+                        
+                        
 
 
 
@@ -241,7 +262,7 @@ merge k (x:xs) = let poly = foldl fn (block x) xs in
 
 
 run'oflat () t = do 
-    (lyk,pstk) <- oflat (elementCtx,[]) t 
-    return (close lyk pstk)
+    lyk <- oflat elementCtx (viewl t) 
+    return lyk
 
  

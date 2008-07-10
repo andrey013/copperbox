@@ -34,7 +34,7 @@ class CSnocList repr ctx where
 
 infixl 5 +++
 
--- | (+++) - alias for cSnoc.
+-- | (+++) - alias for snoc.
 (+++) :: (ListContext ctx a, CSnocList repr ctx) 
       => repr (SnocList ctx) -> repr a ->  repr (SnocList ctx) 
 (+++) es e = snoc es e
