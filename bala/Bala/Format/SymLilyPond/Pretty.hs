@@ -55,6 +55,10 @@ instance CSnocList P CT_Header where
   snil                = P $ empty
   snoc xs x           = P $ unP xs <$> unP x
   
+instance CSnocList P CT_Book where
+  snil                = P $ empty
+  snoc xs x           = P $ unP xs <$> unP x
+
   
     
 instance CAttr P where
@@ -189,7 +193,7 @@ instance CPoly P where
 -- ** Staff notation (6.4)
 -- *** Clef (6.4.1)
 instance CCmdClef P where
-  clef ct               = P $ cmd "clef" <+> unP ct
+  clef ct               = P $ cmd "clef" <+> unP ct <> linebreak
   
 instance CClefType P where
   cleftype s            = P $ text s
@@ -211,7 +215,7 @@ instance CClefTransposition P where
 -- *** Key signature (6.4.2)
 
 instance CCmdKey P where
-  key a b               = P $ cmd "key" <+> unP a <+> unP b
+  key a b               = P $ cmd "key" <+> unP a <+> unP b <> linebreak
 
 instance CCmdKeyType P where
   keyType s             = P $ cmd s
@@ -464,12 +468,12 @@ instance CContextType P where
 -- *** Multiple scores in a book (10.1.2)
 
 instance CCmdScore P where
-  score e     = P $ cmd "score" <+> bracesHanging (unP e)
+  score e     = P $ cmd "score" <+> unP e
 
 
 
 instance CCmdBook P where
-  book e      = P $ cmd "book" <+> bracesHanging (unP e)
+  book e      = P $ cmd "book" <+> unP e
   
 --------------------------------------------------------------------------------
 -- *** Titles and headers (10.2)
@@ -478,7 +482,7 @@ instance CCmdHeader P where
   header a       = P $ cmd "header" <+> bracesHanging (unP a) 
         
 instance CBlock P where
-  block e = P $ bracesSpaced $ unP e
+  block e = P $ bracesHanging $ unP e
 
 --------------------------------------------------------------------------------
 -- *** Creating titles (10.2.1)
@@ -486,11 +490,11 @@ instance CBlock P where
 equation :: String -> Doc -> Doc
 equation var d = text var <+> equals <+> d
 
-instance CEqnTitle P where
-  title s         = P $ equation "title" (dquotes $ text s)
+instance CHeaderElement P where
+  headerElement e s     = P $ equation e (dquotes $ text s)
   
-instance CEqnDedication P where
-  dedication s    = P $ equation "dedication" (dquotes $ text s)
+  breakbefore True      = P $ equation "breakbefore" (text "##t")
+  breakbefore False     = P $ equation "breakbefore" (text "##f")
 
 --------------------------------------------------------------------------------    
 -- ** MIDI output (10.3)

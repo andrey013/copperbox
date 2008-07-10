@@ -6,7 +6,7 @@
 
 module Main where
 
-import Bala.Format.Midi.Midi
+import Bala.Format.Midi.Midi hiding (header)
 import Bala.Base.Base
 
 import Bala.Perform.RenderMidi
@@ -16,6 +16,7 @@ import Bala.Perform.EventTree ( (#) )
 -- For Lilypond
 import qualified Bala.Perform.RenderLilyPond as RLy
 import Bala.Format.Base.SymBase
+import Bala.Format.SymLilyPond.LilyPond hiding (Pitch, Duration)
 import Text.PrettyPrint.Leijen hiding (dot)
 
 data NrEvent = Note Pitch Duration
@@ -29,17 +30,17 @@ instance Renderable NrEvent where
   generates (Note _ _) = Just (\(Note p _) -> return (Left p))  
   generates (Rest _)   = Nothing 
 
-dur 16  = sixteenth
-dur 8   = eighth
-dur 4   = quarter
-dur 2   = half
-dur 1   = whole
+durn 16  = sixteenth
+durn 8   = eighth
+durn 4   = quarter
+durn 2   = half
+durn 1   = whole
       
 n :: Pitch -> Int -> NrEvent
-n p i = Note p (dur i)
+n p i = Note p (durn i)
 
 r :: Int -> NrEvent    
-r = Rest . dur
+r = Rest . durn
 
 -- a major
 
@@ -65,8 +66,9 @@ bars1_4 = foldl (flip E.event) E.root events_bars1_4
 
 bulgarian6 = (E.Perf [bars1_4])   
   
-main = output bulgarian6 "bulgarian6.midi"
-
+main = do
+    output bulgarian6 "bulgarian6.midi"
+    outputLy "bulgarian6.ly" bulgarian6_ly
 -------
 
 -- LilyPond handling is very unpolished
@@ -75,7 +77,11 @@ printDoc :: (() -> P a) -> IO ()
 printDoc e = let sdoc = renderPretty 0.8 80 (unP (e ())) in do
     putStr ((displayS sdoc []) ++ "\n")
     
-
+outputLy :: FilePath -> (() -> P a) -> IO ()
+outputLy filename e = let sdoc = renderPretty 0.8 80 (unP (e ())) in do
+    writeFile filename ((displayS sdoc []) ++ "\n")
+    
+    
 
 instance RLy.LyRenderable NrEvent where
     pitchOf (Note p _)        = p
@@ -90,30 +96,22 @@ instance RLy.LyRenderable NrEvent where
     isRest (Rest _)           = True
     
         
-{-    
 
-data NrEvent = Note Pitch Duration
-             | Rest Duration
-             
-             
--- only handles pitches at the moment
 
-extractPitches :: [NrEvent] -> [Pitch]
-extractPitches = foldr fn [] 
-  where
-    fn (Note p _) acc = p : acc
-    fn _          acc = acc
-
-buildPitchTree :: [Pitch] -> E.EventTree Pitch
-buildPitchTree = foldl (flip E.event) E.root  
-
-tree1_4 = buildPitchTree $ extractPitches events_bars1_4
-
--}
+bulgarian_template musicexpr = 
+    toplevelCtx 
+      +++ version "2.10.3" 
+      +++ header (headerCtx +++ title "Bulgarian (6)")
+      +++ in_book
+            (in_score 
+              (relative (_c %% raised 1) musicexpr))
+  
 
 bulgarian6_ly () = 
-  RLy.runRenderLy (RLy.run'oflat () bars1_4) (RLy.relative c4 RLy.st_zero) 
-
+  let e     = elementCtx +++ key _a major +++ clef treble
+      mexpr = RLy.runRenderLy (RLy.run'oflat e bars1_4) (RLy.relative c4 RLy.st_zero)
+  in bulgarian_template mexpr
+   
 
     
 demo_ly = printDoc bulgarian6_ly

@@ -18,7 +18,8 @@
 module Bala.Format.SymAbc.Datatypes  where
 
 import Bala.Format.Base.SymBase
- 
+
+
     
 data CT_Field
 
@@ -43,90 +44,85 @@ instance ListContext CT_Field Field
 instance ListContext CT_Field MidTuneField
 
 
--- | @X field@ - reference \/ tune number.
-class CFieldNumber repr where
-  num_                :: Int -> repr Field
 
--- | @T field@ - title. 
-class CFieldTitle repr where
-  title_              :: String -> repr MidTuneField
+class CField repr where
+  -- | @A field@ - area.
+  area_field                :: String -> repr Field
 
--- | @A field@ - area.
-class CFieldArea repr where
-  area_               :: String -> repr Field
-
--- | @B field@ - book.
-class CFieldBook repr where  
-  book_               :: String -> repr Field
-
--- | @C field@ - composer name.
-class CFieldComposer repr where  
-  composer_           :: String -> repr Field
-
--- | @D field@ - discography.
-class CFieldDiscography repr where  
-  discography_        :: String -> repr Field
-
--- | @E field@ - elemskip.
-class CFieldElemskip repr where
-  elemskip_           :: String -> repr MidTuneField
-
--- | @G field@ - group.
-class CFieldGroup repr where  
-  group_              :: String -> repr Field
-
--- | @I field@ - information.
-class CFieldInformation repr where
-  information_        :: String -> repr Field
-
--- | @N field@ - notes.
-class CFieldNotes repr where  
-  notes_              :: String -> repr Field
-
--- | @O field@ - origin.
-class CFieldOrigin repr where  
-  origin_             :: String -> repr Field
-
--- | @R field@ - rhythm.
-class CFieldRhythm repr where  
-  rhythm_             :: String -> repr Field
-
--- | @S field@ - source.
-class CFieldSource repr where  
-  source_             :: String -> repr Field
-
--- | @W field@ - words.
-class CFieldWords repr where    
-  words_              :: String -> repr MidTuneField
-
--- | @Z field@ - transcriber notes.  
-class CFieldTranscrNotes repr where
-  transcrNotes_   :: String -> repr Field
-
--- | @H field@ - history.
-class CFieldHistory repr where
-  history_      :: [String] -> repr Field
-
--- | @K field@ - key.
-class CFieldKey repr where
-  key_          :: repr Key -> repr MidTuneField
+  -- | @B field@ - book.
+  book_field                :: String -> repr Field
   
--- | @L field@ - default note length.
-class CFieldDefaultNoteLength repr where
-  defaultNoteLength_    :: MeterFraction -> repr MidTuneField
+  -- | @C field@ - composer name. 
+  composer_field            :: String -> repr Field
 
+  -- | @D field@ - discography.
+  discography_field         :: String -> repr Field
 
--- | @P field@ - parts, simplified - parts are just represented as a string.
-class CFieldParts repr where 
-  parts_        :: [Char] -> repr MidTuneField
+  -- | @G field@ - group.
+  group_field               :: String -> repr Field
+
+  -- | @H field@ - history.
+  history_field             :: [String] -> repr Field
   
--- | @Q field@ - tempo.
-class CFieldTempo repr where
-  tempo_        :: repr Tempo -> repr MidTuneField
+  -- | @I field@ - information.
+  information_field         :: String -> repr Field
 
--- | @M field@ - meter.
-class CFieldMeter repr where
-  meter_        :: repr Meter -> repr MidTuneField  
+  -- | @N field@ - notes.  
+  notes_field               :: String -> repr Field
+
+  -- | @O field@ - origin. 
+  origin_field              :: String -> repr Field
+
+  -- | @R field@ - rhythm. 
+  rhythm_field              :: String -> repr Field
+
+  -- | @S field@ - source.
+  source_field              :: String -> repr Field
+
+           
+  -- | @X field@ - reference \/ tune number.
+  number_field              :: Int -> repr Field
+  
+  -- | @Z field@ - transcriber notes.  
+  transcriber_notes_field   :: String -> repr Field
+  
+ 
+class CMidTuneField repr where
+
+  -- | @E field@ - elemskip.
+  elemskip_field            :: String -> repr MidTuneField
+
+  -- | @K field@ - key.
+  key_field                 :: repr Key -> repr MidTuneField
+  
+  -- | @L field@ - default note length.
+  default_note_length_field :: MeterFraction -> repr MidTuneField
+
+  -- | @M field@ - meter.
+  meter_field               :: repr Meter -> repr MidTuneField  
+  
+  -- | @P field@ - parts, simplified - parts are just represented as a string.
+  parts_field               :: [Char] -> repr MidTuneField
+  
+  -- | @Q field@ - tempo.
+  tempo_field               :: repr Tempo -> repr MidTuneField
+
+  -- | @T field@ - title.
+  title_field               :: String -> repr MidTuneField
+  
+  -- | @W field@ - words.  
+  words_field               :: String -> repr MidTuneField
+
+
+
+
+
+
+
+
+
+
+
 
 data AbcMusic
 class CAbcMusic repr where

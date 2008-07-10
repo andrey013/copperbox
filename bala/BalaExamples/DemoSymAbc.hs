@@ -30,18 +30,18 @@ demo_pp3 = printP demo_003
 -- demo_003c () = rest %% flat
 
 demo_004 () =     fieldCtx
-              +++ book_ "My song book" 
-              +++ area_ "area" 
-              +++ tempo_ << stempo (1%2) 2 
-              +++ meter_ << meter  (2%3)
-              +++ key_ << key << keySpec c_ %% locrian
-              +++ history_ ["All tunes", "written in", "the past"]
-              +++ defaultNoteLength_ (2%4)
-              +++ words_ "la di da"
+              +++ book_field    "My song book" 
+              +++ area_field    "area" 
+              +++ tempo_field   << stempo (1%2) 2 
+              +++ meter_field   << meter  (2%3)
+              +++ key_field     << key << keySpec c_ %% locrian
+              +++ history_field ["All tunes", "written in", "the past"]
+              +++ l_field       (2%4)
+              +++ words_field   "la di da"
               
-              +++ abcmusic << elements << x1             
-              +++ abcmusic << midtuneField << words_ "lolalalo"
-              +++ abcmusic << elements << x1
+              +++ abcmusic      << elements << x1             
+              +++ abcmusic      << midtuneField << words_field "lolalalo"
+              +++ abcmusic      << elements << x1
 
   where 
     x1 = elementCtx +++ note C %% sharp %% octaveHigh 2 +++ firstRepeat 
@@ -54,12 +54,12 @@ demo_pp5 = printP demo_005
 
 
 bala_test () =      fieldCtx
-                +++ num_ 1
-                +++ title_ "Bala Abc test"
-                +++ meter_ << meter (4%4)
-                +++ key_ << key << keySpec << note C
-                +++ defaultNoteLength_ (1%1)
-                +++ abcmusic << elements << e1
+                +++ number_field  1
+                +++ title_field   "Bala Abc test"
+                +++ meter_field   << meter (4%4)
+                +++ key_field     << key << keySpec << note C
+                +++ l_field       (1%1)
+                +++ abcmusic      << elements << e1
   where
     e1 = elementCtx +++ nplet 2 +++ note C +++ note E +++ note G %% sharp +++ z1
           +++ note C %% gracenotes [c_, f_, a_] +++ z1 

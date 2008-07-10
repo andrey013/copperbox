@@ -36,13 +36,13 @@ class CPrefixAttr repr where
        
 -- | Contexts
 data CT_Toplevel
-data CT_Book
 
 -- | Properties inside header block e.g. title, dedication
 data CT_Header  
 
-data CT_Note 
-data CT_NoteAttr
+-- | Book context for multiple scores, markup
+data CT_Book
+
 
 -- | Glyphs - e.g. rest, note, skip etc
 data CT_Element 
@@ -662,14 +662,16 @@ instance NewContextType CtxVoice
 
 data CmdScore
 class CCmdScore repr where
-  score :: repr a -> repr CmdScore
+  score :: repr Block -> repr CmdScore
 
+instance ListContext CT_Toplevel CmdScore
+instance ListContext CT_Book CmdScore
 
 data CmdBook
 class CCmdBook repr where
-  book :: repr a -> repr CmdBook
+  book :: repr Block -> repr CmdBook
  
-
+instance ListContext CT_Toplevel CmdBook
 
 --------------------------------------------------------------------------------
 -- ** Titles and headers (10.2)
@@ -683,7 +685,7 @@ instance ListContext CT_Toplevel CmdHeader
 
 data Block
 class CBlock repr where
-  block         :: repr (SnocList subctx) -> repr Block
+  block         :: repr (SnocList ctx) -> repr Block
 
 instance ListContext CT_Toplevel Block
 instance ListContext CT_Element Block
@@ -691,17 +693,15 @@ instance ListContext CT_Element Block
 --------------------------------------------------------------------------------    
 -- *** Creating titles (10.2.1)
 
-data EqnTitle
-class CEqnTitle repr where
-  title         :: String -> repr EqnTitle
+data HeaderElement
+class CHeaderElement repr where
+  headerElement :: String -> String -> repr HeaderElement
+  breakbefore   :: Bool -> repr HeaderElement
+ 
+        
+instance ListContext CT_Header HeaderElement
+  
 
-instance ListContext CT_Header EqnTitle
-  
-data EqnDedication
-class CEqnDedication repr where
-  dedication    :: String -> repr EqnDedication
-  
-instance ListContext CT_Header EqnDedication
 
      
 --------------------------------------------------------------------------------    

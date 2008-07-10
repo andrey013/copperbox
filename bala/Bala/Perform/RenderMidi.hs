@@ -82,10 +82,9 @@ oflat :: Renderable evt =>
 -}
  
 
-oflat (i,ksq) EmptyL     = return (i, ksq)
+oflat (i,ksq) EmptyL              = return (i, ksq)
 
-    
-oflat (i,ksq) (Evt evt :< sq)    = do 
+oflat (i,ksq) (Evt evt :< sq)     = do 
     d           <- calcDuration evt
     oe          <- generatesEvent evt
     case oe of 
@@ -93,37 +92,42 @@ oflat (i,ksq) (Evt evt :< sq)    = do
       Just e  -> oflat (i+d, ksq |> (i,(e,d))) (viewl sq)
 
 
-oflat (i,ksq) (StartPar :< sq)      =
+oflat (i,ksq) (StartPar :< sq)    =
     oflatPar (i,ksq) (viewl sq)
    
-oflat (i,ksq) (StartPre :< sq)      =
+oflat (i,ksq) (StartPre :< sq)    =
     oflatPre (i,ksq) (viewl sq)
     
 oflat (i,ksq) (Sequence ts :< sq) = do
     xs          <- mapM (oflat (i,empty)) (map viewl ts)   
     oflat (merge (i,ksq) xs) (viewl sq)
     
+oflat (i,ksq) _                     =
+    error "Invalid EventTree"
 
-
-oflatPar (i,ksq) (Evt evt :< sq) = do
+oflatPar (i,ksq) (Evt evt :< sq)    = do
     d           <- calcDuration evt
     oe          <- generatesEvent evt
     case oe of 
       Nothing -> oflatPar (i, ksq)              (viewl sq)
       Just e  -> oflatPar (i, ksq |> (i,(e,d))) (viewl sq) 
   
-oflatPar (i,ksq) (EndPar :< sq) = 
+oflatPar (i,ksq) (EndPar :< sq)     = 
     oflat (i,ksq) (viewl sq)
       
-
-oflatPre (i,ksq) (Evt evt :< sq)  = do
+oflatPar (i,ksq) _                  = 
+    error "unterminated Par"
+    
+    
+oflatPre (i,ksq) (Evt evt :< sq)    = do
     -- to do - currently do nothing
     oflatPre (i,ksq) (viewl sq)
   
-oflatPre (i,ksq) (EndPre :< sq) = 
+oflatPre (i,ksq) (EndPre :< sq)     = 
     oflat (i,ksq) (viewl sq)
     
-
+oflatPre (i,ksq) _                  = 
+    error "unterminated Pre"  
 
 merge :: (Integer, Seq a) -> [(Integer, Seq a)] -> (Integer, Seq a)
 merge (i,sq) xs = (undefined, foldl (><) sq (map snd xs)) 

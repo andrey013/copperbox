@@ -23,14 +23,20 @@ import Bala.Format.SymLilyPond.Datatypes
 --------------------------------------------------------------------------------
 -- * Contexts for lists
 
-elementCtx :: (CSnocList repr CT_Element) => repr (SnocList CT_Element)
+elementCtx    :: (CSnocList repr CT_Element) => repr (SnocList CT_Element)
 elementCtx    = snil
 
-toplevelCtx :: (CSnocList repr CT_Toplevel) => repr (SnocList CT_Toplevel)
+toplevelCtx   :: (CSnocList repr CT_Toplevel) => repr (SnocList CT_Toplevel)
 toplevelCtx   = snil
 
-headerCtx :: (CSnocList repr CT_Header) => repr (SnocList CT_Header)
+headerCtx     :: (CSnocList repr CT_Header) => repr (SnocList CT_Header)
 headerCtx     = snil
+
+
+bookCtx       :: (CSnocList repr CT_Book) => repr (SnocList CT_Book)
+bookCtx       = snil
+
+
 
 -- comments and versioning (2.12)
 
@@ -1427,11 +1433,80 @@ de                    = drumPitchName "de"
 -- ** Input files (10.1)
 -- *** Multiple scores in a book (10.1.2)
 
+in_score :: (CSnocList repr CT_Element,
+            ListContext CT_Element a,
+            CBlock repr,
+            CCmdScore repr) 
+        => repr a -> repr CmdScore
+in_score e = score (block (elementCtx +++ e))
+
+
+in_book :: (CSnocList repr CT_Book,
+            ListContext CT_Book a,
+            CBlock repr,
+            CCmdBook repr) 
+        => repr a -> repr CmdBook
+in_book e = book (block (bookCtx +++ e))
+
 
 --------------------------------------------------------------------------------
 -- ** Titles and headers (10.2)
 -- *** Creating titles (10.2.1)
 
+-- | @dedication@.  
+dedication            :: (CHeaderElement repr) => String -> repr HeaderElement
+dedication            = headerElement "dedication"
+
+-- | @title@.  
+title                 :: (CHeaderElement repr) => String -> repr HeaderElement
+title                 = headerElement "title"
+
+-- | @subtitle@.  
+subtitle              :: (CHeaderElement repr) => String -> repr HeaderElement
+subtitle              = headerElement "subtitle"
+
+-- | @subsubtitle@.  
+subsubtitle           :: (CHeaderElement repr) => String -> repr HeaderElement
+subsubtitle           = headerElement "subsubtitle"
+
+-- | @poet@.  
+poet                  :: (CHeaderElement repr) => String -> repr HeaderElement
+poet                  = headerElement "poet"
+
+-- | @composer@.  
+composer              :: (CHeaderElement repr) => String -> repr HeaderElement
+composer              = headerElement "composer"
+
+-- | @meter@.  
+meter                 :: (CHeaderElement repr) => String -> repr HeaderElement
+meter                 = headerElement "meter"
+
+-- | @opus@.  
+opus                  :: (CHeaderElement repr) => String -> repr HeaderElement
+opus                  = headerElement "opus"
+
+-- | @arranger@.  
+arranger              :: (CHeaderElement repr) => String -> repr HeaderElement
+arranger              = headerElement "arranger"
+
+-- | @instrument@.  
+instrument            :: (CHeaderElement repr) => String -> repr HeaderElement
+instrument            = headerElement "arranger"
+
+-- | @piece@.  
+piece                 :: (CHeaderElement repr) => String -> repr HeaderElement
+piece                 = headerElement "piece"
+
+-- breakbefore is representated in the CHeaderElement class
+-- because its argument is a bool.
+
+-- | @copyright@.  
+copyright             :: (CHeaderElement repr) => String -> repr HeaderElement
+copyright             = headerElement "copyright"
+
+-- | @tagline@.  
+tagline               :: (CHeaderElement repr) => String -> repr HeaderElement
+tagline               = headerElement "tagline"
 
 --------------------------------------------------------------------------------    
 -- ** MIDI output (10.3)

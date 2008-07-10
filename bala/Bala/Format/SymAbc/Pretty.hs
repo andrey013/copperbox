@@ -38,70 +38,45 @@ instance CSnocList P CT_Element where
 instance CAttr P where
   attr e a              = P $ group $ unP e <> unP a 
 
-instance CFieldNumber P where
-  num_ i                = P  $ ppfield 'X' (int i)
 
-instance CFieldTitle P where  
-  title_ s              = P $ ppfield 'T' (text s)
+--------------------------------------------------------------------------------
+-- | Fields
+
+instance CField P where
+  area_field s                    = P $ ppfield 'A' (text s)
+  book_field s                    = P $ ppfield 'B' (text s)
+  composer_field s                = P $ ppfield 'C' (text s)  
+  discography_field s             = P $ ppfield 'D' (text s)
+  group_field s                   = P $ ppfield 'G' (text s)
+  history_field xs                = P $ ppfield 'H' (align $ vsep $ map text xs)  
+  information_field s             = P $ ppfield 'I' (text s)
+  notes_field s                   = P $ ppfield 'N' (text s)
+  origin_field s                  = P $ ppfield 'O' (text s)  
+  rhythm_field s                  = P $ ppfield 'R' (text s)  
+  source_field s                  = P $ ppfield 'S' (text s)    
+  transcriber_notes_field s       = P $ ppfield 'Z' (text s) 
+  number_field i                  = P $ ppfield 'X' (int i)
+
+
+
+
+instance CMidTuneField P where
+  elemskip_field s                = P $ ppfield 'E' (text s)
+  key_field k                     = P $ ppfield 'K' (unP k)
+  default_note_length_field r     = P $ ppfield 'L' (pretty r)
+  meter_field m                   = P $ ppfield 'M' (unP m)
+  parts_field cs                  = P $ ppfield 'P' (text cs)
+  tempo_field t                   = P $ ppfield 'Q' (unP t)
+  title_field s                   = P $ ppfield 'T' (text s)
+  words_field s                   = P $ ppfield 'W' (text s)
    
-instance CFieldArea P where
-  area_ s               = P $ ppfield 'A' (text s)
   
-instance CFieldBook P where
-  book_ s               = P $ ppfield 'B' (text s)
+
+
   
-instance CFieldComposer P where
-  composer_ s           = P $ ppfield 'C' (text s)
+--------------------------------------------------------------------------------
+-- | ...
 
-instance CFieldDiscography P where  
-  discography_ s        = P $ ppfield 'D' (text s)
-
-instance CFieldElemskip P where  
-  elemskip_ s           = P $ ppfield 'E' (text s) 
-
-instance CFieldGroup P where  
-  group_ s              = P $ ppfield 'G' (text s)
-
-instance CFieldInformation P where  
-  information_ s        = P $ ppfield 'I' (text s)
-
-instance CFieldNotes P where  
-  notes_ s              = P $ ppfield 'N' (text s)
-
-instance CFieldOrigin P where  
-  origin_ s             = P $ ppfield 'O' (text s)
-
-instance CFieldRhythm P where  
-  rhythm_ s             = P $ ppfield 'R' (text s)
-
-instance CFieldSource P where  
-  source_ s             = P $ ppfield 'S' (text s)
-
-instance CFieldWords P where  
-  words_ s              = P $ ppfield 'W' (text s)
-
-instance CFieldTranscrNotes P where  
-  transcrNotes_ s       = P $ ppfield 'Z' (text s)
-
-instance CFieldHistory P where
- history_ xs            = P $ ppfield 'H' (align $ vsep $ map text xs)
- 
-instance CFieldKey P where
-  key_ k                = P $ ppfield 'K' (unP k)
-     
-instance CFieldDefaultNoteLength P where
- defaultNoteLength_ r   = P $ ppfield 'L' (pretty r) 
-   
-instance CFieldMeter P where
-  meter_ m              = P $ ppfield 'M' (unP m)  
-
--- simplified
-instance CFieldParts P where 
-  parts_ cs             = P $ ppfield 'P' (text cs)
-  
-  
-instance CFieldTempo P where
-  tempo_ t              = P $ ppfield 'Q' (unP t)
 
   
         

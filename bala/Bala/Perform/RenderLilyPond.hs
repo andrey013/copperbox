@@ -166,7 +166,7 @@ lyDuration d = currentDuration d >>= mkD
     mkD _      = let (dur,dots) = B.simplifyDuration d
                      root       = durationpart dur
                  in case root of
-                    Just (Left a)  -> return $ Just $ Left (a `optAttr` (dotpart dots))
+                    Just (Left a)  -> return $ Just $ Left  (a `optAttr` (dotpart dots))
                     Just (Right a) -> return $ Just $ Right (a `optAttr` (dotpart dots))
                     Nothing        -> return Nothing    
 
@@ -210,11 +210,8 @@ suffixGrace k xs    = k +++ grace +++ gblock
 
        
        
-oflat lyk  EmptyL     = return lyk 
+oflat lyk  EmptyL               = return lyk 
 
-
--- Next pushes its element on the stack and closes it.
--- It might be the first note of a chord
 oflat lyk (Evt e :< sq)         = do
     e'        <- pitchOrRest'duration e
     oflat (suffix lyk e') (viewl sq)
@@ -224,13 +221,16 @@ oflat lyk (Sequence ts :< sq)   = do
     xs        <- mapM (oflat elementCtx) (map viewl ts)
     return (merge lyk' xs)  
     
-
 oflat lyk (StartPar :< sq)      =
     oflatPar (lyk,[]) (viewl sq)
    
 oflat lyk (StartPre :< sq)      =
     oflatPre (lyk,[]) (viewl sq)
 
+oflat lyk _                     =
+    error "Invalid EventTree"
+    
+    
             
 oflatPar (lyk,stk) (Evt e :< sq) = do
     e'              <- pitchOrRest'duration e
@@ -239,7 +239,10 @@ oflatPar (lyk,stk) (Evt e :< sq) = do
 oflatPar (lyk,stk) (EndPar :< sq) = 
     oflat (suffixChord lyk stk) (viewl sq)
       
-
+oflatPar (lyk,stk) _              = 
+    error "unterminated Par"
+    
+    
 oflatPre (lyk,stk) (Evt e :< sq)  = do
     e'              <- pitchOrRest'duration e
     oflatPre (lyk, (e':stk)) (viewl sq)
@@ -247,7 +250,8 @@ oflatPre (lyk,stk) (Evt e :< sq)  = do
 oflatPre (lyk,stk) (EndPre :< sq) = 
     oflat (suffixGrace lyk stk) (viewl sq)
                         
-                        
+oflatPre (lyk,stk) _              = 
+    error "unterminated Pre"                   
                         
 
 
@@ -260,9 +264,26 @@ merge k (x:xs) = let poly = foldl fn (block x) xs in
   where
     fn acc a = acc \\ (block a)
 
-
-run'oflat () t = do 
-    lyk <- oflat elementCtx (viewl t) 
+run'oflat :: (CSnocList repr CT_Element,
+                  CChord repr,
+                  CPoly repr,
+                  CRest repr,
+                  CNote repr,
+                  CBlock repr,
+                  CCmdGrace repr,
+                  LyRenderable t,
+                  CDotted repr,
+                  CDuration repr,
+                  CCmdLongDuration repr,
+                  COctaveSpec repr,
+                  CAccidental repr,
+                  CAttr repr,
+                  CPitch repr) =>
+                    repr (SnocList CT_Element)
+                 -> Seq (EvtPosition t)
+                 -> RenderM (repr (SnocList CT_Element))
+run'oflat ellist t = do 
+    lyk <- oflat ellist (viewl t) 
     return lyk
 
  

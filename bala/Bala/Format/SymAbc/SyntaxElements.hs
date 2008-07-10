@@ -32,6 +32,12 @@ elementCtx = snil
 
 --------------------------------------------------------------------------------
 
+
+-- | @l_field@ - alias for the very long name default_note_length_field.
+l_field :: (CMidTuneField repr) => MeterFraction -> repr MidTuneField
+l_field = default_note_length_field
+  
+
 c_, d_, e_, f_, g_, a_, b_ :: (CBaseNote repr) =>  repr BaseNote
 c_  = note C
 d_  = note D
