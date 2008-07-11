@@ -23,13 +23,7 @@ module Bala.Format.SymLilyPond.Datatypes  where
 import Bala.Format.Base.SymBase
 
 
--- * Prefix Attributes
--- | Normally the P (pretty-print interpretation) prints all attributes as a 
--- suffix to their element. We meed a special case for prefix attributes 
--- (e.g. vertical placement).
-class PrefixAttribute elt attrib
-class CPrefixAttr repr where
-  prefixAttr  :: PrefixAttribute elt att =>  repr att -> repr elt -> repr elt
+
        
        
        
@@ -678,7 +672,7 @@ instance ListContext CT_Toplevel CmdBook
 
 data CmdHeader
 class CCmdHeader repr where
-  header :: repr a -> repr CmdHeader 
+  header ::  repr Block -> repr CmdHeader 
 
 instance ListContext CT_Toplevel CmdHeader
 

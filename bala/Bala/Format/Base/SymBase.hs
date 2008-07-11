@@ -54,7 +54,27 @@ infixl 7 %%
 ( %% ) :: (Attribute elt att, CAttr repr) => repr elt -> repr att -> repr elt
 e %% a = attr e a
 
+optAttr :: (CAttr repr, Attribute elt att) 
+        => repr elt -> Maybe (repr att) -> repr elt
+optAttr e Nothing   = e
+optAttr e (Just a)  = e `attr` a
 
+
+-- * Prefix Attributes
+-- | Normally the P (pretty-print interpretation) prints all attributes as a 
+-- suffix to their element. We meed a special case for prefix attributes 
+-- (e.g. vertical placement in LilyPond, accidental in Abc).
+
+class PrefixAttribute elt attrib
+class CPrefixAttr repr where
+  prefixAttr  :: PrefixAttribute elt att =>  repr att -> repr elt -> repr elt
+  
+optPrefixAttr :: (CPrefixAttr repr, PrefixAttribute elt att) 
+        => Maybe (repr att) -> repr elt -> repr elt
+optPrefixAttr Nothing  e    = e
+optPrefixAttr (Just a) e    = a `prefixAttr` e
+
+  
 
 -- CAN WE DO WITHOUT << ?
 
@@ -66,14 +86,14 @@ f << a = f a
 
 -- * Meter fraction
 -- | An alternative to Data.Rational which normalizes where possible
--- e.g. 4\/4 becomes 1\/1. For time signatures we don't want to noramlize.
-data MeterFraction = Int :% Int
+-- e.g. 4\/4 becomes 1\/1. For time signatures we don't want to normalize.
+data MeterFraction = Int :/ Int
 
-infixl 2 %
+infixl 2 //
 
--- | Synonym for the infix constructor (:%).
-(%) :: Int -> Int -> MeterFraction
-(%) n d = n :% d
+-- | Synonym for the infix constructor (:\/\/).
+(//) :: Integral a => a -> a -> MeterFraction
+(//) n d = (fromIntegral n) :/ (fromIntegral d)
   
   
 --------------------------------------------------------------------------------
@@ -85,12 +105,19 @@ newtype P a = P { unP :: Doc }
 -- | Print a document with a unit argument. Documents taking () as an argument
 -- do not have to be explicitly typed and avoid the monomorphism restriction.
 printP :: (() -> P a) -> IO ()
-printP x = putDoc $ unP (x ())
+printP e = let sdoc = renderPretty 0.8 80 (unP (e ())) in do
+    putStr ((displayS sdoc []) ++ "\n")
 
+instance CAttr P where
+  attr e a              = P $ group $ unP e <> unP a 
 
+instance CPrefixAttr P where
+  prefixAttr a e        = P $ group $ unP a <> unP e 
+    
+  
 instance Pretty MeterFraction where
-  pretty (n :% d) = group $ int n <> char '/' <> int d
+  pretty (n :/ d) = group $ int n <> char '/' <> int d
 
 instance Show MeterFraction where
-  showsPrec _ (n :% d) = shows n . showChar '/' . shows d
+  showsPrec _ (n :/ d) = shows n . showChar '/' . shows d
   

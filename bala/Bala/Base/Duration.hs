@@ -25,7 +25,7 @@ module Bala.Base.Duration (
   -- * Operations
   dot, dotdot, dotdotdot,
   
-  calculateTicks,
+  calculateTicks, rationalize,
     
   -- * Named instances (American)
   -- $amerdoc

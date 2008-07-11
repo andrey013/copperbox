@@ -62,10 +62,7 @@ withAttr :: (CAttr repr, Attribute elt att)
 withAttr a e = e %% a
 
 
-optAttr :: (CAttr repr, Attribute elt att) 
-        => repr elt -> Maybe (repr att) -> repr elt
-optAttr e Nothing   = e
-optAttr e (Just a)  = e `attr` a
+
 
 
 

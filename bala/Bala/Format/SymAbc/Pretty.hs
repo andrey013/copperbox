@@ -19,6 +19,7 @@ module Bala.Format.SymAbc.Pretty where
 import Bala.Format.Base.SymBase
 import Bala.Format.SymAbc.Datatypes
 
+import Data.Ratio
 import Text.PrettyPrint.Leijen
 
 
@@ -35,8 +36,8 @@ instance CSnocList P CT_Element where
   snil                  = P $ empty
   snoc xs x             = P $ unP xs <> unP x 
     
-instance CAttr P where
-  attr e a              = P $ group $ unP e <> unP a 
+-- instance CAttr P where
+--  attr e a              = P $ group $ unP e <> unP a 
 
 
 --------------------------------------------------------------------------------
@@ -123,10 +124,18 @@ instance CMeter P where
   meter r               = P $ pretty r
   commonTime            = P $ char 'C'
   cutTime               = P $ text "C|"
-    
+
+
+ppRatio r = let (n,d) = (numerator r, denominator r) in f n d
+  where 
+    f 1 1   = empty       -- the default note length
+    f n 1   = int n
+    f 1 2   = char '/'    -- short hand for pitch/2
+    f n d   = group $ ppRatio (n%d)
+  
     
 instance CDuration P where
-  dur i                 = P $ int i
+  dur (n :/ d)          = P $ ppRatio (n%d)
   
   
 instance CRest P where

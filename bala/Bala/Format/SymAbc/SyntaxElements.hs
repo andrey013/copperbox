@@ -59,8 +59,8 @@ b__  = note B2
 
 -- rests 
 z1, z2 :: (CRest repr, CDuration repr, CAttr repr) => repr Rest
-z1 = rest `attr` dur 1
-z2 = rest `attr` dur 2
+z1 = rest `attr` dur (1 // 1)
+z2 = rest `attr` dur (2 // 1)
 
 
 major, minor, lydian, ionian, mixolydian, dorian, aeolian, phrygian, locrian 

@@ -61,11 +61,11 @@ instance CSnocList P CT_Book where
 
   
     
-instance CAttr P where
-  attr e a              = P $ group $ unP e <> unP a 
+-- instance CAttr P where
+--   attr e a              = P $ group $ unP e <> unP a 
 
-instance CPrefixAttr P where
-  prefixAttr a e        = P $ group $ unP a <> unP e 
+-- instance CPrefixAttr P where
+--  prefixAttr a e        = P $ group $ unP a <> unP e 
   
   
         
@@ -479,7 +479,7 @@ instance CCmdBook P where
 -- *** Titles and headers (10.2)
 
 instance CCmdHeader P where
-  header a       = P $ cmd "header" <+> bracesHanging (unP a) 
+  header a       = P $ cmd "header" <+> unP a 
         
 instance CBlock P where
   block e = P $ bracesHanging $ unP e

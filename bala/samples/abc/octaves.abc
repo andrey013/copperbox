@@ -1,0 +1,10 @@
+
+% abc2ps octaves.abc -e 1 -o -O octaves.ps
+
+X:1
+T:Octaves
+M:4/4
+L:1/4
+I:Various octaves
+K:C
+C c c' c''  | C C, C,, C,, | C D C, D, | C D c d | c d c' d' | 

@@ -115,15 +115,6 @@ class CMidTuneField repr where
 
 
 
-
-
-
-
-
-
-
-
-
 data AbcMusic
 class CAbcMusic repr where
   abcmusic :: repr AbcLine -> repr AbcMusic
@@ -187,7 +178,7 @@ class CMeter repr where
 
 data Duration
 class CDuration repr where
-  dur :: Int -> repr Duration
+  dur :: MeterFraction -> repr Duration
 
 instance Attribute BaseNote Duration
 instance Attribute Rest Duration
@@ -219,13 +210,13 @@ class CAccidental repr where
 
 
 
-instance Attribute BaseNote Accidental
+instance PrefixAttribute BaseNote Accidental
 
 
 -- Abc has pitches in a two octave range and then uses octave specs for higher
 -- and lower octaves
 data PitchLetter = C | D | E | F | G | A | B | C2 | D2 | E2 | F2 | G2 | A2 | B2
-  deriving (Eq,Show) 
+  deriving (Eq,Enum,Ord,Show) 
 
 data BaseNote
 class CBaseNote repr where

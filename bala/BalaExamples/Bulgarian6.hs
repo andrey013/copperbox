@@ -101,7 +101,7 @@ instance RLy.LyRenderable NrEvent where
 bulgarian_template musicexpr = 
     toplevelCtx 
       +++ version "2.10.3" 
-      +++ header (headerCtx +++ title "Bulgarian (6)")
+      +++ in_header (title "Bulgarian (6)")
       +++ in_book
             (in_score 
               (relative (_c %% raised 1) musicexpr))

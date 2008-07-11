@@ -29,7 +29,8 @@ demo_03b () = longfermata
 demo_04 () = version "2.10.3"
 demo_pp4 = printP demo_04
 
-demo_05 () = header (headerCtx +++ title "Bulgarian 6" +++ dedication "unknown")
+demo_05 () = header (block (headerCtx +++ title "Bulgarian 6" 
+                                      +++ dedication "unknown"))
 demo_pp5 = printP demo_05
 
 
@@ -82,7 +83,7 @@ merge k xs = foldl fn (block k) xs
            
 lilypond_test () = 
   toplevelCtx +++ version "2.10.3" 
-              +++ header (headerCtx +++ title "Bala LilyPond test")
+              +++ header (block (headerCtx +++ title "Bala LilyPond test"))
               +++ block e
   where 
     e = elementCtx +++ relative (_c %% raised 2) 

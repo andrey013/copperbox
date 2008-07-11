@@ -1453,6 +1453,14 @@ in_book e = book (block (bookCtx +++ e))
 -- ** Titles and headers (10.2)
 -- *** Creating titles (10.2.1)
 
+in_header :: (CSnocList repr CT_Header,
+              ListContext CT_Header a,
+              CBlock repr,
+              CCmdHeader repr) 
+          => repr a -> repr CmdHeader
+in_header e = header (block (headerCtx +++ e))
+
+
 -- | @dedication@.  
 dedication            :: (CHeaderElement repr) => String -> repr HeaderElement
 dedication            = headerElement "dedication"

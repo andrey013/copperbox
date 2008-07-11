@@ -66,7 +66,7 @@ noBlock = undefined <$ (lexChar '{') <*> (lexChar '}')
 
 
 meterFraction :: Parser MeterFraction
-meterFraction = (%) <$> (int <* char '/') <*> lexeme int
+meterFraction = (//) <$> (int <* char '/') <*> lexeme int
 
 
 many1Cat :: (CSnocList repr ctx, ListContext ctx a) 
