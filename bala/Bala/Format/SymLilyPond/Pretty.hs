@@ -504,9 +504,5 @@ instance CCmdMidi P where
   midi            = P $ cmd "midi"
 
 
---------------------------------------------------------------------------------    
--- * Placeholder
 
-instance CPlaceholder P where
-  undef          = P $ text "undefined"
   

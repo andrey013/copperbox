@@ -177,7 +177,7 @@ pMicroTone = longestChoice string $
 --------------------------------------------------------------------------------
 -- *** Relative octaves (6.1.6)
 
-pRelative :: (CCmdRelative repr, CPlaceholder repr, CBlock repr)
+pRelative :: (CCmdRelative repr, CBlock repr)
           => Para repr -> Parser (repr CmdRelative)
 pRelative px = relative <$> (command "relative" *> (parsePitch px)) <*> noBlock
   

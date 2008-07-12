@@ -21,7 +21,7 @@ demo_pp1 = printP demo_01
 demo_02 ()  = chord [_c,_e,_g] %% dur 4 
 demo_pp2 = printP demo_02
 
-demo_03 () = time (3%4)
+demo_03 () = time (3//4)
 demo_pp3 = printP demo_03 
 
 demo_03b () = longfermata
@@ -87,9 +87,10 @@ lilypond_test () =
               +++ block e
   where 
     e = elementCtx +++ relative (_c %% raised 2) 
-          (elementCtx +++ key _g major +++ clef treble +++ time (2%4) +++ tempo (duration 4) 120  
-           +++ note _g %% dur 8 +++ openBeam +++ note _a %% dur 8 
-           +++ note _b %% dur 8 +++ closeBeam +++ note _a %% dur 8  )                
+          (elementCtx +++ key _g major +++ clef treble 
+            +++ time (2//4)      +++ tempo (duration 4) 120  
+            +++ note _g %% dur 8 +++ openBeam  +++ note _a %% dur 8 
+            +++ note _b %% dur 8 +++ closeBeam +++ note _a %% dur 8  )                
 
 
 outputDoc :: (() -> P a) -> FilePath -> IO ()

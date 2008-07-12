@@ -18,7 +18,210 @@
 
 
 
-module Bala.Format.SymLilyPond.Datatypes  where
+module Bala.Format.SymLilyPond.Datatypes (
+  -- * Contexts
+  CT_Toplevel, CT_Header, CT_Book, CT_Element,
+  
+  -- * Commenting input files (2.12)
+  CmdVersion, CCmdVersion(..),
+  LineComment, CLineComment(..),
+  BlockComment, CBlockComment(..),
+
+  -- * Basic notation (6)
+  -- ** Pitches (6.1)
+  -- *** Normal pitches (6.1.1)
+  PitchName(..),
+  Pitch, CPitch(..),
+  OctaveSpec, COctaveSpec(..),
+  Note, CNote(..),
+  
+  -- *** Accidentals (6.1.2)  
+  Accidental, CAccidental(..),
+
+  -- *** Cautionary accidentals (6.1.3)
+  CautionaryAccidental, CCautionaryAccidental(..),
+  
+  -- *** Micro tones (6.1.4)
+  MicroTone, CMicroTone(..),
+
+  -- *** Relative octaves (6.1.6)
+  CmdRelative, CCmdRelative(..),
+
+  -- *** Rests (6.1.9)
+  Rest, CRest(..),
+
+  -- *** Skips (6.1.10)
+  CmdSkip, CCmdSkip(..),
+  SkipDuration, CSkipDuration(..),
+  
+  -- ** Rhythms (6.2)
+  -- *** Durations (6.2.1)
+  Duration, CDuration(..),
+  CmdLongDuration, CCmdLongDuration(..),
+  
+  -- *** Augmentation dots (6.2.2)
+  Dotted, CDotted(..),  
+
+  -- *** Tuplets (6.2.3)
+  CmdTimes, CCmdTimes(..),
+
+  -- *** Chords (6.3.1)
+  Chord, CChord(..),
+
+  -- *** Stems (6.3.2)
+  CmdStem, CCmdStem(..),
+  
+  -- *** Basic polyphony (6.3.3)
+  Poly, CPoly(..),
+
+  -- ** Staff notation (6.4)
+  -- *** Clef (6.4.1)
+  CmdClef, CCmdClef(..),
+  ClefType, CClefType(..),
+  ClefTransposition, CClefTransposition(..),
+
+  -- *** Key signature (6.4.2)
+  CmdKey, CCmdKey(..),
+  CmdKeyType, CCmdKeyType(..),
+
+  -- *** Time signature (6.4.3)
+  CmdTime, CCmdTime(..),
+
+  -- *** Bar lines (6.4.5)
+  CmdBar, CCmdBar(..),
+
+  -- *** Unmetered music (6.4.6)
+  CmdCadenza, CCmdCadenza(..),
+
+  -- ** Connecting notes (6.5)
+  -- *** Ties (6.5.1)
+  Tie, CTie(..),
+  CmdTie, CCmdTie(..),
+
+  -- *** Slurs (6.5.2)
+  Slur, CSlur(..),
+  CmdSlur, CCmdSlur(..),
+
+  -- *** Phrasing slurs (6.5.3)
+  CmdPhrasingSlur, CCmdPhrasingSlur(..),
+
+  -- *** Laissez vibrer ties (6.5.4)
+  CmdLaissezVibrer, CCmdLaissezVibrer(..),
+
+  -- *** Automatic beams (6.5.5)
+  CmdNoBeam, CCmdNoBeam(..),
+
+  -- *** Manual beams (6.5.6)
+  Beam, CBeam(..),
+
+  -- *** Grace notes (6.5.7)
+  CmdGrace, CCmdGrace(..),
+
+  -- ** Expressive marks (6.6)
+  -- *** Articulations (6.6.1)
+  CmdArticulation, CCmdArticulation(..),
+  Articulation, CArticulation(..),
+  VPlacement(..),
+  VerticalPlacement, CVerticalPlacement(..),
+  
+  -- *** Fingering instructions (6.6.2)
+  Fingering, CFingering(..),
+  
+  -- *** Dynamics (6.6.3)
+  CmdDynamic, CCmdDynamic(..),
+
+  -- *** Breath marks (6.6.4)
+  CmdBreathe, CCmdBreathe(..),
+
+  -- *** Glissando (6.6.6)
+  CmdGlissando, CCmdGlissando(..),
+
+  -- *** Arpeggio (6.6.7)
+  CmdArpeggio, CCmdArpeggio(..),
+
+  -- *** Falls and doits (6.6.8)
+  CmdBendAfter, CCmdBendAfter(..),
+
+  -- * Instrument-specific notation (7)
+  -- ** Piano music (7.1)
+  -- *** Automatic staff changes (7.1.1)
+  CmdAutochange, CCmdAutochange(..),
+  
+  -- *** Pedals (7.1.2)
+  CmdPedal, CCmdPedal(..),
+
+  -- ** Chord names (7.2)
+  -- *** Chords mode (7.2.2)
+  CmdChordmode, CCmdChordmode(..),
+
+  -- ** Vocal music (7.3)
+  -- *** Setting simple songs (7.3.1)
+  CmdAddlyrics, CCmdAddlyrics(..),
+
+  -- *** Melismata (7.3.5)
+  Melismata, CMelismata(..),
+
+  -- ** Rhythmic music (7.4)
+  -- *** Showing melody rhythms (7.4.1)
+  CtxRhythmicStaff, CCtxRhythmicStaff(..),
+
+  -- *** Entering percussion (7.4.2)
+  CmdDrums, CCmdDrums (..),
+  DrumPitchName, CDrumPitchName(..),
+
+  -- ** Guitar (7.5)
+  -- *** Tablatures basic (7.5.2)
+  Stringnum, CStringnum(..),
+  CtxTabStaff, CCtxTabStaff(..),
+  CtxTabVoice, CCtxTabVoice(..),
+  
+  -- *** Right hand fingerings (7.5.6)
+  RightHandFinger, CRightHandFinger(..),
+
+  -- ** Other instrument specific notation (7.8)
+  -- *** Artificial harmonics (strings) (7.8.1)
+  CmdHarmonic, CCmdHarmonic(..),
+
+  -- * Advanced notation (8)
+  -- ** Text (8.1)
+  -- *** Text scripts (8.1.1)
+  TextScript, CTextScript(..),
+  CmdFatText, CCmdFatText(..),
+  
+  -- *** Text markup (8.1.4)
+  CmdMarkup, CCmdMarkup(..),
+ 
+  -- ** Preparing parts (8.2)
+  -- *** Metronome marks (8.2.2)
+  CmdTempo, CCmdTempo(..),
+
+  -- * Changing defaults (9)
+  -- ** Interpretation contexts (9.2)
+  -- *** Creating contexts (9.2.2)
+  NewContextType,
+  CmdNew, CCmdNew(..),
+  CtxStaff,  CCtxStaff(..),
+  CtxVoice, CCtxVoice(..),
+
+  -- * Non-musical notation (10)
+  -- ** Input files (10.1)
+  -- *** Multiple scores in a book (10.1.2)
+  CmdScore, CCmdScore(..),
+  CmdBook, CCmdBook(..),
+
+  -- ** Titles and headers (10.2)
+  CmdHeader, CCmdHeader(..),
+  Block, CBlock(..),
+
+  -- *** Creating titles (10.2.1)
+  HeaderElement, CHeaderElement(..),
+
+  -- ** MIDI output (10.3)
+  -- *** Creating MIDI files (10.3.1)
+  CmdMidi, CCmdMidi(..)
+
+
+  ) where
 
 import Bala.Format.Base.SymBase
 

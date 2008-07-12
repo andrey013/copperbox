@@ -279,8 +279,6 @@ run'oflat :: (CSnocList repr CT_Element,
                     repr (SnocList CT_Element)
                  -> Seq (EvtPosition t)
                  -> RenderM (repr (SnocList CT_Element))
-run'oflat ellist t = do 
-    lyk <- oflat ellist (viewl t) 
-    return lyk
+run'oflat elt_list t = oflat elt_list (viewl t) 
 
  

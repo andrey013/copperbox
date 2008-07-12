@@ -15,19 +15,87 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Format.SymAbc.Datatypes  where
+module Bala.Format.SymAbc.Datatypes (
+  -- * Contexts
+  CT_Field, CT_Element,
+
+  -- * Information fields (3)
+  Field, CField(..), 
+  MidTuneField, CMidTuneField(..),
+
+  -- ** M: meter (3.1.6)
+  Meter, CMeter(..),
+
+  -- ** Q: tempo (3.1.8)
+  Tempo, CTempo(..),
+  Length, CLength(..),
+
+  -- ** K: key (3.1.14)
+  Key, CKey(..),
+  KeySpec, CKeySpec(..),
+  KeyAccidental, CKeyAccidental(..),
+  Mode, CMode(..),
+  
+  -- * The tune body (4)
+  TuneBody, CTuneBody(..),
+  AbcLine, CAbcLine(..),
+  
+  -- ** Pitch (4.1)
+  PitchLetter(..),
+  BaseNote, CBaseNote(..),
+  Octave, COctave(..),
+
+  -- ** Accidentals (4.2)
+  Accidental, CAccidental(..),
+
+  -- ** Note lengths (4.3)
+  Duration, CDuration(..),
+
+  -- ** Broken rhythm (4.4)
+  BrokenRhythm, CBrokenRhythm(..),
+
+  -- ** Rests (4.5)
+  Rest, CRest(..),
+
+  -- ** Repeat \/ bar symbols (4.8)
+  RepeatMark, CRepeatMark(..),  
+
+  -- ** Ties and slurs (4.11)  
+  Tie, CTie(..),
+  Slur, CSlur(..),
+  
+  -- ** Grace notes (4.12)
+  GraceNotes, CGraceNotes(..),
+
+  -- ** Duplets, triplets, quadruplets, etc. (4.13)
+  NPlet, CNPlet(..),
+  
+  -- ** Decorations (4.13)
+  Decoration, CDecoration(..),
+
+  -- ** Chords and unisons (4.17)
+  Chord, CChord(..), 
+
+  -- * Multiple voices (7)
+  -- ** Voice overlay (7.4)
+  CVoiceOverlay(..)
+
+  
+  ) where
 
 import Bala.Format.Base.SymBase
 
 
-    
+-- Contexts
+
+-- | Fields
 data CT_Field
 
   
--- | notes, rest, slurs, barlines...
+-- | Elements in the tune body - notes, rest, slurs, barlines...
 data CT_Element 
 
-data CT_Line
+
 
 
 
@@ -35,16 +103,10 @@ data CT_Line
 
 
 --------------------------------------------------------------------------------
--- * Fields
+-- * Information fields (3)
+
 
 data Field
-data MidTuneField
-
-instance ListContext CT_Field Field
-instance ListContext CT_Field MidTuneField
-
-
-
 class CField repr where
   -- | @A field@ - area.
   area_field                :: String -> repr Field
@@ -86,7 +148,10 @@ class CField repr where
   -- | @Z field@ - transcriber notes.  
   transcriber_notes_field   :: String -> repr Field
   
- 
+instance ListContext CT_Field Field
+
+
+data MidTuneField
 class CMidTuneField repr where
 
   -- | @E field@ - elemskip.
@@ -113,21 +178,17 @@ class CMidTuneField repr where
   -- | @W field@ - words.  
   words_field               :: String -> repr MidTuneField
 
+instance ListContext CT_Field MidTuneField
 
-
-data AbcMusic
-class CAbcMusic repr where
-  abcmusic :: repr AbcLine -> repr AbcMusic
-
-instance ListContext CT_Field AbcMusic
-
-
-data AbcLine
-class CAbcLine repr where
-  elements          :: repr a -> repr AbcLine
-  midtuneField      :: repr MidTuneField -> repr AbcLine
-    
+-- ** M: meter (3.1.6)
+data Meter
+class CMeter repr where
+  meter      :: MeterFraction -> repr Meter
+  commonTime :: repr Meter
+  cutTime    :: repr Meter
   
+  
+-- ** Q: tempo (3.1.8)
 data Tempo
 class CTempo repr where
   tempo               :: Int -> repr Tempo
@@ -139,8 +200,8 @@ class CLength repr where
   ilength             :: Int -> repr Length
   flength             :: MeterFraction -> repr Length
 
-  
-  
+
+-- ** K: key (3.1.14)
 data Key
 class CKey repr where
   key                 :: repr KeySpec -> repr Key
@@ -157,7 +218,7 @@ data KeyAccidental
 class CKeyAccidental repr where
   keySharp  :: repr KeyAccidental
   keyFlat   :: repr KeyAccidental
-    
+  
 
 data Mode
 class CMode repr where
@@ -167,31 +228,38 @@ class CMode repr where
 instance Attribute KeySpec Mode 
 
 
+--------------------------------------------------------------------------------
+-- * The tune body (4)
 
-data Meter
-class CMeter repr where
-  meter      :: MeterFraction -> repr Meter
-  commonTime :: repr Meter
-  cutTime    :: repr Meter
+data TuneBody
+class CTuneBody repr where
+  tunebody :: repr AbcLine -> repr TuneBody
 
-    
-
-data Duration
-class CDuration repr where
-  dur :: MeterFraction -> repr Duration
-
-instance Attribute BaseNote Duration
-instance Attribute Rest Duration
+instance ListContext CT_Field TuneBody
 
 
 
-data Rest
-class CRest repr where
-  rest :: repr Rest
+data AbcLine
+class CAbcLine repr where
+  elements          :: repr a -> repr AbcLine
+  midtuneField      :: repr MidTuneField -> repr AbcLine
+  
+  
 
-instance ListContext CT_Element Rest
+-- ** Pitch (4.1)
+
+-- Abc has pitches in a two octave range and then uses octave specs for higher
+-- and lower octaves
+data PitchLetter = C | D | E | F | G | A | B | C2 | D2 | E2 | F2 | G2 | A2 | B2
+  deriving (Eq,Enum,Ord,Show) 
 
 
+data BaseNote
+class CBaseNote repr where
+  note          :: PitchLetter -> repr BaseNote
+
+instance ListContext CT_Element BaseNote
+  
 data Octave
 class COctave repr where
   octaveLow     :: Int -> repr Octave
@@ -200,6 +268,9 @@ class COctave repr where
 instance Attribute BaseNote Octave
 
 
+
+
+-- ** Accidentals (4.2)
 data Accidental
 class CAccidental repr where 
   natural       :: repr Accidental
@@ -212,21 +283,16 @@ class CAccidental repr where
 
 instance PrefixAttribute BaseNote Accidental
 
+-- ** Note lengths (4.3)
+data Duration
+class CDuration repr where
+  dur :: MeterFraction -> repr Duration
 
--- Abc has pitches in a two octave range and then uses octave specs for higher
--- and lower octaves
-data PitchLetter = C | D | E | F | G | A | B | C2 | D2 | E2 | F2 | G2 | A2 | B2
-  deriving (Eq,Enum,Ord,Show) 
-
-data BaseNote
-class CBaseNote repr where
-  note          :: PitchLetter -> repr BaseNote
-
-instance ListContext CT_Element BaseNote
+instance Attribute BaseNote Duration
+instance Attribute Rest Duration
 
 
-
-
+-- ** Broken rhythm (4.4)
 data BrokenRhythm
 class CBrokenRhythm repr where
   -- '>' left note dotted, right note halved
@@ -235,29 +301,18 @@ class CBrokenRhythm repr where
   -- '<' left note halved, right note dotted 
   dottedRight   :: Int -> repr BrokenRhythm
   
+-- ** Rests (4.5)
+data Rest
+class CRest repr where
+  rest :: repr Rest
 
-  
-data Tie
-class CTie repr where
-  tie         :: repr Tie
+instance ListContext CT_Element Rest
 
-  
-      
-data Grace
-class CGrace repr where
-    tilde       :: repr Grace
-    stacatto    :: repr Grace
-    downbow     :: repr Grace
-    upbow       :: repr Grace
+-- ** Beams (4.7)
 
-instance Attribute BaseNote Grace
-    
-data NPlet
-class CNPlet repr where
-  nplet :: Int -> repr NPlet
+-- to do 
 
-instance ListContext CT_Element NPlet
-     
+-- ** Repeat \/ bar symbols (4.8)
         
 data RepeatMark
 class CRepeatMark repr where
@@ -265,7 +320,13 @@ class CRepeatMark repr where
 
 instance ListContext CT_Element RepeatMark
 
- 
+
+-- ** Ties and slurs (4.11)  
+data Tie
+class CTie repr where
+  tie         :: repr Tie
+  
+instance ListContext CT_Element Tie
 
 data Slur
 class CSlur repr where
@@ -274,20 +335,54 @@ class CSlur repr where
 
 instance ListContext CT_Element Slur
 
+-- ** Grace notes (4.12)
+
 -- | gracenotes are a prefix attibute of a note
 data GraceNotes
 class CGraceNotes repr where
   gracenotes :: [repr BaseNote] -> repr GraceNotes
 
-instance Attribute BaseNote GraceNotes  
+instance PrefixAttribute BaseNote GraceNotes  
 
-data MultiNote
-class CMultiNote repr where
-  multinote :: [repr BaseNote] -> repr MultiNote
+-- ** Duplets, triplets, quadruplets, etc. (4.13)
+data NPlet
+class CNPlet repr where
+  nplet :: Int -> repr NPlet
 
+instance ListContext CT_Element NPlet
+
+-- ** Decorations (4.13)
+data Decoration
+class CDecoration repr where
+    tilde       :: repr Decoration
+    stacatto    :: repr Decoration
+    downbow     :: repr Decoration
+    upbow       :: repr Decoration
+
+instance Attribute BaseNote Decoration
+
+
+
+-- ** Chords and unisons (4.17)
+data Chord
+class CChord repr where
+  beginChord :: repr Chord
+  endChord   :: repr Chord
+
+instance ListContext CT_Element Chord
+
+-- * Multiple voices (7)
+-- ** Voice overlay (7.4)
   
-data TexCommand
-class CTexComamnd repr where
-  texCommand :: String -> repr TexCommand
+class CVoiceOverlay repr where
+  (&\) :: repr a -> repr b -> repr a  
+  
+  
+  
+
+
+    
+
+
   
   

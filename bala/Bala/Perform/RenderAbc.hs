@@ -22,6 +22,7 @@ import Bala.Format.SymAbc.AbcFormat
 
 import Control.Applicative
 import Control.Monad.State
+import Data.Sequence
 import Data.Ratio
 
 type RenderM a = State RenderSt a
@@ -31,7 +32,14 @@ data RenderSt = RenderSt {
     default_note_length   :: B.Duration
   } 
 
+class AbcRenderable a where
+    isPitch             :: a -> Bool
+    isRest              :: a -> Bool
+    durationOf          :: a -> B.Duration
+    pitchOf             :: a -> B.Pitch
   
+runRenderAbc  = evalState  
+
   
 -- octaves 4 and below upper case pitch 
 -- octaves 5 and above lower case pitch
@@ -73,12 +81,61 @@ abcPitch p =
                           | otherwise = pl              
     
 
-abcDuration :: (CDuration repr) => B.Duration -> RenderM (repr Duration)
+abcDuration :: (CDuration repr) => B.Duration -> RenderM (Maybe (repr Duration))
 abcDuration d = fn d <$> gets default_note_length
   where
     fn dur1 deft
-      | dur1 == deft  = dur (1 // 1)
+      | dur1 == deft  = Nothing
       | otherwise     = let scale = denominator (B.rationalize deft)
                             r     = (B.rationalize dur1)
                             (n,d) = (numerator r, denominator r)    
-                        in dur $ ( n*scale // d)
+                        in Just $ dur ( n*scale // d)
+
+                        
+pitch'duration evt = 
+  let n = abcPitch (pitchOf evt) in do
+    od <- abcDuration (durationOf evt)
+    return (n, od)  
+
+rest'duration :: (CDuration repr, AbcRenderable evt) 
+              => evt -> RenderM (Maybe (repr Duration))
+rest'duration evt = do
+  od <- abcDuration (durationOf evt)
+  return od
+  
+pitchOrRest'duration evt 
+    | isRest evt    = rest'duration evt >>= \od -> return (Right (),od)
+    | otherwise     = pitch'duration evt >>= \(p,od) -> return (Left p,od) 
+
+applyDuration e Nothing    = e
+applyDuration e (Just a)   = e `attr` a
+
+
+    
+suffix k (Left p,od)     = k +++ (p `applyDuration` od)
+suffix k (Right (),od)   = k +++ (rest `applyDuration` od)
+
+
+oflat lyk  EmptyL               = return lyk 
+
+oflat lyk (Evt e :< sq)         = do
+    e'        <- pitchOrRest'duration e
+    oflat (suffix lyk e') (viewl sq)
+    
+-- Sequence maps to voice overlay - supported by abcm2ps but not abc2ps
+oflat lyk (Sequence ts :< sq)   = do
+    lyk'      <- oflat lyk (viewl sq) 
+    xs        <- mapM (oflat elementCtx) (map viewl ts)
+    return (merge lyk' xs)  
+        
+        
+-- need to 'plex' bars...        
+merge k []     = k
+merge k (x:xs) = foldl fn x xs
+  where
+    fn acc a = acc &\ a
+    
+        
+run'oflat ellist t = oflat ellist (viewl t) 
+
+                          

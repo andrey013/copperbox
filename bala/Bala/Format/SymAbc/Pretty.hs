@@ -41,7 +41,7 @@ instance CSnocList P CT_Element where
 
 
 --------------------------------------------------------------------------------
--- | Fields
+-- * Information fields (3)
 
 instance CField P where
   area_field s                    = P $ ppfield 'A' (text s)
@@ -71,16 +71,14 @@ instance CMidTuneField P where
   title_field s                   = P $ ppfield 'T' (text s)
   words_field s                   = P $ ppfield 'W' (text s)
    
+-- ** M: meter (3.1.6)
+instance CMeter P where
+  meter r               = P $ pretty r
+  commonTime            = P $ char 'C'
+  cutTime               = P $ text "C|"
   
-
-
-  
---------------------------------------------------------------------------------
--- | ...
-
-
-  
-        
+    
+-- ** Q: tempo (3.1.8)
 instance CTempo P where
   tempo i               = P $ int i
   ctempo l i            = P $ group $ char 'C' <> (unP l) <> equals <> int i
@@ -90,72 +88,38 @@ instance CTempo P where
 instance CLength P where
   ilength i             = P $ int i
   flength r             = P $ pretty r 
+
   
-  
+-- ** K: key (3.1.14)
 instance CKey P where
   key s                 = P $ unP s
   highlandNoKey         = P $ text "HP" 
   highlandMixolydian    = P $ text "Hp"
-
-
-
+  
 instance CKeySpec P where
   keySpec n             = P $ unP n
-      
-
+        
+instance CKeyAccidental P where
+  keySharp              = P $ char '#' 
+  keyFlat               = P $ char 'b'
+  
 instance CMode P where
   mode s                = P $ text s
   
-instance CAbcMusic P where
-  abcmusic e            = P $ unP e
+  
+--------------------------------------------------------------------------------
+-- * The tune body (4)
+instance CTuneBody P where
+  tunebody e            = P $ unP e
   
   
 instance CAbcLine P where
   elements e            = P $ unP e
   midtuneField a        = P $ unP a
   
-    
-instance CKeyAccidental P where
-  keySharp              = P $ char '#' 
-  keyFlat               = P $ char 'b'
-  
-  
-instance CMeter P where
-  meter r               = P $ pretty r
-  commonTime            = P $ char 'C'
-  cutTime               = P $ text "C|"
-
-
-ppRatio r = let (n,d) = (numerator r, denominator r) in f n d
-  where 
-    f 1 1   = empty       -- the default note length
-    f n 1   = int n
-    f 1 2   = char '/'    -- short hand for pitch/2
-    f n d   = group $ ppRatio (n%d)
-  
-    
-instance CDuration P where
-  dur (n :/ d)          = P $ ppRatio (n%d)
-  
-  
-instance CRest P where
-  rest                  = P $ char 'z'
-
- 
-instance COctave P where
-  octaveHigh  i         = P $ text (replicate i '\'')
-  octaveLow   i         = P $ text (replicate i ',')  
-           
-             
-instance CAccidental P where 
-  natural               = P $ char '='
-  sharp                 = P $ char '^'
-  doubleSharp           = P $ text "^^"
-  flat                  = P $ char '_'
-  doubleFlat            = P $ text "__"
-
 
   
+-- ** Pitch (4.1)
 instance Pretty PitchLetter where
   pretty C    = char 'C'
   pretty D    = char 'D'
@@ -171,46 +135,88 @@ instance Pretty PitchLetter where
   pretty G2   = char 'g'
   pretty A2   = char 'a'
   pretty B2   = char 'b'  
-  
-
 
 
 instance CBaseNote P where
   note p                = P $ pretty p
+
+ 
+instance COctave P where
+  octaveHigh  i         = P $ text (replicate i '\'')
+  octaveLow   i         = P $ text (replicate i ',')  
+           
+
+-- ** Accidentals (4.2)             
+instance CAccidental P where 
+  natural               = P $ char '='
+  sharp                 = P $ char '^'
+  doubleSharp           = P $ text "^^"
+  flat                  = P $ char '_'
+  doubleFlat            = P $ text "__"
+
+-- ** Note lengths (4.3)
+instance CDuration P where
+  dur (n :/ d)          = P $ ppRatio (n%d)
+
+ppRatio r = let (n,d) = (numerator r, denominator r) in f n d
+  where 
+    f 1 1   = empty       -- the default note length
+    f n 1   = int n
+    f 1 2   = char '/'    -- short hand for pitch/2
+    f n d   = group $ ppRatio (n%d)
   
     
+
+  
+-- ** Broken rhythm (4.4)
 instance CBrokenRhythm P where
   dottedLeft i          = P $ text $ replicate i '>'
   dottedRight i         = P $ text $ replicate i '<'
+  
+-- ** Rests (4.5)
+instance CRest P where
+  rest                  = P $ char 'z'
 
+-- ** Repeat \/ bar symbols (4.8)  
+instance CRepeatMark P where
+  repeatMark s          = P $ text s
+    
 
+-- ** Ties and slurs (4.11) 
 instance CTie P where
   tie                   = P $ char '-'
-    
-instance CGrace P where
+
+instance CSlur P where
+  beginSlur             = P $ lparen
+  endSlur               = P $ rparen
+  
+-- ** Grace notes (4.12)
+instance CGraceNotes P where
+  gracenotes xs         = P $  braces $ hcat $ map unP xs
+  
+
+
+-- ** Duplets, triplets, quadruplets, etc. (4.13)
+instance CNPlet P where
+  nplet i               = P $ group $ char '(' <> int i
+
+
+-- ** Decorations (4.13)
+instance CDecoration P where
   tilde                 = P $ char '~'
   stacatto              = P $ char '.'
   downbow               = P $ char 'v'
   upbow                 = P $ char 'u'
 
+-- ** Chords and unisons (4.17)
+instance CChord P where
+  beginChord            = P $ char '['
+  endChord              = P $ char ']'
 
-instance CNPlet P where
-  nplet i               = P $ group $ char '(' <> int i
-        
+-- * Multiple voices (7)
+-- ** Voice overlay (7.4)
   
-instance CRepeatMark P where
-  repeatMark s          = P $ text s
-  
-  
-instance CSlur P where
-  beginSlur             = P $ lparen
-  endSlur               = P $ rparen
-  
-
-instance CGraceNotes P where
-  gracenotes xs         = P $  braces $ hcat $ map unP xs
-    
-  
-  
+instance CVoiceOverlay P where
+  (&\) a b              = P $ unP a <+> text "\\&" <+> unP b
 
 

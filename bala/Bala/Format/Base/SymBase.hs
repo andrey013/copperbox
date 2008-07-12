@@ -67,14 +67,20 @@ optAttr e (Just a)  = e `attr` a
 
 class PrefixAttribute elt attrib
 class CPrefixAttr repr where
-  prefixAttr  :: PrefixAttribute elt att =>  repr att -> repr elt -> repr elt
+  prefixAttr  :: PrefixAttribute elt att => repr att -> repr elt -> repr elt
   
 optPrefixAttr :: (CPrefixAttr repr, PrefixAttribute elt att) 
         => Maybe (repr att) -> repr elt -> repr elt
 optPrefixAttr Nothing  e    = e
 optPrefixAttr (Just a) e    = a `prefixAttr` e
 
-  
+infixl 7 -%-
+
+-- | shorthand for prefixAttr
+( -%- ) :: (PrefixAttribute elt att, CPrefixAttr repr) 
+        => repr att -> repr elt -> repr elt
+a -%- e = prefixAttr a e
+
 
 -- CAN WE DO WITHOUT << ?
 

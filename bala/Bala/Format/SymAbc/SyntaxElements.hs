@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Format.SymAbcPond.SyntaxElements
+-- Module      :  Bala.Format.SymAbc.SyntaxElements
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -15,7 +15,31 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Format.SymAbc.SyntaxElements where
+module Bala.Format.SymAbc.SyntaxElements (
+  -- * Contexts for lists
+  fieldCtx, elementCtx,
+
+  -- * Information fields (3)  
+  l_field,
+
+  -- ** K: key (3.1.14)
+  major, minor, lydian, ionian, mixolydian, 
+  dorian, aeolian, phrygian, locrian, 
+  
+  -- * The tune body (4)
+  tunebody_elements,
+
+  -- ** Pitch (4.1)
+  c_, d_, e_, f_, g_, a_, b_, 
+  c__, d__, e__, f__, g__, a__, b__,
+  
+  -- ** Rests (4.5)
+  z1, z2,
+
+  -- ** Repeat \/ bar symbols (4.8)
+  firstRepeat, secondRepeat, firstEnding, secondEnding 
+   
+  ) where
 
 import Bala.Format.Base.SymBase
 import Bala.Format.SymAbc.Datatypes
@@ -31,12 +55,36 @@ elementCtx = snil
 
 
 --------------------------------------------------------------------------------
-
+-- * Information fields (3)
 
 -- | @l_field@ - alias for the very long name default_note_length_field.
 l_field :: (CMidTuneField repr) => MeterFraction -> repr MidTuneField
 l_field = default_note_length_field
-  
+
+
+-- ** K: key (3.1.14)
+major, minor, lydian, ionian, mixolydian, dorian, aeolian, phrygian, locrian 
+    ::  (CMode repr) => repr Mode 
+major         = mode "maj"
+minor         = mode "min"
+lydian        = mode "lyd"
+ionian        = mode "ion"
+mixolydian    = mode "mix"
+dorian        = mode "dor"
+aeolian       = mode "aeo"
+phrygian      = mode "phr"
+locrian       = mode "loc"
+
+-- * The tune body (4)
+
+tunebody_elements :: (CSnocList repr CT_Element,
+                      ListContext CT_Element a,
+                      CTuneBody repr,
+                      CAbcLine repr) 
+                  => repr a -> repr TuneBody
+tunebody_elements e = tunebody (elements (elementCtx +++ e))
+
+-- ** Pitch (4.1)
 
 c_, d_, e_, f_, g_, a_, b_ :: (CBaseNote repr) =>  repr BaseNote
 c_  = note C
@@ -57,26 +105,16 @@ a__  = note A2
 b__  = note B2
 
 
--- rests 
+-- ** Rests (4.5)
 z1, z2 :: (CRest repr, CDuration repr, CAttr repr) => repr Rest
 z1 = rest `attr` dur (1 // 1)
 z2 = rest `attr` dur (2 // 1)
 
 
-major, minor, lydian, ionian, mixolydian, dorian, aeolian, phrygian, locrian 
-    ::  (CMode repr) => repr Mode 
-major         = mode "maj"
-minor         = mode "min"
-lydian        = mode "lyd"
-ionian        = mode "ion"
-mixolydian    = mode "mix"
-dorian        = mode "dor"
-aeolian       = mode "aeo"
-phrygian      = mode "phr"
-locrian       = mode "loc"
 
 
 
+-- ** Repeat \/ bar symbols (4.8)
 firstRepeat, secondRepeat, firstEnding, secondEnding 
     :: (CRepeatMark repr) => repr RepeatMark
 firstRepeat   = repeatMark "[1"
