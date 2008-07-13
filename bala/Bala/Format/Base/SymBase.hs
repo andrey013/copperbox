@@ -16,7 +16,23 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Format.Base.SymBase where
+module Bala.Format.Base.SymBase (
+  -- * Generic snoc list
+  ListContext, SnocList, CSnocList(..), ( +++ ), optsnoc,
+
+  -- * Attributes
+  Attribute, CAttr(..), ( %% ), optAttr,
+
+  -- * Prefix Attributes
+  PrefixAttribute, CPrefixAttr(..), ( -%- ), optPrefixAttr,
+  
+  (<<),
+
+  -- * Pretty printing
+  P(..), printP
+  
+  
+  ) where
 
 import Bala.Base.Meter
 import Text.PrettyPrint.Leijen
@@ -24,8 +40,11 @@ import Text.PrettyPrint.Leijen
 
 infixl 5 `snoc`
 
+-- | A properly formed snoc list is heterogenous, but elements types must
+-- all be instances of the same list context. 
 class ListContext ctx a
-  
+
+-- | Represent lists as snoc lists so we can add to the right end.  
 data SnocList ctx
 class CSnocList repr ctx where
   snil :: repr (SnocList ctx)
@@ -40,8 +59,15 @@ infixl 5 +++
       => repr (SnocList ctx) -> repr a ->  repr (SnocList ctx) 
 (+++) es e = snoc es e
 
+-- | @optsnoc@ - snoc a Maybe (repr elt) if it is Just elt.
+-- If it is nothing return the snoc list.
+optsnoc :: (ListContext ctx a, CSnocList repr ctx) 
+        => repr (SnocList ctx) -> Maybe (repr a) ->  repr (SnocList ctx)
+optsnoc es Nothing   = es
+optsnoc es (Just e)  = snoc es e      
+
 -- * Attributes
--- | An instance to declares an attribute relation.
+-- | Instances declares an attribute relation.
 class Attribute elt attrib
 
 
@@ -70,10 +96,6 @@ class PrefixAttribute elt attrib
 class CPrefixAttr repr where
   prefixAttr  :: PrefixAttribute elt att => repr att -> repr elt -> repr elt
   
-optPrefixAttr :: (CPrefixAttr repr, PrefixAttribute elt att) 
-        => Maybe (repr att) -> repr elt -> repr elt
-optPrefixAttr Nothing  e    = e
-optPrefixAttr (Just a) e    = a `prefixAttr` e
 
 infixl 7 -%-
 
@@ -81,6 +103,11 @@ infixl 7 -%-
 ( -%- ) :: (PrefixAttribute elt att, CPrefixAttr repr) 
         => repr att -> repr elt -> repr elt
 a -%- e = prefixAttr a e
+
+optPrefixAttr :: (CPrefixAttr repr, PrefixAttribute elt att) 
+        => Maybe (repr att) -> repr elt -> repr elt
+optPrefixAttr Nothing  e    = e
+optPrefixAttr (Just a) e    = a `prefixAttr` e
 
 
 -- CAN WE DO WITHOUT << ?

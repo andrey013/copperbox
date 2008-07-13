@@ -96,12 +96,6 @@ data CT_Field
 data CT_Element 
 
 
-
-
-
-
-
-
 --------------------------------------------------------------------------------
 -- * Information fields (3)
 
@@ -312,7 +306,7 @@ instance ListContext CT_Element Rest
 
 -- to do 
 
--- ** Repeat \/ bar symbols (4.8)
+-- ** Repeat \/ bar symbols & First and second repeats (4.8 & 4.9)
         
 data RepeatMark
 class CRepeatMark repr where
@@ -342,7 +336,9 @@ data GraceNotes
 class CGraceNotes repr where
   gracenotes :: [repr BaseNote] -> repr GraceNotes
 
-instance PrefixAttribute BaseNote GraceNotes  
+-- Its simpler if we make gracenotes a glyph rather than a prefix attr of a note.  
+-- instance PrefixAttribute BaseNote GraceNotes  
+instance ListContext CT_Element GraceNotes
 
 -- ** Duplets, triplets, quadruplets, etc. (4.13)
 data NPlet
@@ -366,8 +362,7 @@ instance Attribute BaseNote Decoration
 -- ** Chords and unisons (4.17)
 data Chord
 class CChord repr where
-  beginChord :: repr Chord
-  endChord   :: repr Chord
+  chord :: [repr BaseNote] -> repr Chord
 
 instance ListContext CT_Element Chord
 

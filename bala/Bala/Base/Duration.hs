@@ -25,7 +25,7 @@ module Bala.Base.Duration (
   -- * Operations
   dot, dotdot, dotdotdot,
   
-  calculateTicks, rationalize,
+  calculateTicks, rationalize, durationSize,
     
   -- * Named instances (American)
   -- $amerdoc
@@ -88,13 +88,19 @@ calculateTicks tpqn dur =
       (n,d) = (numerator r, denominator r)
   in (tpqn * 4 * n) `div` d
 
+-- | @'rationalize'@ - turn a duration into a ratio which may normalize it. 
 rationalize :: Duration -> Ratio Integer
 rationalize (Dur r n) = dotr r (n,r)
   where
     dotr a (i,r) | i < 1      = a 
                  | otherwise  = dotr (a + r/2) (i-1, r/2)
 
-
+-- | @'durationSize'@ - size of the duration as a Double.
+durationSize :: Duration -> Double
+durationSize dur = 
+  let r     = rationalize dur
+      (n,d) = (fromIntegral $ numerator r, fromIntegral $ denominator r)
+  in n / d
 
 --------------------------------------------------------------------------------
 -- Instances

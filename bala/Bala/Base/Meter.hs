@@ -20,7 +20,7 @@ module Bala.Base.Meter (
   (//), unMeterFraction, meterRatio,
   
   -- * Operations
-  perfect, imperfect
+  meterSize, perfect, imperfect
   
   ) where
 
@@ -67,6 +67,29 @@ power2 i = fn $ fromIntegral i
     fn i = (i .&. (i - 1)) == 0 
 
 
+-- | @'meterSize'@ - size (as a Double) of one bar in the given meter.
+meterSize :: MeterFraction -> Double
+meterSize (n :/ d) = fromIntegral n / fromIntegral d
+  
+
+
+perfect :: MeterFraction -> Bool
+perfect (n :/ d) = (n `reduces` 2) || (n `reduces` 3)
+
+imperfect :: MeterFraction -> Bool
+imperfect = not . perfect
+
+reduces :: (Integral a) => a -> a -> Bool
+reduces i j | i == j    = True
+            | otherwise = case i `divMod` j of
+                            (i',0) -> reduces i' j
+                            _      -> False
+
+
+
+
+
+
 simpleDuple     = (//) 2
 simpleTriple    = (//) 3
 simpleQuadruple = (//) 4
@@ -88,19 +111,6 @@ simpleSextuple  = (//) 6
 -- compound triple    9/16  9/8  9/4
 -- compound quadruple 12/16 12/8 12/4
 
-
-
-perfect :: MeterFraction -> Bool
-perfect (n :/ d) = (n `reduces` 2) || (n `reduces` 3)
-
-imperfect :: MeterFraction -> Bool
-imperfect = not . perfect
-
-reduces :: (Integral a) => a -> a -> Bool
-reduces i j | i == j    = True
-            | otherwise = case i `divMod` j of
-                            (i',0) -> reduces i' j
-                            _      -> False
 
 {-
 division :: MeasureValue -> Float

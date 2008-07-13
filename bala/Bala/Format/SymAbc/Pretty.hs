@@ -35,7 +35,7 @@ instance CSnocList P CT_Field where
 
 instance CSnocList P CT_Element where
   snil                  = P $ empty
-  snoc xs x             = P $ unP xs <> unP x 
+  snoc xs x             = P $ unP xs <+> unP x 
     
 -- instance CAttr P where
 --  attr e a              = P $ group $ unP e <> unP a 
@@ -211,8 +211,7 @@ instance CDecoration P where
 
 -- ** Chords and unisons (4.17)
 instance CChord P where
-  beginChord            = P $ char '['
-  endChord              = P $ char ']'
+  chord xs              = P $ (braces $ hsep $ map unP xs)
 
 -- * Multiple voices (7)
 -- ** Voice overlay (7.4)

@@ -64,7 +64,7 @@ bala_test () =      fieldCtx
   where
     e1 = elementCtx +++ nplet 2 +++ note C +++ note E 
                                 +++ sharp -%- note G  +++ z1
-          +++ gracenotes [c_, f_, a_] -%- note C +++ z1 
+          +++ gracenotes [c_, f_, a_] +++ note C +++ z1 
           +++ c_ %% upbow
 
 
