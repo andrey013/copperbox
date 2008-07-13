@@ -17,7 +17,7 @@
 
 
 module Bala.Base.Interval (
-  -- * Datatypes (Interval is opaque) 
+  -- * Datatypes 
   Interval, NamedInterval, IntervalSize(..), IntervalQuality(..), 
   IntervalPattern(..), 
   

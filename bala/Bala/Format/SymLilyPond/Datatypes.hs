@@ -224,7 +224,7 @@ module Bala.Format.SymLilyPond.Datatypes (
   ) where
 
 import Bala.Format.Base.SymBase
-
+import Bala.Base.Meter
 
 
        

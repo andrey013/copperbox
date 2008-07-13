@@ -5,6 +5,7 @@
 module DemoSymAbc where
 
 import Bala.Format.SymAbc.AbcFormat
+import Bala.Base.Meter ( (//) )
 
 import System.Process (runCommand, waitForProcess)
 import Text.PrettyPrint.Leijen

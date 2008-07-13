@@ -5,6 +5,7 @@
 module DemoSymLy where
 
 import Bala.Format.SymLilyPond.LilyPond
+import Bala.Base.Meter ( (//) )
 
 import System.Process (runCommand, waitForProcess)
 import Text.ParserCombinators.Parsec (parse, parseTest, Parser)

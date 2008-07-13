@@ -21,6 +21,7 @@ import Bala.Format.SymLilyPond.Datatypes
 import Bala.Format.SymLilyPond.SyntaxElements
 
 import Bala.Base.BaseExtra
+import Bala.Base.Meter
 
 import Data.List (sortBy)
 import Prelude hiding (break)

@@ -18,7 +18,7 @@ module Bala.Format.SymLilyPond.SyntaxElements where
 
 import Bala.Format.Base.SymBase
 import Bala.Format.SymLilyPond.Datatypes
-
+import Bala.Base.Meter
 
 --------------------------------------------------------------------------------
 -- * Contexts for lists

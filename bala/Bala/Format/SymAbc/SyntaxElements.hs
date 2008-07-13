@@ -43,6 +43,7 @@ module Bala.Format.SymAbc.SyntaxElements (
 
 import Bala.Format.Base.SymBase
 import Bala.Format.SymAbc.Datatypes
+import Bala.Base.Meter
 
 --------------------------------------------------------------------------------
 -- * Contexts for lists

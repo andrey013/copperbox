@@ -1,0 +1,61 @@
+%% How EventTrees should be rendered in Abc
+
+X:1
+T:1. Simple successors
+M:4/4
+I:Trees in ABC notation
+K:C
+C2 C2 D2 E2 |
+
+
+X:2
+T:2. Simple parallel - a chord
+M:4/4
+K:C
+[C8E8G8] |
+
+
+X:3
+T:3. Succesors & grace
+M:4/4
+K:C
+C2 {AB}C2 D2 E2 |
+
+
+X:4
+T:4. Succesors & parallel (chord)
+M:4/4
+K:C
+C2 [C2E2G2] D2 E2 |
+
+
+
+X:5
+T:5. Independent parallelism - two staves
+%% This works with both abc2ps and abcm2ps
+M:4/4
+K:C
+V: 1 clef=treble
+C2 C2 D2 E2 |
+V: 2 clef=bass
+c4 d4 |
+
+
+X:6
+T:6. Independent parallelism - plus chord,grace
+M:4/4
+K:C
+%% voices for independent parallelism
+V: 1 clef=treble
+C2 {AB}[C2E2G2] D2 E2 |
+V: 2 clef=bass
+c4 d4 |
+
+
+X:7
+T:7. Same 'channel' parallelism (abcm2ps only)
+I:Uses voice overlay from the abc2 draft specification 
+K: C
+M: 4/4
+c2 d2 e2 f2 &\
+G4 E4 |

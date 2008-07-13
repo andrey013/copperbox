@@ -18,6 +18,7 @@ module Bala.Format.SymAbc.Pretty where
 
 import Bala.Format.Base.SymBase
 import Bala.Format.SymAbc.Datatypes
+import Bala.Base.Meter
 
 import Data.Ratio
 import Text.PrettyPrint.Leijen
@@ -156,7 +157,7 @@ instance CAccidental P where
 
 -- ** Note lengths (4.3)
 instance CDuration P where
-  dur (n :/ d)          = P $ ppRatio (n%d)
+  dur mf          = let (n,d) = unMeterFraction mf in P $ ppRatio (n%d)
 
 ppRatio r = let (n,d) = (numerator r, denominator r) in f n d
   where 

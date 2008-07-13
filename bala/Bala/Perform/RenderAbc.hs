@@ -29,9 +29,21 @@ type RenderM a = State RenderSt a
 
 
 data RenderSt = RenderSt { 
-    default_note_length   :: B.Duration
+    default_note_length   :: B.Duration,
+    bar_count             :: Int
   } 
 
+abcEnv :: B.Duration -> RenderSt
+abcEnv dnl = RenderSt { default_note_length = dnl,
+                        bar_count = 0 }
+
+
+defaultNoteLength :: B.MeterFraction -> Double
+defaultNoteLength m = 
+  let r     = B.meterRatio m
+      (n,d) = (fromIntegral $ numerator r, fromIntegral $ denominator r)
+  in n / d
+   
 class AbcRenderable a where
     isPitch             :: a -> Bool
     isRest              :: a -> Bool
@@ -89,12 +101,13 @@ abcDuration d = fn d <$> gets default_note_length
       | otherwise     = let scale = denominator (B.rationalize deft)
                             r     = (B.rationalize dur1)
                             (n,d) = (numerator r, denominator r)    
-                        in Just $ dur ( n*scale // d)
+                        in Just $ dur ( n*scale B.// d)
 
                         
 pitch'duration evt = 
-  let n = abcPitch (pitchOf evt) in do
-    od <- abcDuration (durationOf evt)
+  let n = abcPitch (pitchOf evt) 
+      d = durationOf evt in do
+    od <- abcDuration d
     return (n, od)  
 
 rest'duration :: (CDuration repr, AbcRenderable evt) 

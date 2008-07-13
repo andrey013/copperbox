@@ -18,6 +18,7 @@
 
 module Bala.Format.Base.SymBase where
 
+import Bala.Base.Meter
 import Text.PrettyPrint.Leijen
 
 
@@ -89,17 +90,6 @@ infixr 6 <<
 -- | Higher precedence version of the application operator ($).
 (<<) ::(a -> b) -> a ->  b
 f << a = f a 
-
--- * Meter fraction
--- | An alternative to Data.Rational which normalizes where possible
--- e.g. 4\/4 becomes 1\/1. For time signatures we don't want to normalize.
-data MeterFraction = Int :/ Int
-
-infixl 2 //
-
--- | Synonym for the infix constructor (:\/\/).
-(//) :: Integral a => a -> a -> MeterFraction
-(//) n d = (fromIntegral n) :/ (fromIntegral d)
   
   
 --------------------------------------------------------------------------------
@@ -122,8 +112,8 @@ instance CPrefixAttr P where
     
   
 instance Pretty MeterFraction where
-  pretty (n :/ d) = group $ int n <> char '/' <> int d
+  pretty mf = let (n,d) = unMeterFraction mf in 
+              group $ int n <> char '/' <> int d
 
-instance Show MeterFraction where
-  showsPrec _ (n :/ d) = shows n . showChar '/' . shows d
+
   

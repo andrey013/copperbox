@@ -84,7 +84,7 @@ module Bala.Format.SymAbc.Datatypes (
   ) where
 
 import Bala.Format.Base.SymBase
-
+import Bala.Base.Meter
 
 -- Contexts
 

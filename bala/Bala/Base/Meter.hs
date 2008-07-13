@@ -12,69 +12,65 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Base.Meter where
+module Bala.Base.Meter (
+  -- * Datatypes 
+  MeterFraction,
+  
+  -- * Constructors and destructors
+  (//), unMeterFraction, meterRatio,
+  
+  -- * Operations
+  perfect, imperfect
+  
+  ) where
 
 import Bala.Base.BaseExtra
 
 import Data.Bits
 import Data.Ratio
 
-  
-data Meter = Meter { 
-    meter_numerator   :: Int,
-    meter_denominator :: Int
-  }
-  deriving (Eq,Show,Read)
+-- * Meter fraction
+-- | An alternative to Data.Rational which normalizes where possible
+-- e.g. 4\/4 becomes 1\/1. For time signatures we don't want to normalize.
+data MeterFraction = Int :/ Int
+  deriving (Eq)
 
-{-
-data MeasureValue = DoubleWhole | Whole | Half | Quarter | Eighth | Sixteenth
-                  | ThirtySecond | SixtyFourth 
-  deriving (Eq,Enum,Show,Read)
-  
-data Duration = Unit MeasureValue 
-              | Dotted MeasureValue 
-              | Tied Duration Duration
-  deriving (Eq,Show,Read)
 
--}
-
-  
-{-
-instance Real Meter where
-  toRational (Meter n d) = (%) n d
--}
-
-meterRatio :: Meter -> Ratio Int
-meterRatio (Meter n d) = (%) n d
+instance Show MeterFraction where
+  showsPrec _ (n :/ d) = shows n . showChar '/' . shows d
 
 
   
--- | smart constructor
-meter :: Int -> Int -> Meter
-meter i j = if (power2 j) then Meter i j else error msg
- where msg = "Cannot create a meter where the denominator is not a power of 2"
+infixl 2 //
 
-{-
--- | \smart enum\ enum on the measures size not its index
-measureValue :: Int -> MeasureValue
-measureValue i | power2 i  = (toEnum . (+1) . fromIntegral . fn) i
-               | otherwise = error msg     
+-- | smart constructor - replaces (:\/\/).  
+(//) :: Integral a => a -> a -> MeterFraction
+(//) n d  
+    | power2 d    = fromIntegral n :/ fromIntegral d 
+    | otherwise   = error msg
   where 
-    fn  = (flip (countTo (flip (/)  2.0))  1.0) . fromIntegral
-    msg = "Cannot create a measured value where the denominator is not a power of 2"
-
--}
+    msg = "Cannot create a meter where the denominator is not a power of 2"
 
 
-power2 :: Int -> Bool
+unMeterFraction :: MeterFraction -> (Int,Int)
+unMeterFraction (n :/ d) = (n,d)
+
+meterRatio :: MeterFraction -> Ratio Int
+meterRatio (n :/ d) = (%) n d
+
+
+power2 :: Integral a => a -> Bool
 power2 0 = False
-power2 i = (i .&. (i - 1)) == 0 
+power2 i = fn $ fromIntegral i
+  where
+    fn :: Integer -> Bool
+    fn i = (i .&. (i - 1)) == 0 
 
 
-simpleDuple     = meter 2
-simpleTriple    = meter 3
-simpleQuadruple = meter 4
-simpleSextuple  = meter 6
+simpleDuple     = (//) 2
+simpleTriple    = (//) 3
+simpleQuadruple = (//) 4
+simpleSextuple  = (//) 6
 
 
 -- Read page 151 ex 10-4
@@ -94,10 +90,10 @@ simpleSextuple  = meter 6
 
 
 
-perfect :: Meter -> Bool
-perfect (Meter i j) = (i `reduces` 2) || (i `reduces` 3)
+perfect :: MeterFraction -> Bool
+perfect (n :/ d) = (n `reduces` 2) || (n `reduces` 3)
 
-imperfect :: Meter -> Bool
+imperfect :: MeterFraction -> Bool
 imperfect = not . perfect
 
 reduces :: (Integral a) => a -> a -> Bool
