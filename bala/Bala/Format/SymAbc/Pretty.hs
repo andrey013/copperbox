@@ -164,7 +164,7 @@ ppRatio r = let (n,d) = (numerator r, denominator r) in f n d
     f 1 1   = empty       -- the default note length
     f n 1   = int n
     f 1 2   = char '/'    -- short hand for pitch/2
-    f n d   = group $ ppRatio (n%d)
+    f n d   = group $ int n <> char '/' <> int d
   
     
 
@@ -202,7 +202,7 @@ instance CNPlet P where
   nplet i               = P $ group $ char '(' <> int i
 
 
--- ** Decorations (4.13)
+-- ** Decorations (4.14)
 instance CDecoration P where
   tilde                 = P $ char '~'
   stacatto              = P $ char '.'

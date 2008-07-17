@@ -331,13 +331,13 @@ instance ListContext CT_Element Slur
 
 -- ** Grace notes (4.12)
 
--- | gracenotes are a prefix attibute of a note
+
 data GraceNotes
 class CGraceNotes repr where
   gracenotes :: [repr BaseNote] -> repr GraceNotes
 
--- Its simpler if we make gracenotes a glyph rather than a prefix attr of a note.  
--- instance PrefixAttribute BaseNote GraceNotes  
+-- Its simpler if we make gracenotes a glyph rather than 
+-- a prefix attr of a note.  
 instance ListContext CT_Element GraceNotes
 
 -- ** Duplets, triplets, quadruplets, etc. (4.13)
@@ -347,7 +347,7 @@ class CNPlet repr where
 
 instance ListContext CT_Element NPlet
 
--- ** Decorations (4.13)
+-- ** Decorations (4.14)
 data Decoration
 class CDecoration repr where
     tilde       :: repr Decoration

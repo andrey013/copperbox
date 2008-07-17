@@ -162,14 +162,14 @@ firstRepeat   = repeatMark "[1"
 
 -- | @secondRepeat@ - @[2@.
 secondRepeat    :: (CRepeatMark repr) => repr RepeatMark
-secondRepeat  = repeatMark "[2"
+secondRepeat    = repeatMark "[2"
 
 -- | @firstEnding@ - @|1@.
-firstEnding    :: (CRepeatMark repr) => repr RepeatMark
-firstEnding   = repeatMark "|1"
+firstEnding     :: (CRepeatMark repr) => repr RepeatMark
+firstEnding     = repeatMark "|1"
 
 
 -- | @secondEnding@ - @:|2@.
 secondEnding    :: (CRepeatMark repr) => repr RepeatMark
-secondEnding  = repeatMark ":|2"
+secondEnding    = repeatMark ":|2"
 
