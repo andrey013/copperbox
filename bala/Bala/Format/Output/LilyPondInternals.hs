@@ -230,12 +230,12 @@ flat                :: Ly Accidental
 flat                = lyLit $ text "es"
 
 -- | Printed as @isis@.
-double_sharp        :: Ly Accidental
-double_sharp        = lyLit $ text "isis"
+doubleSharp         :: Ly Accidental
+doubleSharp         = lyLit $ text "isis"
 
 -- | Printed as @eses@.
-double_flat         :: Ly Accidental
-double_flat         = lyLit $ text "eses"  
+doubleFlat          :: Ly Accidental
+doubleFlat          = lyLit $ text "eses"  
 
     
 instance SuffixAttr Pitch Accidental
@@ -979,7 +979,8 @@ data Block
 block               :: Ly a -> Ly Block
 block               = bracesHangingExpr
 
-
+blockS              :: Ly a -> Ly Block
+blockS              = bracesSpacedExpr
 
 instance Append CT_Toplevel Block
 instance Append CT_Element Block

@@ -139,7 +139,7 @@ group_field               = field 'G' . Abc . literal . text
 history_field             :: [String] -> Abc CT_Field
 history_field             = field 'H' . Abc . body
   where
-    body =  nested' align . sequenceL (<$>) . map (literal . text)
+    body =  nestedf align . sequenceL (<$>) . map (literal . text)
   
 -- | @I field@ - information.
 information_field         :: String -> Abc CT_Field

@@ -19,7 +19,7 @@ module Bala.Perform.RenderLilyPond where
 import Bala.Perform.EventTree hiding (chord, grace)
 
 import qualified Bala.Base.Base as B
-import Bala.Format.SymLilyPond.LilyPond
+import Bala.Format.Output.OutputLilyPond hiding (Sequence)
 
 import Control.Applicative 
 import Control.Monad.State
@@ -47,6 +47,9 @@ st_zero = RenderSt {
     relative_duration = B.quarter
   } 
 
+optAttr e oa   = maybe e (e !) oa
+
+
 lyPitch' () = lyPitch
 
                            
@@ -57,9 +60,8 @@ relative p st = st { relative_pitch = p }
 runRenderLy  = evalState  
 
 
-withAttr :: (CAttr repr, Attribute elt att) 
-         => repr att -> repr elt -> repr elt    
-withAttr a e = e %% a
+withAttr :: SuffixAttr elt att => Ly att -> Ly elt -> Ly elt    
+withAttr a e = e ! a
 
 
 
@@ -85,22 +87,20 @@ currentOctave p = do
     return $ odisp p' p
   
 
-accidental :: (CAccidental repr) 
-           => B.Accidental -> Maybe (repr Accidental)
+accidental :: B.Accidental -> Maybe (Ly Accidental)
 accidental B.Flat          = Just flat
 accidental B.Sharp         = Just sharp
 accidental B.DoubleSharp   = Just doubleSharp
 accidental B.DoubleFlat    = Just doubleFlat
 accidental _               = Nothing
 
-octaveSpec :: (COctaveSpec repr) => Int -> Maybe (repr OctaveSpec)             
+octaveSpec :: Int -> Maybe (Ly OctaveSpec)             
 octaveSpec i
     | i == 0    = Nothing
     | i <  0    = Just $ lowered (abs i)
     | otherwise = Just $ raised i
     
-lyPitch :: (CPitch repr, CAttr repr, CAccidental repr, COctaveSpec repr) 
-         => B.Pitch -> RenderM (repr Pitch)    
+lyPitch :: B.Pitch -> RenderM (Ly Pitch)    
 lyPitch p = currentOctave p >>= \spec -> 
             return $ pch `optAttr` actl `optAttr` (octaveSpec spec)
   where
@@ -148,7 +148,8 @@ currentDuration d = do
 
 -- The type of a Duration is complicated by breve and longa not having the
 -- same type as duration
-    
+
+{-    
 type AltDuration repr = Either (repr Duration) (repr CmdLongDuration)
   
 lyDuration :: (CCmdLongDuration repr,
@@ -156,7 +157,7 @@ lyDuration :: (CCmdLongDuration repr,
                CDotted repr,
                CAttr repr) 
            => B.Duration -> RenderM (Maybe (AltDuration repr))
-                      
+-}                      
 lyDuration d = currentDuration d >>= mkD
   where 
     mkD SAME    = return Nothing
@@ -168,8 +169,8 @@ lyDuration d = currentDuration d >>= mkD
                     Nothing        -> return Nothing    
 
 applyDuration e Nothing           = e
-applyDuration e (Just (Left a))   = e `attr` a
-applyDuration e (Just (Right b))  = e `attr` b
+applyDuration e (Just (Left a))   = e ! a
+applyDuration e (Just (Right b))  = e ! b
 
 
 
@@ -198,11 +199,12 @@ suffixChord k xs@((_,d):_)    = k +++ khord xs
                in chord ps' `applyDuration` d
     fn acc (Left p,_) = p : acc
     fn acc _          = acc
+
     
 suffixGrace k []    = k
-suffixGrace k xs    = k +++ grace +++ gblock
+suffixGrace k xs    = k +++ grace gblock
   where
-    gblock = block $ foldr (flip suffix) elementCtx xs
+    gblock = blockS $ foldr (flip suffix) elementBlk xs
 
 
        
@@ -215,7 +217,7 @@ oflat lyk (Evt e :< sq)         = do
 
 oflat lyk (Sequence ts :< sq)   = do
     lyk'      <- oflat lyk (viewl sq) 
-    xs        <- mapM (oflat elementCtx) (map viewl ts)
+    xs        <- mapM (oflat elementBlk) (map viewl ts)
     return (merge lyk' xs)  
     
 oflat lyk (StartPar :< sq)      =
@@ -252,15 +254,16 @@ oflatPre (lyk,stk) _              =
                         
 
 
-
+{-
 merge :: (CBlock repr, CPoly repr, CSnocList repr CT_Element)
       => repr (SnocList CT_Element) -> [repr (SnocList CT_Element)] -> repr (SnocList CT_Element)
+-}
 merge k []     = k
 merge k (x:xs) = let poly = foldl fn (block x) xs in 
     k +++ openPoly +++ poly +++ closePoly
   where
     fn acc a = acc \\ (block a)
-
+{-
 run'oflat :: (CSnocList repr CT_Element,
                   CChord repr,
                   CPoly repr,
@@ -279,6 +282,7 @@ run'oflat :: (CSnocList repr CT_Element,
                     repr (SnocList CT_Element)
                  -> Seq (EvtPosition t)
                  -> RenderM (repr (SnocList CT_Element))
+-}
 run'oflat elt_list t = oflat elt_list (viewl t) 
 
  

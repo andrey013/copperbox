@@ -15,8 +15,7 @@ import Bala.Perform.EventTree ( (#) )
 
 -- For Lilypond
 import qualified Bala.Perform.RenderLilyPond as RLy
-import Bala.Format.Base.SymBase
-import Bala.Format.SymLilyPond.LilyPond hiding (Pitch, Duration)
+import Bala.Format.Output.OutputLilyPond hiding (Pitch, Duration)
 import Text.PrettyPrint.Leijen hiding (dot)
 
 data NrEvent = Note Pitch Duration
@@ -73,12 +72,12 @@ main = do
 
 -- LilyPond handling is very unpolished
 
-printDoc :: (() -> P a) -> IO ()
-printDoc e = let sdoc = renderPretty 0.8 80 (unP (e ())) in do
+printDoc :: Ly a -> IO ()
+printDoc e = let sdoc = renderPretty 0.8 80 (pretty (unLy e)) in do
     putStr ((displayS sdoc []) ++ "\n")
     
-outputLy :: FilePath -> (() -> P a) -> IO ()
-outputLy filename e = let sdoc = renderPretty 0.8 80 (unP (e ())) in do
+outputLy :: FilePath -> Ly a -> IO ()
+outputLy filename e = let sdoc = renderPretty 0.8 80 (pretty (unLy e)) in do
     writeFile filename ((displayS sdoc []) ++ "\n")
     
     
@@ -99,16 +98,16 @@ instance RLy.LyRenderable NrEvent where
 
 
 bulgarian_template musicexpr = 
-    toplevelCtx 
+    toplevel 
       +++ version "2.10.3" 
-      +++ in_header (title "Bulgarian (6)")
-      +++ in_book
-            (in_score 
-              (relative (_c %% raised 1) musicexpr))
+      +++ header (headerBlk +++ title "Bulgarian (6)")
+      +++ book
+            (block (score 
+                      (block (relative (_c ! raised 1) musicexpr))))
   
 
-bulgarian6_ly () = 
-  let e     = elementCtx +++ key _a major +++ clef treble
+bulgarian6_ly = 
+  let e     = elementBlk +++ key _a major +++ clef treble
       mexpr = RLy.runRenderLy (RLy.run'oflat e bars1_4) (RLy.relative c4 RLy.st_zero)
   in bulgarian_template mexpr
    
