@@ -2,7 +2,7 @@
 
 -- make sure abcm2ps is in your path.
 
-module DemoSymAbc where
+module DemoOuputAbc where
 
 import Bala.Format.Output.OutputAbc
 import Bala.Base.Meter ( (//) )

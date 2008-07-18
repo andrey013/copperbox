@@ -26,6 +26,12 @@ import Data.Sequence
 import qualified Data.Foldable as F
 
 
+infixr 6 << 
+
+-- | Higher precedence version of the application operator ($).
+(<<) ::(a -> b) -> a ->  b
+f << a = f a 
+
 emptydoc :: PP.Doc
 emptydoc = PP.empty
 
@@ -59,7 +65,7 @@ combineLeft f op ntrl sz = case viewl sz of
 literal :: a -> Skeleton a
 literal = Literal
 
-nested' f = Nested f
+nestedf f = Nested f
  
 nested o c = Nested (enclose o c)
 

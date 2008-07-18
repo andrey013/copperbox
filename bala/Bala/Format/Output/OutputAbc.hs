@@ -10,9 +10,9 @@
 -- Stability   :  highly unstable
 -- Portability :  empty data declarations, multi-parameter typeclasses
 --
--- An output combinators for Abc. 
+-- Output combinators for Abc. 
 -- Similar to Text.XHTML in the Hierarchical Libraries, but with some extra
--- typefulness due to Abc phantom type.
+-- typefulness due to the Abc phantom type.
 --
 --------------------------------------------------------------------------------
 
@@ -37,9 +37,7 @@ class Append cxts cxta
 
 infixl 5 +++
 
-(+++) :: (Append cxts cxta) => 
-         Abc cxts -> Abc cxta -> Abc cxts
-  
+(+++) :: (Append cxts cxta) => Abc cxts -> Abc cxta -> Abc cxts  
 (+++) (Abc (Sequence op sq)) (Abc a) = Abc $ Sequence op (sq |> a)
 (+++)  _                      _      = error "can't append to a non sequence"
 
@@ -57,11 +55,7 @@ infixl 7 !>
 ( !> ) :: (PrefixAttr cxte cxta) => Abc cxta -> Abc cxte ->  Abc cxte
 ( !> ) (Abc a) (Abc e) = Abc $ Attr (flip (<>)) e a
 
-infixr 6 << 
 
--- | Higher precedence version of the application operator ($).
-(<<) ::(a -> b) -> a ->  b
-f << a = f a 
 
 
 
@@ -483,6 +477,24 @@ upbow       = abcLiteral $ char 'u'
 
 instance PrefixAttr Elt_Note Attr_Decoration
 
+
+-- ** Chords and unisons (4.17)
+data Elt_Chord
+
+chord :: [Abc Elt_Note] -> Abc Elt_Chord
+chord = Abc . nested lbracket rbracket . sequenceL (<>) . map unAbc
+
+instance Append CT_Element Elt_Chord
+
+-- * Multiple voices (7)
+-- ** Voice overlay (7.4)
+  
+-- type must be - Abc CT_Element -> Abc CT_Element  -> Abc CT_Element
+-- for folding
+  
+(&\) :: Abc CT_Element -> Abc CT_Element  -> Abc CT_Element
+(&\) _ _ = undefined   
+  
 
 
 -- * Named elements
