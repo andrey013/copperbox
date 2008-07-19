@@ -162,13 +162,13 @@ retroCountTo :: (Eq a) => (a -> a) -> a -> a -> Int
 retroCountTo fn x y = 1 + countUntil 1000 (== y) fn x 
 
 -- | Repeat succ n times.
-successor :: (Enum a) => a -> Int -> a
-successor a n = applyi f a n
+successor :: (Enum a) => Int -> a -> a
+successor n a = applyi n f a
   where f = if (n >= 0) then succ else pred
 
 -- | Repeat pred n times.
-predecessor :: (Enum a) => a -> Int -> a  
-predecessor a n = applyi f a n
+predecessor :: (Enum a) => Int -> a -> a  
+predecessor n a = applyi n f a
   where f = if (n >= 0) then pred else succ
   
 
@@ -261,9 +261,9 @@ countMinus a b = a `backward` (unCount b)
 -- Utility functions
 
 -- | Apply a function i times.              
-applyi :: (a -> a) -> a -> Int -> a
-applyi f a i | i <= 0    = a
-             | otherwise = applyi f (f a) (i-1)
+applyi :: Int -> (a -> a) -> a -> a
+applyi i f a | i <= 0    = a
+             | otherwise = applyi (i-1) f (f a) 
              
              
 -- | zam - zippy map.

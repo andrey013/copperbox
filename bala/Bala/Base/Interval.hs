@@ -293,7 +293,7 @@ arithmeticStep :: Pitch -> Int -> Pitch
 arithmeticStep pch i = 
   let name        = pitchLetter pch
       o           = octaveMeasure pch
-      (o',name')  = applyi succ (o,name) (i - 1)
+      (o',name')  = applyi (i - 1) succ (o,name) 
   in pitch (PitchName name' Nat) o
    
 
@@ -408,11 +408,11 @@ instance IntervalExtension Interval where
   
 instance IntervalExtension PitchName where
   extUp lbl@(PitchName l _) (Interval ad sc) = 
-    let l' = successor l (unCount ad - 1)
+    let l' = successor (unCount ad - 1) l 
     in spell (lbl `addSemi` (unCount sc)) l'
     
   extDown lbl@(PitchName l _) (Interval ad sc) = 
-    let l' = predecessor l (unCount ad - 1)
+    let l' = predecessor (unCount ad - 1) l 
     in spell (lbl `subSemi` (unCount sc)) l'
 
 

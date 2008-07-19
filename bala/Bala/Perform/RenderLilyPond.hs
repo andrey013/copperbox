@@ -53,8 +53,8 @@ st_zero = RenderSt {
 lyPitch' () = lyPitch
 
                            
-relative :: B.Pitch -> RenderSt -> RenderSt
-relative p st = st { relative_pitch = p } 
+withRelativePitch :: B.Pitch -> RenderSt -> RenderSt
+withRelativePitch p st = st { relative_pitch = p } 
 
   
 runRenderLy  = evalState  
@@ -259,4 +259,8 @@ run'oflat :: (LyRenderable t)
           => Ly CT_Element -> Seq (EvtPosition t) -> RenderM (Ly CT_Element)                 
 run'oflat elt_list t = oflat elt_list (viewl t) 
 
+
+renderLy1 :: (LyRenderable evt) =>
+  Ly CT_Element -> EventTree evt -> RenderSt -> Ly CT_Element 
+renderLy1 init_ly tree env = evalState (run'oflat init_ly tree) env
  

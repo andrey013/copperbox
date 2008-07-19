@@ -1,7 +1,6 @@
-
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Perform.PerformPitch
+-- Module      :  Bala.Perform.PerformLilyPond
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -9,28 +8,17 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Perform the pitch representation
+-- Top-level for generating LilyPond.
 --
 --------------------------------------------------------------------------------
 
-{- OBSOLETE -}
+module Bala.Perform.PerformLilyPond 
+  ( module Bala.Perform.LilyPondInternals
+  , module Bala.Perform.RenderLilyPond 
+  ) where
 
--- for a list of pitches turn them into events with an onset time
+import Bala.Perform.LilyPondInternals
+import Bala.Perform.RenderLilyPond 
 
 
-
-module Bala.Perform.PerformPitch where
-
-import Bala.Base.Pitch
-import Bala.Perform.Perform
-
-import Data.Ratio
-
-data PitchEnv = PitchEnv {
-  default_note_length :: Ratio Int
-  }
-  
-default_env = PitchEnv {
-  default_note_length = 1 / 4
-  }
-    
+        

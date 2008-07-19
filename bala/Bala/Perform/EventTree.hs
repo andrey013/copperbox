@@ -15,6 +15,7 @@
 
 module Bala.Perform.EventTree where
 
+import Bala.Base.BaseExtra (applyi)
 
 import Data.Sequence
 
@@ -43,11 +44,20 @@ instance Functor EvtPosition where
   
 
   
-  
+-- \# or .\# 
+-- c.f. show and shows   
 
 infixl 7 #
 
 x # f = f x
+
+
+infixl 7 #.
+
+g #. f = f . g
+
+
+
 
 root :: EventTree evt
 root = empty
@@ -71,5 +81,11 @@ parallel        :: [EventTree evt] -> EventTree evt -> EventTree evt
 parallel [] t   = t
 parallel ts t   = t |> (Sequence ts)
 
+repeated :: 
+  Int -> (EventTree evt -> EventTree evt) -> (EventTree evt -> EventTree evt)
+repeated i f = applyi i f 
 
+
+( >#< )         :: EventTree evt -> EventTree evt -> EventTree evt
+a >#< b         = a >< b
                

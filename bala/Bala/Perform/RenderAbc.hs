@@ -17,8 +17,8 @@ module Bala.Perform.RenderAbc where
 
 import Bala.Perform.EventTree hiding (chord, grace)
 
-import qualified Bala.Base.Base as B
-import Bala.Format.Output.OutputAbc
+import qualified Bala.Base as B
+import Bala.Format.Output.OutputAbc hiding (Sequence)
 
 import Control.Applicative
 import Control.Monad.State
@@ -223,4 +223,5 @@ merge k (x:xs) = foldl fn x xs
         
 run'oflat ellist t = oflat ellist (viewl t) 
 
-                          
+-- runRenderAbc (run'oflat tune tree2) (abcEnv eighth (4//4))
+renderAbc1 init_abc tree env  = evalState (run'oflat init_abc tree) env
