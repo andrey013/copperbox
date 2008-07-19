@@ -14,8 +14,10 @@ import qualified Bala.Perform.EventTree as E
 import Bala.Perform.EventTree ( (#) )
 
 -- For Lilypond
-import qualified Bala.Perform.RenderLilyPond as RLy
+import qualified Bala.Perform.RenderLilyPond as R
 import Bala.Format.Output.OutputLilyPond hiding (Pitch, Duration)
+
+import System.Process (runCommand, waitForProcess)
 import Text.PrettyPrint.Leijen hiding (dot)
 
 data NrEvent = Note Pitch Duration
@@ -65,9 +67,16 @@ bars1_4 = foldl (flip E.event) E.root events_bars1_4
 
 bulgarian6 = (E.Perf [bars1_4])   
   
-main = do
+main =  do
     output bulgarian6 "bulgarian6.midi"
-    outputLy "bulgarian6.ly" bulgarian6_ly
+    outputLy lyfile bulgarian6_ly
+    ph <- runCommand ("lilypond " ++ lyfile)  
+    waitForProcess ph
+    return ()
+  where
+    lyfile = "bulgarian6.ly" 
+    
+       
 -------
 
 -- LilyPond handling is very unpolished
@@ -82,7 +91,7 @@ outputLy filename e = let sdoc = renderPretty 0.8 80 (pretty (unLy e)) in do
     
     
 
-instance RLy.LyRenderable NrEvent where
+instance R.LyRenderable NrEvent where
     pitchOf (Note p _)        = p
     
     durationOf (Note _ d)     = d
@@ -108,7 +117,7 @@ bulgarian_template musicexpr =
 
 bulgarian6_ly = 
   let e     = elementBlk +++ key _a major +++ clef treble
-      mexpr = RLy.runRenderLy (RLy.run'oflat e bars1_4) (RLy.relative c4 RLy.st_zero)
+      mexpr = R.runRenderLy (R.run'oflat e bars1_4) (R.relative c4 R.st_zero)
   in bulgarian_template mexpr
    
 

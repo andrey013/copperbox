@@ -327,7 +327,13 @@ duration  = lyLit . int
 dur :: Int -> Ly Duration
 dur = duration
 
+-- | @\\longa@.
+longa   :: Ly Duration
+longa   = cmd "longa"  
 
+-- | @\\breve@.
+breve   :: Ly Duration
+breve   = cmd "breve"
 
    
 instance SuffixAttr Rest Duration
@@ -336,19 +342,6 @@ instance SuffixAttr Note Duration
 
 
 
-data CmdLongDuration
-
--- cmdLongDuration :: String -> Ly CmdLongDuration
--- | @\\longa@.
-longa   :: Ly CmdLongDuration
-longa   = cmd "longa"  
-
--- | @\\breve@.
-breve   :: Ly CmdLongDuration
-breve   = cmd "breve"
-
-instance SuffixAttr Rest CmdLongDuration
-instance SuffixAttr Note CmdLongDuration
 
 
 
@@ -364,7 +357,7 @@ dot                   :: Ly Dotted
 dot                   = lyLit $ char '.'
 
 instance SuffixAttr Duration Dotted
-instance SuffixAttr CmdLongDuration Dotted
+
 
 
 --------------------------------------------------------------------------------
@@ -392,7 +385,7 @@ chord xs              =
 
 instance Append CT_Element Chord
 instance SuffixAttr Chord Duration
-instance SuffixAttr Chord CmdLongDuration
+
 
 --------------------------------------------------------------------------------
 -- *** Stems (6.3.2)
