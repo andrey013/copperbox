@@ -6,18 +6,19 @@
 
 module Main where
 
-import Bala.Format.Midi hiding (header)
+
 import Bala.Base
 
-import Bala.Perform.RenderMidi
-import qualified Bala.Perform.EventTree as E
+import Bala.Perform.EventTree
 import Bala.Perform.EventTree ( (#) )
+
+
+import Bala.Perform.PerformMidi
 
 -- For Lilypond
 import Bala.Perform.PerformLilyPond
 import Bala.Format.Output.OutputLilyPond hiding (Pitch, Duration)
 
-import System.Process (runCommand, waitForProcess)
 import Text.PrettyPrint.Leijen hiding (dot)
 
 data NrEvent = Note Pitch Duration
@@ -61,20 +62,13 @@ events_bars1_4 =
       ]
          
 
-bars1_4 :: E.EventTree NrEvent
-bars1_4 = foldl (flip E.event) E.root events_bars1_4
+bars1_4 :: EventTree NrEvent
+bars1_4 = foldl (flip event) root events_bars1_4
  
 
-bulgarian6 = (E.Perf [bars1_4])   
+bulgarian6 = (Perf [bars1_4])   
   
-main =  do
-    output bulgarian6 "bulgarian6.midi"
-    writeLy lyfile bulgarian6_ly
-    ph <- runCommand ("lilypond " ++ lyfile)  
-    waitForProcess ph
-    return ()
-  where
-    lyfile = "bulgarian6.ly" 
+
     
        
 -------
@@ -117,7 +111,14 @@ bulgarian6_ly =
     
 demo_ly = printLy bulgarian6_ly
 
-  
+main =  do
+    writeMidi "bulgarian6.midi" bulgarian6_midi
+    writeLy lyfile bulgarian6_ly
+    execLilyPondOn lyfile  
+  where
+    lyfile = "bulgarian6.ly" 
+    
+    bulgarian6_midi = renderMidi bulgarian6 default_midi_st  
   
   
   

@@ -13,6 +13,7 @@
 --
 --------------------------------------------------------------------------------
 
+{- OBSOLETE -}
 
 module Bala.Format.Midi.PerformMidi (
   MidiEnv(..), default_env, output

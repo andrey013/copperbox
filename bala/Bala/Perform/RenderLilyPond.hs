@@ -223,7 +223,7 @@ oflat lyk _                     =
     error "Invalid EventTree"
     
     
-            
+-- successive notes in a chord shouldn't change relative pitch            
 oflatPar (lyk,stk) (Evt e :< sq) = do
     e'              <- pitchOrRest'duration e
     oflatPar (lyk, (e':stk)) (viewl sq)

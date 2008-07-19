@@ -13,7 +13,7 @@
 --------------------------------------------------------------------------------
 
 module Bala.Perform.AbcInternals (
-  printAbc, writeAbc, abc_template
+  printAbc, writeAbc, execAbcm2ps, abc_template
   ) where
 
 import Bala.Format.Output.OutputAbc
@@ -29,7 +29,15 @@ printAbc e = putStr ((displayS (simpledoc e) []) ++ "\n")
     
 writeAbc :: FilePath -> Abc a -> IO ()
 writeAbc filename e = writeFile filename ((displayS (simpledoc e) []) ++ "\n") 
+
+
+execAbcm2ps :: FilePath -> IO ()
+execAbcm2ps filename = do
+    ph <- runCommand ("abcm2ps " ++ filename)  
+    waitForProcess ph
+    return ()
     
+        
 abc_template title expr = 
           header
       +++ number_field  1

@@ -35,16 +35,16 @@ lilypond_ticks  = 384
 
 
 type ClockedEvent evt = (Integer, evt)
-type ProcessM a = State ProcessSt a
+type ProcessM a = State RenderSt a
 
 
-data ProcessSt = ProcessSt { 
+data RenderSt = RenderSt { 
     tick_value        :: Integer,
     track_number      :: Word8,
     midi_tempo        :: Word32
   }  
   
-default_st = ProcessSt lilypond_ticks 1 500000
+default_midi_st = RenderSt lilypond_ticks 1 500000
 
 
 runProcess  = evalState
@@ -254,18 +254,15 @@ notes = afficherL . F.foldr note []
   where note (Evt (n,_)) acc = n:acc
         note _           acc = acc
 
-runDemo perf = MIDI.printMidi $ runProcess (processPerformance perf) default_st
+renderMidi1 :: (Renderable evt) => EventTree evt -> RenderSt -> MIDI.MidiFile
+renderMidi1 tree env = renderMidi (Perf [tree]) env
 
-runDemo' tree = runDemo (Perf [tree])
 
-output perf filename = 
-  let mf = runProcess (processPerformance perf) default_st
-  in MIDI.writeMidi filename mf
-  
-output' tree filename = 
-  let mf = runProcess (processPerformance (Perf [tree])) default_st
-  in MIDI.writeMidi filename mf
-  
+renderMidi :: (Renderable evt) => Performance evt -> RenderSt -> MIDI.MidiFile
+renderMidi perf env = evalState (processPerformance perf) env
+
+
+
 
 
       

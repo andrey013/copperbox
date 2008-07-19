@@ -201,7 +201,8 @@ oflatPar (lyk,stk) (EndPar :< sq) =
       
 oflatPar (lyk,stk) _              = 
     error "unterminated Par"
-    
+
+-- grace notes shouldn't change bar count      
 oflatPre (lyk,stk) (Evt e :< sq)  = do
     e'              <- pitchOrRest'duration e
     oflatPre (lyk, (e':stk)) (viewl sq)
@@ -223,5 +224,5 @@ merge k (x:xs) = foldl fn x xs
         
 run'oflat ellist t = oflat ellist (viewl t) 
 
--- runRenderAbc (run'oflat tune tree2) (abcEnv eighth (4//4))
+
 renderAbc1 init_abc tree env  = evalState (run'oflat init_abc tree) env

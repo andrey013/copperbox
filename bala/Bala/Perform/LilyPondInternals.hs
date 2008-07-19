@@ -13,11 +13,12 @@
 --------------------------------------------------------------------------------
 
 module Bala.Perform.LilyPondInternals (
-  printLy, writeLy, lilypond_template
+  printLy, writeLy, execLilyPondOn, lilypond_template
   ) where
 
 import Bala.Format.Output.OutputLilyPond 
 
+import System.Process (runCommand, waitForProcess)
 import Text.PrettyPrint.Leijen
 
 simpledoc :: Ly a -> SimpleDoc
@@ -32,6 +33,13 @@ writeLy :: FilePath -> Ly a -> IO ()
 writeLy filename e = let sdoc = renderPretty 0.8 80 (pretty (unLy e)) in do
     writeFile filename ((displayS (simpledoc e) []) ++ "\n")
 
+execLilyPondOn :: FilePath -> IO ()
+execLilyPondOn filename = do
+    ph <- runCommand ("lilypond " ++ filename)  
+    waitForProcess ph
+    return ()
+    
+    
 
 lilypond_template :: String -> Ly b -> Ly CT_Toplevel
 lilypond_template s expr = 
