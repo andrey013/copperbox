@@ -16,8 +16,8 @@
 
 
 module Bala 
-  ( module Bala.Base.Base
+  ( module Bala.Base
   )
   where
 
-import Bala.Base.Base  
+import Bala.Base 
