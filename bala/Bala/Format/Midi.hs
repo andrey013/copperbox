@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Format.Midi.Midi
+-- Module      :  Bala.Format.Midi
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -13,8 +13,7 @@
 --
 --------------------------------------------------------------------------------
 
-
-module Bala.Format.Midi.Midi 
+module Bala.Format.Midi 
   ( module Bala.Format.Midi.Datatypes
   , module Bala.Format.Midi.GeneralMidiInstruments  
   , module Bala.Format.Midi.ReadFile 

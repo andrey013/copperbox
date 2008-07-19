@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.Base
+-- Module      :  Bala.Base
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -13,8 +13,7 @@
 --
 --------------------------------------------------------------------------------
 
-
-module Bala.Base.Base 
+module Bala.Base 
   ( module Bala.Base.BaseExtra
   , module Bala.Base.Chord
   , module Bala.Base.ChordSynonyms

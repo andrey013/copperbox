@@ -18,7 +18,7 @@ module Bala.Perform.RenderLilyPond where
 
 import Bala.Perform.EventTree hiding (chord, grace)
 
-import qualified Bala.Base.Base as B
+import qualified Bala.Base as B
 import Bala.Format.Output.OutputLilyPond hiding (duration, Sequence)
 
 import Control.Applicative 

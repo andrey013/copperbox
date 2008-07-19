@@ -12,7 +12,7 @@
 
 module Main where
 
-import Bala.Format.Midi.Midi
+import Bala.Format.Midi
 import qualified Bala.Format.Midi.ReadFileAlt as Alt
 
 import System.Environment

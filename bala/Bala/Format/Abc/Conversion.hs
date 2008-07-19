@@ -17,7 +17,7 @@ module Bala.Format.Abc.Conversion  where
 
 import Bala.Format.Abc.Datatypes hiding (Accidental(..) )
 import qualified Bala.Format.Abc.Datatypes as Abc
-import Bala.Base.Base
+import Bala.Base
 
 import Data.Char
 

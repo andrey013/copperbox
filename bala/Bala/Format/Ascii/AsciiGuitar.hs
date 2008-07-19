@@ -15,7 +15,7 @@
 
 module Bala.Format.Ascii.AsciiGuitar where
 
-import Bala.Base.Base
+import Bala.Base
 
 import Data.List
 

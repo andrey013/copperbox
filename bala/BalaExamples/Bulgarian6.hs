@@ -6,8 +6,8 @@
 
 module Main where
 
-import Bala.Format.Midi.Midi hiding (header)
-import Bala.Base.Base
+import Bala.Format.Midi hiding (header)
+import Bala.Base
 
 import Bala.Perform.RenderMidi
 import qualified Bala.Perform.EventTree as E

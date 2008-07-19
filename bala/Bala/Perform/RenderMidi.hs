@@ -17,8 +17,8 @@ module Bala.Perform.RenderMidi where
 
 import Bala.Perform.Mergesort
 
-import Bala.Base.Base
-import qualified Bala.Format.Midi.Midi as MIDI
+import Bala.Base
+import qualified Bala.Format.Midi as MIDI
 import Bala.Format.Midi.SyntaxElements
 import Bala.Perform.EventTree
 
