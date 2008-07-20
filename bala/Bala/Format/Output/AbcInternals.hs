@@ -31,6 +31,8 @@ import Text.PrettyPrint.Leijen
 -- A phantom type
 newtype Abc a = Abc { unAbc :: Skeleton Doc }
 
+instance Show (Abc a) where
+  show (Abc a) = show $ pretty a
 
 -- A type constrained add-right (|>)
 class Append cxts cxta
@@ -183,17 +185,19 @@ mtfield ch o = Abc $ sequenceL (<+>) [field_id, unAbc o]
 elemskip_field              :: String -> Abc CT_MidTuneField
 elemskip_field              = mtfield 'E' . Abc . literal . text
 
--- | @K field@ - key.
+-- | @K field@ - key, note untyped so it can print keys or clef information.
+
 key_field                   :: Abc a -> Abc CT_MidTuneField
 key_field                   = mtfield 'K' 
+
   
--- | @L field@ - default note length.
-default_note_length_field   :: MeterFraction -> Abc CT_MidTuneField
-default_note_length_field   = mtfield 'L' . Abc . literal . pretty
+-- | @L field@ - unit note length - i.e. the default length.
+unit_note_length_field      :: MeterFraction -> Abc CT_MidTuneField
+unit_note_length_field      = mtfield 'L' . Abc . literal . pretty
 
 -- a synonym
 l_field                     :: MeterFraction -> Abc CT_MidTuneField
-l_field                     = default_note_length_field
+l_field                     = unit_note_length_field
 
 -- | @M field@ - meter.
 meter_field                 :: Abc a -> Abc CT_MidTuneField
@@ -485,6 +489,33 @@ chord :: [Abc Elt_Note] -> Abc Elt_Chord
 chord = Abc . nested lbracket rbracket . sequenceL (<>) . map unAbc
 
 instance Append CT_Element Elt_Chord
+
+-- * Clefs (6)
+data Clef
+
+clef :: Abc ClefName -> Abc Clef
+clef cn = Abc $ sequenceL (<>) [literal (text "clef="), unAbc cn]
+
+data ClefName
+
+clef_name :: String -> Abc ClefName
+clef_name = abcLiteral . text
+
+treble  :: Abc ClefName
+treble  = clef_name "treble"
+
+alto    :: Abc ClefName
+alto    = clef_name "alto"
+ 
+tenor   :: Abc ClefName 
+tenor   = clef_name "tenor"
+
+bass    :: Abc ClefName 
+bass    = clef_name "bass"
+
+perc    :: Abc ClefName
+perc    = clef_name "perc"
+
 
 -- * Multiple voices (7)
 -- ** Voice overlay (7.4)

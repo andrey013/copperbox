@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -16,12 +17,14 @@
 module Bala.Perform.RenderAbc where
 
 import Bala.Perform.EventTree hiding (chord, grace)
+import Bala.Perform.PerformClass
 
 import qualified Bala.Base as B
 import Bala.Format.Output.OutputAbc hiding (Sequence)
 
 import Control.Applicative
 import Control.Monad.State
+import qualified Data.Foldable as F
 import Data.Sequence
 import Data.Ratio
 
@@ -34,6 +37,11 @@ data RenderSt = RenderSt {
     bar_duration_count      :: Double
   } 
 
+instance Applicative (State RenderSt) where
+  pure = return
+  (<*>) = ap
+  
+  
 abcEnv :: B.Duration -> B.MeterFraction -> RenderSt
 abcEnv dnl mf = RenderSt 
     { default_note_length   = dnl,
@@ -41,7 +49,13 @@ abcEnv dnl mf = RenderSt
       bar_duration_count    = 0      
       }
 
+-- ZeroPitch & ZeroRest tracks the original (Base) duration so it can 
+-- be used to update the render state if necessary
 
+data EventZero = 
+    ZeroPitch B.Duration (Abc Elt_Note) (Maybe (Abc Attr_Duration)) 
+  | ZeroRest B.Duration (Maybe (Abc Attr_Duration)) 
+  | ZeroUnknown
 
    
 class AbcRenderable a where
@@ -52,11 +66,11 @@ class AbcRenderable a where
   
 runRenderAbc  = evalState  
 
+(*!) e oa   = maybe e (e !) oa
 
-optAttr e oa   = maybe e (e !) oa
 
 
-optPrefixAttr oa  e    = maybe e (\a -> a !> e) oa
+(*!**) oa  e    = maybe e (\a -> a !> e) oa
 
 
 optAddR sq Nothing   = sq
@@ -109,7 +123,7 @@ abcPitch p =
         pl = octLetterChange (abcPitchLetter $ B.pitchLetter p) o
         oa = octaveAttr o
         aa = accidentalAttr (B.pitchAccidental p)
-    in aa `optPrefixAttr` (note pl) `optAttr` oa
+    in aa *!** (note pl) *! oa
               
   where
     octLetterChange pl o  | o > 4     = octave1 pl
@@ -126,91 +140,102 @@ abcDuration d = fn d <$> gets default_note_length
                             (n,d) = (numerator r, denominator r)    
                         in Just $ dur ( n*scale B.// d)
 
-                        
-pitch'duration evt = 
-  let n = abcPitch (pitchOf evt) 
-      d = durationOf evt in do
-    od <- abcDuration d
-    ob <- barCount d
-    return (n,od,ob)  
 
-rest'duration :: (AbcRenderable evt)
-              => evt 
-              -> RenderM (Maybe (Abc Attr_Duration), Maybe (Abc Elt_RepeatMark))
-rest'duration evt = 
-  let d = durationOf evt in do
-    od <- abcDuration (durationOf evt)
-    ob <- barCount d
-    return (od,ob)
-  
-pitchOrRest'duration evt 
-    | isRest evt    = rest'duration evt >>= \(od,ob) -> return (Right (),od,ob)
-    | otherwise     = pitch'duration evt >>= \(p,od,ob) -> return (Left p,od,ob) 
 
+updateBarCount :: Abc CT_Element -> EventZero -> RenderM (Abc CT_Element)
+updateBarCount k ez = case hasDur ez of 
+    Nothing -> return k
+    Just d  -> barCount d >>= \obl -> maybe (return k) (return . (k +++)) obl  
+  where
+    hasDur (ZeroPitch d _ _)  = Just d
+    hasDur (ZeroRest d _)     = Just d
+    hasDur _                  = Nothing
+    
+
+
+
+
+eventZero evt = case (opitch evt, oduration evt) of
+    (Just p, Just d)    -> (ZeroPitch d) <$> pure (abcPitch p) <*> abcDuration d
+    (Nothing, Just d)   -> (ZeroRest d)  <$> abcDuration d
+    (Nothing, Nothing)  -> return ZeroUnknown
+    
+    
 applyDuration e Nothing    = e
 applyDuration e (Just a)   = e ! a
 
 
-    
-suffix k (Left p,od,ob)     = (k +++ (p `applyDuration` od)) `optAddR` ob
-suffix k (Right (),od,ob)   = (k +++ (rest `applyDuration` od)) `optAddR` ob
+suffix k ez@(ZeroPitch _ p od)  = updateBarCount (k +++ (p *! od)) ez
+suffix k ez@(ZeroRest _ od)     = updateBarCount (k +++ (rest *! od)) ez 
+suffix k _                      = return k
 
-suffixChord k []    = k
-suffixChord k xs    = k +++ khord xs
+
+-- At the end of a chord add its duration 
+-- Assumption: use the duration of the first note in chord for the whole chord
+suffixChord k stk =
+  case viewl stk of
+    EmptyL                      -> return k
+    ez@(ZeroPitch _ _ od) :< _  -> updateBarCount (k +++ khord stk) ez
+
   where
-    khord ps = chord $ foldl fn [] ps 
-               
-    fn acc (Left p,d,_) = (p `applyDuration` d) : acc
-    fn acc _            = acc
+    khord sq = chord $ F.foldr fn [] sq 
+
+    fn (ZeroPitch _ p od) acc = (p *! od) : acc
+    fn _                  acc = acc
     
+        
 suffixGrace k []    = k
 suffixGrace k xs    = k +++ grace xs
   where
     grace ps = gracenotes $ foldl fn [] ps 
                
-    fn acc (Left p,d,_) = (p `applyDuration` d) : acc
-    fn acc _            = acc
+    fn acc (ZeroPitch _ p od) = (p *! od) : acc
+    fn acc _                  = acc
 
-oflat lyk  EmptyL               = return lyk 
+oflat sqk  EmptyL               = return sqk 
 
-oflat lyk (Evt e :< sq)         = do
-    e'        <- pitchOrRest'duration e
-    oflat (suffix lyk e') (viewl sq)
+oflat sqk (Evt e :< sq)         = do
+    ez        <- eventZero e
+    sqk'      <- suffix sqk ez
+    oflat sqk' (viewl sq)
     
 -- Sequence maps to voice overlay - supported by abcm2ps but not abc2ps
-oflat lyk (Sequence ts :< sq)   = do
-    lyk'      <- oflat lyk (viewl sq) 
-    xs        <- mapM (oflat tune) (map viewl ts)
-    return (merge lyk' xs)  
+oflat sqk (Sequence ts :< sq)   = do
+    sqk'      <- oflat sqk (viewl sq) 
+    xs        <- mapM (oflat tune) (map (viewl . unET) ts)
+    return (merge sqk' xs)  
        
-oflat lyk (StartPar :< sq)      =
-    oflatPar (lyk,[]) (viewl sq)
+oflat sqk (StartPar :< sq)      =
+    oflatPar (sqk,emptyseq) (viewl sq)
    
-oflat lyk (StartPre :< sq)      =
-    oflatPre (lyk,[]) (viewl sq)
+oflat sqk (StartPre :< sq)      =
+    oflatPre (sqk,[]) (viewl sq)
 
-oflat lyk _                     =
+oflat sqk _                     =
     error "Invalid EventTree"
     
-oflatPar (lyk,stk) (Evt e :< sq) = do
-    e'              <- pitchOrRest'duration e
-    oflatPar (lyk, (e':stk)) (viewl sq)
-  
-oflatPar (lyk,stk) (EndPar :< sq) = 
-    oflat (suffixChord lyk stk) (viewl sq)
+oflatPar (sqk,stk) (Evt e :< sq) = do
+    ez              <- eventZero e
+    oflatPar (sqk, (stk |> ez)) (viewl sq)
+
+   
+oflatPar (sqk,stk) (EndPar :< sq) = do
+    sqk'            <- suffixChord sqk stk
+    oflat sqk' (viewl sq)
+ 
       
-oflatPar (lyk,stk) _              = 
+oflatPar (sqk,stk) _              = 
     error "unterminated Par"
 
 -- grace notes shouldn't change bar count      
-oflatPre (lyk,stk) (Evt e :< sq)  = do
-    e'              <- pitchOrRest'duration e
-    oflatPre (lyk, (e':stk)) (viewl sq)
+oflatPre (sqk,stk) (Evt e :< sq)  = do
+    ez              <- eventZero e
+    oflatPre (sqk, (ez:stk)) (viewl sq)
   
-oflatPre (lyk,stk) (EndPre :< sq) = 
-    oflat (suffixGrace lyk stk) (viewl sq)
+oflatPre (sqk,stk) (EndPre :< sq) = 
+    oflat (suffixGrace sqk stk) (viewl sq)
                         
-oflatPre (lyk,stk) _              = 
+oflatPre (sqk,stk) _              = 
     error "unterminated Pre"     
    
     
@@ -222,7 +247,8 @@ merge k (x:xs) = foldl fn x xs
     fn acc a = acc &\ a
     
         
-run'oflat ellist t = oflat ellist (viewl t) 
+run'oflat ellist t = oflat ellist (viewl $ unET t) 
 
-
+renderAbc1 :: (Perform evt) =>
+              Abc CT_Element -> EventTree evt -> RenderSt -> Abc CT_Element
 renderAbc1 init_abc tree env  = evalState (run'oflat init_abc tree) env

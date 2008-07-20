@@ -12,7 +12,7 @@ import Bala.Base
 import Bala.Perform.EventTree
 import Bala.Perform.EventTree ( (#) )
 
-
+import Bala.Perform.PerformClass
 import Bala.Perform.PerformMidi
 
 -- For Lilypond
@@ -25,13 +25,17 @@ data NrEvent = Note Pitch Duration
              | Rest Duration
   deriving (Eq,Show)
 
-instance Renderable NrEvent where 
-  duration (Note _ d) = d
-  duration (Rest d)   = d
-  
-  generates (Note _ _) = Just (\(Note p _) -> return (Left p))  
-  generates (Rest _)   = Nothing 
 
+
+-- Perform will (should) replace Renderable 
+instance Perform NrEvent where
+  opitch (Note p _) = Just p
+  opitch (Rest _)   = Nothing
+  
+  oduration (Note _ d) = Just d
+  oduration (Rest d)   = Just d
+  
+  
 durn 16  = sixteenth
 durn 8   = eighth
 durn 4   = quarter
@@ -75,22 +79,6 @@ bulgarian6 = (Perf [bars1_4])
 
 -- LilyPond handling is very unpolished
   
-    
-
-instance LyRenderable NrEvent where
-    pitchOf (Note p _)        = p
-    
-    durationOf (Note _ d)     = d
-    durationOf (Rest d)       = d 
-     
-    isPitch (Note _ _)        = True
-    isPitch (Rest _)          = False
-     
-    isRest (Note _ _)         = False
-    isRest (Rest _)           = True
-    
-        
-
 
 bulgarian_template musicexpr = 
     toplevel 

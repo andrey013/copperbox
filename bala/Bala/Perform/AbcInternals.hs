@@ -13,11 +13,13 @@
 --------------------------------------------------------------------------------
 
 module Bala.Perform.AbcInternals (
-  printAbc, writeAbc, execAbcm2ps, abc_template
+  printAbc, writeAbc, execAbcm2psOn, abc_template, empty_body
   ) where
 
 import Bala.Format.Output.OutputAbc
+import Bala.Base.Meter
 
+import System.Process (runCommand, waitForProcess)
 import Text.PrettyPrint.Leijen
 
 simpledoc :: Abc a -> SimpleDoc
@@ -31,9 +33,9 @@ writeAbc :: FilePath -> Abc a -> IO ()
 writeAbc filename e = writeFile filename ((displayS (simpledoc e) []) ++ "\n") 
 
 
-execAbcm2ps :: FilePath -> IO ()
-execAbcm2ps filename = do
-    ph <- runCommand ("abcm2ps " ++ filename)  
+execAbcm2psOn :: FilePath -> FilePath -> IO ()
+execAbcm2psOn abc_filename ps_filename = do
+    ph <- runCommand ("abcm2ps " ++ abc_filename ++ " -O " ++ ps_filename)  
     waitForProcess ph
     return ()
     
@@ -41,14 +43,13 @@ execAbcm2ps filename = do
 abc_template title expr = 
           header
       +++ number_field  1
-      +++ title_field   title
-{-      
+      +++ title_field   title      
       +++ meter_field   << meter (4 // 4)
       +++ key_field     << key_spec (note C) major
--}
+      +++ key_field     << clef treble
       +++ body          << expr
 
-
+empty_body = tune
       
       
           

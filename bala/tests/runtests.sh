@@ -4,6 +4,10 @@ from_dir=`pwd`
 cd ../BalaExamples/
 
 
+# test Midi, LilyPond and Abc generation are working
+# - you need lilyond and abcm2ps intalled an in your path
+runhaskell -i.. Riff.hs
+
 # generate the midi file bulgarian6.midi
 runhaskell -i.. Bulgarian6.hs
 

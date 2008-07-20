@@ -30,6 +30,9 @@ import Text.PrettyPrint.Leijen
 -- A phantom type
 newtype Ly a = Ly { unLy :: Skeleton Doc }
 
+instance Show (Ly a) where
+  show (Ly a) = show $ pretty a
+
 
 -- A type constrained add-right (|>)
 class Append cxts cxta

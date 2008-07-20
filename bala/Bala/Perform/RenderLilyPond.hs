@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, RankNTypes #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -16,30 +16,42 @@
 
 module Bala.Perform.RenderLilyPond where
 
+
 import Bala.Perform.EventTree hiding (chord, grace)
+import Bala.Perform.PerformClass
 
 import qualified Bala.Base as B
-import Bala.Format.Output.OutputLilyPond hiding (duration, Sequence)
+import Bala.Format.Output.OutputLilyPond hiding (duration, Sequence, emptyseq)
 
-import Control.Applicative 
+import Control.Applicative hiding (empty)
 import Control.Monad.State
-import Data.Sequence
+import qualified Data.Foldable as F
+import Data.Sequence hiding (reverse)
 
 type RenderM a = State RenderSt a
 
-
+instance Applicative (State RenderSt) where
+  pure = return
+  (<*>) = ap
+  
+  
 data RenderSt = RenderSt { 
     relative_pitch      :: B.Pitch,
     relative_duration   :: B.Duration
   } 
 
-class LyRenderable a where
-    isPitch             :: a -> Bool
-    isRest              :: a -> Bool
-    durationOf          :: a -> B.Duration
-    pitchOf             :: a -> B.Pitch
-    
-    
+emptyseq :: Seq a
+emptyseq = empty  
+
+-- Note durations are optional for both Pitch and Rest 
+-- Default durations don't get printed.
+-- ZeroPitch tracks the original (Base) pitch so it can be used to update
+-- the render state if necessary
+data EventZero = ZeroPitch B.Pitch (Ly Pitch) (Maybe (Ly Duration)) 
+               | ZeroRest (Maybe (Ly Duration)) 
+               | ZeroUnknown
+  deriving Show            
+                
 st_zero = RenderSt { 
     --  Middle C (c') is the default in LilyPond. 
     relative_pitch = B.c4,
@@ -78,11 +90,11 @@ odisp p p' =
 currentOctave :: B.Pitch -> RenderM Int
 currentOctave p = do
     p' <- gets relative_pitch
-    modify (\s -> s {relative_pitch = p})
     return $ odisp p' p
   
-
-
+updateCurrentPitch :: EventZero -> RenderM ()
+updateCurrentPitch (ZeroPitch p _ _) = modify (\s -> s {relative_pitch = p})
+updateCurrentPitch _                 = return ()
 
 accidental :: SuffixAttr e Accidental => B.Accidental -> (Ly e -> Ly e)
 accidental B.Flat          = apAttr flat
@@ -146,7 +158,7 @@ currentDuration d = do
 
 
 
--- lyDuration :: B.Duration -> RenderM (OE (Ly Duration) (Ly CmdLongDuration))
+
 lyDuration :: B.Duration -> RenderM (Maybe (Ly Duration))
 lyDuration d = currentDuration d >>= mkD
   where 
@@ -154,44 +166,35 @@ lyDuration d = currentDuration d >>= mkD
     mkD _      = let (dur,dots) = B.simplifyDuration d
                      root       = duration dur
                  in return $ maybe Nothing (Just . dotpart dots) root
+                 -- in error $ "root is " ++ show d
 
 
-
-
--- has to be pitch for chords...
-pitch'duration evt = do
-    p     <- lyPitch (pitchOf evt)
-    od    <- lyDuration (durationOf evt)
-    return (p, od)    
-
-
-
-rest'duration evt = do
-    od   <- lyDuration (durationOf evt)
-    return (rest, od)
     
-pitchOrRest'duration evt 
-    | isRest evt    = rest'duration evt >>= \(_,d) -> return (Right (),d)
-    | otherwise     = pitch'duration evt >>= \(p,d) -> return (Left p,d) 
+eventZero evt = case (opitch evt, oduration evt) of
+    (Just p, Just d)    -> (ZeroPitch p) <$> lyPitch p <*> lyDuration d
+    (Nothing, Just d)   -> ZeroRest  <$> lyDuration d
+    (Nothing, Nothing)  -> return ZeroUnknown
 
 
+             
+suffix k (ZeroPitch _ p od)   = k +++ (note p *! od)
+suffix k (ZeroRest od)        = k +++ (rest *! od)
+suffix k _                    = k
 
-suffix k (Left p,od)     = k +++ (note p *! od)
-suffix k (Right (),od)   = k +++ (rest *! od)
+suffixChord :: (Append cxts Chord) => Ly cxts -> Seq EventZero -> Ly cxts
+suffixChord k stk =
+  case viewl stk of
+    EmptyL                  -> k
+    (ZeroPitch _ _ od) :< _ -> k +++ khord od stk
 
-
-suffixChord :: (Append cxts Chord) => 
-  Ly cxts -> [(Either (Ly Pitch) (), Maybe (Ly Duration))] -> Ly cxts
-suffixChord k []              = k
-suffixChord k xs@((_,od):_)   = k +++ khord xs
   where
-    khord ps = let ps' = foldl fn [] ps 
-               in chord ps' *! od
-    fn acc (Left p,_) = p : acc
-    fn acc _          = acc
+    khord od sq = let ps' = F.foldr fn [] sq 
+                  in chord ps' *! od
+    fn (ZeroPitch _ p _) acc = p : acc
+    fn _                 acc = acc
 
 suffixGrace :: (Append cxts CmdGrace) => 
-  Ly cxts -> [(Either (Ly Pitch) (), Maybe (Ly Duration))] -> Ly cxts
+  Ly cxts -> [EventZero] -> Ly cxts
 suffixGrace k []    = k
 suffixGrace k xs    = k +++ grace gblock
   where
@@ -200,21 +203,23 @@ suffixGrace k xs    = k +++ grace gblock
 
 
        
-oflat :: (LyRenderable evt) =>
-         Ly CT_Element -> ViewL (EvtPosition evt) -> RenderM (Ly CT_Element)    
+oflat :: (Perform evt) =>
+         Ly CT_Element -> ViewL (EvtPosition evt) -> RenderM (Ly CT_Element)
+             
 oflat lyk  EmptyL               = return lyk 
 
 oflat lyk (Evt e :< sq)         = do
-    e'        <- pitchOrRest'duration e
-    oflat (lyk `suffix` e') (viewl sq)
+    ez        <- eventZero e
+    updateCurrentPitch ez
+    oflat (lyk `suffix` ez) (viewl sq)
 
 oflat lyk (Sequence ts :< sq)   = do
     lyk'      <- oflat lyk (viewl sq) 
-    xs        <- mapM (oflat elementBlk) (map viewl ts)
+    xs        <- mapM (oflat elementBlk) (map (viewl . unET) ts)
     return (merge lyk' xs)  
     
 oflat lyk (StartPar :< sq)      =
-    oflatPar (lyk,[]) (viewl sq)
+    oflatPar (lyk,Nothing,emptyseq) (viewl sq)
    
 oflat lyk (StartPre :< sq)      =
     oflatPre (lyk,[]) (viewl sq)
@@ -223,21 +228,26 @@ oflat lyk _                     =
     error "Invalid EventTree"
     
     
--- successive notes in a chord shouldn't change relative pitch            
-oflatPar (lyk,stk) (Evt e :< sq) = do
-    e'              <- pitchOrRest'duration e
-    oflatPar (lyk, (e':stk)) (viewl sq)
-  
-oflatPar (lyk,stk) (EndPar :< sq) = 
+-- Important: successive notes in a chord shouldn't change relative pitch
+           
+oflatPar (lyk,ofirst,stk) (Evt e :< sq) = do
+    ez              <- eventZero e
+    ofirst' <- fn ofirst ez
+    oflatPar (lyk,ofirst',(stk |> ez)) (viewl sq)
+  where
+    fn Nothing ez@(ZeroPitch p _ _) = updateCurrentPitch ez >> return (Just p)
+    fn a       _                    = return a
+      
+oflatPar (lyk,ofirst,stk) (EndPar :< sq) = 
     oflat (suffixChord lyk stk) (viewl sq)
       
-oflatPar (lyk,stk) _              = 
+oflatPar (lyk,ofirst,stk) _              = 
     error "unterminated Par"
     
     
 oflatPre (lyk,stk) (Evt e :< sq)  = do
-    e'              <- pitchOrRest'duration e
-    oflatPre (lyk, (e':stk)) (viewl sq)
+    ez              <- eventZero e
+    oflatPre (lyk, (ez:stk)) (viewl sq)
   
 oflatPre (lyk,stk) (EndPre :< sq) = 
     oflat (suffixGrace lyk stk) (viewl sq)
@@ -255,12 +265,12 @@ merge k (x:xs) = let poly = foldl fn (block x) xs in
   where
     fn acc a = acc \\ (block a)
 
-run'oflat :: (LyRenderable t) 
-          => Ly CT_Element -> Seq (EvtPosition t) -> RenderM (Ly CT_Element)                 
-run'oflat elt_list t = oflat elt_list (viewl t) 
+run'oflat :: (Perform evt) 
+          => Ly CT_Element -> EventTree evt -> RenderM (Ly CT_Element)                 
+run'oflat elt_list t = oflat elt_list (viewl $ unET t) 
 
 
-renderLy1 :: (LyRenderable evt) =>
+renderLy1 :: (Perform evt) =>
   Ly CT_Element -> EventTree evt -> RenderSt -> Ly CT_Element 
 renderLy1 init_ly tree env = evalState (run'oflat init_ly tree) env
  

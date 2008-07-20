@@ -78,6 +78,7 @@ sequenceS f = Sequence f
 attr o e attr = Attr o e attr 
 
 
+
 ----
 run :: Pretty a => a -> IO ()   
 run = putDoc . pretty 

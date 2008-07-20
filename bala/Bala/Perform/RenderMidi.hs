@@ -14,13 +14,14 @@
 
 module Bala.Perform.RenderMidi where
 
-
+import Bala.Perform.EventTree
 import Bala.Perform.Mergesort
+import Bala.Perform.PerformClass
 
 import Bala.Base
 import qualified Bala.Format.Midi as MIDI
 import Bala.Format.Midi.SyntaxElements
-import Bala.Perform.EventTree
+
 
 import Control.Applicative hiding (empty)
 import Control.Monad.State
@@ -49,7 +50,35 @@ default_midi_st = RenderSt lilypond_ticks 1 500000
 
 runProcess  = evalState
 
-  
+-- The initial flattening pass generates one of: 
+-- a. Pitch with duration - later split to NoteOn and NoteOff events
+-- b. Midi messages themselves
+-- c. NoEvent - in MIDI a NoEvent might still have a duration (if its a rest)
+
+data EventZero = ZeroPitch Pitch Integer 
+               | ZeroMidi MIDI.Event Integer
+               | ZeroNoEvent Integer
+
+eventZero :: Perform evt => evt -> ProcessM EventZero
+eventZero e = case opitch e of
+    Nothing -> ZeroNoEvent   <$> calcDuration_p e
+    Just p  -> (ZeroPitch p) <$> calcDuration_p e
+
+calcDuration_p :: Perform evt => evt -> ProcessM Integer
+calcDuration_p e = case oduration e of 
+    Nothing -> return 0
+    Just d  -> (flip calculateTicks) d <$> gets tick_value
+
+ezDuration (ZeroPitch _ i)  = i 
+ezDuration (ZeroMidi _ i)   = i
+ezDuration (ZeroNoEvent i)  = i
+                
+
+
+
+
+---     
+{-  
 class Renderable a where 
     duration           :: a -> Duration
     generates          :: a -> Maybe (a -> ProcessM (Either Pitch MIDI.Event))
@@ -58,6 +87,12 @@ calcDuration :: Renderable a => a -> ProcessM Integer
 calcDuration e = let d = duration e in 
                  gets tick_value >>= \t -> 
                  return $ calculateTicks t d
+
+
+-}
+
+
+    
              
 channel ::  ProcessM Word8
 channel = gets track_number   
@@ -65,12 +100,14 @@ channel = gets track_number
 newTrack :: ProcessM ()
 newTrack = gets track_number >>= \t -> modify (\s -> s { track_number = t+1 })   
 
-
+{-
 generatesEvent :: Renderable evt => evt -> ProcessM (Maybe (Either Pitch MIDI.Event))
 generatesEvent evt = 
   case generates evt of 
     Just f -> f evt >>= (return . Just) 
     Nothing -> return Nothing
+-}
+
 
   
 -- | Flatten the event tree into a sequence of events paired with global time.
@@ -83,39 +120,47 @@ oflat :: Renderable evt =>
  
 
 oflat (i,ksq) EmptyL              = return (i, ksq)
-
+{-
 oflat (i,ksq) (Evt evt :< sq)     = do 
     d           <- calcDuration evt
     oe          <- generatesEvent evt
     case oe of 
       Nothing -> oflat (i+d, ksq) (viewl sq)
       Just e  -> oflat (i+d, ksq |> (i,(e,d))) (viewl sq)
+-}
 
+
+oflat (i,ksq) (Evt evt :< sq)     = do
+    ez <- eventZero evt
+    oflat (i + ezDuration ez, ksq |> (i,ez)) (viewl sq)
 
 oflat (i,ksq) (StartPar :< sq)    =
-    oflatPar (i,ksq) (viewl sq)
+    oflatPar (i,0,ksq) (viewl sq)
    
 oflat (i,ksq) (StartPre :< sq)    =
     oflatPre (i,ksq) (viewl sq)
     
 oflat (i,ksq) (Sequence ts :< sq) = do
-    xs          <- mapM (oflat (i,empty)) (map viewl ts)   
+    xs          <- mapM (oflat (i,empty)) (map (viewl . unET) ts)   
     oflat (merge (i,ksq) xs) (viewl sq)
     
-oflat (i,ksq) _                     =
-    error "Invalid EventTree"
+oflat (i,ksq) x                   =
+    error $ "Invalid EventTree - " ++ fn x
+  where
+    fn (EndPar :< _)              = "out of place EndPar" 
+    fn (EndPre :< _)              = "out of place EndPre" 
+    fn _                          = "unexpected element"
+    
+-- the last oflatPar should increase i, but it doesn't
+oflatPar (i,_,ksq) (Evt evt :< sq)    = do
+    ez <- eventZero evt
+    oflatPar (i, ezDuration ez,ksq |> (i,ez)) (viewl sq)
 
-oflatPar (i,ksq) (Evt evt :< sq)    = do
-    d           <- calcDuration evt
-    oe          <- generatesEvent evt
-    case oe of 
-      Nothing -> oflatPar (i, ksq)              (viewl sq)
-      Just e  -> oflatPar (i, ksq |> (i,(e,d))) (viewl sq) 
   
-oflatPar (i,ksq) (EndPar :< sq)     = 
-    oflat (i,ksq) (viewl sq)
+oflatPar (i,d,ksq) (EndPar :< sq)     = 
+    oflat (i+d,ksq) (viewl sq)
       
-oflatPar (i,ksq) _                  = 
+oflatPar (i,d,ksq) _                  = 
     error "unterminated Par"
     
     
@@ -133,11 +178,12 @@ merge :: (Integer, Seq a) -> [(Integer, Seq a)] -> (Integer, Seq a)
 merge (i,sq) xs = (undefined, foldl (><) sq (map snd xs)) 
 
 
-
+{-
 oflatPass :: Renderable evt 
           => EventTree evt 
           -> ProcessM (Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer)))  
-oflatPass t = snd <$> oflat (0,empty) (viewl t)
+-}
+oflatPass sq = snd <$> oflat (0,empty) (viewl sq)
 
 
 
@@ -168,19 +214,22 @@ noteOnOff gt p d = do
   noff  <- noteOff' p
   return $ (MidiMessage gt no, MidiMessage (gt+d) noff)
 
-  
+{-  
 splitNoteStep  :: (Seq MidiMessage)
                -> ClockedEvent ((Either Pitch MIDI.Event), Integer) 
                -> ProcessM (Seq MidiMessage)
-splitNoteStep sq e@(gt,(Left p,d)) = do 
+-}
+splitNoteStep sq e@(gt,(ZeroPitch p d))   = do 
     (on,off)  <- noteOnOff gt p d 
-    return $  sq |> on |> off
+    return $ sq |> on |> off
 
-splitNoteStep sq e@(gt,(Right msg,d)) = do 
-    return $  sq |> (MidiMessage gt msg)
+splitNoteStep sq e@(gt,(ZeroMidi msg d))  = do 
+    return $ sq |> (MidiMessage gt msg)
+
+splitNoteStep sq _                        = return $ sq 
+        
     
-    
-splitNotePass :: Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer)) -> ProcessM (Seq MidiMessage)
+-- splitNotePass :: Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer)) -> ProcessM (Seq MidiMessage)
 splitNotePass = F.foldlM splitNoteStep empty 
     
     
@@ -218,14 +267,15 @@ listPass = return . toList
 
 
 
-processTrack :: Renderable evt => EventTree evt -> ProcessM MIDI.Track
-processTrack = (return . MIDI.Track) 
-                    <=< listPass      <=< finalizeTrack 
-                    <=< deltaPass     <=< sortPass  
-                    <=< splitNotePass <=< oflatPass
+processTrack :: Perform evt => EventTree evt -> ProcessM MIDI.Track
+processTrack tree = MIDI.Track <$> steps (unET tree)
+  where 
+    steps = listPass <=< finalizeTrack 
+                     <=< deltaPass     <=< sortPass  
+                     <=< splitNotePass <=< oflatPass
 
 
-processPerformance :: Renderable evt => Performance evt -> ProcessM MIDI.MidiFile
+processPerformance :: Perform evt => Performance evt -> ProcessM MIDI.MidiFile
 processPerformance p@(Perf xs) = do 
     hdr <- midiHeader p
     t0 <- trackZero 
@@ -235,7 +285,7 @@ processPerformance p@(Perf xs) = do
     fn acc a = processTrack a >>= \t -> newTrack >> return (t : acc)
 
 
-midiHeader :: Renderable evt => Performance evt -> ProcessM MIDI.Header
+midiHeader :: Perform evt => Performance evt -> ProcessM MIDI.Header
 midiHeader (Perf xs) = do 
     tpqn <- gets tick_value
     return $ format1_header (1 + length xs) (tpb tpqn) 
@@ -250,15 +300,15 @@ trackZero = do
     return $ MIDI.Track [stm, endOfTrack_zero] 
 
 notes :: EventTree (Pitch,a) -> String
-notes = afficherL . F.foldr note []
+notes = afficherL . F.foldr note [] . unET
   where note (Evt (n,_)) acc = n:acc
         note _           acc = acc
 
-renderMidi1 :: (Renderable evt) => EventTree evt -> RenderSt -> MIDI.MidiFile
+renderMidi1 :: (Perform evt) => EventTree evt -> RenderSt -> MIDI.MidiFile
 renderMidi1 tree env = renderMidi (Perf [tree]) env
 
 
-renderMidi :: (Renderable evt) => Performance evt -> RenderSt -> MIDI.MidiFile
+renderMidi :: (Perform evt) => Performance evt -> RenderSt -> MIDI.MidiFile
 renderMidi perf env = evalState (processPerformance perf) env
 
 
