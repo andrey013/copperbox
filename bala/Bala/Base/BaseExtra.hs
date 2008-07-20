@@ -37,7 +37,7 @@ module Bala.Base.BaseExtra (
   applyi, zam, 
   mod12, mod7,
   sub, sub1, 
-  andthen, ora, anda, 
+  andthen, ora, anda,
   dyap, triap, 
   hexStr, 
   
@@ -358,19 +358,21 @@ instance Applicative (GenParser tok st) where
   (<*>) = ap
   
 -- | Use a Parsec parser like a ReadS parser. 
-readsParsec :: (Parser a) -> String -> [(a,String)]
+readsParsec :: (GenParser Char () a) -> String -> [(a,String)]
 readsParsec p s = case parse pfn "" s of
                     Left _ -> []
                     Right a -> [a] 
   where pfn = (,) <$> p <*> getInput
 
 -- | Match the longest string.
-longestString :: [String] -> Parser String
+longestString :: [String] -> GenParser Char st String
 longestString = choice . map (try . string) . reverse . sortBy longer
   where longer a b = (length a) `compare` (length b)
 
 -- | Match the longest string and apply f to interpret it.
-withLongestString :: (String -> Parser b) ->  [(String,a)] -> Parser a
+withLongestString :: (String -> GenParser Char st b) 
+                  -> [(String,a)] 
+                  -> GenParser Char st a
 withLongestString f = choice . map (try . interp f) . reverse . sortBy longer
   where 
     longer (a,_) (b,_) = (length a) `compare` (length b)
@@ -378,70 +380,72 @@ withLongestString f = choice . map (try . interp f) . reverse . sortBy longer
     
     
 -- | Wrap Parsec's @oneOf@ with a Maybe to handle failure. 
-optOneOf :: [Char] -> Parser (Maybe Char)    
+optOneOf :: [Char] -> GenParser Char st (Maybe Char)    
 optOneOf cs = optparse $ oneOf cs
 
 -- | An alternative to Parsec's @option@ parser. Whereas option returns a 
 -- default value if the parse fails, optparse wraps success and failure in
 -- a Maybe.
-optparse :: Parser a -> Parser (Maybe a)
+optparse :: GenParser Char st a -> GenParser Char st (Maybe a)
 optparse p = option Nothing (try $ Just <$> p)
 
 -- | Wrap Parser's alterative (\<|\>) combinator with the Either type to 
 -- get different types for the left and right parse.
-eitherparse :: Parser a -> Parser b -> Parser (Either a b)
+eitherparse :: GenParser Char st a 
+            -> GenParser Char st b 
+            -> GenParser Char st (Either a b)
 eitherparse p p' = (Left <$> p) <|> (Right <$> p')
 
 -- | Return the count of the number of parses, rather than a list of elements.
 -- (Note the @count@ combinator in Parsec works differently, it will parse a 
 -- element n times).
-counting :: Parser a -> Parser Int
+counting :: GenParser Char st a -> GenParser Char st Int
 counting  p = length <$> many p
 
 -- | Version of @counting@ that must succeed at least once.
-counting1 :: Parser a -> Parser Int
+counting1 :: GenParser Char st a -> GenParser Char st Int
 counting1 p = length <$> many1 p
 
 -- | A digit seuence, returning Int.
-positiveInt :: Parser Int
+positiveInt :: GenParser Char st Int
 positiveInt = read <$> many1 digit
 
 -- | A signed digit sequence, returning Int.
-signedInt :: Parser Int
+signedInt :: GenParser Char st Int
 signedInt   = (\ a b -> read (a:b)) <$> sign <*> many1 digit
   where sign        = oneOf "+-"
 
 
 
 -- | Parsec's @double@ parser, coerced to return float.
-float             :: Parser Float
+float             :: GenParser Char st Float
 float             = fromRational . toRational <$> double
 
 -- | Parsec's @integer@ parser, coerced to return Int.
-int               :: Parser Int
+int               :: GenParser Char st Int
 int               = fromIntegral <$> integer 
 
 -- | Parsec's @digit@ parser, coerced to return Int rather than Char.
-digiti            :: Parser Int
+digiti            :: GenParser Char st Int
 digiti            = (flip (-) 48) . ord  <$> digit
 
 
 -- | Like Parsec's @stringLiteral@ but with a more general type.
-doubleQuoted :: Parser a -> Parser a
+doubleQuoted :: GenParser Char st a -> GenParser Char st a
 doubleQuoted p = char '"' *> p <* char '"'
 
 -- | Wrap Parsec's @string@ parser to consume trailing whitespace.
-lexString :: String -> Parser String
+lexString :: String -> GenParser Char st String
 lexString   = lexeme . string
 
 -- | Wrap Parsec's @char@ parser to consume trailing whitespace.
-lexChar :: Char -> Parser Char
+lexChar :: Char -> GenParser Char st Char
 lexChar   = lexeme . char
 
 -- | Island parsing (does it work?)
 -- It generates a parse error if we get to eof without parsing p
 -- which is what we want.
-water :: Parser a -> Parser a
+water :: GenParser Char st a -> GenParser Char st a
 water p = do
     a <- optparse p    
     case a of
@@ -450,7 +454,7 @@ water p = do
 
 
 -- | Collect the water as a string until p parses.     
-collectWater :: Parser a -> Parser (String,a)
+collectWater :: GenParser Char st a -> GenParser Char st (String,a)
 collectWater p = colwater []
   where
     colwater cs  =  do
