@@ -82,6 +82,9 @@ g #. f = f . g
 (|*>) (ET t) evt = ET $ t |> evt
 
 
+perf :: [EventTree evt] -> Performance evt
+perf = Perf
+
 root :: EventTree evt
 root = ET empty
 

@@ -27,7 +27,6 @@ data NrEvent = Note Pitch Duration
 
 
 
--- Perform will (should) replace Renderable 
 instance Perform NrEvent where
   opitch (Note p _) = Just p
   opitch (Rest _)   = Nothing
@@ -100,11 +99,11 @@ bulgarian6_ly =
 demo_ly = printLy bulgarian6_ly
 
 main =  do
-    writeMidi "bulgarian6.midi" bulgarian6_midi
+    writeMidi "out/bulgarian6.midi" bulgarian6_midi
     writeLy lyfile bulgarian6_ly
-    execLilyPondOn lyfile  
+    execLilyPondOn lyfile
   where
-    lyfile = "bulgarian6.ly" 
+    lyfile = "out/bulgarian6.ly" 
     
     bulgarian6_midi = renderMidi bulgarian6 default_midi_st  
   

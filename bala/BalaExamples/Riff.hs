@@ -50,10 +50,10 @@ riff_abc =
     
 
 main = do
-    writeMidi "riff.midi" riff_midi
-    writeLy "riff.ly" riff_ly
-    execLilyPondOn "riff.ly"
-    writeAbc "riff-abc.abc" riff_abc
-    execAbcm2psOn "riff-abc.abc" "riff-abc.ps"
+    writeMidi "out/riff.midi" riff_midi
+    writeLy "out/riff.ly" riff_ly
+    execLilyPondOn "out/riff.ly"
+    writeAbc "out/riff-abc.abc" riff_abc
+    execAbcm2psOn "out/riff-abc.abc" "out/riff-abc.ps"
   where
     riff_midi = renderMidi1 riff default_midi_st 

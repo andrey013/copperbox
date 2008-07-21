@@ -32,6 +32,8 @@ printLy e = putStr ((displayS (simpledoc e) []) ++ "\n")
 writeLy :: FilePath -> Ly a -> IO ()
 writeLy filename e = writeFile filename ((displayS (simpledoc e) []) ++ "\n")
 
+-- | execLilyPondOn infile outfile - don't add extension to outfile
+-- lilypond will suffix @.ps@ and @.pdf@.
 execLilyPondOn :: FilePath -> IO ()
 execLilyPondOn filename = do
     ph <- runCommand ("lilypond " ++ filename)  
