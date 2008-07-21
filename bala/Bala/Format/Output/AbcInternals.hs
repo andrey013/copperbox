@@ -308,7 +308,7 @@ body a = abcSeq2 (<$>) a (abcLiteral empty)
 data CT_Element
 
 tune :: Abc CT_Element
-tune = Abc $ sequenceS (<+>) emptyseq
+tune = Abc $ sequenceS (</>) emptyseq
 
 -- ** Pitch (4.1)
 

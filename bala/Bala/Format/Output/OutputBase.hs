@@ -22,8 +22,9 @@ module Bala.Format.Output.OutputBase where
 import Text.PrettyPrint.Leijen hiding (empty)
 import qualified Text.PrettyPrint.Leijen as PP
 
-import Data.Sequence
 import qualified Data.Foldable as F
+import Data.Sequence
+
 
 
 infixr 6 << 

@@ -73,6 +73,9 @@ lySeq2 op (Ly a) (Ly b) = Ly $ sequenceL op [a,b]
 lySeq3 :: Caten Doc -> Ly a -> Ly b -> Ly c -> Ly o
 lySeq3 op (Ly a) (Ly b) (Ly c) = Ly $ sequenceL op [a,b,c]
 
+lySeq4 :: Caten Doc -> Ly a -> Ly b -> Ly c -> Ly d -> Ly o
+lySeq4 op (Ly a) (Ly b) (Ly c) (Ly d) = Ly $ sequenceL op [a,b,c,d]
+
 
 -- | Prefix a command name with \\.
 cmd :: String -> Ly o
@@ -83,6 +86,13 @@ command1 s a = lySeq2 (<+>) (cmd s) a
 
 command2 :: String -> Ly a -> Ly b -> Ly o 
 command2 s a b = lySeq3 (<+>) (cmd s) a b
+
+command1break :: String -> Ly a -> Ly o
+command1break s a = lySeq3 (<+>) (cmd s) a lyLinebreak
+
+command2break :: String -> Ly a -> Ly b -> Ly o 
+command2break s a b = lySeq4 (<+>) (cmd s) a b lyLinebreak
+
 
 context :: String -> Ly o
 context =  lyLit . text
@@ -142,7 +152,7 @@ data CT_Book
 data CT_Element 
 
 elementBlk          ::  Ly CT_Element
-elementBlk          = Ly $ sequenceS (<+>) emptyseq
+elementBlk          = Ly $ sequenceS (</>) emptyseq
 
 --------------------------------------------------------------------------------
 -- ** Commenting input files (2.12)
@@ -436,7 +446,7 @@ instance Append CT_Element Poly
 data CmdClef
 
 clef :: Ly ClefType -> Ly CmdClef
-clef = command2 "clef" lyLinebreak
+clef = command1break "clef"
 
 instance Append CT_Element CmdClef
  
@@ -453,7 +463,7 @@ cleftype = lyLit . text
 data CmdKey
 
 key :: Ly Pitch -> Ly CmdKeyType -> Ly CmdKey
-key = command2 "key"
+key = command2break "key"
 
 instance Append CT_Element CmdKey
 

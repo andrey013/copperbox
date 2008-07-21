@@ -7,13 +7,15 @@ import TabBase
 import TabParser
 
 import Bala.Base
+import Bala.Format.Output.OutputLilyPond hiding (Pitch, Duration, chord)
 import Bala.Perform.EventTree
 import Bala.Perform.PerformClass
 import Bala.Perform.PerformLilyPond
 import Bala.Perform.PerformMidi
 
+
 import qualified Data.Foldable as F
-import Data.List (nub, groupBy)
+import Data.List (nub, groupBy, sortBy)
 import qualified Data.Map as M
 import Data.Sequence hiding (drop)
 
@@ -67,8 +69,11 @@ buildEvtTree tree xs = let xss = groupBy onsetTime xs
     onsetTime a b = onset a == onset b
     
     fn tree [e] = tree # event e
-    fn tree xs  = tree # chord xs
-    
+    fn tree xs  = tree # chord (sortBy comparePitch xs)
+
+
+comparePitch (EvtNote p _) (EvtNote p' _) = p' `compare` p'
+      
          
 onset (EvtNote _ (o,_)) = o 
 onset (EvtRest (o,_))   = o
@@ -90,9 +95,27 @@ sbt_lines = [63,76,88,97,106,115]
 fahey_lines = [37,46,54,62,70,78]
   
 main = do
-    -- sq <- parseTabfile "sbt.txt" sbt_lines (state_zero standard_tuning)
-    sq <- parseTabfile "fahey.txt" fahey_lines (state_zero standard_tuning)
+    sq <- parseTabfile "sbt.txt" sbt_lines (state_zero standard_tuning)
+   -- sq <- parseTabfile "fahey.txt" fahey_lines (state_zero standard_tuning)
     writeMidi "tab2.midi" (toMidi sq)
+    writeLy "tab1.ly" (tab_ly $ processTab sq)
+    
   where
     toMidi sq = renderMidi1 (processTab sq) default_midi_st 
-            
+
+
+tab_template musicexpr = 
+    toplevel 
+      +++ version "2.10.3" 
+      +++ header (headerBlk +++ title "tab")
+      +++ book
+            (block (score 
+                      (block (relative (_c ! raised 1) musicexpr))))
+  
+
+tab_ly tree = 
+  let expr    = elementBlk +++ key _a major +++ clef treble
+      env     = withRelativePitch c4 st_zero
+      ly_expr = renderLy1 expr tree env
+  in tab_template ly_expr
+              
