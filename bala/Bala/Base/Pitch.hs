@@ -35,6 +35,11 @@ module Bala.Base.Pitch (
   
   -- * Named elements
   -- $nameddoc 
+  c_natural, d_natural, e_natural, f_natural, g_natural, a_natural, b_natural,
+  c_sharp, d_flat, d_sharp, e_flat, f_sharp, 
+  g_flat, g_sharp, a_flat, a_sharp, b_flat,
+
+
   middle_c,
   c4, d4, e4, f4, g4, a4, b4,
   c4is, d4es, d4is, e4es, f4is, g4es, g4is, a4es, a4is, b4es,
@@ -549,6 +554,62 @@ instance Affi PitchLetter where
 -- Pre-defined pitches. Middle c is @c4@, octaves start on c. 
 -- Sharp and flat notes follow the LilyPond convention with suffix of @is@ for 
 -- a sharp and @es@ for a flat.
+
+pnat l    = PitchName l Nat
+psharp l  = PitchName l Sharp
+pflat l   = PitchName l Flat
+
+c_natural   :: PitchName
+c_natural   = pnat C
+
+d_natural   :: PitchName
+d_natural   = pnat D
+
+e_natural   :: PitchName
+e_natural   = pnat E
+
+f_natural   :: PitchName
+f_natural   = pnat F
+
+g_natural   :: PitchName 
+g_natural   = pnat G
+
+a_natural   :: PitchName
+a_natural   = pnat A
+
+b_natural   :: PitchName 
+b_natural   = pnat B
+
+c_sharp     :: PitchName
+c_sharp     = psharp C
+ 
+d_flat      :: PitchName  
+d_flat      = pflat D
+
+d_sharp     :: PitchName 
+d_sharp     = psharp D
+
+e_flat      :: PitchName  
+e_flat      = pflat E
+
+f_sharp     :: PitchName 
+f_sharp     = psharp F
+
+g_flat      :: PitchName  
+g_flat      = pflat G
+
+g_sharp     :: PitchName 
+g_sharp     = psharp G
+
+a_flat      :: PitchName  
+a_flat      = pflat A
+
+a_sharp     :: PitchName 
+a_sharp     = psharp A
+
+b_flat      :: PitchName
+b_flat      = pflat B
+
 
 pchNat n o    = pitch (naturalNote n) o
 pchSharp n o  = pitch (sharpNote n) o

@@ -46,7 +46,7 @@ riff_ly =
 riff_abc = 
   let env       = abcEnv eighth (4//4)
       abc_expr  = renderAbc1 empty_body riff env
-  in abc_template "Riff" abc_expr
+  in abc_template (abc_header_defaults {abc_title = "Riff"} ) abc_expr
     
 
 main = do

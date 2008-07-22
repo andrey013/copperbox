@@ -103,7 +103,8 @@ run6 = do
     writeMidi "out/example6.midi" example6_midi
   where
     example6_midi = renderMidi example6 default_midi_st  
-    
+
+
 -- example 7 - same staff parallel - should be rendered as one track in Midi
 -- and on the same staff in Abc and LilyPond      
 example7 :: EventTree NrEvent

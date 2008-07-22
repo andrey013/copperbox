@@ -12,9 +12,14 @@ runhaskell -i.. Riff.hs
 runhaskell -i.. Bulgarian6.hs
 
 # read what you have written
-runhaskell -i.. MidiPrint.hs bulgarian6.midi > /dev/null
+runhaskell -i.. MidiPrint.hs out/bulgarian6.midi > /dev/null
 
-runhaskell -i.. Korda.hs 
+runhaskell -i.. Korda.hs
+
+# annoying but the '--output=' directive for LilyPond isn't doing what I expect
+# and we don't want the BalaExamples directory full of pdf and ps files 
+mv *.pdf out/
+mv *.ps out/ 
 
 cd ../tests
 

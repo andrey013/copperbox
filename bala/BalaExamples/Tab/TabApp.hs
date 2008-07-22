@@ -97,9 +97,9 @@ fahey_lines = [37,46,54,62,70,78]
 main = do
     sq <- parseTabfile "sbt.txt" sbt_lines (state_zero standard_tuning)
    -- sq <- parseTabfile "fahey.txt" fahey_lines (state_zero standard_tuning)
-    writeMidi "tab2.midi" (toMidi sq)
-    writeLy "tab1.ly" (tab_ly $ processTab sq)
-    
+    writeMidi "../out/tab1.midi" (toMidi sq)
+    writeLy "../out/tab1.ly" (tab_ly $ processTab sq)
+    execLilyPondOn "../out/tab1.ly"
   where
     toMidi sq = renderMidi1 (processTab sq) default_midi_st 
 
@@ -114,7 +114,7 @@ tab_template musicexpr =
   
 
 tab_ly tree = 
-  let expr    = elementBlk +++ key _a major +++ clef treble
+  let expr    = elementBlk +++ key _g major +++ clef treble
       env     = withRelativePitch c4 st_zero
       ly_expr = renderLy1 expr tree env
   in tab_template ly_expr
