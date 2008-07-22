@@ -14,20 +14,38 @@
 
 module Bala.Perform.RenderMidi where
 
-import Bala.Perform.EventTree
-import Bala.Perform.Mergesort
-import Bala.Perform.PerformClass
-
 import Bala.Base
 import qualified Bala.Format.Midi as MIDI
 import Bala.Format.Midi.SyntaxElements
+import Bala.Perform.EventTree
+import Bala.Perform.Mergesort
+import Bala.Perform.PerformBase
 
 
 import Control.Applicative hiding (empty)
+import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Foldable as F
 import Data.Sequence hiding (reverse, length)
 import Data.Word
+
+
+type ClockedEvent evt = (Integer, evt)
+type ProcessM a = PerformM Perform_Midi_State Perform_Midi_Env a
+
+
+data Perform_Midi_State = Perform_Midi_State { 
+    track_number      :: Word8,
+    midi_tempo        :: Word32
+  }  
+  deriving (Show)
+  
+data Perform_Midi_Env = Perform_Midi_Env {
+    tick_value    :: Integer
+  }
+  deriving (Show)
+
+
 
 
 lilypond_ticks, abc_ticks :: Integer
@@ -35,20 +53,15 @@ abc_ticks       = 480
 lilypond_ticks  = 384
 
 
-type ClockedEvent evt = (Integer, evt)
-type ProcessM a = State RenderSt a
+intial_midi_state :: Perform_Midi_State  
+intial_midi_state = Perform_Midi_State { track_number = 1,
+                                         midi_tempo   = 500000 }
+
+default_midi_env :: Perform_Midi_Env
+default_midi_env = Perform_Midi_Env { tick_value = lilypond_ticks }
 
 
-data RenderSt = RenderSt { 
-    tick_value        :: Integer,
-    track_number      :: Word8,
-    midi_tempo        :: Word32
-  }  
-  
-default_midi_st = RenderSt lilypond_ticks 1 500000
 
-
-runProcess  = evalState
 
 -- The initial flattening pass generates one of: 
 -- a. Pitch with duration - later split to NoteOn and NoteOff events
@@ -67,7 +80,7 @@ eventZero e = case opitch e of
 calcDuration_p :: Perform evt => evt -> ProcessM Integer
 calcDuration_p e = case oduration e of 
     Nothing -> return 0
-    Just d  -> (flip calculateTicks) d <$> gets tick_value
+    Just d  -> (flip calculateTicks) d <$> asks tick_value
 
 ezDuration (ZeroPitch _ i)  = i 
 ezDuration (ZeroMidi _ i)   = i
@@ -287,7 +300,7 @@ processPerformance p@(Perf xs) = do
 
 midiHeader :: Perform evt => Performance evt -> ProcessM MIDI.Header
 midiHeader (Perf xs) = do 
-    tpqn <- gets tick_value
+    tpqn <- asks tick_value
     return $ format1_header (1 + length xs) (tpb tpqn) 
 
 setTempoMessage :: ProcessM MIDI.Message
@@ -304,12 +317,16 @@ notes = afficherL . F.foldr note [] . unET
   where note (Evt (n,_)) acc = n:acc
         note _           acc = acc
 
-renderMidi1 :: (Perform evt) => EventTree evt -> RenderSt -> MIDI.MidiFile
-renderMidi1 tree env = renderMidi (Perf [tree]) env
+renderMidi1 :: (Perform evt) 
+            => EventTree evt -> Perform_Midi_Env -> MIDI.MidiFile
+renderMidi1 tree env = 
+    renderMidi (Perf [tree]) env
 
 
-renderMidi :: (Perform evt) => Performance evt -> RenderSt -> MIDI.MidiFile
-renderMidi perf env = evalState (processPerformance perf) env
+renderMidi :: (Perform evt) 
+           => Performance evt -> Perform_Midi_Env -> MIDI.MidiFile
+renderMidi perf env = 
+    evalPerform (processPerformance perf) intial_midi_state env
 
 
 

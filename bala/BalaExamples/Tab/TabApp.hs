@@ -9,7 +9,7 @@ import TabParser
 import Bala.Base
 import Bala.Format.Output.OutputLilyPond hiding (Pitch, Duration, chord)
 import Bala.Perform.EventTree
-import Bala.Perform.PerformClass
+import Bala.Perform.PerformBase
 import Bala.Perform.PerformLilyPond
 import Bala.Perform.PerformMidi
 
@@ -101,7 +101,7 @@ main = do
     writeLy "../out/tab1.ly" (tab_ly $ processTab sq)
     execLilyPondOn "../out/tab1.ly"
   where
-    toMidi sq = renderMidi1 (processTab sq) default_midi_st 
+    toMidi sq = renderMidi1 (processTab sq) default_midi_env
 
 
 tab_template musicexpr = 
@@ -115,7 +115,7 @@ tab_template musicexpr =
 
 tab_ly tree = 
   let expr    = elementBlk +++ key _g major +++ clef treble
-      env     = withRelativePitch c4 st_zero
-      ly_expr = renderLy1 expr tree env
+      env     = default_ly_env { initial_ly_context = expr }
+      ly_expr = renderLy1 tree env
   in tab_template ly_expr
               

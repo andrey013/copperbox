@@ -16,38 +16,49 @@
 
 module Bala.Perform.RenderAbc where
 
-import Bala.Perform.EventTree hiding (chord, grace)
-import Bala.Perform.PerformClass
 
 import qualified Bala.Base as B
 import Bala.Format.Output.OutputAbc hiding (Sequence)
+import Bala.Perform.EventTree hiding (chord, grace)
+import Bala.Perform.PerformBase
+
 
 import Control.Applicative
+import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Foldable as F
 import Data.Sequence
 import Data.Ratio
 
-type RenderM a = State RenderSt a
+
+type ProcessM a = PerformM Perform_Abc_State Perform_Abc_Env a
 
 
-data RenderSt = RenderSt { 
+data Perform_Abc_State = Perform_Abc_State { 
+    bar_duration_count      :: Double
+  }  
+  deriving (Show)
+  
+data Perform_Abc_Env = Perform_Abc_Env {
     default_note_length     :: B.Duration,
     meter_size              :: Double,
-    bar_duration_count      :: Double
+    initial_abc_context     :: Abc CT_Element
+  }
+  deriving (Show)
+  
+
+intial_abc_state = Perform_Abc_State { 
+    bar_duration_count    = 0
+  } 
+  
+default_abc_env :: Perform_Abc_Env
+default_abc_env = Perform_Abc_Env {
+    default_note_length   = B.eighth,
+    meter_size            = B.meterSize (4 B.// 4),
+    initial_abc_context   = tune   
   } 
 
-instance Applicative (State RenderSt) where
-  pure = return
-  (<*>) = ap
-  
-  
-abcEnv :: B.Duration -> B.MeterFraction -> RenderSt
-abcEnv dnl mf = RenderSt 
-    { default_note_length   = dnl,
-      meter_size            = B.meterSize mf,
-      bar_duration_count    = 0      
-      }
+
 
 -- ZeroPitch & ZeroRest tracks the original (Base) duration so it can 
 -- be used to update the render state if necessary
@@ -58,13 +69,8 @@ data EventZero =
   | ZeroUnknown
 
    
-class AbcRenderable a where
-    isPitch             :: a -> Bool
-    isRest              :: a -> Bool
-    durationOf          :: a -> B.Duration
-    pitchOf             :: a -> B.Pitch
   
-runRenderAbc  = evalState  
+ 
 
 (*!) e oa   = maybe e (e !) oa
 
@@ -79,10 +85,10 @@ optAddR sq (Just e)  = sq +++ e
 
 
 
-barCount :: B.Duration -> RenderM (Maybe (Abc Elt_RepeatMark))        
+barCount :: B.Duration -> ProcessM (Maybe (Abc Elt_RepeatMark))        
 barCount dur = let d = B.durationSize dur in do
     c     <- gets bar_duration_count
-    ms    <- gets meter_size 
+    ms    <- asks meter_size 
     fn (c+d) ms
   where
     fn dc ms 
@@ -130,8 +136,8 @@ abcPitch p =
                           | otherwise = pl              
     
 
-abcDuration :: B.Duration -> RenderM (Maybe (Abc Attr_Duration))
-abcDuration d = fn d <$> gets default_note_length
+abcDuration :: B.Duration -> ProcessM (Maybe (Abc Attr_Duration))
+abcDuration d = fn d <$> asks default_note_length
   where
     fn dur1 deft
       | dur1 == deft  = Nothing
@@ -142,7 +148,7 @@ abcDuration d = fn d <$> gets default_note_length
 
 
 
-updateBarCount :: Abc CT_Element -> EventZero -> RenderM (Abc CT_Element)
+updateBarCount :: Abc CT_Element -> EventZero -> ProcessM (Abc CT_Element)
 updateBarCount k ez = case hasDur ez of 
     Nothing -> return k
     Just d  -> barCount d >>= \obl -> maybe (return k) (return . (k +++)) obl  
@@ -247,8 +253,10 @@ merge k (x:xs) = foldl fn x xs
     fn acc a = acc &\ a
     
         
-run'oflat ellist t = oflat ellist (viewl $ unET t) 
+run'oflat  t = do
+    ellist <- asks initial_abc_context
+    oflat ellist (viewl $ unET t) 
 
 renderAbc1 :: (Perform evt) =>
-              Abc CT_Element -> EventTree evt -> RenderSt -> Abc CT_Element
-renderAbc1 init_abc tree env  = evalState (run'oflat init_abc tree) env
+              EventTree evt -> Perform_Abc_Env -> Abc CT_Element
+renderAbc1 tree env  = evalPerform (run'oflat tree) intial_abc_state env

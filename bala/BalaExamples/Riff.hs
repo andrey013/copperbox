@@ -6,7 +6,7 @@ module Main where
 
 import Bala.Base 
 import Bala.Perform.EventTree
-import Bala.Perform.PerformClass
+import Bala.Perform.PerformBase
 import Bala.Perform.PerformAbc
 import Bala.Perform.PerformLilyPond
 import Bala.Perform.PerformMidi
@@ -38,14 +38,13 @@ riff  = root # bar_1 # bar_2 # bar_1 # chord [a3,e4]
 
 riff_ly = 
   let expr    = elementBlk +++ key _c major +++ clef treble
-      env     = withRelativePitch c4 st_zero
-      ly_expr = renderLy1 expr riff env
+      env     = default_ly_env { initial_ly_context = expr }
+      ly_expr = renderLy1 riff env
   in lilypond_template "Riff" ly_expr
 
 
 riff_abc = 
-  let env       = abcEnv eighth (4//4)
-      abc_expr  = renderAbc1 empty_body riff env
+  let abc_expr  = renderAbc1 riff default_abc_env
   in abc_template (abc_header_defaults {abc_title = "Riff"} ) abc_expr
     
 
@@ -56,4 +55,4 @@ main = do
     writeAbc "out/riff-abc.abc" riff_abc
     execAbcm2psOn "out/riff-abc.abc" "out/riff-abc.ps"
   where
-    riff_midi = renderMidi1 riff default_midi_st 
+    riff_midi = renderMidi1 riff default_midi_env 

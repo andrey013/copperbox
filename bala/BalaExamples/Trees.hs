@@ -4,7 +4,7 @@ module Trees where
 
 import Bala.Base
 import Bala.Perform.EventTree
-import Bala.Perform.PerformClass
+import Bala.Perform.PerformBase
 import Bala.Perform.PerformMidi
 
 data NrEvent = Note Pitch Duration
@@ -36,7 +36,7 @@ run1 :: IO ()
 run1 = do
     writeMidi "out/example1.midi" example1_midi
   where
-    example1_midi = renderMidi1 example1 default_midi_st
+    example1_midi = renderMidi1 example1 default_midi_env
     
 -- | example 2 - simple parallel - a chord             
 example2 :: EventTree NrEvent
@@ -46,7 +46,7 @@ run2 :: IO ()
 run2 = do
     writeMidi "out/example2.midi" example2_midi
   where
-    example2_midi = renderMidi1 example2 default_midi_st
+    example2_midi = renderMidi1 example2 default_midi_env
     
 -- | example 3 - successors and grace.
 example3 :: EventTree NrEvent
@@ -57,7 +57,7 @@ run3 :: IO ()
 run3 = do
     writeMidi "out/example3.midi" example3_midi
   where
-    example3_midi = renderMidi1 example3 default_midi_st
+    example3_midi = renderMidi1 example3 default_midi_env
     
 -- | example 4 - successors and parallel (chord)
 example4 :: EventTree NrEvent
@@ -68,7 +68,7 @@ run4 :: IO ()
 run4 = do
     writeMidi "out/example4.midi" example4_midi
   where
-    example4_midi = renderMidi1 example4 default_midi_st
+    example4_midi = renderMidi1 example4 default_midi_env
     
     
 -- | example 5 - a performance which is a list of trees
@@ -84,7 +84,7 @@ run5 :: IO ()
 run5 = do
     writeMidi "out/example5.midi" example5_midi
   where
-    example5_midi = renderMidi example5 default_midi_st  
+    example5_midi = renderMidi example5 default_midi_env  
     
     
 -- | example 6 - two staves - top one has chord and a grace
@@ -102,7 +102,7 @@ run6 :: IO ()
 run6 = do
     writeMidi "out/example6.midi" example6_midi
   where
-    example6_midi = renderMidi example6 default_midi_st  
+    example6_midi = renderMidi example6 default_midi_env  
 
 
 -- example 7 - same staff parallel - should be rendered as one track in Midi
@@ -117,7 +117,7 @@ run7 :: IO ()
 run7 = do
     writeMidi "out/example7.midi" example7_midi
   where
-    example7_midi = renderMidi1 example7 default_midi_st
+    example7_midi = renderMidi1 example7 default_midi_env
 
 
 main = do { run1; run2; run3; run4; run5; run6; run7 }

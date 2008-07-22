@@ -8,16 +8,13 @@ module Main where
 
 
 import Bala.Base
-
+import Bala.Format.Output.OutputLilyPond hiding (Pitch, Duration)
 import Bala.Perform.EventTree
 import Bala.Perform.EventTree ( (#) )
-
-import Bala.Perform.PerformClass
+import Bala.Perform.PerformBase
 import Bala.Perform.PerformMidi
-
--- For Lilypond
 import Bala.Perform.PerformLilyPond
-import Bala.Format.Output.OutputLilyPond hiding (Pitch, Duration)
+
 
 import Text.PrettyPrint.Leijen hiding (dot)
 
@@ -90,8 +87,8 @@ bulgarian_template musicexpr =
 
 bulgarian6_ly = 
   let expr    = elementBlk +++ key _a major +++ clef treble
-      env     = withRelativePitch c4 st_zero
-      ly_expr = renderLy1 expr bars1_4 env
+      env     = default_ly_env { initial_ly_context = expr }
+      ly_expr = renderLy1 bars1_4 env
   in bulgarian_template ly_expr
    
 
@@ -105,7 +102,7 @@ main =  do
   where
     lyfile = "out/bulgarian6.ly" 
     
-    bulgarian6_midi = renderMidi bulgarian6 default_midi_st  
+    bulgarian6_midi = renderMidi bulgarian6 default_midi_env  
   
   
   

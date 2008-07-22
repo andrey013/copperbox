@@ -16,29 +16,44 @@
 
 module Bala.Perform.RenderLilyPond where
 
-
-import Bala.Perform.EventTree hiding (chord, grace)
-import Bala.Perform.PerformClass
-
 import qualified Bala.Base as B
 import Bala.Format.Output.OutputLilyPond hiding (duration, Sequence, emptyseq)
+import Bala.Perform.EventTree hiding (chord, grace)
+import Bala.Perform.PerformBase
+
 
 import Control.Applicative hiding (empty)
+import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Foldable as F
 import Data.Sequence hiding (reverse)
 
-type RenderM a = State RenderSt a
+type ProcessM a = PerformM Perform_Ly_State Perform_Ly_Env a
 
-instance Applicative (State RenderSt) where
-  pure = return
-  (<*>) = ap
-  
-  
-data RenderSt = RenderSt { 
+data Perform_Ly_State = Perform_Ly_State { 
     relative_pitch      :: B.Pitch,
     relative_duration   :: B.Duration
+  }  
+  deriving (Show)
+  
+data Perform_Ly_Env = Perform_Ly_Env {
+    initial_ly_context        :: Ly CT_Element,
+    initial_relative_pitch    :: B.Pitch
+  }
+  deriving (Show)
+  
+intial_ly_state = Perform_Ly_State { 
+    --  Middle C (c') is the default in LilyPond. 
+    relative_pitch = B.c4,
+    -- A quarter note is the default duration in LilyPond. 
+    relative_duration = B.quarter
   } 
+  
+default_ly_env :: Perform_Ly_Env
+default_ly_env = Perform_Ly_Env { 
+    initial_ly_context        = elementBlk,
+    initial_relative_pitch    = B.c4 
+  }
 
 emptyseq :: Seq a
 emptyseq = empty  
@@ -52,12 +67,7 @@ data EventZero = ZeroPitch B.Pitch (Ly Pitch) (Maybe (Ly Duration))
                | ZeroUnknown
   deriving Show            
                 
-st_zero = RenderSt { 
-    --  Middle C (c') is the default in LilyPond. 
-    relative_pitch = B.c4,
-    -- A quarter note is the default duration in LilyPond. 
-    relative_duration = B.quarter
-  } 
+
 
 (*!) e oa   = maybe e (e !) oa
 
@@ -65,11 +75,10 @@ st_zero = RenderSt {
 lyPitch' () = lyPitch
 
                            
-withRelativePitch :: B.Pitch -> RenderSt -> RenderSt
+withRelativePitch :: B.Pitch -> Perform_Ly_State -> Perform_Ly_State
 withRelativePitch p st = st { relative_pitch = p } 
 
-  
-runRenderLy  = evalState  
+
 
 apAttr :: (SuffixAttr e a) => Ly a -> Ly e -> Ly e
 apAttr = flip (!)
@@ -87,12 +96,12 @@ odisp p p' =
   if (ityp < 4) then 0 else disp
 
 
-currentOctave :: B.Pitch -> RenderM Int
+currentOctave :: B.Pitch -> ProcessM Int
 currentOctave p = do
     p' <- gets relative_pitch
     return $ odisp p' p
   
-updateCurrentPitch :: EventZero -> RenderM ()
+updateCurrentPitch :: EventZero -> ProcessM ()
 updateCurrentPitch (ZeroPitch p _ _) = modify (\s -> s {relative_pitch = p})
 updateCurrentPitch _                 = return ()
 
@@ -111,7 +120,7 @@ octaveSpec i
     | i <  0    = apAttr $ lowered (abs i)
     | otherwise = apAttr $ raised i
     
-lyPitch :: B.Pitch -> RenderM (Ly Pitch)    
+lyPitch :: B.Pitch -> ProcessM (Ly Pitch)    
 lyPitch p = currentOctave p >>= \spec -> 
             return $ pch # actl # (octaveSpec spec)
   where
@@ -149,7 +158,7 @@ dotpart i
 
 data DurationStatus = SAME | DIFF
 
-currentDuration :: B.Duration -> RenderM DurationStatus
+currentDuration :: B.Duration -> ProcessM DurationStatus
 currentDuration d = do
     d' <- gets relative_duration
     if (d == d') 
@@ -159,7 +168,7 @@ currentDuration d = do
 
 
 
-lyDuration :: B.Duration -> RenderM (Maybe (Ly Duration))
+lyDuration :: B.Duration -> ProcessM (Maybe (Ly Duration))
 lyDuration d = currentDuration d >>= mkD
   where 
     mkD SAME   = return Nothing
@@ -204,7 +213,7 @@ suffixGrace k xs    = k +++ grace gblock
 
        
 oflat :: (Perform evt) =>
-         Ly CT_Element -> ViewL (EvtPosition evt) -> RenderM (Ly CT_Element)
+         Ly CT_Element -> ViewL (EvtPosition evt) -> ProcessM (Ly CT_Element)
              
 oflat lyk  EmptyL               = return lyk 
 
@@ -266,11 +275,14 @@ merge k (x:xs) = let poly = foldl fn (block x) xs in
     fn acc a = acc \\ (block a)
 
 run'oflat :: (Perform evt) 
-          => Ly CT_Element -> EventTree evt -> RenderM (Ly CT_Element)                 
-run'oflat elt_list t = oflat elt_list (viewl $ unET t) 
+          => EventTree evt -> ProcessM (Ly CT_Element)                 
+run'oflat t = do 
+    elt_list <- asks initial_ly_context
+    oflat elt_list (viewl $ unET t) 
 
 
-renderLy1 :: (Perform evt) =>
-  Ly CT_Element -> EventTree evt -> RenderSt -> Ly CT_Element 
-renderLy1 init_ly tree env = evalState (run'oflat init_ly tree) env
+renderLy1 :: (Perform evt) => EventTree evt -> Perform_Ly_Env -> Ly CT_Element 
+renderLy1 tree env = evalPerform (run'oflat tree) ly_state env
+  where
+    ly_state = intial_ly_state { relative_pitch = (initial_relative_pitch env) }
  
