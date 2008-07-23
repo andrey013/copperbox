@@ -91,15 +91,13 @@ processTab = F.foldl fn root
     fn tree bar = buildEvtTree tree (shuffleBar bar)
   
 
-sbt_lines = [63,76,88,97,106,115]
-fahey_lines = [37,46,54,62,70,78]
+example_tab_lines = [5,14,23,32,41]
   
 main = do
-    sq <- parseTabfile "sbt.txt" sbt_lines (state_zero standard_tuning)
-   -- sq <- parseTabfile "fahey.txt" fahey_lines (state_zero standard_tuning)
-    writeMidi "../out/tab1.midi" (toMidi sq)
-    writeLy "../out/tab1.ly" (tab_ly $ processTab sq)
-    execLilyPondOn "../out/tab1.ly"
+    sq <- parseTabfile "../../samples/tab/example-tab.txt" example_tab_lines (state_zero standard_tuning)
+    writeMidi "../out/example-tab.midi" (toMidi sq)
+    writeLy "../out/example-tab.ly" (tab_ly $ processTab sq)
+    execLilyPondOn "../out/example-tab.ly"
   where
     toMidi sq = renderMidi1 (processTab sq) default_midi_env
 
@@ -114,7 +112,7 @@ tab_template musicexpr =
   
 
 tab_ly tree = 
-  let expr    = elementBlk +++ key _g major +++ clef treble
+  let expr    = elementBlk +++ key _g major +++ clef treble +++ time (3//4)
       env     = default_ly_env { initial_ly_context = expr }
       ly_expr = renderLy1 tree env
   in tab_template ly_expr

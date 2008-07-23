@@ -112,7 +112,7 @@ advanceToLine i = do
                     " already at line " ++ show num
     skipline = water (oneOf "\n")                    
 
-
+-- transpose?
 rebar :: [TabLine] -> Seq Bar
 rebar []        = empty
 rebar (xs:xxs)  = let s1 = foldr (<|) empty xs in foldl mergebars s1 xxs
