@@ -17,7 +17,7 @@ module Bala.Format.Score.Pretty where
 import Bala.Base (afficher)
 import Bala.Format.Score.Datatypes
 
-
+import qualified Data.Map as Map
 import Data.Sequence hiding (length, empty)
 import Text.PrettyPrint.Leijen
 
@@ -40,14 +40,22 @@ instance Pretty ScScore where
   pretty (ScScore sb) = sepSeq (<$>) sb
 
 instance Pretty ScPart where
-  pretty (ScPart i sb) = prefix i <$> text ":part " <> integer i 
-                                  <$> sepSeq (<$>) sb
-    where prefix i = let l = snd $ integerPlex i
-                     in text $ replicate (l+6) '-'                                  
-
-
-instance Pretty ScBar where
-  pretty (ScBar i se) = text "|:" <> integer i <+> sepSeq (</>) se
+  pretty (ScPart i refs sb) = prefix i <$> text ":part " <> integer i 
+                                       <$> sepSeq (<$>) sb 
+                                       <$> pprefs (getRefs refs)
+    where 
+      prefix i  = let l = snd $ integerPlex i in text $ replicate (l+6) '-'                                  
+      pprefs    = indent 2 . vsep . map fn . Map.toAscList
+      fn (i,xs) = char '#' <> integer i <+> fillSep (map pretty xs)
+  
+  
+instance Pretty ScPoly where
+  pretty (ScPolyM m)  = pretty m
+  pretty (ScPolyRef i)  = brackets $ integer i
+  
+  
+instance Pretty ScMeasure where
+  pretty (ScMeasure i se) = text "|:" <> integer i <+> sepSeq (</>) se
   
 instance Pretty ScGlyph where
   pretty (ScNote pn oct dur)  = group $ 
@@ -56,11 +64,14 @@ instance Pretty ScGlyph where
   pretty (ScRest dur)             = group $
       char 'R' <> char '/' <> double dur 
 
+  pretty (ScSpacer dur)           = group $
+      char 'S' <> char '/' <> double dur 
+      
   pretty (ScGroup typ xs)     = brackets $ 
       char ':' <> groupdesc typ <+> hsep (map pretty xs)    
 
-  pretty (ScRef tag )             = group $ 
-      char 'X' <> pretty tag
+--  pretty (ScTaggedGlyph tag)  = group $ 
+--      char 'X' <> pretty tag
       
 groupdesc :: ScGroupType -> Doc
 groupdesc ScBeam        = text "beam"

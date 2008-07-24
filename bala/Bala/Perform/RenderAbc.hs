@@ -206,7 +206,7 @@ oflat sqk (Evt e :< sq)         = do
     oflat sqk' (viewl sq)
     
 -- Sequence maps to voice overlay - supported by abcm2ps but not abc2ps
-oflat sqk (Sequence ts :< sq)   = do
+oflat sqk (Poly ts :< sq)   = do
     sqk'      <- oflat sqk (viewl sq) 
     xs        <- mapM (oflat tune) (map (viewl . unET) ts)
     return (merge sqk' xs)  

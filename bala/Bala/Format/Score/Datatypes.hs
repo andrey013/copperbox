@@ -17,6 +17,8 @@ module Bala.Format.Score.Datatypes  where
 
 import Bala.Base
 
+import qualified Data.Map as Map
+import Data.Monoid
 import Data.Sequence
 
 -- tag things that aren't processed
@@ -24,18 +26,31 @@ newtype ScTag = ScTag Integer
 
 data ScScore = ScScore (Seq ScPart)
 
-data ScPart = ScPart Integer (Seq ScBar) -- for the time being
+data ScPart = ScPart Integer ScPartRefs (Seq ScPoly)
 
-data ScBar = ScBar Integer (Seq ScGlyph)
+
+data ScPoly = ScPolyM ScMeasure | ScPolyRef Integer
+
+newtype ScPartRefs = ScPartRefs { getRefs :: Map.Map Integer [ScPoly] }
+
+
+data ScMeasure = ScMeasure Integer (Seq ScGlyph)
 
 data ScGroupType = ScBeam | ScChord | ScGraceNotes
   deriving (Eq)
 
 data ScGlyph = ScNote PitchName Int Double
              | ScRest Double
+             | ScSpacer Double  -- non-printed space
              | ScGroup ScGroupType [ScGlyph]
-             | ScRef ScTag
+--             | ScTaggedGlyph ScTag
            
            
+instance Monoid ScPartRefs where
+  mempty = ScPartRefs Map.empty
+  mappend r r' =  ScPartRefs $ foldr fn (getRefs r) (Map.toAscList $ getRefs r')
+    where
+      fn (i,x) mp = Map.insert i x mp   
+    
 
    

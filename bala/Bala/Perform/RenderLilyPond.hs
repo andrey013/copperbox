@@ -222,7 +222,7 @@ oflat lyk (Evt e :< sq)         = do
     updateCurrentPitch ez
     oflat (lyk `suffix` ez) (viewl sq)
 
-oflat lyk (Sequence ts :< sq)   = do
+oflat lyk (Poly ts :< sq)       = do
     lyk'      <- oflat lyk (viewl sq) 
     xs        <- mapM (oflat elementBlk) (map (viewl . unET) ts)
     return (merge lyk' xs)  

@@ -105,13 +105,13 @@ run6 = do
     example6_midi = renderMidi example6 default_midi_env  
 
 
--- example 7 - same staff parallel - should be rendered as one track in Midi
+-- example 7 - same staff polyphony - should be rendered as one track in Midi
 -- and on the same staff in Abc and LilyPond      
 example7 :: EventTree NrEvent
-example7 = root # parallel [ root # event (c5 # du4) # event (c5 # du4) 
-                                  # event (d5 # du4) # event (e5 # du4)
-                           , root # event (g4 # du2) # event (e4 # du2) 
-                           ]
+example7 = root # poly [ root # event (c5 # du4) # event (c5 # du4) 
+                              # event (d5 # du4) # event (e5 # du4)
+                       , root # event (g4 # du2) # event (e4 # du2) 
+                       ]
                         
 run7 :: IO ()
 run7 = do

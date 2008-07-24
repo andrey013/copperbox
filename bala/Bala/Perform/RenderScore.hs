@@ -22,6 +22,9 @@ import Bala.Perform.PerformBase
 import Control.Applicative hiding (empty)
 import Control.Monad.Reader
 import Control.Monad.State
+import qualified Data.Foldable as F
+import qualified Data.Map as Map
+import Data.Monoid
 import Data.Sequence hiding (reverse)
 
 
@@ -30,42 +33,38 @@ type ProcessM a = PerformM Perform_Sc_State Perform_Sc_Env a
 
 
 data Perform_Sc_State = Perform_Sc_State { 
-    tagcounter      :: Integer,
-    part_count      :: Integer,
-    bar_count       :: Integer,
-    duration_count  :: Double
+    tagcounter          :: Integer,
+    refcounter          :: Integer,
+    measure_count       :: Integer,
+    duration_count      :: Double
   }  
   deriving (Show)
 
 data Perform_Sc_Env = Perform_Sc_Env { 
-    bar_size        :: Double,
-    first_bar_onset :: Double
+    measure_length        :: Double,
+    first_bar_onset       :: Double
   }  
   deriving (Show)
   
--- 'tipped' sequence - a Seq of bars produced plus the 'tip' the current bar 
-newtype TSeq = TSeq { getTSeq :: (Seq ScBar, ScBar)} 
+-- 'tipped' sequence - a Seq of bars produced plus the 'tip' the current bar
+-- (plus a dictionary of parts for polypohonic elements) 
+data TSeq = TSeq  ScPartRefs  (Seq ScPoly) ScMeasure 
 
 
 
 intial_score_state = Perform_Sc_State { 
     tagcounter      = 1,
-    part_count      = 0,
-    bar_count       = 1,
+    refcounter      = 1,
+    measure_count   = 1,
     duration_count  = 0.0
   } 
 
 default_score_env :: Perform_Sc_Env
 default_score_env = Perform_Sc_Env { 
-    bar_size        = 1.0,   
-    first_bar_onset = 0.0 
+    measure_length    = 1.0,   
+    first_bar_onset   = 0.0 
   }
 
-withPart :: ProcessM Integer
-withPart = do 
-    pc      <- gets part_count 
-    modify (\s -> s {bar_count = 1, part_count=pc+1})
-    return (pc+1)
   
 newTag :: ProcessM ScTag
 newTag = do
@@ -73,21 +72,24 @@ newTag = do
     modify (\s -> s {tagcounter = i+1})
     return $ ScTag i
 
-initialTSeq :: ProcessM TSeq
-initialTSeq = do
-    bc    <- gets bar_count  -- should be 1
-    return $ TSeq (emptyseq, ScBar bc emptyseq)
+newRefId :: ProcessM Integer
+newRefId = do
+    i <- gets refcounter
+    modify (\s -> s {refcounter = i+1})
+    return i
+    
+
         
-progressBar :: Double -> ProcessM (Maybe Integer) 
-progressBar d = do
+increaseMeasure :: Double -> ProcessM (Maybe Integer) 
+increaseMeasure d = do
     dc    <- gets duration_count
-    sz    <- asks bar_size
+    sz    <- asks measure_length
     case (d + dc >= sz) of 
         -- what if this is a tied note over a bar?
         True -> do 
-            bc  <- gets bar_count
-            modify (\s -> s {duration_count = 0.0, bar_count=bc+1})
-            return $ Just (bc+1)
+            mc  <- gets measure_count
+            modify (\s -> s {duration_count = 0.0, measure_count=mc+1})
+            return $ Just (mc+1)
         False -> modify (\s -> s {duration_count = d + dc}) >> return Nothing
 
 
@@ -103,27 +105,22 @@ glyphDuration _                           = 0.0
 
 
 
-
-
-    
-    
-
-
-
 (|%>) :: TSeq -> ScGlyph -> ProcessM TSeq
-(|%>) (TSeq (sb,se)) a = let d = glyphDuration a in do
-    optnext <- progressBar d
+(|%>) (TSeq refs sb se) a = let d = glyphDuration a in do
+    optnext <- increaseMeasure d
     case optnext of
-        Just i -> return $ TSeq (sb |> (se `suffix` a), mkBar i)
-        Nothing -> return $ TSeq (sb,se `suffix` a)
+        Just i -> let sb' = sb |> (ScPolyM (se `suffix` a))
+                      m0  = mkMeasure i
+                  in return $ TSeq refs sb' m0
+        Nothing -> return $ TSeq refs sb (se `suffix` a)
   where
-    mkBar i = ScBar i emptyseq        
-    suffix (ScBar i se) e = ScBar i (se |> e)
+    mkMeasure i = ScMeasure i emptyseq        
+    suffix (ScMeasure i se) e = ScMeasure i (se |> e)
 
 -- extend the event with the 'remainder duration' of the bar
 remext e = let ed = glyphDuration e in do
     dc    <- gets duration_count
-    sz    <- asks bar_size
+    sz    <- asks measure_length
     return $ changeDuration (ed + (sz - dc)) e
   where
     -- Don't change the duration of beamed notes or grace notes
@@ -140,27 +137,31 @@ remext e = let ed = glyphDuration e in do
 remrest :: ProcessM ScGlyph
 remrest = do
     dc    <- gets duration_count
-    sz    <- asks bar_size
+    sz    <- asks measure_length
     return $ ScRest (sz - dc) 
     
-unSeqBar (ScBar _ sg) = sg
+
 
     
 -- extend the final note in the TSeq    
-finalExt :: TSeq -> ProcessM (Seq ScBar)
-finalExt (TSeq (sb,ScBar i se)) = case viewr se of
-  EmptyR -> return sb
-  (se' :> e) -> remext e >>= \e' -> return $ sb |> (ScBar i (se' |> e')) 
+finalExt :: TSeq -> ProcessM (ScPartRefs, Seq ScPoly)
+finalExt (TSeq refs sb (ScMeasure i se)) = case viewr se of
+  EmptyR -> return (refs,sb)
+  (se' :> e) -> remext e >>= \e' -> 
+                return $ (refs, sb |> (ScPolyM $ ScMeasure i (se' |> e'))) 
 
 -- add a rest to finalize the TSeq
-finalRest :: TSeq -> ProcessM (Seq ScBar)
-finalRest (TSeq (sb,ScBar i se)) = case viewr se of
-  EmptyR -> return sb
-  _  -> remrest >>= \r' -> return $ sb |> (ScBar i (se |> r')) 
+finalRest :: TSeq -> ProcessM (ScPartRefs, Seq ScPoly)
+finalRest (TSeq refs sb (ScMeasure i se)) = case viewr se of
+  EmptyR -> return (refs,sb)
+  _  -> remrest >>= \r' -> 
+        return $ (refs, sb |> (ScPolyM $ ScMeasure i (se |> r'))) 
 
 
 emptyseq :: Seq a
 emptyseq = empty
+
+
 
 scGroup :: ScGroupType -> [ScGlyph] -> ScGlyph
 scGroup typ xs = ScGroup typ xs
@@ -177,14 +178,14 @@ scNote p d = ScNote (pitchName p) (octaveMeasure p) (durationSize d)
 scRest :: Duration -> ScGlyph
 scRest d = ScRest (durationSize d)
     
-mkRef :: ProcessM ScGlyph
-mkRef = ScRef <$> newTag 
+-- mkRef :: ProcessM ScGlyph
+-- mkRef = ScRef <$> newTag 
 
 makesEvent :: (Perform evt) => evt -> ProcessM ScGlyph
 makesEvent evt = case (opitch evt, oduration evt) of
     (Just p, Just d)    -> return $ scNote p d
     (Nothing, Just d)   -> return $ scRest d
-    (Nothing, Nothing)  -> mkRef
+    (Nothing, Nothing)  -> undefined -- mkRef
 
 
 -- All notes should have the same duration - is a check in order?
@@ -215,8 +216,9 @@ flattenStep acc sq = flatstep acc sq
     flatstep acc (StartPre :< sq)      =
         flattenPrefix (acc,[]) (viewl sq)
             
-    flatstep acc _                     = error "oflat - to do"
-    
+    flatstep acc (Poly ts :< sq)       = 
+        flattenPoly acc ts sq
+
 flattenParallel (se,stk) sq = flatpar (se,stk) sq
   where
     flatpar (se,stk) (Evt e :< sq)  = do
@@ -244,22 +246,54 @@ flattenPrefix (se,stk) sq = flatpre (se,stk) sq
                             
     flatpre (se,stk) _              = 
         error "flattenPrefix - unterminated Pre"  
-        
+
+flattenPoly :: (Perform t) =>
+               TSeq -> [EventTree t] -> Seq (EvtPosition t) -> ProcessM TSeq
+flattenPoly acc ts next = do
+      mc    <- gets measure_count
+      xs    <- mapM (flattenPass mc (-1)) ts
+      acc'  <- mergeTSeqs acc xs
+      modify (\s -> s { measure_count = mc })
+      flattenStep acc' (viewl next)
+  where
+    newTSeq mc = TSeq mempty emptyseq (ScMeasure mc emptyseq)      
+
+mergeTSeqs :: TSeq -> [ScPart] -> ProcessM TSeq
+mergeTSeqs acc ts = foldM fn acc ts
+  where 
+    fn (TSeq refs se m) part = do
+        (e,rf)  <- reshape part
+        let refs' = refs
+        return $ TSeq (refs `mappend` rf) (se |> e) m
+
+
+reshape :: ScPart -> ProcessM (ScPoly,ScPartRefs)
+reshape (ScPart _ refs sp) = do
+    i <- newRefId
+    let mp' = Map.insert i (F.toList sp) (getRefs refs)
+    return (ScPolyRef i, ScPartRefs mp')
 
 
 flattenPass :: (Perform evt) 
-          => EventTree evt -> ProcessM ScPart          
-flattenPass t = do
-    tseq0     <- initialTSeq 
-    pc        <- withPart
-    tseq'     <- flattenStep tseq0 (viewl $ unET t)
-    se        <- finalExt tseq'
-    return $ ScPart pc se 
-    
-processPerformance :: Perform evt => Performance evt -> ProcessM ScScore
-processPerformance p@(Perf xs) = ScScore <$> foldM fn emptyseq xs 
+          => Integer -> Integer -> EventTree evt -> ProcessM ScPart          
+flattenPass mc pnum t = do
+    modify (\s -> s { measure_count = mc })
+    dc          <- gets duration_count
+    tseq'       <- flattenStep (mkTSeq dc) (viewl $ unET t)
+    (refs,se)   <- finalExt tseq'
+    return $ ScPart pnum refs se 
   where
-    fn sq x = (sq |>) <$> flattenPass x 
+    mkTSeq dc
+        | dc == 0   = TSeq mempty emptyseq (ScMeasure mc emptyseq)
+        | otherwise = let spacer = ScSpacer dc 
+                          se     = emptyseq |> spacer 
+                      in TSeq mempty emptyseq (ScMeasure mc se)    
+                      
+        
+processPerformance :: Perform evt => Performance evt -> ProcessM ScScore
+processPerformance p@(Perf xs) = ScScore <$> foldM fn emptyseq (zip xs [1..]) 
+  where
+    fn sq (x,i) = (sq |>) <$> flattenPass 1 i x 
 
 renderScore1 :: (Perform evt) 
             => EventTree evt -> Perform_Sc_Env -> ScScore

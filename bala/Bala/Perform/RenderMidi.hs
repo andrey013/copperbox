@@ -153,7 +153,7 @@ oflat (i,ksq) (StartPar :< sq)    =
 oflat (i,ksq) (StartPre :< sq)    =
     oflatPre (i,ksq) (viewl sq)
     
-oflat (i,ksq) (Sequence ts :< sq) = do
+oflat (i,ksq) (Poly ts :< sq)     = do
     xs          <- mapM (oflat (i,empty)) (map (viewl . unET) ts)   
     oflat (merge (i,ksq) xs) (viewl sq)
     

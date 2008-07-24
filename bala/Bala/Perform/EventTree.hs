@@ -33,31 +33,31 @@ newtype EventTree evt = ET { unET :: Seq (EvtPosition evt) }
 data EvtPosition evt = Evt evt 
                      | StartPar | EndPar
                      | StartPre | EndPre
-                     | Sequence [EventTree evt]
+                     | Poly [EventTree evt]
   deriving Show
   
 instance Functor EventTree where
-  fmap f (ET sq)        = ET (fmap (fmap f) sq)
+  fmap f (ET sq)            = ET (fmap (fmap f) sq)
 
 instance Functor EvtPosition where
-  fmap f (Evt e)        = Evt (f e) 
-  fmap f StartPar       = StartPar
-  fmap f EndPar         = EndPar
-  fmap f StartPre       = StartPre
-  fmap f EndPre         = EndPre  
-  fmap f (Sequence ts)  = Sequence (fmap (fmap f) ts) 
+  fmap f (Evt e)            = Evt (f e) 
+  fmap f StartPar           = StartPar
+  fmap f EndPar             = EndPar
+  fmap f StartPre           = StartPre
+  fmap f EndPre             = EndPre  
+  fmap f (Poly ts)          = Poly (fmap (fmap f) ts) 
   
     
 instance F.Foldable EventTree where
-  foldMap f (ET sq)       = F.foldMap (F.foldMap f) sq
+  foldMap f (ET sq)         = F.foldMap (F.foldMap f) sq
 
 instance F.Foldable EvtPosition where
-  foldMap f (Evt e)        = f e 
-  foldMap f StartPar       = mempty
-  foldMap f EndPar         = mempty
-  foldMap f StartPre       = mempty
-  foldMap f EndPre         = mempty  
-  foldMap f (Sequence ts)  = F.foldMap (F.foldMap f) ts
+  foldMap f (Evt e)         = f e 
+  foldMap f StartPar        = mempty
+  foldMap f EndPar          = mempty
+  foldMap f StartPre        = mempty
+  foldMap f EndPre          = mempty  
+  foldMap f (Poly ts)       = F.foldMap (F.foldMap f) ts
   
   
 
@@ -103,9 +103,9 @@ grace es t      = seal $ foldl (flip event) (t |*> StartPre) es
   where 
     seal t      = t |*> EndPre
 
-parallel        :: [EventTree evt] -> EventTree evt -> EventTree evt
-parallel [] t   = t
-parallel ts t   = t |*> (Sequence ts)
+poly            :: [EventTree evt] -> EventTree evt -> EventTree evt
+poly [] t       = t
+poly ts t       = t |*> (Poly ts)
 
 repeated :: 
   Int -> (EventTree evt -> EventTree evt) -> (EventTree evt -> EventTree evt)
@@ -122,7 +122,7 @@ instance (Affi evt) => Affi (EvtPosition evt) where
   affi EndPar         = showString "'>'"
   affi StartPre       = showString "'{'"
   affi EndPre         = showString "'}'"
-  affi (Sequence es)  = listS (map affi es)    -- needs improving
+  affi (Poly es)      = listS (map affi es)    -- needs improving
   
 instance (Affi evt) => Affi (EventTree evt) where
   affi (ET sq)        = listS $ F.foldr fn [] sq

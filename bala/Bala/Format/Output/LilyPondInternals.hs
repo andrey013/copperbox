@@ -306,6 +306,10 @@ data Rest
 rest :: Ly Rest
 rest = lyLit $ char 'r'
 
+-- | @spacer@ rests aren't printed.
+spacer :: Ly Rest
+spacer = lyLit $ char 's'
+
 instance Append CT_Element Rest
 
 --------------------------------------------------------------------------------  
