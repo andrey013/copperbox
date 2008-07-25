@@ -179,7 +179,7 @@ lyDuration d = currentDuration d >>= mkD
 
 
     
-eventZero evt = case (opitch evt, oduration evt) of
+eventZero evt = case eventvalues evt of
     (Just p, Just d)    -> (ZeroPitch p) <$> lyPitch p <*> lyDuration d
     (Nothing, Just d)   -> ZeroRest  <$> lyDuration d
     (Nothing, Nothing)  -> return ZeroUnknown
@@ -212,7 +212,7 @@ suffixGrace k xs    = k +++ grace gblock
 
 
        
-oflat :: (Perform evt) =>
+oflat :: (Perform evt B.Pitch B.Duration) =>
          Ly CT_Element -> ViewL (EvtPosition evt) -> ProcessM (Ly CT_Element)
              
 oflat lyk  EmptyL               = return lyk 
@@ -274,14 +274,14 @@ merge k (x:xs) = let poly = foldl fn (block x) xs in
   where
     fn acc a = acc \\ (block a)
 
-run'oflat :: (Perform evt) 
+run'oflat :: (Perform evt B.Pitch B.Duration) 
           => EventTree evt -> ProcessM (Ly CT_Element)                 
 run'oflat t = do 
     elt_list <- asks initial_ly_context
     oflat elt_list (viewl $ unET t) 
 
 
-renderLy1 :: (Perform evt) => EventTree evt -> Perform_Ly_Env -> Ly CT_Element 
+renderLy1 :: (Perform evt B.Pitch B.Duration) => EventTree evt -> Perform_Ly_Env -> Ly CT_Element 
 renderLy1 tree env = evalPerform (run'oflat tree) ly_state env
   where
     ly_state = intial_ly_state { relative_pitch = (initial_relative_pitch env) }

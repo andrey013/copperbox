@@ -1,4 +1,4 @@
-
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 
 module TabApp where
@@ -25,13 +25,19 @@ data Evt = EvtNote Pitch OnsetDuration
          | EvtRest OnsetDuration
   deriving Show
 
+instance Perform Evt Pitch Duration where
+  eventvalues (EvtNote p d) = (Just p, Just eighth)
+  eventvalues (EvtRest d)   = (Nothing, Just eighth)
+  
+  
+{-
 instance Perform Evt where
     opitch (EvtNote p _) = Just p
     opitch _             = Nothing
      
     oduration (EvtNote _ (_,d)) = Just eighth 
     oduration (EvtRest (_,d)) = Just eighth -- TODO
-    
+-}    
     
 data CardiEvt = SingleEvt Evt
               | MultiEvt [Evt] 

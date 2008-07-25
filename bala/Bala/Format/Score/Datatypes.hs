@@ -24,34 +24,35 @@ import Data.Sequence
 -- tag things that aren't processed
 newtype ScTag = ScTag Integer
 
-data ScScore = ScScore (Seq ScPart)
+data ScScore pch dur = ScScore (Seq (ScPart pch dur))
 
-data ScPart = ScPart Integer ScPartRefs (Seq ScPoly)
-
-
-data ScPoly = ScPolyM ScMeasure | ScPolyRef Integer
-
-newtype ScPartRefs = ScPartRefs { getRefs :: Map.Map Integer [ScPoly] }
+data ScPart pch dur = ScPart Integer (ScPartRefs pch dur) (Seq (ScPoly pch dur))
 
 
-data ScMeasure = ScMeasure Integer (Seq ScGlyph)
+data ScPoly pch dur = ScPolyM (ScMeasure pch dur) | ScPolyRef Integer
+
+newtype ScPartRefs pch dur = ScPartRefs { 
+                                getRefs :: Map.Map Integer [ScPoly pch dur] }
+
+
+data ScMeasure pch dur = ScMeasure Integer (Seq (ScGlyph pch dur))
 
 data ScGroupType = ScBeam | ScChord | ScGraceNotes
   deriving (Eq)
 
-data ScGlyph = ScNote ScPitch Double
-             | ScRest Double
-             | ScSpacer Double  -- non-printed space
-             | ScGroup ScGroupType [ScGlyph]
+data ScGlyph pch dur = ScNote (ScPitch pch) dur
+                     | ScRest dur
+                     | ScSpacer dur  -- non-printed space
+                     | ScGroup ScGroupType [ScGlyph pch dur]
 --             | ScTaggedGlyph ScTag
 
 
-data ScPitch = ScPitch PitchName Int
+data ScPitch pch = ScPitch pch
            
 ---
 
 
-instance Monoid ScPartRefs where
+instance Monoid (ScPartRefs pch dur) where
   mempty = ScPartRefs Map.empty
   mappend r r' =  ScPartRefs $ foldr fn (getRefs r) (Map.toAscList $ getRefs r')
     where

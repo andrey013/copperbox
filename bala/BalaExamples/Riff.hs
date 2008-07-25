@@ -1,4 +1,4 @@
-
+{-# LANGUAGE MultiParamTypeClasses #-}
 -- :set -i..
 
 
@@ -19,9 +19,8 @@ import Bala.Format.Output.OutputLilyPond hiding (Pitch, chord, Duration)
 
 
 
-instance Perform Pitch where
-  opitch = Just 
-  oduration _ = Just eighth
+instance Perform Pitch Pitch Duration where
+  eventvalues p = (Just p, Just eighth)
  
 
 bar_1 :: EventTree Pitch -> EventTree Pitch

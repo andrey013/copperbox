@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.Perform.RenderMidi
@@ -72,13 +74,13 @@ data EventZero = ZeroPitch Pitch Integer
                | ZeroMidi MIDI.Event Integer
                | ZeroNoEvent Integer
 
-eventZero :: Perform evt => evt -> ProcessM EventZero
-eventZero e = case opitch e of
+eventZero :: Perform evt Pitch Duration => evt -> ProcessM EventZero
+eventZero e = case fst $ eventvalues e of
     Nothing -> ZeroNoEvent   <$> calcDuration_p e
     Just p  -> (ZeroPitch p) <$> calcDuration_p e
 
-calcDuration_p :: Perform evt => evt -> ProcessM Integer
-calcDuration_p e = case oduration e of 
+calcDuration_p :: Perform evt Pitch Duration => evt -> ProcessM Integer
+calcDuration_p e = case snd $ eventvalues e of 
     Nothing -> return 0
     Just d  -> (flip calculateTicks) d <$> asks tick_value
 
@@ -280,7 +282,9 @@ listPass = return . toList
 
 
 
-processTrack :: Perform evt => EventTree evt -> ProcessM MIDI.Track
+processTrack :: Perform evt Pitch Duration 
+             => EventTree evt 
+             -> ProcessM MIDI.Track
 processTrack tree = MIDI.Track <$> steps (unET tree)
   where 
     steps = listPass <=< finalizeTrack 
@@ -288,7 +292,9 @@ processTrack tree = MIDI.Track <$> steps (unET tree)
                      <=< splitNotePass <=< oflatPass
 
 
-processPerformance :: Perform evt => Performance evt -> ProcessM MIDI.MidiFile
+processPerformance :: Perform evt Pitch Duration 
+                   => Performance evt 
+                   -> ProcessM MIDI.MidiFile
 processPerformance p@(Perf xs) = do 
     hdr <- midiHeader p
     t0 <- trackZero 
@@ -298,7 +304,9 @@ processPerformance p@(Perf xs) = do
     fn acc a = processTrack a >>= \t -> newTrack >> return (t : acc)
 
 
-midiHeader :: Perform evt => Performance evt -> ProcessM MIDI.Header
+midiHeader :: Perform evt Pitch Duration 
+           => Performance evt 
+           -> ProcessM MIDI.Header
 midiHeader (Perf xs) = do 
     tpqn <- asks tick_value
     return $ format1_header (1 + length xs) (tpb tpqn) 
@@ -317,13 +325,13 @@ notes = afficherL . F.foldr note [] . unET
   where note (Evt (n,_)) acc = n:acc
         note _           acc = acc
 
-renderMidi1 :: (Perform evt) 
+renderMidi1 :: (Perform evt Pitch Duration) 
             => EventTree evt -> Perform_Midi_Env -> MIDI.MidiFile
 renderMidi1 tree env = 
     renderMidi (Perf [tree]) env
 
 
-renderMidi :: (Perform evt) 
+renderMidi :: (Perform evt Pitch Duration) 
            => Performance evt -> Perform_Midi_Env -> MIDI.MidiFile
 renderMidi perf env = 
     evalPerform (processPerformance perf) intial_midi_state env

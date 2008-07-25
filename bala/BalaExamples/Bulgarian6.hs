@@ -1,4 +1,4 @@
-
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- This tune is `Bulgarian (?) 6` from the Exotic ABC songbook
 
@@ -24,12 +24,9 @@ data NrEvent = Note Pitch Duration
 
 
 
-instance Perform NrEvent where
-  opitch (Note p _) = Just p
-  opitch (Rest _)   = Nothing
-  
-  oduration (Note _ d) = Just d
-  oduration (Rest d)   = Just d
+instance Perform NrEvent Pitch Duration where
+  eventvalues (Note p d) = (Just p, Just d)
+  eventvalues (Rest d)   = (Nothing, Just d)
   
   
 durn 16  = sixteenth

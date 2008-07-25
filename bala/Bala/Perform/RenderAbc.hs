@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -161,7 +161,7 @@ updateBarCount k ez = case hasDur ez of
 
 
 
-eventZero evt = case (opitch evt, oduration evt) of
+eventZero evt = case eventvalues evt of
     (Just p, Just d)    -> (ZeroPitch d) <$> pure (abcPitch p) <*> abcDuration d
     (Nothing, Just d)   -> (ZeroRest d)  <$> abcDuration d
     (Nothing, Nothing)  -> return ZeroUnknown
@@ -257,6 +257,6 @@ run'oflat  t = do
     ellist <- asks initial_abc_context
     oflat ellist (viewl $ unET t) 
 
-renderAbc1 :: (Perform evt) =>
+renderAbc1 :: (Perform evt B.Pitch B.Duration) =>
               EventTree evt -> Perform_Abc_Env -> Abc CT_Element
 renderAbc1 tree env  = evalPerform (run'oflat tree) intial_abc_state env

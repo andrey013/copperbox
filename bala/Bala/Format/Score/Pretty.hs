@@ -33,13 +33,18 @@ sepSeq op sq = case viewl sq of
     trav doc EmptyL    = doc
     trav doc (e :< se) = trav (doc `op` pretty e) (viewl se)
 
+-- We might not want the default show instance    
+class Printable a where stringrep :: a -> String
+
+    
+
 instance Pretty ScTag where
   pretty (ScTag i) = group $ braces (tagint i)
 
-instance Pretty ScScore where
+instance (Printable pch, Printable dur) => Pretty (ScScore pch dur) where
   pretty (ScScore sb) = sepSeq (<$>) sb
 
-instance Pretty ScPart where
+instance (Printable pch, Printable dur) => Pretty (ScPart pch dur) where
   pretty (ScPart i refs sb) = prefix i <$> text ":part " <> integer i 
                                        <$> sepSeq (<$>) sb 
                                        <$> pprefs (getRefs refs)
@@ -49,23 +54,23 @@ instance Pretty ScPart where
       fn (i,xs) = char '#' <> integer i <+> fillSep (map pretty xs)
   
   
-instance Pretty ScPoly where
+instance (Printable pch, Printable dur) => Pretty (ScPoly pch dur) where
   pretty (ScPolyM m)  = pretty m
   pretty (ScPolyRef i)  = brackets $ integer i
   
   
-instance Pretty ScMeasure where
+instance (Printable pch, Printable dur) => Pretty (ScMeasure pch dur) where
   pretty (ScMeasure i se) = text "|:" <> integer i <+> sepSeq (</>) se
   
-instance Pretty ScGlyph where
+instance (Printable pch, Printable dur) => Pretty (ScGlyph pch dur) where
   pretty (ScNote pch dur)  = group $ 
-      pretty pch <> char '/' <> double dur
+      pretty pch <> char '/' <> (text $ stringrep dur)
       
   pretty (ScRest dur)             = group $
-      char 'R' <> char '/' <> double dur 
+      char 'R' <> char '/' <> (text $ stringrep dur)
 
   pretty (ScSpacer dur)           = group $
-      char 'S' <> char '/' <> double dur 
+      char 'S' <> char '/' <> (text $ stringrep dur)
       
   pretty (ScGroup typ xs)         = brackets $ 
       char ':' <> groupdesc typ <+> hsep (map pretty xs)    
@@ -79,6 +84,7 @@ groupdesc ScBeam        = text "beam"
 groupdesc ScChord       = text "chord"
 groupdesc ScGraceNotes  = text "grace_notes"
 
-instance Pretty ScPitch where
-  pretty (ScPitch pn oct)         = text (afficher pn) <> int oct
+
+instance (Printable pch) => Pretty (ScPitch pch) where
+  pretty (ScPitch a)     = text $ stringrep a
       

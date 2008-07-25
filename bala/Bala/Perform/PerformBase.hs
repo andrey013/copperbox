@@ -1,5 +1,5 @@
-{-# OPTIONS_GHC -XMultiParamTypeClasses #-}
-{-# OPTIONS_GHC -XFlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies,
+             FlexibleInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -24,11 +24,21 @@ import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.State
 
+{-
 
 class (Show evt) => Perform evt where
   opitch     :: evt -> Maybe Pitch
   oduration  :: evt -> Maybe Duration
-  
+
+-}
+
+class (Show evt) => Perform evt pch dur | evt -> pch, evt -> dur where
+  eventvalues     :: evt -> (Maybe pch, Maybe dur)
+
+class ScDuration a where
+  toDouble :: a -> Double
+  fromDouble :: Double -> a
+    
 
 -- | The Perform monad is a State transformer over a reader   
 newtype PerformM st env a = PerformM { getPerform :: StateT st (Reader env) a }

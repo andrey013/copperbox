@@ -1,4 +1,4 @@
-
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Trees where
 
@@ -20,12 +20,9 @@ du16 p   = Note p sixteenth
 
 
 
-instance Perform NrEvent where
-  opitch (Note p _) = Just p
-  opitch (Rest _)   = Nothing
-  
-  oduration (Note _ d) = Just d
-  oduration (Rest d)   = Just d
+instance Perform NrEvent Pitch Duration where
+  eventvalues (Note p d) = (Just p, Just d)
+  eventvalues (Rest d)   = (Nothing, Just d)
 
 -- | example 1 - simple list of successive notes.  
 example1 :: EventTree NrEvent
