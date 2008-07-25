@@ -39,18 +39,25 @@ data ScMeasure = ScMeasure Integer (Seq ScGlyph)
 data ScGroupType = ScBeam | ScChord | ScGraceNotes
   deriving (Eq)
 
-data ScGlyph = ScNote PitchName Int Double
+data ScGlyph = ScNote ScPitch Double
              | ScRest Double
              | ScSpacer Double  -- non-printed space
              | ScGroup ScGroupType [ScGlyph]
 --             | ScTaggedGlyph ScTag
+
+
+data ScPitch = ScPitch PitchName Int
            
-           
+---
+
+
 instance Monoid ScPartRefs where
   mempty = ScPartRefs Map.empty
   mappend r r' =  ScPartRefs $ foldr fn (getRefs r) (Map.toAscList $ getRefs r')
     where
       fn (i,x) mp = Map.insert i x mp   
+      
+      
     
 
-   
+    

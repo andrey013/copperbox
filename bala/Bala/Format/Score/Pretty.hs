@@ -58,8 +58,8 @@ instance Pretty ScMeasure where
   pretty (ScMeasure i se) = text "|:" <> integer i <+> sepSeq (</>) se
   
 instance Pretty ScGlyph where
-  pretty (ScNote pn oct dur)  = group $ 
-      text (afficher pn) <> int oct <> char '/' <> double dur
+  pretty (ScNote pch dur)  = group $ 
+      pretty pch <> char '/' <> double dur
       
   pretty (ScRest dur)             = group $
       char 'R' <> char '/' <> double dur 
@@ -67,16 +67,18 @@ instance Pretty ScGlyph where
   pretty (ScSpacer dur)           = group $
       char 'S' <> char '/' <> double dur 
       
-  pretty (ScGroup typ xs)     = brackets $ 
+  pretty (ScGroup typ xs)         = brackets $ 
       char ':' <> groupdesc typ <+> hsep (map pretty xs)    
 
 --  pretty (ScTaggedGlyph tag)  = group $ 
 --      char 'X' <> pretty tag
+
       
 groupdesc :: ScGroupType -> Doc
 groupdesc ScBeam        = text "beam"
 groupdesc ScChord       = text "chord"
 groupdesc ScGraceNotes  = text "grace_notes"
 
-
+instance Pretty ScPitch where
+  pretty (ScPitch pn oct)         = text (afficher pn) <> int oct
       

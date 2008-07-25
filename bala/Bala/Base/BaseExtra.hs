@@ -31,7 +31,8 @@ module Bala.Base.BaseExtra (
   successor, predecessor, shiftyPlus, shiftyMinus,
   Count(..), Countable(..), 
   NonNeg, nonneg, NnNz, nnnz, RNnNz, rnnnz,
-  countPlus, countMinus, 
+  countPlus, countMinus,
+  base2bases, 
   
   -- * Utility functions 
   applyi, zam, 
@@ -72,7 +73,7 @@ import Control.Applicative hiding (many, optional, (<|>))
 import Control.Monad (ap)
 
 import Data.Char (ord)
-import Data.List (mapAccumL, sortBy)
+import Data.List (mapAccumL, sortBy, unfoldr)
 import Numeric (showHex)
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
@@ -172,8 +173,10 @@ predecessor n a = applyi n f a
   where f = if (n >= 0) then pred else succ
   
 
-             
-
+-- | generate an infinite list of base2 bases (?) 
+-- (terminological to do on this one)
+base2bases :: [Integer]
+base2bases = unfoldr (\x -> Just (x, x * 2)) 1 
 
 --------------------------------------------------------------------------------
 -- * Shifty arithmetic numbers for counting intervals

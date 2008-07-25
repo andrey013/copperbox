@@ -94,8 +94,8 @@ increaseMeasure d = do
 
 
 glyphDuration :: ScGlyph -> Double
-glyphDuration (ScNote  _ _ d)            = d
-glyphDuration (ScRest  d)                = d
+glyphDuration (ScNote  _ d)             = d
+glyphDuration (ScRest  d)               = d
 glyphDuration (ScGroup ScChord (x:xs))  = glyphDuration x
 glyphDuration (ScGroup ScGraceNotes _)  = 0.0
 glyphDuration (ScGroup ScBeam xs)       = 
@@ -127,7 +127,7 @@ remext e = let ed = glyphDuration e in do
     -- LilyPond or Abc can decide what to do
     -- (grace notes shouldn't be at the end anyway)
     changeDuration :: Double -> ScGlyph -> ScGlyph
-    changeDuration d (ScNote p o _)             = ScNote p o d
+    changeDuration d (ScNote p _)               = ScNote p d
     changeDuration d (ScRest _)                 = ScRest d
     changeDuration d (ScGroup ScChord xs)       = 
         let xs' = map (changeDuration d) xs in ScGroup ScChord xs'
@@ -172,7 +172,8 @@ scGrace = scGroup  ScGraceNotes
 
 
 scNote :: Pitch -> Duration -> ScGlyph
-scNote p d = ScNote (pitchName p) (octaveMeasure p) (durationSize d)
+scNote p d = let pch = ScPitch (pitchName p) (octaveMeasure p) 
+             in ScNote pch  (durationSize d)
 
 
 scRest :: Duration -> ScGlyph

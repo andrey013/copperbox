@@ -15,7 +15,11 @@
 
 module Bala.Base.Duration (
   -- * Datatype
-  Duration, 
+  -- Duration, 
+  Duration,
+  
+  rationalDuration, 
+  
   
   -- * Destructor
   unDuration, simplifyDuration,
@@ -41,7 +45,8 @@ module Bala.Base.Duration (
 
   ) where
 
-import Bala.Base.BaseExtra  
+import Bala.Base.BaseExtra
+import Data.List
 import Data.Ratio
 
 
@@ -51,7 +56,30 @@ data Duration = Dur {
   }
   deriving (Eq,Ord)
 
+rationalDuration :: Rational -> Duration
+rationalDuration r = let (n,d) = nr r in 
+    if r < (2%1) then recsmall n d 0 else reclarge r (Dur (closest r) 0)
+  where
+    recsmall n d dots 
+        | n == 0 || d == 0  = error "rationalDuration - doesn't simplify"
+        | n == 1            = Dur (n%d) dots
+        | otherwise         = let (n',d') = nr $ (n%d) - (1%d)
+                              in recsmall n' d' (dots + 1)
+     
+    reclarge r dur = case rationalize (dot dur) `compare` r  of
+                        EQ -> dur
+                        GT -> Dur r 0 -- a nonstandard duration 
+                        LT -> reclarge r (dot dur)
 
+    closest r = let ls = map (flip (%) 1) base2bases
+                in last $ takeWhile (r>=) ls
+                
+    
+    
+
+                                      
+--    simplify n d = nr (n%d)
+         
 -- | Extract a \simple\ ratio plus dotting count 
 unDuration :: Duration -> (Ratio Integer, Integer)
 unDuration (Dur r d) = (r,d)
@@ -67,6 +95,8 @@ simplifyDuration :: Duration -> (Duration, Integer)
 simplifyDuration d = let (r,dots) = unDuration d in (Dur r 0, dots)
 
 
+        
+        
 
 -- | Augment the duration with a dot.
 dot :: Duration -> Duration
@@ -101,6 +131,11 @@ durationSize dur =
   let r     = rationalize dur
       (n,d) = (fromIntegral $ numerator r, fromIntegral $ denominator r)
   in n / d
+
+
+
+
+
 
 --------------------------------------------------------------------------------
 -- Instances
