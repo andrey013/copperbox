@@ -19,9 +19,9 @@ module Bala.Perform.AbcInternals (
   ) where
 
 
-import qualified Bala.Base as Base
-import Bala.Base.Meter 
-import Bala.Format.Output.OutputAbc
+import Bala.Base
+import Bala.Format.Output.OutputAbc hiding ( AbcPitchLetter(..) )
+import qualified Bala.Format.Output.OutputAbc as Abc
 import Bala.Perform.RenderAbc (abcPitch)
 
 import System.Process (runCommand, waitForProcess)
@@ -48,14 +48,14 @@ execAbcm2psOn abc_filename ps_filename = do
 data Abc_Header_Defaults = Abc_Header_Defaults {
     abc_title       :: String,
     abc_meter       :: MeterFraction,
-    abc_key         :: Base.Key
+    abc_key         :: Key
   }
   deriving (Show)
 
 abc_header_defaults = Abc_Header_Defaults {
     abc_title       = "",
     abc_meter       = 4//4,
-    abc_key         = Base.c_major
+    abc_key         = c_major
   }     
         
 abc_template defaults expr = 
@@ -63,16 +63,16 @@ abc_template defaults expr =
       +++ number_field  1
       +++ title_field   (abc_title defaults)      
       +++ meter_field   << meter (abc_meter defaults)
-      +++ key_field     << key_spec (note C) major
+      +++ key_field     << key << key_spec (note Abc.C) major
       +++ key_field     << clef treble
       +++ body          << expr
   where
-    toKeySpec :: Base.Key -> Abc Key
-    toKeySpec k = let (pn,kt) = Base.unKey k
-                      pch     = abcPitch $ Base.pitch pn 4 
+    toKeySpec :: Key -> AbcKeySpec
+    toKeySpec k = let (pn,kt) = unKey k
+                      pch     = abcPitch $ pitch pn 4 
                   in key_spec pch (toKeyType kt)
-    toKeyType (Base.MajorKey) = major
-    toKeyType (Base.MinorKey) = minor
+    toKeyType MajorKey = major
+    toKeyType MinorKey = minor
     
 empty_body = tune
       

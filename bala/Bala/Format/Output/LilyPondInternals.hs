@@ -131,59 +131,67 @@ ppMeter mf = let (n,d) = unMeterFraction mf in
 --------------------------------------------------------------------------------
 
 -- | Contexts
-data CT_Toplevel
+data LyCxt_ToplevelT
+type LyCxt_Toplevel = Ly LyCxt_ToplevelT
 
-toplevel            ::  Ly CT_Toplevel
+toplevel            :: LyCxt_Toplevel
 toplevel            = Ly $ sequenceS (<$>) emptyseq
 
 
 -- | Properties inside header block e.g. title, dedication
-data CT_Header  
+data LyCxt_HeaderT  
+type LyCxt_Header = Ly LyCxt_HeaderT
 
-headerBlk           ::  Ly CT_Header
+headerBlk           :: LyCxt_Header
 headerBlk           = Ly $ sequenceS (<$>) emptyseq
 
 
 -- | Book context for multiple scores, markup
-data CT_Book
+data LyCxt_BookT
+type LyCxt_Book = Ly LyCxt_BookT
 
 
 -- | Glyphs - e.g. rest, note, skip etc
-data CT_Element 
+data LyCxt_ElementT 
+type LyCxt_Element = Ly LyCxt_ElementT
 
-elementBlk          ::  Ly CT_Element
+elementBlk          :: LyCxt_Element
 elementBlk          = Ly $ sequenceS (</>) emptyseq
 
 --------------------------------------------------------------------------------
 -- ** Commenting input files (2.12)
 
 
-data CmdVersion
+data LyCmdVersionT
+type LyCmdVersion = Ly LyCmdVersionT
  
-version :: String -> Ly CmdVersion
+version :: String -> LyCmdVersion
 version = command1 "version" . lyLit . dquotes . text
 
 
-instance Append CT_Toplevel CmdVersion  
+instance Append LyCxt_ToplevelT LyCmdVersionT  
   
 
-data LineComment
+data LyLineCommentT
+type LyLineComment = Ly LyLineCommentT
 
-lineComment :: String -> Ly LineComment
+
+lineComment :: String -> LyLineComment
 lineComment s = lyLit $ text ('%':' ':s) <> linebreak 
 
 
-instance Append CT_Toplevel LineComment
+instance Append LyCxt_ToplevelT LyLineCommentT
 
 
-data BlockComment
+data LyBlockCommentT
+type LyBlockComment = Ly LyBlockCommentT
 
-blockComment :: String -> Ly BlockComment
+blockComment :: String -> LyBlockComment
 blockComment s = lyLit $ string $ "%{ " ++ s ++ " %}"
 
 
-instance Append CT_Toplevel BlockComment
-instance Append CT_Element BlockComment
+instance Append LyCxt_ToplevelT LyBlockCommentT
+instance Append LyCxt_ElementT LyBlockCommentT
 
 
 
@@ -193,309 +201,328 @@ instance Append CT_Element BlockComment
 -- *** Normal pitches (6.1.1)
 
 
-data PitchName = C | D | E | F | G | A | B 
+data LyPitchName = C | D | E | F | G | A | B 
   deriving (Eq,Enum,Ord,Show)
 
-instance Pretty PitchName where 
+instance Pretty LyPitchName where 
   pretty = text . map toLower . show
 
-data Pitch
+data LyPitchT
+type LyPitch = Ly LyPitchT
+
 
 -- | Printed as @c d e f g a b@
-pitch :: PitchName -> Ly Pitch
-pitch = lyLit . pretty
+pitch               :: LyPitchName -> LyPitch
+pitch               = lyLit . pretty
 
   
-data OctaveSpec
+data LyOctaveSpecT
+type LyOctaveSpec = Ly LyOctaveSpecT
   
 -- | Printed as @'@, @''@, @'''@, etc. - e.g. @c''@
-raised      :: Int -> Ly OctaveSpec
-raised i    = lyLit $ text (replicate i '\'')
+raised              :: Int -> LyOctaveSpec
+raised i            = lyLit $ text (replicate i '\'')
 
 
 -- | Printed as @,@, @,,@, @,,,@, etc. - e.g. @d,,@
-lowered     :: Int -> Ly OctaveSpec
-lowered i   = lyLit $ text  (replicate i ',')
+lowered             :: Int -> LyOctaveSpec
+lowered i           = lyLit $ text  (replicate i ',')
   
-instance SuffixAttr Pitch OctaveSpec
+instance SuffixAttr LyPitchT LyOctaveSpecT
 
 
               
-data Note
+data LyNoteT
+type LyNote = Ly LyNoteT
 
-note :: Ly Pitch -> Ly Note
-note (Ly p) = Ly p
+note                :: LyPitch -> LyNote
+note (Ly p)         = Ly p
 
-instance Append CT_Element Note
+instance Append LyCxt_ElementT LyNoteT
 
 
 
 --------------------------------------------------------------------------------
 -- *** Accidentals (6.1.2)  
-data Accidental
+data LyAccidentalT
+type LyAccidental = Ly LyAccidentalT
 
 -- | Printed as @is@.
-sharp               :: Ly Accidental
+sharp               :: LyAccidental
 sharp               = lyLit $ text "is" 
 
 -- | Printed as @es@.
-flat                :: Ly Accidental
+flat                :: LyAccidental
 flat                = lyLit $ text "es"
 
 -- | Printed as @isis@.
-doubleSharp         :: Ly Accidental
+doubleSharp         :: LyAccidental
 doubleSharp         = lyLit $ text "isis"
 
 -- | Printed as @eses@.
-doubleFlat          :: Ly Accidental
+doubleFlat          :: LyAccidental
 doubleFlat          = lyLit $ text "eses"  
 
     
-instance SuffixAttr Pitch Accidental
+instance SuffixAttr LyPitchT LyAccidentalT
 
 --------------------------------------------------------------------------------
 -- *** Cautionary accidentals (6.1.3)
 
-data CautionaryAccidental
+data LyCautionaryAccidentalT
+type LyCautionaryAccidental = Ly LyCautionaryAccidentalT
 
 -- | Printed as @!@.
-reminder_accidental     :: Ly CautionaryAccidental
+reminder_accidental     :: LyCautionaryAccidental
 reminder_accidental     = lyLit $ char '!'
 
 -- | Printed as @?@.
-cautionary_accidental   :: Ly CautionaryAccidental
+cautionary_accidental   :: LyCautionaryAccidental
 cautionary_accidental   = lyLit $ char '?'
   
                              
-instance SuffixAttr Pitch CautionaryAccidental 
+instance SuffixAttr LyPitchT LyCautionaryAccidentalT 
 
 --------------------------------------------------------------------------------
 -- *** Micro tones (6.1.4)
 
-data MicroTone
+data LyMicroToneT
+type LyMicroTone = Ly LyMicroToneT
 
-half_flat               :: Ly MicroTone
-half_flat               = lyLit $ string "ih"
+half_flat           :: LyMicroTone
+half_flat           = lyLit $ string "ih"
 
-half_sharp              :: Ly MicroTone 
-half_sharp              = lyLit $ string "es"
+half_sharp          :: LyMicroTone 
+half_sharp          = lyLit $ string "es"
     
-instance SuffixAttr Pitch MicroTone
+instance SuffixAttr LyPitchT LyMicroToneT
 
 --------------------------------------------------------------------------------
 -- *** Relative octaves (6.1.6)
 
-data CmdRelative
+data LyCmdRelativeT
+type LyCmdRelative= Ly LyCmdRelativeT
 
 -- | Printed as: \\relative c'' { ... expr ... }
-relative :: Ly Pitch -> Ly b -> Ly CmdRelative
-relative p e          = 
+relative            :: LyPitch -> Ly b -> LyCmdRelative
+relative p e        = 
     let bexpr = Ly $ nestedf bracesHanging (unLy e) 
     in command2 "relative" p bexpr
 
 
 
-instance Append CT_Element CmdRelative
+instance Append LyCxt_ElementT LyCmdRelativeT
 
 
 --------------------------------------------------------------------------------
 -- *** Rests (6.1.9)
 
-data Rest
+data LyRestT
+type LyRest = Ly LyRestT
 
-rest :: Ly Rest
-rest = lyLit $ char 'r'
+rest                :: LyRest
+rest                = lyLit $ char 'r'
 
 -- | @spacer@ rests aren't printed.
-spacer :: Ly Rest
-spacer = lyLit $ char 's'
+spacer              :: LyRest
+spacer              = lyLit $ char 's'
 
-instance Append CT_Element Rest
+instance Append LyCxt_ElementT LyRestT
 
 --------------------------------------------------------------------------------  
 -- *** Skips (6.1.10)
 
 -- \skip
-data CmdSkip
+data LyCmdSkipT
+type LyCmdSkip = Ly LyCmdSkipT
 
-skip :: Ly Duration -> Ly CmdSkip
-skip d = lySeq2 (<+>) (cmd "skip") d
+skip                :: LyDuration -> LyCmdSkip
+skip d              = lySeq2 (<+>) (cmd "skip") d
 
-instance Append CT_Element CmdSkip
+instance Append LyCxt_ElementT LyCmdSkipT
   
 -- "s1", "s2", eyc  
-data SkipDuration
+data LySkipDurationT
+type LySkipDuration = Ly LySkipDurationT
 
-skip_duration :: Ly Duration -> Ly SkipDuration
-skip_duration d = lySeq2 (<>) (lyLit $ char 's') d
+skip_duration       :: LyDuration -> LySkipDuration
+skip_duration d     = lySeq2 (<>) (lyLit $ char 's') d
   
-instance Append CT_Element SkipDuration
+instance Append LyCxt_ElementT LySkipDurationT
 
 
 --------------------------------------------------------------------------------  
 -- ** Rhythms (6.2)
 -- *** Durations (6.2.1)
 
-data Duration
+data LyDurationT
+type LyDuration = Ly LyDurationT
 
-duration  :: Int -> Ly Duration
-duration  = lyLit . int
-
-dur :: Int -> Ly Duration
-dur = duration
+duration            :: Int -> LyDuration
+duration            = lyLit . int
 
 -- | @\\longa@.
-longa   :: Ly Duration
-longa   = cmd "longa"  
+longa               :: LyDuration
+longa               = cmd "longa"  
 
 -- | @\\breve@.
-breve   :: Ly Duration
-breve   = cmd "breve"
+breve               :: LyDuration
+breve               = cmd "breve"
 
    
-instance SuffixAttr Rest Duration
-instance SuffixAttr Note Duration
-
-
-
-
-
+instance SuffixAttr LyRestT LyDurationT
+instance SuffixAttr LyNoteT LyDurationT
 
 
 --------------------------------------------------------------------------------
 -- *** Augmentation dots (6.2.2)
 
-data Dotted
+data LyDottedT
+type LyDotted = Ly LyDottedT
 
-dotted                :: Int -> Ly Dotted
-dotted i              = lyLit $ text (replicate i '.') 
+dotted              :: Int -> LyDotted
+dotted i            = lyLit $ text (replicate i '.') 
 
-dot                   :: Ly Dotted
-dot                   = lyLit $ char '.'
+dot                 :: LyDotted
+dot                 = lyLit $ char '.'
 
-instance SuffixAttr Duration Dotted
+instance SuffixAttr LyDurationT LyDottedT
 
 
 
 --------------------------------------------------------------------------------
 -- *** Tuplets (6.2.3)
 
-data CmdTimes
+data LyCmdTimesT
+type LyCmdTimes = Ly LyCmdTimesT
 
-times :: MeterFraction -> Ly e  -> Ly CmdTimes
-times r e          = 
+times               :: MeterFraction -> Ly e  -> LyCmdTimes
+times r e           = 
     let bexpr = Ly $ nestedf bracesSpaced (unLy e)
     in command2 "times" (lyLit $ ppMeter r) bexpr
 
-
+instance Append LyCxt_ElementT LyCmdTimesT
 
 --------------------------------------------------------------------------------
 -- ** Mutliple notes at once (6.3)
 -- *** Chords (6.3.1)
   
-data Chord
+data LyChordT
+type LyChord = Ly LyChordT
 
-chord                 :: [Ly Pitch] -> Ly Chord
-chord xs              = 
+chord               :: [LyPitch] -> LyChord
+chord xs            = 
     let notes = sequenceL (<+>) (map unLy xs) 
     in Ly $ nestedf angles notes
 
-instance Append CT_Element Chord
-instance SuffixAttr Chord Duration
+
+-- to do - which instance is correct?
+instance Append LyCxt_ElementT LyChordT
+instance SuffixAttr LyChordT LyDurationT
 
 
 --------------------------------------------------------------------------------
 -- *** Stems (6.3.2)
 
-data CmdStem
+data LyCmdStemT
+type LyCmdStem = Ly LyCmdStemT
 
 -- | @\\stemUp@.
-stemUp                  :: Ly CmdStem
-stemUp                  = cmd "stemUp"  
+stemUp              :: LyCmdStem
+stemUp              = cmd "stemUp"  
 
 -- | @\\stemDown@.
-stemDown                :: Ly CmdStem
-stemDown                = cmd "stemDown"    
+stemDown            :: LyCmdStem
+stemDown            = cmd "stemDown"    
 
 -- | @\\stemNeutral@.
-stemNeutral             :: Ly CmdStem
-stemNeutral             = cmd "stemNeutral" 
+stemNeutral         :: LyCmdStem
+stemNeutral         = cmd "stemNeutral" 
   
-instance Append CT_Element CmdStem
+instance Append LyCxt_ElementT LyCmdStemT
 
 --------------------------------------------------------------------------------
 -- *** Basic polyphony (6.3.3)
 
 -- Don't constrain the result type otherwise we can't fold (\\)
 
-data Poly
+data LyPolyT
+type LyPoly = Ly LyPolyT
 
-openPoly    :: Ly Poly
-openPoly              = lyLit $ text "<< " <> line
+openPoly            :: LyPoly
+openPoly            = lyLit $ text "<< " <> line
 
-closePoly   :: Ly Poly
-closePoly             = lyLit $ line <> text " >>"
+closePoly           :: LyPoly
+closePoly           = lyLit $ line <> text " >>"
 
 (\\) :: Ly a -> Ly b -> Ly a
 a \\ b                = lySeq3 (<>) a (lyLit $ text " \\\\" <> line) b
   
   
 
-instance Append CT_Element Poly
+instance Append LyCxt_ElementT LyPolyT
 
 --------------------------------------------------------------------------------
 -- ** Staff notation (6.4)
 -- *** Clef (6.4.1)
 
-data CmdClef
+data LyCmdClefT
+type LyCmdClef = Ly LyCmdClefT
 
-clef :: Ly ClefType -> Ly CmdClef
-clef = command1break "clef"
+clef                :: LyClefType -> LyCmdClef
+clef                = command1break "clef"
 
-instance Append CT_Element CmdClef
+instance Append LyCxt_ElementT LyCmdClefT
  
-data ClefType
+data LyClefTypeT
+type LyClefType = Ly LyClefTypeT
 
-cleftype :: String -> Ly ClefType
-cleftype = lyLit . text 
+cleftype            :: String -> LyClefType
+cleftype            = lyLit . text 
 
 -- for clef transpositions  make a cleftype with an doublequoted string
 
 --------------------------------------------------------------------------------
 -- *** Key signature (6.4.2)
 
-data CmdKey
+data LyCmdKeyT
+type LyCmdKey = Ly LyCmdKeyT
 
-key :: Ly Pitch -> Ly CmdKeyType -> Ly CmdKey
-key = command2break "key"
+key                 :: LyPitch -> LyCmdKeyType -> LyCmdKey
+key                 = command2break "key"
 
-instance Append CT_Element CmdKey
+instance Append LyCxt_ElementT LyCmdKeyT
 
 
-data CmdKeyType
+data LyCmdKeyTypeT
+type LyCmdKeyType = Ly LyCmdKeyTypeT
 
-keyType :: String -> Ly CmdKeyType
-keyType = cmd
+keyType             :: String -> LyCmdKeyType
+keyType             = cmd
 
 
 --------------------------------------------------------------------------------
 -- *** Time signature (6.4.3)
 
-data CmdTime
+data LyCmdTimeT
+type LyCmdTime = Ly LyCmdTimeT
 
-time :: MeterFraction -> Ly CmdTime
-time = command1 "time" . lyLit . ppMeter
+time                :: MeterFraction -> LyCmdTime
+time                = command1 "time" . lyLit . ppMeter
 
 
-instance Append CT_Element CmdTime
+instance Append LyCxt_ElementT LyCmdTimeT
 
 --------------------------------------------------------------------------------
 -- *** Bar lines (6.4.5)
 
-data CmdBar
+data LyCmdBarT
+type LyCmdBar = Ly LyCmdBarT
 
-bar :: String -> Ly CmdBar
-bar = command1 "bar" . lyLit . text
+bar                 :: String -> LyCmdBar
+bar                 = command1 "bar" . lyLit . text
+
+instance Append LyCxt_ElementT LyCmdBarT
   
 -- "|", "|:", "||", ":|", ".|", ".|.", ":|:", "|.", ":", "unbroken ||:",
 -- "broken ||:"
@@ -503,319 +530,354 @@ bar = command1 "bar" . lyLit . text
 --------------------------------------------------------------------------------
 -- *** Unmetered music (6.4.6)
 
-data CmdCadenza
+data LyCmdCadenzaT
+type LyCmdCadenza = Ly LyCmdCadenzaT
 
-cadenzaOn           :: Ly CmdCadenza
+cadenzaOn           :: LyCmdCadenza
 cadenzaOn           = cmd "cadenzaOn"
 
-cadenzaOff          :: Ly CmdCadenza 
+cadenzaOff          :: LyCmdCadenza 
 cadenzaOff          = cmd "cadenzaOff"
+
+instance Append LyCxt_ElementT LyCmdCadenzaT
 
 
 --------------------------------------------------------------------------------
 -- ** Connecting notes (6.5)
 -- *** Ties (6.5.1)
 
-data Tie
+data LyTieT
+type LyTie = Ly LyTieT
 
 -- | tie is printed as @~@.
-tie :: Ly Tie
-tie                   = lyLit $ char '~'
+tie                 :: LyTie
+tie                 = lyLit $ char '~'
 
-instance Append CT_Element Tie
+instance Append LyCxt_ElementT LyTieT
 
-data CmdTie
+data LyCmdTieT
+type LyCmdTie = Ly LyCmdTieT
 
-cmdTie :: String -> Ly CmdTie
-cmdTie = cmd
+cmdTie              :: String -> LyCmdTie
+cmdTie              = cmd
 
-instance Append CT_Element CmdTie
+instance Append LyCxt_ElementT LyCmdTieT
 
 --------------------------------------------------------------------------------
 -- *** Slurs (6.5.2)
 
-data Slur
+data LySlurT
+type LySlur = Ly LySlurT
 
-openSlur  :: Ly Slur
-openSlur              = lyLit $ char '('
+openSlur            :: LySlur
+openSlur            = lyLit $ char '('
 
-closeSlur :: Ly Slur
-closeSlur             = lyLit $ char ')'
+closeSlur           :: LySlur
+closeSlur           = lyLit $ char ')'
 
 
-instance Append CT_Element Slur
-
-  
-data CmdSlur
-
-cmdSlur :: String -> Ly CmdSlur
-cmdSlur = cmd
+instance Append LyCxt_ElementT LySlurT
 
   
-instance Append CT_Element CmdSlur
+data LyCmdSlurT
+type LyCmdSlur = Ly LyCmdSlurT
+
+cmdSlur             :: String -> LyCmdSlur
+cmdSlur             = cmd
+
+  
+instance Append LyCxt_ElementT LyCmdSlurT
 
 --------------------------------------------------------------------------------
 -- *** Phrasing slurs (6.5.3)
 -- { ATTRIBUTE OF NOTE ? }
 
-data CmdPhrasingSlur
+data LyCmdPhrasingSlurT
+type LyCmdPhrasingSlur = Ly LyCmdPhrasingSlurT
 
-cmdPhrasingSlur   :: String -> Ly CmdPhrasingSlur
-cmdPhrasingSlur   = cmd
+cmdPhrasingSlur     :: String -> LyCmdPhrasingSlur
+cmdPhrasingSlur     = cmd
   
-instance SuffixAttr Note CmdPhrasingSlur
-instance SuffixAttr Chord CmdPhrasingSlur
+instance SuffixAttr LyNoteT LyCmdPhrasingSlurT
+instance SuffixAttr LyChordT LyCmdPhrasingSlurT
 
 --------------------------------------------------------------------------------
 -- *** Laissez vibrer ties (6.5.4)
 
-data CmdLaissezVibrer
+data LyCmdLaissezVibrerT
+type LyCmdLaissezVibrer = Ly LyCmdLaissezVibrerT
 
-laissezVibrer :: Ly CmdLaissezVibrer
-laissezVibrer = cmd "laissezVibrer"
+laissezVibrer       :: LyCmdLaissezVibrer
+laissezVibrer       = cmd "laissezVibrer"
 
-instance SuffixAttr Note CmdLaissezVibrer
-instance SuffixAttr Chord CmdLaissezVibrer
+instance SuffixAttr LyNoteT LyCmdLaissezVibrerT
+instance SuffixAttr LyChordT LyCmdLaissezVibrerT
 
 
 --------------------------------------------------------------------------------
 -- *** Automatic beams (6.5.5)
 -- noBeam is a note attribute
 
-data CmdNoBeam
+data LyCmdNoBeamT
+type LyCmdNoBeam = Ly LyCmdNoBeamT
 
-noBeam :: Ly CmdNoBeam
-noBeam  = cmd "noBeam"
+noBeam              :: LyCmdNoBeam
+noBeam              = cmd "noBeam"
 
-instance SuffixAttr Note CmdNoBeam
-instance SuffixAttr Chord CmdNoBeam
+instance SuffixAttr LyNoteT LyCmdNoBeamT
+instance SuffixAttr LyChordT LyCmdNoBeamT
 
 --------------------------------------------------------------------------------
 -- *** Manual beams (6.5.6)
 
-data Beam
+data LyBeamT
+type LyBeam = Ly LyBeamT
 
-openBeam  :: Ly Beam 
-openBeam              = lyLit $ char '['
+openBeam            :: LyBeam 
+openBeam            = lyLit $ char '['
   
 
-closeBeam :: Ly Beam
-closeBeam             = lyLit $ char ']'
+closeBeam           :: LyBeam
+closeBeam           = lyLit $ char ']'
 
-instance Append CT_Element Beam
+instance Append LyCxt_ElementT LyBeamT
 
 --------------------------------------------------------------------------------  
 -- *** Grace notes (6.5.7)
 
 -- 
 
-data CmdGrace
+data LyCmdGraceT
+type LyCmdGrace = Ly LyCmdGraceT
 
-cmdGrace            :: String -> Ly a -> Ly CmdGrace
+cmdGrace            :: String -> Ly a -> LyCmdGrace
 cmdGrace            = command1 
 
-instance Append CT_Element CmdGrace
+instance Append LyCxt_ElementT LyCmdGraceT
 
 --------------------------------------------------------------------------------
 -- ** Expressive marks (6.6)
 -- *** Articulations (6.6.1)
 
-data CmdArticulation
+data LyCmdArticulationT
+type LyCmdArticulation = Ly LyCmdArticulationT
 
-cmdArticulation :: String -> Ly CmdArticulation
-cmdArticulation = cmd
+cmdArticulation     :: String -> LyCmdArticulation
+cmdArticulation     = cmd
 
-instance SuffixAttr Note CmdArticulation
-
-
-data Articulation
-
-articulation :: String -> Ly Articulation
-articulation = lyLit . text 
+instance SuffixAttr LyNoteT LyCmdArticulationT
 
 
-instance SuffixAttr Note Articulation
+data LyArticulationT
+type LyArticulation = Ly LyArticulationT
+
+articulation        :: String -> LyArticulation
+articulation        = lyLit . text 
+
+
+instance SuffixAttr LyNoteT LyArticulationT
 
 
 
-data VerticalPlacement
+data LyVerticalPlacementT
+type LyVerticalPlacement = Ly LyVerticalPlacementT
 
-aboveLit            :: Ly VerticalPlacement
+aboveLit            :: LyVerticalPlacement
 aboveLit            = lyLit $ char '^'
 
-belowLit            :: Ly VerticalPlacement
+belowLit            :: LyVerticalPlacement
 belowLit            = lyLit $ char '_'
 
-defaultLit          :: Ly VerticalPlacement
+defaultLit          :: LyVerticalPlacement
 defaultLit          = lyLit $ char '-'
 
 
-above               :: (PrefixAttr elt VerticalPlacement) => Ly elt -> Ly elt
+above               :: (PrefixAttr elt LyVerticalPlacementT) => Ly elt -> Ly elt
 above e             = aboveLit !> e
 
-below               :: (PrefixAttr elt VerticalPlacement) => Ly elt -> Ly elt
+below               :: (PrefixAttr elt LyVerticalPlacementT) => Ly elt -> Ly elt
 below e             = belowLit !> e
 
-defaultPosition :: (PrefixAttr elt VerticalPlacement) => Ly elt -> Ly elt
-defaultPosition e = defaultLit !> e
+defaultPosition     :: (PrefixAttr elt LyVerticalPlacementT) => Ly elt -> Ly elt
+defaultPosition e   = defaultLit !> e
 
 
-instance PrefixAttr CmdArticulation VerticalPlacement
-instance SuffixAttr Fingering VerticalPlacement
+instance PrefixAttr LyCmdArticulationT LyVerticalPlacementT
+instance SuffixAttr LyFingeringT LyVerticalPlacementT
 
 
 --------------------------------------------------------------------------------
 -- *** Fingering instructions (6.6.2)
 
-data Fingering
+data LyFingeringT
+type LyFingering = Ly LyFingeringT
 
-fingering       :: Int -> Ly Fingering
-fingering       = lyLit . text . (:) '-' . show 
+fingering           :: Int -> LyFingering
+fingering           = lyLit . text . (:) '-' . show 
  
-instance SuffixAttr Note Fingering
+instance SuffixAttr LyNoteT LyFingeringT
 
 --------------------------------------------------------------------------------
 -- *** Dynamics (6.6.3)
 
 
-data CmdDynamic
+data LyCmdDynamicT
+type LyCmdDynamic = Ly LyCmdDynamicT
 
-cmdDynamic      :: String -> Ly CmdDynamic
-cmdDynamic      = cmd
+cmdDynamic          :: String -> LyCmdDynamic
+cmdDynamic          = cmd
 
-instance SuffixAttr Note CmdDynamic
-instance SuffixAttr Chord CmdDynamic
+instance SuffixAttr LyNoteT LyCmdDynamicT
+instance SuffixAttr LyChordT LyCmdDynamicT
 
 
 --------------------------------------------------------------------------------
 -- *** Breath marks (6.6.4)
 
 
-data CmdBreathe
+data LyCmdBreatheT
+type LyCmdBreathe = Ly LyCmdBreatheT
 
-breathe             :: Ly CmdBreathe
+breathe             :: LyCmdBreathe
 breathe             = cmd "breathe"
   
-instance Append CT_Element CmdBreathe
+instance Append LyCxt_ElementT LyCmdBreatheT
 
 --------------------------------------------------------------------------------
 -- *** Glissando (6.6.6)
 
-data CmdGlissando
+data LyCmdGlissandoT
+type LyCmdGlissando = Ly LyCmdGlissandoT
 
-glissando           :: Ly CmdGlissando
+glissando           :: LyCmdGlissando
 glissando           = cmd "glissando"
 
 
-instance SuffixAttr Note CmdGlissando
-instance SuffixAttr Chord CmdGlissando
+instance SuffixAttr LyNoteT LyCmdGlissandoT
+instance SuffixAttr LyChordT LyCmdGlissandoT
 
 
 
 --------------------------------------------------------------------------------
 -- *** Arpeggio (6.6.7)
 
-data CmdArpeggio
+data LyCmdArpeggioT
+type LyCmdArpeggio = Ly LyCmdArpeggioT
 
-arpeggio            :: Ly CmdArpeggio
+arpeggio            :: LyCmdArpeggio
 arpeggio            = cmd "arpeggio"
  
-instance SuffixAttr Chord CmdArpeggio
+instance SuffixAttr LyChordT LyCmdArpeggioT
 
 
 --------------------------------------------------------------------------------
 -- *** Falls and doits (6.6.8)
 
-data CmdBendAfter
+data LyCmdBendAfterT
+type LyCmdBendAfter = Ly LyCmdBendAfterT
 
-bendAfter           :: Ly CmdBendAfter
+bendAfter           :: LyCmdBendAfter
 bendAfter           = cmd "bendAfter"
 
 
-instance SuffixAttr Note CmdBendAfter
-instance SuffixAttr Chord CmdBendAfter
+instance SuffixAttr LyNoteT LyCmdBendAfterT
+instance SuffixAttr LyChordT LyCmdBendAfterT
 
 --------------------------------------------------------------------------------
 -- * Instrument-specific notation (7)
 -- ** Piano music (7.1)
 -- *** Automatic staff changes (7.1.1)
 
-data CmdAutochange
+data LyCmdAutochangeT
+type LyCmdAutochange = Ly LyCmdAutochangeT
 
-autochange          :: Ly CmdAutochange
+autochange          :: LyCmdAutochange
 autochange          = cmd "autochange"
 
-instance Append CT_Element CmdAutochange -- not really correct
+instance Append LyCxt_ElementT LyCmdAutochangeT -- not really correct
 
 
 -- *** Pedals (7.1.2)
-data CmdPedal
+data LyCmdPedalT
+type LyCmdPedal = Ly LyCmdPedalT
 
-cmdPedal            :: String -> Ly CmdPedal
+cmdPedal            :: String -> LyCmdPedal
 cmdPedal            = cmd
 
 
-instance SuffixAttr Note CmdPedal
-instance SuffixAttr Chord CmdPedal
+instance SuffixAttr LyNoteT LyCmdPedalT
+instance SuffixAttr LyChordT LyCmdPedalT
 
 --------------------------------------------------------------------------------
 -- ** Chord names (7.2)
 -- *** Chords mode (7.2.2)
 
-data CmdChordmode
+data LyCmdChordmodeT
+type LyCmdChordmode = Ly LyCmdChordmodeT
 
-chordmode           :: Ly a -> Ly CmdChordmode
+chordmode           :: Ly a -> LyCmdChordmode
 chordmode e         = command1 "chordmode" (bracesSpacedExpr e)
+
+-- to do - instance of ?
 
 
 --------------------------------------------------------------------------------
 -- ** Vocal music (7.3)
 -- *** Setting simple songs (7.3.1)
 
-data CmdAddlyrics
+data LyCmdAddlyricsT
+type LyCmdAddlyrics = Ly LyCmdAddlyricsT
 
-addlyrics           :: String -> Ly CmdChordmode
+addlyrics           :: String -> LyCmdAddlyrics
 addlyrics s         = command1 "addlyrics" (lyLit $ string s)
 
 -- {CONTEXT} ?
 
 -- *** Melismata (7.3.5)
-data CmdMelismata
+data LyCmdMelismataT
+type LyCmdMelismata = Ly LyCmdMelismataT
 
-melisma             :: Ly CmdMelismata
+melisma             :: LyCmdMelismata
 melisma             = cmd "melisma"
 
 
-melismaEnd          :: Ly CmdMelismata
+melismaEnd          :: LyCmdMelismata
 melismaEnd          = cmd "melismaEnd"
   
-instance Append CT_Element CmdMelismata
+instance Append LyCxt_ElementT LyCmdMelismataT
   
 --------------------------------------------------------------------------------
 -- ** Rhythmic music (7.4)
 -- *** Showing melody rhythms (7.4.1)
 
-data CtxRhythmicStaff
+data LyCxtRhythmicStaffT
+type LyCxtRhythmicStaff = Ly LyCxtRhythmicStaffT
 
-rhythmicStaff     :: Ly CtxRhythmicStaff
-rhythmicStaff     = context "RhythmicStaff"
+rhythmicStaff       :: LyCxtRhythmicStaff
+rhythmicStaff       = context "RhythmicStaff"
 
 
-instance NewContextType CtxRhythmicStaff
+instance NewContextType LyCxtRhythmicStaffT
 
 --------------------------------------------------------------------------------
 -- *** Entering percussion (7.4.2)
 
-data CmdDrums
+data LyCmdDrumsT
+type LyCmdDrums = Ly LyCmdDrumsT
 
-drums               :: Ly a -> Ly CmdChordmode
+drums               :: Ly a -> LyCmdDrums
 drums e             = command1 "drums" (bracesHangingExpr e)
 
+-- to do - instance of ?
 
-data DrumPitchName  
 
-drumPitchName   :: String -> Ly DrumPitchName
-drumPitchName   = lyLit . text
+data LyDrumPitchNameT 
+type LyDrumPitchName = Ly LyDrumPitchNameT
+
+drumPitchName       :: String -> LyDrumPitchName
+drumPitchName       = lyLit . text
+
+-- to do - instance of ?
  
 --------------------------------------------------------------------------------
 -- ** Guitar (7.5)
@@ -823,101 +885,117 @@ drumPitchName   = lyLit . text
 -- *** Tablatures basic (7.5.2)
 
 -- | stringnum corresponds to @\\@ in LilyPond.
-data Stringnum
+data LyStringnumT
+type LyStringnum = Ly LyStringnumT
 
-stringnum           :: Int -> Ly Stringnum
+stringnum           :: Int -> LyStringnum
 stringnum i         = lyLit $ text $ '\\' : show i
 
 
-instance SuffixAttr Note Stringnum
+instance SuffixAttr LyNoteT LyStringnumT
 
-data CtxTabStaff
+data LyCxtTabStaffT
+type LyCxtTabStaff = Ly LyCxtTabStaffT
 
-tabStaff          :: Ly CtxTabStaff
-tabStaff          = context "TabStaff"
+tabStaff            :: LyCxtTabStaff
+tabStaff            = context "TabStaff"
 
   
-instance NewContextType CtxTabStaff
+instance NewContextType LyCxtTabStaffT
 
-data CtxTabVoice
+data LyCxtTabVoiceT
+type LyCxtTabVoice = Ly LyCxtTabVoiceT
 
-tabVoice          :: Ly CtxTabVoice
-tabVoice          = context "TabVoice"
+tabVoice            :: LyCxtTabVoice
+tabVoice            = context "TabVoice"
 
 
-instance NewContextType CtxTabVoice
+instance NewContextType LyCxtTabVoiceT
 
 -- *** Right hand fingerings (7.5.6)
-data RightHandFinger
+data LyRightHandFingerT
+type LyRightHandFinger = Ly LyRightHandFingerT
 
-rightHandFinger     :: Int -> Ly RightHandFinger
+rightHandFinger     :: Int -> LyRightHandFinger
 rightHandFinger i   = let str = "-\rightHandFinger #" ++ show i
                       in lyLit $ text str
 
-rH                  :: Int -> Ly RightHandFinger
-rH                  = rightHandFinger
+rh                  :: Int -> LyRightHandFinger
+rh                  = rightHandFinger
                          
                                
-instance SuffixAttr Note RightHandFinger
+instance SuffixAttr LyNoteT LyRightHandFingerT
 
 
 --------------------------------------------------------------------------------
 -- ** Other instrument specific notation (7.8)
 -- *** Artificial harmonics (strings) (7.8.1)
-data CmdHarmonic
+data LyCmdHarmonicT
+type LyCmdHarmonic = Ly LyCmdHarmonicT
 
-harmonic            :: Ly CmdHarmonic
+harmonic            :: LyCmdHarmonic
 harmonic            = cmd "harmonic"
 
-instance SuffixAttr Note CmdHarmonic
+instance SuffixAttr LyNoteT LyCmdHarmonicT
 
 --------------------------------------------------------------------------------
 -- * Advanced notation (8)
 -- ** Text (8.1)
 -- *** Text scripts (8.1.1)
 
-data TextScript
+data LyTextScriptT
+type LyTextScript = Ly LyTextScriptT
 
-textScript          :: String -> Ly TextScript
+textScript          :: String -> LyTextScript
 textScript          = lyLit . dquotes . text
 
-instance SuffixAttr Note TextScript
-instance SuffixAttr TextScript VerticalPlacement
+instance SuffixAttr LyNoteT LyTextScriptT
+instance SuffixAttr LyTextScriptT LyVerticalPlacementT
 
-data CmdEmptyText
+data LyCmdEmptyTextT
+type LyCmdEmptyText = Ly LyCmdEmptyTextT
 
-emptyText           :: Ly CmdEmptyText
+emptyText           :: LyCmdEmptyText
 emptyText           = cmd "emptyText"
 
+-- instance of a context?
  
-data CmdFatText
+data LyCmdFatTextT
+type LyCmdFatText = Ly LyCmdFatTextT
 
-fatText             :: Ly CmdFatText
+fatText             :: LyCmdFatText
 fatText             = cmd "fatText"
+
+-- instance of a context?
+
 
 -- *** Text markup (8.1.4)
 
-data CmdMarkup
+data LyCmdMarkupT
+type LyCmdMarkup = Ly LyCmdMarkupT
 
 -- | Simplified for now - the body is a String.
-markup              :: String -> Ly CmdFatText
+markup              :: String -> LyCmdMarkup
 markup s            = command1 "markup" (bracesSpacedExpr $ lyLit $ string s)
+
+-- instance of a context?
 
 
 --------------------------------------------------------------------------------
 -- ** Preparing parts (8.2)
 -- *** Metronome marks (8.2.2)
 
-data CmdTempo
+data LyCmdTempoT
+type LyCmdTempo = Ly LyCmdTempoT
 
-tempo         :: Ly Duration -> Int -> Ly CmdTempo
-tempo d i     = 
+tempo               :: LyDuration -> Int -> LyCmdTempo
+tempo d i = 
     let expr = Ly $ sequenceL (<>) [unLy d, literal $ equals, literal $ int i]
     in command1 "tempo" expr
 
 
 
-instance Append CT_Element CmdTempo
+instance Append LyCxt_ElementT LyCmdTempoT
 
 --------------------------------------------------------------------------------
 -- * Changing defaults (9)
@@ -926,100 +1004,106 @@ instance Append CT_Element CmdTempo
 -- new is a binary command (type x music-expr)
 class NewContextType a
 
-data CmdNew
+data LyCmdNewT
+type LyCmdNew = Ly LyCmdNewT
 
-newContext  :: (NewContextType ct) => Ly ct -> Ly a -> Ly CmdNew
-newContext ct e   = command2 "new" ct (bracesHangingExpr e) 
+newContext          :: (NewContextType ct) => Ly ct -> Ly a -> LyCmdNew
+newContext ct e     = command2 "new" ct (bracesHangingExpr e) 
 
 
 
-data CtxStaff
+data LyCxtStaffT
+type LyCxtStaff = Ly LyCxtStaffT
 
-staff               :: Ly CtxStaff
+staff               :: LyCxtStaff
 staff               = context "Staff"
 
-instance NewContextType CtxStaff  
+instance NewContextType LyCxtStaffT  
 
 
-data CtxVoice
+data LyCxtVoiceT
+type LyCxtVoice = Ly LyCxtVoiceT
 
-voice               :: Ly CtxVoice
+voice               :: LyCxtVoice
 voice               = context "Voice"
 
-instance NewContextType CtxVoice 
+instance NewContextType LyCxtVoiceT 
 
 --------------------------------------------------------------------------------
 -- * Non-musical notation (10)
 -- ** Input files (10.1)
 -- *** Multiple scores in a book (10.1.2)
 
-data CmdScore
+data CmdScoreT
+type LyCmdScore = Ly CmdScoreT
 
-score               :: Ly Block -> Ly CmdScore
+score               :: LyBlock -> LyCmdScore
 score               = command1 "score"
 
 
 
-instance Append CT_Toplevel CmdScore
-instance Append CT_Book CmdScore
+instance Append LyCxt_ToplevelT CmdScoreT
+instance Append LyCxt_BookT CmdScoreT
 
-data CmdBook
+data LyCmdBookT
+type LyCmdBook = Ly LyCmdBookT
 
-book                :: Ly Block -> Ly CmdBook
+book                :: LyBlock -> LyCmdBook
 book                = command1 "book"
 
 
-instance Append CT_Toplevel CmdBook
+instance Append LyCxt_ToplevelT LyCmdBookT
 
 --------------------------------------------------------------------------------
 -- ** Titles and headers (10.2)
 
-data CmdHeader
+data LyCmdHeaderT
+type LyCmdHeader = Ly LyCmdHeaderT
 
-header              ::  Ly CT_Header -> Ly CmdHeader 
+header              ::  Ly a -> LyCmdHeader 
 header              = command1 "header" . bracesHangingExpr                    
  
 
 
-instance Append CT_Toplevel CmdHeader
+instance Append LyCxt_ToplevelT LyCmdHeaderT
 
 
-data Block
+data LyBlockT
+type LyBlock = Ly LyBlockT
 
-block               :: Ly a -> Ly Block
+block               :: Ly a -> LyBlock
 block               = bracesHangingExpr
 
-blockS              :: Ly a -> Ly Block
+blockS              :: Ly a -> LyBlock
 blockS              = bracesSpacedExpr
 
-instance Append CT_Toplevel Block
-instance Append CT_Element Block
+instance Append LyCxt_ToplevelT LyBlockT
+instance Append LyCxt_ElementT LyBlockT
 
 --------------------------------------------------------------------------------    
 -- *** Creating titles (10.2.1)
 
-data HeaderElement
+data LyHeaderElementT
+type LyHeaderElement = Ly LyHeaderElementT
 
-headerElement           :: String -> String -> Ly HeaderElement
-headerElement var val   = equation var (lyLit $ dquotes $ text val)
+headerElement       :: String -> String -> LyHeaderElement
+headerElement n v   = equation n (lyLit $ dquotes $ text v)
 
 
-
+        
+instance Append LyCxt_HeaderT LyHeaderElementT
 
 --------------------------------------------------------------------------------    
 -- ** MIDI output (10.3)
 -- *** Creating MIDI files (10.3.1)
 
-data CmdMidi
+data LyCmdMidiT
+type LyCmdMidi = Ly LyCmdMidiT
 
-midi                :: Ly CmdMidi
+midi                :: LyCmdMidi
 midi                = cmd "midi"
 
 
 
 
-
-  
-        
-instance Append CT_Header HeaderElement
 

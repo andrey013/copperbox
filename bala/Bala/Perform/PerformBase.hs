@@ -19,6 +19,7 @@
 module Bala.Perform.PerformBase where
 
 import Bala.Base
+import Bala.Format.Output.OutputLilyPond
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Reader
@@ -35,11 +36,25 @@ class (Show evt) => Perform evt where
 class (Show evt) => Perform evt pch dur | evt -> pch, evt -> dur where
   eventvalues     :: evt -> (Maybe pch, Maybe dur)
 
+
+-- Score representation 
+
 class ScDuration a where
   toDouble :: a -> Double
   fromDouble :: Double -> a
     
+-- LilyPond back end
 
+class LilyPondPitch pch where
+  octaveDist :: pch -> pch -> Int
+  -- lyAccidental :: pch -> Ly Accidental
+  lyPitch :: pch -> LyPitch
+  
+class (Eq dur) => LilyPondDuration dur where
+  mkLyDuration :: dur -> Maybe (LyDuration)
+  
+  
+  
 -- | The Perform monad is a State transformer over a reader   
 newtype PerformM st env a = PerformM { getPerform :: StateT st (Reader env) a }
 

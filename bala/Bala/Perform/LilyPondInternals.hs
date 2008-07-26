@@ -42,7 +42,7 @@ execLilyPondOn filename = do
     
     
 
-lilypond_template :: String -> Ly b -> Ly CT_Toplevel
+lilypond_template :: String -> Ly b -> LyCxt_Toplevel
 lilypond_template s expr = 
     toplevel 
       +++ version "2.10.3" 

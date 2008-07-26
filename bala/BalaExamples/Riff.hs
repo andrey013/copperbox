@@ -11,7 +11,7 @@ import Bala.Perform.PerformAbc
 import Bala.Perform.PerformLilyPond
 import Bala.Perform.PerformMidi
 
-import Bala.Format.Output.OutputLilyPond hiding (Pitch, chord, Duration) 
+import Bala.Format.Output.OutputLilyPond hiding (chord) 
 
 
 

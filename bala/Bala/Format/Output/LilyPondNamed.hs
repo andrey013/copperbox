@@ -29,7 +29,7 @@ import Text.PrettyPrint.Leijen
 
 -- *** Elements - Normal pitches (6.1.1)
 
-_c, _d, _e, _f, _g , _a, _b :: Ly Pitch
+_c, _d, _e, _f, _g , _a, _b :: LyPitch
 _c      = pitch C
 _d      = pitch D
 _e      = pitch E
@@ -40,1103 +40,1103 @@ _b      = pitch B
 
 -- *** Elements - Clef (6.4.1)
 -- | @treble@.
-treble          :: Ly ClefType
-treble          = cleftype "treble"
+treble              :: LyClefType
+treble              = cleftype "treble"
 
 -- | @alto@.
-alto            :: Ly ClefType
-alto            = cleftype "alto"
+alto                :: LyClefType
+alto                = cleftype "alto"
 
 -- | @tenor@.
-tenor           :: Ly ClefType
-tenor           = cleftype "tenor"
+tenor               :: LyClefType
+tenor               = cleftype "tenor"
 
 -- | @bass@.
-bass            :: Ly ClefType
-bass            = cleftype "bass"
+bass                :: LyClefType
+bass                = cleftype "bass"
 
 -- | @french@.
-french          :: Ly ClefType
-french          = cleftype "french"
+french              :: LyClefType
+french              = cleftype "french"
 
 -- | @soprano@.
-soprano         :: Ly ClefType
-soprano         = cleftype "soprano"
+soprano             :: LyClefType
+soprano             = cleftype "soprano"
 
 -- | @mezzosoprano@.
-mezzosoprano    :: Ly ClefType
-mezzosoprano    = cleftype "mezzosoprano"
+mezzosoprano        :: LyClefType
+mezzosoprano        = cleftype "mezzosoprano"
 
 -- | @baritone@.
-baritone        :: Ly ClefType
-baritone        = cleftype "baritone"
+baritone            :: LyClefType
+baritone            = cleftype "baritone"
 
 -- | @varbaritone@.
-varbaritone     :: Ly ClefType
-varbaritone     = cleftype "varbaritone"
+varbaritone         :: LyClefType
+varbaritone         = cleftype "varbaritone"
 
 -- | @subbass@.
-subbass         :: Ly ClefType
-subbass         = cleftype "subbass" 
+subbass             :: LyClefType
+subbass             = cleftype "subbass" 
 
 -- | @percussion@.
-percussion      :: Ly ClefType
-percussion      = cleftype "percussion" 
+percussion          :: LyClefType
+percussion          = cleftype "percussion" 
 
 -- | @tabClef@.
-tabClef         :: Ly ClefType
-tabClef         = cleftype "tabClef" 
+tabClef             :: LyClefType
+tabClef             = cleftype "tabClef" 
 
 
 -- *** Elements - Key signature (6.4.2)
 
 -- | @\\major@.
-major           :: Ly CmdKeyType
-major           = keyType "major"
+major               :: LyCmdKeyType
+major               = keyType "major"
 
 -- | @\\minor@.
-minor           :: Ly CmdKeyType
-minor           = keyType "minor"
+minor               :: LyCmdKeyType
+minor               = keyType "minor"
 
 -- | @\\ionian@.
-ionian          :: Ly CmdKeyType
-ionian          = keyType "ionian"
+ionian              :: LyCmdKeyType
+ionian              = keyType "ionian"
 
 -- | @\\locrian@.
-locrian         :: Ly CmdKeyType
-locrian         = keyType "locrian"
+locrian             :: LyCmdKeyType
+locrian             = keyType "locrian"
 
 -- | @\\aeolian@.
-aeolian         :: Ly CmdKeyType
-aeolian         = keyType "aeolian"
+aeolian             :: LyCmdKeyType
+aeolian             = keyType "aeolian"
 
 -- | @\\mixolydian@.
-mixolydian      :: Ly CmdKeyType
-mixolydian      = keyType "mixolydian"
+mixolydian          :: LyCmdKeyType
+mixolydian          = keyType "mixolydian"
 
 -- | @\\lydian@.
-lydian          :: Ly CmdKeyType
-lydian          = keyType "lydian"
+lydian              :: LyCmdKeyType
+lydian              = keyType "lydian"
 
 -- | @\\phrygian@.
-phrygian        :: Ly CmdKeyType
-phrygian        = keyType "phrygian"
+phrygian            :: LyCmdKeyType
+phrygian            = keyType "phrygian"
 
 -- | @\\dorian@.
-dorian          :: Ly CmdKeyType
-dorian          = keyType "dorian"
+dorian              :: LyCmdKeyType
+dorian              = keyType "dorian"
 
 
 -- *** Elements - Ties (6.5.1)
 
 -- | @\\repeatTie@.
-repeatTie       :: Ly CmdTie  
-repeatTie       = cmdTie "repeatTie" 
+repeatTie           :: LyCmdTie  
+repeatTie           = cmdTie "repeatTie" 
 
 -- | @\\tieUp@.
-tieUp           :: Ly CmdTie
-tieUp           = cmdTie "tieUp"
+tieUp               :: LyCmdTie
+tieUp               = cmdTie "tieUp"
 
 -- | @\\tieDown@.
-tieDown         :: Ly CmdTie
-tieDown         = cmdTie "tieDown"
+tieDown             :: LyCmdTie
+tieDown             = cmdTie "tieDown"
 
 -- | @\\tieNeutral@.
-tieNeutral      :: Ly CmdTie
-tieNeutral      = cmdTie "tieNeutral"
+tieNeutral          :: LyCmdTie
+tieNeutral          = cmdTie "tieNeutral"
 
 -- | @\\tieDotted@.
-tieDotted       :: Ly CmdTie
-tieDotted       = cmdTie "tieDotted"
+tieDotted           :: LyCmdTie
+tieDotted           = cmdTie "tieDotted"
 
 -- | @\\tieDashed@.
-tieDashed       :: Ly CmdTie
-tieDashed       = cmdTie "tieDashed"
+tieDashed           :: LyCmdTie
+tieDashed           = cmdTie "tieDashed"
 
 -- | @\\tieSolid@.
-tieSolid        :: Ly CmdTie
-tieSolid        = cmdTie "tieSolid"
+tieSolid            :: LyCmdTie
+tieSolid            = cmdTie "tieSolid"
 
 -- *** Elements - Slurs (6.5.2)
 
 -- | @\\slurUp@.
-slurUp          :: Ly CmdSlur
-slurUp          = cmdSlur "slurUp"
+slurUp              :: LyCmdSlur
+slurUp              = cmdSlur "slurUp"
 
 -- | @\\slurDown@.
-slurDown        :: Ly CmdSlur
-slurDown        = cmdSlur "slurDown"
+slurDown            :: LyCmdSlur
+slurDown            = cmdSlur "slurDown"
 
 -- | @\\slurNeutral@.
-slurNeutral     :: Ly CmdSlur
-slurNeutral     = cmdSlur "slurNeutral"
+slurNeutral         :: LyCmdSlur
+slurNeutral         = cmdSlur "slurNeutral"
 
 -- | @\\slurDashed@.
-slurDashed      :: Ly CmdSlur
-slurDashed      = cmdSlur "slurDashed"
+slurDashed          :: LyCmdSlur
+slurDashed          = cmdSlur "slurDashed"
 
 -- | @\\slurDotted@.
-slurDotted      :: Ly CmdSlur
-slurDotted      = cmdSlur "slurDotted"
+slurDotted          :: LyCmdSlur
+slurDotted          = cmdSlur "slurDotted"
 
 -- | @\\slurSolid@.
-slurSolid       :: Ly CmdSlur
-slurSolid       = cmdSlur "slurSolid"
+slurSolid           :: LyCmdSlur
+slurSolid           = cmdSlur "slurSolid"
 
 
 -- *** Elements - Phrasing slurs (6.5.3)
 
 -- | @\\(@.
-openPhrasingSlur      :: Ly CmdPhrasingSlur
-openPhrasingSlur      = cmdPhrasingSlur "("
+openPhrasingSlur    :: LyCmdPhrasingSlur
+openPhrasingSlur    = cmdPhrasingSlur "("
 
 -- | @\\)@.
-closePhrasingSlur     :: Ly CmdPhrasingSlur
-closePhrasingSlur     = cmdPhrasingSlur ")"
+closePhrasingSlur   :: LyCmdPhrasingSlur
+closePhrasingSlur   = cmdPhrasingSlur ")"
 
 -- | @\\phrasingSlurUp@.
-phrasingSlurUp        :: Ly CmdPhrasingSlur
-phrasingSlurUp        = cmdPhrasingSlur "phrasingSlurUp"
+phrasingSlurUp      :: LyCmdPhrasingSlur
+phrasingSlurUp      = cmdPhrasingSlur "phrasingSlurUp"
 
 -- | @\\phrasingSlurDown@.
-phrasingSlurDown      :: Ly CmdPhrasingSlur
-phrasingSlurDown      = cmdPhrasingSlur "phrasingSlurDown"
+phrasingSlurDown    :: LyCmdPhrasingSlur
+phrasingSlurDown    = cmdPhrasingSlur "phrasingSlurDown"
 
 -- | @\\phrasingSlurNeutral@.
-phrasingSlurNeutral   :: Ly CmdPhrasingSlur
-phrasingSlurNeutral   = cmdPhrasingSlur "phrasingSlurNeutral"
+phrasingSlurNeutral :: LyCmdPhrasingSlur
+phrasingSlurNeutral = cmdPhrasingSlur "phrasingSlurNeutral"
 
 -- *** Elements - Grace notes (6.5.7)
 
 -- | @\\grace@.
-grace         :: Ly a -> Ly CmdGrace
-grace         = cmdGrace "grace"
+grace               :: Ly a -> LyCmdGrace
+grace               = cmdGrace "grace"
 
 -- | @\\acciaccatura@.
-acciaccatura  :: Ly a -> Ly CmdGrace
-acciaccatura  = cmdGrace "acciaccatura"
+acciaccatura        :: Ly a -> LyCmdGrace
+acciaccatura        = cmdGrace "acciaccatura"
 
 -- | @\\appoggiatura@.
-appoggiatura  :: Ly a -> Ly CmdGrace
-appoggiatura  = cmdGrace "appoggiatura" 
+appoggiatura        :: Ly a -> LyCmdGrace
+appoggiatura        = cmdGrace "appoggiatura" 
 
 -- *** Elements - Articulations (6.6.1)
 
 -- | @-^@ - dashHat, aka @marcato@.
-dashHat           :: Ly Articulation
-dashHat           = articulation "-^"
+dashHat             :: LyArticulation
+dashHat             = articulation "-^"
 
 -- | @-+@ - dashPlus, aka @stopped@.
-dashPlus          :: Ly Articulation
-dashPlus          = articulation "-+"
+dashPlus            :: LyArticulation
+dashPlus            = articulation "-+"
 
 -- | @--@ - dashDash, aka @tenuto@.
-dashDash          :: Ly Articulation
-dashDash          = articulation "--"
+dashDash            :: LyArticulation
+dashDash            = articulation "--"
 
 -- | @-|@ - dashBar, aka @staccatissimo@.
-dashBar           :: Ly Articulation
-dashBar           = articulation "-|"
+dashBar             :: LyArticulation
+dashBar             = articulation "-|"
 
 -- | @->@ - dashLarger, aka @accent@.
-dashLarger        :: Ly Articulation
-dashLarger        = articulation "->"
+dashLarger          :: LyArticulation
+dashLarger          = articulation "->"
 
 -- | @-.@ - dashDot, aka @staccato@.
-dashDot           :: Ly Articulation
-dashDot           = articulation "-."
+dashDot             :: LyArticulation
+dashDot             = articulation "-."
 
 -- | @-_@ - dashUnderscore, aka @portato@.
-dashUnderscore    :: Ly Articulation
-dashUnderscore    = articulation "-_"
+dashUnderscore      :: LyArticulation
+dashUnderscore      = articulation "-_"
 
 
 
 -- | @\\accent@.
-accent                  :: Ly CmdArticulation          
-accent                  = cmdArticulation "accent"  
+accent              :: LyCmdArticulation          
+accent              = cmdArticulation "accent"  
 
 -- | @\\marcato@.
-marcato                 :: Ly CmdArticulation
-marcato                 = cmdArticulation "marcato" 
+marcato             :: LyCmdArticulation
+marcato             = cmdArticulation "marcato" 
 
 -- | @\\staccatissimo@.
-staccatissimo           :: Ly CmdArticulation
-staccatissimo           = cmdArticulation "staccatissimo" 
+staccatissimo       :: LyCmdArticulation
+staccatissimo       = cmdArticulation "staccatissimo" 
 
 -- | @\\espressivo@.
-espressivo              :: Ly CmdArticulation  
-espressivo              = cmdArticulation "espressivo"  
+espressivo          :: LyCmdArticulation  
+espressivo          = cmdArticulation "espressivo"  
 
 -- | @\\staccato@.
-staccato                :: Ly CmdArticulation
-staccato                = cmdArticulation "staccato" 
+staccato            :: LyCmdArticulation
+staccato            = cmdArticulation "staccato" 
 
 -- | @\\tenuto@.
-tenuto                  :: Ly CmdArticulation
-tenuto                  = cmdArticulation "tenuto" 
+tenuto              :: LyCmdArticulation
+tenuto              = cmdArticulation "tenuto" 
 
 -- | @\\portato@.
-portato                 :: Ly CmdArticulation
-portato                 = cmdArticulation "portato"
+portato             :: LyCmdArticulation
+portato             = cmdArticulation "portato"
 
 -- | @\\upbow@.
-upbow                   :: Ly CmdArticulation
-upbow                   = cmdArticulation "upbow"
+upbow               :: LyCmdArticulation
+upbow               = cmdArticulation "upbow"
 
 -- | @\\downbow@.
-downbow                 :: Ly CmdArticulation
-downbow                 = cmdArticulation "downbow" 
+downbow             :: LyCmdArticulation
+downbow             = cmdArticulation "downbow" 
 
 -- | @\\flageolet@.
-flageolet               :: Ly CmdArticulation
-flageolet               = cmdArticulation "flageolet" 
+flageolet           :: LyCmdArticulation
+flageolet           = cmdArticulation "flageolet" 
 
 -- | @\\thumb@.
-thumb                   :: Ly CmdArticulation
-thumb                   = cmdArticulation "thumb" 
+thumb               :: LyCmdArticulation
+thumb               = cmdArticulation "thumb" 
 
 -- | @\\lheel@.
-lheel                   :: Ly CmdArticulation
-lheel                   = cmdArticulation "lheel" 
+lheel               :: LyCmdArticulation
+lheel               = cmdArticulation "lheel" 
 
 -- | @\\rheel@.
-rheel                   :: Ly CmdArticulation
-rheel                   = cmdArticulation "rheel" 
+rheel               :: LyCmdArticulation
+rheel               = cmdArticulation "rheel" 
 
 -- | @\\ltoe@.
-ltoe                    :: Ly CmdArticulation
-ltoe                    = cmdArticulation "ltoe" 
+ltoe                :: LyCmdArticulation
+ltoe                = cmdArticulation "ltoe" 
 
 -- | @\\rtoe@.
-rtoe                    :: Ly CmdArticulation
-rtoe                    = cmdArticulation "rtoe" 
+rtoe                :: LyCmdArticulation
+rtoe                = cmdArticulation "rtoe" 
 
 -- | @\\open@.
-open                    :: Ly CmdArticulation
-open                    = cmdArticulation "open"
+open                :: LyCmdArticulation
+open                = cmdArticulation "open"
 
 -- | @\\stopped@.
-stopped                 :: Ly CmdArticulation
-stopped                 = cmdArticulation "stopped"
+stopped             :: LyCmdArticulation
+stopped             = cmdArticulation "stopped"
 
 -- | @\\turn@.
-turn                    :: Ly CmdArticulation
-turn                    = cmdArticulation "turn" 
+turn                :: LyCmdArticulation
+turn                = cmdArticulation "turn" 
 
 -- | @\\reverseturn@.
-reverseturn             :: Ly CmdArticulation
-reverseturn             = cmdArticulation "reverseturn"      
+reverseturn         :: LyCmdArticulation
+reverseturn         = cmdArticulation "reverseturn"      
 
 -- | @\\trill@.
-trill                   :: Ly CmdArticulation
-trill                   = cmdArticulation "trill"  
+trill               :: LyCmdArticulation
+trill               = cmdArticulation "trill"  
 
 -- | @\\prall@.
-prall                   :: Ly CmdArticulation
-prall                   = cmdArticulation "prall"  
+prall               :: LyCmdArticulation
+prall               = cmdArticulation "prall"  
 
 -- | @\\mordent@.
-mordent                 :: Ly CmdArticulation
-mordent                 = cmdArticulation "mordent"   
+mordent             :: LyCmdArticulation
+mordent             = cmdArticulation "mordent"   
 
 -- | @\\prallprall@.
-prallprall              :: Ly CmdArticulation
-prallprall              = cmdArticulation "prallprall" 
+prallprall          :: LyCmdArticulation
+prallprall          = cmdArticulation "prallprall" 
 
 -- | @\\prallmordent@.
-prallmordent            :: Ly CmdArticulation
-prallmordent            = cmdArticulation "prallmordent"  
+prallmordent        :: LyCmdArticulation
+prallmordent        = cmdArticulation "prallmordent"  
 
 -- | @\\upprall@.
-upprall                 :: Ly CmdArticulation
-upprall                 = cmdArticulation "upprall"   
+upprall             :: LyCmdArticulation
+upprall             = cmdArticulation "upprall"   
 
 -- | @\\downprall@.
-downprall               :: Ly CmdArticulation
-downprall               = cmdArticulation "downprall" 
+downprall           :: LyCmdArticulation
+downprall           = cmdArticulation "downprall" 
 
 -- | @\\upmordent@.
-upmordent               :: Ly CmdArticulation
-upmordent               = cmdArticulation "upmordent"  
+upmordent           :: LyCmdArticulation
+upmordent           = cmdArticulation "upmordent"  
 
 -- | @\\downmordent@.
-downmordent             :: Ly CmdArticulation
-downmordent             = cmdArticulation "downmordent" 
+downmordent         :: LyCmdArticulation
+downmordent         = cmdArticulation "downmordent" 
 
 -- | @\\pralldown@.
-pralldown               :: Ly CmdArticulation
-pralldown               = cmdArticulation "pralldown"   
+pralldown           :: LyCmdArticulation
+pralldown           = cmdArticulation "pralldown"   
 
 -- | @\\prallup@.
-prallup                 :: Ly CmdArticulation
-prallup                 = cmdArticulation "prallup"  
+prallup             :: LyCmdArticulation
+prallup             = cmdArticulation "prallup"  
 
 -- | @\\lineprall@.
-lineprall               :: Ly CmdArticulation
-lineprall               = cmdArticulation "lineprall" 
+lineprall           :: LyCmdArticulation
+lineprall           = cmdArticulation "lineprall" 
 
 -- | @\\signumcongruentiae@.
-signumcongruentiae      :: Ly CmdArticulation
-signumcongruentiae      = cmdArticulation "signumcongruentiae"  
+signumcongruentiae  :: LyCmdArticulation
+signumcongruentiae  = cmdArticulation "signumcongruentiae"  
 
 -- | @\\shortfermata@.
-shortfermata            :: Ly CmdArticulation
-shortfermata            = cmdArticulation "shortfermata"  
+shortfermata        :: LyCmdArticulation
+shortfermata        = cmdArticulation "shortfermata"  
 
 -- | @\\fermata@.
-fermata                 :: Ly CmdArticulation
-fermata                 = cmdArticulation "fermata" 
+fermata             :: LyCmdArticulation
+fermata             = cmdArticulation "fermata" 
 
 -- | @\\longfermata@.
-longfermata             :: Ly CmdArticulation
-longfermata             = cmdArticulation "longfermata" 
+longfermata         :: LyCmdArticulation
+longfermata         = cmdArticulation "longfermata" 
 
 -- | @\\verylongfermata@.
-verylongfermata         :: Ly CmdArticulation 
-verylongfermata         = cmdArticulation "verylongfermata"    
+verylongfermata     :: LyCmdArticulation 
+verylongfermata     = cmdArticulation "verylongfermata"    
 
 -- | @\\segno@.
-segno                   :: Ly CmdArticulation
-segno                   = cmdArticulation "segno" 
+segno               :: LyCmdArticulation
+segno               = cmdArticulation "segno" 
 
 -- | @\\coda@.
-coda                    :: Ly CmdArticulation
-coda                    = cmdArticulation "coda" 
+coda                :: LyCmdArticulation
+coda                = cmdArticulation "coda" 
 
 -- | @\\varcoda@.
-varcoda                 :: Ly CmdArticulation
-varcoda                 = cmdArticulation "varcoda" 
+varcoda             :: LyCmdArticulation
+varcoda             = cmdArticulation "varcoda" 
 
 -- *** Elements - Dynamics (6.6.3)
 -- use underscore suffix _ so we don't swallow up valuable identifiers in the 
 -- namespace
 
 -- | @\\ppppp@.
-ppppp_                  :: Ly CmdDynamic
-ppppp_                  = cmdDynamic "ppppp" 
+ppppp_              :: LyCmdDynamic
+ppppp_              = cmdDynamic "ppppp" 
 
 -- | @\\pppp@.
-pppp_                   :: Ly CmdDynamic
-pppp_                   = cmdDynamic "pppp" 
+pppp_               :: LyCmdDynamic
+pppp_               = cmdDynamic "pppp" 
 
 -- | @\\ppp@.
-ppp_                    :: Ly CmdDynamic
-ppp_                    = cmdDynamic "ppp" 
+ppp_                :: LyCmdDynamic
+ppp_                = cmdDynamic "ppp" 
 
 -- | @\\pp@.
-pp_                     :: Ly CmdDynamic
-pp_                     = cmdDynamic "pp" 
+pp_                 :: LyCmdDynamic
+pp_                 = cmdDynamic "pp" 
 
 -- | @\\p@ - renamed piano.
-piano                   :: Ly CmdDynamic
-piano                   = cmdDynamic "p" 
+piano               :: LyCmdDynamic
+piano               = cmdDynamic "p" 
 
 -- | @\\mp@.
-mp_                     :: Ly CmdDynamic
-mp_                     = cmdDynamic "mp" 
+mp_                 :: LyCmdDynamic
+mp_                 = cmdDynamic "mp" 
 
 -- | @\\mf@.
-mf_                     :: Ly CmdDynamic
-mf_                     = cmdDynamic "mf" 
+mf_                 :: LyCmdDynamic
+mf_                 = cmdDynamic "mf" 
 
 -- | @\\f@ - renamed forte.
-forte                   :: Ly CmdDynamic
-forte                   = cmdDynamic "f"
+forte               :: LyCmdDynamic
+forte               = cmdDynamic "f"
 
 -- | @\\ff@.
-ff_                     :: Ly CmdDynamic
-ff_                     = cmdDynamic "ff"
+ff_                 :: LyCmdDynamic
+ff_                 = cmdDynamic "ff"
 
 -- | @\\fff@.
-fff_                    :: Ly CmdDynamic
-fff_                    = cmdDynamic "fff"
+fff_                :: LyCmdDynamic
+fff_                = cmdDynamic "fff"
 
 -- | @\\ffff@.
-ffff_                   :: Ly CmdDynamic
-ffff_                   = cmdDynamic "ffff"
+ffff_               :: LyCmdDynamic
+ffff_               = cmdDynamic "ffff"
 
 -- | @\\fp@.
-fp_                     :: Ly CmdDynamic
-fp_                     = cmdDynamic "fp"
+fp_                 :: LyCmdDynamic
+fp_                 = cmdDynamic "fp"
 
 -- | @\\sf@.
-sf_                     :: Ly CmdDynamic
-sf_                     = cmdDynamic "sf"
+sf_                 :: LyCmdDynamic
+sf_                 = cmdDynamic "sf"
 
 -- | @\\sff@.
-sff_                    :: Ly CmdDynamic
-sff_                    = cmdDynamic "sff"
+sff_                :: LyCmdDynamic
+sff_                = cmdDynamic "sff"
 
 -- | @\\sp@.
-sp_                     :: Ly CmdDynamic
-sp_                     = cmdDynamic "sp"
+sp_                 :: LyCmdDynamic
+sp_                 = cmdDynamic "sp"
 
 -- | @\\spp@.
-spp_                    :: Ly CmdDynamic
-spp_                    = cmdDynamic "spp"
+spp_                :: LyCmdDynamic
+spp_                = cmdDynamic "spp"
 
 -- | @\\sfz@.
-sfz_                    :: Ly CmdDynamic
-sfz_                    = cmdDynamic "sfz"
+sfz_                :: LyCmdDynamic
+sfz_                = cmdDynamic "sfz"
 
 -- | @\\rfz@.
-rfz_                    :: Ly CmdDynamic
-rfz_                    = cmdDynamic "rfz"
+rfz_                :: LyCmdDynamic
+rfz_                = cmdDynamic "rfz"
 
 -- | @\\<@.
-openCrescendo           :: Ly CmdDynamic
-openCrescendo           = cmdDynamic "<"
+openCrescendo       :: LyCmdDynamic
+openCrescendo       = cmdDynamic "<"
 
 -- | @\\>@.
-openDecrescendo         :: Ly CmdDynamic
-openDecrescendo         = cmdDynamic ">"
+openDecrescendo     :: LyCmdDynamic
+openDecrescendo     = cmdDynamic ">"
  
 -- | @\\!@. 
-closeDynamic            :: Ly CmdDynamic 
-closeDynamic            = cmdDynamic "!"
+closeDynamic        :: LyCmdDynamic 
+closeDynamic        = cmdDynamic "!"
 
 -- | @\\cr@ - alias of \\<. 
-cr_                     :: Ly CmdDynamic
-cr_                     = cmdDynamic "cr" 
+cr_                 :: LyCmdDynamic
+cr_                 = cmdDynamic "cr" 
 
 -- | @\\decr@ - alias of \\>. 
-decr_                   :: Ly CmdDynamic
-decr_                   = cmdDynamic "decr"   
+decr_               :: LyCmdDynamic
+decr_               = cmdDynamic "decr"   
 
 -- | @\\dynamicUp@. 
-dynamicUp               :: Ly CmdDynamic
-dynamicUp               = cmdDynamic "dynamicUp"  
+dynamicUp           :: LyCmdDynamic
+dynamicUp           = cmdDynamic "dynamicUp"  
 
 -- | @\\dynamicDown@. 
-dynamicDown             :: Ly CmdDynamic
-dynamicDown             = cmdDynamic "dynamicDown"  
+dynamicDown         :: LyCmdDynamic
+dynamicDown         = cmdDynamic "dynamicDown"  
 
 -- | @\\dynamicNeutral@. 
-dynamicNeutral          :: Ly CmdDynamic
-dynamicNeutral          = cmdDynamic "dynamicNeutral"  
+dynamicNeutral      :: LyCmdDynamic
+dynamicNeutral      = cmdDynamic "dynamicNeutral"  
 
 -- *** Elements - Pedals (7.1.2)  
 -- | @\\sustainDown@.
-sustainDown       :: Ly CmdPedal
-sustainDown       = cmdPedal "sustainDown"  
+sustainDown         :: LyCmdPedal
+sustainDown         = cmdPedal "sustainDown"  
 
 -- | @\\sustainUp@.
-sustainUp         :: Ly CmdPedal 
-sustainUp         = cmdPedal "sustainUp"  
+sustainUp           :: LyCmdPedal 
+sustainUp           = cmdPedal "sustainUp"  
 
 -- | @\\unaCorda@.
-unaCorda          :: Ly CmdPedal 
-unaCorda          = cmdPedal "unaCorda"  
+unaCorda            :: LyCmdPedal 
+unaCorda            = cmdPedal "unaCorda"  
 
 -- | @\\treCorde@.
-treCorde          :: Ly CmdPedal 
-treCorde          = cmdPedal "treCorde"  
+treCorde            :: LyCmdPedal 
+treCorde            = cmdPedal "treCorde"  
 
 -- | @\\sostenutoDown@.
-sostenutoDown     :: Ly CmdPedal 
-sostenutoDown     = cmdPedal "sostenutoDown"  
+sostenutoDown       :: LyCmdPedal 
+sostenutoDown       = cmdPedal "sostenutoDown"  
 
 -- | @\\sostenutoUp@.
-sostenutoUp       :: Ly CmdPedal 
-sostenutoUp       = cmdPedal "sostenutoUp"  
+sostenutoUp         :: LyCmdPedal 
+sostenutoUp         = cmdPedal "sostenutoUp"  
 
 
 --------------------------------------------------------------------------------
 -- *** Entering percussion (7.4.2)
 
 -- | @acousticbassdrum@. 
-acousticbassdrum      :: Ly DrumPitchName
-acousticbassdrum      = drumPitchName "acousticbassdrum"
+acousticbassdrum    :: LyDrumPitchName
+acousticbassdrum    = drumPitchName "acousticbassdrum"
 
 -- | @bassdrum@. 
-bassdrum              :: Ly DrumPitchName
-bassdrum              = drumPitchName "bassdrum"
+bassdrum            :: LyDrumPitchName
+bassdrum            = drumPitchName "bassdrum"
 
 -- | @hisidestick@. 
-hisidestick           :: Ly DrumPitchName
-hisidestick           = drumPitchName "hisidestick"
+hisidestick         :: LyDrumPitchName
+hisidestick         = drumPitchName "hisidestick"
 
 -- | @sidestick@. 
-sidestick             :: Ly DrumPitchName
-sidestick             = drumPitchName "sidestick"
+sidestick           :: LyDrumPitchName
+sidestick           = drumPitchName "sidestick"
 
 -- | @losidestick@. 
-losidestick           :: Ly DrumPitchName
-losidestick           = drumPitchName "losidestick"
+losidestick         :: LyDrumPitchName
+losidestick         = drumPitchName "losidestick"
 
 -- | @acousticsnare@. 
-acousticsnare         :: Ly DrumPitchName
-acousticsnare         = drumPitchName "acousticbassdrum"
+acousticsnare       :: LyDrumPitchName
+acousticsnare       = drumPitchName "acousticbassdrum"
 
 -- | @snare@. 
-snare                 :: Ly DrumPitchName
-snare                 = drumPitchName "snare"
+snare               :: LyDrumPitchName
+snare               = drumPitchName "snare"
 
 -- | @handclap@.
-handclap              :: Ly DrumPitchName
-handclap              = drumPitchName "handclap"
+handclap            :: LyDrumPitchName
+handclap            = drumPitchName "handclap"
 
 -- | @electricsnare@.
-electricsnare         :: Ly DrumPitchName
-electricsnare         = drumPitchName "electricsnare"
+electricsnare       :: LyDrumPitchName
+electricsnare       = drumPitchName "electricsnare"
 
 -- | @lowfloortom@.
-lowfloortom           :: Ly DrumPitchName
-lowfloortom           = drumPitchName "lowfloortom"
+lowfloortom         :: LyDrumPitchName
+lowfloortom         = drumPitchName "lowfloortom"
 
 -- | @closedhihat@.
-closedhihat           :: Ly DrumPitchName
-closedhihat           = drumPitchName "closedhihat"
+closedhihat         :: LyDrumPitchName
+closedhihat         = drumPitchName "closedhihat"
 
 -- | @hihat@.
-hihat                 :: Ly DrumPitchName
-hihat                 = drumPitchName "hihat"
+hihat               :: LyDrumPitchName
+hihat               = drumPitchName "hihat"
 
 -- | @highfloortom@.
-highfloortom          :: Ly DrumPitchName
-highfloortom          = drumPitchName "highfloortom"
+highfloortom        :: LyDrumPitchName
+highfloortom        = drumPitchName "highfloortom"
 
 -- | @pedalhihat@.
-pedalhihat            :: Ly DrumPitchName
-pedalhihat            = drumPitchName "pedalhihat"
+pedalhihat          :: LyDrumPitchName
+pedalhihat          = drumPitchName "pedalhihat"
 
 -- | @lowtom@.
-lowtom                :: Ly DrumPitchName
-lowtom                = drumPitchName "lowtom"
+lowtom              :: LyDrumPitchName
+lowtom              = drumPitchName "lowtom"
 
 -- | @openhihat@.
-openhihat             :: Ly DrumPitchName
-openhihat             = drumPitchName "openhihat"
+openhihat           :: LyDrumPitchName
+openhihat           = drumPitchName "openhihat"
 
 -- | @halfopenhihat@.
-halfopenhihat         :: Ly DrumPitchName
-halfopenhihat         = drumPitchName "halfopenhihat"
+halfopenhihat       :: LyDrumPitchName
+halfopenhihat       = drumPitchName "halfopenhihat"
 
 -- | @lowmidtom@.
-lowmidtom             :: Ly DrumPitchName
-lowmidtom             = drumPitchName "lowmidtom"
+lowmidtom           :: LyDrumPitchName
+lowmidtom           = drumPitchName "lowmidtom"
 
 -- | @himidtom@.
-himidtom              :: Ly DrumPitchName
-himidtom              = drumPitchName "himidtom"
+himidtom            :: LyDrumPitchName
+himidtom            = drumPitchName "himidtom"
 
 -- | @crashcymbala@.
-crashcymbala          :: Ly DrumPitchName
-crashcymbala          = drumPitchName "crashcymbala"
+crashcymbala        :: LyDrumPitchName
+crashcymbala        = drumPitchName "crashcymbala"
 
 -- | @crashcymbal@.
-crashcymbal           :: Ly DrumPitchName
-crashcymbal           = drumPitchName "crashcymbal"
+crashcymbal         :: LyDrumPitchName
+crashcymbal         = drumPitchName "crashcymbal"
 
 -- | @hightom@.
-hightom               :: Ly DrumPitchName
-hightom               = drumPitchName "hightom"
+hightom             :: LyDrumPitchName
+hightom             = drumPitchName "hightom"
 
 -- | @ridecymbala@.
 
-ridecymbala           :: Ly DrumPitchName
-ridecymbala           = drumPitchName "ridecymbala"
+ridecymbala         :: LyDrumPitchName
+ridecymbala         = drumPitchName "ridecymbala"
 
 -- | @ridecymbal@.
-ridecymbal            :: Ly DrumPitchName
-ridecymbal            = drumPitchName "ridecymbal"
+ridecymbal          :: LyDrumPitchName
+ridecymbal          = drumPitchName "ridecymbal"
 
 -- | @chinesecymbal@.
-chinesecymbal         :: Ly DrumPitchName
-chinesecymbal         = drumPitchName "chinesecymbal"
+chinesecymbal       :: LyDrumPitchName
+chinesecymbal       = drumPitchName "chinesecymbal"
 
 -- | @ridebell@.
-ridebell              :: Ly DrumPitchName
-ridebell              = drumPitchName "ridebell"
+ridebell            :: LyDrumPitchName
+ridebell            = drumPitchName "ridebell"
 
 -- | @tambourine@.
-tambourine            :: Ly DrumPitchName
-tambourine            = drumPitchName "tambourine"
+tambourine          :: LyDrumPitchName
+tambourine          = drumPitchName "tambourine"
 
 -- | @splashcymbal@.
-splashcymbal          :: Ly DrumPitchName
-splashcymbal          = drumPitchName "splashcymbal"
+splashcymbal        :: LyDrumPitchName
+splashcymbal        = drumPitchName "splashcymbal"
 
 -- | @cowbell@.
-cowbell               :: Ly DrumPitchName
-cowbell               = drumPitchName "cowbell"
+cowbell             :: LyDrumPitchName
+cowbell             = drumPitchName "cowbell"
 
 -- | @crashcymbalb@.
-crashcymbalb          :: Ly DrumPitchName
-crashcymbalb          = drumPitchName "crashcymbalb"
+crashcymbalb        :: LyDrumPitchName
+crashcymbalb        = drumPitchName "crashcymbalb"
 
 -- | @vibraslap@.
-vibraslap             :: Ly DrumPitchName
-vibraslap             = drumPitchName "vibraslap"
+vibraslap           :: LyDrumPitchName
+vibraslap           = drumPitchName "vibraslap"
 
 -- | @ridecymbalb@.
-ridecymbalb           :: Ly DrumPitchName
-ridecymbalb           = drumPitchName "ridecymbalb"
+ridecymbalb         :: LyDrumPitchName
+ridecymbalb         = drumPitchName "ridecymbalb"
 
 -- | @mutehibongo@.
-mutehibongo           :: Ly DrumPitchName
-mutehibongo           = drumPitchName "mutehibongo"
+mutehibongo         :: LyDrumPitchName
+mutehibongo         = drumPitchName "mutehibongo"
 
 -- | @hibongo@.
-hibongo               :: Ly DrumPitchName
-hibongo               = drumPitchName "hibongo"
+hibongo             :: LyDrumPitchName
+hibongo             = drumPitchName "hibongo"
 
 -- | @openhibongo@.
-openhibongo           :: Ly DrumPitchName
-openhibongo           = drumPitchName "openhibongo"
+openhibongo         :: LyDrumPitchName
+openhibongo         = drumPitchName "openhibongo"
 
 -- | @mutelobongo@.
-mutelobongo           :: Ly DrumPitchName
-mutelobongo           = drumPitchName "mutelobongo"
+mutelobongo         :: LyDrumPitchName
+mutelobongo         = drumPitchName "mutelobongo"
 
 -- | @lobongo@.
-lobongo               :: Ly DrumPitchName
-lobongo               = drumPitchName "lobongo"
+lobongo             :: LyDrumPitchName
+lobongo             = drumPitchName "lobongo"
 
 -- | @openlobongo@.
-openlobongo           :: Ly DrumPitchName
-openlobongo           = drumPitchName "openlobongo"
+openlobongo         :: LyDrumPitchName
+openlobongo         = drumPitchName "openlobongo"
 
 -- | @mutehiconga@.
-mutehiconga           :: Ly DrumPitchName
-mutehiconga           = drumPitchName "mutehiconga"
+mutehiconga         :: LyDrumPitchName
+mutehiconga         = drumPitchName "mutehiconga"
 
 -- | @muteloconga@.
-muteloconga           :: Ly DrumPitchName
-muteloconga           = drumPitchName "muteloconga"
+muteloconga         :: LyDrumPitchName
+muteloconga         = drumPitchName "muteloconga"
 
 -- | @openhiconga@.
-openhiconga           :: Ly DrumPitchName
-openhiconga           = drumPitchName "openhiconga"
+openhiconga         :: LyDrumPitchName
+openhiconga         = drumPitchName "openhiconga"
 
 -- | @hiconga@.
-hiconga               :: Ly DrumPitchName
-hiconga               = drumPitchName "hiconga"
+hiconga             :: LyDrumPitchName
+hiconga             = drumPitchName "hiconga"
 
 -- | @openloconga@.
-openloconga           :: Ly DrumPitchName
-openloconga           = drumPitchName "openloconga"
+openloconga         :: LyDrumPitchName
+openloconga         = drumPitchName "openloconga"
 
 -- | @loconga@.
-loconga               :: Ly DrumPitchName
-loconga               = drumPitchName "loconga"
+loconga             :: LyDrumPitchName
+loconga             = drumPitchName "loconga"
 
 -- | @hitimbale@.
-hitimbale             :: Ly DrumPitchName
-hitimbale             = drumPitchName "hitimbale"
+hitimbale           :: LyDrumPitchName
+hitimbale           = drumPitchName "hitimbale"
 
 -- | @lotimbale@.
-lotimbale             :: Ly DrumPitchName
-lotimbale             = drumPitchName "lotimbale"
+lotimbale           :: LyDrumPitchName
+lotimbale           = drumPitchName "lotimbale"
 
 -- | @hiagogo@.
-hiagogo               :: Ly DrumPitchName
-hiagogo               = drumPitchName "hiagogo"
+hiagogo             :: LyDrumPitchName
+hiagogo             = drumPitchName "hiagogo"
 
 -- | @loagogo@.
-loagogo               :: Ly DrumPitchName
-loagogo               = drumPitchName "loagogo"
+loagogo             :: LyDrumPitchName
+loagogo             = drumPitchName "loagogo"
 
 -- | @cabasa@.
-cabasa                :: Ly DrumPitchName
-cabasa                = drumPitchName "cabasa"
+cabasa              :: LyDrumPitchName
+cabasa              = drumPitchName "cabasa"
 
 -- | @maracas@.
-maracas               :: Ly DrumPitchName
-maracas               = drumPitchName "maracas"
+maracas             :: LyDrumPitchName
+maracas             = drumPitchName "maracas"
 
 -- | @shortwhistle@.
-shortwhistle          :: Ly DrumPitchName
-shortwhistle          = drumPitchName "shortwhistle"
+shortwhistle        :: LyDrumPitchName
+shortwhistle        = drumPitchName "shortwhistle"
 
 -- | @longwhistle@.
-longwhistle           :: Ly DrumPitchName
-longwhistle           = drumPitchName "longwhistle"
+longwhistle         :: LyDrumPitchName
+longwhistle         = drumPitchName "longwhistle"
 
 -- | @shortguiro@.
-shortguiro            :: Ly DrumPitchName
-shortguiro            = drumPitchName "shortguiro"
+shortguiro          :: LyDrumPitchName
+shortguiro          = drumPitchName "shortguiro"
 
 -- | @longguiro@.
-longguiro             :: Ly DrumPitchName
-longguiro             = drumPitchName "longguiro"
+longguiro           :: LyDrumPitchName
+longguiro           = drumPitchName "longguiro"
 
 -- | @guiro@.
-guiro                 :: Ly DrumPitchName
-guiro                 = drumPitchName "guiro"
+guiro               :: LyDrumPitchName
+guiro               = drumPitchName "guiro"
 
 -- | @claves@.
-claves                :: Ly DrumPitchName
-claves                = drumPitchName "claves"
+claves              :: LyDrumPitchName
+claves              = drumPitchName "claves"
 
 -- | @hiwoodblock@.
-hiwoodblock           :: Ly DrumPitchName
-hiwoodblock           = drumPitchName "hiwoodblock"
+hiwoodblock         :: LyDrumPitchName
+hiwoodblock         = drumPitchName "hiwoodblock"
 
 -- | @lowoodblock@.
-lowoodblock           :: Ly DrumPitchName
-lowoodblock           = drumPitchName "lowoodblock"
+lowoodblock         :: LyDrumPitchName
+lowoodblock         = drumPitchName "lowoodblock"
 
 -- | @mutecuica@.
-mutecuica             :: Ly DrumPitchName
-mutecuica             = drumPitchName "mutecuica"
+mutecuica           :: LyDrumPitchName
+mutecuica           = drumPitchName "mutecuica"
 
 -- | @opencuica@.
-opencuica             :: Ly DrumPitchName
-opencuica             = drumPitchName "opencuica"
+opencuica           :: LyDrumPitchName
+opencuica           = drumPitchName "opencuica"
 
 -- | @mutetriangle@.
-mutetriangle          :: Ly DrumPitchName
-mutetriangle          = drumPitchName "mutetriangle"
+mutetriangle        :: LyDrumPitchName
+mutetriangle        = drumPitchName "mutetriangle"
 
 -- | @triangle@.
-triangle              :: Ly DrumPitchName
-triangle              = drumPitchName "triangle"
+triangle            :: LyDrumPitchName
+triangle            = drumPitchName "triangle"
 
 -- | @opentriangle@.
-opentriangle          :: Ly DrumPitchName
-opentriangle          = drumPitchName "opentriangle"
+opentriangle        :: LyDrumPitchName
+opentriangle        = drumPitchName "opentriangle"
 
 -- | @oneup@.
-oneup                 :: Ly DrumPitchName
-oneup                 = drumPitchName "oneup"
+oneup               :: LyDrumPitchName
+oneup               = drumPitchName "oneup"
 
 -- | @twoup@.
-twoup                 :: Ly DrumPitchName
-twoup                 = drumPitchName "twoup"
+twoup               :: LyDrumPitchName
+twoup               = drumPitchName "twoup"
 
 -- | @threeup@.
-threeup               :: Ly DrumPitchName
-threeup               = drumPitchName "threeup"
+threeup             :: LyDrumPitchName
+threeup             = drumPitchName "threeup"
 
 -- | @fourup@.
-fourup                :: Ly DrumPitchName
-fourup                = drumPitchName "fourup"
+fourup              :: LyDrumPitchName
+fourup              = drumPitchName "fourup"
 
 -- | @fiveup@.
-fiveup                :: Ly DrumPitchName
-fiveup                = drumPitchName "fiveup"
+fiveup              :: LyDrumPitchName
+fiveup              = drumPitchName "fiveup"
 
 -- | @onedown@.
-onedown               :: Ly DrumPitchName
-onedown               = drumPitchName "onedown"
+onedown             :: LyDrumPitchName
+onedown             = drumPitchName "onedown"
 
 -- | @twodown@.
-twodown               :: Ly DrumPitchName
-twodown               = drumPitchName "twodown"
+twodown             :: LyDrumPitchName
+twodown             = drumPitchName "twodown"
 
 -- | @threedown@.
-threedown             :: Ly DrumPitchName
-threedown             = drumPitchName "threedown"
+threedown           :: LyDrumPitchName
+threedown           = drumPitchName "threedown"
 
 -- | @fourdown@.
-fourdown              :: Ly DrumPitchName
-fourdown              = drumPitchName "fourdown"
+fourdown            :: LyDrumPitchName
+fourdown            = drumPitchName "fourdown"
 
 -- | @fivedown@.
-fivedown              :: Ly DrumPitchName
-fivedown              = drumPitchName "fivedown"
+fivedown            :: LyDrumPitchName
+fivedown            = drumPitchName "fivedown"
    
 
 
 -- | @bda@ - abbreviated name for 'acousticbassdrum'. 
-bda                   :: Ly DrumPitchName
-bda                   = drumPitchName "bda"
+bda                 :: LyDrumPitchName
+bda                 = drumPitchName "bda"
 
 -- | @bd@ - abbreviated name for 'bassdrum'.
-bd                    :: Ly DrumPitchName
-bd                    = drumPitchName "bd"
+bd                  :: LyDrumPitchName
+bd                  = drumPitchName "bd"
 
 -- | @ssh@ - abbreviated name for 'hisidestick'.
-ssh                   :: Ly DrumPitchName
-ssh                   = drumPitchName "ssh"
+ssh                 :: LyDrumPitchName
+ssh                 = drumPitchName "ssh"
 
 -- | @ss@ - abbreviated name for 'sidestick'.
-ss                    :: Ly DrumPitchName
-ss                    = drumPitchName "ss"
+ss                  :: LyDrumPitchName
+ss                  = drumPitchName "ss"
 
 -- | @ssl@ - abbreviated name for 'losidestick'.
-ssl                   :: Ly DrumPitchName
-ssl                   = drumPitchName "ssl"
+ssl                 :: LyDrumPitchName
+ssl                 = drumPitchName "ssl"
 
 -- | @sna@ - abbreviated name for 'acousticsnare'.
-sna                   :: Ly DrumPitchName
-sna                   = drumPitchName "sna"
+sna                 :: LyDrumPitchName
+sna                 = drumPitchName "sna"
 
 -- | @sn@ - abbreviated name for 'snare'.
-sn                    :: Ly DrumPitchName
-sn                    = drumPitchName "sn"
+sn                  :: LyDrumPitchName
+sn                  = drumPitchName "sn"
 
 -- | @hc@ - abbreviated name for 'handclap'.
-hc                    :: Ly DrumPitchName
-hc                    = drumPitchName "hc"
+hc                  :: LyDrumPitchName
+hc                  = drumPitchName "hc"
 
 -- | @sne@ - abbreviated name for 'electricsnare'.
-sne                   :: Ly DrumPitchName
-sne                   = drumPitchName "sne"
+sne                 :: LyDrumPitchName
+sne                 = drumPitchName "sne"
 
 -- | @tomfl@ - abbreviated name for 'lowfloortom'.
-tomfl                 :: Ly DrumPitchName
-tomfl                 = drumPitchName "tomfl"
+tomfl               :: LyDrumPitchName
+tomfl               = drumPitchName "tomfl"
 
 -- | @hhc@ - abbreviated name for 'closedhihat'.
-hhc                   :: Ly DrumPitchName
-hhc                   = drumPitchName "hhc"
+hhc                 :: LyDrumPitchName
+hhc                 = drumPitchName "hhc"
 
 -- | @hh@ - abbreviated name for 'hihat'.
-hh                    :: Ly DrumPitchName
-hh                    = drumPitchName "hh"
+hh                  :: LyDrumPitchName
+hh                  = drumPitchName "hh"
 
 -- | @tomfh@ - abbreviated name for 'highfloortom'.
-tomfh                 :: Ly DrumPitchName
-tomfh                 = drumPitchName "tomfh"
+tomfh               :: LyDrumPitchName
+tomfh               = drumPitchName "tomfh"
 
 
 -- | @hhp@ - abbreviated name for 'pedalhihat'.
-hhp                   :: Ly DrumPitchName
-hhp                   = drumPitchName "hhp"
+hhp                 :: LyDrumPitchName
+hhp                 = drumPitchName "hhp"
 
 -- | @toml@ - abbreviated name for 'lowtom'.
-toml                  :: Ly DrumPitchName
-toml                  = drumPitchName "toml"
+toml                :: LyDrumPitchName
+toml                = drumPitchName "toml"
 
 -- | @hho@ - abbreviated name for 'openhihat'.
-hho                   :: Ly DrumPitchName
-hho                   = drumPitchName "hho"
+hho                 :: LyDrumPitchName
+hho                 = drumPitchName "hho"
 
 -- | @hhho@ - abbreviated name for 'halfopenhihat'.
-hhho                  :: Ly DrumPitchName
-hhho                  = drumPitchName "hhho"
+hhho                :: LyDrumPitchName
+hhho                = drumPitchName "hhho"
 
 -- | @tomml@ - abbreviated name for 'lowmidtom'.
-tomml                 :: Ly DrumPitchName
-tomml                 = drumPitchName "tomml"
+tomml               :: LyDrumPitchName
+tomml               = drumPitchName "tomml"
 
 -- | @tommh@ - abbreviated name for 'himidtom'.
-tommh                 :: Ly DrumPitchName
-tommh                 = drumPitchName "tommh"
+tommh               :: LyDrumPitchName
+tommh               = drumPitchName "tommh"
 
 -- | @cymca@ - abbreviated name for 'crashcymbala'.
-cymca                 :: Ly DrumPitchName
-cymca                 = drumPitchName "cymca"
+cymca               :: LyDrumPitchName
+cymca               = drumPitchName "cymca"
 
 -- | @cymc@ - abbreviated name for 'crashcymbal'.
-cymc                  :: Ly DrumPitchName
-cymc                  = drumPitchName "cymc"
+cymc                :: LyDrumPitchName
+cymc                = drumPitchName "cymc"
 
 -- | @tomh@ - abbreviated name for 'hightom'.
-tomh                  :: Ly DrumPitchName
-tomh                  = drumPitchName "tomh"
+tomh                :: LyDrumPitchName
+tomh                = drumPitchName "tomh"
 
 -- | @cymra@ - abbreviated name for 'ridecymbala'.
-cymra                 :: Ly DrumPitchName
-cymra                 = drumPitchName "cymra"
+cymra               :: LyDrumPitchName
+cymra               = drumPitchName "cymra"
 
 -- | @cymr@ - abbreviated name for 'ridecymbal'.
-cymr                  :: Ly DrumPitchName
-cymr                  = drumPitchName "cymr"
+cymr                :: LyDrumPitchName
+cymr                = drumPitchName "cymr"
 
 -- | @cymch@ - abbreviated name for 'chinesecymbal'.
-cymch                 :: Ly DrumPitchName
-cymch                 = drumPitchName "cymch"
+cymch               :: LyDrumPitchName
+cymch               = drumPitchName "cymch"
 
 -- | @rb@ - abbreviated name for 'ridebell'.
-rb                    :: Ly DrumPitchName
-rb                    = drumPitchName "rb"
+rb                  :: LyDrumPitchName
+rb                  = drumPitchName "rb"
 
 -- | @tamb@ - abbreviated name for 'tambourine'.
-tamb                  :: Ly DrumPitchName
-tamb                  = drumPitchName "tamb"
+tamb                :: LyDrumPitchName
+tamb                = drumPitchName "tamb"
 
 -- | @cyms@ - abbreviated name for 'splashcymbal'.
-cyms                  :: Ly DrumPitchName
-cyms                  = drumPitchName "cyms"
+cyms                :: LyDrumPitchName
+cyms                = drumPitchName "cyms"
 
 -- | @cb@ - abbreviated name for 'cowbell'.
-cb                    :: Ly DrumPitchName
-cb                    = drumPitchName "cb"
+cb                  :: LyDrumPitchName
+cb                  = drumPitchName "cb"
 
 -- | @cymcb@ - abbreviated name for 'crashcymbalb'.
-cymcb                 :: Ly DrumPitchName
-cymcb                 = drumPitchName "cymcb"
+cymcb               :: LyDrumPitchName
+cymcb               = drumPitchName "cymcb"
 
 -- | @vibs@ - abbreviated name for 'vibraslap'.
-vibs                  :: Ly DrumPitchName
-vibs                  = drumPitchName "vibs"
+vibs                :: LyDrumPitchName
+vibs                = drumPitchName "vibs"
 
 -- | @cymrb@ - abbreviated name for 'ridecymbalb'.
-cymrb                 :: Ly DrumPitchName
-cymrb                 = drumPitchName "cymrb"
+cymrb               :: LyDrumPitchName
+cymrb               = drumPitchName "cymrb"
 
 -- | @bohm@ - abbreviated name for 'mutehibongo'.
-bohm                  :: Ly DrumPitchName
-bohm                  = drumPitchName "bohm"
+bohm                :: LyDrumPitchName
+bohm                = drumPitchName "bohm"
 
 -- | @boh@ - abbreviated name for 'hibongo'.
-boh                   :: Ly DrumPitchName
-boh                   = drumPitchName "boh"
+boh                 :: LyDrumPitchName
+boh                 = drumPitchName "boh"
 
 -- | @boho@ - abbreviated name for 'openhibongo'.
-boho                  :: Ly DrumPitchName
-boho                  = drumPitchName "boho"
+boho                :: LyDrumPitchName
+boho                = drumPitchName "boho"
 
 -- | @bolm@ - abbreviated name for 'mutelobongo'.
-bolm                  :: Ly DrumPitchName
-bolm                  = drumPitchName "bolm"
+bolm                :: LyDrumPitchName
+bolm                = drumPitchName "bolm"
 
 -- | @bol@ - abbreviated name for 'lobongo'.
-bol                   :: Ly DrumPitchName
-bol                   = drumPitchName "bol"
+bol                 :: LyDrumPitchName
+bol                 = drumPitchName "bol"
 
 -- | @bolo@ - abbreviated name for 'openlobongo'.
-bolo                  :: Ly DrumPitchName
-bolo                  = drumPitchName "bolo"
+bolo                :: LyDrumPitchName
+bolo                = drumPitchName "bolo"
 
 -- | @cghm@ - abbreviated name for 'mutehiconga'.
-cghm                  :: Ly DrumPitchName
-cghm                  = drumPitchName "cghm"
+cghm                :: LyDrumPitchName
+cghm                = drumPitchName "cghm"
 
 -- | @cglm@ - abbreviated name for 'muteloconga'.
-cglm                  :: Ly DrumPitchName
-cglm                  = drumPitchName "cglm"
+cglm                :: LyDrumPitchName
+cglm                = drumPitchName "cglm"
 
 -- | @cgho@ - abbreviated name for 'openhiconga'.
-cgho                  :: Ly DrumPitchName
-cgho                  = drumPitchName "cgho"
+cgho                :: LyDrumPitchName
+cgho                = drumPitchName "cgho"
 
 -- | @cgh@ - abbreviated name for 'hiconga'.
-cgh                   :: Ly DrumPitchName
-cgh                   = drumPitchName "cgh"
+cgh                 :: LyDrumPitchName
+cgh                 = drumPitchName "cgh"
 
 -- | @cglo@ - abbreviated name for 'openloconga'.
-cglo                  :: Ly DrumPitchName
-cglo                  = drumPitchName "cglo"
+cglo                :: LyDrumPitchName
+cglo                = drumPitchName "cglo"
 
 -- | @cgl@ - abbreviated name for 'loconga'.
-cgl                   :: Ly DrumPitchName
-cgl                   = drumPitchName "cgl"
+cgl                 :: LyDrumPitchName
+cgl                 = drumPitchName "cgl"
 
 -- | @timh@ - abbreviated name for 'hitimbale'.
-timh                  :: Ly DrumPitchName
-timh                  = drumPitchName "timh"
+timh                :: LyDrumPitchName
+timh                = drumPitchName "timh"
 
 -- | @timl@ - abbreviated name for 'lotimbale'.
-timl                  :: Ly DrumPitchName
-timl                  = drumPitchName "timl"
+timl                :: LyDrumPitchName
+timl                = drumPitchName "timl"
 
 -- | @agh@ - abbreviated name for 'hiagogo'.
-agh                   :: Ly DrumPitchName
-agh                   = drumPitchName "agh"
+agh                 :: LyDrumPitchName
+agh                 = drumPitchName "agh"
 
 -- | @agl@ - abbreviated name for 'loagogo'.
-agl                   :: Ly DrumPitchName
-agl                   = drumPitchName "agl"
+agl                 :: LyDrumPitchName
+agl                 = drumPitchName "agl"
 
 -- | @cab@ - abbreviated name for 'cabasa'.
-cab                   :: Ly DrumPitchName
-cab                   = drumPitchName "cab"
+cab                 :: LyDrumPitchName
+cab                 = drumPitchName "cab"
 
 -- | @mar@ - abbreviated name for 'maracas'.
-mar                   :: Ly DrumPitchName
-mar                   = drumPitchName "mar"
+mar                 :: LyDrumPitchName
+mar                 = drumPitchName "mar"
 
 -- | @whs@ - abbreviated name for 'shortwhistle'.
-whs                   :: Ly DrumPitchName
-whs                   = drumPitchName "whs"
+whs                 :: LyDrumPitchName
+whs                 = drumPitchName "whs"
 
 -- | @whl@ - abbreviated name for 'longwhistle'.
-whl                   :: Ly DrumPitchName
-whl                   = drumPitchName "whl"
+whl                 :: LyDrumPitchName
+whl                 = drumPitchName "whl"
 
 -- | @guis@ - abbreviated name for 'shortguiro'.
-guis                  :: Ly DrumPitchName
-guis                  = drumPitchName "guis"
+guis                :: LyDrumPitchName
+guis                = drumPitchName "guis"
 
 -- | @guil@ - abbreviated name for 'longguiro'.
-guil                  :: Ly DrumPitchName
-guil                  = drumPitchName "guil"
+guil                :: LyDrumPitchName
+guil                = drumPitchName "guil"
 
 -- | @gui@ - abbreviated name for 'guiro'.
-gui                   :: Ly DrumPitchName
-gui                   = drumPitchName "gui"
+gui                 :: LyDrumPitchName
+gui                 = drumPitchName "gui"
 
 -- | @cl@ - abbreviated name for 'claves'.
-cl                    :: Ly DrumPitchName
-cl                    = drumPitchName "cl"
+cl                  :: LyDrumPitchName
+cl                  = drumPitchName "cl"
 
 -- | @wbh@ - abbreviated name for 'hiwoodblock'.
-wbh                   :: Ly DrumPitchName
-wbh                   = drumPitchName "wbh"
+wbh                 :: LyDrumPitchName
+wbh                 = drumPitchName "wbh"
 
 -- | @wbl@ - abbreviated name for 'lowoodblock'.
-wbl                   :: Ly DrumPitchName
-wbl                   = drumPitchName "wbl"
+wbl                 :: LyDrumPitchName
+wbl                 = drumPitchName "wbl"
 
 -- | @cuim@ - abbreviated name for 'mutecuica'.
-cuim                  :: Ly DrumPitchName
-cuim                  = drumPitchName "cuim"
+cuim                :: LyDrumPitchName
+cuim                = drumPitchName "cuim"
 
 -- | @cuio@ - abbreviated name for 'opencuica'.
-cuio                  :: Ly DrumPitchName
-cuio                  = drumPitchName "cuio"
+cuio                :: LyDrumPitchName
+cuio                = drumPitchName "cuio"
 
 
 -- | @trim@ - abbreviated name for 'mutetriangle'.
-trim                  :: Ly DrumPitchName
-trim                  = drumPitchName "trim"
+trim                :: LyDrumPitchName
+trim                = drumPitchName "trim"
 
 -- | @tri@ - abbreviated name for 'triangle'.
-tri                   :: Ly DrumPitchName
-tri                   = drumPitchName "tri"
+tri                 :: LyDrumPitchName
+tri                 = drumPitchName "tri"
 
 -- | @trio@ - abbreviated name for 'opentriangle'.
-trio                  :: Ly DrumPitchName
-trio                  = drumPitchName "trio"
+trio                :: LyDrumPitchName
+trio                = drumPitchName "trio"
 
 -- | @tt@ - abbreviated name for 'tamtam'.
-tt                    :: Ly DrumPitchName
-tt                    = drumPitchName "tt"
+tt                  :: LyDrumPitchName
+tt                  = drumPitchName "tt"
 
 -- | @ua@ - abbreviated name for 'oneup'.
-ua                    :: Ly DrumPitchName
-ua                    = drumPitchName "ua"
+ua                  :: LyDrumPitchName
+ua                  = drumPitchName "ua"
 
 -- | @ub@ - abbreviated name for 'twoup'.
-ub                    :: Ly DrumPitchName
-ub                    = drumPitchName "ub"
+ub                  :: LyDrumPitchName
+ub                  = drumPitchName "ub"
 
 -- | @uc@ - abbreviated name for 'threeup'.
-uc                    :: Ly DrumPitchName
-uc                    = drumPitchName "uc"
+uc                  :: LyDrumPitchName
+uc                  = drumPitchName "uc"
 
 -- | @ud@ - abbreviated name for 'fourup'.
-ud                    :: Ly DrumPitchName
-ud                    = drumPitchName "ud"
+ud                  :: LyDrumPitchName
+ud                  = drumPitchName "ud"
 
 -- | @ue@ - abbreviated name for 'fiveup'.
-ue                    :: Ly DrumPitchName
-ue                    = drumPitchName "ue"
+ue                  :: LyDrumPitchName
+ue                  = drumPitchName "ue"
 
 -- | @da@ - abbreviated name for 'onedown'.
-da                    :: Ly DrumPitchName
-da                    = drumPitchName "da"
+da                  :: LyDrumPitchName
+da                  = drumPitchName "da"
 
 -- | @db@ - abbreviated name for 'twodown'.
-db                    :: Ly DrumPitchName
-db                    = drumPitchName "db"
+db                  :: LyDrumPitchName
+db                  = drumPitchName "db"
 
 -- | @dc@ - abbreviated name for 'threedown'.
-dc                    :: Ly DrumPitchName
-dc                    = drumPitchName "dc"
+dc                  :: LyDrumPitchName
+dc                  = drumPitchName "dc"
 
 -- | @dd@ - abbreviated name for 'fourdown'.
-dd                    :: Ly DrumPitchName
-dd                    = drumPitchName "dd"
+dd                  :: LyDrumPitchName
+dd                  = drumPitchName "dd"
 
 -- | @de@ - abbreviated name for 'fivedown'.
-de                    :: Ly DrumPitchName
-de                    = drumPitchName "de"
+de                  :: LyDrumPitchName
+de                  = drumPitchName "de"
 
 
 --------------------------------------------------------------------------------
@@ -1144,59 +1144,60 @@ de                    = drumPitchName "de"
 -- *** Creating titles (10.2.1)
 
 -- | @dedication@.  
-dedication            :: String -> Ly HeaderElement
-dedication            = headerElement "dedication"
+dedication          :: String -> LyHeaderElement
+dedication          = headerElement "dedication"
 
 -- | @title@.  
-title                 :: String -> Ly HeaderElement
-title                 = headerElement "title"
+title               :: String -> LyHeaderElement
+title               = headerElement "title"
 
 -- | @subtitle@.  
-subtitle              :: String -> Ly HeaderElement
-subtitle              = headerElement "subtitle"
+subtitle            :: String -> LyHeaderElement
+subtitle            = headerElement "subtitle"
 
 -- | @subsubtitle@.  
-subsubtitle           :: String -> Ly HeaderElement
-subsubtitle           = headerElement "subsubtitle"
+subsubtitle         :: String -> LyHeaderElement
+subsubtitle         = headerElement "subsubtitle"
 
 -- | @poet@.  
-poet                  :: String -> Ly HeaderElement
-poet                  = headerElement "poet"
+poet                :: String -> LyHeaderElement
+poet                = headerElement "poet"
 
 -- | @composer@.  
-composer              :: String -> Ly HeaderElement
-composer              = headerElement "composer"
+composer            :: String -> LyHeaderElement
+composer            = headerElement "composer"
 
 -- | @meter@.  
-meter                 :: String -> Ly HeaderElement
-meter                 = headerElement "meter"
+meter               :: String -> LyHeaderElement
+meter               = headerElement "meter"
 
 -- | @opus@.  
-opus                  :: String -> Ly HeaderElement
-opus                  = headerElement "opus"
+opus                :: String -> LyHeaderElement
+opus                = headerElement "opus"
 
 -- | @arranger@.  
-arranger              :: String -> Ly HeaderElement
-arranger              = headerElement "arranger"
+arranger            :: String -> LyHeaderElement
+arranger            = headerElement "arranger"
 
 -- | @instrument@.  
-instrument            :: String -> Ly HeaderElement
-instrument            = headerElement "arranger"
+instrument          :: String -> LyHeaderElement
+instrument          = headerElement "arranger"
 
 -- | @piece@.  
-piece                 :: String -> Ly HeaderElement
-piece                 = headerElement "piece"
+piece               :: String -> LyHeaderElement
+piece               = headerElement "piece"
 
 
 -- | @copyright@.  
-copyright             :: String -> Ly HeaderElement
-copyright             = headerElement "copyright"
+copyright           :: String -> LyHeaderElement
+copyright           = headerElement "copyright"
 
 -- | @tagline@.  
-tagline               :: String -> Ly HeaderElement
-tagline               = headerElement "tagline"
+tagline             :: String -> LyHeaderElement
+tagline             = headerElement "tagline"
 
 -- | @breakbefore@.
-breakbefore             :: Bool -> Ly HeaderElement
-breakbefore True        = equation "breakbefore" (lyLit $ text "##t")
-breakbefore False       = equation "breakbefore" (lyLit $ text "##f")
+breakbefore         :: Bool -> LyHeaderElement
+breakbefore True    = equation "breakbefore" (lyLit $ text "##t")
+breakbefore False   = equation "breakbefore" (lyLit $ text "##f")
+

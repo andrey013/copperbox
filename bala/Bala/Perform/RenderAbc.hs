@@ -17,7 +17,7 @@
 module Bala.Perform.RenderAbc where
 
 
-import qualified Bala.Base as B
+import Bala.Base
 import Bala.Format.Output.OutputAbc hiding (Sequence)
 import Bala.Perform.EventTree hiding (chord, grace)
 import Bala.Perform.PerformBase
@@ -40,9 +40,9 @@ data Perform_Abc_State = Perform_Abc_State {
   deriving (Show)
   
 data Perform_Abc_Env = Perform_Abc_Env {
-    default_note_length     :: B.Duration,
+    default_note_length     :: Duration,
     meter_size              :: Double,
-    initial_abc_context     :: Abc CT_Element
+    initial_abc_context     :: AbcCxt_Element
   }
   deriving (Show)
   
@@ -53,8 +53,8 @@ intial_abc_state = Perform_Abc_State {
   
 default_abc_env :: Perform_Abc_Env
 default_abc_env = Perform_Abc_Env {
-    default_note_length   = B.eighth,
-    meter_size            = B.meterSize (4 B.// 4),
+    default_note_length   = eighth,
+    meter_size            = meterSize (4 // 4),
     initial_abc_context   = tune   
   } 
 
@@ -64,8 +64,8 @@ default_abc_env = Perform_Abc_Env {
 -- be used to update the render state if necessary
 
 data EventZero = 
-    ZeroPitch B.Duration (Abc Elt_Note) (Maybe (Abc Attr_Duration)) 
-  | ZeroRest B.Duration (Maybe (Abc Attr_Duration)) 
+    ZeroPitch Duration AbcNote (Maybe AbcDuration) 
+  | ZeroRest Duration (Maybe AbcDuration) 
   | ZeroUnknown
 
    
@@ -85,8 +85,8 @@ optAddR sq (Just e)  = sq +++ e
 
 
 
-barCount :: B.Duration -> ProcessM (Maybe (Abc Elt_RepeatMark))        
-barCount dur = let d = B.durationSize dur in do
+barCount :: Duration -> ProcessM (Maybe AbcRepeatMark)        
+barCount dur = let d = durationSize dur in do
     c     <- gets bar_duration_count
     ms    <- asks meter_size 
     fn (c+d) ms
@@ -101,34 +101,34 @@ barCount dur = let d = B.durationSize dur in do
                          
 -- octaves 4 and below upper case pitch 
 -- octaves 5 and above lower case pitch
-abcPitchLetter :: B.PitchLetter -> PitchLetter
+abcPitchLetter :: PitchLetter -> AbcPitchLetter
 abcPitchLetter = toEnum . fromEnum 
 
-octave1 :: PitchLetter -> PitchLetter
+octave1 :: AbcPitchLetter -> AbcPitchLetter
 octave1 p = let i = fromEnum p in
     if (i < 7) then (toEnum $ i + 7) else p
 
 
-octaveAttr :: Int -> Maybe (Abc Attr_Octave)            
+octaveAttr :: Int -> Maybe AbcOctave            
 octaveAttr i
     | i < 4         = Just $ octaveLow (4 - i)
     | i > 5         = Just $ octaveHigh (i - 5)
     | otherwise     = Nothing
 
 
-accidentalAttr :: B.Accidental -> Maybe (Abc Attr_Accidental)
-accidentalAttr (B.DoubleFlat)   = Just doubleFlat 
-accidentalAttr (B.Flat)         = Just flat  
-accidentalAttr (B.Sharp)        = Just sharp 
-accidentalAttr (B.DoubleSharp)  = Just doubleSharp 
+accidentalAttr :: Accidental -> Maybe AbcAccidental
+accidentalAttr (DoubleFlat)   = Just doubleFlat 
+accidentalAttr (Flat)         = Just flat  
+accidentalAttr (Sharp)        = Just sharp 
+accidentalAttr (DoubleSharp)  = Just doubleSharp 
 accidentalAttr _                = Nothing
 
-abcPitch :: B.Pitch -> Abc Elt_Note     
+abcPitch :: Pitch -> AbcNote     
 abcPitch p = 
-    let o  = B.octaveMeasure p
-        pl = octLetterChange (abcPitchLetter $ B.pitchLetter p) o
+    let o  = octaveMeasure p
+        pl = octLetterChange (abcPitchLetter $ pitchLetter p) o
         oa = octaveAttr o
-        aa = accidentalAttr (B.pitchAccidental p)
+        aa = accidentalAttr (pitchAccidental p)
     in aa *!** (note pl) *! oa
               
   where
@@ -136,19 +136,19 @@ abcPitch p =
                           | otherwise = pl              
     
 
-abcDuration :: B.Duration -> ProcessM (Maybe (Abc Attr_Duration))
+abcDuration :: Duration -> ProcessM (Maybe AbcDuration)
 abcDuration d = fn d <$> asks default_note_length
   where
     fn dur1 deft
       | dur1 == deft  = Nothing
-      | otherwise     = let scale = denominator (B.rationalize deft)
-                            r     = (B.rationalize dur1)
+      | otherwise     = let scale = denominator (rationalize deft)
+                            r     = (rationalize dur1)
                             (n,d) = (numerator r, denominator r)    
-                        in Just $ dur ( n*scale B.// d)
+                        in Just $ dur ( n*scale // d)
 
 
 
-updateBarCount :: Abc CT_Element -> EventZero -> ProcessM (Abc CT_Element)
+updateBarCount :: AbcCxt_Element -> EventZero -> ProcessM AbcCxt_Element
 updateBarCount k ez = case hasDur ez of 
     Nothing -> return k
     Just d  -> barCount d >>= \obl -> maybe (return k) (return . (k +++)) obl  
@@ -257,6 +257,6 @@ run'oflat  t = do
     ellist <- asks initial_abc_context
     oflat ellist (viewl $ unET t) 
 
-renderAbc1 :: (Perform evt B.Pitch B.Duration) =>
-              EventTree evt -> Perform_Abc_Env -> Abc CT_Element
+renderAbc1 :: (Perform evt Pitch Duration) =>
+              EventTree evt -> Perform_Abc_Env -> AbcCxt_Element
 renderAbc1 tree env  = evalPerform (run'oflat tree) intial_abc_state env

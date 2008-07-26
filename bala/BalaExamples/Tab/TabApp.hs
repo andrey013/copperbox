@@ -7,7 +7,7 @@ import TabBase
 import TabParser
 
 import Bala.Base
-import Bala.Format.Output.OutputLilyPond hiding (Pitch, Duration, chord)
+import Bala.Format.Output.OutputLilyPond hiding (chord)
 import Bala.Perform.EventTree
 import Bala.Perform.PerformBase
 import Bala.Perform.PerformLilyPond

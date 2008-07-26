@@ -102,190 +102,203 @@ abcSeq2 op (Abc a) (Abc b) = Abc $ sequenceL op [a,b]
 
 
 
-data CT_Header
-header :: Abc CT_Header
+data AbcCxt_HeaderT
+type AbcCxt_Header = Abc AbcCxt_HeaderT
+
+header :: AbcCxt_Header
 header = Abc $ sequenceS (<$>) emptyseq
 
-instance Append CT_Header CT_Field
-instance Append CT_Header CT_MidTuneField
+instance Append AbcCxt_HeaderT AbcCxt_FieldT
+instance Append AbcCxt_HeaderT AbcCxt_MidTuneFieldT
 
 
-data CT_Field
+data AbcCxt_FieldT
+type AbcCxt_Field = Abc AbcCxt_FieldT
 
-field :: Char -> Abc a -> Abc CT_Field
+field :: Char -> Abc a -> AbcCxt_Field
 field ch o = Abc $ sequenceL (<+>) [field_id, unAbc o]
   where field_id = literalP [ch,':']
   
 -- | @A field@ - area.
-area_field                :: String -> Abc CT_Field
+area_field                :: String -> AbcCxt_Field
 area_field                = field 'A' . Abc . literal . text
 
 
 -- | @B field@ - book.
-book_field                :: String -> Abc CT_Field
+book_field                :: String -> AbcCxt_Field
 book_field                = field 'B' . Abc . literal . text
 
 -- | @C field@ - composer name. 
-composer_field            :: String -> Abc CT_Field
+composer_field            :: String -> AbcCxt_Field
 composer_field            = field 'C' . Abc . literal . text
 
 -- | @D field@ - discography.
-discography_field         :: String -> Abc CT_Field
+discography_field         :: String -> AbcCxt_Field
 discography_field         = field 'D' . Abc . literal . text
 
 -- | @G field@ - group.
-group_field               :: String -> Abc CT_Field
+group_field               :: String -> AbcCxt_Field
 group_field               = field 'G' . Abc . literal . text
 
 -- | @H field@ - history.
-history_field             :: [String] -> Abc CT_Field
+history_field             :: [String] -> AbcCxt_Field
 history_field             = field 'H' . Abc . body
   where
     body =  nestedf align . sequenceL (<$>) . map (literal . text)
   
 -- | @I field@ - information.
-information_field         :: String -> Abc CT_Field
+information_field         :: String -> AbcCxt_Field
 information_field         = field 'I' . Abc . literal . text
 
 -- | @N field@ - notes.  
-notes_field               :: String -> Abc CT_Field
+notes_field               :: String -> AbcCxt_Field
 notes_field               = field 'N' . Abc . literal . text
 
 -- | @O field@ - origin. 
-origin_field              :: String -> Abc CT_Field
+origin_field              :: String -> AbcCxt_Field
 origin_field              = field 'O' . Abc . literal . text
 
 -- | @R field@ - rhythm. 
-rhythm_field              :: String -> Abc CT_Field
+rhythm_field              :: String -> AbcCxt_Field
 rhythm_field              = field 'R' . Abc . literal . text
 
 -- | @S field@ - source.
-source_field              :: String -> Abc CT_Field
+source_field              :: String -> AbcCxt_Field
 source_field              = field 'S' . Abc . literal . text
            
 -- | @X field@ - reference \/ tune number.
-number_field              :: Int -> Abc CT_Field
+number_field              :: Int -> AbcCxt_Field
 number_field              = field 'X' . Abc . literal . int
   
 -- | @Z field@ - transcriber notes.  
-transcriber_notes_field   :: String -> Abc CT_Field
+transcriber_notes_field   :: String -> AbcCxt_Field
 transcriber_notes_field   = field 'Z' . Abc . literal . text  
 
 
 -- Mid tune fields
-data CT_MidTuneField
+data AbcCxt_MidTuneFieldT
+type AbcCxt_MidTuneField = Abc AbcCxt_MidTuneFieldT
 
-mtfield :: Char -> Abc a -> Abc CT_MidTuneField
+mtfield :: Char -> Abc a -> AbcCxt_MidTuneField
 mtfield ch o = Abc $ sequenceL (<+>) [field_id, unAbc o]
   where field_id = literalP [ch,':']
   
   
 
 -- | @E field@ - elemskip.
-elemskip_field              :: String -> Abc CT_MidTuneField
+elemskip_field              :: String -> AbcCxt_MidTuneField
 elemskip_field              = mtfield 'E' . Abc . literal . text
 
 -- | @K field@ - key, note untyped so it can print keys or clef information.
 
-key_field                   :: Abc a -> Abc CT_MidTuneField
+key_field                   :: Abc a -> AbcCxt_MidTuneField
 key_field                   = mtfield 'K' 
 
   
 -- | @L field@ - unit note length - i.e. the default length.
-unit_note_length_field      :: MeterFraction -> Abc CT_MidTuneField
+unit_note_length_field      :: MeterFraction -> AbcCxt_MidTuneField
 unit_note_length_field      = mtfield 'L' . Abc . literal . pretty
 
 -- a synonym
-l_field                     :: MeterFraction -> Abc CT_MidTuneField
+l_field                     :: MeterFraction -> AbcCxt_MidTuneField
 l_field                     = unit_note_length_field
 
 -- | @M field@ - meter.
-meter_field                 :: Abc a -> Abc CT_MidTuneField
+meter_field                 :: Abc a -> AbcCxt_MidTuneField
 meter_field                 = mtfield 'M' 
   
 -- | @P field@ - parts, simplified - parts are just represented as a string.
-parts_field                 :: [Char] -> Abc CT_MidTuneField
+parts_field                 :: [Char] -> AbcCxt_MidTuneField
 parts_field                 = mtfield 'P' . Abc . literal . text
   
 -- | @Q field@ - tempo.
-tempo_field                 :: Abc a -> Abc CT_MidTuneField
+tempo_field                 :: Abc a -> AbcCxt_MidTuneField
 tempo_field                 = mtfield 'Q' 
 
 -- | @T field@ - title.
-title_field                 :: String -> Abc CT_MidTuneField
+title_field                 :: String -> AbcCxt_MidTuneField
 title_field                 = mtfield 'T' . Abc . literal . text
  
 -- | @W field@ - words.  
-words_field                 :: String -> Abc CT_MidTuneField
+words_field                 :: String -> AbcCxt_MidTuneField
 words_field                 = mtfield 'W' . Abc . literal . text
 
 
 -- ** M: meter (3.1.6)
-data Meter
+data AbcMeterT
+type AbcMeter = Abc AbcMeterT
 
-meter               :: MeterFraction -> Abc Meter
+meter               :: MeterFraction -> AbcMeter
 meter r             = abcLiteral $ ppMeter r
   
   
-common_time         :: Abc Meter
+common_time         :: AbcMeter
 common_time         = abcLiteral $  char 'C'
 
-cut_time            :: Abc Meter
+cut_time            :: AbcMeter
 cut_time            = abcLiteral $ text "C|"  
   
 
 -- ** Q: tempo (3.1.8)
-data Tempo
+data AbcTempoT
+type AbcTempo = Abc AbcTempoT
 
-tempo               :: Int -> Abc Tempo
+tempo               :: Int -> AbcTempo
 tempo               = abcLiteral . int
 
-ctempo              :: Abc Length -> Int -> Abc Tempo
+ctempo              :: AbcLength -> Int -> AbcTempo
 ctempo l i          = abcSeq2 (<+>) l (abcLiteral $ int i)
  
-stempo              :: MeterFraction -> Int -> Abc Tempo
+stempo              :: MeterFraction -> Int -> AbcTempo
 stempo mf i         = abcSeq2 (<+>) (abcLiteral $ pretty mf) (abcLiteral $ int i)
 
 
-data Length
+data AbcLengthT
+type AbcLength = Abc AbcLengthT
 
-ilength             :: Int -> Abc Length
+ilength             :: Int -> AbcLength
 ilength             = abcLiteral . int
 
-flength             :: MeterFraction -> Abc Length
+flength             :: MeterFraction -> AbcLength
 flength             = abcLiteral . pretty
   
 -- ** K: key (3.1.14)
-data Key
+data AbcKeyT
+type AbcKey = Abc AbcKeyT
 
+key                   :: AbcKeySpec -> AbcKey
+key                   = Abc . unAbc
 
-highland_no_key       :: Abc Key
+highland_no_key       :: AbcKey
 highland_no_key       = abcLiteral $ text "HP"
 
-highland_mixolydian   :: Abc Key
+highland_mixolydian   :: AbcKey
 highland_mixolydian   = abcLiteral $ text "Hp"
 
-data KeySpec
+data AbcKeySpecT
+type AbcKeySpec = Abc AbcKeySpecT
 
-key_spec :: Abc Elt_Note -> Abc Elt_Mode ->  Abc Key
+key_spec :: AbcNote -> AbcMode -> AbcKeySpec
 key_spec (Abc n) (Abc m) = Abc $ sequenceL (<+>) [n,m] 
   
-data KeyAccidental
+data AbcKeyAccidentalT
+type AbcKeyAccidental = Abc AbcKeyAccidentalT
 
-key_sharp   :: Abc KeyAccidental
+key_sharp   :: AbcKeyAccidental
 key_sharp   = abcLiteral $ char '#' 
   
   
-key_flat    :: Abc KeyAccidental
+key_flat    :: AbcKeyAccidental
 key_flat    = abcLiteral $ char 'b'
   
-data Elt_Mode
+data AbcModeT
+type AbcMode = Abc AbcModeT
 
-mode :: String -> Abc Elt_Mode
+mode :: String -> AbcMode
 mode = abcLiteral . text
 
 major, minor, lydian, ionian, mixolydian, dorian, aeolian, phrygian, locrian 
-    :: Abc Elt_Mode 
+    :: AbcMode
 major         = mode "maj"
 minor         = mode "min"
 lydian        = mode "lyd"
@@ -302,22 +315,23 @@ locrian       = mode "loc"
 -- * The tune body (4)
 
 -- body appends a blank line to the end of the output
-body :: Abc a -> Abc CT_MidTuneField
+body :: Abc a -> AbcCxt_MidTuneField
 body a = abcSeq2 (<$>) a (abcLiteral empty)
 
-data CT_Element
+data AbcCxt_ElementT
+type AbcCxt_Element = Abc AbcCxt_ElementT
 
-tune :: Abc CT_Element
+tune :: AbcCxt_Element
 tune = Abc $ sequenceS (</>) emptyseq
 
 -- ** Pitch (4.1)
 
 -- Abc has pitches in a two octave range and then uses octave specs for higher
 -- and lower octaves
-data PitchLetter = C | D | E | F | G | A | B | C2 | D2 | E2 | F2 | G2 | A2 | B2
+data AbcPitchLetter = C | D | E | F | G | A | B | C2 | D2 | E2 | F2 | G2 | A2 | B2
   deriving (Eq,Enum,Ord,Show) 
 
-instance Pretty PitchLetter where
+instance Pretty AbcPitchLetter where
   pretty C    = char 'C'
   pretty D    = char 'D'
   pretty E    = char 'E'
@@ -334,196 +348,213 @@ instance Pretty PitchLetter where
   pretty B2   = char 'b' 
   
     
-data Elt_Note
+data AbcNoteT
+type AbcNote = Abc AbcNoteT
 
-note          :: PitchLetter -> Abc Elt_Note
+note          :: AbcPitchLetter -> AbcNote
 note          = abcLiteral . pretty
   
-instance Append CT_Element Elt_Note
+instance Append AbcCxt_ElementT AbcNoteT
 
-data Attr_Octave
+data AbcOctaveT
+type AbcOctave = Abc AbcOctaveT
 
-octaveHigh    :: Int -> Abc Attr_Octave
+octaveHigh    :: Int -> AbcOctave
 octaveHigh i  = abcLiteral $ text (replicate i '\'')
   
   
-octaveLow     :: Int -> Abc Attr_Octave
+octaveLow     :: Int -> AbcOctave
 octaveLow i   = abcLiteral $ text (replicate i ',')  
   
   
-instance SuffixAttr Elt_Note Attr_Octave
+instance SuffixAttr AbcNoteT AbcOctaveT
 
 -- ** Accidentals (4.2)
-data Attr_Accidental
+data AbcAccidentalT
+type AbcAccidental = Abc AbcAccidentalT
 
-natural       :: Abc Attr_Accidental
+natural       :: AbcAccidental
 natural       = abcLiteral $ char '='
 
-sharp         :: Abc Attr_Accidental
+sharp         :: AbcAccidental
 sharp         = abcLiteral $ char '^'
       
-doubleSharp   :: Abc Attr_Accidental
+doubleSharp   :: AbcAccidental
 doubleSharp   = abcLiteral $ string "^^"
       
-flat          :: Abc Attr_Accidental
+flat          :: AbcAccidental
 flat          = abcLiteral $ char '_'
       
-doubleFlat    :: Abc Attr_Accidental
+doubleFlat    :: AbcAccidental
 doubleFlat    = abcLiteral $ string "__"
 
-instance PrefixAttr Elt_Note Attr_Accidental
+instance PrefixAttr AbcNoteT AbcAccidentalT
 
       
 -- ** Note lengths (4.3)
-data Attr_Duration
+data AbcDurationT
+type AbcDuration = Abc AbcDurationT
 
-dur :: MeterFraction -> Abc Attr_Duration
+dur :: MeterFraction -> AbcDuration
 dur = abcLiteral . ppNoteLength 
 
-instance SuffixAttr Elt_Note Attr_Duration
-instance SuffixAttr Elt_Rest Attr_Duration
+instance SuffixAttr AbcNoteT AbcDurationT
+instance SuffixAttr AbcRestT AbcDurationT
 
 -- ** Broken rhythm (4.4)
-data Elt_BrokenRhythm
+data AbcBrokenRhythmT
+type AbcBrokenRhythm = Abc AbcBrokenRhythmT
 
 -- '>' left note dotted, right note halved
-dotted_left       :: Abc Elt_BrokenRhythm
+dotted_left       :: AbcBrokenRhythm
 dotted_left       = abcLiteral $ char '>'
 
-dotted_leftn      :: Int -> Abc Elt_BrokenRhythm
+dotted_leftn      :: Int -> AbcBrokenRhythm
 dotted_leftn i    = abcLiteral $ text $ replicate i '>'
   
     
 -- '<' left note halved, right note dotted 
-dotted_right      :: Abc Elt_BrokenRhythm
+dotted_right      :: AbcBrokenRhythm
 dotted_right      = abcLiteral $ char '<'
 
 
-dotted_rightn     :: Int -> Abc Elt_BrokenRhythm
+dotted_rightn     :: Int -> AbcBrokenRhythm
 dotted_rightn i   = abcLiteral $ text $ replicate i '<'
   
   
 -- ** Rests (4.5)
-data Elt_Rest
+data AbcRestT
+type AbcRest = Abc AbcRestT
 
-rest    :: Abc Elt_Rest
+rest    :: AbcRest
 rest    = abcLiteral $ char 'z'
 
-instance Append CT_Element Elt_Rest
+instance Append AbcCxt_ElementT AbcRestT
 
 
 
 
 -- ** Repeat \/ bar symbols & First and second repeats (4.8 & 4.9)
-data Elt_RepeatMark
+data AbcRepeatMarkT
+type AbcRepeatMark = Abc AbcRepeatMarkT
 
-repeatMark :: String -> Abc Elt_RepeatMark
+repeatMark :: String -> AbcRepeatMark
 repeatMark = abcLiteral . text
 
 
-instance Append CT_Element Elt_RepeatMark
+instance Append AbcCxt_ElementT AbcRepeatMarkT
 
 
 -- ** Ties and slurs (4.11)  
-data Elt_Tie
+data AbcTieT
+type AbcTie = Abc AbcTieT
 
-tie             :: Abc Elt_Tie
+tie             :: AbcTie
 tie             = abcLiteral $ char '-'
   
-instance Append CT_Element Elt_Tie
+instance Append AbcCxt_ElementT AbcTieT
 
-data Elt_Slur
+data AbcSlurT
+type AbcSlur = Abc AbcSlurT
 
-beginSlur       :: Abc Elt_Slur
+beginSlur       :: AbcSlur
 beginSlur       = abcLiteral $ lparen
 
-endSlur         :: Abc Elt_Slur
+endSlur         :: AbcSlur
 endSlur         = abcLiteral $ rparen
 
-instance Append CT_Element Elt_Slur
+instance Append AbcCxt_ElementT AbcSlurT
 
 
 -- ** Grace notes (4.12)
-data Elt_GraceNotes
+data AbcGraceNotesT
+type AbcGraceNotes = Abc AbcGraceNotesT
 
-gracenotes :: [Abc Elt_Note] -> Abc Elt_GraceNotes
+
+
+gracenotes :: [AbcNote] -> AbcGraceNotes
 gracenotes = Abc . nested lbrace rbrace . sequenceL (<>) . map unAbc
 
 
 -- Its simpler if we make gracenotes a glyph rather than 
 -- a prefix attr of a note.  
-instance Append CT_Element Elt_GraceNotes
+instance Append AbcCxt_ElementT AbcGraceNotesT
 
 -- ** Duplets, triplets, quadruplets, etc. (4.13)
-data Elt_NPlet
+data AbcNPletT
+type AbcNPlet = Abc AbcNPletT
 
-nplet   :: Int -> Abc Elt_NPlet
+nplet   :: Int -> AbcNPlet
 nplet   = Abc . literal . group . (char '(' <>) . int
 
-instance Append CT_Element Elt_NPlet
+instance Append AbcCxt_ElementT AbcNPletT
 
 
 
 -- ** Decorations (4.14)
-data Attr_Decoration
+data AbcDecorationT
+type AbcDecoration = Abc AbcDecorationT
 
-tilde       :: Abc Attr_Decoration
+tilde       :: AbcDecoration
 tilde       = abcLiteral $ char '~' 
    
-stacatto    :: Abc Attr_Decoration
+stacatto    :: AbcDecoration
 stacatto    = abcLiteral $ char '.' 
 
-downbow     :: Abc Attr_Decoration
+downbow     :: AbcDecoration
 downbow     = abcLiteral $ char 'v' 
 
-upbow       :: Abc Attr_Decoration
+upbow       :: AbcDecoration
 upbow       = abcLiteral $ char 'u' 
 
-instance PrefixAttr Elt_Note Attr_Decoration
+instance PrefixAttr AbcNoteT AbcDecorationT
 
 
 -- ** Chords and unisons (4.17)
-data Elt_Chord
+data AbcChordT
+type AbcChord = Abc AbcChordT
 
-chord :: [Abc Elt_Note] -> Abc Elt_Chord
+chord :: [AbcNote] -> AbcChord
 chord = Abc . nested lbracket rbracket . sequenceL (<>) . map unAbc
 
-instance Append CT_Element Elt_Chord
+instance Append AbcCxt_ElementT AbcChordT
 
 -- * Clefs (6)
-data Clef
+data AbcClefT
+type AbcClef = Abc AbcClefT
 
-clef :: Abc ClefName -> Abc Clef
+clef :: AbcClefName -> AbcClef
 clef cn = Abc $ sequenceL (<>) [literal (text "clef="), unAbc cn]
 
-data ClefName
+data AbcClefNameT
+type AbcClefName = Abc AbcClefNameT
 
-clef_name :: String -> Abc ClefName
+clef_name :: String -> AbcClefName
 clef_name = abcLiteral . text
 
-treble  :: Abc ClefName
+treble  :: AbcClefName
 treble  = clef_name "treble"
 
-alto    :: Abc ClefName
+alto    :: AbcClefName
 alto    = clef_name "alto"
  
-tenor   :: Abc ClefName 
+tenor   :: AbcClefName 
 tenor   = clef_name "tenor"
 
-bass    :: Abc ClefName 
+bass    :: AbcClefName 
 bass    = clef_name "bass"
 
-perc    :: Abc ClefName
+perc    :: AbcClefName
 perc    = clef_name "perc"
 
 
 -- * Multiple voices (7)
 -- ** Voice overlay (7.4)
   
--- type must be - Abc CT_Element -> Abc CT_Element  -> Abc CT_Element
+-- type must be - AbcCxt_Element -> AbcCxt_Element  -> AbcCxt_Element
 -- for folding
   
-(&\) :: Abc CT_Element -> Abc CT_Element  -> Abc CT_Element
+(&\) :: AbcCxt_Element -> AbcCxt_Element -> AbcCxt_Element
 (&\) _ _ = undefined   
   
 
@@ -531,7 +562,7 @@ perc    = clef_name "perc"
 -- * Named elements
 
 -- Notes  
-c_, d_, e_, f_, g_, a_, b_ :: Abc Elt_Note
+c_, d_, e_, f_, g_, a_, b_ :: AbcNote
 c_  = note C
 d_  = note D
 e_  = note E
@@ -540,7 +571,7 @@ g_  = note G
 a_  = note A
 b_  = note B
 
-c__, d__, e__, f__, g__, a__, b__ ::  Abc Elt_Note
+c__, d__, e__, f__, g__, a__, b__ :: AbcNote
 c__  = note C2
 d__  = note D2
 e__  = note E2
@@ -552,61 +583,62 @@ b__  = note B2
 -- Rests
 
 -- @z1@ - a rest of the default note length.
-z1        :: Abc Elt_Rest
+z1        :: AbcRest
 z1        = rest ! dur (1 // 1)
 
 -- @z1@ - a rest of double the default note length.
-z2        :: Abc Elt_Rest
+z2        :: AbcRest
 z2        = rest ! dur (2 // 1)
 
 -- @z4@ - a rest four times the default note length.
-z4        :: Abc Elt_Rest
+z4        :: AbcRest
 z4        = rest ! dur (2 // 1)
 
 -- @z'2@ - a rest of half the default note length.
-z'2       :: Abc Elt_Rest
+z'2       :: AbcRest
 z'2       = rest ! dur (1 // 2)
 
 -- repeats and barlines
 
 -- | @barline@ - single stroke @|@.
-barline         :: Abc Elt_RepeatMark
+barline         :: AbcRepeatMark
 barline         = repeatMark "|" 
 
 -- | @thinThick@ - @|]@.
-thinThick       :: Abc Elt_RepeatMark
+thinThick       :: AbcRepeatMark
 thinThick       = repeatMark "|]" 
 
 -- | @thickThin@ - @|]@.
-thickThin       :: Abc Elt_RepeatMark
+thickThin       :: AbcRepeatMark
 thickThin       = repeatMark "[|" 
 
 -- | @beginRepeat@ - @|:@.
-beginRepeat     :: Abc Elt_RepeatMark
+beginRepeat     :: AbcRepeatMark
 beginRepeat     = repeatMark "|:"
 
 -- | @endRepeat@ - @|:@.
-endRepeat       :: Abc Elt_RepeatMark
+endRepeat       :: AbcRepeatMark
 endRepeat       = repeatMark ":|"
 
 -- | @doubleRepeat@ - @::@.
-doubleRepeat    :: Abc Elt_RepeatMark
+doubleRepeat    :: AbcRepeatMark
 doubleRepeat    = repeatMark "::"
 
 
 -- | @firstRepeat@ - @[1@.
-firstRepeat    :: Abc Elt_RepeatMark
+firstRepeat    :: AbcRepeatMark
 firstRepeat     = repeatMark "[1"
 
 -- | @secondRepeat@ - @[2@.
-secondRepeat    :: Abc Elt_RepeatMark
+secondRepeat    :: AbcRepeatMark
 secondRepeat    = repeatMark "[2"
 
 -- | @firstEnding@ - @|1@.
-firstEnding     :: Abc Elt_RepeatMark
+firstEnding     :: AbcRepeatMark
 firstEnding     = repeatMark "|1"
 
 
 -- | @secondEnding@ - @:|2@.
-secondEnding    :: Abc Elt_RepeatMark
+secondEnding    :: AbcRepeatMark
 secondEnding    = repeatMark ":|2"
+

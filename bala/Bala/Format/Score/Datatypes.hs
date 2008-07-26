@@ -44,7 +44,7 @@ data ScGlyph pch dur = ScNote (ScPitch pch) dur
                      | ScRest dur
                      | ScSpacer dur  -- non-printed space
                      | ScGroup ScGroupType [ScGlyph pch dur]
---             | ScTaggedGlyph ScTag
+--                     | ScTaggedGlyph ScTag
 
 
 data ScPitch pch = ScPitch pch
