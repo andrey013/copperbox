@@ -1,0 +1,8 @@
+cil pickle instructions
+
+> edit Makefile.in, add asdl_base, aterm_base, asdlpickle and atermpickle
+ to CILLY_LIBRARY_MODULES
+ 
+> edit main.ml, add the two features below to the list features    
+    Atermpickle.feature;
+    Asdlpickle.feature; 

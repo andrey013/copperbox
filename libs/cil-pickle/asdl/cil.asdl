@@ -1,0 +1,335 @@
+-- cil.asdl
+
+-- Copyright (c) 2007 Stephen Peter Tetley 
+
+-- __MIT License__ 
+-- Permission is hereby granted, free of charge, to any person obtaining a    
+-- copy of this software and associated documentation files (the "Software"), 
+-- to deal in the Software without restriction, including without limitation   
+-- the rights to use, copy, modify, merge, publish, distribute, sublicense,    
+-- and/or sell copies of the Software, and to permit persons to whom the      
+-- Software is furnished to do so, subject to the following conditions:       
+
+-- The above copyright notice and this permission notice shall be included in 
+-- all copies or substantial portions of the Software.                        
+
+
+-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+-- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,   
+-- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL    
+-- THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+-- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING     
+-- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER        
+-- DEALINGS IN THE SOFTWARE.                                                  
+
+
+
+-- abstract syntax of cil
+-- c intermediate language
+
+
+
+module Cil {
+  
+  cil_file = (
+    identifier fileName, 
+    globals globals, 
+    opt_fun_dec globinit, 
+    bool globinitcalled
+  )
+  comment = (location x1, string x2)
+  
+  globals = (global *)
+  
+  global 
+    = GType(type_info type_info, location sloc)                     
+    | GCompTag(comp_info comp_info, location sloc)
+    | GCompTagDecl(comp_info comp_info, location sloc ) 
+    | GEnumTag(enum_info enum_info, location sloc)
+    | GEnumTagDecl (enum_info enum_info, location sloc)
+    | GVarDecl (var_info var_info, location sloc)
+    | GVar(var_info var_info, init_info init_info, location sloc) 
+    | GFun(fun_dec fun_dec, location sloc)          
+    | GAsm(string asm_text, location sloc)
+    | GPragma(cil_attribute attr, location sloc)
+    | GText (string text)
+    
+    
+  cil_type
+    = TVoid(cil_attributes attrs)
+    | TInt(int_kind ikind, cil_attributes attrs)
+    | TFloat(float_kind fkind, cil_attributes attrs)
+    | TPtr(cil_type typ, cil_attributes attrs)
+    | TArray(cil_type typ, opt_exp opt_exp, cil_attributes attrs)
+    | TFun(cil_type typ, formal_args formals, bool is_varg, cil_attributes attrs)
+    | TNamed(type_info type_info, cil_attributes attrs) 
+    | TComp(comp_info comp_info, cil_attributes attrs)    -- struct or union          
+    | TEnum(enum_info enuminfo, cil_attributes attrs)
+    | TBuiltinVas(cil_attributes attrs)    
+
+  -- Cil itself has formal_args as opt * list   
+  formal_args = (formal_arg*)
+
+  formal_arg = (string x1, cil_type x2, cil_attributes x3)
+      
+  int_kind 
+    = IChar       -- char
+    | ISChar      -- signed char
+    | IUChar      -- unsigned char
+    | IInt        -- int
+    | IUInt       -- unsigned int
+    | IShort      -- short
+    | IUShort     -- unsigned short
+    | ILong       -- long
+    | IULong      -- unsigned long
+    | ILongLong   
+    | IULongLong  
+
+
+  float_kind 
+    = FFloat
+    | FDouble
+    | FLongDouble
+  
+  cil_attributes = (cil_attribute *)
+  
+  cil_attribute = Attr (string name, attr_params params)
+  
+  attr_params = (attr_param *)   
+               
+  attr_param
+    = AInt (int num)
+    | AStr (string str)
+    | ACons (string name, attr_params params)
+    | ASizeOf (cil_type typ)
+    | ASizeOfE (attr_param param)
+    | ASizeOfS (type_sig type_sig)
+    | AAlignOf (cil_type typ)
+    | AAlignOfE (attr_param param)
+    | AAlignOfS (type_sig type_sig)
+    | AUnOp (unOp op, attr_param param)
+    | ABinOp (binOp op, attr_param param1, attr_param param2)
+    | ADot (attr_param param, string str)
+                  
+
+  comp_info 
+    = CompInfo (
+        bool cstruct,
+        string cname,
+        int ckey,
+        field_infos cfields,
+        cil_attributes cattrs,
+        bool is_defiend,
+        bool is_reference
+        )         
+  
+  field_infos = (field_info *)
+  
+  field_info 
+    = FieldInfo (
+        string fname,
+        cil_type ftype,
+        int? fbitfield,
+        cil_attributes fattrs,
+        location floc
+        )
+
+  enum_info
+    = EnumInfo (
+        string ename,
+        items eitems,
+        cil_attributes eattrs,
+        bool ereferenced
+        )
+        
+
+  type_info 
+    = TypeInfo (
+        string tname,
+        cil_type ttype,
+        bool treferenced
+        )
+        
+  var_infos = (var_info *)
+  opt_var_info = (var_info ?)
+                 
+  var_info
+    = VarInfo (
+        string vname,
+        cil_type vtype,
+        cil_attributes vattrs,
+        storage vstorage,
+        bool vglob,
+        bool vinline,
+        location vdecl,
+        int vid,
+        bool vaddrof,
+        bool vreferenced
+        )
+  
+  items = (item *)      
+  item = (string name, exp value, location sloc)        
+        
+  storage 
+    = NoStorage 
+    | Static 
+    | Register 
+    | Extern 
+  
+  opt_exp = (exp ?)
+  
+  exps = (exp *) 
+                   
+  exp 
+    = Const (constant const)
+    | Lval (lval lvalue)
+    | SizeOf (cil_type typ)
+    | SizeOfE (exp expression)
+    | SizeOfStr (string str)
+    | AlignOf (cil_type typ)
+    | AlignOfE (exp expression) 
+    | UnOp (unOp op, exp expression, cil_type typ)
+    | BinOp (binOp op, exp expr1, exp expr2, cil_type typ)
+    | CastE (cil_type typ, exp expression)
+    | AddrOf (lval lvalue)
+    | StartOf (lval lvalue)
+    
+  constant 
+    = CInt64 (int64 val, int_kind ikind, string? rep)
+    | CStr (string val)
+    | CWStr (int64* val)
+    | CChr (char val)
+    | CReal (float val, float_kind fkind, string? rep)
+    | CEnum (exp val, string name, enum_info info)
+
+  unOp 
+    = Neg
+    | BNot 
+    | LNot
+  
+
+  binOp 
+    = PlusA  
+    | PlusPI 
+    | IndexPI
+    | MinusA 
+    | MinusPI
+    | MinusPP
+    | Mult   
+    | Div    
+    | Mod    
+    | Shiftlt
+    | Shiftrt
+    | Lt    
+    | Gt     
+    | Le     
+    | Ge     
+    | Eq     
+    | Ne     
+    | BAnd   
+    | BXor   
+    | BOr    
+    | LAnd   
+    | LOr 
+  
+  opt_lval = (lval ?)
+  
+  lval = (lhost lvalhost, offset lvaloffset)
+                                                                            
+  lhost = Var (var_info varinfo)
+        | Mem (exp expression)
+        
+  offset
+    = NoOffset
+    | Field (field_info field_info, offset field_offset) 
+    | Index (exp expression, offset exp_offset)
+
+  opt_init = (init ?)
+  
+  init
+    = SingleInit (exp expression)
+    | CompoundInit (cil_type typ, elt_initializers inits)
+     
+  init_info = InitInfo (opt_init opt_init)
+  
+  elt_initializers = (elt_initializer *)
+  elt_initializer = (offset x1, init x2)
+  
+  opt_fun_dec = (fun_dec ?)
+  
+  fun_dec
+    = FunDec ( 
+        var_info svar,
+        var_infos sformals,
+        var_infos slocals,
+        int smax_id,
+        block sbody,
+        int? smax_stmt_id,
+        stmts sall_stmts
+        )
+        
+  block = (cil_attributes battrs, stmts bstmts)
+
+  stmts = (stmt *) 
+  opt_stmt = (stmt ?)
+     
+  stmt = Stmt(labels labels, stmt_kind skind, int sid)
+  
+  labels = (label *)
+                         
+  label
+    = Label(string label, location sloc, bool original)
+    | Case(exp expression, location sloc)
+    | Default(location sloc)                                                                         
+
+
+  stmt_kind  
+    = Instr (instrs instrs)
+    | Return (opt_exp opt_exp, location sloc)
+    | Goto (stmt statement, location sloc)
+    | Break (location sloc)
+    | Continue (location sloc)
+    | If(exp expression, block block1, block block2, location sloc)
+    | Switch(exp expression, block sblock, stmts stmts, location sloc)
+    | Loop (block lblock, location sloc, opt_stmt cont_stmt, opt_stmt break_stmt) 
+    | Block(block blk)
+    | TryFinally(block block1, block block2, location sloc)
+    | TryExcept(block block1, except_exp except_exp, block block2, location sloc)
+                  
+
+  except_exp = (instrs x1, exp x2)  
+
+  instrs = (instr *)                                                                 
+  instr 
+    = Set (lval lval, exp exp, location sloc)
+    | Call (opt_lval opt_lval, exp exp, exps exps, location sloc)
+    | Asm (cil_attributes attrs, 
+           string* templates,
+           asm_outputs asmouts,
+           asm_inputs asmins,
+           string* clobbers,
+           location sloc
+           )  
+  
+  asm_outputs = (asm_output *)
+  
+  asm_output = (string x1, lval x2)
+  
+  asm_inputs = (asm_input *)
+  
+  asm_input = (string x1, exp x2)
+  
+  location = Location (int line, string file_name, int byte)
+  
+  type_sigs = (type_sig *)
+  
+  type_sig 
+    = TSArray (type_sig type_sig, int64? opt_exp, cil_attributes attrs)
+    | TSPtr (type_sig type_sig, cil_attributes attrs)
+    | TSComp (bool is_struct, string name, cil_attributes attrs)
+    | TSFun (type_sig type_sig, type_sigs args, bool is_va, cil_attributes attrs)
+    | TSEnum (string name, cil_attributes attrs)
+    | TSBase (cil_type typ)
+  
+                        
+}

@@ -1,0 +1,68 @@
+-- cil-views.asdl 
+
+-- Copyright (c) 2007 Stephen Peter Tetley 
+
+-- __MIT License__ 
+-- Permission is hereby granted, free of charge, to any person obtaining a    
+-- copy of this software and associated documentation files (the "Software"), 
+-- to deal in the Software without restriction, including without limitation   
+-- the rights to use, copy, modify, merge, publish, distribute, sublicense,    
+-- and/or sell copies of the Software, and to permit persons to whom the      
+-- Software is furnished to do so, subject to the following conditions:       
+
+-- The above copyright notice and this permission notice shall be included in 
+-- all copies or substantial portions of the Software.                        
+
+
+-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+-- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,   
+-- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL    
+-- THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+-- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING     
+-- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER        
+-- DEALINGS IN THE SOFTWARE.                                                  
+
+
+
+view OCaml {
+
+  Cil.cil_file <= as_record : true
+  
+}
+
+view OCaml {
+  module Cil <= {
+    pickler_prolog
+%%
+(* asdlpickle.ml *)
+
+open Int64
+open Char
+open Cil
+open Asdl_base
+ 
+%%
+    pickler_epilog
+%%    
+
+
+(* Pickler epilog ....... *)
+
+let pickle_cil_file (f : file) =
+  let outch = open_out_bin (f.fileName ^ ".asdlpkl")
+  in write_cil_file f outch ;
+     close_out outch
+
+let feature : featureDescr =
+  { fd_name = "asdlpickle";
+    fd_enabled = ref false; (*   Cilutil.printAterm; *)
+    fd_description = "writes an Asdl pickle of the Cil ast";
+    fd_extraopt = [];
+    fd_doit = (function (f: file) -> pickle_cil_file f );
+    fd_post_check = true;
+  }
+  
+%%
+  }
+}
+

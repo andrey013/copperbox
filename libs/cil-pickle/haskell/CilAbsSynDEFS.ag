@@ -1,0 +1,382 @@
+-- Sun Jan 14 23:03:47 GMT Standard Time 2007
+
+{
+module CilAbsSyn where
+
+import Data.Int
+}
+
+
+TYPE CilFile = (fileName:String
+               ,globals:Globals
+               ,globinit:OptFunDec
+               ,globinitcalled:Bool)
+
+TYPE Comment = (x1:Location,x2:String)
+
+TYPE Globals = [Global]
+
+DATA Global
+  | GType            type_info        : TypeInfo
+                     sloc             : Location
+  | GCompTag         comp_info        : CompInfo
+                     sloc             : Location
+  | GCompTagDecl     comp_info        : CompInfo
+                     sloc             : Location
+  | GEnumTag         enum_info        : EnumInfo
+                     sloc             : Location
+  | GEnumTagDecl     enum_info        : EnumInfo
+                     sloc             : Location
+  | GVarDecl         var_info         : VarInfo
+                     sloc             : Location
+  | GVar             var_info         : VarInfo
+                     init_info        : InitInfo
+                     sloc             : Location
+  | GFun             fun_dec          : FunDec
+                     sloc             : Location
+  | GAsm             asm_text         : String
+                     sloc             : Location
+  | GPragma          attr             : CilAttribute
+                     sloc             : Location
+  | GText            text             : String
+
+DATA CilType
+  | TVoid            attrs            : CilAttributes
+  | TInt             ikind            : IntKind
+                     attrs            : CilAttributes
+  | TFloat           fkind            : FloatKind
+                     attrs            : CilAttributes
+  | TPtr             typ              : CilType
+                     attrs            : CilAttributes
+  | TArray           typ              : CilType
+                     opt_exp          : OptExp
+                     attrs            : CilAttributes
+  | TFun             typ              : CilType
+                     formals          : FormalArgs
+                     is_varg          : Bool
+                     attrs            : CilAttributes
+  | TNamed           type_info        : TypeInfo
+                     attrs            : CilAttributes
+  | TComp            comp_info        : CompInfo
+                     attrs            : CilAttributes
+  | TEnum            enuminfo         : EnumInfo
+                     attrs            : CilAttributes
+  | TBuiltinVas      attrs            : CilAttributes
+
+TYPE FormalArgs = [FormalArg]
+
+TYPE FormalArg = (x1:String,x2:CilType,x3:CilAttributes)
+
+DATA IntKind
+  | IChar            
+  | ISChar           
+  | IUChar           
+  | IInt             
+  | IUInt            
+  | IShort           
+  | IUShort          
+  | ILong            
+  | IULong           
+  | ILongLong        
+  | IULongLong       
+
+DATA FloatKind
+  | FFloat           
+  | FDouble          
+  | FLongDouble      
+
+TYPE CilAttributes = [CilAttribute]
+
+DATA CilAttribute
+  | Attr             name             : String
+                     params           : AttrParams
+
+TYPE AttrParams = [AttrParam]
+
+DATA AttrParam
+  | AInt             num              : Int
+  | AStr             str              : String
+  | ACons            name             : String
+                     params           : AttrParams
+  | ASizeOf          typ              : CilType
+  | ASizeOfE         param            : AttrParam
+  | ASizeOfS         type_sig         : TypeSig
+  | AAlignOf         typ              : CilType
+  | AAlignOfE        param            : AttrParam
+  | AAlignOfS        type_sig         : TypeSig
+  | AUnOp            op               : UnOp
+                     param            : AttrParam
+  | ABinOp           op               : BinOp
+                     param1           : AttrParam
+                     param2           : AttrParam
+  | ADot             param            : AttrParam
+                     str              : String
+
+DATA CompInfo
+  | CompInfo         cstruct          : Bool
+                     cname            : String
+                     ckey             : Int
+                     cfields          : FieldInfos
+                     cattrs           : CilAttributes
+                     is_defiend       : Bool
+                     is_reference     : Bool
+
+TYPE FieldInfos = [FieldInfo]
+
+DATA FieldInfo
+  | FieldInfo        fname            : String
+                     ftype            : CilType
+                     fbitfield        : {(Maybe Int)}
+                     fattrs           : CilAttributes
+                     floc             : Location
+
+DATA EnumInfo
+  | EnumInfo         ename            : String
+                     eitems           : Items
+                     eattrs           : CilAttributes
+                     ereferenced      : Bool
+
+DATA TypeInfo
+  | TypeInfo         tname            : String
+                     ttype            : CilType
+                     treferenced      : Bool
+
+TYPE VarInfos = [VarInfo]
+
+TYPE OptVarInfo = MAYBE VarInfo
+
+DATA VarInfo
+  | VarInfo          vname            : String
+                     vtype            : CilType
+                     vattrs           : CilAttributes
+                     vstorage         : Storage
+                     vglob            : Bool
+                     vinline          : Bool
+                     vdecl            : Location
+                     vid              : Int
+                     vaddrof          : Bool
+                     vreferenced      : Bool
+
+TYPE Items = [Item]
+
+TYPE Item = (name:String,value:Exp,sloc:Location)
+
+DATA Storage
+  | NoStorage        
+  | Static           
+  | Register         
+  | Extern           
+
+TYPE OptExp = MAYBE Exp
+
+TYPE Exps = [Exp]
+
+DATA Exp
+  | Const            const            : Constant
+  | Lval             lvalue           : Lval
+  | SizeOf           typ              : CilType
+  | SizeOfE          expression       : Exp
+  | SizeOfStr        str              : String
+  | AlignOf          typ              : CilType
+  | AlignOfE         expression       : Exp
+  | UnOp             op               : UnOp
+                     expression       : Exp
+                     typ              : CilType
+  | BinOp            op               : BinOp
+                     expr1            : Exp
+                     expr2            : Exp
+                     typ              : CilType
+  | CastE            typ              : CilType
+                     expression       : Exp
+  | AddrOf           lvalue           : Lval
+  | StartOf          lvalue           : Lval
+
+DATA Constant
+  | CInt64           val              : Int64
+                     ikind            : IntKind
+                     rep              : {(Maybe String)}
+  | CStr             val              : String
+  | CWStr            val              : {[Int64]}
+  | CChr             val              : Char
+  | CReal            val              : Float
+                     fkind            : FloatKind
+                     rep              : {(Maybe String)}
+  | CEnum            val              : Exp
+                     name             : String
+                     info             : EnumInfo
+
+DATA UnOp
+  | Neg              
+  | BNot             
+  | LNot             
+
+DATA BinOp
+  | PlusA            
+  | PlusPI           
+  | IndexPI          
+  | MinusA           
+  | MinusPI          
+  | MinusPP          
+  | Mult             
+  | Div              
+  | Mod              
+  | Shiftlt          
+  | Shiftrt          
+  | Lt               
+  | Gt               
+  | Le               
+  | Ge               
+  | Eq               
+  | Ne               
+  | BAnd             
+  | BXor             
+  | BOr              
+  | LAnd             
+  | LOr              
+
+TYPE OptLval = MAYBE Lval
+
+TYPE Lval = (lvalhost:Lhost,lvaloffset:Offset)
+
+DATA Lhost
+  | Var              varinfo          : VarInfo
+  | Mem              expression       : Exp
+
+DATA Offset
+  | NoOffset         
+  | Field            field_info       : FieldInfo
+                     field_offset     : Offset
+  | Index            expression       : Exp
+                     exp_offset       : Offset
+
+TYPE OptInit = MAYBE Init
+
+DATA Init
+  | SingleInit       expression       : Exp
+  | CompoundInit     typ              : CilType
+                     inits            : EltInitializers
+
+DATA InitInfo
+  | InitInfo         opt_init         : OptInit
+
+TYPE EltInitializers = [EltInitializer]
+
+TYPE EltInitializer = (x1:Offset,x2:Init)
+
+TYPE OptFunDec = MAYBE FunDec
+
+DATA FunDec
+  | FunDec           svar             : VarInfo
+                     sformals         : VarInfos
+                     slocals          : VarInfos
+                     smax_id          : Int
+                     sbody            : Block
+                     smax_stmt_id     : {(Maybe Int)}
+                     sall_stmts       : Stmts
+
+TYPE Block = (battrs:CilAttributes,bstmts:Stmts)
+
+TYPE Stmts = [Stmt]
+
+TYPE OptStmt = MAYBE Stmt
+
+DATA Stmt
+  | Stmt             labels           : Labels
+                     skind            : StmtKind
+                     sid              : Int
+
+TYPE Labels = [Label]
+
+DATA Label
+  | Label            label            : String
+                     sloc             : Location
+                     original         : Bool
+  | Case             expression       : Exp
+                     sloc             : Location
+  | Default          sloc             : Location
+
+DATA StmtKind
+  | Instr            instrs           : Instrs
+  | Return           opt_exp          : OptExp
+                     sloc             : Location
+  | Goto             statement        : Stmt
+                     sloc             : Location
+  | Break            sloc             : Location
+  | Continue         sloc             : Location
+  | If               expression       : Exp
+                     block1           : Block
+                     block2           : Block
+                     sloc             : Location
+  | Switch           expression       : Exp
+                     sblock           : Block
+                     stmts            : Stmts
+                     sloc             : Location
+  | Loop             lblock           : Block
+                     sloc             : Location
+                     cont_stmt        : OptStmt
+                     break_stmt       : OptStmt
+  | Block            blk              : Block
+  | TryFinally       block1           : Block
+                     block2           : Block
+                     sloc             : Location
+  | TryExcept        block1           : Block
+                     except_exp       : ExceptExp
+                     block2           : Block
+                     sloc             : Location
+
+TYPE ExceptExp = (x1:Instrs,x2:Exp)
+
+TYPE Instrs = [Instr]
+
+DATA Instr
+  | Set              lval             : Lval
+                     exp              : Exp
+                     sloc             : Location
+  | Call             opt_lval         : OptLval
+                     exp              : Exp
+                     exps             : Exps
+                     sloc             : Location
+  | Asm              attrs            : CilAttributes
+                     templates        : {[String]}
+                     asmouts          : AsmOutputs
+                     asmins           : AsmInputs
+                     clobbers         : {[String]}
+                     sloc             : Location
+
+TYPE AsmOutputs = [AsmOutput]
+
+TYPE AsmOutput = (x1:String,x2:Lval)
+
+TYPE AsmInputs = [AsmInput]
+
+TYPE AsmInput = (x1:String,x2:Exp)
+
+DATA Location
+  | Location         line             : Int
+                     file_name        : String
+                     byte             : Int
+
+TYPE TypeSigs = [TypeSig]
+
+DATA TypeSig
+  | TSArray          type_sig         : TypeSig
+                     opt_exp          : {(Maybe Int64)}
+                     attrs            : CilAttributes
+  | TSPtr            type_sig         : TypeSig
+                     attrs            : CilAttributes
+  | TSComp           is_struct        : Bool
+                     name             : String
+                     attrs            : CilAttributes
+  | TSFun            type_sig         : TypeSig
+                     args             : TypeSigs
+                     is_va            : Bool
+                     attrs            : CilAttributes
+  | TSEnum           name             : String
+                     attrs            : CilAttributes
+  | TSBase           typ              : CilType
+
+
+
+DERIVING *     : Show
+
+
