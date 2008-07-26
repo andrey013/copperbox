@@ -235,6 +235,10 @@ flattenStep acc sq = flatstep acc sq
     flatstep acc (Poly ts :< sq)       = 
         flattenPoly acc ts sq
 
+flattenParallel :: (Perform evt pch dur, ScDuration dur) 
+                => (TSeq pch dur, [ScGlyph pch dur])
+                -> ViewL (EvtPosition evt)
+                -> ProcessM (TSeq pch dur)                        
 flattenParallel (se,stk) sq = flatpar (se,stk) sq
   where
     flatpar (se,stk) (Evt e :< sq)  = do
@@ -249,7 +253,10 @@ flattenParallel (se,stk) sq = flatpar (se,stk) sq
     flatpar (se,stk) _              = 
         error "flattenParallel - unterminated Par"
     
-
+flattenPrefix :: (Perform evt pch dur, ScDuration dur) 
+              => (TSeq pch dur, [ScGlyph pch dur])
+              -> ViewL (EvtPosition evt)
+              -> ProcessM (TSeq pch dur)  
 flattenPrefix (se,stk) sq = flatpre (se,stk) sq
   where  
     flatpre (se,stk) (Evt e :< sq)  = do

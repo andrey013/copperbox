@@ -21,7 +21,6 @@
 module Bala.Format.Output.LilyPondInternals where
 
 import Bala.Format.Output.OutputBase
-import Bala.Base.Meter
 
 import Data.Char
 import Data.Sequence ( (|>) )
@@ -120,10 +119,10 @@ bracesHangingExpr (Ly e) = Ly $ nestedf bracesHanging e
 equation :: String -> Ly a -> Ly o
 equation var d = lySeq3 (<+>) (lyLit $ text var) (lyLit $ equals) d
 
+type LengthRep a = (a,a)
 
-
-ppMeter :: MeterFraction -> Doc
-ppMeter mf = let (n,d) = unMeterFraction mf in
+ppMeter :: Integral a => LengthRep a -> Doc
+ppMeter (n,d) = 
     group $ int (fromIntegral n) <> char '/' <> int (fromIntegral d)
     
     
@@ -134,16 +133,16 @@ ppMeter mf = let (n,d) = unMeterFraction mf in
 data LyCxt_ToplevelT
 type LyCxt_Toplevel = Ly LyCxt_ToplevelT
 
-toplevel            :: LyCxt_Toplevel
-toplevel            = Ly $ sequenceS (<$>) emptyseq
+toplevelStart       :: LyCxt_Toplevel
+toplevelStart       = Ly $ sequenceS (<$>) emptyseq
 
 
 -- | Properties inside header block e.g. title, dedication
 data LyCxt_HeaderT  
 type LyCxt_Header = Ly LyCxt_HeaderT
 
-headerBlk           :: LyCxt_Header
-headerBlk           = Ly $ sequenceS (<$>) emptyseq
+headerStart         :: LyCxt_Header
+headerStart         = Ly $ sequenceS (<$>) emptyseq
 
 
 -- | Book context for multiple scores, markup
@@ -151,12 +150,17 @@ data LyCxt_BookT
 type LyCxt_Book = Ly LyCxt_BookT
 
 
+bookStart           :: LyCxt_Book
+bookStart           = Ly $ sequenceS (<$>) emptyseq
+
+
+
 -- | Glyphs - e.g. rest, note, skip etc
 data LyCxt_ElementT 
 type LyCxt_Element = Ly LyCxt_ElementT
 
-elementBlk          :: LyCxt_Element
-elementBlk          = Ly $ sequenceS (</>) emptyseq
+elementStart        :: LyCxt_Element
+elementStart        = Ly $ sequenceS (</>) emptyseq
 
 --------------------------------------------------------------------------------
 -- ** Commenting input files (2.12)
@@ -323,9 +327,7 @@ type LyRest = Ly LyRestT
 rest                :: LyRest
 rest                = lyLit $ char 'r'
 
--- | @spacer@ rests aren't printed.
-spacer              :: LyRest
-spacer              = lyLit $ char 's'
+
 
 instance Append LyCxt_ElementT LyRestT
 
@@ -341,14 +343,14 @@ skip d              = lySeq2 (<+>) (cmd "skip") d
 
 instance Append LyCxt_ElementT LyCmdSkipT
   
--- "s1", "s2", eyc  
-data LySkipDurationT
-type LySkipDuration = Ly LySkipDurationT
+-- @spacer@ - "s1", "s2", etc  
+data LySkipT
+type LySkip = Ly LySkipT
 
-skip_duration       :: LyDuration -> LySkipDuration
-skip_duration d     = lySeq2 (<>) (lyLit $ char 's') d
+spacer              :: LySkip
+spacer              = lyLit $ char 's'
   
-instance Append LyCxt_ElementT LySkipDurationT
+instance Append LyCxt_ElementT LySkipT
 
 
 --------------------------------------------------------------------------------  
@@ -370,9 +372,10 @@ breve               :: LyDuration
 breve               = cmd "breve"
 
    
-instance SuffixAttr LyRestT LyDurationT
-instance SuffixAttr LyNoteT LyDurationT
 
+instance SuffixAttr LyNoteT LyDurationT
+instance SuffixAttr LyRestT LyDurationT
+instance SuffixAttr LySkipT LyDurationT
 
 --------------------------------------------------------------------------------
 -- *** Augmentation dots (6.2.2)
@@ -396,7 +399,7 @@ instance SuffixAttr LyDurationT LyDottedT
 data LyCmdTimesT
 type LyCmdTimes = Ly LyCmdTimesT
 
-times               :: MeterFraction -> Ly e  -> LyCmdTimes
+times               :: Integral a => LengthRep a -> Ly e  -> LyCmdTimes
 times r e           = 
     let bexpr = Ly $ nestedf bracesSpaced (unLy e)
     in command2 "times" (lyLit $ ppMeter r) bexpr
@@ -507,7 +510,7 @@ keyType             = cmd
 data LyCmdTimeT
 type LyCmdTime = Ly LyCmdTimeT
 
-time                :: MeterFraction -> LyCmdTime
+time                :: Integral a => LengthRep a -> LyCmdTime
 time                = command1 "time" . lyLit . ppMeter
 
 

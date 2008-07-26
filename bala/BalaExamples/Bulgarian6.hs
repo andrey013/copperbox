@@ -74,16 +74,16 @@ bulgarian6 = (Perf [bars1_4])
   
 
 bulgarian_template musicexpr = 
-    toplevel 
+    toplevelStart
       +++ version "2.10.3" 
-      +++ header (headerBlk +++ title "Bulgarian (6)")
+      +++ header (headerStart +++ title "Bulgarian (6)")
       +++ book
             (block (score 
                       (block (relative (_c ! raised 1) musicexpr))))
   
 
 bulgarian6_ly = 
-  let expr    = elementBlk +++ key _a major +++ clef treble
+  let expr    = elementStart +++ key _a major +++ clef treble
       env     = default_ly_env { initial_ly_context = expr }
       ly_expr = renderLy1 bars1_4 env
   in bulgarian_template ly_expr

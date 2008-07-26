@@ -40,18 +40,26 @@ class (Show evt) => Perform evt pch dur | evt -> pch, evt -> dur where
 -- Score representation 
 
 class ScDuration a where
-  toDouble :: a -> Double
-  fromDouble :: Double -> a
+  toDouble      :: a -> Double
+  fromDouble    :: Double -> a
     
 -- LilyPond back end
 
-class LilyPondPitch pch where
-  octaveDist :: pch -> pch -> Int
-  -- lyAccidental :: pch -> Ly Accidental
-  lyPitch :: pch -> LyPitch
+class (Eq pch) => LilyPondPitch pch where
+  middleC         :: pch
+  
+  octaveDist      :: pch -> pch -> Int
+ 
+  mkPitchName     :: pch -> LyPitchName
+  
+  -- | No direct equivalent of 'natural' in LilyPond, hence the Maybe type
+  mkAccidental    :: pch -> Maybe LyAccidental
+  
+  
   
 class (Eq dur) => LilyPondDuration dur where
-  mkLyDuration :: dur -> Maybe (LyDuration)
+  quaternoteDuration  :: dur
+  mkDuration          :: dur -> LyDuration
   
   
   

@@ -44,9 +44,9 @@ execLilyPondOn filename = do
 
 lilypond_template :: String -> Ly b -> LyCxt_Toplevel
 lilypond_template s expr = 
-    toplevel 
+    toplevelStart
       +++ version "2.10.3" 
-      +++ header (headerBlk +++ title s)
+      +++ header (headerStart +++ title s)
       +++ book
             (block (score 
                       (block (relative (_c ! raised 1) expr))))

@@ -36,7 +36,7 @@ riff :: EventTree Pitch
 riff  = root # bar_1 # bar_2 # bar_1 # chord [a3,e4]
 
 riff_ly = 
-  let expr    = elementBlk +++ key _c major +++ clef treble
+  let expr    = elementStart +++ key _c major +++ clef treble
       env     = default_ly_env { initial_ly_context = expr }
       ly_expr = renderLy1 riff env
   in lilypond_template "Riff" ly_expr

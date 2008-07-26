@@ -54,7 +54,7 @@ intial_ly_state = Perform_Ly_State {
   
 default_ly_env :: Perform_Ly_Env
 default_ly_env = Perform_Ly_Env { 
-    initial_ly_context        = elementBlk,
+    initial_ly_context        = elementStart,
     initial_relative_pitch    = c4 
   }
 
@@ -74,8 +74,6 @@ data EventZero = ZeroPitch Pitch LyPitch (Maybe LyDuration)
 
 (*!) e oa   = maybe e (e !) oa
 
-
-lyPitch' () = lyPitch
 
                            
 withRelativePitch :: Pitch -> Perform_Ly_State -> Perform_Ly_State
@@ -214,7 +212,7 @@ suffixGrace :: (Append cxts LyCmdGraceT)
 suffixGrace k []    = k
 suffixGrace k xs    = k +++ grace gblock
   where
-    gblock = blockS $ foldr (flip suffix) elementBlk xs
+    gblock = blockS $ foldr (flip suffix) elementStart xs
 
 
 
@@ -232,7 +230,7 @@ oflat lyk (Evt e :< sq)         = do
 
 oflat lyk (Poly ts :< sq)       = do
     lyk'      <- oflat lyk (viewl sq) 
-    xs        <- mapM (oflat elementBlk) (map (viewl . unET) ts)
+    xs        <- mapM (oflat elementStart) (map (viewl . unET) ts)
     return (merge lyk' xs)  
     
 oflat lyk (StartPar :< sq)      =

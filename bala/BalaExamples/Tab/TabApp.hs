@@ -109,16 +109,16 @@ main = do
 
 
 tab_template musicexpr = 
-    toplevel 
+    toplevelStart 
       +++ version "2.10.3" 
-      +++ header (headerBlk +++ title "tab")
+      +++ header (headerStart +++ title "tab")
       +++ book
             (block (score 
                       (block (relative (_c ! raised 1) musicexpr))))
   
 
 tab_ly tree = 
-  let expr    = elementBlk +++ key _g major +++ clef treble +++ time (3//4)
+  let expr    = elementStart +++ key _g major +++ clef treble +++ time (3,4)
       env     = default_ly_env { initial_ly_context = expr }
       ly_expr = renderLy1 tree env
   in tab_template ly_expr

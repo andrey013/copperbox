@@ -19,8 +19,6 @@
 module Bala.Format.Output.AbcInternals where
 
 import Bala.Format.Output.OutputBase
-import Bala.Base.Meter
-
 
 import Data.Ratio
 import Data.Sequence ( (|>) )
@@ -59,26 +57,24 @@ infixl 7 !>
 
 
 
+type LengthRep a = (a,a)
 
 
-instance Pretty MeterFraction where
-  pretty =  ppRatio . uncurry (%) . unMeterFraction
-
-
-ppMeter :: MeterFraction -> Doc
-ppMeter mf = let (n,d) = unMeterFraction mf in
-    group $ int (fromIntegral n) <> char '/' <> int (fromIntegral d)
+ppMeter :: Integral a => LengthRep a -> Doc
+ppMeter (n,d) =
+    group $ integer (fromIntegral n) <> char '/' <> int (fromIntegral d)
     
 
-ppRatio :: (Integral a) => Ratio a -> Doc
-ppRatio r = let (n,d) = (numerator r, denominator r) in
-    group $ int (fromIntegral n) <> char '/' <> int (fromIntegral d)
+ppRatio :: (Integral a) => LengthRep a -> Doc
+ppRatio (n,d) = let r       = (n%d) 
+                    (n',d') = (numerator r, denominator r) 
+    in group $ int (fromIntegral n') <> char '/' <> int (fromIntegral d')
 
-ppNoteLength :: MeterFraction -> Doc
-ppNoteLength mf = 
-    let r     = uncurry (%) $ unMeterFraction mf
-        (n,d) = (numerator r, denominator r) 
-    in f n d
+ppNoteLength :: (Integral a) => LengthRep a -> Doc
+ppNoteLength (n,d) = 
+    let r       = n % d
+        (n',d') = (numerator r, denominator r) 
+    in f (fromIntegral n') (fromIntegral d')
   where 
     f 1 1   = empty       -- the default note length
     f n 1   = int n
@@ -196,11 +192,11 @@ key_field                   = mtfield 'K'
 
   
 -- | @L field@ - unit note length - i.e. the default length.
-unit_note_length_field      :: MeterFraction -> AbcCxt_MidTuneField
-unit_note_length_field      = mtfield 'L' . Abc . literal . pretty
+unit_note_length_field      :: Integral a => LengthRep a -> AbcCxt_MidTuneField
+unit_note_length_field      = mtfield 'L' . Abc . literal . ppNoteLength
 
 -- a synonym
-l_field                     :: MeterFraction -> AbcCxt_MidTuneField
+l_field                     :: Integral a => LengthRep a -> AbcCxt_MidTuneField
 l_field                     = unit_note_length_field
 
 -- | @M field@ - meter.
@@ -228,7 +224,7 @@ words_field                 = mtfield 'W' . Abc . literal . text
 data AbcMeterT
 type AbcMeter = Abc AbcMeterT
 
-meter               :: MeterFraction -> AbcMeter
+meter               :: (Integer,Integer) -> AbcMeter
 meter r             = abcLiteral $ ppMeter r
   
   
@@ -249,18 +245,19 @@ tempo               = abcLiteral . int
 ctempo              :: AbcLength -> Int -> AbcTempo
 ctempo l i          = abcSeq2 (<+>) l (abcLiteral $ int i)
  
-stempo              :: MeterFraction -> Int -> AbcTempo
-stempo mf i         = abcSeq2 (<+>) (abcLiteral $ pretty mf) (abcLiteral $ int i)
+stempo              :: Integral a => LengthRep a -> Int -> AbcTempo
+stempo mf i         = 
+    abcSeq2 (<+>) (abcLiteral $ ppNoteLength mf) (abcLiteral $ int i)
 
 
 data AbcLengthT
 type AbcLength = Abc AbcLengthT
 
-ilength             :: Int -> AbcLength
-ilength             = abcLiteral . int
+ilength             :: Integer -> AbcLength
+ilength             = abcLiteral . integer
 
-flength             :: MeterFraction -> AbcLength
-flength             = abcLiteral . pretty
+flength             :: Integral a => LengthRep a -> AbcLength
+flength             = abcLiteral . ppNoteLength
   
 -- ** K: key (3.1.14)
 data AbcKeyT
@@ -395,7 +392,7 @@ instance PrefixAttr AbcNoteT AbcAccidentalT
 data AbcDurationT
 type AbcDuration = Abc AbcDurationT
 
-dur :: MeterFraction -> AbcDuration
+dur :: (Integer,Integer) -> AbcDuration
 dur = abcLiteral . ppNoteLength 
 
 instance SuffixAttr AbcNoteT AbcDurationT
@@ -584,19 +581,19 @@ b__  = note B2
 
 -- @z1@ - a rest of the default note length.
 z1        :: AbcRest
-z1        = rest ! dur (1 // 1)
+z1        = rest ! dur (1,1)
 
 -- @z1@ - a rest of double the default note length.
 z2        :: AbcRest
-z2        = rest ! dur (2 // 1)
+z2        = rest ! dur (2,1)
 
 -- @z4@ - a rest four times the default note length.
 z4        :: AbcRest
-z4        = rest ! dur (2 // 1)
+z4        = rest ! dur (2,1)
 
 -- @z'2@ - a rest of half the default note length.
 z'2       :: AbcRest
-z'2       = rest ! dur (1 // 2)
+z'2       = rest ! dur (1,2)
 
 -- repeats and barlines
 

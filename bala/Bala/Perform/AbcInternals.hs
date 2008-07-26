@@ -44,17 +44,17 @@ execAbcm2psOn abc_filename ps_filename = do
     waitForProcess ph
     return ()
 
-
+-- to do - do we want Abc Output types in these records or Bala.Base types?
 data Abc_Header_Defaults = Abc_Header_Defaults {
     abc_title       :: String,
-    abc_meter       :: MeterFraction,
+    abc_meter       :: LengthRep Integer,
     abc_key         :: Key
   }
   deriving (Show)
 
 abc_header_defaults = Abc_Header_Defaults {
     abc_title       = "",
-    abc_meter       = 4//4,
+    abc_meter       = (4,4),
     abc_key         = c_major
   }     
         
