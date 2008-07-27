@@ -9,9 +9,7 @@ module Main where
 
 import Bala.Base
 import Bala.Format.Output.OutputLilyPond
-import Bala.Perform.EventTree
-import Bala.Perform.EventTree ( (#) )
-import Bala.Perform.PerformBase
+import Bala.Perform.PerformOriginal
 import Bala.Perform.PerformMidi
 import Bala.Perform.PerformLilyPond
 

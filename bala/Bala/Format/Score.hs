@@ -14,10 +14,12 @@
 --------------------------------------------------------------------------------
 
 module Bala.Format.Score 
-  ( module Bala.Format.Score.Datatypes
+  ( module Bala.Format.Score.Class
+  , module Bala.Format.Score.Datatypes
   , module Bala.Format.Score.Pretty
   )
   where
-  
+
+import Bala.Format.Score.Class  
 import Bala.Format.Score.Datatypes
 import Bala.Format.Score.Pretty

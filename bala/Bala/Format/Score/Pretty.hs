@@ -15,6 +15,7 @@
 module Bala.Format.Score.Pretty where
 
 import Bala.Base (afficher)
+import Bala.Format.Score.Class
 import Bala.Format.Score.Datatypes
 
 import qualified Data.Map as Map
@@ -32,10 +33,6 @@ sepSeq op sq = case viewl sq of
   where
     trav doc EmptyL    = doc
     trav doc (e :< se) = trav (doc `op` pretty e) (viewl se)
-
--- We might not want the default show instance    
-class Printable a where stringrep :: a -> String
-
     
 
 instance Pretty ScTag where
