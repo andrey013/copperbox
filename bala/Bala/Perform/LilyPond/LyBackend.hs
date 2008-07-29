@@ -113,11 +113,11 @@ renderScore (ScScore sp) = reverse <$> F.foldlM fn [] sp
 renderPart :: (LilyPondPitch pch, LilyPondDuration dur)
            => ScPart pch dur 
            -> ProcessM pch dur LyCmdScore
-renderPart (ScPart i refs sp) = setPartRefs refs $ 
-    (score . block) <$> F.foldlM renderPoly elementStart sp
+renderPart (ScPart i refs sm) = setPartRefs refs $ 
+    (score . block) <$> F.foldlM renderMeasure elementStart sm
   
   
-  
+{-  
 renderPoly :: (LilyPondPitch pch, LilyPondDuration dur)
            => LyCxt_Element 
            -> ScPoly pch dur  
@@ -146,14 +146,14 @@ mergePolys k (x:xs) = let poly = foldl fn (block x) xs in
   where
     fn acc a = acc \\ (block a)
     
-    
+-}    
 
 
 renderMeasure :: (LilyPondPitch pch, LilyPondDuration dur)
               => LyCxt_Element 
               -> ScMeasure pch dur 
               -> ProcessM pch dur LyCxt_Element 
-renderMeasure cxt (ScMeasure i sg) = F.foldlM renderGlyph cxt sg
+renderMeasure cxt (ScMeasure i xs sg) = F.foldlM renderGlyph cxt sg
 
 
 

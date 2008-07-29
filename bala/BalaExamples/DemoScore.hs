@@ -21,7 +21,7 @@ import Bala.Perform.Score.ToScore
 import Text.PrettyPrint.Leijen hiding (dot)
 
 -- main = demo01_ly
-main = showScore $ perf1 $ foldl (compR (#) event) root (replicate 3 (c4 # du4))
+main = showScore $ perf1 $ foldl (compR (#) event) root (replicate 12 (c4 # du4))
   where compR op f a b = a `op` f b
   
   
@@ -92,6 +92,11 @@ demo07b_ly = printDoc $ createDoc $ toLy example7b
 
 demo07c = showScore example7c
 demo07c_ly = printDoc $ createDoc $ toLy example7c
+
+
+demo07d = showScore example7d
+demo07d_ly = printDoc $ createDoc $ toLy example7d
+
 
 --------------------------------------------------------------------------------
 
@@ -175,23 +180,42 @@ example7 = perf1 $
               , root # event (g4 # du2) # event (e4 # du2) 
               ]
                 
+-- c5/4 c5/4 d5/4 e5/4 ----
+-- g4/2 ---- e4/2 ---- ---- 
+
 
 ----
 
 example7a :: Performance NrEvent
 example7a = perf1 $
-  root  # event (c3 # du2) 
+  root  # event (c4 # du2) 
         # poly [ root # event (c5 # du4) # event (c5 # du4) 
                       # event (d5 # du4) # event (e5 # du4)
                , root # event (g4 # du2) # event (e4 # du2) 
                ] 
-        # event (c3 # du2) 
-        # event (c3 # du2)  
+        # event (c4 # du2) 
+        # event (c4 # du2)  
 
--- poly optimiztion         
+-- Do we want this:
+ 
+-- c4/2 ---- ---- ---- ---- c4/2 ---- c4/2 ----
+-- ---- c5/4 c5/4 d5/4 e5/4 ---- 
+-- ---- g4/2 ---- e4/2 ---- ---- 
+
+-- Or this:
+
+-- c4/2 ---- c4/2 ---- c4/2 ----
+-- ---- c5/4 c5/4 d5/4 e5/4 ---- 
+-- ---- g4/2 ---- e4/2 ---- ---- 
+
+
+
+-- poly optimization         
 example7b = perf1 $ 
   root # event (c4 # du4) # poly [ root # event (d4 # du4) ] 
-       # event (e4 # du4) # event (f4 # du4)          
+       # event (e4 # du4) # event (f4 # du4) 
+       
+-- c4/4 d4/4 e4/4 f4/4                 
 
 -- poly nesting
 example7c = perf1 $
@@ -201,4 +225,25 @@ example7c = perf1 $
                             , root # event (g4 # du2)
                             ]
               ]
-                                  
+              
+-- c4/1 ---- ---- ---- ----
+-- e4/2 ---- ---- ---- ----             
+-- ---- f4/2 ---- ---- ----
+-- ---- g4/2 ---- ---- ----
+
+example7d :: Performance NrEvent
+example7d = perf1 $
+  root  # event (c3 # du2) # event (c3 # du2) 
+        # event (d3 # du2) # event (e3 # du2)
+        # poly [ root # event (c5 # du4) # event (c5 # du4) 
+                      # event (d5 # du4) # event (e5 # du4)
+               , root # event (g4 # du2) # event (e4 # du2) 
+               ] 
+
+-- c3/2 ---- c3/2 ---- d3/2 ---- e3/2 ---- ---- ---- ---- ----
+-- ---- ---- ---- ---- ---- ---- ---- c5/4 c5/4 d5/4 e5/4 ----
+-- ---- ---- ---- ---- ---- ---- ---- g4/2 ---- e4/2 ---- ----
+
+
+
+                       

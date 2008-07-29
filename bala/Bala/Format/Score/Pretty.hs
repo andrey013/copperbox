@@ -42,23 +42,26 @@ instance (Printable pch, Printable dur) => Pretty (ScScore pch dur) where
   pretty (ScScore sb) = sepSeq (<$>) sb
 
 instance (Printable pch, Printable dur) => Pretty (ScPart pch dur) where
-  pretty (ScPart i refs sb) = prefix i <$> text ":part " <> integer i 
-                                       <$> sepSeq (<$>) sb 
+  pretty (ScPart i refs sm) = prefix i <$> text ":part " <> integer i 
+                                       <$> sepSeq (<$>) sm 
                                        <$> pprefs (getRefs refs)
     where 
       prefix i  = let l = snd $ integerPlex i in text $ replicate (l+6) '-'                                  
       pprefs    = indent 2 . vsep . map fn . Map.toAscList
       fn (i,sm) = char '#' <> integer i <+> sepSeq (</>) sm
   
-  
+{-  
 instance (Printable pch, Printable dur) => Pretty (ScPoly pch dur) where
   pretty (ScPolyM m)  = pretty m
   pretty (ScPolyRef xs)  = encloseSep lbracket rbracket (char '-') $ 
                                   map integer xs
-  
+-}  
   
 instance (Printable pch, Printable dur) => Pretty (ScMeasure pch dur) where
-  pretty (ScMeasure i se) = text "|:" <> integer i <+> sepSeq (</>) se
+  pretty (ScMeasure i sr se) = text "|:" <> integer i <+> pprefs sr
+                                         <+> sepSeq (</>) se
+    where pprefs sr  = enclose lbracket rbracket $ 
+                                  sepSeq (\a b -> a <> char '-' <> b) sr                                         
   
 instance (Printable pch, Printable dur) => Pretty (ScGlyph pch dur) where
   pretty (ScNote pch dur)  = group $ 

@@ -29,6 +29,7 @@ import qualified Data.Foldable as F
 import qualified Data.Map as Map
 import Data.Monoid
 import Data.Sequence hiding (reverse)
+import Prelude hiding (null)
 
 
 type ProcessM a = PerformM Perform_Sc_State Perform_Sc_Env a
@@ -52,18 +53,26 @@ data Perform_Sc_Env = Perform_Sc_Env {
   
 -- 'tipped' accumulator - a Seq of bars produced plus the 'tip' the current bar
 -- (plus a dictionary of parts for polypohonic elements) 
-data TA pch dur = 
-  TA (ScPartRefs pch dur) (Seq (ScPoly pch dur)) (ScMeasure pch dur) 
+data TA pch dur = TA {
+    ta_poly_elts            :: ScPartRefs pch dur, 
+    ta_accumulated_measures :: Seq (ScMeasure pch dur),
+    ta_tip_measure          :: ScMeasure pch dur 
+  }
 
-emptyTA = TA mempty mempty (ScMeasure 0 mempty)
+emptyTA = TA mempty mempty (ScMeasure 0 mempty mempty)
 
-atMeasure (TA r sm (ScMeasure _ tip)) i = TA r sm (ScMeasure i tip)
+atMeasure (TA r sm (ScMeasure _ si tip)) i = TA r sm (ScMeasure i si tip)
 
 spaceTip :: (ScoreDuration dur) => TA pch dur -> Double -> TA pch dur
-spaceTip ta@(TA r sm (ScMeasure i _)) dur 
+spaceTip ta@(TA r sm (ScMeasure i si _)) dur 
     | dur == 0  = ta
     | otherwise = let spacer = ScSpacer (fromDouble dur) 
-                  in TA r sm (ScMeasure i (mempty |> spacer))
+                  in TA r sm (ScMeasure i si (mempty |> spacer))
+
+addRefToTip :: (ScoreDuration dur) => Integer -> TA pch dur -> TA pch dur
+addRefToTip x (TA r sm (ScMeasure i si sg)) = 
+    TA r sm (ScMeasure i (si |> x) sg)
+
 
 intial_score_state = Perform_Sc_State { 
     tagcounter      = 1,
@@ -131,18 +140,19 @@ tippedacc |%> a = fn <$> increaseMeasure (glyphDuration a)
 -- Concatenate the measure onto the sequence of measures 
 -- and reset the tip of the TA
 appendMeasure :: TA pch dur -> ScGlyph pch dur -> Integer -> TA pch dur 
-appendMeasure (TA refs sm (ScMeasure i se)) a mc  = 
-    let m   = ScPolyM $ ScMeasure i (se |> a) 
-        m0  = ScMeasure i mempty 
+appendMeasure (TA refs sm (ScMeasure i si se)) a mc  = 
+    let m   = ScMeasure i si (se |> a) 
+        m0  = ScMeasure (i+1) mempty mempty 
     in TA refs (sm |> m) m0     
     
-appendRefs :: TA pch dur -> ScPartRefs pch dur -> [Integer] -> TA pch dur   
-appendRefs (TA refs sm se) r2 xs = 
-    TA (refs `mappend` r2) (sm |> ScPolyRef xs) se
+appendRefs :: TA pch dur -> ScPartRefs pch dur ->  TA pch dur   
+appendRefs (TA refs sm se) r2 = 
+    TA (refs `mappend` r2) sm se
 
 -- Add a glyph to the the tip of the TA
 suffixTip :: TA pch dur -> ScGlyph pch dur -> TA pch dur
-suffixTip (TA refs sm (ScMeasure i se)) e = TA refs sm $ ScMeasure i (se |> e)
+suffixTip (TA refs sm (ScMeasure i xs se)) e = 
+    TA refs sm $ ScMeasure i xs (se |> e)
 
 
  
@@ -192,19 +202,20 @@ remext e = fn <$> remainingDuration
 
 -}        
     
--- add a rest to finalize the TA
-finalRest :: ScoreDuration dur 
-          => TA pch dur 
-          -> ProcessM (ScPartRefs pch dur, Seq (ScPoly pch dur))
-finalRest (TA refs sb (ScMeasure i se)) = case viewr se of
-    EmptyR -> return (refs,sb)
+-- add a spacer to finalize the TA
+finalSpacer :: ScoreDuration dur 
+            => TA pch dur 
+            -> ProcessM (ScPartRefs pch dur, Seq (ScMeasure pch dur))
+finalSpacer (TA refs sb m@(ScMeasure i xs se)) = case viewr se of
+    
+    EmptyR -> if null xs then return (refs,sb) else return (refs,sb |> m) 
     _      -> fn <$> remrest
   where
-    fn r = (refs, sb |> (ScPolyM $ ScMeasure i (se |> r))) 
+    fn r = (refs, sb |> (ScMeasure i xs (se |> r))) 
 
     -- make a rest with the 'remainder duration' of the bar
     remrest :: ScoreDuration dur => ProcessM (ScGlyph pch dur)
-    remrest = (ScRest . fromDouble) <$> remainingDuration
+    remrest = (ScSpacer . fromDouble) <$> remainingDuration
 
 
 
@@ -321,6 +332,21 @@ flattenPoly ts next acc = withGets measure_count $    \mc   ->
     modify (\s -> s { measure_count = mc })      >> 
     flattenStep (viewl next) acc'
 
+
+
+mergeTAs :: ScoreDuration dur => TA pch dur -> [ScPart pch dur] -> ProcessM (TA pch dur)
+mergeTAs = foldM merge1
+  
+merge1 :: ScoreDuration dur => TA pch dur -> ScPart pch dur -> ProcessM (TA pch dur)
+merge1 tacc p = withNewRefId $ \i -> 
+    let line  = sc_part_primary_line p
+        rm    = Map.insert i line (getRefs $ sc_part_poly_refs p) 
+        tacc' = appendRefs tacc (ScPartRefs rm)
+        tacc'' = addRefToTip i tacc' 
+    in return $ tacc''
+
+
+{-
 -- This doesn't work properly for nested TA's 
 -- Ought to do a top down traversal
 mergeTAs :: TA pch dur -> [ScPart pch dur] -> ProcessM (TA pch dur)
@@ -334,12 +360,15 @@ mergeTAs tacc ts = uncurry (appendRefs tacc) <$> foldM fn (mempty,[]) ts
     reshape (ScPart _ refs sp) = withNewRefId $ \i -> 
         let mp' = Map.insert i (extractMeasures sp) (getRefs refs)
         in return (ScPartRefs mp',i)
-    
+
+   
 extractMeasures :: Seq (ScPoly pch dur) -> Seq (ScMeasure pch dur)
 extractMeasures = F.foldl fn mempty
   where
     fn sm (ScPolyRef xs) = error "Urk - unexpected nesting"
     fn sm (ScPolyM m)    = sm |> m
+-}
+
 
 flattenPass :: (Perform evt pch dur, ScoreDuration dur) 
           => Integer -> Integer -> EventTree evt -> ProcessM (ScPart pch dur)          
@@ -347,7 +376,7 @@ flattenPass mc pnum t = do
     modify (\s -> s { measure_count = mc })
     dc          <- gets duration_count    
     ta'         <- flattenStep (viewl $ unET t) (mkTA dc)
-    (refs,se)   <- finalRest ta'
+    (refs,se)   <- finalSpacer ta'
     return $ ScPart pnum refs se 
   where
     mkTA dc     = emptyTA `atMeasure` mc `spaceTip` dc 
