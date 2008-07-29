@@ -102,7 +102,7 @@ remainingDuration = (-) <$> asks measure_length <*> gets duration_count
 
         
 increaseMeasure :: Double -> ProcessM (Maybe Integer) 
-increaseMeasure d = fn d =<< remainingDuration
+increaseMeasure d = remainingDuration >>= fn d 
   where
     fn d duration_left
         | d >= duration_left  = withGets measure_count $ \mc -> do
@@ -110,12 +110,9 @@ increaseMeasure d = fn d =<< remainingDuration
                 return $ Just (mc + 1) 
                 
                 
-        | otherwise           = let d' = duration_left + d in 
-                modify (\s -> s {duration_count = d'}) >> return Nothing
+        | otherwise           = withGets duration_count $ \dc ->
+                modify (\s -> s {duration_count = dc + d}) >> return Nothing
               
-
-fnMC :: Integer -> ProcessM (Maybe Integer)      
-fnMC mc = Just (mc+1) <$ modify (\s -> s {duration_count = 0.0, measure_count=mc+1})   
 
 
 -- Add an event (i.e. a glyph to the tip of the current measure.
@@ -139,9 +136,9 @@ appendMeasure (TA refs sm (ScMeasure i se)) a mc  =
         m0  = ScMeasure i mempty 
     in TA refs (sm |> m) m0     
     
-appendRefs :: TA pch dur -> ScPartRefs pch dur -> Integer -> TA pch dur   
-appendRefs (TA refs sm se) r2 i = 
-    TA (refs `mappend` r2) (sm |> ScPolyRef i) se
+appendRefs :: TA pch dur -> ScPartRefs pch dur -> [Integer] -> TA pch dur   
+appendRefs (TA refs sm se) r2 xs = 
+    TA (refs `mappend` r2) (sm |> ScPolyRef xs) se
 
 -- Add a glyph to the the tip of the TA
 suffixTip :: TA pch dur -> ScGlyph pch dur -> TA pch dur
@@ -161,15 +158,10 @@ glyphDuration (ScGroup ScBeam xs)       = let f e d = d + glyphDuration e
 glyphDuration _                         = 0.0        
 
 
+{-
 
-
-
-
-
-
-    
-
-
+-- Hmm, I can't remember why I thought you might want to use this rather than
+-- finalRest
     
 -- extend the final note in the TA    
 finalExt :: ScoreDuration dur 
@@ -197,7 +189,8 @@ remext e = fn <$> remainingDuration
     changeDuration d (ScGroup ScChord xs)   = 
         let xs' = map (changeDuration d) xs in ScGroup ScChord xs'
     changeDuration d g                      = g
-        
+
+-}        
     
 -- add a rest to finalize the TA
 finalRest :: ScoreDuration dur 
@@ -328,17 +321,25 @@ flattenPoly ts next acc = withGets measure_count $    \mc   ->
     modify (\s -> s { measure_count = mc })      >> 
     flattenStep (viewl next) acc'
 
-
+-- This doesn't work properly for nested TA's 
+-- Ought to do a top down traversal
 mergeTAs :: TA pch dur -> [ScPart pch dur] -> ProcessM (TA pch dur)
-mergeTAs tacc ts = foldM fn tacc ts
+mergeTAs tacc ts = uncurry (appendRefs tacc) <$> foldM fn (mempty,[]) ts
   where 
-    fn tacc part = uncurry (appendRefs tacc) <$> reshape part
+    fn (refs,xs) part = appendP (refs,xs) <$> reshape part
+    
+    appendP (r1,xs) (r2,x) = (r1 `mappend` r2, xs++[x]) 
     
     reshape :: ScPart pch dur -> ProcessM (ScPartRefs pch dur, Integer)
     reshape (ScPart _ refs sp) = withNewRefId $ \i -> 
-        let mp' = Map.insert i (F.toList sp) (getRefs refs)
+        let mp' = Map.insert i (extractMeasures sp) (getRefs refs)
         in return (ScPartRefs mp',i)
     
+extractMeasures :: Seq (ScPoly pch dur) -> Seq (ScMeasure pch dur)
+extractMeasures = F.foldl fn mempty
+  where
+    fn sm (ScPolyRef xs) = error "Urk - unexpected nesting"
+    fn sm (ScPolyM m)    = sm |> m
 
 flattenPass :: (Perform evt pch dur, ScoreDuration dur) 
           => Integer -> Integer -> EventTree evt -> ProcessM (ScPart pch dur)          
@@ -346,7 +347,7 @@ flattenPass mc pnum t = do
     modify (\s -> s { measure_count = mc })
     dc          <- gets duration_count    
     ta'         <- flattenStep (viewl $ unET t) (mkTA dc)
-    (refs,se)   <- finalExt ta'
+    (refs,se)   <- finalRest ta'
     return $ ScPart pnum refs se 
   where
     mkTA dc     = emptyTA `atMeasure` mc `spaceTip` dc 

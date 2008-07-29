@@ -48,12 +48,13 @@ instance (Printable pch, Printable dur) => Pretty (ScPart pch dur) where
     where 
       prefix i  = let l = snd $ integerPlex i in text $ replicate (l+6) '-'                                  
       pprefs    = indent 2 . vsep . map fn . Map.toAscList
-      fn (i,xs) = char '#' <> integer i <+> fillSep (map pretty xs)
+      fn (i,sm) = char '#' <> integer i <+> sepSeq (</>) sm
   
   
 instance (Printable pch, Printable dur) => Pretty (ScPoly pch dur) where
   pretty (ScPolyM m)  = pretty m
-  pretty (ScPolyRef i)  = brackets $ integer i
+  pretty (ScPolyRef xs)  = encloseSep lbracket rbracket (char '-') $ 
+                                  map integer xs
   
   
 instance (Printable pch, Printable dur) => Pretty (ScMeasure pch dur) where

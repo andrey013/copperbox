@@ -39,7 +39,7 @@ module Bala.Base.BaseExtra (
   mod12, mod7,
   sub, sub1, 
   andthen, ora, anda,
-  dyap, triap, 
+  dyap, triap,   {- dyapr, dyapl, dycl, dycr, -}
   hexStr, 
   
   -- ** Helpers for modulo 12 and modulo 100.
@@ -309,6 +309,16 @@ anda = andthen (&&)
 -- then apply the unary function f to the result.
 dyap :: (c -> d) -> (a -> b -> c) -> a -> b -> d
 dyap f g a b = f (g a b) 
+
+-- dyapr :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+dyapl f g a b = f a (g b) 
+
+dyapr f g a b = f (g a) b 
+
+dycl f g a b = g (f a) b 
+
+dycr f g a b = g a (f b)
+ 
 
 -- | Triadic apply \/ compose - apply the ternary function g to a, b and c, 
 -- then apply the unary function f to the result.

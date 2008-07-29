@@ -61,7 +61,8 @@ rationalDuration r = let (n,d) = nr r in
     if r < (2%1) then recsmall n d 0 else reclarge r (Dur (closest r) 0)
   where
     recsmall n d dots 
-        | n == 0 || d == 0  = error "rationalDuration - doesn't simplify"
+        | n == 0 || d == 0  = error $ "rationalDuration - doesn't simplify "
+                                       ++ show r
         | n == 1            = Dur (n%d) dots
         | otherwise         = let (n',d') = nr $ (n%d) - (1%d)
                               in recsmall n' d' (dots + 1)

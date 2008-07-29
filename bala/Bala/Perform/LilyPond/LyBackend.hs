@@ -15,7 +15,7 @@
 
 module Bala.Perform.LilyPond.LyBackend where
 
-import qualified Bala.Base as B
+
 import Bala.Format.Score
 import Bala.Format.Output.OutputLilyPond
 
@@ -26,13 +26,18 @@ import Control.Applicative
 import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Foldable as F
+import Data.List (maximumBy)
+import Data.Maybe (catMaybes)
+import Data.Monoid
 import Data.Ratio
+import Data.Sequence hiding (reverse)
 
 type ProcessM pch dur a = PerformM (Perform_Ly_State pch dur) (Perform_Ly_Env pch) a
 
 data Perform_Ly_State pch dur = Perform_Ly_State { 
     relative_pitch      :: pch,
-    relative_duration   :: dur
+    relative_duration   :: dur,
+    part_refs           :: ScPartRefs pch dur
   }  
 
 
@@ -50,7 +55,8 @@ infixl 7 *!
 state0 :: (LilyPondPitch pch, LilyPondDuration dur) => Perform_Ly_State pch dur
 state0 = Perform_Ly_State { 
     relative_pitch      = middleC,
-    relative_duration   = quaternoteDuration
+    relative_duration   = quaternoteDuration,
+    part_refs           = mempty
   }  
 
 default_ly_env :: LilyPondPitch pch => Perform_Ly_Env pch  
@@ -62,28 +68,53 @@ default_ly_env = Perform_Ly_Env {
 generateLilyPondScore :: (LilyPondPitch pch, LilyPondDuration dur)
                       => ScScore pch dur
                       -> Perform_Ly_Env pch 
-                      -> LyCmdBook
+                      -> [LyCmdScore]
 generateLilyPondScore sc env = evalPerform (renderScore sc) ly_state env
   where 
     ly_state = state0
 
 
+getPitch (ScNote scp _) = scp
+
+getChordDuration :: LilyPondDuration dur => ScGlyph pch dur -> dur
+getChordDuration (ScGroup ScChord ((ScNote _ d):_))   = d
+getChordDuration _                                    = quaternoteDuration
+
+
+
+
+suffixWith :: Append cxts cxta
+           => Ly cxts 
+           -> ProcessM pch dur (Ly cxta) 
+           -> ProcessM pch dur (Ly cxts)
+suffixWith ctx f = (ctx +++) <$> f 
+
+setPartRefs refs f = do
+    modify (\s -> s { part_refs = refs })
+    f
+
+withPartRefs :: (LilyPondPitch pch, LilyPondDuration dur)
+             => (ScPartRefs pch dur -> ProcessM pch dur a) 
+             -> ProcessM pch dur a 
+withPartRefs f = do 
+    dict <- gets part_refs
+    f dict    
+     
 
 -- | @ScScore --> \\book@ 
 renderScore :: (LilyPondPitch pch, LilyPondDuration dur)
            => ScScore pch dur 
-           -> ProcessM pch dur LyCmdBook
-renderScore (ScScore sp) = 
-    (book . block) <$> F.foldlM renderPart bookStart sp
-
+           -> ProcessM pch dur [LyCmdScore]
+renderScore (ScScore sp) = reverse <$> F.foldlM fn [] sp
+  where
+    fn xs p = flip (:) xs <$> renderPart p
 
 -- | @ScPart --> \\score@ 
 renderPart :: (LilyPondPitch pch, LilyPondDuration dur)
-           => LyCxt_Book
-           -> ScPart pch dur 
-           -> ProcessM pch dur LyCxt_Book          
-renderPart cxt (ScPart i refs sp) = 
-    (cxt +++) . (score . block) <$> F.foldlM renderPoly elementStart sp
+           => ScPart pch dur 
+           -> ProcessM pch dur LyCmdScore
+renderPart (ScPart i refs sp) = setPartRefs refs $ 
+    (score . block) <$> F.foldlM renderPoly elementStart sp
   
   
   
@@ -92,8 +123,30 @@ renderPoly :: (LilyPondPitch pch, LilyPondDuration dur)
            -> ScPoly pch dur  
            -> ProcessM pch dur LyCxt_Element 
 renderPoly cxt (ScPolyM mea)    = renderMeasure cxt mea
-renderPoly cxt (ScPolyRef i)    = undefined
+renderPoly cxt (ScPolyRef idxs)   = do 
+    refs    <- refsTo idxs
+    polys   <- mapM poly1 refs
+    return $ mergePolys cxt polys
+  where
+    refsTo :: (LilyPondPitch pch, LilyPondDuration dur) 
+           => [Integer] 
+           -> ProcessM pch dur [Seq (ScMeasure pch dur)]
+    refsTo xs = withPartRefs $ \mp -> 
+           return $ catMaybes $ map ((flip getPolyRef) mp) xs
+               
+    poly1 :: (LilyPondPitch pch, LilyPondDuration dur) 
+          => Seq (ScMeasure pch dur) 
+          -> ProcessM pch dur LyCxt_Element 
+    poly1 sm = F.foldlM renderMeasure elementStart sm
 
+
+mergePolys k []     = k
+mergePolys k (x:xs) = let poly = foldl fn (block x) xs in 
+    k +++ openPoly +++ poly +++ closePoly
+  where
+    fn acc a = acc \\ (block a)
+    
+    
 
 
 renderMeasure :: (LilyPondPitch pch, LilyPondDuration dur)
@@ -109,19 +162,33 @@ renderGlyph :: (LilyPondPitch pch, LilyPondDuration dur)
             -> ScGlyph pch dur 
             -> ProcessM pch dur LyCxt_Element
 
-renderGlyph cxt (ScNote scp d)  = 
-    (fn cxt) <$> renderPitch scp  <*> differDuration d
+renderGlyph cxt (ScNote scp d)            = suffixWith cxt $
+    fn <$> renderPitch scp  <*> differDuration d
   where
-    fn cxt pch od = cxt +++ (note pch) *! od
-        
-renderGlyph cxt (ScRest d)      = 
-    (cxt +++) . (rest *!)   <$> differDuration d
+    fn p od = note p *! od 
+
+renderGlyph cxt (ScRest d)                = suffixWith cxt $
+    (rest *!)   <$> differDuration d
     
-renderGlyph cxt (ScSpacer d)    = 
-    (cxt +++) . (spacer *!) <$> differDuration d
+renderGlyph cxt (ScSpacer d)              = suffixWith cxt $ 
+    (spacer *!) <$> differDuration d
+
+renderGlyph cxt a@(ScGroup ScChord xs)    = suffixWith cxt $ 
+    fn <$> mapM (renderPitch . getPitch) xs  
+       <*> differDuration (getChordDuration a)
+  where
+    fn xs od = chord xs *! od
+    
+renderGlyph cxt (ScGroup ScGraceNotes xs) = suffixWith cxt $ 
+    fn <$> mapM (renderPitch . getPitch) xs
+  where
+    fn        = grace . blockS . foldl op elementStart
+    op c e    = c +++ note e 
 
 
-renderPitch :: LilyPondPitch pch => ScPitch pch -> ProcessM pch dur (LyPitch) 
+    
+
+renderPitch :: LilyPondPitch pch => ScPitch pch -> ProcessM pch dur LyPitch 
 renderPitch (ScPitch pch) = 
     fn <$> pure (mkPitchName pch) <*> pure (mkAccidental pch) 
                                   <*> differOctaveSpec pch

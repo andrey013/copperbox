@@ -29,10 +29,11 @@ data ScScore pch dur = ScScore (Seq (ScPart pch dur))
 data ScPart pch dur = ScPart Integer (ScPartRefs pch dur) (Seq (ScPoly pch dur))
 
 
-data ScPoly pch dur = ScPolyM (ScMeasure pch dur) | ScPolyRef Integer
+data ScPoly pch dur = ScPolyM (ScMeasure pch dur) | ScPolyRef [Integer]
+
 
 newtype ScPartRefs pch dur = ScPartRefs { 
-                                getRefs :: Map.Map Integer [ScPoly pch dur] }
+                                getRefs :: Map.Map Integer (Seq (ScMeasure pch dur)) }
 
 
 data ScMeasure pch dur = ScMeasure Integer (Seq (ScGlyph pch dur))
@@ -48,6 +49,13 @@ data ScGlyph pch dur = ScNote (ScPitch pch) dur
 
 
 data ScPitch pch = ScPitch pch
+
+
+                     
+                     
+
+
+
            
 ---
 
@@ -59,6 +67,7 @@ instance Monoid (ScPartRefs pch dur) where
       fn (i,x) mp = Map.insert i x mp   
       
       
-    
+getPolyRef :: Integer -> ScPartRefs pch dur -> Maybe (Seq (ScMeasure pch dur))
+getPolyRef i r = Map.lookup i (getRefs r)    
 
     

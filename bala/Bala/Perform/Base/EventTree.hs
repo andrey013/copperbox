@@ -79,6 +79,10 @@ g #. f = f . g
 perf :: [EventTree evt] -> Performance evt
 perf = Perf
 
+perf1 :: EventTree evt -> Performance evt
+perf1 t = Perf [t]
+
+
 root :: EventTree evt
 root = ET empty
 
@@ -97,9 +101,12 @@ grace es t      = seal $ foldl (flip event) (t |*> StartPre) es
   where 
     seal t      = t |*> EndPre
 
+
+-- poly does some optimizing ...
 poly            :: [EventTree evt] -> EventTree evt -> EventTree evt
-poly [] t       = t
-poly ts t       = t |*> (Poly ts)
+poly []  t      = t
+poly [x] t      = F.foldl (flip event) t x
+poly ts  t      = t |*> (Poly ts)
 
 repeated :: 
   Int -> (EventTree evt -> EventTree evt) -> (EventTree evt -> EventTree evt)
