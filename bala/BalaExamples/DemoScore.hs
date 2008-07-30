@@ -37,8 +37,11 @@ oq1 = buildQueue [Pair 1 'a', Pair 2 'b', Pair 2 'B', Pair 3 'c']
 mkq sc = let (ScScore sq) = toScore sc default_score_env
          in fmap fn $ deriveQueue $ S.index sq 0
   where
-    fn (PScMeasure _ v s) = if (S.null s) then show v ++ "  ><  " 
-                                          else show v ++ " ---- "
+    fn (PScMeasure i v s) = if (S.null s) 
+                              then show v ++ " :" ++ show i ++ "  ><  " 
+                              else show v ++ " :" ++ show i ++ " ---- "
+
+trans sc = printDoc $ pretty $ score $ toScore sc default_score_env
 
 -- main = demo01_ly
 main = showScore $ perf1 $ foldl (compR (#) event) root (replicate 12 (c4 # du4))

@@ -28,7 +28,7 @@ module Bala.Perform.Base.OnsetQueue (
   -- * Operations
   buildQueue, {- , add, addP, upto, firstEvent, rest -}
   
-  viewNext,
+  ViewH(..), viewH,
   
   Show(..)
   ) where
@@ -44,6 +44,9 @@ newtype Elt a = Elt { getElts :: [a] }
 
 instance Functor Elt where
   fmap f (Elt xs) = Elt (fmap f xs)
+  
+instance F.Foldable Elt where
+  foldMap f (Elt xs) = F.foldMap f xs
 
 
 newtype OnsetQueue a = OnsetQueue { getOnsetQueue :: IM.IntMap (Elt a) }
@@ -61,7 +64,8 @@ instance Monoid (OnsetQueue a) where
 instance Functor OnsetQueue where
   fmap f (OnsetQueue q) = OnsetQueue (fmap (fmap f) q)
   
-  
+instance F.Foldable OnsetQueue where
+  foldMap f (OnsetQueue a)           = F.foldMap (F.foldMap f) a
 
 instance Show a => Show (Elt a) where
   showsPrec p (Elt xs) = showsPrec p xs
@@ -94,12 +98,17 @@ data ViewH evt = EmptyQ | (Int,[evt]) :>> OnsetQueue evt
 
 
 instance Functor ViewH where
-  fmap f EmptyQ                       = EmptyQ
-  fmap f ((i,es) :>> r)               = ((i, fmap f es) :>> fmap f r)
+  fmap f EmptyQ               = EmptyQ
+  fmap f ((i,es) :>> r)       = ((i, fmap f es) :>> fmap f r)
 
+instance F.Foldable ViewH where
+  foldMap f EmptyQ            = mempty
+  foldMap f ((i,es) :>> r)    = (F.foldMap f es) `mappend` F.foldMap f r
+  
+  
 
-viewNext :: OnsetQueue evt -> ViewH evt
-viewNext (OnsetQueue q) = case  IM.minViewWithKey q of
+viewH :: OnsetQueue evt -> ViewH evt
+viewH (OnsetQueue q) = case  IM.minViewWithKey q of
     Nothing              -> EmptyQ
     Just ((i,Elt xs),q') -> (i,xs) :>> OnsetQueue q'
 

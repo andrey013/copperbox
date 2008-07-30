@@ -27,6 +27,26 @@ import Data.Monoid
 import Data.Sequence
 
 
+score :: ScScore pch dur -> PScScore pch dur
+score (ScScore se) = PScScore $ F.foldl fn mempty se 
+  where fn acc e = acc |> part e
+    
+part :: ScPart pch dur -> PScPart pch dur
+part p@(ScPart i _ _) = PScPart i (polycat $ deriveQueue p)
+
+
+-- Folding takes us too far into the OnsetQueue evt rather than [evt]
+-- So we have to use direct recursion
+-- TODO - parameterize this with a join function to do Ly or Abc length units
+polycat :: OnsetQueue (PScMeasure pch dur) -> PScLine pch dur
+polycat = rec mempty . viewH
+  where
+    rec acc EmptyQ          = acc
+    rec acc ((_,es) :>> q)  = rec (acc |> cnstr es) (viewH q) 
+
+    cnstr :: [PScMeasure pch dur] -> PScPolyUnit pch dur
+    cnstr = PScPolyUnit . map (PScSegment . singleton)
+
 
 instance OnsetEvent (PScMeasure pch dur) (PScMeasure pch dur) where
   onset m@(PScMeasure i _ _) = (i, m)
