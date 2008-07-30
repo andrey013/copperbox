@@ -26,7 +26,7 @@ import Control.Applicative hiding (empty)
 import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Foldable as F
-import qualified Data.Map as Map
+import qualified Data.IntMap as IM
 import Data.Monoid
 import Data.Sequence hiding (reverse)
 import Prelude hiding (null)
@@ -38,9 +38,9 @@ type ProcessM a = PerformM Perform_Sc_State Perform_Sc_Env a
   
   
 data Perform_Sc_State = Perform_Sc_State { 
-    tagcounter          :: Integer,
-    refcounter          :: Integer,
-    measure_count       :: Integer,
+    tagcounter          :: Int,
+    refcounter          :: Int,
+    measure_count       :: Int,
     duration_count      :: Double
   }  
   deriving (Show)
@@ -54,7 +54,7 @@ data Perform_Sc_Env = Perform_Sc_Env {
 -- 'tipped' accumulator - a Seq of bars produced plus the 'tip' the current bar
 -- (plus a dictionary of parts for polypohonic elements) 
 data TA pch dur = TA {
-    ta_poly_elts            :: ScPartRefs pch dur, 
+    ta_poly_elts            :: ScPolyRefs pch dur, 
     ta_accumulated_measures :: Seq (ScMeasure pch dur),
     ta_tip_measure          :: ScMeasure pch dur 
   }
@@ -69,7 +69,7 @@ spaceTip ta@(TA r sm (ScMeasure i si _)) dur
     | otherwise = let spacer = ScSpacer (fromDouble dur) 
                   in TA r sm (ScMeasure i si (mempty |> spacer))
 
-addRefToTip :: (ScoreDuration dur) => Integer -> TA pch dur -> TA pch dur
+addRefToTip :: (ScoreDuration dur) => Int -> TA pch dur -> TA pch dur
 addRefToTip x (TA r sm (ScMeasure i si sg)) = 
     TA r sm (ScMeasure i (si |> x) sg)
 
@@ -93,14 +93,14 @@ withGets lbl f = do
   i <- gets lbl
   f i  
 
- 
+{- 
 withNewTag :: (ScTag -> ProcessM a) -> ProcessM a    
 withNewTag f = withGets tagcounter      $ \i -> 
     modify (\s -> s {tagcounter = i+1}) >> 
     f (ScTag i) 
-      
+-}      
     
-withNewRefId :: (Integer -> ProcessM a) -> ProcessM a    
+withNewRefId :: (Int -> ProcessM a) -> ProcessM a    
 withNewRefId f = withGets refcounter    $ \i -> 
     modify (\s -> s {refcounter = i+1}) >>
     f i
@@ -110,7 +110,7 @@ remainingDuration :: ProcessM Double
 remainingDuration = (-) <$> asks measure_length <*> gets duration_count
 
         
-increaseMeasure :: Double -> ProcessM (Maybe Integer) 
+increaseMeasure :: Double -> ProcessM (Maybe Int) 
 increaseMeasure d = remainingDuration >>= fn d 
   where
     fn d duration_left
@@ -139,13 +139,13 @@ tippedacc |%> a = fn <$> increaseMeasure (glyphDuration a)
 
 -- Concatenate the measure onto the sequence of measures 
 -- and reset the tip of the TA
-appendMeasure :: TA pch dur -> ScGlyph pch dur -> Integer -> TA pch dur 
+appendMeasure :: TA pch dur -> ScGlyph pch dur -> Int -> TA pch dur 
 appendMeasure (TA refs sm (ScMeasure i si se)) a mc  = 
     let m   = ScMeasure i si (se |> a) 
         m0  = ScMeasure (i+1) mempty mempty 
     in TA refs (sm |> m) m0     
     
-appendRefs :: TA pch dur -> ScPartRefs pch dur ->  TA pch dur   
+appendRefs :: TA pch dur -> ScPolyRefs pch dur ->  TA pch dur   
 appendRefs (TA refs sm se) r2 = 
     TA (refs `mappend` r2) sm se
 
@@ -205,7 +205,7 @@ remext e = fn <$> remainingDuration
 -- add a spacer to finalize the TA
 finalSpacer :: ScoreDuration dur 
             => TA pch dur 
-            -> ProcessM (ScPartRefs pch dur, Seq (ScMeasure pch dur))
+            -> ProcessM (ScPolyRefs pch dur, Seq (ScMeasure pch dur))
 finalSpacer (TA refs sb m@(ScMeasure i xs se)) = case viewr se of
     
     EmptyR -> if null xs then return (refs,sb) else return (refs,sb |> m) 
@@ -340,8 +340,8 @@ mergeTAs = foldM merge1
 merge1 :: ScoreDuration dur => TA pch dur -> ScPart pch dur -> ProcessM (TA pch dur)
 merge1 tacc p = withNewRefId $ \i -> 
     let line  = sc_part_primary_line p
-        rm    = Map.insert i line (getRefs $ sc_part_poly_refs p) 
-        tacc' = appendRefs tacc (ScPartRefs rm)
+        rm    = IM.insert i line (getPolyRefs $ sc_part_poly_refs p) 
+        tacc' = appendRefs tacc (ScPolyRefs rm)
         tacc'' = addRefToTip i tacc' 
     in return $ tacc''
 
@@ -356,9 +356,9 @@ mergeTAs tacc ts = uncurry (appendRefs tacc) <$> foldM fn (mempty,[]) ts
     
     appendP (r1,xs) (r2,x) = (r1 `mappend` r2, xs++[x]) 
     
-    reshape :: ScPart pch dur -> ProcessM (ScPartRefs pch dur, Integer)
+    reshape :: ScPart pch dur -> ProcessM (ScPartRefs pch dur, Int)
     reshape (ScPart _ refs sp) = withNewRefId $ \i -> 
-        let mp' = Map.insert i (extractMeasures sp) (getRefs refs)
+        let mp' = IM.insert i (extractMeasures sp) (getRefs refs)
         in return (ScPartRefs mp',i)
 
    
@@ -371,7 +371,7 @@ extractMeasures = F.foldl fn mempty
 
 
 flattenPass :: (Perform evt pch dur, ScoreDuration dur) 
-          => Integer -> Integer -> EventTree evt -> ProcessM (ScPart pch dur)          
+          => Int -> Int -> EventTree evt -> ProcessM (ScPart pch dur)          
 flattenPass mc pnum t = do
     modify (\s -> s { measure_count = mc })
     dc          <- gets duration_count    

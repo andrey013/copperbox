@@ -37,7 +37,7 @@ type ProcessM pch dur a = PerformM (Perform_Ly_State pch dur) (Perform_Ly_Env pc
 data Perform_Ly_State pch dur = Perform_Ly_State { 
     relative_pitch      :: pch,
     relative_duration   :: dur,
-    part_refs           :: ScPartRefs pch dur
+    part_refs           :: ScPolyRefs pch dur
   }  
 
 
@@ -94,7 +94,7 @@ setPartRefs refs f = do
     f
 
 withPartRefs :: (LilyPondPitch pch, LilyPondDuration dur)
-             => (ScPartRefs pch dur -> ProcessM pch dur a) 
+             => (ScPolyRefs pch dur -> ProcessM pch dur a) 
              -> ProcessM pch dur a 
 withPartRefs f = do 
     dict <- gets part_refs

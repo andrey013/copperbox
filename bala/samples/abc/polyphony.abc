@@ -1,0 +1,14 @@
+X:1
+T:The polyphonic lines individually...
+I:Not polyphonic - each line played after each other
+K: C
+M: 4/4
+C4 C4 | C4 x4 || x4 c2 c2 | d2 e2 x4 || x4 G4 |  E4 x4 ||
+
+X:1
+T:And together, polyphony!
+I:Now polyphonic - x rests for invisible rests
+K: C
+M: 4/4
+C4 C4 & x4 c2 c2 &  x4 G4 |\ 
+C4 x4 & d2 e2 x4 &  E4 x4 ||

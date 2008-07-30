@@ -25,10 +25,29 @@
   \markup { 
     \typewriter "        # event (c4 # du2)                                   " } 
   
-   
+  \markup { \typewriter "----------" }
+  
+  \markup { 
+    \typewriter ":part 1 " }
+    
+  \markup { 
+    \typewriter "|:1 [1-2] C4/1%2 C4/1%2 " }
+    
+  \markup { 
+    \typewriter "|:2 [] C4/1%2 S/1%2 " }
+    
+  \markup { 
+    \typewriter "  #1 |:1 [] S/1%2 C5/1%4 C5/1%4 |:2 [] D5/1%4 E5/1%4 S/1%2 " }
+    
+  \markup { 
+    \typewriter "  #2 |:1 [] S/1%2 G4/1%2 |:2 [] E4/1%2 S/1%2 "}
+    
+
+  \markup { \typewriter "----------" }
+               
   \markup \typewriter 
     { Vanilla transliteration to LilyPond, note the c4 half notes aren't
-      in series. } 
+      in series: } 
       
   \score {
     \new Voice {
@@ -54,7 +73,7 @@
         \key c \major
         \clef treble
         
-        << { c2 c c } \\ { c'4 c d e } \\ { g,2 e2 } >> 
+        << { c2 c c } \\ { s2 c'4 c d e } \\ { s2 g, e } >> 
         
         }
       }
@@ -66,7 +85,7 @@
 
             
   \markup \typewriter
-    { The second choice is also quite like Abc, which would divide like this... }     
+    { Also, the second choice is quite like Abc, which would divide like this... }     
     
   \score {
     \new Voice {
@@ -74,13 +93,16 @@
         \key c \major
         \clef treble
         
-        << { c2 c } \\ { c'4 c d e } \\ { g,2 e2 } >> c
+        << { c2 c } \\ { s2 c'4 c }  \\ { s2 g2 } >> 
+        << { c,2 s2 } \\ { d'4 e s2 } \\ { e,2 s2 } >>
         
         }
       }
     }  %{ end score %}
     
-            
+
+  
+              
                           
   } %{ end book %}  
         

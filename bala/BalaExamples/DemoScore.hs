@@ -7,8 +7,10 @@ module Main where
 
 
 import Bala.Base
-import Bala.Format.Score
+
 import Bala.Format.Output.LilyPondInternals (unLy)
+import Bala.Format.Score
+
 
 import Bala.Perform.Bala.BalaLy   -- to get the LilyPond instances
 import Bala.Perform.Bala.BalaScore     -- to get the Bala instances
@@ -16,9 +18,27 @@ import Bala.Perform.Base.Class
 import Bala.Perform.Base.EventTree
 import Bala.Perform.LilyPond.LyBackend
 import qualified Bala.Perform.LilyPond.LyBackend as Ly
+import Bala.Perform.Score.ToPolyScore
 import Bala.Perform.Score.ToScore
 
 import Text.PrettyPrint.Leijen hiding (dot)
+
+---
+import Bala.Perform.Base.OnsetQueue
+import Bala.Format.Score.PolyDatatypes
+import qualified Data.Sequence as S
+
+data Pair = Pair Int Char 
+instance OnsetEvent Pair Char where
+  onset (Pair i c) = (i,c)
+
+oq1 = buildQueue [Pair 1 'a', Pair 2 'b', Pair 2 'B', Pair 3 'c']
+
+mkq sc = let (ScScore sq) = toScore sc default_score_env
+         in fmap fn $ deriveQueue $ S.index sq 0
+  where
+    fn (PScMeasure _ v s) = if (S.null s) then show v ++ "  ><  " 
+                                          else show v ++ " ---- "
 
 -- main = demo01_ly
 main = showScore $ perf1 $ foldl (compR (#) event) root (replicate 12 (c4 # du4))
@@ -26,8 +46,6 @@ main = showScore $ perf1 $ foldl (compR (#) event) root (replicate 12 (c4 # du4)
   
   
 ---
-demo_printtag = putDoc (pretty $ ScTag 45)
-
 
 r1 = ScRest 0.5
 n1 = ScNote (ScPitch c4) 0.5

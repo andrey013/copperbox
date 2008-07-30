@@ -10,42 +10,58 @@
 -- Portability :  to be determined.
 --
 -- Datatypes for Score format
---
+-- 
+-- Polyphony is indicated at the start of a measure by pointers to a 
+-- dictionary of lines (a sequence of measures). These lines may themselves 
+-- have measures that point to further polyphonic lines.
+-- 
 --------------------------------------------------------------------------------
 
-module Bala.Format.Score.Datatypes  where
+module Bala.Format.Score.Datatypes (
+  -- * Datatypes
+  ScScore(..),
+  ScPart(..),
+  ScLine,
+  ScPolyRefs(..),
+  ScMeasure(..),
+  ScGroupType(..),
+  ScGlyph(..),
+  ScPitch(..),
+  
+  -- * Utils
+  lookupPolyRef
+  
+  ) where
 
-import Bala.Base
 
-import qualified Data.Map as Map
+import qualified Data.IntMap as IM
 import Data.Monoid
 import Data.Sequence
 
--- tag things that aren't processed
-newtype ScTag = ScTag Integer
+
+
+type ScLine pch dur = Seq (ScMeasure pch dur)
 
 data ScScore pch dur = ScScore (Seq (ScPart pch dur))
 
 data ScPart pch dur = ScPart {
-    sc_part_number          :: Integer,
-    sc_part_poly_refs       :: ScPartRefs pch dur,
+    sc_part_number          :: Int,
+    sc_part_poly_refs       :: ScPolyRefs pch dur,
     -- the primary series of measures 
-    sc_part_primary_line    :: Seq (ScMeasure pch dur)
+    sc_part_primary_line    :: ScLine pch dur
+  }
+
+newtype ScPolyRefs pch dur = ScPolyRefs { 
+    getPolyRefs :: IM.IntMap (ScLine pch dur) 
   }
 
 
--- data ScPoly pch dur = ScPolyM (ScMeasure pch dur) | ScPolyRef [Integer]
-
-
-newtype ScPartRefs pch dur = ScPartRefs { 
-    getRefs :: Map.Map Integer (Seq (ScMeasure pch dur)) 
-  }
 
 -- a Measure could hold a list of indexes to polyphonic measures 
 data ScMeasure pch dur = ScMeasure {
-    sc_measure_number :: Integer,
+    sc_measure_number :: Int,
     -- polyphonic elements that start at the same time as this measure 
-    sc_measure_poly_refs  :: Seq Integer,
+    sc_measure_poly_refs  :: Seq Int,
     -- the glyphs (notes, rests, ...) that make up the measure 
     sc_measure_glyphs :: (Seq (ScGlyph pch dur))
   }
@@ -55,31 +71,28 @@ data ScGroupType = ScBeam | ScChord | ScGraceNotes
 
 data ScGlyph pch dur = ScNote (ScPitch pch) dur
                      | ScRest dur
-                     | ScSpacer dur  -- non-printed space
+                     | ScSpacer dur  -- non-printed rest
                      | ScGroup ScGroupType [ScGlyph pch dur]
---                     | ScTaggedGlyph ScTag
-
+                 {-    | ScTaggedGlyph ScTag  -}
+{-
+-- tag things that aren't processed
+newtype ScTag = ScTag Int
+-}
 
 data ScPitch pch = ScPitch pch
-
-
-                     
-                     
-
 
 
            
 ---
 
 
-instance Monoid (ScPartRefs pch dur) where
-  mempty = ScPartRefs Map.empty
-  mappend r r' =  ScPartRefs $ foldr fn (getRefs r) (Map.toAscList $ getRefs r')
-    where
-      fn (i,x) mp = Map.insert i x mp   
+instance Monoid (ScPolyRefs pch dur) where
+  mempty = ScPolyRefs mempty
+  mappend r r' = ScPolyRefs $ getPolyRefs r `mappend` getPolyRefs r'
+
       
       
-getPolyRef :: Integer -> ScPartRefs pch dur -> Maybe (Seq (ScMeasure pch dur))
-getPolyRef i r = Map.lookup i (getRefs r)    
+lookupPolyRef :: Int -> ScPolyRefs pch dur -> Maybe (Seq (ScMeasure pch dur))
+lookupPolyRef i r = IM.lookup i (getPolyRefs r)    
 
     
