@@ -25,10 +25,11 @@ import qualified Data.Foldable as F
 import qualified Data.IntMap as IM
 import Data.Monoid
 import Data.Sequence
+import Prelude hiding (null)
 
 
-score :: ScScore pch dur -> PScScore pch dur
-score (ScScore se) = PScScore $ F.foldl fn mempty se 
+polyscore :: ScScore pch dur -> PScScore pch dur
+polyscore (ScScore se) = PScScore $ F.foldl fn mempty se 
   where fn acc e = acc |> part e
     
 part :: ScPart pch dur -> PScPart pch dur
@@ -46,7 +47,19 @@ polycat = rec mempty . viewH
 
     cnstr :: [PScMeasure pch dur] -> PScPolyUnit pch dur
     cnstr = PScPolyUnit . map (PScSegment . singleton)
+    
+    
+    
 
+nubEmpty :: [PScSegment pch dur] -> [PScSegment pch dur]
+nubEmpty = filter (not . null . getPScSegment)
+
+emptySegment :: PScSegment pch dur -> Bool
+emptySegment (PScSegment se) 
+    | null se       = True
+    | otherwise     = F.foldl fn False se
+  where
+    fn b (PScMeasure _ _ se) = b && (not $ null se) 
 
 instance OnsetEvent (PScMeasure pch dur) (PScMeasure pch dur) where
   onset m@(PScMeasure i _ _) = (i, m)

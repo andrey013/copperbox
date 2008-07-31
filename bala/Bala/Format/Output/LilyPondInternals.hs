@@ -23,7 +23,7 @@ module Bala.Format.Output.LilyPondInternals where
 import Bala.Format.Output.OutputBase
 
 import Data.Char
-import Data.Sequence ( (|>) )
+import Data.Sequence ( (|>), (><) )
 import Text.PrettyPrint.Leijen
 
 -- A phantom type
@@ -41,6 +41,14 @@ infixl 5 +++
 (+++) :: (Append cxts cxta) => Ly cxts -> Ly cxta -> Ly cxts
 (+++) (Ly (Sequence op sq)) (Ly a) = Ly $ Sequence op (sq |> a)
 (+++)  _                     _     = error "can't append to a non sequence"
+
+class Concat cxt
+
+(>|<) :: (Concat cxt) => Ly cxt -> Ly cxt -> Ly cxt
+(>|<) (Ly (Sequence op sa)) (Ly (Sequence _ sb)) = Ly $ Sequence op (sa >< sb)
+(>|<) _                     _                    = error $
+    "can't caten non sequences" 
+
 
 
 class SuffixAttr cxte cxta
@@ -161,6 +169,10 @@ type LyCxt_Element = Ly LyCxt_ElementT
 
 elementStart        :: LyCxt_Element
 elementStart        = Ly $ sequenceS (</>) emptyseq
+
+
+instance Concat LyCxt_ElementT
+
 
 --------------------------------------------------------------------------------
 -- ** Commenting input files (2.12)

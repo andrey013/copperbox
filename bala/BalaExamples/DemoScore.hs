@@ -41,7 +41,7 @@ mkq sc = let (ScScore sq) = toScore sc default_score_env
                               then show v ++ " :" ++ show i ++ "  ><  " 
                               else show v ++ " :" ++ show i ++ " ---- "
 
-trans sc = printDoc $ pretty $ score $ toScore sc default_score_env
+trans sc = printDoc $ pretty $ polyscore $ toScore sc default_score_env
 
 -- main = demo01_ly
 main = showScore $ perf1 $ foldl (compR (#) event) root (replicate 12 (c4 # du4))
@@ -71,8 +71,9 @@ showScore sc = printDoc $ pretty $ toScore sc default_score_env
 showScoreP sc = printDoc $ pretty $ toScore sc default_score_env
 
 
-toLy perf = let sc = toScore perf default_score_env
-            in Ly.generateLilyPondScore sc Ly.default_ly_env
+toLy perf = let sc0 = toScore perf default_score_env
+                sc1 = polyscore sc0
+            in Ly.generateLilyPondScore sc1 Ly.default_ly_env
 
 createDoc = vsep . map (pretty . unLy)
 
