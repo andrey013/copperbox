@@ -13,8 +13,8 @@
 --------------------------------------------------------------------------------
 
 module Bala.Perform.Score.Utils (
-  (|*>),
-  removeBeams,
+  ( # ), ( #. ),
+  ( |*>),
   normalizeGroupedElements
   ) where
 
@@ -24,6 +24,15 @@ import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Sequence
 
+-- | reverse apply
+( # ) :: a -> (a -> b) -> b
+a # f = f a
+
+-- | reverse compose
+( #. ) :: (a -> b) -> (b -> c) -> a -> c
+f #. g = g . f
+
+
 
 infixl 5 |*>
 (|*>) se Nothing  = se
@@ -31,23 +40,10 @@ infixl 5 |*>
 
 
 
--- Concat toplevel beams, drop nested beams.
--- Sematically nested beams are meaningless (but the datatypes allow them).
-removeBeams :: Seq (ScGlyph pch dur) -> Seq (ScGlyph pch dur)
-removeBeams = F.foldl fn mempty 
-  where
-    fn se (ScGroup ScBeam xs) = se >< beamElts xs
-    fn se e                   = se |> e
-    
-    -- don't allow nested beams - drop them
-    beamElts = fromList . filter (not . isBeam)
-
-
 normalizeGroupedElements :: Seq (ScGlyph pch dur) -> Seq (ScGlyph pch dur)
 normalizeGroupedElements = F.foldl fn mempty 
   where
     fn se (ScGroup ScChord xs)        = se |> ScGroup ScChord (notes xs)
-    fn se (ScGroup ScBeam xs)         = se |> ScGroup ScBeam  (notes xs)
     fn se (ScGroup ScGraceNotes xs)   = se |> ScGroup ScGraceNotes (singles xs)
     fn se e                           = se |> e
     
@@ -64,8 +60,4 @@ isGroup :: ScGlyph pch dur -> Bool
 isGroup (ScGroup _ _) = True
 isGroup _             = False
 
-isBeam :: ScGlyph pch dur -> Bool
-isBeam (ScGroup ScBeam _)  = True
-isBeam _                   = False
-    
     

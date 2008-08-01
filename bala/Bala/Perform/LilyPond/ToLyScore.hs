@@ -75,7 +75,7 @@ glyph (ScRest dur)              = LyScRest dur
 glyph (ScSpacer dur)            = LyScSpacer dur
 glyph (ScGroup ScChord xs)      = LyScChord (catMaybes $ map justNote xs)
 glyph (ScGroup ScGraceNotes xs) = LyScGraceNotes (catMaybes $ map justNote xs)
-glyph (ScGroup ScBeam _)        = error "glyph - beam where it shouldn't be" 
+
 
 
 justNote :: ScGlyph pch dur -> Maybe (LyScGlyph pch dur)                     

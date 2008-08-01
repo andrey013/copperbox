@@ -21,7 +21,7 @@ module Bala.Format.Output.AbcInternals where
 import Bala.Format.Output.OutputBase
 
 import Data.Ratio
-import Data.Sequence ( (|>) )
+import Data.Sequence ( (|>), (><) )
 import Text.PrettyPrint.Leijen
 
 
@@ -40,6 +40,15 @@ infixl 5 +++
 (+++) :: (Append cxts cxta) => Abc cxts -> Abc cxta -> Abc cxts  
 (+++) (Abc (Sequence op sq)) (Abc a) = Abc $ Sequence op (sq |> a)
 (+++)  _                      _      = error "can't append to a non sequence"
+
+class Concat cxt
+
+(>|<) :: (Concat cxt) => Abc cxt -> Abc cxt -> Abc cxt
+(>|<) (Abc (Sequence op sa)) (Abc (Sequence _ sb)) = Abc $ Sequence op (sa >< sb)
+(>|<) _                     _                    = error $
+    "can't caten non sequences" 
+    
+instance Concat  AbcCxt_ElementT
 
 
 class SuffixAttr cxte cxta
@@ -92,11 +101,8 @@ abcSeq2 :: Caten Doc -> Abc a -> Abc b -> Abc c
 abcSeq2 op (Abc a) (Abc b) = Abc $ sequenceL op [a,b]
 
 
-
 --------------------------------------------------------------------------------
--- * Information fields (3)
-
-
+-- * Contexts 
 
 data AbcCxt_HeaderT
 type AbcCxt_Header = Abc AbcCxt_HeaderT
@@ -104,119 +110,145 @@ type AbcCxt_Header = Abc AbcCxt_HeaderT
 header :: AbcCxt_Header
 header = Abc $ sequenceS (<$>) emptyseq
 
-instance Append AbcCxt_HeaderT AbcCxt_FieldT
-instance Append AbcCxt_HeaderT AbcCxt_MidTuneFieldT
+instance Append AbcCxt_HeaderT AbcFieldT
+instance Append AbcCxt_HeaderT AbcMidTuneFieldT
+instance Append AbcCxt_HeaderT AbcCxt_BodyT
 
 
-data AbcCxt_FieldT
-type AbcCxt_Field = Abc AbcCxt_FieldT
+data AbcCxt_BodyT
+type AbcCxt_Body = Abc AbcCxt_BodyT
 
-field :: Char -> Abc a -> AbcCxt_Field
+body :: AbcCxt_Body
+body = Abc $ sequenceS (<$>) emptyseq
+
+instance Append AbcCxt_BodyT AbcCxt_ElementT
+instance Append AbcCxt_BodyT AbcMidTuneFieldT
+
+--------------------------------------------------------------------------------
+-- Tunebook?
+
+data AbcTuneT
+type AbcTune = Abc AbcTuneT
+
+tune                :: AbcCxt_Header -> AbcCxt_Body -> AbcTune
+tune h b            = Abc $ sequenceL (</>) [unAbc h, unAbc b]    
+
+
+
+--------------------------------------------------------------------------------
+-- * Information fields (3)
+
+
+
+data AbcFieldT
+type AbcField = Abc AbcFieldT
+
+field :: Char -> Abc a -> AbcField
 field ch o = Abc $ sequenceL (<+>) [field_id, unAbc o]
   where field_id = literalP [ch,':']
   
 -- | @A field@ - area.
-area_field                :: String -> AbcCxt_Field
+area_field                :: String -> AbcField
 area_field                = field 'A' . Abc . literal . text
 
 
 -- | @B field@ - book.
-book_field                :: String -> AbcCxt_Field
+book_field                :: String -> AbcField
 book_field                = field 'B' . Abc . literal . text
 
 -- | @C field@ - composer name. 
-composer_field            :: String -> AbcCxt_Field
+composer_field            :: String -> AbcField
 composer_field            = field 'C' . Abc . literal . text
 
 -- | @D field@ - discography.
-discography_field         :: String -> AbcCxt_Field
+discography_field         :: String -> AbcField
 discography_field         = field 'D' . Abc . literal . text
 
 -- | @G field@ - group.
-group_field               :: String -> AbcCxt_Field
+group_field               :: String -> AbcField
 group_field               = field 'G' . Abc . literal . text
 
 -- | @H field@ - history.
-history_field             :: [String] -> AbcCxt_Field
+history_field             :: [String] -> AbcField
 history_field             = field 'H' . Abc . body
   where
     body =  nestedf align . sequenceL (<$>) . map (literal . text)
   
 -- | @I field@ - information.
-information_field         :: String -> AbcCxt_Field
+information_field         :: String -> AbcField
 information_field         = field 'I' . Abc . literal . text
 
 -- | @N field@ - notes.  
-notes_field               :: String -> AbcCxt_Field
+notes_field               :: String -> AbcField
 notes_field               = field 'N' . Abc . literal . text
 
 -- | @O field@ - origin. 
-origin_field              :: String -> AbcCxt_Field
+origin_field              :: String -> AbcField
 origin_field              = field 'O' . Abc . literal . text
 
 -- | @R field@ - rhythm. 
-rhythm_field              :: String -> AbcCxt_Field
+rhythm_field              :: String -> AbcField
 rhythm_field              = field 'R' . Abc . literal . text
 
 -- | @S field@ - source.
-source_field              :: String -> AbcCxt_Field
+source_field              :: String -> AbcField
 source_field              = field 'S' . Abc . literal . text
            
 -- | @X field@ - reference \/ tune number.
-number_field              :: Int -> AbcCxt_Field
+number_field              :: Int -> AbcField
 number_field              = field 'X' . Abc . literal . int
   
 -- | @Z field@ - transcriber notes.  
-transcriber_notes_field   :: String -> AbcCxt_Field
+transcriber_notes_field   :: String -> AbcField
 transcriber_notes_field   = field 'Z' . Abc . literal . text  
 
 
 -- Mid tune fields
-data AbcCxt_MidTuneFieldT
-type AbcCxt_MidTuneField = Abc AbcCxt_MidTuneFieldT
+data AbcMidTuneFieldT
+type AbcMidTuneField = Abc AbcMidTuneFieldT
 
-mtfield :: Char -> Abc a -> AbcCxt_MidTuneField
+mtfield :: Char -> Abc a -> AbcMidTuneField
 mtfield ch o = Abc $ sequenceL (<+>) [field_id, unAbc o]
   where field_id = literalP [ch,':']
   
   
 
 -- | @E field@ - elemskip.
-elemskip_field              :: String -> AbcCxt_MidTuneField
+elemskip_field              :: String -> AbcMidTuneField
 elemskip_field              = mtfield 'E' . Abc . literal . text
 
 -- | @K field@ - key, note untyped so it can print keys or clef information.
 
-key_field                   :: Abc a -> AbcCxt_MidTuneField
+key_field                   :: Abc a -> AbcMidTuneField
 key_field                   = mtfield 'K' 
 
   
 -- | @L field@ - unit note length - i.e. the default length.
-unit_note_length_field      :: Integral a => LengthRep a -> AbcCxt_MidTuneField
+unit_note_length_field      :: Integral a => LengthRep a -> AbcMidTuneField
 unit_note_length_field      = mtfield 'L' . Abc . literal . ppNoteLength
 
 -- a synonym
-l_field                     :: Integral a => LengthRep a -> AbcCxt_MidTuneField
+l_field                     :: Integral a => LengthRep a -> AbcMidTuneField
 l_field                     = unit_note_length_field
 
 -- | @M field@ - meter.
-meter_field                 :: Abc a -> AbcCxt_MidTuneField
+meter_field                 :: Abc a -> AbcMidTuneField
 meter_field                 = mtfield 'M' 
   
 -- | @P field@ - parts, simplified - parts are just represented as a string.
-parts_field                 :: [Char] -> AbcCxt_MidTuneField
+parts_field                 :: [Char] -> AbcMidTuneField
 parts_field                 = mtfield 'P' . Abc . literal . text
   
 -- | @Q field@ - tempo.
-tempo_field                 :: Abc a -> AbcCxt_MidTuneField
+tempo_field                 :: Abc a -> AbcMidTuneField
 tempo_field                 = mtfield 'Q' 
 
 -- | @T field@ - title.
-title_field                 :: String -> AbcCxt_MidTuneField
+title_field                 :: String -> AbcMidTuneField
 title_field                 = mtfield 'T' . Abc . literal . text
  
 -- | @W field@ - words.  
-words_field                 :: String -> AbcCxt_MidTuneField
+words_field                 :: String -> AbcMidTuneField
 words_field                 = mtfield 'W' . Abc . literal . text
 
 
@@ -309,17 +341,14 @@ locrian       = mode "loc"
 
 
 --------------------------------------------------------------------------------
--- * The tune body (4)
+-- * The tune elements (4)
 
--- body appends a blank line to the end of the output
-body :: Abc a -> AbcCxt_MidTuneField
-body a = abcSeq2 (<$>) a (abcLiteral empty)
+
 
 data AbcCxt_ElementT
 type AbcCxt_Element = Abc AbcCxt_ElementT
 
-tune :: AbcCxt_Element
-tune = Abc $ sequenceS (</>) emptyseq
+
 
 elementStart :: AbcCxt_Element
 elementStart = Abc $ sequenceS (</>) emptyseq

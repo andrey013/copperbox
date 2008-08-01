@@ -14,7 +14,6 @@
 --
 --------------------------------------------------------------------------------
 
--- Note - don't need beaming in ScScore datatypes - it could be done here 
 
 module Bala.Perform.Abc.ToAbcScore where
 
@@ -24,10 +23,15 @@ import Bala.Perform.Abc.AbcScoreDatatypes
 import Bala.Perform.Score.MeasureOnsets
 import Bala.Perform.Score.Utils
 
+import qualified Data.Foldable as F
 import Data.Maybe (catMaybes)
 import Data.Monoid
+import Data.Sequence
 
-
+abcTunebook :: ScScore pch dur -> AbcScTuneBook pch dur
+abcTunebook (ScScore se) = AbcScTuneBook $ F.foldl fn mempty se 
+  where fn acc e = acc |> tune e
+  
 tune :: ScPart pch dur -> AbcScTune pch dur
 tune p@(ScPart i _ _) = AbcScTune i (polycat $ deriveQueue p)
 
@@ -65,7 +69,7 @@ glyph (ScRest dur)              = AbcScRest dur
 glyph (ScSpacer dur)            = AbcScSpacer dur
 glyph (ScGroup ScChord xs)      = AbcScChord (catMaybes $ map justNote xs)
 glyph (ScGroup ScGraceNotes xs) = AbcScGraceNotes (catMaybes $ map justNote xs)
-glyph (ScGroup ScBeam xs)       = AbcScBeamedNotes (fmap glyph xs)
+
 
 
 justNote :: ScGlyph pch dur -> Maybe (AbcScGlyph pch dur)                     

@@ -22,4 +22,5 @@ class PitchAbc pch where
   abcAccidental    :: pch -> Maybe AbcAccidental
   
 class (Eq dur) => DurationAbc dur where
-  asRational       :: dur -> Rational
+  quaternoteAbc   :: dur
+  asRational      :: dur -> Rational

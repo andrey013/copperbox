@@ -57,8 +57,10 @@ abc_header_defaults = Abc_Header_Defaults {
     abc_title       = "",
     abc_meter       = (4,4),
     abc_key         = c_major
-  }     
-        
+  } 
+      
+   
+            
 abc_template defaults expr = 
           header
       +++ number_field  1
@@ -66,7 +68,7 @@ abc_template defaults expr =
       +++ meter_field   << meter (abc_meter defaults)
       +++ key_field     << key << key_spec (note Abc.C) major
       +++ key_field     << clef treble
-      +++ body          << expr
+     -- +++ body          >|< expr
   where
     toKeySpec :: Key -> AbcKeySpec
     toKeySpec k = let (pn,kt) = unKey k

@@ -120,7 +120,7 @@ calculateTicks tpqn dur =
   in (tpqn * 4 * n) `div` d
 
 -- | @'rationalize'@ - turn a duration into a ratio which may normalize it. 
-rationalize :: Duration -> Ratio Integer
+rationalize :: Duration -> Rational
 rationalize (Dur r n) = dotr r (n,r)
   where
     dotr a (i,r) | i < 1      = a 

@@ -17,12 +17,10 @@
 module Bala.Perform.Abc.AbcBackend where
 
 import Bala.Format.Output.OutputAbc
--- import Bala.Format.Score.PolyDatatypes
-
 import Bala.Perform.Abc.Class
 import Bala.Perform.Abc.AbcScoreDatatypes
 import Bala.Perform.Base.PerformMonad
-
+import Bala.Perform.Score.Utils
 
 import Control.Applicative
 import Control.Monad.Reader
@@ -44,16 +42,22 @@ data Perform_Abc_State = Perform_Abc_State {
 data Perform_Abc_Env dur = Perform_Abc_Env {
     default_note_length      :: dur
   }
+
+state0 = Perform_Abc_State ()
+
+default_abc_env :: DurationAbc dur => Perform_Abc_Env dur 
+default_abc_env = Perform_Abc_Env {
+    default_note_length        = quaternoteAbc
+  }
   
+    
 infixl 7 *!
 (*!) e oa   = maybe e (e !) oa
 
 infixl 7 !*>
 (!*>) oa e   = maybe e ((flip (!>)) e) oa
 
--- reverse compose
-( #. ) :: (a -> b) -> (b -> c) -> a -> c
-f #. g = g . f
+
 
 
 suffixWith :: Append cxts cxta
@@ -82,22 +86,35 @@ concatS = foldr ( #. ) id
 foldlOpA f op = \acc e -> (acc `op`) <$> f e 
 
 
-renderScore (AbcScScore se) = foldlM (foldlOpA renderTune (flip (:))) [] se
+-- first step get the original Abc rendering working
+-- then worry if we should return a function or not 
+generateAbcScore :: (PitchAbc pch, DurationAbc dur)
+                      => AbcScTuneBook pch dur
+                      -> Perform_Abc_Env dur 
+                      -> [AbcCxt_Body]
+generateAbcScore sc env = evalPerform (renderTuneBook sc) abc_state env
+  where 
+    abc_state = state0
+    
+    
+renderTuneBook (AbcScTuneBook se) = 
+    foldlM (foldlOpA renderTune (flip (:))) [] se
 
-renderTune (AbcScTune i se) = foldlM (foldlOpA renderPolyPhrase (flip (:))) [] se
+renderTune :: (PitchAbc pch, DurationAbc dur)
+           => AbcScTune pch dur 
+           -> ProcessM pch dur AbcCxt_Body                 
+renderTune (AbcScTune i se) = -- foldlM (foldlOpA renderPolyPhrase (flip (:))) [] se
+    (body +++) <$> foldlM renderPolyPhrase elementStart se
 
-renderPolyPhrase :: (PitchAbc pch, 
-                  DurationAbc dur, 
-                  Append cxts AbcGraceNotesT,
-                  Append cxts AbcChordT,
-                  Append cxts AbcNoteT,
-                  Append cxts AbcRestT)
-              => AbcScPolyPhrase pch dur 
-              -> ProcessM pch dur (Abc cxts -> Abc cxts)
+
+renderPolyPhrase :: (PitchAbc pch, DurationAbc dur)
+                 => AbcCxt_Element
+                 -> AbcScPolyPhrase pch dur 
+                 -> ProcessM pch dur AbcCxt_Element
               
-renderPolyPhrase (AbcScSingletonPhrase x) = renderMeasure x
-renderPolyPhrase (AbcScPolyPhrase xs) = 
-    foldlM (foldlOpA renderMeasure (flip ( #. ))) id xs
+renderPolyPhrase cxt (AbcScSingletonPhrase x) = ( cxt # ) <$> renderMeasure x
+renderPolyPhrase cxt (AbcScPolyPhrase xs) = 
+    undefined -- foldlM (foldlOpA renderMeasure (flip ( #. ))) id xs
 
 
             

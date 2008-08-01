@@ -162,9 +162,7 @@ glyphDuration :: ScoreDuration dur => ScGlyph pch dur -> Double
 glyphDuration (ScNote  _ d)             = toDouble d
 glyphDuration (ScRest  d)               = toDouble d
 glyphDuration (ScGroup ScChord (x:xs))  = glyphDuration x
-glyphDuration (ScGroup ScGraceNotes _)  = 0.0
-glyphDuration (ScGroup ScBeam xs)       = let f e d = d + glyphDuration e
-                                          in foldr f 0.0 xs           
+glyphDuration (ScGroup ScGraceNotes _)  = 0.0         
 glyphDuration _                         = 0.0        
 
 
@@ -189,9 +187,7 @@ remext e = fn <$> remainingDuration
   where
     fn duration_left = changeDuration (glyphDuration e + duration_left) e
      
-    -- Don't change the duration of beamed notes or grace notes
-    -- LilyPond or Abc can decide what to do
-    -- (grace notes shouldn't be at the end anyway)
+    -- (grace notes shouldn't be at the end)
     changeDuration :: ScoreDuration dur 
                    => Double -> ScGlyph pch dur -> ScGlyph pch dur
     changeDuration d (ScNote p _)           = ScNote p (fromDouble d)

@@ -66,7 +66,7 @@ data ScMeasure pch dur = ScMeasure {
     sc_measure_glyphs :: (Seq (ScGlyph pch dur))
   }
 
-data ScGroupType = ScBeam | ScChord | ScGraceNotes
+data ScGroupType = ScChord | ScGraceNotes
   deriving (Eq)
 
 data ScGlyph pch dur = ScNote (ScPitch pch) dur

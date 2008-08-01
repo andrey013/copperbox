@@ -112,18 +112,18 @@ renderPart :: (LilyPondPitch pch, LilyPondDuration dur)
            => LyScPart pch dur 
            -> ProcessM pch dur LyCmdScore
 renderPart (LyScPart i se) = 
-    (score . block) <$> F.foldlM renderPolyUnit elementStart se
+    (score . block) <$> F.foldlM renderPolyPhrase elementStart se
   
   
 
-renderPolyUnit :: (LilyPondPitch pch, LilyPondDuration dur)
-               => LyCxt_Element 
-               -> LyScPolyPhrase pch dur  
-               -> ProcessM pch dur LyCxt_Element 
-renderPolyUnit cxt (LyScSingletonPhrase x)   =
+renderPolyPhrase :: (LilyPondPitch pch, LilyPondDuration dur)
+                 => LyCxt_Element 
+                 -> LyScPolyPhrase pch dur  
+                 -> ProcessM pch dur LyCxt_Element 
+renderPolyPhrase cxt (LyScSingletonPhrase x)   =
     (cxt >|<) <$> renderSegment elementStart x
 
-renderPolyUnit cxt (LyScPolyPhrase xs)   = 
+renderPolyPhrase cxt (LyScPolyPhrase xs)   = 
     mergePolys cxt <$> mapM (renderSegment elementStart) xs
 
 

@@ -13,7 +13,7 @@
 --------------------------------------------------------------------------------
 
 module Bala.Perform.Abc.AbcScoreDatatypes (
-  AbcScScore(..),
+  AbcScTuneBook(..),
   AbcScTune(..),
   AbcScLine,
   AbcScPolyPhrase(..),
@@ -23,7 +23,7 @@ module Bala.Perform.Abc.AbcScoreDatatypes (
 
 import Data.Sequence
 
-data AbcScScore pch dur = AbcScScore (Seq (AbcScTune pch dur))
+data AbcScTuneBook pch dur = AbcScTuneBook (Seq (AbcScTune pch dur))
 
 data AbcScTune pch dur = AbcScTune {
     lysc_tune_number          :: Int,

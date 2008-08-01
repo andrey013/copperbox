@@ -9,6 +9,7 @@ module Main where
 import Bala.Base
 
 import Bala.Format.Output.LilyPondInternals (unLy)
+import Bala.Format.Output.AbcInternals (unAbc)
 import Bala.Format.Score
 
 
@@ -28,6 +29,7 @@ import qualified Data.Sequence as S
 import Bala.Perform.LilyPond.ToLyScore
 import Bala.Perform.Abc.ToAbcScore
 import Bala.Perform.Abc.AbcBackend
+import Bala.Perform.Bala.BalaAbc
 
 
 data Pair = Pair Int Char 
@@ -76,49 +78,54 @@ toLy perf = let sc0   = toScore perf default_score_env
                 lysc  = lyscore sc0
             in generateLilyPondScore lysc default_ly_env
 
-createDoc = vsep . map (pretty . unLy)
+toAbc perf = let sc0    = toScore perf default_score_env
+                 abcsc  = abcTunebook sc0
+            in generateAbcScore abcsc default_abc_env
+
+createDoc un = vsep . map (pretty . un)
 
 
 demo_s1 = showScore score1
 
 
-demo01 = showScore example1
-demo01_ly = printDoc $ createDoc $ toLy example1
+demo01      = showScore example1
+demo01_ly   = printDoc $ createDoc unLy  $ toLy example1
+demo01_abc  = printDoc $ createDoc unAbc $ toAbc example1
 
 demo02 = showScore example2
-demo02_ly = printDoc $ createDoc $ toLy example2
+demo02_ly = printDoc $ createDoc unLy $ toLy example2
 
 demo03 = showScore example3
-demo03_ly = printDoc $ createDoc $ toLy example3
+demo03_ly = printDoc $ createDoc unLy $ toLy example3
 
-demo03a_ly = printDoc $ createDoc $ toLy example3a
+demo03a_ly = printDoc $ createDoc unLy $ toLy example3a
 
 
 demo04 = showScore example4
-demo04_ly = printDoc $ createDoc $ toLy example4
+demo04_ly = printDoc $ createDoc unLy $ toLy example4
 
 
 demo05 = showScoreP example5
-demo05_ly = printDoc $ createDoc $ toLy example5
+demo05_ly = printDoc $ createDoc unLy $ toLy example5
 
 demo06 = showScoreP example6
-demo06_ly = printDoc $ createDoc $ toLy example6
+demo06_ly = printDoc $ createDoc unLy $ toLy example6
 
 demo07 = showScore example7
-demo07_ly = printDoc $ createDoc $ toLy example7
+demo07_ly = printDoc $ createDoc unLy $ toLy example7
 
 demo07a = showScore example7a 
-demo07a_ly = printDoc $ createDoc $ toLy example7a
+demo07a_ly = printDoc $ createDoc unLy $ toLy example7a
 
 demo07b = showScore example7b 
-demo07b_ly = printDoc $ createDoc $ toLy example7b
+demo07b_ly = printDoc $ createDoc unLy $ toLy example7b
 
 demo07c = showScore example7c
-demo07c_ly = printDoc $ createDoc $ toLy example7c
+demo07c_ly = printDoc $ createDoc unLy $ toLy example7c
 
 
 demo07d = showScore example7d
-demo07d_ly = printDoc $ createDoc $ toLy example7d
+demo07d_ly = printDoc $ createDoc unLy $ toLy example7d
 
 
 --------------------------------------------------------------------------------

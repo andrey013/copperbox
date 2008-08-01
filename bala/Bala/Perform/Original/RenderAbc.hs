@@ -56,7 +56,7 @@ default_abc_env :: Perform_Abc_Env
 default_abc_env = Perform_Abc_Env {
     default_note_length   = eighth,
     meter_size            = meterSize (4 // 4),
-    initial_abc_context   = tune   
+    initial_abc_context   = elementStart   
   } 
 
 
@@ -137,13 +137,13 @@ abcPitch p =
                           | otherwise = pl              
     
 
-abcDuration :: AbcDuration dur => dur -> ProcessM (Maybe AbcDuration)
+abcDuration :: Duration -> ProcessM (Maybe AbcDuration)
 abcDuration d = fn d <$> asks default_note_length
   where
     fn dur1 deft
       | dur1 == deft  = Nothing
-      | otherwise     = let scale = denominator (toRational deft)
-                            r     = (toRational dur1)
+      | otherwise     = let scale = denominator (rationalize deft)
+                            r     = (rationalize dur1)
                             (n,d) = (numerator r, denominator r)    
                         in Just $ dur ( n*scale, d)
 
@@ -209,7 +209,7 @@ oflat sqk (Evt e :< sq)         = do
 -- Sequence maps to voice overlay - supported by abcm2ps but not abc2ps
 oflat sqk (Poly ts :< sq)   = do
     sqk'      <- oflat sqk (viewl sq) 
-    xs        <- mapM (oflat tune) (map (viewl . unET) ts)
+    xs        <- mapM (oflat elementStart) (map (viewl . unET) ts)
     return (merge sqk' xs)  
        
 oflat sqk (StartPar :< sq)      =
