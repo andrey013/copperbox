@@ -34,7 +34,7 @@ data LyScPart pch dur = LyScPart {
 type LyScLine pch dur = Seq (LyScPolyPhrase pch dur)
 
 
--- | A overlapped segments of a polyphonic phrase. 
+-- | Overlapped segments of a polyphonic phrase. 
 -- A singleton phrase (with no polyphony) is treated differently, and so is
 -- a special case.
 data LyScPolyPhrase pch dur  = 

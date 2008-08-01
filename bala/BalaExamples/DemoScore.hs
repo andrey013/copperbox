@@ -17,8 +17,6 @@ import Bala.Perform.Bala.BalaScore     -- to get the Bala instances
 import Bala.Perform.Base.Class
 import Bala.Perform.Base.EventTree
 import Bala.Perform.LilyPond.LyBackend
-import qualified Bala.Perform.LilyPond.LyBackend as Ly
--- import Bala.Perform.Score.ToPolyScore
 import Bala.Perform.Score.ToScore
 
 import Text.PrettyPrint.Leijen hiding (dot)
@@ -28,6 +26,8 @@ import Bala.Perform.Base.OnsetQueue
 import Bala.Perform.Score.MeasureOnsets
 import qualified Data.Sequence as S
 import Bala.Perform.LilyPond.ToLyScore
+import Bala.Perform.Abc.ToAbcScore
+import Bala.Perform.Abc.AbcBackend
 
 
 data Pair = Pair Int Char 
@@ -74,7 +74,7 @@ showScoreP sc = printDoc $ pretty $ toScore sc default_score_env
 
 toLy perf = let sc0   = toScore perf default_score_env
                 lysc  = lyscore sc0
-            in Ly.generateLilyPondScore lysc Ly.default_ly_env
+            in generateLilyPondScore lysc default_ly_env
 
 createDoc = vsep . map (pretty . unLy)
 

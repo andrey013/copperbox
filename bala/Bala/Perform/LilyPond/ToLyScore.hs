@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Perform.Score.ToLyScore
+-- Module      :  Bala.Perform.LilyPond.ToLyScore
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -10,8 +10,8 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Render an Score (which has polyphony as references) to a PolyScore 
--- which has linear polyphony.
+-- Render an (general) Score to a LilyPond-tailored representation, 
+-- that is easier to emit LilyPond from.
 --
 --------------------------------------------------------------------------------
 
@@ -21,6 +21,7 @@ import Bala.Format.Score
 import Bala.Perform.Base.OnsetQueue
 import Bala.Perform.LilyPond.LyScoreDatatypes
 import Bala.Perform.Score.MeasureOnsets
+import Bala.Perform.Score.Utils
 
 import qualified Data.Foldable as F 
 import qualified Data.IntMap as IM
@@ -29,9 +30,7 @@ import Data.Monoid
 import Data.Sequence
 import Prelude hiding (null)
 
-infixl 5 |*>
-(|*>) se Nothing  = se
-(|*>) se (Just e) = se |> e
+
 
 instance OnsetEvent (LyScMeasure pch dur) (LyScMeasure pch dur) where
   onset m@(LyScMeasure i _ _) = (i, m)
@@ -64,44 +63,11 @@ polyPhrase []   = Nothing
 polyPhrase [x]  = Just $ LyScSingletonPhrase x
 polyPhrase xs   = Just $ LyScPolyPhrase xs
     
-{-
-nubEmpty :: [LyScSegment pch dur] -> [LyScSegment pch dur]
-nubEmpty = filter (not . null . getLyScSegment)
-
-emptySegment :: LyScSegment pch dur -> Bool
-emptySegment (LyScSegment se) 
-    | null se       = True
-    | otherwise     = F.foldl fn False se
-  where
-    fn b (LyScMeasure _ _ se) = b && (not $ null se) 
--}
-
-
-
-
- 
-
-----
-
 
 measure :: OnsetMeasure pch dur -> LyScMeasure pch dur
 measure (OnsetMeasure i voice se) = 
-  LyScMeasure i voice (fmap glyph (removeBeams se))
+  LyScMeasure i voice (fmap glyph (normalizeGroupedElements se))
 
-
-
--- Concat toplevel beams, drop nested beams.
--- Sematically nested beams are meaningless (but the datatypes allow them).
-removeBeams :: Seq (ScGlyph pch dur) -> Seq (ScGlyph pch dur)
-removeBeams = F.foldl fn mempty 
-  where
-    fn se (ScGroup ScBeam xs) = se >< beamElts xs
-    fn se e                   = se |> e
-    
-    -- don't allow nested beams - drop them
-    beamElts = fromList . filter notBeam
-    notBeam (ScGroup ScBeam _)  = False
-    notBeam _                   = True
 
 glyph :: ScGlyph pch dur -> LyScGlyph pch dur
 glyph (ScNote scp dur)          = LyScNote (pitch scp) dur

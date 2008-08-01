@@ -17,15 +17,18 @@
 module Bala.Perform.Abc.AbcBackend where
 
 import Bala.Format.Output.OutputAbc
-import Bala.Format.Score.PolyDatatypes
+-- import Bala.Format.Score.PolyDatatypes
 
-import Bala.Perform.Base.PerformMonad
 import Bala.Perform.Abc.Class
+import Bala.Perform.Abc.AbcScoreDatatypes
+import Bala.Perform.Base.PerformMonad
+
 
 import Control.Applicative
 import Control.Monad.Reader
 import Control.Monad.State
 import Data.Foldable (foldlM,foldrM)
+import Data.Maybe (catMaybes)
 import Data.Ratio
 
 type ProcessM pch dur a = 
@@ -79,23 +82,23 @@ concatS = foldr ( #. ) id
 foldlOpA f op = \acc e -> (acc `op`) <$> f e 
 
 
-renderScore (PScScore se) = foldlM (foldlOpA renderPart (flip (:))) [] se
+renderScore (AbcScScore se) = foldlM (foldlOpA renderTune (flip (:))) [] se
 
-renderPart (PScPart i se) = foldlM (foldlOpA renderPolyUnit (flip (:))) [] se
+renderTune (AbcScTune i se) = foldlM (foldlOpA renderPolyPhrase (flip (:))) [] se
 
-
-renderPolyUnit (PScPolyUnit xs) = foldlM (foldlOpA renderSegment (flip (:))) [] xs
-
--- return a list of measure making functions so we can think about barlines
-renderSegment :: (PitchAbc pch, 
+renderPolyPhrase :: (PitchAbc pch, 
                   DurationAbc dur, 
                   Append cxts AbcGraceNotesT,
                   Append cxts AbcChordT,
                   Append cxts AbcNoteT,
                   Append cxts AbcRestT)
-              => PScSegment pch dur 
-              -> ProcessM pch dur [(Abc cxts -> Abc cxts)] 
-renderSegment (PScSegment se) = foldlM (foldlOpA renderMeasure (flip (:))) [] se
+              => AbcScPolyPhrase pch dur 
+              -> ProcessM pch dur (Abc cxts -> Abc cxts)
+              
+renderPolyPhrase (AbcScSingletonPhrase x) = renderMeasure x
+renderPolyPhrase (AbcScPolyPhrase xs) = 
+    foldlM (foldlOpA renderMeasure (flip ( #. ))) id xs
+
 
             
 renderMeasure :: (PitchAbc pch, 
@@ -104,10 +107,10 @@ renderMeasure :: (PitchAbc pch,
                   Append cxts AbcChordT,
                   Append cxts AbcNoteT,
                   Append cxts AbcRestT)
-              => PScMeasure pch dur 
+              => AbcScMeasure pch dur 
               -> ProcessM pch dur (Abc cxts -> Abc cxts)
             
-renderMeasure (PScMeasure i xs se) = foldlM (foldlOpA renderGlyph ( #. )) id se
+renderMeasure (AbcScMeasure i xs se) = foldlM (foldlOpA renderGlyph ( #. )) id se
 
 
 
@@ -123,43 +126,50 @@ renderGlyph :: (PitchAbc pch,
                 Append cxts AbcChordT,
                 Append cxts AbcNoteT,
                 Append cxts AbcRestT)
-            => PScGlyph pch dur 
+            => AbcScGlyph pch dur 
             -> ProcessM pch dur (Abc cxts -> Abc cxts)
 
-renderGlyph (PScNote scp d)            = suffixA $
+renderGlyph (AbcScNote scp d)            = suffixA $
     (*!) <$> renderPitch scp  <*> abcDuration d
 
 
 
-renderGlyph (PScRest d)                = suffixA $
+renderGlyph (AbcScRest d)                = suffixA $
     (rest *!)   <$> abcDuration d
     
-renderGlyph (PScSpacer d)              = suffixA $ 
+renderGlyph (AbcScSpacer d)               = suffixA $ 
     (spacer *!) <$> abcDuration d
 
 
 -- Notes inside chords have duration (though they all _should_ be the same)
-renderGlyph a@(PScGroup PScChord xs)    = suffixA $ 
+renderGlyph (AbcScChord xs)               = suffixA $ 
     chord <$> foldrM pitch1 [] xs  
 
   where
-    pitch1 (PScNote scp d) acc = fn acc <$> renderPitch scp <*> abcDuration d
-    pitch1 _               acc = pure acc
+    pitch1 (AbcScNote scp d) acc = fn acc <$> renderPitch scp <*> abcDuration d
+    pitch1 _                 acc = pure acc
     
     fn acc p od = p *! od : acc 
 
 
-renderGlyph (PScGroup PScGraceNotes xs) = suffixA $ 
-    gracenotes <$> mapM (renderPitch . getPitch) xs
+renderGlyph (AbcScGraceNotes xs)          = suffixA $ 
+    gracenotes . catMaybes <$> mapM justNote xs
+   
     
-    
-getPitch (PScNote scp _) = scp
+getPitch (AbcScNote scp _)  = Just scp
+getPitch _                  = Nothing
 
+justNote :: (PitchAbc pch, DurationAbc dur) 
+         => AbcScGlyph pch dur 
+         -> ProcessM pch dur (Maybe AbcNote)
+justNote (AbcScNote scp d)  = fn <$> renderPitch scp  <*> abcDuration d
+  where fn p od = Just $ p *! od
+  
+justNote _                  = pure Nothing
 
-
--- | @PScPitch --> AbcNote@
-renderPitch :: PitchAbc pch => PScPitch pch -> ProcessM pch dur (AbcNote) 
-renderPitch (PScPitch pch) = 
+-- | @AbcScPitch --> AbcNote@
+renderPitch :: PitchAbc pch => pch -> ProcessM pch dur (AbcNote) 
+renderPitch pch = 
     fn <$> pure (abcPitchLetter pch) <*> pure (abcAccidental pch) 
   where
     fn pn oa = oa !*> (note pn)   
