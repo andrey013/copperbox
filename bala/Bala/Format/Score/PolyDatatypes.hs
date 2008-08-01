@@ -15,6 +15,8 @@
 --
 --------------------------------------------------------------------------------
 
+{- OBSOLETE -}
+
 module Bala.Format.Score.PolyDatatypes where
 
 

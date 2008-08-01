@@ -29,9 +29,9 @@ instance LilyPondPitch Pitch where
           dist  = ceiling $ (fromIntegral (ivl - 4) / 8.0)
       in if p > p' then (negate dist) else dist
   
-  mkPitchName         = toEnum . fromEnum . pitchLetter
+  lyPitchName         = toEnum . fromEnum . pitchLetter
   
-  mkAccidental        = fn . pitchAccidental 
+  lyAccidental        = fn . pitchAccidental 
     where
       fn DoubleFlat   = Just doubleFlat
       fn Flat         = Just flat
@@ -42,7 +42,7 @@ instance LilyPondPitch Pitch where
   
 instance LilyPondDuration Duration where
   quaternoteDuration  = quarter
-  mkDuration d 
+  optLyDuration d 
       | d == longa                      = Just Ly.longa  
       | d == double_whole               = Just Ly.breve 
       | d == whole                      = Just $ duration 1

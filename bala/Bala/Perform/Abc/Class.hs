@@ -13,13 +13,13 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Perform.AbcInterface where
+module Bala.Perform.Abc.Class (PitchAbc(..), DurationAbc(..)) where
 
 import Bala.Format.Output.OutputAbc
 
-class AbcPitch pch where
-  mkAbcPitchLetter   :: pch -> AbcPitchLetter
+class PitchAbc pch where
+  abcPitchLetter   :: pch -> AbcPitchLetter
+  abcAccidental    :: pch -> Maybe AbcAccidental
   
-  mkAbcAccidental    :: pch -> Maybe AbcAccidental
-  
-  
+class (Eq dur) => DurationAbc dur where
+  asRational       :: dur -> Rational

@@ -15,6 +15,8 @@
 --
 --------------------------------------------------------------------------------
 
+{- OBSOLETE -}
+
 module Bala.Perform.Score.ToPolyScore where
 
 import Bala.Format.Score

@@ -18,15 +18,17 @@ import Bala.Perform.Base.Class
 import Bala.Perform.Base.EventTree
 import Bala.Perform.LilyPond.LyBackend
 import qualified Bala.Perform.LilyPond.LyBackend as Ly
-import Bala.Perform.Score.ToPolyScore
+-- import Bala.Perform.Score.ToPolyScore
 import Bala.Perform.Score.ToScore
 
 import Text.PrettyPrint.Leijen hiding (dot)
 
 ---
 import Bala.Perform.Base.OnsetQueue
-import Bala.Format.Score.PolyDatatypes
+import Bala.Perform.Score.MeasureOnsets
 import qualified Data.Sequence as S
+import Bala.Perform.LilyPond.ToLyScore
+
 
 data Pair = Pair Int Char 
 instance OnsetEvent Pair Char where
@@ -37,11 +39,10 @@ oq1 = buildQueue [Pair 1 'a', Pair 2 'b', Pair 2 'B', Pair 3 'c']
 mkq sc = let (ScScore sq) = toScore sc default_score_env
          in fmap fn $ deriveQueue $ S.index sq 0
   where
-    fn (PScMeasure i v s) = if (S.null s) 
+    fn (OnsetMeasure i v s) = if (S.null s) 
                               then show v ++ " :" ++ show i ++ "  ><  " 
                               else show v ++ " :" ++ show i ++ " ---- "
 
-trans sc = printDoc $ pretty $ polyscore $ toScore sc default_score_env
 
 -- main = demo01_ly
 main = showScore $ perf1 $ foldl (compR (#) event) root (replicate 12 (c4 # du4))
@@ -71,9 +72,9 @@ showScore sc = printDoc $ pretty $ toScore sc default_score_env
 showScoreP sc = printDoc $ pretty $ toScore sc default_score_env
 
 
-toLy perf = let sc0 = toScore perf default_score_env
-                sc1 = polyscore sc0
-            in Ly.generateLilyPondScore sc1 Ly.default_ly_env
+toLy perf = let sc0   = toScore perf default_score_env
+                lysc  = lyscore sc0
+            in Ly.generateLilyPondScore lysc Ly.default_ly_env
 
 createDoc = vsep . map (pretty . unLy)
 

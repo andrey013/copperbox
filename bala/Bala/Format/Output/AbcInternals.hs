@@ -321,6 +321,9 @@ type AbcCxt_Element = Abc AbcCxt_ElementT
 tune :: AbcCxt_Element
 tune = Abc $ sequenceS (</>) emptyseq
 
+elementStart :: AbcCxt_Element
+elementStart = Abc $ sequenceS (</>) emptyseq
+
 -- ** Pitch (4.1)
 
 -- Abc has pitches in a two octave range and then uses octave specs for higher
@@ -392,8 +395,8 @@ instance PrefixAttr AbcNoteT AbcAccidentalT
 data AbcDurationT
 type AbcDuration = Abc AbcDurationT
 
-dur :: (Integer,Integer) -> AbcDuration
-dur = abcLiteral . ppNoteLength 
+dur                 :: (Integer,Integer) -> AbcDuration
+dur                 = abcLiteral . ppNoteLength 
 
 instance SuffixAttr AbcNoteT AbcDurationT
 instance SuffixAttr AbcRestT AbcDurationT
@@ -423,8 +426,11 @@ dotted_rightn i   = abcLiteral $ text $ replicate i '<'
 data AbcRestT
 type AbcRest = Abc AbcRestT
 
-rest    :: AbcRest
-rest    = abcLiteral $ char 'z'
+rest                :: AbcRest
+rest                = abcLiteral $ char 'z'
+
+spacer              :: AbcRest
+spacer              = abcLiteral $ char 'x'
 
 instance Append AbcCxt_ElementT AbcRestT
 
@@ -469,8 +475,8 @@ type AbcGraceNotes = Abc AbcGraceNotesT
 
 
 
-gracenotes :: [AbcNote] -> AbcGraceNotes
-gracenotes = Abc . nested lbrace rbrace . sequenceL (<>) . map unAbc
+gracenotes          :: [AbcNote] -> AbcGraceNotes
+gracenotes          = Abc . nested lbrace rbrace . sequenceL (<>) . map unAbc
 
 
 -- Its simpler if we make gracenotes a glyph rather than 
@@ -481,8 +487,8 @@ instance Append AbcCxt_ElementT AbcGraceNotesT
 data AbcNPletT
 type AbcNPlet = Abc AbcNPletT
 
-nplet   :: Int -> AbcNPlet
-nplet   = Abc . literal . group . (char '(' <>) . int
+nplet               :: Int -> AbcNPlet
+nplet               = Abc . literal . group . (char '(' <>) . int
 
 instance Append AbcCxt_ElementT AbcNPletT
 
@@ -492,17 +498,17 @@ instance Append AbcCxt_ElementT AbcNPletT
 data AbcDecorationT
 type AbcDecoration = Abc AbcDecorationT
 
-tilde       :: AbcDecoration
-tilde       = abcLiteral $ char '~' 
+tilde               :: AbcDecoration
+tilde               = abcLiteral $ char '~' 
    
-stacatto    :: AbcDecoration
-stacatto    = abcLiteral $ char '.' 
+stacatto            :: AbcDecoration
+stacatto            = abcLiteral $ char '.' 
 
-downbow     :: AbcDecoration
-downbow     = abcLiteral $ char 'v' 
+downbow             :: AbcDecoration
+downbow             = abcLiteral $ char 'v' 
 
-upbow       :: AbcDecoration
-upbow       = abcLiteral $ char 'u' 
+upbow               :: AbcDecoration
+upbow               = abcLiteral $ char 'u' 
 
 instance PrefixAttr AbcNoteT AbcDecorationT
 
@@ -511,8 +517,8 @@ instance PrefixAttr AbcNoteT AbcDecorationT
 data AbcChordT
 type AbcChord = Abc AbcChordT
 
-chord :: [AbcNote] -> AbcChord
-chord = Abc . nested lbracket rbracket . sequenceL (<>) . map unAbc
+chord           :: [AbcNote] -> AbcChord
+chord           = Abc . nested lbracket rbracket . sequenceL (<>) . map unAbc
 
 instance Append AbcCxt_ElementT AbcChordT
 
@@ -520,29 +526,29 @@ instance Append AbcCxt_ElementT AbcChordT
 data AbcClefT
 type AbcClef = Abc AbcClefT
 
-clef :: AbcClefName -> AbcClef
-clef cn = Abc $ sequenceL (<>) [literal (text "clef="), unAbc cn]
+clef                :: AbcClefName -> AbcClef
+clef cn             = Abc $ sequenceL (<>) [literal (text "clef="), unAbc cn]
 
 data AbcClefNameT
 type AbcClefName = Abc AbcClefNameT
 
-clef_name :: String -> AbcClefName
-clef_name = abcLiteral . text
+clef_name           :: String -> AbcClefName
+clef_name           = abcLiteral . text
 
-treble  :: AbcClefName
-treble  = clef_name "treble"
+treble              :: AbcClefName
+treble              = clef_name "treble"
 
-alto    :: AbcClefName
-alto    = clef_name "alto"
+alto                :: AbcClefName
+alto                = clef_name "alto"
  
-tenor   :: AbcClefName 
-tenor   = clef_name "tenor"
+tenor               :: AbcClefName 
+tenor               = clef_name "tenor"
 
-bass    :: AbcClefName 
-bass    = clef_name "bass"
+bass                :: AbcClefName 
+bass                = clef_name "bass"
 
-perc    :: AbcClefName
-perc    = clef_name "perc"
+perc                :: AbcClefName
+perc                = clef_name "perc"
 
 
 -- * Multiple voices (7)
@@ -580,62 +586,62 @@ b__  = note B2
 -- Rests
 
 -- @z1@ - a rest of the default note length.
-z1        :: AbcRest
-z1        = rest ! dur (1,1)
+z1                  :: AbcRest
+z1                  = rest ! dur (1,1)
 
 -- @z1@ - a rest of double the default note length.
-z2        :: AbcRest
-z2        = rest ! dur (2,1)
+z2                  :: AbcRest
+z2                  = rest ! dur (2,1)
 
 -- @z4@ - a rest four times the default note length.
-z4        :: AbcRest
-z4        = rest ! dur (2,1)
+z4                  :: AbcRest
+z4                  = rest ! dur (2,1)
 
 -- @z'2@ - a rest of half the default note length.
-z'2       :: AbcRest
-z'2       = rest ! dur (1,2)
+z'2                 :: AbcRest
+z'2                 = rest ! dur (1,2)
 
 -- repeats and barlines
 
 -- | @barline@ - single stroke @|@.
-barline         :: AbcRepeatMark
-barline         = repeatMark "|" 
+barline             :: AbcRepeatMark
+barline             = repeatMark "|" 
 
 -- | @thinThick@ - @|]@.
-thinThick       :: AbcRepeatMark
-thinThick       = repeatMark "|]" 
+thinThick           :: AbcRepeatMark
+thinThick           = repeatMark "|]" 
 
 -- | @thickThin@ - @|]@.
-thickThin       :: AbcRepeatMark
-thickThin       = repeatMark "[|" 
+thickThin           :: AbcRepeatMark
+thickThin           = repeatMark "[|" 
 
 -- | @beginRepeat@ - @|:@.
-beginRepeat     :: AbcRepeatMark
-beginRepeat     = repeatMark "|:"
+beginRepeat         :: AbcRepeatMark
+beginRepeat         = repeatMark "|:"
 
 -- | @endRepeat@ - @|:@.
-endRepeat       :: AbcRepeatMark
-endRepeat       = repeatMark ":|"
+endRepeat           :: AbcRepeatMark
+endRepeat           = repeatMark ":|"
 
 -- | @doubleRepeat@ - @::@.
-doubleRepeat    :: AbcRepeatMark
-doubleRepeat    = repeatMark "::"
+doubleRepeat        :: AbcRepeatMark
+doubleRepeat        = repeatMark "::"
 
 
 -- | @firstRepeat@ - @[1@.
-firstRepeat    :: AbcRepeatMark
-firstRepeat     = repeatMark "[1"
+firstRepeat         :: AbcRepeatMark
+firstRepeat         = repeatMark "[1"
 
 -- | @secondRepeat@ - @[2@.
-secondRepeat    :: AbcRepeatMark
-secondRepeat    = repeatMark "[2"
+secondRepeat        :: AbcRepeatMark
+secondRepeat        = repeatMark "[2"
 
 -- | @firstEnding@ - @|1@.
-firstEnding     :: AbcRepeatMark
-firstEnding     = repeatMark "|1"
+firstEnding         :: AbcRepeatMark
+firstEnding         = repeatMark "|1"
 
 
 -- | @secondEnding@ - @:|2@.
-secondEnding    :: AbcRepeatMark
-secondEnding    = repeatMark ":|2"
+secondEnding        :: AbcRepeatMark
+secondEnding        = repeatMark ":|2"
 

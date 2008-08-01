@@ -137,13 +137,13 @@ abcPitch p =
                           | otherwise = pl              
     
 
-abcDuration :: Duration -> ProcessM (Maybe AbcDuration)
+abcDuration :: AbcDuration dur => dur -> ProcessM (Maybe AbcDuration)
 abcDuration d = fn d <$> asks default_note_length
   where
     fn dur1 deft
       | dur1 == deft  = Nothing
-      | otherwise     = let scale = denominator (rationalize deft)
-                            r     = (rationalize dur1)
+      | otherwise     = let scale = denominator (toRational deft)
+                            r     = (toRational dur1)
                             (n,d) = (numerator r, denominator r)    
                         in Just $ dur ( n*scale, d)
 

@@ -16,11 +16,13 @@
 module Bala.Perform.LilyPond.LyBackend where
 
 
-import Bala.Format.Score.PolyDatatypes
+
 import Bala.Format.Output.OutputLilyPond
 
-import Bala.Perform.LilyPond.Class
+
 import Bala.Perform.Base.PerformMonad
+import Bala.Perform.LilyPond.Class
+import Bala.Perform.LilyPond.LyScoreDatatypes
 
 import Control.Applicative
 import Control.Monad.Reader
@@ -32,7 +34,9 @@ import Data.Monoid
 import Data.Ratio
 import Data.Sequence hiding (reverse)
 
-type ProcessM pch dur a = PerformM (Perform_Ly_State pch dur) (Perform_Ly_Env pch) a
+
+type ProcessM pch dur a = 
+       PerformM (Perform_Ly_State pch dur) (Perform_Ly_Env pch) a
 
 data Perform_Ly_State pch dur = Perform_Ly_State { 
     relative_pitch      :: pch,
@@ -66,7 +70,7 @@ default_ly_env = Perform_Ly_Env {
 
 
 generateLilyPondScore :: (LilyPondPitch pch, LilyPondDuration dur)
-                      => PScScore pch dur
+                      => LyScScore pch dur
                       -> Perform_Ly_Env pch 
                       -> [LyCmdScore]
 generateLilyPondScore sc env = evalPerform (renderScore sc) ly_state env
@@ -75,11 +79,11 @@ generateLilyPondScore sc env = evalPerform (renderScore sc) ly_state env
 
 
 
-getPitch (PScNote scp _) = scp
+getPitch (LyScNote scp _) = scp
 
-getChordDuration :: LilyPondDuration dur => PScGlyph pch dur -> dur
-getChordDuration (PScGroup PScChord ((PScNote _ d):_))   = d
-getChordDuration _                                    = quaternoteDuration
+getChordDuration :: LilyPondDuration dur => LyScGlyph pch dur -> dur
+getChordDuration (LyScChord ((LyScNote _ d):_)) = d
+getChordDuration _                              = quaternoteDuration
 
 
 
@@ -93,79 +97,83 @@ suffixWith ctx f = (ctx +++) <$> f
  
      
 
--- | @ScScore --> \\book@ 
+-- | @LyScScore --> \\book@ 
 renderScore :: (LilyPondPitch pch, LilyPondDuration dur)
-           => PScScore pch dur 
+           => LyScScore pch dur 
            -> ProcessM pch dur [LyCmdScore]
-renderScore (PScScore se) = reverse <$> F.foldlM fn [] se
+renderScore (LyScScore se) = reverse <$> F.foldlM fn [] se
   where
     fn xs p = flip (:) xs <$> renderPart p
     
     
 
--- | @ScPart --> \\score@ 
+-- | @LyScPart --> \\score@ 
 renderPart :: (LilyPondPitch pch, LilyPondDuration dur)
-           => PScPart pch dur 
+           => LyScPart pch dur 
            -> ProcessM pch dur LyCmdScore
-renderPart (PScPart i se) = 
+renderPart (LyScPart i se) = 
     (score . block) <$> F.foldlM renderPolyUnit elementStart se
   
   
 
 renderPolyUnit :: (LilyPondPitch pch, LilyPondDuration dur)
                => LyCxt_Element 
-               -> PScPolyUnit pch dur  
+               -> LyScPolyPhrase pch dur  
                -> ProcessM pch dur LyCxt_Element 
-renderPolyUnit cxt (PScPolyUnit xs)   = 
-  mergePolys cxt <$> mapM (renderSegment elementStart) xs
+renderPolyUnit cxt (LyScSingletonPhrase x)   =
+    (cxt >|<) <$> renderSegment elementStart x
+
+renderPolyUnit cxt (LyScPolyPhrase xs)   = 
+    mergePolys cxt <$> mapM (renderSegment elementStart) xs
 
 
-mergePolys k []     = k
-mergePolys k [x]    = k >|< x
+
 mergePolys k (x:xs) = let poly = foldl fn (block x) xs in 
     k +++ openPoly +++ poly +++ closePoly
   where
     fn acc a = acc \\ (block a)
+mergePolys k _      = error "mergePolys - ill constructed PolyPhrase - a bug"
+
        
 renderSegment :: (LilyPondPitch pch, LilyPondDuration dur)
               => LyCxt_Element 
-              -> PScSegment pch dur 
+              -> LyScSegment pch dur 
               -> ProcessM pch dur LyCxt_Element  
-renderSegment cxt (PScSegment se) = F.foldlM renderMeasure cxt se
+renderSegment cxt (LyScSegment se) = F.foldlM renderMeasure cxt se
 
 
 
 renderMeasure :: (LilyPondPitch pch, LilyPondDuration dur)
               => LyCxt_Element 
-              -> PScMeasure pch dur 
+              -> LyScMeasure pch dur 
               -> ProcessM pch dur LyCxt_Element 
-renderMeasure cxt (PScMeasure i xs sg) = F.foldlM renderGlyph cxt sg
+renderMeasure cxt (LyScMeasure i xs se) = F.foldlM renderGlyph cxt se
 
 
 
 renderGlyph :: (LilyPondPitch pch, LilyPondDuration dur)
             => LyCxt_Element 
-            -> PScGlyph pch dur 
+            -> LyScGlyph pch dur 
             -> ProcessM pch dur LyCxt_Element
 
-renderGlyph cxt (PScNote scp d)            = suffixWith cxt $
+renderGlyph cxt (LyScNote scp d)            = suffixWith cxt $
     fn <$> renderPitch scp  <*> differDuration d
   where
     fn p od = note p *! od 
 
-renderGlyph cxt (PScRest d)                = suffixWith cxt $
+renderGlyph cxt (LyScRest d)                = suffixWith cxt $
     (rest *!)   <$> differDuration d
     
-renderGlyph cxt (PScSpacer d)              = suffixWith cxt $ 
+renderGlyph cxt (LyScSpacer d)              = suffixWith cxt $ 
     (spacer *!) <$> differDuration d
 
-renderGlyph cxt a@(PScGroup PScChord xs)    = suffixWith cxt $ 
+renderGlyph cxt a@(LyScChord xs)            = suffixWith cxt $ 
     fn <$> mapM (renderPitch . getPitch) xs  
        <*> differDuration (getChordDuration a)
   where
     fn xs od = chord xs *! od
     
-renderGlyph cxt (PScGroup PScGraceNotes xs) = suffixWith cxt $ 
+renderGlyph cxt (LyScGraceNotes xs)         = suffixWith cxt $ 
     fn <$> mapM (renderPitch . getPitch) xs
   where
     fn        = grace . blockS . foldl op elementStart
@@ -173,10 +181,10 @@ renderGlyph cxt (PScGroup PScGraceNotes xs) = suffixWith cxt $
 
 
     
-
-renderPitch :: LilyPondPitch pch => PScPitch pch -> ProcessM pch dur LyPitch 
-renderPitch (PScPitch pch) = 
-    fn <$> pure (mkPitchName pch) <*> pure (mkAccidental pch) 
+-- | @LyScPitch --> LyPitch@
+renderPitch :: LilyPondPitch pch => pch -> ProcessM pch dur LyPitch 
+renderPitch pch = 
+    fn <$> pure (lyPitchName pch) <*> pure (lyAccidental pch) 
                                   <*> differOctaveSpec pch
   where
     fn pn oa oos = (pitch pn) *! oa *! oos                                  
@@ -204,7 +212,7 @@ differDuration d = fn d =<< gets relative_duration
     fn new old | new == old   = return Nothing
                | otherwise    = do 
                       modify (\s -> s {relative_duration = new})
-                      return $ mkDuration new
+                      return $ optLyDuration new
     
                 
 

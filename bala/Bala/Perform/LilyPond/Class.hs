@@ -23,15 +23,15 @@ class (Eq pch) => LilyPondPitch pch where
   
   octaveDist      :: pch -> pch -> Int
  
-  mkPitchName     :: pch -> LyPitchName
+  lyPitchName     :: pch -> LyPitchName
   
   -- | No direct equivalent of 'natural' in LilyPond, hence the Maybe type
-  mkAccidental    :: pch -> Maybe LyAccidental
+  lyAccidental    :: pch -> Maybe LyAccidental
   
   
   
 class (Eq dur) => LilyPondDuration dur where
   quaternoteDuration  :: dur
-  mkDuration          :: dur -> Maybe LyDuration
+  optLyDuration       :: dur -> Maybe LyDuration
   
   
