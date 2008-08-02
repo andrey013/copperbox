@@ -68,7 +68,7 @@ suffixWith ctx f = (ctx +++) <$> f
 
 
 
-type EltS = AbcCxt_Element -> AbcCxt_Element
+type EltS = AbcCxt_Body -> AbcCxt_Body
 
 
 suffix :: (Append cxts cxta) => Abc cxta -> (Abc cxts -> Abc cxts)
@@ -103,14 +103,13 @@ renderTuneBook (AbcScTuneBook se) =
 renderTune :: (PitchAbc pch, DurationAbc dur)
            => AbcScTune pch dur 
            -> ProcessM pch dur AbcCxt_Body                 
-renderTune (AbcScTune i se) = -- foldlM (foldlOpA renderPolyPhrase (flip (:))) [] se
-    (body +++) <$> foldlM renderPolyPhrase elementStart se
+renderTune (AbcScTune i se) = foldlM renderPolyPhrase body se
 
 
 renderPolyPhrase :: (PitchAbc pch, DurationAbc dur)
-                 => AbcCxt_Element
+                 => AbcCxt_Body
                  -> AbcScPolyPhrase pch dur 
-                 -> ProcessM pch dur AbcCxt_Element
+                 -> ProcessM pch dur AbcCxt_Body
               
 renderPolyPhrase cxt (AbcScSingletonPhrase x) = ( cxt # ) <$> renderMeasure x
 renderPolyPhrase cxt (AbcScPolyPhrase xs) = 

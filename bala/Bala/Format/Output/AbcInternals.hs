@@ -48,7 +48,7 @@ class Concat cxt
 (>|<) _                     _                    = error $
     "can't caten non sequences" 
     
-instance Concat  AbcCxt_ElementT
+instance Concat  AbcCxt_BodyT
 
 
 class SuffixAttr cxte cxta
@@ -102,37 +102,31 @@ abcSeq2 op (Abc a) (Abc b) = Abc $ sequenceL op [a,b]
 
 
 --------------------------------------------------------------------------------
--- * Contexts 
-
-data AbcCxt_HeaderT
-type AbcCxt_Header = Abc AbcCxt_HeaderT
-
-header :: AbcCxt_Header
-header = Abc $ sequenceS (<$>) emptyseq
-
-instance Append AbcCxt_HeaderT AbcFieldT
-instance Append AbcCxt_HeaderT AbcMidTuneFieldT
-instance Append AbcCxt_HeaderT AbcCxt_BodyT
-
-
-data AbcCxt_BodyT
-type AbcCxt_Body = Abc AbcCxt_BodyT
-
-body :: AbcCxt_Body
-body = Abc $ sequenceS (<$>) emptyseq
-
-instance Append AbcCxt_BodyT AbcCxt_ElementT
-instance Append AbcCxt_BodyT AbcMidTuneFieldT
-
---------------------------------------------------------------------------------
 -- Tunebook?
 
 data AbcTuneT
 type AbcTune = Abc AbcTuneT
 
 tune                :: AbcCxt_Header -> AbcCxt_Body -> AbcTune
-tune h b            = Abc $ sequenceL (</>) [unAbc h, unAbc b]    
+tune h b            = Abc $ sequenceL (<$>) [unAbc h, unAbc b]   
 
+data AbcCxt_HeaderT
+type AbcCxt_Header = Abc AbcCxt_HeaderT
+
+header              :: AbcCxt_Header
+header              = Abc $ sequenceS (<$>) emptyseq
+
+instance Append AbcCxt_HeaderT AbcFieldT
+instance Append AbcCxt_HeaderT AbcMidTuneFieldT
+
+
+data AbcCxt_BodyT
+type AbcCxt_Body = Abc AbcCxt_BodyT
+
+body                :: AbcCxt_Body
+body                = Abc $ sequenceS (</>) emptyseq
+
+instance Append AbcCxt_BodyT AbcMidTuneFieldT
 
 
 --------------------------------------------------------------------------------
@@ -225,7 +219,7 @@ key_field                   = mtfield 'K'
   
 -- | @L field@ - unit note length - i.e. the default length.
 unit_note_length_field      :: Integral a => LengthRep a -> AbcMidTuneField
-unit_note_length_field      = mtfield 'L' . Abc . literal . ppNoteLength
+unit_note_length_field      = mtfield 'L' . Abc . literal . ppMeter
 
 -- a synonym
 l_field                     :: Integral a => LengthRep a -> AbcMidTuneField
@@ -344,15 +338,6 @@ locrian       = mode "loc"
 -- * The tune elements (4)
 
 
-
-data AbcCxt_ElementT
-type AbcCxt_Element = Abc AbcCxt_ElementT
-
-
-
-elementStart :: AbcCxt_Element
-elementStart = Abc $ sequenceS (</>) emptyseq
-
 -- ** Pitch (4.1)
 
 -- Abc has pitches in a two octave range and then uses octave specs for higher
@@ -383,7 +368,7 @@ type AbcNote = Abc AbcNoteT
 note          :: AbcPitchLetter -> AbcNote
 note          = abcLiteral . pretty
   
-instance Append AbcCxt_ElementT AbcNoteT
+instance Append AbcCxt_BodyT AbcNoteT
 
 data AbcOctaveT
 type AbcOctave = Abc AbcOctaveT
@@ -461,7 +446,7 @@ rest                = abcLiteral $ char 'z'
 spacer              :: AbcRest
 spacer              = abcLiteral $ char 'x'
 
-instance Append AbcCxt_ElementT AbcRestT
+instance Append AbcCxt_BodyT AbcRestT
 
 
 
@@ -474,7 +459,7 @@ repeatMark :: String -> AbcRepeatMark
 repeatMark = abcLiteral . text
 
 
-instance Append AbcCxt_ElementT AbcRepeatMarkT
+instance Append AbcCxt_BodyT AbcRepeatMarkT
 
 
 -- ** Ties and slurs (4.11)  
@@ -484,7 +469,7 @@ type AbcTie = Abc AbcTieT
 tie             :: AbcTie
 tie             = abcLiteral $ char '-'
   
-instance Append AbcCxt_ElementT AbcTieT
+instance Append AbcCxt_BodyT AbcTieT
 
 data AbcSlurT
 type AbcSlur = Abc AbcSlurT
@@ -495,7 +480,7 @@ beginSlur       = abcLiteral $ lparen
 endSlur         :: AbcSlur
 endSlur         = abcLiteral $ rparen
 
-instance Append AbcCxt_ElementT AbcSlurT
+instance Append AbcCxt_BodyT AbcSlurT
 
 
 -- ** Grace notes (4.12)
@@ -510,7 +495,7 @@ gracenotes          = Abc . nested lbrace rbrace . sequenceL (<>) . map unAbc
 
 -- Its simpler if we make gracenotes a glyph rather than 
 -- a prefix attr of a note.  
-instance Append AbcCxt_ElementT AbcGraceNotesT
+instance Append AbcCxt_BodyT AbcGraceNotesT
 
 -- ** Duplets, triplets, quadruplets, etc. (4.13)
 data AbcNPletT
@@ -519,7 +504,7 @@ type AbcNPlet = Abc AbcNPletT
 nplet               :: Int -> AbcNPlet
 nplet               = Abc . literal . group . (char '(' <>) . int
 
-instance Append AbcCxt_ElementT AbcNPletT
+instance Append AbcCxt_BodyT AbcNPletT
 
 
 
@@ -549,7 +534,7 @@ type AbcChord = Abc AbcChordT
 chord           :: [AbcNote] -> AbcChord
 chord           = Abc . nested lbracket rbracket . sequenceL (<>) . map unAbc
 
-instance Append AbcCxt_ElementT AbcChordT
+instance Append AbcCxt_BodyT AbcChordT
 
 -- * Clefs (6)
 data AbcClefT
@@ -586,7 +571,7 @@ perc                = clef_name "perc"
 -- type must be - AbcCxt_Element -> AbcCxt_Element  -> AbcCxt_Element
 -- for folding
   
-(&\) :: AbcCxt_Element -> AbcCxt_Element -> AbcCxt_Element
+(&\) :: AbcCxt_Body -> AbcCxt_Body -> AbcCxt_Body
 (&\) _ _ = undefined   
   
 

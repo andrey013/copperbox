@@ -14,10 +14,6 @@ import Bala.Format.Output.OutputLilyPond hiding (chord)
 
 
 
-
-
-
-
 instance Perform Pitch Pitch Duration where
   eventvalues p = (Just p, Just eighth)
  

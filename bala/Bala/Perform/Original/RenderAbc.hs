@@ -43,7 +43,7 @@ data Perform_Abc_State = Perform_Abc_State {
 data Perform_Abc_Env = Perform_Abc_Env {
     default_note_length     :: Duration,
     meter_size              :: Double,
-    initial_abc_context     :: AbcCxt_Element
+    initial_abc_context     :: AbcCxt_Body
   }
   deriving (Show)
   
@@ -56,7 +56,7 @@ default_abc_env :: Perform_Abc_Env
 default_abc_env = Perform_Abc_Env {
     default_note_length   = eighth,
     meter_size            = meterSize (4 // 4),
-    initial_abc_context   = elementStart   
+    initial_abc_context   = body   
   } 
 
 
@@ -149,7 +149,7 @@ abcDuration d = fn d <$> asks default_note_length
 
 
 
-updateBarCount :: AbcCxt_Element -> EventZero -> ProcessM AbcCxt_Element
+updateBarCount :: AbcCxt_Body -> EventZero -> ProcessM AbcCxt_Body
 updateBarCount k ez = case hasDur ez of 
     Nothing -> return k
     Just d  -> barCount d >>= \obl -> maybe (return k) (return . (k +++)) obl  
@@ -209,7 +209,7 @@ oflat sqk (Evt e :< sq)         = do
 -- Sequence maps to voice overlay - supported by abcm2ps but not abc2ps
 oflat sqk (Poly ts :< sq)   = do
     sqk'      <- oflat sqk (viewl sq) 
-    xs        <- mapM (oflat elementStart) (map (viewl . unET) ts)
+    xs        <- mapM (oflat body) (map (viewl . unET) ts)
     return (merge sqk' xs)  
        
 oflat sqk (StartPar :< sq)      =
@@ -259,5 +259,5 @@ run'oflat  t = do
     oflat ellist (viewl $ unET t) 
 
 renderAbc1 :: (Perform evt Pitch Duration) =>
-              EventTree evt -> Perform_Abc_Env -> AbcCxt_Element
+              EventTree evt -> Perform_Abc_Env -> AbcCxt_Body
 renderAbc1 tree env  = evalPerform (run'oflat tree) intial_abc_state env

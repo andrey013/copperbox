@@ -61,15 +61,16 @@ abc_header_defaults = Abc_Header_Defaults {
       
    
             
-abc_template defaults expr = 
-          header
-      +++ number_field  1
-      +++ title_field   (abc_title defaults)      
-      +++ meter_field   << meter (abc_meter defaults)
-      +++ key_field     << key << key_spec (note Abc.C) major
-      +++ key_field     << clef treble
-     -- +++ body          >|< expr
+abc_template defaults expr = tune h1 expr
   where
+    h1 =  header
+            +++ number_field  1
+            +++ title_field   (abc_title defaults)      
+            +++ meter_field   << meter (abc_meter defaults)
+            +++ key_field     << key << key_spec (note Abc.C) major
+            +++ key_field     << clef treble
+      
+      
     toKeySpec :: Key -> AbcKeySpec
     toKeySpec k = let (pn,kt) = unKey k
                       pch     = abcPitch $ pitch pn 4 
@@ -77,7 +78,7 @@ abc_template defaults expr =
     toKeyType MajorKey = major
     toKeyType MinorKey = minor
     
-empty_body = tune
+empty_body = body
       
       
           
