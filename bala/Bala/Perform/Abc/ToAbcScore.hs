@@ -15,11 +15,14 @@
 --------------------------------------------------------------------------------
 
 
-module Bala.Perform.Abc.ToAbcScore where
+module Bala.Perform.Abc.ToAbcScore (
+  abcscore
+  ) where
 
-import Bala.Format.Score
+
 import Bala.Perform.Base.OnsetQueue
 import Bala.Perform.Abc.AbcScoreDatatypes
+import Bala.Perform.Score.Datatypes
 import Bala.Perform.Score.MeasureOnsets
 import Bala.Perform.Score.Utils
 
@@ -28,18 +31,18 @@ import Data.Maybe (catMaybes)
 import Data.Monoid
 import Data.Sequence
 
-abcscore :: ScScore pch dur -> AbcScTuneBook pch dur
+abcscore :: ScScore -> AbcScTuneBook
 abcscore (ScScore se) = AbcScTuneBook $ F.foldl fn mempty se 
   where fn acc e = acc |> tune e
   
-tune :: ScPart pch dur -> AbcScTune pch dur
+tune :: ScPart -> AbcScTune
 tune p@(ScPart i _ _) = AbcScTune i (polycat $ deriveQueue p)
 
 
 -- Folding takes us too far into the OnsetQueue evt rather than [evt]
 -- So we have to use direct recursion
 -- TODO - build bigger segments if the pattern of the voices stays the same 
-polycat :: OnsetQueue (OnsetMeasure pch dur) -> AbcScLine pch dur
+polycat :: OnsetQueue OnsetMeasure -> AbcScLine
 polycat = rec mempty . viewH
   where
     rec acc EmptyQ          = acc
@@ -47,36 +50,32 @@ polycat = rec mempty . viewH
     
     
     
-    cnstr :: [OnsetMeasure pch dur] -> Maybe (AbcScPolyPhrase pch dur)
+    cnstr :: [OnsetMeasure] -> Maybe AbcScPolyPhrase
     cnstr = polyPhrase . map measure
     
     
-polyPhrase :: [AbcScMeasure pch dur] -> Maybe (AbcScPolyPhrase pch dur)
+polyPhrase :: [AbcScMeasure] -> Maybe AbcScPolyPhrase
 polyPhrase []   = Nothing
 polyPhrase [x]  = Just $ AbcScSingletonPhrase x
 polyPhrase xs   = Just $ AbcScPolyPhrase xs
 
 
 
-measure :: OnsetMeasure pch dur -> AbcScMeasure pch dur
+measure :: OnsetMeasure -> AbcScMeasure
 measure (OnsetMeasure i voice se) = 
-  AbcScMeasure i voice (fmap glyph (normalizeGroupedElements se))
+  AbcScMeasure i voice (fmap glyph se)
   
   
-glyph :: ScGlyph pch dur -> AbcScGlyph pch dur
-glyph (ScNote scp dur)          = AbcScNote (pitch scp) dur
+glyph :: ScGlyph -> AbcScGlyph
+glyph (ScNote scp dur)          = AbcScNote scp dur
 glyph (ScRest dur)              = AbcScRest dur
 glyph (ScSpacer dur)            = AbcScSpacer dur
-glyph (ScGroup ScChord xs)      = AbcScChord (catMaybes $ map justNote xs)
-glyph (ScGroup ScGraceNotes xs) = AbcScGraceNotes (catMaybes $ map justNote xs)
+glyph (ScChord xs dur)          = AbcScChord xs dur
+glyph (ScGraceNotes xs)         = AbcScGraceNotes xs
 
 
 
-justNote :: ScGlyph pch dur -> Maybe (AbcScGlyph pch dur)                     
-justNote (ScNote scp dur)   = Just $ AbcScNote (pitch scp) dur                   
-justNote _                  = Nothing   
 
               
-pitch :: ScPitch pch -> pch
-pitch (ScPitch pch) = pch
+
 

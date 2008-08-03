@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -16,17 +15,19 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Perform.Base.Class where
+module Bala.Perform.Base.Class( 
+  Perform(..),
+  PitchRepr(..),
+  DurationRepr(..),
+  ) where
+
+import Bala.Perform.Base.Datatypes
+
+class Perform evt where eventvalues :: evt -> (Maybe Pitch, Maybe Duration)
+
+class PitchRepr pch where renderPitch :: pch -> Pitch
+class DurationRepr dur where renderDuration :: dur -> Duration
 
 
-class (Show evt) => Perform evt pch dur | evt -> pch, evt -> dur where
-  eventvalues     :: evt -> (Maybe pch, Maybe dur)
-
-
--- Score representation 
-
-class ScoreDuration a where
-  toDouble      :: a -> Double
-  fromDouble    :: Double -> a
   
   

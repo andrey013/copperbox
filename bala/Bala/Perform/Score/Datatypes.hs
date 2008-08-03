@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Format.Score.Datatypes
+-- Module      :  Bala.Perform.Score.Datatypes
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -17,85 +17,82 @@
 -- 
 --------------------------------------------------------------------------------
 
--- OBSOLETE
-
-module Bala.Format.Score.Datatypes (
+module Bala.Perform.Score.Datatypes (
   -- * Datatypes
   ScScore(..),
   ScPart(..),
   ScLine,
   ScPolyRefs(..),
   ScMeasure(..),
-  ScGroupType(..),
   ScGlyph(..),
-  ScPitch(..),
   
   -- * Utils
   lookupPolyRef
   
   ) where
 
-
+import Bala.Perform.Base.Datatypes
 import qualified Data.IntMap as IM
 import Data.Monoid
 import Data.Sequence
 
 
 
-type ScLine pch dur = Seq (ScMeasure pch dur)
 
-data ScScore pch dur = ScScore (Seq (ScPart pch dur))
 
-data ScPart pch dur = ScPart {
+data ScScore = ScScore (Seq ScPart)
+
+data ScPart = ScPart {
     sc_part_number          :: Int,
-    sc_part_poly_refs       :: ScPolyRefs pch dur,
+    sc_part_poly_refs       :: ScPolyRefs,
     -- the primary series of measures 
-    sc_part_primary_line    :: ScLine pch dur
+    sc_part_primary_line    :: ScLine
   }
 
-newtype ScPolyRefs pch dur = ScPolyRefs { 
-    getPolyRefs :: IM.IntMap (ScLine pch dur) 
+type ScLine = Seq ScMeasure
+
+newtype ScPolyRefs = ScPolyRefs { 
+    getPolyRefs :: IM.IntMap ScLine
   }
 
 
 
 -- a Measure could hold a list of indexes to polyphonic measures 
-data ScMeasure pch dur = ScMeasure {
+data ScMeasure = ScMeasure {
     sc_measure_number :: Int,
     -- polyphonic elements that start at the same time as this measure 
     sc_measure_poly_refs  :: Seq Int,
     -- the glyphs (notes, rests, ...) that make up the measure 
-    sc_measure_glyphs :: (Seq (ScGlyph pch dur))
+    sc_measure_glyphs :: Seq ScGlyph
   }
 
-data ScGroupType = ScChord | ScGraceNotes
-  deriving (Eq)
 
--- TODO - it would make things easier to have chord as (ScChord [pch] dur)
-data ScGlyph pch dur = ScNote (ScPitch pch) dur
-                     | ScRest dur
-                     | ScSpacer dur  -- non-printed rest
-                     | ScGroup ScGroupType [ScGlyph pch dur]
+
+data ScGlyph = ScNote Pitch Duration
+             | ScRest Duration
+             | ScSpacer Duration  -- non-printed rest
+             | ScChord [Pitch] Duration
+             | ScGraceNotes [(Pitch,Duration)]
+             
                  {-    | ScTaggedGlyph ScTag  -}
 {-
 -- tag things that aren't processed
 newtype ScTag = ScTag Int
 -}
 
-data ScPitch pch = ScPitch pch
 
 
            
 ---
 
 
-instance Monoid (ScPolyRefs pch dur) where
+instance Monoid ScPolyRefs where
   mempty = ScPolyRefs mempty
   mappend r r' = ScPolyRefs $ getPolyRefs r `mappend` getPolyRefs r'
 
       
       
-lookupPolyRef :: Int -> ScPolyRefs pch dur -> Maybe (Seq (ScMeasure pch dur))
+lookupPolyRef :: Int -> ScPolyRefs -> Maybe (Seq ScMeasure)
 lookupPolyRef i r = IM.lookup i (getPolyRefs r)    
 
     

@@ -15,11 +15,15 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Perform.Midi.ToMidiScore where
+module Bala.Perform.Midi.ToMidiScore (
+  midiscore
+  ) where
 
-import Bala.Format.Score
+
+import Bala.Perform.Base.Datatypes
 import Bala.Perform.Base.OnsetQueue
 import Bala.Perform.Midi.MidiScoreDatatypes
+import Bala.Perform.Score.Datatypes
 import Bala.Perform.Score.MeasureOnsets
 import Bala.Perform.Score.Utils
 
@@ -28,48 +32,44 @@ import Data.Maybe (catMaybes)
 import Data.Monoid
 import Data.Sequence
 
-midiscore :: ScScore pch dur -> MidiScScore pch dur
+midiscore :: ScScore -> MidiScScore
 midiscore (ScScore se) = MidiScScore $ F.foldl fn mempty se 
   where fn acc e = acc |> track e
   
-track :: ScPart pch dur -> MidiScTrack pch dur
+track :: ScPart -> MidiScTrack
 track p@(ScPart i _ _) = MidiScTrack i (polycat $ deriveQueue p) 
 
 
 -- | Just layout polyphonic measures one after another 
 -- (tracking measure number is crucial though).
-polycat :: OnsetQueue (OnsetMeasure pch dur) -> MidiScLine pch dur
+polycat :: OnsetQueue OnsetMeasure -> MidiScLine
 polycat = rec mempty . viewH
   where
     rec acc EmptyQ          = acc
     rec acc ((_,es) :>> q)  = rec (acc >< trans es) (viewH q) 
     
-    trans :: [OnsetMeasure pch dur] -> Seq (MidiScMeasure pch dur)
+    trans :: [OnsetMeasure] -> Seq MidiScMeasure
     trans = fromList . map measure
 
 
 
-measure :: OnsetMeasure pch dur -> MidiScMeasure pch dur
+measure :: OnsetMeasure -> MidiScMeasure
 measure (OnsetMeasure i voice se) = 
-  MidiScMeasure i voice (fmap glyph (normalizeGroupedElements se))
+  MidiScMeasure i voice (fmap glyph se)
 
 
 
-glyph :: ScGlyph pch dur -> MidiScGlyph pch dur
-glyph (ScNote scp dur)          = MidiScNote (pitch scp) dur
+glyph :: ScGlyph -> MidiScGlyph
+glyph (ScNote scp dur)          = MidiScNote scp dur
 glyph (ScRest dur)              = MidiScSpacer dur
 glyph (ScSpacer dur)            = MidiScSpacer dur
-glyph (ScGroup ScChord xs)      = MidiScChord (catMaybes $ map justNote xs)
-glyph (ScGroup ScGraceNotes xs) = MidiScGraceNotes (catMaybes $ map justNote xs)
+glyph (ScChord xs dur)          = MidiScChord xs dur
+glyph (ScGraceNotes xs)         = MidiScGraceNotes xs
 
 
 
-justNote :: ScGlyph pch dur -> Maybe (MidiScGlyph pch dur)                     
-justNote (ScNote scp dur)   = Just $ MidiScNote (pitch scp) dur                   
-justNote _                  = Nothing   
 
 
-pitch :: ScPitch pch -> pch
-pitch (ScPitch pch) = pch
+
   
    

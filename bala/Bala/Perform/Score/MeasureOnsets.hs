@@ -19,8 +19,9 @@ module Bala.Perform.Score.MeasureOnsets (
   deriveQueue
   ) where
 
-import Bala.Format.Score
+
 import Bala.Perform.Base.OnsetQueue
+import Bala.Perform.Score.Datatypes
 
 import qualified Data.Foldable as F 
 import qualified Data.IntMap as IM
@@ -32,38 +33,38 @@ import Data.Sequence
 -- Measures are just a unit in this representation - they don't contain 
 -- pointers to simultaneous measures, but the do track wich polyphonic voice 
 -- they were originally associated with.
-data OnsetMeasure pch dur = OnsetMeasure {
+data OnsetMeasure = OnsetMeasure {
     onsetmeasure_number  :: Int,
     
     onsetmeasure_voice_number :: Int,
     -- the glyphs (notes, rests, ...) that make up the measure 
-    onsetmeasure_glyphs  :: (Seq (ScGlyph pch dur))
+    onsetmeasure_glyphs  :: Seq ScGlyph
   }
 
 
-instance OnsetEvent (OnsetMeasure pch dur) (OnsetMeasure pch dur) where
+instance OnsetEvent OnsetMeasure OnsetMeasure where
   onset m@(OnsetMeasure i _ _) = (i, m)
   
     
-deriveQueue :: ScPart pch dur -> OnsetQueue (OnsetMeasure pch dur)
+deriveQueue :: ScPart -> OnsetQueue OnsetMeasure
 deriveQueue p = 
   (buildQueue $ primaryLine p) `mappend` (buildQueue $ linearizedRefs p)
   
-primaryLine :: ScPart pch dur -> Seq (OnsetMeasure pch dur)
+primaryLine :: ScPart -> Seq OnsetMeasure
 primaryLine = line 0 . sc_part_primary_line 
 
     
-linearizedRefs ::  ScPart pch dur -> Seq (OnsetMeasure pch dur)  
+linearizedRefs ::  ScPart -> Seq OnsetMeasure
 linearizedRefs = F.foldl fn mempty . extract 
   where
     extract = IM.toAscList . getPolyRefs . sc_part_poly_refs 
     fn acc (v,ln) = acc >< line v ln
     
-line :: Int -> ScLine pch dur -> Seq (OnsetMeasure pch dur) 
+line :: Int -> ScLine -> Seq OnsetMeasure
 line voice = F.foldl fn mempty
   where
     fn acc e = acc |> measure voice e  
       
-measure :: Int -> ScMeasure pch dur -> OnsetMeasure pch dur
+measure :: Int -> ScMeasure -> OnsetMeasure
 measure voice (ScMeasure i _ se) = OnsetMeasure i voice se
  

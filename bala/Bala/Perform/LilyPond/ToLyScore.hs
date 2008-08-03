@@ -15,11 +15,14 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Perform.LilyPond.ToLyScore where
+module Bala.Perform.LilyPond.ToLyScore (
+  lyscore
+  )where
 
-import Bala.Format.Score
+
 import Bala.Perform.Base.OnsetQueue
 import Bala.Perform.LilyPond.LyScoreDatatypes
+import Bala.Perform.Score.Datatypes
 import Bala.Perform.Score.MeasureOnsets
 import Bala.Perform.Score.Utils
 
@@ -32,57 +35,53 @@ import Prelude hiding (null)
 
 
 
-instance OnsetEvent (LyScMeasure pch dur) (LyScMeasure pch dur) where
+instance OnsetEvent LyScMeasure LyScMeasure where
   onset m@(LyScMeasure i _ _) = (i, m)
 
-lyscore :: ScScore pch dur -> LyScScore pch dur
+lyscore :: ScScore -> LyScScore
 lyscore (ScScore se) = LyScScore $ F.foldl fn mempty se 
   where fn acc e = acc |> part e
     
-part :: ScPart pch dur -> LyScPart pch dur
+part :: ScPart -> LyScPart
 part p@(ScPart i _ _) = LyScPart i (polycat $ deriveQueue p)
 
 
 -- Folding takes us too far into the OnsetQueue to 'evt' rather than '[evt]'.
 -- So we have to use direct recursion
 -- TODO - build bigger segments if the pattern of the voices stays the same 
-polycat :: OnsetQueue (OnsetMeasure pch dur) -> LyScLine pch dur
+polycat :: OnsetQueue OnsetMeasure -> LyScLine
 polycat = rec mempty . viewH
   where
     rec acc EmptyQ          = acc
     rec acc ((_,es) :>> q)  = rec (acc |*> trans es) (viewH q) 
         
-    trans :: [OnsetMeasure pch dur] -> Maybe (LyScPolyPhrase pch dur)
+    trans :: [OnsetMeasure] -> Maybe LyScPolyPhrase
     trans = polyPhrase . map (LyScSegment . singleton . measure)
     
     
-polyPhrase :: [LyScSegment pch dur] -> Maybe (LyScPolyPhrase pch dur)
+polyPhrase :: [LyScSegment] -> Maybe LyScPolyPhrase
 polyPhrase []   = Nothing
 polyPhrase [x]  = Just $ LyScSingletonPhrase x
 polyPhrase xs   = Just $ LyScPolyPhrase xs
     
 
-measure :: OnsetMeasure pch dur -> LyScMeasure pch dur
+measure :: OnsetMeasure -> LyScMeasure
 measure (OnsetMeasure i voice se) = 
-  LyScMeasure i voice (fmap glyph (normalizeGroupedElements se))
+  LyScMeasure i voice (fmap glyph se)
 
 
-glyph :: ScGlyph pch dur -> LyScGlyph pch dur
-glyph (ScNote scp dur)          = LyScNote (pitch scp) dur
+glyph :: ScGlyph -> LyScGlyph
+glyph (ScNote scp dur)          = LyScNote scp dur
 glyph (ScRest dur)              = LyScRest dur
 glyph (ScSpacer dur)            = LyScSpacer dur
-glyph (ScGroup ScChord xs)      = LyScChord (catMaybes $ map justNote xs)
-glyph (ScGroup ScGraceNotes xs) = LyScGraceNotes (catMaybes $ map justNote xs)
+glyph (ScChord xs dur)          = LyScChord xs dur
+glyph (ScGraceNotes xs)         = LyScGraceNotes xs
 
 
 
-justNote :: ScGlyph pch dur -> Maybe (LyScGlyph pch dur)                     
-justNote (ScNote scp dur)   = Just $ LyScNote (pitch scp) dur                   
-justNote _                  = Nothing   
 
               
-pitch :: ScPitch pch -> pch
-pitch (ScPitch pch) = pch
+
 
 
  

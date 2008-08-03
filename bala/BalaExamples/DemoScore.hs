@@ -12,24 +12,24 @@ import Bala.Format.Output.LilyPondInternals (unLy)
 import Bala.Format.Output.AbcInternals (unAbc)
 import Bala.Format.Score
 
-
-import Bala.Perform.Bala.BalaLy   -- to get the LilyPond instances
-import Bala.Perform.Bala.BalaScore     -- to get the Bala instances
+import Bala.Perform.Perform
+{-
 import Bala.Perform.Base.Class
 import Bala.Perform.Base.EventTree
 import Bala.Perform.LilyPond.LyBackend
 import Bala.Perform.Score.ToScore
+-}
 
 import Text.PrettyPrint.Leijen hiding (dot)
 
 ---
 import Bala.Perform.Base.OnsetQueue
+import Bala.Perform.Score.Datatypes
+import Bala.Perform.Score.Pretty
 import Bala.Perform.Score.MeasureOnsets
 import qualified Data.Sequence as S
-import Bala.Perform.LilyPond.ToLyScore
-import Bala.Perform.Abc.ToAbcScore
-import Bala.Perform.Abc.AbcBackend
-import Bala.Perform.Bala.BalaAbc
+
+
 
 
 data Pair = Pair Int Char 
@@ -53,12 +53,6 @@ main = showScore $ perf1 $ foldl (compR (#) event) root (replicate 12 (c4 # du4)
   
 ---
 
-r1 = ScRest 0.5
-n1 = ScNote (ScPitch c4) 0.5
-n2 = ScNote (ScPitch e4) 0.5
-n3 = ScNote (ScPitch g4) 0.5
-
-ch1 = ScGroup ScChord [n1,n2,n3]
 
 score1 = perf1 $ root # event (c4 # du4) # event (d4 # du4) # event (e4 # du4)
 
@@ -143,9 +137,9 @@ du16 p   = Note p sixteenth
 
 
 
-instance Perform NrEvent Pitch Duration where
-  eventvalues (Note p d) = (Just p, Just d)
-  eventvalues (Rest d)   = (Nothing, Just d)
+instance Perform NrEvent where
+  eventvalues (Note p d) = (Just $ renderPitch p, Just $ renderDuration d)
+  eventvalues (Rest d)   = (Nothing, Just $ renderDuration d)
 
 -- | example 1 - simple list of successive notes.  
 example1 :: Performance NrEvent

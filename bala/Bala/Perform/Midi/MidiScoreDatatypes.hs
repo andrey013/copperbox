@@ -20,18 +20,19 @@ module Bala.Perform.Midi.MidiScoreDatatypes (
   MidiScGlyph(..),
   ) where
 
+import Bala.Perform.Base.Datatypes
 import Data.Sequence
 import Data.Word
 
-data MidiScScore pch dur = MidiScScore (Seq (MidiScTrack pch dur))
+data MidiScScore = MidiScScore (Seq MidiScTrack)
 
-data MidiScTrack pch dur = MidiScTrack {
+data MidiScTrack = MidiScTrack {
     scmidi_track_number     :: Int,
---    scmidi_prologue_events  :: Seq (MidiScEvt pch),  
-    scmidi_track_events     :: MidiScLine pch dur
+--    scmidi_prologue_events  :: Seq MidiScEvt,  
+    scmidi_track_events     :: MidiScLine
   }
 
-type MidiScLine pch dur = Seq (MidiScMeasure pch dur)  
+type MidiScLine = Seq MidiScMeasure 
 
 -- | Measures for Midi are different than for LilyPond or Abc.
 -- To flatten polyphony we just put one measure after another 
@@ -39,18 +40,18 @@ type MidiScLine pch dur = Seq (MidiScMeasure pch dur)
 --
 -- Measure numbers are then used for scaling onset times to get global times, 
 -- which are finally resolved as delta times  
-data MidiScMeasure pch dur = MidiScMeasure {
+data MidiScMeasure = MidiScMeasure {
     midi_measure_number  :: Int,
     
     midi_measure_voice_number :: Int,
     -- the glyphs (notes, rests, ...) that make up the measure 
-    midi_measure_glyphs  :: (Seq (MidiScGlyph pch dur))
+    midi_measure_glyphs  :: Seq MidiScGlyph
   }
 
 -- Chords and graces are rendered to notes in the final output.  
-data MidiScGlyph pch dur
-    = MidiScNote pch dur
-    | MidiScSpacer dur    -- all rests in midi are spacers
-    | MidiScChord [MidiScGlyph pch dur] 
-    | MidiScGraceNotes [MidiScGlyph pch dur]
+data MidiScGlyph
+    = MidiScNote Pitch Duration
+    | MidiScSpacer Duration    -- all rests in midi are spacers
+    | MidiScChord [Pitch] Duration
+    | MidiScGraceNotes [(Pitch,Duration)]
                          

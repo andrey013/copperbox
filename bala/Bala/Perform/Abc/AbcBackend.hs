@@ -14,11 +14,14 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Perform.Abc.AbcBackend where
+module Bala.Perform.Abc.AbcBackend (
+  Perform_Abc_Env(..), default_abc_env,
+  generateAbcScore 
+  ) where
 
 import Bala.Format.Output.OutputAbc
-import Bala.Perform.Abc.Class
 import Bala.Perform.Abc.AbcScoreDatatypes
+import Bala.Perform.Base.Datatypes
 import Bala.Perform.Base.PerformMonad
 import Bala.Perform.Score.Utils
 
@@ -29,8 +32,7 @@ import Data.Foldable (foldlM,foldrM)
 import Data.Maybe (catMaybes)
 import Data.Ratio
 
-type ProcessM pch dur a = 
-       PerformM (Perform_Abc_State) (Perform_Abc_Env dur) a
+type ProcessM a = PerformM Perform_Abc_State Perform_Abc_Env a
 
 
 
@@ -39,15 +41,15 @@ data Perform_Abc_State = Perform_Abc_State {
   }  
   deriving (Show)
   
-data Perform_Abc_Env dur = Perform_Abc_Env {
-    default_note_length      :: dur
+data Perform_Abc_Env= Perform_Abc_Env {
+    default_note_length      :: Duration
   }
 
 state0 = Perform_Abc_State ()
 
-default_abc_env :: DurationAbc dur => Perform_Abc_Env dur 
+default_abc_env :: Perform_Abc_Env
 default_abc_env = Perform_Abc_Env {
-    default_note_length        = quaternoteAbc
+    default_note_length        = quarternote
   }
   
     
@@ -58,12 +60,25 @@ infixl 7 !*>
 (!*>) oa e   = maybe e ((flip (!>)) e) oa
 
 
+abcPitchLetter   :: Pitch -> AbcPitchLetter
+abcPitchLetter = toEnum . fromEnum . pitch_letter
+
+
+
+oabcAccidental :: Pitch -> Maybe AbcAccidental
+oabcAccidental = fn . accidental
+  where 
+    fn Nat            = Nothing
+    fn Sharp          = Just sharp
+    fn Flat           = Just flat 
+    fn DoubleSharp    = Just doubleSharp
+    fn DoubleFlat     = Just doubleFlat
 
 
 suffixWith :: Append cxts cxta
            => Abc cxts 
-           -> ProcessM pch dur (Abc cxta) 
-           -> ProcessM pch dur (Abc cxts)
+           -> ProcessM (Abc cxta) 
+           -> ProcessM (Abc cxts)
 suffixWith ctx f = (ctx +++) <$> f 
 
 
@@ -88,10 +103,7 @@ foldlOpA f op = \acc e -> (acc `op`) <$> f e
 
 -- first step get the original Abc rendering working
 -- then worry if we should return a function or not 
-generateAbcScore :: (PitchAbc pch, DurationAbc dur)
-                      => AbcScTuneBook pch dur
-                      -> Perform_Abc_Env dur 
-                      -> [AbcCxt_Body]
+generateAbcScore :: AbcScTuneBook -> Perform_Abc_Env -> [AbcCxt_Body]
 generateAbcScore sc env = evalPerform (renderTuneBook sc) abc_state env
   where 
     abc_state = state0
@@ -100,31 +112,23 @@ generateAbcScore sc env = evalPerform (renderTuneBook sc) abc_state env
 renderTuneBook (AbcScTuneBook se) = 
     foldlM (foldlOpA renderTune (flip (:))) [] se
 
-renderTune :: (PitchAbc pch, DurationAbc dur)
-           => AbcScTune pch dur 
-           -> ProcessM pch dur AbcCxt_Body                 
+renderTune :: AbcScTune -> ProcessM AbcCxt_Body                 
 renderTune (AbcScTune i se) = foldlM renderPolyPhrase body se
 
 
-renderPolyPhrase :: (PitchAbc pch, DurationAbc dur)
-                 => AbcCxt_Body
-                 -> AbcScPolyPhrase pch dur 
-                 -> ProcessM pch dur AbcCxt_Body
-              
+renderPolyPhrase :: AbcCxt_Body -> AbcScPolyPhrase -> ProcessM AbcCxt_Body
 renderPolyPhrase cxt (AbcScSingletonPhrase x) = ( cxt # ) <$> renderMeasure x
 renderPolyPhrase cxt (AbcScPolyPhrase xs) = 
-    undefined -- foldlM (foldlOpA renderMeasure (flip ( #. ))) id xs
+    error "Abc renderPolyPhrase - to do" -- foldlM (foldlOpA renderMeasure (flip ( #. ))) id xs
 
 
             
-renderMeasure :: (PitchAbc pch, 
-                  DurationAbc dur, 
-                  Append cxts AbcGraceNotesT,
+renderMeasure :: (Append cxts AbcGraceNotesT,
                   Append cxts AbcChordT,
                   Append cxts AbcNoteT,
                   Append cxts AbcRestT)
-              => AbcScMeasure pch dur 
-              -> ProcessM pch dur (Abc cxts -> Abc cxts)
+              => AbcScMeasure
+              -> ProcessM (Abc cxts -> Abc cxts)
             
 renderMeasure (AbcScMeasure i xs se) = foldlM (foldlOpA renderGlyph ( #. )) id se
 
@@ -136,14 +140,12 @@ renderMeasure (AbcScMeasure i xs se) = foldlM (foldlOpA renderGlyph ( #. )) id s
 -- Also we have the very general return type ...(Abc cxts -> Abc cxts) 
 -- rather than ...EltS as we might need to think about beaming
 -- which prints note without separating spaces at some point.
-renderGlyph :: (PitchAbc pch, 
-                DurationAbc dur, 
-                Append cxts AbcGraceNotesT,
+renderGlyph :: (Append cxts AbcGraceNotesT,
                 Append cxts AbcChordT,
                 Append cxts AbcNoteT,
                 Append cxts AbcRestT)
-            => AbcScGlyph pch dur 
-            -> ProcessM pch dur (Abc cxts -> Abc cxts)
+            => AbcScGlyph
+            -> ProcessM (Abc cxts -> Abc cxts)
 
 renderGlyph (AbcScNote scp d)            = suffixA $
     (*!) <$> renderPitch scp  <*> abcDuration d
@@ -158,44 +160,38 @@ renderGlyph (AbcScSpacer d)               = suffixA $
 
 
 -- Notes inside chords have duration (though they all _should_ be the same)
-renderGlyph (AbcScChord xs)               = suffixA $ 
-    chord <$> foldrM pitch1 [] xs  
+renderGlyph (AbcScChord xs dur)               = suffixA $ 
+    chord <$> foldrM (pitch1 dur) [] xs  
 
   where
-    pitch1 (AbcScNote scp d) acc = fn acc <$> renderPitch scp <*> abcDuration d
-    pitch1 _                 acc = pure acc
+    pitch1 d scp acc  = fn acc <$> renderPitch scp <*> abcDuration d
     
     fn acc p od = p *! od : acc 
 
 
 renderGlyph (AbcScGraceNotes xs)          = suffixA $ 
-    gracenotes . catMaybes <$> mapM justNote xs
+    gracenotes <$> mapM graceNote xs
    
     
-getPitch (AbcScNote scp _)  = Just scp
-getPitch _                  = Nothing
 
-justNote :: (PitchAbc pch, DurationAbc dur) 
-         => AbcScGlyph pch dur 
-         -> ProcessM pch dur (Maybe AbcNote)
-justNote (AbcScNote scp d)  = fn <$> renderPitch scp  <*> abcDuration d
-  where fn p od = Just $ p *! od
+graceNote :: (Pitch,Duration) -> ProcessM AbcNote
+graceNote (scp,d)  = (*!) <$> renderPitch scp  <*> abcDuration d
+
   
-justNote _                  = pure Nothing
 
 -- | @AbcScPitch --> AbcNote@
-renderPitch :: PitchAbc pch => pch -> ProcessM pch dur (AbcNote) 
+renderPitch :: Pitch -> ProcessM AbcNote 
 renderPitch pch = 
-    fn <$> pure (abcPitchLetter pch) <*> pure (abcAccidental pch) 
+    fn <$> pure (abcPitchLetter pch) <*> pure (oabcAccidental pch) 
   where
     fn pn oa = oa !*> (note pn)   
     
-abcDuration :: DurationAbc dur => dur -> ProcessM pch dur (Maybe AbcDuration)
+abcDuration :: Duration -> ProcessM (Maybe AbcDuration)
 abcDuration d = fn d <$> asks default_note_length
   where
     fn dur1 deft
       | dur1 == deft  = Nothing
-      | otherwise     = let scale = denominator (asRational deft)
-                            r     = asRational dur1
+      | otherwise     = let scale = denominator (toRatio deft)
+                            r     = toRatio dur1
                             (n,d) = (numerator r, denominator r)    
                         in Just $ dur ( n*scale, d)

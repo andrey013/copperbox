@@ -5,10 +5,12 @@
 module Main where
 
 import Bala.Base 
+
+
 import Bala.Perform.PerformOriginal
-import Bala.Perform.PerformAbc
-import Bala.Perform.PerformLilyPond
-import Bala.Perform.PerformMidi
+import Bala.Perform.OriginalAbc
+import Bala.Perform.OriginalLilyPond
+import Bala.Perform.OriginalMidi
 
 import Bala.Format.Output.OutputLilyPond hiding (chord) 
 

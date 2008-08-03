@@ -1,6 +1,7 @@
+
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Format.Score.Class
+-- Module      :  Bala.Perform.Base.Utils
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -8,19 +9,22 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Typeclass so that the parameters of a Score (pitch and duration) can 
--- be printed. 
--- We may not want the default Show instance, Certainly in the case of 
--- Bala.Pitch and Bala.Duration the output is too verbose.
+-- Common utility functions.
 --
 --------------------------------------------------------------------------------
 
--- OBSOLETE
-
-module Bala.Format.Score.Class (  
-  Printable(..)
+module Bala.Perform.Base.Utils (
+  simpledoc, displaySimple
   ) where
 
+import Text.PrettyPrint.Leijen
 
--- We might not want the default show instance    
-class Printable a where stringrep :: a -> String
+simpledoc :: Doc -> SimpleDoc
+simpledoc d = renderPretty 0.8 80 (pretty d)
+
+displaySimple :: Doc -> String
+displaySimple a = displayS (simpledoc $ a <$> empty) ""
+
+
+
+

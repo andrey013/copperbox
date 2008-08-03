@@ -13,15 +13,17 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Perform.LilyPond.LyBackend where
+module Bala.Perform.LilyPond.LyBackend (
+  Perform_Ly_Env(..), default_ly_env,
+  generateLilyPondScore
+  ) where
 
 
 
 import Bala.Format.Output.OutputLilyPond
 
-
+import Bala.Perform.Base.Datatypes
 import Bala.Perform.Base.PerformMonad
-import Bala.Perform.LilyPond.Class
 import Bala.Perform.LilyPond.LyScoreDatatypes
 
 import Control.Applicative
@@ -35,19 +37,18 @@ import Data.Ratio
 import Data.Sequence hiding (reverse)
 
 
-type ProcessM pch dur a = 
-       PerformM (Perform_Ly_State pch dur) (Perform_Ly_Env pch) a
+type ProcessM a = PerformM Perform_Ly_State Perform_Ly_Env a
 
-data Perform_Ly_State pch dur = Perform_Ly_State { 
-    relative_pitch      :: pch,
-    relative_duration   :: dur
+data Perform_Ly_State = Perform_Ly_State { 
+    relative_pitch      :: Pitch,
+    relative_duration   :: Duration
     -- part_refs           :: ScPolyRefs pch dur
   }  
 
 
-data Perform_Ly_Env pch = Perform_Ly_Env {
+data Perform_Ly_Env = Perform_Ly_Env {
     initial_ly_context        :: LyCxt_Element,
-    initial_relative_pitch    :: pch 
+    initial_relative_pitch    :: Pitch 
   }
 
 
@@ -56,23 +57,20 @@ infixl 7 *!
 (*!) e oa   = maybe e (e !) oa
 
 
-state0 :: (LilyPondPitch pch, LilyPondDuration dur) => Perform_Ly_State pch dur
+state0 :: Perform_Ly_State
 state0 = Perform_Ly_State { 
     relative_pitch      = middleC,
-    relative_duration   = quaternoteDuration
+    relative_duration   = quarternote
   }  
 
-default_ly_env :: LilyPondPitch pch => Perform_Ly_Env pch  
+default_ly_env :: Perform_Ly_Env  
 default_ly_env = Perform_Ly_Env {
     initial_ly_context        = elementStart,
     initial_relative_pitch    = middleC
   }
 
 
-generateLilyPondScore :: (LilyPondPitch pch, LilyPondDuration dur)
-                      => LyScScore pch dur
-                      -> Perform_Ly_Env pch 
-                      -> [LyCmdScore]
+generateLilyPondScore :: LyScScore -> Perform_Ly_Env -> [LyCmdScore]
 generateLilyPondScore sc env = evalPerform (renderScore sc) ly_state env
   where 
     ly_state = state0
@@ -81,26 +79,34 @@ generateLilyPondScore sc env = evalPerform (renderScore sc) ly_state env
 
 getPitch (LyScNote scp _) = scp
 
-getChordDuration :: LilyPondDuration dur => LyScGlyph pch dur -> dur
-getChordDuration (LyScChord ((LyScNote _ d):_)) = d
-getChordDuration _                              = quaternoteDuration
 
+olyDuration :: Duration -> Maybe LyDuration
+olyDuration _ = Just $ duration 4
 
+olyAccidental :: Pitch -> Maybe LyAccidental
+olyAccidental = fn . accidental
+  where 
+    fn Nat            = Nothing
+    fn Sharp          = Just sharp
+    fn Flat           = Just flat 
+    fn DoubleSharp    = Just doubleSharp
+    fn DoubleFlat     = Just doubleFlat
+
+lyPitchName :: Pitch -> LyPitchName
+lyPitchName = toEnum . fromEnum . pitch_letter
 
 
 suffixWith :: Append cxts cxta
            => Ly cxts 
-           -> ProcessM pch dur (Ly cxta) 
-           -> ProcessM pch dur (Ly cxts)
+           -> ProcessM (Ly cxta) 
+           -> ProcessM (Ly cxts)
 suffixWith ctx f = (ctx +++) <$> f 
 
  
      
 
 -- | @LyScScore --> \\book@ 
-renderScore :: (LilyPondPitch pch, LilyPondDuration dur)
-           => LyScScore pch dur 
-           -> ProcessM pch dur [LyCmdScore]
+renderScore :: LyScScore -> ProcessM [LyCmdScore]
 renderScore (LyScScore se) = F.foldlM fn [] se
   where
     fn xs p = flip (:) xs <$> renderPart p
@@ -108,18 +114,13 @@ renderScore (LyScScore se) = F.foldlM fn [] se
     
 
 -- | @LyScPart --> \\score@ 
-renderPart :: (LilyPondPitch pch, LilyPondDuration dur)
-           => LyScPart pch dur 
-           -> ProcessM pch dur LyCmdScore
+renderPart :: LyScPart -> ProcessM LyCmdScore
 renderPart (LyScPart i se) = 
     (score . block) <$> F.foldlM renderPolyPhrase elementStart se
   
   
 
-renderPolyPhrase :: (LilyPondPitch pch, LilyPondDuration dur)
-                 => LyCxt_Element 
-                 -> LyScPolyPhrase pch dur  
-                 -> ProcessM pch dur LyCxt_Element 
+renderPolyPhrase :: LyCxt_Element -> LyScPolyPhrase -> ProcessM LyCxt_Element 
 renderPolyPhrase cxt (LyScSingletonPhrase x)   =
     (cxt >|<) <$> renderSegment elementStart x
 
@@ -135,27 +136,17 @@ mergePolys k (x:xs) = let poly = foldl fn (block x) xs in
 mergePolys k _      = error "mergePolys - ill constructed PolyPhrase - a bug"
 
        
-renderSegment :: (LilyPondPitch pch, LilyPondDuration dur)
-              => LyCxt_Element 
-              -> LyScSegment pch dur 
-              -> ProcessM pch dur LyCxt_Element  
+renderSegment :: LyCxt_Element -> LyScSegment -> ProcessM LyCxt_Element  
 renderSegment cxt (LyScSegment se) = F.foldlM renderMeasure cxt se
 
 
 
-renderMeasure :: (LilyPondPitch pch, LilyPondDuration dur)
-              => LyCxt_Element 
-              -> LyScMeasure pch dur 
-              -> ProcessM pch dur LyCxt_Element 
+renderMeasure :: LyCxt_Element -> LyScMeasure -> ProcessM LyCxt_Element 
 renderMeasure cxt (LyScMeasure i xs se) = F.foldlM renderGlyph cxt se
 
 
 
-renderGlyph :: (LilyPondPitch pch, LilyPondDuration dur)
-            => LyCxt_Element 
-            -> LyScGlyph pch dur 
-            -> ProcessM pch dur LyCxt_Element
-
+renderGlyph :: LyCxt_Element -> LyScGlyph -> ProcessM LyCxt_Element
 renderGlyph cxt (LyScNote scp d)            = suffixWith cxt $
     fn <$> renderPitch scp  <*> differDuration d
   where
@@ -167,33 +158,36 @@ renderGlyph cxt (LyScRest d)                = suffixWith cxt $
 renderGlyph cxt (LyScSpacer d)              = suffixWith cxt $ 
     (spacer *!) <$> differDuration d
 
-renderGlyph cxt a@(LyScChord xs)            = suffixWith cxt $ 
-    fn <$> mapM (renderPitch . getPitch) xs  
-       <*> differDuration (getChordDuration a)
+renderGlyph cxt a@(LyScChord xs d)          = suffixWith cxt $ 
+    fn <$> mapM renderPitch xs  
+       <*> differDuration d
   where
     fn xs od = chord xs *! od
     
 renderGlyph cxt (LyScGraceNotes xs)         = suffixWith cxt $ 
-    fn <$> mapM (renderPitch . getPitch) xs
+    fn <$> mapM renderGrace xs
   where
-    fn        = grace . blockS . foldl op elementStart
-    op c e    = c +++ note e 
+    fn        = grace . blockS . foldl (+++) elementStart
+ 
 
-
+renderGrace :: (Pitch,Duration) -> ProcessM LyNote
+renderGrace (pch,dur) =
+    fn <$> renderPitch pch  <*> differDuration dur
+  where
+    fn p od = note p *! od 
+    
     
 -- | @LyScPitch --> LyPitch@
-renderPitch :: LilyPondPitch pch => pch -> ProcessM pch dur LyPitch 
+renderPitch :: Pitch -> ProcessM LyPitch 
 renderPitch pch = 
-    fn <$> pure (lyPitchName pch) <*> pure (lyAccidental pch) 
+    fn <$> pure (lyPitchName pch) <*> pure (olyAccidental pch) 
                                   <*> differOctaveSpec pch
   where
     fn pn oa oos = (pitch pn) *! oa *! oos                                  
       
 
     
-differOctaveSpec :: LilyPondPitch pch 
-                => pch 
-                -> ProcessM pch dur (Maybe LyOctaveSpec)    
+differOctaveSpec :: Pitch -> ProcessM (Maybe LyOctaveSpec)    
 differOctaveSpec p = fn p <$> gets relative_pitch <*
                               modify (\s -> s {relative_pitch = p})   
   where
@@ -204,15 +198,13 @@ differOctaveSpec p = fn p <$> gets relative_pitch <*
                       GT -> Just $ raised i
 
 
-differDuration :: LilyPondDuration dur 
-              => dur 
-              -> ProcessM pch dur (Maybe LyDuration)
+differDuration :: Duration -> ProcessM (Maybe LyDuration)
 differDuration d = fn d =<< gets relative_duration
   where
     fn new old | new == old   = return Nothing
                | otherwise    = do 
                       modify (\s -> s {relative_duration = new})
-                      return $ optLyDuration new
+                      return $ olyDuration new
     
                 
 

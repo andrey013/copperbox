@@ -10,8 +10,8 @@ module Main where
 import Bala.Base
 import Bala.Format.Output.OutputLilyPond
 import Bala.Perform.PerformOriginal
-import Bala.Perform.PerformMidi
-import Bala.Perform.PerformLilyPond
+import Bala.Perform.OriginalMidi
+import Bala.Perform.OriginalLilyPond
 
 
 import Text.PrettyPrint.Leijen hiding (dot)

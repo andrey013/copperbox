@@ -21,6 +21,7 @@ module Bala.Base
   , module Bala.Base.Interval
   , module Bala.Base.Meter
   , module Bala.Base.NamedElems
+  , module Bala.Base.PerformInstances
   , module Bala.Base.Pitch  
   , module Bala.Base.PitchClass
   , module Bala.Base.PitchConversion
@@ -36,6 +37,7 @@ import Bala.Base.Duration
 import Bala.Base.Interval
 import Bala.Base.Meter
 import Bala.Base.NamedElems
+import Bala.Base.PerformInstances
 import Bala.Base.Pitch
 import Bala.Base.PitchClass
 import Bala.Base.PitchConversion

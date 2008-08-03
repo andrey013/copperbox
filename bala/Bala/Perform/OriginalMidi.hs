@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Format.Score.Class
+-- Module      :  Bala.Perform.OriginalMidi
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -8,19 +8,14 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Typeclass so that the parameters of a Score (pitch and duration) can 
--- be printed. 
--- We may not want the default Show instance, Certainly in the case of 
--- Bala.Pitch and Bala.Duration the output is too verbose.
+-- Top-level for generating LilyPond.
 --
 --------------------------------------------------------------------------------
 
--- OBSOLETE
-
-module Bala.Format.Score.Class (  
-  Printable(..)
+module Bala.Perform.OriginalMidi 
+  ( module Bala.Perform.Original.MidiInternals
+  , module Bala.Perform.Original.RenderMidi 
   ) where
 
-
--- We might not want the default show instance    
-class Printable a where stringrep :: a -> String
+import Bala.Perform.Original.MidiInternals
+import Bala.Perform.Original.RenderMidi 

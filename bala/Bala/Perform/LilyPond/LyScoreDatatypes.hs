@@ -22,47 +22,48 @@ module Bala.Perform.LilyPond.LyScoreDatatypes (
   LyScGlyph(..),
   ) where
 
+import Bala.Perform.Base.Datatypes
 import Data.Sequence
 
-data LyScScore pch dur = LyScScore (Seq (LyScPart pch dur))
+data LyScScore = LyScScore (Seq LyScPart)
 
-data LyScPart pch dur = LyScPart {
+data LyScPart = LyScPart {
     lysc_part_number          :: Int,
-    lysc_part_body            :: LyScLine pch dur
+    lysc_part_body            :: LyScLine
   }
 
-type LyScLine pch dur = Seq (LyScPolyPhrase pch dur)
+type LyScLine = Seq LyScPolyPhrase
 
 
 -- | Overlapped segments of a polyphonic phrase. 
 -- A singleton phrase (with no polyphony) is treated differently, and so is
 -- a special case.
-data LyScPolyPhrase pch dur  = 
-    LyScSingletonPhrase { lysc_single_phrase :: LyScSegment pch dur }
-  | LyScPolyPhrase { lysc_poly_phrase :: [LyScSegment pch dur] }
+data LyScPolyPhrase = 
+    LyScSingletonPhrase { lysc_single_phrase :: LyScSegment }
+  | LyScPolyPhrase { lysc_poly_phrase :: [LyScSegment] }
 
 -- | The series of measures making up a a single voice in a polyphonic phrase. 
 -- (Actually polyphony can be as short as a note in LilyPond but the shortest
 -- we consider rendering to is a measure).  
-newtype LyScSegment pch dur = LyScSegment { 
-    getLyScSegment :: Seq (LyScMeasure pch dur) 
+newtype LyScSegment = LyScSegment { 
+    getLyScSegment :: Seq LyScMeasure
   }
   
   
 -- | LilyPond automatically inserts bars (unlike Abc), but we still 
 -- track them so we can typeset in coherent groups.
-data LyScMeasure pch dur = LyScMeasure {
+data LyScMeasure = LyScMeasure {
     lysc_measure_number  :: Int,
     
     lysc_measure_voice_number :: Int,
     -- the glyphs (notes, rests, ...) that make up the measure 
-    lysc_measure_glyphs  :: (Seq (LyScGlyph pch dur))
+    lysc_measure_glyphs  :: Seq LyScGlyph
   }
   
 -- | A renderable glyph (note, rest, ...) or multiple glyph (chord, ...).
-data LyScGlyph pch dur = LyScNote pch dur
-                       | LyScRest dur
-                       | LyScSpacer dur  -- non-printed rest
-                       | LyScChord [LyScGlyph pch dur] 
-                       | LyScGraceNotes [LyScGlyph pch dur]
+data LyScGlyph = LyScNote Pitch Duration
+               | LyScRest Duration
+               | LyScSpacer Duration  -- non-printed rest
+               | LyScChord [Pitch] Duration
+               | LyScGraceNotes [(Pitch,Duration)]
                       

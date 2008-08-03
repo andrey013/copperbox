@@ -2,14 +2,18 @@
 
 module Trees where
 
-import Bala.Base
-import Bala.Perform.Bala.BalaMidi
-import Bala.Perform.Bala.BalaScore
-import Bala.Perform.Base.Class
-import Bala.Perform.Base.EventTree
-import Bala.Perform.Midi.PerformMidi
+import Bala.Base hiding (toPitch)
+import qualified Bala.Base as B
+import Bala.Format.Output.AbcInternals (unAbc)
+import Bala.Format.Output.LilyPondInternals (unLy)
+import Bala.Perform.Perform
+import Bala.Perform.Base.Datatypes (middleC, quarternote) 
 
 import Text.PrettyPrint.Leijen
+
+
+
+
 
 data NrEvent = Note Pitch Duration
              | Rest Duration
@@ -24,12 +28,18 @@ du16 p   = Note p sixteenth
 
 
 
-instance Perform NrEvent Pitch Duration where
-  eventvalues (Note p d) = (Just p, Just d)
-  eventvalues (Rest d)   = (Nothing, Just d)
+instance Perform NrEvent where
+  eventvalues (Note p d) = (Just $ renderPitch p, Just $ renderDuration d)
+  eventvalues (Rest d)   = (Nothing, Just $ renderDuration d)
 
 runPerf :: Performance NrEvent -> IO ()
 runPerf = putDoc . pretty . performanceToMidi
+
+runLy :: Performance NrEvent -> IO ()
+runLy = putDoc . vsep . map (pretty . unLy) . performanceToLy
+
+runAbc :: Performance NrEvent -> IO ()
+runAbc = putDoc . vsep . map (pretty . unAbc) . performanceToAbc
 
 
 -- | example 1 - simple list of successive notes.  
@@ -108,7 +118,8 @@ run5 = do
     writeMidi "out/example5.midi" example5_midi
   where
     example5_midi = performanceToMidi example5  
-    
+
+print5 = runPerf example5
     
 -- | example 6 - two staves - top one has chord and a grace
 example6 :: Performance NrEvent       
@@ -127,6 +138,7 @@ run6 = do
   where
     example6_midi = performanceToMidi example6  
 
+print6 = runPerf example6
 
 -- example 7 - same staff polyphony - should be rendered as one track in Midi
 -- and on the same staff in Abc and LilyPond      
@@ -143,6 +155,7 @@ run7 = do
   where
     example7_midi = performanceToMidi example7
 
+print7 = runPerf example7
 
 main = do { run1; run2; run3; run4; run5; run6; run7 }
 

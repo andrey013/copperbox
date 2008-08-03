@@ -12,7 +12,14 @@
 -- Imports for Score (core score) representation.
 --
 --------------------------------------------------------------------------------
+-- OBSOLETE 
 
+module Bala.Format.Score where
+
+include = error ""
+
+
+{-
 module Bala.Format.Score 
   ( module Bala.Format.Score.Class
   , module Bala.Format.Score.Datatypes
@@ -23,3 +30,4 @@ module Bala.Format.Score
 import Bala.Format.Score.Class  
 import Bala.Format.Score.Datatypes
 import Bala.Format.Score.Pretty
+-}

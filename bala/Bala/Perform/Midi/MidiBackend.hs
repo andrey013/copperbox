@@ -14,13 +14,16 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Perform.Midi.MidiBackend where
+module Bala.Perform.Midi.MidiBackend (
+  Perform_Midi_Env(..), default_midi_env,
+  generateMidi
+  ) where
 
 import Bala.Format.Midi
 import Bala.Format.Midi.SyntaxElements
+import Bala.Perform.Base.Datatypes
 import Bala.Perform.Base.OnsetQueue
 import Bala.Perform.Base.PerformMonad
-import Bala.Perform.Midi.Class
 import Bala.Perform.Midi.MidiScoreDatatypes
 
 import Control.Applicative
@@ -73,14 +76,18 @@ state0 = Perform_Midi_State {
     note_off_velocity   = 64
   } 
   
+
+
   
+  
+    
 midiHeader :: Int -> ProcessM Header
 midiHeader nt = Header MF1 (fromIntegral nt)  <$> timeDivision
     
 timeDivision :: ProcessM TimeDivision    
 timeDivision = TPB . fromIntegral             <$> asks tick_value
 
-ticks :: DurationMidi dur => dur -> ProcessM Integer
+ticks :: Duration -> ProcessM Integer
 ticks d = pure $ (midiTicks d) 
 
 setMeasureOnset :: Int -> ProcessM ()
@@ -88,7 +95,7 @@ setMeasureOnset i = asks measure_length >>= \len ->
                     modify (\s -> s{ global_time = (fromIntegral i) * len })
 
 
-bumpDuration :: DurationMidi dur => dur -> ProcessM ()
+bumpDuration :: Duration -> ProcessM ()
 bumpDuration d = do
     d'    <- ticks d
     gt    <- gets global_time
@@ -107,26 +114,19 @@ track0 = do
     return $ Track (mempty |> stm |> endOfTrack_zero) 
     
         
-generateMidi :: (PitchMidi pch, DurationMidi dur)
-             => MidiScScore pch dur
-             -> Perform_Midi_Env 
-             -> MidiFile
+generateMidi :: MidiScScore -> Perform_Midi_Env -> MidiFile
 generateMidi sc env = evalPerform (renderScore sc) state0 env
 
     
 -- | @LyScScore --> \\MidiFile@ 
-renderScore :: (PitchMidi pch, DurationMidi dur) 
-            => MidiScScore pch dur 
-            -> ProcessM MidiFile
+renderScore :: MidiScScore -> ProcessM MidiFile
 renderScore (MidiScScore se) = do
     t0 <- track0 
     MidiFile <$> midiHeader (1 + length se) <*> F.foldlM fn (mempty |> t0) se
   where
     fn xs p = (xs |>) <$> renderTrack p
 
-renderTrack :: (PitchMidi pch, DurationMidi dur) 
-            => MidiScTrack pch dur 
-            -> ProcessM Track   
+renderTrack :: MidiScTrack -> ProcessM Track   
 renderTrack (MidiScTrack _ se) = 
     buildTrack <$> F.foldlM renderMeasure mempty se
   where
@@ -135,10 +135,7 @@ renderTrack (MidiScTrack _ se) =
 
 -- renderMeasure must reset the global_time as MidiScore can have 
 -- consecutive measures with the same measure number.
-renderMeasure :: (PitchMidi pch, DurationMidi dur)  
-              => Seq Message 
-              -> MidiScMeasure pch dur 
-              -> ProcessM (Seq Message)
+renderMeasure :: Seq Message -> MidiScMeasure -> ProcessM (Seq Message)
 renderMeasure cxt (MidiScMeasure i voice se) = do
     setMeasureOnset (i-1)           -- measures start at 1 rather than 0
     F.foldlM renderMessage cxt se
@@ -146,9 +143,7 @@ renderMeasure cxt (MidiScMeasure i voice se) = do
 
 -- track onset in the state monad
 
-renderMessage :: (PitchMidi pch, DurationMidi dur) 
-              => Seq Message 
-              -> MidiScGlyph pch dur -> ProcessM (Seq Message)   
+renderMessage :: Seq Message -> MidiScGlyph -> ProcessM (Seq Message)   
 renderMessage cxt (MidiScNote pch dur)  = 
     fn <$> mkNoteOn pch  <* bumpDuration dur <*> mkNoteOff pch
   where
@@ -160,17 +155,16 @@ renderMessage cxt (MidiScSpacer dur)    =
 
 
 
-renderMessage cxt (MidiScChord xs)      = do
+renderMessage cxt (MidiScChord xs d)      = do
     ons   <- F.foldlM on mempty xs  
-    bumpDuration (chordDur $ head xs) -- uncool
+    bumpDuration d
     offs  <- F.foldlM off mempty xs
     return $ cxt >< ons >< offs 
   where
-    on se (MidiScNote scp d) = (se |>) <$> mkNoteOn scp
-    on se _                 = pure se
+    on se scp = (se |>) <$> mkNoteOn scp
+ 
     
-    off se (MidiScNote scp d) = (se |>) <$> mkNoteOff scp
-    off se _                 = pure se
+    off se scp = (se |>) <$> mkNoteOff scp
     
     chordDur (MidiScNote scp d) = d
 
@@ -178,12 +172,12 @@ renderMessage cxt (MidiScChord xs)      = do
 renderMessage ctx (MidiScGraceNotes xs) = return ctx
     
 
-mkNoteOn :: (PitchMidi pch) => pch -> ProcessM Message                
+mkNoteOn :: Pitch -> ProcessM Message                
 mkNoteOn pch = 
     noteOn_message <$> gets global_time     <*> gets channel 
                    <*> pure (midiPitch pch) <*> gets note_on_velocity
 
-mkNoteOff :: (PitchMidi pch) => pch -> ProcessM Message    
+mkNoteOff :: Pitch -> ProcessM Message    
 mkNoteOff pch = 
     noteOff_message <$> gets global_time     <*> gets channel 
                     <*> pure (midiPitch pch) <*> gets note_off_velocity
