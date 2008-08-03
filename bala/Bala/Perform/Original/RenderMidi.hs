@@ -29,6 +29,7 @@ import Control.Applicative hiding (empty)
 import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Foldable as F
+import Data.Monoid
 import Data.Sequence hiding (reverse, length)
 import Data.Word
 
@@ -264,8 +265,11 @@ demo02 = sortPass <=< splitNotePass <=< oflatPass
 
 deltaStep 
     :: (Integer, Seq MIDI.Message) -> MidiMessage -> ProcessM (Integer, Seq MIDI.Message)
-deltaStep (t,sq) (MidiMessage gt e) = return (gt, sq |> ((fromIntegral $ gt-t), e))
-
+deltaStep (t,sq) (MidiMessage gt e) = return (gt, sq |> mkMessage gt t e)
+  where
+    mkMessage gt t e = MIDI.Message (fromIntegral $ gt-t, e) 
+    
+    
 deltaPass ::  Seq MidiMessage -> ProcessM (Seq MIDI.Message)
 deltaPass s = snd <$> F.foldlM deltaStep (0,empty) s
 
@@ -274,13 +278,6 @@ deltaPass s = snd <$> F.foldlM deltaStep (0,empty) s
 finalizeTrack :: Seq MIDI.Message -> ProcessM (Seq MIDI.Message)
 finalizeTrack s = return $ s |> endOfTrack_zero
 
- 
-toList :: Seq a -> [a]
-toList = F.foldr (:) []
-
-listPass :: Seq MIDI.Message -> ProcessM [MIDI.Message]
-listPass = return . toList
-
 
 
 processTrack :: Perform evt Pitch Duration 
@@ -288,9 +285,8 @@ processTrack :: Perform evt Pitch Duration
              -> ProcessM MIDI.Track
 processTrack tree = MIDI.Track <$> steps (unET tree)
   where 
-    steps = listPass <=< finalizeTrack 
-                     <=< deltaPass     <=< sortPass  
-                     <=< splitNotePass <=< oflatPass
+    steps = finalizeTrack <=< deltaPass     <=< sortPass  
+                          <=< splitNotePass <=< oflatPass
 
 
 processPerformance :: Perform evt Pitch Duration 
@@ -299,10 +295,10 @@ processPerformance :: Perform evt Pitch Duration
 processPerformance p@(Perf xs) = do 
     hdr <- midiHeader p
     t0 <- trackZero 
-    ts <- foldM fn [] xs >>= \sx -> return (reverse sx)
-    return $ MIDI.MidiFile hdr (t0:ts)
+    ts <- foldM fn mempty xs
+    return $ MIDI.MidiFile hdr (t0 <| ts)
   where
-    fn acc a = processTrack a >>= \t -> newTrack >> return (t : acc)
+    fn acc a = processTrack a >>= \t -> newTrack >> return (acc |> t)
 
 
 midiHeader :: Perform evt Pitch Duration 
@@ -319,7 +315,7 @@ setTempoMessage = gets midi_tempo >>= return . setTempo_zero
 trackZero :: ProcessM MIDI.Track
 trackZero = do 
     stm <- setTempoMessage
-    return $ MIDI.Track [stm, endOfTrack_zero] 
+    return $ MIDI.Track (mempty |> stm |> endOfTrack_zero) 
 
 notes :: EventTree (Pitch,a) -> String
 notes = afficherL . F.foldr note [] . unET

@@ -69,6 +69,7 @@ data ScMeasure pch dur = ScMeasure {
 data ScGroupType = ScChord | ScGraceNotes
   deriving (Eq)
 
+-- TODO - it would make things easier to have chord as (ScChord [pch] dur)
 data ScGlyph pch dur = ScNote (ScPitch pch) dur
                      | ScRest dur
                      | ScSpacer dur  -- non-printed rest

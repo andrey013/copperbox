@@ -29,6 +29,8 @@ import Control.Applicative hiding (many, optional, (<|>))
 import Data.Bits
 import Data.Char (ord,chr)
 import Data.Int
+import Data.Monoid
+import Data.Sequence hiding (length)
 import Data.Word
 import System.IO
 import Text.ParserCombinators.Parsec
@@ -55,11 +57,12 @@ readMidi name = do
 parseIO :: Parser a -> FilePath -> String -> IO (Either ParseError a)
 parseIO p name cs = let ans = parse p name cs in return ans
 
+
 midiFile :: Parser MidiFile  
 midiFile = do 
     hdr@(Header _ n _) <- header 
     ts <- count (fromIntegral n) track
-    return (MidiFile hdr ts)
+    return $ MidiFile hdr (fromList ts)
 
 
 header :: Parser Header  
@@ -71,8 +74,8 @@ track :: Parser Track
 track = Track <$> (assertString "MTrk" *> getWord32be *> getMessages) 
 
 
-getMessages :: Parser [Message]
-getMessages = rec []
+getMessages :: Parser (Seq Message)
+getMessages = rec mempty
   where
     rec acc = do
         end <- endOfFile
@@ -81,18 +84,18 @@ getMessages = rec []
     
     step1 acc = do
         msg <- message
-        if eot msg then return $ reverse (msg:acc)
-                   else rec (msg:acc)
+        if eot msg then return $ acc |> msg
+                   else rec (acc |> msg)
 
-    eot (_, (MetaEvent EndOfTrack)) = True
-    eot _                           = False
+    eot (Message (_, (MetaEvent EndOfTrack))) = True
+    eot _                                     = False
 
 
 message :: Parser Message
 message = deltaTime      >>=           \dt -> 
           getWord8split  >>=  \(code,chan) ->         
           next code chan >>=          \evt ->          
-          return (dt,evt)
+          return $ Message (dt,evt)
   where  
     next code chan  
         | code == 0xF && chan == 0xF  = MetaEvent   <$> metaEvent         

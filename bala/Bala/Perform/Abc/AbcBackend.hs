@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Emit Abc from Score.
+-- Emit Abc from AbcScore.
 --
 --------------------------------------------------------------------------------
 

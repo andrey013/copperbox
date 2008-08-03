@@ -21,13 +21,15 @@ module Bala.Format.Midi.WriteFile (
 
 import Bala.Format.Midi.Datatypes
 
-
-import Data.Bits
-import Data.Word
-import Data.Int
 import Data.Binary.Put
+import Data.Bits
 import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.ByteString.Char8 as SBS
+import qualified Data.Foldable as F
+import Data.Int
+import Data.Word
+
+
 
 writeMidi :: FilePath -> MidiFile -> IO ()
 writeMidi path mf = do 
@@ -38,7 +40,7 @@ writeMidi path mf = do
 putMidiFile :: MidiFile -> Put
 putMidiFile (MidiFile hdr trks) = do
   putHeader hdr
-  mapM_ putTrack trks
+  F.mapM_ putTrack trks
   flush
   
 putHeader :: Header -> Put
@@ -51,9 +53,9 @@ putHeader (Header fmt n td) = do
 
 
 putTrack :: Track -> Put
-putTrack (Track es) = do
+putTrack (Track se) = do
   putString     "MTrk"
-  let contents = runPut (mapM_ putMessage es)
+  let contents = runPut (F.mapM_ putMessage se)
   let len = L.length contents
   putWord32be (fromIntegral len)
   putLazyByteString contents
@@ -80,7 +82,7 @@ putTextType MARKER             = putWord8 6
 putTextType CUE_POINT          = putWord8 7
 
 putMessage :: Message -> Put
-putMessage (dt,evt) = do
+putMessage (Message (dt,evt)) = do
   putVarlen dt
   putEvent  evt
 

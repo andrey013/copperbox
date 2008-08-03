@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Emit LilyPond from Score.
+-- Emit LilyPond from LyScore.
 --
 --------------------------------------------------------------------------------
 
@@ -101,7 +101,7 @@ suffixWith ctx f = (ctx +++) <$> f
 renderScore :: (LilyPondPitch pch, LilyPondDuration dur)
            => LyScScore pch dur 
            -> ProcessM pch dur [LyCmdScore]
-renderScore (LyScScore se) = reverse <$> F.foldlM fn [] se
+renderScore (LyScScore se) = F.foldlM fn [] se
   where
     fn xs p = flip (:) xs <$> renderPart p
     

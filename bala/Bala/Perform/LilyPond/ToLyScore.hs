@@ -43,19 +43,17 @@ part :: ScPart pch dur -> LyScPart pch dur
 part p@(ScPart i _ _) = LyScPart i (polycat $ deriveQueue p)
 
 
--- Folding takes us too far into the OnsetQueue evt rather than [evt]
+-- Folding takes us too far into the OnsetQueue to 'evt' rather than '[evt]'.
 -- So we have to use direct recursion
 -- TODO - build bigger segments if the pattern of the voices stays the same 
 polycat :: OnsetQueue (OnsetMeasure pch dur) -> LyScLine pch dur
 polycat = rec mempty . viewH
   where
     rec acc EmptyQ          = acc
-    rec acc ((_,es) :>> q)  = rec (acc |*> cnstr es) (viewH q) 
-    
-    
-    
-    cnstr :: [OnsetMeasure pch dur] -> Maybe (LyScPolyPhrase pch dur)
-    cnstr = polyPhrase . map (LyScSegment . singleton . measure)
+    rec acc ((_,es) :>> q)  = rec (acc |*> trans es) (viewH q) 
+        
+    trans :: [OnsetMeasure pch dur] -> Maybe (LyScPolyPhrase pch dur)
+    trans = polyPhrase . map (LyScSegment . singleton . measure)
     
     
 polyPhrase :: [LyScSegment pch dur] -> Maybe (LyScPolyPhrase pch dur)

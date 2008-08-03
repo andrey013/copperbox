@@ -95,10 +95,10 @@ tpb = TPB . fromIntegral
     
     
 message :: Integral dt => dt -> Event -> Message
-message dt e = (fromIntegral dt, e)
+message dt e = Message (fromIntegral dt, e)
 
 messageZero :: Event -> Message
-messageZero e = (0, e)
+messageZero e = Message (0, e)
 
 
 noteOff                     :: Integral a => a -> a -> a -> Event

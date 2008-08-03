@@ -79,7 +79,7 @@ toLy perf = let sc0   = toScore perf default_score_env
             in generateLilyPondScore lysc default_ly_env
 
 toAbc perf = let sc0    = toScore perf default_score_env
-                 abcsc  = abcTunebook sc0
+                 abcsc  = abcscore sc0
             in generateAbcScore abcsc default_abc_env
 
 createDoc un = vsep . map (pretty . un)

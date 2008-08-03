@@ -28,8 +28,8 @@ import Data.Maybe (catMaybes)
 import Data.Monoid
 import Data.Sequence
 
-abcTunebook :: ScScore pch dur -> AbcScTuneBook pch dur
-abcTunebook (ScScore se) = AbcScTuneBook $ F.foldl fn mempty se 
+abcscore :: ScScore pch dur -> AbcScTuneBook pch dur
+abcscore (ScScore se) = AbcScTuneBook $ F.foldl fn mempty se 
   where fn acc e = acc |> tune e
   
 tune :: ScPart pch dur -> AbcScTune pch dur

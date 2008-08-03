@@ -27,7 +27,7 @@ module Bala.Format.Midi.Datatypes (
     DeltaTime,
 
     -- * A midi event paired with the delta time of its onset
-    Message, 
+    Message(..), 
     -- * A control or meta event
     Event(..),
     
@@ -47,11 +47,12 @@ module Bala.Format.Midi.Datatypes (
 
 import Data.Bits
 import Data.Int
+import Data.Sequence
 import Data.Word
 
 
 
-data MidiFile = MidiFile Header [Track]
+data MidiFile = MidiFile Header (Seq Track)
   deriving (Eq,Show)
 
 -- | @'Header' fmt nt td@ 
@@ -68,7 +69,7 @@ data Header = Header HFormat Word16 TimeDivision
 --
 -- @xs@ - list of @'Message'@. In MIDI files, the start of a track is
 -- indicated by the marker \'@MTrk@\'.  
-newtype Track = Track [Message]
+newtype Track = Track { getTrack :: Seq Message }
   deriving (Eq,Show)
 
 -- | @'HFormat'@ 
@@ -109,10 +110,18 @@ data TextType
 
 -- | @'Message'@ 
 --
--- MIDI messages are pairs of @'DeltaTime'@ and @'Event'@. 
+-- MIDI messages are pairs of @'DeltaTime'@ and @'Event'@ wrapped in a newtype. 
 -- Sequential messages with delta time 0 will be played simultaneously.  
-type Message = (DeltaTime, Event)
+newtype Message = Message { getMessage :: (DeltaTime, Event) }
+  deriving (Eq,Show) 
 
+-- This is useful for rendering - of we have have a NoteOn and a NoteOff
+-- on the same channel at the same time we want the NoteOff played first.
+
+instance Ord Message where
+    compare (Message (t,e)) (Message (t',e')) = (t,e) `compare` (t',e')
+    
+      
 -- | @'DeltaTime'@ 
 --
 -- All time values in a MIDI track are represented as a \delta\ from the 

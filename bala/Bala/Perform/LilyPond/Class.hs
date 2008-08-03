@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Perform.LilyPond.LyInterface
+-- Module      :  Bala.Perform.LilyPond.Class
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Typeclasses that must be implemented to emit LilyPond from Score.
+-- Type classes that must be implemented to emit LilyPond from Score.
 --
 --------------------------------------------------------------------------------
 

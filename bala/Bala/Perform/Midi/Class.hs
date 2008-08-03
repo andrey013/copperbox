@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Perform.Abc.Class
+-- Module      :  Bala.Perform.Midi.Class
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -9,18 +9,19 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Type classes that must be implemented to emit Abc from Score.
+-- Type classes that must be implemented to emit Midi from Score.
 --
 --------------------------------------------------------------------------------
 
-module Bala.Perform.Abc.Class (PitchAbc(..), DurationAbc(..)) where
+module Bala.Perform.Midi.Class (PitchMidi(..), DurationMidi(..)) where
 
-import Bala.Format.Output.OutputAbc
+import Data.Word
 
-class PitchAbc pch where
-  abcPitchLetter   :: pch -> AbcPitchLetter
-  abcAccidental    :: pch -> Maybe AbcAccidental
+class PitchMidi pch where
+  midiPitch   :: pch -> Word8
   
-class (Eq dur) => DurationAbc dur where
-  quaternoteAbc   :: dur
-  asRational      :: dur -> Rational
+class DurationMidi dur where
+  midiTicks             :: dur -> Integer
+
+  
+  

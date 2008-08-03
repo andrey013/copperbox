@@ -14,7 +14,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Perform.Score.ToScore where
+module Bala.Perform.Score.ToScore (
+  toScore,
+  Perform_Sc_Env(..), 
+  default_score_env
+  ) where
 
 import Bala.Base
 import Bala.Format.Score

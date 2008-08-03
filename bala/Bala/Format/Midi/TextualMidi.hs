@@ -28,6 +28,7 @@ import Bala.Format.Midi.Datatypes
 
 import Data.Bits
 import Data.Char
+import qualified Data.Foldable as F
 import Data.Tuple
 import Data.Word
 import Numeric
@@ -61,8 +62,11 @@ mazi f i xs = map f (zip xs [i..])
 
 instance Pretty MidiFile where
   pretty (MidiFile header tracks)  = 
-    pretty header <$> vcat (mazi (uncurry prettyTrack) 0 tracks) <$> empty
-
+      pretty header <> tdoc <$> empty
+    where
+      tdoc = fst $ F.foldl fn (empty,0) tracks
+      fn (d,i) t = (d <$> prettyTrack t i, i+1)
+      
 instance Pretty Header where
   pretty (Header hformat ntrks td) = 
     text "[Header]" <+> pretty hformat 
@@ -79,15 +83,15 @@ instance Pretty TimeDivision where
   pretty (TPB i)   = text "ticks" <+> integral i
 
 
-prettyTrack (Track msgs) i = 
-    brackets (text "Track" <+> int i) <$> (snd $ foldl fn (0,empty) msgs)
+prettyTrack (Track se) i = 
+    brackets (text "Track" <+> int i) <$> (snd $ F.foldl fn (0,empty) se)
   where
-    fn (gt,doc) msg@(dt,_)  = 
-      (gt+dt, doc <$> (fill 8 (integral $ gt+dt) <-> prettyMessage msg))    
+    fn (gt,doc) msg@(Message (dt,_))  = 
+      (gt+dt, doc <$> (fill 8 (integral $ gt+dt) <-> pretty msg))    
 
 
-prettyMessage :: Message -> Doc
-prettyMessage (dt,evt) = fill 5 (integral dt) <-> pretty evt      
+instance Pretty Message where
+  pretty (Message (dt,evt)) = fill 5 (integral dt) <-> pretty evt      
 
 
 instance Pretty Event where
