@@ -23,6 +23,7 @@ module HNotate.Backend.Abc.AbcBackend (
 import HNotate.Backend.Abc.AbcScoreDatatypes
 import HNotate.Base.Datatypes
 import HNotate.Base.NotateMonad
+import HNotate.Print.Base
 import HNotate.Print.OutputAbc
 import HNotate.Score.Utils
 
@@ -31,6 +32,7 @@ import Control.Monad.Reader
 import Control.Monad.State
 import Data.Foldable (foldlM,foldrM)
 import Data.Maybe (catMaybes)
+import Data.Monoid
 import Data.Ratio
 
 type ProcessM a = NotateM Notate_Abc_State Notate_Abc_Env a
@@ -76,7 +78,7 @@ oabcAccidental = fn . accidental
     fn DoubleFlat     = Just doubleFlat
 
 
-suffixWith :: Append cxts cxta
+suffixWith :: (Append Abc cxts cxta, Monoid (Abc cxts))
            => Abc cxts
            -> ProcessM (Abc cxta)
            -> ProcessM (Abc cxts)
@@ -87,10 +89,10 @@ suffixWith ctx f = (ctx +++) <$> f
 type EltS = AbcCxt_Body -> AbcCxt_Body
 
 
-suffix :: (Append cxts cxta) => Abc cxta -> (Abc cxts -> Abc cxts)
+suffix :: (Append Abc cxts cxta, Monoid (Abc cxts)) => Abc cxta -> (Abc cxts -> Abc cxts)
 suffix = flip (+++)
 
-suffixA :: (Append cxts cxta, Functor f)
+suffixA :: (Append Abc cxts cxta, Monoid (Abc cxts), Functor f)
         => f (Abc cxta)
         -> f (Abc cxts -> Abc cxts)
 suffixA f = suffix <$> f
@@ -124,10 +126,11 @@ renderPolyPhrase cxt (AbcScPolyPhrase xs) =
 
 
 
-renderMeasure :: (Append cxts AbcGraceNotesT,
-                  Append cxts AbcChordT,
-                  Append cxts AbcNoteT,
-                  Append cxts AbcRestT)
+renderMeasure :: (Append Abc cxts AbcGraceNotesT,
+                  Append Abc cxts AbcChordT,
+                  Append Abc cxts AbcNoteT,
+                  Append Abc cxts AbcRestT,
+                  Monoid (Abc cxts))
               => AbcScMeasure
               -> ProcessM (Abc cxts -> Abc cxts)
 
@@ -141,10 +144,11 @@ renderMeasure (AbcScMeasure i xs se) = foldlM (foldlOpA renderGlyph ( #. )) id s
 -- Also we have the very general return type ...(Abc cxts -> Abc cxts)
 -- rather than ...EltS as we might need to think about beaming
 -- which prints note without separating spaces at some point.
-renderGlyph :: (Append cxts AbcGraceNotesT,
-                Append cxts AbcChordT,
-                Append cxts AbcNoteT,
-                Append cxts AbcRestT)
+renderGlyph :: (Append Abc cxts AbcGraceNotesT,
+                Append Abc cxts AbcChordT,
+                Append Abc cxts AbcNoteT,
+                Append Abc cxts AbcRestT,
+                Monoid (Abc cxts))
             => AbcScGlyph
             -> ProcessM (Abc cxts -> Abc cxts)
 

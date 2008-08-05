@@ -1,6 +1,5 @@
-{-# LANGUAGE EmptyDataDecls,
-             MultiParamTypeClasses,
-             FlexibleContexts #-}
+{-# LANGUAGE EmptyDataDecls, MultiParamTypeClasses, FlexibleContexts,
+             FlexibleInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -20,90 +19,52 @@
 
 module HNotate.Print.LilyPondInternals where
 
-import HNotate.Print.OutputBase
+import HNotate.Print.Base
 
 import Data.Char
 import Data.Monoid
-import Data.Sequence ( (|>), (><) )
 import Text.PrettyPrint.Leijen
 
 -- A phantom type
-newtype Ly a = Ly { unLy :: Skeleton Doc }
+newtype Ly a = Ly { getLy :: Doc }
 
+instance WDoc Ly where
+  unwrap (Ly a)   = a
+  wrap a          = Ly a
+  
+  
 instance Show (Ly a) where
   show (Ly a) = show $ pretty a
 
 
--- A type constrained add-right (|>)
-class Append cxts cxta
-
-infixl 5 +++
-
-(+++) :: (Append cxts cxta) => Ly cxts -> Ly cxta -> Ly cxts
-(+++) (Ly (Sequence op sq)) (Ly a) = Ly $ Sequence op (sq |> a)
-(+++)  _                     _     = error "can't append to a non sequence"
-
-class Concat cxt
-
-(>|<) :: (Concat cxt) => Ly cxt -> Ly cxt -> Ly cxt
-(>|<) (Ly (Sequence op sa)) (Ly (Sequence _ sb)) = Ly $ Sequence op (sa >< sb)
-(>|<) _                     _                    = error $
-    "can't caten non sequences"
 
 
 
-class SuffixAttr cxte cxta
 
-infixl 7 !
-
-( ! ) :: (SuffixAttr cxte cxta) => Ly cxte -> Ly cxta -> Ly cxte
-( ! ) (Ly e) (Ly a) = Ly $ Attr (<>) e a
-
-class PrefixAttr cxte cxta
-
-infixl 7 !>
-( !> ) :: (PrefixAttr cxte cxta) => Ly cxta -> Ly cxte ->  Ly cxte
-( !> ) (Ly a) (Ly e) = Ly $ Attr (flip (<>)) e a
+runLy (Ly a) = putDoc (pretty a)
 
 
-
-runLy (Ly a) = run a
-
-lyLit = Ly . literal
-
-lyLinebreak :: Ly a
-lyLinebreak = lyLit $ linebreak
-
-
-lySeq2 :: Caten Doc -> Ly a -> Ly b -> Ly o
-lySeq2 op (Ly a) (Ly b) = Ly $ sequenceL op [a,b]
-
-lySeq3 :: Caten Doc -> Ly a -> Ly b -> Ly c -> Ly o
-lySeq3 op (Ly a) (Ly b) (Ly c) = Ly $ sequenceL op [a,b,c]
-
-lySeq4 :: Caten Doc -> Ly a -> Ly b -> Ly c -> Ly d -> Ly o
-lySeq4 op (Ly a) (Ly b) (Ly c) (Ly d) = Ly $ sequenceL op [a,b,c,d]
 
 
 -- | Prefix a command name with \\.
 cmd :: String -> Ly o
-cmd =  lyLit . text . ('\\' :)
+cmd =  wrap . text . ('\\' :)
 
 command1 :: String -> Ly a -> Ly o
-command1 s a = lySeq2 (<+>) (cmd s) a
+command1 s a = caten (<+>) (cmd s) a
 
 command2 :: String -> Ly a -> Ly b -> Ly o
-command2 s a b = lySeq3 (<+>) (cmd s) a b
+command2 s a b = caten3 (<+>) (cmd s) a b
 
 command1break :: String -> Ly a -> Ly o
-command1break s a = lySeq3 (<+>) (cmd s) a lyLinebreak
+command1break s a = caten3 (<+>) (cmd s) a (wrap linebreak)
 
 command2break :: String -> Ly a -> Ly b -> Ly o
-command2break s a b = lySeq4 (<+>) (cmd s) a b lyLinebreak
+command2break s a b = caten4 (<+>) (cmd s) a b (wrap linebreak)
 
 
 context :: String -> Ly o
-context =  lyLit . text
+context =  wrap . text
 
 -- | Version of pprint's braces that inserts spaces between the braces
 -- e.g. @{ content }@. LilyPond can be sensitive to this.
@@ -118,15 +79,10 @@ bracesSpaced = enclose (lbrace <> space) (space <> rbrace)
 bracesHanging :: Doc -> Doc
 bracesHanging d = lbrace <$> indent 2 (d <$> rbrace)
 
-bracesSpacedExpr :: Ly a -> Ly o
-bracesSpacedExpr (Ly e) = Ly $ nestedf bracesSpaced e
-
-bracesHangingExpr :: Ly a -> Ly o
-bracesHangingExpr (Ly e) = Ly $ nestedf bracesHanging e
 
 
 equation :: String -> Ly a -> Ly o
-equation var d = lySeq3 (<+>) (lyLit $ text var) (lyLit $ equals) d
+equation var expr = wrap $ text var <+> equals <+> unwrap expr
 
 type LengthRep a = (a,a)
 
@@ -143,36 +99,49 @@ data LyCxt_ToplevelT
 type LyCxt_Toplevel = Ly LyCxt_ToplevelT
 
 toplevelStart       :: LyCxt_Toplevel
-toplevelStart       = Ly $ sequenceS (<$>) mempty
+toplevelStart       = wrap empty
 
+instance Monoid (Ly LyCxt_ToplevelT) where
+  mempty = toplevelStart
+  mappend = caten (<$>)
+  
 
 -- | Properties inside header block e.g. title, dedication
 data LyCxt_HeaderT
 type LyCxt_Header = Ly LyCxt_HeaderT
 
 headerStart         :: LyCxt_Header
-headerStart         = Ly $ sequenceS (<$>) mempty
+headerStart         = wrap empty
 
-
+instance Monoid (Ly LyCxt_HeaderT) where
+  mempty = headerStart
+  mappend = caten (<$>)
+  
+  
 -- | Book context for multiple scores, markup
 data LyCxt_BookT
 type LyCxt_Book = Ly LyCxt_BookT
 
 
 bookStart           :: LyCxt_Book
-bookStart           = Ly $ sequenceS (<$>) mempty
+bookStart           = wrap empty
 
-
+instance Monoid (Ly LyCxt_BookT) where
+  mempty = bookStart
+  mappend = caten (<$>)
 
 -- | Glyphs - e.g. rest, note, skip etc
 data LyCxt_ElementT
 type LyCxt_Element = Ly LyCxt_ElementT
 
 elementStart        :: LyCxt_Element
-elementStart        = Ly $ sequenceS (</>) mempty
+elementStart        = wrap empty
 
-
-instance Concat LyCxt_ElementT
+instance Monoid (Ly LyCxt_ElementT) where
+  mempty = elementStart
+  mappend = caten (</>)
+  
+-- instance Concat LyCxt_ElementT
 
 
 --------------------------------------------------------------------------------
@@ -183,10 +152,10 @@ data LyCmdVersionT
 type LyCmdVersion = Ly LyCmdVersionT
 
 version :: String -> LyCmdVersion
-version = command1 "version" . lyLit . dquotes . text
+version = command1 "version" . wrap . dquotes . text
 
 
-instance Append LyCxt_ToplevelT LyCmdVersionT
+instance Append Ly LyCxt_ToplevelT LyCmdVersionT
 
 
 data LyLineCommentT
@@ -194,21 +163,21 @@ type LyLineComment = Ly LyLineCommentT
 
 
 lineComment :: String -> LyLineComment
-lineComment s = lyLit $ text ('%':' ':s) <> linebreak
+lineComment s = wrap $ text ('%':' ':s) <> linebreak
 
 
-instance Append LyCxt_ToplevelT LyLineCommentT
+instance Append Ly LyCxt_ToplevelT LyLineCommentT
 
 
 data LyBlockCommentT
 type LyBlockComment = Ly LyBlockCommentT
 
 blockComment :: String -> LyBlockComment
-blockComment s = lyLit $ string $ "%{ " ++ s ++ " %}"
+blockComment s = wrap $ string $ "%{ " ++ s ++ " %}"
 
 
-instance Append LyCxt_ToplevelT LyBlockCommentT
-instance Append LyCxt_ElementT LyBlockCommentT
+instance Append Ly LyCxt_ToplevelT LyBlockCommentT
+instance Append Ly LyCxt_ElementT LyBlockCommentT
 
 
 
@@ -230,7 +199,7 @@ type LyPitch = Ly LyPitchT
 
 -- | Printed as @c d e f g a b@
 pitch               :: LyPitchName -> LyPitch
-pitch               = lyLit . pretty
+pitch               = wrap . pretty
 
 
 data LyOctaveSpecT
@@ -238,12 +207,12 @@ type LyOctaveSpec = Ly LyOctaveSpecT
 
 -- | Printed as @'@, @''@, @'''@, etc. - e.g. @c''@
 raised              :: Int -> LyOctaveSpec
-raised i            = lyLit $ text (replicate i '\'')
+raised i            = wrap $ text (replicate i '\'')
 
 
 -- | Printed as @,@, @,,@, @,,,@, etc. - e.g. @d,,@
 lowered             :: Int -> LyOctaveSpec
-lowered i           = lyLit $ text  (replicate i ',')
+lowered i           = wrap $ text  (replicate i ',')
 
 instance SuffixAttr LyPitchT LyOctaveSpecT
 
@@ -253,9 +222,9 @@ data LyNoteT
 type LyNote = Ly LyNoteT
 
 note                :: LyPitch -> LyNote
-note (Ly p)         = Ly p
+note                = promote
 
-instance Append LyCxt_ElementT LyNoteT
+instance Append Ly LyCxt_ElementT LyNoteT
 
 
 
@@ -266,19 +235,19 @@ type LyAccidental = Ly LyAccidentalT
 
 -- | Printed as @is@.
 sharp               :: LyAccidental
-sharp               = lyLit $ text "is"
+sharp               = wrap $ text "is"
 
 -- | Printed as @es@.
 flat                :: LyAccidental
-flat                = lyLit $ text "es"
+flat                = wrap $ text "es"
 
 -- | Printed as @isis@.
 doubleSharp         :: LyAccidental
-doubleSharp         = lyLit $ text "isis"
+doubleSharp         = wrap $ text "isis"
 
 -- | Printed as @eses@.
 doubleFlat          :: LyAccidental
-doubleFlat          = lyLit $ text "eses"
+doubleFlat          = wrap $ text "eses"
 
 
 instance SuffixAttr LyPitchT LyAccidentalT
@@ -291,11 +260,11 @@ type LyCautionaryAccidental = Ly LyCautionaryAccidentalT
 
 -- | Printed as @!@.
 reminder_accidental     :: LyCautionaryAccidental
-reminder_accidental     = lyLit $ char '!'
+reminder_accidental     = wrap $ char '!'
 
 -- | Printed as @?@.
 cautionary_accidental   :: LyCautionaryAccidental
-cautionary_accidental   = lyLit $ char '?'
+cautionary_accidental   = wrap $ char '?'
 
 
 instance SuffixAttr LyPitchT LyCautionaryAccidentalT
@@ -307,10 +276,10 @@ data LyMicroToneT
 type LyMicroTone = Ly LyMicroToneT
 
 half_flat           :: LyMicroTone
-half_flat           = lyLit $ string "ih"
+half_flat           = wrap $ string "ih"
 
 half_sharp          :: LyMicroTone
-half_sharp          = lyLit $ string "es"
+half_sharp          = wrap $ string "es"
 
 instance SuffixAttr LyPitchT LyMicroToneT
 
@@ -322,13 +291,9 @@ type LyCmdRelative= Ly LyCmdRelativeT
 
 -- | Printed as: \\relative c'' { ... expr ... }
 relative            :: LyPitch -> Ly b -> LyCmdRelative
-relative p e        =
-    let bexpr = Ly $ nestedf bracesHanging (unLy e)
-    in command2 "relative" p bexpr
+relative p e        = command2 "relative" p (nested bracesHanging e)
 
-
-
-instance Append LyCxt_ElementT LyCmdRelativeT
+instance Append Ly LyCxt_ElementT LyCmdRelativeT
 
 
 --------------------------------------------------------------------------------
@@ -338,11 +303,11 @@ data LyRestT
 type LyRest = Ly LyRestT
 
 rest                :: LyRest
-rest                = lyLit $ char 'r'
+rest                = wrap $ char 'r'
 
 
 
-instance Append LyCxt_ElementT LyRestT
+instance Append Ly LyCxt_ElementT LyRestT
 
 --------------------------------------------------------------------------------
 -- *** Skips (6.1.10)
@@ -352,18 +317,18 @@ data LyCmdSkipT
 type LyCmdSkip = Ly LyCmdSkipT
 
 skip                :: LyDuration -> LyCmdSkip
-skip d              = lySeq2 (<+>) (cmd "skip") d
+skip d              = command1 "skip" d
 
-instance Append LyCxt_ElementT LyCmdSkipT
+instance Append Ly LyCxt_ElementT LyCmdSkipT
 
 -- @spacer@ - "s1", "s2", etc
 data LySkipT
 type LySkip = Ly LySkipT
 
 spacer              :: LySkip
-spacer              = lyLit $ char 's'
+spacer              = wrap $ char 's'
 
-instance Append LyCxt_ElementT LySkipT
+instance Append Ly LyCxt_ElementT LySkipT
 
 
 --------------------------------------------------------------------------------
@@ -374,7 +339,7 @@ data LyDurationT
 type LyDuration = Ly LyDurationT
 
 duration            :: Int -> LyDuration
-duration            = lyLit . int
+duration            = wrap . int
 
 -- shorthand
 dur                :: Int -> LyDuration
@@ -402,10 +367,10 @@ data LyDottedT
 type LyDotted = Ly LyDottedT
 
 dotted              :: Int -> LyDotted
-dotted i            = lyLit $ text (replicate i '.')
+dotted i            = wrap $ text (replicate i '.')
 
 dot                 :: LyDotted
-dot                 = lyLit $ char '.'
+dot                 = wrap $ char '.'
 
 instance SuffixAttr LyDurationT LyDottedT
 
@@ -418,11 +383,11 @@ data LyCmdTimesT
 type LyCmdTimes = Ly LyCmdTimesT
 
 times               :: Integral a => LengthRep a -> Ly e  -> LyCmdTimes
-times r e           =
-    let bexpr = Ly $ nestedf bracesSpaced (unLy e)
-    in command2 "times" (lyLit $ ppMeter r) bexpr
+times r e           = command2 "times" (wrap $ ppMeter r) 
+                                       (nested bracesSpaced e)
 
-instance Append LyCxt_ElementT LyCmdTimesT
+
+instance Append Ly LyCxt_ElementT LyCmdTimesT
 
 --------------------------------------------------------------------------------
 -- ** Mutliple notes at once (6.3)
@@ -432,13 +397,12 @@ data LyChordT
 type LyChord = Ly LyChordT
 
 chord               :: [LyPitch] -> LyChord
-chord xs            =
-    let notes = sequenceL (<+>) (map unLy xs)
-    in Ly $ nestedf angles notes
+chord               = wrap . angles . hsep . map unwrap
+
 
 
 -- to do - which instance is correct?
-instance Append LyCxt_ElementT LyChordT
+instance Append Ly LyCxt_ElementT LyChordT
 instance SuffixAttr LyChordT LyDurationT
 
 
@@ -460,7 +424,7 @@ stemDown            = cmd "stemDown"
 stemNeutral         :: LyCmdStem
 stemNeutral         = cmd "stemNeutral"
 
-instance Append LyCxt_ElementT LyCmdStemT
+instance Append Ly LyCxt_ElementT LyCmdStemT
 
 --------------------------------------------------------------------------------
 -- *** Basic polyphony (6.3.3)
@@ -471,17 +435,17 @@ data LyPolyT
 type LyPoly = Ly LyPolyT
 
 openPoly            :: LyPoly
-openPoly            = lyLit $ text "<< " <> line
+openPoly            = wrap $ text "<< " <> line
 
 closePoly           :: LyPoly
-closePoly           = lyLit $ line <> text " >>"
+closePoly           = wrap $ line <> text " >>"
 
 (\\) :: Ly a -> Ly b -> Ly a
-a \\ b                = lySeq3 (<>) a (lyLit $ text " \\\\" <> line) b
+a \\ b                = caten3 (<>) a (wrap $ text " \\\\" <> line) b
 
 
 
-instance Append LyCxt_ElementT LyPolyT
+instance Append Ly LyCxt_ElementT LyPolyT
 
 --------------------------------------------------------------------------------
 -- ** Staff notation (6.4)
@@ -493,13 +457,13 @@ type LyCmdClef = Ly LyCmdClefT
 clef                :: LyClefType -> LyCmdClef
 clef                = command1break "clef"
 
-instance Append LyCxt_ElementT LyCmdClefT
+instance Append Ly LyCxt_ElementT LyCmdClefT
 
 data LyClefTypeT
 type LyClefType = Ly LyClefTypeT
 
 cleftype            :: String -> LyClefType
-cleftype            = lyLit . text
+cleftype            = wrap . text
 
 -- for clef transpositions  make a cleftype with an doublequoted string
 
@@ -512,7 +476,7 @@ type LyCmdKey = Ly LyCmdKeyT
 key                 :: LyPitch -> LyCmdKeyType -> LyCmdKey
 key                 = command2break "key"
 
-instance Append LyCxt_ElementT LyCmdKeyT
+instance Append Ly LyCxt_ElementT LyCmdKeyT
 
 
 data LyCmdKeyTypeT
@@ -529,10 +493,10 @@ data LyCmdTimeT
 type LyCmdTime = Ly LyCmdTimeT
 
 time                :: Integral a => LengthRep a -> LyCmdTime
-time                = command1 "time" . lyLit . ppMeter
+time                = command1break "time" . wrap . ppMeter
 
 
-instance Append LyCxt_ElementT LyCmdTimeT
+instance Append Ly LyCxt_ElementT LyCmdTimeT
 
 --------------------------------------------------------------------------------
 -- *** Bar lines (6.4.5)
@@ -541,9 +505,9 @@ data LyCmdBarT
 type LyCmdBar = Ly LyCmdBarT
 
 bar                 :: String -> LyCmdBar
-bar                 = command1 "bar" . lyLit . text
+bar                 = command1 "bar" . wrap . text
 
-instance Append LyCxt_ElementT LyCmdBarT
+instance Append Ly LyCxt_ElementT LyCmdBarT
 
 -- "|", "|:", "||", ":|", ".|", ".|.", ":|:", "|.", ":", "unbroken ||:",
 -- "broken ||:"
@@ -560,7 +524,7 @@ cadenzaOn           = cmd "cadenzaOn"
 cadenzaOff          :: LyCmdCadenza
 cadenzaOff          = cmd "cadenzaOff"
 
-instance Append LyCxt_ElementT LyCmdCadenzaT
+instance Append Ly LyCxt_ElementT LyCmdCadenzaT
 
 
 --------------------------------------------------------------------------------
@@ -572,9 +536,9 @@ type LyTie = Ly LyTieT
 
 -- | tie is printed as @~@.
 tie                 :: LyTie
-tie                 = lyLit $ char '~'
+tie                 = wrap $ char '~'
 
-instance Append LyCxt_ElementT LyTieT
+instance Append Ly LyCxt_ElementT LyTieT
 
 data LyCmdTieT
 type LyCmdTie = Ly LyCmdTieT
@@ -582,7 +546,7 @@ type LyCmdTie = Ly LyCmdTieT
 cmdTie              :: String -> LyCmdTie
 cmdTie              = cmd
 
-instance Append LyCxt_ElementT LyCmdTieT
+instance Append Ly LyCxt_ElementT LyCmdTieT
 
 --------------------------------------------------------------------------------
 -- *** Slurs (6.5.2)
@@ -591,13 +555,13 @@ data LySlurT
 type LySlur = Ly LySlurT
 
 openSlur            :: LySlur
-openSlur            = lyLit $ char '('
+openSlur            = wrap $ char '('
 
 closeSlur           :: LySlur
-closeSlur           = lyLit $ char ')'
+closeSlur           = wrap $ char ')'
 
 
-instance Append LyCxt_ElementT LySlurT
+instance Append Ly LyCxt_ElementT LySlurT
 
 
 data LyCmdSlurT
@@ -607,7 +571,7 @@ cmdSlur             :: String -> LyCmdSlur
 cmdSlur             = cmd
 
 
-instance Append LyCxt_ElementT LyCmdSlurT
+instance Append Ly LyCxt_ElementT LyCmdSlurT
 
 --------------------------------------------------------------------------------
 -- *** Phrasing slurs (6.5.3)
@@ -655,13 +619,13 @@ data LyBeamT
 type LyBeam = Ly LyBeamT
 
 openBeam            :: LyBeam
-openBeam            = lyLit $ char '['
+openBeam            = wrap $ char '['
 
 
 closeBeam           :: LyBeam
-closeBeam           = lyLit $ char ']'
+closeBeam           = wrap $ char ']'
 
-instance Append LyCxt_ElementT LyBeamT
+instance Append Ly LyCxt_ElementT LyBeamT
 
 --------------------------------------------------------------------------------
 -- *** Grace notes (6.5.7)
@@ -674,7 +638,7 @@ type LyCmdGrace = Ly LyCmdGraceT
 cmdGrace            :: String -> Ly a -> LyCmdGrace
 cmdGrace            = command1
 
-instance Append LyCxt_ElementT LyCmdGraceT
+instance Append Ly LyCxt_ElementT LyCmdGraceT
 
 --------------------------------------------------------------------------------
 -- ** Expressive marks (6.6)
@@ -693,7 +657,7 @@ data LyArticulationT
 type LyArticulation = Ly LyArticulationT
 
 articulation        :: String -> LyArticulation
-articulation        = lyLit . text
+articulation        = wrap . text
 
 
 instance SuffixAttr LyNoteT LyArticulationT
@@ -704,13 +668,13 @@ data LyVerticalPlacementT
 type LyVerticalPlacement = Ly LyVerticalPlacementT
 
 aboveLit            :: LyVerticalPlacement
-aboveLit            = lyLit $ char '^'
+aboveLit            = wrap $ char '^'
 
 belowLit            :: LyVerticalPlacement
-belowLit            = lyLit $ char '_'
+belowLit            = wrap $ char '_'
 
 defaultLit          :: LyVerticalPlacement
-defaultLit          = lyLit $ char '-'
+defaultLit          = wrap $ char '-'
 
 
 above               :: (PrefixAttr elt LyVerticalPlacementT) => Ly elt -> Ly elt
@@ -734,7 +698,7 @@ data LyFingeringT
 type LyFingering = Ly LyFingeringT
 
 fingering           :: Int -> LyFingering
-fingering           = lyLit . text . (:) '-' . show
+fingering           = wrap . text . (:) '-' . show
 
 instance SuffixAttr LyNoteT LyFingeringT
 
@@ -762,7 +726,7 @@ type LyCmdBreathe = Ly LyCmdBreatheT
 breathe             :: LyCmdBreathe
 breathe             = cmd "breathe"
 
-instance Append LyCxt_ElementT LyCmdBreatheT
+instance Append Ly LyCxt_ElementT LyCmdBreatheT
 
 --------------------------------------------------------------------------------
 -- *** Glissando (6.6.6)
@@ -815,7 +779,7 @@ type LyCmdAutochange = Ly LyCmdAutochangeT
 autochange          :: LyCmdAutochange
 autochange          = cmd "autochange"
 
-instance Append LyCxt_ElementT LyCmdAutochangeT -- not really correct
+instance Append Ly LyCxt_ElementT LyCmdAutochangeT -- not really correct
 
 
 -- *** Pedals (7.1.2)
@@ -837,7 +801,7 @@ data LyCmdChordmodeT
 type LyCmdChordmode = Ly LyCmdChordmodeT
 
 chordmode           :: Ly a -> LyCmdChordmode
-chordmode e         = command1 "chordmode" (bracesSpacedExpr e)
+chordmode e         = command1 "chordmode" (nested bracesSpaced e)
 
 -- to do - instance of ?
 
@@ -850,7 +814,7 @@ data LyCmdAddlyricsT
 type LyCmdAddlyrics = Ly LyCmdAddlyricsT
 
 addlyrics           :: String -> LyCmdAddlyrics
-addlyrics s         = command1 "addlyrics" (lyLit $ string s)
+addlyrics s         = command1 "addlyrics" (wrap $ string s)
 
 -- {CONTEXT} ?
 
@@ -865,7 +829,7 @@ melisma             = cmd "melisma"
 melismaEnd          :: LyCmdMelismata
 melismaEnd          = cmd "melismaEnd"
 
-instance Append LyCxt_ElementT LyCmdMelismataT
+instance Append Ly LyCxt_ElementT LyCmdMelismataT
 
 --------------------------------------------------------------------------------
 -- ** Rhythmic music (7.4)
@@ -887,7 +851,7 @@ data LyCmdDrumsT
 type LyCmdDrums = Ly LyCmdDrumsT
 
 drums               :: Ly a -> LyCmdDrums
-drums e             = command1 "drums" (bracesHangingExpr e)
+drums e             = command1 "drums" (nested bracesHanging e)
 
 -- to do - instance of ?
 
@@ -896,7 +860,7 @@ data LyDrumPitchNameT
 type LyDrumPitchName = Ly LyDrumPitchNameT
 
 drumPitchName       :: String -> LyDrumPitchName
-drumPitchName       = lyLit . text
+drumPitchName       = wrap . text
 
 -- to do - instance of ?
 
@@ -910,7 +874,7 @@ data LyStringnumT
 type LyStringnum = Ly LyStringnumT
 
 stringnum           :: Int -> LyStringnum
-stringnum i         = lyLit $ text $ '\\' : show i
+stringnum i         = wrap $ text $ '\\' : show i
 
 
 instance SuffixAttr LyNoteT LyStringnumT
@@ -939,7 +903,7 @@ type LyRightHandFinger = Ly LyRightHandFingerT
 
 rightHandFinger     :: Int -> LyRightHandFinger
 rightHandFinger i   = let str = "-\rightHandFinger #" ++ show i
-                      in lyLit $ text str
+                      in wrap $ text str
 
 rh                  :: Int -> LyRightHandFinger
 rh                  = rightHandFinger
@@ -968,7 +932,7 @@ data LyTextScriptT
 type LyTextScript = Ly LyTextScriptT
 
 textScript          :: String -> LyTextScript
-textScript          = lyLit . dquotes . text
+textScript          = wrap . dquotes . text
 
 instance SuffixAttr LyNoteT LyTextScriptT
 instance SuffixAttr LyTextScriptT LyVerticalPlacementT
@@ -997,7 +961,7 @@ type LyCmdMarkup = Ly LyCmdMarkupT
 
 -- | Simplified for now - the body is a String.
 markup              :: String -> LyCmdMarkup
-markup s            = command1 "markup" (bracesSpacedExpr $ lyLit $ string s)
+markup s            = command1 "markup" (wrap $ bracesSpaced $ string s)
 
 -- instance of a context?
 
@@ -1010,13 +974,11 @@ data LyCmdTempoT
 type LyCmdTempo = Ly LyCmdTempoT
 
 tempo               :: LyDuration -> Int -> LyCmdTempo
-tempo d i =
-    let expr = Ly $ sequenceL (<>) [unLy d, literal $ equals, literal $ int i]
-    in command1 "tempo" expr
+tempo d i           = command1break "tempo" (wrap $ unwrap d <> equals <> int i)
 
 
 
-instance Append LyCxt_ElementT LyCmdTempoT
+instance Append Ly LyCxt_ElementT LyCmdTempoT
 
 --------------------------------------------------------------------------------
 -- * Changing defaults (9)
@@ -1029,7 +991,7 @@ data LyCmdNewT
 type LyCmdNew = Ly LyCmdNewT
 
 newContext          :: (NewContextType ct) => Ly ct -> Ly a -> LyCmdNew
-newContext ct e     = command2 "new" ct (bracesHangingExpr e)
+newContext ct e     = command2 "new" ct (nested bracesHanging e)
 
 
 
@@ -1063,8 +1025,8 @@ score               = command1 "score"
 
 
 
-instance Append LyCxt_ToplevelT CmdScoreT
-instance Append LyCxt_BookT CmdScoreT
+instance Append Ly LyCxt_ToplevelT CmdScoreT
+instance Append Ly LyCxt_BookT CmdScoreT
 
 data LyCmdBookT
 type LyCmdBook = Ly LyCmdBookT
@@ -1073,7 +1035,7 @@ book                :: LyBlock -> LyCmdBook
 book                = command1 "book"
 
 
-instance Append LyCxt_ToplevelT LyCmdBookT
+instance Append Ly LyCxt_ToplevelT LyCmdBookT
 
 --------------------------------------------------------------------------------
 -- ** Titles and headers (10.2)
@@ -1082,24 +1044,24 @@ data LyCmdHeaderT
 type LyCmdHeader = Ly LyCmdHeaderT
 
 header              ::  Ly a -> LyCmdHeader
-header              = command1 "header" . bracesHangingExpr
+header              = command1 "header" . nested bracesHanging
 
 
 
-instance Append LyCxt_ToplevelT LyCmdHeaderT
+instance Append Ly LyCxt_ToplevelT LyCmdHeaderT
 
 
 data LyBlockT
 type LyBlock = Ly LyBlockT
 
 block               :: Ly a -> LyBlock
-block               = bracesHangingExpr
+block               = nested bracesHanging
 
 blockS              :: Ly a -> LyBlock
-blockS              = bracesSpacedExpr
+blockS              = nested bracesSpaced
 
-instance Append LyCxt_ToplevelT LyBlockT
-instance Append LyCxt_ElementT LyBlockT
+instance Append Ly LyCxt_ToplevelT LyBlockT
+instance Append Ly LyCxt_ElementT LyBlockT
 
 --------------------------------------------------------------------------------
 -- *** Creating titles (10.2.1)
@@ -1108,11 +1070,11 @@ data LyHeaderElementT
 type LyHeaderElement = Ly LyHeaderElementT
 
 headerElement       :: String -> String -> LyHeaderElement
-headerElement n v   = equation n (lyLit $ dquotes $ text v)
+headerElement n v   = equation n (wrap $ dquotes $ text v)
 
 
 
-instance Append LyCxt_HeaderT LyHeaderElementT
+instance Append Ly LyCxt_HeaderT LyHeaderElementT
 
 --------------------------------------------------------------------------------
 -- ** MIDI output (10.3)

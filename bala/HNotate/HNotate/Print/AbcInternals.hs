@@ -1,4 +1,4 @@
-{-# LANGUAGE EmptyDataDecls, MultiParamTypeClasses #-}
+{-# LANGUAGE EmptyDataDecls, MultiParamTypeClasses, FlexibleInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -18,52 +18,25 @@
 
 module HNotate.Print.AbcInternals where
 
-import HNotate.Print.OutputBase
+import HNotate.Print.Base
 
 import Data.Monoid
 import Data.Ratio
-import Data.Sequence ( (|>), (><) )
 import Text.PrettyPrint.Leijen
 
 
 
 -- A phantom type
-newtype Abc a = Abc { unAbc :: Skeleton Doc }
+newtype Abc a = Abc { getAbc :: Doc }
 
+instance WDoc Abc where
+  unwrap (Abc a)  = a
+  wrap a          = Abc a
+  
+  
 instance Show (Abc a) where
   show (Abc a) = show $ pretty a
 
--- A type constrained add-right (|>)
-class Append cxts cxta
-
-infixl 5 +++
-
-(+++) :: (Append cxts cxta) => Abc cxts -> Abc cxta -> Abc cxts
-(+++) (Abc (Sequence op sq)) (Abc a) = Abc $ Sequence op (sq |> a)
-(+++)  _                      _      = error "can't append to a non sequence"
-
-class Concat cxt
-
-(>|<) :: (Concat cxt) => Abc cxt -> Abc cxt -> Abc cxt
-(>|<) (Abc (Sequence op sa)) (Abc (Sequence _ sb)) = Abc $ Sequence op (sa >< sb)
-(>|<) _                     _                    = error $
-    "can't caten non sequences"
-
-instance Concat  AbcCxt_BodyT
-
-
-class SuffixAttr cxte cxta
-
-infixl 7 !
-
-( ! ) :: (SuffixAttr cxte cxta) => Abc cxte -> Abc cxta -> Abc cxte
-( ! ) (Abc e) (Abc a) = Abc $ Attr (<>) e a
-
-class PrefixAttr cxte cxta
-
-infixl 7 !>
-( !> ) :: (PrefixAttr cxte cxta) => Abc cxta -> Abc cxte ->  Abc cxte
-( !> ) (Abc a) (Abc e) = Abc $ Attr (flip (<>)) e a
 
 
 
@@ -94,12 +67,9 @@ ppNoteLength (n,d) =
 
 
 
-runAbc (Abc a) = run a
+runAbc (Abc a) = putDoc $ pretty a
 
-abcLiteral = Abc . literal
 
-abcSeq2 :: Caten Doc -> Abc a -> Abc b -> Abc c
-abcSeq2 op (Abc a) (Abc b) = Abc $ sequenceL op [a,b]
 
 
 --------------------------------------------------------------------------------
@@ -109,25 +79,35 @@ data AbcTuneT
 type AbcTune = Abc AbcTuneT
 
 tune                :: AbcCxt_Header -> AbcCxt_Body -> AbcTune
-tune h b            = Abc $ sequenceL (<$>) [unAbc h, unAbc b]
+tune h b            = caten (<$>) h b
 
 data AbcCxt_HeaderT
 type AbcCxt_Header = Abc AbcCxt_HeaderT
 
 header              :: AbcCxt_Header
-header              = Abc $ sequenceS (<$>) mempty
+header              = wrap $ empty
 
-instance Append AbcCxt_HeaderT AbcFieldT
-instance Append AbcCxt_HeaderT AbcMidTuneFieldT
+instance Monoid (Abc AbcCxt_HeaderT) where
+  mempty = header
+  mappend = caten (<$>)
+  
+  
+instance Append Abc AbcCxt_HeaderT AbcFieldT
+instance Append Abc AbcCxt_HeaderT AbcMidTuneFieldT
 
 
 data AbcCxt_BodyT
 type AbcCxt_Body = Abc AbcCxt_BodyT
 
 body                :: AbcCxt_Body
-body                = Abc $ sequenceS (</>) mempty
+body                = wrap $ empty
 
-instance Append AbcCxt_BodyT AbcMidTuneFieldT
+instance Monoid (Abc AbcCxt_BodyT) where
+  mempty = body
+  mappend = caten (<>)
+  
+
+instance Append Abc AbcCxt_BodyT AbcMidTuneFieldT
 
 
 --------------------------------------------------------------------------------
@@ -139,63 +119,62 @@ data AbcFieldT
 type AbcField = Abc AbcFieldT
 
 field :: Char -> Abc a -> AbcField
-field ch o = Abc $ sequenceL (<+>) [field_id, unAbc o]
-  where field_id = literalP [ch,':']
+field ch o = wrap $ group $ char ch <> char ':' <+> unwrap o
 
 -- | @A field@ - area.
 area_field                :: String -> AbcField
-area_field                = field 'A' . Abc . literal . text
+area_field                = field 'A' . wrap . text
 
 
 -- | @B field@ - book.
 book_field                :: String -> AbcField
-book_field                = field 'B' . Abc . literal . text
+book_field                = field 'B' . wrap . text
 
 -- | @C field@ - composer name.
 composer_field            :: String -> AbcField
-composer_field            = field 'C' . Abc . literal . text
+composer_field            = field 'C' . wrap . text
 
 -- | @D field@ - discography.
 discography_field         :: String -> AbcField
-discography_field         = field 'D' . Abc . literal . text
+discography_field         = field 'D' . wrap . text
 
 -- | @G field@ - group.
 group_field               :: String -> AbcField
-group_field               = field 'G' . Abc . literal . text
+group_field               = field 'G' . wrap . text
 
 -- | @H field@ - history.
 history_field             :: [String] -> AbcField
-history_field             = field 'H' . Abc . body
+history_field             = field 'H' . wrap . body
   where
-    body =  nestedf align . sequenceL (<$>) . map (literal . text)
+    body = align . vcat . map string
 
 -- | @I field@ - information.
 information_field         :: String -> AbcField
-information_field         = field 'I' . Abc . literal . text
+information_field         = field 'I' . wrap . text
 
 -- | @N field@ - notes.
 notes_field               :: String -> AbcField
-notes_field               = field 'N' . Abc . literal . text
+notes_field               = field 'N' . wrap . text
 
 -- | @O field@ - origin.
 origin_field              :: String -> AbcField
-origin_field              = field 'O' . Abc . literal . text
+origin_field              = field 'O' . wrap . text
 
 -- | @R field@ - rhythm.
 rhythm_field              :: String -> AbcField
-rhythm_field              = field 'R' . Abc . literal . text
+rhythm_field              = field 'R' . wrap . text
 
 -- | @S field@ - source.
 source_field              :: String -> AbcField
-source_field              = field 'S' . Abc . literal . text
+source_field              = field 'S' . wrap . text
 
 -- | @X field@ - reference \/ tune number.
 number_field              :: Int -> AbcField
-number_field              = field 'X' . Abc . literal . int
+number_field              = field 'X' . wrap . int
 
 -- | @Z field@ - transcriber notes.
 transcriber_notes_field   :: String -> AbcField
-transcriber_notes_field   = field 'Z' . Abc . literal . text
+transcriber_notes_field   = field 'Z' . wrap . text
 
 
 -- Mid tune fields
@@ -203,14 +182,13 @@ data AbcMidTuneFieldT
 type AbcMidTuneField = Abc AbcMidTuneFieldT
 
 mtfield :: Char -> Abc a -> AbcMidTuneField
-mtfield ch o = Abc $ sequenceL (<+>) [field_id, unAbc o]
-  where field_id = literalP [ch,':']
+mtfield ch o = wrap $ group $ char ch <> char ':' <+> unwrap o
 
 
 
 -- | @E field@ - elemskip.
 elemskip_field              :: String -> AbcMidTuneField
-elemskip_field              = mtfield 'E' . Abc . literal . text
+elemskip_field              = mtfield 'E' . wrap . text
 
 -- | @K field@ - key, note untyped so it can print keys or clef information.
 
@@ -220,7 +198,7 @@ key_field                   = mtfield 'K'
 
 -- | @L field@ - unit note length - i.e. the default length.
 unit_note_length_field      :: Integral a => LengthRep a -> AbcMidTuneField
-unit_note_length_field      = mtfield 'L' . Abc . literal . ppMeter
+unit_note_length_field      = mtfield 'L' . wrap . ppMeter
 
 -- a synonym
 l_field                     :: Integral a => LengthRep a -> AbcMidTuneField
@@ -232,7 +210,7 @@ meter_field                 = mtfield 'M'
 
 -- | @P field@ - parts, simplified - parts are just represented as a string.
 parts_field                 :: [Char] -> AbcMidTuneField
-parts_field                 = mtfield 'P' . Abc . literal . text
+parts_field                 = mtfield 'P' . wrap . text
 
 -- | @Q field@ - tempo.
 tempo_field                 :: Abc a -> AbcMidTuneField
@@ -240,11 +218,11 @@ tempo_field                 = mtfield 'Q'
 
 -- | @T field@ - title.
 title_field                 :: String -> AbcMidTuneField
-title_field                 = mtfield 'T' . Abc . literal . text
+title_field                 = mtfield 'T' . wrap . text
 
 -- | @W field@ - words.
 words_field                 :: String -> AbcMidTuneField
-words_field                 = mtfield 'W' . Abc . literal . text
+words_field                 = mtfield 'W' . wrap . text
 
 
 -- ** M: meter (3.1.6)
@@ -252,14 +230,14 @@ data AbcMeterT
 type AbcMeter = Abc AbcMeterT
 
 meter               :: (Integer,Integer) -> AbcMeter
-meter r             = abcLiteral $ ppMeter r
+meter r             = wrap $ ppMeter r
 
 
 common_time         :: AbcMeter
-common_time         = abcLiteral $  char 'C'
+common_time         = wrap $  char 'C'
 
 cut_time            :: AbcMeter
-cut_time            = abcLiteral $ text "C|"
+cut_time            = wrap $ text "C|"
 
 
 -- ** Q: tempo (3.1.8)
@@ -267,59 +245,58 @@ data AbcTempoT
 type AbcTempo = Abc AbcTempoT
 
 tempo               :: Int -> AbcTempo
-tempo               = abcLiteral . int
+tempo               = wrap . int
 
 ctempo              :: AbcLength -> Int -> AbcTempo
-ctempo l i          = abcSeq2 (<+>) l (abcLiteral $ int i)
+ctempo l i          = caten (<+>) l (wrap $ int i)
 
 stempo              :: Integral a => LengthRep a -> Int -> AbcTempo
-stempo mf i         =
-    abcSeq2 (<+>) (abcLiteral $ ppNoteLength mf) (abcLiteral $ int i)
+stempo mf i         = wrap $ ppNoteLength mf <+> int i
 
 
 data AbcLengthT
 type AbcLength = Abc AbcLengthT
 
 ilength             :: Integer -> AbcLength
-ilength             = abcLiteral . integer
+ilength             = wrap . integer
 
 flength             :: Integral a => LengthRep a -> AbcLength
-flength             = abcLiteral . ppNoteLength
+flength             = wrap . ppNoteLength
 
 -- ** K: key (3.1.14)
 data AbcKeyT
 type AbcKey = Abc AbcKeyT
 
 key                   :: AbcKeySpec -> AbcKey
-key                   = Abc . unAbc
+key                   = promote
 
 highland_no_key       :: AbcKey
-highland_no_key       = abcLiteral $ text "HP"
+highland_no_key       = wrap $ text "HP"
 
 highland_mixolydian   :: AbcKey
-highland_mixolydian   = abcLiteral $ text "Hp"
+highland_mixolydian   = wrap $ text "Hp"
 
 data AbcKeySpecT
 type AbcKeySpec = Abc AbcKeySpecT
 
 key_spec :: AbcNote -> AbcMode -> AbcKeySpec
-key_spec (Abc n) (Abc m) = Abc $ sequenceL (<+>) [n,m]
+key_spec n m    = caten (<+>) n m
 
 data AbcKeyAccidentalT
 type AbcKeyAccidental = Abc AbcKeyAccidentalT
 
 key_sharp   :: AbcKeyAccidental
-key_sharp   = abcLiteral $ char '#'
+key_sharp   = wrap $ char '#'
 
 
 key_flat    :: AbcKeyAccidental
-key_flat    = abcLiteral $ char 'b'
+key_flat    = wrap $ char 'b'
 
 data AbcModeT
 type AbcMode = Abc AbcModeT
 
 mode :: String -> AbcMode
-mode = abcLiteral . text
+mode = wrap . text
 
 major, minor, lydian, ionian, mixolydian, dorian, aeolian, phrygian, locrian
     :: AbcMode
@@ -343,7 +320,8 @@ locrian       = mode "loc"
 
 -- Abc has pitches in a two octave range and then uses octave specs for higher
 -- and lower octaves
-data AbcPitchLetter = C | D | E | F | G | A | B | C2 | D2 | E2 | F2 | G2 | A2 | B2
+data AbcPitchLetter = C | D | E | F | G | A | B 
+                    | C2 | D2 | E2 | F2 | G2 | A2 | B2
   deriving (Eq,Enum,Ord,Show)
 
 instance Pretty AbcPitchLetter where
@@ -367,19 +345,19 @@ data AbcNoteT
 type AbcNote = Abc AbcNoteT
 
 note          :: AbcPitchLetter -> AbcNote
-note          = abcLiteral . pretty
+note          = wrap . pretty
 
-instance Append AbcCxt_BodyT AbcNoteT
+instance Append Abc AbcCxt_BodyT AbcNoteT
 
 data AbcOctaveT
 type AbcOctave = Abc AbcOctaveT
 
 octaveHigh    :: Int -> AbcOctave
-octaveHigh i  = abcLiteral $ text (replicate i '\'')
+octaveHigh i  = wrap $ text (replicate i '\'')
 
 
 octaveLow     :: Int -> AbcOctave
-octaveLow i   = abcLiteral $ text (replicate i ',')
+octaveLow i   = wrap $ text (replicate i ',')
 
 
 instance SuffixAttr AbcNoteT AbcOctaveT
@@ -389,19 +367,19 @@ data AbcAccidentalT
 type AbcAccidental = Abc AbcAccidentalT
 
 natural       :: AbcAccidental
-natural       = abcLiteral $ char '='
+natural       = wrap $ char '='
 
 sharp         :: AbcAccidental
-sharp         = abcLiteral $ char '^'
+sharp         = wrap $ char '^'
 
 doubleSharp   :: AbcAccidental
-doubleSharp   = abcLiteral $ string "^^"
+doubleSharp   = wrap $ string "^^"
 
 flat          :: AbcAccidental
-flat          = abcLiteral $ char '_'
+flat          = wrap $ char '_'
 
 doubleFlat    :: AbcAccidental
-doubleFlat    = abcLiteral $ string "__"
+doubleFlat    = wrap $ string "__"
 
 instance PrefixAttr AbcNoteT AbcAccidentalT
 
@@ -411,7 +389,7 @@ data AbcDurationT
 type AbcDuration = Abc AbcDurationT
 
 dur                 :: (Integer,Integer) -> AbcDuration
-dur                 = abcLiteral . ppNoteLength
+dur                 = wrap . ppNoteLength
 
 instance SuffixAttr AbcNoteT AbcDurationT
 instance SuffixAttr AbcRestT AbcDurationT
@@ -422,19 +400,19 @@ type AbcBrokenRhythm = Abc AbcBrokenRhythmT
 
 -- '>' left note dotted, right note halved
 dotted_left       :: AbcBrokenRhythm
-dotted_left       = abcLiteral $ char '>'
+dotted_left       = wrap $ char '>'
 
 dotted_leftn      :: Int -> AbcBrokenRhythm
-dotted_leftn i    = abcLiteral $ text $ replicate i '>'
+dotted_leftn i    = wrap $ text $ replicate i '>'
 
 
 -- '<' left note halved, right note dotted
 dotted_right      :: AbcBrokenRhythm
-dotted_right      = abcLiteral $ char '<'
+dotted_right      = wrap $ char '<'
 
 
 dotted_rightn     :: Int -> AbcBrokenRhythm
-dotted_rightn i   = abcLiteral $ text $ replicate i '<'
+dotted_rightn i   = wrap $ text $ replicate i '<'
 
 
 -- ** Rests (4.5)
@@ -442,12 +420,12 @@ data AbcRestT
 type AbcRest = Abc AbcRestT
 
 rest                :: AbcRest
-rest                = abcLiteral $ char 'z'
+rest                = wrap $ char 'z'
 
 spacer              :: AbcRest
-spacer              = abcLiteral $ char 'x'
+spacer              = wrap $ char 'x'
 
-instance Append AbcCxt_BodyT AbcRestT
+instance Append Abc AbcCxt_BodyT AbcRestT
 
 
 
@@ -457,10 +435,10 @@ data AbcRepeatMarkT
 type AbcRepeatMark = Abc AbcRepeatMarkT
 
 repeatMark :: String -> AbcRepeatMark
-repeatMark = abcLiteral . text
+repeatMark = wrap . text
 
 
-instance Append AbcCxt_BodyT AbcRepeatMarkT
+instance Append Abc AbcCxt_BodyT AbcRepeatMarkT
 
 
 -- ** Ties and slurs (4.11)
@@ -468,20 +446,20 @@ data AbcTieT
 type AbcTie = Abc AbcTieT
 
 tie             :: AbcTie
-tie             = abcLiteral $ char '-'
+tie             = wrap $ char '-'
 
-instance Append AbcCxt_BodyT AbcTieT
+instance Append Abc AbcCxt_BodyT AbcTieT
 
 data AbcSlurT
 type AbcSlur = Abc AbcSlurT
 
 beginSlur       :: AbcSlur
-beginSlur       = abcLiteral $ lparen
+beginSlur       = wrap $ lparen
 
 endSlur         :: AbcSlur
-endSlur         = abcLiteral $ rparen
+endSlur         = wrap $ rparen
 
-instance Append AbcCxt_BodyT AbcSlurT
+instance Append Abc AbcCxt_BodyT AbcSlurT
 
 
 -- ** Grace notes (4.12)
@@ -491,21 +469,21 @@ type AbcGraceNotes = Abc AbcGraceNotesT
 
 
 gracenotes          :: [AbcNote] -> AbcGraceNotes
-gracenotes          = Abc . nested lbrace rbrace . sequenceL (<>) . map unAbc
+gracenotes          = wrap . encloseSep lbrace rbrace empty . map unwrap
 
 
 -- Its simpler if we make gracenotes a glyph rather than
 -- a prefix attr of a note.
-instance Append AbcCxt_BodyT AbcGraceNotesT
+instance Append Abc AbcCxt_BodyT AbcGraceNotesT
 
 -- ** Duplets, triplets, quadruplets, etc. (4.13)
 data AbcNPletT
 type AbcNPlet = Abc AbcNPletT
 
 nplet               :: Int -> AbcNPlet
-nplet               = Abc . literal . group . (char '(' <>) . int
+nplet               = wrap . group . (char '(' <>) . int
 
-instance Append AbcCxt_BodyT AbcNPletT
+instance Append Abc AbcCxt_BodyT AbcNPletT
 
 
 
@@ -514,16 +492,16 @@ data AbcDecorationT
 type AbcDecoration = Abc AbcDecorationT
 
 tilde               :: AbcDecoration
-tilde               = abcLiteral $ char '~'
+tilde               = wrap $ char '~'
 
 stacatto            :: AbcDecoration
-stacatto            = abcLiteral $ char '.'
+stacatto            = wrap $ char '.'
 
 downbow             :: AbcDecoration
-downbow             = abcLiteral $ char 'v'
+downbow             = wrap $ char 'v'
 
 upbow               :: AbcDecoration
-upbow               = abcLiteral $ char 'u'
+upbow               = wrap $ char 'u'
 
 instance PrefixAttr AbcNoteT AbcDecorationT
 
@@ -533,22 +511,22 @@ data AbcChordT
 type AbcChord = Abc AbcChordT
 
 chord           :: [AbcNote] -> AbcChord
-chord           = Abc . nested lbracket rbracket . sequenceL (<>) . map unAbc
+chord           = wrap . encloseSep lbracket rbracket empty . map unwrap
 
-instance Append AbcCxt_BodyT AbcChordT
+instance Append Abc AbcCxt_BodyT AbcChordT
 
 -- * Clefs (6)
 data AbcClefT
 type AbcClef = Abc AbcClefT
 
 clef                :: AbcClefName -> AbcClef
-clef cn             = Abc $ sequenceL (<>) [literal (text "clef="), unAbc cn]
+clef cn             = wrap $ text "clef=" <> unwrap cn
 
 data AbcClefNameT
 type AbcClefName = Abc AbcClefNameT
 
 clef_name           :: String -> AbcClefName
-clef_name           = abcLiteral . text
+clef_name           = wrap . text
 
 treble              :: AbcClefName
 treble              = clef_name "treble"

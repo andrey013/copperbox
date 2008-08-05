@@ -17,7 +17,7 @@
 
 module HNotate.Print.LilyPondNamed where
 
-import HNotate.Print.OutputBase
+import HNotate.Print.Base
 import HNotate.Print.LilyPondInternals
 
 import Text.PrettyPrint.Leijen
@@ -1198,6 +1198,6 @@ tagline             = headerElement "tagline"
 
 -- | @breakbefore@.
 breakbefore         :: Bool -> LyHeaderElement
-breakbefore True    = equation "breakbefore" (lyLit $ text "##t")
-breakbefore False   = equation "breakbefore" (lyLit $ text "##f")
+breakbefore True    = equation "breakbefore" (wrap $ text "##t")
+breakbefore False   = equation "breakbefore" (wrap $ text "##f")
 

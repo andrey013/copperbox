@@ -16,12 +16,12 @@
 --------------------------------------------------------------------------------
 
 module HNotate.Print.OutputLilyPond ( 
-    module HNotate.Print.OutputBase,
+    module HNotate.Print.Base,
     module HNotate.Print.LilyPondInternals,
     module HNotate.Print.LilyPondNamed
   ) where
 
-import HNotate.Print.OutputBase
+import HNotate.Print.Base
 import HNotate.Print.LilyPondInternals
 import HNotate.Print.LilyPondNamed
 

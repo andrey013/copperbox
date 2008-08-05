@@ -17,8 +17,8 @@
 
 module HNotate.Print.OutputAbc
   ( module HNotate.Print.AbcInternals
-  , module HNotate.Print.OutputBase
+  , module HNotate.Print.Base
   ) where
 
 import HNotate.Print.AbcInternals
-import HNotate.Print.OutputBase
+import HNotate.Print.Base

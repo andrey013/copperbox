@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -95,7 +96,7 @@ lyPitchName :: Pitch -> LyPitchName
 lyPitchName = toEnum . fromEnum . pitch_letter
 
 
-suffixWith :: Append cxts cxta
+suffixWith :: (Append Ly cxts cxta, Monoid (Ly cxts))
            => Ly cxts
            -> ProcessM (Ly cxta)
            -> ProcessM (Ly cxts)
@@ -121,7 +122,7 @@ renderPart (LyScPart i se) =
 
 renderPolyPhrase :: LyCxt_Element -> LyScPolyPhrase -> ProcessM LyCxt_Element
 renderPolyPhrase cxt (LyScSingletonPhrase x)   =
-    (cxt >|<) <$> renderSegment elementStart x
+    (cxt `mappend`) <$> renderSegment elementStart x
 
 renderPolyPhrase cxt (LyScPolyPhrase xs)   =
     mergePolys cxt <$> mapM (renderSegment elementStart) xs
