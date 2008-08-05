@@ -1,11 +1,11 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- make sure abcm2ps is in your path.
 
 module DemoOutputAbc where
 
-import Bala.Format.Output.OutputAbc
-import Bala.Base.Meter ( (//) )
+import HNotate.Backend.Abc (printAbc, writeAbc)
+import HNotate.Print.OutputAbc
+
 
 import System.Process (runCommand, waitForProcess)
 import Text.PrettyPrint.Leijen
@@ -54,7 +54,7 @@ demo_005 = key_spec (sharp !> c_ ) locrian
 demo_pp5 = runAbc demo_005
 
 
-bala_test  = tune   (     header
+abc_test  = tune   (     header
                       +++ number_field  1
                       +++ title_field   "Bala Abc test"
                       +++ meter_field   << meter (4,4)
@@ -74,12 +74,13 @@ bala_test  = tune   (     header
 
 
 outputDoc :: Abc a -> FilePath -> FilePath -> IO ()
-outputDoc e abcpath pspath = let sdoc = renderPretty 0.8 80 (pretty $ unAbc e) in do
-    writeFile abcpath ((displayS sdoc []) ++ "\n")
+outputDoc e abcpath pspath = do
+    writeAbc abcpath e
     ph <- runCommand ("abcm2ps " ++ abcpath ++ " -O " ++ pspath)  
     waitForProcess ph
     return ()
   
+demo = printAbc abc_test
 
-main = outputDoc bala_test "bala_test.abc" "bala_test.ps"
+main = outputDoc abc_test "abc_test.abc" "abc_test.ps"
 

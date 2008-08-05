@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.PitchRep
+-- Module      :  Bala.Base.HNotateInstances
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -13,7 +13,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Base.PerformInstances (
+module Bala.Base.HNotateInstances (
   P.PitchRepr, 
   P.DurationRepr
   ) where
@@ -21,8 +21,8 @@ module Bala.Base.PerformInstances (
 import Bala.Base.Pitch
 import Bala.Base.Duration
 
-import qualified Bala.Perform.Base.Class as P
-import qualified Bala.Perform.Base.Datatypes as P
+import qualified HNotate.Base.Class as P
+import qualified HNotate.Base.Datatypes as P
 
 import Data.Ratio
 

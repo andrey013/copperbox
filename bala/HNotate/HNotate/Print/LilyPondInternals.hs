@@ -376,6 +376,11 @@ type LyDuration = Ly LyDurationT
 duration            :: Int -> LyDuration
 duration            = lyLit . int
 
+-- shorthand
+dur                :: Int -> LyDuration
+dur                 = duration
+
+
 -- | @\\longa@.
 longa               :: LyDuration
 longa               = cmd "longa"

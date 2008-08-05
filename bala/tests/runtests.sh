@@ -6,18 +6,22 @@ cd ../BalaExamples/
 
 # test Midi, LilyPond and Abc generation are working
 # - you need lilyond and abcm2ps intalled an in your path
-runhaskell -i.. Riff.hs
+echo "Running Riff.hs..."
+runhaskell -i..:../HNotate:../ZMidi Riff.hs
 
 # generate the midi file bulgarian6.midi
-runhaskell -i.. Bulgarian6.hs
+echo "Running Bulgarian6.hs..."
+runhaskell -i..:../HNotate:../ZMidi Bulgarian6.hs
 
 # read what you have written
-runhaskell -i.. MidiPrint.hs out/bulgarian6.midi > /dev/null
+echo "Running MidiPrint.hs..."
+runhaskell -i..:../HNotate:../ZMidi MidiPrint.hs out/bulgarian6.midi > /dev/null
 
-runhaskell -i.. Korda.hs
+echo "Running Korda.hs..."
+runhaskell -i..:../HNotate:../ZMidi Korda.hs
 
-
-runhaskell -i.. DemoScore.hs
+echo "Running DemoScore.hs..."
+runhaskell -i..:../HNotate:../ZMidi DemoScore.hs
 
 
 # annoying but the '--output=' directive for LilyPond isn't doing what I expect
@@ -27,7 +31,8 @@ mv *.ps out/
 
 cd ../tests
 
-runhaskell -i.. QCTests.hs
+echo "Running QCTests.hs..."
+runhaskell -i..:../HNotate:../ZMidi QCTests.hs
 
 
 

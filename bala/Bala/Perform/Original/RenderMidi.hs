@@ -17,12 +17,11 @@
 module Bala.Perform.Original.RenderMidi where
 
 import Bala.Base
-import qualified Bala.Format.Midi as MIDI
-import Bala.Format.Midi.SyntaxElements
-
 import Bala.Perform.Original.EventTree
 import Bala.Perform.Original.Mergesort
 import Bala.Perform.Original.PerformBase
+
+import ZMidi
 
 
 import Control.Applicative hiding (empty)
@@ -73,7 +72,7 @@ default_midi_env = Perform_Midi_Env { tick_value = lilypond_ticks }
 -- c. NoEvent - in MIDI a NoEvent might still have a duration (if its a rest)
 
 data EventZero = ZeroPitch Pitch Integer 
-               | ZeroMidi MIDI.Event Integer
+               | ZeroMidi Event Integer
                | ZeroNoEvent Integer
 
 eventZero :: Perform evt Pitch Duration => evt -> ProcessM EventZero
@@ -98,7 +97,7 @@ ezDuration (ZeroNoEvent i)  = i
 {-  
 class Renderable a where 
     duration           :: a -> Duration
-    generates          :: a -> Maybe (a -> ProcessM (Either Pitch MIDI.Event))
+    generates          :: a -> Maybe (a -> ProcessM (Either Pitch Event))
   
 calcDuration :: Renderable a => a -> ProcessM Integer
 calcDuration e = let d = duration e in 
@@ -118,7 +117,7 @@ newTrack :: ProcessM ()
 newTrack = gets track_number >>= \t -> modify (\s -> s { track_number = t+1 })   
 
 {-
-generatesEvent :: Renderable evt => evt -> ProcessM (Maybe (Either Pitch MIDI.Event))
+generatesEvent :: Renderable evt => evt -> ProcessM (Maybe (Either Pitch Event))
 generatesEvent evt = 
   case generates evt of 
     Just f -> f evt >>= (return . Just) 
@@ -130,9 +129,9 @@ generatesEvent evt =
 -- | Flatten the event tree into a sequence of events paired with global time.
 {-
 oflat :: Renderable evt =>
-         (Integer,Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer))) -> 
+         (Integer,Seq (ClockedEvent ((Either Pitch Event), Integer))) -> 
          EventTree evt -> 
-         ProcessM (Integer,Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer)))  
+         ProcessM (Integer,Seq (ClockedEvent ((Either Pitch Event), Integer)))  
 -}
  
 
@@ -198,13 +197,13 @@ merge (i,sq) xs = (undefined, foldl (><) sq (map snd xs))
 {-
 oflatPass :: Renderable evt 
           => EventTree evt 
-          -> ProcessM (Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer)))  
+          -> ProcessM (Seq (ClockedEvent ((Either Pitch Event), Integer)))  
 -}
 oflatPass sq = snd <$> oflat (0,empty) (viewl sq)
 
 
 
-data MidiMessage = MidiMessage Integer MIDI.Event
+data MidiMessage = MidiMessage Integer Event
   deriving (Eq,Show)
 
 -- Usefully MIDI.Event's are ordered so that NoteOff is LT NoteOn
@@ -215,15 +214,15 @@ instance Ord MidiMessage where
   
   
   
-noteOn' :: Pitch -> ProcessM MIDI.Event
+noteOn' :: Pitch -> ProcessM Event
 noteOn' p = let p' = fromPitch p in do
     ch <- channel 
-    return $ noteOn ch p' 127
+    return $ VoiceEvent $ NoteOn ch p' 127
 
-noteOff' :: Pitch -> ProcessM MIDI.Event
+noteOff' :: Pitch -> ProcessM Event
 noteOff' p = let p' = fromPitch p in do
     ch <- channel 
-    return $ noteOff ch p' 127
+    return $ VoiceEvent $ NoteOff ch p' 127
 
 noteOnOff :: Integer -> Pitch -> Integer -> ProcessM (MidiMessage, MidiMessage)
 noteOnOff gt p d = do 
@@ -233,7 +232,7 @@ noteOnOff gt p d = do
 
 {-  
 splitNoteStep  :: (Seq MidiMessage)
-               -> ClockedEvent ((Either Pitch MIDI.Event), Integer) 
+               -> ClockedEvent ((Either Pitch Event), Integer) 
                -> ProcessM (Seq MidiMessage)
 -}
 splitNoteStep sq e@(gt,(ZeroPitch p d))   = do 
@@ -246,7 +245,7 @@ splitNoteStep sq e@(gt,(ZeroMidi msg d))  = do
 splitNoteStep sq _                        = return $ sq 
         
     
--- splitNotePass :: Seq (ClockedEvent ((Either Pitch MIDI.Event), Integer)) -> ProcessM (Seq MidiMessage)
+-- splitNotePass :: Seq (ClockedEvent ((Either Pitch Event), Integer)) -> ProcessM (Seq MidiMessage)
 splitNotePass = F.foldlM splitNoteStep empty 
     
     
@@ -264,26 +263,26 @@ demo02 = sortPass <=< splitNotePass <=< oflatPass
 -}
 
 deltaStep 
-    :: (Integer, Seq MIDI.Message) -> MidiMessage -> ProcessM (Integer, Seq MIDI.Message)
+    :: (Integer, Seq Message) -> MidiMessage -> ProcessM (Integer, Seq Message)
 deltaStep (t,sq) (MidiMessage gt e) = return (gt, sq |> mkMessage gt t e)
   where
-    mkMessage gt t e = MIDI.Message (fromIntegral $ gt-t, e) 
+    mkMessage gt t e = Message (fromIntegral $ gt-t, e) 
     
     
-deltaPass ::  Seq MidiMessage -> ProcessM (Seq MIDI.Message)
+deltaPass ::  Seq MidiMessage -> ProcessM (Seq Message)
 deltaPass s = snd <$> F.foldlM deltaStep (0,empty) s
 
 
 
-finalizeTrack :: Seq MIDI.Message -> ProcessM (Seq MIDI.Message)
-finalizeTrack s = return $ s |> endOfTrack_zero
+finalizeTrack :: Seq Message -> ProcessM (Seq Message)
+finalizeTrack s = return $ s |> end_of_track 0
 
 
 
 processTrack :: Perform evt Pitch Duration 
              => EventTree evt 
-             -> ProcessM MIDI.Track
-processTrack tree = MIDI.Track <$> steps (unET tree)
+             -> ProcessM Track
+processTrack tree = Track <$> steps (unET tree)
   where 
     steps = finalizeTrack <=< deltaPass     <=< sortPass  
                           <=< splitNotePass <=< oflatPass
@@ -291,31 +290,31 @@ processTrack tree = MIDI.Track <$> steps (unET tree)
 
 processPerformance :: Perform evt Pitch Duration 
                    => Performance evt 
-                   -> ProcessM MIDI.MidiFile
+                   -> ProcessM MidiFile
 processPerformance p@(Perf xs) = do 
     hdr <- midiHeader p
     t0 <- trackZero 
     ts <- foldM fn mempty xs
-    return $ MIDI.MidiFile hdr (t0 <| ts)
+    return $ MidiFile hdr (t0 <| ts)
   where
     fn acc a = processTrack a >>= \t -> newTrack >> return (acc |> t)
 
 
 midiHeader :: Perform evt Pitch Duration 
            => Performance evt 
-           -> ProcessM MIDI.Header
+           -> ProcessM Header
 midiHeader (Perf xs) = do 
     tpqn <- asks tick_value
-    return $ format1_header (1 + length xs) (tpb tpqn) 
+    return $ header_fmt1 (1 + length xs) (tpb tpqn) 
 
-setTempoMessage :: ProcessM MIDI.Message
-setTempoMessage = gets midi_tempo >>= return . setTempo_zero
+setTempoMessage :: ProcessM Message
+setTempoMessage = gets midi_tempo >>= return . set_tempo
  
 
-trackZero :: ProcessM MIDI.Track
+trackZero :: ProcessM Track
 trackZero = do 
     stm <- setTempoMessage
-    return $ MIDI.Track (mempty |> stm |> endOfTrack_zero) 
+    return $ Track (mempty |> stm |> end_of_track 0) 
 
 notes :: EventTree (Pitch,a) -> String
 notes = afficherL . F.foldr note [] . unET
@@ -323,13 +322,13 @@ notes = afficherL . F.foldr note [] . unET
         note _           acc = acc
 
 renderMidi1 :: (Perform evt Pitch Duration) 
-            => EventTree evt -> Perform_Midi_Env -> MIDI.MidiFile
+            => EventTree evt -> Perform_Midi_Env -> MidiFile
 renderMidi1 tree env = 
     renderMidi (Perf [tree]) env
 
 
 renderMidi :: (Perform evt Pitch Duration) 
-           => Performance evt -> Perform_Midi_Env -> MIDI.MidiFile
+           => Performance evt -> Perform_Midi_Env -> MidiFile
 renderMidi perf env = 
     evalPerform (processPerformance perf) intial_midi_state env
 

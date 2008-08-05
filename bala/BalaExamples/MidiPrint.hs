@@ -1,19 +1,19 @@
 
 
--- ghci> :set -i..
+-- ghci> :set -i../ZMidi
 -- ghci> :set args out/bulgarian6.midi
 
 
--- shell> ghc --make MidiPrint.hs -i..
+-- shell> ghc --make MidiPrint.hs -i../ZMidi
 --
--- shell> runhaskell.exe -i.. MidiPrint.hs out/bulgarian6.midi
+-- shell> runhaskell.exe -i../ZMidi MidiPrint.hs out/bulgarian6.midi
 
 
 
 module Main where
 
-import Bala.Format.Midi
-import qualified Bala.Format.Midi.ReadFileAlt as Alt
+import ZMidi
+import qualified ZMidi.ReadFileAlt as Alt
 
 import System.Environment
 import Text.PrettyPrint.Leijen

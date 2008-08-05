@@ -18,7 +18,8 @@ module HNotate  (
     module HNotate.Backend.Abc,
     module HNotate.Backend.Midi,
     module HNotate.Backend.LilyPond,
-    module HNotate.Score.ToScore
+    module HNotate.Score.Pretty,
+    module HNotate.Score.ToScore    
   ) where
 
 import HNotate.Base.Class
@@ -26,4 +27,5 @@ import HNotate.Base.EventTree
 import HNotate.Backend.Abc
 import HNotate.Backend.Midi
 import HNotate.Backend.LilyPond
+import HNotate.Score.Pretty
 import HNotate.Score.ToScore

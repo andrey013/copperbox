@@ -16,7 +16,7 @@ module Bala.Perform.Original.MidiInternals (
   printMidi, writeMidi
   ) where
 
-import qualified Bala.Format.Midi as MIDI  
+import qualified ZMidi as MIDI  
   
 printMidi :: MIDI.MidiFile -> IO ()
 printMidi = MIDI.printMidi
