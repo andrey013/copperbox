@@ -87,7 +87,7 @@ timeDivision :: ProcessM TimeDivision
 timeDivision = TPB . fromIntegral             <$> asks tick_value
 
 ticks :: Duration -> ProcessM Integer
-ticks d = pure $ (midiTicks d)
+ticks d = (flip midiTicks) d <$> asks tick_value
 
 setMeasureOnset :: Int -> ProcessM ()
 setMeasureOnset i = asks measure_length >>= \len ->

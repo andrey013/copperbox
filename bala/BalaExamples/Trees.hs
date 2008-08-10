@@ -1,5 +1,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
+-- ghci - 
+-- :set -i..:../HNotate:../ZMidi
+
 module Trees where
 
 import Bala.Base hiding (toPitch)
@@ -52,6 +55,7 @@ run1 = do
     
 print1 = printMidi $ systemToMidi default_midi_system example1 
 
+sc1 = pretty $ toScore example1 default_score_env
    
 -- | example 2 - simple parallel - a chord             
 example2 :: System NrEvent
@@ -65,6 +69,7 @@ run2 = do
 
 print2 = printMidi $ systemToMidi default_midi_system example2
 
+sc2 = pretty $ toScore example2 default_score_env
     
 -- | example 3 - successors and grace.
 example3 :: System NrEvent

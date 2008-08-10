@@ -396,4 +396,4 @@ toScore :: (Event evt)
         => System evt
         -> Notate_Sc_Env
         -> ScScore
-toScore perf env = evalNotate (processSystem perf) intial_score_state env
+toScore sys env = evalNotate (processSystem sys) intial_score_state env
