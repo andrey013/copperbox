@@ -87,6 +87,7 @@ type AbcCxt_Header = Abc AbcCxt_HeaderT
 header              :: AbcCxt_Header
 header              = wrap $ empty
 
+instance Sequence AbcCxt_HeaderT
 instance Monoid (Abc AbcCxt_HeaderT) where
   mempty = header
   mappend = caten (<$>)
@@ -102,6 +103,7 @@ type AbcCxt_Body = Abc AbcCxt_BodyT
 body                :: AbcCxt_Body
 body                = wrap $ empty
 
+instance Sequence AbcCxt_BodyT
 instance Monoid (Abc AbcCxt_BodyT) where
   mempty = body
   mappend = caten (<>)

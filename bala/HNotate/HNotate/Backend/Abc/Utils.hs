@@ -16,7 +16,7 @@
 module HNotate.Backend.Abc.Utils (
     printAbc,
     writeAbc,
-    performanceToAbc,
+    systemToAbc,
     scoreToAbc
   ) where
 
@@ -40,10 +40,11 @@ writeAbc :: FilePath -> Abc a -> IO ()
 writeAbc filename (Abc a) = writeFile filename (displaySimple $ pretty a)
 
 
-performanceToAbc :: (Event evt) => System evt -> [AbcCxt_Body]
-performanceToAbc perf = let sc0   = toScore perf default_score_env
-                            abc   = abcscore sc0
-                        in generateAbcScore abc default_abc_env
+systemToAbc :: (Event evt) => System evt -> [AbcCxt_Body]
+systemToAbc sys = 
+    let sc0   = toScore sys default_score_env
+        abc   = abcscore sc0
+    in generateAbcScore abc default_abc_env
 
 scoreToAbc :: ScScore -> [AbcCxt_Body]
 scoreToAbc sc = generateAbcScore (abcscore sc) default_abc_env

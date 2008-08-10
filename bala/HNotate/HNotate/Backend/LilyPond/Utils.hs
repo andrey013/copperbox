@@ -16,7 +16,7 @@
 module HNotate.Backend.LilyPond.Utils (
     printLy,
     writeLy,
-    performanceToLy,
+    systemToLy,
     scoreToLy
   ) where
 
@@ -40,10 +40,11 @@ writeLy :: FilePath -> Ly a -> IO ()
 writeLy filename (Ly a) = writeFile filename (displaySimple $ pretty a)
 
 
-performanceToLy :: (Event evt) => System evt -> [LyCmdScore]
-performanceToLy perf = let sc0  = toScore perf default_score_env
-                           ly   = lyscore sc0
-                       in generateLilyPondScore ly default_ly_env
+systemToLy :: (Event evt) => System evt -> [LyCmdScore]
+systemToLy sys = 
+    let sc0  = toScore sys default_score_env
+        ly   = lyscore sc0
+    in generateLilyPondScore ly default_ly_env
 
 scoreToLy :: ScScore -> [LyCmdScore]
 scoreToLy sc = generateLilyPondScore (lyscore sc) default_ly_env

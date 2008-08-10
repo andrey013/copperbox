@@ -76,32 +76,13 @@ class (WDoc t) => Append t se e where
   lifts = wrap . unwrap
     
 
+class Sequence a
 
+-- The sequence append operator
+infixl 4 <+<
+(<+<) :: (Monoid (t se), Sequence se) => t se -> t se -> t se
+(<+<) se se' = se `mappend` se'
 
-
-{-
--- A type constrained add-right
-class Append cxts cxta
-
-infixl 5 +++
-
-(+++) :: (Monoid cxts, Append cxts cxta) => t cxts -> t cxta -> t cxts
-(+++) se e = addright se e
-
-
-
--}
-
-
-
-
-
-
-
-{-
-literalP :: Pretty a => a -> Skeleton Doc
-literalP = literal . pretty
--}
 
 
 

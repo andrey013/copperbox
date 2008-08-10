@@ -101,6 +101,7 @@ type LyCxt_Toplevel = Ly LyCxt_ToplevelT
 toplevelStart       :: LyCxt_Toplevel
 toplevelStart       = wrap empty
 
+instance Sequence LyCxt_ToplevelT
 instance Monoid (Ly LyCxt_ToplevelT) where
   mempty = toplevelStart
   mappend = caten (<$>)
@@ -113,6 +114,7 @@ type LyCxt_Header = Ly LyCxt_HeaderT
 headerStart         :: LyCxt_Header
 headerStart         = wrap empty
 
+instance Sequence LyCxt_HeaderT
 instance Monoid (Ly LyCxt_HeaderT) where
   mempty = headerStart
   mappend = caten (<$>)
@@ -126,6 +128,7 @@ type LyCxt_Book = Ly LyCxt_BookT
 bookStart           :: LyCxt_Book
 bookStart           = wrap empty
 
+instance Sequence LyCxt_BookT
 instance Monoid (Ly LyCxt_BookT) where
   mempty = bookStart
   mappend = caten (<$>)
@@ -137,6 +140,7 @@ type LyCxt_Element = Ly LyCxt_ElementT
 elementStart        :: LyCxt_Element
 elementStart        = wrap empty
 
+instance Sequence LyCxt_ElementT
 instance Monoid (Ly LyCxt_ElementT) where
   mempty = elementStart
   mappend = caten (</>)
