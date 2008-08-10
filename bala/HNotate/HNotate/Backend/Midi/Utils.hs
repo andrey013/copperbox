@@ -26,6 +26,7 @@ import HNotate.Base.Class (Event)
 import HNotate.Base.EventTree (System)
 import HNotate.Score.Datatypes (ScScore)
 import HNotate.Score.ToScore (toScore, default_score_env)
+import HNotate.System.SystemMidi
 
 import qualified ZMidi as ZM
 
@@ -38,12 +39,12 @@ writeMidi :: FilePath -> ZM.MidiFile -> IO ()
 writeMidi = ZM.writeMidi
 
 
-systemToMidi :: (Event evt) => System evt -> ZM.MidiFile
-systemToMidi perf = 
+systemToMidi :: (Event evt) => MidiSystem -> System evt -> ZM.MidiFile
+systemToMidi sys perf = 
     let sc0   = toScore perf default_score_env
         msc   = midiscore sc0
-    in generateMidi msc default_midi_env
+    in sys $ generateMidi msc default_midi_env
 
-scoreToMidi :: ScScore -> ZM.MidiFile
-scoreToMidi sc = generateMidi (midiscore sc) default_midi_env
+scoreToMidi :: MidiSystem -> ScScore -> ZM.MidiFile
+scoreToMidi sys sc = sys $ generateMidi (midiscore sc) default_midi_env
 

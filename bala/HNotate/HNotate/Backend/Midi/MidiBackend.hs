@@ -23,6 +23,7 @@ import HNotate.Backend.Midi.MidiScoreDatatypes
 import HNotate.Base.Datatypes
 import HNotate.Base.NotateMonad
 import HNotate.Base.OnsetQueue
+import HNotate.System.SystemMidi
 
 import ZMidi
 
@@ -51,8 +52,7 @@ data Notate_Midi_State = Notate_Midi_State {
 
 data Notate_Midi_Env = Notate_Midi_Env {
     tick_value      :: Integer,
-    measure_length  :: Integer,
-    midi_tempo      :: Word32
+    measure_length  :: Integer
   }
   deriving (Show)
 
@@ -64,8 +64,7 @@ lilypond_ticks  = 384
 default_midi_env :: Notate_Midi_Env
 default_midi_env = Notate_Midi_Env {
     tick_value      = lilypond_ticks,
-    measure_length  = 4 * lilypond_ticks,
-    midi_tempo      = 500000
+    measure_length  = 4 * lilypond_ticks  
   }
 
 state0 :: Notate_Midi_State
@@ -73,7 +72,7 @@ state0 = Notate_Midi_State {
     global_time         = 0,
     channel             = 1,
     note_on_velocity    = 127,
-    note_off_velocity   = 64
+    note_off_velocity   = 127
   }
 
 
@@ -104,33 +103,25 @@ bumpDuration d = do
 finalizeTrack :: Seq Message -> Seq Message
 finalizeTrack s = s |> end_of_track 0
 
-setTempoMessage :: ProcessM Message
-setTempoMessage = set_tempo <$> asks midi_tempo
 
 
-track0 :: ProcessM Track
-track0 = do
-    stm <- setTempoMessage
-    return $ Track (mempty |> stm |> end_of_track 0)
 
-
-generateMidi :: MidiScScore -> Notate_Midi_Env -> MidiFile
+generateMidi :: MidiScScore -> Notate_Midi_Env -> PartMidiFile
 generateMidi sc env = evalNotate (renderScore sc) state0 env
 
 
 -- | @LyScScore --> \\MidiFile@
-renderScore :: MidiScScore -> ProcessM MidiFile
+renderScore :: MidiScScore -> ProcessM PartMidiFile
 renderScore (MidiScScore se) = do
-    t0 <- track0
-    MidiFile <$> midiHeader (1 + length se) <*> F.foldlM fn (mempty |> t0) se
+    F.foldlM fn mempty se
   where
     fn xs p = (xs |>) <$> renderTrack p
 
-renderTrack :: MidiScTrack -> ProcessM Track
+renderTrack :: MidiScTrack -> ProcessM (Seq Message)
 renderTrack (MidiScTrack _ se) =
     buildTrack <$> F.foldlM renderMeasure mempty se
   where
-    buildTrack = Track . finalizeTrack . deltaTransform
+    buildTrack = finalizeTrack . deltaTransform
 
 
 -- renderMeasure must reset the global_time as MidiScore can have

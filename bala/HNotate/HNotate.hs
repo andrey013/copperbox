@@ -19,7 +19,8 @@ module HNotate  (
     module HNotate.Backend.Midi,
     module HNotate.Backend.LilyPond,
     module HNotate.Score.Pretty,
-    module HNotate.Score.ToScore    
+    module HNotate.Score.ToScore,
+    module HNotate.System.SystemMidi   
   ) where
 
 import HNotate.Base.Class
@@ -29,3 +30,4 @@ import HNotate.Backend.Midi
 import HNotate.Backend.LilyPond
 import HNotate.Score.Pretty
 import HNotate.Score.ToScore
+import HNotate.System.SystemMidi

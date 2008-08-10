@@ -29,6 +29,7 @@ import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Foldable as F
 import qualified Data.IntMap as IM
+import Data.Maybe
 import Data.Monoid
 import Data.Sequence hiding (reverse)
 import Prelude hiding (null)
@@ -239,17 +240,33 @@ withEvent evt f = makesEvent evt >>= f
 
 suffixChord :: TA
             -> [ScGlyph]
-            -> ProcessM (TA)
-suffixChord se []  = return $ se
-suffixChord se stk = error "suffixChord" -- se |%> (scChord $ reverse stk)
+            -> ProcessM TA
+suffixChord se stk = case pitches stk of
+    [] -> return se 
+    xs -> se |%> (ScChord xs (stackDuration stk))
 
 suffixGrace :: TA
             -> [ScGlyph]
-            -> ProcessM (TA)
-suffixGrace se []  = return $ se
-suffixGrace se stk = error "suffixGrace" -- se |%> (scGrace $ reverse stk)
+            -> ProcessM TA
+suffixGrace se stk = case graces stk of
+    [] -> return se 
+    xs -> se |%> (ScGraceNotes xs)
 
 
+stackDuration :: [ScGlyph] -> Duration
+stackDuration ((ScNote _ d):_)  = d
+stackDuration (x:xs)            = stackDuration xs
+stackDuration _                 = error $ "stackDuration" -- quarternote
+
+pitches = catMaybes . map notePitch
+  where 
+    notePitch (ScNote p _) = Just p
+    notePitch _            = Nothing
+    
+graces = catMaybes . map notePitchDur
+  where 
+    notePitchDur (ScNote p d) = Just (p,d)
+    notePitchDur _            = Nothing  
 
 flattenStep :: (Event evt)
             => ViewL (EvtPosition evt)
@@ -316,10 +333,10 @@ flattenPoly ts next acc = withGets measure_count $    \mc   ->
 
 
 
-mergeTAs :: TA -> [ScPart] -> ProcessM (TA)
+mergeTAs :: TA -> [ScPart] -> ProcessM TA
 mergeTAs = foldM merge1
 
-merge1 :: TA -> ScPart -> ProcessM (TA)
+merge1 :: TA -> ScPart -> ProcessM TA
 merge1 tacc p = withNewRefId $ \i ->
     let line  = sc_part_primary_line p
         rm    = IM.insert i line (getPolyRefs $ sc_part_poly_refs p)
@@ -331,7 +348,7 @@ merge1 tacc p = withNewRefId $ \i ->
 {-
 -- This doesn't work properly for nested TA's
 -- Ought to do a top down traversal
-mergeTAs :: TA -> [ScPart] -> ProcessM (TA)
+mergeTAs :: TA -> [ScPart] -> ProcessM TA
 mergeTAs tacc ts = uncurry (appendRefs tacc) <$> foldM fn (mempty,[]) ts
   where
     fn (refs,xs) part = appendP (refs,xs) <$> reshape part
