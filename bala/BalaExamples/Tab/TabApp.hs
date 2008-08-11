@@ -1,17 +1,24 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
+-- ghci - 
+-- :set -i../..:../../HNotate:../../ZMidi
 
 module TabApp where
 
 import TabBase
 import TabParser
 
-import Bala.Base
+import Bala.Base hiding (Duration)
+import HNotate
+import HNotate.Base.Datatypes ( Duration(..) )
+import HNotate.Print.OutputLilyPond hiding (chord, grace)
+
+{-
 import Bala.Format.Output.OutputLilyPond hiding (chord)
 import Bala.Perform.PerformOriginal
 import Bala.Perform.PerformLilyPond
 import Bala.Perform.PerformMidi
-
+-}
 
 import qualified Data.Foldable as F
 import Data.List (nub, groupBy, sortBy)
@@ -24,19 +31,13 @@ data Evt = EvtNote Pitch OnsetDuration
          | EvtRest OnsetDuration
   deriving Show
 
-instance Perform Evt Pitch Duration where
-  eventvalues (EvtNote p d) = (Just p, Just eighth)
-  eventvalues (EvtRest d)   = (Nothing, Just eighth)
+instance Event Evt where
+  eventvalues (EvtNote p d) = (Just $ renderPitch p, Just $ renderDuration d)
+  eventvalues (EvtRest d)   = (Nothing, Just $ renderDuration d)
   
+instance DurationRepr OnsetDuration where 
+  renderDuration (n,d) = Duration (n,d)
   
-{-
-instance Perform Evt where
-    opitch (EvtNote p _) = Just p
-    opitch _             = Nothing
-     
-    oduration (EvtNote _ (_,d)) = Just eighth 
-    oduration (EvtRest (_,d)) = Just eighth -- TODO
--}    
     
 data CardiEvt = SingleEvt Evt
               | MultiEvt [Evt] 
@@ -90,8 +91,8 @@ instance Affi Evt where
   
   
 
-processTab :: Seq Bar -> EventTree Evt
-processTab = F.foldl fn root 
+processTab :: Seq Bar -> System Evt
+processTab = system1 . F.foldl fn root 
   where
     fn tree bar = buildEvtTree tree (shuffleBar bar)
   
@@ -102,23 +103,13 @@ main = do
     sq <- parseTabfile "../../samples/tab/example-tab.txt" example_tab_lines (state_zero standard_tuning)
     writeMidi "../out/example-tab.midi" (toMidi sq)
     writeLy "../out/example-tab.ly" (tab_ly $ processTab sq)
-    execLilyPondOn "../out/example-tab.ly"
+    runLilyPondOn "../out/example-tab.ly"
   where
-    toMidi sq = renderMidi1 (processTab sq) default_midi_env
+    
+    
+    toMidi sq = systemToMidi default_midi_system (processTab sq)
 
+tab_ly evts = systemToLy (default_ly_system "tab" pre) evts
+  where pre = elementStart +++ key _g major +++ clef treble +++ time (3,4)
 
-tab_template musicexpr = 
-    toplevelStart 
-      +++ version "2.10.3" 
-      +++ header (headerStart +++ title "tab")
-      +++ book
-            (block (score 
-                      (block (relative (_c ! raised 1) musicexpr))))
-  
-
-tab_ly tree = 
-  let expr    = elementStart +++ key _g major +++ clef treble +++ time (3,4)
-      env     = default_ly_env { initial_ly_context = expr }
-      ly_expr = renderLy1 tree env
-  in tab_template ly_expr
-              
+             
