@@ -22,8 +22,10 @@ module HNotate.Base.Datatypes (
 
     toRatio, fromDouble, toDouble,
 
-    -- * Classes
+    -- * Operations
 
+    semitones,
+    
     -- * lilyPond helpers
     middleC, quarternote, octaveDist,
 
@@ -53,7 +55,7 @@ data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp
 -- We might want the unnormalized value
 
 -- TO DO - durations should probably include dotting!
-newtype Duration = Duration { unDuration :: (Int,Int) }
+newtype Duration = Duration { getDuration :: (Int,Int) }
   deriving (Eq,Ord)
 
 toRatio (Duration (n,d)) = (fromIntegral n) % (fromIntegral d)
@@ -68,8 +70,22 @@ fromDouble j = let r = toRational j; (n,d) = (numerator r, denominator r)
 
 
 
+semitones :: Pitch -> Int
+semitones (Pitch l a o) = semis l + asemis a + (12 * o)
 
+semis C = 0
+semis D = 2
+semis E = 4
+semis F = 5
+semis G = 7
+semis A = 9
+semis B = 11
 
+asemis Nat          = 0
+asemis Sharp        = 1
+asemis Flat         = (-1)
+asemis DoubleSharp  = 2
+asemis DoubleFlat   = (-2)
 
 -- LilPond Helpers
 middleC :: Pitch
@@ -79,7 +95,12 @@ quarternote :: Duration
 quarternote = Duration (1,4)
 
 octaveDist :: Pitch -> Pitch -> Int
-octaveDist _ _ = 1
+octaveDist p p' = fn $  semitones p' - semitones p 
+  where
+    fn dist | dist > 4    = 1    + (dist - 4) `div` 12
+            | dist < (-4) = (-1) - ((abs dist - 4) `div` 12)
+            | otherwise   = 0 
+   
 
 
 -- Helpers for Midi
@@ -89,13 +110,7 @@ octaveDist _ _ = 1
 midiPitch :: Pitch -> Word8
 midiPitch (Pitch l a o) = fromIntegral $ semis l + acci a + (12 * (o+1)) 
   where
-    semis C = 0
-    semis D = 2
-    semis E = 4
-    semis F = 5
-    semis G = 7
-    semis A = 9
-    semis B = 11
+
     
     acci = (\x -> x - 2) . fromEnum 
 

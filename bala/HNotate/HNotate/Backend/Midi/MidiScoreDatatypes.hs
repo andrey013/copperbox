@@ -53,5 +53,5 @@ data MidiScMeasure = MidiScMeasure {
 data MidiScGlyph
     = MidiScNote Pitch Duration
     | MidiScSpacer Duration    -- all rests in midi are spacers
-    | MidiScChord [Pitch] Duration
-    | MidiScGraceNotes [(Pitch,Duration)]
+    | MidiScChord (Seq Pitch) Duration
+    | MidiScGraceNotes (Seq (Pitch,Duration))

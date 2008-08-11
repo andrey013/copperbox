@@ -65,5 +65,5 @@ data LyScMeasure = LyScMeasure {
 data LyScGlyph = LyScNote Pitch Duration
                | LyScRest Duration
                | LyScSpacer Duration  -- non-printed rest
-               | LyScChord [Pitch] Duration
-               | LyScGraceNotes [(Pitch,Duration)]
+               | LyScChord (Seq Pitch) Duration
+               | LyScGraceNotes (Seq (Pitch,Duration))

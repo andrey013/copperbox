@@ -22,6 +22,7 @@ module HNotate.Backend.Abc.Utils (
 
 
 import HNotate.Backend.Abc.AbcBackend (generateAbcScore, default_abc_env)
+import HNotate.Backend.Abc.AbcFragments
 import HNotate.Backend.Abc.ToAbcScore (abcscore)
 import HNotate.Base.Class (Event)
 import HNotate.Base.EventTree (System)
@@ -40,11 +41,11 @@ writeAbc :: FilePath -> Abc a -> IO ()
 writeAbc filename (Abc a) = writeFile filename (displaySimple $ pretty a)
 
 
-systemToAbc :: (Event evt) => System evt -> [AbcCxt_Body]
+systemToAbc :: (Event evt) => System evt -> PartAbcExprs
 systemToAbc sys = 
     let sc0   = toScore sys default_score_env
         abc   = abcscore sc0
     in generateAbcScore abc default_abc_env
 
-scoreToAbc :: ScScore -> [AbcCxt_Body]
+scoreToAbc :: ScScore -> PartAbcExprs
 scoreToAbc sc = generateAbcScore (abcscore sc) default_abc_env

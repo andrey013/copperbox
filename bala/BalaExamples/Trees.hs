@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- ghci - 
 -- :set -i..:../HNotate:../ZMidi
@@ -8,12 +7,9 @@ module Trees where
 import Bala.Base hiding (toPitch)
 import qualified Bala.Base as B
 import HNotate
-
+import HNotate.Print.OutputLilyPond hiding (chord, grace)
 
 import Text.PrettyPrint.Leijen
-
-
-
 
 
 data NrEvent = Note Pitch Duration
@@ -54,6 +50,9 @@ run1 = do
     example1_midi = systemToMidi default_midi_system example1
     
 print1 = printMidi $ systemToMidi default_midi_system example1 
+
+print1_ly = printLy $ systemToLy (default_ly_system "example1" pre) example1
+  where pre = elementStart +++ key _c major +++ clef treble
 
 sc1 = pretty $ toScore example1 default_score_env
    

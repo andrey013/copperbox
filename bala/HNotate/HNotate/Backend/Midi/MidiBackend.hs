@@ -20,10 +20,10 @@ module HNotate.Backend.Midi.MidiBackend (
   ) where
 
 import HNotate.Backend.Midi.MidiScoreDatatypes
+import HNotate.Backend.Midi.MidiFragments
 import HNotate.Base.Datatypes
 import HNotate.Base.NotateMonad
 import HNotate.Base.OnsetQueue
-import HNotate.System.SystemMidi
 
 import ZMidi
 

@@ -62,8 +62,8 @@ glyph :: ScGlyph -> MidiScGlyph
 glyph (ScNote scp dur)          = MidiScNote scp dur
 glyph (ScRest dur)              = MidiScSpacer dur
 glyph (ScSpacer dur)            = MidiScSpacer dur
-glyph (ScChord xs dur)          = MidiScChord xs dur
-glyph (ScGraceNotes xs)         = MidiScGraceNotes xs
+glyph (ScChord se dur)          = MidiScChord se dur
+glyph (ScGraceNotes se)         = MidiScGraceNotes se
 
 
 

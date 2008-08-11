@@ -14,14 +14,15 @@
 --------------------------------------------------------------------------------
 
 module HNotate.System.SystemMidi (
-    PartTrack, PartMidiFile,
     MidiSystem,
     
     default_midi_system
     
   ) where
 
+import HNotate.Backend.Midi.MidiFragments
 import ZMidi
+
 
 import Data.Foldable as F
 import Data.Monoid
@@ -29,8 +30,7 @@ import Data.Sequence
 import Data.Word
 import Prelude hiding (length)
 
-type PartTrack = (Seq Message)
-type PartMidiFile = (Seq PartTrack)
+
 
 type MidiSystem = PartMidiFile -> MidiFile 
 

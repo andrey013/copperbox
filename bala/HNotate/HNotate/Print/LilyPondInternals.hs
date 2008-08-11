@@ -94,9 +94,13 @@ ppMeter (n,d) =
 
 --------------------------------------------------------------------------------
 
+
+
 -- | Contexts
 data LyCxt_ToplevelT
 type LyCxt_Toplevel = Ly LyCxt_ToplevelT
+
+type LilyPondScore = LyCxt_Toplevel
 
 toplevelStart       :: LyCxt_Toplevel
 toplevelStart       = wrap empty

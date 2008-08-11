@@ -69,8 +69,8 @@ glyph :: ScGlyph -> AbcScGlyph
 glyph (ScNote scp dur)          = AbcScNote scp dur
 glyph (ScRest dur)              = AbcScRest dur
 glyph (ScSpacer dur)            = AbcScSpacer dur
-glyph (ScChord xs dur)          = AbcScChord xs dur
-glyph (ScGraceNotes xs)         = AbcScGraceNotes xs
+glyph (ScChord se dur)          = AbcScChord se dur
+glyph (ScGraceNotes se)         = AbcScGraceNotes se
 
 
 

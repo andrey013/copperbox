@@ -90,6 +90,13 @@ default_score_env = Notate_Sc_Env {
     first_bar_onset     = 0.0
   }
 
+seqMaybes :: Seq (Maybe a) -> Seq a
+seqMaybes = rec mempty . viewl
+  where
+    rec se EmptyL           = se
+    rec se (Just a :< sse)  = rec (se |> a) (viewl sse)
+    rec se (Nothing :< sse) = rec se (viewl sse)
+
 
 withGets :: (Notate_Sc_State -> a) -> (a -> ProcessM b) -> ProcessM b
 withGets lbl f = do
@@ -239,31 +246,31 @@ withEvent evt f = makesEvent evt >>= f
 -- All notes should have the same duration - is a check in order?
 
 suffixChord :: TA
-            -> [ScGlyph]
+            -> (Seq ScGlyph)
             -> ProcessM TA
-suffixChord se stk = case pitches stk of
-    [] -> return se 
-    xs -> se |%> (ScChord xs (stackDuration stk))
+suffixChord se stk = let sc = pitches stk in
+    if (null sc) then (return se) 
+                 else (se |%> (ScChord sc (stackDuration stk)))
 
 suffixGrace :: TA
-            -> [ScGlyph]
+            -> (Seq ScGlyph)
             -> ProcessM TA
-suffixGrace se stk = case graces stk of
-    [] -> return se 
-    xs -> se |%> (ScGraceNotes xs)
+suffixGrace se stk = let sg = graces stk in
+    if (null sg) then (return se) else (se |%> (ScGraceNotes sg))
 
 
-stackDuration :: [ScGlyph] -> Duration
-stackDuration ((ScNote _ d):_)  = d
-stackDuration (x:xs)            = stackDuration xs
-stackDuration _                 = error $ "stackDuration" -- quarternote
+stackDuration :: Seq ScGlyph -> Duration
+stackDuration se = case viewl se of
+  ((ScNote _ d) :< _)   -> d
+  (_            :< sse) -> stackDuration sse
+  EmptyL                -> error $ "stackDuration" -- quarternote
 
-pitches = catMaybes . map notePitch
+pitches = seqMaybes . fmap notePitch
   where 
     notePitch (ScNote p _) = Just p
     notePitch _            = Nothing
     
-graces = catMaybes . map notePitchDur
+graces = seqMaybes . fmap notePitchDur
   where 
     notePitchDur (ScNote p d) = Just (p,d)
     notePitchDur _            = Nothing  
@@ -279,9 +286,9 @@ flattenStep sq acc = flatstep sq acc
     flatstep (Evt e :< sq)        acc = withEvent e $ \ez ->
                                         acc |%> ez >>= flatstep (viewl sq)
 
-    flatstep (StartPar :< sq)     acc = flattenParallel (viewl sq) (acc,[])
+    flatstep (StartPar :< sq)     acc = flattenParallel (viewl sq) (acc,mempty)
 
-    flatstep (StartPre :< sq)     acc = flattenPrefix (viewl sq) (acc,[])
+    flatstep (StartPre :< sq)     acc = flattenPrefix (viewl sq) (acc,mempty)
 
     flatstep (Poly ts :< sq)      acc = flattenPoly ts sq acc
 
@@ -289,7 +296,7 @@ flattenStep sq acc = flatstep sq acc
 -- Flatten a parallel block to a chord
 flattenParallel :: (Event evt)
                 => ViewL (EvtPosition evt)
-                -> (TA, [ScGlyph])
+                -> (TA, (Seq ScGlyph))
                 -> ProcessM TA
 flattenParallel sq (se,stk) = flatpar sq (se,stk)
   where
@@ -297,7 +304,7 @@ flattenParallel sq (se,stk) = flatpar sq (se,stk)
         se `suffixChord` stk >>= flattenStep (viewl sq)
 
     flatpar (Evt e :< sq)  (se,stk) = withEvent e $ \ez ->
-        flatpar (viewl sq) (se, ez:stk)
+        flatpar (viewl sq) (se,stk |> ez)
 
     flatpar _              (se,stk) =
         error "flattenParallel - unterminated Par"
@@ -306,7 +313,7 @@ flattenParallel sq (se,stk) = flatpar sq (se,stk)
 -- Flatten a prefix block to grace notes
 flattenPrefix :: (Event evt)
               => ViewL (EvtPosition evt)
-              -> (TA, [ScGlyph])
+              -> (TA, (Seq ScGlyph))
               -> ProcessM TA
 flattenPrefix sq (se,stk) = flatpre sq (se,stk)
   where
@@ -314,7 +321,7 @@ flattenPrefix sq (se,stk) = flatpre sq (se,stk)
         se `suffixGrace` stk >>= flattenStep (viewl sq)
 
     flatpre (Evt e :< sq)  (se,stk) = withEvent e $ \ez ->
-        flatpre (viewl sq) (se, (ez:stk))
+        flatpre (viewl sq) (se,stk |> ez)
 
     flatpre _              (se,stk) =
         error "flattenPrefix - unterminated Pre"

@@ -73,8 +73,8 @@ glyph :: ScGlyph -> LyScGlyph
 glyph (ScNote scp dur)          = LyScNote scp dur
 glyph (ScRest dur)              = LyScRest dur
 glyph (ScSpacer dur)            = LyScSpacer dur
-glyph (ScChord xs dur)          = LyScChord xs dur
-glyph (ScGraceNotes xs)         = LyScGraceNotes xs
+glyph (ScChord se dur)          = LyScChord se dur
+glyph (ScGraceNotes se)         = LyScGraceNotes se
 
 
 

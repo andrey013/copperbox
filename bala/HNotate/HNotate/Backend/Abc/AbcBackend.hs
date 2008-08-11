@@ -19,7 +19,7 @@ module HNotate.Backend.Abc.AbcBackend (
     generateAbcScore
   ) where
 
-
+import HNotate.Backend.Abc.AbcFragments
 import HNotate.Backend.Abc.AbcScoreDatatypes
 import HNotate.Base.Datatypes
 import HNotate.Base.NotateMonad
@@ -30,10 +30,12 @@ import HNotate.Score.Utils
 import Control.Applicative
 import Control.Monad.Reader
 import Control.Monad.State
-import Data.Foldable (foldlM,foldrM)
+import qualified Data.Foldable as F
 import Data.Maybe (catMaybes)
 import Data.Monoid
 import Data.Ratio
+import Data.Sequence
+
 
 type ProcessM a = NotateM Notate_Abc_State Notate_Abc_Env a
 
@@ -106,17 +108,19 @@ foldlOpA f op = \acc e -> (acc `op`) <$> f e
 
 -- first step get the original Abc rendering working
 -- then worry if we should return a function or not
-generateAbcScore :: AbcScTuneBook -> Notate_Abc_Env -> [AbcCxt_Body]
+generateAbcScore :: AbcScTuneBook -> Notate_Abc_Env -> PartAbcExprs
 generateAbcScore sc env = evalNotate (renderTuneBook sc) abc_state env
   where
     abc_state = state0
 
 
-renderTuneBook (AbcScTuneBook se) =
-    foldlM (foldlOpA renderTune (flip (:))) [] se
+renderTuneBook (AbcScTuneBook se) = F.foldlM fn mempty se
+  where
+    fn xs p = (xs |>) <$> renderTune p
+ --    foldlM (foldlOpA renderTune (flip (:))) m se
 
-renderTune :: AbcScTune -> ProcessM AbcCxt_Body
-renderTune (AbcScTune i se) = foldlM renderPolyPhrase body se
+renderTune :: AbcScTune -> ProcessM PartAbcMusicExpr
+renderTune (AbcScTune i se) = F.foldlM renderPolyPhrase body se
 
 
 renderPolyPhrase :: AbcCxt_Body -> AbcScPolyPhrase -> ProcessM AbcCxt_Body
@@ -134,7 +138,8 @@ renderMeasure :: (Append Abc cxts AbcGraceNotesT,
               => AbcScMeasure
               -> ProcessM (Abc cxts -> Abc cxts)
 
-renderMeasure (AbcScMeasure i xs se) = foldlM (foldlOpA renderGlyph ( #. )) id se
+renderMeasure (AbcScMeasure i xs se) = 
+    F.foldlM (foldlOpA renderGlyph ( #. )) id se
 
 
 
@@ -166,7 +171,7 @@ renderGlyph (AbcScSpacer d)               = suffixA $
 
 -- Notes inside chords have duration (though they all _should_ be the same)
 renderGlyph (AbcScChord xs dur)               = suffixA $
-    chord <$> foldrM (pitch1 dur) [] xs
+    chord <$> F.foldrM (pitch1 dur) [] xs
 
   where
     pitch1 d scp acc  = fn acc <$> renderPitch scp <*> abcDuration d
@@ -174,8 +179,8 @@ renderGlyph (AbcScChord xs dur)               = suffixA $
     fn acc p od = p *! od : acc
 
 
-renderGlyph (AbcScGraceNotes xs)          = suffixA $
-    gracenotes <$> mapM graceNote xs
+renderGlyph (AbcScGraceNotes se)          = suffixA $
+    gracenotes <$> mapM graceNote (F.toList se)
 
 
 

@@ -40,8 +40,8 @@ writeMidi = ZM.writeMidi
 
 
 systemToMidi :: (Event evt) => MidiSystem -> System evt -> ZM.MidiFile
-systemToMidi sys perf = 
-    let sc0   = toScore perf default_score_env
+systemToMidi sys evts = 
+    let sc0   = toScore evts default_score_env
         msc   = midiscore sc0
     in sys $ generateMidi msc default_midi_env
 

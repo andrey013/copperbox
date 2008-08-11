@@ -67,8 +67,8 @@ instance Pretty ScGlyph where
   pretty (ScNote pch dur)       = ppNote pch dur
   pretty (ScRest dur)           = ppAltRest 'R' dur
   pretty (ScSpacer dur)         = ppAltRest 'S' dur
-  pretty (ScChord ps dur)       = (brackets $ hcat $ map pretty ps) <> pretty dur
-  pretty (ScGraceNotes ps)      = (braces $ hcat $ map pretty ps)
+  pretty (ScChord ps dur)       = (brackets $ sepSeq (<>) ps) <> pretty dur
+  pretty (ScGraceNotes ps)      = (braces $ sepSeq (<>) ps)
 
 
 --  pretty (ScTaggedGlyph tag)  = group $

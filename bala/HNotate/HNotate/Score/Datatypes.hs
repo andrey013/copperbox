@@ -70,8 +70,8 @@ data ScMeasure = ScMeasure {
 data ScGlyph = ScNote Pitch Duration
              | ScRest Duration
              | ScSpacer Duration  -- non-printed rest
-             | ScChord [Pitch] Duration
-             | ScGraceNotes [(Pitch,Duration)]
+             | ScChord (Seq Pitch) Duration
+             | ScGraceNotes (Seq (Pitch,Duration))
 
                  {-    | ScTaggedGlyph ScTag  -}
 {-

@@ -58,6 +58,6 @@ data AbcScMeasure = AbcScMeasure {
 data AbcScGlyph = AbcScNote Pitch Duration
                 | AbcScRest Duration
                 | AbcScSpacer Duration  -- non-printed rest
-                | AbcScChord [Pitch] Duration
-                | AbcScGraceNotes [(Pitch,Duration)]
-                | AbcScBeamedNotes [(Pitch,Duration)]
+                | AbcScChord (Seq Pitch) Duration
+                | AbcScGraceNotes (Seq (Pitch,Duration))
+                | AbcScBeamedNotes (Seq (Pitch,Duration))

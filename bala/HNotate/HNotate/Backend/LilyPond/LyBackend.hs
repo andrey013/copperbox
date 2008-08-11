@@ -19,12 +19,12 @@ module HNotate.Backend.LilyPond.LyBackend (
     generateLilyPondScore
   ) where
 
-
+import HNotate.Backend.LilyPond.LyFragments
 import HNotate.Backend.LilyPond.LyScoreDatatypes
 import HNotate.Base.Datatypes
 import HNotate.Base.NotateMonad
 import HNotate.Print.OutputLilyPond
-
+import HNotate.System.SystemLilyPond
 
 import Control.Applicative
 import Control.Monad.Reader
@@ -70,7 +70,7 @@ default_ly_env = Notate_Ly_Env {
   }
 
 
-generateLilyPondScore :: LyScScore -> Notate_Ly_Env -> [LyCmdScore]
+generateLilyPondScore :: LyScScore -> Notate_Ly_Env -> PartLyExprs
 generateLilyPondScore sc env = evalNotate (renderScore sc) ly_state env
   where
     ly_state = state0
@@ -81,8 +81,21 @@ getPitch (LyScNote scp _) = scp
 
 
 olyDuration :: Duration -> Maybe LyDuration
-olyDuration _ = Just $ duration 4
-
+olyDuration = fn . getDuration
+  where 
+    fn (4,1)      = Just longa  
+    fn (2,1)      = Just breve 
+    fn (1,1)      = Just $ duration 1
+    fn (1,2)      = Just $ duration 2
+    fn (1,4)      = Just $ duration 4
+    fn (1,8)      = Just $ duration 8
+    fn (1,16)     = Just $ duration 16
+    fn (1,32)     = Just $ duration 32
+    fn (1,64)     = Just $ duration 64
+    fn (1,128)    = Just $ duration 128
+    fn _          = Nothing
+  
+  
 olyAccidental :: Pitch -> Maybe LyAccidental
 olyAccidental = fn . accidental
   where
@@ -106,17 +119,17 @@ suffixWith ctx f = (ctx +++) <$> f
 
 
 -- | @LyScScore --> \\book@
-renderScore :: LyScScore -> ProcessM [LyCmdScore]
-renderScore (LyScScore se) = F.foldlM fn [] se
+renderScore :: LyScScore -> ProcessM PartLyExprs
+renderScore (LyScScore se) = F.foldlM fn mempty se
   where
-    fn xs p = flip (:) xs <$> renderPart p
+    fn xs p = (xs |>) <$> renderPart p
 
 
 
 -- | @LyScPart --> \\score@
-renderPart :: LyScPart -> ProcessM LyCmdScore
+renderPart :: LyScPart -> ProcessM PartLyMusicExpr
 renderPart (LyScPart i se) =
-    (score . block) <$> F.foldlM renderPolyPhrase elementStart se
+    F.foldlM renderPolyPhrase elementStart se
 
 
 
@@ -158,14 +171,21 @@ renderGlyph cxt (LyScRest d)                = suffixWith cxt $
 renderGlyph cxt (LyScSpacer d)              = suffixWith cxt $
     (spacer *!) <$> differDuration d
 
-renderGlyph cxt a@(LyScChord xs d)          = suffixWith cxt $
-    fn <$> mapM renderPitch xs
-       <*> differDuration d
-  where
-    fn xs od = chord xs *! od
+-- Important: successive notes in a chord shouldn't change relative pitch
 
-renderGlyph cxt (LyScGraceNotes xs)         = suffixWith cxt $
-    fn <$> mapM renderGrace xs
+renderGlyph cxt a@(LyScChord se d)          = suffixWith cxt $
+    case viewl se of
+      EmptyL      -> error "Empty chord"
+      (e :< sse)  -> do 
+          x <- renderPitch e
+          xs <-  mapM renderPitch2 (F.toList sse)
+          od <- differDuration d
+          return (chord (x:xs) *! od)
+
+    
+
+renderGlyph cxt (LyScGraceNotes se)         = suffixWith cxt $
+    fn <$> mapM renderGrace (F.toList se)
   where
     fn        = grace . blockS . foldl (+++) elementStart
 
@@ -185,7 +205,11 @@ renderPitch pch =
   where
     fn pn oa oos = (pitch pn) *! oa *! oos
 
-
+renderPitch2 :: Pitch -> ProcessM LyPitch
+renderPitch2 pch =
+    fn <$> pure (lyPitchName pch) <*> pure (olyAccidental pch)
+  where
+    fn pn oa = (pitch pn) *! oa 
 
 differOctaveSpec :: Pitch -> ProcessM (Maybe LyOctaveSpec)
 differOctaveSpec p = fn p <$> gets relative_pitch <*

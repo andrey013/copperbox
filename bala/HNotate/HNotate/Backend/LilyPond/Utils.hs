@@ -17,10 +17,13 @@ module HNotate.Backend.LilyPond.Utils (
     printLy,
     writeLy,
     systemToLy,
-    scoreToLy
+    scoreToLy,
+    runLilyPondOn
   ) where
 
+
 import HNotate.Backend.LilyPond.LyBackend (generateLilyPondScore, default_ly_env)
+import HNotate.Backend.LilyPond.LyFragments
 import HNotate.Backend.LilyPond.ToLyScore (lyscore)
 import HNotate.Base.Class (Event)
 import HNotate.Base.EventTree (System)
@@ -28,6 +31,7 @@ import HNotate.Base.Utils (displaySimple)
 import HNotate.Print.OutputLilyPond
 import HNotate.Score.Datatypes (ScScore)
 import HNotate.Score.ToScore (toScore, default_score_env)
+import HNotate.System.SystemLilyPond
 
 import System.Process (runCommand, waitForProcess)
 import Text.PrettyPrint.Leijen
@@ -40,13 +44,18 @@ writeLy :: FilePath -> Ly a -> IO ()
 writeLy filename (Ly a) = writeFile filename (displaySimple $ pretty a)
 
 
-systemToLy :: (Event evt) => System evt -> [LyCmdScore]
-systemToLy sys = 
-    let sc0  = toScore sys default_score_env
+systemToLy :: (Event evt) => LilyPondSystem -> System evt -> LilyPondScore
+systemToLy sys evts = 
+    let sc0  = toScore evts default_score_env
         ly   = lyscore sc0
-    in generateLilyPondScore ly default_ly_env
+    in sys $ generateLilyPondScore ly default_ly_env
 
-scoreToLy :: ScScore -> [LyCmdScore]
-scoreToLy sc = generateLilyPondScore (lyscore sc) default_ly_env
+scoreToLy :: LilyPondSystem -> ScScore -> LilyPondScore
+scoreToLy sys sc = sys $ generateLilyPondScore (lyscore sc) default_ly_env
 
-
+runLilyPondOn :: FilePath -> IO ()
+runLilyPondOn filename = do
+    ph <- runCommand ("lilypond " ++ filename)  
+    waitForProcess ph
+    return ()
+    

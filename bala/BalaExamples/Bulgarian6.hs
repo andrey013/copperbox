@@ -1,20 +1,18 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- This tune is `Bulgarian (?) 6` from the Exotic ABC songbook
 
--- :set -i..
+-- ghci ...
+-- :set -i..:../HNotate:../ZMidi
 
 module Main where
 
 
 import Bala.Base
-import Bala.Format.Output.OutputLilyPond
-import Bala.Perform.PerformOriginal
-import Bala.Perform.OriginalMidi
-import Bala.Perform.OriginalLilyPond
-
+import HNotate
+import HNotate.Print.OutputLilyPond hiding (chord, grace)
 
 import Text.PrettyPrint.Leijen hiding (dot)
+
 
 data NrEvent = Note Pitch Duration
              | Rest Duration
@@ -22,9 +20,9 @@ data NrEvent = Note Pitch Duration
 
 
 
-instance Perform NrEvent Pitch Duration where
-  eventvalues (Note p d) = (Just p, Just d)
-  eventvalues (Rest d)   = (Nothing, Just d)
+instance Event NrEvent where
+  eventvalues (Note p d) = (Just $ renderPitch p, Just $ renderDuration d)
+  eventvalues (Rest d)   = (Nothing, Just $ renderDuration d)
   
   
 durn 16  = sixteenth
@@ -60,44 +58,30 @@ events_bars1_4 =
 bars1_4 :: EventTree NrEvent
 bars1_4 = foldl (flip event) root events_bars1_4
  
-
-bulgarian6 = (Perf [bars1_4])   
+bulgarian6 :: System NrEvent
+bulgarian6 = system1 bars1_4   
   
 
     
        
 -------
 
--- LilyPond handling is very unpolished
+
   
 
-bulgarian_template musicexpr = 
-    toplevelStart
-      +++ version "2.10.3" 
-      +++ header (headerStart +++ title "Bulgarian (6)")
-      +++ book
-            (block (score 
-                      (block (relative (_c ! raised 1) musicexpr))))
-  
+bulgarian6_midi = systemToMidi default_midi_system bulgarian6
 
-bulgarian6_ly = 
-  let expr    = elementStart +++ key _a major +++ clef treble
-      env     = default_ly_env { initial_ly_context = expr }
-      ly_expr = renderLy1 bars1_4 env
-  in bulgarian_template ly_expr
-   
-
-    
-demo_ly = printLy bulgarian6_ly
+bulgarian6_ly = systemToLy (default_ly_system "Bulgarian 6" pre) bulgarian6
+  where pre = elementStart +++ key _a major +++ clef treble
 
 main =  do
     writeMidi "out/bulgarian6.midi" bulgarian6_midi
     writeLy lyfile bulgarian6_ly
-    execLilyPondOn lyfile
+    runLilyPondOn lyfile
   where
     lyfile = "out/bulgarian6.ly" 
     
-    bulgarian6_midi = renderMidi bulgarian6 default_midi_env  
+
   
   
   
