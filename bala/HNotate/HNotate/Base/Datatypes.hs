@@ -25,6 +25,7 @@ module HNotate.Base.Datatypes (
     -- * Operations
 
     semitones,
+    arithmeticDistance,
     
     -- * lilyPond helpers
     middleC, quarternote, octaveDist,
@@ -42,7 +43,7 @@ data Pitch = Pitch {
     accidental    :: Accidental,
     octave        :: Int
   }
-
+  deriving (Eq)
 
 data PitchLetter = C | D | E | F | G | A | B
   deriving (Eq,Enum,Ord,Show)
@@ -67,7 +68,8 @@ fromDouble :: Double -> Duration
 fromDouble j = let r = toRational j; (n,d) = (numerator r, denominator r)
                in Duration (fromIntegral n, fromIntegral d)
 
-
+instance Ord Pitch where
+  compare p1 p2 = semitones p1 `compare` semitones p2
 
 
 semitones :: Pitch -> Int
@@ -94,13 +96,25 @@ middleC = Pitch C Nat 4
 quarternote :: Duration
 quarternote = Duration (1,4)
 
+
+-- See Lilypond (6.1.6 - relative octaves)
+-- ceses ->- fisis
+-- cbb   ->- f##   -- fourth 
 octaveDist :: Pitch -> Pitch -> Int
-octaveDist p p' = fn $  semitones p' - semitones p 
+octaveDist p p' = 
+    fn (abs $ arithmeticDistance p p') (if p > p' then negate else id) 
   where
-    fn dist | dist > 4    = 1    + (dist - 4) `div` 12
-            | dist < (-4) = (-1) - ((abs dist - 4) `div` 12)
-            | otherwise   = 0 
+    fn dist f 
+      | dist <= 4 = 0
+      | otherwise = f $ (dist - 4) `div` 6 + 1 
    
+arithmeticDistance :: Pitch -> Pitch -> Int
+arithmeticDistance (Pitch l _ o) (Pitch l' _ o') = 
+    dist (o * 7 + fromEnum l) (o' * 7 + fromEnum l')
+  where
+    dist i i'
+      | i > i'      = negate $ 1 + (i - i')
+      | otherwise   = 1 + (i' - i)
 
 
 -- Helpers for Midi

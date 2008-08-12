@@ -77,7 +77,7 @@ bracesSpaced = enclose (lbrace <> space) (space <> rbrace)
 -- >   content
 -- > }
 bracesHanging :: Doc -> Doc
-bracesHanging d = lbrace <$> indent 2 (d <$> rbrace)
+bracesHanging d = lbrace <$> indent 2 d <$> rbrace
 
 
 
