@@ -35,6 +35,7 @@ import Data.Maybe (catMaybes)
 import Data.Monoid
 import Data.Ratio
 import Data.Sequence hiding (reverse)
+import qualified Data.Traversable as T
 
 
 type ProcessM a = NotateM Notate_Ly_State Notate_Ly_Env a
@@ -42,7 +43,6 @@ type ProcessM a = NotateM Notate_Ly_State Notate_Ly_Env a
 data Notate_Ly_State = Notate_Ly_State {
     relative_pitch      :: Pitch,
     relative_duration   :: Duration
-    -- part_refs           :: ScPolyRefs pch dur
   }
 
 
@@ -71,13 +71,8 @@ default_ly_env = Notate_Ly_Env {
 
 
 generateLilyPondScore :: LyScScore -> Notate_Ly_Env -> PartLyExprs
-generateLilyPondScore sc env = evalNotate (renderScore sc) ly_state env
-  where
-    ly_state = state0
+generateLilyPondScore sc env = evalNotate (renderScore sc) state0 env
 
-
-
-getPitch (LyScNote scp _) = scp
 
 
 olyDuration :: Duration -> Maybe LyDuration
@@ -104,9 +99,24 @@ olyAccidental = fn . accidental
     fn Flat           = Just flat
     fn DoubleSharp    = Just doubleSharp
     fn DoubleFlat     = Just doubleFlat
+    
+olyOctaveSpec :: Int -> Maybe LyOctaveSpec
+olyOctaveSpec i 
+    | i > 0       = Just $ raised i
+    | i < 0       = Just $ lowered (abs i)
+    | otherwise   = Nothing 
+
+                      
+                          
 
 lyPitchName :: Pitch -> LyPitchName
 lyPitchName = toEnum . fromEnum . pitch_letter
+
+lynote :: LyPitch -> Maybe LyDuration -> LyNote
+lynote p od = note p *! od
+
+lypitch :: LyPitchName -> Maybe LyAccidental -> Maybe LyOctaveSpec -> LyPitch
+lypitch pn oa os = pitch pn *! oa *! os
 
 
 suffixWith :: (Append Ly cxts cxta, Monoid (Ly cxts))
@@ -120,9 +130,7 @@ suffixWith ctx f = (ctx +++) <$> f
 
 -- | @LyScScore --> \\book@
 renderScore :: LyScScore -> ProcessM PartLyExprs
-renderScore (LyScScore se) = F.foldlM fn mempty se
-  where
-    fn xs p = (xs |>) <$> renderPart p
+renderScore (LyScScore se) = T.mapM renderPart se
 
 
 
@@ -155,15 +163,15 @@ renderSegment cxt (LyScSegment se) = F.foldlM renderMeasure cxt se
 
 
 renderMeasure :: LyCxt_Element -> LyScMeasure -> ProcessM LyCxt_Element
-renderMeasure cxt (LyScMeasure i xs se) = F.foldlM renderGlyph cxt se
+renderMeasure cxt (LyScMeasure i xs se) = (\mea -> cxt <+< mea +++ barcheck)
+    <$> F.foldlM renderGlyph elementStart se
 
 
 
 renderGlyph :: LyCxt_Element -> LyScGlyph -> ProcessM LyCxt_Element
 renderGlyph cxt (LyScNote scp d)            = suffixWith cxt $
-    fn <$> renderPitch scp  <*> differDuration d
-  where
-    fn p od = note p *! od
+    lynote <$> renderPitch scp  <*> differDuration d
+
 
 renderGlyph cxt (LyScRest d)                = suffixWith cxt $
     (rest *!)   <$> differDuration d
@@ -185,50 +193,40 @@ renderGlyph cxt a@(LyScChord se d)          = suffixWith cxt $
     
 
 renderGlyph cxt (LyScGraceNotes se)         = suffixWith cxt $
-    fn <$> mapM renderGrace (F.toList se)
-  where
-    fn        = grace . blockS . foldl (+++) elementStart
+    (\xs -> grace $ blockS $ foldl (+++) elementStart xs) 
+        <$> mapM renderGrace (F.toList se)
+
 
 
 renderGrace :: (Pitch,Duration) -> ProcessM LyNote
 renderGrace (pch,dur) =
-    fn <$> renderPitch pch  <*> differDuration dur
-  where
-    fn p od = note p *! od
+    lynote <$> renderPitch pch  <*> differDuration dur
+
 
 
 -- | @LyScPitch --> LyPitch@
 renderPitch :: Pitch -> ProcessM LyPitch
 renderPitch pch =
-    fn <$> pure (lyPitchName pch) <*> pure (olyAccidental pch)
-                                  <*> differOctaveSpec pch
-  where
-    fn pn oa oos = (pitch pn) *! oa *! oos
+    lypitch <$> pure (lyPitchName pch) <*> pure (olyAccidental pch)
+                                       <*> differOctaveSpec pch
+
 
 renderPitch2 :: Pitch -> ProcessM LyPitch
-renderPitch2 pch =
-    fn <$> pure (lyPitchName pch) <*> pure (olyAccidental pch)
-  where
-    fn pn oa = (pitch pn) *! oa 
+renderPitch2 pch = return $ 
+    lypitch (lyPitchName pch) (olyAccidental pch) Nothing
+
 
 differOctaveSpec :: Pitch -> ProcessM (Maybe LyOctaveSpec)
-differOctaveSpec p = fn p <$> gets relative_pitch <*
-                              modify (\s -> s {relative_pitch = p})
-  where
-    fn new old = let i = octaveDist old new
-                 in case i `compare` 0 of
-                      EQ -> Nothing
-                      LT -> Just $ lowered (abs i)
-                      GT -> Just $ raised i
+differOctaveSpec p = (\old -> olyOctaveSpec $ octaveDist old p)
+    <$> gets relative_pitch <* modify (\s -> s {relative_pitch = p})
+
 
 
 differDuration :: Duration -> ProcessM (Maybe LyDuration)
-differDuration d = fn d =<< gets relative_duration
-  where
-    fn new old | new == old   = return Nothing
-               | otherwise    = do
-                      modify (\s -> s {relative_duration = new})
-                      return $ olyDuration new
+differDuration d = (\old -> if (old==d) then Nothing else olyDuration d)
+    <$> gets relative_duration <* modify (\s -> s {relative_duration = d})
+
+
 
 
 

@@ -205,3 +205,5 @@ abcDuration d = fn d <$> asks default_note_length
                             r     = toRatio dur1
                             (n,d) = (numerator r, denominator r)
                         in Just $ dur ( n*scale, d)
+
+                        

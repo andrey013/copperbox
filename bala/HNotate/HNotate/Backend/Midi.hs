@@ -18,12 +18,10 @@
 module HNotate.Backend.Midi (
     module HNotate.Backend.Midi.MidiBackend,
     module HNotate.Backend.Midi.MidiScoreDatatypes,
-    module HNotate.Backend.Midi.ToMidiScore,
-    module HNotate.Backend.Midi.Utils
+    module HNotate.Backend.Midi.ToMidiScore
   ) where
 
 import HNotate.Backend.Midi.MidiBackend
 import HNotate.Backend.Midi.MidiScoreDatatypes
 import HNotate.Backend.Midi.ToMidiScore
-import HNotate.Backend.Midi.Utils
 

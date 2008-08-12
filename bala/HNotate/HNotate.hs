@@ -13,6 +13,9 @@
 --------------------------------------------------------------------------------
 
 module HNotate  (
+    module HNotate.AbcUtils,
+    module HNotate.LilyPondUtils,
+    module HNotate.MidiUtils,
     module HNotate.Base.Class,
     module HNotate.Base.EventTree,
     module HNotate.Backend.Abc,
@@ -24,6 +27,9 @@ module HNotate  (
     module HNotate.System.SystemMidi   
   ) where
 
+import HNotate.AbcUtils
+import HNotate.LilyPondUtils
+import HNotate.MidiUtils
 import HNotate.Base.Class
 import HNotate.Base.EventTree
 import HNotate.Backend.Abc

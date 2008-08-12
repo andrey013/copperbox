@@ -18,12 +18,10 @@
 module HNotate.Backend.Abc ( 
     module HNotate.Backend.Abc.AbcBackend,
     module HNotate.Backend.Abc.AbcScoreDatatypes,
-    module HNotate.Backend.Abc.ToAbcScore,
-    module HNotate.Backend.Abc.Utils
+    module HNotate.Backend.Abc.ToAbcScore
   ) where
   
 import HNotate.Backend.Abc.AbcBackend
 import HNotate.Backend.Abc.AbcScoreDatatypes
 import HNotate.Backend.Abc.ToAbcScore
-import HNotate.Backend.Abc.Utils
 

@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  HNotate.Backend.Midi.Utils
+-- Module      :  HNotate.MidiUtils
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -12,7 +12,7 @@
 --
 --------------------------------------------------------------------------------
 
-module HNotate.Backend.Midi.Utils (
+module HNotate.MidiUtils (
     printMidi,
     writeMidi,
     systemToMidi,

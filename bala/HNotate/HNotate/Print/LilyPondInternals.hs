@@ -153,7 +153,7 @@ instance Monoid (Ly LyCxt_ElementT) where
 
 
 --------------------------------------------------------------------------------
--- ** Commenting input files (2.12)
+-- ** Working on text files (2.1.3)
 
 
 data LyCmdVersionT
@@ -396,6 +396,22 @@ times r e           = command2 "times" (wrap $ ppMeter r)
 
 
 instance Append Ly LyCxt_ElementT LyCmdTimesT
+
+--------------------------------------------------------------------------------
+-- *** Bar check (6.2.5)
+
+data LyBarCheckT
+type LyBarCheck = Ly LyBarCheckT
+
+barcheck            :: LyBarCheck
+barcheck            = wrap $ char '|'
+
+-- shorthand
+bc                  :: LyBarCheck
+bc                  = wrap $ char '|'
+
+
+instance Append Ly LyCxt_ElementT LyBarCheckT
 
 --------------------------------------------------------------------------------
 -- ** Mutliple notes at once (6.3)

@@ -18,12 +18,10 @@
 module HNotate.Backend.LilyPond (
     module HNotate.Backend.LilyPond.LyBackend,
     module HNotate.Backend.LilyPond.LyScoreDatatypes,
-    module HNotate.Backend.LilyPond.ToLyScore,
-    module HNotate.Backend.LilyPond.Utils,
+    module HNotate.Backend.LilyPond.ToLyScore
   ) where
 
 import HNotate.Backend.LilyPond.LyBackend
 import HNotate.Backend.LilyPond.LyScoreDatatypes
 import HNotate.Backend.LilyPond.ToLyScore
-import HNotate.Backend.LilyPond.Utils
 

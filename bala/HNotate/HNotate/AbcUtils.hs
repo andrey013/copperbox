@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  HNotate.Backend.Abc.Utils
+-- Module      :  HNotate.AbcUtils
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -13,7 +13,7 @@
 --
 --------------------------------------------------------------------------------
 
-module HNotate.Backend.Abc.Utils (
+module HNotate.AbcUtils (
     printAbc,
     writeAbc,
     systemToAbc,

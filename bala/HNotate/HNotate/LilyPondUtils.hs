@@ -13,7 +13,7 @@
 --
 --------------------------------------------------------------------------------
 
-module HNotate.Backend.LilyPond.Utils (
+module HNotate.LilyPondUtils (
     printLy,
     writeLy,
     systemToLy,

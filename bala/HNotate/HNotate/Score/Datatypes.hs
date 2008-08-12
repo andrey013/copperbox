@@ -73,11 +73,7 @@ data ScGlyph = ScNote Pitch Duration
              | ScChord (Seq Pitch) Duration
              | ScGraceNotes (Seq (Pitch,Duration))
 
-                 {-    | ScTaggedGlyph ScTag  -}
-{-
--- tag things that aren't processed
-newtype ScTag = ScTag Int
--}
+
 
 
 

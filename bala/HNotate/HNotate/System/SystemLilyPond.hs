@@ -19,16 +19,18 @@ module HNotate.System.SystemLilyPond (
   ) where
 
 import HNotate.Backend.LilyPond.LyFragments
+import HNotate.Backend.LilyPond.LilyPondVersion
 import HNotate.Print.OutputLilyPond
 import qualified Data.Foldable as F
 import Data.Sequence
+import Data.Version
 
 type LilyPondSystem = PartLyExprs -> LyCxt_Toplevel
 
 default_ly_system :: String -> LyCxt_Element -> PartLyExprs -> LyCxt_Toplevel
 default_ly_system s prefix exprs = 
     toplevelStart
-      +++ version "2.10.3" 
+      +++ version (showVersion __lilypond_version)
       +++ header (headerStart +++ title s)
       +++ book
             (block (score $ makeExprs prefix exprs))
