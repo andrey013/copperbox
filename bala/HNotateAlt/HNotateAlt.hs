@@ -13,10 +13,11 @@
 --------------------------------------------------------------------------------
 
 module HNotateAlt (
+    module BackendAbc,
+    module BackendLilyPond,
+    module BackendMidi,    
     module Duration,
     module EventInterface,
-    module LilyPondBackend,
-    module MidiBackend,
     module Pitch,
     module ToScore,
     
@@ -36,11 +37,12 @@ module HNotateAlt (
     
  ) where
 
+import BackendAbc
+import BackendLilyPond
+import BackendMidi
 import Duration
 import EventInterface
 import EventTree
-import LilyPondBackend
-import MidiBackend
 import Pitch
 import ScoreRepresentation
 import ToScore

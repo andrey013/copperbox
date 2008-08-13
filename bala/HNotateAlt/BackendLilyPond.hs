@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  LilyPondBackend
+-- Module      :  BackendLilyPond
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -10,11 +10,11 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Emit LilyPond from LyScore.
+-- Emit LilyPond from Score representation.
 --
 --------------------------------------------------------------------------------
 
-module LilyPondBackend (
+module BackendLilyPond (
     Notate_Ly_Env(..), default_ly_env,
     generateLilyPond
   ) where
@@ -22,7 +22,7 @@ module LilyPondBackend (
 
 import CommonUtils
 import Duration hiding (breve,longa)
-import LilyPondText
+import TextLilyPond
 import NotateMonad
 import Pitch
 import ScoreRepresentation
@@ -70,11 +70,6 @@ data Notate_Ly_Env = Notate_Ly_Env {
   }
 
 
-
-infixl 7 *!
-(*!) e oa   = maybe e (e !) oa
-
-
 state0 :: Notate_Ly_State
 state0 = Notate_Ly_State {
     relative_pitch      = middleC,
@@ -89,7 +84,7 @@ default_ly_env = Notate_Ly_Env {
 
 
 generateLilyPond :: LySystem -> Notate_Ly_Env -> LilyPondExprs
-generateLilyPond sc env = evalNotate (renderScore sc) state0 env
+generateLilyPond sc env = evalNotate (renderSystem sc) state0 env
 
 
 
@@ -147,14 +142,14 @@ suffixWith ctx f = (ctx +++) <$> f
 
 
 -- | @LyScScore --> \\book@
-renderScore :: LySystem -> ProcessM LilyPondExprs
-renderScore (ScSystem se) = LilyPondExprs <$> T.mapM renderPart se
+renderSystem :: LySystem -> ProcessM LilyPondExprs
+renderSystem (ScSystem se) = LilyPondExprs <$> T.mapM renderStrata se
 
 
 
 -- | @LyScPart --> \\score@
-renderPart :: LyStrata -> ProcessM LilyPondMusicLine
-renderPart (ScStrata i se) =
+renderStrata :: LyStrata -> ProcessM LilyPondMusicLine
+renderStrata (ScStrata i se) =
   -- NOT CORRECT - poly!
     F.foldlM renderMeasure elementStart se
 

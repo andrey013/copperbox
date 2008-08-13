@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  MidiBackend
+-- Module      :  BackendMidi
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module MidiBackend (
+module BackendMidi (
     Notate_Midi_Env(..), default_midi_env,
     generateMidi
   ) where

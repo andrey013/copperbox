@@ -89,7 +89,11 @@ infixl 4 <+<
 (<+<) :: (Monoid (t se), Sequence se) => t se -> t se -> t se
 (<+<) se se' = se `mappend` se'
 
+infixl 7 *!
+(*!) e oa   = maybe e (e !) oa
 
+infixl 7 !*>
+(!*>) oa e   = maybe e ((flip (!>)) e) oa
 
 
 

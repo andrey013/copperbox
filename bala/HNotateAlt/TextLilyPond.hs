@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  LilyPondText
+-- Module      :  TextLilyPond
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -17,7 +17,7 @@
 --
 --------------------------------------------------------------------------------
 
-module LilyPondText where
+module TextLilyPond where
 
 import CommonUtils
 
