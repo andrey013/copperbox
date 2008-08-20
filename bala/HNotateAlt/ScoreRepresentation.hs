@@ -21,51 +21,64 @@ module ScoreRepresentation (
     -- * Datatypes
     ScSystem(..),
     ScStrata(..),
-    ScChunk,
+    ScBlock(..),
     ScMeasure(..),
     ScGlyph(..),
-    CommonGlyph(..)
+    CommonGlyph(..),
+    
+    -- * Aliases
+    DSystem,
+    DStrata,
+    DBlock,
+    DMeasure,
+    DGlyph,
+    Glyph
+
   ) where
 
 import CommonUtils (sepSeq)
 import Duration
 import Pitch
 
+import Data.Foldable (toList)
 import Data.Sequence (Seq, ViewL(..), viewl)
 import Text.PrettyPrint.Leijen
 
 
+type DSystem    = ScSystem Glyph Duration
+type DStrata    = ScStrata Glyph Duration
+type DBlock     = ScBlock Glyph Duration
+type DMeasure   = ScMeasure Glyph Duration
+type DGlyph     = ScGlyph Glyph Duration
 
-data ScSystem gly dur = ScSystem (Seq (ScStrata gly dur))
+type Glyph      = CommonGlyph Duration
+
+
+
+newtype ScSystem e d = ScSystem { getSystem :: Seq (ScStrata e d) }
 
 
 -- A 'horizontal line' of music - of course it maybe printed on 
 -- more than one line and might contain polyphony, but it will be played 
 -- by a single instrument.
-data ScStrata gly dur = ScStrata {
+data ScStrata e d = ScStrata {
     _strata_number    :: Int,
-    _strata_chunks    :: ScChunk gly dur
+    _strata_chunks    :: Seq (ScBlock e d)
   }
 
 
-type ScChunk gly dur = Seq (ScMeasure gly dur)
+
+-- Follow the Abc style when voice overlays are grouped measure-wise.
+-- The Int holds the measure number
+data ScBlock e d = ScSingleBlock Int (ScMeasure e d)
+                 | ScPolyBlock Int (Seq (ScMeasure e d))
 
 
-
--- simultaneous measures (i.e. polyphony) have the same measure number
--- but different polyhonic 'indexes'.
-data ScMeasure gly dur = ScMeasure {
-    _measure_number :: Int,
-    _poly_index     :: Int,
-    _measure_glyphs :: Seq (ScGlyph gly dur)
-  }
-
+newtype ScMeasure e d = ScMeasure { getMeasure :: Seq (ScGlyph e d) }
 
 
 -- have glyph open so we can have say, lyrics...
-data ScGlyph gly dur = ScGlyph gly dur
-
-
+data ScGlyph e d = ScGlyph e d
 
 
 data CommonGlyph dur = CmnNote Pitch
@@ -76,26 +89,36 @@ data CommonGlyph dur = CmnNote Pitch
 
 
 
-instance (Pretty gly, Pretty dur) => Pretty (ScSystem gly dur) where
+instance (Pretty e, Pretty d) => Pretty (ScSystem e d) where
   pretty (ScSystem se) = (sepSeq (<$>) se) <> line
 
-instance (Pretty gly, Pretty dur) => Pretty (ScStrata gly dur) where
+instance (Pretty e, Pretty d) => Pretty (ScStrata e d) where
   pretty (ScStrata i se) = prefix i <$> text ":line " <> int i
-                                       <$> sepSeq (<$>) se
+                                    <$> sepSeq (<$>) se
     where
       prefix i  = let l = snd $ intPlex i in text $ replicate (l+6) '-'
 
 
+instance (Pretty e, Pretty d) => Pretty (ScBlock e d) where
+  pretty (ScSingleBlock i e) = measureNumber i
+                                         <$> indent 4 (pretty e)
+  pretty (ScPolyBlock i se)  = 
+      measureNumber i <$> indent 4 (encloseSep (text "<<") 
+                                               (text ">>") 
+                                               (text " // ")
+                                               (map pretty $ toList se))
 
-instance (Pretty gly, Pretty dur) => Pretty (ScMeasure gly dur) where
-  pretty (ScMeasure i v se) = text "|:" <>  int i <+> voice v
-                                        <$> indent 4 (sepSeq (</>) se)
-    where voice n = text "voice:" <> int n  
+measureNumber :: Int -> Doc
+measureNumber i = text "|:" <>  int i
 
-instance (Pretty gly, Pretty dur) => Pretty (ScGlyph gly dur) where 
-  pretty (ScGlyph gly dur) = pretty gly <> char '/' <> pretty dur
 
-instance (Pretty dur) => Pretty (CommonGlyph dur) where
+instance (Pretty e, Pretty d) => Pretty (ScMeasure e d) where
+  pretty (ScMeasure se) = sepSeq (</>) se
+
+instance (Pretty e, Pretty d) => Pretty (ScGlyph e d) where 
+  pretty (ScGlyph e d) = pretty e <> char '/' <> pretty d
+
+instance (Pretty d) => Pretty (CommonGlyph d) where
   pretty (CmnNote pch)       = pretty pch 
   pretty (CmnRest)           = char 'r'
   pretty (CmnSpacer)         = char 'S'

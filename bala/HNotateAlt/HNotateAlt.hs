@@ -39,7 +39,7 @@ module HNotateAlt (
 
 import BackendAbc
 import BackendLilyPond
-import BackendMidi
+import BackendMidi hiding (measure_length)
 import Duration
 import EventInterface
 import EventTree

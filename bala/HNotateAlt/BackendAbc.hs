@@ -26,15 +26,7 @@ import TextAbc
 import Pitch
 import ScoreRepresentation
 
-{-
-import HNotate.Backend.Abc.AbcFragments
-import HNotate.Backend.Abc.AbcScoreDatatypes
-import HNotate.Base.Datatypes
-import HNotate.Base.NotateMonad
-import HNotate.Print.Base
-import HNotate.Print.OutputAbc
-import HNotate.Score.Utils
--}
+
 
 import Control.Applicative
 import Control.Monad.Reader
@@ -61,11 +53,10 @@ type ProcessM a = NotateM Notate_Abc_State Notate_Abc_Env a
 
 type AbcSystem    = ScSystem Glyph Duration
 type AbcStrata    = ScStrata Glyph Duration
-type AbcChunk     = ScChunk Glyph Duration
+type AbcBlock     = ScBlock Glyph Duration
 type AbcMeasure   = ScMeasure Glyph Duration
 type AbcGlyph     = ScGlyph Glyph Duration
 
-type Glyph      = CommonGlyph Duration
 
 data Notate_Abc_State = Notate_Abc_State {
     abc_unknown_st      :: ()
@@ -116,12 +107,13 @@ renderSystem (ScSystem se) = AbcExprs <$> T.mapM renderStrata se
 
 
 renderStrata :: AbcStrata -> ProcessM AbcMusicLine
-renderStrata (ScStrata i se) = F.foldlM renderMeasure body se
+renderStrata (ScStrata i se) = undefined 
+    -- F.foldlM renderMeasure body se
 
 
 
 renderMeasure :: AbcCxt_Body -> AbcMeasure -> ProcessM AbcCxt_Body
-renderMeasure cxt (ScMeasure i xs se) = (\mea -> cxt <+< mea +++ barline)
+renderMeasure cxt (ScMeasure se) = (\mea -> cxt <+< mea +++ barline)
     <$> F.foldlM renderGlyph body se
     
 

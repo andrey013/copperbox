@@ -55,11 +55,9 @@ instance PP.Pretty MidiTrackContent where
 
 type MSystem    = ScSystem Glyph Duration
 type MStrata    = ScStrata Glyph Duration
-type MChunk     = ScChunk Glyph Duration
+type MChunk     = ScBlock Glyph Duration
 type MMeasure   = ScMeasure Glyph Duration
 type MGlyph     = ScGlyph Glyph Duration
-
-type Glyph      = CommonGlyph Duration
 
 
 type ProcessM a = NotateM Notate_Midi_State Notate_Midi_Env a
@@ -142,19 +140,22 @@ renderScore (ScSystem se) =
     fn xs p = (xs |>) <$> renderTrack p
 
 renderTrack :: MStrata -> ProcessM MidiTrackContent
-renderTrack (ScStrata _ se) =
+renderTrack (ScStrata _ se) = undefined
+{-
     buildTrack <$> F.foldlM renderMeasure mempty se
   where
     buildTrack = MidiTrackContent . finalizeTrack . deltaTransform
-
+-}
 
 -- renderMeasure must reset the global_time as MidiScore can have
 -- consecutive measures with the same measure number.
 renderMeasure :: Seq Message -> MMeasure -> ProcessM (Seq Message)
-renderMeasure cxt (ScMeasure i voice se) = do
+renderMeasure cxt (ScMeasure se) = do
+    undefined
+{-
     setMeasureOnset (i-1)           -- measures start at 1 rather than 0
     F.foldlM renderMessage cxt se
-
+-}
 
 -- track onset in the state monad
 

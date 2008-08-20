@@ -52,11 +52,11 @@ type ProcessM a = NotateM Notate_Ly_State Notate_Ly_Env a
 
 type LySystem    = ScSystem Glyph Duration
 type LyStrata    = ScStrata Glyph Duration
-type LyChunk     = ScChunk Glyph Duration
+type LyBlock     = ScBlock Glyph Duration
 type LyMeasure   = ScMeasure Glyph Duration
 type LyGlyph     = ScGlyph Glyph Duration
 
-type Glyph      = CommonGlyph Duration
+
 
 data Notate_Ly_State = Notate_Ly_State {
     relative_pitch      :: Pitch,
@@ -149,10 +149,12 @@ renderSystem (ScSystem se) = LilyPondExprs <$> T.mapM renderStrata se
 
 -- | @LyScPart --> \\score@
 renderStrata :: LyStrata -> ProcessM LilyPondMusicLine
-renderStrata (ScStrata i se) =
+renderStrata (ScStrata i se) = 
+    undefined
+{-    
   -- NOT CORRECT - poly!
     F.foldlM renderMeasure elementStart se
-
+-}
 
 {-
 renderPolyPhrase :: LyCxt_Element -> LyScPolyPhrase -> ProcessM LyCxt_Element
@@ -175,7 +177,7 @@ mergePolys k _      = error "mergePolys - ill constructed PolyPhrase - a bug"
 
 
 renderMeasure :: LyCxt_Element -> LyMeasure -> ProcessM LyCxt_Element
-renderMeasure cxt (ScMeasure i xs se) = (\mea -> cxt <+< mea +++ barcheck)
+renderMeasure cxt (ScMeasure se) = (\mea -> cxt <+< mea +++ barcheck)
     <$> F.foldlM renderGlyph elementStart se
 
 
