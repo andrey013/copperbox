@@ -22,7 +22,8 @@ module BackendLilyPond (
 
 import CommonUtils
 import Duration hiding (breve,longa)
-import TextLilyPond
+import TextLilyPond hiding (duration)
+import qualified TextLilyPond as Ly
 import NotateMonad
 import Pitch
 import ScoreRepresentation
@@ -50,11 +51,11 @@ instance PP.Pretty LilyPondExprs where
 
 type ProcessM a = NotateM Notate_Ly_State Notate_Ly_Env a
 
-type LySystem    = ScSystem Glyph Duration
-type LyStrata    = ScStrata Glyph Duration
-type LyBlock     = ScBlock Glyph Duration
-type LyMeasure   = ScMeasure Glyph Duration
-type LyGlyph     = ScGlyph Glyph Duration
+type LySystem    = DSystem
+type LyStrata    = DStrata
+type LyBlock     = DBlock
+type LyMeasure   = DMeasure
+type LyGlyph     = DGlyph
 
 
 
@@ -93,14 +94,14 @@ olyDuration d = let (i,dots) = getDuration d in fn i
   where 
     fn (-4)       = Just longa  
     fn (-2)       = Just breve 
-    fn 1          = Just $ duration 1
-    fn 2          = Just $ duration 2
-    fn 4          = Just $ duration 4
-    fn 8          = Just $ duration 8
-    fn 16         = Just $ duration 16
-    fn 32         = Just $ duration 32
-    fn 64         = Just $ duration 64
-    fn 128        = Just $ duration 128
+    fn 1          = Just $ Ly.duration 1
+    fn 2          = Just $ Ly.duration 2
+    fn 4          = Just $ Ly.duration 4
+    fn 8          = Just $ Ly.duration 8
+    fn 16         = Just $ Ly.duration 16
+    fn 32         = Just $ Ly.duration 32
+    fn 64         = Just $ Ly.duration 64
+    fn 128        = Just $ Ly.duration 128
     fn _          = Nothing
   
   
@@ -149,8 +150,7 @@ renderSystem (ScSystem se) = LilyPondExprs <$> T.mapM renderStrata se
 
 -- | @LyScPart --> \\score@
 renderStrata :: LyStrata -> ProcessM LilyPondMusicLine
-renderStrata (ScStrata i se) = 
-    undefined
+renderStrata (ScStrata i se) = error "renderStrata to implement"
 {-    
   -- NOT CORRECT - poly!
     F.foldlM renderMeasure elementStart se
@@ -183,19 +183,19 @@ renderMeasure cxt (ScMeasure se) = (\mea -> cxt <+< mea +++ barcheck)
 
 
 renderGlyph :: LyCxt_Element -> LyGlyph -> ProcessM LyCxt_Element
-renderGlyph cxt (ScGlyph gly d) = renderGly cxt gly d
+renderGlyph cxt (ScGlyph e) = renderGly cxt e
 
-renderGly cxt (CmnNote p) d             = suffixWith cxt $
+renderGly cxt (CmnNote p d)             = suffixWith cxt $
     lynote <$> renderPitch p <*> differDuration d
 
-renderGly cxt (CmnRest) d               = suffixWith cxt $
+renderGly cxt (CmnRest d)               = suffixWith cxt $
     (rest *!)   <$> differDuration d
 
-renderGly cxt (CmnSpacer) d             = suffixWith cxt $
+renderGly cxt (CmnSpacer d)             = suffixWith cxt $
     (spacer *!) <$> differDuration d
 
 -- Important: successive notes in a chord shouldn't change relative pitch
-renderGly cxt (CmnChord se) d           = suffixWith cxt $
+renderGly cxt (CmnChord se d)           = suffixWith cxt $
     case viewl se of
       EmptyL      -> error "Empty chord"
       (e :< sse)  -> do 
@@ -204,7 +204,7 @@ renderGly cxt (CmnChord se) d           = suffixWith cxt $
           od <- differDuration d
           return (chord (x:xs) *! od)
 
-renderGly cxt (CmnGraceNotes se) d        = suffixWith cxt $
+renderGly cxt (CmnGraceNotes se)        = suffixWith cxt $
     (\xs -> grace $ blockS $ foldl (+++) elementStart xs) 
         <$> mapM renderGrace (F.toList se)
 

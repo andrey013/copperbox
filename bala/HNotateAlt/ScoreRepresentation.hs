@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  HNotate.ScoreRepresentation
+-- Module      :  HNotate.ScoreRepresentation2
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -26,13 +26,21 @@ module ScoreRepresentation (
     ScGlyph(..),
     CommonGlyph(..),
     
+    duration, dzero, dplus,
+    
     -- * Aliases
     DSystem,
     DStrata,
     DBlock,
     DMeasure,
     DGlyph,
-    Glyph
+    
+    dsystem,
+    dstrata,
+    dsingleBlock,
+    dpolyBlock,
+    dmeasure,
+    dglyph    
 
   ) where
 
@@ -40,90 +48,189 @@ import CommonUtils (sepSeq)
 import Duration
 import Pitch
 
-import Data.Foldable (toList)
+import qualified Control.Applicative as A
+import qualified Data.Foldable as F
 import Data.Sequence (Seq, ViewL(..), viewl)
+import Data.Traversable
 import Text.PrettyPrint.Leijen
 
 
-type DSystem    = ScSystem Glyph Duration
-type DStrata    = ScStrata Glyph Duration
-type DBlock     = ScBlock Glyph Duration
-type DMeasure   = ScMeasure Glyph Duration
-type DGlyph     = ScGlyph Glyph Duration
-
-type Glyph      = CommonGlyph Duration
 
 
-
-newtype ScSystem e d = ScSystem { getSystem :: Seq (ScStrata e d) }
+newtype ScSystem e = ScSystem { getSystem :: Seq (ScStrata e) }
 
 
 -- A 'horizontal line' of music - of course it maybe printed on 
 -- more than one line and might contain polyphony, but it will be played 
 -- by a single instrument.
-data ScStrata e d = ScStrata {
+data ScStrata e = ScStrata {
     _strata_number    :: Int,
-    _strata_chunks    :: Seq (ScBlock e d)
+    _strata_chunks    :: Seq (ScBlock e)
   }
+
 
 
 
 -- Follow the Abc style when voice overlays are grouped measure-wise.
 -- The Int holds the measure number
-data ScBlock e d = ScSingleBlock Int (ScMeasure e d)
-                 | ScPolyBlock Int (Seq (ScMeasure e d))
+data ScBlock e = ScSingleBlock Int (ScMeasure e)
+               | ScPolyBlock Int (Seq (ScMeasure e))
 
 
-newtype ScMeasure e d = ScMeasure { getMeasure :: Seq (ScGlyph e d) }
+newtype ScMeasure e = ScMeasure { getMeasure :: Seq (ScGlyph e) }
 
 
 -- have glyph open so we can have say, lyrics...
-data ScGlyph e d = ScGlyph e d
+data ScGlyph e = ScGlyph e
+
+--------------------------------------------------------------------------------
+-- Functor instances
+
+instance Functor ScSystem where
+  fmap f (ScSystem se)        = ScSystem (fmap (fmap f) se)
+  
+instance Functor ScStrata where
+  fmap f (ScStrata i se)      = ScStrata i (fmap (fmap f) se)
+  
+instance Functor ScBlock where
+  fmap f (ScSingleBlock i e)  = ScSingleBlock i (fmap f e)
+  fmap f (ScPolyBlock i se)   = ScPolyBlock i (fmap (fmap f) se)
+  
+instance Functor ScMeasure where
+  fmap f (ScMeasure se)       = ScMeasure (fmap (fmap f) se)
+
+instance Functor ScGlyph where
+  fmap f (ScGlyph e)          = ScGlyph (f e)
 
 
-data CommonGlyph dur = CmnNote Pitch
-                     | CmnRest
-                     | CmnSpacer  -- non-printed rest
-                     | CmnChord (Seq Pitch)
-                     | CmnGraceNotes (Seq (Pitch,dur))
+--------------------------------------------------------------------------------
+-- Foldable instances
+
+instance F.Foldable ScSystem where
+  foldMap f (ScSystem se)         = F.foldMap (F.foldMap f) se
+  
+instance F.Foldable ScStrata where
+  foldMap f (ScStrata i se)       = F.foldMap (F.foldMap f) se
+  
+instance F.Foldable ScBlock where
+  foldMap f (ScSingleBlock i e)   = F.foldMap f e
+  foldMap f (ScPolyBlock i se)    = F.foldMap (F.foldMap f) se
+  
+instance F.Foldable ScMeasure where
+  foldMap f (ScMeasure se)        = F.foldMap (F.foldMap f) se
+  
+instance F.Foldable ScGlyph where
+  foldMap f (ScGlyph e)           = f e
+
+--------------------------------------------------------------------------------
+-- Traversable instances
+
+
+instance Traversable ScSystem where
+  traverse f (ScSystem se)        = ScSystem A.<$> traverse (traverse f) se
+  
+instance Traversable ScStrata where
+  traverse f (ScStrata i se)      = (ScStrata i) A.<$> traverse (traverse f) se
+
+instance Traversable ScBlock where
+  traverse f (ScSingleBlock i e)  = (ScSingleBlock i) A.<$> traverse f e
+  traverse f (ScPolyBlock i se)   = 
+      (ScPolyBlock i) A.<$> traverse (traverse f) se
+ 
+instance Traversable ScMeasure where
+  traverse f (ScMeasure se)       = ScMeasure A.<$> traverse (traverse f) se
+ 
+instance Traversable ScGlyph where
+  traverse f (ScGlyph e)          = ScGlyph A.<$> f e
+
+
+data CommonGlyph = CmnNote Pitch Duration
+                 | CmnRest Duration
+                 | CmnSpacer Duration -- non-printed rest
+                 | CmnChord (Seq Pitch) Duration
+                 | CmnGraceNotes (Seq (Pitch,Duration))
+
+duration :: CommonGlyph -> Duration 
+duration (CmnNote p d)      = d
+duration (CmnRest d)        = d
+duration (CmnSpacer d)      = d
+duration (CmnChord se d)    = d
+duration (CmnGraceNotes se) = F.foldr f dzero se where f (_,d) a = a `dplus` d
+
+-- At some point define an instance of Num on duration,
+-- until then graces notes won't work. 
+dzero = demisemiquaver
+
+dplus :: Duration -> Duration -> Duration
+dplus a b = b
 
 
 
-instance (Pretty e, Pretty d) => Pretty (ScSystem e d) where
+type DSystem    = ScSystem CommonGlyph
+type DStrata    = ScStrata CommonGlyph
+type DBlock     = ScBlock CommonGlyph
+type DMeasure   = ScMeasure CommonGlyph
+type DGlyph     = ScGlyph CommonGlyph
+
+
+dsystem :: Seq DStrata -> DSystem
+dsystem se = ScSystem se
+
+dstrata :: Int -> Seq DBlock -> DStrata
+dstrata i se = ScStrata i se
+
+dsingleBlock :: Int -> DMeasure ->  DBlock
+dsingleBlock i e = ScSingleBlock i e
+
+dpolyBlock :: Int -> Seq DMeasure ->  DBlock
+dpolyBlock i se = ScPolyBlock i se
+
+dmeasure :: Seq DGlyph -> DMeasure
+dmeasure se = ScMeasure se
+
+-- seperate constructors for each sort in CommonGlyph might be more useful 
+dglyph :: CommonGlyph -> DGlyph
+dglyph g = ScGlyph g
+
+instance (Pretty e) => Pretty (ScSystem e) where
   pretty (ScSystem se) = (sepSeq (<$>) se) <> line
 
-instance (Pretty e, Pretty d) => Pretty (ScStrata e d) where
+instance (Pretty e) => Pretty (ScStrata e) where
   pretty (ScStrata i se) = prefix i <$> text ":line " <> int i
                                     <$> sepSeq (<$>) se
     where
       prefix i  = let l = snd $ intPlex i in text $ replicate (l+6) '-'
 
 
-instance (Pretty e, Pretty d) => Pretty (ScBlock e d) where
+instance (Pretty e) => Pretty (ScBlock e) where
   pretty (ScSingleBlock i e) = measureNumber i
                                          <$> indent 4 (pretty e)
   pretty (ScPolyBlock i se)  = 
       measureNumber i <$> indent 4 (encloseSep (text "<<") 
                                                (text ">>") 
                                                (text " // ")
-                                               (map pretty $ toList se))
+                                               (map pretty $ F.toList se))
 
 measureNumber :: Int -> Doc
 measureNumber i = text "|:" <>  int i
 
 
-instance (Pretty e, Pretty d) => Pretty (ScMeasure e d) where
+instance (Pretty e) => Pretty (ScMeasure e) where
   pretty (ScMeasure se) = sepSeq (</>) se
 
-instance (Pretty e, Pretty d) => Pretty (ScGlyph e d) where 
-  pretty (ScGlyph e d) = pretty e <> char '/' <> pretty d
+instance (Pretty e) => Pretty (ScGlyph e) where 
+  pretty (ScGlyph e) = pretty e
 
-instance (Pretty d) => Pretty (CommonGlyph d) where
-  pretty (CmnNote pch)       = pretty pch 
-  pretty (CmnRest)           = char 'r'
-  pretty (CmnSpacer)         = char 'S'
-  pretty (CmnChord ps)       = brackets $ sepSeq (<>) ps
-  pretty (CmnGraceNotes ps)  = braces $ sepSeq (<>) ps
+instance Pretty CommonGlyph where
+  pretty (CmnNote pch dur)       = pretty pch <> durationSuffix dur
+  pretty (CmnRest dur)           = char 'r' <> durationSuffix dur
+  pretty (CmnSpacer dur)         = char 's' <> durationSuffix dur
+  pretty (CmnChord ps dur)       = (brackets $ sepSeq (<>) ps) 
+                                      <> durationSuffix dur
+  pretty (CmnGraceNotes es)      = text "grace..." -- braces $ sepSeq (<>) ps
+
+durationSuffix :: Duration -> Doc
+durationSuffix d = char '/' <> pretty d 
 
 
 intPlex i = let s = show i in (s,length s)

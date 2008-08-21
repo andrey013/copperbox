@@ -51,11 +51,11 @@ instance PP.Pretty AbcExprs where
 
 type ProcessM a = NotateM Notate_Abc_State Notate_Abc_Env a
 
-type AbcSystem    = ScSystem Glyph Duration
-type AbcStrata    = ScStrata Glyph Duration
-type AbcBlock     = ScBlock Glyph Duration
-type AbcMeasure   = ScMeasure Glyph Duration
-type AbcGlyph     = ScGlyph Glyph Duration
+type AbcSystem    = DSystem
+type AbcStrata    = DStrata
+type AbcBlock     = DBlock
+type AbcMeasure   = DMeasure
+type AbcGlyph     = DGlyph
 
 
 data Notate_Abc_State = Notate_Abc_State {
@@ -107,7 +107,7 @@ renderSystem (ScSystem se) = AbcExprs <$> T.mapM renderStrata se
 
 
 renderStrata :: AbcStrata -> ProcessM AbcMusicLine
-renderStrata (ScStrata i se) = undefined 
+renderStrata (ScStrata i se) = error "renderStrata to implement"
     -- F.foldlM renderMeasure body se
 
 
@@ -125,20 +125,20 @@ renderMeasure cxt (ScMeasure se) = (\mea -> cxt <+< mea +++ barline)
 -- rather than ...EltS as we might need to think about beaming
 -- which prints note without separating spaces at some point.
 renderGlyph :: AbcCxt_Body -> AbcGlyph -> ProcessM AbcCxt_Body
-renderGlyph cxt (ScGlyph gly d) = renderGly cxt gly d
+renderGlyph cxt (ScGlyph e)   = renderGly cxt e
 
-renderGly cxt (CmnNote p) d             = suffixWith cxt $
+renderGly cxt (CmnNote p d)             = suffixWith cxt $
     (*!) <$> renderPitch p <*> abcDuration d
 
-renderGly cxt (CmnRest) d               = suffixWith cxt $
+renderGly cxt (CmnRest d)               = suffixWith cxt $
     (rest *!) <$> abcDuration d
 
-renderGly cxt (CmnSpacer) d             = suffixWith cxt $
+renderGly cxt (CmnSpacer d)             = suffixWith cxt $
     (spacer *!) <$> abcDuration d
 
 
 -- Notes inside chords have duration (though they all _should_ be the same)
-renderGly cxt (CmnChord se) d           = suffixWith cxt $
+renderGly cxt (CmnChord se d)           = suffixWith cxt $
     chord <$> F.foldrM (pitch1 d) [] se
 
   where
@@ -147,7 +147,7 @@ renderGly cxt (CmnChord se) d           = suffixWith cxt $
     fn acc p od = p *! od : acc
 
 
-renderGly cxt (CmnGraceNotes se) d        = suffixWith cxt $
+renderGly cxt (CmnGraceNotes se)          = suffixWith cxt $
     gracenotes <$> mapM graceNote (F.toList se)
 
 

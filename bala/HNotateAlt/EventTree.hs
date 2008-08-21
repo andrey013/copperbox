@@ -56,7 +56,7 @@ instance Monoid (EventTree evt) where
   mappend a b = EventTree $ (getEventTree a) >< (getEventTree b)
   
 instance Functor EventTree where
-  fmap f (EventTree sq)     = EventTree (fmap (fmap f) sq)
+  fmap f (EventTree se)     = EventTree (fmap (fmap f) se)
 
 instance Functor EvtPosition where
   fmap f (Evt e)            = Evt (f e)
@@ -68,7 +68,7 @@ instance Functor EvtPosition where
 
 
 instance F.Foldable EventTree where
-  foldMap f (EventTree sq)  = F.foldMap (F.foldMap f) sq
+  foldMap f (EventTree se)  = F.foldMap (F.foldMap f) se
 
 instance F.Foldable EvtPosition where
   foldMap f (Evt e)         = f e

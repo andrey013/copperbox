@@ -92,7 +92,7 @@ advanceMeasure (_,d) n  = do
       
       
 glyphDuration :: DGlyph -> Double
-glyphDuration (ScGlyph _ d)  = toDouble d
+glyphDuration (ScGlyph e)  = toDouble $ duration e
 
 
 -- Add an event (i.e. a glyph to the tip of the current measure.
@@ -103,11 +103,11 @@ addToTip (Progress se tip@((i,t),d)) e =
     fn <$> advanceMeasure tip (glyphDuration e)
   where
     fn d | d == 0    = Progress (se |> (i,t `addGlyph` e)) 
-                                ((i+1, ScMeasure mempty),0.0)
+                                ((i+1, dmeasure mempty),0.0)
          | otherwise = Progress se ((i, t `addGlyph` e),d)
 
     addGlyph :: DMeasure -> DGlyph -> DMeasure
-    addGlyph (ScMeasure se) e = ScMeasure (se |> e)
+    addGlyph (ScMeasure se) e = dmeasure (se |> e)
     
     
 
@@ -129,19 +129,19 @@ toScore sys env = evalNotate (processSystem sys) () env
 
 
 processSystem :: (Event evt) => System evt -> ProcessM DSystem
-processSystem p@(System se) = (ScSystem . snd) <$> F.foldlM fn (1,mempty) se
+processSystem p@(System se) = (dsystem . snd) <$> F.foldlM fn (1,mempty) se
   where
     fn (i,se) evtree = do 
         sse  <- buildFlatRep 1 evtree
-        return (i+1, se |> (ScStrata i (blockLine sse)))
+        return (i+1, se |> (dstrata i (blockLine sse)))
         
 
 
 
 makeGlyph :: (Event evt) => evt -> DGlyph
 makeGlyph evt = case eventvalues evt of
-                  (Just p, Just d)    -> ScGlyph (CmnNote p) d
-                  (Nothing, Just d)   -> ScGlyph CmnRest d
+                  (Just p, Just d)    -> dglyph (CmnNote p d)
+                  (Nothing, Just d)   -> dglyph (CmnRest d)
                   (Nothing, Nothing)  -> error "withEvent - to do "
                   
 
@@ -152,7 +152,7 @@ buildFlatRep :: (Event evt)
              -> EventTree evt 
              -> ProcessM (Seq IndexedMeasure)
 buildFlatRep mc tree = 
-    let pzero = Progress mempty ((mc,ScMeasure mempty),0.0) in do
+    let pzero = Progress mempty ((mc, dmeasure mempty),0.0) in do
         progress <- flattenEvents (viewl $ getEventTree tree) pzero
         return $ seal progress
 
@@ -245,21 +245,21 @@ blockLine se | null se   = mempty
     step se ((i,sm) :>> oq)   = step (se |> mkBlock i sm) (viewH oq)
     step se EmptyQ               = se
     
-    mkBlock i [x]   = ScSingleBlock i x
-    mkBlock i xs    = ScPolyBlock i (fromList xs)
+    mkBlock i [x]   = dsingleBlock i x
+    mkBlock i xs    = dpolyBlock i (fromList xs)
 
 --------------------------------------------------------------------------------
 -- Handling graces, chords and polyphonic lines
 
 pitches = seqMaybes . fmap notePitch
   where 
-    notePitch (ScGlyph (CmnNote p) _) = Just p
-    notePitch _                       = Nothing
+    notePitch (ScGlyph (CmnNote p  _))  = Just p
+    notePitch _                         = Nothing
     
 graces = seqMaybes . fmap notePitchDur
   where 
-    notePitchDur (ScGlyph (CmnNote p) d) = Just (p,d)
-    notePitchDur _                       = Nothing  
+    notePitchDur (ScGlyph (CmnNote p  d)) = Just (p,d)
+    notePitchDur _                        = Nothing  
 
 
       
@@ -276,21 +276,21 @@ addChordM p se
     | null se     = return p
     | otherwise   = p `addToTip` chord se 
   where 
-    chord se = ScGlyph (CmnChord (pitches se)) (stackDuration se) 
+    chord se = dglyph (CmnChord (pitches se) (stackDuration se)) 
     
     stackDuration :: Seq DGlyph -> Duration
     stackDuration se = case viewl se of
-        ((ScGlyph _ d) :< _)   -> d
-        EmptyL                -> error $ "stackDuration" -- quarternote
+        (ScGlyph (CmnNote p d) :< _)  -> d
+        EmptyL                        -> error $ "stackDuration" -- quarternote
   
 -- graces don't increase the duration so don't use `addToTip`    
 addGrace :: Progress -> Seq DGlyph -> Progress
 addGrace p@(Progress se ((mc, ScMeasure sm),d)) sse 
     | null se     = p
-    | otherwise   = Progress se ((mc, ScMeasure (sm |> grace sse)),d) 
+    | otherwise   = Progress se ((mc, dmeasure (sm |> grace sse)),d) 
   where 
     grace se = let gs = graces se 
-               in ScGlyph (CmnGraceNotes gs) (sumDuration gs)
+               in dglyph $ CmnGraceNotes gs
                    
 sumDuration :: Seq (a,Duration) -> Duration               
 sumDuration xs = quarter

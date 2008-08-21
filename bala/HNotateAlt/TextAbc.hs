@@ -46,7 +46,7 @@ ppMeter (n,d) =
     group $ integer (fromIntegral n) <> char '/' <> int (fromIntegral d)
 
 ppNoteLength :: (Integral a) => LengthRep a -> Doc
-ppNoteLength (n,d) = undefined
+ppNoteLength (n,d) = error "ppNoteLength - error to implement"
 
 {-
 ppNoteLength :: (Integral a) => LengthRep a -> Doc
@@ -549,7 +549,7 @@ perc                = clef_name "perc"
 -- for folding
 
 (&\) :: AbcCxt_Body -> AbcCxt_Body -> AbcCxt_Body
-(&\) _ _ = undefined
+(&\) _ _ = error "&\\ - voice overlay to implement"
 
 
 

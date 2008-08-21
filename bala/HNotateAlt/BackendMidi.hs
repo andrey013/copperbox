@@ -53,11 +53,11 @@ instance PP.Pretty MidiFileContent where
 instance PP.Pretty MidiTrackContent where  
   pretty (MidiTrackContent se) = sepSeq (PP.<$>) se
 
-type MSystem    = ScSystem Glyph Duration
-type MStrata    = ScStrata Glyph Duration
-type MChunk     = ScBlock Glyph Duration
-type MMeasure   = ScMeasure Glyph Duration
-type MGlyph     = ScGlyph Glyph Duration
+type MSystem    = DSystem
+type MStrata    = DStrata
+type MChunk     = DBlock
+type MMeasure   = DMeasure
+type MGlyph     = DGlyph
 
 
 type ProcessM a = NotateM Notate_Midi_State Notate_Midi_Env a
@@ -140,7 +140,7 @@ renderScore (ScSystem se) =
     fn xs p = (xs |>) <$> renderTrack p
 
 renderTrack :: MStrata -> ProcessM MidiTrackContent
-renderTrack (ScStrata _ se) = undefined
+renderTrack (ScStrata _ se) = error "renderTrack to implement"
 {-
     buildTrack <$> F.foldlM renderMeasure mempty se
   where
@@ -151,7 +151,7 @@ renderTrack (ScStrata _ se) = undefined
 -- consecutive measures with the same measure number.
 renderMeasure :: Seq Message -> MMeasure -> ProcessM (Seq Message)
 renderMeasure cxt (ScMeasure se) = do
-    undefined
+    error "renderMeasure to implement"
 {-
     setMeasureOnset (i-1)           -- measures start at 1 rather than 0
     F.foldlM renderMessage cxt se
@@ -160,22 +160,22 @@ renderMeasure cxt (ScMeasure se) = do
 -- track onset in the state monad
 
 renderMessage :: Seq Message -> MGlyph -> ProcessM (Seq Message)
-renderMessage cxt (ScGlyph gly dur) = renderMsg cxt gly dur
+renderMessage cxt (ScGlyph gly) = renderMsg cxt gly
   
-renderMsg cxt (CmnNote pch) dur =
-    fn <$> mkNoteOn pch  <* bumpDuration dur <*> mkNoteOff pch
+renderMsg cxt (CmnNote p d) =
+    fn <$> mkNoteOn p  <* bumpDuration d <*> mkNoteOff p
   where
     fn e e' = cxt |> e |> e'
 
-renderMsg cxt (CmnRest)     dur =
-    cxt <$  bumpDuration dur
+renderMsg cxt (CmnRest d) =
+    cxt <$  bumpDuration d
     
-renderMsg cxt (CmnSpacer)   dur =
-    cxt <$  bumpDuration dur
+renderMsg cxt (CmnSpacer d) =
+    cxt <$  bumpDuration d
 
-renderMsg cxt (CmnChord se) dur = do
+renderMsg cxt (CmnChord se d) = do
     ons   <- F.foldlM on mempty se
-    bumpDuration dur
+    bumpDuration d
     offs  <- F.foldlM off mempty se
     return $ cxt >< ons >< offs
   where
@@ -183,7 +183,7 @@ renderMsg cxt (CmnChord se) dur = do
     off se scp = (se |>) <$> mkNoteOff scp
 
 -- drop grace notes for the time being
-renderMsg cxt (CmnGraceNotes xs) dur = return cxt
+renderMsg cxt (CmnGraceNotes xs) = return cxt
 
 
 mkNoteOn :: Pitch -> ProcessM Message
