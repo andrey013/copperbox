@@ -79,9 +79,15 @@ data ScBlock e = ScSingleBlock Int (ScMeasure e)
 
 newtype ScMeasure e = ScMeasure { getMeasure :: Seq (ScGlyph e) }
 
-
--- have glyph open so we can have say, lyrics...
 data ScGlyph e = ScGlyph e
+
+-- Event Trees will get rendered into `CommonGlyphs`
+data CommonGlyph = CmnNote Pitch Duration
+                 | CmnRest Duration
+                 | CmnSpacer Duration -- non-printed rest
+                 | CmnChord (Seq Pitch) Duration
+                 | CmnGraceNotes (Seq (Pitch,Duration))
+                 
 
 --------------------------------------------------------------------------------
 -- Functor instances
@@ -144,11 +150,7 @@ instance Traversable ScGlyph where
   traverse f (ScGlyph e)          = ScGlyph A.<$> f e
 
 
-data CommonGlyph = CmnNote Pitch Duration
-                 | CmnRest Duration
-                 | CmnSpacer Duration -- non-printed rest
-                 | CmnChord (Seq Pitch) Duration
-                 | CmnGraceNotes (Seq (Pitch,Duration))
+
 
 duration :: CommonGlyph -> Duration 
 duration (CmnNote p d)      = d
@@ -191,6 +193,9 @@ dmeasure se = ScMeasure se
 -- seperate constructors for each sort in CommonGlyph might be more useful 
 dglyph :: CommonGlyph -> DGlyph
 dglyph g = ScGlyph g
+
+--------------------------------------------------------------------------------
+-- pretty printing
 
 instance (Pretty e) => Pretty (ScSystem e) where
   pretty (ScSystem se) = (sepSeq (<$>) se) <> line

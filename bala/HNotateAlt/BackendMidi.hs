@@ -60,12 +60,12 @@ type MMeasure   = DMeasure
 type MGlyph     = DGlyph
 
 
-type ProcessM a = NotateM Notate_Midi_State Notate_Midi_Env a
+type ProcessMidi a = NotateM Notate_Midi_State Notate_Midi_Env a
 
 
 
 data Notate_Midi_State = Notate_Midi_State {
-    global_time         :: Integer,
+    global_time         :: Word32,
     channel             :: Word8,
     note_on_velocity    :: Word8,
     note_off_velocity   :: Word8
@@ -73,20 +73,18 @@ data Notate_Midi_State = Notate_Midi_State {
 
 
 data Notate_Midi_Env = Notate_Midi_Env {
-    tick_value      :: Integer,
-    measure_length  :: Integer
+    measure_length  :: Int
   }
   deriving (Show)
 
-lilypond_ticks, abc_ticks :: Integer
+lilypond_ticks, abc_ticks, hnotate_ticks :: Int
 abc_ticks       = 480
 lilypond_ticks  = 384
-
+hnotate_ticks   = lilypond_ticks
 
 default_midi_env :: Notate_Midi_Env
 default_midi_env = Notate_Midi_Env {
-    tick_value      = lilypond_ticks,
-    measure_length  = 4 * lilypond_ticks  
+    measure_length  = 4 * hnotate_ticks  
   }
 
 state0 :: Notate_Midi_State
@@ -98,104 +96,84 @@ state0 = Notate_Midi_State {
   }
 
 
+generateMidi :: DSystem -> Notate_Midi_Env -> MidiFileContent
+generateMidi sys env = evalNotate (midiFileContent sys) state0 env
 
 
+hnticks :: Duration -> Word32
+hnticks = fromIntegral . midiTicks hnotate_ticks
 
 
-midiHeader :: Int -> ProcessM Header
-midiHeader nt = Header MF1 (fromIntegral nt)  <$> timeDivision
-
-timeDivision :: ProcessM TimeDivision
-timeDivision = TPB . fromIntegral             <$> asks tick_value
-
-ticks :: Duration -> ProcessM Integer
-ticks d = (flip midiTicks) d <$> asks tick_value
-
-setMeasureOnset :: Int -> ProcessM ()
-setMeasureOnset i = asks measure_length >>= \len ->
-                    modify (\s -> s{ global_time = (fromIntegral i) * len })
-
-
-bumpDuration :: Duration -> ProcessM ()
-bumpDuration d = do
-    d'    <- ticks d
-    gt    <- gets global_time
-    modify (\s -> s{ global_time = gt+d' })
 
 finalizeTrack :: Seq Message -> Seq Message
 finalizeTrack s = s |> end_of_track 0
 
+bumpDuration :: Duration -> ((Word32,Word32) -> ProcessMidi a) -> ProcessMidi a
+bumpDuration d f = let d' = hnticks d in do
+    gt    <- gets global_time
+    modify (\s -> s{ global_time = gt+d' })
+    f (gt,d')
 
+blockOnset :: Int -> ProcessMidi ()
+blockOnset i = do
+    ml <- asks measure_length
+    modify (\s -> s{ global_time = fromIntegral $ ml * i })
 
-
-generateMidi :: MSystem -> Notate_Midi_Env -> MidiFileContent
-generateMidi sc env = evalNotate (renderScore sc) state0 env
-
-
--- | @LyScScore --> \\MidiFile@
-renderScore :: MSystem -> ProcessM MidiFileContent
-renderScore (ScSystem se) =
+midiFileContent :: DSystem -> ProcessMidi MidiFileContent
+midiFileContent (ScSystem se) = 
     MidiFileContent <$> F.foldlM fn mempty se
   where
-    fn xs p = (xs |>) <$> renderTrack p
+    fn acc e = (acc |>) <$> midiTrackContent e
 
-renderTrack :: MStrata -> ProcessM MidiTrackContent
-renderTrack (ScStrata _ se) = error "renderTrack to implement"
-{-
-    buildTrack <$> F.foldlM renderMeasure mempty se
-  where
-    buildTrack = MidiTrackContent . finalizeTrack . deltaTransform
--}
+midiTrackContent :: DStrata -> ProcessMidi MidiTrackContent
+midiTrackContent s = MidiTrackContent <$> sstrata s 
 
--- renderMeasure must reset the global_time as MidiScore can have
--- consecutive measures with the same measure number.
-renderMeasure :: Seq Message -> MMeasure -> ProcessM (Seq Message)
-renderMeasure cxt (ScMeasure se) = do
-    error "renderMeasure to implement"
-{-
-    setMeasureOnset (i-1)           -- measures start at 1 rather than 0
-    F.foldlM renderMessage cxt se
--}
+sstrata :: DStrata -> ProcessMidi (Seq Message)
+sstrata (ScStrata i se) = 
+    (finalizeTrack . deltaTransform) <$> F.foldlM sblock mempty se
+   
 
--- track onset in the state monad
+sblock :: Seq Message -> DBlock -> ProcessMidi (Seq Message)
+sblock se (ScSingleBlock i e) = blockOnset (i-1) >> smeasure se e
 
-renderMessage :: Seq Message -> MGlyph -> ProcessM (Seq Message)
-renderMessage cxt (ScGlyph gly) = renderMsg cxt gly
-  
-renderMsg cxt (CmnNote p d) =
-    fn <$> mkNoteOn p  <* bumpDuration d <*> mkNoteOff p
-  where
-    fn e e' = cxt |> e |> e'
+sblock se (ScPolyBlock i sse) = F.foldlM fn se sse
+  where fn se e = blockOnset (i-1) >> smeasure se e
 
-renderMsg cxt (CmnRest d) =
-    cxt <$  bumpDuration d
-    
-renderMsg cxt (CmnSpacer d) =
-    cxt <$  bumpDuration d
+smeasure :: Seq Message -> DMeasure -> ProcessMidi (Seq Message)
+smeasure se (ScMeasure sse)   = F.foldlM sglyph se sse
 
-renderMsg cxt (CmnChord se d) = do
-    ons   <- F.foldlM on mempty se
-    bumpDuration d
-    offs  <- F.foldlM off mempty se
-    return $ cxt >< ons >< offs
-  where
-    on se scp = (se |>) <$> mkNoteOn scp
-    off se scp = (se |>) <$> mkNoteOff scp
+sglyph :: Seq Message -> DGlyph -> ProcessMidi (Seq Message)
+sglyph se (ScGlyph e)         = cglyph se e
 
--- drop grace notes for the time being
-renderMsg cxt (CmnGraceNotes xs) = return cxt
+cglyph :: Seq Message -> CommonGlyph -> ProcessMidi (Seq Message)    
+cglyph se (CmnNote p d)       = bumpDuration d $ \(gt,dur) -> do
+    on    <- mkNoteOn gt p
+    off   <- mkNoteOff (gt+dur) p
+    return $ se |> on |> off
+
+   
+cglyph se (CmnRest d)         = bumpDuration d $ \(gt,dur) -> return se
+
+cglyph se (CmnSpacer d)       = bumpDuration d $ \(gt,dur) -> return se
+ 
+cglyph se (CmnChord sa d)     = bumpDuration d $ \(gt,dur) -> do
+    ons   <- F.foldlM (fn (mkNoteOn gt)) mempty sa
+    offs  <- F.foldlM (fn (mkNoteOff (gt+dur))) mempty sa
+    return $ se >< ons >< offs
+  where 
+    fn f acc e = (acc |>) <$> f e                              
+
+cglyph se (CmnGraceNotes _)   = return se
 
 
-mkNoteOn :: Pitch -> ProcessM Message
-mkNoteOn pch =
-    noteon    <$> gets global_time     <*> gets channel
-              <*> pure (midiPitch pch) <*> gets note_on_velocity
+mkNoteOn :: Word32 -> Pitch ->  ProcessMidi Message
+mkNoteOn onset pch = (noteon onset) <$> 
+    gets channel <*> pure (midiPitch pch) <*> gets note_on_velocity
 
-mkNoteOff :: Pitch -> ProcessM Message
-mkNoteOff pch =
-    noteoff  <$> gets global_time     <*> gets channel
-             <*> pure (midiPitch pch) <*> gets note_off_velocity
-
+mkNoteOff :: Word32 -> Pitch -> ProcessMidi Message
+mkNoteOff onset pch = (noteoff onset) <$> 
+    gets channel <*> pure (midiPitch pch) <*> gets note_off_velocity
+             
 instance OnsetEvent Message Message where
   onset m@(Message (dt,_)) = (fromIntegral dt, m)
 
@@ -212,7 +190,6 @@ deltaTransform = collapse . buildQueue
 
     step (gt,se) EmptyQ                       = se
 
-
     -- List must be sorted to have NoteOffs before NoteOns
     simultaneous gt ((Message (ot,e)) : xs) =
         (mempty |> Message (ot - gt,e)) >< (fromList $ map zeromsg xs)
@@ -220,4 +197,5 @@ deltaTransform = collapse . buildQueue
         zeromsg (Message (_,e)) = Message (0,e)
 
     simultaneous gt []                      = mempty
-
+    
+                 

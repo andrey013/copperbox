@@ -16,7 +16,8 @@
 
 module BackendLilyPond (
     Notate_Ly_Env(..), default_ly_env,
-    generateLilyPond
+    {- generateLilyPond -}
+    translateLilyPond
   ) where
 
 
@@ -29,12 +30,13 @@ import Pitch
 import ScoreRepresentation
 
 import Control.Applicative
-import Control.Monad.Reader
-import Control.Monad.State
+import Control.Monad.Reader hiding (mapM)
+import Control.Monad.State hiding (mapM)
 import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Sequence hiding (reverse)
-import qualified Data.Traversable as T
+import Data.Traversable
+import Prelude hiding (mapM)
 import qualified Text.PrettyPrint.Leijen as PP
 
 newtype LilyPondExprs = LilyPondExprs { 
@@ -51,11 +53,30 @@ instance PP.Pretty LilyPondExprs where
 
 type ProcessM a = NotateM Notate_Ly_State Notate_Ly_Env a
 
-type LySystem    = DSystem
-type LyStrata    = DStrata
-type LyBlock     = DBlock
-type LyMeasure   = DMeasure
-type LyGlyph     = DGlyph
+
+data LilyPondPitch = LilyPondPitch {
+    ly_pitchletter  :: LyPitchName,
+    ly_accidental   :: Maybe LyAccidental,
+    ly_octave       :: Maybe LyOctaveSpec
+  }
+  
+data LilyPondDuration = LilyPondDuration {
+    ly_duration       :: Maybe LyDuration
+  }
+  
+  
+data LilyPondGlyph = LygNote LilyPondPitch LilyPondDuration
+                   | LygRest LilyPondDuration
+                   | LygSpacer LilyPondDuration -- non-printed rest
+                   | LygChord (Seq LilyPondPitch) LilyPondDuration
+                   | LygGraceNotes (Seq (LilyPondPitch,LilyPondDuration))
+                 
+                 
+type LySystem    = ScSystem LilyPondGlyph
+type LyStrata    = ScStrata LilyPondGlyph
+type LyBlock     = ScBlock LilyPondGlyph
+type LyMeasure   = ScMeasure LilyPondGlyph
+type LyGlyph     = ScGlyph LilyPondGlyph
 
 
 
@@ -84,8 +105,6 @@ default_ly_env = Notate_Ly_Env {
   }
 
 
-generateLilyPond :: LySystem -> Notate_Ly_Env -> LilyPondExprs
-generateLilyPond sc env = evalNotate (renderSystem sc) state0 env
 
 
 
@@ -104,27 +123,92 @@ olyDuration d = let (i,dots) = getDuration d in fn i
     fn 128        = Just $ Ly.duration 128
     fn _          = Nothing
   
-  
-olyAccidental :: Pitch -> Maybe LyAccidental
-olyAccidental = fn . accidental
-  where
-    fn Nat            = Nothing
-    fn Sharp          = Just sharp
-    fn Flat           = Just flat
-    fn DoubleSharp    = Just doubleSharp
-    fn DoubleFlat     = Just doubleFlat
-    
+
+
+olyAccidental :: Accidental -> Maybe LyAccidental
+olyAccidental Nat            = Nothing
+olyAccidental Sharp          = Just sharp
+olyAccidental Flat           = Just flat
+olyAccidental DoubleSharp    = Just doubleSharp
+olyAccidental DoubleFlat     = Just doubleFlat
+     
 olyOctaveSpec :: Int -> Maybe LyOctaveSpec
 olyOctaveSpec i 
     | i > 0       = Just $ raised i
     | i < 0       = Just $ lowered (abs i)
     | otherwise   = Nothing 
 
-                      
-                          
+-- we want to evalProcess on each strata so we always start from the 
+-- same relative pitch and duration
 
-lyPitchName :: Pitch -> LyPitchName
-lyPitchName = toEnum . fromEnum . pitch_letter
+{-
+generateLilyPond :: LySystem -> Notate_Ly_Env -> LilyPondExprs
+generateLilyPond sc env = error $ "generateLilyPond to do"
+    -- evalNotate (renderSystem sc) state0 env
+-}
+
+translateLilyPond :: DSystem -> Notate_Ly_Env -> LySystem
+translateLilyPond (ScSystem se) env =
+    ScSystem $ F.foldl fn mempty se
+  where
+    fn se e = se |> transStrata e env 
+transStrata :: DStrata -> Notate_Ly_Env -> LyStrata
+transStrata s env = evalNotate (unwrapMonad $ changeRep s) state0 env 
+
+changeRep :: DStrata 
+          -> WrappedMonad (NotateM Notate_Ly_State Notate_Ly_Env) LyStrata
+changeRep = traverse changeRepBody
+
+changeRepBody :: CommonGlyph 
+              -> WrappedMonad (NotateM Notate_Ly_State Notate_Ly_Env) LilyPondGlyph
+changeRepBody g = WrapMonad $ changeGlyph g
+
+changeGlyph :: CommonGlyph -> ProcessM LilyPondGlyph 
+changeGlyph (CmnNote p d)       = 
+    LygNote   <$> changePitch p <*> changeDuration d
+    
+changeGlyph (CmnRest d)         = LygRest   <$> changeDuration d
+
+changeGlyph (CmnSpacer d)       = LygSpacer <$> changeDuration d
+
+changeGlyph (CmnChord se d)     = 
+    LygChord <$> mapM changePitch se <*> changeDuration d
+
+changeGlyph (CmnGraceNotes se)  = LygGraceNotes <$> mapM fn se
+  where fn (p,d) = (,) <$> changePitch p <*> changeDuration d
+
+
+changePitch p@(Pitch l a o)     = fn <$> differOctaveSpec p
+  where 
+    fn os = LilyPondPitch (lyPitchName l) (olyAccidental a) os
+
+changeDuration d = LilyPondDuration <$> differDuration d
+
+branchEq :: Eq a => a -> a -> b -> b -> b
+branchEq a b eqk neqk = if a==b then eqk else neqk
+                   
+differDuration :: Duration -> ProcessM (Maybe LyDuration)
+differDuration d = do
+    old <- gets relative_duration
+    branchEq d old same diff
+  where 
+    same = return Nothing  
+    diff = do { modify (\s -> s {relative_duration = d})
+              ; return $ olyDuration d}                              
+
+differOctaveSpec :: Pitch -> ProcessM (Maybe LyOctaveSpec)
+differOctaveSpec p = do
+    old <- gets relative_pitch
+    branchEq 0 (octaveDist old p) same (diff old p)
+  where
+    same       = return Nothing  
+    diff old p = do { modify (\s -> s {relative_pitch = p})
+                    ; return $ olyOctaveSpec $ octaveDist old p}  
+
+    
+
+lyPitchName :: PitchLetter -> LyPitchName
+lyPitchName = toEnum . fromEnum 
 
 lynote :: LyPitch -> Maybe LyDuration -> LyNote
 lynote p od = note p *! od
@@ -133,111 +217,25 @@ lypitch :: LyPitchName -> Maybe LyAccidental -> Maybe LyOctaveSpec -> LyPitch
 lypitch pn oa os = pitch pn *! oa *! os
 
 
-suffixWith :: (Append Ly cxts cxta, Monoid (Ly cxts))
-           => Ly cxts
-           -> ProcessM (Ly cxta)
-           -> ProcessM (Ly cxts)
-suffixWith ctx f = (ctx +++) <$> f
+--------------------------------------------------------------------------------
+-- pretty printing
 
+lyppopt :: Maybe (Ly a) -> PP.Doc
+lyppopt (Just a) = unwrap a
+lyppopt Nothing  = PP.empty
 
+instance PP.Pretty LilyPondPitch where
+  pretty (LilyPondPitch l oa os) = 
+      PP.pretty l PP.<> lyppopt oa PP.<> lyppopt os
+  
+instance PP.Pretty LilyPondDuration where
+  pretty (LilyPondDuration od)   = lyppopt od
+  
+instance PP.Pretty LilyPondGlyph where
+  pretty (LygNote p d)      = PP.pretty p PP.<> PP.pretty d
+  pretty (LygRest d)        = PP.char 'r' PP.<> PP.pretty d
+  pretty (LygSpacer d)      = PP.char 's' PP.<> PP.pretty d
+  pretty (LygChord se d)    = PP.text "LygChord to do"
+  pretty (LygGraceNotes se) = PP.text "LygGraceNotes to do"
 
-
--- | @LyScScore --> \\book@
-renderSystem :: LySystem -> ProcessM LilyPondExprs
-renderSystem (ScSystem se) = LilyPondExprs <$> T.mapM renderStrata se
-
-
-
--- | @LyScPart --> \\score@
-renderStrata :: LyStrata -> ProcessM LilyPondMusicLine
-renderStrata (ScStrata i se) = error "renderStrata to implement"
-{-    
-  -- NOT CORRECT - poly!
-    F.foldlM renderMeasure elementStart se
--}
-
-{-
-renderPolyPhrase :: LyCxt_Element -> LyScPolyPhrase -> ProcessM LyCxt_Element
-renderPolyPhrase cxt (LyScSingletonPhrase x)   =
-    (cxt `mappend`) <$> renderSegment elementStart x
-
-renderPolyPhrase cxt (LyScPolyPhrase xs)   =
-    mergePolys cxt <$> mapM (renderSegment elementStart) xs
-
--}
-
-mergePolys k (x:xs) = let poly = foldl fn (block x) xs in
-    k +++ openPoly +++ poly +++ closePoly
-  where
-    fn acc a = acc \\ (block a)
-mergePolys k _      = error "mergePolys - ill constructed PolyPhrase - a bug"
-
-
-
-
-
-renderMeasure :: LyCxt_Element -> LyMeasure -> ProcessM LyCxt_Element
-renderMeasure cxt (ScMeasure se) = (\mea -> cxt <+< mea +++ barcheck)
-    <$> F.foldlM renderGlyph elementStart se
-
-
-
-renderGlyph :: LyCxt_Element -> LyGlyph -> ProcessM LyCxt_Element
-renderGlyph cxt (ScGlyph e) = renderGly cxt e
-
-renderGly cxt (CmnNote p d)             = suffixWith cxt $
-    lynote <$> renderPitch p <*> differDuration d
-
-renderGly cxt (CmnRest d)               = suffixWith cxt $
-    (rest *!)   <$> differDuration d
-
-renderGly cxt (CmnSpacer d)             = suffixWith cxt $
-    (spacer *!) <$> differDuration d
-
--- Important: successive notes in a chord shouldn't change relative pitch
-renderGly cxt (CmnChord se d)           = suffixWith cxt $
-    case viewl se of
-      EmptyL      -> error "Empty chord"
-      (e :< sse)  -> do 
-          x <- renderPitch e
-          xs <-  mapM renderPitch2 (F.toList sse)
-          od <- differDuration d
-          return (chord (x:xs) *! od)
-
-renderGly cxt (CmnGraceNotes se)        = suffixWith cxt $
-    (\xs -> grace $ blockS $ foldl (+++) elementStart xs) 
-        <$> mapM renderGrace (F.toList se)
-
-renderGrace :: (Pitch,Duration) -> ProcessM LyNote
-renderGrace (pch,dur) =
-    lynote <$> renderPitch pch  <*> differDuration dur
-
-
-
--- | @LyScPitch --> LyPitch@
-renderPitch :: Pitch -> ProcessM LyPitch
-renderPitch pch =
-    lypitch <$> pure (lyPitchName pch) <*> pure (olyAccidental pch)
-                                       <*> differOctaveSpec pch
-
-
-renderPitch2 :: Pitch -> ProcessM LyPitch
-renderPitch2 pch = return $ 
-    lypitch (lyPitchName pch) (olyAccidental pch) Nothing
-
-
-differOctaveSpec :: Pitch -> ProcessM (Maybe LyOctaveSpec)
-differOctaveSpec p = (\old -> olyOctaveSpec $ octaveDist old p)
-    <$> gets relative_pitch <* modify (\s -> s {relative_pitch = p})
-
-
-
-differDuration :: Duration -> ProcessM (Maybe LyDuration)
-differDuration d = (\old -> if (old==d) then Nothing else olyDuration d)
-    <$> gets relative_duration <* modify (\s -> s {relative_duration = d})
-
-
-
-
-
-
+  

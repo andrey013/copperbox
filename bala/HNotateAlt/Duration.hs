@@ -76,7 +76,7 @@ fromDouble j = let r = toRational j; (n,d) = (numerator r, denominator r)
 
 
 
-midiTicks :: Integer -> Duration -> Integer
+midiTicks :: Int -> Duration -> Int
 midiTicks tpqn d = floor $ fromIntegral (4 * tpqn) * toDouble d
 
 
