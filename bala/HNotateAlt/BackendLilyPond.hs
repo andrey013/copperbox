@@ -72,11 +72,11 @@ data LilyPondGlyph = LygNote LilyPondPitch LilyPondDuration
                    | LygGraceNotes (Seq (LilyPondPitch,LilyPondDuration))
                  
                  
-type LySystem    = ScSystem LilyPondGlyph
-type LyStrata    = ScStrata LilyPondGlyph
-type LyBlock     = ScBlock LilyPondGlyph
-type LyMeasure   = ScMeasure LilyPondGlyph
-type LyGlyph     = ScGlyph LilyPondGlyph
+type LySystem    = ScSystem   LilyPondGlyph
+type LyStrata    = ScStrata   LilyPondGlyph
+type LyBlock     = ScBlock    LilyPondGlyph
+type LyMeasure   = ScMeasure  LilyPondGlyph
+type LyGlyph     = ScGlyph    LilyPondGlyph
 
 
 
@@ -152,6 +152,7 @@ translateLilyPond (ScSystem se) env =
     ScSystem $ F.foldl fn mempty se
   where
     fn se e = se |> transStrata e env 
+    
 transStrata :: DStrata -> Notate_Ly_Env -> LyStrata
 transStrata s env = evalNotate (unwrapMonad $ changeRep s) state0 env 
 

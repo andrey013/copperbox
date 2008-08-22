@@ -16,7 +16,8 @@
 
 module BackendAbc (
     Notate_Abc_Env(..), default_abc_env,
-    generateAbc
+    {- generateAbc -}
+    translateAbc
   ) where
 
 import CommonUtils
@@ -29,12 +30,14 @@ import ScoreRepresentation
 
 
 import Control.Applicative
-import Control.Monad.Reader
-import Control.Monad.State
+import Control.Monad.Reader hiding (mapM)
+import Control.Monad.State hiding (mapM)
 import qualified Data.Foldable as F
 import Data.Monoid
+import Data.Ratio
 import Data.Sequence
-import qualified Data.Traversable as T
+import Data.Traversable
+import Prelude hiding (mapM)
 import qualified Text.PrettyPrint.Leijen as PP
 
 newtype AbcExprs = AbcExprs { 
@@ -49,13 +52,32 @@ instance PP.Pretty AbcExprs where
     
     
 
-type ProcessM a = NotateM Notate_Abc_State Notate_Abc_Env a
+type ProcessAbc a = NotateM Notate_Abc_State Notate_Abc_Env a
 
-type AbcSystem    = DSystem
-type AbcStrata    = DStrata
-type AbcBlock     = DBlock
-type AbcMeasure   = DMeasure
-type AbcGlyph     = DGlyph
+data Abc_PitchValue = Abc_PitchValue {
+    abc_pitchletter :: AbcPitchLetter,
+    abc_accidental   :: Maybe AbcAccidental,
+    abc_octave       :: Maybe AbcOctave
+  }
+  
+data Abc_DurationValue = Abc_DurationValue {
+    abc_duration      :: Maybe AbcDuration
+  }
+  
+  
+data Abc_Glyph = AbcG_Note Abc_PitchValue Abc_DurationValue
+               | AbcG_Rest Abc_DurationValue
+               | AbcG_Spacer Abc_DurationValue -- non-printed rest
+               | AbcG_Chord (Seq Abc_PitchValue) Abc_DurationValue
+               | AbcG_GraceNotes (Seq (Abc_PitchValue,Abc_DurationValue))
+                 
+                 
+type AbcSystem    = ScSystem  Abc_Glyph
+type AbcStrata    = ScStrata  Abc_Glyph
+type AbcBlock     = ScBlock   Abc_Glyph
+type AbcMeasure   = ScMeasure Abc_Glyph
+type AbcGlyph     = ScGlyph   Abc_Glyph
+
 
 
 data Notate_Abc_State = Notate_Abc_State {
@@ -74,106 +96,82 @@ default_abc_env = Notate_Abc_Env {
     default_note_length        = semiquaver
   }
 
-generateAbc :: AbcSystem -> Notate_Abc_Env -> AbcExprs
-generateAbc sc env = evalNotate (renderSystem sc) state0 env
+changeDuration :: Duration -> ProcessAbc Abc_DurationValue
+changeDuration d = Abc_DurationValue <$> do 
+    dnl   <- asks default_note_length
+    if (d == dnl) 
+      then return Nothing 
+      else let scale = denominator (toRatio dnl)
+               r     = toRatio d
+               (nm,dm) = (numerator r, denominator r)
+           in return $ Just $ dur ( nm*scale, dm)
 
 
-
-
-abcPitchLetter   :: Pitch -> AbcPitchLetter
-abcPitchLetter = toEnum . fromEnum . pitch_letter
-
-
-
-oabcAccidental :: Pitch -> Maybe AbcAccidental
-oabcAccidental = fn . accidental
+translateAbc :: DSystem -> Notate_Abc_Env -> AbcSystem
+translateAbc (ScSystem se) env =
+    ScSystem $ F.foldl fn mempty se
   where
-    fn Nat            = Nothing
-    fn Sharp          = Just sharp
-    fn Flat           = Just flat
-    fn DoubleSharp    = Just doubleSharp
-    fn DoubleFlat     = Just doubleFlat
+    fn se e = se |> transStrata e env 
 
+transStrata :: DStrata -> Notate_Abc_Env -> AbcStrata
+transStrata s env = evalNotate (unwrapMonad $ changeRep s) state0 env 
 
-suffixWith :: (Append Abc cxts cxta, Monoid (Abc cxts))
-           => Abc cxts
-           -> ProcessM (Abc cxta)
-           -> ProcessM (Abc cxts)
-suffixWith ctx f = (ctx +++) <$> f
+changeRep :: DStrata 
+          -> WrappedMonad (NotateM Notate_Abc_State Notate_Abc_Env) AbcStrata
+changeRep = traverse changeRepBody
 
+changeRepBody :: CommonGlyph 
+              -> WrappedMonad (NotateM Notate_Abc_State Notate_Abc_Env) Abc_Glyph
+changeRepBody g = WrapMonad $ changeGlyph g
 
-
-renderSystem (ScSystem se) = AbcExprs <$> T.mapM renderStrata se
-
-
-renderStrata :: AbcStrata -> ProcessM AbcMusicLine
-renderStrata (ScStrata i se) = error "renderStrata to implement"
-    -- F.foldlM renderMeasure body se
-
-
-
-renderMeasure :: AbcCxt_Body -> AbcMeasure -> ProcessM AbcCxt_Body
-renderMeasure cxt (ScMeasure se) = (\mea -> cxt <+< mea +++ barline)
-    <$> F.foldlM renderGlyph body se
+changeGlyph :: CommonGlyph -> ProcessAbc Abc_Glyph 
+changeGlyph (CmnNote p d)       = 
+    AbcG_Note   <$> pure (changePitch p) <*> changeDuration d
     
+changeGlyph (CmnRest d)         = AbcG_Rest   <$> changeDuration d
+
+changeGlyph (CmnSpacer d)       = AbcG_Spacer <$> changeDuration d
+
+changeGlyph (CmnChord se d)     = 
+    AbcG_Chord <$> pure (fmap changePitch se) <*> changeDuration d
+
+changeGlyph (CmnGraceNotes se)  = AbcG_GraceNotes <$> mapM fn se
+  where fn (p,d) = (,) <$> pure (changePitch p) <*> changeDuration d
+  
+changePitch (Pitch l a o)     = 
+    Abc_PitchValue (abcPitchLetter l) (oabcAccidental a) Nothing
 
 
 
--- Glyphs may generate elements of different types, hence we
--- return a 'suffix function' instead...
--- Also we have the very general return type ...(Abc cxts -> Abc cxts)
--- rather than ...EltS as we might need to think about beaming
--- which prints note without separating spaces at some point.
-renderGlyph :: AbcCxt_Body -> AbcGlyph -> ProcessM AbcCxt_Body
-renderGlyph cxt (ScGlyph e)   = renderGly cxt e
 
-renderGly cxt (CmnNote p d)             = suffixWith cxt $
-    (*!) <$> renderPitch p <*> abcDuration d
+abcPitchLetter   :: PitchLetter -> AbcPitchLetter
+abcPitchLetter = toEnum . fromEnum
 
-renderGly cxt (CmnRest d)               = suffixWith cxt $
-    (rest *!) <$> abcDuration d
+oabcAccidental :: Accidental -> Maybe AbcAccidental
+oabcAccidental Nat            = Nothing
+oabcAccidental Sharp          = Just sharp
+oabcAccidental Flat           = Just flat
+oabcAccidental DoubleSharp    = Just doubleSharp
+oabcAccidental DoubleFlat     = Just doubleFlat
+  
+--------------------------------------------------------------------------------
+-- pretty printing
 
-renderGly cxt (CmnSpacer d)             = suffixWith cxt $
-    (spacer *!) <$> abcDuration d
+abcppopt :: Maybe (Abc a) -> PP.Doc
+abcppopt (Just a) = unwrap a
+abcppopt Nothing  = PP.empty
 
-
--- Notes inside chords have duration (though they all _should_ be the same)
-renderGly cxt (CmnChord se d)           = suffixWith cxt $
-    chord <$> F.foldrM (pitch1 d) [] se
-
-  where
-    pitch1 d scp acc  = fn acc <$> renderPitch scp <*> abcDuration d
-
-    fn acc p od = p *! od : acc
-
-
-renderGly cxt (CmnGraceNotes se)          = suffixWith cxt $
-    gracenotes <$> mapM graceNote (F.toList se)
-
-
-
-graceNote :: (Pitch,Duration) -> ProcessM AbcNote
-graceNote (scp,d)  = (*!) <$> renderPitch scp  <*> abcDuration d
-
-
-
--- | @AbcScPitch --> AbcNote@
-renderPitch :: Pitch -> ProcessM AbcNote
-renderPitch pch =
-    fn <$> pure (abcPitchLetter pch) <*> pure (oabcAccidental pch)
-  where
-    fn pn oa = oa !*> (note pn)
-
-abcDuration :: Duration -> ProcessM (Maybe AbcDuration)
-abcDuration d = fn d <$> asks default_note_length
-  where
-    fn dur1 deft
-      | dur1 == deft  = Nothing
-      | otherwise     = Nothing
-{-
-      | otherwise     = let scale = denominator (toRatio deft)
-                            r     = toRatio dur1
-                            (n,d) = (numerator r, denominator r)
-                        in Just $ dur ( n*scale, d)
-
--}                        
+instance PP.Pretty Abc_PitchValue where
+  pretty (Abc_PitchValue l oa os) = 
+      abcppopt oa PP.<> PP.pretty l PP.<> abcppopt os
+  
+instance PP.Pretty Abc_DurationValue where
+  pretty (Abc_DurationValue od)   = abcppopt od
+  
+instance PP.Pretty Abc_Glyph where
+  pretty (AbcG_Note p d)      = PP.pretty p PP.<> PP.pretty d
+  pretty (AbcG_Rest d)        = PP.char 'r' PP.<> PP.pretty d
+  pretty (AbcG_Spacer d)      = PP.char 's' PP.<> PP.pretty d
+  pretty (AbcG_Chord se d)    = PP.text "AbcG_Chord to do"
+  pretty (AbcG_GraceNotes se) = PP.text "AbcG_GraceNotes to do"
+  

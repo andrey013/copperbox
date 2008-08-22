@@ -21,6 +21,7 @@ module TextAbc where
 import CommonUtils
 
 import Data.Monoid
+import Data.Ratio
 import Text.PrettyPrint.Leijen
 
 
@@ -45,10 +46,7 @@ ppMeter :: Integral a => LengthRep a -> Doc
 ppMeter (n,d) =
     group $ integer (fromIntegral n) <> char '/' <> int (fromIntegral d)
 
-ppNoteLength :: (Integral a) => LengthRep a -> Doc
-ppNoteLength (n,d) = error "ppNoteLength - error to implement"
 
-{-
 ppNoteLength :: (Integral a) => LengthRep a -> Doc
 ppNoteLength (n,d) =
     let r       = n % d
@@ -59,7 +57,7 @@ ppNoteLength (n,d) =
     f n 1   = int n
     f 1 2   = char '/'    -- short hand for pitch/2
     f n d   = group $ int n <> char '/' <> int d
--}
+
 
 
 
