@@ -53,11 +53,11 @@ instance PP.Pretty MidiFileContent where
 instance PP.Pretty MidiTrackContent where  
   pretty (MidiTrackContent se) = sepSeq (PP.<$>) se
 
-type MSystem    = DSystem
-type MStrata    = DStrata
-type MChunk     = DBlock
-type MMeasure   = DMeasure
-type MGlyph     = DGlyph
+type MSystem    = ScoreGlyph 
+type MStrata    = ScoreStrata
+type MChunk     = ScoreBlock
+type MMeasure   = ScoreMeasure
+
 
 
 type ProcessMidi a = NotateM Notate_Midi_State Notate_Midi_Env a
@@ -96,7 +96,7 @@ state0 = Notate_Midi_State {
   }
 
 
-generateMidi :: DSystem -> Notate_Midi_Env -> MidiFileContent
+generateMidi :: ScoreSystem -> Notate_Midi_Env -> MidiFileContent
 generateMidi sys env = evalNotate (midiFileContent sys) state0 env
 
 
@@ -119,51 +119,49 @@ blockOnset i = do
     ml <- asks measure_length
     modify (\s -> s{ global_time = fromIntegral $ ml * i })
 
-midiFileContent :: DSystem -> ProcessMidi MidiFileContent
+midiFileContent :: ScoreSystem -> ProcessMidi MidiFileContent
 midiFileContent (ScSystem se) = 
     MidiFileContent <$> F.foldlM fn mempty se
   where
     fn acc e = (acc |>) <$> midiTrackContent e
 
-midiTrackContent :: DStrata -> ProcessMidi MidiTrackContent
+midiTrackContent :: ScoreStrata -> ProcessMidi MidiTrackContent
 midiTrackContent s = MidiTrackContent <$> sstrata s 
 
-sstrata :: DStrata -> ProcessMidi (Seq Message)
+sstrata :: ScoreStrata -> ProcessMidi (Seq Message)
 sstrata (ScStrata i se) = 
     (finalizeTrack . deltaTransform) <$> F.foldlM sblock mempty se
    
 
-sblock :: Seq Message -> DBlock -> ProcessMidi (Seq Message)
+sblock :: Seq Message -> ScoreBlock -> ProcessMidi (Seq Message)
 sblock se (ScSingleBlock i e) = blockOnset (i-1) >> smeasure se e
 
 sblock se (ScPolyBlock i sse) = F.foldlM fn se sse
   where fn se e = blockOnset (i-1) >> smeasure se e
 
-smeasure :: Seq Message -> DMeasure -> ProcessMidi (Seq Message)
-smeasure se (ScMeasure sse)   = F.foldlM sglyph se sse
+smeasure :: Seq Message -> ScoreMeasure -> ProcessMidi (Seq Message)
+smeasure se (ScMeasure sse)   = F.foldlM cglyph se sse
 
-sglyph :: Seq Message -> DGlyph -> ProcessMidi (Seq Message)
-sglyph se (ScGlyph e)         = cglyph se e
 
-cglyph :: Seq Message -> CommonGlyph -> ProcessMidi (Seq Message)    
-cglyph se (CmnNote p d)       = bumpDuration d $ \(gt,dur) -> do
+cglyph :: Seq Message -> ScoreGlyph -> ProcessMidi (Seq Message)    
+cglyph se (GlyNote p d)       = bumpDuration d $ \(gt,dur) -> do
     on    <- mkNoteOn gt p
     off   <- mkNoteOff (gt+dur) p
     return $ se |> on |> off
 
    
-cglyph se (CmnRest d)         = bumpDuration d $ \(gt,dur) -> return se
+cglyph se (GlyRest d)         = bumpDuration d $ \(gt,dur) -> return se
 
-cglyph se (CmnSpacer d)       = bumpDuration d $ \(gt,dur) -> return se
+cglyph se (GlySpacer d)       = bumpDuration d $ \(gt,dur) -> return se
  
-cglyph se (CmnChord sa d)     = bumpDuration d $ \(gt,dur) -> do
+cglyph se (GlyChord sa d)     = bumpDuration d $ \(gt,dur) -> do
     ons   <- F.foldlM (fn (mkNoteOn gt)) mempty sa
     offs  <- F.foldlM (fn (mkNoteOff (gt+dur))) mempty sa
     return $ se >< ons >< offs
   where 
     fn f acc e = (acc |>) <$> f e                              
 
-cglyph se (CmnGraceNotes _)   = return se
+cglyph se (GlyGraceNotes _)   = return se
 
 
 mkNoteOn :: Word32 -> Pitch ->  ProcessMidi Message

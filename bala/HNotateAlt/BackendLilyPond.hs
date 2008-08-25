@@ -65,18 +65,14 @@ data LilyPondDuration = LilyPondDuration {
   }
   
   
-data LilyPondGlyph = LygNote LilyPondPitch LilyPondDuration
-                   | LygRest LilyPondDuration
-                   | LygSpacer LilyPondDuration -- non-printed rest
-                   | LygChord (Seq LilyPondPitch) LilyPondDuration
-                   | LygGraceNotes (Seq (LilyPondPitch,LilyPondDuration))
-                 
+type LilyPondGlyph = Glyph LilyPondPitch LilyPondDuration
+                
                  
 type LySystem    = ScSystem   LilyPondGlyph
 type LyStrata    = ScStrata   LilyPondGlyph
 type LyBlock     = ScBlock    LilyPondGlyph
 type LyMeasure   = ScMeasure  LilyPondGlyph
-type LyGlyph     = ScGlyph    LilyPondGlyph
+
 
 
 
@@ -147,35 +143,35 @@ generateLilyPond sc env = error $ "generateLilyPond to do"
     -- evalNotate (renderSystem sc) state0 env
 -}
 
-translateLilyPond :: DSystem -> Notate_Ly_Env -> LySystem
+translateLilyPond :: ScoreSystem -> Notate_Ly_Env -> LySystem
 translateLilyPond (ScSystem se) env =
     ScSystem $ F.foldl fn mempty se
   where
     fn se e = se |> transStrata e env 
     
-transStrata :: DStrata -> Notate_Ly_Env -> LyStrata
+transStrata :: ScoreStrata -> Notate_Ly_Env -> LyStrata
 transStrata s env = evalNotate (unwrapMonad $ changeRep s) state0 env 
 
-changeRep :: DStrata 
+changeRep :: ScStrata (Glyph Pitch Duration)
           -> WrappedMonad (NotateM Notate_Ly_State Notate_Ly_Env) LyStrata
 changeRep = traverse changeRepBody
 
-changeRepBody :: CommonGlyph 
+changeRepBody :: Glyph Pitch Duration 
               -> WrappedMonad (NotateM Notate_Ly_State Notate_Ly_Env) LilyPondGlyph
 changeRepBody g = WrapMonad $ changeGlyph g
 
-changeGlyph :: CommonGlyph -> ProcessM LilyPondGlyph 
-changeGlyph (CmnNote p d)       = 
-    LygNote   <$> changePitch p <*> changeDuration d
+changeGlyph :: Glyph Pitch Duration -> ProcessM LilyPondGlyph 
+changeGlyph (GlyNote p d)       = 
+    GlyNote   <$> changePitch p <*> changeDuration d
     
-changeGlyph (CmnRest d)         = LygRest   <$> changeDuration d
+changeGlyph (GlyRest d)         = GlyRest   <$> changeDuration d
 
-changeGlyph (CmnSpacer d)       = LygSpacer <$> changeDuration d
+changeGlyph (GlySpacer d)       = GlySpacer <$> changeDuration d
 
-changeGlyph (CmnChord se d)     = 
-    LygChord <$> mapM changePitch se <*> changeDuration d
+changeGlyph (GlyChord se d)     = 
+    GlyChord <$> mapM changePitch se <*> changeDuration d
 
-changeGlyph (CmnGraceNotes se)  = LygGraceNotes <$> mapM fn se
+changeGlyph (GlyGraceNotes se)  = GlyGraceNotes <$> mapM fn se
   where fn (p,d) = (,) <$> changePitch p <*> changeDuration d
 
 
@@ -231,12 +227,6 @@ instance PP.Pretty LilyPondPitch where
   
 instance PP.Pretty LilyPondDuration where
   pretty (LilyPondDuration od)   = lyppopt od
-  
-instance PP.Pretty LilyPondGlyph where
-  pretty (LygNote p d)      = PP.pretty p PP.<> PP.pretty d
-  pretty (LygRest d)        = PP.char 'r' PP.<> PP.pretty d
-  pretty (LygSpacer d)      = PP.char 's' PP.<> PP.pretty d
-  pretty (LygChord se d)    = PP.text "LygChord to do"
-  pretty (LygGraceNotes se) = PP.text "LygGraceNotes to do"
+
 
   

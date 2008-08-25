@@ -25,11 +25,13 @@ module ToScore (
 
 module ToScore where
 
+import Bifunctor
 import Duration
 import EventInterface
 import EventTree
 import NotateMonad
 import OnsetQueue
+import Pitch
 import ScoreRepresentation
 
 import Control.Applicative hiding (empty)
@@ -64,7 +66,7 @@ measure_2_4 = ProgressEnv { measure_length = 0.5 }
 -- We don't sort into single or poly blocks on the first traversal.
 
 -- The Measure and its measure number.
-type IndexedMeasure = (Int,DMeasure)
+type IndexedMeasure = (Int,ScoreMeasure)
 
 -- The tip indexed measure and its duration
 type Tip = (IndexedMeasure,Double)
@@ -91,23 +93,23 @@ advanceMeasure (_,d) n  = do
     if (d+n >= ml) then return 0.0 else return (d+n)
       
       
-glyphDuration :: DGlyph -> Double
-glyphDuration (ScGlyph e)  = toDouble $ duration e
+glyphDuration :: ScoreGlyph -> Double
+glyphDuration e  = sum $ map toDouble $ biprojectR e
 
 
 -- Add an event (i.e. a glyph to the tip of the current measure.
 -- If the measure is full (i.e. its current count == the measure count)
 -- then add it to the accumulation of measures.
-addToTip :: Progress -> DGlyph -> ProcessM Progress
+addToTip :: Progress -> ScoreGlyph -> ProcessM Progress
 addToTip (Progress se tip@((i,t),d)) e = 
     fn <$> advanceMeasure tip (glyphDuration e)
   where
     fn d | d == 0    = Progress (se |> (i,t `addGlyph` e)) 
-                                ((i+1, dmeasure mempty),0.0)
+                                ((i+1, ScMeasure mempty),0.0)
          | otherwise = Progress se ((i, t `addGlyph` e),d)
 
-    addGlyph :: DMeasure -> DGlyph -> DMeasure
-    addGlyph (ScMeasure se) e = dmeasure (se |> e)
+    addGlyph :: ScoreMeasure -> ScoreGlyph -> ScoreMeasure
+    addGlyph (ScMeasure se) e = ScMeasure (se |> e)
     
     
 
@@ -124,24 +126,24 @@ seal (Progress se (tip@(i, ScMeasure me),_))
 --------------------------------------------------------------------------------                
 
   
-toScore :: (Event evt) => System evt -> ProgressEnv -> DSystem
+toScore :: (Event evt) => System evt -> ProgressEnv -> ScoreSystem
 toScore sys env = evalNotate (processSystem sys) () env
 
 
-processSystem :: (Event evt) => System evt -> ProcessM DSystem
-processSystem p@(System se) = (dsystem . snd) <$> F.foldlM fn (1,mempty) se
+processSystem :: (Event evt) => System evt -> ProcessM ScoreSystem
+processSystem p@(System se) = (ScSystem . snd) <$> F.foldlM fn (1,mempty) se
   where
     fn (i,se) evtree = do 
         sse  <- buildFlatRep 1 evtree
-        return (i+1, se |> (dstrata i (blockLine sse)))
+        return (i+1, se |> (ScStrata i (blockLine sse)))
         
 
 
 
-makeGlyph :: (Event evt) => evt -> DGlyph
+makeGlyph :: (Event evt) => evt -> ScoreGlyph
 makeGlyph evt = case eventvalues evt of
-                  (Just p, Just d)    -> dglyph (CmnNote p d)
-                  (Nothing, Just d)   -> dglyph (CmnRest d)
+                  (Just p, Just d)    -> GlyNote p d
+                  (Nothing, Just d)   -> GlyRest d
                   (Nothing, Nothing)  -> error "withEvent - to do "
                   
 
@@ -152,7 +154,7 @@ buildFlatRep :: (Event evt)
              -> EventTree evt 
              -> ProcessM (Seq IndexedMeasure)
 buildFlatRep mc tree = 
-    let pzero = Progress mempty ((mc, dmeasure mempty),0.0) in do
+    let pzero = Progress mempty ((mc, ScMeasure mempty),0.0) in do
         progress <- flattenEvents (viewl $ getEventTree tree) pzero
         return $ seal progress
 
@@ -178,7 +180,7 @@ flattenEvents vl acc = flatstep vl acc
 -- Flatten a parallel block to a chord
 flattenParallel :: (Event evt)
                 => ViewL (EvtPosition evt)
-                -> (Progress, (Seq DGlyph))
+                -> (Progress, (Seq ScoreGlyph))
                 -> ProcessM Progress
 flattenParallel sq (se,stk) = flatpar sq (se,stk)
   where
@@ -195,7 +197,7 @@ flattenParallel sq (se,stk) = flatpar sq (se,stk)
 -- Flatten a prefix block to grace notes
 flattenPrefix :: (Event evt)
               => ViewL (EvtPosition evt)
-              -> (Progress, (Seq DGlyph))
+              -> (Progress, (Seq ScoreGlyph))
               -> ProcessM Progress
 flattenPrefix sq (se,stk) = flatpre sq (se,stk)
   where
@@ -228,38 +230,38 @@ flattenPoly ts next acc = let mc = measureCount acc in do
     
    
 
-instance OnsetEvent IndexedMeasure DMeasure where
+instance OnsetEvent IndexedMeasure ScoreMeasure where
   onset (i,m) = (i,m)
   
 
-instance Show DMeasure where
+instance Show ScoreMeasure where
   show = show . pretty
   
-blockLine :: (Seq IndexedMeasure) -> Seq DBlock
+blockLine :: (Seq IndexedMeasure) -> Seq ScoreBlock
 blockLine se | null se   = mempty
              | otherwise = collapse $ buildQueue se
   where
-    collapse :: OnsetQueue DMeasure -> Seq DBlock
+    collapse :: OnsetQueue ScoreMeasure -> Seq ScoreBlock
     collapse oq = step mempty (viewH oq)
     
     step se ((i,sm) :>> oq)   = step (se |> mkBlock i sm) (viewH oq)
-    step se EmptyQ               = se
+    step se EmptyQ            = se
     
-    mkBlock i [x]   = dsingleBlock i x
-    mkBlock i xs    = dpolyBlock i (fromList xs)
+    mkBlock i [x]   = ScSingleBlock i x
+    mkBlock i xs    = ScPolyBlock i (fromList xs)
 
 --------------------------------------------------------------------------------
 -- Handling graces, chords and polyphonic lines
 
 pitches = seqMaybes . fmap notePitch
   where 
-    notePitch (ScGlyph (CmnNote p  _))  = Just p
-    notePitch _                         = Nothing
+    notePitch (GlyNote p  _)  = Just p
+    notePitch _               = Nothing
     
 graces = seqMaybes . fmap notePitchDur
   where 
-    notePitchDur (ScGlyph (CmnNote p  d)) = Just (p,d)
-    notePitchDur _                        = Nothing  
+    notePitchDur (GlyNote p  d) = Just (p,d)
+    notePitchDur _              = Nothing  
 
 
       
@@ -271,26 +273,25 @@ seqMaybes = rec mempty . viewl
     rec se (Nothing :< sse) = rec se (viewl sse)
         
 
-addChordM :: Progress -> Seq DGlyph -> ProcessM Progress
+addChordM :: Progress -> Seq (Glyph Pitch Duration) -> ProcessM Progress
 addChordM p se 
     | null se     = return p
     | otherwise   = p `addToTip` chord se 
   where 
-    chord se = dglyph (CmnChord (pitches se) (stackDuration se)) 
+    chord se = GlyChord (pitches se) (stackDuration se) 
     
-    stackDuration :: Seq DGlyph -> Duration
+    stackDuration :: Seq (Glyph Pitch Duration) -> Duration
     stackDuration se = case viewl se of
-        (ScGlyph (CmnNote p d) :< _)  -> d
-        EmptyL                        -> error $ "stackDuration" -- quarternote
+        (GlyNote p d) :< _  -> d
+        EmptyL              -> error $ "stackDuration" -- quarternote
   
 -- graces don't increase the duration so don't use `addToTip`    
-addGrace :: Progress -> Seq DGlyph -> Progress
+addGrace :: Progress -> Seq (Glyph Pitch Duration) -> Progress
 addGrace p@(Progress se ((mc, ScMeasure sm),d)) sse 
     | null se     = p
-    | otherwise   = Progress se ((mc, dmeasure (sm |> grace sse)),d) 
+    | otherwise   = Progress se ((mc, ScMeasure (sm |> grace sse)),d) 
   where 
-    grace se = let gs = graces se 
-               in dglyph $ CmnGraceNotes gs
+    grace se = GlyGraceNotes $ graces se 
                    
 sumDuration :: Seq (a,Duration) -> Duration               
 sumDuration xs = quarter

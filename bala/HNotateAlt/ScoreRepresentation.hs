@@ -23,33 +23,27 @@ module ScoreRepresentation (
     ScStrata(..),
     ScBlock(..),
     ScMeasure(..),
-    ScGlyph(..),
-    CommonGlyph(..),
     
-    duration, dzero, dplus,
+    Glyph(..),
     
-    -- * Aliases
-    DSystem,
-    DStrata,
-    DBlock,
-    DMeasure,
-    DGlyph,
+    -- aliases
+    ScoreGlyph,
+    ScoreSystem,
+    ScoreStrata,
+    ScoreBlock,
+    ScoreMeasure
     
-    dsystem,
-    dstrata,
-    dsingleBlock,
-    dpolyBlock,
-    dmeasure,
-    dglyph    
 
   ) where
 
+import Bifunctor
 import CommonUtils (sepSeq)
 import Duration
 import Pitch
 
 import qualified Control.Applicative as A
 import qualified Data.Foldable as F
+import Data.Monoid
 import Data.Sequence (Seq, ViewL(..), viewl)
 import Data.Traversable
 import Text.PrettyPrint.Leijen
@@ -77,16 +71,22 @@ data ScBlock e = ScSingleBlock Int (ScMeasure e)
                | ScPolyBlock Int (Seq (ScMeasure e))
 
 
-newtype ScMeasure e = ScMeasure { getMeasure :: Seq (ScGlyph e) }
+newtype ScMeasure e = ScMeasure { getMeasure :: Seq e }
 
-data ScGlyph e = ScGlyph e
 
--- Event Trees will get rendered into `CommonGlyphs`
-data CommonGlyph = CmnNote Pitch Duration
-                 | CmnRest Duration
-                 | CmnSpacer Duration -- non-printed rest
-                 | CmnChord (Seq Pitch) Duration
-                 | CmnGraceNotes (Seq (Pitch,Duration))
+data Glyph pch drn = GlyNote pch drn
+                   | GlyRest drn
+                   | GlySpacer drn -- non-printed rest
+                   | GlyChord (Seq pch) drn
+                   | GlyGraceNotes (Seq (pch,drn))
+
+type ScoreGlyph = Glyph Pitch Duration
+
+type ScoreSystem  = ScSystem ScoreGlyph
+type ScoreStrata  = ScStrata ScoreGlyph
+type ScoreBlock   = ScBlock ScoreGlyph
+type ScoreMeasure = ScMeasure ScoreGlyph
+
                  
 
 --------------------------------------------------------------------------------
@@ -103,10 +103,8 @@ instance Functor ScBlock where
   fmap f (ScPolyBlock i se)   = ScPolyBlock i (fmap (fmap f) se)
   
 instance Functor ScMeasure where
-  fmap f (ScMeasure se)       = ScMeasure (fmap (fmap f) se)
+  fmap f (ScMeasure se)       = ScMeasure (fmap f se)
 
-instance Functor ScGlyph where
-  fmap f (ScGlyph e)          = ScGlyph (f e)
 
 
 --------------------------------------------------------------------------------
@@ -123,10 +121,8 @@ instance F.Foldable ScBlock where
   foldMap f (ScPolyBlock i se)    = F.foldMap (F.foldMap f) se
   
 instance F.Foldable ScMeasure where
-  foldMap f (ScMeasure se)        = F.foldMap (F.foldMap f) se
+  foldMap f (ScMeasure se)        = F.foldMap f se
   
-instance F.Foldable ScGlyph where
-  foldMap f (ScGlyph e)           = f e
 
 --------------------------------------------------------------------------------
 -- Traversable instances
@@ -144,56 +140,48 @@ instance Traversable ScBlock where
       (ScPolyBlock i) A.<$> traverse (traverse f) se
  
 instance Traversable ScMeasure where
-  traverse f (ScMeasure se)       = ScMeasure A.<$> traverse (traverse f) se
+  traverse f (ScMeasure se)       = ScMeasure A.<$> traverse f se
  
-instance Traversable ScGlyph where
-  traverse f (ScGlyph e)          = ScGlyph A.<$> f e
+
+--------------------------------------------------------------------------------
+-- Bifunctor instance for Glyphs
 
 
+instance Bifunctor Glyph where
+  bimap f g (GlyNote p d)      = GlyNote (f p) (g d)
+  bimap f g (GlyRest d)        = GlyRest (g d)
+  bimap f g (GlySpacer d)      = GlySpacer (g d)
+  bimap f g (GlyChord se d)    = GlyChord (fmap f se) (g d)
+  bimap f g (GlyGraceNotes se) = GlyGraceNotes (fmap (onPair f g) se)
+    where onPair f g (a,b)     = (f a, g b)
 
+    
 
-duration :: CommonGlyph -> Duration 
-duration (CmnNote p d)      = d
-duration (CmnRest d)        = d
-duration (CmnSpacer d)      = d
-duration (CmnChord se d)    = d
-duration (CmnGraceNotes se) = F.foldr f dzero se where f (_,d) a = a `dplus` d
+instance Bicollect Glyph where
+  bicollect f g (GlyNote p d)      = (f p) `mappend` (g d)
+  bicollect f g (GlyRest d)        = g d
+  bicollect f g (GlySpacer d)      = g d
+  bicollect f g (GlyChord se d)    = F.foldl fn mempty se
+    where fn a e = a `mappend` f e
+  bicollect f g (GlyGraceNotes se) = F.foldl fn mempty se
+    where fn a (x,y) = a `mappend` f x `mappend` g y
 
--- At some point define an instance of Num on duration,
--- until then graces notes won't work. 
-dzero = demisemiquaver
+  
+instance Biproject Glyph where
+  biprojectL (GlyNote p d)      = [p]
+  biprojectL (GlyRest d)        = []
+  biprojectL (GlySpacer d)      = []
+  biprojectL (GlyChord se d)    = F.foldr (:) [] se  
+  biprojectL (GlyGraceNotes se) = F.foldr fn mempty se
+    where fn (p,_) a = p:a
 
-dplus :: Duration -> Duration -> Duration
-dplus a b = b
-
-
-
-type DSystem    = ScSystem CommonGlyph
-type DStrata    = ScStrata CommonGlyph
-type DBlock     = ScBlock CommonGlyph
-type DMeasure   = ScMeasure CommonGlyph
-type DGlyph     = ScGlyph CommonGlyph
-
-
-dsystem :: Seq DStrata -> DSystem
-dsystem se = ScSystem se
-
-dstrata :: Int -> Seq DBlock -> DStrata
-dstrata i se = ScStrata i se
-
-dsingleBlock :: Int -> DMeasure ->  DBlock
-dsingleBlock i e = ScSingleBlock i e
-
-dpolyBlock :: Int -> Seq DMeasure ->  DBlock
-dpolyBlock i se = ScPolyBlock i se
-
-dmeasure :: Seq DGlyph -> DMeasure
-dmeasure se = ScMeasure se
-
--- seperate constructors for each sort in CommonGlyph might be more useful 
-dglyph :: CommonGlyph -> DGlyph
-dglyph g = ScGlyph g
-
+  biprojectR (GlyNote p d)      = [d]
+  biprojectR (GlyRest d)        = [d]
+  biprojectR (GlySpacer d)      = [d]
+  biprojectR (GlyChord se d)    = [d]
+  biprojectR (GlyGraceNotes se) = F.foldr fn mempty se
+    where fn (_,d) a = d:a
+    
 --------------------------------------------------------------------------------
 -- pretty printing
 
@@ -223,18 +211,16 @@ measureNumber i = text "|:" <>  int i
 instance (Pretty e) => Pretty (ScMeasure e) where
   pretty (ScMeasure se) = sepSeq (</>) se
 
-instance (Pretty e) => Pretty (ScGlyph e) where 
-  pretty (ScGlyph e) = pretty e
 
-instance Pretty CommonGlyph where
-  pretty (CmnNote pch dur)       = pretty pch <> durationSuffix dur
-  pretty (CmnRest dur)           = char 'r' <> durationSuffix dur
-  pretty (CmnSpacer dur)         = char 's' <> durationSuffix dur
-  pretty (CmnChord ps dur)       = (brackets $ sepSeq (<>) ps) 
+instance (Pretty pch, Pretty drn) => Pretty (Glyph pch drn) where
+  pretty (GlyNote pch dur)       = pretty pch <> durationSuffix dur
+  pretty (GlyRest dur)           = char 'r' <> durationSuffix dur
+  pretty (GlySpacer dur)         = char 's' <> durationSuffix dur
+  pretty (GlyChord ps dur)       = (brackets $ sepSeq (<>) ps) 
                                       <> durationSuffix dur
-  pretty (CmnGraceNotes es)      = text "grace..." -- braces $ sepSeq (<>) ps
+  pretty (GlyGraceNotes es)      = text "grace..." -- braces $ sepSeq (<>) ps
 
-durationSuffix :: Duration -> Doc
+durationSuffix :: Pretty drn => drn -> Doc
 durationSuffix d = char '/' <> pretty d 
 
 

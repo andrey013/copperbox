@@ -14,11 +14,15 @@
 --
 --------------------------------------------------------------------------------
 
+{-
 module BackendAbc (
     Notate_Abc_Env(..), default_abc_env,
     {- generateAbc -}
     translateAbc
   ) where
+-}
+
+module BackendAbc where 
 
 import CommonUtils
 import Duration
@@ -64,19 +68,14 @@ data Abc_DurationValue = Abc_DurationValue {
     abc_duration      :: Maybe AbcDuration
   }
   
-  
-data Abc_Glyph = AbcG_Note Abc_PitchValue Abc_DurationValue
-               | AbcG_Rest Abc_DurationValue
-               | AbcG_Spacer Abc_DurationValue -- non-printed rest
-               | AbcG_Chord (Seq Abc_PitchValue) Abc_DurationValue
-               | AbcG_GraceNotes (Seq (Abc_PitchValue,Abc_DurationValue))
+type AbcGlyph = Glyph Abc_PitchValue Abc_DurationValue
+
                  
                  
-type AbcSystem    = ScSystem  Abc_Glyph
-type AbcStrata    = ScStrata  Abc_Glyph
-type AbcBlock     = ScBlock   Abc_Glyph
-type AbcMeasure   = ScMeasure Abc_Glyph
-type AbcGlyph     = ScGlyph   Abc_Glyph
+type AbcSystem    = ScSystem  AbcGlyph
+type AbcStrata    = ScStrata  AbcGlyph
+type AbcBlock     = ScBlock   AbcGlyph
+type AbcMeasure   = ScMeasure AbcGlyph
 
 
 
@@ -85,7 +84,7 @@ data Notate_Abc_State = Notate_Abc_State {
   }
   deriving (Show)
 
-data Notate_Abc_Env= Notate_Abc_Env {
+data Notate_Abc_Env = Notate_Abc_Env {
     default_note_length      :: Duration
   }
 
@@ -107,35 +106,35 @@ changeDuration d = Abc_DurationValue <$> do
            in return $ Just $ dur ( nm*scale, dm)
 
 
-translateAbc :: DSystem -> Notate_Abc_Env -> AbcSystem
+translateAbc :: ScoreSystem -> Notate_Abc_Env -> AbcSystem
 translateAbc (ScSystem se) env =
     ScSystem $ F.foldl fn mempty se
   where
     fn se e = se |> transStrata e env 
 
-transStrata :: DStrata -> Notate_Abc_Env -> AbcStrata
+transStrata :: ScoreStrata -> Notate_Abc_Env -> AbcStrata
 transStrata s env = evalNotate (unwrapMonad $ changeRep s) state0 env 
 
-changeRep :: DStrata 
+changeRep :: ScoreStrata
           -> WrappedMonad (NotateM Notate_Abc_State Notate_Abc_Env) AbcStrata
 changeRep = traverse changeRepBody
 
-changeRepBody :: CommonGlyph 
-              -> WrappedMonad (NotateM Notate_Abc_State Notate_Abc_Env) Abc_Glyph
+changeRepBody :: ScoreGlyph
+              -> WrappedMonad (NotateM Notate_Abc_State Notate_Abc_Env) AbcGlyph
 changeRepBody g = WrapMonad $ changeGlyph g
 
-changeGlyph :: CommonGlyph -> ProcessAbc Abc_Glyph 
-changeGlyph (CmnNote p d)       = 
-    AbcG_Note   <$> pure (changePitch p) <*> changeDuration d
+changeGlyph :: ScoreGlyph -> ProcessAbc AbcGlyph 
+changeGlyph (GlyNote p d)       = 
+    GlyNote   <$> pure (changePitch p) <*> changeDuration d
     
-changeGlyph (CmnRest d)         = AbcG_Rest   <$> changeDuration d
+changeGlyph (GlyRest d)         = GlyRest   <$> changeDuration d
 
-changeGlyph (CmnSpacer d)       = AbcG_Spacer <$> changeDuration d
+changeGlyph (GlySpacer d)       = GlySpacer <$> changeDuration d
 
-changeGlyph (CmnChord se d)     = 
-    AbcG_Chord <$> pure (fmap changePitch se) <*> changeDuration d
+changeGlyph (GlyChord se d)     = 
+    GlyChord <$> pure (fmap changePitch se) <*> changeDuration d
 
-changeGlyph (CmnGraceNotes se)  = AbcG_GraceNotes <$> mapM fn se
+changeGlyph (GlyGraceNotes se)  = GlyGraceNotes <$> mapM fn se
   where fn (p,d) = (,) <$> pure (changePitch p) <*> changeDuration d
   
 changePitch (Pitch l a o)     = 
@@ -167,11 +166,5 @@ instance PP.Pretty Abc_PitchValue where
   
 instance PP.Pretty Abc_DurationValue where
   pretty (Abc_DurationValue od)   = abcppopt od
-  
-instance PP.Pretty Abc_Glyph where
-  pretty (AbcG_Note p d)      = PP.pretty p PP.<> PP.pretty d
-  pretty (AbcG_Rest d)        = PP.char 'r' PP.<> PP.pretty d
-  pretty (AbcG_Spacer d)      = PP.char 's' PP.<> PP.pretty d
-  pretty (AbcG_Chord se d)    = PP.text "AbcG_Chord to do"
-  pretty (AbcG_GraceNotes se) = PP.text "AbcG_GraceNotes to do"
+
   
