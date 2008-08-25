@@ -100,8 +100,8 @@ changeDuration d = Abc_DurationValue <$> do
     dnl   <- asks default_note_length
     if (d == dnl) 
       then return Nothing 
-      else let scale = denominator (toRatio dnl)
-               r     = toRatio d
+      else let scale = denominator (rationalize dnl)
+               r     = rationalize d
                (nm,dm) = (numerator r, denominator r)
            in return $ Just $ dur ( nm*scale, dm)
 

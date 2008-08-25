@@ -55,11 +55,11 @@ type ProcessM a = NotateM () ProgressEnv a
 
 
 data ProgressEnv = ProgressEnv {
-    measure_length     :: Double
+    measure_length     :: Duration
   }
   deriving (Show)
 
-measure_2_4 = ProgressEnv { measure_length = 0.5 }
+measure_2_4 = ProgressEnv { measure_length = duration 2 4 }
 
 --------------------------------------------------------------------------------
 -- Flattening is done with a tipped accumulator 'Progress'.
@@ -69,7 +69,7 @@ measure_2_4 = ProgressEnv { measure_length = 0.5 }
 type IndexedMeasure = (Int,ScoreMeasure)
 
 -- The tip indexed measure and its duration
-type Tip = (IndexedMeasure,Double)
+type Tip = (IndexedMeasure,Duration)
 
 data Progress = Progress {
     chunk_so_far    :: Seq IndexedMeasure,
@@ -87,14 +87,13 @@ measureCount :: Progress -> Int
 measureCount (Progress _ ((i,_),_)) = i
 
 
-advanceMeasure :: Tip -> Double -> ProcessM Double
+advanceMeasure :: Tip -> Duration -> ProcessM Duration
 advanceMeasure (_,d) n  = do 
     ml  <- asks measure_length
-    if (d+n >= ml) then return 0.0 else return (d+n)
+    if (d+n > ml) then return mempty else return (d+n)
       
       
-glyphDuration :: ScoreGlyph -> Double
-glyphDuration e  = sum $ map toDouble $ biprojectR e
+
 
 
 -- Add an event (i.e. a glyph to the tip of the current measure.
@@ -105,7 +104,7 @@ addToTip (Progress se tip@((i,t),d)) e =
     fn <$> advanceMeasure tip (glyphDuration e)
   where
     fn d | d == 0    = Progress (se |> (i,t `addGlyph` e)) 
-                                ((i+1, ScMeasure mempty),0.0)
+                                ((i+1, ScMeasure mempty),mempty)
          | otherwise = Progress se ((i, t `addGlyph` e),d)
 
     addGlyph :: ScoreMeasure -> ScoreGlyph -> ScoreMeasure
@@ -118,10 +117,6 @@ seal (Progress se (tip@(i, ScMeasure me),_))
     | null me   = se 
     | otherwise = se |> tip
      
-
-              
-
-
 
 --------------------------------------------------------------------------------                
 
@@ -154,7 +149,7 @@ buildFlatRep :: (Event evt)
              -> EventTree evt 
              -> ProcessM (Seq IndexedMeasure)
 buildFlatRep mc tree = 
-    let pzero = Progress mempty ((mc, ScMeasure mempty),0.0) in do
+    let pzero = Progress mempty ((mc, ScMeasure mempty), mempty) in do
         progress <- flattenEvents (viewl $ getEventTree tree) pzero
         return $ seal progress
 
@@ -292,10 +287,11 @@ addGrace p@(Progress se ((mc, ScMeasure sm),d)) sse
     | otherwise   = Progress se ((mc, ScMeasure (sm |> grace sse)),d) 
   where 
     grace se = GlyGraceNotes $ graces se 
-                   
+
+{-                   
 sumDuration :: Seq (a,Duration) -> Duration               
-sumDuration xs = quarter
-    
+sumDuration se = F.foldr (\(_,d) a -> a+d) 0 se
+-}    
 
 
 

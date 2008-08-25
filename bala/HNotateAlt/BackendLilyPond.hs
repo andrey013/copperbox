@@ -105,19 +105,19 @@ default_ly_env = Notate_Ly_Env {
 
 
 olyDuration :: Duration -> Maybe LyDuration
-olyDuration d = let (i,dots) = getDuration d in fn i
+olyDuration d = let (nr,dr,dots) = durationElements d in fn nr dr
   where 
-    fn (-4)       = Just longa  
-    fn (-2)       = Just breve 
-    fn 1          = Just $ Ly.duration 1
-    fn 2          = Just $ Ly.duration 2
-    fn 4          = Just $ Ly.duration 4
-    fn 8          = Just $ Ly.duration 8
-    fn 16         = Just $ Ly.duration 16
-    fn 32         = Just $ Ly.duration 32
-    fn 64         = Just $ Ly.duration 64
-    fn 128        = Just $ Ly.duration 128
-    fn _          = Nothing
+    fn 4 1      = Just longa  
+    fn 2 1      = Just breve 
+    fn 1 1      = Just $ Ly.duration 1
+    fn 1 2      = Just $ Ly.duration 2
+    fn 1 4      = Just $ Ly.duration 4
+    fn 1 8      = Just $ Ly.duration 8
+    fn 1 16     = Just $ Ly.duration 16
+    fn 1 32     = Just $ Ly.duration 32
+    fn 1 64     = Just $ Ly.duration 64
+    fn 1 128    = Just $ Ly.duration 128
+    fn _ _      = Nothing
   
 
 
@@ -152,15 +152,15 @@ translateLilyPond (ScSystem se) env =
 transStrata :: ScoreStrata -> Notate_Ly_Env -> LyStrata
 transStrata s env = evalNotate (unwrapMonad $ changeRep s) state0 env 
 
-changeRep :: ScStrata (Glyph Pitch Duration)
+changeRep :: ScoreStrata
           -> WrappedMonad (NotateM Notate_Ly_State Notate_Ly_Env) LyStrata
 changeRep = traverse changeRepBody
 
-changeRepBody :: Glyph Pitch Duration 
+changeRepBody :: ScoreGlyph 
               -> WrappedMonad (NotateM Notate_Ly_State Notate_Ly_Env) LilyPondGlyph
 changeRepBody g = WrapMonad $ changeGlyph g
 
-changeGlyph :: Glyph Pitch Duration -> ProcessM LilyPondGlyph 
+changeGlyph :: ScoreGlyph -> ProcessM LilyPondGlyph 
 changeGlyph (GlyNote p d)       = 
     GlyNote   <$> changePitch p <*> changeDuration d
     

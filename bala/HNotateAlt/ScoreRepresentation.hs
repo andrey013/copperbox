@@ -31,7 +31,9 @@ module ScoreRepresentation (
     ScoreSystem,
     ScoreStrata,
     ScoreBlock,
-    ScoreMeasure
+    ScoreMeasure,
+    
+    glyphDuration
     
 
   ) where
@@ -181,6 +183,16 @@ instance Biproject Glyph where
   biprojectR (GlyChord se d)    = [d]
   biprojectR (GlyGraceNotes se) = F.foldr fn mempty se
     where fn (_,d) a = d:a
+
+
+glyphDuration :: Glyph p Duration -> Duration
+glyphDuration (GlyNote p d)      = d
+glyphDuration (GlyRest d)        = d
+glyphDuration (GlySpacer d)      = d
+glyphDuration (GlyChord se d)    = d
+glyphDuration (GlyGraceNotes _)  = mempty 
+
+
     
 --------------------------------------------------------------------------------
 -- pretty printing

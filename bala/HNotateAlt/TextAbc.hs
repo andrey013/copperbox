@@ -384,7 +384,7 @@ instance PrefixAttr AbcNoteT AbcAccidentalT
 data AbcDurationT
 type AbcDuration = Abc AbcDurationT
 
-dur                 :: (Integer,Integer) -> AbcDuration
+dur                 :: (Int,Int) -> AbcDuration
 dur                 = wrap . ppNoteLength
 
 instance SuffixAttr AbcNoteT AbcDurationT
