@@ -46,7 +46,7 @@ instance PP.Pretty LyExprs where
     where fn a e = a PP.<$> PP.text "____" PP.<$> getLy e
 
 
-type LyPdGlyph = Glyph LyNote (Maybe LyDuration)
+type LyPdGlyph = Glyph LyPitch (Maybe LyDuration)
                 
                  
 type LyPdSystem    = ScSystem   LyPdGlyph
@@ -70,12 +70,12 @@ lilypondForm (ScSystem se) relative_pitch =
     ScSystem $ F.foldl fn mempty se  
   where
     fn se s  = let s'   = runLengthEncodeDuration s quarter
-                   s''  = traversalIdentity toLyDuration s'
+                   s''  = traversalIdentity ly_duration_Body s'
                    s''' = traversalState pitch_conv_Body s'' relative_pitch
               in se |> s'''
 
 pitch_conv_Body :: Glyph Pitch d 
-                -> WrappedMonad (State Pitch) (Glyph LyNote d)
+                -> WrappedMonad (State Pitch) (Glyph LyPitch d)
 pitch_conv_Body e@(GlyNote p _)     = WrapMonad $ do 
     nt <- convPitch p True 
     return $ changePitch e nt
@@ -88,7 +88,7 @@ pitch_conv_Body (GlyChord se d)     = WrapMonad $ do
     se' <- F.foldlM (\a e -> (a |>) <$> convPitch e False) mempty se
     return $ GlyChord se' d
     
-pitch_conv_Body (GlyGraceNotes se)   = WrapMonad $ do
+pitch_conv_Body (GlyGraceNotes se)  = WrapMonad $ do
     se' <- F.foldlM fn mempty se
     return $ GlyGraceNotes se' 
   where
@@ -99,18 +99,18 @@ pitch_conv_Body (GlyGraceNotes se)   = WrapMonad $ do
      
         
 
-convPitch :: Pitch -> Bool -> State Pitch LyNote
+convPitch :: Pitch -> Bool -> State Pitch LyPitch
 convPitch p update = do
     base <- get
     when (update==True) (put p)
     return (buildNote base p)
   where
-    buildNote base pch = note $ (lymodpitch p) *! (lyRelativeOctave base p)
+    buildNote base pch = (lymodpitch p) *! (lyRelativeOctave base p)
    
 
-toLyDuration :: Glyph p (Maybe Duration) 
-             -> Identity (Glyph p (Maybe LyDuration))
-toLyDuration e = let drn = glyphDuration e in
+ly_duration_Body :: Glyph p (Maybe Duration) 
+                 -> Identity (Glyph p (Maybe LyDuration))
+ly_duration_Body e = let drn = glyphDuration e in
   case drn of
     Just d -> return $ changeDuration e (olyDuration d)
     Nothing -> return $ changeDuration e Nothing
@@ -131,15 +131,19 @@ outputMeasure :: LyMusicLine -> LyPdMeasure -> LyMusicLine
 outputMeasure cxt (ScMeasure se) = F.foldl outputGlyph cxt se
 
 outputGlyph :: LyMusicLine -> LyPdGlyph -> LyMusicLine
-outputGlyph cxt (GlyNote n od)      = cxt +++ n *! od
+outputGlyph cxt (GlyNote p od)      = cxt +++ note p *! od
 
 outputGlyph cxt (GlyRest od)        = cxt +++ rest *! od
 
 outputGlyph cxt (GlySpacer od)      = cxt +++ spacer *! od
 
-outputGlyph cxt (GlyChord se od)    = cxt
+outputGlyph cxt (GlyChord se od)    = cxt +++ mkChord se *! od
+  where 
+    mkChord = chord . F.foldr (:) []  
 
-outputGlyph cxt (GlyGraceNotes se)  = cxt
+outputGlyph cxt (GlyGraceNotes se)  = cxt +++ mkGrace se
+  where 
+    mkGrace = grace . F.foldl (\a (p,od) -> a +++ note p *! od) elementStart
 
 
 polyphony :: LyCxt_Element -> [LyCxt_Element] -> LyCxt_Element

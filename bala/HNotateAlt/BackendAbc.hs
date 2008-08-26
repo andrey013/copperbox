@@ -27,6 +27,7 @@ import ScoreRepresentation
 import TextAbc
 import Traversals
 
+import Control.Monad.Identity
 import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Sequence
@@ -38,8 +39,7 @@ newtype AbcExprs = AbcExprs {
   
 type AbcMusicLine = AbcCxt_Body
 
--- type AbcGlyph     = Glyph AbcNote (Maybe AbcDuration)
-type AbcGlyph     = Glyph Pitch (Maybe AbcDuration)
+type AbcGlyph     = Glyph AbcNote (Maybe AbcDuration)
 
 type AbcSystem    = ScSystem   AbcGlyph
 type AbcStrata    = ScStrata   AbcGlyph
@@ -57,11 +57,13 @@ abcForm :: ScoreSystem -> Duration -> AbcSystem
 abcForm (ScSystem se) default_duration =
     ScSystem $ F.foldl fn mempty se  
   where
-    fn se e = se |> translateDuration e default_duration
+    fn se s = let s'  = translateDuration s default_duration
+                  s'' = traversalIdentity abc_note_Body s'
+              in se |> s''
 
 translateDuration :: ScStrata (Glyph pch Duration)
-                      -> Duration
-                      -> ScStrata (Glyph pch (Maybe AbcDuration))
+                  -> Duration
+                  -> ScStrata (Glyph pch (Maybe AbcDuration))
 translateDuration strata default_duration = 
     traversalEnv default_encode_Abc strata default_duration 
 
@@ -74,6 +76,20 @@ default_encode_Abc e = \env ->
     in changeDuration e od
     
     
+abc_note_Body :: Glyph Pitch d -> Identity (Glyph AbcNote d)
+abc_note_Body e@(GlyNote p _)     = return $ changePitch e (abcNote p)
+
+abc_note_Body (GlyRest d)         = return $ GlyRest d
+             
+abc_note_Body (GlySpacer d)       = return $ GlySpacer d
+
+abc_note_Body (GlyChord se d)     = 
+    let se' = F.foldl (\a e -> a |> abcNote e) mempty se 
+    in return $ GlyChord se' d
+    
+abc_note_Body (GlyGraceNotes se)  = 
+    let se' = F.foldl (\a (p,d) -> a |> (abcNote p,d)) mempty se
+    in return $ GlyGraceNotes se' 
 
 
 outputStrata :: AbcStrata -> AbcMusicLine
@@ -91,15 +107,19 @@ outputMeasure :: AbcMusicLine -> AbcMeasure -> AbcMusicLine
 outputMeasure cxt (ScMeasure se) = F.foldl outputGlyph cxt se
 
 outputGlyph :: AbcMusicLine -> AbcGlyph -> AbcMusicLine
-outputGlyph cxt (GlyNote p od)      = cxt +++ (abcNote p *! od)
+outputGlyph cxt (GlyNote n od)      = cxt +++ (n *! od)
     
 outputGlyph cxt (GlyRest od)        = cxt +++ (rest *! od) 
     
 outputGlyph cxt (GlySpacer od)      = cxt +++ (spacer *! od)
     
-outputGlyph cxt (GlyChord se od)    = cxt
+outputGlyph cxt (GlyChord se od)    = cxt +++ mkChord od se
+  where
+    mkChord od = chord . F.foldr (\n a -> (n *! od) : a) []
     
-outputGlyph cxt (GlyGraceNotes se)  = cxt
+outputGlyph cxt (GlyGraceNotes se)  = cxt +++ mkGrace se
+  where 
+    mkGrace = gracenotes . F.foldr (\(n,od) a -> (n *! od) : a) []
 
 voiceOverlay :: AbcCxt_Body -> [AbcCxt_Body] -> AbcCxt_Body
 voiceOverlay cxt []     = cxt
@@ -114,4 +134,5 @@ instance PP.Pretty AbcExprs where
     where fn a e = a PP.<$> PP.text "____" PP.<$> getAbc e
     
 instance PP.Pretty AbcDuration where
-  pretty = getAbc   
+  pretty = getAbc
+

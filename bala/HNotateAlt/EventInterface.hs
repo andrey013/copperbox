@@ -11,7 +11,7 @@
 --
 -- Type classes for `performing` a music representation
 -- The Score renderer and backends are parametrized on pitch and duration
--- So the can output for other music representations not just Bala.
+-- so they can produce output different music representations not just Bala.
 --
 --------------------------------------------------------------------------------
 
@@ -30,11 +30,11 @@ class Event evt where eventvalues :: evt -> (Maybe Pitch, Maybe Duration)
 class PitchRepr pch where renderPitch :: pch -> Pitch
 class DurationRepr dur where renderDuration :: dur -> Duration
 
--- Make Pitch representable as itself  
+-- Make HNotate's internal pitch representable as itself.  
 instance PitchRepr Pitch where 
   renderPitch = id  
   
--- Make Duration representable as itself  
+-- Make HNotate's internal duration representable as itself. 
 instance DurationRepr Duration where 
   renderDuration = id  
 
