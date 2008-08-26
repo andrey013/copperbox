@@ -185,7 +185,7 @@ instance Biproject Glyph where
     where fn (_,d) a = d:a
 
 
-glyphDuration :: Glyph p Duration -> Duration
+glyphDuration :: Monoid d => Glyph p d -> d
 glyphDuration (GlyNote p d)      = d
 glyphDuration (GlyRest d)        = d
 glyphDuration (GlySpacer d)      = d

@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -14,19 +14,14 @@
 --
 --------------------------------------------------------------------------------
 
-{-
-module BackendAbc (
-    Notate_Abc_Env(..), 
-    default_abc_env,
-    translateAbc
-  ) where
--}
 
-module BackendAbc where 
+module BackendAbc (
+    translateAbc, AbcExprs(..),  AbcMusicLine   
+  ) where
 
 import CommonUtils
 import Duration
-import OutputUtils hiding (abcPitchLetter)
+import OutputUtils
 import Pitch
 import ScoreRepresentation
 import TextAbc
@@ -86,7 +81,7 @@ outputStrata (ScStrata i se) = F.foldl outputBlock body se
 
 outputBlock :: AbcMusicLine -> AbcBlock -> AbcMusicLine
 outputBlock cxt (ScSingleBlock i se) = 
-    let cxt' = outputMeasure cxt se in cxt' +++ barline
+    (outputMeasure cxt se) +++ barline
 
 outputBlock cxt (ScPolyBlock i se) = 
     let voices = F.foldr (\e a -> outputMeasure body e : a) [] se
@@ -96,20 +91,15 @@ outputMeasure :: AbcMusicLine -> AbcMeasure -> AbcMusicLine
 outputMeasure cxt (ScMeasure se) = F.foldl outputGlyph cxt se
 
 outputGlyph :: AbcMusicLine -> AbcGlyph -> AbcMusicLine
-outputGlyph cxt (GlyNote p od) = 
-    cxt +++ (abcNote p *! od)
+outputGlyph cxt (GlyNote p od)      = cxt +++ (abcNote p *! od)
     
-outputGlyph cxt (GlyRest od) = 
-    cxt +++ (rest *! od) 
+outputGlyph cxt (GlyRest od)        = cxt +++ (rest *! od) 
     
-outputGlyph cxt (GlySpacer od) = 
-    cxt +++ (spacer *! od)
+outputGlyph cxt (GlySpacer od)      = cxt +++ (spacer *! od)
     
-outputGlyph cxt (GlyChord se od) = 
-    cxt
+outputGlyph cxt (GlyChord se od)    = cxt
     
-outputGlyph cxt (GlyGraceNotes se) = 
-    cxt
+outputGlyph cxt (GlyGraceNotes se)  = cxt
 
 voiceOverlay :: AbcCxt_Body -> [AbcCxt_Body] -> AbcCxt_Body
 voiceOverlay cxt []     = cxt
@@ -117,19 +107,11 @@ voiceOverlay cxt [v]    = cxt `mappend` v +++ barline
 voiceOverlay cxt (v:vs) = voiceOverlay (cxt &\ v) vs 
 
 
-abcPitchLetter   :: PitchLetter -> AbcPitchLetter
-abcPitchLetter = toEnum . fromEnum
-
-oabcAccidental :: Accidental -> Maybe AbcAccidental
-oabcAccidental Nat            = Nothing
-oabcAccidental Sharp          = Just sharp
-oabcAccidental Flat           = Just flat
-oabcAccidental DoubleSharp    = Just doubleSharp
-oabcAccidental DoubleFlat     = Just doubleFlat
 
 
 instance PP.Pretty AbcExprs where
   pretty (AbcExprs se) = F.foldl fn PP.empty se
     where fn a e = a PP.<$> PP.text "____" PP.<$> getAbc e
     
-    
+instance PP.Pretty AbcDuration where
+  pretty = getAbc   

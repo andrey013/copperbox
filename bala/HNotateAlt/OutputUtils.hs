@@ -22,6 +22,7 @@ import CommonUtils
 import Duration
 import Pitch
 import qualified TextAbc as Abc 
+import qualified TextLilyPond as Ly 
 
 import Data.Ratio
 import Data.Word
@@ -85,6 +86,64 @@ doti i dots = sum $ map (i `div`) xs
 
 dotr r dots = sum $ map ((r /) . fromIntegral) xs
   where xs = take (dots+1) base2number_sequence  
+    
+--------------------------------------------------------------------------------
+-- LilyPond
+
+-- 'lypitch' produces an absolute pitch 
+-- (i.e. the octave spec is not relative to the previous note). 
+lypitch :: Pitch -> Ly.LyPitch
+lypitch p@(Pitch l a o) = 
+    let mp = lymodpitch p
+        oo = olyOctaveSpec (o-4)
+    in mp *! oo
+
+-- 'lymodpitch' produces a modulus pitch (i.e. has no octave spec) 
+lymodpitch :: Pitch -> Ly.LyPitch
+lymodpitch (Pitch l a _) = 
+    let pn = lyPitchName l
+        oa = olyAccidental a 
+    in Ly.pitch pn *! oa
+
+
+lyRelativeOctave :: Pitch -> Pitch -> Maybe Ly.LyOctaveSpec
+lyRelativeOctave base pch = let dist = base `octaveDist` pch in
+    case dist `compare` 0 of
+      LT -> Just $ Ly.lowered $ abs dist
+      GT -> Just $ Ly.raised dist
+      EQ -> Nothing
+
+
+lyPitchName :: PitchLetter -> Ly.LyPitchName
+lyPitchName = toEnum . fromEnum 
+
+olyAccidental :: Accidental -> Maybe Ly.LyAccidental
+olyAccidental Nat            = Nothing
+olyAccidental Sharp          = Just Ly.sharp
+olyAccidental Flat           = Just Ly.flat
+olyAccidental DoubleSharp    = Just Ly.doubleSharp
+olyAccidental DoubleFlat     = Just Ly.doubleFlat
+     
+olyOctaveSpec :: Int -> Maybe Ly.LyOctaveSpec
+olyOctaveSpec i 
+    | i > 0       = Just $ Ly.raised i
+    | i < 0       = Just $ Ly.lowered (abs i)
+    | otherwise   = Nothing 
+    
+olyDuration :: Duration -> Maybe Ly.LyDuration
+olyDuration drn = let (n,d,dots) = durationElements drn 
+                  in maybe Nothing (Just . addDots dots) (mkDuration n d)
+  where 
+    mkDuration 4 1      = Just Ly.longa  
+    mkDuration 2 1      = Just Ly.breve 
+    mkDuration 1 i      = Just $ Ly.duration i
+    mkDuration _ _      = Nothing
+    
+    addDots :: Int -> Ly.LyDuration -> Ly.LyDuration
+    addDots i d 
+        | i > 0     = d ! (Ly.dotted i)
+        | otherwise = d
+
     
 --------------------------------------------------------------------------------
 -- Midi

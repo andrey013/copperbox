@@ -49,13 +49,17 @@ traversalState :: (Traversable t) =>
                   (a -> WrappedMonad (State st) b) -> t a -> st -> t b
 traversalState f a st = evalState (unwrapMonad $ traverse f a) st 
 
-
+-- Reader without the monad...
 traversalEnv :: (Traversable t) =>
                 (a -> (->) env b) -> t a -> env -> t b
 traversalEnv f a env = (traverse f a) env 
 
+
 changeDuration :: Glyph p d -> d' -> Glyph p d'
 changeDuration a od = bimap id (const od) a
+
+changePitch :: Glyph p d -> p' -> Glyph p' d
+changePitch a op = bimap (const op) id a
 
 
 --------------------------------------------------------------------------------
