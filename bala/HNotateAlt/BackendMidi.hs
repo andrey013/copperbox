@@ -23,6 +23,7 @@ import CommonUtils (sepSeq)
 import Duration
 import NotateMonad
 import OnsetQueue
+import OutputUtils
 import Pitch
 import ScoreRepresentation
 

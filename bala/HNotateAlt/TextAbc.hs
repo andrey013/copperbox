@@ -47,8 +47,8 @@ ppMeter (n,d) =
     group $ integer (fromIntegral n) <> char '/' <> int (fromIntegral d)
 
 
-ppNoteLength :: (Integral a) => LengthRep a -> Doc
-ppNoteLength (n,d) =
+ppLengthRep :: (Integral a) => LengthRep a -> Doc
+ppLengthRep (n,d) =
     let r       = n % d
         (n',d') = (numerator r, denominator r)
     in f (fromIntegral n') (fromIntegral d')
@@ -247,7 +247,7 @@ ctempo              :: AbcLength -> Int -> AbcTempo
 ctempo l i          = caten (<+>) l (wrap $ int i)
 
 stempo              :: Integral a => LengthRep a -> Int -> AbcTempo
-stempo mf i         = wrap $ ppNoteLength mf <+> int i
+stempo mf i         = wrap $ ppLengthRep mf <+> int i
 
 
 data AbcLengthT
@@ -257,7 +257,7 @@ ilength             :: Integer -> AbcLength
 ilength             = wrap . integer
 
 flength             :: Integral a => LengthRep a -> AbcLength
-flength             = wrap . ppNoteLength
+flength             = wrap . ppLengthRep
 
 -- ** K: key (3.1.14)
 data AbcKeyT
@@ -318,7 +318,7 @@ locrian       = mode "loc"
 -- and lower octaves
 data AbcPitchLetter = C | D | E | F | G | A | B 
                     | C2 | D2 | E2 | F2 | G2 | A2 | B2
-  deriving (Eq,Enum,Ord,Show)
+  deriving (Eq,Enum,Ord)
 
 instance Pretty AbcPitchLetter where
   pretty C    = char 'C'
@@ -336,7 +336,10 @@ instance Pretty AbcPitchLetter where
   pretty A2   = char 'a'
   pretty B2   = char 'b'
 
-
+instance Show AbcPitchLetter where
+  show = show . pretty
+  
+  
 data AbcNoteT
 type AbcNote = Abc AbcNoteT
 
@@ -384,8 +387,15 @@ instance PrefixAttr AbcNoteT AbcAccidentalT
 data AbcDurationT
 type AbcDuration = Abc AbcDurationT
 
-dur                 :: (Int,Int) -> AbcDuration
-dur                 = wrap . ppNoteLength
+dmult             :: Int -> AbcDuration
+dmult             = wrap . int
+
+ddiv1             :: Int -> AbcDuration
+ddiv1 i           = wrap (char '/' <> int i)
+
+ddiv2             :: (Int,Int) -> AbcDuration
+ddiv2 (n,d)       = wrap (int n <> char '/' <> int d)
+
 
 instance SuffixAttr AbcNoteT AbcDurationT
 instance SuffixAttr AbcRestT AbcDurationT
@@ -576,19 +586,19 @@ b__  = note B2
 
 -- @z1@ - a rest of the default note length.
 z1                  :: AbcRest
-z1                  = rest ! dur (1,1)
+z1                  = rest ! dmult 1
 
 -- @z1@ - a rest of double the default note length.
 z2                  :: AbcRest
-z2                  = rest ! dur (2,1)
+z2                  = rest ! dmult 2
 
 -- @z4@ - a rest four times the default note length.
 z4                  :: AbcRest
-z4                  = rest ! dur (2,1)
+z4                  = rest ! dmult 4
 
 -- @z'2@ - a rest of half the default note length.
 z'2                 :: AbcRest
-z'2                 = rest ! dur (1,2)
+z'2                 = rest ! ddiv1 2
 
 -- repeats and barlines
 

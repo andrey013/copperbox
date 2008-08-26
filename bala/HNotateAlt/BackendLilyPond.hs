@@ -15,8 +15,8 @@
 --------------------------------------------------------------------------------
 
 module BackendLilyPond (
-    Notate_Ly_Env(..), default_ly_env,
-    {- generateLilyPond -}
+    Notate_Ly_Env(..), 
+    default_ly_env,
     translateLilyPond
   ) where
 
@@ -28,6 +28,7 @@ import qualified TextLilyPond as Ly
 import NotateMonad
 import Pitch
 import ScoreRepresentation
+import Traversals
 
 import Control.Applicative
 import Control.Monad.Reader hiding (mapM)
@@ -162,24 +163,24 @@ changeRepBody g = WrapMonad $ changeGlyph g
 
 changeGlyph :: ScoreGlyph -> ProcessM LilyPondGlyph 
 changeGlyph (GlyNote p d)       = 
-    GlyNote   <$> changePitch p <*> changeDuration d
+    GlyNote   <$> changePitch p <*> chgDur d
     
-changeGlyph (GlyRest d)         = GlyRest   <$> changeDuration d
+changeGlyph (GlyRest d)         = GlyRest   <$> chgDur d
 
-changeGlyph (GlySpacer d)       = GlySpacer <$> changeDuration d
+changeGlyph (GlySpacer d)       = GlySpacer <$> chgDur d
 
 changeGlyph (GlyChord se d)     = 
-    GlyChord <$> mapM changePitch se <*> changeDuration d
+    GlyChord <$> mapM changePitch se <*> chgDur d
 
 changeGlyph (GlyGraceNotes se)  = GlyGraceNotes <$> mapM fn se
-  where fn (p,d) = (,) <$> changePitch p <*> changeDuration d
+  where fn (p,d) = (,) <$> changePitch p <*> chgDur d
 
 
 changePitch p@(Pitch l a o)     = fn <$> differOctaveSpec p
   where 
     fn os = LilyPondPitch (lyPitchName l) (olyAccidental a) os
 
-changeDuration d = LilyPondDuration <$> differDuration d
+chgDur d = LilyPondDuration <$> differDuration d
 
 branchEq :: Eq a => a -> a -> b -> b -> b
 branchEq a b eqk neqk = if a==b then eqk else neqk

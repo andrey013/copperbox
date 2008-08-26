@@ -12,7 +12,7 @@
 --
 --------------------------------------------------------------------------------
 
-module HNotateAlt (
+module HNotate (
     module BackendAbc,
     module BackendLilyPond,
     module BackendMidi,    
@@ -46,6 +46,8 @@ import EventTree
 import Pitch
 import ScoreRepresentation
 import ToScore
+
+
 
 infixl 7 #
 

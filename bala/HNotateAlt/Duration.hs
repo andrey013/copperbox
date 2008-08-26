@@ -20,8 +20,7 @@ module Duration (
     -- * Operations  
     dot, rationalize, durationToDouble, approxDuration,
     
-    -- * Midi helper
-    midiTicks,
+    base2number_sequence,
     
     ppAltRest,
 
@@ -69,6 +68,8 @@ durationElements :: Duration -> (Int,Int,Int)
 durationElements (Duration r dc) = let (n,d) = (numerator r, denominator r)
     in (n,d,dc) 
 
+    
+    
 ratioElements :: Integral a => Ratio a -> (a,a)
 ratioElements r = (numerator r, denominator r)
 
@@ -105,11 +106,11 @@ approxDuration r = let (n,d) = ratioElements r in
                         GT -> Duration r 0 -- a nonstandard duration 
                         LT -> reclarge r (dot dur)
                         
-    closest r = let ls = map (flip (%) 1) base2bases
+    closest r = let ls = map (flip (%) 1) base2number_sequence
                 in last $ takeWhile (r>=) ls
                 
-    base2bases :: [Int]
-    base2bases = unfoldr (\x -> Just (x, x * 2)) 1 
+base2number_sequence :: [Int]
+base2number_sequence = unfoldr (\x -> Just (x, x * 2)) 1 
              
 
 operate op d1 d2 = let r = rationalize d1 `op` rationalize d2
@@ -124,8 +125,7 @@ instance Num Duration where
   signum      = approxDuration . signum . rationalize
   abs         = approxDuration . abs . rationalize
 
-midiTicks :: Int -> Duration -> Int
-midiTicks tpqn d = floor $ fromIntegral (4 * tpqn) * durationToDouble d
+
 
 
 instance Pretty Duration where

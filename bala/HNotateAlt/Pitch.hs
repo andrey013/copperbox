@@ -27,8 +27,6 @@ module Pitch (
     -- * lilyPond helpers
     middleC, octaveDist,
     
-    -- * Midi helpers
-    midiPitch,
     
     -- * pretty print
     ppNote,
@@ -131,11 +129,7 @@ arithmeticDistance (Pitch l _ o) (Pitch l' _ o') =
 
     
     
-midiPitch :: Pitch -> Word8
-midiPitch (Pitch l a o) = fromIntegral $ semis l + acci a + (12 * (o+1)) 
-  where
 
-    acci = (\x -> x - 2) . fromEnum 
 
 
 --------------------------------------------------------------------------------
