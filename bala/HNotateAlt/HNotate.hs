@@ -43,6 +43,9 @@ import BackendMidi hiding (measure_length)
 import Duration
 import EventInterface
 import EventTree
+import ExtractionDatatypes
+import ParseAbc (parseAbcSrc)
+import ParseLy (parseLySrc)
 import Pitch
 import ScoreRepresentation
 import ToScore
