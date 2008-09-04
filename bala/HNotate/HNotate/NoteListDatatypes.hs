@@ -46,7 +46,7 @@ import qualified Data.Map as Map
 import Data.Monoid
 import Data.Sequence (Seq, ViewL(..), viewl)
 import Data.Traversable
-import Text.PrettyPrint.Leijen
+
 
 
    
@@ -176,47 +176,5 @@ glyphDuration (GlyGraceNotes _)  = mempty
 
 
     
---------------------------------------------------------------------------------
--- pretty printing
 
-
-
-instance (Pretty e) => Pretty (ScNoteList e) where
-  pretty (ScNoteList se) = sepSeq (<$>) se
-
-
-
-instance (Pretty e) => Pretty (ScBlock e) where
-  pretty (ScSingleBlock i e) = measureNumber i
-                                         <$> indent 4 (pretty e)
-  pretty (ScPolyBlock i se)  = 
-      measureNumber i <$> indent 4 (encloseSep (text "<<") 
-                                               (text ">>") 
-                                               (text " // ")
-                                               (map pretty $ F.toList se))
-
-measureNumber :: Int -> Doc
-measureNumber i = text "|:" <>  int i
-
-
-instance (Pretty e) => Pretty (ScMeasure e) where
-  pretty (ScMeasure se) = sepSeq (</>) se
-
-
-instance (Pretty pch, Pretty drn) => Pretty (Glyph pch drn) where
-  pretty (GlyNote pch dur)       = pretty pch <> durationSuffix dur
-  pretty (GlyRest dur)           = char 'r' <> durationSuffix dur
-  pretty (GlySpacer dur)         = char 's' <> durationSuffix dur
-  pretty (GlyChord ps dur)       = (brackets $ sepSeq (<>) ps) 
-                                      <> durationSuffix dur
-  pretty (GlyGraceNotes es)      = text "grace..." -- braces $ sepSeq (<>) ps
-
-durationSuffix :: Pretty drn => drn -> Doc
-durationSuffix d = char '/' <> pretty d 
-
-
-intPlex i = let s = show i in (s,length s)
-
-tagint i = let (s,l) = intPlex i in
-  if l < 5 then text (replicate (5-l) '0' ++ s) else text s
 

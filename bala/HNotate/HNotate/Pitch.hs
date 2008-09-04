@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- A minimal representation for Pitch and Duration.
+-- Pitch representation.
 --
 --------------------------------------------------------------------------------
 

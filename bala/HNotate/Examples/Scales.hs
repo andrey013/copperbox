@@ -29,3 +29,6 @@ main = do
     outputLilyPond major_scales     ly_template     ly_output
     outputAbc      major_scales     abc_template    abc_output
     
+debug = dumpAbcTemplates  abc_template
+  
+    

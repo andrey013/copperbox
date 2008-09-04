@@ -13,6 +13,7 @@
 --------------------------------------------------------------------------------
 
 module HNotate (  
+    module HNotate.DebugUtils,
     module HNotate.Duration,
     module HNotate.EventInterface,
     module HNotate.Pitch,   
@@ -33,6 +34,7 @@ module HNotate (
     
  ) where
 
+import HNotate.DebugUtils
 import HNotate.Duration
 import HNotate.EventInterface
 import HNotate.EventList

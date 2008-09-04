@@ -18,8 +18,27 @@ module HNotate.CommonUtils where
 
 
 import Data.Monoid
-import Data.Sequence hiding (empty)
+import Data.Sequence hiding (empty, length)
+import System.IO
 import Text.PrettyPrint.Leijen
+
+
+successFailM :: Monad m => m (Either a b) -> (b -> m c) -> (a -> m c) -> m c
+successFailM ma sk fk = ma >>= either fk sk
+
+outputDoc :: FilePath -> Doc -> IO ()
+outputDoc filepath doc = do
+    h <- openFile filepath WriteMode
+    displayIO h (renderPretty 0.7 80 doc)
+    hClose h
+
+putDoc80 :: Doc -> IO ()
+putDoc80 doc = displayIO stdout (renderPretty 0.7 80 doc)
+
+underline :: String -> Doc
+underline s = text s <$> text (replicate (length s) '-') <> line 
+    
+    
 
 sepSeq op sq = case viewl sq of
     EmptyL    -> empty

@@ -21,23 +21,23 @@ import HNotate.Pitch
 import qualified Data.Foldable as F
 import Data.Ratio
 import Data.Sequence hiding (empty, length) 
-import Text.PrettyPrint.Leijen
 
+type Idx = Int
 
--- Two representations of a file
+-- Two views of a file
 
--- 1. Source file - preserves source text and holes for filling. 
+-- 1. Source preserving view 
+-- Preserves source text - the holes are indexed for filling. 
 
-newtype SourceFile = SourceFile { getchunks :: Seq ScoreChunk } 
+newtype SPV = SPV { getTextElements :: Seq TextElement } 
   deriving (Show) 
   
-data ScoreChunk = SourceText String | MetaMark SrcPos MetaDirective
+data TextElement = SourceText String | MetaMark Idx SrcPos MetaDirective
   deriving (Show)
 
-type DId = Int
 type Name = String
 type Scheme = String
-data MetaDirective = MetaOutput DId Name Scheme
+data MetaDirective = MetaOutput Name Scheme
   deriving Show
   
 data SrcPos = SrcPos { 
@@ -47,13 +47,15 @@ data SrcPos = SrcPos {
   }
   deriving (Show)  
 
--- 2. Partially interpreted into a list of expressions for terms of interest 
--- i.e. time signatures, key signatures; and directives for output 
+-- 2. Partially interpreted view
+-- Expressions of interest (e.g. time signatures, key signatures) are
+-- interpreted as are output directives inside meta comments, 
+-- nesting structure is approximately respected. 
+newtype PIV = PIV { getScoreElement :: [ScoreElement] }
 
-
-data SrcExpr = Command Command
-             | Directive MetaDirective
-             | Nested [SrcExpr]
+data ScoreElement = Command Command
+                  | Directive Idx MetaDirective
+                  | Nested [ScoreElement]
   deriving Show                 
                  
 
@@ -88,37 +90,3 @@ four_four = TimeSig 4 4
 
 
   
---------------------------------------------------------------------------------
--- Pretty instances
-
-instance Pretty SourceFile where
-  pretty (SourceFile se) = F.foldl (\d e -> d <> pretty e) empty se 
-
-
-instance Pretty ScoreChunk where
-  pretty (SourceText str) = string str
-  pretty (MetaMark pos d) = enclose (text "{-# ") (text " #-}")
-                                    (pretty d)
-
-
-instance Pretty SrcExpr where
-  pretty (Command cmd)    = text "\\cmd" <+> pretty cmd
-  pretty (Directive drct) = enclose (text "<-- ") (text " -->") (pretty drct)
-  pretty (Nested [])      = text "{ }"   
-  pretty (Nested xs)      = enclose (lbrace <> line) (line <> rbrace) 
-                                    (indent 2 $ vcat $ map pretty xs)
-
-instance Pretty Command where
-  pretty (CmdKey e)               = text "-key" <+> (text . show) e
-  pretty (CmdMeter e)             = text "-meter" <+> (text . show) e
-  pretty (CmdDefaultNoteLength e) = text "-len" <+> (text . show) e
-  pretty (CmdRelativePitch e)     = text "-rpitch" <+> (text . show) e
-  
-instance Pretty MetaDirective where
-  pretty (MetaOutput i name scheme) = 
-      prefix i <+> text name <> colon <> text scheme
-    where
-      prefix i | i > 999    = int i
-               | otherwise  = let s = show i; l = 4 - length s;
-                              in text $ replicate l '0' ++ s    
-                                                

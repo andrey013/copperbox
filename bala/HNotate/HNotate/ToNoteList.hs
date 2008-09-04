@@ -38,8 +38,6 @@ import Control.Applicative hiding (empty)
 import Control.Monad.Reader
 import qualified Data.Foldable as F
 
-import Text.PrettyPrint.Leijen (pretty)
-
 import qualified Data.Map as Map
 import Data.Monoid
 import Data.Sequence
@@ -211,10 +209,7 @@ flattenPoly ts next acc = let mc = measureCount acc in do
 
 instance OnsetEvent IndexedMeasure ScoreMeasure where
   onset (i,m) = (i,m)
-  
 
-instance Show ScoreMeasure where
-  show = show . pretty
   
 blockLine :: (Seq IndexedMeasure) -> Seq ScoreBlock
 blockLine se | null se   = mempty
@@ -273,10 +268,6 @@ addGrace p@(Progress se ((mc, ScMeasure sm),d)) sse
     grace se = GlyGraceNotes $ graces se 
 
   
-
-
-
---------------------------------------------------------------------------------                
 
 
 

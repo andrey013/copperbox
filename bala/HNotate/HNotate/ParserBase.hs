@@ -47,15 +47,7 @@ parseFromFileState p fname st = do
     return (runParser p st fname input)
 
 
---------------------------------------------------------------------------------
--- Meta-directives
 
-
-metadirective :: StParser MetaDirective
-metadirective = metaoutput
-
-metaoutput :: StParser MetaDirective
-metaoutput = MetaOutput <$> incrCount <*> (identifier <* colon) <*> identifier
 
 incrCount :: StParser Int
 incrCount = do 
@@ -66,6 +58,8 @@ incrCount = do
 --------------------------------------------------------------------------------
 -- Utility functions
 
+    
+    
 manyWaterIsland :: GenParser Char st a -> GenParser Char st [a]
 manyWaterIsland p = many $ try (water p) 
 
@@ -178,6 +172,8 @@ symbol            = P.symbol baseLex
 identifier        :: CharParser st String
 identifier        = P.identifier baseLex
 
+
+
   
 integer           :: CharParser st Integer
 integer           = P.integer baseLex
@@ -190,3 +186,9 @@ colon             = P.colon baseLex
 
 braces            :: CharParser st a -> CharParser st a
 braces            = P.braces baseLex
+
+-- 'tightident' a version of identifier that doesn't 
+-- consume trailing whitespace
+tightident :: CharParser st String
+tightident = try $ 
+    (:) <$> P.identStart emptyDef <*> many (P.identLetter emptyDef)

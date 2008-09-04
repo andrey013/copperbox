@@ -19,6 +19,7 @@ module HNotate.OutputMain where
 
 import HNotate.BackendAbc
 import HNotate.BackendLilyPond
+import HNotate.CommonUtils (successFailM, outputDoc)
 import HNotate.Duration
 import HNotate.EventInterface
 import HNotate.EventList
@@ -35,7 +36,6 @@ import HNotate.ToNoteList
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
 import Data.Sequence hiding (empty)
-import System.IO
 import Text.PrettyPrint.Leijen
 
 data OutputFormat = Output_Abc | Output_LilyPond | Output_Midi 
@@ -78,46 +78,35 @@ relative = translateLilyPond
 
 outputLilyPond :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
 outputLilyPond sys infile outfile = 
-  output Output_LilyPond sys parseLySourceChunks parseLyTemplateExpr infile outfile
+  output Output_LilyPond sys lySPV lyPIV infile outfile
 
 outputAbc :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
 outputAbc sys infile outfile = 
-    output Output_Abc sys parseAbcSourceChunks parseAbcTemplateExpr infile outfile
+    output Output_Abc sys abcSPV abcPIV infile outfile
 
    
    
 -- output :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
-output fmt sys p1 p2 infile outfile = 
-    workO (p1 infile) sk1 fk 
+output fmt sys spvParse pivParse infile outfile = 
+    successFailM (spvParse infile) sk1 fk 
   where
-    fk  err           = putStrLn $ show err
-    sk1 ans           = workO (p2 infile) (sk2 ans) fk
-    sk2 chunks exprs  = outputDoc outfile (build fmt sys chunks exprs)
-
- 
-    
-
-
-workO :: Monad m => m (Either a b) -> (b -> m c) -> (a -> m c) -> m c
-workO p sk fk = p >>= either fk sk
+    fk  err      = putStrLn $ show err
+    sk1 ans      = successFailM (pivParse infile) (sk2 ans) fk
+    sk2 spv piv  = outputDoc outfile (build fmt sys spv piv)
 
         
-build :: Event evt => OutputFormat -> System evt -> SourceFile -> [SrcExpr] -> Doc
-build fmt sys chunks exprs  = 
-    let mp = Map.fromList $ evaluateSrcExprs fmt sys exprs
-    in fillSourceHoles fmt mp chunks
+build :: Event evt => OutputFormat -> System evt -> SPV -> PIV -> Doc
+build fmt sys spv (PIV xs)  = 
+    let mp = Map.fromList $ evaluateSrcExprs fmt sys xs
+    in fillSourceHoles fmt mp spv
 
-outputDoc :: FilePath -> Doc -> IO ()
-outputDoc filepath doc = do
-    h <- openFile filepath WriteMode
-    displayIO h (renderPretty 0.7 80 doc)
-    hClose h
+
   
-fillSourceHoles :: OutputFormat -> Map.Map Int Doc -> SourceFile -> Doc
-fillSourceHoles fmt mp (SourceFile se) = F.foldl fn empty se
+fillSourceHoles :: OutputFormat -> Map.Map Int Doc -> SPV -> Doc
+fillSourceHoles fmt mp (SPV se) = F.foldl fn empty se
   where 
-    fn d (SourceText ss)                 = d <> string ss
-    fn d (MetaMark _ (MetaOutput i _ _)) = maybe (fk d i) (sk d) (Map.lookup i mp)
+    fn d (SourceText ss)          = d <> string ss
+    fn d (MetaMark i _ _)         = maybe (fk d i) (sk d) (Map.lookup i mp)
        
     fk d i  = d <> comment ("Failed to find " ++ show i)
     sk d nl = d <> pretty nl
@@ -129,25 +118,26 @@ abcComment str = line <> char '%' <+> string str <> line
 
 
 evaluateSrcExprs :: Event evt => 
-    OutputFormat -> System evt -> [SrcExpr] -> [(DId,Doc)]
+    OutputFormat -> System evt -> [ScoreElement] -> [(Idx,Doc)]
 evaluateSrcExprs fmt sys []      = []
 evaluateSrcExprs fmt sys (x:xs)  = 
     snd $ workE sys (default_env {output_format=fmt}) [] x xs
 
-workE :: Event evt => System evt -> Env -> [(DId,Doc)] -> 
-            SrcExpr -> [SrcExpr] -> (Env,[(DId,Doc)])
+workE :: Event evt => System evt -> Env -> [(Idx,Doc)] -> 
+            ScoreElement -> [ScoreElement] -> (Env,[(Idx,Doc)])
 workE sys env code expr []     = evaluate sys env code expr
 workE sys env code expr (x:xs) = let (env',code') = evaluate sys env code expr
                              in workE sys env' code' x xs
 
-evaluate sys env code (Command cmd)     = (updateEnv cmd env, code)
-evaluate sys env code (Directive drct)  = (env, (directive sys env drct) : code)
-evaluate sys env code (Nested [])       = (env,code)
-evaluate sys env code (Nested (x:xs))   = 
+evaluate sys env code (Command cmd)         = (updateEnv cmd env, code)
+evaluate sys env code (Directive idx drct)  = 
+    (env, (directive sys env idx drct) : code)
+evaluate sys env code (Nested [])           = (env,code)
+evaluate sys env code (Nested (x:xs))       = 
     let (_,code') = workE sys env code x xs in (env,code')
 
 
-directive sys env (MetaOutput i name "relative") =
+directive sys env i (MetaOutput name "relative") =
     maybe failure  sk (Map.lookup name sys)
   where
     failure = error $ "directive failure - missing " ++ name
@@ -158,7 +148,7 @@ directive sys env (MetaOutput i name "relative") =
     mkEnv d = ProgressEnv { measure_length = d }
 
 
-directive sys env (MetaOutput i name "default") =
+directive sys env i (MetaOutput name "default") =
     maybe failure  sk (Map.lookup name sys)
   where
     failure = error $ "directive failure - missing " ++ name

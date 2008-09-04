@@ -30,21 +30,21 @@ import Text.ParserCombinators.Parsec hiding (space)
 
 
 
-parseAbcTemplateExpr :: FilePath -> IO (Either ParseError [SrcExpr])
-parseAbcTemplateExpr filepath = parseFromFileState parseAbcExprs filepath 0
+abcPIV :: FilePath -> IO (Either ParseError PIV)
+abcPIV filepath = parseFromFileState interpretableView filepath 0
 
 
-parseAbcSourceChunks :: FilePath -> IO (Either ParseError SourceFile)
-parseAbcSourceChunks filepath = parseFromFileState parseAbcSrc filepath 0
+abcSPV :: FilePath -> IO (Either ParseError SPV)
+abcSPV filepath = parseFromFileState textView filepath 0
 
-parseAbcSrc :: StParser SourceFile
-parseAbcSrc = collect mempty
+textView :: StParser SPV
+textView = SPV <$> collect mempty
   where
     collect se = do 
       txt    <- upTo (eitherparse eof (lexeme metaCommentStart))
       at_end <- option False (True <$ eof)
       case at_end of
-        True -> return $ SourceFile (se `add` txt)
+        True -> return $ se `add` txt
         False -> do { mark <- metamarkK
                     ; collect $ (se `add` txt) |> mark }  
     
@@ -54,7 +54,7 @@ parseAbcSrc = collect mempty
 -- Don't look for a terminator in Abc the lexeme parser over metadirective
 -- will have consumed the line ending.
 metamarkK = MetaMark 
-    <$> sourcePosition <*> metadirective 
+    <$> incrCount <*> sourcePosition <*> metadirective 
 
 
 -- meter e.g. M:6/8
@@ -67,19 +67,19 @@ metamarkK = MetaMark
 -- pretending that Abc files are nested makes things a bit ugly
 
 
-parseAbcExprs :: StParser [SrcExpr]
-parseAbcExprs = do 
+interpretableView :: StParser PIV
+interpretableView = do 
     try (water beginNested)
     -- can' use `many` with a parser that uses `waterMaybe`
     xs <- manyEOF (nestedk []) [] 
-    return xs
+    return $ PIV xs
 
 manyEOF p acc = do
   at_end <- option False (True <$ eof)
   if at_end then return (reverse acc) else (p >>= \a -> manyEOF p (a:acc))
 
   
-nestedk :: [SrcExpr] -> StParser SrcExpr
+nestedk :: [ScoreElement] -> StParser ScoreElement
 nestedk acc = do
     elt <- waterMaybe (eitherparse endNested 
                                    (choice [abcCommand, abcDirective]))
@@ -99,14 +99,24 @@ endNested         :: StParser Nested
 endNested         = NestEnd <$ field 'X' int
 
 
-abcCommand :: StParser SrcExpr
+abcCommand :: StParser ScoreElement
 abcCommand = Command <$> choice [cmdmeter, cmdkey, cmd_default_note_length]  
   <?> "abcCommand"
 
-abcDirective :: StParser SrcExpr
+abcDirective :: StParser ScoreElement
 abcDirective = Directive 
-    <$> (metaCommentStart *> metadirective) <* metaCommentEnd
-    
+    <$> incrCount <*> (metaCommentStart *> metadirective) <* metaCommentEnd
+
+
+metadirective :: StParser MetaDirective
+metadirective = metaoutput
+
+metaoutput :: StParser MetaDirective
+metaoutput = MetaOutput <$> (identifier <* colon) <*> tightident
+
+
+        
+            
 metaCommentStart :: CharParser st String
 metaCommentStart = lexeme $ string "%#"
 

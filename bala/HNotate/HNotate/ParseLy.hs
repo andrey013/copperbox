@@ -26,22 +26,22 @@ import Data.Sequence ( (|>) )
 import Text.ParserCombinators.Parsec hiding (space)
 
 
-parseLyTemplateExpr :: FilePath -> IO (Either ParseError [SrcExpr])
-parseLyTemplateExpr filepath = parseFromFileState parseLyExprs filepath 0
+lyPIV :: FilePath -> IO (Either ParseError PIV)
+lyPIV filepath = parseFromFileState interpretableView filepath 0
 
 
-parseLySourceChunks :: FilePath -> IO (Either ParseError SourceFile)
-parseLySourceChunks filepath = parseFromFileState parseLySrc filepath 0
+lySPV :: FilePath -> IO (Either ParseError SPV)
+lySPV filepath = parseFromFileState textView filepath 0
 
 
-parseLySrc :: StParser SourceFile
-parseLySrc = collect mempty
+textView :: StParser SPV
+textView = collect mempty
   where
     collect se = do 
       txt    <- upTo (eitherparse eof (lexeme metaCommentStart))
       at_end <- option False (True <$ eof)
       case at_end of
-        True -> return $ SourceFile (se `add` txt)
+        True -> return $ SPV (se `add` txt)
         False -> do { mark <- metamarkK
                     ; collect $ (se `add` txt) |> mark }  
     
@@ -49,7 +49,7 @@ parseLySrc = collect mempty
     add se ss = se |> (SourceText ss)       
 
 metamarkK = MetaMark 
-    <$> sourcePosition <*> (metadirective <* metaCommentEnd) 
+    <$> incrCount <*> sourcePosition <*> (metadirective <* metaCommentEnd) 
     
         
 -- relative e.g. \relative c''
@@ -59,22 +59,22 @@ metamarkK = MetaMark
 -- key e.g. \key c \major
 
 
-parseLyExprs :: StParser [SrcExpr]
-parseLyExprs = manyWaterIsland expr1
+interpretableView :: StParser PIV
+interpretableView = PIV <$> manyWaterIsland expr1
 
 
 -- expr1 and nestedk unwrap the left recursion in the grammar
 -- but make things a bit ugly
 
 
-expr1 :: StParser SrcExpr
+expr1 :: StParser ScoreElement
 expr1 = do 
   ans <- eitherparse beginNested (choice [lyCommand, lyDirective])
   case ans of 
     Left _ -> nestedk []
     Right a -> return a
 
-nestedk :: [SrcExpr] -> StParser SrcExpr
+nestedk :: [ScoreElement] -> StParser ScoreElement
 nestedk acc = do
     elt <- try $ water (eitherparse (choice [beginNested, endNested])
                                     (choice [lyCommand, lyDirective]))
@@ -85,16 +85,21 @@ nestedk acc = do
   <|> fail "unterminated nesting"      
 
 
-lyCommand :: StParser SrcExpr
+lyCommand :: StParser ScoreElement
 lyCommand = Command <$> choice [cmdrelative, cmdtime, cmdkey]          
                  
-lyDirective :: StParser SrcExpr
+lyDirective :: StParser ScoreElement
 lyDirective = Directive 
-    <$> ((lexeme metaCommentStart) *> metadirective) <* (lexeme metaCommentEnd)
+    <$> incrCount <*> ((lexeme metaCommentStart) *> metadirective) 
+                  <*  (lexeme metaCommentEnd)
 
 
     
+metadirective :: StParser MetaDirective
+metadirective = metaoutput
 
+metaoutput :: StParser MetaDirective
+metaoutput = MetaOutput <$> (identifier <* colon) <*> identifier
 
 metaCommentStart  :: CharParser st String
 metaCommentStart  = string "%{#" 
