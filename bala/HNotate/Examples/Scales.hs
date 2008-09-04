@@ -18,8 +18,14 @@ major_scales = systemL $
     [("cmajor", eventlist cmajor_notes),
      ("gmajor", eventlist gmajor_notes)]
 
-template_file = "templates/ly0-major-scales.ly"
-output_file   = "out/ly-major-scales.ly"
+ly_template   = "templates/ly0-major-scales.ly"
+ly_output     = "out/ly-major-scales.ly"
+
+abc_template  = "templates/abc0-major-scales.abc"
+abc_output    = "out/abc-major-scales.abc"
 
 
-main = outputLilyPond major_scales template_file output_file
+main = do 
+    outputLilyPond major_scales     ly_template     ly_output
+    outputAbc      major_scales     abc_template    abc_output
+    

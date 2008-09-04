@@ -12,16 +12,11 @@
 --
 --------------------------------------------------------------------------------
 
-module HNotate (
-    module HNotate.BackendAbc,
-    module HNotate.BackendLilyPond,
-    module HNotate.BackendMidi,    
+module HNotate (  
     module HNotate.Duration,
     module HNotate.EventInterface,
-    module HNotate.Pitch,
-    module HNotate.ToNoteList,
-    
-    module HNotate.OutputLilyPond,
+    module HNotate.Pitch,   
+    module HNotate.OutputMain,
     
     -- restrict the interface to EventTree
       -- * Datatypes
@@ -34,27 +29,15 @@ module HNotate (
     
     repeated, eventlist,
     
-    ( # ) , ( #. ),
-    
-    parseLyTemplateExpr, parseLySourceChunks
-    
+    ( # ) , ( #. )    
     
  ) where
 
-import HNotate.BackendAbc
-import HNotate.BackendLilyPond
-import HNotate.BackendMidi hiding (measure_length)
 import HNotate.Duration
 import HNotate.EventInterface
 import HNotate.EventList
-import HNotate.ExtractionDatatypes
-import HNotate.NoteListDatatypes
-import HNotate.ParseAbc (parseAbcTemplateExpr)
-import HNotate.ParseLy (parseLyTemplateExpr, parseLySourceChunks)
 import HNotate.Pitch
-import HNotate.ToNoteList
-
-import HNotate.OutputLilyPond
+import HNotate.OutputMain
 
 infixl 7 #
 

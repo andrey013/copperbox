@@ -1,5 +1,3 @@
-%# meta-comment
-
 % abcm2ps self-similar.abc -e 1 -O self-similar.ps
 
 X:1

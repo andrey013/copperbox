@@ -23,8 +23,38 @@ import HNotate.Pitch
 import Control.Applicative hiding (many, optional, (<|>) )
 import Control.Monad (when)
 import Data.Char
+import Data.Monoid
+import Data.Sequence ( (|>) )
 import Data.Ratio
 import Text.ParserCombinators.Parsec hiding (space)
+
+
+
+parseAbcTemplateExpr :: FilePath -> IO (Either ParseError [SrcExpr])
+parseAbcTemplateExpr filepath = parseFromFileState parseAbcExprs filepath 0
+
+
+parseAbcSourceChunks :: FilePath -> IO (Either ParseError SourceFile)
+parseAbcSourceChunks filepath = parseFromFileState parseAbcSrc filepath 0
+
+parseAbcSrc :: StParser SourceFile
+parseAbcSrc = collect mempty
+  where
+    collect se = do 
+      txt    <- upTo (eitherparse eof (lexeme metaCommentStart))
+      at_end <- option False (True <$ eof)
+      case at_end of
+        True -> return $ SourceFile (se `add` txt)
+        False -> do { mark <- metamarkK
+                    ; collect $ (se `add` txt) |> mark }  
+    
+    add se "" = se
+    add se ss = se |> (SourceText ss)   
+
+-- Don't look for a terminator in Abc the lexeme parser over metadirective
+-- will have consumed the line ending.
+metamarkK = MetaMark 
+    <$> sourcePosition <*> metadirective 
 
 
 -- meter e.g. M:6/8
@@ -37,8 +67,8 @@ import Text.ParserCombinators.Parsec hiding (space)
 -- pretending that Abc files are nested makes things a bit ugly
 
 
-parseAbcTemplateExpr :: StParser [SrcExpr]
-parseAbcTemplateExpr = do 
+parseAbcExprs :: StParser [SrcExpr]
+parseAbcExprs = do 
     try (water beginNested)
     -- can' use `many` with a parser that uses `waterMaybe`
     xs <- manyEOF (nestedk []) [] 

@@ -30,13 +30,12 @@ import HNotate.Duration
 import HNotate.EventInterface
 import HNotate.EventList
 import HNotate.NoteListDatatypes
-import HNotate.NotateMonad
 import HNotate.OnsetQueue
 import HNotate.Pitch
 
 
 import Control.Applicative hiding (empty)
-import Control.Monad.Reader hiding (lift)
+import Control.Monad.Reader
 import qualified Data.Foldable as F
 
 import Text.PrettyPrint.Leijen (pretty)
@@ -46,21 +45,13 @@ import Data.Monoid
 import Data.Sequence
 import Prelude hiding (null, length)
 
-
-
-type ProcessM a = NotateM () ProgressEnv a
-
-
-
--- No longer use a state monad - rolled into the accumulator 'Progress'
-
+type ConvertM a = Reader ProgressEnv a 
 
 data ProgressEnv = ProgressEnv {
     measure_length     :: Duration
   }
   deriving (Show)
 
-measure_2_4 = ProgressEnv { measure_length = duration 2 4 }
 
 --------------------------------------------------------------------------------
 -- Flattening is done with a tipped accumulator 'Progress'.
@@ -88,7 +79,7 @@ measureCount :: Progress -> Int
 measureCount (Progress _ ((i,_),_)) = i
 
 
-advanceMeasure :: Tip -> Duration -> ProcessM Duration
+advanceMeasure :: Tip -> Duration -> ConvertM Duration
 advanceMeasure (_,d) n  = do 
     ml  <- asks measure_length
     if (d+n > ml) then return mempty else return (d+n)
@@ -100,7 +91,7 @@ advanceMeasure (_,d) n  = do
 -- Add an event (i.e. a glyph to the tip of the current measure.
 -- If the measure is full (i.e. its current count == the measure count)
 -- then add it to the accumulation of measures.
-addToTip :: Progress -> ScoreGlyph -> ProcessM Progress
+addToTip :: Progress -> ScoreGlyph -> ConvertM Progress
 addToTip (Progress se tip@((i,t),d)) e = 
     fn <$> advanceMeasure tip (glyphDuration e)
   where
@@ -121,23 +112,11 @@ seal (Progress se (tip@(i, ScMeasure me),_))
 
 --------------------------------------------------------------------------------                
 
-{-  
-toScore :: (Event evt) => System evt -> ProgressEnv -> ScoreSystem
-toScore sys env = evalNotate (processSystem sys) () env
 
-
-processSystem :: (Event evt) => System evt -> ProcessM ScoreSystem
-processSystem p@(System mp) = ScSystem <$> F.foldrM fn mempty (Map.toList mp)
-  where
-    fn (k,evtree) mp = do 
-        sse  <- buildFlatRep 1 evtree
-        return $ Map.insert k (ScNoteList $ blockLine sse) mp 
-        
--}
 
 toNoteList :: (Event evt) => EventList evt -> ProgressEnv -> ScoreNoteList
 toNoteList evtlist env = ScNoteList $ blockLine $ 
-    evalNotate (buildFlatRep 1 evtlist) () env
+    runReader (buildFlatRep 1 evtlist) env
 
 
 makeGlyph :: (Event evt) => evt -> ScoreGlyph
@@ -152,7 +131,7 @@ makeGlyph evt = case eventvalues evt of
 buildFlatRep :: (Event evt) 
              => Int 
              -> EventList evt 
-             -> ProcessM (Seq IndexedMeasure)
+             -> ConvertM (Seq IndexedMeasure)
 buildFlatRep mc tree = 
     let pzero = Progress mempty ((mc, ScMeasure mempty), mempty) in do
         progress <- flattenEvents (viewl $ getEventList tree) pzero
@@ -163,7 +142,7 @@ buildFlatRep mc tree =
 flattenEvents :: (Event evt) 
               => ViewL (EvtPosition evt) 
               -> Progress 
-              -> ProcessM Progress
+              -> ConvertM Progress
 flattenEvents vl acc = flatstep vl acc
   where
     flatstep EmptyL               acc = return acc
@@ -181,7 +160,7 @@ flattenEvents vl acc = flatstep vl acc
 flattenParallel :: (Event evt)
                 => ViewL (EvtPosition evt)
                 -> (Progress, (Seq ScoreGlyph))
-                -> ProcessM Progress
+                -> ConvertM Progress
 flattenParallel sq (se,stk) = flatpar sq (se,stk)
   where
     flatpar (Evt e :< sq)  (se,stk) =
@@ -198,7 +177,7 @@ flattenParallel sq (se,stk) = flatpar sq (se,stk)
 flattenPrefix :: (Event evt)
               => ViewL (EvtPosition evt)
               -> (Progress, (Seq ScoreGlyph))
-              -> ProcessM Progress
+              -> ConvertM Progress
 flattenPrefix sq (se,stk) = flatpre sq (se,stk)
   where
     flatpre (EndPre :< sq) (se,stk) =
@@ -219,7 +198,7 @@ flattenPoly :: (Event evt)
             => [EventList evt]
             -> Seq (EvtPosition evt)
             -> Progress
-            -> ProcessM Progress
+            -> ConvertM Progress
 flattenPoly ts next acc = let mc = measureCount acc in do 
     acc'    <- F.foldlM (fn mc) acc ts
     flattenEvents (viewl next) acc'
@@ -273,7 +252,7 @@ seqMaybes = rec mempty . viewl
     rec se (Nothing :< sse) = rec se (viewl sse)
         
 
-addChordM :: Progress -> Seq (Glyph Pitch Duration) -> ProcessM Progress
+addChordM :: Progress -> Seq (Glyph Pitch Duration) -> ConvertM Progress
 addChordM p se 
     | null se     = return p
     | otherwise   = p `addToTip` chord se 
@@ -293,10 +272,7 @@ addGrace p@(Progress se ((mc, ScMeasure sm),d)) sse
   where 
     grace se = GlyGraceNotes $ graces se 
 
-{-                   
-sumDuration :: Seq (a,Duration) -> Duration               
-sumDuration se = F.foldr (\(_,d) a -> a+d) 0 se
--}    
+  
 
 
 

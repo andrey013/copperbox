@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  HNotate.OutputLilyPond
+-- Module      :  HNotate.OutputMain
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -9,21 +9,26 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Output LilyPond according to metadirectives in .ly file. 
+-- Output LilyPond or Abc according to metadirectives in the respective
+--  .ly or .abc files. 
 --
 --------------------------------------------------------------------------------
 
 
-module HNotate.OutputLilyPond where
+module HNotate.OutputMain where
 
+import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.Duration
 import HNotate.EventInterface
 import HNotate.EventList
 import HNotate.ExtractionDatatypes
 import HNotate.NoteListDatatypes
+import HNotate.ParseAbc
 import HNotate.ParseLy
 import HNotate.Pitch
+import HNotate.TextAbc (getAbc)
+import HNotate.TextLilyPond (getLy)
 import HNotate.ToNoteList
 
 
@@ -33,14 +38,19 @@ import Data.Sequence hiding (empty)
 import System.IO
 import Text.PrettyPrint.Leijen
 
-
+data OutputFormat = Output_Abc | Output_LilyPond | Output_Midi 
+  deriving (Eq,Show) 
+  
+  
 data Env = Env { 
+    output_format       :: OutputFormat,
     key                 :: Key, 
     meter               :: Meter, 
     default_note_length :: Duration, 
     relative_pitch      :: Pitch,
     partial_measure     :: (Int,Int)
   }
+  deriving (Show)
 
  
 data Instruction = Cmd Command
@@ -51,7 +61,8 @@ data Instruction = Cmd Command
 
 type Code = Seq Instruction
 
-default_env = Env { 
+default_env = Env {
+    output_format           = Output_LilyPond, 
     key                     = c_major,
     meter                   = four_four,
     default_note_length     = quarter,
@@ -66,20 +77,35 @@ default_env = Env {
 relative = translateLilyPond
 
 outputLilyPond :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
-outputLilyPond sys infile outfile = workO (parseLySourceChunks infile) sk1 fk 
+outputLilyPond sys infile outfile = 
+  output Output_LilyPond sys parseLySourceChunks parseLyTemplateExpr infile outfile
+
+outputAbc :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
+outputAbc sys infile outfile = 
+    output Output_Abc sys parseAbcSourceChunks parseAbcTemplateExpr infile outfile
+
+   
+   
+-- output :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
+output fmt sys p1 p2 infile outfile = 
+    workO (p1 infile) sk1 fk 
   where
     fk  err           = putStrLn $ show err
-    sk1 ans           = workO (parseLyTemplateExpr infile) (sk2 ans) fk
-    sk2 chunks exprs  = outputDoc outfile (build sys chunks exprs)
+    sk1 ans           = workO (p2 infile) (sk2 ans) fk
+    sk2 chunks exprs  = outputDoc outfile (build fmt sys chunks exprs)
+
+ 
+    
+
 
 workO :: Monad m => m (Either a b) -> (b -> m c) -> (a -> m c) -> m c
 workO p sk fk = p >>= either fk sk
 
         
-build :: Event evt => System evt -> SourceFile -> [SrcExpr] -> Doc
-build sys chunks exprs  = 
-    let mp = Map.fromList $ evaluateSrcExprs sys exprs
-    in output mp chunks
+build :: Event evt => OutputFormat -> System evt -> SourceFile -> [SrcExpr] -> Doc
+build fmt sys chunks exprs  = 
+    let mp = Map.fromList $ evaluateSrcExprs fmt sys exprs
+    in fillSourceHoles fmt mp chunks
 
 outputDoc :: FilePath -> Doc -> IO ()
 outputDoc filepath doc = do
@@ -87,24 +113,29 @@ outputDoc filepath doc = do
     displayIO h (renderPretty 0.7 80 doc)
     hClose h
   
-output :: Map.Map Int LilyPondNoteList -> SourceFile -> Doc
-output mp (SourceFile se) = F.foldl fn empty se
-  where fn d (SourceText ss) = d <> string ss
-        fn d (MetaMark _ (MetaOutput i _ _)) = case Map.lookup i mp of
-            Just notes -> d <> pretty notes
-            Nothing -> d <> lyComment ("Failed to find " ++ show i)
+fillSourceHoles :: OutputFormat -> Map.Map Int Doc -> SourceFile -> Doc
+fillSourceHoles fmt mp (SourceFile se) = F.foldl fn empty se
+  where 
+    fn d (SourceText ss)                 = d <> string ss
+    fn d (MetaMark _ (MetaOutput i _ _)) = maybe (fk d i) (sk d) (Map.lookup i mp)
+       
+    fk d i  = d <> comment ("Failed to find " ++ show i)
+    sk d nl = d <> pretty nl
+    
+    comment = if fmt == Output_Abc then abcComment else lyComment   
 
 lyComment str = enclose (text "%{ ") (text " %}") (string str)             
+abcComment str = line <> char '%' <+> string str <> line
 
 
+evaluateSrcExprs :: Event evt => 
+    OutputFormat -> System evt -> [SrcExpr] -> [(DId,Doc)]
+evaluateSrcExprs fmt sys []      = []
+evaluateSrcExprs fmt sys (x:xs)  = 
+    snd $ workE sys (default_env {output_format=fmt}) [] x xs
 
-evaluateSrcExprs :: Event evt 
-                 => System evt -> [SrcExpr] -> [(DId,LilyPondNoteList)]
-evaluateSrcExprs sys []      = []
-evaluateSrcExprs sys (x:xs)  = snd $ workE sys default_env [] x xs
-
-workE :: Event evt => System evt -> Env -> [(DId,LilyPondNoteList)] -> 
-            SrcExpr -> [SrcExpr] -> (Env,[(DId,LilyPondNoteList)])
+workE :: Event evt => System evt -> Env -> [(DId,Doc)] -> 
+            SrcExpr -> [SrcExpr] -> (Env,[(DId,Doc)])
 workE sys env code expr []     = evaluate sys env code expr
 workE sys env code expr (x:xs) = let (env',code') = evaluate sys env code expr
                              in workE sys env' code' x xs
@@ -122,9 +153,21 @@ directive sys env (MetaOutput i name "relative") =
     failure = error $ "directive failure - missing " ++ name
   
     sk evtlist = let sc = toNoteList evtlist (mkEnv $ default_note_length env)
-                 in (i, translateLilyPond sc middleC)
+                 in (i, getLy $ translateLilyPond sc middleC)
                  
     mkEnv d = ProgressEnv { measure_length = d }
+
+
+directive sys env (MetaOutput i name "default") =
+    maybe failure  sk (Map.lookup name sys)
+  where
+    failure = error $ "directive failure - missing " ++ name
+  
+    sk evtlist = let sc = toNoteList evtlist (mkEnv $ default_note_length env)
+                 in (i, getAbc $ translateAbc sc quarter)
+                 
+    mkEnv d = ProgressEnv { measure_length = d }
+    
 
 updateEnv :: Command -> Env -> Env
 updateEnv (CmdKey k)                env = env {key = k}
