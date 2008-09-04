@@ -21,9 +21,9 @@ module HNotate.BackendAbc (
 
 import HNotate.CommonUtils
 import HNotate.Duration
+import HNotate.NoteListDatatypes
 import HNotate.OutputUtils
 import HNotate.Pitch
-import HNotate.ScoreRepresentation
 import HNotate.TextAbc
 import HNotate.Traversals
 

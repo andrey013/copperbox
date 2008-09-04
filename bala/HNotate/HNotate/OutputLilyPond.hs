@@ -19,12 +19,13 @@ module HNotate.OutputLilyPond where
 import HNotate.BackendLilyPond
 import HNotate.Duration
 import HNotate.EventInterface
-import HNotate.EventTree
+import HNotate.EventList
 import HNotate.ExtractionDatatypes
+import HNotate.NoteListDatatypes
 import HNotate.ParseLy
 import HNotate.Pitch
-import HNotate.ToScore
-import HNotate.ScoreRepresentation
+import HNotate.ToNoteList
+
 
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
@@ -115,15 +116,14 @@ evaluate sys env code (Nested (x:xs))   =
     let (_,code') = workE sys env code x xs in (env,code')
 
 
-directive sys env (MetaOutput i name "relative") = 
-    let score = toScore sys (mkEnv $ default_note_length env) -- wrong shouldn't translate whole system
-        notes = onNoteList score name $ \se -> 
-                                translateLilyPond se middleC
-    in case notes of
-                  Just a -> (i,a)
-                  Nothing -> error $ "directive failure - missing " ++ name
-
+directive sys env (MetaOutput i name "relative") =
+    maybe failure  sk (Map.lookup name sys)
   where
+    failure = error $ "directive failure - missing " ++ name
+  
+    sk evtlist = let sc = toNoteList evtlist (mkEnv $ default_note_length env)
+                 in (i, translateLilyPond sc middleC)
+                 
     mkEnv d = ProgressEnv { measure_length = d }
 
 updateEnv :: Command -> Env -> Env

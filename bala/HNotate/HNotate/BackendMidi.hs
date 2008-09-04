@@ -22,10 +22,11 @@ module HNotate.BackendMidi (
 import HNotate.CommonUtils (sepSeq)
 import HNotate.Duration
 import HNotate.NotateMonad
+import HNotate.NoteListDatatypes
 import HNotate.OnsetQueue
 import HNotate.OutputUtils
 import HNotate.Pitch
-import HNotate.ScoreRepresentation
+
 
 import ZMidi
 
@@ -97,9 +98,12 @@ state0 = Notate_Midi_State {
   }
 
 
+generateMidi = undefined
+
+{-
 generateMidi :: ScoreSystem -> Notate_Midi_Env -> MidiFileContent
 generateMidi sys env = evalNotate (midiFileContent sys) state0 env
-
+-}
 
 hnticks :: Duration -> Word32
 hnticks = fromIntegral . midiTicks hnotate_ticks
@@ -120,11 +124,13 @@ blockOnset i = do
     ml <- asks measure_length
     modify (\s -> s{ global_time = fromIntegral $ ml * i })
 
+{-
 midiFileContent :: ScoreSystem -> ProcessMidi MidiFileContent
 midiFileContent (ScSystem se) = 
     MidiFileContent <$> F.foldlM fn mempty se
   where
     fn acc e = (acc |>) <$> midiTrackContent e
+-}
 
 midiTrackContent :: ScoreNoteList -> ProcessMidi MidiTrackContent
 midiTrackContent s = MidiTrackContent <$> snotelist s 

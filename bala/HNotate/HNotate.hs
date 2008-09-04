@@ -19,25 +19,24 @@ module HNotate (
     module HNotate.Duration,
     module HNotate.EventInterface,
     module HNotate.Pitch,
-    module HNotate.ToScore,
+    module HNotate.ToNoteList,
     
     module HNotate.OutputLilyPond,
     
     -- restrict the interface to EventTree
       -- * Datatypes
-    System, EventTree,
+    System, EventList,
     system, systemL, system1,
     
     root, event,
     
     par, prefix, poly, 
     
-    repeated, notelist,
+    repeated, eventlist,
     
     ( # ) , ( #. ),
     
-    parseLyTemplateExpr, parseLySourceChunks,
-    onNoteList, onNoteListM
+    parseLyTemplateExpr, parseLySourceChunks
     
     
  ) where
@@ -47,13 +46,13 @@ import HNotate.BackendLilyPond
 import HNotate.BackendMidi hiding (measure_length)
 import HNotate.Duration
 import HNotate.EventInterface
-import HNotate.EventTree
+import HNotate.EventList
 import HNotate.ExtractionDatatypes
+import HNotate.NoteListDatatypes
 import HNotate.ParseAbc (parseAbcTemplateExpr)
 import HNotate.ParseLy (parseLyTemplateExpr, parseLySourceChunks)
 import HNotate.Pitch
-import HNotate.ScoreRepresentation
-import HNotate.ToScore
+import HNotate.ToNoteList
 
 import HNotate.OutputLilyPond
 

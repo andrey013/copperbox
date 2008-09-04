@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  HNotate.EventTree
+-- Module      :  HNotate.NoteList
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -13,9 +13,9 @@
 --
 --------------------------------------------------------------------------------
 
-module HNotate.EventTree (
+module HNotate.EventList (
     -- * Datatypes
-    System(..), EventTree(..), EvtPosition(..),
+    System, EventList(..), EvtPosition(..),
     system, systemL, system1,
     
     root, event,
@@ -24,9 +24,8 @@ module HNotate.EventTree (
     
     repeated,
     
-    notelist,
-    
-    onEventTree, onEventTreeM
+    eventlist,
+
     
   ) where
 
@@ -36,31 +35,28 @@ import Data.Monoid
 import Data.Sequence
 import qualified Data.Foldable as F
 
--- Tracks in MIDI and multiple staffs are represented as a list of
--- Event trees
-newtype System evt = System { getSystem :: Map.Map String (EventTree evt) }
-  deriving Show
 
-newtype EventTree evt = EventTree { getEventTree :: Seq (EvtPosition evt) }
+type System evt = Map.Map String (EventList evt)
+
+
+newtype EventList evt = EventList { getEventList :: Seq (EvtPosition evt) }
   deriving Show
 
 
 data EvtPosition evt = Evt evt
                      | StartPar | EndPar
                      | StartPre | EndPre
-                     | Poly [EventTree evt]
+                     | Poly [EventList evt]
   deriving Show
 
-instance Monoid (System evt) where
-  mempty = System mempty
-  mappend a b = System $ (getSystem a) `Map.union` (getSystem b)
+
   
-instance Monoid (EventTree evt) where
-  mempty = EventTree mempty
-  mappend a b = EventTree $ (getEventTree a) >< (getEventTree b)
+instance Monoid (EventList evt) where
+  mempty = EventList mempty
+  mappend a b = EventList $ (getEventList a) >< (getEventList b)
   
-instance Functor EventTree where
-  fmap f (EventTree se)     = EventTree (fmap (fmap f) se)
+instance Functor EventList where
+  fmap f (EventList se)     = EventList (fmap (fmap f) se)
 
 instance Functor EvtPosition where
   fmap f (Evt e)            = Evt (f e)
@@ -71,8 +67,8 @@ instance Functor EvtPosition where
   fmap f (Poly ts)          = Poly (fmap (fmap f) ts)
 
 
-instance F.Foldable EventTree where
-  foldMap f (EventTree se)  = F.foldMap (F.foldMap f) se
+instance F.Foldable EventList where
+  foldMap f (EventList se)  = F.foldMap (F.foldMap f) se
 
 instance F.Foldable EvtPosition where
   foldMap f (Evt e)         = f e
@@ -97,33 +93,33 @@ infixl 7 #.
 g #. f = f . g
 
 
-(|*>) :: EventTree evt -> EvtPosition evt -> EventTree evt
-(|*>) (EventTree t) evt = EventTree $ t |> evt
+(|*>) :: EventList evt -> EvtPosition evt -> EventList evt
+(|*>) (EventList t) evt = EventList $ t |> evt
 
 
 
 system :: System evt
-system = System mempty
+system = mempty
 
-systemL :: [(String,EventTree evt)] -> System evt
-systemL = System . Map.fromList
+systemL :: [(String, EventList evt)] -> System evt
+systemL = Map.fromList
 
-system1 :: String -> EventTree evt -> System evt
-system1 k t = System $ Map.insert k t mempty
+system1 :: String -> EventList evt -> System evt
+system1 k t = Map.insert k t mempty
 
-root :: EventTree evt
-root = EventTree empty
+root :: EventList evt
+root = EventList empty
 
-event           :: evt -> EventTree evt -> EventTree evt
+event           :: evt -> EventList evt -> EventList evt
 event e t       = t |*> Evt e
 
-par           :: [evt] -> EventTree evt -> EventTree evt
+par           :: [evt] -> EventList evt -> EventList evt
 par [] t      = t
 par es t      = seal $ foldl (flip event) (t |*> StartPar) es
   where
     seal t      = t |*> EndPar
 
-prefix           :: [evt] -> EventTree evt -> EventTree evt
+prefix           :: [evt] -> EventList evt -> EventList evt
 prefix [] t      = t
 prefix es t      = seal $ foldl (flip event) (t |*> StartPre) es
   where
@@ -131,27 +127,18 @@ prefix es t      = seal $ foldl (flip event) (t |*> StartPre) es
 
 
 -- poly does some optimizing ...
-poly            :: [EventTree evt] -> EventTree evt -> EventTree evt
+poly            :: [EventList evt] -> EventList evt -> EventList evt
 poly []  t      = t
 poly [x] t      = F.foldl (flip event) t x
 poly ts  t      = t |*> (Poly ts)
 
-repeated ::
-  Int -> (EventTree evt -> EventTree evt) -> (EventTree evt -> EventTree evt)
+repeated :: Int -> (EventList evt -> EventList evt) -> (EventList evt -> EventList evt)
 repeated i f = applyi i f
   where 
     applyi i f a | i < 1 = a
                  | otherwise  = applyi (i-1) f (f a)
 
-notelist :: [evt] -> EventTree evt
-notelist = foldl (flip event) root 
-
-onEventTree (System mp) k f = case Map.lookup k mp of
-    Just v -> Just $ f v
-    _ -> Nothing
-
-onEventTreeM (System mp) k mf = case Map.lookup k mp of
-    Just v -> mf v >>= return . Just
-    _ -> return Nothing
+eventlist :: [evt] -> EventList evt
+eventlist = foldl (flip event) root 
 
 

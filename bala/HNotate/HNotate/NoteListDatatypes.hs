@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  HNotate.ScoreRepresentation
+-- Module      :  HNotate.NoteListDatatypes
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -9,17 +9,13 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Datatypes for Score format
+-- Datatypes for NoteList format
 --
--- Polyphony is indicated at the start of a measure by pointers to a
--- dictionary of lines (a sequence of measures). These lines may themselves
--- have measures that point to further polyphonic lines.
 --
 --------------------------------------------------------------------------------
 
-module HNotate.ScoreRepresentation (
+module HNotate.NoteListDatatypes (
     -- * Datatypes
-    ScSystem(..),
     ScNoteList(..),
     ScBlock(..),
     ScMeasure(..),
@@ -28,14 +24,13 @@ module HNotate.ScoreRepresentation (
     
     -- aliases
     ScoreGlyph,
-    ScoreSystem,
     ScoreNoteList,
     ScoreBlock,
     ScoreMeasure,
     
     glyphDuration,
     
-    onNoteList, onNoteListM
+    -- onNoteList, onNoteListM
     
 
   ) where
@@ -54,23 +49,12 @@ import Data.Traversable
 import Text.PrettyPrint.Leijen
 
 
-
-
-newtype ScSystem e = ScSystem { getSystem :: Map.Map String (ScNoteList e) }
-
-onNoteList (ScSystem mp) k f = case Map.lookup k mp of
-    Just v -> Just $ f v
-    _ -> Nothing
-
-onNoteListM (ScSystem mp) k mf = case Map.lookup k mp of
-    Just v -> mf v >>= return . Just
-    _ -> return Nothing
-    
+   
     
 -- A 'horizontal line' of music - of course it maybe printed on 
 -- more than one line and might contain polyphony, but it will be played 
 -- by a single instrument.
-newtype ScNoteList e = ScNoteList { getNoteList :: Seq (ScBlock e) }
+newtype ScNoteList e = ScNoteList { geSctNoteList :: Seq (ScBlock e) }
 
 
 
@@ -92,7 +76,6 @@ data Glyph pch drn = GlyNote pch drn
 
 type ScoreGlyph = Glyph Pitch Duration
 
-type ScoreSystem    = ScSystem ScoreGlyph
 type ScoreNoteList  = ScNoteList ScoreGlyph
 type ScoreBlock     = ScBlock ScoreGlyph
 type ScoreMeasure   = ScMeasure ScoreGlyph
@@ -101,9 +84,6 @@ type ScoreMeasure   = ScMeasure ScoreGlyph
 
 --------------------------------------------------------------------------------
 -- Functor instances
-
-instance Functor ScSystem where
-  fmap f (ScSystem se)        = ScSystem (fmap (fmap f) se)
   
 instance Functor ScNoteList where
   fmap f (ScNoteList se)      = ScNoteList (fmap (fmap f) se)
@@ -119,9 +99,6 @@ instance Functor ScMeasure where
 
 --------------------------------------------------------------------------------
 -- Foldable instances
-
-instance F.Foldable ScSystem where
-  foldMap f (ScSystem se)         = F.foldMap (F.foldMap f) se
   
 instance F.Foldable ScNoteList where
   foldMap f (ScNoteList se)       = F.foldMap (F.foldMap f) se
@@ -137,9 +114,6 @@ instance F.Foldable ScMeasure where
 --------------------------------------------------------------------------------
 -- Traversable instances
 
-
-instance Traversable ScSystem where
-  traverse f (ScSystem se)        = ScSystem A.<$> traverse (traverse f) se
   
 instance Traversable ScNoteList where
   traverse f (ScNoteList se)      = ScNoteList A.<$> traverse (traverse f) se
@@ -205,9 +179,7 @@ glyphDuration (GlyGraceNotes _)  = mempty
 --------------------------------------------------------------------------------
 -- pretty printing
 
-instance (Pretty e) => Pretty (ScSystem e) where
-  pretty (ScSystem mp) = Map.foldWithKey fn empty mp
-    where fn k v acc = acc <$> text k <+> equals <+> braces (pretty v)
+
 
 instance (Pretty e) => Pretty (ScNoteList e) where
   pretty (ScNoteList se) = sepSeq (<$>) se

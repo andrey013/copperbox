@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  HNotate.ToSystem
+-- Module      :  HNotate.ToNoteList
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  TypeSynonymInstances, mptc.
 --
--- Render an EventTree as to LilyPond.
+-- Render a NoteList to Score format.
 --
 --------------------------------------------------------------------------------
 {-
@@ -23,16 +23,17 @@ module ToScore (
 
 
 
-module HNotate.ToScore where
+module HNotate.ToNoteList where
 
 import HNotate.Bifunctor
 import HNotate.Duration
 import HNotate.EventInterface
-import HNotate.EventTree
+import HNotate.EventList
+import HNotate.NoteListDatatypes
 import HNotate.NotateMonad
 import HNotate.OnsetQueue
 import HNotate.Pitch
-import HNotate.ScoreRepresentation
+
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Reader hiding (lift)
@@ -120,7 +121,7 @@ seal (Progress se (tip@(i, ScMeasure me),_))
 
 --------------------------------------------------------------------------------                
 
-  
+{-  
 toScore :: (Event evt) => System evt -> ProgressEnv -> ScoreSystem
 toScore sys env = evalNotate (processSystem sys) () env
 
@@ -132,7 +133,11 @@ processSystem p@(System mp) = ScSystem <$> F.foldrM fn mempty (Map.toList mp)
         sse  <- buildFlatRep 1 evtree
         return $ Map.insert k (ScNoteList $ blockLine sse) mp 
         
+-}
 
+toNoteList :: (Event evt) => EventList evt -> ProgressEnv -> ScoreNoteList
+toNoteList evtlist env = ScNoteList $ blockLine $ 
+    evalNotate (buildFlatRep 1 evtlist) () env
 
 
 makeGlyph :: (Event evt) => evt -> ScoreGlyph
@@ -146,11 +151,11 @@ makeGlyph evt = case eventvalues evt of
 -- in order it the tree has `poly` elements  
 buildFlatRep :: (Event evt) 
              => Int 
-             -> EventTree evt 
+             -> EventList evt 
              -> ProcessM (Seq IndexedMeasure)
 buildFlatRep mc tree = 
     let pzero = Progress mempty ((mc, ScMeasure mempty), mempty) in do
-        progress <- flattenEvents (viewl $ getEventTree tree) pzero
+        progress <- flattenEvents (viewl $ getEventList tree) pzero
         return $ seal progress
 
 
@@ -211,7 +216,7 @@ flattenPrefix sq (se,stk) = flatpre sq (se,stk)
 -- Note this will result in measures being out of order - we need to
 -- do a reconciliation step afterwards.
 flattenPoly :: (Event evt)
-            => [EventTree evt]
+            => [EventList evt]
             -> Seq (EvtPosition evt)
             -> Progress
             -> ProcessM Progress

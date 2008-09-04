@@ -17,8 +17,9 @@ module HNotate.Traversals where
 
 import HNotate.Bifunctor
 import HNotate.Duration
+import HNotate.NoteListDatatypes
 import HNotate.Pitch
-import HNotate.ScoreRepresentation
+
 
 import Control.Applicative
 import Control.Monad.Identity

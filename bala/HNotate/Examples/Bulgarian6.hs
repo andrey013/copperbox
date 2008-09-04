@@ -53,8 +53,8 @@ events_bars1_4 =
       ]
          
 
-bars1_4 :: EventTree NrEvent
-bars1_4 = notelist events_bars1_4
+bars1_4 :: EventList NrEvent
+bars1_4 = eventlist events_bars1_4
  
 bulgarian6 :: System NrEvent
 bulgarian6 = system1 "bulgarian6" bars1_4   
