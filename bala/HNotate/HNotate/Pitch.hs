@@ -36,25 +36,25 @@ module HNotate.Pitch (
 
     middle_c,
     c4, d4, e4, f4, g4, a4, b4,
-    c4is, d4es, d4is, e4es, f4is, g4es, g4is, a4es, a4is, b4es,
+    cis4, des4, dis4, ees4, fis4, ges4, gis4, aes4, ais4, bes4,
     
     c3, d3, e3, f3, g3, a3, b3,
-    c3is, d3es, d3is, e3es, f3is, g3es, g3is, a3es, a3is, b3es,
+    cis3, des3, dis3, ees3, fis3, ges3, gis3, aes3, ais3, bes3,
   
     c2, d2, e2, f2, g2, a2, b2,
-    c2is, d2es, d2is, e2es, f2is, g2es, g2is, a2es, a2is, b2es,
+    cis2, des2, dis2, ees2, fis2, ges2, gis2, aes2, ais2, bes2,
   
     c1, d1, e1, f1, g1, a1, b1,
-    c1is, d1es, d1is, e1es, f1is, g1es, g1is, a1es, a1is, b1es,
+    cis1, des1, dis1, ees1, fis1, ges1, gis1, aes1, ais1, bes1,
         
     c5, d5, e5, f5, g5, a5, b5,
-    c5is, d5es, d5is, e5es, f5is, g5es, g5is, a5es, a5is, b5es,
+    cis5, des5, dis5, ees5, fis5, ges5, gis5, aes5, ais5, bes5,
     
     c6, d6, e6, f6, g6, a6, b6,
-    c6is, d6es, d6is, e6es, f6is, g6es, g6is, a6es, a6is, b6es,
+    cis6, des6, dis6, ees6, fis6, ges6, gis6, aes6, ais6, bes6,
   
     c7, d7, e7, f7, g7, a7, b7,
-    c7is, d7es, d7is, e7es, f7is, g7es, g7is, a7es, a7is, b7es
+    cis7, des7, dis7, ees7, fis7, ges7, gis7, aes7, ais7, bes7
 
     
   ) where
@@ -168,7 +168,7 @@ middle_c :: Pitch
 middle_c = pchNat C 4
 
 c4, d4, e4, f4, g4, a4, b4, 
-    c4is, d4es, d4is, e4es, f4is, g4es, g4is, a4es, a4is, b4es :: Pitch
+    cis4, des4, dis4, ees4, fis4, ges4, gis4, aes4, ais4, bes4 :: Pitch
 c4    = pchNat C 4
 d4    = pchNat D 4
 e4    = pchNat E 4
@@ -176,20 +176,20 @@ f4    = pchNat F 4
 g4    = pchNat G 4
 a4    = pchNat A 4
 b4    = pchNat B 4
-c4is  = pchSharp C 4
-d4es  = pchFlat D 4
-d4is  = pchSharp D 4
-e4es  = pchFlat E 4
-f4is  = pchSharp F 4
-g4es  = pchFlat G 4
-g4is  = pchSharp G 4
-a4es  = pchFlat A 4
-a4is  = pchSharp A 4
-b4es  = pchFlat B 4
+cis4  = pchSharp C 4
+des4  = pchFlat D 4
+dis4  = pchSharp D 4
+ees4  = pchFlat E 4
+fis4  = pchSharp F 4
+ges4  = pchFlat G 4
+gis4  = pchSharp G 4
+aes4  = pchFlat A 4
+ais4  = pchSharp A 4
+bes4  = pchFlat B 4
 
 
 c3, d3, e3, f3, g3, a3, b3, 
-    c3is, d3es, d3is, e3es, f3is, g3es, g3is, a3es, a3is, b3es :: Pitch
+    cis3, des3, dis3, ees3, fis3, ges3, gis3, aes3, ais3, bes3 :: Pitch
 c3    = pchNat C 3
 d3    = pchNat D 3
 e3    = pchNat E 3
@@ -197,19 +197,19 @@ f3    = pchNat F 3
 g3    = pchNat G 3
 a3    = pchNat A 3
 b3    = pchNat B 3
-c3is  = pchSharp C 3
-d3es  = pchFlat D 3
-d3is  = pchSharp D 3
-e3es  = pchFlat E 3
-f3is  = pchSharp F 3
-g3es  = pchFlat G 3
-g3is  = pchSharp G 3
-a3es  = pchFlat A 3
-a3is  = pchSharp A 3
-b3es  = pchFlat B 3
+cis3  = pchSharp C 3
+des3  = pchFlat D 3
+dis3  = pchSharp D 3
+ees3  = pchFlat E 3
+fis3  = pchSharp F 3
+ges3  = pchFlat G 3
+gis3  = pchSharp G 3
+aes3  = pchFlat A 3
+ais3  = pchSharp A 3
+bes3  = pchFlat B 3
 
 c2, d2, e2, f2, g2, a2, b2, 
-    c2is, d2es, d2is, e2es, f2is, g2es, g2is, a2es, a2is, b2es :: Pitch
+    cis2, des2, dis2, ees2, fis2, ges2, gis2, aes2, ais2, bes2 :: Pitch
 c2    = pchNat C 2
 d2    = pchNat D 2
 e2    = pchNat E 2
@@ -217,19 +217,19 @@ f2    = pchNat F 2
 g2    = pchNat G 2
 a2    = pchNat A 2
 b2    = pchNat B 2
-c2is  = pchSharp C 2
-d2es  = pchFlat D 2
-d2is  = pchSharp D 2
-e2es  = pchFlat E 2
-f2is  = pchSharp F 2
-g2es  = pchFlat G 2
-g2is  = pchSharp G 2
-a2es  = pchFlat A 2
-a2is  = pchSharp A 2
-b2es  = pchFlat B 2
+cis2  = pchSharp C 2
+des2  = pchFlat D 2
+dis2  = pchSharp D 2
+ees2  = pchFlat E 2
+fis2  = pchSharp F 2
+ges2  = pchFlat G 2
+gis2  = pchSharp G 2
+aes2  = pchFlat A 2
+ais2  = pchSharp A 2
+bes2  = pchFlat B 2
 
 c1, d1, e1, f1, g1, a1, b1, 
-    c1is, d1es, d1is, e1es, f1is, g1es, g1is, a1es, a1is, b1es :: Pitch
+    cis1, des1, dis1, ees1, fis1, ges1, gis1, aes1, ais1, bes1 :: Pitch
 c1    = pchNat C 1
 d1    = pchNat D 1
 e1    = pchNat E 1
@@ -237,20 +237,20 @@ f1    = pchNat F 1
 g1    = pchNat G 1
 a1    = pchNat A 1
 b1    = pchNat B 1
-c1is  = pchSharp C 1
-d1es  = pchFlat D 1
-d1is  = pchSharp D 1
-e1es  = pchFlat E 1
-f1is  = pchSharp F 1
-g1es  = pchFlat G 1
-g1is  = pchSharp G 1
-a1es  = pchFlat A 1
-a1is  = pchSharp A 1
-b1es  = pchFlat B 1
+cis1  = pchSharp C 1
+des1  = pchFlat D 1
+dis1  = pchSharp D 1
+ees1  = pchFlat E 1
+fis1  = pchSharp F 1
+ges1  = pchFlat G 1
+gis1  = pchSharp G 1
+aes1  = pchFlat A 1
+ais1  = pchSharp A 1
+bes1  = pchFlat B 1
 
 
 c5, d5, e5, f5, g5, a5, b5, 
-    c5is, d5es, d5is, e5es, f5is, g5es, g5is, a5es, a5is, b5es :: Pitch
+    cis5, des5, dis5, ees5, fis5, ges5, gis5, aes5, ais5, bes5 :: Pitch
 c5    = pchNat C 5
 d5    = pchNat D 5
 e5    = pchNat E 5
@@ -258,19 +258,19 @@ f5    = pchNat F 5
 g5    = pchNat G 5
 a5    = pchNat A 5
 b5    = pchNat B 5
-c5is  = pchSharp C 5
-d5es  = pchFlat D 5
-d5is  = pchSharp D 5
-e5es  = pchFlat E 5
-f5is  = pchSharp F 5
-g5es  = pchFlat G 5
-g5is  = pchSharp G 5
-a5es  = pchFlat A 5
-a5is  = pchSharp A 5
-b5es  = pchFlat B 5
+cis5  = pchSharp C 5
+des5  = pchFlat D 5
+dis5  = pchSharp D 5
+ees5  = pchFlat E 5
+fis5  = pchSharp F 5
+ges5  = pchFlat G 5
+gis5  = pchSharp G 5
+aes5  = pchFlat A 5
+ais5  = pchSharp A 5
+bes5  = pchFlat B 5
 
 c6, d6, e6, f6, g6, a6, b6, 
-    c6is, d6es, d6is, e6es, f6is, g6es, g6is, a6es, a6is, b6es :: Pitch
+    cis6, des6, dis6, ees6, fis6, ges6, gis6, aes6, ais6, bes6 :: Pitch
 c6    = pchNat C 6
 d6    = pchNat D 6
 e6    = pchNat E 6
@@ -278,19 +278,19 @@ f6    = pchNat F 6
 g6    = pchNat G 6
 a6    = pchNat A 6
 b6    = pchNat B 6
-c6is  = pchSharp C 6
-d6es  = pchFlat D 6
-d6is  = pchSharp D 6
-e6es  = pchFlat E 6
-f6is  = pchSharp F 6
-g6es  = pchFlat G 6
-g6is  = pchSharp G 6
-a6es  = pchFlat A 6
-a6is  = pchSharp A 6
-b6es  = pchFlat B 6
+cis6  = pchSharp C 6
+des6  = pchFlat D 6
+dis6  = pchSharp D 6
+ees6  = pchFlat E 6
+fis6  = pchSharp F 6
+ges6  = pchFlat G 6
+gis6  = pchSharp G 6
+aes6  = pchFlat A 6
+ais6  = pchSharp A 6
+bes6  = pchFlat B 6
 
 c7, d7, e7, f7, g7, a7, b7, 
-    c7is, d7es, d7is, e7es, f7is, g7es, g7is, a7es, a7is, b7es :: Pitch
+    cis7, des7, dis7, ees7, fis7, ges7, gis7, aes7, ais7, bes7 :: Pitch
 c7    = pchNat C 7
 d7    = pchNat D 7
 e7    = pchNat E 7
@@ -298,16 +298,16 @@ f7    = pchNat F 7
 g7    = pchNat G 7
 a7    = pchNat A 7
 b7    = pchNat B 7
-c7is  = pchSharp C 7
-d7es  = pchFlat D 7
-d7is  = pchSharp D 7
-e7es  = pchFlat E 7
-f7is  = pchSharp F 7
-g7es  = pchFlat G 7
-g7is  = pchSharp G 7
-a7es  = pchFlat A 7
-a7is  = pchSharp A 7
-b7es  = pchFlat B 7
+cis7  = pchSharp C 7
+des7  = pchFlat D 7
+dis7  = pchSharp D 7
+ees7  = pchFlat E 7
+fis7  = pchSharp F 7
+ges7  = pchFlat G 7
+gis7  = pchSharp G 7
+aes7  = pchFlat A 7
+ais7  = pchSharp A 7
+bes7  = pchFlat B 7
 
 
           

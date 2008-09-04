@@ -33,7 +33,13 @@ import System.IO
 import Text.PrettyPrint.Leijen
 
 
-type Env = (Key, Meter, Duration, Pitch)
+data Env = Env { 
+    key                 :: Key, 
+    meter               :: Meter, 
+    default_note_length :: Duration, 
+    relative_pitch      :: Pitch,
+    partial_measure     :: (Int,Int)
+  }
 
  
 data Instruction = Cmd Command
@@ -44,28 +50,41 @@ data Instruction = Cmd Command
 
 type Code = Seq Instruction
 
+default_env = Env { 
+    key                     = c_major,
+    meter                   = four_four,
+    default_note_length     = quarter,
+    relative_pitch          = middle_c,
+    partial_measure         = (0,0)
+  }
+
+
+
 
 -- to do `schemes`
 relative = translateLilyPond
 
-outputLilyPond sys infile outfile = do
-  a <- parseLySourceChunks infile
-  case a of 
-    Left err -> putStrLn $ show err
-    Right chunks -> do
-      b <- parseLyTemplateExpr infile
-      case b of 
-        Left err -> putStrLn $ show err
-        Right exprs -> let out = build sys chunks exprs in do
-                          h <- openFile outfile WriteMode
-                          displayIO h (renderPretty 0.7 80 out)
-                          hClose h
- 
+outputLilyPond :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
+outputLilyPond sys infile outfile = workO (parseLySourceChunks infile) sk1 fk 
+  where
+    fk  err           = putStrLn $ show err
+    sk1 ans           = workO (parseLyTemplateExpr infile) (sk2 ans) fk
+    sk2 chunks exprs  = outputDoc outfile (build sys chunks exprs)
+
+workO :: Monad m => m (Either a b) -> (b -> m c) -> (a -> m c) -> m c
+workO p sk fk = p >>= either fk sk
+
         
 build :: Event evt => System evt -> SourceFile -> [SrcExpr] -> Doc
 build sys chunks exprs  = 
     let mp = Map.fromList $ evaluateSrcExprs sys exprs
     in output mp chunks
+
+outputDoc :: FilePath -> Doc -> IO ()
+outputDoc filepath doc = do
+    h <- openFile filepath WriteMode
+    displayIO h (renderPretty 0.7 80 doc)
+    hClose h
   
 output :: Map.Map Int LilyPondNoteList -> SourceFile -> Doc
 output mp (SourceFile se) = F.foldl fn empty se
@@ -76,7 +95,7 @@ output mp (SourceFile se) = F.foldl fn empty se
 
 lyComment str = enclose (text "%{ ") (text " %}") (string str)             
 
-default_env = (c_major,four_four,quarter,middle_c)
+
 
 evaluateSrcExprs :: Event evt 
                  => System evt -> [SrcExpr] -> [(DId,LilyPondNoteList)]
@@ -89,7 +108,7 @@ workE sys env code expr []     = evaluate sys env code expr
 workE sys env code expr (x:xs) = let (env',code') = evaluate sys env code expr
                              in workE sys env' code' x xs
 
-evaluate sys env code (Command cmd)     = (updateEnv env cmd, code)
+evaluate sys env code (Command cmd)     = (updateEnv cmd env, code)
 evaluate sys env code (Directive drct)  = (env, (directive sys env drct) : code)
 evaluate sys env code (Nested [])       = (env,code)
 evaluate sys env code (Nested (x:xs))   = 
@@ -97,52 +116,25 @@ evaluate sys env code (Nested (x:xs))   =
 
 
 directive sys env (MetaOutput i name "relative") = 
-    let score = toScore sys (mkEnv $ lookupDuration env) -- wrong shouldn't translate whole system
-        notes = onNoteList score "bulgarian6" $ \se -> 
+    let score = toScore sys (mkEnv $ default_note_length env) -- wrong shouldn't translate whole system
+        notes = onNoteList score name $ \se -> 
                                 translateLilyPond se middleC
     in case notes of
                   Just a -> (i,a)
-                  Nothing -> error $ "directive - failure"
+                  Nothing -> error $ "directive failure - missing " ++ name
 
   where
     mkEnv d = ProgressEnv { measure_length = d }
 
- 
-updateEnv env (CmdKey k)               = setKey k env
-updateEnv env (CmdMeter m)             = setMeter m env
-updateEnv env (CmdDefaultNoteLength d) = setDuration d env
-updateEnv env (CmdRelativePitch p)     = setPitch p env
-    
-
-
-lookupKey :: Env -> Key
-lookupKey (k,_,_,_) = k
-
-lookupMeter :: Env -> Meter
-lookupMeter (_,m,_,_) = m
-
-lookupDuration :: Env -> Duration
-lookupDuration (_,_,d,_) = d
-
-lookupPitch :: Env -> Pitch
-lookupPitch (_,_,_,p) = p
-
-
-setKey :: Key -> Env -> Env
-setKey k (_,m,d,p) = (k,m,d,p)
-
-setMeter :: Meter -> Env -> Env
-setMeter m (k,_,d,p) = (k,m,d,p)
-
-setDuration :: Duration -> Env -> Env
-setDuration d (k,m,_,p) = (k,m,d,p)
-
-setPitch :: Pitch -> Env -> Env
-setPitch p (k,m,d,_) = (k,m,d,p)
+updateEnv :: Command -> Env -> Env
+updateEnv (CmdKey k)                env = env {key = k}
+updateEnv (CmdMeter m)              env = env {meter = m}
+updateEnv (CmdDefaultNoteLength d)  env = env {default_note_length = d}
+updateEnv (CmdRelativePitch p)      env = env {relative_pitch = p}
+updateEnv (CmdPartial a b)          env = env {partial_measure = (a,b) }
 
 
 
-    
     
           
           

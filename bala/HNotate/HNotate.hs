@@ -32,7 +32,7 @@ module HNotate (
     
     par, prefix, poly, 
     
-    repeated,
+    repeated, notelist,
     
     ( # ) , ( #. ),
     

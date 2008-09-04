@@ -62,6 +62,7 @@ data Command = CmdKey Key
              | CmdMeter Meter
              | CmdDefaultNoteLength Duration  -- Abc only
              | CmdRelativePitch Pitch         -- Lilypond only
+             | CmdPartial Int Int
   deriving Show
  
                       

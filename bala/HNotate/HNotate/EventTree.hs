@@ -24,6 +24,8 @@ module HNotate.EventTree (
     
     repeated,
     
+    notelist,
+    
     onEventTree, onEventTreeM
     
   ) where
@@ -141,7 +143,8 @@ repeated i f = applyi i f
     applyi i f a | i < 1 = a
                  | otherwise  = applyi (i-1) f (f a)
 
-
+notelist :: [evt] -> EventTree evt
+notelist = foldl (flip event) root 
 
 onEventTree (System mp) k f = case Map.lookup k mp of
     Just v -> Just $ f v
