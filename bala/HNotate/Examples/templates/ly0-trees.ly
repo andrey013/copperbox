@@ -1,4 +1,4 @@
-%{ How EventTrees should be rendered in LilyPond %}
+%{ How note lists should be rendered in LilyPond %}
 
 \version "2.10.3"
 
@@ -10,7 +10,9 @@
   \markup { \bold { Trees } }
   \markup \line { }
   
-  \markup { All these examples must be renderable as an EventTree or [EventTree]. }
+  \markup { All these examples must be renderable with the System/NoteList
+            datatypes. 
+  }
   \markup \line { } 
   
   \markup { 1. Simple successors }
@@ -58,7 +60,7 @@
     }
   }
   
-  \markup { 5. Independent parallelism - two staves so two note lists }
+  \markup { 5. Independent parallelism - just use two note lists }
   \score {
     <<
       \new Staff \relative c' {
@@ -79,7 +81,7 @@
     >>    
   }
   
-  \markup { 6. Independent parallelism - plus chord, grace  [EventTree, EventTree] }
+  \markup { 6. Independent parallelism - a complex note list and a simple one }
   \score {
     <<
       \new Staff \relative c' {

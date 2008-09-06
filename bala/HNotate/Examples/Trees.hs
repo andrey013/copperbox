@@ -111,9 +111,14 @@ example_sys = systemL $
      ("example6b",  example6b),
      ("example7",   example7)]
 
-ly_template  = "templates/ly0-trees.ly"
-     
-main = outputLilyPond example_sys ly_template "out/ly-trees.ly"     
+ly_template   = "templates/ly0-trees.ly"
+ly_output     = "out/ly-trees.ly" 
 
+abc_template  = "templates/abc0-trees.abc"
+abc_output    = "out/abc-trees.abc"     
+
+main = do
+    outputLilyPond example_sys  ly_template   ly_output
+    outputAbc      example_sys  abc_template  abc_output
 
                                    

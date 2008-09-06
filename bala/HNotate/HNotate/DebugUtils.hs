@@ -18,10 +18,10 @@
 module HNotate.DebugUtils where
 
 import HNotate.CommonUtils
-import HNotate.ExtractionDatatypes 
 import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
 import HNotate.ParseLy
+import HNotate.TemplateDatatypes
 
 import qualified Data.Foldable as F
 import Text.PrettyPrint.Leijen
@@ -45,13 +45,16 @@ dumpTemplates chunkParse islandParse filepath = do
 
     
     
-  
+dumpLyScoreZero :: FilePath -> IO ()
+dumpLyScoreZero filepath = undefined
+
 
 
 --------------------------------------------------------------------------------
 -- pretty printing
 
-
+hshComment :: Doc -> Doc
+hshComment = enclose (text "{-# ") (text " #-}")
 
 instance (Pretty e) => Pretty (ScNoteList e) where
   pretty (ScNoteList se) = sepSeq (<$>) se
@@ -95,6 +98,9 @@ tagint len i = let (s,l) = intPlex i in
 --------------------------------------------------------------------------------
 -- Template files
 
+ppPos :: SrcPos -> Doc 
+ppPos (SrcPos l c _) = pretty $ (l,c)
+
 instance Pretty SPV where
   pretty (SPV se) = 
       spv_prefix <$> F.foldl (\d e -> d <> pretty e) empty se <> line
@@ -108,14 +114,12 @@ instance Pretty PIV where
 
 instance Pretty TextElement where
   pretty (SourceText str)     = string str
-  pretty (MetaMark idx pos d) = enclose (text "{-# ") (text " #-}")
-                                        (int idx <+> pretty d)
+  pretty (MetaMark idx pos d) = hshComment (ppPos pos <+> int idx <+> pretty d)
 
 
 instance Pretty ScoreElement where
   pretty (Command cmd)        = text "\\cmd" <+> pretty cmd
-  pretty (Directive idx drct) = enclose (text "<-- ") (text " -->") 
-                                        (int idx <+> pretty drct)
+  pretty (Directive idx drct) = hshComment (int idx <+> pretty drct)
   pretty (Nested [])          = text "{ }"   
   pretty (Nested xs)          = enclose (lbrace <> line) (line <> rbrace) 
                                         (indent 2 $ vcat $ map pretty xs)

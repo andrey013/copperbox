@@ -61,8 +61,8 @@ oabcOve :: Int -> Maybe Abc.AbcOctave
 oabcOve i | i < 4       = Just $ Abc.octaveLow (4-i)
           | i > 5       = Just $ Abc.octaveHigh (i-5) 
           | otherwise   = Nothing
-          
-          
+
+         
 abcRelativeDuration :: Duration -> Duration -> Maybe Abc.AbcDuration
 abcRelativeDuration base drn@(Duration _ dots)
     | base == drn   = Nothing 

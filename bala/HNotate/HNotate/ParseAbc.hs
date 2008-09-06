@@ -16,9 +16,10 @@
 module HNotate.ParseAbc where
 
 import HNotate.Duration
-import HNotate.ExtractionDatatypes
+import HNotate.MusicRepDatatypes
 import HNotate.ParserBase
 import HNotate.Pitch
+import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (many, optional, (<|>) )
 import Control.Monad (when)

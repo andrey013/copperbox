@@ -16,7 +16,7 @@
 module HNotate.ParserBase where
 
 
-import HNotate.ExtractionDatatypes
+import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (many, optional, (<|>) )
 import Control.Monad
@@ -117,7 +117,6 @@ makeSrcPos pos = SrcPos {
     _src_file     = sourceName pos
   } 
 
-keyword = symbol
 
 chooseString :: [String] -> GenParser Char st String  
 chooseString = choice . map string

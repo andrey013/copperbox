@@ -21,13 +21,15 @@ import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.CommonUtils (successFailM, outputDoc)
 import HNotate.Duration
+import HNotate.Env
 import HNotate.EventInterface
 import HNotate.EventList
-import HNotate.ExtractionDatatypes
+import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
 import HNotate.ParseLy
 import HNotate.Pitch
+import HNotate.TemplateDatatypes
 import HNotate.TextAbc (getAbc)
 import HNotate.TextLilyPond (getLy)
 import HNotate.ToNoteList
@@ -38,19 +40,6 @@ import qualified Data.Map as Map
 import Data.Sequence hiding (empty)
 import Text.PrettyPrint.Leijen
 
-data OutputFormat = Output_Abc | Output_LilyPond | Output_Midi 
-  deriving (Eq,Show) 
-  
-  
-data Env = Env { 
-    output_format       :: OutputFormat,
-    key                 :: Key, 
-    meter               :: Meter, 
-    default_note_length :: Duration, 
-    relative_pitch      :: Pitch,
-    partial_measure     :: (Int,Int)
-  }
-  deriving (Show)
 
  
 data Instruction = Cmd Command
@@ -59,110 +48,95 @@ data Instruction = Cmd Command
                  | EndLocal
   deriving (Show)
 
-type Code = Seq Instruction
-
-default_env = Env {
-    output_format           = Output_LilyPond, 
-    key                     = c_major,
-    meter                   = four_four,
-    default_note_length     = quarter,
-    relative_pitch          = middle_c,
-    partial_measure         = (0,0)
-  }
-
-
-
 
 -- to do `schemes`
 relative = translateLilyPond
 
 outputLilyPond :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
 outputLilyPond sys infile outfile = 
-  output Output_LilyPond sys lySPV lyPIV infile outfile
+  output default_ly_env sys lySPV lyPIV infile outfile
 
 outputAbc :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
 outputAbc sys infile outfile = 
-    output Output_Abc sys abcSPV abcPIV infile outfile
+    output default_abc_env sys abcSPV abcPIV infile outfile
 
    
    
 -- output :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
-output fmt sys spvParse pivParse infile outfile = 
+output env sys spvParse pivParse infile outfile = 
     successFailM (spvParse infile) sk1 fk 
   where
     fk  err      = putStrLn $ show err
     sk1 ans      = successFailM (pivParse infile) (sk2 ans) fk
-    sk2 spv piv  = outputDoc outfile (build fmt sys spv piv)
+    sk2 spv piv  = outputDoc outfile (build env sys spv piv)
 
         
-build :: Event evt => OutputFormat -> System evt -> SPV -> PIV -> Doc
-build fmt sys spv (PIV xs)  = 
-    let mp = Map.fromList $ evaluateSrcExprs fmt sys xs
-    in fillSourceHoles fmt mp spv
+build :: Event evt => Env -> System evt -> SPV -> PIV -> Doc
+build env sys spv (PIV xs)  = 
+    let mp = Map.fromList $ evaluateSrcExprs env sys xs
+    in fillSourceHoles env mp spv
 
 
   
-fillSourceHoles :: OutputFormat -> Map.Map Int Doc -> SPV -> Doc
-fillSourceHoles fmt mp (SPV se) = F.foldl fn empty se
+fillSourceHoles :: Env -> Map.Map Int Doc -> SPV -> Doc
+fillSourceHoles env mp (SPV se) = F.foldl fn empty se
   where 
-    fn d (SourceText ss)          = d <> string ss
-    fn d (MetaMark i _ _)         = maybe (fk d i) (sk d) (Map.lookup i mp)
+    fn d (SourceText ss)      = d <> string ss
+    fn d (MetaMark i pos _)   = maybe (fk d i) (sk d) (Map.lookup i mp)
        
     fk d i  = d <> comment ("Failed to find " ++ show i)
-    sk d nl = d <> pretty nl
+    sk d nl = d <> (align $ pretty nl)
     
-    comment = if fmt == Output_Abc then abcComment else lyComment   
+    comment = score_comment env   
 
-lyComment str = enclose (text "%{ ") (text " %}") (string str)             
-abcComment str = line <> char '%' <+> string str <> line
 
 
 evaluateSrcExprs :: Event evt => 
-    OutputFormat -> System evt -> [ScoreElement] -> [(Idx,Doc)]
-evaluateSrcExprs fmt sys []      = []
-evaluateSrcExprs fmt sys (x:xs)  = 
-    snd $ workE sys (default_env {output_format=fmt}) [] x xs
+    Env -> System evt -> [ScoreElement] -> [(Idx,Doc)]
+evaluateSrcExprs env sys []      = []
+evaluateSrcExprs env sys (x:xs)  = 
+    snd $ workEval env sys [] x xs
 
-workE :: Event evt => System evt -> Env -> [(Idx,Doc)] -> 
+workEval :: Event evt => Env -> System evt -> [(Idx,Doc)] -> 
             ScoreElement -> [ScoreElement] -> (Env,[(Idx,Doc)])
-workE sys env code expr []     = evaluate sys env code expr
-workE sys env code expr (x:xs) = let (env',code') = evaluate sys env code expr
-                             in workE sys env' code' x xs
+workEval env sys code expr []     = evaluate env sys code expr
+workEval env sys code expr (x:xs) = 
+    let (env',code') = evaluate env sys code expr
+    in workEval env' sys code' x xs
 
-evaluate sys env code (Command cmd)         = (updateEnv cmd env, code)
-evaluate sys env code (Directive idx drct)  = 
-    (env, (directive sys env idx drct) : code)
-evaluate sys env code (Nested [])           = (env,code)
-evaluate sys env code (Nested (x:xs))       = 
-    let (_,code') = workE sys env code x xs in (env,code')
+evaluate env sys code (Command cmd)         = (updateEnv cmd env, code)
+evaluate env sys code (Directive idx drct)  = 
+    (env, (directive env sys idx drct) : code)
+evaluate env sys code (Nested [])           = (env,code)
+evaluate env sys code (Nested (x:xs))       = 
+    let (_,code') = workEval env sys code x xs in (env,code')
 
 
-directive sys env i (MetaOutput name "relative") =
+directive env sys i (MetaOutput name "relative") =
     maybe failure  sk (Map.lookup name sys)
   where
     failure = error $ "directive failure - missing " ++ name
   
-    sk evtlist = let sc = toNoteList evtlist (mkEnv $ default_note_length env)
-                 in (i, getLy $ translateLilyPond sc middleC)
+    sk evtlist = let sc = toNoteList evtlist env
+                 in (i, getLy $ translateLilyPond sc (relative_pitch env))
                  
-    mkEnv d = ProgressEnv { measure_length = d }
 
 
-directive sys env i (MetaOutput name "default") =
+
+directive env sys i (MetaOutput name "default") =
     maybe failure  sk (Map.lookup name sys)
   where
     failure = error $ "directive failure - missing " ++ name
   
-    sk evtlist = let sc = toNoteList evtlist (mkEnv $ default_note_length env)
-                 in (i, getAbc $ translateAbc sc quarter)
-                 
-    mkEnv d = ProgressEnv { measure_length = d }
+    sk evtlist = let sc = toNoteList evtlist env
+                 in (i, getAbc $ translateAbc sc (unit_note_length env))
+
     
 
 updateEnv :: Command -> Env -> Env
-updateEnv (CmdKey k)                env = env {key = k}
-updateEnv (CmdMeter m)              env = env {meter = m}
-updateEnv (CmdDefaultNoteLength d)  env = env {default_note_length = d}
+updateEnv (CmdKey k)                env = env {current_key = k}
+updateEnv (CmdMeter m)              env = updateMeter m env
+updateEnv (CmdDefaultNoteLength d)  env = env {unit_note_length = d}
 updateEnv (CmdRelativePitch p)      env = env {relative_pitch = p}
 updateEnv (CmdPartial a b)          env = env {partial_measure = (a,b) }
 

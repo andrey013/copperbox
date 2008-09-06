@@ -1,6 +1,5 @@
 \version "2.10.33"
 
-
 \header {
   title = "Major scales"
   tagline = " - "

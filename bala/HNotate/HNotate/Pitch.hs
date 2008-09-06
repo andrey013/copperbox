@@ -109,7 +109,7 @@ middleC = Pitch C Nat 4
 -- ceses ->- fisis
 -- cbb   ->- f##   -- fourth 
 octaveDist :: Pitch -> Pitch -> Int
-octaveDist p p' = 
+octaveDist p p' =
     fn (abs $ arithmeticDistance p p') (if p > p' then negate else id) 
   where
     fn dist f 

@@ -27,6 +27,7 @@ module HNotate.ToNoteList where
 
 import HNotate.Bifunctor
 import HNotate.Duration
+import HNotate.Env
 import HNotate.EventInterface
 import HNotate.EventList
 import HNotate.NoteListDatatypes
@@ -43,12 +44,9 @@ import Data.Monoid
 import Data.Sequence
 import Prelude hiding (null, length)
 
-type ConvertM a = Reader ProgressEnv a 
+type ConvertM a = Reader Env a 
 
-data ProgressEnv = ProgressEnv {
-    measure_length     :: Duration
-  }
-  deriving (Show)
+
 
 
 --------------------------------------------------------------------------------
@@ -68,51 +66,7 @@ data Progress = Progress {
 
 
 
-
-joinProgress :: Progress -> Seq IndexedMeasure -> Progress
-joinProgress (Progress sx t) sy = Progress (sx >< sy) t
-
-
-measureCount :: Progress -> Int 
-measureCount (Progress _ ((i,_),_)) = i
-
-
-advanceMeasure :: Tip -> Duration -> ConvertM Duration
-advanceMeasure (_,d) n  = do 
-    ml  <- asks measure_length
-    if (d+n > ml) then return mempty else return (d+n)
-      
-      
-
-
-
--- Add an event (i.e. a glyph to the tip of the current measure.
--- If the measure is full (i.e. its current count == the measure count)
--- then add it to the accumulation of measures.
-addToTip :: Progress -> ScoreGlyph -> ConvertM Progress
-addToTip (Progress se tip@((i,t),d)) e = 
-    fn <$> advanceMeasure tip (glyphDuration e)
-  where
-    fn d | d == 0    = Progress (se |> (i,t `addGlyph` e)) 
-                                ((i+1, ScMeasure mempty),mempty)
-         | otherwise = Progress se ((i, t `addGlyph` e),d)
-
-    addGlyph :: ScoreMeasure -> ScoreGlyph -> ScoreMeasure
-    addGlyph (ScMeasure se) e = ScMeasure (se |> e)
-    
-    
-
-seal :: Progress -> Seq IndexedMeasure
-seal (Progress se (tip@(i, ScMeasure me),_)) 
-    | null me   = se 
-    | otherwise = se |> tip
-     
-
---------------------------------------------------------------------------------                
-
-
-
-toNoteList :: (Event evt) => EventList evt -> ProgressEnv -> ScoreNoteList
+toNoteList :: (Event evt) => EventList evt -> Env -> ScoreNoteList
 toNoteList evtlist env = ScNoteList $ blockLine $ 
     runReader (buildFlatRep 1 evtlist) env
 
@@ -267,9 +221,43 @@ addGrace p@(Progress se ((mc, ScMeasure sm),d)) sse
   where 
     grace se = GlyGraceNotes $ graces se 
 
-  
+--------------------------------------------------------------------------------
+
+joinProgress :: Progress -> Seq IndexedMeasure -> Progress
+joinProgress (Progress sx t) sy = Progress (sx >< sy) t
 
 
+measureCount :: Progress -> Int 
+measureCount (Progress _ ((i,_),_)) = i
+
+
+advanceMeasure :: Tip -> Duration -> ConvertM Duration
+advanceMeasure (_,d) n  = do 
+    ml  <- asks measure_length
+    if (d+n > ml) then return mempty else return (d+n)
+      
+
+-- Add an event (i.e. a glyph to the tip of the current measure.
+-- If the measure is full (i.e. its current count == the measure count)
+-- then add it to the accumulation of measures.
+addToTip :: Progress -> ScoreGlyph -> ConvertM Progress
+addToTip (Progress se tip@((i,t),d)) e = 
+    fn <$> advanceMeasure tip (glyphDuration e)
+  where
+    fn d | d == 0    = Progress (se |> (i,t `addGlyph` e)) 
+                                ((i+1, ScMeasure mempty),mempty)
+         | otherwise = Progress se ((i, t `addGlyph` e),d)
+
+    addGlyph :: ScoreMeasure -> ScoreGlyph -> ScoreMeasure
+    addGlyph (ScMeasure se) e = ScMeasure (se |> e)
+    
+    
+
+seal :: Progress -> Seq IndexedMeasure
+seal (Progress se (tip@(i, ScMeasure me),_)) 
+    | null me   = se 
+    | otherwise = se |> tip
+     
 
 
 

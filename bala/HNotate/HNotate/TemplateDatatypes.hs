@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  HNotate.ExtractionDatatypes
+-- Module      :  HNotate.TemplateDatatypes
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -13,9 +13,10 @@
 --
 --------------------------------------------------------------------------------
 
-module HNotate.ExtractionDatatypes where
+module HNotate.TemplateDatatypes where
 
 import HNotate.Duration
+import HNotate.MusicRepDatatypes
 import HNotate.Pitch
 
 import qualified Data.Foldable as F
@@ -68,24 +69,6 @@ data Command = CmdKey Key
   deriving Show
  
                       
---------------------------------------------------------------------------------
--- Music representation
-
-data Key = Key Pitch Mode
-  deriving Show  
-
-data Meter = TimeSig Int Int | CommonTime | CutTime
-  deriving Show
-  
-data Mode = Major | Minor | Lydian | Ionian | Mixolydian
-          | Dorian | Aeolian | Phrygian | Locrian 
-  deriving Show
-
-
-c_major = Key middle_c Major  
-
-four_four = TimeSig 4 4
-
 
 
 

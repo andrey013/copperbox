@@ -15,10 +15,10 @@
 
 module HNotate.ParseLy where
 
-
-import HNotate.ExtractionDatatypes
+import HNotate.MusicRepDatatypes
 import HNotate.ParserBase
 import HNotate.Pitch
+import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (many, optional, (<|>) )
 import Data.Monoid
@@ -161,12 +161,13 @@ lyPitchLetter = choice [c,d,e,f,g,a,b]
     b = B <$ char 'b'
     
 
-
+--  << \relative c >> gives c below middle c i.e octave 3
+--  << \relative c' >> gives middle c i.e octave 4
 lyOctaveSpec :: StParser Int
 lyOctaveSpec = option 4 (raised <|> lowered)
   where
-    raised  = (4 +) <$> counting1 (char '\'')
-    lowered = (4 -) <$> counting1 (char ',')
+    raised  = (3 +) <$> counting1 (char '\'')
+    lowered = (3 -) <$> counting1 (char ',')
     
 lyAccidental :: StParser Accidental
 lyAccidental = option Nat (f <$> longestString accidentals) 
