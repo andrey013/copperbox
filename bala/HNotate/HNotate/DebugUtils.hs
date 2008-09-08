@@ -18,6 +18,8 @@
 module HNotate.DebugUtils where
 
 import HNotate.CommonUtils
+import HNotate.EventInterface
+import HNotate.EventList
 import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
 import HNotate.ParseLy
@@ -45,8 +47,8 @@ dumpTemplates chunkParse islandParse filepath = do
 
     
     
-dumpLyScoreZero :: FilePath -> IO ()
-dumpLyScoreZero filepath = undefined
+dumpLyScoreZero :: (Event evt) => System evt -> FilePath -> IO ()
+dumpLyScoreZero sys filepath = undefined
 
 
 

@@ -22,8 +22,15 @@ import HNotate.Pitch
 import qualified Data.Foldable as F
 import Data.Ratio
 import Data.Sequence hiding (empty, length) 
+import Text.PrettyPrint.Leijen (Doc)
 
 type Idx = Int
+
+type Name = String
+type Scheme = String
+data MetaDirective = MetaOutput Name Scheme
+  deriving Show
+
 
 -- Two views of a file
 
@@ -36,10 +43,8 @@ newtype SPV = SPV { getTextElements :: Seq TextElement }
 data TextElement = SourceText String | MetaMark Idx SrcPos MetaDirective
   deriving (Show)
 
-type Name = String
-type Scheme = String
-data MetaDirective = MetaOutput Name Scheme
-  deriving Show
+
+
   
 data SrcPos = SrcPos { 
     _src_line     :: Int,
@@ -70,6 +75,7 @@ data Command = CmdKey Key
  
                       
 
-
+-- Plugs fill holes in a source preserving view 
+data Plug = Plug Idx Doc
 
   

@@ -557,7 +557,7 @@ perc                = clef_name "perc"
 -- for folding
 
 (&\) :: AbcCxt_Body -> AbcCxt_Body -> AbcCxt_Body
-(&\) _ _ = error "&\\ - voice overlay to implement"
+(&\) a b = caten3 (<>) a (wrap $ text " &\\" <> line) b
 
 
 

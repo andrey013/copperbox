@@ -71,8 +71,9 @@ main = do
     outputLilyPond bulgarian6   ly_template   ly_output
     outputAbc      bulgarian6   abc_template  abc_output
     
-debug = dumpAbcTemplates  abc_template
- 
+debug = do 
+    dumpAbcTemplates  abc_template
+    dumpLyTemplates   ly_template
   
   
   
