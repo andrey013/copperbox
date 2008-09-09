@@ -18,14 +18,18 @@
 module HNotate.DebugUtils where
 
 import HNotate.CommonUtils
+import HNotate.Env
 import HNotate.EventInterface
 import HNotate.EventList
 import HNotate.NoteListDatatypes
+import HNotate.OutputMain
 import HNotate.ParseAbc
 import HNotate.ParseLy
 import HNotate.TemplateDatatypes
+import HNotate.ToNoteList
 
 import qualified Data.Foldable as F
+import qualified Data.Map as Map
 import Text.PrettyPrint.Leijen
 
 
@@ -48,10 +52,29 @@ dumpTemplates chunkParse islandParse filepath = do
     
     
 dumpLyScoreZero :: (Event evt) => System evt -> FilePath -> IO ()
-dumpLyScoreZero sys filepath = undefined
+dumpLyScoreZero sys filepath = 
+    successFailM (lyPIV filepath) sk fk
+  where
+    fk err    = putStrLn $ show err    
+    sk piv    = let idxp = buildIndexedPlugs default_ly_env sys psDebug piv
+                in putDoc80 $ ppIndexedPlugs idxp
 
-
-
+psDebug :: Event evt => PlugScheme evt           
+psDebug = PlugScheme {
+    defaultPS   = oneStep,
+    relativePS  = oneStep
+  }
+  
+oneStep i evtlist env = Plug i $ 
+    pretty $ toNoteList evtlist env
+    
+        
+ppIndexedPlugs :: IndexedPlugs -> Doc
+ppIndexedPlugs = vsep . (map ppEvtsPair) . Map.toAscList 
+  where
+    ppEvtsPair (i,notelist) = text "Notelist" <+> int i <> colon <$>
+                              pretty notelist <> line
+                              
 --------------------------------------------------------------------------------
 -- pretty printing
 
@@ -67,8 +90,8 @@ instance (Pretty e) => Pretty (ScBlock e) where
   pretty (ScSingleBlock i e) = measureNumber i
                                          <$> indent 4 (pretty e)
   pretty (ScPolyBlock i se)  = 
-      measureNumber i <$> indent 4 (encloseSep (text "<<") 
-                                               (text ">>") 
+      measureNumber i <$> indent 4 (encloseSep (text "<< ") 
+                                               (text " >>") 
                                                (text " // ")
                                                (map pretty $ F.toList se))
 

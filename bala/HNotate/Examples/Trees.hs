@@ -121,4 +121,6 @@ main = do
     outputLilyPond example_sys  ly_template   ly_output
     outputAbc      example_sys  abc_template  abc_output
 
-                                   
+debug = do 
+    dumpLyScoreZero example_sys ly_template
+                              

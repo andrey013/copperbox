@@ -27,8 +27,8 @@ import Text.PrettyPrint.Leijen (Doc)
 type Idx = Int
 
 type Name = String
-type Scheme = String
-data MetaDirective = MetaOutput Name Scheme
+type SchemeName = String
+data MetaDirective = MetaOutput Name SchemeName
   deriving Show
 
 
