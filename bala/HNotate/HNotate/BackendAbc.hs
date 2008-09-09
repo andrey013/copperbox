@@ -31,7 +31,7 @@ import Control.Monad.Identity
 import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Sequence
-import qualified Text.PrettyPrint.Leijen as PP
+
 
   
 type AbcNoteList = AbcCxt_Body
@@ -91,11 +91,13 @@ outputNoteList (ScNoteList se) = F.foldl outputBlock body se
 
 outputBlock :: AbcNoteList -> InterimBlock -> AbcNoteList
 outputBlock cxt (ScSingleBlock i se) = 
-    (outputMeasure cxt se) +++ barline
+    let barcheck = barNumber i
+    in  (outputMeasure (cxt +++ barcheck) se) +++ (suffixLinebreak barline)
 
 outputBlock cxt (ScPolyBlock i se) = 
-    let voices = F.foldr (\e a -> outputMeasure body e : a) [] se
-    in voiceOverlay cxt voices 
+    let barcheck = barNumber i
+        voices = F.foldr (\e a -> outputMeasure body e : a) [] se
+    in voiceOverlay (cxt +++ barcheck) voices 
 
 outputMeasure :: AbcNoteList -> InterimMeasure -> AbcNoteList
 outputMeasure cxt (ScMeasure se) = F.foldl outputGlyph cxt se
@@ -121,7 +123,7 @@ voiceOverlay cxt [v]    = cxt `mappend` v +++ barline
 voiceOverlay cxt (v:vs) = voiceOverlay (cxt &\ v) vs 
 
 
-    
-instance PP.Pretty AbcDuration where
-  pretty = getAbc
+barNumber :: Int -> AbcRemark
+barNumber = remark . show
+
 

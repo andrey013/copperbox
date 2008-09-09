@@ -49,11 +49,14 @@ dumpTemplates chunkParse islandParse filepath = do
     sk :: Pretty a => a -> IO ()
     sk = putDoc80 . pretty
 
-    
-    
 dumpLyScoreZero :: (Event evt) => System evt -> FilePath -> IO ()
-dumpLyScoreZero sys filepath = 
-    successFailM (lyPIV filepath) sk fk
+dumpLyScoreZero sys filepath = dumpScoreZero sys lyPIV filepath
+
+dumpAbcScoreZero :: (Event evt) => System evt -> FilePath -> IO ()
+dumpAbcScoreZero sys filepath = dumpScoreZero sys abcPIV filepath
+
+dumpScoreZero sys parsePiv filepath = 
+    successFailM (parsePiv filepath) sk fk
   where
     fk err    = putStrLn $ show err    
     sk piv    = let idxp = buildIndexedPlugs default_ly_env sys psDebug piv

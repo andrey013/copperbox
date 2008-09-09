@@ -17,8 +17,6 @@
 module HNotate.BackendLilyPond (
     translateLilyPond, 
     LilyPondNoteList,
-   
-     
   ) where
 
 
@@ -36,7 +34,7 @@ import Control.Monad.State
 import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Sequence
-import qualified Text.PrettyPrint.Leijen as PP
+
 
   
 type LilyPondNoteList = LyCxt_Element
@@ -114,12 +112,14 @@ outputNoteList :: LyPdNoteList -> LilyPondNoteList
 outputNoteList (ScNoteList se) = F.foldl outputBlock elementStart se
 
 outputBlock :: LilyPondNoteList -> LyPdBlock -> LilyPondNoteList
-outputBlock cxt (ScSingleBlock i se) = 
-    (outputMeasure cxt se)
+outputBlock cxt (ScSingleBlock i se) =
+    let barcheck = barNumber i
+    in addBarline $ outputMeasure (cxt +++ barcheck) se
 
 outputBlock cxt (ScPolyBlock i se) = 
-    let voices = F.foldr (\e a -> (outputMeasure elementStart e) : a) [] se
-    in polyphony cxt voices 
+    let barcheck = barNumber i
+        voices = F.foldr (\e a -> (outputMeasure elementStart e) : a) [] se
+    in polyphony (cxt +++ barcheck) voices 
     
 outputMeasure :: LilyPondNoteList -> LyPdMeasure -> LilyPondNoteList
 outputMeasure cxt (ScMeasure se) = F.foldl outputGlyph cxt se
@@ -150,12 +150,9 @@ polywork cxt x []     = (cxt \\ x) +++ closePoly
 polywork cxt x (y:ys) = polywork (cxt \\ x) y ys
    
 
-instance PP.Pretty LilyPondNoteList where
-  pretty = getLy
+barNumber :: Int -> LyBarNumberCheck
+barNumber = barNumberCheck
 
-instance PP.Pretty LyDuration where
-  pretty = getLy
-
-instance PP.Pretty LyNote where
-  pretty = getLy
+addBarline :: LyCxt_Element -> LyCxt_Element
+addBarline cxt = cxt +++ suffixLinebreak barcheck
 

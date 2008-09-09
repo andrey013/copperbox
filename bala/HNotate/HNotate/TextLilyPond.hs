@@ -152,6 +152,7 @@ instance Monoid (Ly LyCxt_ElementT) where
 -- instance Concat LyCxt_ElementT
 
 
+ 
 --------------------------------------------------------------------------------
 -- ** Working on text files (2.1.3)
 
@@ -175,7 +176,6 @@ lineComment s = wrap $ text ('%':' ':s) <> linebreak
 
 
 instance Append Ly LyCxt_ToplevelT LyLineCommentT
-
 
 data LyBlockCommentT
 type LyBlockComment = Ly LyBlockCommentT
@@ -412,6 +412,24 @@ bc                  = wrap $ char '|'
 
 
 instance Append Ly LyCxt_ElementT LyBarCheckT
+
+--------------------------------------------------------------------------------
+-- *** Barnumber check (6.2.5)
+
+data LyBarNumberCheckT
+type LyBarNumberCheck = Ly LyBarNumberCheckT
+
+
+barNumberCheck      :: Int -> LyBarNumberCheck
+barNumberCheck      = command1break "barNumberCheck" . wrap . hashInt
+  where hashInt i = group $ char '#' <> int i
+
+-- shorthand
+bnc                 :: Int -> LyBarNumberCheck
+bnc                 = barNumberCheck
+
+
+instance Append Ly LyCxt_ElementT LyBarNumberCheckT
 
 --------------------------------------------------------------------------------
 -- ** Mutliple notes at once (6.3)

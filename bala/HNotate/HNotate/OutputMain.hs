@@ -20,7 +20,6 @@ module HNotate.OutputMain where
 import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.CommonUtils (successFailM, outputDoc)
-import HNotate.Duration
 import HNotate.Env
 import HNotate.EventInterface
 import HNotate.EventList
@@ -28,7 +27,6 @@ import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
 import HNotate.ParseLy
-import HNotate.Pitch
 import HNotate.TemplateDatatypes
 import HNotate.TextAbc (getAbc)
 import HNotate.TextLilyPond (getLy)
@@ -157,9 +155,6 @@ useScheme "relative"  pscheme = relativePS pscheme
 useScheme "default"   pscheme = defaultPS pscheme
 
 
-  
-
-    
 
 updateEnv :: Command -> Env -> Env
 updateEnv (CmdKey k)                env = update_current_key k env
@@ -169,10 +164,6 @@ updateEnv (CmdRelativePitch p)      env = update_relative_pitch p env
 updateEnv (CmdPartial a b)          env = update_partial_measure a b env
 
 
-
-    
-          
-          
 
 
     

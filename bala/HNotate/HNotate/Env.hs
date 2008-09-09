@@ -29,8 +29,12 @@ data Env = Env {
     _unit_note_length   :: Duration, 
     _relative_pitch     :: Pitch,
     _partial_measure    :: (Int,Int),
+    _bar_number_check   :: Int,
     _score_comment      :: String -> Doc
   }
+
+-- Note for a partial measure Abc just prints the barline 'early',
+-- LilyPond needs the partial command.
 
 current_key :: Env -> Key
 current_key = _key
@@ -62,6 +66,7 @@ default_ly_env = Env {
     _unit_note_length       = quarter,
     _relative_pitch         = middle_c,
     _partial_measure        = (0,0),
+    _bar_number_check       = 4,
     _score_comment          = lyComment
   }
   where 
@@ -77,6 +82,7 @@ default_abc_env = Env {
     _unit_note_length       = eighth,
     _relative_pitch         = middle_c,
     _partial_measure        = (0,0),
+    _bar_number_check       = 4,
     _score_comment          = abcComment
   }
   where

@@ -122,5 +122,6 @@ main = do
     outputAbc      example_sys  abc_template  abc_output
 
 debug = do 
-    dumpLyScoreZero example_sys ly_template
+    dumpLyScoreZero  example_sys ly_template
+    dumpAbcScoreZero example_sys abc_template
                               

@@ -105,6 +105,19 @@ instance Monoid (Abc AbcCxt_BodyT) where
 
 instance Append Abc AbcCxt_BodyT AbcMidTuneFieldT
 
+--------------------------------------------------------------------------------
+-- * File structure (2)
+
+-- Remarks are comments
+data AbcRemarkT
+type AbcRemark = Abc AbcRemarkT
+
+remark :: String -> AbcRemark
+remark s = wrap $ text ('%':' ':s) <> linebreak
+
+instance Append Abc AbcCxt_HeaderT AbcRemarkT
+instance Append Abc AbcCxt_BodyT AbcRemarkT
+
 
 --------------------------------------------------------------------------------
 -- * Information fields (3)

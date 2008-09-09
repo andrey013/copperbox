@@ -77,6 +77,9 @@ nested f e = wrap $ f (unwrap e)
 promote :: WDoc t => t a -> t b
 promote = wrap . unwrap
 
+suffixLinebreak :: WDoc t => t a -> t a
+suffixLinebreak a = caten (<>) a (wrap linebreak) 
+
 
 class SuffixAttr cxte cxta
 
