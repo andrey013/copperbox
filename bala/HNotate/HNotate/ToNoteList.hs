@@ -73,9 +73,8 @@ toNoteList evtlist env = ScNoteList $ blockLine $
 
 makeGlyph :: (Event evt) => evt -> ScoreGlyph
 makeGlyph evt = case eventvalues evt of
-                  (Just p, Just d)    -> GlyNote p d
-                  (Nothing, Just d)   -> GlyRest d
-                  (Nothing, Nothing)  -> error "withEvent - to do "
+                  (Just p, d)    -> GlyNote p d
+                  (Nothing, d)   -> GlyRest d
                   
 
 -- flatten an Event Tree - the indexed measures won't properly be 

@@ -1,6 +1,6 @@
 
 -- ghci - 
--- :set -i..:../HNotate:../ZMidi
+-- :set -i..:../HNotate
 
 module Trees where
 
@@ -25,8 +25,8 @@ du16 p   = Note p sixteenth
 
 
 instance Event NrEvent where
-  eventvalues (Note p d) = (Just $ renderPitch p, Just $ renderDuration d)
-  eventvalues (Rest d)   = (Nothing, Just $ renderDuration d)
+  eventvalues (Note p d) = (Just $ renderPitch p, renderDuration d)
+  eventvalues (Rest d)   = (Nothing, renderDuration d)
 
 
 

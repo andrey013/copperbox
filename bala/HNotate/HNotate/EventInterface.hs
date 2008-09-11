@@ -24,8 +24,11 @@ module HNotate.EventInterface (
 import HNotate.Duration
 import HNotate.Pitch
 
-
-class Event evt where eventvalues :: evt -> (Maybe Pitch, Maybe Duration)
+-- An Event is interpreted as either a note or a rest.
+-- If the first element of the pair is @Nothing@ it will be
+-- a rest, if it is @Just a@ it will be a note 
+class Event evt where 
+  eventvalues :: evt -> (Maybe Pitch, Duration)
 
 class PitchRepr pch where renderPitch :: pch -> Pitch
 class DurationRepr dur where renderDuration :: dur -> Duration

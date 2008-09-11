@@ -19,8 +19,8 @@ data NrEvent = Note Pitch Duration
 
 
 instance Event NrEvent where
-  eventvalues (Note p d) = (Just $ renderPitch p, Just $ renderDuration d)
-  eventvalues (Rest d)   = (Nothing, Just $ renderDuration d)
+  eventvalues (Note p d) = (Just $ renderPitch p, renderDuration d)
+  eventvalues (Rest d)   = (Nothing, renderDuration d)
   
   
 durn 16  = sixteenth

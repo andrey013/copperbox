@@ -22,6 +22,7 @@ module HNotate.Pitch (
     -- * Operations
 
     semitones,
+    fromSemitones,
     arithmeticDistance,
     
     -- * lilyPond helpers
@@ -85,6 +86,26 @@ instance Ord Pitch where
 semitones :: Pitch -> Int
 semitones (Pitch l a o) = semis l + asemis a + (12 * o)
 
+-- This will need pitch spelling
+fromSemitones :: Int -> Pitch
+fromSemitones i = let (o,ni) = i `divMod` 12
+                      (l,a)  = pitchVal ni                   
+                  in Pitch l a o
+  where
+    pitchVal  0 = (C,Nat)
+    pitchVal  1 = (C,Sharp)
+    pitchVal  2 = (D,Sharp)
+    pitchVal  3 = (D,Sharp)
+    pitchVal  4 = (E,Nat)
+    pitchVal  5 = (F,Nat)
+    pitchVal  6 = (F,Sharp)
+    pitchVal  7 = (G,Nat)
+    pitchVal  8 = (G,Sharp)
+    pitchVal  9 = (A,Nat)
+    pitchVal 10 = (A,Sharp)
+    pitchVal 11 = (B,Nat)
+    pitchVal _  = error "fromSemitones - not unreachable after all!" 
+    
 semis C = 0
 semis D = 2
 semis E = 4
@@ -98,6 +119,8 @@ asemis Sharp        = 1
 asemis Flat         = (-1)
 asemis DoubleSharp  = 2
 asemis DoubleFlat   = (-2)
+
+
 
 -- LilPond Helpers
 middleC :: Pitch
