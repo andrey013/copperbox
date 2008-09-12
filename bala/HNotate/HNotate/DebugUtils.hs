@@ -67,7 +67,8 @@ psDebug = PlugScheme {
     defaultPS   = oneStep,
     relativePS  = oneStep
   }
-  
+
+oneStep :: Event evt => Int -> EventList evt -> Env -> Plug   
 oneStep i evtlist env = Plug i $ 
     pretty $ toNoteList evtlist env
     

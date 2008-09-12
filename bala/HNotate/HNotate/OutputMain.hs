@@ -157,13 +157,13 @@ useScheme "default"   pscheme = defaultPS pscheme
 
 
 updateEnv :: Command -> Env -> Env
-updateEnv (CmdKey k)                env = update_current_key k env
-updateEnv (CmdMeter m)              env = update_meter m env
-updateEnv (CmdUnitNoteLength d)     env = update_unit_note_length d env
-updateEnv (CmdRelativePitch p)      env = update_relative_pitch p env
-updateEnv (CmdPartial a b)          env = update_partial_measure a b env
-updateEnv (CmdCadenzaOn)            env = update_cadenza True env
-updateEnv (CmdCadenzaOff)           env = update_cadenza False env
+updateEnv (CmdKey k)                env = set_current_key k env
+updateEnv (CmdMeter m)              env = set_current_meter m env
+updateEnv (CmdUnitNoteLength d)     env = set_unit_note_length d env
+updateEnv (CmdRelativePitch p)      env = set_relative_pitch p env
+updateEnv (CmdPartial a b)          env = set_partial_measure a b env
+updateEnv (CmdCadenzaOn)            env = set_cadenza True env
+updateEnv (CmdCadenzaOff)           env = set_cadenza False env
 
 
     

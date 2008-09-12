@@ -65,7 +65,6 @@ data Progress = Progress {
  }
 
 
-
 toNoteList :: (Event evt) => EventList evt -> Env -> ScoreNoteList
 toNoteList evtlist env = ScNoteList $ blockLine $ 
     runReader (buildFlatRep 1 evtlist) env
@@ -233,7 +232,8 @@ measureCount (Progress _ ((i,_),_)) = i
 advanceMeasure :: Tip -> Duration -> ConvertM Duration
 advanceMeasure (_,d) n  = do 
     ml  <- asks measure_length
-    if (d+n > ml) then return mempty else return (d+n)
+    cza <- asks cadenza  
+    if (d+n > ml && cza == False) then return mempty else return (d+n)
       
 
 -- Add an event (i.e. a glyph to the tip of the current measure.
