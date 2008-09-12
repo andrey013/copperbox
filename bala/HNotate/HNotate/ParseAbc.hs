@@ -101,7 +101,8 @@ endNested         = NestEnd <$ field 'X' int
 
 
 abcCommand :: StParser ScoreElement
-abcCommand = Command <$> choice [cmdmeter, cmdkey, cmd_default_note_length]  
+abcCommand = Command <$> choice 
+  [cmdMeter, cmdKey, cmdUnitNoteLength]  
   <?> "abcCommand"
 
 abcDirective :: StParser ScoreElement
@@ -124,21 +125,28 @@ metaCommentStart = lexeme $ string "%#"
 metaCommentEnd :: CharParser st String 
 metaCommentEnd = choice ["\n" <$ newline, "\n" <$ eof] 
 
-cmdmeter :: StParser Command
-cmdmeter = CmdMeter <$> field 'M' timeSig 
+
+-- Meter may also indicate no meter 'M:none'
+-- (equivalent to LilyPond's Cadenza On)
+cmdMeter :: StParser Command
+cmdMeter = mkMeter <$> field 'M' (eitherparse timeSig (symbol "none"))
+  where mkMeter (Left tm) = CmdMeter tm
+        mkMeter (Right _) = CmdCadenzaOn 
+cmdKey :: StParser Command
+cmdKey = CmdKey <$> field 'K' keySig
+
+cmdUnitNoteLength :: StParser Command
+cmdUnitNoteLength = CmdUnitNoteLength <$> field 'L' abcDuration
+
 
 timeSig :: StParser Meter
 timeSig = TimeSig <$> int <*> (char '/' *> int)
-
-cmdkey :: StParser Command
-cmdkey = CmdKey <$> field 'K' keySig
 
 keySig :: StParser Key
 keySig = Key <$> abcPitch <*> abcMode
 
 
-cmd_default_note_length :: StParser Command
-cmd_default_note_length = CmdDefaultNoteLength <$> field 'L' abcDuration
+
 
 abcDuration :: StParser Duration
 abcDuration = (\n d -> Duration (n%d) 0) <$> int <*> (char '/' *> int)

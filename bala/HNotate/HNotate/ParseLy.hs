@@ -86,7 +86,8 @@ nestedk acc = do
 
 
 lyCommand :: StParser ScoreElement
-lyCommand = Command <$> choice [cmdrelative, cmdtime, cmdkey]          
+lyCommand = Command <$> choice 
+  [ cmdRelative, cmdTime, cmdKey, cmdCadenzaOn, cmdCadenzaOff ]          
                  
 lyDirective :: StParser ScoreElement
 lyDirective = Directive 
@@ -114,23 +115,17 @@ endNested         :: StParser Nested
 endNested         = NestEnd <$ symbol "}"
 
 
-cmdrelative :: StParser Command
-cmdrelative = CmdRelativePitch <$> (command "relative" *> lyPitch)
+cmdRelative :: StParser Command
+cmdRelative = CmdRelativePitch <$> (command "relative" *> lyPitch)
 
-cmdtime :: StParser Command
-cmdtime = CmdMeter <$> (command "time" *> timeSig)
+cmdTime :: StParser Command
+cmdTime = CmdMeter <$> (command "time" *> timeSig)
 
-timeSig :: StParser Meter
-timeSig = TimeSig <$> int <*> (char '/' *> int)
+cmdKey :: StParser Command
+cmdKey = CmdKey <$> (command "key" *> keySig)
 
-cmdkey :: StParser Command
-cmdkey = CmdKey <$> (command "key" *> keySig)
-
-keySig :: StParser Key
-keySig  = Key <$> lyPitch <*> cmdmode
-
-cmdmode :: StParser Mode
-cmdmode = choice 
+cmdMode :: StParser Mode
+cmdMode = choice 
     [ major, minor, lydian, ionian, mixolydian, dorian, 
       aeolian, phrygian, locrian 
     ]
@@ -144,6 +139,21 @@ cmdmode = choice
     aeolian     = Aeolian    <$ command "aeolian"
     phrygian    = Phrygian   <$ command "phrygian"
     locrian     = Locrian    <$ command "locrian"
+
+cmdCadenzaOn    :: StParser Command
+cmdCadenzaOn    = CmdCadenzaOn  <$ command "cadenzaOn"
+
+cmdCadenzaOff   :: StParser Command
+cmdCadenzaOff   = CmdCadenzaOff <$ command "cadenzaOff"
+
+
+timeSig :: StParser Meter
+timeSig = TimeSig <$> int <*> (char '/' *> int)
+
+
+keySig :: StParser Key
+keySig  = Key <$> lyPitch <*> cmdMode
+
 
 lyPitch :: StParser Pitch
 lyPitch = lexeme pch 

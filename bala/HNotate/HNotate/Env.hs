@@ -29,6 +29,7 @@ data Env = Env {
     _unit_note_length   :: Duration, 
     _relative_pitch     :: Pitch,
     _partial_measure    :: (Int,Int),
+    _cadenza            :: Bool,
     _bar_number_check   :: Int,
     _score_comment      :: String -> Doc
   }
@@ -66,6 +67,7 @@ default_ly_env = Env {
     _unit_note_length       = quarter,
     _relative_pitch         = middle_c,
     _partial_measure        = (0,0),
+    _cadenza                = False,
     _bar_number_check       = 4,
     _score_comment          = lyComment
   }
@@ -82,19 +84,27 @@ default_abc_env = Env {
     _unit_note_length       = eighth,
     _relative_pitch         = middle_c,
     _partial_measure        = (0,0),
+    _cadenza                = False,
     _bar_number_check       = 4,
     _score_comment          = abcComment
   }
   where
     abcComment str = line <> char '%' <+> string str <> line
-    
+
+
+-- Note there is no recognized 'cadenzaOff' in Abc, 
+-- seeing a Meter command is equivalent to cadenza Off     
 update_meter :: Meter -> Env -> Env
 update_meter m env@(Env {_output_format=Output_Abc})  =   
     if (meterToDouble m > 0.75) 
-       then env {_meter = m, _unit_note_length = eighth, 
-                 _measure_length = measureLength m}
-       else env {_meter = m, _unit_note_length = sixteenth,
-                 _measure_length = measureLength m}
+       then env {_meter             = m, 
+                 _unit_note_length  = eighth, 
+                 _measure_length    = measureLength m,
+                 _cadenza           = False}
+       else env {_meter             = m, 
+                 _unit_note_length  = sixteenth,
+                 _measure_length    = measureLength m,
+                 _cadenza           = False}
 
 update_meter m env                             =  
       env {_meter = m, _measure_length = measureLength m}         
@@ -106,6 +116,7 @@ update_unit_note_length d  env  = env {_unit_note_length = d}
 update_relative_pitch p env     = env {_relative_pitch = p}
 update_partial_measure a b env  = env {_partial_measure = (a,b)}
 
+update_cadenza a env            = env {_cadenza = a}
       
 measureLength :: Meter -> Duration
 measureLength (TimeSig n d)   = duration n d

@@ -155,8 +155,10 @@ instance Pretty ScoreElement where
 instance Pretty Command where
   pretty (CmdKey e)               = text "-key" <+> (text . show) e
   pretty (CmdMeter e)             = text "-meter" <+> (text . show) e
-  pretty (CmdDefaultNoteLength e) = text "-len" <+> (text . show) e
+  pretty (CmdUnitNoteLength e)    = text "-len" <+> (text . show) e
   pretty (CmdRelativePitch e)     = text "-rpitch" <+> (text . show) e
+  pretty (CmdCadenzaOn)           = text "-cadenza_on"
+  pretty (CmdCadenzaOff)          = text "-cadenza_off"
   
 instance Pretty MetaDirective where
   pretty (MetaOutput name scheme) = text name <> colon <> text scheme

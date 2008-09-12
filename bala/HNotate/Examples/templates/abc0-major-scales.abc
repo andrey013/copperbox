@@ -1,4 +1,4 @@
-% abcm2ps self-similar.abc -e 1 -O self-similar.ps
+% abcm2ps abc-major-scales.abc -O abc-major-scales.ps
 
 X:1
 T:C major

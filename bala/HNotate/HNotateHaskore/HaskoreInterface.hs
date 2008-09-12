@@ -151,29 +151,7 @@ instance Convert (H.PitchClass,Int) Pitch where
   convert (H.Bs, o)    = Pitch B Sharp o
 
 
-performanceToSystem :: String -> H.Performance -> System a
-performanceToSystem name perf = mempty
 
 
-
-
--- might be better to work on a Performance rather than Music
-
-{-
-musicToNoteList :: Event a => Music a -> EventList (H.Primitive a)
-musicToNoteList m = step1 root m
-  where
-    step1 es (Primitive a)  = a `event` es
-    step1 es (m1 :+: m2)    = let es' = step1 es m1 
-                              in step1 es' m2
-    step1 es (m1 :=: m2)    = es
-    step1 es (Modify _ m)   = step1 es m                     
-
---             | Music a :+: Music a              -- sequential composition
---             | Music a :=: Music a              -- parallel composition
---             | Modify Control (Music a)         -- modifier
-
-
--}
 
 

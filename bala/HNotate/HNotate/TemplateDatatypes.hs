@@ -68,9 +68,11 @@ data ScoreElement = Command Command
 
 data Command = CmdKey Key
              | CmdMeter Meter
-             | CmdDefaultNoteLength Duration  -- Abc only
+             | CmdUnitNoteLength Duration  -- Abc only
              | CmdRelativePitch Pitch         -- Lilypond only
              | CmdPartial Int Int
+             | CmdCadenzaOn
+             | CmdCadenzaOff
   deriving Show
  
                       
