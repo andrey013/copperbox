@@ -54,11 +54,14 @@ import Text.PrettyPrint.Leijen
 
 data OutputFormat = Output_Abc | Output_LilyPond | Output_Midi 
   deriving (Eq,Show) 
+
+
   
 data Env = Env { 
     _output_format      :: OutputFormat,
     _current_key        :: Key,
     _current_meter      :: Meter,
+    _meter_pattern      :: MeterPattern,
     _measure_length     :: Duration, 
     _unit_note_length   :: Duration, 
     _relative_pitch     :: Pitch,
@@ -80,6 +83,7 @@ default_ly_env = Env {
     _output_format          = Output_LilyPond, 
     _current_key            = c_major,
     _current_meter          = four_four,
+    _meter_pattern          = two_of_four_eighth,
     _measure_length         = 4 * quarter,
     _unit_note_length       = quarter,
     _relative_pitch         = middle_c,
@@ -97,6 +101,7 @@ default_abc_env = Env {
     _output_format          = Output_Abc, 
     _current_key            = c_major,
     _current_meter          = four_four,
+    _meter_pattern          = two_of_four_eighth,
     _measure_length         = 4 * quarter,
     _unit_note_length       = eighth,
     _relative_pitch         = middle_c,
@@ -120,6 +125,9 @@ current_key         = _current_key
 
 current_meter       :: Env -> Meter
 current_meter       = _current_meter
+
+meter_pattern       :: Env ->  MeterPattern
+meter_pattern       = _meter_pattern
 
 measure_length      :: Env -> Duration
 measure_length      = _measure_length

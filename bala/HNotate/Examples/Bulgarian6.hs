@@ -10,53 +10,30 @@ module Main where
 import HNotate
 
 import Text.PrettyPrint.Leijen hiding (dot)
-
-
-data NrEvent = Note Pitch Duration
-             | Rest Duration
-  deriving (Eq,Show)
-
-
-
-instance Event NrEvent where
-  eventvalues (Note p d) = (Just $ renderPitch p, renderDuration d)
-  eventvalues (Rest d)   = (Nothing, renderDuration d)
-  
-  
-durn 16  = sixteenth
-durn 8   = eighth
-durn 4   = quarter
-durn 2   = half
-durn 1   = whole
-      
-n :: Pitch -> Int -> NrEvent
-n p i = Note p (durn i)
-
-r :: Int -> NrEvent    
-r = Rest . durn
+     
 
 -- a major
 
-events_bars1_4 :: [NrEvent]
-events_bars1_4 = 
-      [ n a4 16, n b4 16, n cis5 16, n cis5 16, 
-        n cis5 16, n a4 16, n cis5 16, n cis5 16,
-        
-        n cis5 16, n a4 16, n b4 16, n cis5 16,
-        n b4 16, n a4 16, n a4 16, r 16,
-        
-        n e5 16, n d5 16, n cis5 16, n b4 16,
-        n cis5 16, n a4 16, n b4 16, n cis5 16,
-        
-        n a4 16, n b4 16, n b4 16, n a4 16,
-        n a4 8, r 8       
-      ]
-         
+du16 = sixteenth
+du8  = eighth
 
-bars1_4 :: EventList NrEvent
-bars1_4 = eventlist events_bars1_4
+bars1_4 :: EventList
+bars1_4 = 
+    root # note a4 du16   # note b4 du16 # note cis5 du16 # note cis5 du16 
+         # note cis5 du16 # note a4 du16 # note cis5 du16 # note cis5 du16
+        
+         # note cis5 du16 # note a4 du16 # note b4 du16 # note cis5 du16
+         # note b4 du16   # note a4 du16 # note a4 du16 # rest du16
+        
+         # note e5 du16   # note d5 du16 # note cis5 du16 # note b4 du16
+         # note cis5 du16 # note a4 du16 # note b4 du16   # note cis5 du16
+        
+         # note a4 du16 # note b4 du16 # note b4 du16 # note a4 du16
+         # note a4 du8  # rest du8       
+
+        
  
-bulgarian6 :: System NrEvent
+bulgarian6 :: System
 bulgarian6 = system1 "bulgarian6" bars1_4   
   
 

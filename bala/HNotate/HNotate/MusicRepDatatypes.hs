@@ -24,6 +24,11 @@ import HNotate.Pitch
                       
 --------------------------------------------------------------------------------
 -- Music representation
+type MeterPattern = ([Int],Duration)
+
+two_of_four_eighth :: MeterPattern
+two_of_four_eighth = ([4,4],eighth)
+
 
 data Key = Key Pitch Mode
   deriving Show  

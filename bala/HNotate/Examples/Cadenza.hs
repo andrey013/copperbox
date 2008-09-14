@@ -8,21 +8,19 @@ module Main where
 import HNotate
 
 
-instance Event Pitch where
-  eventvalues p = (Just $ renderPitch p, quarter)
   
 notes = [c4, d4, e4, f4, c4, e4, d4, f4, e4, g4, f4, e4, d4, f4, e4, d4, c4] 
 
 intro = [c4,e4,c4,e4]
 
 cadenzaLy = systemL $ 
-  [ ("intro", eventlist intro),
-    ("cadenza1", eventlist notes) 
+  [ ("intro", notelist intro quarter),
+    ("cadenza1", notelist notes quarter) 
   ]
 ly_template   = "templates/ly0-cadenza.ly"
 ly_output     = "out/ly-cadenza.ly" 
 
-cadenzaAbc = system1 "cadenza" (eventlist notes)
+cadenzaAbc = system1 "cadenza" (notelist notes quarter)
 abc_template   = "templates/abc0-cadenza.abc"
 abc_output     = "out/abc-cadenza.abc" 
 

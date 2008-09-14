@@ -19,9 +19,7 @@ module HNotate.DebugUtils where
 
 import HNotate.CommonUtils
 import HNotate.Env
-import HNotate.EventInterface
-import HNotate.EventList
-import HNotate.NoteListDatatypes
+import HNotate.NoteList
 import HNotate.OutputMain
 import HNotate.ParseAbc
 import HNotate.ParseLy
@@ -49,10 +47,10 @@ dumpTemplates chunkParse islandParse filepath = do
     sk :: Pretty a => a -> IO ()
     sk = putDoc80 . pretty
 
-dumpLyScoreZero :: (Event evt) => System evt -> FilePath -> IO ()
+dumpLyScoreZero :: System -> FilePath -> IO ()
 dumpLyScoreZero sys filepath = dumpScoreZero sys lyPIV filepath
 
-dumpAbcScoreZero :: (Event evt) => System evt -> FilePath -> IO ()
+dumpAbcScoreZero :: System -> FilePath -> IO ()
 dumpAbcScoreZero sys filepath = dumpScoreZero sys abcPIV filepath
 
 dumpScoreZero sys parsePiv filepath = 
@@ -62,13 +60,13 @@ dumpScoreZero sys parsePiv filepath =
     sk piv    = let idxp = buildIndexedPlugs default_ly_env sys psDebug piv
                 in putDoc80 $ ppIndexedPlugs idxp
 
-psDebug :: Event evt => PlugScheme evt           
+psDebug :: PlugScheme           
 psDebug = PlugScheme {
     defaultPS   = oneStep,
     relativePS  = oneStep
   }
 
-oneStep :: Event evt => Int -> EventList evt -> Env -> Plug   
+oneStep :: Int -> EventList -> Env -> Plug   
 oneStep i evtlist env = Plug i $ 
     pretty $ toNoteList evtlist env
     
@@ -107,13 +105,13 @@ instance (Pretty e) => Pretty (ScMeasure e) where
   pretty (ScMeasure se) = sepSeq (</>) se
 
 
-instance (Pretty pch, Pretty drn) => Pretty (Glyph pch drn) where
-  pretty (GlyNote pch dur)       = pretty pch <> durationSuffix dur
-  pretty (GlyRest dur)           = char 'r' <> durationSuffix dur
-  pretty (GlySpacer dur)         = char 's' <> durationSuffix dur
-  pretty (GlyChord ps dur)       = (brackets $ sepSeq (<>) ps) 
+instance Pretty ScoreGlyph where
+  pretty (SgNote pch dur)         = pretty pch <> durationSuffix dur
+  pretty (SgRest dur)             = char 'r' <> durationSuffix dur
+  pretty (SgSpacer dur)           = char 's' <> durationSuffix dur
+  pretty (SgChord ps dur)         = (brackets $ sepSeq (<>) ps) 
                                       <> durationSuffix dur
-  pretty (GlyGraceNotes es)      = text "grace..." -- braces $ sepSeq (<>) ps
+  pretty (SgGraceNotes es)        = text "grace..." -- braces $ sepSeq (<>) ps
 
 durationSuffix :: Pretty drn => drn -> Doc
 durationSuffix d = char '/' <> pretty d 

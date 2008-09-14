@@ -15,9 +15,9 @@
 
 module HNotate.Traversals where
 
-import HNotate.Bifunctor
+
 import HNotate.Duration
-import HNotate.NoteListDatatypes
+import HNotate.NoteList
 import HNotate.Pitch
 
 
@@ -55,60 +55,66 @@ traversalEnv :: (Traversable t) =>
                 (a -> (->) env b) -> t a -> env -> t b
 traversalEnv f a env = (traverse f a) env 
 
+data PlaceHolderGlyph p d = PHG p d
 
-changeDuration :: Glyph p d -> d' -> Glyph p d'
-changeDuration a od = bimap id (const od) a
+type Glyph p d = PlaceHolderGlyph p d
 
-changePitch :: Glyph p d -> p' -> Glyph p' d
-changePitch a op = bimap (const op) id a
+changeDuration :: ScoreGlyph -> Duration -> ScoreGlyph
+changeDuration a od = onDuration (const od) a
+
+changePitch :: ScoreGlyph -> Pitch -> ScoreGlyph
+changePitch a op = onPitch (const op) a
 
 
 --------------------------------------------------------------------------------
 -- run length encode the duration - LilyPond uses this method
 
 
-runLengthEncodeDuration :: ScNoteList (Glyph pch Duration)
+runLengthEncodeDuration :: ScNoteList (ScoreGlyph)
                         -> Duration
-                        -> ScNoteList (Glyph pch (Maybe Duration))
+                        -> ScNoteList (ScoreGlyph)
 runLengthEncodeDuration strata initial_duration = 
     traversalState run_length_encode_GD_body strata initial_duration
 
-run_length_encode_GD_body :: Glyph pch Duration 
-    -> WrappedMonad (State Duration) (Glyph pch (Maybe Duration))
+run_length_encode_GD_body :: ScoreGlyph 
+    -> WrappedMonad (State Duration) ScoreGlyph
 
+{-
 run_length_encode_GD_body g@(GlyGraceNotes _) = WrapMonad $ 
     return $ changeDuration g Nothing
+-}
     
 run_length_encode_GD_body e = WrapMonad $ do
     od <- diffDuration (glyphDuration e)
     return $ changeDuration e od    
   where    
-    diffDuration :: Duration -> State St (Maybe Duration)
+    diffDuration :: Duration -> State St Duration
     diffDuration d = do
         old <- get 
-        if (old == d) then return Nothing
-                      else do {put d; return $ Just d}
+        if (old == d) then return no_duration
+                      else do {put d; return d}
 
 
 
 --------------------------------------------------------------------------------
 -- 'default encode' the duration - if the duration matches the default 
--- don't specify it - Abc uses this method
+-- don't specify it - Abc uses this method (duration 0 represents no duration)
 
 -- Too simple to need a reader monad.
 
-defaultEncodeDuration :: ScNoteList (Glyph pch Duration)
+defaultEncodeDuration :: ScNoteList ScoreGlyph
                       -> Duration
-                      -> ScNoteList (Glyph pch (Maybe Duration))
+                      -> ScNoteList ScoreGlyph
 defaultEncodeDuration strata default_duration = 
     traversalEnv default_encode_GD_body strata default_duration
 
-default_encode_GD_body :: Glyph p Duration 
+default_encode_GD_body :: ScoreGlyph
                        -> Duration 
-                       -> Glyph p (Maybe Duration)
+                       -> ScoreGlyph
 default_encode_GD_body e = \env -> 
     let d = glyphDuration e in 
-    if d == env then changeDuration e Nothing else changeDuration e (Just d)
+    if d == env then changeDuration e no_duration 
+                else changeDuration e d
     
 
 

@@ -15,20 +15,19 @@
 module HNotate (  
     module HNotate.DebugUtils,
     module HNotate.Duration,
-    module HNotate.EventInterface,
     module HNotate.Pitch,   
     module HNotate.OutputMain,
     
     -- restrict the interface to EventTree
       -- * Datatypes
-    System, EventList,
+    System, EventList, Evt,
     system, systemL, system1,
     
-    root, event,
+    root, note, rest, spacer,    
+    chord, gracenotes, poly, 
+    notelist,
     
-    par, prefix, poly, 
-    
-    repeated, eventlist,
+    {- repeated, eventlist, -}
     
     ( # ) , ( #. )    
     
@@ -36,8 +35,7 @@ module HNotate (
 
 import HNotate.DebugUtils
 import HNotate.Duration
-import HNotate.EventInterface
-import HNotate.EventList
+import HNotate.NoteList
 import HNotate.Pitch
 import HNotate.OutputMain
 

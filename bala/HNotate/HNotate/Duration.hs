@@ -17,12 +17,18 @@ module HNotate.Duration (
     -- Data type
     Duration(..), duration, durationElements,
 
+    durationZero, no_duration,
+    
     -- * Operations  
     dot, rationalize, durationToDouble, approxDuration,
+    
+    
     
     base2number_sequence,
     
     ppAltRest,
+
+    
 
     -- * Named instances (American)
     longa, 
@@ -68,7 +74,11 @@ durationElements :: Duration -> (Int,Int,Int)
 durationElements (Duration r dc) = let (n,d) = (numerator r, denominator r)
     in (n,d,dc) 
 
-    
+durationZero :: Duration
+durationZero = mempty
+
+no_duration :: Duration
+no_duration = mempty {_dot_count = minBound}
     
 ratioElements :: Integral a => Ratio a -> (a,a)
 ratioElements r = (numerator r, denominator r)
@@ -79,7 +89,7 @@ dot (Duration r d) = Duration r (d+1)
 
 -- | @'rationalize'@ - turn a duration into a ratio which may normalize it. 
 rationalize :: Duration -> Ratio Int
-rationalize (Duration r dc) = dotr r (dc,r)
+rationalize (Duration r dc)   = dotr r (dc,r)
   where
     dotr a (i,r) | i < 1      = a 
                  | otherwise  = dotr (a + r/2) (i-1, r/2)
@@ -90,9 +100,15 @@ durationToDouble drn =
         (n,d) = ratioElements r
     in (fromIntegral n) / (fromIntegral d)
                 
-                 
+
+-- Positive numbers! 
 approxDuration :: Ratio Int -> Duration
-approxDuration r = let (n,d) = ratioElements r in 
+approxDuration r 
+    | r >= 0    = approxDurationPositve r 
+    | otherwise = negate (approxDurationPositve $ abs r)
+                
+approxDurationPositve :: Ratio Int -> Duration
+approxDurationPositve r = let (n,d) = ratioElements r in 
     if r < (2%1) then recsmall n d 0 else reclarge r (Duration (closest r) 0)
   where
     recsmall n d dots 
@@ -120,10 +136,10 @@ instance Num Duration where
   d1 + d2 = operate (+) d1 d2
   d1 - d2 = operate (-) d1 d2
   d1 * d2 = operate (*) d1 d2
-  negate      = approxDuration . negate . rationalize
-  fromInteger = approxDuration . fromInteger
-  signum      = approxDuration . signum . rationalize
-  abs         = approxDuration . abs . rationalize
+  negate (Duration r dc)    = Duration (negate r) dc
+  fromInteger i             = let r = fromInteger i in Duration r 0
+  signum (Duration r dc)    = Duration (signum r) dc
+  abs (Duration r dc)       = Duration (abs r) dc
 
 
 

@@ -21,10 +21,8 @@ import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.CommonUtils (successFailM, outputDoc)
 import HNotate.Env
-import HNotate.EventInterface
-import HNotate.EventList
 import HNotate.MusicRepDatatypes
-import HNotate.NoteListDatatypes
+import HNotate.NoteList
 import HNotate.ParseAbc
 import HNotate.ParseLy
 import HNotate.TemplateDatatypes
@@ -52,33 +50,33 @@ lookupPlug :: Int -> IndexedPlugs -> Maybe Doc
 lookupPlug = Map.lookup
 
 
-type Scheme evt = Int -> EventList evt -> Env -> Plug  
+type Scheme = Int -> EventList -> Env -> Plug  
 
-data PlugScheme evt = PlugScheme {
-    defaultPS   :: Scheme evt,
-    relativePS  :: Scheme evt
+data PlugScheme = PlugScheme {
+    defaultPS   :: Scheme,
+    relativePS  :: Scheme
   }
 
-abcDefault :: Event evt => Scheme evt
+abcDefault :: Scheme
 abcDefault i evtlist env = Plug i $ 
     getAbc $ translateAbc (toNoteList evtlist env) (unit_note_length env)
 
-lyRelative :: Event evt => Scheme evt
+lyRelative :: Scheme
 lyRelative i evtlist env = Plug i $ 
     getLy $ translateLilyPond (toNoteList evtlist env) (relative_pitch env)
 
-psFullTranslation :: Event evt => PlugScheme evt
+psFullTranslation :: PlugScheme
 psFullTranslation = PlugScheme {
     defaultPS   = abcDefault,
     relativePS  = lyRelative
   }  
 
     
-outputLilyPond :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
+outputLilyPond :: System -> FilePath -> FilePath -> IO ()
 outputLilyPond sys infile outfile = 
   output default_ly_env sys psFullTranslation lySPV lyPIV infile outfile
 
-outputAbc :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
+outputAbc :: System -> FilePath -> FilePath -> IO ()
 outputAbc sys infile outfile = 
     output default_abc_env sys psFullTranslation abcSPV abcPIV infile outfile
 
@@ -93,12 +91,12 @@ output env sys pscheme spvParse pivParse infile outfile =
     sk2 spv piv  = outputDoc outfile (buildOutput env sys pscheme spv piv)
 
         
-buildOutput :: Event evt => Env -> System evt -> PlugScheme evt -> SPV -> PIV -> Doc
+buildOutput :: Env -> System -> PlugScheme -> SPV -> PIV -> Doc
 buildOutput env sys pscheme spv piv  = 
     let idxp = buildIndexedPlugs env sys pscheme piv
     in fillSourceHoles (score_comment env) idxp spv
 
-buildIndexedPlugs :: Event evt => Env -> System evt -> PlugScheme evt -> PIV -> IndexedPlugs
+buildIndexedPlugs :: Env -> System -> PlugScheme -> PIV -> IndexedPlugs
 buildIndexedPlugs env sys pscheme (PIV xs)  =
   indexPlugs $ buildPlugs env sys pscheme xs
 
@@ -119,12 +117,11 @@ fillSourceHoles comment idxp (SPV se) = F.foldl fn empty se
 
 
 
-buildPlugs :: Event evt => Env -> System evt -> PlugScheme evt
-           -> [ScoreElement] -> [Plug]
+buildPlugs :: Env -> System -> PlugScheme -> [ScoreElement] -> [Plug]
 buildPlugs env sys pscheme []      = []
 buildPlugs env sys pscheme (x:xs)  = snd $ workEval env sys pscheme [] x xs
 
-workEval :: Event evt => Env -> System evt -> PlugScheme evt -> [Plug] -> 
+workEval :: Env -> System -> PlugScheme -> [Plug] -> 
             ScoreElement -> [ScoreElement] -> (Env,[Plug])
 workEval env sys pscheme code expr []     = evaluate1 env sys pscheme code expr
 workEval env sys pscheme code expr (x:xs) = 
@@ -140,8 +137,8 @@ evaluate1 env sys pscheme code (Nested (x:xs))       =
 
 
 
-directive :: (Event evt) => Env -> Map.Map Name (EventList evt)
-          -> PlugScheme evt -> Idx -> MetaDirective -> Plug
+directive :: 
+    Env -> Map.Map Name EventList -> PlugScheme -> Idx -> MetaDirective -> Plug
 directive env sys pscheme i (MetaOutput name scheme_name) =
     maybe failure  sk (Map.lookup name sys)
   where
@@ -150,7 +147,7 @@ directive env sys pscheme i (MetaOutput name scheme_name) =
     sk evtlist = let scheme = useScheme scheme_name pscheme
                  in scheme i evtlist env
                  
-useScheme :: String -> PlugScheme evt -> Scheme evt
+useScheme :: String -> PlugScheme -> Scheme
 useScheme "relative"  pscheme = relativePS pscheme
 useScheme "default"   pscheme = defaultPS pscheme
 

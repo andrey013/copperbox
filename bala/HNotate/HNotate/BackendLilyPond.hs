@@ -22,10 +22,11 @@ module HNotate.BackendLilyPond (
 
 import HNotate.CommonUtils
 import HNotate.Duration
-import HNotate.NoteListDatatypes
-import HNotate.OutputUtils
+import HNotate.NoteList
+-- import HNotate.OutputUtils
 import HNotate.Pitch
-import HNotate.TextLilyPond hiding (relative)
+import HNotate.TextLilyPond hiding (chord, relative, rest, spacer)
+import qualified HNotate.TextLilyPond as Ly
 import HNotate.Traversals
 
 import Control.Applicative
@@ -40,13 +41,13 @@ import Data.Sequence
 type LilyPondNoteList = LyCxt_Element
 
 
+-- the relative pitch transformation needs something that the 
+-- simplification doesn't account for
+-- type LyPdGlyph = Glyph LyPitch (Maybe LyDuration)
 
-type LyPdGlyph = Glyph LyPitch (Maybe LyDuration)
-                
 
-type LyPdNoteList  = ScNoteList   LyPdGlyph
-type LyPdBlock     = ScBlock    LyPdGlyph
-type LyPdMeasure   = ScMeasure  LyPdGlyph
+--- change octave spec to infinity or (-1)
+
 
 
 
@@ -58,60 +59,54 @@ translateLilyPond notes relative_pitch =
 
 
 -- to do - look at fusing the traversals
-lilypondForm :: ScoreNoteList -> Pitch -> LyPdNoteList
+lilypondForm :: ScoreNoteList -> Pitch -> ScoreNoteList
 lilypondForm se relative_pitch = fn se  
   where
     fn se = let s'   = runLengthEncodeDuration se quarter
-                s''  = traversalIdentity ly_duration_Body s'
-                s''' = traversalState pitch_conv_Body s'' relative_pitch
-            in s'''
+                s''  = traversalState pitch_conv_Body s' relative_pitch
+            in s''
 
-pitch_conv_Body :: Glyph Pitch d 
-                -> WrappedMonad (State Pitch) (Glyph LyPitch d)
-pitch_conv_Body e@(GlyNote p _)     = WrapMonad $ do 
+pitch_conv_Body :: ScoreGlyph
+                -> WrappedMonad (State Pitch) ScoreGlyph
+pitch_conv_Body e@(SgNote p _)      = WrapMonad $ do 
     nt <- convPitch p True 
     return $ changePitch e nt
 
-pitch_conv_Body (GlyRest d)         = WrapMonad $ return $ GlyRest d
+pitch_conv_Body (SgRest d)          = WrapMonad $ return $ SgRest d
              
-pitch_conv_Body (GlySpacer d)       = WrapMonad $ return $ GlySpacer d
+pitch_conv_Body (SgSpacer d)        = WrapMonad $ return $ SgSpacer d
 
-pitch_conv_Body (GlyChord se d)     = WrapMonad $ do
+pitch_conv_Body (SgChord se d)      = WrapMonad $ do
     se' <- F.foldlM (\a e -> (a |>) <$> convPitch e False) mempty se
-    return $ GlyChord se' d
+    return $ SgChord se' d
     
-pitch_conv_Body (GlyGraceNotes se)  = WrapMonad $ do
+pitch_conv_Body (SgGraceNotes se)   = WrapMonad $ do
     se' <- F.foldlM fn mempty se
-    return $ GlyGraceNotes se' 
+    return $ SgGraceNotes se' 
   where
-    fn a (p,d) = do 
+    fn a p = do 
         p' <- convPitch p False
-        return $ a |> (p',d)
+        return $ a |> p'
     
      
         
 
-convPitch :: Pitch -> Bool -> State Pitch LyPitch
+convPitch :: Pitch -> Bool -> State Pitch Pitch
 convPitch p update = do
     base <- get
     when (update==True) (put p)
-    return (buildNote base p)
-  where
-    buildNote base pch = (lymodpitch p) *! (lyRelativeOctave base p)
-   
+    return $ modifyRelativeOctave base p
 
-ly_duration_Body :: Glyph p (Maybe Duration) 
-                 -> Identity (Glyph p (Maybe LyDuration))
-ly_duration_Body e = let drn = glyphDuration e in
-  case drn of
-    Just d -> return $ changeDuration e (olyDuration d)
-    Nothing -> return $ changeDuration e Nothing
-                
 
-outputNoteList :: LyPdNoteList -> LilyPondNoteList
+modifyRelativeOctave :: Pitch -> Pitch -> Pitch
+modifyRelativeOctave base pch@(Pitch l a o) = 
+    let dist = base `octaveDist` pch in Pitch l a dist
+       
+
+outputNoteList :: ScoreNoteList -> LilyPondNoteList
 outputNoteList (ScNoteList se) = F.foldl outputBlock elementStart se
 
-outputBlock :: LilyPondNoteList -> LyPdBlock -> LilyPondNoteList
+outputBlock :: LilyPondNoteList -> ScoreBlock -> LilyPondNoteList
 outputBlock cxt (ScSingleBlock i se) =
     let barcheck = barNumber i
     in addBarline $ outputMeasure (cxt +++ barcheck) se
@@ -121,23 +116,23 @@ outputBlock cxt (ScPolyBlock i se) =
         voices = F.foldr (\e a -> (outputMeasure elementStart e) : a) [] se
     in polyphony (cxt +++ barcheck) voices 
     
-outputMeasure :: LilyPondNoteList -> LyPdMeasure -> LilyPondNoteList
+outputMeasure :: LilyPondNoteList -> ScoreMeasure -> LilyPondNoteList
 outputMeasure cxt (ScMeasure se) = F.foldl outputGlyph cxt se
 
-outputGlyph :: LilyPondNoteList -> LyPdGlyph -> LilyPondNoteList
-outputGlyph cxt (GlyNote p od)      = cxt +++ note p *! od
+outputGlyph :: LilyPondNoteList -> ScoreGlyph -> LilyPondNoteList
+outputGlyph cxt (SgNote p d)        = cxt +++ mkLyNote p `durAttr` d
 
-outputGlyph cxt (GlyRest od)        = cxt +++ rest *! od
+outputGlyph cxt (SgRest d)          = cxt +++ Ly.rest `durAttr` d
 
-outputGlyph cxt (GlySpacer od)      = cxt +++ spacer *! od
+outputGlyph cxt (SgSpacer d)        = cxt +++ Ly.spacer `durAttr` d
 
-outputGlyph cxt (GlyChord se od)    = cxt +++ mkChord se *! od
+outputGlyph cxt (SgChord se d)      = cxt +++ mkChord se `durAttr` d
   where 
-    mkChord = chord . F.foldr (:) []  
+    mkChord = Ly.chord . F.foldr (\e a -> (mkLyPitch e):a) []  
 
-outputGlyph cxt (GlyGraceNotes se)  = cxt +++ mkGrace se
+outputGlyph cxt (SgGraceNotes se)  = cxt +++ mkGrace se
   where 
-    mkGrace = grace . F.foldl (\a (p,od) -> a +++ note p *! od) elementStart
+    mkGrace = grace . F.foldl (\a p -> a +++ mkLyNote p) elementStart
 
 
 polyphony :: LyCxt_Element -> [LyCxt_Element] -> LyCxt_Element
@@ -148,7 +143,52 @@ polyphony cxt []        = cxt
 
 polywork cxt x []     = (cxt \\ x) +++ closePoly
 polywork cxt x (y:ys) = polywork (cxt \\ x) y ys
-   
+
+durAttr g d | d == no_duration  = g
+            | otherwise         = g ! mkLyDuration d   
+
+
+mkLyNote :: Pitch -> LyNote
+mkLyNote = Ly.note . mkLyPitch
+
+mkLyPitch :: Pitch -> LyPitch
+mkLyPitch (Pitch l a o) = 
+    let pc = Ly.pitch $ lyPitchName l
+        oa = olyAccidental a
+        oo = olyOctaveSpec o
+    in pc *! oa *! oo
+
+
+lyPitchName :: PitchLetter -> Ly.LyPitchName
+lyPitchName = toEnum . fromEnum 
+
+olyAccidental :: Accidental -> Maybe Ly.LyAccidental
+olyAccidental Nat            = Nothing
+olyAccidental Sharp          = Just Ly.sharp
+olyAccidental Flat           = Just Ly.flat
+olyAccidental DoubleSharp    = Just Ly.doubleSharp
+olyAccidental DoubleFlat     = Just Ly.doubleFlat
+     
+olyOctaveSpec :: Int -> Maybe Ly.LyOctaveSpec
+olyOctaveSpec i 
+    | i > 0       = Just $ Ly.raised i
+    | i < 0       = Just $ Ly.lowered (abs i)
+    | otherwise   = Nothing 
+    
+mkLyDuration :: Duration -> Ly.LyDuration
+mkLyDuration drn = 
+    let (n,d,dots) = durationElements drn in addDots dots $ mkDuration n d
+  where 
+    mkDuration 4 1      = Ly.longa  
+    mkDuration 2 1      = Ly.breve 
+    mkDuration 1 i      = Ly.duration i
+    mkDuration n d      = error $ "olyDuration unhandled case - " ++ 
+                                  show n ++ "%" ++ show d
+    
+    addDots :: Int -> Ly.LyDuration -> Ly.LyDuration
+    addDots i d 
+        | i > 0     = d ! (Ly.dotted i)
+        | otherwise = d
 
 barNumber :: Int -> LyBarNumberCheck
 barNumber = barNumberCheck

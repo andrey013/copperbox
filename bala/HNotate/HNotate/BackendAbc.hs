@@ -21,75 +21,55 @@ module HNotate.BackendAbc (
 
 import HNotate.CommonUtils
 import HNotate.Duration
-import HNotate.NoteListDatatypes
-import HNotate.OutputUtils
+import HNotate.NoteList
+-- import HNotate.OutputUtils
 import HNotate.Pitch
-import HNotate.TextAbc
+import HNotate.TextAbc hiding (gracenotes, chord, spacer, rest)
+import qualified HNotate.TextAbc as Abc
 import HNotate.Traversals
 
 import Control.Monad.Identity
 import qualified Data.Foldable as F
 import Data.Monoid
-import Data.Sequence
+import Data.Ratio
+import Data.Sequence hiding (take)
 
 
   
 type AbcNoteList = AbcCxt_Body
 
-type InterimGlyph     = Glyph AbcNote (Maybe AbcDuration)
-
-
-type InterimNoteList  = ScNoteList InterimGlyph
-type InterimBlock     = ScBlock InterimGlyph
-type InterimMeasure   = ScMeasure InterimGlyph
 
 translateAbc :: ScoreNoteList -> Duration -> AbcNoteList
 translateAbc notes default_duration =
     outputNoteList $ abcForm notes default_duration
 
     
-abcForm :: ScoreNoteList -> Duration -> InterimNoteList
+abcForm :: ScoreNoteList -> Duration -> ScoreNoteList
 abcForm se default_duration = fn se  
   where
     fn se = let s'  = translateDuration se default_duration
-                s'' = traversalIdentity abc_note_Body s'
-            in s''
+            in s'
 
-translateDuration :: ScNoteList (Glyph pch Duration)
+translateDuration :: ScNoteList ScoreGlyph
                   -> Duration
-                  -> ScNoteList (Glyph pch (Maybe AbcDuration))
+                  -> ScNoteList ScoreGlyph
 translateDuration strata default_duration = 
     traversalEnv default_encode_Abc strata default_duration 
 
-default_encode_Abc :: Glyph p Duration 
+default_encode_Abc :: ScoreGlyph
                    -> Duration 
-                   -> Glyph p (Maybe AbcDuration)
+                   -> ScoreGlyph
 default_encode_Abc e = \env -> 
     let drn = glyphDuration e
-        od  = abcRelativeDuration env drn
-    in changeDuration e od
+    in if (drn == env) then changeDuration e no_duration
+                       else e
     
     
-abc_note_Body :: Glyph Pitch d -> Identity (Glyph AbcNote d)
-abc_note_Body e@(GlyNote p _)     = return $ changePitch e (abcNote p)
 
-abc_note_Body (GlyRest d)         = return $ GlyRest d
-             
-abc_note_Body (GlySpacer d)       = return $ GlySpacer d
-
-abc_note_Body (GlyChord se d)     = 
-    let se' = F.foldl (\a e -> a |> abcNote e) mempty se 
-    in return $ GlyChord se' d
-    
-abc_note_Body (GlyGraceNotes se)  = 
-    let se' = F.foldl (\a (p,d) -> a |> (abcNote p,d)) mempty se
-    in return $ GlyGraceNotes se' 
-
-
-outputNoteList :: InterimNoteList -> AbcNoteList
+outputNoteList :: ScoreNoteList -> AbcNoteList
 outputNoteList (ScNoteList se) = F.foldl outputBlock body se
 
-outputBlock :: AbcNoteList -> InterimBlock -> AbcNoteList
+outputBlock :: AbcNoteList -> ScoreBlock -> AbcNoteList
 outputBlock cxt (ScSingleBlock i se) = 
     let barcheck = barNumber i
     in  (outputMeasure (cxt +++ barcheck) se) +++ (suffixLinebreak barline)
@@ -99,23 +79,23 @@ outputBlock cxt (ScPolyBlock i se) =
         voices = F.foldr (\e a -> outputMeasure body e : a) [] se
     in voiceOverlay (cxt +++ barcheck) voices 
 
-outputMeasure :: AbcNoteList -> InterimMeasure -> AbcNoteList
+outputMeasure :: AbcNoteList -> ScoreMeasure -> AbcNoteList
 outputMeasure cxt (ScMeasure se) = F.foldl outputGlyph cxt se
 
-outputGlyph :: AbcNoteList -> InterimGlyph -> AbcNoteList
-outputGlyph cxt (GlyNote n od)      = cxt +++ (n *! od)
+outputGlyph :: AbcNoteList -> ScoreGlyph -> AbcNoteList
+outputGlyph cxt (SgNote n d)          = cxt +++ (mkAbcNote n `durAttr` d)
     
-outputGlyph cxt (GlyRest od)        = cxt +++ (rest *! od) 
+outputGlyph cxt (SgRest d)            = cxt +++ (Abc.rest `durAttr` d) 
     
-outputGlyph cxt (GlySpacer od)      = cxt +++ (spacer *! od)
+outputGlyph cxt (SgSpacer d)          = cxt +++ (Abc.spacer `durAttr` d)
     
-outputGlyph cxt (GlyChord se od)    = cxt +++ mkChord od se
+outputGlyph cxt (SgChord se d)        = cxt +++ mkChord d se
   where
-    mkChord od = chord . F.foldr (\n a -> (n *! od) : a) []
+    mkChord d = Abc.chord . F.foldr (\n a -> (mkAbcNote n `durAttr` d) : a) []
     
-outputGlyph cxt (GlyGraceNotes se)  = cxt +++ mkGrace se
+outputGlyph cxt (SgGraceNotes se)  = cxt +++ mkGrace se
   where 
-    mkGrace = gracenotes . F.foldr (\(n,od) a -> (n *! od) : a) []
+    mkGrace = Abc.gracenotes . F.foldr (\n a -> mkAbcNote n : a) []
 
 voiceOverlay :: AbcCxt_Body -> [AbcCxt_Body] -> AbcCxt_Body
 voiceOverlay cxt []     = cxt
@@ -126,4 +106,69 @@ voiceOverlay cxt (v:vs) = voiceOverlay (cxt &\ v) vs
 barNumber :: Int -> AbcRemark
 barNumber = remark . show
 
+durAttr g d | d == durationZero = g
+            | otherwise         = g ! mkAbcDuration d
 
+
+
+mkAbcNote :: Pitch -> AbcNote
+mkAbcNote (Pitch l a o) = 
+    let pl = if o > 4 then upwards $ abcPitchLetter l else abcPitchLetter l
+    in (oabcAccidental a !*> Abc.note pl *! oabcOve o)
+
+
+abcPitchLetter :: PitchLetter -> Abc.AbcPitchLetter
+abcPitchLetter = toEnum . fromEnum
+
+upwards :: Abc.AbcPitchLetter -> Abc.AbcPitchLetter
+upwards l = let i = fromEnum l in 
+  if (i<7) then toEnum $ i + 7 else l
+
+
+oabcAccidental :: Accidental -> Maybe Abc.AbcAccidental
+oabcAccidental Nat          = Nothing
+oabcAccidental a            = Just $ abcAccidental a
+
+abcAccidental :: Accidental -> Abc.AbcAccidental
+abcAccidental Nat            = Abc.natural
+abcAccidental Sharp          = Abc.sharp
+abcAccidental Flat           = Abc.flat
+abcAccidental DoubleSharp    = Abc.doubleSharp
+abcAccidental DoubleFlat     = Abc.doubleFlat
+
+oabcOve :: Int -> Maybe Abc.AbcOctave    
+oabcOve i | i < 4       = Just $ Abc.octaveLow (4-i)
+          | i > 5       = Just $ Abc.octaveHigh (i-5) 
+          | otherwise   = Nothing
+
+
+mkAbcDuration :: Duration -> AbcDuration
+mkAbcDuration _ = dmult 1
+
+
+           {-
+mkAbcDuration :: Duration -> Duration -> AbcDuration
+mkAbcDuration drn@(Duration _ dots) base
+    case scaler base drn of
+      Left i -> Just $ Abc.dmult (doti i dots)
+      Right r -> Just $ factor $ dotr r dots
+  where
+    factor r = let (n,d) = (numerator r, denominator r)
+               in if n==1 then Abc.ddiv1 d else Abc.ddiv2 (n,d)                     
+
+-- if the duration is longer it is scaled by an int, 
+-- if it is shorter its scaled by a fraction. 
+scaler :: Duration -> Duration -> Either Int (Ratio Int)
+scaler (Duration base _) (Duration drn _) = 
+    let a = drn / base; n = numerator a; d = denominator a
+    in if d == 1 then Left n else Right a
+    
+    
+doti i dots = sum $ map (i `div`) xs
+  where xs = take (dots+1) base2number_sequence
+
+dotr r dots = sum $ map ((r /) . fromIntegral) xs
+  where xs = take (dots+1) base2number_sequence  
+
+-}  
+  

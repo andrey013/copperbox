@@ -26,7 +26,7 @@ module HNotate.Pitch (
     arithmeticDistance,
     
     -- * lilyPond helpers
-    middleC, octaveDist,
+    middleC, octaveDist, no_octave,
     
     
     -- * pretty print
@@ -147,6 +147,8 @@ arithmeticDistance (Pitch l _ o) (Pitch l' _ o') =
       | i > i'      = negate $ 1 + (i - i')
       | otherwise   = 1 + (i' - i)
 
+no_octave :: Int 
+no_octave = minBound
 
 -- Helpers for Midi
 
