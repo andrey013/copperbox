@@ -1,7 +1,7 @@
 -- ghci ...
 -- :set -i../../HNotate:../../ZMidi
 
-module Main where
+module Examples.Scales where
 
 
 import HNotate
@@ -22,12 +22,13 @@ ly_output     = "out/ly-major-scales.ly"
 abc_template  = "templates/abc0-major-scales.abc"
 abc_output    = "out/abc-major-scales.abc"
 
-
-main = do 
+outputScales :: IO ()
+outputScales = do 
     outputLilyPond major_scales     ly_template     ly_output
     outputAbc      major_scales     abc_template    abc_output
-    
-debug = do
+
+debugScales :: IO ()    
+debugScales = do
   dumpLyTemplates   ly_template
   dumpAbcTemplates  abc_template
   

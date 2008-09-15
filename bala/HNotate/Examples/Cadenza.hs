@@ -3,7 +3,7 @@
 -- :set -i..:../HNotate
 -- abc > M:none
 
-module Main where
+module Examples.Cadenza where
 
 import HNotate
 
@@ -24,11 +24,12 @@ cadenzaAbc = system1 "cadenza" (notelist notes quarter)
 abc_template   = "templates/abc0-cadenza.abc"
 abc_output     = "out/abc-cadenza.abc" 
 
-main = do
+outputCadenza :: IO ()
+outputCadenza = do
     outputLilyPond cadenzaLy   ly_template   ly_output
     outputAbc      cadenzaAbc  abc_template  abc_output
     
-    
-debug = do
+debugCadenza :: IO ()   
+debugCadenza = do
     dumpLyTemplates   ly_template  
     dumpAbcTemplates  abc_template  

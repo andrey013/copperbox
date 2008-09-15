@@ -63,44 +63,10 @@ lilypondForm :: ScoreNoteList -> Pitch -> ScoreNoteList
 lilypondForm se relative_pitch = fn se  
   where
     fn se = let s'   = runLengthEncodeDuration se quarter
-                s''  = traversalState pitch_conv_Body s' relative_pitch
+                s''  = traversalState proBody s' relative_pitch
             in s''
 
-pitch_conv_Body :: ScoreGlyph
-                -> WrappedMonad (State Pitch) ScoreGlyph
-pitch_conv_Body e@(SgNote p _)      = WrapMonad $ do 
-    nt <- convPitch p True 
-    return $ changePitch e nt
 
-pitch_conv_Body (SgRest d)          = WrapMonad $ return $ SgRest d
-             
-pitch_conv_Body (SgSpacer d)        = WrapMonad $ return $ SgSpacer d
-
-pitch_conv_Body (SgChord se d)      = WrapMonad $ do
-    se' <- F.foldlM (\a e -> (a |>) <$> convPitch e False) mempty se
-    return $ SgChord se' d
-    
-pitch_conv_Body (SgGraceNotes se)   = WrapMonad $ do
-    se' <- F.foldlM fn mempty se
-    return $ SgGraceNotes se' 
-  where
-    fn a p = do 
-        p' <- convPitch p False
-        return $ a |> p'
-    
-     
-        
-
-convPitch :: Pitch -> Bool -> State Pitch Pitch
-convPitch p update = do
-    base <- get
-    when (update==True) (put p)
-    return $ modifyRelativeOctave base p
-
-
-modifyRelativeOctave :: Pitch -> Pitch -> Pitch
-modifyRelativeOctave base pch@(Pitch l a o) = 
-    let dist = base `octaveDist` pch in Pitch l a dist
        
 
 outputNoteList :: ScoreNoteList -> LilyPondNoteList
@@ -132,7 +98,7 @@ outputGlyph cxt (SgChord se d)      = cxt +++ mkChord se `durAttr` d
 
 outputGlyph cxt (SgGraceNotes se)  = cxt +++ mkGrace se
   where 
-    mkGrace = grace . F.foldl (\a p -> a +++ mkLyNote p) elementStart
+    mkGrace = grace . block . F.foldl (\a p -> a +++ mkLyNote p) elementStart
 
 
 polyphony :: LyCxt_Element -> [LyCxt_Element] -> LyCxt_Element

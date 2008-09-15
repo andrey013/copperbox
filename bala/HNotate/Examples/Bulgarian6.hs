@@ -4,7 +4,7 @@
 -- ghci ...
 -- :set -i../../HNotate:../../ZMidi
 
-module Main where
+module Examples.Bulgarian6 where
 
 
 import HNotate

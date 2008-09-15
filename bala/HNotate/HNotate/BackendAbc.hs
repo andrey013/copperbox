@@ -21,8 +21,8 @@ module HNotate.BackendAbc (
 
 import HNotate.CommonUtils
 import HNotate.Duration
+import HNotate.Env
 import HNotate.NoteList
--- import HNotate.OutputUtils
 import HNotate.Pitch
 import HNotate.TextAbc hiding (gracenotes, chord, spacer, rest)
 import qualified HNotate.TextAbc as Abc
@@ -39,32 +39,17 @@ import Data.Sequence hiding (take)
 type AbcNoteList = AbcCxt_Body
 
 
-translateAbc :: ScoreNoteList -> Duration -> AbcNoteList
-translateAbc notes default_duration =
-    outputNoteList $ abcForm notes default_duration
+translateAbc :: ScoreNoteList -> Env -> AbcNoteList
+translateAbc notes env =
+    outputNoteList $ abcForm notes env
 
     
-abcForm :: ScoreNoteList -> Duration -> ScoreNoteList
-abcForm se default_duration = fn se  
+abcForm :: ScoreNoteList -> Env -> ScoreNoteList
+abcForm se env = fn se  
   where
-    fn se = let s'  = translateDuration se default_duration
+    fn se = let s'  = unitNoteLengthEncode se env
             in s'
-
-translateDuration :: ScNoteList ScoreGlyph
-                  -> Duration
-                  -> ScNoteList ScoreGlyph
-translateDuration strata default_duration = 
-    traversalEnv default_encode_Abc strata default_duration 
-
-default_encode_Abc :: ScoreGlyph
-                   -> Duration 
-                   -> ScoreGlyph
-default_encode_Abc e = \env -> 
-    let drn = glyphDuration e
-    in if (drn == env) then changeDuration e no_duration
-                       else e
-    
-    
+ 
 
 outputNoteList :: ScoreNoteList -> AbcNoteList
 outputNoteList (ScNoteList se) = F.foldl outputBlock body se

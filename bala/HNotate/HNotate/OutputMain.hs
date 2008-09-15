@@ -59,7 +59,7 @@ data PlugScheme = PlugScheme {
 
 abcDefault :: Scheme
 abcDefault i evtlist env = Plug i $ 
-    getAbc $ translateAbc (toNoteList evtlist env) (unit_note_length env)
+    getAbc $ translateAbc (toNoteList evtlist env) env
 
 lyRelative :: Scheme
 lyRelative i evtlist env = Plug i $ 

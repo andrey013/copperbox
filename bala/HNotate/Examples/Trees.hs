@@ -2,11 +2,12 @@
 -- ghci - 
 -- :set -i..:../HNotate
 
-module Trees where
+module Examples.Trees where
 
 
 import HNotate
 
+import HNotate.Traversals
 
 import Text.PrettyPrint.Leijen
 
@@ -107,11 +108,13 @@ ly_output     = "out/ly-trees.ly"
 abc_template  = "templates/abc0-trees.abc"
 abc_output    = "out/abc-trees.abc"     
 
-main = do
+outputTrees :: IO ()
+outputTrees = do
     outputLilyPond example_sys  ly_template   ly_output
     outputAbc      example_sys  abc_template  abc_output
 
-debug = do 
+debugTrees :: IO ()
+debugTrees = do 
     dumpLyScoreZero  example_sys ly_template
     dumpAbcScoreZero example_sys abc_template
 
