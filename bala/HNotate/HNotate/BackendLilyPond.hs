@@ -16,14 +16,13 @@
 
 module HNotate.BackendLilyPond (
     translateLilyPond, 
-    LilyPondNoteList,
+    LilyPondOutput,
   ) where
 
 
 import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.NoteList
--- import HNotate.OutputUtils
 import HNotate.Pitch
 import HNotate.TextLilyPond hiding (chord, relative, rest, spacer)
 import qualified HNotate.TextLilyPond as Ly
@@ -35,44 +34,34 @@ import Control.Monad.State
 import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Sequence
+import Data.Traversable
 
 
   
-type LilyPondNoteList = LyCxt_Element
-
-
--- the relative pitch transformation needs something that the 
--- simplification doesn't account for
--- type LyPdGlyph = Glyph LyPitch (Maybe LyDuration)
-
-
---- change octave spec to infinity or (-1)
+type LilyPondOutput = LyCxt_Element
 
 
 
-
-
-translateLilyPond :: ScoreNoteList -> Pitch -> LilyPondNoteList
+translateLilyPond :: ScoreNoteList -> Pitch -> LilyPondOutput
 translateLilyPond notes relative_pitch =
-    outputNoteList $ lilypondForm notes relative_pitch
+    outputNoteList $ lilypondRelativeForm notes relative_pitch
 
 
-
--- to do - look at fusing the traversals
-lilypondForm :: ScoreNoteList -> Pitch -> ScoreNoteList
-lilypondForm se relative_pitch = fn se  
-  where
-    fn se = let s'   = runLengthEncodeDuration se quarter
-                s''  = traversalState proBody s' relative_pitch
-            in s''
+-- Do we need a state type, like this one?
+-- data LyState = LyState { rel_pitch :: Pitch, rel_dur :: Duration }
 
 
-       
+lilypondRelativeForm :: ScoreNoteList -> Pitch -> ScoreNoteList
+lilypondRelativeForm se relative_pitch = 
+    evalState (unwrapMonad $ inner se) relative_pitch 
+  where       
+    inner se = evalState (unwrapMonad $ unComp $ trav se) quarter 
+    trav = traverse (proBody `comp` drleBody)
 
-outputNoteList :: ScoreNoteList -> LilyPondNoteList
+outputNoteList :: ScoreNoteList -> LilyPondOutput
 outputNoteList (ScNoteList se) = F.foldl outputBlock elementStart se
 
-outputBlock :: LilyPondNoteList -> ScoreBlock -> LilyPondNoteList
+outputBlock :: LilyPondOutput -> ScoreBlock -> LilyPondOutput
 outputBlock cxt (ScSingleBlock i se) =
     let barcheck = barNumber i
     in addBarline $ outputMeasure (cxt +++ barcheck) se
@@ -82,10 +71,10 @@ outputBlock cxt (ScPolyBlock i se) =
         voices = F.foldr (\e a -> (outputMeasure elementStart e) : a) [] se
     in polyphony (cxt +++ barcheck) voices 
     
-outputMeasure :: LilyPondNoteList -> ScoreMeasure -> LilyPondNoteList
+outputMeasure :: LilyPondOutput -> ScoreMeasure -> LilyPondOutput
 outputMeasure cxt (ScMeasure se) = F.foldl outputGlyph cxt se
 
-outputGlyph :: LilyPondNoteList -> ScoreGlyph -> LilyPondNoteList
+outputGlyph :: LilyPondOutput -> ScoreGlyph -> LilyPondOutput
 outputGlyph cxt (SgNote p d)        = cxt +++ mkLyNote p `durAttr` d
 
 outputGlyph cxt (SgRest d)          = cxt +++ Ly.rest `durAttr` d

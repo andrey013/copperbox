@@ -28,12 +28,13 @@ import HNotate.TextAbc hiding (gracenotes, chord, spacer, rest)
 import qualified HNotate.TextAbc as Abc
 import HNotate.Traversals
 
-import Control.Monad.Identity
+import Control.Applicative
+import Control.Monad.Reader
 import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Ratio
 import Data.Sequence hiding (take)
-
+import Data.Traversable
 
   
 type AbcNoteList = AbcCxt_Body
@@ -45,10 +46,7 @@ translateAbc notes env =
 
     
 abcForm :: ScoreNoteList -> Env -> ScoreNoteList
-abcForm se env = fn se  
-  where
-    fn se = let s'  = unitNoteLengthEncode se env
-            in s'
+abcForm se env = runReader (unwrapMonad $ traverse unleBody se) env 
  
 
 outputNoteList :: ScoreNoteList -> AbcNoteList

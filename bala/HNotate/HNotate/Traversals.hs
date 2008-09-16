@@ -37,6 +37,23 @@ type St = Duration
 instance Applicative Identity where
   pure = return
   (<*>) = ap
+
+
+-- from Jeremy Gibbons and Bruno Oliviera's Iterator paper
+-- (doesn't seem to be in the Hierarchical Libraries)
+
+data Comp m n a = Comp { unComp :: m (n a) }
+
+instance (Functor m, Functor n) => Functor (Comp m n) where
+  fmap f (Comp x) = Comp $ (fmap . fmap) f x
+  
+  
+comp :: (Functor n, Functor m) => (b -> n c) -> (a -> m b) -> a -> Comp m n c
+f `comp` g = Comp . fmap f . g
+
+instance (Applicative m, Applicative n) => Applicative (Comp m n) where
+  pure x    = Comp (pure (pure x))
+  mf <*> mx = Comp (pure (<*>) <*> unComp mf <*> unComp mx)
   
   
 
@@ -83,7 +100,7 @@ drleBody e = WrapMonad $ do
     diffDuration d = do
         old <- get 
         if (old == d) then return no_duration
-                      else do {put d; return d}
+                      else put d >> return d
 
 
 --------------------------------------------------------------------------------
@@ -135,6 +152,18 @@ convPitch p = do
 changeOctaveWrt :: Pitch -> Pitch -> Pitch
 changeOctaveWrt pch@(Pitch l a o) base = Pitch l a (base `octaveDist` pch)
     
+
+--------------------------------------------------------------------------------
+-- lilypond octave shift - lilypond middle c is c' 
+-- HNotate middle c is c4, the shift will be (-3) so that the octave spec
+-- tells how many ''' 's need to be printed 
+-- (a negative number gives the number of ,,, 's)   
+
+
+losBody :: ScoreGlyph -> WrappedMonad Identity ScoreGlyph
+losBody e = WrapMonad $ return $ onPitch fn e
+  where
+    fn (Pitch l a o) = Pitch l a (o-3)
     
 
 --------------------------------------------------------------------------------
