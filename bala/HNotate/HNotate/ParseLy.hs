@@ -15,6 +15,7 @@
 
 module HNotate.ParseLy where
 
+import HNotate.Duration
 import HNotate.MusicRepDatatypes
 import HNotate.ParserBase
 import HNotate.Pitch
@@ -22,6 +23,7 @@ import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (many, optional, (<|>) )
 import Data.Monoid
+import Data.Ratio
 import Data.Sequence ( (|>) )
 import Text.ParserCombinators.Parsec hiding (space)
 
@@ -87,7 +89,7 @@ nestedk acc = do
 
 lyCommand :: StParser ScoreElement
 lyCommand = Command <$> choice 
-  [ cmdRelative, cmdTime, cmdKey, cmdCadenzaOn, cmdCadenzaOff ]          
+  [ cmdRelative, cmdTime, cmdKey, cmdCadenzaOn, cmdCadenzaOff, cmdPartial ]          
                  
 lyDirective :: StParser ScoreElement
 lyDirective = Directive 
@@ -131,7 +133,7 @@ cmdMode = choice
     ]
   where
     major       = Minor      <$ command "major"
-    minor       = Major      <$ command "minor"
+    minor       = Major      <$ command "major"
     lydian      = Lydian     <$ command "lydian"
     ionian      = Ionian     <$ command "ionian"
     mixolydian  = Mixolydian <$ command "mixolydian"
@@ -145,6 +147,9 @@ cmdCadenzaOn    = CmdCadenzaOn  <$ command "cadenzaOn"
 
 cmdCadenzaOff   :: StParser Command
 cmdCadenzaOff   = CmdCadenzaOff <$ command "cadenzaOff"
+
+cmdPartial      :: StParser Command
+cmdPartial      = CmdPartialMeasure <$ command "partial" <*> lyDuration
 
 
 timeSig :: StParser Meter
@@ -187,7 +192,23 @@ lyAccidental = option Nat (f <$> longestString accidentals)
     f "eses" = DoubleFlat
     f "is"   = Sharp
     f "es"   = Flat
-        
+
+
+lyDuration :: StParser Duration
+lyDuration = 
+    build <$> rootDuration <*> (counting $ symbol ".") 
+                           <*> optparse (symbol "*" *> fractionalPart)
+  where
+    build d dc Nothing  = dotconst d dc
+    build d dc (Just r) = (dotconst d dc) * r
+    fractionalPart      = duration <$> int <*> option 1 (symbol "/" *> int)
+
+rootDuration :: StParser Duration
+rootDuration = choice [pBreve, pLonga, pNumericDuration]
+  where
+    pBreve            = breve <$ command "breve"   
+    pLonga            = longa <$ command "longa"
+    pNumericDuration  = (\i -> Duration (1%i) 0) <$> int 
 --------------------------------------------------------------------------------
 -- utility parsers
 

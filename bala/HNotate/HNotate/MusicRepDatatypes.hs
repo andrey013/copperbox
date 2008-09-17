@@ -50,6 +50,8 @@ meterToDouble (TimeSig n d) = (fromIntegral n) / (fromIntegral d)
 meterToDouble CommonTime    = 4.0 / 4.0
 meterToDouble CutTime       = 2.0 / 2.0
 
-
-
-  
+-- intervals?
+labelSetOf :: Key -> LabelSet
+labelSetOf (Key (Pitch C Nat _) Major)  = c_major_labels
+labelSetOf (Key (Pitch A Nat _) Major)  = a_major_labels
+labelSetOf _                            = c_major_labels

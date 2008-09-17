@@ -218,7 +218,8 @@ instance Traversable ScMeasure where
  
 
 --------------------------------------------------------------------------------
--- Bifunctor instance for Glyphs
+-- Functions on glyphs 
+ 
  
 
 glyphDuration :: ScoreGlyph -> Duration

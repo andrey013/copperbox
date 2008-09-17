@@ -41,13 +41,19 @@ type PState = Int
 
 type StParser a =  GenParser Char PState a
 
-
+parseFromFileState :: StParser a 
+                   -> FilePath 
+                   -> PState 
+                   -> IO (Either ParseError a)
 parseFromFileState p fname st = do
     input <- readFile fname
     return (runParser p st fname input)
 
-
-
+parseTestState :: Show a => StParser a -> [Char] -> PState -> IO ()
+parseTestState p input st = 
+    case (runParser p st "" input) of
+      Left err -> putStr "parse error at " >> print err
+      Right x -> print x
 
 incrCount :: StParser Int
 incrCount = do 
@@ -126,9 +132,12 @@ longestString :: [String] -> GenParser Char st String
 longestString = choice . map (try . string) . reverse . sortBy longer
   where longer a b = (length a) `compare` (length b)
   
-    
+
+-- parse a character but return unit    
 charDrop :: Char -> GenParser Char st ()
 charDrop a = char a >> return () 
+
+
 
 -- | Return the count of the number of parses, rather than a list of elements.
 -- (Note the @count@ combinator in Parsec works differently, it will parse a 
@@ -185,6 +194,10 @@ colon             = P.colon baseLex
 
 braces            :: CharParser st a -> CharParser st a
 braces            = P.braces baseLex
+
+commaSep          :: CharParser st a -> CharParser st [a]
+commaSep          = P.commaSep baseLex
+
 
 -- 'tightident' a version of identifier that doesn't 
 -- consume trailing whitespace

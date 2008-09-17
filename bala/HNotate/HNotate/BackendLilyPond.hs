@@ -56,7 +56,7 @@ lilypondRelativeForm se relative_pitch =
     evalState (unwrapMonad $ inner se) relative_pitch 
   where       
     inner se = evalState (unwrapMonad $ unComp $ trav se) quarter 
-    trav = traverse (proBody `comp` drleBody)
+    trav     = traverse (proBody `comp` drleBody)
 
 outputNoteList :: ScoreNoteList -> LilyPondOutput
 outputNoteList (ScNoteList se) = F.foldl outputBlock elementStart se

@@ -143,7 +143,7 @@ timeSig :: StParser Meter
 timeSig = TimeSig <$> int <*> (char '/' *> int)
 
 keySig :: StParser Key
-keySig = Key <$> abcPitch <*> abcMode
+keySig = Key <$> lexeme abcPitch <*> option Major abcMode
 
 
 

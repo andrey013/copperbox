@@ -46,9 +46,15 @@ translateAbc notes env =
 
     
 abcForm :: ScoreNoteList -> Env -> ScoreNoteList
-abcForm se env = runReader (unwrapMonad $ traverse unleBody se) env 
+abcForm se env = 
+    runReader (unwrapMonad $ inner se) env
+  where
+    inner se = runReader (unwrapMonad $ unComp $ trav se) env 
+    trav     = traverse (unleBody `comp` plrBody)
+   
  
-
+    
+    
 outputNoteList :: ScoreNoteList -> AbcNoteList
 outputNoteList (ScNoteList se) = F.foldl outputBlock body se
 

@@ -20,7 +20,7 @@ module HNotate.Duration (
     durationZero, no_duration,
     
     -- * Operations  
-    dot, rationalize, durationToDouble, approxDuration,
+    dot, dotconst, rationalize, durationToDouble, approxDuration,
     
     
     
@@ -85,7 +85,12 @@ ratioElements r = (numerator r, denominator r)
 
 -- | Augment the duration with a dot.
 dot :: Duration -> Duration
-dot (Duration r d) = Duration r (d+1)
+dot (Duration r dc) = Duration r (dc+1)
+
+-- | Set the dot value (as per const this forgets the original value).
+dotconst :: Duration -> Int -> Duration
+dotconst (Duration r _) dc = Duration r dc
+
 
 -- | @'rationalize'@ - turn a duration into a ratio which may normalize it. 
 rationalize :: Duration -> Ratio Int

@@ -186,8 +186,21 @@ unleBody e = let drn = glyphDuration e in WrapMonad $
     fn e drn unl | drn == unl = changeDuration e no_duration
                  | otherwise  = e            
 
+--------------------------------------------------------------------------------
+-- pitch label rename     
+
+-- unit note length encode
+plrBody :: ScoreGlyph -> WrappedMonad (Reader Env) ScoreGlyph
+plrBody e = WrapMonad $ (respell e) <$> asks label_set
+  where
+    respell (SgNote p d)      lbls  = SgNote (naturalize p lbls) d
+
+    respell (SgChord se d)    lbls  = SgChord (fmap (naturalizef lbls) se) d
     
+    respell (SgGraceNotes se) lbls  = SgGraceNotes (fmap (naturalizef lbls) se)
 
-
+    respell e                 lbls  = e  
+    
+    naturalizef = flip naturalize
 
        

@@ -2,7 +2,7 @@
 -- This tune is `Bulgarian (?) 6` from the Exotic ABC songbook
 
 -- ghci ...
--- :set -i../../HNotate:../../ZMidi
+-- :set -i../../HNotate
 
 module Examples.Bulgarian6 where
 
@@ -49,8 +49,9 @@ main = do
     outputAbc      bulgarian6   abc_template  abc_output
     
 debug = do 
-    dumpAbcTemplates  abc_template
     dumpLyTemplates   ly_template
+    dumpAbcTemplates  abc_template
+    
   
   
   

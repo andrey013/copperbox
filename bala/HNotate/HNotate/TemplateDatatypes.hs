@@ -70,7 +70,7 @@ data Command = CmdKey Key
              | CmdMeter Meter
              | CmdUnitNoteLength Duration  -- Abc only
              | CmdRelativePitch Pitch         -- Lilypond only
-             | CmdPartial Int Int
+             | CmdPartialMeasure Duration
              | CmdCadenzaOn
              | CmdCadenzaOff
   deriving Show
