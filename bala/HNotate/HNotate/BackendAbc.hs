@@ -95,7 +95,7 @@ voiceOverlay cxt (v:vs) = voiceOverlay (cxt &\ v) vs
 barNumber :: Int -> AbcRemark
 barNumber = remark . show
 
-durAttr g d | d == durationZero = g
+durAttr g d | d == no_duration  = g
             | otherwise         = g ! mkAbcDuration d
 
 
@@ -132,32 +132,13 @@ oabcOve i | i < 4       = Just $ Abc.octaveLow (4-i)
 
 
 mkAbcDuration :: Duration -> AbcDuration
-mkAbcDuration _ = dmult 1
-
-
-           {-
-mkAbcDuration :: Duration -> Duration -> AbcDuration
-mkAbcDuration drn@(Duration _ dots) base
-    case scaler base drn of
-      Left i -> Just $ Abc.dmult (doti i dots)
-      Right r -> Just $ factor $ dotr r dots
+mkAbcDuration = fn . nd . rationalize
   where
-    factor r = let (n,d) = (numerator r, denominator r)
-               in if n==1 then Abc.ddiv1 d else Abc.ddiv2 (n,d)                     
+    nd r     = (numerator r, denominator r)
+    fn (n,1) = dmult n
+    fn (1,d) = ddiv1 d
+    fn e     = ddiv2 e
 
--- if the duration is longer it is scaled by an int, 
--- if it is shorter its scaled by a fraction. 
-scaler :: Duration -> Duration -> Either Int (Ratio Int)
-scaler (Duration base _) (Duration drn _) = 
-    let a = drn / base; n = numerator a; d = denominator a
-    in if d == 1 then Left n else Right a
-    
-    
-doti i dots = sum $ map (i `div`) xs
-  where xs = take (dots+1) base2number_sequence
 
-dotr r dots = sum $ map ((r /) . fromIntegral) xs
-  where xs = take (dots+1) base2number_sequence  
 
--}  
   

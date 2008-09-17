@@ -28,6 +28,7 @@ import Control.Monad.Reader hiding (mapM)
 import Control.Monad.State hiding (mapM)
 import qualified Data.Foldable as F
 import Data.Monoid
+import Data.Ratio
 import Data.Sequence
 import Data.Traversable
 import Prelude hiding (mapM)
@@ -184,7 +185,12 @@ unleBody e = let drn = glyphDuration e in WrapMonad $
              fn e drn <$> asks unit_note_length
   where
     fn e drn unl | drn == unl = changeDuration e no_duration
-                 | otherwise  = e            
+                 | otherwise  = changeDuration e (abcScaleDuration drn unl)           
+
+abcScaleDuration drn unl = 
+    let (nr,dr,dc)  = durationElements drn
+        (un,ud,_)   = durationElements unl
+    in Duration ((nr%dr) / (un%ud)) dc                         
 
 --------------------------------------------------------------------------------
 -- pitch label rename     
