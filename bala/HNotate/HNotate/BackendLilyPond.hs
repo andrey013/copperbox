@@ -22,6 +22,7 @@ module HNotate.BackendLilyPond (
 
 import HNotate.CommonUtils
 import HNotate.Duration
+import HNotate.Env
 import HNotate.NoteList
 import HNotate.Pitch
 import HNotate.TextLilyPond hiding (chord, relative, rest, spacer)
@@ -42,22 +43,24 @@ type LilyPondOutput = LyCxt_Element
 
 
 
-translateLilyPond :: ScoreNoteList -> Pitch -> LilyPondOutput
-translateLilyPond notes relative_pitch =
-    outputNoteList $ lilypondRelativeForm notes relative_pitch
+translateLilyPond :: ScoreNoteList -> Env -> LilyPondOutput
+translateLilyPond notes env =
+    outputNoteList $ lilypondRelativeForm notes env
 
 
 -- Do we need a state type, like this one?
 -- data LyState = LyState { rel_pitch :: Pitch, rel_dur :: Duration }
 
 
-lilypondRelativeForm :: ScoreNoteList -> Pitch -> ScoreNoteList
-lilypondRelativeForm se relative_pitch = 
-    evalState (unwrapMonad $ inner se) relative_pitch 
+lilypondRelativeForm :: ScoreNoteList -> Env -> ScoreNoteList
+lilypondRelativeForm se env = 
+    evalState (unwrapMonad $ inner se) ly_st 
   where       
-    inner se = evalState (unwrapMonad $ unComp $ trav se) quarter 
+    inner se = evalState (unwrapMonad $ unComp $ trav se) ly_st 
     trav     = traverse (proBody `comp` drleBody)
-
+    ly_st    = lyState0 {rel_pitch= (relative_pitch env)}
+    
+    
 outputNoteList :: ScoreNoteList -> LilyPondOutput
 outputNoteList (ScNoteList se) = F.foldl outputBlock elementStart se
 

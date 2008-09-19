@@ -63,7 +63,7 @@ abcDefault i evtlist env = Plug i $
 
 lyRelative :: Scheme
 lyRelative i evtlist env = Plug i $ 
-    getLy $ translateLilyPond (toNoteList evtlist env) (relative_pitch env)
+    getLy $ translateLilyPond (toNoteList evtlist env) env
 
 psFullTranslation :: PlugScheme
 psFullTranslation = PlugScheme {

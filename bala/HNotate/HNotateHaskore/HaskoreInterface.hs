@@ -99,7 +99,7 @@ instance Convert H.AbsPitch Pitch where
 
 instance Convert H.Dur Duration where
   convert r = let (n,d) = (numerator r, denominator r)
-              in approxDuration (fromIntegral n % fromIntegral d)
+              in printableDurationF (fromIntegral n % fromIntegral d)
 
 instance Convert (H.PitchClass,Int) Pitch where
   convert (H.Cf, o)    = Pitch C Flat o

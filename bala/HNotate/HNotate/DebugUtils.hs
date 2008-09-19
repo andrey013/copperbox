@@ -111,7 +111,12 @@ instance Pretty ScoreGlyph where
   pretty (SgSpacer dur)           = char 's' <> durationSuffix dur
   pretty (SgChord ps dur)         = (brackets $ sepSeq (<>) ps) 
                                       <> durationSuffix dur
-  pretty (SgGraceNotes es)        = text "grace..." -- braces $ sepSeq (<>) ps
+  pretty (SgGraceNotes es)        = braces $ sepSeq (<>) es
+
+  pretty (SgBeamStart)            = text "[["
+  pretty (SgBeamEnd)              = text "]]" <> line
+  pretty (SgTie)                  = text "~~"
+                
 
 durationSuffix :: Pretty drn => drn -> Doc
 durationSuffix d = char '/' <> pretty d 

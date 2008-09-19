@@ -66,6 +66,7 @@ data ScoreGlyph = SgNote Pitch Duration
                 | SgGraceNotes (Seq Pitch)
                 | SgBeamStart
                 | SgBeamEnd
+                | SgTie
   deriving Show   
   
   
@@ -227,9 +228,8 @@ glyphDuration (SgNote _ d)        = d
 glyphDuration (SgRest d)          = d
 glyphDuration (SgSpacer d)        = d
 glyphDuration (SgChord _ d)       = d
-glyphDuration (SgGraceNotes _)    = durationZero
-glyphDuration (SgBeamStart)       = durationZero
-glyphDuration (SgBeamEnd)         = durationZero
+glyphDuration _                   = no_duration
+
 
 
 onDuration :: (Duration -> Duration) -> ScoreGlyph -> ScoreGlyph
@@ -237,9 +237,8 @@ onDuration f (SgNote p d)         = SgNote p (f d)
 onDuration f (SgRest d)           = SgRest (f d)
 onDuration f (SgSpacer d)         = SgSpacer (f d)
 onDuration f (SgChord se d)       = SgChord se (f d)
-onDuration f (SgGraceNotes se)    = SgGraceNotes se
-onDuration f (SgBeamStart)        = SgBeamStart
-onDuration f (SgBeamEnd)          = SgBeamEnd
+onDuration f e                    = e 
+
 
 onPitch :: (Pitch -> Pitch) -> ScoreGlyph -> ScoreGlyph
 onPitch f (SgNote p d)            = SgNote (f p) d

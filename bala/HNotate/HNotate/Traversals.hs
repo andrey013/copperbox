@@ -35,6 +35,11 @@ import Prelude hiding (mapM)
 
 type St = Duration
 
+data LyState = LyState { rel_pitch :: Pitch, rel_duration :: Duration }
+
+lyState0 = LyState { rel_pitch    = middleC,
+                     rel_duration = quarter }
+
 instance Applicative Identity where
   pure = return
   (<*>) = ap
@@ -77,6 +82,7 @@ traversalState f a st = evalState (unwrapMonad $ traverse f a) st
 changeDuration :: ScoreGlyph -> Duration -> ScoreGlyph
 changeDuration a od = onDuration (const od) a
 
+
 changePitch :: ScoreGlyph -> Pitch -> ScoreGlyph
 changePitch a op = onPitch (const op) a
 
@@ -84,24 +90,17 @@ changePitch a op = onPitch (const op) a
 --------------------------------------------------------------------------------
 -- run length encode the duration - LilyPond uses this method
 
-
-runLengthEncodeDuration :: ScNoteList (ScoreGlyph)
-                        -> Duration
-                        -> ScNoteList (ScoreGlyph)
-runLengthEncodeDuration strata initial_duration = 
-    traversalState drleBody strata initial_duration
-
 -- drle - duration run length encode
-drleBody :: ScoreGlyph -> WrappedMonad (State Duration) ScoreGlyph
+drleBody :: ScoreGlyph -> WrappedMonad (State LyState) ScoreGlyph
 drleBody e = WrapMonad $ do
     od <- diffDuration (glyphDuration e)
     return $ changeDuration e od    
   where    
-    diffDuration :: Duration -> State St Duration
+    diffDuration :: Duration -> State LyState Duration
     diffDuration d = do
-        old <- get 
+        old <- gets rel_duration
         if (old == d) then return no_duration
-                      else put d >> return d
+                      else modify (\s -> s {rel_duration=d}) >> return d
 
 
 --------------------------------------------------------------------------------
@@ -112,7 +111,7 @@ drleBody e = WrapMonad $ do
 -- and the subsequent notes only change it 'locally'.
 -- All successive notes in a grace notes change 'global' relative pitch
  
-proBody :: ScoreGlyph -> WrappedMonad (State Pitch) ScoreGlyph
+proBody :: ScoreGlyph -> WrappedMonad (State LyState) ScoreGlyph
 proBody e = WrapMonad $ step e
   where 
     step e@(SgNote p _)       = do 
@@ -128,25 +127,25 @@ proBody e = WrapMonad $ step e
     step e                    = return e         
 
 
-convChordPitches :: Seq Pitch -> State Pitch (Seq Pitch)
+convChordPitches :: Seq Pitch -> State LyState (Seq Pitch)
 convChordPitches se = case viewl se of
   (e :< sse) -> do e'  <- convPitch e
                    se' <- localPitch $ mapM convPitch sse 
                    return $ e' <| se'
   EmptyL     -> return mempty
 
-localPitch :: State st ans -> State st ans
+localPitch :: State LyState ans -> State LyState ans
 localPitch mf = do 
-    initial <- get
+    initial <- gets rel_pitch
     ans     <- mf
-    put initial
+    modify (\s -> s { rel_pitch = initial })
     return ans   
         
 
-convPitch :: Pitch -> State Pitch Pitch
+convPitch :: Pitch -> State LyState Pitch
 convPitch p = do
-    base <- get
-    put p
+    base <-  gets rel_pitch
+    modify (\s -> s { rel_pitch = p })
     return $ p `changeOctaveWrt` base
 
 
@@ -168,7 +167,7 @@ losBody e = WrapMonad $ return $ onPitch fn e
     
 
 --------------------------------------------------------------------------------
--- 'default encode' the duration - if the duration matches the default 
+-- 'default encode' the duration - if the duration matches the unit note length
 -- don't specify it - Abc uses this method 
 
 
@@ -187,10 +186,10 @@ unleBody e = let drn = glyphDuration e in WrapMonad $
     fn e drn unl | drn == unl = changeDuration e no_duration
                  | otherwise  = changeDuration e (abcScaleDuration drn unl)           
 
-abcScaleDuration drn unl = 
-    let (nr,dr,dc)  = durationElements drn
-        (un,ud,_)   = durationElements unl
-    in Duration ((nr%dr) / (un%ud)) dc                         
+    abcScaleDuration drn unl = 
+        let (nr,dr,dc)  = durationElements drn
+            (un,ud,_)   = durationElements unl
+        in Duration ((nr%dr) / (un%ud)) dc                         
 
 --------------------------------------------------------------------------------
 -- pitch label rename     

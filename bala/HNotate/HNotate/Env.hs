@@ -26,6 +26,7 @@ module HNotate.Env (
     output_format,
     current_key,
     current_meter,
+    meter_pattern,
     label_set,
     measure_length, 
     unit_note_length, 
@@ -48,6 +49,7 @@ import HNotate.Duration
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
 
+import Data.Ratio
 import Text.PrettyPrint.Leijen
 
 --------------------------------------------------------------------------------
@@ -67,7 +69,7 @@ data Env = Env {
     _measure_length     :: Duration, 
     _unit_note_length   :: Duration, 
     _relative_pitch     :: Pitch,
-    _partial_measure    :: Duration,
+    _partial_measure    :: Maybe Duration,
     _cadenza            :: Bool,
     _bar_number_check   :: Int,
     _score_comment      :: String -> Doc
@@ -86,11 +88,11 @@ default_ly_env = Env {
     _current_key            = c_major,
     _label_set              = c_major_labels,
     _current_meter          = four_four,
-    _meter_pattern          = two_of_four_eighth,
+    _meter_pattern          = four_four_of_eighth,
     _measure_length         = 4 * quarter,
     _unit_note_length       = quarter,
     _relative_pitch         = middle_c,
-    _partial_measure        = durationZero,
+    _partial_measure        = Nothing,
     _cadenza                = False,
     _bar_number_check       = 4,
     _score_comment          = lyComment
@@ -105,11 +107,11 @@ default_abc_env = Env {
     _current_key            = c_major,
     _label_set              = c_major_labels,
     _current_meter          = four_four,
-    _meter_pattern          = two_of_four_eighth,
+    _meter_pattern          = four_four_of_eighth,
     _measure_length         = 4 * quarter,
     _unit_note_length       = eighth,
     _relative_pitch         = middle_c,
-    _partial_measure        = durationZero,
+    _partial_measure        = Nothing,
     _cadenza                = False,
     _bar_number_check       = 4,
     _score_comment          = abcComment
@@ -133,7 +135,7 @@ current_meter       = _current_meter
 label_set           :: Env -> LabelSet
 label_set           = _label_set
 
-meter_pattern       :: Env ->  MeterPattern
+meter_pattern       :: Env -> MeterPattern
 meter_pattern       = _meter_pattern
 
 measure_length      :: Env -> Duration
@@ -147,7 +149,7 @@ relative_pitch      = _relative_pitch
 
 -- Note for a partial measure Abc just prints the barline 'early',
 -- LilyPond needs the partial command.
-partial_measure     :: Env -> Duration
+partial_measure     :: Env -> Maybe Duration
 partial_measure     = _partial_measure
 
 cadenza             :: Env -> Bool
@@ -200,13 +202,13 @@ set_relative_pitch            :: Pitch -> Env -> Env
 set_relative_pitch p env      = env {_relative_pitch = p}
 
 set_partial_measure           :: Duration -> Env -> Env
-set_partial_measure d env     = env {_partial_measure = d}
+set_partial_measure d env     = env {_partial_measure = Just d}
 
 set_cadenza                   :: Bool -> Env -> Env
 set_cadenza a env             = env {_cadenza = a}
       
 measureLength :: Meter -> Duration
-measureLength (TimeSig n d)   = duration n d
-measureLength CommonTime      = duration 4 4
-measureLength CutTime         = duration 2 2
+measureLength (TimeSig n d)   = durationR (n%d)
+measureLength CommonTime      = durationR (4%4)
+measureLength CutTime         = durationR (2%2)
 

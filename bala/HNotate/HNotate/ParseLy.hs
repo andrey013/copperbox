@@ -201,7 +201,8 @@ lyDuration =
   where
     build d dc Nothing  = dotconst d dc
     build d dc (Just r) = (dotconst d dc) * r
-    fractionalPart      = duration <$> int <*> option 1 (symbol "/" *> int)
+    fractionalPart      = (\n d -> durationR (n%d)) 
+                              <$> int <*> option 1 (symbol "/" *> int)
 
 rootDuration :: StParser Duration
 rootDuration = choice [pBreve, pLonga, pNumericDuration]
