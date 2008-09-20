@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  TypeSynonymInstances, mptc.
 --
--- Render an Event 'Tree' to a score / note list format.
+-- Render an Event 'Tree' to a score note list format.
 --
 --------------------------------------------------------------------------------
 
@@ -46,7 +46,12 @@ type FlattenM a = Reader Env a
 type IndexedMeasure = (Int,ScoreMeasure)
 
 
+instance Applicative (Reader env) where
+  pure = return
+  (<*>) = ap
 
+
+-- note to self (cadenza not implemented).
 
 toNoteList :: EventList -> Env -> ScoreNoteList
 toNoteList evtlist env = 
@@ -55,10 +60,6 @@ toNoteList evtlist env =
   where 
     bracketIM mp ixs = fmap (\(i,m) -> (i, bracketMeasure mp m)) ixs
 
-
-instance Applicative (Reader env) where
-  pure = return
-  (<*>) = ap
 
 flattenEventSeqeunce :: EventList -> FlattenM (Seq IndexedMeasure)
 flattenEventSeqeunce (EventSeq evts) = do

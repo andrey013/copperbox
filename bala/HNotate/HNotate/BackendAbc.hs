@@ -22,10 +22,10 @@ module HNotate.BackendAbc (
 import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
-import HNotate.NoteList
+import HNotate.NoteList hiding (note, rest, spacer, chord, gracenotes)
 import HNotate.Pitch
-import HNotate.TextAbc hiding (gracenotes, chord, spacer, rest)
-import qualified HNotate.TextAbc as Abc
+import HNotate.PrintAbc
+import HNotate.PrintMonad
 import HNotate.Traversals
 
 import Control.Applicative
@@ -35,14 +35,18 @@ import Data.Monoid
 import Data.Ratio
 import Data.Sequence hiding (take)
 import Data.Traversable
-
+import Text.PrettyPrint.Leijen (Doc, (<>), (<+>), text)
   
-type AbcNoteList = AbcCxt_Body
+type AbcNoteList = Doc
 
+
+unseq :: Seq a -> [a]
+unseq = F.foldr (:) [] 
 
 translateAbc :: ScoreNoteList -> Env -> AbcNoteList
 translateAbc notes env =
-    outputNoteList $ abcForm notes env
+    let abc_notes = abcForm notes env
+    in  execPrintM (outputNoteList abc_notes) st0 
 
     
 abcForm :: ScoreNoteList -> Env -> ScoreNoteList
@@ -55,89 +59,48 @@ abcForm se env =
  
     
     
-outputNoteList :: ScoreNoteList -> AbcNoteList
-outputNoteList (ScNoteList se) = F.foldl outputBlock body se
+outputNoteList :: ScoreNoteList -> PrintM ()
+outputNoteList (ScNoteList se) = F.mapM_ outputBlock se
 
-outputBlock :: AbcNoteList -> ScoreBlock -> AbcNoteList
-outputBlock cxt (ScSingleBlock i se) = 
-    let barcheck = barNumber i
-    in  (outputMeasure (cxt +++ barcheck) se) +++ (suffixLinebreak barline)
+outputBlock :: ScoreBlock -> PrintM ()
+outputBlock (ScSingleBlock i s) = barNumber i >> outputMeasure s
+outputBlock (ScPolyBlock i se)  = barNumber i >> outputVoiceOverlay se
 
-outputBlock cxt (ScPolyBlock i se) = 
-    let barcheck = barNumber i
-        voices = F.foldr (\e a -> outputMeasure body e : a) [] se
-    in voiceOverlay (cxt +++ barcheck) voices 
 
-outputMeasure :: AbcNoteList -> ScoreMeasure -> AbcNoteList
-outputMeasure cxt (ScMeasure se) = F.foldl outputGlyph cxt se
 
-outputGlyph :: AbcNoteList -> ScoreGlyph -> AbcNoteList
-outputGlyph cxt (SgNote n d)          = cxt +++ (mkAbcNote n `durAttr` d)
-    
-outputGlyph cxt (SgRest d)            = cxt +++ (Abc.rest `durAttr` d) 
-    
-outputGlyph cxt (SgSpacer d)          = cxt +++ (Abc.spacer `durAttr` d)
-    
-outputGlyph cxt (SgChord se d)        = cxt +++ mkChord d se
-  where
-    mkChord d = Abc.chord . F.foldr (\n a -> (mkAbcNote n `durAttr` d) : a) []
-    
-outputGlyph cxt (SgGraceNotes se)  = cxt +++ mkGrace se
+outputMeasure :: ScoreMeasure -> PrintM ()
+outputMeasure (ScMeasure se) = F.mapM_ outputGlyph se
+
+outputGlyph :: ScoreGlyph -> PrintM ()
+outputGlyph (SgNote p d)          = note p d
+outputGlyph (SgRest d)            = rest d 
+outputGlyph (SgSpacer d)          = spacer d
+outputGlyph (SgChord se d)        = chord (unseq se) d
+outputGlyph (SgGraceNotes se)     = gracenotes (unseq se)
+outputGlyph (SgBeamStart)         = appendOp (<>)
+outputGlyph (SgBeamEnd)           = appendOp (<+>)
+outputGlyph (SgTie)               = tie
+
+
+
+outputVoiceOverlay :: Seq ScoreMeasure -> PrintM ()
+outputVoiceOverlay = step1 . viewl
   where 
-    mkGrace = Abc.gracenotes . F.foldr (\n a -> mkAbcNote n : a) []
+    step1 EmptyL      = return ()
+    step1 (s :< se)   = rstep s (viewl se)
+    
+    rstep e EmptyL    = outputMeasure e >> barline
+    rstep e (s :< se) = outputMeasure e >> voc >> rstep s (viewl se)
+    
+     
+lastS EmptyL    = error "lastS EmptyL"
+lastS (e :< se) = work e (viewl se)
 
-voiceOverlay :: AbcCxt_Body -> [AbcCxt_Body] -> AbcCxt_Body
-voiceOverlay cxt []     = cxt
-voiceOverlay cxt [v]    = cxt `mappend` v +++ barline
-voiceOverlay cxt (v:vs) = voiceOverlay (cxt &\ v) vs 
+work e EmptyL    = e
+work _ (e :< se) = work e (viewl se)
 
-
-barNumber :: Int -> AbcRemark
-barNumber = remark . show
-
-durAttr g d | d == no_duration  = g
-            | otherwise         = g ! mkAbcDuration d
-
-
-
-mkAbcNote :: Pitch -> AbcNote
-mkAbcNote (Pitch l a o) = 
-    let pl = if o > 4 then upwards $ abcPitchLetter l else abcPitchLetter l
-    in (oabcAccidental a !*> Abc.note pl *! oabcOve o)
-
-
-abcPitchLetter :: PitchLetter -> Abc.AbcPitchLetter
-abcPitchLetter = toEnum . fromEnum
-
-upwards :: Abc.AbcPitchLetter -> Abc.AbcPitchLetter
-upwards l = let i = fromEnum l in 
-  if (i<7) then toEnum $ i + 7 else l
-
-
-oabcAccidental :: Accidental -> Maybe Abc.AbcAccidental
-oabcAccidental Nat          = Nothing
-oabcAccidental a            = Just $ abcAccidental a
-
-abcAccidental :: Accidental -> Abc.AbcAccidental
-abcAccidental Nat            = Abc.natural
-abcAccidental Sharp          = Abc.sharp
-abcAccidental Flat           = Abc.flat
-abcAccidental DoubleSharp    = Abc.doubleSharp
-abcAccidental DoubleFlat     = Abc.doubleFlat
-
-oabcOve :: Int -> Maybe Abc.AbcOctave    
-oabcOve i | i < 4       = Just $ Abc.octaveLow (4-i)
-          | i > 5       = Just $ Abc.octaveHigh (i-5) 
-          | otherwise   = Nothing
-
-
-mkAbcDuration :: Duration -> AbcDuration
-mkAbcDuration = fn . nd . rationalize
-  where
-    nd r     = (numerator r, denominator r)
-    fn (n,1) = dmult n
-    fn (1,d) = ddiv1 d
-    fn e     = ddiv2 e
+barNumber :: Int -> PrintM ()
+barNumber = comment . ("bar " ++) . show
 
 
 
