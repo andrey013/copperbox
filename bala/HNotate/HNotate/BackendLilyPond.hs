@@ -23,10 +23,10 @@ module HNotate.BackendLilyPond (
 import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
-import HNotate.NoteList
+import HNotate.NoteList hiding (note, rest, spacer, chord, gracenotes)
 import HNotate.Pitch
-import HNotate.TextLilyPond hiding (chord, relative, rest, spacer)
-import qualified HNotate.TextLilyPond as Ly
+import HNotate.PrintLy
+import HNotate.PrintMonad
 import HNotate.Traversals
 
 import Control.Applicative
@@ -36,16 +36,18 @@ import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Sequence
 import Data.Traversable
-
+import Text.PrettyPrint.Leijen (Doc)
 
   
-type LilyPondOutput = LyCxt_Element
+type LilyPondOutput = Doc
 
 
 
 translateLilyPond :: ScoreNoteList -> Env -> LilyPondOutput
 translateLilyPond notes env =
-    outputNoteList $ lilypondRelativeForm notes env
+    let ly_notes = lilypondRelativeForm notes env
+    in  execPrintM (outputNoteList ly_notes) st0 
+
 
 
 -- Do we need a state type, like this one?
@@ -61,38 +63,40 @@ lilypondRelativeForm se env =
     ly_st    = lyState0 {rel_pitch= (relative_pitch env)}
     
     
-outputNoteList :: ScoreNoteList -> LilyPondOutput
-outputNoteList (ScNoteList se) = F.foldl outputBlock elementStart se
+outputNoteList :: ScoreNoteList -> PrintM ()
+outputNoteList (ScNoteList se) = F.mapM_  outputBlock se
 
-outputBlock :: LilyPondOutput -> ScoreBlock -> LilyPondOutput
-outputBlock cxt (ScSingleBlock i se) =
-    let barcheck = barNumber i
-    in addBarline $ outputMeasure (cxt +++ barcheck) se
+outputBlock :: ScoreBlock -> PrintM ()
+outputBlock (ScSingleBlock i s) = 
+    barNumberCheck i >> outputMeasure s >> barcheck
+outputBlock (ScPolyBlock i se) = 
+    barNumberCheck i >> polyphony se >> barcheck
 
-outputBlock cxt (ScPolyBlock i se) = 
-    let barcheck = barNumber i
-        voices = F.foldr (\e a -> (outputMeasure elementStart e) : a) [] se
-    in polyphony (cxt +++ barcheck) voices 
     
-outputMeasure :: LilyPondOutput -> ScoreMeasure -> LilyPondOutput
-outputMeasure cxt (ScMeasure se) = F.foldl outputGlyph cxt se
+outputMeasure :: ScoreMeasure -> PrintM ()
+outputMeasure (ScMeasure se) = F.mapM_ outputGlyph se
 
-outputGlyph :: LilyPondOutput -> ScoreGlyph -> LilyPondOutput
-outputGlyph cxt (SgNote p d)        = cxt +++ mkLyNote p `durAttr` d
+outputGlyph :: ScoreGlyph -> PrintM ()
+outputGlyph (SgNote p d)          = note p d
+outputGlyph (SgRest d)            = rest d
+outputGlyph (SgSpacer d)          = spacer d
+outputGlyph (SgChord se d)        = chord (unseq se) d 
+outputGlyph (SgGraceNotes se)     = gracenotes (unseq se)
+outputGlyph (SgBeamStart)         = error "outputGlyph BEAM<"
+outputGlyph (SgBeamEnd)           = error "outputGlyph >BEAM"
+outputGlyph (SgTie)               = tie
 
-outputGlyph cxt (SgRest d)          = cxt +++ Ly.rest `durAttr` d
-
-outputGlyph cxt (SgSpacer d)        = cxt +++ Ly.spacer `durAttr` d
-
-outputGlyph cxt (SgChord se d)      = cxt +++ mkChord se `durAttr` d
+polyphony :: Seq ScoreMeasure -> PrintM ()
+polyphony = step1 . viewl
   where 
-    mkChord = Ly.chord . F.foldr (\e a -> (mkLyPitch e):a) []  
+    step1 EmptyL      = return ()
+    step1 (s :< se)   = polystart >> rstep s (viewl se)
+    
+    rstep e EmptyL    = outputMeasure e >> polyend
+    rstep e (s :< se) = outputMeasure e >> polyc >> rstep s (viewl se)
+    
 
-outputGlyph cxt (SgGraceNotes se)  = cxt +++ mkGrace se
-  where 
-    mkGrace = grace . block . F.foldl (\a p -> a +++ mkLyNote p) elementStart
-
-
+{-
 polyphony :: LyCxt_Element -> [LyCxt_Element] -> LyCxt_Element
 polyphony cxt (a:b:xs)  = polywork ((cxt +++ openPoly) `mappend` a) b xs
 polyphony cxt [a]       = cxt `mappend` a
@@ -101,56 +105,19 @@ polyphony cxt []        = cxt
 
 polywork cxt x []     = (cxt \\ x) +++ closePoly
 polywork cxt x (y:ys) = polywork (cxt \\ x) y ys
-
-durAttr g d | d == no_duration  = g
-            | otherwise         = g ! mkLyDuration d   
+-} 
 
 
-mkLyNote :: Pitch -> LyNote
-mkLyNote = Ly.note . mkLyPitch
-
-mkLyPitch :: Pitch -> LyPitch
-mkLyPitch (Pitch l a o) = 
-    let pc = Ly.pitch $ lyPitchName l
-        oa = olyAccidental a
-        oo = olyOctaveSpec o
-    in pc *! oa *! oo
-
-
-lyPitchName :: PitchLetter -> Ly.LyPitchName
-lyPitchName = toEnum . fromEnum 
-
-olyAccidental :: Accidental -> Maybe Ly.LyAccidental
-olyAccidental Nat            = Nothing
-olyAccidental Sharp          = Just Ly.sharp
-olyAccidental Flat           = Just Ly.flat
-olyAccidental DoubleSharp    = Just Ly.doubleSharp
-olyAccidental DoubleFlat     = Just Ly.doubleFlat
-     
-olyOctaveSpec :: Int -> Maybe Ly.LyOctaveSpec
-olyOctaveSpec i 
-    | i > 0       = Just $ Ly.raised i
-    | i < 0       = Just $ Ly.lowered (abs i)
-    | otherwise   = Nothing 
     
-mkLyDuration :: Duration -> Ly.LyDuration
-mkLyDuration drn = 
-    let (n,d,dots) = durationElements drn in addDots dots $ mkDuration n d
-  where 
-    mkDuration 4 1      = Ly.longa  
-    mkDuration 2 1      = Ly.breve 
-    mkDuration 1 i      = Ly.duration i
-    mkDuration n d      = error $ "olyDuration unhandled case - " ++ 
-                                  show n ++ "%" ++ show d
     
-    addDots :: Int -> Ly.LyDuration -> Ly.LyDuration
-    addDots i d 
-        | i > 0     = d ! (Ly.dotted i)
-        | otherwise = d
 
-barNumber :: Int -> LyBarNumberCheck
+    
+{-
+
+barNumber :: Int -> PrintM ()
 barNumber = barNumberCheck
+
 
 addBarline :: LyCxt_Element -> LyCxt_Element
 addBarline cxt = cxt +++ suffixLinebreak barcheck
-
+-}

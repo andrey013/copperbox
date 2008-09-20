@@ -29,18 +29,18 @@ import Text.PrettyPrint.Leijen
 
 
 note :: P.Pitch -> D.Duration -> PrintM () 
-note p d = glyph $ noteD p <> durationD d
+note p d = glyph $ pitchD p <> durationD d
 
 
-noteD :: P.Pitch -> Doc
-noteD (P.Pitch l a o) 
+pitchD :: P.Pitch -> Doc
+pitchD (P.Pitch l a o) 
     | o > 4     = accidental a $ octave o $ (char . toLower . letter) l
     | otherwise = accidental a $ octave o $ (char . letter) l
   where     
     letter :: P.PitchLetter -> Char
     letter = fn . show
       where fn [x] = x
-            fn xs   = error $ "letter " ++ xs 
+            fn xs  = error $ "letter " ++ xs 
 
     accidental :: P.Accidental -> Doc -> Doc 
     accidental P.Nat           = id    
@@ -78,13 +78,13 @@ chord ps = glyph . chordD ps
 
 chordD :: [P.Pitch] -> D.Duration -> Doc
 chordD ps d = chord1 ps <> durationD d
-  where chord1 = brackets . hcat . map noteD     
+  where chord1 = brackets . hcat . map pitchD     
 
 gracenotes :: [P.Pitch] -> PrintM ()
 gracenotes = glyph . gracenotesD
 
 gracenotesD :: [P.Pitch] -> Doc
-gracenotesD = braces . hcat . map noteD  
+gracenotesD = braces . hcat . map pitchD  
 
 tie :: PrintM ()
 tie = glyph $ char '-'

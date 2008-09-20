@@ -18,9 +18,13 @@ module HNotate.CommonUtils where
 
 
 import Data.Monoid
+import qualified Data.Foldable as F
 import Data.Sequence hiding (empty, length)
 import System.IO
 import Text.PrettyPrint.Leijen
+
+unseq :: Seq a -> [a]
+unseq = F.foldr (:) [] 
 
 
 successFailM :: Monad m => m (Either a b) -> (b -> m c) -> (a -> m c) -> m c

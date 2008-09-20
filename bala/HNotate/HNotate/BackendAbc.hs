@@ -40,8 +40,7 @@ import Text.PrettyPrint.Leijen (Doc, (<>), (<+>), text)
 type AbcNoteList = Doc
 
 
-unseq :: Seq a -> [a]
-unseq = F.foldr (:) [] 
+
 
 translateAbc :: ScoreNoteList -> Env -> AbcNoteList
 translateAbc notes env =
@@ -63,8 +62,10 @@ outputNoteList :: ScoreNoteList -> PrintM ()
 outputNoteList (ScNoteList se) = F.mapM_ outputBlock se
 
 outputBlock :: ScoreBlock -> PrintM ()
-outputBlock (ScSingleBlock i s) = barNumber i >> outputMeasure s
-outputBlock (ScPolyBlock i se)  = barNumber i >> outputVoiceOverlay se
+outputBlock (ScSingleBlock i s) = 
+    barNumber i >> outputMeasure s >> barline
+outputBlock (ScPolyBlock i se)  = 
+    barNumber i >> outputVoiceOverlay se >> barline
 
 
 
@@ -92,12 +93,6 @@ outputVoiceOverlay = step1 . viewl
     rstep e EmptyL    = outputMeasure e >> barline
     rstep e (s :< se) = outputMeasure e >> voc >> rstep s (viewl se)
     
-     
-lastS EmptyL    = error "lastS EmptyL"
-lastS (e :< se) = work e (viewl se)
-
-work e EmptyL    = e
-work _ (e :< se) = work e (viewl se)
 
 barNumber :: Int -> PrintM ()
 barNumber = comment . ("bar " ++) . show

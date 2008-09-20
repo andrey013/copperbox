@@ -66,6 +66,9 @@ attribute a = do
     acc <- gets _output
     modify (\s -> s {_output = acc <> a})
 
-
+manualbreak :: PrintM ()
+manualbreak = do 
+    acc <- gets _output
+    modify (\s -> s {_output = acc <> line})
 
 
