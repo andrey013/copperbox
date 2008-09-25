@@ -16,118 +16,171 @@
 
 module HNotate.PreprocessTemplate where
 
-import HNotate.ParserBase (waterMaybe)
+import HNotate.ParserBase (Token(..), waterMaybe)
 
 import Control.Applicative hiding (many, optional, (<|>) )
 import Control.Monad
 import Text.ParserCombinators.Parsec
 
 
-streamTokens :: [Token] -> String
-streamTokens []     = ""
-streamTokens (x:xs) = work x xs ""
-  where
-    work (Token x) []     d = d `append` x
-    work (Token x) (y:ys) d = work y ys (d `append` x)
-    
-    append acc a = acc ++ " " ++ a
 
---------------------------------------------------------------------------------
--- Lexer
-
-
-newtype Token = Token { getIsland :: String }
-  deriving Show
-
-charToken :: Char -> Token
-charToken c = Token [c]
   
-type Errors = [String]
 
-type Lexer st = [Token] -> GenParser Char st [Token]
+type PreProcesser st = [Token] -> GenParser Char st [Token]
 
-{-
-getToken :: (Token -> Maybe a) -> TParser a
-getToken test = token showf nextf testf
+type NestCount = Int
+
+
+abcPrePro :: GenParser Char NestCount [Token] 
+abcPrePro = step []
   where
-    showf (_,tok) = show tok
-    nextf (pos,_) = pos
-    testf (_,tok) = test tok 
--}
+    step   cca  = (pfn cca) >>= maybe (finish cca) step
+    pfn    cca  = waterMaybe (choiceA abc_start_tokens cca)
+    finish cca  = popCloseBrace cca >>= return . reverse
+    
+abc_start_tokens :: [PreProcesser NestCount]
+abc_start_tokens = 
+  [ lexNumFieldAbc, lexMeterFieldAbc, lexKeyFieldAbc, 
+    
+    lexMetaCommentAbc, lexCommentAbc
+  ]
 
+lexMetaCommentAbc :: PreProcesser NestCount
+lexMetaCommentAbc = try . trailSpace fn
+  where 
+    fn = (\ss -> Token $ "%{#" ++ ss ++ " #%}") <$> 
+                (string "%#" >> manyTill anyChar lineEnding) 
+                
+                
+lexCommentAbc :: PreProcesser NestCount
+lexCommentAbc = passBy $ 
+    try $ string "%" >> manyTill anyChar lineEnding
 
-lyLexerW :: GenParser Char st [Token] 
-lyLexerW = step []
+-- Abc doesn't have nesting like LilyPond - but it makes further 
+-- processing easier if we pretend it does.
+ 
+lexNumFieldAbc :: PreProcesser NestCount
+lexNumFieldAbc = popCloseBrace >=> abcField 'X'
+-- lexNumFieldAbc = trailSpaceDrop (string "X:") >=> popCloseBrace >=> pushStartBrace
+
+lexMeterFieldAbc :: PreProcesser NestCount
+lexMeterFieldAbc = abcField 'M'
+
+lexKeyFieldAbc :: PreProcesser NestCount
+lexKeyFieldAbc = abcField 'K'
+
+     
+popCloseBrace :: PreProcesser NestCount
+popCloseBrace cca = do 
+    nc <- getState
+    setState 0
+    return $ replicate nc (Token "}") ++ cca
+
+pushStartBrace :: PreProcesser NestCount      
+pushStartBrace cca = do
+    nc <- getState
+    setState $ nc+1
+    return $ (Token "{") : cca
+
+lineEnding :: GenParser Char st ()
+lineEnding = choice [ () <$ newline, eof]     
+
+abcField :: Char -> PreProcesser NestCount
+abcField c = trailSpace fn >=> pushStartBrace
+  where 
+    fn = Token . ([c,':'] ++) <$> 
+                (string [c,':'] >> manyTill anyChar lineEnding) 
+    
+--------------------------------------------------------------------------------
+-- LilyPond
+
+lyPrePro :: GenParser Char st [Token] 
+lyPrePro = step []
   where
     step cca  = (pfn cca) >>= maybe (return $ reverse cca) step
-    pfn  cca  = waterMaybe (choiceA start_tokens cca)
+    pfn  cca  = waterMaybe (choiceA ly_start_tokens cca)
 
-start_tokens :: [Lexer st]    
-start_tokens = [ lexLeftBrace, lexRightBrace, lexMetaComment, lexComment, 
-                 lexKey, lexRelative, lexCadenza
-                 ] 
- 
+ly_start_tokens :: [PreProcesser st]    
+ly_start_tokens = 
+  [ lexLeftBrace, lexRightBrace, lexMetaCommentLy, lexCommentLy, 
+    lexKeyLy, lexRelativeLy, lexCadenzaLy
+  ] 
 
-choiceA :: [Lexer st] -> Lexer st
-choiceA xs cca = foldr fn mzero xs
-  where fn f g = f cca <|> g
+
+
+
+lexRelativeLy :: PreProcesser st
+lexRelativeLy = next1 $ lexCommandLy "relative"
+
+lexCadenzaLy = choiceA [ lexCommandLy "cadenzaOn", lexCommandLy "cadenzaOff"]   
+
+lexKeyLy :: PreProcesser st
+lexKeyLy = next2 $ lexCommandLy "key"
+
+
+     
+lexCommandLy :: String -> PreProcesser st
+lexCommandLy ss = try . trailSpace fn
+  where fn = Token . ('\\':) <$> (char '\\' *> string ss) 
+  
+lexAnyCommandLy :: PreProcesser st
+lexAnyCommandLy = try . trailSpace fn
+  where fn = Token . ('\\':) <$> (char '\\' *> many letter)   
+
+lexMetaCommentLy :: PreProcesser st
+lexMetaCommentLy = try . trailSpace fn
+  where 
+    fn = (\ss -> Token $ "%{#" ++ ss ++ "#%}") <$> 
+                (string "%{#" >> manyTill anyChar (try (string "#%}"))) 
     
-trailSpace :: GenParser Char st Token -> Lexer st
+lexCommentLy :: PreProcesser st
+lexCommentLy = passBy $ 
+    try $ string "%{" >> manyTill anyChar (try (string "%}")) 
+
+lexLeftBrace :: PreProcesser st
+lexLeftBrace = trailSpace $  
+    charToken <$> char '{' 
+
+lexRightBrace :: PreProcesser st
+lexRightBrace = trailSpace $  
+    charToken <$> char '}' 
+
+--------------------------------------------------------------------------------
+-- Base parsers - useful for both LilyPond and Abc
+
+
+lexChunk :: PreProcesser st
+lexChunk = trailSpace $ 
+    Token <$> many1 (alphaNum <|> oneOf "'_-")
+  
+choiceA :: [PreProcesser st] -> PreProcesser st
+choiceA xs cca = foldr fn mzero xs
+  where fn f g = f cca <|> g 
+    
+trailSpace :: GenParser Char st Token -> PreProcesser st
 trailSpace f cca = do 
     a   <- f
     -- parse trailing ws if there is any, don't collect...
     option '\0' (choice [space, eof >> return '\0']) 
     return $ a:cca
 
-passBy :: GenParser Char st a -> Lexer st
+trailSpaceDrop :: GenParser Char st a -> PreProcesser st
+trailSpaceDrop f cca = do 
+    a   <- f
+    -- parse trailing ws if there is any, don't collect...
+    option '\0' (choice [space, eof >> return '\0']) 
+    return $ cca
+    
+passBy :: GenParser Char st a -> PreProcesser st
 passBy f cca = f >> return cca
 
-next1 :: Lexer st -> Lexer st
+next1 :: PreProcesser st -> PreProcesser st
 next1 f = f >=> lexChunk
 
-next2 :: Lexer st -> Lexer st
+next2 :: PreProcesser st -> PreProcesser st
 next2 f = f >=> lexChunk >=> lexChunk 
 
 
-lexRelative :: Lexer st
-lexRelative = next1 $ lexCommand "relative"
-
-lexCadenza = choiceA [ lexCommand "cadenzaOn", lexCommand "cadenzaOff"]   
-
-lexKey :: Lexer st
-lexKey = next2 $ lexCommand "key"
-
-
-     
-lexCommand :: String -> Lexer st
-lexCommand ss = try . trailSpace fn
-  where fn = Token . ('\\':) <$> (char '\\' *> string ss) 
-  
-lexAnyCommand :: Lexer st
-lexAnyCommand = try . trailSpace fn
-  where fn = Token . ('\\':) <$> (char '\\' *> many letter)   
-
-lexMetaComment :: Lexer st
-lexMetaComment = try . trailSpace fn
-  where 
-    fn = (\ss -> Token $ "<<< " ++ ss ++ " >>>") <$> 
-                (string "%{#" >> manyTill anyChar (try (string "#%}"))) 
-    
-lexComment :: Lexer st
-lexComment = passBy $ 
-    try $ string "%{" >> manyTill anyChar (try (string "%}")) 
-
-lexLeftBrace :: Lexer st
-lexLeftBrace = trailSpace $  
-    charToken <$> char '{' 
-
-lexRightBrace :: Lexer st
-lexRightBrace = trailSpace $  
-    charToken <$> char '}' 
-
-lexChunk :: Lexer st
-lexChunk = trailSpace $ 
-    Token <$> many1 (alphaNum <|> oneOf "'_-")
-  
-  
+charToken :: Char -> Token
+charToken c = Token [c]
         

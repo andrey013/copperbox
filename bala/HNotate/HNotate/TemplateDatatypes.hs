@@ -16,6 +16,7 @@
 module HNotate.TemplateDatatypes where
 
 import HNotate.Duration
+import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
 
@@ -27,20 +28,24 @@ import Text.PrettyPrint.Leijen (Doc)
 type Idx = Int
 
 type Name = String
-type SchemeName = String
-data MetaDirective = MetaOutput Name SchemeName
+
+type SystemIndex = String
+
+data MetaDirective = MetaOutput OutputScheme SystemIndex
   deriving Show
 
+data OutputScheme = LyRelative | AbcDefault
+  deriving Show
 
 -- Two views of a file
 
 -- 1. Source preserving view 
 -- Preserves source text - the holes are indexed for filling. 
 
-newtype SPV = SPV { getTextElements :: Seq TextElement } 
+newtype TextualView = TextualView { getTextElements :: Seq TextElement } 
   deriving (Show) 
   
-data TextElement = SourceText String | MetaMark Idx SrcPos MetaDirective
+data TextElement = SourceText String | MetaMark Idx SrcPos String
   deriving (Show)
 
 
@@ -53,17 +58,19 @@ data SrcPos = SrcPos {
   }
   deriving (Show)  
 
--- 2. Partially interpreted view
+-- 2. Expression interpreted view
 -- Expressions of interest (e.g. time signatures, key signatures) are
 -- interpreted as are output directives inside meta comments, 
--- nesting structure is approximately respected. 
-newtype PIV = PIV { getScoreElement :: [ScoreElement] }
+-- nesting structure is respected (or manufactured for Abc). 
+newtype ExprView = ExprView { getExprs :: [Expr] }
+  deriving (Show)
 
-data ScoreElement = Command Command
-                  | Directive Idx MetaDirective
-                  | Nested [ScoreElement]
-  deriving Show                 
-                 
+data Expr = LetExpr (Env -> Env) [Expr]
+          | Action Idx MetaDirective
+
+instance Show Expr where
+  show (LetExpr fn xs) = "let <fun> in " ++ show xs
+  show (Action i md)   = "#" ++ show i ++ ":" ++ show md
 
 
 data Command = CmdKey Key

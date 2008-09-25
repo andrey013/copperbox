@@ -7,10 +7,10 @@
 
 melody = \relative c'' {
   \key a \major
-  \time 2/4 
-  \clef treble 
-   %{# bulgarian6:relative #%}
-}      
+  \time 2/4
+  \clef treble
+   %{# relative:bulgarian6 #%}
+}
 
 \book {
   \score {

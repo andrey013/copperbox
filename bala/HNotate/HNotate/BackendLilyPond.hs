@@ -53,7 +53,6 @@ translateLilyPond notes env =
 -- Do we need a state type, like this one?
 -- data LyState = LyState { rel_pitch :: Pitch, rel_dur :: Duration }
 
-
 lilypondRelativeForm :: ScoreNoteList -> Env -> ScoreNoteList
 lilypondRelativeForm se env = 
     evalState (unwrapMonad $ inner se) ly_st 
@@ -82,8 +81,8 @@ outputGlyph (SgRest d)            = rest d
 outputGlyph (SgSpacer d)          = spacer d
 outputGlyph (SgChord se d)        = chord (unseq se) d 
 outputGlyph (SgGraceNotes se)     = gracenotes (unseq se)
-outputGlyph (SgBeamStart)         = error "outputGlyph BEAM<"
-outputGlyph (SgBeamEnd)           = error "outputGlyph >BEAM"
+outputGlyph (SgBeamStart)         = return ()
+outputGlyph (SgBeamEnd)           = return ()
 outputGlyph (SgTie)               = tie
 
 polyphony :: Seq ScoreMeasure -> PrintM ()

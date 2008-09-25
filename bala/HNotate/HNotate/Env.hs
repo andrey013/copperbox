@@ -170,7 +170,6 @@ score_comment       = _score_comment
 --------------------------------------------------------------------------------
 -- Update functions - not every field is directly updateable...
 
-
 set_current_key               :: Key -> Env -> Env
 set_current_key k env         = 
     let lbls = labelSetOf k in env {_current_key = k, 

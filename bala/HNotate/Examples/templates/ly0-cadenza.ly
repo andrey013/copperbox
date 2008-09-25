@@ -8,13 +8,13 @@ melody = \relative c' {
 	\key c \major
 	\time 4/4
 	\clef treble
-	%{# intro:relative #%}
+	%{# relative:intro #%}
 	\cadenzaOn
-	%{# cadenza1:relative #%}
+	%{# relative:cadenza1 #%}
 	\cadenzaOff
 	\barNumberCheck #3
 	c1
-}	
+}
 
 \book {
   \score {

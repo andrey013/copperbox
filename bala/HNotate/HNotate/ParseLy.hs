@@ -16,9 +16,11 @@
 module HNotate.ParseLy where
 
 import HNotate.Duration
+import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.ParserBase
 import HNotate.Pitch
+import HNotate.PreprocessTemplate (lyPrePro)
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (many, optional, (<|>) )
@@ -28,103 +30,35 @@ import Data.Sequence ( (|>) )
 import Text.ParserCombinators.Parsec hiding (space)
 
 
-lyPIV :: FilePath -> IO (Either ParseError PIV)
-lyPIV filepath = parseFromFileState interpretableView filepath 0
 
 
-lySPV :: FilePath -> IO (Either ParseError SPV)
-lySPV filepath = parseFromFileState textView filepath 0
-
-
-textView :: StParser SPV
-textView = collect mempty
+lyTextualView :: FilePath -> IO (Either ParseError TextualView)
+lyTextualView path = parseFromFileState (textView start end) path 0
   where
-    collect se = do 
-      txt    <- upTo (eitherparse eof (lexeme metaCommentStart))
-      at_end <- option False (True <$ eof)
-      case at_end of
-        True -> return $ SPV (se `add` txt)
-        False -> do { mark <- metamarkK
-                    ; collect $ (se `add` txt) |> mark }  
-    
-    add se "" = se
-    add se ss = se |> (SourceText ss)       
+    start = lexeme $ string "%{#"
+    end   = lexeme $ string "#%}"
 
-metamarkK = MetaMark 
-    <$> incrCount <*> sourcePosition <*> (metadirective <* metaCommentEnd) 
-    
-        
--- relative e.g. \relative c''
+lyExpressionView :: FilePath -> IO (Either ParseError ExprView)
+lyExpressionView = twoPass lyPrePro lyExprView
+              
+lyExprView :: StParser ExprView
+lyExprView = exprView updateWithLyCommands
 
--- time e.g. \time 2/4
+--                   
 
--- key e.g. \key c \major
+updateWithLyCommands :: StParser (Env -> Env)
+updateWithLyCommands = choice $ [ cmdRelative, cmdTime, cmdKey, cmdCadenzaOn, 
+   cmdCadenzaOff, cmdPartial ]    
+                     
+                     
+cmdRelative :: StParser (Env -> Env)
+cmdRelative = set_relative_pitch <$> (command "relative" *> lyPitch)
 
+cmdTime :: StParser (Env -> Env)
+cmdTime = set_current_meter <$> (command "time" *> timeSig)
 
-interpretableView :: StParser PIV
-interpretableView = PIV <$> manyWaterIsland expr1
-
-
--- expr1 and nestedk unwrap the left recursion in the grammar
--- but make things a bit ugly
-
-
-expr1 :: StParser ScoreElement
-expr1 = do 
-  ans <- eitherparse beginNested (choice [lyCommand, lyDirective])
-  case ans of 
-    Left _ -> nestedk []
-    Right a -> return a
-
-nestedk :: [ScoreElement] -> StParser ScoreElement
-nestedk acc = do
-    elt <- try $ water (eitherparse (choice [beginNested, endNested])
-                                    (choice [lyCommand, lyDirective]))
-    case elt of
-      Left NestStart -> do { a1 <- nestedk []; nestedk (a1 : acc) }
-      Left NestEnd -> return $ Nested $ reverse acc      
-      Right a  -> nestedk (a:acc) 
-  <|> fail "unterminated nesting"      
-
-
-lyCommand :: StParser ScoreElement
-lyCommand = Command <$> choice 
-  [ cmdRelative, cmdTime, cmdKey, cmdCadenzaOn, cmdCadenzaOff, cmdPartial ]          
-                 
-lyDirective :: StParser ScoreElement
-lyDirective = Directive 
-    <$> incrCount <*> ((lexeme metaCommentStart) *> metadirective) 
-                  <*  (lexeme metaCommentEnd)
-
-
-    
-metadirective :: StParser MetaDirective
-metadirective = metaoutput
-
-metaoutput :: StParser MetaDirective
-metaoutput = MetaOutput <$> (identifier <* colon) <*> identifier
-
-metaCommentStart  :: CharParser st String
-metaCommentStart  = string "%{#" 
-
-metaCommentEnd    :: CharParser st String 
-metaCommentEnd    = string "#%}" 
-
-beginNested       :: StParser Nested
-beginNested       = NestStart <$ symbol "{"
-
-endNested         :: StParser Nested
-endNested         = NestEnd <$ symbol "}"
-
-
-cmdRelative :: StParser Command
-cmdRelative = CmdRelativePitch <$> (command "relative" *> lyPitch)
-
-cmdTime :: StParser Command
-cmdTime = CmdMeter <$> (command "time" *> timeSig)
-
-cmdKey :: StParser Command
-cmdKey = CmdKey <$> (command "key" *> keySig)
+cmdKey :: StParser (Env -> Env)
+cmdKey = set_current_key <$> (command "key" *> keySig)
 
 cmdMode :: StParser Mode
 cmdMode = choice 
@@ -142,16 +76,19 @@ cmdMode = choice
     phrygian    = Phrygian   <$ command "phrygian"
     locrian     = Locrian    <$ command "locrian"
 
-cmdCadenzaOn    :: StParser Command
-cmdCadenzaOn    = CmdCadenzaOn  <$ command "cadenzaOn"
+cmdCadenzaOn    :: StParser (Env -> Env)
+cmdCadenzaOn    = (set_cadenza True)  <$ command "cadenzaOn"
 
-cmdCadenzaOff   :: StParser Command
-cmdCadenzaOff   = CmdCadenzaOff <$ command "cadenzaOff"
+cmdCadenzaOff   :: StParser (Env -> Env)
+cmdCadenzaOff   = (set_cadenza False) <$ command "cadenzaOff"
 
-cmdPartial      :: StParser Command
-cmdPartial      = CmdPartialMeasure <$ command "partial" <*> lyDuration
+cmdPartial      :: StParser (Env -> Env)
+cmdPartial      = set_partial_measure <$ command "partial" <*> lyDuration
 
 
+
+    
+    
 timeSig :: StParser Meter
 timeSig = TimeSig <$> int <*> (char '/' *> int)
 
@@ -210,12 +147,16 @@ rootDuration = choice [pBreve, pLonga, pNumericDuration]
     pBreve            = breve <$ command "breve"   
     pLonga            = longa <$ command "longa"
     pNumericDuration  = (\i -> Duration (1%i) 0) <$> int 
+    
+
+    
+    
 --------------------------------------------------------------------------------
 -- utility parsers
 
 -- | command - note using try is essential to consume the whole command
 -- without it we may consume a blacklash of a different command and not be 
 -- able to backtrack. 
-command :: String -> CharParser st String
-command ss = lexeme $ try $ string ('\\':ss)
+command     :: String -> CharParser st String
+command ss  = lexeme $ try $ string ('\\':ss)
 

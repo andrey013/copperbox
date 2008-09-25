@@ -23,6 +23,8 @@ import HNotate.NoteList
 import HNotate.OutputMain
 import HNotate.ParseAbc
 import HNotate.ParseLy
+import HNotate.ParserBase (StParser, Token, parseFromFileState, streamTokens)
+import HNotate.PreprocessTemplate
 import HNotate.TemplateDatatypes
 import HNotate.ToNoteList
 
@@ -32,33 +34,49 @@ import Text.PrettyPrint.Leijen
 
 
 dumpLyTemplates :: FilePath -> IO ()
-dumpLyTemplates = dumpTemplates lySPV lyPIV
+dumpLyTemplates path = do
+    putStrLn "LilyPond:"
+    putStrLn "------------"
+    dumpTemplates lyTextualView lyPrePro path 
 
 dumpAbcTemplates :: FilePath -> IO ()
-dumpAbcTemplates = dumpTemplates abcSPV abcPIV
+dumpAbcTemplates path = do
+    putStrLn "Abc:"
+    putStrLn "------------"
+    dumpTemplates abcTextualView abcPrePro path 
 
 -- output :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
-dumpTemplates chunkParse islandParse filepath = do
-    successFailM (chunkParse filepath) sk fk
-    putStrLn ""
-    successFailM (islandParse filepath) sk fk
-  where
-    fk = putStrLn . show
-    sk :: Pretty a => a -> IO ()
-    sk = putDoc80 . pretty
+dumpTemplates textualParse prepro path = do
+    putStrLn " - Textual view:"
+    textualParse path >>= either (putStrLn . show) (putDoc80 . pretty)
+    putStrLn " - After preprocessing:"
+    extraction prepro path
 
+
+
+
+extraction :: StParser [Token] -> FilePath -> IO ()
+extraction prepro inf =
+    parseFromFileState prepro inf 0 >>= either print (putStrLn . streamTokens)
+
+    
+    
+    
 dumpLyScoreZero :: System -> FilePath -> IO ()
-dumpLyScoreZero sys filepath = dumpScoreZero sys lyPIV filepath
+dumpLyScoreZero sys filepath = undefined -- dumpScoreZero sys lyPIV filepath
 
 dumpAbcScoreZero :: System -> FilePath -> IO ()
-dumpAbcScoreZero sys filepath = dumpScoreZero sys abcPIV filepath
+dumpAbcScoreZero sys filepath = undefined -- dumpScoreZero sys abcPIV filepath
 
-dumpScoreZero sys parsePiv filepath = 
+
+dumpScoreZero sys parsePiv filepath = undefined 
+{-
     successFailM (parsePiv filepath) sk fk
   where
     fk err    = putStrLn $ show err    
-    sk piv    = let idxp = buildIndexedPlugs default_ly_env sys psDebug piv
+    sk piv    = let idxp = buildIndexedPlugs (OEnv default_ly_env sys psDebug) piv
                 in putDoc80 $ ppIndexedPlugs idxp
+-}
 
 psDebug :: PlugScheme           
 psDebug = PlugScheme {
@@ -133,28 +151,32 @@ tagint len i = let (s,l) = intPlex i in
 ppPos :: SrcPos -> Doc 
 ppPos (SrcPos l c _) = pretty $ (l,c)
 
-instance Pretty SPV where
-  pretty (SPV se) = 
-      spv_prefix <$> F.foldl (\d e -> d <> pretty e) empty se <> line
-    where 
-      spv_prefix = underline "Source preserving view:"
+instance Pretty TextualView where
+  pretty (TextualView se) = F.foldl (\d e -> d <> pretty e) empty se <> line
 
-instance Pretty PIV where
-  pretty (PIV xs) = piv_prefix <$> vsep (map pretty xs) <> line
-    where
-      piv_prefix = underline "Partially interpreted view:" 
 
 instance Pretty TextElement where
   pretty (SourceText str)     = string str
   pretty (MetaMark idx pos d) = hshComment (ppPos pos <+> int idx <+> pretty d)
 
 
+{-
+instance Pretty PIV where
+  pretty (PIV xs) = piv_prefix <$> vsep (map pretty xs) <> line
+    where
+      piv_prefix = underline "Partially interpreted view:" 
+-}
+
+
+{-
 instance Pretty ScoreElement where
   pretty (Command cmd)        = text "\\cmd" <+> pretty cmd
   pretty (Directive idx drct) = hshComment (int idx <+> pretty drct)
   pretty (Nested [])          = text "{ }"   
   pretty (Nested xs)          = enclose (lbrace <> line) (line <> rbrace) 
                                         (indent 2 $ vcat $ map pretty xs)
+-}
+
 
 instance Pretty Command where
   pretty (CmdKey e)               = text "-key" <+> (text . show) e
@@ -165,6 +187,12 @@ instance Pretty Command where
   pretty (CmdCadenzaOff)          = text "-cadenza_off"
   
 instance Pretty MetaDirective where
-  pretty (MetaOutput name scheme) = text name <> colon <> text scheme
+  pretty (MetaOutput scm idx) = pretty scm <> colon <> text idx
+  
+instance Pretty OutputScheme where
+  pretty LyRelative = text "relative" 
+  pretty AbcDefault = text "default"
+  
+    
  
                                                 

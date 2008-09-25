@@ -102,6 +102,14 @@ drleBody e = WrapMonad $ do
         if (old == d) then return no_duration
                       else modify (\s -> s {rel_duration=d}) >> return d
 
+-- Here it would be helpful to know if we are at the start of
+-- a measure - for readability in the output it makes a lot of 
+-- sense to give the duration of the first note in a measure
+-- even if it is the same as the last note in the previous
+-- measure.
+-- Also grace notes cause a problem - ideally we should store 
+-- the last duration before the gracenotes and restore it after
+-- them. 
 
 --------------------------------------------------------------------------------
 -- change pitches according to relative octave - LilyPond uses this method

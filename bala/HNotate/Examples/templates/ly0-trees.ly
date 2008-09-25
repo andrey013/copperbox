@@ -23,7 +23,7 @@
         \time 4/4
         \clef treble
       
-        %{# example1:relative #%} 
+        %{# relative:example1 #%} 
     }
   }
   
@@ -34,7 +34,7 @@
         \time 4/4
         \clef treble
       
-        %{# example2:relative #%} 
+        %{# relative:example2 #%} 
     }
   }
   
@@ -45,7 +45,7 @@
         \time 4/4
         \clef treble
       
-        %{# example3:relative #%} 
+        %{# relative:example3 #%} 
     }
   }
   
@@ -56,7 +56,7 @@
         \time 4/4
         \clef treble
       
-        %{# example4:relative #%} 
+        %{# relative:example4 #%} 
     }
   }
   
@@ -68,7 +68,7 @@
           \time 4/4
           \clef treble
       
-          %{# example5a:relative #%} 
+          %{# relative:example5a #%} 
       }
       
       \new Staff \relative c {
@@ -76,7 +76,7 @@
           \time 4/4
           \clef bass
       
-          %{# example5b:relative #%}
+          %{# relative:example5b #%}
       }
     >>    
   }
@@ -89,7 +89,7 @@
           \time 4/4
           \clef treble
       
-          %{# example6a:relative #%}
+          %{# relative:example6a #%}
       }
       
       \new Staff \relative c {
@@ -97,7 +97,7 @@
           \time 4/4
           \clef bass
       
-          %{# example6b:relative #%}
+          %{# relative:example6b #%}
       }
     >>    
   } 
@@ -109,7 +109,7 @@
       \time 4/4
       \clef treble
 
-       %{# example7:relative #%}
+       %{# relative:example7 #%}
     }
   }      
 }   %{ end book %}

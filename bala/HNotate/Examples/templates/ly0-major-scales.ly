@@ -9,25 +9,25 @@ cmajor = \relative c' {
   \clef treble
   \key c \major
   \time 4/4
-  
-  %{# cmajor:relative #%} 
-} 
+
+  %{# relative:cmajor #%}
+}
 
 gmajor = \relative c' {
   \clef treble
   \key g \major
   \time 4/4
-  
-  %{# gmajor:relative #%} 
+
+  %{# relative:gmajor #%}
 }
 
 
 \book {
-  
+
   \markup { C major }
   \score {
     \new Staff { \cmajor }
-  
+
     \layout { }
     \midi {
       \context {
@@ -36,11 +36,11 @@ gmajor = \relative c' {
       }
     }
   } %{ end - c major %}
-  
+
   \markup { G major }
   \score {
     \new Staff { \gmajor }
-  
+
     \layout { }
     \midi {
       \context {
@@ -49,5 +49,5 @@ gmajor = \relative c' {
       }
     }
   } %{ end - g major %}
-  
+
 }

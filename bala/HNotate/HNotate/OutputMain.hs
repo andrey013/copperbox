@@ -30,11 +30,13 @@ import HNotate.TextAbc (getAbc)
 import HNotate.TextLilyPond (getLy)
 import HNotate.ToNoteList
 
-
+import Control.Applicative hiding (empty)
+import Control.Monad.Reader
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
 import Data.Sequence hiding (empty)
-import Text.PrettyPrint.Leijen
+import Text.ParserCombinators.Parsec (ParseError)
+import Text.PrettyPrint.Leijen hiding ( (<$>) ) 
 
 
  
@@ -57,56 +59,97 @@ data PlugScheme = PlugScheme {
     relativePS  :: Scheme
   }
 
-abcDefault :: Scheme
-abcDefault i evtlist env = Plug i $ 
-    translateAbc (toNoteList evtlist env) env
+data Config = Config {
+    sys           :: System,
+    pscheme       :: PlugScheme,
+    textualParser :: FilePath -> IO (Either ParseError TextualView),
+    exprParser    :: FilePath -> IO (Either ParseError ExprView)
+  }
+  
 
-lyRelative :: Scheme
-lyRelative i evtlist env = Plug i $ 
-    translateLilyPond (toNoteList evtlist env) env
+type OutputReaderM a = ReaderT Env (Reader Config) a
+
+
+runOutputReader :: OutputReaderM a -> Config -> Env -> a
+runOutputReader f config env = runReader (runReaderT f env) config
+
+
+defaultLyConfig system  = Config {
+    sys           = system,
+    pscheme       = psFullTranslation,
+    textualParser = lyTextualView,
+    exprParser    = lyExpressionView
+  }
+    
+defaultAbcConfig system  = Config {
+    sys           = system,
+    pscheme       = psFullTranslation,
+    textualParser = abcTextualView,
+    exprParser    = abcExpressionView
+  }
+
+
 
 psFullTranslation :: PlugScheme
-psFullTranslation = PlugScheme {
-    defaultPS   = abcDefault,
-    relativePS  = lyRelative
-  }  
-
+psFullTranslation = PlugScheme { defaultPS   = abcDefault,
+                                 relativePS  = lyRelative }  
+  where 
+    abcDefault :: Scheme
+    abcDefault i evtlist env' = Plug i $ 
+        translateAbc (toNoteList evtlist env') env'
     
+    lyRelative :: Scheme
+    lyRelative i evtlist env' = Plug i $ 
+        translateLilyPond (toNoteList evtlist env') env'
+
+
+-- {NOTE} Some elements in the env don't really have defaults
+-- that might be too arbitrary (e.g. meter pattern)
+   
 outputLilyPond :: System -> FilePath -> FilePath -> IO ()
 outputLilyPond sys infile outfile = 
-  output default_ly_env sys psFullTranslation lySPV lyPIV infile outfile
+  output sys default_ly_env infile outfile
 
 outputAbc :: System -> FilePath -> FilePath -> IO ()
 outputAbc sys infile outfile = 
-    output default_abc_env sys psFullTranslation abcSPV abcPIV infile outfile
+    output sys default_abc_env infile outfile
+    
+-- output is the most general output function    
+output :: System -> Env -> FilePath -> FilePath -> IO ()
+output sys env infile outfile = case output_format env of
+    Output_LilyPond -> outputStep (defaultLyConfig sys)  env infile outfile
+    Output_Abc      -> outputStep (defaultAbcConfig sys) env infile outfile
+                             
 
-   
-   
--- output :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
-output env sys pscheme spvParse pivParse infile outfile = 
-    successFailM (spvParse infile) sk1 fk 
+
+outputStep :: Config -> Env -> FilePath ->  FilePath -> IO ()
+outputStep config env infile outfile = 
+    let textParse   = textualParser config
+        expParse    = exprParser config
+    in textParse infile >>= either failure (step2 expParse) 
   where
-    fk  err      = putStrLn $ show err
-    sk1 ans      = successFailM (pivParse infile) (sk2 ans) fk
-    sk2 spv piv  = outputDoc outfile (buildOutput env sys pscheme spv piv)
+    failure err             = putStrLn $ show err
+    step2 expParse text_rep =  expParse infile >>= 
+                               either failure (step3 text_rep)
+    step3 text_rep exp_rep  = outputDoc outfile $ 
+            runOutputReader (buildOutput text_rep exp_rep) config env
+    
 
-        
-buildOutput :: Env -> System -> PlugScheme -> SPV -> PIV -> Doc
-buildOutput env sys pscheme spv piv  = 
-    let idxp = buildIndexedPlugs env sys pscheme piv
-    in fillSourceHoles (score_comment env) idxp spv
-
-buildIndexedPlugs :: Env -> System -> PlugScheme -> PIV -> IndexedPlugs
-buildIndexedPlugs env sys pscheme (PIV xs)  =
-  indexPlugs $ buildPlugs env sys pscheme xs
-
--- turn Plugs into a map of Int ~> Doc 
-indexPlugs :: [Plug] -> IndexedPlugs
-indexPlugs = foldr addplug Map.empty
-  where addplug (Plug i doc) mp = Map.insert i doc mp
+buildOutput :: TextualView -> ExprView -> OutputReaderM Doc
+buildOutput text_rep expr_rep  = do
+    idxp        <- buildIndexedPlugs (getExprs expr_rep)
+    commentFun  <- asks score_comment
+    return $ fillSourceHoles commentFun idxp text_rep
+  where    
+    buildIndexedPlugs :: [Expr] -> OutputReaderM IndexedPlugs
+    buildIndexedPlugs xs  = foldr addplug Map.empty <$> buildPlugs xs
+    
+    addplug :: Plug -> IndexedPlugs -> IndexedPlugs
+    addplug (Plug i doc) mp = Map.insert i doc mp
+    
   
-fillSourceHoles :: (String -> Doc) -> IndexedPlugs -> SPV -> Doc
-fillSourceHoles comment idxp (SPV se) = F.foldl fn empty se
+fillSourceHoles :: (String -> Doc) -> IndexedPlugs -> TextualView -> Doc
+fillSourceHoles comment idxp tv = F.foldl fn empty $ getTextElements tv
   where 
     fn d (SourceText ss)      = d <> string ss
     fn d (MetaMark i pos _)   = maybe (fk d i) (sk d) (lookupPlug i idxp)
@@ -115,43 +158,78 @@ fillSourceHoles comment idxp (SPV se) = F.foldl fn empty se
     sk d nl = d <> (align $ pretty nl)
    
 
+buildPlugs :: [Expr] -> OutputReaderM [Plug]
+buildPlugs xs      = F.foldlM eval [] xs
 
+eval :: [Plug] -> Expr -> OutputReaderM [Plug]
+eval acc (LetExpr f es) = F.foldlM (\acc' e -> local f (eval acc' e)) acc es
 
-buildPlugs :: Env -> System -> PlugScheme -> [ScoreElement] -> [Plug]
-buildPlugs env sys pscheme []      = []
-buildPlugs env sys pscheme (x:xs)  = snd $ workEval env sys pscheme [] x xs
+    
+eval acc (Action i d)   = (\a -> a:acc) <$> directive i d
 
-workEval :: Env -> System -> PlugScheme -> [Plug] -> 
+directive :: Idx -> MetaDirective -> OutputReaderM Plug
+directive i (MetaOutput scm sys_name) = outputScheme i scm sys_name
+    
+    
+                 
+outputScheme :: Idx -> OutputScheme -> SystemIndex -> OutputReaderM Plug
+outputScheme i LyRelative sys_name = do
+    sys'     <- lift $ asks sys
+    pscheme' <- lift $ asks pscheme
+    env'     <- ask
+    case (Map.lookup sys_name sys') of
+      Just evts -> return $ (relativePS pscheme') i evts env'
+      Nothing -> error $ "output failure - missing " ++ sys_name
+    
+outputScheme i AbcDefault sys_name   = do
+    sys'     <- lift $ asks sys
+    pscheme' <- lift $ asks pscheme
+    env'     <- ask
+    case (Map.lookup sys_name sys') of
+      Just evts -> return $ (defaultPS pscheme') i evts env'
+      Nothing -> error $ "output failure - missing " ++ sys_name
+
+ 
+-- type Scheme = Int -> EventList -> Env -> Plug 
+
+ 
+{-
+buildPlugs :: OEnv -> [ScoreElement] -> [Plug]
+buildPlugs oenv []      = []
+buildPlugs oenv (x:xs)  = snd $ workEval oenv [] x xs
+
+workEval :: OEnv -> [Plug] -> 
             ScoreElement -> [ScoreElement] -> (Env,[Plug])
-workEval env sys pscheme code expr []     = evaluate1 env sys pscheme code expr
-workEval env sys pscheme code expr (x:xs) = 
-    let (env',code') = evaluate1 env sys pscheme code expr
-    in workEval env' sys pscheme code' x xs
+workEval oenv code expr []     = evaluate1 oenv code expr
+workEval oenv code expr (x:xs) = 
+    let (env',code') = evaluate1 oenv code expr
+    in workEval (oenv {env=env'}) code' x xs
 
-evaluate1 env sys pscheme code (Command cmd)         = (updateEnv cmd env, code)
-evaluate1 env sys pscheme code (Directive idx drct)  = 
-    (env, (directive env sys pscheme idx drct) : code)
-evaluate1 env sys pscheme code (Nested [])           = (env,code)
-evaluate1 env sys pscheme code (Nested (x:xs))       = 
-    let (_,code') = workEval env sys pscheme code x xs in (env,code')
+evaluate1 oenv code (Command cmd)         = (updateEnv cmd (env oenv), code)
+evaluate1 oenv code (Directive idx drct)  = 
+    (env oenv, (directive oenv idx drct) : code)
+evaluate1 oenv code (Nested [])           = (env oenv,code)
+evaluate1 oenv code (Nested (x:xs))       = 
+    let (_,code') = workEval oenv code x xs in (env oenv,code')
 
 
 
-directive :: 
-    Env -> Map.Map Name EventList -> PlugScheme -> Idx -> MetaDirective -> Plug
-directive env sys pscheme i (MetaOutput name scheme_name) =
-    maybe failure  sk (Map.lookup name sys)
+directive :: OEnv -> Idx -> MetaDirective -> Plug
+directive oenv i (MetaOutput name scheme_name) =
+    maybe failure  sk (Map.lookup name (sys oenv))
   where
     failure = error $ "directive failure - missing " ++ name
   
-    sk evtlist = let scheme = useScheme scheme_name pscheme
-                 in scheme i evtlist env
+    sk evtlist = let scheme = useScheme scheme_name (pscheme oenv)
+                 in scheme i evtlist (env oenv)
                  
 useScheme :: String -> PlugScheme -> Scheme
 useScheme "relative"  pscheme = relativePS pscheme
 useScheme "default"   pscheme = defaultPS pscheme
 
 
+updateOEnv :: Command -> OEnv -> OEnv
+updateOEnv cmd oenv@(OEnv {env=e}) = oenv { env = updateEnv cmd e}
 
 updateEnv :: Command -> Env -> Env
 updateEnv (CmdKey k)                env = set_current_key k env
@@ -163,4 +241,4 @@ updateEnv (CmdCadenzaOn)            env = set_cadenza True env
 updateEnv (CmdCadenzaOff)           env = set_cadenza False env
 
 
-    
+-}    

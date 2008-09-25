@@ -108,3 +108,14 @@ barcheck = element $ char '|'
 tie :: PrintM ()
 tie = element $ char '~'
 
+openbrace :: PrintM ()
+openbrace = element $ char '{'
+
+closebrace :: PrintM ()
+closebrace = element $ char '}'
+
+openbeam :: PrintM ()
+openbeam = element $ char '['
+
+closebeam :: PrintM ()
+closebeam = element $ char ']'
