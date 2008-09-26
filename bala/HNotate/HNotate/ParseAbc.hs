@@ -39,8 +39,8 @@ abcTextualView path = parseFromFileState (textView start end) path 0
     end   = choice [() <$ newline, () <$ eof] 
 
 
-abcExpressionView :: FilePath -> IO (Either ParseError ExprView)
-abcExpressionView = twoPass abcPrePro abcExprView
+abcExprView_TwoPass :: FilePath -> IO (Either ParseError ExprView)
+abcExprView_TwoPass = twoPass abcPrePro abcExprView
                 
 abcExprView :: StParser ExprView
 abcExprView = exprView updateWithAbcCommands

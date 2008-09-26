@@ -19,7 +19,7 @@ module HNotate.OutputMain where
 
 import HNotate.BackendAbc
 import HNotate.BackendLilyPond
-import HNotate.CommonUtils (successFailM, outputDoc)
+import HNotate.CommonUtils (outputDoc)
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NoteList
@@ -39,12 +39,6 @@ import Text.ParserCombinators.Parsec (ParseError)
 import Text.PrettyPrint.Leijen hiding ( (<$>) ) 
 
 
- 
-data Instruction = Cmd Command
-                 | Eval MetaDirective
-                 | BeginLocal
-                 | EndLocal
-  deriving (Show)
 
 type IndexedPlugs = Map.Map Int Doc
 
@@ -60,10 +54,10 @@ data PlugScheme = PlugScheme {
   }
 
 data Config = Config {
-    sys           :: System,
-    pscheme       :: PlugScheme,
-    textualParser :: FilePath -> IO (Either ParseError TextualView),
-    exprParser    :: FilePath -> IO (Either ParseError ExprView)
+    sys               :: System,
+    plug_scheme       :: PlugScheme,
+    textual_parser    :: FilePath -> IO (Either ParseError TextualView),
+    expr_parser       :: FilePath -> IO (Either ParseError ExprView)
   }
   
 
@@ -74,20 +68,22 @@ runOutputReader :: OutputReaderM a -> Config -> Env -> a
 runOutputReader f config env = runReader (runReaderT f env) config
 
 
-defaultLyConfig system  = Config {
-    sys           = system,
-    pscheme       = psFullTranslation,
-    textualParser = lyTextualView,
-    exprParser    = lyExpressionView
+default_ly_config system  = Config {
+    sys             = system,
+    plug_scheme     = psFullTranslation,
+    textual_parser  = lyTextualView,
+    expr_parser     = lyExprView_TwoPass
   }
     
-defaultAbcConfig system  = Config {
-    sys           = system,
-    pscheme       = psFullTranslation,
-    textualParser = abcTextualView,
-    exprParser    = abcExpressionView
+default_abc_config system  = Config {
+    sys             = system,
+    plug_scheme     = psFullTranslation,
+    textual_parser  = abcTextualView,
+    expr_parser     = abcExprView_TwoPass
   }
 
+set_plug_scheme :: PlugScheme -> Config -> Config
+set_plug_scheme scm env = env { plug_scheme = scm }
 
 
 psFullTranslation :: PlugScheme
@@ -117,15 +113,15 @@ outputAbc sys infile outfile =
 -- output is the most general output function    
 output :: System -> Env -> FilePath -> FilePath -> IO ()
 output sys env infile outfile = case output_format env of
-    Output_LilyPond -> outputStep (defaultLyConfig sys)  env infile outfile
-    Output_Abc      -> outputStep (defaultAbcConfig sys) env infile outfile
+    Output_LilyPond -> outputStep (default_ly_config sys)  env infile outfile
+    Output_Abc      -> outputStep (default_abc_config sys) env infile outfile
                              
 
 
 outputStep :: Config -> Env -> FilePath ->  FilePath -> IO ()
 outputStep config env infile outfile = 
-    let textParse   = textualParser config
-        expParse    = exprParser config
+    let textParse   = textual_parser config
+        expParse    = expr_parser config
     in textParse infile >>= either failure (step2 expParse) 
   where
     failure err             = putStrLn $ show err
@@ -140,10 +136,11 @@ buildOutput text_rep expr_rep  = do
     idxp        <- buildIndexedPlugs (getExprs expr_rep)
     commentFun  <- asks score_comment
     return $ fillSourceHoles commentFun idxp text_rep
+   
+-- Usefully a top level function - used by DebugUtils   
+buildIndexedPlugs :: [Expr] -> OutputReaderM IndexedPlugs
+buildIndexedPlugs xs  = foldr addplug Map.empty <$> buildPlugs xs
   where    
-    buildIndexedPlugs :: [Expr] -> OutputReaderM IndexedPlugs
-    buildIndexedPlugs xs  = foldr addplug Map.empty <$> buildPlugs xs
-    
     addplug :: Plug -> IndexedPlugs -> IndexedPlugs
     addplug (Plug i doc) mp = Map.insert i doc mp
     
@@ -175,7 +172,7 @@ directive i (MetaOutput scm sys_name) = outputScheme i scm sys_name
 outputScheme :: Idx -> OutputScheme -> SystemIndex -> OutputReaderM Plug
 outputScheme i LyRelative sys_name = do
     sys'     <- lift $ asks sys
-    pscheme' <- lift $ asks pscheme
+    pscheme' <- lift $ asks plug_scheme
     env'     <- ask
     case (Map.lookup sys_name sys') of
       Just evts -> return $ (relativePS pscheme') i evts env'
@@ -183,7 +180,7 @@ outputScheme i LyRelative sys_name = do
     
 outputScheme i AbcDefault sys_name   = do
     sys'     <- lift $ asks sys
-    pscheme' <- lift $ asks pscheme
+    pscheme' <- lift $ asks plug_scheme
     env'     <- ask
     case (Map.lookup sys_name sys') of
       Just evts -> return $ (defaultPS pscheme') i evts env'

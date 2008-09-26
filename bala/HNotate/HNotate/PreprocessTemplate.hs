@@ -23,10 +23,10 @@ import Control.Monad
 import Text.ParserCombinators.Parsec
 
 
-
+type Preprocessor = GenParser Char NestCount [Token]
   
 
-type PreProcesser st = [Token] -> GenParser Char st [Token]
+type PPStep st = [Token] -> GenParser Char st [Token]
 
 type NestCount = Int
 
@@ -38,45 +38,45 @@ abcPrePro = step []
     pfn    cca  = waterMaybe (choiceA abc_start_tokens cca)
     finish cca  = popCloseBrace cca >>= return . reverse
     
-abc_start_tokens :: [PreProcesser NestCount]
+abc_start_tokens :: [PPStep NestCount]
 abc_start_tokens = 
   [ lexNumFieldAbc, lexMeterFieldAbc, lexKeyFieldAbc, 
     
     lexMetaCommentAbc, lexCommentAbc
   ]
 
-lexMetaCommentAbc :: PreProcesser NestCount
+lexMetaCommentAbc :: PPStep NestCount
 lexMetaCommentAbc = try . trailSpace fn
   where 
     fn = (\ss -> Token $ "%{#" ++ ss ++ " #%}") <$> 
                 (string "%#" >> manyTill anyChar lineEnding) 
                 
                 
-lexCommentAbc :: PreProcesser NestCount
+lexCommentAbc :: PPStep NestCount
 lexCommentAbc = passBy $ 
     try $ string "%" >> manyTill anyChar lineEnding
 
 -- Abc doesn't have nesting like LilyPond - but it makes further 
 -- processing easier if we pretend it does.
  
-lexNumFieldAbc :: PreProcesser NestCount
+lexNumFieldAbc :: PPStep NestCount
 lexNumFieldAbc = popCloseBrace >=> abcField 'X'
 -- lexNumFieldAbc = trailSpaceDrop (string "X:") >=> popCloseBrace >=> pushStartBrace
 
-lexMeterFieldAbc :: PreProcesser NestCount
+lexMeterFieldAbc :: PPStep NestCount
 lexMeterFieldAbc = abcField 'M'
 
-lexKeyFieldAbc :: PreProcesser NestCount
+lexKeyFieldAbc :: PPStep NestCount
 lexKeyFieldAbc = abcField 'K'
 
      
-popCloseBrace :: PreProcesser NestCount
+popCloseBrace :: PPStep NestCount
 popCloseBrace cca = do 
     nc <- getState
     setState 0
     return $ replicate nc (Token "}") ++ cca
 
-pushStartBrace :: PreProcesser NestCount      
+pushStartBrace :: PPStep NestCount      
 pushStartBrace cca = do
     nc <- getState
     setState $ nc+1
@@ -85,7 +85,7 @@ pushStartBrace cca = do
 lineEnding :: GenParser Char st ()
 lineEnding = choice [ () <$ newline, eof]     
 
-abcField :: Char -> PreProcesser NestCount
+abcField :: Char -> PPStep NestCount
 abcField c = trailSpace fn >=> pushStartBrace
   where 
     fn = Token . ([c,':'] ++) <$> 
@@ -100,7 +100,7 @@ lyPrePro = step []
     step cca  = (pfn cca) >>= maybe (return $ reverse cca) step
     pfn  cca  = waterMaybe (choiceA ly_start_tokens cca)
 
-ly_start_tokens :: [PreProcesser st]    
+ly_start_tokens :: [PPStep st]    
 ly_start_tokens = 
   [ lexLeftBrace, lexRightBrace, lexMetaCommentLy, lexCommentLy, 
     lexKeyLy, lexRelativeLy, lexCadenzaLy
@@ -109,39 +109,39 @@ ly_start_tokens =
 
 
 
-lexRelativeLy :: PreProcesser st
+lexRelativeLy :: PPStep st
 lexRelativeLy = next1 $ lexCommandLy "relative"
 
 lexCadenzaLy = choiceA [ lexCommandLy "cadenzaOn", lexCommandLy "cadenzaOff"]   
 
-lexKeyLy :: PreProcesser st
+lexKeyLy :: PPStep st
 lexKeyLy = next2 $ lexCommandLy "key"
 
 
      
-lexCommandLy :: String -> PreProcesser st
+lexCommandLy :: String -> PPStep st
 lexCommandLy ss = try . trailSpace fn
   where fn = Token . ('\\':) <$> (char '\\' *> string ss) 
   
-lexAnyCommandLy :: PreProcesser st
+lexAnyCommandLy :: PPStep st
 lexAnyCommandLy = try . trailSpace fn
   where fn = Token . ('\\':) <$> (char '\\' *> many letter)   
 
-lexMetaCommentLy :: PreProcesser st
+lexMetaCommentLy :: PPStep st
 lexMetaCommentLy = try . trailSpace fn
   where 
     fn = (\ss -> Token $ "%{#" ++ ss ++ "#%}") <$> 
                 (string "%{#" >> manyTill anyChar (try (string "#%}"))) 
     
-lexCommentLy :: PreProcesser st
+lexCommentLy :: PPStep st
 lexCommentLy = passBy $ 
     try $ string "%{" >> manyTill anyChar (try (string "%}")) 
 
-lexLeftBrace :: PreProcesser st
+lexLeftBrace :: PPStep st
 lexLeftBrace = trailSpace $  
     charToken <$> char '{' 
 
-lexRightBrace :: PreProcesser st
+lexRightBrace :: PPStep st
 lexRightBrace = trailSpace $  
     charToken <$> char '}' 
 
@@ -149,35 +149,35 @@ lexRightBrace = trailSpace $
 -- Base parsers - useful for both LilyPond and Abc
 
 
-lexChunk :: PreProcesser st
+lexChunk :: PPStep st
 lexChunk = trailSpace $ 
     Token <$> many1 (alphaNum <|> oneOf "'_-")
   
-choiceA :: [PreProcesser st] -> PreProcesser st
+choiceA :: [PPStep st] -> PPStep st
 choiceA xs cca = foldr fn mzero xs
   where fn f g = f cca <|> g 
     
-trailSpace :: GenParser Char st Token -> PreProcesser st
+trailSpace :: GenParser Char st Token -> PPStep st
 trailSpace f cca = do 
     a   <- f
     -- parse trailing ws if there is any, don't collect...
     option '\0' (choice [space, eof >> return '\0']) 
     return $ a:cca
 
-trailSpaceDrop :: GenParser Char st a -> PreProcesser st
+trailSpaceDrop :: GenParser Char st a -> PPStep st
 trailSpaceDrop f cca = do 
     a   <- f
     -- parse trailing ws if there is any, don't collect...
     option '\0' (choice [space, eof >> return '\0']) 
     return $ cca
     
-passBy :: GenParser Char st a -> PreProcesser st
+passBy :: GenParser Char st a -> PPStep st
 passBy f cca = f >> return cca
 
-next1 :: PreProcesser st -> PreProcesser st
+next1 :: PPStep st -> PPStep st
 next1 f = f >=> lexChunk
 
-next2 :: PreProcesser st -> PreProcesser st
+next2 :: PPStep st -> PPStep st
 next2 f = f >=> lexChunk >=> lexChunk 
 
 

@@ -27,9 +27,6 @@ unseq :: Seq a -> [a]
 unseq = F.foldr (:) [] 
 
 
-successFailM :: Monad m => m (Either a b) -> (b -> m c) -> (a -> m c) -> m c
-successFailM ma sk fk = ma >>= either fk sk
-
 outputDoc :: FilePath -> Doc -> IO ()
 outputDoc filepath doc = do
     h <- openFile filepath WriteMode

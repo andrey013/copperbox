@@ -115,9 +115,8 @@ outputTrees = do
 
 debugTrees :: IO ()
 debugTrees = do 
-    -- dumpLyScoreZero  example_sys ly_template
-    -- dumpAbcScoreZero example_sys abc_template
     dumpLyTemplates   ly_template
     dumpAbcTemplates  abc_template
-    
+    dumpLyScoreZero  example_sys ly_template
+    dumpAbcScoreZero example_sys abc_template    
                               

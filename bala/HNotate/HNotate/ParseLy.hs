@@ -32,14 +32,16 @@ import Text.ParserCombinators.Parsec hiding (space)
 
 
 
+
+
 lyTextualView :: FilePath -> IO (Either ParseError TextualView)
 lyTextualView path = parseFromFileState (textView start end) path 0
   where
     start = lexeme $ string "%{#"
     end   = lexeme $ string "#%}"
 
-lyExpressionView :: FilePath -> IO (Either ParseError ExprView)
-lyExpressionView = twoPass lyPrePro lyExprView
+lyExprView_TwoPass :: FilePath -> IO (Either ParseError ExprView)
+lyExprView_TwoPass = twoPass lyPrePro lyExprView
               
 lyExprView :: StParser ExprView
 lyExprView = exprView updateWithLyCommands

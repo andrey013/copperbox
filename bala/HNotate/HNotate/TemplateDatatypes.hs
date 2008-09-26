@@ -58,10 +58,13 @@ data SrcPos = SrcPos {
   }
   deriving (Show)  
 
--- 2. Expression interpreted view
--- Expressions of interest (e.g. time signatures, key signatures) are
--- interpreted as are output directives inside meta comments, 
--- nesting structure is respected (or manufactured for Abc). 
+-- 2. Expression view
+-- Expressions of interest (e.g. time signatures, key signatures)
+-- and meta comments, are extracted from the original file (via a 
+-- preprocessing step). Everything else is dropped. 
+--
+-- LilyPond's nesting structure is respected, Abc has an 
+-- artificial nesting structure 'manufactured'). 
 newtype ExprView = ExprView { getExprs :: [Expr] }
   deriving (Show)
 
@@ -71,17 +74,6 @@ data Expr = LetExpr (Env -> Env) [Expr]
 instance Show Expr where
   show (LetExpr fn xs) = "let <fun> in " ++ show xs
   show (Action i md)   = "#" ++ show i ++ ":" ++ show md
-
-
-data Command = CmdKey Key
-             | CmdMeter Meter
-             | CmdUnitNoteLength Duration  -- Abc only
-             | CmdRelativePitch Pitch         -- Lilypond only
-             | CmdPartialMeasure Duration
-             | CmdCadenzaOn
-             | CmdCadenzaOff
-  deriving Show
- 
                       
 
 -- Plugs fill holes in a source preserving view 

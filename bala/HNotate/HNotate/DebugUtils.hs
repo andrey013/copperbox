@@ -63,20 +63,25 @@ extraction prepro inf =
     
     
 dumpLyScoreZero :: System -> FilePath -> IO ()
-dumpLyScoreZero sys filepath = undefined -- dumpScoreZero sys lyPIV filepath
-
+dumpLyScoreZero sys filepath =
+    let cfg = set_plug_scheme psDebug $ default_ly_config sys
+    in dumpScoreZero cfg default_ly_env filepath
+    
+    
 dumpAbcScoreZero :: System -> FilePath -> IO ()
-dumpAbcScoreZero sys filepath = undefined -- dumpScoreZero sys abcPIV filepath
+dumpAbcScoreZero sys filepath =
+    let cfg = set_plug_scheme psDebug $ default_abc_config sys
+    in dumpScoreZero cfg default_abc_env filepath
 
 
-dumpScoreZero sys parsePiv filepath = undefined 
-{-
-    successFailM (parsePiv filepath) sk fk
+dumpScoreZero config env filepath  =  
+    (expr_parser config) filepath >>= either failure showPlugs
   where
-    fk err    = putStrLn $ show err    
-    sk piv    = let idxp = buildIndexedPlugs (OEnv default_ly_env sys psDebug) piv
-                in putDoc80 $ ppIndexedPlugs idxp
--}
+    failure   err  = putStrLn $ show err    
+    showPlugs ev   = 
+        let idxp = runOutputReader (buildIndexedPlugs $ getExprs ev) config env
+        in putDoc80 $ ppIndexedPlugs idxp
+
 
 psDebug :: PlugScheme           
 psDebug = PlugScheme {
@@ -159,32 +164,6 @@ instance Pretty TextElement where
   pretty (SourceText str)     = string str
   pretty (MetaMark idx pos d) = hshComment (ppPos pos <+> int idx <+> pretty d)
 
-
-{-
-instance Pretty PIV where
-  pretty (PIV xs) = piv_prefix <$> vsep (map pretty xs) <> line
-    where
-      piv_prefix = underline "Partially interpreted view:" 
--}
-
-
-{-
-instance Pretty ScoreElement where
-  pretty (Command cmd)        = text "\\cmd" <+> pretty cmd
-  pretty (Directive idx drct) = hshComment (int idx <+> pretty drct)
-  pretty (Nested [])          = text "{ }"   
-  pretty (Nested xs)          = enclose (lbrace <> line) (line <> rbrace) 
-                                        (indent 2 $ vcat $ map pretty xs)
--}
-
-
-instance Pretty Command where
-  pretty (CmdKey e)               = text "-key" <+> (text . show) e
-  pretty (CmdMeter e)             = text "-meter" <+> (text . show) e
-  pretty (CmdUnitNoteLength e)    = text "-len" <+> (text . show) e
-  pretty (CmdRelativePitch e)     = text "-rpitch" <+> (text . show) e
-  pretty (CmdCadenzaOn)           = text "-cadenza_on"
-  pretty (CmdCadenzaOff)          = text "-cadenza_off"
   
 instance Pretty MetaDirective where
   pretty (MetaOutput scm idx) = pretty scm <> colon <> text idx
