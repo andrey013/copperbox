@@ -18,20 +18,19 @@ module HNotate.Pitch (
     Pitch(..),
     PitchLetter(..),
     Accidental(..),
-    
-    LabelSet, labelSet,
 
     -- * Operations
 
     semitones,
     fromSemitones,
     arithmeticDistance,
-    
+
+    octaveConst, accidentalConst,
+        
     -- * LilyPond helpers
     middleC, octaveDist, no_octave,
-    
-    -- * Abc helpers
-    spell, naturalize,
+
+
     
     -- * pretty print
     ppNote,
@@ -61,14 +60,11 @@ module HNotate.Pitch (
     c7, d7, e7, f7, g7, a7, b7,
     cis7, des7, dis7, ees7, fis7, ges7, gis7, aes7, ais7, bes7,
 
-    -- Label sets
-    c_major_labels, 
-    a_major_labels
+
     
   ) where
 
-import qualified Data.Map as Map
-import Data.Word
+
 import Text.PrettyPrint.Leijen
 
 data Pitch = Pitch {
@@ -90,18 +86,7 @@ instance Show Pitch where
 instance Ord Pitch where
   compare p1 p2 = semitones p1 `compare` semitones p2
 
-newtype LabelSet = LabelSet { getLabelSet :: Map.Map Int Pitch }
-  deriving (Show)
 
-labelSet :: [Pitch] -> LabelSet
-labelSet = LabelSet . foldl fn Map.empty
-  where fn m p = Map.insert (semitones p `mod` 12) p m
-  
-labelSetFind :: Pitch -> LabelSet -> Maybe Pitch
-labelSetFind p@(Pitch _ _ o) (LabelSet m) = 
-    maybe Nothing (fn o) (Map.lookup (semitones p `mod` 12) m) 
-  where
-    fn o p = Just $ octaveconst p o
     
 semitones :: Pitch -> Int
 semitones (Pitch l a o) = semis l + asemis a + (12 * o)
@@ -173,22 +158,14 @@ no_octave = minBound
 -- Helpers for Abc
 
 -- | Set the octave value (as per const this forgets the original value).
-octaveconst :: Pitch -> Int -> Pitch
-octaveconst (Pitch l a _) o = Pitch l a o
+octaveConst :: Pitch -> Int -> Pitch
+octaveConst (Pitch l a _) o = Pitch l a o
 
 -- | Set the accidental value (as per const this forgets the original value).
-accidentalconst :: Pitch -> Accidental -> Pitch
-accidentalconst (Pitch l _ o) a = Pitch l a o
+accidentalConst :: Pitch -> Accidental -> Pitch
+accidentalConst (Pitch l _ o) a = Pitch l a o
 
--- no, spell is 'correct' but it isn't doing what you think!
-spell :: Pitch -> LabelSet -> Pitch
-spell p@(Pitch _ _ o) lbls = 
-    maybe p ((flip octaveconst) o) (labelSetFind p lbls)
-  
-               
-naturalize :: Pitch -> LabelSet -> Pitch
-naturalize p@(Pitch _ _ o) lbls = 
-    maybe p ((flip accidentalconst) Nat) (labelSetFind p lbls)
+
   
 
     
@@ -373,13 +350,6 @@ aes7  = pchFlat A 7
 ais7  = pchSharp A 7
 bes7  = pchFlat B 7
 
---------------------------------------------------------------------------------
--- Label sets for common scales
 
-c_major_labels :: LabelSet
-c_major_labels = labelSet [c4,d4,e4,f4,g4,a4,b4]
-
-a_major_labels :: LabelSet
-a_major_labels = labelSet [a4, b4, cis5, d5, e5, fis5, gis5]
 
           

@@ -18,6 +18,7 @@ module HNotate.Traversals where
 
 import HNotate.Duration
 import HNotate.Env
+import HNotate.MusicRepDatatypes (naturalize)
 import HNotate.NoteList
 import HNotate.Pitch
 

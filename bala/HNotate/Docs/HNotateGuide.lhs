@@ -94,23 +94,40 @@ corresponding note list in the system and replaces the
 meta-comment with the rendered notes - this is commonly 
 called \emph{plugging}.
  
+Meta-comments are transparent to the original application - 
+to LilyPond a meta-comment is treated just like a comment and
+ignored. The same is true for abcm2ps. A score file with 
+meta-comments must be always readable by the respective system 
+whether or not it has been processed with HNotate, it cannot 
+contain syntax errors\footnote{By this virtue, if a score file 
+is acceptable to LilyPond or abcm2ps before it has been 
+processed by HNotate, but then generates a syntax error 
+afterwards then it points to HNotate having a bug - an error
+report would be greatly appreciated}. 
 
-
-A score file with meta-comments must be readable by the 
-respective system before it has been processed with HNotate, 
-it cannot contain syntax errors.
-
-
-
-LilyPond delimits comments with \verb+%{+ and \verb+%}+.  
-HNotate generally ignores comments in LilyPond files but
-it recognizes \emph{meta-comments} that are delimited with 
-\verb+%{#+ and \verb+#%}+. 
+LilyPond delimits comments with \verb+%{+ and \verb+%}+,  
+HNotate adds a hash character to these delimiters to 
+recognize a comment as a meta-comment \verb+%{#+ 
+and \verb+#%}+ (as the outer two characters remain the 
+same LilyPond will see meta-comments only as comments).
+A typical meta-comment might be:
 \begin{verbatim}
-%{# bulgarian6:relative #%}
+%{# relative:bulgarian6 #%}
 \end{verbatim}
-HNotate also recognizes a limited number of LilyPond commands
-these are shown in table~\ref{lycommands}. 
+
+This tells HNotate to use the \emph{relative} rendering 
+scheme on the note list \emph{bulgarian6}.
+
+Comments in Abc start with a \verb+%+ symbol and continue to 
+the end of the line, a meta comment for HNotate starts with 
+\verb+%#+, this example directs HNotate to used the 
+\emph{default} rendering scheme on the note list \emph{example1}:
+\begin{verbatim}
+%# default:example1
+\end{verbatim}
+
+
+
 
 \begin{table}
 \input{LyCommands}%
@@ -118,12 +135,7 @@ these are shown in table~\ref{lycommands}.
 \end{table}
 
 
-Comments in Abc start with a \verb+%+ symbol and continue to 
-the end of the line, a meta comment for HNotate starts with 
-\verb+%#+, for example:
-\begin{verbatim}
-%# example1:default
-\end{verbatim}
+
 
 \begin{table}
 \input{AbcFields}%

@@ -26,8 +26,6 @@ import HNotate.NoteList
 import HNotate.ParseAbc
 import HNotate.ParseLy
 import HNotate.TemplateDatatypes
-import HNotate.TextAbc (getAbc)
-import HNotate.TextLilyPond (getLy)
 import HNotate.ToNoteList
 
 import Control.Applicative hiding (empty)
@@ -168,7 +166,7 @@ directive :: Idx -> MetaDirective -> OutputReaderM Plug
 directive i (MetaOutput scm sys_name) = outputScheme i scm sys_name
     
     
-                 
+-- this one is pending a cleanup...
 outputScheme :: Idx -> OutputScheme -> SystemIndex -> OutputReaderM Plug
 outputScheme i LyRelative sys_name = do
     sys'     <- lift $ asks sys
@@ -187,55 +185,3 @@ outputScheme i AbcDefault sys_name   = do
       Nothing -> error $ "output failure - missing " ++ sys_name
 
  
--- type Scheme = Int -> EventList -> Env -> Plug 
-
- 
-{-
-buildPlugs :: OEnv -> [ScoreElement] -> [Plug]
-buildPlugs oenv []      = []
-buildPlugs oenv (x:xs)  = snd $ workEval oenv [] x xs
-
-workEval :: OEnv -> [Plug] -> 
-            ScoreElement -> [ScoreElement] -> (Env,[Plug])
-workEval oenv code expr []     = evaluate1 oenv code expr
-workEval oenv code expr (x:xs) = 
-    let (env',code') = evaluate1 oenv code expr
-    in workEval (oenv {env=env'}) code' x xs
-
-evaluate1 oenv code (Command cmd)         = (updateEnv cmd (env oenv), code)
-evaluate1 oenv code (Directive idx drct)  = 
-    (env oenv, (directive oenv idx drct) : code)
-evaluate1 oenv code (Nested [])           = (env oenv,code)
-evaluate1 oenv code (Nested (x:xs))       = 
-    let (_,code') = workEval oenv code x xs in (env oenv,code')
-
-
-
-directive :: OEnv -> Idx -> MetaDirective -> Plug
-directive oenv i (MetaOutput name scheme_name) =
-    maybe failure  sk (Map.lookup name (sys oenv))
-  where
-    failure = error $ "directive failure - missing " ++ name
-  
-    sk evtlist = let scheme = useScheme scheme_name (pscheme oenv)
-                 in scheme i evtlist (env oenv)
-                 
-useScheme :: String -> PlugScheme -> Scheme
-useScheme "relative"  pscheme = relativePS pscheme
-useScheme "default"   pscheme = defaultPS pscheme
-
-
-updateOEnv :: Command -> OEnv -> OEnv
-updateOEnv cmd oenv@(OEnv {env=e}) = oenv { env = updateEnv cmd e}
-
-updateEnv :: Command -> Env -> Env
-updateEnv (CmdKey k)                env = set_current_key k env
-updateEnv (CmdMeter m)              env = set_current_meter m env
-updateEnv (CmdUnitNoteLength d)     env = set_unit_note_length d env
-updateEnv (CmdRelativePitch p)      env = set_relative_pitch p env
-updateEnv (CmdPartialMeasure d)     env = set_partial_measure d env
-updateEnv (CmdCadenzaOn)            env = set_cadenza True env
-updateEnv (CmdCadenzaOff)           env = set_cadenza False env
-
-
--}    
