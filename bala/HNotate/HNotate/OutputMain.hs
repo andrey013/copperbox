@@ -19,6 +19,7 @@ module HNotate.OutputMain where
 
 import HNotate.BackendAbc
 import HNotate.BackendLilyPond
+import HNotate.BuildNoteList
 import HNotate.CommonUtils (outputDoc)
 import HNotate.Env
 import HNotate.MusicRepDatatypes
@@ -26,7 +27,6 @@ import HNotate.NoteList
 import HNotate.ParseAbc
 import HNotate.ParseLy
 import HNotate.TemplateDatatypes
-import HNotate.ToNoteList
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Reader
@@ -174,7 +174,7 @@ outputScheme i LyRelative sys_name = do
     env'     <- ask
     case (Map.lookup sys_name sys') of
       Just evts -> return $ (relativePS pscheme') i evts env'
-      Nothing -> error $ "output failure - missing " ++ sys_name
+      Nothing   -> error $ "output failure - missing " ++ sys_name
     
 outputScheme i AbcDefault sys_name   = do
     sys'     <- lift $ asks sys
@@ -182,6 +182,6 @@ outputScheme i AbcDefault sys_name   = do
     env'     <- ask
     case (Map.lookup sys_name sys') of
       Just evts -> return $ (defaultPS pscheme') i evts env'
-      Nothing -> error $ "output failure - missing " ++ sys_name
+      Nothing   -> error $ "output failure - missing " ++ sys_name
 
  

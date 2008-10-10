@@ -17,6 +17,7 @@
 
 module HNotate.DebugUtils where
 
+import HNotate.BuildNoteList
 import HNotate.CommonUtils
 import HNotate.Env
 import HNotate.NoteList
@@ -26,7 +27,7 @@ import HNotate.ParseLy
 import HNotate.ParserBase (StParser, Token, parseFromFileState, streamTokens)
 import HNotate.PreprocessTemplate
 import HNotate.TemplateDatatypes
-import HNotate.ToNoteList
+-- import HNotate.ToNoteList
 
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
@@ -100,78 +101,5 @@ ppIndexedPlugs = vsep . (map ppEvtsPair) . Map.toAscList
     ppEvtsPair (i,notelist) = text "Notelist" <+> int i <> colon <$>
                               pretty notelist <> line
                               
---------------------------------------------------------------------------------
--- pretty printing
 
-hshComment :: Doc -> Doc
-hshComment = enclose (text "{-# ") (text " #-}")
-
-instance (Pretty e) => Pretty (ScNoteList e) where
-  pretty (ScNoteList se) = sepSeq (<$>) se
-
-
-
-instance (Pretty e) => Pretty (ScBlock e) where
-  pretty (ScSingleBlock i e) = measureNumber i
-                                         <$> indent 4 (pretty e)
-  pretty (ScPolyBlock i se)  = 
-      measureNumber i <$> indent 4 (encloseSep (text "<< ") 
-                                               (text " >>") 
-                                               (text " // ")
-                                               (map pretty $ F.toList se))
-
-measureNumber :: Int -> Doc
-measureNumber i = text "|:" <>  int i
-
-
-instance (Pretty e) => Pretty (ScMeasure e) where
-  pretty (ScMeasure se) = sepSeq (</>) se
-
-
-instance Pretty ScoreGlyph where
-  pretty (SgNote pch dur)         = pretty pch <> durationSuffix dur
-  pretty (SgRest dur)             = char 'r' <> durationSuffix dur
-  pretty (SgSpacer dur)           = char 's' <> durationSuffix dur
-  pretty (SgChord ps dur)         = (brackets $ sepSeq (<>) ps) 
-                                      <> durationSuffix dur
-  pretty (SgGraceNotes es)        = braces $ sepSeq (<>) es
-
-  pretty (SgBeamStart)            = text "[["
-  pretty (SgBeamEnd)              = text "]]" <> line
-  pretty (SgTie)                  = text "~~"
-                
-
-durationSuffix :: Pretty drn => drn -> Doc
-durationSuffix d = char '/' <> pretty d 
-
-
-intPlex i = let s = show i in (s,length s)
-
-tagint len i = let (s,l) = intPlex i in
-  if l < len then text (replicate (len -l) '0' ++ s) else text s
-  
---------------------------------------------------------------------------------
--- Template files
-
-ppPos :: SrcPos -> Doc 
-ppPos (SrcPos l c _) = pretty $ (l,c)
-
-instance Pretty TextualView where
-  pretty (TextualView se) = F.foldl (\d e -> d <> pretty e) empty se <> line
-
-
-instance Pretty TextElement where
-  pretty (SourceText str)     = string str
-  pretty (MetaMark idx pos d) = hshComment (ppPos pos <+> int idx <+> pretty d)
-
-  
-instance Pretty MetaDirective where
-  pretty (MetaOutput scm idx) = pretty scm <> colon <> text idx
-  
-instance Pretty OutputScheme where
-  pretty LyRelative = text "relative" 
-  pretty AbcDefault = text "default"
-  
-    
- 
                                                 

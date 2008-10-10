@@ -43,7 +43,7 @@ module HNotate.NoteList (
   ) where
 
 
-import HNotate.CommonUtils (sepSeq)
+import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Pitch
 
@@ -67,7 +67,7 @@ data ScoreGlyph = SgNote Pitch Duration
                 | SgBeamStart
                 | SgBeamEnd
                 | SgTie
-  deriving Show   
+  deriving (Eq,Show)   
   
   
 
@@ -77,10 +77,11 @@ type System = Map.Map String EventList
 type EventList = EventSeq Evt  
 
 newtype EventSeq evt = EventSeq { getEventSeq :: Seq evt }
-  deriving Show
+  deriving (Show)
 
 data Evt = Evt ScoreGlyph
          | Poly [EventSeq Evt]
+  deriving (Show)         
          
 instance Monoid (EventSeq evt) where
   mempty = EventSeq mempty
@@ -152,7 +153,7 @@ notelist ps d   = foldl (\t e -> note e d t) root ps
 -- by a single instrument.
 newtype ScNoteList e = ScNoteList { geSctNoteList :: Seq (ScBlock e) }
 
-
+type ScoreNoteList  = ScNoteList ScoreGlyph
 
 
 -- Follow the Abc style when voice overlays are grouped measure-wise.
@@ -160,16 +161,17 @@ newtype ScNoteList e = ScNoteList { geSctNoteList :: Seq (ScBlock e) }
 data ScBlock e = ScSingleBlock Int (ScMeasure e)
                | ScPolyBlock Int (Seq (ScMeasure e))
 
+type ScoreBlock     = ScBlock ScoreGlyph
 
 newtype ScMeasure e = ScMeasure { getMeasure :: Seq e }
 
-
+type ScoreMeasure   = ScMeasure ScoreGlyph
              
 
 
-type ScoreNoteList  = ScNoteList ScoreGlyph
-type ScoreBlock     = ScBlock ScoreGlyph
-type ScoreMeasure   = ScMeasure ScoreGlyph
+
+
+
 
                  
 

@@ -86,8 +86,9 @@ twoPass :: StParser [Token] -> StParser a -> SourceName -> IO (Either ParseError
 twoPass prepro parser filepath = 
     either fk sk =<< parseFromFileState prepro filepath 0
   where
-    sk ts  = let ans = runParser parser 0 pp_name (streamTokens ts)
-             in either fk (return . Right) ans
+    sk ts  = either fk (return . Right) (runParser parser 0 
+                                                   pp_name (streamTokens ts))
+             
     fk err = return $ Left err
     
     pp_name  = "post-processed " ++ filepath
@@ -136,11 +137,11 @@ exprView cmds = ExprView <$> exprs
     abcDefault  = AbcDefault <$ symbol "default"
     
     -- Abc meta symbols are replaced after preprocesing with LilyPond ones 
-    startMeta   :: CharParser st String
-    startMeta   = symbol "%{#" 
+    startMeta         :: CharParser st String
+    startMeta         = symbol "%{#" 
         
-    endMeta     :: CharParser st String 
-    endMeta     = symbol "#%}" 
+    endMeta           :: CharParser st String 
+    endMeta           = symbol "#%}" 
     
     startNested       :: StParser ()
     startNested       = () <$ symbol "{"

@@ -103,22 +103,23 @@ lyPrePro = step []
 ly_start_tokens :: [PPStep st]    
 ly_start_tokens = 
   [ lexLeftBrace, lexRightBrace, lexMetaCommentLy, lexCommentLy, 
-    lexKeyLy, lexRelativeLy, lexCadenzaLy
+    lexKeyLy, lexTimeLy, lexRelativeLy, lexCadenzaLy
   ] 
 
+lexCadenzaLy    :: PPStep st
+lexCadenzaLy    = choiceA [ lexCommandLy "cadenzaOn", 
+                            lexCommandLy "cadenzaOff" ] 
+
+lexRelativeLy   :: PPStep st
+lexRelativeLy   = next1 $ lexCommandLy "relative"  
+
+lexKeyLy        :: PPStep st
+lexKeyLy        = lexCommandLy "key"  >=> lexChunk >=> lexAnyCommandLy
+
+lexTimeLy       :: PPStep st
+lexTimeLy       = lexCommandLy "time" >=> lexInt >=> lexChar '/' >=> lexInt
 
 
-
-lexRelativeLy :: PPStep st
-lexRelativeLy = next1 $ lexCommandLy "relative"
-
-lexCadenzaLy = choiceA [ lexCommandLy "cadenzaOn", lexCommandLy "cadenzaOff"]   
-
-lexKeyLy :: PPStep st
-lexKeyLy = next2 $ lexCommandLy "key"
-
-
-     
 lexCommandLy :: String -> PPStep st
 lexCommandLy ss = try . trailSpace fn
   where fn = Token . ('\\':) <$> (char '\\' *> string ss) 
@@ -148,6 +149,13 @@ lexRightBrace = trailSpace $
 --------------------------------------------------------------------------------
 -- Base parsers - useful for both LilyPond and Abc
 
+lexInt :: PPStep st
+lexInt = trailSpace $ 
+    Token <$> many1 digit
+    
+lexChar :: Char -> PPStep st
+lexChar c = trailSpace $ 
+    charToken <$> char c
 
 lexChunk :: PPStep st
 lexChunk = trailSpace $ 
@@ -180,6 +188,8 @@ next1 f = f >=> lexChunk
 next2 :: PPStep st -> PPStep st
 next2 f = f >=> lexChunk >=> lexChunk 
 
+next3 :: PPStep st -> PPStep st
+next3 f = f >=> lexChunk >=> lexChunk >=> lexChunk
 
 charToken :: Char -> Token
 charToken c = Token [c]

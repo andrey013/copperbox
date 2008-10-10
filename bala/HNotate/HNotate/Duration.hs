@@ -22,7 +22,7 @@ module HNotate.Duration (
     durationElements,
     
     -- particular durations
-    durationZero, no_duration,
+    duration_zero, no_duration,
     
     -- * Operations  
     dot, dotconst, rationalize, durationToDouble, 
@@ -86,8 +86,8 @@ durationElements :: Duration -> (Int,Int,Int)
 durationElements (Duration r dc) = let (n,d) = (numerator r, denominator r)
     in (n,d,dc) 
 
-durationZero :: Duration
-durationZero = mempty
+duration_zero :: Duration
+duration_zero = mempty
 
 no_duration :: Duration
 no_duration = mempty {_dot_count = minBound}
