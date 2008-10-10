@@ -22,7 +22,7 @@ module HNotate.BackendAbc (
 import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
-import HNotate.NoteList hiding (note, rest, spacer, chord, gracenotes)
+import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, gracenotes)
 import HNotate.Pitch
 import HNotate.PrintAbc
 import HNotate.PrintMonad
@@ -42,13 +42,13 @@ type AbcNoteList = Doc
 
 
 
-translateAbc :: ScoreNoteList -> Env -> AbcNoteList
+translateAbc :: NoteList -> Env -> AbcNoteList
 translateAbc notes env =
     let abc_notes = abcForm notes env
     in  execPrintM (outputNoteList abc_notes) st0 
 
     
-abcForm :: ScoreNoteList -> Env -> ScoreNoteList
+abcForm :: NoteList -> Env -> NoteList
 abcForm se env = 
     runReader (unwrapMonad $ inner se) env
   where
@@ -58,33 +58,31 @@ abcForm se env =
  
     
     
-outputNoteList :: ScoreNoteList -> PrintM ()
-outputNoteList (ScNoteList se) = F.mapM_ outputBlock se
+outputNoteList :: NoteList -> PrintM ()
+outputNoteList (NoteList se) = F.mapM_ outputBlock se
 
-outputBlock :: ScoreBlock -> PrintM ()
-outputBlock (ScSingleBlock i s) = 
-    barNumber i >> outputMeasure s >> barline
-outputBlock (ScPolyBlock i se)  = 
-    barNumber i >> outputVoiceOverlay se >> barline
+outputBlock :: Block -> PrintM ()
+outputBlock (SingleBlock i s) = barNumber i >> outputMeasure s >> barline
+outputBlock (PolyBlock i se)  = barNumber i >> outputVoiceOverlay se >> barline
 
 
 
-outputMeasure :: ScoreMeasure -> PrintM ()
-outputMeasure (ScMeasure se) = F.mapM_ outputGlyph se
+outputMeasure :: Bar -> PrintM ()
+outputMeasure (Bar se)         = F.mapM_ outputGlyph se
 
-outputGlyph :: ScoreGlyph -> PrintM ()
-outputGlyph (SgNote p d)          = note p d
-outputGlyph (SgRest d)            = rest d 
-outputGlyph (SgSpacer d)          = spacer d
-outputGlyph (SgChord se d)        = chord (unseq se) d
-outputGlyph (SgGraceNotes se)     = gracenotes (unseq se)
-outputGlyph (SgBeamStart)         = appendOp (<>)
-outputGlyph (SgBeamEnd)           = appendOp (<+>)
-outputGlyph (SgTie)               = tie
+outputGlyph :: Glyph -> PrintM ()
+outputGlyph (Note p d)          = note p d
+outputGlyph (Rest d)            = rest d
+outputGlyph (Spacer d)          = spacer d
+outputGlyph (Chord se d)        = chord (unseq se) d
+outputGlyph (GraceNotes se)     = gracenotes (unseq se)
+outputGlyph (BeamStart)         = appendOp (<>)
+outputGlyph (BeamEnd)           = appendOp (<+>)
+outputGlyph (Tie)               = tie
 
 
 
-outputVoiceOverlay :: Seq ScoreMeasure -> PrintM ()
+outputVoiceOverlay :: Seq Bar -> PrintM ()
 outputVoiceOverlay = step1 . viewl
   where 
     step1 EmptyL      = return ()

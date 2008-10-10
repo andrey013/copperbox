@@ -20,7 +20,7 @@ module HNotate.DebugUtils where
 import HNotate.BuildNoteList
 import HNotate.CommonUtils
 import HNotate.Env
-import HNotate.NoteList
+import HNotate.NoteListDatatypes
 import HNotate.OutputMain
 import HNotate.ParseAbc
 import HNotate.ParseLy

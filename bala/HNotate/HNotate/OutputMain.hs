@@ -23,7 +23,7 @@ import HNotate.BuildNoteList
 import HNotate.CommonUtils (outputDoc)
 import HNotate.Env
 import HNotate.MusicRepDatatypes
-import HNotate.NoteList
+import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
 import HNotate.ParseLy
 import HNotate.TemplateDatatypes

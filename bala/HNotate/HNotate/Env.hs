@@ -55,7 +55,7 @@ import Text.PrettyPrint.Leijen
 --------------------------------------------------------------------------------
 -- Datatypes
 
-data OutputFormat = Output_Abc | Output_LilyPond | Output_Midi 
+data OutputFormat = Output_Abc | Output_LilyPond  
   deriving (Eq,Show) 
 
 

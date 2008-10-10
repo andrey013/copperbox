@@ -19,7 +19,7 @@ module HNotate.Traversals where
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes (naturalize)
-import HNotate.NoteList
+import HNotate.NoteListDatatypes
 import HNotate.Pitch
 
 
@@ -80,19 +80,19 @@ traversalState f a st = evalState (unwrapMonad $ traverse f a) st
 
 
 
-changeDuration :: ScoreGlyph -> Duration -> ScoreGlyph
-changeDuration a od = onDuration (const od) a
+changeDuration :: Glyph -> Duration -> Glyph
+changeDuration a od = durationf (const od) a
 
 
-changePitch :: ScoreGlyph -> Pitch -> ScoreGlyph
-changePitch a op = onPitch (const op) a
+changePitch :: Glyph -> Pitch -> Glyph
+changePitch a op = pitchf (const op) a
 
 
 --------------------------------------------------------------------------------
 -- run length encode the duration - LilyPond uses this method
 
 -- drle - duration run length encode
-drleBody :: ScoreGlyph -> WrappedMonad (State LyState) ScoreGlyph
+drleBody :: Glyph -> WrappedMonad (State LyState) Glyph
 drleBody e = WrapMonad $ do
     od <- diffDuration (glyphDuration e)
     return $ changeDuration e od    
@@ -120,18 +120,15 @@ drleBody e = WrapMonad $ do
 -- and the subsequent notes only change it 'locally'.
 -- All successive notes in a grace notes change 'global' relative pitch
  
-proBody :: ScoreGlyph -> WrappedMonad (State LyState) ScoreGlyph
+proBody :: Glyph -> WrappedMonad (State LyState) Glyph
 proBody e = WrapMonad $ step e
   where 
-    step e@(SgNote p _)       = do 
-        nt <- convPitch p 
-        return $ changePitch e nt
+    step e@(Note p _)         = do nt <- convPitch p 
+                                   return $ changePitch e nt
 
-    step (SgChord se d)       = 
-        (\se' -> SgChord se' d) <$> convChordPitches se
+    step (Chord se d)         = (\se' -> Chord se' d) <$> convChordPitches se
     
-    step (SgGraceNotes se)    = 
-        SgGraceNotes <$> mapM convPitch se
+    step (GraceNotes se)      =  GraceNotes <$> mapM convPitch se
 
     step e                    = return e         
 
@@ -169,8 +166,8 @@ changeOctaveWrt pch@(Pitch l a o) base = Pitch l a (base `octaveDist` pch)
 -- (a negative number gives the number of ,,, 's)   
 
 
-losBody :: ScoreGlyph -> WrappedMonad Identity ScoreGlyph
-losBody e = WrapMonad $ return $ onPitch fn e
+losBody :: Glyph -> WrappedMonad Identity Glyph
+losBody e = WrapMonad $ return $ pitchf fn e
   where
     fn (Pitch l a o) = Pitch l a (o-3)
     
@@ -181,14 +178,12 @@ losBody e = WrapMonad $ return $ onPitch fn e
 
 
 
-unitNoteLengthEncode :: ScNoteList ScoreGlyph
-                      -> Env
-                      -> ScNoteList ScoreGlyph
+unitNoteLengthEncode :: NoteList -> Env -> NoteList
 unitNoteLengthEncode strata env = 
     traversalReader unleBody strata env
 
 -- unit note length encode
-unleBody :: ScoreGlyph -> WrappedMonad (Reader Env) ScoreGlyph
+unleBody :: Glyph -> WrappedMonad (Reader Env) Glyph
 unleBody e = let drn = glyphDuration e in WrapMonad $ 
              fn e drn <$> asks unit_note_length
   where
@@ -204,16 +199,16 @@ unleBody e = let drn = glyphDuration e in WrapMonad $
 -- pitch label rename     
 
 -- unit note length encode
-plrBody :: ScoreGlyph -> WrappedMonad (Reader Env) ScoreGlyph
+plrBody :: Glyph -> WrappedMonad (Reader Env) Glyph
 plrBody e = WrapMonad $ (respell e) <$> asks label_set
   where
-    respell (SgNote p d)      lbls  = SgNote (naturalize p lbls) d
+    respell (Note p d)      lbls  = Note (naturalize p lbls) d
 
-    respell (SgChord se d)    lbls  = SgChord (fmap (naturalizef lbls) se) d
+    respell (Chord se d)    lbls  = Chord (fmap (naturalizef lbls) se) d
     
-    respell (SgGraceNotes se) lbls  = SgGraceNotes (fmap (naturalizef lbls) se)
+    respell (GraceNotes se) lbls  = GraceNotes (fmap (naturalizef lbls) se)
 
-    respell e                 lbls  = e  
+    respell e               lbls  = e  
     
     naturalizef = flip naturalize
 

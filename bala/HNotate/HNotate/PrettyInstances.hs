@@ -18,7 +18,7 @@
 module HNotate.PrettyInstances where
 
 import HNotate.CommonUtils
-import HNotate.NoteList
+import HNotate.NoteListDatatypes
 import HNotate.TemplateDatatypes
 
 import qualified Data.Foldable as F
@@ -32,15 +32,14 @@ import Text.PrettyPrint.Leijen
 hshComment :: Doc -> Doc
 hshComment = enclose (text "{-# ") (text " #-}")
 
-instance (Pretty e) => Pretty (ScNoteList e) where
-  pretty (ScNoteList se) = genPunctuateSeq pretty line se
+instance (Pretty e) => Pretty (NoteListF e) where
+  pretty (NoteList se)      = genPunctuateSeq pretty line se
 
 
 
-instance (Pretty e) => Pretty (ScBlock e) where
-  pretty (ScSingleBlock i e) = measureNumber i
-                                         <$> indent 4 (pretty e)
-  pretty (ScPolyBlock i se)  = 
+instance (Pretty e) => Pretty (BlockF e) where
+  pretty (SingleBlock i e)  = measureNumber i <$> indent 4 (pretty e)
+  pretty (PolyBlock i se)   = 
       measureNumber i <$> indent 4 (encloseSep (text "<< ") 
                                                (text " >>") 
                                                (text " // ")
@@ -50,21 +49,21 @@ measureNumber :: Int -> Doc
 measureNumber i = text "|:" <>  int i
 
 
-instance (Pretty e) => Pretty (ScMeasure e) where
-  pretty (ScMeasure se) = genPunctuateSeq pretty space se
+instance (Pretty e) => Pretty (BarF e) where
+  pretty (Bar se)                 = genPunctuateSeq pretty space se
 
 
-instance Pretty ScoreGlyph where
-  pretty (SgNote pch dur)         = pretty pch <> durationSuffix dur
-  pretty (SgRest dur)             = char 'r' <> durationSuffix dur
-  pretty (SgSpacer dur)           = char 's' <> durationSuffix dur
-  pretty (SgChord ps dur)         = (brackets $ genPunctuateSeq pretty space ps) 
+instance Pretty Glyph where
+  pretty (Note pch dur)           = pretty pch <> durationSuffix dur
+  pretty (Rest dur)               = char 'r' <> durationSuffix dur
+  pretty (Spacer dur)             = char 's' <> durationSuffix dur
+  pretty (Chord ps dur)           = (brackets $ genPunctuateSeq pretty space ps) 
                                       <> durationSuffix dur
-  pretty (SgGraceNotes es)        = braces $ genPunctuateSeq pretty space es
+  pretty (GraceNotes es)          = braces $ genPunctuateSeq pretty space es
 
-  pretty (SgBeamStart)            = text "[."
-  pretty (SgBeamEnd)              = text ".]" <> line
-  pretty (SgTie)                  = text "~~"
+  pretty (BeamStart)              = text "[."
+  pretty (BeamEnd)                = text ".]" <> line
+  pretty (Tie)                    = text "~~"
                 
 
 durationSuffix :: Pretty drn => drn -> Doc

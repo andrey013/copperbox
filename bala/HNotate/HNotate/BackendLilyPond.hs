@@ -23,7 +23,7 @@ module HNotate.BackendLilyPond (
 import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
-import HNotate.NoteList hiding (note, rest, spacer, chord, gracenotes)
+import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, gracenotes)
 import HNotate.Pitch
 import HNotate.PrintLy
 import HNotate.PrintMonad
@@ -43,7 +43,7 @@ type LilyPondOutput = Doc
 
 
 
-translateLilyPond :: ScoreNoteList -> Env -> LilyPondOutput
+translateLilyPond :: NoteList -> Env -> LilyPondOutput
 translateLilyPond notes env =
     let ly_notes = lilypondRelativeForm notes env
     in  execPrintM (outputNoteList ly_notes) st0 
@@ -53,7 +53,7 @@ translateLilyPond notes env =
 -- Do we need a state type, like this one?
 -- data LyState = LyState { rel_pitch :: Pitch, rel_dur :: Duration }
 
-lilypondRelativeForm :: ScoreNoteList -> Env -> ScoreNoteList
+lilypondRelativeForm :: NoteList -> Env -> NoteList
 lilypondRelativeForm se env = 
     evalState (unwrapMonad $ inner se) ly_st 
   where       
@@ -62,30 +62,28 @@ lilypondRelativeForm se env =
     ly_st    = lyState0 {rel_pitch= (relative_pitch env)}
     
     
-outputNoteList :: ScoreNoteList -> PrintM ()
-outputNoteList (ScNoteList se) = F.mapM_  outputBlock se
+outputNoteList :: NoteList -> PrintM ()
+outputNoteList (NoteList se) = F.mapM_  outputBlock se
 
-outputBlock :: ScoreBlock -> PrintM ()
-outputBlock (ScSingleBlock i s) = 
-    barNumberCheck i >> outputMeasure s >> barcheck
-outputBlock (ScPolyBlock i se) = 
-    barNumberCheck i >> polyphony se >> barcheck
+outputBlock :: Block -> PrintM ()
+outputBlock (SingleBlock i s) = barNumberCheck i >> outputMeasure s >> barcheck
+outputBlock (PolyBlock i se)  = barNumberCheck i >> polyphony se >> barcheck
 
     
-outputMeasure :: ScoreMeasure -> PrintM ()
-outputMeasure (ScMeasure se) = F.mapM_ outputGlyph se
+outputMeasure :: Bar -> PrintM ()
+outputMeasure (Bar se) = F.mapM_ outputGlyph se
 
-outputGlyph :: ScoreGlyph -> PrintM ()
-outputGlyph (SgNote p d)          = note p d
-outputGlyph (SgRest d)            = rest d
-outputGlyph (SgSpacer d)          = spacer d
-outputGlyph (SgChord se d)        = chord (unseq se) d 
-outputGlyph (SgGraceNotes se)     = gracenotes (unseq se)
-outputGlyph (SgBeamStart)         = return ()
-outputGlyph (SgBeamEnd)           = return ()
-outputGlyph (SgTie)               = tie
+outputGlyph :: Glyph -> PrintM ()
+outputGlyph (Note p d)          = note p d
+outputGlyph (Rest d)            = rest d
+outputGlyph (Spacer d)          = spacer d
+outputGlyph (Chord se d)        = chord (unseq se) d 
+outputGlyph (GraceNotes se)     = gracenotes (unseq se)
+outputGlyph (BeamStart)         = return ()
+outputGlyph (BeamEnd)           = return ()
+outputGlyph (Tie)               = tie
 
-polyphony :: Seq ScoreMeasure -> PrintM ()
+polyphony :: Seq Bar -> PrintM ()
 polyphony = step1 . viewl
   where 
     step1 EmptyL      = return ()

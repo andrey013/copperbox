@@ -35,7 +35,7 @@ module HNotate (
 
 import HNotate.DebugUtils
 import HNotate.Duration
-import HNotate.NoteList
+import HNotate.NoteListDatatypes
 import HNotate.Pitch
 import HNotate.OutputMain
 
