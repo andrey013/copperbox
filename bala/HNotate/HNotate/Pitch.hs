@@ -21,7 +21,7 @@ module HNotate.Pitch (
 
     -- * Operations
 
-    semitones,
+    Semitones(..),
     fromSemitones,
     arithmeticDistance,
 
@@ -75,7 +75,7 @@ data Pitch = Pitch {
   deriving (Eq)
 
 data PitchLetter = C | D | E | F | G | A | B
-  deriving (Eq,Enum,Ord,Show)
+  deriving (Bounded,Eq,Enum,Ord,Show)
 
 data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp 
   deriving (Eq,Enum,Ord,Show)
@@ -87,9 +87,10 @@ instance Ord Pitch where
   compare p1 p2 = semitones p1 `compare` semitones p2
 
 
+class Semitones a where semitones :: a -> Int
     
-semitones :: Pitch -> Int
-semitones (Pitch l a o) = semis l + asemis a + (12 * o)
+instance Semitones Pitch where
+  semitones (Pitch l a o) = semitones l + semitones a + (12 * o)
 
 -- This will need pitch spelling
 fromSemitones :: Int -> Pitch
@@ -110,20 +111,22 @@ fromSemitones i = let (o,ni) = i `divMod` 12
     pitchVal 10 = (A,Sharp)
     pitchVal 11 = (B,Nat)
     pitchVal _  = error "fromSemitones - not unreachable after all!" 
-    
-semis C = 0
-semis D = 2
-semis E = 4
-semis F = 5
-semis G = 7
-semis A = 9
-semis B = 11
 
-asemis Nat          = 0
-asemis Sharp        = 1
-asemis Flat         = (-1)
-asemis DoubleSharp  = 2
-asemis DoubleFlat   = (-2)
+instance Semitones PitchLetter where    
+  semitones C = 0
+  semitones D = 2
+  semitones E = 4
+  semitones F = 5
+  semitones G = 7
+  semitones A = 9
+  semitones B = 11
+
+instance Semitones Accidental where 
+  semitones Nat          = 0
+  semitones Sharp        = 1
+  semitones Flat         = (-1)
+  semitones DoubleSharp  = 2
+  semitones DoubleFlat   = (-2)
 
 
 

@@ -18,12 +18,23 @@
 module HNotate.PrettyInstances where
 
 import HNotate.CommonUtils
+import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 import HNotate.TemplateDatatypes
 
 import qualified Data.Foldable as F
+import qualified Data.Map as Map
 import Text.PrettyPrint.Leijen
 
+--------------------------------------------------------------------------------
+-- Music Rep 
+
+instance Pretty PitchLabel where
+  pretty (PitchLabel l a) = pretty l <> pretty a
+
+instance Pretty LabelSet where
+  pretty (LabelSet mp) = 
+      hcat $ punctuate (char '-') (map (pretty . snd) $ Map.toAscList mp) 
 
                               
 --------------------------------------------------------------------------------

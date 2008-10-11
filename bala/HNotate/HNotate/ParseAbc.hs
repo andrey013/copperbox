@@ -83,8 +83,12 @@ cmdUnitNoteLength = set_unit_note_length <$> field 'L' abcDuration
 timeSig :: StParser Meter
 timeSig = TimeSig <$> int <*> (char '/' *> int)
 
+
+-- TODO accidentals 
+-- see ABC 2.0 spec - Klezmer (Ahavoh Rabboh) / Arabic music (Maqam Hedjaz)
 keySig :: StParser Key
-keySig = Key <$> lexeme abcPitch <*> option Major abcMode
+keySig = (\(Pitch l a _) m -> Key l a m) 
+    <$> lexeme abcPitch <*> option Major abcMode
 
 
 

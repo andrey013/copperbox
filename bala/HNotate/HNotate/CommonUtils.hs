@@ -20,6 +20,7 @@ module HNotate.CommonUtils where
 -- Should be no deps on other HNotate modules
 
 import qualified Data.Foldable as F
+import Data.List (unfoldr)
 import Data.Sequence hiding (empty, length, reverse)
 import qualified Data.Sequence as S
 import Prelude hiding (null)
@@ -128,7 +129,36 @@ destroy g se = g step se
                     EmptyL -> Nothing
                     e :< sse -> Just (e,sse)
 
+--------------------------------------------------------------------------------
+-- enum functions for cycles (primarily helpful for pitch letters)
 
+enumFromCyc :: (Bounded a, Enum a, Eq a) => a -> [a]
+enumFromCyc a = a : (unfoldr f $ nextOf a)
+  where 
+    f x | x == a    = Nothing
+        | otherwise = Just (x,nextOf x)
+    
+    nextOf a | a == maxBound = minBound
+             | otherwise     = succ a
+
+enumFromToCyc :: (Bounded a, Enum a, Eq a) => a -> a -> [a]
+enumFromToCyc a b | a == b    = [a]
+                  | otherwise = a : (unfoldr f $ nextOf a) ++ [b]
+  where 
+    f x | x == a || x == b   = Nothing
+        | otherwise                 = Just (x,nextOf x)
+    
+    nextOf a | a == maxBound = minBound
+             | otherwise     = succ a
+             
+--------------------------------------------------------------------------------
+-- splitting a sequence 
+
+-- genSplit c.f. splitAt but with a predicate and state rather 
+-- than an index. 
+-- Also returns the state, the left seq, the pivot (if found) 
+-- and the right seq.
+  
 genSplit :: (st -> st -> Bool) -> (st -> a -> st) 
              -> st -> Seq a -> (st, Seq a, Maybe a, Seq a)
 genSplit test update initial_state = split initial_state S.empty . viewl
@@ -147,6 +177,10 @@ lgs test update st0 = together . genSplit (adapt test) update st0
     adapt f = \old new -> f new
     together (st, l, Nothing, r) = (st,l,r)  
     together (st, l, Just a, r)  = (st,l,a <|r) 
+
+
+--------------------------------------------------------------------------------
+-- other functions
     
 -- elsethenif c.f maybe and either
 elsethenif :: a -> a -> Bool -> a
@@ -161,11 +195,13 @@ worklist f = step []
         step cca (y:ys) = let (b,zs) = f y in step (b:cca) (ys++zs)
         
         
---------------------------------------------------------------------------------       
-                   
+               
 unseq :: Seq a -> [a]
 unseq = F.foldr (:) [] 
 
+
+--------------------------------------------------------------------------------
+-- PPrint helpers
 
 outputDoc :: FilePath -> Doc -> IO ()
 outputDoc filepath doc = do
@@ -179,7 +215,9 @@ putDoc80 doc = displayIO stdout (renderPretty 0.7 80 doc)
 underline :: String -> Doc
 underline s = text s <$> text (replicate (length s) '-') <> line 
     
-
+-- finger -- a pretty printer for seqeunces 
+-- c.f. tupled or list in PPrint - type of the param is different: 
+-- Pretty a => Seq a, rather than Seq Doc
 finger :: Pretty a => Seq a -> Doc
 finger = enclose (text "(|") (text "|)") . genPunctuateSeq pretty comma
 

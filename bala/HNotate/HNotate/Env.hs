@@ -45,10 +45,12 @@ module HNotate.Env (
     set_cadenza
  ) where
 
+import HNotate.Data
 import HNotate.Duration
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
 
+import Data.Maybe (fromMaybe)
 import Data.Ratio
 import Text.PrettyPrint.Leijen
 
@@ -86,7 +88,7 @@ instance Show (String -> Doc) where
 default_ly_env = Env {
     _output_format          = Output_LilyPond, 
     _current_key            = c_major,
-    _label_set              = c_major_labels,
+    _label_set              = c_major'ls,
     _current_meter          = four_four,
     _meter_pattern          = four_four_of_eighth,
     _measure_length         = 4 * quarter,
@@ -105,7 +107,7 @@ default_ly_env = Env {
 default_abc_env = Env {
     _output_format          = Output_Abc, 
     _current_key            = c_major,
-    _label_set              = c_major_labels,
+    _label_set              = c_major'ls,
     _current_meter          = four_four,
     _meter_pattern          = four_four_of_eighth,
     _measure_length         = 4 * quarter,
@@ -172,8 +174,8 @@ score_comment       = _score_comment
 
 set_current_key               :: Key -> Env -> Env
 set_current_key k env         = 
-    let lbls = labelSetOf k in env {_current_key = k, 
-                                    _label_set   = lbls}
+    let lbls = fromMaybe c_major'ls (labelSetOf k) 
+    in env {_current_key = k, _label_set   = lbls}
 
 -- Note there is no recognized 'cadenzaOff' in Abc, 
 -- seeing a Meter command is equivalent to cadenza Off     

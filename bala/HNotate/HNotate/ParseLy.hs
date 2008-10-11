@@ -96,7 +96,8 @@ timeSig = TimeSig <$> int <*> (char '/' *> int)
 
 
 keySig :: StParser Key
-keySig  = Key <$> lyPitch <*> cmdMode
+keySig  = (\(Pitch l a _) m -> Key l a m) 
+    <$> lyPitch <*> cmdMode
 
 
 lyPitch :: StParser Pitch
