@@ -94,7 +94,7 @@ keySig = (\(Pitch l a _) m -> Key l a m)
 
 
 abcDuration :: StParser Duration
-abcDuration = (\n d -> Duration (n%d) 0) <$> int <*> (char '/' *> int)
+abcDuration = (\n d -> convRatio (n%d)) <$> int <*> (char '/' *> int)
 
 
 abcPitch :: StParser Pitch

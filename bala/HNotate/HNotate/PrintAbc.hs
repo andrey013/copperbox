@@ -60,9 +60,8 @@ duration = attribute . durationD
 
 durationD :: D.Duration -> Doc
 durationD d | d == D.no_duration = empty
-            | otherwise          = (fn . nd . D.rationalize) d
+            | otherwise          = fn $ D.ratioElements $ D.convRational d
   where
-    nd r     = (numerator r, denominator r)
     fn (n,1) = int n
     fn (1,d) = char '/' <> int d
     fn (n,d) = int n <> char '/' <> int d

@@ -15,25 +15,22 @@
 
 module HNotate.Duration (
     -- Data type
-    Duration(..), 
-    -- shorthand constructors
-    duration, durationR,
-    -- destructors
-    durationElements,
+    Duration, 
     
     -- particular durations
     duration_zero, no_duration,
     
+    dotn,
+    
+    
     -- * Helper for ratios
-    ratioElements, convRational, fork,
-    
-    -- * Operations  
-    dot, dotconst, rationalize, durationToDouble, 
-    
-    rationalToDuration,
+    ratioElements, convRational, convRatio, fork,
+    durationToDouble,
    
     base2numbers'inf,
     
+    PrintableDuration(..), printableDuration,
+    pdElements,
     ppAltRest,
 
     
@@ -59,36 +56,19 @@ import Data.Ratio
 import Text.PrettyPrint.Leijen hiding (dot)
 
 
+type Duration = Rational 
 
 
-data Duration = Duration { 
-    _duration  :: Ratio Int,
-    _dot_count :: Int 
-  }
-  deriving (Eq,Ord)
-
--- Shorthand constructor  
-duration :: Ratio Int -> Int -> Duration
-duration r dc = Duration r dc 
-
-durationR :: Ratio Int -> Duration
-durationR r = Duration r 0 
-
-instance Show Duration where
-  show = show . pretty
-
-instance Monoid Duration where
-  mempty = Duration (fromInteger 0) 0 
-  mappend = (+)
-
-durationElements :: Duration -> (Int,Int,Int)  
-durationElements (Duration r dc) = let (n,d) = ratioElements r in (n,d,dc) 
 
 duration_zero :: Duration
-duration_zero = mempty
+duration_zero = 0
 
 no_duration :: Duration
-no_duration = mempty {_dot_count = minBound}
+no_duration = 0
+
+dotn :: Int -> Duration -> Duration
+dotn i d | i < 1 = d
+         | otherwise  = sum $ d : take i (halves'inf d)
     
 ratioElements :: Integral a => Ratio a -> (a,a)
 ratioElements r = (numerator r, denominator r)
@@ -96,50 +76,50 @@ ratioElements r = (numerator r, denominator r)
 convRational :: Integral a => Rational -> Ratio a
 convRational = uncurry (%) . fork fromIntegral . ratioElements
 
+convRatio :: Integral a => Ratio a -> Rational
+convRatio = uncurry (%) . fork fromIntegral . ratioElements
+
+durationToDouble :: Duration -> Double
+durationToDouble = uncurry (/) . fork fromIntegral . ratioElements
+
+
 fork :: (a -> b) -> (a,a) -> (b,b)
 fork f (a,b) = (f a, f b)
   
    
--- | Augment the duration with a dot.
-dot :: Duration -> Duration
-dot (Duration r dc) = Duration r (dc+1)
-
--- | Set the dot value (as per const this forgets the original value).
-dotconst :: Duration -> Int -> Duration
-dotconst (Duration r _) dc = Duration r dc
+data PrintableDuration = PrintableDuration { 
+    _duration  :: Rational,
+    _dot_count :: Int 
+  }
+  deriving (Eq,Ord)
 
 
--- | @'rationalize'@ - turn a duration into a ratio which may normalize it. 
-rationalize :: Duration -> Ratio Int
-rationalize (Duration r n) | n >  0     = sum $ r : unfoldr phi (n,r/2)
-                           | otherwise  = r 
+-- | @'rationalize'@ - turn a PrintableDuration back
+-- into a Rational which may normalize it. 
+rationalize :: PrintableDuration -> Rational
+rationalize (PrintableDuration r n) | n >  0     = sum $ r : unfoldr phi (n,r/2)
+                                    | otherwise  = r 
   where 
     phi (0,r) = Nothing
     phi (n,r) = Just (r,(n-1,r/2)) 
     
-    
-durationToDouble :: Duration -> Double
-durationToDouble = uncurry (/) . fork fromIntegral . ratioElements . rationalize
+pdElements :: PrintableDuration -> (Int,Int,Int)  
+pdElements (PrintableDuration r dc) = 
+  let (n,d) = ratioElements r in (fromIntegral n, fromIntegral d, dc) 
 
-                
 
--- maybe durations should be ratios until printing?
-
-rationalToDuration :: Rational -> Duration
-rationalToDuration = nonapproxDuration . convRational
-  --  ratioToDuration . uncurry (%) . fork fromIntegral . ratioElements 
-
-nonapproxDuration :: Ratio Int -> Duration
-nonapproxDuration r  
-    | r <= 0    = duration_zero
-    | otherwise = if r == rationalize r' then r' else Duration r 0
+printableDuration :: Rational -> PrintableDuration
+printableDuration r  
+    | r <= 0    = PrintableDuration duration_zero 0
+    | otherwise = if r == rationalize r' then r' else PrintableDuration r 0
   where 
-    r' = approximateDuration r   
-
-approximateDuration :: Ratio Int -> Duration
+    r' = approximateDuration r 
+    
+    
+approximateDuration :: Duration -> PrintableDuration
 approximateDuration r
-    | r >= 1%1  = uncurry Duration $ dotincrease $ upwardsFind r
-    | otherwise = uncurry Duration $ dotincrease $ downwardsFind r
+    | r >= 1    = uncurry PrintableDuration $ dotincrease $ upwardsFind r
+    | otherwise = uncurry PrintableDuration $ dotincrease $ downwardsFind r
   where
     upwardsFind r           = upwardsNext r $ map (%1) base2numbers'inf
     
@@ -157,56 +137,29 @@ approximateDuration r
                    | otherwise = let dc = reccy r' 1 (halves'inf r') in (r',dc)
     
     
-    reccy :: Ratio Int -> Int -> [Ratio Int] -> Int  
+    reccy :: Rational -> Int -> [Rational] -> Int  
     reccy z i   (x:y:ys) | z+x <= r  && z+x+y >= r = if nearer r (z+x) (z+x+y)
                                                        then i else i+1
                          | otherwise               = reccy (z+x) (i+1) (y:ys)     
 
     nearer a l r = (a - l) <= (r - a) 
                               
-halves'inf :: Ratio Int -> [Ratio Int]
+halves'inf :: Rational -> [Rational]
 halves'inf r = unfoldr phi r
   where
     phi r = Just (r / 2, r / 2)
 
 -- Note: infinte list                
-base2numbers'inf :: [Int]
+base2numbers'inf :: [Integer]
 base2numbers'inf = unfoldr (\x -> Just (x, x * 2)) 1 
 
 
 
-
-instance Num Duration where
-  d1 + d2 = operate (+) d1 d2
-  d1 - d2 = operate (-) d1 d2
-  d1 * d2 = operate (*) d1 d2
-  negate (Duration r dc)    = Duration (negate r) dc
-  fromInteger i             = let r = fromInteger i in Duration r 0
-  signum (Duration r dc)    = Duration (signum r) dc
-  abs (Duration r dc)       = Duration (abs r) dc
-
-{-
-instance Integral Duration where
-  quotRem = operate quotRem
-  toInteger = uncurry div . fork fromIntegral . ratioElements . rationalize
--}
-
-instance Fractional Duration where
-  (/) = operate (/)
-  fromRational = rationalToDuration
-
-  
-  
-
-operate :: (Ratio Int -> Ratio Int -> Ratio Int) 
-        -> Duration -> Duration -> Duration
-operate op d1 d2 = let r = rationalize d1 `op` rationalize d2
-                   in duration r 0
                    
 
-instance Pretty Duration where
-  pretty drn = let (n,d,dc) = durationElements drn in 
-      group $ int n <> char '/' <> int d <> text (replicate dc '.') 
+instance Pretty PrintableDuration where
+  pretty (PrintableDuration r dc) = let (n,d) = ratioElements r in 
+      group $ integer n <> char '/' <> integer d <> text (replicate dc '.') 
 
 
 ppAltRest ch dur = group $
@@ -223,36 +176,36 @@ ppAltRest ch dur = group $
 
 
 longa                       :: Duration
-longa                       = durationR $ 4%1
+longa                       = 4%1
 
 -- $amerdoc
 -- American naming.
 double_whole                :: Duration
-double_whole                = durationR $ 2%1
+double_whole                =  2%1
 
 whole                       :: Duration
-whole                       = durationR $ 1%1
+whole                       = 1%1
 
 half                        :: Duration
-half                        = durationR $ 1%2
+half                        = 1%2
 
 quarter                     :: Duration
-quarter                     = durationR $ 1%4
+quarter                     = 1%4
 
 eighth                      :: Duration
-eighth                      = durationR $ 1%8
+eighth                      = 1%8
 
 sixteenth                   :: Duration
-sixteenth                   = durationR $ 1%16
+sixteenth                   = 1%16
 
 thirty_second               :: Duration
-thirty_second               = durationR $ 1%32
+thirty_second               = 1%32
 
 sixty_fourth                :: Duration
-sixty_fourth                = durationR $ 1%64
+sixty_fourth                = 1%64
 
 one_hundred_twenty_eighth   :: Duration
-one_hundred_twenty_eighth   = durationR $ 1%128
+one_hundred_twenty_eighth   = 1%128
 
 -- $engdoc
 -- English naming.

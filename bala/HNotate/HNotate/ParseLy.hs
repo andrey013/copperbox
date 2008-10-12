@@ -139,9 +139,9 @@ lyDuration =
     build <$> rootDuration <*> (counting $ symbol ".") 
                            <*> optparse (symbol "*" *> fractionalPart)
   where
-    build d dc Nothing  = dotconst d dc
-    build d dc (Just r) = (dotconst d dc) * r
-    fractionalPart      = (\n d -> durationR (n%d)) 
+    build d dc Nothing  = dotn dc d
+    build d dc (Just r) = (dotn dc d) * r
+    fractionalPart      = (\n d -> convRatio (n%d)) 
                               <$> int <*> option 1 (symbol "/" *> int)
 
 rootDuration :: StParser Duration
@@ -149,7 +149,7 @@ rootDuration = choice [pBreve, pLonga, pNumericDuration]
   where
     pBreve            = breve <$ command "breve"   
     pLonga            = longa <$ command "longa"
-    pNumericDuration  = (\i -> Duration (1%i) 0) <$> int 
+    pNumericDuration  = (\i -> convRatio (1%i)) <$> int 
     
 
     

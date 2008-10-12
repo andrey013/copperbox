@@ -56,7 +56,7 @@ pitchD (P.Pitch l a o) = octave o $ accidental a $ (char . toLower . letter) l
 durationD :: D.Duration -> Doc
 durationD drn
     | drn == D.no_duration = empty
-    | otherwise            = let (n,d,dc) = D.durationElements drn 
+    | otherwise            = let (n,d,dc) = D.pdElements $ D.printableDuration drn 
                              in dots dc $ durn n d
   where 
     durn 4 1      = commandD "longa"  

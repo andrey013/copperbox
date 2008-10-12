@@ -191,9 +191,9 @@ unleBody e = let drn = glyphDuration e in WrapMonad $
                  | otherwise  = changeDuration e (abcScaleDuration drn unl)           
 
     abcScaleDuration drn unl = 
-        let (nr,dr,dc)  = durationElements drn
-            (un,ud,_)   = durationElements unl
-        in Duration ((nr%dr) / (un%ud)) dc                         
+        let (nr,dr)  = ratioElements drn
+            (un,ud)  = ratioElements unl
+        in  (nr%dr) / (un%ud)                         
 
 --------------------------------------------------------------------------------
 -- pitch label rename     

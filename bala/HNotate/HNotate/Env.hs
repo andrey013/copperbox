@@ -209,7 +209,7 @@ set_cadenza                   :: Bool -> Env -> Env
 set_cadenza a env             = env {_cadenza = a}
       
 measureLength :: Meter -> Duration
-measureLength (TimeSig n d)   = durationR (n%d)
-measureLength CommonTime      = durationR (4%4)
-measureLength CutTime         = durationR (2%2)
+measureLength (TimeSig n d)   = convRatio $ n%d
+measureLength CommonTime      = 4%4
+measureLength CutTime         = 2%2
 

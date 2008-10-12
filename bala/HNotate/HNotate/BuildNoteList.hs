@@ -195,7 +195,7 @@ ppListVoiceOverlayB :: [VoiceOverlayB] -> Doc
 ppListVoiceOverlayB = vsep . map ppVoiceOverlayB
 
 ppVoiceOverlayB (bc, d, se) = 
-    text "bar" <+> int bc <> colon <+> pretty d <+> finger se 
+    text "bar" <+> int bc <> colon <+> ppDur d <+> finger se 
 
 ppListSeqRawBar :: [Seq RawBar] -> Doc
 ppListSeqRawBar = vsep . map (genFinger ppRawBar)

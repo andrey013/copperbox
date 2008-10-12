@@ -18,13 +18,20 @@
 module HNotate.PrettyInstances where
 
 import HNotate.CommonUtils
+import HNotate.Duration
 import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 import HNotate.TemplateDatatypes
 
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
+import Data.Ratio
 import Text.PrettyPrint.Leijen
+
+
+ppDur :: Duration -> Doc
+ppDur = pretty . printableDuration
+
 
 --------------------------------------------------------------------------------
 -- Music Rep 
@@ -77,8 +84,8 @@ instance Pretty Glyph where
   pretty (Tie)                    = text "~~"
                 
 
-durationSuffix :: Pretty drn => drn -> Doc
-durationSuffix d = char '\'' <> pretty d 
+durationSuffix :: Duration -> Doc
+durationSuffix d = char '\'' <> ppDur d 
 
 
 intPlex i = let s = show i in (s,length s)
