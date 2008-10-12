@@ -24,16 +24,15 @@ module HNotate.Duration (
     -- particular durations
     duration_zero, no_duration,
     
+    -- * Helper for ratios
+    ratioElements, convRational, fork,
+    
     -- * Operations  
     dot, dotconst, rationalize, durationToDouble, 
     
-    representableDuration, 
-    printableDuration, printableDurationF,
-    splitDuration,
-    
-    
-    
-    base2number_sequence,
+    rationalToDuration,
+   
+    base2numbers'inf,
     
     ppAltRest,
 
@@ -83,8 +82,7 @@ instance Monoid Duration where
   mappend = (+)
 
 durationElements :: Duration -> (Int,Int,Int)  
-durationElements (Duration r dc) = let (n,d) = (numerator r, denominator r)
-    in (n,d,dc) 
+durationElements (Duration r dc) = let (n,d) = ratioElements r in (n,d,dc) 
 
 duration_zero :: Duration
 duration_zero = mempty
@@ -113,62 +111,68 @@ dotconst (Duration r _) dc = Duration r dc
 
 -- | @'rationalize'@ - turn a duration into a ratio which may normalize it. 
 rationalize :: Duration -> Ratio Int
-rationalize (Duration r dc)   = dotr r (dc,r)
-  where
-    dotr a (i,r) | i < 1      = a 
-                 | otherwise  = dotr (a + r/2) (i-1, r/2)
-                 
+rationalize (Duration r n) | n >  0     = sum $ r : unfoldr phi (n,r/2)
+                           | otherwise  = r 
+  where 
+    phi (0,r) = Nothing
+    phi (n,r) = Just (r,(n-1,r/2)) 
+    
+    
 durationToDouble :: Duration -> Double
 durationToDouble = uncurry (/) . fork fromIntegral . ratioElements . rationalize
 
                 
 
+-- maybe durations should be ratios until printing?
 
--- D'Oh -- this is probably a hylo...
+rationalToDuration :: Rational -> Duration
+rationalToDuration = nonapproxDuration . convRational
+  --  ratioToDuration . uncurry (%) . fork fromIntegral . ratioElements 
 
--- Cannot be longer than 2 x breve -- longest is a breve with inf. dots
-representableDuration :: (Duration -> a) -> (Ratio Int -> a) -> Ratio Int -> a
-representableDuration succCont failCont r 
-    | r > 8%1 || r < (1%128) = failCont r
-    | otherwise              = let rt = root r in dot (duration rt) rt 0
-                              
-  where
-    rec_lim       = 3
-    root r        = head $ dropWhile (r<) decreasing_ratios
-    
-    dot sk r' i   | r' == r      = succCont $ sk i
-                  | i > rec_lim  = failCont r
-                  | otherwise    = dot sk (dotaugment r') (i+1)
-                   
-    dotaugment r  = r + (1 % (denominator r *2))                 
-
-printableDuration :: Ratio Int -> Maybe Duration
-printableDuration = representableDuration Just (const Nothing)
-
-printableDurationF :: Ratio Int -> Duration
-printableDurationF r = maybe (errUnRep r) id (printableDuration r)
+nonapproxDuration :: Ratio Int -> Duration
+nonapproxDuration r  
+    | r <= 0    = duration_zero
+    | otherwise = if r == rationalize r' then r' else Duration r 0
   where 
-    errUnRep r = error $ 
-            "printableDurationF - cannot make a representable from " ++ show r
-          
--- Note: infinte list 
-decreasing_ratios :: [Ratio Int]
-decreasing_ratios = 4%1 : 2%1 : xs
-  where xs = map (1 %) base2number_sequence
+    r' = approximateDuration r   
+
+approximateDuration :: Ratio Int -> Duration
+approximateDuration r
+    | r >= 1%1  = uncurry Duration $ dotincrease $ upwardsFind r
+    | otherwise = uncurry Duration $ dotincrease $ downwardsFind r
+  where
+    upwardsFind r           = upwardsNext r $ map (%1) base2numbers'inf
+    
+    -- upwardsNext needs lookahead - for (5%1) we want to stop on (4%1) 
+    -- rather than go to (8%1) 
+    upwardsNext a (x:y:ys)  | a >= x && a < y = x
+                            | otherwise       = upwardsNext a (y:ys)
+    
+    downwardsFind r         = downwardsNext1 r $ map (1%) base2numbers'inf
+    
+    downwardsNext1 a (x:xs) | a >= x          = x
+                            | otherwise       = downwardsNext1 a xs
+                            
+    dotincrease r' | r' == r   = (r',0)
+                   | otherwise = let dc = reccy r' 1 (halves'inf r') in (r',dc)
+    
+    
+    reccy :: Ratio Int -> Int -> [Ratio Int] -> Int  
+    reccy z i   (x:y:ys) | z+x <= r  && z+x+y >= r = if nearer r (z+x) (z+x+y)
+                                                       then i else i+1
+                         | otherwise               = reccy (z+x) (i+1) (y:ys)     
+
+    nearer a l r = (a - l) <= (r - a) 
+                              
+halves'inf :: Ratio Int -> [Ratio Int]
+halves'inf r = unfoldr phi r
+  where
+    phi r = Just (r / 2, r / 2)
 
 -- Note: infinte list                
-base2number_sequence :: [Int]
-base2number_sequence = unfoldr (\x -> Just (x, x * 2)) 1 
+base2numbers'inf :: [Int]
+base2numbers'inf = unfoldr (\x -> Just (x, x * 2)) 1 
 
-
-splitDuration :: Duration -> Duration -> Maybe [Duration]
-splitDuration d elt = let (final,xs) = multiElts d [] in 
-    maybe Nothing (\e -> Just $ xs ++ [e]) (remake final) 
-  where
-    multiElts d acc | d > elt   = multiElts (d-elt) (elt:acc)
-                    | otherwise = (d,acc)  
-  
-    remake          = printableDuration . rationalize
 
 
 
@@ -189,7 +193,7 @@ instance Integral Duration where
 
 instance Fractional Duration where
   (/) = operate (/)
-  fromRational = printableDurationF . convRational
+  fromRational = rationalToDuration
 
   
   
