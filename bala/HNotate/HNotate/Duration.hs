@@ -95,6 +95,13 @@ no_duration = mempty {_dot_count = minBound}
 ratioElements :: Integral a => Ratio a -> (a,a)
 ratioElements r = (numerator r, denominator r)
 
+convRational :: Integral a => Rational -> Ratio a
+convRational = uncurry (%) . fork fromIntegral . ratioElements
+
+fork :: (a -> b) -> (a,a) -> (b,b)
+fork f (a,b) = (f a, f b)
+  
+   
 -- | Augment the duration with a dot.
 dot :: Duration -> Duration
 dot (Duration r dc) = Duration r (dc+1)
@@ -112,14 +119,12 @@ rationalize (Duration r dc)   = dotr r (dc,r)
                  | otherwise  = dotr (a + r/2) (i-1, r/2)
                  
 durationToDouble :: Duration -> Double
-durationToDouble drn = 
-    let r     = rationalize drn
-        (n,d) = ratioElements r
-    in (fromIntegral n) / (fromIntegral d)
+durationToDouble = uncurry (/) . fork fromIntegral . ratioElements . rationalize
+
                 
 
 
-
+-- D'Oh -- this is probably a hylo...
 
 -- Cannot be longer than 2 x breve -- longest is a breve with inf. dots
 representableDuration :: (Duration -> a) -> (Ratio Int -> a) -> Ratio Int -> a
@@ -175,6 +180,19 @@ instance Num Duration where
   fromInteger i             = let r = fromInteger i in Duration r 0
   signum (Duration r dc)    = Duration (signum r) dc
   abs (Duration r dc)       = Duration (abs r) dc
+
+{-
+instance Integral Duration where
+  quotRem = operate quotRem
+  toInteger = uncurry div . fork fromIntegral . ratioElements . rationalize
+-}
+
+instance Fractional Duration where
+  (/) = operate (/)
+  fromRational = printableDurationF . convRational
+
+  
+  
 
 operate :: (Ratio Int -> Ratio Int -> Ratio Int) 
         -> Duration -> Duration -> Duration

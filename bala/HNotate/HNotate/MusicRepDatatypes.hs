@@ -81,6 +81,7 @@ naturalize :: Pitch -> LabelSet -> Pitch
 naturalize p@(Pitch _ _ o) lbls = 
     maybe p ((flip accidentalConst) Nat) (labelSetFind p lbls)
     
-    
-
+-- How long does a meter patttern last? 
+durationMP ::  MeterPattern -> Duration
+durationMP (ds,d) = foldr (\e a -> a + (fromIntegral e) * d) duration_zero ds
 

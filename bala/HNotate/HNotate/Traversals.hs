@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Traverse a DScore tracking duration only if it changes (c.f. LilyPond).
+-- Traverse a NoteList tracking to perform shape-preserving transformations
 --
 --------------------------------------------------------------------------------
 

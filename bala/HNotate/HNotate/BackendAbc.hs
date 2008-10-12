@@ -26,6 +26,7 @@ import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, gracenotes)
 import HNotate.Pitch
 import HNotate.PrintAbc
 import HNotate.PrintMonad
+import HNotate.Transformations
 import HNotate.Traversals
 
 import Control.Applicative
@@ -44,7 +45,7 @@ type AbcNoteList = Doc
 
 translateAbc :: NoteList -> Env -> AbcNoteList
 translateAbc notes env =
-    let abc_notes = abcForm notes env
+    let abc_notes = beamNoteList env $ abcForm notes env
     in  execPrintM (outputNoteList abc_notes) st0 
 
     

@@ -89,61 +89,7 @@ instance Monoid (EventListF evt) where
   mappend a b = EventList $ (getEventList a) >< (getEventList b)
            
 
-infixl 7 #
 
-x # f = f x
-
-
-infixl 7 #.
-
-g #. f = f . g
-
-
-(|*>) :: EventList -> Evt -> EventList
-(|*>) (EventList t) evt = EventList $ t |> evt
-
-
-
-system :: System 
-system = mempty
-
-systemL :: [(String, EventList)] -> System
-systemL = Map.fromList
-
-system1 :: String -> EventList -> System
-system1 k t = Map.insert k t mempty
-
-root :: EventList
-root = EventList empty
-
-note            :: Pitch -> Duration -> EventList -> EventList
-note p d t      = t |*> Evt (Note p d)
-
-rest            :: Duration -> EventList -> EventList
-rest d t        = t |*> Evt (Rest d)
-
-spacer          :: Duration -> EventList -> EventList
-spacer d t       = t |*> Evt (Spacer d)
-
-
-chord           :: [Pitch] -> Duration -> EventList -> EventList
-chord [] d t    = t
-chord es d t    = t |*> (Evt $ Chord (fromList es) d)
-
-    
-gracenotes           :: [Pitch] -> EventList -> EventList
-gracenotes [] t      = t
-gracenotes es t      = t |*> (Evt $ GraceNotes $ fromList es)
-
--- poly does some optimizing ...
-poly            :: [EventList] -> EventList -> EventList
-poly []  t      = t
-poly [x] t      = EventList $ getEventList t >< getEventList x
-poly ts  t      = t |*> (Poly ts)
-
-
-notelist        :: [Pitch] -> Duration -> EventList
-notelist ps d   = foldl (\t e -> note e d t) root ps
 
 
 --------------------------------------------------------------------------------   
@@ -246,3 +192,62 @@ pitchf f (BeamStart)              = BeamStart
 pitchf f (BeamEnd)                = BeamEnd
 
 
+--------------------------------------------------------------------------------
+-- Functions for the external view
+
+
+infixl 7 #
+
+x # f = f x
+
+
+infixl 7 #.
+
+g #. f = f . g
+
+
+(|*>) :: EventList -> Evt -> EventList
+(|*>) (EventList t) evt = EventList $ t |> evt
+
+
+
+system :: System 
+system = mempty
+
+systemL :: [(String, EventList)] -> System
+systemL = Map.fromList
+
+system1 :: String -> EventList -> System
+system1 k t = Map.insert k t mempty
+
+root :: EventList
+root = EventList empty
+
+note            :: Pitch -> Duration -> EventList -> EventList
+note p d t      = t |*> Evt (Note p d)
+
+rest            :: Duration -> EventList -> EventList
+rest d t        = t |*> Evt (Rest d)
+
+spacer          :: Duration -> EventList -> EventList
+spacer d t       = t |*> Evt (Spacer d)
+
+
+chord           :: [Pitch] -> Duration -> EventList -> EventList
+chord [] d t    = t
+chord es d t    = t |*> (Evt $ Chord (fromList es) d)
+
+    
+gracenotes           :: [Pitch] -> EventList -> EventList
+gracenotes [] t      = t
+gracenotes es t      = t |*> (Evt $ GraceNotes $ fromList es)
+
+-- poly does some optimizing ...
+poly            :: [EventList] -> EventList -> EventList
+poly []  t      = t
+poly [x] t      = EventList $ getEventList t >< getEventList x
+poly ts  t      = t |*> (Poly ts)
+
+
+notelist        :: [Pitch] -> Duration -> EventList
+notelist ps d   = foldl (\t e -> note e d t) root ps
