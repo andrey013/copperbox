@@ -32,6 +32,7 @@ type Name = String
 type SystemIndex = String
 
 data MetaDirective = MetaOutput OutputScheme SystemIndex
+                   | MetaMeter MeterPattern
   deriving Show
 
 data OutputScheme = LyRelative | AbcDefault

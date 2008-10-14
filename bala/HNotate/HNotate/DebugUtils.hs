@@ -25,12 +25,11 @@ import HNotate.OutputMain
 import HNotate.ParseAbc
 import HNotate.ParseLy
 import HNotate.ParserBase (StParser, Token, parseFromFileState, streamTokens)
-import HNotate.PreprocessTemplate
 import HNotate.TemplateDatatypes
--- import HNotate.ToNoteList
 
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
+import Text.ParserCombinators.Parsec (ParseError)
 import Text.PrettyPrint.Leijen
 
 
@@ -38,13 +37,13 @@ dumpLyTemplates :: FilePath -> IO ()
 dumpLyTemplates path = do
     putStrLn "LilyPond:"
     putStrLn "------------"
-    dumpTemplates lyTextualView lyPrePro path 
+    dumpTemplates lyTextualView preprocessLy path 
 
 dumpAbcTemplates :: FilePath -> IO ()
 dumpAbcTemplates path = do
     putStrLn "Abc:"
     putStrLn "------------"
-    dumpTemplates abcTextualView abcPrePro path 
+    dumpTemplates abcTextualView preprocessAbc path 
 
 -- output :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
 dumpTemplates textualParse prepro path = do
@@ -56,9 +55,8 @@ dumpTemplates textualParse prepro path = do
 
 
 
-extraction :: StParser [Token] -> FilePath -> IO ()
-extraction prepro inf =
-    parseFromFileState prepro inf 0 >>= either print (putStrLn . streamTokens)
+extraction :: (FilePath -> IO (Either ParseError String)) -> FilePath -> IO ()
+extraction prepro inf = prepro inf >>= either print putStrLn
 
     
     

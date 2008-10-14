@@ -15,21 +15,111 @@
 
 module HNotate.ParseAbc where
 
+import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.ParserBase
 import HNotate.Pitch
-import HNotate.PreprocessTemplate (abcPrePro)
 import HNotate.TemplateDatatypes
 
-import Control.Applicative hiding (many, optional, (<|>) )
+import Control.Applicative hiding (many, optional, (<|>), empty)
 import Control.Monad (when)
 import Data.Char
+import Data.List (intersperse)
 import Data.Monoid
-import Data.Sequence ( (|>) )
+import Data.Sequence
 import Data.Ratio
 import Text.ParserCombinators.Parsec hiding (space)
+
+
+--------------------------------------------------------------------------------
+-- Preprocess
+
+preprocessAbc :: FilePath -> IO (Either ParseError String)
+preprocessAbc path = either (return . Left) (return . Right . unfoldAbc) 
+                          =<< (parseFromFile abcExtract path)
+  
+
+abcExtract :: Parser (Seq String)
+abcExtract = waterAcc $ choice 
+    [ metaComment, abcComment,
+      -- fields
+      tunenumber, key, meter
+      
+    ]
+
+unfoldAbc :: Seq String -> String
+unfoldAbc se = hylo step (++) "" (0,se)
+  where
+    step (i, se) = phi (i, viewl se)
+    
+    -- exit the unfold
+    phi (0, EmptyL)       = Nothing
+    
+    -- enqueue close braces 
+    phi (i, EmptyL)       = Just  (close i,           (0, empty))
+   
+    -- enqueue the open brace and increase the nesting level
+    phi (i, "{" :< se)    = Just  (" { ",             (i+1, se))
+    
+    -- 'X' is new tune -- close all braces then enqueue 'X' 
+    phi (i, "X:" :< se)   = Just  (close i ++ "X:" ,  (0, se))
+    
+    -- normal case - produce value and go next
+    phi (i, e :< se)      = Just  (e ,  (i, se)) 
+    
+       
+    
+close :: Int -> String
+close i = concat $ replicate i " }" 
+
+
+metaComment :: Parser (TokenF String)
+metaComment = token1 fn <$> 
+    ((try $ string "%#") *> manyTill anyChar lineEnding)
+  where
+    -- Wrap up in lilypond style meta-begin and end delimiters   
+    fn s = "%{#" ++ s ++ " #%}"
+                
+             
+abcComment :: Parser (TokenF String)
+abcComment = dropToken <$ 
+    (symbol "%{" *> manyTill anyChar lineEnding) 
+
+tunenumber  :: Parser(TokenF String)
+tunenumber  = dyap pushStart (token2 id show) <$> 
+    fieldsymbol 'X' <*> int
+    
+key         :: Parser(TokenF String)
+key         = dyap pushStart (token2 id id)  <$>
+    fieldsymbol 'K' <*> restOfLine
+    
+meter       :: Parser(TokenF String)
+meter       = dyap pushStart (token2 id id)  <$>   
+    fieldsymbol 'M' <*> restOfLine
+    
+    
+fieldsymbol :: Char -> Parser String
+fieldsymbol c = try $ symbol [c,':']
+
+restOfLine :: GenParser Char st String
+restOfLine = manyTill anyChar lineEnding
+
+lineEnding :: GenParser Char st ()
+lineEnding = choice [ () <$ newline, eof] 
+
+pushStart :: TokenF String
+pushStart = \se -> se |> "{"
+
+-- | Dyadic apply \/ compose - apply the binary function g to a and b, 
+-- then apply the unary function f to the result.
+-- dyap :: a -> b -> (c -> d) -> (a -> b -> c) ->  ->  d
+dyap :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
+dyap f g a b se = f (g a b se) 
+
+
+--------------------------------------------------------------------------------
 
 
 abcTextualView :: FilePath -> IO (Either ParseError TextualView)
@@ -40,7 +130,7 @@ abcTextualView path = parseFromFileState (textView start end) path 0
 
 
 abcExprView_TwoPass :: FilePath -> IO (Either ParseError ExprView)
-abcExprView_TwoPass = twoPass abcPrePro abcExprView
+abcExprView_TwoPass = twoPass preprocessAbc abcExprView
                 
 abcExprView :: StParser ExprView
 abcExprView = exprView updateWithAbcCommands

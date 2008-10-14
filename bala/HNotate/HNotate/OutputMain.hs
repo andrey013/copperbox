@@ -164,7 +164,7 @@ eval acc (Action i d)   = (\a -> a:acc) <$> directive i d
 
 directive :: Idx -> MetaDirective -> OutputReaderM Plug
 directive i (MetaOutput scm sys_name) = outputScheme i scm sys_name
-    
+directive _ (MetaMeter mp)            = undefined
     
 -- this one is pending a cleanup...
 outputScheme :: Idx -> OutputScheme -> SystemIndex -> OutputReaderM Plug

@@ -15,14 +15,20 @@
 
 module HNotate.ParserBase where
 
+import HNotate.CommonUtils (para)
+import HNotate.Duration
 import HNotate.Env
+import HNotate.MusicRepDatatypes
 import HNotate.TemplateDatatypes
 
-import Control.Applicative hiding (many, optional, (<|>) )
+import Control.Applicative hiding (many, optional, (<|>), empty )
 import Control.Monad
+import Data.Char (isSpace)
 import Data.List (sortBy)
 import Data.Monoid
+import Data.Ratio
 import Data.Sequence hiding (length, reverse)
+import Prelude hiding (null)
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language (emptyDef)
@@ -64,6 +70,45 @@ incrCount = do
     return i
 
 
+--------------------------------------------------------------------------------
+-- Common machinery for preprcessing
+
+waterAcc :: GenParser Char st (TokenF a) -> GenParser Char st (Seq a)
+waterAcc p = step empty <?> "waterAcc"
+  where 
+    step acc = do
+      a <- optparse (eitherparse (eof <?> "") p)    
+      case a of
+        Just (Left _) -> return $ acc
+        Just (Right f) -> step (f acc)
+        Nothing -> anyChar >> step acc 
+
+
+-- intersperse is easy as a paramorphism!
+untoken :: Seq String -> String
+untoken = para phi ""
+  where 
+      phi :: String -> (Seq String, String) -> String 
+      phi c (rest, acc)   | null rest      = c ++ acc
+                          | otherwise      = c ++ (' ':acc)
+   
+  
+type TokenF a = Seq a -> Seq a
+
+
+dropToken :: TokenF String
+dropToken = \se -> se
+
+token1 :: (a -> String) -> a -> TokenF String
+token1 f a = \se -> se |> f a
+
+token2 :: (a -> String) -> (b -> String) -> a -> b -> TokenF String
+token2 f g a b  = \se -> se |> f a |> g b
+
+token3 :: (a -> String) -> (b -> String) -> (c -> String) 
+       -> a -> b -> c -> TokenF String
+token3 f g h a b c  = \se -> se |> f a |> g b |> h c
+
 
 --------------------------------------------------------------------------------
 -- Pre-processor helpers
@@ -81,18 +126,54 @@ streamTokens (x:xs) = work x xs ""
     
     append acc a = acc ++ " " ++ a
 
-    
-twoPass :: StParser [Token] -> StParser a -> SourceName -> IO (Either ParseError a)
+   
+
+
+twoPass :: (FilePath -> IO (Either ParseError String)) -> StParser a -> FilePath -> IO (Either ParseError a)
 twoPass prepro parser filepath = 
-    either fk sk =<< parseFromFileState prepro filepath 0
+    either fk sk =<< prepro filepath
   where
-    sk ts  = either fk (return . Right) (runParser parser 0 
-                                                   pp_name (streamTokens ts))
+    sk ss  = either fk (return . Right) (runParser parser 0 
+                                                   pp_name ss)
              
     fk err = return $ Left err
     
     pp_name  = "post-processed " ++ filepath
     
+
+
+--------------------------------------------------------------------------------
+-- Common parsers for meta directives
+
+meterPattern :: StParser MeterPattern
+meterPattern = (,) <$> sepBy1 int plus <*> (slash *> simpleDuration)
+  where 
+    plus  = symbol "+"  
+    slash = symbol "/"  
+
+simpleDuration :: StParser Duration
+simpleDuration = (convRatio . (1%)) <$> int 
+
+metaCmd :: String -> StParser String
+metaCmd ss = symbol ss <* colon 
+
+-- Abc meta symbols are replaced after preprocesing with LilyPond ones 
+startMeta         :: StParser String
+startMeta         = symbol "%{#" 
+    
+endMeta           :: StParser String 
+endMeta           = symbol "#%}" 
+
+startNested       :: StParser ()
+startNested       = () <$ symbol "{"
+
+endNested         :: StParser ()
+endNested         = () <$ symbol "}"
+
+metameter         :: StParser MetaDirective    
+metameter         = MetaMeter <$> (metaCmd "meter_pattern" *> meterPattern)
+
+
 --------------------------------------------------------------------------------
 -- Abc and LilyPond 'expression views' have the same shape but differ
 -- in terminal commands 
@@ -125,29 +206,22 @@ exprView cmds = ExprView <$> exprs
         cont a  = nestedk (a:cca)   
 
     metadirective :: StParser MetaDirective
-    metadirective = metaoutput
+    metadirective = choice [metaoutput, metameter]
       where
         metaoutput :: StParser MetaDirective
-        metaoutput = MetaOutput <$> (outputScheme <* colon) <*> identifier
+        metaoutput = MetaOutput <$> outputScheme <*> identifier
     
     outputScheme :: StParser OutputScheme 
     outputScheme = choice [ lyRelative, abcDefault ]
       
-    lyRelative  = LyRelative <$ symbol "relative" 
-    abcDefault  = AbcDefault <$ symbol "default"
+    lyRelative  = LyRelative <$ metaCmd "relative" 
+    abcDefault  = AbcDefault <$ metaCmd "default"
     
-    -- Abc meta symbols are replaced after preprocesing with LilyPond ones 
-    startMeta         :: CharParser st String
-    startMeta         = symbol "%{#" 
-        
-    endMeta           :: CharParser st String 
-    endMeta           = symbol "#%}" 
     
-    startNested       :: StParser ()
-    startNested       = () <$ symbol "{"
     
-    endNested         :: StParser ()
-    endNested         = () <$ symbol "}"
+    
+    
+
 
 
 --------------------------------------------------------------------------------
@@ -251,7 +325,11 @@ longestString = choice . map (try . string) . reverse . sortBy longer
 charDrop :: Char -> GenParser Char st ()
 charDrop a = char a >> return () 
 
+nonwhite :: GenParser Char st String
+nonwhite = lexeme (many1 nonwhiteChar)
 
+nonwhiteChar :: GenParser Char st Char
+nonwhiteChar = satisfy $ not . isSpace 
 
 -- | Return the count of the number of parses, rather than a list of elements.
 -- (Note the @count@ combinator in Parsec works differently, it will parse a 

@@ -14,7 +14,7 @@
 %---------------------------------------------------------------------------
 HNotate is a Haskell preprocessor for producing typeset sheet 
 music. It accommodates two popular free typesetting systems - 
-Abc and LilyPond, though support for LilyPond is more extensive. 
+Abc and LilyPond, although support for LilyPond is more extensive. 
 It follows the common \emph{note list} model for representing 
 music.
 
