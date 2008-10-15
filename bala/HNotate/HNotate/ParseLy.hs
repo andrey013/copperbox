@@ -127,7 +127,7 @@ parseLyExprs = topLevelExprs lyTermParsers
 
 
 lyTermParsers :: [Parser Term]
-lyTermParsers = [relativeT, keyT, timeT]
+lyTermParsers = [relativeT, keyT, timeT, partialT]
 
 relativeT :: Parser Term
 relativeT = Let . LetRelativePitch <$> (cmdsymbol "relative" *> lyPitch)
@@ -138,6 +138,9 @@ keyT = Let . LetKey     <$> (cmdsymbol "key" *> keySig)
 timeT :: Parser Term 
 timeT = Let . LetMeter  <$> (cmdsymbol "time" *> timeSig)
      <?> "timeT"
+
+partialT :: Parser Term 
+partialT = Let . LetPartial  <$> (cmdsymbol "partial" *> lyDuration)
 
 --------------------------------------------------------------------------------
 -- Parse the text for the water and holes so we can fill the holes

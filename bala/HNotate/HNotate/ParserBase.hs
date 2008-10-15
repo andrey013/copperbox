@@ -127,7 +127,7 @@ term specialTerms = choice specialTerms <|> genericTerm
 genericTerm :: Parser Term
 genericTerm = id <$> (symbol "%{#" *> p <* symbol "#%}")
   where
-    p = choice [outputDirective, meterPatternT] 
+    p = choice [outputDirective, meterPattern_md, partial_md] 
 
 
 outputDirective :: Parser Term
@@ -140,8 +140,8 @@ scheme = choice [relative, dflt]
     relative = OutputRelative <$ cmdsymbol "relative"
     dflt     = OutputDefault  <$ cmdsymbol "default"
 
-meterPatternT :: Parser Term 
-meterPatternT = Let . LetMeterPattern <$> 
+meterPattern_md :: Parser Term 
+meterPattern_md = Let . LetMeterPattern <$> 
     (directive "meter_pattern" *> meterPattern)
 
 meterPattern :: Parser MeterPattern
@@ -153,6 +153,15 @@ meterPattern = (,) <$> sepBy1 int plus <*> (slash *> simpleDuration)
 simpleDuration :: Parser Duration
 simpleDuration = (convRatio . (1%)) <$> int 
 
+-- Abc has no equivalent of 'partial' so we have another
+-- meta-directive 
+partial_md :: Parser Term
+partial_md = Let . LetPartial <$> 
+    (directive "partial" *> haskellDuration)
+
+haskellDuration :: Parser Duration
+haskellDuration = (\n d scale -> (n%d) * (scale%1)) <$>
+    (integer <* symbol "%") <*> integer <*> option 1 (symbol "*" *> integer)
     
 cmdsymbol :: String -> Parser String
 cmdsymbol = try . symbol . ('\\' :)

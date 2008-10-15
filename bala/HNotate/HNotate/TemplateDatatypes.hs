@@ -68,9 +68,10 @@ data Term = Let Binding
           | OutputDirective (Maybe OutputScheme) String
   deriving (Eq,Show)            
 
-data Binding = LetMeter Meter
-             | LetKey Key
+data Binding = LetKey Key
+             | LetMeter Meter
              | LetMeterPattern MeterPattern
+             | LetPartial Duration
              | LetRelativePitch Pitch
              | LetNone                -- Used for 'X' fields in Abc
   deriving (Eq,Show)             
@@ -96,9 +97,10 @@ convExpr (Expr (OutputDirective oscm name) xs)  =
     error $ "Malformed Term - this is a bug please report"
 
 convBinding :: Binding -> (Env -> Env)
-convBinding (LetMeter m)          = set_current_meter m
 convBinding (LetKey k)            = set_current_key k
+convBinding (LetMeter m)          = set_current_meter m
 convBinding (LetMeterPattern mp)  = set_meter_pattern mp
+convBinding (LetPartial d)        = set_partial_measure d
 convBinding (LetRelativePitch p)  = set_relative_pitch p
 convBinding (LetNone)             = id
 
