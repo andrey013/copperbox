@@ -15,6 +15,7 @@
 
 module HNotate.ParseLy where
 
+import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
@@ -25,16 +26,18 @@ import HNotate.TemplateDatatypes
 import Control.Applicative hiding (many, optional, (<|>) )
 import Data.Monoid
 import Data.Ratio
-import Data.Sequence ( Seq, (|>) )
+import Data.Sequence
 import Text.ParserCombinators.Parsec hiding (space)
 
 
+lyExprView_TwoPass :: FilePath -> IO (Either ParseError [Expr])
+lyExprView_TwoPass = twoPass preprocessLy parseLyExprs
 
 --------------------------------------------------------------------------------
 -- Preprocess
 
 preprocessLy :: FilePath -> IO (Either ParseError String)
-preprocessLy path = either (return . Left) (return . Right . untoken) 
+preprocessLy path = either (return . Left) (return . Right . hyloLy) 
                           =<< (parseFromFile lyExtract path)
                           
 lyExtract :: Parser (Seq String)
@@ -46,7 +49,36 @@ lyExtract = waterAcc $ choice
     ]
 
 
+-- This might be too simplistic...
+-- - get rid of nested blocks {}
+hyloLy :: Seq String -> String
+hyloLy se = hylo step addsep "" (0,se)
+  where
+    step (i,se)           = phi (i, viewl se)
+    
+    -- exit the unfold
+    phi (_,EmptyL)        = Nothing
+    
+   
+    -- 
+    phi (i, "{" :< se)    = case viewl se of
+                                  -- "{}" - get rid of both
+                              "}" :< sa -> Just ("", (i,sa))
+                              
+                                  -- "{{" - drop the first, incr the count 
+                              "{" :< _  -> Just ("", (i+1,se))
+                              
+                                  -- "{ something useful ..."  
+                              _         -> Just ("{", (i,se))
+    
+    -- one way down - 
+    phi (i, "}" :< se)    | i > 0       = Just ("",  (i-1,se)) 
+                          | otherwise   = Just ("}", (0,se))
+                         
+    -- normal case - produce value and go next
+    phi (i, e :< se)      = Just  (e, (i,se)) 
 
+    addsep xs ys = xs ++ (' ':ys)
 
 -- first part needs try so we don't consume the "%{" of a normal comment
 metaComment :: Parser (TokenF String)
@@ -85,29 +117,55 @@ cadenzaOff = token1 id <$> cmdsymbol "cadenzaOff"
 
 
 
-cmdsymbol :: String -> Parser String
-cmdsymbol = try . symbol . ('\\' :)
+
 
 cmdany :: Parser String
 cmdany = (:) <$> char '\\' <*> nonwhite
 
 --------------------------------------------------------------------------------
+-- Parse
+
+parseLyExprs :: Parser [Expr]
+parseLyExprs = topLevelExprs lyTermParsers
 
 
+lyTermParsers :: [Parser Term]
+lyTermParsers = [relativeT, keyT, timeT]
+
+relativeT :: Parser Term
+relativeT = Let . LetRelativePitch <$> (cmdsymbol "relative" *> lyPitch)
+
+keyT :: Parser Term
+keyT = Let . LetKey     <$> (cmdsymbol "key" *> keySig)
+
+timeT :: Parser Term 
+timeT = Let . LetMeter  <$> (cmdsymbol "time" *> timeSig)
+     <?> "timeT"
+
+--------------------------------------------------------------------------------
+-- Parse the text for the water and holes so we can fill the holes
+
+lyTextChunks :: Parser (Seq TextChunk)
+lyTextChunks = collectWaterAcc metaOutput
+  where 
+    metaOutput = (,,) <$> lexeme (try $ string "%{# output") -- see Abc note
+                      <*> manyTill anyChar (try $ string "#%}")  
+
+{-
 lyTextualView :: FilePath -> IO (Either ParseError TextualView)
 lyTextualView path = parseFromFileState (textView start end) path 0
   where
     start = lexeme $ string "%{#"
     end   = lexeme $ string "#%}"
 
-lyExprView_TwoPass :: FilePath -> IO (Either ParseError ExprView)
-lyExprView_TwoPass = twoPass preprocessLy lyExprView
-              
-lyExprView :: StParser ExprView
-lyExprView = exprView updateWithLyCommands
 
+              
+lyExprView :: StParser Hoas
+lyExprView = exprView updateWithLyCommands
+-}
 --                   
 
+{-
 updateWithLyCommands :: StParser (Env -> Env)
 updateWithLyCommands = choice $ [ cmdRelative, cmdTime, cmdKey, cmdCadenzaOn, 
    cmdCadenzaOff, cmdPartial ]    
@@ -122,7 +180,9 @@ cmdTime = set_current_meter <$> (command "time" *> timeSig)
 cmdKey :: StParser (Env -> Env)
 cmdKey = set_current_key <$> (command "key" *> keySig)
 
-cmdMode :: StParser Mode
+-}
+
+cmdMode :: GenParser Char st Mode
 cmdMode = choice 
     [ major, minor, lydian, ionian, mixolydian, dorian, 
       aeolian, phrygian, locrian 
@@ -138,6 +198,8 @@ cmdMode = choice
     phrygian    = Phrygian   <$ command "phrygian"
     locrian     = Locrian    <$ command "locrian"
 
+{-
+
 cmdCadenzaOn    :: StParser (Env -> Env)
 cmdCadenzaOn    = (set_cadenza True)  <$ command "cadenzaOn"
 
@@ -146,25 +208,23 @@ cmdCadenzaOff   = (set_cadenza False) <$ command "cadenzaOff"
 
 cmdPartial      :: StParser (Env -> Env)
 cmdPartial      = set_partial_measure <$ command "partial" <*> lyDuration
-
-
-
+-}
     
     
-timeSig :: StParser Meter
+timeSig :: GenParser Char st Meter
 timeSig = TimeSig <$> int <*> (char '/' *> int)
 
 
-keySig :: StParser Key
+keySig :: GenParser Char st Key
 keySig  = (\(Pitch l a _) m -> Key l a m) 
     <$> lyPitch <*> cmdMode
 
 
-lyPitch :: StParser Pitch
+lyPitch :: GenParser Char st Pitch
 lyPitch = lexeme pch 
   where pch = Pitch <$> lyPitchLetter <*> lyAccidental <*> lyOctaveSpec
 
-lyPitchLetter :: StParser PitchLetter
+lyPitchLetter :: GenParser Char st PitchLetter
 lyPitchLetter = choice [c,d,e,f,g,a,b]
   where
     c = C <$ char 'c'
@@ -178,13 +238,13 @@ lyPitchLetter = choice [c,d,e,f,g,a,b]
 
 --  << \relative c >> gives c below middle c i.e octave 3
 --  << \relative c' >> gives middle c i.e octave 4
-lyOctaveSpec :: StParser Int
+lyOctaveSpec :: GenParser Char st Int
 lyOctaveSpec = option 4 (raised <|> lowered)
   where
     raised  = (3 +) <$> counting1 (char '\'')
     lowered = (3 -) <$> counting1 (char ',')
     
-lyAccidental :: StParser Accidental
+lyAccidental :: GenParser Char st Accidental
 lyAccidental = option Nat (f <$> longestString accidentals) 
   where
     accidentals = ["isis", "eses", "is", "es"]
@@ -194,7 +254,7 @@ lyAccidental = option Nat (f <$> longestString accidentals)
     f "es"   = Flat
 
 
-lyDuration :: StParser Duration
+lyDuration :: GenParser Char st Duration
 lyDuration = 
     build <$> rootDuration <*> (counting $ symbol ".") 
                            <*> optparse (symbol "*" *> fractionalPart)
@@ -204,7 +264,7 @@ lyDuration =
     fractionalPart      = (\n d -> convRatio (n%d)) 
                               <$> int <*> option 1 (symbol "/" *> int)
 
-rootDuration :: StParser Duration
+rootDuration :: GenParser Char st Duration
 rootDuration = choice [pBreve, pLonga, pNumericDuration]
   where
     pBreve            = breve <$ command "breve"   

@@ -38,7 +38,8 @@ module HNotate.Env (
     
     -- Env update
     set_current_key,
-    set_current_meter,    
+    set_current_meter,
+    set_meter_pattern,
     set_unit_note_length,
     set_relative_pitch,
     set_partial_measure,
@@ -195,6 +196,8 @@ set_current_meter m env       =
       env {_current_meter = m, _measure_length = measureLength m}         
 
 
+set_meter_pattern             :: MeterPattern -> Env -> Env
+set_meter_pattern mp env      = env {_meter_pattern =mp}     
 
 set_unit_note_length          :: Duration -> Env -> Env
 set_unit_note_length d  env   = env {_unit_note_length = d}

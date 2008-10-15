@@ -32,12 +32,15 @@ import Data.Sequence
 import Data.Ratio
 import Text.ParserCombinators.Parsec hiding (space)
 
+abcExprView_TwoPass :: FilePath -> IO (Either ParseError [Expr])
+abcExprView_TwoPass = twoPass preprocessAbc parseAbcExprs
+
 
 --------------------------------------------------------------------------------
 -- Preprocess
 
 preprocessAbc :: FilePath -> IO (Either ParseError String)
-preprocessAbc path = either (return . Left) (return . Right . unfoldAbc) 
+preprocessAbc path = either (return . Left) (return . Right . hyloAbc) 
                           =<< (parseFromFile abcExtract path)
   
 
@@ -49,8 +52,8 @@ abcExtract = waterAcc $ choice
       
     ]
 
-unfoldAbc :: Seq String -> String
-unfoldAbc se = hylo step (++) "" (0,se)
+hyloAbc :: Seq String -> String
+hyloAbc se = hylo step (++) "" (0,se)
   where
     step (i, se) = phi (i, viewl se)
     
@@ -80,7 +83,7 @@ metaComment = token1 fn <$>
     ((try $ string "%#") *> manyTill anyChar lineEnding)
   where
     -- Wrap up in lilypond style meta-begin and end delimiters   
-    fn s = "%{#" ++ s ++ " #%}"
+    fn s = "%{#" ++ s ++ " #%} "
                 
              
 abcComment :: Parser (TokenF String)
@@ -120,8 +123,42 @@ dyap f g a b se = f (g a b se)
 
 
 --------------------------------------------------------------------------------
+-- Parse
+
+parseAbcExprs :: Parser [Expr]
+parseAbcExprs = topLevelExprs abcTermParsers
+
+abcTermParsers :: [Parser Term]
+abcTermParsers = [numberT, keyT, timeT]
+
+numberT :: Parser Term
+numberT = (Let LetNone) <$ (fieldsymbol 'X' *> int)
+
+keyT :: Parser Term
+keyT = Let . LetKey     <$> (fieldsymbol 'K' *> keySig)
+
+timeT :: Parser Term 
+timeT = Let . LetMeter  <$> (fieldsymbol 'M' *> timeSig)
+     <?> "timeT"
+
+--------------------------------------------------------------------------------
 
 
+--------------------------------------------------------------------------------
+-- Parse the text for the water and holes so we can fill the holes
+
+abcTextChunks :: Parser (Seq TextChunk)
+abcTextChunks = collectWaterAcc (metaOutput)
+  where 
+    metaOutput = (,,) <$> lexeme (try $ string "%# output") -- see note
+                      <*> manyTill anyChar (try end)  
+    
+    end   = choice [() <$ newline, () <$ eof]                       
+
+    -- NOTE can we guarantee we have this spacing "%# output" (1 space)
+    -- in the postprocessed output
+
+{-
 abcTextualView :: FilePath -> IO (Either ParseError TextualView)
 abcTextualView path = parseFromFileState (textView start end) path 0
   where
@@ -129,15 +166,14 @@ abcTextualView path = parseFromFileState (textView start end) path 0
     end   = choice [() <$ newline, () <$ eof] 
 
 
-abcExprView_TwoPass :: FilePath -> IO (Either ParseError ExprView)
-abcExprView_TwoPass = twoPass preprocessAbc abcExprView
-                
-abcExprView :: StParser ExprView
-abcExprView = exprView updateWithAbcCommands
 
+                
+abcExprView :: StParser Hoas
+abcExprView = exprView updateWithAbcCommands
+-}
 --
 
-
+{-
 updateWithAbcCommands :: StParser (Env -> Env)
 updateWithAbcCommands = choice $
   [cmdTuneNumber, cmdMeter, cmdKey, cmdUnitNoteLength]  
@@ -168,26 +204,26 @@ cmdKey = set_current_key <$> field 'K' keySig
 
 cmdUnitNoteLength :: StParser  (Env -> Env)
 cmdUnitNoteLength = set_unit_note_length <$> field 'L' abcDuration
+-}
 
-
-timeSig :: StParser Meter
+timeSig :: GenParser Char st Meter
 timeSig = TimeSig <$> int <*> (char '/' *> int)
 
 
 -- TODO accidentals 
 -- see ABC 2.0 spec - Klezmer (Ahavoh Rabboh) / Arabic music (Maqam Hedjaz)
-keySig :: StParser Key
+keySig :: GenParser Char st Key
 keySig = (\(Pitch l a _) m -> Key l a m) 
     <$> lexeme abcPitch <*> option Major abcMode
 
 
 
 
-abcDuration :: StParser Duration
+abcDuration :: GenParser Char st Duration
 abcDuration = (\n d -> convRatio (n%d)) <$> int <*> (char '/' *> int)
 
 
-abcPitch :: StParser Pitch
+abcPitch :: GenParser Char st Pitch
 abcPitch = build <$> abcAccidental <*> basenote <*> octaveDiff
   where build a (i,nt) od  = Pitch nt a (i + od)
 
@@ -201,7 +237,7 @@ abcPitch = build <$> abcAccidental <*> basenote <*> octaveDiff
 -- c, or C' shouldn't occur in Abc files but will be normalized anyway
 
 
-basenote :: StParser (Int,PitchLetter)
+basenote :: GenParser Char st (Int,PitchLetter)
 basenote = build <$> satisfy ((flip elem) "CDEFGABcdefgab")
   where build ch        = (octave ch, letter $ toUpper ch)
         octave ch       = if isUpper ch then 4 else 5
@@ -211,7 +247,7 @@ basenote = build <$> satisfy ((flip elem) "CDEFGABcdefgab")
         letter 'G'      = G;   letter 'A'       = A;
         letter 'B'      = B;   letter _         = error "bassenote"
 
-abcAccidental :: StParser Accidental
+abcAccidental :: GenParser Char st Accidental
 abcAccidental = option Nat (choice [dblSharp, sharp, dblFlat, flat, natural])
   where dblSharp = DoubleSharp <$ string "^^" 
         sharp    = Sharp       <$ string "^"  
@@ -219,13 +255,13 @@ abcAccidental = option Nat (choice [dblSharp, sharp, dblFlat, flat, natural])
         flat     = Flat        <$ string "_"  
         natural  = Nat         <$ string "="
         
-octaveDiff :: StParser Int    
+octaveDiff :: GenParser Char st Int    
 octaveDiff = option 0 (choice [octaveLow, octaveHigh])
   where octaveLow   = negate  <$> counting1 (char ',')
         octaveHigh  = counting1 (char '\'')
         
         
-abcMode :: StParser Mode
+abcMode :: GenParser Char st Mode
 abcMode = choice 
     [ major, lydian, ionian, mixolydian, dorian, aeolian, phrygian, locrian, 
       minor {- minor must be last - to respect longest match -} 
@@ -253,6 +289,8 @@ abcMode = choice
 command     :: String -> CharParser st String
 command ss  = lexeme $ try $ string ('\\':ss)
 
+{-
+
 startMeta   :: CharParser st String
 -- startMeta   = symbol "<<<"
 startMeta   = symbol "%{#" 
@@ -266,6 +304,8 @@ startNested       = () <$ symbol "{"
 
 endNested         :: StParser ()
 endNested         = () <$ symbol "}"
+
+-}
 
 --------------------------------------------------------------------------------
 -- utility parsers  
@@ -283,7 +323,7 @@ linefeed = () <$ choice [char '\r',  char '\n']
 
 
 -- Abc looks only at the first 3 characters of a mode specification     
-leading3 :: Char -> Char -> Char -> StParser String   
+leading3 :: Char -> Char -> Char -> GenParser Char st String   
 leading3 a b c = lexeme $ try (caten <$> p a <*> p b <*> p c <*> many letter)
   where caten a b c xs = a:b:c:xs
         p a = choice [char a, char $ toUpper a] 

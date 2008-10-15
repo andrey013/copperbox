@@ -112,8 +112,8 @@ instance Pretty MetaDirective where
   pretty (MetaOutput scm idx) = pretty scm <> colon <> text idx
   
 instance Pretty OutputScheme where
-  pretty LyRelative = text "relative" 
-  pretty AbcDefault = text "default"
+  pretty OutputRelative = text "relative" 
+  pretty OutputDefault = text "default"
   
     
  

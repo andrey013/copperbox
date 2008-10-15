@@ -8,9 +8,9 @@ melody = \relative c' {
 	\key c \major
 	\time 4/4
 	\clef treble
-	%{# relative:intro #%}
+	%{# output: \relative intro #%}
 	\cadenzaOn
-	%{# relative:cadenza1 #%}
+	%{# output: \relative cadenza1 #%}
 	\cadenzaOff
 	\barNumberCheck #3
 	c1

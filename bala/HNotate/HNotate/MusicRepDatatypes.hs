@@ -31,10 +31,10 @@ data PitchLabel = PitchLabel PitchLetter Accidental
   deriving (Eq,Show)
 
 data Key = Key PitchLetter Accidental Mode
-  deriving Show  
+  deriving (Eq,Show)  
 
 data Meter = TimeSig Int Int | CommonTime | CutTime
-  deriving Show
+  deriving (Eq,Show)
   
 data Mode = Major | Minor | Lydian | Ionian | Mixolydian
           | Dorian | Aeolian | Phrygian | Locrian 

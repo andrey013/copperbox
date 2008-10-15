@@ -10,7 +10,7 @@ cmajor = \relative c' {
   \key c \major
   \time 4/4
 
-  %{# relative:cmajor #%}
+  %{# output: \relative cmajor #%}
 }
 
 gmajor = \relative c' {
@@ -18,7 +18,7 @@ gmajor = \relative c' {
   \key g \major
   \time 4/4
 
-  %{# relative:gmajor #%}
+  %{# output: \relative gmajor #%}
 }
 
 

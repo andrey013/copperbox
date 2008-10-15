@@ -37,18 +37,18 @@ dumpLyTemplates :: FilePath -> IO ()
 dumpLyTemplates path = do
     putStrLn "LilyPond:"
     putStrLn "------------"
-    dumpTemplates lyTextualView preprocessLy path 
+    dumpTemplates lyTextChunks preprocessLy path 
 
 dumpAbcTemplates :: FilePath -> IO ()
 dumpAbcTemplates path = do
     putStrLn "Abc:"
     putStrLn "------------"
-    dumpTemplates abcTextualView preprocessAbc path 
+    dumpTemplates abcTextChunks preprocessAbc path 
 
 -- output :: (Event evt) => System evt -> FilePath -> FilePath -> IO ()
 dumpTemplates textualParse prepro path = do
     putStrLn " - Textual view:"
-    textualParse path >>= either (putStrLn . show) (putDoc80 . pretty)
+ --   textualParse path >>= either (putStrLn . show) (putDoc80 . pretty)
     putStrLn " - After preprocessing:"
     extraction prepro path
 
@@ -58,15 +58,19 @@ dumpTemplates textualParse prepro path = do
 extraction :: (FilePath -> IO (Either ParseError String)) -> FilePath -> IO ()
 extraction prepro inf = prepro inf >>= either print putStrLn
 
+dumpLyScoreZero :: System -> FilePath -> IO ()
+dumpLyScoreZero sys filepath = putStrLn "TODO"
+
+dumpAbcScoreZero :: System -> FilePath -> IO ()
+dumpAbcScoreZero sys filepath = putStrLn "TODO"
     
-    
-    
+    {-
 dumpLyScoreZero :: System -> FilePath -> IO ()
 dumpLyScoreZero sys filepath =
     let cfg = set_plug_scheme psDebug $ default_ly_config sys
     in dumpScoreZero cfg default_ly_env filepath
     
-    
+
 dumpAbcScoreZero :: System -> FilePath -> IO ()
 dumpAbcScoreZero sys filepath =
     let cfg = set_plug_scheme psDebug $ default_abc_config sys
@@ -78,8 +82,8 @@ dumpScoreZero config env filepath  =
   where
     failure   err  = putStrLn $ show err    
     showPlugs ev   = 
-        let idxp = runOutputReader (buildIndexedPlugs $ getExprs ev) config env
-        in putDoc80 $ ppIndexedPlugs idxp
+        let idxp = undefined -- runOutputReader (buildIndexedPlugs $ getExprs ev) config env
+        in putDoc80 $ text "todo" -- ppIndexedPlugs idxp
 
 
 psDebug :: PlugScheme           
@@ -99,5 +103,5 @@ ppIndexedPlugs = vsep . (map ppEvtsPair) . Map.toAscList
     ppEvtsPair (i,notelist) = text "Notelist" <+> int i <> colon <$>
                               pretty notelist <> line
                               
-
+-}
                                                 

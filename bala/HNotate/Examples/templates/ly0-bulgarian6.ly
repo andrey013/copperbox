@@ -9,7 +9,7 @@ melody = \relative c'' {
   \key a \major
   \time 2/4
   \clef treble
-   %{# relative:bulgarian6 #%}
+   %{# output: \relative bulgarian6 #%}
 }
 
 \book {

@@ -251,3 +251,4 @@ poly ts  t      = t |*> (Poly ts)
 
 notelist        :: [Pitch] -> Duration -> EventList
 notelist ps d   = foldl (\t e -> note e d t) root ps
+

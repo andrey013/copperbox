@@ -212,6 +212,11 @@ outputDoc filepath doc = do
 putDoc80 :: Doc -> IO ()
 putDoc80 doc = displayIO stdout (renderPretty 0.7 80 doc)
 
+showDocS :: Doc -> ShowS
+showDocS d = displayS (renderPretty 0.7 80 d)
+
+
+
 underline :: String -> Doc
 underline s = text s <$> text (replicate (length s) '-') <> line 
     

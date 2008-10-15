@@ -25,6 +25,18 @@ import Data.Ratio
 import Data.Sequence hiding (empty, length) 
 import Text.PrettyPrint.Leijen (Doc)
 
+
+-- A non-opaque SrcPos type  
+data SrcPos = SrcPos { 
+    _src_line     :: Int,
+    _src_column   :: Int,
+    _src_file     :: String
+  }
+  deriving (Eq,Ord,Show) 
+  
+type TextChunk = (String, Maybe SrcPos)
+
+  
 type Idx = Int
 
 type Name = String
@@ -35,8 +47,11 @@ data MetaDirective = MetaOutput OutputScheme SystemIndex
                    | MetaMeter MeterPattern
   deriving Show
 
-data OutputScheme = LyRelative | AbcDefault
-  deriving Show
+data OutputScheme = OutputRelative | OutputDefault
+  deriving (Eq,Show)
+  
+  
+  
 
 -- Two views of a file
 
@@ -49,15 +64,7 @@ newtype TextualView = TextualView { getTextElements :: Seq TextElement }
 data TextElement = SourceText String | MetaMark Idx SrcPos String
   deriving (Show)
 
-
-
-  
-data SrcPos = SrcPos { 
-    _src_line     :: Int,
-    _src_column   :: Int,
-    _src_file     :: String
-  }
-  deriving (Show)  
+ 
 
 -- 2. Expression view
 -- Expressions of interest (e.g. time signatures, key signatures)
@@ -66,18 +73,59 @@ data SrcPos = SrcPos {
 --
 -- LilyPond's nesting structure is respected, Abc has an 
 -- artificial nesting structure 'manufactured'). 
-newtype ExprView = ExprView { getExprs :: [Expr] }
+
+
+data Expr = Expr Term [Expr]
+  deriving (Eq,Show) 
+  
+  
+data Term = Let Binding
+          | OutputDirective (Maybe OutputScheme) String
+  deriving (Eq,Show)            
+
+data Binding = LetMeter Meter
+             | LetKey Key
+             | LetMeterPattern MeterPattern
+             | LetRelativePitch Pitch
+             | LetNone                -- Used for 'X' fields in Abc
+  deriving (Eq,Show)             
+
+newtype Hoas = Hoas { getExprs :: [HoasExpr] }
   deriving (Show)
 
-data Expr = LetExpr (Env -> Env) [Expr]
-          | Action Idx MetaDirective
+data HoasExpr = HLetExpr (Env -> Env) [HoasExpr]
+              | HOutputDirective (Maybe OutputScheme) String
+              
 
-instance Show Expr where
-  show (LetExpr fn xs) = "let <fun> in " ++ show xs
-  show (Action i md)   = "#" ++ show i ++ ":" ++ show md
-                      
+toHoas :: [Expr] -> Hoas
+toHoas xs = Hoas $ map convExpr xs
 
--- Plugs fill holes in a source preserving view 
-data Plug = Plug Idx Doc
+convExpr :: Expr -> HoasExpr
+convExpr (Expr (Let b) es)                      = 
+    HLetExpr (convBinding b) (map convExpr es)
+    
+convExpr (Expr (OutputDirective oscm name) [])  =
+    HOutputDirective oscm name 
+
+convExpr (Expr (OutputDirective oscm name) xs)  =
+    error $ "Malformed Term - this is a bug please report"
+
+convBinding :: Binding -> (Env -> Env)
+convBinding (LetMeter m)          = set_current_meter m
+convBinding (LetKey k)            = set_current_key k
+convBinding (LetMeterPattern mp)  = set_meter_pattern mp
+convBinding (LetRelativePitch p)  = set_relative_pitch p
+convBinding (LetNone)             = id
+
+instance Show HoasExpr where
+  show (HLetExpr fn xs)                     = "let <fun> in " ++ show xs
+  show (HOutputDirective Nothing name)      = "# output: " ++ name
+  show (HOutputDirective (Just scm) name)   = 
+      "# output: \\" ++ schemeName scm ++ " " ++ name
+    where
+       schemeName OutputRelative  = "relative" 
+       schemeName OutputDefault   = "default"                  
+
+
 
   

@@ -34,6 +34,9 @@ import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language (emptyDef)
 
 
+
+  
+  
 -- | An Applicative instance for Parsec. 
 instance Applicative (GenParser tok st) where
   pure = return
@@ -129,12 +132,12 @@ streamTokens (x:xs) = work x xs ""
    
 
 
-twoPass :: (FilePath -> IO (Either ParseError String)) -> StParser a -> FilePath -> IO (Either ParseError a)
+twoPass :: (FilePath -> IO (Either ParseError String)) 
+           -> Parser [Expr] -> FilePath -> IO (Either ParseError [Expr])
 twoPass prepro parser filepath = 
     either fk sk =<< prepro filepath
   where
-    sk ss  = either fk (return . Right) (runParser parser 0 
-                                                   pp_name ss)
+    sk ss  = either fk (return . Right) (parse parser pp_name ss)
              
     fk err = return $ Left err
     
@@ -145,14 +148,7 @@ twoPass prepro parser filepath =
 --------------------------------------------------------------------------------
 -- Common parsers for meta directives
 
-meterPattern :: StParser MeterPattern
-meterPattern = (,) <$> sepBy1 int plus <*> (slash *> simpleDuration)
-  where 
-    plus  = symbol "+"  
-    slash = symbol "/"  
 
-simpleDuration :: StParser Duration
-simpleDuration = (convRatio . (1%)) <$> int 
 
 metaCmd :: String -> StParser String
 metaCmd ss = symbol ss <* colon 
@@ -171,62 +167,150 @@ endNested         :: StParser ()
 endNested         = () <$ symbol "}"
 
 metameter         :: StParser MetaDirective    
-metameter         = MetaMeter <$> (metaCmd "meter_pattern" *> meterPattern)
+metameter         = MetaMeter <$> (metaCmd "meter_pattern" *> undefined)
 
 
 --------------------------------------------------------------------------------
 -- Abc and LilyPond 'expression views' have the same shape but differ
 -- in terminal commands 
 
-exprView :: StParser (Env -> Env) -> StParser ExprView
-exprView cmds = ExprView <$> exprs
+{-
+
+exprView :: StParser (Env -> Env) -> StParser Hoas
+exprView cmds = Hoas <$> exprs
   where
-    exprs :: StParser [Expr]
+    exprs :: StParser [HoasExpr]
     exprs = whiteSpace >> many1 expr1
     
-    expr1 :: StParser Expr
+    expr1 :: StParser HoasExpr
     expr1 = choice [metaAction, letExpr] 
 
-    metaAction :: StParser Expr
-    metaAction = Action 
-        <$> incrCount <*> ((lexeme startMeta) *> metadirective) 
+    metaAction :: StParser HoasExpr
+    metaAction = id 
+        <$> <- incrCount <*> -> ((lexeme startMeta) *> metadirective) 
                       <*  (lexeme endMeta)
                   
-    letExpr :: StParser Expr          
+    letExpr :: StParser HoasExpr          
     letExpr = eitherparse startNested cmds >>= either nestedBlock cmdExpr
       where
-        nestedBlock ()    = (LetExpr id) <$> nestedk []
-        cmdExpr     cmd   = (LetExpr cmd)  <$> exprs
+        nestedBlock ()    = (HLetExpr id) <$> nestedk []
+        cmdExpr     cmd   = (HLetExpr cmd)  <$> exprs
 
 
-    nestedk :: [Expr] -> StParser [Expr]
+    nestedk :: [HoasExpr] -> StParser [HoasExpr]
     nestedk cca = eitherparse endNested expr1 >>= either end cont
       where 
         end  () = return $ reverse cca
         cont a  = nestedk (a:cca)   
 
-    metadirective :: StParser MetaDirective
-    metadirective = choice [metaoutput, metameter]
+    metadirective :: StParser HoasExpr
+    metadirective = metaoutput
       where
-        metaoutput :: StParser MetaDirective
-        metaoutput = MetaOutput <$> outputScheme <*> identifier
+        metaoutput :: StParser HoasExpr
+        metaoutput = (\a b -> HOutputDirective  (Just a) b)
+                  <$> outputScheme <*> identifier
     
     outputScheme :: StParser OutputScheme 
     outputScheme = choice [ lyRelative, abcDefault ]
       
-    lyRelative  = LyRelative <$ metaCmd "relative" 
-    abcDefault  = AbcDefault <$ metaCmd "default"
+    lyRelative  = OutputRelative <$ metaCmd "relative" 
+    abcDefault  = OutputDefault  <$ metaCmd "default"
     
+-}
     
-    
-    
-    
+-- syntax of meta comments is common to both Abc & LilyPond
+
+topLevelExprs :: [Parser Term] -> Parser [Expr] 
+topLevelExprs ps = whiteSpace >> (many $ expr ps)
 
 
+expr :: [Parser Term] -> Parser Expr
+expr ps = Expr <$> (term ps) <*> option [] (exprList ps)
+
+exprList :: [Parser Term] -> Parser [Expr]
+exprList ps = between openNesting closeNesting exprs
+  where exprs = many1 (expr ps)
+
+
+openNesting     :: Parser String
+openNesting     = symbol "{"
+
+closeNesting    :: Parser String
+closeNesting    = symbol "}"
+
+
+term :: [Parser Term] -> Parser Term
+term specialTerms = choice specialTerms <|> genericTerm
+
+genericTerm :: Parser Term
+genericTerm = id <$> (symbol "%{#" *> p <* symbol "#%}")
+  where
+    p = choice [outputDirective, meterPatternT] 
+
+
+outputDirective :: Parser Term
+outputDirective = OutputDirective <$> 
+    (directive "output" *> optparse scheme) <*> identifier
+  
+scheme :: Parser OutputScheme
+scheme = choice [relative, dflt]
+  where
+    relative = OutputRelative <$ cmdsymbol "relative"
+    dflt     = OutputDefault  <$ cmdsymbol "default"
+
+meterPatternT :: Parser Term 
+meterPatternT = Let . LetMeterPattern <$> 
+    (directive "meter_pattern" *> meterPattern)
+
+meterPattern :: Parser MeterPattern
+meterPattern = (,) <$> sepBy1 int plus <*> (slash *> simpleDuration)
+  where 
+    plus  = symbol "+"  
+    slash = symbol "/"  
+
+simpleDuration :: Parser Duration
+simpleDuration = (convRatio . (1%)) <$> int 
+
+    
+cmdsymbol :: String -> Parser String
+cmdsymbol = try . symbol . ('\\' :)
+
+directive :: String -> Parser String
+directive s = symbol s <* lexeme colon
 
 --------------------------------------------------------------------------------
 -- Abc and LilyPond 'expression views' have the same shape but differ
 -- in terminal commands 
+
+
+-- Water to the left, at the pos of the output directive
+-- Because both views are interpreted topdown, left-to-right
+-- we don't need to store what the output directive says
+-- (actually we don't really need is src position either).
+-- The result sequence always ends with (water,Nothing),
+-- otherwise we should always have (water, Just pos) - but
+-- water might be "".
+
+
+
+
+collectWaterAcc :: GenParser Char st a -> GenParser Char st (Seq TextChunk)
+collectWaterAcc p = step empty "" <?> "collectWaterAcc"
+  where 
+    step se retaw = do
+      a <- optparse $ eitherparse (eof <?> "") (withPos p)    
+      case a of
+          -- Eof
+        Just (Left _)         -> return $ se |> (reverse retaw, Nothing)
+        
+          -- p matched
+        Just (Right (pos,_))  -> step (se |> (reverse retaw, Just pos)) ""
+                
+          -- more water
+        Nothing               -> anyChar >>= \c -> step se (c:retaw) 
+
+withPos :: GenParser Char st a -> GenParser Char st (SrcPos,a)        
+withPos p = (,) <$> sourcePosition <*> p   
 
 textView :: StParser a -> StParser b -> StParser TextualView
 textView meta_start meta_end = TextualView <$> collect mempty
