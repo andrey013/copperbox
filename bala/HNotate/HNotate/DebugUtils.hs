@@ -24,11 +24,12 @@ import HNotate.NoteListDatatypes
 import HNotate.OutputMain
 import HNotate.ParseAbc
 import HNotate.ParseLy
-import HNotate.ParserBase (StParser, Token, parseFromFileState, streamTokens)
+import HNotate.ParserBase
 import HNotate.TemplateDatatypes
 
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
+import Data.Sequence
 import Text.ParserCombinators.Parsec (ParseError)
 import Text.PrettyPrint.Leijen
 
@@ -63,6 +64,18 @@ dumpLyScoreZero sys filepath = putStrLn "TODO"
 
 dumpAbcScoreZero :: System -> FilePath -> IO ()
 dumpAbcScoreZero sys filepath = putStrLn "TODO"
+
+
+
+printTextChunks :: Seq TextChunk -> String
+printTextChunks = F.foldl op ""
+  where op acc ck = acc ++ printTextChunk ck  
+
+printTextChunk (ss, Nothing)             = ss
+printTextChunk (ss, Just (SrcPos l c _)) = ss ++ "<< " ++ show (l,c) ++ " >>"
+
+
+
     
     {-
 dumpLyScoreZero :: System -> FilePath -> IO ()

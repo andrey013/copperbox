@@ -34,18 +34,6 @@ data SrcPos = SrcPos {
   }
   deriving (Eq,Ord,Show) 
   
-type TextChunk = (String, Maybe SrcPos)
-
-  
-type Idx = Int
-
-type Name = String
-
-type SystemIndex = String
-
-data MetaDirective = MetaOutput OutputScheme SystemIndex
-                   | MetaMeter MeterPattern
-  deriving Show
 
 data OutputScheme = OutputRelative | OutputDefault
   deriving (Eq,Show)
@@ -55,14 +43,11 @@ data OutputScheme = OutputRelative | OutputDefault
 
 -- Two views of a file
 
--- 1. Source preserving view 
--- Preserves source text - the holes are indexed for filling. 
+-- 1. Text view - (Water,Hole)
+-- Preserves source text - the holes are collected at their 
+-- source position for filling. 
 
-newtype TextualView = TextualView { getTextElements :: Seq TextElement } 
-  deriving (Show) 
-  
-data TextElement = SourceText String | MetaMark Idx SrcPos String
-  deriving (Show)
+type TextChunk = (String, Maybe SrcPos)
 
  
 
@@ -71,8 +56,8 @@ data TextElement = SourceText String | MetaMark Idx SrcPos String
 -- and meta comments, are extracted from the original file (via a 
 -- preprocessing step). Everything else is dropped. 
 --
--- LilyPond's nesting structure is respected, Abc has an 
--- artificial nesting structure 'manufactured'). 
+-- LilyPond's nesting structure is respected, Abc has an artificial 
+-- nesting structure 'manufactured'). 
 
 
 data Expr = Expr Term [Expr]

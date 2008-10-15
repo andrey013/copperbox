@@ -28,7 +28,7 @@ import Control.Monad (when)
 import Data.Char
 import Data.List (intersperse)
 import Data.Monoid
-import Data.Sequence
+import Data.Sequence hiding (reverse)
 import Data.Ratio
 import Text.ParserCombinators.Parsec hiding (space)
 
@@ -141,8 +141,6 @@ timeT :: Parser Term
 timeT = Let . LetMeter  <$> (fieldsymbol 'M' *> timeSig)
      <?> "timeT"
 
---------------------------------------------------------------------------------
-
 
 --------------------------------------------------------------------------------
 -- Parse the text for the water and holes so we can fill the holes
@@ -150,61 +148,24 @@ timeT = Let . LetMeter  <$> (fieldsymbol 'M' *> timeSig)
 abcTextChunks :: Parser (Seq TextChunk)
 abcTextChunks = collectWaterAcc (metaOutput)
   where 
-    metaOutput = (,,) <$> lexeme (try $ string "%# output") -- see note
-                      <*> manyTill anyChar (try end)  
+    metaOutput = (,,) <$> lexeme (symbol "%#") 
+                      <*> lexeme (symbol "output")
+                      <*> uptoNewline ""                    
     
-    end   = choice [() <$ newline, () <$ eof]                       
+    -- Important - must not consume the newline
+    -- Use direct recursion as 'many' parser can't be used 
+    -- (empty string restriction). 
+    uptoNewline cca = do 
+        at_end <- option False (True <$ eof) 
+        case at_end of
+          True -> return (reverse cca)
+          False -> optparse (satisfy (/='\n')) >>=
+                   maybe (return $ reverse cca) (\c -> uptoNewline (c:cca))  
 
-    -- NOTE can we guarantee we have this spacing "%# output" (1 space)
-    -- in the postprocessed output
-
-{-
-abcTextualView :: FilePath -> IO (Either ParseError TextualView)
-abcTextualView path = parseFromFileState (textView start end) path 0
-  where
-    start = lexeme $ string "%#"
-    end   = choice [() <$ newline, () <$ eof] 
-
-
-
-                
-abcExprView :: StParser Hoas
-abcExprView = exprView updateWithAbcCommands
--}
---
-
-{-
-updateWithAbcCommands :: StParser (Env -> Env)
-updateWithAbcCommands = choice $
-  [cmdTuneNumber, cmdMeter, cmdKey, cmdUnitNoteLength]  
+                   
+    
 
 
--- meter e.g. M:6/8
-
--- unit note length e.g. L:1/4
-
--- key e.g. K:C major
-
-
--- 
-
-cmdTuneNumber :: StParser (Env -> Env)
-cmdTuneNumber = id <$ field 'X' int
-
--- Meter may also indicate no meter 'M:none'
--- (equivalent to LilyPond's Cadenza On)
-cmdMeter :: StParser (Env -> Env)
-cmdMeter = mkMeter <$> field 'M' (eitherparse timeSig (symbol "none"))
-  where mkMeter (Left tm) = set_current_meter tm
-        mkMeter (Right _) = set_cadenza True
-        
-         
-cmdKey :: StParser (Env -> Env)
-cmdKey = set_current_key <$> field 'K' keySig
-
-cmdUnitNoteLength :: StParser  (Env -> Env)
-cmdUnitNoteLength = set_unit_note_length <$> field 'L' abcDuration
--}
 
 timeSig :: GenParser Char st Meter
 timeSig = TimeSig <$> int <*> (char '/' *> int)
@@ -215,8 +176,6 @@ timeSig = TimeSig <$> int <*> (char '/' *> int)
 keySig :: GenParser Char st Key
 keySig = (\(Pitch l a _) m -> Key l a m) 
     <$> lexeme abcPitch <*> option Major abcMode
-
-
 
 
 abcDuration :: GenParser Char st Duration
@@ -281,46 +240,7 @@ abcMode = choice
 
 
 --------------------------------------------------------------------------------
--- utility parsers
-
--- | command - note using try is essential to consume the whole command
--- without it we may consume a blacklash of a different command and not be 
--- able to backtrack. 
-command     :: String -> CharParser st String
-command ss  = lexeme $ try $ string ('\\':ss)
-
-{-
-
-startMeta   :: CharParser st String
--- startMeta   = symbol "<<<"
-startMeta   = symbol "%{#" 
-    
-endMeta     :: CharParser st String 
--- endMeta     = symbol ">>>"
-endMeta     = symbol "#%}" 
-
-startNested       :: StParser ()
-startNested       = () <$ symbol "{"
-
-endNested         :: StParser ()
-endNested         = () <$ symbol "}"
-
--}
-
---------------------------------------------------------------------------------
 -- utility parsers  
-
-field :: Char -> StParser a -> StParser a
-field ch p = symbol [ch,':'] *> p          
-
-endOfLine :: StParser ()
-endOfLine = () <$ white *> optional trailingComment *> linefeed
-  where white           = many $ satisfy (\c -> c == ' ' || c == '\t')
-        trailingComment = char '%' *> textual
-
-linefeed :: StParser ()     
-linefeed = () <$ choice [char '\r',  char '\n']
-
 
 -- Abc looks only at the first 3 characters of a mode specification     
 leading3 :: Char -> Char -> Char -> GenParser Char st String   
@@ -329,10 +249,4 @@ leading3 a b c = lexeme $ try (caten <$> p a <*> p b <*> p c <*> many letter)
         p a = choice [char a, char $ toUpper a] 
         
         
-textual :: StParser [Char]
-textual = many1 (satisfy isTextChar)
-  where isTextChar :: Char -> Bool
-        isTextChar c = isAlpha c || isDigit c || isSpecial c
-        
-        isSpecial c  = c `elem`  " \t\"!#$&'()*+,-./:;<=>?@[\\]^_`{|}~"
                 

@@ -69,12 +69,13 @@ outputLilyPond sys infile outfile =
 eitherWithErrIO :: Show a => IO (Either a b) -> (b -> IO c) ->  IO c
 eitherWithErrIO a sk = a >>= either (error . show) sk 
 
-
+eitherErrFailIO :: Show a => IO (Either a b) ->  IO b
+eitherErrFailIO a = a >>= either (error . show) return 
 
 outputAbc :: System -> FilePath -> FilePath -> IO ()
-outputAbc sys infile outfile =
-    eitherWithErrIO (parseFromFile abcTextChunks infile) $ \chunks -> 
-    eitherWithErrIO (abcExprView_TwoPass infile)         $ \exprs  ->     
+outputAbc sys infile outfile = do
+    chunks <- eitherErrFailIO (parseFromFile abcTextChunks infile) 
+    exprs  <- eitherErrFailIO (abcExprView_TwoPass infile)     
     writeFile outfile $ (outputter exprs sys chunks) ""
   where
     outputter exprs sys chunks = 

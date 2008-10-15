@@ -116,9 +116,6 @@ cadenzaOff :: Parser (TokenF String)
 cadenzaOff = token1 id <$> cmdsymbol "cadenzaOff"
 
 
-
-
-
 cmdany :: Parser String
 cmdany = (:) <$> char '\\' <*> nonwhite
 
@@ -148,39 +145,10 @@ timeT = Let . LetMeter  <$> (cmdsymbol "time" *> timeSig)
 lyTextChunks :: Parser (Seq TextChunk)
 lyTextChunks = collectWaterAcc metaOutput
   where 
-    metaOutput = (,,) <$> lexeme (try $ string "%{# output") -- see Abc note
+    metaOutput = (,,) <$> lexeme (symbol "%{#")
+                      <*> lexeme (symbol "output")
                       <*> manyTill anyChar (try $ string "#%}")  
 
-{-
-lyTextualView :: FilePath -> IO (Either ParseError TextualView)
-lyTextualView path = parseFromFileState (textView start end) path 0
-  where
-    start = lexeme $ string "%{#"
-    end   = lexeme $ string "#%}"
-
-
-              
-lyExprView :: StParser Hoas
-lyExprView = exprView updateWithLyCommands
--}
---                   
-
-{-
-updateWithLyCommands :: StParser (Env -> Env)
-updateWithLyCommands = choice $ [ cmdRelative, cmdTime, cmdKey, cmdCadenzaOn, 
-   cmdCadenzaOff, cmdPartial ]    
-                     
-                     
-cmdRelative :: StParser (Env -> Env)
-cmdRelative = set_relative_pitch <$> (command "relative" *> lyPitch)
-
-cmdTime :: StParser (Env -> Env)
-cmdTime = set_current_meter <$> (command "time" *> timeSig)
-
-cmdKey :: StParser (Env -> Env)
-cmdKey = set_current_key <$> (command "key" *> keySig)
-
--}
 
 cmdMode :: GenParser Char st Mode
 cmdMode = choice 
@@ -198,17 +166,6 @@ cmdMode = choice
     phrygian    = Phrygian   <$ command "phrygian"
     locrian     = Locrian    <$ command "locrian"
 
-{-
-
-cmdCadenzaOn    :: StParser (Env -> Env)
-cmdCadenzaOn    = (set_cadenza True)  <$ command "cadenzaOn"
-
-cmdCadenzaOff   :: StParser (Env -> Env)
-cmdCadenzaOff   = (set_cadenza False) <$ command "cadenzaOff"
-
-cmdPartial      :: StParser (Env -> Env)
-cmdPartial      = set_partial_measure <$ command "partial" <*> lyDuration
--}
     
     
 timeSig :: GenParser Char st Meter

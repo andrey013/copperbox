@@ -99,21 +99,10 @@ tagint len i = let (s,l) = intPlex i in
 ppPos :: SrcPos -> Doc 
 ppPos (SrcPos l c _) = pretty $ (l,c)
 
-instance Pretty TextualView where
-  pretty (TextualView se) = F.foldl (\d e -> d <> pretty e) empty se <> line
-
-
-instance Pretty TextElement where
-  pretty (SourceText str)     = string str
-  pretty (MetaMark idx pos d) = hshComment (ppPos pos <+> int idx <+> pretty d)
-
-  
-instance Pretty MetaDirective where
-  pretty (MetaOutput scm idx) = pretty scm <> colon <> text idx
   
 instance Pretty OutputScheme where
   pretty OutputRelative = text "relative" 
-  pretty OutputDefault = text "default"
+  pretty OutputDefault  = text "default"
   
     
  

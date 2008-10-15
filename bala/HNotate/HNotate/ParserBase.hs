@@ -42,37 +42,6 @@ instance Applicative (GenParser tok st) where
   pure = return
   (<*>) = ap
 
-
-
-data Nested = NestStart | NestEnd
-  deriving (Eq,Show)
-  
--- Label the meta directives with an index as the parse progresses...
-type PState = Int
-
-type StParser a =  GenParser Char PState a
-
-parseFromFileState :: GenParser Char st a 
-                   -> FilePath 
-                   -> st 
-                   -> IO (Either ParseError a)
-parseFromFileState p fname st = do
-    input <- readFile fname
-    return (runParser p st fname input)
-
-parseTestState :: Show a => StParser a -> [Char] -> PState -> IO ()
-parseTestState p input st = 
-    case (runParser p st "" input) of
-      Left err -> putStr "parse error at " >> print err
-      Right x -> print x
-
-incrCount :: StParser Int
-incrCount = do 
-    i <- getState  
-    updateState (+1)
-    return i
-
-
 --------------------------------------------------------------------------------
 -- Common machinery for preprcessing
 
@@ -114,109 +83,22 @@ token3 f g h a b c  = \se -> se |> f a |> g b |> h c
 
 
 --------------------------------------------------------------------------------
--- Pre-processor helpers
-
-
-newtype Token = Token { getIsland :: String }
-  deriving Show
-
-streamTokens :: [Token] -> String
-streamTokens []     = ""
-streamTokens (x:xs) = work x xs ""
-  where
-    work (Token x) []     d = d `append` x
-    work (Token x) (y:ys) d = work y ys (d `append` x)
-    
-    append acc a = acc ++ " " ++ a
-
-   
+-- Pre-processor helpers 
 
 
 twoPass :: (FilePath -> IO (Either ParseError String)) 
            -> Parser [Expr] -> FilePath -> IO (Either ParseError [Expr])
 twoPass prepro parser filepath = 
-    either fk sk =<< prepro filepath
-  where
-    sk ss  = either fk (return . Right) (parse parser pp_name ss)
-             
-    fk err = return $ Left err
+    let pp_name  = "post-processed " ++ filepath in
+    either (return . Left) (return . parse parser pp_name) =<< prepro filepath
+
     
-    pp_name  = "post-processed " ++ filepath
-    
-
-
---------------------------------------------------------------------------------
--- Common parsers for meta directives
-
-
-
-metaCmd :: String -> StParser String
-metaCmd ss = symbol ss <* colon 
-
--- Abc meta symbols are replaced after preprocesing with LilyPond ones 
-startMeta         :: StParser String
-startMeta         = symbol "%{#" 
-    
-endMeta           :: StParser String 
-endMeta           = symbol "#%}" 
-
-startNested       :: StParser ()
-startNested       = () <$ symbol "{"
-
-endNested         :: StParser ()
-endNested         = () <$ symbol "}"
-
-metameter         :: StParser MetaDirective    
-metameter         = MetaMeter <$> (metaCmd "meter_pattern" *> undefined)
 
 
 --------------------------------------------------------------------------------
 -- Abc and LilyPond 'expression views' have the same shape but differ
 -- in terminal commands 
 
-{-
-
-exprView :: StParser (Env -> Env) -> StParser Hoas
-exprView cmds = Hoas <$> exprs
-  where
-    exprs :: StParser [HoasExpr]
-    exprs = whiteSpace >> many1 expr1
-    
-    expr1 :: StParser HoasExpr
-    expr1 = choice [metaAction, letExpr] 
-
-    metaAction :: StParser HoasExpr
-    metaAction = id 
-        <$> <- incrCount <*> -> ((lexeme startMeta) *> metadirective) 
-                      <*  (lexeme endMeta)
-                  
-    letExpr :: StParser HoasExpr          
-    letExpr = eitherparse startNested cmds >>= either nestedBlock cmdExpr
-      where
-        nestedBlock ()    = (HLetExpr id) <$> nestedk []
-        cmdExpr     cmd   = (HLetExpr cmd)  <$> exprs
-
-
-    nestedk :: [HoasExpr] -> StParser [HoasExpr]
-    nestedk cca = eitherparse endNested expr1 >>= either end cont
-      where 
-        end  () = return $ reverse cca
-        cont a  = nestedk (a:cca)   
-
-    metadirective :: StParser HoasExpr
-    metadirective = metaoutput
-      where
-        metaoutput :: StParser HoasExpr
-        metaoutput = (\a b -> HOutputDirective  (Just a) b)
-                  <$> outputScheme <*> identifier
-    
-    outputScheme :: StParser OutputScheme 
-    outputScheme = choice [ lyRelative, abcDefault ]
-      
-    lyRelative  = OutputRelative <$ metaCmd "relative" 
-    abcDefault  = OutputDefault  <$ metaCmd "default"
-    
--}
     
 -- syntax of meta comments is common to both Abc & LilyPond
 
@@ -283,16 +165,13 @@ directive s = symbol s <* lexeme colon
 -- in terminal commands 
 
 
--- Water to the left, at the pos of the output directive
+-- Collect water to the left of the output directive.
 -- Because both views are interpreted topdown, left-to-right
 -- we don't need to store what the output directive says
 -- (actually we don't really need is src position either).
--- The result sequence always ends with (water,Nothing),
--- otherwise we should always have (water, Just pos) - but
--- water might be "".
-
-
-
+-- The last element of sequence should always be (water,Nothing),
+-- and the 'inits' should be (water, Just pos). 
+-- Water may sometimes be "" (empty).
 
 collectWaterAcc :: GenParser Char st a -> GenParser Char st (Seq TextChunk)
 collectWaterAcc p = step empty "" <?> "collectWaterAcc"
@@ -312,78 +191,11 @@ collectWaterAcc p = step empty "" <?> "collectWaterAcc"
 withPos :: GenParser Char st a -> GenParser Char st (SrcPos,a)        
 withPos p = (,) <$> sourcePosition <*> p   
 
-textView :: StParser a -> StParser b -> StParser TextualView
-textView meta_start meta_end = TextualView <$> collect mempty
-  where
-    collect se = do 
-        txt    <- waterUpto marker
-        at_end <- option False (True <$ eof)
-        case at_end of
-          True -> return $ se `add` txt
-          False -> do { mark <- metamarkK
-                      ; collect $ (se `add` txt) |> mark }    
 
-    metamarkK :: StParser TextElement    
-    metamarkK = MetaMark 
-        <$> incrCount <*> sourcePosition <*> (manyTill anyChar meta_end) 
-    
-    add se "" = se
-    add se ss = se |> (SourceText ss)  
-    
-    marker = eitherparse eof (lexeme meta_start)
-          <?> "marker"  
     
 --------------------------------------------------------------------------------
 -- Utility functions
-
-    
-    
-manyWaterIsland :: GenParser Char st a -> GenParser Char st [a]
-manyWaterIsland p = many $ try (water p) 
-
-manyWaterIslandCollect :: GenParser Char st a -> GenParser Char st [(String,a)]
-manyWaterIslandCollect p = many $ try (collectWater p) 
-
-
--- Note - the supplied parser can't match against eof! 
-water :: GenParser Char st a -> GenParser Char st a
-water p = do
-    a <- optparse (eitherparse (eof <?> "") p)    
-    case a of
-      Just (Left _) -> fail "water - eof reached - parse failed"
-      Just (Right ans) -> return ans
-      Nothing -> anyChar >> water p 
-  <?> "water"      
-
-waterMaybe :: GenParser Char st a -> GenParser Char st (Maybe a)
-waterMaybe p = do
-    a <- optparse (eitherparse (eof <?> "") p)    
-    case a of
-      Just (Left _) -> return Nothing
-      Just (Right ans) -> return (Just ans)
-      Nothing -> anyChar >> waterMaybe p 
-  <?> "waterMaybe" 
-  
--- | Collect the water as a string until p parses.     
-collectWater :: GenParser Char st a -> GenParser Char st (String,a)
-collectWater p = colwater []
-  where
-    colwater cs  =  do
-      a <- optparse p
-      case a of 
-        Just a -> return (reverse cs, a)
-        Nothing -> anyChar >>= \c -> colwater (c:cs)
-        
-waterUpto :: GenParser Char st a -> GenParser Char st String
-waterUpto p = collect []
-  where 
-    collect cs = do 
-      a <- optparse p
-      case a of 
-        Just a -> return (reverse cs)
-        Nothing -> anyChar >>= \c -> collect (c:cs) 
-            
-        
+     
               
 sourcePosition :: GenParser Char st SrcPos
 sourcePosition = makeSrcPos <$> getPosition
@@ -474,8 +286,3 @@ commaSep          = P.commaSep baseLex
 whiteSpace        :: CharParser st ()
 whiteSpace        = P.whiteSpace baseLex
 
--- 'tightident' a version of identifier that doesn't 
--- consume trailing whitespace
-tightident :: CharParser st String
-tightident = try $ 
-    (:) <$> P.identStart emptyDef <*> many (P.identLetter emptyDef)
