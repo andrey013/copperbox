@@ -21,16 +21,20 @@ import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.BuildNoteList
 import HNotate.CommonUtils -- (outputDoc, showDocS)
+import HNotate.DebugWriter
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
 import HNotate.ParseLy
 import HNotate.ParserBase (ExprParser, TextChunkParser)
+import HNotate.PrintMonad (NoteListOutput)
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (empty)
+import Control.Monad.Identity
 import Control.Monad.Reader
+import Control.Monad.Writer
 
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
@@ -44,11 +48,18 @@ import Text.PrettyPrint.Leijen hiding ( (<$>) )
 data Config = Config { _system :: System }
 
 type OutputReaderM a = ReaderT Env (Reader Config) a
+type OutputReaderT m a = ReaderT Env (ReaderT Config m) a
+
+
+runOutputReader :: OutputReaderT Identity a -> Config -> Env -> a
+runOutputReader f config env = runIdentity $ runOutputReaderT f config env
+
+runOutputReader_debug :: OutputReaderT DebugWriter a -> Config -> Env -> (a,String)
+runOutputReader_debug f config env = runDebugWriter $ runOutputReaderT f config env
+
+runOutputReaderT :: Monad m => OutputReaderT m a -> Config -> Env -> m a
+runOutputReaderT f config env = runReaderT (runReaderT f env) config
   
-runOutputReader :: OutputReaderM a -> Config -> Env -> a
-runOutputReader f config env = runReader (runReaderT f env) config
-
-
 
 -- {NOTE} Some elements in the env have defaults
 -- that might be too arbitrary (e.g. meter pattern)
@@ -80,7 +91,7 @@ writeS path = writeFile path . ($ "")
 
 outputter :: Env -> System -> [Expr] -> Seq TextChunk -> ShowS
 outputter env sys exprs chunks = plug chunks $ 
-    runOutputReader (evalHoas $ toHoas exprs) (Config sys) env  
+    (runOutputReader `flipper` (Config sys) $ env) (evalHoas $ toHoas exprs)
                                       
 
                                       
@@ -113,30 +124,32 @@ crossZip se xs = czip (viewl se) xs
      
 
 
-evalHoas :: Hoas -> OutputReaderM [Doc]
+evalHoas :: Monad m => Hoas -> OutputReaderT m [Doc]
 evalHoas (Hoas exprs) = foldM eval [] exprs
 
-eval :: [Doc] -> HoasExpr -> OutputReaderM [Doc]
+eval :: Monad m => [Doc] -> HoasExpr -> OutputReaderT m [Doc]
 eval docs (HLetExpr update xs)        = 
     foldM (\ds e -> local update (eval ds e)) docs xs
 
 eval docs (HOutputDirective oscm name) = 
-    output (fromMaybe OutputDefault oscm) name >>= return . flip (:) docs
+    outputNotes (fromMaybe OutputDefault oscm) name >>= return . flip (:) docs
+
+outputNotes :: Monad m => OutputScheme -> String 
+            -> OutputReaderT m NoteListOutput
+outputNotes OutputRelative name = 
+    ask                       >>= \env ->
+    (lift $ asks _system)     >>= \sys -> 
+    maybe fault (noteListOutput env) (Map.lookup name sys)
+  where 
+    fault        = error $ "output failure - missing " ++ name
 
 
-output OutputRelative name = do
-  sys       <- lift $ asks _system
-  current_env   <- ask
-  case (Map.lookup name sys) of
-      Nothing       -> error $ "output failure - missing " ++ name
-      Just evtlist  -> case output_format current_env of
-                          Output_LilyPond -> 
-                              return $ translateLilyPond (toNoteList evtlist current_env) current_env
-                          Output_Abc      -> 
-                              return $ translateAbc (toNoteList evtlist current_env) current_env
-  
+outputNotes OutputDefault  name = outputNotes OutputRelative name 
 
-  
-  
-output OutputDefault  name = output OutputRelative name 
-
+noteListOutput :: Monad m => Env -> EventList -> OutputReaderT m NoteListOutput
+noteListOutput env evts = case output_format env of
+    Output_LilyPond -> return $ translateLilyPond env (toNoteList env evts)
+    Output_Abc      -> return $ translateAbc env (toNoteList env evts) 
+    
+    
+    

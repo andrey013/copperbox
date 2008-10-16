@@ -1,4 +1,6 @@
-
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE TypeSynonymInstances   #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -22,15 +24,24 @@ import Data.Monoid
 import System.IO (stdout)
 import Text.PrettyPrint.Leijen
 
-instance Monoid Doc where
-  mempty = empty
-  mappend = (</>)
 
-type DebugWriter a = Writer String a
+newtype DebugWriter a = DebugWriter { getDW :: Writer String a }
+
+runDebugWriter :: DebugWriter a -> (a, String) 
+runDebugWriter = runWriter . getDW
+
+instance Monad DebugWriter where
+  return a = DebugWriter $ return a
+  ma >>= f = DebugWriter $ getDW ma >>= getDW . f
+
+instance MonadWriter String DebugWriter where
+  tell    = DebugWriter . tell
+  listen  = DebugWriter . listen . getDW
+  pass    = DebugWriter . pass . getDW 
 
 runInIO :: DebugWriter a -> IO a
-runInIO f = let (a,out) = runWriter f in do
-  putStr out -- displayIO stdout (renderPretty 0.7 80 out)
+runInIO f = let (a,out) = runDebugWriter f in do
+  putStr out
   return a
 
 

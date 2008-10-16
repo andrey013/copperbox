@@ -15,8 +15,7 @@
 --------------------------------------------------------------------------------
 
 module HNotate.BackendLilyPond (
-    translateLilyPond, 
-    LilyPondOutput,
+    translateLilyPond
   ) where
 
 
@@ -39,28 +38,24 @@ import Data.Traversable
 import Text.PrettyPrint.Leijen (Doc)
 
   
-type LilyPondOutput = Doc
 
+translateLilyPond :: Env -> NoteList -> NoteListOutput
+translateLilyPond env =
+    (execPrintM `flip` pmZero) . outputNoteList . lilypondRelativeForm env
 
-
-translateLilyPond :: NoteList -> Env -> LilyPondOutput
-translateLilyPond notes env =
-    let ly_notes = lilypondRelativeForm notes env
-    in  execPrintM (outputNoteList ly_notes) st0 
-
-
+updatePitch st p = st { rel_pitch = p }
 
 -- Do we need a state type, like this one?
 -- data LyState = LyState { rel_pitch :: Pitch, rel_dur :: Duration }
 
-lilypondRelativeForm :: NoteList -> Env -> NoteList
-lilypondRelativeForm se env = 
-    evalState (unwrapMonad $ inner se) ly_st 
+lilypondRelativeForm :: Env -> NoteList -> NoteList
+lilypondRelativeForm env = (evalState `flip` st) . unwrapMonad . inner 
   where       
-    inner se = evalState (unwrapMonad $ unComp $ trav se) ly_st 
-    trav     = traverse (proBody `comp` drleBody)
-    ly_st    = lyState0 {rel_pitch= (relative_pitch env)}
-    
+    inner   = (evalState `flip` st) . unwrapMonad 
+                                    . unComp 
+                                    . traverse (proBody `comp` drleBody)
+
+    st      = lyState0 `updatePitch` (relative_pitch env)
     
 outputNoteList :: NoteList -> PrintM ()
 outputNoteList (NoteList se) = F.mapM_  outputBlock se

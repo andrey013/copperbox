@@ -71,6 +71,9 @@ dup :: a -> (a,a)
 dup a = (a,a)
 
 
+flipper :: (a -> b -> c -> d) -> b -> c -> a -> d
+flipper f y z = \x -> f x y z
+
 --------------------------------------------------------------------------------
 -- Morphisms
 
@@ -149,13 +152,6 @@ apoM phi chi b =
                   (\(a, b') -> apoM phi chi b' >>= return . (a <|))
               
 
-{-
--- apomorphism (generalizes ana)
-apo :: (b -> Maybe (a, b)) -> (b -> Seq a) -> b -> Seq a
-apo phi chi b = case phi b of
-              Just (a, b') -> a <| apo phi chi b'
-              Nothing -> chi b
--}
 
 
 -- build 

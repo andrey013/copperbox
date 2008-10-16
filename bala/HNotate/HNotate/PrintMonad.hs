@@ -20,13 +20,16 @@ import Text.PrettyPrint.Leijen
 
 type PrintM a = State St a
 
+type NoteListOutput = Doc
+
+
 data St = St { 
     _append_op  :: Doc -> Doc -> Doc, 
     _output     :: Doc, 
     _prefix     :: Doc 
   }
 
-st0 = St { _append_op = (<+>), _output = empty, _prefix = empty }
+pmZero = St { _append_op = (<+>), _output = empty, _prefix = empty }
 
 execPrintM :: PrintM a -> St -> Doc
 execPrintM f s = _output $ execState f s

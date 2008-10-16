@@ -44,17 +44,15 @@ type VoiceOverlayA = (Int, Duration, Seq Evt)
 
 type VoiceOverlayB = (Int, Duration, Seq Glyph)
 
-toNoteList :: EventList -> Env -> NoteList
-toNoteList evts env = 
+toNoteList :: Env -> EventList -> NoteList
+toNoteList env = 
     eventsToNoteList (measure_length env) 
                      (fromMaybe duration_zero (partial_measure env))
-                     evts
 
-toNoteList_debug :: EventList -> Env -> DebugWriter NoteList
-toNoteList_debug evts env = 
+toNoteList_debug :: Env -> EventList -> DebugWriter NoteList
+toNoteList_debug env = 
     eventsToNoteList_debug (measure_length env) 
                            (fromMaybe duration_zero (partial_measure env))
-                           evts
 
 
 eventsToNoteList :: Duration -> Duration -> EventList -> NoteList
@@ -213,9 +211,6 @@ ppSeqRawBar = genFinger ppRawBar
 ppRawBar :: RawBar -> Doc
 ppRawBar (i,se) = tupled [int i, finger se] 
 
-
-
-  
 ppNoteList :: NoteList -> Doc
 ppNoteList = pretty
 

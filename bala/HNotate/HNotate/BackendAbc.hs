@@ -16,7 +16,7 @@
 
 
 module HNotate.BackendAbc (
-    translateAbc, AbcNoteList   
+    translateAbc   
   ) where
 
 import HNotate.CommonUtils
@@ -38,23 +38,23 @@ import Data.Sequence hiding (take)
 import Data.Traversable
 import Text.PrettyPrint.Leijen (Doc, (<>), (<+>), text)
   
-type AbcNoteList = Doc
 
 
 
 
-translateAbc :: NoteList -> Env -> AbcNoteList
-translateAbc notes env =
-    let abc_notes = beamNoteList env $ abcForm notes env
-    in  execPrintM (outputNoteList abc_notes) st0 
+
+translateAbc :: Env -> NoteList -> NoteListOutput
+translateAbc env = (execPrintM `flip` pmZero) . outputNoteList 
+                                              . beamNoteList env 
+                                              . abcForm env 
 
     
-abcForm :: NoteList -> Env -> NoteList
-abcForm se env = 
-    runReader (unwrapMonad $ inner se) env
+abcForm :: Env -> NoteList -> NoteList
+abcForm env = (runReader `flip` env) . unwrapMonad . inner
   where
-    inner se = runReader (unwrapMonad $ unComp $ trav se) env 
-    trav     = traverse (unleBody `comp` plrBody)
+    inner   = (runReader `flip` env) . unwrapMonad 
+                                     . unComp 
+                                     . traverse (unleBody `comp` plrBody)
    
  
     
