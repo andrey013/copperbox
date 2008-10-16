@@ -27,7 +27,52 @@ import Prelude hiding (null)
 import System.IO
 import Text.PrettyPrint.Leijen
 
+
 --------------------------------------------------------------------------------
+-- HOF's
+
+-- Reverse application and composition
+
+infixl 7 #
+
+( # ) :: a -> (a -> b) -> b 
+x # f = f x
+
+
+infixl 7 #.
+
+( #. ) :: (a -> b) -> (b -> c) -> (a -> c) 
+g #. f = f . g
+
+
+-- variantions of 'on' 
+
+onr :: (a -> c -> d) -> (b -> c) -> a -> b -> d
+op `onr` f = \x y -> x `op` f y
+
+onl :: (c -> b -> d) -> (a -> c) -> a -> b -> d
+op `onl` f = \x y -> f x `op` y
+
+-- pairs
+fork :: (a -> b) -> (a,a) -> (b,b)
+fork f (a,b) = (f a, f b)
+
+forkM :: Monad m => (a -> m b) -> (a,a) -> m (b,b)
+forkM f (a,b) = f a >>= \a' -> f b >>= \b' -> return (a',b')
+
+
+prod :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
+prod f g (a,b) = (f a, g b)
+
+prodM :: Monad m => (a -> m c) -> (b -> m d) -> (a,b) -> m (c,d)
+prodM f g (a,b) = f a >>= \a' -> g b >>= \b' -> return (a',b') 
+
+dup :: a -> (a,a)
+dup a = (a,a)
+
+
+--------------------------------------------------------------------------------
+-- Morphisms
 
 -- Catamorphism - foldr
 cata :: (a -> b -> b) -> b -> Seq a -> b

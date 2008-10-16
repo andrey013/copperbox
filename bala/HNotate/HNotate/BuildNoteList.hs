@@ -46,8 +46,15 @@ type VoiceOverlayB = (Int, Duration, Seq Glyph)
 
 toNoteList :: EventList -> Env -> NoteList
 toNoteList evts env = 
-    let start = fromMaybe duration_zero (partial_measure env)
-    in eventsToNoteList (measure_length env) start evts
+    eventsToNoteList (measure_length env) 
+                     (fromMaybe duration_zero (partial_measure env))
+                     evts
+
+toNoteList_debug :: EventList -> Env -> DebugWriter NoteList
+toNoteList_debug evts env = 
+    eventsToNoteList_debug (measure_length env) 
+                           (fromMaybe duration_zero (partial_measure env))
+                           evts
 
 
 eventsToNoteList :: Duration -> Duration -> EventList -> NoteList
@@ -69,7 +76,7 @@ eventsToNoteList_debug bar_len partial_start =
     o0 = (.) return   -- don't generate output
     o1 = genWriteStep "Flattened representation... "    ppListVoiceOverlayB
     o2 = genWriteStep "The flat rep partitioned..."     ppListSeqRawBar
-    o3 = genWriteStep "The bars in the onset queue..."  ppOnsetQueue
+    o3 = genWriteStep "The bars in the onset queue..."  pretty
     o4 = genWriteStep "Finally the note list..."        ppNoteList 
     
 
@@ -195,7 +202,7 @@ ppListVoiceOverlayB :: [VoiceOverlayB] -> Doc
 ppListVoiceOverlayB = vsep . map ppVoiceOverlayB
 
 ppVoiceOverlayB (bc, d, se) = 
-    text "bar" <+> int bc <> colon <+> ppDur d <+> finger se 
+    text "bar" <+> int bc <> colon <+> ppDuration d <+> finger se 
 
 ppListSeqRawBar :: [Seq RawBar] -> Doc
 ppListSeqRawBar = vsep . map (genFinger ppRawBar)
@@ -207,9 +214,7 @@ ppRawBar :: RawBar -> Doc
 ppRawBar (i,se) = tupled [int i, finger se] 
 
 
-ppOnsetQueue :: OnsetQueue Bar -> Doc
-ppOnsetQueue = foldlOnsetQueue fn PP.empty
-  where fn d (i,xs) = d <$> int i <+> text ":+" <+> list (map pretty xs)
+
   
 ppNoteList :: NoteList -> Doc
 ppNoteList = pretty

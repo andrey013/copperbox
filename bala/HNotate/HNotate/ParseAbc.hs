@@ -32,7 +32,7 @@ import Data.Sequence hiding (reverse)
 import Data.Ratio
 import Text.ParserCombinators.Parsec hiding (space)
 
-abcExprView_TwoPass :: FilePath -> IO (Either ParseError [Expr])
+abcExprView_TwoPass :: ExprParser
 abcExprView_TwoPass = twoPass preprocessAbc parseAbcExprs
 
 
@@ -145,7 +145,7 @@ timeT = Let . LetMeter  <$> (fieldsymbol 'M' *> timeSig)
 --------------------------------------------------------------------------------
 -- Parse the text for the water and holes so we can fill the holes
 
-abcTextChunks :: Parser (Seq TextChunk)
+abcTextChunks :: TextChunkParser
 abcTextChunks = collectWaterAcc (metaOutput)
   where 
     metaOutput = (,,) <$> lexeme (symbol "%#") 
@@ -174,7 +174,7 @@ timeSig = TimeSig <$> int <*> (char '/' *> int)
 -- TODO accidentals 
 -- see ABC 2.0 spec - Klezmer (Ahavoh Rabboh) / Arabic music (Maqam Hedjaz)
 keySig :: GenParser Char st Key
-keySig = (\(Pitch l a _) m -> Key l a m) 
+keySig = (\(Pitch l a _) m -> Key (PitchLabel l a) m) 
     <$> lexeme abcPitch <*> option Major abcMode
 
 

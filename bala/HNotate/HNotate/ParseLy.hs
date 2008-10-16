@@ -30,7 +30,7 @@ import Data.Sequence
 import Text.ParserCombinators.Parsec hiding (space)
 
 
-lyExprView_TwoPass :: FilePath -> IO (Either ParseError [Expr])
+lyExprView_TwoPass :: ExprParser
 lyExprView_TwoPass = twoPass preprocessLy parseLyExprs
 
 --------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ lyExtract :: Parser (Seq String)
 lyExtract = waterAcc $ choice 
     [ metaComment, lyComment, leftBrace, rightBrace, 
       -- commands
-      key, time, relative, cadenzaOn, cadenzaOff
+      key, time, relative, partial, cadenzaOn, cadenzaOff
       
     ]
 
@@ -109,6 +109,9 @@ time = token2 id id <$> cmdsymbol "time" <*> nonwhite
 relative :: Parser (TokenF String)
 relative = token2 id id <$> cmdsymbol "relative" <*> nonwhite
 
+partial :: Parser (TokenF String)
+partial = token2 id id <$> cmdsymbol "partial" <*> nonwhite
+
 cadenzaOn :: Parser (TokenF String)
 cadenzaOn = token1 id <$> cmdsymbol "cadenza"
 
@@ -145,7 +148,7 @@ partialT = Let . LetPartial  <$> (cmdsymbol "partial" *> lyDuration)
 --------------------------------------------------------------------------------
 -- Parse the text for the water and holes so we can fill the holes
 
-lyTextChunks :: Parser (Seq TextChunk)
+lyTextChunks :: TextChunkParser
 lyTextChunks = collectWaterAcc metaOutput
   where 
     metaOutput = (,,) <$> lexeme (symbol "%{#")
@@ -176,7 +179,7 @@ timeSig = TimeSig <$> int <*> (char '/' *> int)
 
 
 keySig :: GenParser Char st Key
-keySig  = (\(Pitch l a _) m -> Key l a m) 
+keySig  = (\(Pitch l a _) m -> Key (PitchLabel l a) m) 
     <$> lyPitch <*> cmdMode
 
 

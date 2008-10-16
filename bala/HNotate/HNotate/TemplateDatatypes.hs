@@ -68,7 +68,8 @@ data Term = Let Binding
           | OutputDirective (Maybe OutputScheme) String
   deriving (Eq,Show)            
 
-data Binding = LetKey Key
+data Binding = LetCadenza Bool
+             | LetKey Key
              | LetMeter Meter
              | LetMeterPattern MeterPattern
              | LetPartial Duration
@@ -97,6 +98,7 @@ convExpr (Expr (OutputDirective oscm name) xs)  =
     error $ "Malformed Term - this is a bug please report"
 
 convBinding :: Binding -> (Env -> Env)
+convBinding (LetCadenza b)        = set_cadenza b
 convBinding (LetKey k)            = set_current_key k
 convBinding (LetMeter m)          = set_current_meter m
 convBinding (LetMeterPattern mp)  = set_meter_pattern mp

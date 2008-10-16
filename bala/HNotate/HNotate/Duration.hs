@@ -29,6 +29,8 @@ module HNotate.Duration (
    
     base2numbers'inf,
     
+    -- * printing
+    ppDuration,
     PrintableDuration(..), printableDuration,
     pdElements,
     ppAltRest,
@@ -48,7 +50,7 @@ module HNotate.Duration (
 
   ) where
 
-
+import HNotate.CommonUtils (fork)
 
 import Data.List (unfoldr)
 import Data.Monoid
@@ -81,10 +83,6 @@ convRatio = uncurry (%) . fork fromIntegral . ratioElements
 
 durationToDouble :: Duration -> Double
 durationToDouble = uncurry (/) . fork fromIntegral . ratioElements
-
-
-fork :: (a -> b) -> (a,a) -> (b,b)
-fork f (a,b) = (f a, f b)
   
    
 data PrintableDuration = PrintableDuration { 
@@ -108,7 +106,7 @@ pdElements (PrintableDuration r dc) =
   let (n,d) = ratioElements r in (fromIntegral n, fromIntegral d, dc) 
 
 
-printableDuration :: Rational -> PrintableDuration
+printableDuration :: Duration -> PrintableDuration
 printableDuration r  
     | r <= 0    = PrintableDuration duration_zero 0
     | otherwise = if r == rationalize r' then r' else PrintableDuration r 0
@@ -153,6 +151,9 @@ halves'inf r = unfoldr phi r
 base2numbers'inf :: [Integer]
 base2numbers'inf = unfoldr (\x -> Just (x, x * 2)) 1 
 
+
+ppDuration :: Duration -> Doc
+ppDuration = pretty . printableDuration
 
 
                    

@@ -196,14 +196,7 @@ pitchf f (BeamEnd)                = BeamEnd
 -- Functions for the external view
 
 
-infixl 7 #
 
-x # f = f x
-
-
-infixl 7 #.
-
-g #. f = f . g
 
 
 (|*>) :: EventList -> Evt -> EventList

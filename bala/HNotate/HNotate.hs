@@ -33,20 +33,12 @@ module HNotate (
     
  ) where
 
+import HNotate.CommonUtils
 import HNotate.DebugUtils
 import HNotate.Duration
 import HNotate.NoteListDatatypes
 import HNotate.Pitch
 import HNotate.OutputMain
 
-infixl 7 #
 
-( # ) :: a -> (a -> b) -> b
-x # f = f x
-
-
-infixl 7 #.
-
-( #. ) :: (a -> b) -> (b -> c) -> a -> c
-g #. f = f . g
 

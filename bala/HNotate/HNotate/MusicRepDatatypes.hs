@@ -30,7 +30,7 @@ type MeterPattern = ([Int],Duration)
 data PitchLabel = PitchLabel PitchLetter Accidental
   deriving (Eq,Show)
 
-data Key = Key PitchLetter Accidental Mode
+data Key = Key PitchLabel Mode
   deriving (Eq,Show)  
 
 data Meter = TimeSig Int Int | CommonTime | CutTime

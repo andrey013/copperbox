@@ -34,13 +34,22 @@ import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language (emptyDef)
 
 
+-- ExprParser returns the 'expressions of interest' - the parts
+-- of the input file that we know how to interpret. 
+type ExprParser = FilePath -> IO (Either ParseError [Expr])
 
-  
+-- TextChunkParser returns a 'text view' of the input file - 
+-- source to be preserved plus locations of holes to be plugged.
+type TextChunkParser = Parser (Seq TextChunk)
+
   
 -- | An Applicative instance for Parsec. 
 instance Applicative (GenParser tok st) where
   pure = return
   (<*>) = ap
+
+
+
 
 --------------------------------------------------------------------------------
 -- Common machinery for preprcessing

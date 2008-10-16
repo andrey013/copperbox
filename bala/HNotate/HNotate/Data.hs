@@ -45,7 +45,7 @@ import Data.List
 
 -- intervals?
 labelSetOf :: Key -> Maybe LabelSet
-labelSetOf (Key l a m)  = scaleSpelling l a m
+labelSetOf (Key (PitchLabel l a) m)  = scaleSpelling l a m
 
 
 
@@ -127,7 +127,7 @@ c_major'ls :: LabelSet
 c_major'ls = labelSet $ map (\a -> PitchLabel a Nat) $ enumFromCyc C
  
 c_major :: Key
-c_major = Key C Nat Major  
+c_major = Key (PitchLabel C Nat) Major  
 
 
 four_four :: Meter 

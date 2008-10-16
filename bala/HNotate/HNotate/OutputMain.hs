@@ -20,12 +20,13 @@ module HNotate.OutputMain where
 import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.BuildNoteList
-import HNotate.CommonUtils (outputDoc, showDocS)
+import HNotate.CommonUtils -- (outputDoc, showDocS)
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
 import HNotate.ParseLy
+import HNotate.ParserBase (ExprParser, TextChunkParser)
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (empty)
@@ -49,39 +50,47 @@ runOutputReader f config env = runReader (runReaderT f env) config
 
 
 
--- {NOTE} Some elements in the env don't really have defaults
+-- {NOTE} Some elements in the env have defaults
 -- that might be too arbitrary (e.g. meter pattern)
-   
+
 outputLilyPond :: System -> FilePath -> FilePath -> IO ()
-outputLilyPond sys infile outfile =     
-    eitherWithErrIO (parseFromFile lyTextChunks infile) $ \chunks -> 
-    eitherWithErrIO (lyExprView_TwoPass infile)         $ \exprs  ->
-    writeFile outfile $ (outputter exprs sys chunks) ""
-  where
-    outputter exprs sys chunks = 
-        plug chunks $ runOutputReader (evalHoas $ toHoas exprs) 
-                                      (Config sys) 
-                                      default_ly_env
+outputLilyPond sys = 
+    generalOutput default_ly_env sys lyExprView_TwoPass lyTextChunks
+        
+                                 
+
+
+outputAbc :: System -> FilePath -> FilePath -> IO ()
+outputAbc sys = 
+    generalOutput default_abc_env sys abcExprView_TwoPass abcTextChunks
 
 
 
+generalOutput :: Env -> System -> ExprParser -> TextChunkParser 
+              -> FilePath -> FilePath -> IO ()
+generalOutput env sys view_parser chunk_parser infile outfile =
+    prodM (eitherErrFailIO . view_parser) 
+          (eitherErrFailIO . parseFromFile chunk_parser)
+          (dup infile)    
+      >>= writeS outfile . uncurry (outputter env sys)
+    
 
+writeS :: FilePath -> ShowS -> IO ()
+writeS path = writeFile path . ($ "")                                      
+
+outputter :: Env -> System -> [Expr] -> Seq TextChunk -> ShowS
+outputter env sys exprs chunks = plug chunks $ 
+    runOutputReader (evalHoas $ toHoas exprs) (Config sys) env  
+                                      
+
+                                      
 eitherWithErrIO :: Show a => IO (Either a b) -> (b -> IO c) ->  IO c
 eitherWithErrIO a sk = a >>= either (error . show) sk 
 
 eitherErrFailIO :: Show a => IO (Either a b) ->  IO b
 eitherErrFailIO a = a >>= either (error . show) return 
 
-outputAbc :: System -> FilePath -> FilePath -> IO ()
-outputAbc sys infile outfile = do
-    chunks <- eitherErrFailIO (parseFromFile abcTextChunks infile) 
-    exprs  <- eitherErrFailIO (abcExprView_TwoPass infile)     
-    writeFile outfile $ (outputter exprs sys chunks) ""
-  where
-    outputter exprs sys chunks = 
-        plug chunks $ runOutputReader (evalHoas $ toHoas exprs) 
-                                      (Config sys) 
-                                      default_abc_env
+
 
 
 
@@ -112,8 +121,8 @@ eval docs (HLetExpr update xs)        =
     foldM (\ds e -> local update (eval ds e)) docs xs
 
 eval docs (HOutputDirective oscm name) = 
-    output (fromMaybe OutputDefault oscm) name >>= \d -> 
-    return (d:docs)
+    output (fromMaybe OutputDefault oscm) name >>= return . flip (:) docs
+
 
 output OutputRelative name = do
   sys       <- lift $ asks _system
