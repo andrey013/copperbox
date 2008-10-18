@@ -18,8 +18,10 @@ module HNotate.ParserBase where
 import HNotate.CommonUtils (para)
 import HNotate.Duration
 import HNotate.Env
+import HNotate.Monads
 import HNotate.MusicRepDatatypes
 import HNotate.TemplateDatatypes
+import HNotate.PrettyInstances
 
 import Control.Applicative hiding (many, optional, (<|>), empty )
 import Control.Monad
@@ -32,7 +34,7 @@ import Prelude hiding (null)
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language (emptyDef)
-
+import qualified Text.PrettyPrint.Leijen as PP
 
 -- ExprParser returns the 'expressions of interest' - the parts
 -- of the input file that we know how to interpret. 
@@ -98,12 +100,26 @@ token3 f g h a b c  = \se -> se |> f a |> g b |> h c
 twoPass :: (FilePath -> IO (Either ParseError String)) 
            -> Parser [Expr] -> FilePath -> IO (Either ParseError [Expr])
 twoPass prepro parser filepath = 
-    let pp_name  = "post-processed " ++ filepath in
-    either (return . Left) (return . parse parser pp_name) =<< prepro filepath
+    let pp_name  = "post-processed " ++ filepath in 
+    prepro filepath >>= either (return . Left) (return . parse parser pp_name)
 
-    
+twoPass_debug :: (FilePath -> IO (Either ParseError String)) 
+           -> Parser [Expr] -> FilePath -> IO (Either ParseError [Expr])
+twoPass_debug prepro parser filepath = 
+    let pp_name  = "post-processed " ++ filepath in runIOInIO $ 
+    o1 prepro filepath >>=  
+    either (return . Left) (o2 (parse parser pp_name))
+  where
+    -- don't print expressions here - the are printed in another step
+    -- (also note 02 isn't a monadic step as the function parse isn't monadic)
+    o2 = genWriteStep  "Expression count..." ppExprCountErr
+    o1 = genWriteStepM "After preprocessed step..." ppPreproErr    
 
+ppPreproErr :: Either ParseError String -> PP.Doc
+ppPreproErr = either (PP.string . show) PP.string
 
+ppExprCountErr :: Either ParseError [Expr] -> PP.Doc
+ppExprCountErr = either (PP.string . show) (PP.int . length)
 --------------------------------------------------------------------------------
 -- Abc and LilyPond 'expression views' have the same shape but differ
 -- in terminal commands 

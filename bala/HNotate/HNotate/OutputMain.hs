@@ -21,6 +21,7 @@ import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.BuildNoteList
 import HNotate.CommonUtils -- (outputDoc, showDocS)
+import HNotate.DebugUtils (printTextChunks)
 import HNotate.Env
 import HNotate.Monads
 import HNotate.MusicRepDatatypes
@@ -59,13 +60,31 @@ outputLilyPond :: System -> FilePath -> FilePath -> IO ()
 outputLilyPond sys = 
     generalOutput default_ly_env sys lyExprView_TwoPass lyTextChunks
         
-                                 
+outputLilyPond_debug :: System -> FilePath -> FilePath -> IO ()
+outputLilyPond_debug sys inpath outpath =
+    putStrLn "Generating LilyPond..." >> 
+    generalOutput_debug default_ly_env 
+                        sys 
+                        lyExprView_TwoPass_debug 
+                        lyTextChunks
+                        inpath
+                        outpath                               
 
 
 outputAbc :: System -> FilePath -> FilePath -> IO ()
 outputAbc sys = 
     generalOutput default_abc_env sys abcExprView_TwoPass abcTextChunks
 
+outputAbc_debug :: System -> FilePath -> FilePath -> IO ()
+outputAbc_debug sys inpath outpath = 
+    putStrLn "Generating Abc..." >>
+    generalOutput_debug default_abc_env 
+                        sys
+                        abcExprView_TwoPass_debug 
+                        abcTextChunks
+                        inpath
+                        outpath
+    
 
 
 generalOutput :: Env -> System -> ExprParser -> TextChunkParser 
@@ -76,6 +95,20 @@ generalOutput env sys view_parser chunk_parser infile outfile =
           (dup infile)    
       >>= writeS outfile . uncurry (outputter env sys)
     
+
+
+generalOutput_debug :: Env -> System -> ExprParser -> TextChunkParser 
+              -> FilePath -> FilePath -> IO ()
+generalOutput_debug  env sys view_parser chunk_parser infile outfile =
+    prodM (eitherErrFailIO_debug "Expression Representation:" 
+                                 (vsep . map pretty)
+                  . view_parser) 
+          (eitherErrFailIO_debug "Text Representation:" 
+                                 (string . printTextChunks)
+                  . parseFromFile chunk_parser)
+          (dup infile)    
+      >>= writeS outfile . uncurry (outputter env sys)
+      
 
 writeS :: FilePath -> ShowS -> IO ()
 writeS path = writeFile path . ($ "")                                      
@@ -98,7 +131,10 @@ eitherWithErrIO a sk = a >>= either (error . show) sk
 eitherErrFailIO :: Show a => IO (Either a b) ->  IO b
 eitherErrFailIO a = a >>= either (error . show) return 
 
-
+eitherErrFailIO_debug :: (Show a, Show b) => 
+                      String -> (b -> Doc) -> IO (Either a b) -> IO b
+eitherErrFailIO_debug msg pp a = 
+    runIOInIO (genWriteStepM msg pp eitherErrFailIO a)
 
 
 

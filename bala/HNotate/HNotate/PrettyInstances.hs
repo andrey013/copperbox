@@ -119,7 +119,7 @@ instance Pretty OutputScheme where
   pretty OutputDefault  = text "default"
   
 instance Pretty Expr where
-  pretty (Expr t es)          = pretty t <+> indent 2 
+  pretty (Expr t es)          = pretty t <$> indent 2 
                                     (braces $ hsep $ map pretty es)
   
 instance Pretty Term where
@@ -145,3 +145,4 @@ ppcmd = text . ('\\':)
 
  
 foldrMapE op f = foldr (op `onl` f)
+

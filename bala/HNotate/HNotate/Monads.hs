@@ -81,6 +81,10 @@ type OutputReaderDebugM env cfg a = DebugWriterT (OutputReaderM env cfg) a
 runDebugWriter :: DebugWriter a -> (a,String)
 runDebugWriter m = runIdentity (runWriterT $ getDWT m)
 
+runDebugWriterT :: DebugWriterT m a -> m (a,String)
+runDebugWriterT m = runWriterT $ getDWT m
+
+
 runOutputReader_debug :: OutputReaderDebugM env cfg a -> cfg -> env -> (a,String)
 runOutputReader_debug m config env =
   runOutputReader (runWriterT $ getDWT m) config env
@@ -93,6 +97,10 @@ runInIO :: DebugWriter a -> IO a
 runInIO f = let (a,out) = runDebugWriter f in do
   putStr out
   return a
+
+runIOInIO :: DebugWriterT IO a -> IO a
+runIOInIO m = runDebugWriterT m >>= \(a,out) -> putStrLn out >> return a
+
   
 output :: Monad m => Doc -> DebugWriterT m ()
 output d = tell $ displayS (renderPretty 0.4 80 d) ""
@@ -113,7 +121,16 @@ genWriteStep title pp f a = do
     output (pp b <$> empty <$> empty)
     return b 
 
-genWriteStepM :: Monad m => String -> (b -> Doc) -> (a -> m b) -> a -> DebugWriterT m b
+writePrettyM :: (Monad m, Pretty b) => 
+             String -> (a -> m b) -> a -> DebugWriterT m b
+writePrettyM title f = genWriteStepM title pretty f
+
+writeShowM :: (Monad m, Show b) => 
+            String -> (a -> m b) -> a -> DebugWriterT m b
+writeShowM title f = genWriteStepM title (string . show) f
+
+genWriteStepM :: Monad m => 
+              String -> (b -> Doc) -> (a -> m b) -> a -> DebugWriterT m b
 genWriteStepM title pp m a = do 
     tell $ title ++ "\n"
     b <- lift $ m a

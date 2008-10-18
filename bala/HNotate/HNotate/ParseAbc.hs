@@ -35,6 +35,8 @@ import Text.ParserCombinators.Parsec hiding (space)
 abcExprView_TwoPass :: ExprParser
 abcExprView_TwoPass = twoPass preprocessAbc parseAbcExprs
 
+abcExprView_TwoPass_debug :: ExprParser
+abcExprView_TwoPass_debug = twoPass_debug preprocessAbc parseAbcExprs
 
 --------------------------------------------------------------------------------
 -- Preprocess

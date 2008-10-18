@@ -110,8 +110,8 @@ abc_output    = "out/abc-trees.abc"
 
 outputTrees :: IO ()
 outputTrees = do
-    outputLilyPond example_sys  ly_template   ly_output
-    outputAbc      example_sys  abc_template  abc_output
+    outputLilyPond_debug  example_sys  ly_template   ly_output
+    outputAbc_debug       example_sys  abc_template  abc_output
 
 debugTrees :: IO ()
 debugTrees = do 
