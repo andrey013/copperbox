@@ -43,7 +43,9 @@ module HNotate.Env (
     set_unit_note_length,
     set_relative_pitch,
     set_partial_measure,
-    set_cadenza
+    set_cadenza,
+    
+    abcly
  ) where
 
 import HNotate.Data
@@ -215,4 +217,15 @@ measureLength :: Meter -> Duration
 measureLength (TimeSig n d)   = convRatio $ n%d
 measureLength CommonTime      = 4%4
 measureLength CutTime         = 2%2
+
+
+--------------------------------------------------------------------------------
+--
+
+abcly :: HNotate.Env.Env -> a -> a -> a
+abcly env x y = case output_format env of
+  Output_Abc -> x
+  Output_LilyPond -> y 
+  
+
 

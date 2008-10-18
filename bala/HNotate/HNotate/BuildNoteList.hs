@@ -19,9 +19,9 @@
 module HNotate.BuildNoteList where
 
 import HNotate.CommonUtils
-import HNotate.DebugWriter
 import HNotate.Duration
 import HNotate.Env
+import HNotate.Monads
 import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 import HNotate.OnsetQueue
@@ -50,10 +50,11 @@ toNoteList env =
                      (fromMaybe duration_zero (partial_measure env))
 
 toNoteList_debug :: Env -> EventList -> DebugWriter NoteList
-toNoteList_debug env = 
+toNoteList_debug env = undefined
+{-
     eventsToNoteList_debug (measure_length env) 
                            (fromMaybe duration_zero (partial_measure env))
-
+-}
 
 eventsToNoteList :: Duration -> Duration -> EventList -> NoteList
 eventsToNoteList bar_len partial_start = 
@@ -76,8 +77,7 @@ eventsToNoteList_debug bar_len partial_start =
     o2 = genWriteStep "The flat rep partitioned..."     ppListSeqRawBar
     o3 = genWriteStep "The bars in the onset queue..."  pretty
     o4 = genWriteStep "Finally the note list..."        ppNoteList 
-    
-
+      
         
 -- 'untree' is the difficult bit of building a note list
 -- it flattens out the 'polyphony'
