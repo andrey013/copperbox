@@ -41,10 +41,10 @@ lyExprView_TwoPass_debug = twoPass_debug preprocessLy parseLyExprs
 -- Preprocess
 
 preprocessLy :: FilePath -> IO (Either ParseError String)
-preprocessLy path = either (return . Left) (return . Right . hyloLy) 
+preprocessLy path = either (return . Left) (return . Right . rewriteLyToks) 
                           =<< (parseFromFile lyExtract path)
                           
-lyExtract :: Parser (Seq String)
+lyExtract :: Parser (Seq Token)
 lyExtract = waterAcc $ choice 
     [ metaComment, lyComment, leftBrace, rightBrace, 
       -- commands
@@ -53,73 +53,50 @@ lyExtract = waterAcc $ choice
     ]
 
 
--- This might be too simplistic...
--- - get rid of nested blocks {}
-hyloLy :: Seq String -> String
-hyloLy se = hylo step addsep "" (0,se)
-  where
-    step (i,se)           = phi (i, viewl se)
-    
-    -- exit the unfold
-    phi (_,EmptyL)        = Nothing
-    
-   
-    -- 
-    phi (i, "{" :< se)    = case viewl se of
-                                  -- "{}" - get rid of both
-                              "}" :< sa -> Just ("", (i,sa))
-                              
-                                  -- "{{" - drop the first, incr the count 
-                              "{" :< _  -> Just ("", (i+1,se))
-                              
-                                  -- "{ something useful ..."  
-                              _         -> Just ("{", (i,se))
-    
-    -- one way down - 
-    phi (i, "}" :< se)    | i > 0       = Just ("",  (i-1,se)) 
-                          | otherwise   = Just ("}", (0,se))
-                         
-    -- normal case - produce value and go next
-    phi (i, e :< se)      = Just  (e, (i,se)) 
+type Leftwards = Maybe () 
+braceleft = Just ()
 
-    addsep xs ys = xs ++ (' ':ys)
+rewriteLyToks :: Seq Token -> String
+rewriteLyToks = rewriteTokenStream . cata (:) []
+
 
 -- first part needs try so we don't consume the "%{" of a normal comment
-metaComment :: Parser (TokenF String)
+metaComment :: Parser (TokenF Token)
 metaComment = token1 fn <$> 
-    ((try $ string "%{#") *> manyTill anyChar (try $ string "#%}"))
+    ((try $ symbol "%{#") *> manyTill anyChar (try $ symbol "#%}"))
   where
-    fn s = "%{#" ++ s ++ "#%}"
+    -- prefix with a hash  
+    fn s = '#' : s
                 
-lyComment :: Parser (TokenF String)
+lyComment :: Parser (TokenF Token)
 lyComment = dropToken <$
     (symbol "%{" *> manyTill anyChar (try $ symbol "%}")) 
 
-leftBrace :: Parser (TokenF String)
-leftBrace = token1 id <$> symbol "{"
+leftBrace :: Parser (TokenF Token)
+leftBrace = beginNest <$ symbol "{"
 
-rightBrace :: Parser (TokenF String)
-rightBrace = token1 id <$> symbol "}"
+rightBrace :: Parser (TokenF Token)
+rightBrace = endNest <$ symbol "}"
 
 -- commands
 
-key :: Parser (TokenF String)
+key :: Parser (TokenF Token)
 key = token3 id id id <$> cmdsymbol "key" <*> nonwhite <*> cmdany
 
 
-time :: Parser (TokenF String)
+time :: Parser (TokenF Token)
 time = token2 id id <$> cmdsymbol "time" <*> nonwhite
 
-relative :: Parser (TokenF String)
+relative :: Parser (TokenF Token)
 relative = token2 id id <$> cmdsymbol "relative" <*> nonwhite
 
-partial :: Parser (TokenF String)
+partial :: Parser (TokenF Token)
 partial = token2 id id <$> cmdsymbol "partial" <*> nonwhite
 
-cadenzaOn :: Parser (TokenF String)
+cadenzaOn :: Parser (TokenF Token)
 cadenzaOn = token1 id <$> cmdsymbol "cadenza"
 
-cadenzaOff :: Parser (TokenF String)
+cadenzaOff :: Parser (TokenF Token)
 cadenzaOff = token1 id <$> cmdsymbol "cadenzaOff"
 
 

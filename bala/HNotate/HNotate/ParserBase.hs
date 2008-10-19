@@ -26,7 +26,8 @@ import HNotate.PrettyInstances
 import Control.Applicative hiding (many, optional, (<|>), empty )
 import Control.Monad
 import Data.Char (isSpace)
-import Data.List (sortBy)
+import Data.List (sortBy, intersperse)
+import Data.Maybe (catMaybes)
 import Data.Monoid
 import Data.Ratio
 import Data.Sequence hiding (length, reverse)
@@ -79,20 +80,92 @@ untoken = para phi ""
 type TokenF a = Seq a -> Seq a
 
 
-dropToken :: TokenF String
+data Token = Tk_LBr | Tk_RBr 
+           | Tk_None
+           | Tk1 String 
+           | Tk2 String String 
+           | Tk3 String String String
+  deriving (Eq,Show)
+
+dropToken :: TokenF a
 dropToken = \se -> se
 
-token1 :: (a -> String) -> a -> TokenF String
-token1 f a = \se -> se |> f a
 
-token2 :: (a -> String) -> (b -> String) -> a -> b -> TokenF String
-token2 f g a b  = \se -> se |> f a |> g b
+
+beginNest :: TokenF Token
+beginNest = \se -> se |> Tk_LBr
+
+endNest :: TokenF Token
+endNest = \se -> se |> Tk_RBr
+
+token1 :: (a -> String) -> a -> TokenF Token
+token1 f a = \se -> se |> Tk1 (f a)
+
+token2 :: (a -> String) -> (b -> String) -> a -> b -> TokenF Token
+token2 f g a b  = \se -> se |> Tk2 (f a) (g b)
 
 token3 :: (a -> String) -> (b -> String) -> (c -> String) 
-       -> a -> b -> c -> TokenF String
-token3 f g h a b c  = \se -> se |> f a |> g b |> h c
+       -> a -> b -> c -> TokenF Token
+token3 f g h a b c  = \se -> se |> Tk3 (f a) (g b) (h c)
+
+--------------------------------------------------------------------------------
+-- Rewrite the token stream
+
+data Tree = Node String [Tree]
+  deriving (Show)
 
 
+
+build :: [Token] -> [Tree]
+build = step [] 
+  where 
+    step acc [] = acc
+    step acc xs = let (ts,xs') = build1 xs in step (acc ++ ts) xs'
+
+build1 :: [Token] -> ([Tree], [Token])
+build1 (Tk_LBr  :xs)  = let (t1,xs') = build1 xs in ([anode t1], xs')
+build1 (Tk_RBr  :xs)  = ([],xs) 
+build1 (tok     :xs)  = let (t1,xs') = build1 xs in ([enode tok t1],xs') 
+  
+-- anonymous node
+anode :: [Tree] -> Tree
+anode = Node "" 
+
+-- empty node
+enode :: Token -> [Tree] -> Tree
+enode (Tk1 s)     ts = Node s ts
+enode (Tk2 s t)   ts = Node (s ++ " " ++ t) ts
+enode (Tk3 s t u) ts = Node (s ++ " " ++ t ++ " " ++ u) ts
+enode (Tk_None)   ts = Node "" ts
+
+validNode :: Tree -> Maybe Tree
+validNode (Node "" []) = Nothing
+validNode (Node "" xs) = case prune xs of 
+    []  -> Nothing 
+    xs' -> Just (Node "NONE" xs')
+    
+validNode (Node s  xs) = Just (Node s (prune xs))
+
+prune :: [Tree] -> [Tree]
+prune = catMaybes . map validNode 
+
+tree1 :: [Tree] -> Tree
+tree1 [a] = a
+tree1 xs  = Node "NONE" xs
+
+ppTree :: Tree -> String
+ppTree = show . ppt
+  where
+    ppt (Node s []) = PP.string s PP.<$> PP.empty
+    ppt (Node s xs) = PP.string s PP.<$> 
+                            PP.indent 2 (PP.braces $ PP.hsep $ map ppt xs)   
+
+rewriteTokenStream :: [Token] -> String
+rewriteTokenStream = ppTree . tree1 . prune . build
+
+
+
+   
 --------------------------------------------------------------------------------
 -- Pre-processor helpers 
 
@@ -147,12 +220,15 @@ closeNesting    = symbol "}"
 
 
 term :: [Parser Term] -> Parser Term
-term specialTerms = choice specialTerms <|> genericTerm
+term specialTerms = choice specialTerms <|> noneTerm <|> genericTerm 
+
+
+noneTerm :: Parser Term
+noneTerm = Let LetNone <$ symbol "NONE"
+
 
 genericTerm :: Parser Term
-genericTerm = id <$> (symbol "%{#" *> p <* symbol "#%}")
-  where
-    p = choice [outputDirective, meterPattern_md, partial_md] 
+genericTerm = choice [outputDirective, meterPattern_md, partial_md] 
 
 
 outputDirective :: Parser Term
@@ -192,7 +268,7 @@ cmdsymbol :: String -> Parser String
 cmdsymbol = try . symbol . ('\\' :)
 
 directive :: String -> Parser String
-directive s = symbol s <* lexeme colon
+directive s = try (symbol $ '#':s) <* lexeme colon
 
 --------------------------------------------------------------------------------
 -- Abc and LilyPond 'expression views' have the same shape but differ

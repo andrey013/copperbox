@@ -23,6 +23,7 @@ import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 
 import qualified Data.Foldable as F
+import Data.Maybe
 import Data.Sequence
 import Prelude hiding (null)
 
@@ -32,19 +33,22 @@ import Prelude hiding (null)
 
 beamNoteList :: Env -> NoteList -> NoteList
 beamNoteList env (NoteList se) = 
-  NoteList $ fmap (beamBlock (meter_pattern env) (measure_length env)) se
+    NoteList $ fmap (beamBlock (meter_pattern env) 
+                               (measure_length env)
+                               (partial_measure env)) se
 
 
-beamBlock :: MeterPattern -> Duration -> Block -> Block
-beamBlock mp bar_len blk = case blk of
+beamBlock :: MeterPattern -> Duration -> Maybe Duration -> Block -> Block
+beamBlock mp bar_len partial_len blk = case blk of
     SingleBlock i bar -> SingleBlock i (block i bar)  
     PolyBlock i bars  -> PolyBlock i (fmap (block i) bars)
   where
-    block i bar | i == 0    = beamPartialBar mp bar_len bar
+    block i bar | i == 0  && isJust partial_len  
+                            = beamPartialBar mp (fromJust partial_len) bar
                 | otherwise = beamBar mp bar
     
 beamPartialBar :: MeterPattern -> Duration -> Bar -> Bar
-beamPartialBar mp bar_len = beam (shortenMP bar_len mp)
+beamPartialBar mp partial = beam (shortenMP partial mp)
 
 beamBar :: MeterPattern -> Bar -> Bar
 beamBar mp = beam mp
@@ -82,6 +86,7 @@ lgDurationSplit len start =
 
 -- | Turn a meter pattern into a list of durations
 meterDivisions :: MeterPattern -> [Duration]
+meterDivisions ([],s)   = error $ "unspecified meter pattern?"
 meterDivisions (x:xs,s) = 
     scanl (\acc i -> acc + s * fromIntegral i) (s * fromIntegral x) xs
 

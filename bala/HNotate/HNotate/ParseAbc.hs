@@ -26,7 +26,7 @@ import HNotate.TemplateDatatypes
 import Control.Applicative hiding (many, optional, (<|>), empty)
 import Control.Monad (when)
 import Data.Char
-import Data.List (intersperse)
+import Data.List (unfoldr)
 import Data.Monoid
 import Data.Sequence hiding (reverse)
 import Data.Ratio
@@ -42,11 +42,11 @@ abcExprView_TwoPass_debug = twoPass_debug preprocessAbc parseAbcExprs
 -- Preprocess
 
 preprocessAbc :: FilePath -> IO (Either ParseError String)
-preprocessAbc path = either (return . Left) (return . Right . hyloAbc) 
+preprocessAbc path = either (return . Left) (return . Right . rewriteAbcToks) 
                           =<< (parseFromFile abcExtract path)
   
 
-abcExtract :: Parser (Seq String)
+abcExtract :: Parser (Seq Token)
 abcExtract = waterAcc $ choice 
     [ metaComment, abcComment,
       -- fields
@@ -54,54 +54,62 @@ abcExtract = waterAcc $ choice
       
     ]
 
-hyloAbc :: Seq String -> String
-hyloAbc se = hylo step (++) "" (0,se)
+rewriteAbcToks :: Seq Token -> String
+rewriteAbcToks se = rewriteTokenStream $ unfoldr step (0,se)
   where
     step (i, se) = phi (i, viewl se)
     
     -- exit the unfold
-    phi (0, EmptyL)       = Nothing
+    phi (0, EmptyL)           = Nothing
     
     -- enqueue close braces 
-    phi (i, EmptyL)       = Just  (close i,           (0, empty))
+    phi (i, EmptyL)           = unnest i empty
    
     -- enqueue the open brace and increase the nesting level
-    phi (i, "{" :< se)    = Just  (" { ",             (i+1, se))
+    phi (i, Tk_LBr :< se)     = Just (Tk_LBr,   (i+1, se))
     
     -- 'X' is new tune -- close all braces then enqueue 'X' 
-    phi (i, "X:" :< se)   = Just  (close i ++ "X:" ,  (0, se))
+    phi (i, (Tk2 "X:" _) :< se)
+          | i > 0             = unnest i se
+          | otherwise         = Just (Tk_None,   (i, se))
     
     -- normal case - produce value and go next
-    phi (i, e :< se)      = Just  (e ,  (i, se)) 
+    phi (i, e :< se)          = Just (e,         (i, se)) 
     
        
+    -- i is guaranteed (>1)
+    -- Produce 1 closeBrace, and enqueue any further closeBrace's
+    -- into the token stream
+    unnest :: Int -> Seq Token -> Maybe (Token, (Int,Seq Token))
+    unnest 1 se = Just (Tk_RBr, (0, se))
+    unnest i se = Just (Tk_RBr, (0, addleft (replicate (i-1) Tk_RBr) se))
     
-close :: Int -> String
-close i = concat $ replicate i " }" 
+    addleft :: [a] -> Seq a -> Seq a
+    addleft xs = ((fromList xs) ><) 
 
 
-metaComment :: Parser (TokenF String)
+metaComment :: Parser (TokenF Token)
 metaComment = token1 fn <$> 
-    ((try $ string "%#") *> manyTill anyChar lineEnding)
+    ((try $ symbol "%#") *> manyTill anyChar lineEnding)
   where
-    -- Wrap up in lilypond style meta-begin and end delimiters   
-    fn s = "%{#" ++ s ++ " #%} "
+    -- prefix with a hash  
+    fn s = '#' : s
                 
              
-abcComment :: Parser (TokenF String)
+abcComment :: Parser (TokenF Token)
 abcComment = dropToken <$ 
     (symbol "%{" *> manyTill anyChar lineEnding) 
 
-tunenumber  :: Parser(TokenF String)
-tunenumber  = dyap pushStart (token2 id show) <$> 
+tunenumber  :: Parser(TokenF Token)
+tunenumber  = dyap beginNest (token2 id show) <$> 
     fieldsymbol 'X' <*> int
     
-key         :: Parser(TokenF String)
-key         = dyap pushStart (token2 id id)  <$>
+key         :: Parser(TokenF Token)
+key         = dyap beginNest (token2 id id)  <$>
     fieldsymbol 'K' <*> restOfLine
     
-meter       :: Parser(TokenF String)
-meter       = dyap pushStart (token2 id id)  <$>   
+meter       :: Parser(TokenF Token)
+meter       = dyap beginNest (token2 id id)  <$>   
     fieldsymbol 'M' <*> restOfLine
     
     
@@ -114,8 +122,7 @@ restOfLine = manyTill anyChar lineEnding
 lineEnding :: GenParser Char st ()
 lineEnding = choice [ () <$ newline, eof] 
 
-pushStart :: TokenF String
-pushStart = \se -> se |> "{"
+
 
 -- | Dyadic apply \/ compose - apply the binary function g to a and b, 
 -- then apply the unary function f to the result.

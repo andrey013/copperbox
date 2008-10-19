@@ -199,7 +199,7 @@ set_current_meter m env       =
 
 
 set_meter_pattern             :: MeterPattern -> Env -> Env
-set_meter_pattern mp env      = env {_meter_pattern =mp}     
+set_meter_pattern mp env      = env {_meter_pattern = mp}     
 
 set_unit_note_length          :: Duration -> Env -> Env
 set_unit_note_length d  env   = env {_unit_note_length = d}

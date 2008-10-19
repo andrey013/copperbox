@@ -95,7 +95,7 @@ convExpr (Expr (OutputDirective oscm name) [])  =
     HOutputDirective oscm name 
 
 convExpr (Expr (OutputDirective oscm name) xs)  =
-    error $ "Malformed Term - this is a bug please report"
+    error $ "Malformed Term - #output " ++ name ++ " " ++ show xs
 
 convBinding :: Binding -> (Env -> Env)
 convBinding (LetCadenza b)        = set_cadenza b
