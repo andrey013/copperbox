@@ -136,7 +136,7 @@ instance Pretty Binding where
   pretty (LetMeterPattern mp)   = equation "meter_pattern"  (ppMeterPattern mp)
   pretty (LetPartial d)         = equation "partial"        (ppDuration d)
   pretty (LetRelativePitch p)   = equation "relative"       (pretty p)
-  pretty (LetNone)              = text "NONE" 
+  pretty (LetNone)              = text "#NONE" 
 
 equation s e = ppcmd s <+> equals <+> e      
 ppcmd = text . ('\\':) 

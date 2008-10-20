@@ -35,7 +35,7 @@ import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Sequence
 import Data.Traversable
-import Text.PrettyPrint.Leijen (Doc)
+import Text.PrettyPrint.Leijen (Doc, char)
 
   
 
@@ -84,8 +84,10 @@ polyphony = step1 . viewl
     step1 EmptyL      = return ()
     step1 (s :< se)   = polystart >> rstep s (viewl se)
     
-    rstep e EmptyL    = outputMeasure e >> polyend
-    rstep e (s :< se) = outputMeasure e >> polyc >> rstep s (viewl se)
+    rstep e EmptyL    = bracedMeasure e >> polyend
+    rstep e (s :< se) = bracedMeasure e >> polyc >> rstep s (viewl se)
+    
+bracedMeasure e = element (char '{') >> outputMeasure e >> element (char '}')      
     
 
 {-

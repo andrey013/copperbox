@@ -267,6 +267,10 @@ underline s = text s <$> text (replicate (length s) '-') <> line
 finger :: Pretty a => Seq a -> Doc
 finger = enclose (text "(|") (text "|)") . genPunctuateSeq pretty comma
 
+
+    
+    
+
 genFinger :: (a -> Doc) -> Seq a -> Doc
 genFinger f = enclose (text "(|") (text "|)") . genPunctuateSeq f comma
 
@@ -279,4 +283,20 @@ genPunctuateSeq pp p = para phi empty
                     | otherwise      = pp c <> p <> d
                    
                         
+
+--------------------------------------------------------------------------------
+-- ShowS helpers
+
+spaceS :: Int -> ShowS
+spaceS i = showString (replicate i ' ')  
+    
+    
+showNewline, showLBrace, showRBrace :: ShowS
+showNewline   = showChar '\n'
+showLBrace    = showString "{\n"
+showRBrace    = showString "}\n"
+
+foldS :: (ShowS -> ShowS -> ShowS) -> [ShowS] -> ShowS
+foldS f []      = id
+foldS f xs      = foldr1 f xs
 

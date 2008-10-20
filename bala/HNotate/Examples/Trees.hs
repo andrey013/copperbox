@@ -108,15 +108,11 @@ ly_output     = "out/ly-trees.ly"
 abc_template  = "templates/abc0-trees.abc"
 abc_output    = "out/abc-trees.abc"     
 
-outputTrees :: IO ()
-outputTrees = do
-    outputLilyPond_debug  example_sys  ly_template   ly_output
+main :: IO ()
+main = do
     outputAbc_debug       example_sys  abc_template  abc_output
+    outputLilyPond_debug  example_sys  ly_template   ly_output
+    
 
-debugTrees :: IO ()
-debugTrees = do 
-    dumpLyTemplates   ly_template
-    dumpAbcTemplates  abc_template
-    dumpLyScoreZero  example_sys ly_template
-    dumpAbcScoreZero example_sys abc_template    
+ 
                               

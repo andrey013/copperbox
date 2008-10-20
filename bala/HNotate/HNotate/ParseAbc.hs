@@ -69,12 +69,12 @@ rewriteAbcToks se = rewriteTokenStream $ unfoldr step (0,se)
     phi (i, Tk_LBr :< se)     = Just (Tk_LBr,   (i+1, se))
     
     -- 'X' is new tune -- close all braces then enqueue 'X' 
-    phi (i, (Tk2 "X:" _) :< se)
-          | i > 0             = unnest i se
-          | otherwise         = Just (Tk_None,   (i, se))
+    phi (i, t1@(Tk2 "X:" s) :< se)
+          | i > 0             = unnest i (t1 <| se)
+          | otherwise         = Just (t1,       (i, se))
     
     -- normal case - produce value and go next
-    phi (i, e :< se)          = Just (e,         (i, se)) 
+    phi (i, e :< se)          = Just (e,        (i, se)) 
     
        
     -- i is guaranteed (>1)
@@ -89,27 +89,27 @@ rewriteAbcToks se = rewriteTokenStream $ unfoldr step (0,se)
 
 
 metaComment :: Parser (TokenF Token)
-metaComment = token1 fn <$> 
+metaComment = token1 prefix <$> 
     ((try $ symbol "%#") *> manyTill anyChar lineEnding)
   where
     -- prefix with a hash  
-    fn s = '#' : s
-                
+    prefix s = '#' : s
+          
              
 abcComment :: Parser (TokenF Token)
 abcComment = dropToken <$ 
-    (symbol "%{" *> manyTill anyChar lineEnding) 
+    (symbol "%" *> manyTill anyChar lineEnding) 
 
 tunenumber  :: Parser(TokenF Token)
 tunenumber  = dyap beginNest (token2 id show) <$> 
     fieldsymbol 'X' <*> int
     
 key         :: Parser(TokenF Token)
-key         = dyap beginNest (token2 id id)  <$>
+key         = dyap beginNest (token2 id id)   <$>
     fieldsymbol 'K' <*> restOfLine
     
 meter       :: Parser(TokenF Token)
-meter       = dyap beginNest (token2 id id)  <$>   
+meter       = dyap beginNest (token2 id id)   <$>   
     fieldsymbol 'M' <*> restOfLine
     
     

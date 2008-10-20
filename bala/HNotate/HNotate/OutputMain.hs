@@ -40,7 +40,7 @@ import Control.Monad.Writer
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
 import Data.Maybe (fromMaybe)
-import Data.Sequence hiding (empty)
+import Data.Sequence hiding (empty, reverse)
 
 import Text.ParserCombinators.Parsec (ParseError, parseFromFile)
 import Text.PrettyPrint.Leijen hiding ( (<$>) ) 
@@ -116,14 +116,7 @@ writeS path = writeFile path . ($ "")
 outputter :: Env -> System -> [Expr] -> Seq TextChunk -> ShowS
 outputter env sys exprs chunks = plug chunks $ 
     (runOutputReader `flipper` (Config sys) $ env) (evalHoas $ toHoas exprs)
-
-{-
-
-outputter_debug :: Env -> System -> [Expr] -> Seq TextChunk -> (ShowS,String)
-outputter_debug env sys exprs chunks = prod (plug chunks) id $ 
-    (runOutputReader_debug `flipper` (Config sys) $ env) (evalHoas_debug $ toHoas exprs)
-
--}                                      
+                                     
 
 eitherWithErrIO :: Show a => IO (Either a b) -> (b -> IO c) ->  IO c
 eitherWithErrIO a sk = a >>= either (error . show) sk 
@@ -157,14 +150,8 @@ crossZip se xs = czip (viewl se) xs
      
 
 evalHoas :: Hoas -> OutputM [Doc]
-evalHoas (Hoas exprs) = foldM eval [] exprs
-
-{-
-
-evalHoas_debug :: Hoas -> OutputDebugM [Doc]
-evalHoas_debug hoas = genWriteStepM "evalHoas_debug" vsep evalHoas hoas
-
--}                            
+evalHoas (Hoas exprs) = foldM eval [] exprs >>= return . reverse
+                           
 
 eval :: [Doc] -> HoasExpr -> OutputM [Doc]
 eval docs (HLetExpr update xs)        = 

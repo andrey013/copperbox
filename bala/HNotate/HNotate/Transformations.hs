@@ -43,7 +43,7 @@ beamBlock mp bar_len partial_len blk = case blk of
     SingleBlock i bar -> SingleBlock i (block i bar)  
     PolyBlock i bars  -> PolyBlock i (fmap (block i) bars)
   where
-    block i bar | i == 0  && isJust partial_len  
+    block i bar | i == 0 && isJust partial_len  
                             = beamPartialBar mp (fromJust partial_len) bar
                 | otherwise = beamBar mp bar
     

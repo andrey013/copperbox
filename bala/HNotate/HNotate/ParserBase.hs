@@ -15,7 +15,7 @@
 
 module HNotate.ParserBase where
 
-import HNotate.CommonUtils (para)
+import HNotate.CommonUtils hiding (build)
 import HNotate.Duration
 import HNotate.Env
 import HNotate.Monads
@@ -26,7 +26,7 @@ import HNotate.PrettyInstances
 import Control.Applicative hiding (many, optional, (<|>), empty )
 import Control.Monad
 import Data.Char (isSpace)
-import Data.List (sortBy, intersperse)
+import Data.List (sortBy, intersperse, filter)
 import Data.Maybe (catMaybes)
 import Data.Monoid
 import Data.Ratio
@@ -111,59 +111,63 @@ token3 f g h a b c  = \se -> se |> Tk3 (f a) (g b) (h c)
 --------------------------------------------------------------------------------
 -- Rewrite the token stream
 
-data Tree = Node String [Tree]
+data Tree = Node [Tree] | Leaf String
   deriving (Show)
 
 
+showTree :: Tree -> String
+showTree = pt 0 "" 
+  where
+    pt i acc (Leaf s)  = acc ++ replicate i ' ' ++ s ++ "\n"
+    pt i acc (Node []) = acc ++ replicate i ' ' ++ "{}\n"
+    pt i acc (Node xs) = acc ++ replicate i ' ' ++ "{\n"
+                             ++ (concat $ map (pt (i+2) "") xs)
+                             ++ replicate i ' ' ++ "}\n"
 
-build :: [Token] -> [Tree]
-build = step [] 
+printTree :: Tree -> ShowS
+printTree = pt 0 id 
+  where
+    pt i k (Leaf s)   = k . spaceS i . showString s . showNewline 
+    pt i k (Node [])  = k . spaceS i . showString "{}" . showNewline   
+    pt i k (Node xs)  = k . spaceS i . showLBrace 
+                                       . (foldS (.) $ map (pt (i+2) id) xs)
+                            . spaceS i . showRBrace
+                               
+                               
+build :: [Token] -> Tree
+build xs = iter xs []
   where 
-    step acc [] = acc
-    step acc xs = let (ts,xs') = build1 xs in step (acc ++ ts) xs'
-
-build1 :: [Token] -> ([Tree], [Token])
-build1 (Tk_LBr  :xs)  = let (t1,xs') = build1 xs in ([anode t1], xs')
-build1 (Tk_RBr  :xs)  = ([],xs) 
-build1 (tok     :xs)  = let (t1,xs') = build1 xs in ([enode tok t1],xs') 
+    iter :: [Token] -> [Tree] -> Tree
+    iter [] ns = Node ns
+    iter xs ns = let (xs',ns') = walk xs [] in iter xs' (ns++ns') 
   
--- anonymous node
-anode :: [Tree] -> Tree
-anode = Node "" 
+    walk :: [Token] -> [Tree] -> ([Token],[Tree])
+    walk []            ns        = ([],reverse ns)
+    
+    
+    walk (Tk_LBr :ts) ns        = let (ts',ns') = walk ts [] in
+                                   (ts', reverse $ ennode ns' ns)
+    walk (Tk_RBr :ts) ns        = (ts, reverse ns)
+    walk (tk     :ts) ns        = walk ts (leaf tk:ns)
+    
+    ennode [] zs = zs
+    ennode xs [] = [Node xs, Leaf "#NONE"]  -- can't have "{ {" in the output
+    ennode xs zs = Node xs : zs 
+  
+
 
 -- empty node
-enode :: Token -> [Tree] -> Tree
-enode (Tk1 s)     ts = Node s ts
-enode (Tk2 s t)   ts = Node (s ++ " " ++ t) ts
-enode (Tk3 s t u) ts = Node (s ++ " " ++ t ++ " " ++ u) ts
-enode (Tk_None)   ts = Node "" ts
+leaf :: Token -> Tree
+leaf (Tk1 s)     = Leaf s
+leaf (Tk2 s t)   = Leaf (s ++ " " ++ t)
+leaf (Tk3 s t u) = Leaf (s ++ " " ++ t ++ " " ++ u)
+leaf (Tk_None)   = Leaf "#NONE"
 
-validNode :: Tree -> Maybe Tree
-validNode (Node "" []) = Nothing
-validNode (Node "" xs) = case prune xs of 
-    []  -> Nothing 
-    xs' -> Just (Node "NONE" xs')
+
+
     
-validNode (Node s  xs) = Just (Node s (prune xs))
-
-prune :: [Tree] -> [Tree]
-prune = catMaybes . map validNode 
-
-tree1 :: [Tree] -> Tree
-tree1 [a] = a
-tree1 xs  = Node "NONE" xs
-
-ppTree :: Tree -> String
-ppTree = show . ppt
-  where
-    ppt (Node s []) = PP.string s PP.<$> PP.empty
-    ppt (Node s xs) = PP.string s PP.<$> 
-                            PP.indent 2 (PP.braces $ PP.hsep $ map ppt xs)   
-
 rewriteTokenStream :: [Token] -> String
-rewriteTokenStream = ppTree . tree1 . prune . build
-
-
+rewriteTokenStream = (printTree `flip` "") . build
 
    
 --------------------------------------------------------------------------------
@@ -201,16 +205,15 @@ ppExprCountErr = either (PP.string . show) (PP.int . length)
 -- syntax of meta comments is common to both Abc & LilyPond
 
 topLevelExprs :: [Parser Term] -> Parser [Expr] 
-topLevelExprs ps = whiteSpace >> (many $ expr ps)
+topLevelExprs ps = whiteSpace >> (exprList ps)
 
-
-expr :: [Parser Term] -> Parser Expr
-expr ps = Expr <$> (term ps) <*> option [] (exprList ps)
 
 exprList :: [Parser Term] -> Parser [Expr]
 exprList ps = between openNesting closeNesting exprs
   where exprs = many1 (expr ps)
 
+expr :: [Parser Term] -> Parser Expr
+expr ps = Expr <$> (term ps) <*> option [] (exprList ps)
 
 openNesting     :: Parser String
 openNesting     = symbol "{"
@@ -224,7 +227,7 @@ term specialTerms = choice specialTerms <|> noneTerm <|> genericTerm
 
 
 noneTerm :: Parser Term
-noneTerm = Let LetNone <$ symbol "NONE"
+noneTerm = Let LetNone <$ try (symbol "#NONE")
 
 
 genericTerm :: Parser Term
