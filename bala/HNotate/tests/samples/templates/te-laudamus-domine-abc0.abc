@@ -1,0 +1,5 @@
+X:1
+T:Te Laudamus Domine
+K:C bass
+% no meter field specificied - so Abc prints as unmetered
+%# output: te_laudamus_domine

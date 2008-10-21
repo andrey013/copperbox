@@ -46,7 +46,10 @@ module HNotate.Duration (
     -- * Named instances (English)
     -- $engdoc
     breve, semibreve, minim, crochet, quaver, semiquaver, demisemiquaver,
-    hemidemisemiquaver, semihemidemisemiquaver    
+    hemidemisemiquaver, semihemidemisemiquaver,
+    
+    -- * Named instances (Shorthand)
+    du1, du2, du4, du8, du16, du32, du128    
 
   ) where
 
@@ -237,3 +240,27 @@ hemidemisemiquaver          = sixty_fourth
 semihemidemisemiquaver      :: Duration
 semihemidemisemiquaver      = one_hundred_twenty_eighth
 
+-- Shorthands
+du1   :: Duration
+du1   = whole
+
+du2   :: Duration
+du2   = half
+
+du4   :: Duration
+du4   = quarter
+
+du8   :: Duration
+du8   = eighth
+
+du16  :: Duration
+du16  = sixteenth
+
+du32  :: Duration
+du32  = thirty_second
+
+du64  :: Duration
+du64  = sixty_fourth
+
+du128 :: Duration
+du128 = one_hundred_twenty_eighth

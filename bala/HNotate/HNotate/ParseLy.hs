@@ -94,7 +94,7 @@ partial :: Parser (TokenF Token)
 partial = token2 id id <$> cmdsymbol "partial" <*> nonwhite
 
 cadenzaOn :: Parser (TokenF Token)
-cadenzaOn = token1 id <$> cmdsymbol "cadenza"
+cadenzaOn = token1 id <$> cmdsymbol "cadenzaOn"
 
 cadenzaOff :: Parser (TokenF Token)
 cadenzaOff = token1 id <$> cmdsymbol "cadenzaOff"
@@ -111,7 +111,7 @@ parseLyExprs = topLevelExprs lyTermParsers
 
 
 lyTermParsers :: [Parser Term]
-lyTermParsers = [relativeT, keyT, timeT, partialT]
+lyTermParsers = [relativeT, keyT, timeT, partialT, cadenzaT]
 
 relativeT :: Parser Term
 relativeT = Let . LetRelativePitch <$> (cmdsymbol "relative" *> lyPitch)
@@ -126,6 +126,11 @@ timeT = Let . LetMeter  <$> (cmdsymbol "time" *> timeSig)
 partialT :: Parser Term 
 partialT = Let . LetPartial  <$> (cmdsymbol "partial" *> lyDuration)
 
+cadenzaT :: Parser Term
+cadenzaT = cadenzaOnT <|> cadenzaOffT
+  where
+    cadenzaOnT  = Let (LetCadenza True)  <$ cmdsymbol "cadenzaOn" 
+    cadenzaOffT = Let (LetCadenza False) <$ cmdsymbol "cadenzaOff"
 --------------------------------------------------------------------------------
 -- Parse the text for the water and holes so we can fill the holes
 

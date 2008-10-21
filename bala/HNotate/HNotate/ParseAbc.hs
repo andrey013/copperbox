@@ -103,10 +103,15 @@ abcComment = dropToken <$
 tunenumber  :: Parser(TokenF Token)
 tunenumber  = dyap beginNest (token2 id show) <$> 
     fieldsymbol 'X' <*> int
-    
+
+
+-- Key fields might have transpose or clef information
+-- which must not be passed on      
 key         :: Parser(TokenF Token)
 key         = dyap beginNest (token2 id id)   <$>
-    fieldsymbol 'K' <*> restOfLine
+    fieldsymbol 'K' <*> nonwhite <* restOfLine
+  -- TODO mode specification 
+
     
 meter       :: Parser(TokenF Token)
 meter       = dyap beginNest (token2 id id)   <$>   

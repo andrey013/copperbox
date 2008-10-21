@@ -14,8 +14,8 @@
 
 module HNotate (  
     module HNotate.DebugUtils,
-    module HNotate.Duration,
-    module HNotate.Pitch,   
+    module HNotate.Duration,      -- duration & pitch should export a subset
+    module HNotate.Pitch,         -- to the 'outside world'   
     module HNotate.OutputMain,
     
     -- restrict the interface to EventTree
