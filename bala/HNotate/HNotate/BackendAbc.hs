@@ -43,20 +43,20 @@ import Text.PrettyPrint.Leijen (Doc, (<>), (<+>), text)
 
 
 
-translateAbc :: Env -> NoteList -> NoteListOutput
-translateAbc env = (execPrintM `flip` pmZero) . outputNoteList 
-                                              . beamNoteList env 
-                                              . abcForm env 
-
-    
-abcForm :: Env -> NoteList -> NoteList
-abcForm env = (runReader `flip` env) . unwrapMonad . inner
+translateAbc :: Monad m => NoteList -> NotateT m NoteListOutput
+translateAbc = printStep <=< beamNoteList <=< abcForm 
   where
-    inner   = (runReader `flip` env) . unwrapMonad 
-                                     . unComp 
-                                     . traverse (unleBody `comp` plrBody)
-   
- 
+    printStep = return . (execPrintM `flip` pmZero) . outputNoteList
+
+
+
+
+abcForm :: Monad m => NoteList -> NotateT m NoteList
+abcForm = unwrapMonad <=< inner  
+  where
+    inner = unwrapMonad . unComp . traverse (unleBody `comp` plrBody)
+
+
     
     
 outputNoteList :: NoteList -> PrintM ()

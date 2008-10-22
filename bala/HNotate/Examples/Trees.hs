@@ -7,19 +7,9 @@ module Examples.Trees where
 
 import HNotate
 
-import HNotate.Traversals
+
 
 import Text.PrettyPrint.Leijen
-
-
-
-du1,du2,du4,du8,du16 :: Duration
-du1      = whole
-du2      = half
-du4      = quarter
-du8      = eighth
-du16     = sixteenth
-
 
 
 -- | example 1 - simple list of successive notes.  
@@ -110,8 +100,8 @@ abc_output    = "out/abc-trees.abc"
 
 main :: IO ()
 main = do
-    outputAbc_debug       example_sys  abc_template  abc_output
-    outputLilyPond_debug  example_sys  ly_template   ly_output
+    outputAbc       example_sys  abc_template  abc_output
+    outputLilyPond  example_sys  ly_template   ly_output
     
 
  

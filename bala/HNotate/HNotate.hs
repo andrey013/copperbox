@@ -13,7 +13,6 @@
 --------------------------------------------------------------------------------
 
 module HNotate (  
-    module HNotate.DebugUtils,
     module HNotate.Duration,      -- duration & pitch should export a subset
     module HNotate.Pitch,         -- to the 'outside world'   
     module HNotate.OutputMain,
@@ -34,7 +33,6 @@ module HNotate (
  ) where
 
 import HNotate.CommonUtils
-import HNotate.DebugUtils
 import HNotate.Duration
 import HNotate.NoteListDatatypes
 import HNotate.Pitch

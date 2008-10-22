@@ -21,10 +21,9 @@ import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.BuildNoteList
 import HNotate.CommonUtils -- (outputDoc, showDocS)
-import HNotate.DebugUtils (printTextChunks)
 import HNotate.Env
-import HNotate.Monads
 import HNotate.MusicRepDatatypes
+import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
 import HNotate.ParseLy
@@ -46,10 +45,8 @@ import Text.ParserCombinators.Parsec (ParseError, parseFromFile)
 import Text.PrettyPrint.Leijen hiding ( (<$>) ) 
 
 
-data Config = Config { _system :: System }
 
-type OutputM a = OutputReaderM Env Config a
-type OutputDebugM a = OutputReaderDebugM Env Config a
+
 
 
 
@@ -57,65 +54,50 @@ type OutputDebugM a = OutputReaderDebugM Env Config a
 -- that might be too arbitrary (e.g. meter pattern)
 
 outputLilyPond :: System -> FilePath -> FilePath -> IO ()
-outputLilyPond sys = 
-    generalOutput default_ly_env sys lyExprView_TwoPass lyTextChunks
-        
-outputLilyPond_debug :: System -> FilePath -> FilePath -> IO ()
-outputLilyPond_debug sys inpath outpath =
-    putStrLn "Generating LilyPond..." >> 
-    generalOutput_debug default_ly_env 
-                        sys 
-                        lyExprView_TwoPass_debug 
-                        lyTextChunks
-                        inpath
-                        outpath                               
-
-
+outputLilyPond sys inpath outpath   = do 
+    (a,msg) <- runNotateT (generalOutput lyparsers) default_ly_env config 
+    putStrLn msg
+  where
+    config      = mkLyConfig sys inpath outpath
+    lyparsers   = (lyExprView_TwoPass, lyTextChunks) 
+    
 outputAbc :: System -> FilePath -> FilePath -> IO ()
-outputAbc sys = 
-    generalOutput default_abc_env sys abcExprView_TwoPass abcTextChunks
-
-outputAbc_debug :: System -> FilePath -> FilePath -> IO ()
-outputAbc_debug sys inpath outpath = 
-    putStrLn "Generating Abc..." >>
-    generalOutput_debug default_abc_env 
-                        sys
-                        abcExprView_TwoPass_debug 
-                        abcTextChunks
-                        inpath
-                        outpath
+outputAbc sys inpath outpath        = do 
+    (a,msg) <- runNotateT (generalOutput abcparsers) default_abc_env config  
+    putStrLn msg
+  where
+    config      = mkAbcConfig sys inpath outpath
+    abcparsers  = (abcExprView_TwoPass, abcTextChunks) 
     
 
 
-generalOutput :: Env -> System -> ExprParser -> TextChunkParser 
-              -> FilePath -> FilePath -> IO ()
-generalOutput env sys view_parser chunk_parser infile outfile =
-    prodM (eitherErrFailIO . view_parser) 
-          (eitherErrFailIO . parseFromFile chunk_parser)
-          (dup infile)    
-      >>= writeS outfile . uncurry (outputter env sys)
+
+generalOutput :: (ExprParser, TextChunkParser) -> NotateT IO ()
+generalOutput (expr_parser, chunk_parser)  = do 
+    infile    <- asks_config _template_file
+    cks       <- liftIO $ parseFromFile chunk_parser infile
+    either fault (step2 infile) cks
+  where
+    fault err = error $ show err
+    step2 infile chks  =  do 
+        exprs <- expr_parser infile
+        either fault (step3 chks) exprs
     
+    step3 :: Seq TextChunk -> [Expr] ->  NotateT IO ()
+    step3 chunks exprs = do
+        out   <- asks_config _output_file 
+        fn    <- outputter exprs chunks
+        liftIO $ writeS out fn
 
-
-generalOutput_debug :: Env -> System -> ExprParser -> TextChunkParser 
-              -> FilePath -> FilePath -> IO ()
-generalOutput_debug  env sys view_parser chunk_parser infile outfile =
-    prodM (eitherErrFailIO_debug "Expression Representation:" 
-                                 (vsep . map pretty)
-                  . view_parser) 
-          (eitherErrFailIO_debug "Text Representation:" 
-                                 (string . printTextChunks)
-                  . parseFromFile chunk_parser)
-          (dup infile)    
-      >>= writeS outfile . uncurry (outputter env sys)
       
 
 writeS :: FilePath -> ShowS -> IO ()
 writeS path = writeFile path . ($ "")                                      
 
-outputter :: Env -> System -> [Expr] -> Seq TextChunk -> ShowS
-outputter env sys exprs chunks = plug chunks $ 
-    (runOutputReader `flipper` (Config sys) $ env) (evalHoas $ toHoas exprs)
+outputter :: Monad m => [Expr] -> Seq TextChunk -> NotateT m ShowS
+outputter exprs chunks = evalHoas (toHoas exprs) >>= \exprs' ->
+                         return (plug chunks exprs')
+
                                      
 
 eitherWithErrIO :: Show a => IO (Either a b) -> (b -> IO c) ->  IO c
@@ -124,10 +106,10 @@ eitherWithErrIO a sk = a >>= either (error . show) sk
 eitherErrFailIO :: Show a => IO (Either a b) ->  IO b
 eitherErrFailIO a = a >>= either (error . show) return 
 
-eitherErrFailIO_debug :: (Show a, Show b) => 
+eitherNT :: (Show a, Show b) => 
                       String -> (b -> Doc) -> IO (Either a b) -> IO b
-eitherErrFailIO_debug msg pp a = 
-    runIOInIO (genWriteStepM msg pp eitherErrFailIO a)
+eitherNT msg pp a = eitherErrFailIO a 
+--    runIOInIO (genWriteStepM msg pp eitherErrFailIO a)
 
 
 
@@ -149,33 +131,37 @@ crossZip se xs = czip (viewl se) xs
     czip _         xs     = error $ "crossZip - list too long"  
      
 
-evalHoas :: Hoas -> OutputM [Doc]
+evalHoas :: Monad m => Hoas -> NotateT m [Doc]
 evalHoas (Hoas exprs) = foldM eval [] exprs >>= return . reverse
                            
 
-eval :: [Doc] -> HoasExpr -> OutputM [Doc]
+eval :: Monad m => [Doc] -> HoasExpr -> NotateT m [Doc]
 eval docs (HLetExpr update xs)        = 
     foldM (\ds e -> local update (eval ds e)) docs xs
 
 eval docs (HOutputDirective oscm name) = 
     outputNotes (fromMaybe OutputDefault oscm) name >>= return . flip (:) docs
 
-outputNotes :: OutputScheme -> String 
-            -> OutputM NoteListOutput
+outputNotes :: Monad m => OutputScheme -> String 
+            -> NotateT m NoteListOutput
 outputNotes OutputRelative name = 
-    ask                       >>= \env ->
-    asksConfig _system        >>= \sys -> 
-    maybe fault (noteListOutput env) (Map.lookup name sys)
+    maybe fault noteListOutput =<< findEventList name
   where 
     fault        = error $ "output failure - missing " ++ name
 
-
 outputNotes OutputDefault  name = outputNotes OutputRelative name 
 
-noteListOutput :: Env -> EventList -> OutputM NoteListOutput
-noteListOutput env = 
-  abcly env (return . translateAbc env . toNoteList env) 
-            (return . translateLilyPond env . toNoteList env)
+
+findEventList :: Monad m => String -> NotateT m (Maybe EventList)
+findEventList name = asks_config _system >>= \sys ->
+                     return $ Map.lookup name sys
+
+
+
+
+noteListOutput :: Monad m => EventList -> NotateT m NoteListOutput
+noteListOutput = 
+  abcly (toNoteList >=> translateAbc) (toNoteList >=> translateLilyPond)
 
     
     

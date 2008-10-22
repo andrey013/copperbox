@@ -53,6 +53,23 @@ op `onr` f = \x y -> x `op` f y
 onl :: (c -> b -> d) -> (a -> c) -> a -> b -> d
 op `onl` f = \x y -> f x `op` y
 
+
+-- variations of flipped bind with higher arity
+
+-- (=<<) i.e. do { a <- m1; m a}
+effectM :: (Monad m) => (a -> m b) -> m a -> m b
+effectM m m1 = m =<< m1 
+
+effectM2 :: (Monad m) => (a -> b -> m c) -> m a -> m b -> m c
+effectM2 m m1 m2 = do { a <- m1; b <- m2; m a b}
+
+effectM3 :: (Monad m) => (a -> b -> c -> m d) -> m a -> m b -> m c -> m d
+effectM3 m m1 m2 m3 = do { a <- m1; b <- m2; c <- m3; m a b c}
+
+effectM4 :: (Monad m) => (a -> b -> c -> d -> m e) 
+                            -> m a -> m b -> m c -> m d -> m e
+effectM4 m m1 m2 m3 m4 = do { a <- m1; b <- m2; c <- m3; d <- m4; m a b c d}
+
 -- pairs
 fork :: (a -> b) -> (a,a) -> (b,b)
 fork f (a,b) = (f a, f b)

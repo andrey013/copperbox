@@ -21,22 +21,22 @@ module HNotate.BuildNoteList where
 import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
-import HNotate.Monads
 import HNotate.MusicRepDatatypes
+import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
 import HNotate.OnsetQueue
 import HNotate.PrettyInstances
 
-import Control.Monad.State
+import Control.Applicative hiding (empty)
+import Control.Monad.Reader
 import qualified Data.Foldable as F
 import Data.List (unfoldr)
 import Data.Maybe (fromMaybe)
 import Data.Sequence hiding (reverse)
 import Prelude hiding (null)
-import Text.PrettyPrint.Leijen hiding (empty)
+import Text.PrettyPrint.Leijen hiding (empty, (<$>))
 import qualified Text.PrettyPrint.Leijen as PP
 
-        
         
 -- VoiceOverlay - (i,d,se)
 -- i - bar count, d - time from start of bar, se - events
@@ -44,17 +44,19 @@ type VoiceOverlayA = (Int, Duration, Seq Evt)
 
 type VoiceOverlayB = (Int, Duration, Seq Glyph)
 
-toNoteList :: Env -> EventList -> NoteList
-toNoteList env = 
-    eventsToNoteList (measure_length env) 
-                     (fromMaybe duration_zero (partial_measure env))
 
-toNoteList_debug :: Env -> EventList -> DebugWriter NoteList
-toNoteList_debug env = undefined
+toNoteList :: Monad m => EventList -> NotateT m NoteList
+toNoteList evts = effectM2 fn (asks partial_measure) (asks measure_length)
+  where
+    fn partial len = eventsToNoteList len (fromMaybe duration_zero partial) evts
+
+
+
 {-
-    eventsToNoteList_debug (measure_length env) 
-                           (fromMaybe duration_zero (partial_measure env))
--}
+
+-- The outputtter o0..o4 and right left kleisli (<=<) are just
+-- noise over composition.
+-- This is the non monadic version...
 
 eventsToNoteList :: Duration -> Duration -> EventList -> NoteList
 eventsToNoteList bar_len partial_start = 
@@ -62,21 +64,24 @@ eventsToNoteList bar_len partial_start =
                   . map (partitionVoB bar_len) 
                   . untree bar_len partial_start    
                   . getEventList
+-}
 
-
-eventsToNoteList_debug :: Duration -> Duration -> EventList 
-                       -> DebugWriter NoteList
-eventsToNoteList_debug bar_len partial_start = 
-    o4 collapseQueue <=< o3 rawToQueue 
-                     <=< o2 (map (partitionVoB bar_len)) 
-                     <=< o1 (untree bar_len partial_start)    
-                     <=< o0 getEventList
+eventsToNoteList :: Monad m => Duration -> Duration -> EventList 
+                        -> NotateT m NoteList
+eventsToNoteList bar_len partial_start = 
+    (o4 . collapseQueue) <=< (o3 . rawToQueue)
+                         <=< (o2 . map (partitionVoB bar_len))            
+                         <=< (o1 . untree bar_len partial_start) 
+                         <=< (o0 . getEventList)
   where 
-    o0 = (.) return   -- don't generate output
+    
+    o0 = return
     o1 = genWriteStep "Flattened representation... "    ppListVoiceOverlayB
     o2 = genWriteStep "The flat rep partitioned..."     ppListSeqRawBar
     o3 = genWriteStep "The bars in the onset queue..."  pretty
-    o4 = genWriteStep "Finally the note list..."        ppNoteList 
+    o4 = genWriteStep "Finally the note list..."        ppNoteList
+    
+
       
         
 -- 'untree' is the difficult bit of building a note list

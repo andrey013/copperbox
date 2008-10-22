@@ -17,10 +17,17 @@
 module HNotate.Env (
     OutputFormat(..),
     Env,
+    Config(..),
+    
+    NotateT, runNotateT,
     
     -- defaults
     default_ly_env,
     default_abc_env,
+    
+    -- config
+    mkLyConfig,
+    mkAbcConfig,
     
     -- Env query
     output_format,
@@ -50,15 +57,21 @@ module HNotate.Env (
 
 import HNotate.Data
 import HNotate.Duration
+import HNotate.NoteListDatatypes (System)
+import HNotate.NotateMonad
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
 
+import Control.Monad.Reader
 import Data.Maybe (fromMaybe)
 import Data.Ratio
 import Text.PrettyPrint.Leijen
 
 --------------------------------------------------------------------------------
 -- Datatypes
+
+
+
 
 data OutputFormat = Output_Abc | Output_LilyPond  
   deriving (Eq,Show) 
@@ -80,6 +93,20 @@ data Env = Env {
     _score_comment      :: String -> Doc
   }
   deriving Show
+
+data Config = Config { 
+    _system         :: System,
+    _template_file  :: FilePath,
+    _output_file    :: FilePath
+    }
+  deriving Show
+
+-- Type specialization now that we have the Env and Config
+type NotateT m a = NotateMonadT Env Config m a
+
+runNotateT :: Monad m => NotateT m a -> Env -> Config -> m (a,String)
+runNotateT = runNotateMonadT
+ 
 
 instance Show (String -> Doc) where
   show _ = "<<function>>"  
@@ -124,7 +151,22 @@ default_abc_env = Env {
   where
     abcComment str = line <> char '%' <+> string str <> line
     
+
+mkLyConfig :: System -> FilePath -> FilePath -> Config
+mkLyConfig sys template outfile = Config { 
+    _system         = sys,     
+    _template_file  = template,
+    _output_file    = outfile
+    }
+
+mkAbcConfig :: System -> FilePath -> FilePath -> Config
+mkAbcConfig sys template outfile = Config { 
+    _system         = sys,     
+    _template_file  = template,
+    _output_file    = outfile
+    }
     
+        
 --------------------------------------------------------------------------------
 -- Accessor functions
 
@@ -222,10 +264,11 @@ measureLength CutTime         = 2%2
 --------------------------------------------------------------------------------
 --
 
-abcly :: HNotate.Env.Env -> a -> a -> a
-abcly env x y = case output_format env of
-  Output_Abc -> x
-  Output_LilyPond -> y 
+abcly :: Monad m => (a -> NotateT m b) -> (a -> NotateT m b) -> a -> NotateT m b
+abcly mx my a = asks output_format >>= 
+            \fmt -> case fmt of Output_Abc -> mx a; 
+                                Output_LilyPond -> my a
+
   
 
 

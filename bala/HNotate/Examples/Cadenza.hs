@@ -29,7 +29,3 @@ outputCadenza = do
     outputLilyPond cadenzaLy   ly_template   ly_output
     outputAbc      cadenzaAbc  abc_template  abc_output
     
-debugCadenza :: IO ()   
-debugCadenza = do
-    dumpLyTemplates   ly_template  
-    dumpAbcTemplates  abc_template  

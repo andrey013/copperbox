@@ -33,8 +33,6 @@ import Text.ParserCombinators.Parsec hiding (space)
 lyExprView_TwoPass :: ExprParser
 lyExprView_TwoPass = twoPass preprocessLy parseLyExprs
 
-lyExprView_TwoPass_debug :: ExprParser
-lyExprView_TwoPass_debug = twoPass_debug preprocessLy parseLyExprs
 
 
 --------------------------------------------------------------------------------

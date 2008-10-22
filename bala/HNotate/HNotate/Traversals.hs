@@ -18,6 +18,7 @@ module HNotate.Traversals where
 
 import HNotate.Duration
 import HNotate.Env
+import HNotate.NotateMonad
 import HNotate.MusicRepDatatypes (naturalize)
 import HNotate.NoteListDatatypes
 import HNotate.Pitch
@@ -61,23 +62,7 @@ f `comp` g = Comp . fmap f . g
 instance (Applicative m, Applicative n) => Applicative (Comp m n) where
   pure x    = Comp (pure (pure x))
   mf <*> mx = Comp (pure (<*>) <*> unComp mf <*> unComp mx)
-  
-  
-
--- Three useful run functions
-traversalIdentity :: (Traversable t) => 
-                     (a -> Identity b) -> t a -> t b
-traversalIdentity f a = runIdentity $ traverse f a 
-
-traversalReader :: (Traversable t) =>
-                  (a -> WrappedMonad (Reader env) b) -> t a -> env -> t b
-traversalReader f a env = (runReader $ unwrapMonad $ traverse f a) env 
-
-traversalState :: (Traversable t) =>
-                  (a -> WrappedMonad (State st) b) -> t a -> st -> t b
-traversalState f a st = evalState (unwrapMonad $ traverse f a) st 
-
-
+ 
 
 
 changeDuration :: Glyph -> Duration -> Glyph
@@ -177,13 +162,8 @@ losBody e = WrapMonad $ return $ pitchf fn e
 -- don't specify it - Abc uses this method 
 
 
-
-unitNoteLengthEncode :: NoteList -> Env -> NoteList
-unitNoteLengthEncode strata env = 
-    traversalReader unleBody strata env
-
 -- unit note length encode
-unleBody :: Glyph -> WrappedMonad (Reader Env) Glyph
+unleBody :: Monad m => Glyph -> WrappedMonad (NotateMonadT Env Config m) Glyph
 unleBody e = let drn = glyphDuration e in WrapMonad $ 
              fn e drn <$> asks unit_note_length
   where
@@ -199,7 +179,7 @@ unleBody e = let drn = glyphDuration e in WrapMonad $
 -- pitch label rename     
 
 -- unit note length encode
-plrBody :: Glyph -> WrappedMonad (Reader Env) Glyph
+plrBody :: Monad m => Glyph -> WrappedMonad (NotateMonadT Env Config m) Glyph
 plrBody e = WrapMonad $ (respell e) <$> asks label_set
   where
     respell (Note p d)      lbls  = Note (naturalize p lbls) d

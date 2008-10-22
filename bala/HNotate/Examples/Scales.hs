@@ -27,13 +27,6 @@ outputScales = do
     outputLilyPond major_scales     ly_template     ly_output
     outputAbc      major_scales     abc_template    abc_output
 
-debugScales :: IO ()    
-debugScales = do
-  dumpLyTemplates   ly_template
-  dumpAbcTemplates  abc_template
-  putStrLn $ "LilyPond score..." 
-  dumpLyScoreZero   major_scales ly_template
-  putStrLn $ "ABC score..."
-  dumpAbcScoreZero  major_scales abc_template   
+  
     
     

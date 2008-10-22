@@ -14,8 +14,6 @@ import Text.PrettyPrint.Leijen hiding (dot)
 
 -- a major
 
-du16 = sixteenth
-du8  = eighth
 
 bars1_4 :: EventList
 bars1_4 = 
@@ -48,13 +46,7 @@ main = do
     outputLilyPond bulgarian6   ly_template   ly_output
     outputAbc      bulgarian6   abc_template  abc_output
     
-debug = do 
-    dumpLyTemplates   ly_template
-    dumpAbcTemplates  abc_template
-    putStrLn $ "LilyPond score..."
-    dumpLyScoreZero   bulgarian6 ly_template
-    putStrLn $ "Abc score..."
-    dumpAbcScoreZero  bulgarian6 abc_template    
+ 
 
 
     

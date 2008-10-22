@@ -22,6 +22,7 @@ import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 
+import Control.Monad.Reader
 import qualified Data.Foldable as F
 import Data.Maybe
 import Data.Sequence
@@ -31,11 +32,12 @@ import Prelude hiding (null)
 --------------------------------------------------------------------------------
 -- Beaming
 
-beamNoteList :: Env -> NoteList -> NoteList
-beamNoteList env (NoteList se) = 
-    NoteList $ fmap (beamBlock (meter_pattern env) 
-                               (measure_length env)
-                               (partial_measure env)) se
+beamNoteList :: Monad m => NoteList -> NotateT m NoteList
+beamNoteList(NoteList se) = 
+  return (\mp bar p -> NoteList $ fmap (beamBlock mp bar p) se)
+    `ap` asks meter_pattern 
+    `ap` asks measure_length 
+    `ap` asks partial_measure
 
 
 beamBlock :: MeterPattern -> Duration -> Maybe Duration -> Block -> Block

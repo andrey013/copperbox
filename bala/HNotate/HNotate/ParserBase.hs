@@ -18,13 +18,14 @@ module HNotate.ParserBase where
 import HNotate.CommonUtils hiding (build)
 import HNotate.Duration
 import HNotate.Env
-import HNotate.Monads
 import HNotate.MusicRepDatatypes
+import HNotate.NotateMonad
 import HNotate.TemplateDatatypes
 import HNotate.PrettyInstances
 
 import Control.Applicative hiding (many, optional, (<|>), empty )
 import Control.Monad
+import Control.Monad.Trans (liftIO)
 import Data.Char (isSpace)
 import Data.List (sortBy, intersperse, filter)
 import Data.Maybe (catMaybes)
@@ -39,7 +40,7 @@ import qualified Text.PrettyPrint.Leijen as PP
 
 -- ExprParser returns the 'expressions of interest' - the parts
 -- of the input file that we know how to interpret. 
-type ExprParser = FilePath -> IO (Either ParseError [Expr])
+type ExprParser = FilePath -> NotateT IO (Either ParseError [Expr])
 
 -- TextChunkParser returns a 'text view' of the input file - 
 -- source to be preserved plus locations of holes to be plugged.
@@ -173,23 +174,16 @@ rewriteTokenStream = (printTree `flip` "") . build
 --------------------------------------------------------------------------------
 -- Pre-processor helpers 
 
-
 twoPass :: (FilePath -> IO (Either ParseError String)) 
-           -> Parser [Expr] -> FilePath -> IO (Either ParseError [Expr])
+           -> Parser [Expr] -> FilePath -> NotateT IO (Either ParseError [Expr])
 twoPass prepro parser filepath = 
-    let pp_name  = "post-processed " ++ filepath in 
-    prepro filepath >>= either (return . Left) (return . parse parser pp_name)
-
-twoPass_debug :: (FilePath -> IO (Either ParseError String)) 
-           -> Parser [Expr] -> FilePath -> IO (Either ParseError [Expr])
-twoPass_debug prepro parser filepath = 
-    let pp_name  = "post-processed " ++ filepath in runIOInIO $ 
-    o1 prepro filepath >>=  
-    either (return . Left) (o2 (parse parser pp_name))
+    o1 (liftIO $ prepro filepath) >>=  
+    either (return . Left) (o2 . parse parser pp_name)
   where
+    pp_name  = "post-processed " ++ filepath
     -- don't print expressions here - the are printed in another step
     -- (also note 02 isn't a monadic step as the function parse isn't monadic)
-    o2 = genWriteStep  "Expression count..." ppExprCountErr
+    o2 = genWriteStep  "Expression count..."        ppExprCountErr
     o1 = genWriteStepM "After preprocessed step..." ppPreproErr    
 
 ppPreproErr :: Either ParseError String -> PP.Doc

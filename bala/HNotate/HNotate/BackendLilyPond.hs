@@ -30,6 +30,7 @@ import HNotate.Traversals
 
 import Control.Applicative
 import Control.Monad.Identity
+import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Foldable as F
 import Data.Monoid
@@ -39,23 +40,26 @@ import Text.PrettyPrint.Leijen (Doc, char)
 
   
 
-translateLilyPond :: Env -> NoteList -> NoteListOutput
-translateLilyPond env =
-    (execPrintM `flip` pmZero) . outputNoteList . lilypondRelativeForm env
+translateLilyPond :: Monad m => NoteList -> NotateT m NoteListOutput
+translateLilyPond = printStep <=< lilypondRelativeForm
+  where
+    printStep = return . (execPrintM `flip` pmZero) . outputNoteList
+
 
 updatePitch st p = st { rel_pitch = p }
 
 -- Do we need a state type, like this one?
 -- data LyState = LyState { rel_pitch :: Pitch, rel_dur :: Duration }
 
-lilypondRelativeForm :: Env -> NoteList -> NoteList
-lilypondRelativeForm env = (evalState `flip` st) . unwrapMonad . inner 
+lilypondRelativeForm :: Monad m => NoteList -> NotateT m NoteList
+lilypondRelativeForm evts = asks relative_pitch >>= \p -> 
+    return $ (evalState `flip` st p) $ unwrapMonad $ inner p $ evts
   where       
-    inner   = (evalState `flip` st) . unwrapMonad 
-                                    . unComp 
-                                    . traverse (proBody `comp` drleBody)
+    inner p = (evalState `flip` st p) . unwrapMonad 
+                                      . unComp 
+                                      . traverse (proBody `comp` drleBody)
 
-    st      = lyState0 `updatePitch` (relative_pitch env)
+    st p     = lyState0 `updatePitch` p
     
 outputNoteList :: NoteList -> PrintM ()
 outputNoteList (NoteList se) = F.mapM_  outputBlock se
