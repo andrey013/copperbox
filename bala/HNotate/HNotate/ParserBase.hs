@@ -53,7 +53,7 @@ instance Applicative (GenParser tok st) where
   (<*>) = ap
 
 
-
+{-
 
 --------------------------------------------------------------------------------
 -- Common machinery for preprcessing
@@ -86,6 +86,7 @@ data Token = Tk_LBr | Tk_RBr
            | Tk1 String 
            | Tk2 String String 
            | Tk3 String String String
+           | Tk_Output String 
   deriving (Eq,Show)
 
 dropToken :: TokenF a
@@ -109,6 +110,10 @@ token3 :: (a -> String) -> (b -> String) -> (c -> String)
        -> a -> b -> c -> TokenF Token
 token3 f g h a b c  = \se -> se |> Tk3 (f a) (g b) (h c)
 
+
+tokenOutput :: (a -> String) -> a -> TokenF Token
+tokenOutput f a = \se -> se |> Tk_Output (f a)
+
 --------------------------------------------------------------------------------
 -- Rewrite the token stream
 
@@ -129,11 +134,13 @@ printTree :: Tree -> ShowS
 printTree = pt 0 id 
   where
     pt i k (Leaf s)   = k . spaceS i . showString s . showNewline 
-    pt i k (Node [])  = k . spaceS i . showString "{}" . showNewline   
+    pt i k (Node [])  = k . spaceS i . showString "{}" . showNewline
+    pt i k (Node xs)  = k . spaceS i . (foldS (.) $ map (pt (i+2) id) xs)  
+       {-
     pt i k (Node xs)  = k . spaceS i . showLBrace 
                                        . (foldS (.) $ map (pt (i+2) id) xs)
                             . spaceS i . showRBrace
-                               
+                               -}
                                
 build :: [Token] -> Tree
 build xs = iter xs []
@@ -152,18 +159,18 @@ build xs = iter xs []
     walk (tk     :ts) ns        = walk ts (leaf tk:ns)
     
     ennode [] zs = zs
-    ennode xs [] = [Node xs, Leaf "#NONE"]  -- can't have "{ {" in the output
+    ennode xs [] = [Node xs, Leaf "let ~no-bind in "]  -- can't have "{ {" in the output
     ennode xs zs = Node xs : zs 
   
 
 
 -- empty node
 leaf :: Token -> Tree
-leaf (Tk1 s)     = Leaf s
-leaf (Tk2 s t)   = Leaf (s ++ " " ++ t)
-leaf (Tk3 s t u) = Leaf (s ++ " " ++ t ++ " " ++ u)
-leaf (Tk_None)   = Leaf "#NONE"
-
+leaf (Tk1 s)        = Leaf ("let " ++ s ++ " in ")
+leaf (Tk2 s t)      = Leaf ("let " ++ s ++ " " ++ t ++ " in ")
+leaf (Tk3 s t u)    = Leaf ("let " ++ s ++ " " ++ t ++ " " ++ u ++ " in ")
+leaf (Tk_None)      = Leaf "let ~no-bind in "
+leaf (Tk_Output s)  = Leaf s
 
 
     
@@ -198,39 +205,50 @@ ppExprCountErr = either (PP.string . show) (PP.int . length)
     
 -- syntax of meta comments is common to both Abc & LilyPond
 
-topLevelExprs :: [Parser Term] -> Parser [Expr] 
+topLevelExprs :: [Parser Binding] -> Parser [Expr] 
 topLevelExprs ps = whiteSpace >> (exprList ps)
 
 
-exprList :: [Parser Term] -> Parser [Expr]
+exprList :: [Parser Binding] -> Parser [Expr]
 exprList ps = between openNesting closeNesting exprs
   where exprs = many1 (expr ps)
 
-expr :: [Parser Term] -> Parser Expr
-expr ps = Expr <$> (term ps) <*> option [] (exprList ps)
+expr :: [Parser Binding] -> Parser Expr
+expr bs = choice [letExpr bs, forkExpr bs, outputSDo bs, outputDo]
 
-openNesting     :: Parser String
-openNesting     = symbol "{"
-
-closeNesting    :: Parser String
-closeNesting    = symbol "}"
+letExpr :: [Parser Binding] -> Parser Expr
+letExpr bs = Let <$> (symbol "let" *> binding bs)
+                 <*> (symbol "in"  *> expr bs)
 
 
-term :: [Parser Term] -> Parser Term
-term specialTerms = choice specialTerms <|> noneTerm <|> genericTerm 
+outputSDo :: [Parser Binding] ->Parser Expr 
+outputSDo bs = SDo <$> (symbol "sdo"    *> outputDirective) 
+                   <*> (symbol "then"   *> expr bs)
+
+outputDo :: Parser Expr 
+outputDo = Do <$> (symbol "do" *> outputDirective) <* symbol "end"
+
+forkExpr :: [Parser Binding] -> Parser Expr 
+forkExpr bs = Fork <$> (symbol "fork" *> symbol "<<" *> expr bs)
+                   <*> (symbol "//"   *> expr bs    <*  symbol ">>")   
 
 
-noneTerm :: Parser Term
-noneTerm = Let LetNone <$ try (symbol "#NONE")
+binding :: [Parser Binding] -> Parser Binding
+binding bs = choice bs <|> noneBinding <|> genericBinding
 
 
-genericTerm :: Parser Term
-genericTerm = choice [outputDirective, meterPattern_md, partial_md] 
+
+noneBinding :: Parser Binding
+noneBinding = LetNone <$ try (symbol "~no-bind")
+
+genericBinding :: Parser Binding
+genericBinding = choice [meterPattern_md, partial_md] 
 
 
-outputDirective :: Parser Term
+
+outputDirective :: Parser OutputDirective
 outputDirective = OutputDirective <$> 
-    (directive "output" *> optparse scheme) <*> identifier
+    (symbol "#output" *> symbol ":" *> optparse scheme) <*> identifier
   
 scheme :: Parser OutputScheme
 scheme = choice [relative, dflt]
@@ -238,23 +256,17 @@ scheme = choice [relative, dflt]
     relative = OutputRelative <$ cmdsymbol "relative"
     dflt     = OutputDefault  <$ cmdsymbol "default"
 
-meterPattern_md :: Parser Term 
-meterPattern_md = Let . LetMeterPattern <$> 
+meterPattern_md :: Parser Binding 
+meterPattern_md = LetMeterPattern <$> 
     (directive "meter_pattern" *> meterPattern)
 
-meterPattern :: Parser MeterPattern
-meterPattern = (,) <$> sepBy1 int plus <*> (slash *> simpleDuration)
-  where 
-    plus  = symbol "+"  
-    slash = symbol "/"  
 
-simpleDuration :: Parser Duration
-simpleDuration = (convRatio . (1%)) <$> int 
+
 
 -- Abc has no equivalent of 'partial' so we have another
 -- meta-directive 
-partial_md :: Parser Term
-partial_md = Let . LetPartial <$> 
+partial_md :: Parser Binding
+partial_md = LetPartial <$> 
     (directive "partial" *> haskellDuration)
 
 haskellDuration :: Parser Duration
@@ -264,8 +276,49 @@ haskellDuration = (\n d scale -> (n%d) * (scale%1)) <$>
 cmdsymbol :: String -> Parser String
 cmdsymbol = try . symbol . ('\\' :)
 
+
+
+
+openNesting     :: Parser String
+openNesting     = symbol "{"
+
+closeNesting    :: Parser String
+closeNesting    = symbol "}"
+
+-}
+
+metaOutput :: Parser MetaOutput
+metaOutput = MetaOutput
+    <$> (directive "output" *> optparse outputCommand) <*> identifier 
+  where 
+    outputCommand = cmdrelative <|> cmddefault
+    cmdrelative   = OutputRelative <$ command "relative"   
+    cmddefault    = OutputDefault  <$ command "default"
+    
+    
+metaMeterPattern :: Parser MetaBinding
+metaMeterPattern = MetaMeterPattern
+    <$> (directive "meter_pattern" *> meterPattern)
+
+meterPattern :: Parser MeterPattern
+meterPattern = (,) <$> sepBy1 int plus <*> (slash *> simpleDuration)
+  where 
+    plus  = symbol "+"  
+    slash = symbol "/"  
+    
+
+simpleDuration :: Parser Duration
+simpleDuration = (convRatio . (1%)) <$> int 
+    
+-- | command - note using try is essential to consume the whole command.
+-- Without it we may consume a blacklash of a different command and not be 
+-- able to backtrack. 
+command     :: String -> CharParser st String
+command s   = lexeme $ try $ string ('\\':s)   
+
 directive :: String -> Parser String
-directive s = try (symbol $ '#':s) <* lexeme colon
+directive s = try (symbol s) <* lexeme colon
+
 
 --------------------------------------------------------------------------------
 -- Abc and LilyPond 'expression views' have the same shape but differ

@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined
 --
--- Datatypes for elements extracted from score templates.
+-- Datatypes for elements extracted from score files.
 --
 --------------------------------------------------------------------------------
 
@@ -41,32 +41,81 @@ data OutputScheme = OutputRelative | OutputDefault
   
   
 
--- Two views of a file
-
 -- 1. Text view - (Water,Hole)
 -- Preserves source text - the holes are collected at their 
 -- source position for filling. 
 
 type TextChunk = (String, Maybe SrcPos)
 
- 
 
--- 2. Expression view
+-- 2. 'Island Grammars' for Abc and LilyPond.
+-- Only the elements that effect evaluation are retained. 
+
+-- Common to both - meta output
+-- e.g __ %# output: tune1 __
+data MetaOutput  = MetaOutput (Maybe OutputScheme) String
+  deriving (Eq,Show)
+
+-- Common to both - directives that have no direct representation
+-- in Abc or LilyPond.
+-- e.g __ %# meter_pattern: 2+2+2/8 __ 
+data MetaBinding = MetaMeterPattern MeterPattern
+  deriving (Eq,Show)
+  
+   
+-- 2a. A miniaturized Abc source file 
+newtype AbcScore = AbcScore { getAbcScore :: [AbcTune] }
+  deriving (Eq,Show)
+  
+-- X field gives the Int
+data AbcTune = AbcTune Int [AbcExpr]
+  deriving (Eq,Show)
+  
+data AbcExpr = AbcFieldBinding AbcField
+             | AbcMetaBinding MetaBinding   -- shared with LilyPond
+             | AbcOutput MetaOutput
+  deriving (Eq,Show)             
+             
+data AbcField = AbcKey Key
+              | AbcMeter Meter
+  deriving (Eq,Show)
+
+-- 2b. A miniaturized LilyPond source file    
+
+data LyScore = LyScore { getLyScore :: [LyExpr]}
+  deriving (Eq,Show) 
+  
+data LyExpr = LyCmdBinding LyCommand
+            | LyMetaBinding MetaBinding   -- shared with LilyPond
+            | LyOutput MetaOutput
+            | LyNestExpr [LyExpr]
+  deriving (Eq,Show)  
+
+data LyCommand = LyCadenza Bool
+               | LyKey Key
+               | LyPartial Duration
+               | LyRelative Pitch
+               | LyTime Meter
+  deriving (Eq,Show)
+  
+-- 3. Expression view
 -- Expressions of interest (e.g. time signatures, key signatures)
 -- and meta comments, are extracted from the original file (via a 
 -- preprocessing step). Everything else is dropped. 
 --
--- LilyPond's nesting structure is respected, Abc has an artificial 
--- nesting structure 'manufactured'). 
+-- The syntax is pattern atfer the lambda calculus so that it is 
+-- trivial to evaluate. 
 
 
-data Expr = Expr Term [Expr]
-  deriving (Eq,Show) 
+
+ 
+data Expr = Let Binding Expr
+          | SDo OutputDirective Expr
+          | Do OutputDirective
+          | Fork Expr Expr
+  deriving (Eq,Show)   
   
-  
-data Term = Let Binding
-          | OutputDirective (Maybe OutputScheme) String
-  deriving (Eq,Show)            
+            
 
 data Binding = LetCadenza Bool
              | LetKey Key
@@ -77,25 +126,28 @@ data Binding = LetCadenza Bool
              | LetNone                -- Used for 'X' fields in Abc
   deriving (Eq,Show)             
 
-newtype Hoas = Hoas { getExprs :: [HoasExpr] }
-  deriving (Show)
+type NoteListName = String
 
-data HoasExpr = HLetExpr (Env -> Env) [HoasExpr]
-              | HOutputDirective (Maybe OutputScheme) String
+data OutputDirective = OutputDirective (Maybe OutputScheme) NoteListName  
+  deriving (Eq,Show)
+  
+newtype Hoas = Hoas { getExprs :: [HoasExpr] }
+
+
+data HoasExpr = HLet (Env -> Env) HoasExpr
+              | HSDo OutputDirective HoasExpr
+              | HDo OutputDirective
+              | HFork HoasExpr HoasExpr
               
 
 toHoas :: [Expr] -> Hoas
 toHoas xs = Hoas $ map convExpr xs
 
 convExpr :: Expr -> HoasExpr
-convExpr (Expr (Let b) es)                      = 
-    HLetExpr (convBinding b) (map convExpr es)
-    
-convExpr (Expr (OutputDirective oscm name) [])  =
-    HOutputDirective oscm name 
-
-convExpr (Expr (OutputDirective oscm name) xs)  =
-    error $ "Malformed Term - #output " ++ name ++ " " ++ show xs
+convExpr (Let b e)    = HLet (convBinding b) (convExpr e)
+convExpr (SDo o e)    = HSDo o (convExpr e)
+convExpr (Do o)       = HDo o
+convExpr (Fork e e')  = HFork (convExpr e) (convExpr e')
 
 convBinding :: Binding -> (Env -> Env)
 convBinding (LetCadenza b)        = set_cadenza b
@@ -106,14 +158,12 @@ convBinding (LetPartial d)        = set_partial_measure d
 convBinding (LetRelativePitch p)  = set_relative_pitch p
 convBinding (LetNone)             = id
 
-instance Show HoasExpr where
-  show (HLetExpr fn xs)                     = "let <fun> in " ++ show xs
-  show (HOutputDirective Nothing name)      = "# output: " ++ name
-  show (HOutputDirective (Just scm) name)   = 
-      "# output: \\" ++ schemeName scm ++ " " ++ name
-    where
-       schemeName OutputRelative  = "relative" 
-       schemeName OutputDefault   = "default"                  
+transMetaOutput :: MetaOutput -> OutputDirective 
+transMetaOutput (MetaOutput oscm name) = OutputDirective oscm name
+ 
+transMetaBinding :: MetaBinding -> Binding 
+transMetaBinding (MetaMeterPattern mp) = LetMeterPattern mp
+                
 
 
 

@@ -17,128 +17,226 @@ module HNotate.ParseLy where
 
 import HNotate.CommonUtils
 import HNotate.Duration
-import HNotate.Env
+import HNotate.Env (NotateT)
 import HNotate.MusicRepDatatypes
 import HNotate.ParserBase
 import HNotate.Pitch
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (many, optional, (<|>) )
-import Data.Monoid
+import Control.Monad.Trans (liftIO)
 import Data.Ratio
-import Data.Sequence
+import Data.Sequence hiding (reverse)
 import Text.ParserCombinators.Parsec hiding (space)
 
 
-lyExprView_TwoPass :: ExprParser
-lyExprView_TwoPass = twoPass preprocessLy parseLyExprs
+-- FilePath -> NotateT IO (Either ParseError [Expr])
+lyExprParse :: ExprParser
+lyExprParse file_path = 
+    lilyPondFileParse file_path >>=
+    either (return . Left) (return . Right . translateLyScore)  
 
+
+
+lilyPondFileParse :: FilePath -> NotateT IO (Either ParseError LyScore)
+lilyPondFileParse file_path = 
+    liftIO (parseFromFile lilypondPreprocess file_path)   >>= 
+    either (return . Left) (return . parse lyScore file_path)
+    
+    
+--------------------------------------------------------------------------------
+-- translate
+
+translateLyScore :: LyScore -> [Expr]
+translateLyScore (LyScore xs) = maybe [] single (transExprs xs)
+  where single a = [a]
+
+transExprs :: [LyExpr] -> Maybe Expr
+transExprs xs = tree xs id where 
+  tree []                         k = k Nothing
+  
+ 
+  tree [LyOutput mo]              k = k $ Just (Do (transMetaOutput mo))
+  -- last element - 'prune' the tree if it is a binding
+  tree [LyCmdBinding _]           k = k Nothing
+  tree [LyMetaBinding _]          k = k Nothing
+  tree [LyNestExpr ws]            k = k $ transExprs ws
+  
+  tree (LyOutput o:xs)            k = k $ tree xs fn where
+      fn = maybe (Just $ Do (transMetaOutput o))  --  
+                 (\expr -> Just $ SDo (transMetaOutput o) expr)
+        
+  tree (LyCmdBinding b:xs)        k = k $ tree xs fn where
+      fn = maybe Nothing (\expr -> Just $ Let (transLyCommand b) expr)       
+
+  tree (LyMetaBinding b:xs)       k = k $ tree xs fn where
+      fn = maybe Nothing (\expr -> Just $ Let (transMetaBinding b) expr)
+
+  tree (LyNestExpr ws:xs)         k = 
+      let lhs = transExprs ws in k $ tree xs (fn lhs) where
+      -- The accumulating continuation has to account for the nested tree
+      -- (the lhs).
+        fn Nothing     rhs  = rhs
+        fn (Just lexp) rhs  = 
+            maybe (Just lexp) (\rexp -> Just $ Fork lexp rexp) rhs
+      
+      
+transLyCommand :: LyCommand -> Binding
+transLyCommand (LyCadenza c)    = LetCadenza c
+transLyCommand (LyKey key)      = LetKey key
+transLyCommand (LyPartial d)    = LetPartial d
+transLyCommand (LyRelative p)   = LetRelativePitch p 
+transLyCommand (LyTime m)       = LetMeter m  
+
+
+
+--------------------------------------------------------------------------------
+-- parse
+
+lyScore :: Parser LyScore
+lyScore = LyScore <$> (whiteSpace *> many1 lyExpr)
+
+lyExprList :: Parser [LyExpr]
+lyExprList = lyBeginNest *> directRecur lyExpr [] <* lyEndNest
+
+directRecur :: GenParser Char st a -> [a] -> GenParser Char st [a]
+directRecur p cca = 
+    optparse p >>= maybe (return $ reverse cca) (\a -> directRecur p (a:cca))
+
+lyExpr :: Parser LyExpr
+lyExpr = choice [lyNestExpr, lyBinding, lyMetaExpr ]
+
+lyNestExpr :: Parser LyExpr
+lyNestExpr = LyNestExpr <$> lyExprList
+
+lyBinding :: Parser LyExpr
+lyBinding = LyCmdBinding <$> choice 
+  [ lyCadenza, lyKey, lyPartial, lyRelative, lyTime ]
+
+lyCadenza       :: Parser LyCommand
+lyCadenza       = cadenzaOnB <|> cadenzaOffB
+  where 
+    cadenzaOnB  = LyCadenza True  <$ command "cadenzaOn" 
+    cadenzaOffB = LyCadenza False <$ command "cadenzaOff"
+    
+lyKey           :: Parser LyCommand
+lyKey           = LyKey <$> (command "key" *> keySig) 
+
+lyPartial       :: Parser LyCommand 
+lyPartial       = LyPartial  <$> (command "partial" *> lyDuration)
+
+lyRelative      :: Parser LyCommand
+lyRelative      = LyRelative <$> (command "relative" *> lyPitch)
+
+lyTime          :: Parser LyCommand 
+lyTime          = LyTime  <$> (command "time" *> timeSig)
+
+lyMetaExpr :: Parser LyExpr
+lyMetaExpr = 
+    symbol "(|" *> choice [lyOutputDef, lyMeterPattern] <* symbol "|)"
+  where
+    lyOutputDef      = LyOutput <$> metaOutput
+    lyMeterPattern   = LyMetaBinding <$> metaMeterPattern
+    
+        
+lyBeginNest     :: Parser String
+lyBeginNest     = symbol "{" <|> symbol "<<"
+
+lyEndNest       :: Parser String
+lyEndNest       = symbol "}" <|> symbol ">>"
 
 
 --------------------------------------------------------------------------------
 -- Preprocess
 
-preprocessLy :: FilePath -> IO (Either ParseError String)
-preprocessLy path = either (return . Left) (return . Right . rewriteLyToks) 
-                          =<< (parseFromFile lyExtract path)
-                          
-lyExtract :: Parser (Seq Token)
-lyExtract = waterAcc $ choice 
-    [ metaComment, lyComment, leftBrace, rightBrace, 
-      -- commands
-      key, time, relative, partial, cadenzaOn, cadenzaOff
-      
-    ]
+lilypondPreprocess :: Parser String
+lilypondPreprocess = showing $ waterManyS lilypondIsland
+  where showing p = p >>= return . ($ "")
 
+lilypondExtract :: Parser ShowS
+lilypondExtract = waterManyS lilypondIsland
 
-type Leftwards = Maybe () 
-braceleft = Just ()
-
-rewriteLyToks :: Seq Token -> String
-rewriteLyToks = rewriteTokenStream . cata (:) []
-
-
--- first part needs try so we don't consume the "%{" of a normal comment
-metaComment :: Parser (TokenF Token)
-metaComment = token1 fn <$> 
-    ((try $ symbol "%{#") *> manyTill anyChar (try $ symbol "#%}"))
-  where
-    -- prefix with a hash  
-    fn s = '#' : s
-                
-lyComment :: Parser (TokenF Token)
-lyComment = dropToken <$
-    (symbol "%{" *> manyTill anyChar (try $ symbol "%}")) 
-
-leftBrace :: Parser (TokenF Token)
-leftBrace = beginNest <$ symbol "{"
-
-rightBrace :: Parser (TokenF Token)
-rightBrace = endNest <$ symbol "}"
-
--- commands
-
-key :: Parser (TokenF Token)
-key = token3 id id id <$> cmdsymbol "key" <*> nonwhite <*> cmdany
-
-
-time :: Parser (TokenF Token)
-time = token2 id id <$> cmdsymbol "time" <*> nonwhite
-
-relative :: Parser (TokenF Token)
-relative = token2 id id <$> cmdsymbol "relative" <*> nonwhite
-
-partial :: Parser (TokenF Token)
-partial = token2 id id <$> cmdsymbol "partial" <*> nonwhite
-
-cadenzaOn :: Parser (TokenF Token)
-cadenzaOn = token1 id <$> cmdsymbol "cadenzaOn"
-
-cadenzaOff :: Parser (TokenF Token)
-cadenzaOff = token1 id <$> cmdsymbol "cadenzaOff"
-
-
-cmdany :: Parser String
-cmdany = (:) <$> char '\\' <*> nonwhite
-
---------------------------------------------------------------------------------
--- Parse
-
-parseLyExprs :: Parser [Expr]
-parseLyExprs = topLevelExprs lyTermParsers
-
-
-lyTermParsers :: [Parser Term]
-lyTermParsers = [relativeT, keyT, timeT, partialT, cadenzaT]
-
-relativeT :: Parser Term
-relativeT = Let . LetRelativePitch <$> (cmdsymbol "relative" *> lyPitch)
-
-keyT :: Parser Term
-keyT = Let . LetKey     <$> (cmdsymbol "key" *> keySig)
-
-timeT :: Parser Term 
-timeT = Let . LetMeter  <$> (cmdsymbol "time" *> timeSig)
-     <?> "timeT"
-
-partialT :: Parser Term 
-partialT = Let . LetPartial  <$> (cmdsymbol "partial" *> lyDuration)
-
-cadenzaT :: Parser Term
-cadenzaT = cadenzaOnT <|> cadenzaOffT
-  where
-    cadenzaOnT  = Let (LetCadenza True)  <$ cmdsymbol "cadenzaOn" 
-    cadenzaOffT = Let (LetCadenza False) <$ cmdsymbol "cadenzaOff"
---------------------------------------------------------------------------------
--- Parse the text for the water and holes so we can fill the holes
-
-lyTextChunks :: TextChunkParser
-lyTextChunks = collectWaterAcc metaOutput
+waterManyS :: GenParser Char st ShowS -> GenParser Char st ShowS
+waterManyS p = step id <?> "waterAcc"
   where 
-    metaOutput = (,,) <$> lexeme (symbol "%{#")
-                      <*> lexeme (symbol "output")
-                      <*> manyTill anyChar (try $ string "#%}")  
+    step fn = do
+      a <- optparse (eitherparse (eof <?> "") p)    
+      case a of
+        Just (Left _) -> return $ fn
+        Just (Right f) -> step (fn . showChar ' ' . f)
+        Nothing -> anyChar >> step fn 
+        
+        
+lilypondIsland :: Parser ShowS
+lilypondIsland = choice 
+  [ metaCommentSP, lyCommentSP, 
+    leftBraceSP, rightBraceSP, leftSimulSP, rightSimulSP,
+    keySP, timeSP, relativeSP, partialSP, cadenzaOnSP, cadenzaOffSP
+  ]
 
+
+-- rewrite the brackets to bananas so they don't have braces 
+metaCommentSP :: Parser ShowS
+metaCommentSP = (inbetween "(| " " |)" . showString) <$> 
+    ((try (symbol "%{#")) *> manyTill anyChar (try $ symbol "#%}"))
+    
+keySP         :: Parser ShowS
+keySP         = cat3 <$> commandSP "key" <*> nonWhiteSP <*> nonWhiteSP
+
+timeSP        :: Parser ShowS
+timeSP        = cat2 <$> commandSP "time" <*> nonWhiteSP
+
+relativeSP    :: Parser ShowS
+relativeSP    = cat2 <$> commandSP "relative" <*> nonWhiteSP
+
+partialSP     :: Parser ShowS
+partialSP     = cat2 <$> commandSP "partial" <*> nonWhiteSP
+
+cadenzaOnSP   :: Parser ShowS
+cadenzaOnSP   = commandSP "cadenzaOn"
+
+cadenzaOffSP  :: Parser ShowS
+cadenzaOffSP  = commandSP "cadenzaOff"
+    
+    
+lyCommentSP :: Parser ShowS
+lyCommentSP = id <$
+    (symbol "%{" *> manyTill anyChar (try $ symbol "%}")) 
+    
+    
+leftBraceSP :: Parser ShowS
+leftBraceSP = showChar '{' <$ symbol "{"
+
+rightBraceSP :: Parser ShowS
+rightBraceSP = showChar '}' <$ symbol "}"
+
+leftSimulSP :: Parser ShowS
+leftSimulSP = showString "<<" <$ symbol "<<"
+
+rightSimulSP :: Parser ShowS
+rightSimulSP = showString ">>" <$ symbol ">>"
+
+commandSP :: String -> Parser ShowS
+commandSP s = showString <$> command s
+
+nonWhiteSP :: Parser ShowS
+nonWhiteSP = showString <$> nonwhite
+
+cat2 :: ShowS -> ShowS -> ShowS
+cat2 f g = f . showChar ' ' . g
+
+cat3 :: ShowS -> ShowS -> ShowS -> ShowS
+cat3 f g h = f . showChar ' ' . g . showChar ' ' . h
+
+cat4 :: ShowS -> ShowS -> ShowS -> ShowS -> ShowS
+cat4 f g h i = f . showChar ' ' . g . showChar ' ' . h . showChar ' ' . i
+
+inbetween :: String -> String -> ShowS -> ShowS
+inbetween before after middle = 
+    showString before . middle . showString after
+    
+--------------------------------------------------------------------------------
+-- 
 
 cmdMode :: GenParser Char st Mode
 cmdMode = choice 
@@ -217,16 +315,14 @@ rootDuration = choice [pBreve, pLonga, pNumericDuration]
     pBreve            = breve <$ command "breve"   
     pLonga            = longa <$ command "longa"
     pNumericDuration  = (convRatio . (1%)) <$> int 
-    
 
-    
-    
 --------------------------------------------------------------------------------
--- utility parsers
+-- Parse the text for the water and holes so we can fill the holes
 
--- | command - note using try is essential to consume the whole command
--- without it we may consume a blacklash of a different command and not be 
--- able to backtrack. 
-command     :: String -> CharParser st String
-command ss  = lexeme $ try $ string ('\\':ss)
+lyTextChunks :: TextChunkParser
+lyTextChunks = collectWaterAcc metaOutput
+  where 
+    metaOutput = (,,) <$> lexeme (symbol "%{#")
+                      <*> lexeme (symbol "output")
+                      <*> manyTill anyChar (try $ string "#%}")  
 

@@ -273,6 +273,13 @@ putDoc80 doc = displayIO stdout (renderPretty 0.7 80 doc)
 showDocS :: Doc -> ShowS
 showDocS d = displayS (renderPretty 0.7 80 d)
 
+lbanana, rbanana :: Doc
+lbanana = text "(|"
+rbanana = text "|)"
+
+bananas :: Doc -> Doc
+bananas d = lbanana <> d <> rbanana 
+
 
 
 underline :: String -> Doc

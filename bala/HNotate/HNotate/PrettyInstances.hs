@@ -154,14 +154,78 @@ ppPos (SrcPos l c _) = pretty $ (l,c)
 instance Pretty OutputScheme where
   pretty OutputRelative       = text "relative" 
   pretty OutputDefault        = text "default"
+
+
+-- shared with LilyPond
+instance Pretty MetaOutput where
+  pretty (MetaOutput oscm name) = bananas body
+    where body      = text "#output" <> colon <+> optscheme <+> text name
+          optscheme = maybe empty pretty oscm
+
+
+-- shared with LilyPond  
+instance Pretty MetaBinding where
+  pretty (MetaMeterPattern mp)  = bananas body
+    where body      = text "~meter_pattern" <> colon <+> pretty mp
+  
+instance Pretty AbcScore where
+  pretty (AbcScore xs) = vsep $ map pretty xs
+
+  
+-- X field gives the Int
+instance Pretty AbcTune where
+  pretty (AbcTune n xs)         = 
+      text "X:" <+> int n <+> indent 2 (list $ map pretty xs)
+
+  
+instance Pretty AbcExpr where
+  pretty (AbcFieldBinding field)      = pretty field
+  pretty (AbcMetaBinding mb)          = pretty mb
+  pretty (AbcOutput mo)               = pretty mo
+             
+             
+instance Pretty AbcField where
+  pretty (AbcKey k)         = text "K:" <> pretty k
+  pretty (AbcMeter m)       = text "M:" <> pretty m
+
+  
+    
+instance Pretty LyScore where
+  pretty (LyScore xs) = vsep $ map pretty xs
+ 
+  
+instance Pretty LyExpr where
+  pretty (LyCmdBinding cmd)   = pretty cmd
+  pretty (LyMetaBinding mb)   = pretty mb 
+  pretty (LyOutput mo)        = pretty mo
+  pretty (LyNestExpr es)      = indent 2 $ list (map pretty es)
+  
+
+
+instance Pretty LyCommand where
+  pretty (LyCadenza True)   = text "\\cadenzaOn"
+  pretty (LyCadenza False)  = text "\\cadenzaOn"
+  pretty (LyKey key)        = text "\\key"        <+> pretty key
+  pretty (LyPartial d)      = text "\\partial"    <+> pretty d
+  pretty (LyRelative p)     = text "\\relative"   <+> pretty p
+  pretty (LyTime meter)     = text "\\time"       <+> pretty meter
+  
+    
   
 instance Pretty Expr where
-  pretty (Expr t es)          = pretty t <$> indent 2 
-                                    (braces $ hsep $ map pretty es)
-  
-instance Pretty Term where
-  pretty (Let bind)                   
-        = text "let" <+> pretty bind
+  pretty (Let bind e) = text "let" <+> pretty bind <+> text "in"
+                          <$>  indent 2 (pretty e)   
+  pretty (SDo out e)  = text "sdo" <+> pretty out <+> text "then" <+> pretty e   
+  pretty (Do out)     = text "do" <+> pretty out <+> text "end"  
+  pretty (Fork e1 e2) = text "fork" <+> 
+                              nest 2 (text "<<" </> pretty e1 
+                                                <$> pretty "//" 
+                                                </> pretty e2)
+                             <$> text ">>"
+                                      
+          
+        
+instance Pretty OutputDirective where
   pretty (OutputDirective oscm name)  
       = text "#output" <> (maybe empty ((empty <+>) . pretty) oscm) <+> text name  
      
@@ -173,7 +237,7 @@ instance Pretty Binding where
   pretty (LetMeterPattern mp) = equation "meter_pattern"  (ppMeterPattern mp)
   pretty (LetPartial d)       = equation "partial"        (ppDuration d)
   pretty (LetRelativePitch p) = equation "relative"       (pretty p)
-  pretty (LetNone)            = text "#NONE" 
+  pretty (LetNone)            = text "~no-bind" 
 
 equation s e = ppcmd s <+> equals <+> e      
 ppcmd = text . ('\\':) 

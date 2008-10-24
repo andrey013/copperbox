@@ -59,7 +59,7 @@ outputLilyPond sys inpath outpath   = do
     putStrLn msg
   where
     config      = mkLyConfig sys inpath outpath
-    lyparsers   = (lyExprView_TwoPass, lyTextChunks) 
+    lyparsers   = (lyExprParse, lyTextChunks) 
     
 outputAbc :: System -> FilePath -> FilePath -> IO ()
 outputAbc sys inpath outpath        = do 
@@ -67,7 +67,7 @@ outputAbc sys inpath outpath        = do
     putStrLn msg
   where
     config      = mkAbcConfig sys inpath outpath
-    abcparsers  = (abcExprView_TwoPass, abcTextChunks) 
+    abcparsers  = (abcExprParse, abcTextChunks) 
     
 
 
@@ -136,20 +136,20 @@ evalHoas (Hoas exprs) = foldM eval [] exprs >>= return . reverse
                            
 
 eval :: Monad m => [Doc] -> HoasExpr -> NotateT m [Doc]
-eval docs (HLetExpr update xs)        = 
-    foldM (\ds e -> local update (eval ds e)) docs xs
+eval docs (HLet update e)   = local update (eval docs e)
+eval docs (HDo out)         = outputNotes out >>= \d -> return (d:docs)
+eval docs (HSDo out e)      = outputNotes out >>= \d -> eval (d:docs) e
+eval docs (HFork e1 e2)     = eval docs e1 >>= \ds -> eval ds e2  
+    
 
-eval docs (HOutputDirective oscm name) = 
-    outputNotes (fromMaybe OutputDefault oscm) name >>= return . flip (:) docs
-
-outputNotes :: Monad m => OutputScheme -> String 
-            -> NotateT m NoteListOutput
-outputNotes OutputRelative name = 
+outputNotes :: Monad m => OutputDirective -> NotateT m NoteListOutput
+outputNotes (OutputDirective (Just OutputRelative) name) = 
     maybe fault noteListOutput =<< findEventList name
   where 
     fault        = error $ "output failure - missing " ++ name
 
-outputNotes OutputDefault  name = outputNotes OutputRelative name 
+outputNotes (OutputDirective Nothing name)  = 
+    outputNotes (OutputDirective (Just OutputRelative) name) --- ARRGH!! 
 
 
 findEventList :: Monad m => String -> NotateT m (Maybe EventList)

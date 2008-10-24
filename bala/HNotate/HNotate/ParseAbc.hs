@@ -24,157 +24,123 @@ import HNotate.Pitch
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (many, optional, (<|>), empty)
-import Control.Monad (when)
+import Control.Monad.Trans (liftIO)
 import Data.Char
-import Data.List (unfoldr)
-import Data.Monoid
+import Data.List (isPrefixOf)
+import Data.Maybe (catMaybes)
 import Data.Sequence hiding (reverse)
 import Data.Ratio
 import Text.ParserCombinators.Parsec hiding (space)
 
-abcExprView_TwoPass :: ExprParser
-abcExprView_TwoPass = twoPass preprocessAbc parseAbcExprs
 
 
+-- FilePath -> NotateT IO (Either ParseError [Expr])
+abcExprParse :: ExprParser
+abcExprParse file_path = 
+    abcFileParse file_path >>=
+    either (return . Left) (return . Right . translateAbcScore)  
+    
+abcFileParse :: FilePath -> NotateT IO (Either ParseError AbcScore)
+abcFileParse path = 
+    liftIO (readFile path) >>= return . parse parseAbc path . preprocessAbc
 --------------------------------------------------------------------------------
--- Preprocess
+-- translate
 
-preprocessAbc :: FilePath -> IO (Either ParseError String)
-preprocessAbc path = either (return . Left) (return . Right . rewriteAbcToks) 
-                          =<< (parseFromFile abcExtract path)
+
+translateAbcScore :: AbcScore -> [Expr]
+translateAbcScore (AbcScore xs) = catMaybes $ map transAbcTune xs
+
+transAbcTune :: AbcTune -> Maybe Expr
+transAbcTune (AbcTune i xs) = maybe Nothing fn (transExprs xs)
+  where
+    fn expr = Just $ Let LetNone expr
+
+transExprs :: [AbcExpr] -> Maybe Expr
+transExprs xs = tree xs id where 
+  tree []                         k = k Nothing
   
+  -- last element - (ideally) should be an output command  
+  tree [AbcOutput mo]             k = k $ Just (Do (transMetaOutput mo))
+  -- last element - 'prune' the tree if it is a binding
+  tree [AbcFieldBinding _]        k = k Nothing
+  tree [AbcMetaBinding _]         k = k Nothing
+  
+  tree (AbcOutput o:xs)           k = k $ tree xs fn where
+      -- New continuation function for rest of input.
+      -- If 'fn' gets Nothing, then the tree to the right was pruned 
+      -- (as it contained no further output commands), so 'fn'
+      -- returns a 'single output' (Do).  
+      -- If there are more output commands in the right-hand side of 
+      -- the list - (Just expr) - then we have a sequential-do (SDo) 
+      fn = maybe (Just $ Do (transMetaOutput o))  --  
+                 (\expr -> Just $ SDo (transMetaOutput o) expr)
+        
+  tree (AbcFieldBinding b:xs)     k = k $ tree xs fn where
+      -- New continuation function, if the right-hand side of is empty
+      -- then this new binding is redundant - pass the Nothing on. 
+      -- Otherwise _nest_.
+      fn = maybe Nothing (\expr -> Just $ Let (transAbcField b) expr)       
 
-abcExtract :: Parser (Seq Token)
-abcExtract = waterAcc $ choice 
-    [ metaComment, abcComment,
-      -- fields
-      tunenumber, key, meter
+  tree (AbcMetaBinding b:xs)     k = k $ tree xs fn where
+      -- Logic as per AbcFieldBinding.
+      fn = maybe Nothing (\expr -> Just $ Let (transMetaBinding b) expr)   
       
-    ]
+      
 
-rewriteAbcToks :: Seq Token -> String
-rewriteAbcToks se = rewriteTokenStream $ unfoldr step (0,se)
-  where
-    step (i, se) = phi (i, viewl se)
-    
-    -- exit the unfold
-    phi (0, EmptyL)           = Nothing
-    
-    -- enqueue close braces 
-    phi (i, EmptyL)           = unnest i empty
-   
-    -- enqueue the open brace and increase the nesting level
-    phi (i, Tk_LBr :< se)     = Just (Tk_LBr,   (i+1, se))
-    
-    -- 'X' is new tune -- close all braces then enqueue 'X' 
-    phi (i, t1@(Tk2 "X:" s) :< se)
-          | i > 0             = unnest i (t1 <| se)
-          | otherwise         = Just (t1,       (i, se))
-    
-    -- normal case - produce value and go next
-    phi (i, e :< se)          = Just (e,        (i, se)) 
-    
-       
-    -- i is guaranteed (>1)
-    -- Produce 1 closeBrace, and enqueue any further closeBrace's
-    -- into the token stream
-    unnest :: Int -> Seq Token -> Maybe (Token, (Int,Seq Token))
-    unnest 1 se = Just (Tk_RBr, (0, se))
-    unnest i se = Just (Tk_RBr, (0, addleft (replicate (i-1) Tk_RBr) se))
-    
-    addleft :: [a] -> Seq a -> Seq a
-    addleft xs = ((fromList xs) ><) 
-
-
-metaComment :: Parser (TokenF Token)
-metaComment = token1 prefix <$> 
-    ((try $ symbol "%#") *> manyTill anyChar lineEnding)
-  where
-    -- prefix with a hash  
-    prefix s = '#' : s
-          
              
-abcComment :: Parser (TokenF Token)
-abcComment = dropToken <$ 
-    (symbol "%" *> manyTill anyChar lineEnding) 
-
-tunenumber  :: Parser(TokenF Token)
-tunenumber  = dyap beginNest (token2 id show) <$> 
-    fieldsymbol 'X' <*> int
+transAbcField :: AbcField -> Binding
+transAbcField (AbcKey key) = LetKey key
+transAbcField (AbcMeter m) = LetMeter m
 
 
--- Key fields might have transpose or clef information
--- which must not be passed on      
-key         :: Parser(TokenF Token)
-key         = dyap beginNest (token2 id id)   <$>
-    fieldsymbol 'K' <*> nonwhite <* restOfLine
-  -- TODO mode specification 
-
-    
-meter       :: Parser(TokenF Token)
-meter       = dyap beginNest (token2 id id)   <$>   
-    fieldsymbol 'M' <*> restOfLine
-    
-    
-fieldsymbol :: Char -> Parser String
-fieldsymbol c = try $ symbol [c,':']
-
-restOfLine :: GenParser Char st String
-restOfLine = manyTill anyChar lineEnding
-
-lineEnding :: GenParser Char st ()
-lineEnding = choice [ () <$ newline, eof] 
-
-
-
--- | Dyadic apply \/ compose - apply the binary function g to a and b, 
--- then apply the unary function f to the result.
--- dyap :: a -> b -> (c -> d) -> (a -> b -> c) ->  ->  d
-dyap :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
-dyap f g a b se = f (g a b se) 
 
 
 --------------------------------------------------------------------------------
--- Parse
+-- preprocess
 
-parseAbcExprs :: Parser [Expr]
-parseAbcExprs = topLevelExprs abcTermParsers
-
-abcTermParsers :: [Parser Term]
-abcTermParsers = [numberT, keyT, timeT]
-
-numberT :: Parser Term
-numberT = (Let LetNone) <$ (fieldsymbol 'X' *> int)
-
-keyT :: Parser Term
-keyT = Let . LetKey     <$> (fieldsymbol 'K' *> keySig)
-
-timeT :: Parser Term 
-timeT = Let . LetMeter  <$> (fieldsymbol 'M' *> timeSig)
-     <?> "timeT"
-
+-- Doesn't work if metadirectives '#% output: tune' 
+-- aren't on their own line
+preprocessAbc :: String -> String
+preprocessAbc = 
+    unlines . filter (`isPrefixedBy` abc_prefixes) . lines
+  where
+    isPrefixedBy ss pres = any (`isPrefixOf` ss) pres  
+    
+    
+abc_prefixes :: [String]
+abc_prefixes = ["X:", "%#", "M:", "K:"]
 
 --------------------------------------------------------------------------------
--- Parse the text for the water and holes so we can fill the holes
+-- parse (works on postprocessed source)
 
-abcTextChunks :: TextChunkParser
-abcTextChunks = collectWaterAcc (metaOutput)
-  where 
-    metaOutput = (,,) <$> lexeme (symbol "%#") 
-                      <*> lexeme (symbol "output")
-                      <*> uptoNewline ""                    
+parseAbc :: Parser AbcScore
+parseAbc = AbcScore <$> many parseAbcTune
+
+
+parseAbcTune :: Parser AbcTune
+parseAbcTune = AbcTune <$> tuneStart <*> many abcExpr
+
+tuneStart :: Parser Int
+tuneStart = field 'X' int
+
+abcExpr :: Parser AbcExpr
+abcExpr = choice [fieldUpdate, metaExpr]
+
+fieldUpdate :: Parser AbcExpr
+fieldUpdate = AbcFieldBinding <$> choice 
+    [ keyField, meterField]
     
-    -- Important - must not consume the newline
-    -- Use direct recursion as 'many' parser can't be used 
-    -- (empty string restriction). 
-    uptoNewline cca = do 
-        at_end <- option False (True <$ eof) 
-        case at_end of
-          True -> return (reverse cca)
-          False -> optparse (satisfy (/='\n')) >>=
-                   maybe (return $ reverse cca) (\c -> uptoNewline (c:cca))  
-
-                   
+keyField :: Parser AbcField
+keyField = AbcKey <$> field 'K' keySig
+    
+meterField :: Parser AbcField
+meterField = AbcMeter <$> field 'M' timeSig
+  
+metaExpr :: Parser AbcExpr
+metaExpr = (try $ symbol "%#") >> choice [abcOutputDef, abcMeterPattern]
+  where
+    abcOutputDef      = AbcOutput <$> metaOutput
+    abcMeterPattern   = AbcMetaBinding <$> metaMeterPattern
     
 
 
@@ -185,6 +151,9 @@ timeSig = TimeSig <$> int <*> (char '/' *> int)
 
 -- TODO accidentals 
 -- see ABC 2.0 spec - Klezmer (Ahavoh Rabboh) / Arabic music (Maqam Hedjaz)
+
+-- This has an error - might consume characters from the next line...
+-- "K:C \nM:4/4" -- the M for meter will be consumed as M for minor 
 keySig :: GenParser Char st Key
 keySig = (\(Pitch l a _) m -> Key (PitchLabel l a) m) 
     <$> lexeme abcPitch <*> option Major abcMode
@@ -248,17 +217,41 @@ abcMode = choice
         phrygian    = Phrygian   <$ leading3 'p' 'h' 'r'
         locrian     = Locrian    <$ leading3 'l' 'o' 'c' 
 
+--------------------------------------------------------------------------------
+-- Parse the text for the water and holes so we can fill the holes
+
+abcTextChunks :: TextChunkParser
+abcTextChunks = collectWaterAcc (metaOutput)
+  where 
+    metaOutput = (,,) <$> lexeme (symbol "%#") 
+                      <*> lexeme (symbol "output")
+                      <*> uptoNewline ""                    
+    
+    -- Important - must not consume the newline
+    -- Use direct recursion as 'many' parser can't be used 
+    -- (empty string restriction). 
+    uptoNewline cca = do 
+        at_end <- option False (True <$ eof) 
+        case at_end of
+          True -> return (reverse cca)
+          False -> optparse (satisfy (/='\n')) >>=
+                   maybe (return $ reverse cca) (\c -> uptoNewline (c:cca))  
+
+                   
     
 
 
 --------------------------------------------------------------------------------
 -- utility parsers  
 
+
+field :: Char -> Parser a -> Parser a
+field c p = (try $ lexeme (symbol [c,':'])) >> p
+
 -- Abc looks only at the first 3 characters of a mode specification     
 leading3 :: Char -> Char -> Char -> GenParser Char st String   
 leading3 a b c = lexeme $ try (caten <$> p a <*> p b <*> p c <*> many letter)
   where caten a b c xs = a:b:c:xs
         p a = choice [char a, char $ toUpper a] 
-        
-        
+
                 

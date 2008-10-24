@@ -54,6 +54,6 @@ V: 2 clef=bass
 X:7
 T:7. Same 'channel' parallelism (abcm2ps only)
 I:Uses voice overlay from the abc2 draft specification
-K: C
-M: 4/4
+K:C maj
+M:4/4
 %# output: example7
