@@ -46,9 +46,13 @@ type VoiceOverlayB = (Int, Duration, Seq Glyph)
 
 
 toNoteList :: Monad m => EventList -> NotateT m NoteList
-toNoteList evts = effectM2 fn (asks partial_measure) (asks measure_length)
-  where
-    fn partial len = eventsToNoteList len (fromMaybe duration_zero partial) evts
+toNoteList evts =
+    asks unmetered >>= \unm -> 
+    if unm then eventsToNoteListUnmetered evts
+           else asks partial_measure >>= \pm ->
+                asks bar_length      >>= \ml -> 
+                eventsToNoteList ml (fromMaybe duration_zero pm) evts
+              
 
 
 
@@ -66,6 +70,11 @@ eventsToNoteList bar_len partial_start =
                   . getEventList
 -}
 
+eventsToNoteListUnmetered :: Monad m => EventList -> NotateT m NoteList
+eventsToNoteListUnmetered = eventsToNoteList max_bar_len duration_zero
+  where max_bar_len = duration (maxBound::Int) 1
+  
+  
 eventsToNoteList :: Monad m => Duration -> Duration -> EventList 
                         -> NotateT m NoteList
 eventsToNoteList bar_len partial_start = 
@@ -74,15 +83,13 @@ eventsToNoteList bar_len partial_start =
                          <=< (o1 . untree bar_len partial_start) 
                          <=< (o0 . getEventList)
   where 
-    
     o0 = return
-    o1 = genWriteStep "Flattened representation... "    ppListVoiceOverlayB
-    o2 = genWriteStep "The flat rep partitioned..."     ppListSeqRawBar
-    o3 = genWriteStep "The bars in the onset queue..."  pretty
-    o4 = genWriteStep "Finally the note list..."        ppNoteList
+    o1 = document 5 "Flattened representation... "    ppListVoiceOverlayB
+    o2 = document 5 "The flat rep partitioned..."     ppListSeqRawBar
+    o3 = witness  5 "The bars in the onset queue..."  
+    o4 = witness  5 "Finally the note list..."       
     
 
-      
         
 -- 'untree' is the difficult bit of building a note list
 -- it flattens out the 'polyphony'
@@ -216,6 +223,5 @@ ppSeqRawBar = genFinger ppRawBar
 ppRawBar :: RawBar -> Doc
 ppRawBar (i,se) = tupled [int i, finger se] 
 
-ppNoteList :: NoteList -> Doc
-ppNoteList = pretty
+
 

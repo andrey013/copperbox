@@ -36,7 +36,7 @@ beamNoteList :: Monad m => NoteList -> NotateT m NoteList
 beamNoteList(NoteList se) = 
   return (\mp bar p -> NoteList $ fmap (beamBlock mp bar p) se)
     `ap` asks meter_pattern 
-    `ap` asks measure_length 
+    `ap` asks bar_length 
     `ap` asks partial_measure
 
 

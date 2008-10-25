@@ -19,11 +19,13 @@ import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
+import HNotate.NotateMonad
 import HNotate.ParserBase
 import HNotate.Pitch
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (many, optional, (<|>), empty)
+import Control.Monad
 import Control.Monad.Trans (liftIO)
 import Data.Char
 import Data.List (isPrefixOf)
@@ -33,16 +35,17 @@ import Data.Ratio
 import Text.ParserCombinators.Parsec hiding (space)
 
 
-
--- FilePath -> NotateT IO (Either ParseError [Expr])
 abcExprParse :: ExprParser
-abcExprParse file_path = 
-    abcFileParse file_path >>=
-    either (return . Left) (return . Right . translateAbcScore)  
-    
-abcFileParse :: FilePath -> NotateT IO (Either ParseError AbcScore)
-abcFileParse path = 
-    liftIO (readFile path) >>= return . parse parseAbc path . preprocessAbc
+abcExprParse path =  
+    (liftIO $ readFile path) >>= (o1 . preprocessAbc) 
+                             >>= (o2 . parse parseAbc path)
+                             >>= eitherSkM (o3 . translateAbcScore) 
+  where
+    o1 = textoutput 3 "Postprocessed Abc source..."
+    o2 = witness    3 "Parsed Abc source..."
+    o3 = witness    3 "Abc translated to expression representation..."
+
+       
 --------------------------------------------------------------------------------
 -- translate
 

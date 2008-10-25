@@ -1,4 +1,4 @@
-
+{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -10,7 +10,8 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined
 --
--- Debugging helpers - pretty printers of various internal formats.
+-- Debugging helpers - Pretty and Witness instances for 
+-- internal datatypes.
 --
 --------------------------------------------------------------------------------
 
@@ -21,6 +22,7 @@ import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
+import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
 import HNotate.OnsetQueue
 import HNotate.TemplateDatatypes
@@ -30,7 +32,25 @@ import qualified Data.Foldable as F
 import qualified Data.Map as Map
 import Data.Ratio
 import Text.PrettyPrint.Leijen
+import Text.ParserCombinators.Parsec (ParseError)
 
+
+
+--------------------------------------------------------------------------------
+-- Witnesses for external types
+instance Witness String where textrep = id
+
+instance Witness Int where textrep = show
+instance Witness Integer where textrep = show
+instance (Integral a, Show a) => Witness (Ratio a) where textrep = show
+
+instance (Witness a, Witness b) => Witness (Either a b) where
+  textrep (Left a)  = "Left:\n"  ++ textrep a
+  textrep (Right b) = "Right:\n" ++ textrep b
+  
+instance Witness ParseError where textrep = show
+
+    
 
 instance (Integral a, Pretty a) => Pretty (Ratio a) where
   pretty r = pretty (numerator r) <> char '%' <> pretty (denominator r)
@@ -50,11 +70,11 @@ instance Pretty Env where
       eline "label_set"         label_set         pretty          <$> 
       eline "current_meter"     current_meter     pretty          <$> 
       eline "meter_pattern"     meter_pattern     ppMeterPattern  <$>
-      eline "measure_length"    measure_length    ppDuration      <$>
+      eline "bar_length"        bar_length        ppDuration      <$>
       eline "unit_note_length"  unit_note_length  ppDuration      <$>
       eline "relative_pitch"    relative_pitch    pretty          <$>
       eline "partial_measure"   partial_measure   optPM           <$>
-      eline "cadenza"           cadenza           pretty          <$>
+      eline "unmetered"         unmetered         pretty          <$>
       eline "bar_number_check"  bar_number_check  pretty          <$>
       eline "score_comment"     score_comment     ppfun  
                   
@@ -67,7 +87,7 @@ instance Pretty Env where
       optPM (Just d)  = ppDuration d   
       optPM Nothing   = text "unspecified - full bar"             
 
-  
+instance Witness Env where textrep = wpretty . pretty
 
 --------------------------------------------------------------------------------
 -- NoteListDatatypes
@@ -76,7 +96,8 @@ instance Pretty Env where
 instance (Pretty e) => Pretty (NoteListF e) where
   pretty (NoteList se)        = genPunctuateSeq pretty line se
 
-
+instance (Pretty e) => Witness (NoteListF e) where
+  textrep = wpretty . pretty
 
 instance (Pretty e) => Pretty (BlockF e) where
   pretty (SingleBlock i e)    = measureNumber i <$> indent 4 (pretty e)
@@ -144,6 +165,9 @@ instance Pretty a => Pretty (OnsetQueue a) where
     where fn d (i,xs) = d <$> int i <+> text ":+" <+> list (map pretty xs)    
 
 
+instance Pretty a => Witness (OnsetQueue a) where
+  textrep = wpretty . pretty
+
 --------------------------------------------------------------------------------
 -- TemplateDatatypes
 
@@ -171,7 +195,9 @@ instance Pretty MetaBinding where
 instance Pretty AbcScore where
   pretty (AbcScore xs) = vsep $ map pretty xs
 
-  
+instance Witness AbcScore where textrep = wpretty . pretty
+
+
 -- X field gives the Int
 instance Pretty AbcTune where
   pretty (AbcTune n xs)         = 
@@ -193,6 +219,8 @@ instance Pretty AbcField where
 instance Pretty LyScore where
   pretty (LyScore xs) = vsep $ map pretty xs
  
+instance Witness LyScore where textrep = wpretty . pretty
+
   
 instance Pretty LyExpr where
   pretty (LyCmdBinding cmd)   = pretty cmd
@@ -223,7 +251,8 @@ instance Pretty Expr where
                                                 </> pretty e2)
                              <$> text ">>"
                                       
-          
+instance Witness [Expr] where
+  textrep = wpretty . vsep . map pretty
         
 instance Pretty OutputDirective where
   pretty (OutputDirective oscm name)  

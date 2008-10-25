@@ -70,6 +70,30 @@ effectM4 :: (Monad m) => (a -> b -> c -> d -> m e)
                             -> m a -> m b -> m c -> m d -> m e
 effectM4 m m1 m2 m3 m4 = do { a <- m1; b <- m2; c <- m3; d <- m4; m a b c d}
 
+--------------------------------------------------------------------------------
+-- variations on either - postprocessing with a success or failure continuation
+
+eitherSk :: (b -> c) -> Either a b -> Either a c
+eitherSk sk = either (Left . id)  (Right . sk)
+
+eitherSkM :: Monad m => (b -> m c) -> Either a b -> m (Either a c)
+eitherSkM sk = either (return . Left . id)  (\a -> sk a >>= return . Right)
+
+eitherSkM' :: Monad m => (b -> m (Either a c)) -> Either a b -> m (Either a c)
+eitherSkM' sk = either (return . Left . id)  (\a -> sk a >>= return)
+
+
+
+eitherFk :: (a -> z) -> Either a b -> Either z b
+eitherFk fk = either (Left . fk)  (Right . id)
+
+eitherFkM :: Monad m => (a -> m z) -> Either a b -> m (Either z b)
+eitherFkM sk = either (\a -> sk a >>= return . Left)  (return . Right . id)
+
+eitherFkM' :: Monad m => (a -> m (Either z b)) -> Either a b -> m (Either z b)
+eitherFkM' sk = either (\a -> sk a >>= return)  (return . Right . id)
+
+
 -- pairs
 fork :: (a -> b) -> (a,a) -> (b,b)
 fork f (a,b) = (f a, f b)
@@ -303,8 +327,8 @@ genFinger f = enclose (text "(|") (text "|)") . genPunctuateSeq f comma
 genPunctuateSeq :: (a -> Doc) -> Doc -> Seq a -> Doc
 genPunctuateSeq pp p = para phi empty
   where 
-    phi c (se,  d)  | null se        = pp c <> d 
-                    | otherwise      = pp c <> p <> d
+    phi c (se,  d)  | null se        = pp c </> d 
+                    | otherwise      = pp c <> p </> d
                    
                         
 

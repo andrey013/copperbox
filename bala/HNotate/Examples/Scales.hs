@@ -24,8 +24,8 @@ abc_output    = "out/abc-major-scales.abc"
 
 outputScales :: IO ()
 outputScales = do 
-    outputLilyPond major_scales     ly_template     ly_output
-    outputAbc      major_scales     abc_template    abc_output
+    outputLilyPond 3 major_scales     ly_template     ly_output
+    outputAbc      3 major_scales     abc_template    abc_output
 
   
     

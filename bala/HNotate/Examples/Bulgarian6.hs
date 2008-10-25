@@ -43,8 +43,8 @@ abc_output    = "out/abc-bulgarian6.abc"
 
 
 main = do 
-    outputLilyPond bulgarian6   ly_template   ly_output
-    outputAbc      bulgarian6   abc_template  abc_output
+    outputLilyPond 3 bulgarian6   ly_template   ly_output
+    outputAbc      3 bulgarian6   abc_template  abc_output
     
  
 

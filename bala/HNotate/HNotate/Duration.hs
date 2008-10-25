@@ -17,6 +17,8 @@ module HNotate.Duration (
     -- Data type
     Duration, 
     
+    duration,
+    
     -- particular durations
     duration_zero, no_duration,
     
@@ -63,7 +65,8 @@ import Text.PrettyPrint.Leijen hiding (dot)
 
 type Duration = Rational 
 
-
+duration :: Integral a => a -> a -> Duration
+duration n d = fromIntegral n % fromIntegral d
 
 duration_zero :: Duration
 duration_zero = 0

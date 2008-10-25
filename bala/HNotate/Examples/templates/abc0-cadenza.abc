@@ -1,8 +1,8 @@
 % abcm2ps abc-cadenza.abc -e 1 -O abc-cadenza.ps
 
+% for unmetered music don't state a meter field (M:) 
 X:1
 T:Cadenza
-M:none
 I:Cadenza - unmetered music
 L:1/4
 K:C maj

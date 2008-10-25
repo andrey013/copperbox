@@ -150,7 +150,7 @@ convExpr (Do o)       = HDo o
 convExpr (Fork e e')  = HFork (convExpr e) (convExpr e')
 
 convBinding :: Binding -> (Env -> Env)
-convBinding (LetCadenza b)        = set_cadenza b
+convBinding (LetCadenza b)        = set_unmetered b
 convBinding (LetKey k)            = set_current_key k
 convBinding (LetMeter m)          = set_current_meter m
 convBinding (LetMeterPattern mp)  = set_meter_pattern mp

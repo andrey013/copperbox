@@ -100,8 +100,8 @@ abc_output    = "out/abc-trees.abc"
 
 main :: IO ()
 main = do
-    outputAbc       example_sys  abc_template  abc_output
-    outputLilyPond  example_sys  ly_template   ly_output
+    outputAbc       3 example_sys  abc_template  abc_output
+    outputLilyPond  3 example_sys  ly_template   ly_output
     
 
  

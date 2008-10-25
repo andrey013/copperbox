@@ -53,35 +53,39 @@ import Text.PrettyPrint.Leijen hiding ( (<$>) )
 -- {NOTE} Some elements in the env have defaults
 -- that might be too arbitrary (e.g. meter pattern)
 
-outputLilyPond :: System -> FilePath -> FilePath -> IO ()
-outputLilyPond sys inpath outpath   = do 
-    (a,msg) <- runNotateT (generalOutput lyparsers) default_ly_env config 
+outputLilyPond :: Int -> System -> FilePath -> FilePath -> IO ()
+outputLilyPond dl sys inpath outpath   = do 
+    (a,msg) <- runNotateT outfun default_ly_env config 
     putStrLn msg
   where
-    config      = mkLyConfig sys inpath outpath
-    lyparsers   = (lyExprParse, lyTextChunks) 
+    config  = mkLyConfig dl sys inpath outpath
+    outfun  = generalOutput lyExprParse lyTextChunks 
     
-outputAbc :: System -> FilePath -> FilePath -> IO ()
-outputAbc sys inpath outpath        = do 
-    (a,msg) <- runNotateT (generalOutput abcparsers) default_abc_env config  
+outputAbc :: Int -> System -> FilePath -> FilePath -> IO ()
+outputAbc dl sys inpath outpath        = do 
+    (a,msg) <- runNotateT outfun default_abc_env config  
     putStrLn msg
   where
-    config      = mkAbcConfig sys inpath outpath
-    abcparsers  = (abcExprParse, abcTextChunks) 
+    config  = mkAbcConfig dl sys inpath outpath
+    outfun  = generalOutput abcExprParse abcTextChunks
     
 
 
 
-generalOutput :: (ExprParser, TextChunkParser) -> NotateT IO ()
-generalOutput (expr_parser, chunk_parser)  = do 
+generalOutput :: ExprParser -> TextChunkParser -> NotateT IO ()
+generalOutput expr_parser chunk_parser  = do 
     infile    <- asks_config _template_file
     cks       <- liftIO $ parseFromFile chunk_parser infile
-    either fault (step2 infile) cks
+    either (fault chunk_fail_msg) (step2 infile) cks
   where
-    fault err = error $ show err
+    chunk_fail_msg = "Failure running the 'chunk' parser..."
+    expr_fail_msg  = "Failure running the 'expression' parser..." 
+    
+    fault msg err = textoutput 0 msg (show err) >> return ()
+    
     step2 infile chks  =  do 
         exprs <- expr_parser infile
-        either fault (step3 chks) exprs
+        either (fault expr_fail_msg) (step3 chks) exprs
     
     step3 :: Seq TextChunk -> [Expr] ->  NotateT IO ()
     step3 chunks exprs = do
@@ -161,7 +165,7 @@ findEventList name = asks_config _system >>= \sys ->
 
 noteListOutput :: Monad m => EventList -> NotateT m NoteListOutput
 noteListOutput = 
-  abcly (toNoteList >=> translateAbc) (toNoteList >=> translateLilyPond)
+  abcly (toNoteList >=> translateAbc) (toNoteList >=> translateLilyPond) 
 
     
     

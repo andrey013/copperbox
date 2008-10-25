@@ -23,7 +23,9 @@ import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
 import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, gracenotes)
+import HNotate.NotateMonad
 import HNotate.Pitch
+import HNotate.PrettyInstances
 import HNotate.PrintAbc
 import HNotate.PrintMonad
 import HNotate.Transformations
@@ -44,10 +46,13 @@ import Text.PrettyPrint.Leijen (Doc, (<>), (<+>), text)
 
 
 translateAbc :: Monad m => NoteList -> NotateT m NoteListOutput
-translateAbc = printStep <=< beamNoteList <=< abcForm 
+translateAbc = fwd <=< printStep <=< beamNoteList <=< abcForm 
   where
     printStep = return . (execPrintM `flip` pmZero) . outputNoteList
-
+    
+    fwd m = ask >>= \env ->
+            witness 3 "Current environment is..." env >>
+            witness 3 "Abc output..." m
 
 
 

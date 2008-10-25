@@ -35,11 +35,11 @@ module HNotate.Env (
     current_meter,
     meter_pattern,
     label_set,
-    measure_length, 
+    bar_length, 
     unit_note_length, 
     relative_pitch,
     partial_measure,
-    cadenza,
+    unmetered,
     bar_number_check,
     score_comment,
     
@@ -50,7 +50,7 @@ module HNotate.Env (
     set_unit_note_length,
     set_relative_pitch,
     set_partial_measure,
-    set_cadenza,
+    set_unmetered,
     
     abcly
  ) where
@@ -84,11 +84,11 @@ data Env = Env {
     _label_set          :: LabelSet,
     _current_meter      :: Meter,
     _meter_pattern      :: MeterPattern,
-    _measure_length     :: Duration, 
+    _bar_length         :: Duration, 
     _unit_note_length   :: Duration, 
     _relative_pitch     :: Pitch,
     _partial_measure    :: Maybe Duration,
-    _cadenza            :: Bool,
+    _unmetered          :: Bool,
     _bar_number_check   :: Int,
     _score_comment      :: String -> Doc
   }
@@ -96,10 +96,15 @@ data Env = Env {
 
 data Config = Config { 
     _system         :: System,
+    _debug_level    :: Int,
     _template_file  :: FilePath,
     _output_file    :: FilePath
     }
   deriving Show
+
+instance DebugLevel Config where 
+    debug_level  = _debug_level
+
 
 -- Type specialization now that we have the Env and Config
 type NotateT m a = NotateMonadT Env Config m a
@@ -121,11 +126,11 @@ default_ly_env = Env {
     _label_set              = c_major'ls,
     _current_meter          = four_four,
     _meter_pattern          = four_four_of_eighth,
-    _measure_length         = 4 * quarter,
+    _bar_length             = 4 * quarter,
     _unit_note_length       = quarter,
     _relative_pitch         = middle_c,
     _partial_measure        = Nothing,
-    _cadenza                = False,
+    _unmetered              = False,
     _bar_number_check       = 4,
     _score_comment          = lyComment
   }
@@ -140,11 +145,11 @@ default_abc_env = Env {
     _label_set              = c_major'ls,
     _current_meter          = four_four,
     _meter_pattern          = four_four_of_eighth,
-    _measure_length         = 4 * quarter,
+    _bar_length             = 4 * quarter,
     _unit_note_length       = eighth,
     _relative_pitch         = middle_c,
     _partial_measure        = Nothing,
-    _cadenza                = False,
+    _unmetered              = True,         -- Abc must start with cadenza on
     _bar_number_check       = 4,
     _score_comment          = abcComment
   }
@@ -152,16 +157,18 @@ default_abc_env = Env {
     abcComment str = line <> char '%' <+> string str <> line
     
 
-mkLyConfig :: System -> FilePath -> FilePath -> Config
-mkLyConfig sys template outfile = Config { 
-    _system         = sys,     
+mkLyConfig :: Int -> System -> FilePath -> FilePath -> Config
+mkLyConfig dl sys template outfile = Config { 
+    _system         = sys,
+    _debug_level    = dl,     
     _template_file  = template,
     _output_file    = outfile
     }
 
-mkAbcConfig :: System -> FilePath -> FilePath -> Config
-mkAbcConfig sys template outfile = Config { 
-    _system         = sys,     
+mkAbcConfig :: Int -> System -> FilePath -> FilePath -> Config
+mkAbcConfig dl sys template outfile = Config { 
+    _system         = sys,
+    _debug_level    = dl,      
     _template_file  = template,
     _output_file    = outfile
     }
@@ -185,8 +192,8 @@ label_set           = _label_set
 meter_pattern       :: Env -> MeterPattern
 meter_pattern       = _meter_pattern
 
-measure_length      :: Env -> Duration
-measure_length      = _measure_length
+bar_length          :: Env -> Duration
+bar_length          = _bar_length
 
 unit_note_length    :: Env -> Duration
 unit_note_length    = _unit_note_length
@@ -199,8 +206,8 @@ relative_pitch      = _relative_pitch
 partial_measure     :: Env -> Maybe Duration
 partial_measure     = _partial_measure
 
-cadenza             :: Env -> Bool
-cadenza             = _cadenza
+unmetered           :: Env -> Bool
+unmetered           = _unmetered
 
 bar_number_check    :: Env -> Int
 bar_number_check    = _bar_number_check
@@ -229,15 +236,15 @@ set_current_meter m env@(Env {_output_format=Output_Abc})  =
     if (meterToDouble m > 0.75) 
        then env {_current_meter     = m, 
                  _unit_note_length  = eighth, 
-                 _measure_length    = measureLength m,
-                 _cadenza           = False}
+                 _bar_length        = barLength m,
+                 _unmetered         = False}
        else env {_current_meter     = m, 
                  _unit_note_length  = sixteenth,
-                 _measure_length    = measureLength m,
-                 _cadenza           = False}
+                 _bar_length        = barLength m,
+                 _unmetered         = False}
 
 set_current_meter m env       =  
-      env {_current_meter = m, _measure_length = measureLength m}         
+      env {_current_meter = m, _bar_length = barLength m}         
 
 
 set_meter_pattern             :: MeterPattern -> Env -> Env
@@ -252,13 +259,13 @@ set_relative_pitch p env      = env {_relative_pitch = p}
 set_partial_measure           :: Duration -> Env -> Env
 set_partial_measure d env     = env {_partial_measure = Just d}
 
-set_cadenza                   :: Bool -> Env -> Env
-set_cadenza a env             = env {_cadenza = a}
+set_unmetered                 :: Bool -> Env -> Env
+set_unmetered a env           = env {_unmetered = a}
       
-measureLength :: Meter -> Duration
-measureLength (TimeSig n d)   = convRatio $ n%d
-measureLength CommonTime      = 4%4
-measureLength CutTime         = 2%2
+barLength :: Meter -> Duration
+barLength (TimeSig n d)   = convRatio $ n%d
+barLength CommonTime      = 4%4
+barLength CutTime         = 2%2
 
 
 --------------------------------------------------------------------------------

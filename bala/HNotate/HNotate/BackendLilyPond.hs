@@ -22,8 +22,10 @@ module HNotate.BackendLilyPond (
 import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
+import HNotate.NotateMonad
 import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, gracenotes)
 import HNotate.Pitch
+import HNotate.PrettyInstances
 import HNotate.PrintLy
 import HNotate.PrintMonad
 import HNotate.Traversals
@@ -41,10 +43,13 @@ import Text.PrettyPrint.Leijen (Doc, char)
   
 
 translateLilyPond :: Monad m => NoteList -> NotateT m NoteListOutput
-translateLilyPond = printStep <=< lilypondRelativeForm
+translateLilyPond = fwd <=< printStep <=< lilypondRelativeForm
   where
     printStep = return . (execPrintM `flip` pmZero) . outputNoteList
-
+    
+    fwd m = ask >>= \env ->
+            witness 3 "Current environment is..." env >>
+            witness 3 "LilyPond output..." m
 
 updatePitch st p = st { rel_pitch = p }
 

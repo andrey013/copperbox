@@ -79,34 +79,37 @@ runNotateMonadT m env cfg =
     
 
 -- Specialized printers 
+
+class DebugLevel cfg where debug_level :: cfg -> Int
   
-output :: Monad m => Doc -> NotateMonadT env cfg m ()
-output d = tell $ displayS (renderPretty 0.4 80 d) ""
+class Witness a where textrep :: a -> String
 
-writePretty :: (Monad m, Pretty a) => String -> a -> NotateMonadT env cfg m a
-writePretty title = genWriteStep title pretty 
+instance Witness Doc where textrep = wpretty
 
-writeShow :: (Monad m, Show a) => String -> a -> NotateMonadT env cfg m a
-writeShow title = genWriteStep title (string . show)
+wpretty :: Doc -> String 
+wpretty = (displayS `flip` "") . renderPretty 0.8 80
 
+
+primOutput :: (Monad m, DebugLevel cfg) => Int -> String -> NotateMonadT env cfg m ()
+primOutput i s = do 
+  x <- asks_config debug_level
+  when (i <= x) (tell s >> tell "\n")
     
-genWriteStep :: Monad m =>  String -> (a -> Doc) -> a -> NotateMonadT env cfg m a
-genWriteStep title pp a = do 
-    tell $ title ++ "\n"
-    output (pp a <$> empty <$> empty)
-    return a 
 
 
-writePrettyM :: (Monad m, Pretty a) => String -> m a -> NotateMonadT env cfg m a
-writePrettyM title = genWriteStepM title pretty
+witness :: (Monad m, DebugLevel cfg, Witness a) => 
+           Int -> String -> a -> NotateMonadT env cfg m a 
+witness i s a = primOutput i s >> primOutput i (textrep a) >> return a
 
-writeShowM :: (Monad m, Show a) => String -> m a -> NotateMonadT env cfg m a
-writeShowM title = genWriteStepM title (string . show)
+steno :: (Monad m, DebugLevel cfg) => 
+           Int -> String -> (a -> String) -> a -> NotateMonadT env cfg m a 
+steno i s f a = primOutput i s >> primOutput i (f a) >> return a
 
-     
-genWriteStepM :: Monad m => String -> (a -> Doc) -> m a -> NotateMonadT env cfg m a
-genWriteStepM title pp m = do 
-    tell $ title ++ "\n"
-    a <- lift $ m
-    output (pp a <$> empty <$> empty)
-    return a
+document :: (Monad m, DebugLevel cfg) => 
+           Int -> String -> (a -> Doc) -> a -> NotateMonadT env cfg m a 
+document i s f a = primOutput i s >> primOutput i (wpretty $ f a) >> return a
+
+textoutput :: (Monad m, DebugLevel cfg) => 
+              Int -> String -> String ->  NotateMonadT env cfg m String
+textoutput i title a = primOutput i title >>  primOutput i a >> return a
+

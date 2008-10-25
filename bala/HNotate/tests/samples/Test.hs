@@ -62,8 +62,8 @@ outputTestScore ts = do
     putDashedLine
     putStrLn (message ts)
     putDashedLine
-    outputAbc      (ts_system ts)   (abc_template ts)  (abc_outfile ts)
-    outputLilyPond (ts_system ts)   (ly_template ts)   (ly_outfile ts)
+    outputAbc      3 (ts_system ts)   (abc_template ts)  (abc_outfile ts)
+    outputLilyPond 3 (ts_system ts)   (ly_template ts)   (ly_outfile ts)
     runAbcOn       (abc_outfile ts)
     runLilyPondOn  (ly_outfile ts)
 

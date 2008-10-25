@@ -24,8 +24,8 @@ cadenzaAbc = system1 "cadenza" (notelist notes quarter)
 abc_template   = "templates/abc0-cadenza.abc"
 abc_output     = "out/abc-cadenza.abc" 
 
-outputCadenza :: IO ()
-outputCadenza = do
-    outputLilyPond cadenzaLy   ly_template   ly_output
-    outputAbc      cadenzaAbc  abc_template  abc_output
+main :: IO ()
+main = do
+    outputLilyPond 5 cadenzaLy   ly_template   ly_output
+    outputAbc      5 cadenzaAbc  abc_template  abc_output
     

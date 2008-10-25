@@ -19,6 +19,7 @@ import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env (NotateT)
 import HNotate.MusicRepDatatypes
+import HNotate.NotateMonad
 import HNotate.ParserBase
 import HNotate.Pitch
 import HNotate.TemplateDatatypes
@@ -30,19 +31,15 @@ import Data.Sequence hiding (reverse)
 import Text.ParserCombinators.Parsec hiding (space)
 
 
--- FilePath -> NotateT IO (Either ParseError [Expr])
 lyExprParse :: ExprParser
-lyExprParse file_path = 
-    lilyPondFileParse file_path >>=
-    either (return . Left) (return . Right . translateLyScore)  
-
-
-
-lilyPondFileParse :: FilePath -> NotateT IO (Either ParseError LyScore)
-lilyPondFileParse file_path = 
-    liftIO (parseFromFile lilypondPreprocess file_path)   >>= 
-    either (return . Left) (return . parse lyScore file_path)
-    
+lyExprParse path = 
+    liftIO (parseFromFile lilypondPreprocess path)   >>= o1 >>=
+    eitherSkM' (return . parse lyScore path)         >>= o2 >>= 
+    eitherSkM  (return . translateLyScore)           >>= o3 
+  where
+    o1 = witness 3 "Postprocessed LilyPond source..."
+    o2 = witness 3 "Parsed LilyPond source..."
+    o3 = witness 3 "LilyPond translated to expression representation..."
     
 --------------------------------------------------------------------------------
 -- translate
@@ -55,7 +52,6 @@ transExprs :: [LyExpr] -> Maybe Expr
 transExprs xs = tree xs id where 
   tree []                         k = k Nothing
   
- 
   tree [LyOutput mo]              k = k $ Just (Do (transMetaOutput mo))
   -- last element - 'prune' the tree if it is a binding
   tree [LyCmdBinding _]           k = k Nothing
