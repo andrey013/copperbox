@@ -56,10 +56,14 @@ type TextChunk = (String, Maybe SrcPos)
 data MetaOutput  = MetaOutput (Maybe OutputScheme) String
   deriving (Eq,Show)
 
--- Common to both - directives that have no direct representation
--- in Abc or LilyPond.
--- e.g __ %# meter_pattern: 2+2+2/8 __ 
+-- Directives specified in meta-comments.
+-- Some are common to both Abc or LilyPond - directives that have 
+-- no direct representation, e.g __ %# meter_pattern: 2+2+2/8 __
+-- Others are representable in one format but not the other, 
+-- e.g. anacrusis (\partial) is representable in LilyPond but not
+-- Abc.
 data MetaBinding = MetaMeterPattern MeterPattern
+                 | MetaPartial Duration
   deriving (Eq,Show)
   
    
@@ -75,8 +79,10 @@ data AbcExpr = AbcFieldBinding AbcField
              | AbcMetaBinding MetaBinding   -- shared with LilyPond
              | AbcOutput MetaOutput
   deriving (Eq,Show)             
-             
-data AbcField = AbcKey Key
+
+-- Note a keyfield isn't guarenteed to have a key signature
+-- it might have a clef designation instead.              
+data AbcField = AbcKey (Maybe Key) 
               | AbcMeter Meter
   deriving (Eq,Show)
 
@@ -162,7 +168,8 @@ transMetaOutput :: MetaOutput -> OutputDirective
 transMetaOutput (MetaOutput oscm name) = OutputDirective oscm name
  
 transMetaBinding :: MetaBinding -> Binding 
-transMetaBinding (MetaMeterPattern mp) = LetMeterPattern mp
+transMetaBinding (MetaMeterPattern mp)  = LetMeterPattern mp
+transMetaBinding (MetaPartial d)        = LetPartial d
                 
 
 

@@ -189,8 +189,11 @@ instance Pretty MetaOutput where
 
 -- shared with LilyPond  
 instance Pretty MetaBinding where
-  pretty (MetaMeterPattern mp)  = bananas body
-    where body      = text "~meter_pattern" <> colon <+> pretty mp
+  pretty (MetaMeterPattern mp)  = metabind "meter_pattern" (pretty mp)
+  pretty (MetaPartial d)        = metabind "partial" (pretty d)
+
+metabind :: String -> Doc -> Doc  
+metabind name d = bananas $ text ('~':name) <> colon <+> d  
   
 instance Pretty AbcScore where
   pretty (AbcScore xs) = vsep $ map pretty xs

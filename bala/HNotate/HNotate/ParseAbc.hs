@@ -28,7 +28,7 @@ import Control.Applicative hiding (many, optional, (<|>), empty)
 import Control.Monad
 import Control.Monad.Trans (liftIO)
 import Data.Char
-import Data.List (isPrefixOf)
+import Data.List (isPrefixOf, intersperse)
 import Data.Maybe (catMaybes)
 import Data.Sequence hiding (reverse)
 import Data.Ratio
@@ -92,8 +92,9 @@ transExprs xs = tree xs id where
 
              
 transAbcField :: AbcField -> Binding
-transAbcField (AbcKey key) = LetKey key
-transAbcField (AbcMeter m) = LetMeter m
+transAbcField (AbcKey (Just key)) = LetKey key
+transAbcField (AbcKey Nothing)    = LetNone
+transAbcField (AbcMeter m)        = LetMeter m
 
 
 
@@ -105,7 +106,7 @@ transAbcField (AbcMeter m) = LetMeter m
 -- aren't on their own line
 preprocessAbc :: String -> String
 preprocessAbc = 
-    unlines . filter (`isPrefixedBy` abc_prefixes) . lines
+    unlines . map (++ ";") . filter (`isPrefixedBy` abc_prefixes) . lines
   where
     isPrefixedBy ss pres = any (`isPrefixOf` ss) pres  
     
@@ -134,39 +135,52 @@ fieldUpdate = AbcFieldBinding <$> choice
     [ keyField, meterField]
     
 keyField :: Parser AbcField
-keyField = AbcKey <$> field 'K' keySig
+keyField = AbcKey <$> field 'K' (keySig <|> badKeySig)
     
 meterField :: Parser AbcField
 meterField = AbcMeter <$> field 'M' timeSig
   
 metaExpr :: Parser AbcExpr
-metaExpr = (try $ symbol "%#") >> choice [abcOutputDef, abcMeterPattern]
+metaExpr = (try $ symbol "%#") *> metas <* symbol ";"
   where
-    abcOutputDef      = AbcOutput <$> metaOutput
+    metas             = choice [abcOutputDef, abcMeterPattern, abcPartial]
+    
+    abcOutputDef      = AbcOutput      <$> metaOutput
     abcMeterPattern   = AbcMetaBinding <$> metaMeterPattern
+    abcPartial        = AbcMetaBinding <$> metaPartial
     
 
 
 
-timeSig :: GenParser Char st Meter
+timeSig :: Parser Meter
 timeSig = TimeSig <$> int <*> (char '/' *> int)
 
 
 -- TODO accidentals 
 -- see ABC 2.0 spec - Klezmer (Ahavoh Rabboh) / Arabic music (Maqam Hedjaz)
 
--- This has an error - might consume characters from the next line...
--- "K:C \nM:4/4" -- the M for meter will be consumed as M for minor 
-keySig :: GenParser Char st Key
-keySig = (\(Pitch l a _) m -> Key (PitchLabel l a) m) 
-    <$> lexeme abcPitch <*> option Major abcMode
+-- K:<tonic> <mode> <accidentals>
+-- Key fields may also have clef designators
+keySig :: Parser (Maybe Key)
+keySig = (\(Pitch l a _) m -> Just $ Key (PitchLabel l a) m) 
+    <$> lexeme abcPitch <*> (option Major abcMode <* optionMaybe clefDesignator)
 
+-- Key fields might only have designators
+badKeySig :: Parser (Maybe Key)
+badKeySig = Nothing <$ clefDesignator 
 
-abcDuration :: GenParser Char st Duration
+clefDesignator :: Parser  ()
+clefDesignator = () <$ (try clefstart *> stringTill (symbol ";"))
+  where
+    clefstart = choice $ map symbol $
+      [ "treble", "alto", "tenor", "bass", "perc", "none",
+        "+8", "-8" , "transpose", "middle" ]
+
+abcDuration :: Parser Duration
 abcDuration = (\n d -> convRatio (n%d)) <$> int <*> (char '/' *> int)
 
 
-abcPitch :: GenParser Char st Pitch
+abcPitch :: Parser Pitch
 abcPitch = build <$> abcAccidental <*> basenote <*> octaveDiff
   where build a (i,nt) od  = Pitch nt a (i + od)
 
@@ -180,7 +194,7 @@ abcPitch = build <$> abcAccidental <*> basenote <*> octaveDiff
 -- c, or C' shouldn't occur in Abc files but will be normalized anyway
 
 
-basenote :: GenParser Char st (Int,PitchLetter)
+basenote :: Parser (Int,PitchLetter)
 basenote = build <$> satisfy ((flip elem) "CDEFGABcdefgab")
   where build ch        = (octave ch, letter $ toUpper ch)
         octave ch       = if isUpper ch then 4 else 5
@@ -190,7 +204,7 @@ basenote = build <$> satisfy ((flip elem) "CDEFGABcdefgab")
         letter 'G'      = G;   letter 'A'       = A;
         letter 'B'      = B;   letter _         = error "bassenote"
 
-abcAccidental :: GenParser Char st Accidental
+abcAccidental :: Parser Accidental
 abcAccidental = option Nat (choice [dblSharp, sharp, dblFlat, flat, natural])
   where dblSharp = DoubleSharp <$ string "^^" 
         sharp    = Sharp       <$ string "^"  
@@ -198,13 +212,13 @@ abcAccidental = option Nat (choice [dblSharp, sharp, dblFlat, flat, natural])
         flat     = Flat        <$ string "_"  
         natural  = Nat         <$ string "="
         
-octaveDiff :: GenParser Char st Int    
+octaveDiff :: Parser Int    
 octaveDiff = option 0 (choice [octaveLow, octaveHigh])
   where octaveLow   = negate  <$> counting1 (char ',')
         octaveHigh  = counting1 (char '\'')
         
         
-abcMode :: GenParser Char st Mode
+abcMode :: Parser Mode
 abcMode = choice 
     [ major, lydian, ionian, mixolydian, dorian, aeolian, phrygian, locrian, 
       minor {- minor must be last - to respect longest match -} 
@@ -223,8 +237,9 @@ abcMode = choice
 --------------------------------------------------------------------------------
 -- Parse the text for the water and holes so we can fill the holes
 
+-- must use try on metaOutput to get backtrack
 abcTextChunks :: TextChunkParser
-abcTextChunks = collectWaterAcc (metaOutput)
+abcTextChunks = collectWaterAcc (try metaOutput)
   where 
     metaOutput = (,,) <$> lexeme (symbol "%#") 
                       <*> lexeme (symbol "output")
@@ -237,7 +252,7 @@ abcTextChunks = collectWaterAcc (metaOutput)
         at_end <- option False (True <$ eof) 
         case at_end of
           True -> return (reverse cca)
-          False -> optparse (satisfy (/='\n')) >>=
+          False -> optionMaybe (satisfy (/='\n')) >>=
                    maybe (return $ reverse cca) (\c -> uptoNewline (c:cca))  
 
                    
@@ -249,10 +264,10 @@ abcTextChunks = collectWaterAcc (metaOutput)
 
 
 field :: Char -> Parser a -> Parser a
-field c p = (try $ lexeme (symbol [c,':'])) >> p
+field c p = (try $ lexeme (symbol [c,':'])) *> p <* symbol ";"
 
 -- Abc looks only at the first 3 characters of a mode specification     
-leading3 :: Char -> Char -> Char -> GenParser Char st String   
+leading3 :: Char -> Char -> Char -> Parser String   
 leading3 a b c = lexeme $ try (caten <$> p a <*> p b <*> p c <*> many letter)
   where caten a b c xs = a:b:c:xs
         p a = choice [char a, char $ toUpper a] 

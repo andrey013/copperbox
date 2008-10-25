@@ -55,7 +55,7 @@ instance Applicative (GenParser tok st) where
 
 metaOutput :: Parser MetaOutput
 metaOutput = MetaOutput
-    <$> (directive "output" *> optparse outputCommand) <*> identifier 
+    <$> (directive "output" *> optionMaybe outputCommand) <*> identifier 
   where 
     outputCommand = cmdrelative <|> cmddefault
     cmdrelative   = OutputRelative <$ command "relative"   
@@ -66,12 +66,22 @@ metaMeterPattern :: Parser MetaBinding
 metaMeterPattern = MetaMeterPattern
     <$> (directive "meter_pattern" *> meterPattern)
 
+
+metaPartial :: Parser MetaBinding
+metaPartial = MetaPartial
+    <$> (directive "partial" *> eqnDuration)
+
+
 meterPattern :: Parser MeterPattern
 meterPattern = (,) <$> sepBy1 int plus <*> (slash *> simpleDuration)
   where 
     plus  = symbol "+"  
     slash = symbol "/"  
-    
+
+eqnDuration :: Parser Duration
+eqnDuration = (\n d mul -> (n%d) * (mul%1)) 
+  <$> integer <*> (symbol "%" *> integer) 
+              <*> option 1 (symbol "*" *> integer)
 
 simpleDuration :: Parser Duration
 simpleDuration = (convRatio . (1%)) <$> int 
@@ -103,7 +113,7 @@ collectWaterAcc :: GenParser Char st a -> GenParser Char st (Seq TextChunk)
 collectWaterAcc p = step empty "" <?> "collectWaterAcc"
   where 
     step se retaw = do
-      a <- optparse $ eitherparse (eof <?> "") (withPos p)    
+      a <- optionMaybe $ eitherparse (eof <?> "") (withPos p)    
       case a of
           -- Eof
         Just (Left _)         -> return $ se |> (reverse retaw, Nothing)
@@ -121,7 +131,18 @@ withPos p = (,) <$> sourcePosition <*> p
     
 --------------------------------------------------------------------------------
 -- Utility functions
-     
+
+-- pushBack - parse input, put the consumed input back on the input stream,
+-- return the answer. 
+pushBack :: GenParser Char st a -> GenParser Char st a
+pushBack p = do
+  s   <- getInput 
+  ans <- p
+  setInput s
+  return ans  
+  
+stringTill :: GenParser Char st a -> GenParser Char st String
+stringTill p = manyTill anyChar (pushBack p)    
               
 sourcePosition :: GenParser Char st SrcPos
 sourcePosition = makeSrcPos <$> getPosition
@@ -164,12 +185,6 @@ counting1 :: GenParser Char st a -> GenParser Char st Int
 counting1 p = length <$> many1 p
 
 
-
--- | An alternative to Parsec's @option@ parser. Whereas option returns a 
--- default value if the parse fails, optparse wraps success and failure in
--- a Maybe.
-optparse :: GenParser Char st a -> GenParser Char st (Maybe a)
-optparse p = option Nothing (try $ Just <$> p)
 
 -- | Wrap Parser's alterative (\<|\>) combinator with the Either type to 
 -- get different types for the left and right parse.

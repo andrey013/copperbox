@@ -97,7 +97,7 @@ lyExprList = lyBeginNest *> directRecur lyExpr [] <* lyEndNest
 
 directRecur :: GenParser Char st a -> [a] -> GenParser Char st [a]
 directRecur p cca = 
-    optparse p >>= maybe (return $ reverse cca) (\a -> directRecur p (a:cca))
+    optionMaybe p >>= maybe (return $ reverse cca) (\a -> directRecur p (a:cca))
 
 lyExpr :: Parser LyExpr
 lyExpr = choice [lyNestExpr, lyBinding, lyMetaExpr ]
@@ -156,7 +156,7 @@ waterManyS :: GenParser Char st ShowS -> GenParser Char st ShowS
 waterManyS p = step id <?> "waterAcc"
   where 
     step fn = do
-      a <- optparse (eitherparse (eof <?> "") p)    
+      a <- optionMaybe (eitherparse (eof <?> "") p)    
       case a of
         Just (Left _) -> return $ fn
         Just (Right f) -> step (fn . showChar ' ' . f)
@@ -298,7 +298,7 @@ lyAccidental = option Nat (f <$> longestString accidentals)
 lyDuration :: GenParser Char st Duration
 lyDuration = 
     build <$> rootDuration <*> (counting $ symbol ".") 
-                           <*> optparse (symbol "*" *> fractionalPart)
+                           <*> optionMaybe (symbol "*" *> fractionalPart)
   where
     build d dc Nothing  = dotn dc d
     build d dc (Just r) = (dotn dc d) * r
@@ -315,8 +315,9 @@ rootDuration = choice [pBreve, pLonga, pNumericDuration]
 --------------------------------------------------------------------------------
 -- Parse the text for the water and holes so we can fill the holes
 
+-- must use try on metaOutput to get backtrack
 lyTextChunks :: TextChunkParser
-lyTextChunks = collectWaterAcc metaOutput
+lyTextChunks = collectWaterAcc (try metaOutput)
   where 
     metaOutput = (,,) <$> lexeme (symbol "%{#")
                       <*> lexeme (symbol "output")
