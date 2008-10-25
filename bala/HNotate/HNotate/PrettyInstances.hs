@@ -73,7 +73,7 @@ instance Pretty Env where
       eline "bar_length"        bar_length        ppDuration      <$>
       eline "unit_note_length"  unit_note_length  ppDuration      <$>
       eline "relative_pitch"    relative_pitch    pretty          <$>
-      eline "partial_measure"   partial_measure   optPM           <$>
+      eline "anacrusis"         anacrusis         optAnacrusis    <$>
       eline "unmetered"         unmetered         pretty          <$>
       eline "bar_number_check"  bar_number_check  pretty          <$>
       eline "score_comment"     score_comment     ppfun  
@@ -84,8 +84,8 @@ instance Pretty Env where
       
       ppfun        = const $ text "<fun>"
       
-      optPM (Just d)  = ppDuration d   
-      optPM Nothing   = text "unspecified - full bar"             
+      optAnacrusis (Just d)  = ppDuration d   
+      optAnacrusis Nothing   = text "none"             
 
 instance Witness Env where textrep = wpretty . pretty
 

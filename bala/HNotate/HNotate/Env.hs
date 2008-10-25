@@ -38,18 +38,21 @@ module HNotate.Env (
     bar_length, 
     unit_note_length, 
     relative_pitch,
-    partial_measure,
+    anacrusis,
     unmetered,
     bar_number_check,
     score_comment,
     
+    -- computed values
+    anacrusisDisplacement,
+        
     -- Env update
     set_current_key,
     set_current_meter,
     set_meter_pattern,
     set_unit_note_length,
     set_relative_pitch,
-    set_partial_measure,
+    set_anacrusis,
     set_unmetered,
     
     abcly
@@ -62,10 +65,11 @@ import HNotate.NotateMonad
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
 
+import Control.Applicative 
 import Control.Monad.Reader
 import Data.Maybe (fromMaybe)
 import Data.Ratio
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen hiding ( (<$>) )
 
 --------------------------------------------------------------------------------
 -- Datatypes
@@ -87,7 +91,7 @@ data Env = Env {
     _bar_length         :: Duration, 
     _unit_note_length   :: Duration, 
     _relative_pitch     :: Pitch,
-    _partial_measure    :: Maybe Duration,
+    _anacrusis          :: Maybe Duration,
     _unmetered          :: Bool,
     _bar_number_check   :: Int,
     _score_comment      :: String -> Doc
@@ -111,7 +115,10 @@ type NotateT m a = NotateMonadT Env Config m a
 
 runNotateT :: Monad m => NotateT m a -> Env -> Config -> m (a,String)
 runNotateT = runNotateMonadT
- 
+
+instance (Monad m ) => Applicative (NotateMonadT Env Config m) where
+  pure = return
+  (<*>) = ap
 
 instance Show (String -> Doc) where
   show _ = "<<function>>"  
@@ -129,7 +136,7 @@ default_ly_env = Env {
     _bar_length             = 4 * quarter,
     _unit_note_length       = quarter,
     _relative_pitch         = middle_c,
-    _partial_measure        = Nothing,
+    _anacrusis              = Nothing,
     _unmetered              = False,
     _bar_number_check       = 4,
     _score_comment          = lyComment
@@ -148,7 +155,7 @@ default_abc_env = Env {
     _bar_length             = 4 * quarter,
     _unit_note_length       = eighth,
     _relative_pitch         = middle_c,
-    _partial_measure        = Nothing,
+    _anacrusis              = Nothing,
     _unmetered              = True,         -- Abc must start with cadenza on
     _bar_number_check       = 4,
     _score_comment          = abcComment
@@ -201,10 +208,8 @@ unit_note_length    = _unit_note_length
 relative_pitch      :: Env -> Pitch
 relative_pitch      = _relative_pitch
 
--- Note for a partial measure Abc just prints the barline 'early',
--- LilyPond needs the partial command.
-partial_measure     :: Env -> Maybe Duration
-partial_measure     = _partial_measure
+anacrusis           :: Env -> Maybe Duration
+anacrusis           = _anacrusis
 
 unmetered           :: Env -> Bool
 unmetered           = _unmetered
@@ -216,8 +221,15 @@ score_comment       :: Env -> (String -> Doc)
 score_comment       = _score_comment
 
 
-
-
+-- LilyPond's \partial command gives the duration of the notes in 
+-- the anacrusis (the zeroth bar).
+-- For our purposes we need to know the 'start point' in the zeroth bar.  
+anacrusisDisplacement :: Monad m => NotateT m Duration
+anacrusisDisplacement = anaDisp <$> asks _anacrusis <*> asks _bar_length
+  where
+    anaDisp :: Maybe Duration -> Duration -> Duration
+    anaDisp Nothing      _    = duration_zero
+    anaDisp (Just acsis) blen = blen - acsis
 
 
 
@@ -256,8 +268,8 @@ set_unit_note_length d  env   = env {_unit_note_length = d}
 set_relative_pitch            :: Pitch -> Env -> Env
 set_relative_pitch p env      = env {_relative_pitch = p}
 
-set_partial_measure           :: Duration -> Env -> Env
-set_partial_measure d env     = env {_partial_measure = Just d}
+set_anacrusis                 :: Duration -> Env -> Env
+set_anacrusis d env           = env {_anacrusis = Just d}
 
 set_unmetered                 :: Bool -> Env -> Env
 set_unmetered a env           = env {_unmetered = a}
@@ -266,6 +278,9 @@ barLength :: Meter -> Duration
 barLength (TimeSig n d)   = convRatio $ n%d
 barLength CommonTime      = 4%4
 barLength CutTime         = 2%2
+
+
+
 
 
 --------------------------------------------------------------------------------

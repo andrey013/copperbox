@@ -37,20 +37,20 @@ beamNoteList(NoteList se) =
   return (\mp bar p -> NoteList $ fmap (beamBlock mp bar p) se)
     `ap` asks meter_pattern 
     `ap` asks bar_length 
-    `ap` asks partial_measure
+    `ap` anacrusisDisplacement
 
 
-beamBlock :: MeterPattern -> Duration -> Maybe Duration -> Block -> Block
-beamBlock mp bar_len partial_len blk = case blk of
+beamBlock :: MeterPattern -> Duration -> Duration -> Block -> Block
+beamBlock mp bar_len acis blk = case blk of
     SingleBlock i bar -> SingleBlock i (block i bar)  
     PolyBlock i bars  -> PolyBlock i (fmap (block i) bars)
   where
-    block i bar | i == 0 && isJust partial_len  
-                            = beamPartialBar mp (fromJust partial_len) bar
+    block i bar | i == 0 && acis /= duration_zero
+                            = beamPartialBar mp acis bar
                 | otherwise = beamBar mp bar
     
 beamPartialBar :: MeterPattern -> Duration -> Bar -> Bar
-beamPartialBar mp partial = beam (shortenMP partial mp)
+beamPartialBar mp acis = beam (shortenMP acis mp)
 
 beamBar :: MeterPattern -> Bar -> Bar
 beamBar mp = beam mp

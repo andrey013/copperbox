@@ -49,26 +49,13 @@ toNoteList :: Monad m => EventList -> NotateT m NoteList
 toNoteList evts =
     asks unmetered >>= \unm -> 
     if unm then eventsToNoteListUnmetered evts
-           else asks partial_measure >>= \pm ->
-                asks bar_length      >>= \ml -> 
-                eventsToNoteList ml (fromMaybe duration_zero pm) evts
+           else asks bar_length         >>= \ml -> 
+                anacrusisDisplacement   >>= \acis ->
+                eventsToNoteList ml acis evts
               
 
 
 
-{-
-
--- The outputtter o0..o4 and right left kleisli (<=<) are just
--- noise over composition.
--- This is the non monadic version...
-
-eventsToNoteList :: Duration -> Duration -> EventList -> NoteList
-eventsToNoteList bar_len partial_start = 
-    collapseQueue . rawToQueue 
-                  . map (partitionVoB bar_len) 
-                  . untree bar_len partial_start    
-                  . getEventList
--}
 
 eventsToNoteListUnmetered :: Monad m => EventList -> NotateT m NoteList
 eventsToNoteListUnmetered = eventsToNoteList max_bar_len duration_zero
@@ -77,10 +64,10 @@ eventsToNoteListUnmetered = eventsToNoteList max_bar_len duration_zero
   
 eventsToNoteList :: Monad m => Duration -> Duration -> EventList 
                         -> NotateT m NoteList
-eventsToNoteList bar_len partial_start = 
+eventsToNoteList bar_len acis = 
     (o4 . collapseQueue) <=< (o3 . rawToQueue)
                          <=< (o2 . map (partitionVoB bar_len))            
-                         <=< (o1 . untree bar_len partial_start) 
+                         <=< (o1 . untree bar_len acis) 
                          <=< (o0 . getEventList)
   where 
     o0 = return
@@ -94,11 +81,11 @@ eventsToNoteList bar_len partial_start =
 -- 'untree' is the difficult bit of building a note list
 -- it flattens out the 'polyphony'
 untree :: Duration -> Duration -> Seq Evt -> [VoiceOverlayB]    
-untree bar_len partial_start evts = 
+untree bar_len acis evts = 
     worklist (reduceTreeStep bar_len) [initial_vo]
   where
-    bar_number  = if (partial_start == duration_zero) then 1 else 0 
-    initial_vo  = (bar_number, partial_start, evts)     
+    bar_number  = if (acis == duration_zero) then 1 else 0 
+    initial_vo  = (bar_number, acis, evts)     
 
 
 -- reduceTreeStep produces a 'flat view' of VoiceOverlayA which 

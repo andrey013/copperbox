@@ -154,7 +154,7 @@ convBinding (LetCadenza b)        = set_unmetered b
 convBinding (LetKey k)            = set_current_key k
 convBinding (LetMeter m)          = set_current_meter m
 convBinding (LetMeterPattern mp)  = set_meter_pattern mp
-convBinding (LetPartial d)        = set_partial_measure d
+convBinding (LetPartial d)        = set_anacrusis d
 convBinding (LetRelativePitch p)  = set_relative_pitch p
 convBinding (LetNone)             = id
 
