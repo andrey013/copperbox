@@ -74,7 +74,7 @@ hijaz_scale = system1 "hijaz" $
           
           # note g4 du8
           # note a4 du8
-          # note b4 du8
+          # note bes4 du8
           # note c5 du8
           # note d5 du2
           
