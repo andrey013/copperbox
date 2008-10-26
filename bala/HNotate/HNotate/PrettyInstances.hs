@@ -148,8 +148,12 @@ instance Pretty PitchLabel where
   pretty (PitchLabel l a)     = pretty l <> pretty a
 
 instance Pretty Key where
-  pretty (Key pl mode)        = pretty pl <+> char '\\' <> pretty mode
-
+  pretty (Key pl mode accs)   = pretty pl <+> char '\\' 
+                                          <> pretty mode <> pp accs
+    where
+      pp [] = empty
+      pp xs = hsep $ map pretty xs
+  
 instance Pretty Mode where
   pretty = text . fmap toLower . show
   

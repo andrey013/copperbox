@@ -15,9 +15,9 @@ import System.Process (runCommand, waitForProcess)
 
 main = do 
     putStrLn "Running Tests..."
-    outputTestScore partial_measure_test_score
+    outputTestScore anacrusis_test_score
     outputTestScore unmetered_test_score
-
+    outputTestScore hijaz_test_score
 
     
 
@@ -34,9 +34,9 @@ data TestScore = TestScore {
   }
 
 
-partial_measure_test_score :: TestScore
-partial_measure_test_score = TestScore
-    "Adeste Fidelis should a show initial measure of a quarter."
+anacrusis_test_score :: TestScore
+anacrusis_test_score = TestScore
+    "Adeste Fidelis should have an anacrusis of a quarter note."
     adeste_fidelis
     "./templates/adeste-fidelis-abc0.abc"
     "./templates/adeste-fidelis-ly0.ly"
@@ -52,7 +52,14 @@ unmetered_test_score = TestScore
     "./out/te-laudamus-domine-abc.abc"
     "./out/te-laudamus-domine-ly.ly"
 
-
+hijaz_test_score :: TestScore
+hijaz_test_score = TestScore
+    "Hijaz should have the key signature Bb Eb F#."
+    hijaz_scale
+    "./templates/hijaz-abc0.abc"
+    "./templates/hijaz-ly0.ly"
+    "./out/hijaz-abc.abc"
+    "./out/hijaz-ly.ly"
 
 --------------------------------------------------------------------------------
 -- Helpers

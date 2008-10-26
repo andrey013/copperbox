@@ -241,7 +241,7 @@ cmdMode = choice
     ]
   where
     major       = Minor      <$ command "major"
-    minor       = Major      <$ command "major"
+    minor       = Major      <$ command "minor"
     lydian      = Lydian     <$ command "lydian"
     ionian      = Ionian     <$ command "ionian"
     mixolydian  = Mixolydian <$ command "mixolydian"
@@ -257,7 +257,7 @@ timeSig = TimeSig <$> int <*> (char '/' *> int)
 
 
 keySig :: GenParser Char st Key
-keySig  = (\(Pitch l a _) m -> Key (PitchLabel l a) m) 
+keySig  = (\(Pitch l a _) m -> Key (PitchLabel l a) m []) 
     <$> lyPitch <*> cmdMode
 
 

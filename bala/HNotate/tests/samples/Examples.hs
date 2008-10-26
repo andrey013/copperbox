@@ -5,7 +5,7 @@ module Examples where
 import HNotate
 
 
-
+-- starts with an anacrusis
 adeste_fidelis :: System
 adeste_fidelis = system1 "adeste_fidelis" $ 
     root  # chord [e4,    a4] du4
@@ -60,4 +60,24 @@ te_laudamus_domine = system1 "te_laudamus_domine" $
           # note f3 du4   # note g3 du4 {- pes -}
           # note g3 du4   {- augmentum -}                        
           
-    
+
+-- key signature  Bb Eb F#
+hijaz_scale :: System
+hijaz_scale = system1 "hijaz" $
+    root  # note d3 du4
+          # note a3 du8
+          # note b3 du8
+          # note c4 du8
+          # note d4 du8
+          # note e4 du8
+          # note f4 du8
+          
+          # note g4 du8
+          # note a4 du8
+          # note b4 du8
+          # note c5 du8
+          # note d5 du2
+          
+          
+          
+             

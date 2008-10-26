@@ -20,6 +20,7 @@ module HNotate.Pitch (
     Accidental(..),
 
     -- * Operations
+    fromLetter,
 
     Semitones(..),
     fromSemitones,
@@ -64,7 +65,7 @@ module HNotate.Pitch (
     
   ) where
 
-
+import Data.Char (toUpper)
 import Text.PrettyPrint.Leijen
 
 data Pitch = Pitch {
@@ -86,6 +87,20 @@ instance Show Pitch where
 instance Ord Pitch where
   compare p1 p2 = semitones p1 `compare` semitones p2
 
+
+fromLetter :: Char -> Maybe PitchLetter 
+fromLetter = letter . toUpper 
+  where      
+    letter 'C'    = Just C;   
+    letter 'D'    = Just D;
+    letter 'E'    = Just E   
+    letter 'F'    = Just F;
+    letter 'G'    = Just G;   
+    letter 'A'    = Just A;
+    letter 'B'    = Just B;   
+    letter _      = Nothing
+  
+  
 
 class Semitones a where semitones :: a -> Int
     

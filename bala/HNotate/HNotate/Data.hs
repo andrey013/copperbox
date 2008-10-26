@@ -45,13 +45,19 @@ import Data.List
 
 -- intervals?
 labelSetOf :: Key -> Maybe LabelSet
-labelSetOf (Key (PitchLabel l a) m)  = scaleSpelling l a m
+labelSetOf (Key (PitchLabel l a) m xs)  = scaleSpelling l a m xs
+{-
+  where
+    replace xs Nothing    = Nothing
+    replace xs (Just ys)  = Just $ map (replace1 xs) ys
+    replace1 xs x@( = if (find (rootequal 
+-}
 
 
 
-scaleSpelling :: PitchLetter -> Accidental -> Mode -> Maybe LabelSet
-scaleSpelling l a m = case elemIndex (l,a) $ modeLabels m of
-    Just i -> Just $ makeLabelSet (7 - i) l
+scaleSpelling :: PitchLetter -> Accidental -> Mode -> [PitchLabel] -> Maybe LabelSet
+scaleSpelling l a m accidentals = case elemIndex (l,a) $ modeLabels m of
+    Just i -> Just $ makeLabelSet (7 - i) l accidentals
     Nothing -> Nothing
     
 modeLabels Major        = labelOrder C
@@ -91,18 +97,26 @@ order_of_sharps = [F,C,G,D,A,E,B]
 order_of_flats :: [PitchLetter]
 order_of_flats = reverse order_of_sharps
 
-makeLabelSet :: Int -> PitchLetter -> LabelSet
-makeLabelSet i | i >= 0    = build sharp nat order_of_sharps i
-               | otherwise = build flat  nat order_of_flats  (abs i)
+makeLabelSet :: Int -> PitchLetter -> [PitchLabel] -> LabelSet
+makeLabelSet i l accidentals 
+    | i >= 0    = build sharp nat order_of_sharps i l
+    | otherwise = build flat  nat order_of_flats  (abs i) l
   where
-    build sk fk xs i =   labelSet 
+    build sk fk xs i =   labelSet
+                       . map relabel 
                        . twist sk fk (take (mod i 8) xs)
                        . enumFromCyc                   
 
     nat l   = PitchLabel l Nat
     sharp l = PitchLabel l Sharp
     flat l  = PitchLabel l Flat
-
+    
+    -- for Klezmer or Hijaz ...
+    -- if a pitch letter is in the set of accidentals then use the 
+    -- labelling from accidentals 
+    relabel :: PitchLabel -> PitchLabel
+    relabel p@(PitchLabel l _) = maybe p id (find fn accidentals)
+      where fn (PitchLabel l' _) = l' == l 
 
 
 twist :: Eq a => (a -> b) -> (a -> b) -> [a] -> [a] -> [b]
@@ -127,7 +141,7 @@ c_major'ls :: LabelSet
 c_major'ls = labelSet $ map (\a -> PitchLabel a Nat) $ enumFromCyc C
  
 c_major :: Key
-c_major = Key (PitchLabel C Nat) Major  
+c_major = Key (PitchLabel C Nat) Major [] 
 
 
 four_four :: Meter 

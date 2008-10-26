@@ -29,7 +29,7 @@ import Control.Monad
 import Control.Monad.Trans (liftIO)
 import Data.Char
 import Data.List (isPrefixOf, intersperse)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromJust)
 import Data.Sequence hiding (reverse)
 import Data.Ratio
 import Text.ParserCombinators.Parsec hiding (space)
@@ -162,8 +162,24 @@ timeSig = TimeSig <$> int <*> (char '/' *> int)
 -- K:<tonic> <mode> <accidentals>
 -- Key fields may also have clef designators
 keySig :: Parser (Maybe Key)
-keySig = (\(Pitch l a _) m -> Just $ Key (PitchLabel l a) m) 
-    <$> lexeme abcPitch <*> (option Major abcMode <* optionMaybe clefDesignator)
+keySig = (\lbl mode accs -> Just $ Key lbl mode accs) 
+    <$> lexeme keyPitchLabel <*> option Major (lexeme abcMode) 
+            <*> ((many accidentalPitch) <* whiteSpace <* optionMaybe clefDesignator)
+
+-- Pitch labels in key signatures have the form 
+-- <upper-pitchletter> (<optional-#> | <optional-b>)
+keyPitchLabel :: Parser PitchLabel
+keyPitchLabel = PitchLabel <$> pitchLetter <*> option Nat sharpflat
+  where
+    sharpflat = choice [ Sharp <$ symbol "#", Flat <$ symbol "b"] 
+
+-- e.g. ^f _b _c -- all labels should have a single accidental prefix
+-- which saves lookahead problems
+accidentalPitch :: Parser PitchLabel
+accidentalPitch = (flip PitchLabel) <$> accidental <*> pitchLetter
+  where 
+    accidental = choice [ Sharp <$ symbol "^", Flat <$ symbol "_"]
+
 
 -- Key fields might only have designators
 badKeySig :: Parser (Maybe Key)
@@ -173,7 +189,7 @@ clefDesignator :: Parser  ()
 clefDesignator = () <$ (try clefstart *> stringTill (symbol ";"))
   where
     clefstart = choice $ map symbol $
-      [ "treble", "alto", "tenor", "bass", "perc", "none",
+      [ "clef", "treble", "alto", "tenor", "bass", "perc", "none",
         "+8", "-8" , "transpose", "middle" ]
 
 abcDuration :: Parser Duration
@@ -194,15 +210,17 @@ abcPitch = build <$> abcAccidental <*> basenote <*> octaveDiff
 -- c, or C' shouldn't occur in Abc files but will be normalized anyway
 
 
+pitchLetter :: Parser PitchLetter
+pitchLetter = (fromJust . fromLetter) 
+    <$> satisfy ((flip elem) "CDEFGABcdefgab")
+    
 basenote :: Parser (Int,PitchLetter)
 basenote = build <$> satisfy ((flip elem) "CDEFGABcdefgab")
-  where build ch        = (octave ch, letter $ toUpper ch)
-        octave ch       = if isUpper ch then 4 else 5
-        
-        letter 'C'      = C;   letter 'D'       = D;
-        letter 'E'      = E;   letter 'F'       = F;
-        letter 'G'      = G;   letter 'A'       = A;
-        letter 'B'      = B;   letter _         = error "bassenote"
+  where 
+    build ch        = (octave ch, fromJust $ fromLetter ch) -- match guaranteed
+    octave ch       = if isUpper ch then 4 else 5
+
+
 
 abcAccidental :: Parser Accidental
 abcAccidental = option Nat (choice [dblSharp, sharp, dblFlat, flat, natural])
