@@ -64,19 +64,19 @@ te_laudamus_domine = system1 "te_laudamus_domine" $
 -- key signature  Bb Eb F#
 hijaz_scale :: System
 hijaz_scale = system1 "hijaz" $
-    root  # note d3 du4
-          # note a3 du8
-          # note b3 du8
-          # note c4 du8
-          # note d4 du8
-          # note e4 du8
-          # note f4 du8
+    root  # note d3   du4
+          # note a3   du8
+          # note bes3 du8
+          # note c4   du8
+          # note d4   du8
+          # note e4   du8
+          # note fis4 du8
           
-          # note g4 du8
-          # note a4 du8
+          # note g4   du8
+          # note a4   du8
           # note bes4 du8
-          # note c5 du8
-          # note d5 du2
+          # note c5   du8
+          # note d5   du2
           
           
           
