@@ -59,6 +59,7 @@ module HNotate.Env (
  ) where
 
 import HNotate.Data
+import HNotate.Document
 import HNotate.Duration
 import HNotate.NoteListDatatypes (System)
 import HNotate.NotateMonad
@@ -69,7 +70,7 @@ import Control.Applicative
 import Control.Monad.Reader
 import Data.Maybe (fromMaybe)
 import Data.Ratio
-import Text.PrettyPrint.Leijen hiding ( (<$>) )
+
 
 --------------------------------------------------------------------------------
 -- Datatypes
@@ -94,7 +95,7 @@ data Env = Env {
     _anacrusis          :: Maybe Duration,
     _unmetered          :: Bool,
     _bar_number_check   :: Int,
-    _score_comment      :: String -> Doc
+    _score_comment      :: String -> ODoc
   }
   deriving Show
 
@@ -120,7 +121,7 @@ instance (Monad m ) => Applicative (NotateMonadT Env Config m) where
   pure = return
   (<*>) = ap
 
-instance Show (String -> Doc) where
+instance Show (String -> ODoc) where
   show _ = "<<function>>"  
 
 
@@ -217,7 +218,7 @@ unmetered           = _unmetered
 bar_number_check    :: Env -> Int
 bar_number_check    = _bar_number_check
 
-score_comment       :: Env -> (String -> Doc)
+score_comment       :: Env -> (String -> ODoc)
 score_comment       = _score_comment
 
 

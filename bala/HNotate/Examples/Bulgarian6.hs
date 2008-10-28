@@ -9,8 +9,7 @@ module Examples.Bulgarian6 where
 
 import HNotate
 
-import Text.PrettyPrint.Leijen hiding (dot)
-     
+   
 
 -- a major
 

@@ -19,13 +19,14 @@
 module HNotate.BuildNoteList where
 
 import HNotate.CommonUtils
+import HNotate.Document
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
 import HNotate.OnsetQueue
-import HNotate.PrettyInstances
+import HNotate.PPInstances
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Reader
@@ -34,8 +35,7 @@ import Data.List (unfoldr)
 import Data.Maybe (fromMaybe)
 import Data.Sequence hiding (reverse)
 import Prelude hiding (null)
-import Text.PrettyPrint.Leijen hiding (empty, (<$>))
-import qualified Text.PrettyPrint.Leijen as PP
+
 
         
 -- VoiceOverlay - (i,d,se)
@@ -195,19 +195,20 @@ collapseQueue = NoteList . foldlOnsetQueue fn empty
 -- debugging // pp output
     
     
-ppListVoiceOverlayB :: [VoiceOverlayB] -> Doc
+ppListVoiceOverlayB :: [VoiceOverlayB] -> ODoc
 ppListVoiceOverlayB = vsep . map ppVoiceOverlayB
 
+ppVoiceOverlayB :: VoiceOverlayB   -> ODoc
 ppVoiceOverlayB (bc, d, se) = 
     text "bar" <+> int bc <> colon <+> ppDuration d <+> finger se 
 
-ppListSeqRawBar :: [Seq RawBar] -> Doc
+ppListSeqRawBar :: [Seq RawBar] -> ODoc
 ppListSeqRawBar = vsep . map (genFinger ppRawBar)
 
-ppSeqRawBar :: Seq RawBar -> Doc
+ppSeqRawBar :: Seq RawBar -> ODoc
 ppSeqRawBar = genFinger ppRawBar
 
-ppRawBar :: RawBar -> Doc
+ppRawBar :: RawBar -> ODoc
 ppRawBar (i,se) = tupled [int i, finger se] 
 
 

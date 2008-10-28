@@ -42,11 +42,6 @@ import Data.Maybe (fromMaybe)
 import Data.Sequence hiding (empty, reverse)
 
 import Text.ParserCombinators.Parsec (ParseError, parseFromFile)
--- import Text.PrettyPrint.Leijen hiding ( (<$>) ) 
-
-
-
-
 
 
 

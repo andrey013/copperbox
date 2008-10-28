@@ -65,8 +65,9 @@ module HNotate.Pitch (
     
   ) where
 
+import HNotate.Document
 import Data.Char (toUpper, toLower)
-import Text.PrettyPrint.Leijen
+
 
 data Pitch = Pitch {
     pitch_letter  :: PitchLetter,
@@ -82,7 +83,7 @@ data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp
   deriving (Eq,Enum,Ord,Show)
 
 instance Show Pitch where
-  show = show . pretty
+  show = unformatted . pp
   
 instance Ord Pitch where
   compare p1 p2 = semitones p1 `compare` semitones p2
@@ -202,25 +203,24 @@ accidentalConst (Pitch l _ o) a = Pitch l a o
 
 
 --------------------------------------------------------------------------------
--- Pretty instances
+-- PP instances
 
 
-instance Pretty Pitch where
-  pretty (Pitch l a o)  = group $ pretty l <> pretty a <> int o
+instance PP Pitch where
+  pp (Pitch l a o)  = pp l <> pp a <> int o
 
-instance Pretty PitchLetter where
-  pretty              = text . show
+instance PP PitchLetter where
+  pp              = text . show
 
-instance Pretty Accidental where
-  pretty Nat          = empty
-  pretty Sharp        = char '#'
-  pretty Flat         = char 'b'
-  pretty DoubleSharp  = text "##"
-  pretty DoubleFlat   = text "bb"
+instance PP Accidental where
+  pp Nat          = emptyDoc
+  pp Sharp        = char '#'
+  pp Flat         = char 'b'
+  pp DoubleSharp  = text "##"
+  pp DoubleFlat   = text "bb"
 
 
-ppNote pch dur = group $
-      pretty pch <> char '/' <> pretty dur
+ppNote pch dur = pp pch <> char '/' <> pp dur
 
 --------------------------------------------------------------------------------
 -- Named elements

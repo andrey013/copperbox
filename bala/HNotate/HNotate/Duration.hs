@@ -56,11 +56,10 @@ module HNotate.Duration (
   ) where
 
 import HNotate.CommonUtils (fork)
-
+import HNotate.Document hiding (dot)
 import Data.List (unfoldr)
 import Data.Monoid
 import Data.Ratio
-import Text.PrettyPrint.Leijen hiding (dot)
 
 
 type Duration = Rational 
@@ -158,19 +157,18 @@ base2numbers'inf :: [Integer]
 base2numbers'inf = unfoldr (\x -> Just (x, x * 2)) 1 
 
 
-ppDuration :: Duration -> Doc
-ppDuration = pretty . printableDuration
+ppDuration :: Duration -> ODoc
+ppDuration = pp . printableDuration
 
 
                    
 
-instance Pretty PrintableDuration where
-  pretty (PrintableDuration r dc) = let (n,d) = ratioElements r in 
-      group $ integer n <> char '/' <> integer d <> text (replicate dc '.') 
+instance PP PrintableDuration where
+  pp (PrintableDuration r dc) = let (n,d) = ratioElements r in 
+      pp n <> char '/' <> pp d <> text (replicate dc '.') 
 
 
-ppAltRest ch dur = group $
-      char ch <> char '/' <> pretty dur
+ppAltRest ch dur = char ch <> char '/' <> pp dur
 
 
 

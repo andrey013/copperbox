@@ -50,8 +50,7 @@ import qualified Data.Map as Map
 import Data.Monoid
 import Data.Sequence
 import Data.Traversable
-import Text.PrettyPrint.Leijen (Doc, pretty)
-import qualified Text.PrettyPrint.Leijen as PP
+
 
 -- There are two views of note lists the external one (EventList) and
 -- the internal one (NoteList).

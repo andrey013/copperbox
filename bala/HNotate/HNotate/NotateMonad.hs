@@ -20,6 +20,7 @@
 
 module HNotate.NotateMonad where
 
+import HNotate.Document
 
 import Control.Monad
 import Control.Monad.Identity
@@ -27,7 +28,7 @@ import Control.Monad.Reader
 import Control.Monad.Writer
 
 import System.IO (stdout)
-import Text.PrettyPrint.Leijen
+
 
 
 
@@ -84,10 +85,10 @@ class DebugLevel cfg where debug_level :: cfg -> Int
   
 class Witness a where textrep :: a -> String
 
-instance Witness Doc where textrep = wpretty
+instance Witness ODoc where textrep = wpretty
 
-wpretty :: Doc -> String 
-wpretty = (displayS `flip` "") . renderPretty 0.8 80
+wpretty :: ODoc -> String 
+wpretty = formatted 0 70
 
 
 primOutput :: (Monad m, DebugLevel cfg) => Int -> String -> NotateMonadT env cfg m ()
@@ -106,7 +107,7 @@ steno :: (Monad m, DebugLevel cfg) =>
 steno i s f a = primOutput i s >> primOutput i (f a) >> return a
 
 document :: (Monad m, DebugLevel cfg) => 
-           Int -> String -> (a -> Doc) -> a -> NotateMonadT env cfg m a 
+           Int -> String -> (a -> ODoc) -> a -> NotateMonadT env cfg m a 
 document i s f a = primOutput i s >> primOutput i (wpretty $ f a) >> return a
 
 textoutput :: (Monad m, DebugLevel cfg) => 

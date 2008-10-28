@@ -21,7 +21,7 @@ import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.TemplateDatatypes
-import HNotate.PrettyInstances
+import HNotate.PPInstances
 
 import Control.Applicative hiding (many, optional, (<|>), empty )
 import Control.Monad
@@ -36,7 +36,7 @@ import Prelude hiding (null)
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language (emptyDef)
-import qualified Text.PrettyPrint.Leijen as PP
+
 
 -- ExprParser returns the 'expressions of interest' - the parts
 -- of the input file that we know how to interpret. 

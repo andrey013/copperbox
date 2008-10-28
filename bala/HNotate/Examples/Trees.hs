@@ -9,9 +9,6 @@ import HNotate
 
 
 
-import Text.PrettyPrint.Leijen
-
-
 -- | example 1 - simple list of successive notes.  
 example1 :: EventList
 example1 = root # note c4 du4 

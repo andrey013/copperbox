@@ -23,7 +23,7 @@ import HNotate.Pitch
 import qualified Data.Foldable as F
 import Data.Ratio
 import Data.Sequence hiding (empty, length) 
-import Text.PrettyPrint.Leijen (Doc)
+
 
 
 -- A non-opaque SrcPos type  
@@ -80,7 +80,7 @@ data AbcExpr = AbcFieldBinding AbcField
              | AbcOutput MetaOutput
   deriving (Eq,Show)             
 
--- Note a keyfield isn't guarenteed to have a key signature
+-- Note a keyfield isn't guaranteed to have a key signature
 -- it might have a clef designation instead.              
 data AbcField = AbcKey (Maybe Key) 
               | AbcMeter Meter

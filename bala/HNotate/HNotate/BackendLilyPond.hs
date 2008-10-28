@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeSynonymInstances #-}
-
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.BackendLilyPond
@@ -26,15 +24,13 @@ import HNotate.Env
 import HNotate.NotateMonad
 import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, gracenotes)
 import HNotate.Pitch
-import HNotate.PrettyInstances
+import HNotate.PPInstances
 import HNotate.Traversals
 
 import Control.Applicative
-import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Foldable as F
-import Data.Monoid
 import Data.Sequence
 import Data.Traversable
 

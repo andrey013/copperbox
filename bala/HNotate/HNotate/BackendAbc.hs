@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeSynonymInstances #-}
-
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.BackendAbc
@@ -26,15 +24,13 @@ import HNotate.Env
 import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, gracenotes)
 import HNotate.NotateMonad
 import HNotate.Pitch
-import HNotate.PrettyInstances
+import HNotate.PPInstances
 import HNotate.Transformations
 import HNotate.Traversals
 
 import Control.Applicative
 import Control.Monad.Reader
-import Data.Char (toLower)
 import qualified Data.Foldable as F
-import Data.Monoid
 import Data.Ratio
 import Data.Sequence hiding (take)
 import Data.Traversable
@@ -42,6 +38,7 @@ import Data.Traversable
 
 type BarConcat = [(Int,ODoc)] -> ODoc
 
+-- TODO - variants of this to support bar numbering, etc.
 abcConcat :: BarConcat
 abcConcat = vsep . map snd
 
@@ -93,19 +90,8 @@ anno :: (ODoc -> ODoc) -> ODoc -> ODoc
 anno fn e | isEmpty e   = e
           | otherwise   = fn e
                   
-{-    
--- promote to a higher level 
--- (so we can choose how tosupport e.g bar numbering)
-outputNoteList :: NoteList -> PrintM ()
-outputNoteList (NoteList se) = F.mapM_ outputBlock se
+   
 
-
-
-
-outputMeasure :: Bar -> PrintM ()
-outputMeasure (Bar se)         = F.mapM_ outputGlyph se
-
--}
 
 
 glyph :: Glyph -> ODoc
@@ -121,12 +107,6 @@ glyph (Annotation fn)     = emptyDoc
 
 
 
-    
-{-
--- promote to a higher level
-barNumber :: Int -> PrintM ()
-barNumber = comment . ("bar " ++) . show
--}
 --------------------------------------------------------------------------------
 -- pretty printers to 'ODoc'
 
@@ -138,8 +118,8 @@ note p d = pitch p <> duration d
 
 pitch :: Pitch -> ODoc
 pitch (Pitch l a o) 
-    | o > 4     = accidental a $ octave o $ (char . toLower . letter) l
-    | otherwise = accidental a $ octave o $ (char . letter) l
+    | o > 4     = accidental a $ octave o $ (char . toLowerLChar) l
+    | otherwise = accidental a $ octave o $ (char . toUpperLChar) l
   where     
     letter :: PitchLetter -> Char
     letter = fn . show

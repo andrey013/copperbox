@@ -25,7 +25,7 @@ import Data.Sequence hiding (empty, length, reverse)
 import qualified Data.Sequence as S
 import Prelude hiding (null)
 import System.IO
-import Text.PrettyPrint.Leijen
+
 
 
 --------------------------------------------------------------------------------
@@ -281,60 +281,7 @@ worklist f = step []
 unseq :: Seq a -> [a]
 unseq = F.foldr (:) [] 
 
-
---------------------------------------------------------------------------------
--- PPrint helpers
-
-outputDoc :: FilePath -> Doc -> IO ()
-outputDoc filepath doc = do
-    h <- openFile filepath WriteMode
-    displayIO h (renderPretty 0.7 80 doc)
-    hClose h
-
-putDoc80 :: Doc -> IO ()
-putDoc80 doc = displayIO stdout (renderPretty 0.7 80 doc)
-
-showDocS :: Doc -> ShowS
-showDocS d = displayS (renderPretty 0.7 80 d)
-
-lbanana, rbanana :: Doc
-lbanana = text "(|"
-rbanana = text "|)"
-
-bananas :: Doc -> Doc
-bananas d = lbanana <> d <> rbanana 
-
-llens, rlens :: Doc
-llens = text "[("
-rlens = text ")]"
-
-lenses :: Doc -> Doc
-lenses d = llens <> d <> rlens 
-
-underline :: String -> Doc
-underline s = text s <$> text (replicate (length s) '-') <> line 
-    
--- finger -- a pretty printer for seqeunces 
--- c.f. tupled or list in PPrint - type of the param is different: 
--- Pretty a => Seq a, rather than Seq Doc
-finger :: Pretty a => Seq a -> Doc
-finger = enclose (text "(|") (text "|)") . genPunctuateSeq pretty comma
-
-
-    
-    
-
-genFinger :: (a -> Doc) -> Seq a -> Doc
-genFinger f = enclose (text "(|") (text "|)") . genPunctuateSeq f comma
-
-
-
-genPunctuateSeq :: (a -> Doc) -> Doc -> Seq a -> Doc
-genPunctuateSeq pp p = para phi empty
-  where 
-    phi c (se,  d)  | null se        = pp c </> d 
-                    | otherwise      = pp c <> p </> d
-                   
+                
                         
 
 --------------------------------------------------------------------------------
