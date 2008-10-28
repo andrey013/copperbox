@@ -15,19 +15,18 @@
 --------------------------------------------------------------------------------
 
 module HNotate.BackendLilyPond (
-    translateLilyPond
+    lyConcat, translateLilyPond
   ) where
 
 
 import HNotate.CommonUtils
-import HNotate.Duration
+import HNotate.Document
+import HNotate.Duration hiding (duration)
 import HNotate.Env
 import HNotate.NotateMonad
 import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, gracenotes)
 import HNotate.Pitch
 import HNotate.PrettyInstances
-import HNotate.PrintLy
-import HNotate.PrintMonad
 import HNotate.Traversals
 
 import Control.Applicative
@@ -38,14 +37,18 @@ import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Sequence
 import Data.Traversable
-import Text.PrettyPrint.Leijen (Doc, char)
 
   
+type BarConcat' = [(Int,ODoc)] -> ODoc
 
-translateLilyPond :: Monad m => NoteList -> NotateT m NoteListOutput
-translateLilyPond = fwd <=< printStep <=< lilypondRelativeForm
+lyConcat :: BarConcat'
+lyConcat = vsep . map snd
+
+
+translateLilyPond :: Monad m => BarConcat' -> NoteList -> NotateT m ODoc
+translateLilyPond tile = fwd <=< printStep <=< lilypondRelativeForm
   where
-    printStep = return . (execPrintM `flip` pmZero) . outputNoteList
+    printStep = return . outputNoteList tile
     
     fwd m = ask >>= \env ->
             witness 3 "Current environment is..." env >>
@@ -66,63 +69,128 @@ lilypondRelativeForm evts = asks relative_pitch >>= \p ->
 
     st p     = lyState0 `updatePitch` p
     
-outputNoteList :: NoteList -> PrintM ()
-outputNoteList (NoteList se) = F.mapM_  outputBlock se
+outputNoteList :: BarConcat' -> NoteList -> ODoc 
+outputNoteList tile = tile . F.foldr ((:) `onl` blockDoc) [] . getNoteList 
 
-outputBlock :: Block -> PrintM ()
-outputBlock (SingleBlock i s) = barNumberCheck i >> outputMeasure s >> barcheck
-outputBlock (PolyBlock i se)  = barNumberCheck i >> polyphony se >> barcheck
+
+blockDoc :: Block -> (Int,ODoc)
+blockDoc (SingleBlock i s) = (i, barDoc s <+> barcheck)
+blockDoc (PolyBlock i se)  = (i, polyphony se <+> barcheck)
 
     
-outputMeasure :: Bar -> PrintM ()
-outputMeasure (Bar se) = F.mapM_ outputGlyph se
-
-outputGlyph :: Glyph -> PrintM ()
-outputGlyph (Note p d)          = note p d
-outputGlyph (Rest d)            = rest d
-outputGlyph (Spacer d)          = spacer d
-outputGlyph (Chord se d)        = chord (unseq se) d 
-outputGlyph (GraceNotes se)     = gracenotes (unseq se)
-outputGlyph (BeamStart)         = return ()
-outputGlyph (BeamEnd)           = return ()
-outputGlyph (Tie)               = tie
-outputGlyph (Annotation fn)     = return ()
 
 
-polyphony :: Seq Bar -> PrintM ()
-polyphony = step1 . viewl
+glyph :: Glyph -> ODoc
+glyph (Note p d)          = note p d
+glyph (Rest d)            = rest d
+glyph (Spacer d)          = spacer d
+glyph (Chord se d)        = chord (unseq se) d
+glyph (GraceNotes se)     = gracenotes (unseq se)
+glyph (Tie)               = tie
+glyph (BeamStart)         = emptyDoc
+glyph (BeamEnd)           = emptyDoc
+glyph (Annotation fn)     = emptyDoc
+
+
+polyphony :: Seq Bar -> ODoc
+polyphony = dblangles . step1 . viewl
   where 
-    step1 EmptyL      = return ()
-    step1 (s :< se)   = polystart >> rstep s (viewl se)
+    step1 EmptyL      = emptyDoc
+    step1 (s :< se)   = rstep s (viewl se)
     
-    rstep e EmptyL    = bracedMeasure e >> polyend
-    rstep e (s :< se) = bracedMeasure e >> polyc >> rstep s (viewl se)
+    rstep e EmptyL    = braces' (barDoc e)
+    rstep e (s :< se) = braces' (barDoc e) <+> polysep <+> rstep s (viewl se)
     
-bracedMeasure e = element (char '{') >> outputMeasure e >> element (char '}')      
+    polysep :: ODoc
+    polysep = text "\\\\"
+
+barDoc :: Bar -> ODoc
+barDoc xs = collapse $ F.foldl fn (emptyDoc,(<+>), emptyDoc) xs
+  where collapse (out,op,tip) = out `op` tip
+  
+
+fn (out,op,tip) (BeamStart)     = (out `op` tip, (<>),  anno bSt tip)
+fn (out,op,tip) (BeamEnd)       = (out `op` tip, (<+>), anno bEnd tip)
+fn (out,op,tip) (Annotation fn) = (out,           op,   anno fn tip)
+fn (out,op,tip) e               = (out `op` tip,  op,   glyph e)                 
+
+anno :: (ODoc -> ODoc) -> ODoc -> ODoc
+anno fn e | isEmpty e   = e
+          | otherwise   = fn e
+          
+bSt :: (ODoc -> ODoc)
+bSt   = (<> char '[')
+bEnd  = (<> char ']') 
+
+
+--------------------------------------------------------------------------------
+-- pretty printers to 'ODoc'
+
+command :: String -> ODoc
+command = text . ('\\':)
+
+command1 :: String -> ODoc -> ODoc
+command1 s d = command s <+> d
+
+
+note :: Pitch -> Duration -> ODoc
+note p d = pitch p <> duration d
+
+pitch :: Pitch -> ODoc
+pitch (Pitch l a o) = octave o $ accidental a $ (char . toLowerLChar) l
+  where
+    letter :: PitchLetter -> Char
+    letter = fn . show
+      where fn [x] = x
+            fn xs  = error $ "letter " ++ xs 
+
+    accidental :: Accidental -> ODoc -> ODoc
+    accidental Nat            = id
+    accidental Sharp          = (<> text "is")
+    accidental Flat           = (<> text "es")
+    accidental DoubleSharp    = (<> text "isis")
+    accidental DoubleFlat     = (<> text "eses")
+     
+    octave :: Int -> ODoc -> ODoc
+    octave i | i > 0            = (<> text (replicate i '\''))
+             | i < 0            = (<> text (replicate i ','))
+             | otherwise        = id 
     
-
-{-
-polyphony :: LyCxt_Element -> [LyCxt_Element] -> LyCxt_Element
-polyphony cxt (a:b:xs)  = polywork ((cxt +++ openPoly) `mappend` a) b xs
-polyphony cxt [a]       = cxt `mappend` a
-polyphony cxt []        = cxt
-
-
-polywork cxt x []     = (cxt \\ x) +++ closePoly
-polywork cxt x (y:ys) = polywork (cxt \\ x) y ys
--} 
-
-
     
+duration :: Duration -> ODoc
+duration drn
+    | drn == no_duration  = emptyDoc
+    | otherwise           = let (n,d,dc) = pdElements $ printableDuration drn 
+                            in dots dc $ durn n d
+  where 
+    durn 4 1      = command "longa"  
+    durn 2 1      = command "breve" 
+    durn 1 i      = int i
+    durn n d      = error $ "durationD failed on - " ++ 
+                                  show n ++ "%" ++ show d
     
+    dots :: Int -> ODoc -> ODoc
+    dots i | i > 0     = (<> text (replicate i '.'))
+           | otherwise = id
+        
 
+rest :: Duration ->ODoc
+rest = (char 'r' <>) . duration
     
-{-
+spacer :: Duration -> ODoc
+spacer = (char 's' <>) . duration
 
-barNumber :: Int -> PrintM ()
-barNumber = barNumberCheck
+chord :: [Pitch] -> Duration -> ODoc
+chord ps d = (angles $ hsep $ map pitch ps)  <> duration d
+  
+
+gracenotes :: [Pitch] -> ODoc
+gracenotes ps = command1 "grace" (braces $ hsep $ map pitch ps)
 
 
-addBarline :: LyCxt_Element -> LyCxt_Element
-addBarline cxt = cxt +++ suffixLinebreak barcheck
--}
+tie :: ODoc
+tie = char '~'
+
+barcheck :: ODoc
+barcheck = char '|'
+

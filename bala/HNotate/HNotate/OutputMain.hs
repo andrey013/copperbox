@@ -21,7 +21,7 @@ import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.BuildNoteList
 import HNotate.CommonUtils -- (outputDoc, showDocS)
-import HNotate.Document (formatted)
+import HNotate.Document (ODoc, formatted, output)
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
@@ -29,7 +29,6 @@ import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
 import HNotate.ParseLy
 import HNotate.ParserBase (ExprParser, TextChunkParser)
-import HNotate.PrintMonad (NoteListOutput)
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (empty)
@@ -43,7 +42,7 @@ import Data.Maybe (fromMaybe)
 import Data.Sequence hiding (empty, reverse)
 
 import Text.ParserCombinators.Parsec (ParseError, parseFromFile)
-import Text.PrettyPrint.Leijen hiding ( (<$>) ) 
+-- import Text.PrettyPrint.Leijen hiding ( (<$>) ) 
 
 
 
@@ -103,32 +102,19 @@ outputter :: Monad m => [Expr] -> Seq TextChunk -> NotateT m ShowS
 outputter exprs chunks = evalHoas (toHoas exprs) >>= \exprs' ->
                          return (plug chunks exprs')
 
-                                     
-
-eitherWithErrIO :: Show a => IO (Either a b) -> (b -> IO c) ->  IO c
-eitherWithErrIO a sk = a >>= either (error . show) sk 
-
-eitherErrFailIO :: Show a => IO (Either a b) ->  IO b
-eitherErrFailIO a = a >>= either (error . show) return 
-
-eitherNT :: (Show a, Show b) => 
-                      String -> (b -> Doc) -> IO (Either a b) -> IO b
-eitherNT msg pp a = eitherErrFailIO a 
---    runIOInIO (genWriteStepM msg pp eitherErrFailIO a)
 
 
-
-plug :: Seq TextChunk -> [Doc] -> ShowS
+plug :: Seq TextChunk -> [ODoc] -> ShowS
 plug se ds = foldr fn id (crossZip se ds)
   where 
-    fn ((water, _), Just d)  acc = showString water . showDocS d . acc
+    fn ((water, _), Just d)  acc = showString water . output 0 60 d . acc
     fn ((water, _), Nothing) acc = showString water . acc
 
 -- Expect the Seq to be one longer than the list   
 crossZip :: Seq a -> [b] -> [(a,Maybe b)]
 crossZip se xs = czip (viewl se) xs
   where
-    czip (e :< se) (x:xs) = (e,Just x) : czip (viewl se) xs
+    czip (e :< se) (x:xs) = (e,Just x)  : czip (viewl se) xs
     czip (e :< se) []     = (e,Nothing) : czip (viewl se) []
     
     czip EmptyL    []     = []
@@ -136,18 +122,18 @@ crossZip se xs = czip (viewl se) xs
     czip _         xs     = error $ "crossZip - list too long"  
      
 
-evalHoas :: Monad m => Hoas -> NotateT m [Doc]
+evalHoas :: Monad m => Hoas -> NotateT m [ODoc]
 evalHoas (Hoas exprs) = foldM eval [] exprs >>= return . reverse
                            
 
-eval :: Monad m => [Doc] -> HoasExpr -> NotateT m [Doc]
+eval :: Monad m => [ODoc] -> HoasExpr -> NotateT m [ODoc]
 eval docs (HLet update e)   = local update (eval docs e)
 eval docs (HDo out)         = outputNotes out >>= \d -> return (d:docs)
 eval docs (HSDo out e)      = outputNotes out >>= \d -> eval (d:docs) e
 eval docs (HFork e1 e2)     = eval docs e1 >>= \ds -> eval ds e2  
     
 
-outputNotes :: Monad m => OutputDirective -> NotateT m NoteListOutput
+outputNotes :: Monad m => OutputDirective -> NotateT m ODoc
 outputNotes (OutputDirective (Just OutputRelative) name) = 
     maybe fault noteListOutput =<< findEventList name
   where 
@@ -164,11 +150,10 @@ findEventList name = asks_config _system >>= \sys ->
 
 
 
-noteListOutput :: Monad m => EventList -> NotateT m NoteListOutput
+noteListOutput :: Monad m => EventList -> NotateT m ODoc
 noteListOutput = 
-    abcly (toNoteList >=> translateAbc abcConcat >=> tempODocToDoc) 
-          (toNoteList >=> translateLilyPond) 
-  where
-    tempODocToDoc = return . string . formatted 0 60
+    abcly (toNoteList >=> translateAbc abcConcat) 
+          (toNoteList >=> translateLilyPond lyConcat) 
+
 
     

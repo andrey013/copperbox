@@ -19,7 +19,8 @@ module HNotate.Document (
   text, char, string, int,
   ( <> ), ( <+> ), ( <&\> ),
   hcat, hsep, vsep,
-  braces, parens, brackets, angles,
+  braces, parens, brackets, angles, dblangles,
+  braces', parens', brackets', angles', dblangles',
   output, formatted, quickOutput, unformatted 
   ) where
 
@@ -102,17 +103,35 @@ vsep :: [ODoc] -> ODoc
 vsep = foldl (<&\>) emptyDoc 
 
 
-braces :: ODoc -> ODoc
-braces d = char '{' <> d <> char '}'
+braces        :: ODoc -> ODoc
+braces d      = text "{" <> d <> text "}"
 
-parens :: ODoc -> ODoc
-parens d = char '(' <> d <> char ')'
+parens        :: ODoc -> ODoc
+parens d      = text "(" <> d <> text ")"
 
-brackets :: ODoc -> ODoc
-brackets d = char '[' <> d <> char ']'
+brackets      :: ODoc -> ODoc
+brackets d    = text "[" <> d <> text "]"
 
-angles :: ODoc -> ODoc
-angles d = char '<' <> d <> char '>'
+angles        :: ODoc -> ODoc
+angles d      = text "<" <> d <> text ">"
+
+dblangles     :: ODoc -> ODoc
+dblangles d   = text "<<" <> d <> text ">>"
+
+braces'         :: ODoc -> ODoc
+braces' d       = text "{ " <> d <> text " }"
+
+parens'         :: ODoc -> ODoc
+parens' d       = text "( " <> d <> text " )"
+
+brackets'       :: ODoc -> ODoc
+brackets' d     = text "[ " <> d <> text " ]"
+
+angles'         :: ODoc -> ODoc
+angles' d       = text "< " <> d <> text " >"
+
+dblangles'      :: ODoc -> ODoc
+dblangles' d    = text "<< " <> d <> text " >>"
 
 
 --------------------------------------------------------------------------------

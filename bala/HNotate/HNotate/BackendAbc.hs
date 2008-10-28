@@ -128,12 +128,8 @@ barNumber :: Int -> PrintM ()
 barNumber = comment . ("bar " ++) . show
 -}
 --------------------------------------------------------------------------------
--- pretty printers for 'ODoc'
+-- pretty printers to 'ODoc'
 
--- ** Pitch (4.1)
-
--- Abc has pitches in a two octave range and then uses octave specs for higher
--- and lower octaves
 
 
 note :: Pitch -> Duration -> ODoc 
