@@ -24,8 +24,8 @@ module HNotate (
     system, systemL, system1,
     
     root, note, rest, spacer,    
-    chord, gracenotes, poly, 
-    notelist,
+    chord, gracenotes, annoLy, annoAbc, poly, 
+    notelist, 
     
     {- repeated, eventlist, -}
     

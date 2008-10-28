@@ -51,8 +51,7 @@ the note lists inside the score file.
 
 HNotate is still in progress - it is written in the with latest
 stable GHC release (currently 6.8.3) using some GHC 
-specific extensions. It has a dependency on Daan Leijen's 
-\verb|PPrint| package which is available from Hackage.
+specific extensions.
 
 HNotate outputs both LilyPond and Abc scores. The LilyPond 
 output has been developed using LilyPond version 2.10.33. 
@@ -63,13 +62,13 @@ other versions.
 Unlike LilyPond, Abc does not have a canonical implementation.
 Different implementations accept different input formats and 
 the Abc standard itself seems to still be in flux. HNotate 
-generates output specifically for \verb|abcm2ps|, this is a 
+generates output specifically for \texttt{abcm2ps}, this is a 
 advanced implementation which supports features from the draft 
 Abc 2.0 specification. In particular, HNotate uses voice 
 overlays for polyphonic music - these are not supported in 
-the Abc \emph{reference implementation} \verb|abc2ps|. HNotate
+the Abc reference implementation \texttt{abc2ps}. HNotate
 has been developed with version 4.12.30 (May 28, 2007) of
-\verb|abcm2ps|. 
+\texttt{abcm2ps}. 
 
 %---------------------------------------------------------------------------
 \subsection{License}
@@ -84,12 +83,13 @@ as per the Haskell Hierarchical Libraries.
 \section{Using HNotate}
 %---------------------------------------------------------------------------
 
-HNotate renders a score file from a \emph{template file} and
-a \emph{system}. A template file is an ordinary input file for 
+HNotate renders a score file from a template file and
+a \texttt{System}. A template file is an ordinary input file for 
 either LilyPond or Abc marked up with special 
-\emph{meta-comments.} A system is a collection note lists 
+\emph{meta-comments.} A \texttt{System} is a Haskell datatype
+exported by the HNotate API, it is a collection note lists 
 indexed by name. When HNotate renders a score file it looks 
-for \verb|output| meta-comments in the template file, finds the 
+for \texttt{output} meta-comments in the template file, finds the 
 corresponding note list in the system and replaces the 
 meta-comment with the rendered notes - this is commonly 
 called \emph{plugging}.
@@ -103,27 +103,32 @@ contain syntax errors\footnote{By this virtue, if a score file
 is acceptable to LilyPond or abcm2ps before it has been 
 processed by HNotate, but then generates a syntax error 
 afterwards then it points to HNotate having a bug - an error
-report would be greatly appreciated}. 
+report would be greatly appreciated.}. 
 
 LilyPond delimits comments with \verb+%{+ and \verb+%}+,  
 HNotate adds a hash character to these delimiters to 
 recognize a comment as a meta-comment \verb+%{#+ 
-and \verb+#%}+ (as the outer two characters remain the 
-same LilyPond will see meta-comments only as comments).
+and \verb+#%}+ - as the outer two characters remain the 
+same LilyPond will see meta-comments only as comments.
 A typical meta-comment might be:
 \begin{verbatim}
-%{# relative:bulgarian6 #%}
+%{# output: \relative bulgarian6 #%}
 \end{verbatim}
 
-This tells HNotate to use the \emph{relative} rendering 
-scheme on the note list \emph{bulgarian6}.
+This tells HNotate to output the note list \texttt{bulgarian6}
+using the \texttt{relative}\footnote{Relative rendering is 
+shorthand used by LilyPond where the pitch of one note is 
+pitch of the previous note, this saves the user typing
+octave designations for every note.} rendering scheme.  
 
 Comments in Abc start with a \verb+%+ symbol and continue to 
-the end of the line, a meta comment for HNotate starts with 
-\verb+%#+, this example directs HNotate to used the 
-\emph{default} rendering scheme on the note list \emph{example1}:
+the end of the line. Meta-comments for HNotate \textbf{must} 
+start at the beginning of a line with the symbol \verb+%#+, like 
+ordinary Abc comments they continue to the end of the line.
+This example directs HNotate to used the \texttt{default} 
+rendering scheme on the note list \texttt{example1}:
 \begin{verbatim}
-%# default:example1
+%# output: example1
 \end{verbatim}
 
 
@@ -148,6 +153,8 @@ the end of the line, a meta comment for HNotate starts with
 %---------------------------------------------------------------------------
 HNotate is not tied to a specify composition system, though it 
 is only useful for Haskell. 
+
+
 
 % Pitch and Duration are predefined types in HNotate, it maybe 
 % that the composition system being used already has types 

@@ -62,9 +62,7 @@ instance (Integral a, PP a) => PP (Ratio a) where
 --------------------------------------------------------------------------------
 -- Env
 
-instance PP OutputFormat where
-  pp Output_Abc           = text "Abc"
-  pp Output_LilyPond      = text "LilyPond"  
+
 
 
 instance PP Env where
@@ -91,17 +89,20 @@ instance PP Env where
       optAnacrusis (Just d)  = ppDuration d   
       optAnacrusis Nothing   = text "none"             
 
-instance Witness Env where textrep = wpretty . pp
+instance Witness Env where textrep = wpp . pp
 
 --------------------------------------------------------------------------------
 -- NoteListDatatypes
 
+instance PP OutputFormat where
+  pp Abc           = text "Abc"
+  pp LilyPond      = text "LilyPond"  
 
 instance (PP e) => PP (NoteListF e) where
   pp (NoteList se)        = genPunctuateSeq pp line se
 
 instance (PP e) => Witness (NoteListF e) where
-  textrep = wpretty . pp
+  textrep = wpp . pp
 
 instance (PP e) => PP (BlockF e) where
   pp (SingleBlock i e)    = measureNumber i <&\> indent 4 (pp e)
@@ -129,7 +130,8 @@ instance PP Glyph where
   pp (BeamStart)          = text "[."
   pp (BeamEnd)            = text ".]" <> line
   pp (Tie)                = text "~~"
-  pp (Annotation fn)      = lenses $ string $ unformatted $ fn emptyDoc
+  pp (Annotation fmt fn)  = 
+      pp fmt <+> (lenses $ string $ unformatted $ fn emptyDoc)
 
 durationSuffix :: Duration -> ODoc
 durationSuffix d = char '\'' <> ppDuration d 
@@ -172,7 +174,7 @@ instance PP a => PP (OnsetQueue a) where
 
 
 instance PP a => Witness (OnsetQueue a) where
-  textrep = wpretty . pp
+  textrep = wpp . pp
 
 --------------------------------------------------------------------------------
 -- TemplateDatatypes
@@ -204,7 +206,7 @@ metabind name d = bananas $ text ('~':name) <> colon <+> d
 instance PP AbcScore where
   pp (AbcScore xs) = vsep $ map pp xs
 
-instance Witness AbcScore where textrep = wpretty . pp
+instance Witness AbcScore where textrep = wpp . pp
 
 
 -- X field gives the Int
@@ -229,7 +231,7 @@ instance PP AbcField where
 instance PP LyScore where
   pp (LyScore xs) = vsep $ map pp xs
  
-instance Witness LyScore where textrep = wpretty . pp
+instance Witness LyScore where textrep = wpp . pp
 
   
 instance PP LyExpr where
@@ -262,7 +264,7 @@ instance PP Expr where
                              <&\> text ">>"
                                       
 instance Witness [Expr] where
-  textrep = wpretty . vsep . map pp
+  textrep = wpp . vsep . map pp
         
 instance PP OutputDirective where
   pp (OutputDirective oscm name) = text "#output" <> fn oscm <+> text name

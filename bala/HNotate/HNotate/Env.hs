@@ -15,7 +15,6 @@
 --------------------------------------------------------------------------------
 
 module HNotate.Env (
-    OutputFormat(..),
     Env,
     Config(..),
     
@@ -61,7 +60,7 @@ module HNotate.Env (
 import HNotate.Data
 import HNotate.Document
 import HNotate.Duration
-import HNotate.NoteListDatatypes (System)
+import HNotate.NoteListDatatypes (System, OutputFormat(..) )
 import HNotate.NotateMonad
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
@@ -74,12 +73,6 @@ import Data.Ratio
 
 --------------------------------------------------------------------------------
 -- Datatypes
-
-
-
-
-data OutputFormat = Output_Abc | Output_LilyPond  
-  deriving (Eq,Show) 
 
 
   
@@ -129,7 +122,7 @@ instance Show (String -> ODoc) where
 -- Defaults
 
 default_ly_env = Env {
-    _output_format          = Output_LilyPond, 
+    _output_format          = LilyPond, 
     _current_key            = c_major,
     _label_set              = c_major'ls,
     _current_meter          = four_four,
@@ -148,7 +141,7 @@ default_ly_env = Env {
 
   
 default_abc_env = Env {
-    _output_format          = Output_Abc, 
+    _output_format          = Abc, 
     _current_key            = c_major,
     _label_set              = c_major'ls,
     _current_meter          = four_four,
@@ -245,7 +238,7 @@ set_current_key k env         =
 -- Note there is no recognized 'cadenzaOff' in Abc, 
 -- seeing a Meter command is equivalent to cadenza Off     
 set_current_meter             :: Meter -> Env -> Env
-set_current_meter m env@(Env {_output_format=Output_Abc})  =   
+set_current_meter m env@(Env {_output_format=Abc})  =   
     if (meterToDouble m > 0.75) 
        then env {_current_meter     = m, 
                  _unit_note_length  = eighth, 
@@ -289,8 +282,8 @@ barLength CutTime         = 2%2
 
 abcly :: Monad m => (a -> NotateT m b) -> (a -> NotateT m b) -> a -> NotateT m b
 abcly mx my a = asks output_format >>= 
-            \fmt -> case fmt of Output_Abc -> mx a; 
-                                Output_LilyPond -> my a
+            \fmt -> case fmt of Abc -> mx a; 
+                                LilyPond -> my a
 
   
 

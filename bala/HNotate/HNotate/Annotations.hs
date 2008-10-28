@@ -18,30 +18,21 @@ import HNotate.Document
 import HNotate.NoteListDatatypes
 
 
-snoc g t = t |*> Evt g
-
 -- Abc
-upbow' :: Glyph
-upbow' = Annotation $ (\d -> char 'u' <> d)
+upbow :: AnnoFun
+upbow = (\d -> char 'u' <> d)
 
-upbow :: EventList -> EventList
-upbow = snoc upbow'
+downbow :: AnnoFun
+downbow = (\d -> char 'v' <> d)
 
-
-downbow' :: Glyph
-downbow' = Annotation $ (\d -> char 'v' <> d)
-
-downbow :: EventList -> EventList
-downbow = snoc downbow'
 
 
 -- LilyPond
-fermata' :: Glyph 
-fermata' = Annotation $ (<> text "\\fermata")
-
-fermata :: EventList -> EventList
-fermata = snoc fermata'
+fermata :: AnnoFun 
+fermata = (<> command "fermata")
 
 
+stringNum :: Int -> AnnoFun
+stringNum i = (<> command (show i))
 
 

@@ -32,6 +32,7 @@ module HNotate.Document (
   indent, nest,   --- ?? 
   list, tupled,
   underline,
+  command, command1, command2,
   PP(..),
   output, formatted, quickOutput, unformatted 
   ) where
@@ -270,6 +271,17 @@ tupled = parens .  foldr fn emptyDoc
 
 underline :: String -> ODoc
 underline s = text s <&\> text (replicate (length s) '-') <> line 
+
+
+command :: String -> ODoc
+command = text . ('\\':)
+
+command1 :: String -> ODoc -> ODoc
+command1 s d = command s <+> d
+
+command2 :: String -> ODoc -> ODoc -> ODoc
+command2 s d1 d2 = command s <+> d1 <+> d2
+
                  
 --------------------------------------------------------------------------------
 -- class 

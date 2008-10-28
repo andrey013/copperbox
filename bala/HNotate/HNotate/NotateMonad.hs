@@ -85,10 +85,10 @@ class DebugLevel cfg where debug_level :: cfg -> Int
   
 class Witness a where textrep :: a -> String
 
-instance Witness ODoc where textrep = wpretty
+instance Witness ODoc where textrep = wpp
 
-wpretty :: ODoc -> String 
-wpretty = formatted 0 70
+wpp :: ODoc -> String 
+wpp = formatted 0 70
 
 
 primOutput :: (Monad m, DebugLevel cfg) => Int -> String -> NotateMonadT env cfg m ()
@@ -108,7 +108,7 @@ steno i s f a = primOutput i s >> primOutput i (f a) >> return a
 
 document :: (Monad m, DebugLevel cfg) => 
            Int -> String -> (a -> ODoc) -> a -> NotateMonadT env cfg m a 
-document i s f a = primOutput i s >> primOutput i (wpretty $ f a) >> return a
+document i s f a = primOutput i s >> primOutput i (wpp $ f a) >> return a
 
 textoutput :: (Monad m, DebugLevel cfg) => 
               Int -> String -> String ->  NotateMonadT env cfg m String

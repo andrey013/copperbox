@@ -35,16 +35,15 @@ import Data.Sequence
 import Data.Traversable
 
   
-type BarConcat' = [(Int,ODoc)] -> ODoc
 
-lyConcat :: BarConcat'
+lyConcat :: BarConcatFun
 lyConcat = vsep . map snd
 
 
-translateLilyPond :: Monad m => BarConcat' -> NoteList -> NotateT m ODoc
-translateLilyPond tile = fwd <=< printStep <=< lilypondRelativeForm
+translateLilyPond :: Monad m => BarConcatFun -> NoteList -> NotateT m ODoc
+translateLilyPond bf = fwd <=< printStep <=< lilypondRelativeForm
   where
-    printStep = return . outputNoteList tile
+    printStep = return . outputNoteList bf
     
     fwd m = ask >>= \env ->
             witness 3 "Current environment is..." env >>
@@ -65,8 +64,8 @@ lilypondRelativeForm evts = asks relative_pitch >>= \p ->
 
     st p     = lyState0 `updatePitch` p
     
-outputNoteList :: BarConcat' -> NoteList -> ODoc 
-outputNoteList tile = tile . F.foldr ((:) `onl` blockDoc) [] . getNoteList 
+outputNoteList :: BarConcatFun -> NoteList -> ODoc 
+outputNoteList bf = bf . F.foldr ((:) `onl` blockDoc) [] . getNoteList 
 
 
 blockDoc :: Block -> (Int,ODoc)
@@ -85,11 +84,11 @@ glyph (GraceNotes se)     = gracenotes (unseq se)
 glyph (Tie)               = tie
 glyph (BeamStart)         = emptyDoc
 glyph (BeamEnd)           = emptyDoc
-glyph (Annotation fn)     = emptyDoc
+glyph (Annotation fmt fn) = emptyDoc
 
 
 polyphony :: Seq Bar -> ODoc
-polyphony = dblangles . step1 . viewl
+polyphony = dblangles' . step1 . viewl
   where 
     step1 EmptyL      = emptyDoc
     step1 (s :< se)   = rstep s (viewl se)
@@ -107,7 +106,9 @@ barDoc xs = collapse $ F.foldl fn (emptyDoc,(<+>), emptyDoc) xs
 
 fn (out,op,tip) (BeamStart)     = (out `op` tip, (<>),  anno bSt tip)
 fn (out,op,tip) (BeamEnd)       = (out `op` tip, (<+>), anno bEnd tip)
-fn (out,op,tip) (Annotation fn) = (out,           op,   anno fn tip)
+fn (out,op,tip) (Annotation fmt fn) 
+      | fmt == LilyPond         = (out,           op,   anno fn tip)
+      | otherwise               = (out,           op,   tip)
 fn (out,op,tip) e               = (out `op` tip,  op,   glyph e)                 
 
 anno :: (ODoc -> ODoc) -> ODoc -> ODoc
@@ -115,18 +116,12 @@ anno fn e | isEmpty e   = e
           | otherwise   = fn e
           
 bSt :: (ODoc -> ODoc)
-bSt   = (<> char '[')
-bEnd  = (<> char ']') 
+bSt   = (<> lbracket)
+bEnd  = (<> rbracket) 
 
 
 --------------------------------------------------------------------------------
 -- pretty printers to 'ODoc'
-
-command :: String -> ODoc
-command = text . ('\\':)
-
-command1 :: String -> ODoc -> ODoc
-command1 s d = command s <+> d
 
 
 note :: Pitch -> Duration -> ODoc

@@ -15,12 +15,16 @@
 --------------------------------------------------------------------------------
 
 module HNotate.NoteListDatatypes (
+    
+    OutputFormat(..),
     -- * External view 
-    System, EventList, EventListF(..), Evt(..),
+    System, 
+    BarConcatFun, 
+    EventList, EventListF(..), Evt(..),
     system, systemL, system1,
     
     root, note, rest, spacer,    
-    chord, gracenotes, poly, 
+    chord, gracenotes, annoAbc, annoLy, poly, 
     notelist,
     ( |*> ), 
     
@@ -31,6 +35,7 @@ module HNotate.NoteListDatatypes (
     BarF(..), Bar,
     
     Glyph(..),
+    AnnoFun,
     
     glyphDuration,
     durationf, pitchf
@@ -51,7 +56,10 @@ import Data.Monoid
 import Data.Sequence
 import Data.Traversable
 
-
+data OutputFormat = Abc | LilyPond  
+  deriving (Eq,Show) 
+  
+  
 -- There are two views of note lists the external one (EventList) and
 -- the internal one (NoteList).
 -- Both share a common representaion of glyphs
@@ -64,7 +72,9 @@ data Glyph  = Note Pitch Duration
             | BeamStart
             | BeamEnd
             | Tie
-            | Annotation (ODoc -> ODoc)
+            | Annotation OutputFormat AnnoFun
+            
+type AnnoFun = ODoc -> ODoc          
 
 instance Show Glyph where
   showsPrec i (Note p d)        = 
@@ -79,12 +89,16 @@ instance Show Glyph where
   showsPrec i (BeamStart)       = showString "BeamStart"
   showsPrec i (BeamEnd)         = showString "BeamEnd"
   showsPrec i (Tie)             = showString "Tie" 
-  showsPrec i (Annotation fn)   =   
-      constrS "Annotation" (quickOutput $ fn emptyDoc) 
+  showsPrec i (Annotation fmt fn)   =   
+      constrS "Annotation" (shows fmt . showSpace . (quickOutput $ fn emptyDoc)) 
       
       
 -- The External view
 type System = Map.Map String EventList
+
+-- Should each note list have a bcf or can the env have a single one?
+type BarConcatFun = [(Int,ODoc)] -> ODoc
+
 
 type EventList = EventListF Evt  
 
@@ -175,7 +189,7 @@ instance Traversable BarF where
 --------------------------------------------------------------------------------
 -- Functions on glyphs 
  
- 
+
 
 glyphDuration :: Glyph -> Duration
 glyphDuration (Note _ d)          = d
@@ -215,7 +229,6 @@ pitchf f (BeamEnd)                = BeamEnd
 (|*>) (EventList t) evt = EventList $ t |> evt
 
 
-
 system :: System 
 system = mempty
 
@@ -228,24 +241,29 @@ system1 k t = Map.insert k t mempty
 root :: EventList
 root = EventList empty
 
-note            :: Pitch -> Duration -> EventList -> EventList
-note p d t      = t |*> Evt (Note p d)
+note                :: Pitch -> Duration -> EventList -> EventList
+note p d t          = t |*> Evt (Note p d)
 
-rest            :: Duration -> EventList -> EventList
-rest d t        = t |*> Evt (Rest d)
+rest                :: Duration -> EventList -> EventList
+rest d t            = t |*> Evt (Rest d)
 
-spacer          :: Duration -> EventList -> EventList
-spacer d t       = t |*> Evt (Spacer d)
+spacer              :: Duration -> EventList -> EventList
+spacer d t          = t |*> Evt (Spacer d)
 
-
-chord           :: [Pitch] -> Duration -> EventList -> EventList
-chord [] d t    = t
-chord es d t    = t |*> (Evt $ Chord (fromList es) d)
-
+chord               :: [Pitch] -> Duration -> EventList -> EventList
+chord [] d t        = t
+chord es d t        = t |*> (Evt $ Chord (fromList es) d)
     
-gracenotes           :: [Pitch] -> EventList -> EventList
-gracenotes [] t      = t
-gracenotes es t      = t |*> (Evt $ GraceNotes $ fromList es)
+gracenotes          :: [Pitch] -> EventList -> EventList
+gracenotes [] t     = t
+gracenotes es t     = t |*> (Evt $ GraceNotes $ fromList es)
+
+annoAbc             :: AnnoFun -> EventList -> EventList
+annoAbc f t         = t |*> (Evt $ Annotation Abc f)
+
+annoLy              :: AnnoFun -> EventList -> EventList
+annoLy f t          = t |*> (Evt $ Annotation LilyPond f)
+
 
 -- poly does some optimizing ...
 poly            :: [EventList] -> EventList -> EventList

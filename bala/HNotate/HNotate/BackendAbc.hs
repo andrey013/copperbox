@@ -36,16 +36,16 @@ import Data.Sequence hiding (take)
 import Data.Traversable
   
 
-type BarConcat = [(Int,ODoc)] -> ODoc
+
 
 -- TODO - variants of this to support bar numbering, etc.
-abcConcat :: BarConcat
+abcConcat :: BarConcatFun
 abcConcat = vsep . map snd
 
-translateAbc :: Monad m => BarConcat -> NoteList -> NotateT m ODoc
-translateAbc tile = fwd <=< printStep <=< beamNoteList <=< abcForm 
+translateAbc :: Monad m => BarConcatFun -> NoteList -> NotateT m ODoc
+translateAbc bf = fwd <=< printStep <=< beamNoteList <=< abcForm 
   where
-    printStep = return . outputNoteList tile
+    printStep = return . outputNoteList bf
     
     fwd m = ask >>= \env ->
             witness 3 "Current environment is..." env >>
@@ -58,8 +58,8 @@ abcForm = unwrapMonad <=< inner
   where
     inner = unwrapMonad . unComp . traverse (unleBody `comp` plrBody)
 
-outputNoteList :: BarConcat -> NoteList -> ODoc 
-outputNoteList tile = tile . F.foldr ((:) `onl` blockDoc) [] . getNoteList 
+outputNoteList :: BarConcatFun -> NoteList -> ODoc 
+outputNoteList bf = bf . F.foldr ((:) `onl` blockDoc) [] . getNoteList 
 
 
 blockDoc :: Block -> (Int,ODoc)
@@ -81,10 +81,12 @@ barDoc xs = collapse $ F.foldl fn (emptyDoc,(<+>), emptyDoc) xs
   where collapse (out,op,tip) = out `op` tip
   
 
-fn (out,op,tip) (BeamStart)     = (out `op` tip, (<>),  emptyDoc)
-fn (out,op,tip) (BeamEnd)       = (out `op` tip, (<+>), emptyDoc)
-fn (out,op,tip) (Annotation fn) = (out,           op,   anno fn tip)
-fn (out,op,tip) e               = (out `op` tip,  op,   glyph e)                 
+fn (out,op,tip) (BeamStart)         = (out `op` tip, (<>),  emptyDoc)
+fn (out,op,tip) (BeamEnd)           = (out `op` tip, (<+>), emptyDoc)
+fn (out,op,tip) (Annotation fmt fn) 
+      | fmt == Abc                  = (out,           op,   anno fn tip)
+      | otherwise                   = (out,           op,   tip)
+fn (out,op,tip) e                   = (out `op` tip,  op,   glyph e)                 
 
 anno :: (ODoc -> ODoc) -> ODoc -> ODoc
 anno fn e | isEmpty e   = e
@@ -103,7 +105,7 @@ glyph (GraceNotes se)     = gracenotes (unseq se)
 glyph (Tie)               = tie
 glyph (BeamStart)         = emptyDoc
 glyph (BeamEnd)           = emptyDoc
-glyph (Annotation fn)     = emptyDoc
+glyph (Annotation fmt fn) = emptyDoc
 
 
 
