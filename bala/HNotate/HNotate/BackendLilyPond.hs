@@ -86,6 +86,8 @@ outputGlyph (GraceNotes se)     = gracenotes (unseq se)
 outputGlyph (BeamStart)         = return ()
 outputGlyph (BeamEnd)           = return ()
 outputGlyph (Tie)               = tie
+outputGlyph (Annotation fn)     = return ()
+
 
 polyphony :: Seq Bar -> PrintM ()
 polyphony = step1 . viewl

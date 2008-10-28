@@ -15,10 +15,12 @@
 module HNotate.Document (
   ODoc,
   
-  empty, isEmpty,
-  text, char, string,
-  ( <> ), ( <+> ),
-  output, formatted, unformatted 
+  emptyDoc, isEmpty,
+  text, char, string, int,
+  ( <> ), ( <+> ), ( <&\> ),
+  hcat, hsep, vsep,
+  braces, parens, brackets, angles,
+  output, formatted, quickOutput, unformatted 
   ) where
 
 import qualified Data.Foldable as F
@@ -47,6 +49,11 @@ breakjoin a b = ODoc $ (getODoc a |> LineBreak) >< getODoc b
 empty :: ODoc
 empty = ODoc mempty
 
+-- an alias (useful if also importing Data.Sequence etc.)
+emptyDoc :: ODoc
+emptyDoc = empty
+
+
 isEmpty :: ODoc -> Bool
 isEmpty = null . getODoc 
 
@@ -56,6 +63,9 @@ text s = ODoc $ singleton $ Text (length s) s
 char :: Char -> ODoc
 char c = text [c]
 
+
+int :: Int -> ODoc
+int  = text . show
 
 string :: String -> ODoc
 string = build . map text . lines
@@ -75,6 +85,38 @@ a <> b | isEmpty a    = b
 a <+> b | isEmpty a   = b
         | isEmpty b   = a
         | otherwise   = spacejoin a b
+
+(<&\>) :: ODoc -> ODoc -> ODoc
+a <&\> b | isEmpty a   = b
+         | isEmpty b   = a
+         | otherwise   = breakjoin a b
+        
+        
+hcat :: [ODoc] -> ODoc
+hcat = foldl (<>) emptyDoc        
+
+hsep :: [ODoc] -> ODoc
+hsep = foldl (<+>) emptyDoc 
+
+vsep :: [ODoc] -> ODoc
+vsep = foldl (<&\>) emptyDoc 
+
+
+braces :: ODoc -> ODoc
+braces d = char '{' <> d <> char '}'
+
+parens :: ODoc -> ODoc
+parens d = char '(' <> d <> char ')'
+
+brackets :: ODoc -> ODoc
+brackets d = char '[' <> d <> char ']'
+
+angles :: ODoc -> ODoc
+angles d = char '<' <> d <> char '>'
+
+
+--------------------------------------------------------------------------------
+-- rendering
         
 quickOutput :: ODoc -> ShowS
 quickOutput = F.foldl fn id . getODoc

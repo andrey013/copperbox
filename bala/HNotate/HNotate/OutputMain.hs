@@ -21,6 +21,7 @@ import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.BuildNoteList
 import HNotate.CommonUtils -- (outputDoc, showDocS)
+import HNotate.Document (formatted)
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
@@ -165,7 +166,9 @@ findEventList name = asks_config _system >>= \sys ->
 
 noteListOutput :: Monad m => EventList -> NotateT m NoteListOutput
 noteListOutput = 
-  abcly (toNoteList >=> translateAbc) (toNoteList >=> translateLilyPond) 
+    abcly (toNoteList >=> translateAbc abcConcat >=> tempODocToDoc) 
+          (toNoteList >=> translateLilyPond) 
+  where
+    tempODocToDoc = return . string . formatted 0 60
 
-    
     

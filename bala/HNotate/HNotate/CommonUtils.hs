@@ -304,7 +304,12 @@ rbanana = text "|)"
 bananas :: Doc -> Doc
 bananas d = lbanana <> d <> rbanana 
 
+llens, rlens :: Doc
+llens = text "[("
+rlens = text ")]"
 
+lenses :: Doc -> Doc
+lenses d = llens <> d <> rlens 
 
 underline :: String -> Doc
 underline s = text s <$> text (replicate (length s) '-') <> line 
@@ -337,7 +342,9 @@ genPunctuateSeq pp p = para phi empty
 
 spaceS :: Int -> ShowS
 spaceS i = showString (replicate i ' ')  
-    
+
+showSpace :: ShowS
+showSpace = showChar ' '     
     
 showNewline, showLBrace, showRBrace :: ShowS
 showNewline   = showChar '\n'
@@ -348,3 +355,5 @@ foldS :: (ShowS -> ShowS -> ShowS) -> [ShowS] -> ShowS
 foldS f []      = id
 foldS f xs      = foldr1 f xs
 
+constrS :: String -> ShowS -> ShowS
+constrS cname body = showString ('(':cname) . showSpace . body . showChar ')'

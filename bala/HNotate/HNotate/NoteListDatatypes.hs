@@ -22,6 +22,7 @@ module HNotate.NoteListDatatypes (
     root, note, rest, spacer,    
     chord, gracenotes, poly, 
     notelist,
+    ( |*> ), 
     
     
     -- * Internal view 
@@ -31,11 +32,6 @@ module HNotate.NoteListDatatypes (
     
     Glyph(..),
     
-    -- aliases
-    
-    
-    
-    
     glyphDuration,
     durationf, pitchf
     
@@ -44,6 +40,7 @@ module HNotate.NoteListDatatypes (
 
 
 import HNotate.CommonUtils
+import HNotate.Document
 import HNotate.Duration
 import HNotate.Pitch
 
@@ -53,7 +50,8 @@ import qualified Data.Map as Map
 import Data.Monoid
 import Data.Sequence
 import Data.Traversable
-
+import Text.PrettyPrint.Leijen (Doc, pretty)
+import qualified Text.PrettyPrint.Leijen as PP
 
 -- There are two views of note lists the external one (EventList) and
 -- the internal one (NoteList).
@@ -67,10 +65,25 @@ data Glyph  = Note Pitch Duration
             | BeamStart
             | BeamEnd
             | Tie
-  deriving (Eq,Show)   
-  
-  
+            | Annotation (ODoc -> ODoc)
 
+instance Show Glyph where
+  showsPrec i (Note p d)        = 
+      constrS "Note" (showsPrec i p . showSpace . showsPrec i d)
+      
+  showsPrec i (Rest d)          = constrS "Rest" (showsPrec i d)
+  showsPrec i (Spacer d)        = constrS "Spacer" (showsPrec i d) 
+  showsPrec i (Chord se d)      = 
+      constrS "Chord" (showsPrec i se . showSpace . showsPrec i d)
+      
+  showsPrec i (GraceNotes se)   = constrS "GraceNotes" (showsPrec i se) 
+  showsPrec i (BeamStart)       = showString "BeamStart"
+  showsPrec i (BeamEnd)         = showString "BeamEnd"
+  showsPrec i (Tie)             = showString "Tie" 
+  showsPrec i (Annotation fn)   =   
+      constrS "Annotation" (quickOutput $ fn emptyDoc) 
+      
+      
 -- The External view
 type System = Map.Map String EventList
 

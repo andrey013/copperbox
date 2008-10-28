@@ -19,6 +19,7 @@
 module HNotate.PrettyInstances where
 
 import HNotate.CommonUtils
+import HNotate.Document ( ODoc, emptyDoc, unformatted )
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
@@ -54,6 +55,13 @@ instance Witness ParseError where textrep = show
 
 instance (Integral a, Pretty a) => Pretty (Ratio a) where
   pretty r = pretty (numerator r) <> char '%' <> pretty (denominator r)
+
+
+--------------------------------------------------------------------------------
+-- Document / ODoc
+
+instance Witness ODoc where textrep = unformatted
+
 
 --------------------------------------------------------------------------------
 -- Env
@@ -126,7 +134,7 @@ instance Pretty Glyph where
   pretty (BeamStart)          = text "[."
   pretty (BeamEnd)            = text ".]" <> line
   pretty (Tie)                = text "~~"
-                
+  pretty (Annotation fn)      = lenses $ string $ unformatted $ fn emptyDoc
 
 durationSuffix :: Duration -> Doc
 durationSuffix d = char '\'' <> ppDuration d 

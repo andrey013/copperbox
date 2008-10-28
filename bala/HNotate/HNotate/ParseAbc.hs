@@ -211,13 +211,13 @@ abcPitch = build <$> abcAccidental <*> basenote <*> octaveDiff
 
 
 pitchLetter :: Parser PitchLetter
-pitchLetter = (fromJust . fromLetter) 
+pitchLetter = (fromJust . fromLChar) 
     <$> satisfy ((flip elem) "CDEFGABcdefgab")
     
 basenote :: Parser (Int,PitchLetter)
 basenote = build <$> satisfy ((flip elem) "CDEFGABcdefgab")
   where 
-    build ch        = (octave ch, fromJust $ fromLetter ch) -- match guaranteed
+    build ch        = (octave ch, fromJust $ fromLChar ch) -- match guaranteed
     octave ch       = if isUpper ch then 4 else 5
 
 
