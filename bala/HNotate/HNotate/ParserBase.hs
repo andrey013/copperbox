@@ -15,7 +15,7 @@
 
 module HNotate.ParserBase where
 
-import HNotate.CommonUtils hiding (build)
+import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes

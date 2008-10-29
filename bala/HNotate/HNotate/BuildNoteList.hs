@@ -1,4 +1,5 @@
-
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -33,16 +34,49 @@ import Control.Monad.Reader
 import qualified Data.Foldable as F
 import Data.List (unfoldr)
 import Data.Maybe (fromMaybe)
+import Data.Monoid
 import Data.Sequence hiding (reverse)
 import Prelude hiding (null)
 
 
-        
--- VoiceOverlay - (i,d,se)
--- i - bar count, d - time from start of bar, se - events
-type VoiceOverlayA = (Int, Duration, Seq Evt)
+-- The distance from the 'start' of a sequence of music.
+-- Measured in bars and the duration within a bar 
+data MetricalSize = MS { 
+    bar_count :: Int,
+    ib_duration :: Duration     -- 'in-bar' duration 
+  }
+  deriving (Eq,Show)
 
-type VoiceOverlayB = (Int, Duration, Seq Glyph)
+-- We only need 0 and + (a Monoid instance) and can get by 
+-- without a Num instance
+instance Monoid MetricalSize where
+  mempty = MS 0 duration_zero
+  MS b d `mappend` MS b' d' = MS (b+b') (d+d')     
+  
+-- After addition the 'in-bar' duration may actually be bigger than a bar!
+-- This is an unfortunate problem of not having context for the addition
+-- (e.g. getting the bar_length form a reader monad)     
+msnormalize :: Duration -> MetricalSize -> MetricalSize
+msnormalize bar_len (MS b d) 
+    | d < bar_len   = MS b d
+    | otherwise     = let (c,v) = d `divModR` bar_len 
+                      in MS (b + fromIntegral c) v
+                                 
+
+  
+data EvtVoiceOverlay = EVO { 
+    evo_displacement  :: MetricalSize,
+    evo_events        :: Seq Evt
+  }
+  deriving (Show)   
+  
+data GlyphVoiceOverlay = GVO { 
+    gvo_displacement  :: MetricalSize,
+    gvo_glyphs        :: Seq Glyph
+  }
+  deriving (Show) 
+
+
 
 
 toNoteList :: Monad m => EventList -> NotateT m NoteList
@@ -52,10 +86,6 @@ toNoteList evts =
            else asks bar_length         >>= \ml -> 
                 anacrusisDisplacement   >>= \acis ->
                 eventsToNoteList ml acis evts
-              
-
-
-
 
 eventsToNoteListUnmetered :: Monad m => EventList -> NotateT m NoteList
 eventsToNoteListUnmetered = eventsToNoteList max_bar_len duration_zero
@@ -66,109 +96,99 @@ eventsToNoteList :: Monad m => Duration -> Duration -> EventList
                         -> NotateT m NoteList
 eventsToNoteList bar_len acis = 
     (o4 . collapseQueue) <=< (o3 . rawToQueue)
-                         <=< (o2 . map (partitionVoB bar_len))            
+                         <=< (o2 . map (partitionGVO bar_len))            
                          <=< (o1 . untree bar_len acis) 
                          <=< (o0 . getEventList)
   where 
     o0 = return
-    o1 = document 5 "Flattened representation... "    ppListVoiceOverlayB
+    o1 = document 5 "Flattened representation... "    ppListGlyphVoiceOverlay
     o2 = document 5 "The flat rep partitioned..."     ppListSeqRawBar
     o3 = witness  5 "The bars in the onset queue..."  
     o4 = witness  5 "Finally the note list..."       
     
 
-        
--- 'untree' is the difficult bit of building a note list
--- it flattens out the 'polyphony'
-untree :: Duration -> Duration -> Seq Evt -> [VoiceOverlayB]    
+untree :: Duration -> Duration -> Seq Evt -> [GlyphVoiceOverlay]    
 untree bar_len acis evts = 
     worklist (reduceTreeStep bar_len) [initial_vo]
   where
     bar_number  = if (acis == duration_zero) then 1 else 0 
-    initial_vo  = (bar_number, acis, evts)     
+    initial_vo  = EVO (MS bar_number acis) evts 
+    
+    
 
-
--- reduceTreeStep produces a 'flat view' of VoiceOverlayA which 
--- will have the same start point:
--- (bar number /bc/ and inner bar displacement /d/)
--- and also returns a (work)list of voice overlays where it 
--- encountered parallelism (aka. polyphony)      
-reduceTreeStep :: Duration -> VoiceOverlayA -> (VoiceOverlayB, [VoiceOverlayA])
-reduceTreeStep bar_len (bc,d,se) = vals $ F.foldl fn (bc,d,empty,[]) se
+reduceTreeStep :: Duration -> EvtVoiceOverlay 
+                    -> (GlyphVoiceOverlay, [EvtVoiceOverlay])
+reduceTreeStep bar_len (EVO ms se) = mkAnswer $ F.foldl fn (ms,empty,[]) se
   where
-    -- Take the initial bc & d to preserve the start point
-    vals (_,_,se,xs) = ((bc,d,se),xs)  
+    -- Build the final aswer with the initial MS! 
+    mkAnswer (_,se,polys) = ((GVO ms se),polys)  
     
-    fn (bc,d,se,xs) (Poly ys) = 
-        let ys' = map (\s -> (bc,0, spacerPrefix d s)) ys in (bc,d,se, xs++ys')
+    fn (ms,se,polys) (Poly ys) = (ms,se,polys ++ map mkEVO ys)
+        where
+          -- Any poly voices we find we want them to start at a 'bar start'
+          mkEVO (EventList se)  = if ib_duration ms == duration_zero
+                                  then EVO ms se
+                                  else EVO (leftToBarStart ms) (lspacer <| se)
+          lspacer               = Evt $ Spacer (ib_duration ms)
+
     
-    fn (bc,d,se,xs) (Evt e)   = let d' = d + glyphDuration e in 
-      case d' >= bar_len of
-        True  -> let (b'',d'') = gylphSize bar_len d' in (bc+b'',d'',se |> e, xs)
-        False -> (bc,d',se |> e, xs)
+    fn (ms,se,polys) (Evt e)   = (moveRightwards bar_len e ms, se |> e, polys)
 
-    -- Align a further VoiceOverlayA's at the star of a bar
-    -- rather than an arbitrary point within the bar.
-    -- This is done with a non-printable space and is essential 
-    -- for LilyPond and Abc  output.    
-    spacerPrefix d (EventList se)  | d > 0     = Evt (Spacer d) <| se
-                                   | otherwise = se
 
-      
+moveRightwards :: Duration -> Glyph -> MetricalSize -> MetricalSize
+moveRightwards bar_len gly ms = 
+    msnormalize bar_len $ ms `mappend` (gylphSize bar_len gly)
+                 
+leftToBarStart :: MetricalSize -> MetricalSize 
+leftToBarStart (MS b _) = MS b duration_zero
+
 
 type RawBar = (Int,Seq Glyph)
 
-type PVobSt = (Int,Duration,Seq Glyph)
-            
-partitionVoB :: Duration -> VoiceOverlayB -> Seq RawBar
-partitionVoB bar_len (bar_num, partial, se) = 
-    finalize $ apo step flush (bar_num,partial,se)
-  where
-    step :: PVobSt -> Maybe (RawBar, PVobSt)
-    step se = let (bc,d,sa,sb) = together (general_splitter se) in 
-              if null sb then Nothing else Just ((bc,sa),(bc+1,d,sb))
-    
-    -- flush ignores 'start duration'
-    flush :: PVobSt -> Seq RawBar
-    flush (bn,_,se) = singleton (bn,se)         
-    
-    general_splitter (bn,d,se) = genSplit withinBar plusop (bn,d) se
-    
-    plusop :: (Int,Duration) -> Glyph -> (Int,Duration)
-    plusop (bc,d) e = let dn = d + glyphDuration e in case dn >= bar_len of
-        True  -> let (bc',d') = gylphSize bar_len dn in (bc+bc',d') 
-        False -> (bc,dn)
 
-    withinBar :: (Int,Duration) -> (Int,Duration) -> Bool
-    withinBar (bc,_) (bc',_) = bc==bc'       
+partitionGVO :: Duration -> GlyphVoiceOverlay -> Seq RawBar
+partitionGVO bar_len (GVO ms se) = 
+    finalize $ F.foldl phi (empty,(ms,empty)) se
+  where 
+    finalize (srb, (ms,sg)) 
+        | null sg     = srb
+        | otherwise   = srb |> (bar_count ms, sg)
+          
+    phi (srb,(ms,sg)) e  = case fits e (bar_len - ib_duration ms) of
+        Fit a     -> let ms' = moveRightwards bar_len e ms in
+                     -- a 'fit' might be an exact fit and leave 
+                     -- if so the move right will increased the bar_count 
+                     if bar_count ms' /= bar_count ms 
+                     then (srb |> (bar_count ms, (sg |> e)), (ms',empty))
+                     else (srb, (ms', sg |> e))
+                     
+        Split l r -> (srb |> (bar_count ms, sg |> l |> Tie),
+                        (moveRightwards bar_len r ms, singleton r) )
+
+
+instance Fits Glyph Duration where
+  measure (Note _ d)        = d
+  measure (Rest d)          = d
+  measure (Spacer d)        = d
+  measure (Chord _ d)       = d
+  measure e                 = duration_zero
+  
+  resizeTo (Note p _)   d   = Note p d
+  resizeTo (Rest _)     d   = Rest d
+  resizeTo (Spacer _)   d   = Spacer d
+  resizeTo (Chord se _) d   = Chord se d
+  resizeTo e            d   = e
+
+                                                   
+
+gylphSize :: Duration -> Glyph -> MetricalSize
+gylphSize bar_len gly = 
+    let d = glyphDuration gly; (bn,rest) = d `divModR` bar_len 
+    in MS (fromIntegral bn) rest
     
-    together :: ((Int,Duration), Seq Glyph, Maybe Glyph, Seq Glyph)
-                  -> (Int, Duration, Seq Glyph, Seq Glyph)
-    together ((bc,d), sl, Nothing, sr) = (bc,d,sl,sr)
-    together ((bc,d), sl, Just e,  sr) = let ed = glyphDuration e in 
-        case d + ed == bar_len of
-          True  -> (bc, 0, sl |> e, sr)
-          False -> let leftd  = bar_len - d
-                       rightd = ed - leftd
-                       lg     = durationf (const leftd) e
-                       rg     = durationf (const rightd) e
-                   -- new duration is 0 as the 'right' glyph
-                   -- is enqueued and will be consumed later
-                   in (bc, 0, sl |> lg |> Tie, rg <| sr)
-
-    -- drop the last element if it contains an empty body...                               
-    finalize se = case viewr se of
-      EmptyR         -> se        -- not much to do for empty 
-      sa :> (bn,ssa) -> if null ssa then sa else sa |> (bn,ssa)
-                                                                                      
-
--- glyphs might be bigger than a bar!
-gylphSize :: Duration -> Duration -> (Int, Duration)
-gylphSize bar_len drn = reccy 0 drn
-  where reccy i drn   | drn > bar_len = (i,drn)
-                      | otherwise     = (i+1, drn - bar_len)
-                                                      
-
+     
+                      
+                      
 -- Change the raw bars to Bar and queue them on 
 -- bar number. 
 rawToQueue :: [Seq RawBar] -> OnsetQueue Bar
@@ -194,13 +214,14 @@ collapseQueue = NoteList . foldlOnsetQueue fn empty
 --------------------------------------------------------------------------------
 -- debugging // pp output
     
-    
-ppListVoiceOverlayB :: [VoiceOverlayB] -> ODoc
-ppListVoiceOverlayB = vsep . map ppVoiceOverlayB
+ppListGlyphVoiceOverlay :: [GlyphVoiceOverlay] -> ODoc
+ppListGlyphVoiceOverlay = vsep . map ppGlyphVoiceOverlay
 
-ppVoiceOverlayB :: VoiceOverlayB   -> ODoc
-ppVoiceOverlayB (bc, d, se) = 
-    text "bar" <+> int bc <> colon <+> ppDuration d <+> finger se 
+ppGlyphVoiceOverlay :: GlyphVoiceOverlay -> ODoc
+ppGlyphVoiceOverlay (GVO ms se) = 
+  text "bar" <+> int (bar_count ms) <> colon 
+             <+> ppDuration (ib_duration ms) <+> finger se 
+
 
 ppListSeqRawBar :: [Seq RawBar] -> ODoc
 ppListSeqRawBar = vsep . map (genFinger ppRawBar)

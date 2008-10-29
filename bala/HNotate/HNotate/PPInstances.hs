@@ -297,12 +297,15 @@ finger = enclose (text "(|") (text "|)") . genPunctuateSeq pp comma
 genFinger :: (a -> ODoc) -> Seq a -> ODoc
 genFinger f = enclose (text "(|") (text "|)") . genPunctuateSeq f comma
 
-
+-- para gives us a 'view of the remaining sequence' along with the current 
+-- element - so we can get a proper intersperse.
+-- A fold can only see the current element so it would do add an extra sep
+-- e.g.: 1,2,3, 
 genPunctuateSeq :: (a -> ODoc) -> ODoc -> Seq a -> ODoc
-genPunctuateSeq pp p = para phi emptyDoc
+genPunctuateSeq pp sep = para phi emptyDoc
   where 
     phi c (se,  d)  | null se        = pp c <+> d 
-                    | otherwise      = pp c <> p <+> d
+                    | otherwise      = pp c <> sep <+> d
                     
                     
  

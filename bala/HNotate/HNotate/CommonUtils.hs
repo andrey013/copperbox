@@ -1,4 +1,5 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -8,7 +9,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined
+-- Portability :  mptc, fundeps
 --
 -- Common utils - recursion schemes for Data.Sequences 
 -- and pretty print functions
@@ -21,11 +22,42 @@ module HNotate.CommonUtils where
 
 import qualified Data.Foldable as F
 import Data.List (unfoldr)
+import Data.Ratio
 import Data.Sequence hiding (empty, length, reverse)
 import qualified Data.Sequence as S
 import Prelude hiding (null)
 import System.IO
 
+
+--------------------------------------------------------------------------------
+-- 'Fitting' 
+
+data Fit a = Fit a | Split a a 
+  deriving Show
+
+class (Ord b, Num b) => Fits a b | a -> b where
+  measure   :: a -> b
+  resizeTo  :: a -> b -> a
+
+instance Fits Int Int where 
+  measure = id
+  resizeTo _ b = b 
+
+total :: (Fits a b) => Fit a -> b  
+total (Fit a)     = measure a
+total (Split a b) = measure a + measure b
+
+fits :: Fits a b => a -> b -> Fit a
+fits a i  | measure a <= i = Fit a
+          | otherwise      = Split (resizeTo a i) (resizeTo a (measure a - i)) 
+          
+          
+          
+--------------------------------------------------------------------------------
+-- divMod (with rounding) for rationals 
+
+divModR :: (Integral b) => Ratio b -> Ratio b -> (b, Ratio b)
+divModR a b = let a1 = a / b; a2 = round a1 in (a2, a-((a2%1)*b))
 
 
 --------------------------------------------------------------------------------
@@ -193,23 +225,6 @@ apoM phi chi b =
                   (\(a, b') -> apoM phi chi b' >>= return . (a <|))
               
 
-
-
--- build 
-build :: (forall b. (a -> b -> b) -> b -> b) -> Seq a
-build g = g (<|) S.empty
-
--- augment (generalizes build)
-augment :: (forall b. (a -> b -> b) -> b -> b) -> Seq a -> Seq a
-augment g se = g (<|) se
-
--- destroy
-destroy :: (forall a. (a -> Maybe (b,a)) -> a -> c) -> Seq b -> c
-destroy g se = g step se
-  where step :: Seq a -> Maybe (a, Seq a)
-        step se = case viewl se of
-                    EmptyL -> Nothing
-                    e :< sse -> Just (e,sse)
 
 --------------------------------------------------------------------------------
 -- enum functions for cycles (primarily helpful for pitch letters)
