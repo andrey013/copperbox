@@ -179,8 +179,8 @@ instance PP a => Witness (OnsetQueue a) where
 --------------------------------------------------------------------------------
 -- TemplateDatatypes
 
-ppPos :: SrcPos -> ODoc 
-ppPos (SrcPos l c _) = tupled $ [pp l, pp c]
+ppPos :: SrcLoc -> ODoc 
+ppPos (SrcLoc l c) = tupled $ [pp l, pp c]
 
   
 instance PP OutputScheme where

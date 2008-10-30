@@ -26,11 +26,10 @@ import Data.Sequence hiding (empty, length)
 
 
 
--- A non-opaque SrcPos type  
-data SrcPos = SrcPos { 
+-- SrcLoc - SourcePos without the file name 
+data SrcLoc = SrcLoc { 
     _src_line     :: Int,
-    _src_column   :: Int,
-    _src_file     :: String
+    _src_column   :: Int
   }
   deriving (Eq,Ord,Show) 
   
@@ -44,9 +43,13 @@ data OutputScheme = OutputRelative | OutputDefault
 -- 1. Text view - (Water,Hole)
 -- Preserves source text - the holes are collected at their 
 -- source position for filling. 
+type Water = String
 
-type TextChunk = (String, Maybe SrcPos)
-
+data TextSource = SourceFile Water Source'
+  deriving (Show)
+  
+data Source' = EndOfSource | Island SrcLoc TextSource  
+  deriving (Show)
 
 -- 2. 'Island Grammars' for Abc and LilyPond.
 -- Only the elements that effect evaluation are retained. 

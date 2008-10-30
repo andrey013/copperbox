@@ -28,7 +28,7 @@ import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
 import HNotate.ParseLy
-import HNotate.ParserBase (ExprParser, TextChunkParser)
+import HNotate.ParserBase (ExprParser, TextSourceParser)
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (empty)
@@ -39,7 +39,7 @@ import Control.Monad.Writer
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
 import Data.Maybe (fromMaybe)
-import Data.Sequence hiding (empty, reverse)
+import Data.Sequence hiding (empty, reverse, length)
 
 import Text.ParserCombinators.Parsec (ParseError, parseFromFile)
 
@@ -54,7 +54,7 @@ outputLilyPond dl sys inpath outpath   = do
     putStrLn msg
   where
     config  = mkLyConfig dl sys inpath outpath
-    outfun  = generalOutput lyExprParse lyTextChunks 
+    outfun  = generalOutput lyExprParse lyTextSource 
     
 outputAbc :: Int -> System -> FilePath -> FilePath -> IO ()
 outputAbc dl sys inpath outpath        = do 
@@ -62,30 +62,31 @@ outputAbc dl sys inpath outpath        = do
     putStrLn msg
   where
     config  = mkAbcConfig dl sys inpath outpath
-    outfun  = generalOutput abcExprParse abcTextChunks
+    outfun  = generalOutput abcExprParse abcTextSource
     
 
 
 
-generalOutput :: ExprParser -> TextChunkParser -> NotateT IO ()
-generalOutput expr_parser chunk_parser  = do 
+generalOutput :: ExprParser -> TextSourceParser -> NotateT IO ()
+generalOutput expr_parser src_parser  = do 
     infile    <- asks_config _template_file
-    cks       <- liftIO $ parseFromFile chunk_parser infile
-    either (fault chunk_fail_msg) (step2 infile) cks
+    src       <- liftIO $ parseFromFile src_parser infile
+    either (fault src_fail_msg) (step2 infile) src
   where
-    chunk_fail_msg = "Failure running the 'chunk' parser..."
-    expr_fail_msg  = "Failure running the 'expression' parser..." 
+    src_fail_msg  = "Failure running the 'text source' parser..."
+    expr_fail_msg = "Failure running the 'expression' parser..." 
     
     fault msg err = textoutput 0 msg (show err) >> return ()
     
-    step2 infile chks  =  do 
+    step2 :: FilePath -> TextSource -> NotateT IO ()
+    step2 infile src  =  do 
         exprs <- expr_parser infile
-        either (fault expr_fail_msg) (step3 chks) exprs
+        either (fault expr_fail_msg) (step3 src) exprs
     
-    step3 :: Seq TextChunk -> [Expr] ->  NotateT IO ()
-    step3 chunks exprs = do
+    step3 :: TextSource -> [Expr] -> NotateT IO ()
+    step3 src exprs = do
         out   <- asks_config _output_file 
-        fn    <- outputter exprs chunks
+        fn    <- outputter exprs src
         liftIO $ writeS out fn
 
       
@@ -93,29 +94,25 @@ generalOutput expr_parser chunk_parser  = do
 writeS :: FilePath -> ShowS -> IO ()
 writeS path = writeFile path . ($ "")                                      
 
-outputter :: Monad m => [Expr] -> Seq TextChunk -> NotateT m ShowS
-outputter exprs chunks = evalHoas (toHoas exprs) >>= \exprs' ->
-                         return (plug chunks exprs')
+outputter :: Monad m => [Expr] -> TextSource -> NotateT m ShowS
+outputter exprs src = evalHoas (toHoas exprs) >>= plug src
 
 
 
-plug :: Seq TextChunk -> [ODoc] -> ShowS
-plug se ds = foldr fn id (crossZip se ds)
+plug :: Monad m => TextSource -> [ODoc] -> NotateT m ShowS
+plug (SourceFile water (Island _ rest)) (d:ds) = 
+    (\ks -> showString water . output 0 60 d . ks) <$> (plug rest ds)
+
+plug (SourceFile water EndOfSource)     [] = return $ showString water
+
+plug (SourceFile water EndOfSource)     ds = do 
+    textoutput 0 "ERROR - 'plug'" (msg $ length ds) 
+    return $ showString water
   where 
-    fn ((water, _), Just d)  acc = showString water . output 0 60 d . acc
-    fn ((water, _), Nothing) acc = showString water . acc
+    msg i = "A parsing problem: the expression parser has \n" ++
+            "recognized " ++ show i ++ " more plugs in the source" ++
+            "file than the source parser."
 
--- Expect the Seq to be one longer than the list   
-crossZip :: Seq a -> [b] -> [(a,Maybe b)]
-crossZip se xs = czip (viewl se) xs
-  where
-    czip (e :< se) (x:xs) = (e,Just x)  : czip (viewl se) xs
-    czip (e :< se) []     = (e,Nothing) : czip (viewl se) []
-    
-    czip EmptyL    []     = []
-    
-    czip _         xs     = error $ "crossZip - list too long"  
-     
 
 evalHoas :: Monad m => Hoas -> NotateT m [ODoc]
 evalHoas (Hoas exprs) = foldM eval [] exprs >>= return . reverse
@@ -127,7 +124,7 @@ eval docs (HDo out)         = outputNotes out >>= \d -> return (d:docs)
 eval docs (HSDo out e)      = outputNotes out >>= \d -> eval (d:docs) e
 eval docs (HFork e1 e2)     = eval docs e1 >>= \ds -> eval ds e2  
     
-
+-- TODO - change the error to an outputter 
 outputNotes :: Monad m => OutputDirective -> NotateT m ODoc
 outputNotes (OutputDirective (Just OutputRelative) name) = 
     maybe fault noteListOutput =<< findEventList name

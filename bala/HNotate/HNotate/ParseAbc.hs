@@ -185,6 +185,7 @@ accidentalPitch = (flip PitchLabel) <$> accidental <*> pitchLetter
 badKeySig :: Parser (Maybe Key)
 badKeySig = Nothing <$ clefDesignator 
 
+
 clefDesignator :: Parser  ()
 clefDesignator = () <$ (try clefstart *> stringTill (symbol ";"))
   where
@@ -255,28 +256,31 @@ abcMode = choice
 --------------------------------------------------------------------------------
 -- Parse the text for the water and holes so we can fill the holes
 
--- must use try on metaOutput to get backtrack
-abcTextChunks :: TextChunkParser
-abcTextChunks = collectWaterAcc (try metaOutput)
-  where 
-    metaOutput = (,,) <$> lexeme (symbol "%#") 
-                      <*> lexeme (symbol "output")
-                      <*> uptoNewline ""                    
     
-    -- Important - must not consume the newline
-    -- Use direct recursion as 'many' parser can't be used 
-    -- (empty string restriction). 
-    uptoNewline cca = do 
-        at_end <- option False (True <$ eof) 
-        case at_end of
-          True -> return (reverse cca)
-          False -> optionMaybe (satisfy (/='\n')) >>=
-                   maybe (return $ reverse cca) (\c -> uptoNewline (c:cca))  
+abcTextSource :: TextSourceParser
+abcTextSource = SourceFile <$> stringTill abcSource' <*> abcSource'
 
-                   
-    
+abcSource' :: Parser Source'
+abcSource' = endOfSource <|> island
+  where
+    endOfSource = EndOfSource <$ eof
+    island      = (\pair rest -> Island (fst pair) rest) 
+                      <$> (try $ withLoc recognizeIsland) <*> abcTextSource
 
-
+recognizeIsland :: Parser ()
+recognizeIsland = () <$ (lexeme (symbol "%#") *> lexeme (symbol "output")
+                                              *> uptoNewline) 
+  where
+    uptoNewline = do 
+      tok <- eitherparse anyChar eof
+      case tok of
+        Left '\n' -> return ()
+        Left c    -> uptoNewline 
+        Right _   -> return ()
+        
+         
+                      
+                      
 --------------------------------------------------------------------------------
 -- utility parsers  
 

@@ -315,11 +315,19 @@ rootDuration = choice [pBreve, pLonga, pNumericDuration]
 --------------------------------------------------------------------------------
 -- Parse the text for the water and holes so we can fill the holes
 
--- must use try on metaOutput to get backtrack
-lyTextChunks :: TextChunkParser
-lyTextChunks = collectWaterAcc (try metaOutput)
-  where 
-    metaOutput = (,,) <$> lexeme (symbol "%{#")
-                      <*> lexeme (symbol "output")
-                      <*> manyTill anyChar (try $ string "#%}")  
 
+
+lyTextSource :: TextSourceParser
+lyTextSource = SourceFile <$> stringTill lySource' <*> lySource'
+
+lySource' :: Parser Source'
+lySource' = endOfSource <|> island
+  where
+    endOfSource = EndOfSource <$ eof
+    island      = (\pair rest -> Island (fst pair) rest) 
+                      <$> (try $ withLoc recognizeIsland) <*> lyTextSource
+
+recognizeIsland :: Parser ()
+recognizeIsland = () <$ 
+    (lexeme (symbol "%{#") *> lexeme (symbol "output")
+                           *> manyTill anyChar (try $ string "#%}") )

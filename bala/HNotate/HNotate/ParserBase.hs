@@ -42,9 +42,9 @@ import Text.ParserCombinators.Parsec.Language (emptyDef)
 -- of the input file that we know how to interpret. 
 type ExprParser = FilePath -> NotateT IO (Either ParseError [Expr])
 
--- TextChunkParser returns a 'text view' of the input file - 
+-- TextSourceParser returns a 'text view' of the input file - 
 -- source to be preserved plus locations of holes to be plugged.
-type TextChunkParser = Parser (Seq TextChunk)
+type TextSourceParser = Parser TextSource
 
   
 -- | An Applicative instance for Parsec. 
@@ -97,37 +97,16 @@ directive s = try (symbol s) <* lexeme colon
 
 
 --------------------------------------------------------------------------------
--- Abc and LilyPond 'expression views' have the same shape but differ
--- in terminal commands 
+-- source locations
 
+sourceLoc :: GenParser Char st SrcLoc
+sourceLoc = srcLoc <$> getPosition
 
--- Collect water to the left of the output directive.
--- Because both views are interpreted topdown, left-to-right
--- we don't need to store what the output directive says
--- (actually we don't really need is src position either).
--- The last element of sequence should always be (water,Nothing),
--- and the 'inits' should be (water, Just pos). 
--- Water may sometimes be "" (empty).
+withLoc :: GenParser Char st a -> GenParser Char st (SrcLoc,a)        
+withLoc p = sourceLoc >>= \loc -> p >>= \ans -> return (loc,ans)  
 
-collectWaterAcc :: GenParser Char st a -> GenParser Char st (Seq TextChunk)
-collectWaterAcc p = step empty "" <?> "collectWaterAcc"
-  where 
-    step se retaw = do
-      a <- optionMaybe $ eitherparse (eof <?> "") (withPos p)    
-      case a of
-          -- Eof
-        Just (Left _)         -> return $ se |> (reverse retaw, Nothing)
-        
-          -- p matched
-        Just (Right (pos,_))  -> step (se |> (reverse retaw, Just pos)) ""
-                
-          -- more water
-        Nothing               -> anyChar >>= \c -> step se (c:retaw) 
-
-withPos :: GenParser Char st a -> GenParser Char st (SrcPos,a)        
-withPos p = (,) <$> sourcePosition <*> p   
-
-
+srcLoc :: SourcePos -> SrcLoc
+srcLoc p = SrcLoc { _src_line = sourceLine p, _src_column = sourceColumn p }
     
 --------------------------------------------------------------------------------
 -- Utility functions
@@ -136,23 +115,19 @@ withPos p = (,) <$> sourcePosition <*> p
 -- return the answer. 
 pushBack :: GenParser Char st a -> GenParser Char st a
 pushBack p = do
-  s   <- getInput 
+  s   <- getInput
+  loc <- getPosition 
   ans <- p
   setInput s
+  setPosition loc
   return ans  
-  
+
+ 
 stringTill :: GenParser Char st a -> GenParser Char st String
 stringTill p = manyTill anyChar (pushBack p)    
               
-sourcePosition :: GenParser Char st SrcPos
-sourcePosition = makeSrcPos <$> getPosition
 
 
-makeSrcPos pos = SrcPos {
-    _src_line     = sourceLine pos,
-    _src_column   = sourceColumn pos,
-    _src_file     = sourceName pos
-  } 
 
 
 chooseString :: [String] -> GenParser Char st String  

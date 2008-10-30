@@ -156,8 +156,8 @@ partitionGVO bar_len (GVO ms se) =
           
     phi (srb,(ms,sg)) e  = case fits e (bar_len - ib_duration ms) of
         Fit a     -> let ms' = moveRightwards bar_len e ms in
-                     -- a 'fit' might be an exact fit and leave 
-                     -- if so the move right will increased the bar_count 
+                     -- A 'fit' might be an exact fit.
+                     -- If so the move right will increased the bar_count... 
                      if bar_count ms' /= bar_count ms 
                      then (srb |> (bar_count ms, (sg |> e)), (ms',empty))
                      else (srb, (ms', sg |> e))
