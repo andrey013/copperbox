@@ -15,10 +15,10 @@ import System.Process (runCommand, waitForProcess)
 
 main = do 
     putStrLn "Running Tests..."
-    outputTestScore anacrusis_test_score
-    outputTestScore unmetered_test_score
-    outputTestScore hijaz_test_score
-
+    outputTestScore           anacrusis_test_score
+    outputTestScore           unmetered_test_score
+    outputTestScore           hijaz_test_score
+    outputTestScore_lyOnly    ly_rel_abs_score
     
 
 --------------------------------------------------------------------------------
@@ -61,6 +61,17 @@ hijaz_test_score = TestScore
     "./out/hijaz-abc.abc"
     "./out/hijaz-ly.ly"
 
+
+ly_rel_abs_score :: TestScore
+ly_rel_abs_score = TestScore
+    "Two outputs - relative and absolute - should print identically." 
+    amajor_scale
+    ""
+    "./templates/amajor-ly0.ly"
+    ""
+    "./out/amajor-ly.ly"
+    
+    
 --------------------------------------------------------------------------------
 -- Helpers
 
@@ -73,6 +84,16 @@ outputTestScore ts = do
     outputLilyPond 3 (ts_system ts)   (ly_template ts)   (ly_outfile ts)
     runAbcOn       (abc_outfile ts)
     runLilyPondOn  (ly_outfile ts)
+
+
+outputTestScore_lyOnly :: TestScore -> IO ()
+outputTestScore_lyOnly ts = do
+    putDashedLine
+    putStrLn (message ts)
+    putDashedLine
+    outputLilyPond 3 (ts_system ts)   (ly_template ts)   (ly_outfile ts)
+    runLilyPondOn  (ly_outfile ts)
+
 
 
 runAbcOn :: FilePath -> IO ()

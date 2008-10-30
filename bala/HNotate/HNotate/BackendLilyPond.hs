@@ -99,17 +99,20 @@ polyphony = dblangles' . step1 . viewl
     polysep :: ODoc
     polysep = text "\\\\"
 
-barDoc :: Bar -> ODoc
-barDoc xs = collapse $ F.foldl fn (emptyDoc,(<+>), emptyDoc) xs
-  where collapse (out,op,tip) = out `op` tip
-  
+type ODocConcat = ODoc -> ODoc -> ODoc
 
-fn (out,op,tip) (BeamStart)     = (out `op` tip, (<>),  anno bSt tip)
-fn (out,op,tip) (BeamEnd)       = (out `op` tip, (<+>), anno bEnd tip)
-fn (out,op,tip) (Annotation fmt fn) 
-      | fmt == LilyPond         = (out,           op,   anno fn tip)
-      | otherwise               = (out,           op,   tip)
-fn (out,op,tip) e               = (out `op` tip,  op,   glyph e)                 
+barDoc :: Bar -> ODoc
+barDoc xs = collapse $ F.foldl fn (emptyDoc,(<+>),emptyDoc) xs
+  where 
+    collapse (out,op,tip) = out `op` tip
+    
+    fn :: (ODoc, ODocConcat, ODoc) -> Glyph -> (ODoc, ODocConcat, ODoc)
+    fn (out,op,tip) (BeamStart)     = (out `op` tip, (<>),  anno bSt tip)
+    fn (out,op,tip) (BeamEnd)       = (out `op` tip, (<+>), anno bEnd tip)
+    fn (out,op,tip) (Annotation fmt fn) 
+          | fmt == LilyPond         = (out,           op,   anno fn tip)
+          | otherwise               = (out,           op,   tip)
+    fn (out,op,tip) e               = (out `op` tip,  op,   glyph e)                 
 
 anno :: (ODoc -> ODoc) -> ODoc -> ODoc
 anno fn e | isEmpty e   = e
@@ -130,11 +133,6 @@ note p d = pitch p <> duration d
 pitch :: Pitch -> ODoc
 pitch (Pitch l a o) = octave o $ accidental a $ (char . toLowerLChar) l
   where
-    letter :: PitchLetter -> Char
-    letter = fn . show
-      where fn [x] = x
-            fn xs  = error $ "letter " ++ xs 
-
     accidental :: Accidental -> ODoc -> ODoc
     accidental Nat            = id
     accidental Sharp          = (<> text "is")

@@ -79,5 +79,16 @@ hijaz_scale = system1 "hijaz" $
           # note d5   du2
           
           
+amajor_scale :: System
+amajor_scale = system1 "amajor_scale" $ 
+    root  # note a4     du4
+          # note b4     du4
+          # note cis5   du4 
+          # note d5     du4 
+          # note e5     du4
+          # note fis5   du4
+          # note gis5   du4
+          # note a5     du4  
           
+             
              

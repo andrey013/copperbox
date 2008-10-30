@@ -75,18 +75,21 @@ voiceOverlay = step1 . viewl
     
     rstep e EmptyL    = barDoc e
     rstep e (s :< se) = barDoc e <+> voc <+> rstep s (viewl se)
+
+type ODocConcat = ODoc -> ODoc -> ODoc
     
 barDoc :: Bar -> ODoc
-barDoc xs = collapse $ F.foldl fn (emptyDoc,(<+>), emptyDoc) xs
-  where collapse (out,op,tip) = out `op` tip
+barDoc xs = collapse $ F.foldl fn (emptyDoc,(<+>),emptyDoc) xs
+  where 
+    collapse (out,op,tip) = out `op` tip
   
-
-fn (out,op,tip) (BeamStart)         = (out `op` tip, (<>),  emptyDoc)
-fn (out,op,tip) (BeamEnd)           = (out `op` tip, (<+>), emptyDoc)
-fn (out,op,tip) (Annotation fmt fn) 
-      | fmt == Abc                  = (out,           op,   anno fn tip)
-      | otherwise                   = (out,           op,   tip)
-fn (out,op,tip) e                   = (out `op` tip,  op,   glyph e)                 
+    fn :: (ODoc, ODocConcat, ODoc) -> Glyph -> (ODoc, ODocConcat, ODoc)
+    fn (out,op,tip) (BeamStart)         = (out `op` tip, (<>),  emptyDoc)
+    fn (out,op,tip) (BeamEnd)           = (out `op` tip, (<+>), emptyDoc)
+    fn (out,op,tip) (Annotation fmt fn) 
+          | fmt == Abc                  = (out,           op,   anno fn tip)
+          | otherwise                   = (out,           op,   tip)
+    fn (out,op,tip) e                   = (out `op` tip,  op,   glyph e)                 
 
 anno :: (ODoc -> ODoc) -> ODoc -> ODoc
 anno fn e | isEmpty e   = e
@@ -123,11 +126,6 @@ pitch (Pitch l a o)
     | o > 4     = accidental a $ octave o $ (char . toLowerLChar) l
     | otherwise = accidental a $ octave o $ (char . toUpperLChar) l
   where     
-    letter :: PitchLetter -> Char
-    letter = fn . show
-      where fn [x] = x
-            fn xs  = error $ "letter " ++ xs 
-
     accidental :: Accidental -> ODoc -> ODoc 
     accidental Nat           = id    
     accidental Sharp         = (char '^'  <>)

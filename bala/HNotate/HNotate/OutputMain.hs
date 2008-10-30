@@ -120,16 +120,15 @@ evalHoas (Hoas exprs) = foldM eval [] exprs >>= return . reverse
 
 eval :: Monad m => [ODoc] -> HoasExpr -> NotateT m [ODoc]
 eval docs (HLet update e)   = local update (eval docs e)
-eval docs (HDo out)         = outputNotes out >>= \d -> return (d:docs)
-eval docs (HSDo out e)      = outputNotes out >>= \d -> eval (d:docs) e
-eval docs (HFork e1 e2)     = eval docs e1 >>= \ds -> eval ds e2  
+eval docs (HDo out)         = outputNotes out >>= \d  -> return (d:docs)
+eval docs (HSDo out e)      = outputNotes out >>= \d  -> eval (d:docs) e
+eval docs (HFork e1 e2)     = eval docs e1    >>= \ds -> eval ds e2  
     
--- TODO - change the error to an outputter 
+
 outputNotes :: Monad m => OutputDirective -> NotateT m ODoc
 outputNotes (OutputDirective (Just OutputRelative) name) = 
-    maybe fault noteListOutput =<< findEventList name
-  where 
-    fault        = error $ "output failure - missing " ++ name
+    findEventList name >>= maybe (outputFailure name) noteListOutput 
+
 
 outputNotes (OutputDirective Nothing name)  = 
     outputNotes (OutputDirective (Just OutputRelative) name) --- ARRGH!! 
@@ -140,8 +139,12 @@ findEventList name = asks_config _system >>= \sys ->
                      return $ Map.lookup name sys
 
 
-
-
+outputFailure :: Monad m => String -> NotateT m ODoc
+outputFailure name = 
+    textoutput 0 "ERROR - 'outputNotes'" ("missing " ++ name)   >> 
+    asks score_comment                                          >>= \fn -> 
+    return $ fn $ "HNOTATE - output failure, missing " ++ name
+    
 noteListOutput :: Monad m => EventList -> NotateT m ODoc
 noteListOutput = 
     abcly (toNoteList >=> translateAbc abcConcat) 

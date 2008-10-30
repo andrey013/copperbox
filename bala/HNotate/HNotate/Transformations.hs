@@ -88,7 +88,7 @@ lgDurationSplit len start =
 
 -- | Turn a meter pattern into a list of durations
 meterDivisions :: MeterPattern -> [Duration]
-meterDivisions ([],s)   = error $ "unspecified meter pattern?"
+meterDivisions ([],s)   = []  -- is this valid?
 meterDivisions (x:xs,s) = 
     scanl (\acc i -> acc + s * fromIntegral i) (s * fromIntegral x) xs
 

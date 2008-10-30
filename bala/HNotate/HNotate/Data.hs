@@ -46,12 +46,7 @@ import Data.List
 -- intervals?
 labelSetOf :: Key -> Maybe LabelSet
 labelSetOf (Key (PitchLabel l a) m xs)  = scaleSpelling l a m xs
-{-
-  where
-    replace xs Nothing    = Nothing
-    replace xs (Just ys)  = Just $ map (replace1 xs) ys
-    replace1 xs x@( = if (find (rootequal 
--}
+
 
 
 
