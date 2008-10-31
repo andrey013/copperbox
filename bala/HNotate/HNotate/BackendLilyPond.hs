@@ -55,7 +55,7 @@ updatePitch st p = st { rel_pitch = p }
 -- data LyState = LyState { rel_pitch :: Pitch, rel_dur :: Duration }
 
 lilypondRelativeForm :: Monad m => NoteList -> NotateT m NoteList
-lilypondRelativeForm evts = asks relative_pitch >>= \p -> 
+lilypondRelativeForm evts = getRelativePitch >>= \p -> 
     return $ (evalState `flip` st p) $ unwrapMonad $ inner p $ evts
   where       
     inner p = (evalState `flip` st p) . unwrapMonad 
@@ -63,6 +63,14 @@ lilypondRelativeForm evts = asks relative_pitch >>= \p ->
                                       . traverse (proBody `comp` drleBody)
 
     st p     = lyState0 `updatePitch` p
+
+
+getRelativePitch :: Monad m => NotateT m Pitch
+getRelativePitch = asks relative_pitch >>= maybe useDefault (return)
+  where
+    useDefault = textoutput 0 "ERROR - relative pitch" msg >> return c4
+    msg = "Relative pitch not sepcified using c"
+    
     
 outputNoteList :: BarConcatFun -> NoteList -> ODoc 
 outputNoteList bf = bf . F.foldr ((:) `onl` blockDoc) [] . getNoteList 

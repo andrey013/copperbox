@@ -74,7 +74,7 @@ instance PP Env where
       eline "meter_pattern"     meter_pattern     ppMeterPattern  <&\>
       eline "bar_length"        bar_length        ppDuration      <&\>
       eline "unit_note_length"  unit_note_length  ppDuration      <&\>
-      eline "relative_pitch"    relative_pitch    pp              <&\>
+      eline "relative_pitch"    relative_pitch    optPitch        <&\>
       eline "anacrusis"         anacrusis         optAnacrusis    <&\>
       eline "unmetered"         unmetered         pp              <&\>
       eline "bar_number_check"  bar_number_check  pp              <&\>
@@ -86,8 +86,11 @@ instance PP Env where
       
       ppfun        = const $ text "<fun>"
       
-      optAnacrusis (Just d)  = ppDuration d   
-      optAnacrusis Nothing   = text "none"             
+      optAnacrusis (Just d)   = ppDuration d   
+      optAnacrusis Nothing    = text "none"
+      
+      optPitch (Just p)       = pp p   
+      optPitch Nothing        = text "none"             
 
 instance Witness Env where textrep = wpp . pp
 

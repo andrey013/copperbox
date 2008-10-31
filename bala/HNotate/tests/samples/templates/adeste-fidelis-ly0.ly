@@ -9,7 +9,9 @@ adesteFidelis = \relative c' {
   \key a \major
   \time 4/4
   \clef treble
-  \partial 4 %{# output: \relative adeste_fidelis #%}
+  \partial 4 
+  %{# output: \relative adeste_fidelis #%}
+  
 }
 
 \book {

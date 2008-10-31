@@ -84,7 +84,7 @@ data Env = Env {
     _meter_pattern      :: MeterPattern,
     _bar_length         :: Duration, 
     _unit_note_length   :: Duration, 
-    _relative_pitch     :: Pitch,
+    _relative_pitch     :: Maybe Pitch,
     _anacrusis          :: Maybe Duration,
     _unmetered          :: Bool,
     _bar_number_check   :: Int,
@@ -107,7 +107,8 @@ instance DebugLevel Config where
 -- Type specialization now that we have the Env and Config
 type NotateT m a = NotateMonadT Env Config m a
 
-runNotateT :: Monad m => NotateT m a -> Env -> Config -> m (a,String)
+runNotateT :: Monad m => 
+                NotateT m a -> Env -> Config -> m (Either NotateErr a,String)
 runNotateT = runNotateMonadT
 
 instance (Monad m ) => Applicative (NotateMonadT Env Config m) where
@@ -129,7 +130,7 @@ default_ly_env = Env {
     _meter_pattern          = four_four_of_eighth,
     _bar_length             = 4 * quarter,
     _unit_note_length       = quarter,
-    _relative_pitch         = middle_c,
+    _relative_pitch         = Nothing,
     _anacrusis              = Nothing,
     _unmetered              = False,
     _bar_number_check       = 4,
@@ -148,7 +149,7 @@ default_abc_env = Env {
     _meter_pattern          = four_four_of_eighth,
     _bar_length             = 4 * quarter,
     _unit_note_length       = eighth,
-    _relative_pitch         = middle_c,
+    _relative_pitch         = Nothing,
     _anacrusis              = Nothing,
     _unmetered              = True,         -- Abc must start with cadenza on
     _bar_number_check       = 4,
@@ -199,7 +200,7 @@ bar_length          = _bar_length
 unit_note_length    :: Env -> Duration
 unit_note_length    = _unit_note_length
 
-relative_pitch      :: Env -> Pitch
+relative_pitch      :: Env -> Maybe Pitch
 relative_pitch      = _relative_pitch
 
 anacrusis           :: Env -> Maybe Duration
@@ -260,7 +261,7 @@ set_unit_note_length          :: Duration -> Env -> Env
 set_unit_note_length d  env   = env {_unit_note_length = d}
 
 set_relative_pitch            :: Pitch -> Env -> Env
-set_relative_pitch p env      = env {_relative_pitch = p}
+set_relative_pitch p env      = env {_relative_pitch = Just p}
 
 set_anacrusis                 :: Duration -> Env -> Env
 set_anacrusis d env           = env {_anacrusis = Just d}

@@ -49,22 +49,23 @@ import Text.ParserCombinators.Parsec (ParseError, parseFromFile)
 -- that might be too arbitrary (e.g. meter pattern)
 
 outputLilyPond :: Int -> System -> FilePath -> FilePath -> IO ()
-outputLilyPond dl sys inpath outpath   = do 
-    (a,msg) <- runNotateT outfun default_ly_env config 
-    putStrLn msg
+outputLilyPond dl sys inpath outpath   =
+    runNotateT outfun default_ly_env config           >>= \(a,msg) ->
+    either (reportFailure msg) (const $ putStrLn msg) a
   where
     config  = mkLyConfig dl sys inpath outpath
     outfun  = generalOutput lyExprParse lyTextSource 
     
 outputAbc :: Int -> System -> FilePath -> FilePath -> IO ()
-outputAbc dl sys inpath outpath        = do 
-    (a,msg) <- runNotateT outfun default_abc_env config  
-    putStrLn msg
+outputAbc dl sys inpath outpath        =
+    runNotateT outfun default_abc_env config          >>= \(a,msg) ->
+    either (reportFailure msg) (const $ putStrLn msg) a
   where
     config  = mkAbcConfig dl sys inpath outpath
     outfun  = generalOutput abcExprParse abcTextSource
     
-
+reportFailure :: String -> NotateErr -> IO ()
+reportFailure log_msg (NotateErr s) = putStrLn s >> putStrLn log_msg
 
 
 generalOutput :: ExprParser -> TextSourceParser -> NotateT IO ()
@@ -100,8 +101,8 @@ outputter exprs src = evalHoas (toHoas exprs) >>= plug src
 
 
 plug :: Monad m => TextSource -> [ODoc] -> NotateT m ShowS
-plug (SourceFile water (Island _ rest)) (d:ds) = 
-    (\ks -> showString water . output 0 60 d . ks) <$> (plug rest ds)
+plug (SourceFile water (Island (SrcLoc {_src_column=ind}) rest)) (d:ds) = 
+    (\ks -> showString water . output ind 60 d . ks) <$> (plug rest ds)
 
 plug (SourceFile water EndOfSource)     [] = return $ showString water
 

@@ -23,26 +23,34 @@ module HNotate.NotateMonad where
 import HNotate.Document
 
 import Control.Monad
-import Control.Monad.Identity
+import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.Writer
 
 import System.IO (stdout)
 
 
+newtype NotateErr = NotateErr String
+  deriving (Show) 
 
-
+instance Error NotateErr where
+  noMsg = NotateErr ""
+  strMsg s = NotateErr s 
 
 
 -- OutputReaderM is a double reader over a mutable Env
 -- (i.e. supports local) and an immutable Config (no local).
 
 -- The Config (cfg) and Env (env) are parameteric only to avoid 
--- mutually recursive modules
+-- mutually recursive modules - they will only store Config and 
+-- Env from the Env module.
 
 
 newtype NotateMonadT env cfg m a = NotateMonadT {  
-    getNotateMonadT :: WriterT String (ReaderT env (ReaderT cfg m)) a }
+    getNotateMonadT :: ErrorT NotateErr 
+                        (WriterT String 
+                          (ReaderT env 
+                            (ReaderT cfg m))) a }
 
 instance Monad m => Functor (NotateMonadT env cfg m) where
     fmap f = NotateMonadT . fmap f . getNotateMonadT 
@@ -51,6 +59,12 @@ instance Monad m => Functor (NotateMonadT env cfg m) where
 instance Monad m => Monad (NotateMonadT env cfg m) where
   return a = NotateMonadT $ return a
   ma >>= f = NotateMonadT $ getNotateMonadT ma >>= getNotateMonadT . f
+
+instance Monad m => MonadError NotateErr (NotateMonadT env cfg m) where
+  throwError     = NotateMonadT . throwError
+  catchError m f = NotateMonadT $ 
+                     catchError (getNotateMonadT m) (getNotateMonadT . f)
+                                                      
 
 instance Monad m => MonadReader env (NotateMonadT env cfg m) where
   ask     = NotateMonadT $ ask 
@@ -62,21 +76,26 @@ instance Monad m => MonadWriter String (NotateMonadT env cfg m) where
   pass    = NotateMonadT . pass . getNotateMonadT 
 
 instance MonadTrans (NotateMonadT env cfg) where
-  lift = NotateMonadT . lift . lift . lift
+  lift = NotateMonadT . lift . lift . lift . lift
     
 instance (MonadIO m) => MonadIO (NotateMonadT env cfg m) where
     liftIO = lift . liftIO
 
 
 ask_config :: Monad m => NotateMonadT env cfg m cfg   
-ask_config = NotateMonadT $ lift $ lift $ ask
+ask_config = NotateMonadT $ lift $ lift $ lift $ ask
 
 asks_config :: Monad m => (cfg -> a) -> NotateMonadT env cfg m a   
-asks_config = NotateMonadT . lift . lift . asks
+asks_config = NotateMonadT . lift . lift . lift . asks
 
-runNotateMonadT :: Monad m => NotateMonadT env cfg m a -> env -> cfg -> m (a,String)
+
+
+runNotateMonadT :: Monad m => NotateMonadT env cfg m a 
+                   -> env -> cfg 
+                   -> m (Either NotateErr a,String)
 runNotateMonadT m env cfg =
-  runReaderT (runReaderT (runWriterT $ getNotateMonadT m) env) cfg
+  runReaderT (runReaderT (runWriterT (runErrorT $ getNotateMonadT m)) env) cfg
+
     
 
 -- Specialized printers 
