@@ -98,8 +98,8 @@ instance Witness Env where textrep = wpp . pp
 -- NoteListDatatypes
 
 instance PP OutputFormat where
-  pp Abc           = text "Abc"
-  pp LilyPond      = text "LilyPond"  
+  pp Abc        = text "Abc"
+  pp Ly         = text "LilyPond"  
 
 instance (PP e) => PP (NoteListF e) where
   pp (NoteList se)        = genPunctuateSeq pp line se

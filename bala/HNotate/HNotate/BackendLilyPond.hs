@@ -13,7 +13,10 @@
 --------------------------------------------------------------------------------
 
 module HNotate.BackendLilyPond (
-    lyConcat, translateLilyPond
+    lyConcat, 
+    translateLilyPond, 
+    lilypondRelativeForm, 
+    lilypondAbsoluteForm
   ) where
 
 
@@ -25,6 +28,7 @@ import HNotate.NotateMonad
 import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, gracenotes)
 import HNotate.Pitch
 import HNotate.PPInstances
+import HNotate.ProcessingTypes
 import HNotate.Traversals
 
 import Control.Applicative
@@ -35,13 +39,13 @@ import Data.Sequence
 import Data.Traversable
 
   
-
 lyConcat :: BarConcatFun
 lyConcat = vsep . map snd
 
 
-translateLilyPond :: Monad m => BarConcatFun -> NoteList -> NotateT m ODoc
-translateLilyPond bf = fwd <=< printStep <=< lilypondRelativeForm
+translateLilyPond :: Monad m => 
+          BarConcatFun -> NoteListPostProcessFun m -> NoteList -> NotateT m ODoc
+translateLilyPond bf procF = fwd <=< printStep <=< procF
   where
     printStep = return . outputNoteList bf
     
@@ -49,12 +53,15 @@ translateLilyPond bf = fwd <=< printStep <=< lilypondRelativeForm
             witness 3 "Current environment is..." env >>
             witness 3 "LilyPond output..." m
 
-updatePitch st p = st { rel_pitch = p }
-
+lilypondAbsoluteForm :: Monad m => NoteListPostProcessFun m
+lilypondAbsoluteForm = return . id
+    
 -- Do we need a state type, like this one?
 -- data LyState = LyState { rel_pitch :: Pitch, rel_dur :: Duration }
 
-lilypondRelativeForm :: Monad m => NoteList -> NotateT m NoteList
+updatePitch st p = st { rel_pitch = p }
+
+lilypondRelativeForm :: Monad m => NoteListPostProcessFun m
 lilypondRelativeForm evts = getRelativePitch >>= \p -> 
     return $ (evalState `flip` st p) $ unwrapMonad $ inner p $ evts
   where       
@@ -118,7 +125,7 @@ barDoc xs = collapse $ F.foldl fn (emptyDoc,(<+>),emptyDoc) xs
     fn (out,op,tip) (BeamStart)     = (out `op` tip, (<>),  anno bSt tip)
     fn (out,op,tip) (BeamEnd)       = (out `op` tip, (<+>), anno bEnd tip)
     fn (out,op,tip) (Annotation fmt fn) 
-          | fmt == LilyPond         = (out,           op,   anno fn tip)
+          | fmt == Ly               = (out,           op,   anno fn tip)
           | otherwise               = (out,           op,   tip)
     fn (out,op,tip) e               = (out `op` tip,  op,   glyph e)                 
 

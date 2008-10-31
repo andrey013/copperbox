@@ -28,6 +28,7 @@ import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
 import HNotate.OnsetQueue
 import HNotate.PPInstances
+import HNotate.ProcessingTypes
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Reader
@@ -83,8 +84,8 @@ toNoteList :: Monad m => EventList -> NotateT m NoteList
 toNoteList evts =
     asks unmetered >>= \unm -> 
     if unm then eventsToNoteListUnmetered evts
-           else asks bar_length         >>= \ml -> 
-                anacrusisDisplacement   >>= \acis ->
+           else asks bar_length               >>= \ml -> 
+                asks anacrusis_displacement   >>= \acis ->
                 eventsToNoteList ml acis evts
 
 eventsToNoteListUnmetered :: Monad m => EventList -> NotateT m NoteList

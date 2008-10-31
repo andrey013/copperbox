@@ -22,6 +22,7 @@ import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.TemplateDatatypes
 import HNotate.PPInstances
+import HNotate.ProcessingTypes
 
 import Control.Applicative hiding (many, optional, (<|>), empty )
 import Control.Monad

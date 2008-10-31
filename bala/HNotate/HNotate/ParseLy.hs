@@ -17,11 +17,11 @@ module HNotate.ParseLy where
 
 import HNotate.CommonUtils
 import HNotate.Duration
-import HNotate.Env (NotateT)
 import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.ParserBase
 import HNotate.Pitch
+import HNotate.ProcessingTypes
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (many, optional, (<|>) )

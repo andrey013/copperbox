@@ -25,6 +25,7 @@ import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, gracenotes)
 import HNotate.NotateMonad
 import HNotate.Pitch
 import HNotate.PPInstances
+import HNotate.ProcessingTypes
 import HNotate.Transformations
 import HNotate.Traversals
 

@@ -21,6 +21,7 @@ import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
+import HNotate.ProcessingTypes
 
 import Control.Monad.Reader
 import qualified Data.Foldable as F
@@ -37,7 +38,7 @@ beamNoteList(NoteList se) =
   return (\mp bar p -> NoteList $ fmap (beamBlock mp bar p) se)
     `ap` asks meter_pattern 
     `ap` asks bar_length 
-    `ap` anacrusisDisplacement
+    `ap` asks anacrusis_displacement
 
 
 beamBlock :: MeterPattern -> Duration -> Duration -> Block -> Block

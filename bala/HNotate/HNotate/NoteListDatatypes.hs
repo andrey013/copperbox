@@ -16,10 +16,15 @@
 
 module HNotate.NoteListDatatypes (
     
+
+    
+    
+    
+    
     OutputFormat(..),
     -- * External view 
     System, 
-    BarConcatFun, 
+     
     EventList, EventListF(..), Evt(..),
     system, systemL, system1,
     
@@ -56,7 +61,11 @@ import Data.Monoid
 import Data.Sequence
 import Data.Traversable
 
-data OutputFormat = Abc | LilyPond  
+
+
+
+
+data OutputFormat = Abc | Ly  
   deriving (Eq,Show) 
   
   
@@ -74,7 +83,7 @@ data Glyph  = Note Pitch Duration
             | Tie
             | Annotation OutputFormat AnnoFun
             
-type AnnoFun = ODoc -> ODoc          
+type AnnoFun = ODoc -> ODoc  
 
 instance Show Glyph where
   showsPrec i (Note p d)        = 
@@ -96,8 +105,7 @@ instance Show Glyph where
 -- The External view
 type System = Map.Map String EventList
 
--- Should each note list have a bcf or can the env have a single one?
-type BarConcatFun = [(Int,ODoc)] -> ODoc
+
 
 
 type EventList = EventListF Evt  
@@ -262,7 +270,7 @@ annoAbc             :: AnnoFun -> EventList -> EventList
 annoAbc f t         = t |*> (Evt $ Annotation Abc f)
 
 annoLy              :: AnnoFun -> EventList -> EventList
-annoLy f t          = t |*> (Evt $ Annotation LilyPond f)
+annoLy f t          = t |*> (Evt $ Annotation Ly f)
 
 
 -- poly does some optimizing ...

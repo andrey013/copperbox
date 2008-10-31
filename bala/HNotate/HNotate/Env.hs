@@ -18,7 +18,6 @@ module HNotate.Env (
     Env,
     Config(..),
     
-    NotateT, runNotateT,
     
     -- defaults
     default_ly_env,
@@ -43,7 +42,7 @@ module HNotate.Env (
     score_comment,
     
     -- computed values
-    anacrusisDisplacement,
+    anacrusis_displacement,
         
     -- Env update
     set_current_key,
@@ -54,7 +53,6 @@ module HNotate.Env (
     set_anacrusis,
     set_unmetered,
     
-    abcly
  ) where
 
 import HNotate.Data
@@ -104,16 +102,7 @@ instance DebugLevel Config where
     debug_level  = _debug_level
 
 
--- Type specialization now that we have the Env and Config
-type NotateT m a = NotateMonadT Env Config m a
 
-runNotateT :: Monad m => 
-                NotateT m a -> Env -> Config -> m (Either NotateErr a,String)
-runNotateT = runNotateMonadT
-
-instance (Monad m ) => Applicative (NotateMonadT Env Config m) where
-  pure = return
-  (<*>) = ap
 
 instance Show (String -> ODoc) where
   show _ = "<<function>>"  
@@ -123,7 +112,7 @@ instance Show (String -> ODoc) where
 -- Defaults
 
 default_ly_env = Env {
-    _output_format          = LilyPond, 
+    _output_format          = Ly, 
     _current_key            = c_major,
     _label_set              = c_major'ls,
     _current_meter          = four_four,
@@ -219,8 +208,8 @@ score_comment       = _score_comment
 -- LilyPond's \partial command gives the duration of the notes in 
 -- the anacrusis (the zeroth bar).
 -- For our purposes we need to know the 'start point' in the zeroth bar.  
-anacrusisDisplacement :: Monad m => NotateT m Duration
-anacrusisDisplacement = anaDisp <$> asks _anacrusis <*> asks _bar_length
+anacrusis_displacement :: Env -> Duration
+anacrusis_displacement env = anaDisp (_anacrusis env) (_bar_length env)
   where
     anaDisp :: Maybe Duration -> Duration -> Duration
     anaDisp Nothing      _    = duration_zero
@@ -281,10 +270,7 @@ barLength CutTime         = 2%2
 --------------------------------------------------------------------------------
 --
 
-abcly :: Monad m => (a -> NotateT m b) -> (a -> NotateT m b) -> a -> NotateT m b
-abcly mx my a = asks output_format >>= 
-            \fmt -> case fmt of Abc -> mx a; 
-                                LilyPond -> my a
+
 
   
 

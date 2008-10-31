@@ -29,6 +29,7 @@ import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
 import HNotate.ParseLy
 import HNotate.ParserBase (ExprParser, TextSourceParser)
+import HNotate.ProcessingTypes
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (empty)
@@ -101,8 +102,9 @@ outputter exprs src = evalHoas (toHoas exprs) >>= plug src
 
 
 plug :: Monad m => TextSource -> [ODoc] -> NotateT m ShowS
-plug (SourceFile water (Island (SrcLoc {_src_column=ind}) rest)) (d:ds) = 
-    (\ks -> showString water . output ind 60 d . ks) <$> (plug rest ds)
+plug (SourceFile water (Island loc rest)) (d:ds) = 
+    (\ks -> showString water . output (_src_column loc) 60 d . ks) 
+        <$> (plug rest ds)
 
 plug (SourceFile water EndOfSource)     [] = return $ showString water
 
@@ -128,11 +130,17 @@ eval docs (HFork e1 e2)     = eval docs e1    >>= \ds -> eval ds e2
 
 outputNotes :: Monad m => OutputDirective -> NotateT m ODoc
 outputNotes (OutputDirective (Just OutputRelative) name) = 
-    findEventList name >>= maybe (outputFailure name) noteListOutput 
+    findEventList name >>= maybe (outputFailure name) outputRelativeNoteList 
 
 
 outputNotes (OutputDirective Nothing name)  = 
-    outputNotes (OutputDirective (Just OutputRelative) name) --- ARRGH!! 
+    asks output_format >>= \fmt -> 
+    case fmt of
+      Abc -> findEventList name >>= 
+             maybe (outputFailure name) outputNoteListAbc 
+      Ly  -> findEventList name >>= 
+             maybe (outputFailure name) outputAbsoluteNoteList
+
 
 
 findEventList :: Monad m => String -> NotateT m (Maybe EventList)
@@ -145,11 +153,32 @@ outputFailure name =
     textoutput 0 "ERROR - 'outputNotes'" ("missing " ++ name)   >> 
     asks score_comment                                          >>= \fn -> 
     return $ fn $ "HNOTATE - output failure, missing " ++ name
-    
+
+-- Only option for Abc
+outputNoteListAbc :: Monad m => EventList -> NotateT m ODoc
+outputNoteListAbc = 
+    toNoteList >=> translateAbc abcConcat
+
+{-
 noteListOutput :: Monad m => EventList -> NotateT m ODoc
 noteListOutput = 
     abcly (toNoteList >=> translateAbc abcConcat) 
           (toNoteList >=> translateLilyPond lyConcat) 
+-}
 
-
+outputRelativeNoteList :: Monad m => EventList -> NotateT m ODoc
+outputRelativeNoteList = 
+    toNoteList >=> translateLilyPond lyConcat lilypondRelativeForm 
     
+outputAbsoluteNoteList :: Monad m => EventList -> NotateT m ODoc
+outputAbsoluteNoteList = 
+    toNoteList >=> translateLilyPond lyConcat lilypondRelativeForm 
+    
+{-    
+-- for the chop
+abcly :: Monad m => (a -> NotateT m b) -> (a -> NotateT m b) -> a -> NotateT m b
+abcly mx my a = asks output_format >>= 
+            \fmt -> case fmt of Abc -> mx a; 
+                                LilyPond -> my a
+-}
+                                
