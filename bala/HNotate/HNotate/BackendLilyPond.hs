@@ -32,6 +32,7 @@ import HNotate.ProcessingTypes
 import HNotate.Traversals
 
 import Control.Applicative
+import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Foldable as F
@@ -53,8 +54,9 @@ translateLilyPond bf procF = fwd <=< printStep <=< procF
             witness 3 "Current environment is..." env >>
             witness 3 "LilyPond output..." m
 
-lilypondAbsoluteForm :: Monad m => NoteListPostProcessFun m
-lilypondAbsoluteForm = return . id
+lilypondAbsoluteForm :: Monad m => NoteList -> NotateT m NoteList
+lilypondAbsoluteForm = return . traverseIdentity losBody
+    
     
 -- Do we need a state type, like this one?
 -- data LyState = LyState { rel_pitch :: Pitch, rel_dur :: Duration }

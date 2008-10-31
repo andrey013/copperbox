@@ -171,8 +171,9 @@ outputRelativeNoteList =
     toNoteList >=> translateLilyPond lyConcat lilypondRelativeForm 
     
 outputAbsoluteNoteList :: Monad m => EventList -> NotateT m ODoc
-outputAbsoluteNoteList = 
-    toNoteList >=> translateLilyPond lyConcat lilypondRelativeForm 
+outputAbsoluteNoteList evts = 
+    (textoutput 3 "Lilypond 'absolute'" "")   >> 
+    toNoteList evts >>= translateLilyPond lyConcat lilypondAbsoluteForm 
     
 {-    
 -- for the chop

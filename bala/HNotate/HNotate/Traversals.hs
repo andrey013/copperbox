@@ -35,6 +35,26 @@ import Data.Sequence
 import Data.Traversable
 import Prelude hiding (mapM)
 
+--------------------------------------------------------------------------------
+-- Three useful run functions
+
+
+traverseIdentity :: (Traversable t) => 
+                    (a -> WrappedMonad Identity b) -> t a -> t b
+traverseIdentity f a = runIdentity $ unwrapMonad $ traverse f a 
+
+
+traverseReader :: (Traversable t) =>
+                  (a -> WrappedMonad (Reader env) b) -> t a -> env -> t b
+traverseReader f a env = (runReader $ unwrapMonad $ traverse f a) env 
+
+traverseState :: (Traversable t) =>
+                  (a -> WrappedMonad (State st) b) -> t a -> st -> t b
+traverseState f a st = evalState (unwrapMonad $ traverse f a) st 
+
+--------------------------------------------------------------------------------
+-- 
+
 type St = Duration
 
 data LyState = LyState { rel_pitch :: Pitch, rel_duration :: Duration }
