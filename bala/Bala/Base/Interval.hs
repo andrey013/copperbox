@@ -275,7 +275,8 @@ stepy i | i < 0       = stp $ abs i
 letterCountTo :: PitchLetter -> PitchLetter -> Int
 letterCountTo = retroCountTo succ
 
-
+{-
+-- defined in HNotate.Pitch
 -- | number of 'letter names' inclusive between the lowest and highest pitch
 arithmeticDistance :: Pitch -> Pitch -> Int
 arithmeticDistance p  p' | p < p'    = aCount p  p'
@@ -287,14 +288,14 @@ arithmeticDistance p  p' | p < p'    = aCount p  p'
                       l'  = pitchLetter p'
                   in retroCountTo succ (o,l) (o',l')
 --                   
-   
+-}   
 
 arithmeticStep :: Pitch -> Int -> Pitch                                
 arithmeticStep pch i = 
   let name        = pitchLetter pch
       o           = octaveMeasure pch
       (o',name')  = applyi (i - 1) succ (o,name) 
-  in pitch (PitchName name' Nat) o
+  in pitch (PitchLabel name' Nat) o
    
 
 
@@ -393,7 +394,7 @@ instance Enum (Int,PitchLetter) where
   
 
 instance Semitones Interval where
-  semitoneCount (Interval _ (Count sc)) = sc
+  semitones (Interval _ (Count sc)) = sc
 
 {-    
 instance SemitoneExtension Interval where 
@@ -406,12 +407,12 @@ instance IntervalExtension Interval where
   extUp   = (+)
   extDown = (-)
   
-instance IntervalExtension PitchName where
-  extUp lbl@(PitchName l _) (Interval ad sc) = 
+instance IntervalExtension PitchLabel where
+  extUp lbl@(PitchLabel l _) (Interval ad sc) = 
     let l' = successor (unCount ad - 1) l 
     in spell (lbl `addSemi` (unCount sc)) l'
     
-  extDown lbl@(PitchName l _) (Interval ad sc) = 
+  extDown lbl@(PitchLabel l _) (Interval ad sc) = 
     let l' = predecessor (unCount ad - 1) l 
     in spell (lbl `subSemi` (unCount sc)) l'
 
@@ -419,12 +420,15 @@ instance IntervalExtension PitchName where
 -- | {SPELLING ? }  
 
 instance IntervalExtension Pitch where
-  extUp pch inval =
+  extUp pch inval = undefined
+  extDown pch inval = undefined
+{-  
+  extUp pch inval = 
     let lbl = extUp (pitchName pch) inval
         (o,s,c) = pitchMeasures pch
         sc      = halfSteps inval
         (oc,_)  = explode12 $ s + sc       
-    in pitch lbl (o + oc) `withCents` c
+    in pitch lbl (o + oc)
     
   extDown pch inval =
     let lbl = extDown (pitchName pch) inval
@@ -433,7 +437,7 @@ instance IntervalExtension Pitch where
         (oc,_) = explode12 $ s - sc      
     in pitch lbl (o - oc) `withCents` c
     
-      
+-}      
 --------------------------------------------------------------------------------
 -- Affi instances
 --------------------------------------------------------------------------------

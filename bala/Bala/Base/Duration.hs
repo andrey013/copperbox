@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeSynonymInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -14,47 +15,18 @@
 --------------------------------------------------------------------------------
 
 module Bala.Base.Duration (
-  -- * Datatype
-  -- Duration, 
-  Duration,
-  
-  rationalDuration, 
-  
-  
-  -- * Destructor
-  unDuration, simplifyDuration,
-  
- 
-  
-  -- * Operations
-  dot, dotdot, dotdotdot,
-  
-  calculateTicks, rationalize, durationSize,
-    
-  -- * Named instances (American)
-  -- $amerdoc
-  double_whole, whole, half, quarter, eighth, sixteenth, thirty_second,
-  sixty_fourth, one_hundred_twenty_eighth,
-  
-  -- * Named instances (English)
-  -- $engdoc
-  breve, semibreve, minim, crochet, quaver, semiquaver, demisemiquaver,
-  hemidemisemiquaver, semihemidemisemiquaver, 
-  
-  longa
+  module HNotate.Duration,
 
   ) where
 
 import Bala.Base.BaseExtra
+
+import HNotate.Duration
+
 import Data.List
 import Data.Ratio
 
-
-data Duration = Dur { 
-    ratio :: Ratio Integer, 
-    dots  :: Integer
-  }
-  deriving (Eq,Ord)
+{-
 
 rationalDuration :: Rational -> Duration
 rationalDuration r = let (n,d) = nr r in 
@@ -76,9 +48,9 @@ rationalDuration r = let (n,d) = nr r in
                 in last $ takeWhile (r>=) ls
                 
     
-    
+-}    
 
-                                      
+{-
 --    simplify n d = nr (n%d)
          
 -- | Extract a \simple\ ratio plus dotting count 
@@ -95,10 +67,10 @@ nr a = (numerator a, denominator a)
 simplifyDuration :: Duration -> (Duration, Integer)
 simplifyDuration d = let (r,dots) = unDuration d in (Dur r 0, dots)
 
-
+-}
         
         
-
+{-
 -- | Augment the duration with a dot.
 dot :: Duration -> Duration
 dot (Dur r d)       = Dur r (d+1)
@@ -134,17 +106,13 @@ durationSize dur =
   in n / d
 
 
-
+-}
 
 
 
 --------------------------------------------------------------------------------
 -- Instances
 
-
-
-instance Show Duration where
-    showsPrec p d   = showsPrec p (rationalize d)
 
 instance Affi Duration where
     affi d = shows d    
@@ -179,75 +147,4 @@ instance RealFrac Duration where
 -}
 
 
-
-    
-    
---------------------------------------------------------------------------------
--- Named elements
-
-durZero :: Ratio Integer -> Duration
-durZero r = Dur r 0
-
--- $amerdoc
--- American naming.
-double_whole                :: Duration
-double_whole                = durZero (2%1)
-
-whole                       :: Duration
-whole                       = durZero (1%1)
-
-half                        :: Duration
-half                        = durZero (1%2)
-
-quarter                     :: Duration
-quarter                     = durZero (1%4)
-
-eighth                      :: Duration
-eighth                      = durZero (1%8)
-
-sixteenth                   :: Duration
-sixteenth                   = durZero (1%16)
-
-thirty_second               :: Duration
-thirty_second               = durZero (1%32)
-
-sixty_fourth                :: Duration
-sixty_fourth                = durZero (1%64)
-
-one_hundred_twenty_eighth   :: Duration
-one_hundred_twenty_eighth   = durZero (1%128)
-
--- $engdoc
--- English naming.
-breve                       :: Duration
-breve                       = double_whole
-
-semibreve                   :: Duration
-semibreve                   = whole
-
-minim                       :: Duration
-minim                       = half
-
-crochet                     :: Duration
-crochet                     = quarter
-
-quaver                      :: Duration 
-quaver                      = eighth
-
-semiquaver                  :: Duration 
-semiquaver                  = sixteenth
-
-demisemiquaver              :: Duration
-demisemiquaver              = thirty_second
-
-hemidemisemiquaver          :: Duration 
-hemidemisemiquaver          = sixty_fourth
-
-semihemidemisemiquaver      :: Duration
-semihemidemisemiquaver      = one_hundred_twenty_eighth
-
-
-longa                       :: Duration
-longa                       = durZero (4%1)
-  
-  
+ 

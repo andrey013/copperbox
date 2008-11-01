@@ -14,25 +14,26 @@
 --------------------------------------------------------------------------------
 
 module Bala.Base.HNotateInstances (
-  P.PitchRepr, 
-  P.DurationRepr
+  -- P.PitchRepr, 
+  -- P.DurationRepr
   ) where
   
 import Bala.Base.Pitch
 import Bala.Base.Duration
 
-import qualified HNotate.Base.Class as P
-import qualified HNotate.Base.Datatypes as P
 
 import Data.Ratio
 
+{-
 instance P.PitchRepr Pitch where 
   renderPitch p = P.Pitch (transPitchLetter p) (transAccidental p) (transOctave p)
   
 instance P.DurationRepr Duration where 
   renderDuration dur = let (d,dots) = unDuration dur
                            (num,den) = nr d
-                       in P.Duration (num,den)
+                       in if (num == 1) 
+                            then P.Duration den (fromIntegral dots)
+                            else error "renderDuration"
 
 transPitchLetter :: Pitch -> P.PitchLetter  
 transPitchLetter = fn . pitchLetter 
@@ -64,3 +65,5 @@ transOctave = octaveMeasure
 
 nr :: (Integral a, Integral b) => Ratio a -> (b,b)
 nr a = (fromIntegral $ numerator a, fromIntegral $ denominator a)
+
+-}

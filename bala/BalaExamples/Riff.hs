@@ -8,8 +8,6 @@
 module Main where
 
 import Bala.Base 
-
-
 import HNotate
 import HNotate.Print.OutputLilyPond hiding (chord, grace)
 

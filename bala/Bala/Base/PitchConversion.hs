@@ -92,12 +92,12 @@ oveFrValue = unOveFr
 
 -- Midi middle C is 60, whereas for Pitch it is 48
 instance EncodePitch MidiPitch where
-  fromPitch p = M $ semitoneCount p + 12
+  fromPitch p = M $ semitones p + 12
 
   toPitch m@(M i) = fromInteger $ fromIntegral (i - 12)
 
 {-
-mkMidi offst accdt octv = M $ offst + semitoneCount accdt + octaveMidi octv
+mkMidi offst accdt octv = M $ offst + semitones accdt + octaveMidi octv
   where octaveMidi o            = (1 + o) * 12
 -}
 

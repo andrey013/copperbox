@@ -39,7 +39,7 @@ data ScaleDegree = Tonic | SuperTonic | Mediant | Subdominant | Dominant
   deriving (Eq,Show)
 
 data Key = Key {
-    key_pitch :: PitchName,
+    key_pitch :: PitchLabel,
     key_type  :: KeyType
   }
   deriving (Eq,Show)
@@ -47,7 +47,7 @@ data Key = Key {
 data KeyType = MajorKey | MinorKey
   deriving (Eq,Show)  
   
-unKey :: Key -> (PitchName,KeyType)
+unKey :: Key -> (PitchLabel,KeyType)
 unKey (Key p t) = (p,t)
 
 scaleNotes :: Scale -> [Pitch]

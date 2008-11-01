@@ -21,7 +21,7 @@
 module HNotateHaskore.HaskoreInterface where
 
 import HNotate.Duration
-import HNotate.NoteList
+import HNotate.NoteListDatatypes
 import HNotate.Pitch
 
 import qualified Haskore as H 

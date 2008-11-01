@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+
 
 -- :set -i..:../HNotate:../ZMidi
 
@@ -9,29 +9,23 @@ module Main where
 import Bala.Base
 import HNotate
 
-import HNotate.Print.LilyPondInternals (getLy)
-import HNotate.Print.AbcInternals (getAbc)
-import HNotate.Print.OutputLilyPond hiding (chord, grace)
 
 import Text.PrettyPrint.Leijen hiding (dot)
 import qualified Data.Sequence as S
 
 
 
-
-
-
 -- main = demo01_ly
-main = showScore $ system1 $ foldl (compR (#) event) root (replicate 12 (c4 # du4))
+main = print $ system1 "demo" $ foldl (#) root (replicate 12 (note c4 du4))
   where compR op f a b = a `op` f b
   
   
 ---
 
 
-score1 = system1 $ root # event (c4 # du4) # event (d4 # du4) # event (e4 # du4)
+score1 = system1 "score1" $ root # note c4 du4 # note d4 du4 # note e4 du4
 
-
+{-
 simpledoc :: Pretty a => a -> SimpleDoc
 simpledoc e = renderPretty 0.8 80 (pretty e)
 
@@ -55,11 +49,14 @@ createDoc un = vsep . map (pretty . un)
 
 
 demo_s1 = showScore score1
+-}
 
+{-
 printLilyPond t a = printLy $ systemToLy (default_ly_system t pre) a
   where pre = elementStart +++ key _c major +++ clef treble
-  
+-}  
 
+{-
 demo01      = showScore example1
 demo01_ly   = printLilyPond "example1" example1
 -- demo01_abc  = printDoc $ createDoc getAbc $ toAbc example1
@@ -99,87 +96,76 @@ demo07c_ly = printLilyPond "example7c" example7c
 demo07d = showScore example7d
 demo07d_ly = printLilyPond "example7d" example7d
 
+-}
 
 --------------------------------------------------------------------------------
 
-data NrEvent = Note Pitch Duration
-             | Rest Duration
-  deriving (Eq,Show)
-
-du1,du2,du4,du8,du16 :: Pitch -> NrEvent
-du1 p    = Note p whole
-du2 p    = Note p half
-du4 p    = Note p quarter
-du8 p    = Note p eighth
-du16 p   = Note p sixteenth
-
-
-
-instance Event NrEvent where
-  eventvalues (Note p d) = (Just $ renderPitch p, Just $ renderDuration d)
-  eventvalues (Rest d)   = (Nothing, Just $ renderDuration d)
 
 -- | example 1 - simple list of successive notes.  
-example1 :: System NrEvent
-example1 = system1 $ 
-  root # event (c4 # du4) # event (c4 # du4) # event (d4 # du4) 
-       # event (e4 # du4)
+example1 :: System
+example1 = system1 "example1" $ 
+  root # note c4 du4 # note c4 du4 # note d4 du4 
+       # note e4 du4
                 
     
 -- | example 2 - simple parallel - a chord             
-example2 :: System NrEvent
-example2 = system1 $ 
-  root # chord (map du1 [c4,e4,g4])
+example2 :: System
+example2 = system1 "example2" $ 
+  root # chord [c4,e4,g4] du1
 
     
--- | example 3 - successors and grace.
-example3 :: System NrEvent
-example3 = system1 $ 
-  root # event (c4 # du4) # grace (map du16 [a4, b4]) 
-       # event (c4 # du4) # event (d4 # du4) # event (e4 # du4)
+-- | example 3 - successors and gracenotes.
+example3 :: System
+example3 = system1 "example3" $ 
+  root # note c4 du4 # gracenotes [a4, b4]
+       # note c4 du4 # note d4 du4 # note e4 du4
 
-example3a :: System NrEvent
-example3a = system1 $ 
-  root # event (c4 # du4) # grace (map du16 [a4, b4]) # event (c4 # du4)
+example3a :: System
+example3a = system1 "example3a" $ 
+  root # note c4 du4 # gracenotes [a4, b4] # note c4 du4
                 
 
     
 -- | example 4 - successors and parallel (chord)
-example4 :: System NrEvent
-example4 = system1 $ 
-  root # event (c4 # du4) # chord (map du4 [c4,e4,g4]) 
-                # event (d4 # du4) # event (e4 # du4)
+example4 :: System
+example4 = system1 "example4" $ 
+  root # note c4 du4 # chord [c4,e4,g4] du4 
+                # note d4 du4 # note e4 du4
     
     
 -- | example 5 - a performance which is a list of trees
 -- | rendered as two staves (or two tracks in midi)
-example5 :: System NrEvent       
-example5 = system $
-    [ root # event (c4 # du4) # event (c4 # du4) # event (d4 # du4) 
-           # event (e4 # du4)
-    , root # event (c3 # du2) # event (d3 # du2)
+example5 :: System       
+example5 = systemL $ 
+    [ ("example5_part1", 
+        root # note c4 du4 # note c4 du4 # note d4 du4 
+             # note e4 du4)
+    , ("example5_part2", 
+        root # note c3 du2 # note d3 du2)
     ]
     
     
--- | example 6 - two staves - top one has chord and a grace
-example6 :: System NrEvent       
-example6 = system $
-    [ root # event (c4 # du4) # a_b_grace # c_triad # event (d4 # du4) 
-           # event (e4 # du4)
-    , root # event (c3 # du2) # event (d3 # du2)
+-- | example 6 - two staves - top one has chord and gracenotes
+example6 :: System       
+example6 = systemL $ 
+    [ ("example6_part1", 
+        root # note c4 du4 # a_b_grace # c_triad # note d4 du4 
+             # note e4 du4)
+    , ("example6_part2", 
+        root # note c3 du2 # note d3 du2)
     ]
   where
-    a_b_grace = grace (map du16 [a4, b4])
-    c_triad   = chord (map du4 [c4,e4,g4])   
+    a_b_grace = gracenotes [a4, b4]
+    c_triad   = chord [c4,e4,g4] du4   
 
 
 -- example 7 - same staff polyphony - should be rendered as one track in Midi
 -- and on the same staff in Abc and LilyPond      
-example7 :: System NrEvent
-example7 = system1 $ 
-  root # poly [ root # event (c5 # du4) # event (c5 # du4) 
-                     # event (d5 # du4) # event (e5 # du4)
-              , root # event (g4 # du2) # event (e4 # du2) 
+example7 :: System
+example7 = system1 "example7" $ 
+  root # poly [ root # note c5 du4 # note c5 du4 
+                     # note d5 du4 # note e5 du4
+              , root # note g4 du2 # note e4 du2 
               ]
                 
 -- c5/4 c5/4 d5/4 e5/4 ----
@@ -188,15 +174,15 @@ example7 = system1 $
 
 ----
 
-example7a :: System NrEvent
-example7a = system1 $
-  root  # event (c4 # du2) 
-        # poly [ root # event (c5 # du4) # event (c5 # du4) 
-                      # event (d5 # du4) # event (e5 # du4)
-               , root # event (g4 # du2) # event (e4 # du2) 
+example7a :: System
+example7a = system1 "example7a" $
+  root  # note c4 du2 
+        # poly [ root # note c5 du4 # note c5 du4 
+                      # note d5 du4 # note e5 du4
+               , root # note g4 du2 # note e4 du2 
                ] 
-        # event (c4 # du2) 
-        # event (c4 # du2)  
+        # note c4  du2 
+        # note c4  du2  
 
 -- Do we want this:
  
@@ -213,18 +199,18 @@ example7a = system1 $
 
 
 -- poly optimization         
-example7b = system1 $ 
-  root # event (c4 # du4) # poly [ root # event (d4 # du4) ] 
-       # event (e4 # du4) # event (f4 # du4) 
+example7b = system1 "example7b" $ 
+  root # note c4 du4 # poly [ root # note d4 du4 ] 
+       # note e4 du4 # note f4 du4 
        
 -- c4/4 d4/4 e4/4 f4/4                 
 
 -- poly nesting
-example7c = system1 $
-  root # poly [ root # event (c4 # du1) 
-              , root # event (e4 # du2) 
-                     # poly [ root # event (f4 # du2)
-                            , root # event (g4 # du2)
+example7c = system1 "example7c" $
+  root # poly [ root # note c4 du1
+              , root # note e4 du2 
+                     # poly [ root # note f4 du2
+                            , root # note g4 du2
                             ]
               ]
               
@@ -233,13 +219,13 @@ example7c = system1 $
 -- ---- f4/2 ---- ---- ----
 -- ---- g4/2 ---- ---- ----
 
-example7d :: System NrEvent
-example7d = system1 $
-  root  # event (c3 # du2) # event (c3 # du2) 
-        # event (d3 # du2) # event (e3 # du2)
-        # poly [ root # event (c5 # du4) # event (c5 # du4) 
-                      # event (d5 # du4) # event (e5 # du4)
-               , root # event (g4 # du2) # event (e4 # du2) 
+example7d :: System
+example7d = system1 "example7d" $
+  root  # note c3  du2 # note c3  du2 
+        # note d3  du2 # note e3  du2
+        # poly [ root # note c5  du4 # note c5  du4 
+                      # note d5  du4 # note e5  du4
+               , root # note g4  du2 # note e4  du2 
                ] 
 
 -- c3/2 ---- c3/2 ---- d3/2 ---- e3/2 ---- ---- ---- ---- ----

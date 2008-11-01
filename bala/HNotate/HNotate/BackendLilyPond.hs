@@ -32,6 +32,7 @@ import HNotate.ProcessingTypes
 import HNotate.Traversals
 
 import Control.Applicative
+import Control.Monad.Error
 import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.State
@@ -57,29 +58,26 @@ translateLilyPond bf procF = fwd <=< printStep <=< procF
 lilypondAbsoluteForm :: Monad m => NoteList -> NotateT m NoteList
 lilypondAbsoluteForm = return . traverseIdentity losBody
     
-    
--- Do we need a state type, like this one?
--- data LyState = LyState { rel_pitch :: Pitch, rel_dur :: Duration }
 
-updatePitch st p = st { rel_pitch = p }
 
 lilypondRelativeForm :: Monad m => NoteListPostProcessFun m
 lilypondRelativeForm evts = getRelativePitch >>= \p -> 
-    return $ (evalState `flip` st p) $ unwrapMonad $ inner p $ evts
+    return $ (evalState `flip` mkLyState p) $ unwrapMonad $ inner p $ evts
   where       
-    inner p = (evalState `flip` st p) . unwrapMonad 
-                                      . unComp 
-                                      . traverse (proBody `comp` drleBody)
+    inner p = (evalState `flip` mkLyState p) 
+                      . unwrapMonad 
+                      . unComp 
+                      . traverse (proBody `comp` drleBody)
 
-    st p     = lyState0 `updatePitch` p
 
 
 getRelativePitch :: Monad m => NotateT m Pitch
-getRelativePitch = asks relative_pitch >>= maybe useDefault (return)
+getRelativePitch = asks relative_pitch >>= maybe no_rp_err (return)
   where
-    useDefault = textoutput 0 "ERROR - relative pitch" msg >> return c4
-    msg = "Relative pitch not sepcified using c"
-    
+    no_rp_err = throwError $ strMsg msg
+    msg       = "ERROR - \\relative output directive used, but no " ++
+                "relative pitch detected in the current scope."
+  
     
 outputNoteList :: BarConcatFun -> NoteList -> ODoc 
 outputNoteList bf = bf . F.foldr ((:) `onl` blockDoc) [] . getNoteList 
@@ -172,15 +170,18 @@ duration drn
     durn 4 1      = command "longa"  
     durn 2 1      = command "breve" 
     durn 1 i      = int i
-    durn n d      = error $ "durationD failed on - " ++ 
-                                  show n ++ "%" ++ show d
+    -- TODO - we shouldn't have 'error' errors, we should be using throwError.
+    -- But that means making a lot of pure code monadic - is there another 
+    -- way to do it?
+    -- Could we have Duration transformed to a 'fail-free' type by this point?  
+    durn n d      = error $ "durationD failed on - " ++ show n ++ "%" ++ show d
     
     dots :: Int -> ODoc -> ODoc
     dots i | i > 0     = (<> text (replicate i '.'))
            | otherwise = id
         
 
-rest :: Duration ->ODoc
+rest :: Duration -> ODoc
 rest = (char 'r' <>) . duration
     
 spacer :: Duration -> ODoc

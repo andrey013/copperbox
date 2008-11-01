@@ -14,14 +14,12 @@
 --------------------------------------------------------------------------------
 
 module Bala.Base.Pitch (
-  -- * Datatypes (Pitch is opaque) 
-  Pitch, PitchName(..), PitchLetter(..), Accidental(..),
+  module HNotate.Pitch,
   
   -- * Construct and deconstruct pitches
-  pitch, withCents, 
+  pitch, 
   unPitch, pitchName, pitchLetter, pitchAccidental, 
-  octaveMeasure, semitoneMeasure, centMeasure,
-  pitchMeasures,
+  octaveMeasure, semitoneMeasure,
   
   -- * Typeclasses
   Semitones(..),  Pitched(..), EncodePitch(..),
@@ -40,32 +38,13 @@ module Bala.Base.Pitch (
   g_flat, g_sharp, a_flat, a_sharp, b_flat,
 
 
-  middle_c,
-  c4, d4, e4, f4, g4, a4, b4,
-  c4is, d4es, d4is, e4es, f4is, g4es, g4is, a4es, a4is, b4es,
-  
-  c3, d3, e3, f3, g3, a3, b3,
-  c3is, d3es, d3is, e3es, f3is, g3es, g3is, a3es, a3is, b3es,
-
-  c2, d2, e2, f2, g2, a2, b2,
-  c2is, d2es, d2is, e2es, f2is, g2es, g2is, a2es, a2is, b2es,
-
-  c1, d1, e1, f1, g1, a1, b1,
-  c1is, d1es, d1is, e1es, f1is, g1es, g1is, a1es, a1is, b1es,
-      
-  c5, d5, e5, f5, g5, a5, b5,
-  c5is, d5es, d5is, e5es, f5is, g5es, g5is, a5es, a5is, b5es,
-  
-  c6, d6, e6, f6, g6, a6, b6,
-  c6is, d6es, d6is, e6es, f6is, g6es, g6is, a6es, a6is, b6es,
-
-  c7, d7, e7, f7, g7, a7, b7,
-  c7is, d7es, d7is, e7es, f7is, g7es, g7is, a7es, a7is, b7es
-    
   
   ) where
 
 import Bala.Base.BaseExtra
+
+-- Use the Pitch format defined in HNotate
+import HNotate.Pitch
 
 import Control.Applicative hiding (many, optional, (<|>) )
 import Text.ParserCombinators.Parsec
@@ -77,21 +56,16 @@ import Text.ParserCombinators.Parsec
 -- | Note - there is redundancy between pitch_label and semitones, operations
 -- on Pitch must take care to account for both.
 
+{-
  
 data Pitch = Pitch {
-    pch_label       :: PitchName,
+    pch_label       :: PitchLabel,
     pch_octave      :: Int,
     pch_semitones   :: Int,
     pch_cents       :: Int 
   }
   deriving (Eq,Read,Show)
 
--- | Represent pitches independent of octave   
-data PitchName = PitchName {
-    pch_name_pitch_letter :: PitchLetter,
-    pch_name_accidental   :: Accidental
-  }
-  deriving (Eq,Read,Show) 
   
     
 data PitchLetter = C | D | E | F | G | A | B
@@ -100,7 +74,7 @@ data PitchLetter = C | D | E | F | G | A | B
 data Accidental = DoubleFlat | Flat | Nat | Sharp | DoubleSharp 
   deriving (Eq,Enum,Read,Show)
 
-
+-}
 
 --------------------------------------------------------------------------------
 -- | Constructors and selectors
@@ -108,61 +82,51 @@ data Accidental = DoubleFlat | Flat | Nat | Sharp | DoubleSharp
 
 -- | A /smart constructor/. It doesn't need semitones stating as it 
 -- derives semitones from the 'PitchName'.
-pitch :: PitchName -> Int -> Pitch
-pitch lbl o = Pitch lbl o (semitoneCount lbl) 0
-  where
-    semis C = 0
-    semis D = 2
-    semis E = 4
-    semis F = 5
-    semis G = 7
-    semis A = 9
-    semis B = 11
+-- Update - no longer smart now that we don't store semitone_count
+pitch :: PitchLabel -> Int -> Pitch
+pitch lbl o = Pitch (pch_lbl_letter lbl) (pch_lbl_accidental lbl) o 
 
-withCents :: Pitch -> Int -> Pitch
-withCents p i = let c = pch_cents p in p {pch_cents=c+i}
 
-unPitch :: Pitch -> (PitchName,Int,Int,Int)
-unPitch (Pitch lbl o s c) = (lbl,o,s,c)
 
-pitchName :: Pitch -> PitchName
-pitchName (Pitch lbl _ _ _) = lbl
+unPitch :: Pitch -> (PitchLetter,Accidental,Int)
+unPitch (Pitch l a o) = (l,a,o)
+
+pitchName :: Pitch -> PitchLabel
+pitchName (Pitch l a _) = PitchLabel l a
 
 pitchLetter :: Pitch -> PitchLetter
-pitchLetter (Pitch (PitchName l _) _ _ _) = l
+pitchLetter = pch_letter
 
 pitchAccidental :: Pitch -> Accidental
-pitchAccidental (Pitch (PitchName _ a) _ _ _) = a
-
+pitchAccidental = pch_accidental
 
 octaveMeasure :: Pitch -> Int
-octaveMeasure (Pitch _ o _ _) = o
+octaveMeasure = pch_octave
 
 semitoneMeasure :: Pitch -> Int
-semitoneMeasure (Pitch _ _ s _) = s
+semitoneMeasure = semitones
 
-centMeasure :: Pitch -> Int
-centMeasure (Pitch _ _ _ c) = c
 
-pitchMeasures :: Pitch -> (Int,Int,Int)
-pitchMeasures (Pitch _ o s c) = (o,s,c)
+naturalNote     :: PitchLetter -> PitchLabel
+naturalNote z   = PitchLabel z Nat
 
-naturalNote     :: PitchLetter -> PitchName
-naturalNote z   = PitchName z Nat
+sharpNote       :: PitchLetter -> PitchLabel
+sharpNote z     = PitchLabel z Sharp
 
-sharpNote       :: PitchLetter -> PitchName
-sharpNote z     = PitchName z Sharp
-
-flatNote        :: PitchLetter -> PitchName
-flatNote z      = PitchName z Flat
+flatNote        :: PitchLetter -> PitchLabel
+flatNote z      = PitchLabel z Flat
 
 
 --------------------------------------------------------------------------------
 -- * Typeclasses for pitched values
 
--- | Semitones are the basis for Pitch arithmetic
-class Semitones a where semitoneCount   :: a -> Int
+{-
+-- defined in HNotate.Pitch
 
+-- | Semitones are the basis for Pitch arithmetic
+class Semitones a where semitones   :: a -> Int
+
+-}
 -- | Pitch operations, minimal complete definition:
 -- addSemi, subSemi, semitoneDisplacement.
 class (Semitones a) => Pitched a where
@@ -187,13 +151,10 @@ class (Semitones a) => Pitched a where
     -- the first, otherwise 'Downwards'
     semitoneDisplacement  :: a -> a -> (Direction,Int)
     
-
-  
- 
     
     sharpen             = (flip addSemi) 1
     flatten             = (flip subSemi) 1
-    enharmonic a b      = semitoneCount a == semitoneCount b     
+    enharmonic a b      = semitones a == semitones b     
 
 
 
@@ -211,17 +172,17 @@ class EncodePitch a where
 
 -- pitch ops -- adding intervals etc need a naming scheme
 
--- | Spell the 'PitchName' according to the 'PitchLetter', changing the 
+-- | Spell the 'PitchLabel' according to the 'PitchLetter', changing the 
 -- accidental as required, for instance:
 --
--- >   spell (PitchName F (Sharp 1)) G = (PitchName G (Flat 1))
+-- >   spell (PitchLabel F (Sharp 1)) G = (PitchLabel G (Flat 1))
 --
 -- If the pitch distance is greater than two semitones, return the original 
 -- spelling 
-spell :: PitchName -> PitchLetter -> PitchName
-spell lbl l' = if (abs dist > 2) then lbl else PitchName l' (alter dist)
+spell :: PitchLabel -> PitchLetter -> PitchLabel
+spell lbl l' = if (abs dist > 2) then lbl else PitchLabel l' (alter dist)
   where
-    (dr,d) = semitoneDisplacement lbl (PitchName l' Nat)
+    (dr,d) = semitoneDisplacement lbl (PitchLabel l' Nat)
     dist   = case dr of Upwards -> negate d; _ -> d 
 
     alter :: Int -> Accidental
@@ -233,17 +194,17 @@ spell lbl l' = if (abs dist > 2) then lbl else PitchName l' (alter dist)
     alter z     = error $ "alter " ++ show z
 
 
-spellWithSharps :: PitchName -> PitchName
+spellWithSharps :: PitchLabel -> PitchLabel
 spellWithSharps lbl   = 
-  toEnum $ semitoneCount lbl
+  toEnum $ semitones lbl
 
 
-unaltered :: PitchName -> Bool  
-unaltered p = pch_name_accidental p == Nat
+unaltered :: PitchLabel -> Bool  
+unaltered lbl = pch_lbl_accidental lbl == Nat
 
 octaveDisplacement oct            = (oct - 4) * 12  
 
-
+{-
 centValue :: Pitch -> Int
 centValue (Pitch l o s c) 
   = octaveToCents o  + semitonesToCents s + c
@@ -253,7 +214,7 @@ semitonesToCents = (100 *)
 
 octaveToCents :: Int -> Int
 octaveToCents   = (12 * 100 *)
-
+-}
   
 
 -- | Add an octave to a pitched value.  
@@ -278,44 +239,52 @@ semitoneDirection   = fst `dyap` semitoneDisplacement
 --------------------------------------------------------------------------------
 -- Instances
 
+{-
 instance Semitones Pitch where
-  semitoneCount (Pitch l o s c) = 
+  semitones (Pitch l o s c) = 
     let (cc,_) = explode100 c in  (12 * o) + s + cc
-    
+-}    
+
     
 instance Pitched Pitch where
-  addSemi (Pitch l o s c) i = 
-    let (oc,s') = explode12 $ s + i in Pitch (l `addSemi` i) (o + oc) s' c
+  addSemi = undefined
+  subSemi = undefined
+  semitoneDisplacement = undefined
+  
+{-
+  addSemi (Pitch l o s) i = 
+    let (oc,s') = explode12 $ s + i in Pitch (l `addSemi` i) (o + oc) s'
     
-  subSemi (Pitch l o s c) i = 
-    let (oc,s') = explode12 $ s - i in Pitch (l `subSemi` i) (o - oc) s' c
+  subSemi (Pitch l o s) i = 
+    let (oc,s') = explode12 $ s - i in Pitch (l `subSemi` i) (o - oc) s'
 
   semitoneDisplacement p p' = 
-    let d = semitoneCount p' - semitoneCount p
+    let d = semitones p' - semitones p
     in case signum d of
       (-1) -> (Downwards, abs d)
       _    -> (Upwards, d)
+
+-}
       
-      
-      
+{-
 -- C-nat = 0 
 instance Semitones PitchLetter where
-  semitoneCount l = fromEnum (PitchName l Nat)
+  semitones l = fromEnum (PitchLabel l Nat)
 
 instance Semitones Accidental where
-  semitoneCount Nat          = 0
-  semitoneCount Sharp        = 1
-  semitoneCount DoubleSharp  = 2
-  semitoneCount Flat         = (-1)
-  semitoneCount DoubleFlat   = (-2)
+  semitones Nat          = 0
+  semitones Sharp        = 1
+  semitones DoubleSharp  = 2
+  semitones Flat         = (-1)
+  semitones DoubleFlat   = (-2)
 
-instance Semitones PitchName where
-  semitoneCount (PitchName l a) = semitoneCount l + semitoneCount a
+instance Semitones PitchLabel where
+  semitones (PitchLabel l a) = semitones l + semitones a
   
-
+-}
 
 -- | The names generated by toEnum favour sharps, pitches may need re-spelling.     
-instance Pitched PitchName where
+instance Pitched PitchLabel where
   addSemi l i = toEnum $ (fromEnum l) + i
   subSemi l i = toEnum $ (fromEnum l) - i
   
@@ -328,7 +297,7 @@ instance Pitched PitchName where
 --------------------------------------------------------------------------------
 -- Enum instances
 --------------------------------------------------------------------------------
-
+{-
 instance Enum PitchLetter where 
   fromEnum C = 0
   fromEnum D = 1
@@ -349,8 +318,8 @@ instance Enum PitchLetter where
   toEnum i  = toEnum $ mod7 i
 
   
-instance Enum PitchName where 
-  fromEnum (PitchName l a) = mod12 $ fn l + semitoneCount a
+instance Enum PitchLabel where 
+  fromEnum (PitchLabel l a) = mod12 $ fn l + semitones a
     where fn C = 0
           fn D = 2
           fn E = 4
@@ -360,36 +329,37 @@ instance Enum PitchName where
           fn B = 11
 
   
-  toEnum 0   = PitchName C Nat
-  toEnum 1   = PitchName C Sharp
-  toEnum 2   = PitchName D Nat
-  toEnum 3   = PitchName D Sharp
-  toEnum 4   = PitchName E Nat
-  toEnum 5   = PitchName F Nat
-  toEnum 6   = PitchName F Sharp
-  toEnum 7   = PitchName G Nat
-  toEnum 8   = PitchName G Sharp
-  toEnum 9   = PitchName A Nat
-  toEnum 10  = PitchName A Sharp
-  toEnum 11  = PitchName B Nat
+  toEnum 0   = PitchLabel C Nat
+  toEnum 1   = PitchLabel C Sharp
+  toEnum 2   = PitchLabel D Nat
+  toEnum 3   = PitchLabel D Sharp
+  toEnum 4   = PitchLabel E Nat
+  toEnum 5   = PitchLabel F Nat
+  toEnum 6   = PitchLabel F Sharp
+  toEnum 7   = PitchLabel G Nat
+  toEnum 8   = PitchLabel G Sharp
+  toEnum 9   = PitchLabel A Nat
+  toEnum 10  = PitchLabel A Sharp
+  toEnum 11  = PitchLabel B Nat
 
   toEnum i  = toEnum $ mod12 i
   
 
-
+-}
 
 
 --------------------------------------------------------------------------------
 -- Ord instances
 --------------------------------------------------------------------------------
 
-
+{- 
 instance Ord Accidental where
   compare a a' = fromEnum a `compare` fromEnum a' 
 
-instance Ord PitchName where
+instance Ord PitchLabel where
   compare a a' = fromEnum a `compare` fromEnum a' 
-  
+
+ 
 instance Ord Pitch where
   compare (Pitch _ o s c) (Pitch _ o' s' c') = a `compare` b
     where 
@@ -398,7 +368,7 @@ instance Ord Pitch where
       a         = octaveToCents o + semitonesToCents (s + sc) + cc
       b         = octaveToCents o' + semitonesToCents (s' + sc') + cc'
     
-
+-}
 
 
 --------------------------------------------------------------------------------
@@ -425,44 +395,47 @@ instance Num Accidental where
   fromInteger = toEnum . fromIntegral   
 -}
 
-  
+ 
 instance Num Pitch where
-  (Pitch l o s c) + (Pitch _ o' s' c') = Pitch l' (o + o' + co) s'' c''
-    where (cs,c'') = explode100 (c + c')
-          (co,s'') = explode12 (s + s' + cs)
+  p1 + p2 = undefined
+  p1 - p2 = undefined
+  p1 * p2 = undefined
+  abs p = undefined
+  signum p = undefined
+  fromInteger = undefined
+  
+{-
+  (Pitch l o s) + (Pitch _ o' s') = Pitch l' (o + o' + co) s''
+    where (co,s'') = explode12 (s + s')
           l' = toEnum $ s'' + fromEnum l
 
 
-  (Pitch l o s c) - (Pitch _ o' s' c') = 
-    let (cs,c'') = explode100 (c - c')
-        (co,s'') = explode12 (s - s' + cs)
+  (Pitch l o s) - (Pitch _ o' s') = 
+    let (co,s'') = explode12 (s - s')
         l' = toEnum $ s'' - fromEnum l
-    in Pitch l' (o - o' + co) s'' c''
+    in Pitch l' (o - o' + co) s''
   
   p * p' = 
-    let semil     = fromIntegral $ semitoneCount p
-        semir     = fromIntegral $ semitoneCount p'
-        centl     = (fromIntegral $ pch_cents p) / 100.0
-        centr     = (fromIntegral $ pch_cents p') / 100.0
-        sp        = (semil + centl) * (semir + centr)
-        (semis,c) = properFraction $ (semil + centl) * (semir + centr)
-        (o,s)     = explode12 semis
-    in Pitch (toEnum semis) o s (round (100 * c)) 
+    let semil     = fromIntegral $ semitones p
+        semir     = fromIntegral $ semitones p'
+        sp        = semil  * semir
+        (o,s)     = explode12 sp
+    in Pitch (toEnum s) o s
   
-  abs p     = let (Pitch l o s _) = fromInteger $ fromIntegral $ abs $ semitoneCount p
-              in Pitch l o s (pch_cents p)
+  abs p     = let (Pitch l o s) = fromInteger $ fromIntegral $ abs $ semitones p
+              in Pitch l o s
               
-  signum p  = case semitoneCount p `compare` 0 of
-                EQ -> Pitch (toEnum 0) 0 0 0
-                GT -> Pitch (toEnum 0) 0 1 0
-                LT -> Pitch (toEnum (-1)) (-1) 11 0
+  signum p  = case semitones p `compare` 0 of
+                EQ -> Pitch (toEnum 0) 0 0
+                GT -> Pitch (toEnum 0) 0 1
+                LT -> Pitch (toEnum (-1)) (-1) 11
                 
   
   -- note, this is different to midi - middle C here is 48 (in midi it is 60)
   fromInteger i = let i' = fromIntegral i; (o,s) = explode12  i'; l = toEnum i'
-                  in Pitch l o s 0   
+                  in Pitch l o s   
 
-
+-}
 
 --------------------------------------------------------------------------------
 -- Deco instances
@@ -476,22 +449,22 @@ instance Deco Pitch where
 decoPitch :: Parser Pitch
 decoPitch = fn <$> deco <*> option 4 positiveInt <*> option 0 signedInt
   where
-    fn pl o c = pitch pl o `withCents` c                       
+    fn pl o c = pitch pl o                     
                        
                        
-instance Deco PitchName where
-  deco = decoPitchName
+instance Deco PitchLabel where
+  deco = decoPitchLabel
 
--- | Parsec parser for 'PitchName'.
-decoPitchName :: Parser PitchName
-decoPitchName = PitchName <$> decoPitchLetter <*> decoAccidental
+-- | Parsec parser for 'PitchLabel'.
+decoPitchLabel :: Parser PitchLabel
+decoPitchLabel = PitchLabel <$> decoPitchLetter <*> decoAccidental
 
 
 -- hyper abstract - but is it simpler, clearer? 
 -- 
--- decoPitchName = PitchName <$> deco <*> deco
+-- decoPitchLabel = PitchLabel <$> deco <*> deco
 -- or, 
--- decoPitchName' = deco2 PitchName
+-- decoPitchLabel' = deco2 PitchLabel
 -- deco2 :: (Deco a, Deco b) => (a -> b -> c) -> Parser c
 -- deco2 fn = fn <$> deco <*> deco 
 
@@ -529,13 +502,11 @@ decoAccidental = withLongestString (lexString) $
 --------------------------------------------------------------------------------
 
 instance Affi Pitch where
-  affi (Pitch l o s c) | c == 0    = affi l . shows o 
-                       | c > 0     = affi l . shows o . showChar '+' . shows c
-                       | otherwise = affi l . shows o . shows c
+  affi (Pitch l a o) = affi l . affi a . shows o
     
     
-instance Affi PitchName where 
-    affi (PitchName l a) = affi l . affi a
+instance Affi PitchLabel where 
+    affi (PitchLabel l a) = affi l . affi a
         
 -- | Print sharps as with muliple '#'s only
 instance Affi Accidental where
@@ -555,208 +526,63 @@ instance Affi PitchLetter where
 -- Sharp and flat notes follow the LilyPond convention with suffix of @is@ for 
 -- a sharp and @es@ for a flat.
 
-pnat l    = PitchName l Nat
-psharp l  = PitchName l Sharp
-pflat l   = PitchName l Flat
+pnat l    = PitchLabel l Nat
+psharp l  = PitchLabel l Sharp
+pflat l   = PitchLabel l Flat
 
-c_natural   :: PitchName
+c_natural   :: PitchLabel
 c_natural   = pnat C
 
-d_natural   :: PitchName
+d_natural   :: PitchLabel
 d_natural   = pnat D
 
-e_natural   :: PitchName
+e_natural   :: PitchLabel
 e_natural   = pnat E
 
-f_natural   :: PitchName
+f_natural   :: PitchLabel
 f_natural   = pnat F
 
-g_natural   :: PitchName 
+g_natural   :: PitchLabel 
 g_natural   = pnat G
 
-a_natural   :: PitchName
+a_natural   :: PitchLabel
 a_natural   = pnat A
 
-b_natural   :: PitchName 
+b_natural   :: PitchLabel 
 b_natural   = pnat B
 
-c_sharp     :: PitchName
+c_sharp     :: PitchLabel
 c_sharp     = psharp C
  
-d_flat      :: PitchName  
+d_flat      :: PitchLabel  
 d_flat      = pflat D
 
-d_sharp     :: PitchName 
+d_sharp     :: PitchLabel 
 d_sharp     = psharp D
 
-e_flat      :: PitchName  
+e_flat      :: PitchLabel  
 e_flat      = pflat E
 
-f_sharp     :: PitchName 
+f_sharp     :: PitchLabel 
 f_sharp     = psharp F
 
-g_flat      :: PitchName  
+g_flat      :: PitchLabel  
 g_flat      = pflat G
 
-g_sharp     :: PitchName 
+g_sharp     :: PitchLabel 
 g_sharp     = psharp G
 
-a_flat      :: PitchName  
+a_flat      :: PitchLabel  
 a_flat      = pflat A
 
-a_sharp     :: PitchName 
+a_sharp     :: PitchLabel 
 a_sharp     = psharp A
 
-b_flat      :: PitchName
+b_flat      :: PitchLabel
 b_flat      = pflat B
 
 
 pchNat n o    = pitch (naturalNote n) o
 pchSharp n o  = pitch (sharpNote n) o
 pchFlat n o   = pitch (flatNote n) o
-
-middle_c :: Pitch
-middle_c = pchNat C 4
-
-c4, d4, e4, f4, g4, a4, b4, 
-    c4is, d4es, d4is, e4es, f4is, g4es, g4is, a4es, a4is, b4es :: Pitch
-c4    = pchNat C 4
-d4    = pchNat D 4
-e4    = pchNat E 4
-f4    = pchNat F 4
-g4    = pchNat G 4
-a4    = pchNat A 4
-b4    = pchNat B 4
-c4is  = pchSharp C 4
-d4es  = pchFlat D 4
-d4is  = pchSharp D 4
-e4es  = pchFlat E 4
-f4is  = pchSharp F 4
-g4es  = pchFlat G 4
-g4is  = pchSharp G 4
-a4es  = pchFlat A 4
-a4is  = pchSharp A 4
-b4es  = pchFlat B 4
-
-
-c3, d3, e3, f3, g3, a3, b3, 
-    c3is, d3es, d3is, e3es, f3is, g3es, g3is, a3es, a3is, b3es :: Pitch
-c3    = pchNat C 3
-d3    = pchNat D 3
-e3    = pchNat E 3
-f3    = pchNat F 3
-g3    = pchNat G 3
-a3    = pchNat A 3
-b3    = pchNat B 3
-c3is  = pchSharp C 3
-d3es  = pchFlat D 3
-d3is  = pchSharp D 3
-e3es  = pchFlat E 3
-f3is  = pchSharp F 3
-g3es  = pchFlat G 3
-g3is  = pchSharp G 3
-a3es  = pchFlat A 3
-a3is  = pchSharp A 3
-b3es  = pchFlat B 3
-
-c2, d2, e2, f2, g2, a2, b2, 
-    c2is, d2es, d2is, e2es, f2is, g2es, g2is, a2es, a2is, b2es :: Pitch
-c2    = pchNat C 2
-d2    = pchNat D 2
-e2    = pchNat E 2
-f2    = pchNat F 2
-g2    = pchNat G 2
-a2    = pchNat A 2
-b2    = pchNat B 2
-c2is  = pchSharp C 2
-d2es  = pchFlat D 2
-d2is  = pchSharp D 2
-e2es  = pchFlat E 2
-f2is  = pchSharp F 2
-g2es  = pchFlat G 2
-g2is  = pchSharp G 2
-a2es  = pchFlat A 2
-a2is  = pchSharp A 2
-b2es  = pchFlat B 2
-
-c1, d1, e1, f1, g1, a1, b1, 
-    c1is, d1es, d1is, e1es, f1is, g1es, g1is, a1es, a1is, b1es :: Pitch
-c1    = pchNat C 1
-d1    = pchNat D 1
-e1    = pchNat E 1
-f1    = pchNat F 1
-g1    = pchNat G 1
-a1    = pchNat A 1
-b1    = pchNat B 1
-c1is  = pchSharp C 1
-d1es  = pchFlat D 1
-d1is  = pchSharp D 1
-e1es  = pchFlat E 1
-f1is  = pchSharp F 1
-g1es  = pchFlat G 1
-g1is  = pchSharp G 1
-a1es  = pchFlat A 1
-a1is  = pchSharp A 1
-b1es  = pchFlat B 1
-
-
-c5, d5, e5, f5, g5, a5, b5, 
-    c5is, d5es, d5is, e5es, f5is, g5es, g5is, a5es, a5is, b5es :: Pitch
-c5    = pchNat C 5
-d5    = pchNat D 5
-e5    = pchNat E 5
-f5    = pchNat F 5
-g5    = pchNat G 5
-a5    = pchNat A 5
-b5    = pchNat B 5
-c5is  = pchSharp C 5
-d5es  = pchFlat D 5
-d5is  = pchSharp D 5
-e5es  = pchFlat E 5
-f5is  = pchSharp F 5
-g5es  = pchFlat G 5
-g5is  = pchSharp G 5
-a5es  = pchFlat A 5
-a5is  = pchSharp A 5
-b5es  = pchFlat B 5
-
-c6, d6, e6, f6, g6, a6, b6, 
-    c6is, d6es, d6is, e6es, f6is, g6es, g6is, a6es, a6is, b6es :: Pitch
-c6    = pchNat C 6
-d6    = pchNat D 6
-e6    = pchNat E 6
-f6    = pchNat F 6
-g6    = pchNat G 6
-a6    = pchNat A 6
-b6    = pchNat B 6
-c6is  = pchSharp C 6
-d6es  = pchFlat D 6
-d6is  = pchSharp D 6
-e6es  = pchFlat E 6
-f6is  = pchSharp F 6
-g6es  = pchFlat G 6
-g6is  = pchSharp G 6
-a6es  = pchFlat A 6
-a6is  = pchSharp A 6
-b6es  = pchFlat B 6
-
-c7, d7, e7, f7, g7, a7, b7, 
-    c7is, d7es, d7is, e7es, f7is, g7es, g7is, a7es, a7is, b7es :: Pitch
-c7    = pchNat C 7
-d7    = pchNat D 7
-e7    = pchNat E 7
-f7    = pchNat F 7
-g7    = pchNat G 7
-a7    = pchNat A 7
-b7    = pchNat B 7
-c7is  = pchSharp C 7
-d7es  = pchFlat D 7
-d7is  = pchSharp D 7
-e7es  = pchFlat E 7
-f7is  = pchSharp F 7
-g7es  = pchFlat G 7
-g7is  = pchSharp G 7
-a7es  = pchFlat A 7
-a7is  = pchSharp A 7
-b7es  = pchFlat B 7
 

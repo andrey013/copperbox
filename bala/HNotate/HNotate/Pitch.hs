@@ -18,6 +18,7 @@ module HNotate.Pitch (
     Pitch(..),
     PitchLetter(..),
     Accidental(..),
+    PitchLabel(..),
 
     -- * Operations
     fromLChar, toUpperLChar, toLowerLChar,
@@ -70,9 +71,9 @@ import Data.Char (toUpper, toLower)
 
 
 data Pitch = Pitch {
-    pitch_letter  :: PitchLetter,
-    accidental    :: Accidental,
-    octave        :: Int
+    pch_letter        :: PitchLetter,
+    pch_accidental    :: Accidental,
+    pch_octave        :: Int
   }
   deriving (Eq)
 
@@ -82,11 +83,46 @@ data PitchLetter = C | D | E | F | G | A | B
 data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp 
   deriving (Eq,Enum,Ord,Show)
 
+data PitchLabel = PitchLabel {
+    pch_lbl_letter      :: PitchLetter,
+    pch_lbl_accidental  :: Accidental
+  }
+  deriving (Eq,Show)
+  
+  
 instance Show Pitch where
   show = unformatted . pp
   
 instance Ord Pitch where
   compare p1 p2 = semitones p1 `compare` semitones p2
+
+
+instance Enum PitchLabel where 
+  fromEnum (PitchLabel l a) = (fn l + semitones a) `mod` 12
+    where fn C = 0
+          fn D = 2
+          fn E = 4
+          fn F = 5
+          fn G = 7
+          fn A = 9
+          fn B = 11
+
+  
+  toEnum 0   = PitchLabel C Nat
+  toEnum 1   = PitchLabel C Sharp
+  toEnum 2   = PitchLabel D Nat
+  toEnum 3   = PitchLabel D Sharp
+  toEnum 4   = PitchLabel E Nat
+  toEnum 5   = PitchLabel F Nat
+  toEnum 6   = PitchLabel F Sharp
+  toEnum 7   = PitchLabel G Nat
+  toEnum 8   = PitchLabel G Sharp
+  toEnum 9   = PitchLabel A Nat
+  toEnum 10  = PitchLabel A Sharp
+  toEnum 11  = PitchLabel B Nat
+
+  toEnum i  = toEnum $ i `mod` 12
+  
 
 
 fromLChar :: Char -> Maybe PitchLetter 
@@ -118,6 +154,10 @@ class Semitones a where semitones :: a -> Int
 instance Semitones Pitch where
   semitones (Pitch l a o) = semitones l + semitones a + (12 * o)
 
+instance Semitones PitchLabel where
+  semitones (PitchLabel l a) = semitones l + semitones a
+  
+  
 -- This will need pitch spelling
 fromSemitones :: Int -> Pitch
 fromSemitones i = let (o,ni) = i `divMod` 12

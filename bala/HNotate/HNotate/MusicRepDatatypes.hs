@@ -27,8 +27,7 @@ import qualified Data.Map as Map
 type MeterPattern = ([Int],Duration)
 
 
-data PitchLabel = PitchLabel PitchLetter Accidental
-  deriving (Eq,Show)
+
 
 data Key = Key PitchLabel Mode [PitchLabel]
   deriving (Eq,Show)  
@@ -43,8 +42,7 @@ data Mode = Major | Minor | Lydian | Ionian | Mixolydian
 newtype LabelSet = LabelSet { getLabelSet :: Map.Map Int PitchLabel }
   deriving (Show)
 
-instance Semitones PitchLabel where
-  semitones (PitchLabel l a) = semitones l + semitones a
+
 
 labelSet :: [PitchLabel] -> LabelSet
 labelSet = LabelSet . foldl fn Map.empty

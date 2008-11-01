@@ -26,6 +26,7 @@ import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
 import HNotate.OnsetQueue
+import HNotate.Pitch
 import HNotate.TemplateDatatypes
 
 import Data.Char (toLower)
