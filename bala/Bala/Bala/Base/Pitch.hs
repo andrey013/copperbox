@@ -22,7 +22,7 @@ module Bala.Base.Pitch (
   octaveMeasure, semitoneMeasure,
   
   -- * Typeclasses
-  Semitones(..),  Pitched(..), EncodePitch(..),
+  Pitched(..), EncodePitch(..),
   
   -- * Operations
   spell,
@@ -53,28 +53,7 @@ import Text.ParserCombinators.Parsec
 --------------------------------------------------------------------------------
 -- Datatypes
 
--- | Note - there is redundancy between pitch_label and semitones, operations
--- on Pitch must take care to account for both.
-
-{-
- 
-data Pitch = Pitch {
-    pch_label       :: PitchLabel,
-    pch_octave      :: Int,
-    pch_semitones   :: Int,
-    pch_cents       :: Int 
-  }
-  deriving (Eq,Read,Show)
-
-  
-    
-data PitchLetter = C | D | E | F | G | A | B
-  deriving (Eq,Ord,Read,Show)
-
-data Accidental = DoubleFlat | Flat | Nat | Sharp | DoubleSharp 
-  deriving (Eq,Enum,Read,Show)
-
--}
+-- imported from HNotate
 
 --------------------------------------------------------------------------------
 -- | Constructors and selectors
@@ -203,27 +182,15 @@ unaltered :: PitchLabel -> Bool
 unaltered lbl = pch_lbl_accidental lbl == Nat
 
 octaveDisplacement oct            = (oct - 4) * 12  
-
-{-
-centValue :: Pitch -> Int
-centValue (Pitch l o s c) 
-  = octaveToCents o  + semitonesToCents s + c
-  
-semitonesToCents :: Int -> Int
-semitonesToCents = (100 *)
-
-octaveToCents :: Int -> Int
-octaveToCents   = (12 * 100 *)
--}
   
 
 -- | Add an octave to a pitched value.  
 addOve  :: Pitched a => a -> Int -> a
-addOve e = addSemi e . (12 *)
+e `addOve` o = e `addSemi` (12 * o)
 
 -- | Subtract an octave from a pitched value.
 subOve  :: Pitched a => a -> Int -> a
-subOve e = subSemi e . (12 *)
+e `subOve` o = e `subSemi` (12 * o)
 
 
 -- | As per 'semitoneDisplacement' but just return the distance.
@@ -239,32 +206,16 @@ semitoneDirection   = fst `dyap` semitoneDisplacement
 --------------------------------------------------------------------------------
 -- Instances
 
-{-
-instance Semitones Pitch where
-  semitones (Pitch l o s c) = 
-    let (cc,_) = explode100 c in  (12 * o) + s + cc
--}    
 
     
 instance Pitched Pitch where
-  addSemi = undefined
-  subSemi = undefined
-  semitoneDisplacement = undefined
+  p `addSemi` i = p + (fromInteger $ fromIntegral i)
+  p `subSemi` i = p - (fromInteger $ fromIntegral i)
+  p `semitoneDisplacement` p' = let d = semitones p' - semitones p
+                                in case signum d of
+                                    (-1) -> (Downwards, abs d)
+                                    _    -> (Upwards, d)
   
-{-
-  addSemi (Pitch l o s) i = 
-    let (oc,s') = explode12 $ s + i in Pitch (l `addSemi` i) (o + oc) s'
-    
-  subSemi (Pitch l o s) i = 
-    let (oc,s') = explode12 $ s - i in Pitch (l `subSemi` i) (o - oc) s'
-
-  semitoneDisplacement p p' = 
-    let d = semitones p' - semitones p
-    in case signum d of
-      (-1) -> (Downwards, abs d)
-      _    -> (Upwards, d)
-
--}
       
 {-
 -- C-nat = 0 
@@ -375,67 +326,21 @@ instance Ord Pitch where
 -- Num instances
 --------------------------------------------------------------------------------
 
-{-
-instance Num Accidental where
-  a + b = toEnum $ fromEnum a + fromEnum b
-                           
-  a - b = toEnum $ fromEnum a - fromEnum b
-    
-  a * b = toEnum $ fromEnum a * fromEnum a
+binop :: (Int -> Int -> Int) -> Pitch -> Pitch -> Pitch
+binop op p p' = fromInteger $ fromIntegral $ semitones p `op` semitones p' 
 
-  abs (Flat i) = Sharp i  
-  abs a        = a
-  
-  
-  signum Nat       = Nat
-  signum (Sharp _) = Sharp 1
-  signum _         = Flat 1
-
-    
-  fromInteger = toEnum . fromIntegral   
--}
-
+unop :: (Int -> Int) -> Pitch -> Pitch
+unop op p = fromInteger $ fromIntegral $ op (semitones p)
  
 instance Num Pitch where
-  p1 + p2 = undefined
-  p1 - p2 = undefined
-  p1 * p2 = undefined
-  abs p = undefined
-  signum p = undefined
-  fromInteger = undefined
+  (+) = binop (+)
+  (-) = binop (-)
+  (*) = binop (*)
+  abs = unop abs
+  signum = unop signum
+  fromInteger i = let (o,en) = (fromIntegral i) `divMod` 12
+                  in pitch (toEnum en) o   
   
-{-
-  (Pitch l o s) + (Pitch _ o' s') = Pitch l' (o + o' + co) s''
-    where (co,s'') = explode12 (s + s')
-          l' = toEnum $ s'' + fromEnum l
-
-
-  (Pitch l o s) - (Pitch _ o' s') = 
-    let (co,s'') = explode12 (s - s')
-        l' = toEnum $ s'' - fromEnum l
-    in Pitch l' (o - o' + co) s''
-  
-  p * p' = 
-    let semil     = fromIntegral $ semitones p
-        semir     = fromIntegral $ semitones p'
-        sp        = semil  * semir
-        (o,s)     = explode12 sp
-    in Pitch (toEnum s) o s
-  
-  abs p     = let (Pitch l o s) = fromInteger $ fromIntegral $ abs $ semitones p
-              in Pitch l o s
-              
-  signum p  = case semitones p `compare` 0 of
-                EQ -> Pitch (toEnum 0) 0 0
-                GT -> Pitch (toEnum 0) 0 1
-                LT -> Pitch (toEnum (-1)) (-1) 11
-                
-  
-  -- note, this is different to midi - middle C here is 48 (in midi it is 60)
-  fromInteger i = let i' = fromIntegral i; (o,s) = explode12  i'; l = toEnum i'
-                  in Pitch l o s   
-
--}
 
 --------------------------------------------------------------------------------
 -- Deco instances

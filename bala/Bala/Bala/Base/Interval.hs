@@ -32,7 +32,7 @@ module Bala.Base.Interval (
   perfectInterval, majorInterval, minorInterval, augmentedInterval, 
   diminishedInterval,
   
-  pitchDifference, arithmeticDistance,
+  pitchDifference,
   
   
   -- * Named elements
