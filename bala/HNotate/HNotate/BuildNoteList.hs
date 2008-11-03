@@ -73,7 +73,7 @@ data EvtVoiceOverlay = EVO {
   
 data GlyphVoiceOverlay = GVO { 
     gvo_displacement  :: MetricalSize,
-    gvo_glyphs        :: Seq Glyph
+    gvo_tiles         :: Seq Tile
   }
   deriving (Show) 
 
@@ -130,21 +130,21 @@ reduceTreeStep bar_len (EVO ms se) = mkAnswer $ F.foldl fn (ms,empty,[]) se
           mkEVO (EventList se)  = if ib_duration ms == duration_zero
                                   then EVO ms se
                                   else EVO (leftToBarStart ms) (lspacer <| se)
-          lspacer               = Evt $ Spacer (ib_duration ms)
+          lspacer               = Evt $ spacer (ib_duration ms)
 
     
     fn (ms,se,polys) (Evt e)   = (moveRightwards bar_len e ms, se |> e, polys)
 
 
-moveRightwards :: Duration -> Glyph -> MetricalSize -> MetricalSize
-moveRightwards bar_len gly ms = 
-    msnormalize bar_len $ ms `mappend` (gylphSize bar_len gly)
+moveRightwards :: Duration -> Tile -> MetricalSize -> MetricalSize
+moveRightwards bar_len tile ms = 
+    msnormalize bar_len $ ms `mappend` (tileSize bar_len tile)
                  
 leftToBarStart :: MetricalSize -> MetricalSize 
 leftToBarStart (MS b _) = MS b duration_zero
 
 
-type RawBar = (Int,Seq Glyph)
+type RawBar = (Int,Seq Tile)
 
 
 partitionGVO :: Duration -> GlyphVoiceOverlay -> Seq RawBar
@@ -163,28 +163,35 @@ partitionGVO bar_len (GVO ms se) =
                      then (srb |> (bar_count ms, (sg |> e)), (ms',empty))
                      else (srb, (ms', sg |> e))
                      
-        Split l r -> (srb |> (bar_count ms, sg |> l |> Tie),
+        Split l r -> (srb |> (bar_count ms, sg |> l |> tie),
                         (moveRightwards bar_len r ms, singleton r) )
 
 
 instance Fits Glyph Duration where
-  measure (Note _ d)        = d
-  measure (Rest d)          = d
-  measure (Spacer d)        = d
-  measure (Chord _ d)       = d
-  measure e                 = duration_zero
+  measure (Note _ d _)            = d
+  measure (Rest _ d _)            = d
+  measure (RhythmicMark _ d _)    = d
+  measure (Mark _ _)              = duration_zero
   
-  resizeTo (Note p _)   d   = Note p d
-  resizeTo (Rest _)     d   = Rest d
-  resizeTo (Spacer _)   d   = Spacer d
-  resizeTo (Chord se _) d   = Chord se d
-  resizeTo e            d   = e
+  resizeTo (Note p _ a)         d = Note p d a
+  resizeTo (Rest m _ a)         d = Rest m d a 
+  resizeTo (RhythmicMark l _ m) d = RhythmicMark l d m
+  resizeTo (Mark l m)           d = Mark l m
 
-                                                   
+instance Fits Tile Duration where
+  measure (Singleton e)           = measure e                                                
+  measure (Chord se d a)          = d  
+  measure (GraceNotes se m a)     = duration_zero
+ 
+  resizeTo (Singleton e)        d = Singleton (resizeTo e d)                                                
+  resizeTo (Chord se _ a)       d = Chord se d a  
+  resizeTo (GraceNotes se m a)  d = GraceNotes se m a
 
-gylphSize :: Duration -> Glyph -> MetricalSize
-gylphSize bar_len gly = 
-    let d = glyphDuration gly; (bn,rest) = d `divModR` bar_len 
+
+
+tileSize :: Duration -> Tile -> MetricalSize
+tileSize bar_len gly = 
+    let d = rhythmicValue gly; (bn,rest) = d `divModR` bar_len 
     in MS (fromIntegral bn) rest
     
      

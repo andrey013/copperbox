@@ -81,11 +81,14 @@ instance (Applicative m, Applicative n) => Applicative (Comp m n) where
 
 
 changeDuration :: Glyph -> Duration -> Glyph
-changeDuration a od = durationf (const od) a
+changeDuration = modifyDuration
 
 
-changePitch :: Glyph -> Pitch -> Glyph
-changePitch a op = pitchf (const op) a
+modifyPitch :: Glyph -> Pitch -> Glyph
+modifyPitch (Note _ d a)         p = Note p d a
+modifyPitch (Rest m d a)         p = Rest m d a
+modifyPitch (RhythmicMark l d m) p = RhythmicMark l d m
+modifyPitch (Mark l m)           p = Mark l m
 
 
 --------------------------------------------------------------------------------
@@ -101,10 +104,10 @@ mkLyState pch = LyState { rel_pitch = pch, rel_duration = quarter }
 -- run length encode the duration - LilyPond uses this method
 
 -- drle - duration run length encode
-drleBody :: Glyph -> WrappedMonad (State LyState) Glyph
+drleBody :: Tile -> WrappedMonad (State LyState) Tile
 drleBody e = WrapMonad $ do
-    od <- diffDuration (glyphDuration e)
-    return $ changeDuration e od    
+    od <- diffDuration (rhythmicValue e)
+    return $ modifyDuration e od    
   where    
     diffDuration :: Duration -> State LyState Duration
     diffDuration d = do
@@ -129,17 +132,19 @@ drleBody e = WrapMonad $ do
 -- and the subsequent notes only change it 'locally'.
 -- All successive notes in a grace notes change 'global' relative pitch
  
-proBody :: Glyph -> WrappedMonad (State LyState) Glyph
+proBody :: Tile -> WrappedMonad (State LyState) Tile
 proBody e = WrapMonad $ step e
   where 
-    step e@(Note p _)         = do nt <- convPitch p 
-                                   return $ changePitch e nt
+    step (Singleton e)        = Singleton <$> gstep e 
 
-    step (Chord se d)         = (\se' -> Chord se' d) <$> convChordPitches se
+    step (Chord se d a)       = (\se' -> Chord se' d a) <$> convChordPitches se
     
-    step (GraceNotes se)      =  GraceNotes <$> mapM convPitch se
-
-    step e                    = return e         
+    step (GraceNotes se m a)  = (\se' -> GraceNotes se' m a) <$> mapM fn se
+      where fn (p,d) = convPitch p >>= \p' -> return (p',d)
+    
+    gstep :: Glyph ->  State LyState Glyph
+    gstep e@(Note p d a)      = (modifyPitch e) <$> convPitch p 
+    gstep e                   = return e
 
 
 convChordPitches :: Seq Pitch -> State LyState (Seq Pitch)
@@ -175,11 +180,13 @@ changeOctaveWrt pch@(Pitch l a o) base = Pitch l a (base `octaveDist` pch)
 -- (a negative number gives the number of ,,, 's)   
 
 
-losBody :: Glyph -> WrappedMonad Identity Glyph
-losBody e = WrapMonad $ return $ pitchf fn e
+losBody :: Tile -> WrappedMonad Identity Tile
+losBody e = WrapMonad $ return $ fn e
   where
-    fn (Pitch l a o) = Pitch l a (o-3)
-    
+    fn (Singleton (Note p d anno)) = Singleton (Note (down3ve p)  d anno)
+    fn (Chord se d anno)           = Chord (fmap down3ve se) d anno
+
+    down3ve (Pitch l a o) = Pitch l a (o-3)
 
 --------------------------------------------------------------------------------
 -- 'default encode' the duration - if the duration matches the unit note length
@@ -187,12 +194,12 @@ losBody e = WrapMonad $ return $ pitchf fn e
 
 
 -- unit note length encode
-unleBody :: Monad m => Glyph -> WrappedMonad (NotateMonadT Env Config m) Glyph
-unleBody e = let drn = glyphDuration e in WrapMonad $ 
+unleBody :: Monad m => Tile -> WrappedMonad (NotateMonadT Env Config m) Tile
+unleBody e = let drn = rhythmicValue e in WrapMonad $ 
              fn e drn <$> asks unit_note_length
   where
-    fn e drn unl | drn == unl = changeDuration e no_duration
-                 | otherwise  = changeDuration e (abcScaleDuration drn unl)           
+    fn e drn unl | drn == unl = modifyDuration e no_duration
+                 | otherwise  = modifyDuration e (abcScaleDuration drn unl)           
 
     abcScaleDuration drn unl = 
         let (nr,dr)  = ratioElements drn
@@ -203,17 +210,20 @@ unleBody e = let drn = glyphDuration e in WrapMonad $
 -- pitch label rename     
 
 -- unit note length encode
-plrBody :: Monad m => Glyph -> WrappedMonad (NotateMonadT Env Config m) Glyph
+plrBody :: Monad m => Tile -> WrappedMonad (NotateMonadT Env Config m) Tile
 plrBody e = WrapMonad $ (respell e) <$> asks label_set
   where
-    respell (Note p d)      lbls  = Note (naturalize p lbls) d
+    respell (Singleton e)       ls = Singleton (respell' e ls)
 
-    respell (Chord se d)    lbls  = Chord (fmap (naturalizef lbls) se) d
+    respell (Chord se d a)      ls = Chord (fmap (cf ls) se) d a
     
-    respell (GraceNotes se) lbls  = GraceNotes (fmap (naturalizef lbls) se)
+    respell (GraceNotes se m a) ls = GraceNotes (fmap (gf ls) se) m a
 
-    respell e               lbls  = e  
+    respell' (Note p d a)       ls = Note (p `naturalize` ls) d a
+    respell' e                  ls = e
     
-    naturalizef = flip naturalize
+    cf ls p     = p `naturalize` ls
+    gf ls (p,d) = (p `naturalize` ls, d)
+    
 
        

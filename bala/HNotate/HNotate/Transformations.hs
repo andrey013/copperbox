@@ -58,7 +58,7 @@ beamBar mp = beam mp
 
 
 sumDurations :: Bar -> Duration
-sumDurations = F.foldr (\e a -> a + glyphDuration e) duration_zero
+sumDurations = F.foldr (\e a -> a + rhythmicValue e) duration_zero
 
 
 beam :: MeterPattern -> Bar -> Bar
@@ -67,23 +67,23 @@ beam mp = Bar . cata (><) empty . fmap beamUnfold . splitMeasure mp . unBar
     unBar (Bar se) = se
 
 -- SMst - splitMeasure state
-type SMst = ([Duration],Duration, Seq Glyph)
+type SMst = ([Duration],Duration, Seq Tile)
 
-splitMeasure :: MeterPattern -> Seq Glyph -> Seq (Seq Glyph)
+splitMeasure :: MeterPattern -> Seq Tile -> Seq (Seq Tile)
 splitMeasure mp se = apo step flush (meterDivisions mp, duration_zero, se)
   where
-    step :: SMst -> Maybe (Seq Glyph, SMst)
+    step :: SMst -> Maybe (Seq Tile, SMst)
     step ([],  _,_ )  = Nothing    -- run out of meter steps
     step (m:ms,d,se)  = let (d',sl,sr) = lgDurationSplit m d se in
                         if null sr then Nothing else Just (sl,(ms,d',sr))  
     
-    flush :: SMst -> Seq (Seq Glyph)                      
+    flush :: SMst -> Seq (Seq Tile)                      
     flush (_,_,se) = singleton se
 
-lgDurationSplit :: Duration -> Duration -> Seq Glyph 
-                    -> (Duration, Seq Glyph, Seq Glyph)
+lgDurationSplit :: Duration -> Duration -> Seq Tile 
+                    -> (Duration, Seq Tile, Seq Tile)
 lgDurationSplit len start = 
-  lgs (<=len) (\st e -> st + glyphDuration e) start
+  lgs (<=len) (\st e -> st + rhythmicValue e) start
 
 
 
@@ -112,7 +112,7 @@ data BeamSt = BEAM | BEAM_OFF deriving (Eq,Show)
 
 -- beaming works nicely as an unfold as we get 'lookahead' 
 -- on the input stream
-beamUnfold :: Seq Glyph -> Seq Glyph
+beamUnfold :: Seq Tile -> Seq Tile
 beamUnfold se = ana step (BEAM_OFF,se)
   where
     step (st, se) = phi (st, viewl se)
@@ -120,7 +120,7 @@ beamUnfold se = ana step (BEAM_OFF,se)
       -- exit the unfold
     phi (BEAM_OFF, EmptyL)        = Nothing
       -- Beam end & push back the empty seq (can't finish in the BEAM state)
-    phi (BEAM,     EmptyL)        = Just  (BeamEnd,   (BEAM_OFF, empty))
+    phi (BEAM,     EmptyL)        = Just  (beamEnd,   (BEAM_OFF, empty))
     
     phi (BEAM_OFF, (e :< se))   
             | eighthOrSmaller e   = case lookaheadEOS se of
@@ -129,7 +129,7 @@ beamUnfold se = ana step (BEAM_OFF,se)
                                           (e,         (BEAM_OFF, se))
                                         -- start beaming & pushback e     
                                       Just (_,_) -> Just $ 
-                                          (BeamStart, (BEAM, e <| se))
+                                          (beamStart, (BEAM, e <| se))
               -- don't beam for long notes                                    
             | otherwise           = Just  (e,         (BEAM_OFF, se))
    
@@ -137,17 +137,17 @@ beamUnfold se = ana step (BEAM_OFF,se)
               -- keep beaming
             | eighthOrSmaller e   = Just  (e,         (BEAM,    se))
               -- stop beaming & pushback e
-            | otherwise           = Just  (BeamEnd,   (BEAM_OFF, e <| se))  
+            | otherwise           = Just  (beamEnd,   (BEAM_OFF, e <| se))  
     
     lookaheadEOS se = case viewl se of
                         EmptyL                        -> Nothing
                         (a :< sa) | eighthOrSmaller a -> Just (a,sa)
                                   | otherwise         -> Nothing
                 
-eighthOrSmaller :: Glyph -> Bool
-eighthOrSmaller e = glyphDuration e <= eighth && noteOrChord e
+eighthOrSmaller :: Tile -> Bool
+eighthOrSmaller e = rhythmicValue e <= eighth && noteOrChord e
   where
-    noteOrChord (Note _ _)  = True
-    noteOrChord (Chord _ _) = True
-    noteOrChord _           = False
+    noteOrChord (Singleton (Note _ _ _))  = True
+    noteOrChord (Chord _ _ _)             = True
+    noteOrChord _                         = False
     

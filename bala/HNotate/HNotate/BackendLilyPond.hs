@@ -25,7 +25,7 @@ import HNotate.Document
 import HNotate.Duration hiding (duration)
 import HNotate.Env
 import HNotate.NotateMonad
-import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, gracenotes)
+import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord)
 import HNotate.Pitch
 import HNotate.PPInstances
 import HNotate.ProcessingTypes
@@ -91,15 +91,12 @@ blockDoc (PolyBlock i se)  = (i, polyphony se <+> barcheck)
 
 
 glyph :: Glyph -> ODoc
-glyph (Note p d)          = note p d
-glyph (Rest d)            = rest d
-glyph (Spacer d)          = spacer d
-glyph (Chord se d)        = chord (unseq se) d
-glyph (GraceNotes se)     = gracenotes (unseq se)
-glyph (Tie)               = tie
-glyph (BeamStart)         = emptyDoc
-glyph (BeamEnd)           = emptyDoc
-glyph (Annotation fmt fn) = emptyDoc
+glyph (Note p d a)          = applyLyAnno a $ note p d
+glyph (Rest Marked d a)     = applyLyAnno a $ rest d
+glyph (Rest Spacer d a)     = applyLyAnno a $ spacer d
+
+glyph (RhythmicMark _ d m)  = lyOutput m <> duration d
+glyph (Mark _ m)            = lyOutput m
 
 
 polyphony :: Seq Bar -> ODoc
@@ -114,28 +111,32 @@ polyphony = dblangles' . step1 . viewl
     polysep :: ODoc
     polysep = text "\\\\"
 
-type ODocConcat = ODoc -> ODoc -> ODoc
+
+-- Unlike the Abc version of this function, the LilyPond version doesn't
+-- need to have an 'ODocConcat' function as part of its state. 
 
 barDoc :: Bar -> ODoc
-barDoc xs = collapse $ F.foldl fn (emptyDoc,(<+>),emptyDoc) xs
+barDoc xs = collapse $ F.foldl fn (emptyDoc,emptyDoc) xs
   where 
-    collapse (out,op,tip) = out `op` tip
+    collapse (out,tip) = out <+> tip
     
-    fn :: (ODoc, ODocConcat, ODoc) -> Glyph -> (ODoc, ODocConcat, ODoc)
-    fn (out,op,tip) (BeamStart)     = (out `op` tip, (<>),  anno bSt tip)
-    fn (out,op,tip) (BeamEnd)       = (out `op` tip, (<+>), anno bEnd tip)
-    fn (out,op,tip) (Annotation fmt fn) 
-          | fmt == Ly               = (out,           op,   anno fn tip)
-          | otherwise               = (out,           op,   tip)
-    fn (out,op,tip) e               = (out `op` tip,  op,   glyph e)                 
-
-anno :: (ODoc -> ODoc) -> ODoc -> ODoc
-anno fn e | isEmpty e   = e
-          | otherwise   = fn e
+    fn :: (ODoc, ODoc) -> Tile -> (ODoc, ODoc)
+    fn (out,tip) (Singleton e)   
+          | isBeamStart e             = (out <+> tip, anno bSt tip)
+          | isBeamEnd e               = (out <+> tip, anno bEnd tip)
+          | otherwise                 = (out <+> tip, glyph e)
           
-bSt :: (ODoc -> ODoc)
-bSt   = (<> lbracket)
-bEnd  = (<> rbracket) 
+    fn (out,tip) (Chord se d a)       = (out <+> tip, chord se d a)
+    fn (out,tip) (GraceNotes se m a)  = (out <+> tip, gracenotes se a) 
+                
+
+    anno :: (ODoc -> ODoc) -> ODoc -> ODoc
+    anno fn e | isEmpty e   = e
+              | otherwise   = fn e
+          
+    bSt, bEnd :: (ODoc -> ODoc)
+    bSt   = (<> lbracket)
+    bEnd  = (<> rbracket) 
 
 
 --------------------------------------------------------------------------------
@@ -187,12 +188,15 @@ rest = (char 'r' <>) . duration
 spacer :: Duration -> ODoc
 spacer = (char 's' <>) . duration
 
-chord :: [Pitch] -> Duration -> ODoc
-chord ps d = (angles $ hsep $ map pitch ps)  <> duration d
+chord :: Seq Pitch -> Duration -> Annotation -> ODoc
+chord ps d a = 
+    applyLyAnno a $ (angles $ hsep $ unseqMap pitch ps)  <> duration d
   
 
-gracenotes :: [Pitch] -> ODoc
-gracenotes ps = command1 "grace" (braces $ hsep $ map pitch ps)
+gracenotes :: Seq (Pitch,Duration) -> Annotation -> ODoc
+gracenotes ps a = 
+    applyLyAnno a $ command1 "grace" (braces $ hsep $ unseqMap fn ps)
+  where fn (p,d) = pitch p <> duration d
 
 
 tie :: ODoc

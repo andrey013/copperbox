@@ -17,22 +17,28 @@ module HNotate.Annotations where
 import HNotate.Document
 import HNotate.NoteListDatatypes
 
+abcOnly :: (ODoc -> ODoc) -> Annotation
+abcOnly fn = Annotation { _ly_anno = id, _abc_anno = fn } 
+
+lyOnly :: (ODoc -> ODoc) -> Annotation
+lyOnly fn = Annotation { _ly_anno = fn, _abc_anno = id } 
+
 
 -- Abc
-upbow :: AnnoFun
-upbow = (\d -> char 'u' <> d)
+upbow :: Annotation
+upbow = abcOnly (prefix $ char 'u')
 
-downbow :: AnnoFun
-downbow = (\d -> char 'v' <> d)
+downbow :: Annotation
+downbow = abcOnly (prefix $ char 'v')
 
 
 
 -- LilyPond
-fermata :: AnnoFun 
-fermata = (<> command "fermata")
+fermata :: Annotation 
+fermata = lyOnly (suffix $ command "fermata")
 
 
-stringNum :: Int -> AnnoFun
-stringNum i = (<> command (show i))
+stringNum :: Int -> Annotation
+stringNum i = lyOnly(suffix $ command (show i))
 
 

@@ -21,7 +21,7 @@ module HNotate.Document (
   hcat, hsep, vsep,
   punctuate,
   enclose, encloseSpace, dup,
-  line, space, comma, colon, dot, dash, equals,
+  line, space, comma, colon, dot, dash, equals, prime,
   
   lbrace, rbrace, braces, braces',
   lparen, rparen, parens, parens',
@@ -164,6 +164,9 @@ dash      = char ':'
 
 equals    :: ODoc
 equals    = char '='
+
+prime     :: ODoc
+prime     = char '\''
 
 
 -- ---

@@ -21,7 +21,7 @@ import HNotate.CommonUtils
 import HNotate.Document
 import HNotate.Duration hiding (duration)
 import HNotate.Env
-import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, gracenotes)
+import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord)
 import HNotate.NotateMonad
 import HNotate.Pitch
 import HNotate.PPInstances
@@ -84,32 +84,29 @@ barDoc xs = collapse $ F.foldl fn (emptyDoc,(<+>),emptyDoc) xs
   where 
     collapse (out,op,tip) = out `op` tip
   
-    fn :: (ODoc, ODocConcat, ODoc) -> Glyph -> (ODoc, ODocConcat, ODoc)
-    fn (out,op,tip) (BeamStart)         = (out `op` tip, (<>),  emptyDoc)
-    fn (out,op,tip) (BeamEnd)           = (out `op` tip, (<+>), emptyDoc)
-    fn (out,op,tip) (Annotation fmt fn) 
-          | fmt == Abc                  = (out,           op,   anno fn tip)
-          | otherwise                   = (out,           op,   tip)
-    fn (out,op,tip) e                   = (out `op` tip,  op,   glyph e)                 
-
-anno :: (ODoc -> ODoc) -> ODoc -> ODoc
-anno fn e | isEmpty e   = e
-          | otherwise   = fn e
+    fn :: (ODoc, ODocConcat, ODoc) -> Tile -> (ODoc, ODocConcat, ODoc)
+    fn (out,op,tip) (Singleton e)   
+          | isBeamStart e               = (out `op` tip, (<>),  emptyDoc)
+          | isBeamEnd e                 = (out `op` tip, (<+>), emptyDoc)
+          | otherwise                   = (out `op` tip,  op,   glyph e)
+          
+    fn (out,op,tip) (Chord se d a)      = (out `op` tip,  op, chord se d a)
+    fn (out,op,tip) (GraceNotes se m a) = (out `op` tip,  op, gracenotes se a)
+     
+                                
                   
    
 
 
 
 glyph :: Glyph -> ODoc
-glyph (Note p d)          = note p d
-glyph (Rest d)            = rest d
-glyph (Spacer d)          = spacer d
-glyph (Chord se d)        = chord (unseq se) d
-glyph (GraceNotes se)     = gracenotes (unseq se)
-glyph (Tie)               = tie
-glyph (BeamStart)         = emptyDoc
-glyph (BeamEnd)           = emptyDoc
-glyph (Annotation fmt fn) = emptyDoc
+glyph (Note p d a)          = applyAbcAnno a $ note p d
+glyph (Rest Marked d a)     = applyAbcAnno a $ rest d
+glyph (Rest Spacer d a)     = applyAbcAnno a $ spacer d
+
+glyph (RhythmicMark _ d m)  = abcOutput m <> duration d
+glyph (Mark _ m)            = abcOutput m
+
 
 
 
@@ -156,11 +153,13 @@ rest d = char 'z' <> duration d
 spacer :: Duration -> ODoc
 spacer d = char 'x' <> duration d
 
-chord :: [Pitch] -> Duration -> ODoc
-chord ps d = (brackets $ hcat $ map pitch ps) <> duration d
+chord :: Seq Pitch -> Duration -> Annotation -> ODoc
+chord se d a = 
+    applyAbcAnno a (brackets $ hcat $ unseqMap pitch se) <> duration d
     
-gracenotes :: [Pitch] -> ODoc
-gracenotes = braces . hcat . map pitch  
+gracenotes :: Seq (Pitch,Duration) -> Annotation -> ODoc
+gracenotes se a = applyAbcAnno a (braces $ hcat $ unseqMap fn se)
+  where fn (p,d) = pitch p <> duration d  
 
 tie :: ODoc
 tie = char '-'

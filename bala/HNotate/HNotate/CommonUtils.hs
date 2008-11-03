@@ -296,7 +296,8 @@ worklist f = step []
 unseq :: Seq a -> [a]
 unseq = F.foldr (:) [] 
 
-                
+unseqMap :: (a -> b) -> Seq a -> [b]
+unseqMap f = F.foldr ((:) `onl` f) []             
                         
 
 --------------------------------------------------------------------------------
@@ -319,3 +320,12 @@ foldS f xs      = foldr1 f xs
 
 constrS :: String -> ShowS -> ShowS
 constrS cname body = showString ('(':cname) . showSpace . body . showChar ')'
+
+
+-- to sort out...
+showsPrecChain2 :: (Show a, Show b) => Int -> a -> b -> ShowS
+showsPrecChain2 i a b = showsPrec i a . showSpace . showsPrec i b 
+
+showsPrecChain3 :: (Show a, Show b, Show c) => Int -> a -> b -> c -> ShowS
+showsPrecChain3 i a b c = 
+    showsPrec i a . showSpace . showsPrec i b . showSpace . showsPrec i c

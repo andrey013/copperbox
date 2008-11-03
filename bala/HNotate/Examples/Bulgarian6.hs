@@ -16,17 +16,17 @@ import HNotate
 
 bars1_4 :: EventList
 bars1_4 = 
-    root # note a4 du16   # note b4 du16 # note cis5 du16 # note cis5 du16 
-         # note cis5 du16 # note a4 du16 # note cis5 du16 # note cis5 du16
+    root |# note a4 du16   |# note b4 du16 |# note cis5 du16 |# note cis5 du16 
+         |# note cis5 du16 |# note a4 du16 |# note cis5 du16 |# note cis5 du16
         
-         # note cis5 du16 # note a4 du16 # note b4 du16   # note cis5 du16
-         # note b4 du16   # note a4 du16 # note a4 du16   # rest du16
+         |# note cis5 du16 |# note a4 du16 |# note b4 du16   |# note cis5 du16
+         |# note b4 du16   |# note a4 du16 |# note a4 du16   |# rest du16
         
-         # note e5 du16   # note d5 du16 # note cis5 du16 # note b4 du16
-         # note cis5 du16 # note a4 du16 # note b4 du16   # note cis5 du16
+         |# note e5 du16   |# note d5 du16 |# note cis5 du16 |# note b4 du16
+         |# note cis5 du16 |# note a4 du16 |# note b4 du16   |# note cis5 du16
         
-         # note a4 du16   # note b4 du16 # note b4 du16   # note a4 du16
-         # note a4 du8    # rest du8       
+         |# note a4 du16   |# note b4 du16 |# note b4 du16   |# note a4 du16
+         |# note a4 du8    |# rest du8       
 
         
  

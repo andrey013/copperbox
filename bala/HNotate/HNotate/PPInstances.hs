@@ -98,6 +98,28 @@ instance Witness Env where textrep = wpp . pp
 --------------------------------------------------------------------------------
 -- NoteListDatatypes
 
+instance PP Tile where
+  pp (Singleton e)       = pp e
+  
+  pp (Chord se d a)      = brackets (hsep $ unseqMap pp se) <> prime <> pp d
+      
+  pp (GraceNotes se m a) = braces (hsep $ unseqMap fn se) 
+    where fn (p,d) = pp p <> prime <> pp d
+  
+instance PP Glyph where
+  pp (Note p d a)         = applyLyAnno a (pp p <> prime <> pp d)
+  
+  pp (Rest Marked d a)    = applyLyAnno a (char 'r' <> pp d)
+  
+  pp (Rest Spacer d a)    = applyLyAnno a (char 's' <> pp d)
+  
+  
+  pp (RhythmicMark l d m) = text l <> prime <> pp d
+      
+  pp (Mark l m)           = text l
+  
+  
+
 instance PP OutputFormat where
   pp Abc        = text "Abc"
   pp Ly         = text "LilyPond"  
@@ -123,19 +145,7 @@ instance (PP e) => PP (BarF e) where
   pp (Bar se)             = genPunctuateSeq pp space se
 
 
-instance PP Glyph where
-  pp (Note pch dur)       = pp pch    <> durationSuffix dur
-  pp (Rest dur)           = char 'r'  <> durationSuffix dur
-  pp (Spacer dur)         = char 's'  <> durationSuffix dur
-  pp (Chord ps dur)       = (brackets $ genPunctuateSeq pp space ps) 
-                                      <> durationSuffix dur
-  pp (GraceNotes es)      = braces $ genPunctuateSeq pp space es
 
-  pp (BeamStart)          = text "[."
-  pp (BeamEnd)            = text ".]" <> line
-  pp (Tie)                = text "~~"
-  pp (Annotation fmt fn)  = 
-      pp fmt <+> (lenses $ string $ unformatted $ fn emptyDoc)
 
 durationSuffix :: Duration -> ODoc
 durationSuffix d = char '\'' <> ppDuration d 
