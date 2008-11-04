@@ -80,7 +80,7 @@ voiceOverlay = step1 . viewl
 type ODocConcat = ODoc -> ODoc -> ODoc
     
 barDoc :: Bar -> ODoc
-barDoc xs = collapse $ F.foldl fn (emptyDoc,(<+>),emptyDoc) xs
+barDoc = collapse . F.foldl fn (emptyDoc,(<+>),emptyDoc)
   where 
     collapse (out,op,tip) = out `op` tip
   

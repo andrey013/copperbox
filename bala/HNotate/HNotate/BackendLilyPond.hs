@@ -116,7 +116,7 @@ polyphony = dblangles' . step1 . viewl
 -- need to have an 'ODocConcat' function as part of its state. 
 
 barDoc :: Bar -> ODoc
-barDoc xs = collapse $ F.foldl fn (emptyDoc,emptyDoc) xs
+barDoc = collapse . F.foldl fn (emptyDoc,emptyDoc)
   where 
     collapse (out,tip) = out <+> tip
     

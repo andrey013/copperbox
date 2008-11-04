@@ -182,12 +182,14 @@ instance PP LabelSet where
 
 
 
-instance PP a => PP (OnsetQueue a) where
+instance (Integral idx, PP a) => PP (OnsetQueue idx a) where
   pp = foldlOnsetQueue fn emptyDoc
-    where fn d (i,xs) = d <&\> int i <+> text ":+" <+> list (map pp xs)    
+    where 
+      fn d (i,xs) = d <&\> int (fromIntegral i) 
+                      <+>  text ":+" <+> list (map pp xs)    
 
 
-instance PP a => Witness (OnsetQueue a) where
+instance (Integral idx, PP a) => Witness (OnsetQueue idx a) where
   textrep = wpp . pp
 
 --------------------------------------------------------------------------------

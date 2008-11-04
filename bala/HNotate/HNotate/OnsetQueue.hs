@@ -30,7 +30,7 @@ module HNotate.OnsetQueue (
 
 import qualified Data.Foldable as F
 import Data.Monoid
-import qualified Data.IntMap as IM
+import qualified Data.Map as Map
 
 
 
@@ -39,54 +39,55 @@ newtype Elt a = Elt { getElts :: [a] }
 
 
 
-newtype OnsetQueue a = OnsetQueue { getOnsetQueue :: IM.IntMap (Elt a) }
+newtype OnsetQueue idx a = OnsetQueue { getOnsetQueue :: Map.Map idx (Elt a) }
 
-empty :: OnsetQueue a
-empty = OnsetQueue $ IM.empty
+empty :: OnsetQueue idx a
+empty = OnsetQueue $ Map.empty
 
-instance Monoid (OnsetQueue a) where
+instance (Ord idx) => Monoid (OnsetQueue idx a) where
   mempty = mempty
-  l `mappend` (OnsetQueue im) = foldl op l (IM.toAscList im)
+  l `mappend` (OnsetQueue im) = foldl op l (Map.toAscList im)
     where
       op m (i,xs) = cat i (getElts xs) m
 
 instance Show a => Show (Elt a) where
   showsPrec p (Elt xs) = showsPrec p xs
 
-instance Show a => Show (OnsetQueue a) where
-  show (OnsetQueue im) = IM.showTree im
+instance (Show idx, Show a) => Show (OnsetQueue idx a) where
+  show (OnsetQueue im) = Map.showTree im
 
 
-buildQueue :: (F.Foldable t) => (a -> Int) -> (a -> b) -> t a -> OnsetQueue b
+buildQueue :: (Ord idx, F.Foldable t) => 
+              (a -> idx) -> (a -> b) -> t a -> OnsetQueue idx b
 buildQueue f g t = F.foldl fn (OnsetQueue mempty) t
   where fn q ev = let (i,e) = (f ev, g ev) in add i e q
   
   
-add :: Int -> evt -> OnsetQueue evt -> OnsetQueue evt
-add i e (OnsetQueue q) = OnsetQueue $ fn (IM.lookup i q)
+add :: Ord idx => idx -> evt -> OnsetQueue idx evt -> OnsetQueue idx evt
+add i e (OnsetQueue q) = OnsetQueue $ fn (Map.lookup i q)
   where
-    fn Nothing         = IM.insert i (Elt [e]) q
-    fn (Just (Elt xs)) = IM.insert i (Elt $ e:xs) q
+    fn Nothing         = Map.insert i (Elt [e]) q
+    fn (Just (Elt xs)) = Map.insert i (Elt $ e:xs) q
 
-cat :: Int -> [evt] -> OnsetQueue evt -> OnsetQueue evt
-cat i es (OnsetQueue q) = OnsetQueue $ fn (IM.lookup i q)
+cat :: Ord idx => idx -> [evt] -> OnsetQueue idx evt -> OnsetQueue idx evt
+cat i es (OnsetQueue q) = OnsetQueue $ fn (Map.lookup i q)
   where
-    fn Nothing         = IM.insert i (Elt es) q
-    fn (Just (Elt xs)) = IM.insert i (Elt $ xs ++ es) q
+    fn Nothing         = Map.insert i (Elt es) q
+    fn (Just (Elt xs)) = Map.insert i (Elt $ xs ++ es) q
 
 
 
 -- view of the head of the queue
-data ViewH evt = EmptyQ | (Int,[evt]) :>> OnsetQueue evt
+data ViewH idx evt = EmptyQ | (idx,[evt]) :>> OnsetQueue idx evt
 
-foldlOnsetQueue :: (a -> (Int,[b]) -> a) -> a -> OnsetQueue b -> a
-foldlOnsetQueue f a = foldl (adapt f) a . IM.toAscList . getOnsetQueue
+foldlOnsetQueue :: (a -> (idx,[b]) -> a) -> a -> OnsetQueue idx b -> a
+foldlOnsetQueue f a = foldl (adapt f) a . Map.toAscList . getOnsetQueue
   where
-    adapt :: (a -> (Int,[b]) -> a) -> (a -> (Int,Elt b) -> a) 
+    adapt :: (a -> (idx,[b]) -> a) -> (a -> (idx,Elt b) -> a) 
     adapt f = \acc (i,Elt a) -> f acc (i,a)
 
-viewH :: OnsetQueue evt -> ViewH evt
-viewH (OnsetQueue q) = case  IM.minViewWithKey q of
+viewH :: OnsetQueue idx evt -> ViewH idx evt
+viewH (OnsetQueue q) = case  Map.minViewWithKey q of
     Nothing              -> EmptyQ
     Just ((i,Elt xs),q') -> (i,xs) :>> OnsetQueue q'
 

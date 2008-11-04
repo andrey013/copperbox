@@ -19,6 +19,7 @@ module HNotate.OutputMain where
 
 import HNotate.BackendAbc
 import HNotate.BackendLilyPond
+import HNotate.BackendMidi
 import HNotate.BuildNoteList
 import HNotate.CommonUtils -- (outputDoc, showDocS)
 import HNotate.Document (ODoc, formatted, output)
@@ -33,6 +34,7 @@ import HNotate.ProcessingTypes
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (empty)
+import Control.Monad.Error
 import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.Writer
@@ -64,6 +66,17 @@ outputAbc dl sys inpath outpath        =
   where
     config  = mkAbcConfig dl sys inpath outpath
     outfun  = generalOutput abcExprParse abcTextSource
+
+outputMidi :: Int -> System -> String -> FilePath -> IO ()
+outputMidi dl sys name outpath = 
+    runNotateT outfun default_abc_env config          >>= \(a,msg) ->
+    either (reportFailure msg) (const $ putStrLn msg) a
+  where
+    config  = mkAbcConfig dl sys "" outpath
+    outfun = case Map.lookup name sys of
+                Nothing -> throwError $ strMsg $ "missing: " ++ name
+                Just evts -> toNoteList evts >>= midiOut outpath
+
     
 reportFailure :: String -> NotateErr -> IO ()
 reportFailure log_msg (NotateErr s) = putStrLn s >> putStrLn log_msg
@@ -159,12 +172,6 @@ outputNoteListAbc :: Monad m => EventList -> NotateT m ODoc
 outputNoteListAbc = 
     toNoteList >=> translateAbc abcConcat
 
-{-
-noteListOutput :: Monad m => EventList -> NotateT m ODoc
-noteListOutput = 
-    abcly (toNoteList >=> translateAbc abcConcat) 
-          (toNoteList >=> translateLilyPond lyConcat) 
--}
 
 outputRelativeNoteList :: Monad m => EventList -> NotateT m ODoc
 outputRelativeNoteList = 
@@ -175,11 +182,5 @@ outputAbsoluteNoteList evts =
     (textoutput 3 "Lilypond 'absolute'" "")   >> 
     toNoteList evts >>= translateLilyPond lyConcat lilypondAbsoluteForm 
     
-{-    
--- for the chop
-abcly :: Monad m => (a -> NotateT m b) -> (a -> NotateT m b) -> a -> NotateT m b
-abcly mx my a = asks output_format >>= 
-            \fmt -> case fmt of Abc -> mx a; 
-                                LilyPond -> my a
--}
+
                                 

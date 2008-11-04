@@ -19,36 +19,6 @@
 
 module HNotate.NoteListDatatypes where
 
-{-
-module HNotate.NoteListDatatypes (
-    
-    OutputFormat(..),
-    -- * External view 
-    System, 
-     
-    EventList, EventListF(..), Evt(..),
-    system, systemL, system1,
-    
-    root, note, rest, spacer,    
-    chord, gracenotes, annoAbc, annoLy, poly, 
-    notelist,
-    ( |*> ), 
-    
-    
-    -- * Internal view 
-    NoteListF(..), NoteList,
-    BlockF(..), Block,
-    BarF(..), Bar,
-    
-    Glyph(..),
-    AnnoFun,
-    
-    glyphDuration,
-    durationf, pitchf
-    
-
-  ) where
--}
 
 import HNotate.CommonUtils
 import HNotate.Document
@@ -101,8 +71,8 @@ type GraceNote = (Pitch,Duration)
 -- it is (probably) irrelevant as the collective duration of grace notes
 -- doesn't count towards the duration of a bar.  
 
-data GraceMode = AccentedGrace    -- subtract duration from preceeding note 
-               | UnaccentedGrace  -- subtract duration from following note   
+data GraceMode = UGrace  -- unaccented - subtract duration from preceeding note 
+               | AGrace  -- accented   - subtract duration from following note   
   deriving (Eq,Show)
 
 -- The Tile datatype imposes little structure on the 'music'. 
@@ -199,8 +169,8 @@ newtype NoteListF e   = NoteList { getNoteList :: Seq (BlockF e) }
 type NoteList         = NoteListF Tile
 
 
--- Follow the Abc style when voice overlays are grouped measure-wise.
--- The Int holds the measure number
+-- Follow the Abc style when voice overlays are grouped in whole bars.
+-- The Int holds the bar number
 data BlockF e         = SingleBlock Int (BarF e)
                       | PolyBlock   Int (Seq (BarF e))
 
@@ -334,10 +304,10 @@ chord               :: [Pitch] -> Duration -> Tile
 chord es d          = Chord (fromList es) d noAnno
     
 gracenotesU         :: [(Pitch,Duration)] -> Tile
-gracenotesU es      = GraceNotes (fromList es) UnaccentedGrace noAnno
+gracenotesU es      = GraceNotes (fromList es) UGrace noAnno
 
 gracenotesA         :: [(Pitch,Duration)] -> Tile
-gracenotesA es      = GraceNotes (fromList es) AccentedGrace noAnno
+gracenotesA es      = GraceNotes (fromList es) AGrace noAnno
 
 
 

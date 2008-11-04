@@ -199,7 +199,7 @@ tileSize bar_len gly =
                       
 -- Change the raw bars to Bar and queue them on 
 -- bar number. 
-rawToQueue :: [Seq RawBar] -> OnsetQueue Bar
+rawToQueue :: [Seq RawBar] -> OnsetQueue Int Bar
 rawToQueue = buildQueue fst snd . rebuild
   where 
     rebuild :: [Seq RawBar] -> Seq (Int, Bar)
@@ -211,7 +211,7 @@ rawToQueue = buildQueue fst snd . rebuild
  
 -- Finally linearize the queue - aggregating simultaneous
 -- bars into voice overlays (PolyBlock's) 
-collapseQueue :: OnsetQueue Bar -> NoteList 
+collapseQueue :: OnsetQueue Int Bar -> NoteList 
 collapseQueue = NoteList . foldlOnsetQueue fn empty
   where    
     fn acc (i, [x]) = acc |> (SingleBlock i x)

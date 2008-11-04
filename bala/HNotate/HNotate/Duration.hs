@@ -186,7 +186,7 @@ longa                       = 4%1
 -- $amerdoc
 -- American naming.
 double_whole                :: Duration
-double_whole                =  2%1
+double_whole                = 2%1
 
 whole                       :: Duration
 whole                       = 1%1
