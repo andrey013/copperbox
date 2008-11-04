@@ -14,8 +14,10 @@
 
 module HNotate (  
     module HNotate.Annotations,
-    module HNotate.Duration,      -- duration & pitch should export a subset
-    module HNotate.Pitch,         -- to the 'outside world'   
+    -- should duration & pitch  export a subset to the 'outside world'?
+    module HNotate.Duration,      
+    module HNotate.Marks,
+    module HNotate.Pitch,            
     module HNotate.OutputMain,
     
     -- restrict the interface to EventTree
@@ -38,6 +40,7 @@ module HNotate (
 import HNotate.Annotations
 import HNotate.CommonUtils
 import HNotate.Duration
+import HNotate.Marks
 import HNotate.NoteListDatatypes
 import HNotate.Pitch
 import HNotate.OutputMain

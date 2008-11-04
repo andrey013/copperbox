@@ -15,7 +15,7 @@
 
 module HNotate.Traversals where
 
-
+import HNotate.CommonUtils (prod)
 import HNotate.Duration
 import HNotate.Env
 import HNotate.NotateMonad
@@ -183,9 +183,13 @@ changeOctaveWrt pch@(Pitch l a o) base = Pitch l a (base `octaveDist` pch)
 losBody :: Tile -> WrappedMonad Identity Tile
 losBody e = WrapMonad $ return $ fn e
   where
-    fn (Singleton (Note p d anno)) = Singleton (Note (down3ve p)  d anno)
-    fn (Chord se d anno)           = Chord (fmap down3ve se) d anno
-
+    fn (Singleton (Note p d anno))  = Singleton (Note (down3ve p)  d anno)
+    fn (Singleton e)                = Singleton e
+    fn (Chord se d anno)            = Chord (fmap down3ve se) d anno
+    fn (GraceNotes se d anno)       = 
+        GraceNotes (fmap (prod down3ve id) se) d anno
+    
+    
     down3ve (Pitch l a o) = Pitch l a (o-3)
 
 --------------------------------------------------------------------------------

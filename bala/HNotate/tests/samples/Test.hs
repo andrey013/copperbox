@@ -19,7 +19,7 @@ main = do
     outputTestScore           unmetered_test_score
     outputTestScore           hijaz_test_score
     outputTestScore_lyOnly    ly_rel_abs_score
-    
+    outputTestScore_lyOnly    ly_drums_score
 
 --------------------------------------------------------------------------------
 -- Test scores
@@ -70,6 +70,15 @@ ly_rel_abs_score = TestScore
     "./templates/amajor-ly0.ly"
     ""
     "./out/amajor-ly.ly"
+    
+ly_drums_score :: TestScore
+ly_drums_score = TestScore
+    "Drum notation!" 
+    lilypond_drums
+    ""
+    "./templates/drums-ly0.ly"
+    ""
+    "./out/drums.ly"
     
     
 --------------------------------------------------------------------------------

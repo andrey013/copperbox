@@ -369,14 +369,6 @@ instance AddtoEventList [EventList] where
   (|#) evts es  = EventList $ getEventList evts |> (Poly es)
 
 
--- anno
-demo1 = root |# note c4 du2 |# note e4 du2 /@ staccato |# note e4 du2
-
--- poly
-demo2 = root |# [ root |# note c4 du2
-                , root |# note e4 du2 ]
-
-
 -- forgetful annotation 
 
 infixl 7 /@
@@ -407,15 +399,14 @@ composeAnnos :: Annotation -> Annotation -> Annotation
 composeAnnos (Annotation ly1 abc1) (Annotation ly2 abc2) =
     Annotation (ly2 . ly1) (abc2 . abc1) 
 
-staccato :: Annotation
-staccato = Annotation { _ly_anno = suffix $ string "-.",
-                        _abc_anno = prefix $ char '.' }
 
-suffix :: ODoc -> (ODoc -> ODoc)
-suffix d = (<> d)
 
-prefix :: ODoc -> (ODoc -> ODoc)
-prefix d = (d <>)
+
+--------------------------------------------------------------------------------
+-- Ties and Beams
+
+-- Define Ties and Beams as they are used internally for rhythmic division
+-- of the event list.
 
 
 -- beamStart and beamEnd have an 'interpretation' for Abc: they indicate the

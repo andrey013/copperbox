@@ -24,6 +24,20 @@ lyOnly :: (ODoc -> ODoc) -> Annotation
 lyOnly fn = Annotation { _ly_anno = fn, _abc_anno = id } 
 
 
+suffix :: ODoc -> (ODoc -> ODoc)
+suffix d = (<> d)
+
+prefix :: ODoc -> (ODoc -> ODoc)
+prefix d = (d <>)
+
+--------------------------------------------------------------------------------
+--
+
+staccato :: Annotation
+staccato = Annotation { _ly_anno = suffix $ string "-.",
+                        _abc_anno = prefix $ char '.' }
+                        
+                        
 -- Abc
 upbow :: Annotation
 upbow = abcOnly (prefix $ char 'u')

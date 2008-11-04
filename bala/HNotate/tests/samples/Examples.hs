@@ -90,5 +90,17 @@ amajor_scale = system1 "amajor_scale" $
           |# note gis5   du4
           |# note a5     du4  
           
-             
+
+lilypond_drums :: System 
+lilypond_drums = systemL [("drums1", drums1), ("drums2", drums2)]
+  where
+    drums1 :: EventList
+    drums1 = 
+        root |# acousticbassdrum du4  |# acousticbassdrum du4
+             |# bassdrum du4          |# sidestick du4
+         
+    drums2 :: EventList
+    drums2 = 
+        root |# lowtom du4            |# cowbell du8        |# cowbell du8 
+             |# hibongo du4           |# lobongo du4     
              
