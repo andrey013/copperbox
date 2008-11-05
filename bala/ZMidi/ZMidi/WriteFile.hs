@@ -93,7 +93,7 @@ putMetaEvent :: MetaEvent -> MidiOut
 putMetaEvent (TextEvent ty ss)                = 
     out2 0xFF (texttype ty) . (varlen $ fromIntegral $ length ss) . outString ss
   
-putMetaEvent (SequenceNumber n)               = out3 0xFF 0 2 . outW16 n
+putMetaEvent (SequenceNumber n)               = out3 0xFF 0x00 2 . outW16 n
   
 putMetaEvent (ChannelPrefix ch)               = out3 0xFF 0x20 1 . out1 ch
   

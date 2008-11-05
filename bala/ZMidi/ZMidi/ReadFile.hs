@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZMidi.ReadFile
+-- Module      :  ZMidi.ReadFileAlt
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -9,11 +9,9 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Parse MIDI files with Data.Binary.
+-- An MIDI file parser that using Parsec. 
 --
 --------------------------------------------------------------------------------
-
-
 
 module ZMidi.ReadFile (
     -- * Read a MIDI file
@@ -23,179 +21,158 @@ module ZMidi.ReadFile (
 
 import ZMidi.Datatypes
 
-
-
-import Control.Applicative
+import Control.Applicative hiding (many, optional, (<|>))
 import Control.Monad
-import qualified Data.Binary.Get as BG
 import Data.Bits
-import qualified Data.ByteString.Lazy.Char8 as L
-import Data.Char (chr)
+import qualified Data.ByteString.Lazy as B
+import Data.Char (ord,chr)
 import Data.Int
 import Data.Monoid
 import Data.Sequence hiding (length)
 import Data.Word
+import System.IO
+import Text.ParserCombinators.Parsec hiding (Parser, anyChar)
 
+type WParser a = GenParser Word8 () a
 
-
-type Parser a = BG.Get a
-
-
-runParse :: Parser a -> L.ByteString -> a
-runParse = BG.runGet
-
+-- | An Applicative instance for Parsec. 
+instance Applicative (GenParser tok st) where
+  pure = return
+  (<*>) = ap
+  
 
 -- $readmididoc
--- Weirdly it seems lazy bytestrings aren't always reading the full contents
--- of a file under Windows.
---
--- Use ReadFileAlt if you see exceptions due to early end of file.
-
-readMidi :: FilePath -> IO MidiFile
-readMidi path = do
-    bs <- L.readFile path
-    let ans  = runParse midiFile bs
-    return ans
-
-midiFile :: Parser MidiFile
-midiFile = do
-    hdr@(Header _ n _) <- header
-    ts <- count (fromIntegral n) track
-    return $ MidiFile hdr (fromList ts)
+-- Read a MIDI file with a Parsec based parser. Seems to work better on Windows
+-- than the Data.Binary version.
 
 
-header :: Parser Header
+
+readMidi :: FilePath -> IO MidiFile  
+readMidi name = do 
+    h <- openBinaryFile name ReadMode
+    bs <- B.hGetContents h
+    ans <- parseIO midiFile name (unbytestring bs)    
+    case ans of 
+      Left err -> hClose h >> error (show err)
+      Right mf -> hClose h >> return mf
+  where
+    unbytestring :: B.ByteString -> [Word8]
+    unbytestring = B.foldr (:) [] 
+  
+parseIO :: WParser a -> FilePath -> [Word8] -> IO (Either ParseError a)
+parseIO p name cs = let ans = runParser p () name cs in return ans
+
+
+midiFile :: WParser MidiFile  
+midiFile = 
+    header                        >>= \h  -> 
+    iters (trackCount h) track    >>= \se -> return $ MidiFile h se
+  where
+    trackCount :: Header -> Int 
+    trackCount (Header _ n _) = fromIntegral n
+
+header :: WParser Header  
 header = Header <$> (assertString "MThd"  *> assertLength 6   *> format)
-                <*> getWord16be          <*> timeDivision
+                <*> getWord16be          <*> timeDivision 
 
 
-track :: Parser Track
-track = Track <$> (assertString "MTrk" *> getWord32be *> getMessages)
+iters :: Int -> WParser a -> WParser (Seq a)
+iters i p = step mempty i
+  where 
+    step se i   | i <= 0      = return se
+                | otherwise   = p >>= \a -> step (se |> a) (i-1)
+
+track :: WParser Track
+track = Track <$> (assertString "MTrk" *> getWord32be *> getMessages) 
 
 
-getMessages :: Parser (Seq Message)
+getMessages :: WParser (Seq Message)
 getMessages = rec mempty
   where
     rec acc = do
         end <- endOfFile
         if end then fail $ "no end-of-track message before end of input"
                else do step1 acc
-
+    
     step1 acc = do
         msg <- message
         if eot msg then return $ acc |> msg
-                   else rec $ acc |> msg
+                   else rec (acc |> msg)
 
     eot (Message (_, (MetaEvent EndOfTrack))) = True
     eot _                                     = False
 
 
-message :: Parser Message
-message = deltaTime      >>=           \dt ->
-          getWord8split  >>=  \(code,chan) ->
-          next code chan >>=          \evt ->
-          return $ Message (dt,evt)
-  where
-    next code chan
-        | code == 0xF && chan == 0xF  = MetaEvent   <$> metaEvent
+message :: WParser Message
+message = deltaTime       >>= \dt           -> 
+          getWord8split   >>= \(code,chan)  ->         
+          next code chan  >>= \evt          -> return $ Message (dt,evt)
+  where  
+    next code chan  
+        | code == 0xF && chan == 0xF  = MetaEvent   <$> (getWord8 >>= metaEvent)         
         | code == 0xF                 = SystemEvent <$> systemEvent
-        | code >= 0x8 && code <  0xF  = VoiceEvent  <$> voiceEvent (code,chan)
-        | otherwise                   = fail $
+        | code >= 0x8 && code <  0xF  = VoiceEvent  <$> voiceEvent code chan
+        | otherwise                   = fail $ 
             "unrecognized message " ++ hexStr ((code `shiftL` 4) + chan)
 
-deltaTime :: Parser Word32
+deltaTime :: WParser Word32
 deltaTime = getVarlen
-
-voiceEvent :: (Word8,Word8) -> Parser VoiceEvent
-voiceEvent (code,chan) =
-    case code of
-      0x8 -> noteOff chan
-      0x9 -> noteOn chan
-      0xA -> noteAftertouch chan
-      0xB -> controller chan
-      0xC -> programChange chan
-      0xD -> chanAftertouch chan
-      z   -> fail $ "voiceEvent " ++ hexStr z
-
-
-noteOff ch          = (NoteOff ch)        <$> getWord8 <*> getWord8
-noteOn ch           = (NoteOn ch)         <$> getWord8 <*> getWord8
-noteAftertouch ch   = (NoteAftertouch ch) <$> getWord8 <*> getWord8
-controller ch       = (Controller ch)     <$> getWord8 <*> getWord8
-programChange ch    = (ProgramChange ch)  <$> getWord8
-chanAftertouch ch   = (ChanAftertouch ch) <$> getWord8
-
-
-metaEvent :: Parser MetaEvent
-metaEvent = getWord8 >>= fn
-  where
-    fn 0x01 = genericText
-    fn 0x02 = copyrightNotice
-    fn 0x03 = sequenceName
-    fn 0x04 = instrumentName
-    fn 0x05 = lyrics
-    fn 0x06 = marker
-    fn 0x07 = cuePoint
-    fn 0x2F = endOfTrack
-    fn 0x51 = setTempo
-    fn 0x54 = smpteOffset
-    fn 0x58 = timeSignature
-    fn 0x59 = keySignature
-    fn 0x7F = ssme
-    fn z    = fail $ "unreconized meta-event " ++ hexStr z
-
-
-genericText     = textEvent GENERIC_TEXT
-copyrightNotice = textEvent COPYRIGHT_NOTICE
-sequenceName    = textEvent SEQUENCE_NAME
-instrumentName  = textEvent INSTRUMENT_NAME
-lyrics          = textEvent LYRICS
-marker          = textEvent MARKER
-cuePoint        = textEvent CUE_POINT
-
-
-endOfTrack      = EndOfTrack  <$   assertWord8 0
-
-setTempo        = SetTempo    <$> (assertWord8 3  *> getWord24be)
-
-smpteOffset     = SMPTEOffset <$> (assertWord8 5  *> getWord8)
-                              <*> getWord8       <*> getWord8
-                              <*> getWord8       <*> getWord8
-
-timeSignature   = TimeSignature   <$> (assertWord8 4  *> getWord8)
-                                  <*> getWord8       <*> getWord8
-                                  <*> getWord8
-
-keySignature    = KeySignature    <$> (assertWord8 2 *> getInt8) <*> scale
-
-ssme =  getVarlen  >>= \i ->
-        getBytes i >>= \ws ->
-        return (SSME i ws)
+   
+voiceEvent :: Word8 -> Word8 -> WParser VoiceEvent
+voiceEvent 0x8 ch = (NoteOff ch)        <$> getWord8 <*> getWord8
+voiceEvent 0x9 ch = (NoteOn ch)         <$> getWord8 <*> getWord8
+voiceEvent 0xA ch = (NoteAftertouch ch) <$> getWord8 <*> getWord8
+voiceEvent 0xB ch = (Controller ch)     <$> getWord8 <*> getWord8
+voiceEvent 0xC ch = (ProgramChange ch)  <$> getWord8 
+voiceEvent 0xD ch = (ChanAftertouch ch) <$> getWord8 
+voiceEvent z   ch = fail $ "voiceEvent " ++ hexStr z 
 
 
 
-systemEvent :: Parser SystemEvent
-systemEvent = getVarlen  >>= \i ->
-              getBytes i >>= \ws ->
-              return (SysEx i ws)
+
+metaEvent :: Word8 -> WParser MetaEvent
+metaEvent 0x00 = SequenceNumber   <$> (assertWord8 2     *> getWord16be)
+metaEvent 0x01 = textEvent GENERIC_TEXT 
+metaEvent 0x02 = textEvent COPYRIGHT_NOTICE
+metaEvent 0x03 = textEvent SEQUENCE_NAME
+metaEvent 0x04 = textEvent INSTRUMENT_NAME
+metaEvent 0x05 = textEvent LYRICS
+metaEvent 0x06 = textEvent MARKER
+metaEvent 0x07 = textEvent CUE_POINT
+metaEvent 0x2F = EndOfTrack       <$   assertWord8 0  
+metaEvent 0x51 = SetTempo         <$> (assertWord8 3     *> getWord24be)
+metaEvent 0x54 = SMPTEOffset      <$> (assertWord8 5     *> getWord8) 
+                                  <*> getWord8          <*> getWord8
+                                  <*> getWord8          <*> getWord8
+metaEvent 0x58 = TimeSignature    <$> (assertWord8 4     *> getWord8)
+                                  <*> getWord8          <*> getWord8 
+                                  <*> getWord8 
+metaEvent 0x59 = KeySignature     <$> (assertWord8 2     *> getInt8) 
+                                  <*> scale
+metaEvent 0x7F = (uncurry SSME)   <$> getVarlenBytes     
+metaEvent z    = fail $ "unreconized meta-event " ++ hexStr z
 
 
-format :: Parser HFormat
+systemEvent :: WParser SystemEvent
+systemEvent = (uncurry SysEx) <$> getVarlenBytes
+                      
+                          
+format :: WParser HFormat
 format = getWord16be >>= fn
-  where
+  where 
     fn 0 = return MF0
     fn 1 = return MF1
     fn 2 = return MF2
     fn z = fail $ "getFormat - unrecognized file format " ++ hexStr z
-
-timeDivision :: Parser TimeDivision
+        
+timeDivision :: WParser TimeDivision
 timeDivision = division <$> getWord16be
   where division i | i `testBit` 15 = FPS (i `clearBit` 15)
                    | otherwise      = TPB i
-
-
-
-scale :: Parser ScaleType
+                   
+                   
+        
+scale :: WParser ScaleType
 scale = getWord8 >>= fn
   where
     fn 0 = return MAJOR
@@ -204,95 +181,107 @@ scale = getWord8 >>= fn
 
 
 
-textEvent :: TextType -> Parser MetaEvent
-textEvent ty = (TextEvent ty) <$> getText
+textEvent :: TextType -> WParser MetaEvent
+textEvent ty = (TextEvent ty . snd) <$> getVarlenText
 
 
 --------------------------------------------------------------------------------
--- Helpers
+-- Helpers 
 
-count :: Int -> Parser a -> Parser [a]
-count = replicateM
+endOfFile :: WParser Bool
+endOfFile = option False (True <$ eof)
 
-anyChar :: Parser Char
-anyChar = getWord8 >>= \i -> return (chr $ fromIntegral i)
+getVarlenText :: WParser (Word32,String)  
+getVarlenText = getVarlen     >>= \i  -> 
+                getChars i    >>= \cs -> return (i,cs)
 
-endOfFile :: Parser Bool
-endOfFile = BG.isEmpty
+getVarlenBytes :: WParser (Word32,[Word8]) 
+getVarlenBytes = getVarlen    >>= \i  ->  
+                 getBytes i   >>= \bs -> return (i,bs)
+  
+getChars :: Integral a => a -> WParser String  
+getChars i = map (chr . fromIntegral) <$> count (fromIntegral i) anyToken          
 
-getText :: Parser String
-getText = getVarlen >>= \i -> count (fromIntegral i) anyChar
+getBytes :: Integral a => a -> WParser [Word8]
+getBytes i = count (fromIntegral i) getWord8
 
-getChars :: Integral a => a -> Parser String
-getChars i = count (fromIntegral i) anyChar
-
-getVarlen :: Parser Word32
-getVarlen = recVarlen 0
+getVarlen :: WParser Word32
+getVarlen = recVarlen 0            
   where
     recVarlen acc = do
         i <- getWord8
         if (varBitHigh i == False)
           then (return $ merge acc i)
           else (recVarlen $ merge acc i)
-
+    
     varBitHigh i = i `testBit` 7
-
+        
     merge acc i = (acc `shiftL` 7) + ((fromIntegral i) .&. 0x7F)
 
-getBytes :: Integral a => a -> Parser [Word8]
-getBytes i = count (fromIntegral i) getWord8
 
 
 
-getInt8 :: Parser Int8
-getInt8 = unwrap <$> getWord8
+
+getInt8 :: WParser Int8
+getInt8 = (fromIntegral . unwrap) <$> getWord8
   where
+    unwrap :: Word8 -> Int
     unwrap i | i > 128   = (fromIntegral i) - 256
              | otherwise = fromIntegral i
 
 
-getWord8 :: Parser Word8
-getWord8 = BG.getWord8
+getWord8      :: WParser Word8
+getWord8      = anyToken
+           
+getWord16be   :: WParser Word16
+getWord16be   = w16be     <$> getWord8 <*> getWord8  
 
-getWord16be :: Parser Word16
-getWord16be = BG.getWord16be
+getWord32be   :: WParser Word32
+getWord32be   = w32be     <$> getWord8 <*> getWord8 <*> getWord8 <*> getWord8
 
 
-getWord32be :: Parser Word32
-getWord32be = BG.getWord32be
+getWord24be   :: WParser Word32
+getWord24be   = w32be 0   <$> getWord8 <*> getWord8 <*> getWord8
 
-getWord24be :: Parser Word32
-getWord24be =  fn <$> getWord8 <*> getWord16be
-  where
-    fn :: Word8 -> Word16 -> Word32
-    fn a b = ((fromIntegral a) `shiftL` 16) + (fromIntegral b)
 
-getWord8split :: Parser (Word8,Word8)
-getWord8split = f <$> getWord8
+getWord8split :: WParser (Word8,Word8) 
+getWord8split = f <$> getWord8 
   where
     f i = ((i .&. 0xF0) `shiftR` 4, i .&. 0x0F)
 
+  
 
+w16be :: Word8 -> Word8 -> Word16
+w16be a b = let a' = a `iShiftL` 8
+                b' = fromIntegral b 
+            in a' + b'  
+            
+w32be :: Word8 -> Word8 -> Word8 -> Word8 -> Word32
+w32be a b c d = let a' = a `iShiftL` 24
+                    b' = b `iShiftL` 16
+                    c' = c `iShiftL` 8
+                    d' = fromIntegral d
+            in a' + b' + c' + d'        
 
+iShiftL :: (Bits b, Integral a, Integral b) => a -> Int -> b
+a `iShiftL` x = (fromIntegral a) `shiftL` x
 
-assertWord8 :: Word8 -> Parser Word8
+assertWord8 :: Word8 -> WParser Word8
 assertWord8 i = getWord8 >>= fn
   where fn j | j == i    = return i
              | otherwise = fail $ "assertWord8 failed"
-
-assertLength :: Integral a => a -> Parser Word32
+             
+assertLength :: Integral a => a -> WParser Word32
 assertLength i  = getWord32be >>= fn
-  where
+  where 
     fn n | n == fromIntegral i  = return n
-         | otherwise            = fail $
+         | otherwise            = fail $ 
               "assertLength " ++ show i ++ " /= " ++ show n
 
-assertString :: String -> Parser String
+assertString :: String -> WParser String
 assertString s  = getChars (length s) >>= fn
-  where
+  where 
     fn ss | ss == s   = return s
-          | otherwise = fail $ "assertString " ++ (showString s [])
+          | otherwise = fail $ "assertString " ++ (showString s []) 
                                      ++ " /= " ++ (showString ss [])
-
-
 

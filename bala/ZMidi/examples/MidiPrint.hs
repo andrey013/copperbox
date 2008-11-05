@@ -4,7 +4,7 @@
 -- ghci> :set args bulgarian6.mid
 
 
--- shell> ghc --make MidiPrint.hs -i../ZMidi
+-- shell> ghc --make MidiPrint.hs -i../../ZMidi
 --
 -- shell> runhaskell.exe -i../../ZMidi MidiPrint.hs bulgarian6.mid
 
@@ -13,7 +13,6 @@
 module Main where
 
 import ZMidi
-import qualified ZMidi.ReadFileAlt as Alt
 
 import System.Environment
 import Text.PrettyPrint.Leijen
@@ -28,7 +27,7 @@ main = do
 
 process :: FilePath -> IO ()
 process filename = do
-  ans <- Alt.readMidi filename
+  ans <- readMidi filename
   putDoc (pretty ans)
 
 
