@@ -133,6 +133,7 @@ chanAftertouch ch   = (ChanAftertouch ch) <$> getWord8
 metaEvent :: Parser MetaEvent
 metaEvent = getWord8 >>= fn
   where
+    fn 0x00 = sequenceNumber
     fn 0x01 = genericText
     fn 0x02 = copyrightNotice
     fn 0x03 = sequenceName
@@ -157,6 +158,8 @@ lyrics          = textEvent LYRICS
 marker          = textEvent MARKER
 cuePoint        = textEvent CUE_POINT
    
+sequenceNumber  = SequenceNumber <$> (assertWord8 2  *> getWord16be)
+
 
 endOfTrack      = EndOfTrack  <$   assertWord8 0     
 

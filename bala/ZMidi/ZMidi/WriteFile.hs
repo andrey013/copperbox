@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Write a MIDI file using Binary.Put.
+-- Write a MIDI file.
 --
 --------------------------------------------------------------------------------
 
@@ -21,232 +21,199 @@ module ZMidi.WriteFile (
 
 import ZMidi.Datatypes
 
-import Data.Binary.Put
 import Data.Bits
-import qualified Data.ByteString.Lazy.Char8 as L
-import qualified Data.ByteString.Char8 as SBS
+import qualified Data.ByteString.Lazy as B
+import Data.Char (ord)
 import qualified Data.Foldable as F
 import Data.Int
+import qualified Data.Sequence as S
 import Data.Word
 
+import System.IO
 
+
+type MidiBlock = B.ByteString
+
+type MidiOut = MidiBlock -> MidiBlock
 
 writeMidi :: FilePath -> MidiFile -> IO ()
-writeMidi path mf = do 
-  let lbs = runPut (putMidiFile mf)
-  L.writeFile path lbs     
+writeMidi path midi = let midistream = putMidiFile midi $ B.empty in do
+    h <- openBinaryFile path WriteMode
+    B.hPut h midistream
+    hClose h    
                     
 
-putMidiFile :: MidiFile -> Put
-putMidiFile (MidiFile hdr trks) = do
-  putHeader hdr
-  F.mapM_ putTrack trks
-  flush
+putMidiFile :: MidiFile -> MidiOut
+putMidiFile (MidiFile hdr trks) = putHeader hdr . fns
+  where fns = F.foldr (\a f -> putTrack a . f) id trks
   
-putHeader :: Header -> Put
-putHeader (Header fmt n td) = do
-  putString     "MThd"
-  putWord32be   6
-  putHFormat    fmt
-  putWord16be   n
-  putTimeDivision td
+putHeader :: Header -> MidiOut
+putHeader (Header fmt n td) =
+    outChars "MThd" . outW32 6 . putHFormat fmt . outW16 n . putTimeDivision td
 
 
-putTrack :: Track -> Put
-putTrack (Track se) = do
-  putString     "MTrk"
-  let contents = runPut (F.mapM_ putMessage se)
-  let len = L.length contents
-  putWord32be (fromIntegral len)
-  putLazyByteString contents
-  flush
+putTrack :: Track -> MidiOut
+putTrack (Track se) = 
+    let fn = F.foldr (\a f -> putMessage a . f) id se
+        bs = fn B.empty
+    in outChars "MTrk" . (outW32 $ fromIntegral $ B.length bs) . (B.append bs) 
 
 
-putHFormat :: HFormat -> Put
-putHFormat MF0 = putWord16be 0
-putHFormat MF1 = putWord16be 1
-putHFormat MF2 = putWord16be 2
+putHFormat :: HFormat -> MidiOut
+putHFormat MF0 = outW16 0
+putHFormat MF1 = outW16 1
+putHFormat MF2 = outW16 2
 
-putTimeDivision :: TimeDivision -> Put
-putTimeDivision (FPS n) = putWord16be (n `setBit` 15)
-putTimeDivision (TPB n) = putWord16be (n `clearBit` 15)
+putTimeDivision :: TimeDivision -> MidiOut
+putTimeDivision (FPS n) = outW16 (n `setBit` 15)
+putTimeDivision (TPB n) = outW16 (n `clearBit` 15)
 
 
-putTextType :: TextType -> Put
-putTextType GENERIC_TEXT       = putWord8 1
-putTextType COPYRIGHT_NOTICE  = putWord8 2 
-putTextType SEQUENCE_NAME      = putWord8 3
-putTextType INSTRUMENT_NAME    = putWord8 4
-putTextType LYRICS             = putWord8 5
-putTextType MARKER             = putWord8 6
-putTextType CUE_POINT          = putWord8 7
 
-putMessage :: Message -> Put
-putMessage (Message (dt,evt)) = do
-  putVarlen dt
-  putEvent  evt
+putMessage :: Message -> MidiOut
+putMessage (Message (dt,evt)) = varlen dt . putEvent evt
 
-putEvent :: Event -> Put
+putEvent :: Event -> MidiOut
 putEvent (VoiceEvent  evt) = putVoiceEvent evt
 putEvent (SystemEvent evt) = putSystemEvent evt
 putEvent (MetaEvent   evt) = putMetaEvent evt
   
     
-putVoiceEvent :: VoiceEvent -> Put 
-putVoiceEvent (NoteOff ch nt vel) = do
-  putWord8 (0x8 `chanShift` ch)
-  putWord8 nt
-  putWord8 vel 
-  
-putVoiceEvent (NoteOn ch nt vel) = do
-  putWord8 (0x9 `chanShift` ch)
-  putWord8 nt
-  putWord8 vel 
-  
-putVoiceEvent (NoteAftertouch ch nt val) = do
-  putWord8 (0xA `chanShift` ch)
-  putWord8 nt
-  putWord8 val
-  
-putVoiceEvent (Controller ch nt val) = do
-  putWord8 (0xB `chanShift` ch)
-  putWord8 nt
-  putWord8 val
-  
-putVoiceEvent (ProgramChange ch num) = do
-  putWord8 (0xC `chanShift` ch)
-  putWord8 num
-  
-putVoiceEvent (ChanAftertouch ch val) = do
-  putWord8 (0xD `chanShift` ch)
-  putWord8 val
-  
-putVoiceEvent (PitchBend ch val) = do
-  putWord8 ( (0xE::Word8) `chanShift` ch)
-  putWord16be val              -- 2DO
+putVoiceEvent :: VoiceEvent -> MidiOut 
+putVoiceEvent (NoteOff c n v)         = out3 (0x8 `u4l4` c) n v 
+putVoiceEvent (NoteOn c n v)          = out3 (0x9 `u4l4` c) n v 
+putVoiceEvent (NoteAftertouch c n v)  = out3 (0xA `u4l4` c) n v
+putVoiceEvent (Controller c n v)      = out3 (0xB `u4l4` c) n v
+putVoiceEvent (ProgramChange c n)     = out2 (0xC `u4l4` c) n
+putVoiceEvent (ChanAftertouch c v)    = out2 (0xD `u4l4` c) v  
+putVoiceEvent (PitchBend c v)         = out1 (0xE `u4l4` c) . outW16 v
 
 
-putMetaEvent :: MetaEvent -> Put
-putMetaEvent (TextEvent ty cs) = do
-  putWord8      0xFF
-  putTextType   ty
-  putVarlen     (length cs)
-  putByteString (SBS.pack cs)
+putMetaEvent :: MetaEvent -> MidiOut
+putMetaEvent (TextEvent ty ss)                = 
+    out2 0xFF (texttype ty) . (varlen $ fromIntegral $ length ss) . outString ss
   
-putMetaEvent (SequenceNumber n) = do
-  putWord8      0xFF
-  putWord8      0
-  putWord8      2
-  putWord16be   n
+putMetaEvent (SequenceNumber n)               = out3 0xFF 0 2 . outW16 n
   
-putMetaEvent (ChannelPrefix ch) = do
-  putWord8 0xFF
-  putWord8 0x20
-  putWord8 1
-  putWord8 ch
+putMetaEvent (ChannelPrefix ch)               = out3 0xFF 0x20 1 . out1 ch
   
-putMetaEvent (EndOfTrack) = do
-  putWord8 0xFF
-  putWord8 0x2F
-  putWord8 0
+putMetaEvent (EndOfTrack)                     = out3 0xFF 0x2F 0
   
-putMetaEvent (SetTempo t) = do
-  putWord8 0xFF
-  putWord8 0x51
-  putWord8 3           
-  putWord24be t
+putMetaEvent (SetTempo t)                     = out3 0xFF 0x51 3 . outW24 t
   
-putMetaEvent (SMPTEOffset hr mn sc fr sfr) = do
-  putWord8 0xFF
-  putWord8 0x54
-  putWord8 5
-  putWord8 hr
-  putWord8 mn
-  putWord8 sc
-  putWord8 fr
-  putWord8 sfr
+putMetaEvent (SMPTEOffset hr mn sc fr sfr)    =
+    out3 0xFF 0x54 5 . out5 hr mn sc fr sfr
   
-putMetaEvent (TimeSignature nmr dnm met nps) = do
-  putWord8 0xFF
-  putWord8 0x58   
-  putWord8 4
-  putWord8 nmr
-  putWord8 dnm
-  putWord8 met
-  putWord8 nps    
+putMetaEvent (TimeSignature nmr dnm met nps)  =
+    out3 0xFF 0x58 4 . out4 nmr dnm met nps    
   
-putMetaEvent (KeySignature ky sc) = do
-  putWord8 0xFF
-  putWord8 0x59
-  putWord8 2 
-  putWord8 (wrapint ky)
-  putScale sc
+putMetaEvent (KeySignature ky sc)             =
+    out3 0xFF 0x59 2 . out2 (wrapint ky) (wscale sc)
 
-putMetaEvent (SSME i ws) = do
-  putVarlen i
-  putBytes ws
+putMetaEvent (SSME i ws)                      =  varlen i . outBytes ws
 
-putSystemEvent :: SystemEvent -> Put    
-putSystemEvent (SysEx i ws) = do
-  putVarlen i
-  putBytes ws
+putSystemEvent :: SystemEvent -> MidiOut    
+putSystemEvent (SysEx i ws) = varlen i . outBytes ws
   
     
-putScale :: ScaleType -> Put
-putScale MAJOR = putWord8 0
-putScale MINOR = putWord8 1
   
-putVarlen :: Integral a => a -> Put
-putVarlen i = mapM_ putWord8 (varlen i)
 
 
 
 --------------------------------------------------------------------------------
--- Helpers 
---------------------------------------------------------------------------------
+-- Output helpers
+
+infixr 5 `u4l4`
+
+u4l4 :: Word8 -> Word8 -> Word8
+a `u4l4` b = (a `shiftL` 4) + b 
+
+out1 :: Word8 -> (B.ByteString -> B.ByteString)
+out1 = B.cons
+
+out2 :: Word8 -> Word8 -> (B.ByteString -> B.ByteString)
+out2 a b = (B.cons a) . (B.cons b) 
+
+out3 :: Word8 -> Word8 -> Word8 -> (B.ByteString -> B.ByteString)
+out3 a b c = (B.cons a) . (B.cons b) . (B.cons c)
+
+out4 :: Word8 -> Word8 -> Word8 -> Word8 -> (B.ByteString -> B.ByteString)
+out4 a b c d = (B.cons a) . (B.cons b) . (B.cons c) . (B.cons d)
+
+out5 :: Word8 -> Word8 -> Word8 -> Word8 -> Word8 
+     ->(B.ByteString -> B.ByteString)
+out5 a b c d e = (B.cons a) . (B.cons b) . (B.cons c) . (B.cons d) . (B.cons d)
+
+   
 
 wrapint :: Int8 -> Word8
-wrapint i
-  | i < 0     = fromIntegral $ i + 256
-  | otherwise = fromIntegral i
-
-putBytes :: [Word8] -> Put
-putBytes xs = mapM_ putWord8 xs
-
-
-putString :: String -> Put
-putString = putByteString . SBS.pack
-  
-putWord24be :: (Integral n, Bits n) => n -> Put
-putWord24be i = do
-  putWord8 c
-  putWord8 b
-  putWord8 a
-  where 
-  (r, a)    = split i     
-  (r', b)   = split r
-  (_, c)    = split r'
+wrapint i | i < 0     = fromIntegral $ i' + 256
+          | otherwise = fromIntegral i
+  where
+    i' :: Int
+    i' = fromIntegral i  
     
-  split n = (remain, lower8)
-    where
-      remain = n `shiftR` 8
-      lower8 :: Word8
-      lower8 = fromIntegral $ n .&. 0xff   
+wscale :: ScaleType -> Word8
+wscale MAJOR = 0x00
+wscale MINOR = 0x01
 
+outW16 :: Word16 -> MidiOut
+outW16 i = out2 b a 
+  where 
+  (a, r1)   = lowerEight i     
+  (b, _)    = lowerEight r1
 
-varlen :: Integral a => a -> [Word8]
-varlen a = varlenSplit $ fromIntegral a
+outW24 :: Word32 -> MidiOut
+outW24 i = out3 c b a 
+  where 
+  (a, r1)   = lowerEight i     
+  (b, r2)   = lowerEight r1
+  (c, _)    = lowerEight r2
+  
+outW32 :: Word32 -> MidiOut
+outW32 i = out4 d c b a 
+  where 
+  (a, r1)   = lowerEight i     
+  (b, r2)   = lowerEight r1
+  (c, r3)   = lowerEight r2
+  (d, _)    = lowerEight r3
+    
 
+    
+
+lowerEight :: (Bits a, Integral a) => a -> (Word8, a)    
+lowerEight n = (fromIntegral lower8, remain)
+  where
+    remain = n `shiftR` 8
+    lower8 = n .&. 0xff 
       
-infixr 5 `chanShift`
+varlen :: Word32 -> MidiOut
+varlen i  
+    | i < 0x80        = out1 (fromIntegral i)
+    | i < 0x4000      = out2 (wise i 7)  (wise i 0)
+    | i < 0x200000    = out3 (wise i 14) (wise i 7)  (wise i 0) 
+    | otherwise       = out4 (wise i 21) (wise i 14) (wise i 7) (wise i 0) 
+  where         
+    wise i 0 = fromIntegral $ i .&. 0x7F
+    wise i n = fromIntegral $ i `shiftR` n   .&.  0x7F  .|.  0x80;
 
+outString :: String -> MidiOut    
+outString s = B.append (B.pack $ fmap (fromIntegral . ord) s) 
 
--- to do ... a better version ...
-chanShift :: Word8 -> Word8 -> Word8
-a `chanShift` b = val'
-  where val =  ((toInteger a) `shiftL` 4) +  toInteger b
-        val' = case val < 256 of
-                  True -> fromIntegral val
-                  False -> error $ "chanShift applied to values that produce " ++ show val
-              
-               
+outChars :: String -> MidiOut
+outChars []     = id
+outChars (s:ss) = out1 (fromIntegral $ ord s) . outChars ss
+
+outBytes :: [Word8] -> MidiOut
+outBytes []     = id
+outBytes (s:ss) = out1 s . outBytes ss
+
+texttype :: TextType -> Word8
+texttype GENERIC_TEXT         = 0x01
+texttype COPYRIGHT_NOTICE     = 0x02
+texttype SEQUENCE_NAME        = 0x03
+texttype INSTRUMENT_NAME      = 0x04
+texttype LYRICS               = 0x05
+texttype MARKER               = 0x06
+texttype CUE_POINT            = 0x07
+

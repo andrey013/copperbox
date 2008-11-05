@@ -1,12 +1,12 @@
 
 
--- ghci> :set -i../ZMidi
--- ghci> :set args out/bulgarian6.midi
+-- ghci> :set -i../../ZMidi
+-- ghci> :set args bulgarian6.mid
 
 
 -- shell> ghc --make MidiPrint.hs -i../ZMidi
 --
--- shell> runhaskell.exe -i../ZMidi MidiPrint.hs out/bulgarian6.midi
+-- shell> runhaskell.exe -i../../ZMidi MidiPrint.hs bulgarian6.mid
 
 
 
