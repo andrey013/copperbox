@@ -1,7 +1,7 @@
 
 
--- :set -i..:../HNotate
--- abc > M:none
+-- :set -i../../HNotate
+-- abc - no M: field
 
 module Examples.Cadenza where
 

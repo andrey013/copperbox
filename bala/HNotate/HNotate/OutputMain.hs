@@ -54,7 +54,7 @@ import Text.ParserCombinators.Parsec (ParseError, parseFromFile)
 outputLilyPond :: Int -> System -> FilePath -> FilePath -> IO ()
 outputLilyPond dl sys inpath outpath   =
     runNotateT outfun default_ly_env config           >>= \(a,msg) ->
-    either (reportFailure msg) (const $ putStrLn msg) a
+    either (reportFailureIO msg) (const $ putStrLn msg) a
   where
     config  = mkLyConfig dl sys inpath outpath
     outfun  = generalOutput lyExprParse lyTextSource 
@@ -62,24 +62,47 @@ outputLilyPond dl sys inpath outpath   =
 outputAbc :: Int -> System -> FilePath -> FilePath -> IO ()
 outputAbc dl sys inpath outpath        =
     runNotateT outfun default_abc_env config          >>= \(a,msg) ->
-    either (reportFailure msg) (const $ putStrLn msg) a
+    either (reportFailureIO msg) (const $ putStrLn msg) a
   where
     config  = mkAbcConfig dl sys inpath outpath
     outfun  = generalOutput abcExprParse abcTextSource
 
-outputMidi :: Int -> System -> String -> FilePath -> IO ()
-outputMidi dl sys name outpath = 
-    runNotateT outfun default_midi_env config         >>= \(a,msg) ->
-    either (reportFailure msg) (const $ putStrLn msg) a
+outputMidi :: (Env -> Env) -> NotateT IO [EventList] 
+                      -> System -> FilePath -> IO ()
+outputMidi f ma sys outpath = 
+    runNotateT outfun (f default_midi_env) config         >>= \(a,msg) ->
+    either (reportFailureIO msg) (const $ putStrLn msg) a
   where
-    config  = mkMidiConfig dl sys outpath
-    outfun = case Map.lookup name sys of
-                Nothing -> throwError $ strMsg $ "missing: " ++ name
-                Just evts -> toNoteList evts >>= midiOut outpath
+    config  = mkMidiConfig 5 sys outpath
+    outfun  = ma >>= mapM toNoteList >>= midiOut outpath
+
+reportFailureIO :: String -> NotateErr -> IO ()
+reportFailureIO log_msg (NotateErr s) = putStrLn s >> putStrLn log_msg
+
+-- 3 schemes that must be exported
+getEventList :: String -> NotateT IO [EventList]
+getEventList name = getEventList1 name >>= \a -> return [a]
+
+namedEventLists :: [String] -> NotateT IO [EventList]
+namedEventLists names = mapM getEventList1 names 
+
+allEventLists :: NotateT IO [EventList]
+allEventLists = asks_config _system >>= \sys ->
+                return $ Map.elems sys
+
+
+getEventList1 :: String -> NotateT IO EventList
+getEventList1 name = findEventList name >>= maybe fk sk
+  where
+    fk = throwError (strMsg $ "Could not find " ++ name)
+    sk a = return a 
+
+
+
+
 
     
-reportFailure :: String -> NotateErr -> IO ()
-reportFailure log_msg (NotateErr s) = putStrLn s >> putStrLn log_msg
+
 
 
 generalOutput :: ExprParser -> TextSourceParser -> NotateT IO ()

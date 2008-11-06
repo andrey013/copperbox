@@ -1,6 +1,6 @@
 
 -- ghci - 
--- :set -i..:../HNotate
+-- :set -i../../HNotate
 
 module Examples.Trees where
 
@@ -99,7 +99,12 @@ main :: IO ()
 main = do
     outputAbc       3 example_sys  abc_template  abc_output
     outputLilyPond  3 example_sys  ly_template   ly_output
-    
+    midiTrees
 
- 
+midiTrees :: IO ()
+midiTrees = 
+    outputMidi upd_env allEventLists example_sys  "./out/trees.mid"
+  where 
+    upd_env = set_sequential_midi_output 1000
+    
                               

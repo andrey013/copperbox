@@ -17,7 +17,7 @@
 module HNotate.Env (
     Env,
     Config(..),
-    
+    MidiRendering(..),
     
     -- defaults
     default_ly_env,
@@ -42,6 +42,7 @@ module HNotate.Env (
     unmetered,
     bar_number_check,
     score_comment,
+    midi_rendering,
     
     -- computed values
     anacrusis_displacement,
@@ -54,6 +55,8 @@ module HNotate.Env (
     set_relative_pitch,
     set_anacrusis,
     set_unmetered,
+    set_sequential_midi_output,
+    set_parallel_midi_output, 
     
  ) where
 
@@ -89,7 +92,8 @@ data Env = Env {
     _anacrusis          :: Maybe Duration,
     _unmetered          :: Bool,
     _bar_number_check   :: Int,
-    _score_comment      :: String -> ODoc
+    _score_comment      :: String -> ODoc,
+    _midi_rendering     :: MidiRendering
   }
   deriving Show
 
@@ -101,6 +105,11 @@ data Config = Config {
     }
   deriving Show
 
+type Delay = Int
+
+data MidiRendering = Midi_Parallel | Midi_Sequential Delay
+  deriving (Eq,Show)
+  
 instance DebugLevel Config where 
     debug_level  = _debug_level
 
@@ -127,7 +136,8 @@ default_ly_env = Env {
     _anacrusis              = Nothing,
     _unmetered              = False,
     _bar_number_check       = 4,
-    _score_comment          = lyComment
+    _score_comment          = lyComment,
+    _midi_rendering         = Midi_Parallel
   }
   where 
     lyComment str = enclose (text "%{ ") (text " %}") (string str)             
@@ -146,7 +156,8 @@ default_abc_env = Env {
     _anacrusis              = Nothing,
     _unmetered              = True,         -- Abc must start with cadenza on
     _bar_number_check       = 4,
-    _score_comment          = abcComment
+    _score_comment          = abcComment,
+    _midi_rendering         = Midi_Parallel
   }
   where
     abcComment str = line <> char '%' <+> string str <> line
@@ -166,7 +177,8 @@ default_midi_env = Env {
     _anacrusis              = Nothing,
     _unmetered              = True,
     _bar_number_check       = 0,
-    _score_comment          = const (string "<nocomment>")
+    _score_comment          = const (string "<nocomment>"),
+    _midi_rendering         = Midi_Parallel
   }
   where
     abcComment str = line <> char '%' <+> string str <> line
@@ -239,6 +251,8 @@ bar_number_check    = _bar_number_check
 score_comment       :: Env -> (String -> ODoc)
 score_comment       = _score_comment
 
+midi_rendering      :: Env -> MidiRendering
+midi_rendering      = _midi_rendering
 
 -- LilyPond's \partial command gives the duration of the notes in 
 -- the anacrusis (the zeroth bar).
@@ -292,7 +306,14 @@ set_anacrusis d env           = env {_anacrusis = Just d}
 
 set_unmetered                 :: Bool -> Env -> Env
 set_unmetered a env           = env {_unmetered = a}
-      
+
+set_sequential_midi_output        :: Int -> Env -> Env
+set_sequential_midi_output i env  = env { _midi_rendering = Midi_Sequential i } 
+
+set_parallel_midi_output      :: Env -> Env
+set_parallel_midi_output env  = env { _midi_rendering = Midi_Parallel } 
+
+
 barLength :: Meter -> Duration
 barLength (TimeSig n d)   = convRatio $ n%d
 barLength CommonTime      = 4%4

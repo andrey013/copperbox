@@ -112,8 +112,8 @@ instance PP Env where
       eline "anacrusis"         anacrusis         optAnacrusis    <&\>
       eline "unmetered"         unmetered         pp              <&\>
       eline "bar_number_check"  bar_number_check  pp              <&\>
-      eline "score_comment"     score_comment     ppfun  
-                  
+      eline "score_comment"     score_comment     ppfun           <&\>
+      eline "midi_output"       midi_rendering    pp            
     where 
       eline :: String -> (Env -> a) -> (a -> ODoc) -> ODoc
       eline s f pp = fillString 20 s <> colon <+> pp (f e)  
@@ -127,6 +127,10 @@ instance PP Env where
       optPitch Nothing        = text "none"             
 
 instance Witness Env where textrep = wpp . pp
+
+instance PP MidiRendering where
+  pp Midi_Parallel            = text "parallel" 
+  pp (Midi_Sequential delay)  = text "parallel" <+> int delay
 
 --------------------------------------------------------------------------------
 -- NoteListDatatypes

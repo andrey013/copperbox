@@ -32,14 +32,41 @@ import Data.Sequence
 import Data.Word
 
 
-midiOut :: FilePath -> NoteList -> NotateT IO ()
-midiOut path evts = do 
-    bar_len <- asks bar_length
-    let allmsgs = translateMidiGlyphs bar_len (simplifyNoteList evts)
-    liftIO $ writeMidiFile path (mkmidi allmsgs)
+midiOut :: FilePath -> [NoteList] -> NotateT IO ()
+midiOut path ess = do
+    mss <- mapM midiMessages ess
+    rm  <- asks midi_rendering
+    liftIO $ writeMidiFile path (render rm mss)
   where
-    mkmidi msgs = let t1 = Track $ msgs |> eot_msg
-                  in MidiFile (fromList [controlTrack 500000,t1])      
+    mkmidi trks = MidiFile ( controlTrack 500000 <| trks )
+    
+    render Midi_Parallel            = mkmidi . parallelTracks  
+    render (Midi_Sequential delay)  = 
+        mkmidi . sequentialTracks (fromIntegral delay) 
+                  
+
+parallelTracks :: [Seq Message] -> Seq Track
+parallelTracks mss = foldr fn empty mss
+  where fn msgs se = (Track $ msgs |> eot_msg) <| se
+    
+sequentialTracks :: Word32 -> [Seq Message] -> Seq Track
+sequentialTracks delay mss = 
+    singleton $ Track $ foldr fn (empty |> eot_msg) mss
+  where 
+    fn msgs se = msgs >< se
+    
+    delayfirst :: Seq Message -> Seq Message
+    delayfirst se = case viewl se of
+        Message (dt,evt) :< sa  -> (Message (dt+delay,evt)) <| sa
+        EmptyL                  -> empty
+  
+  
+         
+midiMessages :: NoteList -> NotateT IO (Seq Message)
+midiMessages evts = return fn `ap` asks bar_length
+  where 
+    fn bar_len = translateMidiGlyphs bar_len (simplifyNoteList evts)
+        
     
 -- Simplified version of Tile & Glyph -- avoid nested graces
 type Chan = Word8 

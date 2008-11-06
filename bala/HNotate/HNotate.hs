@@ -31,15 +31,16 @@ module HNotate (
     
     AddtoEventList(..), ( /@ ), ( /@@ ), 
     
-    {- repeated, eventlist, -}
-    
-    ( # ) , ( #. )    
+    -- Env
+    set_sequential_midi_output,
+    set_parallel_midi_output
     
  ) where
 
 import HNotate.Annotations
 import HNotate.CommonUtils
 import HNotate.Duration
+import HNotate.Env
 import HNotate.Marks
 import HNotate.NoteListDatatypes
 import HNotate.Pitch

@@ -1,5 +1,5 @@
 -- ghci ...
--- :set -i../../HNotate:../../ZMidi
+-- :set -i../../HNotate
 
 module Examples.Scales where
 
