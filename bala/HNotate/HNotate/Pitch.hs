@@ -33,10 +33,6 @@ module HNotate.Pitch (
     middleC, octaveDist, no_octave,
 
 
-    
-    -- * pretty print
-    ppNote,
-
     -- * Named elements
     -- $nameddoc 
 
@@ -66,7 +62,9 @@ module HNotate.Pitch (
     
   ) where
 
-import HNotate.Document
+
+-- Avoid internal dependencies as this module is included in Bala
+
 import Data.Char (toUpper, toLower)
 
 
@@ -75,7 +73,7 @@ data Pitch = Pitch {
     pch_accidental    :: Accidental,
     pch_octave        :: Int
   }
-  deriving (Eq)
+  deriving (Eq,Show)
 
 data PitchLetter = C | D | E | F | G | A | B
   deriving (Bounded,Eq,Enum,Ord,Show)
@@ -89,9 +87,6 @@ data PitchLabel = PitchLabel {
   }
   deriving (Eq,Show)
   
-  
-instance Show Pitch where
-  show = unformatted . pp
   
 instance Ord Pitch where
   compare p1 p2 = semitones p1 `compare` semitones p2
@@ -242,25 +237,6 @@ accidentalConst (Pitch l _ o) a = Pitch l a o
 
 
 
---------------------------------------------------------------------------------
--- PP instances
-
-
-instance PP Pitch where
-  pp (Pitch l a o)  = pp l <> pp a <> int o
-
-instance PP PitchLetter where
-  pp              = text . show
-
-instance PP Accidental where
-  pp Nat          = emptyDoc
-  pp Sharp        = char '#'
-  pp Flat         = char 'b'
-  pp DoubleSharp  = text "##"
-  pp DoubleFlat   = text "bb"
-
-
-ppNote pch dur = pp pch <> char '/' <> pp dur
 
 --------------------------------------------------------------------------------
 -- Named elements

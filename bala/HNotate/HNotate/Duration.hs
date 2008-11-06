@@ -26,16 +26,14 @@ module HNotate.Duration (
     
     
     -- * Helper for ratios
-    ratioElements, convRational, convRatio, fork,
+    ratioElements, convRational, convRatio,
     durationToDouble,
    
     base2numbers'inf,
     
     -- * printing
-    ppDuration,
     PrintableDuration(..), printableDuration,
     pdElements,
-    ppAltRest,
 
     
 
@@ -55,8 +53,8 @@ module HNotate.Duration (
 
   ) where
 
-import HNotate.CommonUtils (fork)
-import HNotate.Document hiding (dot)
+-- Avoid internal dependencies as this module is included in Bala
+
 import Data.List (unfoldr)
 import Data.Monoid
 import Data.Ratio
@@ -80,15 +78,19 @@ dotn i d | i < 1 = d
 ratioElements :: Integral a => Ratio a -> (a,a)
 ratioElements r = (numerator r, denominator r)
 
+rfork :: Integral a => (a -> b) -> Ratio a -> (b,b)
+rfork f r = (f $ numerator r, f $ denominator r)
+
 convRational :: Integral a => Rational -> Ratio a
-convRational = uncurry (%) . fork fromIntegral . ratioElements
+convRational = uncurry (%) . rfork fromIntegral
 
 convRatio :: Integral a => Ratio a -> Rational
-convRatio = uncurry (%) . fork fromIntegral . ratioElements
+convRatio = uncurry (%) . rfork fromIntegral
 
 durationToDouble :: Duration -> Double
-durationToDouble = uncurry (/) . fork fromIntegral . ratioElements
-  
+durationToDouble = uncurry (/) . rfork fromIntegral
+
+
    
 data PrintableDuration = PrintableDuration { 
     _duration  :: Rational,
@@ -156,19 +158,6 @@ halves'inf r = unfoldr phi r
 base2numbers'inf :: [Integer]
 base2numbers'inf = unfoldr (\x -> Just (x, x * 2)) 1 
 
-
-ppDuration :: Duration -> ODoc
-ppDuration = pp . printableDuration
-
-
-                   
-
-instance PP PrintableDuration where
-  pp (PrintableDuration r dc) = let (n,d) = ratioElements r in 
-      pp n <> char '/' <> pp d <> text (replicate dc '.') 
-
-
-ppAltRest ch dur = char ch <> char '/' <> pp dur
 
 
 

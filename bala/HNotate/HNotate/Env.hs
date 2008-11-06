@@ -22,10 +22,12 @@ module HNotate.Env (
     -- defaults
     default_ly_env,
     default_abc_env,
+    default_midi_env,
     
     -- config
     mkLyConfig,
     mkAbcConfig,
+    mkMidiConfig,
     
     -- Env query
     output_format,
@@ -112,6 +114,7 @@ instance Show (String -> ODoc) where
 --------------------------------------------------------------------------------
 -- Defaults
 
+default_ly_env :: Env
 default_ly_env = Env {
     _output_format          = Ly, 
     _current_key            = c_major,
@@ -130,7 +133,7 @@ default_ly_env = Env {
     lyComment str = enclose (text "%{ ") (text " %}") (string str)             
 
 
-  
+default_abc_env :: Env
 default_abc_env = Env {
     _output_format          = Abc, 
     _current_key            = c_major,
@@ -149,6 +152,29 @@ default_abc_env = Env {
     abcComment str = line <> char '%' <+> string str <> line
     
 
+-- Many of the fields have no bearing on Midi
+default_midi_env :: Env
+default_midi_env = Env {
+    _output_format          = Midi, 
+    _current_key            = c_major,
+    _label_set              = c_major'ls,
+    _current_meter          = four_four,
+    _meter_pattern          = four_four_of_eighth,
+    _bar_length             = 4 * quarter,
+    _unit_note_length       = eighth,
+    _relative_pitch         = Nothing,
+    _anacrusis              = Nothing,
+    _unmetered              = True,
+    _bar_number_check       = 0,
+    _score_comment          = const (string "<nocomment>")
+  }
+  where
+    abcComment str = line <> char '%' <+> string str <> line
+    
+
+
+
+
 mkLyConfig :: Int -> System -> FilePath -> FilePath -> Config
 mkLyConfig dl sys template outfile = Config { 
     _system         = sys,
@@ -165,7 +191,15 @@ mkAbcConfig dl sys template outfile = Config {
     _output_file    = outfile
     }
     
-        
+mkMidiConfig :: Int -> System -> FilePath -> Config
+mkMidiConfig dl sys outfile = Config { 
+    _system         = sys,
+    _debug_level    = dl,      
+    _template_file  = "",
+    _output_file    = outfile
+    }
+    
+         
 --------------------------------------------------------------------------------
 -- Accessor functions
 

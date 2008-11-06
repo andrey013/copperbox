@@ -35,7 +35,7 @@ import Data.Traversable
 import Prelude hiding (null)
 
 
-data OutputFormat = Abc | Ly  
+data OutputFormat = Abc | Ly | Midi
   deriving (Eq,Show) 
   
 --------------------------------------------------------------------------------

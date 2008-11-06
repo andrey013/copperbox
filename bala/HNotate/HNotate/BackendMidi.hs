@@ -41,25 +41,37 @@ midiOut path evts = do
     mkmidi msgs = let t1 = Track $ msgs |> eot_msg
                   in MidiFile (fromList [controlTrack 500000,t1])      
     
--- Simplified version of Tile & Glyph
+-- Simplified version of Tile & Glyph -- avoid nested graces
+type Chan = Word8 
+
+
+data MidiTile = MGlyph Chan MidiGlyph
+              | MuGrace Chan MidiGlyph [GraceNote]
+              | MaGrace Chan [GraceNote] MidiGlyph               
+  deriving (Eq,Show)
+
 data MidiGlyph = MNote Pitch Duration
                | MRest Duration
-               | MChord [Pitch] Duration
-               | MuGrace MidiGlyph [GraceNote]
-               | MaGrace [GraceNote] MidiGlyph
+               | MChord [Pitch] Duration               
   deriving (Eq,Show)
 
 
 
-
-simplifyNoteList :: NoteList -> Seq (Int,Seq MidiGlyph)
+simplifyNoteList :: NoteList -> Seq (Int,Seq MidiTile)
 simplifyNoteList = F.foldl simplifyBlock empty . getNoteList 
 
 
-simplifyBlock :: Seq (Int,Seq MidiGlyph) -> Block -> Seq (Int,Seq MidiGlyph)
-simplifyBlock acc (SingleBlock n b) = acc |> (n, simplifyBar b)
-simplifyBlock acc (PolyBlock n bse) = acc >< fmap fn bse
-  where fn b = (n, simplifyBar b)
+simplifyBlock :: Seq (Int,Seq MidiTile) -> Block -> Seq (Int,Seq MidiTile)
+simplifyBlock acc (SingleBlock n b) = acc |> (n, simplifyBar 1 b)
+simplifyBlock acc (PolyBlock n bse) = acc >< fmap fn (szipl bse [1..])
+  where fn (b,ch) = (n, simplifyBar ch b)
+
+szipl :: Seq a -> [b] -> Seq (a,b)
+szipl se xs = step empty (viewl se) []
+  where
+    step acc EmptyL     _       = acc
+    step acc _          []      = acc
+    step acc (a :< sa)  (b:bs)  = step (acc |> (a,b)) (viewl sa) bs    
 
 
 -- Assumes well constructed sequence: 
@@ -67,34 +79,41 @@ simplifyBlock acc (PolyBlock n bse) = acc >< fmap fn bse
 -- accented graces always prefix a note or chord
 -- If this isn't the case then the graces will be dropped.
 
-simplifyBar :: Bar -> Seq MidiGlyph
-simplifyBar (Bar se) = simplify empty (viewl se) id
+simplifyBar :: Word8 -> Bar -> Seq MidiTile
+simplifyBar ch (Bar se) = simplify empty (viewl se) ktile
   where
+    -- not quite identity as it wraps the glyph as a tile 
+    ktile :: MidiGlyph -> MidiTile 
+    ktile = MGlyph ch . id
+    
     -- if the continuation k is a grace builder it will be lost for EmptyL
     simplify acc EmptyL       k = acc
     
     simplify acc (be :< bse)  k = case be of
         Singleton o -> case simplifyGlyph o of
             -- a note or rest - apply the grace continuation to it, and add
-            Just e    -> simplify (acc |> k e) (viewl bse) id
+            Just e    -> simplify (acc |> k e) (viewl bse) ktile
             
             -- not representable in Midi - keep the grace continuation around
             Nothing   -> simplify acc (viewl bse) k
         
-        Chord se d _ -> simplify (acc |> k (MChord (unseq se) d)) (viewl bse) id
+        Chord se d _ -> let chord = k (MChord (unseq se) d)
+                        in simplify (acc |> chord) (viewl bse) ktile
         
         -- grace acts on the preceeding glyph which has already been enqueued
-        GraceNotes se UGrace _ -> simplify (ugrace se (viewr acc)) (viewl bse) id
+        GraceNotes se UGrace _ -> let se' = ugrace se (viewr acc)
+                                  in simplify se' (viewl bse) ktile
         
         -- grace acts on the next glyph, set up the continuation
         GraceNotes se AGrace _ -> simplify acc (viewl bse) (graceK se)
         
-    graceK :: Seq GraceNote -> MidiGlyph -> MidiGlyph     
-    graceK se g = MaGrace (unseq se) g
+    graceK :: Seq GraceNote -> MidiGlyph -> MidiTile     
+    graceK se g = MaGrace ch (unseq se) g
     
-    ugrace :: Seq GraceNote -> ViewR MidiGlyph -> Seq MidiGlyph
-    ugrace se EmptyR      = empty   -- ill formed, gracenotes get dropped
-    ugrace se (bse :> be) = bse |> MuGrace be (unseq se)
+    ugrace :: Seq GraceNote -> ViewR MidiTile -> Seq MidiTile
+    ugrace se EmptyR                = empty   -- ill formed, gracenotes get dropped
+    ugrace se (bse :> (MGlyph _ e)) = bse |> MuGrace ch e (unseq se)
+    ugrace se (bse :> be)           = bse |> be -- drop gracenotes - ideally we should coalesce them 
               
     simplifyGlyph :: Glyph -> Maybe MidiGlyph
     simplifyGlyph (Note p d _)          = Just $ MNote p d
@@ -103,17 +122,17 @@ simplifyBar (Bar se) = simplify empty (viewl se) id
     simplifyGlyph (Mark _ _)            = Nothing
 
 
-translateMidiGlyphs :: Duration -> Seq (Int,Seq MidiGlyph) -> Seq Message
+translateMidiGlyphs :: Duration -> Seq (Int,Seq MidiTile) -> Seq Message
 translateMidiGlyphs bar_len = 
     deltaTransform . orderMessages . unorderedMessages bar_len
 
-unorderedMessages :: Duration -> Seq (Int,Seq MidiGlyph) -> Seq Message
+unorderedMessages :: Duration -> Seq (Int,Seq MidiTile) -> Seq Message
 unorderedMessages bar_len = F.foldl fn empty . onsetTransform bar_len
   where 
     fn acc (dt,evts) = acc >< barEvts dt evts
 
-    onsetTransform :: Duration -> Seq (Int,Seq MidiGlyph) 
-                      -> Seq (Word32,Seq MidiGlyph)
+    onsetTransform :: Duration -> Seq (Int,Seq MidiTile) 
+                      -> Seq (Word32,Seq MidiTile)
     onsetTransform bar_len se = fmap fn se
       where fn (bar_num,evts) = (w32_bar_len * fromIntegral bar_num, evts)
             w32_bar_len       = duration bar_len
@@ -135,51 +154,100 @@ deltaTransform = snd . F.foldl fn (0,empty)
   where
     fn (t,acc) (Message (gt,e)) = (gt, acc |> (Message (gt-t,e)))  
 
--- Use direct recursion rather than a recursion scheme 
--- because we need to add multiple elements to the accumulator.
 
-barEvts :: Word32 -> Seq MidiGlyph -> Seq Message
+barEvts :: Word32 -> Seq MidiTile -> Seq Message
 barEvts onset se = step empty onset (viewl se)
   where
     step acc _  EmptyL    = acc
     
     step acc dt (e :< se) = case e of
-    
-        (MNote p d) -> let (dt',on,off) = noteOnNoteOff dt p d
-                       in step (acc |> on |> off) dt' (viewl se)
-        
-        (MRest d)   -> step acc (dt + duration d) (viewl se)
-        
-        (MChord ps d) -> let (dt',cse) = chordEvents dt ps d 
-                         in step (acc >< cse) dt' (viewl se)
+        MGlyph ch gly   ->  let (dt', gse) = glyphEvents ch dt gly
+                            in step (acc >< gse) dt' (viewl se)
 
-        (MuGrace l gs) -> let (dt',gse) = unaccentedGraceEvents dt l gs 
-                          in step (acc >< gse) dt' (viewl se)
+        MuGrace ch l gs ->  let (dt',gse) = unaccentedGraceEvents ch dt l gs 
+                            in step (acc >< gse) dt' (viewl se)
         
-        (MaGrace gs r) -> let (dt',gse) = accentedGraceEvents dt gs r 
-                          in step (acc >< gse) dt' (viewl se)
+        MaGrace ch gs r ->  let (dt',gse) = accentedGraceEvents ch dt gs r 
+                            in step (acc >< gse) dt' (viewl se)
                               
-                      
-chordEvents :: Word32 -> [Pitch] -> Duration -> (Word32, Seq Message)                
-chordEvents = undefined
-
-unaccentedGraceEvents :: Word32 -> MidiGlyph -> [GraceNote] 
-        -> (Word32, Seq Message) 
-unaccentedGraceEvents elapsed glyph xs = undefined
-
-accentedGraceEvents :: Word32 -> [GraceNote]  -> MidiGlyph
-        -> (Word32, Seq Message) 
-accentedGraceEvents elapsed xs glyph = undefined
  
+-- gracenote
+unaccentedGraceEvents :: Word8 -> Word32 -> MidiGlyph -> [GraceNote] 
+        -> (Word32, Seq Message) 
+unaccentedGraceEvents ch elapsed gly xs = 
+    let glyph_len = rhythmicValue gly; grace_len =  graceLength xs in
+    if (glyph_len >= grace_len)     
+    then let gly'       = modifyDuration gly (glyph_len - grace_len)
+             (dt,se)    = glyphEvents ch elapsed gly'
+             (dt',se')  = graceEvents ch dt xs
+         in (dt', se >< se')
+    else glyphEvents ch elapsed gly -- graces too large drop them all
+         
 
 
+accentedGraceEvents :: Word8 -> Word32 -> [GraceNote]  -> MidiGlyph
+        -> (Word32, Seq Message) 
+accentedGraceEvents ch elapsed xs gly = 
+    let glyph_len = rhythmicValue gly; grace_len =  graceLength xs in
+    if (glyph_len >= grace_len)     
+    then let gly'       = modifyDuration gly (glyph_len - grace_len)
+             (dt, se)   = graceEvents ch elapsed xs
+             (dt',se')  = glyphEvents ch dt' gly'             
+         in (dt', se >< se')
+    else glyphEvents ch elapsed gly -- graces too large drop them all
+    
+    
+
+graceLength :: [GraceNote] -> Duration
+graceLength = foldr ((+) `onl` snd) duration_zero  
+
+
+instance RhythmicValue MidiGlyph where
+  rhythmicValue (MNote _ d)       = d
+  rhythmicValue (MRest d)         = d
+  rhythmicValue (MChord _ d)      = d
+  
+  modifyDuration (MNote p _)    d = MNote p d
+  modifyDuration (MRest _)      d = MRest d
+  modifyDuration (MChord ps _)  d = MChord ps d
+  
+instance RhythmicValue MidiTile where
+  rhythmicValue (MuGrace _ gly _)   = rhythmicValue gly
+  rhythmicValue (MaGrace _ _ gly)   = rhythmicValue gly
+  rhythmicValue (MGlyph _ gly)      = rhythmicValue gly
+  
+  modifyDuration (MuGrace ch gly xs) d = MuGrace ch (modifyDuration gly d) xs
+  modifyDuration (MaGrace ch xs gly) d = MaGrace ch xs (modifyDuration gly d)
+  modifyDuration (MGlyph ch gly)     d = MGlyph ch (modifyDuration gly d)
+
+
+glyphEvents :: Word8 ->  Word32 -> MidiGlyph -> (Word32, Seq Message) 
+glyphEvents ch elapsed (MNote p d)   = (dt, empty |> on |> off) 
+  where (dt,on,off)  = noteOnNoteOff ch elapsed p d
+
+glyphEvents ch elapsed (MRest d)     = (elapsed + duration d, empty)
+
+glyphEvents ch elapsed (MChord ps d) = (dt, ons >< offs) where
+    dt            = elapsed + duration d
+    (ons,offs)    = foldr fn (empty,empty) ps
+    fn p (sa,sb)  = let (_,on,off) = noteOnNoteOff ch elapsed p d 
+                    in (on <| sa, off <| sb)
+                          
+
+graceEvents :: Word8 ->  Word32 -> [GraceNote] -> (Word32, Seq Message) 
+graceEvents ch elapsed = foldl fn (elapsed,empty)
+  where
+    fn (dt,se) (p,d) = let (dt',on,off) = noteOnNoteOff ch dt p d 
+                       in (dt, se |> on |> off)
+    
+      
 -- note on and note off
-noteOnNoteOff :: Word32 -> Pitch -> Duration -> (Word32,Message,Message)
-noteOnNoteOff elapsed p d = (dt,on,off)
+noteOnNoteOff :: Word8 -> Word32 -> Pitch -> Duration -> (Word32,Message,Message)
+noteOnNoteOff ch elapsed p d = (dt,on,off)
   where
     dt  = elapsed + duration d
-    on  = Message (elapsed, VoiceNoteOn  1 (pitch p) 127)
-    off = Message (dt,      VoiceNoteOff 1 (pitch p) 64)
+    on  = Message (elapsed, VoiceNoteOn  ch (pitch p) 127)
+    off = Message (dt,      VoiceNoteOff ch (pitch p) 64)
 
 
 pitch :: Pitch -> Word8

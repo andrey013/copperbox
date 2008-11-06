@@ -58,6 +58,39 @@ instance Witness ParseError where textrep = show
 instance (Integral a, PP a) => PP (Ratio a) where
   pp r = pp (numerator r) <> char '%' <> pp (denominator r)
 
+--------------------------------------------------------------------------------
+-- Duration 
+
+ppDuration :: Duration -> ODoc
+ppDuration = pp . printableDuration
+
+instance PP PrintableDuration where
+  pp (PrintableDuration r dc) = let (n,d) = ratioElements r in 
+      pp n <> char '/' <> pp d <> text (replicate dc '.') 
+
+ppAltRest ch dur = char ch <> char '/' <> pp dur
+
+
+
+--------------------------------------------------------------------------------
+-- Pitch
+
+
+instance PP Pitch where
+  pp (Pitch l a o)  = pp l <> pp a <> int o
+
+instance PP PitchLetter where
+  pp              = text . show
+
+instance PP Accidental where
+  pp Nat          = emptyDoc
+  pp Sharp        = char '#'
+  pp Flat         = char 'b'
+  pp DoubleSharp  = text "##"
+  pp DoubleFlat   = text "bb"
+
+
+ppNote pch dur = pp pch <> char '/' <> pp dur
 
 
 --------------------------------------------------------------------------------

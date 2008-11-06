@@ -123,6 +123,54 @@ type MidiBlock = B.ByteString
 
 type MidiOut = MidiBlock -> MidiBlock
 
+
+
+writeMidiFile :: FilePath -> MidiFile -> IO ()
+writeMidiFile path midi = let midistream = outputMidiFileS midi $ B.empty in do
+    h <- openBinaryFile path WriteMode
+    B.hPut h midistream
+    hClose h
+
+  
+outputMidiFileS :: MidiFile -> MidiOut
+outputMidiFileS (MidiFile se) = outputHeaderS (S.length se) . fns
+  where fns = F.foldr (\a f -> outputTrackS a . f) id se
+
+
+outputHeaderS :: Int -> MidiOut
+outputHeaderS num_tracks = 
+    outChars "MThd" . outW32 6 . out2 0 1 . ftracks . ftpb
+  where
+    ftracks = outW16 $ fromIntegral num_tracks
+    ftpb    = outW16 $ ticks_per_beat `clearBit` 15
+    
+    
+outputTrackS :: Track -> MidiOut
+outputTrackS (Track se) = 
+    let fn = F.foldr (\a f -> outputMessageS a . f) id se
+        bs = fn B.empty
+    in outChars "MTrk" . (outW32 $ fromIntegral $ B.length bs) . (B.append bs)      
+
+outputMessageS :: Message -> MidiOut
+outputMessageS (Message (dt,evt)) = varlen dt . outputEventS evt 
+
+outputEventS :: Event -> MidiOut
+outputEventS (MetaSeqNum n)           = out3 0xFF 0x00 2 . outW16 n
+outputEventS (MetaText tt s)          = 
+    out2 0xFF (texttype tt) . (varlen $ fromIntegral $ length s) . outString s
+      
+outputEventS (MetaSetTempo t)         = out3 0xFF 0x51 3 . outW24 t
+outputEventS (MetaTimeSig  n d m n32) = out3 0xFF 0x58 4 . out4 n d m n32 
+outputEventS (MetaKeySig i sc)        = 
+    out3 0xFF 0x59 2 . out2 (wrapint i) (wscale sc)
+    
+outputEventS (VoiceNoteOff ch n v)    = out3 (0x8 `u4l4` ch) n v
+outputEventS (VoiceNoteOn ch n v)     = out3 (0x9 `u4l4` ch) n v    
+outputEventS MetaEOT                  = out3 0xFF 0x2F 0
+
+--------------------------------------------------------------------------------
+-- Output helpers
+
 infixr 5 `u4l4`
 
 u4l4 :: Word8 -> Word8 -> Word8
@@ -144,49 +192,6 @@ out5 :: Word8 -> Word8 -> Word8 -> Word8 -> Word8
      ->(B.ByteString -> B.ByteString)
 out5 a b c d e = (B.cons a) . (B.cons b) . (B.cons c) . (B.cons d) . (B.cons d)
 
-
-writeMidiFile :: FilePath -> MidiFile -> IO ()
-writeMidiFile path midi = let midistream = outputMidiFileS midi $ B.empty in do
-    h <- openBinaryFile path WriteMode
-    B.hPut h midistream
-    hClose h
-
-  
-outputMidiFileS :: MidiFile -> MidiOut
-outputMidiFileS (MidiFile se) = outputHeaderS (S.length se) . fns
-  where fns = F.foldr (\a f -> outputTrackS a . f) id se
-
-
-outputHeaderS :: Int -> MidiOut
-outputHeaderS num_tracks = 
-    outString "MThd" . outW32 6 . out2 0 1 . ftracks . ftpb
-  where
-    ftracks = outW16 $ fromIntegral num_tracks
-    ftpb    = outW16 $ ticks_per_beat `clearBit` 15
-    
-    
-outputTrackS :: Track -> MidiOut
-outputTrackS (Track se) = 
-    let fn = F.foldr (\a f -> outputMessageS a . f) id se
-        bs = fn B.empty
-    in outString "MTrk" . (outW32 $ fromIntegral $ B.length bs) . (B.append bs)      
-
-outputMessageS :: Message -> MidiOut
-outputMessageS (Message (dt,evt)) = varlen dt . outputEventS evt 
-
-outputEventS :: Event -> MidiOut
-outputEventS (MetaSeqNum n)           = out3 0xFF 0x00 2 . outW16 n
-outputEventS (MetaText tt s)          = 
-    out2 0xFF (texttype tt) . (varlen $ fromIntegral $ length s) . outString s
-      
-outputEventS (MetaSetTempo t)         = out3 0xFF 0x51 3 . outW24 t
-outputEventS (MetaTimeSig  n d m n32) = out3 0xFF 0x58 4 . out4 n d m n32 
-outputEventS (MetaKeySig i sc)        = 
-    out3 0xFF 0x59 2 . out2 (wrapint i) (wscale sc)
-    
-outputEventS (VoiceNoteOff ch n v)    = out3 (0x8 `u4l4` ch) n v
-outputEventS (VoiceNoteOn ch n v)     = out3 (0x9 `u4l4` ch) n v    
-outputEventS MetaEOT                  = out3 0xFF 0x2F 0
    
 
 wrapint :: Int8 -> Word8
@@ -242,6 +247,10 @@ varlen i
 
 outString :: String -> MidiOut    
 outString s = B.append (B.pack $ fmap (fromIntegral . ord) s) 
+
+outChars :: String -> MidiOut
+outChars []     = id
+outChars (s:ss) = out1 (fromIntegral $ ord s) . outChars ss
 
 texttype :: TextType -> Word8
 texttype GENERIC_TEXT         = 0x01

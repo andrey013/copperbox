@@ -69,10 +69,10 @@ outputAbc dl sys inpath outpath        =
 
 outputMidi :: Int -> System -> String -> FilePath -> IO ()
 outputMidi dl sys name outpath = 
-    runNotateT outfun default_abc_env config          >>= \(a,msg) ->
+    runNotateT outfun default_midi_env config         >>= \(a,msg) ->
     either (reportFailure msg) (const $ putStrLn msg) a
   where
-    config  = mkAbcConfig dl sys "" outpath
+    config  = mkMidiConfig dl sys outpath
     outfun = case Map.lookup name sys of
                 Nothing -> throwError $ strMsg $ "missing: " ++ name
                 Just evts -> toNoteList evts >>= midiOut outpath
