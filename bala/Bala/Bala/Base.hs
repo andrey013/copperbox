@@ -25,7 +25,6 @@ module Bala.Base
   , module Bala.Base.PitchClass
   , module Bala.Base.PitchConversion
   , module Bala.Base.Scale
-  , module Bala.Base.Unfiled
   )
   where
 
@@ -40,6 +39,5 @@ import Bala.Base.Pitch
 import Bala.Base.PitchClass
 import Bala.Base.PitchConversion
 import Bala.Base.Scale
-import Bala.Base.Unfiled
 
 

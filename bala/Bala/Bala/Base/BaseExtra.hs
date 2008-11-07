@@ -49,7 +49,7 @@ module Bala.Base.BaseExtra (
   
   -- * Parsec helpers
   readsParsec, longestString, withLongestString,
-  optOneOf, optparse, eitherparse, counting, counting1,
+  optOneOf, eitherparse, counting, counting1,
   whiteSpace, lexeme, symbol, stringLiteral,
   parens, brackets, angles, braces, integer, double, 
   positiveInt, signedInt, float, int, digiti, 
@@ -163,9 +163,11 @@ retroCountTo :: (Eq a) => (a -> a) -> a -> a -> Int
 retroCountTo fn x y = 1 + countUntil 1000 (== y) fn x 
 
 -- | Repeat succ n times.
-successor :: (Enum a) => Int -> a -> a
+successor :: (Bounded a, Enum a, Eq a) => Int -> a -> a
 successor n a = applyi n f a
-  where f = if (n >= 0) then succ else pred
+  where f a = if (n >= 0) then succround a else pred a
+        succround a | a == maxBound = minBound
+                    | otherwise     = succ a
 
 -- | Repeat pred n times.
 predecessor :: (Enum a) => Int -> a -> a  
@@ -394,13 +396,18 @@ withLongestString f = choice . map (try . interp f) . reverse . sortBy longer
     
 -- | Wrap Parsec's @oneOf@ with a Maybe to handle failure. 
 optOneOf :: [Char] -> GenParser Char st (Maybe Char)    
-optOneOf cs = optparse $ oneOf cs
+optOneOf cs = optionMaybe $ oneOf cs
 
 -- | An alternative to Parsec's @option@ parser. Whereas option returns a 
 -- default value if the parse fails, optparse wraps success and failure in
 -- a Maybe.
+
+-- Use Parsec's optionMaybe
+{-
 optparse :: GenParser Char st a -> GenParser Char st (Maybe a)
 optparse p = option Nothing (try $ Just <$> p)
+-}
+
 
 -- | Wrap Parser's alterative (\<|\>) combinator with the Either type to 
 -- get different types for the left and right parse.
@@ -460,7 +467,7 @@ lexChar   = lexeme . char
 -- which is what we want.
 water :: GenParser Char st a -> GenParser Char st a
 water p = do
-    a <- optparse p    
+    a <- optionMaybe p    
     case a of
       Just a -> return $ a
       Nothing -> anyChar >> water p 
@@ -471,7 +478,7 @@ collectWater :: GenParser Char st a -> GenParser Char st (String,a)
 collectWater p = colwater []
   where
     colwater cs  =  do
-      a <- optparse p
+      a <- optionMaybe p
       case a of 
         Just a -> return (reverse cs, a)
         Nothing -> anyChar >>= \c -> colwater (c:cs)

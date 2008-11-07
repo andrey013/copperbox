@@ -239,10 +239,9 @@ instance Pitched PitchLabel where
   addSemi l i = toEnum $ (fromEnum l) + i
   subSemi l i = toEnum $ (fromEnum l) - i
   
-  semitoneDisplacement l l' = 
-    let d = countTo succ l l'
+  semitoneDisplacement l l' =
+    let d = semitones l - semitones l'
     in if (d > 6) then (Downwards, 12 - d) else (Upwards, abs d)
-
 
       
 --------------------------------------------------------------------------------

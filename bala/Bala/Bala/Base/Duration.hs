@@ -20,10 +20,8 @@ module Bala.Base.Duration (
   ) where
 
 import Bala.Base.BaseExtra
-
 import HNotate.Duration
 
-import Data.List
 import Data.Ratio
 
 {-

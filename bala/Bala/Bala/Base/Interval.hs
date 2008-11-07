@@ -167,14 +167,6 @@ class IntervalExtension a where
   extDown :: a -> Interval -> a 
 
   
-  
-  
-
-   
-        
-
-
-
 
 
     
@@ -296,7 +288,7 @@ arithmeticStep pch i =
       o           = octaveMeasure pch
       (o',name')  = applyi (i - 1) succ (o,name) 
   in pitch (PitchLabel name' Nat) o
-   
+
 
 
 pitchDifference :: Pitch -> Pitch -> Interval
@@ -341,12 +333,12 @@ unorderedPCInterval (PC p1) (PC p2)
                      
 
 diatonicInterval, chromaticInterval :: Interval -> Bool
-diatonicInterval _ = undefined -- perfect major or minor
+diatonicInterval _ = error $ "diatonicInterval undefined" -- perfect major or minor
 
 chromaticInterval = not . diatonicInterval
 
 intervalClass :: Interval -> Bool
-intervalClass = undefined
+intervalClass = error $ "intervalClass undefined"
 
 
 
@@ -408,10 +400,10 @@ instance IntervalExtension Interval where
   extDown = (-)
   
 instance IntervalExtension PitchLabel where
-  extUp lbl@(PitchLabel l _) (Interval ad sc) = 
+  extUp lbl@(PitchLabel l _) (Interval ad sc) =
     let l' = successor (unCount ad - 1) l 
     in spell (lbl `addSemi` (unCount sc)) l'
-    
+
   extDown lbl@(PitchLabel l _) (Interval ad sc) = 
     let l' = predecessor (unCount ad - 1) l 
     in spell (lbl `subSemi` (unCount sc)) l'
@@ -420,8 +412,10 @@ instance IntervalExtension PitchLabel where
 -- | {SPELLING ? }  
 
 instance IntervalExtension Pitch where
-  extUp pch inval = undefined
-  extDown pch inval = undefined
+  extUp pch inval = let (PitchLabel l a) = extUp (pitchName pch) inval
+                        (Pitch _ _ o)    = pch `addSemi` (semitones inval)
+                    in Pitch l a o
+  extDown pch inval = error $ "IntervalExtension Pitch - undefined"
 {-  
   extUp pch inval = 
     let lbl = extUp (pitchName pch) inval
@@ -485,7 +479,7 @@ instance Affi IntervalPattern where
 --------------------------------------------------------------------------------
 
 instance Deco Interval where
-  deco = undefined -- decoInterval
+  deco = error $ "Deco Interval - undefined"
 
 {-
 -- | Parsec parser for 'Interval'. Needs more work...

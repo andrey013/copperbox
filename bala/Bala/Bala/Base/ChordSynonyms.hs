@@ -68,9 +68,9 @@ data ChordSuffix
   
 
 romanChord :: Parser RomanChord  
-romanChord = fn <$> optparse alteration 
+romanChord = fn <$> optionMaybe alteration 
                 <*> chordNumeral 
-                <*> optparse variation
+                <*> optionMaybe variation
                 <*> option RootPosition inversionLabel    
   where fn a (b,c) d e = RomanChord a b c d e
 
