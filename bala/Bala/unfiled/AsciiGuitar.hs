@@ -13,7 +13,7 @@
 --------------------------------------------------------------------------------
 
 
-module Bala.Format.Ascii.AsciiGuitar where
+module AsciiGuitar where
 
 import Bala.Base
 

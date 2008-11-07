@@ -13,7 +13,7 @@
 --------------------------------------------------------------------------------
 
 
-module Bala.Format.Ascii.AsciiPiano where
+module AsciiPiano where
 
 
 

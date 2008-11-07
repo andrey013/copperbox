@@ -51,8 +51,8 @@ instance Arbitrary PitchLetter where
   arbitrary = elements [A, B, C, D, E, F, G]
   coarbitrary = error "no coarbitrary for PitchLetter"
 
-instance Arbitrary PitchName where
-  arbitrary = PitchName <$> arbitrary <*> arbitrary
+instance Arbitrary PitchLabel where
+  arbitrary = PitchLabel <$> arbitrary <*> arbitrary
   coarbitrary = error "no coarbitrary for PitchLabel"
   
     
