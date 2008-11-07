@@ -143,25 +143,4 @@ four_four :: Meter
 four_four = TimeSig 4 4
 
 
-c_nat, d_nat, e_nat, f_nat, g_nat, a_nat, b_nat :: PitchLabel
-c_nat     = PitchLabel C Nat
-d_nat     = PitchLabel D Nat
-e_nat     = PitchLabel E Nat
-f_nat     = PitchLabel F Nat
-g_nat     = PitchLabel G Nat
-a_nat     = PitchLabel A Nat
-b_nat     = PitchLabel B Nat
 
-c_sharp, d_sharp, f_sharp, g_sharp, a_sharp :: PitchLabel
-c_sharp   = PitchLabel C Sharp
-d_sharp   = PitchLabel D Sharp
-f_sharp   = PitchLabel F Sharp
-g_sharp   = PitchLabel G Sharp
-a_sharp   = PitchLabel A Sharp
-
-d_flat, e_flat, g_flat, a_flat, b_flat :: PitchLabel
-d_flat    = PitchLabel D Flat
-e_flat    = PitchLabel E Flat
-g_flat    = PitchLabel G Flat
-a_flat    = PitchLabel A Flat
-b_flat    = PitchLabel B Flat

@@ -31,11 +31,6 @@ module Bala.Base.Pitch (
   
   unaltered,
   
-  -- * Named elements
-  -- $nameddoc 
-  c_natural, d_natural, e_natural, f_natural, g_natural, a_natural, b_natural,
-  c_sharp, d_flat, d_sharp, e_flat, f_sharp, 
-  g_flat, g_sharp, a_flat, a_sharp, b_flat,
 
 
   
@@ -59,8 +54,7 @@ import Text.ParserCombinators.Parsec
 -- | Constructors and selectors
 
 
--- | A /smart constructor/. It doesn't need semitones stating as it 
--- derives semitones from the 'PitchName'.
+
 -- Update - no longer smart now that we don't store semitone_count
 pitch :: PitchLabel -> Int -> Pitch
 pitch lbl o = Pitch (pch_lbl_letter lbl) (pch_lbl_accidental lbl) o 
@@ -423,70 +417,3 @@ instance Affi Accidental where
 instance Affi PitchLetter where
     affi = shows
     
---------------------------------------------------------------------------------
--- Named elements
--- $nameddoc 
--- Pre-defined pitches. Middle c is @c4@, octaves start on c. 
--- Sharp and flat notes follow the LilyPond convention with suffix of @is@ for 
--- a sharp and @es@ for a flat.
-
-pnat l    = PitchLabel l Nat
-psharp l  = PitchLabel l Sharp
-pflat l   = PitchLabel l Flat
-
-c_natural   :: PitchLabel
-c_natural   = pnat C
-
-d_natural   :: PitchLabel
-d_natural   = pnat D
-
-e_natural   :: PitchLabel
-e_natural   = pnat E
-
-f_natural   :: PitchLabel
-f_natural   = pnat F
-
-g_natural   :: PitchLabel 
-g_natural   = pnat G
-
-a_natural   :: PitchLabel
-a_natural   = pnat A
-
-b_natural   :: PitchLabel 
-b_natural   = pnat B
-
-c_sharp     :: PitchLabel
-c_sharp     = psharp C
- 
-d_flat      :: PitchLabel  
-d_flat      = pflat D
-
-d_sharp     :: PitchLabel 
-d_sharp     = psharp D
-
-e_flat      :: PitchLabel  
-e_flat      = pflat E
-
-f_sharp     :: PitchLabel 
-f_sharp     = psharp F
-
-g_flat      :: PitchLabel  
-g_flat      = pflat G
-
-g_sharp     :: PitchLabel 
-g_sharp     = psharp G
-
-a_flat      :: PitchLabel  
-a_flat      = pflat A
-
-a_sharp     :: PitchLabel 
-a_sharp     = psharp A
-
-b_flat      :: PitchLabel
-b_flat      = pflat B
-
-
-pchNat n o    = pitch (naturalNote n) o
-pchSharp n o  = pitch (sharpNote n) o
-pchFlat n o   = pitch (flatNote n) o
-

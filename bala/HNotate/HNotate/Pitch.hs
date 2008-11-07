@@ -30,11 +30,15 @@ module HNotate.Pitch (
     octaveConst, accidentalConst,
         
     -- * LilyPond helpers
-    middleC, octaveDist, no_octave,
+    octaveDist, no_octave,
 
 
     -- * Named elements
     -- $nameddoc 
+    c_nat, d_nat, e_nat, f_nat, g_nat, a_nat, b_nat, 
+    c_sharp, d_sharp, f_sharp, g_sharp, a_sharp, 
+    d_flat, e_flat, g_flat, a_flat, b_flat,
+
 
     middle_c,
     c4, d4, e4, f4, g4, a4, b4,
@@ -79,7 +83,7 @@ data PitchLetter = C | D | E | F | G | A | B
   deriving (Bounded,Eq,Enum,Ord,Show)
 
 data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp 
-  deriving (Eq,Enum,Ord,Show)
+  deriving (Bounded,Eq,Enum,Ord,Show)
 
 data PitchLabel = PitchLabel {
     pch_lbl_letter      :: PitchLetter,
@@ -103,21 +107,23 @@ instance Enum PitchLabel where
           fn B = 11
 
   
-  toEnum 0   = PitchLabel C Nat
-  toEnum 1   = PitchLabel C Sharp
-  toEnum 2   = PitchLabel D Nat
-  toEnum 3   = PitchLabel D Sharp
-  toEnum 4   = PitchLabel E Nat
-  toEnum 5   = PitchLabel F Nat
-  toEnum 6   = PitchLabel F Sharp
-  toEnum 7   = PitchLabel G Nat
-  toEnum 8   = PitchLabel G Sharp
-  toEnum 9   = PitchLabel A Nat
-  toEnum 10  = PitchLabel A Sharp
-  toEnum 11  = PitchLabel B Nat
-
-  toEnum i  = toEnum $ i `mod` 12
+  toEnum 0    = PitchLabel C Nat
+  toEnum 1    = PitchLabel C Sharp
+  toEnum 2    = PitchLabel D Nat
+  toEnum 3    = PitchLabel D Sharp
+  toEnum 4    = PitchLabel E Nat
+  toEnum 5    = PitchLabel F Nat
+  toEnum 6    = PitchLabel F Sharp
+  toEnum 7    = PitchLabel G Nat
+  toEnum 8    = PitchLabel G Sharp
+  toEnum 9    = PitchLabel A Nat
+  toEnum 10   = PitchLabel A Sharp
+  toEnum 11   = PitchLabel B Nat
+  toEnum i    = error $ "Pitch.toEnum " ++ show i ++ " outside bounds"
   
+instance Bounded PitchLabel where
+  maxBound = toEnum 11
+  minBound = toEnum 0
 
 
 fromLChar :: Char -> Maybe PitchLetter 
@@ -191,12 +197,6 @@ instance Semitones Accidental where
 
 
 
--- LilPond Helpers
-middleC :: Pitch
-middleC = Pitch C Nat 4
-
-
-
 -- See Lilypond (6.1.6 - relative octaves)
 -- ceses ->- fisis
 -- cbb   ->- f##   -- fourth 
@@ -241,9 +241,48 @@ accidentalConst (Pitch l _ o) a = Pitch l a o
 --------------------------------------------------------------------------------
 -- Named elements
 -- $nameddoc 
--- Pre-defined pitches. Middle c is @c4@, octaves start on c. 
+-- Pre-defined pitches and pitch labels. Middle c is @c4@, octaves start on c. 
 -- Sharp and flat notes follow the LilyPond convention with suffix of @is@ for 
 -- a sharp and @es@ for a flat.
+
+
+c_nat     :: PitchLabel
+d_nat     :: PitchLabel
+e_nat     :: PitchLabel 
+f_nat     :: PitchLabel
+g_nat     :: PitchLabel
+a_nat     :: PitchLabel
+b_nat     :: PitchLabel
+c_nat     = PitchLabel C Nat
+d_nat     = PitchLabel D Nat
+e_nat     = PitchLabel E Nat
+f_nat     = PitchLabel F Nat
+g_nat     = PitchLabel G Nat
+a_nat     = PitchLabel A Nat
+b_nat     = PitchLabel B Nat
+
+c_sharp   :: PitchLabel
+d_sharp   :: PitchLabel
+f_sharp   :: PitchLabel 
+g_sharp   :: PitchLabel 
+a_sharp   :: PitchLabel
+c_sharp   = PitchLabel C Sharp
+d_sharp   = PitchLabel D Sharp
+f_sharp   = PitchLabel F Sharp
+g_sharp   = PitchLabel G Sharp
+a_sharp   = PitchLabel A Sharp
+
+d_flat    :: PitchLabel
+e_flat    :: PitchLabel
+g_flat    :: PitchLabel
+a_flat    :: PitchLabel
+b_flat    :: PitchLabel
+d_flat    = PitchLabel D Flat
+e_flat    = PitchLabel E Flat
+g_flat    = PitchLabel G Flat
+a_flat    = PitchLabel A Flat
+b_flat    = PitchLabel B Flat
+
       
 pchNat n o    = Pitch n Nat o
 pchSharp n o  = Pitch n Sharp o
@@ -252,8 +291,23 @@ pchFlat n o   = Pitch n Flat o
 middle_c :: Pitch
 middle_c = pchNat C 4
 
-c4, d4, e4, f4, g4, a4, b4, 
-    cis4, des4, dis4, ees4, fis4, ges4, gis4, aes4, ais4, bes4 :: Pitch
+c4    :: Pitch
+d4    :: Pitch 
+e4    :: Pitch
+f4    :: Pitch
+g4    :: Pitch
+a4    :: Pitch 
+b4    :: Pitch 
+cis4  :: Pitch 
+des4  :: Pitch 
+dis4  :: Pitch 
+ees4  :: Pitch
+fis4  :: Pitch
+ges4  :: Pitch 
+gis4  :: Pitch 
+aes4  :: Pitch 
+ais4  :: Pitch 
+bes4  :: Pitch
 c4    = pchNat C 4
 d4    = pchNat D 4
 e4    = pchNat E 4
@@ -273,8 +327,23 @@ ais4  = pchSharp A 4
 bes4  = pchFlat B 4
 
 
-c3, d3, e3, f3, g3, a3, b3, 
-    cis3, des3, dis3, ees3, fis3, ges3, gis3, aes3, ais3, bes3 :: Pitch
+c3    :: Pitch
+d3    :: Pitch 
+e3    :: Pitch
+f3    :: Pitch
+g3    :: Pitch
+a3    :: Pitch 
+b3    :: Pitch 
+cis3  :: Pitch 
+des3  :: Pitch 
+dis3  :: Pitch 
+ees3  :: Pitch
+fis3  :: Pitch
+ges3  :: Pitch 
+gis3  :: Pitch 
+aes3  :: Pitch 
+ais3  :: Pitch 
+bes3  :: Pitch
 c3    = pchNat C 3
 d3    = pchNat D 3
 e3    = pchNat E 3
@@ -293,8 +362,23 @@ aes3  = pchFlat A 3
 ais3  = pchSharp A 3
 bes3  = pchFlat B 3
 
-c2, d2, e2, f2, g2, a2, b2, 
-    cis2, des2, dis2, ees2, fis2, ges2, gis2, aes2, ais2, bes2 :: Pitch
+c2    :: Pitch
+d2    :: Pitch 
+e2    :: Pitch
+f2    :: Pitch
+g2    :: Pitch
+a2    :: Pitch 
+b2    :: Pitch 
+cis2  :: Pitch 
+des2  :: Pitch 
+dis2  :: Pitch 
+ees2  :: Pitch
+fis2  :: Pitch
+ges2  :: Pitch 
+gis2  :: Pitch 
+aes2  :: Pitch 
+ais2  :: Pitch 
+bes2  :: Pitch
 c2    = pchNat C 2
 d2    = pchNat D 2
 e2    = pchNat E 2
@@ -313,8 +397,23 @@ aes2  = pchFlat A 2
 ais2  = pchSharp A 2
 bes2  = pchFlat B 2
 
-c1, d1, e1, f1, g1, a1, b1, 
-    cis1, des1, dis1, ees1, fis1, ges1, gis1, aes1, ais1, bes1 :: Pitch
+c1    :: Pitch
+d1    :: Pitch 
+e1    :: Pitch
+f1    :: Pitch
+g1    :: Pitch
+a1    :: Pitch 
+b1    :: Pitch 
+cis1  :: Pitch 
+des1  :: Pitch 
+dis1  :: Pitch 
+ees1  :: Pitch
+fis1  :: Pitch
+ges1  :: Pitch 
+gis1  :: Pitch 
+aes1  :: Pitch 
+ais1  :: Pitch 
+bes1  :: Pitch
 c1    = pchNat C 1
 d1    = pchNat D 1
 e1    = pchNat E 1
@@ -334,8 +433,23 @@ ais1  = pchSharp A 1
 bes1  = pchFlat B 1
 
 
-c5, d5, e5, f5, g5, a5, b5, 
-    cis5, des5, dis5, ees5, fis5, ges5, gis5, aes5, ais5, bes5 :: Pitch
+c5    :: Pitch
+d5    :: Pitch 
+e5    :: Pitch
+f5    :: Pitch
+g5    :: Pitch
+a5    :: Pitch 
+b5    :: Pitch 
+cis5  :: Pitch 
+des5  :: Pitch 
+dis5  :: Pitch 
+ees5  :: Pitch
+fis5  :: Pitch
+ges5  :: Pitch 
+gis5  :: Pitch 
+aes5  :: Pitch 
+ais5  :: Pitch 
+bes5  :: Pitch
 c5    = pchNat C 5
 d5    = pchNat D 5
 e5    = pchNat E 5
@@ -354,8 +468,23 @@ aes5  = pchFlat A 5
 ais5  = pchSharp A 5
 bes5  = pchFlat B 5
 
-c6, d6, e6, f6, g6, a6, b6, 
-    cis6, des6, dis6, ees6, fis6, ges6, gis6, aes6, ais6, bes6 :: Pitch
+c6    :: Pitch
+d6    :: Pitch 
+e6    :: Pitch
+f6    :: Pitch
+g6    :: Pitch
+a6    :: Pitch 
+b6    :: Pitch 
+cis6  :: Pitch 
+des6  :: Pitch 
+dis6  :: Pitch 
+ees6  :: Pitch
+fis6  :: Pitch
+ges6  :: Pitch 
+gis6  :: Pitch 
+aes6  :: Pitch 
+ais6  :: Pitch 
+bes6  :: Pitch
 c6    = pchNat C 6
 d6    = pchNat D 6
 e6    = pchNat E 6
@@ -374,8 +503,23 @@ aes6  = pchFlat A 6
 ais6  = pchSharp A 6
 bes6  = pchFlat B 6
 
-c7, d7, e7, f7, g7, a7, b7, 
-    cis7, des7, dis7, ees7, fis7, ges7, gis7, aes7, ais7, bes7 :: Pitch
+c7    :: Pitch
+d7    :: Pitch 
+e7    :: Pitch
+f7    :: Pitch
+g7    :: Pitch
+a7    :: Pitch 
+b7    :: Pitch 
+cis7  :: Pitch 
+des7  :: Pitch 
+dis7  :: Pitch 
+ees7  :: Pitch
+fis7  :: Pitch
+ges7  :: Pitch 
+gis7  :: Pitch 
+aes7  :: Pitch 
+ais7  :: Pitch 
+bes7  :: Pitch
 c7    = pchNat C 7
 d7    = pchNat D 7
 e7    = pchNat E 7

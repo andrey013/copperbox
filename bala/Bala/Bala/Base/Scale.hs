@@ -94,22 +94,22 @@ instance Affi Scale where
 
 
 c_major             :: Key
-c_major             = Key c_natural MajorKey
+c_major             = Key c_nat MajorKey
 
 g_major             :: Key
-g_major             = Key g_natural MajorKey
+g_major             = Key g_nat MajorKey
 
 d_major             :: Key
-d_major             = Key d_natural MajorKey
+d_major             = Key d_nat MajorKey
 
 a_major             :: Key
-a_major             = Key a_natural MajorKey
+a_major             = Key a_nat MajorKey
 
 e_major             :: Key
-e_major             = Key e_natural MajorKey
+e_major             = Key e_nat MajorKey
 
 b_major             :: Key
-b_major             = Key b_natural MajorKey
+b_major             = Key b_nat MajorKey
 
 f_sharp_major       :: Key
 f_sharp_major       = Key f_sharp MajorKey
@@ -119,7 +119,7 @@ c_sharp_major       = Key c_sharp MajorKey
 
 -- Major scales with flats
 f_major             :: Key
-f_major             = Key f_natural MajorKey
+f_major             = Key f_nat MajorKey
 
 b_flat_major        :: Key
 b_flat_major        = Key b_flat MajorKey
@@ -137,19 +137,19 @@ g_flat_major        :: Key
 g_flat_major        = Key g_flat MajorKey
 
 c_flat_major        :: Key
-c_flat_major        = Key (subSemi c_natural 1) MajorKey
+c_flat_major        = Key (subSemi c_nat 1) MajorKey
 
 
 
 -- Minor scales with sharps
 a_minor             :: Key
-a_minor             = Key a_natural MinorKey
+a_minor             = Key a_nat MinorKey
 
 e_minor             :: Key
-e_minor             = Key e_natural MinorKey
+e_minor             = Key e_nat MinorKey
 
 b_minor             :: Key
-b_minor             = Key b_natural MinorKey
+b_minor             = Key b_nat MinorKey
 
 f_sharp_minor       :: Key 
 f_sharp_minor       = Key f_sharp MinorKey
@@ -168,16 +168,16 @@ a_sharp_minor       = Key a_sharp MinorKey
 
 -- Minor scales with flats
 d_minor             :: Key
-d_minor             = Key d_natural MinorKey
+d_minor             = Key d_nat MinorKey
 
 g_minor             :: Key
-g_minor             = Key g_natural MinorKey
+g_minor             = Key g_nat MinorKey
 
 c_minor             :: Key
-c_minor             = Key c_natural MinorKey
+c_minor             = Key c_nat MinorKey
 
 f_minor             :: Key
-f_minor             = Key f_natural MinorKey
+f_minor             = Key f_nat MinorKey
 
 b_flat_minor        :: Key
 b_flat_minor        = Key b_flat MinorKey
