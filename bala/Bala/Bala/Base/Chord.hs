@@ -15,22 +15,7 @@
 --------------------------------------------------------------------------------
 
 
-module Bala.Base.Chord (
-  -- * Datatypes (Chord is opaque)
-  Chord, Inversion(..),
-  
-  -- * operations
-  extractNotes, invert,
- 
-  majorTriad, minorTriad, dim5, aug5, 
-  
-  noRoot, no3, no5, no7, no9, no11, no13,
-  
-  min7, maj7, dim7,
-  
-  dim, aug
- 
-  ) where
+module Bala.Base.Chord where
 
 import Bala.Base.Pitch
 import Bala.Base.Interval
@@ -67,7 +52,7 @@ type IntervalMap = Map.Map Int Interval
 -- | Can't handle inversions, yet
 extractNotes :: Chord -> [Pitch]
 extractNotes (Chord p i m)  = 
-  let pchs = map (extUp p) $ map snd (Map.toAscList m)
+  let pchs = map (increase p) $ map snd (Map.toAscList m)
   {- NO!!! only works if you have a proper sequence c.f. <1,3,5> -}
   in inversion i pchs 
       
@@ -75,10 +60,10 @@ extractNotes (Chord p i m)  =
 
 inversion :: Inversion -> [Pitch] -> [Pitch]
 inversion RootPosition   xs       = xs
-inversion i              (x:xs)   = inversion (pred i) (xs ++ [x `addOve` 1])
+inversion i              (x:xs)   = inversion (pred i) (xs ++ [addOctave x])
 inversion _              []       = []       
 
-
+{-
 majorTriad :: Pitch -> Chord
 majorTriad p = Chord p RootPosition $ buildMap
   [perfect_unison, major_third, perfect_fifth]
@@ -88,15 +73,17 @@ minorTriad p = Chord p RootPosition $ buildMap
   [perfect_unison, minor_third, perfect_fifth]
   
 
+
 buildMap :: [Interval] -> IntervalMap
 buildMap = Map.fromAscList . map fn
   where
     fn ivl = (intervalType ivl, ivl)
-
+-}
 
 invert :: Chord -> Chord
 invert (Chord p i m) = Chord p (succ i) m
 
+{-
 -- | replace or add
 roa :: Interval -> Chord -> Chord
 roa ivl (Chord p i m) = 
@@ -143,6 +130,7 @@ min7 = roa minor_seventh
 maj7 = roa major_seventh
 dim7 = dim 7
 
+-}
 
 -- Csus2 <C D G> and Csus4 <C F G>
 

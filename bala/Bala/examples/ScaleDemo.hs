@@ -9,12 +9,14 @@
 module ScaleDemo where
 
 import Bala.Base hiding (a_major)
+import Bala.Base.AffiDecoInstances
+
 import HNotate
 
 import Data.List
 
 a_major :: Scale
-a_major = makeScale a4 major_intervals
+a_major = makeScale a4 major_interval_pattern
 
 data MetricalEvent a = N a Duration | R Duration
   deriving (Eq,Show)
@@ -49,5 +51,6 @@ outputScale name sc =
   
 main :: IO ()
 main = outputScale "a_major" a_major 
+
 
     

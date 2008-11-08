@@ -45,19 +45,19 @@ import Data.Word
 --------------------------------------------------------------------------------
 
 -- | @midi@
-newtype MidiPitch = M {unMidiPitch :: Int}
+newtype MidiPitch = M {getMidiPitch :: Int}
   deriving (Eq)
 
 -- | @hz@
-newtype Hertz = Hz {unHertz :: Float}
+newtype Hertz = Hz {getHertz :: Float}
   deriving (Eq)
   
 -- | @pc@
-newtype OctavePitchClass = OvePC {unOvePC :: Float}
+newtype OctavePitchClass = OvePC {getOvePC :: Float}
   deriving (Eq)
 
 -- | @oct@  
-newtype OctaveFractional = OveFr {unOveFr :: Float}
+newtype OctaveFractional = OveFr {getOveFr :: Float}
   deriving (Eq)
   
 --------------------------------------------------------------------------------
@@ -78,16 +78,16 @@ octaveFractional = OveFr
 
 
 midiValue :: MidiPitch -> Int
-midiValue = unMidiPitch
+midiValue = getMidiPitch
 
 hertzValue :: Hertz -> Float
-hertzValue = unHertz
+hertzValue = getHertz
 
 ovePCValue :: OctavePitchClass -> Float
-ovePCValue = unOvePC
+ovePCValue = getOvePC
 
 oveFrValue :: OctaveFractional -> Float
-oveFrValue = unOveFr
+oveFrValue = getOveFr
 
 
 -- Midi middle C is 60, whereas for Pitch it is 48
@@ -177,7 +177,7 @@ pcOct (OvePC pc) = OveFr $ x + (8.33333 * (pc - x))
 -- | A Word8 pitch will always be a MIDI value
 
 instance EncodePitch Word8 where
-  fromPitch p = fromIntegral $ unMidiPitch p'
+  fromPitch p = fromIntegral $ getMidiPitch p'
     where 
       p' = fromPitch p
 
@@ -185,37 +185,4 @@ instance EncodePitch Word8 where
   
   
 
-
---------------------------------------------------------------------------------
--- Read instances
---------------------------------------------------------------------------------
-
-instance Read MidiPitch where 
-  readsPrec _ s = readsParsec (int >>= return . M) s
-  
-instance Read Hertz where 
-  readsPrec _ s = readsParsec (float >>= return . Hz) s
-  
-instance Read OctavePitchClass where 
-  readsPrec _ s = readsParsec (float >>= return . OvePC) s
-    
-instance Read OctaveFractional where 
-  readsPrec _ s = readsParsec (float >>= return . OveFr) s
-  
---------------------------------------------------------------------------------
--- Show instances
---------------------------------------------------------------------------------
-instance Show MidiPitch where
-  showsPrec _ (M i) = shows i
-
-instance Show Hertz where
-  showsPrec _ (Hz d) = shows d
-  
-instance Show OctavePitchClass where
-  showsPrec _ (OvePC d) = shows d
-
-instance Show OctaveFractional where
-  showsPrec _ (OveFr d) = shows d
-
-    
     

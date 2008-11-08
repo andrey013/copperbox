@@ -20,8 +20,23 @@ import Bala.Base.Pitch
 import Bala.Base.Interval
 import Bala.Base.Scale
 
+w = whole_step
+h = half_step
+
+major_interval_pattern :: IntervalPattern
+major_interval_pattern = buildIntervalPattern major_intervals
+
+major_intervals :: Intervals
+major_intervals = w . w . h . w . w . w . h 
 
 
+dorian_interval_pattern :: IntervalPattern
+dorian_interval_pattern = buildIntervalPattern major_intervals
+
+dorian_intervals :: Intervals
+dorian_intervals = w . h . w . w . w . h . w 
+
+{-
 
 
 major_intervals, mixolydian_intervals, dorian_intervals, aeolian_intervals,
@@ -61,5 +76,5 @@ chromatic_intervals         = decouper "HHHHHHHHHHHH"
 -- c_pentatonic_major = makeScale c4 pentatonic_major_intervals
 
 
-
+-}
 

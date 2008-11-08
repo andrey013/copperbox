@@ -16,7 +16,6 @@
 module Bala.Base 
   ( module Bala.Base.BaseExtra
   , module Bala.Base.Chord
-  , module Bala.Base.ChordSynonyms
   , module Bala.Base.Duration
   , module Bala.Base.Interval
   , module Bala.Base.Meter
@@ -30,7 +29,6 @@ module Bala.Base
 
 import Bala.Base.BaseExtra
 import Bala.Base.Chord
-import Bala.Base.ChordSynonyms
 import Bala.Base.Duration
 import Bala.Base.Interval
 import Bala.Base.Meter

@@ -55,7 +55,7 @@ instance Show PC where
 class PitchClass a where pc :: a -> PC
 
 instance PitchClass Pitch where
-  pc p = pitchClass $ (12 * octaveMeasure p) + semitoneMeasure p
+  pc p = pitchClass $ (12 * pch_octave p) + semitones p
 
 
   

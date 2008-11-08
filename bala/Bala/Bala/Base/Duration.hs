@@ -108,13 +108,6 @@ durationSize dur =
 
 
 
---------------------------------------------------------------------------------
--- Instances
-
-
-instance Affi Duration where
-    affi d = shows d    
-
 {-
 
 -- Now that Duration type tracks dots until 'rendering' time
