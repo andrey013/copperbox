@@ -16,10 +16,11 @@
 
 
 module Bala.Base.BaseExtra (
-
-  Direction(..),
-  
+ 
+  -- * Type classes
   Magnitude(..),
+  Displacement(..),
+  Synonym(..),
   
   -- * Counting
   sentinelCount,
@@ -52,24 +53,33 @@ import Numeric (showHex)
 
 
 
-
-                  
-
-
-                    
 --------------------------------------------------------------------------------
--- Direction
+-- Magnitude 
 
--- | Direction - counting may need to consider its direction
-data Direction = Upwards | Downwards
-  deriving (Eq,Read,Show)
-
---------------------------------------------------------------------------------
--- Magnitude
+-- Change a value by a value of another type
+-- e.g. Pitches are changed by increasing the number of semitones
 
 class Magnitude a b where
   increase :: a -> b -> a
   decrease :: a -> b -> a
+
+
+--------------------------------------------------------------------------------
+-- Displacement
+
+-- What is the displacement (distance) between two values?
+-- e.g. C to G is +7 semitones 
+
+
+class Displacement a b where
+  displacement :: a -> a -> b
+
+  
+--------------------------------------------------------------------------------
+-- Synonym - e.g. B# & C, diminished fifth & augmented fourth
+
+class Synonym a where
+  synonym :: a -> a -> Bool
   
   
 --------------------------------------------------------------------------------

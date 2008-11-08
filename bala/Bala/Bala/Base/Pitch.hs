@@ -23,26 +23,21 @@ module Bala.Base.Pitch (
   pitch, 
   
   -- * Typeclasses
-  Pitched(..), EncodePitch(..),
+  EncodePitch(..),
   
   addSemitone, subSemitone,
   addOctave, subOctave,
   
-  -- * Operations
-  spell,
-  semitoneDistance, semitoneDirection,
+  Relabel(..),
   
-  unaltered,
-  
-
-
-  
+    
   ) where
 
 import Bala.Base.BaseExtra
 
 -- Use the Pitch format defined in HNotate
 import HNotate.Pitch
+
 
 
 
@@ -65,20 +60,6 @@ pitch lbl o = Pitch (pch_lbl_letter lbl) (pch_lbl_accidental lbl) o
 -- * Typeclasses for pitched values
 
 
-class (Semitones a) => Pitched a where
-
-    -- | Are two pitched values enharmonically equal? 
-    enharmonic            :: a -> a -> Bool
-    
-    -- | The semitone distance from one element to another, and the direction 
-    -- of the distance. 'Upwards' if the second element had a higher pitch than 
-    -- the first, otherwise 'Downwards'
-    semitoneDisplacement  :: a -> a -> (Direction,Int)
-    
-    enharmonic a b      = semitones a == semitones b     
-
-
-
 -- | Convert to and from the primary pitch representation.
 class EncodePitch a where 
     -- | Convert to a Pitch.
@@ -89,7 +70,12 @@ class EncodePitch a where
 
 --------------------------------------------------------------------------------
 -- Magnitude instances    
-    
+
+instance Magnitude PitchLetter Int where
+  l `increase` i = toEnum $ mod `flip` (7::Int) $ fromEnum l + i
+  l `decrease` i = toEnum $ mod `flip` (7::Int) $ fromEnum l - i
+  
+  
 instance Magnitude PitchLabel Semitone where
   l `increase` i = toEnum $ mod12 $ fromEnum l + i
   l `decrease` i = toEnum $ mod12 $ fromEnum l - i
@@ -99,6 +85,43 @@ instance Magnitude Pitch Semitone where
   p `increase` i = p + fromIntegral i 
   p `decrease` i = p - fromIntegral i
 
+instance Synonym PitchLabel where
+  synonym a b = semitones a == semitones b 
+  
+instance Synonym Pitch where
+  synonym a b = semitones a == semitones b 
+
+--------------------------------------------------------------------------------
+-- Instances
+
+
+    
+instance Displacement Pitch Semitone where
+  p `displacement` p' = semitones p' - semitones p
+
+  
+      
+
+
+-- | PitchLabels do not generate continuous semitone values ...
+-- Displacement should choose the smaller absolute 
+-- distance of l to l' or l' to l 
+-- C -> B should generate -1 (not 11)
+
+    
+instance Displacement PitchLabel Semitone where
+  displacement l l' = 
+      let s  = semitones l
+          s' = if (l' < l) then (12 + semitones l') else semitones l'
+          d  = s' - s
+     in if (d < 7) then d else negate $ 12 - d  
+    
+  
+instance Ord PitchLabel where
+  compare l l' = fromEnum l `compare` fromEnum l'
+
+      
+      
 --------------------------------------------------------------------------------
 -- specific magnitude functions 
 
@@ -127,90 +150,49 @@ subOctave a = a `decrease` (12::Semitone)
 --------------------------------------------------------------------------------
 -- 
 
--- pitch ops -- adding intervals etc need a naming scheme
+-- pitch ops
+
+-- HNotate has a rather complicated spelling system
+-- If we have intervals is it easier? 
+    
+
 
 -- | Spell the 'PitchLabel' according to the 'PitchLetter', changing the 
 -- accidental as required, for instance:
 --
--- >   spell (PitchLabel F (Sharp 1)) G = (PitchLabel G (Flat 1))
+-- >   relabel (PitchLabel F Sharp) G = PitchLabel G Flat
 --
 -- If the pitch distance is greater than two semitones, return the original 
 -- spelling 
-spell :: PitchLabel -> PitchLetter -> PitchLabel
-spell lbl l' = if (abs dist > 2) then lbl else PitchLabel l' (alter dist)
-  where
-    (dr,d) = semitoneDisplacement lbl (PitchLabel l' Nat)
-    dist   = case dr of Upwards -> negate d; _ -> d 
 
-    alter :: Int -> Accidental
-    alter 0     = Nat
-    alter (-1)  = Flat
-    alter 1     = Sharp
-    alter  (-2) = DoubleFlat
-    alter 2     = DoubleSharp
-    alter z     = error $ "alter " ++ show z
+class Relabel a where relabel :: a -> PitchLetter -> a 
 
-
-spellWithSharps :: PitchLabel -> PitchLabel
-spellWithSharps lbl   = 
-  toEnum $ semitones lbl
-
-
-unaltered :: PitchLabel -> Bool  
-unaltered lbl = pch_lbl_accidental lbl == Nat
-
-octaveDisplacement oct            = (oct - 4) * 12  
+instance Relabel PitchLabel where
+  relabel lbl l = if (abs dist > 2) then lbl else PitchLabel l (alter dist)
+    where
+      dist  = displacement (PitchLabel l Nat) lbl  
   
-
-
-
-
--- | As per 'semitoneDisplacement' but just return the distance.
-semitoneDistance    :: Pitched a => a -> a -> Int
-semitoneDistance    = snd `dyap` semitoneDisplacement
-
--- | As per 'semitoneDisplacement' but just return the direction.   
-semitoneDirection   :: Pitched a => a -> a -> Direction
-semitoneDirection   = fst `dyap` semitoneDisplacement  
-
-
-
---------------------------------------------------------------------------------
--- Instances
-
-
-    
-instance Pitched Pitch where
-  p `semitoneDisplacement` p' = let d = semitones p' - semitones p
-                                in case signum d of
-                                    (-1) -> (Downwards, abs d)
-                                    _    -> (Upwards, d)
-  
+      alter :: Int -> Accidental  
+      alter 0     = Nat
+      alter (-1)  = Flat
+      alter 1     = Sharp
+      alter  (-2) = DoubleFlat
+      alter 2     = DoubleSharp
+      alter _     = error $ "relabel - unreachable"
       
-{-
--- C-nat = 0 
-instance Semitones PitchLetter where
-  semitones l = fromEnum (PitchLabel l Nat)
+instance Relabel Pitch where
+  relabel (Pitch l a o) l' = 
+      let lbl   = PitchLabel l a
+          lbl'  = relabel lbl l'
+      -- must account for the octave 'wraparound' e.g. B#5 -> C6, or Cb6 -> B5     
+      in case compare (semitones lbl') (semitones lbl) of
+            EQ -> pitch lbl' o
+            LT -> pitch lbl' (o+1)
+            GT -> pitch lbl' (o-1)
+                        
 
-instance Semitones Accidental where
-  semitones Nat          = 0
-  semitones Sharp        = 1
-  semitones DoubleSharp  = 2
-  semitones Flat         = (-1)
-  semitones DoubleFlat   = (-2)
 
-instance Semitones PitchLabel where
-  semitones (PitchLabel l a) = semitones l + semitones a
-  
--}
 
--- | The names generated by toEnum favour sharps, pitches may need re-spelling.     
-instance Pitched PitchLabel where
-  semitoneDisplacement l l' =
-    let d = semitones l - semitones l'
-    in if (d > 6) then (Downwards, 12 - d) else (Upwards, abs d)
-
-      
 
 --------------------------------------------------------------------------------
 -- Num instances

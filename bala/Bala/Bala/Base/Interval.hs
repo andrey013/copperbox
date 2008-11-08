@@ -49,11 +49,13 @@ halfSteps = _half_steps
 
   
 
-
-
 instance Magnitude Pitch Interval where
-  increase p = (p `increase`) . halfSteps
-  decrease = error $ "Magnitude Pitch Interval - decrease"
+  p@(Pitch l _ _) `increase` (Interval t sc) = 
+      let l' = l `increase` (t-1) in  (p `increase` sc) `relabel` l'
+      
+  p@(Pitch l _ _) `decrease` (Interval t sc) =
+      let l' = l `decrease` (t-1) in  (p `decrease` sc) `relabel` l'
+  
 
 buildIntervalPattern :: Intervals -> IntervalPattern
 buildIntervalPattern f = IntervalPattern $ f []

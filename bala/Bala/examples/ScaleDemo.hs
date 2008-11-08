@@ -8,15 +8,20 @@
 
 module ScaleDemo where
 
-import Bala.Base hiding (a_major)
-import Bala.Base.AffiDecoInstances
+import Bala.Base
 
 import HNotate
 
 import Data.List
 
+demo :: Int
+demo = displacement (PitchLabel A Sharp) (PitchLabel B Nat)
+
 a_major :: Scale
 a_major = makeScale a4 major_interval_pattern
+
+a_flat_major :: Scale 
+a_flat_major = makeScale aes4 major_interval_pattern
 
 data MetricalEvent a = N a Duration | R Duration
   deriving (Eq,Show)
@@ -43,14 +48,15 @@ pitchEventSystem name = system1 name . foldl' fn root where
     fn evts (N p d) = evts |# note p d
     fn evts (R d)   = evts |# rest d
 
-outputScale :: String -> Scale -> IO ()
-outputScale name sc = 
-    outputMidi id (getEventList name) scale_sys  "./out/scale.mid"
+outputScale :: String -> Scale -> FilePath -> IO ()
+outputScale name sc path = 
+    outputMidi id (getEventList name) scale_sys path
   where 
     scale_sys = pitchEventSystem name (playScale sc)
   
 main :: IO ()
-main = outputScale "a_major" a_major 
-
+main = do 
+    outputScale "a_major" a_major "./out/a_major_scale.mid"
+    outputScale "a_flat_major" a_flat_major "./out/a_flat_major_scale.mid"
 
     

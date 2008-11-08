@@ -73,7 +73,7 @@ makeDescendingScale p (IntervalPattern xs) = Scale p $ scanl decrease p xs
 --------------------------------------------------------------------------------
 -- Named elements
 
-
+{-
 
 c_major             :: Key
 c_major             = Key c_nat MajorKey
@@ -171,4 +171,4 @@ a_flat_minor        :: Key
 a_flat_minor        = Key a_flat MinorKey
 
 
-                   
+-}                   
