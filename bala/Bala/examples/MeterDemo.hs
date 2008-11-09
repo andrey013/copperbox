@@ -29,12 +29,12 @@ type BeatS = [Beat] -> [Beat]
 sb_tap :: BeatS
 sb_tap  = r16 . a8 . a16 . r16 . a8 . a16 
         . r16 . a8 . a16 . r16 . a16 . a8
-sb_foot = r4 . a8 . a8 . {- tie -} a4 . a8' . a16
+sb_foot = r4 . a8 . (tie . a8 .  a4) . a8' . a16
 
 samba_baiao = ([sb_tap $ [], sb_foot $ []], [a5,c4])
 
-samba_baiao_tap = ([sb_tap $ []], [a5])
-samba_baiao_foot = ([sb_foot $ []], [c4])
+tie :: BeatS
+tie (N () d : N () d' : xs) = N () (d+d') :xs
 
 metricalSystem :: String -> [[Beat]] -> [Pitch] -> System
 metricalSystem name bss ps = system1 name $ root |# xs
@@ -64,8 +64,4 @@ main = do
     outputMetricalPattarn "samba_baiao" samba_baiao "./out/samba_baiao.mid"
 
 
-argh = a4 . a4 . a4 . a4 
-     . a8 . a8 . a8 . a8 . a8 . a8 .a8 . a8
-     . a4 . a8 . a8 . a4 . a8 . a8
-
-argh_baiao = ([argh $ []], [a5])            
+         

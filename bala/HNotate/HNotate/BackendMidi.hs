@@ -38,14 +38,20 @@ midiOut :: FilePath -> [NoteList] -> NotateT IO ()
 midiOut path ess = do
     mss <- mapM midiMessages ess
     rm  <- asks midi_rendering
-    liftIO $ writeMidiFile path (render rm mss)
+    let ts = render rm mss
+    midi_ast <- mkmidi ts
+    liftIO $ writeMidiFile path midi_ast
   where
-    mkmidi trks = MidiFile ( controlTrack 500000 <| trks )
+    mkmidi trks = tempoTrack >>= \tt ->
+                  return $ MidiFile ( tt <| trks )
     
-    render Midi_Parallel            = mkmidi . parallelTracks  
-    render (Midi_Sequential delay)  = 
-        mkmidi . sequentialTracks (fromIntegral delay) 
+    render Midi_Parallel            = parallelTracks  
+    render (Midi_Sequential delay)  = sequentialTracks (fromIntegral delay) 
                   
+
+tempoTrack :: Monad m => NotateT m Track
+tempoTrack = (\t -> controlTrack ((fromIntegral t * 500000) `div` 60))
+    <$> asks tempo
 
 parallelTracks :: [Seq Message] -> Seq Track
 parallelTracks mss = foldr fn empty mss
