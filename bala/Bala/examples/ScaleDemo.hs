@@ -23,14 +23,7 @@ a_major = makeScale a4 major_interval_pattern
 a_flat_major :: Scale 
 a_flat_major = makeScale aes4 major_interval_pattern
 
-data MetricalEvent a = N a Duration | R Duration
-  deriving (Eq,Show)
 
-type Beat = MetricalEvent ()
-type PitchEvent = MetricalEvent Pitch
-
-beats :: Duration -> [Beat] 
-beats d = repeat (N () d)
 
 
 playScale :: Scale -> [PitchEvent]

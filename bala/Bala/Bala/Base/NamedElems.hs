@@ -26,14 +26,14 @@ h = half_step
 major_interval_pattern :: IntervalPattern
 major_interval_pattern = buildIntervalPattern major_intervals
 
-major_intervals :: Intervals
+major_intervals :: IntervalS
 major_intervals = w . w . h . w . w . w . h 
 
 
 dorian_interval_pattern :: IntervalPattern
 dorian_interval_pattern = buildIntervalPattern major_intervals
 
-dorian_intervals :: Intervals
+dorian_intervals :: IntervalS
 dorian_intervals = w . h . w . w . w . h . w 
 
 {-

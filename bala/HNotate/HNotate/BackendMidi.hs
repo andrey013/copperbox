@@ -25,10 +25,12 @@ import HNotate.OnsetQueue
 import HNotate.Pitch
 import HNotate.ProcessingTypes
 
-
+import Control.Applicative hiding (empty)
 import Control.Monad.Reader
 import qualified Data.Foldable as F
+import Data.List (sort)
 import Data.Sequence
+import qualified Data.Traversable as T
 import Data.Word
 
 
@@ -63,9 +65,7 @@ sequentialTracks delay mss =
   
          
 midiMessages :: NoteList -> NotateT IO (Seq Message)
-midiMessages evts = return fn `ap` asks bar_length
-  where 
-    fn bar_len = translateMidiGlyphs bar_len (simplifyNoteList evts)
+midiMessages evts = translateMidiGlyphs (simplifyNoteList evts)
         
     
 -- Simplified version of Tile & Glyph -- avoid nested graces
@@ -94,7 +94,7 @@ simplifyBlock acc (PolyBlock n bse) = acc >< fmap fn (szipl bse [1..])
   where fn (b,ch) = (n, simplifyBar ch b)
 
 szipl :: Seq a -> [b] -> Seq (a,b)
-szipl se xs = step empty (viewl se) []
+szipl se xs = step empty (viewl se) xs
   where
     step acc EmptyL     _       = acc
     step acc _          []      = acc
@@ -149,21 +149,28 @@ simplifyBar ch (Bar se) = simplify empty (viewl se) ktile
     simplifyGlyph (Mark _ _)            = Nothing
 
 
-translateMidiGlyphs :: Duration -> Seq (Int,Seq MidiTile) -> Seq Message
-translateMidiGlyphs bar_len = 
-    deltaTransform . orderMessages . unorderedMessages bar_len
+translateMidiGlyphs :: Monad m => Seq (Int,Seq MidiTile) -> NotateT m (Seq Message)
+translateMidiGlyphs = 
+    unorderedMessages >=> return . deltaTransform . orderMessages
 
-unorderedMessages :: Duration -> Seq (Int,Seq MidiTile) -> Seq Message
-unorderedMessages bar_len = F.foldl fn empty . onsetTransform bar_len
+unorderedMessages :: Monad m => 
+    Seq (Int,Seq MidiTile) -> NotateT m (Seq Message)
+unorderedMessages = (return . F.foldl fn empty) <=< onsetTransform
   where 
     fn acc (dt,evts) = acc >< barEvts dt evts
 
-    onsetTransform :: Duration -> Seq (Int,Seq MidiTile) 
-                      -> Seq (Word32,Seq MidiTile)
-    onsetTransform bar_len se = fmap fn se
-      where fn (bar_num,evts) = (w32_bar_len * fromIntegral bar_num, evts)
-            w32_bar_len       = duration bar_len
+    onsetTransform :: Monad m => 
+        Seq (Int,Seq MidiTile) -> NotateT m (Seq (Word32,Seq MidiTile))
+    onsetTransform se = T.mapM fn se
+      where fn (bar_num,evts) = scaleBarOnset bar_num >>= \dt -> 
+                                return (dt, evts)
 
+scaleBarOnset :: Monad m => Int -> NotateT m Word32
+scaleBarOnset bar_num = fn <$> asks bar_length  <*> asks anacrusis_displacement
+  where
+    fn b asis 
+        | asis == duration_zero = (duration b) * (fromIntegral bar_num - 1)
+        | otherwise             = (duration b) * (fromIntegral bar_num)
 
 -- messages ordered, but have global time stamp   
 orderMessages :: Seq Message -> Seq Message
@@ -174,7 +181,7 @@ orderMessages = foldlOnsetQueue fn empty . buildQueue mfst msnd
     
     fn acc (gt, [])     = acc
     fn acc (gt, [x])    = acc |> Message (gt,x)
-    fn acc (gt, xs)     = foldl (\a e -> a |> Message (gt,e)) acc xs
+    fn acc (gt, xs)     = foldl (\a e -> a |> Message (gt,e)) acc (sort xs)
  
 deltaTransform :: Seq Message -> Seq Message
 deltaTransform = snd . F.foldl fn (0,empty)

@@ -57,13 +57,15 @@ instance Magnitude Pitch Interval where
       let l' = l `decrease` (t-1) in  (p `decrease` sc) `relabel` l'
   
 
-buildIntervalPattern :: Intervals -> IntervalPattern
+buildIntervalPattern :: IntervalS -> IntervalPattern
 buildIntervalPattern f = IntervalPattern $ f []
 
-type Intervals = [Interval] -> [Interval]
+type IntervalS = [Interval] -> [Interval]
 
 
-
+whole_step :: IntervalS
 whole_step = (:) (Interval 2 2)  
+
+half_step :: IntervalS
 half_step  = (:) (Interval 2 1)
 

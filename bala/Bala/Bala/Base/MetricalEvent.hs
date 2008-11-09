@@ -1,8 +1,6 @@
-{-# LANGUAGE TypeSynonymInstances #-}
-
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.Duration
+-- Module      :  Bala.Base.MetricalEvent
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -10,18 +8,26 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Duration representation - pulls in the HNotate.Duration module
+-- Meter (currently somewhat subsumed by Duration)
 --
 --------------------------------------------------------------------------------
 
-module Bala.Base.Duration (
-  module HNotate.Duration,
+module Bala.Base.MetricalEvent where
 
-  ) where
+import Bala.Base.BaseExtra
+import Bala.Base.Duration 
+import Bala.Base.Pitch
 
-import HNotate.Duration
+data MetricalEvent a = N a Duration | R Duration
+  deriving (Eq,Show)
+
+type Beat = MetricalEvent ()
+type PitchEvent = MetricalEvent Pitch
+
+beats :: Duration -> [Beat] 
+beats d = repeat (N () d)
+  
 
 
 
-
- 
+              

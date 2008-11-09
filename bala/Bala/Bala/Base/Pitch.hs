@@ -12,7 +12,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Pitch represention
+-- Pitch represention - pulls in the HNotate.Pitch module
 --
 --------------------------------------------------------------------------------
 
@@ -126,19 +126,19 @@ instance Ord PitchLabel where
 -- specific magnitude functions 
 
 
--- | Add a semitone to a value that has Semitone Magnitude.
+-- | Add a semitone to a value that has /semitone magnitude/.
 addSemitone :: Magnitude a Semitone => a -> a
 addSemitone a = a `increase` (1::Semitone)
 
--- | Subtract a semitone from a value that has Semitone Magnitude.
+-- | Subtract a semitone from a value that has /semitone magnitude/.
 subSemitone :: Magnitude a Semitone => a -> a
 subSemitone a = a `decrease` (1::Semitone)
 
--- | Add an octave to a value that has Semitone Magnitude.
+-- | Add an octave to a value that has /semitone magnitude/.
 addOctave  :: Magnitude a Semitone => a -> a
 addOctave a = a `increase` (12::Semitone)
 
--- | Subtract an octave from a value that has Semitone Magnitude.
+-- | Subtract an octave from a value that has /semitone magnitude/.
 subOctave  :: Magnitude a Semitone => a -> a
 subOctave a = a `decrease` (12::Semitone)
 

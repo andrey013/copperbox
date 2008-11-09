@@ -19,6 +19,7 @@ module Bala.Base
   , module Bala.Base.Duration
   , module Bala.Base.Interval
   , module Bala.Base.Meter
+  , module Bala.Base.MetricalEvent
   , module Bala.Base.NamedElems
   , module Bala.Base.Pitch  
   , module Bala.Base.PitchClass
@@ -32,6 +33,7 @@ import Bala.Base.Chord
 import Bala.Base.Duration
 import Bala.Base.Interval
 import Bala.Base.Meter
+import Bala.Base.MetricalEvent
 import Bala.Base.NamedElems
 import Bala.Base.Pitch
 import Bala.Base.PitchClass
