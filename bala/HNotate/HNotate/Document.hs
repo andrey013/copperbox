@@ -13,7 +13,7 @@
 --------------------------------------------------------------------------------
 
 module HNotate.Document (
-  ODoc,
+  ODoc, ODocS,
   
   emptyDoc, isEmpty,
   text, char, string, fillString, int,
@@ -46,6 +46,8 @@ import Prelude hiding (null)
 
 newtype ODoc = ODoc { getODoc :: Seq Particle }
   deriving Show
+
+type ODocS = ODoc -> ODoc
   
 data Particle = Text Int String
               | Space           -- maybe rendered as space, maybe newline
@@ -323,7 +325,7 @@ unformatted :: ODoc -> String
 unformatted = quickOutput `flip` "\n"
 
 formatted :: Int -> Int -> ODoc -> String 
-formatted indent_level width  = (output indent_level width) `flip` "\n"  
+formatted left_col right_col  = (output left_col right_col) `flip` "\n"  
    
 
 type IndentStack = [Int]
@@ -368,6 +370,7 @@ output left_col right_col =
                             = (stk, NO_BREAK, 0,   f . newlineS 
                                                      . indentS (top stk))
  
+    -- must push (w+i) - curent width (w) and the indent level (i) 
     out (stk, _,        w, f) (IndentStart i)   
                             = let stk' = push (w+i) stk
                               in (stk', NO_BREAK, w+i, f . indentS i)

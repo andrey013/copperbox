@@ -21,8 +21,9 @@ import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.BackendMidi
 import HNotate.BuildNoteList
-import HNotate.CommonUtils -- (outputDoc, showDocS)
-import HNotate.Document (ODoc, formatted, output)
+import HNotate.CommonUtils
+import HNotate.Document ( ODoc, ODocS, emptyDoc, output, formatted, 
+                          ( <+> ) , ( <&\> ) )
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
@@ -98,13 +99,6 @@ getEventList1 name = findEventList name >>= maybe fk sk
     sk a = return a 
 
 
-
-
-
-    
-
-
-
 generalOutput :: ExprParser -> TextSourceParser -> NotateT IO ()
 generalOutput expr_parser src_parser  = do 
     infile    <- asks_config _template_file
@@ -152,23 +146,57 @@ plug (SourceFile water EndOfSource)     ds = do
             "recognized " ++ show i ++ " more plugs in the source" ++
             "file than the source parser."
 
+outputLilyPondDocu :: Int -> System -> DocuHoas -> FilePath -> IO ()
+outputLilyPondDocu dl sys docuh outpath   =
+    runNotateT outfun default_ly_env config           >>= \(a,msg) ->
+    either (reportFailureIO msg) (const $ putStrLn msg) a
+  where
+    config  = mkLyConfig dl sys "" outpath
+    outfun  = docuOutput docuh
+    
+    
+docuOutput :: DocuHoas -> NotateT IO ()
+docuOutput dhoas = do
+    out   <- asks_config _output_file
+    docf  <- evalDocuHoas dhoas
+    liftIO $ writeFile out (formatted 0 70 (docf emptyDoc))
 
 evalHoas :: Monad m => Hoas -> NotateT m [ODoc]
 evalHoas (Hoas exprs) = foldM eval [] exprs >>= return . reverse
                            
+-- Standard evaluation - used when plugging holes in template files 
+eval :: Monad m => [ODoc] -> HoasExpr () -> NotateT m [ODoc]
+eval docs (HLet update _ e)   = local update (eval docs e)
+eval docs (HDo out)           = outputNotes out >>= \d  -> return (d:docs)
+eval docs (HSDo out e)        = outputNotes out >>= \d  -> eval (d:docs) e
+eval docs (HFork e1 e2)       = eval docs e1    >>= \ds -> eval ds e2  
+eval docs (HText _ e)         = eval docs e -- should not occur in standard eval   
 
-eval :: Monad m => [ODoc] -> HoasExpr -> NotateT m [ODoc]
-eval docs (HLet update e)   = local update (eval docs e)
-eval docs (HDo out)         = outputNotes out >>= \d  -> return (d:docs)
-eval docs (HSDo out e)      = outputNotes out >>= \d  -> eval (d:docs) e
-eval docs (HFork e1 e2)     = eval docs e1    >>= \ds -> eval ds e2  
-    
+evalDocuHoas :: Monad m => DocuHoas -> NotateT m ODocS
+evalDocuHoas (Hoas exprs) = foldM docuEval id exprs
+
+-- /Document evaluation/ - used when creating ouput from ODoc combinators 
+docuEval :: Monad m => ODocS -> HoasExpr ODocS -> NotateT m ODocS
+docuEval f (HLet update d e)  = local update (docuEval (f . d) e)
+
+docuEval f (HDo out)          = outputNotes out >>= \d -> 
+                                return (f . (<&\> d))
+
+docuEval f (HSDo out e)       = outputNotes out >>= \d -> 
+                                docuEval (f . (<&\> d)) e
+
+docuEval f (HFork e1 e2)      = docuEval f e1 >>= \f' -> docuEval f' e2  
+
+docuEval f (HText d e )       = docuEval (f . d) e 
+
 
 outputNotes :: Monad m => OutputDirective -> NotateT m ODoc
 outputNotes (OutputDirective (Just OutputRelative) name) = 
     findEventList name >>= maybe (outputFailure name) outputRelativeNoteList 
 
-
+outputNotes (OutputDirective (Just OutputDefault) name) = 
+    outputNotes (OutputDirective Nothing name) 
+    
 outputNotes (OutputDirective Nothing name)  = 
     asks output_format >>= \fmt -> 
     case fmt of

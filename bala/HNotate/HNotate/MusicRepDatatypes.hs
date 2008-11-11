@@ -32,7 +32,11 @@ type MeterPattern = ([Int],Duration)
 data Key = Key PitchLabel Mode [PitchLabel]
   deriving (Eq,Show)  
 
-data Meter = TimeSig Int Int | CommonTime | CutTime
+data Meter = TimeSig Int Int 
+           -- | CommonTime is 4/4
+           | CommonTime 
+           -- | CutTime is 2/2
+           | CutTime
   deriving (Eq,Show)
   
 data Mode = Major | Minor | Lydian | Ionian | Mixolydian

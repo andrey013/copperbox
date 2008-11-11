@@ -15,6 +15,7 @@
 
 module HNotate.TemplateDatatypes where
 
+import HNotate.Document
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
@@ -140,23 +141,32 @@ type NoteListName = String
 data OutputDirective = OutputDirective (Maybe OutputScheme) NoteListName  
   deriving (Eq,Show)
   
-newtype Hoas = Hoas { getExprs :: [HoasExpr] }
+newtype ParaHoas a = Hoas { getExprs :: [HoasExpr a] }
 
 
-data HoasExpr = HLet (Env -> Env) HoasExpr
-              | HSDo OutputDirective HoasExpr
-              | HDo OutputDirective
-              | HFork HoasExpr HoasExpr
+data HoasExpr a = HLet (Env -> Env) a (HoasExpr a)
+                | HSDo OutputDirective (HoasExpr a)
+                | HDo OutputDirective
+                | HFork (HoasExpr a) (HoasExpr a)
+                | HText a (HoasExpr a)
               
+type Hoas       = ParaHoas ()
+type HoasExprU  = HoasExpr () 
+
+type DocuHoas   = ParaHoas (ODoc -> ODoc)
+type HoasExprD  = HoasExpr (ODoc -> ODoc)
+
 
 toHoas :: [Expr] -> Hoas
 toHoas xs = Hoas $ map convExpr xs
 
-convExpr :: Expr -> HoasExpr
-convExpr (Let b e)    = HLet (convBinding b) (convExpr e)
-convExpr (SDo o e)    = HSDo o (convExpr e)
-convExpr (Do o)       = HDo o
-convExpr (Fork e e')  = HFork (convExpr e) (convExpr e')
+-- nothing creates HText, it is only created in the DocuHoas interpretation 
+convExpr :: Expr -> HoasExpr ()
+convExpr (Let b e)    = HLet (convBinding b) () (convExpr e)
+convExpr (SDo o e)      = HSDo o (convExpr e)
+convExpr (Do o)         = HDo o
+convExpr (Fork e e')    = HFork (convExpr e) (convExpr e')
+
 
 convBinding :: Binding -> (Env -> Env)
 convBinding (LetCadenza b)        = set_unmetered b
