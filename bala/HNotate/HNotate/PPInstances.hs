@@ -311,9 +311,9 @@ instance PP Expr where
   pp (SDo out e)  = text "sdo"  <+> pp out <+> text "then" <+> pp e   
   pp (Do out)     = text "do"   <+> pp out <+> text "end"  
   pp (Fork e1 e2) = text "fork" <+> 
-                              nest 2 (text "<<" <+>  pp e1 
-                                                <&\> text "//" 
-                                                <+>  pp e2)
+                              indent 2 (text "<<" <+>  pp e1 
+                                                  <&\> text "//" 
+                                                  <+>  pp e2)
                              <&\> text ">>"
                                       
 instance Witness [Expr] where

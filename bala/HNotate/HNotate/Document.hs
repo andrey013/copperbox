@@ -29,7 +29,7 @@ module HNotate.Document (
   langle, rangle, angles, angles', dblangles, dblangles',
   lbanana, rbanana, bananas, bananas',
   llens, rlens, lenses, lenses',
-  indent, nest,   --- ?? 
+  indent,
   list, tupled,
   underline,
   command, command1, command2,
@@ -37,6 +37,7 @@ module HNotate.Document (
   output, formatted, quickOutput, unformatted 
   ) where
 
+import Control.Monad.State
 import qualified Data.Foldable as F
 import Data.List (intersperse)
 import Data.Sequence hiding (length)
@@ -48,7 +49,9 @@ newtype ODoc = ODoc { getODoc :: Seq Particle }
   
 data Particle = Text Int String
               | Space           -- maybe rendered as space, maybe newline
-              | LineBreak 
+              | LineBreak
+              | IndentStart Int
+              | IndentEnd 
   deriving Show
 
 spacejoin :: ODoc -> ODoc -> ODoc
@@ -89,6 +92,8 @@ fillString :: Int -> String -> ODoc
 fillString i s = let l = length s in
   if i > l then string $ s ++ replicate (i - l) ' '  else string s 
 
+spacing :: Int -> ODoc
+spacing i = text $ replicate i ' '
 
 infixr 6 <>,<+>
 (<>) :: ODoc -> ODoc -> ODoc
@@ -255,12 +260,12 @@ lenses'       :: ODoc -> ODoc
 lenses'       = encloseSpace llens rlens
 
 
--- can we do anything for indent and nest?
 indent :: Int -> ODoc -> ODoc
-indent i d = d
+indent i d = start <> d <> end where
+  start = ODoc $ singleton $ IndentStart i
+  end   = ODoc $ singleton $ IndentEnd
 
-nest :: Int -> ODoc -> ODoc
-nest i d = d
+
 
 list :: [ODoc] -> ODoc
 list = brackets . foldr fn emptyDoc
@@ -319,41 +324,82 @@ unformatted = quickOutput `flip` "\n"
 
 formatted :: Int -> Int -> ODoc -> String 
 formatted indent_level width  = (output indent_level width) `flip` "\n"  
+   
+
+type IndentStack = [Int]
+data LineCont    = BREAK | NO_BREAK
+type Width       = Int
+type OutputState = (IndentStack, LineCont, Width, ShowS)
+
+-- Note IndentStack should never be empty
+-- It is created with 1 element, and push & pop are created symmetrically 
+-- by the \indent\ function.
 
 output :: Int -> Int -> ODoc -> ShowS
-output indent_level width = 
-    first . F.foldl out (indent,False,0) . getODoc
-  where     
-    out (f,sp,j) (Text i s)
-          -- not a spacing break so we carry on on the same line 
-          -- regardless of whether it actually 'fits'.                       
-        | not sp           = (f . showString s, False, i+j) 
-          -- spacing break - so it can either be a ' ' if the 
-          -- line fits...           
-        | fits (j + i)     = (f . spaceS . showString s, False, i+j)
-          -- ...or a newline if it doesn't.           
-        | otherwise        = (f . nlS . indent . showString s, False, i) 
-
-          -- Space encountered - just change the state 
-          -- (don't add it to the output)           
-    out (f,_ ,j) (Space)      = (f, True, j+1)
+output left_col right_col = 
+    fourth . F.foldl' out state0 . getODoc
+  where
+    state0          = ([left_col], NO_BREAK, 0, indentS left_col)  
     
-          -- linebreak - add it to the doc and reset the state
-    out (f,_ ,j) (LineBreak)  = (f . nlS . indent, False, 0)
+    fits :: Width -> IndentStack -> Bool  
+    fits i (x:_)    = i <= right_col - x
+    fits i []       = i <= right_col - left_col -- should be unreachable
     
-    -- helpers
-    indent = showString (replicate indent_level ' ') 
-    fits i = i <= width - indent_level
+    out :: OutputState -> Particle -> OutputState
+    -- not a break, so we carry on on the same line regardless of 
+    -- whether it the line actually fits between the left and right columns
+    out (stk, NO_BREAK, w, f) (Text i s) 
+                            = (stk, NO_BREAK, w+i, f . showString s)
+
+    -- spacing break - print space if the line fits, 
+    -- otherwise go on a new line     
+    out (stk, BREAK,    w, f) (Text i s)
+        | fits (w+i) stk    = (stk, NO_BREAK, w+i, f . spaceS . showString s)
+        | otherwise         = (stk, NO_BREAK, i,   f . newlineS 
+                                                     . indentS (top stk)
+                                                     . showString s)
+
+    -- Space encountered - just change the state (don't add it to the output)           
+    out (stk, _,        w, f) Space      
+                            = (stk, BREAK,    w+1, f)
+    
+    -- linebreak - add it to the doc and reset the state
+    out (stk, _,        w, f) LineBreak  
+                            = (stk, NO_BREAK, 0,   f . newlineS 
+                                                     . indentS (top stk))
+ 
+    out (stk, _,        w, f) (IndentStart i)   
+                            = let stk' = push (w+i) stk
+                              in (stk', NO_BREAK, w+i, f . indentS i)
+                            
+    out (stk, _,        w, f) IndentEnd   
+                            = (pop stk, NO_BREAK, w, f)                       
+        
+-- output helpers
+
+push :: Int -> IndentStack -> IndentStack
+push i xs       = i:xs
+
+pop :: IndentStack -> IndentStack
+pop (x:xs)      = xs
+
+top :: IndentStack -> Int
+top (x:_)   = x
+top []      = 0
 
 
-spaceS, nlS :: ShowS
-spaceS  = showChar ' '
-nlS     = showChar '\n'
+indentS :: Int -> ShowS  
+indentS x   = showString (replicate x ' ')
 
-first :: (a,b,c) -> a
-first (a,_,_) = a
     
-    
+first :: (a,b,c,d) -> a
+first (a,_,_,_) = a
+
+fourth :: (a,b,c,d) -> d
+fourth (_,_,_,d) = d
+
+newlineS    = showChar '\n'
+spaceS      = showChar ' '
 
   
     
