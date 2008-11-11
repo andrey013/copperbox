@@ -33,6 +33,9 @@ module HNotate.Document (
   list, tupled,
   underline,
   command, command1, command2,
+  
+  lineS,
+  
   PP(..),
   output, formatted, quickOutput, unformatted 
   ) where
@@ -292,7 +295,13 @@ command1 s d = command s <+> d
 command2 :: String -> ODoc -> ODoc -> ODoc
 command2 s d1 d2 = command s <+> d1 <+> d2
 
-                 
+--------------------------------------------------------------------------------
+-- ODocS variants 
+
+lineS :: ODoc -> ODocS
+lineS d = (d <&\>)
+
+
 --------------------------------------------------------------------------------
 -- class 
 
@@ -358,7 +367,7 @@ output left_col right_col =
     out (stk, BREAK,    w, f) (Text i s)
         | fits (w+i) stk    = (stk, NO_BREAK, w+i, f . spaceS . showString s)
         | otherwise         = (stk, NO_BREAK, i,   f . newlineS 
-                                                     . indentS (top stk)
+                                                     . indentS (depth stk)
                                                      . showString s)
 
     -- Space encountered - just change the state (don't add it to the output)           
@@ -368,7 +377,7 @@ output left_col right_col =
     -- linebreak - add it to the doc and reset the state
     out (stk, _,        w, f) LineBreak  
                             = (stk, NO_BREAK, 0,   f . newlineS 
-                                                     . indentS (top stk))
+                                                     . indentS (depth stk))
  
     -- must push (w+i) - curent width (w) and the indent level (i) 
     out (stk, _,        w, f) (IndentStart i)   
@@ -386,14 +395,12 @@ push i xs       = i:xs
 pop :: IndentStack -> IndentStack
 pop (x:xs)      = xs
 
-top :: IndentStack -> Int
-top (x:_)   = x
-top []      = 0
+depth :: IndentStack -> Int
+depth xs = sum xs 
 
 
 indentS :: Int -> ShowS  
 indentS x   = showString (replicate x ' ')
-
     
 first :: (a,b,c,d) -> a
 first (a,_,_,_) = a

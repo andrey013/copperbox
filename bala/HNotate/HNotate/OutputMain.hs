@@ -154,7 +154,16 @@ outputLilyPondDocu dl sys docuh outpath   =
     config  = mkLyConfig dl sys "" outpath
     outfun  = docuOutput docuh
     
+
+outputAbcDocu :: Int -> System -> DocuHoas -> FilePath -> IO ()
+outputAbcDocu dl sys docuh outpath   =
+    runNotateT outfun default_abc_env config           >>= \(a,msg) ->
+    either (reportFailureIO msg) (const $ putStrLn msg) a
+  where
+    config  = mkAbcConfig dl sys "" outpath
+    outfun  = docuOutput docuh
     
+        
 docuOutput :: DocuHoas -> NotateT IO ()
 docuOutput dhoas = do
     out   <- asks_config _output_file
