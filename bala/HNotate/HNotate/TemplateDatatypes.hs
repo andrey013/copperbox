@@ -156,6 +156,8 @@ type HoasExprU  = HoasExpr ()
 type DocuHoas   = ParaHoas (ODoc -> ODoc)
 type HoasExprD  = HoasExpr (ODoc -> ODoc)
 
+type DocS       = HoasExprD -> HoasExprD
+
 
 toHoas :: [Expr] -> Hoas
 toHoas xs = Hoas $ map convExpr xs

@@ -18,6 +18,7 @@ module HNotate.BackendAbc (
   ) where
 
 import HNotate.CommonUtils
+import HNotate.DocAbc
 import HNotate.Document
 import HNotate.Duration hiding (duration)
 import HNotate.Env
@@ -111,40 +112,14 @@ glyph (Mark _ m)            = abcOutput m
 
 
 --------------------------------------------------------------------------------
--- pretty printers to 'ODoc'
+-- Pretty printers
+
+-- Ones that may be useful to /document view/ should be defined in DocAbc
 
 
 
 note :: Pitch -> Duration -> ODoc 
 note p d = pitch p <> duration d
-
-
-pitch :: Pitch -> ODoc
-pitch (Pitch l a o) 
-    | o > 4     = accidental a $ octave o $ (char . toLowerLChar) l
-    | otherwise = accidental a $ octave o $ (char . toUpperLChar) l
-  where     
-    accidental :: Accidental -> ODoc -> ODoc 
-    accidental Nat           = id    
-    accidental Sharp         = (char '^'  <>)
-    accidental Flat          = (char '_'  <>)
-    accidental DoubleSharp   = (text "^^" <>)
-    accidental DoubleFlat    = (text "__" <>)
-   
-    octave :: Int -> ODoc -> ODoc
-    octave i  | i > 5       = (<> text (replicate (i-5) '\'')) 
-              | i < 4       = (<> text (replicate (4-i) ','))
-              | otherwise   = id
-
-
-
-duration :: Duration -> ODoc
-duration d | d == no_duration = emptyDoc
-           | otherwise        = fn $ ratioElements $ convRational d
-  where
-    fn (n,1) = int n
-    fn (1,d) = char '/' <> int d
-    fn (n,d) = int n <> char '/' <> int d
 
 
 rest :: Duration -> ODoc
@@ -167,11 +142,8 @@ tie = char '-'
 comment :: String -> ODoc
 comment s = text $ '%':' ':s  
 
-
-
 barline :: ODoc
 barline = char '|'
-
 
 -- voc - voice overlay continuation
 voc :: ODoc

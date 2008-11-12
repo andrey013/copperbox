@@ -24,12 +24,12 @@ import HNotate.TemplateDatatypes
 
 
  
-relative :: Pitch -> HoasExprD -> HoasExprD
+relative :: Pitch -> DocS
 relative p expr = HLet update doc expr where
     update  = set_relative_pitch p 
-    doc     = \d -> command "relative" <+> pitch p <+> (bracesLines d)
+    doc d   = command "relative" <+> pitch (rescale p) <+> (bracesLines d)
   
-time :: Int -> Int -> HoasExprD -> HoasExprD
+time :: Int -> Int -> DocS
 time n d expr = HLet update doc expr where
     tsig    = TimeSig n d
     update  = set_current_meter tsig
@@ -37,23 +37,24 @@ time n d expr = HLet update doc expr where
 
 
   
-definition :: String -> HoasExprD -> HoasExprD
+definition :: String -> DocS
 definition s expr = HText doc expr where
-    doc     = \d -> text s <+> equals <> indent 1 d 
+    doc d   = text s <+> equals <> indent 1 d 
               
-key :: PitchLabel -> Mode -> HoasExprD -> HoasExprD
+key :: PitchLabel -> Mode -> DocS
 key l m expr = HLet update doc expr where
     update  = set_current_key (Key l m [])
     doc     = lineS $ command "key" <+> pitchLabel l <+> mode m
 
 
+-- output
 
-relativeOutput :: String -> HoasExprD
-relativeOutput name = HDo directive where
+outputRelative :: String -> HoasExprD
+outputRelative name = HDo directive where
     directive = OutputDirective (Just OutputRelative) name
 
-absoluteOutput :: String -> HoasExprD
-absoluteOutput name = HDo directive where
+outputAbsolute :: String -> HoasExprD
+outputAbsolute name = HDo directive where
     directive = OutputDirective (Just OutputDefault) name
 
 
@@ -66,12 +67,20 @@ meter (TimeSig n d) = int n <> char '/' <> int d
 meter CommonTime    = int 4 <> char '/' <> int 4
 meter CutTime       = int 2 <> char '/' <> int 2
 
+
+-- The octave value of a pitch needs to be rescaled /before/ pitch is called
+
 pitch :: Pitch -> ODoc
 pitch (Pitch l a o) = pitchLabel (PitchLabel l a) <> ove o
   where 
-    ove o | o == 3  = emptyDoc
-          | o <  3  = text $ replicate (3 - o) ','
-          | o >  3  = text $ replicate (o - 3) '\''
+    ove o | o > 0       = text $ replicate o       '\'' 
+          | o < 0       = text $ replicate (abs o) ','
+          | otherwise   = emptyDoc
+
+-- lilypond middle c is c' 
+-- HNotate middle c is c4
+
+rescale (Pitch l a o)   = Pitch l a (o-3)
 
 pitchLabel :: PitchLabel -> ODoc
 pitchLabel (PitchLabel l a) = char (toLowerLChar l) <> accidental a
@@ -82,7 +91,28 @@ pitchLabel (PitchLabel l a) = char (toLowerLChar l) <> accidental a
     accidental Flat           = text "es"
     accidental DoubleSharp    = text "isis"
     accidental DoubleFlat     = text "eses"
-     
+
+
+    
+duration :: Duration -> ODoc
+duration drn
+    | drn == no_duration  = emptyDoc
+    | otherwise           = let (n,d,dc) = pdElements $ printableDuration drn 
+                            in dots dc $ durn n d
+  where 
+    durn 4 1      = command "longa"  
+    durn 2 1      = command "breve" 
+    durn 1 i      = int i
+    -- TODO - ideally we shouldn't have 'error' errors here, we should be 
+    -- using throwError. But that means making a lot of pure code monadic 
+    -- ... is there another way to do it? 
+    durn n d      = error $ "durationD failed on - " ++ show n ++ "%" ++ show d
+    
+    dots :: Int -> ODoc -> ODoc
+    dots i | i > 0     = (<> text (replicate i '.'))
+           | otherwise = id
+           
+                
 mode :: Mode -> ODoc
 mode Major        = text "major" 
 mode Minor        = text "minor"

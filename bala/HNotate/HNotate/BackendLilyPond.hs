@@ -21,6 +21,7 @@ module HNotate.BackendLilyPond (
 
 
 import HNotate.CommonUtils
+import HNotate.DocLilyPond
 import HNotate.Document
 import HNotate.Duration hiding (duration)
 import HNotate.Env
@@ -140,47 +141,13 @@ barDoc = collapse . F.foldl fn (emptyDoc,emptyDoc)
 
 
 --------------------------------------------------------------------------------
--- pretty printers to 'ODoc'
+-- Pretty printers
+
+-- Ones that may be useful to /document view/ should be defined in DocLilyPond
 
 
 note :: Pitch -> Duration -> ODoc
 note p d = pitch p <> duration d
-
-pitch :: Pitch -> ODoc
-pitch (Pitch l a o) = octave o $ accidental a $ (char . toLowerLChar) l
-  where
-    accidental :: Accidental -> ODoc -> ODoc
-    accidental Nat            = id
-    accidental Sharp          = (<> text "is")
-    accidental Flat           = (<> text "es")
-    accidental DoubleSharp    = (<> text "isis")
-    accidental DoubleFlat     = (<> text "eses")
-     
-    octave :: Int -> ODoc -> ODoc
-    octave i | i > 0            = (<> text (replicate i '\''))
-             | i < 0            = (<> text (replicate i ','))
-             | otherwise        = id 
-    
-    
-duration :: Duration -> ODoc
-duration drn
-    | drn == no_duration  = emptyDoc
-    | otherwise           = let (n,d,dc) = pdElements $ printableDuration drn 
-                            in dots dc $ durn n d
-  where 
-    durn 4 1      = command "longa"  
-    durn 2 1      = command "breve" 
-    durn 1 i      = int i
-    -- TODO - we shouldn't have 'error' errors, we should be using throwError.
-    -- But that means making a lot of pure code monadic - is there another 
-    -- way to do it?
-    -- Could we have Duration transformed to a 'fail-free' type by this point?  
-    durn n d      = error $ "durationD failed on - " ++ show n ++ "%" ++ show d
-    
-    dots :: Int -> ODoc -> ODoc
-    dots i | i > 0     = (<> text (replicate i '.'))
-           | otherwise = id
-        
 
 rest :: Duration -> ODoc
 rest = (char 'r' <>) . duration
