@@ -71,17 +71,17 @@ class EncodePitch a where
 --------------------------------------------------------------------------------
 -- Magnitude instances    
 
-instance Magnitude PitchLetter Int where
+instance Increment PitchLetter Int where
   l `increase` i = toEnum $ mod `flip` (7::Int) $ fromEnum l + i
   l `decrease` i = toEnum $ mod `flip` (7::Int) $ fromEnum l - i
   
   
-instance Magnitude PitchLabel Semitone where
+instance Increment PitchLabel Semitone where
   l `increase` i = toEnum $ mod12 $ fromEnum l + i
   l `decrease` i = toEnum $ mod12 $ fromEnum l - i
   
   
-instance Magnitude Pitch Semitone where
+instance Increment Pitch Semitone where
   p `increase` i = p + fromIntegral i 
   p `decrease` i = p - fromIntegral i
 
@@ -127,19 +127,19 @@ instance Ord PitchLabel where
 
 
 -- | Add a semitone to a value that has /semitone magnitude/.
-addSemitone :: Magnitude a Semitone => a -> a
+addSemitone :: Increment a Semitone => a -> a
 addSemitone a = a `increase` (1::Semitone)
 
 -- | Subtract a semitone from a value that has /semitone magnitude/.
-subSemitone :: Magnitude a Semitone => a -> a
+subSemitone :: Increment a Semitone => a -> a
 subSemitone a = a `decrease` (1::Semitone)
 
 -- | Add an octave to a value that has /semitone magnitude/.
-addOctave  :: Magnitude a Semitone => a -> a
+addOctave  :: Increment a Semitone => a -> a
 addOctave a = a `increase` (12::Semitone)
 
 -- | Subtract an octave from a value that has /semitone magnitude/.
-subOctave  :: Magnitude a Semitone => a -> a
+subOctave  :: Increment a Semitone => a -> a
 subOctave a = a `decrease` (12::Semitone)
 
 

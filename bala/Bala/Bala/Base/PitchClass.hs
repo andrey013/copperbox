@@ -57,7 +57,7 @@ class PitchClass a where pc :: a -> PC
 instance PitchClass Pitch where
   pc p = pitchClass $ (12 * pch_octave p) + semitones p
 
-
+{-
   
 class Transpose a where transpose :: Int -> a -> a
 
@@ -66,4 +66,4 @@ instance Transpose PC where
 
 instance Transpose [PC] where
   transpose i ps = map (transpose i) ps
-   
+-}   

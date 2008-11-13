@@ -49,7 +49,7 @@ halfSteps = _half_steps
 
   
 
-instance Magnitude Pitch Interval where
+instance Increment Pitch Interval where
   p@(Pitch l _ _) `increase` (Interval t sc) = 
       let l' = l `increase` (t-1) in  (p `increase` sc) `relabel` l'
       

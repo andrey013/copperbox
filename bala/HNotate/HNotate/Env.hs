@@ -81,7 +81,9 @@ import Data.Ratio
 
 
 
-  
+-- No Show instance use PP instead
+
+ 
 data Env = Env { 
     _output_format      :: OutputFormat,
     _current_key        :: Key,
@@ -98,7 +100,8 @@ data Env = Env {
     _midi_rendering     :: MidiRendering,
     _tempo              :: Int
   }
-  deriving Show
+
+
 
 data Config = Config { 
     _system         :: System,
@@ -116,11 +119,6 @@ data MidiRendering = Midi_Parallel | Midi_Sequential Delay
 instance DebugLevel Config where 
     debug_level  = _debug_level
 
-
-
-
-instance Show (String -> ODoc) where
-  show _ = "<<function>>"  
 
 
 --------------------------------------------------------------------------------

@@ -48,6 +48,8 @@ translateLyScore :: LyScore -> [Expr]
 translateLyScore (LyScore xs) = maybe [] single (transExprs xs)
   where single a = [a]
 
+-- The complicated bit...  turning a list into a tree.
+-- The equivalent funtion in ParseAbc has more detailed explanation.
 transExprs :: [LyExpr] -> Maybe Expr
 transExprs xs = tree xs id where 
   tree []                         k = k Nothing

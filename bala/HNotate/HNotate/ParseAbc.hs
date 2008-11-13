@@ -58,6 +58,10 @@ transAbcTune (AbcTune i xs) = maybe Nothing fn (transExprs xs)
   where
     fn expr = Just $ Let LetNone expr
 
+
+-- The complicated bit...  turning a list into a tree.
+-- Branches should end in output-directives, if they don't then they get pruned. 
+
 transExprs :: [AbcExpr] -> Maybe Expr
 transExprs xs = tree xs id where 
   tree []                         k = k Nothing

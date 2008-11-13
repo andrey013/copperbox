@@ -3,7 +3,7 @@
              
 --------------------------------------------------------------------------------
 -- |
--- Module      :  HNotateHaskore.HaskoreInterface
+-- Module      :  HaskoreHNotate
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -11,14 +11,14 @@
 -- Stability   :  highly unstable
 -- Portability :  Flexible instances, mptc.
 --
--- An instance of the Event class for Haskore's pitch and duration 
--- representation.
+-- An interface for Haskore to HNotate 
 --
 --------------------------------------------------------------------------------
 
+-- Note Matt Munz's thesis renders the Music datatype not a Performance 
 
 
-module HNotateHaskore where
+module HaskoreHNotate where
 
 import HNotate.Duration
 import HNotate.NoteListDatatypes
@@ -32,14 +32,6 @@ import Data.Monoid
 import Data.Ratio
 import Data.Sequence 
 
-
-infixl 7 #
-
-x # f = f x
-
-
-  
-  
 
 -- Rests have been lost in Haskore performance
 -- (Trills will be very difficult to recover...)
@@ -57,22 +49,22 @@ instEL (n,p) = snd $ foldl fn (0%1,root) $ groupChords p
   where
     fn (onset,tree) e   = let (e_onset, e_dur, f) = evt e in 
         if e_onset == onset
-          then (e_onset + e_dur, tree # f)
+          then (e_onset + e_dur, tree |# f)
           else let r = convert (e_onset - onset)
-               in (e_onset + e_dur, tree # rest r # f)
+               in (e_onset + e_dur, tree |# rest r |# f)
 
 groupChords :: [H.Event] -> [[H.Event]]
 groupChords = groupBy (\a b -> H.eTime a == H.eTime b)
 
     
-evt :: [H.Event] -> (H.Time, H.DurT, EventList -> EventList)
+evt :: [H.Event] -> (H.Time, H.DurT, Tile)
 evt [e]     = event1 e
 evt (e:es)  = let chord_notes       = sort $ map convert (e:es)
                   e_dur             = H.eDur e
                   e_onset           = H.eTime e
               in (e_onset, e_dur, chord chord_notes (convert e_dur))
           
-event1 :: H.Event -> (H.Time, H.DurT, EventList -> EventList)
+event1 :: H.Event -> (H.Time, H.DurT, Tile)
 event1 e@(H.Event {H.eTime=onset, H.eDur=drn}) = 
     (onset,drn, note (convert e) (convert drn))
 

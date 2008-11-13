@@ -18,7 +18,7 @@
 module Bala.Base.BaseExtra (
  
   -- * Type classes
-  Magnitude(..),
+  Increment(..),
   Displacement(..),
   Synonym(..),
   
@@ -54,12 +54,12 @@ import Numeric (showHex)
 
 
 --------------------------------------------------------------------------------
--- Magnitude 
+-- Increment 
 
 -- Change a value by a value of another type
 -- e.g. Pitches are changed by increasing the number of semitones
 
-class Magnitude a b where
+class Increment a b where
   increase :: a -> b -> a
   decrease :: a -> b -> a
 

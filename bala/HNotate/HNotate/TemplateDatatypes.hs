@@ -164,7 +164,7 @@ toHoas xs = Hoas $ map convExpr xs
 
 -- nothing creates HText, it is only created in the DocuHoas interpretation 
 convExpr :: Expr -> HoasExpr ()
-convExpr (Let b e)    = HLet (convBinding b) () (convExpr e)
+convExpr (Let b e)      = HLet (convBinding b) () (convExpr e)
 convExpr (SDo o e)      = HSDo o (convExpr e)
 convExpr (Do o)         = HDo o
 convExpr (Fork e e')    = HFork (convExpr e) (convExpr e')
