@@ -4,64 +4,76 @@
 
 module MeterDemo where
 
-import Bala.Base hiding (a4, duration)
-import HNotate hiding (a4, duration)
+import Bala.Base.Structural
+import Bala.Base.Printing
 
-import Data.List
+import Bala.Base hiding (a4, duration, Chord)
+
+
+import qualified HNotate as H
+
+import HNotate.Fits
+
+
+import qualified Data.Foldable as F
+import Data.List hiding (transpose, null)
 import Data.Ratio
-
-import HNotate.BackendMidi
 import Data.Sequence
-
-restS d = (:) (R d)  
-attackS d = (:) (N () d)
-
-a4    = attackS du4
-r4    = restS du4
-a8    = attackS du8
-r8    = restS du8
-a8'   = attackS (dotn 1 du8)
-a16   = attackS du16
-r16   = restS du16
-
-type BeatS = [Beat] -> [Beat]
-
-sb_tap :: BeatS
-sb_tap  = r16 . a8 . a16 . r16 . a8 . a16 
-        . r16 . a8 . a16 . r16 . a16 . a8
-sb_foot = r4 . a8 . (tie . a8 .  a4) . a8' . a16
-
-samba_baiao = ([sb_tap $ [], sb_foot $ []], [a5,c4])
-
-tie :: BeatS
-tie (N () d : N () d' : xs) = N () (d+d') :xs
-
-metricalSystem :: String -> [[Beat]] -> [Pitch] -> System
-metricalSystem name bss ps = system1 name $ root |# xs
-  where xs = foldr fn [] (zip bss ps)
-        fn (bs,p) xs = (metricalLine $ playmetrical bs p) : xs
-
-metricalLine :: [PitchEvent] -> EventList
-metricalLine = foldl' fn root where
-    fn evts (N p d) = evts |# note p d
-    fn evts (R d)   = evts |# rest d
-
-playmetrical :: [Beat] -> Pitch -> [PitchEvent]
-playmetrical bs p = step bs where
-  step []         = []
-  step (N _ d:bs) = N p d : step bs
-  step (R d:bs)   = R d   : step bs
+import Prelude hiding (null)
 
 
-outputMetricalPattarn :: String -> ([[Beat]], [Pitch]) -> FilePath -> IO ()
-outputMetricalPattarn name (bss,ps) path = 
-    outputMidi id (getEventList name) mp_sys path
-  where 
-    mp_sys = metricalSystem name bss ps
+stranspose_test = stranspose $ fromList (map fromList [[1,2,3],[1,2,3]]) 
+
+fit_test1 :: Fit Int
+fit_test1 = fits 10 0
+
+-- use 0 as an indicator of hyphenation
+mk_section :: [Int] -> Seq (Seq Int)
+mk_section xs = asectionHy (|>0) (fromList xs) 0 4
+
+section_test = let xs  = [1..12]
+                   sse = mk_section xs in
+  do { print sse; putStrLn ""; print (sumSections sse == sumMeasure xs) }
+      
+
+
+fit_test :: Fit (Seq Int)
+fit_test = fitsSeq (fromList [1..5]) 10
+
+fit_test' :: Fit [Int]
+fit_test' = fitsList [1..9] 16
+
+
+attack d = note c4 d
+
+a4    = attack du4
+r4    = rest du4
+a8    = attack du8
+r8    = rest du8
+a8'   = attack (dotn 1 du8)
+a16   = attack du16
+r16   = rest du16
+
+
+sb_tap :: Bar
+sb_tap  = bar +- r16 +- a8 +- a16 +- r16 +- a8  +- a16 
+              +- r16 +- a8 +- a16 +- r16 +- a16 +- a8
+
+sb_foot = bar +- r4  +- a8 +- a8  +- a4  +- a8' +- a16
+
+samba_baiao = notelist ->- (transpose (const a5) sb_tap) -\- sb_foot
+
+demo00 = ppNoteList $ samba_baiao
+demo01 = ppNoteList $ remeter (2%4) 0 samba_baiao
+
+samba_baiao_sys = mkSystem "samba_baiao" $ remeter (2%4) 0 samba_baiao
 
 main :: IO ()
 main = do 
-    outputMetricalPattarn "samba_baiao" samba_baiao "./out/samba_baiao.mid"
+    H.outputMidi (H.set_current_meter (H.mkMeter 2 4))
+                 (H.getEventList "samba_baiao") 
+                 samba_baiao_sys 
+                 "./out/samba_baiao.mid"
 
 
-         
+     

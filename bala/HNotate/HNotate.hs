@@ -26,14 +26,24 @@ module HNotate (
     system, systemL, system1,
     
     root, note, rest, spacer,    
-    chord, gracenotes, 
+    chord, ugraces, agraces, tie, 
     simpleEventlist, 
     
     AddtoEventList(..), ( /@ ), ( /@@ ), 
     
     -- Env
+    set_current_key,
+    set_current_meter,
+    set_meter_pattern,
+    set_unit_note_length,
+    set_relative_pitch,
+    set_anacrusis,
+    set_unmetered,
     set_sequential_midi_output,
-    set_parallel_midi_output
+    set_parallel_midi_output, 
+    set_tempo,
+    
+    mkMeter,
     
  ) where
 
@@ -42,9 +52,12 @@ import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
 import HNotate.Marks
+import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 import HNotate.Pitch
 import HNotate.OutputMain
 
-gracenotes :: [(Pitch,Duration)] -> Tile
-gracenotes = gracenotesU
+mkMeter :: Int -> Int -> Meter
+mkMeter n d = TimeSig n d
+
+  

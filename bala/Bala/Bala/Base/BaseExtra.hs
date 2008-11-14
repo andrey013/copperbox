@@ -41,14 +41,16 @@ module Bala.Base.BaseExtra (
   explode12, explode100, collapse12, collapse100,
   normalize12, normalize100, 
   
-
+  -- ** transpose for sequences
+  stranspose,
 
   ) where
 
 
 
-
+import qualified Data.Foldable as F
 import Data.List (unfoldr)
+import Data.Sequence
 import Numeric (showHex)
 
 
@@ -204,3 +206,35 @@ normalize100 :: (Integral a) => (a, a) -> (a, a)
 normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
 
   
+--------------------------------------------------------------------------------
+-- transpose for sequences
+
+
+
+stranspose               :: Seq (Seq a) -> Seq (Seq a)
+stranspose = step . viewl
+  where
+    step EmptyL         = empty
+    step (x :< sse)    = case viewl x of
+        EmptyL    -> stranspose sse
+        (e :< se) -> (e <| allheads sse) <| (stranspose $ se <| alltails sse)
+    
+    allheads = F.foldl' (\acc se -> acc |> head1 se)  empty
+    alltails = F.foldl' (\acc se -> acc |> tail1 se)  empty
+    
+    head1 se = case viewl se of EmptyL -> unmatchErr; 
+                                (a :< _) -> a
+    
+    tail1 se = case viewl se of EmptyL -> unmatchErr; 
+                                (_ :< sa) -> sa
+                                
+    unmatchErr = error "stranspose - sequences of unequal length"                            
+                                
+{-    
+transpose []             = []
+transpose ([]   : xss)   = transpose xss
+transpose ((x:xs) : xss) = 
+  (x : [h | (h:_) <- xss]) : transpose (xs : [ t | (_:t) <- xss])
+    
+-}    
+    

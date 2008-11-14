@@ -293,7 +293,6 @@ noAnno = Annotation { _ly_anno=id, _abc_anno=id }
 note                :: Pitch -> Duration -> Tile
 note p d            = Singleton (Note p d noAnno)
 
-
 rest                :: Duration -> Tile
 rest d              = Singleton (Rest Marked d noAnno)
 
@@ -303,11 +302,11 @@ spacer d            = Singleton (Rest Spacer d noAnno)
 chord               :: [Pitch] -> Duration -> Tile
 chord es d          = Chord (fromList es) d noAnno
     
-gracenotesU         :: [(Pitch,Duration)] -> Tile
-gracenotesU es      = GraceNotes (fromList es) UGrace noAnno
+ugraces             :: [(Pitch,Duration)] -> Tile
+ugraces es          = GraceNotes (fromList es) UGrace noAnno
 
-gracenotesA         :: [(Pitch,Duration)] -> Tile
-gracenotesA es      = GraceNotes (fromList es) AGrace noAnno
+agraces             :: [(Pitch,Duration)] -> Tile
+agraces es          = GraceNotes (fromList es) AGrace noAnno
 
 
 

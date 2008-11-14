@@ -18,16 +18,19 @@
 
 module Bala.Base.Structural where
 
+import Bala.Base.BaseExtra (stranspose)
 import Bala.Base.Duration
 import Bala.Base.Pitch
 
+import HNotate (root, System, system1, (|#) )
+import qualified HNotate as H
 import HNotate.Fits
 
 import Control.Applicative ( (<$>) )
 import Data.Foldable
 import Data.Sequence
 import Data.Traversable
-import Prelude hiding (length, null) 
+import Prelude hiding (length, null, foldl, foldr, maximum) 
 
 
 newtype NoteListF a = NoteList { getNoteList :: Seq (BarF a) }
@@ -119,6 +122,13 @@ infixr 7 -\-
 (-\-) (Bar sa)      (Overlay ssb) = Overlay (sa <|  ssb)
 (-\-) (Overlay ssa) (Overlay ssb) = Overlay (ssa >< ssb)
 
+
+overlay :: Seq (BarF elt) -> BarF elt
+overlay = step . viewl
+  where 
+    step EmptyL     = error $ "overlay: empty sequence"
+    step (a :< se)  = foldl (-\-) a se
+
 note :: Pitch -> Duration -> Elt
 note p d = DEvt (Note p) d 
 
@@ -128,12 +138,78 @@ rest d = DEvt Rest d
 chord :: [Pitch] -> Duration -> Elt
 chord ps d = Chord (fromList ps) d
 
+tie :: Elt 
+tie = Mark Tie
+
 notelist :: NoteListF a
 notelist = NoteList empty
 
 bar :: BarF a
 bar = Bar empty
 
+
+remeter :: Duration -> Duration -> NoteList -> NoteList
+remeter bar_len asis (NoteList se) = step empty asis (viewl se)
+  where
+    step acc _    EmptyL      = NoteList $ acc
+    step acc disp (e :< se)   = let sbars = remeterBar bar_len disp e
+                                    disp' = lastBarDisp (viewr sbars) 
+                                in step (acc >< sbars) disp' (viewl se)
+    
+    
+    lastBarDisp :: ViewR Bar -> Duration
+    lastBarDisp EmptyR                = duration_zero
+    lastBarDisp (_ :> (Bar se))       = sumMeasure se
+    lastBarDisp (_ :> (Overlay sse))  = maximum $ 
+          foldr (\a -> (:) (sumMeasure a)) [] se
+    
+    
+remeterBar :: Duration -> Duration -> Bar -> Seq Bar
+remeterBar bar_len asis (Bar se) = 
+  fmap Bar $ remeterSe bar_len asis se
+
+
+--- transpose....
+
+remeterBar bar_len asis (Overlay sse) = 
+    step empty $ viewl $ stranspose $ fmap (remeterSe bar_len asis) sse
+  where
+    step acc EmptyL      = acc
+    step acc (e :< sse)  = let ovs = overlay (fmap Bar e) 
+                           in step (acc |> ovs) (viewl sse) 
+  
+
+
+remeterSe :: Duration -> Duration -> Seq Elt -> Seq (Seq Elt)
+remeterSe bar_len asis se = asectionHy (|> tie) se asis bar_len 
+
+
+mkSystem :: String -> NoteList -> System
+mkSystem name (NoteList se) = system1 name $ step root (viewl se)
+  where
+    step acc EmptyL               = acc
+    step acc (Overlay ovs :< se)  = let xs = toList (fmap overlay1 ovs) 
+                                    in step (acc |# xs) (viewl se) -- doesn't work
+                                    -- |# <overlay> doesn't move the current 'position' rightwards
+                                    -- it just adds more and more polys at the same place
+    step acc (Bar evs :< se)      = step (foldl' addr acc evs) (viewl se)
+
+    overlay1 = foldl' addr root 
+    
+    addr t (DEvt evt d)        = t |# (mkEvent evt d)
+    addr t (Mark m)            = t |# (mkMark m)
+    addr t (Chord se d)        = t |# (H.chord (toList se) d)
+    addr t (AGrace se p d)     = t |# H.agraces (toList se) |# H.note p d
+    addr t (UGrace p d se)     = t |# H.note p d |# H.ugraces (toList se)
+    
+    
+    mkEvent (Note p)  d = H.note p d
+    mkEvent Rest      d = H.rest d
+    mkEvent Spacer    d = H.spacer d
+    
+    mkMark Tie          = H.tie 
+    
+    
 -- aka null
 class Null a where isNull :: a -> Bool
 
@@ -164,15 +240,5 @@ instance Fits (EltF p Duration) Duration where
   resizeTo (AGrace se p _)   d = AGrace se p d
   resizeTo (UGrace p _ se)   d = UGrace p d se
   
--- if we had resizeLeft & resizeRight fits would generalize to sequences...
 
-{-
-class Fits a b => Split a b where
-  split :: a -> b -> (a,a)
-
-
-instance Split (EltF p Duration) Duration where
-  split a d = let td = measure a    
--}
-
-           
+    
