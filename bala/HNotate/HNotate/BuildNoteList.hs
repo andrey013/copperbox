@@ -38,7 +38,7 @@ import Data.List (unfoldr)
 import Data.Maybe (fromMaybe)
 import Data.Monoid
 import Data.Sequence hiding (reverse)
-import Prelude hiding (null)
+import Prelude hiding (null, length)
 
 
 -- The distance from the 'start' of a sequence of music.
@@ -110,8 +110,7 @@ eventsToNoteList bar_len acis =
     
 
 untree :: Duration -> Duration -> Seq Evt -> [GlyphVoiceOverlay]    
-untree bar_len acis evts = 
-    worklist (reduceTreeStep bar_len) [initial_vo]
+untree bar_len acis evts = worklist (reduceTreeStep bar_len) [initial_vo]
   where
     bar_number  = if (acis == duration_zero) then 1 else 0 
     initial_vo  = EVO (MS bar_number acis) evts 
@@ -147,29 +146,11 @@ leftToBarStart (MS b _) = MS b duration_zero
 
 type RawBar = (Int,Seq Tile)
 
-
 partitionGVO :: Duration -> GlyphVoiceOverlay -> Seq RawBar
-partitionGVO bar_len (GVO ms se) = 
-    finalize $ F.foldl phi (empty,(ms,empty)) se
-  where 
-    finalize (srb, (ms,sg)) 
-        | null sg     = srb
-        | otherwise   = srb |> (bar_count ms, sg)
-          
-    phi (srb,(ms,sg)) e  = case fits e (bar_len - ib_duration ms) of
-        Fit a     -> let ms' = moveRightwards bar_len e ms in
-                     -- A 'fit' might be an exact fit.
-                     -- If so the move right will increased the bar_count... 
-                     if bar_count ms' /= bar_count ms 
-                     then (srb |> (bar_count ms, (sg |> e)), (ms',empty))
-                     else (srb, (ms', sg |> e))
-                     
-        Split l r -> (srb |> (bar_count ms, sg |> l |> tie),
-                        (moveRightwards bar_len r ms, singleton r) )
-        -- AllRight should be unreachable, because of the extraxt work on 
-        -- Fit for and exact fit, but just in case...                        
-        AllRight r -> (srb |> (bar_count ms, sg),
-                        (moveRightwards bar_len r ms, singleton r) )                
+partitionGVO bar_len (GVO (MS bn disp) se) = 
+    let asis = (bar_len - disp)   -- Metrical size doesn't directly give anacrusis
+        sse = asectionHy (|> tie) se asis bar_len 
+    in snd $ F.foldl (\(n,acc) e -> (n+1, acc |>(n,e))) (bn,empty) sse
 
 
 instance Fits Glyph Duration where
