@@ -262,17 +262,9 @@ tempo               :: Env -> Int
 tempo               = _tempo
 
 
--- LilyPond's \partial command gives the duration of the notes in 
--- the anacrusis (the zeroth bar).
--- For our purposes we need to know the 'start point' in the zeroth bar.  
+ 
 anacrusis_displacement :: Env -> Duration
-anacrusis_displacement env = anaDisp (_anacrusis env) (_bar_length env)
-  where
-    anaDisp :: Maybe Duration -> Duration -> Duration
-    anaDisp Nothing      _    = duration_zero
-    anaDisp (Just acsis) blen = blen - acsis
-
-
+anacrusis_displacement env = maybe duration_zero id (_anacrusis env)
 
 --------------------------------------------------------------------------------
 -- Update functions - not every field is directly updateable...

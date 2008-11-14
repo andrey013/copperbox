@@ -36,44 +36,48 @@ import Control.Monad.Reader
 import qualified Data.Foldable as F
 import Data.List (unfoldr)
 import Data.Maybe (fromMaybe)
-import Data.Monoid
 import Data.Sequence hiding (reverse)
 import Prelude hiding (null, length)
 
 
 -- The distance from the 'start' of a sequence of music.
--- Measured in bars and the duration within a bar 
-data MetricalSize = MS { 
-    bar_count :: Int,
-    ib_duration :: Duration     -- 'in-bar' duration 
-  }
+-- Measured in bars and the duration within a bar.
+-- If the 'zeroth' bar is an anacrusis, then the duration is 
+-- 'how much to fill' and not 'how much filled'. 
+data MetricalDisplacement = 
+      StdDisp { bar_count :: Int,
+                offset_ftl :: Duration -- offset 'from the left'
+              }
+    | AnaDisp { initial_anacrusis :: Duration }
   deriving (Eq,Show)
 
--- We only need 0 and + (a Monoid instance) and can get by 
--- without a Num instance
-instance Monoid MetricalSize where
-  mempty = MS 0 duration_zero
-  MS b d `mappend` MS b' d' = MS (b+b') (d+d')     
+displaceRightwards :: MetricalDisplacement -> Duration -> MetricalDisplacement
+displaceRightwards (AnaDisp a)    d | d > a     = StdDisp 1 (abs $ a - d)
+                                    | otherwise = AnaDisp (a - d)  
+displaceRightwards (StdDisp n l)  d = StdDisp n (l + d)
+
   
--- After addition the 'in-bar' duration may actually be bigger than a bar!
+-- After addition the offset_from_left may actually be bigger than a bar!
 -- This is an unfortunate problem of not having context for the addition
--- (e.g. getting the bar_length form a reader monad)     
-msnormalize :: Duration -> MetricalSize -> MetricalSize
-msnormalize bar_len (MS b d) 
-    | d < bar_len   = MS b d
+-- (e.g. getting the bar_length form a reader monad)  
+-- Note (AnaDisp d) is effectively a negative number, so it stays the same   
+mdispNormalize :: Duration -> MetricalDisplacement -> MetricalDisplacement
+mdispNormalize bar_len (AnaDisp d) =   (AnaDisp d) 
+mdispNormalize bar_len (StdDisp b d) 
+    | d < bar_len   = StdDisp b d
     | otherwise     = let (c,v) = d `divModR` bar_len 
-                      in MS (b + fromIntegral c) v
+                      in StdDisp (b + fromIntegral c) v
                                  
 
   
 data EvtVoiceOverlay = EVO { 
-    evo_displacement  :: MetricalSize,
+    evo_displacement  :: MetricalDisplacement,
     evo_events        :: Seq Evt
   }
   deriving (Show)   
   
 data GlyphVoiceOverlay = GVO { 
-    gvo_displacement  :: MetricalSize,
+    gvo_displacement  :: MetricalDisplacement,
     gvo_tiles         :: Seq Tile
   }
   deriving (Show) 
@@ -86,8 +90,8 @@ toNoteList evts =
     asks unmetered >>= \unm -> 
     if unm then eventsToNoteListUnmetered evts
            else asks bar_length               >>= \ml -> 
-                asks anacrusis_displacement   >>= \acis ->
-                eventsToNoteList ml acis evts
+                asks anacrusis_displacement   >>= \asis ->
+                eventsToNoteList ml asis evts
 
 eventsToNoteListUnmetered :: Monad m => EventList -> NotateT m NoteList
 eventsToNoteListUnmetered = eventsToNoteList max_bar_len duration_zero
@@ -110,10 +114,10 @@ eventsToNoteList bar_len acis =
     
 
 untree :: Duration -> Duration -> Seq Evt -> [GlyphVoiceOverlay]    
-untree bar_len acis evts = worklist (reduceTreeStep bar_len) [initial_vo]
+untree bar_len asis evts = worklist (reduceTreeStep bar_len) [initial_vo]
   where
-    bar_number  = if (acis == duration_zero) then 1 else 0 
-    initial_vo  = EVO (MS bar_number acis) evts 
+    mdisp  = if asis == duration_zero then StdDisp 1 0 else AnaDisp asis
+    initial_vo  = EVO mdisp evts 
     
     
 
@@ -122,37 +126,32 @@ reduceTreeStep :: Duration -> EvtVoiceOverlay
 reduceTreeStep bar_len (EVO ms se) = mkAnswer $ F.foldl fn (ms,empty,[]) se
   where
     -- Build the final aswer with the initial MS! 
-    mkAnswer (_,se,polys) = ((GVO ms se),polys)  
+    mkAnswer (_,se,polys)       = ((GVO ms se),polys)  
     
-    fn (ms,se,polys) (Poly ys) = (ms,se,polys ++ map mkEVO ys)
-        where
-          -- Any poly voices we find we want them to start at a 'bar start'
-          mkEVO (EventList se)  = if ib_duration ms == duration_zero
-                                  then EVO ms se
-                                  else EVO (leftToBarStart ms) (lspacer <| se)
-          lspacer               = Evt $ spacer (ib_duration ms)
-
+    fn (ms,se,polys) (Poly ys)  = let ys' = map (EVO ms . getEventList) ys
+                                  in (ms,se,polys ++ ys')
     
-    fn (ms,se,polys) (Evt e)   = (moveRightwards bar_len e ms, se |> e, polys)
+    fn (ms,se,polys) (Evt e)    = (moveRightwards bar_len e ms, se |> e, polys)
 
 
-moveRightwards :: Duration -> Tile -> MetricalSize -> MetricalSize
+moveRightwards :: Duration -> Tile -> MetricalDisplacement -> MetricalDisplacement
 moveRightwards bar_len tile ms = 
-    msnormalize bar_len $ ms `mappend` (tileSize bar_len tile)
+    mdispNormalize bar_len $ ms `displaceRightwards` (rhythmicValue tile)
                  
-leftToBarStart :: MetricalSize -> MetricalSize 
-leftToBarStart (MS b _) = MS b duration_zero
-
 
 type RawBar = (Int,Seq Tile)
 
 partitionGVO :: Duration -> GlyphVoiceOverlay -> Seq RawBar
-partitionGVO bar_len (GVO (MS bn disp) se) = 
-    let asis = (bar_len - disp)   -- Metrical size doesn't directly give anacrusis
-        sse = asectionHy (|> tie) se asis bar_len 
+partitionGVO bar_len (GVO (StdDisp bn disp) se) = 
+    let spacepre se = if disp /= duration_zero then (spacer disp) <| se else se 
+        sse = asectionHy (|> tie) (spacepre se) 0 bar_len 
     in snd $ F.foldl (\(n,acc) e -> (n+1, acc |>(n,e))) (bn,empty) sse
 
 
+partitionGVO bar_len (GVO (AnaDisp asis) se) = 
+    let sse = asectionHy (|> tie) se asis bar_len 
+    in snd $ F.foldl (\(n,acc) e -> (n+1, acc |>(n,e))) (0,empty) sse
+    
 instance Fits Glyph Duration where
   measure (Note _ d _)            = d
   measure (Rest _ d _)            = d
@@ -172,14 +171,7 @@ instance Fits Tile Duration where
   resizeTo (Singleton e)        d = Singleton (resizeTo e d)                                                
   resizeTo (Chord se _ a)       d = Chord se d a  
   resizeTo (GraceNotes se m a)  d = GraceNotes se m a
-
-
-
-tileSize :: Duration -> Tile -> MetricalSize
-tileSize bar_len gly = 
-    let d = rhythmicValue gly; (bn,rest) = d `divModR` bar_len 
-    in MS (fromIntegral bn) rest
-    
+   
      
                       
                       
@@ -212,10 +204,12 @@ ppListGlyphVoiceOverlay :: [GlyphVoiceOverlay] -> ODoc
 ppListGlyphVoiceOverlay = vsep . map ppGlyphVoiceOverlay
 
 ppGlyphVoiceOverlay :: GlyphVoiceOverlay -> ODoc
-ppGlyphVoiceOverlay (GVO ms se) = 
-  text "bar" <+> int (bar_count ms) <> colon 
-             <+> ppDuration (ib_duration ms) <+> finger se 
+ppGlyphVoiceOverlay (GVO (StdDisp n d) se) = 
+  text "bar" <+> int n <> colon <+> ppDuration d <+> finger se 
 
+ppGlyphVoiceOverlay (GVO (AnaDisp d) se) = 
+  text "bar" <+> int 0 <> colon <+> ppDuration d <+> finger se 
+  
 
 ppListSeqRawBar :: [Seq RawBar] -> ODoc
 ppListSeqRawBar = vsep . map (genFinger ppRawBar)

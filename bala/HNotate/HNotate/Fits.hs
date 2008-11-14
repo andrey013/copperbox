@@ -126,13 +126,13 @@ asection = asectionHy id
 -- can add a tie when we have broken a note that spans two bars.
 
 asectionHy :: Fits a b => (Seq a -> Seq a) -> Seq a -> b -> b -> Seq (Seq a)
-asectionHy hyphenate se a n 
+asectionHy hyphenate se asis n 
     | n <= 0      = error $ "sectioning - the divider must be >0"
     | otherwise   = let (ana_section, rest) = firstStep se
                     in step ana_section rest               
   where
     -- firstStep :: Fits a b => Seq a -> (Seq (Seq a), Seq a)
-    firstStep se = case fitsSeqHy hyphenate se a of
+    firstStep se = case fitsSeqHy hyphenate se asis of
                     Fit a       -> (singleton a, empty)
                     Split a b   -> (singleton a, b)
                     AllRight b  -> (empty,       b) 
