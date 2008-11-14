@@ -23,6 +23,7 @@ import HNotate.CommonUtils
 import HNotate.Document
 import HNotate.Duration
 import HNotate.Env
+import HNotate.Fits
 import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
@@ -165,6 +166,10 @@ partitionGVO bar_len (GVO ms se) =
                      
         Split l r -> (srb |> (bar_count ms, sg |> l |> tie),
                         (moveRightwards bar_len r ms, singleton r) )
+        -- AllRight should be unreachable, because of the extraxt work on 
+        -- Fit for and exact fit, but just in case...                        
+        AllRight r -> (srb |> (bar_count ms, sg),
+                        (moveRightwards bar_len r ms, singleton r) )                
 
 
 instance Fits Glyph Duration where

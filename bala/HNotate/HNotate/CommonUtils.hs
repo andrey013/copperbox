@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -22,72 +20,11 @@ module HNotate.CommonUtils where
 
 import qualified Data.Foldable as F
 import Data.List (unfoldr)
-import Data.Monoid
 import Data.Ratio
 import Data.Sequence hiding (empty, length, reverse)
 import qualified Data.Sequence as S
 import Prelude hiding (null)
 import System.IO
-
-
---------------------------------------------------------------------------------
--- 'Fitting' 
-
-data Fit a = Fit a | Split a a 
-  deriving Show
-
-class (Ord b, Num b) => Fits a b | a -> b where
-  measure   :: a -> b
-  resizeTo  :: a -> b -> a
-
-instance Fits Int Int where 
-  measure = id
-  resizeTo _ b = b 
-
-total :: (Fits a b) => Fit a -> b  
-total (Fit a)     = measure a
-total (Split a b) = measure a + measure b
-
-fits :: Fits a b => a -> b -> Fit a
-fits a i  | measure a <= i = Fit a
-          | otherwise      = Split (resizeTo a i) (resizeTo a (measure a - i)) 
-
-sumMeasure :: (Fits a b, F.Foldable c) => c a -> b
-sumMeasure = F.foldr (onl (+) measure) 0 
-
-fitsSeq :: Fits a b => Seq a -> b -> Fit (Seq a)
-fitsSeq = fitsGen (|>) null 
-
-
--- 'Fits' for lists is a bit convoluted - if fitsGen used a right fold 
--- fitsList wouldn't need the reverses, but we would have to do sumMeasure 
--- first in fitsGen and then a countdown.
--- As HNotate uses Seq for must collections, I've made the code simplest 
--- for the common case.  
-   
-fitsList :: Fits a b => [a] -> b -> Fit [a]
-fitsList xs n = case fitsGen (flip (:)) isEmpty xs n of
-    Fit xs -> Fit (reverse xs)
-    Split xs ys -> Split (reverse xs) (reverse ys)  
-  where
-    -- null has been hidden...
-    isEmpty [] = True
-    isEmpty xs = False  
-  
-
-fitsGen :: (Fits a b, F.Foldable c, Monoid (c a)) => 
-    (c a -> a -> c a) -> (c a -> Bool) -> c a -> b -> Fit (c a)
-fitsGen add predEmpty sa i = mkSplit $ F.foldl' fn (0,mempty,mempty) sa
-  where 
-    mkSplit (_,l,r) = if predEmpty r then Fit l else Split l r   -- 
-      
-    fn (n,l,r) e 
-        | n >= i     = (n,l,r `add` e)  -- don't care about adding measure e to n  
-        | otherwise  = let ef = fits e (i - n) in 
-                       case ef of 
-                         Fit a -> (n + measure e, l `add` a, r)
-                         Split a b -> (n + measure e, l `add` a, r `add` b) 
-                                  
 
           
 --------------------------------------------------------------------------------

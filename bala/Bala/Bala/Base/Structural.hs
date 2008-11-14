@@ -21,7 +21,7 @@ module Bala.Base.Structural where
 import Bala.Base.Duration
 import Bala.Base.Pitch
 
-import HNotate.CommonUtils ( Fit (..), Fits(..) )
+import HNotate.Fits
 
 import Control.Applicative ( (<$>) )
 import Data.Foldable
