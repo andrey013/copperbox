@@ -144,7 +144,7 @@ newtype EventListF evt = EventList { getEventList :: Seq evt }
 type EventList = EventListF Evt  
 
 
-
+-- Change the type, or how its used?
 data Evt = Evt Tile
          | Poly [EventListF Evt]         
          
@@ -331,12 +331,20 @@ instance AddtoEventList Tile where
   (|#) evts t     | emptyTile t = evts
                   | otherwise   = EventList $ getEventList evts |> (Evt t)  
 
-
+{-
 instance AddtoEventList [EventList] where 
   (|#) evts []  = evts
   (|#) evts [x] = EventList $ getEventList evts >< getEventList x
   (|#) evts es  = EventList $ getEventList evts |> (Poly es)
+-}
 
+instance AddtoEventList [EventList] where 
+  (|#) evts []        = evts
+  (|#) evts (se:sse)  = EventList $ (getEventList evts `addps` sse) >< getEventList se
+      where
+        addps se []   = se
+        addps se sse  = se |> Poly sse 
+        
 
 -- forgetful annotation 
 

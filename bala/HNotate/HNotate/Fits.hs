@@ -20,7 +20,6 @@ module HNotate.Fits where
 -- Should be no deps on other HNotate modules
 
 import qualified Data.Foldable as F
-import Data.Monoid
 import Data.Sequence hiding (reverse)
 import Prelude hiding (null, length)
 
@@ -53,50 +52,21 @@ sumMeasure :: (Fits a b, F.Foldable c) => c a -> b
 sumMeasure = F.foldr (\e a -> measure e + a) 0 
 
 fitsSeq :: Fits a b => Seq a -> b -> Fit (Seq a)
-fitsSeq = fitsGenHy id (|>) null 
-
-fitsSeqHy :: Fits a b => (Seq a -> Seq a) -> Seq a -> b -> Fit (Seq a)
-fitsSeqHy hyphenate = fitsGenHy hyphenate (|>) null 
+fitsSeq = fitsSeqHy id 
 
 
--- 'Fits' for lists is a bit convoluted - if fitsGen used a right fold 
--- fitsList wouldn't need the reverses, but we would have to do sumMeasure 
--- first in fitsGen and then a countdown.
--- As HNotate uses Seq for must collections, I've made the code simplest 
--- for the common case.  
 
-fitsList :: Fits a b => [a] -> b -> Fit [a]
-fitsList = fitsListHy id
-
-
--- hyphenate inside fitsGenHy won't work if we reverse the lists afterwards,
--- so we call (fitsGenHy id) and do the hyphenate ourselves  
-fitsListHy :: Fits a b => ([a] -> [a]) -> [a] -> b -> Fit [a]
-fitsListHy hyphenate xs n = case fitsGenHy id (flip (:)) isEmpty xs n of
-    Fit xs -> Fit (reverse xs)
-    Split xs ys -> Split (hyphenate (reverse xs)) (reverse ys)
-    AllRight ys -> AllRight (reverse ys) -- are you sure it needs reverse?  
-  where
-    -- null has been hidden...
-    isEmpty [] = True
-    isEmpty xs = False  
-  
-
-fitsGenHy :: (Fits a b, F.Foldable c, Monoid (c a)) => 
-    (c a -> c a) -> (c a -> a -> c a) -> (c a -> Bool) -> c a -> b -> Fit (c a)
-fitsGenHy hyphenate add predEmpty sa i 
+fitsSeqHy :: (Fits a b) => (Seq a -> Seq a) -> Seq a -> b -> Fit (Seq a)
+fitsSeqHy hyphenate sa i 
     | i <= 0      = AllRight sa
-    | otherwise   = mkSplit $ F.foldl' fn (0,mempty,mempty) sa
+    | otherwise   = step (empty,0) (viewl sa)
   where 
-    mkSplit (_,l,r) = if predEmpty r then Fit l else Split l r   -- 
-      
-    fn (n,l,r) e 
-        | n >= i     = (n,l,r `add` e)  -- don't care about adding measure e to n  
-        | otherwise  = let ef = fits e (i - n) in case ef of 
-             Fit a -> (n + measure e, l `add` a, r)
-             Split a b -> (n + measure e, (hyphenate $ l `add` a), r `add` b)
-             AllRight b -> (n, l, r `add` b)  
-
+    step (acc,n) EmptyL     = Fit acc
+    step (acc,n) (e :< se)  = case fits e (i - n) of
+            Fit a      -> step (acc |> a, n + measure e) (viewl se) 
+            Split a b  -> Split (hyphenate $ acc |> a) (b <| se)
+            AllRight b -> if null acc then AllRight (e <| se)
+                                      else Split acc (e <| se) 
 
                     
 sumSections :: Fits a b => Seq (Seq a) -> b

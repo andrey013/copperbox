@@ -189,9 +189,7 @@ mkSystem name (NoteList se) = system1 name $ step root (viewl se)
   where
     step acc EmptyL               = acc
     step acc (Overlay ovs :< se)  = let xs = toList (fmap overlay1 ovs) 
-                                    in step (acc |# xs) (viewl se) -- doesn't work
-                                    -- |# <overlay> doesn't move the current 'position' rightwards
-                                    -- it just adds more and more polys at the same place
+                                    in step (acc |# xs) (viewl se) 
     step acc (Bar evs :< se)      = step (foldl' addr acc evs) (viewl se)
 
     overlay1 = foldl' addr root 
