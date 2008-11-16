@@ -15,7 +15,7 @@ module Main where
 import ZMidi
 
 import System.Environment
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.HughesPJ
 
 
 main :: IO ()
@@ -28,7 +28,7 @@ main = do
 process :: FilePath -> IO ()
 process filename = do
   ans <- readMidi filename
-  putDoc (pretty ans)
+  printMidi ans
 
 
  

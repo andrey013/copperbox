@@ -14,18 +14,18 @@
 --------------------------------------------------------------------------------
 
 module ZMidi ( 
+    module ZMidi.Construction,
     module ZMidi.Datatypes,
     module ZMidi.GeneralMidiInstruments,
     module ZMidi.ReadFile,
-    -- module ZMidi.SyntaxElements,
     module ZMidi.TextualMidi,
     module ZMidi.WriteFile,
   ) where
-  
+
+import ZMidi.Construction  
 import ZMidi.Datatypes
 import ZMidi.GeneralMidiInstruments
 import ZMidi.ReadFile
--- import ZMidi.SyntaxElements
 import ZMidi.TextualMidi
 import ZMidi.WriteFile
 

@@ -12,7 +12,7 @@ import Bala.Base.Structural
 import Bala.Base hiding (a4, duration, Chord)
 
 
-import ZMidi
+import ZMidi hiding (note)
 
 import HNotate.Fits
 

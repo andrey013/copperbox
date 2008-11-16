@@ -1,4 +1,3 @@
-{-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 
@@ -22,7 +21,9 @@ module ZMidi.Construction (
   execConstruction,
   newTrack, nextChannel,
   
-  spacer, note, chord, programChange
+  spacer, note, chord, 
+  
+  programChange, sequenceName, majorKey, minorKey
   
  ) where
 
@@ -32,6 +33,8 @@ import ZMidi.Mergesort
 
 import Control.Monad.Identity
 import Control.Monad.State
+
+import Data.Int
 import Data.Sequence
 import Data.Word
 import Prelude hiding (length)
@@ -151,8 +154,11 @@ aati f = do
         trk <- lift $ gets _current_track
         lift $ modify (\s -> s { _current_track = trk |> e} )                
                
-
-  
+-- p(refix) a(t) z(ero)
+paz :: Monad m => Event -> OutputT m ()
+paz e = let msg = (0,e) in OutputT $ do
+    trk <- lift $ gets _current_track
+    lift $ modify (\s -> s { _current_track = msg <| trk } ) 
      
 noteon            :: Word8 -> Word8 -> Word8 -> Event
 noteon ch p v     = VoiceEvent $ NoteOn ch p v
@@ -188,3 +194,14 @@ chord ps t = do
   
 programChange :: Word8 -> OutputMidi ()
 programChange i = aati (\at ch -> (at, VoiceEvent $ ProgramChange ch i))
+
+
+sequenceName :: String -> OutputMidi ()
+sequenceName s = paz (MetaEvent $ TextEvent SEQUENCE_NAME s)
+
+majorKey :: Int8 -> OutputMidi ()
+majorKey i = paz (MetaEvent $ KeySignature i MAJOR)
+
+minorKey :: Int8 -> OutputMidi ()
+minorKey i = paz (MetaEvent $ KeySignature i MINOR)
+

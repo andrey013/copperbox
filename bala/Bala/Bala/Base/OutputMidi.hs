@@ -23,7 +23,6 @@ import Bala.Base.Pitch
 import Bala.Base.Structural hiding (note, chord)
 
 import ZMidi
-import ZMidi.Construction
 
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
