@@ -97,13 +97,18 @@ data Tile = Singleton { element         :: Glyph }
                   
           -- TODO tuplets (generalized to n-plets)        
   
-  
--- s is some 'state' - this was useful in the prototype 
--- but it might be redundant now. 
+-- Should Tie & beam start and end be special cases?
+-- ... | Tie | BeamStart | BeamEnd 
+data Mark = forall s . M (s -> MarkF s) s
+          
+
+-- s is some 'state' 
+-- This was useful in the prototype but it might be redundant now. 
 data MarkF s = MarkF { _ly_output   :: s -> ODoc,
                        _abc_output  :: s -> ODoc }
 
-data Mark = forall s . M (s -> MarkF s) s
+
+
            
 instance Show Annotation where
   showsPrec i anno = constrS "Annotation" (showString "<fun> <fun>")
@@ -331,12 +336,6 @@ instance AddtoEventList Tile where
   (|#) evts t     | emptyTile t = evts
                   | otherwise   = EventList $ getEventList evts |> (Evt t)  
 
-{-
-instance AddtoEventList [EventList] where 
-  (|#) evts []  = evts
-  (|#) evts [x] = EventList $ getEventList evts >< getEventList x
-  (|#) evts es  = EventList $ getEventList evts |> (Poly es)
--}
 
 instance AddtoEventList [EventList] where 
   (|#) evts []        = evts
@@ -412,6 +411,9 @@ beamEnd = Singleton $ Mark "beamEnd" (M fs ())
                          _abc_output = \() -> emptyDoc }) 
 
 
+isTie :: Glyph -> Bool
+isTie (Mark "tie" _)        = True
+isTie _                     = False 
     
 tie :: Tile
 tie = Singleton $ Mark "tie" (M fs ())

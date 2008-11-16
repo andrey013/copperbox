@@ -18,9 +18,9 @@
 
 
 module ZMidi.Construction (
-  Ticks, MidiPitch, OutputM,
+  Ticks, MidiPitch, OutputMidi,
   execConstruction,
-  newTrack, 
+  newTrack, nextChannel,
   
   spacer, note, chord, programChange
   
@@ -57,7 +57,7 @@ newtype OutputT m a = OutputT {
     getOutputT :: StateT OutputState (StateT MidiOutput m) a }
 
 
-type OutputM a = OutputT Identity a
+type OutputMidi a = OutputT Identity a
 
 
 instance Monad m => Functor (OutputT m) where
@@ -128,11 +128,7 @@ transformTrack = Track . suffixEOT . deltaTransform . mergesort compare
 -- 
 
 
--- Note changing resets the absolute time to 0 
-nextChannel :: Monad m => OutputT m ()
-nextChannel = do 
-    ch <- gets _channel
-    modify (\s -> s { _channel=ch+1, _abs_time =0 })
+
 
 
 updateTime :: Monad m => Ticks -> OutputT m ()     
@@ -168,21 +164,27 @@ noteoff ch p v    = VoiceEvent $ NoteOff ch p v
 --------------------------------------------------------------------------------
 -- user level functions
 
-
-spacer :: Ticks -> OutputM () 
+-- Note changing resets the absolute time to 0 
+nextChannel :: Monad m => OutputT m ()
+nextChannel = do 
+    ch <- gets _channel
+    modify (\s -> s { _channel=ch+1, _abs_time =0 })
+    
+    
+spacer :: Ticks -> OutputMidi () 
 spacer t = updateTime t       
 
-note :: MidiPitch -> Ticks -> OutputM () 
+note :: MidiPitch -> Ticks -> OutputMidi () 
 note p t = do
     aati (\at ch -> (at, noteon ch p 127))
     updateTime t 
     aati (\at ch -> (at, noteoff ch p 64))
 
-chord :: [MidiPitch] -> Ticks -> OutputM () 
+chord :: [MidiPitch] -> Ticks -> OutputMidi () 
 chord ps t = do
   mapM_ (\p -> aati (\at ch -> (at, noteon ch p 127))) ps
   updateTime t     
   mapM_ (\p -> aati (\at ch -> (at, noteoff ch p 64))) ps
   
-programChange :: Word8 -> OutputM ()
+programChange :: Word8 -> OutputMidi ()
 programChange i = aati (\at ch -> (at, VoiceEvent $ ProgramChange ch i))

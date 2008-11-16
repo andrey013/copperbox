@@ -36,30 +36,11 @@ import Prelude hiding (length, null, foldl, foldr, maximum)
 newtype NoteListF a = NoteList { getNoteList :: Seq (BarF a) }
   deriving (Show)
   
-instance Functor NoteListF where
-  fmap f (NoteList se)     = NoteList (fmap (fmap f) se)
-  
-instance Foldable NoteListF where
-  foldMap f (NoteList se)     = foldMap (foldMap f) se
 
-instance Traversable NoteListF where
-  traverse f (NoteList se)  = NoteList <$> traverse (traverse f) se
       
 data BarF a = Bar (Seq a) | Overlay (Seq (Seq a))   
   deriving (Show)
   
-instance Functor BarF where
-  fmap f (Bar se)       = Bar (fmap f se)
-  fmap f (Overlay sse)  = Overlay (fmap (fmap f) sse) 
-
-instance Foldable BarF where
-  foldMap f (Bar se)          = foldMap f se
-  foldMap f (Overlay sse)     = foldMap (foldMap f) sse
-
-instance Traversable BarF where
-  traverse f (Bar se)          = Bar <$> traverse f se
-  traverse f (Overlay sse)     = Overlay <$> traverse (traverse f) sse
-    
 
 data EltF p d = DEvt (Evt p) d      -- some 'event' that has a duration 
               | Mark Mark            -- a mark that has no duration
@@ -73,6 +54,42 @@ data Evt p = Note p | Rest | Spacer
    
 data Mark = Tie      -- | ... more ?       
   deriving (Eq,Show)
+
+-- no Functor, Foldable, Traversable for EltF
+type Elt = EltF Pitch Duration
+
+type Bar = BarF (EltF Pitch Duration)
+
+type NoteList = NoteListF (EltF Pitch Duration)
+
+
+--------------------------------------------------------------------------------
+-- 
+
+instance Functor NoteListF where
+  fmap f (NoteList se)     = NoteList (fmap (fmap f) se)
+  
+instance Foldable NoteListF where
+  foldMap f (NoteList se)     = foldMap (foldMap f) se
+
+instance Traversable NoteListF where
+  traverse f (NoteList se)  = NoteList <$> traverse (traverse f) se
+  
+instance Functor BarF where
+  fmap f (Bar se)       = Bar (fmap f se)
+  fmap f (Overlay sse)  = Overlay (fmap (fmap f) sse) 
+
+instance Foldable BarF where
+  foldMap f (Bar se)          = foldMap f se
+  foldMap f (Overlay sse)     = foldMap (foldMap f) sse
+
+instance Traversable BarF where
+  traverse f (Bar se)          = Bar <$> traverse f se
+  traverse f (Overlay sse)     = Overlay <$> traverse (traverse f) sse
+  
+  
+--------------------------------------------------------------------------------
+-- 
 
 
 class Transpose a where transpose :: (Pitch -> Pitch) -> a -> a
@@ -99,12 +116,7 @@ instance Transpose (Evt Pitch) where
 barcount :: NoteListF a -> Int
 barcount (NoteList se) = length se
   
--- no Functor, Foldable, Traversable for EltF
-type Elt = EltF Pitch Duration
 
-type Bar = BarF (EltF Pitch Duration)
-
-type NoteList = NoteListF (EltF Pitch Duration)
 
 infixl 6 ->-
 (->-) :: NoteListF elt -> BarF elt -> NoteListF elt
@@ -148,6 +160,17 @@ bar :: BarF a
 bar = Bar empty
 
 
+--------------------------------------------------------------------------------
+-- Metrical 'reshaping'
+
+-- It looks like remetering should only be done before the translating to
+-- to HNotate (or pretty printing to the console).
+-- TODO - Is this right? 
+-- If so should we have a phantom type layer that qualifies what operations
+-- can be done on what notelists?
+
+-- Note remeter can leave the last bar ragged is this a good idea?
+-- (ragged - the last bar might be short and not padded with a spacer) 
 remeter :: Duration -> Duration -> NoteList -> NoteList
 remeter bar_len asis (NoteList se) = step empty asis (viewl se)
   where
@@ -166,10 +189,8 @@ remeter bar_len asis (NoteList se) = step empty asis (viewl se)
     
 remeterBar :: Duration -> Duration -> Bar -> Seq Bar
 remeterBar bar_len asis (Bar se) = 
-  fmap Bar $ remeterSe bar_len asis se
+    fmap Bar $ remeterSe bar_len asis se
 
-
---- transpose....
 
 remeterBar bar_len asis (Overlay sse) = 
     step empty $ viewl $ stranspose $ fmap (remeterSe bar_len asis) sse

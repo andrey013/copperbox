@@ -1,16 +1,18 @@
 
 -- ghci ...
--- :set -i../../HNotate:../../Bala
+-- :set -i../../HNotate:../../Bala:../../ZMidi
 
 module MeterDemo where
 
-import Bala.Base.Structural
+import Bala.Base.OutputMidi
 import Bala.Base.Printing
+import Bala.Base.Structural
+
 
 import Bala.Base hiding (a4, duration, Chord)
 
 
-import qualified HNotate as H
+import ZMidi
 
 import HNotate.Fits
 
@@ -20,6 +22,7 @@ import Data.List hiding (transpose, null)
 import Data.Ratio
 import Data.Sequence
 import Prelude hiding (null)
+
 
 
 stranspose_test = stranspose $ fromList (map fromList [[1,2,3],[1,2,3]]) 
@@ -73,15 +76,19 @@ samba_baiao = notelist ->- (transpose (const a5) sb_tap) -\- sb_foot
 
 demo00 = ppNoteList $ samba_baiao
 demo01 = ppNoteList $ remeter (2%4) 0 samba_baiao
+demo02 = printOM $ sofar $ remeter (2%4) 0 samba_baiao
+  where sofar = buildOM . labelOverlays . labelBars
+  
+demo03 = noteListToLines (4%4) samba_baiao
+
+
+
 
 samba_baiao_sys = mkSystem "samba_baiao" $ remeter (2%4) 0 samba_baiao
 
 main :: IO ()
-main = do 
-    H.outputMidi (H.set_current_meter (H.mkMeter 2 4))
-                 (H.getEventList "samba_baiao") 
-                 samba_baiao_sys 
-                 "./out/samba_baiao.mid"
+main = writeMidi "./out/samba_baiao.mid" samba_midi
+  where
+    samba_midi = generateMidi (4%4) samba_baiao
 
-
-     
+    

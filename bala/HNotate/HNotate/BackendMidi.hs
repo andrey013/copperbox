@@ -27,11 +27,13 @@ import HNotate.ProcessingTypes
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Reader
+
 import qualified Data.Foldable as F
 import Data.List (sort)
 import Data.Sequence
 import qualified Data.Traversable as T
 import Data.Word
+
 
 
 midiOut :: FilePath -> [NoteList] -> NotateT IO ()
@@ -80,12 +82,16 @@ type Chan = Word8
 
 data MidiTile = MGlyph Chan MidiGlyph
               | MuGrace Chan MidiGlyph [GraceNote]
-              | MaGrace Chan [GraceNote] MidiGlyph               
+              | MaGrace Chan [GraceNote] MidiGlyph
   deriving (Eq,Show)
+
+-- We have problems with ties. Joining notes split across overlays 
+-- will actually be quite difficult with the current implementation...  
+--                 | MTie 
 
 data MidiGlyph = MNote Pitch Duration
                | MRest Duration
-               | MChord [Pitch] Duration               
+               | MChord [Pitch] Duration              
   deriving (Eq,Show)
 
 
@@ -152,12 +158,19 @@ simplifyBar ch (Bar se) = simplify empty (viewl se) ktile
     simplifyGlyph (Note p d _)          = Just $ MNote p d
     simplifyGlyph (Rest _ d _)          = Just $ MRest d
     simplifyGlyph (RhythmicMark _ d _)  = Just $ MRest d
+  --  simplifyGlyph (Mark "tie" _)        = Just MTie
     simplifyGlyph (Mark _ _)            = Nothing
-
 
 translateMidiGlyphs :: Monad m => Seq (Int,Seq MidiTile) -> NotateT m (Seq Message)
 translateMidiGlyphs = 
-    unorderedMessages >=> return . deltaTransform . orderMessages
+    unorderedMessages >=> return . deltaTransform . orderMessages 
+
+{-
+-- bars are not in an amenable 'shape' for a simple mergeTies.
+-- They would need an stranspose first  
+mergeTies :: Monad m => Seq (Int,Seq MidiTile) -> NotateT m (Seq (Int,Seq MidiTile))
+mergeTies = error . show 
+-}
 
 unorderedMessages :: Monad m => 
     Seq (Int,Seq MidiTile) -> NotateT m (Seq Message)

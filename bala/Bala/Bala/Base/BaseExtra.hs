@@ -41,8 +41,8 @@ module Bala.Base.BaseExtra (
   explode12, explode100, collapse12, collapse100,
   normalize12, normalize100, 
   
-  -- ** transpose for sequences
-  stranspose,
+  -- ** transpose and functions on sequences
+  stranspose, szipl, szipl', sreplicate
 
   ) where
 
@@ -211,11 +211,11 @@ normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
 
 
 
-stranspose               :: Seq (Seq a) -> Seq (Seq a)
+stranspose :: Seq (Seq a) -> Seq (Seq a)
 stranspose = step . viewl
   where
     step EmptyL         = empty
-    step (x :< sse)    = case viewl x of
+    step (x :< sse)     = case viewl x of
         EmptyL    -> stranspose sse
         (e :< se) -> (e <| allheads sse) <| (stranspose $ se <| alltails sse)
     
@@ -230,11 +230,23 @@ stranspose = step . viewl
                                 
     unmatchErr = error "stranspose - sequences of unequal length"                            
                                 
-{-    
-transpose []             = []
-transpose ([]   : xss)   = transpose xss
-transpose ((x:xs) : xss) = 
-  (x : [h | (h:_) <- xss]) : transpose (xs : [ t | (_:t) <- xss])
-    
--}    
+szipl :: Seq a -> [b] -> Seq (a,b)
+szipl se xs = step empty (viewl se) xs where
+  step acc EmptyL    _        = acc
+  step acc _         []       = error "szipl - list too short"
+  step acc (a :< se) (x:xs)   = step (acc |> (a,x)) (viewl se) xs
+
+
+-- The sequence is primary - i.e. its an error if it runs out first, 
+-- the pair is flipped so the list item is fst.
+szipl' :: Seq a -> [b] -> Seq (b,a)
+szipl' se xs = step empty (viewl se) xs where
+  step acc EmptyL    _        = acc
+  step acc _         []       = error "szipl - list too short"
+  step acc (a :< se) (x:xs)   = step (acc |> (x,a)) (viewl se) xs
+  
+sreplicate :: Int -> a -> Seq a
+sreplicate i a | i <= 0     = empty
+               | otherwise  = a <| sreplicate (i-1) a 
+  
     

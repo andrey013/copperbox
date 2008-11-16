@@ -13,17 +13,18 @@
 --
 --------------------------------------------------------------------------------
 
--- Maybe I'll endup prefering this to AffiDeco... 
 
 module Bala.Base.Printing where
 
 import Bala.Base.Duration
+import Bala.Base.OutputMidi
 import Bala.Base.Pitch
 import Bala.Base.Structural
 
 import HNotate.CommonUtils (para)
 
 import qualified Data.Foldable as F
+import qualified Data.Map as Map
 import Data.Sequence hiding (empty)
 import Data.Ratio
 
@@ -49,7 +50,7 @@ dblangles d = text "<<" <+> d <+> text ">>"
 
 ppNoteList :: NoteList -> Doc
 ppNoteList (NoteList se) = 
-    fsep $ map (uncurry (flip ppBar)) (zip (F.toList se) [1..])
+    vcat $ map (uncurry (flip ppBar)) (zip (F.toList se) [1..])
 
 ppBar :: Int -> Bar -> Doc
 ppBar i (Bar e)          = barNumber i $$ nest 4 (ppElts e)
@@ -105,4 +106,14 @@ ppAccidental DoubleSharp        = text "isis"
 
 
 ppDuration r = let (n,d) = (numerator r, denominator r) in
-               integer n <> char '/' <> integer d            
+               integer n <> char '/' <> integer d    
+               
+               
+printOM :: OverlayMap -> Doc
+printOM = F.foldl' fn empty . Map.toList where
+    fn d (k,sse) = d  $$ text "Overlay:" <+> int k 
+                      $$ vcat (map overlay (F.toList sse))
+    
+    overlay (i,_,se) = text "bar:" <+> int i <+> ppElts se  
+
+                       
