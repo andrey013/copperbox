@@ -99,14 +99,14 @@ getMessages = rec mempty
         if eot msg then return $ acc |> msg
                    else rec (acc |> msg)
 
-    eot (Message (_, (MetaEvent EndOfTrack))) = True
-    eot _                                     = False
+    eot (_, (MetaEvent EndOfTrack)) = True
+    eot _                           = False
 
 
 message :: WParser Message
 message = deltaTime       >>= \dt           -> 
           getWord8split   >>= \(code,chan)  ->         
-          next code chan  >>= \evt          -> return $ Message (dt,evt)
+          next code chan  >>= \evt          -> return $ (dt,evt)
   where  
     next code chan  
         | code == 0xF && chan == 0xF  = MetaEvent   <$> (getWord8 >>= metaEvent)         

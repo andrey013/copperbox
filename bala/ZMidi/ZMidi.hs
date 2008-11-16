@@ -17,7 +17,7 @@ module ZMidi (
     module ZMidi.Datatypes,
     module ZMidi.GeneralMidiInstruments,
     module ZMidi.ReadFile,
-    module ZMidi.SyntaxElements,
+    -- module ZMidi.SyntaxElements,
     module ZMidi.TextualMidi,
     module ZMidi.WriteFile,
   ) where
@@ -25,7 +25,7 @@ module ZMidi (
 import ZMidi.Datatypes
 import ZMidi.GeneralMidiInstruments
 import ZMidi.ReadFile
-import ZMidi.SyntaxElements
+-- import ZMidi.SyntaxElements
 import ZMidi.TextualMidi
 import ZMidi.WriteFile
 

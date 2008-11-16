@@ -27,7 +27,7 @@ module ZMidi.Datatypes (
     DeltaTime,
 
     -- * A midi event paired with the delta time of its onset
-    Message(..), 
+    Message, 
     -- * A control or meta event
     Event(..),
     
@@ -63,7 +63,7 @@ data MidiFile = MidiFile Header (Seq Track)
 --
 -- @fmt@ - file format - see @'HFormat'@, 
 -- @nt@  - number of tracks,
--- @td@  - @'TimeDivision'@, often 480 ticks per beat.
+-- @td@  - @'TimeDivision'@, often 384 or 480 ticks per beat.
 -- The header is the start of a MIDI file, it is indicated by the 
 -- marker \'@MThd@\'.   
 data Header = Header HFormat Word16 TimeDivision
@@ -112,20 +112,6 @@ data TextType
     | CUE_POINT 
   deriving (Eq,Enum,Ord,Show) 
 
--- | @'Message'@ 
---
--- MIDI messages are pairs of @'DeltaTime'@ and @'Event'@ wrapped in a newtype. 
--- Sequential messages with delta time 0 will be played simultaneously.  
-newtype Message = Message { getMessage :: (DeltaTime, Event) }
-  deriving (Eq,Show) 
-
--- This is useful for rendering - of we have have a NoteOn and a NoteOff
--- on the same channel at the same time we want the NoteOff played first.
-
-instance Ord Message where
-    compare (Message (t,e)) (Message (t',e')) = (t,e) `compare` (t',e')
-    
-      
 -- | @'DeltaTime'@ 
 --
 -- All time values in a MIDI track are represented as a \delta\ from the 
@@ -133,6 +119,21 @@ instance Ord Message where
 -- Although DeltaTime is a type synonym for Word32, in MIDI files it is 
 -- represented as a @varlen@ to save space. 
 type DeltaTime = Word32
+
+-- | @'Message'@ 
+--
+-- MIDI messages are pairs of @'DeltaTime'@ and @'Event'@ wrapped in a newtype. 
+-- Sequential messages with delta time 0 will be played simultaneously.  
+type Message = (DeltaTime, Event)
+
+
+-- Note, the Ord instance for pairs is very useful for rendering.
+-- When we have have a NoteOn and a NoteOff on the same channel at the 
+-- same time we want the NoteOff played first. An ordinary sort will 
+-- give us this.
+
+     
+
 
 -- | @'Event'@ 
 --

@@ -86,12 +86,12 @@ instance Pretty TimeDivision where
 prettyTrack (Track se) i = 
     brackets (text "Track" <+> int i) <$> (snd $ F.foldl fn (0,empty) se)
   where
-    fn (gt,doc) msg@(Message (dt,_))  = 
-      (gt+dt, doc <$> (fill 8 (integral $ gt+dt) <-> pretty msg))    
+    fn (gt,doc) msg@(dt,_)  = 
+      (gt+dt, doc <$> (fill 8 (integral $ gt+dt) <-> ppMessage msg))    
 
 
-instance Pretty Message where
-  pretty (Message (dt,evt)) = fill 5 (integral dt) <-> pretty evt      
+ppMessage :: Message -> Doc
+ppMessage (dt,evt) = fill 5 (integral dt) <-> pretty evt      
 
 
 instance Pretty Event where

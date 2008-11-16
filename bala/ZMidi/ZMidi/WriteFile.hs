@@ -71,7 +71,7 @@ putTimeDivision (TPB n) = outW16 (n `clearBit` 15)
 
 
 putMessage :: Message -> MidiOut
-putMessage (Message (dt,evt)) = varlen dt . putEvent evt
+putMessage (dt,evt) = varlen dt . putEvent evt
 
 putEvent :: Event -> MidiOut
 putEvent (VoiceEvent  evt) = putVoiceEvent evt

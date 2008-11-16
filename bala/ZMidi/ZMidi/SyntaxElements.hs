@@ -92,10 +92,10 @@ tpb = TPB . fromIntegral
     
     
 msg :: Integral dt => dt -> Event -> Message
-msg dt e = Message (fromIntegral dt, e)
+msg dt e = (fromIntegral dt, e)
 
 msgzero :: Event -> Message
-msgzero e = Message (0, e)
+msgzero e = (0, e)
 
 
 coerce2 :: (Integral a1, Integral a2, Num b1, Num b2) 
