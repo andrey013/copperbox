@@ -23,7 +23,7 @@ module ZMidi.ReadFile (
   ) where
 
 import ZMidi.Datatypes
-
+import ZMidi.TextualMidi
 
 import Control.Applicative
 import Control.Monad.Error
@@ -38,6 +38,7 @@ import Data.Sequence hiding (reverse, length)
 import Data.Word
 
 import System.IO
+import Text.PrettyPrint.HughesPJ
 
 newtype ParseErr = ParseErr String
   deriving (Show) 
@@ -85,14 +86,16 @@ instance MonadError ParseErr Parser where
 
 runParser :: Parser a -> B.ByteString  -> Either String a   
 runParser p bs = case runP p bs of
-    (Left (ParseErr err), ss) -> Left $ err ++ "\n" ++ ss 
+    (Left (ParseErr err), ss) -> Left $ errorstring err ss 
     (Right a, _)              -> Right a  
   where 
     runP :: Parser a -> B.ByteString  -> (Either ParseErr a,String) 
     -- should we use runState and check input is exhausted? 
     runP p bs = evalState (runWriterT (runErrorT $ getParser p)) st0
     
-    st0 = PSt { remaining = bs, pos = 0 } 
+    st0 = PSt { remaining = bs, pos = 0 }
+    
+    errorstring err ss = err ++ "\n\nParse result upto error...\n" ++ ss 
 
 readMidi :: FilePath -> IO MidiFile  
 readMidi name = do 
@@ -116,12 +119,20 @@ reportFail s = do
     throwError $ strMsg $ s ++ posStr pos
   where
     posStr pos = " position " ++ show pos   
+
+tellLine :: String -> Parser ()
+tellLine s = tell s >> tell "\n" 
+
+tellDoc :: Doc -> Parser ()
+tellDoc = tellLine . show  
     
     
 midiFile :: Parser MidiFile  
-midiFile = 
-    header                        >>= \h  -> 
-    iters (trackCount h) track    >>= \se -> return $ MidiFile h se
+midiFile = do
+    h  <- header
+    tellDoc (ppHeader h)
+    se <- iters (trackCount h) track
+    return $ MidiFile h se
   where
     trackCount :: Header -> Int 
     trackCount (Header _ n _) = fromIntegral n
@@ -138,8 +149,11 @@ iters i p = step mempty i
                 | otherwise   = p >>= \a -> step (se |> a) (i-1)
 
 track :: Parser Track
-track = Track <$> (assertString "MTrk" *> getWord32be *> getMessages) 
-
+track = Track <$> 
+    (newtrack *> assertString "MTrk" *> getWord32be *> getMessages) 
+  where
+    newtrack = tellLine "Starting new track..."
+    
 
 getMessages :: Parser (Seq Message)
 getMessages = rec mempty
@@ -159,9 +173,12 @@ getMessages = rec mempty
 
 
 message :: Parser Message
-message = deltaTime       >>= \dt           -> 
-          getWord8split   >>= \(code,chan)  ->         
-          next code chan  >>= \evt          -> return $ (dt,evt)
+message = do 
+    dt          <- deltaTime 
+    (code,chan) <- getWord8split         
+    evt         <- next code chan 
+    tellDoc $ ppMessage (dt,evt)
+    return $ (dt,evt)
   where  
     next code chan  
         | code == 0xF && chan == 0xF  = MetaEvent   <$> (getWord8 >>= metaEvent)         

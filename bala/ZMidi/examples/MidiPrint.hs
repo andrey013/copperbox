@@ -35,6 +35,6 @@ process filename = do
     printMidi ans
   where
     exitHandle :: IOException -> IO a 
-    exitHandle _ = exitFailure
+    exitHandle e = putStrLn (show e) >> exitFailure
 
  

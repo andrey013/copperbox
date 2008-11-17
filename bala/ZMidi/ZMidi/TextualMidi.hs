@@ -18,7 +18,7 @@ module ZMidi.TextualMidi (
     -- * Print a readable text representation
     printMidi, ppMidiFile,
     
---    brep1, brepVarlen, brepStr
+    ppHeader, ppMessage,
   
   ) where
 
