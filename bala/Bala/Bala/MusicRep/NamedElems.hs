@@ -1,7 +1,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.NamedElems
+-- Module      :  Bala.MusicRep.NamedElems
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -13,12 +13,14 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Base.NamedElems where
+module Bala.MusicRep.NamedElems where
 
 import Bala.Base.BaseExtra
 import Bala.Base.Pitch
-import Bala.Base.Interval
-import Bala.Base.Scale
+
+import Bala.MusicRep.Interval
+import Bala.MusicRep.Scale
+
 
 w = whole_step
 h = half_step

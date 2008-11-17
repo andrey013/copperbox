@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.Perform
+-- Module      :  Bala.MusicRep.Perform
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -15,8 +15,7 @@
 --------------------------------------------------------------------------------
 
 
-
-module Bala.Base.Interval where
+module Bala.MusicRep.Interval where
 
 import Bala.Base.BaseExtra
 import Bala.Base.Pitch

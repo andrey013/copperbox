@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.PitchClass
+-- Module      :  Bala.MusicRep.PitchClass
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -14,8 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-
-module Bala.Base.PitchClass where
+module Bala.MusicRep.PitchClass where
 
 import Bala.Base.Pitch
 

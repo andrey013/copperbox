@@ -1,8 +1,7 @@
 
-
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.Chord
+-- Module      :  Bala.MusicRep.Chord
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -15,12 +14,14 @@
 --------------------------------------------------------------------------------
 
 
-module Bala.Base.Chord where
+module Bala.MusicRep.Chord where
 
-import Bala.Base.Pitch
-import Bala.Base.Interval
-import Bala.Base.PitchClass
 import Bala.Base.BaseExtra
+import Bala.Base.Pitch
+
+import Bala.MusicRep.Interval
+import Bala.MusicRep.PitchClass
+
 
 
 import qualified Data.Map as Map

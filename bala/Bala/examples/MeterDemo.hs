@@ -9,7 +9,7 @@ import Bala.Base.Printing
 import Bala.Base.Structural
 
 
-import Bala.Base hiding (a4, duration, Chord)
+import Bala.Base hiding (a4, duration)
 
 
 import ZMidi hiding (note)

@@ -1,8 +1,7 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.Scale
+-- Module      :  Bala.MusicRep.Scale
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -14,12 +13,12 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Base.Scale where
+module Bala.MusicRep.Scale where
 
-import Bala.Base.Pitch
-import Bala.Base.Interval
 import Bala.Base.BaseExtra
+import Bala.Base.Pitch
 
+import Bala.MusicRep.Interval
 
 
 --------------------------------------------------------------------------------

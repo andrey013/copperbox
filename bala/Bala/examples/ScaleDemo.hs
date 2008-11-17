@@ -9,6 +9,7 @@
 module ScaleDemo where
 
 import Bala.Base
+import Bala.MusicRep
 
 import HNotate
 

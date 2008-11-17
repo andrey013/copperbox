@@ -9,15 +9,17 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Top level import module for the base libs
--- (formats can be imported seperately) 
+-- Top level import module for Bala
 --
 --------------------------------------------------------------------------------
 
 
 module Bala 
   ( module Bala.Base
+  , module Bala.MusicRep
   )
   where
 
 import Bala.Base 
+import Bala.MusicRep
+

@@ -1,6 +1,7 @@
+
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.Meter
+-- Module      :  Bala.MusicRep.Meter
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -12,7 +13,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Base.Meter where
+module Bala.MusicRep.Meter where
 
 import Bala.Base.BaseExtra
 import Bala.Base.Duration 
