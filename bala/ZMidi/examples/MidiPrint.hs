@@ -14,7 +14,11 @@ module Main where
 
 import ZMidi
 
+import Control.Exception
+import Prelude hiding (catch)
+
 import System.Environment
+import System.Exit
 import Text.PrettyPrint.HughesPJ
 
 
@@ -27,8 +31,10 @@ main = do
 
 process :: FilePath -> IO ()
 process filename = do
-  ans <- readMidi filename
-  printMidi ans
-
+    ans <- catch (readMidi filename) exitHandle
+    printMidi ans
+  where
+    exitHandle :: IOException -> IO a 
+    exitHandle _ = exitFailure
 
  
