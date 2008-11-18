@@ -20,7 +20,7 @@ module HNotate.BackendAbc (
 import HNotate.CommonUtils
 import HNotate.DocAbc
 import HNotate.Document
-import HNotate.Duration hiding (duration)
+import HNotate.Duration
 import HNotate.Env
 import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord)
 import HNotate.NotateMonad

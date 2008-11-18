@@ -16,7 +16,7 @@
 module HNotate.BackendMidi where
 
 import HNotate.CommonUtils
-import HNotate.Duration hiding (duration)
+import HNotate.Duration
 import HNotate.Env
 import HNotate.MiniMidi
 import HNotate.NoteListDatatypes
@@ -265,9 +265,9 @@ instance RhythmicValue MidiGlyph where
   modifyDuration (MChord ps _)  d = MChord ps d
   
 instance RhythmicValue MidiTile where
-  rhythmicValue (MuGrace _ gly _)   = rhythmicValue gly
-  rhythmicValue (MaGrace _ _ gly)   = rhythmicValue gly
-  rhythmicValue (MGlyph _ gly)      = rhythmicValue gly
+  rhythmicValue (MuGrace _ gly _)    = rhythmicValue gly
+  rhythmicValue (MaGrace _ _ gly)    = rhythmicValue gly
+  rhythmicValue (MGlyph _ gly)       = rhythmicValue gly
   
   modifyDuration (MuGrace ch gly xs) d = MuGrace ch (modifyDuration gly d) xs
   modifyDuration (MaGrace ch xs gly) d = MaGrace ch xs (modifyDuration gly d)

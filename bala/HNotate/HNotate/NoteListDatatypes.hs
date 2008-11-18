@@ -230,16 +230,12 @@ instance Traversable BarF where
   traverse f (Bar se)             = Bar <$> traverse f se
 
 --------------------------------------------------------------------------------
--- RhythmicValue - the duration of a tile or glyph  
-
-class RhythmicValue a where
-  rhythmicValue   :: a -> Duration
-  modifyDuration  :: a -> Duration -> a
+-- RhythmicValue insatnces   
   
 instance RhythmicValue Tile where
-  rhythmicValue (Singleton e)         = rhythmicValue e
-  rhythmicValue (Chord _ d _)         = d
-  rhythmicValue (GraceNotes _ _ _)    = duration_zero
+  rhythmicValue (Singleton e)           = rhythmicValue e
+  rhythmicValue (Chord _ d _)           = d
+  rhythmicValue (GraceNotes _ _ _)      = duration_zero
   
   modifyDuration (Singleton e)        d = Singleton (e `modifyDuration` d)
   modifyDuration (Chord se _ a)       d = Chord se d a
@@ -247,10 +243,10 @@ instance RhythmicValue Tile where
   
   
 instance RhythmicValue Glyph where
-  rhythmicValue (Note _ d _)          = d
-  rhythmicValue (Rest _ d _)          = d
-  rhythmicValue (RhythmicMark _ d _)  = d
-  rhythmicValue (Mark _ _)            = duration_zero
+  rhythmicValue (Note _ d _)            = d
+  rhythmicValue (Rest _ d _)            = d
+  rhythmicValue (RhythmicMark _ d _)    = d
+  rhythmicValue (Mark _ _)              = duration_zero
 
   modifyDuration (Note p _ a)         d = Note p d a
   modifyDuration (Rest m _ a)         d = Rest m d a

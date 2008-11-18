@@ -17,7 +17,9 @@ module HNotate.Duration (
     -- Data type
     Duration, 
     
-    duration,
+    RhythmicValue(..),
+    
+    makeDuration,
     
     -- particular durations
     duration_zero, no_duration,
@@ -62,8 +64,14 @@ import Data.Ratio
 
 type Duration = Rational 
 
-duration :: Integral a => a -> a -> Duration
-duration n d = fromIntegral n % fromIntegral d
+class RhythmicValue a where
+  rhythmicValue   :: a -> Duration
+  modifyDuration  :: a -> Duration -> a
+  
+  
+
+makeDuration :: Integral a => a -> a -> Duration
+makeDuration n d = fromIntegral n % fromIntegral d
 
 duration_zero :: Duration
 duration_zero = 0

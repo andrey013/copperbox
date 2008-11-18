@@ -23,7 +23,7 @@ module HNotate.BackendLilyPond (
 import HNotate.CommonUtils
 import HNotate.DocLilyPond
 import HNotate.Document
-import HNotate.Duration hiding (duration)
+import HNotate.Duration
 import HNotate.Env
 import HNotate.NotateMonad
 import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord)

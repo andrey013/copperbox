@@ -95,7 +95,7 @@ toNoteList evts =
 
 eventsToNoteListUnmetered :: Monad m => EventList -> NotateT m NoteList
 eventsToNoteListUnmetered = eventsToNoteList max_bar_len duration_zero
-  where max_bar_len = duration (maxBound::Int) 1
+  where max_bar_len = makeDuration (maxBound::Int) 1
   
   
 eventsToNoteList :: Monad m => Duration -> Duration -> EventList 

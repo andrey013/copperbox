@@ -27,7 +27,7 @@ module HNotate.DocAbc (
 
 
 import HNotate.Document
-import HNotate.Duration hiding (duration)
+import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
