@@ -170,7 +170,7 @@ noteoff ch p v    = VoiceEvent $ NoteOff ch p v
 --------------------------------------------------------------------------------
 -- user level functions
 
--- Note changing resets the absolute time to 0 
+-- Note changing channel resets the absolute time to 0 
 nextChannel :: Monad m => OutputT m ()
 nextChannel = do 
     ch <- gets _channel

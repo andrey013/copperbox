@@ -1,20 +1,22 @@
 
+-- Note to me...
+-- What about visual intrepretations, e.g. so we can see how well
+-- a sequence fits is metrical shape?
+
+
 -- ghci ...
 -- :set -i../../HNotate:../../Bala:../../ZMidi
 
 module MeterDemo where
 
 import Bala.Base.OutputMidi
-import Bala.Base.Printing
-import Bala.Base.Structural
 
 
-import Bala.Base hiding (a4, duration)
+import Bala.Base hiding (a4)
 
 
-import ZMidi hiding (note)
+import ZMidi (writeMidi)
 
-import HNotate.Fits
 
 
 import qualified Data.Foldable as F
@@ -22,35 +24,6 @@ import Data.List hiding (transpose, null)
 import Data.Ratio
 import Data.Sequence
 import Prelude hiding (null)
-
-
-
-stranspose_test = stranspose $ fromList (map fromList [[1,2,3],[1,2,3]]) 
-
-fit_test1 :: Fit Int
-fit_test1 = fits 10 0
-
-
-fit_test2 :: Fit Int
-fit_test2 = fits 0 0 
-
--- use 0 as an indicator of hyphenation
-mk_section :: [Int] -> Seq (Seq Int)
-mk_section xs = asectionHy (|>0) (fromList xs) 0 4
-
-section_test = let xs  = [1..12]
-                   sse = mk_section xs in
-  do { print sse; putStrLn ""; print (sumSections sse == sumMeasure xs) }
-      
-section_test2 :: Seq (Seq Int)
-section_test2 = asection (fromList [5,0,0,4,1,0,0,0,3]) 0 5
-
-
-fit_test :: Fit (Seq Int)
-fit_test = fitsSeq (fromList [1..5]) 10
-
-fit_test' :: Fit (Seq Int)
-fit_test' = fitsSeq (fromList [1..9]) 16
 
 
 attack d = note c4 d

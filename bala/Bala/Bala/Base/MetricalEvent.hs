@@ -8,7 +8,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Meter (currently somewhat subsumed by Duration)
+-- MetricalEvent (to be replaced by Structural at some point...)
 --
 --------------------------------------------------------------------------------
 

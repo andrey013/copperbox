@@ -2,13 +2,10 @@
 -- ghci ...
 -- :set -i../../HNotate:../../Bala
 
--- Its easy to output 1 scale with HNotate, but how do we output many scales?
--- Do we need the doc combinators back - uh oh? 
-
 
 module ScaleDemo where
 
-import Bala.Base
+import Bala.Base  hiding (rest, note)
 import Bala.MusicRep
 
 import HNotate

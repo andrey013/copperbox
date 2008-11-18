@@ -100,12 +100,14 @@ instance Transpose a => Transpose (NoteListF a) where
 instance Transpose a => Transpose (BarF a) where
   transpose f = fmap (transpose f) 
 
+
+  
 instance Transpose (EltF Pitch d) where
   transpose f (DEvt e d)         = DEvt (transpose f e) d 
   transpose f (Mark z)           = Mark z
   transpose f (Chord se d)       = Chord se d -- can't do anything (?)
-  transpose f (AGrace se p d)    = AGrace se (f p) d
-  transpose f (UGrace p d se)    = UGrace (f p) d se
+  transpose f (AGrace se p d)    = AGrace (transpose f se) (f p) d
+  transpose f (UGrace p d se)    = UGrace (f p) d (transpose f se)
 
 
 instance Transpose (Evt Pitch) where 
@@ -113,8 +115,16 @@ instance Transpose (Evt Pitch) where
   transpose f Rest     = Rest 
   transpose f Spacer   = Spacer
 
-barcount :: NoteListF a -> Int
-barcount (NoteList se) = length se
+instance Transpose (Seq (Pitch,d)) where
+  transpose f = fmap (\(p,d) -> (transpose f p, d)) 
+  
+instance Transpose Pitch where
+  transpose f = f
+
+
+--------------------------------------------------------------------------------
+-- 
+
   
 
 
@@ -202,7 +212,11 @@ remeterBar bar_len asis (Overlay sse) =
 
 
 remeterSe :: Duration -> Duration -> Seq Elt -> Seq (Seq Elt)
-remeterSe bar_len asis se = asectionHy (|> tie) se asis bar_len 
+remeterSe bar_len asis se = asectionHy (|> tie) asis bar_len se  
+
+
+barcount :: NoteListF a -> Int
+barcount (NoteList se) = length se
 
 
 mkSystem :: String -> NoteList -> System
@@ -228,7 +242,8 @@ mkSystem name (NoteList se) = system1 name $ step root (viewl se)
     
     mkMark Tie          = H.tie 
     
-    
+{-
+
 -- aka null
 class Null a where isNull :: a -> Bool
 
@@ -240,7 +255,7 @@ instance Null (BarF a) where
   isNull (Bar se)       = null se
   isNull (Overlay sse)  = null sse
   
-  
+-}
 
 
 --------------------------------------------------------------------------------

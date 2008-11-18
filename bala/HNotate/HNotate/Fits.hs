@@ -74,8 +74,8 @@ sumSections = F.foldr (\a n -> sumMeasure a + n) 0
                                   
 -- Only do sectioning on sequences, it's getting too exotic to do on 
 -- other containers.
-section :: Fits a b => Seq a -> b -> Seq (Seq a)
-section se n | n > 0      = asection se 0 n 
+section :: Fits a b => b -> Seq a -> Seq (Seq a)
+section n se | n > 0      = asection 0 n se  
              | otherwise  = error $ "section - section divider must be >0"
 
 
@@ -83,7 +83,7 @@ section se n | n > 0      = asection se 0 n
 -- length to the following sections. In music the anacrusis will be smaller
 -- than the following sections but we do not enforce that here. 
 -- (Note that the anacrusis can be 0).
-asection :: Fits a b => Seq a -> b -> b -> Seq (Seq a)
+asection :: Fits a b => b -> b -> Seq a -> Seq (Seq a)
 asection = asectionHy id
 
  
@@ -95,8 +95,8 @@ asection = asectionHy id
 -- could be used to add a hyphen to the breaking line, for music it means we 
 -- can add a tie when we have broken a note that spans two bars.
 
-asectionHy :: Fits a b => (Seq a -> Seq a) -> Seq a -> b -> b -> Seq (Seq a)
-asectionHy hyphenate se asis n 
+asectionHy :: Fits a b => (Seq a -> Seq a) -> b -> b -> Seq a -> Seq (Seq a)
+asectionHy hyphenate asis n se  
     | n <= 0      = error $ "sectioning - the divider must be >0"
     | otherwise   = let (ana_section, rest) = firstStep se
                     in step ana_section rest               

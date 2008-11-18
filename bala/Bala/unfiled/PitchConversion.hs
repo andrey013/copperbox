@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.PitchConversion
+-- Module      :  PitchConversion
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Base.PitchConversion (
+module PitchConversion (
   
   -- * Alternative Pitch representations
   MidiPitch, Hertz, OctavePitchClass, OctaveFractional,
