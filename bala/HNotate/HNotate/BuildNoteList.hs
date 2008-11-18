@@ -144,12 +144,12 @@ type RawBar = (Int,Seq Tile)
 partitionGVO :: Duration -> GlyphVoiceOverlay -> Seq RawBar
 partitionGVO bar_len (GVO (StdDisp bn disp) se) = 
     let spacepre se = if disp /= duration_zero then (spacer disp) <| se else se 
-        sse = asectionHy (|> tie)  0 bar_len (spacepre se) 
+        sse = asegmentHy (|> tie)  0 bar_len (spacepre se) 
     in snd $ F.foldl (\(n,acc) e -> (n+1, acc |>(n,e))) (bn,empty) sse
 
 
 partitionGVO bar_len (GVO (AnaDisp asis) se) = 
-    let sse = asectionHy (|> tie) asis bar_len se 
+    let sse = asegmentHy (|> tie) asis bar_len se 
     in snd $ F.foldl (\(n,acc) e -> (n+1, acc |>(n,e))) (0,empty) sse
     
 instance Fits Glyph Duration where

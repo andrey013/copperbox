@@ -69,37 +69,37 @@ fitsSeqHy hyphenate sa i
                                       else Split acc (e <| se) 
 
                     
-sumSections :: Fits a b => Seq (Seq a) -> b
-sumSections = F.foldr (\a n -> sumMeasure a + n) 0
+sumSegments :: Fits a b => Seq (Seq a) -> b
+sumSegments = F.foldr (\a n -> sumMeasure a + n) 0
                                   
--- Only do sectioning on sequences, it's getting too exotic to do on 
+-- Only do segmenting on sequences, it's getting too exotic to do on 
 -- other containers.
-section :: Fits a b => b -> Seq a -> Seq (Seq a)
-section n se | n > 0      = asection 0 n se  
-             | otherwise  = error $ "section - section divider must be >0"
+segment :: Fits a b => b -> Seq a -> Seq (Seq a)
+segment n se | n > 0      = asegment 0 n se  
+             | otherwise  = error $ "segment - segment divisor must be >0"
 
 
--- Section with an anacrusis - i.e. the first section is a different 
+-- Segment with an anacrusis - i.e. the first section is a different 
 -- length to the following sections. In music the anacrusis will be smaller
 -- than the following sections but we do not enforce that here. 
 -- (Note that the anacrusis can be 0).
-asection :: Fits a b => b -> b -> Seq a -> Seq (Seq a)
-asection = asectionHy id
+asegment :: Fits a b => b -> b -> Seq a -> Seq (Seq a)
+asegment = asegmentHy id
 
  
--- The most general section function: 
--- The first section length 'a' is an anacrusis (it doesn't have to be 
+-- The most general segment function: 
+-- The first segment length 'a' is an anacrusis (it doesn't have to be 
 -- the same length as the following section).
 -- Also the function uses a hyphenate function this is used on the left section
 -- when a split has divided an element. If the sequence contained words this 
 -- could be used to add a hyphen to the breaking line, for music it means we 
 -- can add a tie when we have broken a note that spans two bars.
 
-asectionHy :: Fits a b => (Seq a -> Seq a) -> b -> b -> Seq a -> Seq (Seq a)
-asectionHy hyphenate asis n se  
-    | n <= 0      = error $ "sectioning - the divider must be >0"
-    | otherwise   = let (ana_section, rest) = firstStep se
-                    in step ana_section rest               
+asegmentHy :: Fits a b => (Seq a -> Seq a) -> b -> b -> Seq a -> Seq (Seq a)
+asegmentHy hyphenate asis n se  
+    | n <= 0      = error $ "segmenting - the divisor must be >0"
+    | otherwise   = let (ana_segment, rest) = firstStep se
+                    in step ana_segment rest               
   where
     -- firstStep :: Fits a b => Seq a -> (Seq (Seq a), Seq a)
     firstStep se = case fitsSeqHy hyphenate se asis of

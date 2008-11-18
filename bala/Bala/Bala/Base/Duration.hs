@@ -1,4 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+
 
 --------------------------------------------------------------------------------
 -- |
@@ -18,15 +20,23 @@ module Bala.Base.Duration (
   module HNotate.Duration,
   TimeSig,
   showBars,
-  rhychar
-
+  
+  segmentByTS,
+  
+  XOne(..),
+  xdot1, xdotAve,   manyToXOne,
+  
   ) where
-
-import HNotate.Duration
 
 import Bala.Base.BaseExtra (applyi)
 
+import HNotate.Duration
+import HNotate.Fits
+
+import qualified Data.Foldable as F
 import Data.Ratio
+import Data.Sequence
+
 
 type TimeSig = (Int,Int)
 
@@ -47,16 +57,32 @@ tsRender1 (n,d) = applyi n ((cs d) .) id where
   cs _  = showChar '+' 
   
 
-rhychar :: RhythmicValue a => a -> Char
-rhychar a = let r = rhythmicValue a in fn (numerator r) (denominator r) where
-  fn n d | n == 1     = ch d
-         | otherwise  = '+' 
-  ch  1  = 'O'
-  ch  2  = '%'
-  ch  4  = '&'
-  ch  8  = ','
-  ch 16  = '.'
-  ch  _  = '+' 
+
+segmentByTS :: Fits a Duration => TimeSig -> Seq a -> Seq (Seq a)
+segmentByTS (n,d) se = segment (makeDuration 1 d) se  
 
 
- 
+-- Print metrical bit patterns as x.x...x...
+
+class XOne a where xone :: a -> Bool
+
+
+instance XOne Bool where
+  xone = id
+
+xdot1 :: XOne a => a -> Char
+xdot1 a | xone a    = 'x'
+        | otherwise = '.'
+
+xdotAve :: (Fits a Duration, XOne a) => TimeSig -> Seq a -> [Char]
+xdotAve tm se = 
+    F.foldr (\e a -> (xdot1 $  manyToXOne e) : a) [] (segmentByTS tm se)
+
+  
+manyToXOne :: (Fits a Duration, XOne a) => Seq a -> Bool
+manyToXOne se = gteHalf (sumXOne se) (sumMeasure se) where
+  sumXOne = F.foldl (\a e -> if xone e then a + measure e else a) duration_zero  
+
+  gteHalf :: Duration -> Duration -> Bool
+  gteHalf a b = a >= (b / 2)
+   

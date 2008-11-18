@@ -212,7 +212,7 @@ remeterBar bar_len asis (Overlay sse) =
 
 
 remeterSe :: Duration -> Duration -> Seq Elt -> Seq (Seq Elt)
-remeterSe bar_len asis se = asectionHy (|> tie) asis bar_len se  
+remeterSe bar_len asis se = asegmentHy (|> tie) asis bar_len se  
 
 
 barcount :: NoteListF a -> Int
