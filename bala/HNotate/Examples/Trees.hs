@@ -7,6 +7,8 @@ module Examples.Trees where
 
 import HNotate
 
+import Data.Sequence (fromList)
+
 
 
 -- | example 1 - simple list of successive notes.  
@@ -19,20 +21,20 @@ example1 = root |# note c4 du4
 
 -- | example 2 - simple parallel - a chord             
 example2 :: EventList
-example2 = root |# chord [c4,e4,g4] du4
+example2 = root |# chord (fromList [c4,e4,g4]) du4
 
 
 -- | example 3 - successors and grace.
 example3 :: EventList
 example3 = 
-    root |# note c4 du4 |# gracenotes [(a4,du32), (b4,du32)]
+    root |# note c4 du4 |# agraces (fromList [(a4,du32), (b4,du32)])
          |# note c4 du4 |# note d4 du4 |# note e4 du4
 
 
 -- | example 4 - successors and parallel (chord)
 example4 :: EventList
 example4 =
-    root |# note c4 du4 |# chord [c4,e4,g4] du4 
+    root |# note c4 du4 |# chord (fromList [c4,e4,g4]) du4 
          |# note d4 du4 |# note e4 du4
     
 
@@ -56,8 +58,8 @@ example6a =
     root |# note c4 du4 |# a_b_grace |# c_triad |# note d4 du4
          |# note e4 du4
   where
-    a_b_grace = gracenotes [(a4,du32), (b4,du32)]
-    c_triad   = chord [c4,e4,g4] du4   
+    a_b_grace = agraces (fromList [(a4,du32), (b4,du32)])
+    c_triad   = chord (fromList [c4,e4,g4]) du4   
        
 example6b :: EventList       
 example6b = 

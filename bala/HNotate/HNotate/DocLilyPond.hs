@@ -22,8 +22,22 @@ import HNotate.NoteListDatatypes
 import HNotate.Pitch
 import HNotate.TemplateDatatypes
 
+lilypond :: [HoasExprD] -> DocuHoas
+lilypond ds = Hoas ds
 
+lilypond1 :: HoasExprD -> DocuHoas
+lilypond1 d = Hoas [d]
  
+version :: DocS
+version expr = HText doc expr where
+    doc = lineS $ command "version" <+> dblquotes (text "2.10.33")
+
+    
+book :: DocS     
+book expr = HText doc expr where
+    doc d = command "book" <+> (bracesLines d)
+    
+    
 relative :: Pitch -> DocS
 relative p expr = HLet update doc expr where
     update  = set_relative_pitch p 

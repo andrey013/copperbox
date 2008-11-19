@@ -23,6 +23,7 @@ module HNotate.Document (
   enclose, encloseSpace, dup,
   line, space, comma, colon, dot, dash, equals, prime,
   
+  quotes, dblquotes,
   lbrace, rbrace, braces, braces',
   lparen, rparen, parens, parens',
   lbracket, rbracket, brackets, brackets',
@@ -177,6 +178,12 @@ equals    = char '='
 
 prime     :: ODoc
 prime     = char '\''
+
+quotes        :: ODoc -> ODoc
+quotes        = enclose prime prime
+
+dblquotes     :: ODoc -> ODoc
+dblquotes     = enclose (char '"') (char '"')
 
 
 -- ---

@@ -8,23 +8,23 @@ import HNotate
 -- starts with an anacrusis
 adeste_fidelis :: System
 adeste_fidelis = system1 "adeste_fidelis" $ 
-    root  |# chord [e4,    a4] du4
+    root  |# chord' [e4,    a4] du4
     
-          |# chord [e4,    a4] du2
+          |# chord' [e4,    a4] du2
           |# note   e4         du4 
-          |# chord [cis4,  a4] du4 
+          |# chord' [cis4,  a4] du4 
        
-          |# chord [e4,    b4] du2 
+          |# chord' [e4,    b4] du2 
           |# note   e4         du2 
 
-          |# chord [e4,  cis5] du4 
-          |# chord [e4,    b4] du4 
-          |# chord [e4,  cis5] du4 
-          |# chord [fis4,  d5] du4 
+          |# chord' [e4,  cis5] du4 
+          |# chord' [e4,    b4] du4 
+          |# chord' [e4,  cis5] du4 
+          |# chord' [fis4,  d5] du4 
 
-          |# chord [e4,  cis5] du2 
-          |# chord [e4,    b4] du4 
-          |# chord [cis4,  a4] du4
+          |# chord' [e4,  cis5] du2 
+          |# chord' [e4,    b4] du4 
+          |# chord' [cis4,  a4] du4
  
 
 -- unmetered plain song

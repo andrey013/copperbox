@@ -257,14 +257,25 @@ motifContents (Motif se) = se
 
 -- Also, the last bar of a motifs is spaced if the motif doesn't divide 
 -- exactly into bars.
- 
+
+-- Midi and Ascii processing is easier if the section is 'squared' 
+-- then we can use the standard @transpose@ function to get a 
+-- line-by-line view rather than a column-by-column one. 
 packToSquare :: Section -> Section
 packToSquare s@(Section tm se) = Section tm $ fmap fn se where
     h = sectionHeight s
     fn :: Phrase -> Phrase
-    fn ph = spacerOverlayPad (regularPhraseDuration tm ph) h ph
+    fn ph = spacerOverlayPack (regularPhraseDuration tm ph) h ph
 
-
+-- LilyPond and Abc (via HNotate) handle overlays themselves, so we 
+-- just spacer pack the motifs inside a phrase with this transformation.
+-- This stops us having \ragged overlays\.  
+packToLength :: Section -> Section
+packToLength s@(Section tm se) = Section tm $ fmap fn se where
+    fn :: Phrase -> Phrase
+    fn ph = spacerPackLength (regularPhraseDuration tm ph) ph
+    
+    
 
 sectionHeight :: SectionF a -> Int
 sectionHeight (Section _ se) = smaximum $ fmap phraseHeight se where
@@ -285,18 +296,31 @@ maxPhraseDuration (Overlay mo smo)  =
     max (sumMeasure mo) (smaximum $ fmap sumMeasure smo)
 
   
-spacerOverlayPad :: Duration -> Int -> Phrase -> Phrase
-spacerOverlayPad w h (Single mo) 
-    | h <= 1      = Single $ spacerPad w mo
-    | otherwise   = Overlay (spacerPad w mo) 
+-- This 'squares' a phrase - it is extended horizontally so all overlays
+-- are the same length. It is also extended vertically (adding blank 
+-- motifs where necessary) so each phrase has the same numer of overlays.
+-- The vertical transformation simplifies later processig for Midi and ascii
+-- but it is not appropriate for LilyPond and Abc (via HNotate)      
+spacerOverlayPack :: Duration -> Int -> Phrase -> Phrase
+spacerOverlayPack w h (Single mo) 
+    | h <= 1      = Single $ spacerPack w mo
+    | otherwise   = Overlay (spacerPack w mo) 
                             (sreplicate (h-1) (motif +- spacer w)) 
-spacerOverlayPad w h (Overlay mo smo) = Overlay (spacerPad w mo) smo' where
-    smo' = (fmap (spacerPad w) smo) >< blanks
+spacerOverlayPack w h (Overlay mo smo) = Overlay (spacerPack w mo) smo' where
+    smo' = (fmap (spacerPack w) smo) >< blanks
     blanks = sreplicate (h - (S.length smo + 1)) (motif +- spacer w) 
+
+-- This is the alternative phrase spacer formulation for HNotate (Abc and
+-- LilyPond) it only spaces horizontally. No extra voice overlays are added.
+spacerPackLength :: Duration -> Phrase -> Phrase
+spacerPackLength w (Single mo)        = Single $ spacerPack w mo
+spacerPackLength w (Overlay mo smo)   = 
+    Overlay (spacerPack w mo) (fmap (spacerPack w) smo) 
+
+                                
                             
-                            
-spacerPad :: Duration -> Motif -> Motif
-spacerPad d (Motif se) = work d (sumMeasure se) where
+spacerPack :: Duration -> Motif -> Motif
+spacerPack d (Motif se) = work d (sumMeasure se) where
   work d l | l >= d     = Motif se      -- (>d) could throw error instead
            | otherwise  = Motif $ se |> spacer (d - l)
            

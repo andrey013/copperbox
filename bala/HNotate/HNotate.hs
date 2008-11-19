@@ -26,7 +26,9 @@ module HNotate (
     system, systemL, system1,
     
     root, note, rest, spacer,    
-    chord, ugraces, agraces, tie, 
+    chord, ugraces, agraces, 
+    chord', ugraces', agraces',
+    tie, 
     simpleEventlist, 
     
     AddtoEventList(..), ( /@ ), ( /@@ ), 
@@ -43,7 +45,7 @@ module HNotate (
     set_parallel_midi_output, 
     set_tempo,
     
-    mkMeter,
+    mkMeter, major, minor
     
  ) where
 
@@ -60,4 +62,8 @@ import HNotate.OutputMain
 mkMeter :: Int -> Int -> Meter
 mkMeter n d = TimeSig n d
 
-  
+major :: Mode
+major = Major
+
+minor :: Mode
+minor = Minor

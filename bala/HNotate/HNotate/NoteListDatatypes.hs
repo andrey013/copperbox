@@ -300,15 +300,27 @@ rest d              = Singleton (Rest Marked d noAnno)
 spacer              :: Duration -> Tile
 spacer d            = Singleton (Rest Spacer d noAnno)
 
-chord               :: [Pitch] -> Duration -> Tile
-chord es d          = Chord (fromList es) d noAnno
+
+ 
+chord               :: Seq Pitch -> Duration -> Tile
+chord se d          = Chord se d noAnno
+
+chord'              :: [Pitch] -> Duration -> Tile
+chord' xs d         = Chord (fromList xs) d noAnno
+
     
-ugraces             :: [(Pitch,Duration)] -> Tile
-ugraces es          = GraceNotes (fromList es) UGrace noAnno
+ugraces             :: Seq (Pitch,Duration) -> Tile
+ugraces se          = GraceNotes se UGrace noAnno
 
-agraces             :: [(Pitch,Duration)] -> Tile
-agraces es          = GraceNotes (fromList es) AGrace noAnno
+ugraces'            :: [(Pitch,Duration)] -> Tile
+ugraces' xs         = GraceNotes (fromList xs) UGrace noAnno
 
+
+agraces             :: Seq (Pitch,Duration) -> Tile
+agraces se          = GraceNotes se AGrace noAnno
+
+agraces'            :: [(Pitch,Duration)] -> Tile
+agraces' xs         = GraceNotes (fromList xs) AGrace noAnno
 
 
 
@@ -335,7 +347,8 @@ instance AddtoEventList Tile where
 
 instance AddtoEventList [EventList] where 
   (|#) evts []        = evts
-  (|#) evts (se:sse)  = EventList $ (getEventList evts `addps` sse) >< getEventList se
+  (|#) evts (se:sse)  = EventList $ 
+                          (getEventList evts `addps` sse) >< getEventList se
       where
         addps se []   = se
         addps se sse  = se |> Poly sse 

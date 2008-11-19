@@ -25,13 +25,12 @@ import Bala.Base.Structural2 hiding (note, spacer)
 import ZMidi
 
 import qualified Data.Foldable as F
-import qualified Data.Map as Map
 import Data.Sequence
 import Data.Word
 
 generateMidi :: Section -> MidiFile
-generateMidi ns = 
-  execConstruction (midiLines $ linearTransform ns) 384 120 
+generateMidi sn = 
+  execConstruction (midiLines $ linearTransform sn) 384 120 
 
 
 -- each line becomes a channel
