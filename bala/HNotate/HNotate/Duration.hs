@@ -30,7 +30,7 @@ module HNotate.Duration (
     
     -- * Helper for ratios
     ratioElements, convRational, convRatio,
-    durationToDouble,
+    durationToDouble, divModR,
    
     base2numbers'inf,
     
@@ -102,6 +102,16 @@ convRatio = uncurry (%) . rfork fromIntegral
 
 durationToDouble :: Duration -> Double
 durationToDouble = uncurry (/) . rfork fromIntegral
+
+--------------------------------------------------------------------------------
+-- divMod (with rounding) for rationals 
+
+-- check - 8.0 `divModR` 0.75
+
+-- prop_mod_postive a b = let (_,md) = a `divModR` b in signum md == 1
+
+divModR :: (Integral b) => Ratio b -> Ratio b -> (b, Ratio b)
+divModR a b = let a1 = a / b; a2 = floor a1 in (a2, a-((a2%1)*b))
 
 
    

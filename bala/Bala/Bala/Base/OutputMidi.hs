@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Output Midi
+-- Output Midi for Structural (1)
 --
 --------------------------------------------------------------------------------
 

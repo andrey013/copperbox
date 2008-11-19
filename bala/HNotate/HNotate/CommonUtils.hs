@@ -27,11 +27,7 @@ import Prelude hiding (null)
 import System.IO
 
           
---------------------------------------------------------------------------------
--- divMod (with rounding) for rationals 
 
-divModR :: (Integral b) => Ratio b -> Ratio b -> (b, Ratio b)
-divModR a b = let a1 = a / b; a2 = round a1 in (a2, a-((a2%1)*b))
 
 
 --------------------------------------------------------------------------------

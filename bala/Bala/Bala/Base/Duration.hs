@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
@@ -19,7 +20,10 @@
 module Bala.Base.Duration (
   module HNotate.Duration,
   TimeSig,
+  unitDuration,
   showBars,
+  
+  divModBar,
   
   segmentByTS,
   
@@ -40,6 +44,9 @@ import Data.Sequence
 
 type TimeSig = (Int,Int)
 
+unitDuration :: TimeSig -> Duration
+unitDuration (n,d) = makeDuration n d
+
 showBars :: Int -> TimeSig -> ShowS
 showBars n s = showChar '|' . applyi n (tsRender1 s . showChar '|')
 
@@ -57,6 +64,20 @@ tsRender1 (n,d) = applyi n ((cs d) .) id where
   cs _  = showChar '+' 
   
 
+instance Fits Duration Duration where
+  measure d     = d  
+  resizeTo _  d = d
+
+
+-- barfill is analoguous to divMod, but with funnier types...
+
+divModBar :: Duration -> TimeSig -> (Int,Duration)
+divModBar dn (n,d) = fn $ dn `divModR` (makeDuration n d) where
+  fn (i,r) = (fromIntegral i,r)
+
+
+
+
 
 segmentByTS :: Fits a Duration => TimeSig -> Seq a -> Seq (Seq a)
 segmentByTS (n,d) se = segment (makeDuration 1 d) se  
@@ -66,9 +87,12 @@ segmentByTS (n,d) se = segment (makeDuration 1 d) se
 
 class XOne a where xone :: a -> Bool
 
-
 instance XOne Bool where
   xone = id
+
+-- Its arbitrary whether we choose Ture of False for this instance
+instance XOne Duration where
+  xone _ = True
 
 xdot1 :: XOne a => a -> Char
 xdot1 a | xone a    = 'x'

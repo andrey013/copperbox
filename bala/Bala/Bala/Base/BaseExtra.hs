@@ -41,8 +41,8 @@ module Bala.Base.BaseExtra (
   explode12, explode100, collapse12, collapse100,
   normalize12, normalize100, 
   
-  -- ** transpose and functions on sequences
-  stranspose, szipl, szipl', sreplicate
+  -- ** transpose and other functions on sequences
+  stranspose, szipl, szipl', sreplicate, smaximum, sminimum
 
   ) where
 
@@ -52,6 +52,7 @@ import qualified Data.Foldable as F
 import Data.List (unfoldr)
 import Data.Sequence
 import Numeric (showHex)
+import Prelude hiding (null)
 
 
 
@@ -249,4 +250,12 @@ sreplicate :: Int -> a -> Seq a
 sreplicate i a | i <= 0     = empty
                | otherwise  = a <| sreplicate (i-1) a 
   
-    
+smaximum :: (Ord a) => (Seq a) -> a
+smaximum se | null se = error "smaximum: empty sequence"
+            | otherwise = let (a :< sa) = viewl se in F.foldr max a se 
+
+sminimum :: (Ord a) => (Seq a) -> a
+sminimum se | null se = error "sminimum: empty sequence"
+            | otherwise = let (a :< sa) = viewl se in F.foldr min a se 
+            
+            
