@@ -23,7 +23,7 @@ import HNotate.BackendMidi
 import HNotate.BuildNoteList
 import HNotate.CommonUtils
 import HNotate.Document ( ODoc, ODocS, emptyDoc, output, formatted, 
-                          ( <+> ) , ( <&\> ) )
+                          ( <+> ) , ( <&\> ), dblvsep )
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
@@ -168,7 +168,7 @@ docuOutput :: DocuHoas -> NotateT IO ()
 docuOutput dhoas = do
     out   <- asks_config _output_file
     docf  <- evalDocuHoas dhoas
-    liftIO $ writeFile out (formatted 0 70 (docf emptyDoc))
+    liftIO $ writeFile out (formatted 0 70 (dblvsep $ fmap ($ emptyDoc) docf))
 
 evalHoas :: Monad m => Hoas -> NotateT m [ODoc]
 evalHoas (Hoas exprs) = foldM eval [] exprs >>= return . reverse
@@ -180,11 +180,13 @@ eval docs (HDo out)           = outputNotes out >>= \d  -> return (d:docs)
 eval docs (HSDo out e)        = outputNotes out >>= \d  -> eval (d:docs) e
 eval docs (HFork e1 e2)       = eval docs e1    >>= \ds -> eval ds e2  
 eval docs (HText _ e)         = eval docs e -- should not occur in standard eval   
+eval docs (HText0 d)          = return [] -- should not occur in standard eval 
 
-evalDocuHoas :: Monad m => DocuHoas -> NotateT m ODocS
-evalDocuHoas (Hoas exprs) = foldM docuEval id exprs
 
--- /Document evaluation/ - used when creating ouput from ODoc combinators 
+evalDocuHoas :: Monad m => DocuHoas -> NotateT m [ODocS]
+evalDocuHoas (Hoas exprs) = mapM (docuEval id) exprs
+
+-- /Document evaluation/ - used when creating output from ODoc combinators 
 docuEval :: Monad m => ODocS -> HoasExpr ODocS -> NotateT m ODocS
 docuEval f (HLet update d e)  = local update (docuEval (f . d) e)
 
@@ -197,6 +199,8 @@ docuEval f (HSDo out e)       = outputNotes out >>= \d ->
 docuEval f (HFork e1 e2)      = docuEval f e1 >>= \f' -> docuEval f' e2  
 
 docuEval f (HText d e )       = docuEval (f . d) e 
+
+docuEval f (HText0 d)         = return (f . d) 
 
 
 outputNotes :: Monad m => OutputDirective -> NotateT m ODoc

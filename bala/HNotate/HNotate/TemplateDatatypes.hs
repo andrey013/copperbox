@@ -149,6 +149,7 @@ data HoasExpr a = HLet (Env -> Env) a (HoasExpr a)
                 | HDo OutputDirective
                 | HFork (HoasExpr a) (HoasExpr a)
                 | HText a (HoasExpr a)
+                | HText0 a
               
 type Hoas       = ParaHoas ()
 type HoasExprU  = HoasExpr () 

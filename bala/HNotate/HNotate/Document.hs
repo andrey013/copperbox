@@ -18,7 +18,7 @@ module HNotate.Document (
   emptyDoc, isEmpty,
   text, char, string, fillString, int,
   ( <> ), ( <+> ), ( <&\> ),
-  hcat, hsep, vsep,
+  hcat, hsep, vsep, dblvsep,
   punctuate,
   enclose, encloseSpace, dup,
   line, space, comma, colon, dot, dash, equals, prime,
@@ -35,7 +35,7 @@ module HNotate.Document (
   underline,
   command, command1, command2,
   
-  lineS,
+  lineS, nextS,
   
   PP(..),
   output, formatted, quickOutput, unformatted 
@@ -126,6 +126,10 @@ hsep = foldl (<+>) emptyDoc
 
 vsep :: [ODoc] -> ODoc
 vsep = foldl (<&\>) emptyDoc 
+
+dblvsep :: [ODoc] -> ODoc
+dblvsep (x:xs) = foldl (\a d -> a <&\> text "" <&\> d) x xs 
+dblvsep []     = emptyDoc
 
 punctuate :: ODoc -> [ODoc] -> [ODoc] 
 punctuate = intersperse
@@ -308,6 +312,8 @@ command2 s d1 d2 = command s <+> d1 <+> d2
 lineS :: ODoc -> ODocS
 lineS d = (d <&\>)
 
+nextS :: ODoc -> ODocS
+nextS d = (d <>)
 
 --------------------------------------------------------------------------------
 -- class 

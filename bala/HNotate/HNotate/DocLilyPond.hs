@@ -27,16 +27,31 @@ lilypond ds = Hoas ds
 
 lilypond1 :: HoasExprD -> DocuHoas
 lilypond1 d = Hoas [d]
+
+noExpr :: HoasExprD
+noExpr = HText0 doc where
+    doc = nextS $ emptyDoc
  
-version :: DocS
-version expr = HText doc expr where
+version :: HoasExprD
+version = HText0 doc where
     doc = lineS $ command "version" <+> dblquotes (text "2.10.33")
 
-    
+header :: DocS     
+header expr = HText doc expr where
+    doc d = command "header" <+> (bracesLines d)
+
+title :: String -> DocS 
+title s expr = HText doc expr where
+    doc = lineS $ text "title" <+> equals <> dblquotes (text s)     
+        
 book :: DocS     
 book expr = HText doc expr where
     doc d = command "book" <+> (bracesLines d)
-    
+
+score :: DocS     
+score expr = HText doc expr where
+    doc d = command "score" <+> (bracesLines d)
+
     
 relative :: Pitch -> DocS
 relative p expr = HLet update doc expr where
@@ -54,7 +69,12 @@ time n d expr = HLet update doc expr where
 definition :: String -> DocS
 definition s expr = HText doc expr where
     doc d   = text s <+> equals <> indent 1 d 
-              
+    
+invocation :: String -> HoasExprD   
+invocation s = HText0 doc where
+    doc = lineS $ command s
+    
+                  
 key :: PitchLabel -> Mode -> DocS
 key l m expr = HLet update doc expr where
     update  = set_current_key (Key l m [])
@@ -128,15 +148,15 @@ duration drn
            
                 
 mode :: Mode -> ODoc
-mode Major        = text "major" 
-mode Minor        = text "minor"
-mode Lydian       = text "lydian"
-mode Ionian       = text "ionian" 
-mode Mixolydian   = text "mixolydian"
-mode Dorian       = text "dorian"
-mode Aeolian      = text "aeolian"
-mode Phrygian     = text "phrygian"
-mode Locrian      = text "locrian"
+mode Major        = command "major" 
+mode Minor        = command "minor"
+mode Lydian       = command "lydian"
+mode Ionian       = command "ionian" 
+mode Mixolydian   = command "mixolydian"
+mode Dorian       = command "dorian"
+mode Aeolian      = command "aeolian"
+mode Phrygian     = command "phrygian"
+mode Locrian      = command "locrian"
 
 
 bracesLines :: ODoc -> ODoc

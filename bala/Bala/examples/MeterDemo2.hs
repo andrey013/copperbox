@@ -51,12 +51,19 @@ genLy = outputLilyPondDocu 5 samba_sys samba_doc "./out/samba_baiao.ly"
     samba_sys = system1 "samba_baiao"  samba_eventlist
     samba_eventlist = generateEventList samba_baiao    
     samba_doc = lilypond 
-                  -- TO FIX [ version
-                  [ definition "sambaBaiao" $
+                  [ version
+                  
+                  , header                  $
+                    title "Samba Baiao"     $
+                    noExpr
+                         
+                  , definition "sambaBaiao" $
                     relative middle_c       $ 
                     time 2 4                $
                     key c_nat major         $
                     outputRelative "samba_baiao"
+                  
+                  , book $ score $ invocation "sambaBaiao"
                   ]  
     
 
