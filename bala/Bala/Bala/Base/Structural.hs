@@ -1,10 +1,10 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Base.Structural
+-- Module      :  Bala.Base.Structural2
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -12,256 +12,142 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- /Structural grouping of elements/
+-- /Structural grouping of elements/ second version
 --
 --------------------------------------------------------------------------------
 
 module Bala.Base.Structural where
 
-import Bala.Base.BaseExtra (stranspose)
+import Bala.Base.BaseExtra
 import Bala.Base.Duration
 import Bala.Base.Pitch
-
-import HNotate (root, System, system1, (|#) )
-import qualified HNotate as H
 import HNotate.Fits
 
-import Control.Applicative ( (<$>) )
-import Data.Foldable
-import Data.Sequence
+import Control.Applicative hiding (empty)
+
+import qualified Data.Foldable as F
+import Data.List (transpose, intercalate)
+import Data.Sequence hiding (length, null)
+import qualified Data.Sequence as S -- for length and null
 import Data.Traversable
-import Prelude hiding (length, null, foldl, foldr, maximum) 
 
+--------------------------------------------------------------------------------
+-- Datatypes
 
-newtype NoteListF a = NoteList { getNoteList :: Seq (BarF a) }
+-- Containers
+
+data SectionF a = Section TimeSig (Seq (PhraseF a))
   deriving (Show)
-  
 
-      
-data BarF a = Bar (Seq a) | Overlay (Seq (Seq a))   
+data PhraseF a = Single (MotifF a)
+               | Overlay (MotifF a) (Seq (MotifF a))   
   deriving (Show)
-  
 
-data EltF p d = DEvt (Evt p) d      -- some 'event' that has a duration 
-              | Mark Mark            -- a mark that has no duration
-              | Chord (Seq p) d
-              | AGrace (Seq (p,d)) p d 
-              | UGrace p d (Seq (p,d))
+newtype MotifF a = Motif { getMotif :: Seq a }
+  deriving (Show)  
+
+type Section  = SectionF Elt
+type Phrase   = PhraseF Elt
+type Motif    = MotifF Elt
+
+
+-- Elements
+
+type GraceNotes = Seq (Pitch,Duration)
+
+data Elt = DEvt Evt Duration      -- some 'event' that has a duration 
+         | Mark Mark            -- a mark that has no duration
+         | Chord (Seq Pitch) Duration
+         | AGrace GraceNotes Pitch Duration 
+         | UGrace Pitch Duration GraceNotes
   deriving (Eq,Show)
   
-data Evt p = Note p | Rest | Spacer
+data Evt = Note Pitch | Rest | Spacer
   deriving (Eq,Show)
    
 data Mark = Tie      -- | ... more ?       
   deriving (Eq,Show)
-
--- no Functor, Foldable, Traversable for EltF
-type Elt = EltF Pitch Duration
-
-type Bar = BarF (EltF Pitch Duration)
-
-type NoteList = NoteListF (EltF Pitch Duration)
-
-
---------------------------------------------------------------------------------
--- 
-
-instance Functor NoteListF where
-  fmap f (NoteList se)     = NoteList (fmap (fmap f) se)
-  
-instance Foldable NoteListF where
-  foldMap f (NoteList se)     = foldMap (foldMap f) se
-
-instance Traversable NoteListF where
-  traverse f (NoteList se)  = NoteList <$> traverse (traverse f) se
-  
-instance Functor BarF where
-  fmap f (Bar se)       = Bar (fmap f se)
-  fmap f (Overlay sse)  = Overlay (fmap (fmap f) sse) 
-
-instance Foldable BarF where
-  foldMap f (Bar se)          = foldMap f se
-  foldMap f (Overlay sse)     = foldMap (foldMap f) sse
-
-instance Traversable BarF where
-  traverse f (Bar se)          = Bar <$> traverse f se
-  traverse f (Overlay sse)     = Overlay <$> traverse (traverse f) sse
-  
   
 --------------------------------------------------------------------------------
--- 
+-- wrapped constructors / builders
+
+motif :: MotifF a
+motif = Motif $ empty
+
+phrase :: MotifF a -> PhraseF a
+phrase a = Single a 
+
+section :: TimeSig -> PhraseF a -> SectionF a
+section tm a = Section tm (singleton a) 
 
 
-class Transpose a where transpose :: (Pitch -> Pitch) -> a -> a
+starts :: Fits a Duration => PhraseF a -> MotifF a -> PhraseF a
+starts (Single a)     mo = Overlay a (singleton mo)
+starts (Overlay a se) mo = Overlay a (se |> mo)
 
-instance Transpose a => Transpose (NoteListF a) where
-  transpose f = fmap (transpose f) 
-  
-instance Transpose a => Transpose (BarF a) where
-  transpose f = fmap (transpose f) 
-
-
-  
-instance Transpose (EltF Pitch d) where
-  transpose f (DEvt e d)         = DEvt (transpose f e) d 
-  transpose f (Mark z)           = Mark z
-  transpose f (Chord se d)       = Chord se d -- can't do anything (?)
-  transpose f (AGrace se p d)    = AGrace (transpose f se) (f p) d
-  transpose f (UGrace p d se)    = UGrace (f p) d (transpose f se)
+starts' :: Fits a Duration => [MotifF a] -> PhraseF a
+starts' []     = Single motif
+starts' (x:xs) = foldl starts (phrase x) xs
 
 
-instance Transpose (Evt Pitch) where 
-  transpose f (Note p) = Note (f p)
-  transpose f Rest     = Rest 
-  transpose f Spacer   = Spacer
-
-instance Transpose (Seq (Pitch,d)) where
-  transpose f = fmap (\(p,d) -> (transpose f p, d)) 
-  
-instance Transpose Pitch where
-  transpose f = f
-
-
---------------------------------------------------------------------------------
--- 
-
-  
-
-
-infixl 6 ->-
-(->-) :: NoteListF elt -> BarF elt -> NoteListF elt
-(->-) (NoteList se) bar = NoteList (se |> bar)
 
 infixl 7 +-
-(+-) :: BarF elt -> elt -> BarF elt
-(+-) (Bar se) elt = Bar  (se |> elt)
+(+-) :: MotifF elt -> elt -> MotifF elt
+(+-) (Motif se) elt = Motif  (se |> elt)
 
 
-infixr 7 -\-
-(-\-) :: BarF elt -> BarF elt -> BarF elt 
-(-\-) (Bar sa)      (Bar sb)      = Overlay (singleton sa |> sb)
-(-\-) (Overlay ssa) (Bar sb)      = Overlay (ssa |> sb)
-(-\-) (Bar sa)      (Overlay ssb) = Overlay (sa <|  ssb)
-(-\-) (Overlay ssa) (Overlay ssb) = Overlay (ssa >< ssb)
+
+rest      :: Duration -> Elt
+rest d    = DEvt Rest d
+
+spacer    :: Duration -> Elt
+spacer d  = DEvt Spacer d
+
+note      :: Pitch -> Duration -> Elt
+note p d  = DEvt (Note p) d
 
 
-overlay :: Seq (BarF elt) -> BarF elt
-overlay = step . viewl
-  where 
-    step EmptyL     = error $ "overlay: empty sequence"
-    step (a :< se)  = foldl (-\-) a se
-
-note :: Pitch -> Duration -> Elt
-note p d = DEvt (Note p) d 
-
-rest :: Duration -> Elt
-rest d = DEvt Rest d
-
-chord :: [Pitch] -> Duration -> Elt
-chord ps d = Chord (fromList ps) d
-
-tie :: Elt 
-tie = Mark Tie
-
-notelist :: NoteListF a
-notelist = NoteList empty
-
-bar :: BarF a
-bar = Bar empty
-
-
+    
 --------------------------------------------------------------------------------
--- Metrical 'reshaping'
+-- Favourite instances
 
--- It looks like remetering should only be done before the translating to
--- to HNotate (or pretty printing to the console).
--- TODO - Is this right? 
--- If so should we have a phantom type layer that qualifies what operations
--- can be done on what notelists?
-
--- Note remeter can leave the last bar ragged is this a good idea?
--- (ragged - the last bar might be short and not padded with a spacer) 
-remeter :: Duration -> Duration -> NoteList -> NoteList
-remeter bar_len asis (NoteList se) = step empty asis (viewl se)
-  where
-    step acc _    EmptyL      = NoteList $ acc
-    step acc disp (e :< se)   = let sbars = remeterBar bar_len disp e
-                                    disp' = lastBarDisp (viewr sbars) 
-                                in step (acc >< sbars) disp' (viewl se)
-    
-    
-    lastBarDisp :: ViewR Bar -> Duration
-    lastBarDisp EmptyR                = duration_zero
-    lastBarDisp (_ :> (Bar se))       = sumMeasure se
-    lastBarDisp (_ :> (Overlay sse))  = maximum $ 
-          foldr (\a -> (:) (sumMeasure a)) [] se
-    
-    
-remeterBar :: Duration -> Duration -> Bar -> Seq Bar
-remeterBar bar_len asis (Bar se) = 
-    fmap Bar $ remeterSe bar_len asis se
-
-
-remeterBar bar_len asis (Overlay sse) = 
-    step empty $ viewl $ stranspose $ fmap (remeterSe bar_len asis) sse
-  where
-    step acc EmptyL      = acc
-    step acc (e :< sse)  = let ovs = overlay (fmap Bar e) 
-                           in step (acc |> ovs) (viewl sse) 
+-- functor
+instance Functor SectionF where
+  fmap f (Section tm se)        = Section tm (fmap (fmap f) se)
   
-
-
-remeterSe :: Duration -> Duration -> Seq Elt -> Seq (Seq Elt)
-remeterSe bar_len asis se = asegmentHy (|> tie) asis bar_len se  
-
-
-barcount :: NoteListF a -> Int
-barcount (NoteList se) = length se
-
-
-mkSystem :: String -> NoteList -> System
-mkSystem name (NoteList se) = system1 name $ step root (viewl se)
-  where
-    step acc EmptyL               = acc
-    step acc (Overlay ovs :< se)  = let xs = toList (fmap overlay1 ovs) 
-                                    in step (acc |# xs) (viewl se) 
-    step acc (Bar evs :< se)      = step (foldl' addr acc evs) (viewl se)
-
-    overlay1 = foldl' addr root 
-    
-    addr t (DEvt evt d)        = t |# (mkEvent evt d)
-    addr t (Mark m)            = t |# (mkMark m)
-    addr t (Chord se d)        = t |# (H.chord (toList se) d)
-    addr t (AGrace se p d)     = t |# H.agraces (toList se) |# H.note p d
-    addr t (UGrace p d se)     = t |# H.note p d |# H.ugraces (toList se)
-    
-    
-    mkEvent (Note p)  d = H.note p d
-    mkEvent Rest      d = H.rest d
-    mkEvent Spacer    d = H.spacer d
-    
-    mkMark Tie          = H.tie 
-    
-{-
-
--- aka null
-class Null a where isNull :: a -> Bool
-
-instance Null (NoteListF a) where
-  isNull (NoteList se) = null se
-   
-   
-instance Null (BarF a) where
-  isNull (Bar se)       = null se
-  isNull (Overlay sse)  = null sse
+-- Should we recalulate the cache duration? (Is it actually useful?)
+instance Functor PhraseF where
+  fmap f (Single mo)          = Single (fmap f mo)
+  fmap f (Overlay mo smo)     = Overlay (fmap f mo) (fmap (fmap f) smo) 
   
--}
+instance Functor MotifF where
+  fmap f (Motif se)             = Motif (fmap f se)
 
-
+-- foldable
+instance F.Foldable SectionF where
+  foldMap f (Section tm se)     = F.foldMap (F.foldMap f) se
+  
+instance F.Foldable PhraseF where
+  foldMap f (Single mo)       = F.foldMap f mo
+  foldMap f (Overlay mo smo)  = F.foldMap (F.foldMap f) (mo <| smo) 
+  
+instance F.Foldable MotifF where
+  foldMap f (Motif se)          = F.foldMap f se
+  
+  
+-- traversable   
+instance Traversable PhraseF where
+  traverse f (Single mo)      = Single  <$> traverse f mo
+  traverse f (Overlay mo smo) = Overlay <$> traverse f mo 
+                                        <*> traverse (traverse f) smo
+                                          
+instance Traversable MotifF where
+  traverse f (Motif se)          = Motif <$> traverse f se
+  
 --------------------------------------------------------------------------------
--- fitting
+-- Fits and XOne
 
-instance Fits (EltF p Duration) Duration where
+instance Fits Elt Duration where
   measure (DEvt e d)          = d
   measure (Mark z)            = duration_zero
   measure (Chord se d)        = d 
@@ -274,5 +160,176 @@ instance Fits (EltF p Duration) Duration where
   resizeTo (AGrace se p _)   d = AGrace se p d
   resizeTo (UGrace p _ se)   d = UGrace p d se
   
+instance XOne Elt where
+  xone (DEvt e d)           = xone e
+  xone (Mark z)             = False
+  xone (Chord se d)         = True 
+  xone (AGrace se p d)      = True
+  xone (UGrace p d se)      = True
+
+instance XOne Evt where
+  xone (Note _)             = True
+  xone Rest                 = False
+  xone Spacer               = False
+  
+--------------------------------------------------------------------------------
+-- drawing to ascii
+-- (could now use padToSquare)
+
+draw :: (Fits a Duration, XOne a) => SectionF a -> IO ()
+draw (Section tm se) = 
+    let xss       = F.foldr (\e a -> drawPhrase tm e : a) [] se
+        height    = maximum $ fmap length xss
+        xss'      = transpose $ fmap (toWidth . toHeight height) xss
+    in mapM_ (putStrLn . intercalate "/") xss'
+  where 
+    toHeight :: Int -> [[Char]] -> [[Char]]
+    toHeight h xs | h > length xs = xs ++ replicate (h - length xs) "" 
+                  | otherwise     = xs    
+    
+    toWidth :: [[Char]] -> [[Char]]
+    toWidth xss = let width = maximum $ fmap length xss
+                  in fmap (\e -> if null e then (pad width e) else e) xss  
+  
+
+pad :: Int -> [Char] -> [Char]
+pad n xs = let l = length xs in
+           if n <= l then xs else xs ++ replicate (n - l) ' ' 
+                               
+
+--- need to pad...
+drawPhrase :: (Fits a Duration, XOne a) => TimeSig -> PhraseF a -> [[Char]]
+drawPhrase tm (Single mo)         = [drawMotif tm mo]
+drawPhrase tm o@(Overlay mo smo)  = drawPad d tm mo : xs where
+  d = maxPhraseDuration o
+  xs = F.foldr (\e a -> drawPad d tm e : a) [] smo
+  
+  drawPad :: (Fits a Duration, XOne a) => Duration ->  TimeSig -> MotifF a -> [Char] 
+  drawPad d tm mo = let w   = length $ spaces tm d
+                        chs = drawMotif tm mo
+                    in pad w chs
+  
+  spaces :: TimeSig -> Duration -> [Char]
+  spaces (n,d) dn = xdotAve (n,d) $ singleton dn
+  
+
+drawMotif :: (Fits a Duration, XOne a) => TimeSig -> MotifF a -> [Char]
+drawMotif tm (Motif se) = xdotAve tm se    
+
+--------------------------------------------------------------------------------
+-- midi
+
+-- ss :: Section -> Seq (Seq
+
+linearTransform :: SectionF a -> Seq (Seq a)
+linearTransform = fmap joinMotifs . stranspose . sectionContents where
+  joinMotifs :: Seq (MotifF a) -> Seq a
+  joinMotifs = F.foldl (\a mo -> a >< motifContents mo) empty 
+  
+ 
+
+sectionContents :: SectionF a -> Seq (Seq (MotifF a))
+sectionContents (Section _ se) = F.foldl fn empty se where
+    fn a ph = a |> phraseContents ph  
+  
+    phraseContents :: PhraseF a -> Seq (MotifF a)
+    phraseContents (Single mo)      = singleton mo
+    phraseContents (Overlay mo smo) = mo <| smo
+
+motifContents :: MotifF a -> Seq a
+motifContents (Motif se) = se
+
+
+
+
+--------------------------------------------------------------------------------
+-- Packing - for Midi
+
+
+-- Pack vertically (so we have the same number of channels) and 
+-- Pack horizontally (so overlays has consistent lengths).
+-- Overlays should have the same length within the (vertical) overlay,
+-- adjacent horizontal overlays can have different lengths.
+
+-- @ aaa | aaaaa  `becomes` aaa | aaaaa @ 
+-- @ bb  | bbbb             bb. | bbbb. @ 
+-- @ c   |                  c.. | ..... @ 
+
+-- Also, the last bar of a motifs is spaced if the motif doesn't divide 
+-- exactly into bars.
+
+-- Midi and Ascii processing is easier if the section is 'squared' 
+-- then we can use the standard @transpose@ function to get a 
+-- line-by-line view rather than a column-by-column one. 
+packToSquare :: Section -> Section
+packToSquare s@(Section tm se) = Section tm $ fmap fn se where
+    h = sectionHeight s
+    fn :: Phrase -> Phrase
+    fn ph = spacerOverlayPack (regularPhraseDuration tm ph) h ph
+
+-- LilyPond and Abc (via HNotate) handle overlays themselves, so we 
+-- just spacer pack the motifs inside a phrase with this transformation.
+-- This stops us having \ragged overlays\.  
+packToLength :: Section -> Section
+packToLength s@(Section tm se) = Section tm $ fmap fn se where
+    fn :: Phrase -> Phrase
+    fn ph = spacerPackLength (regularPhraseDuration tm ph) ph
+    
+    
+
+sectionHeight :: SectionF a -> Int
+sectionHeight (Section _ se) = smaximum $ fmap phraseHeight se where
+
+phraseHeight :: PhraseF a -> Int
+phraseHeight (Single _)     = 1
+phraseHeight (Overlay _ se) = 1 + S.length se
+
+regularPhraseDuration :: Fits a Duration => TimeSig -> PhraseF a -> Duration
+regularPhraseDuration tm ph = bestfit $ divModBar (maxPhraseDuration ph) tm
+  where
+    bestfit (n,r) | r == duration_zero  = unitDuration tm * fromIntegral n  
+                  | otherwise           = unitDuration tm * fromIntegral n+1
+
+maxPhraseDuration :: Fits a Duration => PhraseF a -> Duration
+maxPhraseDuration (Single mo)       = sumMeasure mo
+maxPhraseDuration (Overlay mo smo)  = 
+    max (sumMeasure mo) (smaximum $ fmap sumMeasure smo)
+
+  
+-- This 'squares' a phrase - it is extended horizontally so all overlays
+-- are the same length. It is also extended vertically (adding blank 
+-- motifs where necessary) so each phrase has the same numer of overlays.
+-- The vertical transformation simplifies later processig for Midi and ascii
+-- but it is not appropriate for LilyPond and Abc (via HNotate)      
+spacerOverlayPack :: Duration -> Int -> Phrase -> Phrase
+spacerOverlayPack w h (Single mo) 
+    | h <= 1      = Single $ spacerPack w mo
+    | otherwise   = Overlay (spacerPack w mo) 
+                            (sreplicate (h-1) (motif +- spacer w)) 
+spacerOverlayPack w h (Overlay mo smo) = Overlay (spacerPack w mo) smo' where
+    smo' = (fmap (spacerPack w) smo) >< blanks
+    blanks = sreplicate (h - (S.length smo + 1)) (motif +- spacer w) 
+
+-- This is the alternative phrase spacer formulation for HNotate (Abc and
+-- LilyPond) it only spaces horizontally. No extra voice overlays are added.
+spacerPackLength :: Duration -> Phrase -> Phrase
+spacerPackLength w (Single mo)        = Single $ spacerPack w mo
+spacerPackLength w (Overlay mo smo)   = 
+    Overlay (spacerPack w mo) (fmap (spacerPack w) smo) 
+
+                                
+                            
+spacerPack :: Duration -> Motif -> Motif
+spacerPack d (Motif se) = work d (sumMeasure se) where
+  work d l | l >= d     = Motif se      -- (>d) could throw error instead
+           | otherwise  = Motif $ se |> spacer (d - l)
+           
+
+
+
+                          
+                         
+
+
 
     

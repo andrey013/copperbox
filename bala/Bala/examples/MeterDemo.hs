@@ -1,30 +1,21 @@
 
--- Note to me...
--- What about visual intrepretations, e.g. so we can see how well
--- a sequence fits is metrical shape?
-
 
 -- ghci ...
 -- :set -i../../HNotate:../../Bala:../../ZMidi
 
 module MeterDemo where
 
+import Bala.Base.Duration
+import Bala.Base.Pitch
 import Bala.Base.OutputMidi
+import Bala.Base.Structural
 
+import Bala.Base.OutputHNotate
 
-import Bala.Base hiding (a4)
-
+import HNotate hiding (note, rest)
+import HNotate.DocLilyPond
 
 import ZMidi (writeMidi)
-
-
-
-import qualified Data.Foldable as F
-import Data.List hiding (transpose, null)
-import Data.Ratio
-import Data.Sequence
-import Prelude hiding (null)
-
 
 attack d = note c4 d
 
@@ -38,30 +29,47 @@ a16   = attack du16
 r16   = rest du16
 
 
-sb_tap :: Bar
-sb_tap  = bar +- r16 +- a8 +- a16 +- r16 +- a8  +- a16 
-              +- r16 +- a8 +- a16 +- r16 +- a16 +- a8
 
--- sb_foot = bar +- r4  +- a8 +- a8 +- <TIE> +- a4  +- a8' +- a16
-sb_foot = bar +- r4  +- a8 +- a4' +- a8' +- a16
+sb_tap :: Motif 
+sb_tap  = motif +- r16 +- a8 +- a16 +- r16 +- a8  +- a16 
+                +- r16 +- a8 +- a16 +- r16 +- a16 +- a8
 
-samba_baiao = notelist ->- (transpose (const a5) sb_tap) -\- sb_foot
+sb_foot = motif +- r4  +- a8 +- a4' +- a8' +- a16
 
-demo00 = ppNoteList $ samba_baiao
-demo01 = ppNoteList $ remeter (2%4) 0 samba_baiao
-demo02 = printOM $ sofar $ remeter (2%4) 0 samba_baiao
-  where sofar = buildOM . labelOverlays . labelBars
-  
-demo03 = noteListToLines (4%4) samba_baiao
+samba_baiao = section (2,4) $ starts' [sb_tap, sb_foot]
 
-
-
-
-samba_baiao_sys = mkSystem "samba_baiao" $ remeter (2%4) 0 samba_baiao
-
-main :: IO ()
-main = writeMidi "./out/samba_baiao.mid" samba_midi
+genMidi :: IO ()
+genMidi = writeMidi "./out/samba_baiao2.mid" samba_midi
   where
-    samba_midi = generateMidi (4%4) samba_baiao
+    samba_midi = generateMidi samba_baiao 
+
+
+-- Not yet
+genLy :: IO ()
+genLy = outputLilyPondDocu 5 samba_sys samba_doc "./out/samba_baiao.ly"
+  where
+    samba_sys = system1 "samba_baiao"  samba_eventlist
+    samba_eventlist = generateEventList samba_baiao    
+    samba_doc = lilypond 
+                  [ version
+                  
+                  , header                  $
+                    title "Samba Baiao"     $
+                    noExpr
+                         
+                  , definition "sambaBaiao" $
+                    relative middle_c       $ 
+                    time 2 4                $
+                    key c_nat major         $
+                    outputRelative "samba_baiao"
+                  
+                  , book $ score $ invocation "sambaBaiao"
+                  ]  
+    
+
 
     
+main = do 
+    genMidi 
+    genLy
+                 

@@ -46,22 +46,28 @@ dblangles :: Doc -> Doc
 dblangles d = text "<<" <+> d <+> text ">>"
  
 --------------------------------------------------------------------------------
--- NoteLists
+-- Structural 
+  
+ppSection :: Section -> Doc
+ppSection (Section tm se) = 
+    vcat $ map numberedPharse (zip (F.toList se) [1..])
+  where    
+    numberedPharse :: (Phrase,Int) -> Doc
+    numberedPharse (ph,i) = text "|:" <>  int i $$ nest 4 (ppPhrase ph) 
 
-ppNoteList :: NoteList -> Doc
-ppNoteList (NoteList se) = 
-    vcat $ map (uncurry (flip ppBar)) (zip (F.toList se) [1..])
 
-ppBar :: Int -> Bar -> Doc
-ppBar i (Bar e)          = barNumber i $$ nest 4 (ppElts e)
-ppBar i (Overlay se)     = 
-      barNumber i $$ nest 4 (dblangles $ fsep $ punctuate 
-                                               (text " // ")
-                                               (map ppElts $ F.toList se))
+
+ppPhrase :: Phrase -> Doc
+ppPhrase (Single mo)        = ppMotif mo
+ppPhrase (Overlay mo smo)   = dblangles $ fsep $ punctuate (text " // ") 
+                                                           (map ppMotif xs) 
+  where xs = mo : F.toList smo
                                                
 
-ppElts :: Seq Elt -> Doc
-ppElts = genPunctuateSeq ppElt space
+
+
+ppMotif :: Motif -> Doc
+ppMotif (Motif mo) = genPunctuateSeq ppElt space mo
 
 ppElt :: Elt -> Doc 
 ppElt (DEvt evt d)    = ppEvt evt <> durationSuffix d
@@ -70,7 +76,7 @@ ppElt (Chord se d)    = ppChord se <> durationSuffix d
 ppElt (AGrace se p d) = ppGrace se <> char '^' <> ppPitch p <> durationSuffix d 
 ppElt (UGrace p d se) = ppPitch p <> durationSuffix d <> char '^' <> ppGrace se 
               
-ppEvt :: Evt Pitch -> Doc
+ppEvt :: Evt -> Doc
 ppEvt (Note p)  = ppPitch p
 ppEvt Rest      = char 'r'
 ppEvt Spacer    = char 'z'
@@ -87,8 +93,7 @@ ppMark :: Mark -> Doc
 ppMark Tie = char '~'
               
                                                   
-barNumber :: Int -> Doc
-barNumber i = text "|:" <>  int i  
+ 
 
 durationSuffix :: Duration -> Doc
 durationSuffix d = char '\'' <> ppDuration d       
@@ -109,11 +114,6 @@ ppDuration r = let (n,d) = (numerator r, denominator r) in
                integer n <> char '/' <> integer d    
                
                
-printOM :: OverlayMap -> Doc
-printOM = F.foldl' fn empty . Map.toList where
-    fn d (k,sse) = d  $$ text "Overlay:" <+> int k 
-                      $$ vcat (map overlay (F.toList sse))
-    
-    overlay (i,_,se) = text "bar:" <+> int i <+> ppElts se  
+
 
                        

@@ -20,7 +20,7 @@ module Bala.Base.OutputHNotate where
 import Bala.Base.BaseExtra
 import Bala.Base.Duration
 import Bala.Base.Pitch
-import Bala.Base.Structural2
+import Bala.Base.Structural
 
 import qualified HNotate as H
 import HNotate ( (|#) )
