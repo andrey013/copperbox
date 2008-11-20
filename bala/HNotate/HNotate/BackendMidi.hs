@@ -158,7 +158,6 @@ simplifyBar ch (Bar se) = simplify empty (viewl se) ktile
     simplifyGlyph (Note p d _)          = Just $ MNote p d
     simplifyGlyph (Rest _ d _)          = Just $ MRest d
     simplifyGlyph (RhythmicMark _ d _)  = Just $ MRest d
-  --  simplifyGlyph (Mark "tie" _)        = Just MTie
     simplifyGlyph (Mark _ _)            = Nothing
 
 translateMidiGlyphs :: Monad m => Seq (Int,Seq MidiTile) -> NotateT m (Seq Message)

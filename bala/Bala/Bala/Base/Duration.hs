@@ -19,7 +19,9 @@
 
 module Bala.Base.Duration (
   module HNotate.Duration,
-  TimeSig,
+  TimeSig, timeSig,
+  compoundMeter, simpleMeter,
+  
   unitDuration,
   showBars,
   
@@ -32,7 +34,7 @@ module Bala.Base.Duration (
   
   ) where
 
-import Bala.Base.BaseExtra (applyi)
+import Bala.Base.BaseExtra (applyi, log2whole)
 
 import HNotate.Duration
 import HNotate.Fits
@@ -43,6 +45,21 @@ import Data.Sequence
 
 
 type TimeSig = (Int,Int)
+
+-- Should TimeSig be a newtype so we can only build it with this function?
+timeSig :: Int -> Int -> TimeSig
+timeSig n d | n < 1             = error "timeSig n must be (>=1)"
+            | not (log2whole d) = error base_error
+            | otherwise         = (n,d)
+  where            
+    base_error = "timeSig - d must be in the sequence [1,2,4,8,16,..]"
+
+compoundMeter :: TimeSig -> Bool
+compoundMeter (n,d) = log2whole d && (n `mod` 3 == 0)
+
+simpleMeter :: TimeSig -> Bool
+simpleMeter (_,d)   = log2whole d
+
 
 unitDuration :: TimeSig -> Duration
 unitDuration (n,d) = makeDuration n d

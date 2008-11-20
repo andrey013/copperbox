@@ -90,6 +90,14 @@ oveFrValue :: OctaveFractional -> Float
 oveFrValue = getOveFr
 
 
+-- | Convert to and from the primary pitch representation.
+class EncodePitch a where 
+    -- | Convert to a Pitch.
+    toPitch       :: a -> Pitch 
+    -- | Convert from a Pitch. 
+    fromPitch     :: Pitch -> a
+    
+    
 -- Midi middle C is 60, whereas for Pitch it is 48
 instance EncodePitch MidiPitch where
   fromPitch p = M $ semitones p + 12

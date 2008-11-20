@@ -3,8 +3,8 @@
 
 module BalaHaddock 
   ( module Bala.Base 
-  , module Bala.MusicRep  
+  , module Bala.MusicRep
   ) where
 
 import Bala.Base
-import Bala.MusicRep
+import Bala.MusicRep hiding ( Chord(..) )

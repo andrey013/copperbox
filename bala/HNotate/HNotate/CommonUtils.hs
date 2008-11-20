@@ -47,13 +47,19 @@ infixl 7 #.
 g #. f = f . g
 
 
--- variantions of 'on' 
+-- variations of 'on' 
 
 onr :: (a -> c -> d) -> (b -> c) -> a -> b -> d
 op `onr` f = \x y -> x `op` f y
 
 onl :: (c -> b -> d) -> (a -> c) -> a -> b -> d
 op `onl` f = \x y -> f x `op` y
+
+foldlOn :: F.Foldable t => (a -> b -> a) -> (c -> b) -> a -> t c -> a
+foldlOn op ppf = F.foldl (op `onr` ppf)
+
+foldrOn :: F.Foldable t => (b -> a -> a) -> (c -> b) -> a -> t c -> a
+foldrOn op ppf = F.foldr (op `onl` ppf)
 
 
 -- variations of flipped bind with higher arity

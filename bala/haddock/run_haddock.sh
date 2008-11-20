@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# move html to trash, don't want old modules hanging around.
+HTML_FILES=$(find -name "*.html" )
+
+
+for file in $HTML_FILES
+do
+  mv $file ./_trash/
+done
+
 
 haddock --odir=doc/bala   --html --optghc=-i../HNotate:../Bala:../ZMidi BalaHaddock.hs
 haddock --odir=doc/zmidi  --html --optghc=-i../ZMidi ZMidiHaddock.hs

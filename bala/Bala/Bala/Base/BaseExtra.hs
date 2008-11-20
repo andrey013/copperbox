@@ -26,9 +26,11 @@ module Bala.Base.BaseExtra (
   sentinelCount,
 
   
-  base2bases, 
+  base2bases, log2whole,
   
   -- * Utility functions 
+  dup, first, second, fork,
+  
   applyi, zam, 
   mod12, mod7,
   sub, sub1, 
@@ -42,7 +44,10 @@ module Bala.Base.BaseExtra (
   normalize12, normalize100, 
   
   -- ** transpose and other functions on sequences
-  stranspose, szipl, szipl', sreplicate, smaximum, sminimum
+  stranspose, 
+  szip, szipWith,
+  szipl, sziplWith, szipl', 
+  sreplicate, smaximum, sminimum
 
   ) where
 
@@ -92,7 +97,7 @@ class Synonym a where
 -- Also, the measure is solely distance, direction isn't considered    
 sentinelCount :: (Num a, Ord a) => a -> a -> a 
 sentinelCount i j  | j > i      = f j i
-                    | otherwise  = f i j
+                   | otherwise  = f i j
                     
                     
   where f i j = i - j + 1   
@@ -100,13 +105,30 @@ sentinelCount i j  | j > i      = f j i
   
 
 -- | generate an infinite list of base2 bases (?) 
--- (terminological to do on this one)
+-- (could filter when logBase 2 i generates whole numbers)
 base2bases :: [Integer]
 base2bases = unfoldr (\x -> Just (x, x * 2)) 1 
 
 
+log2whole :: Integral a => a -> Bool
+log2whole i = f i == 0 where
+  f = snd . properFraction . logBase 2 . fromIntegral
+
 --------------------------------------------------------------------------------
 -- Utility functions
+
+dup :: a -> (a,a)
+dup a = (a,a)
+
+first :: (a -> c) -> (a,b) -> (c,b)
+first f (a,b) = (f a, b)
+
+second :: (b -> c) -> (a,b) -> (a,c)
+second f (a,b) = (a, f b)
+
+fork :: (a -> b) -> (a -> c) -> a -> (b,c) 
+fork f g a = (f a, g a)
+
 
 -- | Apply a function i times.              
 applyi :: Int -> (a -> a) -> a -> a
@@ -230,21 +252,39 @@ stranspose = step . viewl
                                 (_ :< sa) -> sa
                                 
     unmatchErr = error "stranspose - sequences of unequal length"                            
-                                
+
+szip :: Seq a -> Seq b -> Seq (a,b)
+szip = szipWith (,)
+
+-- second seq can be longer than first (but gets truncated) 
+-- behaviour as per zip 
+szipWith :: (a -> b -> c) -> Seq a -> Seq b -> Seq c
+szipWith f sa sb = step (viewl sa) (viewl sb) where
+    step (a :< sa) (b :< sb)  = (f a b) <| step (viewl sa) (viewl sb)
+    step EmptyL    EmptyL     = empty
+    step EmptyL    _          = empty
+    step _         EmptyL     = error "szipWith - right sequence short"
+    
+    
+-- Zip a sequence and a list - list can be infinite
+-- Zip a sequence and a list - list can be infinite
 szipl :: Seq a -> [b] -> Seq (a,b)
-szipl se xs = step empty (viewl se) xs where
-  step acc EmptyL    _        = acc
-  step acc _         []       = error "szipl - list too short"
-  step acc (a :< se) (x:xs)   = step (acc |> (a,x)) (viewl se) xs
+szipl = sziplWith (,)
+
+
+sziplWith :: (a -> b -> c) -> Seq a -> [b] -> Seq c
+sziplWith f se xs = step (viewl se) xs where
+  step (a :< se) (x:xs)   = f a x <| step (viewl se) xs
+  step EmptyL   []        = empty
+  step EmptyL    _        = empty
+  step _         []       = error "sziplWith - list too short"
+  
 
 
 -- The sequence is primary - i.e. its an error if it runs out first, 
 -- the pair is flipped so the list item is fst.
 szipl' :: Seq a -> [b] -> Seq (b,a)
-szipl' se xs = step empty (viewl se) xs where
-  step acc EmptyL    _        = acc
-  step acc _         []       = error "szipl - list too short"
-  step acc (a :< se) (x:xs)   = step (acc |> (x,a)) (viewl se) xs
+szipl' = sziplWith (flip (,))
   
 sreplicate :: Int -> a -> Seq a
 sreplicate i a | i <= 0     = empty

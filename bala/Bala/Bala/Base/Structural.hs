@@ -64,8 +64,9 @@ data Elt = DEvt Evt Duration      -- some 'event' that has a duration
   
 data Evt = Note Pitch | Rest | Spacer
   deriving (Eq,Show)
-   
-data Mark = Tie      -- | ... more ?       
+
+-- ... more ?    
+data Mark = Tie            
   deriving (Eq,Show)
   
 --------------------------------------------------------------------------------
@@ -143,7 +144,49 @@ instance Traversable PhraseF where
                                           
 instance Traversable MotifF where
   traverse f (Motif se)          = Motif <$> traverse f se
+
+--------------------------------------------------------------------------------
+-- RhythmicValue and PitchValue
+
+instance RhythmicValue Elt where
+  rhythmicValue (DEvt _ d)          = d 
+  rhythmicValue (Mark _)            = duration_zero 
+  rhythmicValue (Chord _ d)         = d
+  rhythmicValue (AGrace _ _ d)      = d 
+  rhythmicValue (UGrace _ d _)      = d
   
+  modifyDuration (DEvt e _)       d = DEvt e d 
+  modifyDuration (Mark m)         d = Mark m
+  modifyDuration (Chord se _)     d = Chord se d
+  modifyDuration (AGrace se p _)  d = AGrace se p d 
+  modifyDuration (UGrace p _ se)  d = UGrace p d se
+
+ 
+instance PitchValue Elt where
+  pitchValue (DEvt e _)          = pitchValue e 
+  pitchValue (Mark _)            = Nothing 
+  pitchValue (Chord se _)        = case viewl se of       -- this should be more 
+                                      EmptyL -> Nothing   -- sophisticated
+                                      a :< _ -> Just a
+      
+  pitchValue (AGrace _ p _)      = Just p
+  pitchValue (UGrace p _ _)      = Just p
+  
+  modifyPitch (DEvt e d)       p = DEvt (modifyPitch e p) d 
+  modifyPitch (Mark m)         p = Mark m
+  modifyPitch (Chord se d)     p = Chord se d   -- what to do?
+  modifyPitch (AGrace se _ d)  p = AGrace se p d 
+  modifyPitch (UGrace _ d se)  p = UGrace p d se
+
+instance PitchValue Evt where
+  pitchValue (Note p)             = Just p
+  pitchValue Rest                 = Nothing 
+  pitchValue Spacer               = Nothing
+  
+  modifyPitch (Note _)          p = Note p
+  modifyPitch Rest              p = Rest 
+  modifyPitch Spacer            p = Spacer
+
 --------------------------------------------------------------------------------
 -- Fits and XOne
 
