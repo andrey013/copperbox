@@ -20,6 +20,7 @@ module Bala.Base.Structural where
 
 import Bala.Base.BaseExtra
 import Bala.Base.Duration
+import Bala.Base.Metrical
 import Bala.Base.Pitch
 import HNotate.Fits
 
@@ -74,6 +75,9 @@ data Mark = Tie
 
 motif :: MotifF a
 motif = Motif $ empty
+
+motifl :: [a] -> MotifF a
+motifl = Motif . fromList
 
 phrase :: MotifF a -> PhraseF a
 phrase a = Single a 
@@ -188,7 +192,7 @@ instance PitchValue Evt where
   modifyPitch Spacer            p = Spacer
 
 --------------------------------------------------------------------------------
--- Fits and XOne
+-- Fits and Sounds
 
 instance Fits Elt Duration where
   measure (DEvt e d)          = d
@@ -203,23 +207,26 @@ instance Fits Elt Duration where
   resizeTo (AGrace se p _)   d = AGrace se p d
   resizeTo (UGrace p _ se)   d = UGrace p d se
   
-instance XOne Elt where
-  xone (DEvt e d)           = xone e
-  xone (Mark z)             = False
-  xone (Chord se d)         = True 
-  xone (AGrace se p d)      = True
-  xone (UGrace p d se)      = True
+instance Sounds Elt where
+  sounds (DEvt e d)           = sounds e
+  sounds (Mark z)             = False
+  sounds (Chord se d)         = True 
+  sounds (AGrace se p d)      = True
+  sounds (UGrace p d se)      = True
 
-instance XOne Evt where
-  xone (Note _)             = True
-  xone Rest                 = False
-  xone Spacer               = False
+
+instance Sounds Evt where
+  sounds (Note _)             = True
+  sounds Rest                 = False
+  sounds Spacer               = False
+
+
   
 --------------------------------------------------------------------------------
 -- drawing to ascii
 -- (could now use padToSquare)
 
-draw :: (Fits a Duration, XOne a) => SectionF a -> IO ()
+draw :: (Fits a Duration, Sounds a) => SectionF a -> IO ()
 draw (Section tm se) = 
     let xss       = F.foldr (\e a -> drawPhrase tm e : a) [] se
         height    = maximum $ fmap length xss
@@ -241,23 +248,23 @@ pad n xs = let l = length xs in
                                
 
 --- need to pad...
-drawPhrase :: (Fits a Duration, XOne a) => TimeSig -> PhraseF a -> [[Char]]
+drawPhrase :: (Fits a Duration, Sounds a) => TimeSig -> PhraseF a -> [[Char]]
 drawPhrase tm (Single mo)         = [drawMotif tm mo]
 drawPhrase tm o@(Overlay mo smo)  = drawPad d tm mo : xs where
   d = maxPhraseDuration o
   xs = F.foldr (\e a -> drawPad d tm e : a) [] smo
   
-  drawPad :: (Fits a Duration, XOne a) => Duration ->  TimeSig -> MotifF a -> [Char] 
+  drawPad :: (Fits a Duration, Sounds a) => Duration ->  TimeSig -> MotifF a -> [Char] 
   drawPad d tm mo = let w   = length $ spaces tm d
                         chs = drawMotif tm mo
                     in pad w chs
   
   spaces :: TimeSig -> Duration -> [Char]
-  spaces (n,d) dn = xdotAve (n,d) $ singleton dn
+  spaces (n,d) dn = drawSounds (n,d) $ singleton dn
   
 
-drawMotif :: (Fits a Duration, XOne a) => TimeSig -> MotifF a -> [Char]
-drawMotif tm (Motif se) = xdotAve tm se    
+drawMotif :: (Fits a Duration, Sounds a) => TimeSig -> MotifF a -> [Char]
+drawMotif tm (Motif se) = drawSounds tm se    
 
 --------------------------------------------------------------------------------
 -- midi
