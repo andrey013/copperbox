@@ -27,7 +27,7 @@ import HNotate.Fits
 
 import qualified Data.Foldable as F
 import Data.Ratio
-import Data.Sequence
+import Data.Sequence hiding (length)
 
 
 type TimeSig = (Int,Int)
@@ -162,4 +162,40 @@ aggregateSounds1 se = gteHalf (sumSounds se) (sumMeasure se) where
   
   gteHalf :: Duration -> Duration -> Bool
   gteHalf a b = a >= (b / 2)
-   
+
+-- clave patterns can have varoius 'prolongational' interpretations...
+-- i.e. is easy to get a clave pattern from a event durational pattern, but 
+-- not the other way round.
+
+data Clave = ClaveOn | ClaveOff
+  deriving (Eq,Enum,Show)
+  
+type Bits = [Clave]
+    
+bjorklund :: Int -> Int -> Bits
+bjorklund n k = step (replicate k [ClaveOn], replicate (n - k) [ClaveOff]) 
+  where
+    step :: ([Bits], [Bits]) -> Bits
+    step (as,rs) 
+        | length rs < 2 = concat as ++ concat rs
+        | otherwise     = step $ repartition $ (uncurry distribute) (as,rs) 
+    
+    repartition (as,rs) = let len   = length $ head as
+                              (x,y) = span ((==) len . length) as 
+                          in (x,rs++y)
+                              
+                      
+-- distribute for Bjorklund's algorithm is basically a zip, except we 
+-- return the unconsumed right input. (Hence we need to return a pair, 
+-- hence we use an accumulator)  
+distribute :: [Bits] -> [Bits] -> ([Bits], [Bits])
+distribute xs ys = step [] xs ys where
+
+  step :: [Bits] -> [Bits] -> [Bits] -> ([Bits], [Bits])
+  step acc (x:xs) (y:ys)  = step (acc ++ [x ++ y]) xs ys
+  step acc []     []      = (acc, [])
+  step acc []     (y:ys)  = (acc, (y:ys))
+  step acc (x:xs) []      = (acc ++ (x:xs), [])
+  
+  
+       

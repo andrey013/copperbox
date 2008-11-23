@@ -90,9 +90,9 @@ starts :: Fits a Duration => PhraseF a -> MotifF a -> PhraseF a
 starts (Single a)     mo = Overlay a (singleton mo)
 starts (Overlay a se) mo = Overlay a (se |> mo)
 
-starts' :: Fits a Duration => [MotifF a] -> PhraseF a
-starts' []     = Single motif
-starts' (x:xs) = foldl starts (phrase x) xs
+overlay :: Fits a Duration => [MotifF a] -> PhraseF a
+overlay []     = Single motif
+overlay (x:xs) = foldl starts (phrase x) xs
 
 
 
@@ -266,6 +266,26 @@ drawPhrase tm o@(Overlay mo smo)  = drawPad d tm mo : xs where
 drawMotif :: (Fits a Duration, Sounds a) => TimeSig -> MotifF a -> [Char]
 drawMotif tm (Motif se) = drawSounds tm se    
 
+--------------------------------------------------------------------------------
+-- drawing alternative - directly make a clave pattern
+-- Note this does 'aggregation' so it certainly isn't an exact representation
+  
+inexactClave :: (Sounds a, RhythmicValue a) => Duration -> MotifF a -> MotifF Clave
+inexactClave d = 
+    Motif . fmap aggregateToClave . segment d . rhythmicEvents . getMotif
+  where
+
+    aggregateToClave :: Seq RhythmicEvent -> Clave
+    aggregateToClave se = gteHalf (sumSounds se) (sumMeasure se)
+
+    sumSounds = F.foldl fn duration_zero  
+  
+    fn a (Sounds d) = a + d
+    fn a (Rests _)  = a
+    
+    gteHalf :: Duration -> Duration -> Clave
+    gteHalf a total = if a >= (total / 2) then ClaveOn else ClaveOff
+    
 --------------------------------------------------------------------------------
 -- midi
 

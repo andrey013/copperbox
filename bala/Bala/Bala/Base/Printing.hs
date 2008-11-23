@@ -17,7 +17,7 @@
 module Bala.Base.Printing where
 
 import Bala.Base.Duration
-import Bala.Base.OutputMidi
+import Bala.Base.Metrical
 import Bala.Base.Pitch
 import Bala.Base.Structural
 
@@ -32,18 +32,29 @@ import Prelude hiding (null)
 import Text.PrettyPrint.HughesPJ
 
 
-
 genPunctuateSeq :: (a -> Doc) -> Doc -> Seq a -> Doc
 genPunctuateSeq pp sep = para phi empty
   where 
-    phi c (se,  d)  | null se        = pp c <+> d 
-                    | otherwise      = pp c <> sep <+> d
+    phi c (se,  d)  | null se        = pp c <> d 
+                    | otherwise      = pp c <> sep <> d
 
 angles :: Doc -> Doc
 angles d = text "<" <+> d <+> text ">"
 
 dblangles :: Doc -> Doc
 dblangles d = text "<<" <+> d <+> text ">>"
+
+-- re-export @empty@ as emptyDoc 
+emptyDoc :: Doc
+emptyDoc = empty
+
+--------------------------------------------------------------------------------
+-- Metrical
+
+ppClave :: Clave -> Doc
+ppClave ClaveOn     = char 'x'
+ppClave ClaveOff    = char '.'
+
  
 --------------------------------------------------------------------------------
 -- Structural 
@@ -64,10 +75,12 @@ ppPhrase (Overlay mo smo)   = dblangles $ fsep $ punctuate (text " // ")
   where xs = mo : F.toList smo
                                                
 
+genPPMotifF :: (a -> Doc) -> Doc -> MotifF a -> Doc
+genPPMotifF f op (Motif mo) = genPunctuateSeq f op mo
 
 
 ppMotif :: Motif -> Doc
-ppMotif (Motif mo) = genPunctuateSeq ppElt space mo
+ppMotif = genPPMotifF ppElt space
 
 ppElt :: Elt -> Doc 
 ppElt (DEvt evt d)    = ppEvt evt <> durationSuffix d
