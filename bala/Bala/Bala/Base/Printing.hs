@@ -55,6 +55,11 @@ ppClave :: Clave -> Doc
 ppClave ClaveOn     = char 'x'
 ppClave ClaveOff    = char '.'
 
+ppRhythmicEvent :: RhythmicEvent -> Doc
+ppRhythmicEvent (Sounds d)  = text "x'" <> ppDuration d 
+ppRhythmicEvent (Rests d)   = text ".'" <> ppDuration d    
+ 
+  
  
 --------------------------------------------------------------------------------
 -- Structural 
@@ -66,8 +71,13 @@ ppSection (Section tm se) =
     numberedPharse :: (Phrase,Int) -> Doc
     numberedPharse (ph,i) = text "|:" <>  int i $$ nest 4 (ppPhrase ph) 
 
-
-
+genPPPhraseF :: (a -> Doc) -> Doc -> PhraseF a -> Doc
+genPPPhraseF f op (Single mo) = genPPMotifF f op mo
+genPPPhraseF f op (Overlay mo smo)   = 
+    dblangles $ fsep $ punctuate (text " // ") (map (genPPMotifF f op) xs) 
+  where xs = mo : F.toList smo
+  
+  
 ppPhrase :: Phrase -> Doc
 ppPhrase (Single mo)        = ppMotif mo
 ppPhrase (Overlay mo smo)   = dblangles $ fsep $ punctuate (text " // ") 

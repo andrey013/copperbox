@@ -20,7 +20,7 @@ module Bala.Base.OutputMidi where
 import Bala.Base.BaseExtra
 import Bala.Base.Duration
 import Bala.Base.Pitch
-import Bala.Base.Structural hiding (note, spacer)
+import Bala.Base.Structural hiding (note)
 
 import ZMidi
 

@@ -37,8 +37,9 @@ import Data.Traversable
 
 -- Containers
 
+
 data SectionF a = Section TimeSig (Seq (PhraseF a))
-  deriving (Show)
+ --  deriving (Show)
 
 data PhraseF a = Single (MotifF a)
                | Overlay (MotifF a) (Seq (MotifF a))   
@@ -85,12 +86,16 @@ phrase a = Single a
 section :: TimeSig -> PhraseF a -> SectionF a
 section tm a = Section tm (singleton a) 
 
+-- overlay and starts do no interpretation so they don't 
+-- need the Fits constraint
 
-starts :: Fits a Duration => PhraseF a -> MotifF a -> PhraseF a
+-- starts :: Fits a Duration => PhraseF a -> MotifF a -> PhraseF a
+starts :: PhraseF a -> MotifF a -> PhraseF a
 starts (Single a)     mo = Overlay a (singleton mo)
 starts (Overlay a se) mo = Overlay a (se |> mo)
 
-overlay :: Fits a Duration => [MotifF a] -> PhraseF a
+-- overlay :: Fits a Duration => [MotifF a] -> PhraseF a
+overlay :: [MotifF a] -> PhraseF a
 overlay []     = Single motif
 overlay (x:xs) = foldl starts (phrase x) xs
 
@@ -102,14 +107,11 @@ infixl 7 +-
 
 
 
-rest      :: Duration -> Elt
-rest d    = DEvt Rest d
 
-spacer    :: Duration -> Elt
-spacer d  = DEvt Spacer d
 
 note      :: Pitch -> Duration -> Elt
 note p d  = DEvt (Note p) d
+
 
 
     
@@ -213,18 +215,37 @@ instance Sounds Elt where
   sounds (Chord se d)         = True 
   sounds (AGrace se p d)      = True
   sounds (UGrace p d se)      = True
+  
+  rest d                      = DEvt Rest d
 
+  spacer d                    = DEvt Spacer d
 
 instance Sounds Evt where
   sounds (Note _)             = True
   sounds Rest                 = False
   sounds Spacer               = False
+  
+  rest d                      = Rest
+  
+  spacer d                    = Spacer
 
 
+-- Sometime we want to apply a function to a motif rather than 
+-- to the elements in it...
+
+class FMapMotif c where fmapMotif :: (MotifF a -> MotifF b) -> c a -> c b
+
+instance FMapMotif SectionF where
+  fmapMotif f (Section tm se) = Section tm (fmap (fmapMotif f) se)
+
+instance FMapMotif PhraseF where
+  fmapMotif f (Single mo)       = Single (f mo)
+  fmapMotif f (Overlay mo smo)  = Overlay (f mo) (fmap f smo)
   
 --------------------------------------------------------------------------------
 -- drawing to ascii
 -- (could now use padToSquare)
+{-
 
 draw :: (Fits a Duration, Sounds a) => SectionF a -> IO ()
 draw (Section tm se) = 
@@ -266,9 +287,46 @@ drawPhrase tm o@(Overlay mo smo)  = drawPad d tm mo : xs where
 drawMotif :: (Fits a Duration, Sounds a) => TimeSig -> MotifF a -> [Char]
 drawMotif tm (Motif se) = drawSounds tm se    
 
+drawSounds :: (Fits a Duration, Sounds a) => TimeSig -> Seq a -> [Char]
+drawSounds tm se = 
+    F.foldr (\e a -> (xdot1 $ aggregateSounds1 e) : a) [] (segmentByTS tm se)
+  where    
+    xdot1 :: Bool -> Char
+    xdot1 True    = 'x'
+    xdot1 False   = '.'
+
+    aggregateSounds1 :: (Fits a Duration, Sounds a) => Seq a -> Bool
+    aggregateSounds1 se = gteHalf (sumSounds se) (sumMeasure se) where
+      sumSounds = F.foldl fn duration_zero  
+    
+      fn a e | sounds e   = a + measure e
+             | otherwise  = a
+      
+      gteHalf :: Duration -> Duration -> Bool
+      gteHalf a b = a >= (b / 2)
+
+-}
+      
 --------------------------------------------------------------------------------
 -- drawing alternative - directly make a clave pattern
 -- Note this does 'aggregation' so it certainly isn't an exact representation
+-- Also linearTransform loses bar information
+
+draw :: (Sounds a, Fits a Duration, RhythmicValue a) => 
+            Duration -> SectionF a -> IO ()
+draw d sn = mapM_ putStrLn $ picture d (packToSquare sn)
+
+picture :: (Sounds a, RhythmicValue a) => Duration -> SectionF a -> [String]
+picture d sn = F.foldr fn [] $ linearTransform $ fmapMotif (inexactClave d) sn
+  where
+    fn :: Seq Clave -> [String] -> [String] 
+    fn se acc = drawClave (viewl se) : acc
+    
+    drawClave EmptyL            = "/"
+    drawClave (ClaveOn  :< sa)  = 'x' : drawClave (viewl sa)
+    drawClave (ClaveOff :< sa)  = '.' : drawClave (viewl sa)
+
+
   
 inexactClave :: (Sounds a, RhythmicValue a) => Duration -> MotifF a -> MotifF Clave
 inexactClave d = 
@@ -289,7 +347,6 @@ inexactClave d =
 --------------------------------------------------------------------------------
 -- midi
 
--- ss :: Section -> Seq (Seq
 
 linearTransform :: SectionF a -> Seq (Seq a)
 linearTransform = fmap joinMotifs . stranspose . sectionContents where
@@ -331,18 +388,18 @@ motifContents (Motif se) = se
 -- Midi and Ascii processing is easier if the section is 'squared' 
 -- then we can use the standard @transpose@ function to get a 
 -- line-by-line view rather than a column-by-column one. 
-packToSquare :: Section -> Section
+packToSquare :: (Fits a Duration, Sounds a) => SectionF a -> SectionF a
 packToSquare s@(Section tm se) = Section tm $ fmap fn se where
     h = sectionHeight s
-    fn :: Phrase -> Phrase
+    fn :: (Fits a Duration, Sounds a) => PhraseF a -> PhraseF a
     fn ph = spacerOverlayPack (regularPhraseDuration tm ph) h ph
 
 -- LilyPond and Abc (via HNotate) handle overlays themselves, so we 
 -- just spacer pack the motifs inside a phrase with this transformation.
 -- This stops us having \ragged overlays\.  
-packToLength :: Section -> Section
+packToLength :: (Fits a Duration, Sounds a) => SectionF a -> SectionF a
 packToLength s@(Section tm se) = Section tm $ fmap fn se where
-    fn :: Phrase -> Phrase
+    fn :: (Fits a Duration, Sounds a) => PhraseF a -> PhraseF a
     fn ph = spacerPackLength (regularPhraseDuration tm ph) ph
     
     
@@ -371,7 +428,8 @@ maxPhraseDuration (Overlay mo smo)  =
 -- motifs where necessary) so each phrase has the same numer of overlays.
 -- The vertical transformation simplifies later processig for Midi and ascii
 -- but it is not appropriate for LilyPond and Abc (via HNotate)      
-spacerOverlayPack :: Duration -> Int -> Phrase -> Phrase
+spacerOverlayPack ::  
+    (Fits a Duration, Sounds a) => Duration -> Int -> PhraseF a -> PhraseF a
 spacerOverlayPack w h (Single mo) 
     | h <= 1      = Single $ spacerPack w mo
     | otherwise   = Overlay (spacerPack w mo) 
@@ -382,14 +440,15 @@ spacerOverlayPack w h (Overlay mo smo) = Overlay (spacerPack w mo) smo' where
 
 -- This is the alternative phrase spacer formulation for HNotate (Abc and
 -- LilyPond) it only spaces horizontally. No extra voice overlays are added.
-spacerPackLength :: Duration -> Phrase -> Phrase
+spacerPackLength :: 
+    (Fits a Duration, Sounds a) => Duration -> PhraseF a -> PhraseF a
 spacerPackLength w (Single mo)        = Single $ spacerPack w mo
 spacerPackLength w (Overlay mo smo)   = 
     Overlay (spacerPack w mo) (fmap (spacerPack w) smo) 
 
                                 
                             
-spacerPack :: Duration -> Motif -> Motif
+spacerPack :: (Fits a Duration, Sounds a) => Duration -> MotifF a -> MotifF a
 spacerPack d (Motif se) = work d (sumMeasure se) where
   work d l | l >= d     = Motif se      -- (>d) could throw error instead
            | otherwise  = Motif $ se |> spacer (d - l)

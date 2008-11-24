@@ -94,11 +94,20 @@ segmentByTS (n,d) se = segment (makeDuration 1 d) se
 -- Helps for printing metrical bit patterns as x.x...x...
 
 
-class Sounds a where sounds :: a -> Bool
-
--- Its arbitrary whether we choose Sounds of Rests for this instance
+class Sounds a where 
+  sounds :: a -> Bool
+  rest :: Duration -> a
+  
+  spacer :: Duration -> a
+  spacer d = rest d
+  
+  
+  
+-- Duration doesn't really have a natural instance for Sounds
+-- but it makes things a lot easier if we pretend it does.
 instance Sounds Duration where
   sounds _ = True
+  rest d = d
   
   
 -- Sounding events with a duration... 
@@ -111,6 +120,8 @@ data RhythmicEvent = Sounds Duration | Rests Duration
 instance Sounds RhythmicEvent where
   sounds (Sounds _) = True 
   sounds (Rests _)  = False
+  
+  rest d          = Rests d
 
 instance RhythmicValue RhythmicEvent where
   rhythmicValue (Sounds d)        = d
@@ -140,28 +151,9 @@ rhythmicEvents ::
 rhythmicEvents = fmap revent
 
 
--- Can this lot have a simpler definition now we have RhythmicEvent...
-xdot1 :: Sounds a => a -> Char
-xdot1 a | sounds a    = 'x'
-        | otherwise   = '.'
+ 
 
-instance Sounds Bool where
-  sounds = id
-  
-drawSounds :: (Fits a Duration, Sounds a) => TimeSig -> Seq a -> [Char]
-drawSounds tm se = 
-    F.foldr (\e a -> (xdot1 $  aggregateSounds1 e) : a) [] (segmentByTS tm se)
 
-  
-aggregateSounds1 :: (Fits a Duration, Sounds a) => Seq a -> Bool
-aggregateSounds1 se = gteHalf (sumSounds se) (sumMeasure se) where
-  sumSounds = F.foldl fn duration_zero  
-
-  fn a e | sounds e   = a + measure e
-         | otherwise  = a
-  
-  gteHalf :: Duration -> Duration -> Bool
-  gteHalf a b = a >= (b / 2)
 
 -- clave patterns can have varoius 'prolongational' interpretations...
 -- i.e. is easy to get a clave pattern from a event durational pattern, but 

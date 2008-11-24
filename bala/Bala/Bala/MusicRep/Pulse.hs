@@ -1,6 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -24,6 +24,7 @@ module Bala.MusicRep.Pulse where
 import Bala.Base.BaseExtra
 import Bala.Base.Duration
 import Bala.Base.Metrical
+import Bala.Base.Pitch
 import Bala.Base.Structural
 import Bala.Base.FocusedShapeContents
 
@@ -35,6 +36,50 @@ import Data.Sequence
 import Text.PrettyPrint.HughesPJ hiding (empty)
 
 
+-- Maybe not -- there's not obvious fits instance for Clave
+type ClaveSection   = SectionF Clave
+type ClavePhrase    = PhraseF Clave
+type ClaveMotif     = MotifF Clave
+
+type RhythmicSection   = SectionF RhythmicEvent
+type RhythmicPhrase    = PhraseF RhythmicEvent
+type RhythmicMotif     = MotifF RhythmicEvent
+
+
+-- don't need this cud is shape preserving so it can be done with fmap
+
+
+claveUnitDuration :: Functor t => Duration -> t Clave -> t RhythmicEvent
+claveUnitDuration d t = fmap fn t where
+    fn ClaveOn  = Sounds d
+    fn ClaveOff = Rests d
+
+unitNote :: Functor t => Pitch -> t RhythmicEvent -> t Elt
+unitNote p t = fmap fn t where
+    fn (Sounds d) = note p d
+    fn (Rests d)  = rest d   
+     
+{-
+
+class ClaveUnitDuration a b | a -> b where 
+    claveUnitDuration :: Duration -> a -> b
+
+instance ClaveUnitDuration ClaveSection RhythmicSection where
+  claveUnitDuration d (Section tm se)   = 
+      Section tm (fmap (claveUnitDuration d) se)
+
+instance ClaveUnitDuration ClavePhrase RhythmicPhrase where
+  claveUnitDuration d (Single mo)       = Single $ claveUnitDuration d mo 
+  claveUnitDuration d (Overlay mo smo)  = 
+        Overlay (claveUnitDuration d mo) (fmap (claveUnitDuration d) smo) 
+      
+      
+instance ClaveUnitDuration ClaveMotif RhythmicMotif where
+  claveUnitDuration d (Motif se) = Motif $ fmap fn se 
+    where
+      fn ClaveOn  = Sounds d
+      fn ClaveOff = Rests d
+-}    
 
 
 -- eg. [X X . x X . x .] - X hi x lo
@@ -42,6 +87,7 @@ import Text.PrettyPrint.HughesPJ hiding (empty)
 data TriClave = Hi | Lo | TriOff  
   deriving (Eq,Enum,Show)
 
+{-
 
 -- Type level durations
 data Whole
@@ -65,6 +111,7 @@ tap d i = Sounds $ d * makeDuration i 1
 off :: Integral a => Duration -> a -> RhythmicEvent
 off d i = Rests $ d * makeDuration i 1
 
+  
 
 class BuildRhythmicMotif a where
   build :: [Duration -> Int -> RhythmicEvent] -> [Int] -> RhythmicMotif a
@@ -162,12 +209,12 @@ motifClavePattern base (RMotif (Motif se)) = Motif $ F.foldl fn empty se where
   padless1 a (n+1) | n <= 0     = a
                    | otherwise  = a >< sreplicate n ClaveOff  
    
-multiple :: Duration -> Duration -> Int
-multiple d base = let (a,r) = d `divModR` base in 
-    if r == 0 then fromIntegral a else error msg
-  where  
-    msg = "multiple used on a duration that is not an "
-       ++ "exact multiple of the base" 
+  multiple :: Duration -> Duration -> Int
+  multiple d base = let (a,r) = d `divModR` base in 
+      if r == 0 then fromIntegral a else error msg
+    where  
+      msg = "multiple used on a duration that is not an "
+         ++ "exact multiple of the base" 
 
 -- don't export...
 phraseClavePattern :: Duration -> RhythmicPhrase a -> PhraseF Clave
@@ -183,13 +230,19 @@ sectionClavePattern :: Duration -> RhythmicSection a -> SectionF Clave
 sectionClavePattern base (RSection (Section tm se)) = 
   Section tm $ fmap (phraseClavePattern base . RPhrase) se
 
+-}
+
 
 -- n and k are flipped from bjorklund...
     
 euclidRhythm :: Int -> Int -> MotifF Clave
 euclidRhythm k n = Motif $ fromList $ bjorklund n k
 
-
+readClave :: Eq a => a -> [a] -> MotifF Clave
+readClave a = Motif . fromList . step where 
+    step (x:xs) | x == a    = ClaveOn  : step xs
+                |otherwise  = ClaveOff : step xs
+    step []                 = []
 
 
 
