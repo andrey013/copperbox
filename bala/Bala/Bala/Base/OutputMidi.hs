@@ -20,9 +20,9 @@ module Bala.Base.OutputMidi where
 import Bala.Base.BaseExtra
 import Bala.Base.Duration
 import Bala.Base.Pitch
-import Bala.Base.Structural hiding (note)
+import Bala.Base.Structural hiding (note, chord)
 
-import ZMidi
+import ZMidi hiding (Event)
 
 import qualified Data.Foldable as F
 import Data.Sequence
@@ -34,22 +34,20 @@ generateMidi sn =
 
 
 -- each line becomes a channel
-midiLines :: Seq (Seq Elt) -> OutputMidi ()
+midiLines :: Seq (Seq Event) -> OutputMidi ()
 midiLines sse = F.mapM_ outputChannel sse where
-  outputChannel se =  F.mapM_ outputElt se >> nextChannel
+  outputChannel se =  F.mapM_ outputEvent se >> nextChannel
 
         
-outputElt :: Elt -> OutputMidi ()
-outputElt (DEvt (Note p) d)   = note (midiPitch p) (ticks d)
-outputElt (DEvt Rest d)       = spacer (ticks d)
-outputElt (DEvt Spacer d)     = spacer (ticks d)
-outputElt (Mark _)            = return ()
-outputElt (Chord se d)        = chord (F.foldr fn [] se) (ticks d) where
-    fn p xs = (midiPitch p) : xs
-    
-outputElt (AGrace se p d)     = note (midiPitch p) (ticks d) -- to do
-outputElt (UGrace p d se)     = note (midiPitch p) (ticks d) -- to do
-
+outputEvent :: Event -> OutputMidi ()
+outputEvent (Note p d)          = note (midiPitch p) (ticks d)
+outputEvent (Rest d)            = spacer (ticks d)
+outputEvent (Chord se d)        = chord (F.foldr fn [] se) (ticks d) where
+                                      fn p xs = (midiPitch p) : xs
+outputEvent (Spacer d)          = spacer (ticks d)    
+outputEvent (AGrace se p d)     = note (midiPitch p) (ticks d) -- to do
+outputEvent (UGrace p d se)     = note (midiPitch p) (ticks d) -- to do
+outputEvent (Mark _)            = return ()
 
 durationGraces :: (Seq (Pitch, Duration)) -> Duration
 durationGraces = F.foldr (\e n -> snd e + n) 0

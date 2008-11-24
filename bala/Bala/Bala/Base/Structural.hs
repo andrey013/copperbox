@@ -27,7 +27,7 @@ import HNotate.Fits
 import Control.Applicative hiding (empty)
 
 import qualified Data.Foldable as F
-import Data.List (transpose, intercalate)
+import Data.List (sort, transpose, intercalate)
 import Data.Sequence hiding (length, null)
 import qualified Data.Sequence as S -- for length and null
 import Data.Traversable
@@ -48,24 +48,24 @@ data PhraseF a = Single (MotifF a)
 newtype MotifF a = Motif { getMotif :: Seq a }
   deriving (Show)  
 
-type Section  = SectionF Elt
-type Phrase   = PhraseF Elt
-type Motif    = MotifF Elt
+type Section  = SectionF Event
+type Phrase   = PhraseF Event
+type Motif    = MotifF Event
 
 
 -- Elements
 
 type GraceNotes = Seq (Pitch,Duration)
 
-data Elt = DEvt Evt Duration      -- some 'event' that has a duration 
-         | Mark Mark            -- a mark that has no duration
-         | Chord (Seq Pitch) Duration
-         | AGrace GraceNotes Pitch Duration 
-         | UGrace Pitch Duration GraceNotes
+data Event = Note Pitch Duration     
+           | Rest Duration
+           | Chord (Seq Pitch) Duration
+           | Spacer Duration
+           | AGrace GraceNotes Pitch Duration -- accented grace
+           | UGrace Pitch Duration GraceNotes -- unaccented grace
+           | Mark Mark                  -- a mark that has no duration
   deriving (Eq,Show)
   
-data Evt = Note Pitch | Rest | Spacer
-  deriving (Eq,Show)
 
 -- ... more ?    
 data Mark = Tie            
@@ -102,16 +102,18 @@ overlay (x:xs) = foldl starts (phrase x) xs
 
 
 infixl 7 +-
-(+-) :: MotifF elt -> elt -> MotifF elt
+(+-) :: MotifF a -> a -> MotifF a
 (+-) (Motif se) elt = Motif  (se |> elt)
 
 
 
 
 
-note      :: Pitch -> Duration -> Elt
-note p d  = DEvt (Note p) d
+note      :: Pitch -> Duration -> Event
+note p d  = Note p d
 
+chord     :: [Pitch] -> Duration -> Event
+chord ps d  = Chord (fromList $ sort ps) d
 
 
     
@@ -154,80 +156,80 @@ instance Traversable MotifF where
 --------------------------------------------------------------------------------
 -- RhythmicValue and PitchValue
 
-instance RhythmicValue Elt where
-  rhythmicValue (DEvt _ d)          = d 
-  rhythmicValue (Mark _)            = duration_zero 
+instance RhythmicValue Event where
+  rhythmicValue (Note _ d)          = d 
+  rhythmicValue (Rest d)            = d
   rhythmicValue (Chord _ d)         = d
+  rhythmicValue (Spacer d)          = d
   rhythmicValue (AGrace _ _ d)      = d 
-  rhythmicValue (UGrace _ d _)      = d
+  rhythmicValue (UGrace _ d _)      = d  
+  rhythmicValue (Mark _)            = duration_zero 
   
-  modifyDuration (DEvt e _)       d = DEvt e d 
-  modifyDuration (Mark m)         d = Mark m
+  modifyDuration (Note p _)       d = Note p d 
+  modifyDuration (Rest _)         d = Rest d
   modifyDuration (Chord se _)     d = Chord se d
+  modifyDuration (Spacer _)       d = Spacer d
   modifyDuration (AGrace se p _)  d = AGrace se p d 
   modifyDuration (UGrace p _ se)  d = UGrace p d se
-
+  modifyDuration (Mark m)         d = Mark m
  
-instance PitchValue Elt where
-  pitchValue (DEvt e _)          = pitchValue e 
-  pitchValue (Mark _)            = Nothing 
+instance PitchValue Event where
+  pitchValue (Note p _)          = Just p
+  pitchValue (Rest _)            = Nothing 
   pitchValue (Chord se _)        = case viewl se of       -- this should be more 
                                       EmptyL -> Nothing   -- sophisticated
                                       a :< _ -> Just a
-      
+  pitchValue (Spacer _)          = Nothing      
   pitchValue (AGrace _ p _)      = Just p
   pitchValue (UGrace p _ _)      = Just p
+  pitchValue (Mark _)            = Nothing
   
-  modifyPitch (DEvt e d)       p = DEvt (modifyPitch e p) d 
-  modifyPitch (Mark m)         p = Mark m
+     
+  modifyPitch (Note _ d)       p = Note p d
+  modifyPitch (Rest d)         p = Rest d 
   modifyPitch (Chord se d)     p = Chord se d   -- what to do?
+  modifyPitch (Spacer d)       p = Spacer d
   modifyPitch (AGrace se _ d)  p = AGrace se p d 
   modifyPitch (UGrace _ d se)  p = UGrace p d se
-
-instance PitchValue Evt where
-  pitchValue (Note p)             = Just p
-  pitchValue Rest                 = Nothing 
-  pitchValue Spacer               = Nothing
+  modifyPitch (Mark m)         p = Mark m
   
-  modifyPitch (Note _)          p = Note p
-  modifyPitch Rest              p = Rest 
-  modifyPitch Spacer            p = Spacer
+
 
 --------------------------------------------------------------------------------
 -- Fits and Sounds
 
-instance Fits Elt Duration where
-  measure (DEvt e d)          = d
-  measure (Mark z)            = duration_zero
-  measure (Chord se d)        = d 
-  measure (AGrace se p d)     = d
-  measure (UGrace p d se)     = d
+instance Fits Event Duration where
+  measure (Note _ d)          = d
+  measure (Rest d)            = d
+  measure (Chord _ d)         = d 
+  measure (Spacer d)          = d
+  measure (AGrace _ _ d)      = d
+  measure (UGrace _ d _)      = d
+  measure (Mark _)            = duration_zero
   
-  resizeTo (DEvt e _)        d = DEvt e d
-  resizeTo (Mark z)          d = Mark z
-  resizeTo (Chord se _)      d = Chord se d 
-  resizeTo (AGrace se p _)   d = AGrace se p d
-  resizeTo (UGrace p _ se)   d = UGrace p d se
+  resizeTo (Note p _)       d = Note p d
+  resizeTo (Rest _)         d = Rest d
+  resizeTo (Chord se _)     d = Chord se d 
+  resizeTo (Spacer _)       d = Spacer d
+  resizeTo (AGrace se p _)  d = AGrace se p d
+  resizeTo (UGrace p _ se)  d = UGrace p d se
+  resizeTo (Mark z)         d = Mark z
   
-instance Sounds Elt where
-  sounds (DEvt e d)           = sounds e
-  sounds (Mark z)             = False
-  sounds (Chord se d)         = True 
-  sounds (AGrace se p d)      = True
-  sounds (UGrace p d se)      = True
   
-  rest d                      = DEvt Rest d
+instance Sounds Event where
+  sounds (Note _ _)           = True
+  sounds (Rest _)             = False  
+  sounds (Chord _ _)          = True 
+  sounds (Spacer _)           = False
+  sounds (AGrace _ _ _)       = True
+  sounds (UGrace _ _ _)       = True
+  sounds (Mark _)             = False
+  
+  rest d                      = Rest d
 
-  spacer d                    = DEvt Spacer d
+  spacer d                    = Spacer d
 
-instance Sounds Evt where
-  sounds (Note _)             = True
-  sounds Rest                 = False
-  sounds Spacer               = False
-  
-  rest d                      = Rest
-  
-  spacer d                    = Spacer
+
 
 
 -- Sometime we want to apply a function to a motif rather than 

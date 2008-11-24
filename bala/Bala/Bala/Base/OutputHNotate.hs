@@ -51,17 +51,15 @@ addMotif :: H.EventList -> Motif -> H.EventList
 addMotif t (Motif se) = F.foldl motifFoldStep t se
 
 
-motifFoldStep :: H.EventList -> Elt -> H.EventList
-motifFoldStep t (DEvt evt d)        = t |# (mkEvent evt d)
-motifFoldStep t (Mark m)            = t |# (mkMark m)
+motifFoldStep :: H.EventList -> Event -> H.EventList
+motifFoldStep t (Note p d)          = t |# (H.note p d)
+motifFoldStep t (Rest d)            = t |# (H.rest d)
 motifFoldStep t (Chord se d)        = t |# (H.chord se d)
+motifFoldStep t (Spacer d)          = t |# (H.spacer d)
 motifFoldStep t (AGrace se p d)     = t |# H.agraces se |# H.note p d
 motifFoldStep t (UGrace p d se)     = t |# H.note p d |# H.ugraces se
+motifFoldStep t (Mark m)            = t |# (mkMark m)
 
-
-mkEvent (Note p)  d = H.note p d
-mkEvent Rest      d = H.rest d
-mkEvent Spacer    d = H.spacer d
 
 mkMark Tie          = H.tie 
     

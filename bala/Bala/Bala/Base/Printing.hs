@@ -90,19 +90,18 @@ genPPMotifF f op (Motif mo) = genPunctuateSeq f op mo
 
 
 ppMotif :: Motif -> Doc
-ppMotif = genPPMotifF ppElt space
+ppMotif = genPPMotifF ppEvent space
 
-ppElt :: Elt -> Doc 
-ppElt (DEvt evt d)    = ppEvt evt <> durationSuffix d
-ppElt (Mark m)        = ppMark m
-ppElt (Chord se d)    = ppChord se <> durationSuffix d
-ppElt (AGrace se p d) = ppGrace se <> char '^' <> ppPitch p <> durationSuffix d 
-ppElt (UGrace p d se) = ppPitch p <> durationSuffix d <> char '^' <> ppGrace se 
-              
-ppEvt :: Evt -> Doc
-ppEvt (Note p)  = ppPitch p
-ppEvt Rest      = char 'r'
-ppEvt Spacer    = char 'z'
+ppEvent :: Event -> Doc 
+ppEvent (Note p d)      = ppPitch p   <> durationSuffix d
+ppEvent (Rest d)        = char 'r'    <> durationSuffix d
+ppEvent (Chord se d)    = ppChord se  <> durationSuffix d
+ppEvent (Spacer d)      = char 'z'    <> durationSuffix d
+ppEvent (AGrace se p d) = ppGrace se  <> char '^' <> ppPitch p <> durationSuffix d 
+ppEvent (UGrace p d se) = ppPitch p   <> durationSuffix d <> char '^' <> ppGrace se 
+ppEvent (Mark m)        = ppMark m              
+
+
 
 ppChord :: Seq Pitch -> Doc
 ppChord = angles . genPunctuateSeq ppPitch space

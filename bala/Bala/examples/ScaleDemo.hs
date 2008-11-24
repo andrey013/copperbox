@@ -27,20 +27,20 @@ data Beat = N Duration | R Duration
 beats :: Duration -> [Beat]
 beats d = repeat (N d)
 
-playScale :: Scale -> [Elt]
+playScale :: Scale -> [Event]
 playScale  = (playnotes `flip` beats du1) . scaleNotes
  
-playnotes :: [Pitch] -> [Beat] -> [Elt]
+playnotes :: [Pitch] -> [Beat] -> [Event]
 playnotes ps bs = step ps bs where
     step []     _         = []
     step (p:ps) (N d :bs) = note p d : step ps bs
     step ps     (R d :bs) = rest d   : step ps bs
     step ps     []        = error "playnotes - empty beat list"
   
-pitchEventSystem :: String -> [Elt] -> H.System
+pitchEventSystem :: String -> [Event] -> H.System
 pitchEventSystem name = system1 name . foldl' fn root where
-    fn evts (DEvt (Note p) d) = evts |# H.note p d
-    fn evts (DEvt Rest d)     = evts |# H.rest d
+    fn evts (Note p d)        = evts |# H.note p d
+    fn evts (Rest d)          = evts |# H.rest d
 
 outputScale :: String -> Scale -> FilePath -> IO ()
 outputScale name sc path = 
@@ -50,7 +50,7 @@ outputScale name sc path =
   
 main :: IO ()
 main = do 
-    outputScale "a_major" a_major "./out/a_major_scale.mid"
+    outputScale "a_major"      a_major      "./out/a_major_scale.mid"
     outputScale "a_flat_major" a_flat_major "./out/a_flat_major_scale.mid"
 
     

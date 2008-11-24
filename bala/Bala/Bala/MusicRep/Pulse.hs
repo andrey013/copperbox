@@ -54,7 +54,7 @@ claveUnitDuration d t = fmap fn t where
     fn ClaveOn  = Sounds d
     fn ClaveOff = Rests d
 
-unitNote :: Functor t => Pitch -> t RhythmicEvent -> t Elt
+unitNote :: Functor t => Pitch -> t RhythmicEvent -> t Event
 unitNote p t = fmap fn t where
     fn (Sounds d) = note p d
     fn (Rests d)  = rest d   
