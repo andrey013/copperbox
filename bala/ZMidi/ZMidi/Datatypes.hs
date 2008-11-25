@@ -141,31 +141,34 @@ type Message = (DeltaTime, Event)
 data Event 
     -- | Meta events - usually interpretable (e.g. @end-of-track@, @set-tempo@).
     = MetaEvent         MetaEvent
-    -- | Voice events (e.g @note-on@, @note-off@) are relayed to specific
-    -- channels.
-    | VoiceEvent        VoiceEvent
     -- | SysEx - system exclusive - events. Usually synthesizer specific.
     | SystemEvent       SystemEvent
+    -- | Voice events (e.g @note-on@, @note-off@) are relayed to specific
+    -- channels.
+    | VoiceEvent        VoiceEvent    
   deriving (Eq,Show,Ord)
 
 -- | @'VoiceEvent'@ 
 --
 -- Voice events control the output of the synthesizer.
+-- Note - these are not in the the same order as there byte values
+-- Controller and ProgramChange are higher than they /naturally/
+-- occur so the will come first after a comparison / sort.
 data VoiceEvent 
+    -- | @Controller chan type value@ - controller change to the channel,
+    -- e.g. by a footswitch.
+    = Controller          Word8 Word8 Word8
+    -- | @ProgramChange chan num@ - change the instrument playing on the 
+    -- specified channel. See 'GMInst' for the instruments available with
+    -- General MIDI.
+    | ProgramChange       Word8 Word8
     -- | @NoteOff chan note velocity@ - turn off a sounding note.
-    = NoteOff             Word8 Word8 Word8   
+    | NoteOff             Word8 Word8 Word8   
     -- | @NoteOn chan note velocity@ - start playing a note.
     | NoteOn              Word8 Word8 Word8
     -- | @NoteAftertouch chan note value@ - change in pressure applied to 
     -- the synthesizer key. 
-    | NoteAftertouch      Word8 Word8 Word8   
-    -- | @Controller chan type value@ - controller change to the channel,
-    -- e.g. by a footswitch.
-    | Controller          Word8 Word8 Word8
-    -- | @ProgramChange chan num@ - change the instrument playing on the 
-    -- specified channel. See 'GMInst' for the instruments available with
-    -- General MIDI.
-    | ProgramChange       Word8 Word8  
+    | NoteAftertouch      Word8 Word8 Word8     
     -- | @ChanAftertouch chan value@ - 
     | ChanAftertouch      Word8 Word8
     -- | @PitchBend chan value@ - change the pitch of a sounding note. 

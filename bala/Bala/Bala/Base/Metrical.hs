@@ -163,9 +163,13 @@ data Clave = ClaveOn | ClaveOff
   deriving (Eq,Enum,Show)
   
 type Bits = [Clave]
+
+newtype ClavePattern = ClavePattern { getClavePattern :: Seq Clave }
+
     
-bjorklund :: Int -> Int -> Bits
-bjorklund n k = step (replicate k [ClaveOn], replicate (n - k) [ClaveOff]) 
+bjorklund :: Int -> Int -> ClavePattern
+bjorklund n k = 
+    postP $ step (replicate k [ClaveOn], replicate (n - k) [ClaveOff]) 
   where
     step :: ([Bits], [Bits]) -> Bits
     step (as,rs) 
@@ -176,6 +180,8 @@ bjorklund n k = step (replicate k [ClaveOn], replicate (n - k) [ClaveOff])
                               (x,y) = span ((==) len . length) as 
                           in (x,rs++y)
                               
+    postP = ClavePattern . fromList
+    
                       
 -- distribute for Bjorklund's algorithm is basically a zip, except we 
 -- return the unconsumed right input. (Hence we need to return a pair, 

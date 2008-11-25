@@ -29,7 +29,7 @@ module Bala.Base.BaseExtra (
   base2bases, log2whole,
   
   -- * Utility functions 
-  dup, first, second, fork, prod,
+  dup, ffst, fsnd, fork, prod,
   
   applyi, zam, 
   mod12, mod7,
@@ -121,11 +121,11 @@ log2whole i = f i == 0 where
 dup :: a -> (a,a)
 dup a = (a,a)
 
-first :: (a -> c) -> (a,b) -> (c,b)
-first f (a,b) = (f a, b)
+ffst :: (a -> c) -> (a,b) -> (c,b)
+ffst f (a,b) = (f a, b)
 
-second :: (b -> c) -> (a,b) -> (a,c)
-second f (a,b) = (a, f b)
+fsnd :: (b -> c) -> (a,b) -> (a,c)
+fsnd f (a,b) = (a, f b)
 
 fork :: (a -> b) -> (a -> c) -> a -> (b,c) 
 fork f g a = (f a, g a)

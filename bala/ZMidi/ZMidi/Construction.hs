@@ -19,7 +19,7 @@
 module ZMidi.Construction (
   Ticks, MidiPitch, OutputMidi,
   execConstruction,
-  newTrack, nextChannel,
+  newTrack, nextChannel, drumTrack, clockToZero,
   
   spacer, note, chord, 
   
@@ -49,9 +49,12 @@ data MidiOutput = MidiOutput {
       _tracks           :: Seq Track, 
       _current_track    :: Seq Message 
     }
-    
+
+-- Note channel 10 is special - percussion.
+-- The function drumTrack advances to channel 9, caching the last channel     
 data OutputState = OutputState {
-      _channel          :: Word8,    
+      _channel          :: Word8,
+      _last_channel     :: Word8,       -- store     
       _abs_time         :: Word32
     }
     
@@ -85,7 +88,7 @@ execConstruction' m tpb tempo = do
     return $ finalize s'
   where
     out0 = MidiOutput  { _tracks=empty, _current_track=empty }
-    st0  = OutputState { _channel=0,    _abs_time=0 }
+    st0  = OutputState { _channel=0, _last_channel=0,   _abs_time=0 }
 
     finalize :: MidiOutput -> MidiFile
     finalize (MidiOutput trks t1) = 
@@ -125,7 +128,8 @@ transformTrack = Track . suffixEOT . deltaTransform . mergesort compare
         step t acc ((gt,e) :< se) = step gt (acc |> (gt-t,e)) (viewl se)
         
     suffixEOT = (|> (0, MetaEvent EndOfTrack))    
-    
+
+        
 
 --------------------------------------------------------------------------------
 -- 
@@ -173,9 +177,31 @@ noteoff ch p v    = VoiceEvent $ NoteOff ch p v
 -- Note changing channel resets the absolute time to 0 
 nextChannel :: Monad m => OutputT m ()
 nextChannel = do 
-    ch <- gets _channel
-    modify (\s -> s { _channel=ch+1, _abs_time =0 })
-    
+    ch    <- gets _channel
+    lch   <- gets _last_channel
+    modify (\s -> s { _channel      = (nextChan ch lch) , 
+                      _last_channel = ch,
+                      _abs_time     = 0 })
+  where
+    nextChan i last_chan | i == 8     = 10 -- skip channel 10 (percussion)
+                         | i == 9     = last_chan + 1
+                         | otherwise  = i + 1    
+
+drumTrack :: Monad m => OutputT m ()
+drumTrack = do 
+    ch   <- gets _channel
+    aati (\at _ -> (at, VoiceEvent $ ProgramChange 9 0))
+    modify (\s -> s { _channel        = 9, 
+                      _last_channel   = ch,
+                      _abs_time       = 0 }) 
+
+-- Resets the clock in the current track 
+-- This allows us to do multiple passes writing to the same channel,
+-- which while dangerous (possible conflicts with note on note off)
+-- does make writing percussion tracks easy as we know there is no 
+-- contention.
+clockToZero :: Monad m => OutputT m ()
+clockToZero = modify (\s -> s {_abs_time = 0})
     
 spacer :: Ticks -> OutputMidi () 
 spacer t = updateTime t       

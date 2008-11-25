@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -70,26 +71,26 @@ module HNotate.Pitch (
 -- Avoid internal dependencies as this module is included in Bala
 
 import Data.Char (toUpper, toLower)
-
+import Data.Generics
 
 data Pitch = Pitch {
     pch_letter        :: PitchLetter,
     pch_accidental    :: Accidental,
     pch_octave        :: Int
   }
-  deriving (Eq,Show)
+  deriving (Eq,Data,Show,Typeable)
 
 data PitchLetter = C | D | E | F | G | A | B
-  deriving (Bounded,Eq,Enum,Ord,Show)
+  deriving (Bounded,Data,Enum,Eq,Ord,Show,Typeable)
 
 data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp 
-  deriving (Bounded,Eq,Enum,Ord,Show)
+  deriving (Bounded,Data,Enum,Eq,Ord,Show,Typeable)
 
 data PitchLabel = PitchLabel {
     pch_lbl_letter      :: PitchLetter,
     pch_lbl_accidental  :: Accidental
   }
-  deriving (Eq,Show)
+  deriving (Eq,Data,Show,Typeable)
   
   
 instance Ord Pitch where

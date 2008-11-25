@@ -28,11 +28,28 @@ import qualified Data.Foldable as F
 import Data.Sequence
 import Data.Word
 
-generateMidi :: Section -> MidiFile
-generateMidi sn = 
-  execConstruction (midiLines $ linearTransform sn) 384 120 
+generateMidi :: Maybe Section -> [(GMInst,Section)] -> MidiFile
+generateMidi Nothing      ss  = 
+  execConstruction (mapM_ (uncurry midiSection) ss) 384 120 
 
+generateMidi (Just perc)  ss  = execConstruction actions 384 120 
+  where 
+    actions = do { midiDrums perc; mapM_ (uncurry midiSection) ss }
 
+midiSection :: GMInst -> Section -> OutputMidi ()
+midiSection inst sn = do
+    programChange (fromIntegral $ fromEnum inst)
+    midiLines $ linearTransform sn
+ 
+midiDrums :: Section -> OutputMidi ()
+midiDrums sn = do 
+    drumTrack
+    F.mapM_ outputPerc (linearTransform sn) 
+    nextChannel
+  where
+    outputPerc se = F.mapM_ outputEvent se >> clockToZero
+    
+    
 -- each line becomes a channel
 midiLines :: Seq (Seq Event) -> OutputMidi ()
 midiLines sse = F.mapM_ outputChannel sse where

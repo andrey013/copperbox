@@ -38,15 +38,15 @@ instance Show (FShape a) where
 
               
 
-data Focus a b = FN { focus :: a -> Bool, extract :: a -> b, putback :: a -> b -> a } 
+data Focus a b = FN { focus   :: a -> Bool, 
+                      extract :: a -> b, 
+                      putback :: a -> b -> a } 
 
 
 separate :: (Functor t, F.Foldable t) => Focus a b -> t a -> (t (FShape a), [b])
 separate fcs = fork (fmap f) (F.foldr g []) where
-    f a   = if (focus fcs) a then Focus a else Obliv a
+    f a    = if (focus fcs) a then Focus a else Obliv a
     g a xs = if (focus fcs) a then (extract fcs) a : xs else xs
-
-
 
     
 rejoin :: T.Traversable t => Focus a b -> (t (FShape a), [b]) -> t a

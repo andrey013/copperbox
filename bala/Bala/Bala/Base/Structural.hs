@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -27,6 +28,7 @@ import HNotate.Fits
 import Control.Applicative hiding (empty)
 
 import qualified Data.Foldable as F
+import Data.Generics
 import Data.List (sort, transpose, intercalate)
 import Data.Sequence hiding (length, null)
 import qualified Data.Sequence as S -- for length and null
@@ -39,7 +41,7 @@ import Data.Traversable
 
 
 data SectionF a = Section TimeSig (Seq (PhraseF a))
- --  deriving (Show)
+  deriving (Show)
 
 data PhraseF a = Single (MotifF a)
                | Overlay (MotifF a) (Seq (MotifF a))   
@@ -64,12 +66,12 @@ data Event = Note Pitch Duration
            | AGrace GraceNotes Pitch Duration -- accented grace
            | UGrace Pitch Duration GraceNotes -- unaccented grace
            | Mark Mark                  -- a mark that has no duration
-  deriving (Eq,Show)
+  deriving (Eq,Data,Show,Typeable)
   
 
 -- ... more ?    
 data Mark = Tie            
-  deriving (Eq,Show)
+  deriving (Eq,Data,Show,Typeable)
   
 --------------------------------------------------------------------------------
 -- wrapped constructors / builders
