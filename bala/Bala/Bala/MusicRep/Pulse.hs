@@ -1,6 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -19,19 +16,14 @@
 
 module Bala.MusicRep.Pulse where
 
-import Bala.Base.BaseExtra
+
 import Bala.Base.Duration
 import Bala.Base.Metrical
-import Bala.Base.Pitch
 import Bala.Base.Structural
-import Bala.Base.FocusedShapeContents
 
-import HNotate.Fits (segment, sumMeasure)
 
-import qualified Data.Foldable as F
 import Data.Sequence
 
-import Text.PrettyPrint.HughesPJ hiding (empty)
 
 
 
@@ -53,7 +45,7 @@ readClave a = ClavePattern . fromList . step where
 claveMotif :: (Duration -> Event) -> Duration -> ClavePattern -> Motif
 claveMotif f d = Motif . fmap fn . getClavePattern where
     fn ClaveOn  = f d
-    fn ClaveOff = Rest d
+    fn ClaveOff = rest d
 
 
      

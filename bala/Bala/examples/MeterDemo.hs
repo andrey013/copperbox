@@ -16,7 +16,7 @@ import Bala.Base.OutputHNotate
 import HNotate hiding (note, rest)
 import HNotate.DocLilyPond
 
-import ZMidi (writeMidi)
+import ZMidi (writeMidi, GMInst(..) )
 
 attack d = note c4 d
 
@@ -42,10 +42,10 @@ samba_baiao = section (2,4) $ overlay [sb_tap, sb_foot]
 genMidi :: IO ()
 genMidi = writeMidi "./out/samba_baiao.mid" samba_midi
   where
-    samba_midi = generateMidi samba_baiao 
+    samba_midi = generateMidi Nothing [(Marimba, samba_baiao)] 
 
 
--- Not yet
+
 genLy :: IO ()
 genLy = outputLilyPondDocu 5 samba_sys samba_doc "./out/samba_baiao.ly"
   where

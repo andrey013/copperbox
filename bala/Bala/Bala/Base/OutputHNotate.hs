@@ -18,6 +18,7 @@
 module Bala.Base.OutputHNotate where
 
 import Bala.Base.BaseExtra
+import Bala.Base.DrumPitches (drumEvent)
 import Bala.Base.Duration
 import Bala.Base.Pitch
 import Bala.Base.Structural
@@ -29,26 +30,33 @@ import qualified Data.Foldable as F
 import Data.Sequence
 import Data.Word
 
+type EventInterp = H.EventList -> Event -> H.EventList
+
+
 generateEventList :: Section -> H.EventList
-generateEventList sn = 
-    F.foldl phraseFoldStep H.root $ getPhrases $ packToLength sn
+generateEventList = genGenerateEventList motifFoldStep
+
+
+genGenerateEventList :: EventInterp -> Section -> H.EventList
+genGenerateEventList fstep sn = 
+    F.foldl (phraseFoldStep fstep) H.root $ getPhrases $ packToLength sn
   where
-    getPhrases (Section _ se) = se    
+    getPhrases (Section _ se) = se  
+    
 
-
-phraseFoldStep :: H.EventList -> Phrase -> H.EventList
-phraseFoldStep t (Single mo)      = t `addMotif` mo
-phraseFoldStep t (Overlay mo smo) = t |# (f mo : ovs (viewl smo)) where
+phraseFoldStep :: EventInterp -> H.EventList -> Phrase -> H.EventList
+phraseFoldStep fstep t (Single mo)      = addMotif fstep t mo
+phraseFoldStep fstep t (Overlay mo smo) = t |# (f mo : ovs (viewl smo)) where
     ovs :: ViewL Motif -> [H.EventList]
     ovs EmptyL     = []
     ovs (a :< sa)  = f a : ovs (viewl sa)
     
     f :: Motif -> H.EventList
-    f mo = H.root `addMotif` mo
+    f mo = addMotif fstep H.root mo
     
 
-addMotif :: H.EventList -> Motif -> H.EventList
-addMotif t (Motif se) = F.foldl motifFoldStep t se
+addMotif :: EventInterp -> H.EventList -> Motif -> H.EventList
+addMotif fstep t (Motif se) = F.foldl fstep t se
 
 
 motifFoldStep :: H.EventList -> Event -> H.EventList
@@ -64,7 +72,9 @@ motifFoldStep t (Mark m)            = t |# (mkMark m)
 mkMark Tie          = H.tie 
     
 
-
+drumFoldStep :: H.EventList -> Event -> H.EventList
+drumFoldStep t (Note p d)           = t |# drumEvent p d
+drumFoldStep t a                    = motifFoldStep t a
 
 
             

@@ -6,10 +6,16 @@
 module BossaNova where
 
 import Bala.Base
+import Bala.Base.DrumPitches
+import Bala.Base.OutputHNotate
+
 import Bala.MusicRep.Pulse
-import Bala.MusicRep.DrumPitches
+
 
 import ZMidi (writeMidi)
+
+import HNotate hiding (note, rest)
+import HNotate.DocLilyPond
 
 hi_hat :: ClavePattern
 hi_hat  = clavel $ replicate 16 ClaveOn
@@ -37,4 +43,27 @@ genMidi = writeMidi "./out/bossa_nova.mid" bossa_midi
     
 main = do 
     genMidi 
+    genLy
+
+
+genLy :: IO ()
+genLy = outputLilyPondDocu 5 bossa_sys bossa_doc "./out/bossa_nova.ly"
+  where
+    bossa_sys = system1 "bossa_nova"  bossa_eventlist
+    bossa_eventlist = genGenerateEventList drumFoldStep bossa_nova    
+    bossa_doc = lilypond 
+                  [ version
+                  
+                  , header                        $
+                    title "Bossa Nova"            $
+                    noExpr
+                         
+                  , definition "bossaNova"        $ 
+                    time 2 4                      $
+                    outputRelative "bossa_nova"
+                  
+                  , book $ score $ invocation "bossaNova"
+                  ]  
+    
+
     

@@ -25,21 +25,27 @@ import Bala.Base.Structural hiding (note, chord)
 import ZMidi hiding (Event)
 
 import qualified Data.Foldable as F
+import Data.List (intersperse)
 import Data.Sequence
 import Data.Word
 
 generateMidi :: Maybe Section -> [(GMInst,Section)] -> MidiFile
-generateMidi Nothing      ss  = 
-  execConstruction (mapM_ (uncurry midiSection) ss) 384 120 
+generateMidi (Just perc)  []  = execConstruction (midiDrums perc) 384 120 
 
 generateMidi (Just perc)  ss  = execConstruction actions 384 120 
   where 
-    actions = do { midiDrums perc; mapM_ (uncurry midiSection) ss }
+    actions = do { midiDrums perc; newTrack; midiSections ss }
+
+generateMidi Nothing      ss  = execConstruction (midiSections ss) 384 120 
+  
+
+midiSections :: [(GMInst,Section)] -> OutputMidi ()
+midiSections = sequence_ . intersperse newTrack . fmap (uncurry midiSection)
 
 midiSection :: GMInst -> Section -> OutputMidi ()
-midiSection inst sn = do
-    programChange (fromIntegral $ fromEnum inst)
-    midiLines $ linearTransform sn
+midiSection inst sn = do 
+    midiLines inst $ linearTransform sn
+
  
 midiDrums :: Section -> OutputMidi ()
 midiDrums sn = do 
@@ -51,9 +57,12 @@ midiDrums sn = do
     
     
 -- each line becomes a channel
-midiLines :: Seq (Seq Event) -> OutputMidi ()
-midiLines sse = F.mapM_ outputChannel sse where
-  outputChannel se =  F.mapM_ outputEvent se >> nextChannel
+midiLines :: GMInst -> Seq (Seq Event) -> OutputMidi ()
+midiLines inst sse = F.mapM_ outputChannel sse where
+  outputChannel se = do 
+      programChange (fromIntegral $ fromEnum inst) 
+      F.mapM_ outputEvent se
+      nextChannel
 
         
 outputEvent :: Event -> OutputMidi ()
