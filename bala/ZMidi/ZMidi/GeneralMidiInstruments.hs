@@ -19,9 +19,12 @@ module ZMidi.GeneralMidiInstruments (
     GMInst(..),
 
     -- * General MIDI drums
-    GMDrum(..)
+    GMDrum(..),
 
+    drumPitch
   ) where
+
+import Data.Word
 
 -- | Enumeration of the General MIDI instruments.
 data GMInst
@@ -237,5 +240,8 @@ data GMDrum
     | Open_triangle
   deriving (Eq,Ord,Enum,Read,Show)
 
+-- General Midi drums are in the range [35..81]
+drumPitch :: GMDrum -> Word8
+drumPitch = (+35) . fromIntegral . fromEnum
 
 

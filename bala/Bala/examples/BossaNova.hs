@@ -11,28 +11,42 @@ import Bala.Base.OutputHNotate
 
 import Bala.MusicRep.Pulse
 
-
 import ZMidi (writeMidi)
 
 import HNotate hiding (note, rest)
 import HNotate.DocLilyPond
 
-hi_hat :: ClavePattern
-hi_hat  = clavel $ replicate 16 ClaveOn
 
-cymbal :: ClavePattern
-cymbal = readClave 'X' $    "X..X..X." ++ "..X..X.."
 
-bass  :: ClavePattern
-bass   = readClave 'X' $    "X..XX..X" ++ "X..XX..X"
 
+hi_hat_clave :: ClavePattern
+hi_hat_clave  = clavel $ replicate 16 ClaveOn
+
+cymbal_clave :: ClavePattern
+cymbal_clave = readClave 'X' $    "X..X..X." ++ "..X..X.."
+
+bass_clave  :: ClavePattern
+bass_clave   = readClave 'X' $    "X..XX..X" ++ "X..XX..X"
+
+{-
 bossa_nova :: Section
 bossa_nova = section (2,4) $ overlay 
-    [ drum hi_hat closed_hi_hat 
-    , drum cymbal splash_cymbal
-    , drum bass   bass_drum_1  ]  
+    [ drum Hihat        hi_hat_clave
+    , drum Ridecymbal   cymbal_clave
+    , drum Bassdrum     bass_clave  ]  
   where
-    drum pat inst = claveMotif (\d -> note inst d) sixteenth pat
+    drum inst pat = claveMotif (\d -> note (drumPitch inst) d) sixteenth pat
+-}
+
+--- DRUM CHORDS....
+
+bossa_nova :: Section
+bossa_nova = section (2,4) $ phrase $ claveMotif' sixteenth $ 
+  [ (drumPitch Hihat,         hi_hat_clave)
+  , (drumPitch Ridecymbala,   cymbal_clave)
+  , (drumPitch Bassdrum,      bass_clave)
+  ]
+  
 
     
 genMidi :: IO ()
@@ -60,7 +74,7 @@ genLy = outputLilyPondDocu 5 bossa_sys bossa_doc "./out/bossa_nova.ly"
                          
                   , definition "bossaNova"        $ 
                     time 2 4                      $
-                    outputRelative "bossa_nova"
+                    outputAbsolute "bossa_nova"
                   
                   , book $ score $ invocation "bossaNova"
                   ]  

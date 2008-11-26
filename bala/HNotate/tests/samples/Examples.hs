@@ -101,6 +101,6 @@ lilypond_drums = systemL [("drums1", drums1), ("drums2", drums2)]
          
     drums2 :: EventList
     drums2 = 
-        root |# lowtom du4            |# cowbell du8        |# cowbell du8 
-             |# hibongo du4           |# lobongo du4     
+        root |# lowtom' du4   |# cowbell' du8   |# cowbell' du8 
+             |# hibongo' du4  |# lobongo' du4  
              

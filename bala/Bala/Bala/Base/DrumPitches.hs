@@ -20,203 +20,197 @@ module Bala.Base.DrumPitches where
 import Bala.Base.Duration
 import Bala.Base.Pitch
 
-import HNotate.NoteListDatatypes (Tile)
+import qualified HNotate.NoteListDatatypes as H
 import qualified HNotate.Marks as H 
+import qualified ZMidi as Z (GMDrum(..), drumPitch)
 
 
-acoustic_bass_drum      :: Pitch
-acoustic_bass_drum      = fromSemitones 35 
+-- Just us a subset of /representable/ drums - the drums-style drums 
+-- from LilyPond. 
+-- Note unfortunately the order of the drums does not align with
+-- the order of general midi drums.
+data DrumsStyle = Acousticbassdrum
+                | Bassdrum
+                | Sidestick
+                | Acousticsnare
+                | Snare
+                | Handclap
+                | Electricsnare
+                | Lowfloortom
+                | Closedhihat
+                | Hihat
+                | Highfloortom
+                | Pedalhihat
+                | Lowtom
+                | Openhihat
+                | Halfopenhihat
+                | Lowmidtom
+                | Himidtom
+                | Crashcymbala
+                | Crashcymbal
+                | Hightom
+                | Ridecymbala
+                | Ridecymbal
+                | Chinesecymbal
+                | Ridebell
+                | Splashcymbal
+                | Cowbell
+                | Crashcymbalb
+                | Vibraslap
+                | Ridecymbalb
+  deriving (Enum,Eq,Ord,Show)
+  
+gmDrumPitch :: Z.GMDrum -> Pitch
+gmDrumPitch = fromSemitones . fromIntegral . Z.drumPitch
 
-bass_drum_1             :: Pitch
-bass_drum_1             = fromSemitones 36
+pitchToGmDrum :: Pitch -> Maybe Z.GMDrum
+pitchToGmDrum = fn . semitones where
+  fn i | i >= 35 && i <= 81   = Just $ toEnum $ i -35
+       | otherwise            = Nothing
+   
 
-side_stick              :: Pitch
-side_stick              = fromSemitones 37 
+-- Not all drums have a direct mapping
+-- id ___ marks the ones that don't
+gmDrum :: DrumsStyle -> Z.GMDrum
+gmDrum Acousticbassdrum     = Z.Acoustic_bass_drum
+gmDrum Bassdrum             = Z.Bass_drum_1
+gmDrum Sidestick            = Z.Side_stick
+gmDrum Acousticsnare        = Z.Acoustic_snare
+gmDrum Snare                = id                  Z.Short_guiro
+gmDrum Handclap             = Z.Hand_clap  
+gmDrum Electricsnare        = Z.Electric_snare
+gmDrum Lowfloortom          = Z.Low_floor_tom
+gmDrum Closedhihat          = Z.Closed_hi_hat
+gmDrum Hihat                = id                  Z.Long_guiro
+gmDrum Highfloortom         = Z.High_floor_tom
+gmDrum Pedalhihat           = Z.Pedal_hi_hat
+gmDrum Lowtom               = Z.Low_tom
+gmDrum Openhihat            = Z.Open_hi_hat
+gmDrum Halfopenhihat        = id                  Z.Claves
+gmDrum Lowmidtom            = Z.Low_mid_tom
+gmDrum Himidtom             = Z.High_mid_tom
+gmDrum Crashcymbala         = Z.Crash_cymbal_1
+gmDrum Crashcymbal          = id                  Z.High_wood_block
+gmDrum Hightom              = Z.High_tom
+gmDrum Ridecymbala          = Z.Ride_cymbal_1
+gmDrum Ridecymbal           = id                  Z.Low_wood_block
+gmDrum Chinesecymbal        = Z.Chinese_cymbal
+gmDrum Ridebell             = Z.Ride_bell
+gmDrum Splashcymbal         = Z.Splash_cymbal
+gmDrum Cowbell              = Z.Cowbell
+gmDrum Crashcymbalb         = Z.Crash_cymbal_2
+gmDrum Vibraslap            = Z.Vibraslap
+gmDrum Ridecymbalb          = Z.Ride_cymbal_2
 
-acoustic_snare          :: Pitch
-acoustic_snare          = fromSemitones 38
 
-hand_clap               :: Pitch
-hand_clap               = fromSemitones 39
+-- Turn a Drum into a Pitch
+drumPitch :: DrumsStyle -> Pitch 
+drumPitch = gmDrumPitch . gmDrum
 
-electric_snare          :: Pitch
-electric_snare          = fromSemitones 40
+drumEvent :: Pitch -> Duration -> H.Tile
+drumEvent p d = maybe (H.spacer d) (drumTile `flip` d) (drumName p)
 
-low_floor_tom           :: Pitch
-low_floor_tom           = fromSemitones 41
+drumName :: Pitch -> Maybe DrumsStyle
+drumName = maybe Nothing fn . pitchToGmDrum where
+  fn Z.Acoustic_bass_drum     = Just Acousticbassdrum
+  fn Z.Bass_drum_1            = Just Bassdrum 
+  fn Z.Side_stick             = Just Sidestick 
+  fn Z.Acoustic_snare         = Just Acousticsnare 
+  fn Z.Short_guiro            = Just Snare                  
+  fn Z.Hand_clap              = Just Handclap   
+  fn Z.Electric_snare         = Just Electricsnare 
+  fn Z.Low_floor_tom          = Just Lowfloortom
+  fn Z.Closed_hi_hat          = Just Closedhihat 
+  fn Z.Long_guiro             = Just Hihat                  
+  fn Z.High_floor_tom         = Just Highfloortom 
+  fn Z.Pedal_hi_hat           = Just Pedalhihat 
+  fn Z.Low_tom                = Just Lowtom 
+  fn Z.Open_hi_hat            = Just Openhihat 
+  fn Z.Claves                 = id $ Just Halfopenhihat                  
+  fn Z.Low_mid_tom            = Just Lowmidtom 
+  fn Z.High_mid_tom           = Just Himidtom 
+  fn Z.Crash_cymbal_1         = Just Crashcymbala
+  fn Z.High_wood_block        = id $ Just Crashcymbal                 
+  fn Z.High_tom               = Just Hightom 
+  fn Z.Ride_cymbal_1          = Just Ridecymbala 
+  fn Z.Low_wood_block         = id $ Just Ridecymbal                 
+  fn Z.Chinese_cymbal         = Just Chinesecymbal 
+  fn Z.Ride_bell              = Just Ridebell
+  fn Z.Splash_cymbal          = Just Splashcymbal
+  fn Z.Cowbell                = Just Cowbell
+  fn Z.Crash_cymbal_2         = Just Crashcymbalb 
+  fn Z.Vibraslap              = Just Vibraslap 
+  fn Z.Ride_cymbal_2          = Just Ridecymbalb          
+  fn _                        = Nothing
 
-closed_hi_hat           :: Pitch
-closed_hi_hat           = fromSemitones 42
 
-high_floor_tom          :: Pitch
-high_floor_tom          = fromSemitones 43
 
-pedal_hi_hat            :: Pitch
-pedal_hi_hat            = fromSemitones 44
+drumTile :: DrumsStyle -> Duration -> H.Tile
+drumTile Acousticbassdrum       d = H.acousticbassdrum'   d
+drumTile Bassdrum               d = H.bassdrum'           d
+drumTile Sidestick              d = H.sidestick'          d
+drumTile Acousticsnare          d = H.acousticsnare'      d
+drumTile Snare                  d = H.snare'              d
+drumTile Handclap               d = H.handclap'           d
+drumTile Electricsnare          d = H.electricsnare'      d
+drumTile Lowfloortom            d = H.lowfloortom'        d
+drumTile Closedhihat            d = H.closedhihat'        d
+drumTile Hihat                  d = H.hihat'              d
+drumTile Highfloortom           d = H.highfloortom'       d
+drumTile Pedalhihat             d = H.pedalhihat'         d
+drumTile Lowtom                 d = H.lowtom'             d
+drumTile Openhihat              d = H.openhihat'          d
+drumTile Halfopenhihat          d = H.halfopenhihat'      d
+drumTile Lowmidtom              d = H.lowmidtom'          d
+drumTile Himidtom               d = H.himidtom'           d
+drumTile Crashcymbala           d = H.crashcymbala'       d
+drumTile Crashcymbal            d = H.crashcymbal'        d
+drumTile Hightom                d = H.hightom'            d
+drumTile Ridecymbala            d = H.ridecymbala'        d
+drumTile Ridecymbal             d = H.ridecymbala'        d
+drumTile Chinesecymbal          d = H.chinesecymbal'      d
+drumTile Ridebell               d = H.ridebell'           d
+drumTile Splashcymbal           d = H.splashcymbal'       d
+drumTile Cowbell                d = H.cowbell'            d
+drumTile Crashcymbalb           d = H.crashcymbalb'       d
+drumTile Vibraslap              d = H.vibraslap'          d
+drumTile Ridecymbalb            d = H.ridecymbalb'        d
 
-low_tom                 :: Pitch
-low_tom                 = fromSemitones 45
+          
+{-
+   '((drums-style .
+     (
+      (acousticbassdrum () #f -3)
+      (bassdrum () #f -3)
+      (sidestick cross #f 1)
+      (acousticsnare () #f 1)
+      (snare () #f 1)
+      (handclap triangle #f 1)
+      (electricsnare () #f 1)
+      (lowfloortom () #f -4)
+      (closedhihat cross "stopped" 3)
+      (hihat cross #f 3)
+      (highfloortom () #f -2)
+      (pedalhihat cross #f -5)
+      (lowtom () #f -1)
+      (openhihat cross "open" 3)
+      (halfopenhihat xcircle #f 3)
+      (lowmidtom () #f 0)
+      (himidtom () #f 2)
+      (crashcymbala xcircle #f 5)
+      (crashcymbal xcircle #f 5)
+      (hightom () #f 4)
+      (ridecymbala cross #f 5)
+      (ridecymbal cross #f 5)
+      (chinesecymbal mensural #f 5)
+      (ridebell () #f 5)
+      (splashcymbal diamond #f 5)
+      (cowbell triangle #f 5)
+      (crashcymbalb cross #f 5)
+      (vibraslap diamond #f 4)
+      (ridecymbalb cross #f 5)
+      ))
+-}      
 
-open_hi_hat             :: Pitch
-open_hi_hat             = fromSemitones 46
-
-low_mid_tom             :: Pitch
-low_mid_tom             = fromSemitones 47
-
-high_mid_tom            :: Pitch
-high_mid_tom            = fromSemitones 48
-
-crash_cymbal_1          :: Pitch
-crash_cymbal_1          = fromSemitones 49
-
-high_tom                :: Pitch
-high_tom                = fromSemitones 50
-
-ride_cymbal_1           :: Pitch
-ride_cymbal_1           = fromSemitones 51
-
-chinese_cymbal          :: Pitch
-chinese_cymbal          = fromSemitones 52
-
-ride_bell               :: Pitch
-ride_bell               = fromSemitones 53
-
-tambourine              :: Pitch
-tambourine              = fromSemitones 54
-
-splash_cymbal           :: Pitch
-splash_cymbal           = fromSemitones 55
-
-cowbell                 :: Pitch
-cowbell                 = fromSemitones 56
-
-crash_cymbal_2          :: Pitch
-crash_cymbal_2          = fromSemitones 57
-
-vibraslap               :: Pitch
-vibraslap               = fromSemitones 58
-
-ride_cymbal_2           :: Pitch
-ride_cymbal_2           = fromSemitones 59
-
-high_bongo              :: Pitch
-high_bongo              = fromSemitones 60
-
-low_bongo               :: Pitch
-low_bongo               = fromSemitones 61
-
-mute_high_conga         :: Pitch
-mute_high_conga         = fromSemitones 62
-
-open_high_conga         :: Pitch
-open_high_conga         = fromSemitones 63
-
-low_conga               :: Pitch
-low_conga               = fromSemitones 64
-
-high_timbale            :: Pitch
-high_timbale            = fromSemitones 65
-
-low_timbale             :: Pitch
-low_timbale             = fromSemitones 66
-
-high_agogo              :: Pitch
-high_agogo              = fromSemitones 67
-
-low_agogo               :: Pitch
-low_agogo               = fromSemitones 68
-
-cabasa                  :: Pitch
-cabasa                  = fromSemitones 69
-
-maracas                 :: Pitch
-maracas                 = fromSemitones 70
-
-short_whistle           :: Pitch
-short_whistle           = fromSemitones 71
-
-long_whistle            :: Pitch
-long_whistle            = fromSemitones 72
-
-short_guiro             :: Pitch
-short_guiro             = fromSemitones 73
-
-long_guiro              :: Pitch
-long_guiro              = fromSemitones 74
-
-claves                  :: Pitch
-claves                  = fromSemitones 75
-
-high_wood_block         :: Pitch
-high_wood_block         = fromSemitones 76
-
-low_wood_block          :: Pitch
-low_wood_block          = fromSemitones 77
-
-mute_cuica              :: Pitch
-mute_cuica              = fromSemitones 78
-
-open_cuica              :: Pitch
-open_cuica              = fromSemitones 79
-
-mute_triangle           :: Pitch
-mute_triangle           = fromSemitones 80
-
-open_triangle           :: Pitch
-open_triangle           = fromSemitones 81
-
--- LilyPond has more drums than General Midi (?)
-drumEvent :: Pitch -> Duration -> Tile
-drumEvent p d 
-    | p == acoustic_bass_drum     = H.acousticbassdrum  d
-    | p == bass_drum_1            = H.bassdrum          d
-    | p == side_stick             = H.sidestick         d
-    | p == acoustic_snare         = H.acousticsnare     d
-    | p == hand_clap              = H.handclap          d
-    | p == electric_snare         = H.electricsnare     d
-    | p == low_floor_tom          = H.lowfloortom       d
-    | p == closed_hi_hat          = H.closedhihat       d
-    | p == high_floor_tom         = H.highfloortom      d
-    | p == pedal_hi_hat           = H.pedalhihat        d
-    | p == low_tom                = H.lowtom            d
-    | p == open_hi_hat            = H.openhihat         d
-    | p == low_mid_tom            = H.lowmidtom         d
-    | p == high_mid_tom           = H.himidtom          d
-    | p == crash_cymbal_1         = H.crashcymbala      d
-    | p == high_tom               = H.hightom           d
-    | p == ride_cymbal_1          = H.ridecymbala       d
-    | p == chinese_cymbal         = H.chinesecymbal     d
-    | p == ride_bell              = H.ridebell          d
-    | p == tambourine             = H.tambourine        d
-    | p == splash_cymbal          = H.splashcymbal      d
-    | p == cowbell                = H.cowbell           d
-    | p == crash_cymbal_2         = H.crashcymbalb      d
-    | p == vibraslap              = H.vibraslap         d
-    | p == ride_cymbal_2          = H.ridecymbalb       d
-    | p == high_bongo             = H.hibongo           d
-    | p == low_bongo              = H.lobongo           d
-    | p == mute_high_conga        = H.mutehiconga       d
-    | p == open_high_conga        = H.openhiconga       d
-    | p == low_conga              = H.loconga           d
-    | p == high_timbale           = H.hitimbale         d
-    | p == low_timbale            = H.lotimbale         d
-    | p == high_agogo             = H.hiagogo           d
-    | p == low_agogo              = H.loagogo           d
-    | p == cabasa                 = H.cabasa            d
-    | p == maracas                = H.maracas           d
-    | p == short_whistle          = H.shortwhistle      d
-    | p == long_whistle           = H.longwhistle       d
-    | p == short_guiro            = H.shortguiro        d
-    | p == long_guiro             = H.longguiro         d
-    | p == claves                 = H.claves            d
-    | p == high_wood_block        = H.hiwoodblock       d
-    | p == low_wood_block         = H.lowoodblock       d
-    | p == mute_cuica             = H.mutecuica         d
-    | p == open_cuica             = H.opencuica         d
-    | p == mute_triangle          = H.mutetriangle      d
-    | p == open_triangle          = H.opentriangle      d
-    | otherwise                   = H.oneup             d     -- arbitrary...
-
-    
-    
+  
    

@@ -71,9 +71,12 @@ motifFoldStep t (Mark m)            = t |# (mkMark m)
 
 mkMark Tie          = H.tie 
     
+-- this shouldn't directly call drumEvent it makes this module
+-- depend on DrumPitches.hs - the dependency should be the other way round
 
 drumFoldStep :: H.EventList -> Event -> H.EventList
 drumFoldStep t (Note p d)           = t |# drumEvent p d
+-- drumFoldStep t (Chord ps d)         = t |# undefined 
 drumFoldStep t a                    = motifFoldStep t a
 
 

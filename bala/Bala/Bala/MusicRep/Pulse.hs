@@ -16,14 +16,14 @@
 
 module Bala.MusicRep.Pulse where
 
-
+import Bala.Base.BaseExtra (stranspose, sfilter)
 import Bala.Base.Duration
 import Bala.Base.Metrical
+import Bala.Base.Pitch
 import Bala.Base.Structural
 
-
 import Data.Sequence
-
+import Prelude hiding (null) 
 
 
 
@@ -47,11 +47,24 @@ claveMotif f d = Motif . fmap fn . getClavePattern where
     fn ClaveOn  = f d
     fn ClaveOff = rest d
 
+-- actually, we want to make clave patterns as single overlays of notes/chords... 
 
-     
+claveMotif' :: Duration -> [(Pitch,ClavePattern)] -> Motif
+claveMotif' d = 
+    Motif . fmap (pgroup . ons) . stranspose . fromList . fmap (uncurry line) 
+  where
+    line :: Pitch -> ClavePattern -> Seq (Pitch,Clave)
+    line p = fmap (\c -> (p,c)) . getClavePattern
+    
+    ons :: Seq (Pitch,Clave) -> Seq Pitch
+    ons = fmap fst . sfilter (\(_,c) -> c == ClaveOn)
 
-
-
+    pgroup :: Seq Pitch -> Event
+    pgroup se = case viewl se of
+        EmptyL -> rest d
+        a :< sa -> if null sa then note a d else Chord se d
+        
+        
 
 
 

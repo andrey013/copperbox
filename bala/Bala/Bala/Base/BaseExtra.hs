@@ -48,7 +48,7 @@ module Bala.Base.BaseExtra (
   szip, szipWith,
   szipl, sziplWith, szipl', 
   sreplicate, smaximum, sminimum,
-  sconcat
+  sconcat, sfilter
 
   ) where
 
@@ -305,5 +305,11 @@ sminimum se | null se = error "sminimum: empty sequence"
 sconcat :: Seq (Seq a) -> Seq a
 sconcat = F.foldr (><) empty
              
-            
+sfilter :: (a -> Bool) -> Seq a -> Seq a
+sfilter pf = step . viewl where
+  step EmptyL     = empty
+  step (a :< sa) | pf a       = a <| step (viewl sa)
+                 | otherwise  = step (viewl sa)
+                 
+                         
             
