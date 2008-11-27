@@ -141,28 +141,39 @@ moveRightwards bar_len tile ms =
 
 type RawBar = (Int,Seq Tile)
 
+
 partitionGVO :: Duration -> GlyphVoiceOverlay -> Seq RawBar
 partitionGVO bar_len (GVO (StdDisp bn disp) se) = 
-    let spacepre se = if disp /= duration_zero then (spacer disp) <| se else se 
-        sse = asegmentHy (|> tie)  0 bar_len (spacepre se) 
+    let spacepre se = if disp /= duration_zero then (spacerTile disp) <| se else se 
+        sse = asegmentHy (|> tieTile)  0 bar_len (spacepre se) 
     in snd $ F.foldl (\(n,acc) e -> (n+1, acc |>(n,e))) (bn,empty) sse
 
 
 partitionGVO bar_len (GVO (AnaDisp asis) se) = 
-    let sse = asegmentHy (|> tie) asis bar_len se 
+    let sse = asegmentHy (|> tieTile) asis bar_len se 
     in snd $ F.foldl (\(n,acc) e -> (n+1, acc |>(n,e))) (0,empty) sse
     
 instance Fits Glyph Duration where
   measure (Note _ d _)            = d
-  measure (Rest _ d _)            = d
+  measure (Rest d _)              = d
+  measure (Spacer d _)            = d
   measure (RhythmicMark _ d _)    = d
   measure (Mark _ _)              = duration_zero
+  measure BeamStart               = duration_zero
+  measure BeamEnd                 = duration_zero
+  measure Tie                     = duration_zero
   
-  resizeTo (Note p _ a)         d = Note p d a
-  resizeTo (Rest m _ a)         d = Rest m d a 
-  resizeTo (RhythmicMark l _ m) d = RhythmicMark l d m
-  resizeTo (Mark l m)           d = Mark l m
-
+  
+  resizeTo (Note p _ a)           d = Note p d a
+  resizeTo (Rest _ a)             d = Rest d a 
+  resizeTo (Spacer _ a)           d = Spacer d a
+  resizeTo (RhythmicMark l _ m)   d = RhythmicMark l d m
+  resizeTo (Mark l m)             d = Mark l m
+  resizeTo BeamStart              d = BeamStart
+  resizeTo BeamEnd                d = BeamEnd
+  resizeTo Tie                    d = Tie
+  
+  
 instance Fits Tile Duration where
   measure (Singleton e)           = measure e                                                
   measure (Chord se d a)          = d  

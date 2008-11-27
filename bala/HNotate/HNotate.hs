@@ -25,13 +25,21 @@ module HNotate (
     System, EventList, Evt,
     system, systemL, system1,
     
-    root, note, rest, spacer,    
-    chord, ugraces, agraces, 
-    chord', ugraces', agraces',
+    root, poly,
+    noteTile, note, note',
+    restTile, rest, rest',
+    spacerTile, spacer, spacer',    
+    chordTile, chord, chord',
+    chordTileL, chordL, chordL',
+    agracesTile, agraces, agraces',
+    agracesTileL, agracesL, agracesL',
+    ugracesTile, ugraces, ugraces',
+    ugracesTileL, ugracesL, ugracesL',
     tie, 
     simpleEventlist, 
+    ( # ),
     
-    AddtoEventList(..), ( /@ ), ( /@@ ), 
+    {- AddtoEventList(..), ( /@ ), ( /@@ ), -} 
     
     -- Env
     set_current_key,

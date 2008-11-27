@@ -72,11 +72,21 @@ genLy = outputLilyPondDocu 5 bossa_sys bossa_doc "./out/bossa_nova.ly"
                     title "Bossa Nova"            $
                     noExpr
                          
-                  , definition "bossaNova"        $ 
+                  , definition "bossaNova"        $
+                    drummode                      $ 
                     time 2 4                      $
                     outputAbsolute "bossa_nova"
                   
-                  , book $ score $ invocation "bossaNova"
+                  , book                          $ 
+                    score                         $
+                    new "DrumStaff"               $ 
+                    doubleAngles                  $
+                    
+                    new "DrumVoice"               $
+                    expression                    $
+                    set "DrumStaff.drumStyleTable = #drums-style" $
+                    lycommand "voiceOne"          $
+                    invocation "bossaNova"
                   ]  
     
 

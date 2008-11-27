@@ -144,17 +144,14 @@ instance PP Tile where
     where fn (p,d) = pp p <> prime <> pp d
   
 instance PP Glyph where
-  pp (Note p d a)         = applyLyAnno a (pp p <> prime <> pp d)
-  
-  pp (Rest Marked d a)    = applyLyAnno a (char 'r' <> pp d)
-  
-  pp (Rest Spacer d a)    = applyLyAnno a (char 's' <> pp d)
-  
-  
-  pp (RhythmicMark l d m) = text l <> prime <> pp d
-      
-  pp (Mark l m)           = text l
-  
+  pp (Note p d a)           = applyLyAnno a (pp p <> prime <> pp d)
+  pp (Rest d a)             = applyLyAnno a (char 'r' <> pp d)  
+  pp (Spacer d a)           = applyLyAnno a (char 's' <> pp d)
+  pp (RhythmicMark l d m)   = text l <> prime <> pp d
+  pp (Mark l m)             = text l
+  pp BeamStart              = lbracket
+  pp BeamEnd                = rbracket
+  pp Tie                    = char '~'
   
 
 instance PP OutputFormat where

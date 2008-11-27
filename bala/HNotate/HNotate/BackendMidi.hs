@@ -156,9 +156,13 @@ simplifyBar ch (Bar se) = simplify empty (viewl se) ktile
               
     simplifyGlyph :: Glyph -> Maybe MidiGlyph
     simplifyGlyph (Note p d _)          = Just $ MNote p d
-    simplifyGlyph (Rest _ d _)          = Just $ MRest d
+    simplifyGlyph (Rest d _)            = Just $ MRest d
+    simplifyGlyph (Spacer d _)          = Just $ MRest d
     simplifyGlyph (RhythmicMark _ d _)  = Just $ MRest d
     simplifyGlyph (Mark _ _)            = Nothing
+    simplifyGlyph BeamStart             = Nothing
+    simplifyGlyph BeamEnd               = Nothing
+    simplifyGlyph Tie                   = Nothing
 
 translateMidiGlyphs :: Monad m => Seq (Int,Seq MidiTile) -> NotateT m (Seq Message)
 translateMidiGlyphs = 

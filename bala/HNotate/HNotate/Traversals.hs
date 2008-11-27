@@ -83,13 +83,13 @@ instance (Applicative m, Applicative n) => Applicative (Comp m n) where
 changeDuration :: Glyph -> Duration -> Glyph
 changeDuration = modifyDuration
 
-
+{-
 modifyPitch :: Glyph -> Pitch -> Glyph
 modifyPitch (Note _ d a)         p = Note p d a
 modifyPitch (Rest m d a)         p = Rest m d a
 modifyPitch (RhythmicMark l d m) p = RhythmicMark l d m
 modifyPitch (Mark l m)           p = Mark l m
-
+-}
 
 --------------------------------------------------------------------------------
 -- A state type for stateful LilyPond transformations 

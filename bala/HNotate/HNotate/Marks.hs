@@ -1,3 +1,5 @@
+{-# LANGUAGE EmptyDataDecls #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.Marks
@@ -18,382 +20,394 @@ import HNotate.Document
 import HNotate.Duration
 import HNotate.NoteListDatatypes
 
--- How do we represent 'drum chords'?
-chordMark :: [Tile] -> Duration -> Tile
-chordMark _ d = undefined
+data DrumMark
 
-makeLyDrum :: String -> Duration -> Tile
-makeLyDrum name d = Singleton $ RhythmicMark name d (M (fs name) ())
-    
-  where 
-    fs ss = (\() -> MarkF { _ly_output = \() -> text ss,
-                            _abc_output = \() -> emptyDoc })
+drumTile          :: Mark DrumMark -> Duration -> Tile 
+drumTile m d      = Singleton $ RhythmicMark "Drum" d m 
 
+drumnote :: Mark DrumMark -> Duration -> EventList -> EventList
+drumnote m d t = t |*> Evt (drumTile m d) 
+
+drumChordTile       :: [Mark DrumMark] -> Duration -> Tile 
+drumChordTile ms d  = 
+    Singleton $ RhythmicMark "DrumChord" d (makeLyDrumChord ms)
+
+drumchord :: [Mark DrumMark] -> Duration -> EventList -> EventList
+drumchord ms d t = t |*> Evt (drumChordTile ms d) 
+
+
+makeLyDrum :: String -> Mark DrumMark
+makeLyDrum name = Marker {_ly_output = text name, _abc_output = emptyDoc }
+
+makeLyDrumChord :: [Mark DrumMark] -> Mark DrumMark
+makeLyDrumChord xs = Marker { _ly_output = fn xs, _abc_output = emptyDoc }
+  where
+    fn = angles . hsep . fmap _ly_output  
 
 
                           
-acousticbassdrum      :: Duration -> Tile
-acousticbassdrum'     :: Duration -> Tile
+acousticbassdrum      :: Mark DrumMark
+acousticbassdrum'     :: Mark DrumMark
 acousticbassdrum      = makeLyDrum "acousticbassdrum" 
 acousticbassdrum'     = makeLyDrum "bda"
 
-bassdrum              :: Duration -> Tile                         
-bassdrum'             :: Duration -> Tile
+bassdrum              :: Mark DrumMark                         
+bassdrum'             :: Mark DrumMark
 bassdrum              = makeLyDrum "bassdrum" 
 bassdrum'             = makeLyDrum "bd"
 
-hisidestick           :: Duration -> Tile
-hisidestick'          :: Duration -> Tile
+hisidestick           :: Mark DrumMark
+hisidestick'          :: Mark DrumMark
 hisidestick           = makeLyDrum "hisidestick" 
 hisidestick'          = makeLyDrum "ssh"
 
-sidestick             :: Duration -> Tile
-sidestick'            :: Duration -> Tile
+sidestick             :: Mark DrumMark
+sidestick'            :: Mark DrumMark
 sidestick             = makeLyDrum "sidestick"
 sidestick'            = makeLyDrum "ss"
 
-losidestick           :: Duration -> Tile
-losidestick'          :: Duration -> Tile
+losidestick           :: Mark DrumMark
+losidestick'          :: Mark DrumMark
 losidestick           = makeLyDrum "losidestick"
 losidestick'          = makeLyDrum "ssl"
 
-acousticsnare         :: Duration -> Tile
-acousticsnare'        :: Duration -> Tile
+acousticsnare         :: Mark DrumMark
+acousticsnare'        :: Mark DrumMark
 acousticsnare         = makeLyDrum "acousticsnare"
 acousticsnare'        = makeLyDrum "sna"
 
-snare                 :: Duration -> Tile
-snare'                :: Duration -> Tile
+snare                 :: Mark DrumMark
+snare'                :: Mark DrumMark
 snare                 = makeLyDrum "snare"
 snare'                = makeLyDrum "sn"
 
-handclap              :: Duration -> Tile
-handclap'             :: Duration -> Tile
+handclap              :: Mark DrumMark
+handclap'             :: Mark DrumMark
 handclap              = makeLyDrum "handclap"
 handclap'             = makeLyDrum "hc"
 
-electricsnare         :: Duration -> Tile
-electricsnare'        :: Duration -> Tile
+electricsnare         :: Mark DrumMark
+electricsnare'        :: Mark DrumMark
 electricsnare         = makeLyDrum "electricsnare"
 electricsnare'        = makeLyDrum "sne"
 
-lowfloortom           :: Duration -> Tile
-lowfloortom'          :: Duration -> Tile
+lowfloortom           :: Mark DrumMark
+lowfloortom'          :: Mark DrumMark
 lowfloortom           = makeLyDrum "lowfloortom"
 lowfloortom'          = makeLyDrum "tomfl"
 
-closedhihat           :: Duration -> Tile
-closedhihat'          :: Duration -> Tile
+closedhihat           :: Mark DrumMark
+closedhihat'          :: Mark DrumMark
 closedhihat           = makeLyDrum "closedhihat"
 closedhihat'          = makeLyDrum "hhc"
 
-hihat                 :: Duration -> Tile
-hihat'                :: Duration -> Tile
+hihat                 :: Mark DrumMark
+hihat'                :: Mark DrumMark
 hihat                 = makeLyDrum "hihat"
 hihat'                = makeLyDrum "hh"
 
-highfloortom          :: Duration -> Tile
-highfloortom'         :: Duration -> Tile
+highfloortom          :: Mark DrumMark
+highfloortom'         :: Mark DrumMark
 highfloortom          = makeLyDrum "highfloortom"
 highfloortom'         = makeLyDrum "tomfh"
 
-pedalhihat            :: Duration -> Tile
-pedalhihat'           :: Duration -> Tile
+pedalhihat            :: Mark DrumMark
+pedalhihat'           :: Mark DrumMark
 pedalhihat            = makeLyDrum "pedalhihat"
 pedalhihat'           = makeLyDrum "hhp"
 
-lowtom                :: Duration -> Tile
-lowtom'               :: Duration -> Tile
+lowtom                :: Mark DrumMark
+lowtom'               :: Mark DrumMark
 lowtom                = makeLyDrum "lowtom"
 lowtom'               = makeLyDrum "toml"
 
-openhihat             :: Duration -> Tile
-openhihat'            :: Duration -> Tile
+openhihat             :: Mark DrumMark
+openhihat'            :: Mark DrumMark
 openhihat             = makeLyDrum "openhihat"
 openhihat'            = makeLyDrum "hho"
 
-halfopenhihat         :: Duration -> Tile
-halfopenhihat'        :: Duration -> Tile
+halfopenhihat         :: Mark DrumMark
+halfopenhihat'        :: Mark DrumMark
 halfopenhihat         = makeLyDrum "halfopenhihat"
 halfopenhihat'        = makeLyDrum "hhho"
 
-lowmidtom             :: Duration -> Tile
-lowmidtom'            :: Duration -> Tile
+lowmidtom             :: Mark DrumMark
+lowmidtom'            :: Mark DrumMark
 lowmidtom             = makeLyDrum "lowmidtom"
 lowmidtom'            = makeLyDrum "tomml"
 
-himidtom              :: Duration -> Tile
-himidtom'             :: Duration -> Tile
+himidtom              :: Mark DrumMark
+himidtom'             :: Mark DrumMark
 himidtom              = makeLyDrum "himidtom"
 himidtom'             = makeLyDrum "tommh"
 
-crashcymbala          :: Duration -> Tile
-crashcymbala'         :: Duration -> Tile
+crashcymbala          :: Mark DrumMark
+crashcymbala'         :: Mark DrumMark
 crashcymbala          = makeLyDrum "crashcymbala"
 crashcymbala'         = makeLyDrum "cymca"
 
-crashcymbal           :: Duration -> Tile
-crashcymbal'          :: Duration -> Tile
+crashcymbal           :: Mark DrumMark
+crashcymbal'          :: Mark DrumMark
 crashcymbal           = makeLyDrum "crashcymbal"
 crashcymbal'          = makeLyDrum "cymc"
 
-hightom               :: Duration -> Tile
-hightom'              :: Duration -> Tile
+hightom               :: Mark DrumMark
+hightom'              :: Mark DrumMark
 hightom               = makeLyDrum "hightom"
 hightom'              = makeLyDrum "tomh"
 
-ridecymbala           :: Duration -> Tile
-ridecymbala'          :: Duration -> Tile
+ridecymbala           :: Mark DrumMark
+ridecymbala'          :: Mark DrumMark
 ridecymbala           = makeLyDrum "ridecymbala"
 ridecymbala'          = makeLyDrum "cymra"
 
-ridecymbal            :: Duration -> Tile
-ridecymbal'           :: Duration -> Tile
+ridecymbal            :: Mark DrumMark
+ridecymbal'           :: Mark DrumMark
 ridecymbal            = makeLyDrum "ridecymbal"
 ridecymbal'           = makeLyDrum "cymr"
 
-chinesecymbal         :: Duration -> Tile
-chinesecymbal'        :: Duration -> Tile
+chinesecymbal         :: Mark DrumMark
+chinesecymbal'        :: Mark DrumMark
 chinesecymbal         = makeLyDrum "chinesecymbal"
 chinesecymbal'        = makeLyDrum "cymch"
 
-ridebell              :: Duration -> Tile
-ridebell'             :: Duration -> Tile
+ridebell              :: Mark DrumMark
+ridebell'             :: Mark DrumMark
 ridebell              = makeLyDrum "ridebell"
 ridebell'             = makeLyDrum "rb"
 
-tambourine            :: Duration -> Tile
-tambourine'           :: Duration -> Tile
+tambourine            :: Mark DrumMark
+tambourine'           :: Mark DrumMark
 tambourine            = makeLyDrum "tambourine"
 tambourine'           = makeLyDrum "tamb"
 
-splashcymbal          :: Duration -> Tile
-splashcymbal'         :: Duration -> Tile
+splashcymbal          :: Mark DrumMark
+splashcymbal'         :: Mark DrumMark
 splashcymbal          = makeLyDrum "splashcymbal"
 splashcymbal'         = makeLyDrum "cyms"
 
-cowbell               :: Duration -> Tile
-cowbell'              :: Duration -> Tile
+cowbell               :: Mark DrumMark
+cowbell'              :: Mark DrumMark
 cowbell               = makeLyDrum "cowbell"
 cowbell'              = makeLyDrum "cb"
 
-crashcymbalb          :: Duration -> Tile
-crashcymbalb'         :: Duration -> Tile
+crashcymbalb          :: Mark DrumMark
+crashcymbalb'         :: Mark DrumMark
 crashcymbalb          = makeLyDrum "crashcymbalb"
 crashcymbalb'         = makeLyDrum "cymcb"
 
-vibraslap             :: Duration -> Tile
-vibraslap'            :: Duration -> Tile
+vibraslap             :: Mark DrumMark
+vibraslap'            :: Mark DrumMark
 vibraslap             = makeLyDrum "vibraslap"
 vibraslap'            = makeLyDrum "vibs"
 
-ridecymbalb           :: Duration -> Tile
-ridecymbalb'          :: Duration -> Tile
+ridecymbalb           :: Mark DrumMark
+ridecymbalb'          :: Mark DrumMark
 ridecymbalb           = makeLyDrum "ridecymbalb"
 ridecymbalb'          = makeLyDrum "cymrb"
 
-mutehibongo           :: Duration -> Tile
-mutehibongo'          :: Duration -> Tile
+mutehibongo           :: Mark DrumMark
+mutehibongo'          :: Mark DrumMark
 mutehibongo           = makeLyDrum "mutehibongo"
 mutehibongo'          = makeLyDrum "bohm"
 
-hibongo               :: Duration -> Tile
-hibongo'              :: Duration -> Tile
+hibongo               :: Mark DrumMark
+hibongo'              :: Mark DrumMark
 hibongo               = makeLyDrum "hibongo"
 hibongo'              = makeLyDrum "boh"
 
-openhibongo           :: Duration -> Tile
-openhibongo'          :: Duration -> Tile
+openhibongo           :: Mark DrumMark
+openhibongo'          :: Mark DrumMark
 openhibongo           = makeLyDrum "openhibongo"
 openhibongo'          = makeLyDrum "boho"
 
-mutelobongo           :: Duration -> Tile
-mutelobongo'          :: Duration -> Tile
+mutelobongo           :: Mark DrumMark
+mutelobongo'          :: Mark DrumMark
 mutelobongo           = makeLyDrum "mutelobongo"
 mutelobongo'          = makeLyDrum "bolm"
 
-lobongo               :: Duration -> Tile
-lobongo'              :: Duration -> Tile
+lobongo               :: Mark DrumMark
+lobongo'              :: Mark DrumMark
 lobongo               = makeLyDrum "lobongo"
 lobongo'              = makeLyDrum "bol"
 
-openlobongo           :: Duration -> Tile
-openlobongo'          :: Duration -> Tile
+openlobongo           :: Mark DrumMark
+openlobongo'          :: Mark DrumMark
 openlobongo           = makeLyDrum "openlobongo"
 openlobongo'          = makeLyDrum "bolo"
 
-mutehiconga           :: Duration -> Tile
-mutehiconga'          :: Duration -> Tile
+mutehiconga           :: Mark DrumMark
+mutehiconga'          :: Mark DrumMark
 mutehiconga           = makeLyDrum "mutehiconga"
 mutehiconga'          = makeLyDrum "cghm"
 
-muteloconga           :: Duration -> Tile
-muteloconga'          :: Duration -> Tile
+muteloconga           :: Mark DrumMark
+muteloconga'          :: Mark DrumMark
 muteloconga           = makeLyDrum "muteloconga"
 muteloconga'          = makeLyDrum "cglm"
 
-openhiconga           :: Duration -> Tile
-openhiconga'          :: Duration -> Tile
+openhiconga           :: Mark DrumMark
+openhiconga'          :: Mark DrumMark
 openhiconga           = makeLyDrum "openhiconga"
 openhiconga'          = makeLyDrum "cgho"
 
-hiconga               :: Duration -> Tile
-hiconga'              :: Duration -> Tile
+hiconga               :: Mark DrumMark
+hiconga'              :: Mark DrumMark
 hiconga               = makeLyDrum "hiconga"
 hiconga'              = makeLyDrum "cgh"
 
-openloconga           :: Duration -> Tile
-openloconga'          :: Duration -> Tile
+openloconga           :: Mark DrumMark
+openloconga'          :: Mark DrumMark
 openloconga           = makeLyDrum "openloconga"
 openloconga'          = makeLyDrum "cglo"
 
-loconga               :: Duration -> Tile
-loconga'              :: Duration -> Tile
+loconga               :: Mark DrumMark
+loconga'              :: Mark DrumMark
 loconga               = makeLyDrum "loconga"
 loconga'              = makeLyDrum "cgl"
 
-hitimbale             :: Duration -> Tile
-hitimbale'            :: Duration -> Tile
+hitimbale             :: Mark DrumMark
+hitimbale'            :: Mark DrumMark
 hitimbale             = makeLyDrum "hitimbale"
 hitimbale'            = makeLyDrum "timh"
 
-lotimbale             :: Duration -> Tile
-lotimbale'            :: Duration -> Tile
+lotimbale             :: Mark DrumMark
+lotimbale'            :: Mark DrumMark
 lotimbale             = makeLyDrum "lotimbale"
 lotimbale'            = makeLyDrum "timl"
 
-hiagogo               :: Duration -> Tile
-hiagogo'              :: Duration -> Tile
+hiagogo               :: Mark DrumMark
+hiagogo'              :: Mark DrumMark
 hiagogo               = makeLyDrum "hiagogo"
 hiagogo'              = makeLyDrum "agh"
 
-loagogo               :: Duration -> Tile
-loagogo'              :: Duration -> Tile
+loagogo               :: Mark DrumMark
+loagogo'              :: Mark DrumMark
 loagogo               = makeLyDrum "loagogo"
 loagogo'              = makeLyDrum "agl"
 
-cabasa                :: Duration -> Tile
-cabasa'               :: Duration -> Tile
+cabasa                :: Mark DrumMark
+cabasa'               :: Mark DrumMark
 cabasa                = makeLyDrum "cabasa"
 cabasa'               = makeLyDrum "cab"
 
-maracas               :: Duration -> Tile
-maracas'              :: Duration -> Tile
+maracas               :: Mark DrumMark
+maracas'              :: Mark DrumMark
 maracas               = makeLyDrum "maracas"
 maracas'              = makeLyDrum "mar"
 
-shortwhistle          :: Duration -> Tile
-shortwhistle'         :: Duration -> Tile
+shortwhistle          :: Mark DrumMark
+shortwhistle'         :: Mark DrumMark
 shortwhistle          = makeLyDrum "shortwhistle"
 shortwhistle'         = makeLyDrum "whs"
 
-longwhistle           :: Duration -> Tile
-longwhistle'          :: Duration -> Tile
+longwhistle           :: Mark DrumMark
+longwhistle'          :: Mark DrumMark
 longwhistle           = makeLyDrum "longwhistle"
 longwhistle'          = makeLyDrum "whl"
 
-shortguiro            :: Duration -> Tile
-shortguiro'           :: Duration -> Tile
+shortguiro            :: Mark DrumMark
+shortguiro'           :: Mark DrumMark
 shortguiro            = makeLyDrum "shortguiro"
 shortguiro'           = makeLyDrum "guis"
 
-longguiro             :: Duration -> Tile
-longguiro'            :: Duration -> Tile
+longguiro             :: Mark DrumMark
+longguiro'            :: Mark DrumMark
 longguiro             = makeLyDrum "longguiro"
 longguiro'            = makeLyDrum "guil"
 
-guiro                 :: Duration -> Tile
-guiro'                :: Duration -> Tile
+guiro                 :: Mark DrumMark
+guiro'                :: Mark DrumMark
 guiro                 = makeLyDrum "guiro"
 guiro'                = makeLyDrum "gui"
 
-claves                :: Duration -> Tile
-claves'               :: Duration -> Tile
+claves                :: Mark DrumMark
+claves'               :: Mark DrumMark
 claves                = makeLyDrum "claves"
 claves'               = makeLyDrum "cl"
 
-hiwoodblock           :: Duration -> Tile
-hiwoodblock'          :: Duration -> Tile
+hiwoodblock           :: Mark DrumMark
+hiwoodblock'          :: Mark DrumMark
 hiwoodblock           = makeLyDrum "hiwoodblock"
 hiwoodblock'          = makeLyDrum "whi"
 
-lowoodblock           :: Duration -> Tile
-lowoodblock'          :: Duration -> Tile
+lowoodblock           :: Mark DrumMark
+lowoodblock'          :: Mark DrumMark
 lowoodblock           = makeLyDrum "lowoodblock"
 lowoodblock'          = makeLyDrum "wbl"
 
-mutecuica             :: Duration -> Tile
-mutecuica'            :: Duration -> Tile
+mutecuica             :: Mark DrumMark
+mutecuica'            :: Mark DrumMark
 mutecuica             = makeLyDrum "mutecuica"
 mutecuica'            = makeLyDrum "cuim"
 
-opencuica             :: Duration -> Tile
-opencuica'            :: Duration -> Tile
+opencuica             :: Mark DrumMark
+opencuica'            :: Mark DrumMark
 opencuica             = makeLyDrum "opencuica"
 opencuica'            = makeLyDrum "cuio"
 
-mutetriangle          :: Duration -> Tile
-mutetriangle'         :: Duration -> Tile
+mutetriangle          :: Mark DrumMark
+mutetriangle'         :: Mark DrumMark
 mutetriangle          = makeLyDrum "mutetriangle"
 mutetriangle'         = makeLyDrum "trim"
 
-triangle              :: Duration -> Tile
-triangle'             :: Duration -> Tile
+triangle              :: Mark DrumMark
+triangle'             :: Mark DrumMark
 triangle              = makeLyDrum "triangle"
 triangle'             = makeLyDrum "tri"
 
-opentriangle          :: Duration -> Tile
-opentriangle'         :: Duration -> Tile
+opentriangle          :: Mark DrumMark
+opentriangle'         :: Mark DrumMark
 opentriangle          = makeLyDrum "opentriangle"
 opentriangle'         = makeLyDrum "trio"
 
-oneup                 :: Duration -> Tile
-oneup'                :: Duration -> Tile
+oneup                 :: Mark DrumMark
+oneup'                :: Mark DrumMark
 oneup                 = makeLyDrum "oneup"
 oneup'                = makeLyDrum "ua"
 
-twoup                 :: Duration -> Tile
-twoup'                :: Duration -> Tile
+twoup                 :: Mark DrumMark
+twoup'                :: Mark DrumMark
 twoup                 = makeLyDrum "twoup"
 twoup'                = makeLyDrum "ub"
 
-threeup               :: Duration -> Tile
-threeup'              :: Duration -> Tile
+threeup               :: Mark DrumMark
+threeup'              :: Mark DrumMark
 threeup               = makeLyDrum "threeup"
 threeup'              = makeLyDrum "uc"
 
-fourup                :: Duration -> Tile
-fourup'               :: Duration -> Tile
+fourup                :: Mark DrumMark
+fourup'               :: Mark DrumMark
 fourup                = makeLyDrum "fourup"
 fourup'               = makeLyDrum "ud"
 
-fiveup                :: Duration -> Tile
-fiveup'               :: Duration -> Tile
+fiveup                :: Mark DrumMark
+fiveup'               :: Mark DrumMark
 fiveup                = makeLyDrum "fiveup"
 fiveup'               = makeLyDrum "ue"
 
-onedown               :: Duration -> Tile
-onedown'              :: Duration -> Tile
+onedown               :: Mark DrumMark
+onedown'              :: Mark DrumMark
 onedown               = makeLyDrum "onedown"
 onedown'              = makeLyDrum "da"
 
-twodown               :: Duration -> Tile
-twodown'              :: Duration -> Tile
+twodown               :: Mark DrumMark
+twodown'              :: Mark DrumMark
 twodown               = makeLyDrum "twodown"
 twodown'              = makeLyDrum "db"
 
-threedown             :: Duration -> Tile
-threedown'            :: Duration -> Tile
+threedown             :: Mark DrumMark
+threedown'            :: Mark DrumMark
 threedown             = makeLyDrum "threedown"
 threedown'            = makeLyDrum "dc"
 
-fourdown              :: Duration -> Tile
-fourdown'             :: Duration -> Tile
+fourdown              :: Mark DrumMark
+fourdown'             :: Mark DrumMark
 fourdown              = makeLyDrum "fourdown"
 fourdown'             = makeLyDrum "dd"
 
-fivedown              :: Duration -> Tile
-fivedown'             :: Duration -> Tile
+fivedown              :: Mark DrumMark
+fivedown'             :: Mark DrumMark
 fivedown              = makeLyDrum "fivedown"     
 fivedown'             = makeLyDrum "de"
 

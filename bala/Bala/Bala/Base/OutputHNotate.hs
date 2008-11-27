@@ -24,8 +24,10 @@ import Bala.Base.Pitch
 import Bala.Base.Structural
 
 import qualified HNotate as H
-import HNotate ( (|#) )
+import qualified HNotate.Marks as H
+import HNotate ( ( # ) )
 
+import Data.Either (rights)
 import qualified Data.Foldable as F
 import Data.Sequence
 import Data.Word
@@ -46,7 +48,8 @@ genGenerateEventList fstep sn =
 
 phraseFoldStep :: EventInterp -> H.EventList -> Phrase -> H.EventList
 phraseFoldStep fstep t (Single mo)      = addMotif fstep t mo
-phraseFoldStep fstep t (Overlay mo smo) = t |# (f mo : ovs (viewl smo)) where
+phraseFoldStep fstep t (Overlay mo smo) = t # H.poly (f mo : ovs (viewl smo)) 
+  where
     ovs :: ViewL Motif -> [H.EventList]
     ovs EmptyL     = []
     ovs (a :< sa)  = f a : ovs (viewl sa)
@@ -60,13 +63,13 @@ addMotif fstep t (Motif se) = F.foldl fstep t se
 
 
 motifFoldStep :: H.EventList -> Event -> H.EventList
-motifFoldStep t (Note p d)          = t |# (H.note p d)
-motifFoldStep t (Rest d)            = t |# (H.rest d)
-motifFoldStep t (Chord se d)        = t |# (H.chord se d)
-motifFoldStep t (Spacer d)          = t |# (H.spacer d)
-motifFoldStep t (AGrace se p d)     = t |# H.agraces se |# H.note p d
-motifFoldStep t (UGrace p d se)     = t |# H.note p d |# H.ugraces se
-motifFoldStep t (Mark m)            = t |# (mkMark m)
+motifFoldStep t (Note p d)          = t # (H.note p d)
+motifFoldStep t (Rest d)            = t # (H.rest d)
+motifFoldStep t (Chord se d)        = t # (H.chord se d)
+motifFoldStep t (Spacer d)          = t # (H.spacer d)
+motifFoldStep t (AGrace se p d)     = t # H.agraces se # H.note p d
+motifFoldStep t (UGrace p d se)     = t # H.note p d   # H.ugraces se
+motifFoldStep t (Mark m)            = t # (mkMark m)
 
 
 mkMark Tie          = H.tie 
@@ -75,9 +78,21 @@ mkMark Tie          = H.tie
 -- depend on DrumPitches.hs - the dependency should be the other way round
 
 drumFoldStep :: H.EventList -> Event -> H.EventList
-drumFoldStep t (Note p d)           = t |# drumEvent p d
--- drumFoldStep t (Chord ps d)         = t |# undefined 
+drumFoldStep t (Note p d)           = case drumEvent p d of
+    Left d            -> t # H.spacer d
+    Right (dmark, d)  -> t # H.drumnote dmark d
+drumFoldStep t (Chord se d)         = t # drumChord (F.toList se) d 
 drumFoldStep t a                    = motifFoldStep t a
+
+drumChord :: [Pitch] -> Duration -> (H.EventList -> H.EventList)
+drumChord ps d = 
+    fn $ fmap fst $ rights $ fmap (drumEvent `flip` d) ps 
+  where
+    fn []   = H.spacer d
+    fn [x]  = H.drumnote x d
+    fn xs   = H.drumchord xs d
+  
+  
 
 
             

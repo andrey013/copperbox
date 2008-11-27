@@ -52,6 +52,31 @@ score :: DocS
 score expr = HText doc expr where
     doc d = command "score" <+> (bracesLines d)
 
+drummode :: DocS     
+drummode expr = HText doc expr where
+    doc d = command "drummode" <+> (bracesLines d)
+
+set :: String -> DocS    
+set ss expr = HText doc expr where
+    doc d = command "set" <+> text ss <+> d
+    
+    
+new :: String -> DocS
+new name expr = HText doc expr where
+    doc d = command "new" <+> text name <+> d
+
+
+doubleAngles :: DocS
+doubleAngles expr = HText doc expr where
+    doc d = dblangles' d
+
+expression :: DocS
+expression expr = HText doc expr where
+    doc d = braces' d
+    
+lycommand :: String -> DocS
+lycommand name expr = HText doc expr where
+    doc d = command name <+> d    
     
 relative :: Pitch -> DocS
 relative p expr = HLet update doc expr where
@@ -63,6 +88,7 @@ time n d expr = HLet update doc expr where
     tsig    = TimeSig n d
     update  = set_current_meter tsig
     doc     = lineS $ command "time" <+> meter tsig
+
 
 
   

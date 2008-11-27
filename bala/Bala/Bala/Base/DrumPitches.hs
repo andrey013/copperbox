@@ -107,8 +107,8 @@ gmDrum Ridecymbalb          = Z.Ride_cymbal_2
 drumPitch :: DrumsStyle -> Pitch 
 drumPitch = gmDrumPitch . gmDrum
 
-drumEvent :: Pitch -> Duration -> H.Tile
-drumEvent p d = maybe (H.spacer d) (drumTile `flip` d) (drumName p)
+drumEvent :: Pitch -> Duration -> Either Duration (H.Mark H.DrumMark,Duration) 
+drumEvent p d = maybe (Left d) (\a -> Right (drumMark a,d)) (drumName p)
 
 drumName :: Pitch -> Maybe DrumsStyle
 drumName = maybe Nothing fn . pitchToGmDrum where
@@ -145,37 +145,36 @@ drumName = maybe Nothing fn . pitchToGmDrum where
 
 
 
-drumTile :: DrumsStyle -> Duration -> H.Tile
-drumTile Acousticbassdrum       d = H.acousticbassdrum'   d
-drumTile Bassdrum               d = H.bassdrum'           d
-drumTile Sidestick              d = H.sidestick'          d
-drumTile Acousticsnare          d = H.acousticsnare'      d
-drumTile Snare                  d = H.snare'              d
-drumTile Handclap               d = H.handclap'           d
-drumTile Electricsnare          d = H.electricsnare'      d
-drumTile Lowfloortom            d = H.lowfloortom'        d
-drumTile Closedhihat            d = H.closedhihat'        d
-drumTile Hihat                  d = H.hihat'              d
-drumTile Highfloortom           d = H.highfloortom'       d
-drumTile Pedalhihat             d = H.pedalhihat'         d
-drumTile Lowtom                 d = H.lowtom'             d
-drumTile Openhihat              d = H.openhihat'          d
-drumTile Halfopenhihat          d = H.halfopenhihat'      d
-drumTile Lowmidtom              d = H.lowmidtom'          d
-drumTile Himidtom               d = H.himidtom'           d
-drumTile Crashcymbala           d = H.crashcymbala'       d
-drumTile Crashcymbal            d = H.crashcymbal'        d
-drumTile Hightom                d = H.hightom'            d
-drumTile Ridecymbala            d = H.ridecymbala'        d
-drumTile Ridecymbal             d = H.ridecymbala'        d
-drumTile Chinesecymbal          d = H.chinesecymbal'      d
-drumTile Ridebell               d = H.ridebell'           d
-drumTile Splashcymbal           d = H.splashcymbal'       d
-drumTile Cowbell                d = H.cowbell'            d
-drumTile Crashcymbalb           d = H.crashcymbalb'       d
-drumTile Vibraslap              d = H.vibraslap'          d
-drumTile Ridecymbalb            d = H.ridecymbalb'        d
-
+drumMark :: DrumsStyle -> H.Mark H.DrumMark
+drumMark Acousticbassdrum       = H.acousticbassdrum'   
+drumMark Bassdrum               = H.bassdrum'           
+drumMark Sidestick              = H.sidestick'          
+drumMark Acousticsnare          = H.acousticsnare'      
+drumMark Snare                  = H.snare'              
+drumMark Handclap               = H.handclap'           
+drumMark Electricsnare          = H.electricsnare'      
+drumMark Lowfloortom            = H.lowfloortom'        
+drumMark Closedhihat            = H.closedhihat'        
+drumMark Hihat                  = H.hihat'              
+drumMark Highfloortom           = H.highfloortom'       
+drumMark Pedalhihat             = H.pedalhihat'         
+drumMark Lowtom                 = H.lowtom'             
+drumMark Openhihat              = H.openhihat'          
+drumMark Halfopenhihat          = H.halfopenhihat'      
+drumMark Lowmidtom              = H.lowmidtom'          
+drumMark Himidtom               = H.himidtom'           
+drumMark Crashcymbala           = H.crashcymbala'       
+drumMark Crashcymbal            = H.crashcymbal'        
+drumMark Hightom                = H.hightom'            
+drumMark Ridecymbala            = H.ridecymbala'        
+drumMark Ridecymbal             = H.ridecymbala'        
+drumMark Chinesecymbal          = H.chinesecymbal'      
+drumMark Ridebell               = H.ridebell'           
+drumMark Splashcymbal           = H.splashcymbal'       
+drumMark Cowbell                = H.cowbell'            
+drumMark Crashcymbalb           = H.crashcymbalb'       
+drumMark Vibraslap              = H.vibraslap'          
+drumMark Ridecymbalb            = H.ridecymbalb'        
           
 {-
    '((drums-style .

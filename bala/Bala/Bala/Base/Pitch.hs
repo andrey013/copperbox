@@ -22,10 +22,6 @@ module Bala.Base.Pitch (
   Semitone, 
   pitch, 
     
-  -- * Typeclasses
-  PitchValue(..),
-  
-
   
   addSemitone, subSemitone,
   addOctave, subOctave,
@@ -62,17 +58,7 @@ pitch lbl o = Pitch (pch_lbl_letter lbl) (pch_lbl_accidental lbl) o
 --------------------------------------------------------------------------------
 -- * Typeclasses for pitched values
 
--- Unlike rhythmicValue, pitchValue is partial
--- \no-rhythmic-value\ is effective synonymous with \no-duration\ (aka 0)
--- But there is no effective \no-pitch\ - pitch 0 is actually C natural four
--- octaves below middle C.
-class PitchValue a where
-  pitchValue   :: a -> Maybe Pitch
-  modifyPitch  :: a -> Pitch -> a
-
-instance PitchValue Pitch where
-  pitchValue     = Just . id
-  modifyPitch    = const
+-- PitchValue now in HNotate
   
   
   

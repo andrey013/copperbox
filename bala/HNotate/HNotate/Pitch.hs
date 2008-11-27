@@ -22,9 +22,12 @@ module HNotate.Pitch (
     PitchLabel(..),
 
     -- * Operations
+    PitchValue(..),
+    Semitones(..),
+    
     fromLChar, toUpperLChar, toLowerLChar,
 
-    Semitones(..),
+    
     fromSemitones,
     arithmeticDistance,
 
@@ -127,6 +130,30 @@ instance Bounded PitchLabel where
   minBound = toEnum 0
 
 
+-- Unlike rhythmicValue, pitchValue is partial
+-- \no-rhythmic-value\ is effective synonymous with \no-duration\ (aka 0)
+-- But there is no effective \no-pitch\ - pitch 0 is actually C natural four
+-- octaves below middle C.
+class PitchValue a where
+  pitchValue   :: a -> Maybe Pitch
+  modifyPitch  :: a -> Pitch -> a
+
+instance PitchValue Pitch where
+  pitchValue     = Just . id
+  modifyPitch    = const
+  
+  
+  
+class Semitones a where semitones :: a -> Int
+    
+instance Semitones Pitch where
+  semitones (Pitch l a o) = semitones l + semitones a + (12 * o)
+
+instance Semitones PitchLabel where
+  semitones (PitchLabel l a) = semitones l + semitones a
+  
+  
+
 fromLChar :: Char -> Maybe PitchLetter 
 fromLChar = letter . toUpper 
   where      
@@ -151,13 +178,7 @@ toUpperLChar B         = 'B'
 toLowerLChar :: PitchLetter -> Char 
 toLowerLChar = toLower . toUpperLChar
 
-class Semitones a where semitones :: a -> Int
-    
-instance Semitones Pitch where
-  semitones (Pitch l a o) = semitones l + semitones a + (12 * o)
 
-instance Semitones PitchLabel where
-  semitones (PitchLabel l a) = semitones l + semitones a
   
   
 -- This will need pitch spelling
