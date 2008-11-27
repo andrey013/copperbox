@@ -41,16 +41,11 @@ readClave a = ClavePattern . fromList . step where
                 |otherwise  = ClaveOff : step xs
     step []                 = []
 
--- to do - coalesce rests probably by supplying a function to do it 
-claveMotif :: (Duration -> Event) -> Duration -> ClavePattern -> Motif
-claveMotif f d = Motif . fmap fn . getClavePattern where
-    fn ClaveOn  = f d
-    fn ClaveOff = rest d
 
--- actually, we want to make clave patterns as single overlays of notes/chords... 
+-- make clave patterns as singletons of notes and drumchords...
 
-claveMotif' :: Duration -> [(Pitch,ClavePattern)] -> Motif
-claveMotif' d = 
+claveMotif :: Duration -> [(Pitch,ClavePattern)] -> Motif
+claveMotif d = 
     Motif . fmap (pgroup . ons) . stranspose . fromList . fmap (uncurry line) 
   where
     line :: Pitch -> ClavePattern -> Seq (Pitch,Clave)

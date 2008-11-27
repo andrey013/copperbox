@@ -6,6 +6,7 @@
 module BossaNova where
 
 import Bala.Base
+import Bala.Base.DrumOutput (drumPitch)
 import Bala.Base.OutputHNotate
 
 import Bala.MusicRep.DrumsStyle
@@ -31,7 +32,7 @@ bass_clave   = readClave 'X' $    "X..XX..X" ++ "X..XX..X"
 
 
 bossa_nova :: Section
-bossa_nova = section (2,4) $ phrase $ claveMotif' sixteenth $ 
+bossa_nova = section (2,4) $ phrase $ claveMotif sixteenth $ 
   [ (drumPitch Ridecymbal,    hi_hat_clave)
   , (drumPitch Sidestick,     cymbal_clave)
   , (drumPitch Bassdrum,      bass_clave)

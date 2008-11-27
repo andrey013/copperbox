@@ -25,7 +25,6 @@ import qualified ZMidi as Z (GMDrum(..), drumPitch)
 class DrumMapping a where
   gmDrum    :: a      -> Z.GMDrum
   drumName  :: Pitch  -> Maybe a
-  -- drumMark  :: a      -> H.Mark H.DrumMark
   drumPitch :: a      -> Pitch 
   
   drumPitch = gmDrumPitch . gmDrum

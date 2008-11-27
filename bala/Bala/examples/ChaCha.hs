@@ -6,7 +6,7 @@
 module ChaCha where
 
 import Bala.Base
-import Bala.Base.DrumOutput
+import Bala.Base.DrumOutput 
 import Bala.Base.OutputHNotate
 
 import Bala.MusicRep.TimbalesStyle
@@ -35,7 +35,7 @@ lo_sidestick_clave    = readClave 'X' $    ".X...X.."
 
 
 cha_cha :: Section
-cha_cha = section (2,4) $ phrase $ claveMotif' sixteenth $ 
+cha_cha = section (2,4) $ phrase $ claveMotif sixteenth $ 
   [ (drumPitch Hisidestick,   hi_sidestick_clave)
   , (drumPitch Cowbell,       cowbell_clave)
   , (drumPitch Lotimbale,     lo_timbale_clave)

@@ -19,6 +19,7 @@ module Bala.MusicRep.DrumsStyle where
 
 import Bala.Base.Duration
 import Bala.Base.DrumOutput
+import Bala.Base.OutputHNotate (EventFoldStep, genDrumFoldStep)
 import Bala.Base.Pitch
 
 import qualified HNotate.NoteListDatatypes as H
