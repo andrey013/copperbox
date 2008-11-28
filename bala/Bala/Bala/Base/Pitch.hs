@@ -21,7 +21,8 @@ module Bala.Base.Pitch (
   
   Semitone, 
   pitch, 
-    
+  
+  PitchContent(..),  
   
   addSemitone, subSemitone,
   addOctave, subOctave,
@@ -59,7 +60,9 @@ pitch lbl o = Pitch (pch_lbl_letter lbl) (pch_lbl_accidental lbl) o
 -- * Typeclasses for pitched values
 
 -- PitchValue now in HNotate
-  
+
+class PitchContent a where
+  pitchContent :: a -> [Pitch]  
   
   
 

@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-} 
+{-# LANGUAGE FunctionalDependencies #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -21,6 +22,8 @@ module Bala.Base.BaseExtra (
   Increment(..),
   Displacement(..),
   Synonym(..),
+  
+  Listify(..),
   
   -- * Counting
   sentinelCount,
@@ -90,6 +93,18 @@ class Displacement a b where
 class Synonym a where
   synonym :: a -> a -> Bool
   
+-- Listify
+-- For some structures it seems preferable to build them with a
+-- fixed number of elements, but subsequent operations are easier
+-- to do on a list. 
+-- e.g. We might want to build a guitar tuning with 6 pitches
+-- @ data GuitarTuning = GuitarTuning Pitch Pitch Pitch Pitch Pitch Pitch @
+-- Currying aside, we can't build a tuning with too many or too few 
+-- pitches, which we could if we represented it as
+-- @ newtype GuitarTuning = GuitarTuning { getPitches :: [Pitch] }@
+ 
+class Listify a b | a -> b where listify :: a -> [b]
+
   
 --------------------------------------------------------------------------------
 -- Counting 

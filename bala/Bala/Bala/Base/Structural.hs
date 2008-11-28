@@ -107,7 +107,9 @@ infixl 7 +-
 (+-) :: MotifF a -> a -> MotifF a
 (+-) (Motif se) elt = Motif  (se |> elt)
 
-
+infixl 7 ++-
+(++-) :: MotifF a -> MotifF a -> MotifF a
+(++-) (Motif sa) (Motif sb) = Motif (sa >< sb)
 
 
 
