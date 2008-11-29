@@ -112,24 +112,9 @@ srcLoc p = SrcLoc { _src_line = sourceLine p, _src_column = sourceColumn p }
 --------------------------------------------------------------------------------
 -- Utility functions
 
--- pushBack - parse input, put the consumed input back on the input stream,
--- return the answer. 
-pushBack :: GenParser Char st a -> GenParser Char st a
-pushBack p = do
-  s   <- getInput
-  loc <- getPosition 
-  ans <- p
-  setInput s
-  setPosition loc
-  return ans  
-
- 
 stringTill :: GenParser Char st a -> GenParser Char st String
-stringTill p = manyTill anyChar (pushBack p)    
+stringTill p = manyTill anyChar (lookAhead p)    
               
-
-
-
 
 chooseString :: [String] -> GenParser Char st String  
 chooseString = choice . map string

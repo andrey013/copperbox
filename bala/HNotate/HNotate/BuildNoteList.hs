@@ -65,8 +65,9 @@ mdispNormalize :: Duration -> MetricalDisplacement -> MetricalDisplacement
 mdispNormalize bar_len (AnaDisp d) =   (AnaDisp d) 
 mdispNormalize bar_len (StdDisp b d) 
     | d < bar_len   = StdDisp b d
-    | otherwise     = let (c,v) = d `divModR` bar_len 
-                      in StdDisp (b + fromIntegral c) v
+    | otherwise     = StdDisp (b + fromIntegral c) v where
+                        (c,v) = d `divModR` bar_len 
+                     
                                  
 
   
@@ -141,17 +142,21 @@ moveRightwards bar_len tile ms =
 
 type RawBar = (Int,Seq Tile)
 
+number :: Int -> Seq a -> Seq (Int,a)
+number start se = step (viewl se) [start..] where
+  step EmptyL    _      = empty
+  step (a :< sa) (x:xs) = (x,a) <| step (viewl sa) xs 
+
 
 partitionGVO :: Duration -> GlyphVoiceOverlay -> Seq RawBar
-partitionGVO bar_len (GVO (StdDisp bn disp) se) = 
-    let spacepre se = if disp /= duration_zero then (spacerTile disp) <| se else se 
-        sse = asegmentHy (|> tieTile)  0 bar_len (spacepre se) 
-    in snd $ F.foldl (\(n,acc) e -> (n+1, acc |>(n,e))) (bn,empty) sse
-
+partitionGVO bar_len (GVO (StdDisp bar_num disp) se) = 
+    number bar_num $ asegmentHy (|> tieTile) 0 bar_len (preprocess disp se) 
+  where
+    preprocess d se | d == duration_zero  = se
+                    | otherwise           = (spacerTile d) <| se  
 
 partitionGVO bar_len (GVO (AnaDisp asis) se) = 
-    let sse = asegmentHy (|> tieTile) asis bar_len se 
-    in snd $ F.foldl (\(n,acc) e -> (n+1, acc |>(n,e))) (0,empty) sse
+    number 0 $ asegmentHy (|> tieTile) asis bar_len se 
     
 instance Fits Glyph Duration where
   measure (Note _ d _)            = d

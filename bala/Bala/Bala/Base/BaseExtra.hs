@@ -280,9 +280,8 @@ szip = szipWith (,)
 szipWith :: (a -> b -> c) -> Seq a -> Seq b -> Seq c
 szipWith f sa sb = step (viewl sa) (viewl sb) where
     step (a :< sa) (b :< sb)  = (f a b) <| step (viewl sa) (viewl sb)
-    step EmptyL    EmptyL     = empty
     step EmptyL    _          = empty
-    step _         EmptyL     = error "szipWith - right sequence short"
+    step _         EmptyL     = empty
     
     
 -- Zip a sequence and a list - list can be infinite
