@@ -22,12 +22,10 @@ module HNotate.NotateMonad where
 
 import HNotate.Document
 
-import Control.Monad
 import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.Writer
 
-import System.IO (stdout)
 
 
 newtype NotateErr = NotateErr String

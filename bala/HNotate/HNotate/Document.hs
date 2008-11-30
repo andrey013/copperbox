@@ -16,7 +16,7 @@ module HNotate.Document (
   ODoc, ODocS,
   
   emptyDoc, isEmpty,
-  text, char, string, fillString, int,
+  text, char, string, fillString, int, spacing,
   ( <> ), ( <+> ), ( <&\> ),
   hcat, hsep, vsep, dblvsep,
   punctuate,
@@ -41,7 +41,6 @@ module HNotate.Document (
   output, formatted, quickOutput, unformatted 
   ) where
 
-import Control.Monad.State
 import qualified Data.Foldable as F
 import Data.List (intersperse)
 import Data.Sequence hiding (length)
@@ -93,6 +92,7 @@ string = build . map text . lines
   where
     build [x]     = x
     build (x:xs)  = foldl breakjoin x xs
+    build []      = emptyDoc
 
 fillString :: Int -> String -> ODoc
 fillString i s = let l = length s in
@@ -338,9 +338,11 @@ instance PP Integer where pp = text . show
 quickOutput :: ODoc -> ShowS
 quickOutput = F.foldl fn id . getODoc
   where
-    fn f (Text _ s)   = f . showString s
-    fn f (Space)      = f . showChar ' '
-    fn f (LineBreak)  = f . showChar '\n'
+    fn f (Text _ s)       = f . showString s
+    fn f (Space)          = f . showChar ' '
+    fn f (LineBreak)      = f . showChar '\n'
+    fn f IndentEnd        = f
+    fn f (IndentStart i)  = f . showString (replicate i ' ') 
 
 
 unformatted :: ODoc -> String 
@@ -388,7 +390,7 @@ output left_col right_col =
                             = (stk, BREAK,    w+1, f)
     
     -- linebreak - add it to the doc and reset the state
-    out (stk, _,        w, f) LineBreak  
+    out (stk, _,        _, f) LineBreak  
                             = (stk, NO_BREAK, 0,   f . newlineS 
                                                      . indentS (depth stk))
  
@@ -406,7 +408,8 @@ push :: Int -> IndentStack -> IndentStack
 push i xs       = i:xs
 
 pop :: IndentStack -> IndentStack
-pop (x:xs)      = xs
+pop (_:xs)      = xs
+pop []          = []
 
 depth :: IndentStack -> Int
 depth xs = sum xs 
@@ -415,13 +418,14 @@ depth xs = sum xs
 indentS :: Int -> ShowS  
 indentS x   = showString (replicate x ' ')
     
-first :: (a,b,c,d) -> a
-first (a,_,_,_) = a
 
 fourth :: (a,b,c,d) -> d
 fourth (_,_,_,d) = d
 
+newlineS    :: ShowS
 newlineS    = showChar '\n'
+
+spaceS      :: ShowS
 spaceS      = showChar ' '
 
   

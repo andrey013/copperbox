@@ -305,9 +305,13 @@ g_flat    = PitchLabel G Flat
 a_flat    = PitchLabel A Flat
 b_flat    = PitchLabel B Flat
 
-      
+pchNat :: PitchLetter -> Int -> Pitch
 pchNat n o    = Pitch n Nat o
+
+pchSharp :: PitchLetter -> Int -> Pitch
 pchSharp n o  = Pitch n Sharp o
+
+pchFlat :: PitchLetter -> Int -> Pitch
 pchFlat n o   = Pitch n Flat o
 
 middle_c :: Pitch

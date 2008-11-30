@@ -14,7 +14,6 @@
 
 module HNotate.MiniMidi where
 
-
 import Data.Bits
 import qualified Data.ByteString.Lazy as B
 import Data.Char
@@ -190,7 +189,7 @@ out4 a b c d = (B.cons a) . (B.cons b) . (B.cons c) . (B.cons d)
 
 out5 :: Word8 -> Word8 -> Word8 -> Word8 -> Word8 
      ->(B.ByteString -> B.ByteString)
-out5 a b c d e = (B.cons a) . (B.cons b) . (B.cons c) . (B.cons d) . (B.cons d)
+out5 a b c d e = (B.cons a) . (B.cons b) . (B.cons c) . (B.cons d) . (B.cons e)
 
    
 
@@ -242,8 +241,8 @@ varlen i
     | i < 0x200000    = out3 (wise i 14) (wise i 7)  (wise i 0) 
     | otherwise       = out4 (wise i 21) (wise i 14) (wise i 7) (wise i 0) 
   where         
-    wise i 0 = fromIntegral $ i .&. 0x7F
-    wise i n = fromIntegral $ i `shiftR` n   .&.  0x7F  .|.  0x80;
+    wise x 0 = fromIntegral $ x .&. 0x7F
+    wise x n = fromIntegral $ x `shiftR` n   .&.  0x7F  .|.  0x80;
 
 outString :: String -> MidiOut    
 outString s = B.append (B.pack $ fmap (fromIntegral . ord) s) 

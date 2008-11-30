@@ -21,10 +21,6 @@ import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
 
-import qualified Data.Foldable as F
-import Data.Ratio
-import Data.Sequence hiding (empty, length) 
-
 
 
 -- SrcLoc - SourcePos without the file name 

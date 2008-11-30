@@ -54,7 +54,8 @@ scaleSpelling :: PitchLetter -> Accidental -> Mode -> [PitchLabel] -> Maybe Labe
 scaleSpelling l a m accidentals = case elemIndex (l,a) $ modeLabels m of
     Just i -> Just $ makeLabelSet (7 - i) l accidentals
     Nothing -> Nothing
-    
+
+modeLabels :: Mode -> [(PitchLetter, Accidental)]    
 modeLabels Major        = labelOrder C
 modeLabels Minor        = labelOrder A
 modeLabels Mixolydian   = labelOrder G
@@ -68,15 +69,17 @@ modeLabels Aeolian      = labelOrder A -- natural minor
 
 -- 
 labelOrder :: PitchLetter -> [(PitchLetter,Accidental)]
-labelOrder a = let xs = take 15 $ dropWhile (/=a)  max_min_order'inf in
-    snd $ foldr up (Flat,[]) xs
+labelOrder letter = snd $ foldr up (Flat,[]) xs
   where
+    xs :: [PitchLetter]
+    xs = take 15 $ dropWhile (/=letter)  max_min_order'inf
+    
     max_min_order'inf :: [PitchLetter]
     max_min_order'inf = cycle [B,E,A,D,G,C,F]
 
-    up B (Nat, xs) = (Sharp,(B,Nat):xs)
-    up B (Flat,xs) = (Nat,  (B,Flat):xs)
-    up l (a,   xs) = (a,    (l,a):xs)
+    up B (Nat, ys) = (Sharp,(B,Nat) : ys)
+    up B (Flat,ys) = (Nat,  (B,Flat): ys)
+    up l (a,   ys) = (a,    (l,a)   : ys)
 {-
 down (Sharp,xs) F = (Nat, (F,Sharp):xs)
 down (Nat  ,xs) F = (Flat,(F,Nat):xs)
@@ -93,13 +96,13 @@ order_of_flats :: [PitchLetter]
 order_of_flats = reverse order_of_sharps
 
 makeLabelSet :: Int -> PitchLetter -> [PitchLabel] -> LabelSet
-makeLabelSet i l accidentals 
-    | i >= 0    = build sharp nat order_of_sharps i l
-    | otherwise = build flat  nat order_of_flats  (abs i) l
+makeLabelSet i letter accidentals 
+    | i >= 0    = build sharp nat order_of_sharps i letter
+    | otherwise = build flat  nat order_of_flats  (abs i) letter
   where
-    build sk fk xs i =   labelSet
+    build sk fk xs n =   labelSet
                        . map relabel 
-                       . twist sk fk (take (mod i 8) xs)
+                       . twist sk fk (take (mod n 8) xs)
                        . enumFromCyc                   
 
     nat l   = PitchLabel l Nat

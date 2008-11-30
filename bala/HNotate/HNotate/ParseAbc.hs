@@ -17,7 +17,6 @@ module HNotate.ParseAbc where
 
 import HNotate.CommonUtils
 import HNotate.Duration
-import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.ParserBase
@@ -28,9 +27,8 @@ import Control.Applicative hiding (many, optional, (<|>), empty)
 import Control.Monad
 import Control.Monad.Trans (liftIO)
 import Data.Char
-import Data.List (isPrefixOf, intersperse)
+import Data.List (isPrefixOf)
 import Data.Maybe (catMaybes, fromJust)
-import Data.Sequence hiding (reverse)
 import Data.Ratio
 import Text.ParserCombinators.Parsec hiding (space)
 
@@ -54,7 +52,7 @@ translateAbcScore :: AbcScore -> [Expr]
 translateAbcScore (AbcScore xs) = catMaybes $ map transAbcTune xs
 
 transAbcTune :: AbcTune -> Maybe Expr
-transAbcTune (AbcTune i xs) = maybe Nothing fn (transExprs xs)
+transAbcTune (AbcTune _ xs) = maybe Nothing fn (transExprs xs)
   where
     fn expr = Just $ Let LetNone expr
 
@@ -63,7 +61,7 @@ transAbcTune (AbcTune i xs) = maybe Nothing fn (transExprs xs)
 -- Branches should end in output-directives, if they don't then they get pruned. 
 
 transExprs :: [AbcExpr] -> Maybe Expr
-transExprs xs = tree xs id where 
+transExprs = tree `flip` id where 
   tree []                         k = k Nothing
   
   -- last element - (ideally) should be an output command  
@@ -279,7 +277,7 @@ recognizeIsland = () <$ (lexeme (symbol "%#") *> lexeme (symbol "output")
       tok <- eitherparse anyChar eof
       case tok of
         Left '\n' -> return ()
-        Left c    -> uptoNewline 
+        Left _    -> uptoNewline 
         Right _   -> return ()
         
          
@@ -295,7 +293,7 @@ field c p = (try $ lexeme (symbol [c,':'])) *> p <* symbol ";"
 -- Abc looks only at the first 3 characters of a mode specification     
 leading3 :: Char -> Char -> Char -> Parser String   
 leading3 a b c = lexeme $ try (caten <$> p a <*> p b <*> p c <*> many letter)
-  where caten a b c xs = a:b:c:xs
-        p a = choice [char a, char $ toUpper a] 
+  where caten x1 x2 x3 xs = x1:x2:x3:xs
+        p ch = choice [char ch, char $ toUpper ch] 
 
                 

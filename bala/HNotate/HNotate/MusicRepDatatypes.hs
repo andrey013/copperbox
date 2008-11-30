@@ -21,7 +21,7 @@ import HNotate.Duration
 import HNotate.Pitch
 
 import qualified Data.Map as Map
-                      
+
 --------------------------------------------------------------------------------
 -- Music representation
 type MeterPattern = ([Int],Duration)
@@ -53,10 +53,10 @@ labelSet = LabelSet . foldl fn Map.empty
   where fn m p = Map.insert (semitones p) p m
   
 labelSetFind :: Pitch -> LabelSet -> Maybe Pitch
-labelSetFind p@(Pitch l a o) (LabelSet m) = 
+labelSetFind (Pitch l a o) (LabelSet m) = 
     maybe Nothing (fn o) (Map.lookup (semitones l + semitones a) m) 
   where
-    fn o (PitchLabel l a) = Just $ Pitch l a o
+    fn ove (PitchLabel ltr atl) = Just $ Pitch ltr atl ove
     
     
     
@@ -80,8 +80,7 @@ spell p@(Pitch _ _ o) lbls =
 -- This is the transformation needed for Abc: 
 -- f# should be printed f in g major
 naturalize :: Pitch -> LabelSet -> Pitch
-naturalize p@(Pitch _ _ o) lbls = 
-    maybe p ((flip accidentalConst) Nat) (labelSetFind p lbls)
+naturalize p lbls = maybe p ((flip accidentalConst) Nat) (labelSetFind p lbls)
     
 -- How long does a meter patttern last? 
 durationMP ::  MeterPattern -> Duration

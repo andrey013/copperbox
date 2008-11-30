@@ -18,7 +18,6 @@ import HNotate.Document
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
-import HNotate.NoteListDatatypes
 import HNotate.Pitch
 import HNotate.TemplateDatatypes
 
@@ -122,7 +121,7 @@ outputAbsolute name = HDo directive where
 --------------------------------------------------------------------------------
 -- elementary printers
 
-
+meter :: Meter -> ODoc
 meter (TimeSig n d) = int n <> char '/' <> int d
 meter CommonTime    = int 4 <> char '/' <> int 4
 meter CutTime       = int 2 <> char '/' <> int 2
@@ -133,13 +132,13 @@ meter CutTime       = int 2 <> char '/' <> int 2
 pitch :: Pitch -> ODoc
 pitch (Pitch l a o) = pitchLabel (PitchLabel l a) <> ove o
   where 
-    ove o | o > 0       = text $ replicate o       '\'' 
-          | o < 0       = text $ replicate (abs o) ','
+    ove i | i > 0       = text $ replicate i       '\'' 
+          | i < 0       = text $ replicate (abs i) ','
           | otherwise   = emptyDoc
 
 -- lilypond middle c is c' 
 -- HNotate middle c is c4
-
+rescale :: Pitch -> Pitch
 rescale (Pitch l a o)   = Pitch l a (o-3)
 
 pitchLabel :: PitchLabel -> ODoc

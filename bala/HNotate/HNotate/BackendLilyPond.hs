@@ -26,21 +26,21 @@ import HNotate.Document
 import HNotate.Duration
 import HNotate.Env
 import HNotate.NotateMonad
-import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord)
+import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, nplet)
 import HNotate.Pitch
-import HNotate.PPInstances
+import HNotate.PPInstances () -- get Witness instances
 import HNotate.ProcessingTypes
 import HNotate.Traversals
 
 import Control.Applicative
 import Control.Monad.Error
-import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Foldable as F
 import Data.Sequence
 import Data.Traversable
 
+import Prelude hiding (length)
   
 lyConcat :: BarConcatFun
 lyConcat = vsep . map snd
@@ -59,7 +59,6 @@ translateLilyPond bf procF = fwd <=< printStep <=< procF
 lilypondAbsoluteForm :: Monad m => NoteList -> NotateT m NoteList
 lilypondAbsoluteForm = return . traverseIdentity losBody
     
-
 
 lilypondRelativeForm :: Monad m => NoteListPostProcessFun m
 lilypondRelativeForm evts = getRelativePitch >>= \p -> 
@@ -130,12 +129,13 @@ barDoc = collapse . F.foldl fn (emptyDoc,emptyDoc)
     fn (out,tip) (Singleton e)          = (out <+> tip, atom e)
           
     fn (out,tip) (Chord se d a)         = (out <+> tip, chord se d a)
-    fn (out,tip) (GraceNotes se m a)    = (out <+> tip, gracenotes se a) 
+    fn (out,tip) (GraceNotes se _ a)    = (out <+> tip, gracenotes se a) 
+    fn (out,tip) (Nplet i ud se a)      = (out <+> tip, nplet i ud se a)
                 
 
     anno :: (ODoc -> ODoc) -> ODoc -> ODoc
-    anno fn e | isEmpty e   = e
-              | otherwise   = fn e
+    anno f e | isEmpty e   = e
+             | otherwise   = f e
           
     bSt, bEnd :: (ODoc -> ODoc)
     bSt   = (<> lbracket)
@@ -167,10 +167,20 @@ gracenotes ps a =
     applyLyAnno a $ command1 "grace" (braces $ hsep $ unseqMap fn ps)
   where fn (p,d) = pitch p <> duration d
 
-
-tie :: ODoc
-tie = char '~'
-
+nplet :: Int -> Duration -> Seq Pitch -> Annotation -> ODoc
+nplet mult ud se a = 
+    applyLyAnno a $ command1 "times" fract <+> braces' (hsep $ plet1 (viewl se))
+  where
+    fract = int mult <> char '/' <> int (length se)
+    
+    plet1 EmptyL    = []
+    plet1 (p :< sp) = note p ud : plet (viewl sp)
+    
+    plet (p :< sp)  = pitch p : plet (viewl sp)
+    plet EmptyL     = []
+    
+     
+    
 barcheck :: ODoc
 barcheck = char '|'
 

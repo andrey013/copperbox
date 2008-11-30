@@ -21,11 +21,9 @@ import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.BackendMidi
 import HNotate.BuildNoteList
-import HNotate.CommonUtils
 import HNotate.Document ( ODoc, ODocS, emptyDoc, output, formatted, 
-                          ( <+> ) , ( <&\> ), dblvsep )
+                          ( <&\> ), dblvsep )
 import HNotate.Env
-import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
@@ -36,17 +34,13 @@ import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Error
-import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.Writer
 
-import qualified Data.Foldable as F
+
 import qualified Data.Map as Map
-import Data.Maybe (fromMaybe)
-import Data.Sequence hiding (empty, reverse, length)
 
-import Text.ParserCombinators.Parsec (ParseError, parseFromFile)
-
+import Text.ParserCombinators.Parsec (parseFromFile)
 
 
 -- {NOTE} Some elements in the env have defaults
@@ -132,9 +126,12 @@ outputter exprs src = evalHoas (toHoas exprs) >>= plug src
 
 
 plug :: Monad m => TextSource -> [ODoc] -> NotateT m ShowS
-plug (SourceFile water (Island loc rest)) (d:ds) = 
+plug (SourceFile water (Island loc more_text)) (d:ds) = 
     (\ks -> showString water . output (_src_column loc) 60 d . ks) 
-        <$> (plug rest ds)
+        <$> (plug more_text ds)
+        
+plug (SourceFile _     (Island _ _))           []     = 
+    fail "plug - text hole to plug but no document to fill it with"       
 
 plug (SourceFile water EndOfSource)     [] = return $ showString water
 
@@ -180,7 +177,7 @@ eval docs (HDo out)           = outputNotes out >>= \d  -> return (d:docs)
 eval docs (HSDo out e)        = outputNotes out >>= \d  -> eval (d:docs) e
 eval docs (HFork e1 e2)       = eval docs e1    >>= \ds -> eval ds e2  
 eval docs (HText _ e)         = eval docs e -- should not occur in standard eval   
-eval docs (HText0 d)          = return [] -- should not occur in standard eval 
+eval _    (HText0 _)          = return [] -- should not occur in standard eval 
 
 
 evalDocuHoas :: Monad m => DocuHoas -> NotateT m [ODocS]
@@ -210,13 +207,14 @@ outputNotes (OutputDirective (Just OutputRelative) name) =
 outputNotes (OutputDirective (Just OutputDefault) name) = 
     outputNotes (OutputDirective Nothing name) 
     
-outputNotes (OutputDirective Nothing name)  = 
+outputNotes (OutputDirective _ name)  = 
     asks output_format >>= \fmt -> 
     case fmt of
       Abc -> findEventList name >>= 
              maybe (outputFailure name) outputNoteListAbc 
       Ly  -> findEventList name >>= 
              maybe (outputFailure name) outputAbsoluteNoteList
+      Midi -> fail "cannot output Midi via an OutputDirective"              
 
 
 

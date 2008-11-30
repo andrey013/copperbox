@@ -20,14 +20,9 @@ module HNotate.CommonUtils where
 
 import qualified Data.Foldable as F
 import Data.List (unfoldr)
-import Data.Ratio
-import Data.Sequence hiding (empty, length, reverse)
+import Data.Sequence hiding (empty, length, reverse, update)
 import qualified Data.Sequence as S
 import Prelude hiding (null)
-import System.IO
-
-          
-
 
 
 --------------------------------------------------------------------------------
@@ -211,18 +206,16 @@ enumFromCyc a = a : (unfoldr f $ nextOf a)
     f x | x == a    = Nothing
         | otherwise = Just (x,nextOf x)
     
-    nextOf a | a == maxBound = minBound
-             | otherwise     = succ a
-
 enumFromToCyc :: (Bounded a, Enum a, Eq a) => a -> a -> [a]
 enumFromToCyc a b | a == b    = [a]
                   | otherwise = a : (unfoldr f $ nextOf a) ++ [b]
   where 
     f x | x == a || x == b   = Nothing
-        | otherwise                 = Just (x,nextOf x)
-    
-    nextOf a | a == maxBound = minBound
-             | otherwise     = succ a
+        | otherwise          = Just (x,nextOf x)
+
+nextOf :: (Bounded a, Eq a, Enum a) => a -> a  
+nextOf x | x == maxBound = minBound
+         | otherwise     = succ x
              
 --------------------------------------------------------------------------------
 -- splitting a sequence 
@@ -247,7 +240,7 @@ lgs :: (st -> Bool) -> (st -> a -> st)
           -> st -> Seq a -> (st, Seq a, Seq a)             
 lgs test update st0 = together . genSplit (adapt test) update st0
   where
-    adapt f = \old new -> f new
+    adapt f = \_ new -> f new
     together (st, l, Nothing, r) = (st,l,r)  
     together (st, l, Just a, r)  = (st,l,a <|r) 
 
@@ -293,7 +286,7 @@ showLBrace    = showString "{\n"
 showRBrace    = showString "}\n"
 
 foldS :: (ShowS -> ShowS -> ShowS) -> [ShowS] -> ShowS
-foldS f []      = id
+foldS _ []      = id
 foldS f xs      = foldr1 f xs
 
 constrS :: String -> ShowS -> ShowS

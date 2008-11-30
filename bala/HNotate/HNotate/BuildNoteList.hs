@@ -1,5 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+
 
 --------------------------------------------------------------------------------
 -- |
@@ -24,18 +23,14 @@ import HNotate.Document
 import HNotate.Duration
 import HNotate.Env
 import HNotate.Fits
-import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
 import HNotate.OnsetQueue
 import HNotate.PPInstances
 import HNotate.ProcessingTypes
 
-import Control.Applicative hiding (empty)
 import Control.Monad.Reader
 import qualified Data.Foldable as F
-import Data.List (unfoldr)
-import Data.Maybe (fromMaybe)
 import Data.Sequence hiding (reverse)
 import Prelude hiding (null, length)
 
@@ -62,7 +57,7 @@ displaceRightwards (StdDisp n l)  d = StdDisp n (l + d)
 -- (e.g. getting the bar_length form a reader monad)  
 -- Note (AnaDisp d) is effectively a negative number, so it stays the same   
 mdispNormalize :: Duration -> MetricalDisplacement -> MetricalDisplacement
-mdispNormalize bar_len (AnaDisp d) =   (AnaDisp d) 
+mdispNormalize _       (AnaDisp d) =   (AnaDisp d) 
 mdispNormalize bar_len (StdDisp b d) 
     | d < bar_len   = StdDisp b d
     | otherwise     = StdDisp (b + fromIntegral c) v where
@@ -124,15 +119,15 @@ untree bar_len asis evts = worklist (reduceTreeStep bar_len) [initial_vo]
 
 reduceTreeStep :: Duration -> EvtVoiceOverlay 
                     -> (GlyphVoiceOverlay, [EvtVoiceOverlay])
-reduceTreeStep bar_len (EVO ms se) = mkAnswer $ F.foldl fn (ms,empty,[]) se
+reduceTreeStep bar_len (EVO mdisp se) = mkAnswer $ F.foldl fn (mdisp,empty,[]) se
   where
-    -- Build the final aswer with the initial MS! 
-    mkAnswer (_,se,polys)       = ((GVO ms se),polys)  
+    -- Build the final aswer with the initial metrical displacement! 
+    mkAnswer (_,sa,polys)       = ((GVO mdisp sa),polys)  
     
-    fn (ms,se,polys) (Poly ys)  = let ys' = map (EVO ms . getEventList) ys
-                                  in (ms,se,polys ++ ys')
+    fn (ms,sa,polys) (Poly ys)  = let ys' = map (EVO ms . getEventList) ys
+                                  in (ms,sa,polys ++ ys')
     
-    fn (ms,se,polys) (Evt e)    = (moveRightwards bar_len e ms, se |> e, polys)
+    fn (ms,sa,polys) (Evt e)    = (moveRightwards bar_len e ms, sa |> e, polys)
 
 
 moveRightwards :: Duration -> Grouping -> MetricalDisplacement -> MetricalDisplacement
@@ -144,49 +139,19 @@ type RawBar = (Int,Seq Grouping)
 
 number :: Int -> Seq a -> Seq (Int,a)
 number start se = step (viewl se) [start..] where
-  step EmptyL    _      = empty
   step (a :< sa) (x:xs) = (x,a) <| step (viewl sa) xs 
-
+  step _          _     = empty
 
 partitionGVO :: Duration -> GlyphVoiceOverlay -> Seq RawBar
 partitionGVO bar_len (GVO (StdDisp bar_num disp) se) = 
     number bar_num $ asegmentHy (|> tieSgl) 0 bar_len (preprocess disp se) 
   where
-    preprocess d se | d == duration_zero  = se
-                    | otherwise           = (spacerSgl d) <| se  
+    preprocess d sa | d == duration_zero  = sa
+                    | otherwise           = (spacerSgl d) <| sa  
 
 partitionGVO bar_len (GVO (AnaDisp asis) se) = 
     number 0 $ asegmentHy (|> tieSgl) asis bar_len se 
-    
-instance Fits Atom Duration where
-  measure (Note _ d _)            = d
-  measure (Rest d _)              = d
-  measure (Spacer d _)            = d
-  measure (RhythmicMark _ d _)    = d
-  measure (Mark _ _)              = duration_zero
-  measure BeamStart               = duration_zero
-  measure BeamEnd                 = duration_zero
-  measure Tie                     = duration_zero
-  
-  
-  resizeTo (Note p _ a)           d = Note p d a
-  resizeTo (Rest _ a)             d = Rest d a 
-  resizeTo (Spacer _ a)           d = Spacer d a
-  resizeTo (RhythmicMark l _ m)   d = RhythmicMark l d m
-  resizeTo (Mark l m)             d = Mark l m
-  resizeTo BeamStart              d = BeamStart
-  resizeTo BeamEnd                d = BeamEnd
-  resizeTo Tie                    d = Tie
-  
-  
-instance Fits Grouping Duration where
-  measure (Singleton e)           = measure e                                                
-  measure (Chord se d a)          = d  
-  measure (GraceNotes se m a)     = duration_zero
- 
-  resizeTo (Singleton e)        d = Singleton (resizeTo e d)                                                
-  resizeTo (Chord se _ a)       d = Chord se d a  
-  resizeTo (GraceNotes se m a)  d = GraceNotes se m a
+
    
      
                       

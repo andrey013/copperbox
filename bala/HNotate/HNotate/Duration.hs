@@ -52,7 +52,7 @@ module HNotate.Duration (
     hemidemisemiquaver, semihemidemisemiquaver,
     
     -- * Named instances (Shorthand)
-    du1, du2, du4, du8, du16, du32, du128    
+    du1, du2, du4, du8, du16, du32, du64, du128    
 
   ) where
 
@@ -143,6 +143,8 @@ printableDuration r
   where 
     r' = approximateDuration r 
     
+
+
     
 approximateDuration :: Duration -> PrintableDuration
 approximateDuration r
@@ -156,7 +158,7 @@ approximateDuration r
     upwardsNext a (x:y:ys)  | a >= x && a < y = x
                             | otherwise       = upwardsNext a (y:ys)
     
-    downwardsFind r         = downwardsNext1 r $ map (1%) base2numbers'inf
+    downwardsFind r'        = downwardsNext1 r' $ map (1%) base2numbers'inf
     
     downwardsNext1 a (x:xs) | a >= x          = x
                             | otherwise       = downwardsNext1 a xs
@@ -169,8 +171,10 @@ approximateDuration r
     reccy z i   (x:y:ys) | z+x <= r  && z+x+y >= r = if nearer r (z+x) (z+x+y)
                                                        then i else i+1
                          | otherwise               = reccy (z+x) (i+1) (y:ys)     
-
-    nearer a l r = (a - l) <= (r - a) 
+    
+    reccy z i   _        = error $ "approximateDuration unhandled " ++ show r
+    
+    nearer a l r' = (a - l) <= (r' - a) 
                               
 halves'inf :: Rational -> [Rational]
 halves'inf r = unfoldr phi r

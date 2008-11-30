@@ -14,7 +14,6 @@
 --------------------------------------------------------------------------------
 
 
-
 module HNotate.OnsetQueue (
     -- * Pending event queue
     OnsetQueue,
@@ -41,8 +40,6 @@ newtype Elt a = Elt { getElts :: [a] }
 
 newtype OnsetQueue idx a = OnsetQueue { getOnsetQueue :: Map.Map idx (Elt a) }
 
-empty :: OnsetQueue idx a
-empty = OnsetQueue $ Map.empty
 
 instance (Ord idx) => Monoid (OnsetQueue idx a) where
   mempty = mempty
@@ -81,10 +78,10 @@ cat i es (OnsetQueue q) = OnsetQueue $ fn (Map.lookup i q)
 data ViewH idx evt = EmptyQ | (idx,[evt]) :>> OnsetQueue idx evt
 
 foldlOnsetQueue :: (a -> (idx,[b]) -> a) -> a -> OnsetQueue idx b -> a
-foldlOnsetQueue f a = foldl (adapt f) a . Map.toAscList . getOnsetQueue
+foldlOnsetQueue fn a = foldl (adapt fn) a . Map.toAscList . getOnsetQueue
   where
     adapt :: (a -> (idx,[b]) -> a) -> (a -> (idx,Elt b) -> a) 
-    adapt f = \acc (i,Elt a) -> f acc (i,a)
+    adapt f = \acc (i,Elt e) -> f acc (i,e)
 
 viewH :: OnsetQueue idx evt -> ViewH idx evt
 viewH (OnsetQueue q) = case  Map.minViewWithKey q of

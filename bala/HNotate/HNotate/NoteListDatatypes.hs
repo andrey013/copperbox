@@ -1,4 +1,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 
@@ -23,6 +25,7 @@ module HNotate.NoteListDatatypes where
 import HNotate.CommonUtils
 import HNotate.Document
 import HNotate.Duration hiding ( _duration )
+import HNotate.Fits
 import HNotate.Pitch
 
 
@@ -32,7 +35,7 @@ import qualified Data.Map as Map
 import Data.Monoid
 import Data.Sequence
 import Data.Traversable
-import Prelude hiding (null)
+import Prelude hiding (null, length)
 
 
 data OutputFormat = Abc | Ly | Midi
@@ -73,9 +76,9 @@ instance Show Atom where
   showsPrec i (RhythmicMark l d m)  = constrS "RhythmicMark" $ 
                                                      (showsPrecChain3 i l d m)
   showsPrec i (Mark l m)            = constrS "Mark" (showsPrecChain2 i l m)
-  showsPrec i BeamStart             = showString "BeamStart"
-  showsPrec i BeamEnd               = showString "BeamEnd"
-  showsPrec i Tie                   = showString "Tie"
+  showsPrec _ BeamStart             = showString "BeamStart"
+  showsPrec _ BeamEnd               = showString "BeamEnd"
+  showsPrec _ Tie                   = showString "Tie"
            
            
 -- individual grace notes cannot be annotated
@@ -115,10 +118,13 @@ data Grouping = Singleton { element         :: Atom }
           
               | GraceNotes { grace_elements :: Seq GraceNote,
                              grace_mode     :: GraceMode,
-                             annotation     :: Annotation }     
-      deriving (Show)                             
-                  
-          -- TODO tuplets (generalized to n-plets)        
+                             annotation     :: Annotation } 
+                             
+              | Nplet { nplet_multipier     :: Int,
+                        unit_duration       :: Duration,
+                        nplet_elements      :: Seq Pitch,
+                        annotation          :: Annotation }                   
+      deriving (Show)   
   
 
 data Mark phantom = Marker { _ly_output   :: ODoc,
@@ -127,12 +133,11 @@ data Mark phantom = Marker { _ly_output   :: ODoc,
 instance Show (Mark a) where
   show (Marker _ _) = "<Mark>"          
 
+npletDuration :: Int -> Duration -> Seq Pitch -> Duration
+npletDuration mult unit_d notes = 
+  let l = length notes in (makeDuration mult l) * unit_d * (makeDuration l 1)
 
-
-
-
-
-                                           
+                                         
                                            
 --------------------------------------------------------------------------------
 -- The External view - EventList - events with no rhythmical grouping
@@ -141,24 +146,21 @@ type System = Map.Map String EventList
 
 -- (Call it a _List_ even though it is really a Seq)
 newtype EventListF evt = EventList { getEventList :: Seq evt }
-
+    deriving (Show) 
+    
 type EventList = EventListF Evt  
 
 
 -- Change the type, or how its used?
 data Evt = Evt Grouping
-         | Poly [EventListF Evt]         
+         | Poly [EventListF Evt]  
+    deriving (Show)              
          
 instance Monoid (EventListF evt) where
   mempty      = EventList mempty
   mappend a b = EventList $ (getEventList a) >< (getEventList b)
 
-instance Show (EventListF Evt) where
-  showsPrec i _ = showString "Show (EventListF Evt) - todo"
 
-instance Show Evt where
-  showsPrec i _ = showString "Show Evt - todo"
-    
 --------------------------------------------------------------------------------   
 -- The internal view
     
@@ -204,8 +206,8 @@ instance F.Foldable NoteListF where
   foldMap f (NoteList se)         = F.foldMap (F.foldMap f) se
   
 instance F.Foldable BlockF where
-  foldMap f (SingleBlock i e)     = F.foldMap f e
-  foldMap f (PolyBlock i se)      = F.foldMap (F.foldMap f) se
+  foldMap f (SingleBlock _ e)     = F.foldMap f e
+  foldMap f (PolyBlock _ se)      = F.foldMap (F.foldMap f) se
   
 instance F.Foldable BarF where
   foldMap f (Bar se)              = F.foldMap f se
@@ -232,11 +234,18 @@ instance RhythmicValue Grouping where
   rhythmicValue (Singleton e)           = rhythmicValue e
   rhythmicValue (Chord _ d _)           = d
   rhythmicValue (GraceNotes _ _ _)      = duration_zero
+  rhythmicValue (Nplet i d se _)        = npletDuration i d se
+ 
   
   modifyDuration (Singleton e)        d = Singleton (e `modifyDuration` d)
   modifyDuration (Chord se _ a)       d = Chord se d a
-  modifyDuration (GraceNotes se m a)  d = GraceNotes se m a
-  
+  modifyDuration (GraceNotes se m a)  _ = GraceNotes se m a
+  modifyDuration (Nplet i _ se a)     d = (Nplet i ud se a)
+    where ud = reunit d i se
+    
+reunit :: Duration -> Int -> Seq a -> Duration
+reunit tot i se = let l = length se in 
+                  tot * (makeDuration l i) * (makeDuration 1 l)
   
 instance RhythmicValue Atom where
   rhythmicValue (Note _ d _)            = d
@@ -252,10 +261,10 @@ instance RhythmicValue Atom where
   modifyDuration (Rest _ a)           d = Rest d a
   modifyDuration (Spacer _ a)         d = Spacer d a
   modifyDuration (RhythmicMark l _ m) d = RhythmicMark l d m
-  modifyDuration (Mark l m)           d = Mark l m
-  modifyDuration BeamStart            d = BeamStart
-  modifyDuration BeamEnd              d = BeamEnd
-  modifyDuration Tie                  d = Tie
+  modifyDuration (Mark l m)           _ = Mark l m
+  modifyDuration BeamStart            _ = BeamStart
+  modifyDuration BeamEnd              _ = BeamEnd
+  modifyDuration Tie                  _ = Tie
 
 instance PitchValue Atom where
   pitchValue (Note p _ _)            = Just p
@@ -268,15 +277,26 @@ instance PitchValue Atom where
   pitchValue Tie                     = Nothing
   
   modifyPitch (Note _ d a)         p = Note p d a
-  modifyPitch (Rest d a)           p = Rest d a
-  modifyPitch (Spacer d a)         p = Spacer d a
-  modifyPitch (RhythmicMark l d m) p = RhythmicMark l d m
-  modifyPitch (Mark l m)           p = Mark l m
-  modifyPitch BeamStart            p = BeamStart
-  modifyPitch BeamEnd              p = BeamEnd
-  modifyPitch Tie                  p = Tie
+  modifyPitch (Rest d a)           _ = Rest d a
+  modifyPitch (Spacer d a)         _ = Spacer d a
+  modifyPitch (RhythmicMark l d m) _ = RhythmicMark l d m
+  modifyPitch (Mark l m)           _ = Mark l m
+  modifyPitch BeamStart            _ = BeamStart
+  modifyPitch BeamEnd              _ = BeamEnd
+  modifyPitch Tie                  _ = Tie
 
+--------------------------------------------------------------------------------
+-- Fits instances
+    
+instance Fits Atom Duration where
+  measure  e   = rhythmicValue e
+  resizeTo e d = modifyDuration e d
   
+  
+instance Fits Grouping Duration where
+  measure  e   = rhythmicValue e
+  resizeTo e d = modifyDuration e d
+    
 --------------------------------------------------------------------------------
 -- Annotations and marks
 
@@ -429,7 +449,18 @@ agracesL xs t     = t |*> Evt (agracesGrpL xs)
 
 agracesL'         :: [(Pitch,Duration)] -> Annotation -> EventList -> EventList
 agracesL' xs a t  = t |*> Evt (agracesGrpL' xs a)
- 
+
+npletGrp          :: Int -> Duration -> Seq Pitch -> Grouping
+npletGrp i ud se  = Nplet i ud se noAnno
+
+npletGrp'         :: Int -> Duration -> Seq Pitch -> Annotation -> Grouping
+npletGrp' i ud se a   = Nplet i ud se a
+
+nplet             :: Int -> Duration -> Seq Pitch -> EventList -> EventList
+nplet i ud se t   = t |*> Evt (npletGrp i ud se)
+
+nplet' :: Int -> Duration -> Seq Pitch ->  Annotation -> EventList -> EventList
+nplet' i ud se a t   = t |*> Evt (npletGrp' i ud se a)
     
 tieSgl     :: Grouping
 tieSgl     = Singleton Tie
@@ -459,7 +490,7 @@ emptyGrouping :: Grouping -> Bool
 emptyGrouping (Singleton _)         = False
 emptyGrouping (Chord se _ _)        = null se
 emptyGrouping (GraceNotes se _ _)   = null se
-
+emptyGrouping (Nplet _ _ se _)      = null se
   
         
 composeAnnos :: Annotation -> Annotation -> Annotation

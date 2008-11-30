@@ -28,7 +28,6 @@ import Control.Applicative
 import Control.Monad.Identity hiding (mapM)
 import Control.Monad.Reader hiding (mapM)
 import Control.Monad.State hiding (mapM)
-import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Ratio
 import Data.Sequence
@@ -80,17 +79,6 @@ instance (Applicative m, Applicative n) => Applicative (Comp m n) where
  
 
 
-changeDuration :: Atom -> Duration -> Atom
-changeDuration = modifyDuration
-
-{-
-modifyPitch :: Atom -> Pitch -> Atom
-modifyPitch (Note _ d a)         p = Note p d a
-modifyPitch (Rest m d a)         p = Rest m d a
-modifyPitch (RhythmicMark l d m) p = RhythmicMark l d m
-modifyPitch (Mark l m)           p = Mark l m
--}
-
 --------------------------------------------------------------------------------
 -- A state type for stateful LilyPond transformations 
 
@@ -133,7 +121,7 @@ drleBody e = WrapMonad $ do
 -- All successive notes in a grace notes change 'global' relative pitch
  
 proBody :: Grouping -> WrappedMonad (State LyState) Grouping
-proBody e = WrapMonad $ step e
+proBody = WrapMonad . step
   where 
     step (Singleton e)        = Singleton <$> gstep e 
 
@@ -141,9 +129,11 @@ proBody e = WrapMonad $ step e
     
     step (GraceNotes se m a)  = (\se' -> GraceNotes se' m a) <$> mapM fn se
       where fn (p,d) = convPitch p >>= \p' -> return (p',d)
-    
+      
+    step (Nplet i ud se a)    = (\se' -> Nplet i ud se' a) <$> mapM convPitch se
+                                       
     gstep :: Atom ->  State LyState Atom
-    gstep e@(Note p d a)      = (modifyPitch e) <$> convPitch p 
+    gstep e@(Note p _ _)      = (modifyPitch e) <$> convPitch p 
     gstep e                   = return e
 
 
@@ -170,7 +160,7 @@ convPitch p = do
 
 
 changeOctaveWrt :: Pitch -> Pitch -> Pitch
-changeOctaveWrt pch@(Pitch l a o) base = Pitch l a (base `octaveDist` pch)
+changeOctaveWrt pch@(Pitch l a _) base = Pitch l a (base `octaveDist` pch)
     
 
 --------------------------------------------------------------------------------
@@ -181,7 +171,7 @@ changeOctaveWrt pch@(Pitch l a o) base = Pitch l a (base `octaveDist` pch)
 
 
 losBody :: Grouping -> WrappedMonad Identity Grouping
-losBody e = WrapMonad $ return $ fn e
+losBody gp = WrapMonad $ return $ fn gp
   where
     fn (Singleton (Note p d anno))  = Singleton (Note (down3ve p)  d anno)
     fn (Singleton e)                = Singleton e
@@ -189,6 +179,7 @@ losBody e = WrapMonad $ return $ fn e
     fn (GraceNotes se d anno)       = 
         GraceNotes (fmap (prod down3ve id) se) d anno
     
+    fn (Nplet i ud se anno)         = Nplet i ud (fmap down3ve se) anno 
     
     down3ve (Pitch l a o) = Pitch l a (o-3)
 
@@ -199,8 +190,8 @@ losBody e = WrapMonad $ return $ fn e
 
 -- unit note length encode
 unleBody :: Monad m => Grouping -> WrappedMonad (NotateMonadT Env Config m) Grouping
-unleBody e = let drn = rhythmicValue e in WrapMonad $ 
-             fn e drn <$> asks unit_note_length
+unleBody gp = 
+    WrapMonad $ fn gp (rhythmicValue gp) <$> asks unit_note_length
   where
     fn e drn unl | drn == unl = modifyDuration e no_duration
                  | otherwise  = modifyDuration e (abcScaleDuration drn unl)           
@@ -215,16 +206,19 @@ unleBody e = let drn = rhythmicValue e in WrapMonad $
 
 -- unit note length encode
 plrBody :: Monad m => Grouping -> WrappedMonad (NotateMonadT Env Config m) Grouping
-plrBody e = WrapMonad $ (respell e) <$> asks label_set
+plrBody gp = WrapMonad $ (respell gp) <$> asks label_set
   where
     respell (Singleton e)       ls = Singleton (respell' e ls)
 
     respell (Chord se d a)      ls = Chord (fmap (cf ls) se) d a
     
     respell (GraceNotes se m a) ls = GraceNotes (fmap (gf ls) se) m a
+    
+    respell (Nplet i ud se a)   ls = Nplet i ud (fmap (cf ls) se) a
+    
 
     respell' (Note p d a)       ls = Note (p `naturalize` ls) d a
-    respell' e                  ls = e
+    respell' e                  _  = e
     
     cf ls p     = p `naturalize` ls
     gf ls (p,d) = (p `naturalize` ls, d)

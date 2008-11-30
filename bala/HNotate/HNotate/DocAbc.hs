@@ -30,7 +30,6 @@ import HNotate.Document
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
-import HNotate.NoteListDatatypes
 import HNotate.Pitch
 import HNotate.TemplateDatatypes
 
@@ -144,8 +143,8 @@ pitchLabel (PitchLabel l a) pc
     accidental DoubleFlat    = text "__"
 
 duration :: Duration -> ODoc
-duration d | d == no_duration = emptyDoc
-           | otherwise        = fn $ ratioElements $ convRational d
+duration dn | dn == no_duration = emptyDoc
+            | otherwise        = fn $ ratioElements $ convRational dn
   where
     fn (n,1) = int n
     fn (1,d) = char '/' <> int d

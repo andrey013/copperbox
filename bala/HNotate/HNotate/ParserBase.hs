@@ -15,24 +15,17 @@
 
 module HNotate.ParserBase where
 
-import HNotate.CommonUtils
 import HNotate.Duration
-import HNotate.Env
 import HNotate.MusicRepDatatypes
-import HNotate.NotateMonad
+import HNotate.PPInstances () -- for witness instances
 import HNotate.TemplateDatatypes
-import HNotate.PPInstances
 import HNotate.ProcessingTypes
 
 import Control.Applicative hiding (many, optional, (<|>), empty )
 import Control.Monad
-import Control.Monad.Trans (liftIO)
 import Data.Char (isSpace)
-import Data.List (sortBy, intersperse, filter)
-import Data.Maybe (catMaybes)
-import Data.Monoid
+import Data.List (sortBy)
 import Data.Ratio
-import Data.Sequence hiding (length, reverse)
 import Prelude hiding (null)
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
@@ -157,7 +150,7 @@ eitherparse p p' = (Left <$> p) <|> (Right <$> p')
 
 --------------------------------------------------------------------------------
 -- Lexical analysis
-
+baseLex           :: P.TokenParser st
 baseLex           = P.makeTokenParser emptyDef
 
 -- | @lexeme@ from ParsecChar.

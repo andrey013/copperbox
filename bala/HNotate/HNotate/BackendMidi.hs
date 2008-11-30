@@ -19,8 +19,7 @@ import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MiniMidi
-import HNotate.NoteListDatatypes
-import HNotate.NotateMonad
+import HNotate.NoteListDatatypes hiding (chord)
 import HNotate.OnsetQueue
 import HNotate.Pitch
 import HNotate.ProcessingTypes
@@ -61,7 +60,7 @@ parallelTracks mss = foldr fn empty mss
     
 sequentialTracks :: Word32 -> [Seq Message] -> Seq Track
 sequentialTracks delay mss = 
-    singleton $ Track $ foldr fn (empty |> eot_msg) mss
+    singleton $ Track $ foldr fn (empty |> eot_msg) (fmap delayfirst mss)
   where 
     fn msgs se = msgs >< se
     
@@ -119,14 +118,14 @@ szipl se xs = step empty (viewl se) xs
 -- If this isn't the case then the graces will be dropped.
 
 simplifyBar :: Word8 -> Bar -> Seq MidiGrouping
-simplifyBar ch (Bar se) = simplify empty (viewl se) kGrouping
+simplifyBar ch (Bar sg) = simplify empty (viewl sg) kGrouping
   where
     -- not quite identity as it wraps the Atom as a Grouping 
     kGrouping :: MidiAtom -> MidiGrouping 
     kGrouping = MAtom ch . id
     
     -- if the continuation k is a grace builder it will be lost for EmptyL
-    simplify acc EmptyL       k = acc
+    simplify acc EmptyL       _ = acc
     
     simplify acc (be :< bse)  k = case be of
         Singleton o -> case simplifyAtom o of
@@ -146,13 +145,16 @@ simplifyBar ch (Bar se) = simplify empty (viewl se) kGrouping
         -- grace acts on the next Atom, set up the continuation
         GraceNotes se AGrace _ -> simplify acc (viewl bse) (graceK se)
         
+        Nplet _ ud se _ -> let se' = fmap (\p -> kGrouping $ MNote p ud) se
+                           in simplify (acc >< se') (viewl bse) k  
+        
     graceK :: Seq GraceNote -> MidiAtom -> MidiGrouping     
     graceK se g = MaGrace ch (unseq se) g
     
     ugrace :: Seq GraceNote -> ViewR MidiGrouping -> Seq MidiGrouping
-    ugrace se EmptyR                = empty   -- ill formed, gracenotes get dropped
-    ugrace se (bse :> (MAtom _ e)) = bse |> MuGrace ch e (unseq se)
-    ugrace se (bse :> be)           = bse |> be -- drop gracenotes - ideally we should coalesce them 
+    ugrace _  EmptyR                = empty   -- ill formed, gracenotes get dropped
+    ugrace se (bse :> (MAtom _ e))  = bse |> MuGrace ch e (unseq se)
+    ugrace _  (bse :> be)           = bse |> be -- drop gracenotes - ideally we should coalesce them 
               
     simplifyAtom :: Atom -> Maybe MidiAtom
     simplifyAtom (Note p d _)          = Just $ MNote p d
@@ -183,9 +185,9 @@ unorderedMessages = (return . F.foldl fn empty) <=< onsetTransform
 
     onsetTransform :: Monad m => 
         Seq (Int,Seq MidiGrouping) -> NotateT m (Seq (Word32,Seq MidiGrouping))
-    onsetTransform se = T.mapM fn se
-      where fn (bar_num,evts) = scaleBarOnset bar_num >>= \dt -> 
-                                return (dt, evts)
+    onsetTransform se = T.mapM scale se
+      where scale (bar_num,evts) = scaleBarOnset bar_num >>= \dt -> 
+                                   return (dt, evts)
 
 scaleBarOnset :: Monad m => Int -> NotateT m Word32
 scaleBarOnset bar_num = fn <$> asks bar_length  <*> asks anacrusis_displacement
@@ -201,7 +203,7 @@ orderMessages = foldlOnsetQueue fn empty . buildQueue mfst msnd
     mfst (Message (a,_)) = a
     msnd (Message (_,b)) = b
     
-    fn acc (gt, [])     = acc
+    fn acc (_,  [])     = acc
     fn acc (gt, [x])    = acc |> Message (gt,x)
     fn acc (gt, xs)     = foldl (\a e -> a |> Message (gt,e)) acc (sort xs)
  
@@ -212,7 +214,7 @@ deltaTransform = snd . F.foldl fn (0,empty)
 
 
 barEvts :: Word32 -> Seq MidiGrouping -> Seq Message
-barEvts onset se = step empty onset (viewl se)
+barEvts onset sg = step empty onset (viewl sg)
   where
     step acc _  EmptyL    = acc
     
@@ -248,7 +250,7 @@ accentedGraceEvents ch elapsed xs gly =
     if (atom_len >= grace_len)     
     then let gly'       = modifyDuration gly (atom_len - grace_len)
              (dt, se)   = graceEvents ch elapsed xs
-             (dt',se')  = atomEvents ch dt' gly'             
+             (dt',se')  = atomEvents ch dt gly'             
          in (dt', se >< se')
     else atomEvents ch elapsed gly -- graces too large drop them all
     
@@ -281,7 +283,7 @@ atomEvents :: Word8 ->  Word32 -> MidiAtom -> (Word32, Seq Message)
 atomEvents ch elapsed (MNote p d)   = (dt, empty |> on |> off) 
   where (dt,on,off)  = noteOnNoteOff ch elapsed p d
 
-atomEvents ch elapsed (MRest d)     = (elapsed + duration d, empty)
+atomEvents _  elapsed (MRest d)     = (elapsed + duration d, empty)
 
 atomEvents ch elapsed (MChord ps d) = (dt, ons >< offs) where
     dt            = elapsed + duration d
@@ -294,7 +296,7 @@ graceEvents :: Word8 ->  Word32 -> [GraceNote] -> (Word32, Seq Message)
 graceEvents ch elapsed = foldl fn (elapsed,empty)
   where
     fn (dt,se) (p,d) = let (dt',on,off) = noteOnNoteOff ch dt p d 
-                       in (dt, se |> on |> off)
+                       in (dt', se |> on |> off)
     
       
 -- note on and note off
@@ -310,8 +312,8 @@ pitch :: Pitch -> Word8
 pitch = fromIntegral . (+12) . semitones
 
 duration :: Duration -> Word32
-duration d | d == no_duration = 0
-           | otherwise        = fn $ ratioElements $ convRational d
+duration drn | drn == no_duration = 0
+             | otherwise          = fn $ ratioElements $ convRational drn
   where
     fn (n,1) = n * midi_whole
     fn (1,d) = midi_whole `div` d

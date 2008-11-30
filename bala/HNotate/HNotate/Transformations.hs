@@ -25,7 +25,6 @@ import HNotate.ProcessingTypes
 
 import Control.Monad.Reader
 import qualified Data.Foldable as F
-import Data.Maybe
 import Data.Sequence
 import Prelude hiding (null)
 
@@ -42,7 +41,7 @@ beamNoteList(NoteList se) =
 
 
 beamBlock :: MeterPattern -> Duration -> Duration -> Block -> Block
-beamBlock mp bar_len acis blk = case blk of
+beamBlock mp _ acis blk = case blk of
     SingleBlock i bar -> SingleBlock i (block i bar)  
     PolyBlock i bars  -> PolyBlock i (fmap (block i) bars)
   where
@@ -70,7 +69,7 @@ beam mp = Bar . cata (><) empty . fmap beamUnfold . splitMeasure mp . unBar
 type SMst = ([Duration],Duration, Seq Grouping)
 
 splitMeasure :: MeterPattern -> Seq Grouping -> Seq (Seq Grouping)
-splitMeasure mp se = apo step flush (meterDivisions mp, duration_zero, se)
+splitMeasure mp sg = apo step flush (meterDivisions mp, duration_zero, sg)
   where
     step :: SMst -> Maybe (Seq Grouping, SMst)
     step ([],  _,_ )  = Nothing    -- run out of meter steps
@@ -89,20 +88,20 @@ lgDurationSplit len start =
 
 -- | Turn a meter pattern into a list of durations
 meterDivisions :: MeterPattern -> [Duration]
-meterDivisions ([],s)   = []  -- is this valid?
+meterDivisions ([],_)   = []  -- is this valid?
 meterDivisions (x:xs,s) = 
     scanl (\acc i -> acc + s * fromIntegral i) (s * fromIntegral x) xs
 
 shortenMP :: Duration -> MeterPattern -> MeterPattern
-shortenMP i (ds,d) = pairup $ intlist $ subn i $ drnlist ds
+shortenMP i (ms,d) = pairup $ intlist $ subn i $ drnlist ms
   where
     pairup xs = (xs,d)
     drnlist   = map ((d *) . fromIntegral)
     
-    subn i []                 = []  
-    subn i (d:ds) | i == d    = ds
-                  | i <  d    = (d-i):ds
-                  | otherwise = subn (i-d) ds 
+    subn _ []                 = []  
+    subn n (x:xs) | n == x    = xs
+                  | n <  x    = (x-n):xs
+                  | otherwise = subn (n-x) xs 
                   
     intlist = map (round . durationToDouble . (/ d))   
 
@@ -113,7 +112,7 @@ data BeamSt = BEAM | BEAM_OFF deriving (Eq,Show)
 -- beaming works nicely as an unfold as we get 'lookahead' 
 -- on the input stream
 beamUnfold :: Seq Grouping -> Seq Grouping
-beamUnfold se = ana step (BEAM_OFF,se)
+beamUnfold sg = ana step (BEAM_OFF,sg)
   where
     step (st, se) = phi (st, viewl se)
     
@@ -145,7 +144,7 @@ beamUnfold se = ana step (BEAM_OFF,se)
                                   | otherwise         -> Nothing
                 
 eighthOrSmaller :: Grouping -> Bool
-eighthOrSmaller e = rhythmicValue e <= eighth && noteOrChord e
+eighthOrSmaller gp = rhythmicValue gp <= eighth && noteOrChord gp
   where
     noteOrChord (Singleton (Note _ _ _))  = True
     noteOrChord (Chord _ _ _)             = True

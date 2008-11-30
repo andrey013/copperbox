@@ -42,4 +42,4 @@ type BarConcatFun = [(Int,ODoc)] -> ODoc
 type NoteListPostProcessFun m = NoteList -> NotateT m NoteList
 
 
-  
+

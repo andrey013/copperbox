@@ -21,11 +21,10 @@ import HNotate.CommonUtils
 import HNotate.DocAbc
 import HNotate.Document
 import HNotate.Duration
-import HNotate.Env
-import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord)
+import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, nplet)
 import HNotate.NotateMonad
 import HNotate.Pitch
-import HNotate.PPInstances
+import HNotate.PPInstances () -- for witness instances
 import HNotate.ProcessingTypes
 import HNotate.Transformations
 import HNotate.Traversals
@@ -33,12 +32,10 @@ import HNotate.Traversals
 import Control.Applicative
 import Control.Monad.Reader
 import qualified Data.Foldable as F
-import Data.Ratio
 import Data.Sequence hiding (take)
 import Data.Traversable
-  
 
-
+import Prelude hiding (length)  
 
 -- TODO - variants of this to support bar numbering, etc.
 abcConcat :: BarConcatFun
@@ -91,14 +88,14 @@ barDoc = collapse . F.foldl fn (emptyDoc,(<+>),emptyDoc)
     fn (out,op,tip) (Singleton e)         = (out `op` tip,  op,   atom e)
           
     fn (out,op,tip) (Chord se d a)        = (out `op` tip,  op, chord se d a)
-    fn (out,op,tip) (GraceNotes se m a)   = (out `op` tip,  op, gracenotes se a)
-     
+    fn (out,op,tip) (GraceNotes se _ a)   = (out `op` tip,  op, gracenotes se a)
+    fn (out,op,tip) (Nplet i ud se a)     = (out `op` tip,  op, nplet i ud se a) 
                                 
                   
    
 
 
-
+-- Note ABC tie is dash!
 atom :: Atom -> ODoc
 atom (Note p d a)          = applyAbcAnno a $ note p d
 atom (Rest d a)            = applyAbcAnno a $ rest d
@@ -107,7 +104,7 @@ atom (RhythmicMark _ d m)  = abcOutput m <> duration d
 atom (Mark _ m)            = abcOutput m
 atom BeamStart             = emptyDoc
 atom BeamEnd               = emptyDoc
-atom Tie                   = char '~'
+atom Tie                   = char '-'       
 
 
 
@@ -138,8 +135,16 @@ gracenotes :: Seq (Pitch,Duration) -> Annotation -> ODoc
 gracenotes se a = applyAbcAnno a (braces $ hcat $ unseqMap fn se)
   where fn (p,d) = pitch p <> duration d  
 
-tie :: ODoc
-tie = char '-'
+nplet :: Int -> Duration -> Seq Pitch -> Annotation -> ODoc
+nplet mult ud se a = 
+    applyAbcAnno a $ pqr <+> (hcat $ unseqMap pitch se)
+  where
+    pqr = lparen <> int (length se)       <> colon 
+                 <> duration (scale ud)   <> colon
+                 <> int (length se)
+    
+    scale :: Duration -> Duration
+    scale drn = drn * (makeDuration mult 1)
 
 comment :: String -> ODoc
 comment s = text $ '%':' ':s  

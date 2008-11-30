@@ -16,6 +16,9 @@
 --------------------------------------------------------------------------------
 
 
+-- Todo -- according to the docs on orphaned instances these functions would be 
+-- better in the modules where the datatypes are defined
+
 module HNotate.PPInstances where
 
 import HNotate.CommonUtils
@@ -68,6 +71,7 @@ instance PP PrintableDuration where
   pp (PrintableDuration r dc) = let (n,d) = ratioElements r in 
       pp n <> char '/' <> pp d <> text (replicate dc '.') 
 
+ppAltRest :: Char -> Duration -> ODoc
 ppAltRest ch dur = char ch <> char '/' <> pp dur
 
 
@@ -89,7 +93,7 @@ instance PP Accidental where
   pp DoubleSharp  = text "##"
   pp DoubleFlat   = text "bb"
 
-
+ppNote :: Pitch -> Duration -> ODoc
 ppNote pch dur = pp pch <> char '/' <> pp dur
 
 
@@ -116,7 +120,7 @@ instance PP Env where
       eline "midi_output"       midi_rendering    pp            
     where 
       eline :: String -> (Env -> a) -> (a -> ODoc) -> ODoc
-      eline s f pp = fillString 20 s <> colon <+> pp (f e)  
+      eline s f pretty = fillString 20 s <> colon <+> pretty (f e)  
       
       ppfun        = const $ text "<fun>"
       
@@ -136,19 +140,22 @@ instance PP MidiRendering where
 -- NoteListDatatypes
 
 instance PP Grouping where
-  pp (Singleton e)       = pp e
+  pp (Singleton e)        = pp e
   
-  pp (Chord se d a)      = brackets (hsep $ unseqMap pp se) <> prime <> pp d
+  pp (Chord se d a)       = applyLyAnno a $ brackets (hsep $ unseqMap pp se) 
+                                              <> prime <> pp d
       
-  pp (GraceNotes se m a) = braces (hsep $ unseqMap fn se) 
+  pp (GraceNotes se _ a)  = applyLyAnno a $ braces (hsep $ unseqMap fn se) 
     where fn (p,d) = pp p <> prime <> pp d
+    
+  pp (Nplet _ _ se a)     = applyLyAnno a $ braces (hsep $ unseqMap pp se)    
   
 instance PP Atom where
   pp (Note p d a)           = applyLyAnno a (pp p <> prime <> pp d)
   pp (Rest d a)             = applyLyAnno a (char 'r' <> pp d)  
   pp (Spacer d a)           = applyLyAnno a (char 's' <> pp d)
-  pp (RhythmicMark l d m)   = text l <> prime <> pp d
-  pp (Mark l m)             = text l
+  pp (RhythmicMark l d _)   = text l <> prime <> pp d
+  pp (Mark l _)             = text l
   pp BeamStart              = lbracket
   pp BeamEnd                = rbracket
   pp Tie                    = char '~'
@@ -156,7 +163,8 @@ instance PP Atom where
 
 instance PP OutputFormat where
   pp Abc        = text "Abc"
-  pp Ly         = text "LilyPond"  
+  pp Ly         = text "LilyPond"
+  pp Midi       = text "Midi"  
 
 instance (PP e) => PP (NoteListF e) where
   pp (NoteList se)        = genPunctuateSeq pp line se
@@ -188,6 +196,8 @@ durationSuffix d = char '\'' <> ppDuration d
 
 --------------------------------------------------------------------------------
 -- MusicRepDatatypes
+
+ppMeterPattern :: MeterPattern -> ODoc
 ppMeterPattern (ns,d) = 
     hcat (punctuate (char '+') $ map  pp ns) <> char '/'<> ppDuration d
 
@@ -303,14 +313,14 @@ instance PP LyCommand where
     
   
 instance PP Expr where
-  pp (Let bind e) = text "let"  <+> pp bind <+> text "in"
-                                <&\> indent 2 (pp e)   
-  pp (SDo out e)  = text "sdo"  <+> pp out <+> text "then" <+> pp e   
-  pp (Do out)     = text "do"   <+> pp out <+> text "end"  
-  pp (Fork e1 e2) = text "fork" <+> 
-                              indent 2 (text "<<" <+>  pp e1 
+  pp (Let bind expr)      = text "let"  <+>  pp bind <+> text "in"
+                                        <&\> indent 2 (pp expr)   
+  pp (SDo out expr)       = text "sdo"  <+> pp out <+> text "then" <+> pp expr   
+  pp (Do out)             = text "do"   <+> pp out <+> text "end"  
+  pp (Fork expr1 expr2)   = text "fork" <+> 
+                              indent 2 (text "<<" <+>  pp expr1 
                                                   <&\> text "//" 
-                                                  <+>  pp e2)
+                                                  <+>  pp expr2)
                              <&\> text ">>"
                                       
 instance Witness [Expr] where
@@ -331,7 +341,10 @@ instance PP Binding where
   pp (LetRelativePitch p) = equation "relative"       (pp p)
   pp (LetNone)            = text "~no-bind" 
 
-equation s e = ppcmd s <+> equals <+> e      
+equation :: [Char] -> ODoc -> ODoc
+equation s e = ppcmd s <+> equals <+> e
+
+ppcmd :: [Char] -> ODoc     
 ppcmd = text . ('\\':) 
 
 
@@ -352,12 +365,11 @@ genFinger f = enclose (text "(|") (text "|)") . genPunctuateSeq f comma
 -- A fold can only see the current element so it would do add an extra sep
 -- e.g.: 1,2,3, 
 genPunctuateSeq :: (a -> ODoc) -> ODoc -> Seq a -> ODoc
-genPunctuateSeq pp sep = para phi emptyDoc
+genPunctuateSeq fn sep = para phi emptyDoc
   where 
-    phi c (se,  d)  | null se        = pp c <+> d 
-                    | otherwise      = pp c <> sep <+> d
+    phi c (se,  d)  | null se        = fn c <+> d 
+                    | otherwise      = fn c <> sep <+> d
                     
                     
- 
-foldrMapE op f = foldr (op `onl` f)
+-- foldrMapE op f = foldr (op `onl` f)
 

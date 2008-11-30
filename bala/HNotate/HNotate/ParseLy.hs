@@ -21,13 +21,11 @@ import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.ParserBase
 import HNotate.Pitch
-import HNotate.ProcessingTypes
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (many, optional, (<|>) )
 import Control.Monad.Trans (liftIO)
 import Data.Ratio
-import Data.Sequence hiding (reverse)
 import Text.ParserCombinators.Parsec hiding (space)
 
 
@@ -51,7 +49,7 @@ translateLyScore (LyScore xs) = maybe [] single (transExprs xs)
 -- The complicated bit...  turning a list into a tree.
 -- The equivalent funtion in ParseAbc has more detailed explanation.
 transExprs :: [LyExpr] -> Maybe Expr
-transExprs xs = tree xs id where 
+transExprs = tree `flip` id where 
   tree []                         k = k Nothing
   
   tree [LyOutput mo]              k = k $ Just (Do (transMetaOutput mo))
@@ -295,6 +293,7 @@ lyAccidental = option Nat (f <$> longestString accidentals)
     f "eses" = DoubleFlat
     f "is"   = Sharp
     f "es"   = Flat
+    f _      = Nat
 
 
 lyDuration :: GenParser Char st Duration

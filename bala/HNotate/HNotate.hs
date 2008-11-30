@@ -35,6 +35,8 @@ module HNotate (
     agracesGrpL, agracesL, agracesL',
     ugracesGrp, ugraces, ugraces',
     ugracesGrpL, ugracesL, ugracesL',
+    npletGrp, nplet, nplet',
+    
     tie, 
     simpleEventlist, 
     ( # ),

@@ -31,6 +31,9 @@ import Prelude hiding (null, length)
 data Fit a = Fit a | Split a a | AllRight a
   deriving Show
 
+-- Note (30/11/08) 
+-- To handle nplets (i.e. tuplets) resizeTo might have to be factored into
+-- resizeLeftTo & resizeRightTo
 class (Ord b, Num b) => Fits a b | a -> b where
   measure   :: a -> b
   resizeTo  :: a -> b -> a
@@ -40,8 +43,10 @@ instance Fits Int Int where
   resizeTo _ b = b 
 
 total :: (Fits a b) => Fit a -> b  
-total (Fit a)     = measure a
-total (Split a b) = measure a + measure b
+total (Fit a)       = measure a
+total (Split a b)   = measure a + measure b
+total (AllRight b)  = measure b
+
 
 fits :: Fits a b => a -> b -> Fit a
 fits a i  | measure a <= i  = Fit a
@@ -61,11 +66,11 @@ fitsSeqHy hyphenate sa i
     | i <= 0      = AllRight sa
     | otherwise   = step (empty,0) (viewl sa)
   where 
-    step (acc,n) EmptyL     = Fit acc
+    step (acc,_) EmptyL     = Fit acc
     step (acc,n) (e :< se)  = case fits e (i - n) of
             Fit a      -> step (acc |> a, n + measure e) (viewl se) 
             Split a b  -> Split (hyphenate $ acc |> a) (b <| se)
-            AllRight b -> if null acc then AllRight (e <| se)
+            AllRight _ -> if null acc then AllRight (e <| se)
                                       else Split acc (e <| se) 
 
                     
@@ -102,14 +107,14 @@ asegmentHy hyphenate asis n se
                     in step ana_segment rest               
   where
     -- firstStep :: Fits a b => Seq a -> (Seq (Seq a), Seq a)
-    firstStep se = case fitsSeqHy hyphenate se asis of
+    firstStep sa = case fitsSeqHy hyphenate sa asis of
                     Fit a       -> (singleton a, empty)
                     Split a b   -> (singleton a, b)
                     AllRight b  -> (empty,       b) 
                     
-    step acc se = case fitsSeqHy hyphenate se n of
+    step acc sa = case fitsSeqHy hyphenate sa n of
                     Fit a       -> acc |> a
                     Split a b   -> step (acc |> a) b -- to keen...
-                    AllRight b  -> error "unreachable" -- (n<=0) guard stops this 
+                    AllRight _  -> error "unreachable" -- (n<=0) guard stops this 
 
  

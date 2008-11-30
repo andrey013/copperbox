@@ -248,75 +248,10 @@ instance FMapMotif PhraseF where
   fmapMotif f (Single mo)       = Single (f mo)
   fmapMotif f (Overlay mo smo)  = Overlay (f mo) (fmap f smo)
   
---------------------------------------------------------------------------------
--- drawing to ascii
--- (could now use padToSquare)
-{-
-
-draw :: (Fits a Duration, Sounds a) => SectionF a -> IO ()
-draw (Section tm se) = 
-    let xss       = F.foldr (\e a -> drawPhrase tm e : a) [] se
-        height    = maximum $ fmap length xss
-        xss'      = transpose $ fmap (toWidth . toHeight height) xss
-    in mapM_ (putStrLn . intercalate "/") xss'
-  where 
-    toHeight :: Int -> [[Char]] -> [[Char]]
-    toHeight h xs | h > length xs = xs ++ replicate (h - length xs) "" 
-                  | otherwise     = xs    
-    
-    toWidth :: [[Char]] -> [[Char]]
-    toWidth xss = let width = maximum $ fmap length xss
-                  in fmap (\e -> if null e then (pad width e) else e) xss  
-  
-
-pad :: Int -> [Char] -> [Char]
-pad n xs = let l = length xs in
-           if n <= l then xs else xs ++ replicate (n - l) ' ' 
-                               
-
---- need to pad...
-drawPhrase :: (Fits a Duration, Sounds a) => TimeSig -> PhraseF a -> [[Char]]
-drawPhrase tm (Single mo)         = [drawMotif tm mo]
-drawPhrase tm o@(Overlay mo smo)  = drawPad d tm mo : xs where
-  d = maxPhraseDuration o
-  xs = F.foldr (\e a -> drawPad d tm e : a) [] smo
-  
-  drawPad :: (Fits a Duration, Sounds a) => Duration ->  TimeSig -> MotifF a -> [Char] 
-  drawPad d tm mo = let w   = length $ spaces tm d
-                        chs = drawMotif tm mo
-                    in pad w chs
-  
-  spaces :: TimeSig -> Duration -> [Char]
-  spaces (n,d) dn = drawSounds (n,d) $ singleton dn
-  
-
-drawMotif :: (Fits a Duration, Sounds a) => TimeSig -> MotifF a -> [Char]
-drawMotif tm (Motif se) = drawSounds tm se    
-
-drawSounds :: (Fits a Duration, Sounds a) => TimeSig -> Seq a -> [Char]
-drawSounds tm se = 
-    F.foldr (\e a -> (xdot1 $ aggregateSounds1 e) : a) [] (segmentByTS tm se)
-  where    
-    xdot1 :: Bool -> Char
-    xdot1 True    = 'x'
-    xdot1 False   = '.'
-
-    aggregateSounds1 :: (Fits a Duration, Sounds a) => Seq a -> Bool
-    aggregateSounds1 se = gteHalf (sumSounds se) (sumMeasure se) where
-      sumSounds = F.foldl fn duration_zero  
-    
-      fn a e | sounds e   = a + measure e
-             | otherwise  = a
-      
-      gteHalf :: Duration -> Duration -> Bool
-      gteHalf a b = a >= (b / 2)
-
--}
       
 --------------------------------------------------------------------------------
--- drawing alternative - directly make a clave pattern
 -- Note this does 'aggregation' so it certainly isn't an exact representation
--- Also linearTransform loses bar information
+-- Also @linearTransform@ loses bar information
 
 draw :: (Sounds a, Fits a Duration, RhythmicValue a) => 
             Duration -> SectionF a -> IO ()

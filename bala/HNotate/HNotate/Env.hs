@@ -70,8 +70,6 @@ import HNotate.NotateMonad
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
 
-import Control.Applicative 
-import Control.Monad.Reader
 import Data.Maybe (fromMaybe)
 import Data.Ratio
 
@@ -184,8 +182,6 @@ default_midi_env = Env {
     _midi_rendering         = Midi_Parallel,
     _tempo                  = 120
   }
-  where
-    abcComment str = line <> char '%' <+> string str <> line
     
 
 
