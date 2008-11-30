@@ -135,7 +135,7 @@ instance PP MidiRendering where
 --------------------------------------------------------------------------------
 -- NoteListDatatypes
 
-instance PP Tile where
+instance PP Grouping where
   pp (Singleton e)       = pp e
   
   pp (Chord se d a)      = brackets (hsep $ unseqMap pp se) <> prime <> pp d
@@ -143,7 +143,7 @@ instance PP Tile where
   pp (GraceNotes se m a) = braces (hsep $ unseqMap fn se) 
     where fn (p,d) = pp p <> prime <> pp d
   
-instance PP Glyph where
+instance PP Atom where
   pp (Note p d a)           = applyLyAnno a (pp p <> prime <> pp d)
   pp (Rest d a)             = applyLyAnno a (char 'r' <> pp d)  
   pp (Spacer d a)           = applyLyAnno a (char 's' <> pp d)

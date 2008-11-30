@@ -79,7 +79,7 @@ data EvtVoiceOverlay = EVO {
   
 data GlyphVoiceOverlay = GVO { 
     gvo_displacement  :: MetricalDisplacement,
-    gvo_tiles         :: Seq Tile
+    gvo_tiles         :: Seq Grouping
   }
   deriving (Show) 
 
@@ -135,12 +135,12 @@ reduceTreeStep bar_len (EVO ms se) = mkAnswer $ F.foldl fn (ms,empty,[]) se
     fn (ms,se,polys) (Evt e)    = (moveRightwards bar_len e ms, se |> e, polys)
 
 
-moveRightwards :: Duration -> Tile -> MetricalDisplacement -> MetricalDisplacement
+moveRightwards :: Duration -> Grouping -> MetricalDisplacement -> MetricalDisplacement
 moveRightwards bar_len tile ms = 
     mdispNormalize bar_len $ ms `displaceRightwards` (rhythmicValue tile)
                  
 
-type RawBar = (Int,Seq Tile)
+type RawBar = (Int,Seq Grouping)
 
 number :: Int -> Seq a -> Seq (Int,a)
 number start se = step (viewl se) [start..] where
@@ -150,15 +150,15 @@ number start se = step (viewl se) [start..] where
 
 partitionGVO :: Duration -> GlyphVoiceOverlay -> Seq RawBar
 partitionGVO bar_len (GVO (StdDisp bar_num disp) se) = 
-    number bar_num $ asegmentHy (|> tieTile) 0 bar_len (preprocess disp se) 
+    number bar_num $ asegmentHy (|> tieSgl) 0 bar_len (preprocess disp se) 
   where
     preprocess d se | d == duration_zero  = se
-                    | otherwise           = (spacerTile d) <| se  
+                    | otherwise           = (spacerSgl d) <| se  
 
 partitionGVO bar_len (GVO (AnaDisp asis) se) = 
-    number 0 $ asegmentHy (|> tieTile) asis bar_len se 
+    number 0 $ asegmentHy (|> tieSgl) asis bar_len se 
     
-instance Fits Glyph Duration where
+instance Fits Atom Duration where
   measure (Note _ d _)            = d
   measure (Rest d _)              = d
   measure (Spacer d _)            = d
@@ -179,7 +179,7 @@ instance Fits Glyph Duration where
   resizeTo Tie                    d = Tie
   
   
-instance Fits Tile Duration where
+instance Fits Grouping Duration where
   measure (Singleton e)           = measure e                                                
   measure (Chord se d a)          = d  
   measure (GraceNotes se m a)     = duration_zero

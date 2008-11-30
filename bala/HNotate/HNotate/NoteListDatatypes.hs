@@ -39,7 +39,8 @@ data OutputFormat = Abc | Ly | Midi
   deriving (Eq,Show) 
   
 --------------------------------------------------------------------------------
--- The base view of printable elements - glyphs and 'tiles' which group glyphs.
+-- The base view of printable elements 
+-- - atoms and 'groupings' which group atoms.
 
 data Annotation = Annotation { _ly_anno   :: ODoc -> ODoc, 
                                _abc_anno  :: ODoc -> ODoc }  
@@ -56,16 +57,16 @@ type Label = String
 
 -- Marks might have duration (RhythmicMark) - e.g. 'drum pitches'
 -- Or they may just be typographical symbols (Mark) - e.g. tie
-data Glyph = Note Pitch Duration Annotation
-           | Rest   Duration Annotation
-           | Spacer Duration Annotation
-           | forall a. RhythmicMark Label Duration (Mark a)
-           | forall a. Mark Label (Mark a)
-           | BeamStart
-           | BeamEnd
-           | Tie
+data Atom = Note Pitch Duration Annotation
+          | Rest   Duration Annotation
+          | Spacer Duration Annotation
+          | forall a. RhythmicMark Label Duration (Mark a)
+          | forall a. Mark Label (Mark a)
+          | BeamStart
+          | BeamEnd
+          | Tie
 
-instance Show Glyph where
+instance Show Atom where
   showsPrec i (Note p d a)          = constrS "Note" (showsPrecChain3 i p d a)     
   showsPrec i (Rest d a)            = constrS "Rest" (showsPrecChain2 i d a)
   showsPrec i (Spacer d a)          = constrS "Spacer" (showsPrecChain2 i d a)
@@ -90,26 +91,32 @@ data GraceMode = UGrace  -- unaccented - subtract duration from preceeding note
                | AGrace  -- accented   - subtract duration from following note   
   deriving (Eq,Show)
 
--- The Tile datatype imposes little structure on the 'music'. 
--- There are special sorts  for groups (chord, gracesnotes) only where 
--- they need special interpretation for duration (rhythmic value).
+-- The Grouping datatype - represents elements with a 'unit duration'.
+-- E.g a chord has a set of pitches but the unit duration is common to all 
+-- of them. 
+
+-- Note - not much structure is imposed on the 'music'. 
+-- There are special constructors for Grouping only where 
+-- they need special interpretation for duration:
+-- chord - simultaneous, gracesnotes - subraction from preceeding or suceeding
+-- note.
 -- Other grouped elements (e.g. notes grouped by a slur) have no 'syntax',
 -- instead the are represented 'lexically' - a slur_begin mark would indicate
 -- the start of a slur and a slur_end mark the end.
 -- HNotate generally views the notelist as a stream of lexemes rather than a
 -- parse tree.
 
--- No annotation for a singleton - annotations are contained in the Glyph. 
-data Tile = Singleton { element         :: Glyph }                  
+-- No annotation for a singleton - annotations are contained in the Atom. 
+data Grouping = Singleton { element         :: Atom }                  
+              
+              | Chord { chord_elements      :: Seq Pitch, 
+                        rhythmic_value      :: Duration,
+                        annotation          :: Annotation }
           
-          | Chord { chord_elements      :: Seq Pitch, 
-                    rhythmic_value      :: Duration,
-                    annotation          :: Annotation }
-          
-          | GraceNotes { grace_elements :: Seq GraceNote,
-                         grace_mode     :: GraceMode,
-                         annotation     :: Annotation }     
-  deriving (Show)                             
+              | GraceNotes { grace_elements :: Seq GraceNote,
+                             grace_mode     :: GraceMode,
+                             annotation     :: Annotation }     
+      deriving (Show)                             
                   
           -- TODO tuplets (generalized to n-plets)        
   
@@ -139,7 +146,7 @@ type EventList = EventListF Evt
 
 
 -- Change the type, or how its used?
-data Evt = Evt Tile
+data Evt = Evt Grouping
          | Poly [EventListF Evt]         
          
 instance Monoid (EventListF evt) where
@@ -160,7 +167,7 @@ instance Show Evt where
 -- by a single instrument.
 newtype NoteListF e   = NoteList { getNoteList :: Seq (BlockF e) }
 
-type NoteList         = NoteListF Tile
+type NoteList         = NoteListF Grouping
 
 
 -- Follow the Abc style when voice overlays are grouped in whole bars.
@@ -168,11 +175,11 @@ type NoteList         = NoteListF Tile
 data BlockF e         = SingleBlock Int (BarF e)
                       | PolyBlock   Int (Seq (BarF e))
 
-type Block            = BlockF Tile
+type Block            = BlockF Grouping
 
 newtype BarF e        = Bar { getBar :: Seq e }
 
-type Bar              = BarF Tile
+type Bar              = BarF Grouping
   
 
 --------------------------------------------------------------------------------
@@ -221,7 +228,7 @@ instance Traversable BarF where
 --------------------------------------------------------------------------------
 -- RhythmicValue insatnces   
   
-instance RhythmicValue Tile where
+instance RhythmicValue Grouping where
   rhythmicValue (Singleton e)           = rhythmicValue e
   rhythmicValue (Chord _ d _)           = d
   rhythmicValue (GraceNotes _ _ _)      = duration_zero
@@ -231,7 +238,7 @@ instance RhythmicValue Tile where
   modifyDuration (GraceNotes se m a)  d = GraceNotes se m a
   
   
-instance RhythmicValue Glyph where
+instance RhythmicValue Atom where
   rhythmicValue (Note _ d _)            = d
   rhythmicValue (Rest d _)              = d
   rhythmicValue (Spacer d _)            = d
@@ -250,7 +257,7 @@ instance RhythmicValue Glyph where
   modifyDuration BeamEnd              d = BeamEnd
   modifyDuration Tie                  d = Tie
 
-instance PitchValue Glyph where
+instance PitchValue Atom where
   pitchValue (Note p _ _)            = Just p
   pitchValue (Rest _ _)              = Nothing
   pitchValue (Spacer _ _)            = Nothing
@@ -312,142 +319,146 @@ poly xs t         = t |*> Poly xs
 noAnno :: Annotation 
 noAnno = Annotation { _ly_anno=id, _abc_anno=id }  
 
-noteTile          :: Pitch -> Duration -> Tile 
-noteTile p d      = Singleton $ Note p d noAnno
+noteSgl           :: Pitch -> Duration -> Grouping 
+noteSgl p d       = Singleton $ Note p d noAnno
 
-noteTile'         :: Pitch -> Duration -> Annotation -> Tile 
-noteTile' p d a   = Singleton $ Note p d a 
+noteSgl'          :: Pitch -> Duration -> Annotation -> Grouping 
+noteSgl' p d a    = Singleton $ Note p d a 
 
 note              :: Pitch -> Duration -> EventList -> EventList
-note  p d t       = t |*> Evt (noteTile p d)
+note  p d t       = t |*> Evt (noteSgl p d)
 
 note'             :: Pitch -> Duration -> Annotation -> EventList -> EventList
-note' p d a t     = t |*> Evt (noteTile' p d a)
+note' p d a t     = t |*> Evt (noteSgl' p d a)
 
-restTile          :: Duration -> Tile 
-restTile d        = Singleton $ Rest d noAnno 
+restSgl           :: Duration -> Grouping 
+restSgl d         = Singleton $ Rest d noAnno 
 
-restTile'         :: Duration -> Annotation -> Tile 
-restTile' d a     = Singleton $ Rest d a
+restSgl'          :: Duration -> Annotation -> Grouping 
+restSgl' d a      = Singleton $ Rest d a
 
 
 rest              :: Duration -> EventList -> EventList
-rest d t          = t |*> Evt (restTile d)
+rest d t          = t |*> Evt (restSgl d)
 
 rest'             :: Duration -> Annotation -> EventList -> EventList
-rest' d a t       = t |*> Evt (restTile' d a)
+rest' d a t       = t |*> Evt (restSgl' d a)
 
-spacerTile        :: Duration -> Tile 
-spacerTile d      = Singleton $ Spacer d noAnno 
+spacerSgl         :: Duration -> Grouping 
+spacerSgl d       = Singleton $ Spacer d noAnno 
 
-spacerTile'       :: Duration -> Annotation -> Tile 
-spacerTile' d a   = Singleton $ Spacer d a
+spacerSgl'        :: Duration -> Annotation -> Grouping 
+spacerSgl' d a    = Singleton $ Spacer d a
 
 
 spacer            :: Duration -> EventList -> EventList
-spacer d t        = t |*> Evt (spacerTile d)
+spacer d t        = t |*> Evt (spacerSgl d)
 
 spacer'           :: Duration -> Annotation -> EventList -> EventList
-spacer' d a t     = t |*> Evt (spacerTile' d a)
+spacer' d a t     = t |*> Evt (spacerSgl' d a)
 
-chordTile         :: Seq Pitch -> Duration -> Tile
-chordTile se d    = Chord se d noAnno
+chordGrp          :: Seq Pitch -> Duration -> Grouping
+chordGrp se d     = Chord se d noAnno
 
-chordTile'        :: Seq Pitch -> Duration -> Annotation -> Tile
-chordTile' se d a = Chord se d a
+chordGrp'         :: Seq Pitch -> Duration -> Annotation -> Grouping
+chordGrp' se d a  = Chord se d a
 
 chord             :: Seq Pitch -> Duration -> EventList -> EventList
-chord se d t      = t |*> Evt (chordTile se d)
+chord se d t      = t |*> Evt (chordGrp se d)
 
 chord'            :: Seq Pitch -> Duration -> Annotation -> EventList -> EventList
-chord' se d a t   = t |*> Evt (chordTile' se d a)
+chord' se d a t   = t |*> Evt (chordGrp' se d a)
 
-chordTileL        :: [Pitch] -> Duration ->  Annotation -> Tile
-chordTileL xs d a = Chord (fromList xs) d a
+chordGrpL         :: [Pitch] -> Duration ->  Annotation -> Grouping
+chordGrpL xs d a  = Chord (fromList xs) d a
 
 chordL            :: [Pitch] -> Duration -> EventList -> EventList
-chordL xs d t     = t |*> Evt (chordTileL xs d noAnno)
+chordL xs d t     = t |*> Evt (chordGrpL xs d noAnno)
 
 chordL'           :: [Pitch] -> Duration -> Annotation -> EventList -> EventList
-chordL' xs d a t  = t |*> Evt (chordTileL xs d a)
+chordL' xs d a t  = t |*> Evt (chordGrpL xs d a)
 
 
-ugracesTile       :: Seq (Pitch,Duration) -> Tile
-ugracesTile se    = GraceNotes se UGrace noAnno
+ugracesGrp        :: Seq (Pitch,Duration) -> Grouping
+ugracesGrp se     = GraceNotes se UGrace noAnno
 
-ugracesTile'      :: Seq (Pitch,Duration) -> Annotation -> Tile
-ugracesTile' se a = GraceNotes se UGrace a
+ugracesGrp'       :: Seq (Pitch,Duration) -> Annotation -> Grouping
+ugracesGrp' se a  = GraceNotes se UGrace a
 
 ugraces           :: Seq (Pitch,Duration) -> EventList -> EventList
-ugraces se t      = t |*> Evt (ugracesTile se)
+ugraces se t      = t |*> Evt (ugracesGrp se)
 
 ugraces'          :: Seq (Pitch,Duration) -> Annotation -> EventList -> EventList
-ugraces' se a t   = t |*> Evt (ugracesTile' se a)
+ugraces' se a t   = t |*> Evt (ugracesGrp' se a)
 
-ugracesTileL      :: [(Pitch,Duration)] -> Tile
-ugracesTileL xs   = ugracesTile (fromList xs)
+ugracesGrpL       :: [(Pitch,Duration)] -> Grouping
+ugracesGrpL xs    = ugracesGrp (fromList xs)
 
-ugracesTileL'     :: [(Pitch,Duration)] -> Annotation -> Tile
-ugracesTileL' xs a = ugracesTile' (fromList xs) a
+ugracesGrpL'      :: [(Pitch,Duration)] -> Annotation -> Grouping
+ugracesGrpL' xs a = ugracesGrp' (fromList xs) a
 
 
 ugracesL          :: [(Pitch,Duration)] -> EventList -> EventList
-ugracesL xs t     = t |*> Evt (ugracesTileL xs)
+ugracesL xs t     = t |*> Evt (ugracesGrpL xs)
 
 ugracesL'         :: [(Pitch,Duration)] -> Annotation -> EventList -> EventList
-ugracesL' xs a t  = t |*> Evt (ugracesTileL' xs a)
+ugracesL' xs a t  = t |*> Evt (ugracesGrpL' xs a)
 
 
-agracesTile       :: Seq (Pitch,Duration) -> Tile
-agracesTile se    = GraceNotes se AGrace noAnno
+agracesGrp        :: Seq (Pitch,Duration) -> Grouping
+agracesGrp se     = GraceNotes se AGrace noAnno
 
-agracesTile'      :: Seq (Pitch,Duration) -> Annotation -> Tile
-agracesTile' se a  = GraceNotes se AGrace a
+agracesGrp'       :: Seq (Pitch,Duration) -> Annotation -> Grouping
+agracesGrp' se a  = GraceNotes se AGrace a
 
 agraces           :: Seq (Pitch,Duration) -> EventList -> EventList
-agraces se t      = t |*> Evt (agracesTile se)
+agraces se t      = t |*> Evt (agracesGrp se)
 
 agraces'          :: Seq (Pitch,Duration) -> Annotation -> EventList -> EventList
-agraces' se a t   = t |*> Evt (agracesTile' se a)
+agraces' se a t   = t |*> Evt (agracesGrp' se a)
 
-agracesTileL      :: [(Pitch,Duration)] -> Tile
-agracesTileL xs   = agracesTile (fromList xs) 
+agracesGrpL       :: [(Pitch,Duration)] -> Grouping
+agracesGrpL xs    = agracesGrp (fromList xs) 
 
-agracesTileL'     :: [(Pitch,Duration)] -> Annotation -> Tile
-agracesTileL' xs a = agracesTile' (fromList xs) a
+agracesGrpL'      :: [(Pitch,Duration)] -> Annotation -> Grouping
+agracesGrpL' xs a = agracesGrp' (fromList xs) a
 
 
 agracesL          :: [(Pitch,Duration)] -> EventList -> EventList
-agracesL xs t     = t |*> Evt (agracesTileL xs)
+agracesL xs t     = t |*> Evt (agracesGrpL xs)
 
 agracesL'         :: [(Pitch,Duration)] -> Annotation -> EventList -> EventList
-agracesL' xs a t  = t |*> Evt (agracesTileL' xs a)
+agracesL' xs a t  = t |*> Evt (agracesGrpL' xs a)
  
     
-tieTile :: Tile
-tieTile = Singleton Tie
+tieSgl     :: Grouping
+tieSgl     = Singleton Tie
 
 tie             :: EventList -> EventList
-tie t           = t |*> Evt tieTile
+tie t           = t |*> Evt tieSgl
 
 
-beamStart :: Tile
-beamStart = Singleton BeamStart 
+beamStartSgl  :: Grouping
+beamStartSgl  = Singleton BeamStart 
 
-beamEnd :: Tile
-beamEnd = Singleton BeamEnd
+beamStart     :: EventList -> EventList
+beamStart t   = t |*> Evt  beamStartSgl
 
+beamEndSgl    :: Grouping
+beamEndSgl    = Singleton BeamEnd
 
+beamEnd       :: EventList -> EventList
+beamEnd t     = t |*> Evt  beamEndSgl
 
 simpleEventlist        :: [Pitch] -> Duration -> EventList
 simpleEventlist ps d   = foldl (\t p -> t # note p d) root ps
 
 
 
-emptyTile :: Tile -> Bool
-emptyTile (Singleton _)         = False
-emptyTile (Chord se _ _)        = null se
-emptyTile (GraceNotes se _ _)   = null se
+emptyGrouping :: Grouping -> Bool
+emptyGrouping (Singleton _)         = False
+emptyGrouping (Chord se _ _)        = null se
+emptyGrouping (GraceNotes se _ _)   = null se
 
   
         

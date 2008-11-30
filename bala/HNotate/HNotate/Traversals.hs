@@ -80,11 +80,11 @@ instance (Applicative m, Applicative n) => Applicative (Comp m n) where
  
 
 
-changeDuration :: Glyph -> Duration -> Glyph
+changeDuration :: Atom -> Duration -> Atom
 changeDuration = modifyDuration
 
 {-
-modifyPitch :: Glyph -> Pitch -> Glyph
+modifyPitch :: Atom -> Pitch -> Atom
 modifyPitch (Note _ d a)         p = Note p d a
 modifyPitch (Rest m d a)         p = Rest m d a
 modifyPitch (RhythmicMark l d m) p = RhythmicMark l d m
@@ -104,7 +104,7 @@ mkLyState pch = LyState { rel_pitch = pch, rel_duration = quarter }
 -- run length encode the duration - LilyPond uses this method
 
 -- drle - duration run length encode
-drleBody :: Tile -> WrappedMonad (State LyState) Tile
+drleBody :: Grouping -> WrappedMonad (State LyState) Grouping
 drleBody e = WrapMonad $ do
     od <- diffDuration (rhythmicValue e)
     return $ modifyDuration e od    
@@ -132,7 +132,7 @@ drleBody e = WrapMonad $ do
 -- and the subsequent notes only change it 'locally'.
 -- All successive notes in a grace notes change 'global' relative pitch
  
-proBody :: Tile -> WrappedMonad (State LyState) Tile
+proBody :: Grouping -> WrappedMonad (State LyState) Grouping
 proBody e = WrapMonad $ step e
   where 
     step (Singleton e)        = Singleton <$> gstep e 
@@ -142,7 +142,7 @@ proBody e = WrapMonad $ step e
     step (GraceNotes se m a)  = (\se' -> GraceNotes se' m a) <$> mapM fn se
       where fn (p,d) = convPitch p >>= \p' -> return (p',d)
     
-    gstep :: Glyph ->  State LyState Glyph
+    gstep :: Atom ->  State LyState Atom
     gstep e@(Note p d a)      = (modifyPitch e) <$> convPitch p 
     gstep e                   = return e
 
@@ -180,7 +180,7 @@ changeOctaveWrt pch@(Pitch l a o) base = Pitch l a (base `octaveDist` pch)
 -- (a negative number gives the number of ,,, 's)   
 
 
-losBody :: Tile -> WrappedMonad Identity Tile
+losBody :: Grouping -> WrappedMonad Identity Grouping
 losBody e = WrapMonad $ return $ fn e
   where
     fn (Singleton (Note p d anno))  = Singleton (Note (down3ve p)  d anno)
@@ -198,7 +198,7 @@ losBody e = WrapMonad $ return $ fn e
 
 
 -- unit note length encode
-unleBody :: Monad m => Tile -> WrappedMonad (NotateMonadT Env Config m) Tile
+unleBody :: Monad m => Grouping -> WrappedMonad (NotateMonadT Env Config m) Grouping
 unleBody e = let drn = rhythmicValue e in WrapMonad $ 
              fn e drn <$> asks unit_note_length
   where
@@ -214,7 +214,7 @@ unleBody e = let drn = rhythmicValue e in WrapMonad $
 -- pitch label rename     
 
 -- unit note length encode
-plrBody :: Monad m => Tile -> WrappedMonad (NotateMonadT Env Config m) Tile
+plrBody :: Monad m => Grouping -> WrappedMonad (NotateMonadT Env Config m) Grouping
 plrBody e = WrapMonad $ (respell e) <$> asks label_set
   where
     respell (Singleton e)       ls = Singleton (respell' e ls)

@@ -85,10 +85,10 @@ barDoc = collapse . F.foldl fn (emptyDoc,(<+>),emptyDoc)
   where 
     collapse (out,op,tip) = out `op` tip
   
-    fn :: (ODoc, ODocConcat, ODoc) -> Tile -> (ODoc, ODocConcat, ODoc)
+    fn :: (ODoc, ODocConcat, ODoc) -> Grouping -> (ODoc, ODocConcat, ODoc)
     fn (out,op,tip) (Singleton BeamStart) = (out `op` tip, (<>),  emptyDoc)
     fn (out,op,tip) (Singleton BeamEnd)   = (out `op` tip, (<+>), emptyDoc)
-    fn (out,op,tip) (Singleton e)         = (out `op` tip,  op,   glyph e)
+    fn (out,op,tip) (Singleton e)         = (out `op` tip,  op,   atom e)
           
     fn (out,op,tip) (Chord se d a)        = (out `op` tip,  op, chord se d a)
     fn (out,op,tip) (GraceNotes se m a)   = (out `op` tip,  op, gracenotes se a)
@@ -99,15 +99,15 @@ barDoc = collapse . F.foldl fn (emptyDoc,(<+>),emptyDoc)
 
 
 
-glyph :: Glyph -> ODoc
-glyph (Note p d a)          = applyAbcAnno a $ note p d
-glyph (Rest d a)            = applyAbcAnno a $ rest d
-glyph (Spacer d a)          = applyAbcAnno a $ spacer d
-glyph (RhythmicMark _ d m)  = abcOutput m <> duration d
-glyph (Mark _ m)            = abcOutput m
-glyph BeamStart             = emptyDoc
-glyph BeamEnd               = emptyDoc
-glyph Tie                   = char '~'
+atom :: Atom -> ODoc
+atom (Note p d a)          = applyAbcAnno a $ note p d
+atom (Rest d a)            = applyAbcAnno a $ rest d
+atom (Spacer d a)          = applyAbcAnno a $ spacer d
+atom (RhythmicMark _ d m)  = abcOutput m <> duration d
+atom (Mark _ m)            = abcOutput m
+atom BeamStart             = emptyDoc
+atom BeamEnd               = emptyDoc
+atom Tie                   = char '~'
 
 
 

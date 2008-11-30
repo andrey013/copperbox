@@ -91,15 +91,15 @@ blockDoc (PolyBlock i se)  = (i, polyphony se <+> barcheck)
     
 
 
-glyph :: Glyph -> ODoc
-glyph (Note p d a)          = applyLyAnno a $ note p d
-glyph (Rest d a)            = applyLyAnno a $ rest d
-glyph (Spacer d a)          = applyLyAnno a $ spacer d
-glyph (RhythmicMark _ d m)  = lyOutput m <> duration d
-glyph (Mark _ m)            = lyOutput m
-glyph BeamStart             = emptyDoc
-glyph BeamEnd               = emptyDoc
-glyph Tie                   = char '~'
+atom :: Atom -> ODoc
+atom (Note p d a)          = applyLyAnno a $ note p d
+atom (Rest d a)            = applyLyAnno a $ rest d
+atom (Spacer d a)          = applyLyAnno a $ spacer d
+atom (RhythmicMark _ d m)  = lyOutput m <> duration d
+atom (Mark _ m)            = lyOutput m
+atom BeamStart             = emptyDoc
+atom BeamEnd               = emptyDoc
+atom Tie                   = char '~'
 
 
 
@@ -124,10 +124,10 @@ barDoc = collapse . F.foldl fn (emptyDoc,emptyDoc)
   where 
     collapse (out,tip) = out <+> tip
     
-    fn :: (ODoc, ODoc) -> Tile -> (ODoc, ODoc)
+    fn :: (ODoc, ODoc) -> Grouping -> (ODoc, ODoc)
     fn (out,tip) (Singleton BeamStart)  = (out <+> tip, anno bSt tip)
     fn (out,tip) (Singleton BeamEnd)    = (out <+> tip, anno bEnd tip)
-    fn (out,tip) (Singleton e)          = (out <+> tip, glyph e)
+    fn (out,tip) (Singleton e)          = (out <+> tip, atom e)
           
     fn (out,tip) (Chord se d a)         = (out <+> tip, chord se d a)
     fn (out,tip) (GraceNotes se m a)    = (out <+> tip, gracenotes se a) 
