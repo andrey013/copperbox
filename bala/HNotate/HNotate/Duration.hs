@@ -31,13 +31,13 @@ module HNotate.Duration (
     -- * Helper for ratios
     ratioElements, convRational, convRatio,
     durationToDouble, divModR,
-   
-    base2numbers'inf,
+
     
     -- * printing
     PrintableDuration(..), printableDuration,
     pdElements,
 
+    approximateDuration,
     
 
     -- * Named instances (American)
@@ -59,7 +59,6 @@ module HNotate.Duration (
 -- Avoid internal dependencies as this module is included in Bala
 
 import Data.List (unfoldr)
-import Data.Monoid
 import Data.Ratio
 
 
@@ -86,7 +85,11 @@ no_duration = 0
 
 dotn :: Int -> Duration -> Duration
 dotn i d | i < 1 = d
-         | otherwise  = sum $ d : take i (halves'inf d)
+         | otherwise  = d + step i (d /2)
+  where
+    step 0 _ = 0
+    step n d' = d' + step (n-1) (d' / 2)
+             
     
 ratioElements :: Integral a => Ratio a -> (a,a)
 ratioElements r = (numerator r, denominator r)
@@ -119,7 +122,7 @@ data PrintableDuration = PrintableDuration {
     _duration  :: Rational,
     _dot_count :: Int 
   }
-  deriving (Eq,Ord)
+  deriving (Eq,Ord,Show)
 
 
 -- | @'rationalize'@ - turn a PrintableDuration back
@@ -128,8 +131,8 @@ rationalize :: PrintableDuration -> Rational
 rationalize (PrintableDuration r n) | n >  0     = sum $ r : unfoldr phi (n,r/2)
                                     | otherwise  = r 
   where 
-    phi (0,r) = Nothing
-    phi (n,r) = Just (r,(n-1,r/2)) 
+    phi (0,_) = Nothing
+    phi (i,a) = Just (a,(i-1,a/2)) 
     
 pdElements :: PrintableDuration -> (Int,Int,Int)  
 pdElements (PrintableDuration r dc) = 
@@ -147,47 +150,31 @@ printableDuration r
 
     
 approximateDuration :: Duration -> PrintableDuration
-approximateDuration r
-    | r >= 1    = uncurry PrintableDuration $ dotincrease $ upwardsFind r
-    | otherwise = uncurry PrintableDuration $ dotincrease $ downwardsFind r
+approximateDuration drn 
+    | drn > 1   = let approxd = nearestUp drn
+                  in PrintableDuration approxd (dotting drn approxd)
+    | drn < 1   = let approxd = nearestDown drn
+                  in PrintableDuration approxd (dotting drn approxd)
+    | otherwise = PrintableDuration (1%1) 0
   where
-    upwardsFind r           = upwardsNext r $ map (%1) base2numbers'inf
+    nearestUp :: Rational -> Rational
+    nearestUp r = step (1 % 1) (2 * (1 % 1)) where
+      step n k | k > r      = n
+               | otherwise  = step k (2 * k)
+       
     
-    -- upwardsNext needs lookahead - for (5%1) we want to stop on (4%1) 
-    -- rather than go to (8%1) 
-    upwardsNext a (x:y:ys)  | a >= x && a < y = x
-                            | otherwise       = upwardsNext a (y:ys)
-    
-    downwardsFind r'        = downwardsNext1 r' $ map (1%) base2numbers'inf
-    
-    downwardsNext1 a (x:xs) | a >= x          = x
-                            | otherwise       = downwardsNext1 a xs
-                            
-    dotincrease r' | r' == r   = (r',0)
-                   | otherwise = let dc = reccy r' 1 (halves'inf r') in (r',dc)
+    nearestDown :: Rational -> Rational
+    nearestDown r = step ((1 % 1) / 2) where
+      step k | k < r      = k
+             | otherwise  = step (k / 2)
     
     
-    reccy :: Rational -> Int -> [Rational] -> Int  
-    reccy z i   (x:y:ys) | z+x <= r  && z+x+y >= r = if nearer r (z+x) (z+x+y)
-                                                       then i else i+1
-                         | otherwise               = reccy (z+x) (i+1) (y:ys)     
-    
-    reccy z i   _        = error $ "approximateDuration unhandled " ++ show r
-    
-    nearer a l r' = (a - l) <= (r' - a) 
+    dotting :: Rational -> Rational -> Int
+    dotting d dapprox = step 1 where
+      step i | dotn i dapprox > d = (i-1)
+             | i > 3              = i -- to do (dotting doesn't converge...)
+             | otherwise          = step (i+1) 
                               
-halves'inf :: Rational -> [Rational]
-halves'inf r = unfoldr phi r
-  where
-    phi r = Just (r / 2, r / 2)
-
--- Note: infinte list                
-base2numbers'inf :: [Integer]
-base2numbers'inf = unfoldr (\x -> Just (x, x * 2)) 1 
-
-
-
-
 
       
 --------------------------------------------------------------------------------
