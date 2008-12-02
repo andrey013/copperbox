@@ -32,7 +32,7 @@ module HNotate.Duration (
     ratioElements, convRational, convRatio,
     durationToDouble, divModR,
 
-    
+
     -- * printing
     PrintableDuration(..), printableDuration,
     pdElements,
@@ -106,6 +106,9 @@ convRatio = uncurry (%) . rfork fromIntegral
 durationToDouble :: Duration -> Double
 durationToDouble = uncurry (/) . rfork fromIntegral
 
+
+
+
 --------------------------------------------------------------------------------
 -- divMod (with rounding) for rationals 
 
@@ -165,14 +168,15 @@ approximateDuration drn
     
     nearestDown :: Rational -> Rational
     nearestDown r = step ((1 % 1) / 2) where
-      step k | k < r      = k
+      step k | k <= r     = k
              | otherwise  = step (k / 2)
     
     
     dotting :: Rational -> Rational -> Int
-    dotting d dapprox = step 1 where
+    dotting d dapprox | d == dapprox  = 0
+                      | otherwise     = step 1 where
       step i | dotn i dapprox > d = (i-1)
-             | i > 3              = i -- to do (dotting doesn't converge...)
+             | i > 3              = i
              | otherwise          = step (i+1) 
                               
 

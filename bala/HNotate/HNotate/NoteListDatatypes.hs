@@ -33,6 +33,7 @@ import Control.Applicative hiding (empty)
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
 import Data.Monoid
+import Data.Ratio
 import Data.Sequence
 import Data.Traversable
 import Prelude hiding (null, length)
@@ -133,11 +134,8 @@ data Mark phantom = Marker { _ly_output   :: ODoc,
 instance Show (Mark a) where
   show (Marker _ _) = "<Mark>"          
 
-npletDuration :: Int -> Duration -> Seq Pitch -> Duration
-npletDuration mult unit_d notes = 
-  let l = length notes in (makeDuration mult l) * unit_d * (makeDuration l 1)
-
-                                         
+npletDuration :: Int -> Duration -> Duration
+npletDuration len unit_d = (fromIntegral len % 1) * unit_d                                        
                                            
 --------------------------------------------------------------------------------
 -- The External view - EventList - events with no rhythmical grouping
@@ -234,7 +232,7 @@ instance RhythmicValue Grouping where
   rhythmicValue (Singleton e)           = rhythmicValue e
   rhythmicValue (Chord _ d _)           = d
   rhythmicValue (GraceNotes _ _ _)      = duration_zero
-  rhythmicValue (Nplet i d se _)        = npletDuration i d se
+  rhythmicValue (Nplet i d _ _)         = npletDuration i d
  
   
   modifyDuration (Singleton e)        d = Singleton (e `modifyDuration` d)

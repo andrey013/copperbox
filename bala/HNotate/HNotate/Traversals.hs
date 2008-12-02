@@ -93,6 +93,13 @@ mkLyState pch = LyState { rel_pitch = pch, rel_duration = quarter }
 
 -- drle - duration run length encode
 drleBody :: Grouping -> WrappedMonad (State LyState) Grouping
+
+-- never modify a tuplets unit_duration (its real duration is syntesized) 
+drleBody e@(Nplet _ ud _ _) = WrapMonad $ do
+    modify (\s -> s {rel_duration=ud})
+    return e
+  
+
 drleBody e = WrapMonad $ do
     od <- diffDuration (rhythmicValue e)
     return $ modifyDuration e od    

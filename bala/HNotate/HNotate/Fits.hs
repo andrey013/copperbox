@@ -117,4 +117,11 @@ asegmentHy hyphenate asis n se
                     Split a b   -> step (acc |> a) b -- to keen...
                     AllRight _  -> error "unreachable" -- (n<=0) guard stops this 
 
+{-
+
+-- This is the type signature we want, it needs the fundep on Fits
+prop_split_eq_total :: (Fits a b) => b -> a -> Bool
+prop_split_eq_total split a = measure a == total (fits a split)
+
+-}
  

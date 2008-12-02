@@ -1,6 +1,6 @@
 
 -- ghci ...
--- :set -fwarn-incomplete-patterns
+-- :set -Wall
 -- :set -i../../HNotate
 
 
@@ -9,6 +9,9 @@ module Nplet where
 
 import HNotate
 import HNotate.NoteListDatatypes
+import HNotate.Duration
+import HNotate.DocLilyPond
+
 
 import Data.Sequence
 
@@ -16,8 +19,8 @@ import Data.Sequence
 notes :: EventList
 notes = 
     root # note c4 du4 # nplet 2 eighth (fromList [d4,e4,f4])
-         # note c4 du8 # note d4 du8
-         # note c4 du4 
+         # note c4 du4 # note d4 du8
+         # note c4 du8 
 
 tuplet_sys :: System
 tuplet_sys = system1 "tuplet" notes   
@@ -49,7 +52,7 @@ triplet = Nplet 2 eighth tnotes noAnno
 demo :: Grouping
 demo = modifyDuration triplet sixteenth
 
- 
+-- ddemo = npletDuration 2 eighth 
 
  
 
