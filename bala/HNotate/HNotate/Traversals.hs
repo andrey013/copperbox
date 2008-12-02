@@ -103,12 +103,12 @@ drleBody e@(Nplet _ ud _ _) = WrapMonad $ do
 drleBody e = WrapMonad $ do
     od <- diffDuration (rhythmicValue e)
     return $ modifyDuration e od    
-  where    
-    diffDuration :: Duration -> State LyState Duration
-    diffDuration d = do
-        old <- gets rel_duration
-        if (old == d) then return no_duration
-                      else modify (\s -> s {rel_duration=d}) >> return d
+   
+diffDuration :: Duration -> State LyState Duration
+diffDuration d = do
+    old <- gets rel_duration
+    if (old == d) then return no_duration
+                  else modify (\s -> s {rel_duration=d}) >> return d
 
 -- Here it would be helpful to know if we are at the start of
 -- a measure - for readability in the output it makes a lot of 

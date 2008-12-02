@@ -30,6 +30,7 @@ import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, nplet)
 import HNotate.Pitch
 import HNotate.PPInstances () -- get Witness instances
 import HNotate.ProcessingTypes
+import HNotate.Travel
 import HNotate.Traversals
 
 import Control.Applicative
@@ -59,7 +60,7 @@ translateLilyPond bf procF = fwd <=< printStep <=< procF
 lilypondAbsoluteForm :: Monad m => NoteList -> NotateT m NoteList
 lilypondAbsoluteForm = return . traverseIdentity losBody
     
-
+{-
 lilypondRelativeForm :: Monad m => NoteListPostProcessFun m
 lilypondRelativeForm evts = getRelativePitch >>= \p -> 
     return $ (evalState `flip` mkLyState p) $ unwrapMonad $ inner p $ evts
@@ -68,6 +69,16 @@ lilypondRelativeForm evts = getRelativePitch >>= \p ->
                       . unwrapMonad 
                       . unComp 
                       . traverse (proBody `comp` drleBody)
+-}
+
+lilypondRelativeForm :: Monad m => NoteListPostProcessFun m
+lilypondRelativeForm evts = getRelativePitch >>= \p -> 
+    return $ lyRelativePitchDuration p evts
+
+
+
+
+
 
 
 
