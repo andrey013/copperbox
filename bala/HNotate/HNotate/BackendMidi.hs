@@ -135,7 +135,7 @@ simplifyBar ch (Bar sg) = simplify empty (viewl sg) kGrouping
             -- not representable in Midi - keep the grace continuation around
             Nothing   -> simplify acc (viewl bse) k
         
-        Chord se d _ -> let chord = k (MChord (unseq se) d)
+        Chord se d _ -> let chord = k (MChord (F.toList se) d)
                         in simplify (acc |> chord) (viewl bse) kGrouping
         
         -- grace acts on the preceeding Atom which has already been enqueued
@@ -149,11 +149,11 @@ simplifyBar ch (Bar sg) = simplify empty (viewl sg) kGrouping
                            in simplify (acc >< se') (viewl bse) k  
         
     graceK :: Seq GraceNote -> MidiAtom -> MidiGrouping     
-    graceK se g = MaGrace ch (unseq se) g
+    graceK se g = MaGrace ch (F.toList se) g
     
     ugrace :: Seq GraceNote -> ViewR MidiGrouping -> Seq MidiGrouping
     ugrace _  EmptyR                = empty   -- ill formed, gracenotes get dropped
-    ugrace se (bse :> (MAtom _ e))  = bse |> MuGrace ch e (unseq se)
+    ugrace se (bse :> (MAtom _ e))  = bse |> MuGrace ch e (F.toList se)
     ugrace _  (bse :> be)           = bse |> be -- drop gracenotes - ideally we should coalesce them 
               
     simplifyAtom :: Atom -> Maybe MidiAtom

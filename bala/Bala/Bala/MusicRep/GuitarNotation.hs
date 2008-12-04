@@ -65,8 +65,12 @@ instance Listify GuitarTuning Pitch where
   
 newtype ST_Chord = ST_Chord { getST_Chord :: TerseFretDiagram }
 
-instance PitchContent ST_Chord where
-  pitchContent (ST_Chord ch) = pcat ch standard_tuning
+
+instance PitchValue ST_Chord where
+  pitchValue (ST_Chord ch) = pcat ch standard_tuning
+  
+  modifyPitch _ _ = error "ST_Chord - modifyPitch not implemented"
+
   
 stChord :: Fingering -> Fingering -> Fingering ->
            Fingering -> Fingering -> Fingering -> ST_Chord

@@ -27,16 +27,17 @@ import HNotate.Document
 import HNotate.Duration hiding ( _duration )
 import HNotate.Fits
 import HNotate.Pitch
-
+import HNotate.SequenceUtils
 
 import Control.Applicative hiding (empty)
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
 import Data.Monoid
 import Data.Ratio
-import Data.Sequence
+import Data.Sequence hiding (length, null)
+import qualified Data.Sequence as S
 import Data.Traversable
-import Prelude hiding (null, length)
+
 
 
 data OutputFormat = Abc | Ly | Midi
@@ -239,8 +240,10 @@ instance RhythmicValue Grouping where
     where ud = reunit d i se
     
 reunit :: Duration -> Int -> Seq a -> Duration
-reunit tot i se = let l = length se in 
+reunit tot i se = let l = S.length se in 
                   tot * (makeDuration l i) * (makeDuration 1 l)
+
+
   
 instance RhythmicValue Atom where
   rhythmicValue (Note _ d _)            = d
@@ -261,25 +264,46 @@ instance RhythmicValue Atom where
   modifyDuration BeamEnd              _ = BeamEnd
   modifyDuration Tie                  _ = Tie
 
-instance PitchValue Atom where
-  pitchValue (Note p _ _)            = Just p
-  pitchValue (Rest _ _)              = Nothing
-  pitchValue (Spacer _ _)            = Nothing
-  pitchValue (RhythmicMark _ _ _)    = Nothing
-  pitchValue (Mark _ _)              = Nothing
-  pitchValue BeamStart               = Nothing
-  pitchValue BeamEnd                 = Nothing
-  pitchValue Tie                     = Nothing
+instance PitchValue Grouping where
+  pitchValue (Singleton e)            = pitchValue e
+  pitchValue (Chord se _ _)           = pitchValue se
+  pitchValue (GraceNotes se _ _)      = pitchValue se
+  pitchValue (Nplet i d se _)         = pitchValue se
+ 
   
-  modifyPitch (Note _ d a)         p = Note p d a
-  modifyPitch (Rest d a)           _ = Rest d a
-  modifyPitch (Spacer d a)         _ = Spacer d a
-  modifyPitch (RhythmicMark l d m) _ = RhythmicMark l d m
-  modifyPitch (Mark l m)           _ = Mark l m
-  modifyPitch BeamStart            _ = BeamStart
-  modifyPitch BeamEnd              _ = BeamEnd
-  modifyPitch Tie                  _ = Tie
+  modifyPitch (Singleton e)        pv = Singleton (e `modifyPitch` pv)
+  modifyPitch (Chord se d a)       pv = Chord (se `modifyPitch` pv) d a
+  modifyPitch (GraceNotes se m a)  pv = GraceNotes (se `modifyPitch` pv) m a
+  modifyPitch (Nplet i ud se a)    pv = Nplet i ud (se `modifyPitch` pv) a
+    
+instance PitchValue Atom where
+  pitchValue (Note p _ _)            = pitchValue p
+  pitchValue (Rest _ _)              = noPitchContent
+  pitchValue (Spacer _ _)            = noPitchContent
+  pitchValue (RhythmicMark _ _ _)    = noPitchContent
+  pitchValue (Mark _ _)              = noPitchContent
+  pitchValue BeamStart               = noPitchContent
+  pitchValue BeamEnd                 = noPitchContent
+  pitchValue Tie                     = noPitchContent
+  
+  modifyPitch (Note p d a)         pc = Note (p `modifyPitch` pc) d a
+  modifyPitch (Rest d a)           _  = Rest d a
+  modifyPitch (Spacer d a)         _  = Spacer d a
+  modifyPitch (RhythmicMark l d m) _  = RhythmicMark l d m
+  modifyPitch (Mark l m)           _  = Mark l m
+  modifyPitch BeamStart            _  = BeamStart
+  modifyPitch BeamEnd              _  = BeamEnd
+  modifyPitch Tie                  _  = Tie
 
+instance PitchValue (Seq GraceNote) where
+  pitchValue = map fst . F.toList
+  
+  modifyPitch se pc 
+      | S.length se == length pc  = sziplWith (\(_,d) p -> (p,d)) se pc
+      | otherwise                 = error "modifyPitch (Seq GraceNote) unmatched"
+  
+
+      
 --------------------------------------------------------------------------------
 -- Fits instances
     
@@ -480,9 +504,9 @@ simpleEventlist ps d   = foldl (\t p -> t # note p d) root ps
 
 emptyGrouping :: Grouping -> Bool
 emptyGrouping (Singleton _)         = False
-emptyGrouping (Chord se _ _)        = null se
-emptyGrouping (GraceNotes se _ _)   = null se
-emptyGrouping (Nplet _ _ se _)      = null se
+emptyGrouping (Chord se _ _)        = S.null se
+emptyGrouping (GraceNotes se _ _)   = S.null se
+emptyGrouping (Nplet _ _ se _)      = S.null se
   
         
 composeAnnos :: Annotation -> Annotation -> Annotation

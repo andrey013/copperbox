@@ -20,7 +20,7 @@ animateChord ps = motif +- chord ps quarter ++- arpeggio ps where
   arpeggio = motifl . fmap (note `flip` eighth) 
 
 section_b7 :: Section
-section_b7 = section (4,4) $ phrase (animateChord $ pitchContent $ chordB7)
+section_b7 = section (4,4) $ phrase (animateChord $ pitchValue $ chordB7)
 
 genMidi :: IO ()
 genMidi = writeMidi "./out/chord_b7.mid" b7_midi

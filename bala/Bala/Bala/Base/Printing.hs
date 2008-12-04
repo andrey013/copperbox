@@ -21,7 +21,7 @@ import Bala.Base.Metrical
 import Bala.Base.Pitch
 import Bala.Base.Structural
 
-import HNotate.CommonUtils (para)
+import HNotate.SequenceUtils (para)
 
 import qualified Data.Foldable as F
 import qualified Data.Map as Map

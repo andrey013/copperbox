@@ -18,12 +18,12 @@
 
 module HNotate.BuildNoteList where
 
-import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
 import HNotate.Fits
 import HNotate.NoteListDatatypes
 import HNotate.ProcessingTypes
+import HNotate.SequenceUtils
 
 import Control.Monad.Reader
 import Data.Sequence hiding (reverse)

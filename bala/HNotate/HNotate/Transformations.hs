@@ -22,6 +22,7 @@ import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 import HNotate.ProcessingTypes
+import HNotate.SequenceUtils
 
 import Control.Monad.Reader
 import qualified Data.Foldable as F

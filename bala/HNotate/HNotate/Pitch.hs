@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -21,6 +22,9 @@ module HNotate.Pitch (
     Accidental(..),
     PitchLabel(..),
 
+    PitchContent,
+    noPitchContent, 
+    
     -- * Operations
     PitchValue(..),
     Semitones(..),
@@ -72,9 +76,16 @@ module HNotate.Pitch (
 
 
 -- Avoid internal dependencies as this module is included in Bala
+-- (although it can use HNotate.SequenceUtils as thatis included
+-- in Bala as well)
+
+import HNotate.SequenceUtils  
 
 import Data.Char (toUpper, toLower)
+import qualified Data.Foldable as F
 import Data.Generics
+import Data.Sequence hiding (length)
+import qualified Data.Sequence as S
 
 data Pitch = Pitch {
     pch_letter        :: PitchLetter,
@@ -134,15 +145,31 @@ instance Bounded PitchLabel where
 -- \no-rhythmic-value\ is effective synonymous with \no-duration\ (aka 0)
 -- But there is no effective \no-pitch\ - pitch 0 is actually C natural four
 -- octaves below middle C.
+-- Also chords (and graces notes) a generally treated as an indivisible 
+-- entity, but the have multiple pitches
+-- Hence we treat PitchValue as a list.  
+type PitchContent = [Pitch]
+
+noPitchContent :: PitchContent
+noPitchContent = []
+
 class PitchValue a where
-  pitchValue   :: a -> Maybe Pitch
-  modifyPitch  :: a -> Pitch -> a
+  pitchValue   :: a -> PitchContent
+  modifyPitch  :: a -> PitchContent -> a
 
 instance PitchValue Pitch where
-  pitchValue     = Just . id
-  modifyPitch    = const
+  pitchValue p = [p]
   
+  _ `modifyPitch` [p] = p
+  p `modifyPitch` _   = p
+
+instance PitchValue (Seq Pitch) where
+  pitchValue = F.toList
   
+  modifyPitch se pc 
+      | S.length se == length pc  = sziplWith (\ _ p -> p) se pc 
+      | otherwise                 = error "modifyPitch (Seq Pitch) unmatched"
+        
   
 class Semitones a where semitones :: a -> Int
     

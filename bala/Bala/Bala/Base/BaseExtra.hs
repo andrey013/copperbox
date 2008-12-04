@@ -17,7 +17,8 @@
 
 
 module Bala.Base.BaseExtra (
- 
+  module HNotate.SequenceUtils,
+  
   -- * Type classes
   Increment(..),
   Displacement(..),
@@ -46,16 +47,10 @@ module Bala.Base.BaseExtra (
   explode12, explode100, collapse12, collapse100,
   normalize12, normalize100, 
   
-  -- ** transpose and other functions on sequences
-  stranspose, 
-  szip, szipWith,
-  szipl, sziplWith, szipl', 
-  sreplicate, smaximum, sminimum,
-  sconcat, sfilter
 
   ) where
 
-
+import HNotate.SequenceUtils
 
 import qualified Data.Foldable as F
 import Data.List (unfoldr)
@@ -248,82 +243,4 @@ normalize100 :: (Integral a) => (a, a) -> (a, a)
 normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
 
   
---------------------------------------------------------------------------------
--- transpose for sequences
-
-
-
-stranspose :: Seq (Seq a) -> Seq (Seq a)
-stranspose = step . viewl
-  where
-    step EmptyL         = empty
-    step (x :< sse)     = case viewl x of
-        EmptyL    -> stranspose sse
-        (e :< se) -> (e <| allheads sse) <| (stranspose $ se <| alltails sse)
-    
-    allheads = F.foldl' (\acc se -> acc |> head1 se)  empty
-    alltails = F.foldl' (\acc se -> acc |> tail1 se)  empty
-    
-    head1 se = case viewl se of EmptyL -> unmatchErr; 
-                                (a :< _) -> a
-    
-    tail1 se = case viewl se of EmptyL -> unmatchErr; 
-                                (_ :< sa) -> sa
-                                
-    unmatchErr = error "stranspose - sequences of unequal length"                            
-
-szip :: Seq a -> Seq b -> Seq (a,b)
-szip = szipWith (,)
-
--- second seq can be longer than first (but gets truncated) 
--- behaviour as per zip 
-szipWith :: (a -> b -> c) -> Seq a -> Seq b -> Seq c
-szipWith f sa sb = step (viewl sa) (viewl sb) where
-    step (a :< sa) (b :< sb)  = (f a b) <| step (viewl sa) (viewl sb)
-    step EmptyL    _          = empty
-    step _         EmptyL     = empty
-    
-    
--- Zip a sequence and a list - list can be infinite
--- Zip a sequence and a list - list can be infinite
-szipl :: Seq a -> [b] -> Seq (a,b)
-szipl = sziplWith (,)
-
-
-sziplWith :: (a -> b -> c) -> Seq a -> [b] -> Seq c
-sziplWith f se xs = step (viewl se) xs where
-  step (a :< se) (x:xs)   = f a x <| step (viewl se) xs
-  step EmptyL   []        = empty
-  step EmptyL    _        = empty
-  step _         []       = error "sziplWith - list too short"
-  
-
-
--- The sequence is primary - i.e. its an error if it runs out first, 
--- the pair is flipped so the list item is fst.
-szipl' :: Seq a -> [b] -> Seq (b,a)
-szipl' = sziplWith (flip (,))
-  
-sreplicate :: Int -> a -> Seq a
-sreplicate i a | i <= 0     = empty
-               | otherwise  = a <| sreplicate (i-1) a 
-  
-smaximum :: (Ord a) => (Seq a) -> a
-smaximum se | null se = error "smaximum: empty sequence"
-            | otherwise = let (a :< sa) = viewl se in F.foldr max a se 
-
-sminimum :: (Ord a) => (Seq a) -> a
-sminimum se | null se = error "sminimum: empty sequence"
-            | otherwise = let (a :< sa) = viewl se in F.foldr min a se
-
-sconcat :: Seq (Seq a) -> Seq a
-sconcat = F.foldr (><) empty
-             
-sfilter :: (a -> Bool) -> Seq a -> Seq a
-sfilter pf = step . viewl where
-  step EmptyL     = empty
-  step (a :< sa) | pf a       = a <| step (viewl sa)
-                 | otherwise  = step (viewl sa)
-                 
-                         
-            
+                        

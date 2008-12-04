@@ -30,16 +30,15 @@ import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, nplet)
 import HNotate.Pitch
 import HNotate.PPInstances () -- get Witness instances
 import HNotate.ProcessingTypes
+import HNotate.SequenceUtils
 import HNotate.Travel
 import HNotate.Traversals
 
-import Control.Applicative
 import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Foldable as F
 import Data.Sequence
-import Data.Traversable
 
 import Prelude hiding (length)
   

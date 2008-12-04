@@ -16,7 +16,7 @@
 
 module HNotate.CommonUtils where
 
--- Should be no deps on other HNotate modules
+-- Should have no dependencies on other HNotate modules
 
 import qualified Data.Foldable as F
 import Data.List (unfoldr)
@@ -118,84 +118,6 @@ dup a = (a,a)
 flipper :: (a -> b -> c -> d) -> b -> c -> a -> d
 flipper f y z = \x -> f x y z
 
---------------------------------------------------------------------------------
--- Morphisms
-
--- Catamorphism - foldr
-cata :: (a -> b -> b) -> b -> Seq a -> b
-cata phi b = step . viewl 
-  where step EmptyL  = b
-        step (e:<se) = phi e (step (viewl se))
-
-
--- anamorphism - unfoldr
-ana :: (b -> Maybe (a,b)) -> b -> Seq a
-ana phi = step
-  where step b = case phi b of
-                  Nothing -> S.empty
-                  Just (a,s) -> a <| step s
-
--- hylomorphism
-hylo :: (b -> Maybe (a, b)) -> (a -> c -> c) -> c -> b -> c
-hylo f g a = step 
-  where step b = case f b of
-                   Nothing -> a
-                   Just (x,s) -> g x (step s)
-
--- paramorphism (generalizes cata)
-para :: (a -> (Seq a, b) -> b) -> b -> Seq a -> b
-para phi b = step . viewl
-  where step EmptyL  = b
-        step (e:<se) = phi e (se, step (viewl se))
-
--- apomorphism (generalizes ana)
-apo :: (b -> Maybe (a, b)) -> (b -> Seq a) -> b -> Seq a
-apo phi chi b = case phi b of
-              Just (a, b') -> a <| apo phi chi b'
-              Nothing -> chi b
-
-
--- order of args is (cata)para
-zygo :: (a -> b -> b) -> (a -> (Seq a, b) -> b) -> b -> Seq a -> b
-zygo f g b = step . viewl 
-  where step EmptyL  = b
-        step (e:<se) = f e (g e (se, (step (viewl se))))
-
-
---------------------------------------------------------------------------------
--- Monadic versions
-
-cataM :: Monad m => (a -> b -> m b) -> b -> Seq a -> m b
-cataM phi b = mf . viewl
-  where
-    mf EmptyL   = return b
-    mf (e:<se)  = do y <- mf (viewl se)
-                     phi e y
-
-
-anaM :: Monad m => (b -> m (Maybe (a, b))) -> b -> m (Seq a)
-anaM g b = g b >>= maybe (return S.empty)
-                         (\(x,b') -> anaM g b' >>= return . (x <|)) 
-
--- hylomorphism
-hyloM :: Monad m => (a -> c -> m c) -> (b -> m (Maybe (a, b))) -> c -> b -> m c
-hyloM d f a = step 
-  where step b = f b >>= maybe (return a) (\(x,s) -> step s >>= (d x))
-
--- paramorphism 
-paraM :: Monad m => (a -> (Seq a, b) -> m b) -> b -> Seq a -> m b
-paraM phi b = step . viewl
-  where step EmptyL  = return b
-        step (e:<se) = do se' <- step (viewl se) 
-                          phi e (se, se')
-
--- apomorphism 
-apoM :: Monad m => (b -> m (Maybe (a, b))) -> (b -> m (Seq a)) -> b -> m (Seq a)
-apoM phi chi b = 
-  phi b >>= maybe (chi b)
-                  (\(a, b') -> apoM phi chi b' >>= return . (a <|))
-              
-
 
 --------------------------------------------------------------------------------
 -- enum functions for cycles (primarily helpful for pitch letters)
@@ -245,31 +167,6 @@ lgs test update st0 = together . genSplit (adapt test) update st0
     together (st, l, Just a, r)  = (st,l,a <|r) 
 
 
-
-stranspose :: Seq (Seq a) -> Seq (Seq a)
-stranspose = step . viewl
-  where
-    step EmptyL         = S.empty
-    step (x :< sse)     = case viewl x of
-        EmptyL    -> stranspose sse
-        (e :< se) -> (e <| allheads sse) <| (stranspose $ se <| alltails sse)
-    
-    allheads = F.foldl' (\acc se -> acc |> head1 se)  S.empty
-    alltails = F.foldl' (\acc se -> acc |> tail1 se)  S.empty
-    
-    head1 se = case viewl se of EmptyL -> unmatchErr; 
-                                (a :< _) -> a
-    
-    tail1 se = case viewl se of EmptyL -> unmatchErr; 
-                                (_ :< sa) -> sa
-                                
-    unmatchErr = error "stranspose - sequences of unequal length" 
-    
-sfilter :: (a -> Bool) -> Seq a -> Seq a
-sfilter pf = step . viewl where
-  step EmptyL     = S.empty
-  step (a :< sa) | pf a       = a <| step (viewl sa)
-                 | otherwise  = step (viewl sa)
                      
 --------------------------------------------------------------------------------
 -- other functions
@@ -286,16 +183,7 @@ worklist f = step []
   where step cca []     = reverse cca
         step cca (y:ys) = let (b,zs) = f y in step (b:cca) (ys++zs)
         
-        
-               
-unseq :: Seq a -> [a]
-unseq = F.foldr (:) [] 
-
-unseqMap :: (a -> b) -> Seq a -> [b]
-unseqMap f = F.foldr ((:) `onl` f) []             
-
-
-                      
+                     
 
 --------------------------------------------------------------------------------
 -- ShowS helpers

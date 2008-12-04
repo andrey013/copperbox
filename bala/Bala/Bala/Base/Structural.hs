@@ -178,27 +178,34 @@ instance RhythmicValue Event where
   modifyDuration (Mark m)         d = Mark m
  
 instance PitchValue Event where
-  pitchValue (Note p _)          = Just p
-  pitchValue (Rest _)            = Nothing 
-  pitchValue (Chord se _)        = case viewl se of       -- this should be more 
-                                      EmptyL -> Nothing   -- sophisticated
-                                      a :< _ -> Just a
-  pitchValue (Spacer _)          = Nothing      
-  pitchValue (AGrace _ p _)      = Just p
-  pitchValue (UGrace p _ _)      = Just p
-  pitchValue (Mark _)            = Nothing
+  pitchValue (Note p _)          = [p]
+  pitchValue (Rest _)            = [] 
+  pitchValue (Chord se _)        = pitchValue se
+  pitchValue (Spacer _)          = []      
+  pitchValue (AGrace se p _)     = p : pitchValue se
+  pitchValue (UGrace p _ se)     = p : pitchValue se
+  pitchValue (Mark _)            = []
   
      
-  modifyPitch (Note _ d)       p = Note p d
-  modifyPitch (Rest d)         p = Rest d 
-  modifyPitch (Chord se d)     p = Chord se d   -- what to do?
-  modifyPitch (Spacer d)       p = Spacer d
-  modifyPitch (AGrace se _ d)  p = AGrace se p d 
-  modifyPitch (UGrace _ d se)  p = UGrace p d se
-  modifyPitch (Mark m)         p = Mark m
+  modifyPitch (Note p d)       pc = Note (p `modifyPitch` pc) d
+  modifyPitch (Rest d)         pc = Rest d 
+  modifyPitch (Chord se d)     pc = Chord se d   -- what to do?
+  modifyPitch (Spacer d)       pc = Spacer d
+  modifyPitch (AGrace se p d)  pc = case pc of 
+                                      (x:xs) -> AGrace (se `modifyPitch` xs) x d
+                                      _      -> AGrace se p d
+  modifyPitch (UGrace p d se)  pc = case pc of 
+                                      (x:xs) -> UGrace x d (se `modifyPitch` xs)
+                                      _      -> UGrace p d se
+  modifyPitch (Mark m)         pc = Mark m
   
+instance PitchValue GraceNotes where
+  pitchValue  = F.toList . fmap fst
+  modifyPitch se pc 
+      | S.length se == length pc  = sziplWith (\(_,d) p -> (p,d)) se pc
+      | otherwise                 = error "modifyPitch GraceNotes unmatched"
 
-
+  
 --------------------------------------------------------------------------------
 -- Fits and Sounds
 

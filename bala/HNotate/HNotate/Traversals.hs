@@ -139,8 +139,8 @@ proBody = WrapMonad . step
       
     step (Nplet i ud se a)    = (\se' -> Nplet i ud se' a) <$> mapM convPitch se
                                        
-    gstep :: Atom ->  State LyState Atom
-    gstep e@(Note p _ _)      = (modifyPitch e) <$> convPitch p 
+    gstep :: Atom -> State LyState Atom
+    gstep e@(Note p _ _)      = (\p' -> e `modifyPitch` [p]) <$> convPitch p 
     gstep e                   = return e
 
 

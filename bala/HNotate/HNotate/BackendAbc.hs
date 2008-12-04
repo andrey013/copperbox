@@ -26,6 +26,7 @@ import HNotate.NotateMonad
 import HNotate.Pitch
 import HNotate.PPInstances () -- for witness instances
 import HNotate.ProcessingTypes
+import HNotate.SequenceUtils
 import HNotate.Transformations
 import HNotate.Traversals
 
