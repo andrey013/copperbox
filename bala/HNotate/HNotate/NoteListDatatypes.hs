@@ -330,9 +330,12 @@ root = EventList empty
 poly              :: [EventList] -> EventList -> EventList
 poly xs t         = t |*> OverlayE xs
 
+event             :: Grouping -> EventList -> EventList
+event e t         = t |*> SingleE e
 
 noAnno :: Annotation 
 noAnno = Annotation { _ly_anno=id, _abc_anno=id }  
+
 
 noteSgl           :: Pitch -> Duration -> Grouping 
 noteSgl p d       = Singleton $ Note p d noAnno
@@ -341,10 +344,10 @@ noteSgl'          :: Pitch -> Duration -> Annotation -> Grouping
 noteSgl' p d a    = Singleton $ Note p d a 
 
 note              :: Pitch -> Duration -> EventList -> EventList
-note  p d t       = t |*> SingleE (noteSgl p d)
+note  p d         = event (noteSgl p d)
 
 note'             :: Pitch -> Duration -> Annotation -> EventList -> EventList
-note' p d a t     = t |*> SingleE (noteSgl' p d a)
+note' p d a       = event (noteSgl' p d a)
 
 restSgl           :: Duration -> Grouping 
 restSgl d         = Singleton $ Rest d noAnno 
@@ -352,12 +355,11 @@ restSgl d         = Singleton $ Rest d noAnno
 restSgl'          :: Duration -> Annotation -> Grouping 
 restSgl' d a      = Singleton $ Rest d a
 
-
 rest              :: Duration -> EventList -> EventList
-rest d t          = t |*> SingleE (restSgl d)
+rest d            = event (restSgl d)
 
 rest'             :: Duration -> Annotation -> EventList -> EventList
-rest' d a t       = t |*> SingleE (restSgl' d a)
+rest' d a         = event (restSgl' d a)
 
 spacerSgl         :: Duration -> Grouping 
 spacerSgl d       = Singleton $ Spacer d noAnno 
@@ -365,12 +367,11 @@ spacerSgl d       = Singleton $ Spacer d noAnno
 spacerSgl'        :: Duration -> Annotation -> Grouping 
 spacerSgl' d a    = Singleton $ Spacer d a
 
-
 spacer            :: Duration -> EventList -> EventList
-spacer d t        = t |*> SingleE (spacerSgl d)
+spacer d          = event (spacerSgl d)
 
 spacer'           :: Duration -> Annotation -> EventList -> EventList
-spacer' d a t     = t |*> SingleE (spacerSgl' d a)
+spacer' d a       = event (spacerSgl' d a)
 
 chordGrp          :: Seq Pitch -> Duration -> Grouping
 chordGrp se d     = Chord se d noAnno
@@ -379,20 +380,19 @@ chordGrp'         :: Seq Pitch -> Duration -> Annotation -> Grouping
 chordGrp' se d a  = Chord se d a
 
 chord             :: Seq Pitch -> Duration -> EventList -> EventList
-chord se d t      = t |*> SingleE (chordGrp se d)
+chord se d        = event (chordGrp se d)
 
 chord'            :: Seq Pitch -> Duration -> Annotation -> EventList -> EventList
-chord' se d a t   = t |*> SingleE (chordGrp' se d a)
+chord' se d a     = event (chordGrp' se d a)
 
 chordGrpL         :: [Pitch] -> Duration ->  Annotation -> Grouping
 chordGrpL xs d a  = Chord (fromList xs) d a
 
 chordL            :: [Pitch] -> Duration -> EventList -> EventList
-chordL xs d t     = t |*> SingleE (chordGrpL xs d noAnno)
+chordL xs d       = event (chordGrpL xs d noAnno)
 
 chordL'           :: [Pitch] -> Duration -> Annotation -> EventList -> EventList
-chordL' xs d a t  = t |*> SingleE (chordGrpL xs d a)
-
+chordL' xs d a    = event(chordGrpL xs d a)
 
 ugracesGrp        :: Seq (Pitch,Duration) -> Grouping
 ugracesGrp se     = GraceNotes se UGrace noAnno
@@ -401,10 +401,10 @@ ugracesGrp'       :: Seq (Pitch,Duration) -> Annotation -> Grouping
 ugracesGrp' se a  = GraceNotes se UGrace a
 
 ugraces           :: Seq (Pitch,Duration) -> EventList -> EventList
-ugraces se t      = t |*> SingleE (ugracesGrp se)
+ugraces se        = event (ugracesGrp se)
 
 ugraces'          :: Seq (Pitch,Duration) -> Annotation -> EventList -> EventList
-ugraces' se a t   = t |*> SingleE (ugracesGrp' se a)
+ugraces' se a     = event (ugracesGrp' se a)
 
 ugracesGrpL       :: [(Pitch,Duration)] -> Grouping
 ugracesGrpL xs    = ugracesGrp (fromList xs)
@@ -412,13 +412,11 @@ ugracesGrpL xs    = ugracesGrp (fromList xs)
 ugracesGrpL'      :: [(Pitch,Duration)] -> Annotation -> Grouping
 ugracesGrpL' xs a = ugracesGrp' (fromList xs) a
 
-
 ugracesL          :: [(Pitch,Duration)] -> EventList -> EventList
-ugracesL xs t     = t |*> SingleE (ugracesGrpL xs)
+ugracesL xs       = event (ugracesGrpL xs)
 
 ugracesL'         :: [(Pitch,Duration)] -> Annotation -> EventList -> EventList
-ugracesL' xs a t  = t |*> SingleE (ugracesGrpL' xs a)
-
+ugracesL' xs a    = event (ugracesGrpL' xs a)
 
 agracesGrp        :: Seq (Pitch,Duration) -> Grouping
 agracesGrp se     = GraceNotes se AGrace noAnno
@@ -427,10 +425,10 @@ agracesGrp'       :: Seq (Pitch,Duration) -> Annotation -> Grouping
 agracesGrp' se a  = GraceNotes se AGrace a
 
 agraces           :: Seq (Pitch,Duration) -> EventList -> EventList
-agraces se t      = t |*> SingleE (agracesGrp se)
+agraces se        = event (agracesGrp se)
 
 agraces'          :: Seq (Pitch,Duration) -> Annotation -> EventList -> EventList
-agraces' se a t   = t |*> SingleE (agracesGrp' se a)
+agraces' se a     = event (agracesGrp' se a)
 
 agracesGrpL       :: [(Pitch,Duration)] -> Grouping
 agracesGrpL xs    = agracesGrp (fromList xs) 
@@ -438,12 +436,11 @@ agracesGrpL xs    = agracesGrp (fromList xs)
 agracesGrpL'      :: [(Pitch,Duration)] -> Annotation -> Grouping
 agracesGrpL' xs a = agracesGrp' (fromList xs) a
 
-
 agracesL          :: [(Pitch,Duration)] -> EventList -> EventList
-agracesL xs t     = t |*> SingleE (agracesGrpL xs)
+agracesL xs       = event (agracesGrpL xs)
 
 agracesL'         :: [(Pitch,Duration)] -> Annotation -> EventList -> EventList
-agracesL' xs a t  = t |*> SingleE (agracesGrpL' xs a)
+agracesL' xs a    = event (agracesGrpL' xs a)
 
 npletGrp          :: Int -> Duration -> Seq Pitch -> Grouping
 npletGrp i ud se  = Nplet i ud se noAnno
@@ -452,29 +449,29 @@ npletGrp'         :: Int -> Duration -> Seq Pitch -> Annotation -> Grouping
 npletGrp' i ud se a   = Nplet i ud se a
 
 nplet             :: Int -> Duration -> Seq Pitch -> EventList -> EventList
-nplet i ud se t   = t |*> SingleE (npletGrp i ud se)
+nplet i ud se     = event (npletGrp i ud se)
 
 nplet' :: Int -> Duration -> Seq Pitch ->  Annotation -> EventList -> EventList
-nplet' i ud se a t   = t |*> SingleE (npletGrp' i ud se a)
+nplet' i ud se a  = event (npletGrp' i ud se a)
     
 tieSgl     :: Grouping
 tieSgl     = Singleton Tie
 
 tie             :: EventList -> EventList
-tie t           = t |*> SingleE tieSgl
+tie             = event tieSgl
 
 
 beamStartSgl  :: Grouping
 beamStartSgl  = Singleton BeamStart 
 
 beamStart     :: EventList -> EventList
-beamStart t   = t |*> SingleE  beamStartSgl
+beamStart     = event beamStartSgl
 
 beamEndSgl    :: Grouping
 beamEndSgl    = Singleton BeamEnd
 
 beamEnd       :: EventList -> EventList
-beamEnd t     = t |*> SingleE  beamEndSgl
+beamEnd       = event beamEndSgl
 
 simpleEventlist        :: [Pitch] -> Duration -> EventList
 simpleEventlist ps d   = foldl (\t p -> t # note p d) root ps

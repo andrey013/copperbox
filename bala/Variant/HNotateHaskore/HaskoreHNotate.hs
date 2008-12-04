@@ -20,6 +20,7 @@
 
 module HaskoreHNotate where
 
+import HNotate.CommonUtils ( (#) )
 import HNotate.Duration
 import HNotate.NoteListDatatypes
 import HNotate.Pitch
@@ -49,24 +50,24 @@ instEL (n,p) = snd $ foldl fn (0%1,root) $ groupChords p
   where
     fn (onset,tree) e   = let (e_onset, e_dur, f) = evt e in 
         if e_onset == onset
-          then (e_onset + e_dur, tree |# f)
+          then (e_onset + e_dur, tree # event f)
           else let r = convert (e_onset - onset)
-               in (e_onset + e_dur, tree |# rest r |# f)
+               in (e_onset + e_dur, tree # rest r # event f)
 
 groupChords :: [H.Event] -> [[H.Event]]
 groupChords = groupBy (\a b -> H.eTime a == H.eTime b)
 
     
-evt :: [H.Event] -> (H.Time, H.DurT, Tile)
+evt :: [H.Event] -> (H.Time, H.DurT, Grouping)
 evt [e]     = event1 e
-evt (e:es)  = let chord_notes       = sort $ map convert (e:es)
+evt (e:es)  = let chord_notes       = fromList $ sort $ map convert (e:es)
                   e_dur             = H.eDur e
                   e_onset           = H.eTime e
-              in (e_onset, e_dur, chord chord_notes (convert e_dur))
+              in (e_onset, e_dur, chordGrp chord_notes (convert e_dur))
           
-event1 :: H.Event -> (H.Time, H.DurT, Tile)
+event1 :: H.Event -> (H.Time, H.DurT, Grouping)
 event1 e@(H.Event {H.eTime=onset, H.eDur=drn}) = 
-    (onset,drn, note (convert e) (convert drn))
+    (onset,drn, noteSgl (convert e) (convert drn))
 
 
 -- From Haskore, ToMidi.lhs -- not an exposed function

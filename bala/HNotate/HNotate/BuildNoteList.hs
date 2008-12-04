@@ -10,8 +10,8 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined
 --
--- Render an Event 'Tree' to a score note list format using
--- recursion schemes.
+-- Render an Event 'Tree' to a score note list.
+--
 --------------------------------------------------------------------------------
 
 

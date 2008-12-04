@@ -31,7 +31,7 @@ t251_sys = psystem $  makePerf $ t251'
 t251_ly_template = "templates/ly0-t251.ly"
 t251_ly_output   = "out/ly-t251.ly"
 
-demo = do 
+demo1 = do 
     outputLilyPond 5 t251_sys  t251_ly_template t251_ly_output
 
  
@@ -65,11 +65,11 @@ ssf' = ssf
 
 sys_ssf = psystem (makePerf ssf) 
 
-{-
--- Warning don't run this - for some reason it sends GHC of into orbit 
+
+-- This one fails - it has an unrenderable duration... 
 demo2 = do 
     outputLilyPond 5 sys_ssf  ssf_ly_template   ssf_ly_output
--}
+
     
 sim1_ly_template   = "templates/ly0-sim1.ly"
 sim1_ly_output     = "out/ly-sim1.ly"
