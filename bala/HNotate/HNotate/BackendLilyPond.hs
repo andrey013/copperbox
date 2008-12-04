@@ -95,8 +95,8 @@ outputNoteList bf = bf . F.foldr ((:) `onl` blockDoc) [] . getNoteList
 
 
 blockDoc :: Block -> (Int,ODoc)
-blockDoc (SingleBlock i s) = (i, barDoc s <+> barcheck)
-blockDoc (PolyBlock i se)  = (i, polyphony se <+> barcheck)
+blockDoc (SingleBlock i s)    = (i, barDoc s <+> barcheck)
+blockDoc (OverlayBlock i se)  = (i, polyphony se <+> barcheck)
 
     
 

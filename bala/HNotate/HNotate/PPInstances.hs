@@ -174,7 +174,7 @@ instance (PP e) => Witness (NoteListF e) where
 
 instance (PP e) => PP (BlockF e) where
   pp (SingleBlock i e)    = measureNumber i <&\> indent 4 (pp e)
-  pp (PolyBlock i se)     = 
+  pp (OverlayBlock i se)  = 
       measureNumber i <&\> indent 4 (dblangles' $ vsep $ punctuate 
                                                (text " // ")
                                                (map pp $ F.toList se))
@@ -327,9 +327,9 @@ instance Witness [Expr] where
   textrep = wpp . vsep . map pp
         
 instance PP OutputDirective where
-  pp (OutputDirective oscm name) = text "#output" <> fn oscm <+> text name
+  pp (OutputDirective oscm name) = text "#output " <> fn oscm <+> text name
     where fn Nothing  = emptyDoc
-          fn (Just x) = char ' ' <> pp x  
+          fn (Just x) = pp x  
      
 
 instance PP Binding where

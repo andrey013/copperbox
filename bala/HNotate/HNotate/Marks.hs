@@ -26,14 +26,14 @@ drumGrouping          :: Mark DrumMark -> Duration -> Grouping
 drumGrouping m d      = Singleton $ RhythmicMark "Drum" d m 
 
 drumnote :: Mark DrumMark -> Duration -> EventList -> EventList
-drumnote m d t = t |*> Evt (drumGrouping m d) 
+drumnote m d t = t |*> SingleE (drumGrouping m d) 
 
 drumChordGrouping       :: [Mark DrumMark] -> Duration -> Grouping 
 drumChordGrouping ms d  = 
     Singleton $ RhythmicMark "DrumChord" d (makeLyDrumChord ms)
 
 drumchord :: [Mark DrumMark] -> Duration -> EventList -> EventList
-drumchord ms d t = t |*> Evt (drumChordGrouping ms d) 
+drumchord ms d t = t |*> SingleE (drumChordGrouping ms d) 
 
 
 makeLyDrum :: String -> Mark DrumMark

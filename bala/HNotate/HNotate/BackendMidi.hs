@@ -100,8 +100,8 @@ simplifyNoteList = F.foldl simplifyBlock empty . getNoteList
 
 
 simplifyBlock :: Seq (Int,Seq MidiGrouping) -> Block -> Seq (Int,Seq MidiGrouping)
-simplifyBlock acc (SingleBlock n b) = acc |> (n, simplifyBar 1 b)
-simplifyBlock acc (PolyBlock n bse) = acc >< fmap fn (szipl bse [1..])
+simplifyBlock acc (SingleBlock n b)     = acc |> (n, simplifyBar 1 b)
+simplifyBlock acc (OverlayBlock n bse)  = acc >< fmap fn (szipl bse [1..])
   where fn (b,ch) = (n, simplifyBar ch b)
 
 szipl :: Seq a -> [b] -> Seq (a,b)

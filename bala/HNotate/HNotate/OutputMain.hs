@@ -69,7 +69,7 @@ outputMidi f ma sys outpath =
     either (reportFailureIO msg) (const $ putStrLn msg) a
   where
     config  = mkMidiConfig 5 sys outpath
-    outfun  = ma >>= mapM toNoteList >>= midiOut outpath
+    outfun  = ma >>= mapM buildNoteList >>= midiOut outpath
 
 reportFailureIO :: String -> NotateErr -> IO ()
 reportFailureIO log_msg (NotateErr s) = putStrLn s >> putStrLn log_msg
@@ -232,17 +232,18 @@ outputFailure name =
 -- Only option for Abc
 outputNoteListAbc :: Monad m => EventList -> NotateT m ODoc
 outputNoteListAbc = 
-    toNoteList >=> translateAbc abcConcat
-
+    buildNoteList >=> translateAbc abcConcat
+--  toNoteList
 
 outputRelativeNoteList :: Monad m => EventList -> NotateT m ODoc
 outputRelativeNoteList = 
-    toNoteList >=> translateLilyPond lyConcat lilypondRelativeForm 
+    buildNoteList >=> translateLilyPond lyConcat lilypondRelativeForm 
+--  toNoteList
     
 outputAbsoluteNoteList :: Monad m => EventList -> NotateT m ODoc
 outputAbsoluteNoteList evts = 
     (textoutput 3 "Lilypond 'absolute'" "")   >> 
-    toNoteList evts >>= translateLilyPond lyConcat lilypondAbsoluteForm 
-    
+    buildNoteList evts >>= translateLilyPond lyConcat lilypondAbsoluteForm 
+--  toNoteList    
 
                                 

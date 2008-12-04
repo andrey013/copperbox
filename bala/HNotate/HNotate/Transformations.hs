@@ -43,7 +43,7 @@ beamNoteList(NoteList se) =
 beamBlock :: MeterPattern -> Duration -> Duration -> Block -> Block
 beamBlock mp _ acis blk = case blk of
     SingleBlock i bar -> SingleBlock i (block i bar)  
-    PolyBlock i bars  -> PolyBlock i (fmap (block i) bars)
+    OverlayBlock i bars -> OverlayBlock i (fmap (block i) bars)
   where
     block i bar | i == 0 && acis /= duration_zero
                             = beamPartialBar mp acis bar

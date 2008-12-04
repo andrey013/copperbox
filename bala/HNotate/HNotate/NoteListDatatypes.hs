@@ -146,17 +146,13 @@ type System = Map.Map String EventList
 newtype EventListF evt = EventList { getEventList :: Seq evt }
     deriving (Show) 
     
-type EventList = EventListF Evt  
+type EventList = EventListF Event  
 
 
--- Change the type, or how its used?
-data Evt = Evt Grouping
-         | Poly [EventListF Evt]  
+data Event = SingleE Grouping
+           | OverlayE [EventListF Event]  
     deriving (Show)              
          
-instance Monoid (EventListF evt) where
-  mempty      = EventList mempty
-  mappend a b = EventList $ (getEventList a) >< (getEventList b)
 
 
 --------------------------------------------------------------------------------   
@@ -171,9 +167,10 @@ type NoteList         = NoteListF Grouping
 
 
 -- Follow the Abc style when voice overlays are grouped in whole bars.
--- The Int holds the bar number
+-- TODO - the Int held the bar number but it doesn't any longer
+-- Should it be reintroduced?
 data BlockF e         = SingleBlock Int (BarF e)
-                      | PolyBlock   Int (Seq (BarF e))
+                      | OverlayBlock Int (Seq (BarF e))
 
 type Block            = BlockF Grouping
 
@@ -190,7 +187,7 @@ instance Functor NoteListF where
   
 instance Functor BlockF where
   fmap f (SingleBlock i e)        = SingleBlock i (fmap f e)
-  fmap f (PolyBlock i se)         = PolyBlock i (fmap (fmap f) se)
+  fmap f (OverlayBlock i se)      = OverlayBlock i (fmap (fmap f) se)
   
 instance Functor BarF where
   fmap f (Bar se)                 = Bar (fmap f se)
@@ -205,7 +202,7 @@ instance F.Foldable NoteListF where
   
 instance F.Foldable BlockF where
   foldMap f (SingleBlock _ e)     = F.foldMap f e
-  foldMap f (PolyBlock _ se)      = F.foldMap (F.foldMap f) se
+  foldMap f (OverlayBlock _ se)   = F.foldMap (F.foldMap f) se
   
 instance F.Foldable BarF where
   foldMap f (Bar se)              = F.foldMap f se
@@ -219,8 +216,8 @@ instance Traversable NoteListF where
   traverse f (NoteList se)        = NoteList <$> traverse (traverse f) se
 
 instance Traversable BlockF where
-  traverse f (SingleBlock i e)    = (SingleBlock i) <$> traverse f e
-  traverse f (PolyBlock i se)     = (PolyBlock i) <$> traverse (traverse f) se
+  traverse f (SingleBlock i e)    = (SingleBlock i)  <$> traverse f e
+  traverse f (OverlayBlock i se)  = (OverlayBlock i) <$> traverse (traverse f) se
  
 instance Traversable BarF where
   traverse f (Bar se)             = Bar <$> traverse f se
@@ -314,7 +311,7 @@ abcOutput mark = _abc_output mark
 -- Shorthand constructors / builders for the external view
 
 
-(|*>) :: EventList -> Evt -> EventList
+(|*>) :: EventList -> Event -> EventList
 (|*>) (EventList t) evt = EventList $ t |> evt
 
 
@@ -331,7 +328,7 @@ root :: EventList
 root = EventList empty
 
 poly              :: [EventList] -> EventList -> EventList
-poly xs t         = t |*> Poly xs
+poly xs t         = t |*> OverlayE xs
 
 
 noAnno :: Annotation 
@@ -344,10 +341,10 @@ noteSgl'          :: Pitch -> Duration -> Annotation -> Grouping
 noteSgl' p d a    = Singleton $ Note p d a 
 
 note              :: Pitch -> Duration -> EventList -> EventList
-note  p d t       = t |*> Evt (noteSgl p d)
+note  p d t       = t |*> SingleE (noteSgl p d)
 
 note'             :: Pitch -> Duration -> Annotation -> EventList -> EventList
-note' p d a t     = t |*> Evt (noteSgl' p d a)
+note' p d a t     = t |*> SingleE (noteSgl' p d a)
 
 restSgl           :: Duration -> Grouping 
 restSgl d         = Singleton $ Rest d noAnno 
@@ -357,10 +354,10 @@ restSgl' d a      = Singleton $ Rest d a
 
 
 rest              :: Duration -> EventList -> EventList
-rest d t          = t |*> Evt (restSgl d)
+rest d t          = t |*> SingleE (restSgl d)
 
 rest'             :: Duration -> Annotation -> EventList -> EventList
-rest' d a t       = t |*> Evt (restSgl' d a)
+rest' d a t       = t |*> SingleE (restSgl' d a)
 
 spacerSgl         :: Duration -> Grouping 
 spacerSgl d       = Singleton $ Spacer d noAnno 
@@ -370,10 +367,10 @@ spacerSgl' d a    = Singleton $ Spacer d a
 
 
 spacer            :: Duration -> EventList -> EventList
-spacer d t        = t |*> Evt (spacerSgl d)
+spacer d t        = t |*> SingleE (spacerSgl d)
 
 spacer'           :: Duration -> Annotation -> EventList -> EventList
-spacer' d a t     = t |*> Evt (spacerSgl' d a)
+spacer' d a t     = t |*> SingleE (spacerSgl' d a)
 
 chordGrp          :: Seq Pitch -> Duration -> Grouping
 chordGrp se d     = Chord se d noAnno
@@ -382,19 +379,19 @@ chordGrp'         :: Seq Pitch -> Duration -> Annotation -> Grouping
 chordGrp' se d a  = Chord se d a
 
 chord             :: Seq Pitch -> Duration -> EventList -> EventList
-chord se d t      = t |*> Evt (chordGrp se d)
+chord se d t      = t |*> SingleE (chordGrp se d)
 
 chord'            :: Seq Pitch -> Duration -> Annotation -> EventList -> EventList
-chord' se d a t   = t |*> Evt (chordGrp' se d a)
+chord' se d a t   = t |*> SingleE (chordGrp' se d a)
 
 chordGrpL         :: [Pitch] -> Duration ->  Annotation -> Grouping
 chordGrpL xs d a  = Chord (fromList xs) d a
 
 chordL            :: [Pitch] -> Duration -> EventList -> EventList
-chordL xs d t     = t |*> Evt (chordGrpL xs d noAnno)
+chordL xs d t     = t |*> SingleE (chordGrpL xs d noAnno)
 
 chordL'           :: [Pitch] -> Duration -> Annotation -> EventList -> EventList
-chordL' xs d a t  = t |*> Evt (chordGrpL xs d a)
+chordL' xs d a t  = t |*> SingleE (chordGrpL xs d a)
 
 
 ugracesGrp        :: Seq (Pitch,Duration) -> Grouping
@@ -404,10 +401,10 @@ ugracesGrp'       :: Seq (Pitch,Duration) -> Annotation -> Grouping
 ugracesGrp' se a  = GraceNotes se UGrace a
 
 ugraces           :: Seq (Pitch,Duration) -> EventList -> EventList
-ugraces se t      = t |*> Evt (ugracesGrp se)
+ugraces se t      = t |*> SingleE (ugracesGrp se)
 
 ugraces'          :: Seq (Pitch,Duration) -> Annotation -> EventList -> EventList
-ugraces' se a t   = t |*> Evt (ugracesGrp' se a)
+ugraces' se a t   = t |*> SingleE (ugracesGrp' se a)
 
 ugracesGrpL       :: [(Pitch,Duration)] -> Grouping
 ugracesGrpL xs    = ugracesGrp (fromList xs)
@@ -417,10 +414,10 @@ ugracesGrpL' xs a = ugracesGrp' (fromList xs) a
 
 
 ugracesL          :: [(Pitch,Duration)] -> EventList -> EventList
-ugracesL xs t     = t |*> Evt (ugracesGrpL xs)
+ugracesL xs t     = t |*> SingleE (ugracesGrpL xs)
 
 ugracesL'         :: [(Pitch,Duration)] -> Annotation -> EventList -> EventList
-ugracesL' xs a t  = t |*> Evt (ugracesGrpL' xs a)
+ugracesL' xs a t  = t |*> SingleE (ugracesGrpL' xs a)
 
 
 agracesGrp        :: Seq (Pitch,Duration) -> Grouping
@@ -430,10 +427,10 @@ agracesGrp'       :: Seq (Pitch,Duration) -> Annotation -> Grouping
 agracesGrp' se a  = GraceNotes se AGrace a
 
 agraces           :: Seq (Pitch,Duration) -> EventList -> EventList
-agraces se t      = t |*> Evt (agracesGrp se)
+agraces se t      = t |*> SingleE (agracesGrp se)
 
 agraces'          :: Seq (Pitch,Duration) -> Annotation -> EventList -> EventList
-agraces' se a t   = t |*> Evt (agracesGrp' se a)
+agraces' se a t   = t |*> SingleE (agracesGrp' se a)
 
 agracesGrpL       :: [(Pitch,Duration)] -> Grouping
 agracesGrpL xs    = agracesGrp (fromList xs) 
@@ -443,10 +440,10 @@ agracesGrpL' xs a = agracesGrp' (fromList xs) a
 
 
 agracesL          :: [(Pitch,Duration)] -> EventList -> EventList
-agracesL xs t     = t |*> Evt (agracesGrpL xs)
+agracesL xs t     = t |*> SingleE (agracesGrpL xs)
 
 agracesL'         :: [(Pitch,Duration)] -> Annotation -> EventList -> EventList
-agracesL' xs a t  = t |*> Evt (agracesGrpL' xs a)
+agracesL' xs a t  = t |*> SingleE (agracesGrpL' xs a)
 
 npletGrp          :: Int -> Duration -> Seq Pitch -> Grouping
 npletGrp i ud se  = Nplet i ud se noAnno
@@ -455,29 +452,29 @@ npletGrp'         :: Int -> Duration -> Seq Pitch -> Annotation -> Grouping
 npletGrp' i ud se a   = Nplet i ud se a
 
 nplet             :: Int -> Duration -> Seq Pitch -> EventList -> EventList
-nplet i ud se t   = t |*> Evt (npletGrp i ud se)
+nplet i ud se t   = t |*> SingleE (npletGrp i ud se)
 
 nplet' :: Int -> Duration -> Seq Pitch ->  Annotation -> EventList -> EventList
-nplet' i ud se a t   = t |*> Evt (npletGrp' i ud se a)
+nplet' i ud se a t   = t |*> SingleE (npletGrp' i ud se a)
     
 tieSgl     :: Grouping
 tieSgl     = Singleton Tie
 
 tie             :: EventList -> EventList
-tie t           = t |*> Evt tieSgl
+tie t           = t |*> SingleE tieSgl
 
 
 beamStartSgl  :: Grouping
 beamStartSgl  = Singleton BeamStart 
 
 beamStart     :: EventList -> EventList
-beamStart t   = t |*> Evt  beamStartSgl
+beamStart t   = t |*> SingleE  beamStartSgl
 
 beamEndSgl    :: Grouping
 beamEndSgl    = Singleton BeamEnd
 
 beamEnd       :: EventList -> EventList
-beamEnd t     = t |*> Evt  beamEndSgl
+beamEnd t     = t |*> SingleE  beamEndSgl
 
 simpleEventlist        :: [Pitch] -> Duration -> EventList
 simpleEventlist ps d   = foldl (\t p -> t # note p d) root ps

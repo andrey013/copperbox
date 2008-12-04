@@ -245,6 +245,32 @@ lgs test update st0 = together . genSplit (adapt test) update st0
     together (st, l, Just a, r)  = (st,l,a <|r) 
 
 
+
+stranspose :: Seq (Seq a) -> Seq (Seq a)
+stranspose = step . viewl
+  where
+    step EmptyL         = S.empty
+    step (x :< sse)     = case viewl x of
+        EmptyL    -> stranspose sse
+        (e :< se) -> (e <| allheads sse) <| (stranspose $ se <| alltails sse)
+    
+    allheads = F.foldl' (\acc se -> acc |> head1 se)  S.empty
+    alltails = F.foldl' (\acc se -> acc |> tail1 se)  S.empty
+    
+    head1 se = case viewl se of EmptyL -> unmatchErr; 
+                                (a :< _) -> a
+    
+    tail1 se = case viewl se of EmptyL -> unmatchErr; 
+                                (_ :< sa) -> sa
+                                
+    unmatchErr = error "stranspose - sequences of unequal length" 
+    
+sfilter :: (a -> Bool) -> Seq a -> Seq a
+sfilter pf = step . viewl where
+  step EmptyL     = S.empty
+  step (a :< sa) | pf a       = a <| step (viewl sa)
+                 | otherwise  = step (viewl sa)
+                     
 --------------------------------------------------------------------------------
 -- other functions
     

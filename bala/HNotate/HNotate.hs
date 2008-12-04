@@ -22,7 +22,7 @@ module HNotate (
     
     -- restrict the interface to EventTree
       -- * Datatypes
-    System, EventList, Evt,
+    System, EventList, Event,
     system, systemL, system1,
     
     root, poly,
