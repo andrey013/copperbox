@@ -23,6 +23,7 @@ import HNotate.NoteListDatatypes hiding (chord)
 import HNotate.OnsetQueue
 import HNotate.Pitch
 import HNotate.ProcessingTypes
+import HNotate.SequenceUtils
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Reader
@@ -96,20 +97,14 @@ data MidiAtom = MNote Pitch Duration
 
 
 simplifyNoteList :: NoteList -> Seq (Int,Seq MidiGrouping)
-simplifyNoteList = F.foldl simplifyBlock empty . getNoteList 
+simplifyNoteList = F.foldl simplifyBlock empty . number 0 . getNoteList 
 
 
-simplifyBlock :: Seq (Int,Seq MidiGrouping) -> Block -> Seq (Int,Seq MidiGrouping)
-simplifyBlock acc (SingleBlock n b)     = acc |> (n, simplifyBar 1 b)
-simplifyBlock acc (OverlayBlock n bse)  = acc >< fmap fn (szipl bse [1..])
+simplifyBlock :: Seq (Int,Seq MidiGrouping) -> (Int,Block) -> Seq (Int,Seq MidiGrouping)
+simplifyBlock acc (n, SingleBlock b)    = acc |> (n, simplifyBar 1 b)
+simplifyBlock acc (n, OverlayBlock bse) = acc >< fmap fn (szipl bse [1..])
   where fn (b,ch) = (n, simplifyBar ch b)
 
-szipl :: Seq a -> [b] -> Seq (a,b)
-szipl se xs = step empty (viewl se) xs
-  where
-    step acc EmptyL     _       = acc
-    step acc _          []      = acc
-    step acc (a :< sa)  (b:bs)  = step (acc |> (a,b)) (viewl sa) bs    
 
 
 -- Assumes well constructed sequence: 

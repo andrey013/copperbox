@@ -63,8 +63,8 @@ buildUnmeteredNoteList =
     -- possibly overlayed
     buildBlocks :: [Seq Grouping] -> Seq Block
     buildBlocks []        = empty
-    buildBlocks [x]       = singleton $ SingleBlock 0 (Bar x)
-    buildBlocks xs        = singleton $ OverlayBlock 0 (fromList $ map Bar xs)
+    buildBlocks [x]       = singleton $ SingleBlock (Bar x)
+    buildBlocks xs        = singleton $ OverlayBlock (fromList $ map Bar xs)
     
 
 -- defork - turn the event list (which is really a tree) into genuinely
@@ -103,8 +103,8 @@ alignOverlays barlen = build . viewl . sfilter (not . emptyBar) where
     
     -- an empty bar is malformed but we turn it into a spacer bar
     build EmptyL                = let sp = spacerSgl barlen
-                                  in SingleBlock 0 (Bar (singleton sp))
-    build (a :< sa) | null sa   = SingleBlock 0 a
-                    | otherwise = OverlayBlock 0 (a <| sa) 
+                                  in SingleBlock (Bar (singleton sp))
+    build (a :< sa) | null sa   = SingleBlock a
+                    | otherwise = OverlayBlock (a <| sa) 
   
 

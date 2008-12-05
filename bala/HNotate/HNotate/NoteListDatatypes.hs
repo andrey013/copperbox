@@ -168,10 +168,8 @@ type NoteList         = NoteListF Grouping
 
 
 -- Follow the Abc style when voice overlays are grouped in whole bars.
--- TODO - the Int held the bar number but it doesn't any longer
--- Should it be reintroduced?
-data BlockF e         = SingleBlock Int (BarF e)
-                      | OverlayBlock Int (Seq (BarF e))
+data BlockF e         = SingleBlock (BarF e)
+                      | OverlayBlock (Seq (BarF e))
 
 type Block            = BlockF Grouping
 
@@ -187,8 +185,8 @@ instance Functor NoteListF where
   fmap f (NoteList se)            = NoteList (fmap (fmap f) se)
   
 instance Functor BlockF where
-  fmap f (SingleBlock i e)        = SingleBlock i (fmap f e)
-  fmap f (OverlayBlock i se)      = OverlayBlock i (fmap (fmap f) se)
+  fmap f (SingleBlock e)          = SingleBlock (fmap f e)
+  fmap f (OverlayBlock se)        = OverlayBlock (fmap (fmap f) se)
   
 instance Functor BarF where
   fmap f (Bar se)                 = Bar (fmap f se)
@@ -202,8 +200,8 @@ instance F.Foldable NoteListF where
   foldMap f (NoteList se)         = F.foldMap (F.foldMap f) se
   
 instance F.Foldable BlockF where
-  foldMap f (SingleBlock _ e)     = F.foldMap f e
-  foldMap f (OverlayBlock _ se)   = F.foldMap (F.foldMap f) se
+  foldMap f (SingleBlock e)       = F.foldMap f e
+  foldMap f (OverlayBlock se)     = F.foldMap (F.foldMap f) se
   
 instance F.Foldable BarF where
   foldMap f (Bar se)              = F.foldMap f se
@@ -217,8 +215,8 @@ instance Traversable NoteListF where
   traverse f (NoteList se)        = NoteList <$> traverse (traverse f) se
 
 instance Traversable BlockF where
-  traverse f (SingleBlock i e)    = (SingleBlock i)  <$> traverse f e
-  traverse f (OverlayBlock i se)  = (OverlayBlock i) <$> traverse (traverse f) se
+  traverse f (SingleBlock e)      = SingleBlock  <$> traverse f e
+  traverse f (OverlayBlock se)    = OverlayBlock <$> traverse (traverse f) se
  
 instance Traversable BarF where
   traverse f (Bar se)             = Bar <$> traverse f se

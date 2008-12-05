@@ -21,10 +21,15 @@ import qualified Data.Foldable as F
 import Data.Sequence
 import Prelude hiding (null)
 
-
+number :: Int -> Seq a -> Seq (Int,a) 
+number start se = sziplWith (flip (,)) se [start..]
 
 szip :: Seq a -> Seq b -> Seq (a,b)
 szip = szipWith (,)
+
+szipl :: Seq a -> [b] -> Seq (a,b)
+szipl = sziplWith (,)
+
 
 -- The result will be as long as the shortest seq, 
 -- this is the behaviour of list zip. 

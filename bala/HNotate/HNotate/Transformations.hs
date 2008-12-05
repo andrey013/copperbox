@@ -35,16 +35,19 @@ import Prelude hiding (null)
 
 beamNoteList :: Monad m => NoteList -> NotateT m NoteList
 beamNoteList(NoteList se) = 
-  return (\mp bar p -> NoteList $ fmap (beamBlock mp bar p) se)
-    `ap` asks meter_pattern 
-    `ap` asks bar_length 
-    `ap` asks anacrusis_displacement
+  return beamStep `ap` asks meter_pattern 
+                  `ap` asks bar_length 
+                  `ap` asks anacrusis_displacement
+  where
+    beamStep mp bar p = 
+      NoteList $ sziplWith (\ blk i -> (beamBlock i mp bar p blk)) se [0..]
 
 
-beamBlock :: MeterPattern -> Duration -> Duration -> Block -> Block
-beamBlock mp _ acis blk = case blk of
-    SingleBlock i bar -> SingleBlock i (block i bar)  
-    OverlayBlock i bars -> OverlayBlock i (fmap (block i) bars)
+
+beamBlock :: Int -> MeterPattern -> Duration -> Duration -> Block -> Block
+beamBlock i mp _ acis blk = case blk of
+    SingleBlock bar -> SingleBlock $ block i bar
+    OverlayBlock bars -> OverlayBlock $ fmap (block i) bars
   where
     block i bar | i == 0 && acis /= duration_zero
                             = beamPartialBar mp acis bar

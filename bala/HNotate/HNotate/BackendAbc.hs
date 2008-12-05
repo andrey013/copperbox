@@ -59,12 +59,13 @@ abcForm = unwrapMonad <=< inner
     inner = unwrapMonad . unComp . traverse (unleBody `comp` plrBody)
 
 outputNoteList :: BarConcatFun -> NoteList -> ODoc 
-outputNoteList bf = bf . F.foldr ((:) `onl` blockDoc) [] . getNoteList 
+outputNoteList bf = 
+    bf . F.foldr ((:) `onl` blockDoc) [] . number 0 . getNoteList 
 
 
-blockDoc :: Block -> (Int,ODoc)
-blockDoc (SingleBlock i s)    = (i, barDoc s <+> barline)
-blockDoc (OverlayBlock i se)  = (i, voiceOverlay se <+> barline)
+blockDoc :: (Int,Block) -> (Int,ODoc)
+blockDoc (i, SingleBlock s)    = (i, barDoc s <+> barline)
+blockDoc (i, OverlayBlock se)  = (i, voiceOverlay se <+> barline)
 
 
 voiceOverlay :: Seq Bar -> ODoc

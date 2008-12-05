@@ -90,12 +90,13 @@ getRelativePitch = asks relative_pitch >>= maybe no_rp_err (return)
   
     
 outputNoteList :: BarConcatFun -> NoteList -> ODoc 
-outputNoteList bf = bf . F.foldr ((:) `onl` blockDoc) [] . getNoteList 
+outputNoteList bf = 
+  bf . F.foldr ((:) `onl` blockDoc) [] . number 0 . getNoteList 
 
 
-blockDoc :: Block -> (Int,ODoc)
-blockDoc (SingleBlock i s)    = (i, barDoc s <+> barcheck)
-blockDoc (OverlayBlock i se)  = (i, polyphony se <+> barcheck)
+blockDoc :: (Int,Block) -> (Int,ODoc)
+blockDoc (i, SingleBlock s)    = (i, barDoc s <+> barcheck)
+blockDoc (i, OverlayBlock se)  = (i, polyphony se <+> barcheck)
 
     
 

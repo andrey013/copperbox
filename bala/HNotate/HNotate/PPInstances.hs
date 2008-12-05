@@ -168,15 +168,15 @@ instance PP OutputFormat where
   pp Midi       = text "Midi"  
 
 instance (PP e) => PP (NoteListF e) where
-  pp (NoteList se)        = genPunctuateSeq pp line se
-
+  pp (NoteList se)        = genPunctuateSeq pplBlock line (number 1 se) where
+      pplBlock (i,blk) = measureNumber i <&\> pp blk
+      
 instance (PP e) => Witness (NoteListF e) where
   textrep = wpp . pp
 
 instance (PP e) => PP (BlockF e) where
-  pp (SingleBlock i e)    = measureNumber i <&\> indent 4 (pp e)
-  pp (OverlayBlock i se)  = 
-      measureNumber i <&\> indent 4 (dblangles' $ vsep $ punctuate 
+  pp (SingleBlock e)    = indent 4 (pp e)
+  pp (OverlayBlock se)  = indent 4 (dblangles' $ vsep $ punctuate 
                                                (text " // ")
                                                (map pp $ F.toList se))
 
