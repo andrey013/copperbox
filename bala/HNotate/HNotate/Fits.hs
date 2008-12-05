@@ -22,10 +22,16 @@ module HNotate.Fits (
   Fits(..),
   splitRV,
   splitSequenceHy,
+  strides,
   sumMeasure, 
   sumSegments,
   segment,
-  anasegment
+  anasegment,
+  regiment,
+  anaregiment,
+  
+  -- testing
+  prop_regiment_same_lengths_as_sequence
  ) where
 
 -- Should only depend on Duration as its essential to have a 
@@ -34,8 +40,8 @@ module HNotate.Fits (
 import HNotate.Duration
 
 import qualified Data.Foldable as F
-import Data.Sequence hiding (reverse)
-import Prelude hiding (null, length)
+import Data.Sequence hiding (length)
+import Prelude hiding (null)
 
 
 
@@ -47,10 +53,19 @@ class (Ord b, Num b) => Fits a b | a -> b where
   measure   :: a -> b
   split     :: b -> a -> (a,a)
   hyphenate :: a -> Maybe a 
+  consumes  :: a -> b -> b
   
   -- default
+  consumes a b = b - measure a   
   hyphenate = const Nothing
-  
+
+
+-- By how much does an element _exceed_ the width?
+-- (How much does it stride over the width?)
+-- A positive answer indicates the element is bigger than the width. 
+-- A negative one - that it is smaller.
+strides   :: Fits a b => a -> b -> b
+strides a b = negate $ b - measure a  
 
 -- Pretend numeric instances are naturals
 instance Fits Int Int where 
@@ -117,5 +132,62 @@ anasegment hyph a d seg
                       False -> left <| segment hyph d right 
 
                 
-
+-- regiment - a non splitting segment function
+-- Also it splits on a list of widths not a single one. 
+-- This is because regiment's primary use is to split a bar 
+-- according to a meter pattern.
+--  
+-- Use two accumulators: one for Seq (Seq a) and one for Seq a
+regiment :: Fits a b => Seq a -> [b] -> Seq (Seq a)
+regiment se xs = step empty empty (viewl se) xs where
+    step :: Fits a b => Seq (Seq a) -> Seq a -> ViewL a -> [b] -> Seq (Seq a)
+    step acc ac EmptyL    _      = if null ac then acc else acc |> ac
+    step acc ac (a :< sa) []     = acc |>  ((ac |> a) >< sa)
+    step acc ac (a :< sa) (x:xs)  
+    -- The simple case 'a' fits in 'x' so append it to the current 
+    -- accumulator and carry on...
+        | measure a < x   = step acc (ac |> a) (viewl sa) 
+                                      (advance (measure a) (x:xs))
+        
+    -- An exact fit!
+        | measure a == x  = step (acc |> (ac |> a)) empty (viewl sa) xs
+         
+    -- More complicated 'a' doesn't fit in 'x', see if it fits in the 
+    -- next regiment or if it jumps (i.e. fills more than one regiment)                                          
+        | otherwise       = let (jmp,ys) = jumpedAdvance (measure a) (x:xs) in
+            case jmp of
+    -- True - we've jumped that means 'a' was big enough to fill a 
+    -- regiment by itself
+              True -> step (acc |> ac |> singleton a) empty (viewl sa) ys
+              
+    -- False - 'a' starts a new regiment (alternatively it could join 'ac' 
+    -- as as 'ac' joins 'acc', either way is acceptable).  
+              False -> step (acc |> ac) (singleton a) (viewl sa) ys  
+            
+anaregiment :: Fits a b => b -> Seq a -> [b] -> Seq (Seq a)
+anaregiment asis se xs = regiment se ys where
+    -- note that an anacrusis is how much left to consume,
+    -- not how much consumed.
+    ys = advance (rlen - asis) xs
+    rlen = F.sum xs
  
+
+
+
+
+-- have you consumed more than on regiment measure?
+jumpedAdvance :: (Num a, Ord a) => a -> [a] -> (Bool,[a])
+jumpedAdvance a xs = let ys = advance a xs in
+    if length xs > length ys + 1 then (True,ys) else (False, ys)     
+        
+advance :: (Num a, Ord a) => a -> [a] -> [a]
+advance a []                  = []
+advance a (x:xs)  | a == x    = xs
+                  | a >  x    = advance (a-x) xs
+                  | otherwise = (x-a) : xs
+
+prop_regiment_same_lengths_as_sequence :: Fits a b => Seq a -> [b] -> Bool
+prop_regiment_same_lengths_as_sequence se xs = sumMeasure se == sumSegments sse
+  where sse = regiment se xs
+  
+   

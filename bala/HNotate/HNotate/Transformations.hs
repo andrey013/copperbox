@@ -19,6 +19,7 @@ module HNotate.Transformations where
 import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
+import HNotate.Fits
 import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 import HNotate.ProcessingTypes
@@ -69,32 +70,11 @@ beam mp = Bar . cata (><) empty . fmap beamUnfold . splitMeasure mp . unBar
   where 
     unBar (Bar se) = se
 
--- SMst - splitMeasure state
-type SMst = ([Duration],Duration, Seq Grouping)
-
 splitMeasure :: MeterPattern -> Seq Grouping -> Seq (Seq Grouping)
-splitMeasure mp sg = apo step flush (meterDivisions mp, duration_zero, sg)
-  where
-    step :: SMst -> Maybe (Seq Grouping, SMst)
-    step ([],  _,_ )  = Nothing    -- run out of meter steps
-    step (m:ms,d,se)  = let (d',sl,sr) = lgDurationSplit m d se in
-                        if null sr then Nothing else Just (sl,(ms,d',sr))  
-    
-    flush :: SMst -> Seq (Seq Grouping)                      
-    flush (_,_,se) = singleton se
-
-lgDurationSplit :: Duration -> Duration -> Seq Grouping 
-                    -> (Duration, Seq Grouping, Seq Grouping)
-lgDurationSplit len start = 
-  lgs (<=len) (\st e -> st + rhythmicValue e) start
+splitMeasure (mp,d) se = regiment se (fmap (\m -> d * makeDuration m 1) mp)
 
 
 
--- | Turn a meter pattern into a list of durations
-meterDivisions :: MeterPattern -> [Duration]
-meterDivisions ([],_)   = []  -- is this valid?
-meterDivisions (x:xs,s) = 
-    scanl (\acc i -> acc + s * fromIntegral i) (s * fromIntegral x) xs
 
 shortenMP :: Duration -> MeterPattern -> MeterPattern
 shortenMP i (ms,d) = pairup $ intlist $ subn i $ drnlist ms
@@ -115,6 +95,7 @@ data BeamSt = BEAM | BEAM_OFF deriving (Eq,Show)
 
 -- beaming works nicely as an unfold as we get 'lookahead' 
 -- on the input stream
+-- TODO - would be simpler as a double accumulator
 beamUnfold :: Seq Grouping -> Seq Grouping
 beamUnfold sg = ana step (BEAM_OFF,sg)
   where

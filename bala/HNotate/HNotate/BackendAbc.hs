@@ -43,7 +43,7 @@ abcConcat :: BarConcatFun
 abcConcat = vsep . map snd
 
 translateAbc :: Monad m => BarConcatFun -> NoteList -> NotateT m ODoc
-translateAbc bf = fwd <=< printStep <=< beamNoteList <=< abcForm 
+translateAbc bf = fwd <=< printStep <=< abcForm <=< beamNoteList  
   where
     printStep = return . outputNoteList bf
     
@@ -86,7 +86,7 @@ barDoc = collapse . F.foldl fn (emptyDoc,(<+>),emptyDoc)
   
     fn :: (ODoc, ODocConcat, ODoc) -> Grouping -> (ODoc, ODocConcat, ODoc)
     fn (out,op,tip) (Singleton BeamStart) = (out `op` tip, (<>),  emptyDoc)
-    fn (out,op,tip) (Singleton BeamEnd)   = (out `op` tip, (<+>), emptyDoc)
+    fn (out,op,tip) (Singleton BeamEnd)   = (out `op` tip, (<|+>), emptyDoc)
     fn (out,op,tip) (Singleton e)         = (out `op` tip,  op,   atom e)
           
     fn (out,op,tip) (Chord se d a)        = (out `op` tip,  op, chord se d a)

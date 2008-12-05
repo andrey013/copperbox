@@ -17,7 +17,7 @@ module HNotate.Document (
   
   emptyDoc, isEmpty,
   text, char, string, fillString, int, spacing,
-  ( <> ), ( <+> ), ( <&\> ),
+  ( <> ), ( <+> ), (<|+>), ( <&\> ),
   hcat, hsep, vsep, dblvsep,
   punctuate,
   enclose, encloseSpace, dup,
@@ -112,6 +112,9 @@ a <+> b | isEmpty a   = b
         | isEmpty b   = a
         | otherwise   = spacejoin a b
 
+(<|+>) :: ODoc -> ODoc -> ODoc
+a <|+> b = spacejoin a b
+        
 (<&\>) :: ODoc -> ODoc -> ODoc
 a <&\> b | isEmpty a   = b
          | isEmpty b   = a

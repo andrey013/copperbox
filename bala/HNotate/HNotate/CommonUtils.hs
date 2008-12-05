@@ -114,37 +114,7 @@ nextOf :: (Bounded a, Eq a, Enum a) => a -> a
 nextOf x | x == maxBound = minBound
          | otherwise     = succ x
 
---------------------------------------------------------------------------------
--- splitting a sequence 
 
--- genSplit c.f. splitAt but with a predicate and state rather 
--- than an index. 
--- Also returns the state, the left seq, the pivot (if found) 
--- and the right seq.
-
--- (05/12/08) - can Fits be used to get rid of these two...
-  
-genSplit :: (st -> st -> Bool) -> (st -> a -> st) 
-             -> st -> Seq a -> (st, Seq a, Maybe a, Seq a)
-genSplit test update initial_state = split initial_state S.empty . viewl
-  where
-    split st acc EmptyL     = (st, acc, Nothing, S.empty)
-    split st acc (e :< se)  = let st' = update st e in
-                              if (st `test` st' == False)
-                                then (st , acc, Just e, se)
-                                else split st' (acc |> e) (viewl se)
-
--- lgs less general splitter             
-lgs :: (st -> Bool) -> (st -> a -> st) 
-          -> st -> Seq a -> (st, Seq a, Seq a)             
-lgs test update st0 = together . genSplit (adapt test) update st0
-  where
-    adapt f = \_ new -> f new
-    together (st, l, Nothing, r) = (st,l,r)  
-    together (st, l, Just a, r)  = (st,l,a <|r) 
-
-
-            
 
 --------------------------------------------------------------------------------
 -- ShowS helpers
