@@ -29,7 +29,7 @@ import Control.Applicative hiding (empty)
 
 import qualified Data.Foldable as F
 import Data.Generics
-import Data.List (sort, transpose, intercalate)
+import Data.List (sort)
 import Data.Sequence hiding (length, null)
 import qualified Data.Sequence as S -- for length and null
 import Data.Traversable
@@ -210,21 +210,9 @@ instance PitchValue GraceNotes where
 -- Fits and Sounds
 
 instance Fits Event Duration where
-  measure (Note _ d)          = d
-  measure (Rest d)            = d
-  measure (Chord _ d)         = d 
-  measure (Spacer d)          = d
-  measure (AGrace _ _ d)      = d
-  measure (UGrace _ d _)      = d
-  measure (Mark _)            = duration_zero
-  
-  resizeTo (Note p _)       d = Note p d
-  resizeTo (Rest _)         d = Rest d
-  resizeTo (Chord se _)     d = Chord se d 
-  resizeTo (Spacer _)       d = Spacer d
-  resizeTo (AGrace se p _)  d = AGrace se p d
-  resizeTo (UGrace p _ se)  d = UGrace p d se
-  resizeTo (Mark z)         d = Mark z
+  measure           = rhythmicValue
+  split             = splitRV
+
   
   
 instance Sounds Event where
@@ -278,7 +266,7 @@ picture d sn = F.foldr fn [] $ linearTransform $ fmapMotif (inexactClave d) sn
   
 inexactClave :: (Sounds a, RhythmicValue a) => Duration -> MotifF a -> MotifF Clave
 inexactClave d = 
-    Motif . fmap aggregateToClave . segment d . rhythmicEvents . getMotif
+    Motif . fmap aggregateToClave . segment False d . rhythmicEvents . getMotif
   where
 
     aggregateToClave :: Seq RhythmicEvent -> Clave

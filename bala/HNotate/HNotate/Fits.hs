@@ -1,5 +1,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -15,9 +18,20 @@
 --
 --------------------------------------------------------------------------------
 
-module HNotate.Fits where
+module HNotate.Fits (
+  Fits(..),
+  splitRV,
+  splitSequenceHy,
+  sumMeasure, 
+  sumSegments,
+  segment,
+  anasegment
+ ) where
 
--- Should be no deps on other HNotate modules
+-- Should only depend on Duration as its essential to have a 
+-- Fits instance for Duration.
+
+import HNotate.Duration
 
 import qualified Data.Foldable as F
 import Data.Sequence hiding (reverse)
@@ -28,100 +42,80 @@ import Prelude hiding (null, length)
 --------------------------------------------------------------------------------
 -- 'Fitting' 
 
-data Fit a = Fit a | Split a a | AllRight a
-  deriving Show
 
--- Note (30/11/08) 
--- To handle nplets (i.e. tuplets) resizeTo might have to be factored into
--- resizeLeftTo & resizeRightTo
 class (Ord b, Num b) => Fits a b | a -> b where
   measure   :: a -> b
-  resizeTo  :: a -> b -> a
+  split     :: b -> a -> (a,a)
+  hyphenate :: a -> Maybe a 
+  
+  -- default
+  hyphenate = const Nothing
+  
 
+-- Pretend numeric instances are naturals
 instance Fits Int Int where 
   measure = id
-  resizeTo _ b = b 
+  split a b | a < b     = (a,0)
+            | otherwise = (b, a-b) 
 
-total :: (Fits a b) => Fit a -> b  
-total (Fit a)       = measure a
-total (Split a b)   = measure a + measure b
-total (AllRight b)  = measure b
+instance Fits Duration Duration where 
+  measure = id
+  split a b | a < b     = (a,0)
+            | otherwise = (b, a-b) 
+            
+splitRV :: RhythmicValue a => Duration -> a -> (a,a)
+splitRV l a = let (ld,rd) = split l (rhythmicValue a) 
+              in (modifyDuration a ld, modifyDuration a rd)          
 
+-- With (- -XUndecidableInstances -)this can be relaxed to  
+-- instance Fits a b => Fits (Seq a) b             
+instance Fits a Duration => Fits (Seq a) Duration where
+  measure   = sumMeasure
+  split     = splitSequenceHy False
 
-fits :: Fits a b => a -> b -> Fit a
-fits a i  | measure a <= i  = Fit a
-          | i <= 0          = AllRight a
-          | otherwise       = Split (resizeTo a i) (resizeTo a (measure a - i)) 
+splitSequenceHy :: Fits a b => Bool -> b -> Seq a -> (Seq a, Seq a)
+splitSequenceHy use_hy l se = step empty (viewl se) l 
+  where
+    step :: Fits a b => Seq a -> ViewL a -> b -> (Seq a, Seq a)
+    step sa EmptyL    _   = (sa, empty)
+    step sa (e :< sz) d 
+        | d == 0          = (sa, e <| sz)
+        | otherwise       = let ed = measure e in 
+            if ed <= d then step (sa |> e) (viewl sz) (d-ed)
+                       -- e must divide as d/=0 
+                       else let (el,er) = split d e in (sa |-> el, er <| sz)
+    
+    (|->) :: Fits a b => Seq a -> a -> Seq a
+    (|->) sx x = if use_hy 
+                    then maybe (sx |> x) (\hy -> sx |> x |> hy) (hyphenate x)
+                    else sx |> x                        
+            
+
 
 sumMeasure :: (Fits a b, F.Foldable c) => c a -> b
 sumMeasure = F.foldr (\e a -> measure e + a) 0 
 
-fitsSeq :: Fits a b => Seq a -> b -> Fit (Seq a)
-fitsSeq = fitsSeqHy id 
 
-
-
-fitsSeqHy :: (Fits a b) => (Seq a -> Seq a) -> Seq a -> b -> Fit (Seq a)
-fitsSeqHy hyphenate sa i 
-    | i <= 0      = AllRight sa
-    | otherwise   = step (empty,0) (viewl sa)
-  where 
-    step (acc,_) EmptyL     = Fit acc
-    step (acc,n) (e :< se)  = case fits e (i - n) of
-            Fit a      -> step (acc |> a, n + measure e) (viewl se) 
-            Split a b  -> Split (hyphenate $ acc |> a) (b <| se)
-            AllRight _ -> if null acc then AllRight (e <| se)
-                                      else Split acc (e <| se) 
-
-                    
 sumSegments :: Fits a b => Seq (Seq a) -> b
 sumSegments = F.foldr (\a n -> sumMeasure a + n) 0
-                                  
--- Only do segmenting on sequences, it's getting too exotic to do on 
--- other containers.
-segment :: Fits a b => b -> Seq a -> Seq (Seq a)
-segment n se | n > 0      = asegment 0 n se  
-             | otherwise  = error $ "segment - segment divisor must be >0"
 
 
--- Segment with an anacrusis - i.e. the first section is a different 
--- length to the following sections. In music the anacrusis will be smaller
--- than the following sections but we do not enforce that here. 
--- (Note that the anacrusis can be 0).
-asegment :: Fits a b => b -> b -> Seq a -> Seq (Seq a)
-asegment = asegmentHy id
-
- 
--- The most general segment function: 
--- The first segment length 'a' is an anacrusis (it doesn't have to be 
--- the same length as the following section).
--- Also the function uses a hyphenate function this is used on the left section
--- when a split has divided an element. If the sequence contained words this 
--- could be used to add a hyphen to the breaking line, for music it means we 
--- can add a tie when we have broken a note that spans two bars.
-
-asegmentHy :: Fits a b => (Seq a -> Seq a) -> b -> b -> Seq a -> Seq (Seq a)
-asegmentHy hyphenate asis n se  
-    | n <= 0      = error $ "segmenting - the divisor must be >0"
-    | otherwise   = let (ana_segment, rest) = firstStep se
-                    in step ana_segment rest               
+segment :: Fits a b => Bool -> b -> Seq a -> Seq (Seq a)
+segment hyph d seg | d <= 0     = singleton seg
+                   | otherwise  = step seg 
   where
-    -- firstStep :: Fits a b => Seq a -> (Seq (Seq a), Seq a)
-    firstStep sa = case fitsSeqHy hyphenate sa asis of
-                    Fit a       -> (singleton a, empty)
-                    Split a b   -> (singleton a, b)
-                    AllRight b  -> (empty,       b) 
-                    
-    step acc sa = case fitsSeqHy hyphenate sa n of
-                    Fit a       -> acc |> a
-                    Split a b   -> step (acc |> a) b -- to keen...
-                    AllRight _  -> error "unreachable" -- (n<=0) guard stops this 
+    step s = let (l,r) = splitSequenceHy hyph d s in case null r of
+                True -> singleton l
+                False -> l <| step r
 
-{-
+anasegment :: Fits a b => Bool -> b -> b -> Seq a -> Seq (Seq a)           
+anasegment hyph a d seg 
+    | a <= 0    = segment hyph d seg
+    | otherwise = let (left,right) = splitSequenceHy hyph a seg in
+                  case null right of 
+                      True -> singleton left
+                      False -> left <| segment hyph d right 
 
--- This is the type signature we want, it needs the fundep on Fits
-prop_split_eq_total :: (Fits a b) => b -> a -> Bool
-prop_split_eq_total split a = measure a == total (fits a split)
+                
 
--}
  

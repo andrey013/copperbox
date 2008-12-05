@@ -67,10 +67,6 @@ tsRender1 (n,d) = applyi n ((cs d) .) id where
   cs _  = showChar '+' 
   
 
-instance Fits Duration Duration where
-  measure d     = d  
-  resizeTo _  d = d
-
 
 -- barfill is analoguous to divMod, but with funnier types...
 
@@ -83,7 +79,7 @@ divModBar dn (n,d) = fn $ dn `divModR` (makeDuration n d) where
 
 
 segmentByTS :: Fits a Duration => TimeSig -> Seq a -> Seq (Seq a)
-segmentByTS (n,d) se = segment (makeDuration 1 d) se  
+segmentByTS (n,d) se = segment False (makeDuration 1 d) se  
 
 
 
@@ -127,15 +123,13 @@ instance RhythmicValue RhythmicEvent where
   rhythmicValue (Sounds d)        = d
   rhythmicValue (Rests d)         = d
   
-  modifyDuration (Sounds _)     d = Sounds d 
-  modifyDuration (Rests _)      d = Rests d 
+  modifyDuration (Sounds _)         d = Sounds d
+  modifyDuration (Rests _)          d = Rests d
+
 
 instance Fits RhythmicEvent Duration where
-  measure (Sounds d)            = d
-  measure (Rests d)             = d
-  
-  resizeTo (Sounds _)         d = Sounds d
-  resizeTo (Rests _)          d = Rests d
+  measure     = rhythmicValue
+  split       = splitRV
   
 
   

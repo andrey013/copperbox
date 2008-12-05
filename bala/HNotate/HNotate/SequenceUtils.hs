@@ -87,8 +87,7 @@ sfilter pf = step . viewl where
   step EmptyL     = empty
   step (a :< sa) | pf a       = a <| step (viewl sa)
                  | otherwise  = step (viewl sa)
-                     
- 
+
 
 unseqMap :: (a -> b) -> Seq a -> [b]
 unseqMap f = F.foldr (\e a -> (f e) : a) []     

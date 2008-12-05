@@ -57,21 +57,7 @@ foldrOn :: F.Foldable t => (b -> a -> a) -> (c -> b) -> a -> t c -> a
 foldrOn op ppf = F.foldr (op `onl` ppf)
 
 
--- variations of flipped bind with higher arity
 
--- (=<<) i.e. do { a <- m1; m a}
-effectM :: (Monad m) => (a -> m b) -> m a -> m b
-effectM m m1 = m =<< m1 
-
-effectM2 :: (Monad m) => (a -> b -> m c) -> m a -> m b -> m c
-effectM2 m m1 m2 = do { a <- m1; b <- m2; m a b}
-
-effectM3 :: (Monad m) => (a -> b -> c -> m d) -> m a -> m b -> m c -> m d
-effectM3 m m1 m2 m3 = do { a <- m1; b <- m2; c <- m3; m a b c}
-
-effectM4 :: (Monad m) => (a -> b -> c -> d -> m e) 
-                            -> m a -> m b -> m c -> m d -> m e
-effectM4 m m1 m2 m3 m4 = do { a <- m1; b <- m2; c <- m3; d <- m4; m a b c d}
 
 --------------------------------------------------------------------------------
 -- variations on either - postprocessing with a success or failure continuation
@@ -85,16 +71,6 @@ eitherSkM sk = either (return . Left . id)  (\a -> sk a >>= return . Right)
 eitherSkM' :: Monad m => (b -> m (Either a c)) -> Either a b -> m (Either a c)
 eitherSkM' sk = either (return . Left . id)  (\a -> sk a >>= return)
 
-
-
-eitherFk :: (a -> z) -> Either a b -> Either z b
-eitherFk fk = either (Left . fk)  (Right . id)
-
-eitherFkM :: Monad m => (a -> m z) -> Either a b -> m (Either z b)
-eitherFkM sk = either (\a -> sk a >>= return . Left)  (return . Right . id)
-
-eitherFkM' :: Monad m => (a -> m (Either z b)) -> Either a b -> m (Either z b)
-eitherFkM' sk = either (\a -> sk a >>= return)  (return . Right . id)
 
 
 -- pairs
@@ -115,12 +91,11 @@ dup :: a -> (a,a)
 dup a = (a,a)
 
 
-flipper :: (a -> b -> c -> d) -> b -> c -> a -> d
-flipper f y z = \x -> f x y z
 
 
 --------------------------------------------------------------------------------
 -- enum functions for cycles (primarily helpful for pitch letters)
+
 
 enumFromCyc :: (Bounded a, Enum a, Eq a) => a -> [a]
 enumFromCyc a = a : (unfoldr f $ nextOf a)
@@ -138,7 +113,7 @@ enumFromToCyc a b | a == b    = [a]
 nextOf :: (Bounded a, Eq a, Enum a) => a -> a  
 nextOf x | x == maxBound = minBound
          | otherwise     = succ x
-             
+
 --------------------------------------------------------------------------------
 -- splitting a sequence 
 
@@ -146,6 +121,8 @@ nextOf x | x == maxBound = minBound
 -- than an index. 
 -- Also returns the state, the left seq, the pivot (if found) 
 -- and the right seq.
+
+-- (05/12/08) - can Fits be used to get rid of these two...
   
 genSplit :: (st -> st -> Bool) -> (st -> a -> st) 
              -> st -> Seq a -> (st, Seq a, Maybe a, Seq a)
@@ -167,23 +144,7 @@ lgs test update st0 = together . genSplit (adapt test) update st0
     together (st, l, Just a, r)  = (st,l,a <|r) 
 
 
-                     
---------------------------------------------------------------------------------
--- other functions
-    
--- elsethenif c.f maybe and either
-elsethenif :: a -> a -> Bool -> a
-elsethenif fk sk p = if p then sk else fk
-
-ifte :: Bool -> a -> a -> a
-ifte p sk fk = if p then sk else fk
-
-worklist :: (a -> (b, [a])) -> [a] -> [b]
-worklist f = step [] 
-  where step cca []     = reverse cca
-        step cca (y:ys) = let (b,zs) = f y in step (b:cca) (ys++zs)
-        
-                     
+            
 
 --------------------------------------------------------------------------------
 -- ShowS helpers

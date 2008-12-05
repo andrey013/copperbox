@@ -95,7 +95,7 @@ spacerPrefix asis (d,se) | d == 0 || d == asis  = se
                          | otherwise            = spacerSgl d <| se
 
 segmentToBars :: Duration -> Duration -> Seq Grouping -> Seq Bar
-segmentToBars asis barlen = fmap Bar . asegmentHy (|> tieSgl) asis barlen
+segmentToBars asis barlen = fmap Bar . anasegment True asis barlen
 
 alignOverlays :: Duration -> Seq Bar -> Block
 alignOverlays barlen = build . viewl . sfilter (not . emptyBar) where

@@ -37,7 +37,7 @@ import Data.Ratio
 import Data.Sequence hiding (length, null)
 import qualified Data.Sequence as S
 import Data.Traversable
-
+import Numeric (fromRat)
 
 
 data OutputFormat = Abc | Ly | Midi
@@ -306,14 +306,44 @@ instance PitchValue (Seq GraceNote) where
 -- Fits instances
     
 instance Fits Atom Duration where
-  measure  e   = rhythmicValue e
-  resizeTo e d = modifyDuration e d
+  measure  e  = rhythmicValue e
   
+  split l e   = let (el,er) = splitRV l e in (el, dropAnno er)
+  
+  hyphenate (Note _ _ _)            = Just Tie
+  hyphenate (Rest _ _)              = Nothing
+  hyphenate (Spacer _ _)            = Nothing
+  hyphenate (RhythmicMark _ _ _)    = Just Tie
+  hyphenate (Mark _ _)              = Nothing
+  hyphenate BeamStart               = Nothing
+  hyphenate BeamEnd                 = Nothing
+  hyphenate Tie                     = Nothing
   
 instance Fits Grouping Duration where
-  measure  e   = rhythmicValue e
-  resizeTo e d = modifyDuration e d
-    
+  measure  e  = rhythmicValue e
+  
+  split l (Singleton e)       = 
+      let (a,b) = split l e in (Singleton a, Singleton $ dropAnno b)
+      
+  split l (Chord se d a)      = 
+      let (da,db) = split l d in (Chord se da a, Chord se db noAnno)
+   
+  -- grace notes shouldn't be split, if they are then the calling 
+  -- function is wrong...  
+  -- It might of course be better to represent gracenotes along
+  -- with the note they grace, Bala does this.   
+  split l (GraceNotes se m a) = error $ "can't split gracenotes"
+      
+      
+  split l (Nplet i ud se a)   = 
+      let (da,db)   = npletDuration (S.length se) l `split` ud 
+          sza       = (da/db) * (fromIntegral (S.length se) % 1)
+          (sa,sb)   = S.splitAt (floor $ fromRat sza) se
+      in (Nplet i ud sa a, Nplet i ud sb noAnno)
+
+  hyphenate (Chord _ _ _)     = Just (Singleton Tie)
+  hyphenate _                 = Nothing
+       
 --------------------------------------------------------------------------------
 -- Annotations and marks
 
@@ -328,6 +358,15 @@ lyOutput mark = _ly_output mark
 
 abcOutput :: Mark a -> ODoc
 abcOutput mark = _abc_output mark
+
+noAnno :: Annotation 
+noAnno = Annotation { _ly_anno=id, _abc_anno=id } 
+
+dropAnno :: Atom -> Atom
+dropAnno (Note p d _)   = Note p d noAnno
+dropAnno (Rest d _)     = Rest d noAnno
+dropAnno (Spacer d _)   = Spacer d noAnno
+dropAnno a              = a
   
 --------------------------------------------------------------------------------
 -- Shorthand constructors / builders for the external view
@@ -353,10 +392,7 @@ poly              :: [EventList] -> EventList -> EventList
 poly xs t         = t |*> OverlayE xs
 
 event             :: Grouping -> EventList -> EventList
-event e t         = t |*> SingleE e
-
-noAnno :: Annotation 
-noAnno = Annotation { _ly_anno=id, _abc_anno=id }  
+event e t         = t |*> SingleE e 
 
 
 noteSgl           :: Pitch -> Duration -> Grouping 
