@@ -29,7 +29,7 @@ module HNotate.Fits (
   anasegment,
   regiment,
   anaregiment,
-  
+  advance,
   -- testing
   prop_regiment_same_lengths_as_sequence
  ) where

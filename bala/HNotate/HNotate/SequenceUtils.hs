@@ -88,6 +88,19 @@ sfilter pf = step . viewl where
   step (a :< sa) | pf a       = a <| step (viewl sa)
                  | otherwise  = step (viewl sa)
 
+sgroupBy                :: (a -> a -> Bool) -> Seq a -> Seq (Seq a)
+sgroupBy eq se          = step (viewl se) where
+    step EmptyL         = empty
+    step (a :< sa)      = (a <| sy) <| step (viewl sz) where
+                            (sy,sz) = sspan (eq a) sa
+
+
+sspan                   :: (a -> Bool) -> Seq a -> (Seq a, Seq a)
+sspan p se              = step (viewl se) where
+    step EmptyL         = (empty,empty)
+    step (a :< sa)      
+            | p a       = let (sy,sz) = step (viewl sa) in (a <| sy, sz)
+            | otherwise = (empty, a <| sa)                             
 
 unseqMap :: (a -> b) -> Seq a -> [b]
 unseqMap f = F.foldr (\e a -> (f e) : a) []     

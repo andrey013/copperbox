@@ -21,12 +21,14 @@ import HNotate.Duration
 import HNotate.Pitch
 
 import qualified Data.Map as Map
+import Data.Ratio
 
 --------------------------------------------------------------------------------
 -- Music representation
 type MeterPattern = ([Int],Duration)
 
-
+meterPatternLength :: MeterPattern -> Duration
+meterPatternLength (xs,d) = d * (%1) (fromIntegral $ sum xs)  
 
 
 data Key = Key PitchLabel Mode [PitchLabel]
