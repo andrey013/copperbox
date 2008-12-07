@@ -93,13 +93,15 @@ ppMotif :: Motif -> Doc
 ppMotif = genPPMotifF ppEvent space
 
 ppEvent :: Event -> Doc 
-ppEvent (Note p d)      = ppPitch p   <> durationSuffix d
-ppEvent (Rest d)        = char 'r'    <> durationSuffix d
-ppEvent (Chord se d)    = ppChord se  <> durationSuffix d
-ppEvent (Spacer d)      = char 'z'    <> durationSuffix d
-ppEvent (AGrace se p d) = ppGrace se  <> char '^' <> ppPitch p <> durationSuffix d 
-ppEvent (UGrace p d se) = ppPitch p   <> durationSuffix d <> char '^' <> ppGrace se 
-ppEvent (Mark m)        = ppMark m              
+ppEvent (NoteE p d)       = ppPitch p   <> durationSuffix d
+ppEvent (RestE d)         = char 'r'    <> durationSuffix d
+ppEvent (ChordE se d)     = ppChord se  <> durationSuffix d
+ppEvent (SpacerE d)       = char 'z'    <> durationSuffix d
+ppEvent (AGraceE se p d)  = ppGrace se  <> char '^' <> ppPitch p 
+                                        <> durationSuffix d 
+ppEvent (UGraceE p d se)  = ppPitch p   <> durationSuffix d <> char '^' 
+                                        <> ppGrace se 
+ppEvent (MarkE m)         = ppMark m              
 
 
 

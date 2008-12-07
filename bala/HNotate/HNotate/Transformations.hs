@@ -9,7 +9,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Transformations on NoteLists that don't necessarily preverse shape
+-- Transformations on NoteLists that don't necessarily preserve shape
 -- (and so can't be done with Data.Traversable).
 --
 --------------------------------------------------------------------------------

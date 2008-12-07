@@ -80,6 +80,11 @@ fork f (a,b) = (f a, f b)
 forkM :: Monad m => (a -> m b) -> (a,a) -> m (b,b)
 forkM f (a,b) = f a >>= \a' -> f b >>= \b' -> return (a',b')
 
+{-
+-- alternatively
+-- fork (f,g) a = (f a, g a)
+-}
+
 
 prod :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
 prod f g (a,b) = (f a, g b)

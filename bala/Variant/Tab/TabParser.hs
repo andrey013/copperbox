@@ -8,7 +8,7 @@ import Bala.Base
 import Data.Sequence
 
 import Control.Applicative hiding (many, optional, (<|>), empty )
-import Control.Monad (replicateM_, foldM)
+import Control.Monad (ap, replicateM_, foldM)
 
 import Data.Char (isPrint, isSpace)
 import qualified Data.Foldable as F
@@ -18,6 +18,12 @@ import Data.Sequence
 import Text.ParserCombinators.Parsec
 
 
+-- | An Applicative instance for Parsec. 
+instance Applicative (GenParser tok st) where
+  pure = return
+  (<*>) = ap
+  
+  
 type BPos = Int
 type StrNum = Int
 type TabParser a = GenParser Char ParseState a
@@ -169,5 +175,16 @@ barLineParse :: TabParser Char
 barLineParse = char '|' 
 
 
-
+-- It generates a parse error if we get to eof without parsing p
+-- which is what we want.
+water :: GenParser Char st a -> GenParser Char st a
+water p = do
+    a <- optionMaybe p    
+    case a of
+      Just a -> return $ a
+      Nothing -> anyChar >> water p 
+      
+-- | A digit seuence, returning Int.
+positiveInt :: GenParser Char st Int
+positiveInt = read <$> many1 digit      
 

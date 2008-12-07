@@ -66,14 +66,14 @@ midiLines inst sse = F.mapM_ outputChannel sse where
 
         
 outputEvent :: Event -> OutputMidi ()
-outputEvent (Note p d)          = note (midiPitch p) (ticks d)
-outputEvent (Rest d)            = spacer (ticks d)
-outputEvent (Chord se d)        = chord (F.foldr fn [] se) (ticks d) where
+outputEvent (NoteE p d)         = note (midiPitch p) (ticks d)
+outputEvent (RestE d)           = spacer (ticks d)
+outputEvent (ChordE se d)       = chord (F.foldr fn [] se) (ticks d) where
                                       fn p xs = (midiPitch p) : xs
-outputEvent (Spacer d)          = spacer (ticks d)    
-outputEvent (AGrace se p d)     = note (midiPitch p) (ticks d) -- to do
-outputEvent (UGrace p d se)     = note (midiPitch p) (ticks d) -- to do
-outputEvent (Mark _)            = return ()
+outputEvent (SpacerE d)         = spacer (ticks d)    
+outputEvent (AGraceE se p d)    = note (midiPitch p) (ticks d) -- to do
+outputEvent (UGraceE p d se)    = note (midiPitch p) (ticks d) -- to do
+outputEvent (MarkE _)           = return ()
 
 durationGraces :: (Seq (Pitch, Duration)) -> Duration
 durationGraces = F.foldr (\e n -> snd e + n) 0

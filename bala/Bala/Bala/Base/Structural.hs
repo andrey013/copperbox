@@ -59,13 +59,13 @@ type Motif    = MotifF Event
 
 type GraceNotes = Seq (Pitch,Duration)
 
-data Event = Note Pitch Duration     
-           | Rest Duration
-           | Chord (Seq Pitch) Duration
-           | Spacer Duration
-           | AGrace GraceNotes Pitch Duration -- accented grace
-           | UGrace Pitch Duration GraceNotes -- unaccented grace
-           | Mark Mark                  -- a mark that has no duration
+data Event = NoteE Pitch Duration     
+           | RestE Duration
+           | ChordE (Seq Pitch) Duration
+           | SpacerE Duration
+           | AGraceE GraceNotes Pitch Duration -- accented grace
+           | UGraceE Pitch Duration GraceNotes -- unaccented grace
+           | MarkE Mark                  -- a mark that has no duration
   deriving (Eq,Data,Show,Typeable)
   
 
@@ -114,10 +114,10 @@ infixl 7 ++-
 
 
 note      :: Pitch -> Duration -> Event
-note p d  = Note p d
+note p d  = NoteE p d
 
 chord     :: [Pitch] -> Duration -> Event
-chord ps d  = Chord (fromList $ sort ps) d
+chord ps d  = ChordE (fromList $ sort ps) d
 
 
     
@@ -161,43 +161,43 @@ instance Traversable MotifF where
 -- RhythmicValue and PitchValue
 
 instance RhythmicValue Event where
-  rhythmicValue (Note _ d)          = d 
-  rhythmicValue (Rest d)            = d
-  rhythmicValue (Chord _ d)         = d
-  rhythmicValue (Spacer d)          = d
-  rhythmicValue (AGrace _ _ d)      = d 
-  rhythmicValue (UGrace _ d _)      = d  
-  rhythmicValue (Mark _)            = duration_zero 
+  rhythmicValue (NoteE _ d)         = d 
+  rhythmicValue (RestE d)           = d
+  rhythmicValue (ChordE _ d)        = d
+  rhythmicValue (SpacerE d)         = d
+  rhythmicValue (AGraceE _ _ d)     = d 
+  rhythmicValue (UGraceE _ d _)     = d  
+  rhythmicValue (MarkE _)           = duration_zero 
   
-  modifyDuration (Note p _)       d = Note p d 
-  modifyDuration (Rest _)         d = Rest d
-  modifyDuration (Chord se _)     d = Chord se d
-  modifyDuration (Spacer _)       d = Spacer d
-  modifyDuration (AGrace se p _)  d = AGrace se p d 
-  modifyDuration (UGrace p _ se)  d = UGrace p d se
-  modifyDuration (Mark m)         d = Mark m
+  modifyDuration (NoteE p _)      d = NoteE p d 
+  modifyDuration (RestE _)        d = RestE d
+  modifyDuration (ChordE se _)    d = ChordE se d
+  modifyDuration (SpacerE _)      d = SpacerE d
+  modifyDuration (AGraceE se p _) d = AGraceE se p d 
+  modifyDuration (UGraceE p _ se) d = UGraceE p d se
+  modifyDuration (MarkE m)        d = MarkE m
  
 instance PitchValue Event where
-  pitchValue (Note p _)          = [p]
-  pitchValue (Rest _)            = [] 
-  pitchValue (Chord se _)        = pitchValue se
-  pitchValue (Spacer _)          = []      
-  pitchValue (AGrace se p _)     = p : pitchValue se
-  pitchValue (UGrace p _ se)     = p : pitchValue se
-  pitchValue (Mark _)            = []
+  pitchValue (NoteE p _)            = [p]
+  pitchValue (RestE _)              = [] 
+  pitchValue (ChordE se _)          = pitchValue se
+  pitchValue (SpacerE _)            = []      
+  pitchValue (AGraceE se p _)       = p : pitchValue se
+  pitchValue (UGraceE p _ se)       = p : pitchValue se
+  pitchValue (MarkE _)              = []
   
      
-  modifyPitch (Note p d)       pc = Note (p `modifyPitch` pc) d
-  modifyPitch (Rest d)         pc = Rest d 
-  modifyPitch (Chord se d)     pc = Chord se d   -- what to do?
-  modifyPitch (Spacer d)       pc = Spacer d
-  modifyPitch (AGrace se p d)  pc = case pc of 
-                                      (x:xs) -> AGrace (se `modifyPitch` xs) x d
-                                      _      -> AGrace se p d
-  modifyPitch (UGrace p d se)  pc = case pc of 
-                                      (x:xs) -> UGrace x d (se `modifyPitch` xs)
-                                      _      -> UGrace p d se
-  modifyPitch (Mark m)         pc = Mark m
+  modifyPitch (NoteE p d)       pc = NoteE (p `modifyPitch` pc) d
+  modifyPitch (RestE d)         pc = RestE d 
+  modifyPitch (ChordE se d)     pc = ChordE se d   -- what to do?
+  modifyPitch (SpacerE d)       pc = SpacerE d
+  modifyPitch (AGraceE se p d)  pc = case pc of 
+                                      (x:xs) -> AGraceE (se `modifyPitch` xs) x d
+                                      _      -> AGraceE se p d
+  modifyPitch (UGraceE p d se)  pc = case pc of 
+                                      (x:xs) -> UGraceE x d (se `modifyPitch` xs)
+                                      _      -> UGraceE p d se
+  modifyPitch (MarkE m)         pc = MarkE m
   
 instance PitchValue GraceNotes where
   pitchValue  = F.toList . fmap fst
@@ -216,17 +216,17 @@ instance Fits Event Duration where
   
   
 instance Sounds Event where
-  sounds (Note _ _)           = True
-  sounds (Rest _)             = False  
-  sounds (Chord _ _)          = True 
-  sounds (Spacer _)           = False
-  sounds (AGrace _ _ _)       = True
-  sounds (UGrace _ _ _)       = True
-  sounds (Mark _)             = False
+  sounds (NoteE _ _)          = True
+  sounds (RestE _)            = False  
+  sounds (ChordE _ _)         = True 
+  sounds (SpacerE _)          = False
+  sounds (AGraceE _ _ _)      = True
+  sounds (UGraceE _ _ _)      = True
+  sounds (MarkE _)            = False
   
-  rest d                      = Rest d
+  rest d                      = RestE d
 
-  spacer d                    = Spacer d
+  spacer d                    = SpacerE d
 
 
 

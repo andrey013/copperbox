@@ -112,6 +112,7 @@ data GraceMode = UGrace  -- unaccented - subtract duration from preceeding note
 -- parse tree.
 
 -- No annotation for a singleton - annotations are contained in the Atom. 
+-- (07/12/08) - notes inside chords need annotations
 data Grouping = Singleton { element         :: Atom }                  
               
               | Chord { chord_elements      :: Seq Pitch, 

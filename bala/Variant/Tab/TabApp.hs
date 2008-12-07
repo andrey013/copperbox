@@ -1,14 +1,17 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
--- ghci - 
--- :set -i../..:../../HNotate
+-- ghci ...
+-- :set -i../../Bala:../../ZMidi:../../HNotate
 
 module TabApp where
 
 import TabBase
 import TabParser
 
-import Bala hiding (Pitch(..))
+import TabApp.Datatypes
+import TabApp.StaffLocations 
+
+import Bala hiding ( Pitch(..), Event(..) )
 import HNotate
 
 import qualified Data.Foldable as F
@@ -53,7 +56,7 @@ shuffleBar bar@(Bar i xs) = let etmap = eventTimes bar
     
     optprefix _ xs                        = xs
 
-buildEventList :: EventList -> [Evt] -> EventList
+buildEventList :: EventList -> [Event] -> EventList
 buildEventList tree xs = undefined
 {-
 buildEventList tree xs = let xss = groupBy onsetTime xs
@@ -71,10 +74,6 @@ comparePitch (EvtNote p _) (EvtNote p' _) = p' `compare` p'
 onset (EvtNote _ (o,_)) = o 
 onset (EvtRest (o,_))   = o
 
-
-instance Affi TEvt where
-  affi (EvtNote p (o,d))  = tupledS [affi p, shows o, shows d]
-  affi (EvtRest (o,d))    = tupledS [showChar 'r', shows o, shows d]
   
   
 
