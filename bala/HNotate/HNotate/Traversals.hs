@@ -126,30 +126,36 @@ diffDuration d = do
 -- The first note of a chord changes the 'global' relative pitch
 -- and the subsequent notes only change it 'locally'.
 -- All successive notes in a grace notes change 'global' relative pitch
+
+repitch f e = let ps = f (pitchValue e) in modifyPitch e ps 
+
+repitchM mf e = do
+   ps <- mf (pitchValue e)
+   return $ modifyPitch e ps
+
  
 proBody :: Grouping -> WrappedMonad (State LyState) Grouping
 proBody = WrapMonad . step
   where 
-    step (Singleton e)        = Singleton <$> gstep e 
+    step (Singleton e)          = Singleton <$> gstep e 
 
-    step (Chord se d a)       = (\se' -> Chord se' d a) <$> convChordPitches se
+    step ch@(Chord _ _ _)       = repitchM convChordPitches ch
     
-    step (GraceNotes se m a)  = (\se' -> GraceNotes se' m a) <$> mapM fn se
-      where fn (p,d) = convPitch p >>= \p' -> return (p',d)
+    step gr@(GraceNotes _ _ _)  = repitchM (mapM convPitch) gr
       
-    step (Nplet i ud se a)    = (\se' -> Nplet i ud se' a) <$> mapM convPitch se
+    step np@(Nplet _ _ _ _)     = repitchM (mapM convPitch) np
                                        
     gstep :: Atom -> State LyState Atom
     gstep e@(Note p _ _)      = (\p' -> e `modifyPitch` [p]) <$> convPitch p 
     gstep e                   = return e
 
 
-convChordPitches :: Seq Pitch -> State LyState (Seq Pitch)
-convChordPitches se = case viewl se of
-  (e :< sse) -> do e'  <- convPitch e
-                   se' <- localPitch $ mapM convPitch sse 
-                   return $ e' <| se'
-  EmptyL     -> return mempty
+convChordPitches :: [Pitch] -> State LyState [Pitch]
+convChordPitches [] = return []
+convChordPitches (x:xs) = do 
+    y  <- convPitch x
+    ys <- localPitch $ mapM convPitch xs 
+    return $ y:ys
 
 localPitch :: State LyState ans -> State LyState ans
 localPitch mf = do 
@@ -180,16 +186,11 @@ changeOctaveWrt pch@(Pitch l a _) base = Pitch l a (base `octaveDist` pch)
 losBody :: Grouping -> WrappedMonad Identity Grouping
 losBody gp = WrapMonad $ return $ fn gp
   where
-    fn (Singleton (Note p d anno))  = Singleton (Note (down3ve p)  d anno)
-    fn (Singleton e)                = Singleton e
-    fn (Chord se d anno)            = Chord (fmap down3ve se) d anno
-    fn (GraceNotes se d anno)       = 
-        GraceNotes (fmap (prod down3ve id) se) d anno
-    
-    fn (Nplet i ud se anno)         = Nplet i ud (fmap down3ve se) anno 
+    fn e = let ps = map down3ve $ pitchValue e in modifyPitch e ps 
     
     down3ve (Pitch l a o) = Pitch l a (o-3)
 
+    
 --------------------------------------------------------------------------------
 -- 'default encode' the duration - if the duration matches the unit note length
 -- don't specify it - Abc uses this method 
@@ -227,8 +228,8 @@ plrBody gp = WrapMonad $ (respell gp) <$> asks label_set
     respell' (Note p d a)       ls = Note (p `naturalize` ls) d a
     respell' e                  _  = e
     
-    cf ls p     = p `naturalize` ls
-    gf ls (p,d) = (p `naturalize` ls, d)
+    cf ls (p,a)   = (p `naturalize` ls, a)
+    gf ls (p,d,a) = (p `naturalize` ls, d, a)
     
 
        

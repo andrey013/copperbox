@@ -75,12 +75,6 @@ lilypondRelativeForm evts = getRelativePitch >>= \p ->
     return $ lyRelativePitchDuration p evts
 
 
-
-
-
-
-
-
 getRelativePitch :: Monad m => NotateT m Pitch
 getRelativePitch = asks relative_pitch >>= maybe no_rp_err (return)
   where
@@ -168,27 +162,27 @@ rest = (char 'r' <>) . duration
 spacer :: Duration -> ODoc
 spacer = (char 's' <>) . duration
 
-chord :: Seq Pitch -> Duration -> Annotation -> ODoc
+chord :: Seq (Pitch,Annotation) -> Duration -> Annotation -> ODoc
 chord ps d a = 
-    applyLyAnno a $ (angles $ hsep $ unseqMap pitch ps)  <> duration d
+    applyLyAnno a $ (angles $ hsep $ unseqMap (pitch . fst) ps)  <> duration d
   
 
-gracenotes :: Seq (Pitch,Duration) -> Annotation -> ODoc
+gracenotes :: Seq (Pitch,Duration,Annotation) -> Annotation -> ODoc
 gracenotes ps a = 
     applyLyAnno a $ command1 "grace" (braces $ hsep $ unseqMap fn ps)
-  where fn (p,d) = pitch p <> duration d
+  where fn (p,d,a) = pitch p <> duration d
 
-nplet :: Int -> Duration -> Seq Pitch -> Annotation -> ODoc
+nplet :: Int -> Duration -> Seq (Pitch,Annotation) -> Annotation -> ODoc
 nplet mult ud se a = 
     applyLyAnno a $ command1 "times" fract <+> braces' (hsep $ plet1 (viewl se))
   where
     fract = int mult <> char '/' <> int (length se)
     
-    plet1 EmptyL    = []
-    plet1 (p :< sp) = note p ud : plet (viewl sp)
+    plet1 EmptyL        = []
+    plet1 ((p,_) :< sp) = note p ud : plet (viewl sp)
     
-    plet (p :< sp)  = pitch p : plet (viewl sp)
-    plet EmptyL     = []
+    plet ((p,_) :< sp)  = pitch p : plet (viewl sp)
+    plet EmptyL         = []
     
      
     

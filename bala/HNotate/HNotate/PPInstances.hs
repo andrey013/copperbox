@@ -143,13 +143,15 @@ instance PP MidiRendering where
 instance PP Grouping where
   pp (Singleton e)        = pp e
   
-  pp (Chord se d a)       = applyLyAnno a $ brackets (hsep $ unseqMap pp se) 
+  pp (Chord se d a)       = applyLyAnno a $ 
+                                brackets (hsep $ unseqMap (pp . fst) se) 
                                               <> prime <> pp d
       
   pp (GraceNotes se _ a)  = applyLyAnno a $ braces (hsep $ unseqMap fn se) 
-    where fn (p,d) = pp p <> prime <> pp d
+    where fn (p,d,_) = pp p <> prime <> pp d
     
-  pp (Nplet _ _ se a)     = applyLyAnno a $ braces (hsep $ unseqMap pp se)    
+  pp (Nplet _ _ se a)     = applyLyAnno a $ 
+                                braces (hsep $ unseqMap (pp . fst) se)    
   
 instance PP Atom where
   pp (Note p d a)           = applyLyAnno a (pp p <> prime <> pp d)

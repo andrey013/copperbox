@@ -80,9 +80,11 @@ midiMessages evts = translateMidiAtoms (simplifyNoteList evts)
 type Chan = Word8 
 
 
+type MidiGraceNote = (Pitch,Duration)
+
 data MidiGrouping = MAtom Chan MidiAtom
-                  | MuGrace Chan MidiAtom [GraceNote]
-                  | MaGrace Chan [GraceNote] MidiAtom
+                  | MuGrace Chan MidiAtom [MidiGraceNote]
+                  | MaGrace Chan [MidiGraceNote] MidiAtom
   deriving (Eq,Show)
 
 -- We have problems with ties. Joining notes split across overlays 
@@ -130,7 +132,7 @@ simplifyBar ch (Bar sg) = simplify empty (viewl sg) kGrouping
             -- not representable in Midi - keep the grace continuation around
             Nothing   -> simplify acc (viewl bse) k
         
-        Chord se d _ -> let chord = k (MChord (F.toList se) d)
+        Chord se d _ -> let chord = k (MChord (F.toList $ fmap fst se) d)
                         in simplify (acc |> chord) (viewl bse) kGrouping
         
         -- grace acts on the preceeding Atom which has already been enqueued
@@ -140,15 +142,17 @@ simplifyBar ch (Bar sg) = simplify empty (viewl sg) kGrouping
         -- grace acts on the next Atom, set up the continuation
         GraceNotes se AGrace _ -> simplify acc (viewl bse) (graceK se)
         
-        Nplet _ ud se _ -> let se' = fmap (\p -> kGrouping $ MNote p ud) se
+        Nplet _ ud se _ -> let se' = fmap (\(p,_) -> kGrouping $ MNote p ud) se
                            in simplify (acc >< se') (viewl bse) k  
         
     graceK :: Seq GraceNote -> MidiAtom -> MidiGrouping     
-    graceK se g = MaGrace ch (F.toList se) g
+    graceK se g = MaGrace ch (F.toList $ fmap f se) g
+        where f (a,b,_) = (a,b)
     
     ugrace :: Seq GraceNote -> ViewR MidiGrouping -> Seq MidiGrouping
     ugrace _  EmptyR                = empty   -- ill formed, gracenotes get dropped
-    ugrace se (bse :> (MAtom _ e))  = bse |> MuGrace ch e (F.toList se)
+    ugrace se (bse :> (MAtom _ e))  = bse |> MuGrace ch e (F.toList $ fmap f se) 
+        where f (a,b,_) = (a,b)
     ugrace _  (bse :> be)           = bse |> be -- drop gracenotes - ideally we should coalesce them 
               
     simplifyAtom :: Atom -> Maybe MidiAtom
@@ -225,7 +229,7 @@ barEvts onset sg = step empty onset (viewl sg)
                               
  
 -- gracenote
-unaccentedGraceEvents :: Word8 -> Word32 -> MidiAtom -> [GraceNote] 
+unaccentedGraceEvents :: Word8 -> Word32 -> MidiAtom -> [MidiGraceNote] 
         -> (Word32, Seq Message) 
 unaccentedGraceEvents ch elapsed gly xs = 
     let atom_len = rhythmicValue gly; grace_len =  graceLength xs in
@@ -238,7 +242,7 @@ unaccentedGraceEvents ch elapsed gly xs =
          
 
 
-accentedGraceEvents :: Word8 -> Word32 -> [GraceNote]  -> MidiAtom
+accentedGraceEvents :: Word8 -> Word32 -> [MidiGraceNote]  -> MidiAtom
         -> (Word32, Seq Message) 
 accentedGraceEvents ch elapsed xs gly = 
     let atom_len = rhythmicValue gly; grace_len =  graceLength xs in
@@ -251,7 +255,7 @@ accentedGraceEvents ch elapsed xs gly =
     
     
 
-graceLength :: [GraceNote] -> Duration
+graceLength :: [MidiGraceNote] -> Duration
 graceLength = foldr ((+) `onl` snd) duration_zero  
 
 
@@ -287,7 +291,7 @@ atomEvents ch elapsed (MChord ps d) = (dt, ons >< offs) where
                     in (on <| sa, off <| sb)
                           
 
-graceEvents :: Word8 ->  Word32 -> [GraceNote] -> (Word32, Seq Message) 
+graceEvents :: Word8 ->  Word32 -> [MidiGraceNote] -> (Word32, Seq Message) 
 graceEvents ch elapsed = foldl fn (elapsed,empty)
   where
     fn (dt,se) (p,d) = let (dt',on,off) = noteOnNoteOff ch dt p d 

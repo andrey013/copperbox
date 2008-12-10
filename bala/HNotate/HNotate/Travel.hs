@@ -75,7 +75,7 @@ combinedUpdate (d,lpc) = do
 
 pitchChange :: LyPitchContent -> State LyState LyPitchContent
 pitchChange (ChordPitches xs)         = 
-    convChordPitches (fromList xs) >>= return . ChordPitches . F.toList
+    convChordPitches xs >>= return . ChordPitches . F.toList
     
 pitchChange (RegularPitchContent xs)  = 
     T.mapM convPitch xs >>= return . RegularPitchContent

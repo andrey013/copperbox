@@ -129,17 +129,17 @@ rest d = char 'z' <> duration d
 spacer :: Duration -> ODoc
 spacer d = char 'x' <> duration d
 
-chord :: Seq Pitch -> Duration -> Annotation -> ODoc
+chord :: Seq (Pitch,Annotation) -> Duration -> Annotation -> ODoc
 chord se d a = 
-    applyAbcAnno a (brackets $ hcat $ unseqMap pitch se) <> duration d
+    applyAbcAnno a (brackets $ hcat $ unseqMap (pitch . fst) se) <> duration d
     
-gracenotes :: Seq (Pitch,Duration) -> Annotation -> ODoc
+gracenotes :: Seq (Pitch,Duration,Annotation) -> Annotation -> ODoc
 gracenotes se a = applyAbcAnno a (braces $ hcat $ unseqMap fn se)
-  where fn (p,d) = pitch p <> duration d  
+  where fn (p,d,a) = pitch p <> duration d  
 
-nplet :: Int -> Duration -> Seq Pitch -> Annotation -> ODoc
+nplet :: Int -> Duration -> Seq (Pitch,Annotation) -> Annotation -> ODoc
 nplet mult ud se a = 
-    applyAbcAnno a $ pqr <+> (hcat $ unseqMap pitch se)
+    applyAbcAnno a $ pqr <+> (hcat $ unseqMap (pitch . fst) se)
   where
     pqr = lparen <> int (length se)       <> colon 
                  <> duration (scale ud)   <> colon

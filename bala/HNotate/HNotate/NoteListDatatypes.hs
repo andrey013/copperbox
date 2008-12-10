@@ -1,8 +1,8 @@
-{-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-
+{-# LANGUAGE ExistentialQuantification  #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -54,6 +54,8 @@ data Annotation = Annotation { _ly_anno   :: ODoc -> ODoc,
 instance Show Annotation where
   show (Annotation _ _) = "<Annotation>"
   
+
+  
   
 type Label = String
 
@@ -83,8 +85,7 @@ instance Show Atom where
   showsPrec _ Tie                   = showString "Tie"
            
            
--- individual grace notes cannot be annotated
-type GraceNote = (Pitch,Duration) 
+
 
 -- If we wanted rhythmical calculations on grace notes we need
 -- to know which note to subtract the grace note durations from.
@@ -111,11 +112,13 @@ data GraceMode = UGrace  -- unaccented - subtract duration from preceeding note
 -- HNotate generally views the notelist as a stream of lexemes rather than a
 -- parse tree.
 
--- No annotation for a singleton - annotations are contained in the Atom. 
--- (07/12/08) - notes inside chords need annotations
+-- individual grace notes can be annotated
+type GraceNote = (Pitch,Duration,Annotation) 
+
+
 data Grouping = Singleton { element         :: Atom }                  
               
-              | Chord { chord_elements      :: Seq Pitch, 
+              | Chord { chord_elements      :: Seq (Pitch, Annotation), 
                         rhythmic_value      :: Duration,
                         annotation          :: Annotation }
           
@@ -125,7 +128,7 @@ data Grouping = Singleton { element         :: Atom }
                              
               | Nplet { nplet_multipier     :: Int,
                         unit_duration       :: Duration,
-                        nplet_elements      :: Seq Pitch,
+                        nplet_elements      :: Seq (Pitch, Annotation),
                         annotation          :: Annotation }                   
       deriving (Show)   
   
@@ -181,7 +184,8 @@ type Bar              = BarF Grouping
 
 --------------------------------------------------------------------------------
 -- Functor instances
-  
+
+
 instance Functor NoteListF where
   fmap f (NoteList se)            = NoteList (fmap (fmap f) se)
   
@@ -267,7 +271,7 @@ instance PitchValue Grouping where
   pitchValue (Singleton e)            = pitchValue e
   pitchValue (Chord se _ _)           = pitchValue se
   pitchValue (GraceNotes se _ _)      = pitchValue se
-  pitchValue (Nplet i d se _)         = pitchValue se
+  pitchValue (Nplet _ _ se _)         = pitchValue se
  
   
   modifyPitch (Singleton e)        pv = Singleton (e `modifyPitch` pv)
@@ -295,21 +299,26 @@ instance PitchValue Atom where
   modifyPitch Tie                  _  = Tie
 
 instance PitchValue (Seq GraceNote) where
+  pitchValue = map f . F.toList where f (a,_,_) = a
+  
+  modifyPitch se pc 
+      | S.length se == length pc  = sziplWith (\(_,d,a) p -> (p,d,a)) se pc
+      | otherwise                 = error "modifyPitch (Seq GraceNote) unmatched"
+  
+instance PitchValue (Seq (Pitch,Annotation)) where
   pitchValue = map fst . F.toList
   
   modifyPitch se pc 
-      | S.length se == length pc  = sziplWith (\(_,d) p -> (p,d)) se pc
-      | otherwise                 = error "modifyPitch (Seq GraceNote) unmatched"
-  
-
-      
+      | S.length se == length pc  = sziplWith (\(_,a) p -> (p,a)) se pc
+      | otherwise                 = error $ 
+            "modifyPitch (Seq (Pitch,Annotation)) unmatched" 
 --------------------------------------------------------------------------------
 -- Fits instances
     
 instance Fits Atom Duration where
   measure  e  = rhythmicValue e
   
-  split l e   = let (el,er) = splitRV l e in (el, dropAnno er)
+  split l e   = let (el,er) = splitRV l e in (el, noAnno er)
   
   hyphenate (Note _ _ _)            = Just Tie
   hyphenate (Rest _ _)              = Nothing
@@ -324,23 +333,24 @@ instance Fits Grouping Duration where
   measure  e  = rhythmicValue e
   
   split l (Singleton e)       = 
-      let (a,b) = split l e in (Singleton a, Singleton $ dropAnno b)
+      let (a,b) = split l e in (Singleton a, Singleton $ noAnno b)
       
   split l (Chord se d a)      = 
-      let (da,db) = split l d in (Chord se da a, Chord se db noAnno)
+      let (da,db) = split l d in (Chord se da a, Chord se db mempty)
    
   -- grace notes shouldn't be split, if they are then the calling 
   -- function is wrong...  
   -- It might of course be better to represent gracenotes along
   -- with the note they grace, Bala does this.   
-  split l (GraceNotes se m a) = error $ "can't split gracenotes"
+  split _ (GraceNotes _ _ _) = error $ "can't split gracenotes"
       
       
-  split l (Nplet i ud se a)   = 
-      let (da,db)   = npletDuration (S.length se) l `split` ud 
-          sza       = (da/db) * (fromIntegral (S.length se) % 1)
-          (sa,sb)   = S.splitAt (floor $ fromRat sza) se
-      in (Nplet i ud sa a, Nplet i ud sb noAnno)
+  split l (Nplet i ud se a)   = (Nplet i ud sa a, Nplet i ud sb mempty) where
+      (da,db)   = npletDuration (S.length se) l `split` ud    
+      sza       :: Double
+      sza       = fromRat $ (da/db) * (fromIntegral (S.length se) % 1)
+      (sa,sb)   = S.splitAt (floor  sza) se
+
 
   hyphenate (Chord _ _ _)     = Just (Singleton Tie)
   hyphenate _                 = Nothing
@@ -360,14 +370,25 @@ lyOutput mark = _ly_output mark
 abcOutput :: Mark a -> ODoc
 abcOutput mark = _abc_output mark
 
-noAnno :: Annotation 
-noAnno = Annotation { _ly_anno=id, _abc_anno=id } 
+instance Monoid Annotation where
+  mempty = Annotation { _ly_anno=id, _abc_anno=id } 
+  Annotation f g `mappend` Annotation f' g' = Annotation (f . f') (g . g') 
 
-dropAnno :: Atom -> Atom
-dropAnno (Note p d _)   = Note p d noAnno
-dropAnno (Rest d _)     = Rest d noAnno
-dropAnno (Spacer d _)   = Spacer d noAnno
-dropAnno a              = a
+-- need a class like PitchValue for Annotation....
+
+class NoAnno a where noAnno :: a -> a
+
+instance NoAnno GraceNote where
+  noAnno (p,d,_) = (p,d,mempty)
+
+instance NoAnno (Seq GraceNote) where
+  noAnno = fmap noAnno 
+
+instance NoAnno Atom where
+  noAnno (Note p d _)   = Note p d mempty
+  noAnno (Rest d _)     = Rest d mempty
+  noAnno (Spacer d _)   = Spacer d mempty
+  noAnno a              = a
   
 --------------------------------------------------------------------------------
 -- Shorthand constructors / builders for the external view
@@ -375,6 +396,8 @@ dropAnno a              = a
 
 (|*>) :: EventList -> Event -> EventList
 (|*>) (EventList t) evt = EventList $ t |> evt
+
+
 
 
 system :: System 
@@ -397,7 +420,7 @@ event e t         = t |*> SingleE e
 
 
 noteSgl           :: Pitch -> Duration -> Grouping 
-noteSgl p d       = Singleton $ Note p d noAnno
+noteSgl p d       = Singleton $ Note p d mempty
 
 noteSgl'          :: Pitch -> Duration -> Annotation -> Grouping 
 noteSgl' p d a    = Singleton $ Note p d a 
@@ -409,7 +432,7 @@ note'             :: Pitch -> Duration -> Annotation -> EventList -> EventList
 note' p d a       = event (noteSgl' p d a)
 
 restSgl           :: Duration -> Grouping 
-restSgl d         = Singleton $ Rest d noAnno 
+restSgl d         = Singleton $ Rest d mempty 
 
 restSgl'          :: Duration -> Annotation -> Grouping 
 restSgl' d a      = Singleton $ Rest d a
@@ -421,7 +444,7 @@ rest'             :: Duration -> Annotation -> EventList -> EventList
 rest' d a         = event (restSgl' d a)
 
 spacerSgl         :: Duration -> Grouping 
-spacerSgl d       = Singleton $ Spacer d noAnno 
+spacerSgl d       = Singleton $ Spacer d mempty 
 
 spacerSgl'        :: Duration -> Annotation -> Grouping 
 spacerSgl' d a    = Singleton $ Spacer d a
@@ -433,84 +456,95 @@ spacer'           :: Duration -> Annotation -> EventList -> EventList
 spacer' d a       = event (spacerSgl' d a)
 
 chordGrp          :: Seq Pitch -> Duration -> Grouping
-chordGrp se d     = Chord se d noAnno
+chordGrp se d     = Chord (fmap f se) d mempty where
+    f a  = (a,mempty)
 
-chordGrp'         :: Seq Pitch -> Duration -> Annotation -> Grouping
+chordGrp'         :: Seq (Pitch,Annotation) -> Duration -> Annotation -> Grouping
 chordGrp' se d a  = Chord se d a
+
+chordGrpL         :: [Pitch] -> Duration -> Grouping
+chordGrpL xs d    = Chord (fromList $ fmap f xs) d mempty where
+    f a = (a,mempty)
+
+chordGrpL'         :: [(Pitch,Annotation)] -> Duration ->  Annotation -> Grouping
+chordGrpL' xs d a  = Chord (fromList xs) d a
+
 
 chord             :: Seq Pitch -> Duration -> EventList -> EventList
 chord se d        = event (chordGrp se d)
 
-chord'            :: Seq Pitch -> Duration -> Annotation -> EventList -> EventList
+chord'            :: Seq (Pitch,Annotation) -> Duration -> Annotation -> EventList -> EventList
 chord' se d a     = event (chordGrp' se d a)
 
-chordGrpL         :: [Pitch] -> Duration ->  Annotation -> Grouping
-chordGrpL xs d a  = Chord (fromList xs) d a
+
 
 chordL            :: [Pitch] -> Duration -> EventList -> EventList
-chordL xs d       = event (chordGrpL xs d noAnno)
+chordL xs d       = event (chordGrpL xs d)
 
-chordL'           :: [Pitch] -> Duration -> Annotation -> EventList -> EventList
-chordL' xs d a    = event(chordGrpL xs d a)
+chordL'           :: [(Pitch,Annotation)] -> Duration -> Annotation -> EventList -> EventList
+chordL' xs d a    = event (chordGrpL' xs d a)
 
 ugracesGrp        :: Seq (Pitch,Duration) -> Grouping
-ugracesGrp se     = GraceNotes se UGrace noAnno
+ugracesGrp se     = GraceNotes (fmap f se) UGrace mempty where
+    f (a,b) = (a,b,mempty)
 
-ugracesGrp'       :: Seq (Pitch,Duration) -> Annotation -> Grouping
+ugracesGrp'       :: Seq (Pitch,Duration,Annotation) -> Annotation -> Grouping
 ugracesGrp' se a  = GraceNotes se UGrace a
 
 ugraces           :: Seq (Pitch,Duration) -> EventList -> EventList
 ugraces se        = event (ugracesGrp se)
 
-ugraces'          :: Seq (Pitch,Duration) -> Annotation -> EventList -> EventList
+ugraces'          :: Seq (Pitch,Duration,Annotation) -> Annotation -> EventList -> EventList
 ugraces' se a     = event (ugracesGrp' se a)
 
 ugracesGrpL       :: [(Pitch,Duration)] -> Grouping
 ugracesGrpL xs    = ugracesGrp (fromList xs)
 
-ugracesGrpL'      :: [(Pitch,Duration)] -> Annotation -> Grouping
+ugracesGrpL'      :: [(Pitch,Duration,Annotation)] -> Annotation -> Grouping
 ugracesGrpL' xs a = ugracesGrp' (fromList xs) a
 
 ugracesL          :: [(Pitch,Duration)] -> EventList -> EventList
 ugracesL xs       = event (ugracesGrpL xs)
 
-ugracesL'         :: [(Pitch,Duration)] -> Annotation -> EventList -> EventList
+ugracesL'         :: [(Pitch,Duration,Annotation)] -> Annotation -> EventList -> EventList
 ugracesL' xs a    = event (ugracesGrpL' xs a)
 
 agracesGrp        :: Seq (Pitch,Duration) -> Grouping
-agracesGrp se     = GraceNotes se AGrace noAnno
+agracesGrp se     = GraceNotes (fmap f se) AGrace mempty where
+    f (a,b) = (a,b,mempty)
 
-agracesGrp'       :: Seq (Pitch,Duration) -> Annotation -> Grouping
+agracesGrp'       :: Seq GraceNote -> Annotation -> Grouping
 agracesGrp' se a  = GraceNotes se AGrace a
 
 agraces           :: Seq (Pitch,Duration) -> EventList -> EventList
 agraces se        = event (agracesGrp se)
 
-agraces'          :: Seq (Pitch,Duration) -> Annotation -> EventList -> EventList
+agraces'          :: Seq GraceNote -> Annotation -> EventList -> EventList
 agraces' se a     = event (agracesGrp' se a)
 
 agracesGrpL       :: [(Pitch,Duration)] -> Grouping
 agracesGrpL xs    = agracesGrp (fromList xs) 
 
-agracesGrpL'      :: [(Pitch,Duration)] -> Annotation -> Grouping
+agracesGrpL'      :: [(Pitch,Duration,Annotation)] -> Annotation -> Grouping
 agracesGrpL' xs a = agracesGrp' (fromList xs) a
 
 agracesL          :: [(Pitch,Duration)] -> EventList -> EventList
 agracesL xs       = event (agracesGrpL xs)
 
-agracesL'         :: [(Pitch,Duration)] -> Annotation -> EventList -> EventList
+agracesL'         :: [(Pitch,Duration,Annotation)] -> Annotation -> EventList -> EventList
 agracesL' xs a    = event (agracesGrpL' xs a)
 
 npletGrp          :: Int -> Duration -> Seq Pitch -> Grouping
-npletGrp i ud se  = Nplet i ud se noAnno
+npletGrp i ud se  = Nplet i ud (fmap f se) mempty where
+    f a = (a,mempty)  
 
-npletGrp'         :: Int -> Duration -> Seq Pitch -> Annotation -> Grouping
+npletGrp'         :: Int -> Duration -> Seq (Pitch,Annotation) -> Annotation -> Grouping
 npletGrp' i ud se a   = Nplet i ud se a
 
 nplet             :: Int -> Duration -> Seq Pitch -> EventList -> EventList
 nplet i ud se     = event (npletGrp i ud se)
 
-nplet' :: Int -> Duration -> Seq Pitch ->  Annotation -> EventList -> EventList
+nplet' :: Int -> Duration -> Seq (Pitch,Annotation) ->  Annotation -> EventList -> EventList
 nplet' i ud se a  = event (npletGrp' i ud se a)
     
 tieSgl     :: Grouping
