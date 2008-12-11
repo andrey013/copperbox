@@ -8,6 +8,7 @@ module ChaCha where
 import Bala.Base
 import Bala.Base.DrumOutput 
 import Bala.Base.OutputHNotate
+import Bala.Base.OutputMidi
 
 import Bala.MusicRep.TimbalesStyle
 import Bala.MusicRep.Pulse

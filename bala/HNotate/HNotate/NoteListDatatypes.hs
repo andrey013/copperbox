@@ -236,10 +236,10 @@ instance RhythmicValue Grouping where
   rhythmicValue (Nplet i d _ _)         = npletDuration i d
  
   
-  modifyDuration (Singleton e)        d = Singleton (e `modifyDuration` d)
-  modifyDuration (Chord se _ a)       d = Chord se d a
-  modifyDuration (GraceNotes se m a)  _ = GraceNotes se m a
-  modifyDuration (Nplet i _ se a)     d = (Nplet i ud se a)
+  updateDuration d (Singleton e)        = Singleton $ updateDuration d e
+  updateDuration d (Chord se _ a)       = Chord se d a
+  updateDuration _ (GraceNotes se m a)  = GraceNotes se m a
+  updateDuration d (Nplet i _ se a)     = Nplet i ud se a
     where ud = reunit d i se
     
 reunit :: Duration -> Int -> Seq a -> Duration
@@ -258,14 +258,14 @@ instance RhythmicValue Atom where
   rhythmicValue BeamEnd                 = duration_zero
   rhythmicValue Tie                     = duration_zero
   
-  modifyDuration (Note p _ a)         d = Note p d a
-  modifyDuration (Rest _ a)           d = Rest d a
-  modifyDuration (Spacer _ a)         d = Spacer d a
-  modifyDuration (RhythmicMark l _ m) d = RhythmicMark l d m
-  modifyDuration (Mark l m)           _ = Mark l m
-  modifyDuration BeamStart            _ = BeamStart
-  modifyDuration BeamEnd              _ = BeamEnd
-  modifyDuration Tie                  _ = Tie
+  updateDuration d (Note p _ a)         = Note p d a
+  updateDuration d (Rest _ a)           = Rest d a
+  updateDuration d (Spacer _ a)         = Spacer d a
+  updateDuration d (RhythmicMark l _ m) = RhythmicMark l d m
+  updateDuration _ (Mark l m)           = Mark l m
+  updateDuration _ BeamStart            = BeamStart
+  updateDuration _ BeamEnd              = BeamEnd
+  updateDuration _ Tie                  = Tie
 
 instance PitchValue Grouping where
   pitchValue (Singleton e)            = pitchValue e
@@ -274,10 +274,10 @@ instance PitchValue Grouping where
   pitchValue (Nplet _ _ se _)         = pitchValue se
  
   
-  modifyPitch (Singleton e)        pv = Singleton (e `modifyPitch` pv)
-  modifyPitch (Chord se d a)       pv = Chord (se `modifyPitch` pv) d a
-  modifyPitch (GraceNotes se m a)  pv = GraceNotes (se `modifyPitch` pv) m a
-  modifyPitch (Nplet i ud se a)    pv = Nplet i ud (se `modifyPitch` pv) a
+  updatePitch pc (Singleton e)        = Singleton (updatePitch pc e)
+  updatePitch pc (Chord se d a)       = Chord (updatePitch pc se) d a
+  updatePitch pc (GraceNotes se m a)  = GraceNotes (updatePitch pc se) m a
+  updatePitch pc (Nplet i ud se a)    = Nplet i ud (updatePitch pc se) a
     
 instance PitchValue Atom where
   pitchValue (Note p _ _)            = pitchValue p
@@ -289,26 +289,26 @@ instance PitchValue Atom where
   pitchValue BeamEnd                 = noPitchContent
   pitchValue Tie                     = noPitchContent
   
-  modifyPitch (Note p d a)         pc = Note (p `modifyPitch` pc) d a
-  modifyPitch (Rest d a)           _  = Rest d a
-  modifyPitch (Spacer d a)         _  = Spacer d a
-  modifyPitch (RhythmicMark l d m) _  = RhythmicMark l d m
-  modifyPitch (Mark l m)           _  = Mark l m
-  modifyPitch BeamStart            _  = BeamStart
-  modifyPitch BeamEnd              _  = BeamEnd
-  modifyPitch Tie                  _  = Tie
+  updatePitch pc (Note p d a)         = Note (updatePitch pc p) d a
+  updatePitch _  (Rest d a)           = Rest d a
+  updatePitch _  (Spacer d a)         = Spacer d a
+  updatePitch _  (RhythmicMark l d m) = RhythmicMark l d m
+  updatePitch _  (Mark l m)           = Mark l m
+  updatePitch _  BeamStart            = BeamStart
+  updatePitch _  BeamEnd              = BeamEnd
+  updatePitch _  Tie                  = Tie
 
 instance PitchValue (Seq GraceNote) where
   pitchValue = map f . F.toList where f (a,_,_) = a
   
-  modifyPitch se pc 
+  updatePitch pc se 
       | S.length se == length pc  = sziplWith (\(_,d,a) p -> (p,d,a)) se pc
       | otherwise                 = error "modifyPitch (Seq GraceNote) unmatched"
   
 instance PitchValue (Seq (Pitch,Annotation)) where
   pitchValue = map fst . F.toList
   
-  modifyPitch se pc 
+  updatePitch pc se 
       | S.length se == length pc  = sziplWith (\(_,a) p -> (p,a)) se pc
       | otherwise                 = error $ 
             "modifyPitch (Seq (Pitch,Annotation)) unmatched" 

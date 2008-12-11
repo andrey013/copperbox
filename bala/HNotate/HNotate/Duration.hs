@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -66,11 +67,11 @@ type Duration = Rational
 
 class RhythmicValue a where
   rhythmicValue   :: a -> Duration
-  modifyDuration  :: a -> Duration -> a
+  updateDuration  :: Duration -> a -> a
 
 instance RhythmicValue Duration where
   rhythmicValue     = id
-  modifyDuration    = const
+  updateDuration    = const
     
   
 

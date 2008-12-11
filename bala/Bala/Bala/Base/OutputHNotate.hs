@@ -76,13 +76,13 @@ addMotif t (Motif se) =
 
 
 motifFoldStep :: H.EventList -> Event -> H.EventList
-motifFoldStep t (Note p d)          = t # (H.note p d)
-motifFoldStep t (Rest d)            = t # (H.rest d)
-motifFoldStep t (Chord se d)        = t # (H.chord se d)
-motifFoldStep t (Spacer d)          = t # (H.spacer d)
-motifFoldStep t (AGrace se p d)     = t # H.agraces se # H.note p d
-motifFoldStep t (UGrace p d se)     = t # H.note p d   # H.ugraces se
-motifFoldStep t (Mark m)            = t # (mkMark m)
+motifFoldStep t (NoteE p d)         = t # (H.note p d)
+motifFoldStep t (RestE d)           = t # (H.rest d)
+motifFoldStep t (ChordE se d)       = t # (H.chord se d)
+motifFoldStep t (SpacerE d)         = t # (H.spacer d)
+motifFoldStep t (AGraceE se p d)    = t # H.agraces se # H.note p d
+motifFoldStep t (UGraceE p d se)    = t # H.note p d   # H.ugraces se
+motifFoldStep t (MarkE m)           = t # (mkMark m)
 
 
 mkMark Tie          = H.tie 
@@ -91,9 +91,9 @@ mkMark Tie          = H.tie
 
 genDrumFoldStep :: DrumMapping a =>
     (a -> H.Mark H.DrumMark) -> H.EventList -> Event -> H.EventList
-genDrumFoldStep fn t (Note p d)           = 
+genDrumFoldStep fn t (NoteE p d)          = 
     maybe (t # H.spacer d) (\name -> t # H.drumnote (fn name) d) (drumName p)    
-genDrumFoldStep fn t (Chord se d)         = 
+genDrumFoldStep fn t (ChordE se d)        = 
     case drumChord fn (F.toList se) of
         []   -> t # H.spacer d
         [x]  -> t # H.drumnote x d

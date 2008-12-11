@@ -1,7 +1,7 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 
 
 --------------------------------------------------------------------------------
@@ -123,8 +123,8 @@ instance RhythmicValue RhythmicEvent where
   rhythmicValue (Sounds d)        = d
   rhythmicValue (Rests d)         = d
   
-  modifyDuration (Sounds _)         d = Sounds d
-  modifyDuration (Rests _)          d = Rests d
+  updateDuration d (Sounds _)     = Sounds d
+  updateDuration d (Rests _)      = Rests d
 
 
 instance Fits RhythmicEvent Duration where

@@ -56,7 +56,7 @@ translateLilyPond bf procF = fwd <=< printStep <=< procF
             witness 3 "LilyPond output..." m
 
 lilypondAbsoluteForm :: Monad m => NoteList -> NotateT m NoteList
-lilypondAbsoluteForm = return . lyRelativeDuration
+lilypondAbsoluteForm = return . lyRelativeDurationAbsPitch
  
 lilypondRelativeForm :: Monad m => NoteListPostProcessFun m
 lilypondRelativeForm evts = getRelativePitch >>= \p -> 

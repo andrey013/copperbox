@@ -7,6 +7,7 @@ module GuitarDemo where
 
 import Bala.Base
 import Bala.MusicRep.GuitarNotation
+import Bala.Base.OutputMidi
 
 import ZMidi (writeMidi, GMInst(..) )
 

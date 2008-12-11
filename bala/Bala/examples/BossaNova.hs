@@ -8,6 +8,7 @@ module BossaNova where
 import Bala.Base
 import Bala.Base.DrumOutput (drumPitch)
 import Bala.Base.OutputHNotate
+import Bala.Base.OutputMidi
 
 import Bala.MusicRep.DrumsStyle
 import Bala.MusicRep.Pulse

@@ -57,7 +57,7 @@ claveMotif d =
     pgroup :: Seq Pitch -> Event
     pgroup se = case viewl se of
         EmptyL -> rest d
-        a :< sa -> if null sa then note a d else Chord se d
+        a :< sa -> if null sa then note a d else ChordE se d
         
         
 

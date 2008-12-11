@@ -1,3 +1,5 @@
+{-# OPTIONS -Wall #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.BackendMidi
@@ -234,7 +236,7 @@ unaccentedGraceEvents :: Word8 -> Word32 -> MidiAtom -> [MidiGraceNote]
 unaccentedGraceEvents ch elapsed gly xs = 
     let atom_len = rhythmicValue gly; grace_len =  graceLength xs in
     if (atom_len >= grace_len)     
-    then let gly'       = modifyDuration gly (atom_len - grace_len)
+    then let gly'       = updateDuration (atom_len - grace_len) gly
              (dt,se)    = atomEvents ch elapsed gly'
              (dt',se')  = graceEvents ch dt xs
          in (dt', se >< se')
@@ -247,7 +249,7 @@ accentedGraceEvents :: Word8 -> Word32 -> [MidiGraceNote]  -> MidiAtom
 accentedGraceEvents ch elapsed xs gly = 
     let atom_len = rhythmicValue gly; grace_len =  graceLength xs in
     if (atom_len >= grace_len)     
-    then let gly'       = modifyDuration gly (atom_len - grace_len)
+    then let gly'       = updateDuration (atom_len - grace_len) gly
              (dt, se)   = graceEvents ch elapsed xs
              (dt',se')  = atomEvents ch dt gly'             
          in (dt', se >< se')
@@ -264,18 +266,18 @@ instance RhythmicValue MidiAtom where
   rhythmicValue (MRest d)         = d
   rhythmicValue (MChord _ d)      = d
   
-  modifyDuration (MNote p _)    d = MNote p d
-  modifyDuration (MRest _)      d = MRest d
-  modifyDuration (MChord ps _)  d = MChord ps d
+  updateDuration d (MNote p _)    = MNote p d
+  updateDuration d (MRest _)      = MRest d
+  updateDuration d (MChord ps _)  = MChord ps d
   
 instance RhythmicValue MidiGrouping where
   rhythmicValue (MuGrace _ gly _)    = rhythmicValue gly
   rhythmicValue (MaGrace _ _ gly)    = rhythmicValue gly
   rhythmicValue (MAtom _ gly)        = rhythmicValue gly
   
-  modifyDuration (MuGrace ch gly xs) d = MuGrace ch (modifyDuration gly d) xs
-  modifyDuration (MaGrace ch xs gly) d = MaGrace ch xs (modifyDuration gly d)
-  modifyDuration (MAtom ch gly)      d = MAtom ch (modifyDuration gly d)
+  updateDuration d (MuGrace ch gly xs) = MuGrace ch (updateDuration d gly) xs
+  updateDuration d (MaGrace ch xs gly) = MaGrace ch xs (updateDuration d gly)
+  updateDuration d (MAtom ch gly)      = MAtom ch (updateDuration d gly)
 
 
 atomEvents :: Word8 ->  Word32 -> MidiAtom -> (Word32, Seq Message) 

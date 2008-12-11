@@ -17,7 +17,6 @@ module Bala.Base
   ( module Bala.Base.BaseExtra
   , module Bala.Base.Duration
   , module Bala.Base.Metrical
---  , module Bala.Base.OutputMidi
   , module Bala.Base.Pitch
   , module Bala.Base.Printing
   , module Bala.Base.Structural
@@ -30,7 +29,6 @@ module Bala.Base
 import Bala.Base.BaseExtra
 import Bala.Base.Duration
 import Bala.Base.Metrical
--- import Bala.Base.OutputMidi
 import Bala.Base.Pitch
 import Bala.Base.Printing
 import Bala.Base.Structural

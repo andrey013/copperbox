@@ -7,6 +7,7 @@ module SambaBaiao where
 
 import Bala.Base
 import Bala.MusicRep.Pulse
+import Bala.Base.OutputMidi
 
 import ZMidi (writeMidi, GMInst(..) )
 

@@ -1,6 +1,6 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE FlexibleInstances #-}
-
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# OPTIONS -Wall #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.Pitch
@@ -155,18 +155,18 @@ noPitchContent = []
 
 class PitchValue a where
   pitchValue   :: a -> PitchContent
-  modifyPitch  :: a -> PitchContent -> a
+  updatePitch  :: PitchContent -> a -> a 
 
 instance PitchValue Pitch where
   pitchValue p = [p]
   
-  _ `modifyPitch` [p] = p
-  p `modifyPitch` _   = p
+  updatePitch [p] _ = p
+  updatePitch _   p = p     -- ideally this case would never match...
 
 instance PitchValue (Seq Pitch) where
   pitchValue = F.toList
   
-  modifyPitch se pc 
+  updatePitch pc se 
       | S.length se == length pc  = sziplWith (\ _ p -> p) se pc 
       | otherwise                 = error "modifyPitch (Seq Pitch) unmatched"
         

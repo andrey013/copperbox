@@ -80,9 +80,9 @@ instance Fits Duration Duration where
             
 splitRV :: RhythmicValue a => Duration -> a -> (a,a)
 splitRV l a = let (ld,rd) = split l (rhythmicValue a) 
-              in (modifyDuration a ld, modifyDuration a rd)          
+              in (updateDuration ld a, updateDuration rd a)          
 
--- With (- -XUndecidableInstances -)this can be relaxed to  
+-- With (- -XUndecidableInstances -)this could be relaxed to  
 -- instance Fits a b => Fits (Seq a) b             
 instance Fits a Duration => Fits (Seq a) Duration where
   measure   = sumMeasure

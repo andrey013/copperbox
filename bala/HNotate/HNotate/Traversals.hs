@@ -47,20 +47,20 @@ mkLyState pch = LyState { rel_pitch = pch, rel_duration = quarter }
 -- LilyPond
         
 -- Just change the relative duration        
-lyRelativeDuration :: T.Traversable t => t Grouping -> t Grouping
-lyRelativeDuration = shapeContentsTraversal durationFocus fn 
+lyRelativeDurationAbsPitch :: T.Traversable t => t Grouping -> t Grouping
+lyRelativeDurationAbsPitch = shapeContentsTraversal dlpcFocus fn 
   where
-    fn xs = evalState (mapM diffDuration xs) (mkLyState c4)
+    fn xs = evalState (mapM combinedUpdate xs) (mkLyState c4)
+    combinedUpdate :: (Duration, LyPitchContent) 
+                          -> State LyState (Duration, LyPitchContent)
+    combinedUpdate (d,lpc) = (,) <$> diffDuration d <*> pure (lypcMap down3ve lpc)
 
-durationFocus :: Focus Grouping Duration
-durationFocus = FN { focus = not . isNplet, 
-                     extract = rhythmicValue,
-                     putback = modifyDuration }
-  where
-    isNplet (Nplet _ _ _ _)  = True
-    isNplet _                = False
-
-
+    down3ve :: Pitch -> Pitch
+    down3ve (Pitch l a o) = Pitch l a (o-3)
+    
+    lypcMap f (RegularPitchContent pc)  = RegularPitchContent $ fmap f pc
+    lypcMap f (ChordPitches pc)         = ChordPitches $ fmap f pc
+    
 -- Change the relative pitch and relative duration.
 -- Commonly Lilypond scores will be in this form
 lyRelativePitchDuration :: T.Traversable t => Pitch -> t Grouping -> t Grouping 
@@ -91,8 +91,8 @@ dlpcFocus = FN { focus = fcs, extract = ext, putback = back }
     ext a@(Chord _ _ _) = (rhythmicValue a, ChordPitches $ pitchValue a)
     ext a               = (rhythmicValue a, RegularPitchContent $ pitchValue a)
    
-    back a (d,RegularPitchContent pc) = modifyPitch (modifyDuration a d) pc
-    back a (d,ChordPitches pc)        = modifyPitch (modifyDuration a d) pc 
+    back (d,RegularPitchContent pc) = updatePitch pc . updateDuration d 
+    back (d,ChordPitches pc)        = updatePitch pc . updateDuration d 
     
     
    
@@ -148,7 +148,7 @@ dpFocus = FN { focus = fcs, extract = ext, putback = back }
     
     ext a             = (rhythmicValue a, pitchValue a)
    
-    back a (d,pc)     = modifyPitch (modifyDuration a d) pc
+    back (d,pc)       = updatePitch pc . updateDuration d
     
     
 -- Abc needs two transformations:
@@ -168,12 +168,12 @@ abcPitchDurationTrafo unit_drn label_set =
     
     recalcDuration drn
         | drn == unit_drn = no_duration
-        | otherwise       = scaleDuration drn unit_drn
+        | otherwise       = unlScaleDuration unit_drn drn
                  
     
-    scaleDuration :: Duration -> Duration -> Duration
-    scaleDuration drn unl = 
-        let (nr,dr)  = ratioElements drn
-            (un,ud)  = ratioElements unl
-        in  (nr%dr) / (un%ud)
+unlScaleDuration :: Duration -> Duration -> Duration
+unlScaleDuration unl drn = (nr%dr) / (un%ud) where
+    (nr,dr)  = ratioElements drn
+    (un,ud)  = ratioElements unl
+      
                    

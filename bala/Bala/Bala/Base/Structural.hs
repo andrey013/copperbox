@@ -1,7 +1,7 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -169,39 +169,31 @@ instance RhythmicValue Event where
   rhythmicValue (UGraceE _ d _)     = d  
   rhythmicValue (MarkE _)           = duration_zero 
   
-  modifyDuration (NoteE p _)      d = NoteE p d 
-  modifyDuration (RestE _)        d = RestE d
-  modifyDuration (ChordE se _)    d = ChordE se d
-  modifyDuration (SpacerE _)      d = SpacerE d
-  modifyDuration (AGraceE se p _) d = AGraceE se p d 
-  modifyDuration (UGraceE p _ se) d = UGraceE p d se
-  modifyDuration (MarkE m)        d = MarkE m
+  updateDuration d (NoteE p _)      = NoteE p d 
+  updateDuration d (RestE _)        = RestE d
+  updateDuration d (ChordE se _)    = ChordE se d
+  updateDuration d (SpacerE _)      = SpacerE d
+  updateDuration d (AGraceE se p _) = AGraceE se p d 
+  updateDuration d (UGraceE p _ se) = UGraceE p d se
+  updateDuration d (MarkE m)        = MarkE m
  
 instance PitchValue Event where
   pitchValue (NoteE p _)            = [p]
-  pitchValue (RestE _)              = [] 
-  pitchValue (ChordE se _)          = pitchValue se
-  pitchValue (SpacerE _)            = []      
+  pitchValue (ChordE se _)          = pitchValue se     
   pitchValue (AGraceE se p _)       = p : pitchValue se
   pitchValue (UGraceE p _ se)       = p : pitchValue se
-  pitchValue (MarkE _)              = []
+  pitchValue _                      = []
   
      
-  modifyPitch (NoteE p d)       pc = NoteE (p `modifyPitch` pc) d
-  modifyPitch (RestE d)         pc = RestE d 
-  modifyPitch (ChordE se d)     pc = ChordE se d   -- what to do?
-  modifyPitch (SpacerE d)       pc = SpacerE d
-  modifyPitch (AGraceE se p d)  pc = case pc of 
-                                      (x:xs) -> AGraceE (se `modifyPitch` xs) x d
-                                      _      -> AGraceE se p d
-  modifyPitch (UGraceE p d se)  pc = case pc of 
-                                      (x:xs) -> UGraceE x d (se `modifyPitch` xs)
-                                      _      -> UGraceE p d se
-  modifyPitch (MarkE m)         pc = MarkE m
+  updatePitch [p]     (NoteE _ d)      = NoteE p d 
+  updatePitch pc      (ChordE se d)    = ChordE (updatePitch pc se) d
+  updatePitch (p:pc)  (AGraceE se _ d) = AGraceE (updatePitch pc se) p d
+  updatePitch (p:pc)  (UGraceE _ d se) = UGraceE p d (updatePitch pc se)
+  updatePitch _       e               = e
   
 instance PitchValue GraceNotes where
   pitchValue  = F.toList . fmap fst
-  modifyPitch se pc 
+  updatePitch pc se 
       | S.length se == length pc  = sziplWith (\(_,d) p -> (p,d)) se pc
       | otherwise                 = error "modifyPitch GraceNotes unmatched"
 

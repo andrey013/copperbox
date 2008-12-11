@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -25,8 +26,6 @@ module HNotate.FocusedShapeContents (
 import Control.Monad.State
 
 import qualified Data.Foldable as F
-import Data.Maybe
-import Data.Sequence hiding (reverse)
 import qualified Data.Traversable as T
 
 data FShape a = Focus a | Obliv a
@@ -36,11 +35,14 @@ instance Show (FShape a) where
   show (Focus _)  = "(*)" 
   show (Obliv _)  = "(_)"   
 
-              
-
+-- Focus holds 3 functions@
+-- @focus@ is a predicate to select elements of interest.
+-- @extract@ gets a value form an element (it can be just part of an element
+-- hence the different type.
+-- @putback@ - updates an element with an extracted (and modified) value
 data Focus a b = FN { focus   :: a -> Bool, 
                       extract :: a -> b, 
-                      putback :: a -> b -> a } 
+                      putback :: b -> a -> a } 
 
 
 separate :: (Functor t, F.Foldable t) => Focus a b -> t a -> (t (FShape a), [b])
@@ -48,17 +50,17 @@ separate fcs = fork (fmap f) (F.foldr g []) where
     f a    = if (focus fcs) a then Focus a else Obliv a
     g a xs = if (focus fcs) a then (extract fcs) a : xs else xs
     
-    fork :: (a -> b) -> (a -> c) -> a -> (b,c) 
-    fork f g a = (f a, g a)  
+fork :: (a -> b) -> (a -> c) -> a -> (b,c) 
+fork f g a = (f a, g a)  
     
 rejoin :: T.Traversable t => Focus a b -> (t (FShape a), [b]) -> t a
-rejoin fcs (t, xs) = evalState (T.mapM getElement t) xs where
+rejoin fcs (t, ss) = evalState (T.mapM getElement t) ss where
     -- getElement :: (FShape a) -> State [b] a
     getElement (Obliv a)  = return a
     getElement (Focus a)  = do xs <- get
                                case xs of
-                                 x:xs -> do put xs
-                                            return $ (putback fcs) a x
+                                 y:ys -> do put ys
+                                            return $ (putback fcs) y a
                                  []   -> fail "rejoin - contents too short"
                                  
 
