@@ -21,6 +21,7 @@ import HNotate.CommonUtils
 import HNotate.DocAbc
 import HNotate.Document
 import HNotate.Duration
+import HNotate.Env (label_set, unit_note_length)
 import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, nplet)
 import HNotate.NotateMonad
 import HNotate.Pitch
@@ -54,9 +55,9 @@ translateAbc bf = fwd <=< printStep <=< abcForm <=< beamNoteList
 
 
 abcForm :: Monad m => NoteList -> NotateT m NoteList
-abcForm = unwrapMonad <=< inner  
-  where
-    inner = unwrapMonad . unComp . traverse (unleBody `comp` plrBody)
+abcForm nl = (\ud ls -> abcPitchDurationTrafo ud ls nl) 
+          <$> asks unit_note_length <*> asks label_set 
+ 
 
 outputNoteList :: BarConcatFun -> NoteList -> ODoc 
 outputNoteList bf = 

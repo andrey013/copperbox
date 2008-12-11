@@ -17,7 +17,8 @@
 module HNotate.FocusedShapeContents ( 
     FShape, -- don't export the constructors
     Focus(..),
-    separate, rejoin
+    separate, rejoin,
+    shapeContentsTraversal
   ) where
 
 
@@ -60,4 +61,10 @@ rejoin fcs (t, xs) = evalState (T.mapM getElement t) xs where
                                             return $ (putback fcs) a x
                                  []   -> fail "rejoin - contents too short"
                                  
-                                                             
+
+shapeContentsTraversal :: 
+          T.Traversable t => Focus a b -> ([b] -> [b]) -> t a -> t a
+shapeContentsTraversal fcs fn = rejoin fcs . change . separate fcs
+  where
+    change (shape,contents) = (shape, fn contents)
+                               

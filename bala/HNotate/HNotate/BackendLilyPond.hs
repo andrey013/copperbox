@@ -31,7 +31,6 @@ import HNotate.Pitch
 import HNotate.PPInstances () -- get Witness instances
 import HNotate.ProcessingTypes
 import HNotate.SequenceUtils
-import HNotate.Travel
 import HNotate.Traversals
 
 import Control.Monad.Error
@@ -57,22 +56,12 @@ translateLilyPond bf procF = fwd <=< printStep <=< procF
             witness 3 "LilyPond output..." m
 
 lilypondAbsoluteForm :: Monad m => NoteList -> NotateT m NoteList
-lilypondAbsoluteForm = return . traverseIdentity losBody
+lilypondAbsoluteForm = return . lyRelativeDuration
+ 
+lilypondRelativeForm :: Monad m => NoteListPostProcessFun m
+lilypondRelativeForm evts = getRelativePitch >>= \p -> 
+    return $ lyRelativePitchDuration p evts  
     
-{-
-lilypondRelativeForm :: Monad m => NoteListPostProcessFun m
-lilypondRelativeForm evts = getRelativePitch >>= \p -> 
-    return $ (evalState `flip` mkLyState p) $ unwrapMonad $ inner p $ evts
-  where       
-    inner p = (evalState `flip` mkLyState p) 
-                      . unwrapMonad 
-                      . unComp 
-                      . traverse (proBody `comp` drleBody)
--}
-
-lilypondRelativeForm :: Monad m => NoteListPostProcessFun m
-lilypondRelativeForm evts = getRelativePitch >>= \p -> 
-    return $ lyRelativePitchDuration p evts
 
 
 getRelativePitch :: Monad m => NotateT m Pitch

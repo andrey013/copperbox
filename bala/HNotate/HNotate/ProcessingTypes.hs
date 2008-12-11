@@ -41,5 +41,11 @@ type BarConcatFun = [(Int,ODoc)] -> ODoc
 
 type NoteListPostProcessFun m = NoteList -> NotateT m NoteList
 
-
+{-
+data ScoreProcessor m = ScoreProcessor {
+    bar_post_process :: BarConcatFun,
+    render_note_list :: NoteListPostProcessFun m
+  }
+-}   
+    
 
