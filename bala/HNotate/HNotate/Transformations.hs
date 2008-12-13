@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -16,13 +17,12 @@
 
 module HNotate.Transformations where
 
-import HNotate.CommonUtils
 import HNotate.Duration
 import HNotate.Env
 import HNotate.Fits
 import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
-import HNotate.ProcessingTypes
+import HNotate.ProcessingBase
 import HNotate.SequenceUtils
 
 import Control.Monad.Reader
@@ -51,8 +51,8 @@ beamBlock i mp barlen asis blk = case blk of
     SingleBlock bar -> SingleBlock $ fn i bar
     OverlayBlock bars -> OverlayBlock $ fmap (fn i) bars
   where
-    fn i bar 
-        | i == 0 && asis /= duration_zero = beam asis barlen mp bar
+    fn n bar 
+        | n == 0 && asis /= duration_zero = beam asis barlen mp bar
         | otherwise                       = beam 0    barlen mp bar
 
 
@@ -68,10 +68,10 @@ beam asis barlen mp =
 reduceMeterPattern :: Duration -> Duration -> MeterPattern -> MeterPattern
 reduceMeterPattern asis barlen (patts,d) 
     | asis == 0 = (patts,d)
-    | otherwise = (advance remaining patts,d)  
+    | otherwise = (advance (floor remaining) patts,d)  
   where    
-    remaining :: Int
-    remaining = floor $ fromRat $ rlen / mplen
+    remaining :: Double
+    remaining = fromRat $ rlen / mplen
     
     mplen :: Duration
     mplen = meterPatternLength (patts,d)

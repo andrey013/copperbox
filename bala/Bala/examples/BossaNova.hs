@@ -58,27 +58,25 @@ genLy = outputLilyPondDocu 5 bossa_sys bossa_doc "./out/bossa_nova.ly"
     bossa_sys = system1 "bossa_nova"  bossa_eventlist
     bossa_eventlist = genGenerateEventList drumFoldStep bossa_nova    
     bossa_doc = lilypond 
-                  [ version
+                  [   version
                   
-                  , header                        $
-                    title "Bossa Nova"            $
-                    noExpr
-                         
-                  , definition "bossaNova"        $
-                    drummode                      $ 
-                    time 2 4                      $
-                    outputAbsolute "bossa_nova"
+                  ,   header
+                    . title "Bossa Nova"
+                                           
+                  ,   definition "bossaNova"
+                    . drummode 
+                    . time 2 4
+                    . outputAbsolute "bossa_nova"
                   
-                  , book                          $ 
-                    score                         $
-                    new "DrumStaff"               $ 
-                    doubleAngles                  $
-                    
-                    set "DrumStaff.drumStyleTable = #drums-style" $
-                    new "DrumVoice"               $
-                    expression                    $                    
-                    lycommand "voiceOne"          $
-                    invocation "bossaNova"
+                  ,   book 
+                    . score
+                    . new "DrumStaff" 
+                    . doubleAngles                    
+                    . set "DrumStaff.drumStyleTable = #drums-style"
+                    . new "DrumVoice"
+                    . expression                    
+                    . lycommand "voiceOne"
+                    . invocation "bossaNova"
                   ]  
     
 

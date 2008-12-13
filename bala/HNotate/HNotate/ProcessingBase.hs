@@ -1,8 +1,10 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# OPTIONS -Wall #-}
+
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  HNotate.ProcessingTypes
+-- Module      :  HNotate.ProcessingBase
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -14,7 +16,7 @@
 --
 --------------------------------------------------------------------------------
 
-module HNotate.ProcessingTypes where
+module HNotate.ProcessingBase where
 
 import HNotate.Document
 import HNotate.Env
@@ -24,6 +26,10 @@ import HNotate.NoteListDatatypes
 import Control.Applicative
 import Control.Monad
 
+data OutputScheme = OutputRelative | OutputDefault
+  deriving (Eq,Show)
+  
+  
 -- Type specialization now that we have the Env and Config
 type NotateT m a = NotateMonadT Env Config m a
 
@@ -39,13 +45,23 @@ instance (Monad m ) => Applicative (NotateMonadT Env Config m) where
 -- Should each note list have a bcf or can the env have a single one?
 type BarConcatFun = [(Int,ODoc)] -> ODoc
 
-type NoteListPostProcessFun m = NoteList -> NotateT m NoteList
 
-{-
-data ScoreProcessor m = ScoreProcessor {
-    bar_post_process :: BarConcatFun,
-    render_note_list :: NoteListPostProcessFun m
+
+data ScoreProcessor m template target_fragment target = ScoreProcessor {
+    
+    -- | Backend specific rewrite step.
+    reformulate_notelist      :: OutputScheme -> NoteList -> NotateT m NoteList,
+    
+    -- | Convert a notelist into a target. 
+    --   This isn't final output, the target framents will need assembly.
+    notelist_to_target        :: NoteList -> NotateT m target_fragment,
+    
+    
+    assemble_target_fragments :: template -> [target_fragment] -> NotateT m target,
+    
+    -- Finally write the output to file.    
+    output_to_file            :: FilePath -> target -> IO ()
   }
--}   
+ 
     
 

@@ -23,7 +23,7 @@ main = do
     outSys sys = H.outputLilyPondDocu 5 sys tab_doc "./_out/tab.ly"
     
     tab_doc = lilypond 
-                  [ definition "tabMelody"  $ 
-                    expression              $ 
-                    outputAbsolute "tab" 
+                  [   definition "tabMelody" 
+                    . expression 
+                    . outputAbsolute "tab" 
                   ]

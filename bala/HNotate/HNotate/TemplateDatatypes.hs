@@ -1,3 +1,6 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -18,9 +21,10 @@ module HNotate.TemplateDatatypes where
 import HNotate.Document
 import HNotate.Duration
 import HNotate.Env
+import qualified HNotate.FPList as Fpl 
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
-
+import HNotate.ProcessingBase
 
 
 -- SrcLoc - SourcePos without the file name 
@@ -29,24 +33,16 @@ data SrcLoc = SrcLoc {
     _src_column   :: Int
   }
   deriving (Eq,Ord,Show) 
-  
+              
 
-data OutputScheme = OutputRelative | OutputDefault
-  deriving (Eq,Show)
-  
-  
-  
 
 -- 1. Text view - (Water,Hole)
 -- Preserves source text - the holes are collected at their 
 -- source position for filling. 
 type Water = String
 
-data TextSource = SourceFile Water Source'
-  deriving (Show)
-  
-data Source' = EndOfSource | Island SrcLoc TextSource  
-  deriving (Show)
+type ParsedTemplate   = Fpl.FPList Water SrcLoc
+
 
 -- 2. 'Island Grammars' for Abc and LilyPond.
 -- Only the elements that effect evaluation are retained. 
@@ -116,7 +112,7 @@ data LyCommand = LyCadenza Bool
 
  
 data Expr = Let Binding Expr
-          | SDo OutputDirective Expr
+          | DoExpr OutputDirective Expr
           | Do OutputDirective
           | Fork Expr Expr
   deriving (Eq,Show)   
@@ -137,32 +133,75 @@ type NoteListName = String
 data OutputDirective = OutputDirective (Maybe OutputScheme) NoteListName  
   deriving (Eq,Show)
   
-newtype ParaHoas a = Hoas { getExprs :: [HoasExpr a] }
+newtype Hoas = Hoas { getHoasExprs :: [HoasExpr] }
 
 
-data HoasExpr a = HLet (Env -> Env) a (HoasExpr a)
-                | HSDo OutputDirective (HoasExpr a)
-                | HDo OutputDirective
-                | HFork (HoasExpr a) (HoasExpr a)
-                | HText a (HoasExpr a)
-                | HText0 a
-              
-type Hoas       = ParaHoas ()
-type HoasExprU  = HoasExpr () 
+data HoasExpr = HLet (Env -> Env) HoasExpr
+              | HDoExpr OutputDirective HoasExpr
+              | HDo OutputDirective
+              | HFork HoasExpr HoasExpr
 
-type DocuHoas   = ParaHoas (ODoc -> ODoc)
-type HoasExprD  = HoasExpr (ODoc -> ODoc)
+-- For building Hoas with documents...
 
-type DocS       = HoasExprD -> HoasExprD
+type HandBuiltTemplate = Fpl.FPList ODocS ()
+
+data HandBuiltLilyPond = HBLP { 
+      getHBLP :: (HandBuiltTemplate, [Maybe HoasExpr])
+   }
+
+data HandBuiltAbc = HBAbc { 
+      getHBAbc :: (HandBuiltTemplate, [Maybe HoasExpr])
+   }
+
+type BuildDocS = (ODocS, Maybe HoasExpr) -> (ODocS, Maybe HoasExpr)
+
+type OptHoasExprS  = Maybe HoasExpr -> Maybe HoasExpr
+
+-- Note, we always bookend the PluggableBuildDoc with (<> emptyDoc)
+-- this is to get a proper FPList (e.g. @abababa@ rather than @ababab@)    
+buildDocsContents :: [BuildDocS] -> (HandBuiltTemplate, [Maybe HoasExpr])
+buildDocsContents = combine . unzip . map content where
+    combine (odocs,oes) = (makePDoc odocs, oes)
+    -- see note above
+    makePDoc :: [ODocS] -> HandBuiltTemplate 
+    makePDoc []     = Fpl.singleton (<> emptyDoc)   
+    makePDoc (w:ws) = Fpl.dblcons w () rest where rest = makePDoc ws
+
+
+content :: BuildDocS -> (ODocS, Maybe HoasExpr)
+content f = f ((<> emptyDoc), Nothing)
+
+zero_doc :: (ODoc , Maybe HoasExpr)
+zero_doc = (emptyDoc, Nothing)
+
+
+
+ohlet ::  (Env -> Env) -> OptHoasExprS
+ohlet _   Nothing     = Nothing
+ohlet upd (Just e)    = Just $ HLet upd e
+
+ohdo ::  OutputDirective -> OptHoasExprS
+ohdo d Nothing     = Just $ HDo d
+ohdo d (Just e)    = Just $ HDoExpr d e
+
+
+buildDocHoas :: (ODocS,OptHoasExprS) -> BuildDocS
+buildDocHoas (docS,oeS) (docS',oe) = (docS . docS', oeS oe)
+
+buildDocOnly :: ODocS -> BuildDocS 
+buildDocOnly docS (docS',oe) = (docS . docS',oe)
+
+buildExprOnly :: (Maybe HoasExpr -> Maybe HoasExpr) -> BuildDocS 
+buildExprOnly exprS (docS,oe) = (docS,exprS oe)
 
 
 toHoas :: [Expr] -> Hoas
 toHoas xs = Hoas $ map convExpr xs
 
--- nothing creates HText, it is only created in the DocuHoas interpretation 
-convExpr :: Expr -> HoasExpr ()
-convExpr (Let b e)      = HLet (convBinding b) () (convExpr e)
-convExpr (SDo o e)      = HSDo o (convExpr e)
+
+convExpr :: Expr -> HoasExpr
+convExpr (Let b e)      = HLet (convBinding b) (convExpr e)
+convExpr (DoExpr o e)   = HDoExpr o (convExpr e)
 convExpr (Do o)         = HDo o
 convExpr (Fork e e')    = HFork (convExpr e) (convExpr e')
 

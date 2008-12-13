@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -20,16 +21,19 @@ module HNotate.OutputMain where
 import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.BackendMidi
+import HNotate.CommonUtils
 import HNotate.BuildNoteList
-import HNotate.Document ( ODoc, ODocS, emptyDoc, output, formatted, 
-                          ( <&\> ), dblvsep )
+import HNotate.Document ( ODoc, ODocS, emptyDoc, output, formatted )
 import HNotate.Env
+import HNotate.FPList hiding (length)
+import qualified HNotate.FPList as Fpl
+import HNotate.MiniMidi ( MidiFile(..), MidiTrack (..), writeMidiFile )
 import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
 import HNotate.ParseLy
 import HNotate.ParserBase (ExprParser, TextSourceParser)
-import HNotate.ProcessingTypes
+import HNotate.ProcessingBase
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (empty)
@@ -104,100 +108,113 @@ generalOutput expr_parser src_parser  = do
     
     fault msg err = textoutput 0 msg (show err) >> return ()
     
-    step2 :: FilePath -> TextSource -> NotateT IO ()
+    step2 :: FilePath -> ParsedTemplate -> NotateT IO ()
     step2 infile src  =  do 
         exprs <- expr_parser infile
         either (fault expr_fail_msg) (step3 src) exprs
     
-    step3 :: TextSource -> [Expr] -> NotateT IO ()
+    step3 :: ParsedTemplate -> [Expr] -> NotateT IO ()
     step3 src exprs = do
         out   <- asks_config _output_file 
-        fn    <- outputter exprs src
-        liftIO $ writeS out fn
+        txt   <- outputter exprs src
+        liftIO $ writeFile out txt
+                                    
 
-      
+outputter :: Monad m => [Expr] -> ParsedTemplate -> NotateT m String
+outputter exprs src = do 
+    odocs <- evalHoas (toHoas exprs)
+    return $ plugParsedTemplate src odocs
 
-writeS :: FilePath -> ShowS -> IO ()
-writeS path = writeFile path . ($ "")                                      
+-- Plugging a parsed doc is nice and simple. 
+-- Particularly, any spliced nesting will be captured in the water
+-- on either side of the island. 
+-- (Plugging a handbuilt document is more complicated).
+plugParsedTemplate :: ParsedTemplate -> [ODoc] -> String
+plugParsedTemplate fpls ys = 
+    concatNoSpace $ merge showsWater showsIsland $ knitOnB (,) ys fpls
+  where
+    showsIsland :: (SrcLoc,ODoc) -> ShowS
+    showsIsland (loc,doc) = output (_src_column loc) 80 doc
+    
+    showsWater :: String -> ShowS
+    showsWater = showString 
+    
 
-outputter :: Monad m => [Expr] -> TextSource -> NotateT m ShowS
-outputter exprs src = evalHoas (toHoas exprs) >>= plug src
 
-
-
-plug :: Monad m => TextSource -> [ODoc] -> NotateT m ShowS
-plug (SourceFile water (Island loc more_text)) (d:ds) = 
-    (\ks -> showString water . output (_src_column loc) 60 d . ks) 
-        <$> (plug more_text ds)
-        
-plug (SourceFile _     (Island _ _))           []     = 
-    fail "plug - text hole to plug but no document to fill it with"       
-
-plug (SourceFile water EndOfSource)     [] = return $ showString water
-
-plug (SourceFile water EndOfSource)     ds = do 
-    textoutput 0 "ERROR - 'plug'" (msg $ length ds) 
-    return $ showString water
-  where 
-    msg i = "A parsing problem: the expression parser has \n" ++
-            "recognized " ++ show i ++ " more plugs in the source" ++
-            "file than the source parser."
-
-outputLilyPondDocu :: Int -> System -> DocuHoas -> FilePath -> IO ()
-outputLilyPondDocu dl sys docuh outpath   =
+outputLilyPondDocu :: Int -> System -> HandBuiltLilyPond -> FilePath -> IO ()
+outputLilyPondDocu dl sys (HBLP docuh) outpath   =
     runNotateT outfun default_ly_env config           >>= \(a,msg) ->
     either (reportFailureIO msg) (const $ putStrLn msg) a
   where
     config  = mkLyConfig dl sys "" outpath
     outfun  = docuOutput docuh
-    
 
-outputAbcDocu :: Int -> System -> DocuHoas -> FilePath -> IO ()
-outputAbcDocu dl sys docuh outpath   =
+outputAbcDocu :: Int -> System -> HandBuiltAbc -> FilePath -> IO ()
+outputAbcDocu dl sys (HBAbc docuh) outpath   =
     runNotateT outfun default_abc_env config           >>= \(a,msg) ->
     either (reportFailureIO msg) (const $ putStrLn msg) a
   where
     config  = mkAbcConfig dl sys "" outpath
     outfun  = docuOutput docuh
     
+    
+
+docuOutput :: (HandBuiltTemplate, [Maybe HoasExpr]) -> NotateT IO ()
+docuOutput (pdoc,ohoas) = do
+    out     <- asks_config _output_file
+    odocs   <- evalPartialHoas ohoas
+    let txt = plugHandDoc pdoc odocs
+    liftIO $ writeFile out txt
+
+
+-- Docs created by hand must be able to generate the appropriate 
+-- nesting in output. This is achieved by having /higher-order water/
+-- in the FPList - the water is an ODocS function to fit the island.
+-- So we need to pass the island to the water with a bimerge.     
+plugHandDoc :: FPList ODocS a -> [ODoc] -> String
+plugHandDoc fpls ys = 
+    concatNoSpace $ bimerge pairwise flush $ knitOnB swap ys fpls
+  where
+    pairwise :: ODocS -> ODoc -> ShowS
+    pairwise f d = output 0 80 (f d)
+    
+    flush :: ODocS -> ShowS
+    flush f = output 0 80 (f emptyDoc)
+    
+    swap :: a -> b -> b
+    swap _ = id
+       
         
-docuOutput :: DocuHoas -> NotateT IO ()
-docuOutput dhoas = do
-    out   <- asks_config _output_file
-    docf  <- evalDocuHoas dhoas
-    liftIO $ writeFile out (formatted 0 70 (dblvsep $ fmap ($ emptyDoc) docf))
+{-
+
+-}
+
+writeODocToFile :: FilePath -> ODoc -> IO ()
+writeODocToFile path odoc  = writeFile path (formatted 0 70 odoc)
+
 
 evalHoas :: Monad m => Hoas -> NotateT m [ODoc]
-evalHoas (Hoas exprs) = foldM eval [] exprs >>= return . reverse
-                           
--- Standard evaluation - used when plugging holes in template files 
-eval :: Monad m => [ODoc] -> HoasExpr () -> NotateT m [ODoc]
-eval docs (HLet update _ e)   = local update (eval docs e)
-eval docs (HDo out)           = outputNotes out >>= \d  -> return (d:docs)
-eval docs (HSDo out e)        = outputNotes out >>= \d  -> eval (d:docs) e
-eval docs (HFork e1 e2)       = eval docs e1    >>= \ds -> eval ds e2  
-eval docs (HText _ e)         = eval docs e -- should not occur in standard eval   
-eval _    (HText0 _)          = return [] -- should not occur in standard eval 
+evalHoas (Hoas exprs) = reverse <$> foldM evalHoasStep [] exprs 
+
+evalPartialHoas :: Monad m => [Maybe HoasExpr] -> NotateT m [ODoc]
+evalPartialHoas oexprs = reverse <$> foldM fn [] oexprs where
+    fn docs Nothing   = return $ emptyDoc:docs
+    fn docs (Just e)  = evalHoasStep docs e
 
 
-evalDocuHoas :: Monad m => DocuHoas -> NotateT m [ODocS]
-evalDocuHoas (Hoas exprs) = mapM (docuEval id) exprs
+ 
+evalHoasStep :: Monad m => [ODoc] -> HoasExpr -> NotateT m [ODoc]
+evalHoasStep docs (HLet update e)    = local update (evalHoasStep docs e)
 
--- /Document evaluation/ - used when creating output from ODoc combinators 
-docuEval :: Monad m => ODocS -> HoasExpr ODocS -> NotateT m ODocS
-docuEval f (HLet update d e)  = local update (docuEval (f . d) e)
+evalHoasStep docs (HDo out)          = (\d -> d:docs) <$> outputNotes out
 
-docuEval f (HDo out)          = outputNotes out >>= \d -> 
-                                return (f . (<&\> d))
-
-docuEval f (HSDo out e)       = outputNotes out >>= \d -> 
-                                docuEval (f . (<&\> d)) e
-
-docuEval f (HFork e1 e2)      = docuEval f e1 >>= \f' -> docuEval f' e2  
-
-docuEval f (HText d e )       = docuEval (f . d) e 
-
-docuEval f (HText0 d)         = return (f . d) 
+evalHoasStep docs (HDoExpr out e)    = do { d <- outputNotes out
+                                          ; evalHoasStep (d:docs) e }
+                                      
+evalHoasStep docs (HFork e1 e2)      = do { docs' <- evalHoasStep docs e1
+                                          ; evalHoasStep docs' e2}  
+ 
+    
 
 
 outputNotes :: Monad m => OutputDirective -> NotateT m ODoc
@@ -233,17 +250,62 @@ outputFailure name =
 outputNoteListAbc :: Monad m => EventList -> NotateT m ODoc
 outputNoteListAbc = 
     buildNoteList >=> translateAbc abcConcat
---  toNoteList
+
 
 outputRelativeNoteList :: Monad m => EventList -> NotateT m ODoc
-outputRelativeNoteList = 
-    buildNoteList >=> translateLilyPond lyConcat lilypondRelativeForm 
---  toNoteList
+outputRelativeNoteList evts = 
+    buildNoteList evts >>= lilypondRelativeForm >>= translateLilyPond lyConcat 
+
     
 outputAbsoluteNoteList :: Monad m => EventList -> NotateT m ODoc
 outputAbsoluteNoteList evts = 
     (textoutput 3 "Lilypond 'absolute'" "")   >> 
-    buildNoteList evts >>= translateLilyPond lyConcat lilypondAbsoluteForm 
---  toNoteList    
+    buildNoteList evts >>= lilypondAbsoluteForm >>= translateLilyPond lyConcat  
+   
 
-                                
+--------------------------------------------------------------------------------
+-- Experiment...
+
+{-
+textsrcLyProcessor  :: ScoreProcessor IO TextSource ODoc ShowS
+textsrcLyProcessor = 
+    lyScoreProcessor plug writeShowSToFile
+
+docuLyProcessor     :: ScoreProcessor IO a ODoc ODoc
+docuLyProcessor     = lyScoreProcessor undefined writeODocToFile
+  
+lyScoreProcessor :: 
+       (template -> [ODoc] -> NotateT IO target)
+    -> (FilePath -> target -> IO ()) 
+    -> ScoreProcessor IO template ODoc target
+lyScoreProcessor knit_fun output_fun = ScoreProcessor { 
+    reformulate_notelist      = reformulate,
+    notelist_to_target        = translateLilyPond lyConcat,
+    assemble_target_fragments = knit_fun,
+    output_to_file            = output_fun
+  }
+  where
+    reformulate OutputRelative  = lilypondRelativeForm    
+    reformulate OutputDefault   = lilypondAbsoluteForm 
+
+    
+abcScoreProcessor :: (template -> [ODoc] -> NotateT IO target) ->
+                     (FilePath -> target -> IO ()) -> 
+                     ScoreProcessor IO template ODoc target
+abcScoreProcessor knit_fun output_fun = ScoreProcessor { 
+    reformulate_notelist      = const abcForm,
+    notelist_to_target        = translateAbc abcConcat,
+    assemble_target_fragments = knit_fun,
+    output_to_file            = output_fun
+  }
+ 
+
+midiScoreProcessor :: ScoreProcessor IO template MidiTrack MidiFile
+midiScoreProcessor = ScoreProcessor { 
+    reformulate_notelist      = \_ nl -> return nl,
+    notelist_to_target        = translateMidi,
+    assemble_target_fragments = undefined,
+    output_to_file            = writeMidiFile
+  }
+
+-}                    

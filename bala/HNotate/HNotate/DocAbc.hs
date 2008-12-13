@@ -1,3 +1,5 @@
+{-# OPTIONS -Wall #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.DocAbc
@@ -14,6 +16,7 @@
 
 module HNotate.DocAbc (
   -- * Build Abc output from Document combinators
+  abc, abc1,
   -- $documentcombinators
   xField, titleField, composerField, originField, meterField,
   unitNoteLenField, tempoField, transcriberField, notesField,
@@ -36,68 +39,82 @@ import HNotate.TemplateDatatypes
 -- $documentcombinators
 -- Document building combinators
 
+abc :: [BuildDocS] -> HandBuiltAbc
+abc fs = HBAbc $ buildDocsContents fs
+
+abc1 :: BuildDocS -> HandBuiltAbc
+abc1 f = HBAbc $ buildDocsContents [f]
+
+
+
 -- | @X field@ - reference \/ tune number.
-xField :: Int -> DocS
-xField i expr = HText doc expr where
+xField :: Int -> BuildDocS
+xField i = buildDocOnly (doc <&\>) where
     doc = field 'X' (int i)
 
-titleField :: String -> DocS
-titleField name expr = HText doc expr where
+titleField :: String -> BuildDocS
+titleField name = buildDocOnly (doc <&\>) where
     doc = field 'T' (text name)
 
 -- | @C field@ - composer name.
-composerField :: String -> DocS
-composerField s expr = HText doc expr where
+composerField :: String -> BuildDocS
+composerField s = buildDocOnly (doc <&\>) where
     doc = field 'C' (text s)
     
 -- | @O field@ - origin.
-originField :: String -> DocS
-originField s expr = HText doc expr where
+originField :: String -> BuildDocS
+originField s = buildDocOnly (doc <&\>) where
     doc = field 'O' (text s)
       
 -- | @M field@ - meter.      
-meterField :: Int -> Int -> DocS
-meterField n d expr = HLet update doc expr where
-    tsig    = TimeSig n d
-    update  = set_current_meter tsig
-    doc     = field 'M' (meter tsig)
+meterField :: Int -> Int -> BuildDocS
+meterField n d = buildDocHoas ((doc <&\>), ohlet upd) where    
+    doc = field 'M' (meter tms)
+    upd = set_current_meter tms
+    tms = TimeSig n d
 
 -- | @L field@ - unit note length - set a particular duration as the default
 -- note length. If the unit note length is not set the default will be 
 -- derived from the current meter (e.g. for 4/4 time the unit note length is
 -- an eighth).   
-unitNoteLenField :: Duration -> DocS
-unitNoteLenField d expr = HLet update doc expr where
-    update  = set_unit_note_length d
-    doc     = field 'L' (duration d)
+unitNoteLenField :: Duration -> BuildDocS
+unitNoteLenField d = buildDocHoas ((doc <&\>), ohlet upd) where
+    doc = field 'L' (duration d)
+    upd = set_unit_note_length d
+    
 
 -- | @Q field@ - tempo - specialized to the duration of a quarter note.
-tempoField :: Int -> DocS
-tempoField i expr = HLet update doc expr where
-    update  = set_tempo i
-    doc     = field 'Q' (text "1/4=" <> int i) 
+tempoField :: Int -> BuildDocS
+tempoField i = buildDocHoas ((doc <&\>), ohlet upd) where
+    doc = field 'Q' (text "1/4=" <> int i) 
+    upd = set_tempo i
+    
 
 -- | @Z field@ - transcriber notes.
-transcriberField :: String -> DocS
-transcriberField s expr = HText doc expr where
+transcriberField :: String -> BuildDocS
+transcriberField s = buildDocOnly (doc <&\>) where
     doc = field 'Z' (text s)
 
 -- | @N field@ - notes.    
-notesField :: String -> DocS
-notesField s expr = HText doc expr where
+notesField :: String -> BuildDocS
+notesField s = buildDocOnly (doc <&\>) where
     doc = field 'N' (text s)
+
+
     
 -- | @K field@ - key.
-keyField :: PitchLabel -> Mode -> DocS
-keyField l m expr = HLet update doc expr where
-    update  = set_current_key $ Key l m [] 
-    doc     = field 'K' (pitchLabel l UPPER <+> mode m)
+keyField :: PitchLabel -> Mode -> BuildDocS
+keyField l m = buildDocHoas ((doc <&\>), ohlet upd) where
+    doc = field 'K' (pitchLabel l UPPER <+> mode m)
+    upd = set_current_key $ Key l m [] 
+    
 
 
 -- | @outputDefault name@ - output the notelist /name/.
-outputDefault :: String -> HoasExprD
-outputDefault name = HDo directive where
+outputDefault :: String -> BuildDocS
+outputDefault name = buildExprOnly (ohdo directive) where
     directive = OutputDirective Nothing name
+
 
 
 --------------------------------------------------------------------------------
@@ -107,8 +124,8 @@ outputDefault name = HDo directive where
 -- Elementary print combinators
 
 
-field :: Char -> ODoc -> ODocS
-field ch doc = lineS (char ch <> colon <> doc) 
+field :: Char -> ODoc -> ODoc
+field ch doc = char ch <> colon <> doc 
 
 
 meter :: Meter -> ODoc

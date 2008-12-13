@@ -1,4 +1,7 @@
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# OPTIONS -Wall #-}
+{-# OPTIONS -fno-warn-orphans #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -16,12 +19,10 @@
 --------------------------------------------------------------------------------
 
 
--- Todo -- according to the docs on orphaned instances these functions would be 
--- better in the modules where the datatypes are defined
+-- Don't warn on orphaned instances in this only. 
 
 module HNotate.PPInstances where
 
-import HNotate.CommonUtils
 import HNotate.Document
 import HNotate.Duration
 import HNotate.Env
@@ -30,6 +31,7 @@ import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
 import HNotate.OnsetQueue
 import HNotate.Pitch
+import HNotate.ProcessingBase
 import HNotate.SequenceUtils
 import HNotate.TemplateDatatypes
 
@@ -316,11 +318,11 @@ instance PP LyCommand where
     
   
 instance PP Expr where
-  pp (Let bind expr)      = text "let"  <+>  pp bind <+> text "in"
-                                        <&\> indent 2 (pp expr)   
-  pp (SDo out expr)       = text "sdo"  <+> pp out <+> text "then" <+> pp expr   
-  pp (Do out)             = text "do"   <+> pp out <+> text "end"  
-  pp (Fork expr1 expr2)   = text "fork" <+> 
+  pp (Let bind expr)      = text "let"    <+>  pp bind <+> text "in"
+                                              <&\> indent 2 (pp expr)   
+  pp (DoExpr out expr)    = text "doexpr" <+> pp out <+> text "then" <+> pp expr   
+  pp (Do out)             = text "do"     <+> pp out <+> text "end"  
+  pp (Fork expr1 expr2)   = text "fork"   <+> 
                               indent 2 (text "<<" <+>  pp expr1 
                                                   <&\> text "//" 
                                                   <+>  pp expr2)

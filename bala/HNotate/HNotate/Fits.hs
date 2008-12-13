@@ -1,12 +1,14 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# OPTIONS -Wall #-}
+
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  HNotate.CommonUtils
+-- Module      :  HNotate.Fits
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -139,7 +141,7 @@ anasegment hyph a d seg
 --  
 -- Use two accumulators: one for Seq (Seq a) and one for Seq a
 regiment :: Fits a b => Seq a -> [b] -> Seq (Seq a)
-regiment se xs = step empty empty (viewl se) xs where
+regiment se ls = step empty empty (viewl se) ls where
     step :: Fits a b => Seq (Seq a) -> Seq a -> ViewL a -> [b] -> Seq (Seq a)
     step acc ac EmptyL    _      = if null ac then acc else acc |> ac
     step acc ac (a :< sa) []     = acc |>  ((ac |> a) >< sa)
@@ -181,7 +183,7 @@ jumpedAdvance a xs = let ys = advance a xs in
     if length xs > length ys + 1 then (True,ys) else (False, ys)     
         
 advance :: (Num a, Ord a) => a -> [a] -> [a]
-advance a []                  = []
+advance _ []                  = []
 advance a (x:xs)  | a == x    = xs
                   | a >  x    = advance (a-x) xs
                   | otherwise = (x-a) : xs

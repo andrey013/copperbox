@@ -1,3 +1,5 @@
+{-# OPTIONS -Wall #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.BackendLilyPond
@@ -29,7 +31,7 @@ import HNotate.NotateMonad
 import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, nplet)
 import HNotate.Pitch
 import HNotate.PPInstances () -- get Witness instances
-import HNotate.ProcessingTypes
+import HNotate.ProcessingBase
 import HNotate.SequenceUtils
 import HNotate.Traversals
 
@@ -45,20 +47,20 @@ lyConcat :: BarConcatFun
 lyConcat = vsep . map snd
 
 
-translateLilyPond :: Monad m => 
-          BarConcatFun -> NoteListPostProcessFun m -> NoteList -> NotateT m ODoc
-translateLilyPond bf procF = fwd <=< printStep <=< procF
+translateLilyPond :: Monad m => BarConcatFun -> NoteList -> NotateT m ODoc
+translateLilyPond bf = fwd <=< printStep
   where
     printStep = return . outputNoteList bf
     
     fwd m = ask >>= \env ->
             witness 3 "Current environment is..." env >>
             witness 3 "LilyPond output..." m
+            
 
 lilypondAbsoluteForm :: Monad m => NoteList -> NotateT m NoteList
 lilypondAbsoluteForm = return . lyRelativeDurationAbsPitch
  
-lilypondRelativeForm :: Monad m => NoteListPostProcessFun m
+lilypondRelativeForm :: Monad m => NoteList -> NotateT m NoteList
 lilypondRelativeForm evts = getRelativePitch >>= \p -> 
     return $ lyRelativePitchDuration p evts  
     
@@ -159,7 +161,7 @@ chord ps d a =
 gracenotes :: Seq (Pitch,Duration,Annotation) -> Annotation -> ODoc
 gracenotes ps a = 
     applyLyAnno a $ command1 "grace" (braces $ hsep $ unseqMap fn ps)
-  where fn (p,d,a) = pitch p <> duration d
+  where fn (p,d,_) = pitch p <> duration d
 
 nplet :: Int -> Duration -> Seq (Pitch,Annotation) -> Annotation -> ODoc
 nplet mult ud se a = 

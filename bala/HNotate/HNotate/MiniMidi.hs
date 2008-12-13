@@ -1,3 +1,5 @@
+{-# OPTIONS -Wall #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.MiniMidi
@@ -19,6 +21,7 @@ import qualified Data.ByteString.Lazy as B
 import Data.Char
 import qualified Data.Foldable as F
 import Data.Int
+import Data.Monoid
 import Data.Sequence hiding (length)
 import qualified Data.Sequence as S
 import Data.Word
@@ -59,23 +62,20 @@ midi_sixty_fourth   = 24
 -- Datatypes
 
 -- only consider type1 files & ticks per beat is always 384
-data MidiFile = MidiFile { midi_tracks          :: Seq Track }
+data MidiFile = MidiFile { midi_tracks          :: Seq MidiTrack }
   deriving (Eq,Show)
   
-newtype Track = Track { getTrack :: Seq Message }
+newtype MidiTrack = MidiTrack { getMidiTrack :: Seq Message }
   deriving (Eq,Show)
 
-    
+
+      
 type DeltaTime = Word32
   
 newtype Message = Message { getMessage :: (DeltaTime, Event) }
   deriving (Eq,Show) 
 
--- This is useful for rendering - of we have have a NoteOn and a NoteOff
--- on the same channel at the same time we want the NoteOff played first.
 
-instance Ord Message where
-    compare (Message (t,e)) (Message (t',e')) = (t,e) `compare` (t',e')
 
 
 -- Note - the constructors are ordered for rendering and not by midi event
@@ -104,15 +104,41 @@ data TextType = GENERIC_TEXT
 data ScaleType = MAJOR | MINOR
   deriving (Eq,Enum,Ord,Show)
 
+-- This is useful for rendering - of we have have a NoteOn and a NoteOff
+-- on the same channel at the same time we want the NoteOff played first.
+
+instance Ord Message where
+    compare (Message (t,e)) (Message (t',e')) = (t,e) `compare` (t',e')
+    
+-- There is a useful monoid instance for tracks - it allows use 
+-- to play one after the other in the same track. By virtue of
+-- time being specified as delta-time we don't need to change 
+-- the onset times in the right track. 
+instance Monoid MidiTrack where
+  -- Potentially this should be @MidiTrack $ singleton eot_msg@, however
+  -- it is easier to handle the eot_msg in code that builds the track
+  -- otherwise we would need to viewr-destruct on the sequence each time
+  -- we want to add.
+  mempty = MidiTrack $ mempty
+  
+  MidiTrack sl `mappend` MidiTrack sr = case viewr sl of
+      (se :> (Message (i, MetaEOT))) -> MidiTrack $ se >< forward i (viewl sr)
+      -- otherwise (the left track is ill-formed...)
+      _                              -> MidiTrack $ sl >< sr
+    where
+      forward i ((Message (j,evt)) :< se) = (Message ((i+j),evt)) <| se 
+      forward _ EmptyL                    = mempty
+      
+      
 --------------------------------------------------------------------------------
 -- Some shorthand constructors and message instances
 
-controlTrack :: Word32 -> Track
-controlTrack tempo = let t_msg = Message (0, MetaSetTempo tempo)
-                     in Track (empty |> t_msg |> eot_msg) 
+controlTrack :: Word32 -> MidiTrack
+controlTrack tempo = MidiTrack $ singleton t_msg |> eot_msg where
+    t_msg = Message (0, MetaSetTempo tempo)
 
 eot_msg :: Message
-eot_msg = Message (0,    MetaEOT)
+eot_msg = Message (0, MetaEOT)
 
 
 --------------------------------------------------------------------------------
@@ -144,8 +170,8 @@ outputHeaderS num_tracks =
     ftpb    = outW16 $ ticks_per_beat `clearBit` 15
     
     
-outputTrackS :: Track -> MidiOut
-outputTrackS (Track se) = 
+outputTrackS :: MidiTrack -> MidiOut
+outputTrackS (MidiTrack se) = 
     let fn = F.foldr (\a f -> outputMessageS a . f) id se
         bs = fn B.empty
     in outChars "MTrk" . (outW32 $ fromIntegral $ B.length bs) . (B.append bs)      

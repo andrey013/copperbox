@@ -1,3 +1,5 @@
+{-# OPTIONS -Wall #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.BackendAbc
@@ -14,7 +16,7 @@
 
 
 module HNotate.BackendAbc (
-    abcConcat, translateAbc 
+    abcConcat, translateAbc, abcForm
   ) where
 
 import HNotate.CommonUtils
@@ -26,7 +28,7 @@ import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, nplet)
 import HNotate.NotateMonad
 import HNotate.Pitch
 import HNotate.PPInstances () -- for witness instances
-import HNotate.ProcessingTypes
+import HNotate.ProcessingBase
 import HNotate.SequenceUtils
 import HNotate.Transformations
 import HNotate.Traversals
@@ -35,7 +37,6 @@ import Control.Applicative
 import Control.Monad.Reader
 import qualified Data.Foldable as F
 import Data.Sequence hiding (take)
-import Data.Traversable
 
 import Prelude hiding (length)  
 
@@ -136,7 +137,7 @@ chord se d a =
     
 gracenotes :: Seq (Pitch,Duration,Annotation) -> Annotation -> ODoc
 gracenotes se a = applyAbcAnno a (braces $ hcat $ unseqMap fn se)
-  where fn (p,d,a) = pitch p <> duration d  
+  where fn (p,d,_) = pitch p <> duration d  
 
 nplet :: Int -> Duration -> Seq (Pitch,Annotation) -> Annotation -> ODoc
 nplet mult ud se a = 

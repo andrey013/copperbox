@@ -1,4 +1,4 @@
-
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -22,7 +22,7 @@ import HNotate.Duration
 import HNotate.Env
 import HNotate.Fits
 import HNotate.NoteListDatatypes
-import HNotate.ProcessingTypes
+import HNotate.ProcessingBase
 import HNotate.SequenceUtils
 
 import Control.Monad.Reader

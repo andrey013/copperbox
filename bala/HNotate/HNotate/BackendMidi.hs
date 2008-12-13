@@ -24,7 +24,7 @@ import HNotate.MiniMidi
 import HNotate.NoteListDatatypes hiding (chord)
 import HNotate.OnsetQueue
 import HNotate.Pitch
-import HNotate.ProcessingTypes
+import HNotate.ProcessingBase -- ?
 import HNotate.SequenceUtils
 
 import Control.Applicative hiding (empty)
@@ -36,7 +36,17 @@ import Data.Sequence
 import qualified Data.Traversable as T
 import Data.Word
 
+-- Translate one notelist within a system
+translateMidi :: Monad m => NoteList -> NotateT m MidiTrack
+translateMidi nl = MidiTrack <$> midiMessages nl
 
+
+type Name = String
+
+data MidiOutputStyle = SingleNamedTrack Name
+                     | ParallelTracks [Name]
+                     | SerialTracks [Name]
+  deriving (Eq,Show)                     
 
 midiOut :: FilePath -> [NoteList] -> NotateT IO ()
 midiOut path ess = do
@@ -53,17 +63,17 @@ midiOut path ess = do
     render (Midi_Sequential delay)  = sequentialTracks (fromIntegral delay) 
                   
 
-tempoTrack :: Monad m => NotateT m Track
+tempoTrack :: Monad m => NotateT m MidiTrack
 tempoTrack = (\t -> controlTrack ((fromIntegral t * 500000) `div` 60))
     <$> asks tempo
 
-parallelTracks :: [Seq Message] -> Seq Track
+parallelTracks :: [Seq Message] -> Seq MidiTrack
 parallelTracks mss = foldr fn empty mss
-  where fn msgs se = (Track $ msgs |> eot_msg) <| se
+  where fn msgs se = (MidiTrack $ msgs |> eot_msg) <| se
     
-sequentialTracks :: Word32 -> [Seq Message] -> Seq Track
+sequentialTracks :: Word32 -> [Seq Message] -> Seq MidiTrack
 sequentialTracks delay mss = 
-    singleton $ Track $ foldr fn (empty |> eot_msg) (fmap delayfirst mss)
+    singleton $ MidiTrack $ foldr fn (empty |> eot_msg) (fmap delayfirst mss)
   where 
     fn msgs se = msgs >< se
     
@@ -74,7 +84,7 @@ sequentialTracks delay mss =
   
   
          
-midiMessages :: NoteList -> NotateT IO (Seq Message)
+midiMessages :: Monad m => NoteList -> NotateT m (Seq Message)
 midiMessages evts = translateMidiAtoms (simplifyNoteList evts)
         
     

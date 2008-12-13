@@ -62,27 +62,25 @@ genLy = outputLilyPondDocu 5 chacha_sys chacha_doc "./out/cha_cha.ly"
     chacha_sys = system1 "cha_cha"  chacha_eventlist
     chacha_eventlist = genGenerateEventList drumFoldStep cha_cha   
     chacha_doc = lilypond 
-                  [ version
+                  [   version
                   
-                  , header                        $
-                    title "Cha Cha"               $
-                    noExpr
+                  ,   header
+                    . title "Cha Cha"                   
                          
-                  , definition "chaCha"           $
-                    drummode                      $ 
-                    time 2 4                      $
-                    outputAbsolute "cha_cha"
+                  ,   definition "chaCha"
+                    . drummode 
+                    . time 2 4
+                    . outputAbsolute "cha_cha"
                   
-                  , book                          $ 
-                    score                         $
-                    new "DrumStaff"               $ 
-                    doubleAngles                  $
-                    
-                    set "DrumStaff.drumStyleTable = #timbales-style" $
-                    new "DrumVoice"               $
-                    expression                    $                    
-                    lycommand "voiceOne"          $
-                    invocation "chaCha"
+                  ,   book 
+                    . score
+                    . new "DrumStaff" 
+                    . doubleAngles
+                    . set "DrumStaff.drumStyleTable = #timbales-style"
+                    . new "DrumVoice"
+                    . expression                    
+                    . lycommand "voiceOne"
+                    . invocation "chaCha"
                   ]  
     
 

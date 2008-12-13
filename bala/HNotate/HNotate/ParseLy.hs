@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -17,6 +18,7 @@ module HNotate.ParseLy where
 
 import HNotate.CommonUtils
 import HNotate.Duration
+import qualified HNotate.FPList as Fpl
 import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.ParserBase
@@ -60,7 +62,7 @@ transExprs = tree `flip` id where
   
   tree (LyOutput o:xs)            k = k $ tree xs fn where
       fn = maybe (Just $ Do (transMetaOutput o))  --  
-                 (\expr -> Just $ SDo (transMetaOutput o) expr)
+                 (\expr -> Just $ DoExpr (transMetaOutput o) expr)
         
   tree (LyCmdBinding b:xs)        k = k $ tree xs fn where
       fn = maybe Nothing (\expr -> Just $ Let (transLyCommand b) expr)       
@@ -316,19 +318,16 @@ rootDuration = choice [pBreve, pLonga, pNumericDuration]
 --------------------------------------------------------------------------------
 -- Parse the text for the water and holes so we can fill the holes
 
+lyTextSource :: Parser ParsedTemplate
+lyTextSource = Fpl.zipbuild <$> stringTill recognizeIsland <*> many islandWater
 
-
-lyTextSource :: TextSourceParser
-lyTextSource = SourceFile <$> stringTill lySource' <*> lySource'
-
-lySource' :: Parser Source'
-lySource' = endOfSource <|> island
-  where
-    endOfSource = EndOfSource <$ eof
-    island      = (\pair rest -> Island (fst pair) rest) 
-                      <$> (try $ withLoc recognizeIsland) <*> lyTextSource
+islandWater :: Parser (SrcLoc,String)
+islandWater = (\(loc,_) ss -> (loc,ss)) 
+    <$> (try $ withLoc recognizeIsland) <*> stringTill (eof <|> recognizeIsland)
 
 recognizeIsland :: Parser ()
 recognizeIsland = () <$ 
-    (lexeme (symbol "%{#") *> lexeme (symbol "output")
-                           *> manyTill anyChar (try $ string "#%}") )
+    try (lexeme (symbol "%{#") *> lexeme (symbol "output")
+                               *> manyTill anyChar (try $ string "#%}") )
+
+

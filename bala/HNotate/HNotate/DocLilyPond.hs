@@ -1,3 +1,5 @@
+{-# OPTIONS -Wall #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.DocLilyPond
@@ -19,107 +21,108 @@ import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
+import HNotate.ProcessingBase
 import HNotate.TemplateDatatypes
 
-lilypond :: [HoasExprD] -> DocuHoas
-lilypond ds = Hoas ds
+lilypond :: [BuildDocS] -> HandBuiltLilyPond
+lilypond fs = HBLP $ buildDocsContents fs
 
-lilypond1 :: HoasExprD -> DocuHoas
-lilypond1 d = Hoas [d]
+lilypond1 :: BuildDocS -> HandBuiltLilyPond
+lilypond1 f = HBLP $ buildDocsContents [f]
 
-noExpr :: HoasExprD
-noExpr = HText0 doc where
-    doc = nextS $ emptyDoc
  
-version :: HoasExprD
-version = HText0 doc where
-    doc = lineS $ command "version" <+> dblquotes (text "2.10.33")
+version :: BuildDocS
+version = buildDocOnly (doc <&\>) where
+    doc = command "version" <+> dblquotes (text "2.10.33")
 
-header :: DocS     
-header expr = HText doc expr where
-    doc d = command "header" <+> (bracesLines d)
+header :: BuildDocS     
+header = buildDocOnly docS where
+    docS = \d -> onNewline $ command "header" <+> (bracesLines d)
+    
 
-title :: String -> DocS 
-title s expr = HText doc expr where
-    doc = lineS $ text "title" <+> equals <> dblquotes (text s)     
+title :: String -> BuildDocS 
+title s = buildDocOnly (doc <&\>) where
+    doc = text "title" <+> equals <> dblquotes (text s)     
         
-book :: DocS     
-book expr = HText doc expr where
-    doc d = command "book" <+> (bracesLines d)
+book :: BuildDocS     
+book = buildDocOnly docS where
+    docS = \d -> onNewline $ command "book" <+> (bracesLines d)
 
-score :: DocS     
-score expr = HText doc expr where
-    doc d = command "score" <+> (bracesLines d)
+score :: BuildDocS     
+score = buildDocOnly docS where
+    docS = \d -> command "score" <+> (bracesLines d)
 
-drummode :: DocS     
-drummode expr = HText doc expr where
-    doc d = command "drummode" <+> (bracesLines d)
+drummode :: BuildDocS     
+drummode = buildDocOnly docS where
+    docS = \d -> command "drummode" <+> (bracesLines d)
 
-set :: String -> DocS    
-set ss expr = HText doc expr where
-    doc d = command "set" <+> text ss <+> d
+set :: String -> BuildDocS    
+set ss = buildDocOnly (doc <+>) where
+    doc = command "set" <+> text ss
     
     
-new :: String -> DocS
-new name expr = HText doc expr where
-    doc d = command "new" <+> text name <+> d
+new :: String -> BuildDocS
+new name = buildDocOnly (doc <+>) where
+    doc = command "new" <+> text name
 
 
-doubleAngles :: DocS
-doubleAngles expr = HText doc expr where
-    doc d = dblangles' d
+doubleAngles :: BuildDocS
+doubleAngles = buildDocOnly dblangles'
 
-expression :: DocS
-expression expr = HText doc expr where
-    doc d = braces' d
+expression :: BuildDocS
+expression = buildDocOnly braces'
     
-lycommand :: String -> DocS
-lycommand name expr = HText doc expr where
-    doc d = command name <+> d    
+lycommand :: String -> BuildDocS
+lycommand name = buildDocOnly (doc <+>) where
+    doc = command name    
     
-relative :: Pitch -> DocS
-relative p expr = HLet update doc expr where
-    update  = set_relative_pitch p 
-    doc d   = command "relative" <+> pitch (rescale p) <+> (bracesLines d)
+relative :: Pitch -> BuildDocS
+relative p = buildDocHoas (docS, ohlet upd) where
+    docS = \d -> command "relative" <+> pitch (rescale p) <+> (bracesLines d)
+    upd = set_relative_pitch p 
+    
   
-time :: Int -> Int -> DocS
-time n d expr = HLet update doc expr where
-    tsig    = TimeSig n d
-    update  = set_current_meter tsig
-    doc     = lineS $ command "time" <+> meter tsig
-
+time :: Int -> Int -> BuildDocS
+time n d = buildDocHoas ((doc <&\>), ohlet upd) where
+    doc = command "time" <+> meter tms
+    upd = set_current_meter tms
+    tms = TimeSig n d
 
 
   
-definition :: String -> DocS
-definition s expr = HText doc expr where
-    doc d   = text s <+> equals <> indent 1 d 
+definition :: String -> BuildDocS
+definition s = buildDocOnly docS where
+    docS = \d -> onNewline $ text s <+> equals <> indent 1 d 
     
-invocation :: String -> HoasExprD   
-invocation s = HText0 doc where
-    doc = lineS $ command s
+invocation :: String -> BuildDocS   
+invocation s = buildDocOnly (doc <&\>) where
+    doc = command s
     
                   
-key :: PitchLabel -> Mode -> DocS
-key l m expr = HLet update doc expr where
-    update  = set_current_key (Key l m [])
-    doc     = lineS $ command "key" <+> pitchLabel l <+> mode m
+key :: PitchLabel -> Mode -> BuildDocS
+key l m = buildDocHoas ((doc <&\>), ohlet upd) where
+    doc = command "key" <+> pitchLabel l <+> mode m
+    upd = set_current_key (Key l m [])
+    
 
 
 -- output
 
-outputRelative :: String -> HoasExprD
-outputRelative name = HDo directive where
+outputRelative :: String -> BuildDocS
+outputRelative name = buildExprOnly (ohdo directive) where
     directive = OutputDirective (Just OutputRelative) name
 
-outputAbsolute :: String -> HoasExprD
-outputAbsolute name = HDo directive where
+outputAbsolute :: String -> BuildDocS
+outputAbsolute name = buildExprOnly (ohdo directive) where
     directive = OutputDirective (Just OutputDefault) name
-
 
 
 --------------------------------------------------------------------------------
 -- elementary printers
+
+onNewline :: ODoc -> ODoc
+onNewline d = text "" <&\> d
+
 
 meter :: Meter -> ODoc
 meter (TimeSig n d) = int n <> char '/' <> int d

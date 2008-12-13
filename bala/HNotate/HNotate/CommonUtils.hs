@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -20,8 +21,6 @@ module HNotate.CommonUtils where
 
 import qualified Data.Foldable as F
 import Data.List (unfoldr)
-import Data.Sequence hiding (empty, length, reverse, update)
-import qualified Data.Sequence as S
 import Prelude hiding (null)
 
 
@@ -138,6 +137,20 @@ showRBrace    = showString "}\n"
 foldS :: (ShowS -> ShowS -> ShowS) -> [ShowS] -> ShowS
 foldS _ []      = id
 foldS f xs      = foldr1 f xs
+
+catNoSpaceS :: [ShowS] -> ShowS
+catNoSpaceS = foldS (.)
+
+concatNoSpace :: [ShowS] -> String
+concatNoSpace = ($ "") . catNoSpaceS
+
+
+catSpaceS :: [ShowS] -> ShowS
+catSpaceS = foldS (\a b -> a . showSpace . b)
+
+concatSpace :: [ShowS] -> String
+concatSpace = ($ "") . catSpaceS
+
 
 constrS :: String -> ShowS -> ShowS
 constrS cname body = showString ('(':cname) . showSpace . body . showChar ')'

@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -19,7 +20,7 @@ import HNotate.Duration
 import HNotate.MusicRepDatatypes
 import HNotate.PPInstances () -- for witness instances
 import HNotate.TemplateDatatypes
-import HNotate.ProcessingTypes
+import HNotate.ProcessingBase
 
 import Control.Applicative hiding (many, optional, (<|>), empty )
 import Control.Monad
@@ -38,7 +39,7 @@ type ExprParser = FilePath -> NotateT IO (Either ParseError [Expr])
 
 -- TextSourceParser returns a 'text view' of the input file - 
 -- source to be preserved plus locations of holes to be plugged.
-type TextSourceParser = Parser TextSource
+type TextSourceParser = Parser ParsedTemplate
 
   
 -- | An Applicative instance for Parsec. 

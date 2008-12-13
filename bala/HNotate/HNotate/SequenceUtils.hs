@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -34,17 +35,17 @@ szipl = sziplWith (,)
 -- The result will be as long as the shortest seq, 
 -- this is the behaviour of list zip. 
 szipWith :: (a -> b -> c) -> Seq a -> Seq b -> Seq c
-szipWith f sa sb = step (viewl sa) (viewl sb) where
+szipWith f sx sy = step (viewl sx) (viewl sy) where
     step (a :< sa) (b :< sb)  = (f a b) <| step (viewl sa) (viewl sb)
     step _    _               = empty
 
 sziplWith :: (a -> b -> c) -> Seq a -> [b] -> Seq c
-sziplWith f se xs = step (viewl se) xs where
+sziplWith f se ss = step (viewl se) ss where
   step (a :< sa) (x:xs)   = f a x <| step (viewl sa) xs
   step _         _        = empty
 
 lzipsWith :: (a -> b -> c) -> [a] -> Seq b -> [c]
-lzipsWith f xs se = step xs (viewl se) where
+lzipsWith f ss se = step ss (viewl se) where
   step (x:xs) (y :< sy)   = f x y : step xs (viewl sy)
   step _      _           = []
     
@@ -54,11 +55,11 @@ sreplicate i a | i <= 0     = empty
   
 smaximum :: (Ord a) => (Seq a) -> a
 smaximum se | null se = error "smaximum: empty sequence"
-            | otherwise = let (a :< sa) = viewl se in F.foldr max a se 
+            | otherwise = let (a :< sa) = viewl se in F.foldr max a sa 
 
 sminimum :: (Ord a) => (Seq a) -> a
 sminimum se | null se = error "sminimum: empty sequence"
-            | otherwise = let (a :< sa) = viewl se in F.foldr min a se
+            | otherwise = let (a :< sa) = viewl se in F.foldr min a sa
 
 sconcat :: Seq (Seq a) -> Seq a
 sconcat = F.foldr (><) empty

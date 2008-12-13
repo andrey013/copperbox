@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -50,7 +51,8 @@ labelSetOf (Key (PitchLabel l a) m xs)  = scaleSpelling l a m xs
 
 
 
-scaleSpelling :: PitchLetter -> Accidental -> Mode -> [PitchLabel] -> Maybe LabelSet
+scaleSpelling :: 
+    PitchLetter -> Accidental -> Mode -> [PitchLabel] -> Maybe LabelSet
 scaleSpelling l a m accidentals = case elemIndex (l,a) $ modeLabels m of
     Just i -> Just $ makeLabelSet (7 - i) l accidentals
     Nothing -> Nothing

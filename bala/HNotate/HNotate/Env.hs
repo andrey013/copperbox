@@ -1,5 +1,5 @@
-{-# LANGUAGE FlexibleInstances #-}
-
+{-# LANGUAGE FlexibleInstances          #-}
+{-# OPTIONS -Wall #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.Env

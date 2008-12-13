@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -17,6 +18,7 @@ module HNotate.ParseAbc where
 
 import HNotate.CommonUtils
 import HNotate.Duration
+import qualified HNotate.FPList as Fpl
 import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.ParserBase
@@ -78,7 +80,7 @@ transExprs = tree `flip` id where
       -- If there are more output commands in the right-hand side of 
       -- the list - (Just expr) - then we have a sequential-do (SDo) 
       fn = maybe (Just $ Do (transMetaOutput o))  --  
-                 (\expr -> Just $ SDo (transMetaOutput o) expr)
+                 (\expr -> Just $ DoExpr (transMetaOutput o) expr)
         
   tree (AbcFieldBinding b:xs)     k = k $ tree xs fn where
       -- New continuation function, if the right-hand side of is empty
@@ -259,19 +261,17 @@ abcMode = choice
 -- Parse the text for the water and holes so we can fill the holes
 
     
-abcTextSource :: TextSourceParser
-abcTextSource = SourceFile <$> stringTill abcSource' <*> abcSource'
+abcTextSource :: Parser ParsedTemplate
+abcTextSource = Fpl.zipbuild <$> stringTill recognizeIsland <*> many islandWater
 
-abcSource' :: Parser Source'
-abcSource' = endOfSource <|> island
-  where
-    endOfSource = EndOfSource <$ eof
-    island      = (\pair rest -> Island (fst pair) rest) 
-                      <$> (try $ withLoc recognizeIsland) <*> abcTextSource
+
+islandWater :: Parser (SrcLoc,String)
+islandWater = (\(loc,_) ss -> (loc,ss)) 
+    <$> (try $ withLoc recognizeIsland) <*> stringTill (eof <|> recognizeIsland)
 
 recognizeIsland :: Parser ()
-recognizeIsland = () <$ (lexeme (symbol "%#") *> lexeme (symbol "output")
-                                              *> uptoNewline) 
+recognizeIsland = () <$ try (lexeme (symbol "%#") *> lexeme (symbol "output")
+                                                  *> uptoNewline)
   where
     uptoNewline = do 
       tok <- eitherparse anyChar eof
