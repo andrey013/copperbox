@@ -42,7 +42,6 @@ module HNotate.Env (
     unmetered,
     bar_number_check,
     score_comment,
-    midi_rendering,
     tempo,
     
     -- computed values
@@ -56,8 +55,6 @@ module HNotate.Env (
     set_relative_pitch,
     set_anacrusis,
     set_unmetered,
-    set_sequential_midi_output,
-    set_parallel_midi_output, 
     set_tempo,
     
  ) where
@@ -95,7 +92,6 @@ data Env = Env {
     _unmetered          :: Bool,
     _bar_number_check   :: Int,
     _score_comment      :: String -> ODoc,
-    _midi_rendering     :: MidiRendering,
     _tempo              :: Int
   }
 
@@ -136,7 +132,6 @@ default_ly_env = Env {
     _unmetered              = False,
     _bar_number_check       = 4,
     _score_comment          = lyComment,
-    _midi_rendering         = Midi_Parallel,
     _tempo                  = 120
   }
   where 
@@ -157,7 +152,6 @@ default_abc_env = Env {
     _unmetered              = True,         -- Abc must start with cadenza on
     _bar_number_check       = 4,
     _score_comment          = abcComment,
-    _midi_rendering         = Midi_Parallel,
     _tempo                  = 120
   }
   where
@@ -179,7 +173,6 @@ default_midi_env = Env {
     _unmetered              = False,
     _bar_number_check       = 0,
     _score_comment          = const (string "<nocomment>"),
-    _midi_rendering         = Midi_Parallel,
     _tempo                  = 120
   }
     
@@ -251,9 +244,6 @@ bar_number_check    = _bar_number_check
 score_comment       :: Env -> (String -> ODoc)
 score_comment       = _score_comment
 
-midi_rendering      :: Env -> MidiRendering
-midi_rendering      = _midi_rendering
-
 tempo               :: Env -> Int
 tempo               = _tempo
 
@@ -302,12 +292,6 @@ set_anacrusis d env           = env {_anacrusis = Just d}
 
 set_unmetered                 :: Bool -> Env -> Env
 set_unmetered a env           = env {_unmetered = a}
-
-set_sequential_midi_output        :: Int -> Env -> Env
-set_sequential_midi_output i env  = env { _midi_rendering = Midi_Sequential i } 
-
-set_parallel_midi_output      :: Env -> Env
-set_parallel_midi_output env  = env { _midi_rendering = Midi_Parallel } 
 
 set_tempo                     :: Int -> Env -> Env
 set_tempo i env               = env { _tempo = i } 

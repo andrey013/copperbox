@@ -21,13 +21,11 @@ module HNotate.OutputMain where
 import HNotate.BackendAbc
 import HNotate.BackendLilyPond
 import HNotate.BackendMidi
-import HNotate.CommonUtils
 import HNotate.BuildNoteList
-import HNotate.Document ( ODoc, ODocS, emptyDoc, output, formatted )
+import HNotate.DocMidi
+import HNotate.Document ( ODoc, emptyDoc  )
 import HNotate.Env
-import HNotate.FPList hiding (length)
-import qualified HNotate.FPList as Fpl
-import HNotate.MiniMidi ( MidiFile(..), MidiTrack (..), writeMidiFile )
+import HNotate.MiniMidi
 import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
 import HNotate.ParseAbc
@@ -37,11 +35,12 @@ import HNotate.ProcessingBase
 import HNotate.TemplateDatatypes
 
 import Control.Applicative hiding (empty)
+import Data.Sequence hiding (update)
 import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.Writer
 
-
+import Data.Foldable (foldrM)
 import qualified Data.Map as Map
 
 import Text.ParserCombinators.Parsec (parseFromFile)
@@ -66,14 +65,6 @@ outputAbc dl sys inpath outpath        =
     config  = mkAbcConfig dl sys inpath outpath
     outfun  = generalOutput abcExprParse abcTextSource
 
-outputMidi :: (Env -> Env) -> NotateT IO [EventList] 
-                      -> System -> FilePath -> IO ()
-outputMidi f ma sys outpath = 
-    runNotateT outfun (f default_midi_env) config         >>= \(a,msg) ->
-    either (reportFailureIO msg) (const $ putStrLn msg) a
-  where
-    config  = mkMidiConfig 5 sys outpath
-    outfun  = ma >>= mapM buildNoteList >>= midiOut outpath
 
 reportFailureIO :: String -> NotateErr -> IO ()
 reportFailureIO log_msg (NotateErr s) = putStrLn s >> putStrLn log_msg
@@ -125,32 +116,21 @@ outputter exprs src = do
     odocs <- evalHoas (toHoas exprs)
     return $ plugParsedTemplate src odocs
 
--- Plugging a parsed doc is nice and simple. 
--- Particularly, any spliced nesting will be captured in the water
--- on either side of the island. 
--- (Plugging a handbuilt document is more complicated).
-plugParsedTemplate :: ParsedTemplate -> [ODoc] -> String
-plugParsedTemplate fpls ys = 
-    concatNoSpace $ merge showsWater showsIsland $ knitOnB (,) ys fpls
-  where
-    showsIsland :: (SrcLoc,ODoc) -> ShowS
-    showsIsland (loc,doc) = output (_src_column loc) 80 doc
-    
-    showsWater :: String -> ShowS
-    showsWater = showString 
-    
 
+    
+midiOut :: FilePath -> [NoteList] -> NotateT IO ()
+midiOut _ _ = undefined
 
-outputLilyPondDocu :: Int -> System -> HandBuiltLilyPond -> FilePath -> IO ()
-outputLilyPondDocu dl sys (HBLP docuh) outpath   =
+outputLilyPondDocu :: Int -> System -> LilyPondTemplate -> FilePath -> IO ()
+outputLilyPondDocu dl sys (LyTemplate docuh) outpath   =
     runNotateT outfun default_ly_env config           >>= \(a,msg) ->
     either (reportFailureIO msg) (const $ putStrLn msg) a
   where
     config  = mkLyConfig dl sys "" outpath
     outfun  = docuOutput docuh
 
-outputAbcDocu :: Int -> System -> HandBuiltAbc -> FilePath -> IO ()
-outputAbcDocu dl sys (HBAbc docuh) outpath   =
+outputAbcDocu :: Int -> System -> AbcTemplate -> FilePath -> IO ()
+outputAbcDocu dl sys (AbcTemplate docuh) outpath   =
     runNotateT outfun default_abc_env config           >>= \(a,msg) ->
     either (reportFailureIO msg) (const $ putStrLn msg) a
   where
@@ -167,54 +147,66 @@ docuOutput (pdoc,ohoas) = do
     liftIO $ writeFile out txt
 
 
--- Docs created by hand must be able to generate the appropriate 
--- nesting in output. This is achieved by having /higher-order water/
--- in the FPList - the water is an ODocS function to fit the island.
--- So we need to pass the island to the water with a bimerge.     
-plugHandDoc :: FPList ODocS a -> [ODoc] -> String
-plugHandDoc fpls ys = 
-    concatNoSpace $ bimerge pairwise flush $ knitOnB swap ys fpls
+outputMidi :: Int -> System -> MidiTemplate -> FilePath -> IO ()
+outputMidi dl sys (MidiTemplate docuh) outpath = 
+    runNotateT outfun default_midi_env config           >>= \(a,msg) ->
+    either (reportFailureIO msg) (const $ putStrLn msg) a
   where
-    pairwise :: ODocS -> ODoc -> ShowS
-    pairwise f d = output 0 80 (f d)
+    config  = mkMidiConfig dl sys outpath
+    outfun  = handmidiOutput docuh
     
-    flush :: ODocS -> ShowS
-    flush f = output 0 80 (f emptyDoc)
     
-    swap :: a -> b -> b
-    swap _ = id
-       
-        
-{-
-
--}
-
-writeODocToFile :: FilePath -> ODoc -> IO ()
-writeODocToFile path odoc  = writeFile path (formatted 0 70 odoc)
-
+handmidiOutput :: (HandBuiltMidi, [Maybe HoasExpr]) -> NotateT IO () 
+handmidiOutput (pdoc,ohoas) = do
+    out     <- asks_config _output_file
+    notes   <- evalPartialHoasMidi ohoas
+    let trks = plugMidiTemplate pdoc (fmap (fmap ExtMidi) notes)
+    mf      <- makeMidiFile trks
+    liftIO $ writeMidiFile out mf
 
 evalHoas :: Monad m => Hoas -> NotateT m [ODoc]
-evalHoas (Hoas exprs) = reverse <$> foldM evalHoasStep [] exprs 
+evalHoas (Hoas exprs) = foldrM evalHoasStep [] exprs 
 
 evalPartialHoas :: Monad m => [Maybe HoasExpr] -> NotateT m [ODoc]
-evalPartialHoas oexprs = reverse <$> foldM fn [] oexprs where
-    fn docs Nothing   = return $ emptyDoc:docs
-    fn docs (Just e)  = evalHoasStep docs e
+evalPartialHoas oexprs = foldrM fn [] oexprs where
+    fn Nothing   docs = return $ emptyDoc:docs
+    fn (Just e)  docs = evalHoasStep e docs
 
 
  
-evalHoasStep :: Monad m => [ODoc] -> HoasExpr -> NotateT m [ODoc]
-evalHoasStep docs (HLet update e)    = local update (evalHoasStep docs e)
+evalHoasStep :: Monad m => HoasExpr -> [ODoc] -> NotateT m [ODoc]
+evalHoasStep (HLet update e)    docs = local update (evalHoasStep e docs)
 
-evalHoasStep docs (HDo out)          = (\d -> d:docs) <$> outputNotes out
+evalHoasStep (HDo out)          docs = (\d -> d:docs) <$> outputNotes out
 
-evalHoasStep docs (HDoExpr out e)    = do { d <- outputNotes out
-                                          ; evalHoasStep (d:docs) e }
+evalHoasStep (HDoExpr out e)    docs = do { d <- outputNotes out
+                                          ; evalHoasStep e (d:docs) }
                                       
-evalHoasStep docs (HFork e1 e2)      = do { docs' <- evalHoasStep docs e1
-                                          ; evalHoasStep docs' e2}  
- 
+evalHoasStep (HFork e1 e2)      docs = evalHoasStep e1 docs >>= evalHoasStep e2
+
+
+
+evalPartialHoasMidi :: Monad m => [Maybe HoasExpr] -> NotateT m [Seq Message]
+evalPartialHoasMidi oexprs = foldrM fn [] oexprs where
+    fn Nothing   acc = return $ empty:acc
+    fn (Just e)  acc = evalHoasMidiStep e acc
     
+
+evalHoasMidiStep :: Monad m => HoasExpr -> [Seq Message] -> NotateT m [Seq Message]
+evalHoasMidiStep (HLet update e) xs = local update (evalHoasMidiStep e xs)
+
+evalHoasMidiStep (HDo out)       xs = (\d -> d:xs) <$> outputMidiNotes out
+
+evalHoasMidiStep (HDoExpr out e) xs = do { d <- outputMidiNotes out
+                                         ; evalHoasMidiStep e (d:xs) }
+                                      
+evalHoasMidiStep (HFork e1 e2)   xs = evalHoasMidiStep e1 xs >>= evalHoasMidiStep e2
+
+outputMidiNotes :: Monad m => OutputDirective -> NotateT m (Seq Message)
+outputMidiNotes (OutputDirective _ name)  =      
+    findEventList name >>= maybe (error "outputMidiNotes") sk
+  where
+    sk evts = buildNoteList evts >>= translateMidi    
 
 
 outputNotes :: Monad m => OutputDirective -> NotateT m ODoc
@@ -273,6 +265,8 @@ textsrcLyProcessor =
 
 docuLyProcessor     :: ScoreProcessor IO a ODoc ODoc
 docuLyProcessor     = lyScoreProcessor undefined writeODocToFile
+-}
+
   
 lyScoreProcessor :: 
        (template -> [ODoc] -> NotateT IO target)
@@ -299,7 +293,7 @@ abcScoreProcessor knit_fun output_fun = ScoreProcessor {
     output_to_file            = output_fun
   }
  
-
+{-
 midiScoreProcessor :: ScoreProcessor IO template MidiTrack MidiFile
 midiScoreProcessor = ScoreProcessor { 
     reformulate_notelist      = \_ nl -> return nl,

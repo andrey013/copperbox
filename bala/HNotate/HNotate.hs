@@ -51,8 +51,6 @@ module HNotate (
     set_relative_pitch,
     set_anacrusis,
     set_unmetered,
-    set_sequential_midi_output,
-    set_parallel_midi_output, 
     set_tempo,
     
     mkMeter, major, minor

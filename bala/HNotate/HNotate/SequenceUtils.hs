@@ -20,13 +20,13 @@ module HNotate.SequenceUtils where
 
 import qualified Data.Foldable as F
 import Data.Sequence
-import Prelude hiding (null)
+import Prelude hiding ( null, span, replicate, zipWith )
 
 number :: Int -> Seq a -> Seq (Int,a) 
 number start se = sziplWith (flip (,)) se [start..]
 
-szip :: Seq a -> Seq b -> Seq (a,b)
-szip = szipWith (,)
+zip :: Seq a -> Seq b -> Seq (a,b)
+zip = zipWith (,)
 
 szipl :: Seq a -> [b] -> Seq (a,b)
 szipl = sziplWith (,)
@@ -34,8 +34,8 @@ szipl = sziplWith (,)
 
 -- The result will be as long as the shortest seq, 
 -- this is the behaviour of list zip. 
-szipWith :: (a -> b -> c) -> Seq a -> Seq b -> Seq c
-szipWith f sx sy = step (viewl sx) (viewl sy) where
+zipWith :: (a -> b -> c) -> Seq a -> Seq b -> Seq c
+zipWith f sx sy = step (viewl sx) (viewl sy) where
     step (a :< sa) (b :< sb)  = (f a b) <| step (viewl sa) (viewl sb)
     step _    _               = empty
 
@@ -49,9 +49,9 @@ lzipsWith f ss se = step ss (viewl se) where
   step (x:xs) (y :< sy)   = f x y : step xs (viewl sy)
   step _      _           = []
     
-sreplicate :: Int -> a -> Seq a
-sreplicate i a | i <= 0     = empty
-               | otherwise  = a <| sreplicate (i-1) a 
+replicate :: Int -> a -> Seq a
+replicate i a | i <= 0     = empty
+              | otherwise  = a <| replicate (i-1) a 
   
 smaximum :: (Ord a) => (Seq a) -> a
 smaximum se | null se = error "smaximum: empty sequence"
@@ -61,16 +61,30 @@ sminimum :: (Ord a) => (Seq a) -> a
 sminimum se | null se = error "sminimum: empty sequence"
             | otherwise = let (a :< sa) = viewl se in F.foldr min a sa
 
-sconcat :: Seq (Seq a) -> Seq a
-sconcat = F.foldr (><) empty
+concat :: Seq (Seq a) -> Seq a
+concat = F.foldr (><) empty
 
-stranspose :: Seq (Seq a) -> Seq (Seq a)
-stranspose = step . viewl
+genConcat :: F.Foldable c => 
+    (z a -> z a -> z a) -> (z a) -> (t a -> z a) -> c (t a) -> z a
+genConcat cat empt conv = F.foldr fn empt where
+  fn a b = (conv a) `cat` b
+
+-- The inner collection type is preserved so just use F.foldr
+concat_ls's :: [Seq a] -> Seq a
+concat_ls's = F.foldr (><) empty
+
+-- The inner collection type is changed so use genConcat
+concat_ls'l :: [Seq a] -> [a]
+concat_ls'l = genConcat (++) [] (F.toList)
+
+
+transpose :: Seq (Seq a) -> Seq (Seq a)
+transpose = step . viewl
   where
     step EmptyL         = empty
     step (x :< sse)     = case viewl x of
-        EmptyL    -> stranspose sse
-        (e :< se) -> (e <| allheads sse) <| (stranspose $ se <| alltails sse)
+        EmptyL    -> transpose sse
+        (e :< se) -> (e <| allheads sse) <| (transpose $ se <| alltails sse)
     
     allheads = F.foldl' (\acc se -> acc |> head1 se) empty
     alltails = F.foldl' (\acc se -> acc |> tail1 se) empty
@@ -83,21 +97,21 @@ stranspose = step . viewl
                                 
     unmatchErr = error "stranspose - sequences of unequal length" 
     
-sfilter :: (a -> Bool) -> Seq a -> Seq a
-sfilter pf = step . viewl where
+filter :: (a -> Bool) -> Seq a -> Seq a
+filter pf = step . viewl where
   step EmptyL     = empty
   step (a :< sa) | pf a       = a <| step (viewl sa)
                  | otherwise  = step (viewl sa)
 
-sgroupBy                :: (a -> a -> Bool) -> Seq a -> Seq (Seq a)
-sgroupBy eq se          = step (viewl se) where
+groupBy                 :: (a -> a -> Bool) -> Seq a -> Seq (Seq a)
+groupBy eq se           = step (viewl se) where
     step EmptyL         = empty
     step (a :< sa)      = (a <| sy) <| step (viewl sz) where
-                            (sy,sz) = sspan (eq a) sa
+                            (sy,sz) = span (eq a) sa
 
 
-sspan                   :: (a -> Bool) -> Seq a -> (Seq a, Seq a)
-sspan p se              = step (viewl se) where
+span                    :: (a -> Bool) -> Seq a -> (Seq a, Seq a)
+span p se               = step (viewl se) where
     step EmptyL         = (empty,empty)
     step (a :< sa)      
             | p a       = let (sy,sz) = step (viewl sa) in (a <| sy, sz)

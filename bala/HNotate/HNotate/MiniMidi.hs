@@ -75,19 +75,22 @@ type DeltaTime = Word32
 newtype Message = Message { getMessage :: (DeltaTime, Event) }
   deriving (Eq,Show) 
 
+midiMessage :: DeltaTime -> Event -> Message
+midiMessage dt evt = Message (dt,evt)
 
 
 
 -- Note - the constructors are ordered for rendering and not by midi event
 -- code. When rendering we always want MetaSeqNum first in the track, NoteOffs
 -- should be before NoteOns...
-data Event = MetaSeqNum   Word16
-           | MetaText     TextType String
-           | MetaSetTempo Word32
-           | MetaTimeSig  Word8 Word8 Word8 Word8 -- num den metro num32
-           | MetaKeySig   Int8 ScaleType 
-           | VoiceNoteOff Word8 Word8 Word8   -- chan note velocity
-           | VoiceNoteOn  Word8 Word8 Word8   -- chan note velocity
+data Event = MetaSeqNum     Word16
+           | MetaText       TextType String
+           | MetaSetTempo   Word32
+           | MetaTimeSig    Word8 Word8 Word8 Word8 -- num den metro num32
+           | MetaKeySig     Int8 ScaleType
+           | ProgramChange  Word8 Word8
+           | VoiceNoteOff   Word8 Word8 Word8   -- chan note velocity
+           | VoiceNoteOn    Word8 Word8 Word8   -- chan note velocity
            | MetaEOT
   deriving (Eq,Ord,Show)
   
@@ -172,9 +175,10 @@ outputHeaderS num_tracks =
     
 outputTrackS :: MidiTrack -> MidiOut
 outputTrackS (MidiTrack se) = 
-    let fn = F.foldr (\a f -> outputMessageS a . f) id se
-        bs = fn B.empty
-    in outChars "MTrk" . (outW32 $ fromIntegral $ B.length bs) . (B.append bs)      
+    outChars "MTrk" . (outW32 $ fromIntegral $ B.length bs) . (B.append bs)
+  where    
+    fn = F.foldr (\a f -> outputMessageS a . f) id se
+    bs = fn B.empty     
 
 outputMessageS :: Message -> MidiOut
 outputMessageS (Message (dt,evt)) = varlen dt . outputEventS evt 
@@ -189,6 +193,7 @@ outputEventS (MetaTimeSig  n d m n32) = out3 0xFF 0x58 4 . out4 n d m n32
 outputEventS (MetaKeySig i sc)        = 
     out3 0xFF 0x59 2 . out2 (wrapint i) (wscale sc)
     
+outputEventS (ProgramChange ch inst)  = out2 (0xC `u4l4` ch) inst
 outputEventS (VoiceNoteOff ch n v)    = out3 (0x8 `u4l4` ch) n v
 outputEventS (VoiceNoteOn ch n v)     = out3 (0x9 `u4l4` ch) n v    
 outputEventS MetaEOT                  = out3 0xFF 0x2F 0

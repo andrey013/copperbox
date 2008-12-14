@@ -23,7 +23,7 @@ import HNotate.Env
 import HNotate.Fits
 import HNotate.NoteListDatatypes
 import HNotate.ProcessingBase
-import HNotate.SequenceUtils
+import qualified HNotate.SequenceUtils as S
 
 import Control.Monad.Reader
 import Data.Sequence hiding (reverse)
@@ -45,7 +45,7 @@ type MLine = (Duration,Seq Grouping)
 buildMeteredNoteList :: Duration -> Duration -> EventList -> NoteList
 buildMeteredNoteList asis barlen = 
     NoteList  . fmap (alignOverlays barlen) 
-              . stranspose 
+              . S.transpose 
               . fromList 
               . map (segmentToBars asis barlen) 
               . map (spacerPrefix start) . defork start
@@ -98,7 +98,7 @@ segmentToBars :: Duration -> Duration -> Seq Grouping -> Seq Bar
 segmentToBars asis barlen = fmap Bar . anasegment True asis barlen
 
 alignOverlays :: Duration -> Seq Bar -> Block
-alignOverlays barlen = build . viewl . sfilter (not . emptyBar) where
+alignOverlays barlen = build . viewl . S.filter (not . emptyBar) where
     emptyBar (Bar se) = null se
     
     -- an empty bar is malformed but we turn it into a spacer bar

@@ -23,7 +23,7 @@ import HNotate.Fits
 import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 import HNotate.ProcessingBase
-import HNotate.SequenceUtils
+import qualified HNotate.SequenceUtils as S
 
 import Control.Monad.Reader
 import qualified Data.Foldable as F
@@ -42,7 +42,7 @@ beamNoteList(NoteList se) =
                   `ap` asks anacrusis_displacement
   where
     beamStep mp bar p = 
-      NoteList $ sziplWith (\ blk i -> (beamBlock i mp bar p blk)) se [0..]
+      NoteList $ S.sziplWith (\ blk i -> (beamBlock i mp bar p blk)) se [0..]
 
 
 
@@ -58,9 +58,9 @@ beamBlock i mp barlen asis blk = case blk of
 
 beam :: Duration -> Duration -> MeterPattern -> Bar -> Bar
 beam asis barlen mp = 
-    Bar . cata (><) empty . fmap beamGroup 
-                          . splitMeasure (reduceMeterPattern asis barlen mp) 
-                          . unBar 
+    Bar . S.cata (><) empty . fmap beamGroup 
+                            . splitMeasure (reduceMeterPattern asis barlen mp) 
+                            . unBar 
   where 
     unBar (Bar se) = se
 
@@ -87,8 +87,8 @@ beamGroup :: Seq Grouping -> Seq Grouping
 beamGroup = F.foldr fn empty . joinLTeighth where
   fn e a | length e > 1   = (beamStartSgl <| (e |> beamEndSgl)) >< a
          | otherwise      = e >< a
-  joinLTeighth = sgroupBy (\a b -> eighthOrSmallerAndNote a 
-                                   && eighthOrSmallerAndNote b)
+  joinLTeighth = S.groupBy (\a b -> eighthOrSmallerAndNote a 
+                                    && eighthOrSmallerAndNote b)
 
 -- only want to be chords and notes, not rest, tuplets etc  
 eighthOrSmallerAndNote :: Grouping -> Bool

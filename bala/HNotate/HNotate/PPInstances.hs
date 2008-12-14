@@ -32,7 +32,7 @@ import HNotate.NoteListDatatypes
 import HNotate.OnsetQueue
 import HNotate.Pitch
 import HNotate.ProcessingBase
-import HNotate.SequenceUtils
+import qualified HNotate.SequenceUtils as S
 import HNotate.TemplateDatatypes
 
 import Data.Char (toLower)
@@ -119,8 +119,7 @@ instance PP Env where
       eline "anacrusis"         anacrusis         optAnacrusis    <&\>
       eline "unmetered"         unmetered         pp              <&\>
       eline "bar_number_check"  bar_number_check  pp              <&\>
-      eline "score_comment"     score_comment     ppfun           <&\>
-      eline "midi_output"       midi_rendering    pp            
+      eline "score_comment"     score_comment     ppfun          
     where 
       eline :: String -> (Env -> a) -> (a -> ODoc) -> ODoc
       eline s f pretty = fillString 20 s <> colon <+> pretty (f e)  
@@ -146,14 +145,14 @@ instance PP Grouping where
   pp (Singleton e)        = pp e
   
   pp (Chord se d a)       = applyLyAnno a $ 
-                                brackets (hsep $ unseqMap (pp . fst) se) 
+                                brackets (hsep $ S.unseqMap (pp . fst) se) 
                                               <> prime <> pp d
       
-  pp (GraceNotes se _ a)  = applyLyAnno a $ braces (hsep $ unseqMap fn se) 
+  pp (GraceNotes se _ a)  = applyLyAnno a $ braces (hsep $ S.unseqMap fn se) 
     where fn (p,d,_) = pp p <> prime <> pp d
     
   pp (Nplet _ _ se a)     = applyLyAnno a $ 
-                                braces (hsep $ unseqMap (pp . fst) se)    
+                                braces (hsep $ S.unseqMap (pp . fst) se)    
   
 instance PP Atom where
   pp (Note p d a)           = applyLyAnno a (pp p <> prime <> pp d)
@@ -172,7 +171,7 @@ instance PP OutputFormat where
   pp Midi       = text "Midi"  
 
 instance (PP e) => PP (NoteListF e) where
-  pp (NoteList se)        = genPunctuateSeq pplBlock line (number 1 se) where
+  pp (NoteList se)  = genPunctuateSeq pplBlock line (S.number 1 se) where
       pplBlock (i,blk) = measureNumber i <&\> pp blk
       
 instance (PP e) => Witness (NoteListF e) where
@@ -370,7 +369,7 @@ genFinger f = enclose (text "(|") (text "|)") . genPunctuateSeq f comma
 -- A fold can only see the current element so it would do add an extra sep
 -- e.g.: 1,2,3, 
 genPunctuateSeq :: (a -> ODoc) -> ODoc -> Seq a -> ODoc
-genPunctuateSeq fn sep = para phi emptyDoc
+genPunctuateSeq fn sep = S.para phi emptyDoc
   where 
     phi c (se,  d)  | null se        = fn c <+> d 
                     | otherwise      = fn c <> sep <+> d

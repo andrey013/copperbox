@@ -24,66 +24,66 @@ import HNotate.Pitch
 import HNotate.ProcessingBase
 import HNotate.TemplateDatatypes
 
-lilypond :: [BuildDocS] -> HandBuiltLilyPond
-lilypond fs = HBLP $ buildDocsContents fs
+lilypond :: [BuildDocS] -> LilyPondTemplate
+lilypond fs = LyTemplate $ buildDocsContents fs
 
-lilypond1 :: BuildDocS -> HandBuiltLilyPond
-lilypond1 f = HBLP $ buildDocsContents [f]
+lilypond1 :: BuildDocS -> LilyPondTemplate
+lilypond1 f = LyTemplate $ buildDocsContents [f]
 
  
 version :: BuildDocS
-version = buildDocOnly (doc <&\>) where
+version = buildSrcOnlyS (doc <&\>) where
     doc = command "version" <+> dblquotes (text "2.10.33")
 
 header :: BuildDocS     
-header = buildDocOnly docS where
+header = buildSrcOnlyS docS where
     docS = \d -> onNewline $ command "header" <+> (bracesLines d)
     
 
 title :: String -> BuildDocS 
-title s = buildDocOnly (doc <&\>) where
+title s = buildSrcOnlyS (doc <&\>) where
     doc = text "title" <+> equals <> dblquotes (text s)     
         
 book :: BuildDocS     
-book = buildDocOnly docS where
+book = buildSrcOnlyS docS where
     docS = \d -> onNewline $ command "book" <+> (bracesLines d)
 
 score :: BuildDocS     
-score = buildDocOnly docS where
+score = buildSrcOnlyS docS where
     docS = \d -> command "score" <+> (bracesLines d)
 
 drummode :: BuildDocS     
-drummode = buildDocOnly docS where
+drummode = buildSrcOnlyS docS where
     docS = \d -> command "drummode" <+> (bracesLines d)
 
 set :: String -> BuildDocS    
-set ss = buildDocOnly (doc <+>) where
+set ss = buildSrcOnlyS (doc <+>) where
     doc = command "set" <+> text ss
     
     
 new :: String -> BuildDocS
-new name = buildDocOnly (doc <+>) where
+new name = buildSrcOnlyS (doc <+>) where
     doc = command "new" <+> text name
 
 
 doubleAngles :: BuildDocS
-doubleAngles = buildDocOnly dblangles'
+doubleAngles = buildSrcOnlyS dblangles'
 
 expression :: BuildDocS
-expression = buildDocOnly braces'
+expression = buildSrcOnlyS braces'
     
 lycommand :: String -> BuildDocS
-lycommand name = buildDocOnly (doc <+>) where
+lycommand name = buildSrcOnlyS (doc <+>) where
     doc = command name    
     
 relative :: Pitch -> BuildDocS
-relative p = buildDocHoas (docS, ohlet upd) where
+relative p = buildCombinedS (docS, ohlet upd) where
     docS = \d -> command "relative" <+> pitch (rescale p) <+> (bracesLines d)
     upd = set_relative_pitch p 
     
   
 time :: Int -> Int -> BuildDocS
-time n d = buildDocHoas ((doc <&\>), ohlet upd) where
+time n d = buildCombinedS ((doc <&\>), ohlet upd) where
     doc = command "time" <+> meter tms
     upd = set_current_meter tms
     tms = TimeSig n d
@@ -91,16 +91,16 @@ time n d = buildDocHoas ((doc <&\>), ohlet upd) where
 
   
 definition :: String -> BuildDocS
-definition s = buildDocOnly docS where
+definition s = buildSrcOnlyS docS where
     docS = \d -> onNewline $ text s <+> equals <> indent 1 d 
     
 invocation :: String -> BuildDocS   
-invocation s = buildDocOnly (doc <&\>) where
+invocation s = buildSrcOnlyS (doc <&\>) where
     doc = command s
     
                   
 key :: PitchLabel -> Mode -> BuildDocS
-key l m = buildDocHoas ((doc <&\>), ohlet upd) where
+key l m = buildCombinedS ((doc <&\>), ohlet upd) where
     doc = command "key" <+> pitchLabel l <+> mode m
     upd = set_current_key (Key l m [])
     
@@ -109,11 +109,11 @@ key l m = buildDocHoas ((doc <&\>), ohlet upd) where
 -- output
 
 outputRelative :: String -> BuildDocS
-outputRelative name = buildExprOnly (ohdo directive) where
+outputRelative name = buildExprOnlyS (ohdo directive) where
     directive = OutputDirective (Just OutputRelative) name
 
 outputAbsolute :: String -> BuildDocS
-outputAbsolute name = buildExprOnly (ohdo directive) where
+outputAbsolute name = buildExprOnlyS (ohdo directive) where
     directive = OutputDirective (Just OutputDefault) name
 
 

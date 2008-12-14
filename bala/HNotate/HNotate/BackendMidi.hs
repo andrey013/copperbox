@@ -37,57 +37,18 @@ import qualified Data.Traversable as T
 import Data.Word
 
 -- Translate one notelist within a system
-translateMidi :: Monad m => NoteList -> NotateT m MidiTrack
-translateMidi nl = MidiTrack <$> midiMessages nl
+translateMidi :: Monad m => NoteList -> NotateT m (Seq Message)
+translateMidi = translateMidiAtoms . simplifyNoteList
 
 
-type Name = String
+makeMidiFile :: Monad m => Seq MidiTrack -> NotateT m MidiFile
+makeMidiFile trks = (\tt -> MidiFile $ tt <| trks ) <$> tempoTrack
 
-data MidiOutputStyle = SingleNamedTrack Name
-                     | ParallelTracks [Name]
-                     | SerialTracks [Name]
-  deriving (Eq,Show)                     
-
-midiOut :: FilePath -> [NoteList] -> NotateT IO ()
-midiOut path ess = do
-    mss <- mapM midiMessages ess
-    rm  <- asks midi_rendering
-    let ts = render rm mss
-    midi_ast <- mkmidi ts
-    liftIO $ writeMidiFile path midi_ast
-  where
-    mkmidi trks = tempoTrack >>= \tt ->
-                  return $ MidiFile ( tt <| trks )
-    
-    render Midi_Parallel            = parallelTracks  
-    render (Midi_Sequential delay)  = sequentialTracks (fromIntegral delay) 
-                  
 
 tempoTrack :: Monad m => NotateT m MidiTrack
 tempoTrack = (\t -> controlTrack ((fromIntegral t * 500000) `div` 60))
     <$> asks tempo
-
-parallelTracks :: [Seq Message] -> Seq MidiTrack
-parallelTracks mss = foldr fn empty mss
-  where fn msgs se = (MidiTrack $ msgs |> eot_msg) <| se
-    
-sequentialTracks :: Word32 -> [Seq Message] -> Seq MidiTrack
-sequentialTracks delay mss = 
-    singleton $ MidiTrack $ foldr fn (empty |> eot_msg) (fmap delayfirst mss)
-  where 
-    fn msgs se = msgs >< se
-    
-    delayfirst :: Seq Message -> Seq Message
-    delayfirst se = case viewl se of
-        Message (dt,evt) :< sa  -> (Message (dt+delay,evt)) <| sa
-        EmptyL                  -> empty
-  
-  
          
-midiMessages :: Monad m => NoteList -> NotateT m (Seq Message)
-midiMessages evts = translateMidiAtoms (simplifyNoteList evts)
-        
-    
 -- Simplified version of Grouping & Atom -- avoid nested graces
 type Chan = Word8 
 
@@ -181,12 +142,6 @@ translateMidiAtoms :: Monad m => Seq (Int,Seq MidiGrouping) -> NotateT m (Seq Me
 translateMidiAtoms = 
     unorderedMessages >=> return . deltaTransform . orderMessages 
 
-{-
--- bars are not in an amenable 'shape' for a simple mergeTies.
--- They would need an stranspose first  
-mergeTies :: Monad m => Seq (Int,Seq MidiGrouping) -> NotateT m (Seq (Int,Seq MidiGrouping))
-mergeTies = error . show 
--}
 
 unorderedMessages :: Monad m => 
     Seq (Int,Seq MidiGrouping) -> NotateT m (Seq Message)

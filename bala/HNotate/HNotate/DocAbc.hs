@@ -39,36 +39,36 @@ import HNotate.TemplateDatatypes
 -- $documentcombinators
 -- Document building combinators
 
-abc :: [BuildDocS] -> HandBuiltAbc
-abc fs = HBAbc $ buildDocsContents fs
+abc :: [BuildDocS] -> AbcTemplate
+abc fs = AbcTemplate $ buildDocsContents fs
 
-abc1 :: BuildDocS -> HandBuiltAbc
-abc1 f = HBAbc $ buildDocsContents [f]
+abc1 :: BuildDocS -> AbcTemplate
+abc1 f = AbcTemplate $ buildDocsContents [f]
 
 
 
 -- | @X field@ - reference \/ tune number.
 xField :: Int -> BuildDocS
-xField i = buildDocOnly (doc <&\>) where
+xField i = buildSrcOnlyS (doc <&\>) where
     doc = field 'X' (int i)
 
 titleField :: String -> BuildDocS
-titleField name = buildDocOnly (doc <&\>) where
+titleField name = buildSrcOnlyS (doc <&\>) where
     doc = field 'T' (text name)
 
 -- | @C field@ - composer name.
 composerField :: String -> BuildDocS
-composerField s = buildDocOnly (doc <&\>) where
+composerField s = buildSrcOnlyS (doc <&\>) where
     doc = field 'C' (text s)
     
 -- | @O field@ - origin.
 originField :: String -> BuildDocS
-originField s = buildDocOnly (doc <&\>) where
+originField s = buildSrcOnlyS (doc <&\>) where
     doc = field 'O' (text s)
       
 -- | @M field@ - meter.      
 meterField :: Int -> Int -> BuildDocS
-meterField n d = buildDocHoas ((doc <&\>), ohlet upd) where    
+meterField n d = buildCombinedS ((doc <&\>), ohlet upd) where    
     doc = field 'M' (meter tms)
     upd = set_current_meter tms
     tms = TimeSig n d
@@ -78,33 +78,33 @@ meterField n d = buildDocHoas ((doc <&\>), ohlet upd) where
 -- derived from the current meter (e.g. for 4/4 time the unit note length is
 -- an eighth).   
 unitNoteLenField :: Duration -> BuildDocS
-unitNoteLenField d = buildDocHoas ((doc <&\>), ohlet upd) where
+unitNoteLenField d = buildCombinedS ((doc <&\>), ohlet upd) where
     doc = field 'L' (duration d)
     upd = set_unit_note_length d
     
 
 -- | @Q field@ - tempo - specialized to the duration of a quarter note.
 tempoField :: Int -> BuildDocS
-tempoField i = buildDocHoas ((doc <&\>), ohlet upd) where
+tempoField i = buildCombinedS ((doc <&\>), ohlet upd) where
     doc = field 'Q' (text "1/4=" <> int i) 
     upd = set_tempo i
     
 
 -- | @Z field@ - transcriber notes.
 transcriberField :: String -> BuildDocS
-transcriberField s = buildDocOnly (doc <&\>) where
+transcriberField s = buildSrcOnlyS (doc <&\>) where
     doc = field 'Z' (text s)
 
 -- | @N field@ - notes.    
 notesField :: String -> BuildDocS
-notesField s = buildDocOnly (doc <&\>) where
+notesField s = buildSrcOnlyS (doc <&\>) where
     doc = field 'N' (text s)
 
 
     
 -- | @K field@ - key.
 keyField :: PitchLabel -> Mode -> BuildDocS
-keyField l m = buildDocHoas ((doc <&\>), ohlet upd) where
+keyField l m = buildCombinedS ((doc <&\>), ohlet upd) where
     doc = field 'K' (pitchLabel l UPPER <+> mode m)
     upd = set_current_key $ Key l m [] 
     
@@ -112,7 +112,7 @@ keyField l m = buildDocHoas ((doc <&\>), ohlet upd) where
 
 -- | @outputDefault name@ - output the notelist /name/.
 outputDefault :: String -> BuildDocS
-outputDefault name = buildExprOnly (ohdo directive) where
+outputDefault name = buildExprOnlyS (ohdo directive) where
     directive = OutputDirective Nothing name
 
 

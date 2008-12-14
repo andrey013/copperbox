@@ -18,10 +18,11 @@
 
 module HNotate.TemplateDatatypes where
 
+import HNotate.CommonUtils
 import HNotate.Document
 import HNotate.Duration
 import HNotate.Env
-import qualified HNotate.FPList as Fpl 
+import HNotate.FPList hiding (length)
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
 import HNotate.ProcessingBase
@@ -41,7 +42,7 @@ data SrcLoc = SrcLoc {
 -- source position for filling. 
 type Water = String
 
-type ParsedTemplate   = Fpl.FPList Water SrcLoc
+type ParsedTemplate   = FPList Water SrcLoc
 
 
 -- 2. 'Island Grammars' for Abc and LilyPond.
@@ -143,29 +144,32 @@ data HoasExpr = HLet (Env -> Env) HoasExpr
 
 -- For building Hoas with documents...
 
-type HandBuiltTemplate = Fpl.FPList ODocS ()
+type HandBuiltTemplate = FPList ODocS ()
 
-data HandBuiltLilyPond = HBLP { 
-      getHBLP :: (HandBuiltTemplate, [Maybe HoasExpr])
+data LilyPondTemplate = LyTemplate { 
+      getLyTemplate :: (HandBuiltTemplate, [Maybe HoasExpr])
    }
 
-data HandBuiltAbc = HBAbc { 
-      getHBAbc :: (HandBuiltTemplate, [Maybe HoasExpr])
+data AbcTemplate = AbcTemplate { 
+      getAbcTemplate :: (HandBuiltTemplate, [Maybe HoasExpr])
    }
 
-type BuildDocS = (ODocS, Maybe HoasExpr) -> (ODocS, Maybe HoasExpr)
+
+type BuildCombinedS a = (a -> a, Maybe HoasExpr) -> (a -> a, Maybe HoasExpr)
+type BuildDocS = BuildCombinedS ODoc
+
 
 type OptHoasExprS  = Maybe HoasExpr -> Maybe HoasExpr
 
--- Note, we always bookend the PluggableBuildDoc with (<> emptyDoc)
+-- Note, we always bookend the HandBuiltTemplate with (<> emptyDoc)
 -- this is to get a proper FPList (e.g. @abababa@ rather than @ababab@)    
 buildDocsContents :: [BuildDocS] -> (HandBuiltTemplate, [Maybe HoasExpr])
 buildDocsContents = combine . unzip . map content where
     combine (odocs,oes) = (makePDoc odocs, oes)
     -- see note above
     makePDoc :: [ODocS] -> HandBuiltTemplate 
-    makePDoc []     = Fpl.singleton (<> emptyDoc)   
-    makePDoc (w:ws) = Fpl.dblcons w () rest where rest = makePDoc ws
+    makePDoc []     = singleton (<> emptyDoc)   
+    makePDoc (w:ws) = dblcons w () rest where rest = makePDoc ws
 
 
 content :: BuildDocS -> (ODocS, Maybe HoasExpr)
@@ -185,14 +189,14 @@ ohdo d Nothing     = Just $ HDo d
 ohdo d (Just e)    = Just $ HDoExpr d e
 
 
-buildDocHoas :: (ODocS,OptHoasExprS) -> BuildDocS
-buildDocHoas (docS,oeS) (docS',oe) = (docS . docS', oeS oe)
+buildCombinedS :: ((a -> a), OptHoasExprS) -> BuildCombinedS a
+buildCombinedS (srcS,oeS) (srcS',oe) = (srcS . srcS', oeS oe)
 
-buildDocOnly :: ODocS -> BuildDocS 
-buildDocOnly docS (docS',oe) = (docS . docS',oe)
+buildSrcOnlyS :: (a -> a) -> BuildCombinedS a 
+buildSrcOnlyS srcS (srcS',oe) = (srcS . srcS',oe)
 
-buildExprOnly :: (Maybe HoasExpr -> Maybe HoasExpr) -> BuildDocS 
-buildExprOnly exprS (docS,oe) = (docS,exprS oe)
+buildExprOnlyS :: (Maybe HoasExpr -> Maybe HoasExpr) -> BuildCombinedS a 
+buildExprOnlyS exprS (srcS,oe) = (srcS,exprS oe)
 
 
 toHoas :: [Expr] -> Hoas
@@ -223,6 +227,38 @@ transMetaBinding (MetaMeterPattern mp)  = LetMeterPattern mp
 transMetaBinding (MetaPartial d)        = LetPartial d
                 
 
+-- Plugging a parsed doc is nice and simple. 
+-- Particularly, any spliced nesting will be captured in the water
+-- on either side of the island. 
+-- (Plugging a handbuilt document is more complicated).
+plugParsedTemplate :: ParsedTemplate -> [ODoc] -> String
+plugParsedTemplate fpls ys = 
+    concatNoSpace $ merge showsWater showsIsland $ knitOnB (,) ys fpls
+  where
+    showsWater :: String -> ShowS
+    showsWater = showString 
+    
+    showsIsland :: (SrcLoc,ODoc) -> ShowS
+    showsIsland (loc,doc) = output (_src_column loc) 80 doc
+    
+    
 
-
+  
+-- Docs created by hand must be able to generate the appropriate 
+-- nesting in output. This is achieved by having /higher-order water/
+-- in the FPList - the water is an ODocS function to fit the island.
+-- So we need to pass the island to the water with a bimerge.     
+plugHandDoc :: FPList ODocS a -> [ODoc] -> String
+plugHandDoc fpls ys = 
+    concatNoSpace $ bimerge pairwise flush $ knitOnB swap ys fpls
+  where
+    pairwise :: ODocS -> ODoc -> ShowS
+    pairwise f d = output 0 80 (f d)
+    
+    flush :: ODocS -> ShowS
+    flush f = output 0 80 (f emptyDoc)
+    
+    swap :: a -> b -> b
+    swap _ = id
+       
   
