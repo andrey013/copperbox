@@ -134,9 +134,6 @@ instance PP Env where
 
 instance Witness Env where textrep = wpp . pp
 
-instance PP MidiRendering where
-  pp Midi_Parallel            = text "parallel" 
-  pp (Midi_Sequential delay)  = text "parallel" <+> int delay
 
 --------------------------------------------------------------------------------
 -- NoteListDatatypes
@@ -166,9 +163,9 @@ instance PP Atom where
   
 
 instance PP OutputFormat where
-  pp Abc        = text "Abc"
-  pp Ly         = text "LilyPond"
-  pp Midi       = text "Midi"  
+  pp OutputAbc  = text "Abc"
+  pp OutputLy   = text "LilyPond"
+
 
 instance (PP e) => PP (NoteListF e) where
   pp (NoteList se)  = genPunctuateSeq pplBlock line (S.number 1 se) where

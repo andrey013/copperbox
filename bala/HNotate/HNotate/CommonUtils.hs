@@ -163,3 +163,6 @@ showsPrecChain2 i a b = showsPrec i a . showSpace . showsPrec i b
 showsPrecChain3 :: (Show a, Show b, Show c) => Int -> a -> b -> c -> ShowS
 showsPrecChain3 i a b c = 
     showsPrec i a . showSpace . showsPrec i b . showSpace . showsPrec i c
+    
+singleQuote :: String -> String 
+singleQuote s = ('\'':s) ++ ['\'']     

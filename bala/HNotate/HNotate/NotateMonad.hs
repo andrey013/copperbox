@@ -109,26 +109,27 @@ wpp :: ODoc -> String
 wpp = formatted 0 70
 
 
-primOutput :: (Monad m, DebugLevel cfg) => Int -> String -> NotateMonadT env cfg m ()
+primOutput :: (Monad m, DebugLevel env) => 
+              Int -> String -> NotateMonadT env cfg m ()
 primOutput i s = do 
-  x <- asks_config debug_level
+  x <- asks debug_level
   when (i <= x) (tell s >> tell "\n")
     
 
 
-witness :: (Monad m, DebugLevel cfg, Witness a) => 
+witness :: (Monad m, DebugLevel env, Witness a) => 
            Int -> String -> a -> NotateMonadT env cfg m a 
 witness i s a = primOutput i s >> primOutput i (textrep a) >> return a
 
-steno :: (Monad m, DebugLevel cfg) => 
+steno :: (Monad m, DebugLevel env) => 
            Int -> String -> (a -> String) -> a -> NotateMonadT env cfg m a 
 steno i s f a = primOutput i s >> primOutput i (f a) >> return a
 
-document :: (Monad m, DebugLevel cfg) => 
+document :: (Monad m, DebugLevel env) => 
            Int -> String -> (a -> ODoc) -> a -> NotateMonadT env cfg m a 
 document i s f a = primOutput i s >> primOutput i (wpp $ f a) >> return a
 
-textoutput :: (Monad m, DebugLevel cfg) => 
+textoutput :: (Monad m, DebugLevel env) => 
               Int -> String -> String ->  NotateMonadT env cfg m String
 textoutput i title a = primOutput i title >>  primOutput i a >> return a
 

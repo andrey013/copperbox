@@ -170,10 +170,9 @@ buildDocsContents = combine . unzip . map content where
     makePDoc :: [ODocS] -> HandBuiltTemplate 
     makePDoc []     = singleton (<> emptyDoc)   
     makePDoc (w:ws) = dblcons w () rest where rest = makePDoc ws
-
-
-content :: BuildDocS -> (ODocS, Maybe HoasExpr)
-content f = f ((<> emptyDoc), Nothing)
+    
+    content :: BuildDocS -> (ODocS, Maybe HoasExpr)
+    content f = f ((<> emptyDoc), Nothing)
 
 zero_doc :: (ODoc , Maybe HoasExpr)
 zero_doc = (emptyDoc, Nothing)

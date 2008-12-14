@@ -40,7 +40,7 @@ import Data.Traversable
 import Numeric (fromRat)
 
 
-data OutputFormat = Abc | Ly | Midi
+data OutputFormat = OutputAbc | OutputLy
   deriving (Eq,Show) 
   
 --------------------------------------------------------------------------------
@@ -144,7 +144,8 @@ npletDuration len unit_d = (fromIntegral len % 1) * unit_d
                                            
 --------------------------------------------------------------------------------
 -- The External view - EventList - events with no rhythmical grouping
-type System = Map.Map String EventList
+newtype System = System { getSystem :: Map.Map String EventList }
+  deriving Show
 
 
 -- (Call it a _List_ even though it is really a Seq)
@@ -401,13 +402,13 @@ instance NoAnno Atom where
 
 
 system :: System 
-system = mempty
+system = System $ mempty
 
 systemL :: [(String, EventList)] -> System
-systemL = Map.fromList
+systemL = System . Map.fromList
 
 system1 :: String -> EventList -> System
-system1 k t = Map.insert k t mempty
+system1 k t = System $ Map.insert k t mempty
 
 root :: EventList
 root = EventList empty

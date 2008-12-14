@@ -17,17 +17,15 @@
 module HNotate.Env (
     Env,
     Config(..),
-    MidiRendering(..),
+
     
-    -- defaults
-    default_ly_env,
-    default_abc_env,
-    default_midi_env,
+    -- env
+    makeLyEnv,
+    makeAbcEnv,
     
     -- config
-    mkLyConfig,
-    mkAbcConfig,
-    mkMidiConfig,
+    makeLyConfig,
+    makeAbcConfig,
     
     -- Env query
     output_format,
@@ -81,6 +79,7 @@ import Data.Ratio
  
 data Env = Env { 
     _output_format      :: OutputFormat,
+    _debug_level        :: Int,
     _current_key        :: Key,
     _label_set          :: LabelSet,
     _current_meter      :: Meter,
@@ -99,18 +98,14 @@ data Env = Env {
 
 data Config = Config { 
     _system         :: System,
-    _debug_level    :: Int,
+    
     _template_file  :: FilePath,
     _output_file    :: FilePath
     }
   deriving Show
 
-type Delay = Int
-
-data MidiRendering = Midi_Parallel | Midi_Sequential Delay
-  deriving (Eq,Show)
   
-instance DebugLevel Config where 
+instance DebugLevel Env where 
     debug_level  = _debug_level
 
 
@@ -118,9 +113,10 @@ instance DebugLevel Config where
 --------------------------------------------------------------------------------
 -- Defaults
 
-default_ly_env :: Env
-default_ly_env = Env {
-    _output_format          = Ly, 
+makeLyEnv :: Int -> Env
+makeLyEnv dl = Env {
+    _output_format          = OutputLy,
+    _debug_level            = dl, 
     _current_key            = c_major,
     _label_set              = c_major'ls,
     _current_meter          = four_four,
@@ -138,9 +134,10 @@ default_ly_env = Env {
     lyComment str = enclose (text "%{ ") (text " %}") (string str)             
 
 
-default_abc_env :: Env
-default_abc_env = Env {
-    _output_format          = Abc, 
+makeAbcEnv :: Int -> Env
+makeAbcEnv dl = Env {
+    _output_format          = OutputAbc, 
+    _debug_level            = dl,
     _current_key            = c_major,
     _label_set              = c_major'ls,
     _current_meter          = four_four,
@@ -158,51 +155,21 @@ default_abc_env = Env {
     abcComment str = line <> char '%' <+> string str <> line
     
 
--- Many of the fields have no bearing on Midi
-default_midi_env :: Env
-default_midi_env = Env {
-    _output_format          = Midi, 
-    _current_key            = c_major,
-    _label_set              = c_major'ls,
-    _current_meter          = four_four,
-    _meter_pattern          = four_four_of_eighth,
-    _bar_length             = 4 * quarter,
-    _unit_note_length       = eighth,
-    _relative_pitch         = Nothing,
-    _anacrusis              = Nothing,
-    _unmetered              = False,
-    _bar_number_check       = 0,
-    _score_comment          = const (string "<nocomment>"),
-    _tempo                  = 120
-  }
-    
 
-
-
-
-mkLyConfig :: Int -> System -> FilePath -> FilePath -> Config
-mkLyConfig dl sys template outfile = Config { 
-    _system         = sys,
-    _debug_level    = dl,     
+makeLyConfig :: System -> FilePath -> FilePath -> Config
+makeLyConfig sys template outfile = Config { 
+    _system         = sys,     
     _template_file  = template,
     _output_file    = outfile
     }
 
-mkAbcConfig :: Int -> System -> FilePath -> FilePath -> Config
-mkAbcConfig dl sys template outfile = Config { 
-    _system         = sys,
-    _debug_level    = dl,      
+makeAbcConfig :: System -> FilePath -> FilePath -> Config
+makeAbcConfig sys template outfile = Config { 
+    _system         = sys,      
     _template_file  = template,
     _output_file    = outfile
     }
     
-mkMidiConfig :: Int -> System -> FilePath -> Config
-mkMidiConfig dl sys outfile = Config { 
-    _system         = sys,
-    _debug_level    = dl,      
-    _template_file  = "",
-    _output_file    = outfile
-    }
     
          
 --------------------------------------------------------------------------------
@@ -263,7 +230,7 @@ set_current_key k env         =
 -- Note there is no recognized 'cadenzaOff' in Abc, 
 -- seeing a Meter command is equivalent to cadenza Off     
 set_current_meter             :: Meter -> Env -> Env
-set_current_meter m env@(Env {_output_format=Abc})  =   
+set_current_meter m env@(Env {_output_format=OutputAbc})  =   
     if (meterToDouble m > 0.75) 
        then env {_current_meter     = m, 
                  _unit_note_length  = eighth, 

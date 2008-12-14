@@ -21,7 +21,6 @@ module HNotate.ProcessingBase where
 import HNotate.Document
 import HNotate.Env
 import HNotate.NotateMonad
-import HNotate.NoteListDatatypes
 
 import Control.Applicative
 import Control.Monad
@@ -46,22 +45,5 @@ instance (Monad m ) => Applicative (NotateMonadT Env Config m) where
 type BarConcatFun = [(Int,ODoc)] -> ODoc
 
 
-
-data ScoreProcessor m template target_fragment target = ScoreProcessor {
-    
-    -- | Backend specific rewrite step.
-    reformulate_notelist      :: OutputScheme -> NoteList -> NotateT m NoteList,
-    
-    -- | Convert a notelist into a target. 
-    --   This isn't final output, the target framents will need assembly.
-    notelist_to_target        :: NoteList -> NotateT m target_fragment,
-    
-    
-    assemble_target_fragments :: template -> [target_fragment] -> NotateT m target,
-    
-    -- Finally write the output to file.    
-    output_to_file            :: FilePath -> target -> IO ()
-  }
- 
     
 
