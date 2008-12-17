@@ -36,9 +36,9 @@ module GreyFold.Base.SequenceFolds (
   lookaheadfoldl, lookaheadfoldr,
   lookaheadfoldlM, lookaheadfoldrM,
   
-  -- * pointed (double accumulator) folds
-  pointfoldl, pointfoldr,
-  pointfoldlM, pointfoldrM,
+  -- * double accumulator folds
+  dafoldl, dafoldr,
+  dafoldlM, dafoldrM,
   groupByRight, groupRight,
   
 ) where
@@ -198,48 +198,50 @@ lookaheadfoldrM f b0 se = step b0 (viewr se) where
     step b (sa :> a)    = (\(b',sa') -> step b' (viewr sa')) =<< f b a sa
      
 -- -----------------------------------------------------------------------------
--- pointed accumulating folds
+-- double accumulator folds
 
 
--- | @pointfoldl@ - a fold with two accumulators.
--- Pointed folds are quite handy when building a sequences of sequences - 
--- consider @b@ to be the point (type @Seq x@) and @c@ to be set 
+-- | @dafoldl@ - a fold with two accumulators.
+-- Double accumulator folds are quite handy when building a sequences 
+-- of sequences - vis-a-vis pointed sets. 
+--
+-- Consider @b@ to be the point (type @Seq x@) and @c@ to be set 
 -- (type @Seq (Seq x)@). The reducer can choose whether to put x in the 
 -- point, put x in a new point and move the old point into the set, etc.
--- I've used a pointfold in music processing to segment notes within a 
+-- I've used a dafold in music processing to segment notes within a 
 -- bar into beam groups. As sequence supports /snoc/-ing with the |> operator, 
 -- doing this left-to-right much more tangible.
-pointfoldl :: (b -> c -> a -> (b,c)) -> (b -> c -> d) -> c -> b -> Seq a -> d
-pointfoldl f g c0 b0 se  = step (b0,c0) (viewl se) where
+dafoldl :: (b -> c -> a -> (b,c)) -> (b -> c -> d) -> c -> b -> Seq a -> d
+dafoldl f g c0 b0 se  = step (b0,c0) (viewl se) where
     step (b,c) EmptyL     = g b c
     step (b,c) (a :< sa)  = step (f b c a) (viewl sa)   
                    
--- | @pointfoldr@ - right to left version of pointfoldl.
+-- | @dafoldr@ - right to left version of dafoldl.
 -- This is simpler than the list version as we can simply go backwards
 -- with viewr.
-pointfoldr :: (a -> b -> c -> (b,c)) -> (b -> c -> d) -> c -> b -> Seq a -> d
-pointfoldr f g c0 b0 se  = step (b0,c0) (viewr se) where
+dafoldr :: (a -> b -> c -> (b,c)) -> (b -> c -> d) -> c -> b -> Seq a -> d
+dafoldr f g c0 b0 se  = step (b0,c0) (viewr se) where
     step (b,c) EmptyR     = g b c
     step (b,c) (sa :> a)  = step (f a b c) (viewr sa) 
 
--- | @pointfoldlM@ - monadic version of pointfoldl.
-pointfoldlM :: Monad m =>
+-- | @dafoldlM@ - monadic version of dafoldl.
+dafoldlM :: Monad m =>
     (b -> c -> a -> m (b,c)) -> (b -> c -> m d) -> c -> b -> Seq a -> m d
-pointfoldlM f g c0 b0 se  = step (b0,c0) (viewl se) where
+dafoldlM f g c0 b0 se  = step (b0,c0) (viewl se) where
     step (b,c) EmptyL     = g b c
     step (b,c) (a :< sa)  = (step `flip` (viewl sa)) =<< f b c a     
 
--- | @pointfoldrM@ - monadic version of pointfoldr.
-pointfoldrM :: Monad m =>
+-- | @dafoldrM@ - monadic version of dafoldr.
+dafoldrM :: Monad m =>
     (a -> b -> c -> m (b,c)) -> (b -> c -> m d) -> c -> b -> Seq a -> m d
-pointfoldrM f g c0 b0 se  = step (b0,c0) (viewr se) where
+dafoldrM f g c0 b0 se  = step (b0,c0) (viewr se) where
     step (b,c) EmptyR     = g b c
     step (b,c) (sa :> a)  = (step `flip` (viewr sa)) =<< f a b c  
         
 
--- | @groupByRight@ - the list function @groupBy@ implemented with pointfoldr.
+-- | @groupByRight@ - the list function @groupBy@ implemented with dafoldr.
 groupByRight :: Eq a => (a -> a -> Bool) -> Seq a -> Seq (Seq a)
-groupByRight p ls = pointfoldr fn (<|) empty empty ls where
+groupByRight p ls = dafoldr fn (<|) empty empty ls where
     fn a sb     ssc = step a (viewl sb) ssc
     
     step a EmptyL     ssc               = (singleton a,  ssc)

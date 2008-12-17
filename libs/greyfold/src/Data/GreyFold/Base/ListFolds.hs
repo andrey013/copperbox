@@ -39,9 +39,9 @@ module GreyFold.Base.ListFolds (
   lookaheadfoldl, lookbackfoldr,
   lookaheadfoldlM, lookbackfoldrM,
   
-  -- * pointed (double accumulator) folds
-  pointfoldl, pointfoldr,
-  pointfoldlM, pointfoldrM,
+  -- * double accumulator folds
+  dafoldl, dafoldr,
+  dafoldlM, dafoldrM,
   groupByRight, groupRight,
   
   
@@ -54,7 +54,8 @@ import GreyFold.Base.Utils
 -- in mind. As Sequence has pattern matching on views and not the
 -- Seq type itself, the list folds generally pattern match in the 
 -- step function. 
--- To avoid GHC shadow binding warnings the top line of the 
+--
+-- To avoid GHC shadow binding warnings, the top line of the 
 -- function definition follows one naming scheme and the step
 -- function another. In the top line list arguments are ls, ls', etc.  
 -- and initial values are are e.g. b0, c0, etc. the b or c corresponds 
@@ -62,8 +63,9 @@ import GreyFold.Base.Utils
 -- is the initial value. In the stepping function the naming is
 -- more familiar b is generally the summary value and lists are 
 -- generally (a:as) lists of lists are xss, css, etc.
--- Also, I avoid partial application in the top line definition.   
--- Finally I use the /Gibbons style/ for type variables, see 
+-- Also, I generally avoid partial application in the top line definition.   
+--
+-- Finally I use the /Gibbons style/ for type variable letters, see 
 -- Jeremy Gibbons /origami/ papers - this is the opposite of
 -- the Haskell Prelude style. In the /Gibbons style/ the consumed 
 -- list is @[alpha]@ (here @[a]@) and the produced summary value 
@@ -237,47 +239,49 @@ lookbackfoldrM f b0 ls = (return . fst) =<< step b0 ls where
 
    
 -- -----------------------------------------------------------------------------
--- pointed accumulating folds
+-- double accumulator folds
 
 
--- | @pointfoldl@ - a fold with two accumulators.
--- Pointed folds are quite handy when building a list of lists - 
--- consider @b@ to be the point (type @[x]@) and @c@ to be set 
+-- | @dafoldl@ - a fold with two accumulators.
+-- Double accumulator folds are quite handy when building a list of lists -
+-- vis-a-vis pointed sets.
+-- 
+-- Consider @b@ to be the point (type @[x]@) and @c@ to be set 
 -- (type @[[x]]@). The reducer can choose whether to put x in the 
 -- point, put x in a new point and move the old point into the set, etc.
--- I've used a pointfold in music processing to segment notes within a 
+-- I've used a dafold in music processing to segment notes within a 
 -- bar into beam groups, though I prefer operating on sequences rather
 -- than lists - sequences can be built with /snoc/-ing, so left to 
 -- right traversal is much more tangible.
-pointfoldl :: (b -> c -> a -> (b,c)) -> (b -> c -> d) -> c -> b -> [a] -> d
-pointfoldl f g c0 b0 ls  = step (b0,c0) ls where
+dafoldl :: (b -> c -> a -> (b,c)) -> (b -> c -> d) -> c -> b -> [a] -> d
+dafoldl f g c0 b0 ls  = step (b0,c0) ls where
     step (b,c) []       = g b c
     step (b,c) (a:as)   = step (f b c a) as   
                    
--- | @pointfoldr@ - right to left version of pointfoldl.
-pointfoldr :: (a -> b -> c -> (b,c)) -> (b -> c -> d) -> c -> b -> [a] -> d
-pointfoldr f g c0 b0 ls  = (uncurry g) $ step (b0,c0) ls where
+-- | @dafoldr@ - right to left version of dafoldl.
+dafoldr :: (a -> b -> c -> (b,c)) -> (b -> c -> d) -> c -> b -> [a] -> d
+dafoldr f g c0 b0 ls  = uncurry g $ step (b0,c0) ls where
     step (b,c) []       = (b,c)
     step (b,c) (a:as)   = f a b' c' where (b',c') = step (b,c) as
 
--- | @pointfoldlM@ - monadic version of pointfoldl.
-pointfoldlM :: Monad m => 
+-- | @dafoldlM@ - monadic version of dafoldl.
+dafoldlM :: Monad m => 
     (b -> c -> a -> m (b,c)) -> (b -> c -> m d) -> c -> b -> [a] -> m d
-pointfoldlM f g c0 b0 ls  = step (b0,c0) ls where
+dafoldlM f g c0 b0 ls  = step (b0,c0) ls where
     step (b,c) []       = g b c
     step (b,c) (a:as)   = (step `flip` as) =<< f b c a   
                    
--- | @pointfoldrM@ - monadic version of pointfoldr.
-pointfoldrM :: Monad m => 
+-- | @dafoldrM@ - monadic version of dafoldr.
+dafoldrM :: Monad m => 
     (a -> b -> c -> m (b,c)) -> (b -> c -> m d) -> c -> b -> [a] -> m d
-pointfoldrM f g c0 b0 ls  = (uncurry g) =<< step (b0,c0) ls where
+dafoldrM f g c0 b0 ls  = (uncurry g) =<< step (b0,c0) ls where
     step (b,c) []       = return (b,c)
     step (b,c) (a:as)   = (adapt'atbc f) a =<< step (b,c) as
   
   
--- | @groupByRight@ - the list function @groupBy@ implemented with pointfoldr.
+-- | @groupByRight@ - the list function @groupBy@ implemented with dafoldr.
 groupByRight :: Eq a => (a -> a -> Bool) -> [a] -> [[a]]
-groupByRight p ls = pointfoldr fn (:) [] [] ls where
+groupByRight p ls = dafoldr fn (:) [] [] ls where
     fn a []     ccs             = ([a],ccs)
     fn a (b:bs) ccs    | p a b  = (a:b:bs,ccs)
     fn a bs     ccs             = ([a],bs:ccs)
