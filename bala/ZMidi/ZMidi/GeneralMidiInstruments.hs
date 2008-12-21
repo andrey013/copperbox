@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -12,7 +13,6 @@
 -- Datatypes for general MIDI instruments.
 --
 --------------------------------------------------------------------------------
-
 
 module ZMidi.GeneralMidiInstruments (
     -- * General MIDI instruments

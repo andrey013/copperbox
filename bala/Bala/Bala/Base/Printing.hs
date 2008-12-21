@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -16,12 +17,11 @@
 
 module Bala.Base.Printing where
 
+import Bala.Base.BaseExtra (para)
 import Bala.Base.Duration
 import Bala.Base.Metrical
 import Bala.Base.Pitch
 import Bala.Base.Structural
-
-import HNotate.SequenceUtils (para)
 
 import qualified Data.Foldable as F
 import qualified Data.Map as Map

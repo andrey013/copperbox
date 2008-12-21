@@ -24,14 +24,15 @@ import HNotate.DocAbc
 import HNotate.Document
 import HNotate.Duration
 import HNotate.Env (label_set, unit_note_length)
-import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, nplet)
+import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, 
+                                         nplet, element)
 import HNotate.NotateMonad
 import HNotate.Pitch
 import HNotate.PPInstances () -- for witness instances
 import HNotate.ProcessingBase
-import HNotate.SequenceUtils
-import HNotate.Transformations
 import HNotate.Traversals
+
+
 
 import Control.Applicative
 import Control.Monad.Reader
@@ -40,12 +41,14 @@ import Data.Sequence hiding (take)
 
 import Prelude hiding (length)  
 
+
+
 -- TODO - variants of this to support bar numbering, etc.
 abcConcat :: BarConcatFun
 abcConcat = vsep . map snd
 
 translateAbc :: Monad m => BarConcatFun -> NoteList -> NotateT m ODoc
-translateAbc bf = fwd <=< printStep <=< abcForm <=< beamNoteList  
+translateAbc bf = fwd <=< printStep <=< abcForm  
   where
     printStep = return . outputNoteList bf
     
@@ -82,21 +85,19 @@ voiceOverlay = step1 . viewl
 type ODocConcat = ODoc -> ODoc -> ODoc
     
 barDoc :: Bar -> ODoc
-barDoc = collapse . F.foldl fn (emptyDoc,(<+>),emptyDoc)
-  where 
-    collapse (out,op,tip) = out `op` tip
+barDoc (Bar smw) = F.foldl fn emptyDoc smw
+  where    
+    fn :: ODoc -> MetricalWord -> ODoc
+    fn a (Singleton e)   = a <+> element e
+    fn a (BeamGroup se)  = a <+> hcat (fmap element se) 
+    
+    
   
-    fn :: (ODoc, ODocConcat, ODoc) -> Grouping -> (ODoc, ODocConcat, ODoc)
-    fn (out,op,tip) (Singleton BeamStart) = (out `op` tip, (<>),  emptyDoc)
-    fn (out,op,tip) (Singleton BeamEnd)   = (out `op` tip, (<|+>), emptyDoc)
-    fn (out,op,tip) (Singleton e)         = (out `op` tip,  op,   atom e)
-          
-    fn (out,op,tip) (Chord se d a)        = (out `op` tip,  op, chord se d a)
-    fn (out,op,tip) (GraceNotes se _ a)   = (out `op` tip,  op, gracenotes se a)
-    fn (out,op,tip) (Nplet i ud se a)     = (out `op` tip,  op, nplet i ud se a) 
-                                
-                  
-   
+element :: Element -> ODoc
+element (Atom e)              = atom e
+element (Chord se d a)        = chord se d a
+element (GraceNotes se a)     = gracenotes se a
+element (Nplet i ud se a)     = nplet i ud se a
 
 
 -- Note ABC tie is dash!
@@ -106,8 +107,6 @@ atom (Rest d a)            = applyAbcAnno a $ rest d
 atom (Spacer d a)          = applyAbcAnno a $ spacer d
 atom (RhythmicMark _ d m)  = abcOutput m <> duration d
 atom (Mark _ m)            = abcOutput m
-atom BeamStart             = emptyDoc
-atom BeamEnd               = emptyDoc
 atom Tie                   = char '-'       
 
 
@@ -133,15 +132,15 @@ spacer d = char 'x' <> duration d
 
 chord :: Seq (Pitch,Annotation) -> Duration -> Annotation -> ODoc
 chord se d a = 
-    applyAbcAnno a (brackets $ hcat $ unseqMap (pitch . fst) se) <> duration d
+    applyAbcAnno a (brackets $ hcat $ smapl (pitch . fst) se) <> duration d
     
 gracenotes :: Seq (Pitch,Duration,Annotation) -> Annotation -> ODoc
-gracenotes se a = applyAbcAnno a (braces $ hcat $ unseqMap fn se)
+gracenotes se a = applyAbcAnno a (braces $ hcat $ smapl fn se)
   where fn (p,d,_) = pitch p <> duration d  
 
 nplet :: Int -> Duration -> Seq (Pitch,Annotation) -> Annotation -> ODoc
 nplet mult ud se a = 
-    applyAbcAnno a $ pqr <+> (hcat $ unseqMap (pitch . fst) se)
+    applyAbcAnno a $ pqr <+> (hcat $ smapl (pitch . fst) se)
   where
     pqr = lparen <> int (length se)       <> colon 
                  <> duration (scale ud)   <> colon

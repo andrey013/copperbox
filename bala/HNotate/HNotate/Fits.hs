@@ -52,12 +52,14 @@ import Prelude hiding (null)
 
 
 class (Ord b, Num b) => Fits a b | a -> b where
+  fits      :: a -> b -> Bool
   measure   :: a -> b
   split     :: b -> a -> (a,a)
   hyphenate :: a -> Maybe a 
   consumes  :: a -> b -> b
   
   -- default
+  fits a b = (signum $ consumes a b) >= 0
   consumes a b = b - measure a   
   hyphenate = const Nothing
 

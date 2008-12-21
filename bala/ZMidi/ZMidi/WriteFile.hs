@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -26,7 +27,6 @@ import qualified Data.ByteString.Lazy as B
 import Data.Char (ord)
 import qualified Data.Foldable as F
 import Data.Int
-import qualified Data.Sequence as S
 import Data.Word
 
 import System.IO
@@ -113,7 +113,8 @@ putMetaEvent (KeySignature ky sc)             =
 putMetaEvent (SSME i ws)                      =  varlen i . outBytes ws
 
 putSystemEvent :: SystemEvent -> MidiOut    
-putSystemEvent (SysEx i ws) = varlen i . outBytes ws
+putSystemEvent (SysEx i ws)   = varlen i . outBytes ws
+putSystemEvent (DataEvent w8) = out1 w8 
   
     
   
@@ -142,7 +143,8 @@ out4 a b c d = (B.cons a) . (B.cons b) . (B.cons c) . (B.cons d)
 
 out5 :: Word8 -> Word8 -> Word8 -> Word8 -> Word8 
      ->(B.ByteString -> B.ByteString)
-out5 a b c d e = (B.cons a) . (B.cons b) . (B.cons c) . (B.cons d) . (B.cons d)
+out5 a b c d e = (B.cons a) . (B.cons b) . (B.cons c) 
+                            . (B.cons d) . (B.cons e)
 
    
 
@@ -188,14 +190,13 @@ lowerEight n = (fromIntegral lower8, remain)
     lower8 = n .&. 0xff 
       
 varlen :: Word32 -> MidiOut
-varlen i  
-    | i < 0x80        = out1 (fromIntegral i)
-    | i < 0x4000      = out2 (wise i 7)  (wise i 0)
-    | i < 0x200000    = out3 (wise i 14) (wise i 7)  (wise i 0) 
-    | otherwise       = out4 (wise i 21) (wise i 14) (wise i 7) (wise i 0) 
-  where         
-    wise i 0 = fromIntegral $ i .&. 0x7F
-    wise i n = fromIntegral $ i `shiftR` n   .&.  0x7F  .|.  0x80;
+varlen = step . varlenSplit where
+    step [a]          = out1 a
+    step [a,b]        = out2 a b
+    step [a,b,c]      = out3 a b c
+    step [a,b,c,d]    = out4 a b c d
+    step _            = id
+    
 
 outString :: String -> MidiOut    
 outString s = B.append (B.pack $ fmap (fromIntegral . ord) s) 

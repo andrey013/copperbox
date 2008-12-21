@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -21,45 +22,39 @@ module ZMidi.Mergesort (
   mergesort
   ) where
 
-import Data.Foldable as F
 import Data.Sequence
+import Prelude hiding (length)
 
 
-
+-- Acknowledgement - this is Ian Lynagh's mergesort from the Data.List
+-- source translated to work on Seq.
 mergesort :: (a -> a -> Ordering) -> Seq a -> Seq a
 mergesort cmp = mergesort' cmp . fmap singleton
 
-
-
 mergesort' :: (a -> a -> Ordering) -> Seq (Seq a) -> Seq a
-mergesort' cmp s = 
-  case viewl s of
-    EmptyL      -> empty
-    (sx :< ssx) -> case viewl ssx of
-                     EmptyL      -> sx
-                     _           -> mergesort' cmp (merge_pairs cmp s)
+mergesort' cmp se | length se >=2 = mergesort' cmp (merge_pairs cmp se)
+                  | otherwise     = step (viewl se)
+  where
+    step EmptyL       = empty
+    step (sa :< _)    = sa        -- rhs is known to be empty!                 
+
+
                      
 
 merge_pairs :: (a -> a -> Ordering) -> Seq (Seq a) -> Seq (Seq a)
-merge_pairs cmp s = 
-  case viewl s of
-    EmptyL      -> empty
-    (sx :< ssx) -> case viewl ssx of
-                     EmptyL      -> s
-                     (sy :< ssy) -> merge cmp sx sy <| merge_pairs cmp ssy
+merge_pairs cmp se = step1 (viewl se) where
+    step1 EmptyL          =  empty
+    step1 (sa :< ssa)     =  step2 sa (viewl ssa)
+    
+    step2 _  EmptyL       = se
+    step2 sa (sb :< ssb)  = merge cmp sa sb <| merge_pairs cmp ssb
         
 
 
 merge :: (a -> a -> Ordering) -> Seq a -> Seq a -> Seq a
-merge cmp sa sb = 
-    let a = viewl sa; b = viewl sb in 
-    case (a,b) of
-      (_, EmptyL)           -> sa
-      (EmptyL,_)            -> sb
-      (x :< sx, y :< sy)  -> case x `cmp` y of
-                               GT -> y <| merge cmp (x <| sx) sy
-                               _  -> x <| merge cmp sx        (y <| sy)
-    
-
-
-
+merge cmp se se' = step (viewl se) (viewl se') where
+    step _          EmptyL        = se
+    step EmptyL     _             = se'
+    step (x :< sx)  (y :< sy)     = case x `cmp` y of
+                                      GT -> y <| merge cmp (x <| sx) sy
+                                      _  -> x <| merge cmp sx        (y <| sy)

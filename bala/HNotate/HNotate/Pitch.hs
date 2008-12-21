@@ -76,10 +76,6 @@ module HNotate.Pitch (
 
 
 -- Avoid internal dependencies as this module is included in Bala
--- (although it can use HNotate.SequenceUtils as thatis included
--- in Bala as well)
-
-import HNotate.SequenceUtils  
 
 import Data.Char (toUpper, toLower)
 import qualified Data.Foldable as F
@@ -167,9 +163,15 @@ instance PitchValue (Seq Pitch) where
   pitchValue = F.toList
   
   updatePitch pc se 
-      | S.length se == length pc  = sziplWith (\ _ p -> p) se pc 
+      | S.length se == length pc  = step (viewl se) pc 
       | otherwise                 = error "modifyPitch (Seq Pitch) unmatched"
-        
+    where
+      step (_ :< sa) (b:bs)   = b <| step (viewl sa) bs
+      step (a :< sa) []       = a <| sa
+      step _         _        = empty
+  
+  
+          
   
 class Semitones a where semitones :: a -> Int
     

@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -19,7 +20,7 @@
 
 module Bala.Base.Structural where
 
-import Bala.Base.BaseExtra
+import qualified Bala.Base.BaseExtra as S
 import Bala.Base.Duration
 import Bala.Base.Metrical
 import Bala.Base.Pitch
@@ -194,7 +195,7 @@ instance PitchValue Event where
 instance PitchValue GraceNotes where
   pitchValue  = F.toList . fmap fst
   updatePitch pc se 
-      | S.length se == length pc  = sziplWith (\(_,d) p -> (p,d)) se pc
+      | S.length se == length pc  = S.slzipsWith (\(_,d) p -> (p,d)) se pc
       | otherwise                 = error "modifyPitch GraceNotes unmatched"
 
   
@@ -277,7 +278,7 @@ inexactClave d =
 
 
 linearTransform :: SectionF a -> Seq (Seq a)
-linearTransform = fmap joinMotifs . stranspose . sectionContents where
+linearTransform = fmap joinMotifs . S.transpose . sectionContents where
   joinMotifs :: Seq (MotifF a) -> Seq a
   joinMotifs = F.foldl (\a mo -> a >< motifContents mo) empty 
   
@@ -333,7 +334,7 @@ packToLength s@(Section tm se) = Section tm $ fmap fn se where
     
 
 sectionHeight :: SectionF a -> Int
-sectionHeight (Section _ se) = smaximum $ fmap phraseHeight se where
+sectionHeight (Section _ se) = S.maximum $ fmap phraseHeight se where
 
 phraseHeight :: PhraseF a -> Int
 phraseHeight (Single _)     = 1
@@ -348,7 +349,7 @@ regularPhraseDuration tm ph = bestfit $ divModBar (maxPhraseDuration ph) tm
 maxPhraseDuration :: Fits a Duration => PhraseF a -> Duration
 maxPhraseDuration (Single mo)       = sumMeasure mo
 maxPhraseDuration (Overlay mo smo)  = 
-    max (sumMeasure mo) (smaximum $ fmap sumMeasure smo)
+    max (sumMeasure mo) (S.maximum $ fmap sumMeasure smo)
 
   
 -- This 'squares' a phrase - it is extended horizontally so all overlays
@@ -361,10 +362,10 @@ spacerOverlayPack ::
 spacerOverlayPack w h (Single mo) 
     | h <= 1      = Single $ spacerPack w mo
     | otherwise   = Overlay (spacerPack w mo) 
-                            (sreplicate (h-1) (motif +- spacer w)) 
+                            (S.replicate (h-1) (motif +- spacer w)) 
 spacerOverlayPack w h (Overlay mo smo) = Overlay (spacerPack w mo) smo' where
     smo' = (fmap (spacerPack w) smo) >< blanks
-    blanks = sreplicate (h - (S.length smo + 1)) (motif +- spacer w) 
+    blanks = S.replicate (h - (S.length smo + 1)) (motif +- spacer w) 
 
 -- This is the alternative phrase spacer formulation for HNotate (Abc and
 -- LilyPond) it only spaces horizontally. No extra voice overlays are added.

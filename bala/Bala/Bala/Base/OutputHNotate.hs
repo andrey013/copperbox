@@ -1,4 +1,6 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# OPTIONS -Wall #-}
+
 
 --------------------------------------------------------------------------------
 -- |
@@ -18,9 +20,7 @@
 
 module Bala.Base.OutputHNotate where
 
-import Bala.Base.BaseExtra
 import Bala.Base.DrumOutput
-import Bala.Base.Duration
 import Bala.Base.Pitch
 import Bala.Base.Structural
 
@@ -34,7 +34,6 @@ import Control.Monad.Reader
 import qualified Data.Foldable as F
 import Data.Maybe (catMaybes)
 import Data.Sequence
-import Data.Word
 
 type EventFoldStep = H.EventList -> Event -> H.EventList
 data Env = Env { _fold_step :: EventFoldStep }
@@ -67,7 +66,7 @@ phraseFoldStep t (Overlay mo smo) =
     ovs (a :< sa)  = (:) <$> f a <*> ovs (viewl sa)
     
     f :: Motif -> OutputM H.EventList
-    f mo = addMotif H.root mo
+    f m = addMotif H.root m
     
 
 addMotif :: H.EventList -> Motif -> OutputM H.EventList
@@ -80,11 +79,11 @@ motifFoldStep t (NoteE p d)         = t # (H.note p d)
 motifFoldStep t (RestE d)           = t # (H.rest d)
 motifFoldStep t (ChordE se d)       = t # (H.chord se d)
 motifFoldStep t (SpacerE d)         = t # (H.spacer d)
-motifFoldStep t (AGraceE se p d)    = t # H.agraces se # H.note p d
-motifFoldStep t (UGraceE p d se)    = t # H.note p d   # H.ugraces se
+motifFoldStep t (AGraceE se p d)    = t # H.graces se # H.note p d
+motifFoldStep t (UGraceE p d se)    = t # H.note p d  # H.graces se
 motifFoldStep t (MarkE m)           = t # (mkMark m)
 
-
+mkMark :: Mark -> H.EventList -> H.EventList
 mkMark Tie          = H.tie 
     
 
@@ -107,30 +106,7 @@ drumChord :: DrumMapping a =>
     (a -> H.Mark H.DrumMark) -> [Pitch] -> [H.Mark H.DrumMark]
 drumChord fn = map fn . catMaybes . map drumName
 
-{- 
-  where
-    fn []   = H.spacer d
-    fn [x]  = H.drumnote x d
-    fn xs   = H.drumchord xs d
--}    
-    
 
-{-
-
-drumEvent :: Pitch -> Duration -> Either Duration (H.Mark H.DrumMark,Duration)
-drumEvent p d = maybe (Left d) (\a -> Right (drumMark a,d)) (drumName p)
-
-drumFoldStep 
-
-drumChord :: [Pitch] -> Duration -> (H.EventList -> H.EventList)
-drumChord ps d = undefined
-    -- fn $ fmap fst $ rights $ fmap (drumEvent `flip` d) ps 
-  where
-    fn []   = H.spacer d
-    fn [x]  = H.drumnote x d
-    fn xs   = H.drumchord xs d
-  
--}
 
 
             

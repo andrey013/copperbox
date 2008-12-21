@@ -1,7 +1,7 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# OPTIONS -Wall #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.Base.PitchRep

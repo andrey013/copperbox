@@ -18,9 +18,11 @@
 module HNotate.CommonUtils where
 
 -- Should have no dependencies on other HNotate modules
+-- import HNotate.SequenceExtras hiding (replicate)
 
 import qualified Data.Foldable as F
 import Data.List (unfoldr)
+import Data.Sequence
 import Prelude hiding (null)
 
 
@@ -55,9 +57,34 @@ foldlOn op ppf = F.foldl (op `onr` ppf)
 foldrOn :: F.Foldable t => (b -> a -> a) -> (c -> b) -> a -> t c -> a
 foldrOn op ppf = F.foldr (op `onl` ppf)
 
+{-
+number :: Int -> Seq a -> Seq (Int,a)
+number i0 = countfoldl (\a e i -> a |> (i,e)) i0 empty
 
+snumberl :: Int -> Seq a -> [(Int,a)]
+snumberl i0 = countfoldr (\e a i -> (i,e):a) i0 []
+-}
+-- some /greyfolds/
 
+number :: Int -> Seq a -> Seq (Int,a) 
+number n = fst . F.foldl' (\(a,i) e -> (a |> (i,e), i+1)) (empty,n)
+      
+      
+slzipsWith :: (a -> b -> c) -> Seq a -> [b] -> Seq c
+slzipsWith f se ls = step (viewl se) ls where
+  step (a :< sa) (b:bs)   = f a b <| step (viewl sa) bs
+  step _         _        = empty 
 
+smapl :: (a -> b) -> Seq a -> [b]
+smapl f = F.foldr (\e a -> (f e) : a) []    
+
+-- | Paramorphism (generalizes cata).
+para :: (a -> (Seq a, b) -> b) -> b -> Seq a -> b
+para f b0 se = step (viewl se) where
+    step EmptyL     = b0
+    step (a :< sa)  = f a (sa, step (viewl sa))
+    
+  
 --------------------------------------------------------------------------------
 -- variations on either - postprocessing with a success or failure continuation
 

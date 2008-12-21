@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -175,7 +176,7 @@ data VoiceEvent
     -- Often used to approxiamate microtonal tunings.
     | PitchBend           Word8 Word16
   deriving (Eq,Show,Ord)
-  
+
 -- | @'SystemEvent'@ 
 --
 -- \SysEx\ events - these are generally uninterpreted. 
@@ -243,8 +244,8 @@ varlenSplit i | i < 0x80        = [fromIntegral i]
               | i < 0x200000    = [wise i 14, wise i 7, wise i 0] 
               | otherwise       = [wise i 21, wise i 14, wise i 7, wise i 0] 
   where         
-    wise i 0 = fromIntegral $ i .&. 0x7F
-    wise i n = fromIntegral $ i `shiftR` n   .&.  0x7F  .|.  0x80;
+    wise m 0 = fromIntegral $ m .&. 0x7F
+    wise m n = fromIntegral $ m `shiftR` n   .&.  0x7F  .|.  0x80;
     
 
 hexStr :: (Integral a) => a -> String

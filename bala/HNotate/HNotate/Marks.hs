@@ -23,18 +23,18 @@ import HNotate.NoteListDatatypes
 
 data DrumMark
 
-drumGrouping          :: Mark DrumMark -> Duration -> Grouping 
-drumGrouping m d      = Singleton $ RhythmicMark "Drum" d m 
+drumElement           :: Mark DrumMark -> Duration -> Element 
+drumElement m d       = Atom $ RhythmicMark "Drum" d m 
 
 drumnote :: Mark DrumMark -> Duration -> EventList -> EventList
-drumnote m d t = t |*> SingleE (drumGrouping m d) 
+drumnote m d t = t |*> SingleE (drumElement m d) 
 
-drumChordGrouping       :: [Mark DrumMark] -> Duration -> Grouping 
-drumChordGrouping ms d  = 
-    Singleton $ RhythmicMark "DrumChord" d (makeLyDrumChord ms)
+drumChordElement        :: [Mark DrumMark] -> Duration -> Element 
+drumChordElement ms d   = 
+    Atom $ RhythmicMark "DrumChord" d (makeLyDrumChord ms)
 
 drumchord :: [Mark DrumMark] -> Duration -> EventList -> EventList
-drumchord ms d t = t |*> SingleE (drumChordGrouping ms d) 
+drumchord ms d t = t |*> SingleE (drumChordElement ms d) 
 
 
 makeLyDrum :: String -> Mark DrumMark

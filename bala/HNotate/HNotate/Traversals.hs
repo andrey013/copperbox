@@ -47,7 +47,7 @@ mkLyState pch = LyState { rel_pitch = pch, rel_duration = quarter }
 -- LilyPond
         
 -- Just change the relative duration        
-lyRelativeDurationAbsPitch :: T.Traversable t => t Grouping -> t Grouping
+lyRelativeDurationAbsPitch :: T.Traversable t => t Element -> t Element
 lyRelativeDurationAbsPitch = shapeContentsTraversal dlpcFocus fn 
   where
     fn xs = evalState (mapM combinedUpdate xs) (mkLyState c4)
@@ -63,7 +63,7 @@ lyRelativeDurationAbsPitch = shapeContentsTraversal dlpcFocus fn
     
 -- Change the relative pitch and relative duration.
 -- Commonly Lilypond scores will be in this form
-lyRelativePitchDuration :: T.Traversable t => Pitch -> t Grouping -> t Grouping 
+lyRelativePitchDuration :: T.Traversable t => Pitch -> t Element -> t Element 
 lyRelativePitchDuration p = shapeContentsTraversal dlpcFocus fn where
     fn xs = evalState (mapM combinedUpdate xs) (mkLyState p)
     
@@ -82,11 +82,11 @@ lyRelativePitchDuration p = shapeContentsTraversal dlpcFocus fn where
 data LyPitchContent = RegularPitchContent PitchContent
                     | ChordPitches PitchContent
 
-dlpcFocus :: Focus Grouping (Duration, LyPitchContent)
+dlpcFocus :: Focus Element (Duration, LyPitchContent)
 dlpcFocus = FN { focus = fcs, extract = ext, putback = back } 
   where
-    fcs (Singleton a) = rhythmicValue a /= duration_zero
-    fcs _             = True
+    fcs (Atom a)        = rhythmicValue a /= duration_zero
+    fcs _               = True
     
     ext a@(Chord _ _ _) = (rhythmicValue a, ChordPitches $ pitchValue a)
     ext a               = (rhythmicValue a, RegularPitchContent $ pitchValue a)
@@ -140,10 +140,10 @@ diffDuration d = do
 --------------------------------------------------------------------------------
 -- Abc
 
-dpFocus :: Focus Grouping (Duration, PitchContent)
+dpFocus :: Focus Element (Duration, PitchContent)
 dpFocus = FN { focus = fcs, extract = ext, putback = back } 
   where
-    fcs (Singleton a) = rhythmicValue a /= duration_zero
+    fcs (Atom a)      = rhythmicValue a /= duration_zero
     fcs _             = True
     
     ext a             = (rhythmicValue a, pitchValue a)
@@ -157,7 +157,7 @@ dpFocus = FN { focus = fcs, extract = ext, putback = back }
 -- If the duration is equal to the unit_duration then it is not printed,
 -- so it is given the value duration_zero.      
 abcPitchDurationTrafo :: 
-      T.Traversable t => Duration -> LabelSet -> t Grouping -> t Grouping
+      T.Traversable t => Duration -> LabelSet -> t Element -> t Element
 abcPitchDurationTrafo unit_drn label_set = 
     shapeContentsTraversal dpFocus (fmap fn) 
   where
@@ -172,8 +172,8 @@ abcPitchDurationTrafo unit_drn label_set =
                  
     
 unlScaleDuration :: Duration -> Duration -> Duration
-unlScaleDuration unl drn = (nr%dr) / (un%ud) where
-    (nr,dr)  = ratioElements drn
+unlScaleDuration unl drn = (dn%dd) / (un%ud) where
+    (dn,dd)  = ratioElements drn
     (un,ud)  = ratioElements unl
       
                    

@@ -123,18 +123,19 @@ a <&\> b | isEmpty a   = b
          | otherwise   = breakjoin a b
         
         
-hcat :: [ODoc] -> ODoc
-hcat = foldl (<>) emptyDoc        
+hcat :: F.Foldable t => t ODoc -> ODoc
+hcat = F.foldl (<>) emptyDoc        
 
-hsep :: [ODoc] -> ODoc
-hsep = foldl (<+>) emptyDoc 
+hsep :: F.Foldable t => t ODoc -> ODoc
+hsep = F.foldl (<+>) emptyDoc 
 
-vsep :: [ODoc] -> ODoc
-vsep = foldl (<&\>) emptyDoc 
+vsep :: F.Foldable t => t ODoc -> ODoc
+vsep = F.foldl (<&\>) emptyDoc 
 
-dblvsep :: [ODoc] -> ODoc
-dblvsep (x:xs) = foldl (\a d -> a <&\> text "" <&\> d) x xs 
-dblvsep []     = emptyDoc
+dblvsep :: F.Foldable t => t ODoc -> ODoc
+dblvsep = step . F.toList where
+    step (x:xs) = foldl (\a d -> a <&\> text "" <&\> d) x xs 
+    step []     = emptyDoc
 
 punctuate :: ODoc -> [ODoc] -> [ODoc] 
 punctuate = intersperse
@@ -288,13 +289,14 @@ indent i d = start <> d <> end where
 
 
 
-list :: [ODoc] -> ODoc
-list = brackets . foldr fn emptyDoc
-    where fn a d | isEmpty d  = a
-                 | otherwise  = a <> comma <+> d 
+list :: F.Foldable t => t ODoc -> ODoc
+list = brackets . commaSep
 
-tupled :: [ODoc] -> ODoc     
-tupled = parens .  foldr fn emptyDoc
+tupled :: F.Foldable t => t ODoc -> ODoc     
+tupled = parens .  commaSep
+
+commaSep :: F.Foldable t => t ODoc -> ODoc     
+commaSep = F.foldr fn emptyDoc
     where fn a d | isEmpty d  = a
                  | otherwise  = a <> comma <+> d 
 

@@ -1,5 +1,5 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# OPTIONS -Wall #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.MusicRep.Perform

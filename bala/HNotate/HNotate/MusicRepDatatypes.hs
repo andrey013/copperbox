@@ -31,6 +31,11 @@ type MeterPattern = ([Int],Duration)
 meterPatternLength :: MeterPattern -> Duration
 meterPatternLength (xs,d) = d * (%1) (fromIntegral $ sum xs)  
 
+meterPatternDurations :: MeterPattern -> [Duration]
+meterPatternDurations (xs,d) = map fn xs where
+    fn i = d * (fromIntegral i % 1) 
+
+
 
 data Key = Key PitchLabel Mode [PitchLabel]
   deriving (Eq,Show)  
@@ -85,7 +90,4 @@ spell p@(Pitch _ _ o) lbls =
 naturalize :: Pitch -> LabelSet -> Pitch
 naturalize p lbls = maybe p ((flip accidentalConst) Nat) (labelSetFind p lbls)
     
--- How long does a meter patttern last? 
-durationMP ::  MeterPattern -> Duration
-durationMP (ds,d) = foldr (\e a -> a + (fromIntegral e) * d) duration_zero ds
 

@@ -23,17 +23,18 @@
 
 module HNotate.PPInstances where
 
+import HNotate.CommonUtils
 import HNotate.Document
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.NotateMonad
 import HNotate.NoteListDatatypes
-import HNotate.OnsetQueue
 import HNotate.Pitch
 import HNotate.ProcessingBase
-import qualified HNotate.SequenceUtils as S
 import HNotate.TemplateDatatypes
+
+
 
 import Data.Char (toLower)
 import qualified Data.Foldable as F
@@ -138,18 +139,18 @@ instance Witness Env where textrep = wpp . pp
 --------------------------------------------------------------------------------
 -- NoteListDatatypes
 
-instance PP Grouping where
-  pp (Singleton e)        = pp e
+instance PP Element where
+  pp (Atom e)             = pp e
   
   pp (Chord se d a)       = applyLyAnno a $ 
-                                brackets (hsep $ S.unseqMap (pp . fst) se) 
+                                brackets (hsep $ fmap (pp . fst) se) 
                                               <> prime <> pp d
       
-  pp (GraceNotes se _ a)  = applyLyAnno a $ braces (hsep $ S.unseqMap fn se) 
+  pp (GraceNotes se a)    = applyLyAnno a $ braces (hsep $ fmap fn se) 
     where fn (p,d,_) = pp p <> prime <> pp d
     
   pp (Nplet _ _ se a)     = applyLyAnno a $ 
-                                braces (hsep $ S.unseqMap (pp . fst) se)    
+                                braces (hsep $ fmap (pp . fst) se)    
   
 instance PP Atom where
   pp (Note p d a)           = applyLyAnno a (pp p <> prime <> pp d)
@@ -157,8 +158,6 @@ instance PP Atom where
   pp (Spacer d a)           = applyLyAnno a (char 's' <> pp d)
   pp (RhythmicMark l d _)   = text l <> prime <> pp d
   pp (Mark l _)             = text l
-  pp BeamStart              = lbracket
-  pp BeamEnd                = rbracket
   pp Tie                    = char '~'
   
 
@@ -168,8 +167,9 @@ instance PP OutputFormat where
 
 
 instance (PP e) => PP (NoteListF e) where
-  pp (NoteList se)  = genPunctuateSeq pplBlock line (S.number 1 se) where
+  pp (NoteList se)  = genPunctuateSeq pplBlock line (number 1 se) where
       pplBlock (i,blk) = measureNumber i <&\> pp blk
+      
       
 instance (PP e) => Witness (NoteListF e) where
   textrep = wpp . pp
@@ -185,9 +185,11 @@ measureNumber i = text "|:" <>  int i
 
 
 instance (PP e) => PP (BarF e) where
-  pp (Bar se)             = genPunctuateSeq pp space se
+  pp (Bar se)             = hsep (fmap pp se)
 
-
+instance PP e => PP (MetricalWordF e) where
+  pp (Singleton a)   = pp a
+  pp (BeamGroup se)  = char '/' <> hsep (fmap pp se) <> char '/' 
 
 
 durationSuffix :: Duration -> ODoc
@@ -227,15 +229,6 @@ instance PP LabelSet where
 
 
 
-instance (Integral idx, PP a) => PP (OnsetQueue idx a) where
-  pp = foldlOnsetQueue fn emptyDoc
-    where 
-      fn d (i,xs) = d <&\> int (fromIntegral i) 
-                      <+>  text ":+" <+> list (map pp xs)    
-
-
-instance (Integral idx, PP a) => Witness (OnsetQueue idx a) where
-  textrep = wpp . pp
 
 --------------------------------------------------------------------------------
 -- TemplateDatatypes
@@ -366,7 +359,7 @@ genFinger f = enclose (text "(|") (text "|)") . genPunctuateSeq f comma
 -- A fold can only see the current element so it would do add an extra sep
 -- e.g.: 1,2,3, 
 genPunctuateSeq :: (a -> ODoc) -> ODoc -> Seq a -> ODoc
-genPunctuateSeq fn sep = S.para phi emptyDoc
+genPunctuateSeq fn sep = para phi emptyDoc
   where 
     phi c (se,  d)  | null se        = fn c <+> d 
                     | otherwise      = fn c <> sep <+> d

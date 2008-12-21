@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |

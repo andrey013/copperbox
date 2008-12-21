@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -16,7 +17,7 @@
 
 module Bala.MusicRep.Pulse where
 
-import Bala.Base.BaseExtra (stranspose, sfilter)
+import qualified Bala.Base.BaseExtra as S
 import Bala.Base.Duration
 import Bala.Base.Metrical
 import Bala.Base.Pitch
@@ -46,13 +47,13 @@ readClave a = ClavePattern . fromList . step where
 
 claveMotif :: Duration -> [(Pitch,ClavePattern)] -> Motif
 claveMotif d = 
-    Motif . fmap (pgroup . ons) . stranspose . fromList . fmap (uncurry line) 
+    Motif . fmap (pgroup . ons) . S.transpose . fromList . fmap (uncurry line) 
   where
     line :: Pitch -> ClavePattern -> Seq (Pitch,Clave)
     line p = fmap (\c -> (p,c)) . getClavePattern
     
     ons :: Seq (Pitch,Clave) -> Seq Pitch
-    ons = fmap fst . sfilter (\(_,c) -> c == ClaveOn)
+    ons = fmap fst . S.filter (\(_,c) -> c == ClaveOn)
 
     pgroup :: Seq Pitch -> Event
     pgroup se = case viewl se of

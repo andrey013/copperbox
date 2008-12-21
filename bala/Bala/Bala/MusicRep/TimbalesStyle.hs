@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -17,13 +18,11 @@
 module Bala.MusicRep.TimbalesStyle where
 
 import Bala.Base.DrumOutput
-import Bala.Base.Duration
 import Bala.Base.OutputHNotate (EventFoldStep, genDrumFoldStep)
-import Bala.Base.Pitch
 
 import qualified HNotate.NoteListDatatypes as H
 import qualified HNotate.Marks as H 
-import qualified ZMidi as Z (GMDrum(..), drumPitch)
+import qualified ZMidi as Z (GMDrum(..))
 
 
 

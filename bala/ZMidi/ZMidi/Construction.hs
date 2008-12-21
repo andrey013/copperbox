@@ -1,5 +1,5 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -84,7 +84,7 @@ execConstruction m tpb tempo = runIdentity $ execConstruction' m tpb tempo
   
 execConstruction' :: Monad m => OutputT m a -> Word16 -> Int -> m MidiFile
 execConstruction' m tpb tempo = do
-    ((a,s),s') <- runStateT (runStateT (getOutputT m) st0) out0
+    ((_,_),s') <- runStateT (runStateT (getOutputT m) st0) out0
     return $ finalize s'
   where
     out0 = MidiOutput  { _tracks=empty, _current_track=empty }
@@ -124,7 +124,7 @@ transformTrack = Track . suffixEOT . deltaTransform . mergesort compare
   where
     deltaTransform :: Seq Message -> Seq Message
     deltaTransform = step 0 empty . viewl where
-        step t acc EmptyL         = acc
+        step _ acc EmptyL         = acc
         step t acc ((gt,e) :< se) = step gt (acc |> (gt-t,e)) (viewl se)
         
     suffixEOT = (|> (0, MetaEvent EndOfTrack))    
@@ -143,8 +143,6 @@ updateTime t = do
     at <- gets _abs_time
     modify (\s -> s {_abs_time = at+t} )
 
-now :: Monad m => OutputT m DeltaTime     
-now = gets _abs_time
 
 -- a(ppend) a(t) t(his) i(nstant)
 aati :: Monad m => (DeltaTime -> Word8 -> Message) -> OutputT m ()

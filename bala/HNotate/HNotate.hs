@@ -31,10 +31,8 @@ module HNotate (
     spacerSgl, spacer, spacer',    
     chordGrp, chord, chord',
     chordGrpL, chordL, chordL',
-    agracesGrp, agraces, agraces',
-    agracesGrpL, agracesL, agracesL',
-    ugracesGrp, ugraces, ugraces',
-    ugracesGrpL, ugracesL, ugracesL',
+    gracesGrp, graces, graces',
+    gracesGrpL, gracesL, gracesL',
     npletGrp, nplet, nplet',
     
     tie, 

@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |

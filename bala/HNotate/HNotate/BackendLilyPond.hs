@@ -28,11 +28,11 @@ import HNotate.Document
 import HNotate.Duration
 import HNotate.Env
 import HNotate.NotateMonad
-import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, nplet)
+import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, 
+                                         nplet, element)
 import HNotate.Pitch
 import HNotate.PPInstances () -- get Witness instances
 import HNotate.ProcessingBase
-import HNotate.SequenceUtils
 import HNotate.Traversals
 
 import Control.Monad.Error
@@ -86,16 +86,6 @@ blockDoc (i, OverlayBlock se)  = (i, polyphony se <+> barcheck)
     
 
 
-atom :: Atom -> ODoc
-atom (Note p d a)          = applyLyAnno a $ note p d
-atom (Rest d a)            = applyLyAnno a $ rest d
-atom (Spacer d a)          = applyLyAnno a $ spacer d
-atom (RhythmicMark _ d m)  = lyOutput m <> duration d
-atom (Mark _ m)            = lyOutput m
-atom BeamStart             = emptyDoc
-atom BeamEnd               = emptyDoc
-atom Tie                   = char '~'
-
 
 
 polyphony :: Seq Bar -> ODoc
@@ -111,31 +101,33 @@ polyphony = dblangles' . step1 . viewl
     polysep = text "\\\\"
 
 
--- Unlike the Abc version of this function, the LilyPond version doesn't
--- need to have an 'ODocConcat' function as part of its state. 
 
 barDoc :: Bar -> ODoc
-barDoc = collapse . F.foldl fn (emptyDoc,emptyDoc)
-  where 
-    collapse (out,tip) = out <+> tip
+barDoc (Bar smw) = F.foldl fn emptyDoc smw
+  where    
+    fn :: ODoc -> MetricalWord -> ODoc
+    fn a (Singleton e)   = a <+> element e
+    fn a (BeamGroup se)  = a <+> printBeamed (viewl se)
     
-    fn :: (ODoc, ODoc) -> Grouping -> (ODoc, ODoc)
-    fn (out,tip) (Singleton BeamStart)  = (out <+> tip, anno bSt tip)
-    fn (out,tip) (Singleton BeamEnd)    = (out <+> tip, anno bEnd tip)
-    fn (out,tip) (Singleton e)          = (out <+> tip, atom e)
-          
-    fn (out,tip) (Chord se d a)         = (out <+> tip, chord se d a)
-    fn (out,tip) (GraceNotes se _ a)    = (out <+> tip, gracenotes se a) 
-    fn (out,tip) (Nplet i ud se a)      = (out <+> tip, nplet i ud se a)
-                
+    printBeamed EmptyL    = emptyDoc
+    printBeamed (e :< se) = element e <> lbracket <+> hsep (fmap element se) 
+                                      <> rbracket 
 
-    anno :: (ODoc -> ODoc) -> ODoc -> ODoc
-    anno f e | isEmpty e   = e
-             | otherwise   = f e
-          
-    bSt, bEnd :: (ODoc -> ODoc)
-    bSt   = (<> lbracket)
-    bEnd  = (<> rbracket) 
+element :: Element -> ODoc
+element (Atom e)               = atom e
+element (Chord se d a)         = chord se d a
+element (GraceNotes se a)      = gracenotes se a 
+element (Nplet i ud se a)      = nplet i ud se a
+    
+
+atom :: Atom -> ODoc
+atom (Note p d a)          = applyLyAnno a $ note p d
+atom (Rest d a)            = applyLyAnno a $ rest d
+atom (Spacer d a)          = applyLyAnno a $ spacer d
+atom (RhythmicMark _ d m)  = lyOutput m <> duration d
+atom (Mark _ m)            = lyOutput m
+atom Tie                   = char '~'
+
 
 
 --------------------------------------------------------------------------------
@@ -155,12 +147,12 @@ spacer = (char 's' <>) . duration
 
 chord :: Seq (Pitch,Annotation) -> Duration -> Annotation -> ODoc
 chord ps d a = 
-    applyLyAnno a $ (angles $ hsep $ unseqMap (pitch . fst) ps)  <> duration d
+    applyLyAnno a $ (angles $ hsep $ smapl (pitch . fst) ps)  <> duration d
   
 
 gracenotes :: Seq (Pitch,Duration,Annotation) -> Annotation -> ODoc
 gracenotes ps a = 
-    applyLyAnno a $ command1 "grace" (braces $ hsep $ unseqMap fn ps)
+    applyLyAnno a $ command1 "grace" (braces $ hsep $ smapl fn ps)
   where fn (p,d,_) = pitch p <> duration d
 
 nplet :: Int -> Duration -> Seq (Pitch,Annotation) -> Annotation -> ODoc

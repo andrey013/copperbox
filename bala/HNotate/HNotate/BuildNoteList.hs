@@ -1,5 +1,6 @@
 {-# OPTIONS -Wall #-}
 
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.BuildNoteList
@@ -18,54 +19,60 @@
 
 module HNotate.BuildNoteList where
 
+import HNotate.BeamTrafo (beam)
 import HNotate.Duration
 import HNotate.Env
 import HNotate.Fits
+import HNotate.MusicRepDatatypes
 import HNotate.NoteListDatatypes
 import HNotate.ProcessingBase
-import qualified HNotate.SequenceUtils as S
+import qualified HNotate.SequenceExtras as S
 
+import Control.Applicative ( (<$>), (<*>) )
 import Control.Monad.Reader
 import Data.Sequence hiding (reverse)
 import Prelude hiding (null, length)
 
 
 buildNoteList :: Monad m => EventList -> NotateT m NoteList
-buildNoteList evts = asks unmetered >>= fn
+buildNoteList evts = 
+    fn <$> asks unmetered  <*> asks anacrusis_displacement <*> asks bar_length
+                           <*> asks meter_pattern 
   where
-    fn True   = return $ buildUnmeteredNoteList evts
-    fn _      = do { asis   <- asks anacrusis_displacement 
-                   ; barlen <- asks bar_length
-                   ; return $ buildMeteredNoteList asis barlen evts }
+    fn True _    _  mp  = buildUnmeteredNoteList mp evts
+    fn _    asis bl mp  = buildMeteredNoteList asis bl mp evts
 
 
 -- M(usical) Line = (start_time, Seq notes)
-type MLine = (Duration,Seq Grouping)
+type MLine = (Duration,Seq Element)
 
-buildMeteredNoteList :: Duration -> Duration -> EventList -> NoteList
-buildMeteredNoteList asis barlen = 
+buildMeteredNoteList :: 
+    Duration -> Duration -> MeterPattern -> EventList -> NoteList
+buildMeteredNoteList asis barlen mp = 
     NoteList  . fmap (alignOverlays barlen) 
               . S.transpose 
               . fromList 
-              . map (segmentToBars asis barlen) 
+              . map (segmentToBars asis barlen mp) 
               . map (spacerPrefix start) . defork start
   where
     start = if asis == duration_zero then duration_zero 
                                      else (barlen - asis)              
 
-buildUnmeteredNoteList :: EventList -> NoteList
-buildUnmeteredNoteList = 
+buildUnmeteredNoteList :: MeterPattern -> EventList -> NoteList
+buildUnmeteredNoteList mp = 
     NoteList  . buildBlocks 
               . map (spacerPrefix duration_zero) 
               . defork duration_zero
   where
     -- build1 - for unmetered music we just have a single very long bar
     -- possibly overlayed
-    buildBlocks :: [Seq Grouping] -> Seq Block
+    buildBlocks :: [Seq Element] -> Seq Block
     buildBlocks []        = empty
-    buildBlocks [x]       = singleton $ SingleBlock (Bar x)
-    buildBlocks xs        = singleton $ OverlayBlock (fromList $ map Bar xs)
+    buildBlocks [x]       = singleton $ SingleBlock (makeBar x)
+    buildBlocks xs        = singleton $ OverlayBlock (fromList $ map makeBar xs)
     
+    makeBar :: Seq Element -> Bar 
+    makeBar = Bar . beam (meterPatternDurations mp)
 
 -- defork - turn the event list (which is really a tree) into genuinely
 -- linear sequences, paired with their start time (onset time).          
@@ -90,12 +97,14 @@ defork start (EventList sa) = step start (start,empty) [] (viewl sa)
     snoc (i,se) (j,e) | null se   = (j, singleton e)  
                       | otherwise = (i,se |> e)
 
-spacerPrefix :: Duration -> MLine -> Seq Grouping
+spacerPrefix :: Duration -> MLine -> Seq Element
 spacerPrefix asis (d,se) | d == 0 || d == asis  = se
                          | otherwise            = spacerSgl d <| se
 
-segmentToBars :: Duration -> Duration -> Seq Grouping -> Seq Bar
-segmentToBars asis barlen = fmap Bar . anasegment True asis barlen
+segmentToBars :: Duration -> Duration -> MeterPattern -> Seq Element -> Seq Bar
+segmentToBars asis barlen mp = fmap makeBar . anasegment True asis barlen
+  where
+    makeBar = Bar . beam (meterPatternDurations mp)
 
 alignOverlays :: Duration -> Seq Bar -> Block
 alignOverlays barlen = build . viewl . S.filter (not . emptyBar) where
@@ -103,7 +112,7 @@ alignOverlays barlen = build . viewl . S.filter (not . emptyBar) where
     
     -- an empty bar is malformed but we turn it into a spacer bar
     build EmptyL                = let sp = spacerSgl barlen
-                                  in SingleBlock (Bar (singleton sp))
+                                  in SingleBlock (Bar (singleton $ Singleton sp))
     build (a :< sa) | null sa   = SingleBlock a
                     | otherwise = OverlayBlock (a <| sa) 
   

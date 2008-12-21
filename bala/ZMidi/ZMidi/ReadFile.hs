@@ -1,6 +1,6 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |

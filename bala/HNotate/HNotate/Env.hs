@@ -83,7 +83,7 @@ data Env = Env {
     _current_key        :: Key,
     _label_set          :: LabelSet,
     _current_meter      :: Meter,
-    _meter_pattern      :: MeterPattern,
+    _meter_pattern      :: Maybe MeterPattern,
     _bar_length         :: Duration, 
     _unit_note_length   :: Duration, 
     _relative_pitch     :: Maybe Pitch,
@@ -120,7 +120,7 @@ makeLyEnv dl = Env {
     _current_key            = c_major,
     _label_set              = c_major'ls,
     _current_meter          = four_four,
-    _meter_pattern          = four_four_of_eighth,
+    _meter_pattern          = Nothing,
     _bar_length             = 4 * quarter,
     _unit_note_length       = quarter,
     _relative_pitch         = Nothing,
@@ -141,7 +141,7 @@ makeAbcEnv dl = Env {
     _current_key            = c_major,
     _label_set              = c_major'ls,
     _current_meter          = four_four,
-    _meter_pattern          = four_four_of_eighth,
+    _meter_pattern          = Nothing,
     _bar_length             = 4 * quarter,
     _unit_note_length       = eighth,
     _relative_pitch         = Nothing,
@@ -188,7 +188,9 @@ label_set           :: Env -> LabelSet
 label_set           = _label_set
 
 meter_pattern       :: Env -> MeterPattern
-meter_pattern       = _meter_pattern
+meter_pattern e     = fn $ _meter_pattern e where
+  fn (Just mp) = mp
+  fn Nothing   = defaultMeterPattern (_current_meter e)
 
 bar_length          :: Env -> Duration
 bar_length          = _bar_length
@@ -246,7 +248,7 @@ set_current_meter m env       =
 
 
 set_meter_pattern             :: MeterPattern -> Env -> Env
-set_meter_pattern mp env      = env {_meter_pattern = mp}     
+set_meter_pattern mp env      = env {_meter_pattern = Just mp}     
 
 set_unit_note_length          :: Duration -> Env -> Env
 set_unit_note_length d  env   = env {_unit_note_length = d}

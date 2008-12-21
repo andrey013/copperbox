@@ -129,6 +129,11 @@ twist sk fk ys ss = foldr step [] ss
 --------------------------------------------------------------------------------
 -- Meter patterns
 
+defaultMeterPattern :: Meter -> MeterPattern
+defaultMeterPattern (TimeSig n d) = ([2,2], eighth)
+defaultMeterPattern CommonTime    = ([4,4], eighth)
+defaultMeterPattern CutTime       = ([2,2], eighth)
+
 four_four_of_eighth :: MeterPattern
 four_four_of_eighth = ([4,4],eighth)
 

@@ -1,5 +1,6 @@
-{-# LANGUAGE MultiParamTypeClasses #-} 
-{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses      #-} 
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -17,7 +18,7 @@
 
 
 module Bala.Base.BaseExtra (
-  module HNotate.SequenceUtils,
+  module HNotate.SequenceExtras,
   
   -- * Type classes
   Increment(..),
@@ -47,10 +48,15 @@ module Bala.Base.BaseExtra (
   explode12, explode100, collapse12, collapse100,
   normalize12, normalize100, 
   
+  -- * recursion schemes
+  hylo, para, apo,
+  
+  -- * seqeunce functions
+  slzipsWith,
 
   ) where
 
-import HNotate.SequenceUtils
+import HNotate.SequenceExtras
 
 import qualified Data.Foldable as F
 import Data.List (unfoldr)
@@ -242,5 +248,37 @@ normalize12 (o,d)  = let (c, d') = explode12 d in (o + c, d')
 normalize100 :: (Integral a) => (a, a) -> (a, a) 
 normalize100 (o,d) = let (c, d') = explode100 d in (o + c, d')
 
+
+--------------------------------------------------------------------------------
+-- Recursion schemes
+
+-- | Hylomorphism.
+-- A hylomorphism has no dependency of Data.Sequence of course.
+hylo :: (a -> c -> c) -> (b -> Maybe (a, b)) -> c -> b -> c
+hylo f g c0 b0 = step (g b0) where
+    step Nothing        = c0
+    step (Just (a,st))  = f a (step (g st))
+
+-- | Paramorphism (generalizes cata).
+para :: (a -> (Seq a, b) -> b) -> b -> Seq a -> b
+para f b0 se = step (viewl se) where
+    step EmptyL     = b0
+    step (a :< sa)  = f a (sa, step (viewl sa))
+
+-- | Apomorphism (generalizes ana).
+apo :: (b -> Maybe (a, b)) -> (b -> Seq a) -> b -> Seq a
+apo f g b0 = step (f b0) where
+    step Nothing        = g b0
+    step (Just (a,st))  = a <| step (f st)
+      
+
+--------------------------------------------------------------------------------
+-- Sequence
+
+slzipsWith :: (a -> b -> c) -> Seq a -> [b] -> Seq c
+slzipsWith f se ls = step (viewl se) ls where
+  step (a :< sa) (b:bs)   = f a b <| step (viewl sa) bs
+  step _         _        = empty
   
-                        
+  
+                          
