@@ -22,6 +22,7 @@ import HNotate.Pitch
 import HNotate.MusicRepDatatypes
 
 import Data.List
+import Data.Ratio
 
 
 --------------------------------------------------------------------------------
@@ -130,13 +131,43 @@ twist sk fk ys ss = foldr step [] ss
 -- Meter patterns
 
 defaultMeterPattern :: Meter -> MeterPattern
-defaultMeterPattern (TimeSig n d) = ([2,2], eighth)
+defaultMeterPattern (TimeSig n d) 
+    | compoundMeter (n,d)         = (patt 3 (n%d), eighth)
+    | simpleMeter (n,d)           = (patt 2 (n%d), eighth)
+    | otherwise                   = (badpatt (n%d), eighth)
+  where
+    patt :: Int -> Ratio Int -> [Int]
+    patt i r = fmap floor $ replicate i $ (r / (i%1)) / (1%8) 
+    
+    -- divide into eigths
+    badpatt :: Ratio Int -> [Int]
+    badpatt r = replicate (ceiling $ r / (1%8)) 1
+      
 defaultMeterPattern CommonTime    = ([4,4], eighth)
 defaultMeterPattern CutTime       = ([2,2], eighth)
 
+
+log2whole :: Integral a => a -> Bool
+log2whole i = f i == (0::Double) 
+  where
+    f :: Integral a => a -> Double
+    f = snd . pf . logBase 2 . toDouble
+    
+    pf :: Double -> (Integer, Double)
+    pf = properFraction
+    
+    toDouble :: Integral a => a -> Double 
+    toDouble = fromIntegral
+
+compoundMeter :: (Int,Int) -> Bool
+compoundMeter (n,d) = log2whole d && (n `mod` 3 == 0)
+
+                      
+simpleMeter :: (Int,Int) -> Bool
+simpleMeter (_,d) = log2whole d
+
 four_four_of_eighth :: MeterPattern
 four_four_of_eighth = ([4,4],eighth)
-
 
 
 --------------------------------------------------------------------------------

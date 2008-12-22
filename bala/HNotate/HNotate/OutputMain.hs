@@ -43,21 +43,30 @@ import qualified Data.Map as Map
 import Text.ParserCombinators.Parsec (parseFromFile)
 
 
+noAnnoEval :: AnnoEval
+noAnnoEval = AnnoEval (\_ _ -> id) (\_ _ -> id) (\_ _ -> id) 
+
 -- {NOTE} Some elements in the env have defaults
 -- that might be too arbitrary (e.g. meter pattern)
 
 outputLilyPond :: Int -> System -> FilePath -> FilePath -> IO ()
-outputLilyPond dl sys inp outp   =
+outputLilyPond dl sys inp outp = outputLilyPond' dl sys noAnnoEval inp outp
+
+outputLilyPond' :: Int -> System -> AnnoEval -> FilePath -> FilePath -> IO ()
+outputLilyPond' dl sys aeval inp outp   =
     runMain (filebasedOutput lyExprParse lyTextSource) 
             (makeLyEnv dl) 
-            (makeLyConfig sys inp outp)
-
-    
+            (makeLyConfig sys aeval inp outp)
+            
 outputAbc :: Int -> System -> FilePath -> FilePath -> IO ()
-outputAbc dl sys inp outp        =
+outputAbc dl sys inp outp = outputAbc' dl sys noAnnoEval inp outp
+
+              
+outputAbc' :: Int -> System -> AnnoEval -> FilePath -> FilePath -> IO ()
+outputAbc' dl sys aeval inp outp =
     runMain (filebasedOutput abcExprParse abcTextSource) 
             (makeAbcEnv dl) 
-            (makeAbcConfig sys inp outp)
+            (makeAbcConfig sys aeval inp outp)
  
 runMain :: (NotateT IO ()) -> Env -> Config -> IO ()
 runMain mf env cfg = runNotateT mf env cfg >>= fn where
@@ -103,15 +112,29 @@ filebasedOutput expr_parser src_parser  = do
     liftIO $ writeFile out (plugParsedTemplate src odocs)
                                   
 
+
+
 outputLilyPondDocu :: Int -> System -> LilyPondTemplate -> FilePath -> IO ()
-outputLilyPondDocu dl sys (LyTemplate docuh) outpath   =
-    runMain (docuOutput docuh) (makeLyEnv dl) (makeLyConfig sys "" outpath)
+outputLilyPondDocu dl sys template outpath   =
+    outputLilyPondDocu' dl sys noAnnoEval template outpath
+
+outputLilyPondDocu' :: Int -> System -> AnnoEval -> LilyPondTemplate -> FilePath -> IO ()
+outputLilyPondDocu' dl sys aeval (LyTemplate docuh) outpath =
+    runMain (docuOutput docuh) (makeLyEnv dl) lycfg 
+  where
+    lycfg  = makeLyConfig sys aeval "" outpath
+ 
 
 
 outputAbcDocu :: Int -> System -> AbcTemplate -> FilePath -> IO ()
-outputAbcDocu dl sys (AbcTemplate docuh) outpath   =
-    runMain (docuOutput docuh) (makeAbcEnv dl) (makeAbcConfig sys "" outpath)
+outputAbcDocu dl sys template outpath   =
+    outputAbcDocu' dl sys noAnnoEval template outpath
     
+outputAbcDocu' :: Int -> System -> AnnoEval -> AbcTemplate -> FilePath -> IO ()
+outputAbcDocu' dl sys aeval (AbcTemplate docuh) outpath =
+    runMain (docuOutput docuh) (makeAbcEnv dl) abccfg
+  where
+    abccfg = makeAbcConfig sys aeval "" outpath    
     
 
 docuOutput :: (HandBuiltTemplate, [Maybe HoasExpr]) -> NotateT IO ()

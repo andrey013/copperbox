@@ -109,6 +109,7 @@ durationToDouble = uncurry (/) . rfork fromIntegral
 
 
 
+  
 
 --------------------------------------------------------------------------------
 -- divMod (with rounding) for rationals 

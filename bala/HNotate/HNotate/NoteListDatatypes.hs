@@ -49,6 +49,7 @@ data OutputFormat = OutputAbc | OutputLy
 
 type Annotation = [WrappedAnno]
 
+type AnnotationS =  Annotation ->  Annotation
 
 data WrappedAnno = forall a. Typeable a => WrapAnno a
 
@@ -130,9 +131,7 @@ data AnnoEval = AnnoEval {
      annotate_atom :: HnAtom -> Annotation -> ODocS
   }
 
-evalNoAnnos :: AnnoEval
-evalNoAnnos = AnnoEval (\_ _ -> id) (\_ _ -> id) (\_ _ -> id) 
-    
+   
   
 npletDuration :: Int -> Duration -> Duration
 npletDuration len unit_d = (fromIntegral len % 1) * unit_d                                        
@@ -423,8 +422,8 @@ noteSgl' p d a    = Atom $ Note p d a
 note              :: Pitch -> Duration -> EventList -> EventList
 note  p d         = event (noteSgl p d)
 
-note'             :: Pitch -> Duration -> Annotation -> EventList -> EventList
-note' p d a       = event (noteSgl' p d a)
+note'             :: Pitch -> Duration -> AnnotationS -> EventList -> EventList
+note' p d f       = event $ noteSgl' p d (f [])
 
 restSgl           :: Duration -> Element 
 restSgl d         = Atom $ Rest d mempty 
@@ -506,7 +505,7 @@ gracesL' xs a     = event (gracesGrpL' xs a)
 
 
 npletGrp          :: Int -> Duration -> Seq Pitch -> Element
-npletGrp i ud se  = Nplet i ud (fmap f se) mempty where
+npletGrp i ud se  = Nplet i ud (fmap f se) [] where
     f a = (a,mempty)  
 
 npletGrp'         :: Int -> Duration -> Seq (Pitch,Annotation) -> Annotation -> Element
