@@ -43,30 +43,23 @@ import qualified Data.Map as Map
 import Text.ParserCombinators.Parsec (parseFromFile)
 
 
-noAnnoEval :: AnnoEval
-noAnnoEval = AnnoEval (\_ _ -> id) (\_ _ -> id) (\_ _ -> id) 
+
 
 -- {NOTE} Some elements in the env have defaults
 -- that might be too arbitrary (e.g. meter pattern)
 
 outputLilyPond :: Int -> System -> FilePath -> FilePath -> IO ()
-outputLilyPond dl sys inp outp = outputLilyPond' dl sys noAnnoEval inp outp
-
-outputLilyPond' :: Int -> System -> AnnoEval -> FilePath -> FilePath -> IO ()
-outputLilyPond' dl sys aeval inp outp   =
+outputLilyPond dl sys inp outp   =
     runMain (filebasedOutput lyExprParse lyTextSource) 
             (makeLyEnv dl) 
-            (makeLyConfig sys aeval inp outp)
+            (makeLyConfig sys inp outp)
             
+             
 outputAbc :: Int -> System -> FilePath -> FilePath -> IO ()
-outputAbc dl sys inp outp = outputAbc' dl sys noAnnoEval inp outp
-
-              
-outputAbc' :: Int -> System -> AnnoEval -> FilePath -> FilePath -> IO ()
-outputAbc' dl sys aeval inp outp =
+outputAbc dl sys inp outp =
     runMain (filebasedOutput abcExprParse abcTextSource) 
             (makeAbcEnv dl) 
-            (makeAbcConfig sys aeval inp outp)
+            (makeAbcConfig sys inp outp)
  
 runMain :: (NotateT IO ()) -> Env -> Config -> IO ()
 runMain mf env cfg = runNotateT mf env cfg >>= fn where
@@ -115,26 +108,18 @@ filebasedOutput expr_parser src_parser  = do
 
 
 outputLilyPondDocu :: Int -> System -> LilyPondTemplate -> FilePath -> IO ()
-outputLilyPondDocu dl sys template outpath   =
-    outputLilyPondDocu' dl sys noAnnoEval template outpath
-
-outputLilyPondDocu' :: Int -> System -> AnnoEval -> LilyPondTemplate -> FilePath -> IO ()
-outputLilyPondDocu' dl sys aeval (LyTemplate docuh) outpath =
+outputLilyPondDocu dl sys (LyTemplate docuh) outpath =
     runMain (docuOutput docuh) (makeLyEnv dl) lycfg 
   where
-    lycfg  = makeLyConfig sys aeval "" outpath
+    lycfg  = makeLyConfig sys "" outpath
  
 
 
 outputAbcDocu :: Int -> System -> AbcTemplate -> FilePath -> IO ()
-outputAbcDocu dl sys template outpath   =
-    outputAbcDocu' dl sys noAnnoEval template outpath
-    
-outputAbcDocu' :: Int -> System -> AnnoEval -> AbcTemplate -> FilePath -> IO ()
-outputAbcDocu' dl sys aeval (AbcTemplate docuh) outpath =
+outputAbcDocu dl sys (AbcTemplate docuh) outpath =
     runMain (docuOutput docuh) (makeAbcEnv dl) abccfg
   where
-    abccfg = makeAbcConfig sys aeval "" outpath    
+    abccfg = makeAbcConfig sys "" outpath    
     
 
 docuOutput :: (HandBuiltTemplate, [Maybe HoasExpr]) -> NotateT IO ()
@@ -167,19 +152,19 @@ evalHoasStep (HFork e1 e2)      docs = evalHoasStep e1 docs >>= evalHoasStep e2
 
 outputNotes :: Monad m => OutputDirective -> NotateT m ODoc
 outputNotes (OutputDirective d name) = do 
-    fmt   <- asks output_format
-    evts  <- findEventList name
-    notes <- buildNoteList evts
-    output fmt d notes
+    fmt             <- asks output_format
+    (evts,aeval)    <- findEventList name
+    notes           <- buildNoteList evts
+    output fmt d aeval notes
   where
-    output :: Monad m => 
-        OutputFormat -> Maybe OutputScheme -> NoteList -> NotateT m ODoc
+    output :: Monad m => OutputFormat -> Maybe OutputScheme -> AnnoEval 
+                                      -> NoteList -> NotateT m ODoc
     output OutputAbc  _                      = outputNoteListAbc 
     output OutputLy   (Just OutputRelative)  = outputRelativeNoteList
     output OutputLy   _                      = outputAbsoluteNoteList 
 
 
-findEventList :: Monad m => String -> NotateT m EventList
+findEventList :: Monad m => String -> NotateT m (EventList,AnnoEval)
 findEventList name = do
     System sys <- asks_config _system
     maybe failure return (Map.lookup name sys)
@@ -188,18 +173,18 @@ findEventList name = do
                   " missing in the system. No output will be generated."
    
 -- Only option for Abc
-outputNoteListAbc :: Monad m => NoteList -> NotateT m ODoc
+outputNoteListAbc :: Monad m => AnnoEval -> NoteList -> NotateT m ODoc
 outputNoteListAbc = translateAbc abcConcat
 
 
-outputRelativeNoteList :: Monad m => NoteList -> NotateT m ODoc
-outputRelativeNoteList = 
-    lilypondRelativeForm >=> translateLilyPond lyConcat 
+outputRelativeNoteList :: Monad m => AnnoEval -> NoteList -> NotateT m ODoc
+outputRelativeNoteList aeval = 
+    lilypondRelativeForm >=> translateLilyPond lyConcat aeval
 
     
-outputAbsoluteNoteList :: Monad m => NoteList -> NotateT m ODoc
-outputAbsoluteNoteList = witness 3 "Lilypond 'absolute'" >=> fn where
-  fn = lilypondAbsoluteForm >=> translateLilyPond lyConcat  
+outputAbsoluteNoteList :: Monad m => AnnoEval -> NoteList -> NotateT m ODoc
+outputAbsoluteNoteList aeval = witness 3 "Lilypond 'absolute'" >=> fn where
+  fn = lilypondAbsoluteForm >=> translateLilyPond lyConcat aeval  
    
 
                  

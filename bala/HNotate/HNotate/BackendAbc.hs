@@ -47,12 +47,12 @@ import Prelude hiding (length)
 abcConcat :: BarConcatFun
 abcConcat = vsep . map snd
 
-translateAbc :: Monad m => BarConcatFun -> NoteList -> NotateT m ODoc
-translateAbc bf notes = abcForm notes >>= printStep >>= report 
+translateAbc :: Monad m => 
+    BarConcatFun -> AnnoEval -> NoteList -> NotateT m ODoc
+translateAbc bf aeval notes = do
+    abc_notes <- abcForm notes
+    report $ outputNoteList bf aeval abc_notes
   where
-    printStep :: Monad m => NoteList -> NotateT m ODoc
-    printStep nl = (\ai -> outputNoteList bf ai nl) <$> asks_config _anno_eval
-    
     report :: Monad m => ODoc -> NotateT m ODoc
     report m = ask >>= \env ->
             witness 3 "Current environment is..." env >>

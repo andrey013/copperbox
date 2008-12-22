@@ -60,7 +60,7 @@ module HNotate.Env (
 import HNotate.Data
 import HNotate.Document
 import HNotate.Duration
-import HNotate.NoteListDatatypes (System, OutputFormat(..), AnnoEval )
+import HNotate.NoteListDatatypes (System, OutputFormat(..) )
 import HNotate.NotateMonad
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
@@ -97,8 +97,7 @@ data Env = Env {
 
 
 data Config = Config { 
-    _system         :: System,
-    _anno_eval      :: AnnoEval,    
+    _system         :: System,   
     _template_file  :: FilePath,
     _output_file    :: FilePath
     }
@@ -155,18 +154,16 @@ makeAbcEnv dl = Env {
     
 
 
-makeLyConfig :: System -> AnnoEval -> FilePath -> FilePath -> Config
-makeLyConfig sys aeval template outfile = Config { 
-    _system         = sys, 
-    _anno_eval      = aeval,    
+makeLyConfig :: System -> FilePath -> FilePath -> Config
+makeLyConfig sys template outfile = Config { 
+    _system         = sys,    
     _template_file  = template,
     _output_file    = outfile
     }
 
-makeAbcConfig :: System -> AnnoEval -> FilePath -> FilePath -> Config
-makeAbcConfig sys aeval template outfile = Config { 
-    _system         = sys,
-    _anno_eval      = aeval,    
+makeAbcConfig :: System -> FilePath -> FilePath -> Config
+makeAbcConfig sys template outfile = Config { 
+    _system         = sys,   
     _template_file  = template,
     _output_file    = outfile
     }

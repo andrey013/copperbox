@@ -53,10 +53,10 @@ lyRelativeDurationAbsPitch = shapeContentsTraversal dlpcFocus fn
     fn xs = evalState (mapM combinedUpdate xs) (mkLyState c4)
     combinedUpdate :: (Duration, LyPitchContent) 
                           -> State LyState (Duration, LyPitchContent)
-    combinedUpdate (d,lpc) = (,) <$> diffDuration d <*> pure (lypcMap down3ve lpc)
-
-    down3ve :: Pitch -> Pitch
-    down3ve (Pitch l a o) = Pitch l a (o-3)
+    combinedUpdate (d,lpc) = (,) <$> diffDuration d <*> pure (lypcMap down4ve lpc)
+   
+    down4ve :: Pitch -> Pitch
+    down4ve (Pitch l a o) = Pitch l a (o-4)
     
     lypcMap f (RegularPitchContent pc)  = RegularPitchContent $ fmap f pc
     lypcMap f (ChordPitches pc)         = ChordPitches $ fmap f pc

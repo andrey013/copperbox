@@ -47,12 +47,10 @@ lyConcat :: BarConcatFun
 lyConcat = vsep . map snd
 
 
-translateLilyPond :: Monad m => BarConcatFun -> NoteList -> NotateT m ODoc
-translateLilyPond bf nl = printStep >>= report
-  where
-    printStep :: Monad m => NotateT m ODoc
-    printStep = (\ai -> outputNoteList bf ai nl) <$> asks_config _anno_eval
-    
+translateLilyPond :: Monad m => 
+    BarConcatFun -> AnnoEval -> NoteList -> NotateT m ODoc
+translateLilyPond bf aeval nl = report $ outputNoteList bf aeval nl 
+  where  
     report :: Monad m => ODoc -> NotateT m ODoc
     report m = do env <- ask
                   witness 3 "Current environment is..." env

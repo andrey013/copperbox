@@ -110,8 +110,7 @@ type GraceNote = (Pitch,Duration,Annotation)
 data Mark phantom = Marker { _ly_output   :: ODoc,
                              _abc_output  :: ODoc }
 
-instance Show (Mark a) where
-  show (Marker _ _) = "<Mark>"          
+instance Show (Mark a) where show _ = "<Mark>"          
 
 -- Annotations are interpreted /outside/ HNotate. Thus every annotated 
 -- constructor has a corresponding /tag/ which user code pattern matches on.
@@ -126,19 +125,19 @@ data HnAtom = HnNote | HnRest | HnSpacer
   deriving (Eq,Show)
   
 data AnnoEval = AnnoEval {
-     annotate_element :: HnElement -> Annotation -> ODocS,
-     annotate_element_part ::  HnElement -> Annotation -> ODocS,
-     annotate_atom :: HnAtom -> Annotation -> ODocS
+     annotate_element       :: HnElement -> Annotation -> ODocS,
+     annotate_element_part  :: HnElement -> Annotation -> ODocS,
+     annotate_atom          :: HnAtom -> Annotation -> ODocS
   }
 
-   
+instance Show AnnoEval where show _ = "<AnnoEval>" 
   
 npletDuration :: Int -> Duration -> Duration
 npletDuration len unit_d = (fromIntegral len % 1) * unit_d                                        
                                            
 --------------------------------------------------------------------------------
 -- The External view - EventList - events with no rhythmical grouping
-newtype System = System { getSystem :: Map.Map String EventList }
+newtype System = System { getSystem :: Map.Map String (EventList,AnnoEval) }
   deriving Show
 
 
@@ -392,16 +391,24 @@ instance NoAnno Atom where
 (|*>) (EventList t) evt = EventList $ t |> evt
 
 
-
+noAnnoEval :: AnnoEval
+noAnnoEval = AnnoEval (\_ _ -> id) (\_ _ -> id) (\_ _ -> id) 
 
 system :: System 
 system = System $ mempty
 
 systemL :: [(String, EventList)] -> System
-systemL = System . Map.fromList
+systemL = systemL' . map (\(name,evs) -> (name,evs,noAnnoEval))
+
+systemL' :: [(String, EventList, AnnoEval)] -> System
+systemL' = System . foldr ins mempty where
+  ins (name,evs,aeval) mp = Map.insert name (evs,aeval) mp
 
 system1 :: String -> EventList -> System
-system1 k t = System $ Map.insert k t mempty
+system1 name evs = System $ Map.insert name (evs,noAnnoEval) mempty
+
+system1' :: String -> EventList -> AnnoEval -> System
+system1' name evs aeval = System $ Map.insert name (evs,aeval) mempty
 
 root :: EventList
 root = EventList empty
