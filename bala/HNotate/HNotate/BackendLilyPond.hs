@@ -35,9 +35,9 @@ import HNotate.PPInstances () -- get Witness instances
 import HNotate.ProcessingBase
 import HNotate.Traversals
 
+import Control.Applicative ( (<$>) )
 import Control.Monad.Error
 import Control.Monad.Reader
-import Control.Monad.State
 import qualified Data.Foldable as F
 import Data.Sequence
 
@@ -48,13 +48,15 @@ lyConcat = vsep . map snd
 
 
 translateLilyPond :: Monad m => BarConcatFun -> NoteList -> NotateT m ODoc
-translateLilyPond bf = fwd <=< printStep
+translateLilyPond bf nl = printStep >>= report
   where
-    printStep = return . outputNoteList bf
+    printStep :: Monad m => NotateT m ODoc
+    printStep = (\ai -> outputNoteList bf ai nl) <$> asks_config _anno_eval
     
-    fwd m = ask >>= \env ->
-            witness 3 "Current environment is..." env >>
-            witness 3 "LilyPond output..." m
+    report :: Monad m => ODoc -> NotateT m ODoc
+    report m = do env <- ask
+                  witness 3 "Current environment is..." env
+                  witness 3 "LilyPond output..." m
             
 
 lilypondAbsoluteForm :: Monad m => NoteList -> NotateT m NoteList
@@ -74,59 +76,78 @@ getRelativePitch = asks relative_pitch >>= maybe no_rp_err (return)
                 "relative pitch detected in the current scope."
   
     
-outputNoteList :: BarConcatFun -> NoteList -> ODoc 
-outputNoteList bf = 
-  bf . F.foldr ((:) `onl` blockDoc) [] . number 0 . getNoteList 
+outputNoteList :: BarConcatFun -> AnnoEval -> NoteList -> ODoc 
+outputNoteList bf ai = 
+  bf . F.foldr ((:) `onl` blockDoc ai) [] . number 0 . getNoteList 
 
 
-blockDoc :: (Int,Block) -> (Int,ODoc)
-blockDoc (i, SingleBlock s)    = (i, barDoc s <+> barcheck)
-blockDoc (i, OverlayBlock se)  = (i, polyphony se <+> barcheck)
+blockDoc :: AnnoEval -> (Int,Block) -> (Int,ODoc)
+blockDoc ai (i, SingleBlock s)    = (i, barDoc ai s <+> barcheck)
+blockDoc ai (i, OverlayBlock se)  = (i, polyphony ai se <+> barcheck)
 
     
 
 
 
 
-polyphony :: Seq Bar -> ODoc
-polyphony = dblangles' . step1 . viewl
+polyphony :: AnnoEval -> Seq Bar -> ODoc
+polyphony ai = dblangles' . step1 . viewl
   where 
     step1 EmptyL      = emptyDoc
     step1 (s :< se)   = rstep s (viewl se)
     
-    rstep e EmptyL    = braces' (barDoc e)
-    rstep e (s :< se) = braces' (barDoc e) <+> polysep <+> rstep s (viewl se)
+    rstep e EmptyL    = braces' (barDoc ai e)
+    rstep e (s :< se) = braces' (barDoc ai e) <+> polysep <+> rstep s (viewl se)
     
     polysep :: ODoc
     polysep = text "\\\\"
 
 
 
-barDoc :: Bar -> ODoc
-barDoc (Bar smw) = F.foldl fn emptyDoc smw
+barDoc :: AnnoEval -> Bar -> ODoc
+barDoc ai (Bar smw) = F.foldl fn emptyDoc smw
   where    
     fn :: ODoc -> MetricalWord -> ODoc
-    fn a (Singleton e)   = a <+> element e
+    fn a (Singleton e)   = a <+> element ai e
     fn a (BeamGroup se)  = a <+> printBeamed (viewl se)
     
     printBeamed EmptyL    = emptyDoc
-    printBeamed (e :< se) = element e <> lbracket <+> hsep (fmap element se) 
-                                      <> rbracket 
+    printBeamed (e :< se) = element ai e <>  lbracket 
+                                         <+> hsep (fmap (element ai) se) 
+                                         <>  rbracket 
 
-element :: Element -> ODoc
-element (Atom e)               = atom e
-element (Chord se d a)         = chord se d a
-element (GraceNotes se a)      = gracenotes se a 
-element (Nplet i ud se a)      = nplet i ud se a
+element :: AnnoEval -> Element -> ODoc
+element (AnnoEval _ _ h) (Atom e)          = atom h e
+element (AnnoEval f g _) (Chord se d a)    = 
+    f HnChord a $ angles (hsep ds) <> duration d
+  where
+    ds = fmap (\(p,a') -> g HnChord a' $ pitch p) se
+    
+element (AnnoEval f g _) (GraceNotes se a) =
+    f HnGraceNotes a $ command1 "grace" (braces $ hsep ds)
+  where 
+    ds = fmap (\(p,d,a') -> g HnGraceNotes a' $ pitch p <> duration d) se
+  
+element (AnnoEval f g _) (Nplet i ud se a) =
+    f HnNplet a $ command1 "times" fract <+> braces' (hsep $ plet1 (viewl se))
+  where
+    fract = int i <> char '/' <> int (length se)
+    
+    plet1 EmptyL          = []
+    plet1 ((p,a') :< sp)  = (g HnNplet a' $ note p ud) : plet (viewl sp)
+    
+    plet ((p,a') :< sp)   = (g HnNplet a' $ pitch p) : plet (viewl sp)
+    plet EmptyL           = []
+    
     
 
-atom :: Atom -> ODoc
-atom (Note p d a)          = applyLyAnno a $ note p d
-atom (Rest d a)            = applyLyAnno a $ rest d
-atom (Spacer d a)          = applyLyAnno a $ spacer d
-atom (RhythmicMark _ d m)  = lyOutput m <> duration d
-atom (Mark _ m)            = lyOutput m
-atom Tie                   = char '~'
+atom :: (HnAtom -> Annotation -> ODocS) -> Atom -> ODoc
+atom f (Note p d a)          = f HnNote a $ note p d
+atom f (Rest d a)            = f HnRest a $ rest d
+atom f (Spacer d a)          = f HnSpacer a $ spacer d
+atom _ (RhythmicMark _ d m)  = lyOutput m <> duration d
+atom _ (Mark _ m)            = lyOutput m
+atom _ Tie                   = char '~'
 
 
 
@@ -144,31 +165,6 @@ rest = (char 'r' <>) . duration
     
 spacer :: Duration -> ODoc
 spacer = (char 's' <>) . duration
-
-chord :: Seq (Pitch,Annotation) -> Duration -> Annotation -> ODoc
-chord ps d a = 
-    applyLyAnno a $ (angles $ hsep $ smapl (pitch . fst) ps)  <> duration d
-  
-
-gracenotes :: Seq (Pitch,Duration,Annotation) -> Annotation -> ODoc
-gracenotes ps a = 
-    applyLyAnno a $ command1 "grace" (braces $ hsep $ smapl fn ps)
-  where fn (p,d,_) = pitch p <> duration d
-
-nplet :: Int -> Duration -> Seq (Pitch,Annotation) -> Annotation -> ODoc
-nplet mult ud se a = 
-    applyLyAnno a $ command1 "times" fract <+> braces' (hsep $ plet1 (viewl se))
-  where
-    fract = int mult <> char '/' <> int (length se)
-    
-    plet1 EmptyL        = []
-    plet1 ((p,_) :< sp) = note p ud : plet (viewl sp)
-    
-    plet ((p,_) :< sp)  = pitch p : plet (viewl sp)
-    plet EmptyL         = []
-    
-     
     
 barcheck :: ODoc
 barcheck = char '|'
-

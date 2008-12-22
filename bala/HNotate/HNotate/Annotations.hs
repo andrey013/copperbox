@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable         #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -19,12 +20,23 @@ module HNotate.Annotations where
 import HNotate.Document
 import HNotate.NoteListDatatypes
 
-abcOnly :: (ODoc -> ODoc) -> Annotation
-abcOnly fn = Annotation { _ly_anno = id, _abc_anno = fn } 
+import Data.Generics
+import Data.Typeable
 
-lyOnly :: (ODoc -> ODoc) -> Annotation
-lyOnly fn = Annotation { _ly_anno = fn, _abc_anno = id } 
 
+  
+extract :: Typeable a => a -> [WrappedAnno] -> a
+extract a []     = error $ "missing annontation for " ++ tyname where
+    tyname = (showsTypeRep `flip` "") $ typeOf a
+extract a (WrapAnno x:xs) = case cast x of
+                              Just b -> b
+                              Nothing -> extract a xs
+
+extractMaybe :: Typeable a => a -> [WrappedAnno] -> Maybe a
+extractMaybe a []      = Nothing
+extractMaybe a (WrapAnno x:xs)   = case cast x of
+                                     Just b  -> Just b
+                                     Nothing -> extractMaybe a xs
 
 suffix :: ODoc -> (ODoc -> ODoc)
 suffix d = (<> d)
@@ -35,11 +47,14 @@ prefix d = (d <>)
 --------------------------------------------------------------------------------
 --
 
-staccato :: Annotation
-staccato = Annotation { _ly_anno = suffix $ string "-.",
-                        _abc_anno = prefix $ char '.' }
+data Staccato = Staccato
+  deriving (Data,Eq,Show,Typeable)
+
+-- this is the LilyPond version  
+staccato :: ODoc
+staccato = string "-."
                         
-                        
+{-                        
 -- Abc
 upbow :: Annotation
 upbow = abcOnly (prefix $ char 'u')
@@ -58,3 +73,4 @@ stringNum :: Int -> Annotation
 stringNum i = lyOnly(suffix $ command (show i))
 
 
+-}

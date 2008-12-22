@@ -36,6 +36,7 @@ import Data.Ratio
 import Data.Sequence hiding (length, null)
 import qualified Data.Sequence as S
 import Data.Traversable
+import Data.Typeable
 import Numeric (fromRat)
 
 
@@ -44,18 +45,16 @@ data OutputFormat = OutputAbc | OutputLy
   
 --------------------------------------------------------------------------------
 -- The base view of printable elements 
--- - atoms and 'groupings' which group atoms.
+-- /atoms/ and /elements/ which group atoms.
 
-data Annotation = Annotation { _ly_anno   :: ODoc -> ODoc, 
-                               _abc_anno  :: ODoc -> ODoc }  
+type Annotation = [WrappedAnno]
 
-           
-instance Show Annotation where
-  show (Annotation _ _) = "<Annotation>"
-  
 
-  
-  
+data WrappedAnno = forall a. Typeable a => WrapAnno a
+
+instance Show WrappedAnno where show _ = "<Anno>"
+
+
 type Label = String
 
 -- splitting!
@@ -85,22 +84,6 @@ instance Show Atom where
 -- The Element datatype - represents elements with a 'unit duration'.
 -- E.g a chord has a set of pitches but the unit duration is common to all 
 -- of them. 
-
--- Note - not much structure is imposed on the 'music'. 
--- There are special constructors for Element only where 
--- they need special interpretation for duration:
--- chord - simultaneous, gracesnotes - subraction from preceeding or suceeding
--- note.
--- Other grouped elements (e.g. notes grouped by a slur) have no 'syntax',
--- instead the are represented 'lexically' - a slur_begin mark would indicate
--- the start of a slur and a slur_end mark the end.
--- HNotate generally views the notelist as a stream of lexemes rather than a
--- parse tree.
-
-
-
-
-
 data Element = Atom { element               :: Atom }                  
               
               | Chord { chord_elements      :: Seq (Pitch, Annotation), 
@@ -129,6 +112,28 @@ data Mark phantom = Marker { _ly_output   :: ODoc,
 instance Show (Mark a) where
   show (Marker _ _) = "<Mark>"          
 
+-- Annotations are interpreted /outside/ HNotate. Thus every annotated 
+-- constructor has a corresponding /tag/ which user code pattern matches on.
+--  
+-- There is no HnAtom - atoms are annotated individually (per constructor).
+data HnElement = HnChord | HnGraceNotes | HnNplet
+  deriving (Eq,Show)
+
+-- Marks and RhythmicMarks are unannotated - annotations can be collected
+-- in the mark itself.
+data HnAtom = HnNote | HnRest | HnSpacer
+  deriving (Eq,Show)
+  
+data AnnoEval = AnnoEval {
+     annotate_element :: HnElement -> Annotation -> ODocS,
+     annotate_element_part ::  HnElement -> Annotation -> ODocS,
+     annotate_atom :: HnAtom -> Annotation -> ODocS
+  }
+
+evalNoAnnos :: AnnoEval
+evalNoAnnos = AnnoEval (\_ _ -> id) (\_ _ -> id) (\_ _ -> id) 
+    
+  
 npletDuration :: Int -> Duration -> Duration
 npletDuration len unit_d = (fromIntegral len % 1) * unit_d                                        
                                            
@@ -356,12 +361,6 @@ instance Fits Element Duration where
        
 --------------------------------------------------------------------------------
 -- Annotations and marks
-
-applyLyAnno :: Annotation -> ODoc -> ODoc
-applyLyAnno (Annotation {_ly_anno=f}) d = f d 
-
-applyAbcAnno :: Annotation -> ODoc -> ODoc
-applyAbcAnno (Annotation {_abc_anno=f}) d = f d   
   
 lyOutput :: Mark a -> ODoc
 lyOutput mark = _ly_output mark
@@ -369,16 +368,13 @@ lyOutput mark = _ly_output mark
 abcOutput :: Mark a -> ODoc
 abcOutput mark = _abc_output mark
 
-instance Monoid Annotation where
-  mempty = Annotation { _ly_anno=id, _abc_anno=id } 
-  Annotation f g `mappend` Annotation f' g' = Annotation (f . f') (g . g') 
 
 -- need a class like PitchValue for Annotation....
 
 class NoAnno a where noAnno :: a -> a
 
 instance NoAnno GraceNote where
-  noAnno (p,d,_) = (p,d,mempty)
+  noAnno (p,d,_) = (p,d,[])
 
 instance NoAnno (Seq GraceNote) where
   noAnno = fmap noAnno 
@@ -540,10 +536,7 @@ emptyElement (Chord se _ _)         = S.null se
 emptyElement (GraceNotes se _)      = S.null se
 emptyElement (Nplet _ _ se _)       = S.null se
   
-        
-composeAnnos :: Annotation -> Annotation -> Annotation
-composeAnnos (Annotation ly1 abc1) (Annotation ly2 abc2) =
-    Annotation (ly2 . ly1) (abc2 . abc1) 
+
 
 
 

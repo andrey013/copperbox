@@ -142,20 +142,18 @@ instance Witness Env where textrep = wpp . pp
 instance PP Element where
   pp (Atom e)             = pp e
   
-  pp (Chord se d a)       = applyLyAnno a $ 
-                                brackets (hsep $ fmap (pp . fst) se) 
-                                              <> prime <> pp d
+  pp (Chord se d _)       = brackets (hsep $ fmap (pp . fst) se) 
+                                <> prime <> pp d
       
-  pp (GraceNotes se a)    = applyLyAnno a $ braces (hsep $ fmap fn se) 
-    where fn (p,d,_) = pp p <> prime <> pp d
+  pp (GraceNotes se _)    = braces (hsep $ fmap fn se) where 
+                                fn (p,d,_) = pp p <> prime <> pp d
     
-  pp (Nplet _ _ se a)     = applyLyAnno a $ 
-                                braces (hsep $ fmap (pp . fst) se)    
-  
+  pp (Nplet _ _ se _)     = braces (hsep $ fmap (pp . fst) se)    
+
 instance PP Atom where
-  pp (Note p d a)           = applyLyAnno a (pp p <> prime <> pp d)
-  pp (Rest d a)             = applyLyAnno a (char 'r' <> pp d)  
-  pp (Spacer d a)           = applyLyAnno a (char 's' <> pp d)
+  pp (Note p d _)           = pp p <> prime <> pp d
+  pp (Rest d _)             = char 'r' <> pp d 
+  pp (Spacer d _)           = char 's' <> pp d
   pp (RhythmicMark l d _)   = text l <> prime <> pp d
   pp (Mark l _)             = text l
   pp Tie                    = char '~'
