@@ -36,23 +36,11 @@ abc_output    = "out/abc-tuplet.abc"
 
 main :: IO ()
 main = do 
-    outputLilyPond 3 tuplet_sys   ly_template   ly_output
-    outputAbc      3 tuplet_sys   abc_template  abc_output
+    outputLilyPond DebugOn tuplet_sys   ly_template   ly_output
+    outputAbc      DebugOn tuplet_sys   abc_template  abc_output
 
 
--- 
--- testing
 
-tnotes :: Seq Pitch
-tnotes = fromList [c4,d4,e4]
-
-triplet :: Grouping
-triplet = Nplet 2 eighth tnotes noAnno
-
-demo :: Grouping
-demo = modifyDuration triplet sixteenth
-
--- ddemo = npletDuration 2 eighth 
 
  
 

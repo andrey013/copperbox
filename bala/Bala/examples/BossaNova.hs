@@ -5,7 +5,7 @@
 
 module BossaNova where
 
-import Bala.Base
+import Bala.Base hiding (replicate)
 import Bala.Base.DrumOutput (drumPitch)
 import Bala.Base.OutputHNotate
 import Bala.Base.OutputMidi
@@ -53,7 +53,7 @@ main = do
 
 
 genLy :: IO ()
-genLy = outputLilyPondDocu 5 bossa_sys bossa_doc "./out/bossa_nova.ly"
+genLy = outputLilyPondDocu DebugOn bossa_sys bossa_doc "./out/bossa_nova.ly"
   where
     bossa_sys = system1 "bossa_nova"  bossa_eventlist
     bossa_eventlist = genGenerateEventList drumFoldStep bossa_nova    

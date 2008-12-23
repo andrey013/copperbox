@@ -58,14 +58,14 @@ groupChords :: [H.Event] -> [[H.Event]]
 groupChords = groupBy (\a b -> H.eTime a == H.eTime b)
 
     
-evt :: [H.Event] -> (H.Time, H.DurT, Grouping)
+evt :: [H.Event] -> (H.Time, H.DurT, Element)
 evt [e]     = event1 e
 evt (e:es)  = let chord_notes       = fromList $ sort $ map convert (e:es)
                   e_dur             = H.eDur e
                   e_onset           = H.eTime e
               in (e_onset, e_dur, chordGrp chord_notes (convert e_dur))
           
-event1 :: H.Event -> (H.Time, H.DurT, Grouping)
+event1 :: H.Event -> (H.Time, H.DurT, Element)
 event1 e@(H.Event {H.eTime=onset, H.eDur=drn}) = 
     (onset,drn, noteSgl (convert e) (convert drn))
 

@@ -62,7 +62,7 @@ scales_doc =
     
 output_ly_scales :: IO ()
 output_ly_scales = 
-  outputLilyPondDocu  5 scales_sys scales_doc "./out/fingered_scale.ly"
+  outputLilyPondDocu DebugOn scales_sys scales_doc "./out/fingered_scale.ly"
 
     
 main = output_ly_scales

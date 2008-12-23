@@ -43,28 +43,31 @@ import qualified Data.Map as Map
 import Text.ParserCombinators.Parsec (parseFromFile)
 
 
-
+data DebugLevel = DebugOn | DebugOff
+  deriving (Eq,Show)
 
 -- {NOTE} Some elements in the env have defaults
 -- that might be too arbitrary (e.g. meter pattern)
 
-outputLilyPond :: Int -> System -> FilePath -> FilePath -> IO ()
+outputLilyPond :: DebugLevel -> System -> FilePath -> FilePath -> IO ()
 outputLilyPond dl sys inp outp   =
-    runMain (filebasedOutput lyExprParse lyTextSource) 
-            (makeLyEnv dl) 
-            (makeLyConfig sys inp outp)
+    runMain dl (filebasedOutput lyExprParse lyTextSource) 
+               default_ly_env 
+               (makeLyConfig sys inp outp)
             
              
-outputAbc :: Int -> System -> FilePath -> FilePath -> IO ()
+outputAbc :: DebugLevel -> System -> FilePath -> FilePath -> IO ()
 outputAbc dl sys inp outp =
-    runMain (filebasedOutput abcExprParse abcTextSource) 
-            (makeAbcEnv dl) 
-            (makeAbcConfig sys inp outp)
+    runMain dl (filebasedOutput abcExprParse abcTextSource) 
+               default_abc_env 
+               (makeAbcConfig sys inp outp)
  
-runMain :: (NotateT IO ()) -> Env -> Config -> IO ()
-runMain mf env cfg = runNotateT mf env cfg >>= fn where
-    fn (Left err,logg) = reportFailureIO logg err
-    fn (Right _, logg)  = putStrLn logg
+runMain :: DebugLevel -> (NotateT IO ()) -> Env -> Config -> IO ()
+runMain dl mf env cfg = runNotateT mf env cfg >>= fn where
+    fn (Left err,logg)  = reportFailureIO logg err
+    fn (Right _, logg)  = if (dl==DebugOn) then putStrLn logg 
+                                           else putStrLn "Done."
+                             
 
 reportFailureIO :: String -> NotateErr -> IO ()
 reportFailureIO log_msg (NotateErr err) = 
@@ -107,17 +110,17 @@ filebasedOutput expr_parser src_parser  = do
 
 
 
-outputLilyPondDocu :: Int -> System -> LilyPondTemplate -> FilePath -> IO ()
+outputLilyPondDocu :: DebugLevel -> System -> LilyPondTemplate -> FilePath -> IO ()
 outputLilyPondDocu dl sys (LyTemplate docuh) outpath =
-    runMain (docuOutput docuh) (makeLyEnv dl) lycfg 
+    runMain dl (docuOutput docuh) default_ly_env lycfg 
   where
     lycfg  = makeLyConfig sys "" outpath
  
 
 
-outputAbcDocu :: Int -> System -> AbcTemplate -> FilePath -> IO ()
+outputAbcDocu :: DebugLevel -> System -> AbcTemplate -> FilePath -> IO ()
 outputAbcDocu dl sys (AbcTemplate docuh) outpath =
-    runMain (docuOutput docuh) (makeAbcEnv dl) abccfg
+    runMain dl (docuOutput docuh) default_abc_env abccfg
   where
     abccfg = makeAbcConfig sys "" outpath    
     
@@ -183,7 +186,7 @@ outputRelativeNoteList aeval =
 
     
 outputAbsoluteNoteList :: Monad m => AnnoEval -> NoteList -> NotateT m ODoc
-outputAbsoluteNoteList aeval = witness 3 "Lilypond 'absolute'" >=> fn where
+outputAbsoluteNoteList aeval = witness "Lilypond 'absolute'" >=> fn where
   fn = lilypondAbsoluteForm >=> translateLilyPond lyConcat aeval  
    
 

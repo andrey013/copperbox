@@ -57,7 +57,7 @@ main = do
 
 
 genLy :: IO ()
-genLy = outputLilyPondDocu 5 chacha_sys chacha_doc "./out/cha_cha.ly"
+genLy = outputLilyPondDocu DebugOn chacha_sys chacha_doc "./out/cha_cha.ly"
   where
     chacha_sys = system1 "cha_cha"  chacha_eventlist
     chacha_eventlist = genGenerateEventList drumFoldStep cha_cha   

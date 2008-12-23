@@ -26,6 +26,6 @@ abc_output     = "out/abc-cadenza.abc"
 
 main :: IO ()
 main = do
-    outputLilyPond 5 cadenzaLy   ly_template   ly_output
-    outputAbc      5 cadenzaAbc  abc_template  abc_output
+    outputLilyPond DebugOn cadenzaLy   ly_template   ly_output
+    outputAbc      DebugOn cadenzaAbc  abc_template  abc_output
     

@@ -44,8 +44,8 @@ abc_output    = "out/abc-bulgarian6.abc"
 
 main :: IO ()
 main = do 
-    outputLilyPond 3 bulgarian6   ly_template   ly_output
-    outputAbc      3 bulgarian6   abc_template  abc_output
+    outputLilyPond DebugOn bulgarian6   ly_template   ly_output
+    outputAbc      DebugOn bulgarian6   abc_template  abc_output
     
  
 

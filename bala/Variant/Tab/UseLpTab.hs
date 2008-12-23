@@ -20,7 +20,7 @@ main = do
 
     mkSys = H.system1 "tab" . toEventList std_tuning
 
-    outSys sys = H.outputLilyPondDocu 5 sys tab_doc "./_out/tab.ly"
+    outSys sys = H.outputLilyPondDocu H.DebugOn sys tab_doc "./_out/tab.ly"
     
     tab_doc = lilypond 
                   [   definition "tabMelody" 

@@ -30,6 +30,8 @@ genMidi = writeMidi "./out/samba_baiao.mid" samba_midi
   where
     samba_midi = generateMidi Nothing [(Electric_piano_1,samba_baiao)] 
     
-    
+main :: IO ()
 main = do 
     genMidi 
+    
+    

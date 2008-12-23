@@ -27,7 +27,7 @@ example2 = root # chordL [c4,e4,g4] du4
 -- | example 3 - successors and grace.
 example3 :: EventList
 example3 = 
-    root # note c4 du4 # agracesL [(a4,du32), (b4,du32)]
+    root # note c4 du4 # gracesL [(a4,du32), (b4,du32)]
          # note c4 du4 # note d4 du4 # note e4 du4
 
 
@@ -58,7 +58,7 @@ example6a =
     root # note c4 du4 # a_b_grace # c_triad # note d4 du4
          # note e4 du4
   where
-    a_b_grace = agracesL [(a4,du32), (b4,du32)]
+    a_b_grace = gracesL [(a4,du32), (b4,du32)]
     c_triad   = chordL [c4,e4,g4] du4   
        
 example6b :: EventList       
@@ -99,14 +99,8 @@ abc_output    = "out/abc-trees.abc"
 
 main :: IO ()
 main = do
-    outputAbc       3 example_sys  abc_template  abc_output
-    outputLilyPond  3 example_sys  ly_template   ly_output
-    midiTrees
+    outputAbc       DebugOn example_sys  abc_template  abc_output
+    outputLilyPond  DebugOn example_sys  ly_template   ly_output
 
-midiTrees :: IO ()
-midiTrees = 
-    outputMidi upd_env allEventLists example_sys  "./out/trees.mid"
-  where 
-    upd_env = set_sequential_midi_output 1000
     
                               

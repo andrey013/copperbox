@@ -9,7 +9,7 @@ import Bala.Base
 import Bala.MusicRep
 
 import qualified HNotate as H
-import HNotate ( system1, root, (|#) )
+import HNotate ( system1, root, ( # ) )
 
 import Data.List
 
@@ -36,11 +36,14 @@ playnotes ps bs = step ps bs where
     step (p:ps) (N d :bs) = note p d : step ps bs
     step ps     (R d :bs) = rest d   : step ps bs
     step ps     []        = error "playnotes - empty beat list"
+
+{-
+-- TO DO - use ZMidi...
   
 pitchEventSystem :: String -> [Event] -> H.System
 pitchEventSystem name = system1 name . foldl' fn root where
-    fn evts (Note p d)        = evts |# H.note p d
-    fn evts (Rest d)          = evts |# H.rest d
+    fn evts (Note p d)        = evts # H.note p d
+    fn evts (Rest d)          = evts # H.rest d
 
 outputScale :: String -> Scale -> FilePath -> IO ()
 outputScale name sc path = 
@@ -53,4 +56,4 @@ main = do
     outputScale "a_major"      a_major      "./out/a_major_scale.mid"
     outputScale "a_flat_major" a_flat_major "./out/a_flat_major_scale.mid"
 
-    
+-}    

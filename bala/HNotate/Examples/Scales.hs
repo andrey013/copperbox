@@ -22,10 +22,10 @@ ly_output     = "out/ly-major-scales.ly"
 abc_template  = "templates/abc0-major-scales.abc"
 abc_output    = "out/abc-major-scales.abc"
 
-outputScales :: IO ()
-outputScales = do 
-    outputLilyPond 3 major_scales     ly_template     ly_output
-    outputAbc      3 major_scales     abc_template    abc_output
+main :: IO ()
+main = do 
+    outputLilyPond DebugOn major_scales     ly_template     ly_output
+    outputAbc      DebugOn major_scales     abc_template    abc_output
 
   
     

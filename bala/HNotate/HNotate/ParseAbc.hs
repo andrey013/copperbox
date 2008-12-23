@@ -41,9 +41,9 @@ abcExprParse path =
                              >>= (o2 . parse parseAbc path)
                              >>= eitherSkM (o3 . translateAbcScore) 
   where
-    o1 = textoutput 3 "Postprocessed Abc source..."
-    o2 = witness    3 "Parsed Abc source..."
-    o3 = witness    3 "Abc translated to expression representation..."
+    o1 = textoutput "Postprocessed Abc source..."
+    o2 = witness    "Parsed Abc source..."
+    o3 = witness    "Abc translated to expression representation..."
 
        
 --------------------------------------------------------------------------------

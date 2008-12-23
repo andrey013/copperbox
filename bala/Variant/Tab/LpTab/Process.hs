@@ -17,9 +17,9 @@
 
 module LpTab.Process where
 
-import LpTab.Datatypes
+import LpTab.Datatypes 
 
-import Bala.Base
+import Bala.Base hiding (filter,groupBy,transpose)
 
 import qualified HNotate as H
 import HNotate ( ( # ) )
@@ -92,6 +92,6 @@ toEventList tuning ts = foldl' fn H.root $ map (lilypondSysME tuning) ts
   where
     fn tree xs = foldl' addBar tree xs
     addBar tree (Bar xs) = foldl' addElt tree xs
-    addElt tree (LyNote p sn _)  = tree # H.note' p quarter (H.stringNum sn)
+    addElt tree (LyNote p sn _)  = tree # H.note' p quarter (H.stringNumber sn)
     addElt tree (LyChord xs _)   = tree 
     addElt tree (LyRest _)       = tree # H.rest quarter  

@@ -16,7 +16,7 @@
 
 module Bala.MusicRep.Meter where
 
-import Bala.Base.BaseExtra
+import Bala.Base.BaseExtra hiding (replicate)
 import Bala.Base.Duration 
 
 import Data.Ratio

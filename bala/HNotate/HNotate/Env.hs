@@ -20,8 +20,8 @@ module HNotate.Env (
 
     
     -- env
-    makeLyEnv,
-    makeAbcEnv,
+    default_ly_env,
+    default_abc_env,
     
     -- config
     makeLyConfig,
@@ -61,7 +61,6 @@ import HNotate.Data
 import HNotate.Document
 import HNotate.Duration
 import HNotate.NoteListDatatypes (System, OutputFormat(..) )
-import HNotate.NotateMonad
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
 
@@ -79,7 +78,6 @@ import Data.Ratio
  
 data Env = Env { 
     _output_format      :: OutputFormat,
-    _debug_level        :: Int,
     _current_key        :: Key,
     _label_set          :: LabelSet,
     _current_meter      :: Meter,
@@ -103,18 +101,13 @@ data Config = Config {
     }
 
   
-instance DebugLevel Env where 
-    debug_level  = _debug_level
-
-
 
 --------------------------------------------------------------------------------
 -- Defaults
 
-makeLyEnv :: Int -> Env
-makeLyEnv dl = Env {
-    _output_format          = OutputLy,
-    _debug_level            = dl, 
+default_ly_env :: Env
+default_ly_env = Env {
+    _output_format          = OutputLy, 
     _current_key            = c_major,
     _label_set              = c_major'ls,
     _current_meter          = four_four,
@@ -132,10 +125,9 @@ makeLyEnv dl = Env {
     lyComment str = enclose (text "%{ ") (text " %}") (string str)             
 
 
-makeAbcEnv :: Int -> Env
-makeAbcEnv dl = Env {
-    _output_format          = OutputAbc, 
-    _debug_level            = dl,
+default_abc_env :: Env
+default_abc_env = Env {
+    _output_format          = OutputAbc,
     _current_key            = c_major,
     _label_set              = c_major'ls,
     _current_meter          = four_four,

@@ -37,9 +37,9 @@ lyExprParse path =
     eitherSkM' (return . parse lyScore path)         >>= o2 >>= 
     eitherSkM  (return . translateLyScore)           >>= o3 
   where
-    o1 = witness 3 "Postprocessed LilyPond source..."
-    o2 = witness 3 "Parsed LilyPond source..."
-    o3 = witness 3 "LilyPond translated to expression representation..."
+    o1 = witness "Postprocessed LilyPond source..."
+    o2 = witness "Parsed LilyPond source..."
+    o3 = witness "LilyPond translated to expression representation..."
     
 --------------------------------------------------------------------------------
 -- translate

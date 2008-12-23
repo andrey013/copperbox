@@ -99,8 +99,6 @@ runNotateMonadT m env cfg =
 
 -- Specialized printers 
 
-class DebugLevel cfg where debug_level :: cfg -> Int
-  
 class Witness a where textrep :: a -> String
 
 instance Witness ODoc where textrep = wpp
@@ -109,27 +107,21 @@ wpp :: ODoc -> String
 wpp = formatted 0 70
 
 
-primOutput :: (Monad m, DebugLevel env) => 
-              Int -> String -> NotateMonadT env cfg m ()
-primOutput i s = do 
-  x <- asks debug_level
-  when (i <= x) (tell s >> tell "\n")
+primOutput :: Monad m => String -> NotateMonadT env cfg m ()
+primOutput s = tell s >> tell "\n"
     
 
 
-witness :: (Monad m, DebugLevel env, Witness a) => 
-           Int -> String -> a -> NotateMonadT env cfg m a 
-witness i s a = primOutput i s >> primOutput i (textrep a) >> return a
+witness :: (Monad m, Witness a) => 
+           String -> a -> NotateMonadT env cfg m a 
+witness s a = primOutput s >> primOutput (textrep a) >> return a
 
-steno :: (Monad m, DebugLevel env) => 
-           Int -> String -> (a -> String) -> a -> NotateMonadT env cfg m a 
-steno i s f a = primOutput i s >> primOutput i (f a) >> return a
+steno :: Monad m => String -> (a -> String) -> a -> NotateMonadT env cfg m a 
+steno s f a = primOutput s >> primOutput (f a) >> return a
 
-document :: (Monad m, DebugLevel env) => 
-           Int -> String -> (a -> ODoc) -> a -> NotateMonadT env cfg m a 
-document i s f a = primOutput i s >> primOutput i (wpp $ f a) >> return a
+document :: Monad m => String -> (a -> ODoc) -> a -> NotateMonadT env cfg m a 
+document s f a = primOutput s >> primOutput (wpp $ f a) >> return a
 
-textoutput :: (Monad m, DebugLevel env) => 
-              Int -> String -> String ->  NotateMonadT env cfg m String
-textoutput i title a = primOutput i title >>  primOutput i a >> return a
+textoutput :: Monad m => String -> String ->  NotateMonadT env cfg m String
+textoutput title a = primOutput title >>  primOutput a >> return a
 

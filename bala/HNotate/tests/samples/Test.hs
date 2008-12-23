@@ -89,8 +89,8 @@ outputTestScore ts = do
     putDashedLine
     putStrLn (message ts)
     putDashedLine
-    outputAbc      3 (ts_system ts)   (abc_template ts)  (abc_outfile ts)
-    outputLilyPond 3 (ts_system ts)   (ly_template ts)   (ly_outfile ts)
+    outputAbc      DebugOn (ts_system ts)   (abc_template ts)  (abc_outfile ts)
+    outputLilyPond DebugOn (ts_system ts)   (ly_template ts)   (ly_outfile ts)
     runAbcOn       (abc_outfile ts)
     runLilyPondOn  (ly_outfile ts)
 
@@ -100,7 +100,7 @@ outputTestScore_lyOnly ts = do
     putDashedLine
     putStrLn (message ts)
     putDashedLine
-    outputLilyPond 3 (ts_system ts)   (ly_template ts)   (ly_outfile ts)
+    outputLilyPond DebugOn (ts_system ts)   (ly_template ts)   (ly_outfile ts)
     runLilyPondOn  (ly_outfile ts)
 
 

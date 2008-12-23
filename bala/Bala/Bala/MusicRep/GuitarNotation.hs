@@ -18,7 +18,7 @@
 
 module Bala.MusicRep.GuitarNotation where
 
-import Bala.Base.BaseExtra
+import Bala.Base.BaseExtra hiding (foldr, zip)
 import Bala.Base.Pitch
 
 import Data.List

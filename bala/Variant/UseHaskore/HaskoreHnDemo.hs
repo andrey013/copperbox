@@ -32,7 +32,7 @@ t251_ly_template = "templates/ly0-t251.ly"
 t251_ly_output   = "out/ly-t251.ly"
 
 demo1 = do 
-    outputLilyPond 5 t251_sys  t251_ly_template t251_ly_output
+    outputLilyPond DebugOn t251_sys  t251_ly_template t251_ly_output
 
  
 middle'c = c 5 hn
@@ -68,7 +68,7 @@ sys_ssf = psystem (makePerf ssf)
 
 -- This one fails - it has an unrenderable duration... 
 demo2 = do 
-    outputLilyPond 5 sys_ssf  ssf_ly_template   ssf_ly_output
+    outputLilyPond DebugOn sys_ssf  ssf_ly_template   ssf_ly_output
 
     
 sim1_ly_template   = "templates/ly0-sim1.ly"
@@ -81,7 +81,7 @@ sys_sim1 = psystem (makePerf $ sim1 3)
 
 
 demo3 = do 
-    outputLilyPond 5 sys_sim1  sim1_ly_template   sim1_ly_output
+    outputLilyPond DebugOn sys_sim1  sim1_ly_template   sim1_ly_output
 
     
 

@@ -35,7 +35,6 @@ import HNotate.PPInstances () -- get Witness instances
 import HNotate.ProcessingBase
 import HNotate.Traversals
 
-import Control.Applicative ( (<$>) )
 import Control.Monad.Error
 import Control.Monad.Reader
 import qualified Data.Foldable as F
@@ -53,8 +52,8 @@ translateLilyPond bf aeval nl = report $ outputNoteList bf aeval nl
   where  
     report :: Monad m => ODoc -> NotateT m ODoc
     report m = do env <- ask
-                  witness 3 "Current environment is..." env
-                  witness 3 "LilyPond output..." m
+                  witness "Current environment is..." env
+                  witness "LilyPond output..." m
             
 
 lilypondAbsoluteForm :: Monad m => NoteList -> NotateT m NoteList

@@ -47,24 +47,23 @@ genMidi = writeMidi "./out/samba_baiao.mid" samba_midi
 
 
 genLy :: IO ()
-genLy = outputLilyPondDocu 5 samba_sys samba_doc "./out/samba_baiao.ly"
+genLy = outputLilyPondDocu DebugOn samba_sys samba_doc "./out/samba_baiao.ly"
   where
     samba_sys = system1 "samba_baiao"  samba_eventlist
     samba_eventlist = generateEventList samba_baiao    
     samba_doc = lilypond 
-                  [ version
+                  [  version
                   
-                  , header                  $
-                    title "Samba Baiao"     $
-                    noExpr
+                  ,  header             
+                   . title "Samba Baiao"
                          
-                  , definition "sambaBaiao" $
-                    relative middle_c       $ 
-                    time 2 4                $
-                    key c_nat major         $
-                    outputRelative "samba_baiao"
+                  ,  definition "sambaBaiao"
+                   . relative middle_c 
+                   . time 2 4
+                   . key c_nat major
+                   . outputRelative "samba_baiao"
                   
-                  , book $ score $ invocation "sambaBaiao"
+                  , book . score . invocation "sambaBaiao"
                   ]  
     
 

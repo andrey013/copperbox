@@ -23,7 +23,7 @@ import HNotate.CommonUtils
 import HNotate.DocAbc
 import HNotate.Document
 import HNotate.Duration
-import HNotate.Env (label_set, unit_note_length, Config(..))
+import HNotate.Env (label_set, unit_note_length)
 import HNotate.NoteListDatatypes hiding (note, rest, spacer, chord, 
                                          nplet, element)
 import HNotate.NotateMonad
@@ -55,8 +55,8 @@ translateAbc bf aeval notes = do
   where
     report :: Monad m => ODoc -> NotateT m ODoc
     report m = ask >>= \env ->
-            witness 3 "Current environment is..." env >>
-            witness 3 "Abc output..." m
+            witness "Current environment is..." env >>
+            witness "Abc output..." m
 
 
 

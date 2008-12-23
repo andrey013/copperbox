@@ -16,7 +16,7 @@
 
 module Bala.MusicRep.Scale where
 
-import Bala.Base.BaseExtra
+import Bala.Base.BaseExtra hiding (foldr)
 import Bala.Base.Pitch
 
 import Bala.MusicRep.Interval
