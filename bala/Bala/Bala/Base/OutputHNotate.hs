@@ -21,7 +21,6 @@
 module Bala.Base.OutputHNotate where
 
 import Bala.Base.DrumOutput
-import Bala.Base.Pitch
 import Bala.Base.Structural
 
 import qualified HNotate as H
@@ -98,12 +97,12 @@ genDrumFoldStep fn t (ChordE se d)        =
         [x]  -> t # H.drumnote x d
         xs   -> t # H.drumchord xs d
          
-genDrumFoldStep fn t a                    = motifFoldStep t a
+genDrumFoldStep _ t a                    = motifFoldStep t a
 
 
 
 drumChord :: DrumMapping a => 
-    (a -> H.Mark H.DrumMark) -> [Pitch] -> [H.Mark H.DrumMark]
+    (a -> H.Mark H.DrumMark) -> [H.Pitch] -> [H.Mark H.DrumMark]
 drumChord fn = map fn . catMaybes . map drumName
 
 

@@ -27,7 +27,6 @@ import Bala.Base.Pitch
 import HNotate.Fits
 
 import Control.Applicative hiding (empty)
-
 import qualified Data.Foldable as F
 import Data.Generics
 import Data.List (sort)
@@ -127,7 +126,7 @@ chord ps d  = ChordE (fromList $ sort ps) d
 
 -- functor
 instance Functor SectionF where
-  fmap f (Section tm se)        = Section tm (fmap (fmap f) se)
+  fmap f (Section tm se)      = Section tm (fmap (fmap f) se)
   
 -- Should we recalulate the cache duration? (Is it actually useful?)
 instance Functor PhraseF where
@@ -135,18 +134,18 @@ instance Functor PhraseF where
   fmap f (Overlay mo smo)     = Overlay (fmap f mo) (fmap (fmap f) smo) 
   
 instance Functor MotifF where
-  fmap f (Motif se)             = Motif (fmap f se)
+  fmap f (Motif se)           = Motif (fmap f se)
 
 -- foldable
 instance F.Foldable SectionF where
-  foldMap f (Section tm se)     = F.foldMap (F.foldMap f) se
+  foldMap f (Section _ se)    = F.foldMap (F.foldMap f) se
   
 instance F.Foldable PhraseF where
   foldMap f (Single mo)       = F.foldMap f mo
   foldMap f (Overlay mo smo)  = F.foldMap (F.foldMap f) (mo <| smo) 
   
 instance F.Foldable MotifF where
-  foldMap f (Motif se)          = F.foldMap f se
+  foldMap f (Motif se)        = F.foldMap f se
   
   
 -- traversable   
@@ -176,7 +175,7 @@ instance RhythmicValue Event where
   updateDuration d (SpacerE _)      = SpacerE d
   updateDuration d (AGraceE se p _) = AGraceE se p d 
   updateDuration d (UGraceE p _ se) = UGraceE p d se
-  updateDuration d (MarkE m)        = MarkE m
+  updateDuration _ (MarkE m)        = MarkE m
  
 instance PitchValue Event where
   pitchValue (NoteE p _)            = [p]
@@ -186,11 +185,11 @@ instance PitchValue Event where
   pitchValue _                      = []
   
      
-  updatePitch [p]     (NoteE _ d)      = NoteE p d 
-  updatePitch pc      (ChordE se d)    = ChordE (updatePitch pc se) d
-  updatePitch (p:pc)  (AGraceE se _ d) = AGraceE (updatePitch pc se) p d
-  updatePitch (p:pc)  (UGraceE _ d se) = UGraceE p d (updatePitch pc se)
-  updatePitch _       e               = e
+  updatePitch [p]     (NoteE _ d)       = NoteE p d 
+  updatePitch pc      (ChordE se d)     = ChordE (updatePitch pc se) d
+  updatePitch (p:pc)  (AGraceE se _ d)  = AGraceE (updatePitch pc se) p d
+  updatePitch (p:pc)  (UGraceE _ d se)  = UGraceE p d (updatePitch pc se)
+  updatePitch _       e                 = e
   
 instance PitchValue GraceNotes where
   pitchValue  = F.toList . fmap fst
@@ -258,8 +257,8 @@ picture d sn = F.foldr fn [] $ linearTransform $ fmapMotif (inexactClave d) sn
 
   
 inexactClave :: (Sounds a, RhythmicValue a) => Duration -> MotifF a -> MotifF Clave
-inexactClave d = 
-    Motif . fmap aggregateToClave . segment False d . rhythmicEvents . getMotif
+inexactClave drn = 
+    Motif . fmap aggregateToClave . segment False drn . rhythmicEvents . getMotif
   where
 
     aggregateToClave :: Seq RhythmicEvent -> Clave
@@ -327,7 +326,7 @@ packToSquare s@(Section tm se) = Section tm $ fmap fn se where
 -- just spacer pack the motifs inside a phrase with this transformation.
 -- This stops us having \ragged overlays\.  
 packToLength :: (Fits a Duration, Sounds a) => SectionF a -> SectionF a
-packToLength s@(Section tm se) = Section tm $ fmap fn se where
+packToLength (Section tm se) = Section tm $ fmap fn se where
     fn :: (Fits a Duration, Sounds a) => PhraseF a -> PhraseF a
     fn ph = spacerPackLength (regularPhraseDuration tm ph) ph
     
@@ -378,7 +377,7 @@ spacerPackLength w (Overlay mo smo)   =
                                 
                             
 spacerPack :: (Fits a Duration, Sounds a) => Duration -> MotifF a -> MotifF a
-spacerPack d (Motif se) = work d (sumMeasure se) where
+spacerPack drn (Motif se) = work drn (sumMeasure se) where
   work d l | l >= d     = Motif se      -- (>d) could throw error instead
            | otherwise  = Motif $ se |> spacer (d - l)
            

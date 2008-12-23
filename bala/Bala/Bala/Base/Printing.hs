@@ -24,7 +24,6 @@ import Bala.Base.Pitch
 import Bala.Base.Structural
 
 import qualified Data.Foldable as F
-import qualified Data.Map as Map
 import Data.Sequence hiding (empty)
 import Data.Ratio
 
@@ -33,10 +32,10 @@ import Text.PrettyPrint.HughesPJ
 
 
 genPunctuateSeq :: (a -> Doc) -> Doc -> Seq a -> Doc
-genPunctuateSeq pp sep = para phi empty
+genPunctuateSeq pp hyph = para phi empty
   where 
     phi c (se,  d)  | null se        = pp c <> d 
-                    | otherwise      = pp c <> sep <> d
+                    | otherwise      = pp c <> hyph <> d
 
 angles :: Doc -> Doc
 angles d = text "<" <+> d <+> text ">"
@@ -66,7 +65,7 @@ ppRhythmicEvent (Rests d)   = text ".'" <> ppDuration d
   
 ppSection :: Section -> Doc
 ppSection (Section tm se) = 
-    vcat $ map numberedPharse (zip (F.toList se) [1..])
+    ppTimeSig tm $+$ (vcat $ map numberedPharse (zip (F.toList se) [1..]))
   where    
     numberedPharse :: (Phrase,Int) -> Doc
     numberedPharse (ph,i) = text "|:" <>  int i $$ nest 4 (ppPhrase ph) 
@@ -77,6 +76,8 @@ genPPPhraseF f op (Overlay mo smo)   =
     dblangles $ fsep $ punctuate (text " // ") (map (genPPMotifF f op) xs) 
   where xs = mo : F.toList smo
   
+ppTimeSig :: TimeSig -> Doc
+ppTimeSig (n,d) = parens $ int n <> char '/' <> int d
   
 ppPhrase :: Phrase -> Doc
 ppPhrase (Single mo)        = ppMotif mo
@@ -133,7 +134,7 @@ ppAccidental Nat                = empty
 ppAccidental Sharp              = text "is"
 ppAccidental DoubleSharp        = text "isis"
 
-
+ppDuration :: Ratio Integer -> Doc
 ppDuration r = let (n,d) = (numerator r, denominator r) in
                integer n <> char '/' <> integer d    
                

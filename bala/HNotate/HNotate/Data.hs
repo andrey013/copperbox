@@ -148,16 +148,11 @@ defaultMeterPattern CutTime       = ([2,2], eighth)
 
 
 log2whole :: Integral a => a -> Bool
-log2whole i = f i == (0::Double) 
-  where
-    f :: Integral a => a -> Double
-    f = snd . pf . logBase 2 . toDouble
+log2whole i = f i == 0 where
+    f = snd . pf . logBase 2 . fromIntegral
     
-    pf :: Double -> (Integer, Double)
+    pf :: Double -> (Int, Double)
     pf = properFraction
-    
-    toDouble :: Integral a => a -> Double 
-    toDouble = fromIntegral
 
 compoundMeter :: (Int,Int) -> Bool
 compoundMeter (n,d) = log2whole d && (n `mod` 3 == 0)

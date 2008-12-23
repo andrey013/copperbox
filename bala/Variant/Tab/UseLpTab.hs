@@ -1,4 +1,4 @@
-
+{-# OPTIONS -Wall #-}
 
 -- ghci ...
 -- :set -i../../Bala:../../HNotate
@@ -6,11 +6,10 @@
 module UseLpTab where
 
 import LpTab.LpTab
-import Bala.Base
 import qualified HNotate as H
 import HNotate.DocLilyPond
-import Text.ParserCombinators.Parsec
 
+main :: IO ()
 main = do 
     ans <- tabParse "./_tabs/demo01.lptab"
     either fk sk ans

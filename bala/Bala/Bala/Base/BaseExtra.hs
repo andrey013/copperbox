@@ -36,7 +36,7 @@ module Bala.Base.BaseExtra (
   -- * Utility functions 
   dup, ffst, fsnd, fork, prod,
   
-  applyi, zam, 
+  applyi, 
   mod12, mod7,
   sub, sub1, 
   andthen, ora, anda,
@@ -57,8 +57,8 @@ module Bala.Base.BaseExtra (
   ) where
 
 import HNotate.SequenceExtras
+import HNotate.Data (log2whole)
 
-import qualified Data.Foldable as F
 import Data.List (unfoldr)
 import Data.Sequence
 import Numeric (showHex)
@@ -117,7 +117,7 @@ sentinelCount i j  | j > i      = f j i
                    | otherwise  = f i j
                     
                     
-  where f i j = i - j + 1   
+  where f p q = p - q + 1   
   
   
 
@@ -126,11 +126,8 @@ sentinelCount i j  | j > i      = f j i
 base2bases :: [Integer]
 base2bases = unfoldr (\x -> Just (x, x * 2)) 1 
 
-
-log2whole :: Integral a => a -> Bool
-log2whole i = f i == 0 where
-  f = snd . properFraction . logBase 2 . fromIntegral
-
+    
+    
 --------------------------------------------------------------------------------
 -- Utility functions
 
@@ -156,10 +153,6 @@ applyi i f a | i <= 0    = a
              | otherwise = applyi (i-1) f (f a) 
              
              
--- | zam - zippy map.
-zam :: (a -> a -> b) -> [a] -> [b]
-zam f (x:y:ys) = f x y : zam f (y:ys)
-zam f _        = []
 
 -- | mod12 - modulus 12.
 mod12 :: (Integral a) => a -> a
@@ -197,15 +190,6 @@ anda = andthen (&&)
 dyap :: (c -> d) -> (a -> b -> c) -> a -> b -> d
 dyap f g a b = f (g a b) 
 
--- dyapr :: (c -> d) -> (a -> b -> c) -> a -> b -> d
-dyapl f g a b = f a (g b) 
-
-dyapr f g a b = f (g a) b 
-
-dycl f g a b = g (f a) b 
-
-dycr f g a b = g a (f b)
- 
 
 -- | Triadic apply \/ compose - apply the ternary function g to a, b and c, 
 -- then apply the unary function f to the result.

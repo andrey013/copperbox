@@ -1,4 +1,4 @@
-
+{-# OPTIONS -Wall #-}
 
 -- ghci ...
 -- :set -i../../Bala:../../ZMidi:../../HNotate
@@ -50,7 +50,7 @@ genMidi = writeMidi "./out/cha_cha.mid" cha_cha_midi
   where
     cha_cha_midi = generateMidi (Just cha_cha) []
          
-    
+main :: IO () 
 main = do 
     genMidi 
     genLy

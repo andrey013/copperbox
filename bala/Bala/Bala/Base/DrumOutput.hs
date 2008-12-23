@@ -16,25 +16,21 @@
 
 module Bala.Base.DrumOutput where
 
-import Bala.Base.Pitch
-
 import qualified HNotate as H
-import qualified HNotate.Marks as H
-import qualified HNotate.NoteListDatatypes as H
 import qualified ZMidi as Z (GMDrum(..), drumPitch)
 
 class DrumMapping a where
-  gmDrum    :: a      -> Z.GMDrum
-  drumName  :: Pitch  -> Maybe a
-  drumPitch :: a      -> Pitch 
+  gmDrum    :: a        -> Z.GMDrum
+  drumName  :: H.Pitch  -> Maybe a
+  drumPitch :: a        -> H.Pitch 
   
   drumPitch = gmDrumPitch . gmDrum
   
-gmDrumPitch :: Z.GMDrum -> Pitch
-gmDrumPitch = fromSemitones . fromIntegral . Z.drumPitch
+gmDrumPitch :: Z.GMDrum -> H.Pitch
+gmDrumPitch = H.fromSemitones . fromIntegral . Z.drumPitch
 
-pitchToGmDrum :: Pitch -> Maybe Z.GMDrum
-pitchToGmDrum = fn . semitones where
+pitchToGmDrum :: H.Pitch -> Maybe Z.GMDrum
+pitchToGmDrum = fn . H.semitones where
   fn i | i >= 35 && i <= 81   = Just $ toEnum $ i -35
        | otherwise            = Nothing 
        

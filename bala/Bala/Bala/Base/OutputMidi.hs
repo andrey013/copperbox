@@ -18,7 +18,6 @@
 
 module Bala.Base.OutputMidi where
 
-import Bala.Base.BaseExtra
 import Bala.Base.Duration
 import Bala.Base.Pitch
 import Bala.Base.Structural hiding (note, chord)
@@ -72,8 +71,8 @@ outputEvent (RestE d)           = spacer (ticks d)
 outputEvent (ChordE se d)       = chord (F.foldr fn [] se) (ticks d) where
                                       fn p xs = (midiPitch p) : xs
 outputEvent (SpacerE d)         = spacer (ticks d)    
-outputEvent (AGraceE se p d)    = note (midiPitch p) (ticks d) -- to do
-outputEvent (UGraceE p d se)    = note (midiPitch p) (ticks d) -- to do
+outputEvent (AGraceE _ p d)     = note (midiPitch p) (ticks d) -- to do /se/
+outputEvent (UGraceE p d _)     = note (midiPitch p) (ticks d) -- to do /se/
 outputEvent (MarkE _)           = return ()
 
 durationGraces :: (Seq (Pitch, Duration)) -> Duration
@@ -85,8 +84,8 @@ midiPitch :: Pitch -> Word8
 midiPitch = fromIntegral . (+12) . semitones
 
 ticks :: Duration -> Word32
-ticks d | d == no_duration = 0
-        | otherwise        = fn $ ratioElements $ convRational d
+ticks drn | drn == no_duration = 0
+          | otherwise        = fn $ ratioElements $ convRational drn
   where
     fn (n,1) = n * midi_wn
     fn (1,d) = midi_wn `div` d

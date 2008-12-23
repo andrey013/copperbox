@@ -1,6 +1,8 @@
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances,
-             MultiParamTypeClasses #-}
-             
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# OPTIONS -Wall #-}
+ 
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HaskoreHNotate
@@ -15,8 +17,6 @@
 --
 --------------------------------------------------------------------------------
 
--- Note Matt Munz's thesis renders the Music datatype not a Performance 
-
 
 module HaskoreHNotate where
 
@@ -26,10 +26,8 @@ import HNotate.NoteListDatatypes
 import HNotate.Pitch
 
 import qualified Haskore as H 
-import Haskore ( Music(..), Player(..), defPlayer ) 
 
 import Data.List(partition, groupBy, sort)
-import Data.Monoid
 import Data.Ratio
 import Data.Sequence 
 
@@ -39,14 +37,14 @@ import Data.Sequence
 
 
 psystem :: H.Performance -> System
-psystem p = let split_list = splitByInst p
+psystem perf = let split_list = splitByInst perf
             in systemL $ map (\(n,p) -> (show n, instEL (n,p))) split_list
 
 instrumentNames :: H.Performance -> [String]
 instrumentNames = map (show . fst) . splitByInst
   
 instEL :: (H.InstrumentName,H.Performance) -> EventList
-instEL (n,p) = snd $ foldl fn (0%1,root) $ groupChords p
+instEL (_,p) = snd $ foldl fn (0%1,root) $ groupChords p
   where
     fn (onset,tree) e   = let (e_onset, e_dur, f) = evt e in 
         if e_onset == onset
@@ -60,10 +58,11 @@ groupChords = groupBy (\a b -> H.eTime a == H.eTime b)
     
 evt :: [H.Event] -> (H.Time, H.DurT, Element)
 evt [e]     = event1 e
-evt (e:es)  = let chord_notes       = fromList $ sort $ map convert (e:es)
-                  e_dur             = H.eDur e
-                  e_onset           = H.eTime e
-              in (e_onset, e_dur, chordGrp chord_notes (convert e_dur))
+evt (e:es)  = (e_onset, e_dur, chordGrp chord_notes (convert e_dur)) where
+                  chord_notes = fromList $ sort $ map convert (e:es)
+                  e_dur       = H.eDur e
+                  e_onset     = H.eTime e
+evt []      = error $ "evt - empty list"
           
 event1 :: H.Event -> (H.Time, H.DurT, Element)
 event1 e@(H.Event {H.eTime=onset, H.eDur=drn}) = 

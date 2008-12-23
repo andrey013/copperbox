@@ -25,8 +25,6 @@ import Bala.Base.BaseExtra (applyi, log2whole)
 import Bala.Base.Duration
 import HNotate.Fits
 
-import qualified Data.Foldable as F
-import Data.Ratio
 import Data.Sequence hiding (length)
 
 
@@ -79,7 +77,7 @@ divModBar dn (n,d) = fn $ dn `divModR` (makeDuration n d) where
 
 
 segmentByTS :: Fits a Duration => TimeSig -> Seq a -> Seq (Seq a)
-segmentByTS (n,d) se = segment False (makeDuration 1 d) se  
+segmentByTS (_,d) se = segment False (makeDuration 1 d) se  
 
 
 
@@ -181,7 +179,7 @@ bjorklund n k =
 -- return the unconsumed right input. (Hence we need to return a pair, 
 -- hence we use an accumulator)  
 distribute :: [Bits] -> [Bits] -> ([Bits], [Bits])
-distribute xs ys = step [] xs ys where
+distribute as bs = step [] as bs where
 
   step :: [Bits] -> [Bits] -> [Bits] -> ([Bits], [Bits])
   step acc (x:xs) (y:ys)  = step (acc ++ [x ++ y]) xs ys
