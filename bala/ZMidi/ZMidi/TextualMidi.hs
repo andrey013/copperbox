@@ -26,12 +26,8 @@ module ZMidi.TextualMidi (
 
 import ZMidi.Datatypes
 
-
-import Data.Bits
-import Data.Char
 import qualified Data.Foldable as F
 import Data.Tuple
-import Data.Word
 import Numeric
 import Text.PrettyPrint.HughesPJ
 
@@ -45,19 +41,17 @@ printMidi = putStrLn . render . ppMidiFile
 integral :: Integral a => a -> Doc
 integral = integer . fromIntegral
 
-infixl 6 .-., .--.
+infixl 6 `hyph`, `dblhyph`
 
-(.-.) :: Doc -> Doc -> Doc
-x .-. y         = x <> text " - " <> y
+hyph :: Doc -> Doc -> Doc
+x `hyph` y         = x <> text " - " <> y
 
-(.--.) :: Doc -> Doc -> Doc
-x .--. y         = x <> text " -- " <> y
+dblhyph :: Doc -> Doc -> Doc
+x `dblhyph` y         = x <> text " -- " <> y
 
 ppHex :: Integral a => a -> Doc
 ppHex i = text $ showHex i []
 
-mazi :: ((a,Int) -> b) -> Int -> [a] -> [b]
-mazi f i xs = map f (zip xs [i..]) 
 
 
 ppMidiFile :: MidiFile -> Doc
@@ -69,8 +63,8 @@ ppMidiFile (MidiFile header tracks)  = ppHeader header $$ tdoc $$ empty
 ppHeader :: Header -> Doc
 ppHeader (Header hformat ntrks td) = 
     text "[Header]" <+> ppHFormat hformat 
-                    .-. (integral ntrks <+> text "tracks") 
-                    .-. ppTimeDivision td
+                    `hyph` (integral ntrks <+> text "tracks") 
+                    `hyph` ppTimeDivision td
   
 ppHFormat :: HFormat -> Doc
 ppHFormat MF0  = text "Type 0"
@@ -78,25 +72,25 @@ ppHFormat MF1  = text "Type 1"
 ppHFormat MF2  = text "Type 2"
  
 ppTimeDivision :: TimeDivision -> Doc
-ppTimeDivision (FPS i)   = text "fps" <+> integral i
+ppTimeDivision (FPS i)   = text "fps"   <+> integral i
 ppTimeDivision (TPB i)   = text "ticks" <+> integral i
 
-
+prettyTrack :: Track -> Int -> Doc
 prettyTrack (Track se) i = 
     brackets (text "Track" <+> int i) $$ (snd $ F.foldl fn (0,empty) se)
   where
     fn (gt,doc) msg@(dt,_)  = 
-      (gt+dt, doc $$ (padshow 8 (gt+dt) .-. ppMessage msg))    
+      (gt+dt, doc $$ (padshow 8 (gt+dt) `hyph` ppMessage msg))    
 
 
 ppMessage :: Message -> Doc
-ppMessage (dt,evt) = padshow 5 dt .-. ppEvent evt      
+ppMessage (dt,evt) = padshow 5 dt `hyph` ppEvent evt      
 
 
 ppEvent :: Event -> Doc
 ppEvent (VoiceEvent e)   = ppVoiceEvent e
-ppEvent (SystemEvent e)  = text "sys"  .--. ppSystemEvent e
-ppEvent (MetaEvent e)    = text "meta" .--. ppMetaEvent e
+ppEvent (SystemEvent e)  = text "sys"  `dblhyph` ppSystemEvent e
+ppEvent (MetaEvent e)    = text "meta" `dblhyph` ppMetaEvent e
 
 padshow :: Show a => Int -> a -> Doc
 padshow pad a = let s = show a ; dif = pad - length s in
@@ -109,25 +103,25 @@ fli = padshow 3
 
 ppVoiceEvent :: VoiceEvent -> Doc
 ppVoiceEvent (NoteOff ch nt vel)        = 
-    text "note-off" .-. fli ch .-. fli nt .-. fli vel
+    text "note-off" `hyph` fli ch `hyph` fli nt `hyph` fli vel
  
 ppVoiceEvent (NoteOn ch nt vel)         =
-    text "note-on " .-. fli ch .-. fli nt .-. fli vel
+    text "note-on " `hyph` fli ch `hyph` fli nt `hyph` fli vel
     
 ppVoiceEvent (NoteAftertouch ch nt val) = 
-    text "note-after-touch" .-. fli ch .-. fli nt .-. fli val
+    text "note-after-touch" `hyph` fli ch `hyph` fli nt `hyph` fli val
     
 ppVoiceEvent (Controller ch ty val)     = 
-    text "ctlr" .-. fli ch .-. fli ty .-. fli val
+    text "ctlr" `hyph` fli ch `hyph` fli ty `hyph` fli val
     
 ppVoiceEvent (ProgramChange ch num)     = 
-    text "pc" .-. fli ch .-. fli num
+    text "pc" `hyph` fli ch `hyph` fli num
     
 ppVoiceEvent (ChanAftertouch ch val)    = 
-    text "chan-after-touch" .-. fli ch .-. fli val
+    text "chan-after-touch" `hyph` fli ch `hyph` fli val
       
 ppVoiceEvent (PitchBend ch val)         = 
-    text "pitch-bend" .-. fli ch .-. fli val
+    text "pitch-bend" `hyph` fli ch `hyph` fli val
 
   
 
@@ -136,21 +130,21 @@ ppSystemEvent (SysEx _ _)    = text "sysex"   -- system exclusive event - length
 ppSystemEvent (DataEvent i)  = text "data" <+> ppHex i
 
 ppMetaEvent :: MetaEvent -> Doc
-ppMetaEvent (TextEvent ty s)     = ppTextType ty .-. doubleQuotes (text s)
-ppMetaEvent (SequenceNumber i)   = text "sequence-number" .-. integral i
-ppMetaEvent (ChannelPrefix ch)   = text "channel-prefix"  .-. integral ch
+ppMetaEvent (TextEvent ty s)     = ppTextType ty `hyph` doubleQuotes (text s)
+ppMetaEvent (SequenceNumber i)   = text "sequence-number" `hyph` integral i
+ppMetaEvent (ChannelPrefix ch)   = text "channel-prefix"  `hyph` integral ch
 ppMetaEvent (EndOfTrack)         = text "end-of-track"
-ppMetaEvent (SetTempo mspqn)     = text "set-tempo" .-. integral mspqn  -- microseconds per quarter-note
+ppMetaEvent (SetTempo mspqn)     = text "set-tempo" `hyph` integral mspqn  -- microseconds per quarter-note
 ppMetaEvent (SMPTEOffset h m s f sf) = 
-    text "smpte" .-. fli h .-. fli m .-. fli s .-. fli f .-. fli sf
+    text "smpte" `hyph` fli h `hyph` fli m `hyph` fli s `hyph` fli f `hyph` fli sf
     
 ppMetaEvent (TimeSignature n d m ns) = 
-    text "time-sig" .-. fli n .-. fli d .-. fli m .-. fli ns
+    text "time-sig" `hyph` fli n `hyph` fli d `hyph` fli m `hyph` fli ns
     
 ppMetaEvent (KeySignature i sc)  = 
-    text "key-sig" .-. integral i .-. ppScaleType sc
+    text "key-sig" `hyph` integral i `hyph` ppScaleType sc
        
-ppMetaEvent (SSME i _)           = text "ssme" .-. ppHex i <+> text "..."
+ppMetaEvent (SSME i _)           = text "ssme" `hyph` ppHex i <+> text "..."
 
 ppScaleType :: ScaleType -> Doc
 ppScaleType MAJOR  = text "major"

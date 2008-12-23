@@ -85,15 +85,15 @@ instance MonadError ParseErr Parser where
 
 
 runParser :: Parser a -> B.ByteString  -> Either String a   
-runParser p bs = case runP p bs of
+runParser parser bs0 = case runP parser bs0 of
     (Left (ParseErr err), ss) -> Left $ errorstring err ss 
     (Right a, _)              -> Right a  
   where 
     runP :: Parser a -> B.ByteString  -> (Either ParseErr a,String) 
     -- should we use runState and check input is exhausted? 
-    runP p bs = evalState (runWriterT (runErrorT $ getParser p)) st0
+    runP p bs = evalState (runWriterT (runErrorT $ getParser p)) (initState bs)
     
-    st0 = PSt { remaining = bs, pos = 0 }
+    initState bs = PSt { remaining = bs, pos = 0 }
     
     errorstring err ss = err ++ "\n\nParse result upto error...\n" ++ ss 
 
@@ -105,9 +105,7 @@ readMidi name = do
     case ans of 
       Left err -> hClose h >> putStrLn err >> error "readMidi failed"
       Right mf -> hClose h >> return mf
-  where
-    unbytestring :: B.ByteString -> [Word8]
-    unbytestring = B.foldr (:) [] 
+
     
 
 --------------------------------------------------------------------------------
@@ -115,10 +113,10 @@ readMidi name = do
 
 reportFail :: String -> Parser a
 reportFail s = do 
-    pos <- filePosition
-    throwError $ strMsg $ s ++ posStr pos
+    posn <- filePosition
+    throwError $ strMsg $ s ++ posStr posn
   where
-    posStr pos = " position " ++ show pos   
+    posStr p = " position " ++ show p   
 
 tellLine :: String -> Parser ()
 tellLine s = tell s >> tell "\n" 
@@ -138,15 +136,15 @@ midiFile = do
     trackCount (Header _ n _) = fromIntegral n
 
 header :: Parser Header  
-header = Header <$> (assertString "MThd"  *> assertLength 6   *> format)
+header = Header <$> (assertString "MThd"  *> assertLength (6::Int) *> format)
                 <*> getWord16be          <*> timeDivision 
 
 
 iters :: Int -> Parser a -> Parser (Seq a)
 iters i p = step mempty i
   where 
-    step se i   | i <= 0      = return se
-                | otherwise   = p >>= \a -> step (se |> a) (i-1)
+    step se n   | n <= 0      = return se
+                | otherwise   = p >>= \a -> step (se |> a) (n-1)
 
 track :: Parser Track
 track = Track <$> 
@@ -199,7 +197,7 @@ voiceEvent 0xA ch = (NoteAftertouch ch) <$> getWord8 <*> getWord8
 voiceEvent 0xB ch = (Controller ch)     <$> getWord8 <*> getWord8
 voiceEvent 0xC ch = (ProgramChange ch)  <$> getWord8 
 voiceEvent 0xD ch = (ChanAftertouch ch) <$> getWord8 
-voiceEvent z   ch = reportFail $ "voiceEvent " ++ hexStr z 
+voiceEvent z   _  = reportFail $ "voiceEvent " ++ hexStr z 
 
 
 
@@ -279,8 +277,8 @@ filePosition = gets pos
 
 count :: Integral i => i -> Parser a -> Parser [a]
 count i p = step i [] where
-  step i xs  | i <= 0     = return (reverse xs)
-             | otherwise  = p >>= \a -> step (i-1) (a:xs)
+  step n xs  | n <= 0     = return (reverse xs)
+             | otherwise  = p >>= \a -> step (n-1) (a:xs)
              
 
 

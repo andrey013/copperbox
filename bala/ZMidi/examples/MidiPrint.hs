@@ -1,4 +1,4 @@
-
+{-# OPTIONS -Wall #-}
 
 -- ghci> :set -i../../ZMidi
 -- ghci> :set args bulgarian6.mid
@@ -19,7 +19,6 @@ import Prelude hiding (catch)
 
 import System.Environment
 import System.Exit
-import Text.PrettyPrint.HughesPJ
 
 
 main :: IO ()
