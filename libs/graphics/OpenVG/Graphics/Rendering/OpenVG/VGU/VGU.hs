@@ -25,5 +25,5 @@ data VGU_ErrorCode =
    | VGU_OutOfMemoryError
    | VGU_PathCapabilityError
    | VGU_BadWarpError
-
+   deriving ( Eq, Ord, Show )
 

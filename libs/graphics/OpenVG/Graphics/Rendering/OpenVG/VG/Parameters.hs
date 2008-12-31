@@ -1,3 +1,4 @@
+{-# LANGUAGE ForeignFunctionInterface #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,7 +19,7 @@
 
 module Graphics.Rendering.OpenVG.VG.Parameters where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
+import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum, VGint )
 import Graphics.Rendering.OpenVG.Constants (
     vg_MATRIX_MODE, vg_FILL_RULE, vg_IMAGE_QUALITY, vg_RENDERING_QUALITY,
     vg_BLEND_MODE, vg_IMAGE_MODE, vg_SCISSOR_RECTS, vg_STROKE_LINE_WIDTH,
@@ -111,4 +112,7 @@ marshalParamType x = case x of
     ParamMaxFloat -> vg_MAX_FLOAT
     ParamMaxGaussianStdDeviation -> vg_MAX_GAUSSIAN_STD_DEVIATION 
 
+--------------------------------------------------------------------------------
+
+foreign import ccall unsafe "vgSeti" vgSeti :: VGenum -> VGint -> IO ()
 

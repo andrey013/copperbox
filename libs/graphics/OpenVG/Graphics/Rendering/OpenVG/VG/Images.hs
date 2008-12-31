@@ -18,6 +18,15 @@
 
 module Graphics.Rendering.OpenVG.VG.Images where
 
+import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
+import Graphics.Rendering.OpenVG.Constants (
+    vg_IMAGE_QUALITY_NONANTIALIASED, vg_IMAGE_QUALITY_FASTER, 
+    vg_IMAGE_QUALITY_BETTER, 
+    vg_IMAGE_FORMAT, vg_IMAGE_WIDTH, vg_IMAGE_HEIGHT,
+    vg_DRAW_IMAGE_NORMAL, vg_DRAW_IMAGE_MULTIPLY, vg_DRAW_IMAGE_STENCIL )
+    
+
+
 data ImageFormat = 
      -- RGB{A,X} channel ordering
      FormatsRGBX8888
@@ -70,6 +79,12 @@ data ImageQuality =
    | ImageQualityFaster
    | ImageQualityBetter
    deriving ( Eq, Ord, Show )
+
+data ImageParamType = 
+     ImageParamFormat
+   | ImageParamWidth
+   | ImageParamHeight
+   deriving ( Eq, Ord, Show )
    
 data ImageMode = 
      DrawImageNormal
@@ -77,4 +92,22 @@ data ImageMode =
    | DrawImageStencil
    deriving ( Eq, Ord, Show )
 
+marshalImageQuality :: ImageQuality -> VGenum
+marshalImageQuality x = case x of
+    ImageQualityNonantialiased -> vg_IMAGE_QUALITY_NONANTIALIASED
+    ImageQualityFaster -> vg_IMAGE_QUALITY_FASTER
+    ImageQualityBetter -> vg_IMAGE_QUALITY_BETTER
    
+    
+marshalImageParamType :: ImageParamType -> VGenum
+marshalImageParamType x = case x of
+    ImageParamFormat -> vg_IMAGE_FORMAT
+    ImageParamWidth -> vg_IMAGE_WIDTH
+    ImageParamHeight -> vg_IMAGE_HEIGHT
+
+     
+marshalImageMode :: ImageMode -> VGenum
+marshalImageMode x = case x of
+    DrawImageNormal -> vg_DRAW_IMAGE_NORMAL
+    DrawImageMultiply -> vg_DRAW_IMAGE_MULTIPLY
+    DrawImageStencil -> vg_DRAW_IMAGE_STENCIL

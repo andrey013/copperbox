@@ -36,7 +36,8 @@ data BlendMode =
    | BlendDarken
    | BlendLighten
    | BlendAdditive
-
+   deriving ( Eq, Ord, Show )
+   
 marshalBlendMode :: BlendMode -> VGenum
 marshalBlendMode x = case x of
     BlendSrc -> vg_BLEND_SRC

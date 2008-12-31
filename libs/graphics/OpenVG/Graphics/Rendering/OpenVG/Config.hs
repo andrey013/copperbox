@@ -47,11 +47,11 @@ type VGshort = Int16
 type VGint = Int32
 
 -- | 32-bit unsigned signed integer.
-type VGuint = Int32
+type VGuint = Word32
 
 -- | 32-bit unsigned signed integer - for parameters that may contain
 -- single-bit values.
-type VGbitfield = Int32
+type VGbitfield = Word32
 
 -- | An enumeration { VG_FALSE(0), VG_TRUE(1) }, any non-zero value
 -- is interpreted as True.
@@ -62,4 +62,4 @@ type VGboolean = Word8
 type VGfloat = Float
 
 -- | Enumerated integer types
-type VGenum = HTYPE_VGENUM
+type VGenum = Word32
