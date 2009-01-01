@@ -25,6 +25,7 @@ module Graphics.Rendering.OpenVG.VG.CFunDecls where
 import Graphics.Rendering.OpenVG.VG.BasicTypes
 
 import Foreign.Ptr ( Ptr )
+import Foreign.C.String ( CString )
 
 -- 'suffix indicates a marshalled enum type.
 type VGHardwareQueryResult' = VGenum
@@ -471,9 +472,20 @@ foreign import ccall unsafe "vg/openvg.h vgHardwareQuery"
 
 -- | Renderer and Extension Information
 foreign import ccall unsafe "vg/openvg.h vgGetString"  
-    vgGetString :: VGStringID' -> IO (Ptr VGubyte)
+    vgGetString :: VGStringID' -> IO CString 
 
+-- | Shiva-VG Extensions
+-- See the README in the shiva archive.
+foreign import ccall unsafe "vg/openvg.h vgCreateContextSH"  
+    vgCreateContextSH :: VGint -> VGint -> IO VGboolean
+    
+foreign import ccall unsafe "vg/openvg.h vgResizeSurfaceSH"  
+    vgResizeSurfaceSH :: VGint -> VGint -> IO ()
+    
 
+foreign import ccall unsafe "vg/openvg.h vgDestroyContextSH"  
+    vgDestroyContextSH :: IO ()
+    
 
 
 

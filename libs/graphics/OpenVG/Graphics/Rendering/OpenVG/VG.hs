@@ -27,6 +27,7 @@ module Graphics.Rendering.OpenVG.VG (
   module Graphics.Rendering.OpenVG.VG.QueryingHardware,
   module Graphics.Rendering.OpenVG.VG.RenderingQuality,
   module Graphics.Rendering.OpenVG.VG.Scissoring,
+  module Graphics.Rendering.OpenVG.VG.ShivaExtensions
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes
@@ -41,3 +42,4 @@ import Graphics.Rendering.OpenVG.VG.Paths
 import Graphics.Rendering.OpenVG.VG.QueryingHardware
 import Graphics.Rendering.OpenVG.VG.RenderingQuality
 import Graphics.Rendering.OpenVG.VG.Scissoring
+import Graphics.Rendering.OpenVG.VG.ShivaExtensions
