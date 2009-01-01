@@ -20,7 +20,7 @@ module Graphics.Rendering.OpenVG.VG.Paths  where
 
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.Constants ( 
+import Graphics.Rendering.OpenVG.VG.Constants ( 
     
     vg_PATH_CAPABILITY_APPEND_FROM, vg_PATH_CAPABILITY_APPEND_TO,
     vg_PATH_CAPABILITY_MODIFY, vg_PATH_CAPABILITY_TRANSFORM_FROM,

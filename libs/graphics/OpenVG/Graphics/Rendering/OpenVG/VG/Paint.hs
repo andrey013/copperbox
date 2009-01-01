@@ -18,7 +18,7 @@
 
 module Graphics.Rendering.OpenVG.VG.Paint  where
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.Constants (
+import Graphics.Rendering.OpenVG.VG.Constants (
     vg_PAINT_TYPE, vg_PAINT_COLOR, vg_PAINT_COLOR_RAMP_SPREAD_MODE, 
     vg_PAINT_COLOR_RAMP_STOPS, vg_PAINT_COLOR_RAMP_PREMULTIPLIED, 
     vg_PAINT_LINEAR_GRADIENT, vg_PAINT_RADIAL_GRADIENT, 

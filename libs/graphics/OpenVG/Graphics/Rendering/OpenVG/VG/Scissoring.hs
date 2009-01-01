@@ -19,7 +19,7 @@
 module Graphics.Rendering.OpenVG.VG.Scissoring  where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.Constants (
+import Graphics.Rendering.OpenVG.VG.Constants (
     vg_CLEAR_MASK, vg_FILL_MASK, vg_SET_MASK, vg_UNION_MASK, 
     vg_INTERSECT_MASK, vg_SUBTRACT_MASK )  
     

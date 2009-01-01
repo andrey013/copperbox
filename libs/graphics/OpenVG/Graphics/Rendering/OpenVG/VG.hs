@@ -19,7 +19,6 @@ module Graphics.Rendering.OpenVG.VG (
   module Graphics.Rendering.OpenVG.VG.ColorTransformation,
   module Graphics.Rendering.OpenVG.VG.Errors,
   module Graphics.Rendering.OpenVG.VG.Extending,
-  module Graphics.Rendering.OpenVG.VG.Fonts,
   module Graphics.Rendering.OpenVG.VG.ImageFilters,
   module Graphics.Rendering.OpenVG.VG.Images,
   module Graphics.Rendering.OpenVG.VG.Paint,
@@ -34,7 +33,6 @@ import Graphics.Rendering.OpenVG.VG.BasicTypes
 import Graphics.Rendering.OpenVG.VG.ColorTransformation
 import Graphics.Rendering.OpenVG.VG.Errors
 import Graphics.Rendering.OpenVG.VG.Extending
-import Graphics.Rendering.OpenVG.VG.Fonts
 import Graphics.Rendering.OpenVG.VG.ImageFilters
 import Graphics.Rendering.OpenVG.VG.Images
 import Graphics.Rendering.OpenVG.VG.Paint

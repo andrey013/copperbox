@@ -19,7 +19,7 @@
 module Graphics.Rendering.OpenVG.VG.ImageFilters where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.Constants ( 
+import Graphics.Rendering.OpenVG.VG.Constants ( 
     vg_RED, vg_GREEN, vg_BLUE, vg_ALPHA
   )
   

@@ -19,7 +19,7 @@
 module Graphics.Rendering.OpenVG.VG.RenderingQuality  where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.Constants (
+import Graphics.Rendering.OpenVG.VG.Constants (
     vg_RENDERING_QUALITY_NONANTIALIASED, vg_RENDERING_QUALITY_FASTER,
     vg_RENDERING_QUALITY_BETTER,
     --
@@ -29,7 +29,6 @@ import Graphics.Rendering.OpenVG.Constants (
     --
     vg_MATRIX_PATH_USER_TO_SURFACE, vg_MATRIX_IMAGE_USER_TO_SURFACE, 
     vg_MATRIX_FILL_PAINT_TO_USER, vg_MATRIX_STROKE_PAINT_TO_USER, 
-    vg_MATRIX_GLYPH_USER_TO_SURFACE
     )  
 
 data RenderingQuality = 
@@ -51,7 +50,6 @@ data MatrixMode =
    | MatrixImageUserToSurface
    | MatrixFillPaintToUser
    | MatrixStrokePaintToUser
-   | MatrixGlyphUserToSurface
    deriving ( Eq, Ord, Show )   
    
 marshalRenderingQuality :: RenderingQuality -> VGenum
@@ -75,6 +73,5 @@ marshalMatrixMode x = case x of
     MatrixImageUserToSurface -> vg_MATRIX_IMAGE_USER_TO_SURFACE
     MatrixFillPaintToUser -> vg_MATRIX_FILL_PAINT_TO_USER
     MatrixStrokePaintToUser -> vg_MATRIX_STROKE_PAINT_TO_USER
-    MatrixGlyphUserToSurface -> vg_MATRIX_GLYPH_USER_TO_SURFACE
     
     

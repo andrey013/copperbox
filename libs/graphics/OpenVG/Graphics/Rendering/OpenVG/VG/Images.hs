@@ -19,7 +19,7 @@
 module Graphics.Rendering.OpenVG.VG.Images where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.Constants (
+import Graphics.Rendering.OpenVG.VG.Constants (
     vg_IMAGE_QUALITY_NONANTIALIASED, vg_IMAGE_QUALITY_FASTER, 
     vg_IMAGE_QUALITY_BETTER, 
     vg_IMAGE_FORMAT, vg_IMAGE_WIDTH, vg_IMAGE_HEIGHT,

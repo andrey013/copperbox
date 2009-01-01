@@ -19,7 +19,7 @@
 module Graphics.Rendering.OpenVG.VG.QueryingHardware where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.Constants (
+import Graphics.Rendering.OpenVG.VG.Constants (
     vg_IMAGE_FORMAT_QUERY, vg_PATH_DATATYPE_QUERY, 
     vg_HARDWARE_ACCELERATED, vg_HARDWARE_UNACCELERATED )
 

@@ -19,20 +19,20 @@
 module Graphics.Rendering.OpenVG.VG.Extending where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.Constants (
-    vg_ID_VENDOR, vg_ID_RENDERER, vg_ID_VERSION, vg_ID_EXTENSIONS ) 
+import Graphics.Rendering.OpenVG.VG.Constants (
+    vg_VENDOR, vg_RENDERER, vg_VERSION, vg_EXTENSIONS ) 
     
 data StringID =
-     IDVendor
-   | IDRenderer
-   | IDVersion
-   | IDExtensions
+     Vendor
+   | Renderer
+   | Version
+   | Extensions
    deriving ( Eq, Ord, Show )
    
 marshalStringID :: StringID -> VGenum
 marshalStringID x = case x of 
-    IDVendor -> vg_ID_VENDOR
-    IDRenderer -> vg_ID_RENDERER
-    IDVersion -> vg_ID_VERSION
-    IDExtensions -> vg_ID_EXTENSIONS
+    Vendor -> vg_VENDOR
+    Renderer -> vg_RENDERER
+    Version -> vg_VERSION
+    Extensions -> vg_EXTENSIONS
    

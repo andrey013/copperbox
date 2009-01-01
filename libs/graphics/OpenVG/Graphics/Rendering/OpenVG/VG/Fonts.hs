@@ -15,11 +15,11 @@
 --
 --
 --------------------------------------------------------------------------------
-
+{- Not implemented by shiva-vg -}
 module Graphics.Rendering.OpenVG.VG.Fonts where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.Constants ( vg_FONT_NUM_GLYPHS )
+import Graphics.Rendering.OpenVG.VG.Constants ( vg_FONT_NUM_GLYPHS )
 
 data FontParamType = 
      FontNumGlyphs

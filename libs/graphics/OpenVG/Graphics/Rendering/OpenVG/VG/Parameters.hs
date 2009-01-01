@@ -19,13 +19,14 @@
 
 module Graphics.Rendering.OpenVG.VG.Parameters where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum, VGint )
-import Graphics.Rendering.OpenVG.Constants (
+import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
+import Graphics.Rendering.OpenVG.VG.CFunDecls ( vgSeti )
+import Graphics.Rendering.OpenVG.VG.Constants (
     vg_MATRIX_MODE, vg_FILL_RULE, vg_IMAGE_QUALITY, vg_RENDERING_QUALITY,
     vg_BLEND_MODE, vg_IMAGE_MODE, vg_SCISSOR_RECTS, vg_STROKE_LINE_WIDTH,
     vg_STROKE_CAP_STYLE, vg_STROKE_JOIN_STYLE, vg_STROKE_MITER_LIMIT,
     vg_STROKE_DASH_PATTERN, vg_STROKE_DASH_PHASE, vg_STROKE_DASH_PHASE_RESET,
-    vg_TILE_FILL_COLOR, vg_CLEAR_COLOR, vg_GLYPH_ORIGIN, vg_MASKING,
+    vg_TILE_FILL_COLOR, vg_CLEAR_COLOR, vg_MASKING,
     vg_SCISSORING, vg_PIXEL_LAYOUT, vg_SCREEN_LAYOUT, vg_FILTER_FORMAT_LINEAR,
     vg_FILTER_FORMAT_PREMULTIPLIED, vg_FILTER_CHANNEL_MASK, 
     vg_MAX_SCISSOR_RECTS, vg_MAX_DASH_COUNT, vg_MAX_KERNEL_SIZE,
@@ -53,7 +54,7 @@ data ParamType =
    | ParamStrokeDashPhaseReset
    | ParamTileFillColor
    | ParamClearColor
-   | ParamGlyphOrigin
+   -- | ParamGlyphOrigin        {- Not in shiva-vg -} 
    | ParamMasking
    | ParamScissoring
    | ParamPixelLayout
@@ -92,7 +93,7 @@ marshalParamType x = case x of
     ParamStrokeDashPhaseReset -> vg_STROKE_DASH_PHASE_RESET
     ParamTileFillColor -> vg_TILE_FILL_COLOR 
     ParamClearColor -> vg_CLEAR_COLOR 
-    ParamGlyphOrigin -> vg_GLYPH_ORIGIN
+    -- ParamGlyphOrigin -> vg_GLYPH_ORIGIN         {- Not in shiva-vg -}
     ParamMasking -> vg_MASKING
     ParamScissoring -> vg_SCISSORING 
     ParamPixelLayout -> vg_PIXEL_LAYOUT
@@ -114,5 +115,5 @@ marshalParamType x = case x of
 
 --------------------------------------------------------------------------------
 
-foreign import ccall unsafe "vgSeti" vgSeti :: VGenum -> VGint -> IO ()
+
 

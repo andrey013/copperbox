@@ -1,29 +1,27 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE ForeignFunctionInterface   #-}
+{-# OPTIONS -Wall #-}
 
-module Consts where
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Graphics.Rendering.OpenVG.VG.Constants
+-- Copyright   :  (c) Stephen Tetley 2008
+-- License     :  BSD-style (see the LICENSE file in the distribution)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  GHC
+--
+-- Aliases for constants defined in <vg/openvg.h>.
+--
+--------------------------------------------------------------------------------
+
+
+module Graphics.Rendering.OpenVG.VG.Constants where
 
 #include <vg/openvg.h>
 
-import Foreign.C.Types (CFloat, CChar, CUChar, CShort, CInt, CUInt, CULong)
-
-type VGfloat    = CFloat
-type VGbyte     = CChar
-type VGubyte    = CUChar
-type VGshort    = CShort
-type VGint      = CInt
-type VGuint     = CUInt
-type VGbitfield = CUInt
-
-type VGenum     = CULong   {- Hmmm?? -}
-
--- | The type of data that can be displayed.
-type VGboolean = CInt
-
-#{enum VGboolean,
-  , vg_FALSE    = VG_FALSE
-  , vg_TRUE     = VG_TRUE
-  }
+import Graphics.Rendering.OpenVG.VG.BasicTypes
 
 -- | Enumerations
 
@@ -43,6 +41,9 @@ type VGboolean = CInt
   , vg_MATRIX_MODE                  = VG_MATRIX_MODE
   , vg_FILL_RULE                    = VG_FILL_RULE
   , vg_IMAGE_QUALITY                = VG_IMAGE_QUALITY
+  , vg_RENDERING_QUALITY            = VG_RENDERING_QUALITY
+  , vg_BLEND_MODE                   = VG_BLEND_MODE
+  , vg_IMAGE_MODE                   = VG_IMAGE_MODE
   
   , vg_SCISSOR_RECTS                = VG_SCISSOR_RECTS
 
