@@ -15,7 +15,7 @@
 --
 --
 --------------------------------------------------------------------------------
-{- Not implemented by shiva-vg -}
+{- Not implemented by shiva-vg  -}
 module Graphics.Rendering.OpenVG.VG.Fonts where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )

@@ -18,15 +18,17 @@
 
 module Graphics.Rendering.OpenVG.VG.Extending (
   StringID(..), 
-  getString,
+  stringId,
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( vgGetString ) 
-        
 import Graphics.Rendering.OpenVG.VG.Constants (
     vg_VENDOR, vg_RENDERER, vg_VERSION, vg_EXTENSIONS ) 
 
+import Graphics.Rendering.OpenGL.GL.StateVar (
+   GettableStateVar, makeGettableStateVar )
+   
 import Foreign.C.String ( peekCString )
     
 data StringID =
@@ -36,11 +38,11 @@ data StringID =
    | Extensions
    deriving ( Eq, Ord, Show )
    
-getString :: StringID -> IO (Either () String)
-getString sid = do 
+stringId :: StringID -> GettableStateVar String
+stringId sid = makeGettableStateVar $ do 
     cstr <- vgGetString (marshalStringID sid)
-    ans <- peekCString cstr
-    return (Right ans)
+    ans  <- peekCString cstr
+    return ans
 
 
    

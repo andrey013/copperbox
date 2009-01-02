@@ -22,7 +22,11 @@ import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
 import Graphics.Rendering.OpenVG.VG.Constants (
     vg_IMAGE_FORMAT_QUERY, vg_PATH_DATATYPE_QUERY, 
     vg_HARDWARE_ACCELERATED, vg_HARDWARE_UNACCELERATED )
+import Graphics.Rendering.OpenVG.VG.CFunDecls ( {- vgHardwareQuery -} )
 
+import Graphics.Rendering.OpenGL.GL.StateVar (
+   GettableStateVar, makeGettableStateVar )
+           
 data HardwareQueryType = 
      ImageFormatQuery
    | PathDatatypeQuery
@@ -32,7 +36,14 @@ data HardwareQueryResult =
      HardwareAccelerated
    | HardwareUnccelerated
    deriving ( Eq, Ord, Show )
-   
+
+{-
+hardwareQuery :: VGHardwareQueryType -> VGint -> IO VGHardwareQueryResult
+hardwareQuery key setting = do 
+    x <- vgHardwareQuery (marshalHardwareQueryType key) setting
+-}    
+               
+                       
 marshalHardwareQueryType :: HardwareQueryType -> VGenum
 marshalHardwareQueryType x = case x of
     ImageFormatQuery -> vg_IMAGE_FORMAT_QUERY

@@ -17,10 +17,25 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.OpenVG.VG.Parameters where
+module Graphics.Rendering.OpenVG.VG.Parameters (    
+    ParamType(..),    
+    setf, seti, setfv, setiv,
+    getf, geti, getVectorSize, getfv, getiv,
+    setParameterf, setParameteri, setParameterfv, setParameteriv,
+    getParameterf, getParameteri, getParameterVectorSize,
+    getParameterfv, getParameteriv
+) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.VG.CFunDecls ( vgSeti )
+import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
+    VGenum, VGfloat, VGint, VGenum, VGHandle )
+import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
+    vgSetf, vgSeti, vgSetfv, vgSetiv,
+    vgGetf, vgGeti, vgGetVectorSize, vgGetfv, vgGetiv,
+     
+    vgSetParameterf, vgSetParameteri, vgSetParameterfv, vgSetParameteriv, 
+    vgGetParameterf, vgGetParameteri, vgGetParameterVectorSize,
+    vgGetParameterfv, vgGetParameteriv )
+    
 import Graphics.Rendering.OpenVG.VG.Constants (
     vg_MATRIX_MODE, vg_FILL_RULE, vg_IMAGE_QUALITY, vg_RENDERING_QUALITY,
     vg_BLEND_MODE, vg_IMAGE_MODE, vg_SCISSOR_RECTS, vg_STROKE_LINE_WIDTH,
@@ -34,7 +49,7 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_MAX_IMAGE_WIDTH, vg_MAX_IMAGE_HEIGHT, vg_MAX_IMAGE_PIXELS,
     vg_MAX_IMAGE_BYTES, vg_MAX_FLOAT, vg_MAX_GAUSSIAN_STD_DEVIATION )
 
-
+import Foreign.Marshal.Array ( newArray, peekArray ) 
 
 
 data ParamType = 
@@ -75,6 +90,84 @@ data ParamType =
    | ParamMaxGaussianStdDeviation
    deriving ( Eq, Ord, Show )
 
+setf :: ParamType -> VGfloat -> IO ()
+setf typ val = vgSetf (marshalParamType typ) val
+
+seti :: ParamType -> VGint -> IO ()
+seti typ val = vgSeti (marshalParamType typ) val
+
+-- vgSetfv :: VGenum -> VGint -> Ptr VGfloat -> IO ()
+-- TODO - Lists or arrays?
+setfv :: ParamType -> [VGfloat] -> IO ()
+setfv typ vals = do
+    a <- newArray vals
+    vgSetfv (marshalParamType typ) (fromIntegral $ length vals) a
+    
+setiv :: ParamType -> [VGint] -> IO ()
+setiv typ vals = do
+    a <- newArray vals
+    vgSetiv (marshalParamType typ) (fromIntegral $ length vals) a
+
+        
+getf :: ParamType -> IO VGfloat
+getf typ = vgGetf (marshalParamType typ)
+
+geti :: ParamType -> IO VGint
+geti typ = vgGeti (marshalParamType typ)
+
+
+getVectorSize :: ParamType -> IO VGint
+getVectorSize typ = vgGetVectorSize (marshalParamType typ)
+
+getfv :: ParamType -> VGint -> IO [VGfloat]
+getfv typ i = do
+    ptr <- vgGetfv (marshalParamType typ) i 
+    peekArray (fromIntegral i) ptr
+    
+getiv :: ParamType -> VGint -> IO [VGint]
+getiv typ i = do
+    ptr <- vgGetiv (marshalParamType typ) i 
+    peekArray (fromIntegral i) ptr
+
+
+setParameterf :: VGHandle -> VGenum -> VGfloat -> IO ()
+setParameterf = vgSetParameterf
+                                 
+setParameteri :: VGHandle -> VGenum -> VGint -> IO ()
+setParameteri = vgSetParameteri
+
+setParameterfv :: VGHandle -> VGenum -> [VGfloat] -> IO ()
+setParameterfv h typ vals = do
+    a <- newArray vals
+    vgSetParameterfv h typ (fromIntegral $ length vals) a
+
+setParameteriv :: VGHandle -> VGenum -> [VGint] -> IO ()
+setParameteriv h typ vals = do
+    a <- newArray vals
+    vgSetParameteriv h typ (fromIntegral $ length vals) a
+
+getParameterf :: VGHandle -> VGenum -> IO VGfloat
+getParameterf = vgGetParameterf
+
+getParameteri :: VGHandle -> VGenum -> IO VGint
+getParameteri = vgGetParameteri
+
+
+getParameterVectorSize :: VGHandle -> VGenum -> IO VGint
+getParameterVectorSize = vgGetParameterVectorSize
+
+getParameterfv :: VGHandle -> VGenum -> VGint -> IO [VGfloat]
+getParameterfv h typ i = do
+    ptr <- vgGetParameterfv h typ i 
+    peekArray (fromIntegral i) ptr
+
+getParameteriv :: VGHandle -> VGenum -> VGint -> IO [VGint]
+getParameteriv h typ i = do
+    ptr <- vgGetParameteriv h typ i 
+    peekArray (fromIntegral i) ptr
+                
+--------------------------------------------------------------------------------    
+    
 marshalParamType :: ParamType -> VGenum
 marshalParamType x = case x of
     ParamMatrixMode -> vg_MATRIX_MODE 

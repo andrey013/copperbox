@@ -25,7 +25,8 @@
 
 module Main where
 
-import Graphics.Rendering.OpenVG
+import Graphics.Rendering.OpenVG ( 
+    createContextSH, destroyContextSH, StringID(..) , stringId )
 import Graphics.UI.GLUT
 
 main :: IO ()
@@ -35,21 +36,20 @@ main = do
                             WithStencilBuffer, Multisampling ]
     initialWindowSize $= Size 100 100
     initialWindowPosition $= Position 0 0
-    createWindow progName
+    win <- createWindow progName
     
     okb <- createContextSH 10 10
-    if okb then do { queryStr "OpenVG - Vendor " Vendor
+    if okb then do { queryStr "OpenVG - Vendor "  Vendor
                    ; queryStr "OpenVG - Version " Version }
            else do { putStrLn "createContextSH failed - bad news!" } 
     destroyContextSH
+    destroyWindow win
     putStrLn "Done."
   where
     queryStr :: String -> StringID -> IO ()
     queryStr msg sid = do 
-        ans <- getString sid
-        case ans of 
-          Left err -> putStrLn $ "error - getString " ++ show sid 
-          Right s -> putStrLn $ msg ++ s
+        ans <- get $ stringId sid
+        putStrLn $ msg ++ ans
              
     
     

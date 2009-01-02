@@ -23,12 +23,12 @@ module Graphics.Rendering.OpenVG.VG.BasicTypes (
   VGboolean, VGfloat,
   VGenum,
   
-  vg_FALSE, vg_TRUE,
+  vg_FALSE, vg_TRUE, marshalBool,
   
   VGHandle,
   vg_INVALID_HANDLE,
   
-  VGImage',
+  VGImage,
   
 ) where
 
@@ -56,12 +56,18 @@ type VGboolean = CInt
   , vg_FALSE    = VG_FALSE
   , vg_TRUE     = VG_TRUE
   }
+
+marshalBool :: Bool -> VGboolean
+marshalBool x = case x of
+  True -> vg_TRUE
+  False -> vg_FALSE
+
   
 type VGHandle = #type VGHandle
 
 vg_INVALID_HANDLE :: VGHandle 
 vg_INVALID_HANDLE = #const VG_INVALID_HANDLE
 
-type VGImage' = VGHandle
+type VGImage = VGHandle
 
 

@@ -22,7 +22,7 @@ module Graphics.Rendering.OpenVG.VG.ShivaExtensions (
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-        VGint, vg_TRUE, vg_FALSE )
+        VGint, vg_TRUE )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
         vgCreateContextSH, vgResizeSurfaceSH, vgDestroyContextSH ) 
 

@@ -15,6 +15,7 @@
 --
 --
 --------------------------------------------------------------------------------
+{- Not implemented by shiva-vg  -}
 
 module Graphics.Rendering.OpenVG.VG.ImageFilters where
 

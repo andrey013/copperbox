@@ -257,28 +257,27 @@ foreign import ccall unsafe "vg/openvg.h vgGetColor"
 -}
 
 foreign import ccall unsafe "vg/openvg.h vgPaintPattern"  
-    vgPaintPattern :: VGPaint' -> VGImage' -> IO ()
+    vgPaintPattern :: VGPaint' -> VGImage -> IO ()
 
 
 -- | Images
 
 foreign import ccall unsafe "vg/openvg.h vgCreateImage"  
     vgCreateImage :: VGImageFormat' 
-                  -> VGImage' 
                   -> VGint
                   -> VGint
                   -> VGbitfield
-                  -> IO VGImage'
+                  -> IO VGImage
                                   
                                   
 foreign import ccall unsafe "vg/openvg.h vgDestroyImage"  
-    vgDestroyImage :: VGImage' -> IO () 
+    vgDestroyImage :: VGImage -> IO () 
                   
 foreign import ccall unsafe "vg/openvg.h vgClearImage"  
-    vgClearImage :: VGImage' -> VGint -> VGint -> VGint -> VGint -> IO () 
+    vgClearImage :: VGImage -> VGint -> VGint -> VGint -> VGint -> IO () 
                               
 foreign import ccall unsafe "vg/openvg.h vgImageSubData"  
-    vgImageSubData :: VGImage' 
+    vgImageSubData :: VGImage 
                    -> Ptr a
                    -> VGint
                    -> VGImageFormat' 
@@ -290,7 +289,7 @@ foreign import ccall unsafe "vg/openvg.h vgImageSubData"
                                     
 
 foreign import ccall unsafe "vg/openvg.h vgGetImageSubData"  
-    vgGetImageSubData :: VGImage' 
+    vgGetImageSubData :: VGImage 
                       -> Ptr a
                       -> VGint
                       -> VGImageFormat' 
@@ -303,37 +302,31 @@ foreign import ccall unsafe "vg/openvg.h vgGetImageSubData"
 {-
 -- TODO vgChildImage seems to be missing in the dll... ?
 foreign import ccall unsafe "vg/openvg.h vgChildImage"  
-    vgChildImage :: VGImage' -> VGint -> VGint -> VGint -> VGint -> IO VGImage'
+    vgChildImage :: VGImage -> VGint -> VGint -> VGint -> VGint -> IO VGImage
 -}
 
 {-
 -- TODO vgGetParent seems to be missing in the dll... ?                        
 foreign import ccall unsafe "vg/openvg.h vgGetParent"  
-    vgGetParent :: VGImage' -> IO VGImage'
+    vgGetParent :: VGImage -> IO VGImage
 -}
 
 
 foreign import ccall unsafe "vg/openvg.h vgCopyImage"  
-    vgCopyImage :: VGImage' 
-                -> VGint 
-                -> VGint 
-                -> VGImage' 
-                -> VGint 
-                -> VGint 
-                -> VGint 
-                -> VGint 
-                -> VGint 
+    vgCopyImage :: VGImage -> VGint -> VGint 
+                -> VGImage -> VGint -> VGint 
+                -> VGint   -> VGint 
                 -> VGboolean
                 -> IO ()
     
                              
 foreign import ccall unsafe "vg/openvg.h vgDrawImage"  
-    vgDrawImage :: VGImage' -> IO ()
+    vgDrawImage :: VGImage -> IO ()
 
 foreign import ccall unsafe "vg/openvg.h vgSetPixels"  
     vgSetPixels :: VGint 
                 -> VGint 
-                -> VGImage' 
+                -> VGImage 
                 -> VGint 
                 -> VGint 
                 -> VGint 
@@ -352,7 +345,7 @@ foreign import ccall unsafe "vg/openvg.h vgWritePixels"
                 
 
 foreign import ccall unsafe "vg/openvg.h vgGetPixels"  
-    vgGetPixels :: VGImage'
+    vgGetPixels :: VGImage
                 -> VGint 
                 -> VGint  
                 -> VGint 
@@ -387,14 +380,14 @@ foreign import ccall unsafe "vg/openvg.h vgCopyPixels"
 {-
 -- TODO vgColorMatrix seems to be missing in the dll... ? 
 foreign import ccall unsafe "vg/openvg.h vgColorMatrix"  
-    vgColorMatrix :: VGImage' -> VGImage' -> Ptr VGfloat -> IO ()
+    vgColorMatrix :: VGImage -> VGImage -> Ptr VGfloat -> IO ()
 -}     
 
 {-
 -- TODO vgConvolve seems to be missing in the dll... ? 
 foreign import ccall unsafe "vg/openvg.h vgConvolve"  
-    vgConvolve :: VGImage' 
-               -> VGImage'
+    vgConvolve :: VGImage 
+               -> VGImage
                -> VGint
                -> VGint
                -> VGint
@@ -409,8 +402,8 @@ foreign import ccall unsafe "vg/openvg.h vgConvolve"
 {-
 -- TODO vgSeparableConvolve seems to be missing in the dll... ? 
 foreign import ccall unsafe "vg/openvg.h vgSeparableConvolve"  
-    vgSeparableConvolve :: VGImage' 
-                        -> VGImage'
+    vgSeparableConvolve :: VGImage 
+                        -> VGImage
                         -> VGint
                         -> VGint
                         -> VGint
@@ -426,8 +419,8 @@ foreign import ccall unsafe "vg/openvg.h vgSeparableConvolve"
 {-
 -- TODO vgGaussianBlur seems to be missing in the dll... ?            
 foreign import ccall unsafe "vg/openvg.h vgGaussianBlur"  
-    vgGaussianBlur :: VGImage' 
-                   -> VGImage'
+    vgGaussianBlur :: VGImage 
+                   -> VGImage
                    -> VGfloat
                    -> VGfloat
                    -> VGTilingMode'
@@ -437,8 +430,8 @@ foreign import ccall unsafe "vg/openvg.h vgGaussianBlur"
 {-
 -- TODO vgLookup seems to be missing in the dll... ? 
 foreign import ccall unsafe "vg/openvg.h vgLookup"  
-    vgLookup :: VGImage' 
-             -> VGImage'
+    vgLookup :: VGImage 
+             -> VGImage
              -> Ptr VGubyte
              -> Ptr VGubyte
              -> Ptr VGubyte
@@ -451,8 +444,8 @@ foreign import ccall unsafe "vg/openvg.h vgLookup"
 {-
 -- TODO vgLookupSingle seems to be missing in the dll... ?
 foreign import ccall unsafe "vg/openvg.h vgLookupSingle"  
-    vgLookupSingle :: VGImage' 
-                   -> VGImage'
+    vgLookupSingle :: VGImage 
+                   -> VGImage
                    -> Ptr VGuint
                    -> VGImageChannel'
                    -> VGboolean
