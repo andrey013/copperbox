@@ -28,7 +28,7 @@ module Graphics.Rendering.OpenVG.VG.BasicTypes (
   VGHandle,
   vg_INVALID_HANDLE,
   
-  VGImage,
+  VGPath, VGImage, VGPaint
   
 ) where
 
@@ -68,6 +68,7 @@ type VGHandle = #type VGHandle
 vg_INVALID_HANDLE :: VGHandle 
 vg_INVALID_HANDLE = #const VG_INVALID_HANDLE
 
+type VGPath  = VGHandle
 type VGImage = VGHandle
-
+type VGPaint = VGHandle
 

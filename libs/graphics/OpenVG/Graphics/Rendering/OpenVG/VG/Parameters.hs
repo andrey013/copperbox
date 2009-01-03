@@ -27,7 +27,7 @@ module Graphics.Rendering.OpenVG.VG.Parameters (
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGfloat, VGint, VGenum, VGHandle )
+    VGenum, VGfloat, VGint, VGHandle )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
     vgSetf, vgSeti, vgSetfv, vgSetiv,
     vgGetf, vgGeti, vgGetVectorSize, vgGetfv, vgGetiv,

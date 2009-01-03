@@ -33,9 +33,7 @@ type VGHardwareQueryType'   = VGenum
 type VGImageChannel'        = VGenum
 type VGImageFormat'         = VGenum
 type VGMaskOperation'       = VGenum
-type VGPaint'               = VGenum
 type VGPaintMode'           = VGenum
-type VGPath'                = VGenum
 type VGPathDatatype'        = VGenum
 type VGStringID'            = VGenum
 type VGTilingMode'          = VGenum
@@ -135,6 +133,8 @@ foreign import ccall unsafe "vg/openvg.h vgMask"
 foreign import ccall unsafe "vg/openvg.h vgClear"  
     vgClear :: VGint -> VGint -> VGint -> VGint -> IO ()
 
+
+
 -- | Paths
 foreign import ccall unsafe "vg/openvg.h vgCreatePath"  
     vgCreatePath :: VGint 
@@ -144,58 +144,58 @@ foreign import ccall unsafe "vg/openvg.h vgCreatePath"
                  -> VGint 
                  -> VGint 
                  -> VGbitfield 
-                 -> IO VGPath'
+                 -> IO VGPath
     
 
 
 foreign import ccall unsafe "vg/openvg.h vgClearPath"  
-    vgClearPath :: VGPath' -> VGbitfield -> IO ()
+    vgClearPath :: VGPath -> VGbitfield -> IO ()
 
 foreign import ccall unsafe "vg/openvg.h vgDestroyPath"  
-    vgDestroyPath :: VGPath' -> IO ()
+    vgDestroyPath :: VGPath -> IO ()
     
 foreign import ccall unsafe "vg/openvg.h vgRemovePathCapabilities"  
-    vgRemovePathCapabilities :: VGPath' -> VGbitfield -> IO ()
+    vgRemovePathCapabilities :: VGPath -> VGbitfield -> IO ()
 
 foreign import ccall unsafe "vg/openvg.h vgGetPathCapabilities"  
-    vgGetPathCapabilities :: VGPath' -> IO VGbitfield
+    vgGetPathCapabilities :: VGPath -> IO VGbitfield
     
 foreign import ccall unsafe "vg/openvg.h vgAppendPath"  
-    vgAppendPath :: VGPath' -> VGPath' -> IO ()
+    vgAppendPath :: VGPath -> VGPath -> IO ()
 
--- append the data in /Ptr a/ to the path handle /VGPath'/.    
+-- append the data in /Ptr a/ to the path handle /VGPath/.    
 foreign import ccall unsafe "vg/openvg.h vgAppendPathData"  
-    vgAppendPathData :: VGPath' -> VGint -> Ptr VGubyte -> Ptr a -> IO ()
+    vgAppendPathData :: VGPath -> VGint -> Ptr VGubyte -> Ptr a -> IO ()
 
 
 foreign import ccall unsafe "vg/openvg.h vgModifyPathCoords"  
-    vgModifyPathCoords :: VGPath' -> VGint -> VGint -> Ptr a -> IO ()
+    vgModifyPathCoords :: VGPath -> VGint -> VGint -> Ptr a -> IO ()
     
                                         
                                     
 
 foreign import ccall unsafe "vg/openvg.h vgTransformPath"  
-    vgTransformPath :: VGPath' -> VGPath' -> IO ()
+    vgTransformPath :: VGPath -> VGPath -> IO ()
     
     
 
 foreign import ccall unsafe "vg/openvg.h vgInterpolatePath"  
-    vgInterpolatePath :: VGPath' 
-                      -> VGPath' 
-                      -> VGPath' 
+    vgInterpolatePath :: VGPath 
+                      -> VGPath 
+                      -> VGPath 
                       -> VGfloat 
                       -> IO VGboolean
 {-
 -- TODO vgPathLength seems to be missing in the dll... ?
 foreign import ccall unsafe "vg/openvg.h vgPathLength"  
-    vgPathLength :: VGPath' -> VGint -> VGint -> IO VGfloat   
+    vgPathLength :: VGPath -> VGint -> VGint -> IO VGfloat   
 -}
 
 {-
 -- TODO vgPathLength seems to be missing in the dll... ?
 foreign import ccall unsafe "vg/openvg.h vgPathLength"                                  
 foreign import ccall unsafe "vg/openvg.h vgPointAlongPath"  
-    vgPointAlongPath :: VGPath' 
+    vgPointAlongPath :: VGPath 
                      -> VGint 
                      -> VGint 
                      -> VGfloat
@@ -207,7 +207,7 @@ foreign import ccall unsafe "vg/openvg.h vgPointAlongPath"
 -}
 
 foreign import ccall unsafe "vg/openvg.h vgPathBounds"  
-    vgPathBounds :: VGPath' 
+    vgPathBounds :: VGPath 
                  -> Ptr VGfloat 
                  -> Ptr VGfloat 
                  -> Ptr VGfloat
@@ -216,7 +216,7 @@ foreign import ccall unsafe "vg/openvg.h vgPathBounds"
                                                    
 
 foreign import ccall unsafe "vg/openvg.h vgPathTransformedBounds"  
-    vgPathTransformedBounds :: VGPath' 
+    vgPathTransformedBounds :: VGPath 
                             -> Ptr VGfloat 
                             -> Ptr VGfloat 
                             -> Ptr VGfloat
@@ -224,40 +224,40 @@ foreign import ccall unsafe "vg/openvg.h vgPathTransformedBounds"
                             -> IO () 
 
 foreign import ccall unsafe "vg/openvg.h vgDrawPath"  
-    vgDrawPath :: VGPath' -> VGbitfield -> IO ()
+    vgDrawPath :: VGPath -> VGbitfield -> IO ()
 
 
 
 -- | Paint 
 foreign import ccall unsafe "vg/openvg.h vgCreatePaint"  
-    vgCreatePaint :: IO ()    
+    vgCreatePaint :: IO VGPaint    
 
 foreign import ccall unsafe "vg/openvg.h vgDestroyPaint"  
-    vgDestroyPaint :: VGPaint' -> IO ()
+    vgDestroyPaint :: VGPaint -> IO ()
     
 foreign import ccall unsafe "vg/openvg.h vgSetPaint"  
-    vgSetPaint :: VGPaint' -> VGbitfield -> IO ()
+    vgSetPaint :: VGPaint -> VGbitfield -> IO ()
 
 {-
 -- TODO vgGetPaint seems to be missing in the dll... ?
 foreign import ccall unsafe "vg/openvg.h vgGetPaint"  
-    vgGetPaint :: VGPaintMode' -> VGbitfield -> IO VGPaint'
+    vgGetPaint :: VGPaintMode' -> IO VGPaint
 -}
 
 {-
 -- TODO vgSetColor seems to be missing in the dll... ?
 foreign import ccall unsafe "vg/openvg.h vgSetColor"  
-    vgSetColor :: VGPaint' -> VGuint -> IO ()
+    vgSetColor :: VGPaint -> VGuint -> IO ()
 -}
 
 {-
 -- TODO vgGetColor seems to be missing in the dll... ?
 foreign import ccall unsafe "vg/openvg.h vgGetColor"  
-    vgGetColor :: VGPaint' -> IO VGuint
+    vgGetColor :: VGPaint -> IO VGuint
 -}
 
 foreign import ccall unsafe "vg/openvg.h vgPaintPattern"  
-    vgPaintPattern :: VGPaint' -> VGImage -> IO ()
+    vgPaintPattern :: VGPaint -> VGImage -> IO ()
 
 
 -- | Images

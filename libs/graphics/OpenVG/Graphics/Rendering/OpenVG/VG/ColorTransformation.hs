@@ -17,6 +17,7 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.ColorTransformation (
+  BlendMode(..), 
   blendMode
 ) where
 

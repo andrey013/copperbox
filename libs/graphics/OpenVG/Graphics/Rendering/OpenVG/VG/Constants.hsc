@@ -23,6 +23,10 @@ module Graphics.Rendering.OpenVG.VG.Constants where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes
 
+vg_PATH_FORMAT_STANDARD :: VGint
+vg_PATH_FORMAT_STANDARD = #const VG_PATH_FORMAT_STANDARD
+
+
 -- | Enumerations
 
 #{enum VGenum,

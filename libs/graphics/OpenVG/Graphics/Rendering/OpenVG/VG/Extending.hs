@@ -37,6 +37,8 @@ data StringID =
    | Version
    | Extensions
    deriving ( Eq, Ord, Show )
+
+-- c.f. GLUT colorMapEntry, StateVars don't have to be /unary/.
    
 stringId :: StringID -> GettableStateVar String
 stringId sid = makeGettableStateVar $ do 

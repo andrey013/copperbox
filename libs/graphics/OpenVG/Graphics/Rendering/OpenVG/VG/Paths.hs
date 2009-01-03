@@ -16,11 +16,19 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.OpenVG.VG.Paths  where
+module Graphics.Rendering.OpenVG.VG.Paths (
+  PaintMode(..), marshalPaintMode,
+  createPath, clearPath, destroyPath
+) where
 
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
+import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
+    VGenum, VGint, VGfloat, VGPath )
+import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
+    vgCreatePath, vgClearPath, vgDestroyPath )
 import Graphics.Rendering.OpenVG.VG.Constants ( 
+    vg_PATH_DATATYPE_S_8, vg_PATH_DATATYPE_S_16,
+    vg_PATH_DATATYPE_S_32, vg_PATH_DATATYPE_F,
     
     vg_PATH_CAPABILITY_APPEND_FROM, vg_PATH_CAPABILITY_APPEND_TO,
     vg_PATH_CAPABILITY_MODIFY, vg_PATH_CAPABILITY_TRANSFORM_FROM,
@@ -36,77 +44,77 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_JOIN_MITER, vg_JOIN_ROUND, vg_JOIN_BEVEL,
     vg_EVEN_ODD, vg_NON_ZERO,
     vg_STROKE_PATH, vg_FILL_PATH )
-
+import Graphics.Rendering.OpenVG.VG.Utils ( Marshal(..), bitwiseOr )
 
 data PathDatatype =
-     PathDatatypeS8
-   | PathDatatypeS16
-   | PathDatatypeS32
-   | PathDatatypeF
+     S_8
+   | S_16
+   | S_32
+   | F_ieee754
    deriving ( Eq, Ord, Show )
    
 data PathType = 
-     PathAbsolute
-   | PathRelative
+     Absolute
+   | Relative
    deriving ( Eq, Ord, Show )
       
 data PathSegment = 
-     PathSegmentClosePath
-   | PathSegmentMoveTo
-   | PathSegmentLineTo
-   | PathSegmentHLineTo
-   | PathSegmentVLineTo
-   | PathSegmentQuadTo
-   | PathSegmentCubicTo
-   | PathSegmentSQuadTo
-   | PathSegmentSCubicTo
-   | PathSegmentSCCWArcTo
-   | PathSegmentSCWArcTo
-   | PathSegmentLCCWArcTo
-   | PathSegmentLCWArcTo
+     ClosePath
+   | MoveTo
+   | LineTo
+   | HLineTo
+   | VLineTo
+   | QuadTo
+   | CubicTo
+   | SQuadTo
+   | SCubicTo
+   | SCCWArcTo
+   | SCWArcTo
+   | LCCWArcTo
+   | LCWArcTo
    deriving ( Eq, Ord, Show )
    
 data PathCommand = 
-     PathCmdMoveToAbs
-   | PathCmdMoveToRel
-   | PathCmdLineToAbs
-   | PathCmdLineToRel
-   | PathCmdHLineToAbs
-   | PathCmdHLineToRel
-   | PathCmdVLineToAbs
-   | PathCmdVLineToRel
-   | PathCmdQuadToAbs
-   | PathCmdQuadToRel
-   | PathCmdCubicToAbs
-   | PathCmdCubicToRel
-   | PathCmdSQuadToAbs
-   | PathCmdSQuadToRel
-   | PathCmdSCubicToAbs
-   | PathCmdSCubicToRel
-   | PathCmdSCCWArcToAbs
-   | PathCmdSCCWArcToRel
-   | PathCmdSCWArcToAbs
-   | PathCmdSCWArcToRel
-   | PathCmdLCCWArcToAbs
-   | PathCmdLCCWArcToRel
-   | PathCmdLCWArcToAbs
-   | PathCmdLCWArcToRel
+     MoveToAbs
+   | MoveToRel
+   | LineToAbs
+   | LineToRel
+   | HLineToAbs
+   | HLineToRel
+   | VLineToAbs
+   | VLineToRel
+   | QuadToAbs
+   | QuadToRel
+   | CubicToAbs
+   | CubicToRel
+   | SQuadToAbs
+   | SQuadToRel
+   | SCubicToAbs
+   | SCubicToRel
+   | SCCWArcToAbs
+   | SCCWArcToRel
+   | SCWArcToAbs
+   | SCWArcToRel
+   | LCCWArcToAbs
+   | LCCWArcToRel
+   | LCWArcToAbs
+   | LCWArcToRel
    deriving ( Eq, Ord, Show )
 
 data PathCapabilities = 
-     PathCapabilityAppendFrom
-   | PathCapabilityAppendTo
-   | PathCapabilityModify
-   | PathCapabilityTransformFrom
-   | PathCapabilityTransformTo
-   | PathCapabilityInterpolateFrom
-   | PathCapabilityInterpolateTo
-   | PathCapabilityPathLength
-   | PathCapabilityPointAlongPath
-   | PathCapabilityTangentAlongPath
-   | PathCapabilityPathBounds
-   | PathCapabilityPathTransfomedBounds
-   | PathCapabilityAll
+     AppendFrom
+   | AppendTo
+   | Modify
+   | TransformFrom
+   | TransformTo
+   | InterpolateFrom
+   | InterpolateTo
+   | PathLength
+   | PointAlongPath
+   | TangentAlongPath
+   | PathBounds
+   | PathTransfomedBounds
+   | CapabilityAll
    deriving ( Eq, Ord, Show )
    
 data PathParamType = 
@@ -131,31 +139,53 @@ data JoinStyle =
    deriving ( Eq, Ord, Show )
    
 data FillRule = 
-     FillEvenOdd
-   | FillNonZero
+     EvenOdd
+   | NonZero
    deriving ( Eq, Ord, Show )
 
 data PaintMode =
-     PaintModeStrokePath
-   | PaintModeFillPath
+     StrokePath
+   | FillPath
    deriving ( Eq, Ord, Show )
+
+
+createPath :: VGint -> PathDatatype -> VGfloat -> VGfloat
+                 -> VGint -> VGint -> [PathCapabilities] -> IO VGPath
+createPath fmt typ scale bias sch cch cs = 
+    vgCreatePath fmt (marshalPathDatatype typ) scale bias sch cch (bitwiseOr cs)
+
+clearPath :: VGPath -> [PathCapabilities] -> IO ()
+clearPath h cs = vgClearPath h (bitwiseOr cs)
+
+destroyPath :: VGPath -> IO ()
+destroyPath = vgDestroyPath
+
+--------------------------------------------------------------------------------
+marshalPathDatatype :: PathDatatype -> VGenum
+marshalPathDatatype x = case x of
+    S_8 -> vg_PATH_DATATYPE_S_8
+    S_16 -> vg_PATH_DATATYPE_S_16
+    S_32 -> vg_PATH_DATATYPE_S_32
+    F_ieee754 -> vg_PATH_DATATYPE_F
+   
    
 marshalPathCapabilities :: PathCapabilities -> VGenum
 marshalPathCapabilities x = case x of 
-    PathCapabilityAppendFrom -> vg_PATH_CAPABILITY_APPEND_FROM
-    PathCapabilityAppendTo -> vg_PATH_CAPABILITY_APPEND_TO
-    PathCapabilityModify -> vg_PATH_CAPABILITY_MODIFY
-    PathCapabilityTransformFrom -> vg_PATH_CAPABILITY_TRANSFORM_FROM
-    PathCapabilityTransformTo -> vg_PATH_CAPABILITY_TRANSFORM_TO
-    PathCapabilityInterpolateFrom -> vg_PATH_CAPABILITY_INTERPOLATE_FROM
-    PathCapabilityInterpolateTo -> vg_PATH_CAPABILITY_INTERPOLATE_TO
-    PathCapabilityPathLength -> vg_PATH_CAPABILITY_PATH_LENGTH
-    PathCapabilityPointAlongPath -> vg_PATH_CAPABILITY_POINT_ALONG_PATH
-    PathCapabilityTangentAlongPath -> vg_PATH_CAPABILITY_TANGENT_ALONG_PATH
-    PathCapabilityPathBounds -> vg_PATH_CAPABILITY_PATH_BOUNDS
-    PathCapabilityPathTransfomedBounds -> vg_PATH_CAPABILITY_PATH_TRANSFORMED_BOUNDS
-    PathCapabilityAll -> vg_PATH_CAPABILITY_ALL
-     
+    AppendFrom -> vg_PATH_CAPABILITY_APPEND_FROM
+    AppendTo -> vg_PATH_CAPABILITY_APPEND_TO
+    Modify -> vg_PATH_CAPABILITY_MODIFY
+    TransformFrom -> vg_PATH_CAPABILITY_TRANSFORM_FROM
+    TransformTo -> vg_PATH_CAPABILITY_TRANSFORM_TO
+    InterpolateFrom -> vg_PATH_CAPABILITY_INTERPOLATE_FROM
+    InterpolateTo -> vg_PATH_CAPABILITY_INTERPOLATE_TO
+    PathLength -> vg_PATH_CAPABILITY_PATH_LENGTH
+    PointAlongPath -> vg_PATH_CAPABILITY_POINT_ALONG_PATH
+    TangentAlongPath -> vg_PATH_CAPABILITY_TANGENT_ALONG_PATH
+    PathBounds -> vg_PATH_CAPABILITY_PATH_BOUNDS
+    PathTransfomedBounds -> vg_PATH_CAPABILITY_PATH_TRANSFORMED_BOUNDS
+    CapabilityAll -> vg_PATH_CAPABILITY_ALL
+
+instance Marshal PathCapabilities where marshal = marshalPathCapabilities     
     
 marshalPathParamType :: PathParamType -> VGenum
 marshalPathParamType x = case x of
@@ -181,10 +211,13 @@ marshalJoinStyle x = case x of
 
 marshalFillRule :: FillRule -> VGenum
 marshalFillRule x = case x of 
-    FillEvenOdd -> vg_EVEN_ODD
-    FillNonZero -> vg_NON_ZERO
+    EvenOdd -> vg_EVEN_ODD
+    NonZero -> vg_NON_ZERO
 
 marshalPaintMode :: PaintMode -> VGenum     
 marshalPaintMode x = case x of 
-    PaintModeStrokePath -> vg_STROKE_PATH
-    PaintModeFillPath -> vg_FILL_PATH
+    StrokePath -> vg_STROKE_PATH
+    FillPath -> vg_FILL_PATH
+
+instance Marshal PaintMode where marshal = marshalPaintMode
+ 

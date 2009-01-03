@@ -16,8 +16,17 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.OpenVG.VG.Paint  where
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
+module Graphics.Rendering.OpenVG.VG.Paint (
+  createPaint, destroyPaint, setPaint,
+  vgPaintPattern
+) where
+
+import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
+    VGenum, VGImage, VGPaint )
+import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
+    vgCreatePaint, vgDestroyPaint, vgSetPaint,
+    vgPaintPattern )
+    
 import Graphics.Rendering.OpenVG.VG.Constants (
     vg_PAINT_TYPE, vg_PAINT_COLOR, vg_PAINT_COLOR_RAMP_SPREAD_MODE, 
     vg_PAINT_COLOR_RAMP_STOPS, vg_PAINT_COLOR_RAMP_PREMULTIPLIED, 
@@ -31,6 +40,10 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_COLOR_RAMP_SPREAD_REFLECT,
             
     vg_TILE_FILL, vg_TILE_PAD, vg_TILE_REPEAT, vg_TILE_REFLECT)
+
+import Graphics.Rendering.OpenVG.VG.Paths (
+    PaintMode(..), marshalPaintMode )
+import Graphics.Rendering.OpenVG.VG.Utils ( bitwiseOr )
     
 data PaintParamType = 
     --  Color paint parameters
@@ -55,9 +68,9 @@ data PaintType =
    deriving ( Eq, Ord, Show )
    
 data ColorRampSpreadMode = 
-     ColorRampSpreadPad
-   | ColorRampSpreadRepeat
-   | ColorRampSpreadReflect
+     CRSPad
+   | CRSRepeat
+   | CRSReflect
    deriving ( Eq, Ord, Show )
    
 data TilingMode = 
@@ -66,6 +79,19 @@ data TilingMode =
    | TileRepeat
    | TileReflect
    deriving ( Eq, Ord, Show )   
+
+createPaint :: IO VGPaint  
+createPaint = vgCreatePaint
+
+destroyPaint :: VGPaint -> IO ()
+destroyPaint = vgDestroyPaint
+
+setPaint :: VGPaint -> [PaintMode] -> IO ()
+setPaint h ms = vgSetPaint h (bitwiseOr ms)
+
+paintPattern :: VGPaint -> VGImage -> IO ()
+paintPattern = vgPaintPattern
+
 
 marshalPaintParamType :: PaintParamType -> VGenum
 marshalPaintParamType x = case x of 
@@ -89,9 +115,9 @@ marshalPaintType x = case x of
     
 marshalColorRampSpreadMode :: ColorRampSpreadMode -> VGenum
 marshalColorRampSpreadMode x = case x of 
-    ColorRampSpreadPad -> vg_COLOR_RAMP_SPREAD_PAD
-    ColorRampSpreadRepeat -> vg_COLOR_RAMP_SPREAD_REPEAT
-    ColorRampSpreadReflect -> vg_COLOR_RAMP_SPREAD_REFLECT
+    CRSPad -> vg_COLOR_RAMP_SPREAD_PAD
+    CRSRepeat -> vg_COLOR_RAMP_SPREAD_REPEAT
+    CRSReflect -> vg_COLOR_RAMP_SPREAD_REFLECT
 
 marshalTilingMode :: TilingMode -> VGenum
 marshalTilingMode x = case x of

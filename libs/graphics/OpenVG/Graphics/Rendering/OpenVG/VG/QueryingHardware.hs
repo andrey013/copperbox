@@ -15,7 +15,7 @@
 --
 --
 --------------------------------------------------------------------------------
-
+{- Not implemented by shiva-vg  -}
 module Graphics.Rendering.OpenVG.VG.QueryingHardware where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
