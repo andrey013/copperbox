@@ -23,7 +23,7 @@ module Graphics.Rendering.OpenVG.VG.Paint (
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGImage, VGPaint )
+    VGenum, VGint, VGfloat, VGImage, VGPaint )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
     vgCreatePaint, vgDestroyPaint, vgSetPaint,
     vgPaintPattern )
@@ -40,17 +40,20 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_COLOR_RAMP_SPREAD_PAD, vg_COLOR_RAMP_SPREAD_REPEAT, 
     vg_COLOR_RAMP_SPREAD_REFLECT,
             
-    vg_TILE_FILL, vg_TILE_PAD, vg_TILE_REPEAT, vg_TILE_REFLECT)
+    vg_TILE_FILL, vg_TILE_PAD, vg_TILE_REPEAT, vg_TILE_REFLECT )
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
-    getParameteri, setParameteri ) 
+    ParamType( ParamMaxColorRampStops ),
+    geti, getParameteri, setParameteri, setParameterfv ) 
     
 import Graphics.Rendering.OpenVG.VG.Paths (
-    PaintMode(..), marshalPaintMode )
+    PaintMode(..) )
 import Graphics.Rendering.OpenVG.VG.Utils ( bitwiseOr )
 
 import Graphics.Rendering.OpenGL.GL.StateVar (
-    StateVar(), makeStateVar )
-        
+    StateVar(), makeStateVar,
+--    SettableStateVar, makeSettableStateVar,
+    GettableStateVar, makeGettableStateVar )
+     
 data PaintParamType = 
     --  Color paint parameters
      PaintType
@@ -73,11 +76,7 @@ data PaintType =
    | Pattern
    deriving ( Eq, Ord, Show )
    
-data ColorRampSpreadMode = 
-     CRSPad
-   | CRSRepeat
-   | CRSReflect
-   deriving ( Eq, Ord, Show )
+
    
 data TilingMode = 
      TileFill
@@ -100,20 +99,50 @@ setPaint h ms = vgSetPaint h (bitwiseOr ms)
 -- | Getters and setters for Table 10.
 
 paintType :: VGPaint -> StateVar PaintType
-paintType h = makeStateVar (getPaintType h) (setPaintType h)
+paintType ph = makeStateVar (getPaintType ph) (setPaintType ph) 
+  where
+    getPaintType :: VGPaint -> IO PaintType
+    getPaintType h = do 
+        a <- getParameteri h vg_PAINT_TYPE
+        return $ unmarshalPaintType $ fromIntegral a 
+    
+    setPaintType :: VGPaint -> PaintType -> IO ()
+    setPaintType h v = 
+        setParameteri h vg_PAINT_TYPE (fromIntegral $ marshalPaintType v)
+                    
+{-
+-- not implemented in shiva-vg                    
+paintColor :: VGPaint -> StateVar VGuint
+paintColor h = makeStateVar (vgGetColor h) (vgSetColor h) 
+-}
 
-getPaintType :: VGPaint -> IO PaintType
-getPaintType h = do 
-    a <- getParameteri h (marshalPaintParamType PaintType)
-    return $ unmarshalPaintType $ fromIntegral a 
-
-setPaintType :: VGPaint -> PaintType -> IO ()
-setPaintType h v = 
-    setParameteri h (marshalPaintParamType PaintType) 
-                    (fromIntegral $ marshalPaintType v)
--- ...
+                    
+-- Gradient paint
+linearGradientPaint :: VGPaint 
+                    -> VGfloat -> VGfloat -> VGfloat -> VGfloat -> IO ()
+linearGradientPaint h x0 y0 x1 y1 = do
+    setParameteri  h vg_PAINT_TYPE (fromIntegral vg_PAINT_LINEAR_GRADIENT)
+    setParameterfv h vg_PAINT_LINEAR_GRADIENT [x0,y0,x1,y1]
 
 
+
+radialGradientPaint :: VGPaint 
+                    -> VGfloat -> VGfloat -> VGfloat -> VGfloat -> VGfloat 
+                    -> IO ()
+radialGradientPaint h cx cy fx fy r = do
+    setParameteri  h vg_PAINT_TYPE (fromIntegral vg_PAINT_RADIAL_GRADIENT)
+    setParameterfv h vg_PAINT_RADIAL_GRADIENT [cx,cy,fx,fy,r]
+    
+
+maxStops :: GettableStateVar VGint 
+maxStops = makeGettableStateVar $ geti ParamMaxColorRampStops
+
+data ColorRampSpreadMode = 
+     CRSPad
+   | CRSRepeat
+   | CRSReflect
+   deriving ( Eq, Ord, Show )
+       
 
 paintPattern :: VGPaint -> VGImage -> IO ()
 paintPattern = vgPaintPattern
@@ -142,10 +171,10 @@ marshalPaintType x = case x of
 
 unmarshalPaintType :: VGenum -> PaintType
 unmarshalPaintType x
-    | x ==vg_PAINT_TYPE_COLOR             = Color
-    | x ==vg_PAINT_TYPE_LINEAR_GRADIENT   = LinearGradient
-    | x ==vg_PAINT_TYPE_RADIAL_GRADIENT   = RadialGradient
-    | x ==vg_PAINT_TYPE_PATTERN           = Pattern
+    | x == vg_PAINT_TYPE_COLOR              = Color
+    | x == vg_PAINT_TYPE_LINEAR_GRADIENT    = LinearGradient
+    | x == vg_PAINT_TYPE_RADIAL_GRADIENT    = RadialGradient
+    | x == vg_PAINT_TYPE_PATTERN            = Pattern
     | otherwise = error ("unmarshalPaintType: illegal value " ++ show x)
     
     

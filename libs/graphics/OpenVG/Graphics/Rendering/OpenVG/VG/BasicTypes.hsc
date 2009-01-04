@@ -36,22 +36,22 @@ module Graphics.Rendering.OpenVG.VG.BasicTypes (
 #include <vg/openvg.h>
 
 import Data.Word ( Word32 )
-import Foreign.C.Types ( CFloat, CChar, CUChar, CShort, CInt, CUInt )
+import Graphics.Rendering.OpenGL.GL.BasicTypes
 
-type VGfloat    = CFloat
-type VGbyte     = CChar
-type VGubyte    = CUChar
-type VGshort    = CShort
-type VGint      = CInt
-type VGuint     = CUInt
-type VGbitfield = CUInt
+type VGfloat    = GLfloat
+type VGbyte     = GLbyte
+type VGubyte    = GLubyte
+type VGshort    = GLshort
+type VGint      = GLint
+type VGuint     = GLuint
+type VGbitfield = GLbitfield
 
-type VGenum     = Word32   {- Hmmm?? -}
+type VGenum     = GLenum 
 
 
 
 -- | The type of data that can be displayed.
-type VGboolean = CInt
+type VGboolean = GLint
 
 #{enum VGboolean,
   , vg_FALSE    = VG_FALSE

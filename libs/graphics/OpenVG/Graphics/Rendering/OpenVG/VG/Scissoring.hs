@@ -39,6 +39,8 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
 import Graphics.Rendering.OpenGL.GL.StateVar (
     SettableStateVar, makeSettableStateVar,
     GettableStateVar, makeGettableStateVar ) 
+
+import Graphics.Rendering.OpenGL.GL.CoordTrans ( Position(..), Size(..) )
 import Graphics.Rendering.OpenGL.GL.VertexSpec ( Color4(..) )
             
 data MaskOperation =
@@ -57,13 +59,13 @@ scissoring = makeSettableStateVar $ \a ->
 maxScissorRects :: GettableStateVar VGint
 maxScissorRects = makeGettableStateVar $ geti ParamMaxScissorRects
 
-type ScissorRect = (VGint,VGint,VGint,VGint)
+type ScissorRect = (Position, Size) 
 
 -- | ScissorRects are discarded immediately and cannot be retrieved with a getvi
 scissorRects :: SettableStateVar [ScissorRect]
 scissorRects = makeSettableStateVar $ \ss ->
     setiv ParamScissorRects (foldr f [] ss) where 
-        f (mx,my,w,h) a = mx:my:w:h:a 
+        f ((Position mx my), (Size w h)) a = mx:my:w:h:a 
 
 alphaMasking :: SettableStateVar Bool
 alphaMasking = makeSettableStateVar $ \a -> 

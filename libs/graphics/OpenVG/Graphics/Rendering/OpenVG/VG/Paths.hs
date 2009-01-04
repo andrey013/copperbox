@@ -17,19 +17,41 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.Paths (
+  PathDatatype(..),
+  PathSegment(..),
+  PathCommand(..),
   PaintMode(..), marshalPaintMode,
   createPath, clearPath, destroyPath,
+  
+  format, datatype, pathScale, bias, numSegments, numCoords,
+  
   removePathCapabilities, getPathCapabilities,
-  appendPath
+  appendPath,
+  
+  -- ** Stroke parameters
+  lineWidth,
+  capStyle,
+  joinStyle,
+  maxDashCount, 
+  dashPattern, 
+  dashPhase,
+  dashPhaseReset,
+  
+  -- ** Filling or stroking a path
+  fillRule,
+  drawPath,
+  fillPath,
+  strokePath,
+  
 ) where
 
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGint, VGfloat, VGPath )
+    VGenum, VGint, VGfloat, VGPath, marshalBool )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
     vgCreatePath, vgClearPath, vgDestroyPath, 
     vgRemovePathCapabilities, vgGetPathCapabilities, 
-    vgAppendPath )
+    vgAppendPath, vgDrawPath )
 import Graphics.Rendering.OpenVG.VG.Constants ( 
     vg_PATH_DATATYPE_S_8, vg_PATH_DATATYPE_S_16,
     vg_PATH_DATATYPE_S_32, vg_PATH_DATATYPE_F,
@@ -47,10 +69,22 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_CAP_BUTT, vg_CAP_ROUND, vg_CAP_SQUARE,
     vg_JOIN_MITER, vg_JOIN_ROUND, vg_JOIN_BEVEL,
     vg_EVEN_ODD, vg_NON_ZERO,
-    vg_STROKE_PATH, vg_FILL_PATH )
+    vg_STROKE_PATH, vg_FILL_PATH  )
+import Graphics.Rendering.OpenVG.VG.Parameters ( 
+    ParamType ( ParamFillRule, 
+                ParamStrokeLineWidth, ParamStrokeCapStyle,
+                ParamStrokeJoinStyle, ParamStrokeDashPattern, 
+                ParamStrokeDashPhase, ParamStrokeDashPhaseReset,
+                ParamMaxDashCount ),
+    getParameteri, getParameterf, seti, setf, setfv, geti )     
+    
 import Graphics.Rendering.OpenVG.VG.Utils ( 
     Marshal(..), Unmarshal(..), bitwiseOr, unbits )
 
+import Graphics.Rendering.OpenGL.GL.StateVar (
+    SettableStateVar, makeSettableStateVar,
+    GettableStateVar, makeGettableStateVar ) 
+    
 data PathDatatype =
      S_8
    | S_16
@@ -123,12 +157,12 @@ data PathCapabilities =
    deriving ( Eq, Ord, Show )
    
 data PathParamType = 
-     PathParamFormat
-   | PathParamDatatype
-   | PathParamScale
-   | PathParamBias
-   | PathParamNumSegments
-   | PathParamNumCoords
+     Format
+   | Datatype
+   | Scale
+   | Bias
+   | NumSegments
+   | NumCoords
    deriving ( Eq, Ord, Show )
    
 data CapStyle = 
@@ -142,28 +176,51 @@ data JoinStyle =
    | JoinRound
    | JoinBevel
    deriving ( Eq, Ord, Show )
-   
-data FillRule = 
-     EvenOdd
-   | NonZero
-   deriving ( Eq, Ord, Show )
 
-data PaintMode =
-     StrokePath
-   | FillPath
-   deriving ( Eq, Ord, Show )
 
 
 createPath :: VGint -> PathDatatype -> VGfloat -> VGfloat
                  -> VGint -> VGint -> [PathCapabilities] -> IO VGPath
-createPath fmt typ scale bias sch cch cs = 
-    vgCreatePath fmt (marshalPathDatatype typ) scale bias sch cch (bitwiseOr cs)
+createPath fmt typ scl bi sch cch cs = 
+    vgCreatePath fmt (marshalPathDatatype typ) scl bi sch cch (bitwiseOr cs)
 
+        
 clearPath :: VGPath -> [PathCapabilities] -> IO ()
 clearPath h cs = vgClearPath h (bitwiseOr cs)
 
 destroyPath :: VGPath -> IO ()
 destroyPath = vgDestroyPath
+
+
+-- | Operations corresponding to Table 8 (8.6.3 Path Queries).
+format :: VGPath -> GettableStateVar VGint
+format h = makeGettableStateVar $
+    getParameteri h (marshalPathParamType Format)
+
+datatype :: VGPath -> GettableStateVar PathDatatype
+datatype h = makeGettableStateVar $ do
+    a <- getParameteri h (marshalPathParamType Datatype)    
+    return $ unmarshalPathDatatype $ fromIntegral a
+    
+pathScale :: VGPath -> GettableStateVar VGfloat
+pathScale h = makeGettableStateVar $
+    getParameterf h (marshalPathParamType Scale)
+
+bias :: VGPath -> GettableStateVar VGfloat
+bias h = makeGettableStateVar $
+    getParameterf h (marshalPathParamType Bias)
+    
+numSegments :: VGPath -> GettableStateVar VGint 
+numSegments h = makeGettableStateVar $
+    getParameteri h (marshalPathParamType NumSegments)
+
+    
+numCoords :: VGPath -> GettableStateVar VGint 
+numCoords h = makeGettableStateVar $
+    getParameteri h (marshalPathParamType NumCoords)
+    
+
+-- | Path capabilities
 
 removePathCapabilities :: VGPath -> [PathCapabilities] -> IO ()
 removePathCapabilities h cs = vgRemovePathCapabilities h (bitwiseOr cs)
@@ -176,7 +233,62 @@ getPathCapabilities h = do
 appendPath :: VGPath -> VGPath -> IO ()
 appendPath = vgAppendPath
 
+-- Stroke parameters
 
+lineWidth :: SettableStateVar VGfloat
+lineWidth = makeSettableStateVar $ \a -> 
+    setf ParamStrokeLineWidth a
+
+capStyle :: SettableStateVar CapStyle
+capStyle = makeSettableStateVar $ \a -> 
+    seti ParamStrokeCapStyle (fromIntegral $ marshalCapStyle a)
+    
+joinStyle :: SettableStateVar JoinStyle
+joinStyle = makeSettableStateVar $ \a -> 
+    seti ParamStrokeJoinStyle (fromIntegral $ marshalJoinStyle a)
+
+maxDashCount :: GettableStateVar VGint 
+maxDashCount = makeGettableStateVar $
+    geti ParamMaxDashCount
+
+dashPattern :: SettableStateVar [VGfloat]
+dashPattern = makeSettableStateVar $ \a -> 
+    setfv ParamStrokeDashPattern a
+
+dashPhase :: SettableStateVar VGfloat
+dashPhase = makeSettableStateVar $ \a -> 
+    setf ParamStrokeDashPhase a
+    
+dashPhaseReset :: SettableStateVar Bool
+dashPhaseReset = makeSettableStateVar $ \a -> 
+    seti ParamStrokeDashPhaseReset (marshalBool a)
+    
+-- | Filling or Stroking a path
+   
+data FillRule = 
+     EvenOdd
+   | NonZero
+   deriving ( Eq, Ord, Show )
+   
+fillRule :: SettableStateVar FillRule
+fillRule = makeSettableStateVar $ \a -> 
+    seti ParamFillRule (fromIntegral $ marshalFillRule a)
+
+
+data PaintMode =
+     StrokePath
+   | FillPath
+   deriving ( Eq, Ord, Show )
+   
+drawPath :: VGPath -> [PaintMode] -> IO ()
+drawPath h ps = vgDrawPath h (bitwiseOr ps)
+
+fillPath :: VGPath -> IO ()
+fillPath h = drawPath h [FillPath]
+
+strokePath :: VGPath -> IO ()
+strokePath h = drawPath h [StrokePath]
+ 
 --------------------------------------------------------------------------------
 marshalPathDatatype :: PathDatatype -> VGenum
 marshalPathDatatype x = case x of
@@ -184,7 +296,14 @@ marshalPathDatatype x = case x of
     S_16 -> vg_PATH_DATATYPE_S_16
     S_32 -> vg_PATH_DATATYPE_S_32
     F_ieee754 -> vg_PATH_DATATYPE_F
-   
+
+unmarshalPathDatatype :: VGenum -> PathDatatype  
+unmarshalPathDatatype x
+    | x == vg_PATH_DATATYPE_S_8   = S_8 
+    | x == vg_PATH_DATATYPE_S_16  = S_16 
+    | x == vg_PATH_DATATYPE_S_32  = S_32
+    | x == vg_PATH_DATATYPE_F     = F_ieee754     
+    | otherwise = error ("unmarshalPathDatatype: illegal value " ++ show x)
    
 marshalPathCapabilities :: PathCapabilities -> VGenum
 marshalPathCapabilities x = case x of 
@@ -225,14 +344,23 @@ instance Unmarshal PathCapabilities where unmarshal = unmarshalPathCapabilities
   
 marshalPathParamType :: PathParamType -> VGenum
 marshalPathParamType x = case x of
-    PathParamFormat -> vg_PATH_FORMAT
-    PathParamDatatype -> vg_PATH_DATATYPE
-    PathParamScale -> vg_PATH_SCALE
-    PathParamBias -> vg_PATH_BIAS
-    PathParamNumSegments -> vg_PATH_NUM_SEGMENTS
-    PathParamNumCoords -> vg_PATH_NUM_COORDS
+    Format -> vg_PATH_FORMAT
+    Datatype -> vg_PATH_DATATYPE
+    Scale -> vg_PATH_SCALE
+    Bias -> vg_PATH_BIAS
+    NumSegments -> vg_PATH_NUM_SEGMENTS
+    NumCoords -> vg_PATH_NUM_COORDS
 
-
+unmarshalPathParamType :: VGenum -> PathParamType 
+unmarshalPathParamType x
+    | x == vg_PATH_FORMAT         = Format 
+    | x == vg_PATH_DATATYPE       = Datatype 
+    | x == vg_PATH_SCALE          = Scale 
+    | x == vg_PATH_BIAS           = Bias 
+    | x == vg_PATH_NUM_SEGMENTS   = NumSegments 
+    | x == vg_PATH_NUM_COORDS     = NumCoords 
+    | otherwise = error ("unmarshalPathParamType: illegal value " ++ show x)
+    
 marshalCapStyle :: CapStyle -> VGenum
 marshalCapStyle x = case x of
     CapButt -> vg_CAP_BUTT
