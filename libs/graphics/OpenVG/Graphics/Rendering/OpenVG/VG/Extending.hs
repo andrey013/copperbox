@@ -10,8 +10,8 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- This module corresponds to section 15 (Extending the API) 
--- of the OpenVG 1.1 specs.
+-- This module corresponds to section 14 (Extending the API) 
+-- of the OpenVG 1.0.1 specs.
 --
 --
 --------------------------------------------------------------------------------

@@ -11,7 +11,7 @@
 -- Portability :  GHC
 --
 -- This module corresponds to section 10 (Images) 
--- of the OpenVG 1.1 specs.
+-- of the OpenVG 1.0.1 specs.
 --
 --
 --------------------------------------------------------------------------------
@@ -118,9 +118,9 @@ data ImageFormat =
    deriving ( Eq, Ord, Show )
    
 data ImageQuality = 
-     ImageQualityNonantialiased
-   | ImageQualityFaster
-   | ImageQualityBetter
+     Nonantialiased
+   | Faster
+   | Better
    deriving ( Eq, Ord, Show )
 
 data ImageParamType = 
@@ -130,9 +130,9 @@ data ImageParamType =
    deriving ( Eq, Ord, Show )
    
 data ImageMode = 
-     DrawImageNormal
-   | DrawImageMultiply
-   | DrawImageStencil
+     Normal
+   | Multiply
+   | Stencil
    deriving ( Eq, Ord, Show )
 
 
@@ -336,9 +336,9 @@ unmarshalImageFormat x
    
 marshalImageQuality :: ImageQuality -> VGenum
 marshalImageQuality x = case x of
-    ImageQualityNonantialiased -> vg_IMAGE_QUALITY_NONANTIALIASED
-    ImageQualityFaster -> vg_IMAGE_QUALITY_FASTER
-    ImageQualityBetter -> vg_IMAGE_QUALITY_BETTER
+    Nonantialiased -> vg_IMAGE_QUALITY_NONANTIALIASED
+    Faster -> vg_IMAGE_QUALITY_FASTER
+    Better -> vg_IMAGE_QUALITY_BETTER
 
 instance Marshal ImageQuality where marshal = marshalImageQuality   
     
@@ -351,6 +351,6 @@ marshalImageParamType x = case x of
      
 marshalImageMode :: ImageMode -> VGenum
 marshalImageMode x = case x of
-    DrawImageNormal -> vg_DRAW_IMAGE_NORMAL
-    DrawImageMultiply -> vg_DRAW_IMAGE_MULTIPLY
-    DrawImageStencil -> vg_DRAW_IMAGE_STENCIL
+    Normal -> vg_DRAW_IMAGE_NORMAL
+    Multiply -> vg_DRAW_IMAGE_MULTIPLY
+    Stencil -> vg_DRAW_IMAGE_STENCIL

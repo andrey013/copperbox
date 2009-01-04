@@ -10,14 +10,16 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- This module corresponds to section 12 (Image Filters) 
--- of the OpenVG 1.1 specs.
+-- This module corresponds to section 11 (Image Filters) 
+-- of the OpenVG 1.0.1 specs.
 --
 --
 --------------------------------------------------------------------------------
 {- Not implemented by shiva-vg  -}
 
 module Graphics.Rendering.OpenVG.VG.ImageFilters where
+
+{-
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
 import Graphics.Rendering.OpenVG.VG.Constants ( 
@@ -39,4 +41,4 @@ marshalImageChannel x = case x of
     ImageChannelAlpha -> vg_ALPHA
     
     
-
+-}

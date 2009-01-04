@@ -38,6 +38,13 @@ type VGPathDatatype'        = VGenum
 type VGStringID'            = VGenum
 type VGTilingMode'          = VGenum
 
+foreign import ccall unsafe "vg/openvg.h vgFlush" 
+    vgFlush :: IO ()
+    
+foreign import ccall unsafe "vg/openvg.h vgFinish" 
+    vgFinish ::  IO ()
+    
+        
 -- getters and setters
 foreign import ccall unsafe "vg/openvg.h vgSeti" 
     vgSeti :: VGenum -> VGint -> IO ()

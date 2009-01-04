@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.OpenVG.VGU.VGU
+-- Module      :  Graphics.Rendering.OpenVG.VG.ShivaExtensions
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
@@ -10,20 +10,25 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- This module corresponds to section 16 (The VGU Utility Library) 
+-- This module corresponds to section 4.3 (Forcing Drawing to Complete) 
 -- of the OpenVG 1.0.1 specs.
---
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.OpenVG.VGU.VGU  where
+module Graphics.Rendering.OpenVG.VG.DrawingContext (
+  flush, finish
+) where
 
-data VGU_ErrorCode = 
-     VGU_NoError
-   | VGU_BadHandleError
-   | VGU_IllegalArgumentError
-   | VGU_OutOfMemoryError
-   | VGU_PathCapabilityError
-   | VGU_BadWarpError
-   deriving ( Eq, Ord, Show )
 
+import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
+        vgFlush, vgFinish ) 
+
+flush :: IO ()
+flush = vgFlush
+
+finish :: IO ()
+finish = vgFinish
+
+
+
+ 

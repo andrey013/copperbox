@@ -11,21 +11,25 @@
 -- Portability :  GHC
 --
 -- This module corresponds to section 8 (Paths) 
--- of the OpenVG 1.1 specs.
+-- of the OpenVG 1.0.1 specs.
 --
 --
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.Paths (
   PaintMode(..), marshalPaintMode,
-  createPath, clearPath, destroyPath
+  createPath, clearPath, destroyPath,
+  removePathCapabilities, getPathCapabilities,
+  appendPath
 ) where
 
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
     VGenum, VGint, VGfloat, VGPath )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
-    vgCreatePath, vgClearPath, vgDestroyPath )
+    vgCreatePath, vgClearPath, vgDestroyPath, 
+    vgRemovePathCapabilities, vgGetPathCapabilities, 
+    vgAppendPath )
 import Graphics.Rendering.OpenVG.VG.Constants ( 
     vg_PATH_DATATYPE_S_8, vg_PATH_DATATYPE_S_16,
     vg_PATH_DATATYPE_S_32, vg_PATH_DATATYPE_F,
@@ -44,7 +48,8 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_JOIN_MITER, vg_JOIN_ROUND, vg_JOIN_BEVEL,
     vg_EVEN_ODD, vg_NON_ZERO,
     vg_STROKE_PATH, vg_FILL_PATH )
-import Graphics.Rendering.OpenVG.VG.Utils ( Marshal(..), bitwiseOr )
+import Graphics.Rendering.OpenVG.VG.Utils ( 
+    Marshal(..), Unmarshal(..), bitwiseOr, unbits )
 
 data PathDatatype =
      S_8
@@ -160,6 +165,18 @@ clearPath h cs = vgClearPath h (bitwiseOr cs)
 destroyPath :: VGPath -> IO ()
 destroyPath = vgDestroyPath
 
+removePathCapabilities :: VGPath -> [PathCapabilities] -> IO ()
+removePathCapabilities h cs = vgRemovePathCapabilities h (bitwiseOr cs)
+
+getPathCapabilities :: VGPath -> IO [PathCapabilities]
+getPathCapabilities h = do 
+    b <- vgGetPathCapabilities h
+    return $ unbits b
+
+appendPath :: VGPath -> VGPath -> IO ()
+appendPath = vgAppendPath
+
+
 --------------------------------------------------------------------------------
 marshalPathDatatype :: PathDatatype -> VGenum
 marshalPathDatatype x = case x of
@@ -186,7 +203,26 @@ marshalPathCapabilities x = case x of
     CapabilityAll -> vg_PATH_CAPABILITY_ALL
 
 instance Marshal PathCapabilities where marshal = marshalPathCapabilities     
-    
+
+unmarshalPathCapabilities :: VGenum -> PathCapabilities 
+unmarshalPathCapabilities x
+    | x == vg_PATH_CAPABILITY_APPEND_FROM             = AppendFrom
+    | x == vg_PATH_CAPABILITY_APPEND_TO               = AppendTo 
+    | x == vg_PATH_CAPABILITY_MODIFY                  = Modify 
+    | x == vg_PATH_CAPABILITY_TRANSFORM_FROM          = TransformFrom 
+    | x == vg_PATH_CAPABILITY_TRANSFORM_TO            = TransformTo 
+    | x == vg_PATH_CAPABILITY_INTERPOLATE_FROM        = InterpolateFrom 
+    | x == vg_PATH_CAPABILITY_INTERPOLATE_TO          = InterpolateTo 
+    | x == vg_PATH_CAPABILITY_PATH_LENGTH             = PathLength 
+    | x == vg_PATH_CAPABILITY_POINT_ALONG_PATH        = PointAlongPath 
+    | x == vg_PATH_CAPABILITY_TANGENT_ALONG_PATH      = TangentAlongPath 
+    | x == vg_PATH_CAPABILITY_PATH_BOUNDS             = PathBounds 
+    | x == vg_PATH_CAPABILITY_PATH_TRANSFORMED_BOUNDS = PathTransfomedBounds 
+    | x == vg_PATH_CAPABILITY_ALL                     = CapabilityAll 
+    | otherwise = error ("unmarshalPathCapabilities: illegal value " ++ show x)
+        
+instance Unmarshal PathCapabilities where unmarshal = unmarshalPathCapabilities
+  
 marshalPathParamType :: PathParamType -> VGenum
 marshalPathParamType x = case x of
     PathParamFormat -> vg_PATH_FORMAT

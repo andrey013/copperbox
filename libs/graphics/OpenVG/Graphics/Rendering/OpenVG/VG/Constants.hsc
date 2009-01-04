@@ -26,6 +26,16 @@ import Graphics.Rendering.OpenVG.VG.BasicTypes
 vg_PATH_FORMAT_STANDARD :: VGint
 vg_PATH_FORMAT_STANDARD = #const VG_PATH_FORMAT_STANDARD
 
+vg_MAXSHORT :: VGshort
+vg_MAXSHORT = #const VG_MAXSHORT
+
+vg_MAXINT :: VGint
+vg_MAXINT = #const VG_MAXINT
+
+-- shiva-vg has no VG_MAXFLOAT
+-- vg_MAXFLOAT :: VGfloat
+-- vg_MAXFLOAT = #const VG_MAXFLOAT
+
 
 -- | Enumerations
 

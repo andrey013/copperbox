@@ -11,14 +11,15 @@
 -- Portability :  GHC
 --
 -- This module corresponds to section 9 (Paint) 
--- of the OpenVG 1.1 specs.
+-- of the OpenVG 1.0.1 specs.
 --
 --
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.Paint (
   createPaint, destroyPaint, setPaint,
-  vgPaintPattern
+  paintType, -- ...
+  paintPattern
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
@@ -40,11 +41,16 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_COLOR_RAMP_SPREAD_REFLECT,
             
     vg_TILE_FILL, vg_TILE_PAD, vg_TILE_REPEAT, vg_TILE_REFLECT)
-
+import Graphics.Rendering.OpenVG.VG.Parameters ( 
+    getParameteri, setParameteri ) 
+    
 import Graphics.Rendering.OpenVG.VG.Paths (
     PaintMode(..), marshalPaintMode )
 import Graphics.Rendering.OpenVG.VG.Utils ( bitwiseOr )
-    
+
+import Graphics.Rendering.OpenGL.GL.StateVar (
+    StateVar(), makeStateVar )
+        
 data PaintParamType = 
     --  Color paint parameters
      PaintType
@@ -61,10 +67,10 @@ data PaintParamType =
    deriving ( Eq, Ord, Show )
    
 data PaintType = 
-     PaintTypeColor
-   | PaintTypeLinearGradient
-   | PaintTypeRadialGradient
-   | PaintTypePattern
+     Color
+   | LinearGradient
+   | RadialGradient
+   | Pattern
    deriving ( Eq, Ord, Show )
    
 data ColorRampSpreadMode = 
@@ -89,9 +95,31 @@ destroyPaint = vgDestroyPaint
 setPaint :: VGPaint -> [PaintMode] -> IO ()
 setPaint h ms = vgSetPaint h (bitwiseOr ms)
 
+-- vgGetPaint 
+
+-- | Getters and setters for Table 10.
+
+paintType :: VGPaint -> StateVar PaintType
+paintType h = makeStateVar (getPaintType h) (setPaintType h)
+
+getPaintType :: VGPaint -> IO PaintType
+getPaintType h = do 
+    a <- getParameteri h (marshalPaintParamType PaintType)
+    return $ unmarshalPaintType $ fromIntegral a 
+
+setPaintType :: VGPaint -> PaintType -> IO ()
+setPaintType h v = 
+    setParameteri h (marshalPaintParamType PaintType) 
+                    (fromIntegral $ marshalPaintType v)
+-- ...
+
+
+
 paintPattern :: VGPaint -> VGImage -> IO ()
 paintPattern = vgPaintPattern
 
+
+--------------------------------------------------------------------------------
 
 marshalPaintParamType :: PaintParamType -> VGenum
 marshalPaintParamType x = case x of 
@@ -107,11 +135,19 @@ marshalPaintParamType x = case x of
 
 marshalPaintType :: PaintType -> VGenum
 marshalPaintType x = case x of
-    PaintTypeColor -> vg_PAINT_TYPE_COLOR
-    PaintTypeLinearGradient -> vg_PAINT_TYPE_LINEAR_GRADIENT
-    PaintTypeRadialGradient -> vg_PAINT_TYPE_RADIAL_GRADIENT
-    PaintTypePattern -> vg_PAINT_TYPE_PATTERN
+    Color -> vg_PAINT_TYPE_COLOR
+    LinearGradient -> vg_PAINT_TYPE_LINEAR_GRADIENT
+    RadialGradient -> vg_PAINT_TYPE_RADIAL_GRADIENT
+    Pattern -> vg_PAINT_TYPE_PATTERN
 
+unmarshalPaintType :: VGenum -> PaintType
+unmarshalPaintType x
+    | x ==vg_PAINT_TYPE_COLOR             = Color
+    | x ==vg_PAINT_TYPE_LINEAR_GRADIENT   = LinearGradient
+    | x ==vg_PAINT_TYPE_RADIAL_GRADIENT   = RadialGradient
+    | x ==vg_PAINT_TYPE_PATTERN           = Pattern
+    | otherwise = error ("unmarshalPaintType: illegal value " ++ show x)
+    
     
 marshalColorRampSpreadMode :: ColorRampSpreadMode -> VGenum
 marshalColorRampSpreadMode x = case x of 

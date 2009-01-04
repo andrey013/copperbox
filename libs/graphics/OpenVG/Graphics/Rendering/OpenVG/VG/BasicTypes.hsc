@@ -12,8 +12,9 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Types defined in <vg/openvg.h>.
---
+-- This module corresponds to sections 3.2 (Primitive Data Types) 
+-- and 3.6 (Handle-based Data Types) of the OpenVG 1.0.1 specs.
+-- 
 --
 --------------------------------------------------------------------------------
 

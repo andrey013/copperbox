@@ -12,13 +12,13 @@
 -- Portability :  GHC
 --
 -- This module corresponds to section 5 (Setting API Parameters) 
--- of the OpenVG 1.1 specs.
+-- of the OpenVG 1.0.1 specs.
 --
 --
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.Parameters (    
-    ParamType(..),    
+    ParamType(..), marshalParamType,
     setf, seti, setfv, setiv,
     getf, geti, getVectorSize, getfv, getiv,
     setParameterf, setParameteri, setParameterfv, setParameteriv,

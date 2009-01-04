@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.OpenVG.VG.ColorTransformation
+-- Module      :  Graphics.Rendering.OpenVG.VG.Blending
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
@@ -10,13 +10,12 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- This module corresponds to section 13 (Color Transformation and Blending) 
--- of the OpenVG 1.1 specs.
---
+-- This module corresponds to section 12 (Blending) 
+-- of the OpenVG 1.0.1 specs.
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.OpenVG.VG.ColorTransformation (
+module Graphics.Rendering.OpenVG.VG.Blending (
   BlendMode(..), 
   blendMode
 ) where
