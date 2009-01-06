@@ -58,9 +58,9 @@ import Graphics.Rendering.OpenGL.GL.StateVar (
 import Foreign.Ptr ( Ptr )   
                    
 data RenderingQuality = 
-     Nonantialiased
-   | Faster
-   | Better
+     Nonantialiased'
+   | Faster'
+   | Better'
    deriving ( Eq, Ord, Show )
       
 data PixelLayout = 
@@ -131,9 +131,9 @@ rotate = vgRotate
    
 marshalRenderingQuality :: RenderingQuality -> VGenum
 marshalRenderingQuality x = case x of
-    Nonantialiased -> vg_RENDERING_QUALITY_NONANTIALIASED  
-    Faster -> vg_RENDERING_QUALITY_FASTER
-    Better -> vg_RENDERING_QUALITY_BETTER
+    Nonantialiased' -> vg_RENDERING_QUALITY_NONANTIALIASED  
+    Faster' -> vg_RENDERING_QUALITY_FASTER
+    Better' -> vg_RENDERING_QUALITY_BETTER
 
 marshalPixelLayout :: PixelLayout -> VGenum
 marshalPixelLayout x = case x of

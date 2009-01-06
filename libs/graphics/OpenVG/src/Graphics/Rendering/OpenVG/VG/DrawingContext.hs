@@ -16,16 +16,24 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.DrawingContext (
-  flush, finish
+  
+  -- * Forcing drawing to complete
+  flush, 
+  finish
 ) where
 
 
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
         vgFlush, vgFinish ) 
 
+--------------------------------------------------------------------------------
+--  Forcing drawing to complete
+
+-- | @flush@ - corresponds directly to the OpenVG call @vgFlush@.
 flush :: IO ()
 flush = vgFlush
 
+-- | @finish@ - corresponds directly to the OpenVG call @vgFinish@.
 finish :: IO ()
 finish = vgFinish
 

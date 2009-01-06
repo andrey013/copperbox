@@ -17,6 +17,7 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.Extending (
+  -- * Accessing extensions dynamically
   StringID(..), 
   stringId,
 ) where
@@ -30,6 +31,9 @@ import Graphics.Rendering.OpenGL.GL.StateVar (
    GettableStateVar, makeGettableStateVar )
    
 import Foreign.C.String ( peekCString )
+
+--------------------------------------------------------------------------------
+-- Accessing extensions dynamically
     
 data StringID =
      Vendor
@@ -38,15 +42,16 @@ data StringID =
    | Extensions
    deriving ( Eq, Ord, Show )
 
--- c.f. GLUT colorMapEntry, StateVars don't have to be /unary/.
-   
+
+
+-- | Query the OpenVG implementation.   
 stringId :: StringID -> GettableStateVar String
 stringId sid = makeGettableStateVar $ do 
     cstr <- vgGetString (marshalStringID sid)
     ans  <- peekCString cstr
     return ans
 
-
+--------------------------------------------------------------------------------
    
 marshalStringID :: StringID -> VGenum
 marshalStringID x = case x of 

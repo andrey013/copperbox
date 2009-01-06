@@ -16,6 +16,7 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.Blending (
+  -- * Setting the blend mode
   BlendMode(..), 
   blendMode
 ) where
@@ -31,38 +32,48 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
 
 import Graphics.Rendering.OpenGL.GL.StateVar (
    SettableStateVar, makeSettableStateVar ) 
+
+
+--------------------------------------------------------------------------------
+-- Setting the blend mode
    
-       
+-- | BlendMode defines the possible blend modes.        
 data BlendMode = 
-     BlendSrc
-   | BlendSrcOver
-   | BlendDstOver
-   | BlendSrcIn
-   | BlendDstIn
-   | BlendMultiply
-   | BlendScreen
-   | BlendDarken
-   | BlendLighten
-   | BlendAdditive
+     Src
+   | SrcOver
+   | DstOver
+   | SrcIn
+   | DstIn
+   | Multiply'      -- Unfortunate name conflict
+   | Screen
+   | Darken
+   | Lighten
+   | Additive
    deriving ( Eq, Ord, Show )
 
-
+-- | Set the blend mode - @blendMode@ is typed wrapper
+-- over this equivalent OpenVG code:
+--
+-- @ VGBlendMode mode; @
+--
+-- @ vgSeti(VG_BLEND_MODE, mode); @
 blendMode :: SettableStateVar BlendMode
 blendMode = makeSettableStateVar $ \mode -> 
     seti BlendMode (fromIntegral $ marshalBlendMode mode)
 
+--------------------------------------------------------------------------------
 
 marshalBlendMode :: BlendMode -> VGenum
 marshalBlendMode x = case x of
-    BlendSrc -> vg_BLEND_SRC
-    BlendSrcOver -> vg_BLEND_SRC_OVER
-    BlendDstOver -> vg_BLEND_DST_OVER
-    BlendSrcIn -> vg_BLEND_SRC_IN
-    BlendDstIn -> vg_BLEND_DST_IN
-    BlendMultiply -> vg_BLEND_MULTIPLY
-    BlendScreen -> vg_BLEND_SCREEN
-    BlendDarken -> vg_BLEND_DARKEN
-    BlendLighten -> vg_BLEND_LIGHTEN
-    BlendAdditive -> vg_BLEND_ADDITIVE
+    Src -> vg_BLEND_SRC
+    SrcOver -> vg_BLEND_SRC_OVER
+    DstOver -> vg_BLEND_DST_OVER
+    SrcIn -> vg_BLEND_SRC_IN
+    DstIn -> vg_BLEND_DST_IN
+    Multiply' -> vg_BLEND_MULTIPLY
+    Screen -> vg_BLEND_SCREEN
+    Darken -> vg_BLEND_DARKEN
+    Lighten -> vg_BLEND_LIGHTEN
+    Additive -> vg_BLEND_ADDITIVE
     
 

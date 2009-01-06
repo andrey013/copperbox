@@ -26,6 +26,7 @@ module Graphics.Rendering.OpenVG.VG.BasicTypes (
   
   vg_FALSE, vg_TRUE, marshalBool,
   
+  -- * Handle-based Types
   VGHandle,
   vg_INVALID_HANDLE,
   
