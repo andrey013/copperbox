@@ -53,41 +53,41 @@ import Foreign.Marshal.Array ( newArray, peekArray )
 
 
 data ParamType = 
-     ParamMatrixMode
-   | ParamFillRule
-   | ParamImageQuality
-   | ParamRenderingQuality
-   | ParamBlendMode
-   | ParamImageMode
-   | ParamScissorRects
-   | ParamStrokeLineWidth
-   | ParamStrokeCapStyle
-   | ParamStrokeJoinStyle
-   | ParamStrokeMiterLimit
-   | ParamStrokeDashPattern
-   | ParamStrokeDashPhase
-   | ParamStrokeDashPhaseReset
-   | ParamTileFillColor
-   | ParamClearColor
-   -- | ParamGlyphOrigin        {- Not in shiva-vg -} 
-   | ParamMasking
-   | ParamScissoring
-   | ParamPixelLayout
-   | ParamScreenLayout
-   | ParamFilterFormatLinear
-   | ParamFilterFormatPremultiplied
-   | ParamFilterChannelMask
-   | ParamMaxScissorRects
-   | ParamMaxDashCount
-   | ParamMaxKernelSize
-   | ParamMaxSaparableKernelSize
-   | ParamMaxColorRampStops
-   | ParamMaxImageWidth
-   | ParamMaxImageHeight
-   | ParamMaxImagePixels
-   | ParamMaxImageBytes
-   | ParamMaxFloat
-   | ParamMaxGaussianStdDeviation
+     MatrixMode
+   | FillRule
+   | ImageQuality
+   | RenderingQuality
+   | BlendMode
+   | ImageMode
+   | ScissorRects
+   | StrokeLineWidth
+   | StrokeCapStyle
+   | StrokeJoinStyle
+   | StrokeMiterLimit
+   | StrokeDashPattern
+   | StrokeDashPhase
+   | StrokeDashPhaseReset
+   | TileFillColor
+   | ClearColor
+   -- | GlyphOrigin        {- Not in shiva-vg -} 
+   | Masking
+   | Scissoring
+   | PixelLayout
+   | ScreenLayout
+   | FilterFormatLinear
+   | FilterFormatPremultiplied
+   | FilterChannelMask
+   | MaxScissorRects
+   | MaxDashCount
+   | MaxKernelSize
+   | MaxSaparableKernelSize
+   | MaxColorRampStops
+   | MaxImageWidth
+   | MaxImageHeight
+   | MaxImagePixels
+   | MaxImageBytes
+   | MaxFloat
+   | MaxGaussianStdDeviation
    deriving ( Eq, Ord, Show )
 
 setf :: ParamType -> VGfloat -> IO ()
@@ -170,41 +170,41 @@ getParameteriv h typ i = do
     
 marshalParamType :: ParamType -> VGenum
 marshalParamType x = case x of
-    ParamMatrixMode -> vg_MATRIX_MODE 
-    ParamFillRule -> vg_FILL_RULE
-    ParamImageQuality -> vg_IMAGE_QUALITY
-    ParamRenderingQuality -> vg_RENDERING_QUALITY
-    ParamBlendMode -> vg_BLEND_MODE
-    ParamImageMode -> vg_IMAGE_MODE
-    ParamScissorRects -> vg_SCISSOR_RECTS
-    ParamStrokeLineWidth -> vg_STROKE_LINE_WIDTH
-    ParamStrokeCapStyle -> vg_STROKE_CAP_STYLE
-    ParamStrokeJoinStyle -> vg_STROKE_JOIN_STYLE
-    ParamStrokeMiterLimit -> vg_STROKE_MITER_LIMIT
-    ParamStrokeDashPattern -> vg_STROKE_DASH_PATTERN
-    ParamStrokeDashPhase -> vg_STROKE_DASH_PHASE 
-    ParamStrokeDashPhaseReset -> vg_STROKE_DASH_PHASE_RESET
-    ParamTileFillColor -> vg_TILE_FILL_COLOR 
-    ParamClearColor -> vg_CLEAR_COLOR 
+    MatrixMode -> vg_MATRIX_MODE 
+    FillRule -> vg_FILL_RULE
+    ImageQuality -> vg_IMAGE_QUALITY
+    RenderingQuality -> vg_RENDERING_QUALITY
+    BlendMode -> vg_BLEND_MODE
+    ImageMode -> vg_IMAGE_MODE
+    ScissorRects -> vg_SCISSOR_RECTS
+    StrokeLineWidth -> vg_STROKE_LINE_WIDTH
+    StrokeCapStyle -> vg_STROKE_CAP_STYLE
+    StrokeJoinStyle -> vg_STROKE_JOIN_STYLE
+    StrokeMiterLimit -> vg_STROKE_MITER_LIMIT
+    StrokeDashPattern -> vg_STROKE_DASH_PATTERN
+    StrokeDashPhase -> vg_STROKE_DASH_PHASE 
+    StrokeDashPhaseReset -> vg_STROKE_DASH_PHASE_RESET
+    TileFillColor -> vg_TILE_FILL_COLOR 
+    ClearColor -> vg_CLEAR_COLOR 
     -- ParamGlyphOrigin -> vg_GLYPH_ORIGIN         {- Not in shiva-vg -}
-    ParamMasking -> vg_MASKING
-    ParamScissoring -> vg_SCISSORING 
-    ParamPixelLayout -> vg_PIXEL_LAYOUT
-    ParamScreenLayout -> vg_SCREEN_LAYOUT 
-    ParamFilterFormatLinear -> vg_FILTER_FORMAT_LINEAR
-    ParamFilterFormatPremultiplied -> vg_FILTER_FORMAT_PREMULTIPLIED
-    ParamFilterChannelMask -> vg_FILTER_CHANNEL_MASK 
-    ParamMaxScissorRects -> vg_MAX_SCISSOR_RECTS 
-    ParamMaxDashCount -> vg_MAX_DASH_COUNT
-    ParamMaxKernelSize -> vg_MAX_KERNEL_SIZE
-    ParamMaxSaparableKernelSize -> vg_MAX_SEPARABLE_KERNEL_SIZE
-    ParamMaxColorRampStops -> vg_MAX_COLOR_RAMP_STOPS
-    ParamMaxImageWidth -> vg_MAX_IMAGE_WIDTH
-    ParamMaxImageHeight -> vg_MAX_IMAGE_HEIGHT
-    ParamMaxImagePixels -> vg_MAX_IMAGE_PIXELS
-    ParamMaxImageBytes -> vg_MAX_IMAGE_BYTES
-    ParamMaxFloat -> vg_MAX_FLOAT
-    ParamMaxGaussianStdDeviation -> vg_MAX_GAUSSIAN_STD_DEVIATION 
+    Masking -> vg_MASKING
+    Scissoring -> vg_SCISSORING 
+    PixelLayout -> vg_PIXEL_LAYOUT
+    ScreenLayout -> vg_SCREEN_LAYOUT 
+    FilterFormatLinear -> vg_FILTER_FORMAT_LINEAR
+    FilterFormatPremultiplied -> vg_FILTER_FORMAT_PREMULTIPLIED
+    FilterChannelMask -> vg_FILTER_CHANNEL_MASK 
+    MaxScissorRects -> vg_MAX_SCISSOR_RECTS 
+    MaxDashCount -> vg_MAX_DASH_COUNT
+    MaxKernelSize -> vg_MAX_KERNEL_SIZE
+    MaxSaparableKernelSize -> vg_MAX_SEPARABLE_KERNEL_SIZE
+    MaxColorRampStops -> vg_MAX_COLOR_RAMP_STOPS
+    MaxImageWidth -> vg_MAX_IMAGE_WIDTH
+    MaxImageHeight -> vg_MAX_IMAGE_HEIGHT
+    MaxImagePixels -> vg_MAX_IMAGE_PIXELS
+    MaxImageBytes -> vg_MAX_IMAGE_BYTES
+    MaxFloat -> vg_MAX_FLOAT
+    MaxGaussianStdDeviation -> vg_MAX_GAUSSIAN_STD_DEVIATION 
 
 --------------------------------------------------------------------------------
 

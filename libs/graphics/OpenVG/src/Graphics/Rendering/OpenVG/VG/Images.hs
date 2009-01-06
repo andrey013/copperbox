@@ -58,9 +58,9 @@ import Graphics.Rendering.OpenVG.VG.Constants (
 
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
     seti, geti, getParameteri, 
-    ParamType ( ParamImageQuality, ParamImageMode,
-                ParamMaxImageWidth, ParamMaxImageHeight, 
-                ParamMaxImagePixels, ParamMaxImageBytes ) )
+    ParamType ( ImageQuality, ImageMode,
+                MaxImageWidth, MaxImageHeight, 
+                MaxImagePixels, MaxImageBytes ) )
 import Graphics.Rendering.OpenVG.VG.Utils ( Marshal(..), bitwiseOr )
   
 import Graphics.Rendering.OpenGL.GL.StateVar (
@@ -138,23 +138,23 @@ data ImageMode =
 
 imageQuality :: SettableStateVar ImageQuality  
 imageQuality = makeSettableStateVar $ \mode -> 
-    seti ParamImageQuality (fromIntegral $ marshalImageQuality mode)      
+    seti ImageQuality (fromIntegral $ marshalImageQuality mode)      
 
 maxImageWidth :: GettableStateVar VGint
 maxImageWidth = makeGettableStateVar $
-    geti ParamMaxImageWidth 
+    geti MaxImageWidth 
 
 maxImageHeight :: GettableStateVar VGint
 maxImageHeight = makeGettableStateVar $
-    geti ParamMaxImageHeight
+    geti MaxImageHeight
     
 maxImagePixels :: GettableStateVar VGint
 maxImagePixels = makeGettableStateVar $
-    geti ParamMaxImagePixels
+    geti MaxImagePixels
 
 maxImageBytes :: GettableStateVar VGint
 maxImageBytes = makeGettableStateVar $
-    geti ParamMaxImageBytes
+    geti MaxImageBytes
              
 createImage :: ImageFormat -> VGint -> VGint -> [ImageQuality] -> IO VGImage 
 createImage FormatsRGBA8888 width height qs = 
@@ -210,7 +210,7 @@ copyImage dst dx dy src sx sy w h dither
 
 drawImageMode :: SettableStateVar ImageMode  
 drawImageMode = makeSettableStateVar $ \mode -> 
-    seti ParamImageMode (fromIntegral $ marshalImageMode mode)  
+    seti ImageMode (fromIntegral $ marshalImageMode mode)  
 
 drawImage :: VGImage -> IO ()
 drawImage = vgDrawImage

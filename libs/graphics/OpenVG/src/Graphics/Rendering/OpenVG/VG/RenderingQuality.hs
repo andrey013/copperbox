@@ -49,7 +49,7 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_MATRIX_FILL_PAINT_TO_USER, vg_MATRIX_STROKE_PAINT_TO_USER, 
     )  
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
-    ParamType ( ParamMatrixMode, ParamRenderingQuality, ParamScreenLayout ), 
+    ParamType ( MatrixMode, RenderingQuality, ScreenLayout ), 
     seti, geti  )
 
 import Graphics.Rendering.OpenGL.GL.StateVar (
@@ -81,24 +81,24 @@ data MatrixMode =
 -- | Set the rendering quality - the default is /Better/.
 renderingQuality :: SettableStateVar RenderingQuality  
 renderingQuality = makeSettableStateVar $ \mode -> 
-    seti ParamRenderingQuality (fromIntegral $ marshalRenderingQuality mode) 
+    seti RenderingQuality (fromIntegral $ marshalRenderingQuality mode) 
 
 pixelLayout :: StateVar PixelLayout
 pixelLayout = makeStateVar getPixelLayout setPixelLayout
 
 getPixelLayout :: IO PixelLayout
 getPixelLayout = do
-    a <- geti ParamScreenLayout 
+    a <- geti ScreenLayout 
     return $ unmarshalPixelLayout $ fromIntegral a
     
 setPixelLayout :: PixelLayout -> IO ()  
 setPixelLayout a = 
-    seti ParamScreenLayout (fromIntegral $ marshalPixelLayout a)    
+    seti ScreenLayout (fromIntegral $ marshalPixelLayout a)    
 
 -- | VGMatrix Mode    
 matrixMode :: SettableStateVar MatrixMode  
 matrixMode = makeSettableStateVar $ \mode -> 
-    seti ParamMatrixMode (fromIntegral $ marshalMatrixMode mode) 
+    seti MatrixMode (fromIntegral $ marshalMatrixMode mode) 
 
 loadIdentity :: IO ()
 loadIdentity = vgLoadIdentity

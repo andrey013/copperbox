@@ -21,23 +21,24 @@ module Graphics.Rendering.OpenVG.VG.ShivaExtensions (
   destroyContextSH
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-        VGint, vg_TRUE )
+import Graphics.Rendering.OpenVG.VG.BasicTypes ( vg_TRUE )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
         vgCreateContextSH, vgResizeSurfaceSH, vgDestroyContextSH ) 
+
+import Graphics.Rendering.OpenGL.GL.CoordTrans ( Size(..) )
 
 -- Note - I\'m not sure if this is the best type for the function...
 -- HOpenGL uses GLints for window positions, sizes etc, so it makes sense to 
 -- follow that convention, and it seems preferable to return a Haskell Bool
 -- but this means the function has mixed high-level and low-level types.
    
-createContextSH :: VGint -> VGint -> IO Bool
-createContextSH width height = do 
-    vgbool <- vgCreateContextSH width height
+createContextSH :: Size -> IO Bool
+createContextSH (Size w h) = do 
+    vgbool <- vgCreateContextSH w h
     if vgbool == vg_TRUE then return True else return False
     
-resizeSurfaceSH :: VGint -> VGint -> IO ()
-resizeSurfaceSH width height = vgResizeSurfaceSH width height
+resizeSurfaceSH :: Size -> IO ()
+resizeSurfaceSH (Size w h) = vgResizeSurfaceSH w h
 
 destroyContextSH :: IO ()
 destroyContextSH = vgDestroyContextSH

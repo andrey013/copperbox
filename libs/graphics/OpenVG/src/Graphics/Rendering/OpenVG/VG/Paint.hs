@@ -42,7 +42,7 @@ import Graphics.Rendering.OpenVG.VG.Constants (
             
     vg_TILE_FILL, vg_TILE_PAD, vg_TILE_REPEAT, vg_TILE_REFLECT )
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
-    ParamType( ParamMaxColorRampStops ),
+    ParamType( MaxColorRampStops ),
     geti, getParameteri, setParameteri, setParameterfv ) 
     
 import Graphics.Rendering.OpenVG.VG.Paths (
@@ -135,7 +135,7 @@ radialGradientPaint h cx cy fx fy r = do
     
 
 maxStops :: GettableStateVar VGint 
-maxStops = makeGettableStateVar $ geti ParamMaxColorRampStops
+maxStops = makeGettableStateVar $ geti MaxColorRampStops
 
 data ColorRampSpreadMode = 
      CRSPad

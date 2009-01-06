@@ -22,6 +22,8 @@ module Graphics.Rendering.OpenVG.VG.Scissoring (
   maxScissorRects,
   ScissorRect, scissorRects,
   alphaMasking,
+  
+  clearColor,
   clear
   
 ) where
@@ -33,8 +35,8 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_CLEAR_MASK, vg_FILL_MASK, vg_SET_MASK, vg_UNION_MASK, 
     vg_INTERSECT_MASK, vg_SUBTRACT_MASK )  
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
-    ParamType ( ParamScissoring, ParamScissorRects, ParamMaxScissorRects, 
-                ParamMasking, ParamClearColor ),   
+    ParamType ( Scissoring, ScissorRects, MaxScissorRects, 
+                Masking, ClearColor ),   
     seti, geti, setiv, setfv )
 import Graphics.Rendering.OpenGL.GL.StateVar (
     SettableStateVar, makeSettableStateVar,
@@ -54,31 +56,31 @@ data MaskOperation =
 
 scissoring :: SettableStateVar Bool  
 scissoring = makeSettableStateVar $ \a -> 
-    seti ParamScissoring (fromIntegral $ marshalBool a) 
+    seti Scissoring (fromIntegral $ marshalBool a) 
 
 maxScissorRects :: GettableStateVar VGint
-maxScissorRects = makeGettableStateVar $ geti ParamMaxScissorRects
+maxScissorRects = makeGettableStateVar $ geti MaxScissorRects
 
 type ScissorRect = (Position, Size) 
 
 -- | ScissorRects are discarded immediately and cannot be retrieved with a getvi
 scissorRects :: SettableStateVar [ScissorRect]
 scissorRects = makeSettableStateVar $ \ss ->
-    setiv ParamScissorRects (foldr f [] ss) where 
+    setiv ScissorRects (foldr f [] ss) where 
         f ((Position mx my), (Size w h)) a = mx:my:w:h:a 
 
 alphaMasking :: SettableStateVar Bool
-alphaMasking = makeSettableStateVar $ \a -> 
-    seti ParamMasking (marshalBool a)  
+alphaMasking = makeSettableStateVar $ \a -> seti Masking (marshalBool a)  
 
 -- vgMask not implemented in shiva-vg
 
 
-clearColor :: Color4 VGfloat -> IO ()
-clearColor (Color4 r g b a) = setfv ParamClearColor [r,g,b,a]
+clearColor :: SettableStateVar (Color4 VGfloat)
+clearColor = makeSettableStateVar $ 
+    \(Color4 r g b a) -> setfv ClearColor [r,g,b,a]
 
-clear :: VGint -> VGint -> VGint -> VGint -> IO ()
-clear x y w h = vgClear x y w h
+clear :: Position -> Size -> IO ()
+clear (Position x y) (Size w h) = vgClear x y w h
 
 
 --------------------------------------------------------------------------------

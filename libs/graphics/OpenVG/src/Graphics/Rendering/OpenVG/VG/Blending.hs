@@ -27,7 +27,7 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_BLEND_SCREEN, vg_BLEND_DARKEN, vg_BLEND_LIGHTEN, 
     vg_BLEND_ADDITIVE ) 
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
-    seti, ParamType ( ParamBlendMode ) )
+    seti, ParamType ( BlendMode ) )
 
 import Graphics.Rendering.OpenGL.GL.StateVar (
    SettableStateVar, makeSettableStateVar ) 
@@ -49,7 +49,7 @@ data BlendMode =
 
 blendMode :: SettableStateVar BlendMode
 blendMode = makeSettableStateVar $ \mode -> 
-    seti ParamBlendMode (fromIntegral $ marshalBlendMode mode)
+    seti BlendMode (fromIntegral $ marshalBlendMode mode)
 
 
 marshalBlendMode :: BlendMode -> VGenum

@@ -20,6 +20,7 @@ module Graphics.Rendering.OpenVG.VG.Paths (
   PathDatatype(..),
   PathSegment(..),
   PathCommand(..),
+  PathCapabilities(..),
   PaintMode(..), marshalPaintMode,
   createPath, clearPath, destroyPath,
   
@@ -55,6 +56,7 @@ import Graphics.Rendering.OpenVG.VG.CFunDecls (
 import Graphics.Rendering.OpenVG.VG.Constants ( 
     vg_PATH_DATATYPE_S_8, vg_PATH_DATATYPE_S_16,
     vg_PATH_DATATYPE_S_32, vg_PATH_DATATYPE_F,
+    vg_PATH_FORMAT_STANDARD,
     
     vg_PATH_CAPABILITY_APPEND_FROM, vg_PATH_CAPABILITY_APPEND_TO,
     vg_PATH_CAPABILITY_MODIFY, vg_PATH_CAPABILITY_TRANSFORM_FROM,
@@ -71,11 +73,11 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_EVEN_ODD, vg_NON_ZERO,
     vg_STROKE_PATH, vg_FILL_PATH  )
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
-    ParamType ( ParamFillRule, 
-                ParamStrokeLineWidth, ParamStrokeCapStyle,
-                ParamStrokeJoinStyle, ParamStrokeDashPattern, 
-                ParamStrokeDashPhase, ParamStrokeDashPhaseReset,
-                ParamMaxDashCount ),
+    ParamType ( FillRule, 
+                StrokeLineWidth, StrokeCapStyle,
+                StrokeJoinStyle, StrokeDashPattern, 
+                StrokeDashPhase, StrokeDashPhaseReset,
+                MaxDashCount ),
     getParameteri, getParameterf, seti, setf, setfv, geti )     
     
 import Graphics.Rendering.OpenVG.VG.Utils ( 
@@ -84,6 +86,8 @@ import Graphics.Rendering.OpenVG.VG.Utils (
 import Graphics.Rendering.OpenGL.GL.StateVar (
     SettableStateVar, makeSettableStateVar,
     GettableStateVar, makeGettableStateVar ) 
+
+
     
 data PathDatatype =
      S_8
@@ -179,11 +183,15 @@ data JoinStyle =
 
 
 
-createPath :: VGint -> PathDatatype -> VGfloat -> VGfloat
+createPath :: PathDatatype -> VGfloat -> VGfloat
                  -> VGint -> VGint -> [PathCapabilities] -> IO VGPath
-createPath fmt typ scl bi sch cch cs = 
+createPath typ scl bi sch cch cs = 
     vgCreatePath fmt (marshalPathDatatype typ) scl bi sch cch (bitwiseOr cs)
-
+  where
+    -- Other paths formats maybe defined as extensions, for the present
+    -- restrict the format to just VG_PATH_FORMAT_STANDARD 
+    fmt :: VGint
+    fmt = vg_PATH_FORMAT_STANDARD
         
 clearPath :: VGPath -> [PathCapabilities] -> IO ()
 clearPath h cs = vgClearPath h (bitwiseOr cs)
@@ -237,31 +245,31 @@ appendPath = vgAppendPath
 
 lineWidth :: SettableStateVar VGfloat
 lineWidth = makeSettableStateVar $ \a -> 
-    setf ParamStrokeLineWidth a
+    setf StrokeLineWidth a
 
 capStyle :: SettableStateVar CapStyle
 capStyle = makeSettableStateVar $ \a -> 
-    seti ParamStrokeCapStyle (fromIntegral $ marshalCapStyle a)
+    seti StrokeCapStyle (fromIntegral $ marshalCapStyle a)
     
 joinStyle :: SettableStateVar JoinStyle
 joinStyle = makeSettableStateVar $ \a -> 
-    seti ParamStrokeJoinStyle (fromIntegral $ marshalJoinStyle a)
+    seti StrokeJoinStyle (fromIntegral $ marshalJoinStyle a)
 
 maxDashCount :: GettableStateVar VGint 
 maxDashCount = makeGettableStateVar $
-    geti ParamMaxDashCount
+    geti MaxDashCount
 
 dashPattern :: SettableStateVar [VGfloat]
 dashPattern = makeSettableStateVar $ \a -> 
-    setfv ParamStrokeDashPattern a
+    setfv StrokeDashPattern a
 
 dashPhase :: SettableStateVar VGfloat
 dashPhase = makeSettableStateVar $ \a -> 
-    setf ParamStrokeDashPhase a
+    setf StrokeDashPhase a
     
 dashPhaseReset :: SettableStateVar Bool
 dashPhaseReset = makeSettableStateVar $ \a -> 
-    seti ParamStrokeDashPhaseReset (marshalBool a)
+    seti StrokeDashPhaseReset (marshalBool a)
     
 -- | Filling or Stroking a path
    
@@ -272,7 +280,7 @@ data FillRule =
    
 fillRule :: SettableStateVar FillRule
 fillRule = makeSettableStateVar $ \a -> 
-    seti ParamFillRule (fromIntegral $ marshalFillRule a)
+    seti FillRule (fromIntegral $ marshalFillRule a)
 
 
 data PaintMode =

@@ -14,13 +14,10 @@
 --
 
 --------------------------------------------------------------------------------
--- Currently (on Windows) it only seems to work via ghci (??)
--- ~> ghcii.sh -i../OpenVG -lopenvg32
--- ghci> :load HsGetString.hs
--- ghci> main
+-- Currently (on Windows) it seems to work best with `runhaskell` ...
+-- shell> runhaskell.exe -i../src -lopenvg32 HsGetString.hs
 
--- This opens a glutWindow - closing it kills ghci.
--- (But we need a glutWindow to create a vgContext inside).
+
 
 
 module Main where
@@ -38,10 +35,11 @@ main = do
     initialWindowPosition $= Position 0 0
     win <- createWindow progName
     
-    okb <- createContextSH 10 10
+    okb <- createContextSH $ Size 100 100
     if okb then do { queryStr "OpenVG - Vendor "  Vendor
                    ; queryStr "OpenVG - Version " Version }
-           else do { putStrLn "createContextSH failed - bad news!" } 
+           else do { putStrLn "createContextSH failed - bad news!" }
+    mainLoop
     destroyContextSH
     destroyWindow win
     putStrLn "Done."
