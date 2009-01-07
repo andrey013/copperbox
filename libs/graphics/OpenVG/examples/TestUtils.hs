@@ -31,7 +31,7 @@ import Graphics.UI.GLUT
 
 
 testCreatePath :: IO VGPath
-testCreatePath = createPath F_ieee754 1.0 0.0 0 0 [CapabilityAll]
+testCreatePath = createPath VG.Float 1.0 0.0 0 0 [CapabilityAll]
 
 testDrawString :: GLfloat -> GLfloat -> String -> IO ()
 testDrawString x y test_string = do

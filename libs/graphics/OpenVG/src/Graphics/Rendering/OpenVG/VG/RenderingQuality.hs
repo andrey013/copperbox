@@ -17,10 +17,19 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.RenderingQuality (
-  RenderingQuality(..), renderingQuality,
-  PixelLayout(..),
-  MatrixMode(..), matrixMode, 
+  
+  -- * Rendering quality
+  RenderingQuality(..), 
+  renderingQuality,
+  
+  -- * Additional quality settings
+  PixelLayout(..), 
   pixelLayout,
+  
+  -- * Matrix manipulation
+  MatrixMode(..),
+  matrixMode, 
+  
   loadIdentity,
   loadMatrix,
   getMatrix,
@@ -51,18 +60,35 @@ import Graphics.Rendering.OpenVG.VG.Constants (
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
     ParamType ( MatrixMode, RenderingQuality, ScreenLayout ), 
     seti, geti  )
+import Graphics.Rendering.OpenVG.VG.Utils ( 
+    Marshal(..), Unmarshal(..), enumValue, unmarshalIntegral )
 
 import Graphics.Rendering.OpenGL.GL.StateVar (
     StateVar(), makeStateVar, SettableStateVar, makeSettableStateVar )   
 
 import Foreign.Ptr ( Ptr )   
-                   
+
+
+--------------------------------------------------------------------------------
+-- Rendering quality
+                     
+-- | @RenderingQuality@ corresponds to the OpenVG 
+-- enumeration @VGRenderingQuality@. 
 data RenderingQuality = 
      Nonantialiased'
    | Faster'
    | Better'
    deriving ( Eq, Ord, Show )
-      
+
+-- | Set the rendering quality - the default is /Better/.
+renderingQuality :: SettableStateVar RenderingQuality  
+renderingQuality = makeSettableStateVar $ \mode -> 
+    seti RenderingQuality (enumValue mode) 
+    
+--------------------------------------------------------------------------------
+-- Additional quality settings 
+
+-- | @PixelLayout@ corresponds to the OpenVG enumeration @VGPixelLayout@.  
 data PixelLayout = 
      Unknown
    | RgbVertical
@@ -70,7 +96,23 @@ data PixelLayout =
    | RgbHorizontal
    | BgrHorizontal
    deriving ( Eq, Ord, Show )
-   
+
+-- | @pixelLayout@ - a @StateVar@ to get and set the pixel layout.
+pixelLayout :: StateVar PixelLayout
+pixelLayout = makeStateVar getPixelLayout setPixelLayout
+  where
+    getPixelLayout :: IO PixelLayout
+    getPixelLayout = do
+        a <- geti ScreenLayout 
+        return $ unmarshalIntegral a
+        
+    setPixelLayout :: PixelLayout -> IO ()  
+    setPixelLayout a = seti ScreenLayout (enumValue a)  
+    
+--------------------------------------------------------------------------------
+-- Matrix manipulation
+
+-- | @MatrixMode@ corresponds to the OpenVG  enumeration @VGMatrixMode@.  
 data MatrixMode =
      PathUserToSurface
    | ImageUserToSurface
@@ -78,51 +120,40 @@ data MatrixMode =
    | StrokePaintToUser
    deriving ( Eq, Ord, Show )   
 
--- | Set the rendering quality - the default is /Better/.
-renderingQuality :: SettableStateVar RenderingQuality  
-renderingQuality = makeSettableStateVar $ \mode -> 
-    seti RenderingQuality (fromIntegral $ marshalRenderingQuality mode) 
-
-pixelLayout :: StateVar PixelLayout
-pixelLayout = makeStateVar getPixelLayout setPixelLayout
-
-getPixelLayout :: IO PixelLayout
-getPixelLayout = do
-    a <- geti ScreenLayout 
-    return $ unmarshalPixelLayout $ fromIntegral a
-    
-setPixelLayout :: PixelLayout -> IO ()  
-setPixelLayout a = 
-    seti ScreenLayout (fromIntegral $ marshalPixelLayout a)    
-
--- | VGMatrix Mode    
+-- | Set the matrix mode.
 matrixMode :: SettableStateVar MatrixMode  
 matrixMode = makeSettableStateVar $ \mode -> 
-    seti MatrixMode (fromIntegral $ marshalMatrixMode mode) 
+    seti MatrixMode (enumValue mode) 
 
+-- | @loadIdentity@ corresponds to the OpenVG function @vgLoadIdentity@. 
 loadIdentity :: IO ()
 loadIdentity = vgLoadIdentity
 
-
+-- | @loadMatrix@ corresponds to the OpenVG function @vgLoadMatrix@. 
 loadMatrix :: Ptr VGfloat -> IO ()
 loadMatrix = vgLoadMatrix
 
+-- | @getMatrix@ - TODO.
 getMatrix :: IO (Ptr VGfloat)
 getMatrix = vgGetMatrix
 
+-- | @multMatrix@ - TODO.
 multMatrix :: Ptr VGfloat -> IO ()
 multMatrix = vgMultMatrix
 
-
+-- | @translate@ corresponds to the OpenVG function @vgTranslate@. 
 translate :: VGfloat -> VGfloat -> IO ()
 translate = vgTranslate
 
+-- | @scale@ corresponds to the OpenVG function @vgScale@. 
 scale :: VGfloat -> VGfloat -> IO ()
 scale = vgScale
-    
+
+-- | @shear@ corresponds to the OpenVG function @vgShear@.     
 shear :: VGfloat -> VGfloat -> IO ()
 shear = vgShear
-    
+
+-- | @rotate@ corresponds to the OpenVG function @vgRotate@.     
 rotate :: VGfloat -> IO ()
 rotate = vgRotate    
     
@@ -135,6 +166,8 @@ marshalRenderingQuality x = case x of
     Faster' -> vg_RENDERING_QUALITY_FASTER
     Better' -> vg_RENDERING_QUALITY_BETTER
 
+instance Marshal RenderingQuality where marshal = marshalRenderingQuality
+
 marshalPixelLayout :: PixelLayout -> VGenum
 marshalPixelLayout x = case x of
     Unknown -> vg_PIXEL_LAYOUT_UNKNOWN
@@ -142,6 +175,9 @@ marshalPixelLayout x = case x of
     BgrVertical -> vg_PIXEL_LAYOUT_BGR_VERTICAL
     RgbHorizontal -> vg_PIXEL_LAYOUT_RGB_HORIZONTAL
     BgrHorizontal -> vg_PIXEL_LAYOUT_BGR_HORIZONTAL
+
+instance Marshal PixelLayout where marshal = marshalPixelLayout
+
 
 unmarshalPixelLayout :: VGenum -> PixelLayout 
 unmarshalPixelLayout x
@@ -152,6 +188,7 @@ unmarshalPixelLayout x
     | x == vg_PIXEL_LAYOUT_BGR_HORIZONTAL = BgrHorizontal 
     | otherwise = error ("unmarshalPixelLayout: illegal value " ++ show x)
     
+instance Unmarshal PixelLayout where unmarshal = unmarshalPixelLayout
     
 marshalMatrixMode :: MatrixMode -> VGenum
 marshalMatrixMode x = case x of 
@@ -160,4 +197,5 @@ marshalMatrixMode x = case x of
     FillPaintToUser -> vg_MATRIX_FILL_PAINT_TO_USER
     StrokePaintToUser -> vg_MATRIX_STROKE_PAINT_TO_USER
     
-    
+instance Marshal MatrixMode where marshal = marshalMatrixMode
+

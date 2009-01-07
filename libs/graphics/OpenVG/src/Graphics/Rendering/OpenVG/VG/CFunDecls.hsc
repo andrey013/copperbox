@@ -178,14 +178,11 @@ foreign import ccall unsafe "vg/openvg.h vgAppendPathData"
 foreign import ccall unsafe "vg/openvg.h vgModifyPathCoords"  
     vgModifyPathCoords :: VGPath -> VGint -> VGint -> Ptr a -> IO ()
     
-                                        
-                                    
 
 foreign import ccall unsafe "vg/openvg.h vgTransformPath"  
     vgTransformPath :: VGPath -> VGPath -> IO ()
     
     
-
 foreign import ccall unsafe "vg/openvg.h vgInterpolatePath"  
     vgInterpolatePath :: VGPath 
                       -> VGPath 
@@ -199,8 +196,7 @@ foreign import ccall unsafe "vg/openvg.h vgPathLength"
 -}
 
 {-
--- TODO vgPathLength seems to be missing in the dll... ?
-foreign import ccall unsafe "vg/openvg.h vgPathLength"                                  
+-- TODO vgPointAlongPath seems to be missing in the dll... ?                                
 foreign import ccall unsafe "vg/openvg.h vgPointAlongPath"  
     vgPointAlongPath :: VGPath 
                      -> VGint 

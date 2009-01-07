@@ -24,7 +24,7 @@ module Graphics.Rendering.OpenVG.VG.BasicTypes (
   VGboolean, VGfloat,
   VGenum,
   
-  vg_FALSE, vg_TRUE, marshalBool,
+  vg_FALSE, vg_TRUE, marshalBool, unmarshalBool,
   
   -- * Handle-based Types
   VGHandle,
@@ -67,7 +67,13 @@ marshalBool x = case x of
   True -> vg_TRUE
   False -> vg_FALSE
 
+unmarshalBool :: VGboolean -> Bool
+unmarshalBool x
+    | x == vg_TRUE  = True
+    | x == vg_FALSE = False
+    | otherwise = error ("unmarshalBool: illegal value " ++ show x)
   
+    
 type VGHandle = #type VGHandle
 
 vg_INVALID_HANDLE :: VGHandle 

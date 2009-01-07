@@ -17,23 +17,24 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.Scissoring (
-  MaskOperation(..),
+  -- * Scissoring
   scissoring, 
+  ScissorRect, 
   maxScissorRects,
-  ScissorRect, scissorRects,
+  scissorRects,
+  
+  -- * Alpha masking
+  MaskOperation(..),
   alphaMasking,
   
+  -- * Fast clearing
   clearColor,
-  clear
-  
+  clear  
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGint, VGfloat, marshalBool )
+    VGint, VGfloat, marshalBool )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( vgClear )
-import Graphics.Rendering.OpenVG.VG.Constants (
-    vg_CLEAR_MASK, vg_FILL_MASK, vg_SET_MASK, vg_UNION_MASK, 
-    vg_INTERSECT_MASK, vg_SUBTRACT_MASK )  
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
     ParamType ( Scissoring, ScissorRects, MaxScissorRects, 
                 Masking, ClearColor ),   
@@ -44,7 +45,33 @@ import Graphics.Rendering.OpenGL.GL.StateVar (
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Position(..), Size(..) )
 import Graphics.Rendering.OpenGL.GL.VertexSpec ( Color4(..) )
-            
+
+
+--------------------------------------------------------------------------------
+-- Scissoring
+
+-- | Enable or disable scissoring.
+scissoring :: SettableStateVar Bool  
+scissoring = makeSettableStateVar $ \a -> 
+    seti Scissoring (fromIntegral $ marshalBool a) 
+
+type ScissorRect = (Position, Size) 
+    
+-- | Get the maximum number of scissoring rectangles.
+maxScissorRects :: GettableStateVar VGint
+maxScissorRects = makeGettableStateVar $ geti MaxScissorRects
+
+
+-- | Specify the scissoring rectangles.
+scissorRects :: SettableStateVar [ScissorRect]
+scissorRects = makeSettableStateVar $ \ss ->
+    setiv ScissorRects (foldr f [] ss) where 
+        f ((Position mx my), (Size w h)) a = mx:my:w:h:a 
+
+--------------------------------------------------------------------------------
+-- Alpha masking
+
+-- | @MaskOperation@ corresponds to the OpenVG enumeration @VGMaskOperation@.    
 data MaskOperation =
      ClearMask
    | FillMask
@@ -54,37 +81,29 @@ data MaskOperation =
    | SubtractMask
    deriving ( Eq, Ord, Show )
 
-scissoring :: SettableStateVar Bool  
-scissoring = makeSettableStateVar $ \a -> 
-    seti Scissoring (fromIntegral $ marshalBool a) 
-
-maxScissorRects :: GettableStateVar VGint
-maxScissorRects = makeGettableStateVar $ geti MaxScissorRects
-
-type ScissorRect = (Position, Size) 
-
--- | ScissorRects are discarded immediately and cannot be retrieved with a getvi
-scissorRects :: SettableStateVar [ScissorRect]
-scissorRects = makeSettableStateVar $ \ss ->
-    setiv ScissorRects (foldr f [] ss) where 
-        f ((Position mx my), (Size w h)) a = mx:my:w:h:a 
-
+-- | Enable or disable alpha masking.   
 alphaMasking :: SettableStateVar Bool
 alphaMasking = makeSettableStateVar $ \a -> seti Masking (marshalBool a)  
 
 -- vgMask not implemented in shiva-vg
 
+--------------------------------------------------------------------------------
+-- Fast clearing
 
+-- | Set the color for clearing.
 clearColor :: SettableStateVar (Color4 VGfloat)
 clearColor = makeSettableStateVar $ 
     \(Color4 r g b a) -> setfv ClearColor [r,g,b,a]
 
+-- | @clear@ corresponds to the OpenVG function @vgClear@.
 clear :: Position -> Size -> IO ()
 clear (Position x y) (Size w h) = vgClear x y w h
 
 
 --------------------------------------------------------------------------------
 
+{-
+-- Defined but not (YET) used: marshalMaskOperation
 marshalMaskOperation :: MaskOperation -> VGenum
 marshalMaskOperation x = case x of
     ClearMask -> vg_CLEAR_MASK
@@ -93,3 +112,4 @@ marshalMaskOperation x = case x of
     UnionMask -> vg_UNION_MASK
     IntersectMask -> vg_INTERSECT_MASK
     SubtractMask -> vg_SUBTRACT_MASK
+-}

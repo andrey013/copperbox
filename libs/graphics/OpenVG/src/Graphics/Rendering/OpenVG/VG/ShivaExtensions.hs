@@ -16,6 +16,7 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.ShivaExtensions (
+  -- * ShivaVG extensions
   createContextSH,
   resizeSurfaceSH, 
   destroyContextSH
@@ -27,19 +28,19 @@ import Graphics.Rendering.OpenVG.VG.CFunDecls (
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Size(..) )
 
--- Note - I\'m not sure if this is the best type for the function...
--- HOpenGL uses GLints for window positions, sizes etc, so it makes sense to 
--- follow that convention, and it seems preferable to return a Haskell Bool
--- but this means the function has mixed high-level and low-level types.
-   
+
+-- | Create an OpenVG context on top of an already created OpenGL context.   
 createContextSH :: Size -> IO Bool
 createContextSH (Size w h) = do 
     vgbool <- vgCreateContextSH w h
     if vgbool == vg_TRUE then return True else return False
-    
+
+-- | @resizeSurfaceSH@ should be called whenever the size of the 
+-- surface changes.    
 resizeSurfaceSH :: Size -> IO ()
 resizeSurfaceSH (Size w h) = vgResizeSurfaceSH w h
 
+-- | Destroy the OpenVG context.
 destroyContextSH :: IO ()
 destroyContextSH = vgDestroyContextSH
 
