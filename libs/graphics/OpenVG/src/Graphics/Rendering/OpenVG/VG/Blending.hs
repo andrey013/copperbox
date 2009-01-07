@@ -29,6 +29,7 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_BLEND_ADDITIVE ) 
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
     seti, ParamType ( BlendMode ) )
+import Graphics.Rendering.OpenVG.VG.Utils ( Marshal(..), enumValue )
 
 import Graphics.Rendering.OpenGL.GL.StateVar (
    SettableStateVar, makeSettableStateVar ) 
@@ -58,8 +59,7 @@ data BlendMode =
 --
 -- @ vgSeti(VG_BLEND_MODE, mode); @
 blendMode :: SettableStateVar BlendMode
-blendMode = makeSettableStateVar $ \mode -> 
-    seti BlendMode (fromIntegral $ marshalBlendMode mode)
+blendMode = makeSettableStateVar $ \mode -> seti BlendMode (enumValue mode)
 
 --------------------------------------------------------------------------------
 
@@ -76,4 +76,7 @@ marshalBlendMode x = case x of
     Lighten -> vg_BLEND_LIGHTEN
     Additive -> vg_BLEND_ADDITIVE
     
+instance Marshal BlendMode where marshal = marshalBlendMode
+
+
 

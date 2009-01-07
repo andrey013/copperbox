@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -16,16 +17,29 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.Utils (
-  Marshal(..), Unmarshal(..), bitwiseOr, unbits 
-  
+  Marshal(..), Unmarshal(..), enumValue, unmarshalIntegral, 
+  bitwiseOr, unbits 
 ) where
 
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum, VGbitfield)
+import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
+        VGint, VGenum, VGbitfield, 
+        marshalBool )
 import Data.Bits
 
 class Marshal a where marshal :: a -> VGenum
 class Unmarshal a where unmarshal :: VGenum -> a 
+
+instance Marshal VGint where marshal = fromIntegral
+instance Marshal Bool where marshal = fromIntegral . marshalBool
+
+enumValue :: Marshal a => a -> VGint
+enumValue = fromIntegral . marshal
+
+
+unmarshalIntegral :: (Integral a, Unmarshal b)  => a -> b
+unmarshalIntegral = unmarshal . fromIntegral
+
 
 bitwiseOr :: Marshal a => [a] -> VGbitfield
 bitwiseOr = sum . map (fromIntegral . marshal)

@@ -81,7 +81,7 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
     getParameteri, getParameterf, seti, setf, setfv, geti )     
     
 import Graphics.Rendering.OpenVG.VG.Utils ( 
-    Marshal(..), Unmarshal(..), bitwiseOr, unbits )
+    Marshal(..), Unmarshal(..), unmarshalIntegral, bitwiseOr, unbits )
 
 import Graphics.Rendering.OpenGL.GL.StateVar (
     SettableStateVar, makeSettableStateVar,
@@ -186,7 +186,7 @@ data JoinStyle =
 createPath :: PathDatatype -> VGfloat -> VGfloat
                  -> VGint -> VGint -> [PathCapabilities] -> IO VGPath
 createPath typ scl bi sch cch cs = 
-    vgCreatePath fmt (marshalPathDatatype typ) scl bi sch cch (bitwiseOr cs)
+    vgCreatePath fmt (marshal typ) scl bi sch cch (bitwiseOr cs)
   where
     -- Other paths formats maybe defined as extensions, for the present
     -- restrict the format to just VG_PATH_FORMAT_STANDARD 
@@ -208,7 +208,7 @@ format h = makeGettableStateVar $
 datatype :: VGPath -> GettableStateVar PathDatatype
 datatype h = makeGettableStateVar $ do
     a <- getParameteri h (marshalPathParamType Datatype)    
-    return $ unmarshalPathDatatype $ fromIntegral a
+    return $ unmarshalIntegral a
     
 pathScale :: VGPath -> GettableStateVar VGfloat
 pathScale h = makeGettableStateVar $
@@ -298,12 +298,15 @@ strokePath :: VGPath -> IO ()
 strokePath h = drawPath h [StrokePath]
  
 --------------------------------------------------------------------------------
+
 marshalPathDatatype :: PathDatatype -> VGenum
 marshalPathDatatype x = case x of
     S_8 -> vg_PATH_DATATYPE_S_8
     S_16 -> vg_PATH_DATATYPE_S_16
     S_32 -> vg_PATH_DATATYPE_S_32
     F_ieee754 -> vg_PATH_DATATYPE_F
+
+instance Marshal PathDatatype where marshal = marshalPathDatatype
 
 unmarshalPathDatatype :: VGenum -> PathDatatype  
 unmarshalPathDatatype x
@@ -312,6 +315,8 @@ unmarshalPathDatatype x
     | x == vg_PATH_DATATYPE_S_32  = S_32
     | x == vg_PATH_DATATYPE_F     = F_ieee754     
     | otherwise = error ("unmarshalPathDatatype: illegal value " ++ show x)
+
+instance Unmarshal PathDatatype where unmarshal = unmarshalPathDatatype
    
 marshalPathCapabilities :: PathCapabilities -> VGenum
 marshalPathCapabilities x = case x of 
@@ -390,6 +395,13 @@ marshalPaintMode :: PaintMode -> VGenum
 marshalPaintMode x = case x of 
     StrokePath -> vg_STROKE_PATH
     FillPath -> vg_FILL_PATH
+    
+unmarshalPaintMode :: VGenum -> PaintMode 
+unmarshalPaintMode x
+    | x == vg_STROKE_PATH         = StrokePath 
+    | x == vg_FILL_PATH           = FillPath 
+    | otherwise = error ("unmarshalPaintMode: illegal value " ++ show x)
 
 instance Marshal PaintMode where marshal = marshalPaintMode
- 
+instance Unmarshal PaintMode where unmarshal = unmarshalPaintMode
+  

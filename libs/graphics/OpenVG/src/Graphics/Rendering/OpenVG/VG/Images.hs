@@ -85,7 +85,8 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
     ParamType ( ImageQuality, ImageMode,
                 MaxImageWidth, MaxImageHeight, 
                 MaxImagePixels, MaxImageBytes ) )
-import Graphics.Rendering.OpenVG.VG.Utils ( Marshal(..), bitwiseOr )
+import Graphics.Rendering.OpenVG.VG.Utils ( 
+    Marshal(..), Unmarshal(..), enumValue, unmarshalIntegral, bitwiseOr )
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Position(..), Size (..) )  
 import Graphics.Rendering.OpenGL.GL.StateVar (
@@ -178,16 +179,14 @@ data ImageFormat =
 --
 -- @ VGint imageMaxWidth = vgGeti(VG_MAX_IMAGE_WIDTH); @
 maxImageWidth :: GettableStateVar VGint
-maxImageWidth = makeGettableStateVar $
-    geti MaxImageWidth 
+maxImageWidth = makeGettableStateVar $ geti MaxImageWidth 
 
 -- | Get the maximum available width for the 'createImage' function.
 -- @maxImageWidth@ is equivalent to this OpenVG code:
 --
 -- @ VGint imageMaxWidth = vgGeti(VG_MAX_IMAGE_WIDTH); @
 maxImageHeight :: GettableStateVar VGint
-maxImageHeight = makeGettableStateVar $
-    geti MaxImageHeight
+maxImageHeight = makeGettableStateVar $ geti MaxImageHeight
 
 -- | Get the largest available value of the product of the @width@ and 
 -- @height@ passed to the 'createImage' function.
@@ -195,8 +194,7 @@ maxImageHeight = makeGettableStateVar $
 --
 -- @ VGint imageMaxPixels = vgGeti(VG_MAX_IMAGE_PIXELS); @
 maxImagePixels :: GettableStateVar VGint
-maxImagePixels = makeGettableStateVar $
-    geti MaxImagePixels
+maxImagePixels = makeGettableStateVar $ geti MaxImagePixels
 
 -- | Get the largest available number of bytes that may make up the image data
 -- passed to the 'createImage' function.
@@ -204,13 +202,12 @@ maxImagePixels = makeGettableStateVar $
 --
 -- @ VGint imageMaxBytes = vgGeti(VG_MAX_IMAGE_BYTES); @
 maxImageBytes :: GettableStateVar VGint
-maxImageBytes = makeGettableStateVar $
-    geti MaxImageBytes
+maxImageBytes = makeGettableStateVar $ geti MaxImageBytes
 
 -- | @createImage@ corresponds to the OpenVG function @vgCreateImage@.             
 createImage :: ImageFormat -> Size -> [ImageQuality] -> IO VGImage 
 createImage SRGBA8888 (Size w h) qs = 
-    vgCreateImage (marshalImageFormat SRGBA8888) w h (bitwiseOr qs) 
+    vgCreateImage (marshal SRGBA8888) w h (bitwiseOr qs) 
 createImage _ _ _ = error $ "unsupported image format"
 
 
@@ -226,17 +223,15 @@ destroyImage = vgDestroyImage
 imageFormat :: VGImage -> GettableStateVar ImageFormat
 imageFormat h = makeGettableStateVar $ do 
     a <- getParameteri h vg_IMAGE_FORMAT
-    return $ unmarshalImageFormat $ fromIntegral a 
+    return $ unmarshalIntegral a 
 
 -- | Get the width used to defined the image.
 imageWidth :: VGImage -> GettableStateVar VGint
-imageWidth h = 
-    makeGettableStateVar $ getParameteri h vg_IMAGE_WIDTH
+imageWidth h = makeGettableStateVar $ getParameteri h vg_IMAGE_WIDTH
 
 -- | Get the height used to defined the image.
 imageHeight :: VGImage -> GettableStateVar VGint
-imageHeight h =
-    makeGettableStateVar $ getParameteri h vg_IMAGE_HEIGHT
+imageHeight h = makeGettableStateVar $ getParameteri h vg_IMAGE_HEIGHT
  
 
 --------------------------------------------------------------------------------
@@ -292,7 +287,7 @@ data ImageMode =
 -- @ vgSeti(VG_IMAGE_MODE, drawImageMode); @
 drawImageMode :: SettableStateVar ImageMode  
 drawImageMode = makeSettableStateVar $ \mode -> 
-    seti ImageMode (fromIntegral $ marshalImageMode mode)  
+    seti ImageMode (enumValue mode)  
 
 -- | @drawImage@ corresponds to the OpenVG function @vgDrawImage@. 
 drawImage :: VGImage -> IO ()
@@ -310,7 +305,7 @@ setPixels (Position dx dy) src (Position sx sy) (Size w h) =
 -- | @writePixels@ corresponds to the OpenVG function @vgWritePixels@. 
 writePixels :: Ptr a -> VGint -> ImageFormat -> Position -> Size -> IO ()
 writePixels pixeldata stride fmt (Position dx dy) (Size w h) =
-    vgWritePixels pixeldata stride (marshalImageFormat fmt) dx dy w h
+    vgWritePixels pixeldata stride (marshal fmt) dx dy w h
 
 -- | @getPixels@ corresponds to the OpenVG function @vgGetPixels@. 
 getPixels :: VGImage  -> Position -> Position -> Size -> IO ()
@@ -320,7 +315,7 @@ getPixels dst (Position dx dy) (Position sx sy) (Size w h) =
 -- | @readPixels@ corresponds to the OpenVG function @vgReadPixels@.
 readPixels :: Ptr a -> VGint -> ImageFormat -> Position -> Size -> IO ()
 readPixels pixeldata stride fmt (Position sx sy) (Size w h) =
-    vgReadPixels pixeldata stride (marshalImageFormat fmt) sx sy w h
+    vgReadPixels pixeldata stride (marshal fmt) sx sy w h
 
 --------------------------------------------------------------------------------
 -- Copying portions of the drawing surface
@@ -379,6 +374,8 @@ marshalImageFormat x = case x of
     LABGR8888 -> vg_lABGR_8888
     LABGR8888Pre -> vg_lABGR_8888_PRE
 
+instance Marshal ImageFormat where marshal = marshalImageFormat
+
 unmarshalImageFormat :: VGenum -> ImageFormat
 unmarshalImageFormat x
     | x == vg_sRGBX_8888        = SRGBX8888
@@ -422,6 +419,8 @@ unmarshalImageFormat x
     | x == vg_lABGR_8888        = LABGR8888  
     | x == vg_lABGR_8888_PRE    = LABGR8888Pre  
     | otherwise = error ("unmarshalImageFormat: illegal value " ++ show x)
+
+instance Unmarshal ImageFormat where unmarshal = unmarshalImageFormat
    
 marshalImageQuality :: ImageQuality -> VGenum
 marshalImageQuality x = case x of
@@ -438,3 +437,7 @@ marshalImageMode x = case x of
     Normal -> vg_DRAW_IMAGE_NORMAL
     Multiply -> vg_DRAW_IMAGE_MULTIPLY
     Stencil -> vg_DRAW_IMAGE_STENCIL
+
+instance Marshal ImageMode where marshal = marshalImageMode  
+
+    

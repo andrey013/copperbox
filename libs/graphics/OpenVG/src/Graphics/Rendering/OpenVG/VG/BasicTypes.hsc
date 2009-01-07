@@ -30,7 +30,10 @@ module Graphics.Rendering.OpenVG.VG.BasicTypes (
   VGHandle,
   vg_INVALID_HANDLE,
   
-  VGPath, VGImage, VGPaint
+  VGPath, VGImage, VGPaint,
+  
+  -- * Points
+  Point,
   
 ) where
 
@@ -73,4 +76,10 @@ vg_INVALID_HANDLE = #const VG_INVALID_HANDLE
 type VGPath  = VGHandle
 type VGImage = VGHandle
 type VGPaint = VGHandle
+
+
+-- | Point (VGfloat,VGfloat) 
+type Point = (VGfloat, VGfloat)
+
+
 
