@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.OpenVG.VGU.CFunDecls
+-- Module      :  Graphics.Rendering.OpenVG.VGU.CInternals
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
