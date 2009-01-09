@@ -24,6 +24,7 @@ module Graphics.Rendering.FreeType.CDataTypes where
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+import Data.Char ( ord, chr )
 import Data.Int
 import Data.Word
 import Foreign.C.String ( CString )
@@ -364,6 +365,7 @@ instance Unmarshal FTRendermode where
 
 -- alignment seems to be the first element of the Haskell data type.
 
+
 -- | @FTvector@ corresponds to the FreeType type @FT_Vector@. 
 data FTvector = FTvector { _xpos :: FTpos, _ypos :: FTpos }
   deriving (Eq, Show)
@@ -436,12 +438,13 @@ instance Storable FTmatrix where
 --------------------------------------------------------------------------------
 
 -- | @FTunitvector@ corresponds to the FreeType type @FT_UnitVector@. 
+
 data FTunitvector = FTunitvector { _xpos' :: FTf2dot14, _ypos' :: FTf2dot14 }
   deriving (Eq, Show)
 
 instance Storable FTunitvector where
   sizeOf    _ = #{size FT_UnitVector}
-  alignment _ = alignment (undefined :: CInt)
+  alignment _ = alignment (undefined :: FTf2dot14)
   
   peek ptr = do 
       x <- #{peek FT_UnitVector, x} ptr
@@ -467,6 +470,34 @@ data FTbitmap = FTbitmap {
       _palette        :: Ptr CVoid_
     }
 
+instance Storable FTbitmap where
+  sizeOf    _ = #{size FT_Bitmap}
+  alignment _ = alignment (undefined :: FTint)
+  
+  peek ptr = do 
+      r   <- #{peek FT_Bitmap, rows}          ptr
+      w   <- #{peek FT_Bitmap, width}         ptr
+      p   <- #{peek FT_Bitmap, pitch}         ptr
+      b   <- #{peek FT_Bitmap, buffer}        ptr
+      n   <- #{peek FT_Bitmap, num_grays}     ptr
+      pxm <- #{peek FT_Bitmap, pixel_mode}    ptr
+      plm <- #{peek FT_Bitmap, palette_mode}  ptr
+      pl  <- #{peek FT_Bitmap, palette}       ptr
+      return $ FTbitmap r w p b n (unmarshal $ fromIntegral $ ord pxm) plm pl 
+ 
+  poke ptr (FTbitmap r w p b n pxm plm pl) = do
+        #{poke FT_Bitmap, rows}         ptr r
+        #{poke FT_Bitmap, width}        ptr w
+        #{poke FT_Bitmap, pitch}        ptr p
+        #{poke FT_Bitmap, buffer}       ptr b
+        #{poke FT_Bitmap, num_grays}    ptr n
+        #{poke FT_Bitmap, pixel_mode}   ptr (chr $ fromIntegral $ marshal pxm)
+        #{poke FT_Bitmap, palette_mode} ptr plm
+        #{poke FT_Bitmap, palette}      ptr pl
+        
+        
+        
+        
 --------------------------------------------------------------------------------
 
 -- | @FT_Parameter@ corresponds to the FreeType type @FT_Parameter@.
@@ -476,7 +507,19 @@ data FTparameter = FTparameter {
       _data           :: FTpointer
     }
 
-
+instance Storable FTparameter where
+  sizeOf    _ = #{size FT_Parameter}
+  alignment _ = alignment (undefined :: FTulong)
+  
+  peek ptr = do 
+      t <- #{peek FT_Parameter, tag} ptr
+      d <- #{peek FT_Parameter, data} ptr
+      return $ FTparameter t d
+  
+  poke ptr (FTparameter t d) = do
+        #{poke FT_Parameter, tag}  ptr t
+        #{poke FT_Parameter, data} ptr d
+        
 
 --------------------------------------------------------------------------------
 
@@ -493,6 +536,30 @@ data FTopenargs = FTopenargs {
       _params         :: Ptr FTparameter
     }
 
+instance Storable FTopenargs where
+  sizeOf    _ = #{size FT_Open_Args}
+  alignment _ = alignment (undefined :: FTuint)
+  
+  peek ptr = do 
+      fs <- #{peek FT_Open_Args, flags}       ptr
+      mb <- #{peek FT_Open_Args, memory_base} ptr
+      ms <- #{peek FT_Open_Args, memory_size} ptr
+      p  <- #{peek FT_Open_Args, pathname}    ptr
+      s  <- #{peek FT_Open_Args, stream}      ptr
+      d  <- #{peek FT_Open_Args, driver}      ptr
+      n  <- #{peek FT_Open_Args, num_params}  ptr
+      ps <- #{peek FT_Open_Args, params}      ptr
+      return $ FTopenargs fs mb ms p s d n ps
+  
+  poke ptr (FTopenargs fs mb ms p s d n ps) = do
+        #{poke FT_Open_Args, flags}       ptr fs
+        #{poke FT_Open_Args, memory_base} ptr mb
+        #{poke FT_Open_Args, memory_size} ptr ms
+        #{poke FT_Open_Args, pathname}    ptr p
+        #{poke FT_Open_Args, stream}      ptr s
+        #{poke FT_Open_Args, driver}      ptr d
+        #{poke FT_Open_Args, num_params}  ptr n
+        #{poke FT_Open_Args, params}      ptr ps
         
            
 -- end of file
