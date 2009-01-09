@@ -26,6 +26,7 @@ module Graphics.Rendering.FreeType.CDataTypes where
 
 import Data.Int
 import Data.Word
+import Foreign.C.String ( CString )
 import Foreign.C.Types ( CInt, CChar )
 import Foreign.Ptr ( Ptr )
 import Foreign.Storable 
@@ -97,17 +98,26 @@ type FTfaceinternal     = Ptr FTfaceinternal_
 data FTsizeinternal_
 type FTsizeinternal     = Ptr FTsizeinternal_
 
+data FTsizerequest_
+type FTsizerequest      = Ptr FTsizerequest_
+
 data FTsubglyph_
 type FTsubglyph         = Ptr FTsubglyph_
 
 data FTslotinternal_
 type FTslotinternal     = Ptr FTslotinternal_
 
+data FTstream_
+type FTstream           = Ptr FTstream_
 
 --------------------------------------------------------------------------------
 -- Enumerations
 
 --------------------------------------------------------------------------------
+
+class Marshal a where marshal :: a -> CInt
+class Unmarshal a where unmarshal :: CInt -> a
+
 
 type FTpixelmode_    = CInt
 
@@ -124,17 +134,41 @@ type FTpixelmode_    = CInt
   }
 
 data FTpixelmode = 
-      PixelModeNone
-    | Mono
-    | Gray
-    | Gray2
-    | Gray4
-    | Lcd
-    | LcdV
-    | PixelModeMax
-    deriving ( Enum, Eq, Ord, Show )
-    
-    
+      PmNone
+    | PmMono
+    | PmGray
+    | PmGray2
+    | PmGray4
+    | PmLcd
+    | PmLcdV
+    | PmMax
+    deriving ( Eq, Ord, Show )
+
+instance Marshal FTpixelmode where
+  marshal x = case x of
+      PmNone  -> ft_PIXEL_MODE_NONE
+      PmMono  -> ft_PIXEL_MODE_MONO
+      PmGray  -> ft_PIXEL_MODE_GRAY
+      PmGray2 -> ft_PIXEL_MODE_GRAY2
+      PmGray4 -> ft_PIXEL_MODE_GRAY4
+      PmLcd   -> ft_PIXEL_MODE_LCD
+      PmLcdV  -> ft_PIXEL_MODE_LCD_V
+      PmMax   -> ft_PIXEL_MODE_MAX
+      
+      
+instance Unmarshal FTpixelmode where
+  unmarshal x
+      | x == ft_PIXEL_MODE_NONE   = PmNone 
+      | x == ft_PIXEL_MODE_MONO   = PmMono 
+      | x == ft_PIXEL_MODE_GRAY   = PmGray 
+      | x == ft_PIXEL_MODE_GRAY2  = PmGray2 
+      | x == ft_PIXEL_MODE_GRAY4  = PmGray4 
+      | x == ft_PIXEL_MODE_LCD    = PmLcd 
+      | x == ft_PIXEL_MODE_LCD_V  = PmLcdV 
+      | x == ft_PIXEL_MODE_MAX    = PmMax 
+      | otherwise = error ("unmarshal: FTpixelmode - illegal value " ++ show x)                  
+      
+      
 --------------------------------------------------------------------------------
 
 
@@ -156,7 +190,25 @@ data FTglyphformat =
     | Outline
     | Plotter
     deriving ( Enum, Eq, Ord, Show )
-      
+
+instance Marshal FTglyphformat where
+  marshal x = case x of
+      GlyphFormatNone -> ft_GLYPH_FORMAT_NONE
+      Composite       -> ft_GLYPH_FORMAT_COMPOSITE
+      Bitmap          -> ft_GLYPH_FORMAT_BITMAP
+      Outline         -> ft_GLYPH_FORMAT_OUTLINE
+      Plotter         -> ft_GLYPH_FORMAT_PLOTTER
+
+instance Unmarshal FTglyphformat where
+  unmarshal x
+      | x == ft_GLYPH_FORMAT_NONE       = GlyphFormatNone  
+      | x == ft_GLYPH_FORMAT_COMPOSITE  = Composite  
+      | x == ft_GLYPH_FORMAT_BITMAP     = Bitmap
+      | x == ft_GLYPH_FORMAT_OUTLINE    = Outline
+      | x == ft_GLYPH_FORMAT_PLOTTER    = Plotter  
+      | otherwise = error ("unmarshal: FTglyphformat - illegal value " ++ show x)
+         
+                     
 --------------------------------------------------------------------------------
 
 type FTencoding_     = CInt
@@ -199,7 +251,42 @@ data FTencoding =
     | OldLatin2
     | AppleRoman
     deriving ( Enum, Eq, Ord, Show )
-    
+
+instance Marshal FTencoding where
+  marshal x = case x of
+      EncodingNone  -> ft_ENCODING_NONE
+      MsSymbol      -> ft_ENCODING_MS_SYMBOL
+      Unicode       -> ft_ENCODING_UNICODE
+      SJIS          -> ft_ENCODING_SJIS
+      GB2312        -> ft_ENCODING_GB2312
+      Big5          -> ft_ENCODING_BIG5
+      Wansung       -> ft_ENCODING_WANSUNG
+      Johab         -> ft_ENCODING_JOHAB
+      AdobeStandard -> ft_ENCODING_ADOBE_STANDARD
+      AdobeExpert   -> ft_ENCODING_ADOBE_EXPERT
+      AdobeCustom   -> ft_ENCODING_ADOBE_CUSTOM
+      AdobeLatin1   -> ft_ENCODING_ADOBE_LATIN_1
+      OldLatin2     -> ft_ENCODING_OLD_LATIN_2
+      AppleRoman    -> ft_ENCODING_APPLE_ROMAN 
+
+instance Unmarshal FTencoding where
+  unmarshal x
+      | x == ft_ENCODING_NONE             = EncodingNone 
+      | x == ft_ENCODING_MS_SYMBOL        = MsSymbol
+      | x == ft_ENCODING_UNICODE          = Unicode 
+      | x == ft_ENCODING_SJIS             = SJIS 
+      | x == ft_ENCODING_GB2312           = GB2312 
+      | x == ft_ENCODING_BIG5             = Big5 
+      | x == ft_ENCODING_WANSUNG          = Wansung 
+      | x == ft_ENCODING_JOHAB            = Johab 
+      | x == ft_ENCODING_ADOBE_STANDARD   = AdobeStandard 
+      | x == ft_ENCODING_ADOBE_EXPERT     = AdobeExpert 
+      | x == ft_ENCODING_ADOBE_CUSTOM     = AdobeCustom 
+      | x == ft_ENCODING_ADOBE_LATIN_1    = AdobeLatin1 
+      | x == ft_ENCODING_OLD_LATIN_2      = OldLatin2 
+      | x == ft_ENCODING_APPLE_ROMAN      = AppleRoman  
+      | otherwise = error ("unmarshal: FTencoding - illegal value " ++ show x)
+                
 --------------------------------------------------------------------------------    
       
 type FTkerningmode_ = CInt
@@ -216,7 +303,62 @@ data FTkerningmode =
     | Unscaled
     deriving ( Enum, Eq, Ord, Show )
 
-    
+instance Marshal FTkerningmode where
+  marshal x = case x of
+      DefaultKerning  -> ft_KERNING_DEFAULT
+      Unfitted        -> ft_KERNING_UNFITTED
+      Unscaled        -> ft_KERNING_UNSCALED
+
+instance Unmarshal FTkerningmode where
+  unmarshal x
+      | x == ft_KERNING_DEFAULT       = DefaultKerning  
+      | x == ft_KERNING_UNFITTED      = Unfitted  
+      | x == ft_KERNING_UNSCALED      = Unscaled  
+      | otherwise = error ("unmarshal: FTkerningmode - illegal value " ++ show x)
+              
+--------------------------------------------------------------------------------    
+      
+type FTrendermode_ = CInt
+
+#{enum FTrendermode_ ,
+  , ft_RENDER_MODE_NORMAL     = FT_RENDER_MODE_NORMAL
+  , ft_RENDER_MODE_LIGHT      = FT_RENDER_MODE_LIGHT
+  , ft_RENDER_MODE_MONO       = FT_RENDER_MODE_MONO
+  , ft_RENDER_MODE_LCD        = FT_RENDER_MODE_LCD
+  , ft_RENDER_MODE_LCD_V      = FT_RENDER_MODE_LCD_V
+
+  , ft_RENDER_MODE_MAX        = FT_RENDER_MODE_MAX
+
+  }
+
+data FTRendermode = 
+      RmNormal
+    | RmLight
+    | RmMono
+    | RmLcd
+    | RmLcdV
+    | RmMax
+    deriving ( Enum, Eq, Ord, Show )
+
+instance Marshal FTRendermode where
+  marshal x = case x of
+      RmNormal  -> ft_RENDER_MODE_NORMAL
+      RmLight   -> ft_RENDER_MODE_LIGHT
+      RmMono    -> ft_RENDER_MODE_MONO
+      RmLcd     -> ft_RENDER_MODE_LCD
+      RmLcdV    -> ft_RENDER_MODE_LCD_V
+      RmMax     -> ft_RENDER_MODE_MAX
+
+instance Unmarshal FTRendermode where
+  unmarshal x
+      | x == ft_RENDER_MODE_NORMAL    = RmNormal  
+      | x == ft_RENDER_MODE_LIGHT     = RmLight  
+      | x == ft_RENDER_MODE_MONO      = RmMono  
+      | x == ft_RENDER_MODE_LCD       = RmLcd  
+      | x == ft_RENDER_MODE_LCD_V     = RmLcdV  
+      | x == ft_RENDER_MODE_MAX       = RmMax       
+      | otherwise = error ("unmarshal: FTRendermode - illegal value " ++ show x)
+          
 --------------------------------------------------------------------------------
 -- Structs
 
@@ -325,7 +467,31 @@ data FTbitmap = FTbitmap {
       _palette        :: Ptr CVoid_
     }
 
+--------------------------------------------------------------------------------
 
+-- | @FT_Parameter@ corresponds to the FreeType type @FT_Parameter@.
+
+data FTparameter = FTparameter {
+      _tag            :: FTulong,
+      _data           :: FTpointer
+    }
+
+
+
+--------------------------------------------------------------------------------
+
+-- | @FTopenargs@ corresponds to the FreeType type @FT_Open_Args@.
+
+data FTopenargs = FTopenargs {
+      _flags          :: FTuint,
+      _memory_base    :: Ptr FTbyte,
+      _memory_size    :: FTlong,
+      _pathname       :: CString,
+      _stream         :: FTstream,
+      _driver         :: FTmodule,
+      _num_params     :: FTint,
+      _params         :: Ptr FTparameter
+    }
 
         
            

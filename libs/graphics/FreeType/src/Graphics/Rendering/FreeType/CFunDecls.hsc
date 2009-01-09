@@ -57,13 +57,22 @@ foreign import ccall unsafe "freetype/freetype.h FT_New_Face"
                        -> Ptr FTface 
                        -> IO FTerror
 
--- FT_Open_Face
+
+foreign import ccall unsafe "freetype/freetype.h FT_Open_Face" 
+    ft_Open_Face :: FTlibrary 
+                 -> Ptr FTopenargs
+                 -> FTlong 
+                 -> Ptr FTface 
+                 -> IO FTerror
+
 
 foreign import ccall unsafe "freetype/freetype.h FT_Attach_File" 
     ft_Attach_File :: FTface -> CString -> IO FTerror
      
 
--- FT_Attach_Stream
+foreign import ccall unsafe "freetype/freetype.h FT_Attach_Stream" 
+    ft_Attach_Stream :: FTface -> Ptr FTopenargs -> IO FTerror
+
 
 foreign import ccall unsafe "freetype/freetype.h FT_Done_Face" 
     ft_Done_Face :: FTface -> IO FTerror
@@ -72,7 +81,10 @@ foreign import ccall unsafe "freetype/freetype.h FT_Done_Face"
 foreign import ccall unsafe "freetype/freetype.h FT_Select_Size" 
     ft_Select_Size :: FTface -> FTint -> IO FTerror
 
--- FT_Request_Size
+
+foreign import ccall unsafe "freetype/freetype.h FT_Request_Size" 
+    ft_Request_Size :: FTface -> FTsizerequest -> IO FTerror
+
 
 foreign import ccall unsafe "freetype/freetype.h FT_Set_Char_Size" 
     ft_Set_Char_Size :: FTface 
@@ -102,8 +114,8 @@ foreign import ccall unsafe "freetype/freetype.h FT_Set_Transform"
     ft_Set_Transform :: FTface -> Ptr FTmatrix -> Ptr FTvector -> IO () 
     
     
--- foreign import ccall unsafe "freetype/freetype.h FT_Render_Glyph" 
---    ft_Render_Glyph :: FTglyphslot -> FTrendermode_ -> IO FTerror     
+foreign import ccall unsafe "freetype/freetype.h FT_Render_Glyph" 
+    ft_Render_Glyph :: FTglyphslot -> FTrendermode_ -> IO FTerror     
     
     
 foreign import ccall unsafe "freetype/freetype.h FT_Get_Kerning" 
