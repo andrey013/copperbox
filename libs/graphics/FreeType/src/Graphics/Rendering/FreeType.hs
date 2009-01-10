@@ -17,9 +17,13 @@
 module Graphics.Rendering.FreeType (
   module Graphics.Rendering.FreeType.CDataTypes,
   module Graphics.Rendering.FreeType.CFunDecls,
+  module Graphics.Rendering.FreeType.CImage,
+  module Graphics.Rendering.FreeType.COutline,
 ) where
 
 import Graphics.Rendering.FreeType.CDataTypes
 import Graphics.Rendering.FreeType.CFunDecls
+import Graphics.Rendering.FreeType.CImage
+import Graphics.Rendering.FreeType.COutline
 
 

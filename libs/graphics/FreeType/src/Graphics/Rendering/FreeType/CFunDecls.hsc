@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.FreeType.CInternals
+-- Module      :  Graphics.Rendering.FreeType.CFunDecls
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --

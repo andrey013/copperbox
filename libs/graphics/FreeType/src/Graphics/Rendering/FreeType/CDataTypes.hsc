@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE ForeignFunctionInterface   #-}
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls             #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -29,7 +30,7 @@ import Data.Int
 import Data.Word
 import Foreign.C.String ( CString )
 import Foreign.C.Types ( CInt, CChar )
-import Foreign.Ptr ( Ptr )
+import Foreign.Ptr ( Ptr, FunPtr )
 import Foreign.Storable 
 
 data CVoid_
@@ -64,6 +65,10 @@ type FTufword       = #type FT_UFWord
 type FTf2dot14      = #type FT_F2Dot14
 
 type FTf26dot6      = #type FT_F26Dot6
+
+type VoidPtr        = FTpointer
+
+newtype FTcallback a = FTCallback (FunPtr a) deriving Storable
 
 --------------------------------------------------------------------------------
 
@@ -526,7 +531,7 @@ instance Storable FTparameter where
 -- | @FTopenargs@ corresponds to the FreeType type @FT_Open_Args@.
 
 data FTopenargs = FTopenargs {
-      _flags          :: FTuint,
+      _openargs_flags :: FTuint,
       _memory_base    :: Ptr FTbyte,
       _memory_size    :: FTlong,
       _pathname       :: CString,
