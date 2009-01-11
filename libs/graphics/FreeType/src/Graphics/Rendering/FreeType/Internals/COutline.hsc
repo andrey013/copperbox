@@ -1,11 +1,10 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE ForeignFunctionInterface   #-}
-{-# LANGUAGE EmptyDataDecls #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.FreeType.COutline
+-- Module      :  Graphics.Rendering.FreeType.Internals.COutline
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
@@ -18,7 +17,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.FreeType.COutline where
+module Graphics.Rendering.FreeType.Internals.COutline where
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -26,8 +25,8 @@ module Graphics.Rendering.FreeType.COutline where
 #include FT_OUTLINE_H
 
 
-import Graphics.Rendering.FreeType.CDataTypes
-import Graphics.Rendering.FreeType.CImage
+import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
+import Graphics.Rendering.FreeType.Internals.CImage
 
 import Foreign.C.String ( CString )
 import Foreign.C.Types ( CInt )

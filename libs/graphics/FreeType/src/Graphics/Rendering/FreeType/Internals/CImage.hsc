@@ -1,11 +1,11 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE ForeignFunctionInterface   #-}
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.FreeType.CImage
+-- Module      :  Graphics.Rendering.FreeType.Internals.CImage
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
@@ -18,7 +18,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.FreeType.CImage where
+module Graphics.Rendering.FreeType.Internals.CImage where
 
 
 #include <ft2build.h>
@@ -26,7 +26,7 @@ module Graphics.Rendering.FreeType.CImage where
 
 
 
-import Graphics.Rendering.FreeType.CDataTypes
+import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 
 import Foreign.C.Types
 import Foreign.Ptr ( Ptr, FunPtr ) 

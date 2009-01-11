@@ -22,7 +22,6 @@ module Main where
 
 import Graphics.Rendering.FreeType
 
--- import Foreign.Ptr
 import Foreign.Storable
 import Foreign.Marshal.Alloc
 
@@ -30,27 +29,29 @@ import Foreign.Marshal.Alloc
 -- This is a straight translation of ft_demo.c so the code is very un-Haskell!
 -- But it does test that the compile and link works.
 
+
+
 main :: IO ()
 main = do
-    putStrLn $ "here"
-    alloca $ \h -> do
-        err <- ft_Init_FreeType h
-        putStrLn $ show err
-        
-        handle <- peek h
-        alloca $ \ptr_vmj -> do 
-            alloca $ \ptr_vmn -> do 
-                alloca $ \ptr_vph -> do                     
-                    ft_Library_Version handle ptr_vmj ptr_vmn ptr_vph
-                    
-                    vmj <- peek ptr_vmj
-                    vmn <- peek ptr_vmn
-                    vph <- peek ptr_vph
-                    
-                    putStrLn $ show vmj ++ "." ++ show vmn ++ "." ++ show vph
-                     
-                    err2 <- ft_Done_FreeType handle             
-                    putStrLn $ show err2
+    putStrLn $ "start..."
+    ft <- initFreeType
+    putStrLn $ "done init"
+    
+   
+    hack <- hackExtract ft
+    alloca $ \ptr_vmj -> do 
+        alloca $ \ptr_vmn -> do 
+            alloca $ \ptr_vph -> do                     
+                ft_Library_Version hack ptr_vmj ptr_vmn ptr_vph
+                
+                vmj <- peek ptr_vmj
+                vmn <- peek ptr_vmn
+                vph <- peek ptr_vph
+                
+                putStrLn $ show vmj ++ "." ++ show vmn ++ "." ++ show vph
+
+    doneFreeType ft                 
+    putStrLn "Done."
                 
 
    
