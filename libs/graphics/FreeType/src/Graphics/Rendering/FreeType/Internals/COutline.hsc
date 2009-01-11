@@ -47,51 +47,51 @@ data FToutline = FToutline {
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_New" 
-    ft_Outline_New :: FTlibrary 
+    ft_outline_new :: FTlibrary 
                    -> FTuint 
                    -> FTint 
                    -> Ptr FToutline 
                    -> IO FTerror
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Done" 
-    ft_Outline_Done :: FTlibrary 
+    ft_outline_done :: FTlibrary 
                     -> Ptr FToutline 
                     -> IO FTerror
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Copy" 
-    ft_Outline_Copy :: Ptr FToutline 
+    ft_outline_copy :: Ptr FToutline 
                     -> Ptr FToutline 
                     -> IO FTerror
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Translate" 
-    ft_Outline_Translate :: Ptr FToutline 
+    ft_outline_translate :: Ptr FToutline 
                          -> FTpos
                          -> FTpos
                          -> IO ()
                          
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Transform" 
-    ft_Outline_Transform :: Ptr FToutline 
+    ft_outline_transform :: Ptr FToutline 
                          -> Ptr FTmatrix 
                          -> IO ()
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Embolden" 
-    ft_Outline_Embolden :: Ptr FToutline -> FTpos -> IO FTerror
+    ft_outline_embolden :: Ptr FToutline -> FTpos -> IO FTerror
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Reverse" 
-   ft_Outline_Reverse :: Ptr FToutline -> IO ()
+   ft_outline_reverse :: Ptr FToutline -> IO ()
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Check" 
-   ft_Outline_Check :: Ptr FToutline -> IO FTerror
+   ft_outline_check :: Ptr FToutline -> IO FTerror
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_BBox" 
-   ft_Outline_Get_BBox :: Ptr FToutline -> Ptr FTbbox -> IO FTerror
+   ft_outline_get_bbox :: Ptr FToutline -> Ptr FTbbox -> IO FTerror
    
 
 
@@ -142,7 +142,7 @@ data FToutlinefuncs = FToutlinefuncs {
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Decompose" 
-   ft_Outline_Decompose :: Ptr FToutline 
+   ft_outline_decompose :: Ptr FToutline 
                         -> Ptr FToutlinefuncs 
                         -> VoidPtr 
                         -> IO FTerror
@@ -150,11 +150,11 @@ foreign import ccall unsafe "freetype/freetype.h FT_Outline_Decompose"
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_CBox" 
-   ft_Outline_Get_CBox :: Ptr FToutline -> Ptr FTbbox -> IO ()
+   ft_outline_get_cbox :: Ptr FToutline -> Ptr FTbbox -> IO ()
    
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_Bitmap" 
-   ft_Outline_Get_Bitmap :: FTlibrary 
+   ft_outline_get_bitmap :: FTlibrary 
                          -> Ptr FToutline 
                          -> Ptr FTbitmap
                          -> IO FTerror
@@ -163,7 +163,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_Bitmap"
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Render" 
-   ft_Outline_Render :: FTlibrary 
+   ft_outline_render :: FTlibrary 
                      -> Ptr FToutline 
                      -> Ptr FTrasterparams
                      -> IO FTerror
@@ -185,7 +185,7 @@ type FTorientation_    = CInt
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_Orientation" 
-   ft_Outline_Get_Orientation :: Ptr FToutline 
+   ft_outline_get_orientation :: Ptr FToutline 
                               -> IO FTorientation_
 
 -- end of file

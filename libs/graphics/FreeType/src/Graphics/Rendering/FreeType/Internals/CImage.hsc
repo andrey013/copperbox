@@ -1,11 +1,11 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE ForeignFunctionInterface   #-}
-{-# LANGUAGE EmptyDataDecls             #-}
+
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.FreeType.Internals.CImage
+-- Module      :  Graphics.Rendering.FreeType.Internals.Wrappers
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
@@ -21,8 +21,7 @@
 module Graphics.Rendering.FreeType.Internals.CImage where
 
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
+
 
 
 
