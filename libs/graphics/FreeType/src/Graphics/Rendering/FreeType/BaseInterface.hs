@@ -33,7 +33,7 @@ module Graphics.Rendering.FreeType.BaseInterface (
   setPixelSizes,
   
   -- * loading ...
-  LoadFlag(..), -- rexport from Internal
+  LoadFlag(..), -- re-export from Internal
   loadGlyph,
   loadChar,
   

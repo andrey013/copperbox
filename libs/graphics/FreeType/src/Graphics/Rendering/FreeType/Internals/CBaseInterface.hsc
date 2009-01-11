@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.FreeType.CFunDecls
+-- Module      :  Graphics.Rendering.FreeType.Internals.CBaseInterface
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
@@ -19,12 +19,12 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.FreeType.CFunDecls where
+module Graphics.Rendering.FreeType.Internals.CBaseInterface where
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-import Graphics.Rendering.FreeType.CDataTypes
+import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 
 import Foreign.C.String ( CString )
 import Foreign.Ptr ( Ptr ) 
@@ -35,59 +35,63 @@ import Foreign.Ptr ( Ptr )
   
 -- | @FT_Init_FreeType@.
 foreign import ccall unsafe "freetype/freetype.h FT_Init_FreeType" 
-    ft_Init_FreeType :: Ptr FTlibrary -> IO FTerror
+    ft_init_freetype :: Ptr FT_Library -> IO FTerror
 
 -- | @FT_Done_FreeType@.
 foreign import ccall unsafe "freetype/freetype.h FT_Done_FreeType" 
-    ft_Done_FreeType :: FTlibrary ->IO FTerror
+    ft_done_freetype :: FT_Library -> IO FTerror
 
 
 --------------------------------------------------------------------------------
   
       
 foreign import ccall unsafe "freetype/freetype.h FT_New_Face" 
-    ft_New_Face :: FTlibrary -> CString -> FTlong -> Ptr FTface -> IO FTerror
+    ft_new_face :: FT_Library 
+                -> CString 
+                -> FTlong 
+                -> Ptr FT_Face 
+                -> IO FTerror
 
 
-foreign import ccall unsafe "freetype/freetype.h FT_New_Face" 
-    ft_New_Memory_Face :: FTlibrary 
+foreign import ccall unsafe "freetype/freetype.h  FT_New_Memory_Face" 
+    ft_new_memory_face :: FT_Library 
                        -> Ptr FTbyte
                        -> FTlong 
                        -> FTlong
-                       -> Ptr FTface 
+                       -> Ptr FT_Face 
                        -> IO FTerror
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Open_Face" 
-    ft_Open_Face :: FTlibrary 
+    ft_open_face :: FT_Library 
                  -> Ptr FTopenargs
                  -> FTlong 
-                 -> Ptr FTface 
+                 -> FT_Face 
                  -> IO FTerror
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Attach_File" 
-    ft_Attach_File :: FTface -> CString -> IO FTerror
+    ft_attach_file :: FT_Face -> CString -> IO FTerror
      
 
 foreign import ccall unsafe "freetype/freetype.h FT_Attach_Stream" 
-    ft_Attach_Stream :: FTface -> Ptr FTopenargs -> IO FTerror
+    ft_attach_stream :: FT_Face -> Ptr FTopenargs -> IO FTerror
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Done_Face" 
-    ft_Done_Face :: FTface -> IO FTerror
+    ft_done_face :: FT_Face -> IO FTerror
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Select_Size" 
-    ft_Select_Size :: FTface -> FTint -> IO FTerror
+    ft_select_size :: FT_Face -> FTint -> IO FTerror
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Request_Size" 
-    ft_Request_Size :: FTface -> FTsizerequest -> IO FTerror
+    ft_request_size :: FT_Face -> FTsizerequest -> IO FTerror
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Set_Char_Size" 
-    ft_Set_Char_Size :: FTface 
+    ft_set_char_size :: FT_Face 
                      -> FTf26dot6
                      -> FTf26dot6
                      -> FTuint
@@ -96,30 +100,30 @@ foreign import ccall unsafe "freetype/freetype.h FT_Set_Char_Size"
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Set_Pixel_Sizes" 
-    ft_Set_Pixel_Sizes :: FTface -> FTuint -> FTuint -> IO FTerror 
+    ft_set_pixel_sizes :: FT_Face -> FTuint -> FTuint -> IO FTerror 
 
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Load_Glyph" 
-    ft_Load_Glyph :: FTface -> FTuint -> FTint32 -> IO FTerror 
+    ft_load_glyph :: FT_Face -> FTuint -> FTint32 -> IO FTerror 
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Load_Char" 
-    ft_Load_Char :: FTface -> FTuint -> FTint32 -> IO FTerror 
+    ft_load_char :: FT_Face -> FTuint -> FTint32 -> IO FTerror 
 
 
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Set_Transform" 
-    ft_Set_Transform :: FTface -> Ptr FTmatrix -> Ptr FTvector -> IO () 
+    ft_set_transform :: FT_Face -> Ptr FTmatrix -> Ptr FTvector -> IO () 
     
     
 foreign import ccall unsafe "freetype/freetype.h FT_Render_Glyph" 
-    ft_Render_Glyph :: FTglyphslot -> FTrendermode_ -> IO FTerror     
+    ft_render_glyph :: FTglyphslot -> FTrendermode_ -> IO FTerror     
     
     
 foreign import ccall unsafe "freetype/freetype.h FT_Get_Kerning" 
-    ft_Get_Kerning :: FTface 
+    ft_get_kerning :: FT_Face 
                    -> FTuint 
                    -> FTuint 
                    -> FTuint 
@@ -129,7 +133,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Get_Kerning"
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Get_Track_Kerning" 
-    ft_Get_Track_Kerning :: FTface 
+    ft_get_track_kerning :: FT_Face 
                          -> FTfixed 
                          -> FTint 
                          -> Ptr FTfixed 
@@ -138,7 +142,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Get_Track_Kerning"
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Get_Glyph_Name" 
-    ft_Get_Glyph_Name :: FTface 
+    ft_get_glyph_name :: FT_Face 
                       -> FTuint
                       -> FTpointer 
                       -> FTuint
@@ -146,39 +150,39 @@ foreign import ccall unsafe "freetype/freetype.h FT_Get_Glyph_Name"
                          
 
 foreign import ccall unsafe "freetype/freetype.h FT_Get_Postscript_Name" 
-    ft_Get_Postscript_Name :: FTface -> IO CString 
+    ft_get_postscript_name :: FT_Face -> IO CString 
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Select_Charmap" 
-    ft_Select_Charmap :: FTface -> FTencoding_ -> IO FTerror 
+    ft_select_charmap :: FT_Face -> FTencoding_ -> IO FTerror 
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Set_Charmap" 
-    ft_Set_Charmap :: FTface -> FTcharmap -> IO FTerror 
+    ft_set_charmap :: FT_Face -> FTcharmap -> IO FTerror 
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Get_Charmap_Index" 
-    ft_Get_Charmap_Index :: FTcharmap -> IO FTint 
+    ft_get_charmap_index :: FTcharmap -> IO FTint 
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Get_Char_Index" 
-    ft_Get_Char_Index :: FTface -> FTulong -> IO FTuint 
+    ft_get_char_index :: FT_Face -> FTulong -> IO FTuint 
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Get_First_Char" 
-    ft_Get_First_Char :: FTface -> Ptr FTuint -> IO FTulong
+    ft_get_first_char :: FT_Face -> Ptr FTuint -> IO FTulong
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Get_Next_Char" 
-    ft_Get_Next_Char :: FTface -> FTulong -> Ptr FTuint -> IO FTulong
+    ft_get_next_char :: FT_Face -> FTulong -> Ptr FTuint -> IO FTulong
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Get_Name_Index" 
-    ft_Get_Name_Index :: FTface ->  Ptr FTstring -> IO FTuint
+    ft_get_name_index :: FT_Face ->  Ptr FTstring -> IO FTuint
     
 
 foreign import ccall unsafe "freetype/freetype.h FT_Get_SubGlyph_Info" 
-    ft_Get_SubGlyph_Info :: FTglyphslot 
+    ft_get_subblyph_info :: FTglyphslot 
                          -> FTuint
                          -> Ptr FTint
                          -> Ptr FTuint
@@ -190,7 +194,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Get_SubGlyph_Info"
     
 -- | @FT_Library_Version@.
 foreign import ccall unsafe "freetype/freetype.h FT_Library_Version" 
-    ft_Library_Version :: FTlibrary 
+    ft_library_version :: FT_Library 
                        -> Ptr FTint 
                        -> Ptr FTint 
                        -> Ptr FTint 

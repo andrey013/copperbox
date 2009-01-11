@@ -6,7 +6,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.FreeType.CDataTypes
+-- Module      :  Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
@@ -20,7 +20,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.FreeType.CDataTypes where
+module Graphics.Rendering.FreeType.Internals.CBasicDataTypes where
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -30,6 +30,7 @@ import Data.Int
 import Data.Word
 import Foreign.C.String ( CString )
 import Foreign.C.Types ( CInt, CChar )
+import Foreign.ForeignPtr ( ForeignPtr )
 import Foreign.Ptr ( Ptr, FunPtr )
 import Foreign.Storable 
 
@@ -74,11 +75,20 @@ newtype FTcallback a = FTCallback (FunPtr a) deriving Storable
 
 -- Handles
 
-data FTlibrary_ 
-type FTlibrary          = Ptr FTlibrary_
+-- $FTlibrary - there are three datatypes for the C type @FT_Library@.
+-- @FTLIBRARYREC_ is the private type allowing us to form Haskell pointers.
+-- @FT_Library@ corresponds to the C type directly - it should only 
+-- appear in ccall stubs.
+-- @FTlibrary@ is the Haskell type to be exported outside the binding 
+-- library, as @FT_Library@ is allocated on the C side it is foreign pointer.
 
-data FTface_
-type FTface             = Ptr FTface_
+data    FT_LIBRARY_REC_
+type    FT_Library        = Ptr FT_LIBRARY_REC_         
+newtype FTlibrary         = FTlibrary (ForeignPtr FT_LIBRARY_REC_)
+
+data    FT_FACE_REC_ 
+type    FT_Face           = Ptr FT_FACE_REC_
+newtype FTface            = FTface (ForeignPtr FT_FACE_REC_)
 
 data FTsize_
 type FTsize             = Ptr FTsize_
@@ -364,6 +374,69 @@ instance Unmarshal FTRendermode where
       | x == ft_RENDER_MODE_LCD_V     = RmLcdV  
       | x == ft_RENDER_MODE_MAX       = RmMax       
       | otherwise = error ("unmarshal: FTRendermode - illegal value " ++ show x)
+
+--------------------------------------------------------------------------------    
+      
+type FTloadflags_ = CInt
+
+#{enum FTrendermode_ ,
+  , ft_LOAD_DEFAULT                     = FT_LOAD_DEFAULT
+  , ft_LOAD_NO_SCALE                    = FT_LOAD_NO_SCALE
+  , ft_LOAD_NO_HINTING                  = FT_LOAD_NO_HINTING
+  , ft_LOAD_RENDER                      = FT_LOAD_RENDER
+  , ft_LOAD_NO_BITMAP                   = FT_LOAD_NO_BITMAP
+  , ft_LOAD_VERTICAL_LAYOUT             = FT_LOAD_VERTICAL_LAYOUT
+  , ft_LOAD_FORCE_AUTOHINT              = FT_LOAD_FORCE_AUTOHINT
+  , ft_LOAD_CROP_BITMAP                 = FT_LOAD_CROP_BITMAP
+  , ft_LOAD_PEDANTIC                    = FT_LOAD_PEDANTIC
+  , ft_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH = FT_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH
+  , ft_LOAD_NO_RECURSE                  = FT_LOAD_NO_RECURSE
+  , ft_LOAD_IGNORE_TRANSFORM            = FT_LOAD_IGNORE_TRANSFORM
+  , ft_LOAD_MONOCHROME                  = FT_LOAD_MONOCHROME
+  , ft_LOAD_LINEAR_DESIGN               = FT_LOAD_LINEAR_DESIGN
+  , ft_LOAD_SBITS_ONLY                  = FT_LOAD_SBITS_ONLY
+  , ft_LOAD_NO_AUTOHINT                 = FT_LOAD_NO_AUTOHINT
+  }
+
+data LoadFlag = 
+    LoadDefault
+  | NoScale
+  | NoHinting
+  | Render
+  | NoBitmap
+  | VerticalLayout
+  | ForceAutohint
+  | CropBitmap
+  | Pedantic
+  | IgnoreGlobalAdvanceWidth
+  | NoRecurse
+  | IgnoreTransform
+  | Monochrome
+  | LinearDesign
+  | SbitsOnly
+  | NoAutoHint
+  deriving ( Enum, Eq, Ord, Show )
+
+instance Marshal LoadFlag where
+  marshal x = case x of
+      LoadDefault               -> ft_LOAD_DEFAULT
+      NoScale                   -> ft_LOAD_NO_SCALE
+      NoHinting                 -> ft_LOAD_NO_HINTING
+      Render                    -> ft_LOAD_RENDER
+      NoBitmap                  -> ft_LOAD_NO_BITMAP
+      VerticalLayout            -> ft_LOAD_VERTICAL_LAYOUT
+      ForceAutohint             -> ft_LOAD_FORCE_AUTOHINT
+      CropBitmap                -> ft_LOAD_CROP_BITMAP
+      Pedantic                  -> ft_LOAD_PEDANTIC
+      IgnoreGlobalAdvanceWidth  -> ft_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH
+      NoRecurse                 -> ft_LOAD_NO_RECURSE
+      IgnoreTransform           -> ft_LOAD_IGNORE_TRANSFORM
+      Monochrome                -> ft_LOAD_MONOCHROME
+      LinearDesign              -> ft_LOAD_LINEAR_DESIGN
+      SbitsOnly                 -> ft_LOAD_SBITS_ONLY
+      NoAutoHint                -> ft_LOAD_NO_AUTOHINT
+
+
           
 --------------------------------------------------------------------------------
 -- Structs
