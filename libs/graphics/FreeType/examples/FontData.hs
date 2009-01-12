@@ -15,7 +15,7 @@
 
 --------------------------------------------------------------------------------
 -- windows & cygwin with lbfreetype.dll in current directory 
--- > ghc --make -i../src -L. -lfreetype FTVersion.hs
+-- > ghc --make -i../src -L. -lfreetype FontData.hs
 
 -- For this example I've used Tempest.ttf available from:
 -- http://www.fontfreak.com/charactermaps/t/Tempest.htm
@@ -31,7 +31,11 @@ main :: IO ()
 main = do
     ft <- initFreeType
     fc <- newFace ft "data/Tempest.ttf" 0
-    putStrLn $ "done load"
+    
+    
+    familyName fc       >>= putStrLn    
+    styleName fc        >>= putStrLn 
+    postscriptName fc   >>= putStrLn
     
     n <- numFaces fc
     putStrLn $ show n ++ " faces in face"
@@ -42,9 +46,33 @@ main = do
     j <- numGlyphs fc
     putStrLn $ show j ++ " glyphs"
     
+    setCharSize fc 0 (f26d6 16 64) 150 150
+    loadChar fc 36 [Render]  >>= putStrLn . show
+    ec <- renderCurrentGlyph fc RenderNormal
+    
+    if ec==0 
+      then do  
+        putStrLn $ show ec
+        glyphSlotBitmap fc >>= printBitmap
+        
+        gsBitmapLeft fc >>= \x  -> putStrLn $ "glyphslot bitmap left " ++ show x 
+        gsBitmapTop  fc >>= \x' -> putStrLn $ "glyphslot bitmap top "  ++ show x' 
+      else
+        putStrLn $ "renderCurrentGlyph failed " ++ show ec
+        
     doneFace fc
     doneFreeType ft                 
     putStrLn "Done."
                 
+printBitmap :: Bitmap -> IO ()
+printBitmap (Bitmap r w _ bs) = step bs
+  where
+    step [] = putStrLn $ ""
+    step xs = let (a,b) = splitAt w xs in
+              do { showLine a; step b }
+    
+    showLine = putStrLn . map f
+      where f 255 = 'X'
+            f _   = ' '
 
    

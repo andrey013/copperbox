@@ -15,9 +15,11 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.FreeType (
-  module Graphics.Rendering.FreeType.BaseInterface
+  module Graphics.Rendering.FreeType.BaseInterface,
+  module Graphics.Rendering.FreeType.FixedPrecision
 ) where
 
 import Graphics.Rendering.FreeType.BaseInterface
+import Graphics.Rendering.FreeType.FixedPrecision
 
 

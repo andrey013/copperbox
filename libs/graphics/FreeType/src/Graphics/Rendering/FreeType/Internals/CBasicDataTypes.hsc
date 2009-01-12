@@ -25,11 +25,11 @@ module Graphics.Rendering.FreeType.Internals.CBasicDataTypes where
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-import Data.Char ( ord, chr )
+
 import Data.Int
 import Data.Word
 import Foreign.C.String ( CString )
-import Foreign.C.Types ( CInt, CChar )
+import Foreign.C.Types ( CInt, CChar, CUChar )
 import Foreign.ForeignPtr ( ForeignPtr )
 import Foreign.Ptr ( Ptr, FunPtr )
 import Foreign.Storable 
@@ -96,11 +96,14 @@ data    FT_FACE_REC_
 type    FT_Face           = Ptr FT_FACE_REC_
 newtype FTface            = FTface (ForeignPtr FT_FACE_REC_)
 
+
 data FTsize_
 type FTsize             = Ptr FTsize_
 
-data FTglyphslot_
-type FTglyphslot        = Ptr FTglyphslot_
+data FT_GLYPH_SLOT_
+type FT_Glyph_Slot      = Ptr FT_GLYPH_SLOT_
+newtype FTglyphslot     = FTglyphslot (ForeignPtr FT_GLYPH_SLOT_)
+
 
 data FTcharmap_
 type FTcharmap          = Ptr FTcharmap_
@@ -206,28 +209,28 @@ type FTglyphformat_  = CInt
   }
 
 data FTglyphformat = 
-      GlyphFormatNone
-    | Composite
-    | Bitmap
-    | Outline
-    | Plotter
+      FormatNone
+    | FormatComposite
+    | FormatBitmap
+    | FormatOutline
+    | FormatPlotter
     deriving ( Enum, Eq, Ord, Show )
 
 instance Marshal FTglyphformat where
   marshal x = case x of
-      GlyphFormatNone -> ft_GLYPH_FORMAT_NONE
-      Composite       -> ft_GLYPH_FORMAT_COMPOSITE
-      Bitmap          -> ft_GLYPH_FORMAT_BITMAP
-      Outline         -> ft_GLYPH_FORMAT_OUTLINE
-      Plotter         -> ft_GLYPH_FORMAT_PLOTTER
+      FormatNone        -> ft_GLYPH_FORMAT_NONE
+      FormatComposite   -> ft_GLYPH_FORMAT_COMPOSITE
+      FormatBitmap      -> ft_GLYPH_FORMAT_BITMAP
+      FormatOutline     -> ft_GLYPH_FORMAT_OUTLINE
+      FormatPlotter     -> ft_GLYPH_FORMAT_PLOTTER
 
 instance Unmarshal FTglyphformat where
   unmarshal x
-      | x == ft_GLYPH_FORMAT_NONE       = GlyphFormatNone  
-      | x == ft_GLYPH_FORMAT_COMPOSITE  = Composite  
-      | x == ft_GLYPH_FORMAT_BITMAP     = Bitmap
-      | x == ft_GLYPH_FORMAT_OUTLINE    = Outline
-      | x == ft_GLYPH_FORMAT_PLOTTER    = Plotter  
+      | x == ft_GLYPH_FORMAT_NONE       = FormatNone  
+      | x == ft_GLYPH_FORMAT_COMPOSITE  = FormatComposite  
+      | x == ft_GLYPH_FORMAT_BITMAP     = FormatBitmap
+      | x == ft_GLYPH_FORMAT_OUTLINE    = FormatOutline
+      | x == ft_GLYPH_FORMAT_PLOTTER    = FormatPlotter  
       | otherwise = error ("unmarshal: FTglyphformat - illegal value " ++ show x)
          
                      
@@ -353,33 +356,33 @@ type FTrendermode_ = CInt
 
   }
 
-data FTRendermode = 
-      RmNormal
-    | RmLight
-    | RmMono
-    | RmLcd
-    | RmLcdV
-    | RmMax
+data RenderMode = 
+      RenderNormal
+    | RenderLight
+    | RenderMono
+    | RenderLcd
+    | RenderLcdV
+    | RenderMax
     deriving ( Enum, Eq, Ord, Show )
 
-instance Marshal FTRendermode where
+instance Marshal RenderMode where
   marshal x = case x of
-      RmNormal  -> ft_RENDER_MODE_NORMAL
-      RmLight   -> ft_RENDER_MODE_LIGHT
-      RmMono    -> ft_RENDER_MODE_MONO
-      RmLcd     -> ft_RENDER_MODE_LCD
-      RmLcdV    -> ft_RENDER_MODE_LCD_V
-      RmMax     -> ft_RENDER_MODE_MAX
+      RenderNormal  -> ft_RENDER_MODE_NORMAL
+      RenderLight   -> ft_RENDER_MODE_LIGHT
+      RenderMono    -> ft_RENDER_MODE_MONO
+      RenderLcd     -> ft_RENDER_MODE_LCD
+      RenderLcdV    -> ft_RENDER_MODE_LCD_V
+      RenderMax     -> ft_RENDER_MODE_MAX
 
-instance Unmarshal FTRendermode where
+instance Unmarshal RenderMode where
   unmarshal x
-      | x == ft_RENDER_MODE_NORMAL    = RmNormal  
-      | x == ft_RENDER_MODE_LIGHT     = RmLight  
-      | x == ft_RENDER_MODE_MONO      = RmMono  
-      | x == ft_RENDER_MODE_LCD       = RmLcd  
-      | x == ft_RENDER_MODE_LCD_V     = RmLcdV  
-      | x == ft_RENDER_MODE_MAX       = RmMax       
-      | otherwise = error ("unmarshal: FTRendermode - illegal value " ++ show x)
+      | x == ft_RENDER_MODE_NORMAL    = RenderNormal  
+      | x == ft_RENDER_MODE_LIGHT     = RenderLight  
+      | x == ft_RENDER_MODE_MONO      = RenderMono  
+      | x == ft_RENDER_MODE_LCD       = RenderLcd  
+      | x == ft_RENDER_MODE_LCD_V     = RenderLcdV  
+      | x == ft_RENDER_MODE_MAX       = RenderMax       
+      | otherwise = error ("unmarshal: RenderMode - illegal value " ++ show x)
 
 --------------------------------------------------------------------------------    
       
@@ -543,18 +546,28 @@ instance Storable FTunitvector where
 
 -- | @FTbitmap@ corresponds to the FreeType type @FT_Bitmap@.
 
-data FTbitmap = FTbitmap {
-      _rows           :: FTint,
-      _width          :: FTint,
-      _pitch          :: FTint,
-      _buffer         :: Ptr FTbyte,
-      _num_grays      :: FTshort,
-      _pixel_mode     :: FTpixelmode,
-      _palette_mode   :: CChar,
-      _palette        :: Ptr CVoid_
+data Bitmap = Bitmap { 
+      _rows         :: Int,
+      _width        :: Int,
+      _pitch        :: Int,
+      _buffer       :: [CUChar]  -- oh no! change this to an array when working properly
+   }
+    deriving (Show)
+    
+     
+
+data FT_Bitmap = FT_Bitmap {
+      __rows            :: FTint,
+      __width           :: FTint,
+      __pitch           :: FTint,
+      __buffer          :: Ptr CUChar,
+      __num_grays       :: FTshort,
+      __pixel_mode      :: CChar,
+      __palette_mode    :: CChar,
+      __palette         :: Ptr CVoid_
     }
 
-instance Storable FTbitmap where
+instance Storable FT_Bitmap where
   sizeOf    _ = #{size FT_Bitmap}
   alignment _ = alignment (undefined :: FTint)
   
@@ -567,18 +580,19 @@ instance Storable FTbitmap where
       pxm <- #{peek FT_Bitmap, pixel_mode}    ptr
       plm <- #{peek FT_Bitmap, palette_mode}  ptr
       pl  <- #{peek FT_Bitmap, palette}       ptr
-      return $ FTbitmap r w p b n (unmarshal $ fromIntegral $ ord pxm) plm pl 
+      return $ FT_Bitmap r w p b n pxm plm pl 
  
-  poke ptr (FTbitmap r w p b n pxm plm pl) = do
+  poke ptr (FT_Bitmap r w p b n pxm plm pl) = do
         #{poke FT_Bitmap, rows}         ptr r
         #{poke FT_Bitmap, width}        ptr w
         #{poke FT_Bitmap, pitch}        ptr p
         #{poke FT_Bitmap, buffer}       ptr b
         #{poke FT_Bitmap, num_grays}    ptr n
-        #{poke FT_Bitmap, pixel_mode}   ptr (chr $ fromIntegral $ marshal pxm)
+        #{poke FT_Bitmap, pixel_mode}   ptr pxm
         #{poke FT_Bitmap, palette_mode} ptr plm
         #{poke FT_Bitmap, palette}      ptr pl
         
+
         
         
         

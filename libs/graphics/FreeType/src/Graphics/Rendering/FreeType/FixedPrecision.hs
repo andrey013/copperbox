@@ -25,35 +25,36 @@ import Data.Int
 import Data.Ratio
 import Text.Read
 
-newtype F2d14 = F2d14 { getF2d14 :: Rational }
-  deriving ( Enum, Eq, Data, Fractional, Num, Ord, Real, RealFrac, Typeable )
+newtype F2d14 = F2d14 { getF2d14 :: Int16 }
+  deriving ( Enum, Eq, Data, Num, Ord, Typeable )
 
-newtype F26d6 = F26d6 { getF26d6 :: Rational }
-  deriving ( Enum, Eq, Data, Fractional, Num, Ord, Real, RealFrac, Typeable )
+newtype F26d6 = F26d6 { getF26d6 :: Int32 }
+  deriving ( Enum, Eq, Data, Num, Ord,Typeable )
+
+f2d14 :: Integral a => a -> a -> F2d14
+f2d14 a b = F2d14 $ fromIntegral $ a * b
+
+f26d6 :: Integral a => a -> a -> F26d6
+f26d6 a b = F26d6 $ fromIntegral $ a * b
   
--- TODO
-extractF2d14 :: F2d14 -> Int16
-extractF2d14 _ = 1
 
-extractF26d6 :: F26d6 -> Int32
-extractF26d6 _ = 1
 
 --------------------------------------------------------------------------------
 -- Read and Show
   
 instance Show F2d14 where
-  show (F2d14 r) = show r
+  show (F2d14 r) = show $ (toRational r) 
 
 instance Show F26d6 where
-  show (F26d6 r) = show r
+  show (F26d6 r) = show $ (toRational r) 
 
 instance Read F2d14 where 
   readPrec = do 
       (d::Double) <- readPrec
-      return (F2d14 $ approxRational d ((1e-24)/2))
+      return (F2d14 $ round $ 64.0 * approxRational d ((1e-24)/2))
 
 
 instance Read F26d6 where 
   readPrec = do 
       (d::Double) <- readPrec
-      return (F26d6 $ approxRational d ((1e-12)/2))
+      return (F26d6 $ round $ 64.0 * approxRational d ((1e-12)/2))

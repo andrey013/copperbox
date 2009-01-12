@@ -1,6 +1,6 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE ForeignFunctionInterface   #-}
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -26,7 +26,8 @@ module Graphics.Rendering.FreeType.Internals.CBaseInterface where
 
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 
-import Foreign.C.String ( CString )
+import Foreign.C.String ( CString, peekCString )
+import Foreign.Marshal.Array ( peekArray )
 import Foreign.Ptr ( Ptr ) 
 import Foreign.Storable ( peekByteOff )
 
@@ -119,7 +120,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Set_Transform"
     
     
 foreign import ccall unsafe "freetype/freetype.h FT_Render_Glyph" 
-    ft_render_glyph :: FTglyphslot -> FTrendermode_ -> IO FTerror     
+    ft_render_glyph :: FT_Glyph_Slot -> FTrendermode_ -> IO FTerror     
     
     
 foreign import ccall unsafe "freetype/freetype.h FT_Get_Kerning" 
@@ -182,7 +183,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Get_Name_Index"
     
 
 foreign import ccall unsafe "freetype/freetype.h FT_Get_SubGlyph_Info" 
-    ft_get_subblyph_info :: FTglyphslot 
+    ft_get_subblyph_info :: FT_Glyph_Slot 
                          -> FTuint
                          -> Ptr FTint
                          -> Ptr FTuint
@@ -218,6 +219,52 @@ peekFace_num_glyphs :: FT_Face -> IO FTlong
 peekFace_num_glyphs ptr = do 
       i <- #{peek FT_FaceRec, num_glyphs} ptr
       return i
-            
       
+peekFace_family_name :: FT_Face -> IO String
+peekFace_family_name ptr = do 
+      cstr <- #{peek FT_FaceRec, family_name} ptr
+      str <- peekCString cstr
+      return str
+
+peekFace_style_name :: FT_Face -> IO String
+peekFace_style_name ptr = do 
+      cstr <- #{peek FT_FaceRec, style_name} ptr
+      str <- peekCString cstr
+      return str
+
+peekFace_glyph_slot :: FT_Face -> IO FT_Glyph_Slot
+peekFace_glyph_slot ptr = do
+      g <- #{peek FT_FaceRec, glyph} ptr
+      return g
+
+peekFace_glyph_slot_bitmap_left :: FT_Face -> IO FTint
+peekFace_glyph_slot_bitmap_left ptr = do 
+      gptr <- #{peek FT_FaceRec, glyph} ptr
+      i    <- #{peek FT_GlyphSlotRec, bitmap_left} gptr
+      return i
+      
+peekFace_glyph_slot_bitmap_top :: FT_Face -> IO FTint
+peekFace_glyph_slot_bitmap_top ptr = do 
+      gptr <- #{peek FT_FaceRec, glyph} ptr
+      i    <- #{peek FT_GlyphSlotRec, bitmap_top} gptr
+      return i
+
+
+-- Bitmap is one way traffic from the C-side to the Haskell side
+-- hence we don't have a full storable instance.
+
+marshalBitmap :: FT_Bitmap -> IO Bitmap    
+marshalBitmap bmp = do
+    buf <- peekArray (r * w) $ __buffer bmp
+    return $ Bitmap r w (fromIntegral $ __pitch bmp) buf  
+  where
+    r = fromIntegral $ __rows bmp
+    w = fromIntegral $ __width bmp
+    
+peekFace_bitmap :: FT_Face -> IO Bitmap
+peekFace_bitmap ptr = do 
+      gptr <- #{peek FT_FaceRec, glyph} ptr
+      bptr <- #{peek FT_GlyphSlotRec, bitmap} gptr
+      marshalBitmap bptr
+            
 -- end of file
