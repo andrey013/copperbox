@@ -86,6 +86,12 @@ data    FT_LIBRARY_REC_
 type    FT_Library        = Ptr FT_LIBRARY_REC_         
 newtype FTlibrary         = FTlibrary (ForeignPtr FT_LIBRARY_REC_)
 
+
+-- FT_Face \\ FT_FACE_REC_ is not actually opaque, we allow access to 
+-- certain fields (see 'peekFace_num_faces' and others in CBaseInterface.hsc) 
+-- but we don\'t go as far as making it a Storable instance as we consider it 
+-- immutable and only creatable in the on the \'C side\'.   
+
 data    FT_FACE_REC_ 
 type    FT_Face           = Ptr FT_FACE_REC_
 newtype FTface            = FTface (ForeignPtr FT_FACE_REC_)
@@ -638,6 +644,9 @@ instance Storable FTopenargs where
         #{poke FT_Open_Args, driver}      ptr d
         #{poke FT_Open_Args, num_params}  ptr n
         #{poke FT_Open_Args, params}      ptr ps
-        
-           
+
+
+
+      
+                 
 -- end of file

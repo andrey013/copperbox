@@ -25,6 +25,10 @@ module Graphics.Rendering.FreeType.BaseInterface (
   newFace,
   doneFace,
   
+  -- * Face field accessors
+  numFaces, 
+  faceIndex,
+  numGlyphs,
   
   -- * ...
   selectSize,
@@ -47,6 +51,7 @@ import Graphics.Rendering.FreeType.Internals.CBaseInterface
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Internals.Wrappers 
 
+import Control.Monad
 import Data.Bits ( (.|.) )
 import Foreign.C.String ( withCString )
 import Foreign.ForeignPtr ( newForeignPtr, finalizeForeignPtr, 
@@ -113,12 +118,29 @@ doneFace (FTface h) = finalizeForeignPtr h
 freeFace_ :: FT_Face -> IO ()
 freeFace_ p = ft_done_face p >> return ()
 
+-- | @withForeignFace@ - internal function, shortahand for accessing the 
+-- face pointer. 
+withForeignFace :: FTface -> (FT_Face -> IO b) -> IO b 
+withForeignFace (FTface fc) f = withForeignPtr fc $ \ h -> f h
 
 
 --------------------------------------------------------------------------------
+
+numFaces :: FTface -> IO Int
+numFaces fc = withForeignFace fc fn where 
+    fn = peekFace_num_faces >=> (return . fromIntegral)
+
+faceIndex :: FTface -> IO Int
+faceIndex fc = withForeignFace fc fn where
+    fn = peekFace_face_index >=> (return . fromIntegral)
+    
+numGlyphs :: FTface -> IO Int
+numGlyphs fc = withForeignFace fc fn where
+    fn = peekFace_num_glyphs >=> (return . fromIntegral)
+
+--------------------------------------------------------------------------------
 --
-withForeignFace :: FTface -> (FT_Face -> IO b) -> IO b 
-withForeignFace (FTface fc) f = withForeignPtr fc $ \ h -> f h
+
 
 
 selectSize :: FTface -> Int -> IO FTerror

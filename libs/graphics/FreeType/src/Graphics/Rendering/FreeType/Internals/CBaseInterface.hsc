@@ -28,7 +28,7 @@ import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 
 import Foreign.C.String ( CString )
 import Foreign.Ptr ( Ptr ) 
-
+import Foreign.Storable ( peekByteOff )
 
 
 --------------------------------------------------------------------------------
@@ -200,5 +200,24 @@ foreign import ccall unsafe "freetype/freetype.h FT_Library_Version"
                        -> Ptr FTint 
                        -> IO ()
 
+--------------------------------------------------------------------------------
 
+-- Peek into an FT_Face 
+
+peekFace_num_faces :: FT_Face -> IO FTlong
+peekFace_num_faces ptr = do 
+      i <- #{peek FT_FaceRec, num_faces} ptr
+      return i
+              
+peekFace_face_index :: FT_Face -> IO FTlong
+peekFace_face_index ptr = do 
+      i <- #{peek FT_FaceRec, face_index} ptr
+      return i
+      
+peekFace_num_glyphs :: FT_Face -> IO FTlong
+peekFace_num_glyphs ptr = do 
+      i <- #{peek FT_FaceRec, num_glyphs} ptr
+      return i
+            
+      
 -- end of file
