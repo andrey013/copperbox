@@ -16,10 +16,13 @@
 
 module Graphics.Rendering.FreeType (
   module Graphics.Rendering.FreeType.BaseInterface,
-  module Graphics.Rendering.FreeType.FixedPrecision
+  module Graphics.Rendering.FreeType.FixedPrecision,
+  module Graphics.Rendering.FreeType.GlyphManagement,
+  module Graphics.Rendering.FreeType.Outline
 ) where
 
 import Graphics.Rendering.FreeType.BaseInterface
 import Graphics.Rendering.FreeType.FixedPrecision
-
+import Graphics.Rendering.FreeType.GlyphManagement
+import Graphics.Rendering.FreeType.Outline
 

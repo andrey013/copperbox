@@ -36,68 +36,74 @@ import Foreign.Ptr ( Ptr, FunPtr )
 
 -- | @FToutline@ corresponds to the FreeType type @FT_Outline@.
 
-data FToutline = FToutline {
-      _n_contours     :: FTshort,
-      _n_points       :: FTshort,
-      _points         :: Ptr FTvector,
+data FT_struct_outline = FT_struct_outline {
+      _n_contours     :: FT_short,
+      _n_points       :: FT_short,
+      _points         :: Ptr FT_struct_vector,
       _tags           :: CString,
-      _contours       :: FTshort,
-      _outline_flags  :: FTint
+      _contours       :: FT_short,
+      _outline_flags  :: FT_int
     }
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_New" 
-    ft_outline_new :: FTlibrary 
-                   -> FTuint 
-                   -> FTint 
-                   -> Ptr FToutline 
-                   -> IO FTerror
+    ft_outline_new :: FT_library_ptr 
+                   -> FT_uint 
+                   -> FT_int 
+                   -> Ptr FT_struct_outline 
+                   -> IO FT_error
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Done" 
-    ft_outline_done :: FTlibrary 
-                    -> Ptr FToutline 
-                    -> IO FTerror
+    ft_outline_done :: FT_library_ptr 
+                    -> Ptr FT_struct_outline 
+                    -> IO FT_error
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Copy" 
-    ft_outline_copy :: Ptr FToutline 
-                    -> Ptr FToutline 
-                    -> IO FTerror
+    ft_outline_copy :: Ptr FT_struct_outline 
+                    -> Ptr FT_struct_outline 
+                    -> IO FT_error
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Translate" 
-    ft_outline_translate :: Ptr FToutline 
-                         -> FTpos
-                         -> FTpos
+    ft_outline_translate :: Ptr FT_struct_outline 
+                         -> FT_pos
+                         -> FT_pos
                          -> IO ()
                          
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Transform" 
-    ft_outline_transform :: Ptr FToutline 
-                         -> Ptr FTmatrix 
+    ft_outline_transform :: Ptr FT_struct_outline 
+                         -> Ptr FT_struct_matrix 
                          -> IO ()
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Embolden" 
-    ft_outline_embolden :: Ptr FToutline -> FTpos -> IO FTerror
+    ft_outline_embolden   :: Ptr FT_struct_outline 
+                          -> FT_pos 
+                          -> IO FT_error
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Reverse" 
-   ft_outline_reverse :: Ptr FToutline -> IO ()
+   ft_outline_reverse     :: Ptr FT_struct_outline 
+                          -> IO ()
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Check" 
-   ft_outline_check :: Ptr FToutline -> IO FTerror
+   ft_outline_check       :: Ptr FT_struct_outline 
+                          -> IO FT_error
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_BBox" 
-   ft_outline_get_bbox :: Ptr FToutline -> Ptr FTbbox -> IO FTerror
+   ft_outline_get_bbox    :: Ptr FT_struct_outline 
+                          -> Ptr FT_struct_bbox 
+                          -> IO FT_error
    
 
 
-type FToutlineflags_    = CInt
+type FT_enum_outlineflags    = CInt
 
-#{enum FToutlineflags_ ,
+#{enum FT_enum_outlineflags ,
   , ft_OUTLINE_NONE             = FT_OUTLINE_NONE
   , ft_OUTLINE_OWNER            = FT_OUTLINE_OWNER
   , ft_OUTLINE_EVEN_ODD_FILL    = FT_OUTLINE_EVEN_ODD_FILL
@@ -111,71 +117,73 @@ type FToutlineflags_    = CInt
   }
 
 
-type FT_Outline_MoveToFunc = Ptr FTvector -> VoidPtr -> IO FTint
+type FT_Outline_MoveToFunc = Ptr FT_struct_vector -> VoidPtr -> IO FT_int
 
 foreign import ccall "wrapper"
     mkOutline_MoveToFunc :: FT_Outline_MoveToFunc 
-                         -> IO (FTcallback FT_Outline_MoveToFunc)
+                         -> IO (FT_callback FT_Outline_MoveToFunc)
    
 
-type FT_Outline_LineToFunc = Ptr FTvector -> VoidPtr -> IO FTint
+type FT_Outline_LineToFunc = Ptr FT_struct_vector -> VoidPtr -> IO FT_int
 
-type FT_Outline_ConicToFunc =   Ptr FTvector 
-                             -> Ptr FTvector 
+type FT_Outline_ConicToFunc =   Ptr FT_struct_vector 
+                             -> Ptr FT_struct_vector 
                              -> VoidPtr 
-                             -> IO FTint
+                             -> IO FT_int
 
-type FT_Outline_CubicToFunc =   Ptr FTvector 
-                             -> Ptr FTvector
-                             -> Ptr FTvector 
+type FT_Outline_CubicToFunc =   Ptr FT_struct_vector 
+                             -> Ptr FT_struct_vector
+                             -> Ptr FT_struct_vector 
                              -> VoidPtr 
-                             -> IO FTint
+                             -> IO FT_int
                              
-data FToutlinefuncs = FToutlinefuncs {
+data FT_struct_outlinefuncs = FT_struct_outlinefuncs {
       _move_to   :: FunPtr FT_Outline_MoveToFunc,
       _line_to   :: FunPtr FT_Outline_LineToFunc,
       _conic_to  :: FunPtr FT_Outline_ConicToFunc,
       _cubic_to  :: FunPtr FT_Outline_CubicToFunc,
-      _shift     :: FTint,
-      _delta     :: FTpos
+      _shift     :: FT_int,
+      _delta     :: FT_pos
     }
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Decompose" 
-   ft_outline_decompose :: Ptr FToutline 
-                        -> Ptr FToutlinefuncs 
+   ft_outline_decompose :: Ptr FT_struct_outline 
+                        -> Ptr FT_struct_outlinefuncs 
                         -> VoidPtr 
-                        -> IO FTerror
+                        -> IO FT_error
    
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_CBox" 
-   ft_outline_get_cbox :: Ptr FToutline -> Ptr FTbbox -> IO ()
+   ft_outline_get_cbox  :: Ptr FT_struct_outline 
+                        -> Ptr FT_struct_bbox 
+                        -> IO ()
    
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_Bitmap" 
-   ft_outline_get_bitmap :: FTlibrary 
-                         -> Ptr FToutline 
-                         -> Ptr FTbitmap
-                         -> IO FTerror
+   ft_outline_get_bitmap  :: FT_library_ptr 
+                          -> Ptr FT_struct_outline 
+                          -> Ptr FT_struct_bitmap
+                          -> IO FT_error
 
 
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Render" 
-   ft_outline_render :: FTlibrary 
-                     -> Ptr FToutline 
-                     -> Ptr FTrasterparams
-                     -> IO FTerror
+   ft_outline_render    :: FT_library_ptr 
+                        -> Ptr FT_struct_outline 
+                        -> Ptr FT_struct_rasterparams
+                        -> IO FT_error
 
 
 
 
-type FTorientation_    = CInt
+type FT_enum_orientation    = CInt
 
 
 
-#{enum FTorientation_ ,
+#{enum FT_enum_orientation ,
   , ft_ORIENTATION_TRUETYPE     = FT_ORIENTATION_TRUETYPE
   , ft_ORIENTATION_POSTSCRIPT   = FT_ORIENTATION_POSTSCRIPT
   , ft_ORIENTATION_FILL_RIGHT   = FT_ORIENTATION_FILL_RIGHT
@@ -185,7 +193,7 @@ type FTorientation_    = CInt
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_Orientation" 
-   ft_outline_get_orientation :: Ptr FToutline 
-                              -> IO FTorientation_
+   ft_outline_get_orientation :: Ptr FT_struct_outline 
+                              -> IO FT_enum_orientation
 
 -- end of file

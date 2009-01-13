@@ -1,11 +1,11 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE ForeignFunctionInterface   #-}
-
+{-# LANGUAGE EmptyDataDecls             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.FreeType.Internals.Wrappers
+-- Module      :  Graphics.Rendering.FreeType.Internals.CImage
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
@@ -32,37 +32,37 @@ import Foreign.Ptr ( Ptr, FunPtr )
 
 --------------------------------------------------------------------------------
 
-data FTraster_ 
-type FTraster           = Ptr FTraster_
+data FT_RASTER_RCRD_ 
+type FT_raster_ptr        = Ptr FT_RASTER_RCRD_
 
 
-data FTspan = FTspan {
+data FT_struct_span = FT_struct_span {
       _x        :: CShort,
       _len      :: CUShort,
       _coverage :: CUChar
     }
 
 
-type FT_SpanFunc = CInt -> CInt -> Ptr FTspan -> VoidPtr -> IO ()
+type FT_spanfunc = CInt -> CInt -> Ptr FT_struct_span -> VoidPtr -> IO ()
 
 
 -- @FT_Raster_BitTest_Func@ is depreciated.
-type FT_Raster_BitTest_Func = CInt -> CInt -> VoidPtr -> IO CInt
+type FT_raster_bittest_func = CInt -> CInt -> VoidPtr -> IO CInt
 
 -- @FT_Raster_BitSet_Func@ is depreciated.
-type FT_Raster_BitSet_Func = CInt -> CInt -> VoidPtr -> IO ()
+type FT_raster_bitset_func = CInt -> CInt -> VoidPtr -> IO ()
                                            
                              
-data FTrasterparams = FTrasterparams {
-      _target           :: Ptr FTbitmap,
+data FT_struct_rasterparams = FT_struct_rasterparams {
+      _target           :: Ptr FT_struct_bitmap,
       _source           :: VoidPtr,
-      _rparams_flags    :: FTint,
-      _gray_spans       :: FunPtr FT_SpanFunc,
-      _black_spans      :: FunPtr FT_SpanFunc,
-      _bit_test         :: FunPtr FT_Raster_BitTest_Func,
-      _bit_set          :: FunPtr FT_Raster_BitSet_Func,
+      _rparams_flags    :: FT_int,
+      _gray_spans       :: FunPtr FT_spanfunc,
+      _black_spans      :: FunPtr FT_spanfunc,
+      _bit_test         :: FunPtr FT_raster_bittest_func,
+      _bit_set          :: FunPtr FT_raster_bitset_func,
       _user             :: VoidPtr,
-      _clip_box         :: FTbbox
+      _clip_box         :: FT_struct_bbox
   }
   
   

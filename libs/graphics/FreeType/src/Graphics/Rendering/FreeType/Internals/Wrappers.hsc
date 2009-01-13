@@ -29,11 +29,11 @@ import Foreign.Ptr ( FunPtr )
 --------------------------------------------------------------------------------
 
 foreign import ccall "wrapper"
-    mkDoneLibrary :: (FT_Library -> IO ()) 
-                  -> IO (FunPtr (FT_Library -> IO ()))
+    mkDoneLibrary       :: (FT_library_ptr -> IO ()) 
+                        -> IO (FunPtr (FT_library_ptr -> IO ()))
   
 foreign import ccall "wrapper"
-    mkDoneFace :: (FT_Face -> IO ()) 
-                  -> IO (FunPtr (FT_Face -> IO ()))
+    mkDoneFace          :: (FT_face_ptr -> IO ()) 
+                        -> IO (FunPtr (FT_face_ptr -> IO ()))
                     
 -- end of file

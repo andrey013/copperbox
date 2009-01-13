@@ -36,55 +36,54 @@ import Foreign.Storable
 
 data CVoid_
 
-type FTbyte         = #type FT_Byte
-type FTbytes        = Ptr FTbyte
-type FTchar         = #type FT_Char
-type FTint          = #type FT_Int
-type FTuint         = #type FT_UInt
-type FTint16        = #type FT_Int16
-type FTuint16       = #type FT_UInt16
-type FTint32        = #type FT_Int32
-type FTuint32       = #type FT_UInt32
-type FTshort        = #type FT_Short
-type FTushort       = #type FT_UShort
-type FTlong         = #type FT_Long
-type FTulong        = #type FT_ULong
-type FTbool         = #type FT_Bool
+type FT_byte            = #type FT_Byte
+type FT_bytes           = Ptr FT_byte
+type FT_char            = #type FT_Char
+type FT_int             = #type FT_Int
+type FT_uint            = #type FT_UInt
+type FT_int16           = #type FT_Int16
+type FT_uint16          = #type FT_UInt16
+type FT_int32           = #type FT_Int32
+type FT_uint32          = #type FT_UInt32
+type FT_short           = #type FT_Short
+type FT_ushort          = #type FT_UShort
+type FT_long            = #type FT_Long
+type FT_ulong           = #type FT_ULong
+type FT_bool            = #type FT_Bool
 
-type FToffset       = #type FT_Offset
-type FTptrdist      = #type FT_PtrDist
-type FTstring       = #type FT_String
-type FTtag          = #type FT_Tag
-type FTerror        = #type FT_Error
-type FTfixed        = #type FT_Fixed
-type FTpointer      = Ptr CVoid_
-type FTpos          = #type FT_Pos
+type FT_offset          = #type FT_Offset
+type FT_ptrdist         = #type FT_PtrDist
+type FT_string          = #type FT_String
+type FT_tag             = #type FT_Tag
+type FT_error           = #type FT_Error
+type FT_fixed           = #type FT_Fixed
+type FT_pointer         = Ptr CVoid_
+type FT_pos             = #type FT_Pos
 
 
-type FTfword        = #type FT_FWord
-type FTufword       = #type FT_UFWord
-type FTf2dot14      = #type FT_F2Dot14
+type FT_fword           = #type FT_FWord
+type FT_ufword          = #type FT_UFWord
+type FT_f2dot14         = #type FT_F2Dot14
 
-type FTf26dot6      = #type FT_F26Dot6
+type FT_f26dot6         = #type FT_F26Dot6
 
-type VoidPtr        = FTpointer
+type VoidPtr            = FT_pointer
 
-newtype FTcallback a = FTCallback (FunPtr a) deriving Storable
+newtype FT_callback a = FTCallback (FunPtr a) deriving Storable
 
 --------------------------------------------------------------------------------
 
 -- Handles
 
--- $FTlibrary - there are three datatypes for the C type @FT_Library@.
--- @FTLIBRARYREC_ is the private type allowing us to form Haskell pointers.
--- @FT_Library@ corresponds to the C type directly - it should only 
--- appear in ccall stubs.
--- @FTlibrary@ is the Haskell type to be exported outside the binding 
+-- $FT_Library - there are three datatypes for the C type @FT_Library@.
+-- @FT_LIBRARY_RCRD_ is the private type allowing us to form Haskell pointers.
+-- @FT_library_ptr@ corresponds to the C type @FT_Library@ directly
+-- @FT_library@ is the Haskell type to be exported outside the binding 
 -- library, as @FT_Library@ is allocated on the C side it is foreign pointer.
 
-data    FT_LIBRARY_REC_
-type    FT_Library        = Ptr FT_LIBRARY_REC_         
-newtype FTlibrary         = FTlibrary (ForeignPtr FT_LIBRARY_REC_)
+data    FT_LIBRARY_RCRD_
+type    FT_library_ptr    = Ptr FT_LIBRARY_RCRD_         
+newtype FT_library        = FT_library (ForeignPtr FT_LIBRARY_RCRD_)
 
 
 -- FT_Face \\ FT_FACE_REC_ is not actually opaque, we allow access to 
@@ -92,48 +91,51 @@ newtype FTlibrary         = FTlibrary (ForeignPtr FT_LIBRARY_REC_)
 -- but we don\'t go as far as making it a Storable instance as we consider it 
 -- immutable and only creatable in the on the \'C side\'.   
 
-data    FT_FACE_REC_ 
-type    FT_Face           = Ptr FT_FACE_REC_
-newtype FTface            = FTface (ForeignPtr FT_FACE_REC_)
+data    FT_FACE_RCRD_ 
+type    FT_face_ptr       = Ptr FT_FACE_RCRD_
+newtype FT_face           = FT_face (ForeignPtr FT_FACE_RCRD_)
 
 
-data FTsize_
-type FTsize             = Ptr FTsize_
-
-data FT_GLYPH_SLOT_
-type FT_Glyph_Slot      = Ptr FT_GLYPH_SLOT_
-newtype FTglyphslot     = FTglyphslot (ForeignPtr FT_GLYPH_SLOT_)
 
 
-data FTcharmap_
-type FTcharmap          = Ptr FTcharmap_
+data FT_GLYPH_SLOT_RCRD_
+type FT_glyph_slot_ptr    = Ptr FT_GLYPH_SLOT_RCRD_
+newtype FT_glyphslot      = FT_glyphslot (ForeignPtr FT_GLYPH_SLOT_RCRD_)
 
-data FTmodule_
-type FTmodule           = Ptr FTmodule_
+-- Note - the types below haven't been used yet and will change.
 
-data FTdriver_
-type FTdriver           = Ptr FTdriver_
+data FT_size
+type FT_size_ptr              = Ptr FT_size
 
-data FTrenderer_
-type FTrenderer         = Ptr FTrenderer_
+data FT_charmap
+type FT_charmap_ptr           = Ptr FT_charmap
 
-data FTfaceinternal_
-type FTfaceinternal     = Ptr FTfaceinternal_
+data FT_module
+type FT_module_ptr            = Ptr FT_module
 
-data FTsizeinternal_
-type FTsizeinternal     = Ptr FTsizeinternal_
+data FT_driver
+type FT_driver_ptr            = Ptr FT_driver
 
-data FTsizerequest_
-type FTsizerequest      = Ptr FTsizerequest_
+data FT_renderer
+type FT_renderer_ptr          = Ptr FT_renderer
 
-data FTsubglyph_
-type FTsubglyph         = Ptr FTsubglyph_
+data FT_faceinternal
+type FT_faceinternal_ptr      = Ptr FT_faceinternal
 
-data FTslotinternal_
-type FTslotinternal     = Ptr FTslotinternal_
+data FT_sizeinternal
+type FT_sizeinternal_ptr      = Ptr FT_sizeinternal
 
-data FTstream_
-type FTstream           = Ptr FTstream_
+data FT_sizerequest
+type FT_sizerequest_ptr       = Ptr FT_sizerequest
+
+data FT_subglyph
+type FT_subglyph_ptr          = Ptr FT_subglyph
+
+data FT_slotinternal
+type FT_slotinternal_ptr      = Ptr FT_slotinternal
+
+data FT_stream
+type FT_stream_ptr            = Ptr FT_stream
 
 --------------------------------------------------------------------------------
 -- Enumerations
@@ -144,9 +146,9 @@ class Marshal a where marshal :: a -> CInt
 class Unmarshal a where unmarshal :: CInt -> a
 
 
-type FTpixelmode_    = CInt
+type FT_enum_pixelmode    = CInt
 
-#{enum FTpixelmode_ ,
+#{enum FT_enum_pixelmode ,
   , ft_PIXEL_MODE_NONE    = FT_PIXEL_MODE_NONE 
   , ft_PIXEL_MODE_MONO    = FT_PIXEL_MODE_MONO
   , ft_PIXEL_MODE_GRAY    = FT_PIXEL_MODE_GRAY
@@ -158,7 +160,7 @@ type FTpixelmode_    = CInt
   , ft_PIXEL_MODE_MAX     = FT_PIXEL_MODE_MAX 
   }
 
-data FTpixelmode = 
+data PixelMode = 
       PmNone
     | PmMono
     | PmGray
@@ -169,7 +171,7 @@ data FTpixelmode =
     | PmMax
     deriving ( Eq, Ord, Show )
 
-instance Marshal FTpixelmode where
+instance Marshal PixelMode where
   marshal x = case x of
       PmNone  -> ft_PIXEL_MODE_NONE
       PmMono  -> ft_PIXEL_MODE_MONO
@@ -181,7 +183,7 @@ instance Marshal FTpixelmode where
       PmMax   -> ft_PIXEL_MODE_MAX
       
       
-instance Unmarshal FTpixelmode where
+instance Unmarshal PixelMode where
   unmarshal x
       | x == ft_PIXEL_MODE_NONE   = PmNone 
       | x == ft_PIXEL_MODE_MONO   = PmMono 
@@ -191,15 +193,15 @@ instance Unmarshal FTpixelmode where
       | x == ft_PIXEL_MODE_LCD    = PmLcd 
       | x == ft_PIXEL_MODE_LCD_V  = PmLcdV 
       | x == ft_PIXEL_MODE_MAX    = PmMax 
-      | otherwise = error ("unmarshal: FTpixelmode - illegal value " ++ show x)                  
+      | otherwise = error ("unmarshal: PixelMode - illegal value " ++ show x)                  
       
       
 --------------------------------------------------------------------------------
 
 
-type FTglyphformat_  = CInt
+type FT_enum_glyphformat  = CInt
 
-#{enum FTglyphformat_ ,
+#{enum FT_enum_glyphformat ,
   , ft_GLYPH_FORMAT_NONE      = FT_GLYPH_FORMAT_NONE 
   
   , ft_GLYPH_FORMAT_COMPOSITE = FT_GLYPH_FORMAT_COMPOSITE
@@ -208,7 +210,7 @@ type FTglyphformat_  = CInt
   , ft_GLYPH_FORMAT_PLOTTER   = FT_GLYPH_FORMAT_PLOTTER
   }
 
-data FTglyphformat = 
+data GlyphFormat = 
       FormatNone
     | FormatComposite
     | FormatBitmap
@@ -216,7 +218,7 @@ data FTglyphformat =
     | FormatPlotter
     deriving ( Enum, Eq, Ord, Show )
 
-instance Marshal FTglyphformat where
+instance Marshal GlyphFormat where
   marshal x = case x of
       FormatNone        -> ft_GLYPH_FORMAT_NONE
       FormatComposite   -> ft_GLYPH_FORMAT_COMPOSITE
@@ -224,21 +226,21 @@ instance Marshal FTglyphformat where
       FormatOutline     -> ft_GLYPH_FORMAT_OUTLINE
       FormatPlotter     -> ft_GLYPH_FORMAT_PLOTTER
 
-instance Unmarshal FTglyphformat where
+instance Unmarshal GlyphFormat where
   unmarshal x
       | x == ft_GLYPH_FORMAT_NONE       = FormatNone  
       | x == ft_GLYPH_FORMAT_COMPOSITE  = FormatComposite  
       | x == ft_GLYPH_FORMAT_BITMAP     = FormatBitmap
       | x == ft_GLYPH_FORMAT_OUTLINE    = FormatOutline
       | x == ft_GLYPH_FORMAT_PLOTTER    = FormatPlotter  
-      | otherwise = error ("unmarshal: FTglyphformat - illegal value " ++ show x)
+      | otherwise = error ("unmarshal: GlyphFormat - illegal value " ++ show x)
          
                      
 --------------------------------------------------------------------------------
 
-type FTencoding_     = CInt
+type FT_enum_encoding        = CInt
 
-#{enum FTencoding_ ,
+#{enum FT_enum_encoding ,
   , ft_ENCODING_NONE              = FT_ENCODING_NONE 
   
   , ft_ENCODING_MS_SYMBOL         = FT_ENCODING_MS_SYMBOL
@@ -260,7 +262,7 @@ type FTencoding_     = CInt
   , ft_ENCODING_APPLE_ROMAN       = FT_ENCODING_APPLE_ROMAN
   }
 
-data FTencoding = 
+data Encoding = 
       EncodingNone
     | MsSymbol
     | Unicode
@@ -277,7 +279,7 @@ data FTencoding =
     | AppleRoman
     deriving ( Enum, Eq, Ord, Show )
 
-instance Marshal FTencoding where
+instance Marshal Encoding where
   marshal x = case x of
       EncodingNone  -> ft_ENCODING_NONE
       MsSymbol      -> ft_ENCODING_MS_SYMBOL
@@ -294,7 +296,7 @@ instance Marshal FTencoding where
       OldLatin2     -> ft_ENCODING_OLD_LATIN_2
       AppleRoman    -> ft_ENCODING_APPLE_ROMAN 
 
-instance Unmarshal FTencoding where
+instance Unmarshal Encoding where
   unmarshal x
       | x == ft_ENCODING_NONE             = EncodingNone 
       | x == ft_ENCODING_MS_SYMBOL        = MsSymbol
@@ -314,38 +316,38 @@ instance Unmarshal FTencoding where
                 
 --------------------------------------------------------------------------------    
       
-type FTkerningmode_ = CInt
+type FT_enum_kerningmode = CInt
 
-#{enum FTkerningmode_ ,
+#{enum FT_enum_kerningmode ,
   , ft_KERNING_DEFAULT            = FT_KERNING_DEFAULT 
   , ft_KERNING_UNFITTED           = FT_KERNING_UNFITTED
   , ft_KERNING_UNSCALED           = FT_KERNING_UNSCALED
   }
 
-data FTkerningmode = 
+data KerningMode = 
       DefaultKerning
     | Unfitted
     | Unscaled
     deriving ( Enum, Eq, Ord, Show )
 
-instance Marshal FTkerningmode where
+instance Marshal KerningMode where
   marshal x = case x of
       DefaultKerning  -> ft_KERNING_DEFAULT
       Unfitted        -> ft_KERNING_UNFITTED
       Unscaled        -> ft_KERNING_UNSCALED
 
-instance Unmarshal FTkerningmode where
+instance Unmarshal KerningMode where
   unmarshal x
       | x == ft_KERNING_DEFAULT       = DefaultKerning  
       | x == ft_KERNING_UNFITTED      = Unfitted  
       | x == ft_KERNING_UNSCALED      = Unscaled  
-      | otherwise = error ("unmarshal: FTkerningmode - illegal value " ++ show x)
+      | otherwise = error ("unmarshal: KerningMode - illegal value " ++ show x)
               
 --------------------------------------------------------------------------------    
       
-type FTrendermode_ = CInt
+type FT_enum_rendermode = CInt
 
-#{enum FTrendermode_ ,
+#{enum FT_enum_rendermode ,
   , ft_RENDER_MODE_NORMAL     = FT_RENDER_MODE_NORMAL
   , ft_RENDER_MODE_LIGHT      = FT_RENDER_MODE_LIGHT
   , ft_RENDER_MODE_MONO       = FT_RENDER_MODE_MONO
@@ -386,9 +388,9 @@ instance Unmarshal RenderMode where
 
 --------------------------------------------------------------------------------    
       
-type FTloadflags_ = CInt
+type FT_enum_loadflags = CInt
 
-#{enum FTrendermode_ ,
+#{enum FT_enum_loadflags ,
   , ft_LOAD_DEFAULT                     = FT_LOAD_DEFAULT
   , ft_LOAD_NO_SCALE                    = FT_LOAD_NO_SCALE
   , ft_LOAD_NO_HINTING                  = FT_LOAD_NO_HINTING
@@ -453,44 +455,54 @@ instance Marshal LoadFlag where
 -- alignment seems to be the first element of the Haskell data type.
 
 
--- | @FTvector@ corresponds to the FreeType type @FT_Vector@. 
-data FTvector = FTvector { _xpos :: FTpos, _ypos :: FTpos }
+-- | @Vector@ corresponds to the FreeType type @FT_Vector@. 
+data Vector = Vector { 
+      _xpos   :: FT_pos, 
+      _ypos   :: FT_pos 
+    }
   deriving (Eq, Show)
 
-instance Storable FTvector where
+
+type FT_struct_vector = Vector
+
+
+instance Storable Vector where
   sizeOf    _ = #{size FT_Vector}
-  alignment _ = alignment (undefined :: FTpos) 
+  alignment _ = alignment (undefined :: FT_pos) 
   
   peek ptr = do 
       x <- #{peek FT_Vector, x} ptr
       y <- #{peek FT_Vector, y} ptr
-      return $ FTvector x y
+      return $ Vector x y
   
-  poke ptr (FTvector x y) = do
+  poke ptr (Vector x y) = do
         #{poke FT_Vector, x} ptr x
         #{poke FT_Vector, y} ptr y
  
 --------------------------------------------------------------------------------
 
 -- | @FTbbox@ corresponds to the FreeType type @FT_BBox@.      
-data FTbbox = FTbbox { _xmin :: FTpos, _ymin :: FTpos,
-                       _xmax :: FTpos, _ymax :: FTpos }
+data BBox = BBox { 
+      _xmin   :: FT_pos, 
+      _ymin   :: FT_pos,
+      _xmax   :: FT_pos, 
+      _ymax   :: FT_pos }
   deriving (Eq, Show)
 
+type FT_struct_bbox = BBox
 
-
-instance Storable FTbbox where
+instance Storable BBox where
   sizeOf    _ = #{size FT_BBox}
-  alignment _ = alignment (undefined :: FTpos)
+  alignment _ = alignment (undefined :: FT_pos)
   
   peek ptr = do 
       xmin <- #{peek FT_BBox, xMin} ptr
       ymin <- #{peek FT_BBox, yMin} ptr
       xmax <- #{peek FT_BBox, xMax} ptr
       ymax <- #{peek FT_BBox, yMax} ptr
-      return $ FTbbox xmin ymin xmax ymax
+      return $ BBox xmin ymin xmax ymax
   
-  poke ptr (FTbbox xmin ymin xmax ymax) = do
+  poke ptr (BBox xmin ymin xmax ymax) = do
         #{poke FT_BBox, xMin} ptr xmin
         #{poke FT_BBox, yMin} ptr ymin
         #{poke FT_BBox, xMax} ptr xmax
@@ -498,25 +510,29 @@ instance Storable FTbbox where
 
 --------------------------------------------------------------------------------
 
--- | @FTmatrix@ corresponds to the FreeType type @FT_Matrix@.      
-data FTmatrix = FTmatrix { _xx :: FTfixed, _xy :: FTfixed,
-                           _yx :: FTfixed, _yy :: FTfixed }
+-- | @Matrix@ corresponds to the FreeType type @FT_Matrix@.      
+data Matrix = Matrix { 
+      _xx   :: FT_fixed, 
+      _xy   :: FT_fixed,
+      _yx   :: FT_fixed, 
+      _yy   :: FT_fixed 
+    }
   deriving (Eq, Show)
 
+type FT_struct_matrix = Matrix
 
-
-instance Storable FTmatrix where
+instance Storable Matrix where
   sizeOf    _ = #{size FT_Matrix}
-  alignment _ = alignment (undefined :: FTfixed)
+  alignment _ = alignment (undefined :: FT_fixed)
   
   peek ptr = do 
       xx <- #{peek FT_Matrix, xx} ptr
       xy <- #{peek FT_Matrix, xy} ptr
       yx <- #{peek FT_Matrix, yx} ptr
       yy <- #{peek FT_Matrix, yy} ptr
-      return $ FTmatrix xx xy yx yy
+      return $ Matrix xx xy yx yy
   
-  poke ptr (FTmatrix xx xy yx yy) = do
+  poke ptr (Matrix xx xy yx yy) = do
         #{poke FT_Matrix, xx} ptr xx
         #{poke FT_Matrix, xy} ptr xy
         #{poke FT_Matrix, yx} ptr yx
@@ -524,27 +540,32 @@ instance Storable FTmatrix where
    
 --------------------------------------------------------------------------------
 
--- | @FTunitvector@ corresponds to the FreeType type @FT_UnitVector@. 
+-- | @UnitVector@ corresponds to the FreeType type @FT_UnitVector@. 
 
-data FTunitvector = FTunitvector { _xpos' :: FTf2dot14, _ypos' :: FTf2dot14 }
+data UnitVector = UnitVector { 
+      _xpos'  :: FT_f2dot14, 
+      _ypos'  :: FT_f2dot14 
+    }
   deriving (Eq, Show)
 
-instance Storable FTunitvector where
+type FT_struct_unitvector = UnitVector
+
+instance Storable UnitVector where
   sizeOf    _ = #{size FT_UnitVector}
-  alignment _ = alignment (undefined :: FTf2dot14)
+  alignment _ = alignment (undefined :: FT_f2dot14)
   
   peek ptr = do 
       x <- #{peek FT_UnitVector, x} ptr
       y <- #{peek FT_UnitVector, y} ptr
-      return $ FTunitvector x y
+      return $ UnitVector x y
   
-  poke ptr (FTunitvector x y) = do
+  poke ptr (UnitVector x y) = do
         #{poke FT_UnitVector, x} ptr x
         #{poke FT_UnitVector, y} ptr y
 
 --------------------------------------------------------------------------------
 
--- | @FTbitmap@ corresponds to the FreeType type @FT_Bitmap@.
+-- | @Bitmap@ is a Haskell /reduction/ of the FreeType type @FT_Bitmap@.
 
 data Bitmap = Bitmap { 
       _rows         :: Int,
@@ -556,20 +577,20 @@ data Bitmap = Bitmap {
     
      
 
-data FT_Bitmap = FT_Bitmap {
-      __rows            :: FTint,
-      __width           :: FTint,
-      __pitch           :: FTint,
+data FT_struct_bitmap = FT_struct_bitmap {
+      __rows            :: FT_int,
+      __width           :: FT_int,
+      __pitch           :: FT_int,
       __buffer          :: Ptr CUChar,
-      __num_grays       :: FTshort,
+      __num_grays       :: FT_short,
       __pixel_mode      :: CChar,
       __palette_mode    :: CChar,
       __palette         :: Ptr CVoid_
     }
 
-instance Storable FT_Bitmap where
+instance Storable FT_struct_bitmap where
   sizeOf    _ = #{size FT_Bitmap}
-  alignment _ = alignment (undefined :: FTint)
+  alignment _ = alignment (undefined :: FT_int)
   
   peek ptr = do 
       r   <- #{peek FT_Bitmap, rows}          ptr
@@ -580,9 +601,9 @@ instance Storable FT_Bitmap where
       pxm <- #{peek FT_Bitmap, pixel_mode}    ptr
       plm <- #{peek FT_Bitmap, palette_mode}  ptr
       pl  <- #{peek FT_Bitmap, palette}       ptr
-      return $ FT_Bitmap r w p b n pxm plm pl 
+      return $ FT_struct_bitmap r w p b n pxm plm pl 
  
-  poke ptr (FT_Bitmap r w p b n pxm plm pl) = do
+  poke ptr (FT_struct_bitmap r w p b n pxm plm pl) = do
         #{poke FT_Bitmap, rows}         ptr r
         #{poke FT_Bitmap, width}        ptr w
         #{poke FT_Bitmap, pitch}        ptr p
@@ -600,21 +621,21 @@ instance Storable FT_Bitmap where
 
 -- | @FT_Parameter@ corresponds to the FreeType type @FT_Parameter@.
 
-data FTparameter = FTparameter {
-      _tag            :: FTulong,
-      _data           :: FTpointer
+data FT_struct_parameter = FT_struct_parameter {
+      _tag            :: FT_ulong,
+      _data           :: FT_pointer
     }
 
-instance Storable FTparameter where
+instance Storable FT_struct_parameter where
   sizeOf    _ = #{size FT_Parameter}
-  alignment _ = alignment (undefined :: FTulong)
+  alignment _ = alignment (undefined :: FT_ulong)
   
   peek ptr = do 
       t <- #{peek FT_Parameter, tag} ptr
       d <- #{peek FT_Parameter, data} ptr
-      return $ FTparameter t d
+      return $ FT_struct_parameter t d
   
-  poke ptr (FTparameter t d) = do
+  poke ptr (FT_struct_parameter t d) = do
         #{poke FT_Parameter, tag}  ptr t
         #{poke FT_Parameter, data} ptr d
         
@@ -623,20 +644,20 @@ instance Storable FTparameter where
 
 -- | @FTopenargs@ corresponds to the FreeType type @FT_Open_Args@.
 
-data FTopenargs = FTopenargs {
-      _openargs_flags :: FTuint,
-      _memory_base    :: Ptr FTbyte,
-      _memory_size    :: FTlong,
+data FT_struct_openargs = FT_struct_openargs {
+      _openargs_flags :: FT_uint,
+      _memory_base    :: Ptr FT_byte,
+      _memory_size    :: FT_long,
       _pathname       :: CString,
-      _stream         :: FTstream,
-      _driver         :: FTmodule,
-      _num_params     :: FTint,
-      _params         :: Ptr FTparameter
+      _stream         :: FT_stream_ptr,
+      _driver         :: FT_module_ptr,
+      _num_params     :: FT_int,
+      _params         :: Ptr FT_struct_parameter
     }
 
-instance Storable FTopenargs where
+instance Storable FT_struct_openargs where
   sizeOf    _ = #{size FT_Open_Args}
-  alignment _ = alignment (undefined :: FTuint)
+  alignment _ = alignment (undefined :: FT_uint)
   
   peek ptr = do 
       fs <- #{peek FT_Open_Args, flags}       ptr
@@ -647,9 +668,9 @@ instance Storable FTopenargs where
       d  <- #{peek FT_Open_Args, driver}      ptr
       n  <- #{peek FT_Open_Args, num_params}  ptr
       ps <- #{peek FT_Open_Args, params}      ptr
-      return $ FTopenargs fs mb ms p s d n ps
+      return $ FT_struct_openargs fs mb ms p s d n ps
   
-  poke ptr (FTopenargs fs mb ms p s d n ps) = do
+  poke ptr (FT_struct_openargs fs mb ms p s d n ps) = do
         #{poke FT_Open_Args, flags}       ptr fs
         #{poke FT_Open_Args, memory_base} ptr mb
         #{poke FT_Open_Args, memory_size} ptr ms

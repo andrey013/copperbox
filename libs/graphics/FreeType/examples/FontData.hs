@@ -46,7 +46,7 @@ main = do
     j <- numGlyphs fc
     putStrLn $ show j ++ " glyphs"
     
-    setCharSize fc 0 (f26d6 16 64) 150 150
+    setCharSize fc 0 (f26d6 (16::Int) (64::Int)) 150 150
     loadChar fc 36 [Render]  >>= putStrLn . show
     ec <- renderCurrentGlyph fc RenderNormal
     
@@ -65,7 +65,7 @@ main = do
     putStrLn "Done."
                 
 printBitmap :: Bitmap -> IO ()
-printBitmap (Bitmap r w _ bs) = step bs
+printBitmap (Bitmap _ w _ bs) = step bs
   where
     step [] = putStrLn $ ""
     step xs = let (a,b) = splitAt w xs in
