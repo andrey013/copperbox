@@ -25,49 +25,49 @@ module Main where
 
 import Graphics.Rendering.FreeType
 
-
+import Control.Monad
 
 main :: IO ()
 main = do
-    ft <- initFreeType
-    fc <- newFace ft "data/Tempest.ttf" 0
-    
-    
-    familyName fc       >>= putStrLn    
-    styleName fc        >>= putStrLn 
-    postscriptName fc   >>= putStrLn
-    
-    n <- numFaces fc
-    putStrLn $ show n ++ " faces in face"
-    
-    i <- faceIndex fc
-    putStrLn $ "Face index " ++ show i
-    
-    j <- numGlyphs fc
-    putStrLn $ show j ++ " glyphs"
-    
-    setCharSize fc 0 (f26d6 (16::Int) (64::Int)) 150 150
-    loadChar fc 36 [Render]  >>= putStrLn . show
-    ec <- renderCurrentGlyph fc RenderNormal
-    
-    if ec==0 
-      then do  
-        putStrLn $ show ec
-        glyphSlotBitmap fc >>= printBitmap
+  withFreeType $ \ft -> 
+    withNewFace ft "data/Tempest.ttf" 0 $ \fc -> do
+        familyName fc       >>= putStrLn    
+        styleName fc        >>= putStrLn 
+        postscriptName fc   >>= putStrLn
         
-        gsBitmapLeft fc >>= \x  -> putStrLn $ "glyphslot bitmap left " ++ show x 
-        gsBitmapTop  fc >>= \x' -> putStrLn $ "glyphslot bitmap top "  ++ show x' 
-      else
-        putStrLn $ "renderCurrentGlyph failed " ++ show ec
+        n <- numFaces fc
+        putStrLn $ show n ++ " faces in face"
         
-    olt <- newOutline ft 100 100
-    cc <- contours olt
-    putStrLn $ "n_contours " ++ show cc
-    doneOutline olt
-         
-    doneFace fc
-    doneFreeType ft                 
-    putStrLn "Done."
+        i <- faceIndex fc
+        putStrLn $ "Face index " ++ show i
+        
+        j <- numGlyphs fc
+        putStrLn $ show j ++ " glyphs"
+        
+        setCharSize fc 0 (f26d6 (16::Int) (64::Int)) 150 150
+        loadChar fc 36 [Render]  >>= putStrLn . show
+        ec <- renderCurrentGlyph fc RenderNormal
+        
+        if ec==0 
+          then do  
+            putStrLn $ show ec
+            glyphSlotBitmap fc >>= printBitmap
+            
+            gsBitmapLeft fc >>= \x  -> putStrLn $ "glyphslot bitmap left " ++ show x 
+            gsBitmapTop  fc >>= \x' -> putStrLn $ "glyphslot bitmap top "  ++ show x' 
+          else
+            putStrLn $ "renderCurrentGlyph failed " ++ show ec
+            
+        olt <- newOutline ft 100 100
+        cc <- contours olt
+        putStrLn $ "n_contours " ++ show cc
+        doneOutline olt
+  
+        putStrLn "Done."
+  return () -- needs this at the end
+            -- this problem is caused by not seeding the withFreeType etc 
+            -- functions with a default
+
                 
 printBitmap :: Bitmap -> IO ()
 printBitmap (Bitmap _ w _ bs) = step bs

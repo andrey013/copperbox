@@ -234,13 +234,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Get_SubGlyph_Info"
                           -> IO FT_error
 
     
--- | @FT_Library_Version@.
-foreign import ccall unsafe "freetype/freetype.h FT_Library_Version" 
-    ft_library_version  :: FT_library_ptr 
-                        -> Ptr FT_int 
-                        -> Ptr FT_int 
-                        -> Ptr FT_int 
-                        -> IO ()
+
 
 --------------------------------------------------------------------------------
 

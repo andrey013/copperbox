@@ -16,13 +16,15 @@
 
 module Graphics.Rendering.FreeType.BaseInterface (
   
-  -- * initialize and free a FreeType /library/.
-  initFreeType,
-  doneFreeType,
+  -- * \'run a computation inside FreeType\'.
+  withFreeType, 
   
   -- * newFace
-  newFace,
-  doneFace,
+  
+  withNewFace,
+  
+  -- newFace,
+  -- doneFace,
   
   -- * Face field accessors
   numFaces, 
@@ -60,17 +62,17 @@ module Graphics.Rendering.FreeType.BaseInterface (
   
   getCharIndex,
   
-  -- * FreeType library version number
-  VersionNumber, 
-  libraryVersion,
+
 ) where
 
 import Graphics.Rendering.FreeType.FixedPrecision
 import Graphics.Rendering.FreeType.Internals.CBaseInterface
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Internals.Wrappers 
+import Graphics.Rendering.FreeType.Utils ( nullForeignPtr )
 
 import Control.Applicative ( (<$>) )
+import Control.Exception ( bracket )
 import Control.Monad
 import Data.Bits ( (.|.) )
 import Foreign.C.String ( withCString, peekCString )
@@ -78,12 +80,24 @@ import Foreign.ForeignPtr ( newForeignPtr, finalizeForeignPtr,
     withForeignPtr )
 import Foreign.Marshal.Alloc ( alloca )
 import Foreign.Marshal.Utils ( with )
--- import Foreign.Ptr ( Ptr )
+import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( peek )
 
 
 
 -------------------------------------------------------------------------------- 
+
+isNullFT_Library :: FT_library -> IO Bool
+isNullFT_Library (FT_library lib) = nullForeignPtr lib
+
+withFreeType :: (FT_library -> IO a) -> IO (Maybe a)
+withFreeType action = 
+  bracket initFreeType doneFreeType 
+          (\ftlib -> do { check_null <- isNullFT_Library ftlib 
+                        ; if check_null
+                             then do putStrLn "withFreeType: failed"
+                                     return Nothing
+                             else action ftlib >>= return . Just })   
   
 -- | Initialize a handle to the FreeType library, @FT_Init_FreeType@ 
 -- allocates memory for the library on the C side
@@ -113,7 +127,21 @@ freeLibrary_ p = ft_done_freetype p >> return ()
 
 --------------------------------------------------------------------------------
 -- New face
+isNullFT_Face :: FT_face -> IO Bool
+isNullFT_Face (FT_face lib) = nullForeignPtr lib
 
+
+withNewFace :: FT_library -> FilePath -> Int -> (FT_face -> IO a) -> IO (Maybe a)
+withNewFace ft_lib path idx action = 
+  bracket (newFace ft_lib path idx) doneFace 
+          (\face -> do { check_null <- isNullFT_Face face 
+                       ; if check_null
+                            then do putStrLn "withFreeType: withNewFace"
+                                    return Nothing
+                            else action face >>= return . Just }) 
+                             
+                               
+                             
 newFace :: FT_library -> FilePath -> Int -> IO FT_face
 newFace (FT_library lib) path_s idx = 
     withForeignPtr lib $ \h ->
@@ -240,25 +268,5 @@ getCharIndex fc ccode = withForeignFace fc $ \h -> do
     idx <- ft_get_char_index h (fromIntegral ccode)
     return $ fromIntegral idx
 
-
---------------------------------------------------------------------------------
--- FreeType library version number
-
-
-type VersionNumber = (Int,Int,Int)
-
-libraryVersion :: FT_library -> IO VersionNumber
-libraryVersion (FT_library lib) =
-  withForeignPtr lib $ \h -> 
-    alloca $ \ptr_vmj -> do 
-        alloca $ \ptr_vmn -> do 
-            alloca $ \ptr_vph -> do                     
-                ft_library_version h ptr_vmj ptr_vmn ptr_vph
-                
-                vmj <- peek ptr_vmj
-                vmn <- peek ptr_vmn
-                vph <- peek ptr_vph
-                
-                return (fromIntegral vmj, fromIntegral vmn, fromIntegral vph)
 
 
