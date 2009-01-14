@@ -20,7 +20,6 @@ module Graphics.Rendering.OpenVG.VG (
   module Graphics.Rendering.OpenVG.VG.BasicTypes,  
   module Graphics.Rendering.OpenVG.VG.Blending,
   module Graphics.Rendering.OpenVG.VG.DrawingContext,
-  module Graphics.Rendering.OpenVG.VG.Errors,
   module Graphics.Rendering.OpenVG.VG.Extending,
 --  module Graphics.Rendering.OpenVG.VG.ImageFilters,
   module Graphics.Rendering.OpenVG.VG.Images,
@@ -36,7 +35,6 @@ module Graphics.Rendering.OpenVG.VG (
 import Graphics.Rendering.OpenVG.VG.BasicTypes
 import Graphics.Rendering.OpenVG.VG.Blending
 import Graphics.Rendering.OpenVG.VG.DrawingContext
-import Graphics.Rendering.OpenVG.VG.Errors
 import Graphics.Rendering.OpenVG.VG.Extending
 -- import Graphics.Rendering.OpenVG.VG.ImageFilters
 import Graphics.Rendering.OpenVG.VG.Images

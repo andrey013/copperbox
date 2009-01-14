@@ -15,7 +15,9 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VGU (
+  module Graphics.Rendering.OpenVG.VGU.Errors,
   module Graphics.Rendering.OpenVG.VGU.VGU
 ) where
 
+import Graphics.Rendering.OpenVG.VGU.Errors
 import Graphics.Rendering.OpenVG.VGU.VGU

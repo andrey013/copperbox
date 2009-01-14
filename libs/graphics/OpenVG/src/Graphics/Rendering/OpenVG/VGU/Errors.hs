@@ -16,26 +16,22 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.OpenVG.VG.Errors where
+module Graphics.Rendering.OpenVG.VGU.Errors (
+   Error(..), ErrorCategory(..), errors
+) where
 
-{-
+import Graphics.Rendering.OpenVG.VGU.ErrorsInternal (
+   Error(..), ErrorCategory(..), getErrors )
+   
 import Graphics.Rendering.OpenGL.GL.StateVar (
    GettableStateVar, makeGettableStateVar )
--}
+
 
 --------------------------------------------------------------------------------
 
--- | VG errors.
+errors :: GettableStateVar [Error]
+errors = makeGettableStateVar getErrors
 
-data VG_ErrorCode =
-     VG_NoError
-   | VG_BadHandleError
-   | VG_IllegalArgumentError
-   | VG_OutOfMemoryError
-   | VG_PathCapabilityError
-   | VG_UnsupportedImageFormatError
-   | VG_UnsupportedPathFormatError
-   | VG_ImageInUseError
-   | VG_NoContextError
-   deriving ( Eq, Ord, Show )
+
+
    

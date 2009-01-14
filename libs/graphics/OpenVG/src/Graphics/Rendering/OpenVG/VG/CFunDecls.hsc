@@ -28,6 +28,7 @@ import Foreign.Ptr ( Ptr )
 import Foreign.C.String ( CString )
 
 -- 'suffix indicates a marshalled enum type.
+type VGErrorCode'           = VGenum
 type VGHardwareQueryResult' = VGenum
 type VGHardwareQueryType'   = VGenum
 type VGImageChannel'        = VGenum
@@ -37,6 +38,12 @@ type VGPaintMode'           = VGenum
 type VGPathDatatype'        = VGenum
 type VGStringID'            = VGenum
 type VGTilingMode'          = VGenum
+
+
+foreign import ccall unsafe "vg/openvg.h vgGetError" 
+    vgGetError :: IO VGErrorCode'
+
+
 
 foreign import ccall unsafe "vg/openvg.h vgFlush" 
     vgFlush :: IO ()
