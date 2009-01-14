@@ -139,7 +139,11 @@ doneFace (FT_face h) = finalizeForeignPtr h
 freeFace_ :: FT_face_ptr -> IO ()
 freeFace_ p = ft_done_face p >> return ()
 
--- | @withForeignFace@ - internal function, shortahand for accessing the 
+
+
+
+
+-- | @withForeignFace@ - internal function, shorthand for accessing the 
 -- face pointer. 
 withForeignFace :: FT_face -> (FT_face_ptr -> IO b) -> IO b 
 withForeignFace (FT_face fc) f = withForeignPtr fc $ \ h -> f h

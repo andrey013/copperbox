@@ -60,6 +60,11 @@ main = do
       else
         putStrLn $ "renderCurrentGlyph failed " ++ show ec
         
+    olt <- newOutline ft 100 100
+    cc <- contours olt
+    putStrLn $ "n_contours " ++ show cc
+    doneOutline olt
+         
     doneFace fc
     doneFreeType ft                 
     putStrLn "Done."

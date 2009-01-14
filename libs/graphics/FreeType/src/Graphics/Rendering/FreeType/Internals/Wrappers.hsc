@@ -20,9 +20,8 @@
 module Graphics.Rendering.FreeType.Internals.Wrappers where
 
 
-
-
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
+import Graphics.Rendering.FreeType.Internals.COutline
 
 import Foreign.Ptr ( FunPtr ) 
 
@@ -35,5 +34,10 @@ foreign import ccall "wrapper"
 foreign import ccall "wrapper"
     mkDoneFace          :: (FT_face_ptr -> IO ()) 
                         -> IO (FunPtr (FT_face_ptr -> IO ()))
-                    
+
+foreign import ccall "wrapper"
+    mkDoneOutline       :: (FT_outline_ptr -> IO ()) 
+                        -> IO (FunPtr (FT_outline_ptr -> IO ()))
+                        
+                                            
 -- end of file

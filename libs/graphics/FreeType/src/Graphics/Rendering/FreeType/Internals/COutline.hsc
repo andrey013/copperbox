@@ -29,22 +29,117 @@ import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Internals.CImage
 
 import Foreign.C.String ( CString )
-import Foreign.C.Types ( CInt )
+import Foreign.C.Types (  CInt, CShort, CChar )
+import Foreign.ForeignPtr ( ForeignPtr )
 import Foreign.Ptr ( Ptr, FunPtr ) 
+import Foreign.Storable
 
 --------------------------------------------------------------------------------
 
 -- | @FToutline@ corresponds to the FreeType type @FT_Outline@.
 
+-- Note - FT_Outline is defined with plain C types (not FT aliases) 
+-- in the header file
+
 data FT_struct_outline = FT_struct_outline {
-      _n_contours     :: FT_short,
-      _n_points       :: FT_short,
+      _n_contours     :: CShort,
+      _n_points       :: CShort,
       _points         :: Ptr FT_struct_vector,
-      _tags           :: CString,
-      _contours       :: FT_short,
-      _outline_flags  :: FT_int
+      _tags           :: Ptr CChar,
+      _contours       :: Ptr CShort,
+      _outline_flags  :: CInt
     }
 
+instance Storable FT_struct_outline where
+  sizeOf    _ = #{size FT_Outline}
+  alignment _ = alignment (undefined :: CShort)
+  
+  peek ptr = do 
+      a <- #{peek FT_Outline, n_contours} ptr
+      b <- #{peek FT_Outline, n_points}   ptr
+      c <- #{peek FT_Outline, points}     ptr
+      d <- #{peek FT_Outline, tags}       ptr
+      e <- #{peek FT_Outline, contours}   ptr
+      f <- #{peek FT_Outline, flags}      ptr
+      return $ FT_struct_outline a b c d e f
+  
+  poke ptr (FT_struct_outline a b c d e f) = do
+        #{poke FT_Outline, n_contours}  ptr a
+        #{poke FT_Outline, n_points}    ptr b
+        #{poke FT_Outline, points}      ptr c
+        #{poke FT_Outline, tags}        ptr d
+        #{poke FT_Outline, contours}    ptr e
+        #{poke FT_Outline, flags}       ptr f
+
+type FT_outline_ptr = Ptr FT_struct_outline
+newtype FT_outline  = FT_outline (ForeignPtr FT_struct_outline) 
+
+type FT_enum_outlineflags    = CInt
+
+#{enum FT_enum_outlineflags ,
+  , ft_OUTLINE_NONE             = FT_OUTLINE_NONE
+  , ft_OUTLINE_OWNER            = FT_OUTLINE_OWNER
+  , ft_OUTLINE_EVEN_ODD_FILL    = FT_OUTLINE_EVEN_ODD_FILL
+  , ft_OUTLINE_REVERSE_FILL     = FT_OUTLINE_REVERSE_FILL
+  , ft_OUTLINE_IGNORE_DROPOUTS  = FT_OUTLINE_IGNORE_DROPOUTS
+  , ft_OUTLINE_SMART_DROPOUTS   = FT_OUTLINE_SMART_DROPOUTS
+  , ft_OUTLINE_INCLUDE_STUBS    = FT_OUTLINE_INCLUDE_STUBS
+
+  , ft_OUTLINE_HIGH_PRECISION   = FT_OUTLINE_HIGH_PRECISION
+  , ft_OUTLINE_SINGLE_PASS      = FT_OUTLINE_SINGLE_PASS 
+  }
+
+
+
+type FT_outline_moveto_func   = Ptr FT_struct_vector 
+                              -> VoidPtr 
+                              -> IO FT_int
+
+foreign import ccall "wrapper"
+    mk_outline_moveto_func   :: FT_outline_moveto_func 
+                            -> IO (FT_callback FT_outline_moveto_func)
+   
+
+type FT_outline_lineto_func   = Ptr FT_struct_vector 
+                              -> VoidPtr 
+                              -> IO FT_int
+
+type FT_outline_conicto_func  = Ptr FT_struct_vector 
+                              -> Ptr FT_struct_vector 
+                              -> VoidPtr 
+                              -> IO FT_int
+
+type FT_outline_cubicto_func  = Ptr FT_struct_vector 
+                              -> Ptr FT_struct_vector
+                              -> Ptr FT_struct_vector 
+                              -> VoidPtr 
+                              -> IO FT_int
+
+
+                             
+data FT_struct_outlinefuncs = FT_struct_outlinefuncs {
+      _move_to   :: FunPtr FT_outline_moveto_func,
+      _line_to   :: FunPtr FT_outline_lineto_func,
+      _conic_to  :: FunPtr FT_outline_conicto_func,
+      _cubic_to  :: FunPtr FT_outline_cubicto_func,
+      _shift     :: FT_int,
+      _delta     :: FT_pos
+    }
+
+type FT_enum_orientation    = CInt
+
+
+
+#{enum FT_enum_orientation ,
+  , ft_ORIENTATION_TRUETYPE     = FT_ORIENTATION_TRUETYPE
+  , ft_ORIENTATION_POSTSCRIPT   = FT_ORIENTATION_POSTSCRIPT
+  , ft_ORIENTATION_FILL_RIGHT   = FT_ORIENTATION_FILL_RIGHT
+  , ft_ORIENTATION_FILL_LEFT    = FT_ORIENTATION_FILL_LEFT
+  , ft_ORIENTATION_NONE         = FT_ORIENTATION_NONE
+  }
+  
+--------------------------------------------------------------------------------
+-- wrappers
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_New" 
     ft_outline_new :: FT_library_ptr 
@@ -101,50 +196,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_BBox"
    
 
 
-type FT_enum_outlineflags    = CInt
 
-#{enum FT_enum_outlineflags ,
-  , ft_OUTLINE_NONE             = FT_OUTLINE_NONE
-  , ft_OUTLINE_OWNER            = FT_OUTLINE_OWNER
-  , ft_OUTLINE_EVEN_ODD_FILL    = FT_OUTLINE_EVEN_ODD_FILL
-  , ft_OUTLINE_REVERSE_FILL     = FT_OUTLINE_REVERSE_FILL
-  , ft_OUTLINE_IGNORE_DROPOUTS  = FT_OUTLINE_IGNORE_DROPOUTS
-  , ft_OUTLINE_SMART_DROPOUTS   = FT_OUTLINE_SMART_DROPOUTS
-  , ft_OUTLINE_INCLUDE_STUBS    = FT_OUTLINE_INCLUDE_STUBS
-
-  , ft_OUTLINE_HIGH_PRECISION   = FT_OUTLINE_HIGH_PRECISION
-  , ft_OUTLINE_SINGLE_PASS      = FT_OUTLINE_SINGLE_PASS 
-  }
-
-
-type FT_Outline_MoveToFunc = Ptr FT_struct_vector -> VoidPtr -> IO FT_int
-
-foreign import ccall "wrapper"
-    mkOutline_MoveToFunc :: FT_Outline_MoveToFunc 
-                         -> IO (FT_callback FT_Outline_MoveToFunc)
-   
-
-type FT_Outline_LineToFunc = Ptr FT_struct_vector -> VoidPtr -> IO FT_int
-
-type FT_Outline_ConicToFunc =   Ptr FT_struct_vector 
-                             -> Ptr FT_struct_vector 
-                             -> VoidPtr 
-                             -> IO FT_int
-
-type FT_Outline_CubicToFunc =   Ptr FT_struct_vector 
-                             -> Ptr FT_struct_vector
-                             -> Ptr FT_struct_vector 
-                             -> VoidPtr 
-                             -> IO FT_int
-                             
-data FT_struct_outlinefuncs = FT_struct_outlinefuncs {
-      _move_to   :: FunPtr FT_Outline_MoveToFunc,
-      _line_to   :: FunPtr FT_Outline_LineToFunc,
-      _conic_to  :: FunPtr FT_Outline_ConicToFunc,
-      _cubic_to  :: FunPtr FT_Outline_CubicToFunc,
-      _shift     :: FT_int,
-      _delta     :: FT_pos
-    }
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Decompose" 
@@ -166,9 +218,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_Bitmap"
                           -> Ptr FT_struct_outline 
                           -> Ptr FT_struct_bitmap
                           -> IO FT_error
-
-
-
+                          
 
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Render" 
    ft_outline_render    :: FT_library_ptr 
@@ -178,22 +228,15 @@ foreign import ccall unsafe "freetype/freetype.h FT_Outline_Render"
 
 
 
-
-type FT_enum_orientation    = CInt
-
-
-
-#{enum FT_enum_orientation ,
-  , ft_ORIENTATION_TRUETYPE     = FT_ORIENTATION_TRUETYPE
-  , ft_ORIENTATION_POSTSCRIPT   = FT_ORIENTATION_POSTSCRIPT
-  , ft_ORIENTATION_FILL_RIGHT   = FT_ORIENTATION_FILL_RIGHT
-  , ft_ORIENTATION_FILL_LEFT    = FT_ORIENTATION_FILL_LEFT
-  , ft_ORIENTATION_NONE         = FT_ORIENTATION_NONE
-  }
-
-
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_Orientation" 
    ft_outline_get_orientation :: Ptr FT_struct_outline 
                               -> IO FT_enum_orientation
 
+
+peekOutline_n_contours :: FT_outline_ptr -> IO CShort
+peekOutline_n_contours ptr = do 
+      i <- #{peek FT_Outline, n_contours} ptr
+      return i
+      
+      
 -- end of file
