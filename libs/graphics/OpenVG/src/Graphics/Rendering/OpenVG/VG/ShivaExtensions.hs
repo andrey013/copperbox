@@ -17,6 +17,9 @@
 
 module Graphics.Rendering.OpenVG.VG.ShivaExtensions (
   -- * ShivaVG extensions
+  
+  withContextSH, 
+  
   createContextSH,
   resizeSurfaceSH, 
   destroyContextSH
@@ -27,6 +30,16 @@ import Graphics.Rendering.OpenVG.VG.CFunDecls (
         vgCreateContextSH, vgResizeSurfaceSH, vgDestroyContextSH ) 
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Size(..) )
+
+-- | Create an OpenVG context, if the creation is successful run the 
+-- action (destroying the context afterwards). If the creation fails
+-- run the failureAction. 
+withContextSH :: Size -> (IO a) -> (IO a) -> IO a
+withContextSH sz action failureAction = do
+    okb <- createContextSH sz
+    if okb then action >>= \ans -> destroyContextSH >> return ans
+           else failureAction
+ 
 
 
 -- | Create an OpenVG context on top of an already created OpenGL context.   

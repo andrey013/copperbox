@@ -18,6 +18,7 @@
 
 module Graphics.Rendering.OpenVG.VG.Paint (
   -- * Creating and destroying paint objects 
+  withPaint,
   createPaint, destroyPaint, 
   
   -- * Setting the current paint 
@@ -79,6 +80,17 @@ import Graphics.Rendering.OpenGL.GL.VertexSpec ( Color4(..) )
 --------------------------------------------------------------------------------
 -- Creating and destroying paint objects 
 
+
+-- | @withPaint@ - create a paint object, run an action on it, destroy the 
+-- paint object.
+withPaint :: (VGPaint -> IO a) -> IO a
+withPaint action = do
+    img   <- createPaint
+    ans   <- action img
+    destroyPaint img
+    return ans
+    
+    
 -- | @createPaint@ corresponds to the OpenVG function @vgCreatePaint@.
 createPaint :: IO VGPaint  
 createPaint = vgCreatePaint

@@ -10,10 +10,9 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- A Haskell binding for the OpenVG vector and raster graphics API 
--- (version 1.0.1).
--- The implementation targets the Shiva-VG implementation which is not 
--- complete. Image Filters and Querying Hardware are not implemented. 
+-- Colour definitions named with the SVG \'named colours\', but
+-- defining OpenGL colours. 
+--
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.Util.Colors (

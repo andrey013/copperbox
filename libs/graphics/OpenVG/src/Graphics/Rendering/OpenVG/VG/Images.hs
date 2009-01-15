@@ -26,6 +26,8 @@ module Graphics.Rendering.OpenVG.VG.Images (
   
   -- * Creating and destroying images
   maxImageWidth, maxImageHeight, maxImagePixels, maxImageBytes,
+  
+  withImage,
   createImage, 
   destroyImage, 
   
@@ -204,6 +206,16 @@ maxImagePixels = makeGettableStateVar $ geti MaxImagePixels
 maxImageBytes :: GettableStateVar VGint
 maxImageBytes = makeGettableStateVar $ geti MaxImageBytes
 
+
+-- | @withImage@ - create an image, run an action on it, destroy the image.
+withImage :: ImageFormat -> Size -> [ImageQuality] -> (VGImage -> IO a) -> IO a
+withImage fmt sz qual action = do
+    img   <- createImage fmt sz qual
+    ans   <- action img
+    destroyImage img
+    return ans
+    
+    
 -- | @createImage@ corresponds to the OpenVG function @vgCreateImage@.             
 createImage :: ImageFormat -> Size -> [ImageQuality] -> IO VGImage 
 createImage SRGBA8888 (Size w h) qs = 

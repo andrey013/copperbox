@@ -22,12 +22,12 @@ module Graphics.Rendering.OpenVG.VG.Paths (
   -- * Datatypes
   PathDatatype(..),
   PathType(..),
-  PathSegment(..),
   PathCommand(..),
   
   
   -- * Creating and destroying paths
   PathCapabilities(..),
+  withPath,
   createPath, clearPath, destroyPath,
 
   -- * Path queries
@@ -41,7 +41,7 @@ module Graphics.Rendering.OpenVG.VG.Paths (
   appendPath,
   
   -- * Appending client-side data to a path.
-  PathCmd(..), PathData(..),
+  StorablePathData, -- don't export the member as the instances are fixed
   appendPathData,
   
   -- * Modifying path data
@@ -74,7 +74,7 @@ module Graphics.Rendering.OpenVG.VG.Paths (
 
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGint, VGfloat, VGubyte, VGPath, marshalBool, unmarshalBool )
+    VGenum, VGint, VGfloat, VGPath, marshalBool, unmarshalBool )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
     vgCreatePath, vgClearPath, vgDestroyPath, 
     vgRemovePathCapabilities, vgGetPathCapabilities, 
@@ -86,7 +86,7 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_PATH_DATATYPE_S_32, vg_PATH_DATATYPE_F,
     vg_PATH_FORMAT_STANDARD,
     
-    vg_CLOSE_PATH,
+    vg_CLOSE_PATH, 
     vg_MOVE_TO_ABS, vg_MOVE_TO_REL,
     vg_LINE_TO_ABS, vg_LINE_TO_REL,
     vg_HLINE_TO_ABS, vg_HLINE_TO_REL,
@@ -154,26 +154,14 @@ data PathType =
    | Relative
    deriving ( Eq, Ord, Show )
 
--- | @PathSegment@ corresponds to the OpenVG enumeration @VGPathSegment@.       
-data PathSegment = 
-     ClosePath
-   | MoveTo
-   | LineTo
-   | HLineTo
-   | VLineTo
-   | QuadTo
-   | CubicTo
-   | SQuadTo
-   | SCubicTo
-   | SCCWArcTo
-   | SCWArcTo
-   | LCCWArcTo
-   | LCWArcTo
-   deriving ( Eq, Ord, Show )
+-- There is no Haskell equivalent to @VGPathSegment@. 
+-- It is subsumed by PathCommand 
 
--- | @PathCommand@ corresponds to the OpenVG enumeration @VGPathCommand@.    
+-- | @PathCommand@ corresponds to the OpenVG enumeration @VGPathCommand@,
+-- but includes ClosePath aka @VG_CLOSE_PATH@.      
 data PathCommand = 
-     MoveToAbs
+     ClosePath
+   | MoveToAbs
    | MoveToRel
    | LineToAbs
    | LineToRel
@@ -222,8 +210,20 @@ data PathCapabilities =
    | CapabilityAll
    deriving ( Eq, Ord, Show )
 
+
+-- | @withPath@ - create a path, run an action on it, destroy the path.
+withPath :: PathDatatype -> VGfloat -> VGfloat
+                 -> VGint -> VGint -> [PathCapabilities]
+                 -> (VGPath -> IO a) -> IO a
+withPath typ scl bi sch cch cs action = do
+    path  <- createPath typ scl bi sch cch cs
+    ans   <- action path
+    destroyPath path
+    return ans
+          
+
 -- | @createPath@ - corresponds to the OpenVG function @vgCreatePath@.
--- Currently in can only create paths in the standard format 
+-- @createPath@ can only create paths in the standard format 
 -- (VG_PATH_FORMAT_STANDARD), extensions are not supported.   
 createPath :: PathDatatype -> VGfloat -> VGfloat
                  -> VGint -> VGint -> [PathCapabilities] -> IO VGPath
@@ -305,14 +305,8 @@ appendPath = vgAppendPath
 --------------------------------------------------------------------------------
 -- Appending client-side data to a path
 
-data PathCmd = 
-      Cmd PathCommand
-    | CmdClosePath             
-    deriving ( Eq, Show )
-
 
 class Storable a => StorablePathData a 
-data PathData = forall a. (StorablePathData a) => PathData { getPathData :: [a] }
 
 instance StorablePathData Int8
 instance StorablePathData Int16
@@ -320,25 +314,22 @@ instance StorablePathData Int32
 instance StorablePathData VGfloat
     
 -- | @appendPathData@ - TODO is this implementation valid?
-appendPathData :: VGPath -> [PathCmd] -> PathData -> IO ()
-appendPathData h cs (PathData ps) = do 
-    cmd_arr <- newArray (map cmdVal cs)
-    d_arr   <- newArray ps
+appendPathData :: StorablePathData a => VGPath -> [PathCommand] -> [a] -> IO ()
+appendPathData h cs ds = do 
+    cmd_arr <- newArray (map (fromIntegral . marshal) cs)
+    d_arr   <- newArray ds
     vgAppendPathData h (fromIntegral $ length cs) cmd_arr d_arr
-  where
-    cmdVal :: PathCmd -> VGubyte
-    cmdVal (Cmd cmd)    = fromIntegral $ marshal cmd
-    cmdVal CmdClosePath = fromIntegral $ vg_CLOSE_PATH
+
     
 --------------------------------------------------------------------------------
 -- Modifying path data
 
 -- | @modifyPathCoords@ corresponds to the OpenVG 
 -- function @vgModifyPathCoords@. 
-modifyPathCoords :: VGPath -> VGint -> PathData -> IO ()
-modifyPathCoords h start (PathData ps) = do
-    d_arr   <- newArray ps
-    vgModifyPathCoords h start (fromIntegral $ length ps) d_arr
+modifyPathCoords :: StorablePathData a => VGPath -> VGint -> [a] -> IO ()
+modifyPathCoords h start ds = do
+    d_arr   <- newArray ds
+    vgModifyPathCoords h start (fromIntegral $ length ds) d_arr
     
 --------------------------------------------------------------------------------
 -- Transforming a path
@@ -479,8 +470,11 @@ unmarshalPathDatatype x
 
 instance Unmarshal PathDatatype where unmarshal = unmarshalPathDatatype
 
+
+
 marshalPathCommand :: PathCommand -> VGenum
 marshalPathCommand x = case x of
+    ClosePath -> vg_CLOSE_PATH
     MoveToAbs -> vg_MOVE_TO_ABS
     MoveToRel -> vg_MOVE_TO_REL
     LineToAbs -> vg_LINE_TO_ABS
