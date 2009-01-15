@@ -380,5 +380,5 @@ vg_MAXINT = #const VG_MAXINT
   , vg_EXTENSIONS       = VG_EXTENSIONS
   }
 
-
+-- end of file
 

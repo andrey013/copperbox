@@ -1,43 +1,45 @@
-name:		        OpenVG
-version:	        0.1
-license:	        BSD3
-license-file:	    LICENSE
-copyright:	        Stephen Tetley <stephen.tetley@gmail.com>
-maintainer:	        Stephen Tetley <stephen.tetley@gmail.com>
-homepage:           http://code.google.com/p/copperbox/
-category:	        Graphics
-synopsis:	        OpenVG (shivag-0.2.0) binding 
-description:	    
-  A Haskell binding for the OpenVG vector graphics API version 1.0.1 
-  (specifically the shivavg-0.2.0 implementation). 
-build-type:         Configure
+name:             OpenVG
+version:          0.1
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Graphics
+synopsis:         OpenVG (shivag-0.2.0) binding
+description:
+  A Haskell binding for the OpenVG vector graphics API version 1.0.1
+  (specifically the shivavg-0.2.0 implementation).
+
+build-type:         Simple
 stability:          alpha
 cabal-version:      >= 1.2
 
 library
-    hs-source-dirs:     src
-    build-depends:	    base, OpenGL >= 2.2, GLUT >= 2.1.1.2
-    extra-libraries:    opengl32 glu32 glut32 openvg32
-    exposed-modules:    Graphics.Rendering.OpenVG,
-                        Graphics.Rendering.OpenVG.VG,
-                        Graphics.Rendering.OpenVG.VGU,
-                        Graphics.Rendering.OpenVG.VG.BasicTypes,  
-                        Graphics.Rendering.OpenVG.VG.Blending,
-                        Graphics.Rendering.OpenVG.VG.DrawingContext,
-                        Graphics.Rendering.OpenVG.VG.Errors,
-                        Graphics.Rendering.OpenVG.VG.Extending,
-                        Graphics.Rendering.OpenVG.VG.Images,
-                        Graphics.Rendering.OpenVG.VG.Paint,
-                        Graphics.Rendering.OpenVG.VG.Parameters,
-                        Graphics.Rendering.OpenVG.VG.Paths,
-                        Graphics.Rendering.OpenVG.VG.RenderingQuality,
-                        Graphics.Rendering.OpenVG.VG.Scissoring,
-                        Graphics.Rendering.OpenVG.VG.ShivaExtensions,
-                        Graphics.Rendering.OpenVG.VGU.VGU
-    other-modules:
-                        Graphics.Rendering.OpenVG.VG.CFunDecls,
-                        Graphics.Rendering.OpenVG.VG.Constants,
-                        Graphics.Rendering.OpenVG.VGU.VGU.CInternals      
-    extensions:	        ForeignFunctionInterface,
-                        CPP                        
-    ghc-options:        -Wall
+  hs-source-dirs:     src
+  build-depends:      base, OpenGL >= 2.2, GLUT >= 2.1.1.2
+  extra-libraries:    opengl32, glu32, glut32, openvg32
+  include-dirs:  C:\cygwin\usr\include\w32api
+  
+  exposed-modules:
+    Graphics.Rendering.OpenVG,
+    Graphics.Rendering.OpenVG.VG,
+    Graphics.Rendering.OpenVG.VGU,
+    Graphics.Rendering.OpenVG.VG.BasicTypes,
+    Graphics.Rendering.OpenVG.VG.Blending,
+    Graphics.Rendering.OpenVG.VG.DrawingContext,
+    Graphics.Rendering.OpenVG.VG.Extending,
+    Graphics.Rendering.OpenVG.VG.Images,
+    Graphics.Rendering.OpenVG.VG.Paint,
+    Graphics.Rendering.OpenVG.VG.Parameters,
+    Graphics.Rendering.OpenVG.VG.Paths,
+    Graphics.Rendering.OpenVG.VG.RenderingQuality,
+    Graphics.Rendering.OpenVG.VG.Scissoring,
+    Graphics.Rendering.OpenVG.VG.ShivaExtensions,
+    Graphics.Rendering.OpenVG.VGU.VGU,
+    Graphics.Rendering.OpenVG.VGU.Errors
+
+  extensions:
+    ForeignFunctionInterface, TypeSynonymInstances, CPP
+
+  ghc-options:  -Wall 

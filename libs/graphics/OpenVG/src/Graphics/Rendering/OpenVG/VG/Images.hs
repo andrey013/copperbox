@@ -440,4 +440,3 @@ marshalImageMode x = case x of
 
 instance Marshal ImageMode where marshal = marshalImageMode  
 
-    

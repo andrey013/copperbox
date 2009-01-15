@@ -579,4 +579,4 @@ unmarshalPaintMode x
 
 instance Marshal PaintMode where marshal = marshalPaintMode
 instance Unmarshal PaintMode where unmarshal = unmarshalPaintMode
-  
+

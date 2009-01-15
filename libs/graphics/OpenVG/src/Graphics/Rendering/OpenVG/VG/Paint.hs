@@ -247,5 +247,5 @@ marshalTilingMode x = case x of
     TReflect -> vg_TILE_REFLECT
    
 instance Marshal TilingMode where marshal = marshalTilingMode
-    
+
      
