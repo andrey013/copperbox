@@ -90,14 +90,14 @@ import Foreign.Storable ( peek )
 isNullFT_Library :: FT_library -> IO Bool
 isNullFT_Library (FT_library lib) = nullForeignPtr lib
 
-withFreeType :: (FT_library -> IO a) -> IO (Maybe a)
-withFreeType action = 
+withFreeType :: a -> (FT_library -> IO a) -> IO a
+withFreeType failureValue action = 
   bracket initFreeType doneFreeType 
           (\ftlib -> do { check_null <- isNullFT_Library ftlib 
                         ; if check_null
                              then do putStrLn "withFreeType: failed"
-                                     return Nothing
-                             else action ftlib >>= return . Just })   
+                                     return failureValue
+                             else action ftlib })   
   
 -- | Initialize a handle to the FreeType library, @FT_Init_FreeType@ 
 -- allocates memory for the library on the C side
@@ -131,14 +131,14 @@ isNullFT_Face :: FT_face -> IO Bool
 isNullFT_Face (FT_face lib) = nullForeignPtr lib
 
 
-withNewFace :: FT_library -> FilePath -> Int -> (FT_face -> IO a) -> IO (Maybe a)
-withNewFace ft_lib path idx action = 
+withNewFace :: FT_library -> FilePath -> Int -> a -> (FT_face -> IO a) -> IO a
+withNewFace ft_lib path idx failureValue action = 
   bracket (newFace ft_lib path idx) doneFace 
           (\face -> do { check_null <- isNullFT_Face face 
                        ; if check_null
                             then do putStrLn "withFreeType: withNewFace"
-                                    return Nothing
-                            else action face >>= return . Just }) 
+                                    return failureValue
+                            else action face }) 
                              
                                
                              

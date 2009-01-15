@@ -26,7 +26,7 @@ import Graphics.Rendering.OpenGL.GL.StateVar
 
 main :: IO ()
 main = do
-    withFreeType $ \ft -> do
+    withFreeType () $ \ft -> do
         (mj,mn,ph) <- get $ libraryVersion ft
         putStrLn $ show mj ++ "." ++ show mn ++ "." ++ show ph               
     putStrLn "Done."

@@ -29,8 +29,8 @@ import Control.Monad
 
 main :: IO ()
 main = do
-  withFreeType $ \ft -> 
-    withNewFace ft "data/Tempest.ttf" 0 $ \fc -> do
+  withFreeType () $ \ft -> 
+    withNewFace ft "data/Tempest.ttf" 0 () $ \fc -> do
         familyName fc       >>= putStrLn    
         styleName fc        >>= putStrLn 
         postscriptName fc   >>= putStrLn
