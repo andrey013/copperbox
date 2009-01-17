@@ -21,14 +21,14 @@
 
 module Graphics.Rendering.FreeType.Internals.CGlyphManagement where
 
-
-
-
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H 
 
+import Graphics.Rendering.FreeType.Internals.CBaseTypes
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
+
+
 
 -- import Foreign.C.Types
 import Foreign.Ptr ( Ptr ) 

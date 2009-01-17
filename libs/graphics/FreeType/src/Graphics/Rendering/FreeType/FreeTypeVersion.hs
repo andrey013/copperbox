@@ -22,7 +22,7 @@ module Graphics.Rendering.FreeType.FreeTypeVersion (
   
 ) where  
   
-import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
+import Graphics.Rendering.FreeType.Internals.CBaseTypes ( FT_library(..) )
 import Graphics.Rendering.FreeType.Internals.CFreeTypeVersion
 
 import Graphics.Rendering.OpenGL.GL.StateVar

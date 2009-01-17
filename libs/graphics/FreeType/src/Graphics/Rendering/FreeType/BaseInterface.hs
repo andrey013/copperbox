@@ -66,10 +66,11 @@ module Graphics.Rendering.FreeType.BaseInterface (
 ) where
 
 import Graphics.Rendering.FreeType.FixedPrecision
-import Graphics.Rendering.FreeType.Internals.CBaseInterface
+import Graphics.Rendering.FreeType.Internals.CBaseFuns
+import Graphics.Rendering.FreeType.Internals.CBaseTypes
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Internals.Wrappers 
-import Graphics.Rendering.FreeType.Utils ( nullForeignPtr )
+import Graphics.Rendering.FreeType.Utils ( Marshal(..), nullForeignPtr )
 
 import Control.Applicative ( (<$>) )
 import Control.Exception ( bracket )

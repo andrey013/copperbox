@@ -24,7 +24,7 @@ module Graphics.Rendering.FreeType.Internals.COutline where
 #include FT_IMAGE_H
 #include FT_OUTLINE_H
 
-
+import Graphics.Rendering.FreeType.Internals.CBaseTypes
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Internals.CImage
 

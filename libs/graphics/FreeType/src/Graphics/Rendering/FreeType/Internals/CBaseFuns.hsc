@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.FreeType.Internals.CBaseInterface
+-- Module      :  Graphics.Rendering.FreeType.Internals.CBaseFuns
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
@@ -13,17 +13,16 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Internal module declaring all some datatypes and foreign declarations 
--- defined from FT_FREETYPE_H.
---
+-- FFI wrappers to FreeType'\s /BaseInterface/ functions. 
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.FreeType.Internals.CBaseInterface where
+module Graphics.Rendering.FreeType.Internals.CBaseFuns where
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+import Graphics.Rendering.FreeType.Internals.CBaseTypes
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 
 import Foreign.C.String ( CString, peekCString )

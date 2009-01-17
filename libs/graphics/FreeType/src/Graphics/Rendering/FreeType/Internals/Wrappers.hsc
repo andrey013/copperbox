@@ -19,7 +19,7 @@
 
 module Graphics.Rendering.FreeType.Internals.Wrappers where
 
-
+import Graphics.Rendering.FreeType.Internals.CBaseTypes
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Internals.COutline
 

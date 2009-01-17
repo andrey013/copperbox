@@ -105,6 +105,7 @@ main = do
     mainLoop
     
     -- end
+    testDestoryPaths prims
     destroyContextSH
     destroyWindow win
     

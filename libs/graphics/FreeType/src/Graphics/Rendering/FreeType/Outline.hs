@@ -23,7 +23,8 @@ module Graphics.Rendering.FreeType.Outline (
   
 ) where
 
-
+import Graphics.Rendering.FreeType.Internals.CBaseTypes ( 
+      FT_library(..), FT_library_ptr )
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Internals.COutline
 import Graphics.Rendering.FreeType.Internals.Wrappers 

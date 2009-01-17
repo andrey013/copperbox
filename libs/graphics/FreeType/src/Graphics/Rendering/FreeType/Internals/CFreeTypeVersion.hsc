@@ -22,7 +22,10 @@ module Graphics.Rendering.FreeType.Internals.CFreeTypeVersion where
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+import Graphics.Rendering.FreeType.Internals.CBaseTypes
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
+
+
 
 import Foreign.Ptr ( Ptr )
 

@@ -18,6 +18,7 @@
 
 module TestUtils (
   testCreatePath,
+  testDestoryPaths,
   
   testDrawString,
   testInit
@@ -28,10 +29,12 @@ import Graphics.Rendering.OpenVG hiding (
 import qualified Graphics.Rendering.OpenVG as VG
 import Graphics.UI.GLUT 
 
-
-
 testCreatePath :: IO VGPath
 testCreatePath = createPath VG.Float 1.0 0.0 0 0 [CapabilityAll]
+
+testDestoryPaths :: [VGPath] -> IO ()
+testDestoryPaths = mapM_ destroyPath
+
 
 testDrawString :: GLfloat -> GLfloat -> String -> IO ()
 testDrawString x y test_string = do
