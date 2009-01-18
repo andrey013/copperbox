@@ -25,8 +25,7 @@ module Graphics.Rendering.FreeType.Internals.CBaseFuns where
 import Graphics.Rendering.FreeType.Internals.CBaseTypes
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 
-import Foreign.C.String ( CString, peekCString )
-import Foreign.Marshal.Array ( peekArray )
+import Foreign.C.String ( CString )
 import Foreign.Ptr ( Ptr ) 
 import Foreign.Storable ( peekByteOff )
 
@@ -234,29 +233,8 @@ foreign import ccall unsafe "freetype/freetype.h FT_Get_SubGlyph_Info"
 
     
 
+  
 
---------------------------------------------------------------------------------
-
--- Peek into a FT_face_ptr pointer\'s reference. 
-
-
-
-
--- Bitmap is one way traffic from the C-side to the Haskell side
--- hence we don't have a full storable instance.
-
-marshalBitmap :: FT_struct_bitmap -> IO Bitmap    
-marshalBitmap bmp = do
-    buf <- peekArray (r * w) $ __buffer bmp
-    return $ Bitmap r w (fromIntegral $ __pitch bmp) buf  
-  where
-    r = fromIntegral $ __rows bmp
-    w = fromIntegral $ __width bmp
     
-peekFace_bitmap :: FT_face_ptr -> IO Bitmap
-peekFace_bitmap ptr = do 
-      gptr <- #{peek FT_FaceRec, glyph} ptr
-      bptr <- #{peek FT_GlyphSlotRec, bitmap} gptr
-      marshalBitmap bptr
-            
+                
 -- end of file

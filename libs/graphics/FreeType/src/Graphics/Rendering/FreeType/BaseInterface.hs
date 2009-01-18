@@ -29,11 +29,16 @@ module Graphics.Rendering.FreeType.BaseInterface (
   numGlyphs,
   familyName, 
   styleName,
+
+  withGlyphSlot,
   
+  
+  -- * Access a bitmap
   Bitmap(..),
-  glyphSlotBitmap,
-  gsBitmapLeft,
-  gsBitmapTop, 
+  withBitmap,
+  
+  bitmapLeft,
+  bitmapTop,
   
   -- * ...
   selectSize,
@@ -83,9 +88,8 @@ import Foreign.Storable ( peek )
 
 
 -------------------------------------------------------------------------------- 
+-- Initialize FreeType
 
-isNullFT_Library :: FT_library -> IO Bool
-isNullFT_Library (FT_library lib) = nullForeignPtr lib
 
 withFreeType :: a -> (FT_library -> IO a) -> IO a
 withFreeType failureValue action = 
@@ -95,6 +99,11 @@ withFreeType failureValue action =
                              then do putStrLn "withFreeType: failed"
                                      return failureValue
                              else action ftlib })   
+
+
+isNullFT_Library :: FT_library -> IO Bool
+isNullFT_Library (FT_library lib) = nullForeignPtr lib
+
   
 -- | Initialize a handle to the FreeType library, @FT_Init_FreeType@ 
 -- allocates memory for the library on the C side
@@ -124,9 +133,6 @@ freeLibrary_ p = ft_done_freetype p >> return ()
 
 --------------------------------------------------------------------------------
 -- New face
-isNullFT_Face :: FT_face -> IO Bool
-isNullFT_Face (FT_face lib) = nullForeignPtr lib
-
 
 withNewFace :: FT_library -> FilePath -> Int -> a -> (FT_face -> IO a) -> IO a
 withNewFace ft_lib path idx failureValue action = 
@@ -136,9 +142,12 @@ withNewFace ft_lib path idx failureValue action =
                             then do putStrLn "withFreeType: withNewFace"
                                     return failureValue
                             else action face }) 
-                             
-                               
-                             
+                            
+
+isNullFT_Face :: FT_face -> IO Bool
+isNullFT_Face (FT_face lib) = nullForeignPtr lib
+
+
 newFace :: FT_library -> FilePath -> Int -> IO FT_face
 newFace (FT_library lib) path_s idx = 
     withForeignPtr lib $ \h ->
@@ -164,10 +173,6 @@ doneFace (FT_face h) = finalizeForeignPtr h
 freeFace_ :: FT_face_ptr -> IO ()
 freeFace_ p = ft_done_face p >> return ()
 
-
-
-
-
 -- | @withForeignFace@ - internal function, shorthand for accessing the 
 -- face pointer. 
 withForeignFace :: FT_face -> (FT_face_ptr -> IO b) -> IO b 
@@ -175,6 +180,7 @@ withForeignFace (FT_face fc) f = withForeignPtr fc $ \ h -> f h
 
 
 --------------------------------------------------------------------------------
+-- Field accessors for a Face.
 
 numFaces :: FT_face -> IO Int
 numFaces fc = withForeignFace fc fn where 
@@ -192,16 +198,24 @@ familyName fc = withForeignFace fc peekFace_family_name
 styleName :: FT_face -> IO String
 styleName fc = withForeignFace fc peekFace_style_name
 
-glyphSlotBitmap :: FT_face -> IO Bitmap
-glyphSlotBitmap fc = withForeignFace fc peekFace_bitmap
 
-gsBitmapLeft :: FT_face -> IO Int
-gsBitmapLeft fc = 
-    fromIntegral <$> withForeignFace fc peekFace_glyph_slot_bitmap_left
 
-gsBitmapTop :: FT_face -> IO Int
-gsBitmapTop fc = 
-    fromIntegral <$> withForeignFace fc peekFace_glyph_slot_bitmap_top
+withGlyphSlot :: FT_face -> (FT_glyphslot -> IO a) -> IO a
+withGlyphSlot fc action = glyphSlot fc >>= action
+  where
+    glyphSlot :: FT_face -> IO FT_glyphslot
+    glyphSlot fc = withForeignFace fc peekFace_glyph_slot
+
+-- Shouldn't really be exposing a marshalled Bitmap
+withBitmap :: FT_glyphslot -> (Bitmap -> IO a) -> IO a
+withBitmap (FT_glyphslot ptr) action = peekGlyphSlot_bitmap ptr >>= action
+
+
+bitmapLeft :: FT_glyphslot -> IO FT_int
+bitmapLeft (FT_glyphslot ptr) = peekGlyphSlot_bitmap_left ptr
+
+bitmapTop :: FT_glyphslot -> IO FT_int
+bitmapTop (FT_glyphslot ptr) = peekGlyphSlot_bitmap_top ptr
 
 
 --------------------------------------------------------------------------------
@@ -241,7 +255,7 @@ setTransform fc matrix delta = withForeignFace fc $ \h ->
 
 renderCurrentGlyph :: FT_face -> RenderMode -> IO FT_error 
 renderCurrentGlyph fc mode = withForeignFace fc $ \h -> do
-    gly <- peekFace_glyph_slot_ptr h 
+    (FT_glyphslot gly) <- peekFace_glyph_slot h 
     ft_render_glyph gly (marshal mode)
 
 

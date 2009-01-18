@@ -26,11 +26,15 @@ module Graphics.Rendering.FreeType.Internals.CBaseTypes where
 
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Utils ( Marshal(..), Unmarshal (..) )
+
+import Control.Monad ( (>=>) )
 import Data.Int
 import Data.Word
+
 import Foreign.C.String ( CString, peekCString )
 import Foreign.C.Types ( CInt, CShort, CLong, CChar, CUChar )
 import Foreign.ForeignPtr ( ForeignPtr, withForeignPtr )
+import Foreign.Marshal.Array ( peekArray )
 import Foreign.Ptr ( Ptr, FunPtr )
 import Foreign.Storable 
 
@@ -50,8 +54,9 @@ newtype FT_library        = FT_library (ForeignPtr FT_LIBRARY_RCRD_)
 
 --------------------------------------------------------------------------------
 
--- FT_FaceRec is not actually opaque, but the struct contains so much 
--- private data that we don't give full access to it.
+-- FT_FaceRec (the C struct corresponding to FT_FACE_RCRD_) is not 
+-- actually opaque, but the struct contains private data that we 
+-- don't give full access to it.
 
 
 data    FT_FACE_RCRD_ 
@@ -67,10 +72,15 @@ type FT_size_ptr              = Ptr FT_struct_size
 --------------------------------------------------------------------------------
 -- FT_GlyphSlot
 
-data FT_GLYPH_SLOT_RCRD_
-type FT_glyphslot_ptr     = Ptr FT_GLYPH_SLOT_RCRD_
+-- FT_GlyphSlotRec (the C struct corresponding to FT_GLYPH_SLOT_RCRD_) 
+-- is not actually opaque, but the struct contains private data that we 
+-- don't give full access to it.
 
-newtype FT_glyphslot      = FT_glyphslot (ForeignPtr FT_GLYPH_SLOT_RCRD_)
+data FT_GLYPHSLOT_RCRD_
+type FT_glyphslot_ptr     = Ptr FT_GLYPHSLOT_RCRD_
+
+-- Not a foreign Prt...
+newtype FT_glyphslot      = FT_glyphslot FT_glyphslot_ptr
 
   
 --------------------------------------------------------------------------------
@@ -365,154 +375,15 @@ peekFace_underline_thickness  :: FT_face_ptr -> IO FT_short
 peekFace_underline_thickness  = #{peek FT_FaceRec, underline_thickness}
 
 
-peekFace_glyph_slot_ptr   :: FT_face_ptr -> IO FT_glyphslot_ptr
-peekFace_glyph_slot_ptr   = #{peek FT_FaceRec, glyph}
+peekFace_glyph_slot   :: FT_face_ptr -> IO FT_glyphslot
+peekFace_glyph_slot   = #{peek FT_FaceRec, glyph} >=> return . FT_glyphslot
 
 peekFace_size_ptr         :: FT_face_ptr -> IO FT_size_ptr
 peekFace_size_ptr         = #{peek FT_FaceRec, size}
 
 
 
-peekFace_glyph_slot_bitmap_left :: FT_face_ptr -> IO FT_int
-peekFace_glyph_slot_bitmap_left ptr = do 
-      gptr <- #{peek FT_FaceRec, glyph} ptr
-      i    <- #{peek FT_GlyphSlotRec, bitmap_left} gptr
-      return i
       
-peekFace_glyph_slot_bitmap_top :: FT_face_ptr -> IO FT_int
-peekFace_glyph_slot_bitmap_top ptr = do 
-      gptr <- #{peek FT_FaceRec, glyph} ptr
-      i    <- #{peek FT_GlyphSlotRec, bitmap_top} gptr
-      return i
-      
-      
-      
-{-
-data Face = Face { 
-      _base_ptr             :: !FT_face,
-      _num_faces            :: FT_long,
-      _face_index           :: FT_long,
-      
-      -- FLAGS ...
-      
-      _num_glyphs           :: FT_long,
-      
-      _family_name          :: String,
-      _style_name           :: String,
-      
-      -- FIXED SIZES
-      -- CHARMAPS
-      
-      _face_bbox            :: BBox
-      
-      _units_per_em         :: FT_ushort,
-      _ascender             :: FT_short,
-      _descender            :: FT_short,
-      _height               :: FT_short,     
-
-      _max_advance_width    :: FT_short, 
-      _max_advance_height   :: FT_short,
-
-      _underline_position   :: FT_short,
-      _underline_thickness  :: FT_short,
-      
-      
-    }
--- No!
-makeFace :: FT_face -> IO Face      
-makeFace fc_ptr@(FT_face fptr) = withForeignPtr fptr $ \ptr -> do
-    nf    <- #{peek FT_FaceRec, num_faces}    ptr
-    idx   <- #{peek FT_FaceRec, face_index}   ptr
-    ng    <- #{peek FT_FaceRec, num_glyphs}   ptr
-    fname <- #{peek FT_FaceRec, family_name}  ptr >>= peekCString
-    sname <- #{peek FT_FaceRec, style_name}   ptr >>= peekCString
-    bbox  <- #{peek FT_FaceRec, bbox}         ptr
-    upem  <- #{peek FT_FaceRec, units_per_EM} ptr
-    asc   <- #{peek FT_FaceRec, ascender}     ptr
-    des   <- #{peek FT_FaceRec, descender}    ptr
-    h     <- #{peek FT_FaceRec, height}       ptr
-    maw   <- #{peek FT_FaceRec, height}       ptr
-    mah   <- #{peek FT_FaceRec, height}       ptr
-    return $ Face { _base_ptr       = fc_ptr
-                  , _num_faces      = nfnf 
-                  , _face_index     = idx 
-                  , _num_glyphs     = ng 
-                  , _family_name    = fname 
-                  , _style_name     = sname 
-                  , _bbox           = bbox 
-                  , _units_per_em   = upem
-                  , _ascender       = asc
-                  , _descender      = des
-                  , _height         = h
-                  }
-
-
-data FT_struct_face = FT_struct_face {
-      _num_faces            :: FT_long,
-      _face_index           :: FT_long,
-
-      _face_flags           :: FT_long,
-      _style_flags          :: FT_long,
-
-      _num_glyphs           :: FT_long,
-
-      _family_name          :: CString,
-      _style_name           :: CString,
-
-      _num_fixed_sizes      :: FT_int,
-      _available_sizes      :: Ptr FT_struct_bitmapsize,
-
-      _num_charmaps         :: FT_int,
-      _charmaps             :: Ptr FT_struct_charmap,
-
-      _generic              :: FT_struct_generic,
-      
-      _bbox                 :: BBox,
-
-      _units_per_em         :: FT_ushort,
-      _ascender             :: FT_short,
-      _descender            :: FT_short,
-      _height               :: FT_short,     
-
-      _max_advance_width    :: FT_short, 
-      _max_advance_height   :: FT_short,
-
-      _underline_position   :: FT_short,
-      _underline_thickness  :: FT_short,
-
-      _glyph                :: FT_glyphslot_ptr,
-      _size                 :: FT_size_ptr,
-      _charmap              :: FT_charmap_ptr,
-
-      -- Private data
-      _driver               :: FT_driver_ptr,
-      _memory               :: FT_memory_ptr,
-      _stream               :: FT_stream_ptr,
-
-      _sizes_list           :: FT_struct_list,
-
-      _autohint             :: FT_struct_generic,
-      _extensions           :: VoidPtr,
-
-      _internal             :: FT_faceinternal_ptr
-    }
-
-
--- FT_Memory defined in FT_SYSTEM_H 
-data FT_memory
-type FT_memory_ptr      = Ptr FT_memory
-
-
--- FT_ListRec defined in FT_TYPES_H
-data FT_struct_list = FT_struct_list { 
-      _ls_head      :: FT_listnode_ptr,
-      _ls_tail      :: FT_listnode_ptr
-    }
-    
-data FT_listnode
-type FT_listnode_ptr    = Ptr FT_listnode
-
--}
 
 --------------------------------------------------------------------------------
 -- FT_FACE_FLAG_XXX
@@ -650,40 +521,55 @@ type FT_slotinternal_ptr      = Ptr FT_slotinternal
 --------------------------------------------------------------------------------
 -- FT_GlyphSlotRec
 
--- Currently no Haskell equivalent.
+-- Leave the FT_GlyphSlotRec on in C memory, instead provide field accessors. 
 
-data FT_struct_glyphslot = FT_struct_glyphslot {
-      _gs_library         :: FT_library_ptr,
-      _gs_face            :: FT_face_ptr,
-      _gs_next            :: FT_glyphslot_ptr,
-      _gs_reserved        :: FT_uint,
-      _gs_generic         :: FT_struct_generic,
-      _gs_metrics         :: FT_struct_glyphmetrics,
+-- The C struct fields @library@ and @face@ are parent pointers,
+-- we don't give access to them.
+
+peekGlyphSlot_metrics         :: FT_glyphslot_ptr -> IO FT_struct_glyphmetrics
+peekGlyphSlot_metrics         = #{peek FT_GlyphSlotRec, metrics}
+
+
+peekGlyphSlot_linearHoriAdvance   :: FT_glyphslot_ptr -> IO FT_fixed
+peekGlyphSlot_linearHoriAdvance   = #{peek FT_GlyphSlotRec, linearHoriAdvance}
+
+peekGlyphSlot_linearVertAdvance   :: FT_glyphslot_ptr -> IO FT_fixed
+peekGlyphSlot_linearVertAdvance   = #{peek FT_GlyphSlotRec, linearVertAdvance}
+
+peekGlyphSlot_advance             :: FT_glyphslot_ptr -> IO FT_fixed
+peekGlyphSlot_advance             = #{peek FT_GlyphSlotRec, advance}
+
+
+
+peekGlyphSlot_format              :: FT_glyphslot_ptr -> IO GlyphFormat
+peekGlyphSlot_format ptr          = 
+    #{peek FT_GlyphSlotRec, format} ptr >>= return . unmarshal
     
-      _linear_h_advance   :: FT_fixed,
-      _linear_v_advance   :: FT_fixed,
-      _gs_advance         :: FT_struct_vector,
-      
-      _gs_format          :: GlyphFormat,
 
-      _gs_bitmap          :: FT_struct_bitmap,
-      _bitmap_left        :: FT_int,
-      _bitmap_top         :: FT_int,
+peekGlyphSlot_bitmap :: FT_glyphslot_ptr -> IO Bitmap
+peekGlyphSlot_bitmap ptr = 
+    #{peek FT_GlyphSlotRec, bitmap} ptr >>= marshalBitmap
+
+
+-- TODO - it would be better not to marshal the bitmap... 
+
+marshalBitmap :: FT_struct_bitmap -> IO Bitmap    
+marshalBitmap bmp = do
+    buf <- peekArray (r * w) $ __buffer bmp
+    return $ Bitmap r w (fromIntegral $ __pitch bmp) buf  
+  where
+    r = fromIntegral $ __rows bmp
+    w = fromIntegral $ __width bmp
+    
+peekGlyphSlot_bitmap_left       :: FT_glyphslot_ptr -> IO FT_int
+peekGlyphSlot_bitmap_left       = #{peek FT_GlyphSlotRec, bitmap_left}
+
+peekGlyphSlot_bitmap_top        :: FT_glyphslot_ptr -> IO FT_int
+peekGlyphSlot_bitmap_top        = #{peek FT_GlyphSlotRec, bitmap_top}
       
-      _gs_outline         :: FT_struct_outline,
-      _gs_num_subglyphs   :: FT_uint,
-      _gs_subglyphs       :: FT_subglyph_ptr,
-      
-      _control_data       :: VoidPtr,
-      _control_len        :: CLong,
-      
-      _lsb_delta          :: FT_pos,
-      _rsb_delta          :: FT_pos,
-      
-      _gs_other           :: VoidPtr,
-      
-      _gs_internal        :: FT_slotinternal_ptr
-    }   
+peekGlyphSlot_num_subglyphs     ::  FT_glyphslot_ptr -> IO FT_uint
+peekGlyphSlot_num_subglyphs     = #{peek FT_GlyphSlotRec, num_subglyphs}
+
 
 
 --------------------------------------------------------------------------------
@@ -771,8 +657,8 @@ data FT_struct_openargs = FT_struct_openargs {
       _memory_base    :: Ptr FT_byte,
       _memory_size    :: FT_long,
       _pathname       :: CString,
-      _oa_stream         :: FT_stream_ptr,
-      _oa_driver         :: FT_module_ptr,
+      _oa_stream      :: FT_stream_ptr,
+      _oa_driver      :: FT_module_ptr,
       _num_params     :: FT_int,
       _params         :: Ptr FT_struct_parameter
     }

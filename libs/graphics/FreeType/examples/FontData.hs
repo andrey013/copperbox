@@ -51,10 +51,11 @@ main = do
         if ec==0 
           then do  
             putStrLn $ show ec
-            glyphSlotBitmap fc >>= printBitmap
-            
-            gsBitmapLeft fc >>= \x  -> putStrLn $ "glyphslot bitmap left " ++ show x 
-            gsBitmapTop  fc >>= \x' -> putStrLn $ "glyphslot bitmap top "  ++ show x' 
+            withGlyphSlot fc $ \gs -> do 
+                withBitmap gs printBitmap
+                bitmapLeft gs >>= \x  -> putStrLn $ "glyphslot bitmap left " ++ show x 
+                bitmapTop  gs >>= \x' -> putStrLn $ "glyphslot bitmap top "  ++ show x'
+                
           else
             putStrLn $ "renderCurrentGlyph failed " ++ show ec
         
@@ -64,9 +65,7 @@ main = do
 
   
         putStrLn "Done."
-  return () -- needs this at the end
-            -- this problem is caused by not seeding the withFreeType etc 
-            -- functions with a default
+
 
                 
 printBitmap :: Bitmap -> IO ()
