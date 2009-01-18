@@ -239,49 +239,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Get_SubGlyph_Info"
 
 -- Peek into a FT_face_ptr pointer\'s reference. 
 
-peekFace_num_faces :: FT_face_ptr -> IO FT_long
-peekFace_num_faces ptr = do 
-      i <- #{peek FT_FaceRec, num_faces} ptr
-      return i
-              
-peekFace_face_index :: FT_face_ptr -> IO FT_long
-peekFace_face_index ptr = do 
-      i <- #{peek FT_FaceRec, face_index} ptr
-      return i
-      
-peekFace_num_glyphs :: FT_face_ptr -> IO FT_long
-peekFace_num_glyphs ptr = do 
-      i <- #{peek FT_FaceRec, num_glyphs} ptr
-      return i
-      
-peekFace_family_name :: FT_face_ptr -> IO String
-peekFace_family_name ptr = do 
-      cstr <- #{peek FT_FaceRec, family_name} ptr
-      str <- peekCString cstr
-      return str
 
-peekFace_style_name :: FT_face_ptr -> IO String
-peekFace_style_name ptr = do 
-      cstr <- #{peek FT_FaceRec, style_name} ptr
-      str <- peekCString cstr
-      return str
-
-peekFace_glyph_slot :: FT_face_ptr -> IO FT_glyphslot_ptr
-peekFace_glyph_slot ptr = do
-      g <- #{peek FT_FaceRec, glyph} ptr
-      return g
-
-peekFace_glyph_slot_bitmap_left :: FT_face_ptr -> IO FT_int
-peekFace_glyph_slot_bitmap_left ptr = do 
-      gptr <- #{peek FT_FaceRec, glyph} ptr
-      i    <- #{peek FT_GlyphSlotRec, bitmap_left} gptr
-      return i
-      
-peekFace_glyph_slot_bitmap_top :: FT_face_ptr -> IO FT_int
-peekFace_glyph_slot_bitmap_top ptr = do 
-      gptr <- #{peek FT_FaceRec, glyph} ptr
-      i    <- #{peek FT_GlyphSlotRec, bitmap_top} gptr
-      return i
 
 
 -- Bitmap is one way traffic from the C-side to the Haskell side

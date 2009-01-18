@@ -241,7 +241,7 @@ setTransform fc matrix delta = withForeignFace fc $ \h ->
 
 renderCurrentGlyph :: FT_face -> RenderMode -> IO FT_error 
 renderCurrentGlyph fc mode = withForeignFace fc $ \h -> do
-    gly <- peekFace_glyph_slot h 
+    gly <- peekFace_glyph_slot_ptr h 
     ft_render_glyph gly (marshal mode)
 
 

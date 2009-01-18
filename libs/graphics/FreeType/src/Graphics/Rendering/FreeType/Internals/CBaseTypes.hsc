@@ -28,9 +28,9 @@ import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Utils ( Marshal(..), Unmarshal (..) )
 import Data.Int
 import Data.Word
-import Foreign.C.String ( CString )
+import Foreign.C.String ( CString, peekCString )
 import Foreign.C.Types ( CInt, CShort, CLong, CChar, CUChar )
-import Foreign.ForeignPtr ( ForeignPtr )
+import Foreign.ForeignPtr ( ForeignPtr, withForeignPtr )
 import Foreign.Ptr ( Ptr, FunPtr )
 import Foreign.Storable 
 
@@ -50,10 +50,9 @@ newtype FT_library        = FT_library (ForeignPtr FT_LIBRARY_RCRD_)
 
 --------------------------------------------------------------------------------
 
--- FT_Face \\ FT_FACE_REC_ is not actually opaque, we allow access to 
--- certain fields (see 'peekFace_num_faces' and others in CBaseInterface.hsc) 
--- but we don\'t go as far as making it a Storable instance as we consider it 
--- immutable and only creatable in the on the \'C side\'.   
+-- FT_FaceRec is not actually opaque, but the struct contains so much 
+-- private data that we don't give full access to it.
+
 
 data    FT_FACE_RCRD_ 
 type    FT_face_ptr       = Ptr FT_FACE_RCRD_
@@ -70,8 +69,10 @@ type FT_size_ptr              = Ptr FT_struct_size
 
 data FT_GLYPH_SLOT_RCRD_
 type FT_glyphslot_ptr     = Ptr FT_GLYPH_SLOT_RCRD_
+
 newtype FT_glyphslot      = FT_glyphslot (ForeignPtr FT_GLYPH_SLOT_RCRD_)
 
+  
 --------------------------------------------------------------------------------
 
 -- FT_CharMap
@@ -299,32 +300,179 @@ type FT_faceinternal_ptr      = Ptr FT_faceinternal
 --------------------------------------------------------------------------------
 -- FT_FaceRec
 
-data FT_struct_face = FT_struct_face {
-      _num_faces          :: FT_long,
-      _face_index         :: FT_long,
+-- Leave the FT_FaceRec on in C memory, instead provide field accessors. 
 
-      _face_flags         :: FT_long,
-      _style_flags        :: FT_long,
+peekFace_num_faces :: FT_face_ptr -> IO FT_long
+peekFace_num_faces = #{peek FT_FaceRec, num_faces}
+              
+peekFace_face_index :: FT_face_ptr -> IO FT_long
+peekFace_face_index = #{peek FT_FaceRec, face_index}
 
-      _num_glyphs         :: FT_long,
 
-      _family_name        :: CString,
-      _style_name         :: CString,
+-- TODO marshal this to a list of FaceFlag
+peekFace_face_flags :: FT_face_ptr -> IO FT_long
+peekFace_face_flags = #{peek FT_FaceRec, face_flags}
 
-      _num_fixed_sizes    :: FT_int,
-      _available_sizes    :: Ptr FT_struct_bitmapsize,
+-- TODO marshal this to a list of StyleFlag
+peekFace_style_flags :: FT_face_ptr -> IO FT_long
+peekFace_style_flags = #{peek FT_FaceRec, style_flags}
 
-      _num_charmaps       :: FT_int,
-      _charmaps           :: Ptr FT_struct_charmap,
-
-      _generic            :: FT_struct_generic,
       
-      _bbox               :: BBox,
+peekFace_num_glyphs :: FT_face_ptr -> IO FT_long
+peekFace_num_glyphs = #{peek FT_FaceRec, num_glyphs}
+      
+peekFace_family_name :: FT_face_ptr -> IO String
+peekFace_family_name ptr = 
+    #{peek FT_FaceRec, family_name} ptr >>= peekCString
 
-      _units_per_em       :: FT_ushort,
-      _ascender           :: FT_short,
-      _descender          :: FT_short,
-      _height             :: FT_short,     
+
+peekFace_style_name :: FT_face_ptr -> IO String
+peekFace_style_name ptr = do 
+  #{peek FT_FaceRec, style_name} ptr >>= peekCString
+
+
+-- Charmaps
+
+-- Don't think there is a need to peek at the /generic/ field.
+
+peekFace_bbox :: FT_face_ptr -> IO BBox
+peekFace_bbox =  #{peek FT_FaceRec, bbox}
+
+
+peekFace_units_per_em         :: FT_face_ptr -> IO FT_ushort
+peekFace_units_per_em         = #{peek FT_FaceRec, units_per_EM}
+      
+peekFace_units_ascender       :: FT_face_ptr -> IO FT_short
+peekFace_units_ascender       = #{peek FT_FaceRec, ascender}
+
+peekFace_descender            :: FT_face_ptr -> IO FT_short
+peekFace_descender            = #{peek FT_FaceRec, descender}
+
+peekFace_height               :: FT_face_ptr -> IO FT_short
+peekFace_height               = #{peek FT_FaceRec, height}
+
+
+peekFace_max_advance_width    :: FT_face_ptr -> IO FT_short
+peekFace_max_advance_width    = #{peek FT_FaceRec, max_advance_width}
+
+peekFace_max_advance_height   :: FT_face_ptr -> IO FT_short
+peekFace_max_advance_height   = #{peek FT_FaceRec, max_advance_height}
+
+peekFace_underline_position   :: FT_face_ptr -> IO FT_short
+peekFace_underline_position   = #{peek FT_FaceRec, underline_position}
+
+peekFace_underline_thickness  :: FT_face_ptr -> IO FT_short
+peekFace_underline_thickness  = #{peek FT_FaceRec, underline_thickness}
+
+
+peekFace_glyph_slot_ptr   :: FT_face_ptr -> IO FT_glyphslot_ptr
+peekFace_glyph_slot_ptr   = #{peek FT_FaceRec, glyph}
+
+peekFace_size_ptr         :: FT_face_ptr -> IO FT_size_ptr
+peekFace_size_ptr         = #{peek FT_FaceRec, size}
+
+
+
+peekFace_glyph_slot_bitmap_left :: FT_face_ptr -> IO FT_int
+peekFace_glyph_slot_bitmap_left ptr = do 
+      gptr <- #{peek FT_FaceRec, glyph} ptr
+      i    <- #{peek FT_GlyphSlotRec, bitmap_left} gptr
+      return i
+      
+peekFace_glyph_slot_bitmap_top :: FT_face_ptr -> IO FT_int
+peekFace_glyph_slot_bitmap_top ptr = do 
+      gptr <- #{peek FT_FaceRec, glyph} ptr
+      i    <- #{peek FT_GlyphSlotRec, bitmap_top} gptr
+      return i
+      
+      
+      
+{-
+data Face = Face { 
+      _base_ptr             :: !FT_face,
+      _num_faces            :: FT_long,
+      _face_index           :: FT_long,
+      
+      -- FLAGS ...
+      
+      _num_glyphs           :: FT_long,
+      
+      _family_name          :: String,
+      _style_name           :: String,
+      
+      -- FIXED SIZES
+      -- CHARMAPS
+      
+      _face_bbox            :: BBox
+      
+      _units_per_em         :: FT_ushort,
+      _ascender             :: FT_short,
+      _descender            :: FT_short,
+      _height               :: FT_short,     
+
+      _max_advance_width    :: FT_short, 
+      _max_advance_height   :: FT_short,
+
+      _underline_position   :: FT_short,
+      _underline_thickness  :: FT_short,
+      
+      
+    }
+-- No!
+makeFace :: FT_face -> IO Face      
+makeFace fc_ptr@(FT_face fptr) = withForeignPtr fptr $ \ptr -> do
+    nf    <- #{peek FT_FaceRec, num_faces}    ptr
+    idx   <- #{peek FT_FaceRec, face_index}   ptr
+    ng    <- #{peek FT_FaceRec, num_glyphs}   ptr
+    fname <- #{peek FT_FaceRec, family_name}  ptr >>= peekCString
+    sname <- #{peek FT_FaceRec, style_name}   ptr >>= peekCString
+    bbox  <- #{peek FT_FaceRec, bbox}         ptr
+    upem  <- #{peek FT_FaceRec, units_per_EM} ptr
+    asc   <- #{peek FT_FaceRec, ascender}     ptr
+    des   <- #{peek FT_FaceRec, descender}    ptr
+    h     <- #{peek FT_FaceRec, height}       ptr
+    maw   <- #{peek FT_FaceRec, height}       ptr
+    mah   <- #{peek FT_FaceRec, height}       ptr
+    return $ Face { _base_ptr       = fc_ptr
+                  , _num_faces      = nfnf 
+                  , _face_index     = idx 
+                  , _num_glyphs     = ng 
+                  , _family_name    = fname 
+                  , _style_name     = sname 
+                  , _bbox           = bbox 
+                  , _units_per_em   = upem
+                  , _ascender       = asc
+                  , _descender      = des
+                  , _height         = h
+                  }
+
+
+data FT_struct_face = FT_struct_face {
+      _num_faces            :: FT_long,
+      _face_index           :: FT_long,
+
+      _face_flags           :: FT_long,
+      _style_flags          :: FT_long,
+
+      _num_glyphs           :: FT_long,
+
+      _family_name          :: CString,
+      _style_name           :: CString,
+
+      _num_fixed_sizes      :: FT_int,
+      _available_sizes      :: Ptr FT_struct_bitmapsize,
+
+      _num_charmaps         :: FT_int,
+      _charmaps             :: Ptr FT_struct_charmap,
+
+      _generic              :: FT_struct_generic,
+      
+      _bbox                 :: BBox,
+
+      _units_per_em         :: FT_ushort,
+      _ascender             :: FT_short,
+      _descender            :: FT_short,
+      _height               :: FT_short,     
 
       _max_advance_width    :: FT_short, 
       _max_advance_height   :: FT_short,
@@ -349,6 +497,7 @@ data FT_struct_face = FT_struct_face {
       _internal             :: FT_faceinternal_ptr
     }
 
+
 -- FT_Memory defined in FT_SYSTEM_H 
 data FT_memory
 type FT_memory_ptr      = Ptr FT_memory
@@ -363,8 +512,64 @@ data FT_struct_list = FT_struct_list {
 data FT_listnode
 type FT_listnode_ptr    = Ptr FT_listnode
 
+-}
 
+--------------------------------------------------------------------------------
+-- FT_FACE_FLAG_XXX
 
+-- Note FT_enum_faceflag / FT_FACE_FLAG_XXX enumerates to a long.
+
+type FT_enum_faceflag    = FT_long
+
+-- Note the deprecated and internal enums in FreeType have no Haskell
+-- equivalent
+
+#{enum FT_enum_faceflag ,
+  , ft_FACE_FLAG_SCALABLE         = FT_FACE_FLAG_SCALABLE
+  , ft_FACE_FLAG_FIXED_SIZES      = FT_FACE_FLAG_FIXED_SIZES 
+  , ft_FACE_FLAG_FIXED_WIDTH      = FT_FACE_FLAG_FIXED_WIDTH
+  , ft_FACE_FLAG_SFNT             = FT_FACE_FLAG_SFNT
+  , ft_FACE_FLAG_HORIZONTAL       = FT_FACE_FLAG_HORIZONTAL
+  , ft_FACE_FLAG_VERTICAL         = FT_FACE_FLAG_VERTICAL
+  , ft_FACE_FLAG_KERNING          = FT_FACE_FLAG_KERNING 
+
+  , ft_FACE_FLAG_MULTIPLE_MASTERS = FT_FACE_FLAG_MULTIPLE_MASTERS
+  , ft_FACE_FLAG_GLYPH_NAMES      = FT_FACE_FLAG_GLYPH_NAMES
+  , ft_FACE_FLAG_HINTER           = FT_FACE_FLAG_HINTER
+  , ft_FACE_FLAG_CID_KEYED        = FT_FACE_FLAG_CID_KEYED
+  }
+  
+  
+data FaceFlag = 
+      Scalable
+    | FixedSizes
+    | FixedWidth
+    | SfntStorage
+    | HorizontalGlyphMetrics
+    | VerticalalGlyphMetrics
+    | KerningInfo
+    | MultipleMasters
+    | GlyphNames
+    | FlagHinter
+    | CidKeyed   
+    deriving ( Eq, Ord, Show )
+
+--------------------------------------------------------------------------------
+-- FT_STYLE_FLAG_XXX
+
+-- Note FT_enum_styleflag / FT_STYLE_FLAG_XXX enumerates to a long.
+
+type FT_enum_styleflag    = FT_long
+
+#{enum FT_enum_styleflag ,
+  , ft_STYLE_FLAG_ITALIC          = FT_STYLE_FLAG_ITALIC
+  , ft_STYLE_FLAG_BOLD            = FT_STYLE_FLAG_BOLD 
+  }
+
+data StyleFlag = 
+      Italic
+    | Bold
+    deriving ( Eq, Ord, Show )
 
 --------------------------------------------------------------------------------
 -- FT_Size_Internal

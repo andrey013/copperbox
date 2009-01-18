@@ -368,6 +368,17 @@ data FT_struct_generic = FT_struct_generic {
       _gf_finalizer :: FunPtr FT_generic_finalizer_func
     }
 
-      
+instance Storable FT_struct_generic where
+  sizeOf    _ = #{size FT_Generic}
+  alignment _ = alignment (undefined :: VoidPtr)
+  
+  peek ptr = do 
+      d <- #{peek FT_Generic, data} ptr
+      f <- #{peek FT_Generic, finalizer} ptr
+      return $ FT_struct_generic d f
+  
+  poke ptr (FT_struct_generic d f) = do
+        #{poke FT_Generic, data}      ptr d
+        #{poke FT_Generic, finalizer} ptr f
                  
 -- end of file
