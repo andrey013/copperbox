@@ -17,30 +17,41 @@
 module Graphics.Rendering.FreeType.Outline (
   
   FT_outline, -- only expose the type not the constructor..
-  newOutline,
-  doneOutline,
+  withOutline,
   contours,
   
 ) where
 
 import Graphics.Rendering.FreeType.Internals.CBaseTypes ( 
-      FT_library(..), FT_library_ptr )
-import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
+      FT_library(..), FT_library_ptr, FT_outline(..), FT_struct_outline  )
+-- import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Internals.COutline
 import Graphics.Rendering.FreeType.Internals.Wrappers 
+import Graphics.Rendering.FreeType.Utils ( nullForeignPtr )
 
+
+import Control.Exception ( bracket )
 import Foreign.ForeignPtr ( newForeignPtr, withForeignPtr, finalizeForeignPtr )
 import Foreign.Marshal.Alloc ( alloca )
 import Foreign.Ptr ( Ptr )
-import Foreign.Storable ( peek )
+
 
 
 
 -------------------------------------------------------------------------------- 
 
+isNullFT_outline :: FT_outline -> IO Bool
+isNullFT_outline (FT_outline lib) = nullForeignPtr lib
 
-
-    
+withOutline :: FT_library -> Int -> Int -> a -> (FT_outline -> IO a) -> IO a
+withOutline lib max_pts max_cts failureValue action = 
+  bracket (newOutline lib max_pts max_cts) doneOutline 
+          (\ftoln -> do { check_null <- isNullFT_outline ftoln 
+                        ; if check_null
+                             then do putStrLn "withOutline: failed"
+                                     return failureValue
+                             else action ftoln })  
+                             
 newOutline :: FT_library -> Int -> Int -> IO FT_outline
 newOutline (FT_library lib) max_pts max_cts  = 
     withForeignPtr lib $ \h ->

@@ -143,7 +143,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Set_Transform"
     
     
 foreign import ccall unsafe "freetype/freetype.h FT_Render_Glyph" 
-    ft_render_glyph     :: FT_glyph_slot_ptr 
+    ft_render_glyph     :: FT_glyphslot_ptr 
                         -> FT_enum_rendermode 
                         -> IO FT_error     
     
@@ -223,7 +223,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Get_Name_Index"
     
 
 foreign import ccall unsafe "freetype/freetype.h FT_Get_SubGlyph_Info" 
-    ft_get_subblyph_info  :: FT_glyph_slot_ptr 
+    ft_get_subblyph_info  :: FT_glyphslot_ptr 
                           -> FT_uint
                           -> Ptr FT_int
                           -> Ptr FT_uint
@@ -266,7 +266,7 @@ peekFace_style_name ptr = do
       str <- peekCString cstr
       return str
 
-peekFace_glyph_slot :: FT_face_ptr -> IO FT_glyph_slot_ptr
+peekFace_glyph_slot :: FT_face_ptr -> IO FT_glyphslot_ptr
 peekFace_glyph_slot ptr = do
       g <- #{peek FT_FaceRec, glyph} ptr
       return g

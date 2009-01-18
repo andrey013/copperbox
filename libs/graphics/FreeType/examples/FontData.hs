@@ -57,11 +57,11 @@ main = do
             gsBitmapTop  fc >>= \x' -> putStrLn $ "glyphslot bitmap top "  ++ show x' 
           else
             putStrLn $ "renderCurrentGlyph failed " ++ show ec
-            
-        olt <- newOutline ft 100 100
-        cc <- contours olt
-        putStrLn $ "n_contours " ++ show cc
-        doneOutline olt
+        
+        withOutline ft 100 100 () $ \otl -> do
+          cc <- contours otl
+          putStrLn $ "n_contours " ++ show cc
+
   
         putStrLn "Done."
   return () -- needs this at the end

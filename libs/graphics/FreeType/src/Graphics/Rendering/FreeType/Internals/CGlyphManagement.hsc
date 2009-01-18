@@ -70,14 +70,14 @@ instance Storable FT_glyphrec where
 newtype Glyph = Glyph (Ptr FT_glyphrec) deriving Storable
 
 -- FT_glyph is used internally 
-type FT_glyph_ptr = Ptr FT_glyph_slot_ptr
+type FT_glyph_ptr = Ptr FT_glyphslot_ptr
 
 --------------------------------------------------------------------------------
 
 
 
 foreign import ccall unsafe "freetype/freetype.h FT_Get_Glyph" 
-    ft_get_glyph          :: FT_glyph_slot_ptr 
+    ft_get_glyph          :: FT_glyphslot_ptr 
                           -> Ptr FT_glyph_ptr 
                           -> IO FT_error
 

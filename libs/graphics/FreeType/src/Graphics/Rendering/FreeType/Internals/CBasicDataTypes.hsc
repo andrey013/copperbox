@@ -341,20 +341,32 @@ instance Unmarshal GlyphFormat where
 --------------------------------------------------------------------------------
 -- FT_Data
 
--- Currently no Haskell equivalent.
+data FT_struct_data = FT_struct_data {
+      _data_pointer     :: Ptr FT_byte,
+      _data_length      :: FT_int     
+    }
 
 
 --------------------------------------------------------------------------------
 -- FT_Generic_Finalizer
 
--- Currently no Haskell equivalent.
+type FT_generic_finalizer_func   = VoidPtr 
+                                 -> IO ()
+                              
+foreign import ccall "wrapper"
+    mk_generic_finalizer_func   :: FT_generic_finalizer_func 
+                                -> IO (FT_callback FT_generic_finalizer_func)
+      
 
 
 --------------------------------------------------------------------------------
 -- FT_Generic
 
--- Currently no Haskell equivalent.
 
+data FT_struct_generic = FT_struct_generic {
+      _gf_data      :: VoidPtr,
+      _gf_finalizer :: FunPtr FT_generic_finalizer_func
+    }
 
       
                  

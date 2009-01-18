@@ -16,15 +16,12 @@
 
 module Graphics.Rendering.FreeType.BaseInterface (
   
-  -- * \'run a computation inside FreeType\'.
+  -- * Run a computation on a FreeType library instance.
   withFreeType, 
   
-  -- * newFace
-  
+  -- * Run a conputation on a face.  
   withNewFace,
-  
-  -- newFace,
-  -- doneFace,
+
   
   -- * Face field accessors
   numFaces, 
@@ -81,7 +78,6 @@ import Foreign.ForeignPtr ( newForeignPtr, finalizeForeignPtr,
     withForeignPtr )
 import Foreign.Marshal.Alloc ( alloca )
 import Foreign.Marshal.Utils ( with )
-import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( peek )
 
 
