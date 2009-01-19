@@ -24,10 +24,11 @@ import Control.Applicative
 import Control.Monad.Error
 import Control.Monad.State
 
+import Data.Array.IArray ( Array, array, listArray )
 import Data.Bits
 import qualified Data.ByteString.Lazy as B
 import Data.Char ( chr )
-import Data.Array.IArray ( Array, array, listArray )
+import Data.List ( transpose )
 import Data.Word
 
 import System.IO
@@ -112,7 +113,7 @@ compression = unmarshalCompression <$> getWord32le
 imageData24 :: Word32 -> Word32 -> Parser (Array (Word32,Word32) RGBcolour)
 imageData24 w h = do 
     xss <- iter h (fst <$> dataLine w)
-    return $ build (concat xss)
+    return $ build (concat $ transpose xss)
   where
     -- build xs = array arange [(i,a) | i <- idxs | a <- xs ]
     build xs = listArray arange xs

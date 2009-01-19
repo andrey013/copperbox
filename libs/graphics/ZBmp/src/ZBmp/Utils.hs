@@ -18,6 +18,8 @@ module ZBmp.Utils where
 
 import ZBmp.Datatypes
 
+import Data.Array.IArray
+
 data YCbCrColour = YCbCrColour { 
       _y_val  :: Float,
       _cb     :: Float,
@@ -43,4 +45,15 @@ yCbCrToRgb (YCbCrColour y cb cr) = RGBcolour r g b
   b = round (y + 1.772   * (cb-128.0))
 
 
+row :: Int -> Array (Int,Int) a -> [a]
+row y arr = foldr (\x xs -> arr!(x,y) : xs) [] [x..x'] 
+  where
+    ((x,_),(x',_)) = bounds arr 
     
+column :: Int -> Array (Int,Int) a -> [a]
+column x arr = foldr (\y xs -> arr!(x,y) : xs) [] [y..y'] 
+  where
+    ((_,y),(_,y')) = bounds arr
+    
+    
+         

@@ -21,12 +21,12 @@ import ZBmp.Utils
 
 import Data.Array.IArray ( listArray, (!), IArray(..) )
 import Data.Array.Unboxed ( UArray )
-import qualified Data.Foldable as F
-import Data.Word
+import Data.List ( foldl' )
+
 
 greyPalette :: UArray Int Char
 greyPalette = listArray (0,length xs) xs where
-    xs = " `.,'-~*:+!?&%#@"   -- 16 levels
+    xs = "@$#%&!+-^,.`    "   -- 16 levels
     
     
 colourPitch :: RGBcolour -> Int
@@ -43,13 +43,10 @@ greyscale = (greyPalette !) . colourPitch
 
 -- Really we ought to resample the image so we can be sure it wil fit onscreen
 quickAsciiHack :: ImageData -> [String]
-quickAsciiHack arr = third $ F.foldr fn (1,"",[]) arr where
-    fn a (x,s,ss) | x == w    = (1,   [greyscale a],   s:ss)
-                  | otherwise = (x+1, greyscale a : s, ss)
-
-    third (_,_,c) = c
-    
-    ((_,_),(w,_)) = bounds arr
+quickAsciiHack arr = foldl' (\ss y -> line y :ss) [] [0..h] 
+  where
+    line y = foldr (\x s -> (greyscale $ arr!(x,y)) : s) "" [0..w]    
+    ((_,_),(w,h)) = bounds arr
     
      
 
