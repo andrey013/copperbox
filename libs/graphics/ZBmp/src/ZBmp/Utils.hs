@@ -19,6 +19,7 @@ module ZBmp.Utils where
 import ZBmp.Datatypes
 
 import Data.Array.IArray
+import Data.Word
 
 data YCbCrColour = YCbCrColour { 
       _y_val  :: Float,
@@ -46,14 +47,24 @@ yCbCrToRgb (YCbCrColour y cb cr) = RGBcolour r g b
 
 
 row :: Int -> Array (Int,Int) a -> [a]
-row y arr = foldr (\x xs -> arr!(x,y) : xs) [] [x..x'] 
+row y arr = foldr (\a xs -> arr!(a,y) : xs) [] [x..x'] 
   where
     ((x,_),(x',_)) = bounds arr 
     
 column :: Int -> Array (Int,Int) a -> [a]
-column x arr = foldr (\y xs -> arr!(x,y) : xs) [] [y..y'] 
+column x arr = foldr (\a xs -> arr!(x,a) : xs) [] [y..y'] 
   where
     ((_,y),(_,y')) = bounds arr
     
+
+-- How much padding does a line need?
+paddingMeasure :: Word32 -> Word32
+paddingMeasure i = step $ (i*3) `mod` 4 where
+    step n | n == 0     = 0
+           | otherwise  = 4 - n
+           
+           
     
-         
+ 
+
+       

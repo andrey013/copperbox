@@ -26,11 +26,7 @@ data BMPfile = BMPfile {
       }
     deriving Show
 
-data BMPbody = UnrecognizedFormat
-             | RGB24 ImageData
-    deriving Show
 
-type ImageData = Array (Word32,Word32) RGBcolour
    
 data BMPheader = BMPheader { 
         _magic      :: String,
@@ -56,6 +52,13 @@ data DIBheader = DIBheader {
         _colours_used   :: Word32
     }
   deriving Show 
+
+data BMPbody = UnrecognizedFormat
+             | RGB24 ImageData
+    deriving Show
+
+type ImageData = Array (Word32,Word32) RGBcolour
+
 
 data RGBcolour = RGBcolour { 
         _red    :: Word8, 

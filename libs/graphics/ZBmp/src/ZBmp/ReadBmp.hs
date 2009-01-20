@@ -19,6 +19,7 @@
 module ZBmp.ReadBmp where
 
 import ZBmp.Datatypes
+import ZBmp.Utils ( paddingMeasure )
 
 import Control.Applicative
 import Control.Monad.Error
@@ -115,9 +116,7 @@ imageData24 w h = do
     xss <- iter h (fst <$> dataLine w)
     return $ build (concat $ transpose xss)
   where
-    -- build xs = array arange [(i,a) | i <- idxs | a <- xs ]
     build xs = listArray arange xs
-    -- idxs   = [(x,y) | x <- [0..w-1], y <- [0..h-1] ] 
     arange = ((0,0), (w-1,h-1)) 
     
     
@@ -126,10 +125,8 @@ dataLine :: Word32 -> Parser ([RGBcolour],[Word8])
 dataLine w = (,) <$> payload w <*> padding w
   where
     payload i = iter i rgbColour
-    padding z = let i = lim $ 4 `mod` (3 * z) in iter i getWord8
-    
-    lim i | i > 0     = 4 - i
-          | otherwise = 0
+    padding z = iter (paddingMeasure w) getWord8
+
           
 
 rgbColour :: Parser RGBcolour

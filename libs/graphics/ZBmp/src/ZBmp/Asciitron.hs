@@ -41,7 +41,7 @@ colourPitch a = lim $ floor $ y / 16
 greyscale :: RGBcolour -> Char
 greyscale = (greyPalette !) . colourPitch
 
--- Really we ought to resample the image so we can be sure it wil fit onscreen
+-- Really we ought to resample the image so we can be sure it will fit onscreen
 quickAsciiHack :: ImageData -> [String]
 quickAsciiHack arr = foldl' (\ss y -> line y :ss) [] [0..h] 
   where
