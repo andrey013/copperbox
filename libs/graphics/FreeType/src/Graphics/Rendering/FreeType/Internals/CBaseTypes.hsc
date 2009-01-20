@@ -536,7 +536,7 @@ peekGlyphSlot_linearHoriAdvance   = #{peek FT_GlyphSlotRec, linearHoriAdvance}
 peekGlyphSlot_linearVertAdvance   :: FT_glyphslot_ptr -> IO FT_fixed
 peekGlyphSlot_linearVertAdvance   = #{peek FT_GlyphSlotRec, linearVertAdvance}
 
-peekGlyphSlot_advance             :: FT_glyphslot_ptr -> IO FT_fixed
+peekGlyphSlot_advance             :: FT_glyphslot_ptr -> IO FT_vector
 peekGlyphSlot_advance             = #{peek FT_GlyphSlotRec, advance}
 
 

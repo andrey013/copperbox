@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  FontData
+-- Module      :  Example1
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Load a font and print some information about it...
+-- Example1 from the FreeType tutorial
 --
 
 --------------------------------------------------------------------------------
@@ -24,7 +24,7 @@
 module Main where
 
 import Graphics.Rendering.FreeType
-
+import Graphics.Rendering.FreeType.Utils
 import Control.Monad
 
 main :: IO ()

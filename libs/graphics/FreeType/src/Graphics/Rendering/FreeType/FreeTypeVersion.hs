@@ -25,7 +25,6 @@ module Graphics.Rendering.FreeType.FreeTypeVersion (
 import Graphics.Rendering.FreeType.Internals.CBaseTypes ( FT_library(..) )
 import Graphics.Rendering.FreeType.Internals.CFreeTypeVersion
 
-import Graphics.Rendering.OpenGL.GL.StateVar
 
 import Foreign.ForeignPtr ( withForeignPtr )
 import Foreign.Marshal.Alloc ( alloca )
@@ -37,8 +36,8 @@ import Foreign.Storable ( peek )
 
 type VersionNumber = (Int,Int,Int)
 
-libraryVersion :: FT_library -> GettableStateVar VersionNumber
-libraryVersion lib = makeGettableStateVar $ ftLibraryVersion lib
+libraryVersion :: FT_library -> IO VersionNumber
+libraryVersion lib = ftLibraryVersion lib
 
 ftLibraryVersion :: FT_library -> IO VersionNumber
 ftLibraryVersion (FT_library lib) =

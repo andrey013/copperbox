@@ -73,7 +73,8 @@ data Vector = Vector {
     }
   deriving (Eq, Show)
 
-
+-- TODO - need to work out consistent naming
+type FT_vector = Vector
 type FT_struct_vector = Vector
 
 
@@ -151,6 +152,7 @@ instance Storable Matrix where
         #{poke FT_Matrix, xy} ptr xy
         #{poke FT_Matrix, yx} ptr yx
         #{poke FT_Matrix, yy} ptr yy    
+
 --------------------------------------------------------------------------------
         
 type FT_fword           = #type FT_FWord

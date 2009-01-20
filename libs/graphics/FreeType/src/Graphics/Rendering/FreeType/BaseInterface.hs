@@ -17,9 +17,11 @@
 module Graphics.Rendering.FreeType.BaseInterface (
   
   -- * Run a computation on a FreeType library instance.
+  FT_library,
   withFreeType, 
   
   -- * Run a conputation on a face.  
+  FT_face,
   withNewFace,
 
   
@@ -39,6 +41,7 @@ module Graphics.Rendering.FreeType.BaseInterface (
   
   bitmapLeft,
   bitmapTop,
+  advance,
   
   -- * ...
   selectSize,
@@ -216,6 +219,9 @@ bitmapLeft (FT_glyphslot ptr) = peekGlyphSlot_bitmap_left ptr
 
 bitmapTop :: FT_glyphslot -> IO FT_int
 bitmapTop (FT_glyphslot ptr) = peekGlyphSlot_bitmap_top ptr
+
+advance :: FT_glyphslot -> IO Vector
+advance (FT_glyphslot ptr) = peekGlyphSlot_advance ptr
 
 
 --------------------------------------------------------------------------------
