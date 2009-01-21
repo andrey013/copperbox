@@ -17,16 +17,20 @@
 
 module Graphics.Rendering.FreeType.Util.Bitmap where
 
-import qualified Graphics.Rendering.FreeType.Util.Array as FtArr
+import qualified Graphics.Rendering.FreeType.Util.ZigZag as ZZ
 
 import Control.Monad ( when )
-import Data.Array.ST ( runSTUArray )
-import qualified Data.Array.MArray as MutA
-import Data.Array.Unboxed ( IArray, Ix, UArray, bounds, (!) )
-import Data.Foldable ( foldl', foldlM ) 
+import Data.Bits ( (.|.) )
+
+import Data.Array.IArray ( Array )
+import qualified Data.Array.MArray as MA
+import Data.Array.ST ( runSTUArray, runSTArray )
+import Data.Array.Unboxed ( IArray, UArray, bounds )
+
+import Data.Foldable ( foldlM ) 
 import Data.Int
 import Data.Word
-import Foreign.C.Types ( CUChar, CChar )
+import Foreign.C.Types ( CUChar )
 
 newtype Image = Image { getImage :: ImageData }
 
@@ -34,54 +38,86 @@ type ImageData = UArray (Int32,Int32) Word8
 
 
 makeImage :: Int32 -> Int32 -> Image
-makeImage w h = Image $ runSTUArray $ MutA.newArray ((0,0),(w,h)) 0
-
-overlay :: Int32 -> Int32 -> Int32 -> [CUChar] -> Image -> Image 
-overlay xpos ypos bwidth buffer (Image uarr) = Image $ runSTUArray $ do 
-    arr <- MutA.thaw uarr
-    foldlM (updateArr arr) (xpos,ypos) buffer 
+makeImage w h = Image $ runSTUArray $ MA.newArray ((0,0),(rows,cols)) 0
+  where rows = h; cols = w
+  
+overlay :: Int32 -> Int32 -> Int32 -> Buffer -> Image -> Image 
+overlay xpos ypos bwidth (Buffer buffer) (Image uarr) = Image $ runSTUArray $ do 
+    arr <- MA.thaw uarr
+    foldlM (fn arr) (ypos,xpos) buffer
     return arr
-  where    
-    updateArr a idx@(x,y) e = do 
-        when ((x >= x0 && x < x1) && (y >= y0 && y < y1)) 
-             (MutA.writeArray a idx (fromIntegral e)) 
-        return $ incrIdx idx
+  where
+    fn arr idx@(j,i) e = do
+        when (inbounds j i) 
+             (do val <- MA.readArray arr idx
+                 MA.writeArray arr idx (val .|. fromIntegral e))
+        return $ next idx
     
-    incrIdx (x,y) | x == bwidth   = (0,y+1)
-                  | otherwise     = (x+1,y)
-    
-    ((x0,y0),(x1,y1)) = bounds uarr
+   
+    next (j,i) | i+1 == xpos+bwidth = (j+1,xpos)
+               | otherwise          = (j,i+1)        
+            
           
+    inbounds r c = (r >= minR && r <= maxR) && (c >= minC && c <= maxC)
+    
+    ((minR,minC),(maxR,maxC))   = bounds uarr 
+        
+               
+
+type BufferData = Array Int32 CUChar
+
+newtype Buffer = Buffer { getBuffer :: BufferData }
+  deriving (Show)
+
+makeBuffer :: Int -> Int -> [CUChar] -> Buffer
+makeBuffer w h chars = Buffer $ runSTArray $ do 
+    arr <- MA.newArray (0,height * width) 0
+    step arr 0 chars 
+  where
+    step arr _   []     = return arr
+    step arr i   (c:cs) = do MA.writeArray arr i c
+                             step arr (i + 1) cs
+                                    
+    
+    width, height :: Int32
+    (width, height) = (fromIntegral w,fromIntegral h)
+
+nonzeros :: Buffer -> IO Int
+nonzeros (Buffer buffer) = foldlM f 0 buffer
+  where 
+    f :: Int -> CUChar -> IO Int 
+    f a e | e == 0    = return a
+          | otherwise = return (a+1)
           
 imageBounds :: Image -> ((Int32,Int32),(Int32,Int32))
 imageBounds (Image uarr) = bounds uarr
 
-rowwise :: (Word8 -> a -> a) -> a -> Image -> a
-rowwise f a (Image uarr) = FtArr.rowwise f a uarr
+zigZag :: (Word8 -> a -> a) -> a -> Image -> a
+zigZag f a (Image uarr) = ZZ.zigZag f a uarr
 
-rowwiseM :: Monad m => (Word8 -> a -> m a) -> a -> Image -> m a
-rowwiseM f a (Image uarr) = FtArr.rowwiseM f a uarr
+zigZagM :: Monad m => (Word8 -> a -> m a) -> a -> Image -> m a
+zigZagM f a (Image uarr) = ZZ.zigZagM f a uarr
               
-colwise :: (Word8 -> a -> a) -> a -> Image -> a
-colwise f a (Image uarr) = FtArr.colwise f a uarr
+zagZig :: (Word8 -> a -> a) -> a -> Image -> a
+zagZig f a (Image uarr) = ZZ.zagZig f a uarr
 
-colwiseM :: Monad m => (Word8 -> a -> m a) -> a -> Image -> m a
-colwiseM f a (Image uarr) = FtArr.colwiseM f a uarr
+zagZigM :: Monad m => (Word8 -> a -> m a) -> a -> Image -> m a
+zagZigM f a (Image uarr) = ZZ.zagZigM f a uarr
 
         
-rowwiseOpa :: (Word8 -> a -> a) -> (a -> b -> b) -> (a,b) -> Image -> b
-rowwiseOpa f h (a,b) (Image uarr) = FtArr.rowwiseOpa f h(a,b) uarr
+zigZagPhi :: (Word8 -> a -> a) -> (a -> b -> b) -> (a,b) -> Image -> b
+zigZagPhi f h (a,b) (Image uarr) = ZZ.zigZagPhi f h (a,b) uarr
 
-rowwiseOpaM :: Monad m => 
+zigZagPhiM :: Monad m => 
                (Word8 -> a -> m a) -> (a -> b -> m b) -> (a,b) -> Image -> m b
-rowwiseOpaM f h (a,b) (Image uarr) = FtArr.rowwiseOpaM f h (a,b) uarr
+zigZagPhiM f h (a,b) (Image uarr) = ZZ.zigZagPhiM f h (a,b) uarr
               
-colwiseOpa :: (Word8 -> a -> a) -> (a -> b -> b) -> (a,b) -> Image -> b
-colwiseOpa f h (a,b) (Image uarr) = FtArr.colwiseOpa f h (a,b) uarr
+zagZigPhi :: (Word8 -> a -> a) -> (a -> b -> b) -> (a,b) -> Image -> b
+zagZigPhi f h (a,b) (Image uarr) = ZZ.zagZigPhi f h (a,b) uarr
 
-colwiseOpaM :: Monad m => 
+zagZigPhiM :: Monad m => 
                (Word8 -> a -> m a) -> (a -> b -> m b) -> (a,b) -> Image -> m b
-colwiseOpaM f h (a,b) (Image uarr) = FtArr.colwiseOpaM f h (a,b) uarr
+zagZigPhiM f h (a,b) (Image uarr) = ZZ.zagZigPhiM f h (a,b) uarr
                   
                   
 

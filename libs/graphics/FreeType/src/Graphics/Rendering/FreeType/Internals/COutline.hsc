@@ -28,9 +28,7 @@ import Graphics.Rendering.FreeType.Internals.CBaseTypes
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Internals.CImage
 
-import Foreign.C.String ( CString )
-import Foreign.C.Types (  CInt, CShort, CChar )
-import Foreign.ForeignPtr ( ForeignPtr )
+import Foreign.C.Types (  CInt, CShort )
 import Foreign.Ptr ( Ptr, FunPtr ) 
 import Foreign.Storable
 

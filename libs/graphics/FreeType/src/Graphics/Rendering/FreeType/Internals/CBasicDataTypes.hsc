@@ -29,9 +29,7 @@ import Graphics.Rendering.FreeType.Utils ( Marshal(..), Unmarshal(..) )
 
 import Data.Int
 import Data.Word
-import Foreign.C.String ( CString )
-import Foreign.C.Types ( CInt, CChar, CUChar )
-import Foreign.ForeignPtr ( ForeignPtr )
+import Foreign.C.Types ( CInt, CShort, CChar, CUChar )
 import Foreign.Ptr ( Ptr, FunPtr )
 import Foreign.Storable 
 
@@ -257,11 +255,11 @@ data Bitmap = Bitmap {
      
 
 data FT_struct_bitmap = FT_struct_bitmap {
-      __rows            :: FT_int,
-      __width           :: FT_int,
-      __pitch           :: FT_int,
+      __rows            :: CInt,
+      __width           :: CInt,
+      __pitch           :: CInt,
       __buffer          :: Ptr CUChar,
-      __num_grays       :: FT_short,
+      __num_grays       :: CShort,
       __pixel_mode      :: CChar,
       __palette_mode    :: CChar,
       __palette         :: Ptr CVoid_
@@ -269,7 +267,7 @@ data FT_struct_bitmap = FT_struct_bitmap {
 
 instance Storable FT_struct_bitmap where
   sizeOf    _ = #{size FT_Bitmap}
-  alignment _ = alignment (undefined :: FT_int)
+  alignment _ = alignment (undefined :: CInt)
   
   peek ptr = do 
       r   <- #{peek FT_Bitmap, rows}          ptr

@@ -28,14 +28,13 @@ import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Utils ( Marshal(..), Unmarshal (..) )
 
 import Control.Monad ( (>=>) )
-import Data.Int
-import Data.Word
+
 
 import Foreign.C.String ( CString, peekCString )
-import Foreign.C.Types ( CInt, CShort, CLong, CChar, CUChar )
-import Foreign.ForeignPtr ( ForeignPtr, withForeignPtr )
+import Foreign.C.Types ( CInt, CShort, CChar )
+import Foreign.ForeignPtr ( ForeignPtr )
 import Foreign.Marshal.Array ( peekArray )
-import Foreign.Ptr ( Ptr, FunPtr )
+import Foreign.Ptr ( Ptr )
 import Foreign.Storable 
 
 

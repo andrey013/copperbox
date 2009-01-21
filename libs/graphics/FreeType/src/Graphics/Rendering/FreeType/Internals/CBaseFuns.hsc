@@ -27,7 +27,7 @@ import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 
 import Foreign.C.String ( CString )
 import Foreign.Ptr ( Ptr ) 
-import Foreign.Storable ( peekByteOff )
+
 
 
 

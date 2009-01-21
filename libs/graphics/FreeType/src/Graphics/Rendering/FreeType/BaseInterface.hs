@@ -86,6 +86,7 @@ import Foreign.ForeignPtr ( newForeignPtr, finalizeForeignPtr,
     withForeignPtr )
 import Foreign.Marshal.Alloc ( alloca )
 import Foreign.Marshal.Utils ( with )
+import Foreign.Ptr ( Ptr, nullPtr )
 import Foreign.Storable ( peek )
 
 
@@ -207,7 +208,7 @@ withGlyphSlot :: FT_face -> (FT_glyphslot -> IO a) -> IO a
 withGlyphSlot fc action = glyphSlot fc >>= action
   where
     glyphSlot :: FT_face -> IO FT_glyphslot
-    glyphSlot fc = withForeignFace fc peekFace_glyph_slot
+    glyphSlot face = withForeignFace face peekFace_glyph_slot
 
 -- Shouldn't really be exposing a marshalled Bitmap
 withBitmap :: FT_glyphslot -> (Bitmap -> IO a) -> IO a
@@ -253,12 +254,17 @@ loadChar :: FT_face -> Int -> [LoadFlag] -> IO FT_error
 loadChar fc ccode flags = withForeignFace fc $ \h ->  
     ft_load_char h (fromIntegral ccode) (combineLoadFlags flags) 
 
-setTransform :: FT_face -> Matrix -> Vector -> IO ()
-setTransform fc matrix delta = withForeignFace fc $ \h ->
+setTransform :: FT_face -> Maybe Matrix -> Vector -> IO ()
+setTransform fc (Just matrix) delta = withForeignFace fc $ \h ->
     with matrix $ \ptr_matrix -> 
         with delta $ \ptr_delta -> ft_set_transform h ptr_matrix ptr_delta
 
-
+setTransform fc Nothing delta = withForeignFace fc $ \h ->
+    with delta $ \ptr_delta -> ft_set_transform h ptr_matrix ptr_delta
+  where
+    ptr_matrix :: Ptr Matrix
+    ptr_matrix = nullPtr
+    
 renderCurrentGlyph :: FT_face -> RenderMode -> IO FT_error 
 renderCurrentGlyph fc mode = withForeignFace fc $ \h -> do
     (FT_glyphslot gly) <- peekFace_glyph_slot h 

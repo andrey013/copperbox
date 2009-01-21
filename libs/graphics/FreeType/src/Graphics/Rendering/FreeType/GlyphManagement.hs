@@ -14,11 +14,17 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.FreeType.GlyphManagement () where
+module Graphics.Rendering.FreeType.GlyphManagement ( 
+    gm_dummy_export 
+) where
 
 
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes () 
 import Graphics.Rendering.FreeType.Internals.CGlyphManagement ()
+
+gm_dummy_export :: ()
+gm_dummy_export = ()
+
 
 {-
 import Foreign.C.String ( withCString )
