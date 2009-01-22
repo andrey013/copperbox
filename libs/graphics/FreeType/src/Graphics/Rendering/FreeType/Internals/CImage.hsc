@@ -54,7 +54,7 @@ type FT_raster_bitset_func = CInt -> CInt -> VoidPtr -> IO ()
                                            
                              
 data FT_struct_rasterparams = FT_struct_rasterparams {
-      _target           :: Ptr FT_struct_bitmap,
+      _target           :: Ptr Bitmap,
       _source           :: VoidPtr,
       _rparams_flags    :: FT_int,
       _gray_spans       :: FunPtr FT_spanfunc,

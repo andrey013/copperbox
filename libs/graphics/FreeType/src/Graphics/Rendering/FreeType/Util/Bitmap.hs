@@ -26,11 +26,11 @@ import Data.Array.IArray ( Array )
 import qualified Data.Array.MArray as MA
 import Data.Array.ST ( runSTUArray, runSTArray )
 import Data.Array.Unboxed ( IArray, UArray, bounds )
-
+import Data.Char ( ord )
 import Data.Foldable ( foldlM ) 
 import Data.Int
 import Data.Word
-import Foreign.C.Types ( CUChar )
+
 
 newtype Image = Image { getImage :: ImageData }
 
@@ -50,7 +50,7 @@ overlay xpos ypos bwidth (Buffer buffer) (Image uarr) = Image $ runSTUArray $ do
     fn arr idx@(j,i) e = do
         when (inbounds j i) 
              (do val <- MA.readArray arr idx
-                 MA.writeArray arr idx (val .|. fromIntegral e))
+                 MA.writeArray arr idx (val .|. e))
         return $ next idx
     
    
@@ -65,18 +65,18 @@ overlay xpos ypos bwidth (Buffer buffer) (Image uarr) = Image $ runSTUArray $ do
         
                
 
-type BufferData = Array Int32 CUChar
+type BufferData = Array Int32 Word8
 
 newtype Buffer = Buffer { getBuffer :: BufferData }
   deriving (Show)
 
-makeBuffer :: Int -> Int -> [CUChar] -> Buffer
+makeBuffer :: Int -> Int -> String -> Buffer
 makeBuffer w h chars = Buffer $ runSTArray $ do 
     arr <- MA.newArray (0,height * width) 0
     step arr 0 chars 
   where
     step arr _   []     = return arr
-    step arr i   (c:cs) = do MA.writeArray arr i c
+    step arr i   (c:cs) = do MA.writeArray arr i (fromIntegral $ ord c)
                              step arr (i + 1) cs
                                     
     

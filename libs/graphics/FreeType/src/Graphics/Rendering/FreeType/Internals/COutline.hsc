@@ -160,7 +160,7 @@ foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_CBox"
 foreign import ccall unsafe "freetype/freetype.h FT_Outline_Get_Bitmap" 
    ft_outline_get_bitmap  :: FT_library_ptr 
                           -> Ptr FT_struct_outline 
-                          -> Ptr FT_struct_bitmap
+                          -> Ptr Bitmap
                           -> IO FT_error
                           
 

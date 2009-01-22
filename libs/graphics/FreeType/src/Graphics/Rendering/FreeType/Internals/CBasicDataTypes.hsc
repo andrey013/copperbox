@@ -29,12 +29,11 @@ import Graphics.Rendering.FreeType.Utils ( Marshal(..), Unmarshal(..) )
 
 import Data.Int
 import Data.Word
-import Foreign.C.Types ( CInt, CShort, CChar, CUChar )
+import Foreign.C.String ( peekCStringLen, newCStringLen )
+import Foreign.C.Types ( CInt, CShort, CChar )
+import Foreign.Marshal.Alloc ( free )
 import Foreign.Ptr ( Ptr, FunPtr )
 import Foreign.Storable 
-
-import Foreign.Marshal.Array ( peekArray ) 
-
 
 --------------------------------------------------------------------------------
 
@@ -248,20 +247,25 @@ instance Unmarshal PixelMode where
 
 --------------------------------------------------------------------------------
 -- FT_Bitmap
- 
 
-data FT_struct_bitmap = FT_struct_bitmap {
-      __rows            :: CInt,
-      __width           :: CInt,
-      __pitch           :: CInt,
-      __buffer          :: Ptr CUChar,
-      __num_grays       :: CShort,
-      __pixel_mode      :: CChar,
-      __palette_mode    :: CChar,
-      __palette         :: Ptr CVoid_
+
+-- Bitmaps should be /produceable/ as well as /consumable/ by Haskell,
+-- hence they should be storable
+-- See the function @FT_Outline_Get_Bitmap@ and the example 
+-- application @ftgrid.c@.  
+
+data Bitmap = Bitmap {
+      _bmp_rows         :: CInt,
+      _bmp_width        :: CInt,
+      _bmp_pitch        :: CInt,
+      _bmp_buffer       :: String,
+      _num_grays        :: CShort,
+      _pixel_mode       :: CChar,
+      _palette_mode     :: CChar,
+      _palette          :: Ptr CVoid_
     }
 
-instance Storable FT_struct_bitmap where
+instance Storable Bitmap where
   sizeOf    _ = #{size FT_Bitmap}
   alignment _ = alignment (undefined :: CInt)
   
@@ -269,42 +273,27 @@ instance Storable FT_struct_bitmap where
       r   <- #{peek FT_Bitmap, rows}          ptr
       w   <- #{peek FT_Bitmap, width}         ptr
       p   <- #{peek FT_Bitmap, pitch}         ptr
-      b   <- #{peek FT_Bitmap, buffer}        ptr
+      let slen = fromIntegral $ r * w
+      buf <- #{peek FT_Bitmap, buffer}        ptr >>= \s -> peekCStringLen (s,slen)
       n   <- #{peek FT_Bitmap, num_grays}     ptr
       pxm <- #{peek FT_Bitmap, pixel_mode}    ptr
       plm <- #{peek FT_Bitmap, palette_mode}  ptr
       pl  <- #{peek FT_Bitmap, palette}       ptr
-      return $ FT_struct_bitmap r w p b n pxm plm pl 
+      return $ Bitmap r w p buf n pxm plm pl 
  
-  poke ptr (FT_struct_bitmap r w p b n pxm plm pl) = do
+  poke ptr (Bitmap r w p buf n pxm plm pl) = do
+        -- might want to check len against r * w
+        (sptr,_) <- newCStringLen buf
         #{poke FT_Bitmap, rows}         ptr r
         #{poke FT_Bitmap, width}        ptr w
-        #{poke FT_Bitmap, pitch}        ptr p
-        #{poke FT_Bitmap, buffer}       ptr b
+        #{poke FT_Bitmap, pitch}        ptr p        
+        #{poke FT_Bitmap, buffer}       ptr sptr
         #{poke FT_Bitmap, num_grays}    ptr n
         #{poke FT_Bitmap, pixel_mode}   ptr pxm
         #{poke FT_Bitmap, palette_mode} ptr plm
         #{poke FT_Bitmap, palette}      ptr pl
+        free sptr
 
-{-
-data FT_BITMAP
-
-peekBitmap_rows                 :: FT_BITMAP -> IO CInt
-peekBitmap_rows                 = #{peek FT_Bitmap, rows}
-
-peekBitmap_width                :: FT_BITMAP -> IO CInt
-peekBitmap_width                = #{peek FT_Bitmap, width}
-      
-peekBitmap_pitch                :: FT_BITMAP -> IO CInt
-peekBitmap_pitch                = #{peek FT_Bitmap, pitch}
-
-peekBitmap_buffer               :: FT_BITMAP -> IO [CUChar]
-peekBitmap_buffer ptr = do
-    r     <- #{peek FT_Bitmap, rows}          ptr
-    w     <- #{peek FT_Bitmap, width}         ptr
-    bptr  <- #{peek FT_Bitmap, buffer}
-    peekArray (r * w) bptr
--}
 
         
 --------------------------------------------------------------------------------

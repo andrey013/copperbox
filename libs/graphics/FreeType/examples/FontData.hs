@@ -24,8 +24,8 @@
 module Main where
 
 import Graphics.Rendering.FreeType
-import Graphics.Rendering.FreeType.Utils
 import Control.Monad
+import Data.Char ( ord )
 
 main :: IO ()
 main = do
@@ -69,18 +69,16 @@ main = do
 
                 
 printBitmap :: Bitmap -> IO ()
-printBitmap bmp = do 
-    bs <- getBitmapBuffer bmp
+printBitmap (Bitmap _ w' _ bs _ _ _ _) = do 
     step bs
   where
     step [] = putStrLn $ ""
     step xs = let (a,b) = splitAt w xs in
               do { showLine a; step b }
     
-    showLine = putStrLn . map f
+    showLine = putStrLn . map (f . ord)
       where f 255 = 'X'
             f _   = ' '
 
-    w = getBitmapWidth bmp
-    
+    w = fromIntegral w'
          

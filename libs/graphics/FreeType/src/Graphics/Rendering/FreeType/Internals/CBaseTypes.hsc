@@ -33,7 +33,6 @@ import Control.Monad ( (>=>) )
 import Foreign.C.String ( CString, peekCString )
 import Foreign.C.Types ( CInt, CShort, CChar )
 import Foreign.ForeignPtr ( ForeignPtr )
-import Foreign.Marshal.Array ( peekArray )
 import Foreign.Ptr ( Ptr )
 import Foreign.Storable 
 
@@ -549,7 +548,7 @@ peekGlyphSlot_format ptr          =
     #{peek FT_GlyphSlotRec, format} ptr >>= return . unmarshal
     
 
-peekGlyphSlot_bitmap :: FT_glyphslot_ptr -> IO FT_struct_bitmap
+peekGlyphSlot_bitmap :: FT_glyphslot_ptr -> IO Bitmap
 peekGlyphSlot_bitmap ptr = 
     #{peek FT_GlyphSlotRec, bitmap} ptr
 

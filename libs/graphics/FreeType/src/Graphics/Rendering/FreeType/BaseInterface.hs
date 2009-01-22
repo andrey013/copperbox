@@ -36,11 +36,7 @@ module Graphics.Rendering.FreeType.BaseInterface (
   
   
   -- * Access a bitmap
-  Bitmap, -- opaque wrapper over FT_Struct_bitmap
-  getBitmapRows, getBitmapWidth, getBitmapPitch, getBitmapBuffer,
-  
-  
-  
+  Bitmap(..), -- warning - it might be dangerous to expose Bitmap
   
   withBitmap,
   
@@ -87,11 +83,9 @@ import Control.Exception ( bracket )
 import Control.Monad
 import Data.Bits ( (.|.) )
 import Foreign.C.String ( withCString, peekCString )
-import Foreign.C.Types ( CUChar )
 import Foreign.ForeignPtr ( newForeignPtr, finalizeForeignPtr, 
     withForeignPtr )
 import Foreign.Marshal.Alloc ( alloca )
-import Foreign.Marshal.Array ( peekArray )
 import Foreign.Marshal.Utils ( with )
 import Foreign.Ptr ( Ptr, nullPtr )
 import Foreign.Storable ( peek )
@@ -218,30 +212,11 @@ withGlyphSlot fc action = glyphSlot fc >>= action
     glyphSlot face = withForeignFace face peekFace_glyph_slot
 
 
-newtype Bitmap = Bitmap { unBitmap :: FT_struct_bitmap }
-
-getBitmapRows :: Bitmap -> Int
-getBitmapRows = fromIntegral . __rows . unBitmap 
-
-getBitmapWidth :: Bitmap -> Int
-getBitmapWidth = fromIntegral . __width . unBitmap 
-
-getBitmapPitch :: Bitmap -> Int
-getBitmapPitch = fromIntegral . __pitch . unBitmap 
-
-
--- Not satisfactory that this has to be in IO ....
--- More thought needed.
-getBitmapBuffer :: Bitmap -> IO [CUChar]
-getBitmapBuffer (Bitmap bmp) = peekArray (r * w) $ __buffer bmp
-  where
-    r = fromIntegral $ __rows bmp
-    w = fromIntegral $ __width bmp
 
 
 withBitmap :: FT_glyphslot -> (Bitmap -> IO a) -> IO a
 withBitmap (FT_glyphslot ptr) action = 
-    peekGlyphSlot_bitmap ptr >>= action . Bitmap 
+    peekGlyphSlot_bitmap ptr >>= action
 
 
 bitmapLeft :: FT_glyphslot -> IO FT_int
