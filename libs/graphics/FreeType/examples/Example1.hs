@@ -38,10 +38,12 @@ image_height = 480
 target_height :: Int32
 target_height = image_height
 
-drawBitmap :: Bitmap -> Int32 -> Int32 -> Image -> Image
-drawBitmap (Bitmap r w _ bs) x y img = 
-    overlay x y (fromIntegral w) (makeBuffer w r bs) img     
-   
+drawBitmap :: Bitmap -> Int32 -> Int32 -> Image -> IO Image
+drawBitmap bmp x y img = do
+    bs <- getBitmapBuffer bmp
+    return $ overlay x y (fromIntegral w) (makeBuffer w r bs) img     
+  where
+    (r,w) = (getBitmapRows bmp, getBitmapWidth bmp)  
 
 showImage :: Image -> IO ()
 showImage img = zigZagPhiM f h ((),()) img
@@ -92,7 +94,7 @@ foldStep fc mx (pen,image) ch = do
         bleft <- bitmapLeft gs
         btop  <- bitmapTop gs
         withBitmap gs $ \bmp -> do 
-            let img' = drawBitmap bmp bleft (target_height - btop) image 
+            img' <- drawBitmap bmp bleft (target_height - btop) image 
             adv  <- advance gs
             return (moveVec pen adv, img')  
   where

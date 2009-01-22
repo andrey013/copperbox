@@ -33,6 +33,11 @@ import Foreign.C.Types ( CInt, CShort, CChar, CUChar )
 import Foreign.Ptr ( Ptr, FunPtr )
 import Foreign.Storable 
 
+import Foreign.Marshal.Array ( peekArray ) 
+
+
+--------------------------------------------------------------------------------
+
 data CVoid_
 type VoidPtr            = FT_pointer
 newtype FT_callback a   = FTCallback (FunPtr a) deriving Storable
@@ -243,16 +248,7 @@ instance Unmarshal PixelMode where
 
 --------------------------------------------------------------------------------
 -- FT_Bitmap
-
-data Bitmap = Bitmap { 
-      _rows         :: Int,
-      _width        :: Int,
-      _pitch        :: Int,
-      _buffer       :: [CUChar]  -- oh no! change this to an array when working properly
-   }
-    deriving (Show)
-    
-     
+ 
 
 data FT_struct_bitmap = FT_struct_bitmap {
       __rows            :: CInt,
@@ -289,6 +285,27 @@ instance Storable FT_struct_bitmap where
         #{poke FT_Bitmap, pixel_mode}   ptr pxm
         #{poke FT_Bitmap, palette_mode} ptr plm
         #{poke FT_Bitmap, palette}      ptr pl
+
+{-
+data FT_BITMAP
+
+peekBitmap_rows                 :: FT_BITMAP -> IO CInt
+peekBitmap_rows                 = #{peek FT_Bitmap, rows}
+
+peekBitmap_width                :: FT_BITMAP -> IO CInt
+peekBitmap_width                = #{peek FT_Bitmap, width}
+      
+peekBitmap_pitch                :: FT_BITMAP -> IO CInt
+peekBitmap_pitch                = #{peek FT_Bitmap, pitch}
+
+peekBitmap_buffer               :: FT_BITMAP -> IO [CUChar]
+peekBitmap_buffer ptr = do
+    r     <- #{peek FT_Bitmap, rows}          ptr
+    w     <- #{peek FT_Bitmap, width}         ptr
+    bptr  <- #{peek FT_Bitmap, buffer}
+    peekArray (r * w) bptr
+-}
+
         
 --------------------------------------------------------------------------------
 -- FT_IMAGE_TAG
@@ -348,37 +365,20 @@ data FT_struct_data = FT_struct_data {
 
 
 --------------------------------------------------------------------------------
--- FT_Generic_Finalizer
+-- FT_Generic_Finalizer and FT_Generic
 
-type FT_generic_finalizer_func   = VoidPtr 
-                                 -> IO ()
-                              
-foreign import ccall "wrapper"
-    mk_generic_finalizer_func   :: FT_generic_finalizer_func 
-                                -> IO (FT_callback FT_generic_finalizer_func)
-      
-
-
---------------------------------------------------------------------------------
--- FT_Generic
+-- My working assumption is that FT_Generic_Finalizer and FT_Generic 
+-- show not be exposed to Haskell. 
+--
+-- The purpose of FT_Generic is \"to associate their own data to a variety 
+-- of FreeType core objects\" - while this is important for a C client 
+-- appliction using FreeType, I don't see this having a naturally analogy
+-- for a Haskell application. It seems sensible to have Haskell 
+-- \"client-specific data\" entirely on the Haskell side.  
 
 
-data FT_struct_generic = FT_struct_generic {
-      _gf_data      :: VoidPtr,
-      _gf_finalizer :: FunPtr FT_generic_finalizer_func
-    }
 
-instance Storable FT_struct_generic where
-  sizeOf    _ = #{size FT_Generic}
-  alignment _ = alignment (undefined :: VoidPtr)
-  
-  peek ptr = do 
-      d <- #{peek FT_Generic, data} ptr
-      f <- #{peek FT_Generic, finalizer} ptr
-      return $ FT_struct_generic d f
-  
-  poke ptr (FT_struct_generic d f) = do
-        #{poke FT_Generic, data}      ptr d
-        #{poke FT_Generic, finalizer} ptr f
-                 
+
+
+
 -- end of file

@@ -69,7 +69,9 @@ main = do
 
                 
 printBitmap :: Bitmap -> IO ()
-printBitmap (Bitmap _ w _ bs) = step bs
+printBitmap bmp = do 
+    bs <- getBitmapBuffer bmp
+    step bs
   where
     step [] = putStrLn $ ""
     step xs = let (a,b) = splitAt w xs in
@@ -79,4 +81,6 @@ printBitmap (Bitmap _ w _ bs) = step bs
       where f 255 = 'X'
             f _   = ' '
 
-   
+    w = getBitmapWidth bmp
+    
+         

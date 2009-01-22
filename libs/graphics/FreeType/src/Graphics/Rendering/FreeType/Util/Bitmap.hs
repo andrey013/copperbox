@@ -58,7 +58,8 @@ overlay xpos ypos bwidth (Buffer buffer) (Image uarr) = Image $ runSTUArray $ do
                | otherwise          = (j,i+1)        
             
           
-    inbounds r c = (r >= minR && r <= maxR) && (c >= minC && c <= maxC)
+    inbounds row col = (row >= minR && row <= maxR) 
+                    && (col >= minC && col <= maxC)
     
     ((minR,minC),(maxR,maxC))   = bounds uarr 
         
@@ -82,12 +83,6 @@ makeBuffer w h chars = Buffer $ runSTArray $ do
     width, height :: Int32
     (width, height) = (fromIntegral w,fromIntegral h)
 
-nonzeros :: Buffer -> IO Int
-nonzeros (Buffer buffer) = foldlM f 0 buffer
-  where 
-    f :: Int -> CUChar -> IO Int 
-    f a e | e == 0    = return a
-          | otherwise = return (a+1)
           
 imageBounds :: Image -> ((Int32,Int32),(Int32,Int32))
 imageBounds (Image uarr) = bounds uarr

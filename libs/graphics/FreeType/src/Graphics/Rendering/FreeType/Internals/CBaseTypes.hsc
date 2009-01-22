@@ -66,7 +66,8 @@ newtype FT_face           = FT_face (ForeignPtr FT_FACE_RCRD_)
 
 -- FT_Size
 
-type FT_size_ptr              = Ptr FT_struct_size
+data FT_SIZE_RCRD_ 
+type FT_size_ptr              = Ptr FT_SIZE_RCRD_
 
 --------------------------------------------------------------------------------
 -- FT_GlyphSlot
@@ -491,6 +492,8 @@ instance Storable FT_struct_sizemetrics where
 --------------------------------------------------------------------------------
 -- FT_SizeRec
 
+{-
+
 
 data FT_struct_size = FT_struct_size {
       _sz_face         :: FT_face_ptr,
@@ -499,6 +502,7 @@ data FT_struct_size = FT_struct_size {
       _sz_internal     :: FT_sizeinternal_ptr
     }
 
+-}
 
 
 --------------------------------------------------------------------------------
@@ -545,20 +549,10 @@ peekGlyphSlot_format ptr          =
     #{peek FT_GlyphSlotRec, format} ptr >>= return . unmarshal
     
 
-peekGlyphSlot_bitmap :: FT_glyphslot_ptr -> IO Bitmap
+peekGlyphSlot_bitmap :: FT_glyphslot_ptr -> IO FT_struct_bitmap
 peekGlyphSlot_bitmap ptr = 
-    #{peek FT_GlyphSlotRec, bitmap} ptr >>= marshalBitmap
+    #{peek FT_GlyphSlotRec, bitmap} ptr
 
-
--- TODO - it would be better not to marshal the bitmap... 
-
-marshalBitmap :: FT_struct_bitmap -> IO Bitmap    
-marshalBitmap bmp = do
-    buf <- peekArray (r * w) $ __buffer bmp
-    return $ Bitmap r w (fromIntegral $ __pitch bmp) buf  
-  where
-    r = fromIntegral $ __rows bmp
-    w = fromIntegral $ __width bmp
     
 peekGlyphSlot_bitmap_left       :: FT_glyphslot_ptr -> IO FT_int
 peekGlyphSlot_bitmap_left       = #{peek FT_GlyphSlotRec, bitmap_left}
