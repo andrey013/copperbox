@@ -29,12 +29,12 @@ import Text.PrettyPrint.HughesPJ
 
 
 ppBMPheader :: BMPheader -> Doc
-ppBMPheader (BMPheader mc sz r1 r2 off) =
-    fsep $ [ field "magic"     (doubleQuotes $ text mc) 
-           , field "file_size" (decHex0x 8 sz) 
-           , field "reserved"  (ppHex0x 4 r1)
-           , field "reserved"  (ppHex0x 4 r2)
-           , field "offset"    (decHex0x 8 off)
+ppBMPheader (BMPheader sz off) =
+    fsep $ [ anonfield  "magic"       2
+           , field      "file_size"   (decHex0x 8 sz) 
+           , anonfield  "reserved"    1
+           , anonfield  "reserved"    1
+           , field      "offset"      (decHex0x 8 off)
            ]
     
 
@@ -44,7 +44,7 @@ ppDIBheader dib =
            , field "image_width"      (integerValue $ _dib_width dib)
            , field "image_height"     (integerValue $ _dib_height dib)
            , field "colour_planes"    (integerValue $ _colour_planes dib)
-           , field "bits_per_pixel"   (decHex0x 4 $ _bits_per_pxl dib)
+           , field "bits_per_pixel"   (ppBitsPerPixel $ _bits_per_pxl dib)
            , field "compression"      (ppCompression $ _compression dib)
            , field "data_size"        (decHex0x 8 $ _data_size dib)
            , field "horizontal_res"   (integerValue $ _h_resolution dib)
@@ -53,7 +53,14 @@ ppDIBheader dib =
            , field "colours_used"     (decHex0x 8 $ _colours_used dib)
            ]
 
-    
+          
+ppBitsPerPixel :: BitsPerPixel -> Doc
+ppBitsPerPixel B1_Monochrome      = text "1 (mono)"
+ppBitsPerPixel B4_Colour16        = text "4 (16 colours)"
+ppBitsPerPixel B8_Colour256       = text "8 (256 colours)"
+ppBitsPerPixel B16_HighColour     = text "16 (16 bit high colour bitmap)"
+ppBitsPerPixel B24_TrueColour24   = text "24 (24 bit true colour bitmap)"
+ppBitsPerPixel B32_TrueColour32   = text "32 (32 bit true colour bitmap)"
     
 ppCompression :: Compression -> Doc
 ppCompression Bi_RGB        = text "BI_RGB"
@@ -88,6 +95,10 @@ decHex0x w i = integer (fromIntegral i) <+> parens (ppHex0x w i)
 
 field :: String -> Doc -> Doc
 field s d = text s <> equals <> d
+
+anonfield :: String -> Int -> Doc
+anonfield s i = text s <> equals <> (text $ replicate i '_')
+
 
 ppHex0x :: Integral a => Int -> a -> Doc
 ppHex0x w i = text "0x" <> ppHex w i

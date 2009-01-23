@@ -24,8 +24,9 @@ import ZBmp.Utils ( paddingMeasure )
 import Control.Applicative
 import Control.Monad.Error
 import Control.Monad.State
+import Control.Monad.Writer
 
-import Data.Array.IArray ( Array, array, listArray )
+import Data.Array.IArray ( Array, listArray )
 import Data.Bits
 import qualified Data.ByteString.Lazy as B
 import Data.Char ( chr )
@@ -33,6 +34,8 @@ import Data.List ( transpose )
 import Data.Word
 
 import System.IO
+
+type ParseLog = String
 
 data ParseState = PSt { remaining :: B.ByteString,
                         pos       :: Int }
@@ -45,34 +48,42 @@ instance Error ParseErr where
   strMsg s = ParseErr s   
                           
 newtype Parser a = Parser { 
-          getParser :: ErrorT ParseErr (State ParseState) a }
-    deriving ( Functor, Monad, MonadError ParseErr, MonadState ParseState ) 
+    getParser :: ErrorT ParseErr (WriterT ParseLog (State ParseState)) a }
+  deriving ( Functor, Monad, MonadError ParseErr, MonadState ParseState,
+             MonadWriter ParseLog ) 
 
 instance Applicative Parser where
   pure = return
   (<*>) = ap
   
-runParser :: Parser a -> B.ByteString  -> Either String a   
+runParser :: Parser a -> B.ByteString  -> (Either String a, ParseLog)   
 runParser parser bs0 = case runP parser bs0 of
-    Left (ParseErr err) -> Left err
-    Right a             -> Right a  
+    (Left (ParseErr err),msg) -> (Left err,msg)
+    (Right a            ,msg) -> (Right a,msg)  
   where 
-    runP :: Parser a -> B.ByteString  -> Either ParseErr a
+    runP :: Parser a -> B.ByteString  -> (Either ParseErr a, ParseLog)
     -- should we use runState and check input is exhausted? 
-    runP p bs = evalState (runErrorT $ getParser p) (initState bs)
+    runP p bs = evalState (runWriterT $ runErrorT $ getParser p) (initState bs)
     
     initState bs = PSt { remaining = bs, pos = 0 }
+
+
+evalParser :: Parser a -> B.ByteString  -> Either String a
+evalParser parser = fst . runParser parser 
+
     
 readBmp :: FilePath -> IO BMPfile  
 readBmp name = do 
     h <- openBinaryFile name ReadMode
     bs <- B.hGetContents h
-    let ans = runParser bmpFile bs    
+    let (ans,msg) = runParser bmpFile bs    
     case ans of 
-      Left err -> hClose h >> putStrLn err >> error "readBmp failed"
+      Left err -> hClose h >> putStrLn err >> putStrLn msg 
+                           >> error "readBmp failed"
       Right mf -> hClose h >> return mf
       
 --------------------------------------------------------------------------------
+
 
 reportFail :: String -> Parser a
 reportFail s = do 
@@ -89,15 +100,16 @@ bmpFile = do
     return $ BMPfile hdr dib body
 
 header :: Parser BMPheader
-header = (\c1 c2 sz r1 r2 off -> BMPheader [c1,c2] sz r1 r2 off )
-  <$> char        <*> char        <*> getWord32le 
-  <*> getWord16le <*> getWord16le <*> getWord32le 
+header = (\sz off -> BMPheader sz off)
+  <$> (ignore "magic1" char *> ignore "magic2" char *> getWord32le)          
+  <*> (ignore "reserved1" getWord16le *> 
+       ignore "reserved2" getWord16le *> getWord32le) 
 
 
 dibheader :: Parser DIBheader
 dibheader = DIBheader 
     <$> getWord32le  <*> getWord32le  <*> getWord32le 
-    <*> getWord16le  <*> getWord16le  <*> compression
+    <*> getWord16le  <*> bitsPerPixel <*> compression
     <*> getWord32le  <*> getWord32le  <*> getWord32le
     <*> getWord32le  <*> getWord32le
 
@@ -106,7 +118,10 @@ bmpBody dib
     | isRGB24 dib = RGB24 <$> imageData24 (_dib_width dib) (_dib_height dib) 
     | otherwise   = return UnrecognizedFormat
   where 
-    isRGB24 d = _bits_per_pxl d == 24 && _compression d == Bi_RGB  
+    isRGB24 d = _bits_per_pxl d == B24_TrueColour24 && _compression d == Bi_RGB  
+
+bitsPerPixel :: Parser BitsPerPixel
+bitsPerPixel = unmarshalBitsPerPixel <$> getWord16le
     
 compression :: Parser Compression
 compression = unmarshalCompression <$> getWord32le
@@ -125,7 +140,7 @@ dataLine :: Word32 -> Parser ([RGBcolour],[Word8])
 dataLine w = (,) <$> payload w <*> padding w
   where
     payload i = iter i rgbColour
-    padding z = iter (paddingMeasure w) getWord8
+    padding i = iter (paddingMeasure i) getWord8
 
           
 
@@ -136,6 +151,15 @@ rgbColour = RGBcolour <$> getWord8 <*> getWord8 <*> getWord8
 
 --------------------------------------------------------------------------------
 -- Helpers
+
+
+ignore :: Show a => String -> Parser a -> Parser ()
+ignore name p = p >>= logfield name . show
+  
+
+logfield :: Show a => String -> a -> Parser ()
+logfield name val = tell $ name  ++ " = " ++ show val ++ "\n"
+
 
 iter :: Integral i => i -> Parser a -> Parser [a]
 iter i p | i > 0     = (:) <$> p <*> iter (i-1) p

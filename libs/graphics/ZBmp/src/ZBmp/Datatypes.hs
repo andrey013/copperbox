@@ -29,10 +29,7 @@ data BMPfile = BMPfile {
 
    
 data BMPheader = BMPheader { 
-        _magic      :: String,
         _file_size  :: Word32, 
-        _reserved1  :: Word16,
-        _reserved2  :: Word16,
         _offset     :: Word32 
     }
   deriving Show
@@ -43,7 +40,7 @@ data DIBheader = DIBheader {
         _dib_width      :: Word32,
         _dib_height     :: Word32,
         _colour_planes  :: Word16,
-        _bits_per_pxl   :: Word16,
+        _bits_per_pxl   :: BitsPerPixel,
         _compression    :: Compression,
         _data_size      :: Word32,
         _h_resolution   :: Word32,
@@ -67,6 +64,15 @@ data RGBcolour = RGBcolour {
     }
   deriving Show 
 
+data BitsPerPixel = 
+      B1_Monochrome
+    | B4_Colour16      
+    | B8_Colour256     
+    | B16_HighColour   
+    | B24_TrueColour24
+    | B32_TrueColour32
+    deriving ( Enum, Eq, Ord, Show )  
+
 data Compression =
       Bi_RGB
     | Bi_RLE8
@@ -76,7 +82,27 @@ data Compression =
     | Bi_PNG
     deriving ( Enum, Eq, Ord, Show )
     
-    
+
+marshalBitsPerPixel :: BitsPerPixel -> Word16
+marshalBitsPerPixel x = case x of
+      B1_Monochrome     -> 1
+      B4_Colour16       -> 4
+      B8_Colour256      -> 8
+      B16_HighColour    -> 16
+      B24_TrueColour24  -> 24
+      B32_TrueColour32  -> 32
+
+unmarshalBitsPerPixel :: Word16 -> BitsPerPixel
+unmarshalBitsPerPixel x
+      | x == 1    = B1_Monochrome  
+      | x == 4    = B4_Colour16  
+      | x == 8    = B8_Colour256
+      | x == 16   = B16_HighColour
+      | x == 24   = B24_TrueColour24
+      | x == 32   = B32_TrueColour32         
+      | otherwise = error ("unmarshalCompression - illegal value " ++ show x)
+      
+          
 marshalCompression :: Compression -> Word32
 marshalCompression x = case x of
       Bi_RGB       -> 0

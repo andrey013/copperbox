@@ -46,9 +46,9 @@ putBmpFile (BMPfile hdr dib body) =
 
 
 putBMPheader :: BMPheader -> BMPout
-putBMPheader (BMPheader _ sz _ _ _)  = 
+putBMPheader (BMPheader sz off)  = 
     outChar 'B' . outChar 'M' . outW32le sz 
-                . outW16le 0  . outW16le 0   . outW32le 54
+                . outW16le 0  . outW16le 0   . outW32le off
 
 
 putDIBheader :: DIBheader -> BMPout
@@ -56,7 +56,7 @@ putDIBheader dib =
     outW32le 40 . outW32le (_dib_width dib) 
                 . outW32le (_dib_height dib) 
                 . outW16le 1                      -- 1 colour plane
-                . outW16le 24                     -- bits per pixel
+                . outW16le (marshalBitsPerPixel $ _bits_per_pxl dib)
                 . outW32le 0                      -- compression
                 . outW32le (_data_size dib)
                 . outW32le 0                      -- horizontal res
