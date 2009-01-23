@@ -20,8 +20,8 @@
 module Graphics.Rendering.FreeType.Internals.Wrappers where
 
 import Graphics.Rendering.FreeType.Internals.CBaseTypes
--- import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
--- import Graphics.Rendering.FreeType.Internals.COutline
+import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
+import Graphics.Rendering.FreeType.Internals.COutline
 
 import Foreign.Ptr ( FunPtr ) 
 
@@ -39,5 +39,26 @@ foreign import ccall "wrapper"
     mkDoneOutline       :: (FT_outline_ptr -> IO ()) 
                         -> IO (FunPtr (FT_outline_ptr -> IO ()))
                         
-                                            
+
+--------------------------------------------------------------------------------
+-- Outline function pointers 
+
+foreign import ccall "wrapper"
+    mk_outline_moveto_func   :: FT_outline_moveto_func 
+                             -> IO (FT_callback FT_outline_moveto_func)
+                            
+foreign import ccall "wrapper"
+    mk_outline_lineto_func   :: FT_outline_lineto_func 
+                             -> IO (FT_callback FT_outline_lineto_func)
+                             
+                             
+foreign import ccall "wrapper"
+    mk_outline_conicto_func  :: FT_outline_conicto_func 
+                             -> IO (FT_callback FT_outline_conicto_func)
+
+foreign import ccall "wrapper"
+    mk_outline_cubicto_func  :: FT_outline_cubicto_func 
+                             -> IO (FT_callback FT_outline_cubicto_func)
+                             
+                                                          
 -- end of file

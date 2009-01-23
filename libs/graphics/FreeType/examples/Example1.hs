@@ -85,14 +85,14 @@ main2 path text =
     
     pen = Vector (300 * 64) ((image_height - 200) * 64)                    
 
-foldStep :: FT_face -> Matrix -> FoldState -> Char -> IO FoldState
+foldStep :: Face -> Matrix -> FoldState -> Char -> IO FoldState
 foldStep fc mx (pen,image) ch = do
     setTransform fc (Just mx) pen
     loadChar fc (ord ch) [Render]
     withGlyphSlot fc $ \gs -> do 
         bleft <- bitmapLeft gs
         btop  <- bitmapTop gs
-        withBitmap gs $ \bmp -> do 
+        withGSBitmap gs $ \bmp -> do 
             let img' = drawBitmap bmp bleft (target_height - btop) image 
             adv  <- advance gs
             return (moveVec pen adv, img')  

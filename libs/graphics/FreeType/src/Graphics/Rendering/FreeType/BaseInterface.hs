@@ -17,11 +17,11 @@
 module Graphics.Rendering.FreeType.BaseInterface (
   
   -- * Run a computation on a FreeType library instance.
-  FT_library,
+  FreeTypeLibrary,
   withFreeType, 
   
   -- * Run a conputation on a face.  
-  FT_face,
+  Face,
   withNewFace,
 
   
@@ -38,7 +38,7 @@ module Graphics.Rendering.FreeType.BaseInterface (
   -- * Access a bitmap
   Bitmap(..), -- warning - it might be dangerous to expose Bitmap
   
-  withBitmap,
+  withGSBitmap,
   
   bitmapLeft,
   bitmapTop,
@@ -66,6 +66,7 @@ module Graphics.Rendering.FreeType.BaseInterface (
   Encoding(..),
   selectCharMap, 
   
+  getCharmapIndex,
   getCharIndex,
   
 
@@ -95,8 +96,9 @@ import Foreign.Storable ( peek )
 -------------------------------------------------------------------------------- 
 -- Initialize FreeType
 
+type FreeTypeLibrary = FT_library
 
-withFreeType :: a -> (FT_library -> IO a) -> IO a
+withFreeType :: a -> (FreeTypeLibrary -> IO a) -> IO a
 withFreeType failureValue action = 
   bracket initFreeType doneFreeType 
           (\ftlib -> do { check_null <- isNullFT_Library ftlib 
@@ -139,7 +141,9 @@ freeLibrary_ p = ft_done_freetype p >> return ()
 --------------------------------------------------------------------------------
 -- New face
 
-withNewFace :: FT_library -> FilePath -> Int -> a -> (FT_face -> IO a) -> IO a
+type Face = FT_face
+
+withNewFace :: FT_library -> FilePath -> Int -> a -> (Face -> IO a) -> IO a
 withNewFace ft_lib path idx failureValue action = 
   bracket (newFace ft_lib path idx) doneFace 
           (\face -> do { check_null <- isNullFT_Face face 
@@ -214,8 +218,8 @@ withGlyphSlot fc action = glyphSlot fc >>= action
 
 
 
-withBitmap :: FT_glyphslot -> (Bitmap -> IO a) -> IO a
-withBitmap (FT_glyphslot ptr) action = 
+withGSBitmap :: FT_glyphslot -> (Bitmap -> IO a) -> IO a
+withGSBitmap (FT_glyphslot ptr) action = 
     peekGlyphSlot_bitmap ptr >>= action
 
 
@@ -289,6 +293,12 @@ postscriptName fc = withForeignFace fc $ \h -> do
 selectCharMap :: FT_face -> Encoding -> IO FT_error
 selectCharMap fc enc = withForeignFace fc $ \h ->
     ft_select_charmap h (marshal enc)
+
+-- TODO FT_int or Int ?
+
+getCharmapIndex :: FT_charmap -> IO FT_int
+getCharmapIndex (FT_charmap h) = ft_get_charmap_index h
+
 
 getCharIndex :: FT_face -> Int -> IO Int
 getCharIndex fc ccode = withForeignFace fc $ \h -> do

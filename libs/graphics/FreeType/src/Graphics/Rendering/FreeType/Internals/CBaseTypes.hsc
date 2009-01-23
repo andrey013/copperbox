@@ -31,7 +31,7 @@ import Control.Monad ( (>=>) )
 
 
 import Foreign.C.String ( CString, peekCString )
-import Foreign.C.Types ( CInt, CShort, CChar )
+import Foreign.C.Types ( CInt )
 import Foreign.ForeignPtr ( ForeignPtr )
 import Foreign.Ptr ( Ptr )
 import Foreign.Storable 
@@ -79,21 +79,24 @@ data FT_GLYPHSLOT_RCRD_
 type FT_glyphslot_ptr     = Ptr FT_GLYPHSLOT_RCRD_
 
 -- Not a foreign Prt...
-newtype FT_glyphslot      = FT_glyphslot FT_glyphslot_ptr
+newtype FT_glyphslot      = FT_glyphslot { getGlyphslot :: FT_glyphslot_ptr }
 
   
 --------------------------------------------------------------------------------
 
 -- FT_CharMap
 
-type FT_charmap_ptr           = Ptr FT_struct_charmap
+data FT_CHARMAP_RCRD_ 
+type FT_charmap_ptr           = Ptr FT_CHARMAP_RCRD_
+
+newtype FT_charmap            = FT_charmap { getCharmap :: FT_charmap_ptr }
 
 --------------------------------------------------------------------------------
 
 -- FT_Encoding
 
 
-type FT_enum_encoding        = CInt
+type FT_enum_encoding             = CInt
 
 #{enum FT_enum_encoding ,
   , ft_ENCODING_NONE              = FT_ENCODING_NONE 
@@ -216,7 +219,12 @@ instance Storable FT_struct_glyphmetrics where
 --------------------------------------------------------------------------------
 -- FT_Bitmap_Size
 
-data FT_struct_bitmapsize = FT_struct_bitmapsize {
+-- With a cursory reading of the FreeType API it looks as though 
+-- FT_Bitmap_Size doesn't need Haskell-to-C marshalling. 
+-- (FT_Bitmap_Size is only queried, never constructed by a client).
+-- For the time being it has Storable instance - this may change.
+
+data BitmapSize = BitmapSize {
       _bs_height  :: FT_short,
       _bs_width   :: FT_short,
       _bs_size    :: FT_pos,
@@ -224,7 +232,7 @@ data FT_struct_bitmapsize = FT_struct_bitmapsize {
       _bs_y_ppem  :: FT_pos
     }
 
-instance Storable FT_struct_bitmapsize where
+instance Storable BitmapSize where
   sizeOf    _ = #{size FT_Bitmap_Size}
   alignment _ = alignment (undefined :: FT_short)
   
@@ -234,9 +242,9 @@ instance Storable FT_struct_bitmapsize where
       sz  <- #{peek FT_Bitmap_Size, size}   ptr
       xpp <- #{peek FT_Bitmap_Size, x_ppem} ptr
       ypp <- #{peek FT_Bitmap_Size, y_ppem} ptr
-      return $ FT_struct_bitmapsize h w sz xpp ypp
+      return $ BitmapSize h w sz xpp ypp
   
-  poke ptr (FT_struct_bitmapsize h w sz xpp ypp) = do
+  poke ptr (BitmapSize h w sz xpp ypp) = do
         #{poke FT_Bitmap_Size, height} ptr h
         #{poke FT_Bitmap_Size, width}  ptr w
         #{poke FT_Bitmap_Size, size}   ptr sz
@@ -273,29 +281,18 @@ type FT_renderer_ptr          = Ptr FT_renderer
 -------------------------------------------------------------------------------- 
 -- FT_CharMapRec
 
-data FT_struct_charmap = FT_struct_charmap {
-      _face         :: FT_face_ptr,
-      _encoding     :: Encoding,
-      _platform_id  :: FT_ushort,
-      _encoding_id  :: FT_ushort
-    }
+-- Leave the FT_CharMapRec on in C memory, instead provide field accessors. 
+-- (No accessor to @face@ which is the parent pointer).
 
-instance Storable FT_struct_charmap where
-  sizeOf    _ = #{size FT_CharMapRec}
-  alignment _ = alignment (undefined :: FT_face_ptr)
-  
-  peek ptr = do 
-      f   <- #{peek FT_CharMapRec, face}        ptr
-      e   <- #{peek FT_CharMapRec, encoding}    ptr
-      pid <- #{peek FT_CharMapRec, platform_id} ptr
-      eid <- #{peek FT_CharMapRec, encoding_id} ptr
-      return $ FT_struct_charmap f (unmarshal e) pid eid
-  
-  poke ptr (FT_struct_charmap f e pid eid) = do
-        #{poke FT_CharMapRec, face}        ptr f
-        #{poke FT_CharMapRec, encoding}    ptr (marshal e)
-        #{poke FT_CharMapRec, platform_id} ptr pid
-        #{poke FT_CharMapRec, encoding_id} ptr eid
+peekCharMap_encoding      :: FT_charmap_ptr -> IO Encoding
+peekCharMap_encoding      = 
+    #{peek FT_CharMapRec, encoding} >=> return . unmarshal
+              
+peekCharMap_platform_id   :: FT_charmap_ptr -> IO FT_ushort
+peekCharMap_platform_id   = #{peek FT_CharMapRec, platform_id}
+
+peekCharMap_encoding_id   :: FT_charmap_ptr -> IO FT_ushort
+peekCharMap_encoding_id   = #{peek FT_CharMapRec, encoding_id}
 
 
 -------------------------------------------------------------------------------- 
@@ -565,57 +562,6 @@ peekGlyphSlot_num_subglyphs     = #{peek FT_GlyphSlotRec, num_subglyphs}
 
 
 --------------------------------------------------------------------------------
-
--- FT_Outline
--- Defined in FT_IMAGE_H 
-
-data FT_struct_outline = FT_struct_outline {
-      _n_contours     :: CShort,
-      _n_points       :: CShort,
-      _points         :: Ptr FT_struct_vector,
-      _tags           :: Ptr CChar,
-      _contours       :: Ptr CShort,
-      _outline_flags  :: CInt
-    }
-
-instance Storable FT_struct_outline where
-  sizeOf    _ = #{size FT_Outline}
-  alignment _ = alignment (undefined :: CShort)
-  
-  peek ptr = do 
-      a <- #{peek FT_Outline, n_contours} ptr
-      b <- #{peek FT_Outline, n_points}   ptr
-      c <- #{peek FT_Outline, points}     ptr
-      d <- #{peek FT_Outline, tags}       ptr
-      e <- #{peek FT_Outline, contours}   ptr
-      f <- #{peek FT_Outline, flags}      ptr
-      return $ FT_struct_outline a b c d e f
-  
-  poke ptr (FT_struct_outline a b c d e f) = do
-        #{poke FT_Outline, n_contours}  ptr a
-        #{poke FT_Outline, n_points}    ptr b
-        #{poke FT_Outline, points}      ptr c
-        #{poke FT_Outline, tags}        ptr d
-        #{poke FT_Outline, contours}    ptr e
-        #{poke FT_Outline, flags}       ptr f
-
-type FT_outline_ptr = Ptr FT_struct_outline
-newtype FT_outline  = FT_outline (ForeignPtr FT_struct_outline) 
-
-type FT_enum_outlineflags    = CInt
-
-#{enum FT_enum_outlineflags ,
-  , ft_OUTLINE_NONE             = FT_OUTLINE_NONE
-  , ft_OUTLINE_OWNER            = FT_OUTLINE_OWNER
-  , ft_OUTLINE_EVEN_ODD_FILL    = FT_OUTLINE_EVEN_ODD_FILL
-  , ft_OUTLINE_REVERSE_FILL     = FT_OUTLINE_REVERSE_FILL
-  , ft_OUTLINE_IGNORE_DROPOUTS  = FT_OUTLINE_IGNORE_DROPOUTS
-  , ft_OUTLINE_SMART_DROPOUTS   = FT_OUTLINE_SMART_DROPOUTS
-  , ft_OUTLINE_INCLUDE_STUBS    = FT_OUTLINE_INCLUDE_STUBS
-
-  , ft_OUTLINE_HIGH_PRECISION   = FT_OUTLINE_HIGH_PRECISION
-  , ft_OUTLINE_SINGLE_PASS      = FT_OUTLINE_SINGLE_PASS 
-  }
 
 
 

@@ -28,20 +28,71 @@ import Graphics.Rendering.FreeType.Internals.CBaseTypes
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Internals.CImage
 
-import Foreign.C.Types (  CInt, CShort )
+import Foreign.C.Types (  CInt, CShort, CChar )
+
+import Foreign.ForeignPtr ( ForeignPtr )
 import Foreign.Ptr ( Ptr, FunPtr ) 
 import Foreign.Storable
 
 --------------------------------------------------------------------------------
 
+-- TODO - change this to `data Outline = Outline {` after you have stopped 
+-- it exposing pointers.
 
+data FT_struct_outline = FT_struct_outline {
+      _n_contours     :: CShort,
+      _n_points       :: CShort,
+      _points         :: Ptr FT_struct_vector,
+      _tags           :: Ptr CChar,
+      _contours       :: Ptr CShort,
+      _outline_flags  :: CInt
+    }
+
+instance Storable FT_struct_outline where
+  sizeOf    _ = #{size FT_Outline}
+  alignment _ = alignment (undefined :: CShort)
+  
+  peek ptr = do 
+      a <- #{peek FT_Outline, n_contours} ptr
+      b <- #{peek FT_Outline, n_points}   ptr
+      c <- #{peek FT_Outline, points}     ptr
+      d <- #{peek FT_Outline, tags}       ptr
+      e <- #{peek FT_Outline, contours}   ptr
+      f <- #{peek FT_Outline, flags}      ptr
+      return $ FT_struct_outline a b c d e f
+  
+  poke ptr (FT_struct_outline a b c d e f) = do
+        #{poke FT_Outline, n_contours}  ptr a
+        #{poke FT_Outline, n_points}    ptr b
+        #{poke FT_Outline, points}      ptr c
+        #{poke FT_Outline, tags}        ptr d
+        #{poke FT_Outline, contours}    ptr e
+        #{poke FT_Outline, flags}       ptr f
+
+type FT_outline_ptr = Ptr FT_struct_outline
+newtype FT_outline  = FT_outline (ForeignPtr FT_struct_outline) 
+
+type FT_enum_outlineflags    = CInt
+
+#{enum FT_enum_outlineflags ,
+  , ft_OUTLINE_NONE             = FT_OUTLINE_NONE
+  , ft_OUTLINE_OWNER            = FT_OUTLINE_OWNER
+  , ft_OUTLINE_EVEN_ODD_FILL    = FT_OUTLINE_EVEN_ODD_FILL
+  , ft_OUTLINE_REVERSE_FILL     = FT_OUTLINE_REVERSE_FILL
+  , ft_OUTLINE_IGNORE_DROPOUTS  = FT_OUTLINE_IGNORE_DROPOUTS
+  , ft_OUTLINE_SMART_DROPOUTS   = FT_OUTLINE_SMART_DROPOUTS
+  , ft_OUTLINE_INCLUDE_STUBS    = FT_OUTLINE_INCLUDE_STUBS
+
+  , ft_OUTLINE_HIGH_PRECISION   = FT_OUTLINE_HIGH_PRECISION
+  , ft_OUTLINE_SINGLE_PASS      = FT_OUTLINE_SINGLE_PASS 
+  }
+
+
+
+--------------------------------------------------------------------------------
 type FT_outline_moveto_func   = Ptr FT_struct_vector 
                               -> VoidPtr 
                               -> IO FT_int
-
-foreign import ccall "wrapper"
-    mk_outline_moveto_func   :: FT_outline_moveto_func 
-                            -> IO (FT_callback FT_outline_moveto_func)
    
 
 type FT_outline_lineto_func   = Ptr FT_struct_vector 

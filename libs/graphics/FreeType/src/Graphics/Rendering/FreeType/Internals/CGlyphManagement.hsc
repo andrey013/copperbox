@@ -25,52 +25,25 @@ module Graphics.Rendering.FreeType.Internals.CGlyphManagement where
 #include FT_FREETYPE_H
 #include FT_GLYPH_H 
 
+
 import Graphics.Rendering.FreeType.Internals.CBaseTypes
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
+import Graphics.Rendering.FreeType.Utils ( Marshal(..), Unmarshal (..) )
 
-
-
--- import Foreign.C.Types
-import Foreign.Ptr ( Ptr ) 
-import Foreign.Storable ( Storable(..) )
-
-
+import Foreign.C.Types ( CInt )
+import Foreign.Ptr
 
 --------------------------------------------------------------------------------
-data FT_GLYPH_CLASS_
+
+data    FT_GLYPH_RCRD_      
+
+type FT_glyph_ptr           = Ptr FT_GLYPH_RCRD_
+
+newtype FT_glyph            = FT_glyph (Ptr FT_GLYPH_RCRD_) 
 
 
 
-data FT_glyphrec = FT_glyphrec {
-      _library  :: FT_library_ptr,
-      _clazz    :: Ptr FT_GLYPH_CLASS_,
-      _format   :: FT_enum_glyphformat,
-      _advance  :: Vector
-    }
 
-instance Storable FT_glyphrec where
-  sizeOf    _ = #{size FT_GlyphRec}
-  alignment _ = alignment (undefined :: FT_library_ptr)
-  
-  peek ptr = do 
-      l <- #{peek FT_GlyphRec, library} ptr
-      c <- #{peek FT_GlyphRec, clazz}   ptr
-      f <- #{peek FT_GlyphRec, format}  ptr
-      a <- #{peek FT_GlyphRec, advance} ptr
-      return $ FT_glyphrec l c f a
-  
-  poke ptr (FT_glyphrec l c f a) = do
-        #{poke FT_GlyphRec, library} ptr l
-        #{poke FT_GlyphRec, clazz}   ptr c
-        #{poke FT_GlyphRec, format}  ptr f
-        #{poke FT_GlyphRec, advance} ptr a
-
--- Glyph is exported from the library
-
-newtype Glyph = Glyph (Ptr FT_glyphrec) deriving Storable
-
--- FT_glyph is used internally 
-type FT_glyph_ptr = Ptr FT_glyphslot_ptr
 
 --------------------------------------------------------------------------------
 
@@ -88,14 +61,72 @@ foreign import ccall unsafe "freetype/freetype.h FT_Glyph_Copy"
                           -> IO FT_error
 
 
+foreign import ccall unsafe "freetype/freetype.h FT_Glyph_Transform" 
+    ft_glyph_transform    :: FT_glyph_ptr
+                          -> Ptr Matrix
+                          -> Ptr Vector
+                          -> IO FT_error
+
+
+
+
+--------------------------------------------------------------------------------
+-- FT_Glyph_BBox_Mode
+
+
+type FT_enum_glyph_bbox_mode      = CInt
+
+#{enum FT_enum_glyph_bbox_mode ,
+  , ft_GLYPH_BBOX_UNSCALED        = FT_GLYPH_BBOX_UNSCALED 
+  , ft_GLYPH_BBOX_SUBPIXELS       = FT_GLYPH_BBOX_SUBPIXELS
+  , ft_GLYPH_BBOX_GRIDFIT         = FT_GLYPH_BBOX_GRIDFIT
+  , ft_GLYPH_BBOX_TRUNCATE        = FT_GLYPH_BBOX_TRUNCATE
+  , ft_GLYPH_BBOX_PIXELS          = FT_GLYPH_BBOX_PIXELS
+  }
+
+data GlyphBBoxMode = 
+      UnscaledBBox
+    | Subpixels
+    | Gridfit
+    | Truncate
+    | Pixels
+    deriving ( Enum, Eq, Ord, Show )
+    
+instance Marshal GlyphBBoxMode where
+  marshal x = case x of
+      UnscaledBBox  -> ft_GLYPH_BBOX_UNSCALED
+      Subpixels     -> ft_GLYPH_BBOX_SUBPIXELS
+      Gridfit       -> ft_GLYPH_BBOX_GRIDFIT
+      Truncate      -> ft_GLYPH_BBOX_TRUNCATE
+      Pixels        -> ft_GLYPH_BBOX_PIXELS
+
+instance Unmarshal GlyphBBoxMode where
+  unmarshal x
+      | x == ft_GLYPH_BBOX_UNSCALED     = UnscaledBBox 
+      | x == ft_GLYPH_BBOX_SUBPIXELS    = Subpixels 
+      | x == ft_GLYPH_BBOX_GRIDFIT      = Gridfit 
+      | x == ft_GLYPH_BBOX_TRUNCATE     = Truncate 
+      | x == ft_GLYPH_BBOX_PIXELS       = Pixels  
+      | otherwise = error ("unmarshal: GlyphBBoxMode - illegal value " ++ show x)
+
+--------------------------------------------------------------------------------
+
+
 foreign import ccall unsafe "freetype/freetype.h FT_Glyph_Get_CBox" 
     ft_glyph_get_cbox     :: FT_glyph_ptr 
                           -> FT_uint 
                           -> Ptr FT_struct_bbox
                           -> IO ()
+                          
+
+--------------------------------------------------------------------------------
+
+-- TODO FT_Glyph_To_Bitmap - typecasting!
 
 
-  
-  
-  
+foreign import ccall unsafe "freetype/freetype.h FT_Done_Glyph" 
+    ft_done_glyph         :: FT_glyph_ptr 
+                          -> IO ()
+
+                            
 -- end of file

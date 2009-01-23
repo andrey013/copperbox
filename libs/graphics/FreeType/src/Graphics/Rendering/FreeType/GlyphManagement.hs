@@ -15,42 +15,37 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.FreeType.GlyphManagement ( 
-    gm_dummy_export 
+   Glyph,
+   withGlyph  
 ) where
 
 
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes () 
-import Graphics.Rendering.FreeType.Internals.CGlyphManagement ()
+import Graphics.Rendering.FreeType.Internals.CGlyphManagement
 
-gm_dummy_export :: ()
-gm_dummy_export = ()
+import Control.Exception ( bracket )
 
+import Foreign.Ptr ( nullPtr )
 
-{-
-import Foreign.C.String ( withCString )
-import Foreign.ForeignPtr ( newForeignPtr, finalizeForeignPtr, 
-    withForeignPtr )
-import Foreign.Marshal.Alloc ( alloca )
--- import Foreign.Ptr ( Ptr )
-import Foreign.Storable ( peek )
--}
-
--- Note glyphs are allocated by the client not the library...
--- Values get stored in a glyph by FreeType copying them in from the 
--- current-glyph-in-the-glyphslot.
-
--- They actual contents of the glyph should be opaque to Haskell
--- as they contain pointers to the FreeType library and internal
--- /clazz/ data.
+ 
+type Glyph = FT_glyph
 
 
--- FreeType - FT_Glyph is a pointer.
+withGlyph :: (Glyph -> IO a) -> IO a
+withGlyph action = bracket newGlyph doneGlyph action
+                            
 
--------------------------------------------------------------------------------- 
+newGlyph :: IO FT_glyph
+newGlyph = return (FT_glyph nullPtr)
 
 
-{-
-initGlyph :: IO Glyph
-initGlyph = do
-    alloca $ \ptr -> 
--}
+-- | Free the glyph on the C-side if it had been updated to 
+-- point to something.
+doneGlyph :: FT_glyph -> IO ()
+doneGlyph (FT_glyph ptr) 
+    | ptr == nullPtr = return ()
+    | otherwise      = ft_done_glyph ptr
+
+    
+
+
