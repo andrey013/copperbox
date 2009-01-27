@@ -116,7 +116,7 @@ dibheader = V3Dibheader
 
 bmpBody :: V3Dibheader -> Parser BMPbody
 bmpBody dib 
-    | isMono dib  = Mono <$> imageDataMono (_dib_width dib) (_dib_height dib) 
+    | isMono dib  = Mono <$> imageDataMono (_bmp_width dib) (_bmp_height dib) 
     | otherwise   = return UnrecognizedFormat
   where 
     isMono d = _bits_per_pxl d == B1_Monochrome && _compression d == Bi_RGB  

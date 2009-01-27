@@ -53,8 +53,8 @@ putBMPheader (BMPheader sz off)  =
 
 putV3Dibheader :: V3Dibheader -> BMPout
 putV3Dibheader dib = 
-    outW32le 40 . outW32le (_dib_width dib) 
-                . outW32le (_dib_height dib) 
+    outW32le 40 . outW32le (_bmp_width dib) 
+                . outW32le (_bmp_height dib) 
                 . outW16le 1                      -- 1 colour plane
                 . outW16le (marshalBitsPerPixel $ _bits_per_pxl dib)
                 . outW32le 0                      -- compression

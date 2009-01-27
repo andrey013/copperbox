@@ -19,6 +19,16 @@ module ZBmp1.Datatypes where
 import Data.Array.Unboxed ( UArray )
 import Data.Word 
 
+
+-- Use C style - (row,column) addressing.
+type RowIx = Word32 
+type ColIx = Word32
+
+type TwoDIndex = (RowIx,ColIx)
+
+ 
+
+
 data BMPfile = BMPfile { 
         _header         :: BMPheader, 
         _dibheader      :: V3Dibheader,
@@ -38,8 +48,8 @@ data BMPheader = BMPheader {
 -- V3 only 
 data V3Dibheader = V3Dibheader {
         _dib_size       :: Word32,
-        _dib_width      :: Word32,
-        _dib_height     :: Word32,
+        _bmp_width      :: Word32,
+        _bmp_height     :: Word32,
         _colour_planes  :: Word16,
         _bits_per_pxl   :: BitsPerPixel,
         _compression    :: Compression,
@@ -62,12 +72,10 @@ data BMPbody = UnrecognizedFormat
              | Mono ImageData
     deriving Show
 
--- This should really be generalized to an array of Word8
--- with a more abstract indexeing scheme then we can handle 
--- different pixels depths 
+
 type ImageData = ArrayWord8
 
-type ArrayWord8 = UArray Int Word8
+type ArrayWord8 = UArray Word32 Word8
 
 data RGBcolour = RGBcolour { 
         _red    :: Word8, 
