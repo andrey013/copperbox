@@ -19,7 +19,7 @@
 module ZBmp.ReadBmp where
 
 import ZBmp.Datatypes
-import ZBmp.Utils ( paddingMeasure )
+import ZBmp.Utils ( paddingMeasure, paletteSize, listArrayFrom0 )
 
 import Control.Applicative
 import Control.Monad.Error
@@ -96,8 +96,9 @@ bmpFile :: Parser BMPfile
 bmpFile = do
     hdr     <- header
     dib     <- dibheader
+    o_ps    <- palette $ _bits_per_pixel dib
     body    <- bmpBody dib
-    return $ BMPfile hdr dib body
+    return $ BMPfile hdr dib o_ps body
 
 header :: Parser BMPheader
 header = (\sz off -> BMPheader sz off)
@@ -106,19 +107,26 @@ header = (\sz off -> BMPheader sz off)
        ignore "reserved2" getWord16le *> getWord32le) 
 
 
-dibheader :: Parser DIBheader
-dibheader = DIBheader 
+dibheader :: Parser V3Dibheader
+dibheader = V3Dibheader 
     <$> getWord32le  <*> getWord32le  <*> getWord32le 
     <*> getWord16le  <*> bitsPerPixel <*> compression
     <*> getWord32le  <*> getWord32le  <*> getWord32le
     <*> getWord32le  <*> getWord32le
 
-bmpBody :: DIBheader -> Parser BMPbody
+palette :: BitsPerPixel -> Parser (Maybe PaletteSpec)
+palette bpp = case paletteSize bpp of
+    0 -> return Nothing
+    n -> do xs <- iter n getWord8
+            return $ Just $ (n,listArrayFrom0 xs)
+
+
+bmpBody :: V3Dibheader -> Parser BMPbody
 bmpBody dib 
-    | isRGB24 dib = RGB24 <$> imageData24 (_dib_width dib) (_dib_height dib) 
+    | isRGB24 dib = RGB24 <$> imageData24 (_bmp_height dib) (_bmp_width dib)  
     | otherwise   = return UnrecognizedFormat
   where 
-    isRGB24 d = _bits_per_pxl d == B24_TrueColour24 && _compression d == Bi_RGB  
+    isRGB24 d = _bits_per_pixel d == B24_TrueColour24 && _compression d == Bi_RGB  
 
 bitsPerPixel :: Parser BitsPerPixel
 bitsPerPixel = unmarshalBitsPerPixel <$> getWord16le
@@ -127,12 +135,12 @@ compression :: Parser Compression
 compression = unmarshalCompression <$> getWord32le
 
 imageData24 :: Word32 -> Word32 -> Parser (Array (Word32,Word32) RGBcolour)
-imageData24 w h = do 
-    xss <- iter h (fst <$> dataLine w)
-    return $ build (concat $ transpose xss)
+imageData24 rows cols = do 
+    xss <- iter rows (fst <$> dataLine cols)
+    return $ build (concat $ reverse xss)
   where
     build xs = listArray arange xs
-    arange = ((0,0), (w-1,h-1)) 
+    arange = ((0,0), (rows-1,cols-1)) 
     
     
     

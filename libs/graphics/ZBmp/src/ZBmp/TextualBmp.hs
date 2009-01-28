@@ -38,13 +38,13 @@ ppBMPheader (BMPheader sz off) =
            ]
     
 
-ppDIBheader :: DIBheader -> Doc
-ppDIBheader dib = 
+ppV3DibHeader :: V3Dibheader -> Doc
+ppV3DibHeader dib = 
     fsep $ [ field "header_size"      (decHex0x 8 $ _dib_size dib)
-           , field "image_width"      (integerValue $ _dib_width dib)
-           , field "image_height"     (integerValue $ _dib_height dib)
+           , field "image_width"      (integerValue $ _bmp_width dib)
+           , field "image_height"     (integerValue $ _bmp_height dib)
            , field "colour_planes"    (integerValue $ _colour_planes dib)
-           , field "bits_per_pixel"   (ppBitsPerPixel $ _bits_per_pxl dib)
+           , field "bits_per_pixel"   (ppBitsPerPixel $ _bits_per_pixel dib)
            , field "compression"      (ppCompression $ _compression dib)
            , field "data_size"        (decHex0x 8 $ _data_size dib)
            , field "horizontal_res"   (integerValue $ _h_resolution dib)

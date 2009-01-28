@@ -40,8 +40,8 @@ writeBmp path bmp = let bmpstream = putBmpFile bmp $ B.empty in do
     hClose h  
 
 putBmpFile :: BMPfile -> BMPout
-putBmpFile (BMPfile hdr dib body) = 
-    putBMPheader hdr . putDIBheader dib . putBody body
+putBmpFile (BMPfile hdr dib o_pspec body) = 
+    putBMPheader hdr . putV3Dibheader dib . putBody body
    
 
 
@@ -51,12 +51,12 @@ putBMPheader (BMPheader sz off)  =
                 . outW16le 0  . outW16le 0   . outW32le off
 
 
-putDIBheader :: DIBheader -> BMPout
-putDIBheader dib = 
-    outW32le 40 . outW32le (_dib_width dib) 
-                . outW32le (_dib_height dib) 
+putV3Dibheader :: V3Dibheader -> BMPout
+putV3Dibheader dib = 
+    outW32le 40 . outW32le (_bmp_width dib) 
+                . outW32le (_bmp_height dib) 
                 . outW16le 1                      -- 1 colour plane
-                . outW16le (marshalBitsPerPixel $ _bits_per_pxl dib)
+                . outW16le (marshalBitsPerPixel $ _bits_per_pixel dib)
                 . outW32le 0                      -- compression
                 . outW32le (_data_size dib)
                 . outW32le 0                      -- horizontal res
@@ -69,7 +69,7 @@ putBody :: BMPbody -> BMPout
 putBody (RGB24 arr)   = putBodyArr arr
 putBody _             = id
           
-putBodyArr :: ImageData -> BMPout
+putBodyArr :: ImageData' -> BMPout
 putBodyArr arr = step [0..height] where
     step []     = id
     step (y:ys) = putRGBLine y width arr . step ys
@@ -77,7 +77,7 @@ putBodyArr arr = step [0..height] where
 
 -- +1 when getting the padding measure because the array width is
 -- the count from zero of the arraysize. 
-putRGBLine :: Word32 -> Word32 -> ImageData -> BMPout
+putRGBLine :: Word32 -> Word32 -> ImageData' -> BMPout
 putRGBLine row width arr = line [0..width]. padW (paddingMeasure $ width+1) 
   where
     line []     = id

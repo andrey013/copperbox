@@ -17,12 +17,14 @@
 module ZBmp.Datatypes where
 
 import Data.Array.IArray ( Array )
+import Data.Array.Unboxed ( UArray )
 import Data.Word 
 
 data BMPfile = BMPfile { 
-        _header     :: BMPheader, 
-        _dibheader  :: DIBheader,
-        _body       :: BMPbody
+        _header       :: BMPheader, 
+        _dibheader    :: V3Dibheader,
+        _opt_palette  :: Maybe PaletteSpec,
+        _body         :: BMPbody
       }
     deriving Show
 
@@ -35,12 +37,12 @@ data BMPheader = BMPheader {
   deriving Show
   
 -- V3 only 
-data DIBheader = DIBheader {
+data V3Dibheader = V3Dibheader {
         _dib_size       :: Word32,
-        _dib_width      :: Word32,
-        _dib_height     :: Word32,
+        _bmp_width      :: Word32,
+        _bmp_height     :: Word32,
         _colour_planes  :: Word16,
-        _bits_per_pxl   :: BitsPerPixel,
+        _bits_per_pixel :: BitsPerPixel,
         _compression    :: Compression,
         _data_size      :: Word32,
         _h_resolution   :: Word32,
@@ -50,12 +52,23 @@ data DIBheader = DIBheader {
     }
   deriving Show 
 
+
+type PaletteSpec = (Int, ArrayWord8) 
+
+    
+type ArrayWord8 = UArray Int Word8
+    
 data BMPbody = UnrecognizedFormat
-             | RGB24 ImageData
+             | RGB24 ImageData'
     deriving Show
 
-type ImageData = Array (Word32,Word32) RGBcolour
+-- This should really be generalized to an array of Word8
+-- with a more abstract indexeing scheme then we can handle 
+-- different pixels depths 
+type ImageData' = Array (Word32,Word32) RGBcolour
 
+-- move to this...
+type ImageData = UArray Word32 Word8
 
 data RGBcolour = RGBcolour { 
         _red    :: Word8, 
