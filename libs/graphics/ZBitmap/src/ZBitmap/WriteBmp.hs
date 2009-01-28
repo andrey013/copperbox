@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZBmp.WriteBmp
+-- Module      :  ZBitmap.WriteBmp
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -14,29 +14,29 @@
 --
 --------------------------------------------------------------------------------
 
-module ZBmp.WriteBmp where
+module ZBitmap.WriteBmp where
 
-import ZBmp.Datatypes
-import ZBmp.Utils ( paddingMeasure )
+import ZBitmap.Datatypes
+import ZBitmap.Utils ( paddingMeasure )
 
 import Data.Array.IArray ( (!), bounds )
 import Data.Bits
-import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString as BS
 import Data.Char ( ord ) 
 import Data.Word 
 
 import System.IO
 
 
-type Output = B.ByteString
+type Output = BS.ByteString
 
 type BMPout = Output -> Output
 
 
 writeBmp :: FilePath -> BMPfile -> IO ()
-writeBmp path bmp = let bmpstream = putBmpFile bmp $ B.empty in do
+writeBmp path bmp = let bmpstream = putBmpFile bmp $ BS.empty in do
     h <- openBinaryFile path WriteMode
-    B.hPut h bmpstream
+    BS.hPut h bmpstream
     hClose h  
 
 putBmpFile :: BMPfile -> BMPout
@@ -56,7 +56,7 @@ putV3Dibheader dib =
     outW32le 40 . outW32le (_bmp_width dib) 
                 . outW32le (_bmp_height dib) 
                 . outW16le 1                      -- 1 colour plane
-                . outW16le (marshalBitsPerPixel $ _bits_per_pixel dib)
+                . outW16le (marshalBmpBitsPerPixel $ _bits_per_pixel dib)
                 . outW32le 0                      -- compression
                 . outW32le (_data_size dib)
                 . outW32le 0                      -- horizontal res
@@ -65,9 +65,9 @@ putV3Dibheader dib =
                 . outW32le 0                      -- all colours important
 
 
-putBody :: BMPbody -> BMPout
-putBody (RGB24 arr)   = putBodyArr arr
-putBody _             = id
+putBody :: DibImageData -> BMPout
+putBody = outByteString
+
           
 putBodyArr :: ImageData' -> BMPout
 putBodyArr arr = step [0..height] where
@@ -118,6 +118,10 @@ outW32le i = out4 a b c d
   (c, r3)   = lowerEight r2
   (d, _)    = lowerEight r3
 
+outByteString :: BS.ByteString -> (BS.ByteString -> BS.ByteString)
+outByteString = BS.append
+
+
 outChar :: Char -> BMPout
 outChar = out1 . fromIntegral . ord
 
@@ -128,16 +132,16 @@ lowerEight n = (fromIntegral lower8, remain)
     remain = n `shiftR` 8
     lower8 = n .&. 0xff 
     
-out1 :: Word8 -> (B.ByteString -> B.ByteString)
-out1 = B.cons
+out1 :: Word8 -> (BS.ByteString -> BS.ByteString)
+out1 = BS.cons
 
-out2 :: Word8 -> Word8 -> (B.ByteString -> B.ByteString)
-out2 a b = (B.cons a) . (B.cons b) 
+out2 :: Word8 -> Word8 -> (BS.ByteString -> BS.ByteString)
+out2 a b = (BS.cons a) . (BS.cons b) 
 
-out3 :: Word8 -> Word8 -> Word8 -> (B.ByteString -> B.ByteString)
-out3 a b c = (B.cons a) . (B.cons b) . (B.cons c)
+out3 :: Word8 -> Word8 -> Word8 -> (BS.ByteString -> BS.ByteString)
+out3 a b c = (BS.cons a) . (BS.cons b) . (BS.cons c)
 
-out4 :: Word8 -> Word8 -> Word8 -> Word8 -> (B.ByteString -> B.ByteString)
-out4 a b c d = (B.cons a) . (B.cons b) . (B.cons c) . (B.cons d)
+out4 :: Word8 -> Word8 -> Word8 -> Word8 -> (BS.ByteString -> BS.ByteString)
+out4 a b c d = (BS.cons a) . (BS.cons b) . (BS.cons c) . (BS.cons d)
 
 

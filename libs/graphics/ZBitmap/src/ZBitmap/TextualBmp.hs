@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZBmp.TextualBmp
+-- Module      :  ZBitmap.TextualBmp
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -15,10 +15,10 @@
 --------------------------------------------------------------------------------
 
 
-module ZBmp.TextualBmp where
+module ZBitmap.TextualBmp where
 
-import ZBmp.Asciitron
-import ZBmp.Datatypes
+import ZBitmap.Asciitron
+import ZBitmap.Datatypes
 
 import Data.Array.IArray ( Array )
 import Data.Word 
@@ -54,7 +54,7 @@ ppV3DibHeader dib =
            ]
 
           
-ppBitsPerPixel :: BitsPerPixel -> Doc
+ppBitsPerPixel :: BmpBitsPerPixel -> Doc
 ppBitsPerPixel B1_Monochrome      = text "1 (mono)"
 ppBitsPerPixel B4_Colour16        = text "4 (16 colours)"
 ppBitsPerPixel B8_Colour256       = text "8 (256 colours)"
@@ -62,7 +62,7 @@ ppBitsPerPixel B16_HighColour     = text "16 (16 bit high colour bitmap)"
 ppBitsPerPixel B24_TrueColour24   = text "24 (24 bit true colour bitmap)"
 ppBitsPerPixel B32_TrueColour32   = text "32 (32 bit true colour bitmap)"
     
-ppCompression :: Compression -> Doc
+ppCompression :: BmpCompression -> Doc
 ppCompression Bi_RGB        = text "BI_RGB"
 ppCompression Bi_RLE8       = text "BI_RLE8"
 ppCompression Bi_RLE4       = text "BI_RLE4"

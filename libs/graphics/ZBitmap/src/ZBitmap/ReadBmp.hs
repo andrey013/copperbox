@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZBmp.ReadBmp
+-- Module      :  ZBitmap.ReadBmp
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -16,28 +16,26 @@
 --------------------------------------------------------------------------------
 
 
-module ZBmp.ReadBmp where
+module ZBitmap.ReadBmp where
 
-import ZBmp.Datatypes
-import ZBmp.Utils ( paddingMeasure, paletteSize, listArrayFrom0 )
+import ZBitmap.Datatypes
+import ZBitmap.Utils ( paddingMeasure, paletteSize, bmpRowWidth )
 
 import Control.Applicative
 import Control.Monad.Error
 import Control.Monad.State
 import Control.Monad.Writer
 
-import Data.Array.IArray ( Array, listArray )
 import Data.Bits
-import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString as BS
 import Data.Char ( chr )
-import Data.List ( transpose )
 import Data.Word
 
 import System.IO
 
 type ParseLog = String
 
-data ParseState = PSt { remaining :: B.ByteString,
+data ParseState = PSt { remaining :: BS.ByteString,
                         pos       :: Int }
 
 newtype ParseErr = ParseErr String
@@ -56,26 +54,26 @@ instance Applicative Parser where
   pure = return
   (<*>) = ap
   
-runParser :: Parser a -> B.ByteString  -> (Either String a, ParseLog)   
+runParser :: Parser a -> BS.ByteString  -> (Either String a, ParseLog)   
 runParser parser bs0 = case runP parser bs0 of
     (Left (ParseErr err),msg) -> (Left err,msg)
     (Right a            ,msg) -> (Right a,msg)  
   where 
-    runP :: Parser a -> B.ByteString  -> (Either ParseErr a, ParseLog)
+    runP :: Parser a -> BS.ByteString  -> (Either ParseErr a, ParseLog)
     -- should we use runState and check input is exhausted? 
     runP p bs = evalState (runWriterT $ runErrorT $ getParser p) (initState bs)
     
     initState bs = PSt { remaining = bs, pos = 0 }
 
 
-evalParser :: Parser a -> B.ByteString  -> Either String a
+evalParser :: Parser a -> BS.ByteString  -> Either String a
 evalParser parser = fst . runParser parser 
 
     
 readBmp :: FilePath -> IO BMPfile  
 readBmp name = do 
     h <- openBinaryFile name ReadMode
-    bs <- B.hGetContents h
+    bs <- BS.hGetContents h
     let (ans,msg) = runParser bmpFile bs    
     case ans of 
       Left err -> hClose h >> putStrLn err >> putStrLn msg 
@@ -114,25 +112,29 @@ dibheader = V3Dibheader
     <*> getWord32le  <*> getWord32le  <*> getWord32le
     <*> getWord32le  <*> getWord32le
 
-palette :: BitsPerPixel -> Parser (Maybe PaletteSpec)
+palette :: BmpBitsPerPixel -> Parser (Maybe PaletteSpec)
 palette bpp = case paletteSize bpp of
     0 -> return Nothing
-    n -> do xs <- iter n getWord8
-            return $ Just $ (n,listArrayFrom0 xs)
+    n -> do bs <- getByteString n
+            return $ Just bs
 
 
-bmpBody :: V3Dibheader -> Parser BMPbody
+bmpBody :: V3Dibheader -> Parser DibImageData
 bmpBody dib 
-    | isRGB24 dib = RGB24 <$> imageData24 (_bmp_height dib) (_bmp_width dib)  
-    | otherwise   = return UnrecognizedFormat
+    | isBi_RGB24 dib = getByteString bs_size  
+    | otherwise      = return BS.empty
   where 
-    isRGB24 d = _bits_per_pixel d == B24_TrueColour24 && _compression d == Bi_RGB  
-
-bitsPerPixel :: Parser BitsPerPixel
-bitsPerPixel = unmarshalBitsPerPixel <$> getWord16le
+    isBi_RGB24 d = _compression d == Bi_RGB  
+    bs_size      = h * getByteCount (bmpRowWidth w bpp)
+    (w,h,bpp)    = (_bmp_width dib, _bmp_height dib, _bits_per_pixel dib)
     
-compression :: Parser Compression
-compression = unmarshalCompression <$> getWord32le
+bitsPerPixel :: Parser BmpBitsPerPixel
+bitsPerPixel = unmarshalBmpBitsPerPixel <$> getWord16le
+    
+compression :: Parser BmpCompression
+compression = unmarshalBmpCompression <$> getWord32le
+
+{-
 
 imageData24 :: Word32 -> Word32 -> Parser (Array (Word32,Word32) RGBcolour)
 imageData24 rows cols = do 
@@ -141,7 +143,7 @@ imageData24 rows cols = do
   where
     build xs = listArray arange xs
     arange = ((0,0), (rows-1,cols-1)) 
-    
+-}    
     
     
 dataLine :: Word32 -> Parser ([RGBcolour],[Word8])
@@ -169,6 +171,26 @@ logfield :: Show a => String -> a -> Parser ()
 logfield name val = tell $ name  ++ " = " ++ show val ++ "\n"
 
 
+getByteString :: Integral i => i -> Parser BS.ByteString
+getByteString count = do 
+    bs <- gets remaining
+    let rlen = BS.length bs
+    if i > rlen 
+      then getFailure rlen
+      else let (front,rest) = BS.splitAt i bs in do 
+                p <- gets pos 
+                modify (\s -> s { remaining=rest, pos=p+i } )
+                return front
+  where
+    i = fromIntegral count
+    
+    getFailure rlen = do 
+      p <- gets pos
+      reportFail $ "getByteString failed at " ++ show p ++ " trying to get "
+                   ++ show i ++ " bytes, with only " ++ show rlen 
+                   ++ " remaining.\n" 
+      
+
 iter :: Integral i => i -> Parser a -> Parser [a]
 iter i p | i > 0     = (:) <$> p <*> iter (i-1) p
          | otherwise = return []
@@ -177,12 +199,12 @@ iter i p | i > 0     = (:) <$> p <*> iter (i-1) p
 eof :: Parser Bool
 eof = do
      bs <- gets remaining
-     return $ B.null bs 
+     return $ BS.null bs 
    
 getWord8 :: Parser Word8
 getWord8 = do
     bs <- gets remaining
-    case B.uncons bs of
+    case BS.uncons bs of
         Nothing    -> reportFail "Unexpected eof" 
         Just (a,b) -> do { i <- gets pos 
                          ; modify (\s -> s { remaining=b, pos=i+1 } )

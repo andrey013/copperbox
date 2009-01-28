@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZBmp.Asciitron
+-- Module      :  ZBitmap.Asciitron
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -14,10 +14,10 @@
 --
 --------------------------------------------------------------------------------
 
-module ZBmp.Asciitron where
+module ZBitmap.Asciitron where
 
-import ZBmp.Datatypes
-import ZBmp.Utils
+import ZBitmap.Datatypes
+import ZBitmap.Utils
 
 import Data.Array.IArray  ( listArray, (!), IArray(..) )
 import qualified Data.Array.MArray as MA
@@ -38,8 +38,9 @@ showAsciiPicture arr =
     (_,(r1,c1)) = bounds arr
     
 
+{-
 makeAsciiPicture :: Word32 -> Word32 -> ImageData' -> AsciiPicture
-makeAsciiPicture row_count col_count arr =  runSTUArray $ do
+makeAsciiPicture row_count col_count arr = runSTUArray $ do
     ascii <- MA.thaw uarr
     fold_lrdownM (f ascii) row_count col_count () 
     return ascii
@@ -59,10 +60,47 @@ pixelAt w h a idx@(r,c) =
   where
     ((r0,c0),(r1,c1)) = bounds a
     rmax = r1-r0 ; cmax = c1-c0
+-}
+
+makeAsciiPicture :: Bitmap Word32 -> AsciiPicture
+makeAsciiPicture bmp@(Bitmap w h _ _) =  runSTUArray $ do
+    ascii <- MA.thaw uarr
+    fold_lrdownM (f ascii) row_count col_count () 
+    return ascii
+  where
+    row_count = h
+    col_count = w   
+    uarr      = blankAsciiPicture row_count col_count
+    
+    f ascii idx _ = let c = greyscale $ bmp `pixelAt` idx in
+                    MA.writeArray ascii idx c
+                    
+                    
+pixelAt :: Bitmap Word32 -> (Word32,Word32) -> RGBcolour                               
+pixelAt (Bitmap _ _ fw a) (r,c) = 
+    if (r>rmax || c>cmax) 
+      then error $ "r=" ++ show r ++ ", c=" ++ show c 
+                        ++ ", bounds= " ++ show (bounds a)
+      else RGBcolour (a!idxR) (a!idxG) (a!idxB)
+  where    
+    plusX (y,x) i     = (y,x+i)
+    ((r0,c0),(r1,c1)) = bounds a
+    rmax = r1-r0
+    cmax = c1-c0
+    idxR = (r, c * 3)
+    idxG = idxR `plusX` 1
+    idxB = idxR `plusX` 2
+    
+
                                 
 blankAsciiPicture :: Word32 -> Word32 -> AsciiPicture
 blankAsciiPicture row_count col_count = 
     runSTUArray $ MA.newArray ((0,0),(row_count - 1,col_count - 1)) '/'
+
+
+
+
+
 
 greyPalette :: UArray Int Char
 greyPalette = listArray (0,length xs) xs where
