@@ -35,14 +35,16 @@ type TwoDIndex = (RowIx,ColIx)
 data Bitmap i = Bitmap { 
       bitmap_width      :: i,
       bitmap_height     :: i,
-      byte_width        :: ByteCount,
+      surface_width     :: ByteCount,
       bitmap_surface    :: PixelSurface i
     }
 
 instance Show i => Show (Bitmap i) where
   show (Bitmap w h bw _) = 
-      "Bitmap{ width=" ++ show w ++ ", height=" ++ show h 
-               ++ ", byte_width=" ++ show (getByteCount bw) ++ " }"       
+        "Bitmap{ width=" ++ show w 
+           ++ ", height=" ++ show h 
+           ++ ", surface_width=" ++ show (getByteCount bw) 
+           ++ " }"       
     
 -- 2D array - parametric on the index so the user can choose
 -- how they avoid unnecessary fromIntegral conversions.   
@@ -60,8 +62,11 @@ data RGBcolour = RGBcolour {
     }
   deriving Show 
 
-
-
+data Palette = Palette { 
+        colour_count    :: Word32,
+        palette_colours ::  Array Word32 RGBcolour
+      }
+      
    
 
 --------------------------------------------------------------------------------

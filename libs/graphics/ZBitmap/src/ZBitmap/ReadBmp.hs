@@ -16,7 +16,10 @@
 --------------------------------------------------------------------------------
 
 
-module ZBitmap.ReadBmp where
+module ZBitmap.ReadBmp (
+  readBmp
+  
+) where
 
 import ZBitmap.Datatypes
 import ZBitmap.Utils ( paddingMeasure, paletteSize, bmpRowWidth )
@@ -115,7 +118,7 @@ dibheader = V3Dibheader
 palette :: BmpBitsPerPixel -> Parser (Maybe PaletteSpec)
 palette bpp = case paletteSize bpp of
     0 -> return Nothing
-    n -> do bs <- getByteString n
+    n -> do bs <- getByteString (4 * n)   -- 4 bytes per colour
             return $ Just bs
 
 

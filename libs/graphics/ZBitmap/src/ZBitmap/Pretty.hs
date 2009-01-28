@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZBitmap.TextualBmp
+-- Module      :  ZBitmap.Pretty
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -15,13 +15,12 @@
 --------------------------------------------------------------------------------
 
 
-module ZBitmap.TextualBmp where
+module ZBitmap.Pretty where
 
-import ZBitmap.Asciitron
 import ZBitmap.Datatypes
+import ZBitmap.Utils ( fold_lr )
 
-import Data.Array.IArray ( Array )
-import Data.Word 
+import Data.Array.IArray ( (!) )
 
 import Numeric ( showHex )
 import Text.PrettyPrint.HughesPJ
@@ -40,17 +39,17 @@ ppBMPheader (BMPheader sz off) =
 
 ppV3DibHeader :: V3Dibheader -> Doc
 ppV3DibHeader dib = 
-    fsep $ [ field "header_size"      (decHex0x 8 $ _dib_size dib)
-           , field "image_width"      (integerValue $ _bmp_width dib)
-           , field "image_height"     (integerValue $ _bmp_height dib)
-           , field "colour_planes"    (integerValue $ _colour_planes dib)
+    fsep $ [ field "header_size"      (decHex0x 8     $ _dib_size dib)
+           , field "image_width"      (integerValue   $ _bmp_width dib)
+           , field "image_height"     (integerValue   $ _bmp_height dib)
+           , field "colour_planes"    (integerValue   $ _colour_planes dib)
            , field "bits_per_pixel"   (ppBitsPerPixel $ _bits_per_pixel dib)
-           , field "compression"      (ppCompression $ _compression dib)
-           , field "data_size"        (decHex0x 8 $ _data_size dib)
-           , field "horizontal_res"   (integerValue $ _h_resolution dib)
-           , field "vertical_res"     (integerValue $ _v_resolution dib)
-           , field "palette_depth"    (decHex0x 8 $ _palette_depth dib)
-           , field "colours_used"     (decHex0x 8 $ _colours_used dib)
+           , field "compression"      (ppCompression  $ _compression dib)
+           , field "data_size"        (decHex0x 8     $ _data_size dib)
+           , field "horizontal_res"   (integerValue   $ _h_resolution dib)
+           , field "vertical_res"     (integerValue   $ _v_resolution dib)
+           , field "palette_depth"    (decHex0x 8     $ _palette_depth dib)
+           , field "colours_used"     (decHex0x 8     $ _colours_used dib)
            ]
 
           
@@ -70,6 +69,24 @@ ppCompression Bi_BITFIELDS  = text "BI_BITFIELDS"
 ppCompression Bi_JPEG       = text "BI_JPEG"
 ppCompression Bi_PNG        = text "BI_PNG"
 
+
+
+--------------------------------------------------------------------------------
+-- Palette
+
+ppPalette :: Palette -> Doc
+ppPalette (Palette sz arr) = fold_lr f sz doc1 where
+    f i doc = doc $$ (nest 3 $ intValue i) <> colon <+>  paletteColour (arr!i)
+    doc1    = text "Palette" <+> parens (intValue sz <+> text "entries")
+    
+     
+paletteColour :: RGBcolour -> Doc
+paletteColour (RGBcolour r g b) = 
+        text "R=" <> (nest 3 $ intValue r) <> comma 
+    <+> text "G=" <> (nest 3 $ intValue g) <> comma
+    <+> text "B=" <> (nest 3 $ intValue b)
+    
+{-
 ppBMPbody :: BMPbody -> Doc
 ppBMPbody UnrecognizedFormat  = text "Unrecognized Format"
 ppBMPbody (RGB24 grid)        = ppColourGrid grid
@@ -85,6 +102,10 @@ ppColourLine = hsep . map ppRGBcolour
 
 ppRGBcolour :: RGBcolour -> Doc
 ppRGBcolour (RGBcolour r g b) = ppHex 2 r <> ppHex 2 g <> ppHex 2 b
+-}
+
+intValue :: Integral a => a -> Doc
+intValue = int . fromIntegral 
 
 integerValue :: Integral a => a -> Doc
 integerValue = integer . fromIntegral 

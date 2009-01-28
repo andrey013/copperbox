@@ -19,7 +19,7 @@ module ZBitmap (
     module ZBitmap.Convert, 
     module ZBitmap.Datatypes,
     module ZBitmap.ReadBmp,
-    module ZBitmap.TextualBmp,
+    module ZBitmap.Pretty,
     module ZBitmap.Utils,
     module ZBitmap.WriteBmp,
   ) where
@@ -28,7 +28,7 @@ import ZBitmap.Asciitron
 import ZBitmap.Convert
 import ZBitmap.Datatypes  
 import ZBitmap.ReadBmp
-import ZBitmap.TextualBmp
+import ZBitmap.Pretty
 import ZBitmap.Utils
 import ZBitmap.WriteBmp
 

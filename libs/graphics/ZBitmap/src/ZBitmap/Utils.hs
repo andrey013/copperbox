@@ -66,6 +66,15 @@ countup :: Integral a => a -> [a]
 countup (n + 1) = [0..n]
 countup _       = []
 
+fold_lr :: Integral idx => (idx -> b -> b) -> idx -> b -> b
+fold_lr f cols a = 
+    foldl' (flip f) a [c | c <- countup cols ]
+
+fold_rl :: Integral idx => (idx -> b -> b) -> idx -> b -> b
+fold_rl f cols a = 
+    foldl' (flip f) a [c | c <- countdown cols ]
+    
+
 fold_lrdown :: Integral idx => ((idx,idx) -> b -> b) -> idx -> idx -> b -> b
 fold_lrdown f rows cols a = 
     foldl' (flip f) a [(r,c) | r <- countup rows, c <- countup cols ]

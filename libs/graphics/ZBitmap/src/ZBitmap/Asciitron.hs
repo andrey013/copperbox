@@ -38,29 +38,6 @@ showAsciiPicture arr =
     (_,(r1,c1)) = bounds arr
     
 
-{-
-makeAsciiPicture :: Word32 -> Word32 -> ImageData' -> AsciiPicture
-makeAsciiPicture row_count col_count arr = runSTUArray $ do
-    ascii <- MA.thaw uarr
-    fold_lrdownM (f ascii) row_count col_count () 
-    return ascii
-  where 
-    uarr      = blankAsciiPicture row_count col_count
-    pixelAtE  = pixelAt col_count row_count 
-    
-    f ascii idx _ = let c = greyscale $ arr `pixelAtE` idx in
-                    MA.writeArray ascii idx c
-
-pixelAt :: Word32 -> Word32 -> ImageData' -> (Word32,Word32) -> RGBcolour                               
-pixelAt w h a idx@(r,c) = 
-    if(r>rmax || c>cmax) 
-      then error $ "r=" ++ show r ++ ", c=" ++ show c 
-                        ++ ", bounds= " ++ show (bounds a)
-      else a!idx 
-  where
-    ((r0,c0),(r1,c1)) = bounds a
-    rmax = r1-r0 ; cmax = c1-c0
--}
 
 makeAsciiPicture :: Bitmap Word32 -> AsciiPicture
 makeAsciiPicture bmp@(Bitmap w h _ _) =  runSTUArray $ do
@@ -119,12 +96,6 @@ colourPitch a = lim $ floor $ y / 16
 greyscale :: RGBcolour -> Char
 greyscale = (greyPalette !) . colourPitch
 
--- Really we ought to resample the image so we can be sure it will fit onscreen
-quickAsciiHack :: ImageData' -> [String]
-quickAsciiHack arr = foldl' (\ss y -> line y :ss) [] [0..h] 
-  where
-    line y = foldr (\x s -> (greyscale $ arr!(x,y)) : s) "" [0..w]    
-    ((_,_),(w,h)) = bounds arr
     
      
 
