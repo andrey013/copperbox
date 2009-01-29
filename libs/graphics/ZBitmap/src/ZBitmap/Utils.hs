@@ -27,6 +27,14 @@ import Data.Word
 
 import Text.PrettyPrint.HughesPJ
 
+import Prelude hiding ( (^) )
+import qualified Prelude as Pre
+
+-- Avoid warnings due to Integral Integer defaulting 
+infixr 8 ^
+(^) :: Integral a => a -> a -> a
+(^) = (Pre.^)
+
 
 paletteSize :: BmpBitsPerPixel -> Int 
 paletteSize B1_Monochrome       = 2 ^ 1
@@ -39,20 +47,24 @@ paletteSize B32_TrueColour32    = 0
 rowsColumns :: BmpBitmap -> (Word32,Word32)
 rowsColumns bmp = (heightBmp bmp, widthBmp bmp)
 
-bmpRowWidth :: Word32 -> BmpBitsPerPixel -> ByteCount
-bmpRowWidth w B1_Monochrome       = extendTo4ByteBoundary $ subdivide w 8    
-bmpRowWidth w B4_Colour16         = extendTo4ByteBoundary $ subdivide w 2 
-bmpRowWidth w B8_Colour256        = extendTo4ByteBoundary $ ByteCount w
-bmpRowWidth w B16_HighColour      = extendTo4ByteBoundary $ ByteCount (w * 2)
-bmpRowWidth w B24_TrueColour24    = extendTo4ByteBoundary $ ByteCount (w * 3)
-bmpRowWidth w B32_TrueColour32    = ByteCount $ w * 4
 
-subdivide w sub = let (d,m) = w `divMod` sub in 
-                  if m==0 then ByteCount d else ByteCount $ d + 1
+--------------------------------------------------------------------------------
+-- 
 
-extendTo4ByteBoundary :: ByteCount -> ByteCount
-extendTo4ByteBoundary (ByteCount w) = let (d,m) = w `divMod` 4 in
-    if m == 0 then ByteCount w else ByteCount $ (d + 1) * 4
+surfaceWidth :: BmpBitsPerPixel -> PixelCount -> PixelCount
+surfaceWidth bpp w  = z * (((n * w) + 7) `div` 8) 
+  where
+    n = fromIntegral $ marshalBmpBitsPerPixel bpp
+    -- effectively /z/ gets the ceiling of the division
+    z = let z' = n `div` 8 in if z' == 0 then 1 else z' 
+    
+
+physicalWidth :: BmpBitsPerPixel -> PixelCount ->  ByteCount
+physicalWidth bpp w = 4 * (((n * w) + 31) `div` 32) 
+  where 
+    n = fromIntegral $ marshalBmpBitsPerPixel bpp
+    
+
 
 listArrayFrom0 :: IArray UArray a => [a] -> UArray Int a
 listArrayFrom0 xs = listArray (0,fromIntegral $ length xs - 1) xs
@@ -175,11 +187,12 @@ printCBBox (r0,c0) (r1,c1) = putStrLn $ render $ doc where
     (bl,cl)         = mkCoord (r0,c1)
     (br,cr)         = mkCoord (r1,c1)
     
-    mkCoord :: Integral a => (a,a) -> (Doc,Int)
-    mkCoord (i,j)   = let s = show (fromIntegral i, fromIntegral j) 
+    mkCoord :: (Word32,Word32) -> (Doc,Int)
+    mkCoord (i,j)   = let s = show (i,j)  
                       in (text s, length s) 
 
-   
+
+
 printCBBoxA :: IArray arr e => arr TwoDIndex e -> IO ()
 printCBBoxA arr = printCBBox top_left bottom_right where
   (top_left,bottom_right) = bounds arr

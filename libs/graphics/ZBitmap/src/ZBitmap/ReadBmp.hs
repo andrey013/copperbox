@@ -22,7 +22,7 @@ module ZBitmap.ReadBmp (
 ) where
 
 import ZBitmap.Datatypes
-import ZBitmap.Utils ( paddingMeasure, paletteSize, bmpRowWidth )
+import ZBitmap.Utils ( paddingMeasure, paletteSize, physicalWidth )
 
 import Control.Applicative
 import Control.Monad.Error

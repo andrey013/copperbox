@@ -39,7 +39,7 @@ showAsciiPicture arr =
     
 
 
-makeAsciiPicture :: Bitmap Word32 -> AsciiPicture
+makeAsciiPicture :: Bitmap -> AsciiPicture
 makeAsciiPicture bmp@(Bitmap w h _ _) =  runSTUArray $ do
     ascii <- MA.thaw uarr
     fold_lrdownM (f ascii) row_count col_count () 
@@ -53,7 +53,7 @@ makeAsciiPicture bmp@(Bitmap w h _ _) =  runSTUArray $ do
                     MA.writeArray ascii idx c
                     
                     
-pixelAt :: Bitmap Word32 -> (Word32,Word32) -> RgbColour                               
+pixelAt :: Bitmap -> (Word32,Word32) -> RgbColour                               
 pixelAt (Bitmap _ _ fw a) (r,c) = 
     if (r>rmax || c>cmax) 
       then error $ "r=" ++ show r ++ ", c=" ++ show c 

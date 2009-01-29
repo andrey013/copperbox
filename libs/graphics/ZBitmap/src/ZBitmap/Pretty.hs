@@ -85,8 +85,12 @@ paletteColour :: RgbColour -> Doc
 paletteColour (RgbColour r g b) = 
         text "R=" <> fillstring 3 (show r) <> comma 
     <+> text "G=" <> fillstring 3 (show g) <> comma
-    <+> text "B=" <> fillstring 3 (show b)
-    
+    <+> text "B=" <> fillstring 3 (show b) <> subscript
+  where
+    subscript = case (r,g,b) of
+        (255,255,255) -> leftpad ' ' 12 "(white)"
+        (0,0,0)       -> leftpad ' ' 12 "(black)"    
+        _             -> empty
 
 
 intValue :: Integral a => a -> Doc

@@ -18,9 +18,12 @@
 module ZBitmap.Datatypes (
   RowIx, ColIx, TwoDIndex,
   
+  PixelCount, ByteCount,
+  ImageSize, SurfaceSize, PhysicalSize,
+  
+  
   Bitmap(..),
   PixelSurface,
-  ByteCount(..),
   RgbColour(..),
   Palette(..),
   YCbCrColour(..),
@@ -80,29 +83,56 @@ type ColIx = Word32
 
 type TwoDIndex = (RowIx,ColIx)
 
+type PixelCount  = Word32
+type ByteCount   = Word32
 
-data Bitmap i = Bitmap { 
-      bitmap_width      :: i,
-      bitmap_height     :: i,
+-- | @ImageSize = (rows,cols)@ - 
+-- Image size is the /viewable/ extent of a bitmap.
+-- It is the number of adressable vertical pixels x the number 
+-- of horizontal pixels. 
+type ImageSize    = (PixelCount,PixelCount)
+
+-- | @SurfaceSize = (rows,cols)@ - 
+-- Surface size is the /allocated/ extent of a bitmap.
+-- Unless the width of the bitmap is a multiple of 8 then then it will have 
+-- extra pixels padding at the right end of each row. 
+-- The number of rows a surface has will always be the same as the 
+-- number of rows the corresponding image has.
+type SurfaceSize  = (PixelCount,PixelCount)
+
+-- | @PhysicalSize = (rows,cols)@ -
+-- The physical size of a bitmap /in bytes/. 
+-- The physical size may be larger or smaller than the surface size,
+-- depending on the /bit-depth/ of the image.
+--
+-- For instance mono bitmaps store 8 pixels in 1 byte, so the physical size
+-- will be smaller than the surface size.
+-- 
+-- 24 bit bitmaps need 3 bytes for a pixel so the the physical size will be 
+-- greater than the surface size.
+type PhysicalSize = (PixelCount,ByteCount)
+
+
+
+
+
+data Bitmap = Bitmap { 
+      bitmap_width      :: Word32,
+      bitmap_height     :: Word32,
       surface_width     :: ByteCount,
-      bitmap_surface    :: PixelSurface i
+      bitmap_surface    :: PixelSurface
     }
 
-instance Show i => Show (Bitmap i) where
-  show (Bitmap w h bw _) = 
+instance Show Bitmap where
+  show (Bitmap w h sw _) = 
         "Bitmap{ width=" ++ show w 
            ++ ", height=" ++ show h 
-           ++ ", surface_width=" ++ show (getByteCount bw) 
+           ++ ", surface_width=" ++ show sw
            ++ " }"       
     
--- 2D array - parametric on the index so the user can choose
--- how they avoid unnecessary fromIntegral conversions.   
-type PixelSurface i = UArray (i,i) Word8
+type PixelSurface = UArray (Word32,Word32) Word8
 
 
--- Does this really need to be wrapped?
-newtype ByteCount = ByteCount { getByteCount :: Word32 }
-  deriving (Eq,Num,Ord,Show)
 
 data RgbColour = RgbColour { 
         _red    :: Word8, 
@@ -113,7 +143,7 @@ data RgbColour = RgbColour {
 
 data Palette = Palette { 
         colour_count    :: Word32,
-        palette_colours ::  Array Word32 RgbColour
+        palette_colours :: Array Word32 RgbColour
       }
       
 data YCbCrColour = YCbCrColour { 
@@ -170,10 +200,6 @@ data BmpDibHeader = BmpDibHeader {
 
              
 type BmpPaletteSpec = BS.ByteString
-
-    
-type ArrayWord8 = UArray Int Word8
-
 
 type BmpDibImageData = BS.ByteString
 
