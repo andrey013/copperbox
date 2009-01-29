@@ -63,7 +63,9 @@ physicalWidth :: BmpBitsPerPixel -> PixelCount ->  ByteCount
 physicalWidth bpp w = 4 * (((n * w) + 31) `div` 32) 
   where 
     n = fromIntegral $ marshalBmpBitsPerPixel bpp
-    
+
+physicalSize :: BmpBitsPerPixel -> PixelCount ->  PixelCount -> ByteCount
+physicalSize bpp w h = h * physicalWidth bpp w
 
 
 listArrayFrom0 :: IArray UArray a => [a] -> UArray Int a

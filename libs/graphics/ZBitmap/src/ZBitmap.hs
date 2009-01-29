@@ -27,7 +27,8 @@ module ZBitmap (
 import ZBitmap.Asciitron
 import ZBitmap.Convert
 import ZBitmap.Datatypes hiding 
-    ( makeBmpBitmap, makeBmpHeader, makeBmpDibHeaderLong, makeBmpDibHeaderShort )
+    ( makeBmpBitmap, makeBmpHeaderLong, makeBmpHeaderShort,
+      makeBmpDibHeaderLong, makeBmpDibHeaderShort )
 import ZBitmap.ReadBmp
 import ZBitmap.Pretty
 import ZBitmap.Utils

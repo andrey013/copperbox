@@ -28,18 +28,18 @@ import Text.PrettyPrint.HughesPJ
 
 
 ppBmpHeader :: BmpBitmap -> Doc
-ppBmpHeader bmp =
-    fsep $ [ anonfield  "magic"       2
-           , field      "file_size"   (decHex0x 8 $ fileSizeBmp bmp) 
-           , field      "reserved"    (decHex0x 4 r1)
-           , field      "reserved"    (decHex0x 4 r2)
-           , field      "offset"      (decHex0x 8 $ dataOffsetBmp bmp)
-           ]
+ppBmpHeader bmp = (text "BMP Header" $$) $ vcat $ 
+    [ anonfield  "magic"       2
+    , field      "file_size"   (decHex0x 8 $ fileSizeBmp bmp) 
+    , field      "reserved"    (decHex0x 4 r1)
+    , field      "reserved"    (decHex0x 4 r2)
+    , field      "offset"      (decHex0x 8 $ dataOffsetBmp bmp)
+    ]
   where
     (r1,r2) = reservedBytesBmp bmp     
 
 ppBmpDibHeader :: BmpBitmap -> Doc
-ppBmpDibHeader bmp = fsep $ 
+ppBmpDibHeader bmp = (text "DIB Header" $$) $ vcat $ 
     [ field "header_size"     (decHex0x 8     $ dibSizeBmp bmp)
     , field "image_width"     (integerValue   $ widthBmp bmp)
     , field "image_height"    (integerValue   $ heightBmp bmp)
@@ -104,10 +104,10 @@ decHex0x w i = integer (fromIntegral i) <+> parens (ppHex0x w i)
 
 
 field :: String -> Doc -> Doc
-field s d = text s <> equals <> d
+field s d = (rightpad ' ' 18 (' ':s)) <> equals <+> d
 
 anonfield :: String -> Int -> Doc
-anonfield s i = text s <> equals <> (text $ replicate i '_')
+anonfield s i = field s (text $ replicate i '_')
 
 
 ppHex0x :: Integral a => Int -> a -> Doc

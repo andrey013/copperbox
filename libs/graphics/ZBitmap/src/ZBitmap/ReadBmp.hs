@@ -103,7 +103,7 @@ bmpFile = do
     return $ makeBmpBitmap hdr dib o_ps body
 
 header :: Parser BmpHeader
-header = (\sz r1 r2 off -> makeBmpHeader sz r1 r2 off)
+header = (\sz r1 r2 off -> makeBmpHeaderLong sz r1 r2 off)
   <$> (ignore "magic1" char *> ignore "magic2" char *> getWord32le)          
   <*> getWord16le <*>  getWord16le <*> getWord32le 
 

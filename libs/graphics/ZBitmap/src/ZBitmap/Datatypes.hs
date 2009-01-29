@@ -37,15 +37,14 @@ module ZBitmap.Datatypes (
   BmpCompression(..),
   
   makeBmpBitmap,
-  makeBmpHeader,
+  makeBmpHeaderLong,
+  makeBmpHeaderShort,
   makeBmpDibHeaderLong,
   makeBmpDibHeaderShort, 
   
   -- * Querying BmpBitmap attributes
   optPaletteSpecBmp,
   imageDataBmp,
-  
-  
   
   fileSizeBmp,
   reservedBytesBmp,
@@ -170,7 +169,8 @@ data BmpHeader = BmpHeader {
         _file_size  :: Word32,
         _reserved1  :: Word16,
         _reserved2  :: Word16, 
-        _offset     :: Word32 
+        -- start of the image data after the headers and palette
+        _offset     :: Word32   
     }
   deriving Show
 
@@ -240,9 +240,20 @@ makeBmpBitmap :: BmpHeader -> BmpDibHeader
               -> BmpBitmap
 makeBmpBitmap = BmpBitmap
 
-        
-makeBmpHeader :: Word32 -> Word16 -> Word16 ->  Word32 -> BmpHeader
-makeBmpHeader = BmpHeader
+
+-- only export this to the Bmp parser not client libraries.        
+makeBmpHeaderLong :: Word32 -> Word16 -> Word16 -> Word32 -> BmpHeader
+makeBmpHeaderLong = BmpHeader
+
+makeBmpHeaderShort :: Word32 -> Word32 -> BmpHeader
+makeBmpHeaderShort palette_size image_size = BmpHeader total_size 0 0 offset
+  where
+    hdr_size    = 14
+    dib_size    = 40 
+    total_size  = hdr_size + dib_size + palette_size + image_size
+    offset      = hdr_size + dib_size + palette_size 
+
+
 
 -- only export this to ZBitmap modules not client libraries.
 makeBmpDibHeaderLong :: Word32 -> Word32 -> Word16 

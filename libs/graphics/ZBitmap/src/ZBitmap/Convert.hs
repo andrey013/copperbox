@@ -20,16 +20,20 @@ module ZBitmap.Convert (
   
   monoTo24bit,
   
+  bitmapToBmp24,
   
 ) where
 
 import ZBitmap.Datatypes
-import ZBitmap.Utils ( physicalWidth, fold_lrdownM )
+import ZBitmap.Utils ( physicalWidth, physicalSize, fold_lrdownM )
 
+import Data.Array.IArray ( (!), elems, bounds )
 import qualified Data.Array.MArray as MA
 import Data.Array.ST ( runSTArray, runSTUArray )
+import Data.Array.Unboxed ( UArray )
 import Data.Bits ( Bits(..) )
 import qualified Data.ByteString as BS
+import Data.Maybe ( fromJust )      -- careful...
 import Data.Word
 
 import Prelude hiding ( (^) )
@@ -83,14 +87,15 @@ makePalette sz bs_len bs = (\p -> Palette sz p) $ runSTArray $ do
 
 dibToBitmap :: BmpBitmap -> Bitmap
 dibToBitmap bm = 
-    (\bmp -> Bitmap w h pw bmp) 
+    (\bmp -> Bitmap w h pw32 bmp) 
           $ translate24bit h pw pw (imageDataBmp bm) 
-          $ newSurface h pw 
+          $ newSurface h pw32 
   where
     w     = widthBmp bm
     h     = heightBmp bm
     bpp   = bitsPerPixelBmp bm
     pw    = physicalWidth bpp w
+    pw32  = physicalWidth B32_TrueColour32 w
     
 translate24bit :: 
     Word32 -> Word32 -> Word32 -> BmpDibImageData -> PixelSurface -> PixelSurface
@@ -100,6 +105,7 @@ translate24bit row_count col_count full_width bs uarr = runSTUArray $ do
     return bmp
   where
     f bmp (r,c) _ = let row = row_count - 1 - r
+                        -- WRONG want to get rd gn bl
                         a = bs `BS.index` (fromIntegral $ row * full_width + c) 
                     in MA.writeArray bmp (r,c) a
   
@@ -107,31 +113,36 @@ translate24bit row_count col_count full_width bs uarr = runSTUArray $ do
  
 monoTo24bit :: BmpBitmap -> Bitmap
 monoTo24bit bm = 
-    (\bmp -> Bitmap w h pw bmp) 
-          $ translateMono h w pw (imageDataBmp bm) 
-          $ newSurface h (physicalWidth B32_TrueColour32 w) 
+    (\bmp -> Bitmap w h pw32 bmp) 
+          $ translateMono h w pw pal (imageDataBmp bm) 
+          $ newSurface h pw32
   where
     w     = widthBmp bm
     h     = heightBmp bm
     bpp   = bitsPerPixelBmp bm
     pw    = physicalWidth bpp w
+    pw32  = physicalWidth B32_TrueColour32 w
+    pal   = palette bpp (fromJust $ optPaletteSpecBmp bm)
     
 translateMono :: 
-    Word32 -> Word32 -> Word32 -> BmpDibImageData -> PixelSurface -> PixelSurface
-translateMono row_count col_count full_width bs uarr = runSTUArray $ do
-    bmp <- MA.thaw uarr
-    fold_lrdownM (f bmp) row_count col_count () 
-    return bmp
+    Word32 -> Word32 -> Word32 -> Palette -> 
+        BmpDibImageData -> PixelSurface -> PixelSurface
+translateMono row_count col_count full_width (Palette _ pal) bs uarr = 
+    runSTUArray $ do
+        bmp <- MA.thaw uarr
+        fold_lrdownM (f bmp) row_count col_count () 
+        return bmp
   where
     f bmp (r,c) _ = let row = row_count - 1 - r
-                        (x,xi) = c `divMod` 8
-                        w8 = bs `BS.index` (fromIntegral $ row * full_width + x)
-                        a  = atMsb g w8 (fromIntegral xi) 
-                    in do MA.writeArray bmp (r,c*4) a
-                          MA.writeArray bmp (r,c*4+1) a
-                          MA.writeArray bmp (r,c*4+2) a
-    g True  = 255
-    g False = 0
+                        (x,xi)  = c `divMod` 8
+                        w8      = bs `BS.index` (fromIntegral $ row * full_width + x)
+                        (RgbColour rd gn bl) = atMsb pxLookup w8 (fromIntegral xi) 
+                    in do MA.writeArray bmp (r,c*4)   rd
+                          MA.writeArray bmp (r,c*4+1) gn
+                          MA.writeArray bmp (r,c*4+2) bl
+                          
+    pxLookup b  = pal!(fromIntegral $ fromEnum b) 
+    
     
     
 newSurface :: Word32 -> Word32 -> PixelSurface
@@ -144,17 +155,51 @@ atMsb f a i = f $ a `testBit` j
   where j = (bitSize a) - 1 - i
   
 
+--------------------------------------------------------------------------------
+--   
 
-{-
-surfaceSizeAs24bit :: BmpBitmap -> SurfaceSize
-surfaceSizeAs24bit b = fn (bitsPerPixelBmp b) (heightBmp b) (widthBmp b) where
-    fn B1_Monochrome    r c  = undefined
-    fn B4_Colour16      r c  = undefined
-    fn B8_Colour256     r c  = undefined
-    fn B16_HighColour   r c  = undefined
-    fn B24_TrueColour24 r c  = (r,
-    fn B32_TrueColour32 r c  = undefined
--}    
+
+-- drat! - where is the library function to go from @UArray of Word8@
+-- to a @Word8 ByteString@ ? 
+
+
+bitmapToBmp24 :: Bitmap -> BmpBitmap
+bitmapToBmp24 bmp@(Bitmap w h _ _) = makeBmpBitmap hdr dibh Nothing img
+  where
+    ps    = physicalSize B24_TrueColour24 w h
+    hdr   = makeBmpHeaderShort 0 ps
+    dibh  = makeBmpDibHeaderShort w h B24_TrueColour24 ps
+    img   = makeImageData bmp
+
+slowMarshal :: UArray Word32 Word8 -> BS.ByteString
+slowMarshal = BS.pack . elems
     
+makeImageData :: Bitmap -> BmpDibImageData
+makeImageData (Bitmap w h sw bmp) = -- error $ show (bounds bmp) 
+    slowMarshal $ makeLinear h w rwidth bmp arr 
+  where
+    ps      = physicalSize B24_TrueColour24 w h
+    rwidth  = physicalWidth B24_TrueColour24 w
+    arr     = newOutputArray ps
+
+makeLinear :: Word32 -> Word32 -> Word32 -> PixelSurface 
+                  -> UArray Word32 Word8 -> UArray Word32 Word8
+makeLinear row_count col_count row_width bmp marr = runSTUArray $ do
+    zz <- MA.thaw marr
+    fold_lrdownM (f zz) row_count col_count () 
+    return zz
+  where
+    f line (r,c) _ = let lrow = row_count - 1 - r
+                         rd   = bmp!(r,c*4)
+                         gn   = bmp!(r,c*4+1)
+                         bl   = bmp!(r,c*4+2)
+                     in do MA.writeArray line (lrow * row_width + c * 3)     bl
+                           MA.writeArray line (lrow * row_width + c * 3 + 1) gn
+                           MA.writeArray line (lrow * row_width + c * 3 + 2) rd
+
+                         
+newOutputArray :: ByteCount -> UArray Word32 Word8
+newOutputArray sz = runSTUArray $ MA.newArray (0,sz) 0
+
 
        
