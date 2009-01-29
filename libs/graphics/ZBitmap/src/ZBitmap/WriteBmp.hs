@@ -33,70 +33,46 @@ type Output = BS.ByteString
 type BMPout = Output -> Output
 
 
-writeBmp :: FilePath -> BMPfile -> IO ()
+writeBmp :: FilePath -> BmpBitmap -> IO ()
 writeBmp path bmp = let bmpstream = putBmpFile bmp $ BS.empty in do
     h <- openBinaryFile path WriteMode
     BS.hPut h bmpstream
     hClose h  
 
-putBmpFile :: BMPfile -> BMPout
-putBmpFile (BMPfile hdr dib o_pspec body) = 
-    putBMPheader hdr . putV3Dibheader dib . putBody body
+putBmpFile :: BmpBitmap -> BMPout
+putBmpFile bmp = 
+    putBMPheader bmp . putV3Dibheader bmp . putBody (imageDataBmp bmp)
    
 
 
-putBMPheader :: BMPheader -> BMPout
-putBMPheader (BMPheader sz off)  = 
-    outChar 'B' . outChar 'M' . outW32le sz 
-                . outW16le 0  . outW16le 0   . outW32le off
+putBMPheader :: BmpBitmap -> BMPout
+putBMPheader bmp  = 
+    outChar 'B' . outChar 'M'  
+                . outW32le (fileSizeBmp bmp) 
+                . outW16le r1  
+                . outW16le r2   
+                . outW32le (dataOffsetBmp bmp)
+  where
+    (r1,r2) = reservedBytesBmp bmp  
+
+putV3Dibheader :: BmpBitmap -> BMPout
+putV3Dibheader bmp = 
+    outW32le 40 . outW32le (widthBmp bmp) 
+                . outW32le (heightBmp bmp) 
+                . outW16le (colourPlanesBmp bmp)  -- 1 colour plane
+                . outW16le (marshalBmpBitsPerPixel $ bitsPerPixelBmp bmp)
+                . outW32le (marshalBmpCompression $ compressionBmp bmp) 
+                . outW32le (imageDataSizeBmp bmp)
+                . outW32le (horizontalResolutionBmp bmp)
+                . outW32le (verticalResolutionBmp bmp)
+                . outW32le (paletteDepthBmp bmp)
+                . outW32le (coloursUsedBmp bmp)
 
 
-putV3Dibheader :: V3Dibheader -> BMPout
-putV3Dibheader dib = 
-    outW32le 40 . outW32le (_bmp_width dib) 
-                . outW32le (_bmp_height dib) 
-                . outW16le 1                      -- 1 colour plane
-                . outW16le (marshalBmpBitsPerPixel $ _bits_per_pixel dib)
-                . outW32le 0                      -- compression
-                . outW32le (_data_size dib)
-                . outW32le 0                      -- horizontal res
-                . outW32le 0                      -- vertical res
-                . outW32le 0                      -- colours in palette
-                . outW32le 0                      -- all colours important
-
-
-putBody :: DibImageData -> BMPout
+putBody :: BmpDibImageData -> BMPout
 putBody = outByteString
 
-          
-putBodyArr :: ImageData' -> BMPout
-putBodyArr arr = step [0..height] where
-    step []     = id
-    step (y:ys) = putRGBLine y width arr . step ys
-    (_,(width,height)) = bounds arr
-
--- +1 when getting the padding measure because the array width is
--- the count from zero of the arraysize. 
-putRGBLine :: Word32 -> Word32 -> ImageData' -> BMPout
-putRGBLine row width arr = line [0..width]. padW (paddingMeasure $ width+1) 
-  where
-    line []     = id
-    line (x:xs) = putRGBcolour (arr!(x,row)) . line xs
-  
-
-
-putRGBcolour :: RGBcolour -> BMPout
-putRGBcolour (RGBcolour r g b) = out3 r g b
-
-padW :: Word32 -> BMPout
-padW i = step $ i `mod` 4
-  where
-    step 0 = id
-    step 1 = out1 0
-    step 2 = out2 0 0 
-    step 3 = out3 0 0 0 
-    step _ = error "erk - unreachable padW"
-    
+   
     
 
 --------------------------------------------------------------------------------

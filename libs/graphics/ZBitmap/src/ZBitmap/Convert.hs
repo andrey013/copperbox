@@ -29,7 +29,7 @@ import Data.Word
 valid_palette_spec_sizes   :: [Word32] 
 valid_palette_spec_sizes = map (4*) [2^1, 2^4, 2^8]
 
-palette :: BmpBitsPerPixel -> PaletteSpec -> Palette
+palette :: BmpBitsPerPixel -> BmpPaletteSpec -> Palette
 palette bpp bs = 
     maybe (fk bpp) (\(sz,blen) -> makePalette sz blen bs) $ 
               checkPaletteSize bpp bs 
@@ -56,7 +56,7 @@ checkPaletteSize bpp bs = fn bpp (BS.length bs) where
     
 makePalette :: Word32 -> Int -> BS.ByteString -> Palette
 makePalette sz bs_len bs = (\p -> Palette sz p) $ runSTArray $ do
-    pal <-  MA.newArray (0, fromIntegral sz - 1) (RGBcolour 0 0 0)
+    pal <-  MA.newArray (0, fromIntegral sz - 1) (RgbColour 0 0 0)
     step pal 0 0
     return pal
   where
@@ -64,7 +64,7 @@ makePalette sz bs_len bs = (\p -> Palette sz p) $ runSTArray $ do
                  | otherwise  = let b   = bs `BS.index` j
                                     g   = bs `BS.index` (j+1)
                                     r   = bs `BS.index` (j+2)
-                                    elt = (RGBcolour r g b)
+                                    elt = (RgbColour r g b)
                                 in do MA.writeArray pal i elt
                                       step pal (i+1) (j+4)
                                    
@@ -72,18 +72,19 @@ makePalette sz bs_len bs = (\p -> Palette sz p) $ runSTArray $ do
 -- blue green red _unused_
 
 
-dibToBitmap :: BMPfile -> Bitmap Word32
-dibToBitmap (BMPfile _ dib _ body) = 
-    (\bmp -> Bitmap w h bw bmp) $ translate24bit h (getByteCount bw) (getByteCount bw) body 
-                                $ newSurface h (getByteCount bw) 
+dibToBitmap :: BmpBitmap -> Bitmap Word32
+dibToBitmap bm = 
+    (\bmp -> Bitmap w h bw bmp) 
+          $ translate24bit h (getByteCount bw) (getByteCount bw) (imageDataBmp bm) 
+          $ newSurface h (getByteCount bw) 
   where
-    w     = _bmp_width dib
-    h     = _bmp_height dib
-    bpp   = _bits_per_pixel dib
+    w     = widthBmp bm
+    h     = heightBmp bm
+    bpp   = bitsPerPixelBmp bm
     bw    = bmpRowWidth w bpp
     
 translate24bit :: 
-    Word32 -> Word32 -> Word32 -> DibImageData -> PixelSurface Word32 -> PixelSurface Word32
+    Word32 -> Word32 -> Word32 -> BmpDibImageData -> PixelSurface Word32 -> PixelSurface Word32
 translate24bit row_count col_count full_width bs uarr = runSTUArray $ do
     bmp <- MA.thaw uarr
     fold_lrdownM (f bmp) row_count col_count () 

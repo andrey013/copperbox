@@ -15,7 +15,56 @@
 --
 --------------------------------------------------------------------------------
 
-module ZBitmap.Datatypes where
+module ZBitmap.Datatypes (
+  RowIx, ColIx, TwoDIndex,
+  
+  Bitmap(..),
+  PixelSurface,
+  ByteCount(..),
+  RgbColour(..),
+  Palette(..),
+  YCbCrColour(..),
+  
+  BmpBitmap,
+  BmpHeader,
+  BmpDibHeader,
+  BmpPaletteSpec,
+  BmpDibImageData,
+  BmpBitsPerPixel(..),
+  BmpCompression(..),
+  
+  makeBmpBitmap,
+  makeBmpHeader,
+  makeBmpDibHeaderLong,
+  makeBmpDibHeaderShort, 
+  
+  -- * Querying BmpBitmap attributes
+  optPaletteSpecBmp,
+  imageDataBmp,
+  
+  
+  
+  fileSizeBmp,
+  reservedBytesBmp,
+  dataOffsetBmp,
+  
+  dibSizeBmp,
+  widthBmp,
+  heightBmp,
+  colourPlanesBmp,
+  bitsPerPixelBmp,
+  compressionBmp,
+  imageDataSizeBmp,
+  horizontalResolutionBmp,
+  verticalResolutionBmp,
+  paletteDepthBmp,
+  coloursUsedBmp,
+
+  marshalBmpBitsPerPixel,
+  unmarshalBmpBitsPerPixel,
+  marshalBmpCompression,
+  unmarshalBmpCompression
+) where
 
 import Data.Array.IArray ( Array )
 import Data.Array.Unboxed ( UArray )
@@ -51,11 +100,11 @@ instance Show i => Show (Bitmap i) where
 type PixelSurface i = UArray (i,i) Word8
 
 
-
+-- Does this really need to be wrapped?
 newtype ByteCount = ByteCount { getByteCount :: Word32 }
   deriving (Eq,Num,Ord,Show)
 
-data RGBcolour = RGBcolour { 
+data RgbColour = RgbColour { 
         _red    :: Word8, 
         _green  :: Word8, 
         _blue   :: Word8 
@@ -64,63 +113,69 @@ data RGBcolour = RGBcolour {
 
 data Palette = Palette { 
         colour_count    :: Word32,
-        palette_colours ::  Array Word32 RGBcolour
+        palette_colours ::  Array Word32 RgbColour
       }
       
-   
+data YCbCrColour = YCbCrColour { 
+      _y_val  :: Float,
+      _cb     :: Float,
+      _cr     :: Float
+    }
+  deriving ( Show ) 
+     
 
 --------------------------------------------------------------------------------
 -- Data types for BMP files
 
-data BMPfile = BMPfile { 
-        _header       :: BMPheader, 
-        _dibheader    :: V3Dibheader,
-        _opt_palette  :: Maybe PaletteSpec,
-        _body         :: DibImageData
+data BmpBitmap = BmpBitmap { 
+        _header       :: BmpHeader, 
+        _dibheader    :: BmpDibHeader,
+        _opt_palette  :: Maybe BmpPaletteSpec,
+        _body         :: BmpDibImageData
       }
     deriving Show
 
-
    
-data BMPheader = BMPheader { 
-        _file_size  :: Word32, 
+data BmpHeader = BmpHeader { 
+        _file_size  :: Word32,
+        _reserved1  :: Word16,
+        _reserved2  :: Word16, 
         _offset     :: Word32 
     }
   deriving Show
-  
+
+
+
+
+
 -- V3 only 
-data V3Dibheader = V3Dibheader {
-        _dib_size       :: Word32,
-        _bmp_width      :: Word32,
-        _bmp_height     :: Word32,
-        _colour_planes  :: Word16,
-        _bits_per_pixel :: BmpBitsPerPixel,
-        _compression    :: BmpCompression,
-        _data_size      :: Word32,
-        _h_resolution   :: Word32,
-        _v_resolution   :: Word32,
-        _palette_depth  :: Word32,
-        _colours_used   :: Word32
+data BmpDibHeader = BmpDibHeader {
+        _dib_size         :: Word32,
+        _bmp_width        :: Word32,
+        _bmp_height       :: Word32,
+        _colour_planes    :: Word16,
+        _bits_per_pixel   :: BmpBitsPerPixel,
+        _compression      :: BmpCompression,
+        _image_data_size  :: Word32,
+        _h_resolution     :: Word32,
+        _v_resolution     :: Word32,
+        _palette_depth    :: Word32,
+        _colours_used     :: Word32
     }
   deriving Show 
 
 
-type PaletteSpec = BS.ByteString
+
+
+
+             
+type BmpPaletteSpec = BS.ByteString
 
     
 type ArrayWord8 = UArray Int Word8
-    
-data BMPbody = UnrecognizedFormat
-             | RGB24 ImageData'
-    deriving Show
 
--- This should really be generalized to an array of Word8
--- with a more abstract indexeing scheme then we can handle 
--- different pixels depths 
-type ImageData' = Array (Word32,Word32) RGBcolour
 
--- move to this...
-type DibImageData = BS.ByteString
+type BmpDibImageData = BS.ByteString
 
 
 
@@ -150,6 +205,99 @@ data BmpCompression =
     | Bi_PNG
     deriving ( Enum, Eq, Ord, Show )
     
+
+--------------------------------------------------------------------------------
+-- Wrapped constructors
+
+makeBmpBitmap :: BmpHeader -> BmpDibHeader 
+              -> Maybe BmpPaletteSpec -> BmpDibImageData
+              -> BmpBitmap
+makeBmpBitmap = BmpBitmap
+
+        
+makeBmpHeader :: Word32 -> Word16 -> Word16 ->  Word32 -> BmpHeader
+makeBmpHeader = BmpHeader
+
+-- only export this to ZBitmap modules not client libraries.
+makeBmpDibHeaderLong :: Word32 -> Word32 -> Word16 
+                     -> BmpBitsPerPixel -> BmpCompression -> Word32 
+                     -> Word32 -> Word32 -> Word32 -> Word32 
+                     -> BmpDibHeader
+makeBmpDibHeaderLong = BmpDibHeader 40
+
+
+-- warning careful with sz
+
+makeBmpDibHeaderShort :: Word32 -> Word32 -> BmpBitsPerPixel -> Word32
+                      -> BmpDibHeader
+makeBmpDibHeaderShort w h bpp sz = BmpDibHeader 40 w h 1 bpp Bi_RGB sz 0 0 0 0
+
+
+--------------------------------------------------------------------------------
+-- Querying an opaque BmpBitmap
+
+optPaletteSpecBmp :: BmpBitmap -> Maybe BmpPaletteSpec
+optPaletteSpecBmp (BmpBitmap _ _ o _) = o
+
+
+imageDataBmp :: BmpBitmap -> BmpDibImageData
+imageDataBmp (BmpBitmap _ _ _ d) = d
+
+-- The header
+
+withHeader :: (BmpHeader -> a) -> BmpBitmap -> a
+withHeader f (BmpBitmap h _ _ _) = f h
+
+fileSizeBmp :: BmpBitmap -> Word32 
+fileSizeBmp = withHeader $ \(BmpHeader sz _ _ _) -> sz
+
+reservedBytesBmp :: BmpBitmap -> (Word16, Word16) 
+reservedBytesBmp = withHeader $ \(BmpHeader _ r1 r2 _) -> (r1,r2)
+
+dataOffsetBmp :: BmpBitmap -> Word32 
+dataOffsetBmp = withHeader $ \(BmpHeader _ _ _ off) -> off
+
+
+-- The DIB header
+
+withDibHeader :: (BmpDibHeader -> a) -> BmpBitmap -> a
+withDibHeader f (BmpBitmap _ d _ _) = f d
+
+dibSizeBmp        :: BmpBitmap -> Word32  
+dibSizeBmp        = withDibHeader $ \dib -> _dib_size dib
+
+widthBmp          :: BmpBitmap -> Word32  
+widthBmp          = withDibHeader $ \dib -> _bmp_height dib
+
+heightBmp         :: BmpBitmap -> Word32  
+heightBmp         = withDibHeader $ \dib -> _bmp_height dib
+        
+colourPlanesBmp   :: BmpBitmap -> Word16  
+colourPlanesBmp   = withDibHeader $ \dib -> _colour_planes dib
+
+bitsPerPixelBmp   :: BmpBitmap -> BmpBitsPerPixel  
+bitsPerPixelBmp   = withDibHeader $ \dib -> _bits_per_pixel dib
+
+compressionBmp            :: BmpBitmap -> BmpCompression  
+compressionBmp            = withDibHeader $ \dib -> _compression dib
+        
+imageDataSizeBmp          :: BmpBitmap -> Word32  
+imageDataSizeBmp          = withDibHeader $ \dib -> _image_data_size dib
+        
+horizontalResolutionBmp   :: BmpBitmap -> Word32  
+horizontalResolutionBmp   = withDibHeader $ \dib -> _h_resolution dib
+
+verticalResolutionBmp     :: BmpBitmap -> Word32 
+verticalResolutionBmp     = withDibHeader $ \dib -> _v_resolution dib
+
+paletteDepthBmp           :: BmpBitmap -> Word32 
+paletteDepthBmp           = withDibHeader $ \dib -> _palette_depth dib
+        
+coloursUsedBmp     :: BmpBitmap -> Word32 
+coloursUsedBmp     = withDibHeader $ \dib -> _colours_used dib        
+
+--------------------------------------------------------------------------------
+-- Marshal and unmarshal
 
 marshalBmpBitsPerPixel :: BmpBitsPerPixel -> Word16
 marshalBmpBitsPerPixel x = case x of

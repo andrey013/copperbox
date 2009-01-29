@@ -53,12 +53,12 @@ makeAsciiPicture bmp@(Bitmap w h _ _) =  runSTUArray $ do
                     MA.writeArray ascii idx c
                     
                     
-pixelAt :: Bitmap Word32 -> (Word32,Word32) -> RGBcolour                               
+pixelAt :: Bitmap Word32 -> (Word32,Word32) -> RgbColour                               
 pixelAt (Bitmap _ _ fw a) (r,c) = 
     if (r>rmax || c>cmax) 
       then error $ "r=" ++ show r ++ ", c=" ++ show c 
                         ++ ", bounds= " ++ show (bounds a)
-      else RGBcolour (a!idxR) (a!idxG) (a!idxB)
+      else RgbColour (a!idxR) (a!idxG) (a!idxB)
   where    
     plusX (y,x) i     = (y,x+i)
     ((r0,c0),(r1,c1)) = bounds a
@@ -84,7 +84,7 @@ greyPalette = listArray (0,length xs) xs where
     xs = "@$#%&!+-^,.`    "   -- 16 levels
     
     
-colourPitch :: RGBcolour -> Int
+colourPitch :: RgbColour -> Int
 colourPitch a = lim $ floor $ y / 16
   where
     (YCbCrColour y _ _) = rgbToYCbCr a
@@ -93,7 +93,7 @@ colourPitch a = lim $ floor $ y / 16
           | i < 0     = 0
           | otherwise = i
 
-greyscale :: RGBcolour -> Char
+greyscale :: RgbColour -> Char
 greyscale = (greyPalette !) . colourPitch
 
     

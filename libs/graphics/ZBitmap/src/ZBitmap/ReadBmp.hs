@@ -73,7 +73,7 @@ evalParser :: Parser a -> BS.ByteString  -> Either String a
 evalParser parser = fst . runParser parser 
 
     
-readBmp :: FilePath -> IO BMPfile  
+readBmp :: FilePath -> IO BmpBitmap  
 readBmp name = do 
     h <- openBinaryFile name ReadMode
     bs <- BS.hGetContents h
@@ -93,74 +93,51 @@ reportFail s = do
   where
     posStr p = " position " ++ show p   
     
-bmpFile :: Parser BMPfile  
+bmpFile :: Parser BmpBitmap  
 bmpFile = do
-    hdr     <- header
-    dib     <- dibheader
-    o_ps    <- palette $ _bits_per_pixel dib
-    body    <- bmpBody dib
-    return $ BMPfile hdr dib o_ps body
+    hdr                 <- header
+    (sz,bpp,cmprz,dib)  <- dibheader
+    o_ps                <- palette bpp
+    let bs_size = fromIntegral sz -- might need to subtract the palette_spec size
+    body                <- imageData cmprz bs_size
+    return $ makeBmpBitmap hdr dib o_ps body
 
-header :: Parser BMPheader
-header = (\sz off -> BMPheader sz off)
+header :: Parser BmpHeader
+header = (\sz r1 r2 off -> makeBmpHeader sz r1 r2 off)
   <$> (ignore "magic1" char *> ignore "magic2" char *> getWord32le)          
-  <*> (ignore "reserved1" getWord16le *> 
-       ignore "reserved2" getWord16le *> getWord32le) 
+  <*> getWord16le <*>  getWord16le <*> getWord32le 
 
 
-dibheader :: Parser V3Dibheader
-dibheader = V3Dibheader 
-    <$> getWord32le  <*> getWord32le  <*> getWord32le 
-    <*> getWord16le  <*> bitsPerPixel <*> compression
-    <*> getWord32le  <*> getWord32le  <*> getWord32le
-    <*> getWord32le  <*> getWord32le
+type DataSize = Word32
+type DibAns = (DataSize, BmpBitsPerPixel, BmpCompression, BmpDibHeader)
 
-palette :: BmpBitsPerPixel -> Parser (Maybe PaletteSpec)
+dibheader :: Parser DibAns
+dibheader = 
+    (\w h cp bpp cm sz hr vr pd cs -> 
+        (sz, bpp, cm, makeBmpDibHeaderLong w h cp bpp cm sz hr vr pd cs)) 
+      <$> (getWord32le  *> getWord32le) <*> getWord32le 
+                       <*> getWord16le  <*> bitsPerPixel <*> compression
+                       <*> getWord32le  <*> getWord32le  <*> getWord32le
+                       <*> getWord32le  <*> getWord32le
+
+palette :: BmpBitsPerPixel -> Parser (Maybe BmpPaletteSpec)
 palette bpp = case paletteSize bpp of
     0 -> return Nothing
     n -> do bs <- getByteString (4 * n)   -- 4 bytes per colour
             return $ Just bs
 
+-- Return an empty ByteString if the image is compressed.
+-- The image header might still be important.
+imageData :: BmpCompression -> Int -> Parser BmpDibImageData
+imageData Bi_RGB sz = getByteString sz  
+imageData _      _  = return BS.empty
 
-bmpBody :: V3Dibheader -> Parser DibImageData
-bmpBody dib 
-    | isBi_RGB24 dib = getByteString bs_size  
-    | otherwise      = return BS.empty
-  where 
-    isBi_RGB24 d = _compression d == Bi_RGB  
-    bs_size      = h * getByteCount (bmpRowWidth w bpp)
-    (w,h,bpp)    = (_bmp_width dib, _bmp_height dib, _bits_per_pixel dib)
     
 bitsPerPixel :: Parser BmpBitsPerPixel
 bitsPerPixel = unmarshalBmpBitsPerPixel <$> getWord16le
     
 compression :: Parser BmpCompression
 compression = unmarshalBmpCompression <$> getWord32le
-
-{-
-
-imageData24 :: Word32 -> Word32 -> Parser (Array (Word32,Word32) RGBcolour)
-imageData24 rows cols = do 
-    xss <- iter rows (fst <$> dataLine cols)
-    return $ build (concat $ reverse xss)
-  where
-    build xs = listArray arange xs
-    arange = ((0,0), (rows-1,cols-1)) 
--}    
-    
-    
-dataLine :: Word32 -> Parser ([RGBcolour],[Word8])
-dataLine w = (,) <$> payload w <*> padding w
-  where
-    payload i = iter i rgbColour
-    padding i = iter (paddingMeasure i) getWord8
-
-          
-
-rgbColour :: Parser RGBcolour
-rgbColour = RGBcolour <$> getWord8 <*> getWord8 <*> getWord8
-
-
 
 --------------------------------------------------------------------------------
 -- Helpers

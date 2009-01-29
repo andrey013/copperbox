@@ -36,8 +36,8 @@ paletteSize B16_HighColour      = 0
 paletteSize B24_TrueColour24    = 0
 paletteSize B32_TrueColour32    = 0
 
-rowsColumns :: BMPfile -> (Word32,Word32)
-rowsColumns (BMPfile _ dib _ _) = (_bmp_height dib, _bmp_width dib)
+rowsColumns :: BmpBitmap -> (Word32,Word32)
+rowsColumns bmp = (heightBmp bmp, widthBmp bmp)
 
 bmpRowWidth :: Word32 -> BmpBitsPerPixel -> ByteCount
 bmpRowWidth w B1_Monochrome       = extendTo4ByteBoundary $ subdivide w 8    
@@ -121,15 +121,10 @@ fold_rlupM f rows cols a =
 -- demo04 = fold_rlupM   (\idx _ -> putStrLn $ show idx) 3 4 () 
 
 
-data YCbCrColour = YCbCrColour { 
-      _y_val  :: Float,
-      _cb     :: Float,
-      _cr     :: Float
-    }
-  deriving ( Show )    
+   
 
-rgbToYCbCr :: RGBcolour -> YCbCrColour
-rgbToYCbCr (RGBcolour rv gv bv) = YCbCrColour y cb cr
+rgbToYCbCr :: RgbColour -> YCbCrColour
+rgbToYCbCr (RgbColour rv gv bv) = YCbCrColour y cb cr
   where
   y   =   (0.299  * r) + (0.587  * g) + (0.114  * b)
   cb  = (- 0.1687 * r) - (0.3313 * g) + (0.5    * b) + 128
@@ -138,8 +133,8 @@ rgbToYCbCr (RGBcolour rv gv bv) = YCbCrColour y cb cr
   (r,g,b) = (fromIntegral rv, fromIntegral gv, fromIntegral bv)
   
   
-yCbCrToRgb :: YCbCrColour -> RGBcolour
-yCbCrToRgb (YCbCrColour y cb cr) = RGBcolour r g b
+yCbCrToRgb :: YCbCrColour -> RgbColour
+yCbCrToRgb (YCbCrColour y cb cr) = RgbColour r g b
   where
   r = round (y + 1.402   * (cr-128.0))
   g = round (y - 0.34414 * (cb-128.0) - 0.71414 * (cr-128.0))

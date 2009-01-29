@@ -27,30 +27,31 @@ import Text.PrettyPrint.HughesPJ
 
 
 
-ppBMPheader :: BMPheader -> Doc
-ppBMPheader (BMPheader sz off) =
+ppBmpHeader :: BmpBitmap -> Doc
+ppBmpHeader bmp =
     fsep $ [ anonfield  "magic"       2
-           , field      "file_size"   (decHex0x 8 sz) 
-           , anonfield  "reserved"    1
-           , anonfield  "reserved"    1
-           , field      "offset"      (decHex0x 8 off)
+           , field      "file_size"   (decHex0x 8 $ fileSizeBmp bmp) 
+           , field      "reserved"    (decHex0x 4 r1)
+           , field      "reserved"    (decHex0x 4 r2)
+           , field      "offset"      (decHex0x 8 $ dataOffsetBmp bmp)
            ]
-    
+  where
+    (r1,r2) = reservedBytesBmp bmp     
 
-ppV3DibHeader :: V3Dibheader -> Doc
-ppV3DibHeader dib = 
-    fsep $ [ field "header_size"      (decHex0x 8     $ _dib_size dib)
-           , field "image_width"      (integerValue   $ _bmp_width dib)
-           , field "image_height"     (integerValue   $ _bmp_height dib)
-           , field "colour_planes"    (integerValue   $ _colour_planes dib)
-           , field "bits_per_pixel"   (ppBitsPerPixel $ _bits_per_pixel dib)
-           , field "compression"      (ppCompression  $ _compression dib)
-           , field "data_size"        (decHex0x 8     $ _data_size dib)
-           , field "horizontal_res"   (integerValue   $ _h_resolution dib)
-           , field "vertical_res"     (integerValue   $ _v_resolution dib)
-           , field "palette_depth"    (decHex0x 8     $ _palette_depth dib)
-           , field "colours_used"     (decHex0x 8     $ _colours_used dib)
-           ]
+ppBmpDibHeader :: BmpBitmap -> Doc
+ppBmpDibHeader bmp = fsep $ 
+    [ field "header_size"     (decHex0x 8     $ dibSizeBmp bmp)
+    , field "image_width"     (integerValue   $ widthBmp bmp)
+    , field "image_height"    (integerValue   $ heightBmp bmp)
+    , field "colour_planes"   (integerValue   $ colourPlanesBmp bmp)
+    , field "bits_per_pixel"  (ppBitsPerPixel $ bitsPerPixelBmp bmp)
+    , field "compression"     (ppCompression  $ compressionBmp bmp)
+    , field "data_size"       (decHex0x 8     $ imageDataSizeBmp bmp)
+    , field "horizontal_res"  (integerValue   $ horizontalResolutionBmp bmp)
+    , field "vertical_res"    (integerValue   $ verticalResolutionBmp bmp)
+    , field "palette_depth"   (decHex0x 8     $ paletteDepthBmp bmp)
+    , field "colours_used"    (decHex0x 8     $ coloursUsedBmp bmp)
+    ]
 
           
 ppBitsPerPixel :: BmpBitsPerPixel -> Doc
@@ -76,33 +77,17 @@ ppCompression Bi_PNG        = text "BI_PNG"
 
 ppPalette :: Palette -> Doc
 ppPalette (Palette sz arr) = fold_lr f sz doc1 where
-    f i doc = doc $$ (nest 3 $ intValue i) <> colon <+>  paletteColour (arr!i)
+    f i doc = doc $$ (leftpad ' ' 5 $ show i) <> colon <+>  paletteColour (arr!i)
     doc1    = text "Palette" <+> parens (intValue sz <+> text "entries")
     
      
-paletteColour :: RGBcolour -> Doc
-paletteColour (RGBcolour r g b) = 
-        text "R=" <> (nest 3 $ intValue r) <> comma 
-    <+> text "G=" <> (nest 3 $ intValue g) <> comma
-    <+> text "B=" <> (nest 3 $ intValue b)
+paletteColour :: RgbColour -> Doc
+paletteColour (RgbColour r g b) = 
+        text "R=" <> fillstring 3 (show r) <> comma 
+    <+> text "G=" <> fillstring 3 (show g) <> comma
+    <+> text "B=" <> fillstring 3 (show b)
     
-{-
-ppBMPbody :: BMPbody -> Doc
-ppBMPbody UnrecognizedFormat  = text "Unrecognized Format"
-ppBMPbody (RGB24 grid)        = ppColourGrid grid
-             
 
-ppColourGrid :: Array (Word32,Word32) RGBcolour -> Doc
-ppColourGrid = vcat . map text . quickAsciiHack
-
-
-ppColourLine :: [RGBcolour] -> Doc
-ppColourLine = hsep . map ppRGBcolour
-
-
-ppRGBcolour :: RGBcolour -> Doc
-ppRGBcolour (RGBcolour r g b) = ppHex 2 r <> ppHex 2 g <> ppHex 2 b
--}
 
 intValue :: Integral a => a -> Doc
 intValue = int . fromIntegral 
@@ -125,10 +110,19 @@ ppHex0x :: Integral a => Int -> a -> Doc
 ppHex0x w i = text "0x" <> ppHex w i
 
 ppHex :: Integral a => Int -> a -> Doc
-ppHex w i = padstring '0' w $ showHex i []
+ppHex w i = leftpad '0' w $ showHex i []
 
-padstring :: Char -> Int -> String -> Doc
-padstring ch pad s = let dif = pad - length s in
+-- Poor mans /fill/ from Daan Leijen\'s PPrint
+
+leftpad :: Char -> Int -> String -> Doc
+leftpad ch pad s = let dif = pad - length s in
     text $ replicate dif ch ++ s 
+
+rightpad :: Char -> Int -> String -> Doc
+rightpad ch pad s = let dif = pad - length s in
+    text $ s ++ replicate dif ch 
     
     
+fillstring :: Int -> String -> Doc
+fillstring = rightpad ' '
+
