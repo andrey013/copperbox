@@ -64,7 +64,7 @@ pixelAt (Bitmap _ _ fw a) (r,c) =
     ((r0,c0),(r1,c1)) = bounds a
     rmax = r1-r0
     cmax = c1-c0
-    idxR = (r, c * 3)
+    idxR = (r, c * 4)
     idxG = idxR `plusX` 1
     idxB = idxR `plusX` 2
     

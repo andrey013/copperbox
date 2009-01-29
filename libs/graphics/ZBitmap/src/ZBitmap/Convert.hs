@@ -88,7 +88,7 @@ makePalette sz bs_len bs = (\p -> Palette sz p) $ runSTArray $ do
 dibToBitmap :: BmpBitmap -> Bitmap
 dibToBitmap bm = 
     (\bmp -> Bitmap w h pw32 bmp) 
-          $ translate24bit h pw pw (imageDataBmp bm) 
+          $ translate24bit h w pw (imageDataBmp bm) 
           $ newSurface h pw32 
   where
     w     = widthBmp bm
@@ -105,9 +105,14 @@ translate24bit row_count col_count full_width bs uarr = runSTUArray $ do
     return bmp
   where
     f bmp (r,c) _ = let row = row_count - 1 - r
-                        -- WRONG want to get rd gn bl
-                        a = bs `BS.index` (fromIntegral $ row * full_width + c) 
-                    in MA.writeArray bmp (r,c) a
+                        base = fromIntegral $ row * full_width + c*3
+                        bl = bs `BS.index` base
+                        gn = bs `BS.index` (base+1)
+                        rd = bs `BS.index` (base+2)  
+                    in do MA.writeArray bmp (r,c*4)   rd
+                          MA.writeArray bmp (r,c*4+1) gn
+                          MA.writeArray bmp (r,c*4+2) bl
+                       
   
 
  

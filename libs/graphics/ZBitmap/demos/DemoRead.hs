@@ -32,7 +32,8 @@ runMono = do
     let b = monoTo24bit a
     putStrLn $ showAsciiPicture $ makeAsciiPicture b
     maybe fk (sk a) (optPaletteSpecBmp a)
-    print b
+    let a' = bitmapToBmp24 b
+    writeBmp "./out/letterA_2.bmp" a'
     
 run8bit = do
     a <- readBmp "../images/8bit/picture256.bmp"
