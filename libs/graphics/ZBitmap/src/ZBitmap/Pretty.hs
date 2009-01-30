@@ -59,8 +59,8 @@ ppBitsPerPixel B1_Monochrome      = text "1 (mono)"
 ppBitsPerPixel B4_Colour16        = text "4 (16 colours)"
 ppBitsPerPixel B8_Colour256       = text "8 (256 colours)"
 ppBitsPerPixel B16_HighColour     = text "16 (16 bit high colour bitmap)"
-ppBitsPerPixel B24_TrueColour24   = text "24 (24 bit true colour bitmap)"
-ppBitsPerPixel B32_TrueColour32   = text "32 (32 bit true colour bitmap)"
+ppBitsPerPixel B24_TrueColour     = text "24 (24 bit true colour bitmap)"
+ppBitsPerPixel B32_TrueColour     = text "32 (32 bit true colour bitmap)"
     
 ppCompression :: BmpCompression -> Doc
 ppCompression Bi_RGB        = text "BI_RGB"

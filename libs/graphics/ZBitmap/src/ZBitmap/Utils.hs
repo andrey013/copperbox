@@ -36,12 +36,12 @@ infixr 8 ^
 
 
 paletteSize :: BmpBitsPerPixel -> Int 
-paletteSize B1_Monochrome       = 2 ^ 1
-paletteSize B4_Colour16         = 2 ^ 4      
-paletteSize B8_Colour256        = 2 ^ 8     
-paletteSize B16_HighColour      = 0   
-paletteSize B24_TrueColour24    = 0
-paletteSize B32_TrueColour32    = 0
+paletteSize B1_Monochrome     = 2 ^ 1
+paletteSize B4_Colour16       = 2 ^ 4     
+paletteSize B8_Colour256      = 2 ^ 8     
+paletteSize B16_HighColour    = 0   
+paletteSize B24_TrueColour    = 0
+paletteSize B32_TrueColour    = 0
 
 rowsColumns :: BmpBitmap -> (Word32,Word32)
 rowsColumns bmp = (heightBmp bmp, widthBmp bmp)

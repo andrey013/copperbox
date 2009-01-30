@@ -25,6 +25,7 @@ module ZBitmap.Datatypes (
   Bitmap(..),
   PixelSurface,
   RgbColour(..),
+  PaletteData,
   Palette(..),
   YCbCrColour(..),
   
@@ -141,9 +142,11 @@ data RgbColour = RgbColour {
     }
   deriving Show 
 
+type PaletteData = Array Word32 RgbColour
+
 data Palette = Palette { 
         colour_count    :: Word32,
-        palette_colours :: Array Word32 RgbColour
+        palette_data    :: PaletteData
       }
       
 data YCbCrColour = YCbCrColour { 
@@ -220,8 +223,8 @@ data BmpBitsPerPixel =
     | B4_Colour16      
     | B8_Colour256     
     | B16_HighColour   
-    | B24_TrueColour24
-    | B32_TrueColour32
+    | B24_TrueColour
+    | B32_TrueColour
     deriving ( Enum, Eq, Ord, Show )  
 
 data BmpCompression =
@@ -348,8 +351,8 @@ marshalBmpBitsPerPixel x = case x of
       B4_Colour16       -> 4
       B8_Colour256      -> 8
       B16_HighColour    -> 16
-      B24_TrueColour24  -> 24
-      B32_TrueColour32  -> 32
+      B24_TrueColour    -> 24
+      B32_TrueColour    -> 32
 
 unmarshalBmpBitsPerPixel :: Word16 -> BmpBitsPerPixel
 unmarshalBmpBitsPerPixel x
@@ -357,8 +360,8 @@ unmarshalBmpBitsPerPixel x
       | x == 4    = B4_Colour16  
       | x == 8    = B8_Colour256
       | x == 16   = B16_HighColour
-      | x == 24   = B24_TrueColour24
-      | x == 32   = B32_TrueColour32         
+      | x == 24   = B24_TrueColour
+      | x == 32   = B32_TrueColour         
       | otherwise = error ("unmarshalBmpBitsPerPixel - illegal value " ++ show x)
       
           
