@@ -17,7 +17,7 @@ run24bit :: IO ()
 run24bit = do
     a <- readBmp "../images/24bit/luke.bmp"
     showBmp a
-    let b = dibToBitmap a
+    let b = convertBmp a
     putStrLn $ showAsciiPicture $ makeAsciiPicture b
     -- maybe fk (sk a) (optPaletteSpecBmp a)
     let a' = bitmapToBmp24 b
@@ -30,7 +30,7 @@ runMono :: IO ()
 runMono = do
     a <- readBmp "../images/mono/letterA.bmp"
     showBmp a
-    let b = monoTo24bit a
+    let b = convertBmp a
     putStrLn $ showAsciiPicture $ makeAsciiPicture b
     maybe fk (sk a) (optPaletteSpecBmp a)
     let a' = bitmapToBmp24 b

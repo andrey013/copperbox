@@ -16,9 +16,7 @@
 
 module ZBitmap.Convert (
   palette,
-  dibToBitmap,
-  
-  monoTo24bit,
+  convertBmp,
   
   bitmapToBmp24,
   
@@ -27,13 +25,12 @@ module ZBitmap.Convert (
 import ZBitmap.Datatypes
 import ZBitmap.Utils ( physicalWidth, physicalSize, fold_lrdownM )
 
-import Data.Array.IArray ( (!), elems, bounds )
+import Data.Array.IArray ( (!), elems )
 import qualified Data.Array.MArray as MA
 import Data.Array.ST ( runSTArray, runSTUArray )
 import Data.Array.Unboxed ( UArray )
 import Data.Bits ( Bits(..) )
 import qualified Data.ByteString as BS
-import Data.Maybe ( fromJust )      -- careful...
 import Data.Word
 
 import Prelude hiding ( (^) )
@@ -44,6 +41,11 @@ infixr 8 ^
 (^) :: Integral a => a -> a -> a
 (^) = (Pre.^)
 
+
+--------------------------------------------------------------------------------
+-- Palette manipulation
+
+-- | Make a palette from the Bmp byte-string 
 palette :: BmpBitsPerPixel -> BmpPaletteSpec -> Palette
 palette bpp bs = 
     maybe (fk bpp) (\(sz,blen) -> makePalette sz blen bs) $ 
@@ -72,30 +74,43 @@ makePalette sz bs_len bs = (\p -> Palette sz p) $ runSTArray $ do
     step pal 0 0
     return pal
   where
-    step pal i j | j >= bs_len    = return ()
-                 | otherwise  = let b   = bs `BS.index` j
-                                    g   = bs `BS.index` (j+1)
-                                    r   = bs `BS.index` (j+2)
-                                    elt = (RgbColour r g b)
-                                in do MA.writeArray pal i elt
-                                      step pal (i+1) (j+4)
+    step pal ix ox 
+        | ix >= bs_len   = return ()
+        -- Note colours are in reverse order [blue][green][red][none]
+        -- in the BMP palette.                          
+        | otherwise      = let rd = bs `BS.index` (ix+2)
+                               gn = bs `BS.index` (ix+1)
+                               bl = bs `BS.index` ix
+                           in do MA.writeArray pal ox (RgbColour rd gn bl)
+                                 step pal (ix+4) (ox+1)
+
+                                      
                                        
--- blue green red _unused_
+--------------------------------------------------------------------------------
+-- Bmp to internal bitmap conversion
 
+-- Internal bitmap is a 32bit bitmap [red][green][blue][unused]
+convertBmp :: BmpBitmap -> Bitmap
+convertBmp bmp = fn $ bitsPerPixelBmp bmp where
+    fn B1_Monochrome      = mkBm $ translateMono ih iw ipw ipal ibs oarr
+    fn B24_TrueColour24   = mkBm $ translate24bit ih iw ipw ibs oarr
+    fn _                  = error $ "convertBmp - currently unhandled resolution"
 
--- Bitmap is 32bit bitmap
+    (ih,iw) = (heightBmp bmp, widthBmp bmp)
+    ibpp    = bitsPerPixelBmp bmp
+    ibs     = imageDataBmp bmp
+    ipw     = physicalWidth ibpp (iw)
+    opw     = physicalWidth B32_TrueColour32 iw
+    oarr    = newSurface ih opw
+    ipal    = maybe fk (palette ibpp) (optPaletteSpecBmp bmp)
+    fk      = error $ "convertBmp - missing palette for a format " 
+                        ++ show ibpp
+    mkBm a  = Bitmap iw ih opw a
 
-dibToBitmap :: BmpBitmap -> Bitmap
-dibToBitmap bm = 
-    (\bmp -> Bitmap w h pw32 bmp) 
-          $ translate24bit h w pw (imageDataBmp bm) 
-          $ newSurface h pw32 
-  where
-    w     = widthBmp bm
-    h     = heightBmp bm
-    bpp   = bitsPerPixelBmp bm
-    pw    = physicalWidth bpp w
-    pw32  = physicalWidth B32_TrueColour32 w
+    
+newSurface :: Word32 -> Word32 -> PixelSurface
+newSurface row_count col_count = 
+    runSTUArray $ MA.newArray ((0,0),(row_count - 1,col_count - 1)) 255
     
 translate24bit :: 
     Word32 -> Word32 -> Word32 -> BmpDibImageData -> PixelSurface -> PixelSurface
@@ -113,21 +128,7 @@ translate24bit row_count col_count full_width bs uarr = runSTUArray $ do
                           MA.writeArray bmp (r,c*4+1) gn
                           MA.writeArray bmp (r,c*4+2) bl
                        
-  
 
- 
-monoTo24bit :: BmpBitmap -> Bitmap
-monoTo24bit bm = 
-    (\bmp -> Bitmap w h pw32 bmp) 
-          $ translateMono h w pw pal (imageDataBmp bm) 
-          $ newSurface h pw32
-  where
-    w     = widthBmp bm
-    h     = heightBmp bm
-    bpp   = bitsPerPixelBmp bm
-    pw    = physicalWidth bpp w
-    pw32  = physicalWidth B32_TrueColour32 w
-    pal   = palette bpp (fromJust $ optPaletteSpecBmp bm)
     
 translateMono :: 
     Word32 -> Word32 -> Word32 -> Palette -> 
@@ -148,17 +149,29 @@ translateMono row_count col_count full_width (Palette _ pal) bs uarr =
                           
     pxLookup b  = pal!(fromIntegral $ fromEnum b) 
     
-    
-    
-newSurface :: Word32 -> Word32 -> PixelSurface
-newSurface row_count col_count = 
-    runSTUArray $ MA.newArray ((0,0),(row_count - 1,col_count - 1)) 255
-
--- 0 msb - 7 lsb
-atMsb :: (Bits a) => (Bool -> b) -> a -> Int -> b  
-atMsb f a i = f $ a `testBit` j
-  where j = (bitSize a) - 1 - i
+    -- 0 msb - 7 lsb
+    atMsb :: (Bits a) => (Bool -> b) -> a -> Int -> b  
+    atMsb fun a i = fun $ a `testBit` j
+      where j = (bitSize a) - 1 - i
   
+
+
+
+  
+  {-
+monoTo24bit :: BmpBitmap -> Bitmap
+monoTo24bit bm = 
+    (\bmp -> Bitmap w h pw32 bmp) 
+          $ translateMono h w pw pal (imageDataBmp bm) 
+          $ newSurface h pw32
+  where
+    w     = widthBmp bm
+    h     = heightBmp bm
+    bpp   = bitsPerPixelBmp bm
+    pw    = physicalWidth bpp w
+    pw32  = physicalWidth B32_TrueColour32 w
+    pal   = palette bpp (fromJust $ optPaletteSpecBmp bm)
+-}
 
 --------------------------------------------------------------------------------
 --   
@@ -181,7 +194,7 @@ slowMarshal :: UArray Word32 Word8 -> BS.ByteString
 slowMarshal = BS.pack . elems
     
 makeImageData :: Bitmap -> BmpDibImageData
-makeImageData (Bitmap w h sw bmp) = 
+makeImageData (Bitmap w h _ bmp) = 
     slowMarshal $ makeLinear h w rwidth bmp arr 
   where
     ps      = physicalSize B24_TrueColour24 w h
