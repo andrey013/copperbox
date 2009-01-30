@@ -14,12 +14,13 @@
 --
 --------------------------------------------------------------------------------
 
-module ZBitmap.WriteBmp where
+module ZBitmap.WriteBmp (
+  writeBmp
+) where
 
 import ZBitmap.Datatypes
-import ZBitmap.Utils ( paddingMeasure )
 
-import Data.Array.IArray ( (!), bounds )
+
 import Data.Bits
 import qualified Data.ByteString as BS
 import Data.Char ( ord ) 
@@ -113,9 +114,6 @@ out1 = BS.cons
 
 out2 :: Word8 -> Word8 -> (BS.ByteString -> BS.ByteString)
 out2 a b = (BS.cons a) . (BS.cons b) 
-
-out3 :: Word8 -> Word8 -> Word8 -> (BS.ByteString -> BS.ByteString)
-out3 a b c = (BS.cons a) . (BS.cons b) . (BS.cons c)
 
 out4 :: Word8 -> Word8 -> Word8 -> Word8 -> (BS.ByteString -> BS.ByteString)
 out4 a b c d = (BS.cons a) . (BS.cons b) . (BS.cons c) . (BS.cons d)

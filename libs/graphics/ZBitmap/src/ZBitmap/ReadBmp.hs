@@ -17,12 +17,14 @@
 
 
 module ZBitmap.ReadBmp (
-  readBmp
+  readBmp,
+  runParser,
+  evalParser,
   
 ) where
 
 import ZBitmap.Datatypes
-import ZBitmap.Utils ( paddingMeasure, paletteSize, physicalWidth )
+import ZBitmap.Utils ( paletteSize )
 
 import Control.Applicative
 import Control.Monad.Error
@@ -103,9 +105,9 @@ bmpFile = do
     return $ makeBmpBitmap hdr dib o_ps body
 
 header :: Parser BmpHeader
-header = (\sz r1 r2 off -> makeBmpHeaderLong sz r1 r2 off)
-  <$> (ignore "magic1" char *> ignore "magic2" char *> getWord32le)          
-  <*> getWord16le <*>  getWord16le <*> getWord32le 
+header = (\c1 c2 sz r1 r2 off -> makeBmpHeaderLong c1 c2 sz r1 r2 off)
+    <$> char <*> char        <*> getWord32le 
+             <*> getWord16le <*> getWord16le <*> getWord32le 
 
 
 type DataSize = Word32
@@ -142,15 +144,6 @@ compression = unmarshalBmpCompression <$> getWord32le
 --------------------------------------------------------------------------------
 -- Helpers
 
-
-ignore :: Show a => String -> Parser a -> Parser ()
-ignore name p = p >>= logfield name . show
-  
-
-logfield :: Show a => String -> a -> Parser ()
-logfield name val = tell $ name  ++ " = " ++ show val ++ "\n"
-
-
 getByteString :: Integral i => i -> Parser BS.ByteString
 getByteString count = do 
     bs <- gets remaining
@@ -170,16 +163,6 @@ getByteString count = do
                    ++ show i ++ " bytes, with only " ++ show rlen 
                    ++ " remaining.\n" 
       
-
-iter :: Integral i => i -> Parser a -> Parser [a]
-iter i p | i > 0     = (:) <$> p <*> iter (i-1) p
-         | otherwise = return []
-         
-         
-eof :: Parser Bool
-eof = do
-     bs <- gets remaining
-     return $ BS.null bs 
    
 getWord8 :: Parser Word8
 getWord8 = do
@@ -193,11 +176,6 @@ getWord8 = do
 char :: Parser Char
 char = chr . fromIntegral <$> getWord8
 
-         
-assertChar :: Char -> Parser Char
-assertChar ch = char >>= fn
-  where fn a | a == ch    = return ch
-             | otherwise  = reportFail $ "assertChar failed"
 
 getWord16le   :: Parser Word16
 getWord16le   = w16le <$> getWord8 <*> getWord8

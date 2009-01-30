@@ -16,7 +16,7 @@
 --------------------------------------------------------------------------------
 
 module ZBitmap.Datatypes (
-  RowIx, ColIx, TwoDIndex,
+  RowIx, ColIx, BitmapIndex,
   
   PixelCount, ByteCount,
   ImageSize, SurfaceSize, PhysicalSize,
@@ -46,6 +46,7 @@ module ZBitmap.Datatypes (
   optPaletteSpecBmp,
   imageDataBmp,
   
+  magicBmp,
   fileSizeBmp,
   reservedBytesBmp,
   dataOffsetBmp,
@@ -80,7 +81,7 @@ import Data.Word
 type RowIx = Word32 
 type ColIx = Word32
 
-type TwoDIndex = (RowIx,ColIx)
+type BitmapIndex = (RowIx,ColIx)
 
 type PixelCount  = Word32
 type ByteCount   = Word32
@@ -166,6 +167,7 @@ data BmpBitmap = BmpBitmap {
 
    
 data BmpHeader = BmpHeader { 
+        _magic      :: (Char,Char),
         _file_size  :: Word32,
         _reserved1  :: Word16,
         _reserved2  :: Word16, 
@@ -242,11 +244,12 @@ makeBmpBitmap = BmpBitmap
 
 
 -- only export this to the Bmp parser not client libraries.        
-makeBmpHeaderLong :: Word32 -> Word16 -> Word16 -> Word32 -> BmpHeader
-makeBmpHeaderLong = BmpHeader
+makeBmpHeaderLong :: Char -> Char ->Word32 -> Word16 -> Word16 -> Word32 -> BmpHeader
+makeBmpHeaderLong m1 m2 = BmpHeader (m1,m2)
 
 makeBmpHeaderShort :: Word32 -> Word32 -> BmpHeader
-makeBmpHeaderShort palette_size image_size = BmpHeader total_size 0 0 offset
+makeBmpHeaderShort palette_size image_size = 
+    BmpHeader ('B','M') total_size 0 0 offset
   where
     hdr_size    = 14
     dib_size    = 40 
@@ -285,14 +288,17 @@ imageDataBmp (BmpBitmap _ _ _ d) = d
 withHeader :: (BmpHeader -> a) -> BmpBitmap -> a
 withHeader f (BmpBitmap h _ _ _) = f h
 
-fileSizeBmp :: BmpBitmap -> Word32 
-fileSizeBmp = withHeader $ \(BmpHeader sz _ _ _) -> sz
+magicBmp          :: BmpBitmap -> (Char,Char) 
+magicBmp          = withHeader $ \(BmpHeader mg _ _ _ _) -> mg
 
-reservedBytesBmp :: BmpBitmap -> (Word16, Word16) 
-reservedBytesBmp = withHeader $ \(BmpHeader _ r1 r2 _) -> (r1,r2)
+fileSizeBmp       :: BmpBitmap -> Word32 
+fileSizeBmp       = withHeader $ \(BmpHeader _ sz _ _ _) -> sz
 
-dataOffsetBmp :: BmpBitmap -> Word32 
-dataOffsetBmp = withHeader $ \(BmpHeader _ _ _ off) -> off
+reservedBytesBmp  :: BmpBitmap -> (Word16, Word16) 
+reservedBytesBmp  = withHeader $ \(BmpHeader _ _ r1 r2 _) -> (r1,r2)
+
+dataOffsetBmp     :: BmpBitmap -> Word32 
+dataOffsetBmp     = withHeader $ \(BmpHeader _ _ _ _ off) -> off
 
 
 -- The DIB header

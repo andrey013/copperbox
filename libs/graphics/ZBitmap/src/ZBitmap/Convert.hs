@@ -164,8 +164,7 @@ atMsb f a i = f $ a `testBit` j
 --   
 
 
--- drat! - where is the library function to go from @UArray of Word8@
--- to a @Word8 ByteString@ ? 
+
 
 
 bitmapToBmp24 :: Bitmap -> BmpBitmap
@@ -176,11 +175,13 @@ bitmapToBmp24 bmp@(Bitmap w h _ _) = makeBmpBitmap hdr dibh Nothing img
     dibh  = makeBmpDibHeaderShort w h B24_TrueColour24 ps
     img   = makeImageData bmp
 
+-- drat! - where is the library function to go from @UArray of Word8@
+-- to a @Word8 ByteString@ ? 
 slowMarshal :: UArray Word32 Word8 -> BS.ByteString
 slowMarshal = BS.pack . elems
     
 makeImageData :: Bitmap -> BmpDibImageData
-makeImageData (Bitmap w h sw bmp) = -- error $ show (bounds bmp) 
+makeImageData (Bitmap w h sw bmp) = 
     slowMarshal $ makeLinear h w rwidth bmp arr 
   where
     ps      = physicalSize B24_TrueColour24 w h

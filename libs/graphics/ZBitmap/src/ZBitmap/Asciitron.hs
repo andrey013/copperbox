@@ -14,7 +14,12 @@
 --
 --------------------------------------------------------------------------------
 
-module ZBitmap.Asciitron where
+module ZBitmap.Asciitron (
+  AsciiPicture,
+  makeAsciiPicture,
+  showAsciiPicture,
+  
+) where
 
 import ZBitmap.Datatypes
 import ZBitmap.Utils
@@ -23,20 +28,9 @@ import Data.Array.IArray  ( listArray, (!), IArray(..) )
 import qualified Data.Array.MArray as MA
 import Data.Array.ST      ( runSTUArray )
 import Data.Array.Unboxed ( UArray )
-import Data.List ( foldl' )
 import Data.Word ( Word32 )
 
 type AsciiPicture = UArray (Word32,Word32) Char 
-
-showAsciiPicture :: AsciiPicture -> String
-showAsciiPicture arr = 
-    unlines $ snd $ fold_rlup fn (r1+1) (c1+1) ([],[]) 
-  where
-    
-    fn (r,c) (xs,xss) | c == 0    = let a = arr!(r,c) in ([], (a:xs):xss)
-                      | otherwise = let a = arr!(r,c) in ((a:xs),xss)  
-    (_,(r1,c1)) = bounds arr
-    
 
 
 makeAsciiPicture :: Bitmap -> AsciiPicture
@@ -53,32 +47,36 @@ makeAsciiPicture bmp@(Bitmap w h _ _) =  runSTUArray $ do
                     MA.writeArray ascii idx c
                     
                     
+showAsciiPicture :: AsciiPicture -> String
+showAsciiPicture arr = 
+    unlines $ snd $ fold_rlup fn (r1+1) (c1+1) ([],[]) 
+  where
+    
+    fn (r,c) (xs,xss) | c == 0    = let a = arr!(r,c) in ([], (a:xs):xss)
+                      | otherwise = let a = arr!(r,c) in ((a:xs),xss)  
+    (_,(r1,c1)) = bounds arr
+    
+
+
+                    
+                    
 pixelAt :: Bitmap -> (Word32,Word32) -> RgbColour                               
-pixelAt (Bitmap _ _ fw a) (r,c) = 
-    if (r>rmax || c>cmax) 
-      then error $ "r=" ++ show r ++ ", c=" ++ show c 
-                        ++ ", bounds= " ++ show (bounds a)
-      else RgbColour (a!idxR) (a!idxG) (a!idxB)
-  where    
-    plusX (y,x) i     = (y,x+i)
-    ((r0,c0),(r1,c1)) = bounds a
-    rmax = r1-r0
-    cmax = c1-c0
-    idxR = (r, c * 4)
-    idxG = idxR `plusX` 1
-    idxB = idxR `plusX` 2
+pixelAt (Bitmap _ _ _ a) (r,col) = RgbColour (a!(r,c)) (a!(r,c+1)) (a!(r,c+2))
+  where c = col * 4
     
 
                                 
 blankAsciiPicture :: Word32 -> Word32 -> AsciiPicture
 blankAsciiPicture row_count col_count = 
-    runSTUArray $ MA.newArray ((0,0),(row_count - 1,col_count - 1)) '/'
+    runSTUArray $ MA.newArray ((0,0),(row_count - 1,col_count - 1)) ' '
 
 
 
 
 
-
+-- Black is (0,0,0) and white is (255,255,255) hence the darkest 
+-- char '@' is indexed at zero.
+-- Having 4 full white chars seems to get better pictures.
 greyPalette :: UArray Int Char
 greyPalette = listArray (0,length xs) xs where
     xs = "@$#%&!+-^,.`    "   -- 16 levels

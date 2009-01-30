@@ -20,7 +20,6 @@ module ZBitmap.Utils where
 import ZBitmap.Datatypes
 
 import Data.Array.IArray
-import Data.Array.Unboxed ( UArray )
 import Data.Foldable ( foldlM )
 import Data.List ( foldl' )
 import Data.Word
@@ -67,10 +66,8 @@ physicalWidth bpp w = 4 * (((n * w) + 31) `div` 32)
 physicalSize :: BmpBitsPerPixel -> PixelCount ->  PixelCount -> ByteCount
 physicalSize bpp w h = h * physicalWidth bpp w
 
-
-listArrayFrom0 :: IArray UArray a => [a] -> UArray Int a
-listArrayFrom0 xs = listArray (0,fromIntegral $ length xs - 1) xs
-
+--------------------------------------------------------------------------------
+-- Indexes for traversal
 
 countdown :: Integral a => a -> [a]
 countdown (n + 1) = enumFromThenTo n (n-1) 0
@@ -135,7 +132,8 @@ fold_rlupM f rows cols a =
 -- demo04 = fold_rlupM   (\idx _ -> putStrLn $ show idx) 3 4 () 
 
 
-   
+--------------------------------------------------------------------------------
+-- Colour conversion
 
 rgbToYCbCr :: RgbColour -> YCbCrColour
 rgbToYCbCr (RgbColour rv gv bv) = YCbCrColour y cb cr
@@ -154,27 +152,10 @@ yCbCrToRgb (YCbCrColour y cb cr) = RgbColour r g b
   g = round (y - 0.34414 * (cb-128.0) - 0.71414 * (cr-128.0))
   b = round (y + 1.772   * (cb-128.0))
 
-
-row :: Int -> Array (Int,Int) a -> [a]
-row y arr = foldr (\a xs -> arr!(a,y) : xs) [] [x..x'] 
-  where
-    ((x,_),(x',_)) = bounds arr 
+--------------------------------------------------------------------------------
+-- Print the coordinates of a bounding box     
     
-column :: Int -> Array (Int,Int) a -> [a]
-column x arr = foldr (\a xs -> arr!(x,a) : xs) [] [y..y'] 
-  where
-    ((_,y),(_,y')) = bounds arr
-    
-
--- How much padding does a line need?
-paddingMeasure :: Word32 -> Word32
-paddingMeasure i = step $ (i*3) `mod` 4 where
-    step n | n == 0     = 0
-           | otherwise  = 4 - n
-           
-           
-    
-printCBBox :: TwoDIndex -> TwoDIndex -> IO ()
+printCBBox :: BitmapIndex -> BitmapIndex -> IO ()
 printCBBox (r0,c0) (r1,c1) = putStrLn $ render $ doc where
     doc =     (indent (cl-x) tl)   <+> text ".."   <+> (indent (cr-y) tr)
            $$ (indent (cl-3) dot)                   <> indent (8 + (cr-y)) dot
@@ -195,7 +176,7 @@ printCBBox (r0,c0) (r1,c1) = putStrLn $ render $ doc where
 
 
 
-printCBBoxA :: IArray arr e => arr TwoDIndex e -> IO ()
+printCBBoxA :: IArray arr e => arr BitmapIndex e -> IO ()
 printCBBoxA arr = printCBBox top_left bottom_right where
   (top_left,bottom_right) = bounds arr
 

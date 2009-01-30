@@ -29,11 +29,11 @@ import Text.PrettyPrint.HughesPJ
 
 ppBmpHeader :: BmpBitmap -> Doc
 ppBmpHeader bmp = (text "BMP Header" $$) $ vcat $ 
-    [ anonfield  "magic"       2
-    , field      "file_size"   (decHex0x 8 $ fileSizeBmp bmp) 
-    , field      "reserved"    (decHex0x 4 r1)
-    , field      "reserved"    (decHex0x 4 r2)
-    , field      "offset"      (decHex0x 8 $ dataOffsetBmp bmp)
+    [ field  "magic"       ((\(c1,c2) -> text [c1,c2]) $ magicBmp bmp)
+    , field  "file_size"   (decHex0x 8 $ fileSizeBmp bmp) 
+    , field  "reserved"    (decHex0x 4 r1)
+    , field  "reserved"    (decHex0x 4 r2)
+    , field  "offset"      (decHex0x 8 $ dataOffsetBmp bmp)
     ]
   where
     (r1,r2) = reservedBytesBmp bmp     
