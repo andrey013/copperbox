@@ -24,6 +24,7 @@ import Graphics.Rendering.FreeType
 import Graphics.Rendering.FreeType.Util.Bitmap
 
 import Control.Monad
+import Data.Array.IArray ( (!) )
 import Data.Char ( ord )
 import Data.Int
 import Data.Word
@@ -45,13 +46,18 @@ drawBitmap (Bitmap r' w' _ bs _ _ _ _) x y img =
     (r,w) = (fromIntegral r', fromIntegral w')  
 
 showImage :: Image -> IO ()
-showImage img = zigZagPhiM f h ((),()) img
+showImage (Image img) = mapM_ f indexes 
   where
-    f i () | i == 0    = putChar ' '
-           | i <  128  = putChar '+'
-           | otherwise = putChar '*'
+    indexes = [(r,c) | r <- [0..(image_height-1)], c <- [0..(image_width-1)] ]
 
-    h () () = putChar '\n'           
+    f idx@(_,c) = do show1 $ img!idx
+                     when (c == image_width-1) (putChar '\n') 
+    
+    show1 i | i == 0    = putChar ' '
+            | i <  128  = putChar '+'
+            | otherwise = putChar '*'
+
+    
     
     
 main :: IO ()

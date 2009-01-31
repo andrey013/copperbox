@@ -17,7 +17,6 @@
 
 module Graphics.Rendering.FreeType.Util.Bitmap where
 
-import qualified Graphics.Rendering.FreeType.Util.ZigZag as ZZ
 
 import Control.Monad ( when )
 import Data.Bits ( (.|.) )
@@ -87,34 +86,7 @@ makeBuffer w h chars = Buffer $ runSTArray $ do
 imageBounds :: Image -> ((Int32,Int32),(Int32,Int32))
 imageBounds (Image uarr) = bounds uarr
 
-zigZag :: (Word8 -> a -> a) -> a -> Image -> a
-zigZag f a (Image uarr) = ZZ.zigZag f a uarr
-
-zigZagM :: Monad m => (Word8 -> a -> m a) -> a -> Image -> m a
-zigZagM f a (Image uarr) = ZZ.zigZagM f a uarr
               
-zagZig :: (Word8 -> a -> a) -> a -> Image -> a
-zagZig f a (Image uarr) = ZZ.zagZig f a uarr
-
-zagZigM :: Monad m => (Word8 -> a -> m a) -> a -> Image -> m a
-zagZigM f a (Image uarr) = ZZ.zagZigM f a uarr
-
-        
-zigZagPhi :: (Word8 -> a -> a) -> (a -> b -> b) -> (a,b) -> Image -> b
-zigZagPhi f h (a,b) (Image uarr) = ZZ.zigZagPhi f h (a,b) uarr
-
-zigZagPhiM :: Monad m => 
-               (Word8 -> a -> m a) -> (a -> b -> m b) -> (a,b) -> Image -> m b
-zigZagPhiM f h (a,b) (Image uarr) = ZZ.zigZagPhiM f h (a,b) uarr
-              
-zagZigPhi :: (Word8 -> a -> a) -> (a -> b -> b) -> (a,b) -> Image -> b
-zagZigPhi f h (a,b) (Image uarr) = ZZ.zagZigPhi f h (a,b) uarr
-
-zagZigPhiM :: Monad m => 
-               (Word8 -> a -> m a) -> (a -> b -> m b) -> (a,b) -> Image -> m b
-zagZigPhiM f h (a,b) (Image uarr) = ZZ.zagZigPhiM f h (a,b) uarr
-                  
-                  
 
 
     
