@@ -260,4 +260,3 @@ marshalTilingMode x = case x of
    
 instance Marshal TilingMode where marshal = marshalTilingMode
 
-     
