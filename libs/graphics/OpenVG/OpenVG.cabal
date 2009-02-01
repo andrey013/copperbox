@@ -15,6 +15,9 @@ build-type:         Simple
 stability:          alpha
 cabal-version:      >= 1.2
 
+extra-source-files:
+  examples/TestUtils.hs,
+  examples/TestVgu.hs
 
 library
   hs-source-dirs:     src
@@ -40,7 +43,11 @@ library
     Graphics.Rendering.OpenVG.VGU.Errors
   
   other-modules:
-    Graphics.Rendering.OpenVG.VG.Constants
+    Graphics.Rendering.OpenVG.VG.Constants,
+    Graphics.Rendering.OpenVG.VG.Utils,
+    Graphics.Rendering.OpenVG.VG.CFunDecls,
+    Graphics.Rendering.OpenVG.VGU.CInternals,
+    Graphics.Rendering.OpenVG.VGU.ErrorsInternal    
   
   extensions:
     ForeignFunctionInterface, TypeSynonymInstances, CPP
