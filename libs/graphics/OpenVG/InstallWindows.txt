@@ -1,0 +1,115 @@
+It is tedious to install ShivaVG on Windows with MinGW/Msys (I 
+don't think Cygwin will work at all). With GHC-6.10.1 most 
+people appear to be following these instructions to install 
+HOpenGL and HGLUT - they are the ones I followed:
+
+http://netsuperbrain.com/blog/posts/freeglut-windows-hopengl-hglut/
+
+To get Shiva-VG to work under MinGW/Msys you have to do the same 
+trick of compiling directly with gcc rather than using the makefiles
+as per *Compile and Install freeglut*.
+
+Here's what I did:
+
+I dropped the archive into my home directory
+C:\msys\1.0\home\stephen
+
+> tar xvfz shivavg-0.2.0.tar.gz
+
+> cd shivavg-0.2.0/src
+
+> gcc -O2 -c *.c -I../include/VG
+
+That should build the *.o files.
+
+> gcc -shared -o openvg32.dll *.o -Wl,--enable-stdcall-fixup,--out-implib,libopenvg32.a -lopengl32 -lglu32 -lgdi32 -lwinmm
+
+That should create `openvg32.dll` and `libopenvg32.a`.
+
+Put `libshivavg32.a` into your MinGW lib directory, on my system
+it is here:
+
+C:\MinGW\lib
+
+Also copy the `vg` folder from `shivavg-0.2.0\include` to the
+MinGW include directory, on my system it is here:
+
+C:\MinGW\include
+
+You should have folders for both the GL and OpenVG headers:
+
+C:\MinGW\include\GL
+C:\MinGW\include\vg
+
+Now you should be able to build the Haskell binding to Shiva:
+
+I dropped the archive into my home directory
+C:\msys\1.0\home\stephen
+
+> tar xvfz OpenVG-0.1.tar.gz
+
+> cd OpenVG-0.1
+> runhaskell Setup.hs configure
+> runhaskell Setup.hs build
+> runhaskell Setup.hs install
+> runhaskell Setup.hs haddock
+
+To run the test you need to copy `openvg32.dll` from
+the shivavg src directory into OpenVG-0.1/examples.
+The cd to examples and run with:
+> runhaskell -lopenvg TestVgu.hs
+
+This should display a white window with some line drawn
+shapes.
+
+Better examples of OpenVG capabilities are in the ShivaVG 
+examples. Particularly test_tiger which uses the famous 
+tiger from SVG tutorials.
+
+
+Running ShivaVG's C examples
+----------------------------
+
+ShivaVG itself seems to have some problems with FreeGlut - 
+at least if the are both compiled through the direct gcc 
+(no makefile) hack as per the *netsuperbrain.com* blog tutorial. 
+
+Compiling should be straight-forward, the following command 
+compiles test_tiger.exe: 
+
+> gcc -o test_tiger test.c test_tiger_paths.c test_tiger.c -lm -lglut32 -lglu32 -lopengl32 -lopenvg32
+
+To run the test_tiger.exe you will need to drop to put a copy of 
+the `openvg32.dll` that you compiled (in the src directory) into 
+the examples directory.
+
+You will also need a copy of `glut32.dll` in the examples 
+directory -  and here seems to be the snag. 
+
+I don't think the `glut32.dll` produced by FreeGlut works 
+- at least not if its compiled as per the *netsuperbrain.com* 
+guide. The `glut32.dll` compiled from FreeGlut is identifiable 
+as its 308KB in size (on my computer at least). If you try to 
+run test_tiger.exe with this it may fail with an 
+`Entry Point Not Found` dialog for the function 
+`_glutCreateMenuWithExit` (it certainly fails for me). 
+
+To get around this, I have to use the `glut32.dll` from my 
+Cygwin installation, this is 232KB in size and was in the folder:
+
+C:\cygwin\bin
+
+I copied this into the `examples` folder along with `openvg32.dll`
+then double-clicking on test_tiger.exe should work.
+
+
+
+
+  
+
+  
+
+ 
+
+   
+   

@@ -16,6 +16,8 @@ stability:          alpha
 cabal-version:      >= 1.2
 
 extra-source-files:
+  InstallWindows.txt,
+  README.txt,
   examples/TestUtils.hs,
   examples/TestVgu.hs
 

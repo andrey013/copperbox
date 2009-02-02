@@ -16,9 +16,19 @@
 
 --------------------------------------------------------------------------------
 
--- Currently (on Windows) it seems to work best with `runhaskell` ...
--- shell> runhaskell.exe -i../src -lopenvg32 TestVgu.hs
+-- On Windows copy `openvg32.dll` and `glut32.dll` into this directory,
+-- then under MinGW/Msys cd to this directory and run this at the prompt:
+-- MinGW> runhaskell.exe -lopenvg32 TestVgu.hs
 
+-- You can run through GHCi, but closing the display window kills the
+-- GHCi session.
+
+-- On MacOSX runhaskell won't work, a blank window is printed and the
+-- shell effectively freezes. You will have to do a compile to see the demo:
+-- shell> ghc --make -lopenvg TestVgu.hs
+-- the run the compiled app.
+
+-- GHCi does not work either.
 
 
 module Main where
