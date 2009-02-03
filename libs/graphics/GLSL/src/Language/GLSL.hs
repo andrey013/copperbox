@@ -15,11 +15,13 @@
 --------------------------------------------------------------------------------
 
 module Language.GLSL (
+  module Language.GLSL.Parse,
 --  module Language.GLSL.Pretty,
   module Language.GLSL.Syntax
 )
 where
 
+import Language.GLSL.Parse
 import Language.GLSL.Pretty ()
 import Language.GLSL.Syntax
 
