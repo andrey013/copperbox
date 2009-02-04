@@ -40,10 +40,10 @@ data SlConst = SlIntConst Integer
   deriving (Eq,Show,Typeable,Data)
 
 -- p70
-data UnaryOp = PlusOp
-             | MinusOp
-             | LNotOp
-             | NotOp
+data UnaryOp = PlusOp             -- +
+             | MinusOp            -- -
+             | LNotOp             -- !
+             | NotOp              -- ~
   deriving (Eq,Show,Typeable,Data)
 
 data BinaryOp = MulOp             -- *

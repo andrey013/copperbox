@@ -71,7 +71,40 @@ data GlslToken
     | Tk_kw_sampler1DShadow 
     | Tk_kw_sampler2DShadow
     | Tk_kw_struct
-    -- more
+    -- punctuators
+    | Tk_p_plus
+    | Tk_p_dash
+    | Tk_p_bang
+    | Tk_p_tilde
+    | Tk_p_star
+    | Tk_p_divide
+    | Tk_p_percent
+    | Tk_p_shiftl
+    | Tk_p_shiftr
+    | Tk_p_less
+    | Tk_p_greater
+    | Tk_p_lesseq
+    | Tk_p_greatereq
+    | Tk_p_equality
+    | Tk_p_notequal
+    | Tk_p_ampersand
+    | Tk_p_caret
+    | Tk_p_bar
+    | Tk_p_dblampersand 
+    | Tk_p_dblcaret
+    | Tk_p_dblbar 
+    | Tk_p_eq
+    | Tk_p_stareq
+    | Tk_p_divideeq
+    | Tk_p_percenteq
+    | Tk_p_pluseq
+    | Tk_p_minuseq
+    | Tk_p_shiftleq
+    | Tk_p_shiftreq
+    | Tk_p_ampersandeq
+    | Tk_p_careteq
+    | Tk_p_bareq
+    
     | Tk_Period
     | Tk_Integer Integer
     | Tk_EOF

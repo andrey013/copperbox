@@ -32,16 +32,22 @@ import Control.Monad.Identity
 
 $white = [\ \t\v\f\r\n]
 
-$digit = 0-9      -- digits
+$nondigit           = [A-Za-z_]
+$digit              = 0-9
+$nonzero_digit      = [1-9]
+$octal_digit        = [0-7]
+$hex_digit          = [0-9A-Fa-f]
+
+@hex_prefix         = 0x | 0X
+
+
+
 @integer = $digit+
 
 glsl :-
 
 $white ;
 
-<0> {
-  @integer      { tkInteger `andBegin` 0 }
-}
 
 -- keywords  
 
@@ -102,6 +108,59 @@ $white ;
 } 
 
 
+-- punctuators
+<0> {
+  
+  \+              { punctuator Tk_p_plus          }
+  \-              { punctuator Tk_p_dash          }
+  \!              { punctuator Tk_p_bang          }
+  \~              { punctuator Tk_p_tilde         }
+  
+  \*              { punctuator Tk_p_star          }
+  \/              { punctuator Tk_p_divide        }
+  "<<"            { punctuator Tk_p_shiftl        }
+  ">>"            { punctuator Tk_p_shiftr        }
+  \<              { punctuator Tk_p_less          } 
+  \>              { punctuator Tk_p_greater       }
+  "<="            { punctuator Tk_p_lesseq        }    
+  ">="            { punctuator Tk_p_greatereq     }
+  "=="            { punctuator Tk_p_equality      }
+  "!="            { punctuator Tk_p_notequal      }
+  \&              { punctuator Tk_p_ampersand     }
+  \^              { punctuator Tk_p_caret         }
+  \|              { punctuator Tk_p_bar           }
+  "&&"            { punctuator Tk_p_dblampersand  }
+  "^^"            { punctuator Tk_p_dblcaret      }
+  "||"            { punctuator Tk_p_dblbar        }
+
+  \=              { punctuator Tk_p_eq            }
+  "*="            { punctuator Tk_p_stareq        }
+  "/="            { punctuator Tk_p_divideeq      }
+  "%="            { punctuator Tk_p_percenteq     }
+  "+="            { punctuator Tk_p_pluseq        }
+  "-="            { punctuator Tk_p_minuseq       }
+  "<<="           { punctuator Tk_p_shiftleq      }
+  ">>="           { punctuator Tk_p_shiftreq      }
+  "&="            { punctuator Tk_p_ampersandeq   }
+  "^="            { punctuator Tk_p_careteq       }
+  "|="            { punctuator Tk_p_bareq         }
+              
+
+  
+}
+
+-- integer constants
+<0> {
+  
+  $nonzero_digit $digit*      { intLiteral }
+  
+  0 $octal_digit*             { octLiteral }
+  
+  @hex_prefix $hex_digit*     { hexLiteral }
+
+} 
+
+
 {
 
 type ParseM a = ParseT Identity a
@@ -115,12 +174,26 @@ alexEOF = (\pos -> L pos Tk_EOF) <$> getPosition
 data Lexeme = L SrcPosn GlslToken
   deriving (Eq, Show)
 
-tkInteger :: Monad m => AlexInput -> Int -> ParseT m Lexeme
-tkInteger = usingInput L (Tk_Integer . read)
+intLiteral :: Monad m => AlexInput -> Int -> ParseT m Lexeme
+intLiteral = usingInput L (Tk_Integer . read)
+
+-- TODO - watch out for an error on read 
+octLiteral :: Monad m => AlexInput -> Int -> ParseT m Lexeme
+octLiteral = usingInput L (Tk_Integer . read . traf) where
+  traf ('0':s) = '0':'o':s
+  traf s       = s    -- this will probably cause a read error which is bad
+
+hexLiteral :: Monad m => AlexInput -> Int -> ParseT m Lexeme
+hexLiteral = usingInput L (Tk_Integer . read)
+
 
 
 keyword :: Monad m => GlslToken -> AlexInput -> Int -> ParseT m Lexeme
 keyword kw = usingInput L (const kw) 
+
+punctuator :: Monad m => GlslToken -> AlexInput -> Int -> ParseT m Lexeme
+punctuator pr = usingInput L (const pr)
+
     
 glslLex :: (Lexeme -> ParseM a) -> ParseM a
 glslLex k = lexToken >>= k
