@@ -105,8 +105,25 @@ data GlslToken
     | Tk_p_careteq
     | Tk_p_bareq
     
-    | Tk_Period
-    | Tk_Integer Integer
+    | Tk_p_dblplus
+    | Tk_p_dbldash
+    | Tk_p_dot
+    | Tk_p_comma
+    | Tk_p_semi
+    | Tk_p_question
+    | Tk_p_colon    
+    | Tk_p_lparen
+    | Tk_p_rparen
+    | Tk_p_lbrace
+    | Tk_p_rbrace
+    | Tk_p_lbracket
+    | Tk_p_rbracket    
+
+    | Tk_ident String
+    | Tk_tyname String
+    | Tk_lit_int Integer
+    | Tk_lit_float String
+    | Tk_lit_bool Bool
     | Tk_EOF
   deriving (Eq,Show)
 

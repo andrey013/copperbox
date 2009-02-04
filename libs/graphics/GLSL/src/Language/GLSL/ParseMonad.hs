@@ -21,7 +21,6 @@
 module Language.GLSL.ParseMonad  where
 
 import Control.Applicative
-import Control.Monad
 import Control.Monad.Error
 import Control.Monad.State
        
@@ -85,7 +84,7 @@ initialParseState path input = ParseState path lexstate where
 type AlexInput = LexerState
 
 nextChar :: LexerState -> Maybe (Char,LexerState)
-nextChar (LexerState loc _ []     sc) = Nothing
+nextChar (LexerState _   _ []     _) = Nothing
 nextChar (LexerState loc _ (s:ss) sc) = 
     Just $ (s, LexerState (nextPos s loc) s ss sc) 
 

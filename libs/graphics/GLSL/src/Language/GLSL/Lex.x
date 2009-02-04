@@ -175,16 +175,16 @@ data Lexeme = L SrcPosn GlslToken
   deriving (Eq, Show)
 
 intLiteral :: Monad m => AlexInput -> Int -> ParseT m Lexeme
-intLiteral = usingInput L (Tk_Integer . read)
+intLiteral = usingInput L (Tk_lit_int . read)
 
 -- TODO - watch out for an error on read 
 octLiteral :: Monad m => AlexInput -> Int -> ParseT m Lexeme
-octLiteral = usingInput L (Tk_Integer . read . traf) where
+octLiteral = usingInput L (Tk_lit_int . read . traf) where
   traf ('0':s) = '0':'o':s
   traf s       = s    -- this will probably cause a read error which is bad
 
 hexLiteral :: Monad m => AlexInput -> Int -> ParseT m Lexeme
-hexLiteral = usingInput L (Tk_Integer . read)
+hexLiteral = usingInput L (Tk_lit_int . read)
 
 
 

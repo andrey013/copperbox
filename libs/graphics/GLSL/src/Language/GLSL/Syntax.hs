@@ -22,6 +22,7 @@ module Language.GLSL.Syntax  where
 import Data.Generics.Basics
 import Data.Generics.Instances()
 
+type Ident = String
 
 data SlTranslUnit = SlTranslUnit [SlExtDecl]
 
@@ -40,7 +41,11 @@ data SlConst = SlIntConst Integer
   deriving (Eq,Show,Typeable,Data)
 
 -- p70
-data UnaryOp = PlusOp             -- +
+data UnaryOp = PreIncOp
+             | PreDecOp
+             | PostIncOp
+             | PostDecOp
+             | PlusOp             -- +
              | MinusOp            -- -
              | LNotOp             -- !
              | NotOp              -- ~
@@ -58,7 +63,7 @@ data BinaryOp = MulOp             -- *
               | LteOp             -- <=
               | GteOp             -- >=
               | EqOp              -- ==
-              | NEqOp             -- !=
+              | NeqOp             -- !=
               | AndOp             -- &
               | XorOp             -- ^
               | OrOp              -- |
@@ -80,12 +85,21 @@ data AssignOp = AssignOp        -- =
               | OrAssign        -- |=
   deriving (Eq,Show,Typeable,Data)
 
-data SlExpr = VarExpr 
+data SlExpr = CommaExpr [SlExpr]
+            | VarExpr Ident
             | ConstExpr SlConst
             | AssignExpr AssignOp 
                          SlExpr 
                          SlExpr
-                         
+            | UnaryExpr  UnaryOp
+                         SlExpr
+            | BinaryExpr BinaryOp
+                         SlExpr
+                         SlExpr
+
+            | CondExpr   SlExpr
+                         SlExpr
+                         SlExpr
   deriving (Eq,Show,Typeable,Data)
 
 
