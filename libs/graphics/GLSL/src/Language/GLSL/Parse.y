@@ -173,10 +173,10 @@ primary_expression :: { Expr }
 postfix_expression :: { Expr }
   : primary_expression                  { $1 }
   | postfix_expression LEFT_BRACKET integer_expression RIGHT_BRACKET 
-                                        { undefined }
+                                        { ArrayAccessExpr $1 $3 }
   | function_call                       { $1 }
   | postfix_expression DOT FIELD_SELECTION
-                                        { undefined }
+                                        { FieldSelectionExpr $1 $3 }
   | postfix_expression INC_OP           { UnaryExpr PostIncOp $1 }
   | postfix_expression DEC_OP           { UnaryExpr PostDecOp $1 }
 
@@ -187,21 +187,24 @@ function_call :: { Expr }
   : function_call_or_method   { $1 }
   
 function_call_or_method :: { Expr }
-  : function_call_generic                           { $1 }
-  | postfix_expression DOT function_call_generic    { $3 }
+  : function_call_generic               { $1 }
+  | postfix_expression DOT function_call_generic    
+                                        { MethodAccessExpr $1 $3 }
   
 function_call_generic :: { Expr }
-  : function_call_header_with_parameters RIGHT_PAREN        { $1 }
-  | function_call_header_no_parameters RIGHT_PAREN          { $1 }
+  : function_call_header_with_parameters RIGHT_PAREN        
+                              { (\(n,xs) -> FunCallExpr n (reverse xs)) $1 }
+  | function_call_header_no_parameters RIGHT_PAREN          
+                              { $1 }
   
 function_call_header_no_parameters :: { Expr }
-  : function_call_header VOID                       { undefined }
-  | function_call_header                            { undefined }
+  : function_call_header VOID                       { FunCallExpr $1 [] }
+  | function_call_header                            { FunCallExpr $1 [] }
   
-function_call_header_with_parameters :: { Expr }
-  : function_call_header assignment_expression    { undefined } 
+function_call_header_with_parameters :: { (Ident, [Expr]) }
+  : function_call_header assignment_expression    { ($1,[$2]) } 
   | function_call_header_with_parameters COMMA assignment_expression
-                                                  { undefined }
+                                                  { consSnd $1 $3 }
 function_call_header :: { Ident }
   : function_identifier LEFT_PAREN                { $1 }
 
@@ -325,48 +328,55 @@ assignment_operator :: { AssignOp }
                
   
 expression :: { Expr }
-  : assignment_expression     { $1 }
-  | expression COMMA assignment_expression
-                              { CommaExpr ($1 : [$3] ) } -- not right
+  : expression_revlist     { consE $1 }
+
+
+
+
+expression_revlist :: { [Expr] }
+  : assignment_expression     { [$1] }
+  | expression_revlist COMMA assignment_expression
+                              { ($3:$1) }
+
 
 constant_expression :: { Expr }
   : conditional_expression    { $1 }
 
 declaration :: { Decl }
   : function_prototype SEMICOLON      { FunProtoDecl $1 }
-  | init_declarator_list SEMICOLON    { InitialDeclrs $1 }
+  | init_declarator_list SEMICOLON    { InitDeclr $1 }
   
 function_prototype :: { FunProto }
   : function_declarator RIGHT_PAREN   { mkFunProto $1 }
   
 function_declarator :: { ((FullType,Ident),[ParamDecl]) }
   : function_header                   { ($1,[]) }
-  | function_header_with_parameters   { undefined }
+  | function_header_with_parameters   { $1 }
 
 function_header_with_parameters :: { ((FullType,Ident),[ParamDecl]) }
   : function_header parameter_declaration
-                                      { undefined }
+                                      { ($1,[$2]) }
   | function_header_with_parameters COMMA parameter_declaration
-                                      { undefined }
+                                      { $1 `consSnd` $3 }
 
-function_header :: { (FullType ,Ident) }
+function_header :: { (FullType,Ident) }
   : fully_specified_type IDENTIFIER LEFT_PAREN
                                       { ($1,$2) }
 
 parameter_declarator :: { ParamDeclr }
-  : type_specifier IDENTIFIER         { undefined }
+  : type_specifier IDENTIFIER         { ParamScalarDeclr $1 $2 }
   | type_specifier IDENTIFIER LEFT_BRACKET constant_expression RIGHT_BRACKET
-                                      { undefined }
+                                      { ParamArrayDeclr $1 $2 $4 }
 
 parameter_declaration :: { ParamDecl }
   : type_qualifier parameter_qualifier parameter_declarator
-                                      { undefined }
+                              { Declarator (Just $1) $2 $3 }
   | parameter_qualifier parameter_declarator
-                                      { undefined }
+                              { Declarator Nothing $1 $2 }
   | type_qualifier parameter_qualifier parameter_type_specifier
-                                      { undefined }  
+                              { Specifier (Just $1) $2 $3 }  
   | parameter_qualifier parameter_type_specifier
-                                      { undefined }
+                              { Specifier Nothing $1 $2 }
                                       
                                       
 parameter_qualifier :: { ParamQual }
@@ -375,45 +385,48 @@ parameter_qualifier :: { ParamQual }
   | INOUT                     { Inout }
 
 parameter_type_specifier :: { TypeSpec }
-  : type_specifier    { undefined }
+  : type_specifier    { $1 }
 
 
-init_declarator_list :: { [Declr] }
-  : single_declaration        { undefined }
-  | init_declarator_list COMMA IDENTIFIER
-                              { undefined }
-  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET RIGHT_BRACKET
-                              { undefined }
-  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET constant_expression 
+init_declarator_list :: { DeclrList } 
+  : init_declarator_revlist   { reverseD $1 }
+
+
+init_declarator_revlist :: { DeclrRev }
+  : single_declaration        { $1 }
+  | init_declarator_revlist COMMA IDENTIFIER
+                              { $1 `consD` (ScalarDeclr $3 Nothing) }
+  | init_declarator_revlist COMMA IDENTIFIER LEFT_BRACKET RIGHT_BRACKET
+                              { $1 `consD` (ArrayDeclr $3 Nothing Nothing) }
+  | init_declarator_revlist COMMA IDENTIFIER LEFT_BRACKET constant_expression 
                                         RIGHT_BRACKET
-                              { undefined }                                        
-  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET 
+                              { $1 `consD` (ArrayDeclr $3 (Just $5) Nothing) }                                        
+  | init_declarator_revlist COMMA IDENTIFIER LEFT_BRACKET 
                                         RIGHT_BRACKET EQUAL initializer
-                              { undefined }
-  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET constant_expression
+                              { $1 `consD` (ArrayDeclr $3 Nothing (Just $7)) }
+  | init_declarator_revlist COMMA IDENTIFIER LEFT_BRACKET constant_expression
                                         RIGHT_BRACKET EQUAL initializer
-                              { undefined }                                        
-  | init_declarator_list COMMA IDENTIFIER EQUAL initializer
-                              { undefined }
+                              { $1 `consD` (ArrayDeclr $3 (Just $5) (Just $8)) }                                        
+  | init_declarator_revlist COMMA IDENTIFIER EQUAL initializer
+                              { $1 `consD` (ScalarDeclr $3 (Just $5)) }
 
-single_declaration :: { Declr }
-  : fully_specified_type      { undefined }
+single_declaration :: { DeclrRev }
+  : fully_specified_type      { Declr $1 [] }
   | fully_specified_type IDENTIFIER
-                              { undefined }
+                              { Declr $1 [ScalarDeclr $2 Nothing] }
   | fully_specified_type IDENTIFIER LEFT_BRACKET RIGHT_BRACKET
-                              { undefined }
+                              { Declr $1 [ArrayDeclr $2 Nothing Nothing] }
   | fully_specified_type IDENTIFIER LEFT_BRACKET constant_expression 
                                         RIGHT_BRACKET
-                              { undefined }
+                              { Declr $1 [ArrayDeclr $2 (Just $4) Nothing] }
   | fully_specified_type IDENTIFIER LEFT_BRACKET RIGHT_BRACKET EQUAL initializer
-                              { undefined }
+                              { Declr $1 [ArrayDeclr $2 Nothing (Just $6)] }
   | fully_specified_type IDENTIFIER LEFT_BRACKET constant_expression
-                              { undefined }
-  | RIGHT_BRACKET EQUAL initializer
-                              { undefined }
+                                        RIGHT_BRACKET EQUAL initializer
+                              { Declr $1 [ArrayDeclr $2 (Just $4) (Just $7)] }
   | fully_specified_type IDENTIFIER EQUAL initializer
-                              { undefined }
-  | INVARIANT IDENTIFIER      { undefined }
+                              { Declr $1 [ScalarDeclr $2 (Just $4)]  }
+  | INVARIANT IDENTIFIER      { InvariantDeclr $2 [] }
                             
 fully_specified_type :: { FullType }
   : type_specifier                      { (Nothing,$1) }
@@ -430,11 +443,11 @@ type_qualifier :: { TypeQual }
   | UNIFORM                             { Uniform }
 
 type_specifier :: { TypeSpec }
-  : type_specifier_nonarray   { $1 }
+  : type_specifier_nonarray   { ScalarType $1 }
   | type_specifier_nonarray LEFT_BRACKET constant_expression RIGHT_BRACKET
-                              { undefined }
+                              { ArrayType $1 $3 }
   
-type_specifier_nonarray :: { TypeSpec }
+type_specifier_nonarray :: { ScalarTypeSpec }
   : VOID                { SlVoid }
   | FLOAT               { SlFloat }
   | INT                 { SlInt }
@@ -467,35 +480,41 @@ type_specifier_nonarray :: { TypeSpec }
   | SAMPLER1DSHADOW     { Sampler1DShadow }
   | SAMPLER2DSHADOW     { Sampler2DShadow }
   | struct_specifier    { StructType $1 }
-  | TYPE_NAME           { undefined }
+  | TYPE_NAME           { TypeName $1 }
 
 struct_specifier :: { Struct }
   : STRUCT IDENTIFIER LEFT_BRACE struct_declaration_list RIGHT_BRACE
-                              { undefined }
+                              { Struct (Just $2) $4 }
   | STRUCT LEFT_BRACE struct_declaration_list RIGHT_BRACE
-                              { undefined }
+                              { Struct Nothing $3 }
                               
-struct_declaration_list :: { [Decl] }
-  : struct_declaration        { undefined }
-  | struct_declaration_list struct_declaration    
-                              { undefined }
-
-struct_declaration :: { Decl }
-  : type_specifier struct_declarator_list SEMICOLON         
-                              { undefined }
+struct_declaration_list :: { [StructDeclr] }
+  : struct_declaration_revlist          { reverse $1 }
   
-struct_declarator_list :: { [Declr] }
-  : struct_declarator         { undefined }
-  | struct_declarator_list COMMA struct_declarator
-                              { undefined }
+struct_declaration_revlist :: { [StructDeclr] }
+  : struct_declaration                  { [$1] }
+  | struct_declaration_revlist struct_declaration    
+                                        { ($2:$1) }
 
-struct_declarator :: { Declr }
-  : IDENTIFIER                { undefined }
+struct_declaration :: { StructDeclr }
+  : type_specifier struct_declarator_list SEMICOLON         
+                              { StructDeclr $1 $2  }
+  
+struct_declarator_list :: { [StructDeclrElement] }
+  : struct_declarator_revlist { reverse $1 }
+  
+struct_declarator_revlist :: { [StructDeclrElement] }
+  : struct_declarator         { [$1] }
+  | struct_declarator_revlist COMMA struct_declarator
+                              { ($3:$1) }
+
+struct_declarator :: { StructDeclrElement }
+  : IDENTIFIER                { StructScalarDeclr $1 }
   | IDENTIFIER LEFT_BRACKET constant_expression RIGHT_BRACKET
-                              { undefined }
+                              { StructArrayDeclr $1 $3 }
 
 initializer :: { Expr }
-  : assignment_expression     { undefined }
+  : assignment_expression     { $1 }
 
 declaration_statement :: { Stmt }
   : declaration               { DeclStmt $1 }
@@ -545,7 +564,7 @@ selection_rest_statement :: { (Stmt, Maybe Stmt) }
 condition :: { Expr }
   : expression                { $1 }
   | fully_specified_type IDENTIFIER EQUAL initializer
-                              { undefined }
+                              { NewVar $1 $2 $4 }
 
 iteration_statement :: { Stmt }
   : WHILE LEFT_PAREN condition RIGHT_PAREN statement_no_new_scope
@@ -592,6 +611,28 @@ function_definition :: { FunDef }
 
 {
 
+consSnd :: (a, [b]) -> b -> (a, [b])
+consSnd (n,xs) x = (n,x:xs)
+
+
+consE :: [Expr] -> Expr
+consE [a] = a
+consE xs  = CommaExpr xs
+
+
+-- just for notational effect
+type DeclrRev = DeclrList
+
+consD :: DeclrRev -> DeclrElement -> DeclrRev
+consD (Declr ty es)             e = Declr ty (e:es)
+consD (InvariantDeclr ident es) e = InvariantDeclr ident (e:es)
+
+
+reverseD :: DeclrRev -> DeclrList
+reverseD (Declr ty es)              = Declr ty (reverse es)
+reverseD (InvariantDeclr ident es)  = InvariantDeclr ident (reverse es)
+
+
 unwrapExpr :: Stmt -> Expr
 unwrapExpr (ExprStmt (Just e))  = e
 unwrapExpr _                    = error $ "fail"
@@ -603,33 +644,37 @@ mkFor :: Expr -> (Expr, Maybe Expr) -> Stmt -> Stmt
 mkFor initE (condE,opt_loopE) bodyS = For initE condE opt_loopE bodyS
 
 mkFunProto :: ((FullType,Ident),[ParamDecl]) -> FunProto
-mkFunProto ((ty,ident),ps) = FunProto ty ident ps
+mkFunProto ((ty,ident),ps) = FunProto ty ident (reverse ps)
 
 
 
 constructorIdent :: TypeSpec -> Ident
-constructorIdent Vec2             = "vec2"
-constructorIdent Vec3             = "vec3"
-constructorIdent Vec4             = "vec4"
-constructorIdent BVec2            = "bvec2"
-constructorIdent BVec3            = "bvec3"
-constructorIdent BVec4            = "bvec4"
-constructorIdent IVec2            = "ivec2"
-constructorIdent IVec3            = "ivec3"
-constructorIdent IVec4            = "ivec4"
-constructorIdent Mat2             = "mat2"
-constructorIdent Mat3             = "mat3"
-constructorIdent Mat4             = "mat4"
-constructorIdent Mat2x2           = "mat2x2"
-constructorIdent Mat2x3           = "mat2x3"
-constructorIdent Mat2x4           = "mat2x4"
-constructorIdent Mat3x2           = "mat3x2"
-constructorIdent Mat3x3           = "mat3x3"
-constructorIdent Mat3x4           = "mat3x4"
-constructorIdent Mat4x2           = "mat4x2"
-constructorIdent Mat4x3           = "mat4x3"
-constructorIdent Mat4x4           = "mat4x4"
-constructorIdent z                = error $ "constructorIdent on " ++ show z
+constructorIdent ts = case ts of
+    ScalarType ty -> fn ty
+    ArrayType ty _ -> fn ty
+  where     
+    fn Vec2             = "vec2"
+    fn Vec3             = "vec3"
+    fn Vec4             = "vec4"
+    fn BVec2            = "bvec2"
+    fn BVec3            = "bvec3"
+    fn BVec4            = "bvec4"
+    fn IVec2            = "ivec2"
+    fn IVec3            = "ivec3"
+    fn IVec4            = "ivec4"
+    fn Mat2             = "mat2"
+    fn Mat3             = "mat3"
+    fn Mat4             = "mat4"
+    fn Mat2x2           = "mat2x2"
+    fn Mat2x3           = "mat2x3"
+    fn Mat2x4           = "mat2x4"
+    fn Mat3x2           = "mat3x2"
+    fn Mat3x3           = "mat3x3"
+    fn Mat3x4           = "mat3x4"
+    fn Mat4x2           = "mat4x2"
+    fn Mat4x3           = "mat4x3"
+    fn Mat4x4           = "mat4x4"
+    fn z                = error $ "constructorIdent on " ++ show z
 
  
 

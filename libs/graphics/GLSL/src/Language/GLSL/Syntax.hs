@@ -47,18 +47,40 @@ data Constant = IntConst    Integer
 
 
 data Decl = FunProtoDecl FunProto
-          | InitialDeclrs [Declr]   -- not really correct might have specifiers not just declrs
+          | InitDeclr DeclrList         -- more concrete syntax than abstract
   deriving (Eq,Show,Typeable,Data)
-  
--- aka single_declaration  
-data Declr = Declr FullType
-                   (Maybe Ident)
-                   (Maybe Expr)     -- array size expr
-                   (Maybe Expr)     -- initializer
+
+
+-- more concrete syntax than abstract (should simplify to one declr / one type)  
+data DeclrList = 
+        Declr          FullType 
+                       [DeclrElement]
+      | InvariantDeclr Ident 
+                       [DeclrElement]   -- too permissive but seemingly legal
+  deriving (Eq,Show,Typeable,Data)
+
+data DeclrElement = 
+        ScalarDeclr Ident                   
+                    (Maybe Expr)     -- initializer
+      | ArrayDeclr  Ident
+                    (Maybe Expr)     -- array size expr
+                    (Maybe Expr)                         
   deriving (Eq,Show,Typeable,Data)
   
 data Struct = Struct (Maybe Ident)
-                     [Decl]
+                     [StructDeclr]
+  deriving (Eq,Show,Typeable,Data)
+
+data StructDeclr = 
+        StructDeclr TypeSpec
+                    [StructDeclrElement]
+  deriving (Eq,Show,Typeable,Data)
+  
+  
+data StructDeclrElement = 
+        StructScalarDeclr Ident                   
+      | StructArrayDeclr  Ident
+                          Expr     -- array size expr                        
   deriving (Eq,Show,Typeable,Data)
 
 -- p70
@@ -109,7 +131,10 @@ data AssignOp = AssignOp        -- =
 data Expr = ConstantExpr Constant
           | ContructorExpr
           
-          | VarExpr Ident
+          | VarExpr    Ident
+          | NewVar     FullType           -- this is a new variable introduced
+                       Ident              -- in a condition (ideally it shouldn't
+                       Expr               -- be in the /abstract/ syntax tree).           
           | AssignExpr AssignOp 
                        Expr 
                        Expr
@@ -118,7 +143,15 @@ data Expr = ConstantExpr Constant
           | BinaryExpr BinaryOp
                        Expr
                        Expr
+          | ArrayAccessExpr Expr
+                            Expr
+          | FieldSelectionExpr Expr
+                               FieldSelection 
+          | MethodAccessExpr Expr 
+                             Expr                                                   
+          | FunCallExpr Ident [Expr]    -- arguments are expressions
           | CommaExpr [Expr]      -- seqeuence of expressions
+          
           | TernaryExpr Expr      -- (? :)
                         Expr
                         Expr            
@@ -138,9 +171,12 @@ data ParamDecl = Declarator (Maybe TypeQual)
                             TypeSpec
   deriving (Eq,Show,Typeable,Data)
 
-data ParamDeclr = ParamDeclr TypeSpec
-                             Ident
-                             (Maybe Expr)  
+data ParamDeclr = 
+        ParamScalarDeclr TypeSpec
+                         Ident
+      | ParamArrayDeclr  TypeSpec
+                         Ident
+                         Expr  
   deriving (Eq,Show,Typeable,Data)
   
   
@@ -161,61 +197,68 @@ data VaryingQual = Centroid
                  | Invariant
   deriving (Eq,Show,Typeable,Data)
   
+
+data TypeSpec = ScalarType ScalarTypeSpec 
+              | ArrayType  ScalarTypeSpec
+                           Expr                 -- constant_expr
+  deriving (Eq,Show,Typeable,Data)
   
-data TypeSpec = SlVoid
-              | SlFloat
-              | SlInt
-              | SlBool
-              | Vec2
-              | Vec3
-              | Vec4
-              | BVec2
-              | BVec3
-              | BVec4
-              | IVec2
-              | IVec3
-              | IVec4
-              | Mat2
-              | Mat3
-              | Mat4
-              | Mat2x2
-              | Mat2x3
-              | Mat2x4
-              | Mat3x2
-              | Mat3x3
-              | Mat3x4
-              | Mat4x2
-              | Mat4x3
-              | Mat4x4
-              | Sampler1D
-              | Sampler2D
-              | Sampler3D
-              | SamplerCube
-              | Sampler1DShadow
-              | Sampler2DShadow
-              | StructType Struct
-              -- TYPE_NAME
+  
+  
+data ScalarTypeSpec = SlVoid
+                    | SlFloat
+                    | SlInt
+                    | SlBool
+                    | Vec2
+                    | Vec3
+                    | Vec4
+                    | BVec2
+                    | BVec3
+                    | BVec4
+                    | IVec2
+                    | IVec3
+                    | IVec4
+                    | Mat2
+                    | Mat3
+                    | Mat4
+                    | Mat2x2
+                    | Mat2x3
+                    | Mat2x4
+                    | Mat3x2
+                    | Mat3x3
+                    | Mat3x4
+                    | Mat4x2
+                    | Mat4x3
+                    | Mat4x4
+                    | Sampler1D
+                    | Sampler2D
+                    | Sampler3D
+                    | SamplerCube
+                    | Sampler1DShadow
+                    | Sampler2DShadow
+                    | StructType Struct
+                    | TypeName String
   deriving (Eq,Show,Typeable,Data)
  
 
 data Stmt = CompoundStmt [Stmt]
-            | DeclStmt Decl
-            | ExprStmt (Maybe Expr)
-            | IfStmt   Expr
-                       Stmt
-                       (Maybe Stmt)
-            | For      Expr               -- init
-                       Expr               -- condition
-                       (Maybe Expr)       -- loop_expr 
-                       Stmt
-            | While    Expr
-                       Stmt
-            | DoWhile  Stmt
-                       Expr                    
-            | Continue
-            | Break
-            | Return (Maybe Expr)
-            | Discard
+          | DeclStmt Decl
+          | ExprStmt (Maybe Expr)
+          | IfStmt   Expr
+                     Stmt
+                     (Maybe Stmt)
+          | For      Expr               -- init
+                     Expr               -- condition
+                     (Maybe Expr)       -- loop_expr 
+                     Stmt
+          | While    Expr
+                     Stmt    
+          | DoWhile  Stmt
+                     Expr                    
+          | Continue
+          | Break
+          | Return (Maybe Expr)
+          | Discard
   deriving (Eq,Show,Typeable,Data)      
   
 

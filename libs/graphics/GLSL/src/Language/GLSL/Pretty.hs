@@ -96,7 +96,7 @@ instance Pretty VaryingQual where
   pretty Invariant            = text "invariant"
                    
                      
-instance Pretty TypeSpec where
+instance Pretty ScalarTypeSpec where
   pretty SlVoid               = text "void"
   pretty SlFloat              = text "float"
   pretty SlInt                = text "int"
@@ -129,5 +129,6 @@ instance Pretty TypeSpec where
   pretty Sampler1DShadow      = text "sampler1DShadow"
   pretty Sampler2DShadow      = text "sampler2DShadow"
   pretty (StructType _s)      = text "__TODO__"
-                            
+  pretty (TypeName s)         = text s
+                         
        
