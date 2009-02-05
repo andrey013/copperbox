@@ -24,14 +24,14 @@ import Data.Generics.Instances()
 
 type Ident = String
 
-data SlTranslUnit = SlTranslUnit [SlExtDecl]
+data SlTranslUnit = SlTranslUnit [SlGblDecl]
 
-data SlExtDecl = SlFunDefExt SlFunDef
-               | SlDeclExt 
+data SlGblDecl = SlGblFunDef SlFunDef
+               | SlGblDecl SlDecl 
   deriving (Eq,Show,Typeable,Data)
 
 data SlFunDef = SlFunDef SlFunProto 
-                         SlStmt           -- compound statement
+                         SlStmt         -- Compound statement
   deriving (Eq,Show,Typeable,Data)
 
   
@@ -40,11 +40,22 @@ data SlConst = SlIntConst Integer
              | SlBoolConst Bool 
   deriving (Eq,Show,Typeable,Data)
 
+
+data SlDecl = SlDecl
+  deriving (Eq,Show,Typeable,Data)
+  
+data SlDeclr = SlDeclr
+  deriving (Eq,Show,Typeable,Data)
+  
+data SlStruct = Struct (Maybe Ident)
+                       [SlDecl]
+  deriving (Eq,Show,Typeable,Data)
+
 -- p70
-data UnaryOp = PreIncOp
-             | PreDecOp
-             | PostIncOp
-             | PostDecOp
+data UnaryOp = PreIncOp           -- ++a
+             | PreDecOp           -- --a
+             | PostIncOp          -- a++
+             | PostDecOp          -- a--
              | PlusOp             -- +
              | MinusOp            -- -
              | LNotOp             -- !
@@ -85,9 +96,10 @@ data AssignOp = AssignOp        -- =
               | OrAssign        -- |=
   deriving (Eq,Show,Typeable,Data)
 
-data SlExpr = CommaExpr [SlExpr]
+data SlExpr = ConstantExpr SlConst
+            | ContructorExpr
+            
             | VarExpr Ident
-            | ConstExpr SlConst
             | AssignExpr AssignOp 
                          SlExpr 
                          SlExpr
@@ -96,10 +108,10 @@ data SlExpr = CommaExpr [SlExpr]
             | BinaryExpr BinaryOp
                          SlExpr
                          SlExpr
-
-            | CondExpr   SlExpr
-                         SlExpr
-                         SlExpr
+            | CommaExpr [SlExpr]      -- seqeuence of expressions
+            | TernaryExpr SlExpr      -- (? :)
+                          SlExpr
+                          SlExpr            
   deriving (Eq,Show,Typeable,Data)
 
 
@@ -153,16 +165,29 @@ data SlTypeSpec = SlVoid
                 | SamplerCube
                 | Sampler1DShadow
                 | Sampler2DShadow
-                | StructType -- ...
+                | StructType SlStruct
               -- TYPE_NAME
   deriving (Eq,Show,Typeable,Data)
  
 
-data SlStmt = 
-            SlContinue
-          | SlBreak
-          | SlReturn (Maybe SlExpr)
-          | SlDiscard
+data SlStmt = CompoundStmt [SlStmt]
+            | DeclStmt SlDecl
+            | ExprStmt (Maybe SlExpr)
+            | IfStmt   SlExpr
+                       SlStmt
+                       (Maybe SlStmt)
+            | For      SlExpr               -- init
+                       SlExpr               -- condition
+                       (Maybe SlExpr)       -- loop_expr 
+                       SlStmt
+            | While    SlExpr
+                       SlStmt
+            | DoWhile  SlStmt
+                       SlExpr                    
+            | Continue
+            | Break
+            | Return (Maybe SlExpr)
+            | Discard
   deriving (Eq,Show,Typeable,Data)      
   
 

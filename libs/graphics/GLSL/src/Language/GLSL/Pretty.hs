@@ -35,6 +35,10 @@ instance Pretty SlConst where
 
 
 instance Pretty UnaryOp where
+  pretty PreIncOp             = text "++"
+  pretty PreDecOp             = text "--"
+  pretty PostIncOp            = text "++"
+  pretty PostDecOp            = text "--"
   pretty PlusOp               = char '+'
   pretty MinusOp              = char '-'
   pretty LNotOp               = char '!'
@@ -53,7 +57,7 @@ instance Pretty BinaryOp where
   pretty LteOp                = text "<="
   pretty GteOp                = text ">="
   pretty EqOp                 = text "=="
-  pretty NEqOp                = text "!="
+  pretty NeqOp                = text "!="
   pretty AndOp                = char '&'
   pretty XorOp                = char '^'
   pretty OrOp                 = char '|'
@@ -124,6 +128,6 @@ instance Pretty SlTypeSpec where
   pretty SamplerCube          = text "samplerCube"
   pretty Sampler1DShadow      = text "sampler1DShadow"
   pretty Sampler2DShadow      = text "sampler2DShadow"
-  pretty StructType           = text "__TODO__"
+  pretty (StructType s)       = text "__TODO__"
                             
        

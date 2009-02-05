@@ -35,7 +35,7 @@ parseGlsl path contents  =
 
 }
 
-%name glslParser
+%name glslParser translation_unit
 
 %lexer { glslLex } { L _ Tk_EOF }
 %monad { ParseM } { >>= } { return }
@@ -159,38 +159,38 @@ parseGlsl path contents  =
   
 %%
 
-todo_expr :: { SlExpr }
-  : COMMA       { VarExpr "todo" }
-
-
 
 variable_identifier :: { Ident }
   : IDENTIFIER                { $1 }
 
 primary_expression :: { SlExpr }
   : variable_identifier                 { VarExpr $1 }
-  | INTCONSTANT                         { ConstExpr (SlIntConst $1) }
-  | FLOATCONSTANT                       { ConstExpr (SlFloatConst $1) }
-  | BOOLCONSTANT                        { ConstExpr (SlBoolConst $1) }
+  | INTCONSTANT                         { ConstantExpr (SlIntConst $1) }
+  | FLOATCONSTANT                       { ConstantExpr (SlFloatConst $1) }
+  | BOOLCONSTANT                        { ConstantExpr (SlBoolConst $1) }
   | LEFT_PAREN expression RIGHT_PAREN   { $2 }
 
 postfix_expression :: { SlExpr }
   : primary_expression                  { $1 }
   | postfix_expression LEFT_BRACKET integer_expression RIGHT_BRACKET 
                                         { undefined }
-
+  | function_call                       { $1 }
+  | postfix_expression DOT FIELD_SELECTION
+                                        { undefined }
+  | postfix_expression INC_OP           { UnaryExpr PostIncOp $1 }
+  | postfix_expression DEC_OP           { UnaryExpr PostDecOp $1 }
 
 integer_expression :: { SlExpr }
   : expression                { $1 }
 
-function_call :: { TYPE_TODO }
+function_call :: { SlExpr }
   : function_call_or_method   { $1 }
   
-function_call_or_method :: { TYPE_TODO }
+function_call_or_method :: { SlExpr }
   : function_call_generic                           { $1 }
   | postfix_expression DOT function_call_generic    { $3 }
   
-function_call_generic :: { TYPE_TODO }
+function_call_generic :: { SlExpr }
   : function_call_header_with_parameters RIGHT_PAREN        { $1 }
   | function_call_header_no_parameters RIGHT_PAREN          { $1 }
   
@@ -206,9 +206,9 @@ function_call_header :: { TYPE_TODO }
   : function_identifier LEFT_PAREN                { $1 }
 
 function_identifier :: { TYPE_TODO }
-  : type_specifier            { TypeTodo }
-  | IDENTIFIER                { TypeTodo }
-  | FIELD_SELECTION           { TypeTodo }
+  : type_specifier            { undefined }
+  | IDENTIFIER                { undefined }
+  | FIELD_SELECTION           { undefined }
 
 unary_expression :: { SlExpr }
   : postfix_expression                { $1 }
@@ -302,7 +302,7 @@ logical_or_expression :: { SlExpr }
 conditional_expression :: { SlExpr }
   : logical_or_expression   { $1 }
   | logical_or_expression QUESTION expression COLON assignment_expression
-                            { CondExpr $1 $3 $5 }
+                            { TernaryExpr $1 $3 $5 }
                             
 assignment_expression :: { SlExpr }
   : conditional_expression  { $1 }
@@ -332,41 +332,41 @@ expression :: { SlExpr }
 constant_expression :: { SlExpr }
   : conditional_expression    { $1 }
 
-declaration :: { TYPE_TODO }
-  : function_prototype SEMICOLON      { TypeTodo }
-  | init_declarator_list SEMICOLON    { TypeTodo }
+declaration :: { SlDecl }
+  : function_prototype SEMICOLON      { undefined }
+  | init_declarator_list SEMICOLON    { undefined }
   
-function_prototype :: { TYPE_TODO }
-  : function_declarator RIGHT_PAREN   { TypeTodo }
+function_prototype :: { SlDecl }
+  : function_declarator RIGHT_PAREN   { undefined }
   
 function_declarator :: { TYPE_TODO }
-  : function_header                   { TypeTodo }
-  | function_header_with_parameters   { TypeTodo }
+  : function_header                   { undefined }
+  | function_header_with_parameters   { undefined }
 
 function_header_with_parameters :: { TYPE_TODO }
   : function_header parameter_declaration
-                                      { TypeTodo }
+                                      { undefined }
   | function_header_with_parameters COMMA parameter_declaration
-                                      { TypeTodo }
+                                      { undefined }
 
 function_header :: { TYPE_TODO }
   : fully_specified_type IDENTIFIER LEFT_PAREN
-                                      { TypeTodo }
+                                      { undefined }
 
 parameter_declarator :: { TYPE_TODO }
-  : type_specifier IDENTIFIER         { TypeTodo }
+  : type_specifier IDENTIFIER         { undefined }
   | type_specifier IDENTIFIER LEFT_BRACKET constant_expression RIGHT_BRACKET
-                                      { TypeTodo }
+                                      { undefined }
 
 parameter_declaration :: { TYPE_TODO }
   : type_qualifier parameter_qualifier parameter_declarator
-                                      { TypeTodo }
+                                      { undefined }
   | parameter_qualifier parameter_declarator
-                                      { TypeTodo }
+                                      { undefined }
   | type_qualifier parameter_qualifier parameter_type_specifier
-                                      { TypeTodo }  
+                                      { undefined }  
   | parameter_qualifier parameter_type_specifier
-                                      { TypeTodo }
+                                      { undefined }
                                       
                                       
 parameter_qualifier :: { SlParamQual }
@@ -374,8 +374,51 @@ parameter_qualifier :: { SlParamQual }
   | OUT                       { Out }
   | INOUT                     { Inout }
 
-parameter_type_specifier  :: { TYPE_TODO }
-  : type_specifier    { TypeTodo }
+parameter_type_specifier :: { TYPE_TODO }
+  : type_specifier    { undefined }
+
+
+init_declarator_list :: { SlDecl }
+  : single_declaration        { undefined }
+  | init_declarator_list COMMA IDENTIFIER
+                              { undefined }
+  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET RIGHT_BRACKET
+                              { undefined }
+  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET constant_expression 
+                                        RIGHT_BRACKET
+                              { undefined }                                        
+  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET 
+                                        RIGHT_BRACKET EQUAL initializer
+                              { undefined }
+  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET constant_expression
+                                        RIGHT_BRACKET EQUAL initializer
+                              { undefined }                                        
+  | init_declarator_list COMMA IDENTIFIER EQUAL initializer
+                              { undefined }
+
+single_declaration :: { TYPE_TODO }
+  : fully_specified_type      { undefined }
+  | fully_specified_type IDENTIFIER
+                              { undefined }
+  | fully_specified_type IDENTIFIER LEFT_BRACKET RIGHT_BRACKET
+                              { undefined }
+  | fully_specified_type IDENTIFIER LEFT_BRACKET constant_expression 
+                                        RIGHT_BRACKET
+                              { undefined }
+  | fully_specified_type IDENTIFIER LEFT_BRACKET RIGHT_BRACKET EQUAL initializer
+                              { undefined }
+  | fully_specified_type IDENTIFIER LEFT_BRACKET constant_expression
+                              { undefined }
+  | RIGHT_BRACKET EQUAL initializer
+                              { undefined }
+  | fully_specified_type IDENTIFIER EQUAL initializer
+                              { undefined }
+  | INVARIANT IDENTIFIER      { undefined }
+                            
+fully_specified_type :: { TYPE_TODO }
+  : type_specifier                      { undefined }
+  | type_qualifier type_specifier       { undefined }
+
 
 type_qualifier :: { SlTypeQual }
   : CONST                               { Const }
@@ -385,6 +428,11 @@ type_qualifier :: { SlTypeQual }
   | INVARIANT VARYING                   { Varying [Invariant] }
   | INVARIANT CENTROID VARYING          { Varying [Invariant, Centroid] }
   | UNIFORM                             { Uniform }
+
+type_specifier :: { SlTypeSpec }
+  : type_specifier_nonarray   { $1 }
+  | type_specifier_nonarray LEFT_BRACKET constant_expression RIGHT_BRACKET
+                              { undefined }
   
 type_specifier_nonarray :: { SlTypeSpec }
   : VOID                { SlVoid }
@@ -418,12 +466,141 @@ type_specifier_nonarray :: { SlTypeSpec }
   | SAMPLERCUBE         { SamplerCube }
   | SAMPLER1DSHADOW     { Sampler1DShadow }
   | SAMPLER2DSHADOW     { Sampler2DShadow }
+  | struct_specifier    { $1 }
+  | TYPE_NAME           { undefined }
 
+struct_specifier :: { SlStruct }
+  : STRUCT IDENTIFIER LEFT_BRACE struct_declaration_list RIGHT_BRACE
+                              { undefined }
+  | STRUCT LEFT_BRACE struct_declaration_list RIGHT_BRACE
+                              { undefined }
+                              
+struct_declaration_list :: { TYPE_TODO }
+  : struct_declaration        { undefined }
+  | struct_declaration_list struct_declaration    
+                              { undefined }
 
+struct_declaration :: { TYPE_TODO }
+  : type_specifier struct_declarator_list SEMICOLON         
+                              { undefined }
   
+struct_declarator_list :: { TYPE_TODO }
+  : struct_declarator         { undefined }
+  | struct_declarator_list COMMA struct_declarator
+                              { undefined }
+
+struct_declarator :: { TYPE_TODO }
+  : IDENTIFIER                { undefined }
+  | IDENTIFIER LEFT_BRACKET constant_expression RIGHT_BRACKET
+                              { undefined }
+
+initializer :: { SlExpr }
+  : assignment_expression     { undefined }
+
+declaration_statement :: { SlStmt }
+  : declaration               { DeclStmt $1 }
+
+statement :: { SlStmt }
+  : compound_statement        { $1 }
+  | simple_statement          { $1 }
+
+simple_statement :: { SlStmt }
+  : declaration_statement     { $1 }
+  | expression_statement      { $1 }
+  | selection_statement       { $1 }
+  | iteration_statement       { $1 }
+  | jump_statement            { $1 }
+
+compound_statement :: { SlStmt }
+  : LEFT_BRACE RIGHT_BRACE                        { CompoundStmt [] }
+  | LEFT_BRACE statement_list RIGHT_BRACE         { CompoundStmt $2 }
+
+statement_no_new_scope :: { SlStmt }
+  : compound_statement_no_new_scope     { $1 }
+  | simple_statement                    { $1 }
+
+compound_statement_no_new_scope :: { SlStmt }
+  : LEFT_BRACE RIGHT_BRACE                        { CompoundStmt [] }
+  | LEFT_BRACE statement_list RIGHT_BRACE         { CompoundStmt $2 }
+
+statement_list :: { [SlStmt] }
+  : statement_revlist         { reverse $1 }
+  
+statement_revlist :: { [SlStmt] }
+  : statement                           { [$1] }
+  | statement_revlist statement         { ($2:$1) }    -- todo
+
+expression_statement :: { SlStmt }
+  : SEMICOLON                 { ExprStmt Nothing }
+  | expression SEMICOLON      { ExprStmt (Just $1) }
+  
+selection_statement :: { SlStmt }
+  : IF LEFT_PAREN expression RIGHT_PAREN selection_rest_statement
+                              { mkIfStmt $3 $5 }
+
+selection_rest_statement :: { (SlStmt, Maybe SlStmt) }
+  : statement ELSE statement  { ($1, Just $3) }
+  | statement                 { ($1, Nothing) }
+  
+condition :: { SlExpr }
+  : expression                { $1 }
+  | fully_specified_type IDENTIFIER EQUAL initializer
+                              { undefined }
+
+iteration_statement :: { SlStmt }
+  : WHILE LEFT_PAREN condition RIGHT_PAREN statement_no_new_scope
+                              { While $3 $5 }
+  | DO statement WHILE LEFT_PAREN expression RIGHT_PAREN SEMICOLON
+                              { DoWhile $2 $5 }
+  | FOR LEFT_PAREN for_init_statement for_rest_statement RIGHT_PAREN
+                                        statement_no_new_scope
+                              { mkFor (unwrapExpr $3) $4 $6 }
+                                        
+for_init_statement :: { SlStmt }
+  : expression_statement      { $1 }
+  | declaration_statement     { $1 }
+
+conditionopt :: { SlExpr }
+  : condition                 { $1 }
+
+for_rest_statement :: { (SlExpr, Maybe SlExpr) }
+  : conditionopt SEMICOLON              { ($1,Nothing) }
+  | conditionopt SEMICOLON expression   { ($1,Just $3) }
+
+jump_statement :: { SlStmt }
+  : CONTINUE SEMICOLON                  { Continue }
+  | BREAK SEMICOLON                     { Break }
+  | RETURN SEMICOLON                    { Return Nothing }
+  | RETURN expression SEMICOLON         { Return (Just $2) }
+  | DISCARD SEMICOLON                   { Discard }
+
+translation_unit :: { SlTranslUnit }
+  : translation_unit_revlist            { SlTranslUnit (reverse $1) }
+   
+translation_unit_revlist :: { [SlGblDecl] }
+  : external_declaration                                    { [$1] }
+  | translation_unit_revlist external_declaration           { ($2 : $1) }
+                                          
+external_declaration :: { SlGblDecl }
+  : function_definition       { SlGblFunDef $1 }
+  | declaration               { SlGblDecl $1 }
+
+function_definition :: { SlFunDef }
+  : function_prototype compound_statement_no_new_scope
+                              { SlFunDef $1 $2 }
+
+
 {
 
--- some haskell
+unwrapExpr :: SlStmt -> SlExpr
+unwrapExpr (ExprStmt (Just e))  = e
+unwrapExpr _                    = error $ "fail"
+
+mkIfStmt :: SlExpr -> (SlStmt, Maybe SlStmt) -> SlStmt
+mkIfStmt condE (thenS,opt_elseS) = IfStmt condE thenS opt_elseS
+
+mkFor :: SlExpr -> (SlExpr, Maybe SlExpr) -> SlStmt -> SlStmt
+mkFor initE (condE,opt_loopE) bodyS = For initE condE opt_loopE bodyS
 
 data TYPE_TODO = TypeTodo
   deriving (Show)
