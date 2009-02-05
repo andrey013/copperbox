@@ -148,8 +148,13 @@ instance Error ParseErr where
   strMsg s  = ParseErr s  
 
 parseError :: Monad m => tok -> ParseT m a
-parseError _ = throwError $ strMsg "parse error"
+parseError _ = reportError "parse error"
 
 lexError :: Monad m => tok -> ParseT m a
-lexError _ = throwError $ strMsg "lex error" 
+lexError _ = reportError "lex error" 
 
+reportError :: Monad m => String -> ParseT m a
+reportError s = do 
+    pos <- getPosition
+    ln  <- getCurrentLine 
+    throwError $ strMsg $ s ++ "\n" ++ show pos ++ "\n" ++ ln

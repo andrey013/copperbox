@@ -30,13 +30,17 @@ import Control.Monad.Identity
 
 
 
-$white = [\ \t\v\f\r\n]
+$white                  = [\ \t\v\f\r\n]
 
-$nondigit           = [A-Za-z_]
-$digit              = 0-9
-$nonzero_digit      = [1-9]
-$octal_digit        = [0-7]
-$hex_digit          = [0-9A-Fa-f]
+$nondigit               = [A-Za-z_]
+$digit                  = 0-9
+$nonzero_digit          = [1-9]
+$octal_digit            = [0-7]
+$hex_digit              = [0-9A-Fa-f]
+
+$identifier_nondigit    = $nondigit
+$identifier             = [$nondigit $digit]
+
 
 @hex_prefix         = 0x | 0X
 
@@ -53,32 +57,40 @@ $white ;
 
 <0> {
   "attribute"         { keyword Tk_kw_attribute       }
-  "const"             { keyword Tk_kw_const           } 
-  "uniform"           { keyword Tk_kw_uniform         }
-  "varying"           { keyword Tk_kw_varying         }
-  "centroid"          { keyword Tk_kw_centroid        }
+  "const"             { keyword Tk_kw_const           }
+  "bool"              { keyword Tk_kw_bool            }
+  "float"             { keyword Tk_kw_float           }
+  "int"               { keyword Tk_kw_int             }
+
   "break"             { keyword Tk_kw_break           }
   "continue"          { keyword Tk_kw_continue        }
   "do"                { keyword Tk_kw_do              }
-  "for"               { keyword Tk_kw_for             }
-  "while"             { keyword Tk_kw_while           }
-  "if"                { keyword Tk_kw_if              }
   "else"              { keyword Tk_kw_else            }
-  "in"                { keyword Tk_kw_in              }
-  "out"               { keyword Tk_kw_out             }
-  "inout"             { keyword Tk_kw_inout           }
-  "float"             { keyword Tk_kw_float           }
-  "int"               { keyword Tk_kw_int             }
-  "void"              { keyword Tk_kw_void            }
-  "bool"              { keyword Tk_kw_bool            }
-  "true"              { keyword Tk_kw_true            }
-  "false"             { keyword Tk_kw_false           }
-  "invariant"         { keyword Tk_kw_invariant       }
+  "for"               { keyword Tk_kw_for             }
+  "if"                { keyword Tk_kw_if              }
   "discard"           { keyword Tk_kw_discard         }
   "return"            { keyword Tk_kw_return          }
+
+  "bvec2"             { keyword Tk_kw_bvec2           }
+  "bvec3"             { keyword Tk_kw_bvec3           }
+  "bvec4"             { keyword Tk_kw_bvec4           }
+  "ivec2"             { keyword Tk_kw_ivec2           }
+  "ivec3"             { keyword Tk_kw_ivec3           }
+  "ivec4"             { keyword Tk_kw_ivec4           }
+  "vec2"              { keyword Tk_kw_vec2            }
+  "vec3"              { keyword Tk_kw_vec3            }
+  "vec4"              { keyword Tk_kw_vec4            }
+  
   "mat2"              { keyword Tk_kw_mat2            }
   "mat3"              { keyword Tk_kw_mat3            }
   "mat4"              { keyword Tk_kw_mat4            }
+  "in"                { keyword Tk_kw_in              }
+  "out"               { keyword Tk_kw_out             }
+  "inout"             { keyword Tk_kw_inout           }
+  "uniform"           { keyword Tk_kw_uniform         }
+  "varying"           { keyword Tk_kw_varying         }
+  "centroid"          { keyword Tk_kw_centroid        }
+
   "mat2x2"            { keyword Tk_kw_mat2x2          }
   "mat2x3"            { keyword Tk_kw_mat2x3          }
   "mat2x4"            { keyword Tk_kw_mat2x4          }
@@ -88,25 +100,26 @@ $white ;
   "mat4x2"            { keyword Tk_kw_mat4x2          }
   "mat4x3"            { keyword Tk_kw_mat4x3          }
   "mat4x4"            { keyword Tk_kw_mat4x4          }
-  "vec2"              { keyword Tk_kw_vec2            }
-  "vec3"              { keyword Tk_kw_vec3            }
-  "vec4"              { keyword Tk_kw_vec4            }
-  "ivec2"             { keyword Tk_kw_ivec2           }
-  "ivec3"             { keyword Tk_kw_ivec3           }
-  "ivec4"             { keyword Tk_kw_ivec4           }
-  "bvec2"             { keyword Tk_kw_bvec2           }
-  "bvec3"             { keyword Tk_kw_bvec3           }
-  "bvec4"             { keyword Tk_kw_bvec4           }
+
   "sampler1D"         { keyword Tk_kw_sampler1D       }
   "sampler2D"         { keyword Tk_kw_sampler2D       }
   "sampler3D"         { keyword Tk_kw_sampler3D       }
   "samplerCube"       { keyword Tk_kw_samplerCube     }
   "sampler1DShadow"   { keyword Tk_kw_sampler1DShadow }
   "sampler2DShadow"   { keyword Tk_kw_sampler2DShadow }
+  
   "struct"            { keyword Tk_kw_struct          }
+  "void"              { keyword Tk_kw_void            }
+  "while"             { keyword Tk_kw_while           }
+  
+  "invariant"         { keyword Tk_kw_invariant       }
 
 } 
 
+-- identifier
+<0> {
+  $identifier_nondigit $identifier*     { identifier }
+}
 
 -- punctuators
 <0> {
@@ -144,9 +157,8 @@ $white ;
   "&="            { punctuator Tk_p_ampersandeq   }
   "^="            { punctuator Tk_p_careteq       }
   "|="            { punctuator Tk_p_bareq         }
-              
-
   
+  \;              { punctuator Tk_p_semi          }              
 }
 
 -- integer constants
@@ -174,27 +186,35 @@ alexEOF = (\pos -> L pos Tk_EOF) <$> getPosition
 data Lexeme = L SrcPosn GlslToken
   deriving (Eq, Show)
 
-intLiteral :: Monad m => AlexInput -> Int -> ParseT m Lexeme
+intLiteral :: AlexInput -> Int -> ParseM Lexeme
 intLiteral = usingInput L (Tk_lit_int . read)
 
 -- TODO - watch out for an error on read 
-octLiteral :: Monad m => AlexInput -> Int -> ParseT m Lexeme
+octLiteral :: AlexInput -> Int -> ParseM Lexeme
 octLiteral = usingInput L (Tk_lit_int . read . traf) where
   traf ('0':s) = '0':'o':s
   traf s       = s    -- this will probably cause a read error which is bad
 
-hexLiteral :: Monad m => AlexInput -> Int -> ParseT m Lexeme
+hexLiteral :: AlexInput -> Int -> ParseM Lexeme
 hexLiteral = usingInput L (Tk_lit_int . read)
 
+boolLiteral :: AlexInput -> Int -> ParseM Lexeme
+boolLiteral = usingInput L (Tk_lit_bool . fn) where 
+    fn "true"   = True
+    fn "false"  = False
 
 
-keyword :: Monad m => GlslToken -> AlexInput -> Int -> ParseT m Lexeme
+
+keyword :: GlslToken -> AlexInput -> Int -> ParseM Lexeme
 keyword kw = usingInput L (const kw) 
 
-punctuator :: Monad m => GlslToken -> AlexInput -> Int -> ParseT m Lexeme
+punctuator :: GlslToken -> AlexInput -> Int -> ParseM Lexeme
 punctuator pr = usingInput L (const pr)
 
-    
+identifier :: AlexInput -> Int -> ParseM Lexeme 
+identifier = usingInput L Tk_ident
+
+
 glslLex :: (Lexeme -> ParseM a) -> ParseM a
 glslLex k = lexToken >>= k
 

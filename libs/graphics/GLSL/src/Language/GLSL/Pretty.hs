@@ -27,11 +27,11 @@ import Language.GLSL.Syntax
 import Text.PrettyPrint.Leijen
 
 
-instance Pretty SlConst where
-  pretty (SlIntConst i)       = integer i
-  pretty (SlFloatConst srep)  = text srep
-  pretty (SlBoolConst True)   = text "true" 
-  pretty (SlBoolConst False)  = text "false"
+instance Pretty Constant where
+  pretty (IntConst i)         = integer i
+  pretty (FloatConst srep)    = text srep
+  pretty (BoolConst True)     = text "true" 
+  pretty (BoolConst False)    = text "false"
 
 
 instance Pretty UnaryOp where
@@ -79,24 +79,24 @@ instance Pretty AssignOp where
   pretty OrAssign             = text "|="
 
 
-instance Pretty SlParamQual where
+instance Pretty ParamQual where
   pretty In                   = text "in"
   pretty Out                  = text "out"
   pretty Inout                = text "inout"
   
-instance Pretty SlTypeQual where
+instance Pretty TypeQual where
   pretty Const                = text "const"
   pretty Attribute            = text "const"
   pretty (Varying [])         = text "varying"
   pretty (Varying xs)         = (hsep $ map pretty xs) <+> text "varying"
   pretty Uniform              = text "uniform"
   
-instance Pretty SlVaryingQual where
+instance Pretty VaryingQual where
   pretty Centroid             = text "centroid"
   pretty Invariant            = text "invariant"
                    
                      
-instance Pretty SlTypeSpec where
+instance Pretty TypeSpec where
   pretty SlVoid               = text "void"
   pretty SlFloat              = text "float"
   pretty SlInt                = text "int"
@@ -128,6 +128,6 @@ instance Pretty SlTypeSpec where
   pretty SamplerCube          = text "samplerCube"
   pretty Sampler1DShadow      = text "sampler1DShadow"
   pretty Sampler2DShadow      = text "sampler2DShadow"
-  pretty (StructType s)       = text "__TODO__"
+  pretty (StructType _s)      = text "__TODO__"
                             
        
