@@ -18,15 +18,25 @@ module Graphics.Rendering.FreeType.Outline (
   
   FT_outline, -- expose the alias not the type (so it is opaque).
   withOutline,
+  copy,
+  translate,
+  transform,
   contours,
+  points,
+  embolden,
+  check,
+  getBBox,
+  
+  getOrientation,
   
 ) where
 
 import Graphics.Rendering.FreeType.Internals.CBaseTypes ( 
       FT_library(..)  )
--- import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
+import Graphics.Rendering.FreeType.Internals.CBasicDataTypes ( 
+      FT_pos, FT_error, Matrix, BBox(..) )
 import Graphics.Rendering.FreeType.Internals.COutline
--- import Graphics.Rendering.FreeType.Internals.Wrappers 
+import Graphics.Rendering.FreeType.Utils ( Unmarshal(..) )
 
 
 
@@ -69,16 +79,55 @@ withOutline (FT_library lib) max_pts max_cts failureValue action =
         else
           return failureValue
       
+-- Outline API functions
 
-                      
+copy :: FT_outline -> FT_outline -> IO FT_error 
+copy src dest = 
+    with src $ \sptr ->
+        with dest $ \dptr -> ft_outline_copy sptr dptr 
 
--- the _with_ pattern is from Data.Time.Clock.CTimeval from the time package 
-  
-  
+
+translate :: FT_outline -> FT_pos -> FT_pos -> IO ()
+translate outl x y = with outl $ \ptr -> ft_outline_translate ptr x y
 
 
+transform :: FT_outline -> Matrix -> IO ()
+transform outl mat = 
+    with outl $ \optr -> 
+        with mat $ \mptr -> ft_outline_transform optr mptr
+
+embolden :: FT_outline -> FT_pos -> IO FT_error
+embolden outl s = with outl $ \ptr -> ft_outline_embolden ptr s
+
+{-
+-- From the FreeType docs
+-- [FT_Outline_Reverse] shouldn't be used by a normal client application, 
+-- unless it knows what it is doing.
+
+oreverse :: FT_outline -> IO ()
+oreverse outl = with outl $ \ptr -> ft_outline_reverse ptr 
+-}
+
+check :: FT_outline -> IO FT_error
+check outl = with outl $ \ptr -> ft_outline_check ptr 
+
+getBBox :: FT_outline -> IO (Maybe BBox)
+getBBox outl = 
+    with (BBox 0 0 0 0) $ \bbox -> 
+        with outl $ \ptr -> do 
+            ec <- ft_outline_get_bbox ptr bbox
+            if (ec == 0) 
+               then peek bbox >>= return . Just
+               else return Nothing
+
+getOrientation :: FT_outline -> IO Orientation
+getOrientation outl = 
+    with outl $ \ptr -> ft_outline_get_orientation ptr >>= return . unmarshal
+
+                                            
 contours :: FT_outline -> IO Int
 contours = return . fromIntegral . _n_contours
 
-          
+points :: FT_outline -> IO Int
+points = return . fromIntegral . _n_points     
           

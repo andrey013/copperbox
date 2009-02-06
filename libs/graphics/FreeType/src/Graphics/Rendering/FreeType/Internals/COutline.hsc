@@ -27,6 +27,7 @@ module Graphics.Rendering.FreeType.Internals.COutline where
 import Graphics.Rendering.FreeType.Internals.CBaseTypes
 import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Internals.CImage
+import Graphics.Rendering.FreeType.Utils ( Marshal(..), Unmarshal(..) )
 
 import Foreign.C.Types (  CInt, CShort, CChar )
 
@@ -149,7 +150,35 @@ type FT_enum_orientation    = CInt
   , ft_ORIENTATION_FILL_LEFT    = FT_ORIENTATION_FILL_LEFT
   , ft_ORIENTATION_NONE         = FT_ORIENTATION_NONE
   }
-  
+
+data Orientation = 
+      TrueType
+    | PostScript
+    | FillRight
+    | FillLeft
+    | ONone
+    deriving ( Eq, Ord, Show )
+    
+instance Marshal Orientation where
+  marshal x = case x of
+      TrueType    -> ft_ORIENTATION_TRUETYPE
+      PostScript  -> ft_ORIENTATION_POSTSCRIPT
+      FillRight   -> ft_ORIENTATION_FILL_RIGHT
+      FillLeft    -> ft_ORIENTATION_FILL_LEFT
+      ONone       -> ft_ORIENTATION_NONE
+
+      
+      
+instance Unmarshal Orientation where
+  unmarshal x
+      | x == ft_ORIENTATION_TRUETYPE    = TrueType 
+      | x == ft_ORIENTATION_POSTSCRIPT  = PostScript 
+      | x == ft_ORIENTATION_FILL_RIGHT  = FillRight 
+      | x == ft_ORIENTATION_FILL_LEFT   = FillLeft 
+      | x == ft_ORIENTATION_NONE        = ONone 
+      | otherwise = error ("unmarshal: PixelMode - illegal value " ++ show x)                  
+      
+      
 --------------------------------------------------------------------------------
 -- wrappers
 
