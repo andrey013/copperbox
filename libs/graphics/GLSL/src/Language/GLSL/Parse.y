@@ -24,10 +24,10 @@ import Language.GLSL.Tokens
 
 
 import Control.Monad.Identity
+import Data.Sequence
 
 
-
--- parseGlsl :: FilePath -> String -> Integer
+parseGlsl :: FilePath -> String -> TranslUnit
 parseGlsl path contents  = 
   case runIdentity (runParseT glslParser path contents) of
     Left (ParseErr err) -> error err
@@ -176,7 +176,7 @@ postfix_expression :: { Expr }
                                         { ArrayAccessExpr $1 $3 }
   | function_call                       { $1 }
   | postfix_expression DOT FIELD_SELECTION
-                                        { FieldSelectionExpr $1 $3 }
+                                        { FieldAccessExpr $1 $3 }
   | postfix_expression INC_OP           { UnaryExpr PostIncOp $1 }
   | postfix_expression DEC_OP           { UnaryExpr PostDecOp $1 }
 
@@ -193,18 +193,18 @@ function_call_or_method :: { Expr }
   
 function_call_generic :: { Expr }
   : function_call_header_with_parameters RIGHT_PAREN        
-                              { (\(n,xs) -> FunCallExpr n (reverse xs)) $1 }
+                              { (uncurry FunCallExpr) $1 }
   | function_call_header_no_parameters RIGHT_PAREN          
-                              { $1 }
+                              { (uncurry FunCallExpr) $1 }
   
-function_call_header_no_parameters :: { Expr }
-  : function_call_header VOID                       { FunCallExpr $1 [] }
-  | function_call_header                            { FunCallExpr $1 [] }
+function_call_header_no_parameters :: { (Ident, (Seq Expr)) }
+  : function_call_header VOID           { ($1, empty) }
+  | function_call_header                { ($1, empty) }
   
-function_call_header_with_parameters :: { (Ident, [Expr]) }
-  : function_call_header assignment_expression    { ($1,[$2]) } 
+function_call_header_with_parameters :: { (Ident, (Seq Expr)) }
+  : function_call_header assignment_expression    { ($1,wrap $2) } 
   | function_call_header_with_parameters COMMA assignment_expression
-                                                  { consSnd $1 $3 }
+                                                  { $1 `snoc` $3 }
 function_call_header :: { Ident }
   : function_identifier LEFT_PAREN                { $1 }
 
@@ -328,15 +328,13 @@ assignment_operator :: { AssignOp }
                
   
 expression :: { Expr }
-  : expression_revlist     { consE $1 }
+  : expression_seq     { CommaExpr $1 }
 
 
-
-
-expression_revlist :: { [Expr] }
-  : assignment_expression     { [$1] }
-  | expression_revlist COMMA assignment_expression
-                              { ($3:$1) }
+expression_seq :: { Seq Expr }
+  : assignment_expression     { wrap $1 }
+  | expression_seq COMMA assignment_expression
+                              { $1 `snoc` $3 }
 
 
 constant_expression :: { Expr }
@@ -347,17 +345,18 @@ declaration :: { Decl }
   | init_declarator_list SEMICOLON    { InitDeclr $1 }
   
 function_prototype :: { FunProto }
-  : function_declarator RIGHT_PAREN   { mkFunProto $1 }
+  : function_declarator RIGHT_PAREN   
+                    { (\((ty,name),se) -> FunProto ty name se) $1 }
   
-function_declarator :: { ((FullType,Ident),[ParamDecl]) }
-  : function_header                   { ($1,[]) }
+function_declarator :: { ((FullType,Ident),Seq ParamDecl) }
+  : function_header                   { ($1,empty) }
   | function_header_with_parameters   { $1 }
 
-function_header_with_parameters :: { ((FullType,Ident),[ParamDecl]) }
+function_header_with_parameters :: { ((FullType,Ident), Seq ParamDecl) }
   : function_header parameter_declaration
-                                      { ($1,[$2]) }
+                                      { ($1,wrap $2) }
   | function_header_with_parameters COMMA parameter_declaration
-                                      { $1 `consSnd` $3 }
+                                      { $1 `snoc` $3 }
 
 function_header :: { (FullType,Ident) }
   : fully_specified_type IDENTIFIER LEFT_PAREN
@@ -388,45 +387,43 @@ parameter_type_specifier :: { TypeSpec }
   : type_specifier    { $1 }
 
 
-init_declarator_list :: { DeclrList } 
-  : init_declarator_revlist   { reverseD $1 }
-
-
-init_declarator_revlist :: { DeclrRev }
+init_declarator_list :: { Declrs }
   : single_declaration        { $1 }
-  | init_declarator_revlist COMMA IDENTIFIER
-                              { $1 `consD` (ScalarDeclr $3 Nothing) }
-  | init_declarator_revlist COMMA IDENTIFIER LEFT_BRACKET RIGHT_BRACKET
-                              { $1 `consD` (ArrayDeclr $3 Nothing Nothing) }
-  | init_declarator_revlist COMMA IDENTIFIER LEFT_BRACKET constant_expression 
+  | init_declarator_list COMMA IDENTIFIER
+                              { $1 `snoc` (ScalarDeclr $3 Nothing) }
+  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET RIGHT_BRACKET
+                              { $1 `snoc` (ArrayDeclr $3 Nothing Nothing) }
+  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET constant_expression 
                                         RIGHT_BRACKET
-                              { $1 `consD` (ArrayDeclr $3 (Just $5) Nothing) }                                        
-  | init_declarator_revlist COMMA IDENTIFIER LEFT_BRACKET 
+                              { $1 `snoc` (ArrayDeclr $3 (Just $5) Nothing) }                                        
+  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET 
                                         RIGHT_BRACKET EQUAL initializer
-                              { $1 `consD` (ArrayDeclr $3 Nothing (Just $7)) }
-  | init_declarator_revlist COMMA IDENTIFIER LEFT_BRACKET constant_expression
+                              { $1 `snoc` (ArrayDeclr $3 Nothing (Just $7)) }
+  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET constant_expression
                                         RIGHT_BRACKET EQUAL initializer
-                              { $1 `consD` (ArrayDeclr $3 (Just $5) (Just $8)) }                                        
-  | init_declarator_revlist COMMA IDENTIFIER EQUAL initializer
-                              { $1 `consD` (ScalarDeclr $3 (Just $5)) }
+                              { $1 `snoc` (ArrayDeclr $3 (Just $5) (Just $8)) }                                        
+  | init_declarator_list COMMA IDENTIFIER EQUAL initializer
+                              { $1 `snoc` (ScalarDeclr $3 (Just $5)) }
 
-single_declaration :: { DeclrRev }
-  : fully_specified_type      { Declr $1 [] }
+single_declaration :: { Declrs }
+  : fully_specified_type      
+                    { Declr $1 empty }
   | fully_specified_type IDENTIFIER
-                              { Declr $1 [ScalarDeclr $2 Nothing] }
+                    { Declr $1 (singleton $ ScalarDeclr $2 Nothing) }
   | fully_specified_type IDENTIFIER LEFT_BRACKET RIGHT_BRACKET
-                              { Declr $1 [ArrayDeclr $2 Nothing Nothing] }
+                    { Declr $1 (singleton $ ArrayDeclr $2 Nothing Nothing) }
   | fully_specified_type IDENTIFIER LEFT_BRACKET constant_expression 
                                         RIGHT_BRACKET
-                              { Declr $1 [ArrayDeclr $2 (Just $4) Nothing] }
+                    { Declr $1 (singleton $ ArrayDeclr $2 (Just $4) Nothing) }
   | fully_specified_type IDENTIFIER LEFT_BRACKET RIGHT_BRACKET EQUAL initializer
-                              { Declr $1 [ArrayDeclr $2 Nothing (Just $6)] }
+                    { Declr $1 (singleton $ ArrayDeclr $2 Nothing (Just $6)) }
   | fully_specified_type IDENTIFIER LEFT_BRACKET constant_expression
                                         RIGHT_BRACKET EQUAL initializer
-                              { Declr $1 [ArrayDeclr $2 (Just $4) (Just $7)] }
+                    { Declr $1 (singleton $ ArrayDeclr $2 (Just $4) (Just $7)) }
   | fully_specified_type IDENTIFIER EQUAL initializer
-                              { Declr $1 [ScalarDeclr $2 (Just $4)]  }
-  | INVARIANT IDENTIFIER      { InvariantDeclr $2 [] }
+                    { Declr $1 (singleton $ ScalarDeclr $2 (Just $4))  }
+  | INVARIANT IDENTIFIER      
+                    { InvariantDeclr $2 empty }
                             
 fully_specified_type :: { FullType }
   : type_specifier                      { (Nothing,$1) }
@@ -488,25 +485,19 @@ struct_specifier :: { Struct }
   | STRUCT LEFT_BRACE struct_declaration_list RIGHT_BRACE
                               { Struct Nothing $3 }
                               
-struct_declaration_list :: { [StructDeclr] }
-  : struct_declaration_revlist          { reverse $1 }
-  
-struct_declaration_revlist :: { [StructDeclr] }
-  : struct_declaration                  { [$1] }
-  | struct_declaration_revlist struct_declaration    
-                                        { ($2:$1) }
+struct_declaration_list :: {  Seq StructDeclr }
+  : struct_declaration                  { wrap $1 }
+  | struct_declaration_list struct_declaration    
+                                        { $1 `snoc` $2 }
 
 struct_declaration :: { StructDeclr }
   : type_specifier struct_declarator_list SEMICOLON         
                               { StructDeclr $1 $2  }
   
-struct_declarator_list :: { [StructDeclrElement] }
-  : struct_declarator_revlist { reverse $1 }
-  
-struct_declarator_revlist :: { [StructDeclrElement] }
-  : struct_declarator         { [$1] }
-  | struct_declarator_revlist COMMA struct_declarator
-                              { ($3:$1) }
+struct_declarator_list :: { Seq StructDeclrElement }
+  : struct_declarator         { wrap $1 }
+  | struct_declarator_list COMMA struct_declarator
+                              { $1 `snoc` $3 }
 
 struct_declarator :: { StructDeclrElement }
   : IDENTIFIER                { StructScalarDeclr $1 }
@@ -531,7 +522,7 @@ simple_statement :: { Stmt }
   | jump_statement            { $1 }
 
 compound_statement :: { Stmt }
-  : LEFT_BRACE RIGHT_BRACE                        { CompoundStmt [] }
+  : LEFT_BRACE RIGHT_BRACE                        { CompoundStmt empty }
   | LEFT_BRACE statement_list RIGHT_BRACE         { CompoundStmt $2 }
 
 statement_no_new_scope :: { Stmt }
@@ -539,15 +530,14 @@ statement_no_new_scope :: { Stmt }
   | simple_statement                    { $1 }
 
 compound_statement_no_new_scope :: { Stmt }
-  : LEFT_BRACE RIGHT_BRACE                        { CompoundStmt [] }
+  : LEFT_BRACE RIGHT_BRACE                        { CompoundStmt empty }
   | LEFT_BRACE statement_list RIGHT_BRACE         { CompoundStmt $2 }
 
-statement_list :: { [Stmt] }
-  : statement_revlist         { reverse $1 }
+
   
-statement_revlist :: { [Stmt] }
-  : statement                           { [$1] }
-  | statement_revlist statement         { ($2:$1) }    -- todo
+statement_list :: { Seq Stmt }
+  : statement                           { wrap $1 }
+  | statement_list statement            { $1 `snoc` $2 }
 
 expression_statement :: { Stmt }
   : SEMICOLON                 { ExprStmt Nothing }
@@ -593,12 +583,10 @@ jump_statement :: { Stmt }
   | RETURN expression SEMICOLON         { Return (Just $2) }
   | DISCARD SEMICOLON                   { Discard }
 
-translation_unit :: { TranslUnit }
-  : translation_unit_revlist            { TranslUnit (reverse $1) }
    
-translation_unit_revlist :: { [GblDecl] }
-  : external_declaration                                    { [$1] }
-  | translation_unit_revlist external_declaration           { ($2 : $1) }
+translation_unit :: { TranslUnit }
+  : external_declaration                          { wrap $1 }
+  | translation_unit external_declaration         { $1 `snoc` $2 }
                                           
 external_declaration :: { GblDecl }
   : function_definition       { GblFunDef $1 }
@@ -611,26 +599,7 @@ function_definition :: { FunDef }
 
 {
 
-consSnd :: (a, [b]) -> b -> (a, [b])
-consSnd (n,xs) x = (n,x:xs)
 
-
-consE :: [Expr] -> Expr
-consE [a] = a
-consE xs  = CommaExpr xs
-
-
--- just for notational effect
-type DeclrRev = DeclrList
-
-consD :: DeclrRev -> DeclrElement -> DeclrRev
-consD (Declr ty es)             e = Declr ty (e:es)
-consD (InvariantDeclr ident es) e = InvariantDeclr ident (e:es)
-
-
-reverseD :: DeclrRev -> DeclrList
-reverseD (Declr ty es)              = Declr ty (reverse es)
-reverseD (InvariantDeclr ident es)  = InvariantDeclr ident (reverse es)
 
 
 unwrapExpr :: Stmt -> Expr
@@ -642,11 +611,6 @@ mkIfStmt condE (thenS,opt_elseS) = IfStmt condE thenS opt_elseS
 
 mkFor :: Expr -> (Expr, Maybe Expr) -> Stmt -> Stmt
 mkFor initE (condE,opt_loopE) bodyS = For initE condE opt_loopE bodyS
-
-mkFunProto :: ((FullType,Ident),[ParamDecl]) -> FunProto
-mkFunProto ((ty,ident),ps) = FunProto ty ident (reverse ps)
-
-
 
 constructorIdent :: TypeSpec -> Ident
 constructorIdent ts = case ts of

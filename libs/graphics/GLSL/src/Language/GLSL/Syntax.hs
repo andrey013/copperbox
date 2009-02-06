@@ -1,4 +1,7 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -21,6 +24,23 @@ module Language.GLSL.Syntax  where
 
 import Data.Generics.Basics
 import Data.Generics.Instances()
+import Data.Sequence
+
+class Snoc a b | a -> b where
+  snoc :: a -> b -> a
+
+class Wrap a b where
+  wrap :: a -> b
+
+instance Snoc (Seq a) a where
+  snoc = (|>)
+    
+instance Wrap a (Seq a) where
+  wrap = singleton
+  
+instance Snoc (z, Seq a) a where
+  snoc (z,sa) a = (z,sa |> a)  
+  
 
 type Ident = String
 
@@ -28,8 +48,14 @@ type Ident = String
 type FieldSelector = Char 
 type FieldSelection = [FieldSelector]
 
-data TranslUnit = TranslUnit [GblDecl]
+data TranslUnit = TranslUnit (Seq GblDecl)
   deriving (Eq,Show,Typeable,Data)
+
+instance Snoc TranslUnit GblDecl where
+  snoc (TranslUnit se) e = TranslUnit (se |> e)
+
+instance Wrap GblDecl TranslUnit where
+  wrap = TranslUnit . singleton
   
 data GblDecl = GblFunDef FunDef
              | GblDecl Decl 
@@ -47,17 +73,21 @@ data Constant = IntConst    Integer
 
 
 data Decl = FunProtoDecl FunProto
-          | InitDeclr DeclrList         -- more concrete syntax than abstract
+          | InitDeclr Declrs         -- more concrete syntax than abstract
   deriving (Eq,Show,Typeable,Data)
 
 
 -- more concrete syntax than abstract (should simplify to one declr / one type)  
-data DeclrList = 
+data Declrs = 
         Declr          FullType 
-                       [DeclrElement]
+                       (Seq DeclrElement)
       | InvariantDeclr Ident 
-                       [DeclrElement]   -- too permissive but seemingly legal
+                       (Seq DeclrElement)   -- too permissive but seemingly legal
   deriving (Eq,Show,Typeable,Data)
+
+instance Snoc Declrs DeclrElement where
+  snoc (Declr ty se)          e = Declr ty (se |> e)
+  snoc (InvariantDeclr ty se) e = InvariantDeclr ty (se |> e)
 
 data DeclrElement = 
         ScalarDeclr Ident                   
@@ -68,14 +98,16 @@ data DeclrElement =
   deriving (Eq,Show,Typeable,Data)
   
 data Struct = Struct (Maybe Ident)
-                     [StructDeclr]
+                     (Seq StructDeclr)
   deriving (Eq,Show,Typeable,Data)
 
 data StructDeclr = 
         StructDeclr TypeSpec
-                    [StructDeclrElement]
+                    (Seq StructDeclrElement)
   deriving (Eq,Show,Typeable,Data)
-  
+
+instance Snoc StructDeclr StructDeclrElement where
+  snoc (StructDeclr ty se) e =  StructDeclr ty (se |> e)
   
 data StructDeclrElement = 
         StructScalarDeclr Ident                   
@@ -145,12 +177,13 @@ data Expr = ConstantExpr Constant
                        Expr
           | ArrayAccessExpr Expr
                             Expr
-          | FieldSelectionExpr Expr
-                               FieldSelection 
+          | FieldAccessExpr Expr
+                            FieldSelection 
           | MethodAccessExpr Expr 
                              Expr                                                   
-          | FunCallExpr Ident [Expr]    -- arguments are expressions
-          | CommaExpr [Expr]      -- seqeuence of expressions
+          | FunCallExpr Ident
+                        (Seq Expr)    -- arguments are expressions
+          | CommaExpr   (Seq Expr)      -- seqeuence of expressions
           
           | TernaryExpr Expr      -- (? :)
                         Expr
@@ -160,7 +193,7 @@ data Expr = ConstantExpr Constant
 
 data FunProto = FunProto FullType 
                          Ident 
-                         [ParamDecl]
+                         (Seq ParamDecl)
   deriving (Eq,Show,Typeable,Data)
 
 data ParamDecl = Declarator (Maybe TypeQual)
@@ -241,7 +274,7 @@ data ScalarTypeSpec = SlVoid
   deriving (Eq,Show,Typeable,Data)
  
 
-data Stmt = CompoundStmt [Stmt]
+data Stmt = CompoundStmt (Seq Stmt)
           | DeclStmt Decl
           | ExprStmt (Maybe Expr)
           | IfStmt   Expr
