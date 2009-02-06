@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  FontData
+-- Module      :  Example1
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
@@ -20,8 +20,8 @@
 
 module Main where
 
+import BitmapHelper
 import Graphics.Rendering.FreeType
-import Graphics.Rendering.FreeType.Util.Bitmap
 
 import Control.Monad
 import Data.Array.IArray ( (!) )

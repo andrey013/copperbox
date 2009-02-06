@@ -16,71 +16,69 @@
 
 module Graphics.Rendering.FreeType.Outline (
   
-  FT_outline, -- only expose the type not the constructor..
+  FT_outline, -- expose the alias not the type (so it is opaque).
   withOutline,
   contours,
   
 ) where
 
 import Graphics.Rendering.FreeType.Internals.CBaseTypes ( 
-      FT_library(..), FT_library_ptr )
+      FT_library(..)  )
 -- import Graphics.Rendering.FreeType.Internals.CBasicDataTypes
 import Graphics.Rendering.FreeType.Internals.COutline
-import Graphics.Rendering.FreeType.Internals.Wrappers 
-import Graphics.Rendering.FreeType.Utils ( nullForeignPtr )
+-- import Graphics.Rendering.FreeType.Internals.Wrappers 
 
 
-import Control.Exception ( bracket )
-import Foreign.ForeignPtr ( newForeignPtr, withForeignPtr, finalizeForeignPtr )
-import Foreign.Marshal.Alloc ( alloca )
-import Foreign.Ptr ( Ptr )
+
+
+import Foreign.ForeignPtr ( withForeignPtr )
+import Foreign.Marshal.Utils ( with )
+import Foreign.Ptr ( nullPtr )
+import Foreign.Storable ( peek ) 
 
 
 
 
 -------------------------------------------------------------------------------- 
 
-isNullFT_outline :: FT_outline -> IO Bool
-isNullFT_outline (FT_outline lib) = nullForeignPtr lib
+
+-- FT_outline is not an opaque handle.
+-- We need to be able to create one and pass it to the C-side.
+
+mkOutline :: FT_outline
+mkOutline = FT_struct_outline {
+      _n_contours     = 0,
+      _n_points       = 0,
+      _points         = nullPtr,
+      _tags           = nullPtr,
+      _contours       = nullPtr,
+      _outline_flags  = 0
+    }
+       
 
 withOutline :: FT_library -> Int -> Int -> a -> (FT_outline -> IO a) -> IO a
-withOutline lib max_pts max_cts failureValue action = 
-  bracket (newOutline lib max_pts max_cts) doneOutline 
-          (\ftoln -> do { check_null <- isNullFT_outline ftoln 
-                        ; if check_null
-                             then do putStrLn "withOutline: failed"
-                                     return failureValue
-                             else action ftoln })  
-                             
-newOutline :: FT_library -> Int -> Int -> IO FT_outline
-newOutline (FT_library lib) max_pts max_cts  = 
-    withForeignPtr lib $ \h ->
-        alloca $ \ptr -> do 
-        ec <- ft_outline_new h (fromIntegral max_pts) (fromIntegral max_cts) ptr
-        case ec of
-          0 -> do fin <- mkDoneOutline (freeOutline_ h)
-                  p   <- newForeignPtr fin ptr
-                  return (FT_outline p)
-          _ -> fail ("newOutline: failed to initialize, error " ++ show ec)
+withOutline (FT_library lib) max_pts max_cts failureValue action = 
+  withForeignPtr lib $ \h -> 
+    with mkOutline $ \ptval -> do 
+      ec <- ft_outline_new h (fromIntegral max_pts) (fromIntegral max_cts) ptval
+      if (ec == 0) 
+        then do 
+          ans <- action =<< peek ptval
+          ft_outline_done h ptval
+          return ans
+        else
+          return failureValue
+      
 
+                      
 
-
+-- the _with_ pattern is from Data.Time.Clock.CTimeval from the time package 
+  
   
 
-doneOutline :: FT_outline -> IO ()
-doneOutline (FT_outline h) = finalizeForeignPtr h
-
-
--- doneFace_ drops the return code as per doneLibrary_. 
-freeOutline_ :: FT_library_ptr -> Ptr FT_struct_outline -> IO ()
-freeOutline_ h o = ft_outline_done h o >> return ()
 
 contours :: FT_outline -> IO Int
-contours (FT_outline oln) = 
-      withForeignPtr oln $ \h -> do
-          i <- peekOutline_n_contours h
-          return (fromIntegral i)
-          
-          
+contours = return . fromIntegral . _n_contours
+
           
           

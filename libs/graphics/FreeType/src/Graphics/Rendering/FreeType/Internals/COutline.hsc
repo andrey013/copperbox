@@ -30,14 +30,29 @@ import Graphics.Rendering.FreeType.Internals.CImage
 
 import Foreign.C.Types (  CInt, CShort, CChar )
 
-import Foreign.ForeignPtr ( ForeignPtr )
 import Foreign.Ptr ( Ptr, FunPtr ) 
 import Foreign.Storable
 
 --------------------------------------------------------------------------------
 
--- TODO - change this to `data Outline = Outline {` after you have stopped 
--- it exposing pointers.
+
+-- FT_Outline is a struct not a handle, it is quite reasonable for
+-- a C program to declare an FT_Outline (from ftgrid.c in the FreeType
+-- examples):
+--
+-- @FT_Outline  transformed;@
+--
+-- Then pass it to FT_Outline_New...
+--
+-- FT_Outline_New( handle->library,
+--                 outline->n_points,
+--                 outline->n_contours,
+--                 &transformed );
+-- 
+-- Before disposing of it...
+--
+-- FT_Outline_Done( handle->library, &transformed );
+--  
 
 data FT_struct_outline = FT_struct_outline {
       _n_contours     :: CShort,
@@ -47,6 +62,8 @@ data FT_struct_outline = FT_struct_outline {
       _contours       :: Ptr CShort,
       _outline_flags  :: CInt
     }
+
+type FT_outline = FT_struct_outline
 
 instance Storable FT_struct_outline where
   sizeOf    _ = #{size FT_Outline}
@@ -70,7 +87,7 @@ instance Storable FT_struct_outline where
         #{poke FT_Outline, flags}       ptr f
 
 type FT_outline_ptr = Ptr FT_struct_outline
-newtype FT_outline  = FT_outline (ForeignPtr FT_struct_outline) 
+
 
 type FT_enum_outlineflags    = CInt
 

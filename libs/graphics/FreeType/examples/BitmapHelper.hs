@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.FreeType.Util.Bitmap
+-- Module      :  BitmapHelper
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
@@ -15,7 +15,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.FreeType.Util.Bitmap where
+module BitmapHelper where
 
 
 import Control.Monad ( when )
@@ -82,9 +82,6 @@ makeBuffer w h chars = Buffer $ runSTArray $ do
     width, height :: Int32
     (width, height) = (fromIntegral w,fromIntegral h)
 
-          
-imageBounds :: Image -> ((Int32,Int32),(Int32,Int32))
-imageBounds (Image uarr) = bounds uarr
 
               
 
