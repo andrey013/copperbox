@@ -85,62 +85,55 @@ data GlslToken
     
     | Tk_kw_invariant
 
-
-
-
-
+    -- operators
+    | Tk_left_op
+    | Tk_right_op
+    | Tk_inc_op
+    | Tk_dec_op
+    | Tk_le_op
+    | Tk_ge_op
+    | Tk_eq_op
+    | Tk_ne_op
+    | Tk_and_op
+    | Tk_or_op
+    | Tk_xor_op
+    | Tk_mul_assign
+    | Tk_div_assign
+    | Tk_add_assign
+    | Tk_mod_assign
+    | Tk_left_assign
+    | Tk_right_assign
+    | Tk_and_assign
+    | Tk_xor_assign
+    | Tk_or_assign
+    | Tk_sub_assign
     
     -- punctuators
-    | Tk_p_plus
-    | Tk_p_dash
-    | Tk_p_bang
-    | Tk_p_tilde
-    | Tk_p_star
-    | Tk_p_divide
-    | Tk_p_percent
-    | Tk_p_shiftl
-    | Tk_p_shiftr
-    | Tk_p_less
-    | Tk_p_greater
-    | Tk_p_lesseq
-    | Tk_p_greatereq
-    | Tk_p_equality
-    | Tk_p_notequal
-    | Tk_p_ampersand
-    | Tk_p_caret
-    | Tk_p_bar
-    | Tk_p_dblampersand 
-    | Tk_p_dblcaret
-    | Tk_p_dblbar 
-    | Tk_p_eq
-    | Tk_p_stareq
-    | Tk_p_divideeq
-    | Tk_p_percenteq
-    | Tk_p_pluseq
-    | Tk_p_minuseq
-    | Tk_p_shiftleq
-    | Tk_p_shiftreq
-    | Tk_p_ampersandeq
-    | Tk_p_careteq
-    | Tk_p_bareq
-    
-    | Tk_p_dblplus
-    | Tk_p_dbldash
+    | Tk_p_left_paren
+    | Tk_p_right_paren
+    | Tk_p_left_bracket
+    | Tk_p_right_bracket
+    | Tk_p_left_brace
+    | Tk_p_right_brace
     | Tk_p_dot
     | Tk_p_comma
-    | Tk_p_semi
+    | Tk_p_colon
+    | Tk_p_equal
+    | Tk_p_semicolon
+    | Tk_p_bang
+    | Tk_p_dash
+    | Tk_p_tilde
+    | Tk_p_plus 
+    | Tk_p_star
+    | Tk_p_slash 
+    | Tk_p_percent
+    | Tk_p_left_angle
+    | Tk_p_right_angle
+    | Tk_p_vertical_bar
+    | Tk_p_caret
+    | Tk_p_ampersand
     | Tk_p_question
-    | Tk_p_colon    
-    | Tk_p_lparen
-    | Tk_p_rparen
-    | Tk_p_lbrace
-    | Tk_p_rbrace
-    | Tk_p_lbracket
-    | Tk_p_rbracket    
-
-
-
-
+    -- EOF
     | Tk_EOF
   deriving (Eq,Show)
 

@@ -96,58 +96,59 @@ parseGlsl path contents  =
   WHILE               { L _ Tk_kw_while             }
 
   IDENTIFIER          { L _ (Tk_ident $$)           }
-  TYPE_NAME           { L _ (Tk_tyname $$)          }   
+  TYPE_NAME           { L _ (Tk_ident $$)           }   
   FLOATCONSTANT       { L _ (Tk_lit_float $$)       }
   INTCONSTANT         { L _ (Tk_lit_int $$)         }
   BOOLCONSTANT        { L _ (Tk_lit_bool $$)        }
   FIELD_SELECTION     { L _ (Tk_field_selection $$) }
-  LEFT_OP             { L _ Tk_p_shiftl             }
-  RIGHT_OP            { L _ Tk_p_shiftr             }
+  
+  LEFT_OP             { L _ Tk_left_op              }
+  RIGHT_OP            { L _ Tk_right_op             }
    
-  INC_OP              { L _ Tk_p_dblplus            }
-  DEC_OP              { L _ Tk_p_dbldash            }
-  LE_OP               { L _ Tk_p_lesseq             }
-  GE_OP               { L _ Tk_p_greatereq          }
-  EQ_OP               { L _ Tk_p_equality           }
-  NE_OP               { L _ Tk_p_notequal           }
+  INC_OP              { L _ Tk_inc_op               }
+  DEC_OP              { L _ Tk_dec_op               }
+  LE_OP               { L _ Tk_le_op                }
+  GE_OP               { L _ Tk_ge_op                }
+  EQ_OP               { L _ Tk_eq_op                }
+  NE_OP               { L _ Tk_ne_op                }
   
-  AND_OP              { L _ Tk_p_dblampersand       }
-  XOR_OP              { L _ Tk_p_dblcaret           }
-  OR_OP               { L _ Tk_p_dblbar             } 
-  MUL_ASSIGN          { L _ Tk_p_stareq             }
-  DIV_ASSIGN          { L _ Tk_p_divideeq           }
-  ADD_ASSIGN          { L _ Tk_p_pluseq             }
-  MOD_ASSIGN          { L _ Tk_p_percenteq          }
-  LEFT_ASSIGN         { L _ Tk_p_shiftleq           }
-  RIGHT_ASSIGN        { L _ Tk_p_shiftreq           }
-  AND_ASSIGN          { L _ Tk_p_ampersandeq        }
-  XOR_ASSIGN          { L _ Tk_p_careteq            }
-  OR_ASSIGN           { L _ Tk_p_bareq              }
-  SUB_ASSIGN          { L _ Tk_p_minuseq            }
+  AND_OP              { L _ Tk_and_op               }
+  XOR_OP              { L _ Tk_xor_op               }
+  OR_OP               { L _ Tk_or_op                } 
+  MUL_ASSIGN          { L _ Tk_mul_assign           }
+  DIV_ASSIGN          { L _ Tk_div_assign           }
+  ADD_ASSIGN          { L _ Tk_add_assign           }
+  MOD_ASSIGN          { L _ Tk_mod_assign           }
+  LEFT_ASSIGN         { L _ Tk_left_assign          }
+  RIGHT_ASSIGN        { L _ Tk_right_assign         }
+  AND_ASSIGN          { L _ Tk_and_assign           }
+  XOR_ASSIGN          { L _ Tk_xor_assign           }
+  OR_ASSIGN           { L _ Tk_or_assign            }
+  SUB_ASSIGN          { L _ Tk_sub_assign           }
   
-  LEFT_PAREN          { L _ Tk_p_lparen             }
-  RIGHT_PAREN         { L _ Tk_p_rparen             }
-  LEFT_BRACKET        { L _ Tk_p_lbracket           }
-  RIGHT_BRACKET       { L _ Tk_p_rbracket           }   
-  LEFT_BRACE          { L _ Tk_p_lbrace             }
-  RIGHT_BRACE         { L _ Tk_p_rbrace             }
+  LEFT_PAREN          { L _ Tk_p_left_paren         }
+  RIGHT_PAREN         { L _ Tk_p_right_paren        }
+  LEFT_BRACKET        { L _ Tk_p_left_bracket       }
+  RIGHT_BRACKET       { L _ Tk_p_right_bracket      }   
+  LEFT_BRACE          { L _ Tk_p_left_brace         }
+  RIGHT_BRACE         { L _ Tk_p_right_brace        }
   DOT                 { L _ Tk_p_dot                }
   
   COMMA               { L _ Tk_p_comma              }
   COLON               { L _ Tk_p_colon              }
-  EQUAL               { L _ Tk_p_eq                 }
-  SEMICOLON           { L _ Tk_p_semi               }
+  EQUAL               { L _ Tk_p_equal              }
+  SEMICOLON           { L _ Tk_p_semicolon          }
   BANG                { L _ Tk_p_bang               }
   DASH                { L _ Tk_p_dash               }
   TILDE               { L _ Tk_p_tilde              }
   PLUS                { L _ Tk_p_plus               }
   STAR                { L _ Tk_p_star               }
-  SLASH               { L _ Tk_p_divide             }
+  SLASH               { L _ Tk_p_slash              }
   PERCENT             { L _ Tk_p_percent            } 
 
-  LEFT_ANGLE          { L _ Tk_p_less               }
-  RIGHT_ANGLE         { L _ Tk_p_greater            }
-  VERTICAL_BAR        { L _ Tk_p_bar                }  
+  LEFT_ANGLE          { L _ Tk_p_left_angle         }
+  RIGHT_ANGLE         { L _ Tk_p_right_angle        }
+  VERTICAL_BAR        { L _ Tk_p_vertical_bar       }  
   CARET               { L _ Tk_p_caret              }   
   AMPERSAND           { L _ Tk_p_ampersand          }
   QUESTION            { L _ Tk_p_question           }  
@@ -155,8 +156,6 @@ parseGlsl path contents  =
   INVARIANT           { L _ Tk_kw_invariant         }
 
 
-
-  
 %%
 
 

@@ -45,12 +45,19 @@ $identifier             = [$nondigit $digit]
 @hex_prefix         = 0x | 0X
 
 
-
 @integer = $digit+
+
+
 
 glsl :-
 
 $white ;
+
+-- Comment - cpp -E seems to fill in with lines like `# 1 "<command line>"`
+<0> {
+  ^\# [.]*     { skip }
+}
+  
 
 
 -- keywords  
@@ -121,44 +128,67 @@ $white ;
   $identifier_nondigit $identifier*     { identifier }
 }
 
--- punctuators
+-- operators
 <0> {
   
-  \+              { punctuator Tk_p_plus          }
-  \-              { punctuator Tk_p_dash          }
-  \!              { punctuator Tk_p_bang          }
-  \~              { punctuator Tk_p_tilde         }
+  "<<"            { operator Tk_left_op           }
+  ">>"            { operator Tk_right_op          }
+  "++"            { operator Tk_inc_op            }
+  "--"            { operator Tk_dec_op            }
   
-  \*              { punctuator Tk_p_star          }
-  \/              { punctuator Tk_p_divide        }
-  "<<"            { punctuator Tk_p_shiftl        }
-  ">>"            { punctuator Tk_p_shiftr        }
-  \<              { punctuator Tk_p_less          } 
-  \>              { punctuator Tk_p_greater       }
-  "<="            { punctuator Tk_p_lesseq        }    
-  ">="            { punctuator Tk_p_greatereq     }
-  "=="            { punctuator Tk_p_equality      }
-  "!="            { punctuator Tk_p_notequal      }
-  \&              { punctuator Tk_p_ampersand     }
-  \^              { punctuator Tk_p_caret         }
-  \|              { punctuator Tk_p_bar           }
-  "&&"            { punctuator Tk_p_dblampersand  }
-  "^^"            { punctuator Tk_p_dblcaret      }
-  "||"            { punctuator Tk_p_dblbar        }
+  "<="            { operator Tk_le_op             } 
+  ">="            { operator Tk_ge_op             }
+  "=="            { operator Tk_eq_op             }
+  "!="            { operator Tk_ne_op             }
+  
+  \&              { operator Tk_and_op            }
+  \|              { operator Tk_or_op             }
+  \^              { operator Tk_xor_op            }
+  "*="            { operator Tk_mul_assign        }
+  "/="            { operator Tk_div_assign        }
+  
+  "+="            { operator Tk_add_assign        }
+  "%="            { operator Tk_mod_assign        }
+  "<<="           { operator Tk_left_assign       }
+  ">>="           { operator Tk_right_assign      }
+  "&="            { operator Tk_and_assign        }
+  "^="            { operator Tk_xor_assign        }
+  "|="            { operator Tk_or_assign         }
+  "-="            { operator Tk_sub_assign        }
+}
 
-  \=              { punctuator Tk_p_eq            }
-  "*="            { punctuator Tk_p_stareq        }
-  "/="            { punctuator Tk_p_divideeq      }
-  "%="            { punctuator Tk_p_percenteq     }
-  "+="            { punctuator Tk_p_pluseq        }
-  "-="            { punctuator Tk_p_minuseq       }
-  "<<="           { punctuator Tk_p_shiftleq      }
-  ">>="           { punctuator Tk_p_shiftreq      }
-  "&="            { punctuator Tk_p_ampersandeq   }
-  "^="            { punctuator Tk_p_careteq       }
-  "|="            { punctuator Tk_p_bareq         }
+
+-- punctuators
+<0> {
+
+  \(              { punctuator Tk_p_left_paren    }
+  \)              { punctuator Tk_p_right_paren   }
+  \[              { punctuator Tk_p_left_bracket  }
+  \]              { punctuator Tk_p_right_bracket }
+  \{              { punctuator Tk_p_left_brace    }
+  \}              { punctuator Tk_p_right_brace   }
+  \.              { punctuator Tk_p_dot           }
   
-  \;              { punctuator Tk_p_semi          }              
+  \,              { punctuator Tk_p_comma         }
+  \:              { punctuator Tk_p_colon         }
+  \=              { punctuator Tk_p_equal         }
+  \;              { punctuator Tk_p_semicolon     }
+  \!              { punctuator Tk_p_bang          }
+  \-              { punctuator Tk_p_dash          }
+  \~              { punctuator Tk_p_tilde         }
+  \+              { punctuator Tk_p_plus          }
+  \*              { punctuator Tk_p_star          }
+  \/              { punctuator Tk_p_slash         }
+  \%              { punctuator Tk_p_percent       }
+
+  \<              { punctuator Tk_p_left_angle    }
+  \>              { punctuator Tk_p_right_angle   }
+  \|              { punctuator Tk_p_vertical_bar  }
+  \^              { punctuator Tk_p_caret         }
+  \&              { punctuator Tk_p_ampersand     }
+  \?              { punctuator Tk_p_question      }
+  
+                
 }
 
 -- integer constants
@@ -171,6 +201,8 @@ $white ;
   @hex_prefix $hex_digit*     { hexLiteral }
 
 } 
+
+
 
 
 {
@@ -211,6 +243,10 @@ keyword kw = usingInput L (const kw)
 punctuator :: GlslToken -> AlexInput -> Int -> ParseM Lexeme
 punctuator pr = usingInput L (const pr)
 
+operator :: GlslToken -> AlexInput -> Int -> ParseM Lexeme
+operator op = usingInput L (const op)
+
+
 identifier :: AlexInput -> Int -> ParseM Lexeme 
 identifier = usingInput L Tk_ident
 
@@ -248,6 +284,10 @@ andBegin :: (LexerState -> Int -> ParseM Lexeme)
 andBegin action code input len = do 
     setLexerStateStartCode code
     action input len        
+
+
+skip :: LexerState -> Int -> ParseM Lexeme 
+skip input len = lexToken
 
 
 }

@@ -158,3 +158,5 @@ reportError s = do
     pos <- getPosition
     ln  <- getCurrentLine 
     throwError $ strMsg $ s ++ "\n" ++ show pos ++ "\n" ++ ln
+    
+    
