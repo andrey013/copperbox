@@ -24,3 +24,13 @@ import Data.Word
 
 findTable :: String -> LaxFont -> Maybe (BS.ByteString)
 findTable name (LaxFont _ _ fm) = Map.lookup name fm
+
+section :: Int -> Int -> BS.ByteString -> BS.ByteString 
+section start len inp
+    | start + len <= BS.length inp  = BS.take len $ BS.drop start inp 
+    | otherwise                     = error $ 
+          "section - out-of-bounds, from " ++ show start ++ " for"
+                                           ++ show len ++ " on length " 
+                                           ++ show (BS.length inp) 
+
+                                           

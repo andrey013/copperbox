@@ -52,13 +52,11 @@ tableDirectory = TableDirectory
 extractTableStreams :: [TableDirectory] -> BS.ByteString -> TableStreams
 extractTableStreams ts inp = foldr fn Map.empty ts
   where
-    fn (TableDirectory name _ o l) fm = Map.insert name (section o l) fm
+    fn (TableDirectory name _ o l) fm = 
+        Map.insert name (section (fromIntegral o) (fromIntegral l) inp) fm
    
-    section i j 
-        | i + j <= len = BS.take (fromIntegral j) $ BS.drop (fromIntegral i) inp 
-        | otherwise    = error $ "extractTableStreams - section error"
     
-    len                = fromIntegral $ BS.length inp  
+ 
         
 
 --------------------------------------------------------------------------------
@@ -87,3 +85,4 @@ ushort = word16be
  
 
 
+   

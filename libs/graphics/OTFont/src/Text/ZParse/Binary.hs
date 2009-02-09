@@ -28,7 +28,7 @@ import Control.Applicative
 import Control.Monad.State
 import Data.Bits
 import Data.Char
-import Data.List
+import Data.Int
 import Data.Word
 
 import qualified Data.ByteString as BS
@@ -112,6 +112,27 @@ mkW32le a b c d = a' + b' + c' + d' where
     b' = (fromIntegral b) `shiftL` 8
     c' = (fromIntegral c) `shiftL` 16
     d' = (fromIntegral d) `shiftL` 24
+
+
+-- For Data.Bits - 0 is lsb, 7 is msb
+
+-- 7 or 0 ?
+mkI8le :: Word8 -> Int16
+mkI8le a = if a `testBit` 7 then fromIntegral a 
+                            else 1 - fromIntegral (0xFF .&. a)
+                      
+-- 15 or 0 ?
+mkI16le :: Word8 -> Word8 -> Int16
+mkI16le a b = let v = mkW16le a b in
+    if v `testBit` 15 then fromIntegral v 
+                      else 1 - fromIntegral (0xFFFF .&. v)
+
+-- 31 or 0 ?                
+mkI32le :: Word8 -> Word8 -> Word8 -> Word8 -> Int16
+mkI32le a b c d  = let v = mkW32le a b c d in
+    if v `testBit`31 then fromIntegral v 
+                     else 1 - fromIntegral (0xFFFFFFFF .&. v)                  
+
                
 mkW16be :: Word8 -> Word8 -> Word16
 mkW16be a b = a' + b' where
@@ -124,4 +145,19 @@ mkW32be a b c d = a' + b' + c' + d' where
     b' = (fromIntegral b) `shiftL` 16
     c' = (fromIntegral c) `shiftL` 8
     d' = (fromIntegral d) 
-  
+
+mkI8be :: Word8 -> Int16
+mkI8be a = if a `testBit` 7 then fromIntegral a 
+                            else 1 - fromIntegral (0xFF .&. a)
+                      
+
+mkI16be :: Word8 -> Word8 -> Int16
+mkI16be a b = let v = mkW16be a b in
+    if v `testBit` 15 then fromIntegral v 
+                      else 1 - fromIntegral (0xFFFF .&. v)
+                            
+mkI32be :: Word8 -> Word8 -> Word8 -> Word8 -> Int16
+mkI32be a b c d  = let v = mkW32be a b c d in
+    if v `testBit` 31 then fromIntegral v 
+                      else 1 - fromIntegral (0xFFFFFFFF .&. v) 
+                       

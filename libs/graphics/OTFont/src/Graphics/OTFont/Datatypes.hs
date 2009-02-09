@@ -16,6 +16,7 @@
 module Graphics.OTFont.Datatypes where
 
 import qualified Data.ByteString as BS
+import Data.Int
 import qualified Data.Map as Map
 import Data.Word
 
@@ -53,13 +54,14 @@ data CmapHeader = CmapHeader {
     } 
   deriving (Eq,Show)  
 
+type StringData = BS.ByteString
   
 data NameTable = NameTable { 
       nt_format       :: Word16,
       nt_count        :: Word16,
       string_offset   :: Word16,
       name_records    :: [NameRecord],
-      string_data     :: BS.ByteString
+      string_data     :: StringData
     }
   deriving (Eq,Show)
   
@@ -70,6 +72,18 @@ data NameRecord = NameRecord {
       name_id         :: Word16,
       string_length   :: Word16,
       str_offset      :: Word16
+    }
+  deriving (Eq,Show)
+
+
+  
+  
+data GlyfData = GlyfData {
+      num_contours    :: Int16,
+      x_min           :: Int16,
+      y_min           :: Int16,
+      x_max           :: Int16,
+      y_max           :: Int16
     }
   deriving (Eq,Show)
     
