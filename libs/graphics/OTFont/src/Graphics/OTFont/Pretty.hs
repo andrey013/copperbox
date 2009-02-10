@@ -53,28 +53,6 @@ instance Pretty TableDirectory where
       <$> field "table_length"    16 (integral tl)
 
       
-instance Pretty CmapHeader where
-  pretty (CmapHeader v nt) = title "Cmap Header"
-      <$> field "cmap_version"    16 (integral v)
-      <$> field "num_tables"      16 (integral nt)
-
-
-instance Pretty NameTable where
-  pretty (NameTable nf nc so ns _) = title "Name Table" 
-      <$> field "nt_format"       16 (integral nf)
-      <$> field "nt_count"        16 (integral nc)
-      <$> field "string_offset"   16 (integral so)
-      <$> field "name_records"    16 (indent 0 $ vsep (map prettyThenLine ns))
-      
-  
-instance Pretty NameRecord where 
-  pretty (NameRecord pid ei li ni sl so) = title "Name Record"
-      <$> field "platform_id"     16 (integral pid)
-      <$> field "encoding_id"     16 (integral ei)
-      <$> field "language_id"     16 (integral li)
-      <$> field "name_id"         16 (integral ni)
-      <$> field "string_length"   16 (integral sl)
-      <$> field "str_offset"      16 (integral so)
 
 
 prettyThenLine :: Pretty a => a -> Doc
@@ -96,6 +74,13 @@ integral = integer . fromIntegral
 instance Pretty Fixed where
   pretty = double . unFixed
 
+instance Pretty FWord where
+  pretty = integral . unFWord
+  
+instance Pretty UFWord where
+  pretty = integral . unUFWord
+  
+  
 ppBitfield :: Meaning a => [a] -> Doc
 ppBitfield = list . map ppMeaning 
 

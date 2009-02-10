@@ -18,28 +18,63 @@
 module Graphics.OTFont.Table.Name where
 
 import Graphics.OTFont.Datatypes
+import Graphics.OTFont.Parse
+import Graphics.OTFont.Pretty
 import Graphics.OTFont.Utils
+import Graphics.OTFont.Table.CommonDatatypes
 
+import Text.ZParse ( BinaryParserT, count, flush )
+
+
+import Control.Applicative
 import qualified Data.ByteString as BS
 import Data.Char ( chr ) 
 import Data.List ( find )
 import Data.Word
 
-data PlatformId = 
-      Unicode
-    | Macintosh
-    | ISO
-    | Windows
-    | Custom
-  deriving (Enum,Eq,Ord,Show)
+import Text.PrettyPrint.Leijen ( Pretty(..), indent, vsep )
+
+data NameTable = NameTable { 
+      nt_format       :: Word16,
+      nt_count        :: Word16,
+      string_offset   :: Word16,
+      name_records    :: [NameRecord],
+      string_data     :: StringData
+    }
+  deriving (Eq,Show)
+
+instance Pretty NameTable where
+  pretty (NameTable nf nc so ns _) = ppTable "Name Table" 
+      [ field "nt_format"       16 (integral nf)
+      , field "nt_count"        16 (integral nc)
+      , field "string_offset"   16 (integral so)
+      , field "name_records"    16 (indent 0 $ vsep (map prettyThenLine ns))
+      ]
+        
+data NameRecord = NameRecord {
+      platform_id     :: PlatformId,
+      encoding_id     :: EncodingId,
+      language_id     :: Word16,
+      name_id         :: NameId,
+      string_length   :: Word16,
+      str_offset      :: Word16
+    }
+  deriving (Eq,Show)
   
-data EncodingId = 
-      Unicode_1_0
-    | Unicode_1_1
-    | ISO_IEC_10646
-    | Unicode_2_0_BMP
-    | Unicode_2_0_full
-  deriving (Enum,Eq,Ord,Show)
+
+instance Pretty NameRecord where 
+  pretty (NameRecord pid ei li ni sl so) = ppTable "Name Record"
+      [ field "platform_id"     16 (ppMeaning pid)
+      , field "encoding_id"     16 (ppMeaning ei)
+      , field "language_id"     16 (integral li)
+      , field "name_id"         16 (ppMeaning ni)
+      , field "string_length"   16 (integral sl)
+      , field "str_offset"      16 (integral so)
+      ]
+
+      
+
+  
 
 
 data NameId = 
@@ -139,13 +174,25 @@ instance Meaning NameId where
   meaning Sample_text         = "Sample text"
   meaning PostScipt_CID       = "PostScipt CID findfont name"
   meaning (Reserved_name i)   = "Reserved " ++ show i 
-  
+
+readNameTable :: Monad m => ReadTable m NameTable
+readNameTable = do 
+    nf  <- ushort
+    nc  <- ushort
+    so  <- ushort
+    nr  <- count (fromIntegral nc) nameRecord
+    sd  <- flush
+    return $ NameTable nf nc so nr sd
+
+nameRecord :: Monad m => BinaryParserT m NameRecord 
+nameRecord = NameRecord <$>
+   platformId <*> encodingId <*> ushort <*> nameId <*> ushort <*> ushort 
+  where 
+    nameId     = toEnum . fromIntegral <$> ushort
+     
 allMeanings :: NameTable -> [String]
-allMeanings (NameTable _ _ _ ns _) = 
-    map (meaning . f1  . name_id) ns 
-  where
-    f1 :: Word16 -> NameId
-    f1 = toEnum . fromIntegral
+allMeanings (NameTable _ _ _ ns _) = map (meaning . name_id) ns 
+
     
 extractText :: NameRecord -> StringData -> String
 extractText (NameRecord _ _ _ _ l o) s = 
@@ -157,7 +204,7 @@ extractText (NameRecord _ _ _ _ l o) s =
 -- By itself, NameId is not unique           
 getMeaning :: NameId -> NameTable -> Maybe String
 getMeaning nid (NameTable _ _ _ ns sdata) = 
-    maybe Nothing sk $ find ((== nid) . toEnum . fromIntegral . name_id) ns
+    maybe Nothing sk $ find ((== nid) . name_id) ns
   where
     sk = Just . (extractText `flip` sdata)          
                                            

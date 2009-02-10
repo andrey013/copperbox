@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -22,6 +23,7 @@ import Graphics.OTFont.Utils
 import Text.ZParse
 
 import Control.Applicative
+import Data.Array.Unboxed
 import Data.Bits
 import qualified Data.ByteString as BS
 import Data.Int
@@ -65,18 +67,7 @@ extractTableStreams ts inp = foldr fn Map.empty ts
 --------------------------------------------------------------------------------
 -- NameTable
 
-nameTable :: Monad m => BinaryParserT m NameTable 
-nameTable  = do 
-    nf  <- word16be
-    nc  <- word16be
-    so  <- word16be
-    nr  <- count (fromIntegral nc) nameRecord
-    sd  <- flush
-    return $ NameTable nf nc so nr sd
 
-nameRecord :: Monad m => BinaryParserT m NameRecord 
-nameRecord = NameRecord <$>
-   word16be <*> word16be <*> word16be <*> word16be <*> word16be <*> word16be 
 
 
 
@@ -89,12 +80,27 @@ ushort = word16be
 ulong :: Monad m => BinaryParserT m Word32
 ulong = word32be
 
+byte :: Monad m => BinaryParserT m Word8
+byte = word8 
+
+char :: Monad m => BinaryParserT m Char 
+char = anychar  
+
 short :: Monad m => BinaryParserT m Int16
 short = int16be 
 
 fixed :: Monad m => BinaryParserT m Fixed 
 fixed = mk <$> word16be <*> word16be where
     mk a b = Fixed $ (fromIntegral a) + ((fromIntegral b) / 10000)
+
+-- TODO
+fword :: Monad m => BinaryParserT m FWord 
+fword = FWord <$> int16be 
+
+ufword :: Monad m => BinaryParserT m UFWord 
+ufword = UFWord <$> word16be 
+
+
 
 bitfield :: (Monad m, Bits a, Ord a, Unmarshal b) 
          => BinaryParserT m a -> BinaryParserT m [b]
@@ -103,6 +109,11 @@ bitfield p = unbits <$> p
 longDateTime :: Monad m => BinaryParserT m DateTime
 longDateTime = (\w -> DateTime w undefined) <$> word64be 
 
-    
-type ReadTable m a = BinaryParserT m a
 
+uarray :: (Monad m, Integral idx, Ix idx, IArray UArray a) =>
+        idx -> BinaryParserT m a -> BinaryParserT m (UArray idx a)
+uarray i p = mkArr <$> count (fromIntegral i) p where
+    mkArr xs = listArray (0,i-1) xs
+  
+type ReadTable m a = BinaryParserT m a
+type ReadData m a = BinaryParserT m a

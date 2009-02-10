@@ -24,6 +24,9 @@ import Data.Word
 
 type TableStreams = Map.Map String BS.ByteString
 
+--------------------------------------------------------------------------------
+-- Numbers - these will all need sorting out at some point
+
 -- 16.16 float
 newtype Fixed = Fixed { unFixed :: Double }
   deriving (Eq,Ord,Num)
@@ -33,6 +36,29 @@ instance Show Fixed where
     
 instance Read Fixed where
   readsPrec i s = map (\(d,r) -> (Fixed d,r)) $ readsPrec i s      
+
+
+newtype FWord = FWord { unFWord :: Int16 }
+  deriving (Eq,Ord,Num)
+
+instance Show FWord where 
+  show = show . unFWord
+    
+instance Read FWord where
+  readsPrec i s = map (\(d,r) -> (FWord d,r)) $ readsPrec i s   
+
+
+newtype UFWord = UFWord { unUFWord :: Word16 }
+  deriving (Eq,Ord,Num)
+
+instance Show UFWord where 
+  show = show . unUFWord
+    
+instance Read UFWord where
+  readsPrec i s = map (\(d,r) -> (UFWord d,r)) $ readsPrec i s  
+  
+--------------------------------------------------------------------------------
+-- DateTime - needs sorting out at some point
 
 data DateTime = DateTime Word64 UTCTime
 
@@ -69,32 +95,11 @@ data TableDirectory = TableDirectory {
   deriving (Eq,Show)  
  
 
-data CmapHeader = CmapHeader {
-      cmap_version    :: Word16,
-      cmap_num_tables :: Word16
-    } 
-  deriving (Eq,Show)  
+ 
 
 type StringData = BS.ByteString
   
-data NameTable = NameTable { 
-      nt_format       :: Word16,
-      nt_count        :: Word16,
-      string_offset   :: Word16,
-      name_records    :: [NameRecord],
-      string_data     :: StringData
-    }
-  deriving (Eq,Show)
-  
-data NameRecord = NameRecord {
-      platform_id     :: Word16,
-      encoding_id     :: Word16,
-      language_id     :: Word16,
-      name_id         :: Word16,
-      string_length   :: Word16,
-      str_offset      :: Word16
-    }
-  deriving (Eq,Show)
+
 
 
   

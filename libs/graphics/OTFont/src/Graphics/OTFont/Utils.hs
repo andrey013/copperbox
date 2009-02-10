@@ -23,7 +23,7 @@ import Data.Bits
 import qualified Data.ByteString as BS
 import Data.Int
 import qualified Data.Map as Map
-
+import Data.Word
 
 class Marshal a where marshal :: a -> Int
 
@@ -36,8 +36,21 @@ class BoundingBox a where
     y_min           :: a -> Int16
     x_max           :: a -> Int16
     y_max           :: a -> Int16
-      
 
+
+class IntegralBool a where
+    boolValue :: a -> Bool
+    
+    isTrue  :: a -> Bool
+    isTrue = boolValue
+    
+    isFalse :: a -> Bool       
+    isFalse = not . boolValue
+    
+instance IntegralBool Word32 where
+    boolValue 0 = True
+    boolValue _ = False
+    
 findTable :: String -> LaxFont -> Maybe (BS.ByteString)
 findTable name (LaxFont _ _ fm) = Map.lookup name fm
 

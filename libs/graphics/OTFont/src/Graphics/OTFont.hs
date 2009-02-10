@@ -19,15 +19,13 @@ module Graphics.OTFont (
     module Graphics.OTFont.Parse,
     module Graphics.OTFont.Pretty,
     module Graphics.OTFont.Utils,
-    module Graphics.OTFont.Table.Head,
-    module Graphics.OTFont.Table.Name,
+    module Graphics.OTFont.Table.RequiredCommonTables,
   ) where
 
 import Graphics.OTFont.Datatypes
 import Graphics.OTFont.Parse
 import Graphics.OTFont.Pretty
 import Graphics.OTFont.Utils
-import Graphics.OTFont.Table.Name
-import Graphics.OTFont.Table.Head
+import Graphics.OTFont.Table.RequiredCommonTables
 
 

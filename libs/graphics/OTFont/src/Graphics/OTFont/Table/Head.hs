@@ -23,7 +23,6 @@ import Graphics.OTFont.Pretty
 import Graphics.OTFont.Utils
 
 import Control.Applicative
--- import qualified Data.ByteString as BS
 import Data.Int 
 import Data.Word
 
@@ -163,7 +162,7 @@ data MacStyle =
 
 instance Meaning MacStyle where
   meaning S0_Bold         = "Bold"
-  meaning S1_Italic       = "Itlaic"
+  meaning S1_Italic       = "Italic"
   meaning S2_Underline    = "Underline"
   meaning S3_Outline      = "Outline"
   meaning S4_Shadow       = "Shadow"
