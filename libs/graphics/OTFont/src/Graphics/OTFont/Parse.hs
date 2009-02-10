@@ -1,3 +1,5 @@
+{-# OPTIONS -Wall #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.OTFont.Parse
@@ -12,7 +14,6 @@
 --
 --------------------------------------------------------------------------------
 
-
 module Graphics.OTFont.Parse where
 
 import Graphics.OTFont.Datatypes
@@ -21,7 +22,9 @@ import Graphics.OTFont.Utils
 import Text.ZParse
 
 import Control.Applicative
+import Data.Bits
 import qualified Data.ByteString as BS
+import Data.Int
 import qualified Data.Map as Map
 import Data.Word
 
@@ -82,7 +85,24 @@ nameRecord = NameRecord <$>
 
 ushort :: Monad m => BinaryParserT m Word16
 ushort = word16be
- 
 
+ulong :: Monad m => BinaryParserT m Word32
+ulong = word32be
 
-   
+short :: Monad m => BinaryParserT m Int16
+short = int16be 
+
+fixed :: Monad m => BinaryParserT m Fixed 
+fixed = mk <$> word16be <*> word16be where
+    mk a b = Fixed $ (fromIntegral a) + ((fromIntegral b) / 10000)
+
+bitfield :: (Monad m, Bits a, Ord a, Unmarshal b) 
+         => BinaryParserT m a -> BinaryParserT m [b]
+bitfield p = unbits <$> p 
+
+longDateTime :: Monad m => BinaryParserT m DateTime
+longDateTime = (\w -> DateTime w undefined) <$> word64be 
+
+    
+type ReadTable m a = BinaryParserT m a
+

@@ -1,6 +1,8 @@
+{-# OPTIONS -Wall #-}
+
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.OTFont.NameTable
+-- Module      :  Graphics.OTFont.Table.Name
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -8,12 +10,12 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- NameTable
+-- Name Table
 --
 --------------------------------------------------------------------------------
 
 
-module Graphics.OTFont.NameTable where
+module Graphics.OTFont.Table.Name where
 
 import Graphics.OTFont.Datatypes
 import Graphics.OTFont.Utils
@@ -21,7 +23,7 @@ import Graphics.OTFont.Utils
 import qualified Data.ByteString as BS
 import Data.Char ( chr ) 
 import Data.List ( find )
-
+import Data.Word
 
 data PlatformId = 
       Unicode
@@ -114,34 +116,37 @@ instance Enum NameId where
    toEnum  i = Reserved_name i 
 
   
-meaning :: NameId -> String
-meaning Copyright_notice    = "Copyright notice"
-meaning Font_family_name    = "Font family name"
-meaning Font_subfamily_name = "Font subfamily name"
-meaning Unique_font_id      = "Unique font id"
-meaning Full_font_name      = "Full font name"
-meaning Version_string      = "Version string"
-meaning PostScript_name     = "PostScript name"
-meaning Trademark           = "Trademark"
-meaning Manufacturer_name   = "Manufacturer name"
-meaning Designer_name       = "Designer name"
-meaning Description_text    = "Description text"
-meaning Vendor_URL          = "Vendor URL"
-meaning Designer_URL        = "Designer URL"
-meaning License_description = "License description"
-meaning License_info_URL    = "License info URL"
-meaning Reserved_as_ZERO    = "Reserved"
-meaning Preferred_family    = "Preferred family"
-meaning Preferred_subfamily = "Preferred subfamily"
-meaning Compatible_full     = "Compatible full"
-meaning Sample_text         = "Sample text"
-meaning PostScipt_CID       = "PostScipt CID findfont name"
-meaning (Reserved_name i)   = "Reserved " ++ show i 
+instance Meaning NameId where
+  meaning Copyright_notice    = "Copyright notice"
+  meaning Font_family_name    = "Font family name"
+  meaning Font_subfamily_name = "Font subfamily name"
+  meaning Unique_font_id      = "Unique font id"
+  meaning Full_font_name      = "Full font name"
+  meaning Version_string      = "Version string"
+  meaning PostScript_name     = "PostScript name"
+  meaning Trademark           = "Trademark"
+  meaning Manufacturer_name   = "Manufacturer name"
+  meaning Designer_name       = "Designer name"
+  meaning Description_text    = "Description text"
+  meaning Vendor_URL          = "Vendor URL"
+  meaning Designer_URL        = "Designer URL"
+  meaning License_description = "License description"
+  meaning License_info_URL    = "License info URL"
+  meaning Reserved_as_ZERO    = "Reserved"
+  meaning Preferred_family    = "Preferred family"
+  meaning Preferred_subfamily = "Preferred subfamily"
+  meaning Compatible_full     = "Compatible full"
+  meaning Sample_text         = "Sample text"
+  meaning PostScipt_CID       = "PostScipt CID findfont name"
+  meaning (Reserved_name i)   = "Reserved " ++ show i 
   
 allMeanings :: NameTable -> [String]
 allMeanings (NameTable _ _ _ ns _) = 
-    map (meaning . toEnum . fromIntegral . name_id) ns 
-
+    map (meaning . f1  . name_id) ns 
+  where
+    f1 :: Word16 -> NameId
+    f1 = toEnum . fromIntegral
+    
 extractText :: NameRecord -> StringData -> String
 extractText (NameRecord _ _ _ _ l o) s = 
     map (chr . fromIntegral) 

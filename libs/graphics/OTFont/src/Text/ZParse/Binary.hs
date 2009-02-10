@@ -88,6 +88,10 @@ word8 = do
 anychar :: Monad m => BinaryParserT m Char
 anychar = chr . fromIntegral <$> word8  
 
+word64be   :: Monad m => BinaryParserT m Word64
+word64be   = mkW64be <$> word8 <*> word8 <*> word8 <*> word8
+                     <*> word8 <*> word8 <*> word8 <*> word8
+
 word32be   :: Monad m => BinaryParserT m Word32
 word32be   = mkW32be <$> word8 <*> word8 <*> word8 <*> word8
                          
@@ -99,6 +103,19 @@ word16be   = mkW16be <$> word8 <*> word8
                          
 word16le   :: Monad m => BinaryParserT m Word16
 word16le   = mkW16le <$> word8 <*> word8
+
+int32be   :: Monad m => BinaryParserT m Int32
+int32be   = mkI32be <$> word8 <*> word8 <*> word8 <*> word8
+                         
+int32le   :: Monad m => BinaryParserT m Int32
+int32le   = mkI32le <$> word8 <*> word8 <*> word8 <*> word8
+
+int16be   :: Monad m => BinaryParserT m Int16
+int16be   = mkI16be <$> word8 <*> word8
+                         
+int16le   :: Monad m => BinaryParserT m Int16
+int16le   = mkI16le <$> word8 <*> word8
+
 
 
 mkW16le :: Word8 -> Word8 -> Word16
@@ -128,7 +145,7 @@ mkI16le a b = let v = mkW16le a b in
                       else 1 - fromIntegral (0xFFFF .&. v)
 
 -- 31 or 0 ?                
-mkI32le :: Word8 -> Word8 -> Word8 -> Word8 -> Int16
+mkI32le :: Word8 -> Word8 -> Word8 -> Word8 -> Int32
 mkI32le a b c d  = let v = mkW32le a b c d in
     if v `testBit`31 then fromIntegral v 
                      else 1 - fromIntegral (0xFFFFFFFF .&. v)                  
@@ -146,6 +163,20 @@ mkW32be a b c d = a' + b' + c' + d' where
     c' = (fromIntegral c) `shiftL` 8
     d' = (fromIntegral d) 
 
+mkW64be :: Word8 -> Word8 -> Word8 -> Word8 -> 
+           Word8 -> Word8 -> Word8 -> Word8 -> Word64
+mkW64be a b c d e f g h = a' + b' + c' + d' + e' + f' + g' + h' where
+    a' = (fromIntegral a) `shiftL` 54
+    b' = (fromIntegral b) `shiftL` 48
+    c' = (fromIntegral c) `shiftL` 40
+    d' = (fromIntegral d) `shiftL` 32
+    e' = (fromIntegral e) `shiftL` 24
+    f' = (fromIntegral f) `shiftL` 16
+    g' = (fromIntegral g) `shiftL` 8
+    h' = (fromIntegral h) 
+    
+    
+    
 mkI8be :: Word8 -> Int16
 mkI8be a = if a `testBit` 7 then fromIntegral a 
                             else 1 - fromIntegral (0xFF .&. a)
@@ -156,7 +187,7 @@ mkI16be a b = let v = mkW16be a b in
     if v `testBit` 15 then fromIntegral v 
                       else 1 - fromIntegral (0xFFFF .&. v)
                             
-mkI32be :: Word8 -> Word8 -> Word8 -> Word8 -> Int16
+mkI32be :: Word8 -> Word8 -> Word8 -> Word8 -> Int32
 mkI32be a b c d  = let v = mkW32be a b c d in
     if v `testBit` 31 then fromIntegral v 
                       else 1 - fromIntegral (0xFFFFFFFF .&. v) 

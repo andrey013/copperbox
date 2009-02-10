@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# OPTIONS -Wall #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.OTFont.Datatypes
@@ -12,15 +14,34 @@
 --
 --------------------------------------------------------------------------------
 
-
 module Graphics.OTFont.Datatypes where
 
 import qualified Data.ByteString as BS
 import Data.Int
 import qualified Data.Map as Map
+import Data.Time.Clock
 import Data.Word
 
 type TableStreams = Map.Map String BS.ByteString
+
+-- 16.16 float
+newtype Fixed = Fixed { unFixed :: Double }
+  deriving (Eq,Ord,Num)
+
+instance Show Fixed where 
+  show = show . unFixed
+    
+instance Read Fixed where
+  readsPrec i s = map (\(d,r) -> (Fixed d,r)) $ readsPrec i s      
+
+data DateTime = DateTime Word64 UTCTime
+
+instance Show DateTime where
+  show (DateTime i _) = show i
+  
+instance Eq DateTime where
+  DateTime i _ == DateTime j _ = i == j
+  
 
 data LaxFont = LaxFont {
       offset_table    :: OffsetTable,
@@ -80,10 +101,10 @@ data NameRecord = NameRecord {
   
 data GlyfData = GlyfData {
       num_contours    :: Int16,
-      x_min           :: Int16,
-      y_min           :: Int16,
-      x_max           :: Int16,
-      y_max           :: Int16
+      glyf_x_min      :: Int16,
+      glyf_y_min      :: Int16,
+      glyf_x_max      :: Int16,
+      glyf_y_max      :: Int16
     }
   deriving (Eq,Show)
     

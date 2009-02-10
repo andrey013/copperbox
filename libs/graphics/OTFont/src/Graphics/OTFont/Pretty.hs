@@ -1,3 +1,6 @@
+{-# OPTIONS -Wall #-}
+{-# OPTIONS -fno-warn-orphans #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.OTFont.Pretty
@@ -16,12 +19,17 @@
 module Graphics.OTFont.Pretty where
 
 import Graphics.OTFont.Datatypes
+import Graphics.OTFont.Utils
 
 import Data.Char
 import qualified Data.Map as Map 
-import Data.Word
 import Numeric ( showHex )
 import Text.PrettyPrint.Leijen
+
+
+
+ppMeaning :: Meaning a => a -> Doc
+ppMeaning = text . meaning
 
 instance Pretty LaxFont where
   pretty (LaxFont ot dirs fm) = 
@@ -71,6 +79,9 @@ instance Pretty NameRecord where
 
 prettyThenLine :: Pretty a => a -> Doc
 prettyThenLine a = pretty a <> line
+
+ppTable :: String -> [Doc] -> Doc
+ppTable s ds = title s <$> vsep ds
   
 title :: String -> Doc   
 title s = string s <$> uline (length s) where
@@ -81,6 +92,15 @@ field s i d = fill i (text s) <> equals <+> d
  
 integral :: Integral i => i -> Doc
 integral = integer . fromIntegral
+
+instance Pretty Fixed where
+  pretty = double . unFixed
+
+ppBitfield :: Meaning a => [a] -> Doc
+ppBitfield = list . map ppMeaning 
+
+instance Pretty DateTime where
+  pretty _ = text "ugh!" 
 
 pptag :: String -> Doc
 pptag s | all isPrint s = text s
