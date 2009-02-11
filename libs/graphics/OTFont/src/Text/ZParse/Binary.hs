@@ -133,22 +133,12 @@ mkW32le a b c d = a' + b' + c' + d' where
 
 -- For Data.Bits - 0 is lsb, 7 is msb
 
--- 7 or 0 ?
-mkI8le :: Word8 -> Int16
-mkI8le a = if a `testBit` 7 then fromIntegral a 
-                            else 1 - fromIntegral (0xFF .&. a)
-                      
--- 15 or 0 ?
-mkI16le :: Word8 -> Word8 -> Int16
-mkI16le a b = let v = mkW16le a b in
-    if v `testBit` 15 then fromIntegral v 
-                      else 1 - fromIntegral (0xFFFF .&. v)
 
--- 31 or 0 ?                
+mkI16le :: Word8 -> Word8 -> Int16
+mkI16le a b = fromIntegral $ mkW16le a b
+              
 mkI32le :: Word8 -> Word8 -> Word8 -> Word8 -> Int32
-mkI32le a b c d  = let v = mkW32le a b c d in
-    if v `testBit`31 then fromIntegral v 
-                     else 1 - fromIntegral (0xFFFFFFFF .&. v)                  
+mkI32le a b c d  = fromIntegral $ mkW32le a b c d                
 
                
 mkW16be :: Word8 -> Word8 -> Word16
@@ -177,18 +167,12 @@ mkW64be a b c d e f g h = a' + b' + c' + d' + e' + f' + g' + h' where
     
     
     
-mkI8be :: Word8 -> Int16
-mkI8be a = if a `testBit` 7 then fromIntegral a 
-                            else 1 - fromIntegral (0xFF .&. a)
-                      
+
 
 mkI16be :: Word8 -> Word8 -> Int16
-mkI16be a b = let v = mkW16be a b in
-    if v `testBit` 15 then fromIntegral v 
-                      else 1 - fromIntegral (0xFFFF .&. v)
+mkI16be a b = fromIntegral $ mkW16be a b
                             
 mkI32be :: Word8 -> Word8 -> Word8 -> Word8 -> Int32
-mkI32be a b c d  = let v = mkW32be a b c d in
-    if v `testBit` 31 then fromIntegral v 
-                      else 1 - fromIntegral (0xFFFFFFFF .&. v) 
-                       
+mkI32be a b c d = fromIntegral $ mkW32be a b c d
+                      
+                   

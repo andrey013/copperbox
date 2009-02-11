@@ -51,8 +51,8 @@ instance IntegralBool Word32 where
     boolValue 0 = True
     boolValue _ = False
     
-findTable :: String -> LaxFont -> Maybe (BS.ByteString)
-findTable name (LaxFont _ _ fm) = Map.lookup name fm
+findTable :: String -> ProtoFace -> Maybe (BS.ByteString)
+findTable name (ProtoFace _ _ fm) = Map.lookup name fm
 
 section :: Int -> Int -> BS.ByteString -> BS.ByteString 
 section start len inp

@@ -22,8 +22,6 @@ import Graphics.OTFont.Parse
 import Graphics.OTFont.Pretty
 import Graphics.OTFont.Utils
 
-import Text.ZParse
-
 import Control.Applicative
 import Data.Word
 
@@ -62,4 +60,8 @@ instance Pretty PostTable where
       , field "max_mem_type1"       24 (integral $ max_mem_type1 t) 
       ]
 
-                            
+{-
+data PostAppendix_Version_2_0 = PostAppendix_Version_2_0
+      number_of_glyphs    :: Word16,
+      glyph_name_index    :: UArray Word16 Word16
+-}                     

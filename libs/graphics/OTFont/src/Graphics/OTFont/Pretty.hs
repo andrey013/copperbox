@@ -21,7 +21,9 @@ module Graphics.OTFont.Pretty where
 import Graphics.OTFont.Datatypes
 import Graphics.OTFont.Utils
 
+import Data.Array.Unboxed
 import Data.Char
+import Data.List
 import qualified Data.Map as Map 
 import Numeric ( showHex )
 import Text.PrettyPrint.Leijen
@@ -31,8 +33,8 @@ import Text.PrettyPrint.Leijen
 ppMeaning :: Meaning a => a -> Doc
 ppMeaning = text . meaning
 
-instance Pretty LaxFont where
-  pretty (LaxFont ot dirs fm) = 
+instance Pretty ProtoFace where
+  pretty (ProtoFace ot dirs fm) = 
       pretty ot <$> vsep (map prettyThenLine dirs) 
                 <$> field "map size" 16 (integral (Map.size fm))
 
@@ -82,7 +84,15 @@ instance Pretty UFWord where
   
   
 ppBitfield :: Meaning a => [a] -> Doc
-ppBitfield = list . map ppMeaning 
+ppBitfield = list . map ppMeaning
+
+ppArray :: (IArray arr a, Ix idx, Enum idx) => (a -> Doc) -> arr idx a -> Doc
+ppArray f arr = foldl' (\a i -> a <> f (arr!i)) empty xs where
+    xs        = let (l,u) = bounds arr in [l..u]
+
+pchar :: Char -> Doc
+pchar ch | isPrint ch   = char ch
+         | otherwise    = char '.' 
 
 instance Pretty DateTime where
   pretty _ = text "ugh!" 
@@ -97,3 +107,9 @@ pptag s | all isPrint s = text s
 pphex :: Integral i => i -> Doc
 pphex = text . (showHex `flip` [])
 
+hex2 :: Integral i => i -> String
+hex2 i | i < 16     = '0' : showHex i [] 
+       | otherwise  = showHex i []
+
+pphex2 :: Integral i => i -> Doc    
+pphex2 = text . hex2          

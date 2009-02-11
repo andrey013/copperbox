@@ -28,7 +28,7 @@ import Data.Array.Unboxed
 import Data.Int 
 import Data.Word
 
-import Text.PrettyPrint.Leijen ( Pretty(..), text )
+import Text.PrettyPrint.Leijen ( Pretty(..) )
 
 data OS2Table = OS2Table { 
       os2_version             :: Word16,
@@ -74,27 +74,27 @@ data OS2Table = OS2Table {
 readOS2Table :: Monad m => ReadData m OS2Table
 readOS2Table = OS2Table <$> 
         ushort          -- os2_version
-    <*> short   
-    <*> ushort  
-    <*> ushort
-    <*> ushort  
-    <*> short   
-    <*> short   
-    <*> short
-    <*> short   
-    <*> short   
+    <*> short           -- x_avg_char_width   
+    <*> ushort          -- us_weight_class  
+    <*> ushort          -- us_width_class
+    <*> ushort          -- fs_type
+    <*> short           -- y_subscript_x_size   
     <*> short   
     <*> short
     <*> short   
     <*> short   
     <*> short   
     <*> short
+    <*> short   
+    <*> short   
+    <*> short   
+    <*> short           -- s_family_class
     <*> uarray 10 byte  -- panose
-    <*> ulong  
-    <*> ulong  
-    <*> ulong  
-    <*> ulong
-    <*> uarray 4 char  -- ach_vendor_id
+    <*> ulong           -- ul_unicode_range1  
+    <*> ulong           -- ul_unicode_range2
+    <*> ulong           -- ul_unicode_range3
+    <*> ulong           -- ul_unicode_range4
+    <*> uarray 4 char   -- ach_vendor_id
     <*> ushort  
     <*> ushort  
     <*> ushort
@@ -129,12 +129,12 @@ instance Pretty OS2Table where
       , field "y_strikeout_size"        24 (integral  $ y_strikeout_size t)
       , field "y_strikeout_position"    24 (integral  $ y_strikeout_position t)
       , field "s_family_class"          24 (integral  $ s_family_class t)
-      , field "panose"                  24 (text "Arr - todo")
+      , field "panose"                  24 (ppArray pphex2 $ panose t)
       , field "ul_unicode_range1"       24 (integral  $ ul_unicode_range1 t)
       , field "ul_unicode_range2"       24 (integral  $ ul_unicode_range2 t)
       , field "ul_unicode_range3"       24 (integral  $ ul_unicode_range3 t)
       , field "ul_unicode_range4"       24 (integral  $ ul_unicode_range4 t)
-      , field "ach_vendor_id"           24 (text "Arr - todo")
+      , field "ach_vendor_id"           24 (ppArray pchar $ ach_vendor_id t)
       , field "fs_selection"            24 (integral  $ fs_selection t)
       , field "first_char_index"        24 (integral  $ us_first_char_index t)
       , field "last_char_index"         24 (integral  $ us_last_char_index t)

@@ -22,14 +22,13 @@ import qualified Data.Map as Map
 import Data.Time.Clock
 import Data.Word
 
-type TableStreams = Map.Map String BS.ByteString
 
 --------------------------------------------------------------------------------
 -- Numbers - these will all need sorting out at some point
 
 -- 16.16 float
 newtype Fixed = Fixed { unFixed :: Double }
-  deriving (Eq,Ord,Num)
+  deriving (Eq,Ord,Num, Fractional)
 
 instance Show Fixed where 
   show = show . unFixed
@@ -68,8 +67,11 @@ instance Show DateTime where
 instance Eq DateTime where
   DateTime i _ == DateTime j _ = i == j
   
+--------------------------------------------------------------------------------
+--
+type TableStreams = Map.Map String BS.ByteString
 
-data LaxFont = LaxFont {
+data ProtoFace = ProtoFace {
       offset_table    :: OffsetTable,
       table_dirs      :: [TableDirectory],
       table_data      :: TableStreams
@@ -104,12 +106,5 @@ type StringData = BS.ByteString
 
   
   
-data GlyfData = GlyfData {
-      num_contours    :: Int16,
-      glyf_x_min      :: Int16,
-      glyf_y_min      :: Int16,
-      glyf_x_max      :: Int16,
-      glyf_y_max      :: Int16
-    }
-  deriving (Eq,Show)
+
     
