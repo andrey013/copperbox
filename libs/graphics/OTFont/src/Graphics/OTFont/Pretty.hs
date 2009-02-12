@@ -33,6 +33,9 @@ import Text.PrettyPrint.Leijen
 ppMeaning :: Meaning a => a -> Doc
 ppMeaning = text . meaning
 
+meaningParensEnum :: (Meaning a, Enum a) => a -> Doc
+meaningParensEnum a = text (meaning a) <+> parens (integral $ fromEnum a)
+
 instance Pretty ProtoFace where
   pretty (ProtoFace ot dirs fm) = 
       pretty ot <$> vsep (map prettyThenLine dirs) 

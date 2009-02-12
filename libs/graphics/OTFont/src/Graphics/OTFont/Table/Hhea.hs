@@ -21,11 +21,8 @@ import Graphics.OTFont.Datatypes
 import Graphics.OTFont.Parse
 import Graphics.OTFont.Pretty
 
-import Text.ZParse
-
 import Control.Applicative
-import Data.Int 
-import Data.Word
+
 
 import Text.PrettyPrint.Leijen ( Pretty(..) )
 
@@ -38,15 +35,15 @@ data HheaTable = HheaTable {
       min_left_side_bearing   :: FWord,
       min_right_side_bearing  :: FWord,
       x_max_extent            :: FWord,
-      caret_slope_rise        :: Int16,
-      caret_slope_run         :: Int16,
-      caret_offset            :: Int16,
-      hea_reserved_a          :: Int16,
-      hea_reserved_b          :: Int16,
-      hea_reserved_c          :: Int16,
-      hea_reserved_d          :: Int16,
-      metric_data_format      :: Int16,
-      number_of_h_metrics     :: Word16
+      caret_slope_rise        :: Short,
+      caret_slope_run         :: Short,
+      caret_offset            :: Short,
+      hea_reserved_a          :: Short,
+      hea_reserved_b          :: Short,
+      hea_reserved_c          :: Short,
+      hea_reserved_d          :: Short,
+      metric_data_format      :: Short,
+      number_of_h_metrics     :: UShort
       
     }
   deriving (Eq,Show)

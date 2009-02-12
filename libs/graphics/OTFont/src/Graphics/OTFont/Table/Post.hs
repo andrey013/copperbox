@@ -23,7 +23,6 @@ import Graphics.OTFont.Pretty
 import Graphics.OTFont.Utils
 
 import Control.Applicative
-import Data.Word
 
 import Text.PrettyPrint.Leijen ( Pretty(..) )
 
@@ -32,11 +31,11 @@ data PostTable = PostTable {
       italic_angle        :: Fixed,
       underline_position  :: FWord,
       underline_thickness :: FWord,
-      is_fixed_pitch      :: Word32,      -- c.f. IntegralBool
-      min_mem_type42      :: Word32,
-      max_mem_type42      :: Word32,
-      min_mem_type1       :: Word32,
-      max_mem_type1       :: Word32
+      is_fixed_pitch      :: ULong,      -- c.f. IntegralBool
+      min_mem_type42      :: ULong,
+      max_mem_type42      :: ULong,
+      min_mem_type1       :: ULong,
+      max_mem_type1       :: ULong
     }
   deriving (Eq,Show)
 

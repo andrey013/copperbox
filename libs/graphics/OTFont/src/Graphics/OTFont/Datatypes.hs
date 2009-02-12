@@ -24,6 +24,23 @@ import Data.Word
 
 
 --------------------------------------------------------------------------------
+-- Aliases
+
+type Byte   = Word8
+
+-- This is a @Char@ in terms of the OFF, naturally we use something else
+type SByte  = Int8 
+
+type UShort = Word16
+type Short  = Int16 
+    
+type ULong  = Word32
+type Long   = Int32
+
+type Offset = Word16
+
+
+--------------------------------------------------------------------------------
 -- Numbers - these will all need sorting out at some point
 
 -- 16.16 float

@@ -17,57 +17,55 @@
 
 module Graphics.OTFont.Table.OS2 where
 
-
+import Graphics.OTFont.Datatypes
 import Graphics.OTFont.Parse
 import Graphics.OTFont.Pretty
 
--- import Text.ZParse hiding ( text )
 
 import Control.Applicative
 import Data.Array.Unboxed
-import Data.Int 
-import Data.Word
+
 
 import Text.PrettyPrint.Leijen ( Pretty(..) )
 
 data OS2Table = OS2Table { 
-      os2_version             :: Word16,
-      x_avg_char_width        :: Int16,
-      us_weight_class         :: Word16,
-      us_width_class          :: Word16,
-      fs_type                 :: Word16,
-      y_subscript_x_size      :: Int16,
-      y_subscript_y_size      :: Int16,
-      y_subscript_x_offset    :: Int16,
-      y_subscript_y_offset    :: Int16,
-      y_superscript_x_size    :: Int16,
-      y_superscript_y_size    :: Int16,
-      y_superscript_x_offset  :: Int16,
-      y_superscript_y_offset  :: Int16,
-      y_strikeout_size        :: Int16,
-      y_strikeout_position    :: Int16,
-      s_family_class          :: Int16,
-      panose                  :: UArray Int Word8,  -- 10
-      ul_unicode_range1       :: Word32,
-      ul_unicode_range2       :: Word32,
-      ul_unicode_range3       :: Word32,
-      ul_unicode_range4       :: Word32,
+      os2_version             :: UShort,
+      x_avg_char_width        :: Short,
+      us_weight_class         :: UShort,
+      us_width_class          :: UShort,
+      fs_type                 :: UShort,
+      y_subscript_x_size      :: Short,
+      y_subscript_y_size      :: Short,
+      y_subscript_x_offset    :: Short,
+      y_subscript_y_offset    :: Short,
+      y_superscript_x_size    :: Short,
+      y_superscript_y_size    :: Short,
+      y_superscript_x_offset  :: Short,
+      y_superscript_y_offset  :: Short,
+      y_strikeout_size        :: Short,
+      y_strikeout_position    :: Short,
+      s_family_class          :: Short,
+      panose                  :: UArray Int Byte,  -- 10
+      ul_unicode_range1       :: ULong,
+      ul_unicode_range2       :: ULong,
+      ul_unicode_range3       :: ULong,
+      ul_unicode_range4       :: ULong,
       ach_vendor_id           :: UArray Int Char,   -- 4
-      fs_selection            :: Word16,
-      us_first_char_index     :: Word16,
-      us_last_char_index      :: Word16,
-      s_typo_ascender         :: Int16,
-      s_typo_descender        :: Int16,
-      s_typo_line_gap         :: Int16,
-      us_win_ascent           :: Word16,
-      us_win_descent          :: Word16,
-      ul_code_page_range1     :: Word32,
-      ul_code_page_range2     :: Word32,
-      sx_height               :: Int16,
-      s_cap_height            :: Int16,
-      us_default_char         :: Word16,
-      us_break_char           :: Word16,
-      us_max_context          :: Word16
+      fs_selection            :: UShort,
+      us_first_char_index     :: UShort,
+      us_last_char_index      :: UShort,
+      s_typo_ascender         :: Short,
+      s_typo_descender        :: Short,
+      s_typo_line_gap         :: Short,
+      us_win_ascent           :: UShort,
+      us_win_descent          :: UShort,
+      ul_code_page_range1     :: ULong,
+      ul_code_page_range2     :: ULong,
+      sx_height               :: Short,
+      s_cap_height            :: Short,
+      us_default_char         :: UShort,
+      us_break_char           :: UShort,
+      us_max_context          :: UShort
     }
   deriving (Eq,Show)
 

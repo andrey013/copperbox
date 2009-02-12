@@ -23,8 +23,7 @@ import Graphics.OTFont.Pretty
 import Graphics.OTFont.Utils
 
 import Control.Applicative
-import Data.Int 
-import Data.Word
+
 
 import Text.PrettyPrint.Leijen ( Pretty(..) )
 
@@ -32,21 +31,21 @@ import Text.PrettyPrint.Leijen ( Pretty(..) )
 data HeadTable = HeadTable {
       table_version_num       :: Fixed,
       font_revision           :: Fixed,
-      check_sum_adjust        :: Word32,
-      magic_number            :: Word32,
+      check_sum_adjust        :: ULong,
+      magic_number            :: ULong,
       head_flags              :: [HeadFlag],
-      units_per_em            :: Word16,
+      units_per_em            :: UShort,
       created_timestamp       :: DateTime,
       modified_timestamp      :: DateTime,
-      all_x_min               :: Int16,
-      all_y_min               :: Int16,
-      all_x_max               :: Int16,
-      all_y_max               :: Int16,
+      all_x_min               :: Short,
+      all_y_min               :: Short,
+      all_x_max               :: Short,
+      all_y_max               :: Short,
       mac_style               :: [MacStyle],
-      smallest_readable_size  :: Word16,
-      font_direction_hint     :: Int16,      -- this could be a type...
-      index_to_loc_format     :: Int16,
-      glyph_data_format       :: Int16
+      smallest_readable_size  :: UShort,
+      font_direction_hint     :: Short,      -- this could be a type...
+      index_to_loc_format     :: Short,
+      glyph_data_format       :: Short
   }
   deriving (Eq,Show)
 

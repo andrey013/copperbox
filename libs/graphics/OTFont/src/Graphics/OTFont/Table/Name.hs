@@ -30,14 +30,14 @@ import Control.Applicative
 import qualified Data.ByteString as BS
 import Data.Char ( chr ) 
 import Data.List ( find )
-import Data.Word
+
 
 import Text.PrettyPrint.Leijen ( Pretty(..), indent, vsep )
 
 data NameTable = NameTable { 
-      nt_format       :: Word16,
-      nt_count        :: Word16,
-      string_offset   :: Word16,
+      nt_format       :: UShort,
+      nt_count        :: UShort,
+      string_offset   :: UShort,
       name_records    :: [NameRecord],
       string_data     :: StringData
     }
@@ -54,10 +54,10 @@ instance Pretty NameTable where
 data NameRecord = NameRecord {
       platform_id     :: PlatformId,
       encoding_id     :: EncodingId,
-      language_id     :: Word16,
+      language_id     :: UShort,
       name_id         :: NameId,
-      string_length   :: Word16,
-      str_offset      :: Word16
+      string_length   :: UShort,
+      str_offset      :: UShort
     }
   deriving (Eq,Show)
   

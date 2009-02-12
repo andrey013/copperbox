@@ -20,18 +20,14 @@ module Graphics.OTFont.Table.Glyf where
 import Graphics.OTFont.Datatypes
 import Graphics.OTFont.Parse
 import Graphics.OTFont.Pretty
-import Graphics.OTFont.Utils
-import Graphics.OTFont.Table.CommonDatatypes
 
 import Text.ZParse
 
 import Control.Applicative
 import Data.Array.Unboxed hiding (array)
-import qualified Data.Foldable as F
-import Data.Int 
-import Data.Word
 
-import Text.PrettyPrint.Leijen ( Pretty(..), Doc, space, (<>) )
+
+import Text.PrettyPrint.Leijen ( Pretty(..), Doc, space, (<>), hsep )
 
 data Glyf = SimpleGlyf    { gylf_header       :: GlyfHeader,
                             simple_glyf_body  :: SimpleGlyph }
@@ -42,11 +38,11 @@ data Glyf = SimpleGlyf    { gylf_header       :: GlyfHeader,
                                   
   
 data GlyfHeader = GlyfHeader { 
-      num_contours    :: Int16,
-      glyf_x_min      :: Int16,
-      glyf_y_min      :: Int16,
-      glyf_x_max      :: Int16,
-      glyf_y_max      :: Int16
+      num_contours    :: Short,
+      glyf_x_min      :: Short,
+      glyf_y_min      :: Short,
+      glyf_x_max      :: Short,
+      glyf_y_max      :: Short
     }
   deriving (Eq,Show)
 
@@ -72,7 +68,7 @@ instance Pretty Glyf where
       ys = simpleGlyphFields b
       
       
-  pretty (CompositeGlyf h b) = ppTable "composite glyph" (xs ++ ys) where
+  pretty (CompositeGlyf h _b) = ppTable "composite glyph" (xs ++ ys) where
       xs = headerFields h
       ys = []
 
@@ -92,23 +88,22 @@ headerFields t =
 --------------------------------------------------------------------------------
 --
 
-{-
-data GlyphPoint = OnCurvePt Word16 Word16
-                | OffCurvePt Word16 Word16
+data OutlinePoint = OnCurvePt UShort UShort
+                | OffCurvePt UShort UShort
   deriving (Eq,Ord,Show)
--}  
+ 
 
-data Coord = Coord Word8 Word8
+data Coord = Coord UShort UShort
   deriving (Eq,Show)
     
 
 data SimpleGlyph = SimpleGlyph {
-      end_pts_of_contours   :: Array Int16 Word16,
-      instruction_length    :: Word16,
-      instructions          :: UArray Word16 Word8,  -- uninterpreted
-      sg_flags              :: Array Word16 Word8,
-      x_coordinates         :: Array Word16 Coord,
-      y_coordinates         :: Array Word16 Coord
+      end_pts_of_contours   :: [UShort],
+      instruction_length    :: UShort,
+      instructions          :: UArray UShort Byte,  -- uninterpreted
+      sg_flags              :: Array UShort Byte,
+      x_coordinates         :: Array UShort Coord,
+      y_coordinates         :: Array UShort Coord
     }
   deriving (Eq,Show)
   
@@ -124,19 +119,30 @@ data SimpleGlyphFlag  =
     | SG7_Reserved
   deriving (Enum,Eq,Ord,Show)
 
-readSimpleGlyph :: Monad m => Int16 -> ReadData m SimpleGlyph
+readSimpleGlyph :: Monad m => Short -> ReadData m SimpleGlyph
 readSimpleGlyph nc = do
-    ends  <- array nc ushort
-    let csize = fromIntegral $ F.foldr max 0 ends
+    ends  <- count (fromIntegral nc) ushort
+    let csize = 1 + fromIntegral (foldr max 0 ends)
+    
     len   <- ushort
     insts <- uarray len byte
     flags <- array csize byte
     return $ SimpleGlyph ends len insts flags undefined undefined
 
 
+-- Consume 1 byte to get a UShort
+extract1byte :: Monad m => ReadData m UShort
+extract1byte = fromIntegral <$> word8
+
+-- Consume 2 bytes to get a UShort
+extract2byte :: Monad m => ReadData m UShort
+extract2byte = word16be
+
+
+
 simpleGlyphFields :: SimpleGlyph -> [Doc]
 simpleGlyphFields (SimpleGlyph ends _ _ flags _ _) = 
-    [ field "end_pts_of_contours"      24 (ppArray ((space <>) . integral) ends)
+    [ field "end_pts_of_contours"      24 (hsep $ map ((space <>) . integral) ends)
     , field "flags"                    24 (ppArray ((space <>) . pphex2) flags)
     ]
     
@@ -145,8 +151,8 @@ simpleGlyphFields (SimpleGlyph ends _ _ flags _ _) =
 --
 
 data CompositeGlyph = CompositeGlyph {
-      component_flag        :: Int16,
-      glyph_index           :: Int16
+      component_flag    :: Short,
+      glyph_index       :: Short
     }
   deriving (Eq,Show)
   
@@ -165,7 +171,7 @@ data CompositeGlyphFlag  =
     | CG10_OverlapCompound 
     | CG11_ScaledomponentOffset
     | CG12_UnscaledComponentOffset
-    | CompositeGlyphFlag Word16
+    | CompositeGlyphFlag UShort
   deriving (Eq,Ord,Show)
   
 readCompositeGlyph :: Monad m => ReadData m CompositeGlyph
