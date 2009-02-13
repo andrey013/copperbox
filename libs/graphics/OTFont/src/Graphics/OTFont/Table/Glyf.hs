@@ -29,10 +29,15 @@ import Data.Array.Unboxed hiding (array)
 
 import Text.PrettyPrint.Leijen ( Pretty(..), Doc, space, (<>), hsep )
 
-data Glyf = SimpleGlyf    { gylf_header       :: GlyfHeader,
-                            simple_glyf_body  :: SimpleGlyph }
-          | CompositeGlyf { gylf_header       :: GlyfHeader,
-                            comp_glyf_body    :: CompositeGlyph }                 
+data Glyf = 
+      SimpleGlyf { 
+          gylf_header       :: GlyfHeader,
+          simple_glyf_body  :: SimpleGlyph 
+        }
+    | CompositeGlyf { 
+          gylf_header       :: GlyfHeader,
+          comp_glyf_body    :: CompositeGlyph 
+      }                 
   deriving (Eq,Show)
   
                                   

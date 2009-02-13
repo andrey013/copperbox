@@ -25,7 +25,7 @@ import Graphics.OTFont.Table.CommonDatatypes
 import Text.ZParse
 
 import Control.Applicative
-import Data.Array.Unboxed
+import Data.Array.Unboxed hiding ( array )
 
 
 import Text.PrettyPrint.Leijen ( Pretty(..) )
@@ -93,6 +93,7 @@ instance Pretty EncodingRecord where
 -- All the formats have (format::ushort) when parsing you could 
 -- peek this to see what to do next... 
 
+
 data CmapSubtable = 
       Format0_BE { 
           subtable_format       :: UShort,
@@ -147,7 +148,7 @@ data CmapSubtable =
           ul_language           :: ULong,
           fmt10_start_char_code :: ULong,
           fmt10_num_chars       :: ULong,
-          fmt10_glyphs          :: [UShort]
+          fmt10_glyphs          :: Array Int UShort
       }
     | Format12_SC { 
           subtable_format       :: UShort,
@@ -176,4 +177,82 @@ data CharacterCodeGroup = CharacterCodeGroup {
   deriving (Eq,Show) 
 
 
-                              
+readCmapSubtable :: Monad m => ReadData m CmapSubtable 
+readCmapSubtable = ushort >>= subtable 
+  where
+    subtable  0 = readFormat0_BE
+    subtable  2 = readFormat2_HBM
+    subtable  4 = readFormat4_SMDV
+    subtable  6 = readFormat6_TTM
+    subtable  8 = readFormat8_Mx
+    subtable 10 = readFormat10_TA
+    subtable 12 = readFormat12_SC
+    subtable  i = error $ "unrecognized cmap subtable " ++ show i
+    
+    readFormat0_BE    = Format0_BE 0 <$>
+                            ushort <*> ushort <*> uarray 256 byte
+                            
+    readFormat2_HBM   = Format2_HBM 2 <$>
+                                ushort 
+                            <*> ushort
+                            <*> uarray 256 ushort 
+                            <*> undefined 
+                            <*> undefined
+                            
+    readFormat4_SMDV  = do len      <- ushort
+                           lang     <- ushort 
+                           scX2     <- ushort
+                           let seg_count = fromIntegral $ scX2 `div` 2
+                           sr       <- ushort
+                           es       <- ushort
+                           rs       <- ushort
+                           ec_arr   <- uarray seg_count ushort
+                           rp       <- ushort
+                           sc_arr   <- uarray seg_count ushort
+                           idd_arr  <- uarray seg_count short
+                           idr_arr  <- uarray seg_count ushort
+                           gid_arr  <- undefined
+                           return $ Format4_SMDV 4          len 
+                                                 lang       scX2 
+                                                 sr         es 
+                                                 rs         ec_arr     
+                                                 rp         sc_arr 
+                                                 idd_arr    idr_arr
+                                                 gid_arr  
+    readFormat6_TTM   = do len      <- ushort
+                           lang     <- ushort
+                           fc       <- ushort
+                           ec       <- ushort
+                           gid_arr  <- uarray (fromIntegral ec) ushort
+                           return $ Format6_TTM 6 len lang fc ec gid_arr
+                           
+    readFormat8_Mx    = do res      <- ushort
+                           len      <- ulong
+                           lang     <- ulong
+                           is32_arr <- uarray 8192 byte
+                           n_grps   <- ulong
+                           grps     <- count (fromIntegral n_grps) readCharacterCodeGroup
+                           return $ Format8_Mx 8 res len lang
+                                               is32_arr n_grps grps
+    readFormat10_TA   = do res      <- ushort
+                           len      <- ulong
+                           lang     <- ulong
+                           scc      <- ulong
+                           n_chars  <- ulong
+                           g_arr    <- array (fromIntegral n_chars) ushort 
+                           return $ Format10_TA 10 res len lang 
+                                             scc n_chars g_arr
+          
+          
+    readFormat12_SC   = do res      <- ushort
+                           len      <- ulong
+                           lang     <- ulong
+                           n_grps   <- ulong
+                           grps     <- count (fromIntegral n_grps) readCharacterCodeGroup
+                           return $ Format12_SC 12 res len lang
+                                                n_grps grps    
+
+
+readCharacterCodeGroup :: Monad m => ReadData m CharacterCodeGroup
+readCharacterCodeGroup = CharacterCodeGroup <$>
+      ulong <*> ulong <*> ulong                     
