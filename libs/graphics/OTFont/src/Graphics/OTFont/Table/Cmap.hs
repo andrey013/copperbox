@@ -28,24 +28,28 @@ import Control.Applicative
 import Data.Array.Unboxed hiding ( array )
 
 
-import Text.PrettyPrint.Leijen ( Pretty(..) )
+import Text.PrettyPrint.Leijen ( Pretty(..), Doc )
 
 data CmapTable = CmapTable { 
       cmap_header       :: CmapHeader,
-      encoding_records  :: [EncodingRecord]
+      encoding_records  :: [EncodingRecord],
+      cmap_subtables    :: [CmapSubtable]
     }
   deriving (Eq,Show)
 
 readCmapTable :: Monad m => ReadData m CmapTable
 readCmapTable = do 
-    hdr@(CmapHeader _ i) <- readCmapHeader
-    ts                   <- count (fromIntegral i) readEncodingRecord
-    return $ CmapTable hdr ts
+    hdr@(CmapHeader _ i)  <- readCmapHeader
+    ts                    <- count (fromIntegral i) readEncodingRecord
+    -- ss                   <- count (fromIntegral i) readCmapSubtable
+    s                     <- readCmapSubtable
+    return $ CmapTable hdr ts [s] -- ss
     
 instance Pretty CmapTable where
-  pretty t = ppTable "Cmap Table" (hd:rest) where
+  pretty t = ppTable "Cmap Table" ((hd:rest) ++ rest2 ) where
       hd    = pretty $ cmap_header t
-      rest  =  map pretty $ encoding_records t 
+      rest  = map pretty $ encoding_records t
+      rest2 = map pretty $ cmap_subtables t
 
 
 data CmapHeader = CmapHeader {
@@ -93,68 +97,55 @@ instance Pretty EncodingRecord where
 -- All the formats have (format::ushort) when parsing you could 
 -- peek this to see what to do next... 
 
+data SubtableHeader = SubtableHeader {
+      st_format   :: UShort,
+      st_length   :: ULong,
+      st_language :: ULong
+    }
+  deriving (Eq,Show)
+  
+  
 
 data CmapSubtable = 
-      Format0_BE { 
-          subtable_format       :: UShort,
-          subtable_length       :: UShort,
-          subtable_language     :: UShort,
+      Format0 { 
+          st_header             :: SubtableHeader,
           fmt0_glyph_id_array   :: UArray Int Byte
       }
-    | Format2_HBM { 
-          subtable_format       :: UShort,
-          subtable_length       :: UShort,
-          subtable_language     :: UShort,
+    | Format2 { 
+          st_header             :: SubtableHeader,
           fmt2_sub_header_keys  :: UArray Int UShort,
           fmt2_sub_headers      :: [Format2_SubHeader],   -- change?
           fmt2_glyph_indexes    :: [UShort]               -- change?
       } 
-    | Format4_SMDV { 
-          subtable_format       :: UShort,
-          subtable_length       :: UShort,
-          subtable_language     :: UShort,
-          fmt4_seg_count_x2     :: UShort,
-          fmt4_search_range     :: UShort,
-          fmt4_entry_selector   :: UShort,
-          fmt4_range_shift      :: UShort,
+    | Format4 { 
+          st_header             :: SubtableHeader,
+          search_params         :: Format4_SearchParams,
           fmt4_end_code         :: UArray Int UShort,
-          fmt4_reserved_pad     :: UShort,
           fmt4_start_code       :: UArray Int UShort,
           fmt4_id_delta         :: UArray Int Short,
           fmt4_id_range_offset  :: UArray Int UShort,
-          fmt4_glyph_id_array   :: [UShort] 
+          fmt4_glyph_id_array   :: UArray Int UShort 
       }
-    | Format6_TTM { 
-          subtable_format       :: UShort,
-          subtable_length       :: UShort,
-          subtable_language     :: UShort,
+    | Format6 { 
+          st_header             :: SubtableHeader,
           fmt6_first_code       :: UShort,
           fmt6_entry_count      :: UShort,
           fmt6_glyph_id_array   :: UArray Int UShort
       } 
-    | Format8_Mx { 
-          subtable_format       :: UShort,
-          reserved              :: UShort,
-          ul_length             :: ULong,
-          ul_language           :: ULong,
+    | Format8 { 
+          st_header             :: SubtableHeader,
           fmt8_is_32            :: UArray Int Byte,
           fmt8_num_groups       :: ULong,
           fmt8_groups           :: [CharacterCodeGroup]
       }
-    | Format10_TA { 
-          subtable_format       :: UShort,
-          reserved              :: UShort,
-          ul_length             :: ULong,
-          ul_language           :: ULong,
+    | Format10 { 
+          st_header             :: SubtableHeader,
           fmt10_start_char_code :: ULong,
           fmt10_num_chars       :: ULong,
           fmt10_glyphs          :: Array Int UShort
       }
-    | Format12_SC { 
-          subtable_format       :: UShort,
-          reserved              :: UShort,
-          ul_length             :: ULong,
-          ul_language           :: ULong,
+    | Format12 { 
+          st_header             :: SubtableHeader,
           fmt12_num_groups      :: ULong,
           fmt12_groups          :: [CharacterCodeGroup]
       }        
@@ -168,7 +159,16 @@ data Format2_SubHeader = Format2_SubHeader {
       id_range_offset   :: UShort
     }
   deriving (Eq,Show)  
-      
+
+data Format4_SearchParams = Format4_SearchParams {
+      seg_count_x2              :: UShort,
+      format4_search_range      :: UShort,
+      format4_entry_selector    :: UShort,
+      format4_range_shift       :: UShort
+    }
+  deriving (Eq,Show) 
+  
+    
 data CharacterCodeGroup = CharacterCodeGroup {
       start_char_code   :: ULong,
       end_char_code     :: ULong,
@@ -180,79 +180,142 @@ data CharacterCodeGroup = CharacterCodeGroup {
 readCmapSubtable :: Monad m => ReadData m CmapSubtable 
 readCmapSubtable = ushort >>= subtable 
   where
-    subtable  0 = readFormat0_BE
-    subtable  2 = readFormat2_HBM
-    subtable  4 = readFormat4_SMDV
-    subtable  6 = readFormat6_TTM
-    subtable  8 = readFormat8_Mx
-    subtable 10 = readFormat10_TA
-    subtable 12 = readFormat12_SC
+    subtable  0 = readFormat0
+    subtable  2 = readFormat2
+    subtable  4 = readFormat4
+    subtable  6 = readFormat6
+    subtable  8 = readFormat8
+    subtable 10 = readFormat10
+    subtable 12 = readFormat12
     subtable  i = error $ "unrecognized cmap subtable " ++ show i
     
-    readFormat0_BE    = Format0_BE 0 <$>
-                            ushort <*> ushort <*> uarray 256 byte
+    readFormat0   = Format0 <$>
+                        subH 0 <*> uarray 256 byte
                             
-    readFormat2_HBM   = Format2_HBM 2 <$>
-                                ushort 
-                            <*> ushort
-                            <*> uarray 256 ushort 
-                            <*> undefined 
-                            <*> undefined
+    readFormat2   = Format2 <$>
+                            subH 2 
+                        <*> uarray 256 ushort 
+                        <*> undefined
+                        <*> undefined
                             
-    readFormat4_SMDV  = do len      <- ushort
-                           lang     <- ushort 
-                           scX2     <- ushort
-                           let seg_count = fromIntegral $ scX2 `div` 2
-                           sr       <- ushort
-                           es       <- ushort
-                           rs       <- ushort
-                           ec_arr   <- uarray seg_count ushort
-                           rp       <- ushort
-                           sc_arr   <- uarray seg_count ushort
-                           idd_arr  <- uarray seg_count short
-                           idr_arr  <- uarray seg_count ushort
-                           gid_arr  <- undefined
-                           return $ Format4_SMDV 4          len 
-                                                 lang       scX2 
-                                                 sr         es 
-                                                 rs         ec_arr     
-                                                 rp         sc_arr 
-                                                 idd_arr    idr_arr
-                                                 gid_arr  
-    readFormat6_TTM   = do len      <- ushort
-                           lang     <- ushort
-                           fc       <- ushort
-                           ec       <- ushort
-                           gid_arr  <- uarray (fromIntegral ec) ushort
-                           return $ Format6_TTM 6 len lang fc ec gid_arr
+    readFormat4   = do hdr      <- subH 4
+                       sparams  <- readFormat4_SearchParams
+                       let seg_count = fromIntegral 
+                                          $ (seg_count_x2 sparams) `div` 2
+                       ec_arr   <- uarray seg_count ushort
+                       rp       <- ushort
+                       sc_arr   <- uarray seg_count ushort
+                       idd_arr  <- uarray seg_count short
+                       idr_arr  <- uarray seg_count ushort
+                       gid_arr  <- uarray 0 ushort
+                       return $ Format4 hdr        sparams
+                                        ec_arr     sc_arr 
+                                        idd_arr    idr_arr
+                                        gid_arr  
+                                                 
+    readFormat6   = do hdr      <- subH 6
+                       fc       <- ushort
+                       ec       <- ushort
+                       gid_arr  <- uarray (fromIntegral ec) ushort
+                       return $ Format6 hdr fc ec gid_arr
                            
-    readFormat8_Mx    = do res      <- ushort
-                           len      <- ulong
-                           lang     <- ulong
-                           is32_arr <- uarray 8192 byte
-                           n_grps   <- ulong
-                           grps     <- count (fromIntegral n_grps) readCharacterCodeGroup
-                           return $ Format8_Mx 8 res len lang
-                                               is32_arr n_grps grps
-    readFormat10_TA   = do res      <- ushort
-                           len      <- ulong
-                           lang     <- ulong
-                           scc      <- ulong
-                           n_chars  <- ulong
-                           g_arr    <- array (fromIntegral n_chars) ushort 
-                           return $ Format10_TA 10 res len lang 
-                                             scc n_chars g_arr
+    readFormat8   = do hdr      <- subH 8
+                       is32_arr <- uarray 8192 byte
+                       n_grps   <- ulong
+                       grps     <- count (fromIntegral n_grps) readCharacterCodeGroup
+                       return $ Format8 hdr is32_arr n_grps grps
+                           
+    readFormat10  = do hdr      <- subH 10
+                       scc      <- ulong
+                       n_chars  <- ulong
+                       g_arr    <- array (fromIntegral n_chars) ushort 
+                       return $ Format10 hdr scc n_chars g_arr
           
           
-    readFormat12_SC   = do res      <- ushort
-                           len      <- ulong
-                           lang     <- ulong
-                           n_grps   <- ulong
-                           grps     <- count (fromIntegral n_grps) readCharacterCodeGroup
-                           return $ Format12_SC 12 res len lang
-                                                n_grps grps    
+    readFormat12  = do hdr      <- subH 12
+                       n_grps   <- ulong
+                       grps     <- count (fromIntegral n_grps) readCharacterCodeGroup
+                       return $ Format12 hdr n_grps grps    
 
 
+subH :: Monad m => UShort -> ReadData m SubtableHeader
+subH fmt | fmt <= 6   = shortH
+         | otherwise  = longH 
+  where 
+    shortH = (\l l' -> SubtableHeader fmt (fromIntegral l) (fromIntegral l'))
+        <$> ushort <*> ushort
+        
+    -- longer instance has 2 bytes padding and two longs
+    longH  = (SubtableHeader fmt)
+        <$> (ushort *> ulong) <*> ulong
+        
+readFormat4_SearchParams :: Monad m => ReadData m Format4_SearchParams
+readFormat4_SearchParams = Format4_SearchParams <$>
+    ushort <*> ushort <*> ushort <*> ushort
+
+                       
+        
 readCharacterCodeGroup :: Monad m => ReadData m CharacterCodeGroup
 readCharacterCodeGroup = CharacterCodeGroup <$>
-      ulong <*> ulong <*> ulong                     
+      ulong <*> ulong <*> ulong
+      
+
+instance Pretty CmapSubtable where
+  pretty t@(Format0 {}) = 
+      ppTable "Format 0: Byte Enconding Table" (hdr ++ xs) where
+          hdr = subtableHeaderFields (st_header t)
+          xs  = []
+  
+  pretty t@(Format2 {}) = 
+      ppTable "Format 2: High Byte Mapping through Table" (hdr ++ xs) where
+          hdr = subtableHeaderFields (st_header t)
+          xs  = []  
+      
+  pretty t@(Format4 {}) = 
+      ppTable "Format 4: Segment Mapping to Delta Values" (hdr ++ ys ++ xs) 
+        where
+          hdr = subtableHeaderFields (st_header t)
+          ys  = searchParamFields (search_params t)
+          xs  = [ field "endCode"         24 (ppArray integral $ fmt4_end_code t)
+                , field "startCode"       24 (ppArray integral $ fmt4_start_code t)
+                , field "idDelta"         24 (ppArray integral $ fmt4_id_delta t)
+                , field "idRangeOffset"   24 (ppArray integral $ fmt4_id_range_offset t)
+                , field "glyphIdArray"    24 (ppArray integral $ fmt4_glyph_id_array t)
+                ]
+
+  pretty t@(Format6 {}) = 
+      ppTable "Format 6: High Byte Mapping through Table" (hdr ++ xs) where
+          hdr = subtableHeaderFields (st_header t)
+          xs  = []  
+          
+  pretty t@(Format8 {}) = 
+      ppTable "Format 8: mixed 16-bit and 32-bit coverage" (hdr ++ xs) where
+          hdr = subtableHeaderFields (st_header t)
+          xs  = []  
+
+  
+  pretty t@(Format10 {}) = 
+      ppTable "Format 6: Trimmed array" (hdr ++ xs) where
+          hdr = subtableHeaderFields (st_header t)
+          xs  = []    
+  
+  pretty t@(Format12 {}) = 
+      ppTable "Format 12: Segmented Coverage" (hdr ++ xs) where
+          hdr = subtableHeaderFields (st_header t)
+          xs  = []  
+
+subtableHeaderFields :: SubtableHeader -> [Doc]
+subtableHeaderFields (SubtableHeader fmt len lang) = 
+    [ field "format"          24 (integral fmt)
+    , field "length"          24 (integral len)
+    , field "language"        24 (integral lang)
+    ]
+
+searchParamFields :: Format4_SearchParams -> [Doc]
+searchParamFields (Format4_SearchParams sc sr es rs) =
+    [ field "segCountX2"      24 (integral sc)
+    , field "searchRange"     24 (integral sr)
+    , field "entrySelector"   24 (integral es)
+    , field "rangeShift"      24 (integral rs)
+    ]
+                                  

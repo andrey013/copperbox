@@ -38,10 +38,6 @@ data HheaTable = HheaTable {
       caret_slope_rise        :: Short,
       caret_slope_run         :: Short,
       caret_offset            :: Short,
-      hea_reserved_a          :: Short,
-      hea_reserved_b          :: Short,
-      hea_reserved_c          :: Short,
-      hea_reserved_d          :: Short,
       metric_data_format      :: Short,
       number_of_h_metrics     :: UShort
       
@@ -52,10 +48,13 @@ readHheaTable :: Monad m => ReadData m HheaTable
 readHheaTable = HheaTable <$> 
         fixed   <*> fword   <*> fword   <*> fword
     <*> ufword  <*> fword   <*> fword   <*> fword
-    <*> short   <*> short   <*> short   <*> short
-    <*> short   <*> short   <*> short   <*> short
+    <*> short   <*> short   <*> (short  <*  padS4)   
+    <*> short
     <*> ushort
+  where 
+    padS4 = (\ _ _ _ _ -> ()) <$> short <*> short <*> short <*> short
     
+     
 instance Pretty HheaTable where
   pretty t = ppTable "hhea Table"
       [ field "version_num"             24 (pretty   $ hhea_version_num t)
@@ -69,10 +68,6 @@ instance Pretty HheaTable where
       , field "caret_slope_rise"        24 (integral $ caret_slope_rise t)
       , field "caret_slope_run"         24 (integral $ caret_slope_run t)
       , field "caret_offset"            24 (integral $ caret_offset t)
-      , field "reserved"                24 (integral $ hea_reserved_a t)
-      , field "reserved"                24 (integral $ hea_reserved_b t)
-      , field "reserved"                24 (integral $ hea_reserved_c t)
-      , field "reserved"                24 (integral $ hea_reserved_d t)
       , field "metric_data_format"      24 (integral $ metric_data_format t)
       , field "number_of_h_metrics"     24 (integral $ number_of_h_metrics t)
       ]
