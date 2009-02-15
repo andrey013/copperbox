@@ -18,7 +18,8 @@
 module Graphics.OTFont.Table.Head where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParserCombinators
+import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 import Graphics.OTFont.Utils
 
@@ -49,7 +50,7 @@ data HeadTable = HeadTable {
   }
   deriving (Eq,Show)
 
-readHeadTable :: Monad m => ReadTable m HeadTable
+readHeadTable :: ParserM r HeadTable
 readHeadTable = HeadTable <$>
           fixed 
       <*> fixed 

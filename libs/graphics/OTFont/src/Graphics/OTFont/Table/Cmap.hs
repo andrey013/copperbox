@@ -18,11 +18,10 @@
 module Graphics.OTFont.Table.Cmap where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParserCombinators
+import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 import Graphics.OTFont.Table.CommonDatatypes
-
-import Text.ZParse
 
 import Control.Applicative
 import Data.Array.Unboxed hiding ( array )
@@ -37,7 +36,7 @@ data CmapTable = CmapTable {
     }
   deriving (Eq,Show)
 
-readCmapTable :: Monad m => ReadData m CmapTable
+readCmapTable :: ParserM r CmapTable
 readCmapTable = do 
     hdr@(CmapHeader _ i)  <- readCmapHeader
     ts                    <- count (fromIntegral i) readEncodingRecord
@@ -60,7 +59,7 @@ data CmapHeader = CmapHeader {
 
       
 
-readCmapHeader :: Monad m => ReadData m CmapHeader
+readCmapHeader :: ParserM r CmapHeader
 readCmapHeader = CmapHeader <$>
     ushort <*> ushort
 
@@ -78,7 +77,7 @@ data EncodingRecord = EncodingRecord {
     }
   deriving (Eq,Show)
   
-readEncodingRecord :: Monad m => ReadData m EncodingRecord
+readEncodingRecord :: ParserM r EncodingRecord
 readEncodingRecord = EncodingRecord <$>
           platformId  
       <*> encodingId
@@ -177,7 +176,7 @@ data CharacterCodeGroup = CharacterCodeGroup {
   deriving (Eq,Show) 
 
 
-readCmapSubtable :: Monad m => ReadData m CmapSubtable 
+readCmapSubtable :: ParserM r CmapSubtable 
 readCmapSubtable = ushort >>= subtable 
   where
     subtable  0 = readFormat0
@@ -190,11 +189,11 @@ readCmapSubtable = ushort >>= subtable
     subtable  i = error $ "unrecognized cmap subtable " ++ show i
     
     readFormat0   = Format0 <$>
-                        subH 0 <*> uarray 256 byte
+                        subH 0 <*> usequence 256 byte
                             
     readFormat2   = Format2 <$>
                             subH 2 
-                        <*> uarray 256 ushort 
+                        <*> usequence 256 ushort 
                         <*> undefined
                         <*> undefined
                             
@@ -202,12 +201,12 @@ readCmapSubtable = ushort >>= subtable
                        sparams  <- readFormat4_SearchParams
                        let seg_count = fromIntegral 
                                           $ (seg_count_x2 sparams) `div` 2
-                       ec_arr   <- uarray seg_count ushort
+                       ec_arr   <- usequence seg_count ushort
                        rp       <- ushort
-                       sc_arr   <- uarray seg_count ushort
-                       idd_arr  <- uarray seg_count short
-                       idr_arr  <- uarray seg_count ushort
-                       gid_arr  <- uarray 0 ushort
+                       sc_arr   <- usequence seg_count ushort
+                       idd_arr  <- usequence seg_count short
+                       idr_arr  <- usequence seg_count ushort
+                       gid_arr  <- usequence 0 ushort
                        return $ Format4 hdr        sparams
                                         ec_arr     sc_arr 
                                         idd_arr    idr_arr
@@ -216,11 +215,11 @@ readCmapSubtable = ushort >>= subtable
     readFormat6   = do hdr      <- subH 6
                        fc       <- ushort
                        ec       <- ushort
-                       gid_arr  <- uarray (fromIntegral ec) ushort
+                       gid_arr  <- usequence (fromIntegral ec) ushort
                        return $ Format6 hdr fc ec gid_arr
                            
     readFormat8   = do hdr      <- subH 8
-                       is32_arr <- uarray 8192 byte
+                       is32_arr <- usequence 8192 byte
                        n_grps   <- ulong
                        grps     <- count (fromIntegral n_grps) readCharacterCodeGroup
                        return $ Format8 hdr is32_arr n_grps grps
@@ -228,7 +227,7 @@ readCmapSubtable = ushort >>= subtable
     readFormat10  = do hdr      <- subH 10
                        scc      <- ulong
                        n_chars  <- ulong
-                       g_arr    <- array (fromIntegral n_chars) ushort 
+                       g_arr    <- bxsequence (fromIntegral n_chars) ushort 
                        return $ Format10 hdr scc n_chars g_arr
           
           
@@ -238,7 +237,7 @@ readCmapSubtable = ushort >>= subtable
                        return $ Format12 hdr n_grps grps    
 
 
-subH :: Monad m => UShort -> ReadData m SubtableHeader
+subH ::UShort -> ParserM r SubtableHeader
 subH fmt | fmt <= 6   = shortH
          | otherwise  = longH 
   where 
@@ -249,13 +248,13 @@ subH fmt | fmt <= 6   = shortH
     longH  = (SubtableHeader fmt)
         <$> (ushort *> ulong) <*> ulong
         
-readFormat4_SearchParams :: Monad m => ReadData m Format4_SearchParams
+readFormat4_SearchParams :: ParserM r Format4_SearchParams
 readFormat4_SearchParams = Format4_SearchParams <$>
     ushort <*> ushort <*> ushort <*> ushort
 
                        
         
-readCharacterCodeGroup :: Monad m => ReadData m CharacterCodeGroup
+readCharacterCodeGroup :: ParserM r CharacterCodeGroup
 readCharacterCodeGroup = CharacterCodeGroup <$>
       ulong <*> ulong <*> ulong
       

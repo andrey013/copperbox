@@ -1,119 +1,119 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Text.ZParse.Binary
--- Copyright   :  (c) Stephen Tetley 2008
+-- Module      :  Graphics.OTFont.ParserCombinators
+-- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Combinators - ...
+-- Read an otf file 
 --
 --------------------------------------------------------------------------------
 
+module Graphics.OTFont.ParserCombinators where
 
-module Text.ZParse.Binary where
-
-import Text.ZParse.Combinators
-import Text.ZParse.ParseMonad
-import Text.ZParse.SrcPos
-
+import Graphics.OTFont.ParseMonad
 
 import Control.Applicative
-import Control.Monad.State
+import Data.Array.IO
+import Data.Array.Unboxed ( (!), bounds )
 import Data.Bits
-import Data.Char
+import Data.Char ( chr )
 import Data.Int
 import Data.Word
+import System.IO 
 
-import qualified Data.ByteString as BS
+type ParserM r a = ContState RAstate RAenv r a
+ 
 
-instance ParseState (StreamPosn,BS.ByteString) StreamPosn BS.ByteString where
-    pos                   = fst
-    setPos p (_,r)        = (p,r)
-    remaining             = snd 
-    setRemaining r (p,_)  = (p,r) 
+    
+runParser :: ParserM r r -> ByteSequence -> r
+runParser m arr = runCS m (\c _st _env -> c) st arr where
+  st = let (i,j) = bounds arr in position i j
 
-type BinaryParserT m a = ParserT (StreamPosn,BS.ByteString) m a
+runParserFile :: FilePath -> ParserM r r -> IO r 
+runParserFile path p = withBinaryFile path ReadMode $ \h -> do
+    sz_i  <- hFileSize h
+    let abound = mkBounds sz_i
+    marr   <- newArray_ abound 
+    sz_r  <- hGetArray h marr (fromIntegral sz_i)
+    arr   <- freezeByteSequence marr
+    if sz_r == (fromIntegral sz_i) 
+        then return $ runParser p arr
+        else error $ "Problem with hGetArray" 
+
+  where
+    mkBounds :: Integral a => a -> (Int,Int)
+    mkBounds i = (0, fromIntegral $ i - 1)
+    
+    freezeByteSequence :: IOUArray Int Word8 -> IO ByteSequence
+    freezeByteSequence = freeze
 
 --------------------------------------------------------------------------------
---
+-- Primitive parser - word8 
 
-
-chars :: Monad m => String -> BinaryParserT m String 
-chars s = mapM char s 
-
-
-char :: Monad m => Char -> BinaryParserT m Char 
-char c = satisfies anychar (==c)
-
-
-text :: Monad m => Int -> BinaryParserT m String
-text i = count i anychar
-
-bytestring :: Int -> BinaryParserT m BS.ByteString
-bytestring i = do 
-    inp            <- input
-    StreamPosn p   <- position
-    let (a,b) = BS.splitAt i inp
-    updateState (StreamPosn $ p+i) b
-    return a
-  
-flush :: BinaryParserT m BS.ByteString
-flush = do 
-    inp           <- input
-    StreamPosn p  <- position
-    updateState (StreamPosn $ p + BS.length inp) BS.empty
-    return inp
-    
-    
-  
-
---------------------------------------------------------------------------------
---
-word8 :: Monad m => BinaryParserT m Word8
+word8 :: ParserM r Word8
 word8 = do
-    bs <- input
-    case BS.uncons bs of
-        Nothing    -> fail "Unexpected eof" 
-        Just (a,b) -> do { p <- position 
-                         ; updateState (nextPos undefined p) b
-                         ; return a }
+    a <- input
+    i <- absPosition
+    let e = a!i
+    movePos1
+    return e
+    
+(<:>) :: Applicative f => f a -> f [a] -> f [a]
+(<:>) p1 p2 = (:) <$> p1 <*> p2
 
-anychar :: Monad m => BinaryParserT m Char
-anychar = chr . fromIntegral <$> word8  
+count :: Applicative f => Int -> f a -> f [a]
+count i p | i <= 0    = pure []
+          | otherwise = p <:> count (i-1) p 
+          
+          
+--------------------------------------------------------------------------------
+-- Text parsers
 
-word64be   :: Monad m => BinaryParserT m Word64
+char :: ParserM r Char
+char = chr . fromIntegral <$> word8  
+
+text :: Int -> ParserM r String
+text i = count i char
+
+    
+--------------------------------------------------------------------------------
+--  Number parsers
+
+ 
+
+word64be   :: ParserM r Word64
 word64be   = mkW64be <$> word8 <*> word8 <*> word8 <*> word8
                      <*> word8 <*> word8 <*> word8 <*> word8
 
-word32be   :: Monad m => BinaryParserT m Word32
+word32be   :: ParserM r Word32
 word32be   = mkW32be <$> word8 <*> word8 <*> word8 <*> word8
                          
-word32le   :: Monad m => BinaryParserT m Word32
+word32le   :: ParserM r Word32
 word32le   = mkW32le <$> word8 <*> word8 <*> word8 <*> word8
 
-word16be   :: Monad m => BinaryParserT m Word16
+word16be   :: ParserM r Word16
 word16be   = mkW16be <$> word8 <*> word8
                          
-word16le   :: Monad m => BinaryParserT m Word16
+word16le   :: ParserM r Word16
 word16le   = mkW16le <$> word8 <*> word8
 
-int32be   :: Monad m => BinaryParserT m Int32
+int32be   :: ParserM r Int32
 int32be   = mkI32be <$> word8 <*> word8 <*> word8 <*> word8
                          
-int32le   :: Monad m => BinaryParserT m Int32
+int32le   :: ParserM r Int32
 int32le   = mkI32le <$> word8 <*> word8 <*> word8 <*> word8
 
-int16be   :: Monad m => BinaryParserT m Int16
+int16be   :: ParserM r Int16
 int16be   = mkI16be <$> word8 <*> word8
                          
-int16le   :: Monad m => BinaryParserT m Int16
+int16le   :: ParserM r Int16
 int16le   = mkI16le <$> word8 <*> word8
 
 
@@ -174,5 +174,4 @@ mkI16be a b = fromIntegral $ mkW16be a b
                             
 mkI32be :: Word8 -> Word8 -> Word8 -> Word8 -> Int32
 mkI32be a b c d = fromIntegral $ mkW32be a b c d
-                      
-                   
+    

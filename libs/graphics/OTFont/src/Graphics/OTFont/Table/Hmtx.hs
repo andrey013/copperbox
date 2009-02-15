@@ -18,7 +18,8 @@
 module Graphics.OTFont.Table.Hmtx where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParserCombinators
+import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 
 import Control.Applicative
@@ -42,15 +43,15 @@ data LongHorMetric = LongHorMetric {
 
 -- hmetric_count is @number_of_h_metrics@ from @hhea@
 -- glyph_count @num_glyphs@ from @maxp@
-readHmtxTable :: Monad m => UShort -> UShort -> ReadData m HmtxTable
+readHmtxTable :: UShort -> UShort -> ParserM r HmtxTable
 readHmtxTable hmetric_count glyf_count = HmtxTable <$>
-        array msize readLongHorMetric
-    <*> array gsize short
+        bxsequence msize readLongHorMetric
+    <*> bxsequence gsize short
   where
     msize = fromIntegral hmetric_count
     gsize = fromIntegral $ glyf_count - hmetric_count
     
-readLongHorMetric :: Monad m => ReadData m LongHorMetric
+readLongHorMetric :: ParserM r LongHorMetric
 readLongHorMetric = LongHorMetric <$>
     ushort <*> short
         

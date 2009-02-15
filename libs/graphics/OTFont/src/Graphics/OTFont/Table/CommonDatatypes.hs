@@ -17,10 +17,10 @@
 
 module Graphics.OTFont.Table.CommonDatatypes where
 
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParserCombinators
+import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Utils
 
-import Text.ZParse ( BinaryParserT )
 
 import Control.Applicative
 import Data.Word
@@ -89,10 +89,10 @@ instance Meaning EncodingId where
   meaning Unicode_2_0_full  = "Unicode 2.0, full repetoire"
   meaning (EncodingId i)    = show i
   
-platformId :: Monad m => BinaryParserT m PlatformId 
+platformId :: ParserM r PlatformId 
 platformId = toEnum . fromIntegral <$> ushort 
       
-encodingId :: Monad m => BinaryParserT m EncodingId 
+encodingId :: ParserM r EncodingId 
 encodingId = toEnum . fromIntegral <$> ushort 
 
 

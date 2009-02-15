@@ -18,7 +18,8 @@
 module Graphics.OTFont.Table.Post where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParserCombinators
+import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 import Graphics.OTFont.Utils
 
@@ -39,7 +40,7 @@ data PostTable = PostTable {
     }
   deriving (Eq,Show)
 
-readPostTable :: Monad m => ReadData m PostTable
+readPostTable :: ParserM r PostTable
 readPostTable = PostTable <$> 
         fixed   <*> fixed   <*> fword   <*> fword  
     <*> ulong   <*> ulong   <*> ulong   <*> ulong   <*> ulong 

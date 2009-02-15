@@ -18,7 +18,8 @@
 module Graphics.OTFont.Table.OS2 where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParserCombinators
+import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 
 
@@ -69,7 +70,7 @@ data OS2Table = OS2Table {
     }
   deriving (Eq,Show)
 
-readOS2Table :: Monad m => ReadData m OS2Table
+readOS2Table :: ParserM r OS2Table
 readOS2Table = OS2Table <$> 
         ushort          -- os2_version
     <*> short           -- x_avg_char_width   
@@ -87,12 +88,12 @@ readOS2Table = OS2Table <$>
     <*> short   
     <*> short   
     <*> short           -- s_family_class
-    <*> uarray 10 byte  -- panose
+    <*> usequence 10 byte  -- panose
     <*> ulong           -- ul_unicode_range1  
     <*> ulong           -- ul_unicode_range2
     <*> ulong           -- ul_unicode_range3
     <*> ulong           -- ul_unicode_range4
-    <*> uarray 4 char   -- ach_vendor_id
+    <*> usequence 4 char   -- ach_vendor_id
     <*> ushort  
     <*> ushort  
     <*> ushort

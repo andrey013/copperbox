@@ -18,7 +18,8 @@
 module Graphics.OTFont.Table.Loca where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParserCombinators
+import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 
 import Control.Applicative
@@ -40,13 +41,13 @@ data LongLocaTable = LongLocaTable {
 
 -- Note allignment issues to think about...
 
-readShortLocaTable :: Monad m => ULong -> ReadData m ShortLocaTable
+readShortLocaTable :: ULong -> ParserM r ShortLocaTable
 readShortLocaTable sz = ShortLocaTable <$>
-    uarray sz ushort
+    usequence sz ushort
 
-readLongLocaTable :: Monad m => ULong -> ReadData m LongLocaTable
+readLongLocaTable :: ULong -> ParserM r LongLocaTable
 readLongLocaTable sz = LongLocaTable <$>
-    uarray sz ulong
+    usequence sz ulong
     
     
     

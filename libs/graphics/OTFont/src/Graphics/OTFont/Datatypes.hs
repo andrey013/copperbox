@@ -16,11 +16,16 @@
 
 module Graphics.OTFont.Datatypes where
 
+import Graphics.OTFont.ParseMonad ( Region )
+
 import qualified Data.ByteString as BS
 import Data.Int
 import qualified Data.Map as Map
 import Data.Time.Clock
 import Data.Word
+
+
+
 
 
 --------------------------------------------------------------------------------
@@ -86,12 +91,12 @@ instance Eq DateTime where
   
 --------------------------------------------------------------------------------
 --
-type TableStreams = Map.Map String BS.ByteString
+type TableRegions = Map.Map String Region
 
 data ProtoFace = ProtoFace {
       offset_table    :: OffsetTable,
       table_dirs      :: [TableDirectory],
-      table_data      :: TableStreams
+      table_offsets   :: TableRegions
     }
   deriving (Eq,Show) 
   

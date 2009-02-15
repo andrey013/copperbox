@@ -18,6 +18,7 @@
 module Graphics.OTFont.Utils where
 
 import Graphics.OTFont.Datatypes
+import Graphics.OTFont.ParseMonad ( Region )
 
 import Data.Bits
 import qualified Data.ByteString as BS
@@ -51,8 +52,8 @@ instance IntegralBool Word32 where
     boolValue 0 = True
     boolValue _ = False
     
-findTable :: String -> ProtoFace -> Maybe (BS.ByteString)
-findTable name (ProtoFace _ _ fm) = Map.lookup name fm
+findTableRegion :: String -> ProtoFace -> Maybe Region
+findTableRegion name (ProtoFace _ _ fm) = Map.lookup name fm
 
 section :: Int -> Int -> BS.ByteString -> BS.ByteString 
 section start len inp

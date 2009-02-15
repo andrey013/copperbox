@@ -18,10 +18,10 @@
 module Graphics.OTFont.Table.Glyf where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParserCombinators
+import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 
-import Text.ZParse
 
 import Control.Applicative
 import Data.Array.Unboxed hiding (array)
@@ -55,7 +55,7 @@ composite :: GlyfHeader -> Bool
 composite (GlyfHeader nc _ _ _ _)     | nc < 0      = True
                                       | otherwise   = False
                                       
-readGlyf :: Monad m => ReadData m Glyf
+readGlyf :: ParserM r Glyf
 readGlyf = do 
     hdr <- readGlyfHeader
     if composite hdr then do cbdy <- readCompositeGlyph
@@ -63,7 +63,7 @@ readGlyf = do
                      else do sbdy <- readSimpleGlyph (num_contours hdr)
                              return $ SimpleGlyf hdr sbdy
                                       
-readGlyfHeader :: Monad m => ReadData m GlyfHeader
+readGlyfHeader :: ParserM r GlyfHeader
 readGlyfHeader = GlyfHeader <$>
     short <*> short <*> short <*> short <*> short
 
@@ -124,23 +124,23 @@ data SimpleGlyphFlag  =
     | SG7_Reserved
   deriving (Enum,Eq,Ord,Show)
 
-readSimpleGlyph :: Monad m => Short -> ReadData m SimpleGlyph
+readSimpleGlyph :: Short -> ParserM r SimpleGlyph
 readSimpleGlyph nc = do
     ends  <- count (fromIntegral nc) ushort
     let csize = 1 + fromIntegral (foldr max 0 ends)
     
     len   <- ushort
-    insts <- uarray len byte
-    flags <- array csize byte
+    insts <- usequence len byte
+    flags <- bxsequence csize byte
     return $ SimpleGlyph ends len insts flags undefined undefined
 
 
 -- Consume 1 byte to get a UShort
-extract1byte :: Monad m => ReadData m UShort
+extract1byte :: ParserM r  UShort
 extract1byte = fromIntegral <$> word8
 
 -- Consume 2 bytes to get a UShort
-extract2byte :: Monad m => ReadData m UShort
+extract2byte :: ParserM r UShort
 extract2byte = word16be
 
 
@@ -179,6 +179,6 @@ data CompositeGlyphFlag  =
     | CompositeGlyphFlag UShort
   deriving (Eq,Ord,Show)
   
-readCompositeGlyph :: Monad m => ReadData m CompositeGlyph
+readCompositeGlyph :: ParserM r CompositeGlyph
 readCompositeGlyph = undefined
 

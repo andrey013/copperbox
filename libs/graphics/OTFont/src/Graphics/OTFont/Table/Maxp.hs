@@ -18,7 +18,8 @@
 module Graphics.OTFont.Table.Maxp where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParserCombinators
+import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 
 import Control.Applicative
@@ -42,7 +43,7 @@ data MaxpTable =
                
 
 
-readMaxpTable :: Monad m => ReadData m MaxpTable
+readMaxpTable :: ParserM r MaxpTable
 readMaxpTable = do 
     v   <- fixed 
     ng  <- ushort
@@ -72,7 +73,7 @@ data Version_1_0_Body = Version_1_0_Body {
     }
   deriving (Eq,Show)
 
-readVersion1Body :: Monad m => ReadData m Version_1_0_Body
+readVersion1Body :: ParserM r Version_1_0_Body
 readVersion1Body = Version_1_0_Body <$>  
         ushort    <*> ushort  <*> ushort  <*> ushort
     <*> ushort    <*> ushort  <*> ushort  <*> ushort
