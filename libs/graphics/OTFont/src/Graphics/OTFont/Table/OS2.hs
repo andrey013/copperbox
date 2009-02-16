@@ -18,6 +18,7 @@
 module Graphics.OTFont.Table.OS2 where
 
 import Graphics.OTFont.Datatypes
+import Graphics.OTFont.Parse
 import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
@@ -70,7 +71,7 @@ data OS2Table = OS2Table {
     }
   deriving (Eq,Show)
 
-readOS2Table :: ParserM r OS2Table
+readOS2Table :: Parser r OS2Table
 readOS2Table = OS2Table <$> 
         ushort          -- os2_version
     <*> short           -- x_avg_char_width   

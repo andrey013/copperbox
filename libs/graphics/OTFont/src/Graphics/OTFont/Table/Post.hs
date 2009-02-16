@@ -18,6 +18,7 @@
 module Graphics.OTFont.Table.Post where
 
 import Graphics.OTFont.Datatypes
+import Graphics.OTFont.Parse
 import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
@@ -56,7 +57,7 @@ data PostSubtable =
     | UnrecognizedPostSubtable Fixed
   deriving (Eq,Show)
   
-readPostTable :: ParserM r PostTable
+readPostTable :: Parser r PostTable
 readPostTable = do 
     v     <- fixed
     b     <- fixed   
@@ -67,17 +68,18 @@ readPostTable = do
     g     <- readPostSubtable v
     return $ PostTable v b c d e f g
 
-readPostMemUsage :: ParserM r PostMemUsage
+readPostMemUsage :: Parser r PostMemUsage
 readPostMemUsage = PostMemUsage <$>
         ulong <*> ulong <*> ulong <*> ulong 
 
 
-readPostSubtable :: Fixed -> ParserM r PostSubtable
+readPostSubtable :: Fixed -> Parser r PostSubtable
 readPostSubtable d 
     | d == 1.0 || d == 3.0  = return NoPostSubtable
     | d == 2.0              = do n    <- ushort
                                  arr  <- usequence (fromIntegral n) ushort
-                                 return $ Version2_0 n arr []
+                                 cs   <- count 20 pascalString
+                                 return $ Version2_0 n arr cs
     | otherwise             = return $ UnrecognizedPostSubtable d
         
     

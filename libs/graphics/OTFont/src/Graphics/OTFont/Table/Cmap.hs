@@ -18,6 +18,7 @@
 module Graphics.OTFont.Table.Cmap where
 
 import Graphics.OTFont.Datatypes
+import Graphics.OTFont.Parse
 import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
@@ -36,7 +37,7 @@ data CmapTable = CmapTable {
     }
   deriving (Eq,Show)
 
-readCmapTable :: ParserM r CmapTable
+readCmapTable :: Parser r CmapTable
 readCmapTable = do 
     hdr@(CmapHeader _ i)  <- readCmapHeader
     ts                    <- count (fromIntegral i) readEncodingRecord
@@ -59,7 +60,7 @@ data CmapHeader = CmapHeader {
 
       
 
-readCmapHeader :: ParserM r CmapHeader
+readCmapHeader :: Parser r CmapHeader
 readCmapHeader = CmapHeader <$>
     ushort <*> ushort
 
@@ -77,7 +78,7 @@ data EncodingRecord = EncodingRecord {
     }
   deriving (Eq,Show)
   
-readEncodingRecord :: ParserM r EncodingRecord
+readEncodingRecord :: Parser r EncodingRecord
 readEncodingRecord = EncodingRecord <$>
           platformId  
       <*> encodingId
@@ -176,7 +177,7 @@ data CharacterCodeGroup = CharacterCodeGroup {
   deriving (Eq,Show) 
 
 
-readCmapSubtable :: ParserM r CmapSubtable 
+readCmapSubtable :: Parser r CmapSubtable 
 readCmapSubtable = ushort >>= subtable 
   where
     subtable  0 = readFormat0
@@ -237,7 +238,7 @@ readCmapSubtable = ushort >>= subtable
                        return $ Format12 hdr n_grps grps    
 
 
-subH ::UShort -> ParserM r SubtableHeader
+subH ::UShort -> Parser r SubtableHeader
 subH fmt | fmt <= 6   = shortH
          | otherwise  = longH 
   where 
@@ -248,13 +249,13 @@ subH fmt | fmt <= 6   = shortH
     longH  = (SubtableHeader fmt)
         <$> (ushort *> ulong) <*> ulong
         
-readFormat4_SearchParams :: ParserM r Format4_SearchParams
+readFormat4_SearchParams :: Parser r Format4_SearchParams
 readFormat4_SearchParams = Format4_SearchParams <$>
     ushort <*> ushort <*> ushort <*> ushort
 
                        
         
-readCharacterCodeGroup :: ParserM r CharacterCodeGroup
+readCharacterCodeGroup :: Parser r CharacterCodeGroup
 readCharacterCodeGroup = CharacterCodeGroup <$>
       ulong <*> ulong <*> ulong
       

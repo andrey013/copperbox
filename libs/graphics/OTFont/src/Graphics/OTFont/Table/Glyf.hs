@@ -18,6 +18,7 @@
 module Graphics.OTFont.Table.Glyf where
 
 import Graphics.OTFont.Datatypes
+import Graphics.OTFont.Parse
 import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
@@ -54,7 +55,7 @@ composite :: GlyfHeader -> Bool
 composite (GlyfHeader nc _ _ _ _)     | nc < 0      = True
                                       | otherwise   = False
                                       
-readGlyf :: ParserM r Glyf
+readGlyf :: Parser r Glyf
 readGlyf = do 
     hdr <- readGlyfHeader
     if composite hdr then do cbdy <- readCompositeGlyph
@@ -62,7 +63,7 @@ readGlyf = do
                      else do sbdy <- readSimpleGlyph (num_contours hdr)
                              return $ SimpleGlyf hdr sbdy
                                       
-readGlyfHeader :: ParserM r GlyfHeader
+readGlyfHeader :: Parser r GlyfHeader
 readGlyfHeader = GlyfHeader <$>
     short <*> short <*> short <*> short <*> short
 
@@ -123,7 +124,7 @@ data SimpleGlyphFlag  =
     | SG7_Reserved
   deriving (Enum,Eq,Ord,Show)
 
-readSimpleGlyph :: Short -> ParserM r SimpleGlyph
+readSimpleGlyph :: Short -> Parser r SimpleGlyph
 readSimpleGlyph nc = do
     ends  <- count (fromIntegral nc) ushort
     let csize = 1 + fromIntegral (foldr max 0 ends)
@@ -135,11 +136,11 @@ readSimpleGlyph nc = do
 
 
 -- Consume 1 byte to get a UShort
-extract1byte :: ParserM r  UShort
+extract1byte :: Parser r  UShort
 extract1byte = fromIntegral <$> word8
 
 -- Consume 2 bytes to get a UShort
-extract2byte :: ParserM r UShort
+extract2byte :: Parser r UShort
 extract2byte = word16be
 
 
@@ -178,6 +179,6 @@ data CompositeGlyphFlag  =
     | CompositeGlyphFlag UShort
   deriving (Eq,Ord,Show)
   
-readCompositeGlyph :: ParserM r CompositeGlyph
+readCompositeGlyph :: Parser r CompositeGlyph
 readCompositeGlyph = undefined
 

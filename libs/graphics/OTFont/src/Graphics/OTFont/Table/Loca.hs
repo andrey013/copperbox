@@ -18,6 +18,7 @@
 module Graphics.OTFont.Table.Loca where
 
 import Graphics.OTFont.Datatypes
+import Graphics.OTFont.Parse
 import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
@@ -39,11 +40,11 @@ data LongLocaTable = LongLocaTable {
 
 -- Note allignment issues to think about...
 
-readShortLocaTable :: ULong -> ParserM r ShortLocaTable
+readShortLocaTable :: ULong -> Parser r ShortLocaTable
 readShortLocaTable sz = ShortLocaTable <$>
     usequence (fromIntegral sz) ushort
 
-readLongLocaTable :: ULong -> ParserM r LongLocaTable
+readLongLocaTable :: ULong -> Parser r LongLocaTable
 readLongLocaTable sz = LongLocaTable <$>
     usequence (fromIntegral sz) ulong
     

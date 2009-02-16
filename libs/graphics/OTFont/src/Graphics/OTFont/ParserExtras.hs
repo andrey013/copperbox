@@ -27,52 +27,55 @@ import Data.Bits
 import Data.Int
 import Data.Word
 
-satisfies :: ParserM r a -> (a -> Bool) -> ParserM r  a
+satisfies :: Monad m => ParserT m r a -> (a -> Bool) -> ParserT m r  a
 satisfies p f = p >>= (\x -> if f x then return x else fail "satisfies")
 
 
-chars :: String -> ParserM r String
+chars :: Monad m => String -> ParserT m r String
 chars s = mapM matchChar s 
 
-matchChar :: Char -> ParserM r Char 
+matchChar :: Monad m => Char -> ParserT m r Char 
 matchChar c = satisfies char (==c)
 
 
-ushort :: ParserM r Word16
+ushort :: Monad m => ParserT m r Word16
 ushort = word16be
 
-ulong :: ParserM r Word32
+ulong :: Monad m => ParserT m r Word32
 ulong = word32be
 
-byte :: ParserM r Word8
+byte :: Monad m => ParserT m r Word8
 byte = word8 
 
 
-short :: ParserM r Int16
+short :: Monad m => ParserT m r Int16
 short = int16be 
 
-fixed :: ParserM r Fixed 
+fixed :: Monad m => ParserT m r Fixed 
 fixed = mk <$> word16be <*> word16be where
     mk a b = Fixed $ (fromIntegral a) + ((fromIntegral b) / 10000)
 
 -- TODO
-fword :: ParserM r FWord 
+fword :: Monad m => ParserT m r FWord 
 fword = FWord <$> int16be 
 
-ufword :: ParserM r UFWord 
+ufword :: Monad m => ParserT m r UFWord 
 ufword = UFWord <$> word16be 
 
-bitfield :: (Bits a, Ord a, Unmarshal b) => ParserM r a -> ParserM r [b]
+bitfield :: (Bits a, Ord a, Unmarshal b, Monad m) => 
+            ParserT m r a -> ParserT m r [b]
 bitfield p = unbits <$> p 
 
-longDateTime :: ParserM r DateTime
+longDateTime :: Monad m => ParserT m r DateTime
 longDateTime = (\w -> DateTime w undefined) <$> word64be
 
-usequence :: IArray UArray a => Int -> ParserM r a -> ParserM r (USequence a)
+usequence :: (IArray UArray a, Monad m) => 
+             Int -> ParserT m r a -> ParserT m r (USequence a)
 usequence i p = mkArr <$> count (fromIntegral i) p where
     mkArr xs = listArray (0,i-1) xs
     
-bxsequence :: IArray Array a => Int -> ParserM r a -> ParserM r (BxSequence a)
+bxsequence :: (IArray Array a, Monad m) => 
+              Int -> ParserT m r a -> ParserT m r (BxSequence a)
 bxsequence i p = mkArr <$> count i p where
     mkArr xs = listArray (0,i-1) xs
 

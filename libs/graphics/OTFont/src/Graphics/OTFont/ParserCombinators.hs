@@ -20,44 +20,25 @@ module Graphics.OTFont.ParserCombinators where
 import Graphics.OTFont.ParseMonad
 
 import Control.Applicative
-import Data.Array.IO
-import Data.Array.Unboxed ( (!), bounds )
+import Control.Monad.Trans ( liftIO )
+-- import Data.Array.IO
+import Data.Array.Unboxed ( (!) )
 import Data.Bits
 import Data.Char ( chr )
 import Data.Int
 import Data.Word
-import System.IO 
 
-type ParserM r a = ContState RAstate RAenv r a
+
+type ParserT m r a = ContStateT RAstate RAenv m r a
  
 
     
-runParser :: ParserM r r -> ByteSequence -> r
-runParser m arr = runCS m (\c _st _env -> c) st arr where
-  st = let (i,j) = bounds arr in position i j
 
-runParserFile :: FilePath -> ParserM r r -> IO r 
-runParserFile path p = withBinaryFile path ReadMode $ \h -> do
-    sz_i  <- hFileSize h
-    let abound = mkBounds sz_i
-    marr   <- newArray_ abound 
-    sz_r  <- hGetArray h marr (fromIntegral sz_i)
-    arr   <- freezeByteSequence marr
-    if sz_r == (fromIntegral sz_i) 
-        then return $ runParser p arr
-        else error $ "Problem with hGetArray" 
-
-  where
-    mkBounds :: Integral a => a -> (Int,Int)
-    mkBounds i = (0, fromIntegral $ i - 1)
-    
-    freezeByteSequence :: IOUArray Int Word8 -> IO ByteSequence
-    freezeByteSequence = freeze
 
 --------------------------------------------------------------------------------
 -- Primitive parser - word8 
 
-word8 :: ParserM r Word8
+word8 :: Monad m => ParserT m r Word8
 word8 = do
     a <- input
     i <- absPosition
@@ -76,44 +57,49 @@ count i p | i <= 0    = pure []
 --------------------------------------------------------------------------------
 -- Text parsers
 
-char :: ParserM r Char
+char :: Monad m => ParserT m r Char
 char = chr . fromIntegral <$> word8  
 
-text :: Int -> ParserM r String
+text :: Monad m => Int -> ParserT m r String
 text i = count i char
 
-    
+pascalString :: Monad m => ParserT m r String
+pascalString = do 
+    i <- word8 
+    count (fromIntegral i) char
+
+     
 --------------------------------------------------------------------------------
 --  Number parsers
 
  
 
-word64be   :: ParserM r Word64
+word64be   :: Monad m => ParserT m r Word64
 word64be   = mkW64be <$> word8 <*> word8 <*> word8 <*> word8
                      <*> word8 <*> word8 <*> word8 <*> word8
 
-word32be   :: ParserM r Word32
+word32be   :: Monad m => ParserT m r Word32
 word32be   = mkW32be <$> word8 <*> word8 <*> word8 <*> word8
                          
-word32le   :: ParserM r Word32
+word32le   :: Monad m => ParserT m r Word32
 word32le   = mkW32le <$> word8 <*> word8 <*> word8 <*> word8
 
-word16be   :: ParserM r Word16
+word16be   :: Monad m => ParserT m r Word16
 word16be   = mkW16be <$> word8 <*> word8
                          
-word16le   :: ParserM r Word16
+word16le   :: Monad m => ParserT m r Word16
 word16le   = mkW16le <$> word8 <*> word8
 
-int32be   :: ParserM r Int32
+int32be   :: Monad m => ParserT m r Int32
 int32be   = mkI32be <$> word8 <*> word8 <*> word8 <*> word8
                          
-int32le   :: ParserM r Int32
+int32le   :: Monad m => ParserT m r Int32
 int32le   = mkI32le <$> word8 <*> word8 <*> word8 <*> word8
 
-int16be   :: ParserM r Int16
+int16be   :: Monad m => ParserT m r Int16
 int16be   = mkI16be <$> word8 <*> word8
                          
-int16le   :: ParserM r Int16
+int16le   :: Monad m => ParserT m r Int16
 int16le   = mkI16le <$> word8 <*> word8
 
 

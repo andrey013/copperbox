@@ -18,7 +18,7 @@
 module Graphics.OTFont.Table.Hhea where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.ParserCombinators
+import Graphics.OTFont.Parse
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 
@@ -45,7 +45,7 @@ data HheaTable = HheaTable {
     }
   deriving (Eq,Show)
 
-readHheaTable :: ParserM r HheaTable
+readHheaTable :: Parser r HheaTable
 readHheaTable = HheaTable <$> 
         fixed   <*> fword   <*> fword   <*> fword
     <*> ufword  <*> fword   <*> fword   <*> fword

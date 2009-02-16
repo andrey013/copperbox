@@ -44,63 +44,63 @@ move1 :: Position -> Position
 move1 (Position (i,j)) = Position (i+1,j)
 
 
-newtype ContState st env r a = ContState { 
-         runCS :: (a -> st -> env -> r) -> st -> env -> r
+newtype ContStateT st env m r a = ContStateT { 
+         runCST :: (a -> st -> env -> m r) -> st -> env -> m r
       }    
       
-instance Functor (ContState st env r) where
-    fmap f m = ContState $ \c st env -> runCS m (c . f) st env
+instance Functor (ContStateT st env m r) where
+    fmap f m = ContStateT $ \c st env -> runCST m (c . f) st env
     
-csreturn :: a -> ContState st env r a
-csreturn x = ContState $ \c st env -> c x st env
+csreturn :: a -> ContStateT st env m r a
+csreturn x = ContStateT $ \c st env -> c x st env
 
-csbind :: ContState st env r a -> 
-            (a -> ContState st env r b) -> ContState st env r b
-csbind m f = ContState $ \c -> runCS m (\a -> runCS (f a) c) 
+csbind :: ContStateT st env m r a -> 
+            (a -> ContStateT st env m r b) -> ContStateT st env m r b
+csbind m f = ContStateT $ \c -> runCST m (\a -> runCST (f a) c) 
 
-instance Monad (ContState st env r) where
+instance Monad m => Monad (ContStateT st env m r) where
   return = csreturn
   (>>=) = csbind
    
-instance Applicative (ContState st env r) where
+instance Monad m => Applicative (ContStateT st env m r) where
   pure  = return
   (<*>) = ap  
 
   
-csget :: ContState st env r st
-csget = ContState $ \c st env -> c st st env
+csget :: ContStateT st env m r st
+csget = ContStateT $ \c st env -> c st st env
 
-csput :: st -> ContState st env r ()
-csput st = ContState $ \c _ env -> c () st env
+csput :: st -> ContStateT st env m r ()
+csput st = ContStateT $ \c _ env -> c () st env
 
-instance MonadState st (ContState st env r) where
+instance Monad m => MonadState st (ContStateT st env m r) where
   get = csget
   put = csput
 
 
   
-csask :: ContState st env r env
-csask = ContState $ \c st env -> c env st env  
+csask :: ContStateT st env r m env
+csask = ContStateT $ \c st env -> c env st env  
 
-cslocal :: (env -> env) -> ContState st env r a -> ContState st env r a
-cslocal f m = ContState $ \c st env -> runCS m c st (f env) 
+cslocal :: (env -> env) -> ContStateT st env m r a -> ContStateT st env m r a
+cslocal f m = ContStateT $ \c st env -> runCST m c st (f env) 
 
   
-instance MonadReader env (ContState st env r) where 
+instance Monad m => MonadReader env (ContStateT st env m r) where 
   ask = csask
   local = cslocal
   
-absPosition :: ContState RAstate RAenv r Int
+absPosition :: Monad m => ContStateT RAstate RAenv m r Int
 absPosition = fst . getPosition <$> get
 
-movePos1 :: ContState RAstate RAenv r ()
+movePos1 :: Monad m => ContStateT RAstate RAenv m r ()
 movePos1 = do 
   p <- get
   put $ move1 p
   
-newRegion :: Region -> ContState RAstate RAenv r ()
+newRegion :: Monad m => Region -> ContStateT RAstate RAenv m r ()
 newRegion (i,j) = put $ position i j  
 
 
-input :: ContState RAstate RAenv r ByteSequence
+input :: Monad m => ContStateT RAstate RAenv m r ByteSequence
 input = ask

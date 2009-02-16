@@ -18,6 +18,7 @@
 module Graphics.OTFont.Table.Name where
 
 import Graphics.OTFont.Datatypes
+import Graphics.OTFont.Parse
 import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
@@ -173,7 +174,7 @@ instance Meaning NameId where
   meaning PostScipt_CID       = "PostScipt CID findfont name"
   meaning (Reserved_name i)   = "Reserved " ++ show i 
 
-readNameTable :: ParserM r NameTable
+readNameTable :: Parser r NameTable
 readNameTable = do 
     nf  <- ushort
     nc  <- ushort
@@ -182,7 +183,7 @@ readNameTable = do
     sd  <- undefined -- flush
     return $ NameTable nf nc so nr sd
 
-nameRecord :: ParserM r NameRecord 
+nameRecord :: Parser r NameRecord 
 nameRecord = NameRecord <$>
    platformId <*> encodingId <*> ushort <*> nameId <*> ushort <*> ushort 
   where 
