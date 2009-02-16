@@ -27,55 +27,47 @@ import Data.Bits
 import Data.Int
 import Data.Word
 
-satisfies :: Monad m => ParserT m r a -> (a -> Bool) -> ParserT m r  a
-satisfies p f = p >>= (\x -> if f x then return x else fail "satisfies")
 
 
-chars :: Monad m => String -> ParserT m r String
-chars s = mapM matchChar s 
 
-matchChar :: Monad m => Char -> ParserT m r Char 
-matchChar c = satisfies char (==c)
-
-
-ushort :: Monad m => ParserT m r Word16
+ushort :: Monad m => ParserT r m Word16
 ushort = word16be
 
-ulong :: Monad m => ParserT m r Word32
+ulong :: Monad m => ParserT r m Word32
 ulong = word32be
 
-byte :: Monad m => ParserT m r Word8
+byte :: Monad m => ParserT r m Word8
 byte = word8 
 
 
-short :: Monad m => ParserT m r Int16
+short :: Monad m => ParserT r m Int16
 short = int16be 
 
-fixed :: Monad m => ParserT m r Fixed 
+fixed :: Monad m => ParserT r m Fixed 
 fixed = mk <$> word16be <*> word16be where
     mk a b = Fixed $ (fromIntegral a) + ((fromIntegral b) / 10000)
 
 -- TODO
-fword :: Monad m => ParserT m r FWord 
+fword :: Monad m => ParserT r m FWord 
 fword = FWord <$> int16be 
 
-ufword :: Monad m => ParserT m r UFWord 
+ufword :: Monad m => ParserT r m UFWord 
 ufword = UFWord <$> word16be 
 
 bitfield :: (Bits a, Ord a, Unmarshal b, Monad m) => 
-            ParserT m r a -> ParserT m r [b]
+            ParserT r m a -> ParserT r m [b]
 bitfield p = unbits <$> p 
 
-longDateTime :: Monad m => ParserT m r DateTime
+longDateTime :: Monad m => ParserT r m DateTime
 longDateTime = (\w -> DateTime w undefined) <$> word64be
 
 usequence :: (IArray UArray a, Monad m) => 
-             Int -> ParserT m r a -> ParserT m r (USequence a)
+             Int -> ParserT r m a -> ParserT r m (USequence a)
 usequence i p = mkArr <$> count (fromIntegral i) p where
     mkArr xs = listArray (0,i-1) xs
     
 bxsequence :: (IArray Array a, Monad m) => 
-              Int -> ParserT m r a -> ParserT m r (BxSequence a)
+              Int -> ParserT r m a -> ParserT r m (BxSequence a)
 bxsequence i p = mkArr <$> count i p where
     mkArr xs = listArray (0,i-1) xs
 

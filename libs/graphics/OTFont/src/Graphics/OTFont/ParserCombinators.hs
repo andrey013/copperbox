@@ -1,4 +1,7 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -20,26 +23,56 @@ module Graphics.OTFont.ParserCombinators where
 import Graphics.OTFont.ParseMonad
 
 import Control.Applicative
-import Control.Monad.Trans ( liftIO )
--- import Data.Array.IO
-import Data.Array.Unboxed ( (!) )
+import Control.Monad.Error
+import Control.Monad.Reader
+import Control.Monad.State
+import Control.Monad.Trans
+import Data.Array.Unboxed ( (!), bounds )
 import Data.Bits
 import Data.Char ( chr )
 import Data.Int
 import Data.Word
 
+newtype ParseError = ParseError String
+  deriving (Show) 
 
-type ParserT m r a = ContStateT RAstate RAenv m r a
- 
+instance Error ParseError where
+  noMsg = ParseError ""
+  strMsg s = ParseError s  
 
-    
+newtype ParserT r m a = ParserT {
+          getParserT :: ContStateT RAstate RAenv r (ErrorT ParseError m) a
+        }
+  deriving ( Functor, Monad, MonadState RAstate, MonadReader RAenv ) 
+
+runParserT :: Monad m => 
+              ParserT r m r -> ByteSequence -> m (Either ParseError r)
+runParserT (ParserT m) arr = runErrorT $
+    runCST m (\c _st _env -> return c) st arr where
+        st = let (i,j) = bounds arr in position i j
+        
+        
+instance Monad m => Applicative (ParserT r m) where
+  pure = return
+  (<*>) = ap
+
+instance MonadTrans (ParserT r) where
+  lift = ParserT . cslift . lift 
+  
+instance Monad m => MonadError ParseError (ParserT r m) where
+  throwError = ParserT . csthrowError  
+  m `catchError`  h = ParserT $ cscatchError (getParserT m) (getParserT . h)
+
+
+newRegion' :: Monad m => Region -> ParserT r m ()
+newRegion' (i,j) = ParserT $ put $ position i j  
 
 
 --------------------------------------------------------------------------------
 -- Primitive parser - word8 
 
-word8 :: Monad m => ParserT m r Word8
-word8 = do
+word8 :: Monad m => ParserT r m Word8
+word8 = ParserT $ do
     a <- input
     i <- absPosition
     let e = a!i
@@ -53,17 +86,29 @@ count :: Applicative f => Int -> f a -> f [a]
 count i p | i <= 0    = pure []
           | otherwise = p <:> count (i-1) p 
           
+
+satisfies :: Monad m => ParserT r m a -> (a -> Bool) -> ParserT r m  a
+satisfies p f = p >>= 
+    (\x -> if f x then return x else throwError $ strMsg "satisfies")
+
+
+chars :: Monad m => String -> ParserT r m String
+chars s = mapM matchChar s 
+
+matchChar :: Monad m => Char -> ParserT r m Char 
+matchChar c = satisfies char (==c)
+
           
 --------------------------------------------------------------------------------
 -- Text parsers
 
-char :: Monad m => ParserT m r Char
+char :: Monad m => ParserT r m Char
 char = chr . fromIntegral <$> word8  
 
-text :: Monad m => Int -> ParserT m r String
+text :: Monad m => Int -> ParserT r m String
 text i = count i char
 
-pascalString :: Monad m => ParserT m r String
+pascalString :: Monad m => ParserT r m String
 pascalString = do 
     i <- word8 
     count (fromIntegral i) char
@@ -74,32 +119,32 @@ pascalString = do
 
  
 
-word64be   :: Monad m => ParserT m r Word64
+word64be   :: Monad m => ParserT r m Word64
 word64be   = mkW64be <$> word8 <*> word8 <*> word8 <*> word8
                      <*> word8 <*> word8 <*> word8 <*> word8
 
-word32be   :: Monad m => ParserT m r Word32
+word32be   :: Monad m => ParserT r m Word32
 word32be   = mkW32be <$> word8 <*> word8 <*> word8 <*> word8
                          
-word32le   :: Monad m => ParserT m r Word32
+word32le   :: Monad m => ParserT r m Word32
 word32le   = mkW32le <$> word8 <*> word8 <*> word8 <*> word8
 
-word16be   :: Monad m => ParserT m r Word16
+word16be   :: Monad m => ParserT r m Word16
 word16be   = mkW16be <$> word8 <*> word8
                          
-word16le   :: Monad m => ParserT m r Word16
+word16le   :: Monad m => ParserT r m Word16
 word16le   = mkW16le <$> word8 <*> word8
 
-int32be   :: Monad m => ParserT m r Int32
+int32be   :: Monad m => ParserT r m Int32
 int32be   = mkI32be <$> word8 <*> word8 <*> word8 <*> word8
                          
-int32le   :: Monad m => ParserT m r Int32
+int32le   :: Monad m => ParserT r m Int32
 int32le   = mkI32le <$> word8 <*> word8 <*> word8 <*> word8
 
-int16be   :: Monad m => ParserT m r Int16
+int16be   :: Monad m => ParserT r m Int16
 int16be   = mkI16be <$> word8 <*> word8
                          
-int16le   :: Monad m => ParserT m r Int16
+int16le   :: Monad m => ParserT r m Int16
 int16le   = mkI16le <$> word8 <*> word8
 
 

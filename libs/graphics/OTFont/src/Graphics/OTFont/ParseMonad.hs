@@ -1,5 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FlexibleContexts           #-} 
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -20,8 +21,10 @@
 module Graphics.OTFont.ParseMonad where
 
 import Control.Applicative
+import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.State
+import Control.Monad.Trans
 import Data.Array.Unboxed
 import Data.Word
 
@@ -44,36 +47,45 @@ move1 :: Position -> Position
 move1 (Position (i,j)) = Position (i+1,j)
 
 
-newtype ContStateT st env m r a = ContStateT { 
+newtype ContStateT st env r m a = ContStateT { 
          runCST :: (a -> st -> env -> m r) -> st -> env -> m r
       }    
-      
-instance Functor (ContStateT st env m r) where
+
+
+  
+        
+instance Functor (ContStateT st env r m) where
     fmap f m = ContStateT $ \c st env -> runCST m (c . f) st env
     
-csreturn :: a -> ContStateT st env m r a
+csreturn :: a -> ContStateT st env r m a
 csreturn x = ContStateT $ \c st env -> c x st env
 
-csbind :: ContStateT st env m r a -> 
-            (a -> ContStateT st env m r b) -> ContStateT st env m r b
+csbind :: ContStateT st env r m a -> 
+            (a -> ContStateT st env r m b) -> ContStateT st env r m b
 csbind m f = ContStateT $ \c -> runCST m (\a -> runCST (f a) c) 
 
-instance Monad m => Monad (ContStateT st env m r) where
+instance Monad m => Monad (ContStateT st env r m) where
   return = csreturn
   (>>=) = csbind
    
-instance Monad m => Applicative (ContStateT st env m r) where
+instance Monad m => Applicative (ContStateT st env r m) where
   pure  = return
   (<*>) = ap  
 
+cslift :: Monad m => m a -> ContStateT st env r m a
+cslift m = ContStateT $ \c st env -> m >>= (\a -> c a st env)
+
+instance MonadTrans (ContStateT st env r) where
+  lift = cslift
   
-csget :: ContStateT st env m r st
+    
+csget :: ContStateT st env r m st
 csget = ContStateT $ \c st env -> c st st env
 
-csput :: st -> ContStateT st env m r ()
+csput :: st -> ContStateT st env r m ()
 csput st = ContStateT $ \c _ env -> c () st env
 
-instance Monad m => MonadState st (ContStateT st env m r) where
+instance Monad m => MonadState st (ContStateT st env r m) where
   get = csget
   put = csput
 
@@ -82,25 +94,45 @@ instance Monad m => MonadState st (ContStateT st env m r) where
 csask :: ContStateT st env r m env
 csask = ContStateT $ \c st env -> c env st env  
 
-cslocal :: (env -> env) -> ContStateT st env m r a -> ContStateT st env m r a
+cslocal :: (env -> env) -> ContStateT st env r m a -> ContStateT st env r m a
 cslocal f m = ContStateT $ \c st env -> runCST m c st (f env) 
 
   
-instance Monad m => MonadReader env (ContStateT st env m r) where 
+instance Monad m => MonadReader env (ContStateT st env r m) where 
   ask = csask
   local = cslocal
-  
-absPosition :: Monad m => ContStateT RAstate RAenv m r Int
+
+-- if the inner monad supports @MonadError@ use it...
+csthrowError :: MonadError e m => e -> ContStateT st env r m a
+csthrowError e = cslift $ throwError e
+
+{-
+-- without lift...
+csthrowError' :: MonadError e m => e -> ContStateT st env r m a
+csthrowError' e = ContStateT $ \c st env -> throwError e >>= (\a -> c a st env)
+-}
+
+
+cscatchError :: MonadError e m =>
+                ContStateT st env r m a -> (e -> ContStateT st env r m a) -> 
+                ContStateT st env r m a
+cscatchError m h = 
+    ContStateT $ \c st env -> catchError (runCST m c st env)
+                                         (\e -> runCST (h e) c st env)
+
+                
+
+absPosition :: Monad m => ContStateT RAstate RAenv r m Int
 absPosition = fst . getPosition <$> get
 
-movePos1 :: Monad m => ContStateT RAstate RAenv m r ()
+movePos1 :: Monad m => ContStateT RAstate RAenv r m ()
 movePos1 = do 
   p <- get
   put $ move1 p
   
-newRegion :: Monad m => Region -> ContStateT RAstate RAenv m r ()
+newRegion :: Monad m => Region -> ContStateT RAstate RAenv r m ()
 newRegion (i,j) = put $ position i j  
 
 
-input :: Monad m => ContStateT RAstate RAenv m r ByteSequence
+input :: Monad m => ContStateT RAstate RAenv r m ByteSequence
 input = ask
