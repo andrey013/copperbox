@@ -24,7 +24,6 @@ import Graphics.OTFont.Pretty
 
 
 import Control.Applicative
-import Data.Array.Unboxed hiding (array)
 
 
 import Text.PrettyPrint.Leijen ( Pretty(..), Doc, space, (<>), hsep )
@@ -105,10 +104,10 @@ data Coord = Coord UShort UShort
 data SimpleGlyph = SimpleGlyph {
       end_pts_of_contours   :: [UShort],
       instruction_length    :: UShort,
-      instructions          :: UArray UShort Byte,  -- uninterpreted
-      sg_flags              :: Array UShort Byte,
-      x_coordinates         :: Array UShort Coord,
-      y_coordinates         :: Array UShort Coord
+      instructions          :: USequence Byte,  -- uninterpreted
+      sg_flags              :: BxSequence Byte,
+      x_coordinates         :: BxSequence Coord,
+      y_coordinates         :: BxSequence Coord
     }
   deriving (Eq,Show)
   
@@ -130,7 +129,7 @@ readSimpleGlyph nc = do
     let csize = 1 + fromIntegral (foldr max 0 ends)
     
     len   <- ushort
-    insts <- usequence len byte
+    insts <- usequence (fromIntegral len) byte
     flags <- bxsequence csize byte
     return $ SimpleGlyph ends len insts flags undefined undefined
 

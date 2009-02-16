@@ -19,7 +19,7 @@ module Graphics.OTFont.Parse where
 
 import Graphics.OTFont.Datatypes
 import Graphics.OTFont.ParserCombinators
-import Graphics.OTFont.ParserExtras
+
 
 import Control.Applicative
 import qualified Data.Map as Map

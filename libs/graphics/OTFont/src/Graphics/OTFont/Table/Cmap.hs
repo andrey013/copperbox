@@ -108,32 +108,32 @@ data SubtableHeader = SubtableHeader {
 data CmapSubtable = 
       Format0 { 
           st_header             :: SubtableHeader,
-          fmt0_glyph_id_array   :: UArray Int Byte
+          fmt0_glyph_id_array   :: USequence Byte
       }
     | Format2 { 
           st_header             :: SubtableHeader,
-          fmt2_sub_header_keys  :: UArray Int UShort,
+          fmt2_sub_header_keys  :: USequence UShort,
           fmt2_sub_headers      :: [Format2_SubHeader],   -- change?
           fmt2_glyph_indexes    :: [UShort]               -- change?
       } 
     | Format4 { 
           st_header             :: SubtableHeader,
           search_params         :: Format4_SearchParams,
-          fmt4_end_code         :: UArray Int UShort,
-          fmt4_start_code       :: UArray Int UShort,
-          fmt4_id_delta         :: UArray Int Short,
-          fmt4_id_range_offset  :: UArray Int UShort,
-          fmt4_glyph_id_array   :: UArray Int UShort 
+          fmt4_end_code         :: USequence UShort,
+          fmt4_start_code       :: USequence UShort,
+          fmt4_id_delta         :: USequence Short,
+          fmt4_id_range_offset  :: USequence UShort,
+          fmt4_glyph_id_array   :: USequence UShort 
       }
     | Format6 { 
           st_header             :: SubtableHeader,
           fmt6_first_code       :: UShort,
           fmt6_entry_count      :: UShort,
-          fmt6_glyph_id_array   :: UArray Int UShort
+          fmt6_glyph_id_array   :: USequence UShort
       } 
     | Format8 { 
           st_header             :: SubtableHeader,
-          fmt8_is_32            :: UArray Int Byte,
+          fmt8_is_32            :: USequence Byte,
           fmt8_num_groups       :: ULong,
           fmt8_groups           :: [CharacterCodeGroup]
       }
@@ -202,7 +202,7 @@ readCmapSubtable = ushort >>= subtable
                        let seg_count = fromIntegral 
                                           $ (seg_count_x2 sparams) `div` 2
                        ec_arr   <- usequence seg_count ushort
-                       rp       <- ushort
+                       _rp      <- ushort
                        sc_arr   <- usequence seg_count ushort
                        idd_arr  <- usequence seg_count short
                        idr_arr  <- usequence seg_count ushort

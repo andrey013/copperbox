@@ -18,6 +18,8 @@ module Graphics.OTFont.Datatypes where
 
 import Graphics.OTFont.ParseMonad ( Region )
 
+import Data.Array.IArray ( Array )
+import Data.Array.Unboxed ( UArray )
 import qualified Data.ByteString as BS
 import Data.Int
 import qualified Data.Map as Map
@@ -30,6 +32,9 @@ import Data.Word
 
 --------------------------------------------------------------------------------
 -- Aliases
+
+type USequence a  = UArray Int a
+type BxSequence a = Array Int a 
 
 type Byte   = Word8
 

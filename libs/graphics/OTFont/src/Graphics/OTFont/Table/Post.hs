@@ -25,7 +25,7 @@ import Graphics.OTFont.Utils
 
 import Control.Applicative
 
-import Text.PrettyPrint.Leijen ( Pretty(..) )
+import Text.PrettyPrint.Leijen ( Pretty(..), vsep, (<+>), string  )
 
 data PostTable = PostTable { 
       post_version        :: Fixed,
@@ -33,6 +33,12 @@ data PostTable = PostTable {
       underline_position  :: FWord,
       underline_thickness :: FWord,
       is_fixed_pitch      :: ULong,      -- c.f. IntegralBool
+      mem_usage           :: PostMemUsage,
+      post_subtable       :: PostSubtable
+    }
+  deriving (Eq,Show)
+
+data PostMemUsage = PostMemUsage {
       min_mem_type42      :: ULong,
       max_mem_type42      :: ULong,
       min_mem_type1       :: ULong,
@@ -40,12 +46,40 @@ data PostTable = PostTable {
     }
   deriving (Eq,Show)
 
+data PostSubtable = 
+      NoPostSubtable      -- for table versions 1.0 and 3.0   
+    | Version2_0 { 
+          number_of_glyphs      :: UShort,
+          glyph_name_index      :: USequence UShort,
+          names                 :: [String]
+      }
+    | UnrecognizedPostSubtable Fixed
+  deriving (Eq,Show)
+  
 readPostTable :: ParserM r PostTable
-readPostTable = PostTable <$> 
-        fixed   <*> fixed   <*> fword   <*> fword  
-    <*> ulong   <*> ulong   <*> ulong   <*> ulong   <*> ulong 
+readPostTable = do 
+    v     <- fixed
+    b     <- fixed   
+    c     <- fword
+    d     <- fword
+    e     <- ulong  
+    f     <- readPostMemUsage
+    g     <- readPostSubtable v
+    return $ PostTable v b c d e f g
 
-    
+readPostMemUsage :: ParserM r PostMemUsage
+readPostMemUsage = PostMemUsage <$>
+        ulong <*> ulong <*> ulong <*> ulong 
+
+
+readPostSubtable :: Fixed -> ParserM r PostSubtable
+readPostSubtable d 
+    | d == 1.0 || d == 3.0  = return NoPostSubtable
+    | d == 2.0              = do n    <- ushort
+                                 arr  <- usequence (fromIntegral n) ushort
+                                 return $ Version2_0 n arr []
+    | otherwise             = return $ UnrecognizedPostSubtable d
+        
     
 instance Pretty PostTable where
   pretty t = ppTable "Post Table"
@@ -54,14 +88,22 @@ instance Pretty PostTable where
       , field "underline_position"  24 (pretty   $ underline_position t)
       , field "underline_thickness" 24 (pretty   $ underline_thickness t)
       , field "is_fixed_pitch"      24 (pretty   $ boolValue $ is_fixed_pitch t)
-      , field "min_mem_type42"      24 (integral $ max_mem_type1 t) 
-      , field "max_mem_type42"      24 (integral $ max_mem_type1 t) 
-      , field "min_mem_type1"       24 (integral $ max_mem_type1 t) 
-      , field "max_mem_type1"       24 (integral $ max_mem_type1 t) 
+      , field "min_mem_type42"      24 (integral $ max_mem_type1 $ mem_usage t) 
+      , field "max_mem_type42"      24 (integral $ max_mem_type1 $ mem_usage t) 
+      , field "min_mem_type1"       24 (integral $ max_mem_type1 $ mem_usage t) 
+      , field "max_mem_type1"       24 (integral $ max_mem_type1 $ mem_usage t)
+      , field "subtable"            24 (pretty $ post_subtable t) 
       ]
 
-{-
-data PostAppendix_Version_2_0 = PostAppendix_Version_2_0
-      number_of_glyphs    :: Word16,
-      glyph_name_index    :: UArray Word16 Word16
--}                     
+instance Pretty PostSubtable where 
+  pretty NoPostSubtable               = string "no subtable"
+  pretty (Version2_0 n a ss)          = ppTable "Version 2.0 subtable"
+      [ field "number_of_glyphs"    24 (integral n)
+      , field "glyph_name_index"    24 (ppArray integral a)
+      , field "names"               24 (vsep $ map pretty ss)
+      ]
+  pretty (UnrecognizedPostSubtable v) = string "Unrecognized subtable " 
+                                        <+> pretty v
+
+    
+                  

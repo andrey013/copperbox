@@ -23,18 +23,16 @@ import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 
 import Control.Applicative
-import Data.Array.Unboxed
-
 
 import Text.PrettyPrint.Leijen ( Pretty(..), string )
 
 data ShortLocaTable = ShortLocaTable { 
-      s_loca_offsets  :: UArray ULong UShort
+      s_loca_offsets  :: USequence UShort
     }
   deriving (Eq,Show)
 
 data LongLocaTable = LongLocaTable { 
-      l_loca_offsets  :: UArray ULong ULong
+      l_loca_offsets  :: USequence ULong
     }
   deriving (Eq,Show)
 
@@ -43,11 +41,11 @@ data LongLocaTable = LongLocaTable {
 
 readShortLocaTable :: ULong -> ParserM r ShortLocaTable
 readShortLocaTable sz = ShortLocaTable <$>
-    usequence sz ushort
+    usequence (fromIntegral sz) ushort
 
 readLongLocaTable :: ULong -> ParserM r LongLocaTable
 readLongLocaTable sz = LongLocaTable <$>
-    usequence sz ulong
+    usequence (fromIntegral sz) ulong
     
     
     

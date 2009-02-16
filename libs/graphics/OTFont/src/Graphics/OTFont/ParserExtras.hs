@@ -68,13 +68,13 @@ bitfield p = unbits <$> p
 longDateTime :: ParserM r DateTime
 longDateTime = (\w -> DateTime w undefined) <$> word64be
 
-bxsequence :: (Integral idx, Ix idx, IArray Array a) =>
-        idx -> ParserM r a -> ParserM r (Array idx a)
-bxsequence i p = mkArr <$> count (fromIntegral i) p where
-    mkArr xs = listArray (0,i-1) xs
-
-usequence :: (Integral idx, Ix idx, IArray UArray a) =>
-        idx -> ParserM r a -> ParserM r (UArray idx a)
+usequence :: IArray UArray a => Int -> ParserM r a -> ParserM r (USequence a)
 usequence i p = mkArr <$> count (fromIntegral i) p where
     mkArr xs = listArray (0,i-1) xs
+    
+bxsequence :: IArray Array a => Int -> ParserM r a -> ParserM r (BxSequence a)
+bxsequence i p = mkArr <$> count i p where
+    mkArr xs = listArray (0,i-1) xs
+
+
     
