@@ -18,7 +18,8 @@
 module Graphics.OTFont.ParserExtras where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.ParserCombinators
+import Graphics.OTFont.ParseMonad
+import Graphics.OTFont.ParserCombinators 
 import Graphics.OTFont.Utils
 
 import Control.Applicative

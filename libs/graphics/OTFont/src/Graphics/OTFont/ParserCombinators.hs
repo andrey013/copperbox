@@ -1,4 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -24,61 +23,16 @@ import Graphics.OTFont.ParseMonad
 
 import Control.Applicative
 import Control.Monad.Error
-import Control.Monad.Reader
-import Control.Monad.State
-import Control.Monad.Trans
-import Data.Array.Unboxed ( (!), bounds )
+
+
 import Data.Bits
 import Data.Char ( chr )
 import Data.Int
 import Data.Word
 
-newtype ParseError = ParseError String
-  deriving (Show) 
-
-instance Error ParseError where
-  noMsg = ParseError ""
-  strMsg s = ParseError s  
-
-newtype ParserT r m a = ParserT {
-          getParserT :: ContStateT RAstate RAenv r (ErrorT ParseError m) a
-        }
-  deriving ( Functor, Monad, MonadState RAstate, MonadReader RAenv ) 
-
-runParserT :: Monad m => 
-              ParserT r m r -> ByteSequence -> m (Either ParseError r)
-runParserT (ParserT m) arr = runErrorT $
-    runCST m (const . const . return) st arr where
-        st = let (i,j) = bounds arr in position i j
-        
-        
-instance Monad m => Applicative (ParserT r m) where
-  pure = return
-  (<*>) = ap
-
-instance MonadTrans (ParserT r) where
-  lift = ParserT . cslift . lift 
-  
-instance Monad m => MonadError ParseError (ParserT r m) where
-  throwError = ParserT . csthrowError  
-  m `catchError`  h = ParserT $ cscatchError (getParserT m) (getParserT . h)
 
 
-newRegion' :: Monad m => Region -> ParserT r m ()
-newRegion' (i,j) = ParserT $ put $ position i j  
 
-
---------------------------------------------------------------------------------
--- Primitive parser - word8 
-
-word8 :: Monad m => ParserT r m Word8
-word8 = ParserT $ do
-    a <- input
-    i <- absPosition
-    let e = a!i
-    movePos1
-    return e
-    
 (<:>) :: Applicative f => f a -> f [a] -> f [a]
 (<:>) p1 p2 = (:) <$> p1 <*> p2
 
@@ -98,6 +52,15 @@ chars s = mapM matchChar s
 matchChar :: Monad m => Char -> ParserT r m Char 
 matchChar c = satisfies char (==c)
 
+
+runOn :: Monad m => ParserT r m a -> ParserT r m [a]
+runOn p = do i <- inputRemaining
+             if i == 0 then return []
+                       else p <:> runOn p
+             -- an error will have been thrown if (i<0)
+ 
+    
+  
           
 --------------------------------------------------------------------------------
 -- Text parsers
@@ -117,6 +80,8 @@ pascalString = do
 --------------------------------------------------------------------------------
 --  Number parsers
 
+word8 :: Monad m => ParserT r m Word8
+word8 = getWord8
  
 
 word64be   :: Monad m => ParserT r m Word64

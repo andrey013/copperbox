@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FlexibleContexts           #-} 
@@ -20,6 +21,8 @@
 
 module Graphics.OTFont.ParseMonad where
 
+import Graphics.OTFont.CSEMonad
+
 import Control.Applicative
 import Control.Monad.Cont
 import Control.Monad.Error
@@ -31,141 +34,101 @@ import Data.Word
 
 
 type ByteSequence = UArray Int Word8 
-
-type RAstate = Position
-type RAenv   = ByteSequence
-     
 type Region = (Int,Int)
 
+type ParserState = Region
+data ParserEnv   = ParserEnv { input_bounds :: Region, input_data :: ByteSequence }
+     
 
-newtype Position = Position { getPosition :: Region }
-  deriving (Eq,Show)
+newtype ParseError = ParseError String
+  deriving (Show) 
 
-position :: Int -> Int -> Position
-position i j = Position (i,j)
- 
-move1 :: Position -> Position
-move1 (Position (i,j)) = Position (i+1,j)
+instance Error ParseError where
+  noMsg = ParseError ""
+  strMsg s = ParseError s  
 
+newtype ParserT r m a = ParserT {
+      getParserT :: ContStateEnvT ParserState ParserEnv r (ErrorT ParseError m) a
+    }
+  deriving ( Functor, Monad, MonadState ParserState, MonadReader ParserEnv ) 
 
-newtype ContStateT st env r m a = ContStateT { 
-         runCST :: (a -> st -> env -> m r) -> st -> env -> m r
-      }    
-
-
-  
+runParserT :: Monad m => 
+              ParserT r m r -> ByteSequence -> m (Either ParseError r)
+runParserT (ParserT m) arr = runErrorT $
+    runCSET m (const . const . return) st env where
+        st  = bounds arr
+        env = ParserEnv { input_bounds=st, input_data=arr }
         
-instance Monad m => Functor (ContStateT st env r m) where
-    fmap f m = ContStateT $ \c st env -> runCST m (c . f) st env
+        
+instance Monad m => Applicative (ParserT r m) where
+  pure = return
+  (<*>) = ap
+
+instance MonadTrans (ParserT r) where
+  lift = ParserT . cselift . lift 
+  
+instance Monad m => MonadError ParseError (ParserT r m) where
+  throwError = ParserT . csethrowError  
+  m `catchError`  h = ParserT $ csecatchError (getParserT m) (getParserT . h)
+
+pcallCC :: Monad m => ((a -> ParserT r m b) -> ParserT r m a) -> ParserT r m a
+pcallCC f = ParserT $ csecallCC $ \c -> getParserT (f (\a -> ParserT (c a)))
+  
+instance Monad m => MonadCont (ParserT r m) where
+  callCC = pcallCC
+
+-- No instances of MonadState and MonadReader, because put, get and ask
+-- shouldn't escape this module
+ 
+pput :: ParserState -> ParserT r m ()
+pput = ParserT . cseput
+
+pget :: ParserT r m ParserState
+pget = ParserT $ cseget
+
+
+pask :: ParserT r m ParserEnv
+pask = ParserT $ cseask
+ 
+
+ 
+move1 :: Monad m => ParserT r m ()
+move1 = do 
+    (i,j) <- pget
+    if i<j then put (i+1,j) 
+           else throwError $ strMsg $ "move1 - out of bounds at " ++ show i
+
+position :: Monad m => ParserT r m Int
+position = fst <$> pget
+
+input :: Monad m => ParserT r m ByteSequence
+input = input_data <$> pask
+
+inputBounds :: Monad m => ParserT r m Region
+inputBounds = input_bounds <$> pask
+
+inputRemaining :: Monad m => ParserT r m Int
+inputRemaining = f <$> pget where
+  f (i,j) = j - i
+
+setRange :: Monad m => Int -> Int -> ParserT r m ()
+setRange offset len = let (m,n) = (offset, offset+len) in do
+  (i,j) <- inputBounds
+  if (m < i || n > j) 
+      then throwError $ strMsg $ "setRange - out of bounds " 
+                                    ++ show (m,n) ++ " on "
+                                    ++ show (i,j)
+      else put (m,n)
+             
     
-csreturn :: a -> ContStateT st env r m a
-csreturn x = ContStateT $ \c st env -> c x st env
 
-csbind :: ContStateT st env r m a -> 
-            (a -> ContStateT st env r m b) -> ContStateT st env r m b
-csbind m f = ContStateT $ \c -> runCST m (\a -> runCST (f a) c) 
+--------------------------------------------------------------------------------
+-- Primitive parser - getWord8 
 
-instance Monad m => Monad (ContStateT st env r m) where
-  return = csreturn
-  (>>=) = csbind
-   
-instance Monad m => Applicative (ContStateT st env r m) where
-  pure  = return
-  (<*>) = ap  
-
-
-cscallCC :: ((a -> ContStateT st env r m b) -> ContStateT st env r m a) -> 
-                ContStateT st env r m a
-cscallCC h = ContStateT $ \c -> runCST (h (\a -> ContStateT $ \_c' -> c a)) c
-
-
-instance Monad m => MonadCont (ContStateT st env r m) where
-  callCC = cscallCC 
-
-
-
--- shift and reset typecheck at least...
-csshift :: Monad m => 
-           ((a -> ContStateT st env r m r) -> ContStateT st env r m r) -> 
-           ContStateT st env r m a
-csshift h = 
-  ContStateT $ \c st env -> runCST (h (\v -> ContStateT $ \c' st' env' -> 
-                                                (c v st' env') >>= \f ->
-                                                  c' f st' env')) -- ? which state and env
-                                      (const . const . return)
-                                      st
-                                      env
-                                      
-                                      
-csreset :: Monad m => ContStateT st env r m r -> ContStateT st env r m r
-csreset m = ContStateT $ \c st env -> 
-                (runCST m (const . const . return) st env) >>= \f -> c f st env 
-
-
-
-
-cslift :: Monad m => m a -> ContStateT st env r m a
-cslift m = ContStateT $ \c st env -> m >>= (\a -> c a st env)
-
-instance MonadTrans (ContStateT st env r) where
-  lift = cslift
-  
-    
-csget :: ContStateT st env r m st
-csget = ContStateT $ \c st env -> c st st env
-
-csput :: st -> ContStateT st env r m ()
-csput st = ContStateT $ \c _ env -> c () st env
-
-instance Monad m => MonadState st (ContStateT st env r m) where
-  get = csget
-  put = csput
-
-
-  
-csask :: ContStateT st env r m env
-csask = ContStateT $ \c st env -> c env st env  
-
-cslocal :: (env -> env) -> ContStateT st env r m a -> ContStateT st env r m a
-cslocal f m = ContStateT $ \c st env -> runCST m c st (f env) 
-
-  
-instance Monad m => MonadReader env (ContStateT st env r m) where 
-  ask = csask
-  local = cslocal
-
--- if the inner monad supports @MonadError@ use it...
-csthrowError :: MonadError e m => e -> ContStateT st env r m a
-csthrowError e = cslift $ throwError e
-
-{-
--- without lift...
-csthrowError' :: MonadError e m => e -> ContStateT st env r m a
-csthrowError' e = ContStateT $ \c st env -> throwError e >>= (\a -> c a st env)
--}
-
-
-cscatchError :: MonadError e m =>
-                ContStateT st env r m a -> (e -> ContStateT st env r m a) -> 
-                ContStateT st env r m a
-cscatchError m h = 
-    ContStateT $ \c st env -> catchError (runCST m c st env)
-                                         (\e -> runCST (h e) c st env)
-
-                
-
-absPosition :: Monad m => ContStateT RAstate RAenv r m Int
-absPosition = fst . getPosition <$> get
-
-movePos1 :: Monad m => ContStateT RAstate RAenv r m ()
-movePos1 = do 
-  p <- get
-  put $ move1 p
-  
-newRegion :: Monad m => Region -> ContStateT RAstate RAenv r m ()
-newRegion (i,j) = put $ position i j  
-
-
-
-input :: Monad m => ContStateT RAstate RAenv r m ByteSequence
-input = ask
+getWord8 :: Monad m => ParserT r m Word8
+getWord8 = do
+    a <- input
+    i <- position
+    let e = a!i
+    move1
+    return e
