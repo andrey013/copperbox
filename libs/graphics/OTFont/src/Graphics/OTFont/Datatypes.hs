@@ -108,18 +108,18 @@ data ProtoFace = ProtoFace {
   
 data OffsetTable = OffsetTable {
       sfnt_version    :: String,
-      num_tables      :: Word16,
-      search_range    :: Word16,
-      entry_selector  :: Word16,
-      range_shift     :: Word16
+      num_tables      :: UShort,
+      search_range    :: UShort,
+      entry_selector  :: UShort,
+      range_shift     :: UShort
     } 
   deriving (Eq,Show)      
       
 data TableDirectory = TableDirectory {
       tag             :: String,
-      check_sum       :: Word32,
-      offset          :: Word32,
-      table_length    :: Word32
+      check_sum       :: ULong,
+      offset          :: ULong,
+      table_length    :: ULong
     } 
   deriving (Eq,Show)  
  

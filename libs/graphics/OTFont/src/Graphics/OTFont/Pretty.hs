@@ -22,9 +22,11 @@ import Graphics.OTFont.Datatypes
 import Graphics.OTFont.Utils
 
 import Data.Array.Unboxed
+import Data.Bits ( testBit ) 
 import Data.Char
 import Data.List
-import qualified Data.Map as Map 
+import qualified Data.Map as Map
+import Data.Word 
 import Numeric ( showHex )
 import Text.PrettyPrint.Leijen
 
@@ -115,4 +117,11 @@ hex2 i | i < 16     = '0' : showHex i []
        | otherwise  = showHex i []
 
 pphex2 :: Integral i => i -> Doc    
-pphex2 = text . hex2          
+pphex2 = text . hex2  
+
+
+ppBits :: Word8 -> Doc
+ppBits w = hcat $ 
+    map (\i -> if w `testBit` i then char '1' else char '0') [0..7]
+    
+            

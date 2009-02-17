@@ -55,6 +55,12 @@ runParserFile path p = withBinaryFile path ReadMode $ \h -> do
     freezeByteSequence :: IOUArray Int Word8 -> IO ByteSequence
     freezeByteSequence = freeze
 
+
+parsefile :: FilePath -> (ProtoFace -> Parser r r) -> IO (Either ParseError r) 
+parsefile path p = runParserFile path (protoFace >>= p) 
+
+          
+          
 --------------------------------------------------------------------------------    
 
 protoFace :: Parser r ProtoFace

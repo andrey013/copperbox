@@ -28,6 +28,7 @@ import Control.Monad.Error
 import Data.Bits
 import Data.Char ( chr )
 import Data.Int
+import qualified Data.Sequence as S
 import Data.Word
 
 
@@ -53,14 +54,21 @@ matchChar :: Monad m => Char -> ParserT r m Char
 matchChar c = satisfies char (==c)
 
 
-runOn :: Monad m => ParserT r m a -> ParserT r m [a]
-runOn p = do i <- inputRemaining
-             if i == 0 then return []
-                       else p <:> runOn p
+runOnL :: Monad m => ParserT r m a -> ParserT r m [a]
+runOnL p = do i <- inputRemaining
+              if i == 0 then return []
+                        else p <:> runOnL p
              -- an error will have been thrown if (i<0)
  
-    
-  
+(<<|>) :: Applicative f => f a -> f (S.Seq a) -> f (S.Seq a)
+(<<|>) p1 p2 = (S.<|) <$> p1 <*> p2
+
+
+runOnS :: Monad m => ParserT r m a -> ParserT r m (S.Seq a)
+runOnS p = do i <- inputRemaining
+              if i == 0 then return S.empty
+                        else p <<|> runOnS p
+             -- an error will have been thrown if (i<0)
           
 --------------------------------------------------------------------------------
 -- Text parsers

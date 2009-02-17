@@ -32,7 +32,7 @@ import Text.PrettyPrint.Leijen ( Pretty(..), Doc, space, (<>), hsep )
 data Glyf = 
       SimpleGlyf { 
           gylf_header       :: GlyfHeader,
-          simple_glyf_body  :: SimpleGlyph 
+          simple_glyf_body  :: SimpleGlyphData 
         }
     | CompositeGlyf { 
           gylf_header       :: GlyfHeader,
@@ -60,7 +60,7 @@ readGlyf = do
     hdr <- readGlyfHeader
     if composite hdr then do cbdy <- readCompositeGlyph
                              return $ CompositeGlyf hdr cbdy
-                     else do sbdy <- readSimpleGlyph (num_contours hdr)
+                     else do sbdy <- readSimpleGlyphData (num_contours hdr)
                              return $ SimpleGlyf hdr sbdy
                                       
 readGlyfHeader :: Parser r GlyfHeader
@@ -70,7 +70,7 @@ readGlyfHeader = GlyfHeader <$>
 instance Pretty Glyf where
   pretty (SimpleGlyf h b) = ppTable "simple glyph" (xs ++ ys) where
       xs = headerFields h
-      ys = simpleGlyphFields b
+      ys = simpleGlyphDataFields b
       
       
   pretty (CompositeGlyf h _b) = ppTable "composite glyph" (xs ++ ys) where
@@ -93,62 +93,44 @@ headerFields t =
 --------------------------------------------------------------------------------
 --
 
-data OutlinePoint = OnCurvePt UShort UShort
-                | OffCurvePt UShort UShort
-  deriving (Eq,Ord,Show)
+
  
 
 data Coord = Coord UShort UShort
   deriving (Eq,Show)
     
 
-data SimpleGlyph = SimpleGlyph {
+data SimpleGlyphData = SimpleGlyphData {
       end_pts_of_contours   :: [UShort],
       instruction_length    :: UShort,
       instructions          :: USequence Byte,  -- uninterpreted
-      sg_flags              :: BxSequence Byte,
-      x_coordinates         :: BxSequence Coord,
-      y_coordinates         :: BxSequence Coord
+      sg_flags              :: [Byte],
+      xy_data               :: [Byte]
     }
   deriving (Eq,Show)
   
   
-data SimpleGlyphFlag  = 
-      SG0_OnCurve
-    | SG1_XShortVector
-    | SG2_YShortVector
-    | SG3_Repeat
-    | SG4_XSame
-    | SG5_YSame
-    | SG6_Reserved
-    | SG7_Reserved
-  deriving (Enum,Eq,Ord,Show)
 
-readSimpleGlyph :: Short -> Parser r SimpleGlyph
-readSimpleGlyph nc = do
+
+readSimpleGlyphData :: Short -> Parser r SimpleGlyphData
+readSimpleGlyphData nc = do
     ends  <- count (fromIntegral nc) ushort
     let csize = 1 + fromIntegral (foldr max 0 ends)
-    
     len   <- ushort
     insts <- usequence (fromIntegral len) byte
-    flags <- bxsequence csize byte
-    return $ SimpleGlyph ends len insts flags undefined undefined
-
-
--- Consume 1 byte to get a UShort
-extract1byte :: Parser r  UShort
-extract1byte = fromIntegral <$> word8
-
--- Consume 2 bytes to get a UShort
-extract2byte :: Parser r UShort
-extract2byte = word16be
+    flags <- count csize byte
+    xy    <- count 1000 byte
+    return $ SimpleGlyphData ends len insts flags xy
 
 
 
-simpleGlyphFields :: SimpleGlyph -> [Doc]
-simpleGlyphFields (SimpleGlyph ends _ _ flags _ _) = 
+
+
+
+simpleGlyphDataFields :: SimpleGlyphData -> [Doc]
+simpleGlyphDataFields (SimpleGlyphData ends _ _ flags _) = 
     [ field "end_pts_of_contours"      24 (hsep $ map ((space <>) . integral) ends)
-    , field "flags"                    24 (ppArray ((space <>) . pphex2) flags)
+    , field "flags"                    24 (hsep $ map pphex2 flags)
     ]
     
     

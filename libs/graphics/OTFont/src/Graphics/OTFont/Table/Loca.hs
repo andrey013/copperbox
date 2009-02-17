@@ -19,7 +19,6 @@ module Graphics.OTFont.Table.Loca where
 
 import Graphics.OTFont.Datatypes
 import Graphics.OTFont.Parse
-import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 

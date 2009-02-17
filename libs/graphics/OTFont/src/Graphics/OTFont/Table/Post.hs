@@ -78,7 +78,7 @@ readPostSubtable d
     | d == 1.0 || d == 3.0  = return NoPostSubtable
     | d == 2.0              = do n    <- ushort
                                  arr  <- usequence (fromIntegral n) ushort
-                                 cs   <- runOn pascalString
+                                 cs   <- runOnL pascalString
                                  return $ Version2_0 n arr cs
     | otherwise             = return $ UnrecognizedPostSubtable d
         
