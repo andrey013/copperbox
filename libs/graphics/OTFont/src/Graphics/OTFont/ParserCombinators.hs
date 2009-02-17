@@ -48,7 +48,7 @@ newtype ParserT r m a = ParserT {
 runParserT :: Monad m => 
               ParserT r m r -> ByteSequence -> m (Either ParseError r)
 runParserT (ParserT m) arr = runErrorT $
-    runCST m (\c _st _env -> return c) st arr where
+    runCST m (const . const . return) st arr where
         st = let (i,j) = bounds arr in position i j
         
         

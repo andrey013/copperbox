@@ -21,6 +21,7 @@
 module Graphics.OTFont.ParseMonad where
 
 import Control.Applicative
+import Control.Monad.Cont
 import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.State
@@ -54,7 +55,7 @@ newtype ContStateT st env r m a = ContStateT {
 
   
         
-instance Functor (ContStateT st env r m) where
+instance Monad m => Functor (ContStateT st env r m) where
     fmap f m = ContStateT $ \c st env -> runCST m (c . f) st env
     
 csreturn :: a -> ContStateT st env r m a
@@ -71,6 +72,37 @@ instance Monad m => Monad (ContStateT st env r m) where
 instance Monad m => Applicative (ContStateT st env r m) where
   pure  = return
   (<*>) = ap  
+
+
+cscallCC :: ((a -> ContStateT st env r m b) -> ContStateT st env r m a) -> 
+                ContStateT st env r m a
+cscallCC h = ContStateT $ \c -> runCST (h (\a -> ContStateT $ \_c' -> c a)) c
+
+
+instance Monad m => MonadCont (ContStateT st env r m) where
+  callCC = cscallCC 
+
+
+
+-- shift and reset typecheck at least...
+csshift :: Monad m => 
+           ((a -> ContStateT st env r m r) -> ContStateT st env r m r) -> 
+           ContStateT st env r m a
+csshift h = 
+  ContStateT $ \c st env -> runCST (h (\v -> ContStateT $ \c' st' env' -> 
+                                                (c v st' env') >>= \f ->
+                                                  c' f st' env')) -- ? which state and env
+                                      (const . const . return)
+                                      st
+                                      env
+                                      
+                                      
+csreset :: Monad m => ContStateT st env r m r -> ContStateT st env r m r
+csreset m = ContStateT $ \c st env -> 
+                (runCST m (const . const . return) st env) >>= \f -> c f st env 
+
+
+
 
 cslift :: Monad m => m a -> ContStateT st env r m a
 cslift m = ContStateT $ \c st env -> m >>= (\a -> c a st env)
@@ -132,6 +164,7 @@ movePos1 = do
   
 newRegion :: Monad m => Region -> ContStateT RAstate RAenv r m ()
 newRegion (i,j) = put $ position i j  
+
 
 
 input :: Monad m => ContStateT RAstate RAenv r m ByteSequence
