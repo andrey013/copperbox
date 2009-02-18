@@ -18,7 +18,7 @@ module Graphics.OTFont.Glyph.GlyphDecoder where
 
 import Graphics.OTFont.Glyph.Datatypes
 
-import Graphics.OTFont.ParserCombinators ( mkI16le )
+import Graphics.OTFont.ParserCombinators ( mkI16be )
 
 import Data.Bits
 import Data.Int
@@ -93,21 +93,21 @@ decodeXCoords = step (0,[])
     step (_,cca) []                 ws        = (reverse cca,ws)
     
     -- 2 = int16 -- take two from the word-stream
-    step (_,cca) (Inst c 2 y:xs)    (w:w':ws) = let x = deltaVector w w'
+    step (u,cca) (Inst c 2 y:xs)    (w:w':ws) = let x = u + deltaVector w w'
                                                     i = Inst c x y
                                                 in step (x,i:cca) xs ws
                                             
     -- 1 = word8 and positive - take one from word-stream
-    step (_,cca) (Inst c 1 y:xs)    (w:ws)    = let x = fromIntegral w
+    step (u,cca) (Inst c 1 y:xs)    (w:ws)    = let x = u + fromIntegral w
                                                     i = Inst c x y
                                                 in step (x,i:cca) xs ws
                                             
     -- 0 = use cached x value - take none
-    step (x,cca) (Inst c 0 y:xs)    ws        = let i = Inst c x y
-                                                in step (x,i:cca) xs ws  
+    step (u,cca) (Inst c 0 y:xs)    ws        = let i = Inst c u y
+                                                in step (u,i:cca) xs ws  
     
     -- 1 = word8 and negative - take one from word-stream and negate it
-    step (_,cca) (Inst c (-1) y:xs) (w:ws)    = let x = negate $ fromIntegral w
+    step (u,cca) (Inst c (-1) y:xs) (w:ws)    = let x = u - fromIntegral w
                                                     i = Inst c x y
                                                 in step (x,i:cca) xs ws 
 
@@ -129,21 +129,21 @@ decodeYCoords = step 0
     step _ []                 _ws       = []
     
     -- 2 = int16 -- take two from the word-stream
-    step _ (Inst c x 2:ys)    (w:w':ws) = let y   = deltaVector w w'
+    step u (Inst c x 2:ys)    (w:w':ws) = let y   = u + deltaVector w w'
                                               pt  = mkPoint c x y
                                           in pt : step y ys ws
                                            
     -- 1 = word8 and positive - take one from word-stream
-    step _ (Inst c x 1:ys)    (w:ws)    = let y   = fromIntegral w
+    step u (Inst c x 1:ys)    (w:ws)    = let y   = u + fromIntegral w
                                               pt  = mkPoint c x y
                                           in pt : step y ys ws
                                             
     -- 0 = use cached y value - take none
-    step y (Inst c x 0:ys)    ws        = let pt  = mkPoint c x y
-                                          in pt : step y ys ws  
+    step u (Inst c x 0:ys)    ws        = let pt  = mkPoint c x u
+                                          in pt : step u ys ws  
     
     -- 1 = word8 and negative - take one from word-stream and negate it
-    step _ (Inst c x (-1):ys) (w:ws)    = let y = negate $ fromIntegral w
+    step u (Inst c x (-1):ys) (w:ws)    = let y = u - fromIntegral w
                                               pt  = mkPoint c x y
                                           in pt : step y ys ws 
   
@@ -154,9 +154,8 @@ decodeYCoords = step 0
     mkPoint COff x y                    = OffCurvePt x y
 
 
--- delta vectors require a different interpretation to this function
--- What does /delta vector/ mean?  
+
 deltaVector :: Word8 -> Word8 -> Int16
-deltaVector i j = mkI16le i j 
+deltaVector = mkI16be
 
     

@@ -101,6 +101,12 @@ move1 = do
 position :: Monad m => ParserT r m Int
 position = fst <$> pget
 
+reportError :: Monad m => String -> ParserT r m a
+reportError s = do
+  i <- position
+  throwError $ strMsg $ "Error - at " ++ show i ++ ": " ++ s  
+
+
 input :: Monad m => ParserT r m ByteSequence
 input = input_data <$> pask
 
