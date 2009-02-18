@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,7 +19,7 @@
 module Graphics.OTFont.Table.Name where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParseMonad
 import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
@@ -29,7 +30,7 @@ import Control.Applicative
 import qualified Data.ByteString as BS
 import Data.Char ( chr ) 
 import Data.List ( find )
-
+import Data.Typeable
 
 import Text.PrettyPrint.Leijen ( Pretty(..), indent, vsep )
 
@@ -40,7 +41,7 @@ data NameTable = NameTable {
       name_records    :: [NameRecord],
       string_data     :: StringData
     }
-  deriving (Eq,Show)
+  deriving (Eq,Show,Typeable)
 
 instance Pretty NameTable where
   pretty (NameTable nf nc so ns _) = ppTable "Name Table" 
@@ -174,7 +175,7 @@ instance Meaning NameId where
   meaning PostScipt_CID       = "PostScipt CID findfont name"
   meaning (Reserved_name i)   = "Reserved " ++ show i 
 
-readNameTable :: Parser r NameTable
+readNameTable :: Monad m => ParserT r m NameTable
 readNameTable = do 
     nf  <- ushort
     nc  <- ushort
@@ -183,7 +184,7 @@ readNameTable = do
     sd  <- undefined -- flush
     return $ NameTable nf nc so nr sd
 
-nameRecord :: Parser r NameRecord 
+nameRecord :: Monad m => ParserT r m NameRecord 
 nameRecord = NameRecord <$>
    platformId <*> encodingId <*> ushort <*> nameId <*> ushort <*> ushort 
   where 

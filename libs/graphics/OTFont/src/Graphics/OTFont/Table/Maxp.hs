@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,11 +19,12 @@
 module Graphics.OTFont.Table.Maxp where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParseMonad
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 
 import Control.Applicative
+import Data.Typeable
 
 import Text.PrettyPrint.Leijen ( Pretty(..), Doc )
 
@@ -39,11 +41,11 @@ data MaxpTable =
           num_glyphs     :: UShort,
           maxp_1_0_body  :: Version_1_0_Body 
       }
-  deriving (Eq,Show)
+  deriving (Eq,Show,Typeable)
                
 
 
-readMaxpTable :: Parser r MaxpTable
+readMaxpTable :: Monad m => ParserT r m MaxpTable
 readMaxpTable = do 
     v   <- fixed 
     ng  <- ushort
@@ -73,7 +75,7 @@ data Version_1_0_Body = Version_1_0_Body {
     }
   deriving (Eq,Show)
 
-readVersion1Body :: Parser r Version_1_0_Body
+readVersion1Body :: Monad m => ParserT r m Version_1_0_Body
 readVersion1Body = Version_1_0_Body <$>  
         ushort    <*> ushort  <*> ushort  <*> ushort
     <*> ushort    <*> ushort  <*> ushort  <*> ushort

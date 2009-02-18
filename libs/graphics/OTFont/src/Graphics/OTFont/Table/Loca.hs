@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,13 +19,14 @@
 module Graphics.OTFont.Table.Loca where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParseMonad
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 import Graphics.OTFont.Utils ( regionBetween )
 
-import Data.Array.IArray ( elems, bounds, (!) ) 
 import Control.Applicative
+import Data.Array.IArray ( elems, bounds, (!) ) 
+import Data.Typeable
 
 import Text.PrettyPrint.Leijen ( Doc, Pretty(..) )
 
@@ -35,24 +37,27 @@ data LocaTable = LocaTable {
         storage_mode  :: LocaStorage,
         loca_offsets  :: USequence ULong
     }
-  deriving (Eq,Show)
+  deriving (Eq,Show,Typeable)
 
 -- Note allignment issues to think about... ?
 
--- numglyphs plus1 to account for 0 being the .notAccess glyph
-readLocaTable :: Short -> ULong -> Parser r LocaTable
+-- indexToLocFormat in head table determines whether the Loca table
+-- stores shorts or longs
+
+-- numglyphs (maxp table) plus1 to account for 0 being the .notAccess glyph
+readLocaTable :: Monad m => Short -> UShort -> ParserT r m LocaTable
 readLocaTable 0 num_glyphs = readShortLocaTable (num_glyphs + 1)
 readLocaTable _ num_glyphs = readLongLocaTable (num_glyphs + 1)
 
 
-readShortLocaTable :: ULong -> Parser r LocaTable
+readShortLocaTable :: Monad m => UShort -> ParserT r m LocaTable
 readShortLocaTable sz = LocaTable UShortLS <$>
     usequence (fromIntegral sz) ushortAsULong
   where
-    ushortAsULong :: Parser r ULong
+    ushortAsULong :: Monad m => ParserT r m ULong
     ushortAsULong = (2 *) . fromIntegral <$> ushort   
 
-readLongLocaTable :: ULong -> Parser r LocaTable
+readLongLocaTable :: Monad m => UShort -> ParserT r m LocaTable
 readLongLocaTable sz = LocaTable ULongLS  <$>
     usequence (fromIntegral sz) ulong
     

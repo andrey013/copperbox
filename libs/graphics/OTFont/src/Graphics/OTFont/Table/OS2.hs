@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,7 +19,7 @@
 module Graphics.OTFont.Table.OS2 where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParseMonad
 import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
@@ -26,7 +27,7 @@ import Graphics.OTFont.Pretty
 
 import Control.Applicative
 import Data.Array.Unboxed
-
+import Data.Typeable
 
 import Text.PrettyPrint.Leijen ( Pretty(..) )
 
@@ -69,9 +70,9 @@ data OS2Table = OS2Table {
       us_break_char           :: UShort,
       us_max_context          :: UShort
     }
-  deriving (Eq,Show)
+  deriving (Eq,Show,Typeable)
 
-readOS2Table :: Parser r OS2Table
+readOS2Table ::  Monad m => ParserT r m OS2Table
 readOS2Table = OS2Table <$> 
         ushort          -- os2_version
     <*> short           -- x_avg_char_width   

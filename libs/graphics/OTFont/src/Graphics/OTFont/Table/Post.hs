@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,13 +19,14 @@
 module Graphics.OTFont.Table.Post where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParseMonad
 import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 import Graphics.OTFont.Utils
 
 import Control.Applicative
+import Data.Typeable
 
 import Text.PrettyPrint.Leijen ( Pretty(..), vsep, (<+>), string  )
 
@@ -37,7 +39,7 @@ data PostTable = PostTable {
       mem_usage           :: PostMemUsage,
       post_subtable       :: PostSubtable
     }
-  deriving (Eq,Show)
+  deriving (Eq,Show,Typeable)
 
 data PostMemUsage = PostMemUsage {
       min_mem_type42      :: ULong,
@@ -57,7 +59,7 @@ data PostSubtable =
     | UnrecognizedPostSubtable Fixed
   deriving (Eq,Show)
   
-readPostTable :: Parser r PostTable
+readPostTable :: Monad m => ParserT r m PostTable
 readPostTable = do 
     v     <- fixed
     b     <- fixed   
@@ -68,12 +70,12 @@ readPostTable = do
     g     <- readPostSubtable v
     return $ PostTable v b c d e f g
 
-readPostMemUsage :: Parser r PostMemUsage
+readPostMemUsage :: Monad m => ParserT r m PostMemUsage
 readPostMemUsage = PostMemUsage <$>
         ulong <*> ulong <*> ulong <*> ulong 
 
 
-readPostSubtable :: Fixed -> Parser r PostSubtable
+readPostSubtable :: Monad m => Fixed -> ParserT r m PostSubtable
 readPostSubtable d 
     | d == 1.0 || d == 3.0  = return NoPostSubtable
     | d == 2.0              = do n    <- ushort

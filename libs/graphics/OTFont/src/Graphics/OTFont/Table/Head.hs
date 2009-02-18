@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,13 +19,13 @@
 module Graphics.OTFont.Table.Head where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParseMonad
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 import Graphics.OTFont.Utils
 
 import Control.Applicative
-
+import Data.Typeable
 
 import Text.PrettyPrint.Leijen ( Pretty(..) )
 
@@ -48,9 +49,9 @@ data HeadTable = HeadTable {
       index_to_loc_format     :: Short,
       glyph_data_format       :: Short
   }
-  deriving (Eq,Show)
+  deriving (Eq,Show,Typeable)
 
-readHeadTable :: Parser r HeadTable
+readHeadTable :: Monad m => ParserT r m HeadTable
 readHeadTable = HeadTable <$>
           fixed 
       <*> fixed 

@@ -18,8 +18,7 @@
 module Graphics.OTFont.Table.Glyf where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
-import Graphics.OTFont.ParseMonad ( withinRangeRel )
+import Graphics.OTFont.ParseMonad
 import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
@@ -56,7 +55,7 @@ composite :: GlyfHeader -> Bool
 composite (GlyfHeader nc _ _ _ _)     | nc < 0      = True
                                       | otherwise   = False
                                       
-readGlyf :: Int -> Int -> Parser r Glyf
+readGlyf :: Monad m => Int -> Int -> ParserT r m Glyf
 readGlyf offset len = withinRangeRel offset len $ do 
     hdr <- readGlyfHeader
     if composite hdr then do cbdy <- readCompositeGlyph
@@ -64,7 +63,7 @@ readGlyf offset len = withinRangeRel offset len $ do
                      else do sbdy <- readSimpleGlyphData (num_contours hdr)
                              return $ SimpleGlyf hdr sbdy
                                       
-readGlyfHeader :: Parser r GlyfHeader
+readGlyfHeader :: Monad m => ParserT r m GlyfHeader
 readGlyfHeader = GlyfHeader <$>
     short <*> short <*> short <*> short <*> short
 
@@ -113,7 +112,7 @@ data SimpleGlyphData = SimpleGlyphData {
   
 
 
-readSimpleGlyphData :: Short -> Parser r SimpleGlyphData
+readSimpleGlyphData :: Monad m => Short -> ParserT r m SimpleGlyphData
 readSimpleGlyphData nc = do
     ends  <- count (fromIntegral nc) ushort
     let csize = 1 + fromIntegral (foldr max 0 ends)
@@ -162,6 +161,6 @@ data CompositeGlyphFlag  =
     | CompositeGlyphFlag UShort
   deriving (Eq,Ord,Show)
   
-readCompositeGlyph :: Parser r CompositeGlyph
+readCompositeGlyph :: Monad m => ParserT r m CompositeGlyph
 readCompositeGlyph = undefined
 

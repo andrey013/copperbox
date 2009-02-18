@@ -19,7 +19,7 @@
 module Graphics.OTFont.Table.Cmap where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParseMonad
 import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
@@ -38,7 +38,7 @@ data CmapTable = CmapTable {
     }
   deriving (Eq,Show,Typeable)
 
-readCmapTable :: Parser r CmapTable
+readCmapTable :: Monad m => ParserT r m CmapTable
 readCmapTable = do 
     hdr@(CmapHeader _ i)  <- readCmapHeader
     ts                    <- count (fromIntegral i) readEncodingRecord
@@ -57,11 +57,11 @@ data CmapHeader = CmapHeader {
       cmap_table_version_num  :: UShort,
       cmap_num_tables         :: UShort
   }
-  deriving (Eq,Show,Typeable)
+  deriving (Eq,Show)
 
       
 
-readCmapHeader :: Parser r CmapHeader
+readCmapHeader :: Monad m => ParserT r m CmapHeader
 readCmapHeader = CmapHeader <$>
     ushort <*> ushort
 
@@ -77,9 +77,9 @@ data EncodingRecord = EncodingRecord {
       cmap_encoding_id  :: EncodingId,
       cmap_offset       :: ULong
     }
-  deriving (Eq,Show,Typeable)
+  deriving (Eq,Show)
   
-readEncodingRecord :: Parser r EncodingRecord
+readEncodingRecord :: Monad m => ParserT r m EncodingRecord
 readEncodingRecord = EncodingRecord <$>
           platformId  
       <*> encodingId
@@ -178,7 +178,7 @@ data CharacterCodeGroup = CharacterCodeGroup {
   deriving (Eq,Show) 
 
 
-readCmapSubtable :: Parser r CmapSubtable 
+readCmapSubtable :: Monad m => ParserT r m CmapSubtable 
 readCmapSubtable = ushort >>= subtable 
   where
     subtable  0 = readFormat0
@@ -239,7 +239,7 @@ readCmapSubtable = ushort >>= subtable
                        return $ Format12 hdr n_grps grps    
 
 
-subH ::UShort -> Parser r SubtableHeader
+subH :: Monad m => UShort -> ParserT r m SubtableHeader
 subH fmt | fmt <= 6   = shortH
          | otherwise  = longH 
   where 
@@ -250,13 +250,13 @@ subH fmt | fmt <= 6   = shortH
     longH  = (SubtableHeader fmt)
         <$> (ushort *> ulong) <*> ulong
         
-readFormat4_SearchParams :: Parser r Format4_SearchParams
+readFormat4_SearchParams :: Monad m => ParserT r m Format4_SearchParams
 readFormat4_SearchParams = Format4_SearchParams <$>
     ushort <*> ushort <*> ushort <*> ushort
 
                        
         
-readCharacterCodeGroup :: Parser r CharacterCodeGroup
+readCharacterCodeGroup :: Monad m => ParserT r m CharacterCodeGroup
 readCharacterCodeGroup = CharacterCodeGroup <$>
       ulong <*> ulong <*> ulong
       

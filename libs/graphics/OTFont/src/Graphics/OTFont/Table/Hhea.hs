@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,12 +19,12 @@
 module Graphics.OTFont.Table.Hhea where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParseMonad
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 
 import Control.Applicative
-
+import Data.Typeable
 
 import Text.PrettyPrint.Leijen ( Pretty(..) )
 
@@ -43,9 +44,9 @@ data HheaTable = HheaTable {
       number_of_h_metrics     :: UShort
       
     }
-  deriving (Eq,Show)
+  deriving (Eq,Show,Typeable)
 
-readHheaTable :: Parser r HheaTable
+readHheaTable :: Monad m => ParserT r m HheaTable
 readHheaTable = HheaTable <$> 
         fixed   <*> fword   <*> fword   <*> fword
     <*> ufword  <*> fword   <*> fword   <*> fword

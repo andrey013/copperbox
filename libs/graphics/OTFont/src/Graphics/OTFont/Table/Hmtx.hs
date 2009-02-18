@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,12 +19,13 @@
 module Graphics.OTFont.Table.Hmtx where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.Parse
+import Graphics.OTFont.ParseMonad
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
 
 import Control.Applicative
 import Data.Array.IArray hiding ( array )
+import Data.Typeable
 
 import Text.PrettyPrint.Leijen ( Pretty(..), tupled )
 
@@ -33,7 +35,7 @@ data HmtxTable = HmtxTable {
       h_metrics           :: Array Int LongHorMetric,
       left_side_bearing   :: Array Int Short
     }
-  deriving (Eq,Show)
+  deriving (Eq,Show,Typeable)
 
 data LongHorMetric = LongHorMetric { 
       lhm_advance_width   :: UShort,
@@ -43,7 +45,7 @@ data LongHorMetric = LongHorMetric {
 
 -- hmetric_count is @number_of_h_metrics@ from @hhea@
 -- glyph_count @num_glyphs@ from @maxp@
-readHmtxTable :: UShort -> UShort -> Parser r HmtxTable
+readHmtxTable :: Monad m => UShort -> UShort -> ParserT r m HmtxTable
 readHmtxTable hmetric_count glyf_count = HmtxTable <$>
         bxsequence msize readLongHorMetric
     <*> bxsequence gsize short
@@ -51,7 +53,7 @@ readHmtxTable hmetric_count glyf_count = HmtxTable <$>
     msize = fromIntegral hmetric_count
     gsize = fromIntegral $ glyf_count - hmetric_count
     
-readLongHorMetric :: Parser r LongHorMetric
+readLongHorMetric :: Monad m => ParserT r m LongHorMetric
 readLongHorMetric = LongHorMetric <$>
     ushort <*> short
         
