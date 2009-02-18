@@ -21,6 +21,7 @@
 
 module Graphics.OTFont.ParseMonad where
 
+import Graphics.OTFont.Datatypes ( Region )
 import Graphics.OTFont.CSEMonad
 
 import Control.Applicative
@@ -34,7 +35,7 @@ import Data.Word
 
 
 type ByteSequence = UArray Int Word8 
-type Region = (Int,Int)
+
 
 type ParserState = Region
 data ParserEnv   = ParserEnv { input_bounds :: Region, input_data :: ByteSequence }
@@ -125,8 +126,27 @@ setRange offset len = let (m,n) = (offset, offset+len) in do
                                     ++ show (m,n) ++ " on "
                                     ++ show (i,j)
       else put (m,n)
-             
-    
+
+-- run parser p within the supplied range retore the /original/ range 
+-- afterwards
+
+-- relative
+withinRangeRel :: Monad m => Int -> Int -> ParserT r m a -> ParserT r m a  
+withinRangeRel offset len p = do 
+    o@(oo,_) <- get
+    setRange (oo+offset) len
+    a <- p
+    put o
+    return a
+
+-- absolute  
+withinRangeAbs :: Monad m => Int -> Int -> ParserT r m a -> ParserT r m a  
+withinRangeAbs absval len p = do 
+    o <- get
+    setRange absval len
+    a <- p
+    put o
+    return a
 
 --------------------------------------------------------------------------------
 -- Primitive parser - getWord8 

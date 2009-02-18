@@ -25,7 +25,6 @@ import Data.Array.Unboxed
 import Data.Bits ( testBit ) 
 import Data.Char
 import Data.List
-import qualified Data.Map as Map
 import Data.Word 
 import Numeric ( showHex )
 import Text.PrettyPrint.Leijen
@@ -38,26 +37,7 @@ ppMeaning = text . meaning
 meaningParensEnum :: (Meaning a, Enum a) => a -> Doc
 meaningParensEnum a = text (meaning a) <+> parens (integral $ fromEnum a)
 
-instance Pretty ProtoFace where
-  pretty (ProtoFace ot dirs fm) = 
-      pretty ot <$> vsep (map prettyThenLine dirs) 
-                <$> field "map size" 16 (integral (Map.size fm))
 
-instance Pretty OffsetTable where
-  pretty (OffsetTable s nt sr es rs) = title "Offset Table"  
-      <$> field "sfnt_version"    16 (pptag s)
-      <$> field "num_tables"      16 (integral nt)
-      <$> field "search_range"    16 (integral sr)
-      <$> field "entry_selector"  16 (integral es)
-      <$> field "range_shift"     16 (integral rs)
-
-
-instance Pretty TableDirectory where
-  pretty (TableDirectory t cs o tl) = title "Table Directory" 
-      <$> field "tag"             16 (pptag t)
-      <$> field "check_sum"       16 (integral cs)
-      <$> field "offset"          16 (integral o)
-      <$> field "table_length"    16 (integral tl)
 
       
 

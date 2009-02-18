@@ -16,7 +16,7 @@
 
 module Graphics.OTFont.Datatypes where
 
-import Graphics.OTFont.ParseMonad ( Region )
+
 
 import Data.Array.IArray ( Array )
 import Data.Array.Unboxed ( UArray )
@@ -28,7 +28,7 @@ import Data.Word
 
 
 
-
+type Region = (Int,Int)
 
 --------------------------------------------------------------------------------
 -- Aliases
@@ -93,40 +93,17 @@ instance Show DateTime where
   
 instance Eq DateTime where
   DateTime i _ == DateTime j _ = i == j
-  
+
 --------------------------------------------------------------------------------
---
-type TableRegions = Map.Map String Region
-
-data ProtoFace = ProtoFace {
-      offset_table    :: OffsetTable,
-      table_dirs      :: [TableDirectory],
-      table_offsets   :: TableRegions
-    }
-  deriving (Eq,Show) 
-  
-  
-data OffsetTable = OffsetTable {
-      sfnt_version    :: String,
-      num_tables      :: UShort,
-      search_range    :: UShort,
-      entry_selector  :: UShort,
-      range_shift     :: UShort
-    } 
-  deriving (Eq,Show)      
-      
-data TableDirectory = TableDirectory {
-      tag             :: String,
-      check_sum       :: ULong,
-      offset          :: ULong,
-      table_length    :: ULong
-    } 
-  deriving (Eq,Show)  
- 
-
- 
+-- Strings that are usefully addressed by index
 
 type StringData = BS.ByteString
+  
+
+
+ 
+
+
   
 
 

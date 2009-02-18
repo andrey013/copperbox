@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -26,7 +27,7 @@ import Graphics.OTFont.Table.CommonDatatypes
 
 import Control.Applicative
 import Data.Array.Unboxed hiding ( array )
-
+import Data.Typeable
 
 import Text.PrettyPrint.Leijen ( Pretty(..), Doc )
 
@@ -35,7 +36,7 @@ data CmapTable = CmapTable {
       encoding_records  :: [EncodingRecord],
       cmap_subtables    :: [CmapSubtable]
     }
-  deriving (Eq,Show)
+  deriving (Eq,Show,Typeable)
 
 readCmapTable :: Parser r CmapTable
 readCmapTable = do 
@@ -56,7 +57,7 @@ data CmapHeader = CmapHeader {
       cmap_table_version_num  :: UShort,
       cmap_num_tables         :: UShort
   }
-  deriving (Eq,Show)
+  deriving (Eq,Show,Typeable)
 
       
 
@@ -76,7 +77,7 @@ data EncodingRecord = EncodingRecord {
       cmap_encoding_id  :: EncodingId,
       cmap_offset       :: ULong
     }
-  deriving (Eq,Show)
+  deriving (Eq,Show,Typeable)
   
 readEncodingRecord :: Parser r EncodingRecord
 readEncodingRecord = EncodingRecord <$>

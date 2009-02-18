@@ -19,6 +19,7 @@ module Graphics.OTFont.Table.Glyf where
 
 import Graphics.OTFont.Datatypes
 import Graphics.OTFont.Parse
+import Graphics.OTFont.ParseMonad ( withinRangeRel )
 import Graphics.OTFont.ParserCombinators
 import Graphics.OTFont.ParserExtras
 import Graphics.OTFont.Pretty
@@ -55,8 +56,8 @@ composite :: GlyfHeader -> Bool
 composite (GlyfHeader nc _ _ _ _)     | nc < 0      = True
                                       | otherwise   = False
                                       
-readGlyf :: Parser r Glyf
-readGlyf = do 
+readGlyf :: Int -> Int -> Parser r Glyf
+readGlyf offset len = withinRangeRel offset len $ do 
     hdr <- readGlyfHeader
     if composite hdr then do cbdy <- readCompositeGlyph
                              return $ CompositeGlyf hdr cbdy
@@ -119,7 +120,7 @@ readSimpleGlyphData nc = do
     len   <- ushort
     insts <- usequence (fromIntegral len) byte
     flags <- count csize byte
-    xy    <- count 1000 byte
+    xy    <- runOnL byte
     return $ SimpleGlyphData ends len insts flags xy
 
 

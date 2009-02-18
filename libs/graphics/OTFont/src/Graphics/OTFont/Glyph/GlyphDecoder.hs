@@ -16,8 +16,8 @@
 
 module Graphics.OTFont.Glyph.GlyphDecoder where
 
+import Graphics.OTFont.Datatypes
 import Graphics.OTFont.Glyph.Datatypes
-
 import Graphics.OTFont.ParserCombinators ( mkI16be )
 
 import Data.Bits
@@ -93,7 +93,7 @@ decodeXCoords = step (0,[])
     step (_,cca) []                 ws        = (reverse cca,ws)
     
     -- 2 = int16 -- take two from the word-stream
-    step (u,cca) (Inst c 2 y:xs)    (w:w':ws) = let x = u + deltaVector w w'
+    step (u,cca) (Inst c 2 y:xs)    (w:w':ws) = let x = u + mkI16be w w'
                                                     i = Inst c x y
                                                 in step (x,i:cca) xs ws
                                             
@@ -129,7 +129,7 @@ decodeYCoords = step 0
     step _ []                 _ws       = []
     
     -- 2 = int16 -- take two from the word-stream
-    step u (Inst c x 2:ys)    (w:w':ws) = let y   = u + deltaVector w w'
+    step u (Inst c x 2:ys)    (w:w':ws) = let y   = u + mkI16be w w'
                                               pt  = mkPoint c x y
                                           in pt : step y ys ws
                                            
@@ -153,9 +153,16 @@ decodeYCoords = step 0
     mkPoint COn  x y                    = OnCurvePt x y
     mkPoint COff x y                    = OffCurvePt x y
 
+outlines :: [UShort] -> [Byte] -> [Byte] -> [[OutlinePoint]]
+outlines ends flags xys = endSegment ends $ decode flags xys    
 
-
-deltaVector :: Word8 -> Word8 -> Int16
-deltaVector = mkI16be
+-- special version of @segment@ as /ends/ counts from zero (so we have to add
+-- 1 to splitAt in the right place).
+endSegment :: [UShort] -> [a] -> [[a]]
+endSegment []      xs = [xs]
+endSegment [i]     xs = let (l,r) = splitAt (1 + fromIntegral i) xs in 
+                        if null r then [l] else l:[r] 
+endSegment (i:ix)  xs = let (l,r) = splitAt (1 + fromIntegral i) xs 
+                        in l : endSegment ix r 
 
     

@@ -18,7 +18,6 @@
 module Graphics.OTFont.Utils where
 
 import Graphics.OTFont.Datatypes
-import Graphics.OTFont.ParseMonad ( Region )
 
 import Data.Bits
 import qualified Data.ByteString as BS
@@ -52,8 +51,7 @@ instance IntegralBool Word32 where
     boolValue 0 = True
     boolValue _ = False
     
-findTableRegion :: String -> ProtoFace -> Maybe Region
-findTableRegion name (ProtoFace _ _ fm) = Map.lookup name fm
+
 
 section :: Int -> Int -> BS.ByteString -> BS.ByteString 
 section start len inp
@@ -73,4 +71,15 @@ unbits v = step v (szmax - 1) where
                                       else (unmarshal i) : step c (i-1) 
     szmax = bitSize v 
     
-                          
+
+
+segment :: [Int] -> [a] -> [[a]]
+segment []      xs = [xs]
+segment [i]     xs = let (l,r) = splitAt (1 + fromIntegral i) xs in 
+                     if null r then [l] else l:[r] 
+segment (i:ix)  xs = let (l,r) = splitAt i xs in l : segment ix r  
+
+-- regionBetween extracts the region between 2 locations 
+regionBetween :: Int -> Int -> Region
+regionBetween start end = (start, end - start)
+

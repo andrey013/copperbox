@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -23,6 +24,7 @@ import Graphics.OTFont.Utils
 
 
 import Control.Applicative
+import Data.Typeable
 import Data.Word
 
 data PlatformId = 
@@ -32,7 +34,7 @@ data PlatformId =
     | Windows
     | Custom
     | PlatformId Word16
-  deriving (Eq,Ord,Show)
+  deriving (Eq,Ord,Show,Typeable)
 
 instance Enum PlatformId where
    fromEnum Unicode         = 0
@@ -64,7 +66,7 @@ data EncodingId =
     | Unicode_2_0_BMP
     | Unicode_2_0_full
     | EncodingId Word16
-  deriving (Eq,Ord,Show)
+  deriving (Eq,Ord,Show,Typeable)
 
 instance Enum EncodingId where
    fromEnum Unicode_1_0       = 0
@@ -108,7 +110,7 @@ data WindowsEncoding =
     | WEncReserved8
     | WEncReserved9
     | USC_4
-  deriving (Enum,Eq,Ord,Show)
+  deriving (Enum,Eq,Ord,Show,Typeable)
 
 instance Meaning WindowsEncoding where
   meaning Symbol        = "Symbol"
