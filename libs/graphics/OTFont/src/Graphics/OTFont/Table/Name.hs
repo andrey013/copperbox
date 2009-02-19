@@ -28,8 +28,6 @@ import Graphics.OTFont.Table.CommonDatatypes
 
 import Control.Applicative
 import qualified Data.ByteString as BS
-import Data.Char ( chr ) 
-import Data.List ( find )
 import Data.Typeable
 
 import Text.PrettyPrint.Leijen ( Pretty(..), indent, vsep )
@@ -43,13 +41,7 @@ data NameTable = NameTable {
     }
   deriving (Eq,Show,Typeable)
 
-instance Pretty NameTable where
-  pretty (NameTable nf nc so ns _) = ppTable "Name Table" 
-      [ field "nt_format"       16 (integral nf)
-      , field "nt_count"        16 (integral nc)
-      , field "string_offset"   16 (integral so)
-      , field "name_records"    16 (indent 0 $ vsep (map prettyThenLine ns))
-      ]
+
         
 data NameRecord = NameRecord {
       platform_id     :: PlatformId,
@@ -60,21 +52,6 @@ data NameRecord = NameRecord {
       str_offset      :: UShort
     }
   deriving (Eq,Show)
-  
-
-instance Pretty NameRecord where 
-  pretty (NameRecord pid ei li ni sl so) = ppTable "Name Record"
-      [ field "platform_id"     16 (ppMeaning pid)
-      , field "encoding_id"     16 (ppMeaning ei)
-      , field "language_id"     16 (integral li)
-      , field "name_id"         16 (ppMeaning ni)
-      , field "string_length"   16 (integral sl)
-      , field "str_offset"      16 (integral so)
-      ]
-
-      
-
-  
 
 
 data NameId = 
@@ -150,7 +127,51 @@ instance Enum NameId where
    toEnum 20 = PostScipt_CID
    toEnum  i = Reserved_name i 
 
-  
+
+
+readNameTable :: Monad m => Region -> ParserT r m NameTable
+readNameTable (i,j) = withinRangeAbs i j $ do 
+    nf  <- ushort
+    nc  <- ushort
+    so  <- ushort
+    nr  <- count (fromIntegral nc) readNameRecord
+    sd  <- runOnL word8
+    return $ NameTable nf nc so nr (BS.pack sd)
+
+
+readNameRecord :: Monad m => ParserT r m NameRecord 
+readNameRecord = NameRecord <$>
+   platformId <*> encodingId <*> ushort <*> nameId <*> ushort <*> ushort 
+  where 
+    nameId     = toEnum . fromIntegral <$> ushort
+     
+       
+
+--------------------------------------------------------------------------------
+-- pretty print
+
+
+instance Pretty NameRecord where 
+  pretty (NameRecord pid ei li ni sl so) = ppTable "Name Record"
+      [ field "platform_id"     16 (ppMeaning pid)
+      , field "encoding_id"     16 (ppMeaning ei)
+      , field "language_id"     16 (integral li)
+      , field "name_id"         16 (ppMeaning ni)
+      , field "string_length"   16 (integral sl)
+      , field "str_offset"      16 (integral so)
+      ]
+
+
+
+instance Pretty NameTable where
+  pretty (NameTable nf nc so ns _) = ppTable "Name Table" 
+      [ field "nt_format"       16 (integral nf)
+      , field "nt_count"        16 (integral nc)
+      , field "string_offset"   16 (integral so)
+      , field "name_records"    16 (indent 0 $ vsep (map prettyThenLine ns))
+      ]
+      
+     
 instance Meaning NameId where
   meaning Copyright_notice    = "Copyright notice"
   meaning Font_family_name    = "Font family name"
@@ -173,39 +194,4 @@ instance Meaning NameId where
   meaning Compatible_full     = "Compatible full"
   meaning Sample_text         = "Sample text"
   meaning PostScipt_CID       = "PostScipt CID findfont name"
-  meaning (Reserved_name i)   = "Reserved " ++ show i 
-
-readNameTable :: Monad m => Region -> ParserT r m NameTable
-readNameTable (i,j) = withinRangeAbs i j $ do 
-    nf  <- ushort
-    nc  <- ushort
-    so  <- ushort
-    nr  <- count (fromIntegral nc) nameRecord
-    sd  <- runOnL word8
-    return $ NameTable nf nc so nr (BS.pack sd)
-
-
-nameRecord :: Monad m => ParserT r m NameRecord 
-nameRecord = NameRecord <$>
-   platformId <*> encodingId <*> ushort <*> nameId <*> ushort <*> ushort 
-  where 
-    nameId     = toEnum . fromIntegral <$> ushort
-     
-allMeanings :: NameTable -> [String]
-allMeanings (NameTable _ _ _ ns _) = map (meaning . name_id) ns 
-
-    
-extractText :: NameRecord -> StringData -> String
-extractText (NameRecord _ _ _ _ l o) s = 
-    map (chr . fromIntegral) 
-          $ BS.unpack 
-          $ section (fromIntegral o) (fromIntegral l) s
-
-
--- By itself, NameId is not unique           
-getMeaning :: NameId -> NameTable -> Maybe String
-getMeaning nid (NameTable _ _ _ ns sdata) = 
-    maybe Nothing sk $ find ((== nid) . name_id) ns
-  where
-    sk = Just . (extractText `flip` sdata)          
-                                           
+  meaning (Reserved_name i)   = "Reserved " ++ show i                                     

@@ -21,6 +21,7 @@ import Graphics.OTFont.Datatypes
 
 import Data.Bits
 import qualified Data.ByteString as BS
+import Data.Char ( isPrint )
 import Data.Int
 import Data.Word
 
@@ -84,3 +85,8 @@ segment (i:ix)  xs = let (l,r) = splitAt i xs in l : segment ix r
 regionBetween :: Int -> Int -> Region
 regionBetween start end = (start, end - start)
 
+putStrLnSafe :: String -> IO ()
+putStrLnSafe = putStrLn . map replaceUnprint where
+    replaceUnprint ch | isPrint ch  = ch
+                      | otherwise   = '.'
+                       
