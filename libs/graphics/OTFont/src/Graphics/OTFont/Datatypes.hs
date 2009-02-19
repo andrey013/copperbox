@@ -22,12 +22,12 @@ import Data.Array.IArray ( Array )
 import Data.Array.Unboxed ( UArray )
 import qualified Data.ByteString as BS
 import Data.Int
-import qualified Data.Map as Map
 import Data.Time.Clock
 import Data.Word
 
 
-
+-- A region within the font file which is loaded as an array of bytes.
+-- (a,b) - a is the position, b is the length.
 type Region = (Int,Int)
 
 --------------------------------------------------------------------------------

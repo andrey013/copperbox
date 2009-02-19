@@ -81,7 +81,7 @@ type FontLoader r a = ParserT r (State FontLoaderState) a
 
 
 
-runFontLoader :: FilePath -> FontLoader r r -> IO (Either ParseError r)
+runFontLoader :: FilePath -> FontLoader r r -> IO (Either String r)
 runFontLoader path p = withBinaryFile path ReadMode $ \h -> do
     sz_i  <- hFileSize h
     let abound = mkBounds sz_i
@@ -99,8 +99,10 @@ runFontLoader path p = withBinaryFile path ReadMode $ \h -> do
     freezeByteSequence :: IOUArray Int Word8 -> IO ByteSequence
     freezeByteSequence = freeze
     
-    runFL :: FontLoader r r -> ByteSequence -> (Either ParseError r)
-    runFL m arr = evalState `flip` st0 $ runParserT (adapt m) arr
+    runFL :: FontLoader r r -> ByteSequence -> Either String r
+    runFL m arr = case evalState `flip` st0 $ runParserT (adapt m) arr of
+                    Left (ParseError s) -> Left s
+                    Right a             -> Right a  
     
     -- Initial some fields of FontLoaderState have to be undefined
     st0 :: FontLoaderState
@@ -188,7 +190,9 @@ loadTable name = tableFromCache name >>= maybe (load name) (const $ return ())
                           load2 $ readLocaTable i j        
     
     load "maxp"   = load2 readMaxpTable
-    load "name"   = load2 readNameTable
+    load "name"   = findTableOffset "name"  >>= -- error . show
+                    maybe (tableLoadError "name") (load2 . readNameTable) 
+                    
     load "os/2"   = load2 readOS2Table
     load "post"   = load2 readPostTable
                     

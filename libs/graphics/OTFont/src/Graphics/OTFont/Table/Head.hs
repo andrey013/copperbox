@@ -138,9 +138,7 @@ instance Meaning HeadFlag where
   meaning H14_Reserved              = "Reserved"
   meaning H15_Reserved              = "Reserved"
   
-  
-instance Marshal HeadFlag where marshal = fromEnum
-instance Unmarshal HeadFlag where unmarshal = toEnum
+
 
 data MacStyle = 
       S0_Bold
@@ -172,8 +170,6 @@ instance Meaning MacStyle where
   meaning _               = "Reserved"
 
 
-instance Marshal MacStyle where marshal = fromEnum
-instance Unmarshal MacStyle where unmarshal = toEnum
 
 
                             

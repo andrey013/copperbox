@@ -196,8 +196,8 @@ readCmapSubtable = ushort >>= subtable
     readFormat2   = Format2 <$>
                             subH 2 
                         <*> usequence 256 ushort 
-                        <*> undefined
-                        <*> undefined
+                        <*> error "readFormat2"
+                        <*> error "readFormat2"
                             
     readFormat4   = do hdr      <- subH 4
                        sparams  <- readFormat4_SearchParams

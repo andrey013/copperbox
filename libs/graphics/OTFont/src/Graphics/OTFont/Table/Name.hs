@@ -175,14 +175,15 @@ instance Meaning NameId where
   meaning PostScipt_CID       = "PostScipt CID findfont name"
   meaning (Reserved_name i)   = "Reserved " ++ show i 
 
-readNameTable :: Monad m => ParserT r m NameTable
-readNameTable = do 
+readNameTable :: Monad m => Region -> ParserT r m NameTable
+readNameTable (i,j) = withinRangeAbs i j $ do 
     nf  <- ushort
     nc  <- ushort
     so  <- ushort
     nr  <- count (fromIntegral nc) nameRecord
-    sd  <- undefined -- flush
-    return $ NameTable nf nc so nr sd
+    sd  <- runOnL word8
+    return $ NameTable nf nc so nr (BS.pack sd)
+
 
 nameRecord :: Monad m => ParserT r m NameRecord 
 nameRecord = NameRecord <$>

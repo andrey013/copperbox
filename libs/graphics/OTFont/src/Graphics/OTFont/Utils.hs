@@ -22,12 +22,8 @@ import Graphics.OTFont.Datatypes
 import Data.Bits
 import qualified Data.ByteString as BS
 import Data.Int
-import qualified Data.Map as Map
 import Data.Word
 
-class Marshal a where marshal :: a -> Int
-
-class Unmarshal a where unmarshal :: Int -> a  
 
 class Meaning a where meaning :: a -> String
 
@@ -37,6 +33,8 @@ class BoundingBox a where
     x_max           :: a -> Int16
     y_max           :: a -> Int16
 
+
+-- Model C land booleans...
 
 class IntegralBool a where
     boolValue :: a -> Bool
@@ -62,13 +60,16 @@ section start len inp
                                            ++ show (BS.length inp) 
 
 
-unbits :: (Bits a, Ord a, Unmarshal b) => a -> [b]
+-- Should unbits have a stronger marshalling constraint than Enum?
+-- It used to have a dedicated type class /Unmarshal/.
+
+unbits :: (Bits a, Ord a, Enum b) => a -> [b]
 unbits v = step v (szmax - 1) where
     step a i | a <= 0     = []
              | i <  0     = []  -- unreachable?
              | otherwise  = let c = a `clearBit` i in
                             if c == a then step c (i-1) 
-                                      else (unmarshal i) : step c (i-1) 
+                                      else (toEnum i) : step c (i-1) 
     szmax = bitSize v 
     
 
