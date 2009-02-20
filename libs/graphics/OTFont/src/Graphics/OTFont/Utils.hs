@@ -23,6 +23,8 @@ import Data.Bits
 import qualified Data.ByteString as BS
 import Data.Char ( isPrint )
 import Data.Int
+import Data.List ( foldl' ) 
+import qualified Data.IntMap as IntMap
 import Data.Word
 
 
@@ -89,4 +91,9 @@ putStrLnSafe :: String -> IO ()
 putStrLnSafe = putStrLn . map replaceUnprint where
     replaceUnprint ch | isPrint ch  = ch
                       | otherwise   = '.'
-                       
+
+zeroBasedIntMap :: [a] ->  IntMap.IntMap a 
+zeroBasedIntMap = snd . foldl' fn (0,IntMap.empty) where
+  fn (i,m) e = (i+1,IntMap.insert i e m)
+  
+                   

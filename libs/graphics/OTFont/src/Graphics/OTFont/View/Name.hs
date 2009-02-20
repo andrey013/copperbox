@@ -30,8 +30,8 @@ import Data.Char ( chr )
 
 type NameRel = Rel4 PlatformId EncodingId Int NameId String
 
-buildNameMap :: NameTable -> NameRel
-buildNameMap (NameTable {name_records=recs, string_data=bs}) = 
+buildNameRel :: NameTable -> NameRel
+buildNameRel (NameTable {name_records=recs, string_data=bs}) = 
     foldr fn empty recs
   where
     fn (NameRecord pid eid lid nid l o) r = 

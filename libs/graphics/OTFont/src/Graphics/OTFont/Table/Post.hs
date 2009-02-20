@@ -28,7 +28,7 @@ import Graphics.OTFont.Utils
 import Control.Applicative
 import Data.Typeable
 
-import Text.PrettyPrint.Leijen ( Pretty(..), vsep, (<+>), string  )
+import Text.PrettyPrint.Leijen ( Pretty(..), vsep, (<+>), (</>), string  )
 
 data PostTable = PostTable { 
       post_version        :: Fixed,
@@ -54,7 +54,7 @@ data PostSubtable =
     | Version2_0 { 
           number_of_glyphs      :: UShort,
           glyph_name_index      :: USequence UShort,
-          names                 :: [String]
+          names                 :: StringSequence
       }
     | UnrecognizedPostSubtable Fixed
   deriving (Eq,Show)
@@ -81,7 +81,7 @@ readPostSubtable d
     | d == 2.0              = do n    <- ushort
                                  arr  <- usequence (fromIntegral n) ushort
                                  cs   <- runOnL pascalString
-                                 return $ Version2_0 n arr cs
+                                 return $ Version2_0 n arr (zeroBasedIntMap cs)
     | otherwise             = return $ UnrecognizedPostSubtable d
         
     
@@ -103,8 +103,8 @@ instance Pretty PostSubtable where
   pretty NoPostSubtable               = string "no subtable"
   pretty (Version2_0 n a ss)          = ppTable "Version 2.0 subtable"
       [ field "number_of_glyphs"    24 (integral n)
-      , field "glyph_name_index"    24 (ppArray integral a)
-      , field "names"               24 (vsep $ map pretty ss)
+      , field "glyph_name_index"    24 (ppArraySep integral (</>) a)
+      , field "names"               24 (ppStringSequence ss)
       ]
   pretty (UnrecognizedPostSubtable v) = string "Unrecognized subtable " 
                                         <+> pretty v

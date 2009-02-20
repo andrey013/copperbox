@@ -22,6 +22,7 @@ import Data.Array.IArray ( Array )
 import Data.Array.Unboxed ( UArray )
 import qualified Data.ByteString as BS
 import Data.Int
+import qualified Data.IntMap as IntMap
 import Data.Time.Clock
 import Data.Word
 
@@ -34,7 +35,8 @@ type Region = (Int,Int)
 -- Aliases
 
 type USequence a  = UArray Int a
-type BxSequence a = Array Int a 
+type BxSequence a = Array Int a
+type StringSequence = IntMap.IntMap String 
 
 type Byte   = Word8
 

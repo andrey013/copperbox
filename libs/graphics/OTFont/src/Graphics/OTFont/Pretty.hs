@@ -25,6 +25,7 @@ import Data.Array.Unboxed
 import Data.Bits ( testBit ) 
 import Data.Char
 import Data.List
+import qualified Data.IntMap as IntMap
 import Data.Word 
 import Numeric ( showHex )
 import Text.PrettyPrint.Leijen
@@ -75,6 +76,16 @@ ppArray :: (IArray arr a, Ix idx, Enum idx) => (a -> Doc) -> arr idx a -> Doc
 ppArray f arr = foldl' (\a i -> a <> f (arr!i)) empty xs where
     xs        = let (l,u) = bounds arr in [l..u]
 
+ppArraySep :: (IArray arr a, Ix idx, Enum idx) => 
+              (a -> Doc) -> (Doc -> Doc -> Doc) ->  arr idx a -> Doc
+ppArraySep f op arr = foldl' (\a i -> a `op` f (arr!i)) empty xs where
+    xs        = let (l,u) = bounds arr in [l..u]
+    
+
+ppStringSequence :: StringSequence -> Doc
+ppStringSequence = foldl' fn empty. IntMap.toAscList where
+    fn a (k,v) = a <$> fill 4 (int k) <> colon <+> text v  
+    
 pchar :: Char -> Doc
 pchar ch | isPrint ch   = char ch
          | otherwise    = char '.' 
