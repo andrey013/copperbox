@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.OTFont.ParserExtras
+-- Module      :  Graphics.SFont.ParserExtras
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -15,12 +15,12 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.OTFont.ParserExtras where
+module Graphics.SFont.ParserExtras where
 
-import Graphics.OTFont.Datatypes
-import Graphics.OTFont.ParseMonad
-import Graphics.OTFont.ParserCombinators 
-import Graphics.OTFont.Utils
+import Graphics.SFont.PrimitiveDatatypes
+import Graphics.SFont.ParseMonad
+import Graphics.SFont.ParserCombinators 
+import Graphics.SFont.Utils
 
 import Control.Applicative
 import Data.Array.Unboxed
@@ -78,4 +78,3 @@ countPrefixedList :: (Integral i, Monad m) =>
 countPrefixedList lenParser parser = do 
     len   <- lenParser
     count (fromIntegral len) parser
-
