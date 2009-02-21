@@ -87,8 +87,8 @@ data GlyphLocations = GlyphLocations {
   deriving (Eq,Show)
   
 mkGlyphLocations :: Int -> USequence ULong -> GlyphLocations
-mkGlyphLocations table_size arr = let (_,gtop) = bounds arr in 
-    GlyphLocations (gtop+1) table_size arr
+mkGlyphLocations glyf_table_size arr = let (_,gtop) = bounds arr in 
+    GlyphLocations (gtop+1) glyf_table_size arr
 
 glyfLoca :: Int -> GlyphLocations -> Region
 glyfLoca i (GlyphLocations c sz arr) 

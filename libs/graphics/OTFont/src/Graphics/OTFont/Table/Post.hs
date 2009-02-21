@@ -28,7 +28,7 @@ import Graphics.OTFont.Utils
 import Control.Applicative
 import Data.Typeable
 
-import Text.PrettyPrint.Leijen ( Pretty(..), vsep, (<+>), (</>), string  )
+import Text.PrettyPrint.Leijen ( Pretty(..), (<+>), (</>), string  )
 
 data PostTable = PostTable { 
       post_version        :: Fixed,

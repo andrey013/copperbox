@@ -173,7 +173,8 @@ loadTable :: String -> FontLoader r ()
 loadTable name = tableFromCache name >>= maybe (load name) (const $ return ()) 
   where
     load :: String -> FontLoader r ()
-    load "cmap"   = load2 readCmapTable
+    load "cmap"   = findTableOffset "cmap"  >>=
+                    maybe (tableLoadError "cmap") (load2 . readCmapTable)
     load "head"   = load2 readHeadTable
     load "hhea"   = load2 readHheaTable
     
@@ -190,7 +191,7 @@ loadTable name = tableFromCache name >>= maybe (load name) (const $ return ())
                           load2 $ readLocaTable i j        
     
     load "maxp"   = load2 readMaxpTable
-    load "name"   = findTableOffset "name"  >>= -- error . show
+    load "name"   = findTableOffset "name"  >>=
                     maybe (tableLoadError "name") (load2 . readNameTable) 
                     
     load "os/2"   = load2 readOS2Table

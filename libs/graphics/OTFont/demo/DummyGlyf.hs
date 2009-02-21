@@ -17,7 +17,7 @@ import Graphics.OTFont.ParseMonad ( ParseError(..), setRange )
 
 import Graphics.OTFont.Glyph.Datatypes
 import Graphics.OTFont.Glyph.GlyphDecoder
-import Graphics.OTFont.Glyph.GlyphNames
+import Graphics.OTFont.Glyph.GlyphNaming
 
 
 import Control.Applicative

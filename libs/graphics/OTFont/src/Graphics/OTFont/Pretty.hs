@@ -110,6 +110,14 @@ hex2 i | i < 16     = '0' : showHex i []
 pphex2 :: Integral i => i -> Doc    
 pphex2 = text . hex2  
 
+hex4 :: Integral i => i -> String
+hex4 i | i < 16     = '0' : '0' : '0' : showHex i [] 
+       | i < 256    = '0' : '0' : showHex i []
+       | i < 4096   = '0' : showHex i []  
+       | otherwise  = showHex i []
+       
+pphex4 :: Integral i => i -> Doc    
+pphex4 = text . hex4 
 
 ppBits :: Word8 -> Doc
 ppBits w = hcat $ 

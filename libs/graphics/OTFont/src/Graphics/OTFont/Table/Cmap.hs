@@ -29,7 +29,7 @@ import Control.Applicative
 import Data.Array.Unboxed hiding ( array )
 import Data.Typeable
 
-import Text.PrettyPrint.Leijen ( Pretty(..), Doc )
+import Text.PrettyPrint.Leijen ( Pretty(..), Doc, (</>) )
 
 data CmapTable = CmapTable { 
       cmap_header       :: CmapHeader,
@@ -38,10 +38,10 @@ data CmapTable = CmapTable {
     }
   deriving (Eq,Show,Typeable)
 
-readCmapTable :: Monad m => ParserT r m CmapTable
-readCmapTable = do 
-    hdr@(CmapHeader _ i)  <- readCmapHeader
-    ts                    <- count (fromIntegral i) readEncodingRecord
+readCmapTable :: Monad m => Region -> ParserT r m CmapTable
+readCmapTable (i,j) = withinRangeAbs i j $ do 
+    hdr@(CmapHeader _ c)  <- readCmapHeader
+    ts                    <- count (fromIntegral c) readEncodingRecord
     -- ss                   <- count (fromIntegral i) readCmapSubtable
     s                     <- readCmapSubtable
     return $ CmapTable hdr ts [s] -- ss
@@ -188,7 +188,7 @@ readCmapSubtable = ushort >>= subtable
     subtable  8 = readFormat8
     subtable 10 = readFormat10
     subtable 12 = readFormat12
-    subtable  i = error $ "unrecognized cmap subtable " ++ show i
+    subtable  z = error $ "unrecognized cmap subtable " ++ show z
     
     readFormat0   = Format0 <$>
                         subH 0 <*> usequence 256 byte
@@ -208,7 +208,8 @@ readCmapSubtable = ushort >>= subtable
                        sc_arr   <- usequence seg_count ushort
                        idd_arr  <- usequence seg_count short
                        idr_arr  <- usequence seg_count ushort
-                       gid_arr  <- usequence 0 ushort
+                       i        <- inputRemaining
+                       gid_arr  <- usequence (i `div` 2) ushort -- WARNING! don't like this use of `div`
                        return $ Format4 hdr        sparams
                                         ec_arr     sc_arr 
                                         idd_arr    idr_arr
@@ -277,11 +278,11 @@ instance Pretty CmapSubtable where
         where
           hdr = subtableHeaderFields (st_header t)
           ys  = searchParamFields (search_params t)
-          xs  = [ field "endCode"         24 (ppArray integral $ fmt4_end_code t)
-                , field "startCode"       24 (ppArray integral $ fmt4_start_code t)
-                , field "idDelta"         24 (ppArray integral $ fmt4_id_delta t)
-                , field "idRangeOffset"   24 (ppArray integral $ fmt4_id_range_offset t)
-                , field "glyphIdArray"    24 (ppArray integral $ fmt4_glyph_id_array t)
+          xs  = [ field "endCode"         24 (ppArraySep pphex4 (</>) $ fmt4_end_code t)
+                , field "startCode"       24 (ppArraySep pphex4 (</>) $ fmt4_start_code t)
+                , field "idDelta"         24 (ppArraySep integral (</>) $ fmt4_id_delta t)
+                , field "idRangeOffset"   24 (ppArraySep pphex4 (</>) $ fmt4_id_range_offset t)
+                , field "glyphIdArray"    24 (ppArraySep pphex4 (</>) $ fmt4_glyph_id_array t)
                 ]
 
   pretty t@(Format6 {}) = 

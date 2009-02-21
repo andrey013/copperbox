@@ -28,8 +28,8 @@ import Data.IntMap
 glyph_mac_names_258 :: IntMap String
 glyph_mac_names_258 = fromAscList $
     [ (     0,      ".notdef"           )
-    , (     1,      ""                  )
-    , (     2,      ""                  )
+    , (     1,      ".null"             )
+    , (     2,      "nonmarkingreturn"  )
     , (     3,      "space"             )
     , (     4,      "exclam"            )
     , (     5,      "quotedbl"          )
@@ -237,14 +237,14 @@ glyph_mac_names_258 = fromAscList $
     , (   207,      "Igrave"            )
     , (   208,      "Oacute"            )
     , (   209,      "Ocircumflex"       )
-    , (   210,      ""                  ) -- ??
+    , (   210,      "apple"             )
     , (   211,      "Ograve"            )
     , (   212,      "Uacute"            )
     , (   213,      "Ucircumflex"       )
     , (   214,      "Ugrave"            )
     , (   215,      "dotlessi"          )
     , (   216,      "circumflex"        )
-    , (   217,      ""                  ) -- ??
+    , (   217,      "tilde"             )
     , (   218,      "macron"            )
     , (   219,      "breve"             )
     , (   220,      "dotaccent"         )
