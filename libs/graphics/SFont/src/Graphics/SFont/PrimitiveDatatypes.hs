@@ -89,7 +89,14 @@ instance Show UFWord where
     
 instance Read UFWord where
   readsPrec i s = map (\(d,r) -> (UFWord d,r)) $ readsPrec i s  
+
+newtype F2Dot14 = F2Dot14 { unF2Dot14 :: Double }
+  deriving (Eq,Ord,Num,Show)
+
+instance Read F2Dot14 where
+  readsPrec i s = map (\(d,r) -> (F2Dot14 d,r)) $ readsPrec i s 
   
+    
 --------------------------------------------------------------------------------
 -- DateTime - needs sorting out at some point
 

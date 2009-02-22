@@ -27,6 +27,7 @@ import Graphics.SFont.Utils
 import Control.Applicative
 import Control.Monad.State
 import Data.Array.IO ( IOUArray, hGetArray, newArray_, freeze )
+import Data.Maybe ( catMaybes )
 import Data.Word
 import System.IO ( IOMode(..), withBinaryFile, hFileSize ) 
 
@@ -98,7 +99,7 @@ readTTFF = do
     lift $ modify $ (\s -> s {glyph_locs=glocs})
     
     -- temporary
-    gs      <- tableJump "glyf" (readGlyphs (take 1 glocs))
+    gs      <- tableJump "glyf" (readGlyphs glocs)
     return $ TTFF v nt hdr gs
 
 
@@ -227,27 +228,33 @@ glyfLocsFromLocaTable head_idx_to_loc_fmt maxp_num_glyphs
 
 --------------------------------------------------------------------------------
 -- Glyf table
-
 readGlyphs :: Monad m => [Region] -> ParserT r m [Glyph]
-readGlyphs ((o,l):rs) = readGlyf o l <:> readGlyphs rs
-readGlyphs []         = return [] 
+readGlyphs xs = catMaybes <$> readGlyphs' xs
+
+readGlyphs' :: Monad m => [Region] -> ParserT r m [Maybe Glyph]
+readGlyphs' ((o,l):rs) = readGlyf o l <:> readGlyphs' rs
+readGlyphs' []         = return [] 
 
 
-readGlyf :: Monad m => Int -> Int -> ParserT r m Glyph
+readGlyf :: Monad m => Int -> Int -> ParserT r m (Maybe Glyph)
+readGlyf _      0   = return Nothing
 readGlyf offset len = withinRangeRel offset len $ do 
     nc  <- short 
     bb  <- readBoundingBox
     if nc >= 0 
-      then do end_pts       <- count (fromIntegral nc) ushort
-              let csize     = 1 + fromIntegral (foldr max 0 end_pts)
-              _insts        <- countPrefixedList ushort byte
-              flags         <- count csize byte
-              xy_data       <- runOnL byte
-              let outlines  = simpleGlyphContours end_pts flags xy_data
-              return $ SimpleGlyph "" bb outlines
-              -- don't know the glyph_name at this point
-      else 
-          reportError $ "Cannot read composite glyphs yet"
+      then do 
+        end_pts       <- count (fromIntegral nc) ushort
+        let csize     = 1 + fromIntegral (foldr max 0 end_pts)
+        _insts        <- countPrefixedList ushort byte
+        flags         <- count csize byte
+        xy_data       <- runOnL byte
+        let outlines  = simpleGlyphContours end_pts flags xy_data
+        return $ Just $ SimpleGlyph "" bb outlines
+        -- don't know the glyph_name at this point
+      else do
+          elts        <- compositeElements
+          return $ Just $ CompositeGlyph "" bb elts
+          
 
 
 

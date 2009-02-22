@@ -103,7 +103,7 @@ type GlyphName = String
 
 data Glyph = 
       SimpleGlyph     GlyphName BoundingBox [Contour]
-    | CompositeGlyph  GlyphName BoundingBox
+    | CompositeGlyph  GlyphName BoundingBox [CompositeElement]
   deriving (Eq,Show)    
 
              
@@ -114,7 +114,42 @@ data OutlinePoint = OnCurvePt  Short Short
                   | OffCurvePt Short Short
   deriving (Eq,Ord,Show)
 
+type GylphIndex = Int
 
+data CompositeElement = CompositeElement 
+      { gylph_index     :: Int
+      , composite_args  :: CompositeArgs
+      , composite_trans :: CompositeTrans
+      }
+  deriving (Eq,Show)
+      
+data CompositeArgs = 
+      OffsetArgs 
+        { x_offset     :: Int 
+        , y_offset    :: Int 
+        }
+    | PointNumbers 
+        { parent_pt   :: Int
+        , child_pt    :: Int
+        } 
+  deriving (Eq,Show)
+  
+  
+data CompositeTrans =
+      Scale
+        { scale     :: F2Dot14 }
+    | XyScale 
+        { x_scale   :: F2Dot14
+        , y_scale   :: F2Dot14 
+        }
+    | TwoByTwo
+        { x_scale   :: F2Dot14
+        , scale_01  :: F2Dot14
+        , scale_02  :: F2Dot14 
+        , y_scale   :: F2Dot14 
+        } 
+    | NoTrans
+  deriving (Eq,Show)
   
 -- Bounding box - do all bounding boxes in a font file (tt or ot)  
 -- use short for the dimension? 

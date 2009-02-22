@@ -15,18 +15,23 @@
 --------------------------------------------------------------------------------
 
 module Graphics.SFont.GlyphDecoder ( 
-  simpleGlyphContours
+  simpleGlyphContours, 
+  compositeElements
 ) where
 
 
-import Graphics.SFont.ParserCombinators ( mkI16be )
+import Graphics.SFont.Parse
 import Graphics.SFont.PrimitiveDatatypes
 import Graphics.SFont.Syntax
 
+import Control.Applicative
 import Data.Bits
 import Data.Int
 import Data.Word
 
+
+--------------------------------------------------------------------------------
+-- Simple glyphs
 
 
 data CurvePos = COn | COff deriving (Eq,Show)
@@ -170,4 +175,65 @@ endSegment [i]     xs = let (l,r) = splitAt (1 + fromIntegral i) xs in
 endSegment (i:ix)  xs = let (l,r) = splitAt (1 + fromIntegral i) xs 
                         in l : endSegment ix r 
 
+--------------------------------------------------------------------------------
+-- Composite glyphs
+
+-- This one is easier in the parse monad...
+
+compositeElements :: Monad m => ParserT r m [CompositeElement]
+compositeElements = do 
+    (a,more)  <- compositeElt
+    if not more then return [a] else (return a) <:> compositeElements
+            
+            
+compositeElt :: Monad m => ParserT r m (CompositeElement,Bool)  
+compositeElt = do 
+    flag  <- ushort
+    gidx  <- (fromIntegral <$> ushort)
+    args  <- extractArgs (argsAreWords flag) (argmaker $ argsAreXYVals flag) 
+    op    <- cond3 (haveScale flag)     (Scale   <$> f2dot14) 
+                   (haveXYScale flag)   (XyScale <$> f2dot14 <*> f2dot14) 
+                   (have2x2 flag)       twoByTwo
+                   NoTrans
+    return (CompositeElement gidx args op, moreComponents flag)                   
+  where
+    extractArgs True f = (\a b -> f (fromIntegral a, fromIntegral b)) <$>
+                            short <*> short
+                          
+    extractArgs _    f = (\a b -> f (fromIntegral a, fromIntegral b)) <$>
+                            byte <*> byte                          
     
+    argmaker True (x,y) = OffsetArgs x y  
+    argmaker _    (x,y) = PointNumbers x y 
+    
+    twoByTwo :: Monad m => ParserT r m CompositeTrans
+    twoByTwo = TwoByTwo <$> f2dot14 <*> f2dot14 <*> f2dot14 <*> f2dot14
+    
+cond3 :: Monad m => Bool -> m a -> Bool -> m a -> Bool -> m a -> a -> m a
+cond3 pred1 f1 pred2 f2 pred3 f3 deft
+    | pred1     = f1
+    | pred2     = f2
+    | pred3     = f3
+    | otherwise = return deft
+  
+    
+
+argsAreWords      :: UShort -> Bool
+argsAreWords      = testBit `flip` 0
+
+argsAreXYVals     :: UShort -> Bool
+argsAreXYVals     = testBit `flip` 1
+
+haveScale         :: UShort -> Bool
+haveScale         = testBit `flip` 3
+
+moreComponents    :: UShort -> Bool
+moreComponents    = testBit `flip` 5
+
+haveXYScale       :: UShort -> Bool
+haveXYScale       = testBit `flip` 6
+
+have2x2           :: UShort -> Bool
+have2x2           = testBit `flip` 7
+
+

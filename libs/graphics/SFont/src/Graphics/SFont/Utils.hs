@@ -31,9 +31,8 @@ import qualified Data.Map as Map
 import Data.Word
 
 
+
 class Meaning a where meaning :: a -> String
-
-
 
 
 -- Model C land booleans...

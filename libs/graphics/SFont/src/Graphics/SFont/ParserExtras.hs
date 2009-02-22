@@ -55,6 +55,11 @@ fword = FWord <$> int16be
 ufword :: Monad m => ParserT r m UFWord 
 ufword = UFWord <$> word16be 
 
+
+f2dot14 :: Monad m => ParserT r m F2Dot14
+f2dot14 = F2Dot14 . fromIntegral <$> int16be
+
+
 bitfield :: (Bits a, Ord a, Enum b, Monad m) => 
             ParserT r m a -> ParserT r m [b]
 bitfield p = unbits <$> p 
