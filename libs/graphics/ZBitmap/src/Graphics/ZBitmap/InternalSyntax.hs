@@ -112,7 +112,11 @@ data BmpBitmap = BmpBitmap
       , bmp_opt_palette  :: Maybe Palette
       , bmp_body         :: BmpDibImageData
       }
-    deriving Show
+
+instance Show BmpBitmap where
+  show (BmpBitmap h d p _) = "BmpBitmap " ++ show h ++ " " ++ show d ++ " "
+                                ++ show p ++ " {}"
+
 
    
 data BmpHeader = BmpHeader 

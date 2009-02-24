@@ -17,7 +17,6 @@
 
 module Graphics.ZBitmap.ZBitmap where
 
-import Data.Array.IArray ( Array )
 import Data.Array.Unboxed ( UArray )
 
 
