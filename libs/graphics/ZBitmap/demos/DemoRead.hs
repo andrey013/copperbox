@@ -3,12 +3,12 @@
 module Main where
 
 
-import ZBitmap
+import Graphics.ZBitmap
 import Text.PrettyPrint.HughesPJ ( render )
 
 
 main :: IO ()
-main = run4bit
+main = run24bit
     
 runMono :: IO ()
 runMono = 
@@ -33,26 +33,23 @@ runAction (infile,outfile,show_palette) = do
     a <- readBmp infile
     showBmp a
     let b = convertBmp a
-    putStrLn $ showAsciiPicture $ makeAsciiPicture b
+    putStrLn $ showAsciiPicture $ makeAsciiPicture b   
     if show_palette 
-      then maybe fk (sk a) (optPaletteSpecBmp a)
+      then maybe fk sk (optPalette a)
       else putStrLn "No palette"
-    let a' = bitmapToBmp24 b
+    let a' = zbitmapToBmp24 b
     writeBmp outfile a'
   where
     fk :: IO ()
     fk = putStrLn $ "No palette spec"
     
-    sk :: BmpBitmap -> BmpPaletteSpec -> IO ()
-    sk a ps = let pal = palette (bitsPerPixelBmp a) ps 
-              in putStrLn $ render $ ppPalette pal  
+    sk :: Palette -> IO ()
+    sk pal = putStrLn $ render $ ppPalette pal  
       
     showBmp :: BmpBitmap -> IO ()
     showBmp bmp = do 
-        putStrLn $ render $ ppBmpHeader bmp
-        putStrLn $ render $ ppBmpDibHeader bmp
+        putStrLn $ render $ ppBmpBitmap bmp
         putStr "\n"
     
-
 
 

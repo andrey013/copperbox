@@ -22,7 +22,7 @@ module Graphics.ZBitmap.Traverse where
 
 import Data.Array.IArray ( IArray, bounds )
 import Data.Ix
-import Data.List ( foldl' )
+import Data.Foldable ( foldl', foldlM )
 
 class Ix i => Rowwise a i | a -> i where
   rowBounds :: a -> (i,i)
@@ -32,6 +32,13 @@ class Ix i => Rowwise a i | a -> i where
 rowHeight :: (Rowwise a i, Num i) => a -> i
 rowHeight = (1+) . fn . rowBounds where
   fn (rmin,rmax) = rmax-rmin
+
+rowMax :: (Rowwise a i, Num i) => a -> i
+rowMax = snd . rowBounds 
+  
+rowMin :: (Rowwise a i, Num i) => a -> i
+rowMin = fst . rowBounds 
+
   
 rowIndexes :: (Rowwise a i, Enum i) => a -> [i]  
 rowIndexes = fn . rowBounds where
@@ -51,6 +58,12 @@ class Ix i => Colwise a i | a -> i where
 colWidth :: (Colwise a i, Num i) => a -> i
 colWidth = (1+) . fn . colBounds where
   fn (cmin,cmax) = cmax-cmin
+
+colMax :: (Colwise a i, Num i) => a -> i
+colMax = snd . colBounds 
+  
+colMin :: (Colwise a i, Num i) => a -> i
+colMin = fst . colBounds 
   
 colIndexes :: (Colwise a i, Enum i) => a -> [i]  
 colIndexes = fn . colBounds where
@@ -67,7 +80,14 @@ forEachRowCol :: (Rowwise a i, Colwise a i , Enum i)
 forEachRowCol a f b0 = foldl' fun b0 idxs where
     fun b (r,c) = f (r,c) b 
     idxs        = [(r,c) | r <- rowIndexes a,  c <- colIndexes a]
-        
+
+forEachRowColM_ :: (Colwise a i, Rowwise a i, Enum i,  Monad m) 
+                => a -> ((i,i) -> m ()) -> m ()
+forEachRowColM_ a f = foldlM fn () idxs where
+    fn _ idx    = f idx 
+    idxs        = [(r,c) | r <- rowIndexes a,  c <- colIndexes a]
+    
+            
 --------------------------------------------------------------------------------
 -- Wrapper types and instances
 
