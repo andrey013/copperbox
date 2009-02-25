@@ -98,9 +98,11 @@ readTTFF = do
     glocs   <- tableJump "loca" (readLocaTable loc_fmt ng ge)
     lift $ modify $ (\s -> s {glyph_locs=glocs})
     
-    -- temporary
-    gs      <- tableJump "glyf" (readGlyphs glocs)
-    return $ TTFF v nt hdr gs
+
+    nrecs   <- tableJump "name" readNameRecords
+
+    glyfs   <- tableJump "glyf" (readGlyphs glocs)
+    return $ TTFF v nt hdr nrecs glyfs
 
 
 
@@ -183,9 +185,70 @@ readHeadTable = FontHeader <$>
 maxpNumGlyphs :: Monad m => ParserT r m Int 
 maxpNumGlyphs = fromIntegral <$> (fixed *> ushort)
 
+--------------------------------------------------------------------------------
+-- name table
 
 
 
+readNameRecords :: Monad m => ParserT r m [NameRecord]
+readNameRecords = do
+    start   <- position
+    _fmt    <- ushort
+    n       <- ushort
+    off     <- ushort
+    recs    <- count (fromIntegral n) (readNameRecord $ start + fromIntegral off)
+    return recs
+
+
+readNameRecord :: Monad m => Int -> ParserT r m NameRecord 
+readNameRecord abs_data_offset = do
+    pid     <- platformId  
+    enc     <- encodingId 
+    lang    <- ushort
+    nid     <- nameId
+    len     <- ushort
+    pos     <- ushort
+    str     <- withinRange (abs_data_offset + fromIntegral pos) 
+                           (fromIntegral len)
+                           (runOnL char)
+    return $ NameRecord pid enc lang nid str
+    
+nameId :: Monad m => ParserT r m NameId
+nameId = toEnum . fromIntegral <$> ushort
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- Glyf table
+readGlyphs :: Monad m => [Region] -> ParserT r m [Glyph]
+readGlyphs xs = catMaybes <$> readGlyphs' xs
+
+readGlyphs' :: Monad m => [Region] -> ParserT r m [Maybe Glyph]
+readGlyphs' ((o,l):rs) = readGlyf o l <:> readGlyphs' rs
+readGlyphs' []         = return [] 
+
+
+readGlyf :: Monad m => Int -> Int -> ParserT r m (Maybe Glyph)
+readGlyf _      0   = return Nothing
+readGlyf offset len = withinRangeRel offset len $ do 
+    nc  <- short 
+    bb  <- readBoundingBox
+    if nc >= 0 
+      then do 
+        end_pts       <- count (fromIntegral nc) ushort
+        let csize     = 1 + fromIntegral (foldr max 0 end_pts)
+        _insts        <- countPrefixedList ushort byte
+        flags         <- count csize byte
+        xy_data       <- runOnL byte
+        let outlines  = simpleGlyphContours end_pts flags xy_data
+        return $ Just $ SimpleGlyph "" bb outlines
+        -- don't know the glyph_name at this point
+      else do
+          elts        <- compositeElements
+          return $ Just $ CompositeGlyph "" bb elts
+          
 
 --------------------------------------------------------------------------------
 -- Loca table
@@ -227,35 +290,13 @@ glyfLocsFromLocaTable head_idx_to_loc_fmt maxp_num_glyphs
 
 
 --------------------------------------------------------------------------------
--- Glyf table
-readGlyphs :: Monad m => [Region] -> ParserT r m [Glyph]
-readGlyphs xs = catMaybes <$> readGlyphs' xs
+-- Common elements
 
-readGlyphs' :: Monad m => [Region] -> ParserT r m [Maybe Glyph]
-readGlyphs' ((o,l):rs) = readGlyf o l <:> readGlyphs' rs
-readGlyphs' []         = return [] 
-
-
-readGlyf :: Monad m => Int -> Int -> ParserT r m (Maybe Glyph)
-readGlyf _      0   = return Nothing
-readGlyf offset len = withinRangeRel offset len $ do 
-    nc  <- short 
-    bb  <- readBoundingBox
-    if nc >= 0 
-      then do 
-        end_pts       <- count (fromIntegral nc) ushort
-        let csize     = 1 + fromIntegral (foldr max 0 end_pts)
-        _insts        <- countPrefixedList ushort byte
-        flags         <- count csize byte
-        xy_data       <- runOnL byte
-        let outlines  = simpleGlyphContours end_pts flags xy_data
-        return $ Just $ SimpleGlyph "" bb outlines
-        -- don't know the glyph_name at this point
-      else do
-          elts        <- compositeElements
-          return $ Just $ CompositeGlyph "" bb elts
-          
-
+platformId :: Monad m => ParserT r m PlatformId 
+platformId = toEnum . fromIntegral <$> ushort 
+      
+encodingId :: Monad m => ParserT r m EncodingId 
+encodingId = toEnum . fromIntegral <$> ushort 
 
 
 readBoundingBox :: Monad m => ParserT r m BoundingBox
