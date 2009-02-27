@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Hawa
+-- Module      :  Graphics.Hawa.Prims
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -10,18 +10,22 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Vector drawing... 
+-- primitive ops
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Hawa ( 
-    module Graphics.Hawa.Dummy,
-    module Graphics.Hawa.PrettyPrim,
-    module Graphics.Hawa.Unit
-  ) where
+module Graphics.Hawa.Prims where
 
-
-import Graphics.Hawa.Dummy
-import Graphics.Hawa.PrettyPrim
 import Graphics.Hawa.Unit
 
+-- data TyRep = Em     -- postscript unit 
+
+data PrimOp = 
+        Pop
+      -- Path ops  
+      | Moveto            Unit    Unit
+      | Lineto            Unit    Unit
+      | Closepath
+      -- paint ops
+      | Stroke
+  deriving (Eq,Show)      

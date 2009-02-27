@@ -17,6 +17,7 @@
 
 module Graphics.Hawa.Unit where
 
+import Text.PrettyPrint.Leijen
 
 newtype Unit = Unit { getUnit :: Double }
   deriving (Eq,Fractional,Num,Ord,Read,Real,RealFrac,Show)
@@ -28,3 +29,8 @@ whole = (==0) . snd . propFrac . getUnit
 
 propFrac :: RealFrac a => a -> (Int, a)
 propFrac = properFraction
+
+
+instance Pretty Unit where
+  pretty a | whole a      = int . fst . properFraction $ a
+           | otherwise    = double . getUnit $ a
