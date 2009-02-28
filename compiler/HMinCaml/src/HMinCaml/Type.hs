@@ -20,7 +20,7 @@ data Type = TUnit
           | TFloat
           | TFun   [Type]  Type         {- arguments are uncurried -}
           | TTuple [Type]
-          | TArray [Type]
+          | TArray Type
           | TVar   (Maybe Type)
   deriving (Eq,Show)
 

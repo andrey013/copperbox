@@ -8,8 +8,9 @@ import HMinCaml.Parser
 import HMinCaml.SparcAsm
 import HMinCaml.Syntax
 import HMinCaml.Type
+import HMinCaml.Typing 
 
-import Control.Applicative
+
 
 demo = do 
   ans <- parseMinCaml "ack.ml"
@@ -19,4 +20,8 @@ demo = do
 
 -- aka dyap
 demo02' = f 1 3 where
-  f = (show .) . (+)    
+  f = (show .) . (+)
+  
+
+
+   
