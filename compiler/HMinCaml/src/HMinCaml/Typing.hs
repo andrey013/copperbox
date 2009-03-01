@@ -54,8 +54,8 @@ derefTerm (Not e) =  Not <$> derefTerm e
 
 derefTerm _       = error $ "derefTerm todo"
 
-infer :: Expr -> Expr
-infer e = evalState `flip` initial_state $ do
+typing :: Expr -> Expr
+typing e = evalState `flip` initial_state $ do
     -- ...
     derefTerm e
     

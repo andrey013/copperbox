@@ -2,6 +2,7 @@
 
 module Demo where
 
+import HMinCaml.Beta
 import HMinCaml.Emit
 import HMinCaml.Id
 import HMinCaml.Parser
