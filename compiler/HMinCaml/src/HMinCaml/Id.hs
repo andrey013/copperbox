@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 -- |
@@ -14,6 +15,8 @@
 module HMinCaml.Id where
 
 import HMinCaml.Type
+
+import Control.Monad.State
 
 type Id = String
 
@@ -32,6 +35,11 @@ idOfType (TTuple _)   = "t"
 idOfType (TArray _)   = "a" 
 idOfType (TVar _)     = error $ "idOfType on Var"
 
-
+genid :: MonadState Int m => String -> m String
+genid s = do 
+    i <- get
+    put (i+1)
+    return $ s ++ '.' : show i
+    
 
     

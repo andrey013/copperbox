@@ -16,7 +16,8 @@ module HMinCaml.M (
     addList,
     addList2,
     empty,
-    add
+    add,
+    find
   ) where
 
 import Data.List ( foldl' )
@@ -35,6 +36,9 @@ empty = Map.empty
 
 add :: Ord k => k -> v -> M k v -> M k v
 add  = Map.insert
+
+find :: Ord k => k -> M k a -> Maybe a
+find = Map.lookup
 
 
 
