@@ -4,8 +4,10 @@ module Demo where
 
 import HMinCaml.Alpha ( alpha )
 import HMinCaml.Beta ( beta )
+import HMinCaml.Elim
 import HMinCaml.Emit
 import HMinCaml.Id
+import HMinCaml.Inline
 import HMinCaml.Parser
 import HMinCaml.SparcAsm
 import HMinCaml.Syntax

@@ -14,8 +14,13 @@
 module HMinCaml.S (
     S, 
     ofList,
-    add, 
-    empty
+    add,
+    mem,
+    empty,
+    singleton,
+    diff,
+    union,
+    remove
   ) where
 
 import Data.List ( foldl' )
@@ -29,8 +34,22 @@ ofList = foldl' (\s e -> Set.insert e s) empty
 add :: Ord a => a -> S a -> S a
 add = Set.insert
 
+mem :: Ord a => a -> S a -> Bool
+mem = Set.member
+
+
 empty :: S a
 empty = Set.empty
 
+singleton :: a -> S a
+singleton = Set.singleton
 
 
+union :: Ord a => S a -> S a -> S a
+union = Set.union
+
+diff :: Ord a => S a -> S a -> S a
+diff = Set.difference
+
+remove :: Ord a => a -> S a -> S a
+remove = Set.delete
