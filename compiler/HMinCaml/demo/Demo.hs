@@ -2,6 +2,7 @@
 
 module Demo where
 
+import HMinCaml.Main 
 import HMinCaml.Alpha ( alpha )
 import HMinCaml.Beta ( beta )
 import HMinCaml.ConstFold
@@ -16,7 +17,7 @@ import HMinCaml.SparcAsm
 import HMinCaml.Syntax
 import HMinCaml.Type
 import HMinCaml.Typing 
-
+import HMinCaml.Virtual
 
 
 demo = do 

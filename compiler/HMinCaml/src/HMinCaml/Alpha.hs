@@ -18,7 +18,7 @@ module HMinCaml.Alpha where
 import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import qualified HMinCaml.M as M
-import HMinCaml.KNormal
+import HMinCaml.KNormal ( Expr(..), Fundef(..) )
 
 import Control.Applicative
 import Control.Monad.State

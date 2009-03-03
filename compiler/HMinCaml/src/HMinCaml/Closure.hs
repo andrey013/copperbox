@@ -117,4 +117,7 @@ g env known a = step a where
     step (K.Put x y z)        = Put x y z
     step (K.ExtArray x)       = ExtArray (L x)
     step (K.ExtFunApp x ys)   = AppDir (L $ "min_caml_" ++ x) ys
-      
+
+
+closure :: K.Expr -> Prog
+closure _ = error $ "closure undefined"       

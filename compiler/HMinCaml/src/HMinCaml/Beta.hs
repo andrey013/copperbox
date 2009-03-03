@@ -14,8 +14,9 @@
 module HMinCaml.Beta where
 
 import HMinCaml.Id
+import HMinCaml.KNormal ( Expr(..), Fundef(..) )
 import qualified HMinCaml.M as M
-import HMinCaml.KNormal
+
 
 type Env = M.M Id Id
 

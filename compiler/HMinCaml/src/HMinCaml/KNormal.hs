@@ -14,7 +14,9 @@
 module HMinCaml.KNormal where
 
 import HMinCaml.Id
-import qualified  HMinCaml.S as S
+import qualified HMinCaml.M as M
+import qualified HMinCaml.S as S
+import qualified HMinCaml.Syntax as Syntax
 import HMinCaml.Type
 
 data Expr = Unit
@@ -78,4 +80,8 @@ fv (Put x y z)        = S.ofList [x,y,z]
 fv (LetTuple xs y e)  = S.add y (S.diff (fv e) (S.ofList (map fst xs)))
   
   
+g env Syntax.Unit     = (Unit, TUnit)
+
+knormal :: Syntax.Expr -> Expr
+knormal e = fst (g M.empty e)
   

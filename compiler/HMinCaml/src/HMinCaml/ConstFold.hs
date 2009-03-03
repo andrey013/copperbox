@@ -14,8 +14,8 @@
 module HMinCaml.ConstFold where
 
 import HMinCaml.Id
+import HMinCaml.KNormal ( Expr(..), Fundef(..) )
 import qualified HMinCaml.M as M
-import HMinCaml.KNormal
 import HMinCaml.Utils
 
 type Env = M.M Id Expr

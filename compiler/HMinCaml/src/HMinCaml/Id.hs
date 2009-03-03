@@ -24,7 +24,12 @@ data Label = L String
   deriving (Eq,Show)
   
 
-
+genid :: MonadState Int m => String -> m String
+genid s = do 
+    i <- get
+    put (i+1)
+    return $ s ++ '.' : show i
+    
 idOfType :: Type -> String
 idOfType TUnit        = "u"
 idOfType TBool        = "b"
@@ -35,11 +40,10 @@ idOfType (TTuple _)   = "t"
 idOfType (TArray _)   = "a" 
 idOfType (TVar _)     = error $ "idOfType on Var"
 
-genid :: MonadState Int m => String -> m String
-genid s = do 
+
+gentmp :: MonadState Int m => Type -> m String
+gentmp typ = do 
     i <- get
     put (i+1)
-    return $ s ++ '.' : show i
-    
-
+    return $ 'T' : (idOfType typ) ++ show i
     

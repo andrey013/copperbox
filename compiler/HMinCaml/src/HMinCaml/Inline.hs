@@ -14,7 +14,7 @@
 module HMinCaml.Inline where
 
 import qualified HMinCaml.Alpha as Alpha
-import HMinCaml.KNormal
+import HMinCaml.KNormal ( Expr(..), Fundef(..) )
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import HMinCaml.Type

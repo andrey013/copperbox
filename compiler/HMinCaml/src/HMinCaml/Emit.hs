@@ -101,6 +101,6 @@ emitF (Prog pdata fundefs e) = do
     tell  "\tret\n"
     tell  "\trestore\n"
 
-
-         
+emit :: Prog -> String 
+emit _ = error $ "emit undefined"       
   
