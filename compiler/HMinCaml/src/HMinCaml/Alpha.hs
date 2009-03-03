@@ -15,16 +15,13 @@
 
 module HMinCaml.Alpha where
 
+import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import HMinCaml.KNormal
 
 import Control.Applicative
 import Control.Monad.State
-
-instance Applicative (State Int) where
-  pure = return
-  (<*>) = ap
 
 type Env = M.M Id Id
 
@@ -86,4 +83,4 @@ g env (ExtFunApp x ys)    = return $ ExtFunApp x (map (find `flip` env) ys)
 
 
 alpha :: Expr -> Expr
-alpha e = evalState (g M.empty e) 0
+alpha e = eval (g M.empty e) 0

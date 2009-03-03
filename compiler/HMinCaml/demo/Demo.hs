@@ -4,6 +4,8 @@ module Demo where
 
 import HMinCaml.Alpha ( alpha )
 import HMinCaml.Beta ( beta )
+import HMinCaml.ConstFold
+import qualified HMinCaml.Closure as Closure
 import HMinCaml.Elim
 import HMinCaml.Emit
 import HMinCaml.Id
