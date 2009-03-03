@@ -20,12 +20,12 @@ data Id_or_Imm = V Id | C Int
   deriving (Eq,Show)
 
 data SparcT =
-        Ans     SparcExp
-      | Let     (Id,Type)   SparcExp  SparcT
+        Ans     Expr
+      | Let     (Id,Type)   Expr  SparcT
       | Forget  Id          SparcT              {- virtual instruction -}
   deriving (Eq,Show)
   
-data SparcExp =
+data Expr =
         Nop
       | Set     Int
       | SetL    Id
@@ -46,11 +46,11 @@ data SparcExp =
       | StDF    Id Id Id_or_Imm
       | Comment String
       {- virtual instructions -}
-      | IfEq    Id Id_or_Imm SparcExp SparcExp
-      | IfLE    Id Id_or_Imm SparcExp SparcExp
-      | IfGE    Id Id_or_Imm SparcExp SparcExp
-      | IfFEq   Id Id SparcExp SparcExp
-      | IfFLE   Id Id SparcExp SparcExp
+      | IfEq    Id Id_or_Imm  SparcT SparcT
+      | IfLE    Id Id_or_Imm  SparcT SparcT
+      | IfGE    Id Id_or_Imm  SparcT SparcT
+      | IfFEq   Id Id         SparcT SparcT
+      | IfFLE   Id Id         SparcT SparcT
       {- closure address, integer arguments, and float arguments -}
       | CallCls Id [Id] [Id]
       | CallDir Label [Id] [Id]
@@ -59,7 +59,7 @@ data SparcExp =
   deriving (Eq,Show)
   
   
-data SparcFundef = SparcFundef  
+data Fundef = Fundef  
       { fun_name  :: Label
       , args      :: [Id]
       , fargs     :: [Id]
@@ -70,7 +70,7 @@ data SparcFundef = SparcFundef
   
   
 
-data Prog = Prog [(Label, Float)] [SparcFundef] SparcT
+data Prog = Prog [(Label, Float)] [Fundef] SparcT
   deriving (Eq,Show)
   
-  
+fv e = error "SparcAsm fv todo"  

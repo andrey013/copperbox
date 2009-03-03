@@ -63,14 +63,14 @@ emitG dest (Let (x,_t) expr e)  = do emitG' (NonTail x) expr
 emitG dest (Forget _ _)         = error $ "emitG - Forget" 
 
 emitG' :: (MonadState EmitState m, MonadWriter String m) 
-       => Dest -> SparcExp -> m ()
+       => Dest -> Expr -> m ()
 emitG' (NonTail _)  Nop       = return ()
 
 emitG' _ _    = return ()
 
-emitH :: (MonadState EmitState m, MonadWriter String m) => SparcFundef -> m ()
+emitH :: (MonadState EmitState m, MonadWriter String m) => Fundef -> m ()
 
-emitH (SparcFundef (L x)_ _ e _) = do
+emitH (Fundef (L x)_ _ e _) = do
     tellprintf "%s:\n" x
     stackclear
     emitG Tail e

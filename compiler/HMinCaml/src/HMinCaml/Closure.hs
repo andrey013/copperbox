@@ -87,7 +87,7 @@ fv (LetTuple xts y e)               = S.add y (S.diff (fv e)
                                                       (S.ofList (map fst xts)))
 fv (Put x y z)                      = S.ofList [x, y, z]
 
-
+g :: M.M Id Type -> S.S Id -> K.Expr -> Expr
 g env known a = step a where
     step K.Unit               = Unit
     step (K.Int i)            = Int i

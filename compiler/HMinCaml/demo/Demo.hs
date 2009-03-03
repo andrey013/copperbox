@@ -11,6 +11,7 @@ import HMinCaml.Emit
 import HMinCaml.Id
 import HMinCaml.Inline
 import HMinCaml.Parser
+import HMinCaml.Simm13
 import HMinCaml.SparcAsm
 import HMinCaml.Syntax
 import HMinCaml.Type
