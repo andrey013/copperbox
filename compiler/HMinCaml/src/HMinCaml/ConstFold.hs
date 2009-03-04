@@ -13,6 +13,7 @@
 
 module HMinCaml.ConstFold where
 
+import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import HMinCaml.KNormal ( Expr(..), Fundef(..) )
 import qualified HMinCaml.M as M
@@ -107,5 +108,5 @@ g _   e                         = e
 
 
                 
-constFold :: Expr -> Expr
-constFold = g M.empty
+constFold :: Expr -> CM Expr
+constFold = return . g M.empty

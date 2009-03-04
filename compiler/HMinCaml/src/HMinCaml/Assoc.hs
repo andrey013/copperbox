@@ -13,18 +13,24 @@
 
 module HMinCaml.Assoc where
 
-
+import HMinCaml.CompilerMonad
 import HMinCaml.KNormal ( Expr(..), Fundef(..) )
 
-assoc :: Expr -> Expr
-assoc (IfEq x y e1 e2)      = IfEq x y (assoc e1) (assoc e2)
-assoc (IfLE x y e1 e2)      = IfLE x y (assoc e1) (assoc e2)
-assoc (Let xt e1 e2)        = insert (assoc e1) where
+import Control.Monad ( liftM )
+
+g :: Expr -> Expr
+g (IfEq x y e1 e2)                = IfEq x y (g e1) (g e2)
+g (IfLE x y e1 e2)                = IfLE x y (g e1) (g e2)
+g (Let xt e1 e2)                  = insert (g e1) where
     insert (Let yt e3 e4)     = Let yt e3 (insert e4)
     insert (LetRec fundefs e) = LetRec fundefs (insert e)
     insert (LetTuple yts z e) = LetTuple yts z (insert e)
-    insert e                  = Let xt e (assoc e2)
+    insert e                  = Let xt e (g e2)
               
-assoc (LetRec (Fundef xt yts e1) e2)  = LetRec (Fundef xt yts (assoc e1)) (assoc e2)
-assoc (LetTuple xts y e)              = LetTuple xts y (assoc e)
-assoc e                               = e
+g (LetRec (Fundef xt yts e1) e2)  = LetRec (Fundef xt yts (g e1)) (g e2)
+g (LetTuple xts y e)              = LetTuple xts y (g e)
+g e                               = e
+
+assoc :: Expr -> CM Expr
+assoc = return . g
+

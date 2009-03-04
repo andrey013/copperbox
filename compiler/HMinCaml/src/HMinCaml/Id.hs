@@ -14,9 +14,10 @@
 
 module HMinCaml.Id where
 
+import HMinCaml.CompilerMonad
+import HMinCaml.IdTypes
 import HMinCaml.Type
 
-import Control.Monad.State
 
 type Id = String
 
@@ -24,10 +25,9 @@ data Label = L String
   deriving (Eq,Show)
   
 
-genid :: MonadState Int m => String -> m String
+genid :: String -> CM String
 genid s = do 
-    i <- get
-    put (i+1)
+    i <- counter
     return $ s ++ '.' : show i
     
 idOfType :: Type -> String
@@ -41,9 +41,8 @@ idOfType (TArray _)   = "a"
 idOfType (TVar _)     = error $ "idOfType on Var"
 
 
-gentmp :: MonadState Int m => Type -> m String
+gentmp :: Type -> CM String
 gentmp typ = do 
-    i <- get
-    put (i+1)
+    i <- counter
     return $ 'T' : (idOfType typ) ++ show i
     

@@ -15,7 +15,9 @@
 
 module HMinCaml.RegAlloc  where
 
+import HMinCaml.CompilerMonad
 import HMinCaml.SparcAsm
 
-regAlloc :: Prog -> Prog
+regAlloc :: Prog -> CM Prog
 regAlloc _ = error $ "regAlloc undefined"
+

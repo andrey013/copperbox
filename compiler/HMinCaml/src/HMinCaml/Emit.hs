@@ -14,7 +14,7 @@
 
 module HMinCaml.Emit where
 
-
+import HMinCaml.CompilerMonad
 import HMinCaml.Float
 import HMinCaml.Id
 import HMinCaml.S
@@ -101,6 +101,6 @@ emitF (Prog pdata fundefs e) = do
     tell  "\tret\n"
     tell  "\trestore\n"
 
-emit :: Prog -> String 
+emit :: Prog -> CM String 
 emit _ = error $ "emit undefined"       
   

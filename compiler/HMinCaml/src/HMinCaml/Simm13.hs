@@ -13,6 +13,7 @@
 
 module HMinCaml.Simm13 where
 
+import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import HMinCaml.SparcAsm
@@ -70,8 +71,8 @@ g' _   e                    = e
 h :: Fundef -> Fundef
 h (Fundef l xs ys e t) = Fundef l xs ys (g M.empty e) t
 
-simm13 :: Prog -> Prog
-simm13 (Prog pdata fundefs e) =
+simm13 :: Prog -> CM Prog
+simm13 (Prog pdata fundefs e) = return $ 
     Prog pdata (map h fundefs) (g M.empty e)
   
   

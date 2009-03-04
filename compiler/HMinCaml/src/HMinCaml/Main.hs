@@ -17,6 +17,7 @@ import HMinCaml.Alpha     ( alpha )
 import HMinCaml.Assoc     ( assoc )
 import HMinCaml.Beta      ( beta )
 import HMinCaml.Closure   ( closure )
+import HMinCaml.CompilerMonad
 import HMinCaml.ConstFold ( constFold )
 import HMinCaml.Elim      ( elim )
 import HMinCaml.Emit      ( emit )
@@ -28,6 +29,8 @@ import HMinCaml.Simm13    ( simm13 )
 import qualified HMinCaml.Syntax as Syntax
 import HMinCaml.Typing    ( typing )
 import HMinCaml.Virtual   ( virtual )
+
+import Control.Monad
 
 limit :: Int
 limit = 1000
@@ -42,16 +45,15 @@ parseFile path = do
     Left err -> putStrLn err >> return Nothing
     Right a -> return $ Just a
 
-iter :: Int -> Expr -> Expr
-iter 0 e = e
-iter i e = let e' = (elim . constFold . inline . assoc . beta)  e
-               in if e' == e then e else iter (i-1) e'
+iter :: Int -> Expr -> CM Expr
+iter 0 e = return e
+iter i e = do e' <- (elim <=< constFold <=< inline <=< assoc <=< beta)  e
+              if e' == e then return e else iter (i-1) e'
                
                
-                
-    
-compile :: Syntax.Expr -> AsmText
-compile e = 
-  let out = (emit . regAlloc . simm13 . virtual . closure 
-                  . iter limit . alpha . knormal . typing) e in
-  out    
+compile :: Syntax.Expr -> CM AsmText
+compile e = (emit <=< regAlloc   <=< simm13 <=< virtual <=< closure 
+                  <=< iter limit <=< alpha  <=< knormal <=< typing) e
+
+
+                    

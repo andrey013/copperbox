@@ -14,13 +14,13 @@
 
 module HMinCaml.SparcAsm where
 
+import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import qualified HMinCaml.S as S
 import HMinCaml.Type
 
 import Control.Applicative
-import Control.Monad.State
 import Data.Array.IArray
 
 
@@ -85,8 +85,7 @@ fletd :: Id -> Expr -> SparcT -> SparcT
 fletd x e1 e2 = Let (x, TFloat) e1 e2
 
 -- ulet aka seq 
-ulet :: (MonadState Int m, Applicative m) 
-     => Expr -> SparcT -> m SparcT
+ulet :: Expr -> SparcT -> CM SparcT
 ulet e1 e2  = (\ident -> Let (ident, TUnit) e1 e2) <$> gentmp TUnit
 
 regs :: Array Int Id

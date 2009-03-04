@@ -30,7 +30,7 @@ find x env = maybe x id (M.find x env)
 
 
 
-g :: (Applicative m, MonadState Int m) => Env -> Expr -> m Expr
+g :: Env -> Expr -> CM Expr
 g _   Unit                = return $ Unit
 g _   (Int i)             = return $ Int i
 g _   (Float d)           = return $ Float d
@@ -82,5 +82,5 @@ g env (ExtFunApp x ys)    = return $ ExtFunApp x (map (find `flip` env) ys)
          
 
 
-alpha :: Expr -> Expr
-alpha e = eval (g M.empty e) 0
+alpha :: Expr -> CM Expr
+alpha e = g M.empty e

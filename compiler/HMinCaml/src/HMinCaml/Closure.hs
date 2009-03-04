@@ -13,6 +13,7 @@
 
 module HMinCaml.Closure where
 
+import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import qualified HMinCaml.KNormal as K
 import qualified HMinCaml.M as M
@@ -119,5 +120,5 @@ g env known a = step a where
     step (K.ExtFunApp x ys)   = AppDir (L $ "min_caml_" ++ x) ys
 
 
-closure :: K.Expr -> Prog
+closure :: K.Expr -> CM Prog
 closure _ = error $ "closure undefined"       

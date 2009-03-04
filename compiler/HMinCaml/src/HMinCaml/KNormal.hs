@@ -13,6 +13,7 @@
 
 module HMinCaml.KNormal where
 
+import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import qualified HMinCaml.S as S
@@ -82,6 +83,6 @@ fv (LetTuple xs y e)  = S.add y (S.diff (fv e) (S.ofList (map fst xs)))
   
 g env Syntax.Unit     = (Unit, TUnit)
 
-knormal :: Syntax.Expr -> Expr
-knormal e = fst (g M.empty e)
+knormal :: Syntax.Expr -> CM Expr
+knormal e = return $ fst (g M.empty e)
   

@@ -13,6 +13,7 @@
 
 module HMinCaml.Beta where
 
+import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import HMinCaml.KNormal ( Expr(..), Fundef(..) )
 import qualified HMinCaml.M as M
@@ -57,5 +58,5 @@ g env (ExtFunApp x ys)    = ExtFunApp x (map (\y -> find y env) ys)
 
 
 
-beta :: Expr -> Expr
-beta = g M.empty
+beta :: Expr -> CM Expr
+beta = return . g M.empty

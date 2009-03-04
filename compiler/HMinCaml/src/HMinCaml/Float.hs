@@ -20,3 +20,4 @@ gethi = floor
 
 getlo :: Float -> Int32
 getlo = floor
+

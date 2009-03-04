@@ -14,6 +14,7 @@
 module HMinCaml.Virtual where
 
 import qualified HMinCaml.Closure as C
+import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import HMinCaml.SparcAsm
@@ -83,7 +84,7 @@ g env (C.Var x)             = case M.find x env of
     _             -> Ans (Mov x)
 
 
-virtual :: C.Prog -> Prog
+virtual :: C.Prog -> CM Prog
 virtual _ = error "virtual undefined"
 
          
