@@ -16,22 +16,18 @@
 
 module Graphics.ZBitmap (
     module Graphics.ZBitmap.Asciitron,    
-    module Graphics.ZBitmap.Convert,
     module Graphics.ZBitmap.Pretty,
     module Graphics.ZBitmap.ReadBmp,
     module Graphics.ZBitmap.Syntax,
-    module Graphics.ZBitmap.Traverse,
     module Graphics.ZBitmap.Utils,
     module Graphics.ZBitmap.WriteBmp,
   ) where
 
 import Graphics.ZBitmap.Asciitron
-import Graphics.ZBitmap.Convert
 import Graphics.ZBitmap.Pretty
 import Graphics.ZBitmap.ReadBmp
 import Graphics.ZBitmap.Syntax
-import Graphics.ZBitmap.Traverse
-import Graphics.ZBitmap.Utils ( optPalette, bitsPerPixel ) 
+import Graphics.ZBitmap.Utils
 import Graphics.ZBitmap.WriteBmp
 
 

@@ -69,8 +69,8 @@ putV3Dibheader dib =
                 . outW32le (colours_used              dib)
 
 
-putBody :: BmpDibImageData -> BMPout
-putBody = outByteString
+putBody :: Maybe BmpDibImageData -> BMPout
+putBody = undefined -- outByteString
 
    
     

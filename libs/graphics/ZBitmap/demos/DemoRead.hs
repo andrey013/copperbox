@@ -6,13 +6,20 @@ module Main where
 import Graphics.ZBitmap
 import Text.PrettyPrint.HughesPJ ( render )
 
+import Graphics.ZBitmap.InternalBitmap 
+
+import Data.Array
+
+dummy :: Array (Int,Int) Char
+dummy = cstyle2Darray 4 2 "aaaabbbb"
+
 
 main :: IO ()
 main = run24bit
     
 runMono :: IO ()
 runMono = 
-    runAction ("../images/mono/letterA.bmp", "./out/letterA_2.bmp", True)
+    runAction ("../images/mono/sizes/monow33H10.bmp", "./out/mono1.bmp", True)
 
 run4bit :: IO ()    
 run4bit = 
@@ -32,13 +39,18 @@ runAction :: (FilePath, FilePath, Bool) -> IO ()
 runAction (infile,outfile,show_palette) = do
     a <- readBmp infile
     showBmp a
-    let b = convertBmp a
-    putStrLn $ showAsciiPicture $ makeAsciiPicture b   
+    let ub = uniBitmap a
+    print ub
+    (putStrLn . showAsciiPicture . makeAsciiPicture) ub
+    
+    
+{-
     if show_palette 
       then maybe fk sk (optPalette a)
       else putStrLn "No palette"
     let a' = zbitmapToBmp24 b
     writeBmp outfile a'
+-}
   where
     fk :: IO ()
     fk = putStrLn $ "No palette spec"

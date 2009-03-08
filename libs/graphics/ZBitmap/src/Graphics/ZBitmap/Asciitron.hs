@@ -22,42 +22,53 @@ module Graphics.ZBitmap.Asciitron (
   
 ) where
 
+import Graphics.ZBitmap.InternalBitmap hiding ( (!) )
 import Graphics.ZBitmap.InternalSyntax
-import Graphics.ZBitmap.Traverse
-import Graphics.ZBitmap.Utils ( YCbCrColour(..), rgbToYCbCr )
-import Graphics.ZBitmap.ZBitmap
+import Graphics.ZBitmap.Utils
+
 
 import Control.Monad.ST
-import Data.Array.IArray  ( listArray, (!) )
+import Data.Array.IArray  ( IArray, Ix, bounds, listArray, {- (!) -} )
+import qualified Data.Array.IArray as I 
+
+
 import qualified Data.Array.MArray as MA
 import Data.Array.ST      ( STUArray, runSTUArray )
 import Data.Array.Unboxed ( UArray )
+import Data.Foldable ( foldl', foldlM )
 
-type AsciiPicture = Cartesian UArray (Int,Int) Char 
 
+type AsciiPicture = UArray (Int,Int) Char 
 
-makeAsciiPicture :: ZBitmap -> AsciiPicture
-makeAsciiPicture bmp@(ZBitmap w h _ _) = Cartesian $ runSTUArray $ do
+(!) :: (Show i, IArray a e, Ix i) => a i e -> i -> e
+(!) a i = let (l,u) = bounds a in 
+          if l <= i && i <= u then (I.!) a i 
+                              else error $ "AT - arr " ++ show i ++ " " ++ show (l,u)
+                              
+
+makeAsciiPicture :: UniBitmap -> AsciiPicture
+makeAsciiPicture (UniBitmap _ bmp) = runSTUArray $ do
     ascii <- MA.thaw uarr
-    forEachRowColM_ (Cartesian uarr) (f ascii)
+    foldlM (f ascii) () $ cstyle2DindexList width height 
     return ascii
   where
-    row_count = h
-    col_count = w   
-    uarr      = getCartesian $ blankAsciiPicture row_count col_count
+    width     = imageWidth bmp
+    height    = imageHeight bmp
+    
+    pixelAt   = colourAt bmp   
+    uarr      = blankAsciiPicture width height
   
-    f :: STUArray s (Int,Int) Char -> (Int,Int) -> ST s ()
-    f ascii idx  = let c = greyscale $ bmp `pixelAt` idx in
-                   MA.writeArray ascii idx c
-
-pixelAt :: ZBitmap -> (Int,Int) -> PaletteColour                               
-pixelAt (ZBitmap _ _ _ a) (r,col) = 
-    PaletteColour (a!(r,c)) (a!(r,c+1)) (a!(r,c+2))
-  where c = col * 4
-
+    f :: STUArray s (Int,Int) Char -> () -> (Int,Int) ->  ST s ()
+    f ascii () idx = let c = greyscale $ pixelAt (convert idx) in
+                     if idx > (snd (bounds uarr)) then error $ "f: " ++ show idx ++ show (bounds uarr) else 
+                     MA.writeArray ascii idx c
+    -- bitmaps are stored upside down
+    convert (r,c) = (height-1-r,c)
+    
+    
 blankAsciiPicture :: Int -> Int -> AsciiPicture
-blankAsciiPicture rows cols = Cartesian $ 
-    listArray ((0,0),(rows - 1,cols - 1)) (replicate (rows*cols) ' ')
+blankAsciiPicture width height =  
+    cstyle2Darray width height (replicate (width*height) ' ')
     
 
 
@@ -71,10 +82,10 @@ greyPalette = listArray (0,length xs) xs where
     
 
 
-greyscale :: PaletteColour -> Char
+greyscale :: RgbColour -> Char
 greyscale = (greyPalette !) . colourPitch
 
-colourPitch :: PaletteColour -> Int
+colourPitch :: RgbColour -> Int
 colourPitch a = lim $ floor $ y / 16
   where
     (YCbCrColour y _ _) = rgbToYCbCr a
@@ -90,15 +101,14 @@ showAsciiPicture :: AsciiPicture -> String
 showAsciiPicture = ($ []) . showsAsciiPicture
                     
 showsAsciiPicture :: AsciiPicture -> ShowS
-showsAsciiPicture arr = 
-    forEachRowCol arr (\idx@(_,c) f -> 
-                              if (c==xmax) 
-                                then f . showChar (a!idx) . showChar '\n' 
-                                else f . showChar (a!idx))                              
-                         id
+showsAsciiPicture arr = foldl' mkShowFun id (cstyle2DindexList w h)
   where
-    a     = getCartesian arr
-    xmax  = colMax arr 
+    (w,h) = arrayWidthHeight arr
+    xmax  = w-1
+    mkShowFun f (c,r)
+      | (c,r) > snd (bounds arr) = error $ "showsAsciiPicture" ++ show (c,r) ++ show (bounds arr) 
+      | r==xmax   = f . showChar (arr!(c,r)) . showChar '\n' 
+      | otherwise = f . showChar (arr!(c,r))   
          
     
 

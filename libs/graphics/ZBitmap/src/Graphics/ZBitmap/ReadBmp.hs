@@ -25,7 +25,7 @@ module Graphics.ZBitmap.ReadBmp (
 
 
 import Graphics.ZBitmap.InternalSyntax
-import Graphics.ZBitmap.Utils ( paletteSize )
+import Graphics.ZBitmap.Utils ( paletteSize, cstyle2Darray)
 
 import Control.Applicative
 import Control.Monad.Error
@@ -98,8 +98,9 @@ bmpFile = do
     hdr                 <- header
     (sz,bpp,cmprz,dib)  <- dibheader
     o_ps                <- palette bpp
-    let bs_size = fromIntegral sz -- might need to subtract the palette_spec size
-    body                <- imageData cmprz bs_size
+    let bs_size         = fromIntegral sz -- might need to subtract the palette_spec size
+    let height          = fromIntegral $ bmp_height dib
+    body                <- imageData cmprz bs_size height
     return $ BmpBitmap hdr dib o_ps body
 
 header :: Parser BmpHeader
@@ -116,8 +117,8 @@ dibheader =
     (\w h cp bpp cm sz hr vr pd cs -> 
         (sz, bpp, cm, makeBmpDibHeaderLong w h cp bpp cm sz hr vr pd cs)) 
       <$> (word32le  *> word32le) <*> word32le 
-                    <*> word16le  <*> bitsPerPixel <*> compression
-                    <*> word32le  <*> word32le     <*> word32le
+                    <*> word16le  <*> bitsPerPx   <*> compression
+                    <*> word32le  <*> word32le    <*> word32le
                     <*> word32le  <*> word32le
 
 palette :: BmpBitsPerPixel -> Parser (Maybe Palette)
@@ -126,24 +127,30 @@ palette bpp = case paletteSize bpp of
     n -> do cs <- count n paletteColour       -- 4 bytes per colour
             return $ Just $ makePalette cs
 
-paletteColour :: Parser PaletteColour
-paletteColour = (\b g r _ -> PaletteColour r g b) <$>
+paletteColour :: Parser RgbColour
+paletteColour = (\b g r _ -> (r,g,b)) <$>
     word8 <*> word8 <*> word8 <*> word8
 
-makePalette :: [PaletteColour] -> Palette                                 
+makePalette :: [RgbColour] -> Palette                                 
 makePalette cs = Palette sz $ listArray (0,sz) cs where
     sz                    = length cs - 1
     
     
--- Return an empty ByteString if the image is compressed.
+-- /sz/ should always be a multiple of /height/
 -- The image header might still be important.
-imageData :: BmpCompression -> Int -> Parser BmpDibImageData
-imageData Bi_RGB sz = getByteString sz  
-imageData _      _  = return BS.empty
+imageData :: BmpCompression -> Int -> Int -> Parser (Maybe BmpDibImageData)
+imageData Bi_RGB sz height 
+    | sz `mod` height == 0  = let width = sz `div` height in do
+                                  ws <- count sz word8
+                                  return $ Just $ 
+                                      cstyle2Darray width height ws
+       
+imageData _      _  _       = return Nothing
+
 
     
-bitsPerPixel :: Parser BmpBitsPerPixel
-bitsPerPixel = unmarshalBmpBitsPerPixel <$> word16le
+bitsPerPx :: Parser BmpBitsPerPixel
+bitsPerPx = unmarshalBmpBitsPerPixel <$> word16le
     
 compression :: Parser BmpCompression
 compression = unmarshalBmpCompression <$> word32le
@@ -168,22 +175,6 @@ count i p | i <= 0    = pure []
           | otherwise = p <:> count (i-1) p 
           
           
-getByteString :: Integral i => i -> Parser BS.ByteString
-getByteString n = do 
-    bs <- gets remaining
-    let rlen = BS.length bs
-    if i > rlen 
-      then getFailure rlen
-      else let (front,rest) = BS.splitAt i bs in do 
-                p <- gets pos 
-                modify (\s -> s { remaining=rest, pos=p+i } )
-                return front
-  where
-    i = fromIntegral n
-    
-    getFailure rlen = reportFail $ 
-        "getByteString failed trying to get " ++ show i ++ 
-        " bytes, with only " ++ show rlen ++ " remaining.\n" 
       
    
 word8 :: Parser Word8

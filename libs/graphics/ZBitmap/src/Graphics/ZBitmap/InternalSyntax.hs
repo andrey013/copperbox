@@ -16,36 +16,7 @@
 --------------------------------------------------------------------------------
 
 
-module Graphics.ZBitmap.InternalSyntax (
-  RowIx, ColIx, BitmapIndex,
-  
-  PixelCount, ByteCount,
-  ImageSize, SurfaceSize, PhysicalSize,
-  
-  
-  PixelSurface,
-  PaletteColour(..),
-  PaletteData,
-  Palette(..),
-  
-  BmpBitmap(..),
-  BmpHeader(..),
-  BmpDibHeader(..),
-  BmpDibImageData,
-  BmpBitsPerPixel(..),
-  BmpCompression(..),
-  
-  makeBmpHeaderLong,
-  makeBmpHeaderShort,
-  makeBmpDibHeaderLong,
-  makeBmpDibHeaderShort, 
-  
-
-  marshalBmpBitsPerPixel,
-  unmarshalBmpBitsPerPixel,
-  marshalBmpCompression,
-  unmarshalBmpCompression
-) where
+module Graphics.ZBitmap.InternalSyntax where
 
 import Data.Array.IArray ( Array )
 import Data.Array.Unboxed ( UArray )
@@ -54,6 +25,8 @@ import qualified Data.ByteString as BS -- strict Word8 representation
 import Data.Word 
 
 
+
+{-
 
 -- Use C style - (row,column) addressing.
 type RowIx = Int 
@@ -97,7 +70,7 @@ type PixelSurface = UArray (Int,Int) Word8
 
 
 
-
+-}
 
       
 
@@ -110,7 +83,7 @@ data BmpBitmap = BmpBitmap
       { bmp_header       :: BmpHeader 
       , bmp_dibheader    :: BmpDibHeader
       , bmp_opt_palette  :: Maybe Palette
-      , bmp_body         :: BmpDibImageData
+      , bmp_opt_body     :: Maybe BmpDibImageData -- e.g. cannot parse due to compression
       }
 
 instance Show BmpBitmap where
@@ -155,23 +128,20 @@ data Palette = Palette
       }
       
       
-data PaletteColour = PaletteColour 
-      { palette_red     :: Word8 
-      , palette_green   :: Word8 
-      , palette_blue    :: Word8 
-      }
-  deriving Show 
+type RgbColour = (Word8,Word8,Word8) 
 
-type PaletteData = Array Int PaletteColour
+
+type PaletteData = Array Int RgbColour
 
 instance Show Palette where
   show (Palette i _) = "Palette " ++ show i ++ "{}"
    
 
 
+type BmpData = UArray (Int,Int) Word8
 
-type BmpDibImageData = BS.ByteString
-
+-- type BmpDibImageData = BS.ByteString
+type BmpDibImageData = BmpData
 
 
 -- B1_Monochrome    - stores 8 pixels in a word8  - value is idx to colour table
@@ -200,6 +170,12 @@ data BmpCompression =
     | Bi_PNG
     deriving ( Enum, Eq, Ord, Show )
     
+bitsPerPixel :: BmpBitmap -> BmpBitsPerPixel
+bitsPerPixel =  bits_per_pixel . bmp_dibheader
+
+optPalette :: BmpBitmap -> Maybe Palette
+optPalette = bmp_opt_palette
+
 
 --------------------------------------------------------------------------------
 -- Wrapped constructors

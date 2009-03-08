@@ -104,14 +104,14 @@ printCBBox (r0,c0) (r1,c1) = putStrLn $ render $ doc where
 ppPalette :: Palette -> Doc
 ppPalette (Palette sz arr) = snd $ foldl' f (0,doc1) $ elems arr 
   where
-    f :: (Int,Doc) -> PaletteColour -> (Int,Doc)
+    f :: (Int,Doc) -> RgbColour -> (Int,Doc)
     f (i,doc) e = (i+1, doc $$ (leftpad ' ' 5 $ show i) 
                             <> colon <+>  paletteColour e)
     doc1    = text "Palette" <+> parens (intValue sz <+> text "entries")
     
      
-paletteColour :: PaletteColour -> Doc
-paletteColour (PaletteColour r g b) = 
+paletteColour :: RgbColour -> Doc
+paletteColour (r,g,b) = 
         text "R=" <> fillstring 3 (show r) <> comma 
     <+> text "G=" <> fillstring 3 (show g) <> comma
     <+> text "B=" <> fillstring 3 (show b) <> subscript
