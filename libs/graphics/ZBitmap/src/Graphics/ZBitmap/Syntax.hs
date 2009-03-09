@@ -21,4 +21,6 @@ module Graphics.ZBitmap.Syntax (
   Palette
 ) where
 
+
+
 import Graphics.ZBitmap.InternalSyntax

@@ -11,7 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Colour manipulation
+-- Utilities
 --
 --------------------------------------------------------------------------------
 
@@ -20,30 +20,18 @@ module Graphics.ZBitmap.Utils where
 import Graphics.ZBitmap.InternalSyntax
 
 import Data.Array.IArray
-
-
-
-import Prelude hiding ( (^) )
-import qualified Prelude as Pre
-
--- Avoid warnings due to Integral Integer defaulting 
-infixr 8 ^
-(^) :: Integral a => a -> a -> a
-(^) = (Pre.^)
+import Data.Bits
+import Data.Word
+import Numeric
 
 
 paletteSize :: BmpBitsPerPixel -> Int 
-paletteSize B1_Monochrome     = 2 ^ 1
-paletteSize B4_Colour16       = 2 ^ 4     
-paletteSize B8_Colour256      = 2 ^ 8     
+paletteSize B1_Monochrome     = 2 ^ (1 :: Int)
+paletteSize B4_Colour16       = 2 ^ (4 :: Int)     
+paletteSize B8_Colour256      = 2 ^ (8 :: Int)    
 paletteSize B16_HighColour    = 0   
 paletteSize B24_TrueColour    = 0
 paletteSize B32_TrueColour    = 0
-
-rowsColumns :: BmpBitmap -> (Int,Int)
-rowsColumns (BmpBitmap _ hdr _ _) = 
-  (fromIntegral $ bmp_height hdr, fromIntegral $ bmp_width hdr)
-
 
 
 cstyle2Darray :: IArray a e => Int -> Int -> [e] -> a (Int,Int) e 
@@ -56,95 +44,23 @@ arrayWidthHeight :: IArray a e => a (Int,Int) e -> (Int,Int)
 arrayWidthHeight arr = 
     let ((c0,r0),(c1,r1)) = bounds arr in (1+r1-r0,1+c1-c0)
     
+
+decodeRGB16bit :: Word8 -> Word8 -> RgbColour
+decodeRGB16bit v1 v2 = (red,grn,blu) where
+    red   =  bits7to3 v1
+    grn   = (bits2to0 v1) + (bits7to6 v2)
+    blu   =  bits5to1 v2 
     
---------------------------------------------------------------------------------
--- 
-{-
+    bits7to3  n = (`shiftR` 6) $ (n .&. 0x7c) 
+    bits2to0  n = n .&. 0x07
+    bits7to6  n = (`shiftR` 6) $ (n .&. 0xC0)  
+    bits5to1  n = (`shiftR` 1) $ (n .&. 0x3E) 
+          
+showBin :: Integral a => a -> ShowS
+showBin = showIntAtBase 2 (\i -> if i==0 then '0' else '1')
 
-surfaceWidth :: BmpBitsPerPixel -> PixelCount -> PixelCount
-surfaceWidth bpp w  = z * (((n * w) + 7) `div` 8) 
-  where
-    n = fromIntegral $ marshalBmpBitsPerPixel bpp
-    -- effectively /z/ gets the ceiling of the division
-    z = let z' = n `div` 8 in if z' == 0 then 1 else z' 
-    
-
-physicalWidth :: BmpBitsPerPixel -> PixelCount -> ByteCount
-physicalWidth bpp w = 4 * (((n * w) + 31) `div` 32) 
-  where 
-    n = fromIntegral $ marshalBmpBitsPerPixel bpp
-
-physicalSize :: BmpBitsPerPixel -> PixelCount ->  PixelCount -> ByteCount
-physicalSize bpp w h = h * physicalWidth bpp w
-
--}
-
-{-
---------------------------------------------------------------------------------
--- Indexes for traversal
-
-countdown :: Integral a => a -> [a]
-countdown (n + 1) = enumFromThenTo n (n-1) 0
-countdown _       = []
-
-countup :: Integral a => a -> [a]  
-countup (n + 1) = [0..n]
-countup _       = []
-
-fold_lr :: Integral idx => (idx -> b -> b) -> idx -> b -> b
-fold_lr f cols a = 
-    foldl' (flip f) a [c | c <- countup cols ]
-
-fold_rl :: Integral idx => (idx -> b -> b) -> idx -> b -> b
-fold_rl f cols a = 
-    foldl' (flip f) a [c | c <- countdown cols ]
-    
-
-fold_lrdown :: Integral idx => ((idx,idx) -> b -> b) -> idx -> idx -> b -> b
-fold_lrdown f rows cols a = 
-    foldl' (flip f) a [(r,c) | r <- countup rows, c <- countup cols ]
-
-fold_lrdownM :: (Integral idx, Monad m) => 
-    ((idx,idx) -> b -> m b) -> idx -> idx -> b -> m b
-fold_lrdownM f rows cols a = 
-    foldlM (flip f) a [(r,c) | r <- countup rows, c <- countup cols ]        
-
-
-fold_rldown :: Integral idx => ((idx,idx) -> b -> b) -> idx -> idx -> b -> b
-fold_rldown f rows cols a = 
-    foldl' (flip f) a [(r,c) | r <- countup rows, c <- countdown cols ]
-
-fold_rldownM :: (Integral idx, Monad m) => 
-    ((idx,idx) -> b -> m b) -> idx -> idx -> b -> m b
-fold_rldownM f rows cols a = 
-    foldlM (flip f) a [(r,c) | r <- countup rows, c <- countdown cols]  
-
-
-fold_lrup :: Integral idx => ((idx,idx) -> b -> b) -> idx -> idx -> b -> b
-fold_lrup f rows cols a = 
-    foldl' (flip f) a [(r,c) | r <- countdown rows, c <- countup cols ]
-
-fold_lrupM :: (Integral idx, Monad m) => 
-    ((idx,idx) -> b -> m b) -> idx -> idx -> b -> m b
-fold_lrupM f rows cols a = 
-    foldlM (flip f) a [(r,c) | r <- countdown rows, c <- countup cols ]  
-    
-
-fold_rlup :: Integral idx => ((idx,idx) -> b -> b) -> idx -> idx -> b -> b
-fold_rlup f rows cols a = 
-    foldl' (flip f) a [(r,c) | r <- countdown rows, c <- countdown cols ]
-
-fold_rlupM :: (Integral idx, Monad m) => 
-    ((idx,idx) -> b -> m b) -> idx -> idx -> b -> m b
-fold_rlupM f rows cols a = 
-    foldlM (flip f) a [(r,c) | r <- countdown rows, c <- countdown cols ] 
--}    
-        
--- demo01 = fold_lrdownM (\idx _ -> putStrLn $ show idx) 3 4 () 
--- demo02 = fold_rldownM (\idx _ -> putStrLn $ show idx) 3 4 ()  
--- demo03 = fold_lrupM   (\idx _ -> putStrLn $ show idx) 3 4 ()
--- demo04 = fold_rlupM   (\idx _ -> putStrLn $ show idx) 3 4 () 
-
+binRep :: Integral a => a -> String
+binRep = ($ []) . showBin
 
 --------------------------------------------------------------------------------
 -- Colour conversion
@@ -176,13 +92,5 @@ yCbCrToRgb (YCbCrColour y cb cr) = (rv,gv,bv)
 
 
 
-{-
-
-printCBBoxA :: IArray arr e => arr BitmapIndex e -> IO ()
-printCBBoxA arr = printCBBox top_left bottom_right where
-  (top_left,bottom_right) = bounds arr
-
-
--}
 
        

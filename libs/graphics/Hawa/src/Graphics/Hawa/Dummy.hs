@@ -102,4 +102,8 @@ ppPoint (a,b)
 vcats :: PP a => S.Seq a -> Doc
 vcats = step . S.viewl where
     step EmptyL         = empty      
-    step (a :< sa)      = F.foldl' (\ac e -> ac <$> pp e) (pp a) sa  
+    step (a :< sa)      = F.foldl' (\ac e -> ac <$> pp e) (pp a) sa
+
+
+
+    

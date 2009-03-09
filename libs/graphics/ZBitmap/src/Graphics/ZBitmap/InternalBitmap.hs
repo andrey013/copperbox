@@ -18,9 +18,11 @@
 
 module Graphics.ZBitmap.InternalBitmap where
 
-import Graphics.ZBitmap.InternalSyntax 
+import Graphics.ZBitmap.InternalSyntax
+import Graphics.ZBitmap.Utils 
 import Data.Array.Unboxed hiding ( (!) )
 import Data.Bits
+import Data.Dynamic
 import Data.Word
 
 import qualified Data.Array.Unboxed as U
@@ -30,7 +32,6 @@ import qualified Data.Array.Unboxed as U
           if l <= i && i <= u then (U.!) a i 
                               else error $ "IB: - arr " ++ show i ++ " " ++ show (l,u)
 
--- type BmpData = UArray (Int,Int) Word8
 
 type ByteCount  = Int
 type PixelCount = Int
@@ -46,8 +47,10 @@ data Bitmap pictype = Bitmap
 
 class BitmapImage a
 
+-- universal Bitmap type
 data UniBitmap = forall a. BitmapImage a => 
                     UniBitmap BmpBitsPerPixel (Bitmap a)
+
 
 instance Show UniBitmap where
   show (UniBitmap bpp bmp) = "UniBitmap "     ++ show bpp 
@@ -119,19 +122,21 @@ uniBitmap bmp = case bitsPerPixel bmp of
     B16_HighColour    -> UniBitmap B16_HighColour $ bitmap16bit' bmp    
     B24_TrueColour    -> UniBitmap B24_TrueColour $ bitmap24bit' bmp 
     B32_TrueColour    -> UniBitmap B32_TrueColour $ bitmap32bit' bmp 
- 
+
+
+
 
    
 --------------------------------------------------------------------------------
 -- constructors
 
 bitmapMono' :: BmpBitmap -> Bitmap ImageMono 
-bitmapMono' bmp = 
-    let w     = fromIntegral $ bmp_width $ bmp_dibheader $ bmp
-        p     = maybe (error $ "no palette data") palette_data (optPalette bmp)
-        d     = maybe (error $ "no bitmap data") id (bmp_opt_body bmp)
-    in bitmapMono w p d        
+bitmapMono' bmp = bitmapMono w p d where
+    (w,p,d) = widthPaletteAndData bmp        
 
+
+    
+    
 bitmapMono :: Int -> PaletteData -> BmpData -> Bitmap ImageMono  
 bitmapMono w p d = Bitmap
     { picture_width = w
@@ -144,11 +149,8 @@ bitmapMono w p d = Bitmap
  
 
 bitmap4bit' :: BmpBitmap -> Bitmap Image4bit 
-bitmap4bit' bmp = 
-    let w     = fromIntegral $ bmp_width $ bmp_dibheader $ bmp
-        p     = maybe (error $ "no palette data") palette_data (optPalette bmp)
-        d     = maybe (error $ "no bitmap data") id (bmp_opt_body bmp)
-    in bitmap4bit w p d 
+bitmap4bit' bmp = bitmap4bit w p d where
+    (w,p,d) = widthPaletteAndData bmp
     
       
 bitmap4bit :: Int -> PaletteData -> BmpData -> Bitmap Image4bit  
@@ -162,11 +164,8 @@ bitmap4bit w p d = Bitmap
     }
 
 bitmap8bit' :: BmpBitmap -> Bitmap Image8bit 
-bitmap8bit' bmp = 
-    let w     = fromIntegral $ bmp_width $ bmp_dibheader $ bmp
-        p     = maybe (error $ "no palette data") palette_data (optPalette bmp)
-        d     = maybe (error $ "no bitmap data") id (bmp_opt_body bmp)
-    in bitmap8bit w p d 
+bitmap8bit' bmp = bitmap8bit w p d where
+    (w,p,d) = widthPaletteAndData bmp
     
 bitmap8bit :: Int -> PaletteData -> BmpData -> Bitmap Image8bit  
 bitmap8bit w p d = Bitmap
@@ -180,10 +179,8 @@ bitmap8bit w p d = Bitmap
 
 -- no palettes for these resolutions
 bitmap16bit' :: BmpBitmap -> Bitmap Image16bit 
-bitmap16bit' bmp = 
-    let w     = fromIntegral $ bmp_width $ bmp_dibheader $ bmp
-        d     = maybe (error $ "no bitmap data") id (bmp_opt_body bmp)
-    in bitmap16bit w d 
+bitmap16bit' bmp = bitmap16bit w d where
+    (w,d) = widthAndData bmp
     
 bitmap16bit :: Int -> BmpData -> Bitmap Image16bit  
 bitmap16bit w d = Bitmap 
@@ -197,10 +194,8 @@ bitmap16bit w d = Bitmap
 
 
 bitmap24bit' :: BmpBitmap -> Bitmap Image24bit 
-bitmap24bit' bmp = 
-    let w     = fromIntegral $ bmp_width $ bmp_dibheader $ bmp
-        d     = maybe (error $ "no bitmap data") id (bmp_opt_body bmp)
-    in bitmap24bit w d 
+bitmap24bit' bmp = bitmap24bit w d where
+    (w,d) = widthAndData bmp
       
 bitmap24bit :: Int -> BmpData -> Bitmap Image24bit  
 bitmap24bit w d = Bitmap
@@ -213,10 +208,8 @@ bitmap24bit w d = Bitmap
     }
 
 bitmap32bit' :: BmpBitmap -> Bitmap Image32bit 
-bitmap32bit' bmp = 
-    let w     = fromIntegral $ bmp_width $ bmp_dibheader $ bmp
-        d     = maybe (error $ "no bitmap data") id (bmp_opt_body bmp)
-    in bitmap32bit w d 
+bitmap32bit' bmp = bitmap32bit w d where
+    (w,d) = widthAndData bmp
     
 bitmap32bit :: Int -> BmpData -> Bitmap Image32bit  
 bitmap32bit w d = Bitmap
@@ -228,7 +221,18 @@ bitmap32bit w d = Bitmap
     , colour_at     = colourAt32bit d
     } 
 
-
+widthAndData :: BmpBitmap -> (Int,BmpData)
+widthAndData bmp = (w,d) where
+    w = fromIntegral $ bmp_width $ bmp_dibheader $ bmp 
+    d = maybe (error $ "no bitmap data") id (bmp_opt_body bmp)
+    
+widthPaletteAndData :: BmpBitmap -> (Int,PaletteData,BmpData)
+widthPaletteAndData bmp = (w,p,d) where
+    w = fromIntegral $ bmp_width $ bmp_dibheader $ bmp 
+    p = maybe (error $ "no palette data") palette_data (optPalette bmp)
+    d = maybe (error $ "no bitmap data")  id           (bmp_opt_body bmp)
+    
+    
 
 colourAtMono :: PaletteData -> BmpData -> (Int,Int) -> RgbColour
 colourAtMono p arr (row,col) = 
@@ -264,37 +268,30 @@ colourAt8bit p arr (row,col) =
 
 
 colourAt16bit:: BmpData -> (Int,Int) -> RgbColour
-colourAt16bit arr (row,col) = 
-    let v1    = arr!(r,c) 
-        v2    = arr!(r,c+1)
-        red   =  v1 .&. 0x7c                    -- oops some shifting missing
-        grn   = (v1 .&. 0x03) + (v2 .&. 0xe0)   -- oops some shifting missing
-        blu   =  v2 .&. 0x1F                     
-    in (red,grn,blu) 
-  where
+colourAt16bit arr (row,col) = decodeRGB16bit v1 v2 where
     (r,c)  = (row,col*2)
+    v1     = arr!(r,c) 
+    v2     = arr!(r,c+1)
     
+    
+      
 colourAt24bit:: BmpData -> (Int,Int) -> RgbColour
-colourAt24bit arr (row,col) = 
-    let red   = arr!(r,c)
-        grn   = arr!(r,c+1)
-        blu   = arr!(r,c+2)
-    in (red,grn,blu) 
-  where
-    (r,c)  = (row,col*3)
+colourAt24bit arr (row,col) = (red,grn,blu) where
+    (r,c) = (row,col*3)
+    red   = arr!(r,c)
+    grn   = arr!(r,c+1)
+    blu   = arr!(r,c+2)
 
-
--- note these may be wrong... possible gnore c and take (c+1),(c+2),(c+3)    
+-- note this may be wrong and I need to check... 
+-- It might be the way to do it is ignore c and take (c+1),(c+2),(c+3)    
 colourAt32bit :: BmpData -> (Int,Int) -> RgbColour
-colourAt32bit arr (row,col) = 
-    let red   = arr!(r,c)
-        grn   = arr!(r,c+1)
-        blu   = arr!(r,c+2)
-        -- __ ignore (c+3)
-    in (red,grn,blu) 
-  where
+colourAt32bit arr (row,col) = (red,grn,blu) where
     (r,c)  = (row,col*4)
-
+    red   = arr!(r,c)
+    grn   = arr!(r,c+1)
+    blu   = arr!(r,c+2)
+    
+    
 paletteColour :: Integral a => a -> PaletteData -> RgbColour
 paletteColour i p = p!(fromIntegral $ i)  
 

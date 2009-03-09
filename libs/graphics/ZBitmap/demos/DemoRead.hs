@@ -9,6 +9,7 @@ import Text.PrettyPrint.HughesPJ ( render )
 import Graphics.ZBitmap.InternalBitmap 
 
 import Data.Array
+import Data.Bits
 
 dummy :: Array (Int,Int) Char
 dummy = cstyle2Darray 4 2 "aaaabbbb"
