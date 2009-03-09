@@ -18,59 +18,12 @@
 
 module Graphics.ZBitmap.InternalSyntax where
 
-import Data.Array.IArray ( Array )
+import Data.Array.IArray ( Array, bounds )
 import Data.Array.Unboxed ( UArray )
 import qualified Data.ByteString as BS -- strict Word8 representation 
 
 import Data.Word 
 
-
-
-{-
-
--- Use C style - (row,column) addressing.
-type RowIx = Int 
-type ColIx = Int
-
-type BitmapIndex = (RowIx,ColIx)
-
-type PixelCount  = Int
-type ByteCount   = Int
-
--- | @ImageSize = (rows,cols)@ - 
--- Image size is the /viewable/ extent of a bitmap.
--- It is the number of adressable vertical pixels x the number 
--- of horizontal pixels. 
-type ImageSize    = (PixelCount,PixelCount)
-
--- | @SurfaceSize = (rows,cols)@ - 
--- Surface size is the /allocated/ extent of a bitmap.
--- Unless the width of the bitmap is a multiple of 8 then then it will have 
--- extra pixels padding at the right end of each row. 
--- The number of rows a surface has will always be the same as the 
--- number of rows the corresponding image has.
-type SurfaceSize  = (PixelCount,PixelCount)
-
--- | @PhysicalSize = (rows,cols)@ -
--- The physical size of a bitmap /in bytes/. 
--- The physical size may be larger or smaller than the surface size,
--- depending on the /bit-depth/ of the image.
---
--- For instance mono bitmaps store 8 pixels in 1 byte, so the physical size
--- will be smaller than the surface size.
--- 
--- 24 bit bitmaps need 3 bytes for a pixel so the the physical size will be 
--- greater than the surface size.
-type PhysicalSize = (PixelCount,ByteCount)
-
-
-
-type PixelSurface = UArray (Int,Int) Word8
-     
-
-
-
--}
 
       
 
@@ -179,6 +132,9 @@ optPalette = bmp_opt_palette
 
 --------------------------------------------------------------------------------
 -- Wrapped constructors
+
+makePalette :: PaletteData -> Palette
+makePalette a = let (lo,hi) = bounds a in Palette (1+hi-lo) a 
 
 
 -- only export this to the Bmp parser not client libraries.        

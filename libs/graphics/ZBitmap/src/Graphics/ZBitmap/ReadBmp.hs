@@ -125,15 +125,15 @@ palette :: BmpBitsPerPixel -> Parser (Maybe Palette)
 palette bpp = case paletteSize bpp of
     0 -> return Nothing
     n -> do cs <- count n paletteColour       -- 4 bytes per colour
-            return $ Just $ makePalette cs
+            return $ Just $ buildPalette cs
 
 paletteColour :: Parser RgbColour
 paletteColour = (\b g r _ -> (r,g,b)) <$>
     word8 <*> word8 <*> word8 <*> word8
 
-makePalette :: [RgbColour] -> Palette                                 
-makePalette cs = Palette sz $ listArray (0,sz) cs where
-    sz                    = length cs - 1
+buildPalette :: [RgbColour] -> Palette                                 
+buildPalette cs = Palette sz $ listArray (0,sz-1) cs where
+    sz                    = length cs
     
     
 -- /sz/ should always be a multiple of /height/

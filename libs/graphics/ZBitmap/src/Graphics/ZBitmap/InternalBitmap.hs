@@ -22,7 +22,6 @@ import Graphics.ZBitmap.InternalSyntax
 import Graphics.ZBitmap.Utils 
 import Data.Array.Unboxed hiding ( (!) )
 import Data.Bits
-import Data.Dynamic
 import Data.Word
 
 import qualified Data.Array.Unboxed as U
@@ -57,6 +56,47 @@ instance Show UniBitmap where
                               ++ " {width="   ++ show (imageWidth bmp)
                               ++ ", height= " ++ show (imageHeight bmp)
                               ++ "}"    
+
+
+
+
+-- The number of rows in the bmp data array, reflects the number of rows 
+-- (aka height) of the image directly. 
+-- Remember - add 1 to bounds
+imageHeight :: BitmapImage a => Bitmap a -> Int
+imageHeight (Bitmap {picture_array=arr}) = 
+    let ((r0,_),(r1,_)) = bounds arr in 1 + r1 - r0
+
+-- We must store the image width explicitly - it /cannot/ be recovered from 
+-- the array bounds because the array may contain padding.
+imageWidth :: BitmapImage a => Bitmap a -> Int
+imageWidth = picture_width
+
+
+      
+
+colourAt :: BitmapImage a => Bitmap a -> ((Int,Int) -> RgbColour)
+colourAt = colour_at
+
+uniBitmap :: BmpBitmap -> UniBitmap
+uniBitmap bmp = case bitsPerPixel bmp of 
+    B1_Monochrome     -> UniBitmap B1_Monochrome  $ bitmapMono'  bmp  
+    B4_Colour16       -> UniBitmap B4_Colour16    $ bitmap4bit'  bmp     
+    B8_Colour256      -> UniBitmap B8_Colour256   $ bitmap8bit'  bmp      
+    B16_HighColour    -> UniBitmap B16_HighColour $ bitmap16bit' bmp    
+    B24_TrueColour    -> UniBitmap B24_TrueColour $ bitmap24bit' bmp 
+    B32_TrueColour    -> UniBitmap B32_TrueColour $ bitmap32bit' bmp 
+
+
+-- Extract the essential contents of a UniBitmap stripping off the 
+-- (phantom) type layer on the bitmap data.
+extractBitmap :: UniBitmap 
+              -> ((Int,Int),BmpBitsPerPixel,Maybe Palette,BmpData)
+extractBitmap (UniBitmap bpp bmp@(Bitmap {opt_palette=op,picture_array=a})) = 
+    ((imageWidth bmp,imageHeight bmp),bpp,fn op,a)
+  where
+    fn = maybe Nothing (Just . makePalette)     
+
 
 -- Each bit is a pixel so 8 pixels per byte, rows must be 'quad-aligned'
 -- with padding.       
@@ -94,37 +134,6 @@ instance BitmapImage Image8bit
 instance BitmapImage Image16bit
 instance BitmapImage Image24bit
 instance BitmapImage Image32bit
-
-
--- The number of rows in the bmp data array, reflects the number of rows 
--- (aka height) of the image directly. 
--- Remember - add 1 to bounds
-imageHeight :: BitmapImage a => Bitmap a -> Int
-imageHeight (Bitmap {picture_array=arr}) = 
-    let ((r0,_),(r1,_)) = bounds arr in 1 + r1 - r0
-
--- We must store the image width explicitly - it /cannot/ be recovered from 
--- the array bounds because the array may contain padding.
-imageWidth :: BitmapImage a => Bitmap a -> Int
-imageWidth = picture_width
-
-
-      
-
-colourAt :: BitmapImage a => Bitmap a -> ((Int,Int) -> RgbColour)
-colourAt = colour_at
-
-uniBitmap :: BmpBitmap -> UniBitmap
-uniBitmap bmp = case bitsPerPixel bmp of 
-    B1_Monochrome     -> UniBitmap B1_Monochrome  $ bitmapMono' bmp  
-    B4_Colour16       -> UniBitmap B4_Colour16    $ bitmap4bit' bmp     
-    B8_Colour256      -> UniBitmap B8_Colour256   $ bitmap8bit' bmp      
-    B16_HighColour    -> UniBitmap B16_HighColour $ bitmap16bit' bmp    
-    B24_TrueColour    -> UniBitmap B24_TrueColour $ bitmap24bit' bmp 
-    B32_TrueColour    -> UniBitmap B32_TrueColour $ bitmap32bit' bmp 
-
-
-
 
    
 --------------------------------------------------------------------------------

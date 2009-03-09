@@ -43,15 +43,11 @@ runAction (infile,outfile,show_palette) = do
     let ub = uniBitmap a
     print ub
     (putStrLn . showAsciiPicture . makeAsciiPicture) ub
-    
-    
-{-
     if show_palette 
-      then maybe fk sk (optPalette a)
-      else putStrLn "No palette"
-    let a' = zbitmapToBmp24 b
-    writeBmp outfile a'
--}
+      then maybe fk sk ((\(_,_,op,_) -> op) $ extractBitmap ub)
+      else putStrLn "No palette"     
+    writeBmp outfile a
+
   where
     fk :: IO ()
     fk = putStrLn $ "No palette spec"

@@ -19,11 +19,13 @@ module Graphics.ZBitmap.WriteBmp (
 ) where
 
 import Graphics.ZBitmap.InternalSyntax
+import Graphics.ZBitmap.Utils
 
-
+import Data.Array.IArray ( (!) )
 import Data.Bits
 import qualified Data.ByteString as BS
-import Data.Char ( ord ) 
+import Data.Char ( ord )
+import Data.List( foldl' ) 
 import Data.Word 
 
 import System.IO
@@ -70,8 +72,10 @@ putV3Dibheader dib =
 
 
 putBody :: Maybe BmpDibImageData -> BMPout
-putBody = undefined -- outByteString
-
+putBody Nothing     = id -- outByteString
+putBody (Just arr)  = foldl' fn id idxs where
+    idxs      = uncurry cstyle2DindexList $ arrayWidthHeight arr
+    fn f idx  = f . out1 (arr!idx)
    
     
 
@@ -92,9 +96,10 @@ outW32le i = out4 a b c d where
     (c, r3)   = lowerEight r2
     (d, _)    = lowerEight r3
 
+{-
 outByteString :: BS.ByteString -> (BS.ByteString -> BS.ByteString)
 outByteString = BS.append
-
+-}
 
 outChar :: Char -> BMPout
 outChar = out1 . fromIntegral . ord
