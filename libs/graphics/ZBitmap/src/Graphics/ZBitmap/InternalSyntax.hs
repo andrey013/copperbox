@@ -48,7 +48,7 @@ literalLiteral (BmpLiteral _ b) = b
 data BmpBitmap = BmpBitmap 
       { bmp_header        :: BmpHeader       
       , opt_palette       :: Maybe Palette
-      , opt_pixel_data    :: Maybe BmpDibImageData -- e.g. cannot parse due to compression
+      , opt_pixel_data    :: Maybe PixelData -- e.g. cannot parse due to compression
       }
 
 instance Show BmpBitmap where
@@ -124,10 +124,8 @@ instance Show Palette where
    
 
 
-type BmpData = UArray (Int,Int) Word8
+type PixelData = UArray (Int,Int) Word8
 
--- type BmpDibImageData = BS.ByteString
-type BmpDibImageData = BmpData
 
 
 -- B1_Monochrome    - stores 8 pixels in a word8  - value is idx to colour table

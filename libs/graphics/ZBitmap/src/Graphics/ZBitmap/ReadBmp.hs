@@ -171,15 +171,17 @@ buildPalette cs = Palette sz $ listArray (0,sz-1) cs where
     
     
 -- /sz/ should always be a multiple of /height/
--- The image header might still be important.
-imageData :: BmpCompression -> Int -> Int -> Parser (Maybe BmpDibImageData)
+imageData :: BmpCompression -> Int -> Int -> Parser (Maybe PixelData)
 imageData Bi_RGB sz height 
     | sz `mod` height == 0  = let width = sz `div` height in do
                                   ws <- count sz word8
                                   return $ Just $ 
                                       cstyle2Darray width height ws
-       
-imageData _      _  _       = return Nothing
+    | otherwise             = reportFail $ "Image dimensions incorrect - "
+          ++ "image height (" ++ show height ++ ") must be a multiple of "
+          ++ show sz
+
+imageData _     _   _       = reportFail $ "cannot decode compressed bmp files" 
 
 
     

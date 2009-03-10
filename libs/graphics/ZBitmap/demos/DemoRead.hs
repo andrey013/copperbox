@@ -4,15 +4,13 @@ module Main where
 
 
 import Graphics.ZBitmap
-import Text.PrettyPrint.HughesPJ ( render )
-
 import Graphics.ZBitmap.InternalBitmap 
 
-import Data.Array
-import Data.Bits
+import Text.PrettyPrint.HughesPJ ( render )
+
 
 dummy :: IO ()
-dummy = do (a,op) <- readBmpHeaderAndPalette  "./out/picture256.bmp"
+dummy = do (a,op) <- readBmpHeaderAndPalette  "checker.bmp"
            putStrLn $ render $ ppBmpHeader a
            print $ sectionSizes a
            maybe (putStrLn "no palette") (putStrLn . render . ppPalette) op
@@ -22,6 +20,10 @@ dumm2 = runAction ("./out/picture256.bmp", "./out/picture256_2.bmp", True)
 
 main :: IO ()
 main = run24bit
+
+runChecker :: IO ()
+runChecker = 
+    runAction ("checker.bmp", "./out/checker_2.bmp", True)
     
 runMono :: IO ()
 runMono = 

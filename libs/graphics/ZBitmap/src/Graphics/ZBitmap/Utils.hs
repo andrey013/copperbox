@@ -43,7 +43,9 @@ cstyle2DindexList w h = [(y,x) | y <- [0..(h-1)], x <- [0..(w-1)] ]
 arrayWidthHeight :: IArray a e => a (Int,Int) e -> (Int,Int)
 arrayWidthHeight arr = 
     let ((c0,r0),(c1,r1)) = bounds arr in (1+r1-r0,1+c1-c0)
-    
+
+arraySize :: IArray a e => a (Int,Int) e -> Int
+arraySize = uncurry (*) . arrayWidthHeight
 
 decodeRGB16bit :: Word8 -> Word8 -> RgbColour
 decodeRGB16bit v1 v2 = (red,grn,blu) where
@@ -70,6 +72,12 @@ sectionSizes hdr = ((14,40),pal_size,pxl_size)
   where
     pal_size = fromIntegral $ 4 * (paletteSize . bits_per_pixel . dib_header) hdr
     pxl_size = fromIntegral $ bmp_file_size hdr - image_data_offset hdr
+
+
+
+
+calcBmpSize :: BmpBitsPerPixel -> Int -> Int
+calcBmpSize bpp sz = 14 + 40 + paletteSize bpp + sz
     
 --------------------------------------------------------------------------------
 -- Colour conversion

@@ -83,12 +83,12 @@ putBmpPalette (Palette _ arr) = foldl' fn id idxs where
                 f . out1 b . out1 g . out1 r . out1 0  
 
    
-arrayWrite :: Handle -> BmpDibImageData -> IO ()
+arrayWrite :: Handle -> PixelData -> IO ()
 arrayWrite h arr = do
     arr_b   <- remap arr
     hPutArray h arr_b (width*height)
   where
-    remap :: BmpData -> IO (IOUArray Int Word8)
+    remap :: PixelData -> IO (IOUArray Int Word8)
     remap = thaw >=> mapIndices (l,u) fn
     
     width,l,u :: Int

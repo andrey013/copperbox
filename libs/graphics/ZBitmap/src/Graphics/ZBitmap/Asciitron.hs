@@ -22,29 +22,23 @@ module Graphics.ZBitmap.Asciitron (
   
 ) where
 
-import Graphics.ZBitmap.InternalBitmap hiding ( (!) )
+import Graphics.ZBitmap.InternalBitmap 
 import Graphics.ZBitmap.InternalSyntax
 import Graphics.ZBitmap.Utils
 
 
 import Control.Monad.ST
-import Data.Array.IArray  ( IArray, Ix, bounds, listArray, {- (!) -} )
+
+import Data.Array.IArray  ( IArray, bounds, listArray, (!) )
 import qualified Data.Array.IArray as I 
-
-
 import qualified Data.Array.MArray as MA
 import Data.Array.ST      ( STUArray, runSTUArray )
 import Data.Array.Unboxed ( UArray )
+
 import Data.Foldable ( foldl', foldlM )
 
 
 type AsciiPicture = UArray (Int,Int) Char 
-
-(!) :: (Show i, IArray a e, Ix i) => a i e -> i -> e
-(!) a i = let (l,u) = bounds a in 
-          if l <= i && i <= u then (I.!) a i 
-                              else error $ "AT - arr " ++ show i ++ " " ++ show (l,u)
-                              
 
 makeAsciiPicture :: UniBitmap -> AsciiPicture
 makeAsciiPicture (UniBitmap _ bmp) = runSTUArray $ do
@@ -60,7 +54,6 @@ makeAsciiPicture (UniBitmap _ bmp) = runSTUArray $ do
   
     f :: STUArray s (Int,Int) Char -> () -> (Int,Int) ->  ST s ()
     f ascii () idx = let c = greyscale $ pixelAt (convert idx) in
-                     if idx > (snd (bounds uarr)) then error $ "f: " ++ show idx ++ show (bounds uarr) else 
                      MA.writeArray ascii idx c
     -- bitmaps are stored upside down
     convert (r,c) = (height-1-r,c)
