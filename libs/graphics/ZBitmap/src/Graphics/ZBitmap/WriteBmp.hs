@@ -19,9 +19,10 @@ module Graphics.ZBitmap.WriteBmp (
 ) where
 
 import Graphics.ZBitmap.InternalSyntax
-import Graphics.ZBitmap.Utils
 
+import Control.Monad ( (>=>) )
 import Data.Array.IArray ( bounds, (!) )
+import Data.Array.IO
 import Data.Bits
 import qualified Data.ByteString as BS
 import Data.Char ( ord )
@@ -37,17 +38,14 @@ type BMPout = Output -> Output
 
 
 writeBmp :: FilePath -> BmpBitmap -> IO ()
-writeBmp path bmp = let bmpstream = putBmpFile bmp $ BS.empty in do
-    h <- openBinaryFile path WriteMode
-    BS.hPut h bmpstream
-    hClose h  
-
-putBmpFile :: BmpBitmap -> BMPout
-putBmpFile (BmpBitmap hdr opal bdy) = 
-    putBMPheader hdr . maybe id putBmpPalette opal 
-                     . maybe id putBody bdy
-   
-
+writeBmp path (BmpBitmap hdr opal obdy) = maybe fk sk obdy where 
+    fk        = error $ "no pixel data, no file written"
+    sk bdy    = do h <- openBinaryFile path WriteMode
+                   BS.hPut h bmpstream
+                   arrayWrite h bdy
+                   hClose h
+    bmpstream = (putBMPheader hdr . maybe id putBmpPalette opal) $ BS.empty                 
+    
 
 putBMPheader :: BmpHeader -> BMPout
 putBMPheader hdr  = 
@@ -84,13 +82,23 @@ putBmpPalette (Palette _ arr) = foldl' fn id idxs where
     fn f idx  = let (r,g,b) = arr!idx in
                 f . out1 b . out1 g . out1 r . out1 0  
 
-putBody :: BmpDibImageData -> BMPout
-putBody arr   = foldl' fn id idxs where
-    idxs      = uncurry cstyle2DindexList $ arrayWidthHeight arr
-    fn f idx  = f . out1 (arr!idx)
    
+arrayWrite :: Handle -> BmpDibImageData -> IO ()
+arrayWrite h arr = do
+    arr_b   <- remap arr
+    hPutArray h arr_b (width*height)
+  where
+    remap :: BmpData -> IO (IOUArray Int Word8)
+    remap = thaw >=> mapIndices (l,u) fn
     
-
+    width,l,u :: Int
+    width  = let ((_,n0),(_,n1))   = bounds arr in 1+(n1-n0)
+    height = let ((m0,_),(m1,_))   = bounds arr in 1+(m1-m0)
+    (l,u)  = (0,(width*height)-1)          
+    
+    fn :: Int -> (Int,Int)
+    fn i      = i `divMod` width
+    
 --------------------------------------------------------------------------------
 -- Output helpers
 
