@@ -20,60 +20,93 @@ module Graphics.ZBitmap.InternalSyntax where
 
 import Data.Array.IArray ( Array, bounds )
 import Data.Array.Unboxed ( UArray )
-import qualified Data.ByteString as BS -- strict Word8 representation 
 
 import Data.Word 
 
 
-      
-
-     
-
 --------------------------------------------------------------------------------
 -- Data types for BMP files
 
+-- Literal are wrapped with the value they should have.
+-- This helps parsing the bitmap header even if it has bad values. 
+
+data BmpLiteral a = BmpLiteral a a 
+  deriving (Eq,Show) 
+
+checkLiteral :: Eq a => BmpLiteral a -> Bool
+checkLiteral (BmpLiteral a l) = a == l 
+
+literalValue :: BmpLiteral a -> a
+literalValue (BmpLiteral a _) = a
+
+-- When writing a BmpLiteral always use the standard value in case
+-- the literal has been constructed incorrectly
+literalLiteral :: BmpLiteral a -> a
+literalLiteral (BmpLiteral _ b) = b
+
+
 data BmpBitmap = BmpBitmap 
-      { bmp_header       :: BmpHeader 
-      , bmp_dibheader    :: BmpDibHeader
+      { bmp_header       :: BmpHeader       
       , bmp_opt_palette  :: Maybe Palette
       , bmp_opt_body     :: Maybe BmpDibImageData -- e.g. cannot parse due to compression
       }
 
 instance Show BmpBitmap where
-  show (BmpBitmap h d p _) = "BmpBitmap " ++ show h ++ " " ++ show d ++ " "
-                                ++ show p ++ " {}"
+  show (BmpBitmap h p _) = "BmpBitmap " ++ show h ++ " " ++ show p ++ " {}"
 
 
    
 data BmpHeader = BmpHeader 
-      { magic               :: (Char,Char)
+      { magic               :: MagicNumber
       , bmp_file_size       :: Word32
-      , reserved1           :: Word16
-      , reserved2           :: Word16 
+      , reserved_data       :: ReservedData
         -- start of the image data after the headers and palette
-      , image_data_offset   :: Word32   
+      , image_data_offset   :: Word32
+      , dib_header          :: BmpDibHeader   
     }
   deriving Show
 
 
 
+type MagicNumber = BmpLiteral (Char,Char)
+type ReservedData = (Word16,Word16)
+
+
+magicNumber :: Char -> Char -> MagicNumber
+magicNumber c c' = BmpLiteral (c,c') ('B','M')
+
 
 
 -- V3 only 
 data BmpDibHeader = BmpDibHeader 
-      { dib_size          :: Word32
+      { dib_size          :: HeaderSize
       , bmp_width         :: Word32
       , bmp_height        :: Word32
-      , colour_planes     :: Word16
+      , colour_planes     :: ColourPlanes
       , bits_per_pixel    :: BmpBitsPerPixel
       , compression_type  :: BmpCompression
       , image_data_size   :: Word32
       , h_resolution      :: Word32
       , v_resolution      :: Word32
       , palette_depth     :: Word32
-      , colours_used      :: Word32
+      , colours_used      :: ImportantColours
       }
   deriving Show 
+
+type HeaderSize   = BmpLiteral Word32
+
+headerSize :: Word32 -> HeaderSize
+headerSize a = BmpLiteral a 40        -- 40 bytes in the dib header
+
+type ColourPlanes = BmpLiteral Word16
+
+colourPlanes :: Word16 -> ColourPlanes
+colourPlanes a = BmpLiteral a 1         -- only 1 colour plane in a bitmap
+
+type ImportantColours = BmpLiteral Word32 
+
+importantColours :: Word32 -> ImportantColours
+importantColours a = BmpLiteral a 0       -- all colours important
 
 data Palette = Palette 
       { colour_count    :: Int
@@ -124,7 +157,7 @@ data BmpCompression =
     deriving ( Enum, Eq, Ord, Show )
     
 bitsPerPixel :: BmpBitmap -> BmpBitsPerPixel
-bitsPerPixel =  bits_per_pixel . bmp_dibheader
+bitsPerPixel =  bits_per_pixel . dib_header . bmp_header
 
 optPalette :: BmpBitmap -> Maybe Palette
 optPalette = bmp_opt_palette
@@ -138,12 +171,12 @@ makePalette a = let (lo,hi) = bounds a in Palette (1+hi-lo) a
 
 
 -- only export this to the Bmp parser not client libraries.        
-makeBmpHeaderLong :: Char -> Char ->Word32 -> Word16 -> Word16 -> Word32 -> BmpHeader
-makeBmpHeaderLong m1 m2 = BmpHeader (m1,m2)
+makeBmpHeaderLong :: MagicNumber -> Word32 -> ReservedData -> Word32 -> BmpDibHeader -> BmpHeader
+makeBmpHeaderLong = BmpHeader
 
-makeBmpHeaderShort :: Word32 -> Word32 -> BmpHeader
-makeBmpHeaderShort palette_size image_size = 
-    BmpHeader ('B','M') total_size 0 0 offset
+makeBmpHeaderShort :: Word32 -> Word32 -> BmpDibHeader -> BmpHeader
+makeBmpHeaderShort palette_size image_size dib = 
+    BmpHeader (magicNumber 'B' 'M') total_size (0,0) offset dib
   where
     hdr_size      = 14
     dib_hdr_size  = 40 
@@ -153,19 +186,23 @@ makeBmpHeaderShort palette_size image_size =
 
 
 -- only export this to ZBitmap modules not client libraries.
-makeBmpDibHeaderLong :: Word32 -> Word32 -> Word16 
+makeBmpDibHeaderLong :: HeaderSize -> Word32 -> Word32 -> ColourPlanes 
                      -> BmpBitsPerPixel -> BmpCompression -> Word32 
-                     -> Word32 -> Word32 -> Word32 -> Word32 
+                     -> Word32 -> Word32 -> Word32 -> ImportantColours 
                      -> BmpDibHeader
-makeBmpDibHeaderLong = BmpDibHeader 40
+makeBmpDibHeaderLong = BmpDibHeader
 
 
 -- warning careful with sz
 
 makeBmpDibHeaderShort :: Word32 -> Word32 -> BmpBitsPerPixel -> Word32
                       -> BmpDibHeader
-makeBmpDibHeaderShort w h bpp sz = BmpDibHeader 40 w h 1 bpp Bi_RGB sz 0 0 0 0
-
+makeBmpDibHeaderShort w h bpp sz = 
+    BmpDibHeader hdr_size w h clr_planes bpp Bi_RGB sz 0 0 0 imp_colours 
+  where
+    hdr_size    = headerSize 40
+    clr_planes  = colourPlanes 1
+    imp_colours = importantColours 0
 
      
 

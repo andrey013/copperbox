@@ -18,7 +18,6 @@
 module Graphics.ZBitmap.Pretty (
   ppBmpBitmap,
   ppPalette,
-  printCBBox
 ) where
 
 import Graphics.ZBitmap.InternalSyntax
@@ -30,32 +29,33 @@ import Numeric ( showHex )
 import Text.PrettyPrint.HughesPJ
 
 ppBmpBitmap :: BmpBitmap -> Doc
-ppBmpBitmap bmp =    (ppBmpHeader     $ bmp_header      bmp) 
-                  $$ (ppBmpDibHeader  $ bmp_dibheader   bmp)
+ppBmpBitmap bmp = ppBmpHeader $ bmp_header bmp
 
 ppBmpHeader :: BmpHeader -> Doc
-ppBmpHeader hdr = (text "BMP Header" $$) $ vcat $ 
-    [ field  "magic"       ((\(c1,c2) -> text [c1,c2]) $ magic hdr)
-    , field  "file_size"   (decHex0x 8 $ bmp_file_size      hdr) 
-    , field  "reserved"    (decHex0x 4 $ reserved1          hdr)
-    , field  "reserved"    (decHex0x 4 $ reserved2          hdr)
-    , field  "offset"      (decHex0x 8 $ image_data_offset  hdr)
-    ]
-   
+ppBmpHeader hdr = header $$ dib 
+  where 
+    header = (text "BMP Header" $$) $ vcat $ 
+              [ field  "magic"       ((\(c1,c2) -> text [c1,c2]) $ literalValue $ magic hdr)
+              , field  "file_size"   (decHex0x 8 $ bmp_file_size      hdr) 
+           --   , field  "reserved"    (decHex0x 4 $ reserved1          hdr)
+           --   , field  "reserved"    (decHex0x 4 $ reserved2          hdr)
+              , field  "offset"      (decHex0x 8 $ image_data_offset  hdr)
+              ]
+    dib = ppBmpDibHeader $ dib_header hdr   
 
 ppBmpDibHeader :: BmpDibHeader -> Doc
 ppBmpDibHeader hdr = (text "DIB Header" $$) $ vcat $ 
-    [ field "header_size"     (decHex0x 8     $ dib_size          hdr)
+    [ field "header_size"     empty --  (decHex0x 8     $ dib_size          hdr)
     , field "image_width"     (integerValue   $ bmp_width         hdr)
     , field "image_height"    (integerValue   $ bmp_height        hdr)
-    , field "colour_planes"   (integerValue   $ colour_planes     hdr)
+--    , field "colour_planes"   (integerValue   $ colour_planes     hdr)
     , field "bits_per_pixel"  (ppBitsPerPixel $ bits_per_pixel    hdr)
     , field "compression"     (ppCompression  $ compression_type  hdr)
     , field "data_size"       (decHex0x 8     $ image_data_size   hdr)
     , field "horizontal_res"  (integerValue   $ h_resolution      hdr)
     , field "vertical_res"    (integerValue   $ v_resolution      hdr)
     , field "palette_depth"   (decHex0x 8     $ palette_depth     hdr)
-    , field "colours_used"    (decHex0x 8     $ colours_used      hdr)
+    -- , field "colours_used"    (decHex0x 8     $ colours_used      hdr)
     ]
 
           
@@ -75,27 +75,7 @@ ppCompression Bi_BITFIELDS  = text "BI_BITFIELDS"
 ppCompression Bi_JPEG       = text "BI_JPEG"
 ppCompression Bi_PNG        = text "BI_PNG"
 
---------------------------------------------------------------------------------
--- Print the coordinates of a bounding box     
-    
-printCBBox :: (Int,Int) -> (Int,Int) -> IO ()
-printCBBox (r0,c0) (r1,c1) = putStrLn $ render $ doc where
-    doc =     (indent (cl-x) tl)   <+> text ".."   <+> (indent (cr-y) tr)
-           $$ (indent (cl-3) dot)                   <> indent (8 + (cr-y)) dot
-           $$ bl                   <+> text ".."   <+> br
-    
-    dot             = char '.'
-    indent i d      = spaces i <> d
-    spaces i        = text $ replicate i ' ' 
 
-    (tl,x)          = mkCoord (r0,c0)
-    (tr,y)          = mkCoord (r1,c0)
-    (bl,cl)         = mkCoord (r0,c1)
-    (br,cr)         = mkCoord (r1,c1)
-    
-    mkCoord :: (Int,Int) -> (Doc,Int)
-    mkCoord (i,j)   = let s = show (i,j)  
-                      in (text s, length s) 
                       
 
 --------------------------------------------------------------------------------

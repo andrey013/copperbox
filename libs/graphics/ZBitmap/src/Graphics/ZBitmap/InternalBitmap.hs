@@ -232,12 +232,12 @@ bitmap32bit w d = Bitmap
 
 widthAndData :: BmpBitmap -> (Int,BmpData)
 widthAndData bmp = (w,d) where
-    w = fromIntegral $ bmp_width $ bmp_dibheader $ bmp 
+    w = (fromIntegral . bmp_width . dib_header . bmp_header) $ bmp 
     d = maybe (error $ "no bitmap data") id (bmp_opt_body bmp)
     
 widthPaletteAndData :: BmpBitmap -> (Int,PaletteData,BmpData)
 widthPaletteAndData bmp = (w,p,d) where
-    w = fromIntegral $ bmp_width $ bmp_dibheader $ bmp 
+    w = (fromIntegral . bmp_width . dib_header . bmp_header) $ bmp 
     p = maybe (error $ "no palette data") palette_data (optPalette bmp)
     d = maybe (error $ "no bitmap data")  id           (bmp_opt_body bmp)
     

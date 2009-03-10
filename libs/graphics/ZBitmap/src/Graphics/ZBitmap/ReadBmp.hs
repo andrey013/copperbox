@@ -18,6 +18,7 @@
 
 module Graphics.ZBitmap.ReadBmp (
   readBmp,
+  readBmpHeader,
   runParser,
   evalParser,
   
@@ -80,14 +81,22 @@ evalParser parser = fst . runParser parser
 
     
 readBmp :: FilePath -> IO BmpBitmap  
-readBmp name = do 
+readBmp name = readFromFile name bmpFile "readBmp failed"
+
+readBmpHeader :: FilePath -> IO BmpHeader
+readBmpHeader name = readFromFile name header "readBmpHeader failed"
+
+readFromFile :: FilePath -> Parser a -> String -> IO a  
+readFromFile name p err_msg = do 
     h <- openBinaryFile name ReadMode
     bs <- BS.hGetContents h
-    let (ans,msg) = runParser bmpFile bs    
+    let (ans,msg) = runParser p bs    
     case ans of 
       Left err -> hClose h >> putStrLn err >> putStrLn msg 
-                           >> error "readBmp failed"
+                           >> error err_msg
       Right mf -> hClose h >> return mf
+      
+      
       
 --------------------------------------------------------------------------------
 
@@ -95,31 +104,49 @@ readBmp name = do
     
 bmpFile :: Parser BmpBitmap  
 bmpFile = do
-    hdr                 <- header
-    (sz,bpp,cmprz,dib)  <- dibheader
-    o_ps                <- palette bpp
-    let bs_size         = fromIntegral sz -- might need to subtract the palette_spec size
-    let height          = fromIntegral $ bmp_height dib
-    body                <- imageData cmprz bs_size height
-    return $ BmpBitmap hdr dib o_ps body
+    hdr                   <- header
+    let (sz,bpp,cmprz,h)  = dibStats hdr
+    o_ps                  <- palette bpp
+    body                  <- imageData cmprz (fromIntegral sz) (fromIntegral h)
+    return $ BmpBitmap hdr o_ps body
 
 header :: Parser BmpHeader
-header = (\c1 c2 sz r1 r2 off -> makeBmpHeaderLong c1 c2 sz r1 r2 off)
-    <$> char <*> char     <*> word32le 
-             <*> word16le <*> word16le <*> word32le 
+header = makeBmpHeaderLong
+    <$> bmpmagic <*> word32le <*> reservedData <*> word32le <*> dibheader
+  where
+    bmpmagic :: Parser MagicNumber
+    bmpmagic = magicNumber <$> char <*> char 
+
+    reservedData :: Parser ReservedData
+    reservedData = (,) <$> word16le <*> word16le
 
 
-type DataSize = Word32
-type DibAns = (DataSize, BmpBitsPerPixel, BmpCompression, BmpDibHeader)
+dibStats :: BmpHeader -> (Word32, BmpBitsPerPixel, BmpCompression, Word32)
+dibStats hdr = (bmp_data_size, bpp, cmprz, height)
+  where
+    dib           = dib_header hdr 
+    bpp           = bits_per_pixel dib
+    cmprz         = compression_type dib
+    height        = bmp_height dib
+    dib_len       = literalLiteral $ dib_size dib
+    header_len    = 14
+    bmp_data_size = bmp_file_size hdr - (header_len + dib_len) -- PALETTE? 
+                  
+               
 
-dibheader :: Parser DibAns
-dibheader = 
-    (\w h cp bpp cm sz hr vr pd cs -> 
-        (sz, bpp, cm, makeBmpDibHeaderLong w h cp bpp cm sz hr vr pd cs)) 
-      <$> (word32le  *> word32le) <*> word32le 
-                    <*> word16le  <*> bitsPerPx   <*> compression
+      
+      
+dibheader :: Parser BmpDibHeader
+dibheader = makeBmpDibHeaderLong
+      <$> readHeaderSize  <*> word32le    <*> word32le 
+                    <*> readColourPlanes  <*> bitsPerPx   <*> compression
                     <*> word32le  <*> word32le    <*> word32le
-                    <*> word32le  <*> word32le
+                    <*> word32le  <*> readImportantColours
+  where
+    readHeaderSize        = headerSize        <$> word32le
+    readColourPlanes      = colourPlanes      <$> word16le
+    readImportantColours  = importantColours  <$> word32le 
+    
 
 palette :: BmpBitsPerPixel -> Parser (Maybe Palette)
 palette bpp = case paletteSize bpp of
@@ -139,6 +166,7 @@ buildPalette cs = Palette sz $ listArray (0,sz-1) cs where
 -- /sz/ should always be a multiple of /height/
 -- The image header might still be important.
 imageData :: BmpCompression -> Int -> Int -> Parser (Maybe BmpDibImageData)
+imageData _      _  0       = reportFail $ "height is zero"
 imageData Bi_RGB sz height 
     | sz `mod` height == 0  = let width = sz `div` height in do
                                   ws <- count sz word8

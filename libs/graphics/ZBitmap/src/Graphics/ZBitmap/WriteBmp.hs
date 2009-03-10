@@ -43,8 +43,9 @@ writeBmp path bmp = let bmpstream = putBmpFile bmp $ BS.empty in do
     hClose h  
 
 putBmpFile :: BmpBitmap -> BMPout
-putBmpFile (BmpBitmap hdr dib _ bdy) = 
-    putBMPheader hdr . putV3Dibheader dib . putBody bdy
+putBmpFile (BmpBitmap hdr opal bdy) = 
+    putBMPheader hdr . maybe id putBmpPalette opal 
+                     . maybe id putBody bdy
    
 
 
@@ -52,28 +53,36 @@ putBMPheader :: BmpHeader -> BMPout
 putBMPheader hdr  = 
     outChar 'B' . outChar 'M'  
                 . outW32le (bmp_file_size       hdr) 
-                . outW16le (reserved1           hdr)
-                . outW16le (reserved2           hdr) 
+                . outReserved (reserved_data    hdr)
                 . outW32le (image_data_offset   hdr)
-
-
+                . putV3Dibheader (dib_header    hdr)
+  where
+    outReserved :: ReservedData -> BMPout
+    outReserved (a,b) = outW16le a . outW16le b
+    
+     
 putV3Dibheader :: BmpDibHeader -> BMPout
 putV3Dibheader dib = 
-    outW32le 40 . outW32le (bmp_width                 dib) 
-                . outW32le (bmp_height                dib) 
-                . outW16le (colour_planes             dib)  -- 1 colour plane
-                . outW16le (marshalBmpBitsPerPixel  $ bits_per_pixel    dib)
-                . outW32le (marshalBmpCompression   $ compression_type  dib) 
-                . outW32le (image_data_size           dib)
-                . outW32le (h_resolution              dib)
-                . outW32le (v_resolution              dib)
-                . outW32le (palette_depth             dib)
-                . outW32le (colours_used              dib)
+    outDibSize dib . outW32le (bmp_width                 dib) 
+                   . outW32le (bmp_height                dib) 
+                   . outColourPlanes  dib
+                   . outW16le (marshalBmpBitsPerPixel  $ bits_per_pixel    dib)
+                   . outW32le (marshalBmpCompression   $ compression_type  dib) 
+                   . outW32le (image_data_size           dib)
+                   . outW32le (h_resolution              dib)
+                   . outW32le (v_resolution              dib)
+                   . outW32le (palette_depth             dib)
+                   . outImptColours dib
+    where
+      outDibSize      = outW32le . literalLiteral . dib_size
+      outColourPlanes = outW16le . literalLiteral . colour_planes
+      outImptColours  = outW32le . literalLiteral . colours_used
 
+putBmpPalette :: Palette -> BMPout 
+putBmpPalette _ = error $ "putBmpPalette _TODO_" 
 
-putBody :: Maybe BmpDibImageData -> BMPout
-putBody Nothing     = id -- outByteString
-putBody (Just arr)  = foldl' fn id idxs where
+putBody :: BmpDibImageData -> BMPout
+putBody arr   = foldl' fn id idxs where
     idxs      = uncurry cstyle2DindexList $ arrayWidthHeight arr
     fn f idx  = f . out1 (arr!idx)
    
