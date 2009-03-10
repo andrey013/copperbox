@@ -36,12 +36,12 @@ type ByteCount  = Int
 type PixelCount = Int
 
 data Bitmap pictype = Bitmap 
-      { picture_width :: PixelCount
-      , opt_palette   :: Maybe PaletteData
-      , picture_array :: BmpData
+      { picture_width     :: PixelCount
+      , opt_palette_data  :: Maybe PaletteData
+      , picture_array     :: BmpData
       -- 
-      , storage_size  :: ByteCount
-      , colour_at     :: (Int,Int) -> RgbColour
+      , storage_size      :: ByteCount
+      , colour_at         :: (Int,Int) -> RgbColour
       }
 
 class BitmapImage a
@@ -92,7 +92,8 @@ uniBitmap bmp = case bitsPerPixel bmp of
 -- (phantom) type layer on the bitmap data.
 extractBitmap :: UniBitmap 
               -> ((Int,Int),BmpBitsPerPixel,Maybe Palette,BmpData)
-extractBitmap (UniBitmap bpp bmp@(Bitmap {opt_palette=op,picture_array=a})) = 
+extractBitmap (UniBitmap bpp bmp@(Bitmap {opt_palette_data=op,
+                                          picture_array=a})) = 
     ((imageWidth bmp,imageHeight bmp),bpp,fn op,a)
   where
     fn = maybe Nothing (Just . makePalette)     
@@ -148,12 +149,12 @@ bitmapMono' bmp = bitmapMono w p d where
     
 bitmapMono :: Int -> PaletteData -> BmpData -> Bitmap ImageMono  
 bitmapMono w p d = Bitmap
-    { picture_width = w
-    , opt_palette   = Just p
-    , picture_array = d
+    { picture_width     = w
+    , opt_palette_data  = Just p
+    , picture_array     = d
     --
-    , storage_size  = 4 * ((w + 31) `div` 32)
-    , colour_at     = colourAtMono p d
+    , storage_size      = 4 * ((w + 31) `div` 32)
+    , colour_at         = colourAtMono p d
     }
  
 
@@ -164,12 +165,12 @@ bitmap4bit' bmp = bitmap4bit w p d where
       
 bitmap4bit :: Int -> PaletteData -> BmpData -> Bitmap Image4bit  
 bitmap4bit w p d = Bitmap 
-    { picture_width = w
-    , opt_palette   = Just p
-    , picture_array = d
+    { picture_width     = w
+    , opt_palette_data  = Just p
+    , picture_array     = d
     --
-    , storage_size  = 4 * ((4 * w + 31) `div` 32) 
-    , colour_at     = colourAt4bit p d
+    , storage_size      = 4 * ((4 * w + 31) `div` 32) 
+    , colour_at         = colourAt4bit p d
     }
 
 bitmap8bit' :: BmpBitmap -> Bitmap Image8bit 
@@ -178,12 +179,12 @@ bitmap8bit' bmp = bitmap8bit w p d where
     
 bitmap8bit :: Int -> PaletteData -> BmpData -> Bitmap Image8bit  
 bitmap8bit w p d = Bitmap
-    { picture_width = w
-    , opt_palette   = Just p
-    , picture_array = d
+    { picture_width     = w
+    , opt_palette_data  = Just p
+    , picture_array     = d
     --
-    , storage_size  = 4 * ((8 * w + 31) `div` 32) 
-    , colour_at     = colourAt8bit p d
+    , storage_size      = 4 * ((8 * w + 31) `div` 32) 
+    , colour_at         = colourAt8bit p d
     }
 
 -- no palettes for these resolutions
@@ -193,12 +194,12 @@ bitmap16bit' bmp = bitmap16bit w d where
     
 bitmap16bit :: Int -> BmpData -> Bitmap Image16bit  
 bitmap16bit w d = Bitmap 
-    { picture_width = w
-    , opt_palette   = Nothing
-    , picture_array = d
+    { picture_width     = w
+    , opt_palette_data  = Nothing
+    , picture_array     = d
     --
-    , storage_size  = 4 * ((16 * w + 31) `div` 32)
-    , colour_at     = colourAt16bit d
+    , storage_size      = 4 * ((16 * w + 31) `div` 32)
+    , colour_at         = colourAt16bit d
     }
 
 
@@ -208,12 +209,12 @@ bitmap24bit' bmp = bitmap24bit w d where
       
 bitmap24bit :: Int -> BmpData -> Bitmap Image24bit  
 bitmap24bit w d = Bitmap
-    { picture_width = w
-    , opt_palette   = Nothing
-    , picture_array = d
+    { picture_width     = w
+    , opt_palette_data  = Nothing
+    , picture_array     = d
     --
-    , storage_size  = 4 * ((24 * w + 31) `div` 32) 
-    , colour_at     = colourAt24bit d
+    , storage_size      = 4 * ((24 * w + 31) `div` 32) 
+    , colour_at         = colourAt24bit d
     }
 
 bitmap32bit' :: BmpBitmap -> Bitmap Image32bit 
@@ -222,24 +223,24 @@ bitmap32bit' bmp = bitmap32bit w d where
     
 bitmap32bit :: Int -> BmpData -> Bitmap Image32bit  
 bitmap32bit w d = Bitmap
-    { picture_width = w
-    , opt_palette   = Nothing
-    , picture_array = d
+    { picture_width     = w
+    , opt_palette_data  = Nothing
+    , picture_array     = d
     --
-    , storage_size  = 4 * w
-    , colour_at     = colourAt32bit d
+    , storage_size      = 4 * w
+    , colour_at         = colourAt32bit d
     } 
 
 widthAndData :: BmpBitmap -> (Int,BmpData)
 widthAndData bmp = (w,d) where
     w = (fromIntegral . bmp_width . dib_header . bmp_header) $ bmp 
-    d = maybe (error $ "no bitmap data") id (bmp_opt_body bmp)
+    d = maybe (error $ "no bitmap data") id (opt_pixel_data bmp)
     
 widthPaletteAndData :: BmpBitmap -> (Int,PaletteData,BmpData)
 widthPaletteAndData bmp = (w,p,d) where
     w = (fromIntegral . bmp_width . dib_header . bmp_header) $ bmp 
-    p = maybe (error $ "no palette data") palette_data (optPalette bmp)
-    d = maybe (error $ "no bitmap data")  id           (bmp_opt_body bmp)
+    p = maybe (error $ "no palette data") palette_data (maybePalette bmp)
+    d = maybe (error $ "no bitmap data")  id           (opt_pixel_data bmp)
     
     
 

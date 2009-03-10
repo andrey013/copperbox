@@ -12,9 +12,13 @@ import Data.Array
 import Data.Bits
 
 dummy :: IO ()
-dummy = do a <- readBmpHeader "./out/picture256.bmp"
-           print a
-
+dummy = do (a,op) <- readBmpHeaderAndPalette  "./out/picture256.bmp"
+           putStrLn $ render $ ppBmpHeader a
+           print $ sectionSizes a
+           maybe (putStrLn "no palette") (putStrLn . render . ppPalette) op
+{-
+dumm2 = runAction ("./out/picture256.bmp", "./out/picture256_2.bmp", True)
+-}
 
 main :: IO ()
 main = run24bit

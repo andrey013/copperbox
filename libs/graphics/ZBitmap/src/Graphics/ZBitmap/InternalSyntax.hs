@@ -46,9 +46,9 @@ literalLiteral (BmpLiteral _ b) = b
 
 
 data BmpBitmap = BmpBitmap 
-      { bmp_header       :: BmpHeader       
-      , bmp_opt_palette  :: Maybe Palette
-      , bmp_opt_body     :: Maybe BmpDibImageData -- e.g. cannot parse due to compression
+      { bmp_header        :: BmpHeader       
+      , opt_palette       :: Maybe Palette
+      , opt_pixel_data    :: Maybe BmpDibImageData -- e.g. cannot parse due to compression
       }
 
 instance Show BmpBitmap where
@@ -159,8 +159,11 @@ data BmpCompression =
 bitsPerPixel :: BmpBitmap -> BmpBitsPerPixel
 bitsPerPixel =  bits_per_pixel . dib_header . bmp_header
 
-optPalette :: BmpBitmap -> Maybe Palette
-optPalette = bmp_opt_palette
+maybePalette :: BmpBitmap -> Maybe Palette
+maybePalette = opt_palette
+
+
+
 
 
 --------------------------------------------------------------------------------
@@ -170,9 +173,6 @@ makePalette :: PaletteData -> Palette
 makePalette a = let (lo,hi) = bounds a in Palette (1+hi-lo) a 
 
 
--- only export this to the Bmp parser not client libraries.        
-makeBmpHeaderLong :: MagicNumber -> Word32 -> ReservedData -> Word32 -> BmpDibHeader -> BmpHeader
-makeBmpHeaderLong = BmpHeader
 
 makeBmpHeaderShort :: Word32 -> Word32 -> BmpDibHeader -> BmpHeader
 makeBmpHeaderShort palette_size image_size dib = 
@@ -184,13 +184,6 @@ makeBmpHeaderShort palette_size image_size dib =
     offset        = hdr_size + dib_hdr_size + palette_size 
 
 
-
--- only export this to ZBitmap modules not client libraries.
-makeBmpDibHeaderLong :: HeaderSize -> Word32 -> Word32 -> ColourPlanes 
-                     -> BmpBitsPerPixel -> BmpCompression -> Word32 
-                     -> Word32 -> Word32 -> Word32 -> ImportantColours 
-                     -> BmpDibHeader
-makeBmpDibHeaderLong = BmpDibHeader
 
 
 -- warning careful with sz

@@ -62,6 +62,15 @@ showBin = showIntAtBase 2 (\i -> if i==0 then '0' else '1')
 binRep :: Integral a => a -> String
 binRep = ($ []) . showBin
 
+
+-- sectionSizes ((header,dib_data), palette, pixel_data
+ 
+sectionSizes :: BmpHeader -> ((Int,Int),Int,Int)
+sectionSizes hdr = ((14,40),pal_size,pxl_size) 
+  where
+    pal_size = fromIntegral $ 4 * (paletteSize . bits_per_pixel . dib_header) hdr
+    pxl_size = fromIntegral $ bmp_file_size hdr - image_data_offset hdr
+    
 --------------------------------------------------------------------------------
 -- Colour conversion
 

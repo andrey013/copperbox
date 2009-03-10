@@ -19,6 +19,7 @@
 module Graphics.ZBitmap.ReadBmp (
   readBmp,
   readBmpHeader,
+  readBmpHeaderAndPalette,
   runParser,
   evalParser,
   
@@ -26,7 +27,7 @@ module Graphics.ZBitmap.ReadBmp (
 
 
 import Graphics.ZBitmap.InternalSyntax
-import Graphics.ZBitmap.Utils ( paletteSize, cstyle2Darray)
+import Graphics.ZBitmap.Utils ( cstyle2Darray, sectionSizes)
 
 import Control.Applicative
 import Control.Monad.Error
@@ -79,12 +80,6 @@ runParser parser bs0 = case runP parser bs0 of
 evalParser :: Parser a -> BS.ByteString  -> Either String a
 evalParser parser = fst . runParser parser 
 
-    
-readBmp :: FilePath -> IO BmpBitmap  
-readBmp name = readFromFile name bmpFile "readBmp failed"
-
-readBmpHeader :: FilePath -> IO BmpHeader
-readBmpHeader name = readFromFile name header "readBmpHeader failed"
 
 readFromFile :: FilePath -> Parser a -> String -> IO a  
 readFromFile name p err_msg = do 
@@ -95,7 +90,16 @@ readFromFile name p err_msg = do
       Left err -> hClose h >> putStrLn err >> putStrLn msg 
                            >> error err_msg
       Right mf -> hClose h >> return mf
-      
+    
+readBmp :: FilePath -> IO BmpBitmap  
+readBmp name = readFromFile name bmpFile "readBmp failed"
+
+readBmpHeader :: FilePath -> IO BmpHeader
+readBmpHeader name = readFromFile name header "readBmpHeader failed"
+
+readBmpHeaderAndPalette :: FilePath -> IO (BmpHeader,Maybe Palette)
+readBmpHeaderAndPalette name = 
+    readFromFile name headerPlusPalette "readBmpHeaderAndPalette failed"
       
       
 --------------------------------------------------------------------------------
@@ -105,13 +109,31 @@ readFromFile name p err_msg = do
 bmpFile :: Parser BmpBitmap  
 bmpFile = do
     hdr                   <- header
-    let (sz,bpp,cmprz,h)  = dibStats hdr
-    o_ps                  <- palette bpp
-    body                  <- imageData cmprz (fromIntegral sz) (fromIntegral h)
-    return $ BmpBitmap hdr o_ps body
+    let (_,pali,pxli)     = sectionSizes hdr
+    let height            = (fromIntegral . bmp_height . dib_header) hdr
+    let cmprz             = (compression_type . dib_header) hdr
+    o_p                   <- optionalPalette pali
+    body                  <- imageData cmprz pxli height
+    return $ BmpBitmap hdr o_p body
+  where
+    -- i is the palette's on disk size - divide by 4 for number of colours
+    optionalPalette 0 = pure Nothing
+    optionalPalette i = Just <$> palette (i `div` 4)
+
+headerPlusPalette :: Parser (BmpHeader,Maybe Palette)  
+headerPlusPalette = do
+    hdr                   <- header
+    let (_,pali,_)        = sectionSizes hdr
+    o_p                   <- optionalPalette pali
+    return $ (hdr, o_p)
+  where
+    -- i is the palette's on disk size - divide by 4 for number of colours
+    optionalPalette 0 = pure Nothing
+    optionalPalette i = Just <$> palette (i `div` 4)
+
 
 header :: Parser BmpHeader
-header = makeBmpHeaderLong
+header = BmpHeader
     <$> bmpmagic <*> word32le <*> reservedData <*> word32le <*> dibheader
   where
     bmpmagic :: Parser MagicNumber
@@ -120,39 +142,24 @@ header = makeBmpHeaderLong
     reservedData :: Parser ReservedData
     reservedData = (,) <$> word16le <*> word16le
 
-
-dibStats :: BmpHeader -> (Word32, BmpBitsPerPixel, BmpCompression, Word32)
-dibStats hdr = (bmp_data_size, bpp, cmprz, height)
-  where
-    dib           = dib_header hdr 
-    bpp           = bits_per_pixel dib
-    cmprz         = compression_type dib
-    height        = bmp_height dib
-    dib_len       = literalLiteral $ dib_size dib
-    header_len    = 14
-    bmp_data_size = bmp_file_size hdr - (header_len + dib_len) -- PALETTE? 
-                  
-               
+    
 
       
       
 dibheader :: Parser BmpDibHeader
-dibheader = makeBmpDibHeaderLong
-      <$> readHeaderSize  <*> word32le    <*> word32le 
-                    <*> readColourPlanes  <*> bitsPerPx   <*> compression
-                    <*> word32le  <*> word32le    <*> word32le
-                    <*> word32le  <*> readImportantColours
+dibheader = BmpDibHeader
+      <$> readHeaderSize    <*> word32le        <*> word32le 
+      <*> readColourPlanes  <*> bitsPerPx       <*> compression
+      <*> word32le          <*> word32le        <*> word32le
+      <*> word32le          <*> readImpColours
   where
     readHeaderSize        = headerSize        <$> word32le
     readColourPlanes      = colourPlanes      <$> word16le
-    readImportantColours  = importantColours  <$> word32le 
+    readImpColours        = importantColours  <$> word32le 
     
 
-palette :: BmpBitsPerPixel -> Parser (Maybe Palette)
-palette bpp = case paletteSize bpp of
-    0 -> return Nothing
-    n -> do cs <- count n paletteColour       -- 4 bytes per colour
-            return $ Just $ buildPalette cs
+palette :: Int -> Parser Palette
+palette n = buildPalette <$> count n paletteColour
 
 paletteColour :: Parser RgbColour
 paletteColour = (\b g r _ -> (r,g,b)) <$>
@@ -166,7 +173,6 @@ buildPalette cs = Palette sz $ listArray (0,sz-1) cs where
 -- /sz/ should always be a multiple of /height/
 -- The image header might still be important.
 imageData :: BmpCompression -> Int -> Int -> Parser (Maybe BmpDibImageData)
-imageData _      _  0       = reportFail $ "height is zero"
 imageData Bi_RGB sz height 
     | sz `mod` height == 0  = let width = sz `div` height in do
                                   ws <- count sz word8
@@ -201,9 +207,6 @@ reportFail s = do
 count :: Applicative f => Int -> f a -> f [a]
 count i p | i <= 0    = pure []
           | otherwise = p <:> count (i-1) p 
-          
-          
-      
    
 word8 :: Parser Word8
 word8 = do

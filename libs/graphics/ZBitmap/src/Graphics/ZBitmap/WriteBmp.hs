@@ -21,7 +21,7 @@ module Graphics.ZBitmap.WriteBmp (
 import Graphics.ZBitmap.InternalSyntax
 import Graphics.ZBitmap.Utils
 
-import Data.Array.IArray ( (!) )
+import Data.Array.IArray ( bounds, (!) )
 import Data.Bits
 import qualified Data.ByteString as BS
 import Data.Char ( ord )
@@ -79,7 +79,10 @@ putV3Dibheader dib =
       outImptColours  = outW32le . literalLiteral . colours_used
 
 putBmpPalette :: Palette -> BMPout 
-putBmpPalette _ = error $ "putBmpPalette _TODO_" 
+putBmpPalette (Palette _ arr) = foldl' fn id idxs where
+    idxs      = let (l,u) = bounds arr in [l..u]
+    fn f idx  = let (r,g,b) = arr!idx in
+                f . out1 b . out1 g . out1 r . out1 0  
 
 putBody :: BmpDibImageData -> BMPout
 putBody arr   = foldl' fn id idxs where

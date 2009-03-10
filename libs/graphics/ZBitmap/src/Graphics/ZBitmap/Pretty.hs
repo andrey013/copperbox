@@ -17,6 +17,7 @@
 
 module Graphics.ZBitmap.Pretty (
   ppBmpBitmap,
+  ppBmpHeader,
   ppPalette,
 ) where
 
@@ -32,30 +33,31 @@ ppBmpBitmap :: BmpBitmap -> Doc
 ppBmpBitmap bmp = ppBmpHeader $ bmp_header bmp
 
 ppBmpHeader :: BmpHeader -> Doc
-ppBmpHeader hdr = header $$ dib 
+ppBmpHeader (BmpHeader a b c d h) = header $$ ppBmpDibHeader h 
   where 
     header = (text "BMP Header" $$) $ vcat $ 
-              [ field  "magic"       ((\(c1,c2) -> text [c1,c2]) $ literalValue $ magic hdr)
-              , field  "file_size"   (decHex0x 8 $ bmp_file_size      hdr) 
-           --   , field  "reserved"    (decHex0x 4 $ reserved1          hdr)
-           --   , field  "reserved"    (decHex0x 4 $ reserved2          hdr)
-              , field  "offset"      (decHex0x 8 $ image_data_offset  hdr)
+              [ field  "magic"       (ppLiteral (nspairing char) a)
+              , field  "file_size"   (decHex0x 8 b) 
+              , field  "reserved"    (nspairing (decHex0x 4) c)
+           
+              , field  "offset"      (decHex0x 8 d)
               ]
-    dib = ppBmpDibHeader $ dib_header hdr   
+   
 
 ppBmpDibHeader :: BmpDibHeader -> Doc
-ppBmpDibHeader hdr = (text "DIB Header" $$) $ vcat $ 
-    [ field "header_size"     empty --  (decHex0x 8     $ dib_size          hdr)
-    , field "image_width"     (integerValue   $ bmp_width         hdr)
-    , field "image_height"    (integerValue   $ bmp_height        hdr)
---    , field "colour_planes"   (integerValue   $ colour_planes     hdr)
-    , field "bits_per_pixel"  (ppBitsPerPixel $ bits_per_pixel    hdr)
-    , field "compression"     (ppCompression  $ compression_type  hdr)
-    , field "data_size"       (decHex0x 8     $ image_data_size   hdr)
-    , field "horizontal_res"  (integerValue   $ h_resolution      hdr)
-    , field "vertical_res"    (integerValue   $ v_resolution      hdr)
-    , field "palette_depth"   (decHex0x 8     $ palette_depth     hdr)
-    -- , field "colours_used"    (decHex0x 8     $ colours_used      hdr)
+ppBmpDibHeader (BmpDibHeader a b c d e f g h i j k) =
+  (text "DIB Header" $$) $ vcat $ 
+    [ field "header_size"     (ppLiteral (decHex0x 8) a)
+    , field "image_width"     (integerValue   b)
+    , field "image_height"    (integerValue   c)
+    , field "colour_planes"   (ppLiteral integerValue d)
+    , field "bits_per_pixel"  (ppBitsPerPixel e)
+    , field "compression"     (ppCompression  f)
+    , field "data_size"       (decHex0x 8     g)
+    , field "horizontal_res"  (integerValue   h)
+    , field "vertical_res"    (integerValue   i)
+    , field "palette_depth"   (decHex0x 8     j)
+    , field "colours_used"    (ppLiteral (decHex0x 8) k)
     ]
 
           
@@ -80,6 +82,12 @@ ppCompression Bi_PNG        = text "BI_PNG"
 
 --------------------------------------------------------------------------------
 -- Palette
+
+ppLiteral :: Eq a => (a -> Doc) -> BmpLiteral a -> Doc 
+ppLiteral f v | checkLiteral v  = f $ literalValue v
+              | otherwise       = text "WARNING: value" <+> f (literalValue v)
+                                 <+> text ", expecting" <+> f (literalLiteral v)
+
 
 ppPalette :: Palette -> Doc
 ppPalette (Palette sz arr) = snd $ foldl' f (0,doc1) $ elems arr 
@@ -135,4 +143,8 @@ rightpad ch pad s = let dif = pad - length s in
     
 fillstring :: Int -> String -> Doc
 fillstring = rightpad ' '
+
+-- no space pairing
+nspairing :: (a -> Doc) -> (a,a) -> Doc
+nspairing f (a,b) = f a <> f b
 
