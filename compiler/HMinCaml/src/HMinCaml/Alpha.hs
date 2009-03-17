@@ -48,7 +48,7 @@ g env (IfEq x y e1 e2)    = IfEq <$> pure (find x env) <*> pure (find y env)
 g env (IfLE x y e1 e2)    = IfLE <$> pure (find x env) <*> pure (find y env) 
                                  <*> (g env e1)        <*> (g env e2)
                                  
-g env (Let (x, t) e1 e2)  = do x'   <- genid x
+g env (Let (x, t) e1 e2)  = do x'    <- genid x
                                e1'   <- g env e1
                                e2'   <- g (M.add x x' env) e2
                                return $ Let (x', t) e1' e2'
