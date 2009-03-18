@@ -1,4 +1,7 @@
-{-# OPTIONS -Wall #-}
+
+
+-- UUAGC 0.9.6 (Syntax.ag)
+
 
 -- |
 -- Module: HMinCaml.Syntax
@@ -11,44 +14,47 @@
 -- Syntax
 --
 
+
+
+
 module HMinCaml.Syntax where
 
 import HMinCaml.Id
 import HMinCaml.Type
 
-data Expr = Unit
-          | Bool      Bool
-          | Int       Int
-          | Float     Float
-          | Not       Expr
-          | Neg       Expr
-          | Add       Expr  Expr
-          | Sub       Expr  Expr
-          | FNeg      Expr
-          | FAdd      Expr  Expr
-          | FSub      Expr  Expr
-          | FMul      Expr  Expr
-          | FDiv      Expr  Expr
-          | Eq        Expr  Expr
-          | LE        Expr  Expr
-          | If        Expr  Expr  Expr
-          | Let       (Id, Type)  Expr  Expr
-          | Var       Id
-          | LetRec    Fundef  Expr
-          | App       Expr            [Expr]
-          | Tuple     [Expr]
-          | LetTuple  [(Id, Type)]  Expr  Expr
-          | Array     Expr  Expr
-          | Get       Expr  Expr
-          | Put       Expr  Expr  Expr
-  deriving (Eq,Show)
-  
-data Fundef = Fundef 
-      { name :: (Id, Type)
-      , args :: [(Id, Type)]
-      , body :: Expr 
-      }
-  deriving (Eq,Show)
-  
-                
 
+gentyp :: Type
+gentyp = TVar Nothing
+
+-- Expr --------------------------------------------------------
+data Expr  = Add (Expr) (Expr) 
+           | App (Expr) (Exprs) 
+           | Array (Expr) (Expr) 
+           | Bool (Bool) 
+           | Eq (Expr) (Expr) 
+           | FAdd (Expr) (Expr) 
+           | FDiv (Expr) (Expr) 
+           | FMul (Expr) (Expr) 
+           | FNeg (Expr) 
+           | FSub (Expr) (Expr) 
+           | Float (Float) 
+           | Get (Expr) (Expr) 
+           | If (Expr) (Expr) (Expr) 
+           | Int (Int) 
+           | LE (Expr) (Expr) 
+           | Let (TypeId) (Expr) (Expr) 
+           | LetRec (Fundef) (Expr) 
+           | LetTuple (TypeIds) (Expr) (Expr) 
+           | Neg (Expr) 
+           | Not (Expr) 
+           | Put (Expr) (Expr) (Expr) 
+           | Sub (Expr) (Expr) 
+           | Tuple (Exprs) 
+           | Unit 
+           | Var (Id) 
+           deriving ( Eq,Show)
+-- Exprs -------------------------------------------------------
+type Exprs  = [Expr]
+-- Fundef ------------------------------------------------------
+data Fundef  = Fundef (TypeId) (TypeIds) (Expr) 
+             deriving ( Eq,Show)

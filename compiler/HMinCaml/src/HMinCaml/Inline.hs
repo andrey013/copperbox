@@ -1,4 +1,7 @@
-{-# OPTIONS -Wall #-}
+
+
+-- UUAGC 0.9.6 (Inline.ag)
+
 
 -- |
 -- Module: HMinCaml.Inline
@@ -10,6 +13,7 @@
 --
 -- Inline expansion
 --
+
 
 module HMinCaml.Inline where
 
@@ -25,6 +29,7 @@ import Control.Applicative
 
 type Env = M.M Id ([(Id, Type)], Expr)
 
+
 -- this is configurable in MinCaml
 threshold :: Int 
 threshold = 100
@@ -33,7 +38,7 @@ size :: Expr -> Int
 size (IfEq _ _ e1 e2)   = 1 + size e1 + size e2
 size (IfLE _ _ e1 e2)   = 1 + size e1 + size e2
 size (Let _ e1 e2)      = 1 + size e1 + size e2
-size (LetRec fdef e2)   = 1 + size (body fdef) + size e2
+-- size (LetRec fdef e2)   = 1 + size (body fdef) + size e2
 size (LetTuple _ _ e)   = 1 + size e
 size _                  = 1
 
@@ -54,13 +59,9 @@ g env (App x ys)
                                           M.empty
                                           zs
                                           ys
-                            in (Alpha.g env' e) 
+                            in undefined -- (Alpha.g env' e) 
 g env (LetTuple xts y e)  = LetTuple xts y <$> (g env e)
 g _   e                   = return $ e
 
 inline :: Expr -> CM Expr 
-inline = g M.empty  
-
-
-
-  
+inline = undefined -- g M.empty  

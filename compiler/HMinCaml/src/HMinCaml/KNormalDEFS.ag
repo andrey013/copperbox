@@ -1,0 +1,56 @@
+-- HMinCaml.KNormalDEFS
+
+DATA Expr 
+  | Unit
+  | Int         val       : {Int}
+  | Float       val       : {Float}
+  | Neg         ref       : {Id}
+  | Add         ref1      : {Id}  
+                ref2      : {Id}
+  | Sub         ref1      : {Id}  
+                ref2      : {Id}
+  | FNeg        ref       : {Id}
+  | FAdd        ref1      : {Id}  
+                ref2      : {Id}
+  | FSub        ref1      : {Id}  
+                ref2      : {Id}
+  | FMul        ref1      : {Id}  
+                ref2      : {Id}
+  | FDiv        ref1      : {Id}  
+                ref2      : {Id}
+  | IfEq        ref1      : {Id}  
+                ref2      : {Id}
+                texpr     : Expr  
+                eexpr     : Expr
+  | IfLE        ref1      : {Id}  
+                ref2      : {Id}
+                texpr     : Expr  
+                eexpr     : Expr
+  | Let         tyid      : TypeId 
+                sub       : Expr  
+                body      : Expr
+  | Var         ref       : {Id}
+  | LetRec      fundef    : Fundef  
+                body      : Expr
+  | App         ref       : {Id}
+                args      : {[Id]}
+  | Tuple       refs      : {[Id]}
+  | LetTuple    tyids     : TypeIds 
+                ref       : {Id}  
+                body      : Expr
+  | Get         aref      : {Id}  
+                iref      : {Id}
+  | Put         aref      : {Id}  
+                iref      : {Id}
+                vref      : {Id}
+  | ExtArray    ref       : {Id}
+  | ExtFunApp   nref      : {Id}    
+                args      : {[Id]}
+
+  
+DATA Fundef 
+  | Fundef      name      : TypeId
+                args      : TypeIds
+                body      : Expr 
+
+  

@@ -28,6 +28,9 @@ import qualified Data.Map as Map
 
 type M k v = Map.Map k v
 
+
+
+
 addList :: Ord k => [(k,v)] -> M k v -> M k v
 addList xys env = foldl' (\s (k,v) -> Map.insert k v s) env xys
 
@@ -39,6 +42,8 @@ empty = Map.empty
 
 add :: Ord k => k -> v -> M k v -> M k v
 add  = Map.insert
+
+
 
 find :: Ord k => k -> M k a -> Maybe a
 find = Map.lookup

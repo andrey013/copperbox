@@ -16,9 +16,10 @@
 
 module HMinCaml.CompilerMonad where
 
-import HMinCaml.IdTypes
+import HMinCaml.Id
 import qualified HMinCaml.M as M
 import HMinCaml.Type
+import HMinCaml.Utils
 
 import Control.Applicative
 import Control.Monad.State
@@ -40,3 +41,17 @@ counter = do
     i <- gets id_counter
     modify $ \s -> s { id_counter = i+1 }
     return i
+    
+
+gentmp :: Type -> CM String
+gentmp typ = do 
+    i <- counter
+    return $ 'T' : (idOfType typ) ++ show i
+
+genid :: String -> CM String
+genid s = do 
+    i <- counter
+    return $ s ++ '.' : show i
+        
+
+    

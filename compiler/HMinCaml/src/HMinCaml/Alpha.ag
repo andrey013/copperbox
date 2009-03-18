@@ -1,0 +1,150 @@
+{
+-- |
+-- Module: HMinCaml.Alpha
+-- License: as per original MinCaml
+--
+-- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability: unstable
+-- Portability: ghc
+--
+-- Alpha conversion
+--
+}
+
+{
+
+module HMinCaml.Alpha where
+
+import HMinCaml.CompilerMonad
+import HMinCaml.Id
+import qualified HMinCaml.M as M
+import HMinCaml.KNormal ( Expr(..), Fundef(..) )
+import HMinCaml.Type
+
+import Control.Applicative
+import Control.Monad.State
+
+
+
+type Env = M.M Id Id
+
+(&?) :: Id -> Env -> Id
+(&?) x env = maybe x id (M.find x env) 
+
+(&+) :: (Id,Id) -> Env -> Env
+(&+) (x,x') env = M.add x x' env 
+
+
+
+find :: Id -> Env -> Id
+find x env = maybe x id (M.find x env) 
+
+
+}
+
+INCLUDE "KNormalDEFS.ag"
+INCLUDE "TypeDEFS.ag"
+
+
+
+ATTR Expr     [ | | alpha : {Expr} ]
+ATTR Fundef   [ | | alpha : {Fundef} ]
+ATTR TypeIds  [ | | alpha USE {:} {[]} : {[TypeId]} ]
+ATTR TypeId   [ | | alpha : {TypeId} ]
+
+
+ATTR Expr Fundef TypeId TypeIds [ | env : {Env} | ]
+
+ATTR Expr Fundef TypeIds TypeId [ | fresh : {Int} | ]
+
+SEM Expr
+  | Unit        lhs.alpha     = Unit
+  | Int         lhs.alpha     = Int @val
+  | Float       lhs.alpha     = Float @val
+  | Neg         lhs.alpha     = Neg  (@ref  &? @lhs.env)
+  | Add         lhs.alpha     = Add  (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
+  | Sub         lhs.alpha     = Sub  (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
+  | FNeg        lhs.alpha     = FNeg (@ref  &? @lhs.env)
+  | FAdd        lhs.alpha     = FAdd (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
+  | FSub        lhs.alpha     = FSub (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
+  | FMul        lhs.alpha     = FMul (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
+  | FDiv        lhs.alpha     = FDiv (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
+  | IfEq        lhs.alpha     = IfEq (@ref1 &? @lhs.env)
+                                     (@ref2 &? @lhs.env)
+                                     @texpr.alpha          
+                                     @eexpr.alpha
+  | IfLE        lhs.alpha     = IfLE (@ref1 &? @lhs.env) 
+                                     (@ref2 &? @lhs.env)
+                                     @texpr.alpha          
+                                     @eexpr.alpha
+  | Let         loc.newlab    = @tyid.relabel
+                body.env      = @tyid.renames &+ @lhs.env
+                lhs.alpha     = Let @loc.newlab 
+                                    @sub.alpha 
+                                    @body.alpha
+  | Var         lhs.alpha     = Var (@ref &? @lhs.env)                                    
+  | LetRec      lhs.env       = @fundef.extenv
+                body.env      = @lhs.env
+                lhs.alpha     = LetRec @fundef.alpha @body.alpha
+  | App         lhs.alpha     = App (@ref &? @lhs.env) 
+                                    (map (&? @lhs.env) @args)                
+  | Tuple       lhs.alpha     = Tuple (map (&? @lhs.env) @refs)
+  | LetTuple    loc.env'      = M.addList @tyids.renames @lhs.env
+                tyids.env     = @loc.env' 
+                body.env      = @loc.env'
+                lhs.alpha     = LetTuple @tyids.alpha
+                                         (@ref &? @lhs.env)
+                                         @body.alpha
+  | Get         lhs.alpha     = Get (@aref &? @lhs.env) (@iref &? @lhs.env) 
+  | Put         lhs.alpha     = Put (@aref &? @lhs.env) 
+                                    (@iref &? @lhs.env) 
+                                    (@vref &? @lhs.env)
+  | ExtArray    lhs.alpha     = ExtArray @ref
+  | ExtFunApp   lhs.alpha     = ExtFunApp @nref (map (&? @lhs.env) @args)
+
+SEM TypeId
+  | Tuple       lhs.alpha     = (@argId &? @lhs.env, @argType.copy)
+
+
+ATTR Fundef TypeId [ | | renames : {(Id,Id)} ]    -- (old_name,new_name)
+ATTR TypeIds       [ | | renames USE {:} {[]} : {[(Id,Id)]} ]
+
+ATTR TypeId        [ | | relabel : {TypeId} ]
+ATTR TypeIds       [ | | relabel USE {:} {[]} : {[TypeId]} ]
+
+
+SEM TypeId
+  | Tuple       lhs.fresh     = @lhs.fresh+1
+                loc.(x,x')    = (@argId, newId @argId @lhs.fresh)
+                lhs.renames   = (@loc.x,@loc.x')
+
+SEM TypeId                
+  | Tuple       lhs.relabel   = (@loc.x', @argType.copy)
+
+                
+SEM Fundef
+  | Fundef      lhs.renames   = @name.renames
+
+ATTR Fundef        [ | | extenv : {Env} ]    -- extend with just renamed var
+
+SEM Fundef
+  | Fundef      loc.env'      = @name.renames &+ @lhs.env
+                lhs.extenv    = @loc.env'
+                loc.extenvs   = M.addList @args.renames @loc.env' 
+                body.env      = @loc.extenvs                           
+                lhs.alpha     = Fundef @name.relabel
+                                       @args.alpha
+                                       @body.alpha
+
+
+
+
+
+  
+{
+
+
+alpha :: Expr -> CM Expr
+alpha e = undefined -- g M.empty e
+
+}

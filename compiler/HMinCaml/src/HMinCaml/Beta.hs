@@ -1,4 +1,7 @@
-{-# OPTIONS -Wall #-}
+
+
+-- UUAGC 0.9.6 (Beta.ag)
+
 
 -- |
 -- Module: HMinCaml.Beta
@@ -10,6 +13,7 @@
 --
 -- Beta reduction
 --
+
 
 module HMinCaml.Beta where
 
@@ -23,6 +27,7 @@ type Env = M.M Id Id
 
 find :: Id -> Env -> Id
 find x env = maybe x id (M.find x env) 
+
 
 g :: Env -> Expr -> Expr
 g _   Unit                = Unit
@@ -43,8 +48,8 @@ g env (Let (x, t) e1 e2)  = case g env e1 of
                               e1'     -> let e2' = g env e2 in
                                          Let (x, t) e1' e2'
                                          
-g env (LetRec fdef e2)    = let e1 = body fdef in 
-                            LetRec (fdef { body = g env e1 }) (g env e2)
+g env (LetRec (Fundef n args body) e2)    = 
+                            LetRec (Fundef n args (g env body)) (g env e2)
      
 g env (Var x)             = Var (find x env)
 g env (Tuple xs)          = Tuple (map (\x -> find x env) xs)

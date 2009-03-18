@@ -1,0 +1,29 @@
+
+-- HMinCaml.TypeDEFS
+
+
+
+DATA Type 
+  | TUnit
+  | TBool
+  | TInt
+  | TFloat
+  | TFun        args      : Types  
+                retTy     : Type
+  | TTuple      tys       : Types
+  | TArray      ty        : Type
+  | TVar        optTy     : OptType
+
+TYPE Types      = [Type]
+TYPE OptType    = MAYBE Type
+
+TYPE TypeId     = (argId : {Id}, argType : Type)
+TYPE TypeIds    = [TypeId]    
+
+
+ATTR TypeId TypeIds Type Types OptType [ | | copy : SELF ]
+
+
+
+
+  

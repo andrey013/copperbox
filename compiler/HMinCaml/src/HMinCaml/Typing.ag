@@ -1,0 +1,114 @@
+{
+-- |
+-- Module: HMinCaml.Typing
+-- License: as per original MinCaml
+--
+-- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability: unstable
+-- Portability: ghc
+--
+-- Type inference
+--
+}
+
+{
+
+module HMinCaml.Typing  where
+
+import HMinCaml.CompilerMonad
+import HMinCaml.Id
+import HMinCaml.M
+import HMinCaml.Syntax
+import HMinCaml.Type
+
+import Control.Applicative hiding ( empty )
+}
+
+-- INCLUDE "SyntaxDEFS.ag"
+INCLUDE "TypeDEFS.ag"
+
+{
+
+typing :: Expr -> CM Expr
+typing e = do
+    -- ...
+    derefTerm e
+
+type Subst = M Id Type
+
+
+unify :: Type -> Type -> (Subst,Type)
+unify TUnit     TUnit                       = (empty,TUnit)
+unify TBool     TBool                       = (empty,TBool)
+unify TInt      TInt                        = (empty,TInt)
+unify TFloat            TFloat              = (empty,TFloat)
+
+unify (TVar a)          (TVar b)            | a == b  = (empty, TVar a)
+unify (TVar (Just a))   b                   = unify a b
+unify a                 (TVar (Just b))     = unify a b
+unify (TVar Nothing)    b                   = if occur Nothing b  
+                                                then undefined
+                                                else undefined
+
+}
+
+ATTR Type OptType [ r1 : { Maybe Type } | | occur : { Bool } ]
+ATTR Types [ r1 : { Maybe Type } | | occur USE {:} {[]} : { [Bool] } ]
+
+
+SEM Type
+  | TFun        lhs . occur   = (or @args.occur) || @retTy.occur
+  | TTuple      lhs . occur   = or @tys.occur
+  | TArray      lhs . occur   = @ty.occur                             
+  | TVar        lhs . occur   = @optTy.occur
+  | * - TFun TTuple TArray TVar    
+                lhs . occur   = False
+
+SEM OptType
+  | Just
+                lhs . occur   = @just.occur
+  | Nothing
+                lhs . occur   = False                       
+
+SEM Type
+  | TFun        args . r1     = @lhs.r1
+                retTy . r1    = @lhs.r1
+  | TTuple      tys . r1      = @lhs.r1 
+  | TVar        optTy . r1    = @lhs.r1
+  
+    
+{
+
+occur :: Maybe Type -> Type -> Bool
+occur r1 ty = occur_Syn_Type synthesized
+  where
+    synthesized = wrap_Type (sem_Type ty) inherited
+    inherited = Inh_Type r1
+
+
+
+derefTyp :: Type -> CM Type
+derefTyp (TFun t1s t2)    = TFun    <$> (mapM derefTyp t1s) <*> derefTyp t2
+derefTyp (TTuple ts)      = TTuple  <$> mapM derefTyp ts
+derefTyp (TArray t)       = TArray  <$> derefTyp t
+derefTyp (TVar Nothing)   = return $ TVar (Just TInt)
+derefTyp (TVar (Just _t)) = error $ "do TVars need STRefs?"
+
+derefTyp t                = return t
+  
+derefIdTyp :: (Id,Type) -> CM (Id,Type)
+           
+derefIdTyp (x, t) = (,) <$> pure x <*> derefTyp t
+
+derefTerm :: Expr -> CM Expr
+derefTerm (Not e) =  Not <$> derefTerm e
+
+derefTerm _       = error $ "derefTerm todo"
+
+
+    
+         
+
+}
+
+    

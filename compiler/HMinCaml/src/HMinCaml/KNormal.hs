@@ -1,4 +1,7 @@
-{-# OPTIONS -Wall #-}
+
+
+-- UUAGC 0.9.6 (KNormal.ag)
+
 
 -- |
 -- Module: HMinCaml.KNormal
@@ -11,6 +14,7 @@
 -- K Normal form datatypes
 --
 
+
 module HMinCaml.KNormal where
 
 import HMinCaml.CompilerMonad
@@ -20,37 +24,8 @@ import qualified HMinCaml.S as S
 import qualified HMinCaml.Syntax as Syntax
 import HMinCaml.Type
 
-data Expr = Unit
-          | Int       Int
-          | Float     Float
-          | Neg       Id
-          | Add       Id    Id
-          | Sub       Id    Id
-          | FNeg      Id
-          | FAdd      Id    Id
-          | FSub      Id    Id
-          | FMul      Id    Id
-          | FDiv      Id    Id
-          | IfEq      Id    Id    Expr  Expr
-          | IfLE      Id    Id    Expr  Expr
-          | Let       (Id, Type)  Expr  Expr
-          | Var       Id
-          | LetRec    Fundef  Expr
-          | App       Id    [Id]
-          | Tuple     [Id]
-          | LetTuple  [(Id, Type)]  Id  Expr
-          | Get       Id    Id
-          | Put       Id    Id    Id
-          | ExtArray  Id
-          | ExtFunApp Id    [Id]
-  deriving (Eq,Show)
-  
-data Fundef = Fundef
-      { name :: (Id, Type)
-      , args :: [(Id, Type)]
-      , body :: Expr 
-      }
-  deriving (Eq,Show)
+
+
 
 fv :: Expr -> S.S Id
 fv Unit               = S.empty
@@ -85,4 +60,32 @@ g env Syntax.Unit     = (Unit, TUnit)
 
 knormal :: Syntax.Expr -> CM Expr
 knormal e = return $ fst (g M.empty e)
-  
+ 
+-- Expr --------------------------------------------------------
+data Expr  = Add (Id) (Id) 
+           | App (Id) ([Id]) 
+           | ExtArray (Id) 
+           | ExtFunApp (Id) ([Id]) 
+           | FAdd (Id) (Id) 
+           | FDiv (Id) (Id) 
+           | FMul (Id) (Id) 
+           | FNeg (Id) 
+           | FSub (Id) (Id) 
+           | Float (Float) 
+           | Get (Id) (Id) 
+           | IfEq (Id) (Id) (Expr) (Expr) 
+           | IfLE (Id) (Id) (Expr) (Expr) 
+           | Int (Int) 
+           | Let (TypeId) (Expr) (Expr) 
+           | LetRec (Fundef) (Expr) 
+           | LetTuple (TypeIds) (Id) (Expr) 
+           | Neg (Id) 
+           | Put (Id) (Id) (Id) 
+           | Sub (Id) (Id) 
+           | Tuple ([Id]) 
+           | Unit 
+           | Var (Id) 
+           deriving ( Eq,Show)
+-- Fundef ------------------------------------------------------
+data Fundef  = Fundef (TypeId) (TypeIds) (Expr) 
+             deriving ( Eq,Show)

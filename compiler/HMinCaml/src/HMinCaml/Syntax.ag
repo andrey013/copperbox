@@ -1,0 +1,33 @@
+{
+-- |
+-- Module: HMinCaml.Syntax
+-- License: as per original MinCaml
+--
+-- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability: unstable
+-- Portability: ghc
+--
+-- Syntax
+--
+}
+{
+
+
+module HMinCaml.Syntax where
+
+import HMinCaml.Id
+import HMinCaml.Type
+
+
+gentyp :: Type
+gentyp = TVar Nothing
+
+}
+
+
+
+INCLUDE "SyntaxDEFS.ag"
+
+DERIVING *  : Eq, Show
+
+

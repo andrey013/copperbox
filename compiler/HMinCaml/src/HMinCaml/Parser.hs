@@ -42,6 +42,15 @@ parseMinCaml path = do
 addtyp :: Id -> (Id,Type)
 addtyp x = (x, gentyp)
 
+expr :: Parser Expr
+expr = buildExpressionParser table term >>= termk
+  where
+    termk e = maybe e id <$> optionMaybe (choice [appExpr, semiExpr])
+      where                 
+        appExpr     = (\arglist -> App e arglist)  <$> actualArgs 
+        semiExpr    = (\e2 -> Let ("",TUnit) e e2) <$> (reservedOp ";"  *> expr)
+        
+        
 simpleExpr :: Parser Expr
 simpleExpr = arrExpr =<< choice [ parene, boole, inte, floate, 
                                   ident, unitOrExpr]
@@ -59,14 +68,7 @@ simpleExpr = arrExpr =<< choice [ parene, boole, inte, floate,
                       optionMaybe (reservedOp "<-" *> expr)
     
     
-expr :: Parser Expr
-expr = buildExpressionParser table term >>= termk
-  where
-    termk e = maybe e id <$> optionMaybe (choice [appExpr, semiExpr])
-      where                 
-        appExpr     = (\arglist -> App e arglist)  <$> actualArgs 
-        semiExpr    = (\e2 -> Let ("",TUnit) e e2) <$> (reservedOp ";"  *> expr)
-        
+
 term :: Parser Expr
 term = choice [ simpleExpr, notExpr,  ifThenElse
                 , letExpr, tupleExpr, arrayCreate ]

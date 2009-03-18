@@ -1,4 +1,7 @@
-{-# OPTIONS -Wall #-}
+
+
+-- UUAGC 0.9.6 (Type.ag)
+
 
 -- |
 -- Module: HMinCaml.Type
@@ -11,21 +14,26 @@
 -- Type representation
 --
 
+
 module HMinCaml.Type where
 
+import HMinCaml.Id
 
-data Type = TUnit
-          | TBool
-          | TInt
-          | TFloat
-          | TFun   [Type]  Type         {- arguments are uncurried -}
-          | TTuple [Type]
-          | TArray Type
-          | TVar   (Maybe Type)
-  deriving (Eq,Show)
-
-gentyp :: Type
-gentyp = TVar Nothing
-  
-         
-  
+-- OptType -----------------------------------------------------
+type OptType  = (Maybe (Type))
+-- Type --------------------------------------------------------
+data Type  = TArray (Type) 
+           | TBool 
+           | TFloat 
+           | TFun (Types) (Type) 
+           | TInt 
+           | TTuple (Types) 
+           | TUnit 
+           | TVar (OptType) 
+           deriving ( Eq,Show)
+-- TypeId ------------------------------------------------------
+type TypeId  = ( Id,Type)
+-- TypeIds -----------------------------------------------------
+type TypeIds  = [TypeId]
+-- Types -------------------------------------------------------
+type Types  = [Type]
