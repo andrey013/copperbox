@@ -3,6 +3,9 @@
 -- UUAGC 0.9.6 (SparcAsm.ag)
 
 
+-- UUAGC 0.9.6 (SparcAsm.ag)
+
+
 -- |
 -- Module: HMinCaml.SparcAsm
 -- License: as per original MinCaml
@@ -15,25 +18,28 @@
 --
 
 
+
 module HMinCaml.SparcAsm where
 
-import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import qualified HMinCaml.S as S
+import HMinCaml.SparcAsmSyn
 import HMinCaml.Type
 
-import Control.Applicative
 import Data.Array.IArray
+
 
 
 
 fletd :: Id -> Expr -> SparcT -> SparcT
 fletd x e1 e2 = Let (x, TFloat) e1 e2
 
+{-
 -- ulet aka seq 
 ulet :: Expr -> SparcT -> CM SparcT
 ulet e1 e2  = (\ident -> Let (ident, TUnit) e1 e2) <$> gentmp TUnit
+-}
 
 regs :: Array Int Id
 regs = listArray (0,length xs -1) xs where
@@ -95,46 +101,7 @@ fv_idOrImm :: Id_or_Imm -> [Id]
 fv_idOrImm (V x) = [x] 
 fv_idOrImm  _    = []
 
-fv_exp :: [Id] -> Expr -> [Id]
-fv_exp cont Nop               = cont
-fv_exp cont (Set _)           = cont
-fv_exp cont (SetL _)          = cont 
-fv_exp cont (Comment _)       = cont 
-fv_exp cont (Restore _)       = cont
-fv_exp cont (Mov x)           = x:cont
-fv_exp cont (Neg x)           = x:cont
-fv_exp cont (FMovD x)         = x:cont
-fv_exp cont (FNegD x)         = x:cont
-fv_exp cont (Save x _)        = x:cont
-fv_exp cont (Add x y')        = (x:fv_idOrImm y') ++ cont
-fv_exp cont (Sub x y')        = (x:fv_idOrImm y') ++ cont
-fv_exp cont (SLL x y')        = (x:fv_idOrImm y') ++ cont
-fv_exp cont (Ld x y')         = (x:fv_idOrImm y') ++ cont
-fv_exp cont (LdDF x y')       = (x:fv_idOrImm y') ++ cont
-fv_exp cont (St x y z')       = x:y: fv_idOrImm z' ++ cont
-fv_exp cont (StDF x y z')     = x:y: fv_idOrImm z' ++ cont
-fv_exp cont (FAddD x y)       = x:y:cont
-fv_exp cont (FSubD x y)       = x:y:cont
-fv_exp cont (FMulD x y)       = x:y:cont
-fv_exp cont (FDivD x y)       = x:y:cont
-fv_exp cont (IfEq x y' e1 e2) = x: fv_idOrImm y' ++ removeAndUniq S.empty (fv' cont e1 ++ fv' cont e2)
-fv_exp cont (IfLE x y' e1 e2) = x: fv_idOrImm y' ++ removeAndUniq S.empty (fv' cont e1 ++ fv' cont e2)
-fv_exp cont (IfGE x y' e1 e2) = x: fv_idOrImm y' ++ removeAndUniq S.empty (fv' cont e1 ++ fv' cont e2)
-fv_exp cont (IfFEq x y e1 e2) = x:y: removeAndUniq S.empty (fv' cont e1 ++ fv' cont e2)
-fv_exp cont (IfFLE x y e1 e2) = x:y: removeAndUniq S.empty (fv' cont e1 ++ fv' cont e2)
-fv_exp cont (CallCls x ys zs) = x:ys ++ zs ++ cont
-fv_exp cont (CallDir _ ys zs) = ys ++ zs ++ cont
 
-fv' :: [Id] -> SparcT -> [Id]
-fv' cont (Ans expr)           = fv_exp cont expr
-fv' cont (Let (x,_) expr e)   = 
-      let cont' = removeAndUniq (S.singleton x) (fv' cont e) in
-      fv_exp cont' expr
-fv' cont (Forget x e)         = removeAndUniq (S.singleton x) (fv' cont e)
-  
-  
-fv :: SparcT -> [Id]
-fv e = removeAndUniq S.empty (fv' [] e)   
 
 
 sparcConcat :: SparcT -> (Id, Type) -> SparcT -> SparcT
@@ -145,54 +112,3 @@ sparcConcat (Forget y e1')    xt e2 = Forget y (sparcConcat e1' xt e2)
 align :: Int -> Int  
 align i = if i `mod` 8 == 0 then i else i + 4
 
--- Expr --------------------------------------------------------
-data Expr  = Add (Id) (Id_or_Imm) 
-           | CallCls (Id) ([Id]) ([Id]) 
-           | CallDir (Label) ([Id]) ([Id]) 
-           | Comment (String) 
-           | FAddD (Id) (Id) 
-           | FDivD (Id) (Id) 
-           | FMovD (Id) 
-           | FMulD (Id) (Id) 
-           | FNegD (Id) 
-           | FSubD (Id) (Id) 
-           | IfEq (Id) (Id_or_Imm) (SparcT) (SparcT) 
-           | IfFEq (Id) (Id) (SparcT) (SparcT) 
-           | IfFLE (Id) (Id) (SparcT) (SparcT) 
-           | IfGE (Id) (Id_or_Imm) (SparcT) (SparcT) 
-           | IfLE (Id) (Id_or_Imm) (SparcT) (SparcT) 
-           | Ld (Id) (Id_or_Imm) 
-           | LdDF (Id) (Id_or_Imm) 
-           | Mov (Id) 
-           | Neg (Id) 
-           | Nop 
-           | Restore (Id) 
-           | SLL (Id) (Id_or_Imm) 
-           | Save (Id) (Id) 
-           | Set (Int) 
-           | SetL (Id) 
-           | St (Id) (Id) (Id_or_Imm) 
-           | StDF (Id) (Id) (Id_or_Imm) 
-           | Sub (Id) (Id_or_Imm) 
-           deriving ( Eq,Show)
--- FloatConst --------------------------------------------------
-type FloatConst  = ( Label,Float)
--- FloatConsts -------------------------------------------------
-type FloatConsts  = [FloatConst]
--- Fundef ------------------------------------------------------
-data Fundef  = Fundef (Label) ([Id]) ([Id]) (SparcT) (Type) 
-             deriving ( Eq,Show)
--- Fundefs -----------------------------------------------------
-type Fundefs  = [Fundef]
--- Id_or_Imm ---------------------------------------------------
-data Id_or_Imm  = C (Int) 
-                | V (Id) 
-                deriving ( Eq,Show)
--- Prog --------------------------------------------------------
-data Prog  = Prog (FloatConsts) (Fundefs) (SparcT) 
-           deriving ( Eq,Show)
--- SparcT ------------------------------------------------------
-data SparcT  = Ans (Expr) 
-             | Forget (Id) (SparcT) 
-             | Let (TypeId) (Expr) (SparcT) 
-             deriving ( Eq,Show)

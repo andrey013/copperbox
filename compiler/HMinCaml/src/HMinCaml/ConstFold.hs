@@ -17,9 +17,9 @@
 
 module HMinCaml.ConstFold where
 
-import HMinCaml.CompilerMonad
+
 import HMinCaml.Id
-import HMinCaml.KNormal
+import HMinCaml.KNormalSyn
 import qualified HMinCaml.M as M
 import HMinCaml.Type
 import HMinCaml.Utils
@@ -67,10 +67,12 @@ epLeq (Left  (a,b)) = a<=b
 epLeq (Right (a,b)) = a<=b
 
 
-
                 
-constFold :: Expr -> CM Expr
-constFold = undefined -- return . g M.empty
+constFold :: Expr -> Expr
+constFold expr = constFold_Syn_Expr synthesized
+  where
+    synthesized = wrap_Expr (sem_Expr expr) inherited
+    inherited = Inh_Expr { env_Inh_Expr = M.empty }
 
 -- Expr --------------------------------------------------------
 {-
@@ -82,8 +84,8 @@ constFold = undefined -- return . g M.empty
          copy                 : SELF 
    alternatives:
       alternative Add:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
          visit 0:
             local copy        : _
       alternative App:
@@ -101,27 +103,27 @@ constFold = undefined -- return . g M.empty
          visit 0:
             local copy        : _
       alternative FAdd:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
          visit 0:
             local copy        : _
       alternative FDiv:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
          visit 0:
             local copy        : _
       alternative FMul:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
          visit 0:
             local copy        : _
       alternative FNeg:
-         child ref            : {Id}
+         child x              : {Id}
          visit 0:
             local copy        : _
       alternative FSub:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
          visit 0:
             local copy        : _
       alternative Float:
@@ -134,8 +136,8 @@ constFold = undefined -- return . g M.empty
          visit 0:
             local copy        : _
       alternative IfEq:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
          child texpr          : Expr 
          child eexpr          : Expr 
          visit 0:
@@ -143,8 +145,8 @@ constFold = undefined -- return . g M.empty
             local eexpr'      : _
             local copy        : _
       alternative IfLE:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
          child texpr          : Expr 
          child eexpr          : Expr 
          visit 0:
@@ -175,7 +177,7 @@ constFold = undefined -- return . g M.empty
          visit 0:
             local copy        : _
       alternative Neg:
-         child ref            : {Id}
+         child x              : {Id}
          visit 0:
             local copy        : _
       alternative Put:
@@ -185,8 +187,8 @@ constFold = undefined -- return . g M.empty
          visit 0:
             local copy        : _
       alternative Sub:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
          visit 0:
             local copy        : _
       alternative Tuple:
@@ -204,32 +206,32 @@ constFold = undefined -- return . g M.empty
 -- cata
 sem_Expr :: Expr  ->
             T_Expr 
-sem_Expr (Add _ref1 _ref2 )  =
-    (sem_Expr_Add _ref1 _ref2 )
+sem_Expr (Add _x _y )  =
+    (sem_Expr_Add _x _y )
 sem_Expr (App _ref _args )  =
     (sem_Expr_App _ref _args )
 sem_Expr (ExtArray _ref )  =
     (sem_Expr_ExtArray _ref )
 sem_Expr (ExtFunApp _nref _args )  =
     (sem_Expr_ExtFunApp _nref _args )
-sem_Expr (FAdd _ref1 _ref2 )  =
-    (sem_Expr_FAdd _ref1 _ref2 )
-sem_Expr (FDiv _ref1 _ref2 )  =
-    (sem_Expr_FDiv _ref1 _ref2 )
-sem_Expr (FMul _ref1 _ref2 )  =
-    (sem_Expr_FMul _ref1 _ref2 )
-sem_Expr (FNeg _ref )  =
-    (sem_Expr_FNeg _ref )
-sem_Expr (FSub _ref1 _ref2 )  =
-    (sem_Expr_FSub _ref1 _ref2 )
+sem_Expr (FAdd _x _y )  =
+    (sem_Expr_FAdd _x _y )
+sem_Expr (FDiv _x _y )  =
+    (sem_Expr_FDiv _x _y )
+sem_Expr (FMul _x _y )  =
+    (sem_Expr_FMul _x _y )
+sem_Expr (FNeg _x )  =
+    (sem_Expr_FNeg _x )
+sem_Expr (FSub _x _y )  =
+    (sem_Expr_FSub _x _y )
 sem_Expr (Float _val )  =
     (sem_Expr_Float _val )
 sem_Expr (Get _aref _iref )  =
     (sem_Expr_Get _aref _iref )
-sem_Expr (IfEq _ref1 _ref2 _texpr _eexpr )  =
-    (sem_Expr_IfEq _ref1 _ref2 (sem_Expr _texpr ) (sem_Expr _eexpr ) )
-sem_Expr (IfLE _ref1 _ref2 _texpr _eexpr )  =
-    (sem_Expr_IfLE _ref1 _ref2 (sem_Expr _texpr ) (sem_Expr _eexpr ) )
+sem_Expr (IfEq _x _y _texpr _eexpr )  =
+    (sem_Expr_IfEq _x _y (sem_Expr _texpr ) (sem_Expr _eexpr ) )
+sem_Expr (IfLE _x _y _texpr _eexpr )  =
+    (sem_Expr_IfLE _x _y (sem_Expr _texpr ) (sem_Expr _eexpr ) )
 sem_Expr (Int _val )  =
     (sem_Expr_Int _val )
 sem_Expr (Let _tyid _sub _body )  =
@@ -238,12 +240,12 @@ sem_Expr (LetRec _fundef _body )  =
     (sem_Expr_LetRec (sem_Fundef _fundef ) (sem_Expr _body ) )
 sem_Expr (LetTuple _tyids _ref _body )  =
     (sem_Expr_LetTuple (sem_TypeIds _tyids ) _ref (sem_Expr _body ) )
-sem_Expr (Neg _ref )  =
-    (sem_Expr_Neg _ref )
+sem_Expr (Neg _x )  =
+    (sem_Expr_Neg _x )
 sem_Expr (Put _aref _iref _vref )  =
     (sem_Expr_Put _aref _iref _vref )
-sem_Expr (Sub _ref1 _ref2 )  =
-    (sem_Expr_Sub _ref1 _ref2 )
+sem_Expr (Sub _x _y )  =
+    (sem_Expr_Sub _x _y )
 sem_Expr (Tuple _refs )  =
     (sem_Expr_Tuple _refs )
 sem_Expr (Unit )  =
@@ -265,7 +267,7 @@ wrap_Expr sem (Inh_Expr _lhsIenv )  =
 sem_Expr_Add :: Id ->
                 Id ->
                 T_Expr 
-sem_Expr_Add ref1_ ref2_  =
+sem_Expr_Add x_ y_  =
     (\ _lhsIenv ->
          (let _lhsOconstFold :: Expr
               _lhsOcopy :: Expr
@@ -274,11 +276,11 @@ sem_Expr_Add ref1_ ref2_  =
               _lhsOconstFold =
                   maybe _copy
                         (Int . uncurry (+))
-                        (both (findInt ref1_ _lhsIenv)
-                              (findInt ref2_ _lhsIenv))
+                        (both (findInt x_ _lhsIenv)
+                              (findInt y_ _lhsIenv))
               -- self rule
               _copy =
-                  Add ref1_ ref2_
+                  Add x_ y_
               -- self rule
               _lhsOcopy =
                   _copy
@@ -351,7 +353,7 @@ sem_Expr_ExtFunApp nref_ args_  =
 sem_Expr_FAdd :: Id ->
                  Id ->
                  T_Expr 
-sem_Expr_FAdd ref1_ ref2_  =
+sem_Expr_FAdd x_ y_  =
     (\ _lhsIenv ->
          (let _lhsOconstFold :: Expr
               _lhsOcopy :: Expr
@@ -360,11 +362,11 @@ sem_Expr_FAdd ref1_ ref2_  =
               _lhsOconstFold =
                   maybe _copy
                         (Float . uncurry (+))
-                        (both (findFloat ref1_ _lhsIenv)
-                              (findFloat ref2_ _lhsIenv))
+                        (both (findFloat x_ _lhsIenv)
+                              (findFloat y_ _lhsIenv))
               -- self rule
               _copy =
-                  FAdd ref1_ ref2_
+                  FAdd x_ y_
               -- self rule
               _lhsOcopy =
                   _copy
@@ -375,7 +377,7 @@ sem_Expr_FAdd ref1_ ref2_  =
 sem_Expr_FDiv :: Id ->
                  Id ->
                  T_Expr 
-sem_Expr_FDiv ref1_ ref2_  =
+sem_Expr_FDiv x_ y_  =
     (\ _lhsIenv ->
          (let _lhsOconstFold :: Expr
               _lhsOcopy :: Expr
@@ -384,11 +386,11 @@ sem_Expr_FDiv ref1_ ref2_  =
               _lhsOconstFold =
                   maybe _copy
                         (Float . uncurry (/))
-                        (both (findFloat ref1_ _lhsIenv)
-                              (findFloat ref2_ _lhsIenv))
+                        (both (findFloat x_ _lhsIenv)
+                              (findFloat y_ _lhsIenv))
               -- self rule
               _copy =
-                  FDiv ref1_ ref2_
+                  FDiv x_ y_
               -- self rule
               _lhsOcopy =
                   _copy
@@ -399,7 +401,7 @@ sem_Expr_FDiv ref1_ ref2_  =
 sem_Expr_FMul :: Id ->
                  Id ->
                  T_Expr 
-sem_Expr_FMul ref1_ ref2_  =
+sem_Expr_FMul x_ y_  =
     (\ _lhsIenv ->
          (let _lhsOconstFold :: Expr
               _lhsOcopy :: Expr
@@ -408,11 +410,11 @@ sem_Expr_FMul ref1_ ref2_  =
               _lhsOconstFold =
                   maybe _copy
                         (Float . uncurry (*))
-                        (both (findFloat ref1_ _lhsIenv)
-                              (findFloat ref2_ _lhsIenv))
+                        (both (findFloat x_ _lhsIenv)
+                              (findFloat y_ _lhsIenv))
               -- self rule
               _copy =
-                  FMul ref1_ ref2_
+                  FMul x_ y_
               -- self rule
               _lhsOcopy =
                   _copy
@@ -422,17 +424,17 @@ sem_Expr_FMul ref1_ ref2_  =
           in  ( _lhsOconstFold,_lhsOcopy,_lhsOenv)))
 sem_Expr_FNeg :: Id ->
                  T_Expr 
-sem_Expr_FNeg ref_  =
+sem_Expr_FNeg x_  =
     (\ _lhsIenv ->
          (let _lhsOconstFold :: Expr
               _lhsOcopy :: Expr
               _lhsOenv :: Env
               -- "ConstFold.ag"(line 79, column 11)
               _lhsOconstFold =
-                  maybe _copy (Float . negate) (findFloat ref_ _lhsIenv)
+                  maybe _copy (Float . negate) (findFloat x_ _lhsIenv)
               -- self rule
               _copy =
-                  FNeg ref_
+                  FNeg x_
               -- self rule
               _lhsOcopy =
                   _copy
@@ -443,7 +445,7 @@ sem_Expr_FNeg ref_  =
 sem_Expr_FSub :: Id ->
                  Id ->
                  T_Expr 
-sem_Expr_FSub ref1_ ref2_  =
+sem_Expr_FSub x_ y_  =
     (\ _lhsIenv ->
          (let _lhsOconstFold :: Expr
               _lhsOcopy :: Expr
@@ -452,11 +454,11 @@ sem_Expr_FSub ref1_ ref2_  =
               _lhsOconstFold =
                   maybe _copy
                         (Float . uncurry (-))
-                        (both (findFloat ref1_ _lhsIenv)
-                              (findFloat ref2_ _lhsIenv))
+                        (both (findFloat x_ _lhsIenv)
+                              (findFloat y_ _lhsIenv))
               -- self rule
               _copy =
-                  FSub ref1_ ref2_
+                  FSub x_ y_
               -- self rule
               _lhsOcopy =
                   _copy
@@ -510,7 +512,7 @@ sem_Expr_IfEq :: Id ->
                  T_Expr  ->
                  T_Expr  ->
                  T_Expr 
-sem_Expr_IfEq ref1_ ref2_ texpr_ eexpr_  =
+sem_Expr_IfEq x_ y_ texpr_ eexpr_  =
     (\ _lhsIenv ->
          (let _lhsOconstFold :: Expr
               _lhsOcopy :: Expr
@@ -531,16 +533,16 @@ sem_Expr_IfEq ref1_ ref2_ texpr_ eexpr_  =
                   _eexprIconstFold
               -- "ConstFold.ag"(line 99, column 11)
               _lhsOconstFold =
-                  maybe (IfEq ref1_ ref2_ _texpr'     _eexpr'    )
+                  maybe (IfEq x_ y_ _texpr'     _eexpr'    )
                         (\a -> if epeq a then _texpr'
                                          else _eexpr'    )
-                        (alt (both (findInt   ref1_ _lhsIenv)
-                                   (findInt   ref2_ _lhsIenv))
-                             (both (findFloat ref1_ _lhsIenv)
-                                   (findFloat ref2_ _lhsIenv)))
+                        (alt (both (findInt   x_ _lhsIenv)
+                                   (findInt   y_ _lhsIenv))
+                             (both (findFloat x_ _lhsIenv)
+                                   (findFloat y_ _lhsIenv)))
               -- self rule
               _copy =
-                  IfEq ref1_ ref2_ _texprIcopy _eexprIcopy
+                  IfEq x_ y_ _texprIcopy _eexprIcopy
               -- self rule
               _lhsOcopy =
                   _copy
@@ -563,7 +565,7 @@ sem_Expr_IfLE :: Id ->
                  T_Expr  ->
                  T_Expr  ->
                  T_Expr 
-sem_Expr_IfLE ref1_ ref2_ texpr_ eexpr_  =
+sem_Expr_IfLE x_ y_ texpr_ eexpr_  =
     (\ _lhsIenv ->
          (let _lhsOconstFold :: Expr
               _lhsOcopy :: Expr
@@ -584,16 +586,16 @@ sem_Expr_IfLE ref1_ ref2_ texpr_ eexpr_  =
                   _eexprIconstFold
               -- "ConstFold.ag"(line 109, column 11)
               _lhsOconstFold =
-                  maybe (IfLE ref1_ ref2_ _texpr'     _eexpr'    )
+                  maybe (IfLE x_ y_ _texpr'     _eexpr'    )
                         (\a -> if epLeq a then _texpr'
                                           else _eexpr'    )
-                        (alt (both (findInt   ref1_ _lhsIenv)
-                                   (findInt   ref2_ _lhsIenv))
-                             (both (findFloat ref1_ _lhsIenv)
-                                   (findFloat ref2_ _lhsIenv)))
+                        (alt (both (findInt   x_ _lhsIenv)
+                                   (findInt   y_ _lhsIenv))
+                             (both (findFloat x_ _lhsIenv)
+                                   (findFloat y_ _lhsIenv)))
               -- self rule
               _copy =
-                  IfLE ref1_ ref2_ _texprIcopy _eexprIcopy
+                  IfLE x_ y_ _texprIcopy _eexprIcopy
               -- self rule
               _lhsOcopy =
                   _copy
@@ -736,6 +738,7 @@ sem_Expr_LetTuple tyids_ ref_ body_  =
               _lhsOenv :: Env
               _tyidsOenv :: Env
               _bodyOenv :: Env
+              _tyidsIargId :: ([Id])
               _tyidsIconstFoldF :: ([(Id -> Expr -> Expr)])
               _tyidsIcopy :: TypeIds
               _bodyIconstFold :: Expr
@@ -764,24 +767,24 @@ sem_Expr_LetTuple tyids_ ref_ body_  =
               -- copy rule (down)
               _bodyOenv =
                   _lhsIenv
-              ( _tyidsIconstFoldF,_tyidsIcopy) =
+              ( _tyidsIargId,_tyidsIconstFoldF,_tyidsIcopy) =
                   (tyids_ _tyidsOenv )
               ( _bodyIconstFold,_bodyIcopy,_bodyIenv) =
                   (body_ _bodyOenv )
           in  ( _lhsOconstFold,_lhsOcopy,_lhsOenv)))
 sem_Expr_Neg :: Id ->
                 T_Expr 
-sem_Expr_Neg ref_  =
+sem_Expr_Neg x_  =
     (\ _lhsIenv ->
          (let _lhsOconstFold :: Expr
               _lhsOcopy :: Expr
               _lhsOenv :: Env
               -- "ConstFold.ag"(line 70, column 11)
               _lhsOconstFold =
-                  maybe _copy (Int . negate) (findInt ref_ _lhsIenv)
+                  maybe _copy (Int . negate) (findInt x_ _lhsIenv)
               -- self rule
               _copy =
-                  Neg ref_
+                  Neg x_
               -- self rule
               _lhsOcopy =
                   _copy
@@ -814,7 +817,7 @@ sem_Expr_Put aref_ iref_ vref_  =
 sem_Expr_Sub :: Id ->
                 Id ->
                 T_Expr 
-sem_Expr_Sub ref1_ ref2_  =
+sem_Expr_Sub x_ y_  =
     (\ _lhsIenv ->
          (let _lhsOconstFold :: Expr
               _lhsOcopy :: Expr
@@ -823,11 +826,11 @@ sem_Expr_Sub ref1_ ref2_  =
               _lhsOconstFold =
                   maybe _copy
                         (Int . uncurry (-))
-                        (both (findInt ref1_ _lhsIenv)
-                              (findInt ref2_ _lhsIenv))
+                        (both (findInt x_ _lhsIenv)
+                              (findInt y_ _lhsIenv))
               -- self rule
               _copy =
-                  Sub ref1_ ref2_
+                  Sub x_ y_
               -- self rule
               _lhsOcopy =
                   _copy
@@ -942,6 +945,7 @@ sem_Fundef_Fundef name_ args_ body_  =
               _nameIargId :: Id
               _nameIconstFoldF :: ((Id -> Expr -> Expr))
               _nameIcopy :: TypeId
+              _argsIargId :: ([Id])
               _argsIconstFoldF :: ([(Id -> Expr -> Expr)])
               _argsIcopy :: TypeIds
               _bodyIconstFold :: Expr
@@ -970,11 +974,42 @@ sem_Fundef_Fundef name_ args_ body_  =
                   _lhsIenv
               ( _nameIargId,_nameIconstFoldF,_nameIcopy) =
                   (name_ _nameOenv )
-              ( _argsIconstFoldF,_argsIcopy) =
+              ( _argsIargId,_argsIconstFoldF,_argsIcopy) =
                   (args_ _argsOenv )
               ( _bodyIconstFold,_bodyIcopy,_bodyIenv) =
                   (body_ _bodyOenv )
           in  ( _lhsOconstFold,_lhsOcopy,_lhsOenv)))
+-- LabeledType -------------------------------------------------
+{-
+   alternatives:
+      alternative Tuple:
+         child argId          : {Label}
+         child argType        : Type 
+-}
+-- cata
+sem_LabeledType :: LabeledType  ->
+                   T_LabeledType 
+sem_LabeledType ( argId,argType)  =
+    (sem_LabeledType_Tuple argId (sem_Type argType ) )
+-- semantic domain
+type T_LabeledType  = ( )
+data Inh_LabeledType  = Inh_LabeledType {}
+data Syn_LabeledType  = Syn_LabeledType {}
+wrap_LabeledType :: T_LabeledType  ->
+                    Inh_LabeledType  ->
+                    Syn_LabeledType 
+wrap_LabeledType sem (Inh_LabeledType )  =
+    (let ( ) =
+             (sem )
+     in  (Syn_LabeledType ))
+sem_LabeledType_Tuple :: Label ->
+                         T_Type  ->
+                         T_LabeledType 
+sem_LabeledType_Tuple argId_ argType_  =
+    (let _argTypeIcopy :: Type
+         ( _argTypeIcopy) =
+             (argType_ )
+     in  ( ))
 -- OptType -----------------------------------------------------
 {-
    visit 0:
@@ -1242,7 +1277,7 @@ sem_TypeId_Tuple argId_ argType_  =
               -- "ConstFold.ag"(line 143, column 13)
               _lhsOconstFoldF =
                   (\x e -> Let _copy (Var x) e)
-              -- "./TypeDEFS.ag"(line 29, column 15)
+              -- "./TypeDEFS.ag"(line 32, column 15)
               _lhsOargId =
                   argId_
               -- self rule
@@ -1260,6 +1295,7 @@ sem_TypeId_Tuple argId_ argType_  =
       inherited attribute:
          env                  : Env
       synthesized attributes:
+         argId                : [Id]
          constFoldF           : [(Id -> Expr -> Expr)]
          copy                 : SELF 
    alternatives:
@@ -1279,30 +1315,35 @@ sem_TypeIds list  =
     (Prelude.foldr sem_TypeIds_Cons sem_TypeIds_Nil (Prelude.map sem_TypeId list) )
 -- semantic domain
 type T_TypeIds  = Env ->
-                  ( ([(Id -> Expr -> Expr)]),TypeIds)
+                  ( ([Id]),([(Id -> Expr -> Expr)]),TypeIds)
 data Inh_TypeIds  = Inh_TypeIds {env_Inh_TypeIds :: Env}
-data Syn_TypeIds  = Syn_TypeIds {constFoldF_Syn_TypeIds :: [(Id -> Expr -> Expr)],copy_Syn_TypeIds :: TypeIds}
+data Syn_TypeIds  = Syn_TypeIds {argId_Syn_TypeIds :: [Id],constFoldF_Syn_TypeIds :: [(Id -> Expr -> Expr)],copy_Syn_TypeIds :: TypeIds}
 wrap_TypeIds :: T_TypeIds  ->
                 Inh_TypeIds  ->
                 Syn_TypeIds 
 wrap_TypeIds sem (Inh_TypeIds _lhsIenv )  =
-    (let ( _lhsOconstFoldF,_lhsOcopy) =
+    (let ( _lhsOargId,_lhsOconstFoldF,_lhsOcopy) =
              (sem _lhsIenv )
-     in  (Syn_TypeIds _lhsOconstFoldF _lhsOcopy ))
+     in  (Syn_TypeIds _lhsOargId _lhsOconstFoldF _lhsOcopy ))
 sem_TypeIds_Cons :: T_TypeId  ->
                     T_TypeIds  ->
                     T_TypeIds 
 sem_TypeIds_Cons hd_ tl_  =
     (\ _lhsIenv ->
-         (let _lhsOconstFoldF :: ([(Id -> Expr -> Expr)])
+         (let _lhsOargId :: ([Id])
+              _lhsOconstFoldF :: ([(Id -> Expr -> Expr)])
               _lhsOcopy :: TypeIds
               _hdOenv :: Env
               _tlOenv :: Env
               _hdIargId :: Id
               _hdIconstFoldF :: ((Id -> Expr -> Expr))
               _hdIcopy :: TypeId
+              _tlIargId :: ([Id])
               _tlIconstFoldF :: ([(Id -> Expr -> Expr)])
               _tlIcopy :: TypeIds
+              -- use rule "./TypeDEFS.ag"(line 28, column 32)
+              _lhsOargId =
+                  _hdIargId : _tlIargId
               -- use rule "ConstFold.ag"(line 138, column 31)
               _lhsOconstFoldF =
                   _hdIconstFoldF : _tlIconstFoldF
@@ -1320,14 +1361,18 @@ sem_TypeIds_Cons hd_ tl_  =
                   _lhsIenv
               ( _hdIargId,_hdIconstFoldF,_hdIcopy) =
                   (hd_ _hdOenv )
-              ( _tlIconstFoldF,_tlIcopy) =
+              ( _tlIargId,_tlIconstFoldF,_tlIcopy) =
                   (tl_ _tlOenv )
-          in  ( _lhsOconstFoldF,_lhsOcopy)))
+          in  ( _lhsOargId,_lhsOconstFoldF,_lhsOcopy)))
 sem_TypeIds_Nil :: T_TypeIds 
 sem_TypeIds_Nil  =
     (\ _lhsIenv ->
-         (let _lhsOconstFoldF :: ([(Id -> Expr -> Expr)])
+         (let _lhsOargId :: ([Id])
+              _lhsOconstFoldF :: ([(Id -> Expr -> Expr)])
               _lhsOcopy :: TypeIds
+              -- use rule "./TypeDEFS.ag"(line 28, column 32)
+              _lhsOargId =
+                  []
               -- use rule "ConstFold.ag"(line 138, column 31)
               _lhsOconstFoldF =
                   []
@@ -1337,7 +1382,7 @@ sem_TypeIds_Nil  =
               -- self rule
               _lhsOcopy =
                   _copy
-          in  ( _lhsOconstFoldF,_lhsOcopy)))
+          in  ( _lhsOargId,_lhsOconstFoldF,_lhsOcopy)))
 -- Types -------------------------------------------------------
 {-
    visit 0:

@@ -98,5 +98,7 @@ TYPE Fundefs      = [Fundef]
 TYPE FloatConsts  = [FloatConst]  
 TYPE FloatConst   = (label : {Label}, value : {Float})
    
+ATTR SparcT Expr Id_or_Imm Fundef Fundefs FloatConsts FloatConst 
+    [ | | copy : SELF ]
 
 

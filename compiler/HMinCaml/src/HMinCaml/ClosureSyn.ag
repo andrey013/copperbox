@@ -1,0 +1,26 @@
+{
+-- |
+-- Module: HMinCaml.ClosureSyn
+-- License: as per original MinCaml
+--
+-- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability: unstable
+-- Portability: ghc
+--
+-- Abstract syntax for closure conversion
+--
+}
+
+{
+module HMinCaml.ClosureSyn where
+
+import HMinCaml.Id
+import HMinCaml.Type
+
+}
+
+INCLUDE "ClosureSynDEFS.ag"
+
+DERIVING *  : Eq, Show
+
+      

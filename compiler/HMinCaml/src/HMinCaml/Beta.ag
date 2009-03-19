@@ -15,7 +15,7 @@
 module HMinCaml.Beta where
 
 import HMinCaml.Id
-import HMinCaml.KNormal ( Expr(..), Fundef(..) )
+import HMinCaml.KNormalSyn ( Expr(..), Fundef(..) )
 import qualified HMinCaml.M as M
 import HMinCaml.Type
 import HMinCaml.Utils ( (&?), (&+) )
@@ -40,20 +40,20 @@ SEM Expr
   | Unit        lhs.beta      = Unit
   | Int         lhs.beta      = Int @val
   | Float       lhs.beta      = Float @val
-  | Neg         lhs.beta      = Neg (@ref &? @lhs.env)
-  | Add         lhs.beta      = Add (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
-  | Sub         lhs.beta      = Sub (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
-  | FNeg        lhs.beta      = FNeg (@ref  &? @lhs.env)
-  | FAdd        lhs.beta      = FAdd (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
-  | FSub        lhs.beta      = FSub (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
-  | FMul        lhs.beta      = FMul (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
-  | FDiv        lhs.beta      = FDiv (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
-  | IfEq        lhs.beta      = IfEq (@ref1 &? @lhs.env)
-                                     (@ref2 &? @lhs.env)
+  | Neg         lhs.beta      = Neg  (@x &? @lhs.env)
+  | Add         lhs.beta      = Add  (@x &? @lhs.env) (@y &? @lhs.env)
+  | Sub         lhs.beta      = Sub  (@x &? @lhs.env) (@y &? @lhs.env)
+  | FNeg        lhs.beta      = FNeg (@x &? @lhs.env)
+  | FAdd        lhs.beta      = FAdd (@x &? @lhs.env) (@y &? @lhs.env)
+  | FSub        lhs.beta      = FSub (@x &? @lhs.env) (@y &? @lhs.env)
+  | FMul        lhs.beta      = FMul (@x &? @lhs.env) (@y &? @lhs.env)
+  | FDiv        lhs.beta      = FDiv (@x &? @lhs.env) (@y &? @lhs.env)
+  | IfEq        lhs.beta      = IfEq (@x &? @lhs.env)
+                                     (@y &? @lhs.env)
                                      @texpr.beta          
                                      @eexpr.beta
-  | IfLE        lhs.beta      = IfLE (@ref1 &? @lhs.env) 
-                                     (@ref2 &? @lhs.env)
+  | IfLE        lhs.beta      = IfLE (@x &? @lhs.env) 
+                                     (@y &? @lhs.env)
                                      @texpr.beta          
                                      @eexpr.beta                                     
   | Let         loc.subbeta   = @body.beta

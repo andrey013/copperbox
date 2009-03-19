@@ -19,6 +19,8 @@ module HMinCaml.Type where
 
 import HMinCaml.Id
 
+-- LabeledType -------------------------------------------------
+type LabeledType  = ( Label,Type)
 -- OptType -----------------------------------------------------
 type OptType  = (Maybe (Type))
 -- Type --------------------------------------------------------

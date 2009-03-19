@@ -1,0 +1,25 @@
+{
+-- |
+-- Module: HMinCaml.KNormalSyn
+-- License: as per original MinCaml
+--
+-- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability: unstable
+-- Portability: ghc
+--
+-- K Normal form datatypes
+--
+}
+
+{
+module HMinCaml.KNormalSyn where
+
+import HMinCaml.Id
+import HMinCaml.Type
+
+}
+
+INCLUDE "KNormalDEFS.ag"
+
+DERIVING *  : Eq, Show
+

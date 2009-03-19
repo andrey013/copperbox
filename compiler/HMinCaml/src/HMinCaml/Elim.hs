@@ -15,7 +15,9 @@ module HMinCaml.Elim where
 
 import HMinCaml.CompilerMonad
 import HMinCaml.KNormal
+import HMinCaml.KNormalSyn
 import qualified HMinCaml.S as S
+import HMinCaml.ToKNormal
 
 import Data.List ( find )
 

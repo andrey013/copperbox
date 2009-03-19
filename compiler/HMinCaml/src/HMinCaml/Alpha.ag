@@ -18,7 +18,7 @@ module HMinCaml.Alpha where
 
 import HMinCaml.Id
 import qualified HMinCaml.M as M
-import HMinCaml.KNormal ( Expr(..), Fundef(..) )
+import HMinCaml.KNormalSyn ( Expr(..), Fundef(..) )
 import HMinCaml.Type
 import HMinCaml.Utils ( (&?), (&+) )
 
@@ -48,20 +48,20 @@ SEM Expr
   | Unit        lhs.alpha     = Unit
   | Int         lhs.alpha     = Int @val
   | Float       lhs.alpha     = Float @val
-  | Neg         lhs.alpha     = Neg  (@ref  &? @lhs.env)
-  | Add         lhs.alpha     = Add  (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
-  | Sub         lhs.alpha     = Sub  (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
-  | FNeg        lhs.alpha     = FNeg (@ref  &? @lhs.env)
-  | FAdd        lhs.alpha     = FAdd (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
-  | FSub        lhs.alpha     = FSub (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
-  | FMul        lhs.alpha     = FMul (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
-  | FDiv        lhs.alpha     = FDiv (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
-  | IfEq        lhs.alpha     = IfEq (@ref1 &? @lhs.env)
-                                     (@ref2 &? @lhs.env)
+  | Neg         lhs.alpha     = Neg  (@x &? @lhs.env)
+  | Add         lhs.alpha     = Add  (@x &? @lhs.env) (@y &? @lhs.env)
+  | Sub         lhs.alpha     = Sub  (@x &? @lhs.env) (@y &? @lhs.env)
+  | FNeg        lhs.alpha     = FNeg (@x &? @lhs.env)
+  | FAdd        lhs.alpha     = FAdd (@x &? @lhs.env) (@y &? @lhs.env)
+  | FSub        lhs.alpha     = FSub (@x &? @lhs.env) (@y &? @lhs.env)
+  | FMul        lhs.alpha     = FMul (@x &? @lhs.env) (@y &? @lhs.env)
+  | FDiv        lhs.alpha     = FDiv (@x &? @lhs.env) (@y &? @lhs.env)
+  | IfEq        lhs.alpha     = IfEq (@x &? @lhs.env)
+                                     (@y &? @lhs.env)
                                      @texpr.alpha          
                                      @eexpr.alpha
-  | IfLE        lhs.alpha     = IfLE (@ref1 &? @lhs.env) 
-                                     (@ref2 &? @lhs.env)
+  | IfLE        lhs.alpha     = IfLE (@x &? @lhs.env) 
+                                     (@y &? @lhs.env)
                                      @texpr.alpha          
                                      @eexpr.alpha
   | Let         loc.newlab    = @tyid.relabel

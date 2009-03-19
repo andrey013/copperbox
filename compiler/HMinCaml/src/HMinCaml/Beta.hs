@@ -18,7 +18,7 @@
 module HMinCaml.Beta where
 
 import HMinCaml.Id
-import HMinCaml.KNormal ( Expr(..), Fundef(..) )
+import HMinCaml.KNormalSyn ( Expr(..), Fundef(..) )
 import qualified HMinCaml.M as M
 import HMinCaml.Type
 import HMinCaml.Utils ( (&?), (&+) )
@@ -48,8 +48,8 @@ beta expr = beta_Syn_Expr synthesized
          beta                 : Expr
    alternatives:
       alternative Add:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
       alternative App:
          child ref            : {Id}
          child args           : {[Id]}
@@ -59,32 +59,32 @@ beta expr = beta_Syn_Expr synthesized
          child nref           : {Id}
          child args           : {[Id]}
       alternative FAdd:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
       alternative FDiv:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
       alternative FMul:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
       alternative FNeg:
-         child ref            : {Id}
+         child x              : {Id}
       alternative FSub:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
       alternative Float:
          child val            : {Float}
       alternative Get:
          child aref           : {Id}
          child iref           : {Id}
       alternative IfEq:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
          child texpr          : Expr 
          child eexpr          : Expr 
       alternative IfLE:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
          child texpr          : Expr 
          child eexpr          : Expr 
       alternative Int:
@@ -103,14 +103,14 @@ beta expr = beta_Syn_Expr synthesized
          child ref            : {Id}
          child body           : Expr 
       alternative Neg:
-         child ref            : {Id}
+         child x              : {Id}
       alternative Put:
          child aref           : {Id}
          child iref           : {Id}
          child vref           : {Id}
       alternative Sub:
-         child ref1           : {Id}
-         child ref2           : {Id}
+         child x              : {Id}
+         child y              : {Id}
       alternative Tuple:
          child refs           : {[Id]}
       alternative Unit:
@@ -120,32 +120,32 @@ beta expr = beta_Syn_Expr synthesized
 -- cata
 sem_Expr :: Expr  ->
             T_Expr 
-sem_Expr (Add _ref1 _ref2 )  =
-    (sem_Expr_Add _ref1 _ref2 )
+sem_Expr (Add _x _y )  =
+    (sem_Expr_Add _x _y )
 sem_Expr (App _ref _args )  =
     (sem_Expr_App _ref _args )
 sem_Expr (ExtArray _ref )  =
     (sem_Expr_ExtArray _ref )
 sem_Expr (ExtFunApp _nref _args )  =
     (sem_Expr_ExtFunApp _nref _args )
-sem_Expr (FAdd _ref1 _ref2 )  =
-    (sem_Expr_FAdd _ref1 _ref2 )
-sem_Expr (FDiv _ref1 _ref2 )  =
-    (sem_Expr_FDiv _ref1 _ref2 )
-sem_Expr (FMul _ref1 _ref2 )  =
-    (sem_Expr_FMul _ref1 _ref2 )
-sem_Expr (FNeg _ref )  =
-    (sem_Expr_FNeg _ref )
-sem_Expr (FSub _ref1 _ref2 )  =
-    (sem_Expr_FSub _ref1 _ref2 )
+sem_Expr (FAdd _x _y )  =
+    (sem_Expr_FAdd _x _y )
+sem_Expr (FDiv _x _y )  =
+    (sem_Expr_FDiv _x _y )
+sem_Expr (FMul _x _y )  =
+    (sem_Expr_FMul _x _y )
+sem_Expr (FNeg _x )  =
+    (sem_Expr_FNeg _x )
+sem_Expr (FSub _x _y )  =
+    (sem_Expr_FSub _x _y )
 sem_Expr (Float _val )  =
     (sem_Expr_Float _val )
 sem_Expr (Get _aref _iref )  =
     (sem_Expr_Get _aref _iref )
-sem_Expr (IfEq _ref1 _ref2 _texpr _eexpr )  =
-    (sem_Expr_IfEq _ref1 _ref2 (sem_Expr _texpr ) (sem_Expr _eexpr ) )
-sem_Expr (IfLE _ref1 _ref2 _texpr _eexpr )  =
-    (sem_Expr_IfLE _ref1 _ref2 (sem_Expr _texpr ) (sem_Expr _eexpr ) )
+sem_Expr (IfEq _x _y _texpr _eexpr )  =
+    (sem_Expr_IfEq _x _y (sem_Expr _texpr ) (sem_Expr _eexpr ) )
+sem_Expr (IfLE _x _y _texpr _eexpr )  =
+    (sem_Expr_IfLE _x _y (sem_Expr _texpr ) (sem_Expr _eexpr ) )
 sem_Expr (Int _val )  =
     (sem_Expr_Int _val )
 sem_Expr (Let _tyid _sub _body )  =
@@ -154,12 +154,12 @@ sem_Expr (LetRec _fundef _body )  =
     (sem_Expr_LetRec (sem_Fundef _fundef ) (sem_Expr _body ) )
 sem_Expr (LetTuple _tyids _ref _body )  =
     (sem_Expr_LetTuple (sem_TypeIds _tyids ) _ref (sem_Expr _body ) )
-sem_Expr (Neg _ref )  =
-    (sem_Expr_Neg _ref )
+sem_Expr (Neg _x )  =
+    (sem_Expr_Neg _x )
 sem_Expr (Put _aref _iref _vref )  =
     (sem_Expr_Put _aref _iref _vref )
-sem_Expr (Sub _ref1 _ref2 )  =
-    (sem_Expr_Sub _ref1 _ref2 )
+sem_Expr (Sub _x _y )  =
+    (sem_Expr_Sub _x _y )
 sem_Expr (Tuple _refs )  =
     (sem_Expr_Tuple _refs )
 sem_Expr (Unit )  =
@@ -181,13 +181,13 @@ wrap_Expr sem (Inh_Expr _lhsIenv )  =
 sem_Expr_Add :: Id ->
                 Id ->
                 T_Expr 
-sem_Expr_Add ref1_ ref2_  =
+sem_Expr_Add x_ y_  =
     (\ _lhsIenv ->
          (let _lhsObeta :: Expr
               _lhsOenv :: Env
               -- "Beta.ag"(line 44, column 17)
               _lhsObeta =
-                  Add (ref1_ &? _lhsIenv) (ref2_ &? _lhsIenv)
+                  Add  (x_ &? _lhsIenv) (y_ &? _lhsIenv)
               -- copy rule (chain)
               _lhsOenv =
                   _lhsIenv
@@ -237,13 +237,13 @@ sem_Expr_ExtFunApp nref_ args_  =
 sem_Expr_FAdd :: Id ->
                  Id ->
                  T_Expr 
-sem_Expr_FAdd ref1_ ref2_  =
+sem_Expr_FAdd x_ y_  =
     (\ _lhsIenv ->
          (let _lhsObeta :: Expr
               _lhsOenv :: Env
               -- "Beta.ag"(line 47, column 17)
               _lhsObeta =
-                  FAdd (ref1_ &? _lhsIenv) (ref2_ &? _lhsIenv)
+                  FAdd (x_ &? _lhsIenv) (y_ &? _lhsIenv)
               -- copy rule (chain)
               _lhsOenv =
                   _lhsIenv
@@ -251,13 +251,13 @@ sem_Expr_FAdd ref1_ ref2_  =
 sem_Expr_FDiv :: Id ->
                  Id ->
                  T_Expr 
-sem_Expr_FDiv ref1_ ref2_  =
+sem_Expr_FDiv x_ y_  =
     (\ _lhsIenv ->
          (let _lhsObeta :: Expr
               _lhsOenv :: Env
               -- "Beta.ag"(line 50, column 17)
               _lhsObeta =
-                  FDiv (ref1_ &? _lhsIenv) (ref2_ &? _lhsIenv)
+                  FDiv (x_ &? _lhsIenv) (y_ &? _lhsIenv)
               -- copy rule (chain)
               _lhsOenv =
                   _lhsIenv
@@ -265,26 +265,26 @@ sem_Expr_FDiv ref1_ ref2_  =
 sem_Expr_FMul :: Id ->
                  Id ->
                  T_Expr 
-sem_Expr_FMul ref1_ ref2_  =
+sem_Expr_FMul x_ y_  =
     (\ _lhsIenv ->
          (let _lhsObeta :: Expr
               _lhsOenv :: Env
               -- "Beta.ag"(line 49, column 17)
               _lhsObeta =
-                  FMul (ref1_ &? _lhsIenv) (ref2_ &? _lhsIenv)
+                  FMul (x_ &? _lhsIenv) (y_ &? _lhsIenv)
               -- copy rule (chain)
               _lhsOenv =
                   _lhsIenv
           in  ( _lhsObeta,_lhsOenv)))
 sem_Expr_FNeg :: Id ->
                  T_Expr 
-sem_Expr_FNeg ref_  =
+sem_Expr_FNeg x_  =
     (\ _lhsIenv ->
          (let _lhsObeta :: Expr
               _lhsOenv :: Env
               -- "Beta.ag"(line 46, column 17)
               _lhsObeta =
-                  FNeg (ref_  &? _lhsIenv)
+                  FNeg (x_ &? _lhsIenv)
               -- copy rule (chain)
               _lhsOenv =
                   _lhsIenv
@@ -292,13 +292,13 @@ sem_Expr_FNeg ref_  =
 sem_Expr_FSub :: Id ->
                  Id ->
                  T_Expr 
-sem_Expr_FSub ref1_ ref2_  =
+sem_Expr_FSub x_ y_  =
     (\ _lhsIenv ->
          (let _lhsObeta :: Expr
               _lhsOenv :: Env
               -- "Beta.ag"(line 48, column 17)
               _lhsObeta =
-                  FSub (ref1_ &? _lhsIenv) (ref2_ &? _lhsIenv)
+                  FSub (x_ &? _lhsIenv) (y_ &? _lhsIenv)
               -- copy rule (chain)
               _lhsOenv =
                   _lhsIenv
@@ -335,7 +335,7 @@ sem_Expr_IfEq :: Id ->
                  T_Expr  ->
                  T_Expr  ->
                  T_Expr 
-sem_Expr_IfEq ref1_ ref2_ texpr_ eexpr_  =
+sem_Expr_IfEq x_ y_ texpr_ eexpr_  =
     (\ _lhsIenv ->
          (let _lhsObeta :: Expr
               _lhsOenv :: Env
@@ -347,8 +347,8 @@ sem_Expr_IfEq ref1_ ref2_ texpr_ eexpr_  =
               _eexprIenv :: Env
               -- "Beta.ag"(line 51, column 17)
               _lhsObeta =
-                  IfEq (ref1_ &? _lhsIenv)
-                       (ref2_ &? _lhsIenv)
+                  IfEq (x_ &? _lhsIenv)
+                       (y_ &? _lhsIenv)
                        _texprIbeta
                        _eexprIbeta
               -- copy rule (up)
@@ -370,7 +370,7 @@ sem_Expr_IfLE :: Id ->
                  T_Expr  ->
                  T_Expr  ->
                  T_Expr 
-sem_Expr_IfLE ref1_ ref2_ texpr_ eexpr_  =
+sem_Expr_IfLE x_ y_ texpr_ eexpr_  =
     (\ _lhsIenv ->
          (let _lhsObeta :: Expr
               _lhsOenv :: Env
@@ -382,8 +382,8 @@ sem_Expr_IfLE ref1_ ref2_ texpr_ eexpr_  =
               _eexprIenv :: Env
               -- "Beta.ag"(line 55, column 17)
               _lhsObeta =
-                  IfLE (ref1_ &? _lhsIenv)
-                       (ref2_ &? _lhsIenv)
+                  IfLE (x_ &? _lhsIenv)
+                       (y_ &? _lhsIenv)
                        _texprIbeta
                        _eexprIbeta
               -- copy rule (up)
@@ -494,6 +494,7 @@ sem_Expr_LetTuple tyids_ ref_ body_  =
          (let _lhsObeta :: Expr
               _lhsOenv :: Env
               _bodyOenv :: Env
+              _tyidsIargId :: ([Id])
               _tyidsIcopy :: TypeIds
               _bodyIbeta :: Expr
               _bodyIenv :: Env
@@ -508,20 +509,20 @@ sem_Expr_LetTuple tyids_ ref_ body_  =
               -- copy rule (down)
               _bodyOenv =
                   _lhsIenv
-              ( _tyidsIcopy) =
+              ( _tyidsIargId,_tyidsIcopy) =
                   (tyids_ )
               ( _bodyIbeta,_bodyIenv) =
                   (body_ _bodyOenv )
           in  ( _lhsObeta,_lhsOenv)))
 sem_Expr_Neg :: Id ->
                 T_Expr 
-sem_Expr_Neg ref_  =
+sem_Expr_Neg x_  =
     (\ _lhsIenv ->
          (let _lhsObeta :: Expr
               _lhsOenv :: Env
               -- "Beta.ag"(line 43, column 17)
               _lhsObeta =
-                  Neg (ref_ &? _lhsIenv)
+                  Neg  (x_ &? _lhsIenv)
               -- copy rule (chain)
               _lhsOenv =
                   _lhsIenv
@@ -546,13 +547,13 @@ sem_Expr_Put aref_ iref_ vref_  =
 sem_Expr_Sub :: Id ->
                 Id ->
                 T_Expr 
-sem_Expr_Sub ref1_ ref2_  =
+sem_Expr_Sub x_ y_  =
     (\ _lhsIenv ->
          (let _lhsObeta :: Expr
               _lhsOenv :: Env
               -- "Beta.ag"(line 45, column 17)
               _lhsObeta =
-                  Sub (ref1_ &? _lhsIenv) (ref2_ &? _lhsIenv)
+                  Sub  (x_ &? _lhsIenv) (y_ &? _lhsIenv)
               -- copy rule (chain)
               _lhsOenv =
                   _lhsIenv
@@ -636,6 +637,7 @@ sem_Fundef_Fundef name_ args_ body_  =
               _bodyOenv :: Env
               _nameIargId :: Id
               _nameIcopy :: TypeId
+              _argsIargId :: ([Id])
               _argsIcopy :: TypeIds
               _bodyIbeta :: Expr
               _bodyIenv :: Env
@@ -650,11 +652,42 @@ sem_Fundef_Fundef name_ args_ body_  =
                   _lhsIenv
               ( _nameIargId,_nameIcopy) =
                   (name_ )
-              ( _argsIcopy) =
+              ( _argsIargId,_argsIcopy) =
                   (args_ )
               ( _bodyIbeta,_bodyIenv) =
                   (body_ _bodyOenv )
           in  ( _lhsObeta,_lhsOenv)))
+-- LabeledType -------------------------------------------------
+{-
+   alternatives:
+      alternative Tuple:
+         child argId          : {Label}
+         child argType        : Type 
+-}
+-- cata
+sem_LabeledType :: LabeledType  ->
+                   T_LabeledType 
+sem_LabeledType ( argId,argType)  =
+    (sem_LabeledType_Tuple argId (sem_Type argType ) )
+-- semantic domain
+type T_LabeledType  = ( )
+data Inh_LabeledType  = Inh_LabeledType {}
+data Syn_LabeledType  = Syn_LabeledType {}
+wrap_LabeledType :: T_LabeledType  ->
+                    Inh_LabeledType  ->
+                    Syn_LabeledType 
+wrap_LabeledType sem (Inh_LabeledType )  =
+    (let ( ) =
+             (sem )
+     in  (Syn_LabeledType ))
+sem_LabeledType_Tuple :: Label ->
+                         T_Type  ->
+                         T_LabeledType 
+sem_LabeledType_Tuple argId_ argType_  =
+    (let _argTypeIcopy :: Type
+         ( _argTypeIcopy) =
+             (argType_ )
+     in  ( ))
 -- OptType -----------------------------------------------------
 {-
    visit 0:
@@ -913,7 +946,7 @@ sem_TypeId_Tuple argId_ argType_  =
     (let _lhsOargId :: Id
          _lhsOcopy :: TypeId
          _argTypeIcopy :: Type
-         -- "./TypeDEFS.ag"(line 29, column 15)
+         -- "./TypeDEFS.ag"(line 32, column 15)
          _lhsOargId =
              argId_
          -- self rule
@@ -928,7 +961,8 @@ sem_TypeId_Tuple argId_ argType_  =
 -- TypeIds -----------------------------------------------------
 {-
    visit 0:
-      synthesized attribute:
+      synthesized attributes:
+         argId                : [Id]
          copy                 : SELF 
    alternatives:
       alternative Cons:
@@ -946,24 +980,29 @@ sem_TypeIds :: TypeIds  ->
 sem_TypeIds list  =
     (Prelude.foldr sem_TypeIds_Cons sem_TypeIds_Nil (Prelude.map sem_TypeId list) )
 -- semantic domain
-type T_TypeIds  = ( TypeIds)
+type T_TypeIds  = ( ([Id]),TypeIds)
 data Inh_TypeIds  = Inh_TypeIds {}
-data Syn_TypeIds  = Syn_TypeIds {copy_Syn_TypeIds :: TypeIds}
+data Syn_TypeIds  = Syn_TypeIds {argId_Syn_TypeIds :: [Id],copy_Syn_TypeIds :: TypeIds}
 wrap_TypeIds :: T_TypeIds  ->
                 Inh_TypeIds  ->
                 Syn_TypeIds 
 wrap_TypeIds sem (Inh_TypeIds )  =
-    (let ( _lhsOcopy) =
+    (let ( _lhsOargId,_lhsOcopy) =
              (sem )
-     in  (Syn_TypeIds _lhsOcopy ))
+     in  (Syn_TypeIds _lhsOargId _lhsOcopy ))
 sem_TypeIds_Cons :: T_TypeId  ->
                     T_TypeIds  ->
                     T_TypeIds 
 sem_TypeIds_Cons hd_ tl_  =
-    (let _lhsOcopy :: TypeIds
+    (let _lhsOargId :: ([Id])
+         _lhsOcopy :: TypeIds
          _hdIargId :: Id
          _hdIcopy :: TypeId
+         _tlIargId :: ([Id])
          _tlIcopy :: TypeIds
+         -- use rule "./TypeDEFS.ag"(line 28, column 32)
+         _lhsOargId =
+             _hdIargId : _tlIargId
          -- self rule
          _copy =
              (:) _hdIcopy _tlIcopy
@@ -972,19 +1011,23 @@ sem_TypeIds_Cons hd_ tl_  =
              _copy
          ( _hdIargId,_hdIcopy) =
              (hd_ )
-         ( _tlIcopy) =
+         ( _tlIargId,_tlIcopy) =
              (tl_ )
-     in  ( _lhsOcopy))
+     in  ( _lhsOargId,_lhsOcopy))
 sem_TypeIds_Nil :: T_TypeIds 
 sem_TypeIds_Nil  =
-    (let _lhsOcopy :: TypeIds
+    (let _lhsOargId :: ([Id])
+         _lhsOcopy :: TypeIds
+         -- use rule "./TypeDEFS.ag"(line 28, column 32)
+         _lhsOargId =
+             []
          -- self rule
          _copy =
              []
          -- self rule
          _lhsOcopy =
              _copy
-     in  ( _lhsOcopy))
+     in  ( _lhsOargId,_lhsOcopy))
 -- Types -------------------------------------------------------
 {-
    visit 0:

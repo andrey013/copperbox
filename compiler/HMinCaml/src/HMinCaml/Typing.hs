@@ -82,6 +82,42 @@ derefTerm _       = error $ "derefTerm todo"
     
          
 
+-- LabeledType -------------------------------------------------
+{-
+   alternatives:
+      alternative Tuple:
+         child argId          : {Label}
+         child argType        : Type 
+-}
+-- cata
+sem_LabeledType :: LabeledType  ->
+                   T_LabeledType 
+sem_LabeledType ( argId,argType)  =
+    (sem_LabeledType_Tuple argId (sem_Type argType ) )
+-- semantic domain
+type T_LabeledType  = ( )
+data Inh_LabeledType  = Inh_LabeledType {}
+data Syn_LabeledType  = Syn_LabeledType {}
+wrap_LabeledType :: T_LabeledType  ->
+                    Inh_LabeledType  ->
+                    Syn_LabeledType 
+wrap_LabeledType sem (Inh_LabeledType )  =
+    (let ( ) =
+             (sem )
+     in  (Syn_LabeledType ))
+sem_LabeledType_Tuple :: Label ->
+                         T_Type  ->
+                         T_LabeledType 
+sem_LabeledType_Tuple argId_ argType_  =
+    (let _argTypeOr1 :: ( Maybe Type )
+         _argTypeIcopy :: Type
+         _argTypeIoccur :: ( Bool )
+         -- copy rule (chain)
+         _argTypeOr1 =
+             error "missing rule: LabeledType.Tuple.argType.r1"
+         ( _argTypeIcopy,_argTypeIoccur) =
+             (argType_ _argTypeOr1 )
+     in  ( ))
 -- OptType -----------------------------------------------------
 {-
    visit 0:
@@ -430,7 +466,7 @@ sem_TypeId_Tuple argId_ argType_  =
          _argTypeOr1 :: ( Maybe Type )
          _argTypeIcopy :: Type
          _argTypeIoccur :: ( Bool )
-         -- "./TypeDEFS.ag"(line 29, column 15)
+         -- "./TypeDEFS.ag"(line 32, column 15)
          _lhsOargId =
              argId_
          -- self rule
@@ -448,7 +484,8 @@ sem_TypeId_Tuple argId_ argType_  =
 -- TypeIds -----------------------------------------------------
 {-
    visit 0:
-      synthesized attribute:
+      synthesized attributes:
+         argId                : [Id]
          copy                 : SELF 
    alternatives:
       alternative Cons:
@@ -466,24 +503,29 @@ sem_TypeIds :: TypeIds  ->
 sem_TypeIds list  =
     (Prelude.foldr sem_TypeIds_Cons sem_TypeIds_Nil (Prelude.map sem_TypeId list) )
 -- semantic domain
-type T_TypeIds  = ( TypeIds)
+type T_TypeIds  = ( ([Id]),TypeIds)
 data Inh_TypeIds  = Inh_TypeIds {}
-data Syn_TypeIds  = Syn_TypeIds {copy_Syn_TypeIds :: TypeIds}
+data Syn_TypeIds  = Syn_TypeIds {argId_Syn_TypeIds :: [Id],copy_Syn_TypeIds :: TypeIds}
 wrap_TypeIds :: T_TypeIds  ->
                 Inh_TypeIds  ->
                 Syn_TypeIds 
 wrap_TypeIds sem (Inh_TypeIds )  =
-    (let ( _lhsOcopy) =
+    (let ( _lhsOargId,_lhsOcopy) =
              (sem )
-     in  (Syn_TypeIds _lhsOcopy ))
+     in  (Syn_TypeIds _lhsOargId _lhsOcopy ))
 sem_TypeIds_Cons :: T_TypeId  ->
                     T_TypeIds  ->
                     T_TypeIds 
 sem_TypeIds_Cons hd_ tl_  =
-    (let _lhsOcopy :: TypeIds
+    (let _lhsOargId :: ([Id])
+         _lhsOcopy :: TypeIds
          _hdIargId :: Id
          _hdIcopy :: TypeId
+         _tlIargId :: ([Id])
          _tlIcopy :: TypeIds
+         -- use rule "./TypeDEFS.ag"(line 28, column 32)
+         _lhsOargId =
+             _hdIargId : _tlIargId
          -- self rule
          _copy =
              (:) _hdIcopy _tlIcopy
@@ -492,19 +534,23 @@ sem_TypeIds_Cons hd_ tl_  =
              _copy
          ( _hdIargId,_hdIcopy) =
              (hd_ )
-         ( _tlIcopy) =
+         ( _tlIargId,_tlIcopy) =
              (tl_ )
-     in  ( _lhsOcopy))
+     in  ( _lhsOargId,_lhsOcopy))
 sem_TypeIds_Nil :: T_TypeIds 
 sem_TypeIds_Nil  =
-    (let _lhsOcopy :: TypeIds
+    (let _lhsOargId :: ([Id])
+         _lhsOcopy :: TypeIds
+         -- use rule "./TypeDEFS.ag"(line 28, column 32)
+         _lhsOargId =
+             []
          -- self rule
          _copy =
              []
          -- self rule
          _lhsOcopy =
              _copy
-     in  ( _lhsOcopy))
+     in  ( _lhsOargId,_lhsOcopy))
 -- Types -------------------------------------------------------
 {-
    visit 0:

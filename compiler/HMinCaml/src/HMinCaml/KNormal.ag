@@ -14,18 +14,18 @@
 {
 module HMinCaml.KNormal where
 
-import HMinCaml.CompilerMonad
+
 import HMinCaml.Id
+import HMinCaml.KNormalSyn
 import qualified HMinCaml.M as M
 import qualified HMinCaml.S as S
-import qualified HMinCaml.Syntax as Syntax
 import HMinCaml.Type
 
 }
 
 INCLUDE "KNormalDEFS.ag"
 
-DERIVING *  : Eq, Show
+
 
 {
 
@@ -58,9 +58,9 @@ fv (Put x y z)        = S.ofList [x,y,z]
 fv (LetTuple xs y e)  = S.add y (S.diff (fv e) (S.ofList (map fst xs)))
   
   
-g env Syntax.Unit     = (Unit, TUnit)
+-- g env Syntax.Unit     = (Unit, TUnit)
 
-knormal :: Syntax.Expr -> CM Expr
-knormal e = return $ fst (g M.empty e)
+freeVars :: Expr -> S.S Id
+freeVars e = undefined -- return $ fst (g M.empty e)
  
 } 

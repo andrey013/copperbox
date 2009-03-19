@@ -1,4 +1,7 @@
 {
+-- UUAGC 0.9.6 (SparcAsm.ag)
+
+
 -- |
 -- Module: HMinCaml.SparcAsm
 -- License: as per original MinCaml
@@ -12,32 +15,29 @@
 }
 
 {
+
 module HMinCaml.SparcAsm where
 
-import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import qualified HMinCaml.S as S
+import HMinCaml.SparcAsmSyn
 import HMinCaml.Type
 
-import Control.Applicative
 import Data.Array.IArray
+
 }
-
-
-INCLUDE "SparcAsmDEFS.ag"
-
-DERIVING *  : Eq, Show
-
 
 {
 
 fletd :: Id -> Expr -> SparcT -> SparcT
 fletd x e1 e2 = Let (x, TFloat) e1 e2
 
+{-
 -- ulet aka seq 
 ulet :: Expr -> SparcT -> CM SparcT
 ulet e1 e2  = (\ident -> Let (ident, TUnit) e1 e2) <$> gentmp TUnit
+-}
 
 regs :: Array Int Id
 regs = listArray (0,length xs -1) xs where
@@ -99,6 +99,9 @@ fv_idOrImm :: Id_or_Imm -> [Id]
 fv_idOrImm (V x) = [x] 
 fv_idOrImm  _    = []
 
+}
+
+{-
 fv_exp :: [Id] -> Expr -> [Id]
 fv_exp cont Nop               = cont
 fv_exp cont (Set _)           = cont
@@ -139,7 +142,10 @@ fv' cont (Forget x e)         = removeAndUniq (S.singleton x) (fv' cont e)
   
 fv :: SparcT -> [Id]
 fv e = removeAndUniq S.empty (fv' [] e)   
+-}
 
+
+{
 
 sparcConcat :: SparcT -> (Id, Type) -> SparcT -> SparcT
 sparcConcat (Ans expr)        xt e2 = Let xt expr e2
@@ -149,5 +155,5 @@ sparcConcat (Forget y e1')    xt e2 = Forget y (sparcConcat e1' xt e2)
 align :: Int -> Int  
 align i = if i `mod` 8 == 0 then i else i + 4
 
-}
 
+}

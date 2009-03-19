@@ -16,7 +16,7 @@ module HMinCaml.Inline where
 
 import qualified HMinCaml.Alpha as Alpha
 import HMinCaml.CompilerMonad
-import HMinCaml.KNormal ( Expr(..), Fundef(..) )
+import HMinCaml.KNormalSyn ( Expr(..), Fundef(..) )
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import HMinCaml.Type

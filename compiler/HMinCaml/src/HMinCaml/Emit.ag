@@ -18,7 +18,7 @@ import HMinCaml.CompilerMonad
 import HMinCaml.Float
 import HMinCaml.Id
 import HMinCaml.S
-import HMinCaml.SparcAsm
+import HMinCaml.SparcAsmSyn
 import HMinCaml.Type
 
 

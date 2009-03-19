@@ -1,0 +1,69 @@
+{
+-- |
+-- Module: HMinCaml.Virtual
+-- License: as per original MinCaml
+--
+-- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability: unstable
+-- Portability: ghc
+--
+-- Translate to Sparc assembly with infinite registers
+--
+}
+
+{
+module HMinCaml.Virtual where
+
+import HMinCaml.ClosureSyn
+import HMinCaml.CompilerMonad
+import HMinCaml.Id
+import qualified HMinCaml.M as M
+import HMinCaml.SparcAsm
+import qualified HMinCaml.SparcAsmSyn as S
+import HMinCaml.Type
+
+import Data.List ( foldl' )
+}
+
+INCLUDE "ClosureSynDEFS.ag"
+
+ATTR Prog [ | | virtual : {S.Prog} ]
+
+ATTR Prog [ | env : {M.M Id Int} | ] 
+
+SEM Prog
+  | Prog        lhs.virtual   = undefined 
+  
+
+
+{
+
+classify xts ini addf addi = foldl' fn ini xts where
+    fn acc (_,TUnit)    = acc
+    fn acc (x,TFloat)   = addf acc x
+    fn acc (x,t)        = addi acc x t
+
+separate xts = classify xts ([], []) ff fi where
+    ff (int,float) x    = (int, float ++ [x])
+    fi (int,float) x _  = (int ++ [x], float)
+
+expand xts ini addf addi = classify xts ini ff fi where
+    ff (offset,acc) x     = let offset' = align offset
+                            in (offset' + 8, addf x offset' acc)
+    fi (offset, acc) x t  = (offset + 4, addi (x,t) offset acc)
+
+}
+
+
+{
+
+virtual :: Prog -> S.Prog
+virtual prog = virtual_Syn_Prog synthesized
+  where
+    synthesized = wrap_Prog (sem_Prog prog) inherited
+    inherited   = Inh_Prog { env_Inh_Prog = M.empty }
+    
+
+}
+
+     

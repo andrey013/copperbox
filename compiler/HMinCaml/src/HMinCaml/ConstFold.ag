@@ -14,9 +14,9 @@
 {
 module HMinCaml.ConstFold where
 
-import HMinCaml.CompilerMonad
+
 import HMinCaml.Id
-import HMinCaml.KNormal
+import HMinCaml.KNormalSyn
 import qualified HMinCaml.M as M
 import HMinCaml.Type
 import HMinCaml.Utils
@@ -67,52 +67,52 @@ ATTR Expr Fundef  [ | env : {Env} | ]
 
 SEM Expr 
   | Var   lhs.constFold   = maybe @copy Int (findInt @ref @lhs.env)
-  | Neg   lhs.constFold   = maybe @copy (Int . negate) (findInt @ref @lhs.env)
+  | Neg   lhs.constFold   = maybe @copy (Int . negate) (findInt @x @lhs.env)
   | Add   lhs.constFold   = maybe @copy 
                                   (Int . uncurry (+)) 
-                                  (both (findInt @ref1 @lhs.env) 
-                                        (findInt @ref2 @lhs.env))
+                                  (both (findInt @x @lhs.env) 
+                                        (findInt @y @lhs.env))
   | Sub   lhs.constFold   = maybe @copy 
                                   (Int . uncurry (-)) 
-                                  (both (findInt @ref1 @lhs.env) 
-                                        (findInt @ref2 @lhs.env))
-  | FNeg  lhs.constFold   = maybe @copy (Float . negate) (findFloat @ref @lhs.env)
+                                  (both (findInt @x @lhs.env) 
+                                        (findInt @y @lhs.env))
+  | FNeg  lhs.constFold   = maybe @copy (Float . negate) (findFloat @x @lhs.env)
   | FAdd  lhs.constFold   = maybe @copy 
                                   (Float . uncurry (+)) 
-                                  (both (findFloat @ref1 @lhs.env) 
-                                        (findFloat @ref2 @lhs.env))
+                                  (both (findFloat @x @lhs.env) 
+                                        (findFloat @y @lhs.env))
   | FSub  lhs.constFold   = maybe @copy 
                                   (Float . uncurry (-)) 
-                                  (both (findFloat @ref1 @lhs.env) 
-                                        (findFloat @ref2 @lhs.env)) 
+                                  (both (findFloat @x @lhs.env) 
+                                        (findFloat @y @lhs.env)) 
   | FMul  lhs.constFold   = maybe @copy 
                                   (Float . uncurry (*)) 
-                                  (both (findFloat @ref1 @lhs.env) 
-                                        (findFloat @ref2 @lhs.env))  
+                                  (both (findFloat @x @lhs.env) 
+                                        (findFloat @y @lhs.env))  
   | FDiv  lhs.constFold   = maybe @copy 
                                   (Float . uncurry (/)) 
-                                  (both (findFloat @ref1 @lhs.env) 
-                                        (findFloat @ref2 @lhs.env))
+                                  (both (findFloat @x @lhs.env) 
+                                        (findFloat @y @lhs.env))
   | IfEq  
           loc.texpr'      = @texpr.constFold
           loc.eexpr'      = @eexpr.constFold
-          lhs.constFold   = maybe (IfEq @ref1 @ref2 @loc.texpr' @loc.eexpr')
+          lhs.constFold   = maybe (IfEq @x @y @loc.texpr' @loc.eexpr')
                                   (\a -> if epeq a then @loc.texpr' 
                                                    else @loc.eexpr') 
-                                  (alt (both (findInt   @ref1 @lhs.env) 
-                                             (findInt   @ref2 @lhs.env))
-                                       (both (findFloat @ref1 @lhs.env) 
-                                             (findFloat @ref2 @lhs.env)))                                               
+                                  (alt (both (findInt   @x @lhs.env) 
+                                             (findInt   @y @lhs.env))
+                                       (both (findFloat @x @lhs.env) 
+                                             (findFloat @y @lhs.env)))                                               
   | IfLE                
           loc.texpr'      = @texpr.constFold
           loc.eexpr'      = @eexpr.constFold
-          lhs.constFold   = maybe (IfLE @ref1 @ref2 @loc.texpr' @loc.eexpr')
+          lhs.constFold   = maybe (IfLE @x @y @loc.texpr' @loc.eexpr')
                                   (\a -> if epLeq a then @loc.texpr' 
                                                     else @loc.eexpr') 
-                                  (alt (both (findInt   @ref1 @lhs.env) 
-                                             (findInt   @ref2 @lhs.env))
-                                       (both (findFloat @ref1 @lhs.env) 
-                                             (findFloat @ref2 @lhs.env)))                                                                      
+                                  (alt (both (findInt   @x @lhs.env) 
+                                             (findInt   @y @lhs.env))
+                                       (both (findFloat @x @lhs.env) 
+                                             (findFloat @y @lhs.env)))                                                                      
   | Let   loc.sub'        = @sub.constFold
           body.env        = M.add @tyid.argId @loc.sub' @lhs.env
           loc.body'       = @body.constFold
@@ -164,69 +164,13 @@ epLeq :: (Ord a, Ord b) => Either (a,a) (b,b) -> Bool
 epLeq (Left  (a,b)) = a<=b
 epLeq (Right (a,b)) = a<=b
 
-}
 
-{-
-
-g :: Env -> Expr -> Expr
-g env (Var x) | memi x env      = Int (findi x env)           
-g env (Neg x) | memi x env      = Int (negate (findi x env))
-g env (Add x y) 
-    | memi x env && memi y env  = Int (findi x env + findi y env)
-g env (Sub x y) 
-    | memi x env && memi y env  = Int (findi x env - findi y env)
-g env (FNeg x) 
-    | memf x env                = Float (negate (findf x env))
-g env (FAdd x y) 
-    | memf x env && memf y env  = Float (findf x env + findf y env)
-g env (FSub x y)
-    | memf x env && memf y env  = Float (findf x env - findf y env)
-g env (FMul x y) 
-    | memf x env && memf y env  = Float (findf x env * findf y env)
-g env (FDiv x y) 
-    | memf x env && memf y env  = Float (findf x env / findf y env)
-g env (IfEq x y e1 e2) 
-    | memi x env && memi y env  = if findi x env == findi y env 
-                                    then g env e1 
-                                    else g env e2
-                                    
-g env (IfEq x y e1 e2) 
-    | memf x env && memf y env  = if findf x env == findf y env 
-                                    then g env e1 
-                                    else g env e2
-                                    
-g env (IfEq x y e1 e2)          = IfEq x y (g env e1) (g env e2)
-g env (IfLE x y e1 e2) 
-    | memi x env && memi y env  = if findi x env <= findi y env 
-                                    then g env e1 
-                                    else g env e2
-                                    
-g env (IfLE x y e1 e2)
-    | memf x env && memf y env  = if findf x env <= findf y env 
-                                    then g env e1 
-                                    else g env e2
-                                    
-g env (IfLE x y e1 e2)          = IfLE x y (g env e1) (g env e2)
-g env (Let (x,t) e1 e2)         = let e1' = g env e1
-                                      e2' = g (M.add x e1' env) e2 
-                                  in Let (x,t) e1' e2'
-                                  
-g env (LetRec (Fundef x ys e1) e2)  = LetRec (Fundef x ys (g env e1)) (g env e2)
-g env (LetTuple xts y e) 
-    | memt y env                = foldleft2 (\e' xt z -> Let xt (Var z) e')
-                                            (g env e)
-                                            xts
-                                            (findt y env)
-    | otherwise                 = LetTuple xts y (g env e)
-  
-g _   e                         = e
-
--}
-
-{
                 
-constFold :: Expr -> CM Expr
-constFold = undefined -- return . g M.empty
+constFold :: Expr -> Expr
+constFold expr = constFold_Syn_Expr synthesized
+  where
+    synthesized = wrap_Expr (sem_Expr expr) inherited
+    inherited = Inh_Expr { env_Inh_Expr = M.empty }
 
 }
 

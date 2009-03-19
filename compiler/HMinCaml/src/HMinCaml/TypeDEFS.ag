@@ -25,8 +25,11 @@ ATTR TypeId TypeIds Type Types OptType [ | | copy : SELF ]
 
 ATTR TypeId        [ | | argId : {Id} ]
 
+ATTR TypeIds       [ | | argId USE {:} {[]} : {[Id]} ]
+
+
 SEM TypeId
   | Tuple     lhs.argId   = @argId
 
-
+TYPE LabeledType = (argId : {Label}, argType : Type) 
   

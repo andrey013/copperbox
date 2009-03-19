@@ -1,0 +1,42 @@
+{
+-- |
+-- Module: HMinCaml.ToKNormal
+-- License: as per original MinCaml
+--
+-- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability: unstable
+-- Portability: ghc
+--
+-- K Normal form datatypes
+--
+}
+
+{
+module HMinCaml.ToKNormal where
+
+
+import HMinCaml.Id
+import qualified HMinCaml.KNormalSyn as K
+import qualified HMinCaml.M as M
+import qualified HMinCaml.S as S
+import HMinCaml.Syntax
+import HMinCaml.Type
+
+}
+
+INCLUDE "SyntaxDEFS.ag"
+
+ATTR Expr [ | | knormal : { K.Expr} ]
+
+SEM Expr
+  | *     lhs.knormal   = undefined
+
+
+{
+
+
+
+knormal :: Expr -> K.Expr
+knormal e = undefined -- return $ fst (g M.empty e)
+ 
+} 

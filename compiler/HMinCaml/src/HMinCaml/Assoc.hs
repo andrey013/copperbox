@@ -14,7 +14,7 @@
 module HMinCaml.Assoc where
 
 import HMinCaml.CompilerMonad
-import HMinCaml.KNormal ( Expr(..), Fundef(..) )
+import HMinCaml.KNormalSyn ( Expr(..), Fundef(..) )
 
 import Control.Monad ( liftM )
 

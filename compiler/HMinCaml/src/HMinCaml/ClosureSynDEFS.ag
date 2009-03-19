@@ -1,4 +1,10 @@
--- HMinCaml.KNormalDEFS
+-- HMinCaml.ClosureSynDEFS
+
+DATA Closure 
+  | Closure     entry     : {Label} 
+                actual_fv : {[Id]}
+
+  
 
 DATA Expr 
   | Unit
@@ -19,37 +25,50 @@ DATA Expr
   | FDiv        x         : {Id}  
                 y         : {Id}
   | IfEq        x         : {Id}  
-                y         : {Id}
+                y         : {Id}  
                 texpr     : Expr  
                 eexpr     : Expr
   | IfLE        x         : {Id}  
-                y         : {Id}
+                y         : {Id}  
                 texpr     : Expr  
                 eexpr     : Expr
-  | Let         tyid      : TypeId 
-                sub       : Expr  
+  | Let         tyid      : TypeId
+                sub       : Expr
                 body      : Expr
-  | Var         ref       : {Id}
-  | LetRec      fundef    : Fundef  
+  | Var         x         : {Id}
+  | MakeCls     tyid      : TypeId
+                close     : Closure 
                 body      : Expr
-  | App         ref       : {Id}
+  | AppCls      ref       : Id          -- closure-based function call
+                args      : {[Id]}
+  | AppDir      lbl       : {Label}     -- direct function call
                 args      : {[Id]}
   | Tuple       refs      : {[Id]}
-  | LetTuple    tyids     : TypeIds 
-                ref       : {Id}  
+  | LetTuple    tyids     : TypeIds
+                ref       : {Id}
                 body      : Expr
   | Get         aref      : {Id}  
                 iref      : {Id}
   | Put         aref      : {Id}  
                 iref      : {Id}
                 vref      : {Id}
-  | ExtArray    ref       : {Id}
-  | ExtFunApp   nref      : {Id}    
-                args      : {[Id]}
+  | ExtArray    lbl       : {Label}
 
-  
+    
 DATA Fundef 
-  | Fundef      name      : TypeId
+  | Fundef      name      : LabeledType
                 args      : TypeIds
+                formal_fv : TypeIds
                 body      : Expr 
 
+  
+DATA Prog 
+  | Prog        defs      : Fundefs 
+                body      : Expr
+
+TYPE Fundefs    = [Fundef]
+  
+
+
+
+     

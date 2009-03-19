@@ -17,7 +17,7 @@ module HMinCaml.M (
     addList2,
     mem,
     empty,
-    add,
+    add, add2,
     find, find'
   ) where
 
@@ -43,6 +43,8 @@ empty = Map.empty
 add :: Ord k => k -> v -> M k v -> M k v
 add  = Map.insert
 
+add2 :: Ord k => (k,v) -> M k v -> M k v
+add2 (k,v) = Map.insert k v
 
 
 find :: Ord k => k -> M k a -> Maybe a

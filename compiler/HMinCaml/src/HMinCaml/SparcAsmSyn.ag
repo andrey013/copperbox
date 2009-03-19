@@ -1,0 +1,27 @@
+{
+-- |
+-- Module: HMinCaml.SparcAsmSyn
+-- License: as per original MinCaml
+--
+-- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability: unstable
+-- Portability: ghc
+--
+-- Sparc asm abstract syntax
+--
+}
+
+{
+module HMinCaml.SparcAsmSyn where
+
+import HMinCaml.Id
+import HMinCaml.Type
+
+}
+
+
+INCLUDE "SparcAsmDEFS.ag"
+
+DERIVING *  : Eq, Show
+
+

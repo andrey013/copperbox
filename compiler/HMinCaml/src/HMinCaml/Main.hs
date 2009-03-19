@@ -16,17 +16,18 @@ module HMinCaml.Main where
 import HMinCaml.Alpha     ( alpha )
 import HMinCaml.Assoc     ( assoc )
 import HMinCaml.Beta      ( beta )
-import HMinCaml.Closure   ( closure )
+import HMinCaml.ToClosure   ( closure )
 import HMinCaml.CompilerMonad
 import HMinCaml.ConstFold ( constFold )
 import HMinCaml.Elim      ( elim )
 import HMinCaml.Emit      ( emit )
-import HMinCaml.KNormal   ( knormal, Expr )
+import HMinCaml.KNormalSyn ( Expr )
 import HMinCaml.Inline    ( inline )
 import HMinCaml.Parser    ( parseMinCaml )
 import HMinCaml.RegAlloc  ( regAlloc )
 import HMinCaml.Simm13    ( simm13 )
 import qualified HMinCaml.Syntax as Syntax
+import HMinCaml.ToKNormal   ( knormal )
 import HMinCaml.Typing    ( typing )
 import HMinCaml.Virtual   ( virtual )
 
@@ -47,13 +48,22 @@ parseFile path = do
 
 iter :: Int -> Expr -> CM Expr
 iter 0 e = return e
-iter i e = do e' <- (elim <=< constFold <=< inline <=< assoc <=< (return . beta))  e
+iter i e = do e' <- (elim <=< (return . constFold) 
+                          <=< inline 
+                          <=< assoc 
+                          <=< (return . beta))  e
               if e' == e then return e else iter (i-1) e'
                
                
 compile :: Syntax.Expr -> CM AsmText
-compile e = (emit <=< regAlloc   <=< simm13 <=< virtual <=< closure 
-                  <=< iter limit <=< (return . alpha)  <=< knormal <=< typing) e
+compile e = (emit <=< regAlloc      
+                  <=< (return . simm13) 
+                  <=< (return . virtual)       
+                  <=< (return . closure) 
+                  <=< iter limit    
+                  <=< (return . alpha)  
+                  <=< (return . knormal)       
+                  <=< typing) e
 
 
                     
