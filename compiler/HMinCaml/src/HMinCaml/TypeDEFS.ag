@@ -23,7 +23,10 @@ TYPE TypeIds    = [TypeId]
 
 ATTR TypeId TypeIds Type Types OptType [ | | copy : SELF ]
 
+ATTR TypeId        [ | | argId : {Id} ]
 
+SEM TypeId
+  | Tuple     lhs.argId   = @argId
 
 
   

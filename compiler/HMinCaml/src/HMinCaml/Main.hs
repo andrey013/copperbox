@@ -47,13 +47,13 @@ parseFile path = do
 
 iter :: Int -> Expr -> CM Expr
 iter 0 e = return e
-iter i e = do e' <- (elim <=< constFold <=< inline <=< assoc <=< beta)  e
+iter i e = do e' <- (elim <=< constFold <=< inline <=< assoc <=< (return . beta))  e
               if e' == e then return e else iter (i-1) e'
                
                
 compile :: Syntax.Expr -> CM AsmText
 compile e = (emit <=< regAlloc   <=< simm13 <=< virtual <=< closure 
-                  <=< iter limit <=< alpha  <=< knormal <=< typing) e
+                  <=< iter limit <=< (return . alpha)  <=< knormal <=< typing) e
 
 
                     

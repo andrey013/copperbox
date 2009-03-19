@@ -15,6 +15,15 @@ module HMinCaml.Utils  where
 
 import HMinCaml.Type
 
+import qualified Data.Map as Map 
+
+(&?) :: Ord a => a -> Map.Map a a -> a
+(&?) x env = maybe x id (Map.lookup x env) 
+
+(&+) :: Ord a => (a,a) -> Map.Map a a -> Map.Map a a
+(&+) (x,x') env = Map.insert x x' env 
+
+
 foldleft2           :: (a -> b -> c -> a) -> a -> [b] -> [c] -> a
 foldleft2 f z0 xs0 ys0 = lgo z0 xs0 ys0
     where lgo z []     _      = z

@@ -14,55 +14,81 @@
 {
 module HMinCaml.Beta where
 
-import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import HMinCaml.KNormal ( Expr(..), Fundef(..) )
 import qualified HMinCaml.M as M
+import HMinCaml.Type
+import HMinCaml.Utils ( (&?), (&+) )
+
 
 
 type Env = M.M Id Id
 
-find :: Id -> Env -> Id
-find x env = maybe x id (M.find x env) 
+
 }
 
+INCLUDE "KNormalDEFS.ag"
+INCLUDE "TypeDEFS.ag"
 
+ATTR Expr [ | | beta : {Expr} ]
+ATTR Fundef [ | | beta : {Fundef} ]
+
+ATTR Expr Fundef [ | env : {Env} | ]
+
+
+SEM Expr
+  | Unit        lhs.beta      = Unit
+  | Int         lhs.beta      = Int @val
+  | Float       lhs.beta      = Float @val
+  | Neg         lhs.beta      = Neg (@ref &? @lhs.env)
+  | Add         lhs.beta      = Add (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
+  | Sub         lhs.beta      = Sub (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
+  | FNeg        lhs.beta      = FNeg (@ref  &? @lhs.env)
+  | FAdd        lhs.beta      = FAdd (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
+  | FSub        lhs.beta      = FSub (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
+  | FMul        lhs.beta      = FMul (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
+  | FDiv        lhs.beta      = FDiv (@ref1 &? @lhs.env) (@ref2 &? @lhs.env)
+  | IfEq        lhs.beta      = IfEq (@ref1 &? @lhs.env)
+                                     (@ref2 &? @lhs.env)
+                                     @texpr.beta          
+                                     @eexpr.beta
+  | IfLE        lhs.beta      = IfLE (@ref1 &? @lhs.env) 
+                                     (@ref2 &? @lhs.env)
+                                     @texpr.beta          
+                                     @eexpr.beta                                     
+  | Let         loc.subbeta   = @body.beta
+                lhs.env       = case @loc.subbeta of
+                                  Var y -> M.add @tyid.argId y @lhs.env
+                                  _     -> @lhs.env
+                lhs.beta      = case @loc.subbeta of
+                                  Var y -> @body.beta                                  
+                                  e1'   -> Let @tyid.copy e1' @body.beta
+  | Var         lhs.beta      = Var (@ref &? @lhs.env)                                    
+  | LetRec      lhs.beta      = LetRec @fundef.beta @body.beta
+  | App         lhs.beta      = App (@ref &? @lhs.env) 
+                                    (map (&? @lhs.env) @args)                
+  | Tuple       lhs.beta      = Tuple (map (&? @lhs.env) @refs)
+  | LetTuple    lhs.beta      = LetTuple @tyids.copy
+                                         (@ref &? @lhs.env)
+                                         @body.beta
+  | Get         lhs.beta      = Get (@aref &? @lhs.env) (@iref &? @lhs.env) 
+  | Put         lhs.beta      = Put (@aref &? @lhs.env) 
+                                    (@iref &? @lhs.env) 
+                                    (@vref &? @lhs.env)
+  | ExtArray    lhs.beta      = ExtArray @ref
+  | ExtFunApp   lhs.beta      = ExtFunApp @nref (map (&? @lhs.env) @args)
+
+SEM Fundef
+  | Fundef      lhs.beta      = Fundef @name.copy @args.copy @body.beta  
+  
 {
-g :: Env -> Expr -> Expr
-g _   Unit                = Unit
-g _   (Int i)             = Int i
-g _   (Float d)           = Float d
-g env (Neg x)             = Neg (find x env)
-g env (Add x y)           = Add (find x env) (find y env)
-g env (Sub x  y)          = Sub (find x env) (find y env)
-g env (FNeg x)            = FNeg (find x env)
-g env (FAdd x y)          = FAdd (find x env) (find y env)
-g env (FSub x y)          = FSub (find x env) (find y env)
-g env (FMul x y)          = FMul (find x env) (find y env)
-g env (FDiv x y)          = FDiv (find x env) (find y env)
-g env (IfEq x y e1 e2)    = IfEq (find x env) (find y env) (g env e1) (g env e2)
-g env (IfLE x y e1 e2)    = IfLE (find x env) (find y env) (g env e1) (g env e2)
-g env (Let (x, t) e1 e2)  = case g env e1 of
-                              (Var y) -> g (M.add x y env) e2
-                              e1'     -> let e2' = g env e2 in
-                                         Let (x, t) e1' e2'
-                                         
-g env (LetRec (Fundef n args body) e2)    = 
-                            LetRec (Fundef n args (g env body)) (g env e2)
-     
-g env (Var x)             = Var (find x env)
-g env (Tuple xs)          = Tuple (map (\x -> find x env) xs)
-g env (LetTuple xts y e)  = LetTuple xts (find y env) (g env e)
-g env (Get x y)           = Get (find x env) (find y env)
-g env (Put x y z)         = Put (find x env) (find y env) (find z env)
-g env (App fn xs)         = App (find fn env) (map (\x -> find x env) xs)
-g _   (ExtArray x)        = ExtArray x
-g env (ExtFunApp x ys)    = ExtFunApp x (map (\y -> find y env) ys)
-                                       
 
 
-
-beta :: Expr -> CM Expr
-beta = return . g M.empty
-
+beta :: Expr -> Expr
+beta expr = beta_Syn_Expr synthesized
+  where
+    synthesized = wrap_Expr (sem_Expr expr) inherited
+    inherited = Inh_Expr { env_Inh_Expr = M.empty }
+    
+    
 }

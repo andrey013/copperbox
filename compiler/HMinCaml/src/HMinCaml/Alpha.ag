@@ -15,29 +15,16 @@
 
 module HMinCaml.Alpha where
 
-import HMinCaml.CompilerMonad
+
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import HMinCaml.KNormal ( Expr(..), Fundef(..) )
 import HMinCaml.Type
-
-import Control.Applicative
-import Control.Monad.State
+import HMinCaml.Utils ( (&?), (&+) )
 
 
 
 type Env = M.M Id Id
-
-(&?) :: Id -> Env -> Id
-(&?) x env = maybe x id (M.find x env) 
-
-(&+) :: (Id,Id) -> Env -> Env
-(&+) (x,x') env = M.add x x' env 
-
-
-
-find :: Id -> Env -> Id
-find x env = maybe x id (M.find x env) 
 
 
 }
@@ -144,7 +131,10 @@ SEM Fundef
 {
 
 
-alpha :: Expr -> CM Expr
-alpha e = undefined -- g M.empty e
+alpha :: Expr -> Expr
+alpha expr = alpha_Syn_Expr synthesized
+  where
+    synthesized = wrap_Expr (sem_Expr expr) inherited
+    inherited = Inh_Expr { env_Inh_Expr = M.empty }
 
 }

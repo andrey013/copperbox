@@ -18,37 +18,27 @@
 
 module HMinCaml.Alpha where
 
-import HMinCaml.CompilerMonad
+
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import HMinCaml.KNormal ( Expr(..), Fundef(..) )
 import HMinCaml.Type
-
-import Control.Applicative
-import Control.Monad.State
+import HMinCaml.Utils ( (&?), (&+) )
 
 
 
 type Env = M.M Id Id
 
-(&?) :: Id -> Env -> Id
-(&?) x env = maybe x id (M.find x env) 
-
-(&+) :: (Id,Id) -> Env -> Env
-(&+) (x,x') env = M.add x x' env 
-
-
-
-find :: Id -> Env -> Id
-find x env = maybe x id (M.find x env) 
 
 
 
 
 
-
-alpha :: Expr -> CM Expr
-alpha e = undefined -- g M.empty e
+alpha :: Expr -> Expr
+alpha expr = alpha_Syn_Expr synthesized
+  where
+    synthesized = wrap_Expr (sem_Expr expr) inherited
+    inherited = Inh_Expr { env_Inh_Expr = M.empty }
 
 -- Expr --------------------------------------------------------
 {-
@@ -202,7 +192,7 @@ sem_Expr_Add ref1_ ref2_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 65, column 17)
+              -- "Alpha.ag"(line 52, column 17)
               _lhsOalpha =
                   Add  (ref1_ &? _lhsIenv) (ref2_ &? _lhsIenv)
               -- copy rule (chain)
@@ -221,7 +211,7 @@ sem_Expr_App ref_ args_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 89, column 17)
+              -- "Alpha.ag"(line 76, column 17)
               _lhsOalpha =
                   App (ref_ &? _lhsIenv)
                       (map (&? _lhsIenv) args_)
@@ -240,7 +230,7 @@ sem_Expr_ExtArray ref_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 102, column 17)
+              -- "Alpha.ag"(line 89, column 17)
               _lhsOalpha =
                   ExtArray ref_
               -- copy rule (chain)
@@ -259,7 +249,7 @@ sem_Expr_ExtFunApp nref_ args_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 103, column 17)
+              -- "Alpha.ag"(line 90, column 17)
               _lhsOalpha =
                   ExtFunApp nref_ (map (&? _lhsIenv) args_)
               -- copy rule (chain)
@@ -278,7 +268,7 @@ sem_Expr_FAdd ref1_ ref2_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 68, column 17)
+              -- "Alpha.ag"(line 55, column 17)
               _lhsOalpha =
                   FAdd (ref1_ &? _lhsIenv) (ref2_ &? _lhsIenv)
               -- copy rule (chain)
@@ -297,7 +287,7 @@ sem_Expr_FDiv ref1_ ref2_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 71, column 17)
+              -- "Alpha.ag"(line 58, column 17)
               _lhsOalpha =
                   FDiv (ref1_ &? _lhsIenv) (ref2_ &? _lhsIenv)
               -- copy rule (chain)
@@ -316,7 +306,7 @@ sem_Expr_FMul ref1_ ref2_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 70, column 17)
+              -- "Alpha.ag"(line 57, column 17)
               _lhsOalpha =
                   FMul (ref1_ &? _lhsIenv) (ref2_ &? _lhsIenv)
               -- copy rule (chain)
@@ -334,7 +324,7 @@ sem_Expr_FNeg ref_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 67, column 17)
+              -- "Alpha.ag"(line 54, column 17)
               _lhsOalpha =
                   FNeg (ref_  &? _lhsIenv)
               -- copy rule (chain)
@@ -353,7 +343,7 @@ sem_Expr_FSub ref1_ ref2_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 69, column 17)
+              -- "Alpha.ag"(line 56, column 17)
               _lhsOalpha =
                   FSub (ref1_ &? _lhsIenv) (ref2_ &? _lhsIenv)
               -- copy rule (chain)
@@ -371,7 +361,7 @@ sem_Expr_Float val_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 63, column 17)
+              -- "Alpha.ag"(line 50, column 17)
               _lhsOalpha =
                   Float val_
               -- copy rule (chain)
@@ -390,7 +380,7 @@ sem_Expr_Get aref_ iref_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 98, column 17)
+              -- "Alpha.ag"(line 85, column 17)
               _lhsOalpha =
                   Get (aref_ &? _lhsIenv) (iref_ &? _lhsIenv)
               -- copy rule (chain)
@@ -421,7 +411,7 @@ sem_Expr_IfEq ref1_ ref2_ texpr_ eexpr_  =
               _eexprIalpha :: Expr
               _eexprIenv :: Env
               _eexprIfresh :: Int
-              -- "Alpha.ag"(line 72, column 17)
+              -- "Alpha.ag"(line 59, column 17)
               _lhsOalpha =
                   IfEq (ref1_ &? _lhsIenv)
                        (ref2_ &? _lhsIenv)
@@ -471,7 +461,7 @@ sem_Expr_IfLE ref1_ ref2_ texpr_ eexpr_  =
               _eexprIalpha :: Expr
               _eexprIenv :: Env
               _eexprIfresh :: Int
-              -- "Alpha.ag"(line 76, column 17)
+              -- "Alpha.ag"(line 63, column 17)
               _lhsOalpha =
                   IfLE (ref1_ &? _lhsIenv)
                        (ref2_ &? _lhsIenv)
@@ -508,7 +498,7 @@ sem_Expr_Int val_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 62, column 17)
+              -- "Alpha.ag"(line 49, column 17)
               _lhsOalpha =
                   Int val_
               -- copy rule (chain)
@@ -535,6 +525,7 @@ sem_Expr_Let tyid_ sub_ body_  =
               _subOfresh :: Int
               _bodyOfresh :: Int
               _tyidIalpha :: TypeId
+              _tyidIargId :: Id
               _tyidIcopy :: TypeId
               _tyidIenv :: Env
               _tyidIfresh :: Int
@@ -546,13 +537,13 @@ sem_Expr_Let tyid_ sub_ body_  =
               _bodyIalpha :: Expr
               _bodyIenv :: Env
               _bodyIfresh :: Int
-              -- "Alpha.ag"(line 80, column 17)
+              -- "Alpha.ag"(line 67, column 17)
               _newlab =
                   _tyidIrelabel
-              -- "Alpha.ag"(line 81, column 17)
+              -- "Alpha.ag"(line 68, column 17)
               _bodyOenv =
                   _tyidIrenames &+ _lhsIenv
-              -- "Alpha.ag"(line 82, column 17)
+              -- "Alpha.ag"(line 69, column 17)
               _lhsOalpha =
                   Let _newlab
                       _subIalpha
@@ -578,7 +569,7 @@ sem_Expr_Let tyid_ sub_ body_  =
               -- copy rule (chain)
               _bodyOfresh =
                   _subIfresh
-              ( _tyidIalpha,_tyidIcopy,_tyidIenv,_tyidIfresh,_tyidIrelabel,_tyidIrenames) =
+              ( _tyidIalpha,_tyidIargId,_tyidIcopy,_tyidIenv,_tyidIfresh,_tyidIrelabel,_tyidIrenames) =
                   (tyid_ _tyidOenv _tyidOfresh )
               ( _subIalpha,_subIenv,_subIfresh) =
                   (sub_ _subOenv _subOfresh )
@@ -606,13 +597,13 @@ sem_Expr_LetRec fundef_ body_  =
               _bodyIalpha :: Expr
               _bodyIenv :: Env
               _bodyIfresh :: Int
-              -- "Alpha.ag"(line 86, column 17)
+              -- "Alpha.ag"(line 73, column 17)
               _lhsOenv =
                   _fundefIextenv
-              -- "Alpha.ag"(line 87, column 17)
+              -- "Alpha.ag"(line 74, column 17)
               _bodyOenv =
                   _lhsIenv
-              -- "Alpha.ag"(line 88, column 17)
+              -- "Alpha.ag"(line 75, column 17)
               _lhsOalpha =
                   LetRec _fundefIalpha _bodyIalpha
               -- copy rule (up)
@@ -655,16 +646,16 @@ sem_Expr_LetTuple tyids_ ref_ body_  =
               _bodyIalpha :: Expr
               _bodyIenv :: Env
               _bodyIfresh :: Int
-              -- "Alpha.ag"(line 92, column 17)
+              -- "Alpha.ag"(line 79, column 17)
               _env' =
                   M.addList _tyidsIrenames _lhsIenv
-              -- "Alpha.ag"(line 93, column 17)
+              -- "Alpha.ag"(line 80, column 17)
               _tyidsOenv =
                   _env'
-              -- "Alpha.ag"(line 94, column 17)
+              -- "Alpha.ag"(line 81, column 17)
               _bodyOenv =
                   _env'
-              -- "Alpha.ag"(line 95, column 17)
+              -- "Alpha.ag"(line 82, column 17)
               _lhsOalpha =
                   LetTuple _tyidsIalpha
                            (ref_ &? _lhsIenv)
@@ -694,7 +685,7 @@ sem_Expr_Neg ref_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 64, column 17)
+              -- "Alpha.ag"(line 51, column 17)
               _lhsOalpha =
                   Neg  (ref_  &? _lhsIenv)
               -- copy rule (chain)
@@ -714,7 +705,7 @@ sem_Expr_Put aref_ iref_ vref_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 99, column 17)
+              -- "Alpha.ag"(line 86, column 17)
               _lhsOalpha =
                   Put (aref_ &? _lhsIenv)
                       (iref_ &? _lhsIenv)
@@ -735,7 +726,7 @@ sem_Expr_Sub ref1_ ref2_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 66, column 17)
+              -- "Alpha.ag"(line 53, column 17)
               _lhsOalpha =
                   Sub  (ref1_ &? _lhsIenv) (ref2_ &? _lhsIenv)
               -- copy rule (chain)
@@ -753,7 +744,7 @@ sem_Expr_Tuple refs_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 91, column 17)
+              -- "Alpha.ag"(line 78, column 17)
               _lhsOalpha =
                   Tuple (map (&? _lhsIenv) refs_)
               -- copy rule (chain)
@@ -770,7 +761,7 @@ sem_Expr_Unit  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 61, column 17)
+              -- "Alpha.ag"(line 48, column 17)
               _lhsOalpha =
                   Unit
               -- copy rule (chain)
@@ -788,7 +779,7 @@ sem_Expr_Var ref_  =
          (let _lhsOalpha :: Expr
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- "Alpha.ag"(line 85, column 17)
+              -- "Alpha.ag"(line 72, column 17)
               _lhsOalpha =
                   Var (ref_ &? _lhsIenv)
               -- copy rule (chain)
@@ -854,6 +845,7 @@ sem_Fundef_Fundef name_ args_ body_  =
               _argsOfresh :: Int
               _bodyOfresh :: Int
               _nameIalpha :: TypeId
+              _nameIargId :: Id
               _nameIcopy :: TypeId
               _nameIenv :: Env
               _nameIfresh :: Int
@@ -868,22 +860,22 @@ sem_Fundef_Fundef name_ args_ body_  =
               _bodyIalpha :: Expr
               _bodyIenv :: Env
               _bodyIfresh :: Int
-              -- "Alpha.ag"(line 126, column 17)
+              -- "Alpha.ag"(line 113, column 17)
               _lhsOrenames =
                   _nameIrenames
-              -- "Alpha.ag"(line 131, column 17)
+              -- "Alpha.ag"(line 118, column 17)
               _env' =
                   _nameIrenames &+ _lhsIenv
-              -- "Alpha.ag"(line 132, column 17)
+              -- "Alpha.ag"(line 119, column 17)
               _lhsOextenv =
                   _env'
-              -- "Alpha.ag"(line 133, column 17)
+              -- "Alpha.ag"(line 120, column 17)
               _extenvs =
                   M.addList _argsIrenames _env'
-              -- "Alpha.ag"(line 134, column 17)
+              -- "Alpha.ag"(line 121, column 17)
               _bodyOenv =
                   _extenvs
-              -- "Alpha.ag"(line 135, column 17)
+              -- "Alpha.ag"(line 122, column 17)
               _lhsOalpha =
                   Fundef _nameIrelabel
                          _argsIalpha
@@ -909,7 +901,7 @@ sem_Fundef_Fundef name_ args_ body_  =
               -- copy rule (chain)
               _bodyOfresh =
                   _argsIfresh
-              ( _nameIalpha,_nameIcopy,_nameIenv,_nameIfresh,_nameIrelabel,_nameIrenames) =
+              ( _nameIalpha,_nameIargId,_nameIcopy,_nameIenv,_nameIfresh,_nameIrelabel,_nameIrenames) =
                   (name_ _nameOenv _nameOfresh )
               ( _argsIalpha,_argsIcopy,_argsIenv,_argsIfresh,_argsIrelabel,_argsIrenames) =
                   (args_ _argsOenv _argsOfresh )
@@ -1146,6 +1138,7 @@ sem_Type_TVar optTy_  =
          fresh                : Int
       synthesized attributes:
          alpha                : TypeId
+         argId                : Id
          copy                 : SELF 
          relabel              : TypeId
          renames              : (Id,Id)
@@ -1167,16 +1160,16 @@ sem_TypeId ( argId,argType)  =
 -- semantic domain
 type T_TypeId  = Env ->
                  Int ->
-                 ( TypeId,TypeId,Env,Int,TypeId,((Id,Id)))
+                 ( TypeId,Id,TypeId,Env,Int,TypeId,((Id,Id)))
 data Inh_TypeId  = Inh_TypeId {env_Inh_TypeId :: Env,fresh_Inh_TypeId :: Int}
-data Syn_TypeId  = Syn_TypeId {alpha_Syn_TypeId :: TypeId,copy_Syn_TypeId :: TypeId,env_Syn_TypeId :: Env,fresh_Syn_TypeId :: Int,relabel_Syn_TypeId :: TypeId,renames_Syn_TypeId :: (Id,Id)}
+data Syn_TypeId  = Syn_TypeId {alpha_Syn_TypeId :: TypeId,argId_Syn_TypeId :: Id,copy_Syn_TypeId :: TypeId,env_Syn_TypeId :: Env,fresh_Syn_TypeId :: Int,relabel_Syn_TypeId :: TypeId,renames_Syn_TypeId :: (Id,Id)}
 wrap_TypeId :: T_TypeId  ->
                Inh_TypeId  ->
                Syn_TypeId 
 wrap_TypeId sem (Inh_TypeId _lhsIenv _lhsIfresh )  =
-    (let ( _lhsOalpha,_lhsOcopy,_lhsOenv,_lhsOfresh,_lhsOrelabel,_lhsOrenames) =
+    (let ( _lhsOalpha,_lhsOargId,_lhsOcopy,_lhsOenv,_lhsOfresh,_lhsOrelabel,_lhsOrenames) =
              (sem _lhsIenv _lhsIfresh )
-     in  (Syn_TypeId _lhsOalpha _lhsOcopy _lhsOenv _lhsOfresh _lhsOrelabel _lhsOrenames ))
+     in  (Syn_TypeId _lhsOalpha _lhsOargId _lhsOcopy _lhsOenv _lhsOfresh _lhsOrelabel _lhsOrenames ))
 sem_TypeId_Tuple :: Id ->
                     T_Type  ->
                     T_TypeId 
@@ -1187,30 +1180,34 @@ sem_TypeId_Tuple argId_ argType_  =
               _lhsOfresh :: Int
               _lhsOrenames :: ((Id,Id))
               _lhsOrelabel :: TypeId
+              _lhsOargId :: Id
               _lhsOcopy :: TypeId
               _lhsOenv :: Env
               _argTypeIcopy :: Type
-              -- "Alpha.ag"(line 106, column 17)
+              -- "Alpha.ag"(line 93, column 17)
               _lhsOalpha =
                   (argId_ &? _lhsIenv, _argTypeIcopy)
-              -- "Alpha.ag"(line 117, column 17)
+              -- "Alpha.ag"(line 104, column 17)
               _lhsOfresh =
                   _lhsIfresh+1
-              -- "Alpha.ag"(line 118, column 21)
+              -- "Alpha.ag"(line 105, column 21)
               __tup1 =
                   (argId_, newId argId_ _lhsIfresh)
-              -- "Alpha.ag"(line 118, column 21)
+              -- "Alpha.ag"(line 105, column 21)
               (_x,_) =
                   __tup1
-              -- "Alpha.ag"(line 118, column 21)
+              -- "Alpha.ag"(line 105, column 21)
               (_,_x') =
                   __tup1
-              -- "Alpha.ag"(line 119, column 17)
+              -- "Alpha.ag"(line 106, column 17)
               _lhsOrenames =
                   (_x    ,_x'    )
-              -- "Alpha.ag"(line 122, column 17)
+              -- "Alpha.ag"(line 109, column 17)
               _lhsOrelabel =
                   (_x'    , _argTypeIcopy)
+              -- "./TypeDEFS.ag"(line 29, column 15)
+              _lhsOargId =
+                  argId_
               -- self rule
               _copy =
                   (argId_,_argTypeIcopy)
@@ -1222,7 +1219,7 @@ sem_TypeId_Tuple argId_ argType_  =
                   _lhsIenv
               ( _argTypeIcopy) =
                   (argType_ )
-          in  ( _lhsOalpha,_lhsOcopy,_lhsOenv,_lhsOfresh,_lhsOrelabel,_lhsOrenames)))
+          in  ( _lhsOalpha,_lhsOargId,_lhsOcopy,_lhsOenv,_lhsOfresh,_lhsOrelabel,_lhsOrenames)))
 -- TypeIds -----------------------------------------------------
 {-
    visit 0:
@@ -1279,6 +1276,7 @@ sem_TypeIds_Cons hd_ tl_  =
               _tlOenv :: Env
               _tlOfresh :: Int
               _hdIalpha :: TypeId
+              _hdIargId :: Id
               _hdIcopy :: TypeId
               _hdIenv :: Env
               _hdIfresh :: Int
@@ -1290,13 +1288,13 @@ sem_TypeIds_Cons hd_ tl_  =
               _tlIfresh :: Int
               _tlIrelabel :: ([TypeId])
               _tlIrenames :: ([(Id,Id)])
-              -- use rule "Alpha.ag"(line 52, column 27)
+              -- use rule "Alpha.ag"(line 39, column 27)
               _lhsOalpha =
                   _hdIalpha : _tlIalpha
-              -- use rule "Alpha.ag"(line 113, column 34)
+              -- use rule "Alpha.ag"(line 100, column 34)
               _lhsOrelabel =
                   _hdIrelabel : _tlIrelabel
-              -- use rule "Alpha.ag"(line 110, column 34)
+              -- use rule "Alpha.ag"(line 97, column 34)
               _lhsOrenames =
                   _hdIrenames : _tlIrenames
               -- self rule
@@ -1323,7 +1321,7 @@ sem_TypeIds_Cons hd_ tl_  =
               -- copy rule (chain)
               _tlOfresh =
                   _hdIfresh
-              ( _hdIalpha,_hdIcopy,_hdIenv,_hdIfresh,_hdIrelabel,_hdIrenames) =
+              ( _hdIalpha,_hdIargId,_hdIcopy,_hdIenv,_hdIfresh,_hdIrelabel,_hdIrenames) =
                   (hd_ _hdOenv _hdOfresh )
               ( _tlIalpha,_tlIcopy,_tlIenv,_tlIfresh,_tlIrelabel,_tlIrenames) =
                   (tl_ _tlOenv _tlOfresh )
@@ -1338,13 +1336,13 @@ sem_TypeIds_Nil  =
               _lhsOcopy :: TypeIds
               _lhsOenv :: Env
               _lhsOfresh :: Int
-              -- use rule "Alpha.ag"(line 52, column 27)
+              -- use rule "Alpha.ag"(line 39, column 27)
               _lhsOalpha =
                   []
-              -- use rule "Alpha.ag"(line 113, column 34)
+              -- use rule "Alpha.ag"(line 100, column 34)
               _lhsOrelabel =
                   []
-              -- use rule "Alpha.ag"(line 110, column 34)
+              -- use rule "Alpha.ag"(line 97, column 34)
               _lhsOrenames =
                   []
               -- self rule

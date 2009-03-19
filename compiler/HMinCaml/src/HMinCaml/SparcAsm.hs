@@ -1,5 +1,7 @@
-{-# LANGUAGE FlexibleContexts           #-}
-{-# OPTIONS -Wall #-}
+
+
+-- UUAGC 0.9.6 (SparcAsm.ag)
+
 
 -- |
 -- Module: HMinCaml.SparcAsm
@@ -11,6 +13,7 @@
 --
 -- Sparc asm
 --
+
 
 module HMinCaml.SparcAsm where
 
@@ -24,62 +27,6 @@ import Control.Applicative
 import Data.Array.IArray
 
 
-data Id_or_Imm = V Id | C Int
-  deriving (Eq,Show)
-
-data SparcT =
-        Ans     Expr
-      | Let     (Id,Type)   Expr  SparcT
-      | Forget  Id          SparcT              {- virtual instruction -}
-  deriving (Eq,Show)
-  
-data Expr =
-        Nop
-      | Set     Int
-      | SetL    Id
-      | Mov     Id
-      | Neg     Id
-      | Add     Id Id_or_Imm
-      | Sub     Id Id_or_Imm
-      | SLL     Id Id_or_Imm
-      | Ld      Id Id_or_Imm
-      | St      Id Id Id_or_Imm
-      | FMovD   Id
-      | FNegD   Id
-      | FAddD   Id Id
-      | FSubD   Id Id
-      | FMulD   Id Id
-      | FDivD   Id Id
-      | LdDF    Id Id_or_Imm
-      | StDF    Id Id Id_or_Imm
-      | Comment String
-      {- virtual instructions -}
-      | IfEq    Id Id_or_Imm  SparcT SparcT
-      | IfLE    Id Id_or_Imm  SparcT SparcT
-      | IfGE    Id Id_or_Imm  SparcT SparcT
-      | IfFEq   Id Id         SparcT SparcT
-      | IfFLE   Id Id         SparcT SparcT
-      {- closure address, integer arguments, and float arguments -}
-      | CallCls Id [Id] [Id]
-      | CallDir Label [Id] [Id]
-      | Save    Id Id
-      | Restore Id
-  deriving (Eq,Show)
-  
-  
-data Fundef = Fundef  
-      { fun_name  :: Label
-      , args      :: [Id]
-      , fargs     :: [Id]
-      , body      :: SparcT
-      , ret       :: Type 
-      }
-  deriving (Eq,Show)
-  
-  
-
-data Prog = Prog [(Label, Float)] [Fundef] SparcT
-  deriving (Eq,Show)
 
 fletd :: Id -> Expr -> SparcT -> SparcT
 fletd x e1 e2 = Let (x, TFloat) e1 e2
@@ -198,5 +145,54 @@ sparcConcat (Forget y e1')    xt e2 = Forget y (sparcConcat e1' xt e2)
 align :: Int -> Int  
 align i = if i `mod` 8 == 0 then i else i + 4
 
-
-
+-- Expr --------------------------------------------------------
+data Expr  = Add (Id) (Id_or_Imm) 
+           | CallCls (Id) ([Id]) ([Id]) 
+           | CallDir (Label) ([Id]) ([Id]) 
+           | Comment (String) 
+           | FAddD (Id) (Id) 
+           | FDivD (Id) (Id) 
+           | FMovD (Id) 
+           | FMulD (Id) (Id) 
+           | FNegD (Id) 
+           | FSubD (Id) (Id) 
+           | IfEq (Id) (Id_or_Imm) (SparcT) (SparcT) 
+           | IfFEq (Id) (Id) (SparcT) (SparcT) 
+           | IfFLE (Id) (Id) (SparcT) (SparcT) 
+           | IfGE (Id) (Id_or_Imm) (SparcT) (SparcT) 
+           | IfLE (Id) (Id_or_Imm) (SparcT) (SparcT) 
+           | Ld (Id) (Id_or_Imm) 
+           | LdDF (Id) (Id_or_Imm) 
+           | Mov (Id) 
+           | Neg (Id) 
+           | Nop 
+           | Restore (Id) 
+           | SLL (Id) (Id_or_Imm) 
+           | Save (Id) (Id) 
+           | Set (Int) 
+           | SetL (Id) 
+           | St (Id) (Id) (Id_or_Imm) 
+           | StDF (Id) (Id) (Id_or_Imm) 
+           | Sub (Id) (Id_or_Imm) 
+           deriving ( Eq,Show)
+-- FloatConst --------------------------------------------------
+type FloatConst  = ( Label,Float)
+-- FloatConsts -------------------------------------------------
+type FloatConsts  = [FloatConst]
+-- Fundef ------------------------------------------------------
+data Fundef  = Fundef (Label) ([Id]) ([Id]) (SparcT) (Type) 
+             deriving ( Eq,Show)
+-- Fundefs -----------------------------------------------------
+type Fundefs  = [Fundef]
+-- Id_or_Imm ---------------------------------------------------
+data Id_or_Imm  = C (Int) 
+                | V (Id) 
+                deriving ( Eq,Show)
+-- Prog --------------------------------------------------------
+data Prog  = Prog (FloatConsts) (Fundefs) (SparcT) 
+           deriving ( Eq,Show)
+-- SparcT ------------------------------------------------------
+data SparcT  = Ans (Expr) 
+             | Forget (Id) (SparcT) 
+             | Let (TypeId) (Expr) (SparcT) 
+             deriving ( Eq,Show)

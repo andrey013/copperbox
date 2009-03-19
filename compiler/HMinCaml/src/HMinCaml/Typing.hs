@@ -395,7 +395,8 @@ sem_Type_TVar optTy_  =
 -- TypeId ------------------------------------------------------
 {-
    visit 0:
-      synthesized attribute:
+      synthesized attributes:
+         argId                : Id
          copy                 : SELF 
    alternatives:
       alternative Tuple:
@@ -410,24 +411,28 @@ sem_TypeId :: TypeId  ->
 sem_TypeId ( argId,argType)  =
     (sem_TypeId_Tuple argId (sem_Type argType ) )
 -- semantic domain
-type T_TypeId  = ( TypeId)
+type T_TypeId  = ( Id,TypeId)
 data Inh_TypeId  = Inh_TypeId {}
-data Syn_TypeId  = Syn_TypeId {copy_Syn_TypeId :: TypeId}
+data Syn_TypeId  = Syn_TypeId {argId_Syn_TypeId :: Id,copy_Syn_TypeId :: TypeId}
 wrap_TypeId :: T_TypeId  ->
                Inh_TypeId  ->
                Syn_TypeId 
 wrap_TypeId sem (Inh_TypeId )  =
-    (let ( _lhsOcopy) =
+    (let ( _lhsOargId,_lhsOcopy) =
              (sem )
-     in  (Syn_TypeId _lhsOcopy ))
+     in  (Syn_TypeId _lhsOargId _lhsOcopy ))
 sem_TypeId_Tuple :: Id ->
                     T_Type  ->
                     T_TypeId 
 sem_TypeId_Tuple argId_ argType_  =
-    (let _lhsOcopy :: TypeId
+    (let _lhsOargId :: Id
+         _lhsOcopy :: TypeId
          _argTypeOr1 :: ( Maybe Type )
          _argTypeIcopy :: Type
          _argTypeIoccur :: ( Bool )
+         -- "./TypeDEFS.ag"(line 29, column 15)
+         _lhsOargId =
+             argId_
          -- self rule
          _copy =
              (argId_,_argTypeIcopy)
@@ -439,7 +444,7 @@ sem_TypeId_Tuple argId_ argType_  =
              error "missing rule: TypeId.Tuple.argType.r1"
          ( _argTypeIcopy,_argTypeIoccur) =
              (argType_ _argTypeOr1 )
-     in  ( _lhsOcopy))
+     in  ( _lhsOargId,_lhsOcopy))
 -- TypeIds -----------------------------------------------------
 {-
    visit 0:
@@ -476,6 +481,7 @@ sem_TypeIds_Cons :: T_TypeId  ->
                     T_TypeIds 
 sem_TypeIds_Cons hd_ tl_  =
     (let _lhsOcopy :: TypeIds
+         _hdIargId :: Id
          _hdIcopy :: TypeId
          _tlIcopy :: TypeIds
          -- self rule
@@ -484,7 +490,7 @@ sem_TypeIds_Cons hd_ tl_  =
          -- self rule
          _lhsOcopy =
              _copy
-         ( _hdIcopy) =
+         ( _hdIargId,_hdIcopy) =
              (hd_ )
          ( _tlIcopy) =
              (tl_ )
