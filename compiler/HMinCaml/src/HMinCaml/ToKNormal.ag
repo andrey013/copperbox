@@ -14,9 +14,8 @@
 {
 module HMinCaml.ToKNormal where
 
-
 import HMinCaml.Id
-import qualified HMinCaml.KNormalSyn as K
+import qualified HMinCaml.KNormal.KNormalSyn as K
 import qualified HMinCaml.M as M
 import qualified HMinCaml.S as S
 import HMinCaml.Syntax
@@ -37,6 +36,10 @@ SEM Expr
 
 
 knormal :: Expr -> K.Expr
-knormal e = undefined -- return $ fst (g M.empty e)
+knormal expr = knormal_Syn_Expr synthesized
+  where
+    synthesized = wrap_Expr (sem_Expr expr) inherited
+    inherited   = Inh_Expr {  }
+
  
 } 

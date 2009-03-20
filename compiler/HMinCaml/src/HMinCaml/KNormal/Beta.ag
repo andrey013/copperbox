@@ -1,6 +1,6 @@
 {
 -- |
--- Module: HMinCaml.Beta
+-- Module: HMinCaml.KNormal.Beta
 -- License: as per original MinCaml
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,10 +12,10 @@
 }
 
 {
-module HMinCaml.Beta where
+module HMinCaml.KNormal.Beta where
 
 import HMinCaml.Id
-import HMinCaml.KNormalSyn ( Expr(..), Fundef(..) )
+import HMinCaml.KNormal.KNormalSyn ( Expr(..), Fundef(..) )
 import qualified HMinCaml.M as M
 import HMinCaml.Type
 import HMinCaml.Utils ( (&?), (&+) )
@@ -27,7 +27,7 @@ type Env = M.M Id Id
 
 }
 
-INCLUDE "KNormalDEFS.ag"
+INCLUDE "KNormal/KNormalSynDEFS.ag"
 INCLUDE "TypeDEFS.ag"
 
 ATTR Expr [ | | beta : {Expr} ]

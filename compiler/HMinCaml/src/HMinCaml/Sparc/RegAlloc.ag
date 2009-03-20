@@ -1,0 +1,41 @@
+{
+-- |
+-- Module: HMinCaml.RegAlloc
+-- License: as per original MinCaml
+--
+-- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability: unstable
+-- Portability: ghc
+--
+-- Register allocation
+--
+}
+
+{
+module HMinCaml.Sparc.RegAlloc  where
+
+import HMinCaml.Id
+import HMinCaml.Sparc.SparcSyn
+import HMinCaml.Type
+
+}
+
+INCLUDE "Sparc/SparcSynDEFS.ag"
+INCLUDE "TypeDEFS.ag"
+
+ATTR Prog [ | | regAlloc : {Prog} ]
+
+SEM Prog 
+  | *     lhs.regAlloc  = error $ "regAlloc.TODO"
+
+
+
+{
+
+regAlloc :: Prog -> Prog
+regAlloc prog = regAlloc_Syn_Prog synthesized
+  where
+    synthesized = wrap_Prog (sem_Prog prog) inherited
+    inherited   = Inh_Prog { }
+
+}

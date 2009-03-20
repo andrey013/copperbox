@@ -1,6 +1,6 @@
 {
 -- |
--- Module: HMinCaml.Closure
+-- Module: HMinCaml.KNormal.KNormalToClosure
 -- License: as per original MinCaml
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,18 +12,18 @@
 }
 
 {
-module HMinCaml.ToClosure where
+module HMinCaml.KNormal.KNormalToClosure where
 
-import qualified HMinCaml.ClosureSyn as C
+import qualified HMinCaml.Closure.ClosureSyn as C
 import HMinCaml.Id
-import HMinCaml.KNormalSyn
+import HMinCaml.KNormal.KNormalSyn
 import qualified HMinCaml.M as M
 import qualified HMinCaml.S as S
 import HMinCaml.Type
 
 }
 
-INCLUDE "KNormalDEFS.ag"
+INCLUDE "KNormal/KNormalSynDEFS.ag"
 INCLUDE "TypeDEFS.ag"
 
 
@@ -64,40 +64,6 @@ SEM Expr
   | ExtFunApp lhs.closure     = C.AppDir (L $ "min_caml_" ++ @nref) @args
   
     
-{-
-
-
-g :: M.M Id Type -> S.S Id -> K.Expr -> C.Expr
-g env known a = step a where
-    step K.Unit               = Unit
-    step (K.Int i)            = Int i
-    step (K.Float d)          = Float d
-    step (K.Neg x)            = Neg x
-    step (K.Add x y)          = Add x y
-    step (K.Sub x y)          = Sub x y
-    step (K.FNeg x)           = FNeg x
-    step (K.FAdd x y)         = FAdd x y
-    step (K.FSub x y)         = FSub x y
-    step (K.FMul x y)         = FMul x y
-    step (K.FDiv x y)         = FDiv x y
-    step (K.IfEq x y e1 e2)   = IfEq x y (g env known e1) (g env known e2)
-    step (K.IfLE x y e1 e2)   = IfLE x y (g env known e1) (g env known e2)
-    step (K.Let (x,t) e1 e2)  = Let (x,t) (g env known e1) 
-                                          (g (M.add x t env) known e2)
-    step (K.Var x)            = Var x
-   
-    step (K.LetRec _ _)       = error "todo"
-
-    step (K.App x ys) 
-        |  S.mem x known      = AppDir (L x) ys
-        | otherwise           = AppCls x ys
-    step (K.Tuple xs)         = Tuple xs
-    step (K.LetTuple xts y e) = LetTuple xts  y (g (M.addList xts env) known e)
-    step (K.Get x y)          = Get x y
-    step (K.Put x y z)        = Put x y z
-    step (K.ExtArray x)       = ExtArray (L x)
-    step (K.ExtFunApp x ys)   = AppDir (L $ "min_caml_" ++ x) ys
--}
 
 {
 

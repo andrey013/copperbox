@@ -1,6 +1,6 @@
 {
 -- |
--- Module: HMinCaml.Closure
+-- Module: HMinCaml.Closure.Closure
 -- License: as per original MinCaml
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,9 +12,9 @@
 }
 
 {
-module HMinCaml.Closure where
+module HMinCaml.Closure.Closure where
 
-import HMinCaml.ClosureSyn
+import HMinCaml.Closure.ClosureSyn
 import HMinCaml.Id
 import qualified HMinCaml.KNormalSyn as K
 import qualified HMinCaml.M as M
@@ -23,7 +23,7 @@ import HMinCaml.Type
 
 }
 
-INCLUDE "ClosureSynDEFS.ag"
+INCLUDE "Closure/ClosureSynDEFS.ag"
 INCLUDE "TypeDEFS.ag"
 
 ATTR Expr [ | | fv : {S.S Id} ]

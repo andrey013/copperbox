@@ -1,27 +1,25 @@
 {
 -- |
--- Module: HMinCaml.SparcAsmSyn
+-- Module: HMinCaml.KNormal.KNormalSyn
 -- License: as per original MinCaml
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability: unstable
 -- Portability: ghc
 --
--- Sparc asm abstract syntax
+-- K Normal form datatypes
 --
 }
 
 {
-module HMinCaml.SparcAsmSyn where
+module HMinCaml.KNormal.KNormalSyn where
 
 import HMinCaml.Id
 import HMinCaml.Type
 
 }
 
-
-INCLUDE "SparcAsmDEFS.ag"
+INCLUDE "KNormal/KNormalSynDEFS.ag"
 
 DERIVING *  : Eq, Show
-
 

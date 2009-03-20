@@ -1,7 +1,6 @@
-{-# OPTIONS -Wall #-}
-
+{
 -- |
--- Module: HMinCaml.Assoc
+-- Module: HMinCaml.KNormal.Assoc
 -- License: as per original MinCaml
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
@@ -10,14 +9,28 @@
 --
 -- Flatten let-bindings for pretty printing
 --
+}
 
-module HMinCaml.Assoc where
+{
+module HMinCaml.KNormal.Assoc where
 
-import HMinCaml.CompilerMonad
-import HMinCaml.KNormalSyn ( Expr(..), Fundef(..) )
+import HMinCaml.Id
+import HMinCaml.KNormal.KNormalSyn ( Expr(..), Fundef(..) )
+import HMinCaml.Type
 
-import Control.Monad ( liftM )
 
+}
+
+INCLUDE "KNormal/KNormalSynDEFS.ag"
+INCLUDE "TypeDEFS.ag"
+
+ATTR Expr [ | | assoc : {Expr} ]
+
+SEM Expr
+  | *   lhs.assoc = undefined
+
+
+{-
 g :: Expr -> Expr
 g (IfEq x y e1 e2)                = IfEq x y (g e1) (g e2)
 g (IfLE x y e1 e2)                = IfLE x y (g e1) (g e2)
@@ -30,7 +43,14 @@ g (Let xt e1 e2)                  = insert (g e1) where
 g (LetRec (Fundef xt yts e1) e2)  = LetRec (Fundef xt yts (g e1)) (g e2)
 g (LetTuple xts y e)              = LetTuple xts y (g e)
 g e                               = e
+-}
 
-assoc :: Expr -> CM Expr
-assoc = return . g
+{
 
+assoc :: Expr -> Expr
+assoc expr = assoc_Syn_Expr synthesized
+  where
+    synthesized = wrap_Expr (sem_Expr expr) inherited
+    inherited = Inh_Expr { }
+
+}

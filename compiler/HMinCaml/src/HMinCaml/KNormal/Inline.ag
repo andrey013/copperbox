@@ -1,6 +1,6 @@
 {
 -- |
--- Module: HMinCaml.Inline
+-- Module: HMinCaml.KNormal.Inline
 -- License: as per original MinCaml
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,22 +12,33 @@
 }
 
 {
-module HMinCaml.Inline where
+module HMinCaml.KNormal.Inline where
 
-import qualified HMinCaml.Alpha as Alpha
-import HMinCaml.CompilerMonad
-import HMinCaml.KNormalSyn ( Expr(..), Fundef(..) )
+
+import qualified HMinCaml.KNormal.Alpha as Alpha
+import HMinCaml.KNormal.KNormalSyn ( Expr(..), Fundef(..) )
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import HMinCaml.Type
 import HMinCaml.Utils ( foldleft2 )
 
-import Control.Applicative
 
 type Env = M.M Id ([(Id, Type)], Expr)
 }
 
-{
+
+INCLUDE "KNormal/KNormalSynDEFS.ag"
+INCLUDE "TypeDEFS.ag"
+
+ATTR Expr Fundef [ | threshold : {Int} | ]
+
+ATTR Expr [ | | inline : {Expr} ]
+
+SEM Expr 
+  | *       lhs.inline = undefined
+
+
+{-
 -- this is configurable in MinCaml
 threshold :: Int 
 threshold = 100
@@ -64,6 +75,16 @@ g _   e                   = return $ e
 inline :: Expr -> CM Expr 
 inline = undefined -- g M.empty  
 
+-}
+
+{
+
+inline :: Int -> Expr -> Expr
+inline i expr = inline_Syn_Expr synthesized
+  where
+    synthesized = wrap_Expr (sem_Expr expr) inherited
+    inherited = Inh_Expr { threshold_Inh_Expr = i }
+                           
 }
 
   

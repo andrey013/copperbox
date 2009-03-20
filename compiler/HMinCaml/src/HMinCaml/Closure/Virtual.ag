@@ -1,6 +1,6 @@
 {
 -- |
--- Module: HMinCaml.Virtual
+-- Module: HMinCaml.Closure.Virtual
 -- License: as per original MinCaml
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,20 +12,19 @@
 }
 
 {
-module HMinCaml.Virtual where
+module HMinCaml.Closure.Virtual where
 
-import HMinCaml.ClosureSyn
-import HMinCaml.CompilerMonad
+import HMinCaml.Closure.ClosureSyn
 import HMinCaml.Id
 import qualified HMinCaml.M as M
-import HMinCaml.SparcAsm
-import qualified HMinCaml.SparcAsmSyn as S
+import HMinCaml.Sparc.SparcAsm
+import qualified HMinCaml.Sparc.SparcSyn as S
 import HMinCaml.Type
 
 import Data.List ( foldl' )
 }
 
-INCLUDE "ClosureSynDEFS.ag"
+INCLUDE "Closure/ClosureSynDEFS.ag"
 
 ATTR Prog [ | | virtual : {S.Prog} ]
 

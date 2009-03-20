@@ -1,6 +1,6 @@
 {
 -- |
--- Module: HMinCaml.Simm13
+-- Module: HMinCaml.Sparc.Simm13
 -- License: as per original MinCaml
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,12 +12,12 @@
 }
 
 {
-module HMinCaml.Simm13 where
+module HMinCaml.Sparc.Simm13 where
 
 
 import HMinCaml.Id
 import qualified HMinCaml.M as M
-import HMinCaml.SparcAsmSyn
+import HMinCaml.Sparc.SparcSyn
 import HMinCaml.Type
 
 import Data.Bits
@@ -49,7 +49,7 @@ alt _        _        = Nothing
 
 }
 
-INCLUDE "SparcAsmDEFS.ag"
+INCLUDE "Sparc/SparcSynDEFS.ag"
 INCLUDE "TypeDEFS.ag"
 
 ATTR Prog   [ | | simm13 : {Prog} ]

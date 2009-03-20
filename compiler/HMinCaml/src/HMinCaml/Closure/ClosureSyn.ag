@@ -1,6 +1,6 @@
 {
 -- |
--- Module: HMinCaml.ClosureSyn
+-- Module: HMinCaml.Closure.ClosureSyn
 -- License: as per original MinCaml
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,14 +12,14 @@
 }
 
 {
-module HMinCaml.ClosureSyn where
+module HMinCaml.Closure.ClosureSyn where
 
 import HMinCaml.Id
 import HMinCaml.Type
 
 }
 
-INCLUDE "ClosureSynDEFS.ag"
+INCLUDE "Closure/ClosureSynDEFS.ag"
 
 DERIVING *  : Eq, Show
 

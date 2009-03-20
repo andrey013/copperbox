@@ -1,6 +1,6 @@
 {
 -- |
--- Module: HMinCaml.ConstFold
+-- Module: HMinCaml.KNormal.ConstFold
 -- License: as per original MinCaml
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,11 +12,11 @@
 }
 
 {
-module HMinCaml.ConstFold where
+module HMinCaml.KNormal.ConstFold where
 
 
 import HMinCaml.Id
-import HMinCaml.KNormalSyn
+import HMinCaml.KNormal.KNormalSyn
 import qualified HMinCaml.M as M
 import HMinCaml.Type
 import HMinCaml.Utils
@@ -52,7 +52,7 @@ alt _        _        = Nothing
 
 }
 
-INCLUDE "KNormalDEFS.ag"
+INCLUDE "KNormal/KNormalSynDEFS.ag"
 INCLUDE "TypeDEFS.ag"
 
 ATTR Expr Fundef [ | | copy : SELF ]

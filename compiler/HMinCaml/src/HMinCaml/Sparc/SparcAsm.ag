@@ -3,7 +3,7 @@
 
 
 -- |
--- Module: HMinCaml.SparcAsm
+-- Module: HMinCaml.Sparc.SparcAsm
 -- License: as per original MinCaml
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
@@ -16,12 +16,12 @@
 
 {
 
-module HMinCaml.SparcAsm where
+module HMinCaml.Sparc.SparcAsm where
 
 import HMinCaml.Id
 import qualified HMinCaml.M as M
 import qualified HMinCaml.S as S
-import HMinCaml.SparcAsmSyn
+import HMinCaml.Sparc.SparcSyn
 import HMinCaml.Type
 
 import Data.Array.IArray

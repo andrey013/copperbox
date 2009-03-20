@@ -1,4 +1,4 @@
--- HMinCaml.SparcAsmDEFS
+-- HMinCaml.Sparc.SparcSynDEFS
 
 
 DATA Id_or_Imm 

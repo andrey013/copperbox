@@ -15,7 +15,6 @@
 
 module HMinCaml.Typing  where
 
-import HMinCaml.CompilerMonad
 import HMinCaml.Id
 import HMinCaml.M
 import HMinCaml.Syntax
@@ -24,15 +23,13 @@ import HMinCaml.Type
 import Control.Applicative hiding ( empty )
 }
 
--- INCLUDE "SyntaxDEFS.ag"
+INCLUDE "SyntaxDEFS.ag"
 INCLUDE "TypeDEFS.ag"
 
 {
 
-typing :: Expr -> CM Expr
-typing e = do
-    -- ...
-    derefTerm e
+typing :: Expr -> Expr
+typing e = error $ "typing.TODO"
 
 type Subst = M Id Type
 
@@ -86,7 +83,7 @@ occur r1 ty = occur_Syn_Type synthesized
     inherited = Inh_Type r1
 
 
-
+{-
 derefTyp :: Type -> CM Type
 derefTyp (TFun t1s t2)    = TFun    <$> (mapM derefTyp t1s) <*> derefTyp t2
 derefTyp (TTuple ts)      = TTuple  <$> mapM derefTyp ts
@@ -104,7 +101,7 @@ derefTerm :: Expr -> CM Expr
 derefTerm (Not e) =  Not <$> derefTerm e
 
 derefTerm _       = error $ "derefTerm todo"
-
+-}
 
     
          

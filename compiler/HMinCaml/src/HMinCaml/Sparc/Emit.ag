@@ -1,6 +1,6 @@
 {
 -- |
--- Module: HMinCaml.Emit
+-- Module: HMinCaml.Sparc.Emit
 -- License: as per original MinCaml
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
@@ -12,18 +12,14 @@
 }
 
 {
-module HMinCaml.Emit where
+module HMinCaml.Sparc.Emit where
 
-import HMinCaml.CompilerMonad
 import HMinCaml.Float
 import HMinCaml.Id
 import HMinCaml.S
-import HMinCaml.SparcAsmSyn
+import HMinCaml.Sparc.SparcSyn
 import HMinCaml.Type
 
-
-import Control.Monad.State
-import Control.Monad.Writer
 import Text.PrettyPrint.Leijen
 
 data Dest = Tail | NonTail Id
@@ -37,10 +33,14 @@ tab s = indent 4 (text s)
 
 }
 
-INCLUDE "SparcAsmDEFS.ag"
+INCLUDE "Sparc/SparcSynDEFS.ag"
 
+
+ATTR Prog [ | | emit : {Doc} ]
+SEM Prog
+  | *         lhs.emit    = text "emit.TODO"
+  
 {-
-ATTR Expr [ | | emit : {Doc} ]
 ATTR Expr [ | | emitTail : {Doc} ]
 
 SEM Expr
@@ -130,15 +130,17 @@ emitF (Prog pdata fundefs e) = do
     emitG (NonTail "%g0") e
     tell  "\tret\n"
     tell  "\trestore\n"
-
-emit :: Prog -> CM String 
-emit _ = error $ "emit undefined"       
+      
 
 -}  
 
 {
 
-emit :: Prog -> CM String 
-emit _ = error $ "emit undefined" 
-
+emit :: Prog -> String 
+emit prog = 
+    (displayS `flip` []) . (renderPretty 0.8 60) $ emit_Syn_Prog synthesized
+  where
+    synthesized = wrap_Prog (sem_Prog prog) inherited
+    inherited   = Inh_Prog { }
+                           
 }

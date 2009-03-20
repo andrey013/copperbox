@@ -13,23 +13,29 @@
 
 module HMinCaml.Main where
 
-import HMinCaml.Alpha     ( alpha )
-import HMinCaml.Assoc     ( assoc )
-import HMinCaml.Beta      ( beta )
-import HMinCaml.ToClosure   ( closure )
-import HMinCaml.CompilerMonad
-import HMinCaml.ConstFold ( constFold )
-import HMinCaml.Elim      ( elim )
-import HMinCaml.Emit      ( emit )
-import HMinCaml.KNormalSyn ( Expr )
-import HMinCaml.Inline    ( inline )
+
+import HMinCaml.Closure.Virtual   ( virtual )
+
+import HMinCaml.KNormal.Alpha     ( alpha )
+import HMinCaml.KNormal.Assoc     ( assoc )
+import HMinCaml.KNormal.Beta      ( beta )
+import HMinCaml.KNormal.ConstFold ( constFold )
+import HMinCaml.KNormal.Elim      ( elim )
+import HMinCaml.KNormal.Inline    ( inline )
+import HMinCaml.KNormal.KNormalSyn ( Expr )
+import HMinCaml.KNormal.KNormalToClosure   ( closure )
+
 import HMinCaml.Parser    ( parseMinCaml )
-import HMinCaml.RegAlloc  ( regAlloc )
-import HMinCaml.Simm13    ( simm13 )
+import HMinCaml.Sparc.Emit      ( emit )
+import HMinCaml.Sparc.RegAlloc  ( regAlloc )
+import HMinCaml.Sparc.Simm13    ( simm13 )
+
 import qualified HMinCaml.Syntax as Syntax
+
 import HMinCaml.ToKNormal   ( knormal )
+
 import HMinCaml.Typing    ( typing )
-import HMinCaml.Virtual   ( virtual )
+
 
 import Control.Monad
 
@@ -46,24 +52,15 @@ parseFile path = do
     Left err -> putStrLn err >> return Nothing
     Right a -> return $ Just a
 
-iter :: Int -> Expr -> CM Expr
-iter 0 e = return e
-iter i e = do e' <- (elim <=< (return . constFold) 
-                          <=< inline 
-                          <=< assoc 
-                          <=< (return . beta))  e
-              if e' == e then return e else iter (i-1) e'
+iter :: Int -> Expr ->Expr
+iter 0 e = e
+iter i e = let e' = (elim . constFold . inline limit . assoc . beta) e
+           in if e' == e then e else iter (i-1) e'
                
                
-compile :: Syntax.Expr -> CM AsmText
-compile e = (emit <=< regAlloc      
-                  <=< (return . simm13) 
-                  <=< (return . virtual)       
-                  <=< (return . closure) 
-                  <=< iter limit    
-                  <=< (return . alpha)  
-                  <=< (return . knormal)       
-                  <=< typing) e
+compile :: Syntax.Expr -> AsmText
+compile = emit . regAlloc   . simm13  . virtual   . closure 
+               . iter limit . alpha   . knormal   . typing
 
 
                     

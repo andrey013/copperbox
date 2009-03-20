@@ -1,4 +1,4 @@
--- HMinCaml.KNormalDEFS
+-- HMinCaml.KNormal.KNormalSynDEFS
 
 DATA Expr 
   | Unit
