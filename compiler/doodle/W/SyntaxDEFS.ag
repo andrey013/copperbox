@@ -1,0 +1,33 @@
+
+-- Syntax.ag
+
+DATA Exp
+  | EVar        var           : {EName}
+  | ELit        lit           : Lit
+  | EApp        fun           : Exp 
+                arg           : Exp
+  | EAbs        var           : {EName} 
+                expr          : Exp
+  | ELet        var           : {EName}
+                sub           : Exp 
+                expr          : Exp
+
+
+DATA Lit
+  | LInt        val           : Integer
+  | LBool       val           : Bool
+
+
+DATA Type    
+  | TVar        name          : VarName
+  | TInt
+  | TBool
+  | TFun        t1            : Type 
+                t2            : Type
+  | TError      msg           : {String}                
+
+DATA TypeScheme  
+  | TypeScheme  vars          : {[VarName]} 
+                t             : Type
+                
+                

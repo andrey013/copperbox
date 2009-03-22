@@ -1,0 +1,77 @@
+
+{
+module Pretty where
+
+
+import Syntax
+
+import Text.PrettyPrint.Leijen                                                
+
+}
+
+INCLUDE "SyntaxDEFS.ag"
+
+ATTR Exp [ | | pretty : {Doc} ]
+
+SEM Exp
+  | EVar        lhs.pretty    = text @var
+  
+  | ELit        lhs.pretty    = @lit.pretty
+  
+  | EApp        lhs.pretty    = @fun.pretty <+> @arg.parenFun @arg.pretty
+  
+  | EAbs        lhs.pretty    = (    char '\\'  <+> text @var
+                                 <+> text "->"  <+> @expr.pretty )
+  | ELet        lhs.pretty    = (   text "let" <+> text @var
+                                 <+> char '='   <+> @sub.pretty
+                                 <+> text "in"  <$> nest 2 @expr.pretty )
+
+ATTR Lit [ | | pretty : {Doc} ]
+
+SEM Lit
+  | LInt        lhs.pretty    = integer @val 
+  | LBool       lhs.pretty    = bool @val
+  
+ATTR Exp [ | | parenFun : {Doc -> Doc} ]
+
+SEM Exp 
+  | ELet EApp EAbs    
+                lhs.parenFun  = parens
+  | * - ELet EApp EAbs
+                lhs.parenFun  = id
+                  
+ATTR TypeScheme [ | | pretty : {Doc} ]
+
+SEM TypeScheme 
+  | TypeScheme  lhs.pretty    = text "All" <+> hcat (punctuate comma 
+                                                          (map ppTyNum @vars))
+                                <> char '.' <+> @t.pretty
+
+ATTR Type  [ | | pretty : {Doc} ]
+
+SEM Type
+  | TVar        lhs.pretty    = ppTyNum @name 
+  | TInt        lhs.pretty    = text "Int"
+  | TBool       lhs.pretty    = text "Bool"
+  | TFun        lhs.pretty    = @t1.pretty <+> text "->" <+> @t2.pretty
+  | TError      lhs.pretty    = text "Type Error" <+> text @msg 
+                              
+
+{
+
+ppTyNum :: Int -> Doc
+ppTyNum = (char 't' <>) . int 
+
+instance Pretty Exp where
+    pretty e = pretty_Syn_Exp synthesized where
+      synthesized = wrap_Exp (sem_Exp e) inherited
+      inherited   = Inh_Exp  { }
+
+instance Pretty Type where
+    pretty t = pretty_Syn_Type synthesized where
+      synthesized = wrap_Type (sem_Type t) inherited
+      inherited   = Inh_Type  { }
+      
+
+
+}

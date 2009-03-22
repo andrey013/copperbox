@@ -1,0 +1,15 @@
+{
+
+module Syntax where
+
+type VarName = Int
+
+type EName   = String
+
+}
+
+
+
+INCLUDE "SyntaxDEFS.ag"
+
+DERIVING *  : Eq, Show
