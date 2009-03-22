@@ -49,11 +49,11 @@ infer (EAbs var expr)         = do
     return (s1,  (s1 |=> beta) `TFun` t1)                                 
 
 infer (EApp fun arg)          = do
+    beta      <- newVar
     (s1,t1)   <- infer fun
     env       <- gets t_env
     modify $ \s -> s { t_env = s1 |=> env }
     (s2,t2)   <- infer arg
-    beta      <- newVar
     let (s3,t3) = unify (s2 |=> t1) (t2 `TFun` beta)
     if isErr t3 
       then return (s3,t3)
