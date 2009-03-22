@@ -7,12 +7,7 @@ import Syntax
 
 import qualified Data.Map as Map
 import Data.Monoid
-import qualified Data.Set as Set
 
-
-generalize :: TypeEnv -> Type -> TypeScheme
-generalize te t = TypeScheme vars t where
-  vars = Set.toList $ freevars t `Set.difference` freevars te
 
 unboundErr :: String -> Type
 unboundErr = TError . ("unbound variable " ++) 
@@ -31,7 +26,6 @@ INCLUDE "SyntaxDEFS.ag"
 
 ATTR Exp [ | env : {TypeEnv} | ]
 ATTR Exp [ | uniq : {Int} | ]  
-ATTR Exp [ | subst : {Subst} | ] 
 
 
 ATTR Exp [ | | infer : {(Subst,Type)} ]
@@ -47,12 +41,19 @@ SEM Exp
   
   | ELit        lhs.infer     = @lit.infer
 
-
+                
+  | EAbs        loc.beta      = newVar @lhs.uniq
+                lhs.uniq      = @lhs.uniq + 1
+                expr.env      = (@lhs.env \\ @var) `union` 
+                                    (env1 @var (scheme @loc.beta []))   
+                loc.(s1,t1)   = @expr.infer                
+                lhs.infer     = (@loc.s1, (@loc.s1 |=> @loc.beta) `TFun` @loc.t1) 
+                
   | EApp        loc.(s1,t1)   = @fun.infer
                 arg.env       = @loc.s1 |=> @lhs.env
                 loc.(s2,t2)   = @arg.infer
                 loc.beta      = newVar @lhs.uniq
-                lhs.uniq      = @lhs.uniq + 1    
+                lhs.uniq      = @lhs.uniq + 1 
                 loc.(s3,t3)   = unify (@loc.s2 |=> @loc.t1) 
                                       (@loc.t2 `TFun` @loc.beta)
                                 
@@ -61,20 +62,11 @@ SEM Exp
                                   else (@loc.s3 `mappend` @loc.s2 
                                                 `mappend` @loc.s1, 
                                         @loc.s3 |=> @loc.beta)                             
-              
-                
-  | EAbs        loc.beta      = newVar @lhs.uniq
-                lhs.uniq      = @lhs.uniq + 1
-                expr.env      = (@lhs.env \\ @var) `union` 
-                                    (env1 @var (scheme @loc.beta []))   
-                loc.(s1,t1)   = @expr.infer
-                
-                lhs.infer     = (@loc.s1, (@loc.s1 |=> @loc.beta) `TFun` @loc.t1)                      
-
+                                   
   | ELet        loc.(s1,t1)   = @sub.infer
-                loc.scm       = generalize (@loc.s1 |=> @lhs.env) @loc.t1
-                expr.env      = (@loc.s1 |=> @lhs.env \\ @var) 
-                                    `union` (env1 @var @loc.scm)
+                loc.env'      = env1 @var (generalize (@loc.s1 |=> @lhs.env) 
+                                                       @loc.t1)
+                expr.env      = (@loc.s1 |=> @lhs.env \\ @var) `union` @loc.env'
                 loc.(s2,t2)   = @expr.infer       
                 lhs.infer     = (@loc.s2 `mappend` @loc.s1, @loc.t2)
 
@@ -86,49 +78,16 @@ SEM Lit
   | LBool       lhs.infer       = (mempty,TBool)
   
 
-ATTR Type [ | | freevars : {Set.Set VarName} ]
-
-SEM Type
-  | TVar        
-                lhs.freevars  = Set.singleton @name
-  | TInt TBool TError
-                lhs.freevars  = Set.empty
-  | TFun        
-                lhs.freevars  = @t1.freevars `Set.union` @t2.freevars
-                
-ATTR TypeScheme [ | | freevars : {Set.Set VarName} ]
-
-SEM TypeScheme  
-  | TypeScheme  lhs.freevars  = foldr (Set.delete) @t.freevars @vars
-
-
 
 {
 
-class Freevars a where freevars :: a -> Set.Set VarName
 
-instance Freevars TypeEnv where
-  freevars (T env) = Set.unions $ Map.fold (\e a -> freevars e : a) [] env 
-
-instance Freevars TypeScheme where
-  freevars t = freevars_Syn_TypeScheme synthesized
-    where
-      synthesized = wrap_TypeScheme (sem_TypeScheme t) inherited
-      inherited   = Inh_TypeScheme  { }
-
-instance Freevars Type where
-  freevars t = freevars_Syn_Type synthesized
-    where
-      synthesized = wrap_Type (sem_Type t) inherited
-      inherited   = Inh_Type { }
-      
 
 infer :: Exp -> Type
 infer e = snd $ infer_Syn_Exp synthesized
   where
     synthesized = wrap_Exp (sem_Exp e) inherited
     inherited   = Inh_Exp  { env_Inh_Exp   = T Map.empty,
-                             uniq_Inh_Exp  = 0,
-                             subst_Inh_Exp = mempty  }
+                             uniq_Inh_Exp  = 0 }
 
 }

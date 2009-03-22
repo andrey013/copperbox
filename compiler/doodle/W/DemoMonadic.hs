@@ -2,7 +2,7 @@
 
 module Demo where
 
-import Infer
+import InferMonadic
 import Pretty
 import Syntax
 import Unification 
@@ -10,12 +10,12 @@ import Unification
 
 import Text.PrettyPrint.Leijen 
 
-demo1 = infer (EVar "id")
-demo2 = infer (ELit (LInt 4))
+demo1 = inferM (EVar "id")
+demo2 = inferM (ELit (LInt 4))
 
 test :: Exp -> IO ()
 test e = putStrLn $ show (pretty e) ++ " :: " ++ show (pretty t) where 
-     t = infer e
+     t = inferM e
 
           
 

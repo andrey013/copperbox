@@ -7,14 +7,16 @@ import Syntax
 
 import qualified Data.Map as Map
 import Data.Monoid
+import qualified Data.Set as Set
 
+
+  
 type TyError = String
 
 newtype Subst = S { getSubst :: Map.Map VarName Type }
 
+
 newtype TypeEnv = T { getTypeEnv :: Map.Map EName TypeScheme }
-
-
 
 
 instantiate :: TypeScheme -> Int -> (Type,Int)
@@ -42,11 +44,8 @@ scheme :: Type -> [VarName] -> TypeScheme
 scheme t xs = TypeScheme xs t
 
 
-singleton :: VarName -> Type -> Subst
-singleton = (S .) . Map.singleton
-
-fromList :: [(VarName,Type)] -> Subst
-fromList = S . Map.fromList
+subst1 :: VarName -> Type -> Subst
+subst1 = (S .) . Map.singleton
 
 
 class Apply a where (|=>) :: Subst -> a -> a
@@ -68,42 +67,15 @@ instance Monoid Subst where
   mempty = S mempty
   S s1 `mappend` S s2 = S $ s1 `mappend` fmap ((S s1) |=>) s2
 
-
-{-
-unify :: Type -> Type -> Subst
-unify (TError s)  _             = TError s
-unify _           (TError s)    = TError s 
-unify (TFun l r)  (TFun l' r')  = let s1 = unify l l'
-                                      s2 = unify (s1 |=> r) (s1 |=> r')
-                                  in s1 `mappend` s2    
-unify (TVar l)  r               = varBind l r
-unify l         (TVar r)        = varBind r l
-unify TInt      TInt            = TInt
-unify TBool     TBool           = TBool
-unify l         r               = TError $ show l ++ " does not unify with "
-                                                  ++ show r
-                                    
-
-varBind :: VarName -> Type -> Subst
-varBind n t  
-    | n `occurs` t    = (mempty, TError $ "occur check fails " 
-                                   ++ show n ++ " " ++ show t)
-    | otherwise       = (singleton n t, t)  
-    
--}
+                         
   
 varBind :: VarName -> Type -> (Subst,Type)
-varBind n t  
-    | n `occurs` t    = (mempty, TError $ "occur check fails " 
-                                   ++ show n ++ " " ++ show t)
-    | otherwise       = (singleton n t, t)  
+varBind n (TVar u) | n == u       = (mempty, TVar u)  
+varBind n t     
+    | n `Set.member` freevars t   = (mempty, TError $ "occur check fails " 
+                                                ++ show n ++ " " ++ show t)
+    | otherwise                   = (subst1 n t, t)  
     
-occurs :: VarName -> Type -> Bool
-occurs n (TVar u)     = n == u
-occurs n (TFun t1 t2) = occurs n t1 || occurs n t2
-occurs _ _            = False
-
-
 
 
 unify :: Type -> Type -> (Subst,Type)
@@ -114,7 +86,7 @@ unify (TFun l r)  (TFun l' r')  = let (s1,t1) = unify l l'
                                   in (s1 `mappend` s2, TFun t1 t2)    
 unify (TVar l)    (TVar r) 
     | l == r                    = (mempty, TVar r)
-    | otherwise                 = (singleton l (TVar r), TVar r)
+    | otherwise                 = (subst1 l (TVar r), TVar r)
 unify l         (TVar r)        = varBind r l
 unify (TVar l)  r               = varBind l r
 unify TInt      TInt            = (mempty, TInt)
@@ -122,6 +94,24 @@ unify TBool     TBool           = (mempty, TBool)
 unify l         r               = (mempty, TError $ 
                                     show l ++ " does not unify with " ++ show r)
 
+class Freevars a where freevars :: a -> Set.Set VarName
 
+instance Freevars Type where
+  freevars (TVar name)        = Set.singleton name
+  freevars (TFun t1 t2)       = (freevars t1) `Set.union` (freevars t2)  
+  freevars _                  = Set.empty
+
+                
+instance Freevars TypeScheme where
+  freevars (TypeScheme vars t)  = foldr (Set.delete) (freevars t) vars
+  
+instance Freevars TypeEnv where
+  freevars (T env)  = Set.unions $ Map.fold (\e a -> freevars e : a) [] env 
+
+
+generalize :: TypeEnv -> Type -> TypeScheme
+generalize te t = TypeScheme vars t where
+  vars = Set.toList $ freevars t `Set.difference` freevars te  
+  
 
 
