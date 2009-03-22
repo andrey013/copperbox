@@ -16,6 +16,7 @@ module HMinCaml.Id where
 
 
 type Id = String
+type TyId = Int
 
 data Label = L String
   deriving (Eq,Show)
@@ -23,8 +24,4 @@ data Label = L String
 newId :: String -> Int -> Id
 newId s x = s ++ show x
   
-{-
-
-
-
--}    
+    

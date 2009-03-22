@@ -18,9 +18,11 @@ module HMinCaml.Syntax where
 import HMinCaml.Id
 import HMinCaml.Type
 
-
+{-
 gentyp :: Type
-gentyp = TVar Nothing
+gentyp = TVar 0
+-}
+
 
 }
 

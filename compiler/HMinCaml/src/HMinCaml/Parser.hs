@@ -40,7 +40,7 @@ parseMinCaml path = do
     
   
 addtyp :: Id -> (Id,Type)
-addtyp x = (x, gentyp)
+addtyp x = (x, TVar (-1))
 
 expr :: Parser Expr
 expr = buildExpressionParser table term >>= termk

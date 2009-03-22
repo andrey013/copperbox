@@ -2,6 +2,7 @@
 -- |
 -- Module: HMinCaml.Typing
 -- License: as per original MinCaml
+-- Copyright 2009 Stephen Tetley
 --
 -- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability: unstable
@@ -19,8 +20,11 @@ import HMinCaml.Id
 import HMinCaml.M
 import HMinCaml.Syntax
 import HMinCaml.Type
+import HMinCaml.Unification
 
-import Control.Applicative hiding ( empty )
+import qualified Data.Map as Map
+import Data.Monoid
+
 }
 
 INCLUDE "SyntaxDEFS.ag"
@@ -28,83 +32,117 @@ INCLUDE "TypeDEFS.ag"
 
 {
 
-typing :: Expr -> Expr
-typing e = error $ "typing.TODO"
 
-type Subst = M Id Type
+unboundErr :: String -> Type
+unboundErr = TError . ("unbound variable " ++) 
 
+newVar :: Int -> Type
+newVar = TVar                                                        
 
-unify :: Type -> Type -> (Subst,Type)
-unify TUnit     TUnit                       = (empty,TUnit)
-unify TBool     TBool                       = (empty,TBool)
-unify TInt      TInt                        = (empty,TInt)
-unify TFloat            TFloat              = (empty,TFloat)
+isErr :: Type -> Bool
+isErr (TError _)     = True
+isErr _              = False  
 
-unify (TVar a)          (TVar b)            | a == b  = (empty, TVar a)
-unify (TVar (Just a))   b                   = unify a b
-unify a                 (TVar (Just b))     = unify a b
-unify (TVar Nothing)    b                   = if occur Nothing b  
-                                                then undefined
-                                                else undefined
 
 }
 
-ATTR Type OptType [ r1 : { Maybe Type } | | occur : { Bool } ]
-ATTR Types [ r1 : { Maybe Type } | | occur USE {:} {[]} : { [Bool] } ]
+ATTR Expr Fundef [ | env : {TypeEnv} | ]
+ATTR Expr Fundef [ | uniq : {Int} | ]  
 
 
-SEM Type
-  | TFun        lhs . occur   = (or @args.occur) || @retTy.occur
-  | TTuple      lhs . occur   = or @tys.occur
-  | TArray      lhs . occur   = @ty.occur                             
-  | TVar        lhs . occur   = @optTy.occur
-  | * - TFun TTuple TArray TVar    
-                lhs . occur   = False
+ATTR Expr Fundef [ | | infer : {(Subst,Type)} ]
 
-SEM OptType
-  | Just
-                lhs . occur   = @just.occur
-  | Nothing
-                lhs . occur   = False                       
-
-SEM Type
-  | TFun        args . r1     = @lhs.r1
-                retTy . r1    = @lhs.r1
-  | TTuple      tys . r1      = @lhs.r1 
-  | TVar        optTy . r1    = @lhs.r1
+SEM Expr 
+  | Unit        lhs.infer     = (mempty,TUnit)
   
-    
-{
+  | Bool        lhs.infer     = (mempty,TBool)
+  
+  | Int         lhs.infer     = (mempty,TInt)
+  
+  | Float       lhs.infer     = (mempty,TFloat)
+  
+  | Not         loc.(s1,t1)   = @expr.infer
+                lhs.infer     = if @loc.t1 == inttype 
+                                  then (@loc.s1, inttype)
+                                  else (mempty, TError $ "Not " ++ show @loc.t1)
+                                  
+  | Neg         loc.(s1,t1)   = @expr.infer
+                lhs.infer     = if @loc.t1 == inttype 
+                                  then (@loc.s1, inttype)
+                                  else (mempty, TError $ "Neg " ++ show @loc.t1)
 
-occur :: Maybe Type -> Type -> Bool
-occur r1 ty = occur_Syn_Type synthesized
-  where
-    synthesized = wrap_Type (sem_Type ty) inherited
-    inherited = Inh_Type r1
+  
+  | Add         loc.(s1,t1)   = @expr1.infer
+                loc.(s2,t2)   = @expr2.infer
+                lhs.infer     = if arrow2 @loc.t1 @loc.t2 inttype == int2int2int 
+                                  then (@loc.s1 `mappend` @loc.s2, inttype)
+                                  else (mempty, TError $ "Neg " ++ show @loc.t1)
+
+{-
+  | Sub         expr1   : Expr  
+                expr2   : Expr
+  | FNeg        expr    : Expr
+  | FAdd        expr1   : Expr  
+                expr2   : Expr
+  | FSub        expr1   : Expr  
+                expr2   : Expr
+  | FMul        expr1   : Expr  
+                expr2   : Expr
+  | FDiv        expr1   : Expr  
+                expr2   : Expr
+  | Eq          expr1   : Expr  
+                expr2   : Expr
+  | LE          expr1   : Expr  
+                expr2   : Expr
+  | If          econd   : Expr  
+                ethen   : Expr  
+                eelse   : Expr
+  | Let         varName : TypeId
+                sub     : Expr  
+                body    : Expr
+-}
+                
+  | Var         loc.(t,n')    = case @var `element` @lhs.env of
+                                  Nothing -> (unboundErr @var, @lhs.uniq)
+                                  Just s  -> instantiate s @lhs.uniq                
+                lhs.infer     = (mempty,@loc.t)
+                lhs.uniq      = @lhs.uniq + @loc.n'
 
 
 {-
-derefTyp :: Type -> CM Type
-derefTyp (TFun t1s t2)    = TFun    <$> (mapM derefTyp t1s) <*> derefTyp t2
-derefTyp (TTuple ts)      = TTuple  <$> mapM derefTyp ts
-derefTyp (TArray t)       = TArray  <$> derefTyp t
-derefTyp (TVar Nothing)   = return $ TVar (Just TInt)
-derefTyp (TVar (Just _t)) = error $ "do TVars need STRefs?"
-
-derefTyp t                = return t
-  
-derefIdTyp :: (Id,Type) -> CM (Id,Type)
-           
-derefIdTyp (x, t) = (,) <$> pure x <*> derefTyp t
-
-derefTerm :: Expr -> CM Expr
-derefTerm (Not e) =  Not <$> derefTerm e
-
-derefTerm _       = error $ "derefTerm todo"
--}
-
+  | LetRec      funDef  : Fundef    
+                body    : Expr
+  | App         expr    : Expr
+                args    : Exprs
+  | Tuple       elts    : Exprs
+  | LetTuple    idents  : TypeIds  
+                sub     : Expr  
+                body    : Expr
+  | Array       expr1   : Expr  
+                expr2   : Expr
+  | Get         aexpr   : Expr  
+                iexpr   : Expr
+  | Put         aexpr   : Expr  
+                ixexpr  : Expr  
+                vexpr   : Expr
+                
+-}                
+SEM Fundef
+  | Fundef      lhs.infer     = @body.infer   
     
-         
+{
+
+infer :: Expr -> Type
+infer e = snd $ infer_Syn_Expr synthesized
+  where
+    synthesized = wrap_Expr (sem_Expr e) inherited
+    inherited   = Inh_Expr  { env_Inh_Expr   = initial_type_env,
+                              uniq_Inh_Expr = 0 }
+
+typing :: Expr -> Expr
+typing e = case infer e of
+              TUnit -> e
+              _     -> error $ "Type inference failed " ++ show e       
 
 }
 

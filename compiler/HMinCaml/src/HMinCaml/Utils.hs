@@ -41,7 +41,6 @@ idOfType TFloat       = "d"
 idOfType (TFun _ _)   = "f"
 idOfType (TTuple _)   = "t"
 idOfType (TArray _)   = "a" 
-idOfType (TVar _)     = error $ "idOfType on Var"
-
+idOfType t            = error $ "idOfType on " ++ show t
 
     

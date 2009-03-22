@@ -12,16 +12,17 @@ DATA Type
                 retTy     : Type
   | TTuple      tys       : Types
   | TArray      ty        : Type
-  | TVar        optTy     : OptType
+  | TVar        name      : TyId
+  | TError      msg       : String
+  
 
 TYPE Types      = [Type]
-TYPE OptType    = MAYBE Type
 
 TYPE TypeId     = (argId : {Id}, argType : Type)
 TYPE TypeIds    = [TypeId]    
 
 
-ATTR TypeId TypeIds Type Types OptType [ | | copy : SELF ]
+ATTR TypeId TypeIds Type Types [ | | copy : SELF ]
 
 ATTR TypeId        [ | | argId : {Id} ]
 

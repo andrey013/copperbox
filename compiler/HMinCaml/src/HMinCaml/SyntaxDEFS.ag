@@ -32,7 +32,7 @@ DATA Expr
   | Let         varName : TypeId
                 sub     : Expr  
                 body    : Expr
-  | Var         ident   : {Id}
+  | Var         var     : {Id}
   | LetRec      funDef  : Fundef    
                 body    : Expr
   | App         expr    : Expr
