@@ -12,7 +12,7 @@ include KNormal/knormal.mk
 include Sparc/sparc.mk
 
 all: Syntax.hs Type.hs   \
-  Typing.hs ToKNormal.hs \
+  Pretty.hs Typing.hs ToKNormal.hs \
   make-closure make-knormal make-sparc
 
 Syntax.hs: Syntax.ag SyntaxDEFS.ag
@@ -20,6 +20,9 @@ Syntax.hs: Syntax.ag SyntaxDEFS.ag
 
 Type.hs: Type.ag TypeDEFS.ag
 	uuagc -d Type.ag -o Type.hs
+
+Pretty.hs: Pretty.ag Syntax.hs Type.hs
+	uuagc -cfspw  Pretty.ag
 	
 Typing.hs: Typing.ag Syntax.hs Type.hs
 	uuagc -cfspw  Typing.ag

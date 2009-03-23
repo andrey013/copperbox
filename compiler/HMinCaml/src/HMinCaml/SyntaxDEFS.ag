@@ -46,7 +46,7 @@ DATA Expr
   | Get         aexpr   : Expr  
                 iexpr   : Expr
   | Put         aexpr   : Expr  
-                ixexpr  : Expr  
+                iexpr   : Expr  
                 vexpr   : Expr
 
   

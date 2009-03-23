@@ -1,0 +1,122 @@
+{
+-- |
+-- Module: HMinCaml.Pretty
+-- License: as per original MinCaml
+-- Copyright 2009 Stephen Tetley
+--
+-- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability: unstable
+-- Portability: ghc
+--
+-- Pretty print the top-level syntax
+--
+}
+
+{
+
+module HMinCaml.Pretty  where
+
+import HMinCaml.Id
+import HMinCaml.Syntax
+import HMinCaml.Type
+
+
+import Text.PrettyPrint.Leijen   
+
+}
+
+INCLUDE "SyntaxDEFS.ag"
+INCLUDE "TypeDEFS.ag"
+
+
+
+ATTR Expr Type Fundef TypeId [ | | pp : {Doc} ]
+
+ATTR Exprs Types TypeIds [ | | pp USE {:} {[]} : {[Doc]} ]
+
+
+SEM Expr 
+  | Unit        lhs.pp    = text "()"  
+  | Bool        lhs.pp    = ppbool @val
+  | Int         lhs.pp    = int @val
+  | Float       lhs.pp    = float @val
+  | Not         lhs.pp    = text "not"  <+> @expr.pp
+  | FNeg Neg         
+                lhs.pp    = char '-'    <> @expr.pp
+  | Add FAdd        
+                lhs.pp    = @expr1.pp   <> char '+'   <> @expr2.pp  
+  | Sub FSub    
+                lhs.pp    = @expr1.pp   <> char '-'   <> @expr2.pp 
+  | FMul        lhs.pp    = @expr1.pp   <> char '*'   <> @expr2.pp 
+  | FDiv        lhs.pp    = @expr1.pp   <> char '/'   <> @expr2.pp 
+  | Eq          lhs.pp    = @expr1.pp   <> char '='   <> @expr2.pp 
+  | LE          lhs.pp    = @expr1.pp   <> text "<="   <> @expr2.pp
+  | If          lhs.pp    = text "if"   </> @econd.pp </> 
+                            align (text "then" </> @ethen.pp <$>
+                                   text "else" </> @eelse.pp)
+  | Let         lhs.pp    = text "let"  <+> @varName.pp <+> equals <+> 
+                            @sub.pp <+> text "in" <$> @body.pp
+  | Var         lhs.pp    = text @var
+  | LetRec      lhs.pp    = text "let" <+> text "rec" <+> 
+                                (hang 2 @funDef.pp </> text "in") <$> 
+                                @body.pp          
+  | App         lhs.pp    = @expr.pp <+> hsep @args.pp
+  | Tuple       lhs.pp    = tupled @elts.pp
+  | LetTuple    lhs.pp    = text "let" <+> tupled @idents.pp <+> equals <+>
+                            @sub.pp <+> text "in" <$> @body.pp
+  | Array       lhs.pp    = text "Array.create" <+> @expr1.pp <+> @expr2.pp
+  | Get         lhs.pp    = @aexpr.pp <> dot <> parens @iexpr.pp
+  | Put         lhs.pp    = @aexpr.pp <> dot <> parens @iexpr.pp <+>
+                            text "<-" <+> @vexpr.pp
+
+  
+SEM Fundef 
+  | Fundef      lhs.pp    = @name.pp <+> hsep @args.pp <+> equals 
+                              </> @body.pp
+                
+                
+SEM Type 
+  | TUnit       lhs.pp    = text "unit"
+  | TBool       lhs.pp    = text "bool"
+  | TInt        lhs.pp    = text "int"
+  | TFloat      lhs.pp    = text "float"
+  | TFun        lhs.pp    = (arrowed @args.pp) `arrow` @retTy.pp
+  | TTuple      lhs.pp    = starred @tys.pp
+  | TArray      lhs.pp    = text "arr" <+> @ty.pp
+  | TVar        lhs.pp    = if @name < 0 
+                              then char '*' else char 't' <> int @name
+  | TError      lhs.pp    = text "Type-Error" <+> text @msg
+  
+SEM TypeId
+  | Tuple       lhs.pp    = text @argId <> colon <+> @argType.pp
+      
+{
+
+ppbool :: Bool -> Doc
+ppbool True   = text "true"
+ppbool False  = text "false"
+
+arrowed :: [Doc] -> Doc
+arrowed = hcat . punctuate (text "->")  
+
+starred :: [Doc] -> Doc
+starred = hcat . punctuate (text "*") 
+
+arrow :: Doc -> Doc -> Doc
+arrow a b = a <+> text "->" <+> b
+
+instance Pretty Expr where
+    pretty e = pp_Syn_Expr synthesized where
+      synthesized = wrap_Expr (sem_Expr e) inherited
+      inherited   = Inh_Expr  { }
+
+instance Pretty Type where
+    pretty t = pp_Syn_Type synthesized where
+      synthesized = wrap_Type (sem_Type t) inherited
+      inherited   = Inh_Type  { }
+      
+    
+
+}
+
+    
