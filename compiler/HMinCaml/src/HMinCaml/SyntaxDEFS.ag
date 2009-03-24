@@ -29,16 +29,16 @@ DATA Expr
   | If          econd   : Expr  
                 ethen   : Expr  
                 eelse   : Expr
-  | Let         varName : TypeId
+  | Let         var     : TypeId
                 sub     : Expr  
                 body    : Expr
   | Var         var     : {Id}
-  | LetRec      funDef  : Fundef    
+  | LetRec      fundef  : Fundef    
                 body    : Expr
   | App         expr    : Expr
                 args    : Exprs
   | Tuple       elts    : Exprs
-  | LetTuple    idents  : TypeIds  
+  | LetTuple    ids     : TypeIds  
                 sub     : Expr  
                 body    : Expr
   | Array       expr1   : Expr  

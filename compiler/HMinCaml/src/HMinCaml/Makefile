@@ -24,7 +24,7 @@ Type.hs: Type.ag TypeDEFS.ag
 Pretty.hs: Pretty.ag Syntax.hs Type.hs
 	uuagc -cfspw  Pretty.ag
 	
-Typing.hs: Typing.ag Syntax.hs Type.hs
+Typing.hs: Typing.ag Syntax.ag TypeDEFS.ag
 	uuagc -cfspw  Typing.ag
 
 ToKNormal.hs: ToKNormal.ag Syntax.hs $(KNORMAL_DIR)/KNormalSyn.hs

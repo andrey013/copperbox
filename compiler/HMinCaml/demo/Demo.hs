@@ -14,7 +14,8 @@ demo = do
   ans <- parseMinCaml "ack.ml"
   case ans of 
     Left err -> putStrLn err
-    Right a -> putStrLn $ showWidth 80 (pretty a)
+    -- Right a   -> putStrLn (show a)
+    Right a -> putStrLn $ showWidth 80 (pretty (typing a))
     
     
 

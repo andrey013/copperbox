@@ -1,0 +1,17 @@
+
+-- HNanoML.TypeDEFS
+
+
+
+DATA Type
+  | TyUnit
+  | TyBool
+  | TyInt
+  | TyFun       args      : Types 
+                ans       : Type
+  | TyVar       var       : {TyId}
+  | TyError     msg       : {String}
+--  | TyUndef
+
+TYPE Types = [Type]
+  

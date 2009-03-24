@@ -17,132 +17,170 @@
 module HMinCaml.Typing  where
 
 import HMinCaml.Id
-import HMinCaml.M
+import qualified HMinCaml.M as M
 import HMinCaml.Syntax
 import HMinCaml.Type
-import HMinCaml.Unification
 
-import qualified Data.Map as Map
-import Data.Monoid
+
+type Env = M.M Id Type
 
 }
 
 INCLUDE "SyntaxDEFS.ag"
 INCLUDE "TypeDEFS.ag"
 
-{
+ATTR Expr Exprs Fundef [ | env : {Env} | ]
+
+ATTR Type OptType [ | |  deref : {Type} ] 
+ATTR Types [ | | deref USE {:} {[]} : {[Type]} ]
 
 
-unboundErr :: String -> Type
-unboundErr = TError . ("unbound variable " ++) 
 
-newVar :: Int -> Type
-newVar = TVar                                                        
+SEM Type 
+  | TUnit TBool TInt TFloat    
+                lhs.deref     = @copy
 
-isErr :: Type -> Bool
-isErr (TError _)     = True
-isErr _              = False  
+  | TFun        lhs.deref     = TFun @args.deref @retTy.deref  
+  | TTuple      lhs.deref     = TTuple @tys.deref
+  | TArray      lhs.deref     = TArray @ty.deref
+  | TVar        lhs.deref     = @var.deref
 
-
-}
-
-ATTR Expr Fundef [ | env : {TypeEnv} | ]
-ATTR Expr Fundef [ | uniq : {Int} | ]  
+SEM OptType
+  | Nothing     lhs.deref     = TInt   -- uninstantiated types are cast to Int
+  | Just        lhs.deref     = @just.deref
 
 
-ATTR Expr Fundef [ | | infer : {(Subst,Type)} ]
+ATTR TypeId [ | | deref : {TypeId} ]
+ATTR TypeIds [ | | deref USE {:} {[]} : {[TypeId]} ]
 
-SEM Expr 
-  | Unit        lhs.infer     = (mempty,TUnit)
+SEM TypeId
+  | Tuple       lhs.deref     = (@argId, @argType.deref)
+
+ATTR Expr   [ | | deref : {Expr} ]
+ATTR Exprs   [ | | deref USE {:} {[]} : {[Expr]} ]
+
+SEM Expr
+  | Unit        lhs.deref     = Unit
+  | Bool        lhs.deref     = Bool @val
+  | Int         lhs.deref     = Int @val
+  | Float       lhs.deref     = Float @val
+  | Not         lhs.deref     = Not @expr.deref
+  | Neg         lhs.deref     = Neg @expr.deref
+  | Add         lhs.deref     = Add @expr1.deref @expr2.deref
+  | Sub         lhs.deref     = Sub @expr1.deref @expr2.deref
+  | Eq          lhs.deref     = Eq  @expr1.deref @expr2.deref
+  | LE          lhs.deref     = LE  @expr1.deref @expr2.deref
+  | FNeg        lhs.deref     = FNeg @expr.deref
+  | FAdd        lhs.deref     = FAdd @expr1.deref @expr2.deref
+  | FSub        lhs.deref     = FSub @expr1.deref @expr2.deref
+  | FMul        lhs.deref     = FMul @expr1.deref @expr2.deref
+  | FDiv        lhs.deref     = FDiv @expr1.deref @expr2.deref
+  | If          lhs.deref     = If   @econd.deref @ethen.deref @eelse.deref
+  | Let         lhs.deref     = Let  @var.deref   @sub.deref   @body.deref
+  | LetRec      lhs.deref     = error $ "LetRec.deref"
+  | App         lhs.deref     = App  @expr.deref  @args.deref
+  | Tuple       lhs.deref     = Tuple @elts.deref
+  | LetTuple    lhs.deref     = LetTuple @ids.deref @sub.deref @body.deref
+  | Array       lhs.deref     = Array @expr1.deref  @expr2.deref
+  | Get         lhs.deref     = Get   @aexpr.deref  @iexpr.deref
+  | Put         lhs.deref     = Put   @aexpr.deref  @iexpr.deref  @vexpr.deref
+
   
-  | Bool        lhs.infer     = (mempty,TBool)
   
-  | Int         lhs.infer     = (mempty,TInt)
+ATTR Expr     [ | | infer : {Type} ]
+
+SEM Expr
+  | Unit        lhs.infer     = TUnit
+  | Bool        lhs.infer     = TBool
+  | Int         lhs.infer     = TInt
+  | Float       lhs.infer     = TFloat
+  | Not         lhs.infer     = unifyWith "Not" TBool @expr.infer 
+  | Neg         lhs.infer     = unifyWith "Neg" TInt @expr.infer 
+  | Add Sub 
+                lhs.infer     = unifyWith2 "Int" TInt @expr1.infer  @expr2.infer 
+  | FNeg        lhs.infer     = unifyWith "FNeg" TFloat @expr.infer 
+  | FAdd FSub FMul FDiv 
+                lhs.infer     = unifyWith2 "Float" TFloat @expr1.infer @expr2.infer 
+  | Eq LE       
+                lhs.infer     = if @expr1.infer == @expr2.infer
+                                  then TBool
+                                  else error $ "Eq/LE unification failed"
+  | If          lhs.infer     = if @econd.infer == TBool 
+                                  then unifyWith "If" @ethen.infer @eelse.infer
+                                  else error $ "IF cond not Bool"
+  | Let         lhs.infer     = error $ "Let.TODO"
   
-  | Float       lhs.infer     = (mempty,TFloat)
+  | LetRec      loc.(x,t)     = @fundef.tid
+                lhs.env       = M.add @loc.x @loc.t @lhs.env
+                fundef.env    = M.addList @fundef.getargs @lhs.env
+                lhs.infer     = if unify @loc.t 
+                                         (TFun @fundef.tyargs @fundef.inferBody)
+                                  then @body.infer
+                                  else error $ "Letrec infer failed"
+  | App         lhs.infer     = error $ "App.TODO"
+  | Tuple       lhs.infer     = error $ "Tuple.TODO"
+  | LetTuple    lhs.infer     = error $ "LetTuple.TODO"
+  | Array       lhs.infer     = error $ "Array.TODO"
+  | Get         lhs.infer     = error $ "Get.TODO"
+  | Put         lhs.infer     = error $ "Put.TODO"
   
-  | Not         loc.(s1,t1)   = @expr.infer
-                lhs.infer     = if @loc.t1 == inttype 
-                                  then (@loc.s1, inttype)
-                                  else (mempty, TError $ "Not " ++ show @loc.t1)
-                                  
-  | Neg         loc.(s1,t1)   = @expr.infer
-                lhs.infer     = if @loc.t1 == inttype 
-                                  then (@loc.s1, inttype)
-                                  else (mempty, TError $ "Neg " ++ show @loc.t1)
 
-  
-  | Add         loc.(s1,t1)   = @expr1.infer
-                loc.(s2,t2)   = @expr2.infer
-                lhs.infer     = if arrow2 @loc.t1 @loc.t2 inttype == int2int2int 
-                                  then (@loc.s1 `mappend` @loc.s2, inttype)
-                                  else (mempty, TError $ "Neg " ++ show @loc.t1)
-
-{-
-  | Sub         expr1   : Expr  
-                expr2   : Expr
-  | FNeg        expr    : Expr
-  | FAdd        expr1   : Expr  
-                expr2   : Expr
-  | FSub        expr1   : Expr  
-                expr2   : Expr
-  | FMul        expr1   : Expr  
-                expr2   : Expr
-  | FDiv        expr1   : Expr  
-                expr2   : Expr
-  | Eq          expr1   : Expr  
-                expr2   : Expr
-  | LE          expr1   : Expr  
-                expr2   : Expr
-  | If          econd   : Expr  
-                ethen   : Expr  
-                eelse   : Expr
-  | Let         varName : TypeId
-                sub     : Expr  
-                body    : Expr
--}
-                
-  | Var         loc.(t,n')    = case @var `element` @lhs.env of
-                                  Nothing -> (unboundErr @var, @lhs.uniq)
-                                  Just s  -> instantiate s @lhs.uniq                
-                lhs.infer     = (mempty,@loc.t)
-                lhs.uniq      = @lhs.uniq + @loc.n'
-
-
-{-
-  | LetRec      funDef  : Fundef    
-                body    : Expr
-  | App         expr    : Expr
-                args    : Exprs
-  | Tuple       elts    : Exprs
-  | LetTuple    idents  : TypeIds  
-                sub     : Expr  
-                body    : Expr
-  | Array       expr1   : Expr  
-                expr2   : Expr
-  | Get         aexpr   : Expr  
-                iexpr   : Expr
-  | Put         aexpr   : Expr  
-                ixexpr  : Expr  
-                vexpr   : Expr
-                
--}                
+ATTR Fundef [ | | tid : {TypeId} ]
 SEM Fundef
-  | Fundef      lhs.infer     = @body.infer   
-    
-{
+  | Fundef      lhs.tid       = @name.copy
 
-infer :: Expr -> Type
-infer e = snd $ infer_Syn_Expr synthesized
+
+ATTR Fundef [ | | tyargs : {[Type]} ]
+SEM Fundef
+  | Fundef      lhs.tyargs    = map snd @args.copy
+  
+ATTR Fundef [ | | inferBody : {Type} ]
+SEM Fundef
+  | Fundef      lhs.inferBody = @body.infer 
+  
+ATTR Fundef [ | | getargs : {[TypeId]} ]
+SEM Fundef
+  | Fundef      lhs.getargs   = @args.copy
+  
+{
+unify :: Type -> Type -> Bool
+unify TUnit         TUnit         = True
+unify TBool         TBool         = True  
+unify TInt          TInt          = True
+unify TFloat        TFloat        = True
+unify (TFun a r)    (TFun a' r')  = and (zipWith unify a a') && unify r r'
+
+unify _             _             = False
+
+unifyWith :: String -> Type -> Type -> Type
+unifyWith msg t t' | unify t t' = t
+                   | otherwise  = error $ "unification failed " ++ msg ++ "\n"
+                                              ++ show t ++ " " ++ show t'         
+
+unifyWith2 :: String -> Type -> Type -> Type -> Type
+unifyWith2 msg t t' t'' 
+    | unify t t' && unify t t'' = t
+    | otherwise  = error $ "unification failed " ++ msg ++ "\n"
+                              ++ show t ++ " " ++ show t' ++ " " ++ show t''
+                                
+infer :: Expr -> Type -- (M.M Type Type, Type)
+infer e = infer_Syn_Expr synthesized
   where
     synthesized = wrap_Expr (sem_Expr e) inherited
-    inherited   = Inh_Expr  { env_Inh_Expr   = initial_type_env,
-                              uniq_Inh_Expr = 0 }
+    inherited   = Inh_Expr  { env_Inh_Expr  = M.empty }
+
+derefType :: Type -> Type
+derefType t = undefined
+
+derefTerm :: Expr -> Expr
+derefTerm e = undefined
+
 
 typing :: Expr -> Expr
-typing e = case infer e of
-              TUnit -> e
-              _     -> error $ "Type inference failed " ++ show e       
+typing e = case unify TUnit (infer e) of
+              False -> error "top level does not have type unit"
+              True  -> let env' = M.map derefType M.empty
+                       in derefTerm e  
 
 }
 

@@ -18,13 +18,15 @@ module HMinCaml.M (
     mem,
     empty,
     add, add2,
-    find, find'
+    find, find', map
   ) where
 
 import HMinCaml.Utils ( foldleft2 )
 
 import Data.List ( foldl' )
 import qualified Data.Map as Map
+
+import Prelude hiding ( map )
 
 type M k v = Map.Map k v
 
@@ -60,5 +62,5 @@ find' k m = maybe fk id $ Map.lookup k m where
 mem :: Ord k => k -> M k a -> Bool
 mem = Map.member
 
-
-
+map :: (a -> b) -> M k a -> M k b
+map = Map.map

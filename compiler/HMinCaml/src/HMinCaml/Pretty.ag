@@ -30,7 +30,7 @@ INCLUDE "TypeDEFS.ag"
 
 
 
-ATTR Expr Type Fundef TypeId [ | | pp : {Doc} ]
+ATTR Expr Type Fundef TypeId OptType [ | | pp : {Doc} ]
 
 ATTR Exprs Types TypeIds [ | | pp USE {:} {[]} : {[Doc]} ]
 
@@ -54,15 +54,16 @@ SEM Expr
   | If          lhs.pp    = text "if"   </> @econd.pp </> 
                             align (text "then" </> @ethen.pp <$>
                                    text "else" </> @eelse.pp)
-  | Let         lhs.pp    = text "let"  <+> @varName.pp <+> equals <+> 
+  | Let         lhs.pp    = text "let"  <+> @var.pp <+> equals <+> 
                             @sub.pp <+> text "in" <$> @body.pp
   | Var         lhs.pp    = text @var
   | LetRec      lhs.pp    = text "let" <+> text "rec" <+> 
-                                (hang 2 @funDef.pp </> text "in") <$> 
+                                (hang 2 @fundef.pp </> text "in") <$> 
                                 @body.pp          
-  | App         lhs.pp    = @expr.pp <+> hsep @args.pp
+  | App         lhs.pp    = @expr.pp <+> 
+                              hsep (zipWith ($) @args.parenpp @args.pp)
   | Tuple       lhs.pp    = tupled @elts.pp
-  | LetTuple    lhs.pp    = text "let" <+> tupled @idents.pp <+> equals <+>
+  | LetTuple    lhs.pp    = text "let" <+> tupled @ids.pp <+> equals <+>
                             @sub.pp <+> text "in" <$> @body.pp
   | Array       lhs.pp    = text "Array.create" <+> @expr1.pp <+> @expr2.pp
   | Get         lhs.pp    = @aexpr.pp <> dot <> parens @iexpr.pp
@@ -83,14 +84,26 @@ SEM Type
   | TFun        lhs.pp    = (arrowed @args.pp) `arrow` @retTy.pp
   | TTuple      lhs.pp    = starred @tys.pp
   | TArray      lhs.pp    = text "arr" <+> @ty.pp
-  | TVar        lhs.pp    = if @name < 0 
-                              then char '*' else char 't' <> int @name
-  | TError      lhs.pp    = text "Type-Error" <+> text @msg
+  | TVar        lhs.pp    = @var.pp
+
+SEM OptType
+  | Nothing     lhs.pp    = char '*'
+  | Just        lhs.pp    = @just.pp
   
 SEM TypeId
   | Tuple       lhs.pp    = text @argId <> colon <+> @argType.pp
+
+ATTR Exprs [ | | parenpp USE {:} {[]} : {[(Doc -> Doc)]} ]
+ATTR Expr  [ | | parenpp : {(Doc -> Doc)} ]
+
+SEM Expr 
+  | Not Add Sub FAdd FSub FMul FDiv App  
+               lhs.parenpp  = parens
+  | * - Not Add Sub FAdd FSub FMul FDiv App          
+               lhs.parenpp  = id               
       
 {
+
 
 ppbool :: Bool -> Doc
 ppbool True   = text "true"
@@ -104,6 +117,9 @@ starred = hcat . punctuate (text "*")
 
 arrow :: Doc -> Doc -> Doc
 arrow a b = a <+> text "->" <+> b
+
+
+ 
 
 instance Pretty Expr where
     pretty e = pp_Syn_Expr synthesized where

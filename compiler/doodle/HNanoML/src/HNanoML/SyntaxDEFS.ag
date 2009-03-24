@@ -1,0 +1,42 @@
+
+-- HNanoML.SyntaxDEFS
+-- Copyright   :  (c) Stephen Tetley 2009
+
+DATA Expr 
+  | CBool       val     : {Bool}
+  | CInt        val     : {Int}
+  | Plus        lexp    : Expr      
+                rexp    : Expr
+  | Minus       lexp    : Expr  
+                rexp    : Expr
+  | Eq          lexp    : Expr  
+                rexp    : Expr
+  | Less        lexp    : Expr  
+                rexp    : Expr
+  | If          bexp    : Expr  
+                sexp    : Expr  
+                fexp    : Expr
+  | Let         decl    : Decl  
+                body    : Expr
+  | Var         var     : {Name}
+  | Letrec      fundef  : Fundef    
+                body    : Expr
+  | App         expr    : Expr
+                args    : Exprs
+
+DATA Decl
+  | Decl        var     : {Name}
+                typ     : Type
+                sub     : Expr
+  
+DATA Fundef 
+  | Fundef      var     : {Name}
+                typ     : Type
+                args    : {[Name]}
+                argtys  : Types
+                body    : Expr 
+
+
+
+TYPE Exprs      = [Expr]        
+

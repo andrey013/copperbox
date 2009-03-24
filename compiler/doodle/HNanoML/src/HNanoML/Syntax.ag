@@ -1,0 +1,32 @@
+{
+-- |
+-- Module      : HNanoML.Syntax
+-- License     : BSD-style (see the LICENSE file in the distribution)
+-- Copyright   : 2009 Stephen Tetley
+--
+-- Maintainer  : Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   : unstable
+-- Portability : ghc & uuag
+--
+-- Initial syntax
+--
+}
+{
+
+
+module HNanoML.Syntax where
+
+
+import HNanoML.Type
+
+type Name = String 
+
+}
+
+
+
+INCLUDE "SyntaxDEFS.ag"
+
+DERIVING *  : Eq, Show
+
+

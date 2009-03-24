@@ -1,0 +1,28 @@
+{
+-- |
+-- Module      :  HNanoML.Type
+-- License     : BSD-style (see the LICENSE file in the distribution)
+-- Copyright   : 2009 Stephen Tetley
+--
+-- Maintainer  : Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   : unstable
+-- Portability : ghc & uuag
+--
+-- Type representation
+--
+}
+
+{
+module HNanoML.Type where
+
+type TyId = Int
+
+}
+
+
+INCLUDE "TypeDEFS.ag"
+
+DERIVING *  : Eq, Show
+  
+         
+  

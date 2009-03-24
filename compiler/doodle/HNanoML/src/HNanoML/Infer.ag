@@ -1,0 +1,136 @@
+
+{
+module HNanoML.Infer where
+
+import HNanoML.Syntax
+import HNanoML.Type
+import HNanoML.Unification
+
+import qualified Data.Map as Map
+import Data.Monoid
+
+
+unboundErr :: String -> Type
+unboundErr = TyError . ("unbound variable " ++) 
+
+newVar :: Int -> Type
+newVar = TyVar                                                        
+
+isErr :: Type -> Bool
+isErr (TyError _)    = True
+isErr _              = False  
+
+extractError :: Type -> Type -> Type
+extractError t@(TyError _)  _               = t
+extractError _              t@(TyError _)   = t
+extractError t              t'              = TyError $ "unification failed" ++
+                                               show t ++ " " ++ show t'
+
+
+
+
+}
+
+INCLUDE "SyntaxDEFS.ag"
+INCLUDE "TypeDEFS.ag"
+
+ATTR Types Type [ | | copy : SELF ]
+
+ATTR Expr Exprs Decl Fundef [ | env : {TypeEnv} | ]
+ATTR Expr Exprs Decl Fundef [ | uniq : {Int} | ]  
+ATTR Expr Exprs Decl Fundef [ | subst : {Subst} | ]
+
+ATTR Expr [ | | infer : {Type} ]
+
+SEM Expr
+  | CBool       lhs.infer       = TyBool
+  | CInt        lhs.infer       = TyInt
+  | Plus Minus 
+                lhs.uniq        = @lhs.uniq + 1
+                loc.(s1,t1)     = unify TyInt @lexp.infer
+                loc.(s2,t2)     = unify TyInt @rexp.infer  
+                lhs.infer       = case (@loc.t1,@loc.t2) of
+                                    (TyInt,TyInt) -> TyInt
+                                    (t,t')      -> extractError t t'
+                lhs.subst       = @loc.s2 `mappend` @loc.s1
+  | Eq Less 
+                lhs.uniq        = @lhs.uniq + 1
+                loc.(s1,t1)     = unify TyInt @lexp.infer
+                loc.(s2,t2)     = unify TyInt @rexp.infer  
+                lhs.infer       = case (@loc.t1,@loc.t2) of
+                                    (TyInt,TyInt) -> TyBool
+                                    (t,t')      -> extractError t t'
+                lhs.subst       = @loc.s2 `mappend` @loc.s1
+
+
+  | Let         loc.t1        = @decl.infer
+                loc.env'      = env1 @decl.var (generalize (@decl.subst |=> @lhs.env) 
+                                                       @loc.t1)
+                body.env      = (@decl.subst |=> @lhs.env \\ @decl.var) `union` @loc.env'
+                loc.t2        = @body.infer       
+                lhs.infer     = @loc.t2
+                lhs.subst     = @body.subst `mappend` @decl.subst 
+                 
+  | Var         loc.(t,n')    = case @var `element` @lhs.env of
+                                  Nothing -> (unboundErr @var, @lhs.uniq)
+                                  Just s  -> instantiate s @lhs.uniq                
+                lhs.infer     = @loc.t
+                lhs.uniq      = @lhs.uniq + @loc.n'
+  | Letrec      
+                lhs.infer     = case @fundef.tyError of 
+                                  Just msg -> TyError msg
+                                  Nothing  -> @body.infer                
+
+  | App         args.uniq     = @lhs.uniq + 1
+                loc.beta      = newVar @args.uniq
+                loc.t1        = @expr.infer
+                loc.t2        = @args.infer                
+                loc.(s3,t3)   = unify (@args.subst |=> @loc.t1) 
+                                      (@loc.t2 `TyFun` @loc.beta)
+                                
+                lhs.infer     = if isErr @loc.t3 
+                                  then @loc.t3 
+                                  else @loc.s3 |=> @loc.beta    
+                lhs.subst     = @loc.s3 `mappend` @args.subst 
+                                        `mappend` @expr.subst                                        
+
+
+ATTR Exprs [ | | infer USE {:} {[]} : {[Type]} ]
+
+ATTR Decl [ | | infer : {Type} ] 
+
+SEM Decl
+  | Decl        lhs.infer     = @sub.infer 
+                
+ATTR Decl [ | | var : {Name} ] 
+
+SEM Decl
+  | Decl        lhs.var       = @var 
+
+ATTR Fundef [ | | tyError : {Maybe String} ]
+
+SEM Fundef
+  | Fundef    lhs.env       = addTE @var @typ.copy @lhs.env
+              body.env      = foldr (\(k,v) env -> addTE k v env) 
+                                @lhs.env 
+                                (zip @args @argtys.copy)
+              loc.argT      = TyFun @argtys.copy @body.infer
+              loc.(s1,t1)   = unify @typ.copy @loc.argT
+              lhs.tyError   = case @loc.t1 of
+                                TyError msg -> Just msg
+                                _           -> Nothing
+              lhs.subst     = @loc.s1                   
+
+{
+
+
+
+infer :: Expr -> Type
+infer e = infer_Syn_Expr synthesized
+  where
+    synthesized = wrap_Expr (sem_Expr e) inherited
+    inherited   = Inh_Expr  { env_Inh_Expr   = initial_type_env,
+                              subst_Inh_Expr = mempty,
+                              uniq_Inh_Expr  = 0 }
+
+}

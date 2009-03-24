@@ -1,0 +1,119 @@
+{
+-- |
+-- Module      : HNanoML.Pretty
+-- License     : BSD-style (see the LICENSE file in the distribution)
+-- Copyright   : 2009 Stephen Tetley
+--
+-- Maintainer  : Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   : unstable
+-- Portability : ghc & uuag
+--
+-- Pretty print the top-level syntax
+--
+}
+
+{
+
+module HNanoML.Pretty  where
+
+
+import HNanoML.Syntax
+import HNanoML.Type
+
+
+import Text.PrettyPrint.Leijen   
+
+}
+
+INCLUDE "SyntaxDEFS.ag"
+INCLUDE "TypeDEFS.ag"
+
+
+
+ATTR Expr Decl Fundef Type  [ | | pp : {Doc} ]
+
+ATTR Exprs Types [ | | pp USE {:} {[]} : {[Doc]} ]
+
+
+SEM Expr  
+  | CBool       lhs.pp    = ppbool @val
+  | CInt        lhs.pp    = int @val
+  | Plus        lhs.pp    = @lexp.pp   <> char '+'   <> @rexp.pp  
+  | Minus       lhs.pp    = @lexp.pp   <> char '-'   <> @rexp.pp 
+  | Eq          lhs.pp    = @lexp.pp   <> char '='   <> @rexp.pp 
+  | Less        lhs.pp    = @lexp.pp   <> text "<="   <> @rexp.pp
+  | If          lhs.pp    = text "if"   </> @bexp.pp </> 
+                            align (text "then" </> @sexp.pp <$>
+                                   text "else" </> @fexp.pp)
+  | Let         lhs.pp    = text "let"  <+> @decl.pp <+> text "in" <$> @body.pp
+  | Var         lhs.pp    = text @var
+  | Letrec      lhs.pp    = text "let" <+> text "rec" <+> 
+                                (hang 2 (@fundef.pp </> text "in")) <$> 
+                                @body.pp          
+  | App         lhs.pp    = @expr.pp <+> 
+                              hsep (zipWith ($) @args.parenpp @args.pp)
+
+
+SEM Decl
+  | Decl        lhs.pp    = text @var  <> colon <+> @typ.pp <+> equals 
+                                       <+> @sub.pp
+  
+SEM Fundef 
+  | Fundef      lhs.pp    = text @var  <+> hsep (map text @args) 
+                                       <>  colon  <+> @typ.pp
+                                       <+> equals </> @body.pp
+                
+                
+SEM Type 
+  | TyUnit      lhs.pp    = text "()"
+  | TyBool      lhs.pp    = text "bool"
+  | TyInt       lhs.pp    = text "int"
+  | TyFun       lhs.pp    = (starred @args.pp) `arrow` @ans.pp
+  | TyVar       lhs.pp    = char 't' <> int @var
+  | TyError     lhs.pp    = text "Type-Error" <+> text @msg
+--  | TyUndef     lhs.pp    = char '*'
+  
+
+ATTR Exprs [ | | parenpp USE {:} {[]} : {[(Doc -> Doc)]} ]
+ATTR Expr  [ | | parenpp : {(Doc -> Doc)} ]
+
+SEM Expr 
+  | Plus Minus App
+               lhs.parenpp  = parens
+  | * - Plus Minus App        
+               lhs.parenpp  = id               
+      
+{
+
+
+ppbool :: Bool -> Doc
+ppbool True   = text "true"
+ppbool False  = text "false"
+
+arrowed :: [Doc] -> Doc
+arrowed = hcat . punctuate (text "->")  
+
+starred :: [Doc] -> Doc
+starred = hcat . punctuate (text "*") 
+
+arrow :: Doc -> Doc -> Doc
+arrow a b = a <+> text "->" <+> b
+
+
+ 
+
+instance Pretty Expr where
+    pretty e = pp_Syn_Expr synthesized where
+      synthesized = wrap_Expr (sem_Expr e) inherited
+      inherited   = Inh_Expr  { }
+
+instance Pretty Type where
+    pretty t = pp_Syn_Type synthesized where
+      synthesized = wrap_Type (sem_Type t) inherited
+      inherited   = Inh_Type  { }
+      
+    
+
+}
+
+    
