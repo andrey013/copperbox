@@ -130,7 +130,8 @@ instance (Ftv a, Ftv b) => Ftv (Either a b) where
   
 instance Ftv TypeEnv where
   ftv (T env)  = Set.unions $ Map.fold (\e a -> ftv e : a) [] env 
-  
+
+instantiate :: Either Type PType -> Fresh Type  
 instantiate (Left t)                = return t
 instantiate (Right (PType alphs t)) = do 
     es <- count (Set.size alphs) freshUnivar

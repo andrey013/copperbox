@@ -25,7 +25,7 @@ data Type = PolyVar Int | UniVar Int | TyFun Type Type
 arrow :: Type -> Type -> Type
 arrow = TyFun  
  
-data PType = PType [TyName] Type    
+data PType = PType (Set.Set TyName) Type     
   deriving (Show)
   
 type Subst = Map.Map TyName Type
@@ -58,11 +58,11 @@ popP (T (x:xs) env) = let t = maybe err (either (const err) id) $
 popP (T []     _)   = error $ "Stack empty"
 
 
-pushT :: Name -> Type -> TypeEnv -> TypeEnv
-pushT x e (T xs env) = T (x:xs) (Map.insert x (Left e) env)
+pushT :: TypeEnv -> (Name, Type) -> TypeEnv
+pushT (T xs env) (x,e)  = T (x:xs) (Map.insert x (Left e) env)
 
-pushP :: Name -> PType -> TypeEnv -> TypeEnv
-pushP x s (T xs env) = T (x:xs) (Map.insert x (Right s) env)
+pushP :: TypeEnv -> (Name, PType) -> TypeEnv
+pushP (T xs env) (x,s)  = T (x:xs) (Map.insert x (Right s) env)
 
 -- NE (next expression), MT (monotype), abbreviated for the eval functions compactness 
 data Control = NE Exp | MT Type
@@ -76,15 +76,31 @@ type TypeNames = Set.Set TyName
  
 class Ftv a where ftv :: a -> TypeNames
 
+instance Ftv Type where
+  ftv (UniVar name)      = Set.singleton name
+  ftv (TyFun t1 t2)      = (ftv t1) `Set.union` (ftv t2)  
+  ftv _                  = Set.empty
 
+instance Ftv PType where
+  ftv (PType vars t)  = (ftv t) Set.\\ vars
+  
+instance (Ftv a, Ftv b) => Ftv (Either a b) where
+  ftv = either ftv ftv
+  
+instance Ftv TypeEnv where
+  ftv (T _ env)  = Set.unions $ Map.fold (\e a -> ftv e : a) [] env 
+    
+instantiate :: Either Type PType -> Fresh Type
 instantiate (Left t)                = return t
 instantiate (Right (PType alphs t)) = do 
-    es <- count (length alphs) xifresh
+    es <- count (Set.size alphs) freshUnivar
     let s = es // alphs 
-    return (s |=> t) where
+    return (s |=> t)
     
-(//) :: [Type] -> [Int] -> Subst
-(//) = (Map.fromList .) . zipWith (flip (,))
+(//) :: [Type] -> TypeNames -> Subst
+(//) ts sn = Map.fromList $ zip (Set.toList sn) ts
+
+freshUnivar = xifresh
 
 xifresh :: Fresh Type
 xifresh = UniVar <$> freshName
@@ -111,7 +127,7 @@ instance (Apply a, Apply b) => Apply (Either a b) where
 instance Apply PType where
   s |=> (PType vars t) = PType vars t' where
       t' = s' |=> t
-      s' = foldr (Map.delete) s vars
+      s' = Set.fold (Map.delete) s vars
 
 instance Apply Frame where
   s |=> LamF          = LamF 
@@ -126,25 +142,46 @@ instance Apply [Frame] where
 generalize :: PType -> Fresh Type
 generalize (PType vars t) = (|=> t) <$> s
   where
-    s    = (Map.fromList . zip vars . map UniVar) <$> freshNames (length vars) 
-   
+    s    = (Map.fromList . zip (Set.toList vars) . map UniVar) <$> freshNames (Set.size vars) 
+
 -- [var]
-eval (NE (Var x),te,k)      = (\c -> (MT c,te,k)) <$> instantiate (te &? x)
+eval (NE (Var x),te,k)        = (\c -> (MT c,te,k)) <$> instantiate (te &? x)
 -- [lam-in] 
-eval (NE (Lam x e),te,k)    = (\xi -> (NE e,pushT x xi te,LamF:k)) <$> xifresh
+eval (NE (Lam x e),te,k)      = (\xi -> (NE e,te `pushT` (x,xi),LamF:k)) 
+                                  <$> xifresh
 -- [lam-out]
-eval (MT t,te,LamF:k)       = (\(t',te') -> (MT $ t `arrow` t',te',k))
-                                 <$> pure (popT te)
+eval (MT t,te,LamF:k)         = (\(t',te') -> (MT $ t `arrow` t',te',k))
+                                  <$> pure (popT te)
 -- [app-l]
-eval (NE (App e1 e2),te,k)  = pure (NE e1,te,SqE e2:k)                                  
+eval (NE (App e1 e2),te,k)    = pure (NE e1,te,SqE e2:k)                                  
 -- [app-r]
-eval (MT t,te,SqE e2:k)     = pure (NE e2,te,SqT t:k)                               
+eval (MT t,te,SqE e2:k)       = pure (NE e2,te,SqT t:k)                               
 -- [app-out]
-eval (MT t,te,SqT t':k)     = xifresh >>= \xi -> undefined xi >>= \s ->
-                              return (MT $ s |=> xi,s |=> te,s |=> k)
+eval (MT t,te,SqT t':k)       = (\ xi -> let s = unify t' (t `arrow` xi)
+                                  in (MT $ s |=> xi,s |=> te,s |=> k)) <$> xifresh
+-- [let-def]
+eval (NE (Let x e1 e2),te,k)  = pure (NE e1,te, LetInF x e2:k)
+-- [let-body]
+eval (MT t,te,LetInF x e2:k)  = let si   = PType (gt t te) t in
+                                pure (NE e2, te `pushP` (x,si), LetF : k)
+-- [let-out]
+eval (MT t,te, LetF:k)        = pure (MT t, snd $ popP te, k)  
+eval a                        = error $ show a                      
+
+gt :: Type -> TypeEnv -> TypeNames
+gt t te = ftv t Set.\\ ftv te
+
+unify :: Type -> Type -> Subst
+unify t             (UniVar n)    = unify (UniVar n) t
+unify (UniVar n)    t            
+    | not (n `Set.member` ftv t)  = Map.singleton n t 
+    | otherwise                   = error $ "occur check fails" 
+unify (TyFun t1 t2) (TyFun t3 t4) = let th = unify t1 t3 in
+                                    (unify (th |=> t2) (th |=> t4)) `mappend` th
+unify _             _             = mempty
 
 
-eval a                      = error $ show a                      
+
                      
 runW :: Fresh a -> a                          
 runW f = fst $ runFresh f 0   
@@ -172,4 +209,9 @@ e1  =  Let "id" (Lam "x" (Var "x"))
 e2  =  Let "id" (Lam "x" (Let "y" (Var "x") (Var "y")))
         (App (Var "id") (Var "id"))
         
+
+-- :t (let id = \x -> x x in id) - cannot construct the infinite type: t = t -> t1
+e4  =  Let "id" (Lam "x" (App (Var "x") (Var "x")))
+        (Var "id")
+
         
