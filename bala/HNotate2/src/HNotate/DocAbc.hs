@@ -19,19 +19,20 @@
 
 module HNotate.DocAbc where
 
+import HNotate.Data ( c_major, c_major'ls, labelSetOf )
 import HNotate.DocBase
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
-
-
-
+import HNotate.Pitch
 
 
 -- temp
 printf :: ((Doc -> AbcEnv -> Doc) -> AbcEnv -> r) -> r
 printf p = p (\s _env -> s) abc_env where
-  abc_env = AbcEnv { _current_meter       = TimeSig 4 4, 
+  abc_env = AbcEnv { _current_meter       = TimeSig 4 4,
+                     _current_key         = c_major,
+                     _label_set           = c_major'ls, 
                      _unit_note_length    = quarter,
                      _tempo               = 120  }
 
@@ -46,14 +47,19 @@ set_unit_note_length d  env   = env {_unit_note_length = d}
 
 set_tempo                     :: Int -> AbcEnv -> AbcEnv
 set_tempo i env               = env { _tempo = i } 
-                 
+
+set_current_key               :: Key -> AbcEnv -> AbcEnv
+set_current_key k env         = 
+    let lbls = maybe c_major'ls id (labelSetOf k) 
+    in env {_current_key = k, _label_set   = lbls}
+                     
 --------------------------------------------------------------------------------
 --
                  
 type AbcOutput = DocK AbcEnv Doc
 
 tune :: AbcOutput -> AbcOutput
-tune k = local k 
+tune k = local k <> line
 
 -- | @X field@ - reference \/ tune number.
 xField :: Int -> AbcOutput
@@ -87,7 +93,23 @@ unitNoteLenField d =  field 'L' (duration d) <> update (set_unit_note_length d)
 tempoField :: Int -> AbcOutput
 tempoField i = field 'Q' (text "1/4=" <> int i) <> update (set_tempo i)
     
-               
+-- | @Z field@ - transcriber notes.
+transcriberField :: String -> AbcOutput
+transcriberField s = field 'Z' (text s)
+
+-- | @N field@ - notes.    
+notesField :: String -> AbcOutput
+notesField s = field 'N' (text s)
+
+   
+-- | @K field@ - key.
+-- The key determines how Abc prints a pitch for instance f# is printed
+-- as ^f in c major, but just f in g major. 
+keyField :: PitchLabel -> Mode -> AbcOutput
+keyField l m = doc <> update (set_current_key $ Key l m []) where
+    doc = field 'K' (pitchLabel l UPPER <+> mode m)
+    
+         
 --------------------------------------------------------------------------------
 -- elementary printers
 
@@ -96,7 +118,7 @@ tempoField i = field 'Q' (text "1/4=" <> int i) <> update (set_tempo i)
 
 
 field :: Char -> AbcOutput -> AbcOutput
-field ch doc = char ch <> colon <> doc <> line
+field ch doc = char ch <> colon <> doc
 
 
 meter :: Meter -> AbcOutput
@@ -104,11 +126,51 @@ meter (TimeSig n d) = int n <> char '/' <> int d
 meter CommonTime    = text "C"
 meter CutTime       = text "C|"
 
+data PitchChar = UPPER | LOWER
+  deriving (Eq,Show)
+  
+pitch :: Pitch -> AbcOutput
+pitch (Pitch l a o) 
+    | o > 4     = pitchLabel (PitchLabel l a) LOWER <> octave o 
+    | otherwise = pitchLabel (PitchLabel l a) UPPER <> octave o 
+  where
+    octave :: Int -> AbcOutput
+    octave i  | i > 5       = text (replicate (i-5) '\'') 
+              | i < 4       = text (replicate (4-i) ',')
+              | otherwise   = empty
+
+
+pitchLabel :: PitchLabel -> PitchChar -> AbcOutput
+pitchLabel (PitchLabel l a) pc 
+    | pc == LOWER   = accidental a <> (char . toLowerLChar) l
+    | otherwise     = accidental a <> (char . toUpperLChar) l
+  where     
+    accidental :: Accidental -> AbcOutput
+    accidental Nat           = empty    
+    accidental Sharp         = char '^' 
+    accidental Flat          = char '_' 
+    accidental DoubleSharp   = text "^^"
+    accidental DoubleFlat    = text "__"
+
 duration :: Duration -> AbcOutput
 duration dn | dn == no_duration = empty
-            | otherwise         = fn $ ratioElements $ convRational dn
+            | otherwise        = fn $ ratioElements $ convRational dn
   where
     fn (n,1) = int n
     fn (1,d) = char '/' <> int d
     fn (n,d) = int n <> char '/' <> int d
+     
+mode :: Mode -> AbcOutput
+mode Major        = text "maj" 
+mode Minor        = text "min"
+mode Lydian       = text "lyd"
+mode Ionian       = text "ion" 
+mode Mixolydian   = text "mix"
+mode Dorian       = text "dor"
+mode Aeolian      = text "aeo"
+mode Phrygian     = text "phr"
+mode Locrian      = text "loc"
+
+
+
     

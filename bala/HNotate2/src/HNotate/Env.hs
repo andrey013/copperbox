@@ -26,7 +26,11 @@ import HNotate.MusicRepDatatypes
 
 data AbcEnv = AbcEnv {
       _current_meter      :: Meter,
+      _current_key        :: Key,
+      _label_set          :: LabelSet,      
       _unit_note_length   :: Duration,
       _tempo              :: Int     
     }
   deriving (Show)
+  
+  

@@ -17,7 +17,75 @@
 
 module HNotate.MusicRepDatatypes where
 
+import HNotate.Duration
+import HNotate.Pitch
 
+import qualified Data.Map as Map
+import Data.Ratio
+
+--------------------------------------------------------------------------------
+-- Music representation
+type MeterPattern = ([Int],Duration)
+
+meterPatternLength :: MeterPattern -> Duration
+meterPatternLength (xs,d) = d * (%1) (fromIntegral $ sum xs)  
+
+meterPatternDurations :: MeterPattern -> [Duration]
+meterPatternDurations (xs,d) = map fn xs where
+    fn i = d * (fromIntegral i % 1) 
+
+
+
+data Key = Key PitchLabel Mode [PitchLabel]
+  deriving (Eq,Show) 
+
+  
+data Mode = Major | Minor | Lydian | Ionian | Mixolydian
+          | Dorian | Aeolian | Phrygian | Locrian 
+  deriving (Eq,Enum,Ord,Show)
+
+newtype LabelSet = LabelSet { getLabelSet :: Map.Map Int PitchLabel }
+  deriving (Show)
+
+
+
+labelSet :: [PitchLabel] -> LabelSet
+labelSet = LabelSet . foldl fn Map.empty
+  where fn m p = Map.insert (semitones p) p m
+  
+labelSetFind :: Pitch -> LabelSet -> Maybe Pitch
+labelSetFind (Pitch l a o) (LabelSet m) = 
+    maybe Nothing (fn o) (Map.lookup (semitones l + semitones a) m) 
+  where
+    fn ove (PitchLabel ltr atl) = Just $ Pitch ltr atl ove
+    
+    
+    
+    
+
+
+meterToDouble :: Meter -> Double
+meterToDouble (TimeSig n d) = (fromIntegral n) / (fromIntegral d)
+meterToDouble CommonTime    = 4.0 / 4.0
+meterToDouble CutTime       = 2.0 / 2.0
+
+
+
+
+-- Enharmonically change the pitch name if it is in the label set
+spell :: Pitch -> LabelSet -> Pitch
+spell p@(Pitch _ _ o) lbls = 
+    maybe p ((flip octaveConst) o) (labelSetFind p lbls)
+  
+-- Cancel the accidental if the pitch is found in the label set
+-- This is the transformation needed for Abc: 
+-- f# should be printed f in g major
+naturalize :: Pitch -> LabelSet -> Pitch
+naturalize p lbls = maybe p ((flip accidentalConst) Nat) (labelSetFind p lbls)
+    
+
+
+  
 -- For /universality/ meter is defined according to Abc's representation.
 -- LilyPond will simply generate @TimeSig@ cases.
 data Meter = TimeSig Int Int 
