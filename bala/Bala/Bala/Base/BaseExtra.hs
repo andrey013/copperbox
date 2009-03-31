@@ -126,7 +126,13 @@ sentinelCount i j  | j > i      = f j i
 base2bases :: [Integer]
 base2bases = unfoldr (\x -> Just (x, x * 2)) 1 
 
-    
+--  alternative 
+-- map (2^) [0..]
+--  or with a limit :
+-- f n = map (2^) $ iota n
+--   where
+--     iota :: Integral a => a -> [a]
+--     iota i = [0..i-1]
     
 --------------------------------------------------------------------------------
 -- Utility functions
@@ -195,6 +201,26 @@ dyap f g a b = f (g a b)
 -- then apply the unary function f to the result.
 triap :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
 triap f g a b c = f (g a b c) 
+
+{-
+
+dyap & triap are better done with this...
+
+demo01 = dyap show (+) 1 2
+demo02 = show $ (+) 1 2
+demo02' = f 1 3 where
+  f = (show .) . (+)
+
+
+demo03 = triap show (,,) 1 2 3
+demo04 = show $ (,,) 1 2 3
+
+
+
+-}
+
+
+
 
 -- | Show as a hexadecimal string, prefixed with @0x@.
 hexStr :: Integral a => a -> String

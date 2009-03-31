@@ -33,7 +33,7 @@ ana f b0 = step (f b0) where
 -- anaMap is the unfold analogue of accumMapL
 -- we can signal exhaustion early by the Maybe type                
 anaMap  :: (a -> st -> Maybe (b,st)) -> st -> [a] -> ([b],st) 
-anaMap f s0 []     = ([],s0)     
+anaMap _ s0 []     = ([],s0)     
 anaMap f s0 (x:xs) = case (f x s0) of
     Nothing       -> ([],s0)
     Just (a,st)   -> (a:as,b) where (as,b) = anaMap f st xs

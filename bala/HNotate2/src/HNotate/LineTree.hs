@@ -131,11 +131,10 @@ levelSt upd st0 = post . F.foldl' fn ([],(st0,S.empty),st0) . getLineTree where
                                         
   post (xss,se,_st)               = (se:xss)
     
-demo01 = levelSt' (\s e -> ((s,e), s+1)) 0 example7 
-demo02 = levelSt (\s _ -> s+1) 0 example7
+
     
-root :: LineTree a
-root = LineTree S.empty
+lineTree :: LineTree a
+lineTree = LineTree S.empty
 
 (|*>) :: LineTree a -> LTNode a -> LineTree a
 (|*>) (LineTree se) e = LineTree $ se |> e
@@ -149,18 +148,3 @@ event e t         = t |*> Single e
 
 
 
--- Reverse application and composition
-
-infixl 7 #
-
-( # ) :: a -> (a -> b) -> b 
-x # f = f x
-
-note ch t = event ch t
-
-example7 :: LineTree Char
-example7 =  
-  root # poly [ root # note 'c' # note 'c' # note 'C' # note 'C'
-              , root # note 'd' # note 'D' # poly [ root # note 'e' ]
-              ]
-              

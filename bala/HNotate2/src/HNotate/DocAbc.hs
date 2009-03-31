@@ -87,7 +87,7 @@ meterField n d = field 'M' (meter tms) <> update (set_current_meter tms)
 -- derived from the current meter (e.g. for 4/4 time the unit note length is
 -- an eighth).   
 unitNoteLenField :: Duration -> AbcOutput
-unitNoteLenField d =  field 'L' (duration d) <> update (set_unit_note_length d)
+unitNoteLenField d =  field 'L' (abcduration d) <> update (set_unit_note_length d)
 
 -- | @Q field@ - tempo - specialized to the duration of a quarter note.
 tempoField :: Int -> AbcOutput
@@ -152,9 +152,9 @@ pitchLabel (PitchLabel l a) pc
     accidental DoubleSharp   = text "^^"
     accidental DoubleFlat    = text "__"
 
-duration :: Duration -> AbcOutput
-duration dn | dn == no_duration = empty
-            | otherwise        = fn $ ratioElements $ convRational dn
+abcduration :: Duration -> AbcOutput
+abcduration dn | dn == no_duration = empty
+               | otherwise        = fn $ ratioElements $ convRational dn
   where
     fn (n,1) = int n
     fn (1,d) = char '/' <> int d

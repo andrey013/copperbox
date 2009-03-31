@@ -20,8 +20,6 @@
 module HNotate.Fits where
 
 
-import qualified Data.Sequence as S
-
 
 class (Ord b, Num b) => Fits a b | a -> b where
   -- @measure@ object a by the unit b

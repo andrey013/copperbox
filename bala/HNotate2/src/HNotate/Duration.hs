@@ -66,12 +66,12 @@ import Data.Ratio
 type Duration = Rational 
 
 class RhythmicValue a where
-  rhythmicValue   :: a -> Duration
-  updateDuration  :: Duration -> a -> a
+  duration      :: a -> Duration
+  swapDuration  :: Duration -> a -> a
 
 instance RhythmicValue Duration where
-  rhythmicValue     = id
-  updateDuration    = const
+  duration      = id
+  swapDuration  = const
     
   
 

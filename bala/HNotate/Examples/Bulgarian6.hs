@@ -4,7 +4,7 @@
 -- ghci ...
 -- :set -i../../HNotate
 
-module Examples.Bulgarian6 where
+module Bulgarian6 where
 
 
 import HNotate
