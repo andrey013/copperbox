@@ -36,6 +36,8 @@ module HNotate.Duration (
 
     -- * printing
     PrintableDuration(..), printableDuration,
+    ppDuration, 
+    
     pdElements,
 
     approximateDuration,
@@ -62,6 +64,7 @@ module HNotate.Duration (
 import Data.List (unfoldr)
 import Data.Ratio
 
+import Text.PrettyPrint.Leijen
 
 type Duration = Rational 
 
@@ -180,8 +183,15 @@ approximateDuration drn
       step i | dotn i dapprox > d = (i-1)
              | i > 3              = i
              | otherwise          = step (i+1) 
-                              
 
+ppDuration :: Duration -> Doc 
+ppDuration = pretty . printableDuration
+
+instance Pretty PrintableDuration where
+  pretty (PrintableDuration r dc) = let (n,d) = ratioElements r in 
+      pretty n <> char '/' <> pretty d <> text (replicate dc '.') 
+      
+      
       
 --------------------------------------------------------------------------------
 -- Named elements

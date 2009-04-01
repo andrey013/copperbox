@@ -19,6 +19,8 @@ module HNotate.Utils where
 import qualified Data.Sequence as S
 import Data.List ( unfoldr )
 
+import Text.PrettyPrint.Leijen
+
 --------------------------------------------------------------------------------
 -- HOF's
 
@@ -89,5 +91,10 @@ nextOf :: (Bounded a, Eq a, Enum a) => a -> a
 nextOf x | x == maxBound = minBound
          | otherwise     = succ x
 
+--------------------------------------------------------------------------------
+-- pretty print
+
+prime :: Doc
+prime = char '\''
 
 

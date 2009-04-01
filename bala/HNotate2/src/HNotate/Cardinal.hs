@@ -40,7 +40,6 @@
 
 module HNotate.Cardinal where
 
-import Data.Monoid
 
 data Cardinal a = Single a 
                 | Multi [a]
@@ -51,8 +50,8 @@ toList (Single a) = [a]
 toList (Multi xs) = xs
 
 fromList :: [a] -> Cardinal a
-fromList (x:xs) = Multi (x:xs)
 fromList [x]    = Single x
+fromList (x:xs) = Multi (x:xs)
 fromList []     = error $ "Cardinal - fromList on empty list"
 
   
@@ -60,8 +59,5 @@ instance Functor Cardinal where
   fmap f (Single a) = Single (f a)
   fmap f (Multi xs) = Multi (fmap f xs)
   
-instance Monoid (Cardinal a) where
-  Single a `mappend` c  = Multi $ a : toList c  
-  Multi xs `mappend` c  = Multi $ xs ++ toList c
   
    

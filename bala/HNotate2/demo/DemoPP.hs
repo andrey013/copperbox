@@ -13,7 +13,14 @@ import HNotate.NoteList
 import HNotate.Pitch
 import HNotate.Utils
 
+import Data.Ratio 
+import Text.PrettyPrint.Leijen ( pretty )
 
+
+test1 = partitionToStaff 0 (repeat $ 2%4) (repeat [2%8,2%8]) $ 
+    fn $  collapseTree bars1_4
+  where
+    fn ((_,sa):_)  = sa
 
 bars1_4 :: NoteList
 bars1_4 = 

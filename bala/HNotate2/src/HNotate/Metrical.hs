@@ -86,7 +86,10 @@ beam = unfoldr2 fn where
     fn dstk@(d:_) xs          = let (count,l,r) = beamGroup1 d xs in 
                                 Just (fromList l, reduceStk count dstk, r)
 
-reduceStk :: Duration -> [Duration] -> [Duration]       
+
+-- cannot reduce stack by negative amounts...
+reduceStk :: Duration -> [Duration] -> [Duration]
+reduceStk d stk     | d <= 0    = stk       
 reduceStk _ []                  = []
 reduceStk d (x:xs)  | d == x    = xs
                     | d > x     = reduceStk (d-x) xs

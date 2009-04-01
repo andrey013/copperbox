@@ -83,6 +83,8 @@ import Data.Generics
 import Data.Sequence hiding (length)
 import qualified Data.Sequence as S
 
+import qualified Text.PrettyPrint.Leijen as PP
+
 data Pitch = Pitch {
     pch_letter        :: PitchLetter,
     pch_accidental    :: Accidental,
@@ -282,6 +284,22 @@ accidentalConst (Pitch l _ o) a = Pitch l a o
 
 
   
+--------------------------------------------------------------------------------
+-- pretty print 
+
+instance PP.Pretty Pitch where
+  pretty (Pitch l a o)  = PP.pretty l PP.<> PP.pretty a PP.<> PP.int o
+
+instance PP.Pretty PitchLetter where
+  pretty         = PP.text . show
+
+instance PP.Pretty Accidental where
+  pretty Nat          = PP.empty
+  pretty Sharp        = PP.char '#'
+  pretty Flat         = PP.char 'b'
+  pretty DoubleSharp  = PP.text "##"
+  pretty DoubleFlat   = PP.text "bb"
+
 
     
     
