@@ -20,6 +20,7 @@ module HNotate.Duration (
     Duration, 
     
     Temporal(..),
+    Spacer(..),
     
     makeDuration,
     
@@ -75,8 +76,10 @@ class Temporal a where
 instance Temporal Duration where
   duration      = id
   swapDuration  = const
-    
-  
+
+class Spacer a where
+  spacer :: Duration -> a
+   
 
 makeDuration :: Integral a => a -> a -> Duration
 makeDuration n d = fromIntegral n % fromIntegral d

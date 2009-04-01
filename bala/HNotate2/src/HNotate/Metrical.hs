@@ -20,9 +20,12 @@ module HNotate.Metrical where
 
 import HNotate.Cardinal
 import HNotate.Duration
+import HNotate.LineTree
+import HNotate.NoteList ( collapseTree )
 import HNotate.Staff
 import HNotate.Utils
 
+import Data.List ( foldl' )
 import Data.Sequence ( Seq, ViewL (..), ( <| ), viewl, empty )
 import qualified Data.Sequence as S
 
@@ -31,16 +34,27 @@ data TieStatus = Tied | NotTied
 
 
 
-partitionToStaff :: Temporal a => 
-    Duration -> [Duration] -> [[Duration]] -> Seq a -> Staff a
-partitionToStaff anacrusis ds dss notelist = 
-    (Staff . map Single) $ zipWith fn (divideToBars ds_bar notelist) dss_beam 
-  where  
-    ds_bar    = reduceStk anacrusis ds
-    dss_beam  = case dss of 
+lineTreeToStaffRep :: (Temporal a, Spacer a) =>
+    Duration -> [Duration] -> [[Duration]] -> LineTree a -> Staff a
+lineTreeToStaffRep anacrusis bar_lengths meter_patterns note_list = 
+    Staff . mergeOverlays . map splitAndBeam . map calcOnset 
+      $ collapseTree note_list   
+  where    
+    splitAndBeam (start,xs) = (start, partitionAndBeam ds_bar dss_beam xs) 
+    calcOnset = onset anacrusis bar_lengths
+    
+    ds_bar    = reduceStk anacrusis bar_lengths
+    dss_beam  = case meter_patterns of 
                   xs:xss -> (reduceStk anacrusis xs) : xss
-                  _      -> dss
-           
+                  _      -> meter_patterns    
+    
+partitionToStaff :: Temporal a => [Duration] -> [[Duration]] -> Seq a -> Staff a
+partitionToStaff =  (Staff . map Single) `ooo` partitionAndBeam
+             
+partitionAndBeam :: Temporal a => [Duration] -> [[Duration]] -> Seq a -> [Bar a]
+partitionAndBeam ds_bar dss_beam notelist = 
+    zipWith fn (divideToBars ds_bar notelist) dss_beam 
+  where    
     fn (_,[])          _  = Bar []
     fn (Tied, n:notes) xs = TiedBar n (beam stk notes) where 
                                 stk = reduceStk (duration n) xs 
@@ -123,4 +137,75 @@ consumes d ys = step 0 ys where
 
 
  
-  
+--------------------------------------------------------------------------------
+-- grouping overlays
+
+-- onset - change the onset time from /collapseTree/ to the bar number
+-- Optional prefix a spacer - if the notes start mid-bar. 
+onset :: (Temporal a, Spacer a) => 
+    Duration -> [Duration] -> (Duration,Seq a) -> (Int,Seq a)
+onset anacrusis ds0 (start,notes) = step 1 start stk where
+    stk   = reduceStk anacrusis ds0
+    
+    step bc n _       | n <= 0    = (bc, notes)   
+    step bc n (d:ds)  | n < d     = (bc, spacer n <| notes)
+                      | otherwise = step (bc+1) (n-d) ds
+    step _  _ []                  = error $ "onset - duration stack exhausted"                       
+
+mergeOverlays :: [(Int,[Bar a])] -> [Overlay a]
+mergeOverlays (x:xs)  = foldl' zipOverlay (overlay1 x) xs
+mergeOverlays []      = []
+
+-- the first /line/ must be transformed to an overlay /by hand/, the other
+-- /lines/ can then be zipped into it.
+-- @start@ is bar number which starts at 1!
+overlay1 :: (Int,[Bar a]) -> [Overlay a]
+overlay1 (bar_num,xs) = map Single (replicate (bar_num-1) empty_bar ++ xs) where
+    empty_bar = Bar []
+    
+
+zipOverlay :: [Overlay a] -> (Int,[Bar a]) -> [Overlay a]
+zipOverlay xs (n,ys) 
+    | n == 1     = longZipWith overl empty_sgl empty_bar xs ys 
+    | n > 1      = longZipWith overl empty_sgl empty_bar xs (replicate n empty_bar ++ ys) 
+    | otherwise  = error $ "zipOverlay - unreachable"
+  where
+    overl :: Overlay a -> Bar a -> Overlay a
+    overl o          b   | nullBar b = o   -- no update
+    overl (Single x) b   | nullBar x = Single b   -- swap
+                         | otherwise = Multi [x,b]
+    overl (Multi os) b               = Multi $ os++[b] -- yes really do append!              
+    
+    nullBar (Bar [])      = True
+    nullBar _             = False  
+    empty_bar             = Bar []
+    empty_sgl             = Single empty_bar        
+
+{-
+
+groupOverlays :: Temporal a => 
+    Duration -> [Duration] -> [(Duration,Staff a)] -> Staff a
+groupOverlays anacrusis ds (x:xs) = Staff $ foldl' fn (prefix anacrusis ds x) xs   
+  where
+    fn acc short = longZipWith joinOverlay o0 o0 acc (prefix anacrusis ds short)
+    nullBar (Bar [])  = True
+    nullBar _         = False
+    o0                = Single (Bar [])
+    
+    joinOverlay o          (Single b)   | nullBar b = o   -- no update
+    joinOverlay (Single x) a            | nullBar x = a   -- swap
+    joinOverlay (Single x) (Single b)               = Multi [x,b]
+    joinOverlay (Multi xs) (Single b)               = Multi $ xs++[b] -- yes really do append!              
+
+prefix :: Temporal a => Duration -> [Duration] -> (Duration,Staff a) -> [Cardinal (Bar a)]
+prefix anacrusis ds (d, (Staff xs)) = apoFin phi post (d,ds
+  where
+    stk = reduceStk anacrusis ds
+
+emptyPrefix :: Duration -> [Duration] -> ([Cardinal (Bar a)], Maybe Duration)
+emptyPrefix = step [] where
+    step acc 0 _                    = (acc,Nothing)
+    step acc d (s:stk)  | d >= s    = step ((Single $ Bar []):acc) (d-s) stk
+                        | otherwise = (acc, Just d)
+                        
+-}                          

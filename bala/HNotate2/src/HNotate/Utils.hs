@@ -45,6 +45,16 @@ unfoldr2 :: (s1 -> s2 -> Maybe (a,s1,s2)) -> s1 -> s2 -> [a]
 unfoldr2 f s1 s2 = case f s1 s2 of
     Nothing     -> []
     Just (a,s1',s2') -> a : unfoldr2 f s1' s2'
+
+
+longZipWith :: (a -> b -> c) -> a -> b -> [a] -> [b] -> [c]
+longZipWith f a b as bs = step as bs where
+    step (x:xs) (y:ys) = f x y : step xs ys
+    step (x:xs) []     = f x b : step xs []
+    step []     (y:ys) = f a y : step [] ys
+    step []     []     = []
+    
+    
     
         
 -- Reverse application and composition

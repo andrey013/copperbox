@@ -75,6 +75,9 @@ instance Temporal Element where
   swapDuration _ (GraceNotes se)  = GraceNotes se
   swapDuration d (Nplet i _ se)   = Nplet i ud se
     where ud = reunit d i se
+
+instance Spacer Element where
+  spacer d = Spacer d
         
 reunit :: Duration -> Int -> [a] -> Duration
 reunit tot i xs = let l = length xs in 
@@ -93,8 +96,13 @@ rest d t = (Rest d) `event` t
 root :: NoteList
 root = lineTree
 
-collapseTree :: NoteList -> [(Duration, Seq Element)]
+poly              :: [NoteList] -> NoteList -> NoteList
+poly xs t         = t |*> Overlay xs
+
+
+collapseTree :: Temporal a => LineTree a -> [(Duration, Seq a)]
 collapseTree = levelSt (\s e -> s + duration e) 0 
+
 
 --------------------------------------------------------------------------------
 -- pretty print
