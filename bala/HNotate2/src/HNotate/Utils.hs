@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  mptc, fundeps
+-- Portability :  to be determined
 --
 -- Common utils...
 --

@@ -2,7 +2,8 @@
 
 module DemoPP where
 
-
+import qualified HNotate.AbcForm as Abc
+import HNotate.Staff
 import HNotate.DocAbc
 import HNotate.DocBase
 import HNotate.Duration

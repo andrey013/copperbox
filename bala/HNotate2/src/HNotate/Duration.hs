@@ -19,7 +19,7 @@ module HNotate.Duration (
     -- Data type
     Duration, 
     
-    RhythmicValue(..),
+    Temporal(..),
     
     makeDuration,
     
@@ -65,11 +65,11 @@ import Data.Ratio
 
 type Duration = Rational 
 
-class RhythmicValue a where
+class Temporal a where
   duration      :: a -> Duration
   swapDuration  :: Duration -> a -> a
 
-instance RhythmicValue Duration where
+instance Temporal Duration where
   duration      = id
   swapDuration  = const
     

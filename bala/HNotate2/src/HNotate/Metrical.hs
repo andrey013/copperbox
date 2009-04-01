@@ -18,40 +18,57 @@
 
 module HNotate.Metrical where
 
+import HNotate.Cardinal
 import HNotate.Duration
+import HNotate.Staff
 import HNotate.Utils
 
-
-data Bar a = Bar [a] | TiedBar a [a]
-  deriving (Show)
+import Data.Sequence ( Seq, ViewL (..), ( <| ), viewl, empty )
+import qualified Data.Sequence as S
 
 data TieStatus = Tied | NotTied
   deriving (Eq,Show)
 
--- split a list of notes into bars of given duration 
-metricalSplit :: RhythmicValue a => [Duration] -> [a] -> [Bar a] 
-metricalSplit ds ns = fst $ anaMap fn (NotTied,ns) ds where
-  fn _ (_,[])     = Nothing
-  fn d (tie,xs)   = let (ls, opt_split, rs) = fitTill d xs in
-                    maybe (Just (bar tie ls, (NotTied,rs)))
-                          (\split_note -> Just (bar tie ls, (Tied, split_note:rs)))
-                          opt_split
-  
-  bar Tied (x:xs) = TiedBar x xs
-  bar NotTied xs  = Bar xs
-  bar Tied []     = error "metricalSplit - unreachable"      
-  
-  
-fitTill :: RhythmicValue a => Duration -> [a] -> ([a], Maybe a, [a])
-fitTill _ []      = ([],Nothing,[]) 
-fitTill d (x:xs)  = let d' = duration x in 
-                    case d' `compare` d of
-                        EQ -> ([x],Nothing,xs)
-                        LT -> (x:ls,pivot,rs) where
-                                (ls,pivot,rs) = fitTill (d-d') xs
-                        GT -> ([swapDuration d x], Just $ swapDuration (d'-d) x, xs)
-                         
 
+
+partitionToStaff :: Temporal a => 
+    Duration -> [Duration] -> [[Duration]] -> Seq a -> Staff a
+partitionToStaff anacrusis ds dss notelist = 
+    (Staff . map Single) $ zipWith fn (divideToBars ds_bar notelist) dss_beam 
+  where  
+    ds_bar    = reduceStk anacrusis ds
+    dss_beam  = case dss of 
+                  xs:xss -> (reduceStk anacrusis xs) : xss
+                  _      -> dss
+           
+    fn (_,[])          _  = Bar []
+    fn (Tied, n:notes) xs = TiedBar n (beam stk notes) where 
+                                stk = reduceStk (duration n) xs 
+    fn (_, notes)      xs = Bar $ beam xs notes
+
+    
+-- split a list of notes into bars of given duration 
+divideToBars :: Temporal a => [Duration] -> Seq a -> [(TieStatus, [a])] 
+divideToBars ds ns = fst $ anaMap fn (NotTied,ns) ds where
+  fn d (tie,sa) | S.null sa = Nothing
+                | otherwise = let (ls, opt_split, rest) = fitTill d sa in
+                              maybe (Just ((tie,ls), (NotTied, rest)))
+                              (\split_note -> Just ((tie,ls), (Tied, split_note <| rest)))
+                              opt_split
+
+  
+fitTill :: Temporal a => Duration -> Seq a -> ([a], Maybe a, Seq a)
+fitTill d0 se = step d0 (viewl se) where
+    step _ EmptyL     = ([],Nothing,empty) 
+    step d (a :< sa)  = let d' = duration a in 
+                    case d' `compare` d of
+                        EQ -> ([a],Nothing,sa)
+                        LT -> (a:ls,pivot,rs) where
+                                (ls,pivot,rs) = fitTill (d-d') sa
+                        GT -> ([swapDuration d a], Just $ swapDuration (d'-d) a, sa)
+                         
+--------------------------------------------------------------------------------
+-- beaming
 
 -- beam splitting as an unfold. 
 -- For syntactical clarity we use a 'double unfoldr' rather than 
@@ -59,15 +76,15 @@ fitTill d (x:xs)  = let d' = duration x in
 -- The state is (1) the stack of durations for each beam group, 
 -- and (2) the input stream of notes.
  
-beam :: RhythmicValue a => [Duration] -> [a] -> [[a]]
+beam :: Temporal a => [Duration] -> [a] -> [Cardinal a]
 beam = unfoldr2 fn where
     fn _          []          = Nothing             -- notes exhausted
-    fn []         (x:xs)      = Just ([x], [],xs)   -- duration exhausted, return singletons
+    fn []         (x:xs)      = Just (Single x, [],xs)   -- duration exhausted, return singletons
     fn dstk       (x:xs)  
-        | duration x > eighth = Just ([x], reduceStk (duration x) dstk, xs)
+        | duration x > eighth = Just (Single x, reduceStk (duration x) dstk, xs)
     
     fn dstk@(d:_) xs          = let (count,l,r) = beamGroup1 d xs in 
-                                Just (l, reduceStk count dstk, r)
+                                Just (fromList l, reduceStk count dstk, r)
 
 reduceStk :: Duration -> [Duration] -> [Duration]       
 reduceStk _ []                  = []
@@ -78,7 +95,7 @@ reduceStk d (x:xs)  | d == x    = xs
                       
 -- beamGroup1 is always called on non-empty list
 
-beamGroup1 :: RhythmicValue a => Duration -> [a] -> (Duration,[a],[a])
+beamGroup1 :: Temporal a => Duration -> [a] -> (Duration,[a],[a])
 beamGroup1 d xs = if c >= d then (c,[l],rs) else (c+c', l:ls', rs')  
   where
     (c,l,rs)     = consume1 xs
@@ -86,12 +103,12 @@ beamGroup1 d xs = if c >= d then (c,[l],rs) else (c+c', l:ls', rs')
 
 -- beaming must always consume at least one note...
 -- (and consume1 always called on non-empty list)
-consume1 :: RhythmicValue a => [a] -> (Duration,a,[a])
+consume1 :: Temporal a => [a] -> (Duration,a,[a])
 consume1 (x:xs) = (duration x,x,xs)
 consume1 []     = error $ "consume1 - unreachable"
 
 
-consumes :: RhythmicValue a => Duration -> [a] -> (Duration,[a],[a])
+consumes :: Temporal a => Duration -> [a] -> (Duration,[a],[a])
 consumes d ys = step 0 ys where
     step c []       = (c,[],[])
     step c (x:xs)   = case d `compare` (c + duration x) of
