@@ -19,6 +19,7 @@ module HNotate.Data where
 
 import HNotate.Duration
 import HNotate.Pitch
+import HNotate.NamedElements 
 import HNotate.MusicRepDatatypes
 import HNotate.Utils
 
@@ -50,7 +51,8 @@ import Data.Ratio
 labelSetOf :: Key -> Maybe LabelSet
 labelSetOf (Key (PitchLabel l a) m xs)  = scaleSpelling l a m xs
 
-
+labelSetOf' :: Key -> LabelSet
+labelSetOf' = maybe default_labelset id . labelSetOf
 
 
 scaleSpelling :: 
@@ -179,17 +181,8 @@ four_four_of_eighth = ([4,4],eighth)
 --------------------------------------------------------------------------------
 -- Named elements
 
-c_major'ls :: LabelSet 
-c_major'ls = labelSet $ map (\a -> PitchLabel a Nat) $ enumFromCyc C
  
-c_major :: Key
-c_major = Key (PitchLabel C Nat) Major [] 
 
-a_major'ls :: LabelSet 
-a_major'ls = maybe (error "a_major'ls") id  $ labelSetOf a_major
-
-a_major :: Key
-a_major = Key (PitchLabel A Nat) Major [] 
 
 four_four :: Meter 
 four_four = TimeSig 4 4

@@ -21,6 +21,7 @@ module HNotate.Metrical where
 import HNotate.Cardinal
 import HNotate.Duration
 import HNotate.LineTree
+import HNotate.NamedElements ( eighth )
 import HNotate.NoteList ( collapseTree )
 import HNotate.Staff
 import HNotate.Utils
@@ -174,38 +175,11 @@ zipOverlay xs (n,ys)
     overl o          b   | nullBar b = o   -- no update
     overl (Single x) b   | nullBar x = Single b   -- swap
                          | otherwise = Multi [x,b]
-    overl (Multi os) b               = Multi $ os++[b] -- yes really do append!              
+    overl (Multi os) b               = Multi $ os++[b] -- yes really do an append!              
     
     nullBar (Bar [])      = True
     nullBar _             = False  
     empty_bar             = Bar []
     empty_sgl             = Single empty_bar        
 
-{-
-
-groupOverlays :: Temporal a => 
-    Duration -> [Duration] -> [(Duration,Staff a)] -> Staff a
-groupOverlays anacrusis ds (x:xs) = Staff $ foldl' fn (prefix anacrusis ds x) xs   
-  where
-    fn acc short = longZipWith joinOverlay o0 o0 acc (prefix anacrusis ds short)
-    nullBar (Bar [])  = True
-    nullBar _         = False
-    o0                = Single (Bar [])
-    
-    joinOverlay o          (Single b)   | nullBar b = o   -- no update
-    joinOverlay (Single x) a            | nullBar x = a   -- swap
-    joinOverlay (Single x) (Single b)               = Multi [x,b]
-    joinOverlay (Multi xs) (Single b)               = Multi $ xs++[b] -- yes really do append!              
-
-prefix :: Temporal a => Duration -> [Duration] -> (Duration,Staff a) -> [Cardinal (Bar a)]
-prefix anacrusis ds (d, (Staff xs)) = apoFin phi post (d,ds
-  where
-    stk = reduceStk anacrusis ds
-
-emptyPrefix :: Duration -> [Duration] -> ([Cardinal (Bar a)], Maybe Duration)
-emptyPrefix = step [] where
-    step acc 0 _                    = (acc,Nothing)
-    step acc d (s:stk)  | d >= s    = step ((Single $ Bar []):acc) (d-s) stk
-                        | otherwise = (acc, Just d)
-                        
--}                          
+                         

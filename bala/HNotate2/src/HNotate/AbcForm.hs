@@ -62,17 +62,17 @@ unitRescale unl drn = (dn%dd) / (un%ud) where
     (dn,dd)  = ratioElements drn
     (un,ud)  = ratioElements unl
 
-abcS :: LabelSet -> Duration -> Staff N.Element -> Staff Element
-abcS ls u (Staff xs) = Staff (fmap (fmap (fmap (abcE ls u))) xs) 
+abcStaff :: LabelSet -> Duration -> Staff N.Element -> Staff Element
+abcStaff ls u (Staff xs) = Staff (fmap (fmap (fmap (abcElement ls u))) xs) 
 
     
-abcE :: LabelSet -> Duration -> N.Element -> Element
-abcE ls u (N.Note p d)      = Note (naturalize ls p) (unitRescale u d)
-abcE _  u (N.Rest d)        = Rest (unitRescale u d) 
-abcE _  u (N.Spacer d)      = Spacer (unitRescale u d) 
-abcE ls u (N.Chord ps d)    = Chord (map (naturalize ls) ps) (unitRescale u d)        
-abcE ls _ (N.GraceNotes ns) = GraceNotes (map (naturalize ls . fst) ns)                          
-abcE ls _ (N.Nplet m _ ps)  = Nplet m (map (naturalize ls) ps)
+abcElement :: LabelSet -> Duration -> N.Element -> Element
+abcElement ls u (N.Note p d)      = Note (naturalize ls p) (unitRescale u d)
+abcElement _  u (N.Rest d)        = Rest (unitRescale u d) 
+abcElement _  u (N.Spacer d)      = Spacer (unitRescale u d) 
+abcElement ls u (N.Chord ps d)    = Chord (map (naturalize ls) ps) (unitRescale u d)        
+abcElement ls _ (N.GraceNotes ns) = GraceNotes (map (naturalize ls . fst) ns)                          
+abcElement ls _ (N.Nplet m _ ps)  = Nplet m (map (naturalize ls) ps)
 
 --------------------------------------------------------------------------------
 -- output

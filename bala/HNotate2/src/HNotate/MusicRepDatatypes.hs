@@ -65,6 +65,9 @@ newtype LabelSet = LabelSet { getLabelSet :: Map.Map Int PitchLabel }
 labelSet :: [PitchLabel] -> LabelSet
 labelSet = LabelSet . foldl fn Map.empty
   where fn m p = Map.insert (semitones p) p m
+
+default_labelset :: LabelSet
+default_labelset = labelSet $ [PitchLabel a Nat | a <- [C .. B] ]
   
 labelSetFind :: Pitch -> LabelSet -> Maybe Pitch
 labelSetFind (Pitch l a o) (LabelSet m) = 

@@ -76,12 +76,16 @@ instance Temporal Element where
   swapDuration d (Nplet i _ se)   = Nplet i ud se
     where ud = reunit d i se
 
-instance Spacer Element where
-  spacer d = Spacer d
         
 reunit :: Duration -> Int -> [a] -> Duration
-reunit tot i xs = let l = length xs in 
-                  tot * (makeDuration l i) * (makeDuration 1 l)
+reunit tot i xs = tot * (makeDuration l i) * (makeDuration 1 l) where
+                    l = length xs 
+                  
+                  
+                  
+instance Spacer Element where
+  spacer d = Spacer d
+
                   
 npletDuration :: Int -> Duration -> Duration
 npletDuration len unit_d = (fromIntegral len % 1) * unit_d   

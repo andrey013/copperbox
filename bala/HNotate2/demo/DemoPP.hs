@@ -7,8 +7,8 @@ import qualified HNotate.AbcForm as Abc
 import qualified HNotate.DocAbc as DocAbc
 import HNotate.Data
 import HNotate.Duration
-import HNotate.Fits
 import HNotate.Metrical
+import HNotate.NamedElements
 import HNotate.NoteList
 import HNotate.Pitch
 import HNotate.Staff
@@ -19,7 +19,7 @@ import Data.Ratio
 import Text.PrettyPrint.Leijen -- ( pretty )
 
 
-test1 = Abc.outputAbc $ Abc.abcS a_major'ls sixteenth
+test1 = Abc.outputAbc $ Abc.abcStaff (labelSetOf' a_major) sixteenth
     $ lineTreeToStaffRep 0 (repeat $ 2%4) (repeat [2%8,2%8]) bars1_4
 test2 = pretty $ lineTreeToStaffRep 0 (repeat $ 4%4) (repeat [2%8,2%8,2%8,2%8]) example7
 

@@ -20,12 +20,11 @@
 module HNotate.LineTree where
 
 
-import Data.Sequence ( ViewL(..), viewl, ( |> ) )
+import Data.Sequence ( ( |> ) )
 import qualified Data.Sequence as S
 import qualified Data.Foldable as F
 
-foldS :: (b -> a -> b) -> b -> S.Seq a -> b
-foldS = F.foldl'
+
 
 
 -- LineTree is a tree that emphasizes its /horizontal linearity/ 
@@ -36,7 +35,9 @@ newtype LineTree e = LineTree { getLineTree :: S.Seq (LTNode e) }
     deriving (Show) 
     
 
--- Unfortunately - LTNode in not representable by Cardinal
+-- Unfortunately, LTNode in not representable by Cardinal as an Overlay is
+-- made of LineTrees and not the element type @e@.
+
 data LTNode e = LTNode e
               | Overlay [LineTree e]  
     deriving (Show)  
@@ -58,67 +59,10 @@ foldlLTNode f b (LTNode a)   = f b a
 foldlLTNode f b (Overlay xs) = F.foldl' (foldlLineTree f) b xs
 
 
-stateFoldlS :: (st -> b -> a -> (b,st)) -> st -> b -> S.Seq a -> (b,st)
-stateFoldlS f s0 b0 se = step b0 s0 (viewl se) where
-    -- step :: (b,st) -> ViewL a -> (b,st)
-    step b s EmptyL     = (b,s)
-    step b s (a :< sa)  = let (b',s') = (f s b a) in 
-                              (b',s') `seq` step b' s' (viewl sa)
-     
-stateFoldl :: (st -> b -> a -> (b,st)) -> st -> b -> [a] -> (b,st)
-stateFoldl f s0 b0 xs = step b0 s0 xs where
-    step b s []     = (b,s)
-    step b s (a:as) = let (b',s') = (f s b a) in 
-                          (b',s') `seq` step b' s' as
-                              
-nonpropFoldl :: (st -> b -> a -> (b,st)) -> st -> b -> [a] -> (b,st)
-nonpropFoldl f s b0 xs = step b0 xs where
-    step b []     = (b,s)
-    step b (a:as) = let (b',_s) = (f s b a) in 
-                        (b',_s) `seq` step b' as
-                          
-                          
-stateFoldlLineTree :: (st -> b -> a -> (b,st)) -> st -> b -> LineTree a -> (b,st)
-stateFoldlLineTree f s b (LineTree se) = stateFoldlS (stateFoldlLTNode f) s b se
+foldS :: (b -> a -> b) -> b -> S.Seq a -> b
+foldS = F.foldl'
 
-stateFoldlLTNode :: (st -> b -> a -> (b,st)) -> st -> b -> LTNode a -> (b,st)
-stateFoldlLTNode f s b (LTNode a)   = f s b a
-stateFoldlLTNode f s b (Overlay xs) = nonpropFoldl (stateFoldlLineTree f) s b xs
-
-flatten :: LineTree a -> S.Seq a
-flatten = foldlLineTree (|>) S.empty  
-
-flattenSt :: Num st => LineTree a -> (S.Seq (a, st), st)
-flattenSt = stateFoldlLineTree (\st se a -> (se |> (a,st), st+1)) 0 S.empty 
-
-
-level' :: LineTree e -> [(S.Seq e)]
-level' (LineTree sa) = step S.empty [] (viewl sa) 
-  where
-    step :: S.Seq e -> [(S.Seq e)] -> ViewL (LTNode e) -> [(S.Seq e)]
-    step z zs EmptyL              = z:zs
   
-    step z zs (LTNode e :< se)    = step (z |> e) zs (viewl se)
-        
-    step z zs (Overlay xs :< se)  = step z (zs++zs') (viewl se) where
-                                      zs' = concat $ fmap level' xs  
-      
-
-level :: LineTree e -> [(S.Seq e)]
-level = uncurry (flip (:)) . F.foldl' fn ([],S.empty) . getLineTree where
-  fn (xss, se) (LTNode e)   = (xss, se |> e)
-  fn (xss, se) (Overlay xs) = (xss++xss',se) where 
-                                  xss' = concat $ fmap level xs
-
--- Note: state is 'forked' for Overlays, this is exactly the behaviour 
--- needed for identifying start times of overlays.
-levelSt' :: (st -> e -> (z,st)) -> st -> LineTree e -> [(S.Seq z)] 
-levelSt' f st0 = post . F.foldl' fn ([],S.empty,st0) . getLineTree where
-  fn (xss,se,st) (LTNode e)   = (xss, se |> e', st') where (e',st') = f st e
-  fn (xss,se,st) (Overlay xs) = (xss++xss',se,st) where     
-                                  xss' = concat $ fmap (levelSt' f st) xs
-  post (xss,se,_st)           = (se:xss)
-    
 
 -- Note: state is 'forked' for Overlays, this is exactly the behaviour 
 -- needed for identifying start times of overlays.
@@ -142,8 +86,8 @@ lineTree = LineTree S.empty
 (|*>) :: LineTree a -> LTNode a -> LineTree a
 (|*>) (LineTree se) e = LineTree $ se |> e
 
-poly              :: [LineTree a] -> LineTree a -> LineTree a
-poly xs t         = t |*> Overlay xs
+overlays          :: [LineTree a] -> LineTree a -> LineTree a
+overlays xs t     = t |*> Overlay xs
 
 event             :: a -> LineTree a -> LineTree a
 event e t         = t |*> LTNode e 

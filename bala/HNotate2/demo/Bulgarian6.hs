@@ -12,12 +12,10 @@ import HNotate.DocBase
 import HNotate.Duration
 import HNotate.EvalAbc
 import HNotate.MusicRepDatatypes
+import HNotate.NamedElements
 import HNotate.NoteList
 import HNotate.Pitch
 import HNotate.Utils
-
-import qualified Text.PrettyPrint.Leijen as PP
-
 
     
 

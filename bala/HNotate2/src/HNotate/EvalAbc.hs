@@ -21,6 +21,7 @@ import HNotate.Data
 import HNotate.Duration
 import HNotate.Metrical
 import HNotate.MusicRepDatatypes
+import HNotate.NamedElements
 import HNotate.NoteList
 
 import Text.PrettyPrint.Leijen
@@ -38,7 +39,7 @@ data AbcEnv = AbcEnv {
 abc_env0 :: AbcEnv
 abc_env0 = AbcEnv { _current_meter       = TimeSig 4 4,
                     _current_key         = c_major,
-                    _label_set           = c_major'ls, 
+                    _label_set           = default_labelset, 
                     _unit_note_length    = Nothing,
                     _tempo               = 120,
                     _anacrusis           = 0  }
@@ -64,7 +65,7 @@ set_tempo i env               = env { _tempo = i }
 
 set_current_key               :: Key -> AbcEnv -> AbcEnv
 set_current_key k env         = 
-    let lbls = maybe c_major'ls id (labelSetOf k) 
+    let lbls = maybe default_labelset id (labelSetOf k) 
     in env {_current_key = k, _label_set   = lbls}
     
 set_anacrusis                 :: Duration -> AbcEnv -> AbcEnv
@@ -75,7 +76,7 @@ set_anacrusis d env           = env {_anacrusis = d}
    
 stdInterp :: NoteList -> AbcEnv -> Doc
 stdInterp notes env = 
-    outputAbc . abcS lset unl $ lineTreeToStaffRep ana bars beams notes
+    outputAbc . abcStaff lset unl $ lineTreeToStaffRep ana bars beams notes
   where
     lset  = maybe lsetFail id  $ labelSetOf (_current_key env)
     unl   = get_unit_note_length env
