@@ -84,11 +84,7 @@ labelOrder letter = snd $ foldr up (Flat,[]) xs
     up B (Nat, ys) = (Sharp,(B,Nat) : ys)
     up B (Flat,ys) = (Nat,  (B,Flat): ys)
     up l (a,   ys) = (a,    (l,a)   : ys)
-{-
-down (Sharp,xs) F = (Nat, (F,Sharp):xs)
-down (Nat  ,xs) F = (Flat,(F,Nat):xs)
-down (a    ,xs) l = (a,   (l,a):xs)
--}
+
 
 
 
@@ -132,22 +128,36 @@ twist sk fk ys ss = foldr step [] ss
 -- Meter patterns
 
 defaultMeterPattern :: Meter -> MeterPattern
+defaultMeterPattern CommonTime    = ([4,4], eighth)
+defaultMeterPattern CutTime       = ([2,2], eighth)
 defaultMeterPattern (TimeSig n d) 
     | compoundMeter (n,d)         = (patt 3 (n%d), eighth)
     | simpleMeter (n,d)           = (patt 2 (n%d), eighth)
     | otherwise                   = (badpatt (n%d), eighth)
   where
-    patt :: Int -> Ratio Int -> [Int]
-    patt i r = fmap floor $ replicate i $ (r / (i%1)) / (1%8) 
+    patt :: Integer -> Rational -> [Integer]
+    patt i r = fmap floor $ replicate (fromIntegral i) $ (r / (i%1)) / (1%8) 
     
     -- divide into eigths
-    badpatt :: Ratio Int -> [Int]
+    badpatt :: Rational -> [Integer]
     badpatt r = replicate (ceiling $ r / (1%8)) 1
       
-defaultMeterPattern CommonTime    = ([4,4], eighth)
-defaultMeterPattern CutTime       = ([2,2], eighth)
+mkMeterPattern :: Meter -> [Duration]
+mkMeterPattern CommonTime    = replicate 4 quarter
+mkMeterPattern CutTime       = replicate 2 quarter
+mkMeterPattern (TimeSig n d) 
+    | simpleMeter (n,d)           = map (.* eighth) $ meterDivisions 2 (n%d)
+    | compoundMeter (n,d)         = map (.* eighth) $ meterDivisions 3 (n%d)
+    | otherwise                   = error $ "mkMeterPattern"
 
 
+(.*) :: Integer -> Rational -> Rational
+(.*) i r = i%1 * r
+
+-- see Gardner Read 'Music Notation' p.169
+meterDivisions :: Integer -> Rational -> [Integer]
+meterDivisions i r = map floor $ replicate (fromIntegral i) $ (r / (i%1)) / (1%8) 
+    
 log2whole :: Integral a => a -> Bool
 log2whole i = f i == 0 where
     f = snd . pf . logBase 2 . fromIntegral
@@ -155,11 +165,11 @@ log2whole i = f i == 0 where
     pf :: Double -> (Int, Double)
     pf = properFraction
 
-compoundMeter :: (Int,Int) -> Bool
+compoundMeter :: (Integer,Integer) -> Bool
 compoundMeter (n,d) = log2whole d && (n `mod` 3 == 0)
 
                       
-simpleMeter :: (Int,Int) -> Bool
+simpleMeter :: (Integer,Integer) -> Bool
 simpleMeter (_,d) = log2whole d
 
 four_four_of_eighth :: MeterPattern

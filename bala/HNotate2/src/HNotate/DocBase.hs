@@ -36,6 +36,10 @@ local f k = \env -> f (\s -> \_ -> k s env) env
 update :: (env -> env) -> (Doc -> env -> r) -> env -> r
 update f k = \env -> k PP.empty (f env) 
 
+current :: (env -> PP.Doc) -> (Doc -> env -> r) -> env -> r
+current f k = \env -> k (f env) env
+
+
 -- @caten@ is the general function for combining two /CPS Docs/.
 --  
 caten :: (Doc -> Doc  -> Doc) ->
@@ -70,6 +74,11 @@ string x k = k (PP.string x)
 int :: Int -> (Doc -> env -> r) -> env -> r
 int i k = k (PP.int i)
 
+-- @integer@ - CPS version of PP.integer
+integer :: Integer -> (Doc -> env -> r) -> env -> r
+integer i k = k (PP.integer i)
+
+
 -- @char@ - CPS version of PP.char
 char :: Char -> (Doc -> env -> r) -> env -> r
 char c k = k (PP.char c)
@@ -103,5 +112,9 @@ line = document (PP.line)
 
 sprintf :: env -> ((Doc -> env -> Doc) -> env -> r) -> r
 sprintf env p = p (\s _env -> s) env
+
+pprender :: PP.Doc -> String
+pprender doc = PP.displayS (PP.renderPretty 0.4 80 doc) ""
+
 
                                           

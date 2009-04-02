@@ -25,7 +25,20 @@ import Data.Ratio
 
 --------------------------------------------------------------------------------
 -- Music representation
-type MeterPattern = ([Int],Duration)
+
+  
+-- For /universality/ meter is defined according to Abc's representation.
+-- LilyPond will simply generate @TimeSig@ cases.
+data Meter = TimeSig Integer Integer 
+           -- | CommonTime is 4/4
+           | CommonTime 
+           -- | CutTime is 2/2
+           | CutTime
+  deriving (Eq,Show)
+  
+  
+  
+type MeterPattern = ([Integer],Duration)
 
 meterPatternLength :: MeterPattern -> Duration
 meterPatternLength (xs,d) = d * (%1) (fromIntegral $ sum xs)  
@@ -61,7 +74,11 @@ labelSetFind (Pitch l a o) (LabelSet m) =
     
     
     
-    
+
+barLength :: Meter -> Duration
+barLength CommonTime    = 4 * 1%4
+barLength CutTime       = 2 * 1%4
+barLength (TimeSig n d) = n%d
 
 
 meterToDouble :: Meter -> Double
@@ -85,13 +102,3 @@ naturalize lbls p = maybe p ((flip accidentalConst) Nat) (labelSetFind p lbls)
     
 
 
-  
--- For /universality/ meter is defined according to Abc's representation.
--- LilyPond will simply generate @TimeSig@ cases.
-data Meter = TimeSig Int Int 
-           -- | CommonTime is 4/4
-           | CommonTime 
-           -- | CutTime is 2/2
-           | CutTime
-  deriving (Eq,Show)
-  
