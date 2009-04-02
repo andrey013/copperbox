@@ -19,13 +19,14 @@
 
 module HNotate.DocAbc where
 
+import qualified HNotate.AbcForm as Abc
 import HNotate.Data ( c_major, c_major'ls, labelSetOf )
 import HNotate.DocBase
 import HNotate.Duration
 import HNotate.Env
 import HNotate.MusicRepDatatypes
 import HNotate.Pitch
-
+import HNotate.Utils
 
 -- temp
 printf :: ((Doc -> AbcEnv -> Doc) -> AbcEnv -> r) -> r
@@ -107,7 +108,7 @@ notesField s = field 'N' (text s)
 -- as ^f in c major, but just f in g major. 
 keyField :: PitchLabel -> Mode -> AbcOutput
 keyField l m = doc <> update (set_current_key $ Key l m []) where
-    doc = field 'K' (pitchLabel l UPPER <+> mode m)
+    doc = field 'K' (pitchLabel l Abc.UPPER <+> mode m)
     
          
 --------------------------------------------------------------------------------
@@ -126,39 +127,18 @@ meter (TimeSig n d) = int n <> char '/' <> int d
 meter CommonTime    = text "C"
 meter CutTime       = text "C|"
 
-data PitchChar = UPPER | LOWER
-  deriving (Eq,Show)
   
 pitch :: Pitch -> AbcOutput
-pitch (Pitch l a o) 
-    | o > 4     = pitchLabel (PitchLabel l a) LOWER <> octave o 
-    | otherwise = pitchLabel (PitchLabel l a) UPPER <> octave o 
-  where
-    octave :: Int -> AbcOutput
-    octave i  | i > 5       = text (replicate (i-5) '\'') 
-              | i < 4       = text (replicate (4-i) ',')
-              | otherwise   = empty
+pitch = document . Abc.pitch
 
 
-pitchLabel :: PitchLabel -> PitchChar -> AbcOutput
-pitchLabel (PitchLabel l a) pc 
-    | pc == LOWER   = accidental a <> (char . toLowerLChar) l
-    | otherwise     = accidental a <> (char . toUpperLChar) l
-  where     
-    accidental :: Accidental -> AbcOutput
-    accidental Nat           = empty    
-    accidental Sharp         = char '^' 
-    accidental Flat          = char '_' 
-    accidental DoubleSharp   = text "^^"
-    accidental DoubleFlat    = text "__"
+pitchLabel :: PitchLabel -> Abc.PitchChar -> AbcOutput
+pitchLabel = document `oo` Abc.pitchLabel
 
+
+-- This might not be correct...
 abcduration :: Duration -> AbcOutput
-abcduration dn | dn == no_duration = empty
-               | otherwise        = fn $ ratioElements $ convRational dn
-  where
-    fn (n,1) = int n
-    fn (1,d) = char '/' <> int d
-    fn (n,d) = int n <> char '/' <> int d
+abcduration = document . Abc.multiplier
      
 mode :: Mode -> AbcOutput
 mode Major        = text "maj" 
