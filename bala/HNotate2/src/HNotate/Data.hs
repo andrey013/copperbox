@@ -175,6 +175,11 @@ c_major'ls = labelSet $ map (\a -> PitchLabel a Nat) $ enumFromCyc C
 c_major :: Key
 c_major = Key (PitchLabel C Nat) Major [] 
 
+a_major'ls :: LabelSet 
+a_major'ls = maybe (error "a_major'ls") id  $ labelSetOf a_major
+
+a_major :: Key
+a_major = Key (PitchLabel A Nat) Major [] 
 
 four_four :: Meter 
 four_four = TimeSig 4 4

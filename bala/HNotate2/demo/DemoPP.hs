@@ -3,14 +3,15 @@
 module DemoPP where
 
 import qualified HNotate.AbcForm as Abc
-import HNotate.Staff
+
 -- import HNotate.DocAbc
--- import HNotate.DocBase
+import HNotate.Data
 import HNotate.Duration
 import HNotate.Fits
 import HNotate.Metrical
 import HNotate.NoteList
 import HNotate.Pitch
+import HNotate.Staff
 import HNotate.Utils
 
 import qualified Data.Foldable as F
@@ -18,7 +19,8 @@ import Data.Ratio
 import Text.PrettyPrint.Leijen -- ( pretty )
 
 
-test1 = pretty $ lineTreeToStaffRep 0 (repeat $ 2%4) (repeat [2%8,2%8]) bars1_4
+test1 = pretty $ Abc.abcS a_major'ls sixteenth
+    $ lineTreeToStaffRep 0 (repeat $ 2%4) (repeat [2%8,2%8]) bars1_4
 test2 = pretty $ lineTreeToStaffRep 0 (repeat $ 4%4) (repeat [2%8,2%8,2%8,2%8]) example7
 
 

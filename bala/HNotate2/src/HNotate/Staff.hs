@@ -36,7 +36,11 @@ type BeamGroup a = Cardinal a
 data Bar a  = Bar [BeamGroup a] | TiedBar a [BeamGroup a]
   deriving (Show)              
 
-
+instance Functor Bar where
+  fmap f (Bar xs)       = Bar (fmap (fmap f) xs) 
+  fmap f (TiedBar x xs) = TiedBar (f x) (fmap (fmap f) xs) 
+  
+  
 instance Pretty a => Pretty (Staff a) where
   pretty (Staff xs) = vsep $ map ppOverlay xs
   

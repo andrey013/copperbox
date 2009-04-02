@@ -80,8 +80,8 @@ spell p@(Pitch _ _ o) lbls =
 -- Cancel the accidental if the pitch is found in the label set
 -- This is the transformation needed for Abc: 
 -- f# should be printed f in g major
-naturalize :: Pitch -> LabelSet -> Pitch
-naturalize p lbls = maybe p ((flip accidentalConst) Nat) (labelSetFind p lbls)
+naturalize :: LabelSet -> Pitch -> Pitch
+naturalize lbls p = maybe p ((flip accidentalConst) Nat) (labelSetFind p lbls)
     
 
 
