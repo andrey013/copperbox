@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.NoteList
--- Copyright   :  (c) Stephen Tetley 2008
+-- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -18,7 +18,6 @@
 module HNotate.NoteList where
 
 import HNotate.Duration
-import HNotate.LineTree
 import HNotate.Pitch
 import HNotate.Utils
 
@@ -56,7 +55,7 @@ data Element =
 
 type GraceNote = (Pitch,Duration)
 
-type NoteList = LineTree Element
+type NoteList = S.Seq Element
 
 
 instance Temporal Element where 
@@ -92,20 +91,15 @@ npletDuration len unit_d = (fromIntegral len % 1) * unit_d
 
                
 note :: Pitch -> Duration -> NoteList -> NoteList
-note p d t = (Note p d) `event` t
+note p d t = t |> (Note p d)
 
 rest :: Duration -> NoteList -> NoteList
-rest d t = (Rest d) `event` t
+rest d t = t |> (Rest d)
 
 root :: NoteList
-root = lineTree
-
-poly              :: [NoteList] -> NoteList -> NoteList
-poly xs t         = t |*> Overlay xs
+root = S.empty
 
 
-collapseTree :: Temporal a => LineTree a -> [(Duration, Seq a)]
-collapseTree = levelSt (\s e -> s + duration e) 0 
 
 
 --------------------------------------------------------------------------------

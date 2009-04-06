@@ -1,29 +1,57 @@
 
+-- This tune is `Bulgarian (?) 6` from the Exotic ABC songbook
+
+-- ghci ...
+-- :set -i../src
+
 module Bulgarian6 where
 
+import HNotate.Data
+import HNotate.DocAbc
+import HNotate.DocBase
 import HNotate.Duration
-import HNotate.LinearForm
-import HNotate.NoteFunctions
+import HNotate.EvalAbc
+import HNotate.MusicRepDatatypes
+import HNotate.NamedElements
+import HNotate.NoteList
+import HNotate.Pitch
+import HNotate.Utils
 
-import Control.Applicative
+    
 
--- 2/4 time so unl is sixteenth
+-- a major
 
+bulgarian6 :: AbcOutput
+bulgarian6 = tune $  tune_number 1 
+                 <$> title "Bulgarian (?) 6"
+                 <$> composer "Unknown"
+                 <$> key a_major 
+                 <$> meter 2 4 
+                 <$> current (stdInterp bars1_4)
+
+generateAbc :: AbcOutput -> String
+generateAbc doc = pprender $ printf doc
+
+runAbc = putStr . generateAbc
+
+demo1 = runAbc bulgarian6
+
+bars1_4 :: NoteList
 bars1_4 = 
-  root ... a4   ... b4  ... cis5  ... cis5
-       ... cis5 ... a4  ... cis5  ... cis5
-       //  cis5 ... a4  ... b4    ... cis5
-       ... b4   ... a4  ... a4    ... rest
-       //  e5   ... d5  ... cis5  ... b4 
-       ... cis5 ... a4  ... b4    ... cis5 
+    root # note a4 du16   # note b4 du16 # note cis5 du16 # note cis5 du16 
+         # note cis5 du16 # note a4 du16 # note cis5 du16 # note cis5 du16
+        
+         # note cis5 du16 # note a4 du16 # note b4 du16   # note cis5 du16
+         # note b4 du16   # note a4 du16 # note a4 du16   # rest du16
+        
+         # note e5 du16   # note d5 du16 # note cis5 du16 # note b4 du16
+         # note cis5 du16 # note a4 du16 # note b4 du16   # note cis5 du16
+        
+         # note a4 du16   # note b4 du16 # note b4 du16   # note a4 du16
+         # note a4 du8    # rest du8       
 
-       //  a4   ... b4  ... b4    ... a4 
-       ... a4 *& du8    ... rest *& du8
-         
+        
+ 
 
 
-(*&) :: ElementF -> Duration -> ElementF 
-(*&) e d = swapDuration d <$> e
-
-run f = f (Env { unit_note_length = du16 })
-
+    

@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.EvalAbc
--- Copyright   :  (c) Stephen Tetley 2008
+-- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -76,7 +76,7 @@ set_anacrusis d env           = env {_anacrusis = d}
    
 stdInterp :: NoteList -> AbcEnv -> Doc
 stdInterp notes env = 
-    outputAbc . abcStaff lset unl $ lineTreeToStaffRep ana bars beams notes
+    outputAbc . abcStaff lset unl $ primeToStaffRep ana bars beams notes
   where
     lset  = maybe lsetFail id  $ labelSetOf (_current_key env)
     unl   = get_unit_note_length env

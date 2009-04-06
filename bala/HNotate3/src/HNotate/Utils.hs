@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  HNotate.Utils
--- Copyright   :  (c) Stephen Tetley 2008
+-- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -16,10 +16,17 @@
 
 module HNotate.Utils where
 
+
+
+
+import qualified Data.Foldable as F
 import qualified Data.Sequence as S
 import Data.List ( unfoldr )
 
 import Text.PrettyPrint.Leijen
+
+
+
 
 --------------------------------------------------------------------------------
 -- HOF's
@@ -70,6 +77,9 @@ infixl 7 #.
 ( #. ) :: (a -> b) -> (b -> c) -> (a -> c) 
 g #. f = f . g
 
+concatenate :: S.Seq [a] -> [a]
+concatenate = F.foldr (++) []
+
 
 -- 'specs'
 
@@ -107,4 +117,8 @@ nextOf x | x == maxBound = minBound
 prime :: Doc
 prime = char '\''
 
+-- [d1, p <> d2, ... , p <> dn]
+prepunctuate :: Doc -> [Doc] -> [Doc]
+prepunctuate _ []     = []
+prepunctuate p (d:ds) = d : foldr (\e a -> p <> e : a) [] ds
 

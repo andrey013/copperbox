@@ -20,9 +20,8 @@ module HNotate.Metrical where
 
 import HNotate.Cardinal
 import HNotate.Duration
-import HNotate.LineTree
 import HNotate.NamedElements ( eighth )
-import HNotate.NoteList ( collapseTree )
+-- import HNotate.NoteList
 import HNotate.Staff
 import HNotate.Utils
 
@@ -35,15 +34,11 @@ data TieStatus = Tied | NotTied
 
 
 
-lineTreeToStaffRep :: (Temporal a, Spacer a) =>
-    Duration -> [Duration] -> [[Duration]] -> LineTree a -> Staff a
-lineTreeToStaffRep anacrusis bar_lengths meter_patterns note_list = 
-    Staff . mergeOverlays . map splitAndBeam . map calcOnset 
-      $ collapseTree note_list   
+primeToStaffRep :: (Temporal a, Spacer a) =>
+    Duration -> [Duration] -> [[Duration]] -> Seq a -> Staff a
+primeToStaffRep anacrusis bar_lengths meter_patterns note_list = 
+    partitionToStaff ds_bar dss_beam note_list   
   where    
-    splitAndBeam (start,xs) = (start, partitionAndBeam ds_bar dss_beam xs) 
-    calcOnset = onset anacrusis bar_lengths
-    
     ds_bar    = reduceStk anacrusis bar_lengths
     dss_beam  = case meter_patterns of 
                   xs:xss -> (reduceStk anacrusis xs) : xss
@@ -144,8 +139,8 @@ consumes d ys = step 0 ys where
 -- onset - change the onset time from /collapseTree/ to the bar number
 -- Optional prefix a spacer - if the notes start mid-bar. 
 onset :: (Temporal a, Spacer a) => 
-    Duration -> [Duration] -> (Duration,Seq a) -> (Int,Seq a)
-onset anacrusis ds0 (start,notes) = step 1 start stk where
+    Duration -> [Duration] -> Seq a -> (Int,Seq a)
+onset anacrusis ds0 notes = step 1 0 stk where
     stk   = reduceStk anacrusis ds0
     
     step bc n _       | n <= 0    = (bc, notes)   
