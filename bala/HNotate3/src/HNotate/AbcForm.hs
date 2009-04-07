@@ -23,7 +23,7 @@ import HNotate.MusicRepDatatypes
 import qualified HNotate.NoteList as N
 import HNotate.Pitch
 import HNotate.StructuralDatatypes
-import HNotate.Utils ( prime )
+import HNotate.Utils ( prime, doclines )
 
 
 import Data.Ratio
@@ -77,8 +77,11 @@ abcElement ls _ (N.Nplet m _ ps)  = Nplet m (map (naturalize ls) ps)
 --------------------------------------------------------------------------------
 -- output
 
-outputAbc :: Section Element -> Doc
-outputAbc = vsep . map (\a -> overlay a <+> char '|') . getSection 
+-- need to be more sophisticated than /vsep/ as Abc renders a line of text to 
+-- a line of music, thus vsep gives us lines of 1 bar all the time...
+
+outputAbc :: [Int] -> Section Element -> Doc
+outputAbc xs = doclines xs . punctuate  (text " |") . map overlay . getSection 
 
 overlay :: Cardinal (Bar Element) -> Doc
 overlay (Single x) = bar x

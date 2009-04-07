@@ -35,17 +35,7 @@ data Bar a  = Bar [BeamGroup a] | TiedBar a [BeamGroup a]
   deriving (Show)              
 
 
-data Compo a = Literal a   -- 
-             | Compo a :->- Compo a
-             | Repeated (Compo a)
 
-
-repeated :: Compo a -> Compo a
-repeated = Repeated
-
-infixl 5 ->-
-(->-) :: Compo a -> Compo a -> Compo a
-(->-) = (:->-)
 --------------------------------------------------------------------------------
 -- instances
 

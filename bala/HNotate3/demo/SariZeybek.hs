@@ -28,18 +28,19 @@ sari_zeybek_abc = tune $  tune_number 1
               <$> origin "Turkey"
               <$> key d_minor 
               <$> meter 9 8 
-              <$> current (stdInterp bars1_3)
+              <$> sari_zeybek
 
 generateAbc :: AbcOutput -> String
 generateAbc doc = pprender $ printf doc
 
 runAbc = putStr . generateAbc
 
--- sari_zeybek :: Compo Element -- This would realize the full tune, with correct repeat marks
-sari_zeybek = repeated (lit bars1_3) ->- repeated (lit bars4_6)
+repeated a = text "|:" <+> a <+> text ":|"
+ 
 
-lit x = Literal $ \env -> stdInterp x env
+sari_zeybek = repeated (stdInterp' bars1_3) <$> repeated (stdInterp' bars4_6)
 
+stdInterp' notes = current (stdInterp notes)
 
 bars1_3 :: NoteList
 bars1_3 = 

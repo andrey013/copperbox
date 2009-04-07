@@ -43,41 +43,41 @@ current f = get >>= \st -> return (f st)
 document :: Doc -> DocSt st
 document = return
 
--- @caten@ is the general function for combining two /DocSt/.
+-- @caten@ is the general function for combining two /DocSt/ functions.
 --  
 caten :: (Doc -> Doc  -> Doc) ->
          DocSt st -> DocSt st -> DocSt st 
 caten op f g = f >>= \a -> g >>= \b -> return $ a `op` b
 
 
--- @printEnv@ - print the current enviroment when it is an instance of Show. 
-printEnv :: Show st => DocSt st
-printEnv = get >>= return . PP.string . show
+-- @printState@ - print the current state when it is an instance of Show. 
+printState :: Show st => DocSt st
+printState = get >>= return . PP.string . show
 
 
--- @empty@ - applicative env passing version of PP.empty
+-- @empty@ - DocSt version of PP.empty
 empty :: DocSt st
 empty = return PP.empty
 
 
--- @text@ - applicative env passing PP.text
+-- @text@ - DocSt version of PP.text
 text :: String -> DocSt st
 text = return . PP.text
 
--- @string@ - applicative env passing PP.string
+-- @string@ - DocSt version of PP.string
 string :: String -> DocSt st
 string = return . PP.string
 
--- @int@ - applicative env passing PP.int
+-- @int@ - DocSt version of PP.int
 int :: Int -> DocSt st
 int  = return . PP.int
 
--- @integer@ - applicative env passing PP.integer
+-- @integer@ - DocSt version of PP.integer
 integer :: Integer -> DocSt st
 integer = return . PP.integer
 
 
--- @char@ - applicative env passing PP.char
+-- @char@ - DocSt version of PP.char
 char :: Char -> DocSt st
 char = return . PP.char
 
@@ -106,7 +106,7 @@ sprintf :: st -> DocSt st -> Doc
 sprintf st p = evalState p st
 
 pprender :: PP.Doc -> String
-pprender doc = PP.displayS (PP.renderPretty 0.4 80 doc) ""
+pprender doc = PP.displayS (PP.renderPretty 0.8 80 doc) ""
 
 
                                           

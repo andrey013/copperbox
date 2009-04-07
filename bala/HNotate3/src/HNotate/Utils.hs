@@ -122,3 +122,15 @@ prepunctuate :: Doc -> [Doc] -> [Doc]
 prepunctuate _ []     = []
 prepunctuate p (d:ds) = d : foldr (\e a -> p <> e : a) [] ds
 
+-- This function is primarily for Abc bar printing, where the number
+-- of bars on a line in the input score is reflected by the number of
+-- bars on a line in the output.
+
+doclines :: [Int] -> [Doc] -> Doc
+doclines = vsep `oo` step where
+    step _      []  = []
+    step []     ds  = [hsep ds]
+    step (n:ns) ds  = hsep ls : step ns rs where (ls,rs) = splitAt n ds
+
+                          
+

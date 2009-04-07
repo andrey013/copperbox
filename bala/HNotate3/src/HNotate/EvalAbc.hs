@@ -32,17 +32,19 @@ data AbcEnv = AbcEnv {
       _label_set          :: LabelSet,      
       _unit_note_length   :: Maybe Duration,
       _tempo              :: Int,
-      _anacrusis          :: Duration     
+      _anacrusis          :: Duration,
+      _doc_lines          :: [Int]     
     }
   deriving (Show)
 
 abc_env0 :: AbcEnv
-abc_env0 = AbcEnv { _current_meter       = TimeSig 4 4,
-                    _current_key         = c_major,
-                    _label_set           = default_labelset, 
-                    _unit_note_length    = Nothing,
-                    _tempo               = 120,
-                    _anacrusis           = 0  }
+abc_env0 = AbcEnv { _current_meter        = TimeSig 4 4,
+                    _current_key          = c_major,
+                    _label_set            = default_labelset, 
+                    _unit_note_length     = Nothing,
+                    _tempo                = 120,
+                    _anacrusis            = 0,
+                    _doc_lines            = repeat 4  }
                      
 get_anacrusis :: AbcEnv -> Duration             
 get_anacrusis = _anacrusis
@@ -75,14 +77,15 @@ set_anacrusis d env           = env {_anacrusis = d}
 -- 
    
 stdInterp :: NoteList -> AbcEnv -> Doc
-stdInterp notes env = 
-    outputAbc . abcSection lset unl $ makeSection ana bars beams notes
+stdInterp notes env = outputAbc line_widths . abcSection lset unl $ 
+    makeSection ana bars beams notes
   where
     lset  = maybe lsetFail id  $ labelSetOf (_current_key env)
     unl   = get_unit_note_length env
     ana   = get_anacrusis env
     bars  = repeat . barLength $ _current_meter env
     beams = repeat . mkMeterPattern $ _current_meter env
+    line_widths = _doc_lines env
     
     lsetFail = error $ "stdInterp - label set failed"
 
