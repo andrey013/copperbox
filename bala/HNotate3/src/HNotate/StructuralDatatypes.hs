@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  HNotate.Staff
+-- Module      :  HNotate.StructuralDatatypes
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -11,21 +11,19 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined
 --
--- Rendering is done in /lines/ of music a line is equivalent to a voice
--- in Abc or a staff in LilyPond. 
--- We use the LilyPond term /staff/ for a line.
+-- Datatypes for the /structural/ organisation of scores...
 --
 --------------------------------------------------------------------------------
 
 
 
-module HNotate.Staff where
+module HNotate.StructuralDatatypes where
 
 import HNotate.Cardinal
 
 import Text.PrettyPrint.Leijen
 
-newtype Staff a = Staff { getStaff :: [Overlay a] }
+newtype Section a = Section { getSection :: [Overlay a] }
   deriving (Show)
 
 -- Follow the Abc style when voice overlays are grouped in whole bars.
@@ -36,6 +34,21 @@ type BeamGroup a = Cardinal a
 data Bar a  = Bar [BeamGroup a] | TiedBar a [BeamGroup a]
   deriving (Show)              
 
+
+data Compo a = Literal a   -- 
+             | Compo a :->- Compo a
+             | Repeated (Compo a)
+
+
+repeated :: Compo a -> Compo a
+repeated = Repeated
+
+infixl 5 ->-
+(->-) :: Compo a -> Compo a -> Compo a
+(->-) = (:->-)
+--------------------------------------------------------------------------------
+-- instances
+
 instance Functor Bar where
   fmap f (Bar xs)       = Bar (fmap (fmap f) xs) 
   fmap f (TiedBar x xs) = TiedBar (f x) (fmap (fmap f) xs) 
@@ -45,8 +58,8 @@ instance Functor Bar where
 --------------------------------------------------------------------------------
 -- Pretty print
   
-instance Pretty a => Pretty (Staff a) where
-  pretty (Staff xs) = vsep $ map ppOverlay xs
+instance Pretty a => Pretty (Section a) where
+  pretty (Section xs) = vsep $ map ppOverlay xs
   
 ppOverlay :: Pretty a => Overlay a -> Doc
 ppOverlay (Single a) = text "BAR:" <+> pretty a

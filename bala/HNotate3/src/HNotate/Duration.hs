@@ -27,7 +27,7 @@ module HNotate.Duration (
     -- particular durations
     duration_zero, no_duration,
     
-    dotn,
+    dot, dotn,
     
     
     -- * Helper for ratios
@@ -51,7 +51,7 @@ module HNotate.Duration (
 import Data.List (unfoldr)
 import Data.Ratio
 
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen hiding ( dot )
 
 type Duration = Rational 
 
@@ -75,6 +75,9 @@ duration_zero = 0
 
 no_duration :: Duration
 no_duration = 0
+
+dot :: Duration -> Duration
+dot = dotn 1
 
 dotn :: Int -> Duration -> Duration
 dotn i d | i < 1 = d

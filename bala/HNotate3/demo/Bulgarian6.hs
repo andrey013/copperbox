@@ -17,7 +17,7 @@ import HNotate.NoteList
 import HNotate.Pitch
 import HNotate.Utils
 
-    
+demo = runAbc bulgarian6
 
 -- a major
 
@@ -34,7 +34,7 @@ generateAbc doc = pprender $ printf doc
 
 runAbc = putStr . generateAbc
 
-demo1 = runAbc bulgarian6
+
 
 bars1_4 :: NoteList
 bars1_4 = 

@@ -60,13 +60,17 @@ module HNotate.NamedElements (
     du1, du2, du4, du8, du16, du32, du64, du128,  
     
     -- * Named keys
+    -- ** Major
     c_major, g_major, d_major, a_major, e_major, b_major, f_sharp_major,
     c_sharp_major,
     f_major, b_flat_major, e_flat_major, a_flat_major, d_flat_major,
-    g_flat_major, c_flat_major
+    g_flat_major, c_flat_major,
     
-    
-
+    -- ** Minor
+    a_minor, e_minor, b_minor, 
+    f_sharp_minor, c_sharp_minor, g_sharp_minor, d_sharp_minor, a_sharp_minor,
+    d_minor, g_minor, c_minor, f_minor,
+    b_flat_minor, e_flat_minor, a_flat_minor, 
  ) where
 
 
@@ -520,4 +524,54 @@ g_flat_major = majorKey G Flat
 c_flat_major :: Key
 c_flat_major = majorKey C Flat
 
- 
+
+
+minorKey :: PitchLetter -> Accidental -> Key
+minorKey l a = Key (PitchLabel l a) Minor []
+
+a_minor :: Key
+a_minor = minorKey A Nat
+
+e_minor :: Key
+e_minor = minorKey E Nat
+
+b_minor :: Key
+b_minor = minorKey B Nat
+  
+f_sharp_minor :: Key
+f_sharp_minor = minorKey F Sharp
+
+c_sharp_minor :: Key
+c_sharp_minor = minorKey C Sharp
+
+g_sharp_minor :: Key
+g_sharp_minor = minorKey G Sharp
+
+d_sharp_minor :: Key
+d_sharp_minor = minorKey D Sharp
+
+a_sharp_minor :: Key
+a_sharp_minor = minorKey A Sharp
+
+d_minor :: Key
+d_minor = minorKey D Nat
+
+g_minor :: Key
+g_minor = minorKey G Nat
+
+c_minor :: Key
+c_minor = minorKey C Nat
+
+f_minor :: Key
+f_minor = minorKey F Nat
+
+b_flat_minor :: Key
+b_flat_minor = minorKey B Flat
+
+e_flat_minor :: Key
+e_flat_minor = minorKey E Flat
+
+a_flat_minor :: Key
+a_flat_minor = minorKey A Flat
+
+

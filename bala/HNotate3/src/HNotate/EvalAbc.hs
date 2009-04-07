@@ -76,7 +76,7 @@ set_anacrusis d env           = env {_anacrusis = d}
    
 stdInterp :: NoteList -> AbcEnv -> Doc
 stdInterp notes env = 
-    outputAbc . abcStaff lset unl $ primeToStaffRep ana bars beams notes
+    outputAbc . abcSection lset unl $ makeSection ana bars beams notes
   where
     lset  = maybe lsetFail id  $ labelSetOf (_current_key env)
     unl   = get_unit_note_length env

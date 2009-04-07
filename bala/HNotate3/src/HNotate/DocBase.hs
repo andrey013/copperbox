@@ -11,7 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Primitives for 'environment passing' doucument building
+-- Primitives for 'state passing' document building
 --
 --------------------------------------------------------------------------------
 
@@ -24,94 +24,104 @@ import qualified Text.PrettyPrint.Leijen as PP
 type Doc = PP.Doc
 
 
-type DocK env r = (Doc -> env -> r) -> env -> r
+type DocK st r = (Doc -> st -> r) -> st -> r
 
--- @local@ runs a computation with a local copy of the env
--- c.f. the Reader monads local operation. 
-local :: ((Doc -> env -> Doc) -> env -> Doc)
-            -> (Doc -> env -> Doc) -> env -> Doc
-local f k = \env -> f (\s -> \_ -> k s env) env  
+-- @local@ runs a computation with a local copy of the state
+-- c.f. @withState@ the Reader monads @local@ operation. 
+local :: ((Doc -> st -> Doc) -> st -> Doc)
+            -> (Doc -> st -> Doc) -> st -> Doc
+local f k = \st -> f (\s -> \_ -> k s st) st  
 
--- @update@ applies the function f to the enviroment
-update :: (env -> env) -> (Doc -> env -> r) -> env -> r
-update f k = \env -> k PP.empty (f env) 
+-- @update@ applies the function f to the state
+-- @update@ is essential, it allows us to handle document combinators 
+-- which produce out put and change the state e.g. a /meter/ combinator
+-- would print the new time signature in a score but also change the 
+-- /meter/ value in the state so subsequent tunes would be evaluated 
+-- with the new time signature.
+-- If @update@ wasn't essential (giving us an environment rather than 
+-- state) we could simply use the (->) applicative functor.
+--
+-- (Note, this module could be reimplemented using a state monad instead 
+-- of CPS...)
+update :: (st -> st) -> (Doc -> st -> r) -> st -> r
+update f k = \st -> k PP.empty (f st) 
 
-current :: (env -> PP.Doc) -> (Doc -> env -> r) -> env -> r
-current f k = \env -> k (f env) env
+current :: (st -> PP.Doc) -> (Doc -> st -> r) -> st -> r
+current f k = \st -> k (f st) st
 
 
--- @caten@ is the general function for combining two /CPS Docs/.
+-- @caten@ is a general function for combining two /CPS Docs/.
 --  
 caten :: (Doc -> Doc  -> Doc) ->
-         ((Doc -> env -> b) -> env -> a) ->
-         ((Doc -> env -> c) -> env -> b) ->
-         ((Doc -> env -> c) -> env -> a)
-caten op f1 f2 k = \env -> 
-                  f1 (\d1 env1 -> 
-                    f2 (\d2 env2 -> k (d1 `op` d2) env2) env1) env 
+         ((Doc -> st -> b) -> st -> a) ->
+         ((Doc -> st -> c) -> st -> b) ->
+         ((Doc -> st -> c) -> st -> a)
+caten op f1 f2 k = \st -> 
+                  f1 (\d1 st1 -> 
+                    f2 (\d2 st2 -> k (d1 `op` d2) st2) st1) st 
 
 -- @document@ lifts a Doc to a /CPS Doc/.
-document :: Doc -> (Doc -> env -> r) -> env -> r
+document :: Doc -> (Doc -> st -> r) -> st -> r
 document d k = k d
 
--- @printEnv@ - print the current enviroment when it is an instance of Show. 
-printEnv :: Show env => (Doc -> env -> r) -> env -> r
-printEnv k = \env -> k (PP.string $ show env) env
+-- @printState@ - print the current state when it is an instance of Show. 
+printState :: Show st => (Doc -> st -> r) -> st -> r
+printState k = \st -> k (PP.string $ show st) st
 
 -- @empty@ - CPS version of PP.empty
-empty :: (Doc -> env -> r) -> env -> r
+empty :: (Doc -> st -> r) -> st -> r
 empty k = k (PP.empty)
 
 -- @text@ - CPS version of PP.text
-text :: String -> (Doc -> env -> r) -> env -> r
+text :: String -> (Doc -> st -> r) -> st -> r
 text x k = k (PP.text x)
 
 -- @string@ - CPS version of PP.string
-string :: String -> (Doc -> env -> r) -> env -> r
+string :: String -> (Doc -> st -> r) -> st -> r
 string x k = k (PP.string x)
 
 -- @int@ - CPS version of PP.int
-int :: Int -> (Doc -> env -> r) -> env -> r
+int :: Int -> (Doc -> st -> r) -> st -> r
 int i k = k (PP.int i)
 
 -- @integer@ - CPS version of PP.integer
-integer :: Integer -> (Doc -> env -> r) -> env -> r
+integer :: Integer -> (Doc -> st -> r) -> st -> r
 integer i k = k (PP.integer i)
 
 
 -- @char@ - CPS version of PP.char
-char :: Char -> (Doc -> env -> r) -> env -> r
+char :: Char -> (Doc -> st -> r) -> st -> r
 char c k = k (PP.char c)
 
-eol :: (Doc -> env -> a) -> env ->  a
+eol :: (Doc -> st -> a) -> st ->  a
 eol k = k (PP.line)
 
 
-(<$>) :: ((Doc -> env -> Doc) -> env -> Doc)
-      -> ((Doc -> env -> Doc) -> env -> Doc)
-      -> ((Doc -> env -> Doc) -> env -> Doc)
+(<$>) :: ((Doc -> st -> Doc) -> st -> Doc)
+      -> ((Doc -> st -> Doc) -> st -> Doc)
+      -> ((Doc -> st -> Doc) -> st -> Doc)
 (<$>) = caten (PP.<$>)
 
-(<+>) :: ((Doc -> env -> Doc) -> env -> Doc)
-      -> ((Doc -> env -> Doc) -> env -> Doc)
-      -> ((Doc -> env -> Doc) -> env -> Doc)
+(<+>) :: ((Doc -> st -> Doc) -> st -> Doc)
+      -> ((Doc -> st -> Doc) -> st -> Doc)
+      -> ((Doc -> st -> Doc) -> st -> Doc)
 (<+>) = caten (PP.<+>)
   
-(<>) :: ((Doc -> env -> Doc) -> env -> Doc)
-      -> ((Doc -> env -> Doc) -> env -> Doc)
-      -> ((Doc -> env -> Doc) -> env -> Doc)  
+(<>) :: ((Doc -> st -> Doc) -> st -> Doc)
+      -> ((Doc -> st -> Doc) -> st -> Doc)
+      -> ((Doc -> st -> Doc) -> st -> Doc)  
 (<>)  = caten (PP.<>)
   
   
-colon :: (Doc -> env -> r) -> env -> r
+colon :: (Doc -> st -> r) -> st -> r
 colon = document (PP.colon)
 
-line :: (Doc -> env -> r) -> env -> r
+line :: (Doc -> st -> r) -> st -> r
 line = document (PP.line)
 
 
-sprintf :: env -> ((Doc -> env -> Doc) -> env -> r) -> r
-sprintf env p = p (\s _env -> s) env
+sprintf :: st -> ((Doc -> st -> Doc) -> st -> r) -> r
+sprintf st p = p (\s _st -> s) st
 
 pprender :: PP.Doc -> String
 pprender doc = PP.displayS (PP.renderPretty 0.4 80 doc) ""

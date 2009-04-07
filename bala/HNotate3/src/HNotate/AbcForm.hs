@@ -22,7 +22,7 @@ import HNotate.Duration hiding ( spacer )
 import HNotate.MusicRepDatatypes
 import qualified HNotate.NoteList as N
 import HNotate.Pitch
-import HNotate.Staff
+import HNotate.StructuralDatatypes
 import HNotate.Utils ( prime )
 
 
@@ -62,8 +62,8 @@ unitRescale unl drn = (dn%dd) / (un%ud) where
     (dn,dd)  = ratioElements drn
     (un,ud)  = ratioElements unl
 
-abcStaff :: LabelSet -> Duration -> Staff N.Element -> Staff Element
-abcStaff ls u (Staff xs) = Staff (fmap (fmap (fmap (abcElement ls u))) xs) 
+abcSection :: LabelSet -> Duration -> Section N.Element -> Section Element
+abcSection ls u (Section xs) = Section (fmap (fmap (fmap (abcElement ls u))) xs) 
 
     
 abcElement :: LabelSet -> Duration -> N.Element -> Element
@@ -77,8 +77,8 @@ abcElement ls _ (N.Nplet m _ ps)  = Nplet m (map (naturalize ls) ps)
 --------------------------------------------------------------------------------
 -- output
 
-outputAbc :: Staff Element -> Doc
-outputAbc = vsep . map (\a -> overlay a <+> char '|') . getStaff 
+outputAbc :: Section Element -> Doc
+outputAbc = vsep . map (\a -> overlay a <+> char '|') . getSection 
 
 overlay :: Cardinal (Bar Element) -> Doc
 overlay (Single x) = bar x
