@@ -27,10 +27,12 @@ import HNotate.MusicRepDatatypes
 import HNotate.Pitch
 import HNotate.Utils
 
+import Control.Monad.State
 
 -- temp
-printf :: ((Doc -> AbcEnv -> Doc) -> AbcEnv -> r) -> r
-printf p = p (\s _env -> s) abc_env0 
+
+printf :: DocSt AbcEnv -> Doc
+printf p = evalState p abc_env0 
 
 
 
@@ -38,10 +40,12 @@ printf p = p (\s _env -> s) abc_env0
 --------------------------------------------------------------------------------
 --
                  
-type AbcOutput = DocK AbcEnv Doc
+type AbcOutput = DocSt AbcEnv
+
 
 tune :: AbcOutput -> AbcOutput
 tune k = local k <> line
+
 
 -- | @X field@ - reference \/ tune number.
 tune_number :: Int -> AbcOutput

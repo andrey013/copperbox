@@ -11,7 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Primitives for 'state passing' document building
+-- Build documents with a state monad
 --
 --------------------------------------------------------------------------------
 
@@ -19,109 +19,91 @@
 module HNotate.DocBase where
 
 
+import Control.Monad.State
 import qualified Text.PrettyPrint.Leijen as PP
 
 type Doc = PP.Doc
+ 
+type DocSt st = State st Doc 
 
 
-type DocK st r = (Doc -> st -> r) -> st -> r
-
--- @local@ runs a computation with a local copy of the state
--- c.f. @withState@ the Reader monads @local@ operation. 
-local :: ((Doc -> st -> Doc) -> st -> Doc)
-            -> (Doc -> st -> Doc) -> st -> Doc
-local f k = \st -> f (\s -> \_ -> k s st) st  
-
--- @update@ applies the function f to the state
--- @update@ is essential, it allows us to handle document combinators 
--- which produce out put and change the state e.g. a /meter/ combinator
--- would print the new time signature in a score but also change the 
--- /meter/ value in the state so subsequent tunes would be evaluated 
--- with the new time signature.
--- If @update@ wasn't essential (giving us an environment rather than 
--- state) we could simply use the (->) applicative functor.
---
--- (Note, this module could be reimplemented using a state monad instead 
--- of CPS...)
-update :: (st -> st) -> (Doc -> st -> r) -> st -> r
-update f k = \st -> k PP.empty (f st) 
-
-current :: (st -> PP.Doc) -> (Doc -> st -> r) -> st -> r
-current f k = \st -> k (f st) st
+update :: (st -> st) -> DocSt st 
+update f = get >>= \st -> put (f st) >> return PP.empty
 
 
--- @caten@ is a general function for combining two /CPS Docs/.
---  
-caten :: (Doc -> Doc  -> Doc) ->
-         ((Doc -> st -> b) -> st -> a) ->
-         ((Doc -> st -> c) -> st -> b) ->
-         ((Doc -> st -> c) -> st -> a)
-caten op f1 f2 k = \st -> 
-                  f1 (\d1 st1 -> 
-                    f2 (\d2 st2 -> k (d1 `op` d2) st2) st1) st 
+local :: DocSt st -> DocSt st
+local f = get >>= \st -> return $ evalState f st 
+
+
+
+current :: (st -> PP.Doc) -> DocSt st
+current f = get >>= \st -> return (f st)
 
 -- @document@ lifts a Doc to a /CPS Doc/.
-document :: Doc -> (Doc -> st -> r) -> st -> r
-document d k = k d
+document :: Doc -> DocSt st
+document = return
 
--- @printState@ - print the current state when it is an instance of Show. 
-printState :: Show st => (Doc -> st -> r) -> st -> r
-printState k = \st -> k (PP.string $ show st) st
-
--- @empty@ - CPS version of PP.empty
-empty :: (Doc -> st -> r) -> st -> r
-empty k = k (PP.empty)
-
--- @text@ - CPS version of PP.text
-text :: String -> (Doc -> st -> r) -> st -> r
-text x k = k (PP.text x)
-
--- @string@ - CPS version of PP.string
-string :: String -> (Doc -> st -> r) -> st -> r
-string x k = k (PP.string x)
-
--- @int@ - CPS version of PP.int
-int :: Int -> (Doc -> st -> r) -> st -> r
-int i k = k (PP.int i)
-
--- @integer@ - CPS version of PP.integer
-integer :: Integer -> (Doc -> st -> r) -> st -> r
-integer i k = k (PP.integer i)
+-- @caten@ is the general function for combining two /DocSt/.
+--  
+caten :: (Doc -> Doc  -> Doc) ->
+         DocSt st -> DocSt st -> DocSt st 
+caten op f g = f >>= \a -> g >>= \b -> return $ a `op` b
 
 
--- @char@ - CPS version of PP.char
-char :: Char -> (Doc -> st -> r) -> st -> r
-char c k = k (PP.char c)
-
-eol :: (Doc -> st -> a) -> st ->  a
-eol k = k (PP.line)
+-- @printEnv@ - print the current enviroment when it is an instance of Show. 
+printEnv :: Show st => DocSt st
+printEnv = get >>= return . PP.string . show
 
 
-(<$>) :: ((Doc -> st -> Doc) -> st -> Doc)
-      -> ((Doc -> st -> Doc) -> st -> Doc)
-      -> ((Doc -> st -> Doc) -> st -> Doc)
+-- @empty@ - applicative env passing version of PP.empty
+empty :: DocSt st
+empty = return PP.empty
+
+
+-- @text@ - applicative env passing PP.text
+text :: String -> DocSt st
+text = return . PP.text
+
+-- @string@ - applicative env passing PP.string
+string :: String -> DocSt st
+string = return . PP.string
+
+-- @int@ - applicative env passing PP.int
+int :: Int -> DocSt st
+int  = return . PP.int
+
+-- @integer@ - applicative env passing PP.integer
+integer :: Integer -> DocSt st
+integer = return . PP.integer
+
+
+-- @char@ - applicative env passing PP.char
+char :: Char -> DocSt st
+char = return . PP.char
+
+eol :: DocSt st
+eol = return PP.line
+
+
+(<$>) :: DocSt st -> DocSt st -> DocSt st
 (<$>) = caten (PP.<$>)
 
-(<+>) :: ((Doc -> st -> Doc) -> st -> Doc)
-      -> ((Doc -> st -> Doc) -> st -> Doc)
-      -> ((Doc -> st -> Doc) -> st -> Doc)
+(<+>) :: DocSt st -> DocSt st -> DocSt st
 (<+>) = caten (PP.<+>)
   
-(<>) :: ((Doc -> st -> Doc) -> st -> Doc)
-      -> ((Doc -> st -> Doc) -> st -> Doc)
-      -> ((Doc -> st -> Doc) -> st -> Doc)  
+(<>) :: DocSt st -> DocSt st -> DocSt st  
 (<>)  = caten (PP.<>)
   
   
-colon :: (Doc -> st -> r) -> st -> r
-colon = document (PP.colon)
+colon :: DocSt st
+colon = return PP.colon
 
-line :: (Doc -> st -> r) -> st -> r
-line = document (PP.line)
+line :: DocSt st
+line = return PP.line
 
 
-sprintf :: st -> ((Doc -> st -> Doc) -> st -> r) -> r
-sprintf st p = p (\s _st -> s) st
+sprintf :: st -> DocSt st -> Doc
+sprintf st p = evalState p st
 
 pprender :: PP.Doc -> String
 pprender doc = PP.displayS (PP.renderPretty 0.4 80 doc) ""
