@@ -97,8 +97,21 @@ key z = doc <> update (set_current_key z) where
     
 
 
+--------------------------------------------------------------------------------
+-- synthetic fields
+
+beamgroups :: [[Duration]] -> AbcOutput
+beamgroups = update . 
+
 anacrusis :: Duration -> AbcOutput
 anacrusis d = update (set_anacrusis d)
+
+--------------------------------------------------------------------------------
+--
+
+
+repeated :: AbcOutput -> AbcOutput
+repeated a = text "|:" <+> a <+> text ":|"
 
 
          

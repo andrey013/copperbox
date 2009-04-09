@@ -19,7 +19,8 @@
 module Mullein.Section where
 
 import Mullein.Cardinal
-import Mullein.Core hiding ( rest )
+import Mullein.Core ( meterFraction )
+import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Utils
 

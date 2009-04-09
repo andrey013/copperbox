@@ -75,7 +75,7 @@ module Mullein.NamedElements (
 
 
 import Mullein.Duration
-import Mullein.Core
+import Mullein.CoreTypes
 import Mullein.Pitch
 
 import Data.Ratio

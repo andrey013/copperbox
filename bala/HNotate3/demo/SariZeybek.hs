@@ -34,8 +34,6 @@ generateAbc :: AbcOutput -> String
 generateAbc doc = pprender $ printf doc
 
 runAbc = putStr . generateAbc
-
-repeated a = text "|:" <+> a <+> text ":|"
  
 
 sari_zeybek = repeated (stdInterp' bars1_3) <$> repeated (stdInterp' bars4_6)

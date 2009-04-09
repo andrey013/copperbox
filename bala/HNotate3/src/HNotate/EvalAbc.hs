@@ -26,6 +26,10 @@ import HNotate.NoteList
 
 import Text.PrettyPrint.Leijen
 
+-- which is preferable - all configurable elements in a (huge) env
+-- or various eval functions where configurable elements are parameters?
+
+
 data AbcEnv = AbcEnv {
       _current_meter      :: Meter,
       _current_key        :: Key,

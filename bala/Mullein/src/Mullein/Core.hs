@@ -10,17 +10,18 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- TODO
+-- Common functions operating on core types
 --
 --------------------------------------------------------------------------------
 
 module Mullein.Core where
 
-import Mullein.Cardinal
+import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Pitch
 import Mullein.Utils
 
+import qualified Data.Map as Map
 import Data.Ratio
 import Data.Sequence ( (|>) )
 import qualified Data.Sequence as S
@@ -30,34 +31,7 @@ import qualified Data.Sequence as S
 --------------------------------------------------------------------------------
 -- Note lists
 
--- The Element datatype - represents elements with a 'unit duration'.
--- E.g a chord has a set of pitches but the unit duration is common to all 
--- of them. 
-data Element = 
-      Note 
-        { note_pitch          :: Pitch
-        , elt_duration        :: Duration
-        }                  
-    | Rest  
-        { elt_duration        :: Duration }
-    | Spacer  
-        { elt_duration        :: Duration }
-    | Chord 
-        { chord_elements      :: [Pitch] 
-        , rhythmic_value      :: Duration
-        }          
-    | GraceNotes 
-        { grace_elements      :: [GraceNote] }                              
-    | Nplet 
-        { nplet_multipier     :: Int
-        , unit_duration       :: Duration
-        , nplet_elements      :: [Pitch] 
-        }                   
-  deriving (Show) 
 
-type GraceNote = (Pitch,Duration)
-
-type NoteList = S.Seq Element
 
 
 note :: Pitch -> Duration -> NoteList -> NoteList
@@ -73,57 +47,11 @@ root = S.empty
 --------------------------------------------------------------------------------
 -- structured /sections/.
 
-newtype Section a = Section { getSection :: [Overlay a] }
-  deriving (Show)
 
--- Follow the Abc style when voice overlays are grouped in whole bars.
-type Overlay a         = Cardinal (Bar a)
-
-type BeamGroup a = Cardinal a
-
-data Bar a  = Bar [BeamGroup a] | TiedBar a [BeamGroup a]
-  deriving (Show)              
-
-
-instance Temporal Element where 
-  duration (Note _ d)             = d
-  duration (Rest d)               = d
-  duration (Spacer d)             = d
-  duration (Chord _ d )           = d
-  duration (GraceNotes _)         = duration_zero
-  duration (Nplet i d _)          = npletDuration i d
- 
-  
-  swapDuration d (Note p _)       = Note p d
-  swapDuration d (Rest _)         = Rest d
-  swapDuration d (Spacer _)       = Spacer d
-  swapDuration d (Chord se _)     = Chord se d
-  swapDuration _ (GraceNotes se)  = GraceNotes se
-  swapDuration d (Nplet i _ se)   = Nplet i ud se
-    where ud = reunit d i se
-
-        
-reunit :: Duration -> Int -> [a] -> Duration
-reunit tot i xs = tot * (makeDuration l i) * (makeDuration 1 l) where
-                    l = length xs 
-                  
-                  
-                  
-instance Spacer Element where
-  spacer d = Spacer d
-
-                  
-npletDuration :: Int -> Duration -> Duration
-npletDuration len unit_d = (fromIntegral len % 1) * unit_d  
 
 --------------------------------------------------------------------------------
 -- aggregate sections
 
-data Aggregate a = Aggregate a :>> Aggregate a
-                 | Literal (Section a)
-                 | Repeated (Section a)                 
-                 | AltRepeat { body, end1, end2 :: Section a }
-                 | KeyChange Key 
 
 
 -- Do automatic coercion on snoc-ing...
@@ -153,27 +81,7 @@ keyChange = KeyChange
 --------------------------------------------------------------------------------
 -- Musical representation
 
--- For /universality/ meter is defined according to Abc's representation.
--- LilyPond will simply generate @TimeSig@ cases.
-data Meter = TimeSig Integer Integer 
-           -- | CommonTime is 4/4
-           | CommonTime 
-           -- | CutTime is 2/2
-           | CutTime
-  deriving (Eq,Show)
 
-type MeterPattern = [Duration] 
-
-type MetricalSpec = (Meter,MeterPattern)
-
-  
-data Key = Key PitchLabel Mode [PitchLabel]
-  deriving (Eq,Show) 
-
-  
-data Mode = Major | Minor | Lydian | Ionian | Mixolydian
-          | Dorian | Aeolian | Phrygian | Locrian 
-  deriving (Eq,Enum,Ord,Show) 
 
 
 --------------------------------------------------------------------------------
@@ -211,4 +119,20 @@ log2whole = (==0) . snd . pf . logBase 2 . fromIntegral where
     pf :: Double -> (Int, Double)
     pf = properFraction
         
-           
+--------------------------------------------------------------------------------
+-- pitch labels        
+
+-- Cancel the accidental if the pitch is found in the label set
+-- This is the transformation needed for Abc: 
+-- f# should be printed f in g major
+naturalize :: LabelSet -> Pitch -> Pitch
+naturalize lbls p = maybe p ((flip accidentalConst) Nat) (labelSetFind p lbls)
+    
+
+labelSetFind :: Pitch -> LabelSet -> Maybe Pitch
+labelSetFind (Pitch l a o) (LabelSet m) = 
+    maybe Nothing (fn o) (Map.lookup (semitones l + semitones a) m) 
+  where
+    fn ove (PitchLabel ltr atl) = Just $ Pitch ltr atl ove
+
+  
