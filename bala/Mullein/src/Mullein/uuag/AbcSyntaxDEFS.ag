@@ -1,0 +1,18 @@
+-- Mullein.AbcSyntaxDEFS
+-- Copyright   :  (c) Stephen Tetley 2009
+
+
+DATA Element
+  | Note        pitch   : {Pitch} 
+                dmult   : {Multiplier}                 
+  | Rest        dmult   : {Multiplier}
+  | Spacer      dmult   : {Multiplier}
+  | Chord       pitches : Pitches 
+                dmult   : {Multiplier}         
+  | GraceNotes  graces  : GraceNotes                             
+  | Nplet       nmult   : {Int} 
+                pitches : Pitches
+
+TYPE Elements   = [Element]
+TYPE GraceNotes = [GraceNote]
+TYPE Pitches    = [Pitch]        

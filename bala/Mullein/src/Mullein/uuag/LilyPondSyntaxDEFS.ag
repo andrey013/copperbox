@@ -1,0 +1,20 @@
+-- Mullein.LilyPondSyntaxDEFS
+-- Copyright   :  (c) Stephen Tetley 2009
+
+
+DATA Element
+  | Note        letter    : {PitchLetter} 
+                accident  : {Accidental}
+                oct_mod   : {Int}
+                opt_drn   : {Maybe Duration}                 
+  | Rest        opt_drn   : {Maybe Duration}
+  | Spacer      opt_drn   : {Maybe Duration}
+  | Chord       pitches   : Pitches 
+                opt_drn   : {Maybe Duration}         
+  | GraceNotes  graces    : GraceNotes                             
+  | Nplet       nmult     : {Int} 
+                pitches   : Pitches
+
+TYPE Elements   = [Element]
+TYPE GraceNotes = [GraceNote]
+TYPE Pitches    = [Pitch]        

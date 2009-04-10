@@ -16,7 +16,6 @@
 
 module Mullein.CoreTypes where
 
-import Mullein.Cardinal
 import Mullein.Duration
 import Mullein.Pitch
 
@@ -59,26 +58,6 @@ type GraceNote = (Pitch,Duration)
 type NoteList = S.Seq Element
 
 
-
-
---------------------------------------------------------------------------------
--- structured /sections/.
-
-newtype Section a = Section { getSection :: [Overlay a] }
-  deriving (Show)
-
--- Follow the Abc style when voice overlays are grouped in whole bars.
-type Overlay a         = Cardinal (Bar a)
-
-type BeamGroup a = Cardinal a
-
-data Bar a  = Bar [BeamGroup a] | TiedBar a [BeamGroup a]
-  deriving (Show)              
-
-instance Functor Bar where
-  fmap f (Bar xs)       = Bar (fmap (fmap f) xs) 
-  fmap f (TiedBar x xs) = TiedBar (f x) (fmap (fmap f) xs) 
-
 instance Temporal Element where 
   duration (Note _ d)             = d
   duration (Rest d)               = d
@@ -103,17 +82,6 @@ instance Temporal Element where
                   
 instance Spacer Element where
   spacer d = Spacer d
-
-
---------------------------------------------------------------------------------
--- aggregate sections
-
-data Aggregate a = Aggregate a :>> Aggregate a
-                 | Literal (Section a)
-                 | Repeated (Section a)                 
-                 | AltRepeat { body, end1, end2 :: Section a }
-                 | KeyChange Key 
-
 
 
 

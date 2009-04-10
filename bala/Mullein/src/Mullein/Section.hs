@@ -18,10 +18,10 @@
 
 module Mullein.Section where
 
-import Mullein.Cardinal
 import Mullein.Core ( meterFraction )
 import Mullein.CoreTypes
 import Mullein.Duration
+import Mullein.Syntax
 import Mullein.Utils
 
 import Data.Ratio
@@ -32,14 +32,14 @@ data TieStatus = Tied | NotTied
   deriving (Eq,Show)
 
 section :: (Temporal a, Spacer a) => MetricalSpec -> Seq a -> Section a 
-section mspec notes = sectionSingles $ partitionAndBeam bs bss notes where
+section mspec notes = Section $ partitionAndBeam bs bss notes where
     (bs,bss) = repeatSpec 0 mspec   
 
   
 sectionAna :: (Temporal a, Spacer a) => 
     Duration -> MetricalSpec -> Seq a -> Section a
 sectionAna anacrusis mspec notes = 
-    sectionSingles $ partitionAndBeam bs bss notes
+    Section $ partitionAndBeam bs bss notes
   where
     (bs,bss) = repeatSpec anacrusis mspec     
 
@@ -49,18 +49,14 @@ repeatSpec 0 (b,bs) = (repeat $ meterFraction b, repeat bs)
 repeatSpec a (b,bs) = (reduceStk a ds, reduceStk a bs : repeat bs) where 
     ds = repeat $ meterFraction b
 
-
-sectionSingles :: [Bar a] -> Section a
-sectionSingles = Section . map Single
              
 partitionAndBeam :: Temporal a => [Duration] -> [[Duration]] -> Seq a -> [Bar a]
 partitionAndBeam ds_bar dss_beam notelist = 
     zipWith fn (divideToBars ds_bar notelist) dss_beam 
   where    
-    fn (_,[])          _  = Bar []
-    fn (Tied, n:notes) xs = TiedBar n (beam stk notes) where 
-                                stk = reduceStk (duration n) xs 
-    fn (_, notes)      xs = Bar $ beam xs notes
+    fn (_,[])        _  = Bar $ VoiceUnit [] False
+    fn (Tied, notes) xs = Bar $ VoiceUnit (beam xs notes) True 
+    fn (_, notes)    xs = Bar $ VoiceUnit (beam xs notes) False
 
     
 -- split a list of notes into bars of given duration 
@@ -92,15 +88,19 @@ fitTill d0 se = step d0 (viewl se) where
 -- The state is (1) the stack of durations for each beam group, 
 -- and (2) the input stream of notes.
  
-beam :: Temporal a => [Duration] -> [a] -> [Cardinal a]
+beam :: Temporal a => [Duration] -> [a] -> [Pulsation a]
 beam = unfoldr2 fn where
-    fn _          []          = Nothing             -- notes exhausted
-    fn []         (x:xs)      = Just (Single x, [],xs)   -- duration exhausted, return singletons
+    -- notes exhausted
+    fn _          []          = Nothing
+
+    -- beam lengths exhausted, return singletons 
+    fn []         (x:xs)      = Just (SingleElt x, [],xs)
+
     fn dstk       (x:xs)  
-        | duration x > (1%8)  = Just (Single x, reduceStk (duration x) dstk, xs)
+        | duration x > (1%8)  = Just (SingleElt x, reduceStk (duration x) dstk, xs)
     
     fn dstk@(d:_) xs          = let (count,l,r) = beamGroup1 d xs in 
-                                Just (fromList l, reduceStk count dstk, r)
+                                Just (BeamedGroup l, reduceStk count dstk, r)
 
 
 -- cannot reduce stack by negative amounts...

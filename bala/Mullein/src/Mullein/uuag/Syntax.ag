@@ -1,0 +1,49 @@
+{
+{-# OPTIONS -Wall #-}
+
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Mullein.Syntax
+-- Copyright   :  (c) Stephen Tetley 2009
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Structural syntax
+--
+--------------------------------------------------------------------------------
+}
+
+{
+module Mullein.Syntax where
+
+
+}
+
+
+INCLUDE "SyntaxDEFS.ag"
+
+DERIVING *  : Eq, Show
+
+{
+
+instance Functor Section where
+  fmap f (Section xs)     = Section (fmap (fmap f) xs)
+
+
+instance Functor Bar where
+  fmap f (Bar v)          = Bar (fmap f v)
+  fmap f (Overlay xs)     = Overlay (fmap (fmap f) xs)
+
+
+instance Functor VoiceUnit where
+  fmap f (VoiceUnit xs t) = VoiceUnit (fmap (fmap f) xs) t
+
+instance Functor Pulsation where
+  fmap f (BeamedGroup xs) = BeamedGroup (fmap f xs)
+  fmap f (SingleElt e)    = SingleElt (f e)
+
+}
+

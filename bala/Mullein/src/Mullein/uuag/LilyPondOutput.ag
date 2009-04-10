@@ -1,0 +1,124 @@
+{
+
+{-# LANGUAGE ScopedTypeVariables #-}
+
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Mullein.LilyPondOutput
+-- Copyright   :  (c) Stephen Tetley 2009
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Pretty print LilyPond with an attribute grammar
+--
+--------------------------------------------------------------------------------
+}
+
+{
+module Mullein.LilyPondOutput where
+
+import Mullein.LilyPondSyntax
+import Mullein.Duration
+import Mullein.Pitch
+import Mullein.Syntax
+
+import Text.PrettyPrint.Leijen 
+
+}
+
+INCLUDE "SyntaxDEFS.ag"
+INCLUDE "LilyPondSyntaxDEFS.ag"
+
+ATTR Output e => Section Bar VoiceUnit Pulsation [ | | output : {Doc} ]
+
+ATTR Output e => Bars VoiceUnits Pulsations [ | | output USE {:} {[]} :{[Doc]} ]
+
+SEM Section
+  | Section     lhs.output     = hsep $ @bars.output
+
+SEM Bar
+  | Bar         lhs.output     = @voice.output
+  | Overlay     lhs.output     = overlay @ovs.output
+
+
+SEM VoiceUnit
+  | VoiceUnit   lhs.output     = hsep @pulses.output <> 
+                                   if @tied then char '-' else empty
+
+SEM Pulsation
+  | SingleElt   lhs.output     = output @elt
+  | BeamedGroup lhs.output     = hcat $ map output @elts
+
+{-
+ATTR Element [ | | output : {Doc} ]
+
+
+SEM Element
+  | Note        lhs.output    = note @pitch @dmult                
+  | Rest        lhs.output    = char 'z' <> multiplier @dmult
+  | Spacer      lhs.output    = char 'x' <> multiplier @dmult
+  | Chord       lhs.output    = text "Chord - TODO"         
+  | GraceNotes  lhs.output    = text "GraceNotes - TODO"
+  | Nplet       lhs.output    = text "Nplet - TODO"
+-}
+
+{
+
+class Output e where output :: e -> Doc
+
+instance Output Element where
+  output = elementPP
+
+elementPP :: Element -> Doc
+elementPP e = output_Syn_Element synthesized 
+  where
+    synthesized = wrap_Element (sem_Element e) inherited
+    inherited   = Inh_Element  { } 
+
+instance Output e => Output (Section e) where
+  output = sectionPP
+
+sectionPP :: Output e => Section e -> Doc
+sectionPP e = output_Syn_Section synthesized 
+  where
+    synthesized = wrap_Section (sem_Section e) inherited
+    inherited   = Inh_Section  { } 
+
+
+
+
+overlay :: [Doc] -> Doc
+overlay = vsep . punctuate (text " &\\")    
+
+note :: Pitch -> Int -> Maybe Duration -> Doc 
+note p n d = pitch p <> octaveSpec n <> drn where
+
+
+pitch :: Pitch -> ODoc
+pitch (Pitch l a o) = pitchLabel (PitchLabel l a) <> ove o
+  where 
+    ove i | i > 0       = text $ replicate i       '\'' 
+          | i < 0       = text $ replicate (abs i) ','
+          | otherwise   = emptyDoc
+
+-- lilypond middle c is c' 
+-- HNotate middle c is c4
+rescale :: Pitch -> Pitch
+rescale (Pitch l a o)   = Pitch l a (o-3)
+
+pitchLabel :: PitchLabel -> ODoc
+pitchLabel (PitchLabel l a) = char (toLowerLChar l) <> accidental a
+  where 
+    accidental :: Accidental -> ODoc
+    accidental Nat            = emptyDoc
+    accidental Sharp          = text "is"
+    accidental Flat           = text "es"
+    accidental DoubleSharp    = text "isis"
+    accidental DoubleFlat     = text "eses"
+
+}                
+                
+          

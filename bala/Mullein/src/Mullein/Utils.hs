@@ -16,6 +16,7 @@
 
 module Mullein.Utils where
 
+import Data.List ( unfoldr )
 import Data.Ratio
 
 -- anaMap is the unfold analogue of accumMapL
@@ -48,5 +49,15 @@ infixl 7 ##
 g ## f = f . g
 
 
+enumFromCyc :: (Bounded a, Enum a, Eq a) => a -> [a]
+enumFromCyc a = a : (unfoldr f $ nextOf a)
+  where 
+    f x | x == a    = Nothing
+        | otherwise = Just (x,nextOf x)
+        
+nextOf :: (Bounded a, Eq a, Enum a) => a -> a  
+nextOf x | x == maxBound = minBound
+         | otherwise     = succ x
+                 
 rational :: Integral a => a -> a -> Rational
 rational a b = fromIntegral a % fromIntegral b

@@ -1,0 +1,24 @@
+-- Mullein.SyntaxDEFS
+-- Copyright   :  (c) Stephen Tetley 2009
+
+
+DATA Section e
+  | Section     bars    : (Bars {e})
+
+DATA Bar e
+  | Bar         voice   : (VoiceUnit {e})
+  | Overlay     ovs     : (VoiceUnits {e})
+
+DATA VoiceUnit e
+  | VoiceUnit   pulses  : (Pulsations {e})
+                tied    : {Bool}
+
+DATA Pulsation e
+  | SingleElt   elt     : {e}
+  | BeamedGroup elts    : {[e]}
+
+
+TYPE Bars e         = [Bar e]                
+TYPE VoiceUnits e   = [VoiceUnit e]
+TYPE Pulsations e   = [Pulsation e]
+
