@@ -5,12 +5,14 @@
 INCLUDE "SyntaxTOP.ag"
 
 
-SET Every = Section AllBars AllVoiceUnit AllPulsation AllElements
+SET Every = Section AllBars AllVoiceUnit AllPulsation AllElements AllGraces Pitches
 
 SET AllBars       = Bars Bar
 SET AllVoiceUnit  = VoiceUnits VoiceUnit
 SET AllPulsation  = Pulsations Pulsation 
 SET AllElements   = Elements Element
+SET AllGraces     = GraceNotes GraceNote
+
 
 -- The Element datatype - represents elements with a 'unit duration'.
 -- E.g a chord has a set of pitches but the unit duration is common to all 
@@ -20,14 +22,15 @@ DATA Element
               duration        : {Duration}
   | Rest      duration        : {Duration}
   | Spacer    duration        : {Duration}
-  | Chord     pitches         : {[Pitch]} 
+  | Chord     pitches         : Pitches
               duration        : {Duration}          
   | GraceNotes 
-              notes           : GraceNotes                              
+              graces          : GraceNotes                              
   | Nplet     multipier       : {Int}
               unit_duration   : {Duration}
-              pitches         : {[Pitch]}
+              pitches         : Pitches
         
 TYPE GraceNotes = [GraceNote]
-TYPE GraceNote = (Pitch,Duration)
+TYPE GraceNote  = (pch : Pitch, drn : Duration)
+TYPE Pitches    = [Pitch]
 

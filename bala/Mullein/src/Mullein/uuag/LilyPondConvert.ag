@@ -34,10 +34,15 @@ import Text.PrettyPrint.Leijen
 
 INCLUDE "SyntaxDEFS.ag"
 
+
+
 -- Propagate relative duration to the elements 
 
 
 ATTR Every [ | rduration : {Duration} | ]
+ATTR Every [ | rpitch : {Pitch} | ]
+
+ATTR Every [ trafoPitch : {(Pitch -> Pitch -> Pitch)} | | ]
 
 SEM Elements 
   | Cons        tl.rduration   = @hd.getDuration
@@ -53,6 +58,32 @@ SEM Element
   | GraceNotes  lhs.getDuration = 0                             
   | Nplet       lhs.getDuration = error "Nplet getDuration"
 
+SEM Elements 
+  | Cons        tl.rpitch      = @hd.getPitch
+
+ATTR Element GraceNotes GraceNote Pitches [ | | getPitch : {Pitch} ]
+
+SEM Element 
+  | Note        lhs.getPitch    = @pitch
+  | Rest        lhs.getPitch    = @lhs.rpitch  -- just pass on rpitch 
+  | Spacer      lhs.getPitch    = @lhs.rpitch
+  | Chord       lhs.getPitch    = @pitches.getPitch       
+  | GraceNotes  lhs.getPitch    = @graces.getPitch                             
+  | Nplet       lhs.getPitch    = error "Nplet getPitch"
+
+-- First pitch of the list
+SEM GraceNotes 
+  | Cons        lhs.getPitch    = @hd.getPitch
+  | Nil         lhs.getPitch    = @lhs.rpitch
+
+SEM GraceNote
+  | Tuple       lhs.getPitch    = @pch
+
+-- First pitch of the list
+SEM Pitches
+  | Cons        lhs.getPitch    = @hd
+  | Nil         lhs.getPitch    = @lhs.rpitch
+ 
 
 -- Convert 
 
@@ -89,24 +120,42 @@ ATTR Elements [ | | convert USE {:} {[]} : {[Ly.Element]} ]
 ATTR Element  [ | | convert : {Ly.Element} ]
 
 SEM Element
-  | Note        lhs.convert   = Ly.Note @pitch (relativeDuration @lhs.rduration @duration)
+  | Note        lhs.convert   = let f = @lhs.trafoPitch  in 
+                                Ly.Note (f @lhs.rpitch @pitch) 
+                                        (relativeDuration @lhs.rduration @duration)
   | Rest        lhs.convert   = Ly.Rest $ relativeDuration @lhs.rduration @duration
   | Spacer      lhs.convert   = Ly.Spacer $ relativeDuration @lhs.rduration @duration
   | Chord       lhs.convert   = error "Ly.Chord"
   | GraceNotes  lhs.convert   = error "Ly.GraceNotes"
   | Nplet       lhs.convert   = error "Ly.Nplet"
 
+
+
+
 {
 
-convertToLy :: Section -> Ly.Section
-convertToLy e = convert_Syn_Section synthesized 
+convertToLy :: (Pitch -> Pitch -> Pitch) -> Pitch -> Section -> Ly.Section
+convertToLy pchFun relpitch e = convert_Syn_Section synthesized 
   where
     synthesized = wrap_Section (sem_Section e) inherited
-    inherited   = Inh_Section { rduration_Inh_Section = 1%4 } 
+    inherited   = Inh_Section { rduration_Inh_Section  = 1%4,
+                                rpitch_Inh_Section     = relpitch,
+                                trafoPitch_Inh_Section = pchFun   } 
 
 relativeDuration :: Duration -> Duration -> Maybe Duration
 relativeDuration ud drn | ud == drn = Nothing
                         | otherwise = Just drn
+
+
+-- LilyPond middle c is c' (aka `c 1`)
+-- Mullein middle c is c4
+absPitch :: Pitch -> Pitch -> Pitch
+absPitch _ (Pitch l a o) = Pitch l a (o-3)
+
+
+relPitch :: Pitch -> Pitch -> Pitch
+relPitch rel pch@(Pitch l a _) = Pitch l a (pch `octaveDist` rel)
+
 
 }                
                 
