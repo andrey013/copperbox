@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Mullein.Syntax
+-- Module      :  Mullein.Gen.Syntax
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -17,8 +17,12 @@
 }
 
 {
-module Mullein.Syntax where
+module Mullein.Gen.Syntax where
 
+import Mullein.Duration
+import Mullein.Pitch
+
+import Data.Ratio
 
 }
 
@@ -29,21 +33,34 @@ DERIVING *  : Eq, Show
 
 {
 
-instance Functor Section where
-  fmap f (Section xs)     = Section (fmap (fmap f) xs)
+
+instance Temporal Element where 
+  duration (Note _ d)             = d
+  duration (Rest d)               = d
+  duration (Spacer d)             = d
+  duration (Chord _ d )           = d
+  duration (GraceNotes _)         = duration_zero
+  duration (Nplet i d _)          = (fromIntegral i % 1) * d 
+    
+ 
+  
+  swapDuration d (Note p _)       = Note p d
+  swapDuration d (Rest _)         = Rest d
+  swapDuration d (Spacer _)       = Spacer d
+  swapDuration d (Chord se _)     = Chord se d
+  swapDuration _ (GraceNotes se)  = GraceNotes se
+  swapDuration d (Nplet i _ se)   = Nplet i (reunit d i se) se where 
+      reunit :: Duration -> Int -> [a] -> Duration
+      reunit tot n xs = tot * (makeDuration l n) * (makeDuration 1 l) where
+          l = length xs 
+                  
+                  
+                  
+instance Spacer Element where
+  spacer d = Spacer d
 
 
-instance Functor Bar where
-  fmap f (Bar v)          = Bar (fmap f v)
-  fmap f (Overlay xs)     = Overlay (fmap (fmap f) xs)
-
-
-instance Functor VoiceUnit where
-  fmap f (VoiceUnit xs t) = VoiceUnit (fmap (fmap f) xs) t
-
-instance Functor Pulsation where
-  fmap f (BeamedGroup xs) = BeamedGroup (fmap f xs)
-  fmap f (SingleElt e)    = SingleElt (f e)
 
 }
+
 

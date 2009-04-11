@@ -1,0 +1,113 @@
+{
+
+{-# LANGUAGE ScopedTypeVariables #-}
+
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Mullein.Gen.LilyPondConvert
+-- Copyright   :  (c) Stephen Tetley 2009
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Convert internal form to LilyPond 
+--
+--------------------------------------------------------------------------------
+}
+
+{
+module Mullein.Gen.LilyPondConvert where
+
+import Mullein.Core
+import Mullein.CoreTypes
+import Mullein.Duration
+import qualified Mullein.Gen.LilyPondSyntax as Ly
+import Mullein.Gen.Syntax
+import Mullein.Pitch
+
+import Data.Ratio
+import Text.PrettyPrint.Leijen 
+
+}
+
+INCLUDE "SyntaxDEFS.ag"
+
+-- Propagate relative duration to the elements 
+
+
+ATTR Every [ | rduration : {Duration} | ]
+
+SEM Elements 
+  | Cons        tl.rduration   = @hd.getDuration
+
+
+ATTR Element [ | | getDuration : {Duration} ]
+
+SEM Element 
+  | Note        lhs.getDuration = @duration
+  | Rest        lhs.getDuration = @duration 
+  | Spacer      lhs.getDuration = @duration
+  | Chord       lhs.getDuration = @duration         
+  | GraceNotes  lhs.getDuration = 0                             
+  | Nplet       lhs.getDuration = error "Nplet getDuration"
+
+
+-- Convert 
+
+ATTR Section [ | | convert : {Ly.Section} ]
+
+SEM Section
+  | Section     lhs.convert    = Ly.Section @bars.convert
+
+
+ATTR Bars [ | | convert USE {:} {[]} : {[Ly.Bar]} ]
+ATTR Bar  [ | | convert : {Ly.Bar} ]
+
+
+SEM Bar
+  | Bar         lhs.convert    = Ly.Bar @voice.convert
+  | Overlay     lhs.convert    = Ly.Overlay @ovs.convert
+
+ATTR VoiceUnits [ | | convert USE {:} {[]} : {[Ly.VoiceUnit]} ]
+ATTR VoiceUnit  [ | | convert : {Ly.VoiceUnit} ]
+
+
+SEM VoiceUnit
+  | VoiceUnit   lhs.convert    = Ly.VoiceUnit @pulses.convert @tied
+
+ATTR Pulsations [ | | convert USE {:} {[]} : {[Ly.Pulsation]} ]
+ATTR Pulsation  [ | | convert : {Ly.Pulsation} ]
+
+SEM Pulsation
+  | SingleElt   lhs.convert    = Ly.SingleElt @elt.convert
+  | BeamedGroup lhs.convert    = Ly.BeamedGroup @elts.convert
+
+
+ATTR Elements [ | | convert USE {:} {[]} : {[Ly.Element]} ]
+ATTR Element  [ | | convert : {Ly.Element} ]
+
+SEM Element
+  | Note        lhs.convert   = Ly.Note @pitch (relativeDuration @lhs.rduration @duration)
+  | Rest        lhs.convert   = Ly.Rest $ relativeDuration @lhs.rduration @duration
+  | Spacer      lhs.convert   = Ly.Spacer $ relativeDuration @lhs.rduration @duration
+  | Chord       lhs.convert   = error "Ly.Chord"
+  | GraceNotes  lhs.convert   = error "Ly.GraceNotes"
+  | Nplet       lhs.convert   = error "Ly.Nplet"
+
+{
+
+convertToLy :: Section -> Ly.Section
+convertToLy e = convert_Syn_Section synthesized 
+  where
+    synthesized = wrap_Section (sem_Section e) inherited
+    inherited   = Inh_Section { rduration_Inh_Section = 1%4 } 
+
+relativeDuration :: Duration -> Duration -> Maybe Duration
+relativeDuration ud drn | ud == drn = Nothing
+                        | otherwise = Just drn
+
+}                
+                
+          

@@ -19,7 +19,7 @@ module Mullein.Core where
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Pitch
-import Mullein.Syntax ( Section )
+import Mullein.Gen.Syntax ( Element(..) )
 import Mullein.Utils
 
 import Data.List ( elemIndex, find )
@@ -58,17 +58,19 @@ root = S.empty
 --------------------------------------------------------------------------------
 -- aggregate sections
 
-data Aggregate a = Aggregate a :>> Aggregate a
-                 | Literal (Section a)
-                 | Repeated (Section a)                 
-                 | AltRepeat { body, end1, end2 :: Section a }
-                 | KeyChange Key 
+{-
+
+data Aggregate = Aggregate :>> Aggregate
+               | Literal Section
+               | Repeated Section                 
+               | AltRepeat { body, end1, end2 :: Section }
+               | KeyChange Key 
 
 
 
 -- Do automatic coercion on snoc-ing...
 class Snoc c c' where
-  (|>>) :: c a -> c' a -> Aggregate a
+  (|>>) :: c a -> c' a -> Aggregate
 
 instance Snoc Section Section where
   (|>>) a b = Literal a :>> Literal b
@@ -88,7 +90,7 @@ repeated = Repeated
 keyChange :: Key -> Aggregate a
 keyChange = KeyChange
 
-
+-}
 
 --------------------------------------------------------------------------------
 -- Musical representation

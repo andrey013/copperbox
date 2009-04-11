@@ -1,0 +1,25 @@
+-- Mullein.Gen.SyntaxTOP
+-- Copyright   :  (c) Stephen Tetley 2009
+
+
+DATA Section
+  | Section     bars    : Bars
+
+DATA Bar
+  | Bar         voice   : VoiceUnit
+  | Overlay     ovs     : VoiceUnits
+
+DATA VoiceUnit
+  | VoiceUnit   pulses  : Pulsations
+                tied    : {Bool}
+
+DATA Pulsation
+  | SingleElt   elt     : Element
+  | BeamedGroup elts    : Elements
+
+
+TYPE Bars         = [Bar]                
+TYPE VoiceUnits   = [VoiceUnit]
+TYPE Pulsations   = [Pulsation]
+TYPE Elements     = [Element]
+

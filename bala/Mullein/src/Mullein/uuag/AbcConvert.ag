@@ -1,0 +1,99 @@
+{
+
+{-# LANGUAGE ScopedTypeVariables #-}
+
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Mullein.Gen.AbcConvert
+-- Copyright   :  (c) Stephen Tetley 2009
+-- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Convert internal representation to Abc representation
+--
+--------------------------------------------------------------------------------
+}
+
+{
+module Mullein.Gen.AbcConvert where
+
+import Mullein.Core
+import Mullein.CoreTypes
+import Mullein.Duration
+import qualified Mullein.Gen.AbcSyntax as Abc
+import Mullein.Gen.Syntax
+import Mullein.Pitch
+
+import Data.Ratio
+import Text.PrettyPrint.Leijen 
+
+}
+
+INCLUDE "SyntaxDEFS.ag"
+
+ATTR Every [ unitnl : {Duration} | | ]
+ATTR Every [ labels : {LabelSet} | | ]
+
+
+ATTR Section [ | | convert : {Abc.Section} ]
+
+SEM Section
+  | Section     lhs.convert    = Abc.Section @bars.convert
+
+
+ATTR Bars [ | | convert USE {:} {[]} : {[Abc.Bar]} ]
+ATTR Bar  [ | | convert : {Abc.Bar} ]
+
+
+SEM Bar
+  | Bar         lhs.convert    = Abc.Bar @voice.convert
+  | Overlay     lhs.convert    = Abc.Overlay @ovs.convert
+
+ATTR VoiceUnits [ | | convert USE {:} {[]} : {[Abc.VoiceUnit]} ]
+ATTR VoiceUnit  [ | | convert : {Abc.VoiceUnit} ]
+
+
+SEM VoiceUnit
+  | VoiceUnit   lhs.convert    = Abc.VoiceUnit @pulses.convert @tied
+
+ATTR Pulsations [ | | convert USE {:} {[]} : {[Abc.Pulsation]} ]
+ATTR Pulsation  [ | | convert : {Abc.Pulsation} ]
+
+SEM Pulsation
+  | SingleElt   lhs.convert    = Abc.SingleElt @elt.convert
+  | BeamedGroup lhs.convert    = Abc.BeamedGroup @elts.convert
+
+
+ATTR Elements [ | | convert USE {:} {[]} : {[Abc.Element]} ]
+ATTR Element  [ | | convert : {Abc.Element} ]
+
+SEM Element
+  | Note        lhs.convert   = Abc.Note (naturalize @lhs.labels @pitch) 
+                                         (unitRescale @lhs.unitnl @duration)
+  | Rest        lhs.convert   = Abc.Rest (unitRescale @lhs.unitnl @duration)
+  | Spacer      lhs.convert   = Abc.Spacer (unitRescale @lhs.unitnl @duration)
+  | Chord       lhs.convert   = error "Abc.Chord"
+  | GraceNotes  lhs.convert   = error "Abc.GraceNotes"
+  | Nplet       lhs.convert   = error "Abc.Nplet"
+
+{
+
+convertToAbc :: LabelSet -> Duration -> Section -> Abc.Section
+convertToAbc lset unl e = convert_Syn_Section synthesized 
+  where
+    synthesized = wrap_Section (sem_Section e) inherited
+    inherited   = Inh_Section { unitnl_Inh_Section = unl,
+                                labels_Inh_Section   = lset } 
+
+unitRescale :: Duration -> Duration -> Duration
+unitRescale unl drn = (dn%dd) / (un%ud) where
+    (dn,dd)  = ratioElements drn
+    (un,ud)  = ratioElements unl
+    
+
+}                
+                
+          

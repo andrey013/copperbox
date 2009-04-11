@@ -1,6 +1,14 @@
--- Mullein.AbcSyntaxDEFS
+-- Mullein.Gen.AbcSyntaxDEFS
 -- Copyright   :  (c) Stephen Tetley 2009
 
+INCLUDE "SyntaxTOP.ag"
+
+SET Every = Section AllBars AllVoiceUnit AllPulsation AllElements
+
+SET AllBars       = Bars Bar
+SET AllVoiceUnit  = VoiceUnits VoiceUnit
+SET AllPulsation  = Pulsations Pulsation 
+SET AllElements   = Elements Element
 
 DATA Element
   | Note        pitch   : {Pitch} 
@@ -13,6 +21,5 @@ DATA Element
   | Nplet       nmult   : {Int} 
                 pitches : Pitches
 
-TYPE Elements   = [Element]
 TYPE GraceNotes = [GraceNote]
 TYPE Pitches    = [Pitch]        

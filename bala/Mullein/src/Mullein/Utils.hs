@@ -19,6 +19,9 @@ module Mullein.Utils where
 import Data.List ( unfoldr )
 import Data.Ratio
 
+import Text.PrettyPrint.Leijen
+
+
 -- anaMap is the unfold analogue of accumMapL
 -- we can signal exhaustion early by the Maybe type                
 anaMap  :: (a -> st -> Maybe (b,st)) -> st -> [a] -> ([b],st) 
@@ -33,6 +36,16 @@ unfoldr2 f s1 s2 = case f s1 s2 of
     Nothing     -> []
     Just (a,s1',s2') -> a : unfoldr2 f s1' s2'
     
+
+
+-- 'specs'
+
+oo :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+oo f g = (f .) . g
+
+ooo :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
+ooo f g = ((f .) .) . g
+
     
     
 -- Reverse application and composition
@@ -61,3 +74,13 @@ nextOf x | x == maxBound = minBound
                  
 rational :: Integral a => a -> a -> Rational
 rational a b = fromIntegral a % fromIntegral b
+
+-- This function is primarily for Abc bar printing, where the number
+-- of bars on a line in the input score is reflected by the number of
+-- bars on a line in the output.
+
+doclines :: [Int] -> [Doc] -> Doc
+doclines = vsep `oo` step where
+    step _      []  = []
+    step []     ds  = [hsep ds]
+    step (n:ns) ds  = hsep ls : step ns rs where (ls,rs) = splitAt n ds

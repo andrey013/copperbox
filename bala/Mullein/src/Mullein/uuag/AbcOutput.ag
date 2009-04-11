@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Mullein.AbcOutput
+-- Module      :  Mullein.Gen.AbcOutput
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -18,26 +18,28 @@
 }
 
 {
-module Mullein.AbcOutput where
+module Mullein.Gen.AbcOutput where
 
-import Mullein.AbcSyntax
+import Mullein.Gen.AbcSyntax
 import Mullein.Duration
 import Mullein.Pitch
-import Mullein.Syntax
+import Mullein.Utils
 
 import Text.PrettyPrint.Leijen 
 
 }
 
-INCLUDE "SyntaxDEFS.ag"
 INCLUDE "AbcSyntaxDEFS.ag"
 
-ATTR Output e => Section Bar VoiceUnit Pulsation [ | | output : {Doc} ]
+ATTR Section [ bgroups : {[Int]} | | ]
 
-ATTR Output e => Bars VoiceUnits Pulsations [ | | output USE {:} {[]} :{[Doc]} ]
+ATTR Section Bar VoiceUnit Pulsation Element [ | | output : {Doc} ]
+
+ATTR Bars VoiceUnits Pulsations Elements [ | | output USE {:} {[]} :{[Doc]} ]
 
 SEM Section
-  | Section     lhs.output     = hsep $ @bars.output
+  | Section     lhs.output     = doclines @lhs.bgroups 
+                                   $ punctuate (text " |") @bars.output
 
 SEM Bar
   | Bar         lhs.output     = @voice.output
@@ -49,10 +51,9 @@ SEM VoiceUnit
                                    if @tied then char '-' else empty
 
 SEM Pulsation
-  | SingleElt   lhs.output     = output @elt
-  | BeamedGroup lhs.output     = hcat $ map output @elts
+  | SingleElt   lhs.output     = @elt.output
+  | BeamedGroup lhs.output     = hcat $ @elts.output
 
-ATTR Element [ | | output : {Doc} ]
 
 SEM Element
   | Note        lhs.output    = note @pitch @dmult                
@@ -64,25 +65,12 @@ SEM Element
 
 {
 
-class Output e where output :: e -> Doc
-
-instance Output Element where
-  output = elementPP
-
-elementPP :: Element -> Doc
-elementPP e = output_Syn_Element synthesized 
-  where
-    synthesized = wrap_Element (sem_Element e) inherited
-    inherited   = Inh_Element  { } 
-
-instance Output e => Output (Section e) where
-  output = sectionPP
-
-sectionPP :: Output e => Section e -> Doc
-sectionPP e = output_Syn_Section synthesized 
+-- xs is a list of bars per line  
+outputAbc :: [Int] -> Section -> Doc
+outputAbc xs e = output_Syn_Section synthesized 
   where
     synthesized = wrap_Section (sem_Section e) inherited
-    inherited   = Inh_Section  { } 
+    inherited   = Inh_Section  { bgroups_Inh_Section = xs } 
 
 
 

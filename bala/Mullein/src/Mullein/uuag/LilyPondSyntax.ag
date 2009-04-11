@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Mullein.LilyPondSyntax
+-- Module      :  Mullein.Gen.LilyPondSyntax
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -17,7 +17,7 @@
 }
 
 {
-module Mullein.LilyPondSyntax where
+module Mullein.Gen.LilyPondSyntax where
 
 import Mullein.Pitch
 import Mullein.Duration

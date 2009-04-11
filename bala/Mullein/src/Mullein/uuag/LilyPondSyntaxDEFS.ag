@@ -1,11 +1,18 @@
--- Mullein.LilyPondSyntaxDEFS
+-- Mullein.Gen.LilyPondSyntaxDEFS
 -- Copyright   :  (c) Stephen Tetley 2009
+
+INCLUDE "SyntaxTOP.ag"
+
+SET Every = Section AllBars AllVoiceUnit AllPulsation AllElements
+
+SET AllBars       = Bars Bar
+SET AllVoiceUnit  = VoiceUnits VoiceUnit
+SET AllPulsation  = Pulsations Pulsation 
+SET AllElements   = Elements Element
 
 
 DATA Element
-  | Note        letter    : {PitchLetter} 
-                accident  : {Accidental}
-                oct_mod   : {Int}
+  | Note        pitch     : {Pitch}
                 opt_drn   : {Maybe Duration}                 
   | Rest        opt_drn   : {Maybe Duration}
   | Spacer      opt_drn   : {Maybe Duration}
@@ -15,6 +22,5 @@ DATA Element
   | Nplet       nmult     : {Int} 
                 pitches   : Pitches
 
-TYPE Elements   = [Element]
 TYPE GraceNotes = [GraceNote]
 TYPE Pitches    = [Pitch]        

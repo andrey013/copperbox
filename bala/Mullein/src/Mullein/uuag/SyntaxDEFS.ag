@@ -1,24 +1,33 @@
--- Mullein.SyntaxDEFS
+-- Mullein.Gen.SyntaxDEFS
 -- Copyright   :  (c) Stephen Tetley 2009
 
 
-DATA Section e
-  | Section     bars    : (Bars {e})
-
-DATA Bar e
-  | Bar         voice   : (VoiceUnit {e})
-  | Overlay     ovs     : (VoiceUnits {e})
-
-DATA VoiceUnit e
-  | VoiceUnit   pulses  : (Pulsations {e})
-                tied    : {Bool}
-
-DATA Pulsation e
-  | SingleElt   elt     : {e}
-  | BeamedGroup elts    : {[e]}
+INCLUDE "SyntaxTOP.ag"
 
 
-TYPE Bars e         = [Bar e]                
-TYPE VoiceUnits e   = [VoiceUnit e]
-TYPE Pulsations e   = [Pulsation e]
+SET Every = Section AllBars AllVoiceUnit AllPulsation AllElements
+
+SET AllBars       = Bars Bar
+SET AllVoiceUnit  = VoiceUnits VoiceUnit
+SET AllPulsation  = Pulsations Pulsation 
+SET AllElements   = Elements Element
+
+-- The Element datatype - represents elements with a 'unit duration'.
+-- E.g a chord has a set of pitches but the unit duration is common to all 
+-- of them. 
+DATA Element
+  | Note      pitch           : {Pitch}
+              duration        : {Duration}
+  | Rest      duration        : {Duration}
+  | Spacer    duration        : {Duration}
+  | Chord     pitches         : {[Pitch]} 
+              duration        : {Duration}          
+  | GraceNotes 
+              notes           : GraceNotes                              
+  | Nplet     multipier       : {Int}
+              unit_duration   : {Duration}
+              pitches         : {[Pitch]}
+        
+TYPE GraceNotes = [GraceNote]
+TYPE GraceNote = (Pitch,Duration)
 

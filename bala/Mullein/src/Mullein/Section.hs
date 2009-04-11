@@ -21,7 +21,7 @@ module Mullein.Section where
 import Mullein.Core ( meterFraction )
 import Mullein.CoreTypes
 import Mullein.Duration
-import Mullein.Syntax
+import Mullein.Gen.Syntax
 import Mullein.Utils
 
 import Data.Ratio
@@ -31,13 +31,12 @@ import qualified Data.Sequence as S
 data TieStatus = Tied | NotTied
   deriving (Eq,Show)
 
-section :: (Temporal a, Spacer a) => MetricalSpec -> Seq a -> Section a 
+section :: MetricalSpec -> Seq Element -> Section
 section mspec notes = Section $ partitionAndBeam bs bss notes where
     (bs,bss) = repeatSpec 0 mspec   
 
   
-sectionAna :: (Temporal a, Spacer a) => 
-    Duration -> MetricalSpec -> Seq a -> Section a
+sectionAna :: Duration -> MetricalSpec -> Seq Element -> Section
 sectionAna anacrusis mspec notes = 
     Section $ partitionAndBeam bs bss notes
   where
@@ -50,7 +49,7 @@ repeatSpec a (b,bs) = (reduceStk a ds, reduceStk a bs : repeat bs) where
     ds = repeat $ meterFraction b
 
              
-partitionAndBeam :: Temporal a => [Duration] -> [[Duration]] -> Seq a -> [Bar a]
+partitionAndBeam :: [Duration] -> [[Duration]] -> Seq Element -> [Bar]
 partitionAndBeam ds_bar dss_beam notelist = 
     zipWith fn (divideToBars ds_bar notelist) dss_beam 
   where    
@@ -88,7 +87,7 @@ fitTill d0 se = step d0 (viewl se) where
 -- The state is (1) the stack of durations for each beam group, 
 -- and (2) the input stream of notes.
  
-beam :: Temporal a => [Duration] -> [a] -> [Pulsation a]
+beam :: [Duration] -> [Element] -> [Pulsation]
 beam = unfoldr2 fn where
     -- notes exhausted
     fn _          []          = Nothing
