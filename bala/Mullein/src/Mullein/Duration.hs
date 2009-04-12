@@ -118,8 +118,8 @@ divModR a b = let a1 = a / b; a2 = floor a1 in (a2, a-((a2%1)*b))
 
    
 data PrintableDuration = PrintableDuration { 
-    _duration  :: Rational,
-    _dot_count :: Int 
+    printable_duration  :: Rational,
+    printable_dot_count :: Int 
   }
   deriving (Eq,Ord,Show)
 

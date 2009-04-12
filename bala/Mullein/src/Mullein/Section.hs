@@ -136,5 +136,18 @@ consumes d ys = step 0 ys where
                                  (c',ls,rs) = step (c + duration x) xs     
 
 
+---------------------------------------------------------------------------------
+-- overlay
 
-       
+zipOverlays :: Section -> Section -> Section
+zipOverlays (Section bs) (Section bs') = Section $ zipWith f bs bs' where
+    f (Bar v)        b2    = if null vs then Bar v else Overlay v vs where
+                                 vs = voices b2
+    f (Overlay v vs) b2    = Overlay v (vs ++ voices b2) 
+
+    voices (Bar v)         = if nullVoice v then [] else [v]
+    voices (Overlay v vs)  = v:vs
+    
+nullVoice :: VoiceUnit -> Bool
+nullVoice (VoiceUnit xs _) = null xs
+

@@ -7,7 +7,8 @@ DATA Section
 
 DATA Bar
   | Bar         voice   : VoiceUnit
-  | Overlay     ovs     : VoiceUnits
+  | Overlay     vone    : VoiceUnit
+                vrest   : VoiceUnits
 
 DATA VoiceUnit
   | VoiceUnit   pulses  : Pulsations

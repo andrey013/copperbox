@@ -43,7 +43,7 @@ SEM Section
 
 SEM Bar
   | Bar         lhs.output     = @voice.output
-  | Overlay     lhs.output     = overlay @ovs.output
+  | Overlay     lhs.output     = overlay $ @vone.output : @vrest.output
 
 
 SEM VoiceUnit

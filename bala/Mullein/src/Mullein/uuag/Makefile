@@ -13,7 +13,7 @@ all: ../Gen/AbcOutput.hs ../Gen/AbcSyntax.hs \
 ../Gen/AbcOutput.hs: AbcOutput.ag ../Gen/AbcSyntax.hs
 	uuagc -cfspw --newtypes AbcOutput.ag -o ../Gen/AbcOutput.hs
 
-../Gen/AbcSyntax.hs: AbcSyntax.ag AbcSyntaxDEFS.ag
+../Gen/AbcSyntax.hs: AbcSyntax.ag AbcSyntaxDEFS.ag SyntaxTOP.ag
 	uuagc -d --newtypes AbcSyntax.ag -o ../Gen/AbcSyntax.hs
 
 ../Gen/LilyPondConvert.hs: LilyPondConvert.ag ../Gen/Syntax.hs ../Gen/LilyPondSyntax.hs
@@ -22,10 +22,10 @@ all: ../Gen/AbcOutput.hs ../Gen/AbcSyntax.hs \
 ../Gen/LilyPondOutput.hs: LilyPondOutput.ag ../Gen/LilyPondSyntax.hs
 	uuagc -cfspw --newtypes LilyPondOutput.ag -o ../Gen/LilyPondOutput.hs
 
-../Gen/LilyPondSyntax.hs: LilyPondSyntax.ag LilyPondSyntaxDEFS.ag
+../Gen/LilyPondSyntax.hs: LilyPondSyntax.ag LilyPondSyntaxDEFS.ag SyntaxTOP.ag
 	uuagc -d --newtypes LilyPondSyntax.ag -o ../Gen/LilyPondSyntax.hs
 
-../Gen/Syntax.hs: Syntax.ag SyntaxDEFS.ag
+../Gen/Syntax.hs: Syntax.ag SyntaxDEFS.ag SyntaxTOP.ag
 	uuagc -d --newtypes Syntax.ag -o ../Gen/Syntax.hs
 
 clean:

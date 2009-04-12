@@ -1,6 +1,7 @@
 {
 
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -20,15 +21,14 @@
 {
 module Mullein.Gen.LilyPondConvert where
 
-import Mullein.Core
-import Mullein.CoreTypes
+-- import Mullein.Core
+-- import Mullein.CoreTypes
 import Mullein.Duration
 import qualified Mullein.Gen.LilyPondSyntax as Ly
 import Mullein.Gen.Syntax
 import Mullein.Pitch
 
-import Data.Ratio
-import Text.PrettyPrint.Leijen 
+-- import Data.Ratio
 
 }
 
@@ -39,10 +39,19 @@ INCLUDE "SyntaxDEFS.ag"
 -- Propagate relative duration to the elements 
 
 
-ATTR Every [ | rduration : {Duration} | ]
+ATTR AllBar AllVoiceUnit AllPulsation AllElement [ | rduration : {Duration} | ]
 ATTR Every [ | rpitch : {Pitch} | ]
 
 ATTR Every [ trafoPitch : {(Pitch -> Pitch -> Pitch)} | | ]
+
+
+-- Propagate the same initial duration (-1) to each bar.
+-- This makes score more readable, the first note in each bar always has 
+-- its printed.
+-- (-1) insures that the first duration is always printed 
+ATTR Section [ | | rduration : {Duration} ]
+SEM Section
+  | Section        bars.rduration   = (-1)
 
 SEM Elements 
   | Cons        tl.rduration   = @hd.getDuration
@@ -99,7 +108,7 @@ ATTR Bar  [ | | convert : {Ly.Bar} ]
 
 SEM Bar
   | Bar         lhs.convert    = Ly.Bar @voice.convert
-  | Overlay     lhs.convert    = Ly.Overlay @ovs.convert
+  | Overlay     lhs.convert    = Ly.Overlay @vone.convert @vrest.convert
 
 ATTR VoiceUnits [ | | convert USE {:} {[]} : {[Ly.VoiceUnit]} ]
 ATTR VoiceUnit  [ | | convert : {Ly.VoiceUnit} ]
@@ -138,8 +147,7 @@ convertToLy :: (Pitch -> Pitch -> Pitch) -> Pitch -> Section -> Ly.Section
 convertToLy pchFun relpitch e = convert_Syn_Section synthesized 
   where
     synthesized = wrap_Section (sem_Section e) inherited
-    inherited   = Inh_Section { rduration_Inh_Section  = 1%4,
-                                rpitch_Inh_Section     = relpitch,
+    inherited   = Inh_Section { rpitch_Inh_Section     = relpitch,
                                 trafoPitch_Inh_Section = pchFun   } 
 
 relativeDuration :: Duration -> Duration -> Maybe Duration

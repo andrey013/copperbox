@@ -5,13 +5,13 @@
 INCLUDE "SyntaxTOP.ag"
 
 
-SET Every = Section AllBars AllVoiceUnit AllPulsation AllElements AllGraces Pitches
+SET Every = Section AllBar AllVoiceUnit AllPulsation AllElement AllGrace Pitches
 
-SET AllBars       = Bars Bar
+SET AllBar        = Bars Bar
 SET AllVoiceUnit  = VoiceUnits VoiceUnit
 SET AllPulsation  = Pulsations Pulsation 
-SET AllElements   = Elements Element
-SET AllGraces     = GraceNotes GraceNote
+SET AllElement    = Elements Element
+SET AllGrace      = GraceNotes GraceNote
 
 
 -- The Element datatype - represents elements with a 'unit duration'.

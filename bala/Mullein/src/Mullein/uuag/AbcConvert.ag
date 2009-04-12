@@ -50,7 +50,7 @@ ATTR Bar  [ | | convert : {Abc.Bar} ]
 
 SEM Bar
   | Bar         lhs.convert    = Abc.Bar @voice.convert
-  | Overlay     lhs.convert    = Abc.Overlay @ovs.convert
+  | Overlay     lhs.convert    = Abc.Overlay @vone.convert @vrest.convert
 
 ATTR VoiceUnits [ | | convert USE {:} {[]} : {[Abc.VoiceUnit]} ]
 ATTR VoiceUnit  [ | | convert : {Abc.VoiceUnit} ]

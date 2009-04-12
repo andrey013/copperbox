@@ -75,6 +75,9 @@ nextOf x | x == maxBound = minBound
 rational :: Integral a => a -> a -> Rational
 rational a b = fromIntegral a % fromIntegral b
 
+---------------------------------------------------------------------------------
+-- PPrint extras 
+
 -- This function is primarily for Abc bar printing, where the number
 -- of bars on a line in the input score is reflected by the number of
 -- bars on a line in the output.
@@ -84,3 +87,6 @@ doclines = vsep `oo` step where
     step _      []  = []
     step []     ds  = [hsep ds]
     step (n:ns) ds  = hsep ls : step ns rs where (ls,rs) = splitAt n ds
+
+dblangles :: Doc -> Doc 
+dblangles = enclose (text "<<") (text ">>")

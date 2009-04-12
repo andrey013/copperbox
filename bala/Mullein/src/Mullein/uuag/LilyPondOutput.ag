@@ -23,6 +23,7 @@ module Mullein.Gen.LilyPondOutput where
 import Mullein.Gen.LilyPondSyntax
 import Mullein.Duration
 import Mullein.Pitch
+import Mullein.Utils
 
 import Text.PrettyPrint.Leijen 
 
@@ -35,11 +36,11 @@ ATTR Section Bar VoiceUnit Pulsation Element [ | | output : {Doc} ]
 ATTR Bars VoiceUnits Pulsations Elements [ | | output USE {:} {[]} :{[Doc]} ]
 
 SEM Section
-  | Section     lhs.output     = hsep $ @bars.output
+  | Section     lhs.output     = hsep $ punctuate (text " |") @bars.output
 
 SEM Bar
   | Bar         lhs.output     = @voice.output
-  | Overlay     lhs.output     = overlay @ovs.output
+  | Overlay     lhs.output     = overlay $ @vone.output : @vrest.output
 
 
 SEM VoiceUnit
@@ -73,7 +74,7 @@ outputLy e = output_Syn_Section synthesized
 
 
 overlay :: [Doc] -> Doc
-overlay = vsep . punctuate (text " &\\")    
+overlay = dblangles . vsep . punctuate (text " \\")    
 
 
 note :: Pitch -> Doc 
