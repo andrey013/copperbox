@@ -38,10 +38,10 @@ ATTR Every [ unitnl : {Duration} | | ]
 ATTR Every [ labels : {LabelSet} | | ]
 
 
-ATTR Section [ | | convert : {Abc.Section} ]
+ATTR Motif [ | | convert : {Abc.Motif} ]
 
-SEM Section
-  | Section     lhs.convert    = Abc.Section @bars.convert
+SEM Motif
+  | Motif       lhs.convert    = Abc.Motif @bars.convert
 
 
 ATTR Bars [ | | convert USE {:} {[]} : {[Abc.Bar]} ]
@@ -49,22 +49,22 @@ ATTR Bar  [ | | convert : {Abc.Bar} ]
 
 
 SEM Bar
-  | Bar         lhs.convert    = Abc.Bar @voice.convert
-  | Overlay     lhs.convert    = Abc.Overlay @vone.convert @vrest.convert
+  | Bar         lhs.convert    = Abc.Bar @one.convert
+  | Overlay     lhs.convert    = Abc.Overlay @one.convert @orest.convert
 
-ATTR VoiceUnits [ | | convert USE {:} {[]} : {[Abc.VoiceUnit]} ]
-ATTR VoiceUnit  [ | | convert : {Abc.VoiceUnit} ]
+ATTR Unisons [ | | convert USE {:} {[]} : {[Abc.Unison]} ]
+ATTR Unison  [ | | convert : {Abc.Unison} ]
 
 
-SEM VoiceUnit
-  | VoiceUnit   lhs.convert    = Abc.VoiceUnit @pulses.convert @tied
+SEM Unison
+  | Unison      lhs.convert    = Abc.Unison @pulses.convert @tied
 
-ATTR Pulsations [ | | convert USE {:} {[]} : {[Abc.Pulsation]} ]
-ATTR Pulsation  [ | | convert : {Abc.Pulsation} ]
+ATTR Brackets [ | | convert USE {:} {[]} : {[Abc.Bracket]} ]
+ATTR Bracket  [ | | convert : {Abc.Bracket} ]
 
-SEM Pulsation
-  | SingleElt   lhs.convert    = Abc.SingleElt @elt.convert
-  | BeamedGroup lhs.convert    = Abc.BeamedGroup @elts.convert
+SEM Bracket
+  | Singleton   lhs.convert    = Abc.Singleton @elt.convert
+  | Bracket     lhs.convert    = Abc.Bracket @elts.convert
 
 
 ATTR Elements [ | | convert USE {:} {[]} : {[Abc.Element]} ]
@@ -81,12 +81,12 @@ SEM Element
 
 {
 
-convertToAbc :: LabelSet -> Duration -> Section -> Abc.Section
-convertToAbc lset unl e = convert_Syn_Section synthesized 
+convertToAbc :: LabelSet -> Duration -> Motif -> Abc.Motif
+convertToAbc lset unl e = convert_Syn_Motif synthesized 
   where
-    synthesized = wrap_Section (sem_Section e) inherited
-    inherited   = Inh_Section { unitnl_Inh_Section = unl,
-                                labels_Inh_Section   = lset } 
+    synthesized = wrap_Motif (sem_Motif e) inherited
+    inherited   = Inh_Motif { unitnl_Inh_Motif = unl,
+                              labels_Inh_Motif   = lset } 
 
 unitRescale :: Duration -> Duration -> Duration
 unitRescale unl drn = (dn%dd) / (un%ud) where

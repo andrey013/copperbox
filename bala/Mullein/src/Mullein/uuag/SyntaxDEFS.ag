@@ -5,11 +5,11 @@
 INCLUDE "SyntaxTOP.ag"
 
 
-SET Every = Section AllBar AllVoiceUnit AllPulsation AllElement AllGrace Pitches
+SET Every = Motif AllBar AllUnison AllBracket AllElement AllGrace Pitches
 
 SET AllBar        = Bars Bar
-SET AllVoiceUnit  = VoiceUnits VoiceUnit
-SET AllPulsation  = Pulsations Pulsation 
+SET AllUnison     = Unisons Unison
+SET AllBracket    = Brackets Bracket
 SET AllElement    = Elements Element
 SET AllGrace      = GraceNotes GraceNote
 

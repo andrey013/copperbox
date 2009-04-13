@@ -30,7 +30,7 @@ ly = putDoc $ Ly.outputLy bulg6 where
   bulg6 = Ly.convertToLy Ly.relPitch c4 s1_4
 
 
-bulgarian6 :: Abc.Section
+bulgarian6 :: Abc.Motif
 bulgarian6 = convertToAbc lset sixteenth s1_4 where
   lset =  maybe (error "missing LabelSet") id  $ labelSetOf a_major
   

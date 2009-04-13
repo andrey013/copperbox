@@ -30,6 +30,19 @@ import qualified Data.Sequence as S
 
 type NoteList = S.Seq Element
 
+
+--------------------------------------------------------------------------------
+-- 
+
+type Part env = S.Seq (Z env)
+type Motive env = (env, NoteList)
+
+data Z env = Repeated (Motive env)
+           | FSRepeat (Motive env) (Motive env) (Motive env)
+           | Sequence (Motive env) (Motive env)
+ deriving (Show)
+
+
 --------------------------------------------------------------------------------
 -- Musical representation
 

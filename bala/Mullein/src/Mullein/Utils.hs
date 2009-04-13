@@ -22,6 +22,14 @@ import Data.Ratio
 import Text.PrettyPrint.Leijen
 
 
+-- special zipWith that zips all of the first list
+overlayZipWith :: (a -> b -> c) -> (a -> c) -> [a] -> [b] -> [c]
+overlayZipWith f g (x:xs) (y:ys) = f x y : overlayZipWith f g xs ys
+overlayZipWith f g (x:xs) []     = g x   : overlayZipWith f g xs []
+overlayZipWith _ _ []     _      = []
+
+ 
+
 -- anaMap is the unfold analogue of accumMapL
 -- we can signal exhaustion early by the Maybe type                
 anaMap  :: (a -> st -> Maybe (b,st)) -> st -> [a] -> ([b],st) 

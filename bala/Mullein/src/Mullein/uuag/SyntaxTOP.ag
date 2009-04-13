@@ -2,25 +2,26 @@
 -- Copyright   :  (c) Stephen Tetley 2009
 
 
-DATA Section
-  | Section     bars    : Bars
+DATA Motif
+  | Motif       bars    : Bars
 
 DATA Bar
-  | Bar         voice   : VoiceUnit
-  | Overlay     vone    : VoiceUnit
-                vrest   : VoiceUnits
+  | Bar         one     : Unison
+  | Overlay     one     : Unison
+                orest   : Unisons
 
-DATA VoiceUnit
-  | VoiceUnit   pulses  : Pulsations
+DATA Unison
+  | Unison      pulses  : Brackets
                 tied    : {Bool}
 
-DATA Pulsation
-  | SingleElt   elt     : Element
-  | BeamedGroup elts    : Elements
+-- bracket together beamed notes to make a pulsation
+DATA Bracket
+  | Singleton   elt     : Element
+  | Bracket     elts    : Elements
 
 
 TYPE Bars         = [Bar]                
-TYPE VoiceUnits   = [VoiceUnit]
-TYPE Pulsations   = [Pulsation]
+TYPE Unisons      = [Unison]
+TYPE Brackets     = [Bracket]
 TYPE Elements     = [Element]
 

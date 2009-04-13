@@ -31,28 +31,28 @@ import Text.PrettyPrint.Leijen
 
 INCLUDE "AbcSyntaxDEFS.ag"
 
-ATTR Section [ bgroups : {[Int]} | | ]
+ATTR Motif [ bgroups : {[Int]} | | ]
 
-ATTR Section Bar VoiceUnit Pulsation Element [ | | output : {Doc} ]
+ATTR Motif Bar Unison Bracket Element [ | | output : {Doc} ]
 
-ATTR Bars VoiceUnits Pulsations Elements [ | | output USE {:} {[]} :{[Doc]} ]
+ATTR Bars Unisons Brackets Elements [ | | output USE {:} {[]} :{[Doc]} ]
 
-SEM Section
-  | Section     lhs.output     = doclines @lhs.bgroups 
+SEM Motif
+  | Motif       lhs.output     = doclines @lhs.bgroups 
                                    $ punctuate (text " |") @bars.output
 
 SEM Bar
-  | Bar         lhs.output     = @voice.output
-  | Overlay     lhs.output     = overlay $ @vone.output : @vrest.output
+  | Bar         lhs.output     = @one.output
+  | Overlay     lhs.output     = overlay $ @one.output : @orest.output
 
 
-SEM VoiceUnit
-  | VoiceUnit   lhs.output     = hsep @pulses.output <> 
+SEM Unison
+  | Unison       lhs.output     = hsep @pulses.output <> 
                                    if @tied then char '-' else empty
 
-SEM Pulsation
-  | SingleElt   lhs.output     = @elt.output
-  | BeamedGroup lhs.output     = hcat $ @elts.output
+SEM Bracket
+  | Singleton   lhs.output     = @elt.output
+  | Bracket     lhs.output     = hcat $ @elts.output
 
 
 SEM Element
@@ -66,11 +66,11 @@ SEM Element
 {
 
 -- xs is a list of bars per line  
-outputAbc :: [Int] -> Section -> Doc
-outputAbc xs e = output_Syn_Section synthesized 
+outputAbc :: [Int] -> Motif -> Doc
+outputAbc xs e = output_Syn_Motif synthesized 
   where
-    synthesized = wrap_Section (sem_Section e) inherited
-    inherited   = Inh_Section  { bgroups_Inh_Section = xs } 
+    synthesized = wrap_Motif (sem_Motif e) inherited
+    inherited   = Inh_Motif  { bgroups_Inh_Motif = xs } 
 
 
 

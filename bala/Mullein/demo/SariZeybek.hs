@@ -6,13 +6,13 @@
 
 module SariZeybek where
 
-import qualified Mullein.AbcSyntax as Abc
+import qualified Mullein.Gen.AbcSyntax as Abc
 import Mullein.Core
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.NamedElements
 import Mullein.Section
-import Mullein.Syntax
+import Mullein.Gen.Syntax
 import Mullein.Utils
 
 
@@ -44,14 +44,14 @@ abcTune _ = undefined
 
 
 
-score = keyChange d_minor |>> repeated bars1_3 |>> repeated bars4_6
+-- score = keyChange d_minor |>> repeated bars1_3 |>> repeated bars4_6
 
 
 nineEightTime :: MetricalSpec
 nineEightTime = metricalSpec 9 8
 
-bars1_3 :: Section Element
-bars1_3 = section nineEightTime notes1_3
+-- bars1_3 :: Section Element
+-- bars1_3 = section nineEightTime notes1_3
 
 
 notes1_3 :: NoteList
@@ -67,8 +67,8 @@ notes1_3 =
               # note d4 du4 # note d4 (dot du4)
                      
 
-bars4_6 :: Section Element
-bars4_6 = section nineEightTime notes4_6 
+-- bars4_6 :: Section Element
+-- bars4_6 = section nineEightTime notes4_6 
 
 notes4_6 :: NoteList
 notes4_6 = 

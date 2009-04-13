@@ -21,8 +21,6 @@
 {
 module Mullein.Gen.LilyPondConvert where
 
--- import Mullein.Core
--- import Mullein.CoreTypes
 import Mullein.Duration
 import qualified Mullein.Gen.LilyPondSyntax as Ly
 import Mullein.Gen.Syntax
@@ -39,7 +37,7 @@ INCLUDE "SyntaxDEFS.ag"
 -- Propagate relative duration to the elements 
 
 
-ATTR AllBar AllVoiceUnit AllPulsation AllElement [ | rduration : {Duration} | ]
+ATTR AllBar AllUnison AllBracket AllElement [ | rduration : {Duration} | ]
 ATTR Every [ | rpitch : {Pitch} | ]
 
 ATTR Every [ trafoPitch : {(Pitch -> Pitch -> Pitch)} | | ]
@@ -49,9 +47,9 @@ ATTR Every [ trafoPitch : {(Pitch -> Pitch -> Pitch)} | | ]
 -- This makes score more readable, the first note in each bar always has 
 -- its printed.
 -- (-1) insures that the first duration is always printed 
-ATTR Section [ | | rduration : {Duration} ]
-SEM Section
-  | Section        bars.rduration   = (-1)
+ATTR Motif [ | | rduration : {Duration} ]
+SEM Motif
+  | Motif       bars.rduration   = (-1)
 
 SEM Elements 
   | Cons        tl.rduration   = @hd.getDuration
@@ -96,10 +94,10 @@ SEM Pitches
 
 -- Convert 
 
-ATTR Section [ | | convert : {Ly.Section} ]
+ATTR Motif [ | | convert : {Ly.Motif} ]
 
-SEM Section
-  | Section     lhs.convert    = Ly.Section @bars.convert
+SEM Motif
+  | Motif       lhs.convert    = Ly.Motif @bars.convert
 
 
 ATTR Bars [ | | convert USE {:} {[]} : {[Ly.Bar]} ]
@@ -107,22 +105,22 @@ ATTR Bar  [ | | convert : {Ly.Bar} ]
 
 
 SEM Bar
-  | Bar         lhs.convert    = Ly.Bar @voice.convert
-  | Overlay     lhs.convert    = Ly.Overlay @vone.convert @vrest.convert
+  | Bar         lhs.convert    = Ly.Bar @one.convert
+  | Overlay     lhs.convert    = Ly.Overlay @one.convert @orest.convert
 
-ATTR VoiceUnits [ | | convert USE {:} {[]} : {[Ly.VoiceUnit]} ]
-ATTR VoiceUnit  [ | | convert : {Ly.VoiceUnit} ]
+ATTR Unisons [ | | convert USE {:} {[]} : {[Ly.Unison]} ]
+ATTR Unison  [ | | convert : {Ly.Unison} ]
 
 
-SEM VoiceUnit
-  | VoiceUnit   lhs.convert    = Ly.VoiceUnit @pulses.convert @tied
+SEM Unison
+  | Unison      lhs.convert    = Ly.Unison @pulses.convert @tied
 
-ATTR Pulsations [ | | convert USE {:} {[]} : {[Ly.Pulsation]} ]
-ATTR Pulsation  [ | | convert : {Ly.Pulsation} ]
+ATTR Brackets [ | | convert USE {:} {[]} : {[Ly.Bracket]} ]
+ATTR Bracket  [ | | convert : {Ly.Bracket} ]
 
-SEM Pulsation
-  | SingleElt   lhs.convert    = Ly.SingleElt @elt.convert
-  | BeamedGroup lhs.convert    = Ly.BeamedGroup @elts.convert
+SEM Bracket
+  | Singleton   lhs.convert    = Ly.Singleton @elt.convert
+  | Bracket     lhs.convert    = Ly.Bracket @elts.convert
 
 
 ATTR Elements [ | | convert USE {:} {[]} : {[Ly.Element]} ]
@@ -143,12 +141,12 @@ SEM Element
 
 {
 
-convertToLy :: (Pitch -> Pitch -> Pitch) -> Pitch -> Section -> Ly.Section
-convertToLy pchFun relpitch e = convert_Syn_Section synthesized 
+convertToLy :: (Pitch -> Pitch -> Pitch) -> Pitch -> Motif -> Ly.Motif
+convertToLy pchFun relpitch e = convert_Syn_Motif synthesized 
   where
-    synthesized = wrap_Section (sem_Section e) inherited
-    inherited   = Inh_Section { rpitch_Inh_Section     = relpitch,
-                                trafoPitch_Inh_Section = pchFun   } 
+    synthesized = wrap_Motif (sem_Motif e) inherited
+    inherited   = Inh_Motif { rpitch_Inh_Motif     = relpitch,
+                              trafoPitch_Inh_Motif = pchFun   } 
 
 relativeDuration :: Duration -> Duration -> Maybe Duration
 relativeDuration ud drn | ud == drn = Nothing

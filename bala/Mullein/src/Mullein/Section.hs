@@ -31,14 +31,14 @@ import qualified Data.Sequence as S
 data TieStatus = Tied | NotTied
   deriving (Eq,Show)
 
-section :: MetricalSpec -> Seq Element -> Section
-section mspec notes = Section $ partitionAndBeam bs bss notes where
+section :: MetricalSpec -> Seq Element -> Motif
+section mspec notes = Motif $ partitionAndBeam bs bss notes where
     (bs,bss) = repeatSpec 0 mspec   
 
   
-sectionAna :: Duration -> MetricalSpec -> Seq Element -> Section
+sectionAna :: Duration -> MetricalSpec -> Seq Element -> Motif
 sectionAna anacrusis mspec notes = 
-    Section $ partitionAndBeam bs bss notes
+    Motif $ partitionAndBeam bs bss notes
   where
     (bs,bss) = repeatSpec anacrusis mspec     
 
@@ -53,9 +53,9 @@ partitionAndBeam :: [Duration] -> [[Duration]] -> Seq Element -> [Bar]
 partitionAndBeam ds_bar dss_beam notelist = 
     zipWith fn (divideToBars ds_bar notelist) dss_beam 
   where    
-    fn (_,[])        _  = Bar $ VoiceUnit [] False
-    fn (Tied, notes) xs = Bar $ VoiceUnit (beam xs notes) True 
-    fn (_, notes)    xs = Bar $ VoiceUnit (beam xs notes) False
+    fn (_,[])        _  = Bar $ Unison [] False
+    fn (Tied, notes) xs = Bar $ Unison (beam xs notes) True 
+    fn (_, notes)    xs = Bar $ Unison (beam xs notes) False
 
     
 -- split a list of notes into bars of given duration 
@@ -87,19 +87,19 @@ fitTill d0 se = step d0 (viewl se) where
 -- The state is (1) the stack of durations for each beam group, 
 -- and (2) the input stream of notes.
  
-beam :: [Duration] -> [Element] -> [Pulsation]
+beam :: [Duration] -> [Element] -> [Bracket]
 beam = unfoldr2 fn where
     -- notes exhausted
     fn _          []          = Nothing
 
     -- beam lengths exhausted, return singletons 
-    fn []         (x:xs)      = Just (SingleElt x, [],xs)
+    fn []         (x:xs)      = Just (Singleton x, [],xs)
 
     fn dstk       (x:xs)  
-        | duration x > (1%8)  = Just (SingleElt x, reduceStk (duration x) dstk, xs)
+        | duration x > (1%8)  = Just (Singleton x, reduceStk (duration x) dstk, xs)
     
     fn dstk@(d:_) xs          = let (count,l,r) = beamGroup1 d xs in 
-                                Just (BeamedGroup l, reduceStk count dstk, r)
+                                Just (Bracket l, reduceStk count dstk, r)
 
 
 -- cannot reduce stack by negative amounts...
@@ -139,8 +139,8 @@ consumes d ys = step 0 ys where
 ---------------------------------------------------------------------------------
 -- overlay
 
-zipOverlays :: Section -> Section -> Section
-zipOverlays (Section bs) (Section bs') = Section $ zipWith f bs bs' where
+zipOverlays :: Motif -> Motif -> Motif
+zipOverlays (Motif bs) (Motif bs') = Motif $ overlayZipWith f id bs bs' where
     f (Bar v)        b2    = if null vs then Bar v else Overlay v vs where
                                  vs = voices b2
     f (Overlay v vs) b2    = Overlay v (vs ++ voices b2) 
@@ -148,6 +148,6 @@ zipOverlays (Section bs) (Section bs') = Section $ zipWith f bs bs' where
     voices (Bar v)         = if nullVoice v then [] else [v]
     voices (Overlay v vs)  = v:vs
     
-nullVoice :: VoiceUnit -> Bool
-nullVoice (VoiceUnit xs _) = null xs
+nullVoice :: Unison -> Bool
+nullVoice (Unison xs _) = null xs
 
