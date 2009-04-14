@@ -28,7 +28,7 @@ import qualified Data.Sequence as S
 --------------------------------------------------------------------------------
 -- Note lists
 
-type NoteList = S.Seq Element
+type NoteList = [Element]
 
 
 --------------------------------------------------------------------------------

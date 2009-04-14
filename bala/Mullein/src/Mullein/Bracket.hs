@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Mullein.Section
+-- Module      :  Mullein.Bracket
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -16,7 +16,7 @@
 
 
 
-module Mullein.Section where
+module Mullein.Bracket where
 
 import Mullein.Core ( meterFraction )
 import Mullein.CoreTypes
@@ -25,18 +25,16 @@ import Mullein.Gen.Syntax
 import Mullein.Utils
 
 import Data.Ratio
-import Data.Sequence ( Seq, ViewL (..), ( <| ), viewl, empty )
-import qualified Data.Sequence as S
 
 data TieStatus = Tied | NotTied
   deriving (Eq,Show)
 
-section :: MetricalSpec -> Seq Element -> Motif
-section mspec notes = Motif $ partitionAndBeam bs bss notes where
+bracket :: MetricalSpec -> [Element] -> Motif
+bracket mspec notes = Motif $ partitionAndBeam bs bss notes where
     (bs,bss) = repeatSpec 0 mspec   
 
   
-sectionAna :: Duration -> MetricalSpec -> Seq Element -> Motif
+sectionAna :: Duration -> MetricalSpec -> [Element] -> Motif
 sectionAna anacrusis mspec notes = 
     Motif $ partitionAndBeam bs bss notes
   where
@@ -49,7 +47,7 @@ repeatSpec a (b,bs) = (reduceStk a ds, reduceStk a bs : repeat bs) where
     ds = repeat $ meterFraction b
 
              
-partitionAndBeam :: [Duration] -> [[Duration]] -> Seq Element -> [Bar]
+partitionAndBeam :: [Duration] -> [[Duration]] -> [Element] -> [Bar]
 partitionAndBeam ds_bar dss_beam notelist = 
     zipWith fn (divideToBars ds_bar notelist) dss_beam 
   where    
@@ -59,24 +57,24 @@ partitionAndBeam ds_bar dss_beam notelist =
 
     
 -- split a list of notes into bars of given duration 
-divideToBars :: Temporal a => [Duration] -> Seq a -> [(TieStatus, [a])] 
+divideToBars :: Temporal a => [Duration] -> [a] -> [(TieStatus, [a])] 
 divideToBars ds ns = fst $ anaMap fn (NotTied,ns) ds where
-  fn d (tie,sa) | S.null sa = Nothing
-                | otherwise = let (ls, opt_split, rest) = fitTill d sa in
-                              maybe (Just ((tie,ls), (NotTied, rest)))
-                              (\split_note -> Just ((tie,ls), (Tied, split_note <| rest)))
-                              opt_split
+  fn _ (_,  []) = Nothing
+  fn d (tie,xs) = let (ls, opt_split, rest) = fitTill d xs in
+                  maybe (Just ((tie,ls), (NotTied, rest)))
+                        (\split_note -> Just ((tie,ls), (Tied, split_note : rest)))
+                        opt_split
 
   
-fitTill :: Temporal a => Duration -> Seq a -> ([a], Maybe a, Seq a)
-fitTill d0 se = step d0 (viewl se) where
-    step _ EmptyL     = ([],Nothing,empty) 
-    step d (a :< sa)  = let d' = duration a in 
+fitTill :: Temporal a => Duration -> [a] -> ([a], Maybe a, [a])
+fitTill d0 es = step d0 es where
+    step _ []     = ([],Nothing,[]) 
+    step d (x:xs) = let d' = duration x in 
                     case d' `compare` d of
-                        EQ -> ([a],Nothing,sa)
-                        LT -> (a:ls,pivot,rs) where
-                                (ls,pivot,rs) = fitTill (d-d') sa
-                        GT -> ([swapDuration d a], Just $ swapDuration (d'-d) a, sa)
+                        EQ -> ([x],Nothing,xs)
+                        LT -> (x:ls,pivot,rs) where
+                                (ls,pivot,rs) = fitTill (d-d') xs
+                        GT -> ([swapDuration d x], Just $ swapDuration (d'-d) x, xs)
                          
 --------------------------------------------------------------------------------
 -- beaming

@@ -22,75 +22,34 @@ import Mullein.Pitch
 import Mullein.Gen.Syntax ( Element(..) )
 import Mullein.Utils
 
+import Control.Monad.State
 import Data.List ( elemIndex, find )
 import qualified Data.Map as Map
 import Data.Ratio
-import Data.Sequence ( (|>) )
-import qualified Data.Sequence as S
-
 
 
 --------------------------------------------------------------------------------
 -- Note lists
 
+type NoteCtx a = State NoteListCtx a
+
+-- NoteListCtx represents /shorthand state/ so we can omit
+-- some details when building the notelist (e.g. duration) 
+data NoteListCtx = NoteListCtx 
+      { unit_note_length :: Duration }
+  deriving (Eq,Show)
+
+-- type NoteList = [Element]
+
+notelist :: [NoteCtx Element] -> [Element]
+notelist fs = evalState (sequence fs) ctx0 where
+    ctx0 = NoteListCtx { unit_note_length = 1%4 }
+
+(&) :: NoteCtx Element -> NoteCtx () -> NoteCtx Element
+(&) f upd  = upd >> f 
 
 
 
-note :: Pitch -> Duration -> NoteList -> NoteList
-note p d t = t |> (Note p d)
-
-rest :: Duration -> NoteList -> NoteList
-rest d t = t |> (Rest d)
-
-root :: NoteList
-root = S.empty
-
-
---------------------------------------------------------------------------------
--- structured /sections/.
-
-
-
---------------------------------------------------------------------------------
--- aggregate sections
-
-
---------------------------------------------------------------------------------
--- aggregate sections
-
-{-
-
-data Aggregate = Aggregate :>> Aggregate
-               | Literal Section
-               | Repeated Section                 
-               | AltRepeat { body, end1, end2 :: Section }
-               | KeyChange Key 
-
-
-
--- Do automatic coercion on snoc-ing...
-class Snoc c c' where
-  (|>>) :: c a -> c' a -> Aggregate
-
-instance Snoc Section Section where
-  (|>>) a b = Literal a :>> Literal b
-  
-instance Snoc Aggregate Aggregate where
-  (|>>) a b = a :>> b
-  
-instance Snoc Section Aggregate where
-  (|>>) a b = Literal a :>> b
-    
-instance Snoc Aggregate Section where
-  (|>>) a b = a :>> Literal b
-  
-repeated :: Section a -> Aggregate a
-repeated = Repeated
-
-keyChange :: Key -> Aggregate a
-keyChange = KeyChange
-
--}
 
 --------------------------------------------------------------------------------
 -- Musical representation
