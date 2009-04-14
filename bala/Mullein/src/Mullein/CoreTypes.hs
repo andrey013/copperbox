@@ -39,7 +39,7 @@ type Motive env = (env, NoteList)
 
 data Z env = Repeated (Motive env)
            | FSRepeat (Motive env) (Motive env) (Motive env)
-           | Sequence (Motive env) (Motive env)
+           | Literal  (Motive env)
  deriving (Show)
 
 

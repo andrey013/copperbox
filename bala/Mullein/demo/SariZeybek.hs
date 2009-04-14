@@ -18,27 +18,6 @@ import Mullein.Utils
 
 import Data.Ratio
 
-{-
-
-
--- demo = runAbc sari_zeybek_abc
-
--- a major
-
-sari_zeybek_abc :: AbcOutput
-sari_zeybek_abc = tune $  tune_number 1 
-              <$> title "Sari Zeybek"
-              <$> origin "Turkey"
-              <$> key d_minor 
-              <$> meter 9 8 
-              <$> sari_zeybek
-
-generateAbc :: AbcOutput -> String
-generateAbc doc = pprender $ printf doc
-
-runAbc = putStr . generateAbc
-
--}
 
 abcTune _ = undefined
 
