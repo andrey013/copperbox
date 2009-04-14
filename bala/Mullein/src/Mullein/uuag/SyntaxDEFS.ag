@@ -26,9 +26,6 @@ DATA Element
               duration        : {Duration}          
   | GraceNotes 
               graces          : GraceNotes                              
-  | Nplet     multipier       : {Int}
-              unit_duration   : {Duration}
-              pitches         : Pitches
         
 TYPE GraceNotes = [GraceNote]
 TYPE GraceNote  = (pch : Pitch, drn : Duration)

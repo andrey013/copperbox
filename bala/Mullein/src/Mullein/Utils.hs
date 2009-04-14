@@ -28,6 +28,13 @@ overlayZipWith f g (x:xs) (y:ys) = f x y : overlayZipWith f g xs ys
 overlayZipWith f g (x:xs) []     = g x   : overlayZipWith f g xs []
 overlayZipWith _ _ []     _      = []
 
+
+longZipWith :: (a -> b -> c) -> (a -> c) -> (b -> c) -> [a] -> [b] -> [c]
+longZipWith f g h as bs = step as bs where
+    step (x:xs) (y:ys) = f x y : step xs ys
+    step (x:xs) []     = g x : step xs []
+    step []     (y:ys) = h y : step [] ys
+    step []     []     = []
  
 
 -- anaMap is the unfold analogue of accumMapL
@@ -69,6 +76,8 @@ infixl 7 ##
 ( ## ) :: (a -> b) -> (b -> c) -> (a -> c) 
 g ## f = f . g
 
+prod :: (a -> c) -> (b -> d) -> (a,b) -> (c,d) 
+prod f g (a,b) = (f a,g b)
 
 enumFromCyc :: (Bounded a, Enum a, Eq a) => a -> [a]
 enumFromCyc a = a : (unfoldr f $ nextOf a)

@@ -59,7 +59,6 @@ SEM Element
   | Spacer      lhs.output    = char 's' <> optDuration @opt_drn
   | Chord       lhs.output    = text "Chord - TODO"         
   | GraceNotes  lhs.output    = text "GraceNotes - TODO"
-  | Nplet       lhs.output    = text "Nplet - TODO"
 
 
 {

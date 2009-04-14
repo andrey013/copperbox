@@ -22,7 +22,6 @@ module Mullein.Gen.Syntax where
 import Mullein.Duration
 import Mullein.Pitch
 
-import Data.Ratio
 
 }
 
@@ -40,7 +39,6 @@ instance Temporal Element where
   duration (Spacer d)             = d
   duration (Chord _ d )           = d
   duration (GraceNotes _)         = duration_zero
-  duration (Nplet i d _)          = (fromIntegral i % 1) * d 
     
  
   
@@ -49,10 +47,6 @@ instance Temporal Element where
   swapDuration d (Spacer _)       = Spacer d
   swapDuration d (Chord se _)     = Chord se d
   swapDuration _ (GraceNotes se)  = GraceNotes se
-  swapDuration d (Nplet i _ se)   = Nplet i (reunit d i se) se where 
-      reunit :: Duration -> Int -> [a] -> Duration
-      reunit tot n xs = tot * (makeDuration l n) * (makeDuration 1 l) where
-          l = length xs 
                   
                   
                   

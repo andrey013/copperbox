@@ -18,8 +18,6 @@ DATA Element
   | Chord       pitches : Pitches 
                 dmult   : {Multiplier}         
   | GraceNotes  graces  : GraceNotes                             
-  | Nplet       nmult   : {Int} 
-                pitches : Pitches
 
 TYPE GraceNotes = [GraceNote]
 TYPE Pitches    = [Pitch]        

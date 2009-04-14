@@ -77,7 +77,6 @@ SEM Element
   | Spacer      lhs.convert   = Abc.Spacer (unitRescale @lhs.unitnl @duration)
   | Chord       lhs.convert   = error "Abc.Chord"
   | GraceNotes  lhs.convert   = error "Abc.GraceNotes"
-  | Nplet       lhs.convert   = error "Abc.Nplet"
 
 {
 

@@ -61,7 +61,6 @@ SEM Element
   | Spacer      lhs.output    = char 'x' <> multiplier @dmult
   | Chord       lhs.output    = text "Chord - TODO"         
   | GraceNotes  lhs.output    = text "GraceNotes - TODO"
-  | Nplet       lhs.output    = text "Nplet - TODO"
 
 {
 
@@ -76,7 +75,7 @@ outputAbc xs e = output_Syn_Motif synthesized
 
 
 overlay :: [Doc] -> Doc
-overlay = vsep . punctuate (text " &\\")    
+overlay = vsep . punctuate (text " & ")    
 
 note :: Pitch -> Multiplier -> Doc 
 note p m = pitch p <> multiplier m

@@ -63,7 +63,6 @@ SEM Element
   | Spacer      lhs.getDuration = @duration
   | Chord       lhs.getDuration = @duration         
   | GraceNotes  lhs.getDuration = 0                             
-  | Nplet       lhs.getDuration = error "Nplet getDuration"
 
 SEM Elements 
   | Cons        tl.rpitch      = @hd.getPitch
@@ -76,7 +75,6 @@ SEM Element
   | Spacer      lhs.getPitch    = @lhs.rpitch
   | Chord       lhs.getPitch    = @pitches.getPitch       
   | GraceNotes  lhs.getPitch    = @graces.getPitch                             
-  | Nplet       lhs.getPitch    = error "Nplet getPitch"
 
 -- First pitch of the list
 SEM GraceNotes 
@@ -134,7 +132,6 @@ SEM Element
   | Spacer      lhs.convert   = Ly.Spacer $ relativeDuration @lhs.rduration @duration
   | Chord       lhs.convert   = error "Ly.Chord"
   | GraceNotes  lhs.convert   = error "Ly.GraceNotes"
-  | Nplet       lhs.convert   = error "Ly.Nplet"
 
 
 

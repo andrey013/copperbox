@@ -18,26 +18,33 @@
 
 module Mullein.Bracket where
 
-import Mullein.Core ( meterFraction )
+import Mullein.Core
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Gen.Syntax
 import Mullein.Utils
 
+import Data.List (foldl')
 import Data.Ratio
 
 data TieStatus = Tied | NotTied
   deriving (Eq,Show)
 
-bracket :: MetricalSpec -> [Element] -> Motif
-bracket mspec notes = Motif $ partitionAndBeam bs bss notes where
+
+bracket :: MetricalSpec -> OverlayList -> Motif
+bracket mspec (p,xs) = Motif $ foldl' zipOverlays prime ovs
+  where
+    prime = bracket1 mspec p
+    ovs   :: [(BarNum,[Bar])]
+    ovs   = map (prod id (bracket1 mspec)) xs
+
+bracket1 :: MetricalSpec -> NoteList -> [Bar]
+bracket1 mspec notes = partitionAndBeam bs bss notes where
     (bs,bss) = repeatSpec 0 mspec   
 
-  
-sectionAna :: Duration -> MetricalSpec -> [Element] -> Motif
-sectionAna anacrusis mspec notes = 
-    Motif $ partitionAndBeam bs bss notes
-  where
+-- TODO bracketing with anacrusis  
+bracket1Ana :: Duration -> MetricalSpec -> NoteList -> [Bar]
+bracket1Ana anacrusis mspec notes = partitionAndBeam bs bss notes where
     (bs,bss) = repeatSpec anacrusis mspec     
 
 
@@ -48,12 +55,12 @@ repeatSpec a (b,bs) = (reduceStk a ds, reduceStk a bs : repeat bs) where
 
              
 partitionAndBeam :: [Duration] -> [[Duration]] -> [Element] -> [Bar]
-partitionAndBeam ds_bar dss_beam notelist = 
-    zipWith fn (divideToBars ds_bar notelist) dss_beam 
+partitionAndBeam ds_bar dss_beam notes = 
+    zipWith fn (divideToBars ds_bar notes) dss_beam 
   where    
-    fn (_,[])        _  = Bar $ Unison [] False
-    fn (Tied, notes) xs = Bar $ Unison (beam xs notes) True 
-    fn (_, notes)    xs = Bar $ Unison (beam xs notes) False
+    fn (_,[])      _  = Bar $ Unison [] False
+    fn (Tied, bar) ds = Bar $ Unison (beam ds bar) True 
+    fn (_, bar)    ds = Bar $ Unison (beam ds bar) False
 
     
 -- split a list of notes into bars of given duration 
@@ -137,8 +144,9 @@ consumes d ys = step 0 ys where
 ---------------------------------------------------------------------------------
 -- overlay
 
-zipOverlays :: Motif -> Motif -> Motif
-zipOverlays (Motif bs) (Motif bs') = Motif $ overlayZipWith f id bs bs' where
+zipOverlays :: [Bar] -> (BarNum,[Bar]) -> [Bar]
+zipOverlays bs (bnum,bs') = prefix ++ longZipWith f id id suffix bs' where
+    (prefix,suffix)        = splitAt bnum bs
     f (Bar v)        b2    = if null vs then Bar v else Overlay v vs where
                                  vs = voices b2
     f (Overlay v vs) b2    = Overlay v (vs ++ voices b2) 

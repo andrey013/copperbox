@@ -36,7 +36,7 @@ bulgarian6 = convertToAbc lset sixteenth s1_4 where
   lset =  maybe (error "missing LabelSet") id  $ labelSetOf a_major
   
   
-s1_4 = bracket twoFourTime bars1_4
+s1_4 = bracket twoFourTime (primary bars1_4)
 
 twoFourTime :: MetricalSpec
 twoFourTime = metricalSpec 2 4

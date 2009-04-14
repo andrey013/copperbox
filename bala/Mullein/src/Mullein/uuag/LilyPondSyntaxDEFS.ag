@@ -19,8 +19,6 @@ DATA Element
   | Chord       pitches   : Pitches 
                 opt_drn   : {Maybe Duration}         
   | GraceNotes  graces    : GraceNotes                             
-  | Nplet       nmult     : {Int} 
-                pitches   : Pitches
 
 TYPE GraceNotes = [GraceNote]
 TYPE Pitches    = [Pitch]        
