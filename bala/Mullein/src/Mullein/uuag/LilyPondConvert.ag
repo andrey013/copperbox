@@ -92,6 +92,24 @@ SEM Pitches
 
 -- Convert 
 
+ATTR Part [ | | convert : {Ly.Part} ]
+
+SEM Part
+  | Part        lhs.convert   = Ly.Part @phrases.convert
+
+ATTR Phrases [ | | convert USE {:} {[]} : {[Ly.Phrase]} ]
+
+ATTR Phrase [ | | convert : {Ly.Phrase} ]
+
+SEM Phrase
+  | Phrase      lhs.convert   = Ly.Phrase @body.convert
+  | Repeated    lhs.convert   = Ly.Repeated @body.convert
+  | FSRepeat    lhs.convert   = Ly.FSRepeat @body.convert 
+                                            @fst_rep.convert
+                                            @snd_rep.convert
+                                                       
+
+
 ATTR Motif [ | | convert : {Ly.Motif} ]
 
 SEM Motif
@@ -138,12 +156,12 @@ SEM Element
 
 {
 
-convertToLy :: (Pitch -> Pitch -> Pitch) -> Pitch -> Motif -> Ly.Motif
-convertToLy pchFun relpitch e = convert_Syn_Motif synthesized 
+convertToLy :: (Pitch -> Pitch -> Pitch) -> Pitch -> Part -> Ly.Part
+convertToLy pchFun relpitch e = convert_Syn_Part synthesized 
   where
-    synthesized = wrap_Motif (sem_Motif e) inherited
-    inherited   = Inh_Motif { rpitch_Inh_Motif     = relpitch,
-                              trafoPitch_Inh_Motif = pchFun   } 
+    synthesized = wrap_Part (sem_Part e) inherited
+    inherited   = Inh_Part { rpitch_Inh_Part     = relpitch,
+                             trafoPitch_Inh_Part = pchFun   } 
 
 relativeDuration :: Duration -> Duration -> Maybe Duration
 relativeDuration ud drn | ud == drn = Nothing

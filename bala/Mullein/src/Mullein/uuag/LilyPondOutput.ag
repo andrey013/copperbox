@@ -31,25 +31,39 @@ import Text.PrettyPrint.Leijen
 
 INCLUDE "LilyPondSyntaxDEFS.ag"
 
-ATTR Motif Bar Unison Bracket Element [ | | output : {Doc} ]
+ATTR Part Phrase Motif Bar Unison Bracket Element [ | | output : {Doc} ]
 
-ATTR Bars Unisons Brackets Elements [ | | output USE {:} {[]} :{[Doc]} ]
+ATTR Phrases Bars Unisons Brackets Elements [ | | output USE {:} {[]} :{[Doc]} ]
+
+SEM Part
+  | Part        lhs.output    = vsep $ @phrases.output 
+
+SEM Phrase
+  | Phrase      lhs.output    = @body.output
+  | Repeated    lhs.output    = command "repeat" <+> text "volta 2" 
+                                                 <+> braces @body.output
+  | FSRepeat    lhs.output    = command "repeat" <+> text "volta 2" 
+                                                 <+> braces @body.output
+                                  <$> command "alternative" 
+                                  <+> braces ((<+>) (braces @fst_rep.output)
+                                                    (braces @snd_rep.output)) 
+
 
 SEM Motif
-  | Motif       lhs.output     = hsep $ punctuate (text " |") @bars.output
+  | Motif       lhs.output    = hsep $ punctuate (text " |") @bars.output
 
 SEM Bar
-  | Bar         lhs.output     = @one.output
-  | Overlay     lhs.output     = overlay $ @one.output : @orest.output
+  | Bar         lhs.output    = @one.output
+  | Overlay     lhs.output    = overlay $ @one.output : @orest.output
 
 
 SEM Unison
-  | Unison      lhs.output     = hsep @pulses.output <> 
+  | Unison      lhs.output    = hsep @pulses.output <> 
                                    if @tied then char '~' else empty
 
 SEM Bracket
-  | Singleton   lhs.output     = @elt.output
-  | Bracket     lhs.output     = lyBeam @elts.output
+  | Singleton   lhs.output    = @elt.output
+  | Bracket     lhs.output    = lyBeam @elts.output
 
 
 
@@ -65,11 +79,11 @@ SEM Element
 
 
 
-outputLy :: Motif -> Doc
-outputLy e = output_Syn_Motif synthesized 
+outputLy :: Part -> Doc
+outputLy e = output_Syn_Part synthesized 
   where
-    synthesized = wrap_Motif (sem_Motif e) inherited
-    inherited   = Inh_Motif  { } 
+    synthesized = wrap_Part (sem_Part e) inherited
+    inherited   = Inh_Part  { } 
 
 
 overlay :: [Doc] -> Doc

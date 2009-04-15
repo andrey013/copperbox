@@ -31,11 +31,25 @@ import Text.PrettyPrint.Leijen
 
 INCLUDE "AbcSyntaxDEFS.ag"
 
-ATTR Motif [ bgroups : {[Int]} | | ]
+ATTR Part Phrases Phrase Motif [ bgroups : {[Int]} | | ]
 
-ATTR Motif Bar Unison Bracket Element [ | | output : {Doc} ]
+ATTR Part Phrase Motif Bar Unison Bracket Element [ | | output : {Doc} ]
 
-ATTR Bars Unisons Brackets Elements [ | | output USE {:} {[]} :{[Doc]} ]
+ATTR Phrases Bars Unisons Brackets Elements [ | | output USE {:} {[]} :{[Doc]} ]
+
+
+SEM Part
+  | Part        lhs.output    = vsep $ @phrases.output 
+
+SEM Phrase
+  | Phrase      lhs.output    = @body.output
+  | Repeated    lhs.output    = text "|:" <+> @body.output <+> text ":|"
+  | FSRepeat    lhs.output    = text "|:" <+> @body.output 
+                                          <+> text "|[1"  <+> @fst_rep.output
+                                          <+> text ":|[2" <+> @snd_rep.output
+                                          <+> text "|]"
+
+
 
 SEM Motif
   | Motif       lhs.output     = doclines @lhs.bgroups 
@@ -73,11 +87,11 @@ stdPrefs = AbcPrefs { bars_per_line = repeat 4 }
 
 
 -- xs is a list of bars per line  
-outputAbc :: AbcPrefs -> Motif -> Doc
-outputAbc prefs e = output_Syn_Motif synthesized 
+outputAbc :: AbcPrefs -> Part -> Doc
+outputAbc prefs e = output_Syn_Part synthesized 
   where
-    synthesized = wrap_Motif (sem_Motif e) inherited
-    inherited   = Inh_Motif  { bgroups_Inh_Motif = bars_per_line prefs } 
+    synthesized = wrap_Part (sem_Part e) inherited
+    inherited   = Inh_Part  { bgroups_Inh_Part = bars_per_line prefs } 
 
 
 

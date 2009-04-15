@@ -1,6 +1,15 @@
 -- Mullein.Gen.SyntaxTOP
 -- Copyright   :  (c) Stephen Tetley 2009
 
+DATA Part
+  | Part        phrases    : Phrases
+
+DATA Phrase    
+  | Phrase      body       : Motif
+  | Repeated    body       : Motif
+  | FSRepeat    body       : Motif
+                fst_rep    : Motif
+                snd_rep    : Motif 
 
 DATA Motif
   | Motif       time_sig   : Meter
@@ -20,7 +29,7 @@ DATA Bracket
   | Singleton   elt        : Element
   | Bracket     elts       : Elements
 
-
+TYPE Phrases      = [Phrase]
 TYPE Bars         = [Bar]                
 TYPE Unisons      = [Unison]
 TYPE Brackets     = [Bracket]

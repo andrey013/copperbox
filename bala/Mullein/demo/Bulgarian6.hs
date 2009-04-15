@@ -30,16 +30,21 @@ import Text.PrettyPrint.Leijen
 main = putDoc $ Abc.outputAbc Abc.stdPrefs bulgarian6
 
 ly = putDoc $ Ly.outputLy bulg6 where
-  bulg6 = Ly.convertToLy Ly.relPitch c4' m1_4
+  bulg6 = Ly.convertToLy Ly.relPitch c4' part1_8
 
 
-bulgarian6 :: Abc.Motif
-bulgarian6 = convertToAbc lset sixteenth m1_4 where
+bulgarian6 :: Abc.Part
+bulgarian6 = convertToAbc lset sixteenth part1_8 where
   lset =  maybe (error "missing LabelSet") id  $ labelSetOf a_major
-  
+
+part1_8 :: Part 
+part1_8 = Part $ [Repeated m1_4, Repeated m5_8]
   
 m1_4 :: Motif
 m1_4 = bracket twoFourTime (primary bars1_4)
+
+m5_8 :: Motif
+m5_8 = bracket twoFourTime (primary bars5_8)
 
 twoFourTime :: MetricalSpec
 twoFourTime = metricalSpec 2 4

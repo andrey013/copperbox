@@ -17,7 +17,7 @@
 module Mullein.CoreTypes where
 
 import Mullein.Duration
-import Mullein.Gen.Syntax ( Motif, Element(..) )
+import Mullein.Gen.Syntax ( Element(..) )
 import Mullein.Pitch
 
 
@@ -30,18 +30,6 @@ import qualified Data.Map as Map
 
 type NoteList = [Element]
 
-
---------------------------------------------------------------------------------
--- 
-
-type Part = [Phrase]
-
-data Phrase = Repeated Motif
-            | FSRepeat Motif Motif Motif
-            | Literal  Motif
- deriving (Show)
-
--- Note Motif's contain time signature information
 
 --------------------------------------------------------------------------------
 -- Musical representation

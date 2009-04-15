@@ -5,8 +5,10 @@
 INCLUDE "SyntaxTOP.ag"
 
 
-SET Every = Motif AllBar AllUnison AllBracket AllElement AllGrace Pitches
+SET Every = Part AllPhrase Motif AllBar AllUnison AllBracket AllElement AllGrace Pitches
 
+
+SET AllPhrase     = Phrases Phrase 
 SET AllBar        = Bars Bar
 SET AllUnison     = Unisons Unison
 SET AllBracket    = Brackets Bracket

@@ -37,7 +37,22 @@ INCLUDE "SyntaxDEFS.ag"
 ATTR Every [ unitnl : {Duration} | | ]
 ATTR Every [ labels : {LabelSet} | | ]
 
+ATTR Part [ | | convert : {Abc.Part} ]
 
+SEM Part
+  | Part        lhs.convert   = Abc.Part @phrases.convert
+
+ATTR Phrases [ | | convert USE {:} {[]} : {[Abc.Phrase]} ]
+
+ATTR Phrase [ | | convert : {Abc.Phrase} ]
+
+SEM Phrase
+  | Phrase      lhs.convert   = Abc.Phrase @body.convert
+  | Repeated    lhs.convert   = Abc.Repeated @body.convert
+  | FSRepeat    lhs.convert   = Abc.FSRepeat @body.convert 
+                                             @fst_rep.convert
+                                             @snd_rep.convert
+                                                       
 ATTR Motif [ | | convert : {Abc.Motif} ]
 
 SEM Motif
@@ -80,12 +95,12 @@ SEM Element
 
 {
 
-convertToAbc :: LabelSet -> Duration -> Motif -> Abc.Motif
-convertToAbc lset unl e = convert_Syn_Motif synthesized 
+convertToAbc :: LabelSet -> Duration -> Part -> Abc.Part
+convertToAbc lset unl e = convert_Syn_Part synthesized 
   where
-    synthesized = wrap_Motif (sem_Motif e) inherited
-    inherited   = Inh_Motif { unitnl_Inh_Motif = unl,
-                              labels_Inh_Motif   = lset } 
+    synthesized = wrap_Part (sem_Part e) inherited
+    inherited   = Inh_Part { unitnl_Inh_Part = unl,
+                             labels_Inh_Part = lset } 
 
 unitRescale :: Duration -> Duration -> Duration
 unitRescale unl drn = (dn%dd) / (un%ud) where
