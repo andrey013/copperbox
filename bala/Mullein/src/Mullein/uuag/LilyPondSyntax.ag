@@ -22,7 +22,6 @@ module Mullein.Gen.LilyPondSyntax where
 import Mullein.Pitch
 import Mullein.Duration
 
-
 type GraceNote = Pitch
 
 }

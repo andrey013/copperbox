@@ -17,12 +17,12 @@
 module Mullein.CoreTypes where
 
 import Mullein.Duration
-import Mullein.Gen.Syntax ( Element(..) )
+import Mullein.Gen.Syntax ( Motif, Element(..) )
 import Mullein.Pitch
 
-import qualified Data.Map as Map
-import qualified Data.Sequence as S
 
+
+import qualified Data.Map as Map
 
 
 --------------------------------------------------------------------------------
@@ -34,26 +34,18 @@ type NoteList = [Element]
 --------------------------------------------------------------------------------
 -- 
 
-type Part env = S.Seq (Z env)
-type Motive env = (env, NoteList)
+type Part = [Phrase]
 
-data Z env = Repeated (Motive env)
-           | FSRepeat (Motive env) (Motive env) (Motive env)
-           | Literal  (Motive env)
+data Phrase = Repeated Motif
+            | FSRepeat Motif Motif Motif
+            | Literal  Motif
  deriving (Show)
 
+-- Note Motif's contain time signature information
 
 --------------------------------------------------------------------------------
 -- Musical representation
 
--- For /universality/ meter is defined according to Abc's representation.
--- LilyPond will simply generate @TimeSig@ cases.
-data Meter = TimeSig Integer Integer 
-           -- | CommonTime is 4/4
-           | CommonTime 
-           -- | CutTime is 2/2
-           | CutTime
-  deriving (Eq,Show)
 
 type MeterPattern = [Duration] 
 

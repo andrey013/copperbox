@@ -25,18 +25,21 @@ import qualified Mullein.Gen.LilyPondOutput as Ly
 
 import Text.PrettyPrint.Leijen 
 
-main = putDoc $ Abc.outputAbc (repeat 4) bulgarian6
+     
+
+main = putDoc $ Abc.outputAbc Abc.stdPrefs bulgarian6
 
 ly = putDoc $ Ly.outputLy bulg6 where
-  bulg6 = Ly.convertToLy Ly.relPitch c4' s1_4
+  bulg6 = Ly.convertToLy Ly.relPitch c4' m1_4
 
 
 bulgarian6 :: Abc.Motif
-bulgarian6 = convertToAbc lset sixteenth s1_4 where
+bulgarian6 = convertToAbc lset sixteenth m1_4 where
   lset =  maybe (error "missing LabelSet") id  $ labelSetOf a_major
   
   
-s1_4 = bracket twoFourTime (primary bars1_4)
+m1_4 :: Motif
+m1_4 = bracket twoFourTime (primary bars1_4)
 
 twoFourTime :: MetricalSpec
 twoFourTime = metricalSpec 2 4
@@ -58,23 +61,6 @@ bars5_8 = notelist $
            ]
 
 
-{-
-bars1_4 :: NoteList
-bars1_4 = 
-    root # note a4 du16   # note b4 du16 # note cis5 du16 # note cis5 du16 
-         # note cis5 du16 # note a4 du16 # note cis5 du16 # note cis5 du16
-        
-         # note cis5 du16 # note a4 du16 # note b4 du16   # note cis5 du16
-         # note b4 du16   # note a4 du16 # note a4 du16   # rest du16
-        
-         # note e5 du16   # note d5 du16 # note cis5 du16 # note b4 du16
-         # note cis5 du16 # note a4 du16 # note b4 du16   # note cis5 du16
-        
-         # note a4 du16   # note b4 du16 # note b4 du16   # note a4 du16
-         # note a4 du8    # rest du8       
-
-        
--} 
 
 
     

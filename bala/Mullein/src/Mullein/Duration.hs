@@ -16,9 +16,11 @@
 --------------------------------------------------------------------------------
 
 module Mullein.Duration (
-    -- Data type
+    -- Data types
     Duration, 
-    
+    Meter(..), 
+
+
     Temporal(..),
     Spacer(..),
     
@@ -53,6 +55,18 @@ import Data.Ratio
 import Text.PrettyPrint.Leijen hiding ( dot )
 
 type Duration = Rational 
+
+
+-- For /universality/ meter is defined according to Abc's representation.
+-- LilyPond will simply generate @TimeSig@ cases.
+data Meter = TimeSig Integer Integer 
+           -- | CommonTime is 4/4
+           | CommonTime 
+           -- | CutTime is 2/2
+           | CutTime
+  deriving (Eq,Show)
+
+
 
 class Temporal a where
   duration      :: a -> Duration

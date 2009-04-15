@@ -32,11 +32,12 @@ data TieStatus = Tied | NotTied
 
 
 bracket :: MetricalSpec -> OverlayList -> Motif
-bracket mspec (p,xs) = Motif $ foldl' zipOverlays prime ovs
+bracket mspec (p,xs) = Motif time_sig $ foldl' zipOverlays prime ovs
   where
-    prime = bracket1 mspec p
-    ovs   :: [(BarNum,[Bar])]
-    ovs   = map (prod id (bracket1 mspec)) xs
+    prime    = bracket1 mspec p
+    ovs      = map (prod id (bracket1 mspec)) xs
+    time_sig = fst mspec
+
 
 bracket1 :: MetricalSpec -> NoteList -> [Bar]
 bracket1 mspec notes = partitionAndBeam bs bss notes where

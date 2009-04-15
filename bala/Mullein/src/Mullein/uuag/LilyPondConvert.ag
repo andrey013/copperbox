@@ -95,7 +95,7 @@ SEM Pitches
 ATTR Motif [ | | convert : {Ly.Motif} ]
 
 SEM Motif
-  | Motif       lhs.convert    = Ly.Motif @bars.convert
+  | Motif       lhs.convert    = Ly.Motif @time_sig @bars.convert
 
 
 ATTR Bars [ | | convert USE {:} {[]} : {[Ly.Bar]} ]

@@ -3,21 +3,22 @@
 
 
 DATA Motif
-  | Motif       bars    : Bars
+  | Motif       time_sig   : Meter
+                bars       : Bars
 
 DATA Bar
-  | Bar         one     : Unison
-  | Overlay     one     : Unison
-                orest   : Unisons
+  | Bar         one        : Unison
+  | Overlay     one        : Unison
+                orest      : Unisons
 
 DATA Unison
-  | Unison      pulses  : Brackets
-                tied    : {Bool}
+  | Unison      pulses     : Brackets
+                tied       : {Bool}
 
 -- bracket together beamed notes to make a pulsation
 DATA Bracket
-  | Singleton   elt     : Element
-  | Bracket     elts    : Elements
+  | Singleton   elt        : Element
+  | Bracket     elts       : Elements
 
 
 TYPE Bars         = [Bar]                

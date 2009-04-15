@@ -19,6 +19,7 @@
 {
 module Mullein.Gen.AbcSyntax where
 
+import Mullein.Duration ( Meter(..) )
 import Mullein.Pitch
 
 import Data.Ratio

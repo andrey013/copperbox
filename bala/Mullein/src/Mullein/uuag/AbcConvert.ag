@@ -41,7 +41,7 @@ ATTR Every [ labels : {LabelSet} | | ]
 ATTR Motif [ | | convert : {Abc.Motif} ]
 
 SEM Motif
-  | Motif       lhs.convert    = Abc.Motif @bars.convert
+  | Motif       lhs.convert    = Abc.Motif @time_sig @bars.convert
 
 
 ATTR Bars [ | | convert USE {:} {[]} : {[Abc.Bar]} ]

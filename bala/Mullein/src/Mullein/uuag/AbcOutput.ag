@@ -64,12 +64,20 @@ SEM Element
 
 {
 
+data AbcPrefs = AbcPrefs 
+      { bars_per_line :: [Int] }
+  deriving (Eq,Show)
+
+stdPrefs :: AbcPrefs
+stdPrefs = AbcPrefs { bars_per_line = repeat 4 }
+
+
 -- xs is a list of bars per line  
-outputAbc :: [Int] -> Motif -> Doc
-outputAbc xs e = output_Syn_Motif synthesized 
+outputAbc :: AbcPrefs -> Motif -> Doc
+outputAbc prefs e = output_Syn_Motif synthesized 
   where
     synthesized = wrap_Motif (sem_Motif e) inherited
-    inherited   = Inh_Motif  { bgroups_Inh_Motif = xs } 
+    inherited   = Inh_Motif  { bgroups_Inh_Motif = bars_per_line prefs } 
 
 
 
