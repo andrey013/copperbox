@@ -6,10 +6,10 @@
 
 module Bulgarian6 where
 
-import Mullein.Gen.AbcConvert
-import qualified Mullein.Gen.AbcSyntax as Abc
-import qualified Mullein.Gen.AbcOutput as Abc
-import Mullein.Gen.Syntax
+import Mullein.AbcConvert
+import qualified Mullein.AbcSyntax as Abc
+import qualified Mullein.AbcOutput as Abc
+import Mullein.ScoreSyntax
 import Mullein.Bracket
 import Mullein.Core
 import Mullein.CoreTypes
@@ -17,8 +17,8 @@ import Mullein.NamedElements ( sixteenth, a_major, c4' )
 import Mullein.ScoreNames
 import Mullein.Utils
 
-import qualified Mullein.Gen.LilyPondConvert as Ly
-import qualified Mullein.Gen.LilyPondOutput as Ly
+import qualified Mullein.LilyPondConvert as Ly
+import qualified Mullein.LilyPondOutput as Ly
 
 
 
@@ -27,23 +27,23 @@ import Text.PrettyPrint.Leijen
 
      
 
-main = putDoc $ Abc.outputAbc Abc.stdPrefs bulgarian6
+main = putDoc $ Abc.outputPart bulgarian6
 
-ly = putDoc $ Ly.outputLy bulg6 where
+ly = putDoc $ Ly.outputPart bulg6 where
   bulg6 = Ly.convertToLy Ly.relPitch c4' part1_8
 
 
-bulgarian6 :: Abc.Part
+bulgarian6 :: Part Abc.Element
 bulgarian6 = convertToAbc lset sixteenth part1_8 where
   lset =  maybe (error "missing LabelSet") id  $ labelSetOf a_major
 
-part1_8 :: Part 
+part1_8 :: Part Element 
 part1_8 = Part $ [Repeated m1_4, Repeated m5_8]
   
-m1_4 :: Motif
+m1_4 :: Motif Element
 m1_4 = bracket twoFourTime (primary bars1_4)
 
-m5_8 :: Motif
+m5_8 :: Motif Element
 m5_8 = bracket twoFourTime (primary bars5_8)
 
 twoFourTime :: MetricalSpec

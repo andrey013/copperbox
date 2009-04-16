@@ -1,32 +1,36 @@
-{
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Mullein.Gen.LilyPondSyntax
+-- Module      :  Mullein.AbcSyntax
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  to be determined
 --
--- LilyPond Syntax
+-- Element type for Abc
 --
 --------------------------------------------------------------------------------
-}
 
-{
-module Mullein.Gen.LilyPondSyntax where
+module Mullein.AbcSyntax where
 
 import Mullein.Pitch
-import Mullein.Duration
+
+import Data.Ratio
+
+type Multiplier = Rational
+
+
+data Element = Note   Pitch Multiplier
+             | Rest   Multiplier
+             | Spacer Multiplier
+             | Chord  [Pitch] Multiplier
+             | GraceNotes  [GraceNote]
+  deriving (Eq,Show)
 
 type GraceNote = Pitch
 
-}
 
-
-INCLUDE "LilyPondSyntaxDEFS.ag"
-
-DERIVING *  : Eq, Show
+                             

@@ -45,7 +45,7 @@ module Mullein.ScoreNames (
  ) where
 
 import Mullein.Core
-import Mullein.Gen.Syntax
+import Mullein.ScoreSyntax
 import Mullein.Pitch
 
 

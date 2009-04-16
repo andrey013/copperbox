@@ -19,7 +19,7 @@ module Mullein.Core where
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Pitch
-import Mullein.Gen.Syntax ( Element(..) )
+import Mullein.ScoreSyntax ( Element(..) )
 import Mullein.Utils
 
 import Control.Monad.State

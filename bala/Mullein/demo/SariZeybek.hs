@@ -6,14 +6,14 @@
 
 module SariZeybek where
 
-import qualified Mullein.Gen.AbcSyntax as Abc
+import qualified Mullein.AbcSyntax as Abc
 import Mullein.Bracket
 import Mullein.Core
 import Mullein.CoreTypes
 import Mullein.Duration hiding (dot)
 import Mullein.NamedElements
 import Mullein.ScoreNames
-import Mullein.Gen.Syntax
+import Mullein.ScoreSyntax
 import Mullein.Utils
 
 

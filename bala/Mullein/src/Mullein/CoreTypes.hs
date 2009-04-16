@@ -17,7 +17,7 @@
 module Mullein.CoreTypes where
 
 import Mullein.Duration
-import Mullein.Gen.Syntax ( Element(..) )
+import Mullein.ScoreSyntax ( Element(..) )
 import Mullein.Pitch
 
 
