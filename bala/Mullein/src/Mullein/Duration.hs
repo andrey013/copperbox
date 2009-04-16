@@ -15,38 +15,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Duration (
-    -- Data types
-    Duration, 
-    Meter(..), 
-
-
-    Temporal(..),
-    Spacer(..),
-    
-    makeDuration,
-    
-    -- particular durations
-    duration_zero, no_duration,
-    
-    dot, dotn,
-    
-    
-    -- * Helper for ratios
-    ratioElements, convRational, convRatio,
-    durationToDouble, divModR,
-
-
-    -- * printing
-    PrintableDuration(..), printableDuration,
-    ppDuration, 
-    
-    pdElements,
-
-    approximateDuration,
-    
-
-  ) where
+module Mullein.Duration where
 
 
 import Data.List (unfoldr)
@@ -76,18 +45,10 @@ instance Temporal Duration where
   duration      = id
   swapDuration  = const
 
+
 class Spacer a where
   spacer :: Duration -> a
    
-
-makeDuration :: Integral a => a -> a -> Duration
-makeDuration n d = fromIntegral n % fromIntegral d
-
-duration_zero :: Duration
-duration_zero = 0
-
-no_duration :: Duration
-no_duration = 0
 
 dot :: Duration -> Duration
 dot = dotn 1
@@ -99,24 +60,6 @@ dotn i d | i < 1 = d
     step 0 _ = 0
     step n d' = d' + step (n-1) (d' / 2)
              
-    
-ratioElements :: Integral a => Ratio a -> (a,a)
-ratioElements r = (numerator r, denominator r)
-
-rfork :: Integral a => (a -> b) -> Ratio a -> (b,b)
-rfork f r = (f $ numerator r, f $ denominator r)
-
-convRational :: Integral a => Rational -> Ratio a
-convRational = uncurry (%) . rfork fromIntegral
-
-convRatio :: Integral a => Ratio a -> Rational
-convRatio = uncurry (%) . rfork fromIntegral
-
-durationToDouble :: Duration -> Double
-durationToDouble = uncurry (/) . rfork fromIntegral
-
-
-
   
 
 --------------------------------------------------------------------------------
@@ -126,50 +69,52 @@ durationToDouble = uncurry (/) . rfork fromIntegral
 
 -- prop_mod_postive a b = let (_,md) = a `divModR` b in signum md == 1
 
+
 divModR :: (Integral b) => Ratio b -> Ratio b -> (b, Ratio b)
 divModR a b = let a1 = a / b; a2 = floor a1 in (a2, a-((a2%1)*b))
 
-
+type DotCount = Int 
    
-data PrintableDuration = PrintableDuration { 
-    printable_duration  :: Rational,
-    printable_dot_count :: Int 
-  }
-  deriving (Eq,Ord,Show)
+-- Augmented duration - i.e. the ratio is normalized to a /musically useful/ 
+-- one and labelled with the dot count
+data AugDuration = AugDuration Rational DotCount 
+  deriving (Eq,Show)
 
 
--- | @'rationalize'@ - turn a PrintableDuration back
--- into a Rational which may normalize it. 
-rationalize :: PrintableDuration -> Rational
-rationalize (PrintableDuration r n) | n >  0     = sum $ r : unfoldr phi (n,r/2)
-                                    | otherwise  = r 
+-- | @'rationalize'@ - turn a AugDuration back into a Rational which 
+-- may normalize it. 
+rationalize :: AugDuration -> Rational
+rationalize (AugDuration r n) | n >  0     = sum $ r : unfoldr phi (n,r/2)
+                              | otherwise  = r 
   where 
     phi (0,_) = Nothing
     phi (i,a) = Just (a,(i-1,a/2)) 
+
     
-pdElements :: PrintableDuration -> (Int,Int,Int)  
-pdElements (PrintableDuration r dc) = 
-  let (n,d) = ratioElements r in (fromIntegral n, fromIntegral d, dc) 
+pdElements :: AugDuration -> (Int,Int,Int)  
+pdElements (AugDuration r dc) = 
+  (fromIntegral $ numerator r, fromIntegral $ denominator r, dc) 
 
 
-printableDuration :: Duration -> PrintableDuration
-printableDuration r  
-    | r <= 0    = PrintableDuration duration_zero 0
-    | otherwise = if r == rationalize r' then r' else PrintableDuration r 0
+augDuration :: Duration -> AugDuration
+augDuration r  
+    | r <= 0    = AugDuration 0 0
+    | otherwise = if r == rationalize r' then r' else AugDuration r 0
   where 
     r' = approximateDuration r 
     
 
 
     
-approximateDuration :: Duration -> PrintableDuration
+approximateDuration :: Duration -> AugDuration
 approximateDuration drn 
-    | drn > 1   = let approxd = nearestUp drn
-                  in PrintableDuration approxd (dotting drn approxd)
-    | drn < 1   = let approxd = nearestDown drn
-                  in PrintableDuration approxd (dotting drn approxd)
-    | otherwise = PrintableDuration (1%1) 0
+    | drn > 1   = mkApprox (nearestUp drn) 
+    | drn < 1   = mkApprox (nearestDown drn)
+    | otherwise = AugDuration (1%1) 0
   where
+    mkApprox :: Rational -> AugDuration
+    mkApprox r = AugDuration r (dotting drn r)
+
     nearestUp :: Rational -> Rational
     nearestUp r = step (1 % 1) (2 * (1 % 1)) where
       step n k | k > r      = n
@@ -189,12 +134,16 @@ approximateDuration drn
              | i > 3              = i
              | otherwise          = step (i+1) 
 
-ppDuration :: Duration -> Doc 
-ppDuration = pretty . printableDuration
 
-instance Pretty PrintableDuration where
-  pretty (PrintableDuration r dc) = let (n,d) = ratioElements r in 
-      pretty n <> char '/' <> pretty d <> text (replicate dc '.') 
+ppDuration :: Duration -> Doc 
+ppDuration = pretty . augDuration
+
+
+instance Pretty AugDuration where
+  pretty (AugDuration r dc) =  integer (numerator r) 
+                            <> char '/' 
+                            <> integer (denominator r) 
+                            <> text (replicate dc '.') 
       
       
       

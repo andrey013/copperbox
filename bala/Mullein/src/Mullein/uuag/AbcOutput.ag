@@ -25,6 +25,8 @@ import Mullein.Duration
 import Mullein.Pitch
 import Mullein.Utils
 
+import Data.Ratio
+
 import Text.PrettyPrint.Leijen 
 
 }
@@ -131,11 +133,11 @@ pitchLabel (PitchLabel l a) pc
     
 multiplier :: Duration -> Doc
 multiplier dn | dn == 1   = empty
-              | otherwise = fn $ ratioElements $ convRational dn
+              | otherwise = fn (numerator dn, denominator dn)
   where
-    fn (n,1) = int n
-    fn (1,d) = char '/' <> int d
-    fn (n,d) = int n <> char '/' <> int d
+    fn (n,1) = integer n
+    fn (1,d) = char '/' <> integer d
+    fn (n,d) = integer n <> char '/' <> integer d
     
 
 }                

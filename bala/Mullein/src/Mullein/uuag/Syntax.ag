@@ -38,7 +38,7 @@ instance Temporal Element where
   duration (Rest d)               = d
   duration (Spacer d)             = d
   duration (Chord _ d )           = d
-  duration (GraceNotes _)         = duration_zero
+  duration (GraceNotes _)         = 0
     
  
   

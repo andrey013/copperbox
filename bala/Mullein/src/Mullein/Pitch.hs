@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 --------------------------------------------------------------------------------
@@ -15,44 +14,10 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Pitch (
-    -- Internal types
-    Pitch(..),
-    PitchLetter(..),
-    Accidental(..),
-    PitchLabel(..),
-
-    PitchContent,
-    noPitchContent, 
-    
-    -- * Operations
-    PitchValue(..),
-    Semitones(..),
-    
-    fromLChar, toUpperLChar, toLowerLChar,
-
-    
-    fromSemitones,
-    arithmeticDistance,
-
-    octaveConst, accidentalConst,
-        
-    -- * LilyPond helpers
-    octaveDist, no_octave,
-
-
-
-
-
-    
-  ) where
+module Mullein.Pitch where
 
 
 import Data.Char (toUpper, toLower)
-import qualified Data.Foldable as F
-import Data.Generics
-import Data.Sequence hiding (length)
-import qualified Data.Sequence as S
 
 import qualified Text.PrettyPrint.Leijen as PP
 
@@ -61,19 +26,19 @@ data Pitch = Pitch {
     pch_accidental    :: Accidental,
     pch_octave        :: Int
   }
-  deriving (Eq,Data,Show,Typeable)
+  deriving (Eq,Show)
 
 data PitchLetter = C | D | E | F | G | A | B
-  deriving (Bounded,Data,Enum,Eq,Ord,Show,Typeable)
+  deriving (Bounded,Enum,Eq,Ord,Show)
 
 data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp 
-  deriving (Bounded,Data,Enum,Eq,Ord,Show,Typeable)
+  deriving (Bounded,Enum,Eq,Ord,Show)
 
 data PitchLabel = PitchLabel {
     pch_lbl_letter      :: PitchLetter,
     pch_lbl_accidental  :: Accidental
   }
-  deriving (Eq,Data,Show,Typeable)
+  deriving (Eq,Show)
   
   
 instance Ord Pitch where
@@ -110,41 +75,6 @@ instance Bounded PitchLabel where
   minBound = toEnum 0
 
 
--- Unlike rhythmicValue, pitchValue is partial
--- \no-rhythmic-value\ is effective synonymous with \no-duration\ (aka 0)
--- But there is no effective \no-pitch\ - pitch 0 is actually C natural four
--- octaves below middle C.
--- Also chords (and graces notes) a generally treated as an indivisible 
--- entity, but the have multiple pitches
--- Hence we treat PitchValue as a list.  
-type PitchContent = [Pitch]
-
-noPitchContent :: PitchContent
-noPitchContent = []
-
-class PitchValue a where
-  pitchValue   :: a -> PitchContent
-  updatePitch  :: PitchContent -> a -> a 
-
-instance PitchValue Pitch where
-  pitchValue p = [p]
-  
-  updatePitch [p] _ = p
-  updatePitch _   p = p     -- ideally this case would never match...
-
-instance PitchValue (Seq Pitch) where
-  pitchValue = F.toList
-  
-  updatePitch pc se 
-      | S.length se == length pc  = step (viewl se) pc 
-      | otherwise                 = error "modifyPitch (Seq Pitch) unmatched"
-    where
-      step (_ :< sa) (b:bs)   = b <| step (viewl sa) bs
-      step (a :< sa) []       = a <| sa
-      step _         _        = empty
-  
-  
-          
   
 class Semitones a where semitones :: a -> Int
     
@@ -185,10 +115,11 @@ toLowerLChar = toLower . toUpperLChar
   
 -- This will need pitch spelling
 fromSemitones :: Int -> Pitch
-fromSemitones i = let (o,ni) = i `divMod` 12
-                      (l,a)  = pitchVal ni                   
-                  in Pitch l a o
+fromSemitones i = Pitch l a o
   where
+    (o,ni)      = i `divMod` 12
+    (l,a)       = pitchVal ni                   
+                 
     pitchVal  0 = (C,Nat)
     pitchVal  1 = (C,Sharp)
     pitchVal  2 = (D,Sharp)
@@ -239,19 +170,6 @@ arithmeticDistance (Pitch l _ o) (Pitch l' _ o') =
     dist i i'
       | i > i'      = negate $ 1 + (i - i')
       | otherwise   = 1 + (i' - i)
-
-no_octave :: Int 
-no_octave = minBound
-
--- Helpers for Abc
-
--- | Set the octave value (as per const this forgets the original value).
-octaveConst :: Pitch -> Int -> Pitch
-octaveConst (Pitch l a _) o = Pitch l a o
-
--- | Set the accidental value (as per const this forgets the original value).
-accidentalConst :: Pitch -> Accidental -> Pitch
-accidentalConst (Pitch l _ o) a = Pitch l a o
 
 
   

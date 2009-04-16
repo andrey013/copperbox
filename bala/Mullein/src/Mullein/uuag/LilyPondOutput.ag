@@ -117,7 +117,7 @@ pitchLabel l a = char (toLowerLChar l) <> accidental a
 optDuration :: Maybe Duration -> Doc
 optDuration = maybe empty df where
     df 0   = empty
-    df drn = let (n,d,dc) = pdElements $ printableDuration drn
+    df drn = let (n,d,dc) = pdElements $ augDuration drn
              in dots dc $ durn n d
 
     durn 4 1      = command "longa"

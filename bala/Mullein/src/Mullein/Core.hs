@@ -109,7 +109,8 @@ log2whole = (==0) . snd . pf . logBase 2 . fromIntegral where
 -- This is the transformation needed for Abc: 
 -- f# should be printed f in g major
 naturalize :: LabelSet -> Pitch -> Pitch
-naturalize lbls p = maybe p ((flip accidentalConst) Nat) (labelSetFind p lbls)
+naturalize lbls p = maybe p nat (labelSetFind p lbls) where
+    nat (Pitch l _ o) = Pitch l Nat o
 
 labelSet :: [PitchLabel] -> LabelSet
 labelSet = LabelSet . foldl fn Map.empty

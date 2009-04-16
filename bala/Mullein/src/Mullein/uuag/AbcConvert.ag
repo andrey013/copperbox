@@ -104,8 +104,8 @@ convertToAbc lset unl e = convert_Syn_Part synthesized
 
 unitRescale :: Duration -> Duration -> Duration
 unitRescale unl drn = (dn%dd) / (un%ud) where
-    (dn,dd)  = ratioElements drn
-    (un,ud)  = ratioElements unl
+    (dn,dd)  = (numerator drn, denominator drn)
+    (un,ud)  = (numerator unl, denominator unl)
     
 
 }                
