@@ -13,6 +13,7 @@ import Mullein.ScoreSyntax
 import Mullein.Bracket
 import Mullein.Core
 import Mullein.CoreTypes
+import Mullein.LabelSet
 import Mullein.NamedElements ( sixteenth, a_major, c4' )
 import Mullein.ScoreNames
 import Mullein.Utils

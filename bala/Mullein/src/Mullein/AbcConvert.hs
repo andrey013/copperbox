@@ -17,11 +17,9 @@
 
 module Mullein.AbcConvert where
 
-import Mullein.Core ( naturalize )
-import Mullein.CoreTypes
-import Mullein.Duration
 import qualified Mullein.AbcSyntax as A
--- import Mullein.Pitch hiding ( PitchLetter(..) )
+import Mullein.Duration
+import Mullein.LabelSet
 import Mullein.RS
 import Mullein.ScoreSyntax
 

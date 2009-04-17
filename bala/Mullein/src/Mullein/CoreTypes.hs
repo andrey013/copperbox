@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# OPTIONS -Wall #-}
 --------------------------------------------------------------------------------
 -- |
@@ -19,10 +18,6 @@ module Mullein.CoreTypes where
 import Mullein.Duration
 import Mullein.ScoreSyntax ( Element(..) )
 import Mullein.Pitch
-
-
-
-import qualified Data.Map as Map
 
 
 --------------------------------------------------------------------------------
@@ -48,7 +43,3 @@ data Mode = Major | Minor | Lydian | Ionian | Mixolydian
           | Dorian | Aeolian | Phrygian | Locrian 
   deriving (Eq,Enum,Ord,Show) 
 
-
-newtype LabelSet = LabelSet { getLabelSet :: Map.Map Int PitchLabel }
-  deriving (Show)
-           
