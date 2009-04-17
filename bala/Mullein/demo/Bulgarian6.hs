@@ -36,7 +36,7 @@ ly = putDoc $ Ly.outputPart bulg6 where
 
 bulgarian6 :: Part Abc.Element
 bulgarian6 = convertToAbc lset sixteenth part1_8 where
-  lset =  maybe (error "missing LabelSet") id  $ labelSetOf a_major
+  lset = maybe (error "lset missing") id $ makeLabelSet a_major
 
 part1_8 :: Part Element 
 part1_8 = Part $ [Repeated m1_4, Repeated m5_8]

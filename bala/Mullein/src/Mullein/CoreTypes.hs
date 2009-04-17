@@ -41,5 +41,5 @@ data Key = Key PitchLabel Mode [PitchLabel]
   
 data Mode = Major | Minor | Lydian | Ionian | Mixolydian
           | Dorian | Aeolian | Phrygian | Locrian 
-  deriving (Eq,Enum,Ord,Show) 
-
+  deriving (Bounded,Enum,Eq,Ord,Show) 
+ 

@@ -15,7 +15,14 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.LabelSet where
+module Mullein.LabelSet (
+  LabelSet,
+  naturalize,
+  makeLabelSet,
+  labelSet,
+  labels
+
+  ) where
 
 import Mullein.CoreTypes ( Key(..), Mode(..) )
 import Mullein.Pitch
@@ -23,6 +30,26 @@ import Mullein.Utils
 
 import Data.List ( elemIndex, find )
 import qualified Data.Map as Map
+
+--------------------------------------------------------------------------------
+-- PitchLabels
+{-
+7 sharps:   C#      A#m      G#Mix   D#Dor   E#Phr   F#Lyd   B#Loc
+6 sharps:   F#      D#m      C#Mix   G#Dor   A#Phr   BLyd    E#Loc
+5 sharps:   B       G#m      F#Mix   C#Dor   D#Phr   ELyd    A#Loc
+4 sharps:   E       C#m      BMix    F#Dor   G#Phr   ALyd    D#Loc
+3 sharps:   A       F#m      EMix    BDor    C#Phr   DLyd    G#Loc
+2 sharps:   D       Bm       AMix    EDor    F#Phr   GLyd    C#Loc
+1 sharp :   G       Em       DMix    ADor    BPhr    CLyd    F#Loc
+0 sharps:   C       Am       GMix    DDor    EPhr    FLyd    BLoc
+1 flat  :   F       Dm       CMix    GDor    APhr    BbLyd   ELoc
+2 flats :   Bb      Gm       FMix    CDor    DPhr    EbLyd   ALoc
+3 flats :   Eb      Cm       BbMix   FDor    GPhr    AbLyd   DLoc
+4 flats :   Ab      Fm       EbMix   BbDor   CPhr    DbLyd   GLoc
+5 flats :   Db      Bbm      AbMix   EbDor   FPhr    GbLyd   CLoc
+6 flats :   Gb      Ebm      DbMix   AbDor   BbPhr   CbLyd   FLoc
+7 flats :   Cb      Abm      GbMix   DbDor   EbPhr   FbLyd   BbLoc
+-}
 
 
 newtype LabelSet = LabelSet { getLabelSet :: Map.Map Int PitchLabel }
@@ -36,6 +63,17 @@ naturalize :: LabelSet -> Pitch -> Pitch
 naturalize lbls p = maybe p nat (labelSetFind p lbls) where
     nat (Pitch l _ o) = Pitch l Nat o
 
+-- Make a label set for the given key.
+-- If the is irregular (i.e. not in the table above) then the function 
+-- returns Nothing.
+makeLabelSet :: Key -> Maybe LabelSet
+makeLabelSet (Key (PitchLabel l a) m xs)
+    = case elemIndex (l,a) $ modeLabels m of
+        Just i  -> Just $ mkLS (7 - i) l xs
+        Nothing -> Nothing
+
+
+-- Create a label set /by hand/.
 labelSet :: [PitchLabel] -> LabelSet
 labelSet = LabelSet . foldl fn Map.empty
   where fn m p = Map.insert (semitones p) p m    
@@ -46,14 +84,9 @@ labelSetFind (Pitch l a o) (LabelSet m) =
   where
     fn ove (PitchLabel ltr atl) = Just $ Pitch ltr atl ove
 
-labelSetOf :: Key -> Maybe LabelSet
-labelSetOf (Key (PitchLabel l a) m xs)  = scaleSpelling l a m xs
 
-scaleSpelling :: 
-    PitchLetter -> Accidental -> Mode -> [PitchLabel] -> Maybe LabelSet
-scaleSpelling l a m accidentals = case elemIndex (l,a) $ modeLabels m of
-    Just i -> Just $ makeLabelSet (7 - i) l accidentals
-    Nothing -> Nothing
+labels :: LabelSet -> [PitchLabel]
+labels = Map.elems . getLabelSet
 
 modeLabels :: Mode -> [(PitchLetter, Accidental)]    
 modeLabels Major        = labelOrder C
@@ -81,8 +114,8 @@ labelOrder letter = snd $ foldr up (Flat,[]) xs
     up B (Flat,ys) = (Nat,  (B,Flat): ys)
     up l (a,   ys) = (a,    (l,a)   : ys)
 
-makeLabelSet :: Int -> PitchLetter -> [PitchLabel] -> LabelSet
-makeLabelSet i letter accidentals 
+mkLS :: Int -> PitchLetter -> [PitchLabel] -> LabelSet
+mkLS i letter accidentals 
     | i >= 0    = build sharp nat order_of_sharps i letter
     | otherwise = build flat  nat order_of_flats  (abs i) letter
   where

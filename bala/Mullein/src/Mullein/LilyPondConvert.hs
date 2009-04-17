@@ -55,9 +55,14 @@ cMotif :: Motif Element -> CM (Motif L.Element)
 cMotif (Motif t as)       = Motif t <$> mapM cBar as
 
 
+-- Reset the duration at the start of the bar.
+-- Although not strictly necessary, this makes deducing the duration
+-- of a note in a the midst of generated score easier.
+ 
 cBar :: Bar Element -> CM (Bar L.Element)
-cBar (Bar a)              = Bar <$> cUnison a 
-cBar (Overlay a as)       = Overlay <$> cUnison a <*> mapM cUnison as
+cBar (Bar a)              = Bar <$> (resetDuration *> cUnison a)
+cBar (Overlay a as)       = Overlay <$> (resetDuration *> cUnison a) 
+                                    <*> mapM cUnison as
 
 cUnison :: Unison Element -> CM (Unison L.Element)
 cUnison (Unison as tied)  = (\xs -> Unison xs tied) 
@@ -99,6 +104,9 @@ exchPitch new = do
     modify $ \s -> s {relative_pitch=new}
     return old
 
+
+resetDuration :: CM ()
+resetDuration = modify $ \s -> s {relative_duration=(-1)}
 
 
 relativeDuration :: Duration -> Duration -> Maybe Duration
