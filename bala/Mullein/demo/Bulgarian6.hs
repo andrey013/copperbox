@@ -13,6 +13,7 @@ import Mullein.ScoreSyntax
 import Mullein.Bracket
 import Mullein.Core
 import Mullein.CoreTypes
+import Mullein.Duration
 import Mullein.LabelSet
 import Mullein.NamedElements ( sixteenth, a_major, c4' )
 import Mullein.ScoreNames
@@ -28,7 +29,7 @@ import Text.PrettyPrint.Leijen ( putDoc )
 
      
 
-main = putDoc $ Abc.output a_major bulgarian6
+main = putDoc $ Abc.output a_major (TimeSig 2 4) (repeat 4) bulgarian6
 
 ly = putDoc $ Ly.output a_major bulg6 where
   bulg6 = Ly.convertToLy Ly.relPitch c4' part1_8

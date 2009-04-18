@@ -45,6 +45,22 @@ anaMap f s0 (x:xs) = case (f x s0) of
     Nothing       -> ([],s0)
     Just (a,st)   -> (a:as,b) where (as,b) = anaMap f st xs
 
+{-
+-- | Apomorphism (generalizes ana).
+apo :: (b -> Maybe (a, b)) -> (b -> Seq a) -> b -> Seq a
+apo f g b0 = step (f b0) where
+    step Nothing        = g b0  
+    step (Just (a,st))  = a <| apo f g st
+
+-}
+
+-- variant of an apomorphism, but we return the final state 
+-- rather than running a flush function on it
+anaSt :: (st -> Maybe (a,st)) -> st -> ([a],st)
+anaSt f s0 = case (f s0) of
+    Nothing     -> ([],s0)
+    Just (a,st) -> (a:as,b) where (as,b) = anaSt f st 
+
 
 unfoldr2 :: (s1 -> s2 -> Maybe (a,s1,s2)) -> s1 -> s2 -> [a]
 unfoldr2 f s1 s2 = case f s1 s2 of
@@ -108,3 +124,9 @@ doclines = vsep `oo` step where
 
 dblangles :: Doc -> Doc 
 dblangles = enclose (text "<<") (text ">>")
+
+
+-- an alternative to (<$>) when Control.Applicative is alos imported
+infixr 5 `nextLine`
+nextLine :: Doc -> Doc -> Doc 
+nextLine = (<$>)
