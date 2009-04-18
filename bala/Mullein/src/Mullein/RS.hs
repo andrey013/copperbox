@@ -16,7 +16,7 @@
 --------------------------------------------------------------------------------
 
 module Mullein.RS (
-  RS,
+  RS(..),
   runRS,
   evalRS,
   module Control.Monad.Reader.Class,

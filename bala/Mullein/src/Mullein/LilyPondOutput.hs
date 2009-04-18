@@ -17,14 +17,22 @@
 
 module Mullein.LilyPondOutput where
 
+import Mullein.CoreTypes
 import Mullein.Duration
 import qualified Mullein.LilyPondSyntax as L
 import Mullein.Pitch
+import Mullein.RS
 import Mullein.ScoreSyntax hiding ( Element )
 import Mullein.Utils
 
-import Text.PrettyPrint.Leijen 
+import Control.Applicative hiding ( empty )
+import Text.PrettyPrint.Leijen hiding ( (<$>) ) 
+import qualified Text.PrettyPrint.Leijen as PP
 
+data S = St { current_key :: Key }
+data E = Env {}
+
+type M a = RS S E a
 
 
 class LilyPondElement e where
@@ -37,42 +45,62 @@ instance LilyPondElement L.Element where
   outputLy (L.Chord _ _)      = text "Chord - TODO"
   outputLy (L.GraceNotes _)   = text "GraceNotes - TODO"
 
+output :: LilyPondElement e => Key -> Part e -> Doc
+output k a = evalRS (outputPart a) s0 e0 where
+    s0 = St k
+    e0 = Env 
 
 
-outputPart :: LilyPondElement e => Part e -> Doc
-outputPart (Part as)          = vsep $ map outputPhrase as
 
-outputPhrase :: LilyPondElement e => Phrase e -> Doc
+outputPart :: LilyPondElement e => Part e -> M Doc
+outputPart (Part as)          = vsep <$> mapM outputPhrase as
+
+outputPhrase :: LilyPondElement e => Phrase e -> M Doc
 outputPhrase (Phrase a)       = outputMotif a
-outputPhrase (Repeated a)     = command "repeat" <+> text "volta 2"
-                                                 <+> braces (outputMotif a)
-outputPhrase (FSRepeat a x y) = command "repeat" <+> text "volta 2"
-                                                 <+> braces (outputMotif a)
-                                  <$> command "alternative"
-                                  <+> braces (braces (outputMotif x)
-                                                 <+> braces (outputMotif y))
+outputPhrase (Repeated a)     = repeated <$> outputMotif a
+outputPhrase (FSRepeat a x y) = fsrepeat <$> outputMotif a
+                                         <*> outputMotif x
+                                         <*> outputMotif y
 
-outputMotif :: LilyPondElement e => Motif e -> Doc
-outputMotif (Motif _ bs)      = hsep $ punctuate (text " |") (map outputBar bs)
+outputMotif :: LilyPondElement e => Motif e -> M Doc
+outputMotif (Motif k _ bs)    = fn <$> keyChange k <*> mapM outputBar bs
+  where
+    fn True  xs = text "%{ keychange %}" <+> (hsep $ punctuate (text " |") xs)
+    fn _     xs = hsep $ punctuate (text " |") xs
 
-outputBar :: LilyPondElement e => Bar e -> Doc
+
+outputBar :: LilyPondElement e => Bar e -> M Doc
 outputBar (Bar a)             = outputUnison a
-outputBar (Overlay a as)      = overlay $ outputUnison a : map outputUnison as
+outputBar (Overlay a as)      = (\x xs -> overlay $ x:xs) 
+                                  <$> outputUnison a 
+                                  <*> mapM outputUnison as
 
 
-outputUnison :: LilyPondElement e => Unison e -> Doc
-outputUnison (Unison ps tied) = hsep (map outputBracket ps) <>
-                                   if tied then char '~' else empty
+outputUnison :: LilyPondElement e => Unison e -> M Doc
+outputUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '~'
+                                                           else empty)
+                                  <$> mapM outputBracket ps
 
-outputBracket :: LilyPondElement e => Bracket e -> Doc
-outputBracket (Singleton e)   = outputLy e
-outputBracket (Bracket es)    = lyBeam $ map outputLy es
+outputBracket :: LilyPondElement e => Bracket e -> M Doc
+outputBracket (Singleton e)   = return $ outputLy e
+outputBracket (Bracket es)    = return $ lyBeam $ map outputLy es
 
 
 
 
 --------------------------------------------------------------------------------
 -- helpers
+
+-- ... COMMON ...
+
+keyChange :: Key -> M Bool
+keyChange new = do 
+    old <- gets current_key 
+    if (new==old) 
+       then return False
+       else do {modify $ \s -> s{current_key=new} ; return True } 
+
+
 
 overlay :: [Doc] -> Doc
 overlay = dblangles . vsep . punctuate (text " \\")    
@@ -128,3 +156,10 @@ lyBeam []     = empty
 command :: String -> Doc
 command = (char '\\' <>) . text 
 
+repeated :: Doc -> Doc 
+repeated d = command "repeat" <+> text "volta 2" <+> braces d
+
+fsrepeat :: Doc -> Doc -> Doc -> Doc
+fsrepeat a x y = 
+    command "repeat" <+> text "volta 2" <+> (braces a)
+        PP.<$> command "alternative" <+> braces ((braces x) <+> (braces y))

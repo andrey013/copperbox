@@ -43,9 +43,9 @@ instance AbcElement A.Element where
   outputAbc (A.Chord _ _)      = text "Chord - TODO"
   outputAbc (A.GraceNotes _)   = text "GraceNotes - TODO"
 
-output :: AbcElement e => Part e -> Doc
-output a = evalRS (outputPart a) s0 e0 where
-    s0 = St  undefined
+output :: AbcElement e => Key -> Part e -> Doc
+output k a = evalRS (outputPart a) s0 e0 where
+    s0 = St k
     e0 = Env 
 
 
@@ -60,8 +60,10 @@ outputPhrase (FSRepeat a x y) = fsrepeat <$> outputMotif a
                                          <*> outputMotif y
                                          
 outputMotif :: AbcElement e => Motif e -> M Doc
-outputMotif (Motif _ bs)      = (hsep . punctuate (text " |"))
-                                  <$> mapM outputBar bs
+outputMotif (Motif k _ bs)    = fn <$> keyChange k <*> mapM outputBar bs
+  where
+    fn True  xs = text "%keychange" <+> (hsep $ punctuate (text " |") xs)
+    fn _     xs = hsep $ punctuate (text " |") xs
 
 outputBar :: AbcElement e => Bar e -> M Doc
 outputBar (Bar a)             = outputUnison a
@@ -85,7 +87,12 @@ outputBracket (Bracket es)    = pure $ hcat $ map outputAbc es
 --------------------------------------------------------------------------------
 -- helpers
 
-
+keyChange :: Key -> M Bool
+keyChange new = do 
+    old <- gets current_key 
+    if (new==old) 
+       then return False
+       else do {modify $ \s -> s{current_key=new} ; return True } 
 
 overlay :: [Doc] -> Doc
 overlay = vsep . punctuate (text " & ")    

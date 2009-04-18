@@ -31,8 +31,8 @@ data TieStatus = Tied | NotTied
   deriving (Eq,Show)
 
 
-bracket :: MetricalSpec -> OverlayList -> Motif Element
-bracket mspec (p,xs) = Motif time_sig $ foldl' zipOverlays prime ovs
+bracket :: Key -> MetricalSpec -> OverlayList -> Motif Element
+bracket k mspec (p,xs) = Motif k time_sig $ foldl' zipOverlays prime ovs
   where
     prime    = bracket1 mspec p
     ovs      = map (prod id (bracket1 mspec)) xs

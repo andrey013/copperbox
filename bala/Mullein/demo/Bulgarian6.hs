@@ -24,13 +24,13 @@ import qualified Mullein.LilyPondOutput as Ly
 
 
 
-import Text.PrettyPrint.Leijen 
+import Text.PrettyPrint.Leijen ( putDoc )
 
      
 
-main = putDoc $ Abc.output bulgarian6
+main = putDoc $ Abc.output a_major bulgarian6
 
-ly = putDoc $ Ly.outputPart bulg6 where
+ly = putDoc $ Ly.output a_major bulg6 where
   bulg6 = Ly.convertToLy Ly.relPitch c4' part1_8
 
 
@@ -42,10 +42,10 @@ part1_8 :: Part Element
 part1_8 = Part $ [Repeated m1_4, Repeated m5_8]
   
 m1_4 :: Motif Element
-m1_4 = bracket twoFourTime (primary bars1_4)
+m1_4 = bracket a_major twoFourTime (primary bars1_4)
 
 m5_8 :: Motif Element
-m5_8 = bracket twoFourTime (primary bars5_8)
+m5_8 = bracket a_major twoFourTime (primary bars5_8)
 
 twoFourTime :: MetricalSpec
 twoFourTime = metricalSpec 2 4

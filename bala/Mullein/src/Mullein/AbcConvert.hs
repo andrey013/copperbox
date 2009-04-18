@@ -48,7 +48,7 @@ cPhrase (FSRepeat a x y)  = FSRepeat <$> cMotif a <*> cMotif x <*> cMotif y
 
 
 cMotif :: Motif Element -> CM (Motif A.Element)
-cMotif (Motif t as)       = Motif t <$> mapM cBar as
+cMotif (Motif k m as)       = Motif k m <$> mapM cBar as
 
 
 cBar :: Bar Element -> CM (Bar A.Element)

@@ -16,6 +16,7 @@
 
 module Mullein.ScoreSyntax where
 
+import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Pitch
 
@@ -29,7 +30,7 @@ data Phrase e = Phrase   (Motif e)
               | FSRepeat (Motif e) (Motif e) (Motif e)
   deriving (Eq,Show)
 
-data Motif e = Motif Meter [Bar e]
+data Motif e = Motif Key Meter [Bar e]
   deriving (Eq,Show)
 
 data Bar e = Bar     (Unison e)
@@ -61,6 +62,11 @@ data Element = Note   Pitch     Duration
         
 type GraceNote  = (Pitch, Duration)
 
+
+--------------------------------------------------------------------------------
+-- Note lists
+
+type NoteList = [Element]
 
 
 instance Temporal Element where 

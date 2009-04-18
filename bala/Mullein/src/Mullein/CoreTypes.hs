@@ -16,14 +16,9 @@
 module Mullein.CoreTypes where
 
 import Mullein.Duration
-import Mullein.ScoreSyntax ( Element(..) )
 import Mullein.Pitch
 
 
---------------------------------------------------------------------------------
--- Note lists
-
-type NoteList = [Element]
 
 
 --------------------------------------------------------------------------------

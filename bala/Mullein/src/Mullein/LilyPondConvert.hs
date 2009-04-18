@@ -49,7 +49,7 @@ cPhrase (FSRepeat a x y)  = FSRepeat <$> cMotif a <*> cMotif x <*> cMotif y
 
 
 cMotif :: Motif Element -> CM (Motif L.Element)
-cMotif (Motif t as)       = Motif t <$> mapM cBar as
+cMotif (Motif k m as)       = Motif k m <$> mapM cBar as
 
 
 -- Reset the duration at the start of the bar.
