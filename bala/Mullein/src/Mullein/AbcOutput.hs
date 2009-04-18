@@ -17,15 +17,21 @@
 
 module Mullein.AbcOutput where
 
+import Mullein.CoreTypes
 import Mullein.Duration
 import qualified Mullein.AbcSyntax as A
 import Mullein.Pitch
+import Mullein.RS
 import Mullein.ScoreSyntax hiding ( Element )
 
+import Control.Applicative hiding ( empty )
 import Data.Ratio
-import Text.PrettyPrint.Leijen 
+import Text.PrettyPrint.Leijen hiding ( (<$>) )
 
+data S = St { current_key :: Key }
+data E = Env {}
 
+type M a = RS S E a
 
 class AbcElement e where
   outputAbc :: e -> Doc
@@ -37,34 +43,41 @@ instance AbcElement A.Element where
   outputAbc (A.Chord _ _)      = text "Chord - TODO"
   outputAbc (A.GraceNotes _)   = text "GraceNotes - TODO"
 
+output :: AbcElement e => Part e -> Doc
+output a = evalRS (outputPart a) s0 e0 where
+    s0 = St  undefined
+    e0 = Env 
 
 
-outputPart :: AbcElement e => Part e -> Doc
-outputPart (Part as)          = vsep $ map outputPhrase as
+outputPart :: AbcElement e => Part e -> M Doc
+outputPart (Part as)          = vsep <$> mapM outputPhrase as
 
-outputPhrase :: AbcElement e => Phrase e -> Doc
+outputPhrase :: AbcElement e => Phrase e -> M Doc
 outputPhrase (Phrase a)       = outputMotif a
-outputPhrase (Repeated a)     = text "|:" <+> outputMotif a <+> text ":|"
-outputPhrase (FSRepeat a x y) = text "|:" <+> outputMotif a
-                                          <+> text "|[1"  <+> outputMotif x
-                                          <+> text ":|[2" <+> outputMotif y
-                                          <+> text "|]"
+outputPhrase (Repeated a)     = repeated <$> outputMotif a
+outputPhrase (FSRepeat a x y) = fsrepeat <$> outputMotif a
+                                         <*> outputMotif x
+                                         <*> outputMotif y
+                                         
+outputMotif :: AbcElement e => Motif e -> M Doc
+outputMotif (Motif _ bs)      = (hsep . punctuate (text " |"))
+                                  <$> mapM outputBar bs
 
-outputMotif :: AbcElement e => Motif e -> Doc
-outputMotif (Motif _ bs)      = hsep $ punctuate (text " |") (map outputBar bs)
-
-outputBar :: AbcElement e => Bar e -> Doc
+outputBar :: AbcElement e => Bar e -> M Doc
 outputBar (Bar a)             = outputUnison a
-outputBar (Overlay a as)      = overlay $ outputUnison a : map outputUnison as
+outputBar (Overlay a as)      = (\x xs -> overlay $  x:xs) 
+                                  <$> outputUnison a 
+                                  <*> mapM outputUnison as
 
 
-outputUnison :: AbcElement e => Unison e -> Doc
-outputUnison (Unison ps tied) = hsep (map outputBracket ps) <>
-                                   if tied then char '-' else empty
+outputUnison :: AbcElement e => Unison e -> M Doc
+outputUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '-'
+                                                           else empty)
+                                  <$> mapM outputBracket ps
 
-outputBracket :: AbcElement e => Bracket e -> Doc
-outputBracket (Singleton e)   = outputAbc e
-outputBracket (Bracket es)    = hcat $ map outputAbc es
+outputBracket :: AbcElement e => Bracket e -> M Doc
+outputBracket (Singleton e)   = pure $ outputAbc e
+outputBracket (Bracket es)    = pure $ hcat $ map outputAbc es
 
 
 
@@ -114,5 +127,11 @@ multiplier dn | dn == 1   = empty
     fn (n,1) = integer n
     fn (1,d) = char '/' <> integer d
     fn (n,d) = integer n <> char '/' <> integer d
-    
 
+
+repeated :: Doc -> Doc
+repeated d = text "|:" <+> d <+> text ":|"     
+
+fsrepeat :: Doc -> Doc -> Doc -> Doc
+fsrepeat d x y = 
+    text "|:" <+> d <+> text "|[1"  <+> x <+> text ":|[2" <+> y <+> text "|]"

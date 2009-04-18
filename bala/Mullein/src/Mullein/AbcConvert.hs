@@ -24,9 +24,6 @@ import Mullein.RS
 import Mullein.ScoreSyntax
 
 import Control.Applicative
--- import Control.Monad.Reader
-import Control.Monad.State
-
 import Data.Ratio
 
 data S = S { label_set :: LabelSet, unit_note_length :: Duration }

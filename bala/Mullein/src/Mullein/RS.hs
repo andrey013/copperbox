@@ -15,13 +15,21 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.RS where
+module Mullein.RS (
+  RS,
+  runRS,
+  evalRS,
+  module Control.Monad.Reader.Class,
+  module Control.Monad.State.Class,
+ ) where
 
 import Mullein.Utils
 
 import Control.Applicative
 import Control.Monad.Reader
+import Control.Monad.Reader.Class
 import Control.Monad.State
+import Control.Monad.State.Class
 
 
 newtype RS st env a = RS { getRS :: ReaderT env (State st) a }

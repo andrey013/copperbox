@@ -28,7 +28,7 @@ import Text.PrettyPrint.Leijen
 
      
 
-main = putDoc $ Abc.outputPart bulgarian6
+main = putDoc $ Abc.output bulgarian6
 
 ly = putDoc $ Ly.outputPart bulg6 where
   bulg6 = Ly.convertToLy Ly.relPitch c4' part1_8

@@ -25,9 +25,6 @@ import Mullein.RS
 import Mullein.ScoreSyntax
 
 import Control.Applicative
-import Control.Monad.Reader
-import Control.Monad.State
-
 import Data.Ratio
 
 data S = S { relative_pitch :: Pitch, relative_duration :: Duration }
