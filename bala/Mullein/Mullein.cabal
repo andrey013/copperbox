@@ -1,0 +1,57 @@
+name:             Mullein
+version:          0.1
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Graphics
+synopsis:         Mullein
+description:
+  A DSEL for generating musical scores via Abc and LilyPond. 
+
+build-type:         Simple
+stability:          alpha
+cabal-version:      >= 1.2
+
+extra-source-files:
+  README.txt,
+  demo/Bulgarian6.hs,
+  test/TestLabelSet.hs
+
+library
+  hs-source-dirs:     src
+  build-depends:      base, wl-pprint, containers, mtl
+
+  
+  exposed-modules:
+    Mullein.AbcConvert,
+    Mullein.AbcOutput,
+    Mullein.AbcSyntax,
+    Mullein.Bracket,
+    Mullein.Core,
+    Mullein.CoreTypes,
+    Mullein.Duration,
+    Mullein.LabelSet,
+    Mullein.LilyPondConvert,
+    Mullein.LilyPondOutput,
+    Mullein.LilyPondSyntax,
+    Mullein.NamedElements,
+    Mullein.Pitch,
+    Mullein.RS,
+    Mullein.Score,
+    Mullein.ScoreDatatypes,
+    Mullein.Utils
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:  -Wall 
+  
+  includes: 
+  
+
+  
+  
+  
