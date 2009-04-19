@@ -12,8 +12,8 @@ import Mullein.Core
 import Mullein.CoreTypes
 import Mullein.Duration hiding (dot)
 import Mullein.NamedElements
-import Mullein.ScoreNames
-import Mullein.ScoreSyntax
+import Mullein.ScoreDatatypes ( NoteList, Element(..) )
+import Mullein.Score
 import Mullein.Utils
 
 
@@ -35,7 +35,7 @@ nineEightTime = metricalSpec 9 8
 -- bars1_3 = section nineEightTime notes1_3
 
 
-notes1_3 :: NoteList
+notes1_3 :: NoteCtx [Element]
 notes1_3 = notelist $
     [ d4 & (dot du4),  a4 & du8, a4, g4, f4 & du4, e4 & du8
       -- bar 2
@@ -50,7 +50,7 @@ notes1_3 = notelist $
 
 
 
-notes4_6 :: NoteList
+notes4_6 :: NoteCtx [Element]
 notes4_6 = notelist $  
     [ d4 & (dot du4), f4 & du8, e4, d4, c4 & du4, b3 & du8
     -- bar 5

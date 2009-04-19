@@ -18,44 +18,34 @@ module Mullein.Core where
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.RS
-import Mullein.ScoreSyntax ( NoteList, Element(..) )
+import Mullein.ScoreDatatypes ( NoteList )
 import Mullein.Utils
 
-import Control.Monad.State
+-- import Control.Monad.State
 import Data.Ratio
 
 
 --------------------------------------------------------------------------------
 -- Note lists
 
-type NoteCtx a = RS St Env a
-
--- NoteListCtx represents /shorthand state/ so we can omit
--- some details when building the notelist (e.g. duration) 
-data St = St
-      { prev_note_length :: Duration }
-  deriving (Eq,Show)
-
-data Env = Env {}
-
-notelist :: [NoteCtx Element] -> [Element]
-notelist fs = evalRS (sequence fs) st0 env0 where
-    st0  = St  { prev_note_length = 1%4 }
-    env0 = Env 
-
-(&) :: Monad m => m a -> m b -> m a
-(&) f upd  = upd >> f 
-
--- Building overlays
 
 type BarNum = Int
 type OverlayList = (NoteList, [(BarNum,NoteList)])
 
-primary :: NoteList -> OverlayList
-primary xs = (xs,[])
 
-addOverlay :: BarNum -> NoteList -> OverlayList -> OverlayList
-addOverlay n xs (p,xss) = (p,(n,xs):xss)
+
+type NoteCtx a = RS St Env a
+
+
+-- NoteListCtx represents /shorthand state/ so we can omit
+-- some details when building the notelist (e.g. duration) 
+data St = St { prev_note_length :: Duration,
+               metrical_spec    :: MetricalSpec,
+               current_key      :: Key
+             }
+  deriving (Eq,Show)
+
+data Env = Env {}
 
 
 

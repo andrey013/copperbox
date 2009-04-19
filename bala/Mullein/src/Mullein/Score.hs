@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Mullein.ScoreNames
+-- Module      :  Mullein.Score
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -14,7 +14,17 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.ScoreNames (
+module Mullein.Score (
+    ( & ),
+    evaluatePart,
+
+    part,
+
+    repeated,
+    
+    motif,
+    primary, addOverlay,
+    notelist,
 
     rest, space,
 
@@ -44,13 +54,63 @@ module Mullein.ScoreNames (
     du1, du2, du4, du8, du16, du32, du64, du128,  
  ) where
 
+import Mullein.Bracket
 import Mullein.Core
-import Mullein.ScoreSyntax
+import Mullein.CoreTypes
+import Mullein.ScoreDatatypes
 import Mullein.Pitch
+import Mullein.RS
 
-
-import Control.Monad.State
+import Control.Applicative
 import Data.Ratio
+
+
+
+
+(&) :: Monad m => m a -> m b -> m a
+(&) f upd  = upd >> f 
+
+
+--------------------------------------------------------------------------------
+-- build the score
+
+
+evaluatePart :: Key -> MetricalSpec -> NoteCtx (Part Element) -> Part Element
+evaluatePart key mspec mpart = evalRS mpart  st0 env0 where
+    st0  = St { prev_note_length = 1%4,
+                metrical_spec    = mspec,
+                current_key      = key }
+    env0 = Env
+
+
+
+part :: [NoteCtx (Phrase e)] -> NoteCtx (Part e)
+part ms = Part <$> sequence ms
+
+repeated :: NoteCtx (Motif e) -> NoteCtx (Phrase e)
+repeated = (Repeated <$>)
+
+-- fsrepeat :: Note
+
+motif :: NoteCtx OverlayList -> NoteCtx (Motif Element)
+motif ovs = bracket 
+    <$> gets current_key <*> gets metrical_spec <*> ovs
+
+
+primary :: NoteCtx NoteList -> NoteCtx OverlayList
+primary ms = (\xs -> (xs,[])) <$> ms
+
+addOverlay :: BarNum -> NoteCtx NoteList -> NoteCtx OverlayList 
+           -> NoteCtx OverlayList
+addOverlay n ns os = (\xs (p,xss) -> (p,(n,xs):xss)) <$> ns <*> os
+
+
+notelist :: [NoteCtx Element] -> NoteCtx [Element]
+notelist ms = (sequence ms) & modify (\s -> s { prev_note_length = 1%4 })
+
+
+--
+
 
 rest :: NoteCtx Element
 rest = gets prev_note_length >>= return . Rest

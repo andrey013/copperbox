@@ -21,7 +21,7 @@ import qualified Mullein.AbcSyntax as A
 import Mullein.Duration
 import Mullein.LabelSet
 import Mullein.RS
-import Mullein.ScoreSyntax
+import Mullein.ScoreDatatypes
 
 import Control.Applicative
 import Data.Ratio

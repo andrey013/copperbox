@@ -22,7 +22,7 @@ import Mullein.Duration
 import qualified Mullein.LilyPondSyntax as L
 import Mullein.Pitch
 import Mullein.RS
-import Mullein.ScoreSyntax
+import Mullein.ScoreDatatypes
 
 import Control.Applicative
 import Data.Ratio

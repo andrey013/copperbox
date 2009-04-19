@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Mullein.ScoreSyntax
+-- Module      :  Mullein.ScoreDatatypes
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.ScoreSyntax where
+module Mullein.ScoreDatatypes where
 
 import Mullein.CoreTypes
 import Mullein.Duration

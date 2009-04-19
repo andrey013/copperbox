@@ -21,7 +21,7 @@ module Mullein.Bracket where
 import Mullein.Core
 import Mullein.CoreTypes
 import Mullein.Duration
-import Mullein.ScoreSyntax
+import Mullein.ScoreDatatypes
 import Mullein.Utils
 
 import Data.List (foldl')
