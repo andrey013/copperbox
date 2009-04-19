@@ -20,23 +20,23 @@ module Mullein.LilyPondConvert where
 
 import Mullein.Duration
 import qualified Mullein.LilyPondSyntax as L
-import Mullein.Pitch hiding ( PitchLetter(..) )
+import Mullein.Pitch
 import Mullein.RS
 import Mullein.ScoreSyntax
 
 import Control.Applicative
 import Data.Ratio
 
-data S = S { relative_pitch :: Pitch, relative_duration :: Duration }
-data E = E { pitchConvert :: Pitch -> Pitch -> Pitch }
+data St = St { relative_pitch :: Pitch, relative_duration :: Duration }
+data Env = Env { pitchConvert :: Pitch -> Pitch -> Pitch }
 
 
-type CM a = RS S E a
+type CM a = RS St Env a
 
 convertToLy :: (Pitch -> Pitch -> Pitch) -> Pitch -> Part Element -> Part L.Element
 convertToLy f rp e = evalRS (cPart e) s0 e0 where
-    s0 = S rp (1%4)
-    e0 = E f 
+    s0 = St  {relative_pitch=rp, relative_duration=1%4}
+    e0 = Env {pitchConvert=f} 
 
 cPart :: Part Element -> CM (Part L.Element)
 cPart (Part as)           = Part <$> mapM cPhrase as

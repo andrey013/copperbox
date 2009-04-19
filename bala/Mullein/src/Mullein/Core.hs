@@ -17,6 +17,7 @@ module Mullein.Core where
 
 import Mullein.CoreTypes
 import Mullein.Duration
+import Mullein.RS
 import Mullein.ScoreSyntax ( NoteList, Element(..) )
 import Mullein.Utils
 
@@ -27,20 +28,22 @@ import Data.Ratio
 --------------------------------------------------------------------------------
 -- Note lists
 
-type NoteCtx a = State NoteListCtx a
+type NoteCtx a = RS St Env a
 
 -- NoteListCtx represents /shorthand state/ so we can omit
 -- some details when building the notelist (e.g. duration) 
-data NoteListCtx = NoteListCtx 
-      { unit_note_length :: Duration }
+data St = St
+      { prev_note_length :: Duration }
   deriving (Eq,Show)
 
+data Env = Env {}
 
 notelist :: [NoteCtx Element] -> [Element]
-notelist fs = evalState (sequence fs) ctx0 where
-    ctx0 = NoteListCtx { unit_note_length = 1%4 }
+notelist fs = evalRS (sequence fs) st0 env0 where
+    st0  = St  { prev_note_length = 1%4 }
+    env0 = Env 
 
-(&) :: NoteCtx Element -> NoteCtx () -> NoteCtx Element
+(&) :: Monad m => m a -> m b -> m a
 (&) f upd  = upd >> f 
 
 -- Building overlays
@@ -97,8 +100,3 @@ log2whole :: Integral a => a -> Bool
 log2whole = (==0) . snd . pf . logBase 2 . fromIntegral where
     pf :: Double -> (Int, Double)
     pf = properFraction
-        
---------------------------------------------------------------------------------
--- pitch labels        
-
--- in module LabelSet

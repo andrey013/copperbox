@@ -33,10 +33,10 @@ import qualified Data.Sequence as S
 import Data.Ratio
 import Text.PrettyPrint.Leijen hiding ( (<$>) )
 
-data S = St { current_key :: Key, current_meter :: Meter }
-data E = Env {}
+data St = St { current_key :: Key, current_meter :: Meter }
+data Env = Env {}
 
-type M a = RS S E a
+type M a = RS St Env a
 
 data AbcFragment = MidtuneField Doc 
                  | BarOutput Doc
@@ -138,7 +138,7 @@ printLine :: [AbcFragment] -> Doc
 printLine  = step empty . intersperseBars  where
     step acc []                    = acc
     step acc (MidtuneField d : xs) = step (acc <> linecont `nextLine` d 
-                                                           `nextLine` linecont) xs
+                                                           `nextLine` empty) xs
     step acc (BarOutput d : xs)    = step (acc <> d) xs
     step acc (Prefix s : xs)       = step (acc <> text s) xs 
     step acc (Suffix s : xs)       = step (acc <> text s) xs

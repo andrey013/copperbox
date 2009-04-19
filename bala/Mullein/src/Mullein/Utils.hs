@@ -45,16 +45,8 @@ anaMap f s0 (x:xs) = case (f x s0) of
     Nothing       -> ([],s0)
     Just (a,st)   -> (a:as,b) where (as,b) = anaMap f st xs
 
-{-
--- | Apomorphism (generalizes ana).
-apo :: (b -> Maybe (a, b)) -> (b -> Seq a) -> b -> Seq a
-apo f g b0 = step (f b0) where
-    step Nothing        = g b0  
-    step (Just (a,st))  = a <| apo f g st
 
--}
-
--- variant of an apomorphism, but we return the final state 
+-- variant of /apomorphism/, but we return the final state 
 -- rather than running a flush function on it
 anaSt :: (st -> Maybe (a,st)) -> st -> ([a],st)
 anaSt f s0 = case (f s0) of

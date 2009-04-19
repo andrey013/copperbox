@@ -53,20 +53,20 @@ import Control.Monad.State
 import Data.Ratio
 
 rest :: NoteCtx Element
-rest = gets unit_note_length >>= return . Rest
+rest = gets prev_note_length >>= return . Rest
 
 space :: NoteCtx Element
-space = gets unit_note_length >>= return . Spacer
+space = gets prev_note_length >>= return . Spacer
 
 
 noteNat :: PitchLetter -> Int -> NoteCtx Element
-noteNat n o    = gets unit_note_length >>= return . Note (Pitch n Nat o)
+noteNat n o    = gets prev_note_length >>= return . Note (Pitch n Nat o)
 
 noteSharp :: PitchLetter -> Int -> NoteCtx Element
-noteSharp n o  = gets unit_note_length >>= return . Note (Pitch n Sharp o)
+noteSharp n o  = gets prev_note_length >>= return . Note (Pitch n Sharp o)
 
 noteFlat :: PitchLetter -> Int -> NoteCtx Element
-noteFlat n o   = gets unit_note_length >>= return . Note (Pitch n Flat o)
+noteFlat n o   = gets prev_note_length >>= return . Note (Pitch n Flat o)
 
 
 c4    :: NoteCtx Element
@@ -318,27 +318,27 @@ bes7  = noteFlat B 7
 
 -- Unit note length modifiers
 du1   :: NoteCtx ()
-du1   = modify $ \s -> s {unit_note_length = 1%1}
+du1   = modify $ \s -> s {prev_note_length = 1%1}
 
 du2   :: NoteCtx ()
-du2   = modify $ \s -> s {unit_note_length = 1%2}
+du2   = modify $ \s -> s {prev_note_length = 1%2}
 
 du4   :: NoteCtx ()
-du4   = modify $ \s -> s {unit_note_length = 1%4}
+du4   = modify $ \s -> s {prev_note_length = 1%4}
 
 du8   :: NoteCtx ()
-du8   = modify $ \s -> s {unit_note_length = 1%8}
+du8   = modify $ \s -> s {prev_note_length = 1%8}
 
 du16  :: NoteCtx ()
-du16  = modify $ \s -> s {unit_note_length = 1%16}
+du16  = modify $ \s -> s {prev_note_length = 1%16}
 
 du32  :: NoteCtx ()
-du32  = modify $ \s -> s {unit_note_length = 1%32}
+du32  = modify $ \s -> s {prev_note_length = 1%32}
 
 du64  :: NoteCtx ()
-du64  = modify $ \s -> s {unit_note_length = 1%64}
+du64  = modify $ \s -> s {prev_note_length = 1%64}
 
 du128 :: NoteCtx ()
-du128 = modify $ \s -> s {unit_note_length = 1%128}
+du128 = modify $ \s -> s {prev_note_length = 1%128}
 
 

@@ -29,10 +29,10 @@ import Control.Applicative hiding ( empty )
 import Text.PrettyPrint.Leijen hiding ( (<$>) ) 
 import qualified Text.PrettyPrint.Leijen as PP
 
-data S = St { current_key :: Key }
-data E = Env {}
+data St  = St { current_key :: Key }
+data Env = Env {}
 
-type M a = RS S E a
+type M a = RS St Env a
 
 
 class LilyPondElement e where

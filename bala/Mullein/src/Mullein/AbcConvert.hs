@@ -26,16 +26,16 @@ import Mullein.ScoreSyntax
 import Control.Applicative
 import Data.Ratio
 
-data S = S { label_set :: LabelSet, unit_note_length :: Duration }
-data E = E 
+data St = St { label_set :: LabelSet, unit_note_length :: Duration }
+data Env = Env {} 
 
 
-type CM a = RS S E a
+type CM a = RS St Env a
 
 convertToAbc :: LabelSet -> Duration -> Part Element -> Part A.Element
 convertToAbc lset unl e = evalRS (cPart e) s0 e0 where
-    s0 = S lset unl 
-    e0 = E
+    s0 = St  {label_set=lset, unit_note_length=unl} 
+    e0 = Env
 
 cPart :: Part Element -> CM (Part A.Element)
 cPart (Part as)           = Part <$> mapM cPhrase as
