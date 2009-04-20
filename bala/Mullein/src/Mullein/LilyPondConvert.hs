@@ -19,7 +19,7 @@ module Mullein.LilyPondConvert where
 
 
 import Mullein.Duration
-import qualified Mullein.LilyPondSyntax as L
+-- import qualified Mullein.LilyPondSyntax as L
 import Mullein.Pitch
 import Mullein.RS
 import Mullein.ScoreDatatypes
@@ -33,22 +33,22 @@ data Env = Env { pitchConvert :: Pitch -> Pitch -> Pitch }
 
 type CM a = RS St Env a
 
-convertToLy :: (Pitch -> Pitch -> Pitch) -> Pitch -> Part Element -> Part L.Element
+convertToLy :: (Pitch -> Pitch -> Pitch) -> Pitch -> Part Pitch -> Part Pitch
 convertToLy f rp e = evalRS (cPart e) s0 e0 where
     s0 = St  {relative_pitch=rp, relative_duration=1%4}
     e0 = Env {pitchConvert=f} 
 
-cPart :: Part Element -> CM (Part L.Element)
+cPart :: Part Pitch -> CM (Part Pitch)
 cPart (Part as)           = Part <$> mapM cPhrase as
 
 
-cPhrase :: Phrase Element -> CM (Phrase L.Element)
+cPhrase :: Phrase Pitch -> CM (Phrase Pitch)
 cPhrase (Phrase a)        = Phrase <$> cMotif a
 cPhrase (Repeated a)      = Repeated <$> cMotif a
 cPhrase (FSRepeat a x y)  = FSRepeat <$> cMotif a <*> cMotif x <*> cMotif y
 
 
-cMotif :: Motif Element -> CM (Motif L.Element)
+cMotif :: Motif Pitch -> CM (Motif Pitch)
 cMotif (Motif k m as)       = Motif k m <$> mapM cBar as
 
 
@@ -56,31 +56,31 @@ cMotif (Motif k m as)       = Motif k m <$> mapM cBar as
 -- Although not strictly necessary, this makes deducing the duration
 -- of a note in a the midst of generated score easier.
  
-cBar :: Bar Element -> CM (Bar L.Element)
+cBar :: Bar Pitch -> CM (Bar Pitch)
 cBar (Bar a)              = Bar <$> (resetDuration *> cUnison a)
 cBar (Overlay a as)       = Overlay <$> (resetDuration *> cUnison a) 
                                     <*> mapM cUnison as
 
-cUnison :: Unison Element -> CM (Unison L.Element)
+cUnison :: Unison Pitch -> CM (Unison Pitch)
 cUnison (Unison as tied)  = (\xs -> Unison xs tied) 
                               <$> mapM cBracket as
 
-cBracket :: Bracket Element -> CM (Bracket L.Element)
+cBracket :: Bracket Pitch -> CM (Bracket Pitch)
 cBracket (Singleton a)    = Singleton <$> cElement a
 cBracket (Bracket as)     = Bracket   <$> mapM cElement as
 
 
-cElement :: Element -> CM L.Element
+cElement :: Element Pitch -> CM (Element Pitch)
 cElement (Note p d)       = (\f rp rd -> 
-                             L.Note (f rp p) (relativeDuration rd d))
+                              Note (f rp p) (relativeDuration rd d))
                               <$> asks pitchConvert <*> exchPitch p 
                                                     <*> exchDuration d
-cElement (Rest d)         = (\rd -> L.Rest $ relativeDuration rd d)
+cElement (Rest d)         = (\rd -> Rest $ relativeDuration rd d)
                               <$> exchDuration d
-cElement (Spacer d)       = (\rd -> L.Spacer $ relativeDuration rd d)
+cElement (Spacer d)       = (\rd -> Spacer $ relativeDuration rd d)
                               <$> exchDuration d
-cElement (Chord _ _)      = error "L.Chord"
-cElement (GraceNotes _)   = error "L.GraceNotes"
+cElement (Chord _ _)      = error "Chord"
+cElement (GraceNotes _)   = error "GraceNotes"
 
 
 
@@ -106,9 +106,9 @@ resetDuration :: CM ()
 resetDuration = modify $ \s -> s {relative_duration=(-1)}
 
 
-relativeDuration :: Duration -> Duration -> Maybe Duration
-relativeDuration ud drn | ud == drn = Nothing
-                        | otherwise = Just drn
+relativeDuration :: Duration -> Duration -> Duration
+relativeDuration ud drn | ud == drn = -1
+                        | otherwise = drn
 
 
 -- LilyPond middle c is c' (aka `c 1`)

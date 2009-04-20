@@ -19,10 +19,9 @@ module Mullein.AbcOutput where
 
 import Mullein.CoreTypes
 import Mullein.Duration
-import qualified Mullein.AbcSyntax as A
 import Mullein.Pitch
 import Mullein.RS
-import Mullein.ScoreDatatypes hiding ( Element )
+import Mullein.ScoreDatatypes
 import Mullein.Utils
 
 import Control.Applicative hiding ( empty )
@@ -45,14 +44,14 @@ data AbcFragment = MidtuneField Doc
   deriving (Show)
 
 class AbcElement e where
-  outputAbc :: e -> Doc
+  outputAbc :: Element e -> Doc
 
-instance AbcElement A.Element where
-  outputAbc (A.Note p dm)      = note p dm
-  outputAbc (A.Rest dm)        = char 'z' <> multiplier dm
-  outputAbc (A.Spacer dm)      = char 'x' <> multiplier dm
-  outputAbc (A.Chord _ _)      = text "Chord - TODO"
-  outputAbc (A.GraceNotes _)   = text "GraceNotes - TODO"
+instance AbcElement Pitch where
+  outputAbc (Note p dm)      = note p dm
+  outputAbc (Rest dm)        = char 'z' <> multiplier dm
+  outputAbc (Spacer dm)      = char 'x' <> multiplier dm
+  outputAbc (Chord _ _)      = text "Chord - TODO"
+  outputAbc (GraceNotes _)   = text "GraceNotes - TODO"
 
 output :: AbcElement e => Key -> Meter -> [Int] -> Part e -> Doc
 output k m ns a = postProcess ns $ evalRS (outputPart a) s0 e0 where
@@ -208,7 +207,7 @@ field ch d = char ch <> colon <> d
 overlay :: [Doc] -> Doc
 overlay = vsep . punctuate (text " & ")    
 
-note :: Pitch -> A.Multiplier -> Doc 
+note :: Pitch -> Duration -> Doc 
 note p m = pitch p <> multiplier m
 
 

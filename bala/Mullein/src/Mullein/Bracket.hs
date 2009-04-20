@@ -31,7 +31,7 @@ data TieStatus = Tied | NotTied
   deriving (Eq,Show)
 
 
-bracket :: Key -> MetricalSpec -> OverlayList -> Motif Element
+bracket :: Key -> MetricalSpec -> OverlayList e -> Motif e
 bracket k mspec (p,xs) = Motif k time_sig $ foldl' zipOverlays prime ovs
   where
     prime    = bracket1 mspec p
@@ -39,12 +39,12 @@ bracket k mspec (p,xs) = Motif k time_sig $ foldl' zipOverlays prime ovs
     time_sig = fst mspec
 
 
-bracket1 :: MetricalSpec -> NoteList -> [Bar Element]
+bracket1 :: MetricalSpec -> ElemList e -> [Bar e]
 bracket1 mspec notes = partitionAndBeam bs bss notes where
     (bs,bss) = repeatSpec 0 mspec   
 
 -- TODO bracketing with anacrusis  
-bracket1Ana :: Duration -> MetricalSpec -> NoteList -> [Bar Element]
+bracket1Ana :: Duration -> MetricalSpec -> ElemList e -> [Bar e]
 bracket1Ana anacrusis mspec notes = partitionAndBeam bs bss notes where
     (bs,bss) = repeatSpec anacrusis mspec     
 
@@ -55,7 +55,7 @@ repeatSpec a (b,bs) = (reduceStk a ds, reduceStk a bs : repeat bs) where
     ds = repeat $ meterFraction b
 
              
-partitionAndBeam :: [Duration] -> [[Duration]] -> [Element] -> [Bar Element]
+partitionAndBeam :: [Duration] -> [[Duration]] -> [Element e] -> [Bar e]
 partitionAndBeam ds_bar dss_beam notes = 
     zipWith fn (divideToBars ds_bar notes) dss_beam 
   where    
@@ -93,7 +93,7 @@ fitTill d0 es = step d0 es where
 -- The state is (1) the stack of durations for each beam group, 
 -- and (2) the input stream of notes.
  
-beam :: [Duration] -> [Element] -> [Bracket Element]
+beam :: [Duration] -> [Element e] -> [Bracket e]
 beam = unfoldr2 fn where
     -- notes exhausted
     fn _          []          = Nothing
@@ -145,7 +145,7 @@ consumes d ys = step 0 ys where
 ---------------------------------------------------------------------------------
 -- overlay
 
-zipOverlays :: [Bar Element] -> (BarNum,[Bar Element]) -> [Bar Element]
+zipOverlays :: [Bar e] -> (BarNum,[Bar e]) -> [Bar e]
 zipOverlays bs (bnum,bs') = prefix ++ longZipWith f id id suffix bs' where
     (prefix,suffix)        = splitAt bnum bs
     f (Bar v)        b2    = if null vs then Bar v else Overlay v vs where
@@ -155,6 +155,6 @@ zipOverlays bs (bnum,bs') = prefix ++ longZipWith f id id suffix bs' where
     voices (Bar v)         = if nullVoice v then [] else [v]
     voices (Overlay v vs)  = v:vs
     
-nullVoice :: Unison Element -> Bool
+nullVoice :: Unison e -> Bool
 nullVoice (Unison xs _) = null xs
 

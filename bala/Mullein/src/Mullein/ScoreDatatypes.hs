@@ -45,31 +45,33 @@ data Unison e = Unison [Bracket e] Tied
 
 
 -- bracket together beamed notes to make a pulsation
-data Bracket e = Singleton e
-               | Bracket   [e]
+data Bracket e = Singleton (Element e)
+               | Bracket   [Element e]
   deriving (Eq,Show)
 
 
--- Element is the typical parameter for the Part syntax tree
--- but there can be others...
+-- Pitch is the typical parameter for Element syntax tree.
+-- However other variations so as LilyPond percussion can be handled.
+-- With LilyPond percussion each note is a drum name rather than a pitch. 
 
-data Element = Note   Pitch     Duration
-             | Rest   Duration
-             | Spacer Duration
-             | Chord  [Pitch]   Duration
-             | GraceNotes [GraceNote]
+data Element e = Note   e     Duration
+               | Rest   Duration
+               | Spacer Duration
+               | Chord  [e]   Duration
+               | GraceNotes [GraceNote e]
   deriving (Eq,Show)
         
-type GraceNote  = (Pitch, Duration)
+type GraceNote e = (e, Duration)
 
 
 --------------------------------------------------------------------------------
 -- Note lists
 
-type NoteList = [Element]
+type NoteList = [Element Pitch]
+type ElemList e = [Element e]
 
 
-instance Temporal Element where 
+instance Temporal (Element e) where 
   duration (Note _ d)             = d
   duration (Rest d)               = d
   duration (Spacer d)             = d
@@ -86,7 +88,7 @@ instance Temporal Element where
                   
                   
                   
-instance Spacer Element where
+instance Spacer (Element e) where
   spacer d = Spacer d
 
   

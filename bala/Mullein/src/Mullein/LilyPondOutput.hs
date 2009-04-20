@@ -19,10 +19,9 @@ module Mullein.LilyPondOutput where
 
 import Mullein.CoreTypes
 import Mullein.Duration
-import qualified Mullein.LilyPondSyntax as L
 import Mullein.Pitch
 import Mullein.RS
-import Mullein.ScoreDatatypes hiding ( Element )
+import Mullein.ScoreDatatypes
 import Mullein.Utils
 
 import Control.Applicative hiding ( empty )
@@ -36,14 +35,14 @@ type M a = RS St Env a
 
 
 class LilyPondElement e where
-  outputLy :: e -> Doc
+  outputLy :: Element e -> Doc
 
-instance LilyPondElement L.Element where
-  outputLy (L.Note p od)      = note p <> optDuration od
-  outputLy (L.Rest od)        = char 'r' <> optDuration od
-  outputLy (L.Spacer od)      = char 's' <> optDuration od
-  outputLy (L.Chord _ _)      = text "Chord - TODO"
-  outputLy (L.GraceNotes _)   = text "GraceNotes - TODO"
+instance LilyPondElement Pitch where
+  outputLy (Note p od)      = note p <> optDuration od
+  outputLy (Rest od)        = char 'r' <> optDuration od
+  outputLy (Spacer od)      = char 's' <> optDuration od
+  outputLy (Chord _ _)      = text "Chord - TODO"
+  outputLy (GraceNotes _)   = text "GraceNotes - TODO"
 
 output :: LilyPondElement e => Key -> Part e -> Doc
 output k a = evalRS (outputPart a) s0 e0 where
@@ -130,8 +129,10 @@ pitchLabel l a = char (toLowerLChar l) <> accidental a
     accidental DoubleFlat     = text "eses"
 
 
-optDuration :: Maybe Duration -> Doc
-optDuration = maybe empty df where
+optDuration :: Duration -> Doc
+optDuration d0 | d0 <= 0   = empty 
+               | otherwise = df d0
+  where
     df 0   = empty
     df drn = let (n,d,dc) = pdElements $ augDuration drn
              in dots dc $ durn n d
