@@ -21,7 +21,6 @@ import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Pitch
 import Mullein.RS
-import Mullein.ScoreDatatypes
 import Mullein.Utils
 
 import Control.Applicative hiding ( empty )
@@ -35,7 +34,7 @@ type M a = RS St Env a
 
 
 class LilyPondElement e where
-  outputLy :: Element e -> Doc
+  outputLy :: ElementP e -> Doc
 
 instance LilyPondElement Pitch where
   outputLy (Note p od)      = note p <> optDuration od
@@ -44,43 +43,43 @@ instance LilyPondElement Pitch where
   outputLy (Chord _ _)      = text "Chord - TODO"
   outputLy (GraceNotes _)   = text "GraceNotes - TODO"
 
-output :: LilyPondElement e => Key -> Part e -> Doc
+output :: LilyPondElement e => Key -> PartP e -> Doc
 output k a = evalRS (outputPart a) s0 e0 where
     s0 = St k
     e0 = Env 
 
 
 
-outputPart :: LilyPondElement e => Part e -> M Doc
+outputPart :: LilyPondElement e => PartP e -> M Doc
 outputPart (Part as)          = vsep <$> mapM outputPhrase as
 
-outputPhrase :: LilyPondElement e => Phrase e -> M Doc
+outputPhrase :: LilyPondElement e => PhraseP e -> M Doc
 outputPhrase (Phrase a)       = outputMotif a
 outputPhrase (Repeated a)     = repeated <$> outputMotif a
 outputPhrase (FSRepeat a x y) = fsrepeat <$> outputMotif a
                                          <*> outputMotif x
                                          <*> outputMotif y
 
-outputMotif :: LilyPondElement e => Motif e -> M Doc
+outputMotif :: LilyPondElement e => MotifP e -> M Doc
 outputMotif (Motif k _ bs)    = fn <$> keyChange k <*> mapM outputBar bs
   where
     fn True  xs = text "%{ keychange %}" <+> (hsep $ punctuate (text " |") xs)
     fn _     xs = hsep $ punctuate (text " |") xs
 
 
-outputBar :: LilyPondElement e => Bar e -> M Doc
+outputBar :: LilyPondElement e => BarP e -> M Doc
 outputBar (Bar a)             = outputUnison a
 outputBar (Overlay a as)      = (\x xs -> overlay $ x:xs) 
                                   <$> outputUnison a 
                                   <*> mapM outputUnison as
 
 
-outputUnison :: LilyPondElement e => Unison e -> M Doc
+outputUnison :: LilyPondElement e => UnisonP e -> M Doc
 outputUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '~'
                                                            else empty)
                                   <$> mapM outputBracket ps
 
-outputBracket :: LilyPondElement e => Bracket e -> M Doc
+outputBracket :: LilyPondElement e => BracketP e -> M Doc
 outputBracket (Singleton e)   = return $ outputLy e
 outputBracket (Bracket es)    = return $ lyBeam $ map outputLy es
 

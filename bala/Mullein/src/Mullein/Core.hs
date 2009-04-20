@@ -18,10 +18,8 @@ module Mullein.Core where
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.RS
-import Mullein.ScoreDatatypes ( ElemList )
 import Mullein.Utils
 
--- import Control.Monad.State
 import Data.Ratio
 
 
@@ -30,7 +28,7 @@ import Data.Ratio
 
 
 type BarNum = Int
-type OverlayList e = (ElemList e, [(BarNum,ElemList e)])
+type OverlayList e = ([ElementP e], [(BarNum,[ElementP e])])
 
 
 

@@ -21,7 +21,6 @@ import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Pitch
 import Mullein.RS
-import Mullein.ScoreDatatypes
 import Mullein.Utils
 
 import Control.Applicative hiding ( empty )
@@ -44,7 +43,7 @@ data AbcFragment = MidtuneField Doc
   deriving (Show)
 
 class AbcElement e where
-  outputAbc :: Element e -> Doc
+  outputAbc :: ElementP e -> Doc
 
 instance AbcElement Pitch where
   outputAbc (Note p dm)      = note p dm
@@ -53,24 +52,24 @@ instance AbcElement Pitch where
   outputAbc (Chord _ _)      = text "Chord - TODO"
   outputAbc (GraceNotes _)   = text "GraceNotes - TODO"
 
-output :: AbcElement e => Key -> Meter -> [Int] -> Part e -> Doc
+output :: AbcElement e => Key -> Meter -> [Int] -> PartP e -> Doc
 output k m ns a = postProcess ns $ evalRS (outputPart a) s0 e0 where
     s0 = St { current_key = k, current_meter = m } 
     e0 = Env 
 
 
-outputPart :: AbcElement e => Part e -> M (S.Seq AbcFragment)
+outputPart :: AbcElement e => PartP e -> M (S.Seq AbcFragment)
 outputPart (Part as)          =
     foldlM (\a e -> (a ><) <$> outputPhrase e) S.empty as
 
-outputPhrase :: AbcElement e => Phrase e -> M (S.Seq AbcFragment)
+outputPhrase :: AbcElement e => PhraseP e -> M (S.Seq AbcFragment)
 outputPhrase (Phrase a)       = outputMotif a
 outputPhrase (Repeated a)     = repeated <$> outputMotif a
 outputPhrase (FSRepeat a x y) = fsrepeat <$> outputMotif a
                                          <*> outputMotif x
                                          <*> outputMotif y
                                          
-outputMotif :: AbcElement e => Motif e -> M (S.Seq AbcFragment)
+outputMotif :: AbcElement e => MotifP e -> M (S.Seq AbcFragment)
 outputMotif (Motif k m bs)    = 
     mcons2 <$> keyChange k  <*> meterChange m <*> foldlM fn S.empty bs
   where
@@ -79,21 +78,29 @@ outputMotif (Motif k m bs)    =
     g        = fmap MidtuneField
 
 
-outputBar :: AbcElement e => Bar e -> M Doc
+outputBar :: AbcElement e => BarP e -> M Doc
 outputBar (Bar a)             = outputUnison a
 outputBar (Overlay a as)      = (\x xs -> overlay $ x:xs) 
                                   <$> outputUnison a 
                                   <*> mapM outputUnison as
 
 
-outputUnison :: AbcElement e => Unison e -> M Doc
+outputUnison :: AbcElement e => UnisonP e -> M Doc
 outputUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '-'
                                                            else empty)
                                   <$> mapM outputBracket ps
 
-outputBracket :: AbcElement e => Bracket e -> M Doc
+outputBracket :: AbcElement e => BracketP e -> M Doc
 outputBracket (Singleton e)   = pure $ outputAbc e
 outputBracket (Bracket es)    = pure $ hcat $ map outputAbc es
+
+
+--------------------------------------------------------------------------------
+-- Post process
+
+-- ABC renders to PostScript the same number of bars per line as per the 
+-- original .abc file - essentially .abc files are whitespace sensitive. 
+-- When generating ABC we must do extra work to accommodate this.
 
 
 postProcess :: [Int] -> S.Seq AbcFragment -> Doc

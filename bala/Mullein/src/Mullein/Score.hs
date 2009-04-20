@@ -61,7 +61,6 @@ import Mullein.Bracket
 import Mullein.Core
 import Mullein.CoreTypes
 import qualified Mullein.Duration as D 
-import Mullein.ScoreDatatypes
 import Mullein.Pitch
 import Mullein.RS
 
@@ -69,7 +68,6 @@ import Control.Applicative
 import Data.Ratio
 
 
-type ElementP = Element Pitch
 
 (&) :: Monad m => m a -> m b -> m a
 (&) f upd  = upd >> f 
@@ -79,7 +77,7 @@ type ElementP = Element Pitch
 -- build the score
 
 
-evaluatePart :: Key -> MetricalSpec -> NoteCtx (Part e) -> Part e
+evaluatePart :: Key -> MetricalSpec -> NoteCtx (PartP e) -> PartP e
 evaluatePart key mspec mpart = evalRS mpart  st0 env0 where
     st0  = St { prev_note_length = 1%4,
                 metrical_spec    = mspec,
@@ -88,27 +86,27 @@ evaluatePart key mspec mpart = evalRS mpart  st0 env0 where
 
 
 
-part :: [NoteCtx (Phrase e)] -> NoteCtx (Part e)
+part :: [NoteCtx (PhraseP e)] -> NoteCtx (PartP e)
 part ms = Part <$> sequence ms
 
-repeated :: NoteCtx (Motif e) -> NoteCtx (Phrase e)
+repeated :: NoteCtx (MotifP e) -> NoteCtx (PhraseP e)
 repeated ma = Repeated <$> ma
 
-fsrepeat :: NoteCtx (Motif e) 
-         -> NoteCtx (Motif e) 
-         -> NoteCtx (Motif e)
-         -> NoteCtx (Phrase e)
+fsrepeat :: NoteCtx (MotifP e) 
+         -> NoteCtx (MotifP e) 
+         -> NoteCtx (MotifP e)
+         -> NoteCtx (PhraseP e)
 fsrepeat ma mx my = FSRepeat <$> ma <*> mx <*> my 
 
-motif :: NoteCtx (OverlayList e) -> NoteCtx (Motif e)
+motif :: NoteCtx (OverlayList e) -> NoteCtx (MotifP e)
 motif ovs = bracket 
     <$> gets current_key <*> gets metrical_spec <*> ovs
 
 
-primary :: NoteCtx (ElemList e) -> NoteCtx (OverlayList e)
+primary :: NoteCtx [ElementP e] -> NoteCtx (OverlayList e)
 primary ms = (\xs -> (xs,[])) <$> ms
 
-addOverlay :: BarNum -> NoteCtx (ElemList e) -> NoteCtx (OverlayList e)
+addOverlay :: BarNum -> NoteCtx [ElementP e] -> NoteCtx (OverlayList e)
            -> NoteCtx (OverlayList e)
 addOverlay n ns os = (\xs (p,xss) -> (p,(n,xs):xss)) <$> ns <*> os
 
@@ -120,40 +118,40 @@ notelist ms = (sequence ms) & modify (\s -> s { prev_note_length = 1%4 })
 --
 
 
-rest :: NoteCtx (Element e)
+rest :: NoteCtx (ElementP e)
 rest = gets prev_note_length >>= return . Rest
 
-space :: NoteCtx (Element e)
+space :: NoteCtx (ElementP e)
 space = gets prev_note_length >>= return . Spacer
 
 
-noteNat :: PitchLetter -> Int -> NoteCtx (Element Pitch)
+noteNat :: PitchLetter -> Int -> NoteCtx Element
 noteNat n o    = gets prev_note_length >>= return . Note (Pitch n Nat o)
 
-noteSharp :: PitchLetter -> Int -> NoteCtx (Element Pitch)
+noteSharp :: PitchLetter -> Int -> NoteCtx Element
 noteSharp n o  = gets prev_note_length >>= return . Note (Pitch n Sharp o)
 
-noteFlat :: PitchLetter -> Int -> NoteCtx (Element Pitch)
+noteFlat :: PitchLetter -> Int -> NoteCtx Element
 noteFlat n o   = gets prev_note_length >>= return . Note (Pitch n Flat o)
 
 
-c4    :: NoteCtx (Element Pitch)
-d4    :: NoteCtx (Element Pitch) 
-e4    :: NoteCtx (Element Pitch)
-f4    :: NoteCtx (Element Pitch)
-g4    :: NoteCtx (Element Pitch)
-a4    :: NoteCtx (Element Pitch) 
-b4    :: NoteCtx (Element Pitch) 
-cis4  :: NoteCtx (Element Pitch) 
-des4  :: NoteCtx (Element Pitch) 
-dis4  :: NoteCtx (Element Pitch) 
-ees4  :: NoteCtx (Element Pitch)
-fis4  :: NoteCtx (Element Pitch)
-ges4  :: NoteCtx (Element Pitch) 
-gis4  :: NoteCtx (Element Pitch) 
-aes4  :: NoteCtx (Element Pitch) 
-ais4  :: NoteCtx (Element Pitch) 
-bes4  :: NoteCtx (Element Pitch)
+c4    :: NoteCtx Element
+d4    :: NoteCtx Element 
+e4    :: NoteCtx Element
+f4    :: NoteCtx Element
+g4    :: NoteCtx Element
+a4    :: NoteCtx Element 
+b4    :: NoteCtx Element 
+cis4  :: NoteCtx Element 
+des4  :: NoteCtx Element 
+dis4  :: NoteCtx Element 
+ees4  :: NoteCtx Element
+fis4  :: NoteCtx Element
+ges4  :: NoteCtx Element 
+gis4  :: NoteCtx Element 
+aes4  :: NoteCtx Element 
+ais4  :: NoteCtx Element 
+bes4  :: NoteCtx Element
 c4    = noteNat C 4
 d4    = noteNat D 4
 e4    = noteNat E 4
@@ -173,23 +171,23 @@ ais4  = noteSharp A 4
 bes4  = noteFlat B 4
 
 
-c3    :: NoteCtx (Element Pitch)
-d3    :: NoteCtx (Element Pitch) 
-e3    :: NoteCtx (Element Pitch)
-f3    :: NoteCtx (Element Pitch)
-g3    :: NoteCtx (Element Pitch)
-a3    :: NoteCtx (Element Pitch) 
-b3    :: NoteCtx (Element Pitch) 
-cis3  :: NoteCtx (Element Pitch) 
-des3  :: NoteCtx (Element Pitch) 
-dis3  :: NoteCtx (Element Pitch) 
-ees3  :: NoteCtx (Element Pitch)
-fis3  :: NoteCtx (Element Pitch)
-ges3  :: NoteCtx (Element Pitch) 
-gis3  :: NoteCtx (Element Pitch) 
-aes3  :: NoteCtx (Element Pitch) 
-ais3  :: NoteCtx (Element Pitch) 
-bes3  :: NoteCtx (Element Pitch)
+c3    :: NoteCtx Element
+d3    :: NoteCtx Element 
+e3    :: NoteCtx Element
+f3    :: NoteCtx Element
+g3    :: NoteCtx Element
+a3    :: NoteCtx Element 
+b3    :: NoteCtx Element 
+cis3  :: NoteCtx Element 
+des3  :: NoteCtx Element 
+dis3  :: NoteCtx Element 
+ees3  :: NoteCtx Element
+fis3  :: NoteCtx Element
+ges3  :: NoteCtx Element 
+gis3  :: NoteCtx Element 
+aes3  :: NoteCtx Element 
+ais3  :: NoteCtx Element 
+bes3  :: NoteCtx Element
 c3    = noteNat C 3
 d3    = noteNat D 3
 e3    = noteNat E 3
@@ -208,23 +206,23 @@ aes3  = noteFlat A 3
 ais3  = noteSharp A 3
 bes3  = noteFlat B 3
 
-c2    :: NoteCtx (Element Pitch)
-d2    :: NoteCtx (Element Pitch) 
-e2    :: NoteCtx (Element Pitch)
-f2    :: NoteCtx (Element Pitch)
-g2    :: NoteCtx (Element Pitch)
-a2    :: NoteCtx (Element Pitch) 
-b2    :: NoteCtx (Element Pitch) 
-cis2  :: NoteCtx (Element Pitch) 
-des2  :: NoteCtx (Element Pitch) 
-dis2  :: NoteCtx (Element Pitch) 
-ees2  :: NoteCtx (Element Pitch)
-fis2  :: NoteCtx (Element Pitch)
-ges2  :: NoteCtx (Element Pitch) 
-gis2  :: NoteCtx (Element Pitch) 
-aes2  :: NoteCtx (Element Pitch) 
-ais2  :: NoteCtx (Element Pitch) 
-bes2  :: NoteCtx (Element Pitch)
+c2    :: NoteCtx Element
+d2    :: NoteCtx Element 
+e2    :: NoteCtx Element
+f2    :: NoteCtx Element
+g2    :: NoteCtx Element
+a2    :: NoteCtx Element 
+b2    :: NoteCtx Element 
+cis2  :: NoteCtx Element 
+des2  :: NoteCtx Element 
+dis2  :: NoteCtx Element 
+ees2  :: NoteCtx Element
+fis2  :: NoteCtx Element
+ges2  :: NoteCtx Element 
+gis2  :: NoteCtx Element 
+aes2  :: NoteCtx Element 
+ais2  :: NoteCtx Element 
+bes2  :: NoteCtx Element
 c2    = noteNat C 2
 d2    = noteNat D 2
 e2    = noteNat E 2
@@ -243,23 +241,23 @@ aes2  = noteFlat A 2
 ais2  = noteSharp A 2
 bes2  = noteFlat B 2
 
-c1    :: NoteCtx (Element Pitch)
-d1    :: NoteCtx (Element Pitch) 
-e1    :: NoteCtx (Element Pitch)
-f1    :: NoteCtx (Element Pitch)
-g1    :: NoteCtx (Element Pitch)
-a1    :: NoteCtx (Element Pitch) 
-b1    :: NoteCtx (Element Pitch) 
-cis1  :: NoteCtx (Element Pitch) 
-des1  :: NoteCtx (Element Pitch) 
-dis1  :: NoteCtx (Element Pitch) 
-ees1  :: NoteCtx (Element Pitch)
-fis1  :: NoteCtx (Element Pitch)
-ges1  :: NoteCtx (Element Pitch) 
-gis1  :: NoteCtx (Element Pitch) 
-aes1  :: NoteCtx (Element Pitch) 
-ais1  :: NoteCtx (Element Pitch) 
-bes1  :: NoteCtx (Element Pitch)
+c1    :: NoteCtx Element
+d1    :: NoteCtx Element 
+e1    :: NoteCtx Element
+f1    :: NoteCtx Element
+g1    :: NoteCtx Element
+a1    :: NoteCtx Element 
+b1    :: NoteCtx Element 
+cis1  :: NoteCtx Element 
+des1  :: NoteCtx Element 
+dis1  :: NoteCtx Element 
+ees1  :: NoteCtx Element
+fis1  :: NoteCtx Element
+ges1  :: NoteCtx Element 
+gis1  :: NoteCtx Element 
+aes1  :: NoteCtx Element 
+ais1  :: NoteCtx Element 
+bes1  :: NoteCtx Element
 c1    = noteNat C 1
 d1    = noteNat D 1
 e1    = noteNat E 1
@@ -279,23 +277,23 @@ ais1  = noteSharp A 1
 bes1  = noteFlat B 1
 
 
-c5    :: NoteCtx (Element Pitch)
-d5    :: NoteCtx (Element Pitch) 
-e5    :: NoteCtx (Element Pitch)
-f5    :: NoteCtx (Element Pitch)
-g5    :: NoteCtx (Element Pitch)
-a5    :: NoteCtx (Element Pitch) 
-b5    :: NoteCtx (Element Pitch) 
-cis5  :: NoteCtx (Element Pitch) 
-des5  :: NoteCtx (Element Pitch) 
-dis5  :: NoteCtx (Element Pitch) 
-ees5  :: NoteCtx (Element Pitch)
-fis5  :: NoteCtx (Element Pitch)
-ges5  :: NoteCtx (Element Pitch) 
-gis5  :: NoteCtx (Element Pitch) 
-aes5  :: NoteCtx (Element Pitch) 
-ais5  :: NoteCtx (Element Pitch) 
-bes5  :: NoteCtx (Element Pitch)
+c5    :: NoteCtx Element
+d5    :: NoteCtx Element 
+e5    :: NoteCtx Element
+f5    :: NoteCtx Element
+g5    :: NoteCtx Element
+a5    :: NoteCtx Element 
+b5    :: NoteCtx Element 
+cis5  :: NoteCtx Element 
+des5  :: NoteCtx Element 
+dis5  :: NoteCtx Element 
+ees5  :: NoteCtx Element
+fis5  :: NoteCtx Element
+ges5  :: NoteCtx Element 
+gis5  :: NoteCtx Element 
+aes5  :: NoteCtx Element 
+ais5  :: NoteCtx Element 
+bes5  :: NoteCtx Element
 c5    = noteNat C 5
 d5    = noteNat D 5
 e5    = noteNat E 5
@@ -314,23 +312,23 @@ aes5  = noteFlat A 5
 ais5  = noteSharp A 5
 bes5  = noteFlat B 5
 
-c6    :: NoteCtx (Element Pitch)
-d6    :: NoteCtx (Element Pitch) 
-e6    :: NoteCtx (Element Pitch)
-f6    :: NoteCtx (Element Pitch)
-g6    :: NoteCtx (Element Pitch)
-a6    :: NoteCtx (Element Pitch) 
-b6    :: NoteCtx (Element Pitch) 
-cis6  :: NoteCtx (Element Pitch) 
-des6  :: NoteCtx (Element Pitch) 
-dis6  :: NoteCtx (Element Pitch) 
-ees6  :: NoteCtx (Element Pitch)
-fis6  :: NoteCtx (Element Pitch)
-ges6  :: NoteCtx (Element Pitch) 
-gis6  :: NoteCtx (Element Pitch) 
-aes6  :: NoteCtx (Element Pitch) 
-ais6  :: NoteCtx (Element Pitch) 
-bes6  :: NoteCtx (Element Pitch)
+c6    :: NoteCtx Element
+d6    :: NoteCtx Element 
+e6    :: NoteCtx Element
+f6    :: NoteCtx Element
+g6    :: NoteCtx Element
+a6    :: NoteCtx Element 
+b6    :: NoteCtx Element 
+cis6  :: NoteCtx Element 
+des6  :: NoteCtx Element 
+dis6  :: NoteCtx Element 
+ees6  :: NoteCtx Element
+fis6  :: NoteCtx Element
+ges6  :: NoteCtx Element 
+gis6  :: NoteCtx Element 
+aes6  :: NoteCtx Element 
+ais6  :: NoteCtx Element 
+bes6  :: NoteCtx Element
 c6    = noteNat C 6
 d6    = noteNat D 6
 e6    = noteNat E 6
@@ -349,23 +347,23 @@ aes6  = noteFlat A 6
 ais6  = noteSharp A 6
 bes6  = noteFlat B 6
 
-c7    :: NoteCtx (Element Pitch)
-d7    :: NoteCtx (Element Pitch) 
-e7    :: NoteCtx (Element Pitch)
-f7    :: NoteCtx (Element Pitch)
-g7    :: NoteCtx (Element Pitch)
-a7    :: NoteCtx (Element Pitch) 
-b7    :: NoteCtx (Element Pitch) 
-cis7  :: NoteCtx (Element Pitch) 
-des7  :: NoteCtx (Element Pitch) 
-dis7  :: NoteCtx (Element Pitch) 
-ees7  :: NoteCtx (Element Pitch)
-fis7  :: NoteCtx (Element Pitch)
-ges7  :: NoteCtx (Element Pitch) 
-gis7  :: NoteCtx (Element Pitch) 
-aes7  :: NoteCtx (Element Pitch) 
-ais7  :: NoteCtx (Element Pitch) 
-bes7  :: NoteCtx (Element Pitch)
+c7    :: NoteCtx Element
+d7    :: NoteCtx Element 
+e7    :: NoteCtx Element
+f7    :: NoteCtx Element
+g7    :: NoteCtx Element
+a7    :: NoteCtx Element 
+b7    :: NoteCtx Element 
+cis7  :: NoteCtx Element 
+des7  :: NoteCtx Element 
+dis7  :: NoteCtx Element 
+ees7  :: NoteCtx Element
+fis7  :: NoteCtx Element
+ges7  :: NoteCtx Element 
+gis7  :: NoteCtx Element 
+aes7  :: NoteCtx Element 
+ais7  :: NoteCtx Element 
+bes7  :: NoteCtx Element
 c7    = noteNat C 7
 d7    = noteNat D 7
 e7    = noteNat E 7

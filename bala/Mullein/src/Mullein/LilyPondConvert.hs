@@ -18,11 +18,10 @@
 module Mullein.LilyPondConvert where
 
 
+import Mullein.CoreTypes
 import Mullein.Duration
--- import qualified Mullein.LilyPondSyntax as L
 import Mullein.Pitch
 import Mullein.RS
-import Mullein.ScoreDatatypes
 
 import Control.Applicative
 import Data.Ratio
@@ -33,22 +32,22 @@ data Env = Env { pitchConvert :: Pitch -> Pitch -> Pitch }
 
 type CM a = RS St Env a
 
-convertToLy :: (Pitch -> Pitch -> Pitch) -> Pitch -> Part Pitch -> Part Pitch
+convertToLy :: (Pitch -> Pitch -> Pitch) -> Pitch -> PartP Pitch -> PartP Pitch
 convertToLy f rp e = evalRS (cPart e) s0 e0 where
     s0 = St  {relative_pitch=rp, relative_duration=1%4}
     e0 = Env {pitchConvert=f} 
 
-cPart :: Part Pitch -> CM (Part Pitch)
+cPart :: PartP Pitch -> CM (PartP Pitch)
 cPart (Part as)           = Part <$> mapM cPhrase as
 
 
-cPhrase :: Phrase Pitch -> CM (Phrase Pitch)
+cPhrase :: PhraseP Pitch -> CM (PhraseP Pitch)
 cPhrase (Phrase a)        = Phrase <$> cMotif a
 cPhrase (Repeated a)      = Repeated <$> cMotif a
 cPhrase (FSRepeat a x y)  = FSRepeat <$> cMotif a <*> cMotif x <*> cMotif y
 
 
-cMotif :: Motif Pitch -> CM (Motif Pitch)
+cMotif :: MotifP Pitch -> CM (MotifP Pitch)
 cMotif (Motif k m as)       = Motif k m <$> mapM cBar as
 
 
@@ -56,21 +55,21 @@ cMotif (Motif k m as)       = Motif k m <$> mapM cBar as
 -- Although not strictly necessary, this makes deducing the duration
 -- of a note in a the midst of generated score easier.
  
-cBar :: Bar Pitch -> CM (Bar Pitch)
+cBar :: BarP Pitch -> CM (BarP Pitch)
 cBar (Bar a)              = Bar <$> (resetDuration *> cUnison a)
 cBar (Overlay a as)       = Overlay <$> (resetDuration *> cUnison a) 
                                     <*> mapM cUnison as
 
-cUnison :: Unison Pitch -> CM (Unison Pitch)
+cUnison :: UnisonP Pitch -> CM (UnisonP Pitch)
 cUnison (Unison as tied)  = (\xs -> Unison xs tied) 
                               <$> mapM cBracket as
 
-cBracket :: Bracket Pitch -> CM (Bracket Pitch)
+cBracket :: BracketP Pitch -> CM (BracketP Pitch)
 cBracket (Singleton a)    = Singleton <$> cElement a
 cBracket (Bracket as)     = Bracket   <$> mapM cElement as
 
 
-cElement :: Element Pitch -> CM (Element Pitch)
+cElement :: ElementP Pitch -> CM (ElementP Pitch)
 cElement (Note p d)       = (\f rp rd -> 
                               Note (f rp p) (relativeDuration rd d))
                               <$> asks pitchConvert <*> exchPitch p 
