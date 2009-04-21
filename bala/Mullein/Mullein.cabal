@@ -37,7 +37,6 @@ library
     Mullein.LilyPondPercussion,
     Mullein.NamedElements,
     Mullein.Pitch,
-    Mullein.RS,
     Mullein.Score,
     Mullein.Utils
   other-modules:

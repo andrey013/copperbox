@@ -20,17 +20,17 @@ module Mullein.LilyPondOutput where
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Pitch
-import Mullein.RS
 import Mullein.Utils
 
 import Control.Applicative hiding ( empty )
+import Control.Monad.State
+
 import Text.PrettyPrint.Leijen hiding ( (<$>) ) 
 import qualified Text.PrettyPrint.Leijen as PP
 
-data St  = St { current_key :: Key }
-data Env = Env {}
+data St  = St { current_key :: Key, current_meter :: Meter }
 
-type M a = RS St Env a
+type M a = State St a
 
 
 class LyPitch e where
@@ -42,10 +42,9 @@ instance LyPitch Pitch where
   lyPitch p   = note p
 
 
-output :: LyPitch e => Key -> PartP e -> Doc
-output k a = evalRS (oPart a) s0 e0 where
-    s0 = St k
-    e0 = Env 
+output :: LyPitch e => Key -> Meter -> PartP e -> Doc
+output k m a = evalState (oPart a) s0 where
+    s0 = St k m
 
 
 
@@ -60,7 +59,7 @@ oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a <*> oMotif x <*> oMotif y
 oMotif :: LyPitch e => MotifP e -> M Doc
 oMotif (Motif k _ bs)    = fn <$> keyChange k <*> mapM oBar bs
   where
-    fn True  xs = text "%{ keychange %}" <+> (hsep $ punctuate (text " |") xs)
+    fn True  xs = key k <+> (hsep $ punctuate (text " |") xs)
     fn _     xs = hsep $ punctuate (text " |") xs
 
 
@@ -81,15 +80,20 @@ oBracket (Singleton e)   = return $ oElement e
 oBracket (Bracket es)    = return $ lyBeam $ map oElement es
 
 
+-- TODO check whether or not successive notes in chords and graces
+-- change the relative pitch
 
 oElement :: LyPitch e => ElementP e -> Doc
 oElement (Note p d)       = lyNote p (coerceDuration d)
-oElement (Rest d)         = char 'r' <> (optDuration $ coerceDuration d)
-oElement (Spacer d)       = char 's' <> (optDuration $ coerceDuration d)
-oElement (Chord _ _)      = text "Chord - TODO"
-oElement (GraceNotes _)   = text "GraceNotes - TODO"
+oElement (Rest d)         = char 'r' <> oDuration d
+oElement (Spacer d)       = char 's' <> oDuration d
+oElement (Chord ps d)     = angles (hsep $ map lyPitch ps) <> oDuration d
+oElement (GraceNotes xs)   = command "grace" <+> braces (lyBeam $ map f xs) where
+                               f (p,d) = lyNote p (coerceDuration d) 
 
 
+oDuration :: Duration -> Doc
+oDuration = optDuration . coerceDuration
 
 coerceDuration :: Duration -> Maybe Duration
 coerceDuration d | d <= 0    = Nothing
@@ -165,6 +169,24 @@ lyBeam []     = empty
 
 command :: String -> Doc
 command = (char '\\' <>) . text 
+
+
+-- TODO variant key signatures
+key :: Key -> Doc
+key (Key (PitchLabel l a) m []) = command "key" <+> pitchLabel l a <+> mode m
+key _                           = error "key - variant key signatures TODO"
+
+mode :: Mode -> Doc
+mode Major        = command "major"
+mode Minor        = command "minor"
+mode Lydian       = command "lydian"
+mode Ionian       = command "ionian"
+mode Mixolydian   = command "mixolydian"
+mode Dorian       = command "dorian"
+mode Aeolian      = command "aeolian"
+mode Phrygian     = command "phrygian"
+mode Locrian      = command "locrian"
+
 
 repeated :: Doc -> Doc 
 repeated d = command "repeat" <+> text "volta 2" <+> braces d

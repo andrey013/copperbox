@@ -21,21 +21,20 @@ module Mullein.LilyPondConvert where
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Pitch
-import Mullein.RS
+import Mullein.Utils () -- get State Applicative instance
 
 import Control.Applicative
+import Control.Monad.State
 import Data.Ratio
 
 data St = St { relative_pitch :: Pitch, relative_duration :: Duration }
-data Env = Env {}
 
 
-type CM a = RS St Env a
+type CM a = State St a
 
 convertToLy :: LyPitchC e => Pitch -> PartP e -> PartP e
-convertToLy rp e = evalRS (cPart e) s0 e0 where
+convertToLy rp e = evalState (cPart e) s0 where
     s0 = St  {relative_pitch=rp, relative_duration=1%4}
-    e0 = Env {} 
 
 class LyPitchC e where
   lyPitchC :: e -> CM e

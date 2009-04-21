@@ -21,21 +21,20 @@ import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.LabelSet
 import Mullein.Pitch
-import Mullein.RS
+import Mullein.Utils () -- State Applicative instance
 
 import Control.Applicative
+import Control.Monad.State
 import Data.Ratio
 
 data St = St { label_set :: LabelSet, unit_note_length :: Duration }
-data Env = Env {} 
 
 
-type CM a = RS St Env a
+type CM a = State St a
 
 convertToAbc :: LabelSet -> Duration -> PartP Pitch -> PartP Pitch
-convertToAbc lset unl e = evalRS (cPart e) s0 e0 where
+convertToAbc lset unl e = evalState (cPart e) s0 where
     s0 = St  {label_set=lset, unit_note_length=unl} 
-    e0 = Env
 
 cPart :: PartP Pitch -> CM (PartP Pitch)
 cPart (Part as)           = Part <$> mapM cPhrase as

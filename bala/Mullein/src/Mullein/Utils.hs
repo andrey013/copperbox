@@ -1,4 +1,5 @@
 {-# OPTIONS -Wall #-}
+{-# OPTIONS -fno-warn-orphans #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -16,11 +17,16 @@
 
 module Mullein.Utils where
 
+import Control.Applicative ( Applicative(..) )
+import Control.Monad.State
 import Data.List ( unfoldr )
 import Data.Ratio
 
 import Text.PrettyPrint.Leijen
 
+instance Applicative (State s) where
+  pure  = return
+  (<*>) = ap
 
 -- special zipWith that zips all of the first list
 overlayZipWith :: (a -> b -> c) -> (a -> c) -> [a] -> [b] -> [c]

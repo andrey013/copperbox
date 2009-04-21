@@ -16,11 +16,10 @@
 
 module Mullein.LilyPondPercussion where
 
-import Mullein.Core
 import Mullein.CoreTypes
+import Mullein.Duration
 import Mullein.LilyPondConvert
 import Mullein.LilyPondOutput
-import Mullein.RS
 
 import Text.PrettyPrint.Leijen 
 
@@ -31,8 +30,8 @@ data DrumPitch = DrumPitch {
   deriving (Eq,Show)
 
 
-drum :: DrumPitch -> NoteCtx (ElementP DrumPitch)
-drum dp    = gets prev_note_length >>= return . Note dp
+drum :: DrumPitch -> Duration -> ElementP DrumPitch
+drum dp d    = Note dp d
 
 
 instance LyPitch DrumPitch where

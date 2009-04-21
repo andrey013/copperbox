@@ -8,6 +8,7 @@ module Drums where
 
 import Mullein.Core
 import Mullein.CoreTypes
+import Mullein.Duration
 import Mullein.LilyPondConvert
 import Mullein.LilyPondOutput hiding ( repeated )
 import Mullein.LilyPondPercussion
@@ -17,7 +18,7 @@ import Mullein.Score
 import Text.PrettyPrint.Leijen ( putDoc )
 
 
-main = putDoc $ output c_major drums where
+main = putDoc $ output c_major (TimeSig 4 4) drums where
   drums = convertToLy c4 drum_part
 
 dMotif = motif c_major fourFourTime

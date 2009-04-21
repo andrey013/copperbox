@@ -15,7 +15,6 @@ import Mullein.Duration
 import Mullein.LabelSet
 import Mullein.NamedElements
 import Mullein.Pitch
-import Mullein.RS
 import Mullein.Score
 import Mullein.Utils
 
@@ -28,7 +27,7 @@ import Text.PrettyPrint.Leijen ( putDoc )
 
 main = putDoc $ Abc.output a_major (TimeSig 2 4) (repeat 4) bulgarian6
 
-ly = putDoc $ Ly.output a_major bulg6 where
+ly = putDoc $ Ly.output a_major (TimeSig 2 4) bulg6 where
   bulg6 = Ly.convertToLy c4 part1_8
 
 

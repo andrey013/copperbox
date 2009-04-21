@@ -17,7 +17,6 @@ module Mullein.Core where
 
 import Mullein.CoreTypes
 import Mullein.Duration
-import Mullein.RS
 import Mullein.Utils
 
 import Data.Ratio
@@ -30,20 +29,6 @@ import Data.Ratio
 type BarNum = Int
 type OverlayList e = ([ElementP e], [(BarNum,[ElementP e])])
 
-
-
-type NoteCtx a = RS St Env a
-
-
--- NoteListCtx represents /shorthand state/ so we can omit
--- some details when building the notelist (e.g. duration) 
-data St = St { prev_note_length :: Duration,
-               metrical_spec    :: MetricalSpec,
-               current_key      :: Key
-             }
-  deriving (Eq,Show)
-
-data Env = Env {}
 
 
 

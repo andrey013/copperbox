@@ -20,11 +20,10 @@ module Mullein.AbcOutput where
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Pitch
-import Mullein.RS
 import Mullein.Utils
 
 import Control.Applicative hiding ( empty )
-import Control.Monad
+import Control.Monad.State
 import Data.Foldable ( foldlM, toList )
 import Data.Sequence ( (<|), (|>), (><), ViewL(..), viewl )
 import qualified Data.Sequence as S
@@ -34,7 +33,7 @@ import Text.PrettyPrint.Leijen hiding ( (<$>) )
 data St = St { current_key :: Key, current_meter :: Meter }
 data Env = Env {}
 
-type M a = RS St Env a
+type M a = State St a
 
 data AbcFragment = MidtuneField Doc 
                  | BarOutput Doc
@@ -62,9 +61,8 @@ instance AbcPitch Pitch where
 
 
 output :: AbcPitch e => Key -> Meter -> [Int] -> PartP e -> Doc
-output k m ns a = postProcess ns $ evalRS (oPart a) s0 e0 where
+output k m ns a = postProcess ns $ evalState (oPart a) s0 where
     s0 = St { current_key = k, current_meter = m } 
-    e0 = Env 
 
 
 oPart :: AbcPitch e => PartP e -> M (S.Seq AbcFragment)
@@ -107,8 +105,10 @@ oElement :: AbcPitch e => ElementP e -> Doc
 oElement (Note p dm)      = abcNote p dm
 oElement (Rest dm)        = char 'z' <> multiplier dm
 oElement (Spacer dm)      = char 'x' <> multiplier dm
-oElement (Chord _ _)      = text "Chord - TODO"
-oElement (GraceNotes _)   = text "GraceNotes - TODO"
+oElement (Chord ps dm)    = brackets $ hcat $ map f ps where
+                              f p = abcPitch p <> multiplier dm 
+oElement (GraceNotes xs)  = braces $ hcat $ map f xs where
+                              f (p,dm) = abcPitch p <> multiplier dm
 
 
 --------------------------------------------------------------------------------
