@@ -33,56 +33,67 @@ data Env = Env {}
 type M a = RS St Env a
 
 
-class LilyPondElement e where
-  outputLy :: ElementP e -> Doc
+class LyPitch e where
+  lyNote  :: e -> Maybe Duration -> Doc   -- for notes
+  lyPitch :: e -> Doc               -- for pitches within chords, graces notes,
 
-instance LilyPondElement Pitch where
-  outputLy (Note p od)      = note p <> optDuration od
-  outputLy (Rest od)        = char 'r' <> optDuration od
-  outputLy (Spacer od)      = char 's' <> optDuration od
-  outputLy (Chord _ _)      = text "Chord - TODO"
-  outputLy (GraceNotes _)   = text "GraceNotes - TODO"
+instance LyPitch Pitch where
+  lyNote p od = note p <> optDuration od
+  lyPitch p   = note p
 
-output :: LilyPondElement e => Key -> PartP e -> Doc
-output k a = evalRS (outputPart a) s0 e0 where
+
+output :: LyPitch e => Key -> PartP e -> Doc
+output k a = evalRS (oPart a) s0 e0 where
     s0 = St k
     e0 = Env 
 
 
 
-outputPart :: LilyPondElement e => PartP e -> M Doc
-outputPart (Part as)          = vsep <$> mapM outputPhrase as
+oPart :: LyPitch e => PartP e -> M Doc
+oPart (Part as)          = vsep <$> mapM oPhrase as
 
-outputPhrase :: LilyPondElement e => PhraseP e -> M Doc
-outputPhrase (Phrase a)       = outputMotif a
-outputPhrase (Repeated a)     = repeated <$> outputMotif a
-outputPhrase (FSRepeat a x y) = fsrepeat <$> outputMotif a
-                                         <*> outputMotif x
-                                         <*> outputMotif y
+oPhrase :: LyPitch e => PhraseP e -> M Doc
+oPhrase (Phrase a)       = oMotif a
+oPhrase (Repeated a)     = repeated <$> oMotif a
+oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a <*> oMotif x <*> oMotif y
 
-outputMotif :: LilyPondElement e => MotifP e -> M Doc
-outputMotif (Motif k _ bs)    = fn <$> keyChange k <*> mapM outputBar bs
+oMotif :: LyPitch e => MotifP e -> M Doc
+oMotif (Motif k _ bs)    = fn <$> keyChange k <*> mapM oBar bs
   where
     fn True  xs = text "%{ keychange %}" <+> (hsep $ punctuate (text " |") xs)
     fn _     xs = hsep $ punctuate (text " |") xs
 
 
-outputBar :: LilyPondElement e => BarP e -> M Doc
-outputBar (Bar a)             = outputUnison a
-outputBar (Overlay a as)      = (\x xs -> overlay $ x:xs) 
-                                  <$> outputUnison a 
-                                  <*> mapM outputUnison as
+oBar :: LyPitch e => BarP e -> M Doc
+oBar (Bar a)             = oUnison a
+oBar (Overlay a as)      = (\x xs -> overlay $ x:xs) 
+                                  <$> oUnison a 
+                                  <*> mapM oUnison as
 
 
-outputUnison :: LilyPondElement e => UnisonP e -> M Doc
-outputUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '~'
+oUnison :: LyPitch e => UnisonP e -> M Doc
+oUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '~'
                                                            else empty)
-                                  <$> mapM outputBracket ps
+                                  <$> mapM oBracket ps
 
-outputBracket :: LilyPondElement e => BracketP e -> M Doc
-outputBracket (Singleton e)   = return $ outputLy e
-outputBracket (Bracket es)    = return $ lyBeam $ map outputLy es
+oBracket :: LyPitch e => BracketP e -> M Doc
+oBracket (Singleton e)   = return $ oElement e
+oBracket (Bracket es)    = return $ lyBeam $ map oElement es
 
+
+
+oElement :: LyPitch e => ElementP e -> Doc
+oElement (Note p d)       = lyNote p (coerceDuration d)
+oElement (Rest d)         = char 'r' <> (optDuration $ coerceDuration d)
+oElement (Spacer d)       = char 's' <> (optDuration $ coerceDuration d)
+oElement (Chord _ _)      = text "Chord - TODO"
+oElement (GraceNotes _)   = text "GraceNotes - TODO"
+
+
+
+coerceDuration :: Duration -> Maybe Duration
+coerceDuration d | d <= 0    = Nothing
+                 | otherwise = Just d
 
 
 
@@ -128,9 +139,8 @@ pitchLabel l a = char (toLowerLChar l) <> accidental a
     accidental DoubleFlat     = text "eses"
 
 
-optDuration :: Duration -> Doc
-optDuration d0 | d0 <= 0   = empty 
-               | otherwise = df d0
+optDuration :: Maybe Duration -> Doc
+optDuration = maybe empty df
   where
     df 0   = empty
     df drn = let (n,d,dc) = pdElements $ augDuration drn

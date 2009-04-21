@@ -5,7 +5,7 @@ license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
-category:         Graphics
+category:         Music
 synopsis:         Mullein
 description:
   A DSEL for generating musical scores via Abc and LilyPond. 
@@ -34,6 +34,7 @@ library
     Mullein.LabelSet,
     Mullein.LilyPondConvert,
     Mullein.LilyPondOutput,
+    Mullein.LilyPondPercussion,
     Mullein.NamedElements,
     Mullein.Pitch,
     Mullein.RS,

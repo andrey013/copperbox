@@ -42,57 +42,73 @@ data AbcFragment = MidtuneField Doc
                  | Suffix String        -- e.g. "|" or ":|"
   deriving (Show)
 
-class AbcElement e where
-  outputAbc :: ElementP e -> Doc
 
-instance AbcElement Pitch where
-  outputAbc (Note p dm)      = note p dm
-  outputAbc (Rest dm)        = char 'z' <> multiplier dm
-  outputAbc (Spacer dm)      = char 'x' <> multiplier dm
-  outputAbc (Chord _ _)      = text "Chord - TODO"
-  outputAbc (GraceNotes _)   = text "GraceNotes - TODO"
+-- For ABC, having a type class to print pitches is currently superfluous.
+-- Whereas LilyPond has some obviously different pitches (common pitches 
+-- c4,d4 etc, and drum pitches) ABC only has common pitches.
+-- For the time being ABC follows LilyPond, by the logic that if I ever
+-- add annotations they will probably be paired with playable notes 
+-- (i.e. pitches).
 
-output :: AbcElement e => Key -> Meter -> [Int] -> PartP e -> Doc
-output k m ns a = postProcess ns $ evalRS (outputPart a) s0 e0 where
+class AbcPitch e where
+  abcNote  :: e -> Duration -> Doc   -- for notes
+  abcPitch :: e -> Doc               -- for pitches within chords, graces notes,
+
+instance AbcPitch Pitch where
+  abcNote p dm = note p dm
+  abcPitch p   = note p 1
+
+
+
+
+output :: AbcPitch e => Key -> Meter -> [Int] -> PartP e -> Doc
+output k m ns a = postProcess ns $ evalRS (oPart a) s0 e0 where
     s0 = St { current_key = k, current_meter = m } 
     e0 = Env 
 
 
-outputPart :: AbcElement e => PartP e -> M (S.Seq AbcFragment)
-outputPart (Part as)          =
-    foldlM (\a e -> (a ><) <$> outputPhrase e) S.empty as
+oPart :: AbcPitch e => PartP e -> M (S.Seq AbcFragment)
+oPart (Part as)          =
+    foldlM (\a e -> (a ><) <$> oPhrase e) S.empty as
 
-outputPhrase :: AbcElement e => PhraseP e -> M (S.Seq AbcFragment)
-outputPhrase (Phrase a)       = outputMotif a
-outputPhrase (Repeated a)     = repeated <$> outputMotif a
-outputPhrase (FSRepeat a x y) = fsrepeat <$> outputMotif a
-                                         <*> outputMotif x
-                                         <*> outputMotif y
+oPhrase :: AbcPitch e => PhraseP e -> M (S.Seq AbcFragment)
+oPhrase (Phrase a)       = oMotif a
+oPhrase (Repeated a)     = repeated <$> oMotif a
+oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a  <*> oMotif x <*> oMotif y
                                          
-outputMotif :: AbcElement e => MotifP e -> M (S.Seq AbcFragment)
-outputMotif (Motif k m bs)    = 
+oMotif :: AbcPitch e => MotifP e -> M (S.Seq AbcFragment)
+oMotif (Motif k m bs)    = 
     mcons2 <$> keyChange k  <*> meterChange m <*> foldlM fn S.empty bs
   where
-    fn se a = (\x -> se |> BarOutput x) <$> outputBar a
+    fn se a       = (\x -> se |> BarOutput x) <$> oBar a
     mcons2 x y xs = (g x) `mbCons` (g y) `mbCons` xs
-    g        = fmap MidtuneField
+    g             = fmap MidtuneField
 
 
-outputBar :: AbcElement e => BarP e -> M Doc
-outputBar (Bar a)             = outputUnison a
-outputBar (Overlay a as)      = (\x xs -> overlay $ x:xs) 
-                                  <$> outputUnison a 
-                                  <*> mapM outputUnison as
+oBar :: AbcPitch e => BarP e -> M Doc
+oBar (Bar a)             = oUnison a
+oBar (Overlay a as)      = (\x xs -> overlay $ x:xs) 
+                                  <$> oUnison a 
+                                  <*> mapM oUnison as
 
 
-outputUnison :: AbcElement e => UnisonP e -> M Doc
-outputUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '-'
+oUnison :: AbcPitch e => UnisonP e -> M Doc
+oUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '-'
                                                            else empty)
-                                  <$> mapM outputBracket ps
+                                  <$> mapM oBracket ps
 
-outputBracket :: AbcElement e => BracketP e -> M Doc
-outputBracket (Singleton e)   = pure $ outputAbc e
-outputBracket (Bracket es)    = pure $ hcat $ map outputAbc es
+oBracket :: AbcPitch e => BracketP e -> M Doc
+oBracket (Singleton e)   = pure $ oElement e
+oBracket (Bracket es)    = pure $ hcat $ map oElement es
+
+
+
+oElement :: AbcPitch e => ElementP e -> Doc
+oElement (Note p dm)      = abcNote p dm
+oElement (Rest dm)        = char 'z' <> multiplier dm
+oElement (Spacer dm)      = char 'x' <> multiplier dm
+oElement (Chord _ _)      = text "Chord - TODO"
+oElement (GraceNotes _)   = text "GraceNotes - TODO"
 
 
 --------------------------------------------------------------------------------
