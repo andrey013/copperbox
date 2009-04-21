@@ -31,8 +31,8 @@ nineEightTime = metricalSpec 9 8
 
 
 
-notes1_3 :: NoteCtx [Element]
-notes1_3 = notelist $
+notes1_3 :: [Element]
+notes1_3 = 
   [ d4 %% dot du4, a4 %% du8, a4 %% du8, g4 %% du8, f4 %% du4, e4 %% du8
   -- bar 2
   , f4 %% du4, g4 %% du4, a4 %% du8, g4 %% du8, f4 %% du8, e4 %% du8, d4 %% du8
@@ -43,8 +43,8 @@ notes1_3 = notelist $
 
 
 
-notes4_6 :: NoteCtx [Element]
-notes4_6 = notelist $  
+notes4_6 :: [Element]
+notes4_6 =   
   [ d4 %% dot du4, f4 %% du8, e4 %% du8, d4 %% du8, c4 %% du4, b3 %% du8
   -- bar 5
   , c4 %% du4, e4 %% du4, e4 %% du8, g4 %% du8, f4 %% du8, e4 %% du8, d4 %% du8

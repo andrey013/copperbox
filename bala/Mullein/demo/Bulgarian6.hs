@@ -29,35 +29,36 @@ import Text.PrettyPrint.Leijen ( putDoc )
 main = putDoc $ Abc.output a_major (TimeSig 2 4) (repeat 4) bulgarian6
 
 ly = putDoc $ Ly.output a_major bulg6 where
-  bulg6 = Ly.convertToLy c4 tune1
+  bulg6 = Ly.convertToLy c4 part1_8
 
 
 bulgarian6 :: Part
-bulgarian6 = convertToAbc lset sixteenth tune1 where
+bulgarian6 = convertToAbc lset sixteenth part1_8 where
   lset = maybe (error "lset missing") id $ makeLabelSet a_major
 
-tune1 = evaluatePart a_major twoFourTime part1_8
+-- tune1 = evaluatePart a_major twoFourTime part1_8
 
-
-part1_8 :: NoteCtx Part
-part1_8 = part [repeated m1_4, repeated m5_8]
-
-
-
-m1_4 :: NoteCtx Motif
-m1_4 = motif $ primary bars1_4
-
-m5_8 :: NoteCtx Motif
-m5_8 = motif $ primary bars5_8
-
-
+amMotif = motif a_major twoFourTime
 
 twoFourTime :: MetricalSpec
 twoFourTime = metricalSpec 2 4
 
 
-bars1_4 :: NoteCtx [Element]
-bars1_4 = notelist $ 
+part1_8 :: Part
+part1_8 = part [repeated m1_4, repeated m5_8]
+
+
+
+m1_4 :: Motif
+m1_4 = amMotif $  primary bars1_4
+
+m5_8 ::  Motif
+m5_8 = amMotif $ primary bars5_8
+
+
+
+bars1_4 :: [Element]
+bars1_4 =  
   [ a4 # n16, b4 # n16, cis5 # n16, cis5 # n16, cis5 # n16, a4 # n16
             , cis5 # n16, cis5 # n16
   -- bar 2
@@ -70,8 +71,8 @@ bars1_4 = notelist $
   , a4 # n16, b4 # n16, b4 # n16, a4 # n16, a4 # n8, rest du8
   ]
 
-bars5_8 :: NoteCtx [Element]
-bars5_8 = notelist $  
+bars5_8 :: [Element]
+bars5_8 =   
   [ c5 # n8, b4 # n16, a4 # n16, b4 # n8, a4 # n16, gis4 # n16
   -- bar 6
   , fis4 # n16, e4 # n16, fis4 # n16, gis4 # n16, a4 # n8, b4 # n8

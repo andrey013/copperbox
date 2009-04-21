@@ -17,25 +17,21 @@ import Mullein.Score
 import Text.PrettyPrint.Leijen ( putDoc )
 
 
-main = putDoc $ output a_major drums where
-  drums = convertToLy c4 drums1
+main = putDoc $ output c_major drums where
+  drums = convertToLy c4 drum_part
 
-
-drums1 = evaluatePart a_major fourFourTime drum_part
-
+dMotif = motif c_major fourFourTime
 
 fourFourTime :: MetricalSpec
 fourFourTime = metricalSpec 4 4
 
-drum_part :: NoteCtx (PartP DrumPitch)
+drum_part :: PartP DrumPitch
 drum_part = part [repeated drum_motif]
 
 
-drum_motif :: NoteCtx (MotifP DrumPitch)
-drum_motif = motif $ primary drum_bars
+drum_motif :: MotifP DrumPitch
+drum_motif = dMotif $ primary drum_bars
 
 
-drum_bars :: NoteCtx [ElementP DrumPitch]
-drum_bars = notelist $ 
-           [ snare %% du4, rest du4, snare %% du4,rest du4
-           ]
+drum_bars :: [ElementP DrumPitch]
+drum_bars = [ snare %% du4, rest du4, snare %% du4,rest du4 ]
