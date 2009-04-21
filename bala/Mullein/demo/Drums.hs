@@ -11,14 +11,14 @@ import Mullein.CoreTypes
 import Mullein.LilyPondConvert
 import Mullein.LilyPondOutput hiding ( repeated )
 import Mullein.LilyPondPercussion
-import Mullein.NamedElements ( a_major, c4' )
+import Mullein.NamedElements
 import Mullein.Score
 
 import Text.PrettyPrint.Leijen ( putDoc )
 
 
 main = putDoc $ output a_major drums where
-  drums = convertToLy c4' drums1
+  drums = convertToLy c4 drums1
 
 
 drums1 = evaluatePart a_major fourFourTime drum_part
@@ -37,5 +37,5 @@ drum_motif = motif $ primary drum_bars
 
 drum_bars :: NoteCtx [ElementP DrumPitch]
 drum_bars = notelist $ 
-           [ drum snare, rest, drum snare,rest
+           [ snare %% du4, rest du4, snare %% du4,rest du4
            ]
