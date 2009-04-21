@@ -16,11 +16,34 @@
 
 module Mullein.LilyPondPercussion where
 
+import Mullein.Core
+import Mullein.CoreTypes
+import Mullein.LilyPondConvert
+import Mullein.LilyPondOutput
+import Mullein.RS
+
+import Text.PrettyPrint.Leijen 
+
 data DrumPitch = DrumPitch { 
       drum_long_name   :: String, 
       drum_short_name  :: String 
     }
   deriving (Eq,Show)
+
+
+drum :: DrumPitch -> NoteCtx (ElementP DrumPitch)
+drum dp    = gets prev_note_length >>= return . Note dp
+
+
+instance LyPitch DrumPitch where
+  lyNote p od = text (drum_short_name p) <> optDuration od
+  lyPitch p   = text $ drum_short_name p
+
+-- no changes for DrumPitch
+instance LyPitchC DrumPitch where
+  lyPitchC new = return new
+  lyPitchesC xs = return xs
+
 
 acousticbassdrum      :: DrumPitch
 acousticbassdrum      = DrumPitch "acousticbassdrum" "bda"

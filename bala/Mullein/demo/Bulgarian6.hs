@@ -29,7 +29,7 @@ import Text.PrettyPrint.Leijen ( putDoc )
 main = putDoc $ Abc.output a_major (TimeSig 2 4) (repeat 4) bulgarian6
 
 ly = putDoc $ Ly.output a_major bulg6 where
-  bulg6 = Ly.convertToLy Ly.relPitch c4' tune1
+  bulg6 = Ly.convertToLy c4' tune1
 
 
 bulgarian6 :: Part
