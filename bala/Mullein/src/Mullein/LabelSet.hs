@@ -20,7 +20,8 @@ module Mullein.LabelSet (
   naturalize,
   makeLabelSet,
   labelSet,
-  labels
+  labels,
+  trebleKeyMarks
 
   ) where
 
@@ -34,21 +35,21 @@ import qualified Data.Map as Map
 --------------------------------------------------------------------------------
 -- PitchLabels
 {-
-7 sharps:   C#      A#m      G#Mix   D#Dor   E#Phr   F#Lyd   B#Loc
-6 sharps:   F#      D#m      C#Mix   G#Dor   A#Phr   BLyd    E#Loc
-5 sharps:   B       G#m      F#Mix   C#Dor   D#Phr   ELyd    A#Loc
-4 sharps:   E       C#m      BMix    F#Dor   G#Phr   ALyd    D#Loc
-3 sharps:   A       F#m      EMix    BDor    C#Phr   DLyd    G#Loc
-2 sharps:   D       Bm       AMix    EDor    F#Phr   GLyd    C#Loc
-1 sharp :   G       Em       DMix    ADor    BPhr    CLyd    F#Loc
-0 sharps:   C       Am       GMix    DDor    EPhr    FLyd    BLoc
-1 flat  :   F       Dm       CMix    GDor    APhr    BbLyd   ELoc
-2 flats :   Bb      Gm       FMix    CDor    DPhr    EbLyd   ALoc
-3 flats :   Eb      Cm       BbMix   FDor    GPhr    AbLyd   DLoc
-4 flats :   Ab      Fm       EbMix   BbDor   CPhr    DbLyd   GLoc
-5 flats :   Db      Bbm      AbMix   EbDor   FPhr    GbLyd   CLoc
-6 flats :   Gb      Ebm      DbMix   AbDor   BbPhr   CbLyd   FLoc
-7 flats :   Cb      Abm      GbMix   DbDor   EbPhr   FbLyd   BbLoc
+-- 7 sharps:   C#      A#m      G#Mix   D#Dor   E#Phr   F#Lyd   B#Loc
+-- 6 sharps:   F#      D#m      C#Mix   G#Dor   A#Phr   BLyd    E#Loc
+-- 5 sharps:   B       G#m      F#Mix   C#Dor   D#Phr   ELyd    A#Loc
+-- 4 sharps:   E       C#m      BMix    F#Dor   G#Phr   ALyd    D#Loc
+-- 3 sharps:   A       F#m      EMix    BDor    C#Phr   DLyd    G#Loc
+-- 2 sharps:   D       Bm       AMix    EDor    F#Phr   GLyd    C#Loc
+-- 1 sharp :   G       Em       DMix    ADor    BPhr    CLyd    F#Loc
+-- 0 sharps:   C       Am       GMix    DDor    EPhr    FLyd    BLoc
+-- 1 flat  :   F       Dm       CMix    GDor    APhr    BbLyd   ELoc
+-- 2 flats :   Bb      Gm       FMix    CDor    DPhr    EbLyd   ALoc
+-- 3 flats :   Eb      Cm       BbMix   FDor    GPhr    AbLyd   DLoc
+-- 4 flats :   Ab      Fm       EbMix   BbDor   CPhr    DbLyd   GLoc
+-- 5 flats :   Db      Bbm      AbMix   EbDor   FPhr    GbLyd   CLoc
+-- 6 flats :   Gb      Ebm      DbMix   AbDor   BbPhr   CbLyd   FLoc
+-- 7 flats :   Cb      Abm      GbMix   DbDor   EbPhr   FbLyd   BbLoc
 -}
 
 
@@ -147,3 +148,103 @@ twist sk fk ys ss = foldr step [] ss
   where
     step a acc | a `elem` ys = (sk a):acc
                | otherwise   = (fk a):acc      
+
+--------------------------------------------------------------------------------
+-- manual key signatures for LilyPond
+
+type Octave = Int
+type Step = Int
+
+type ManualKeyMark = (Octave,Step,Accidental)
+
+
+
+trebleKeyMarks :: Key -> [ManualKeyMark]
+trebleKeyMarks key@(Key _ _ xs) = step $ numAccidentals key where
+    step i | i < 0     = addExtras xs $ take (abs i) treble_flats 
+           | otherwise = addExtras xs $ take i treble_sharps
+    
+    addExtras _ ys = ys -- TODO
+
+
+treble_sharps :: [ManualKeyMark]
+treble_sharps = 
+    [ (oPosTs F,3,Sharp)
+    , (oPosTs C,0,Sharp)
+    , (oPosTs G,4,Sharp)
+    , (oPosTs D,1,Sharp)
+    , (oPosTs A,5,Sharp)
+    , (oPosTs E,2,Sharp)
+    , (oPosTs B,6,Sharp)
+    ]
+    
+treble_flats :: [ManualKeyMark]
+treble_flats =
+    [ (oPosTf B,6,Flat)
+    , (oPosTf E,2,Flat)
+    , (oPosTf A,5,Flat)
+    , (oPosTf D,1,Flat)
+    , (oPosTf G,4,Flat)
+    , (oPosTf C,0,Flat)
+    , (oPosTf F,3,Flat)
+    ]
+
+
+-- negative represents flats - (-3) is 3 flats
+numAccidentals :: Key -> Int 
+numAccidentals (Key (PitchLabel l a) m _) = 
+    rot m $ acc a $ pos l 
+  where
+
+    pos :: PitchLetter -> Int
+    pos C = 0 
+    pos G = 1
+    pos D = 2
+    pos A = 3
+    pos E = 4
+    pos B = 5
+    pos F = (-1)
+    
+    acc :: Accidental -> (Int-> Int)
+    acc Nat   = id
+    acc Sharp = (+ 7)
+    acc Flat  = flip (-) 7
+    acc _     = error "key signature is not normalized"
+
+    rot :: Mode -> (Int -> Int) 
+    rot Major       = (+ 0)
+    rot Minor       = flip (-) 3
+    rot Lydian      = flip (-) 1
+    rot Ionian      = rot Major
+    rot Mixolydian  = flip (-) 1
+    rot Dorian      = flip (-) 2
+    rot Aeolian     = rot Minor
+    rot Phrygian    = flip (-) 4
+    rot Locrian     = flip (-) 5
+
+
+-- octavePosition is how many octaves above middle C the (altered) pitch is 
+-- printed in a key signature, e.g. F# is printed through line 5 - the top 
+-- line of the staff, one octave above middle c. B# is printed through line
+-- 3, in the same octave as middle C
+
+-- octave position of sharps on treble clef
+oPosTs :: PitchLetter -> Int
+oPosTs C = 1
+oPosTs D = 1
+oPosTs E = 1
+oPosTs F = 1
+oPosTs G = 1
+oPosTs A = 0
+oPosTs B = 0
+
+-- octave position of flats on treble clef
+oPosTf :: PitchLetter -> Int
+oPosTf C = 1
+oPosTf D = 1
+oPosTf E = 1
+oPosTf F = 0
+oPosTf G = 0
+oPosTf A = 0
+oPosTf B = 0
+

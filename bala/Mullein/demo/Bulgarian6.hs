@@ -25,9 +25,9 @@ import Data.Ratio
 import Text.PrettyPrint.Leijen ( putDoc )
 
 
-main = putDoc $ Abc.output a_major (TimeSig 2 4) (repeat 4) bulgarian6
+main = putDoc $ Abc.output a_major (fst twoFourTime) (repeat 4) bulgarian6
 
-ly = putDoc $ Ly.output a_major (TimeSig 2 4) bulg6 where
+ly = putDoc $ Ly.output a_major (fst twoFourTime) bulg6 where
   bulg6 = Ly.convertToLy c4 part1_8
 
 
@@ -35,7 +35,6 @@ bulgarian6 :: Part
 bulgarian6 = convertToAbc lset sixteenth part1_8 where
   lset = maybe (error "lset missing") id $ makeLabelSet a_major
 
--- tune1 = evaluatePart a_major twoFourTime part1_8
 
 amMotif = motif a_major twoFourTime
 

@@ -19,6 +19,7 @@ module Mullein.LilyPondOutput where
 
 import Mullein.CoreTypes
 import Mullein.Duration
+import Mullein.LabelSet
 import Mullein.Pitch
 import Mullein.Utils
 
@@ -171,10 +172,23 @@ command :: String -> Doc
 command = (char '\\' <>) . text 
 
 
--- TODO variant key signatures
+-- This implementation of variant key signatures is not so good...
 key :: Key -> Doc
-key (Key (PitchLabel l a) m []) = command "key" <+> pitchLabel l a <+> mode m
-key _                           = error "key - variant key signatures TODO"
+key k@(Key (PitchLabel l a) m xs) 
+    | null xs   = command "key" <+> pitchLabel l a <+> mode m
+    | otherwise = command "set" <+> text "Staff.keySignature" 
+                                <+> text "= #`" <> parens scm 
+
+  where
+    scm           = vsep $ map f $ trebleKeyMarks k
+    f (o,s,acdt)  = parens ((parens $ int o <> PP.dot <> int s) 
+                            <+> PP.dot <+> g acdt)
+    g Nat         = text ",NAT"
+    g Sharp       = text ",SHARP"
+    g DoubleSharp = text ",DOUBLE-SHARP"
+    g Flat        = text ",FLAT"
+    g DoubleFlat  = text ",DOUBLE-FLAT"
+
 
 mode :: Mode -> Doc
 mode Major        = command "major"

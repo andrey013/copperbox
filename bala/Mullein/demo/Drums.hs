@@ -18,7 +18,7 @@ import Mullein.Score
 import Text.PrettyPrint.Leijen ( putDoc )
 
 
-main = putDoc $ output c_major (TimeSig 4 4) drums where
+main = putDoc $ output c_major (fst fourFourTime) drums where
   drums = convertToLy c4 drum_part
 
 dMotif = motif c_major fourFourTime
