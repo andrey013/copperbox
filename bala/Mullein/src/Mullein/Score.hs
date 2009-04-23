@@ -18,13 +18,13 @@ module Mullein.Score (
 
     part,
 
-    repeated, fsrepeat,
+    phrase, repeated, fsrepeat,
     
     motif,
     primary, addOverlay,
 --    notelist,
 
-    rest, space, note,
+    rest, space, note, chord,
     (%%),    
     
     
@@ -41,6 +41,9 @@ import Mullein.Pitch
 
 part :: [PhraseP e] -> PartP e
 part = Part
+
+phrase :: MotifP e -> PhraseP e
+phrase  = Phrase
 
 repeated :: MotifP e -> PhraseP e
 repeated = Repeated
@@ -78,6 +81,10 @@ space = Spacer
 
 note :: Pitch -> Duration -> Element
 note p d   = Note p d
+
+chord :: [Pitch] -> Duration -> Element
+chord xs d = Chord xs d
+
 
 -- alternative to @note@ with more general type
 (%%) :: e -> Duration -> ElementP e
