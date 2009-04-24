@@ -60,8 +60,8 @@ instance AbcPitch Pitch where
 
 
 
-output :: AbcPitch e => Key -> Meter -> [Int] -> PartP e -> Doc
-output k m ns a = postProcess ns $ evalState (oPart a) s0 where
+outputAbc :: AbcPitch e => Key -> Meter -> [Int] -> PartP e -> Doc
+outputAbc k m ns a = postProcess ns $ evalState (oPart a) s0 where
     s0 = St { current_key = k, current_meter = m } 
 
 

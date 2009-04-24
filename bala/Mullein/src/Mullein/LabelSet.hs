@@ -152,7 +152,6 @@ twist sk fk ys ss = foldr step [] ss
 --------------------------------------------------------------------------------
 -- manual key signatures for LilyPond
 
-type Octave = Int
 type Step = Int
 
 type ManualKeyMark = (Octave,Step,Accidental)

@@ -25,9 +25,9 @@ import Data.Ratio
 import Text.PrettyPrint.Leijen ( putDoc )
 
 
-main = putDoc $ Abc.output a_major (fst twoFourTime) (repeat 4) bulgarian6
+main = putDoc $ Abc.outputAbc a_major (fst twoFourTime) (repeat 4) bulgarian6
 
-ly = putDoc $ Ly.output a_major (fst twoFourTime) bulg6 where
+ly = putDoc $ Ly.outputLy a_major (fst twoFourTime) bulg6 where
   bulg6 = Ly.convertToLy c4 part1_8
 
 

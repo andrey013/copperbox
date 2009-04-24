@@ -43,8 +43,8 @@ instance LyPitch Pitch where
   lyPitch p   = note p
 
 
-output :: LyPitch e => Key -> Meter -> PartP e -> Doc
-output k m a = evalState (oPart a) s0 where
+outputLy :: LyPitch e => Key -> Meter -> PartP e -> Doc
+outputLy k m a = evalState (oPart a) s0 where
     s0 = St k m
 
 

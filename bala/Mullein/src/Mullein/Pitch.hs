@@ -21,11 +21,9 @@ import Data.Char (toUpper, toLower)
 
 import qualified Text.PrettyPrint.Leijen as PP
 
-data Pitch = Pitch {
-    pch_letter        :: PitchLetter,
-    pch_accidental    :: Accidental,
-    pch_octave        :: Int
-  }
+type Octave  = Int
+
+data Pitch = Pitch PitchLetter Accidental Octave
   deriving (Eq,Show)
 
 data PitchLetter = C | D | E | F | G | A | B
@@ -34,10 +32,7 @@ data PitchLetter = C | D | E | F | G | A | B
 data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp 
   deriving (Bounded,Enum,Eq,Ord,Show)
 
-data PitchLabel = PitchLabel {
-    pch_lbl_letter      :: PitchLetter,
-    pch_lbl_accidental  :: Accidental
-  }
+data PitchLabel = PitchLabel PitchLetter Accidental
   deriving (Eq,Show)
   
   
@@ -122,7 +117,7 @@ fromSemitones i = Pitch l a o
                  
     pitchVal  0 = (C,Nat)
     pitchVal  1 = (C,Sharp)
-    pitchVal  2 = (D,Sharp)
+    pitchVal  2 = (D,Nat)
     pitchVal  3 = (D,Sharp)
     pitchVal  4 = (E,Nat)
     pitchVal  5 = (F,Nat)

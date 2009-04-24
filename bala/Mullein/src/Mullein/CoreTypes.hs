@@ -98,6 +98,8 @@ instance Temporal (ElementP e) where
   swapDuration d (Chord se _)     = Chord se d
   swapDuration _ (GraceNotes se)  = GraceNotes se
 
+instance Spacer (ElementP e) where
+  spacer d     = Spacer d  
 
 -- Synonyms for the common case where the parameter is Pitch
 type Part      = PartP Pitch
