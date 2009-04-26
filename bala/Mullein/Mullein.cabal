@@ -26,7 +26,8 @@ library
   
   exposed-modules:
     Mullein.AbcConvert,
-    Mullein.AbcNoteClass
+    Mullein.AbcDoc,
+    Mullein.AbcNoteClass,
     Mullein.AbcOutput,
     Mullein.Bracket,
     Mullein.Core,

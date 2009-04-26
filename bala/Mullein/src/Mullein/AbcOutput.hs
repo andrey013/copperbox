@@ -4,7 +4,7 @@
 -- |
 -- Module      :  Mullein.AbcOutput
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
@@ -42,17 +42,12 @@ data AbcFragment = MidtuneField Doc
                  | Suffix String        -- e.g. "|" or ":|"
   deriving (Show)
 
-{-
-instance AbcNote Pitch where
-  respell        = naturalize
-  abcNote p dm   = note p dm
-  abcPitch p     = note p 1
-  inlineAnno     = Nothing
--}
+
+newtype AbcOutput = AbcOutput { getAbcOutput :: Doc }
 
 
-outputAbc :: AbcNote e => Key -> Meter -> [Int] -> PartP e -> Doc
-outputAbc k m ns a = postProcess ns $ evalState (oPart a) s0 where
+generateAbc :: AbcNote e => Key -> Meter -> [Int] -> PartP e -> AbcOutput
+generateAbc k m ns a = AbcOutput $ postProcess ns $ evalState (oPart a) s0 where
     s0 = St { current_key = k, current_meter = m } 
 
 

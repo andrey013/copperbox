@@ -3,7 +3,7 @@
 -- |
 -- Module      :  Mullein.Core
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable

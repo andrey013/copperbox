@@ -3,6 +3,7 @@
 module Ssf where
 
 import Mullein.AbcConvert
+import Mullein.AbcDoc
 import Mullein.AbcOutput
 import Mullein.Core
 import Mullein.CoreTypes
@@ -43,14 +44,28 @@ twoFourTime = metricalSpec 2 4
 ssf_score = part $ map (phrase .  mkMotif) [m1,m2,m3,m4]
 
 
-ssf_abc :: PartP ScNote 
-ssf_abc = convertToAbc lset sn ssf_score where
+ssf_abc_part :: PartP ScNote 
+ssf_abc_part = convertToAbc lset sn ssf_score where
   lset = maybe (error "lset missing") id $ makeLabelSet e_flat_major
+
+ssf_abc_output :: AbcOutput
+ssf_abc_output = 
+    generateAbc e_flat_major (fst twoFourTime) (repeat 4) ssf_abc_part
+
+
 
 ly = putDoc $ outputLy e_flat_major (fst twoFourTime) ssf_ly where
   ssf_ly = convertToLy c4 ssf_score
 
+abc_score = tunenum 1 +++ title "Stars and Stripes Forever" 
+                      +++ meterinfo (fst twoFourTime)
+                      +++ keyinfo a_flat_major
+                      +++ tune ssf_abc_output
 
-main = putDoc $ outputAbc e_flat_major (fst twoFourTime) (repeat 4) ssf_abc
+main = putDoc $ unP $ abc_score
+
+
+
+---
 
 
