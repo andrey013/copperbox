@@ -18,7 +18,7 @@ import Mullein.Score
 import Text.PrettyPrint.Leijen ( putDoc )
 
 
-main = putDoc $ output c_major (fst fourFourTime) drums where
+main = putDoc $ outputLy c_major (fst fourFourTime) drums where
   drums = convertToLy c4 drum_part
 
 dMotif = motif c_major fourFourTime
@@ -35,4 +35,4 @@ drum_motif = dMotif $ primary drum_bars
 
 
 drum_bars :: [ElementP DrumPitch]
-drum_bars = [ snare %% du4, rest du4, snare %% du4,rest du4 ]
+drum_bars = [ snare qn, qnr, snare qn, qnr ]

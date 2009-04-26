@@ -20,6 +20,7 @@ module Mullein.LilyPondOutput where
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.LabelSet
+import Mullein.LilyPondNoteClass
 import Mullein.Pitch
 import Mullein.Utils
 
@@ -34,49 +35,40 @@ data St  = St { current_key :: Key, current_meter :: Meter }
 type M a = State St a
 
 
-class LyPitch e where
-  lyNote  :: e -> Maybe Duration -> Doc   -- for notes
-  lyPitch :: e -> Doc               -- for pitches within chords, graces notes,
-
-instance LyPitch Pitch where
-  lyNote p od = note p <> optDuration od
-  lyPitch p   = note p
-
-
-outputLy :: LyPitch e => Key -> Meter -> PartP e -> Doc
+outputLy :: LyNote e => Key -> Meter -> PartP e -> Doc
 outputLy k m a = evalState (oPart a) s0 where
     s0 = St k m
 
 
 
-oPart :: LyPitch e => PartP e -> M Doc
+oPart :: LyNote e => PartP e -> M Doc
 oPart (Part as)          = vsep <$> mapM oPhrase as
 
-oPhrase :: LyPitch e => PhraseP e -> M Doc
+oPhrase :: LyNote e => PhraseP e -> M Doc
 oPhrase (Phrase a)       = oMotif a
 oPhrase (Repeated a)     = repeated <$> oMotif a
 oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a <*> oMotif x <*> oMotif y
 
-oMotif :: LyPitch e => MotifP e -> M Doc
+oMotif :: LyNote e => MotifP e -> M Doc
 oMotif (Motif k _ bs)    = fn <$> keyChange k <*> mapM oBar bs
   where
     fn True  xs = key k <+> (hsep $ punctuate (text " |") xs)
     fn _     xs = hsep $ punctuate (text " |") xs
 
 
-oBar :: LyPitch e => BarP e -> M Doc
+oBar :: LyNote e => BarP e -> M Doc
 oBar (Bar a)             = oUnison a
 oBar (Overlay a as)      = (\x xs -> overlay $ x:xs) 
                                   <$> oUnison a 
                                   <*> mapM oUnison as
 
 
-oUnison :: LyPitch e => UnisonP e -> M Doc
+oUnison :: LyNote e => UnisonP e -> M Doc
 oUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '~'
                                                            else empty)
                                   <$> mapM oBracket ps
 
-oBracket :: LyPitch e => BracketP e -> M Doc
+oBracket :: LyNote e => BracketP e -> M Doc
 oBracket (Singleton e)   = return $ oElement e
 oBracket (Bracket es)    = return $ lyBeam $ map oElement es
 
@@ -84,7 +76,7 @@ oBracket (Bracket es)    = return $ lyBeam $ map oElement es
 -- TODO check whether or not successive notes in chords and graces
 -- change the relative pitch
 
-oElement :: LyPitch e => ElementP e -> Doc
+oElement :: LyNote e => ElementP e -> Doc
 oElement (Note p d)       = lyNote p (coerceDuration d)
 oElement (Rest d)         = char 'r' <> oDuration d
 oElement (Spacer d)       = char 's' <> oDuration d

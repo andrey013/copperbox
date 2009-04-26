@@ -101,13 +101,3 @@ instance Temporal (ElementP e) where
 instance Spacer (ElementP e) where
   spacer d     = Spacer d  
 
--- Synonyms for the common case where the parameter is Pitch
-type Part      = PartP Pitch
-type Phrase    = PhraseP Pitch
-type Motif     = MotifP Pitch
-type Bar       = BarP Pitch
-type Unison    = UnisonP Pitch
-type Bracket   = BracketP Pitch
-type Element   = ElementP Pitch
-type GraceNote = GraceNoteP Pitch
-

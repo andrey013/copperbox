@@ -17,10 +17,10 @@
 
 module Mullein.AbcConvert where
 
+import Mullein.AbcNoteClass
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.LabelSet
-import Mullein.Pitch
 import Mullein.Utils () -- State Applicative instance
 
 import Control.Applicative
@@ -32,40 +32,42 @@ data St = St { label_set :: LabelSet, unit_note_length :: Duration }
 
 type CM a = State St a
 
-convertToAbc :: LabelSet -> Duration -> PartP Pitch -> PartP Pitch
+
+
+convertToAbc :: AbcNote e => LabelSet -> Duration -> PartP e -> PartP e
 convertToAbc lset unl e = evalState (cPart e) s0 where
     s0 = St  {label_set=lset, unit_note_length=unl} 
 
-cPart :: PartP Pitch -> CM (PartP Pitch)
+cPart :: AbcNote e => PartP e -> CM (PartP e)
 cPart (Part as)           = Part <$> mapM cPhrase as
 
 
-cPhrase :: PhraseP Pitch -> CM (PhraseP Pitch)
+cPhrase :: AbcNote e => PhraseP e -> CM (PhraseP e)
 cPhrase (Phrase a)        = Phrase <$> cMotif a
 cPhrase (Repeated a)      = Repeated <$> cMotif a
 cPhrase (FSRepeat a x y)  = FSRepeat <$> cMotif a <*> cMotif x <*> cMotif y
 
 
-cMotif :: MotifP Pitch -> CM (MotifP Pitch)
+cMotif :: AbcNote e => MotifP e -> CM (MotifP e)
 cMotif (Motif k m as)       = Motif k m <$> mapM cBar as
 
 
-cBar :: BarP Pitch -> CM (BarP Pitch)
+cBar :: AbcNote e => BarP e -> CM (BarP e)
 cBar (Bar a)              = Bar <$> cUnison a 
 cBar (Overlay a as)       = Overlay <$> cUnison a <*> mapM cUnison as
 
-cUnison :: UnisonP Pitch -> CM (UnisonP Pitch)
+cUnison :: AbcNote e => UnisonP e -> CM (UnisonP e)
 cUnison (Unison as tied)  = (\xs -> Unison xs tied) 
                               <$> mapM cBracket as
 
-cBracket :: BracketP Pitch -> CM (BracketP Pitch)
+cBracket :: AbcNote e => BracketP e -> CM (BracketP e)
 cBracket (Singleton a)    = Singleton <$> cElement a
 cBracket (Bracket as)     = Bracket   <$> mapM cElement as
 
 
-cElement :: ElementP Pitch -> CM (ElementP Pitch)
+cElement :: AbcNote e => ElementP e -> CM (ElementP e)
 cElement (Note p d)       = (\lset unl -> 
-                             Note (naturalize lset p) (unitRescale unl d))
+                             Note (respell lset p) (unitRescale unl d))
                               <$> gets label_set <*> gets unit_note_length
 cElement (Rest d)         = (\unl -> Rest $ unitRescale unl d)
                               <$> gets unit_note_length

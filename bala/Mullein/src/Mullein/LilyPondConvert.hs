@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -20,6 +21,7 @@ module Mullein.LilyPondConvert where
 
 import Mullein.CoreTypes
 import Mullein.Duration
+import Mullein.LilyPondNoteClass
 import Mullein.Pitch
 import Mullein.Utils () -- get State Applicative instance
 
@@ -32,28 +34,25 @@ data St = St { relative_pitch :: Pitch, relative_duration :: Duration }
 
 type CM a = State St a
 
-convertToLy :: LyPitchC e => Pitch -> PartP e -> PartP e
+instance ExchangePitch (State St) where
+  exchangePitch = exchPitch
+
+
+convertToLy :: LyNote e => Pitch -> PartP e -> PartP e
 convertToLy rp e = evalState (cPart e) s0 where
     s0 = St  {relative_pitch=rp, relative_duration=1%4}
 
-class LyPitchC e where
-  lyPitchC :: e -> CM e
-  lyPitchesC :: [e] -> CM [e]  
-    -- in LilyPond's relative mode chords have a special behaviour 
-    -- that must be captured
-
-
-cPart :: LyPitchC e => PartP e -> CM (PartP e)
+cPart :: LyNote e => PartP e -> CM (PartP e)
 cPart (Part as)           = Part <$> mapM cPhrase as
 
 
-cPhrase :: LyPitchC e => PhraseP e -> CM (PhraseP e)
+cPhrase :: LyNote e => PhraseP e -> CM (PhraseP e)
 cPhrase (Phrase a)        = Phrase <$> cMotif a
 cPhrase (Repeated a)      = Repeated <$> cMotif a
 cPhrase (FSRepeat a x y)  = FSRepeat <$> cMotif a <*> cMotif x <*> cMotif y
 
 
-cMotif :: LyPitchC e => MotifP e -> CM (MotifP e)
+cMotif :: LyNote e => MotifP e -> CM (MotifP e)
 cMotif (Motif k m as)       = Motif k m <$> mapM cBar as
 
 
@@ -61,23 +60,23 @@ cMotif (Motif k m as)       = Motif k m <$> mapM cBar as
 -- Although not strictly necessary, this makes deducing the duration
 -- of a note in a the midst of generated score easier.
  
-cBar :: LyPitchC e => BarP e -> CM (BarP e)
+cBar :: LyNote e => BarP e -> CM (BarP e)
 cBar (Bar a)              = Bar <$> (resetDuration *> cUnison a)
 cBar (Overlay a as)       = Overlay <$> (resetDuration *> cUnison a) 
                                     <*> mapM cUnison as
 
-cUnison :: LyPitchC e => UnisonP e -> CM (UnisonP e)
+cUnison :: LyNote e => UnisonP e -> CM (UnisonP e)
 cUnison (Unison as tied)  = (\xs -> Unison xs tied) 
                               <$> mapM cBracket as
 
-cBracket :: LyPitchC e => BracketP e -> CM (BracketP e)
+cBracket :: LyNote e => BracketP e -> CM (BracketP e)
 cBracket (Singleton a)    = Singleton <$> cElement a
 cBracket (Bracket as)     = Bracket   <$> mapM cElement as
 
 
-cElement :: LyPitchC e => ElementP e -> CM (ElementP e)
+cElement :: LyNote e => ElementP e -> CM (ElementP e)
 cElement (Note p d)       = (\p' rd -> Note p' (relativeDuration rd d))
-                              <$> lyPitchC p <*> exchDuration d
+                              <$> rewritePitch p <*> exchDuration d
 cElement (Rest d)         = (\rd -> Rest $ relativeDuration rd d)
                               <$> exchDuration d
 cElement (Spacer d)       = (\rd -> Spacer $ relativeDuration rd d)
@@ -86,11 +85,12 @@ cElement (Chord _ _)      = error "Chord"
 cElement (GraceNotes _)   = error "GraceNotes"
 
 
-
+{-
 -- Pitch is always treated as relative (wrap with a newtype to get absolute)
 instance LyPitchC Pitch where
   lyPitchC new = exchPitch new >>= \old -> return $ relPitch old new
   lyPitchesC _xs = error $ "lyPitches -- todo"
+-}
 
 
 --------------------------------------------------------------------------------

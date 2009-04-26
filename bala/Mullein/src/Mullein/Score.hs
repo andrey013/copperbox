@@ -1,3 +1,7 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -15,6 +19,18 @@
 --------------------------------------------------------------------------------
 
 module Mullein.Score (
+    ScNote(..),
+    Part, 
+    Phrase,
+    Motif,
+    Bar,
+    Unison,
+    Bracket,
+    Element,
+    GraceNote,
+
+    Note(..),
+    NoteAttribute(..),
 
     part,
 
@@ -24,8 +40,8 @@ module Mullein.Score (
     primary, addOverlay,
 --    notelist,
 
-    rest, space, note, chord,
-    (%%),    
+    rest, space, chord,
+    
     
     -- notes
     cf, c, cs, df, d, ds, ef, e, es,
@@ -43,13 +59,78 @@ module Mullein.Score (
 
  ) where
 
+import qualified Mullein.AbcOutput as Abc
+import Mullein.AbcNoteClass
 import Mullein.Bracket
 import Mullein.Core
 import Mullein.CoreTypes
 import Mullein.Duration
+import Mullein.LabelSet ( naturalize )
+import Mullein.LilyPondNoteClass
+import qualified Mullein.LilyPondConvert as Ly
+import qualified Mullein.LilyPondOutput as Ly
 import Mullein.Pitch
 
 import Data.Ratio
+import Text.PrettyPrint.Leijen ( (<>) )
+
+
+{-
+instance AbcNote Pitch where
+  respell        = naturalize
+  abcNote p dm   = note p dm
+  abcPitch p     = note p 1
+  inlineAnno     = Nothing
+-}
+
+
+
+
+data NoteAttribute = Fingering Int
+  deriving (Eq,Show)
+
+data ScNote = ScNote Pitch [NoteAttribute]
+
+
+-- Synonyms for the common case where we approximate Haskore
+type Part      = PartP ScNote
+type Phrase    = PhraseP ScNote
+type Motif     = MotifP ScNote
+type Bar       = BarP ScNote
+type Unison    = UnisonP ScNote
+type Bracket   = BracketP ScNote
+type Element   = ElementP ScNote
+type GraceNote = GraceNoteP ScNote
+
+
+class Note a b c | c -> a b where
+  note :: a -> b -> c 
+
+--------------------------------------------------------------------------------
+-- instances
+
+
+instance AbcNote ScNote where
+  respell lset (ScNote p attrs)  = ScNote (naturalize lset p) attrs
+  abcNote (ScNote p _) dm        = Abc.printNote p dm
+  abcPitch (ScNote p _)          = Abc.printNote p 1
+  inlineAnno (ScNote _ _attrs)   = Nothing -- this should handle fingerings at least...
+
+
+instance LyNote ScNote where
+  rewritePitch (ScNote new attrs) = do 
+     old <- exchangePitch new
+     return $ ScNote (Ly.relPitch old new) attrs
+
+  rewritePitches _  = error "TODO"
+
+  lyNote (ScNote p _) od = Ly.note p <> Ly.optDuration od
+  lyPitch (ScNote p _)   = Ly.note p
+
+
+
+
+--------------------------------------------------------------------------------
 
 
 part :: [PhraseP e] -> PartP e
@@ -92,62 +173,63 @@ space :: Duration -> ElementP e
 space = Spacer
 
 
-note :: Pitch -> Duration -> Element
-note pch dur   = Note pch dur
-
-chord :: [Pitch] -> Duration -> Element
+chord :: [e] -> Duration -> ElementP e
 chord xs dur = Chord xs dur
 
-
+{-
 -- alternative to @note@ with more general type
 (%%) :: e -> Duration -> ElementP e
 (%%) pch dur = Note pch dur
+-}
+
+instance Note Pitch [NoteAttribute] ScNote where
+  note p xs = ScNote p xs 
 
 -- notes
-cf :: Octave -> Duration -> Element
-c  :: Octave -> Duration -> Element
-cs :: Octave -> Duration -> Element
-df :: Octave -> Duration -> Element
-d  :: Octave -> Duration -> Element
-ds :: Octave -> Duration -> Element
-ef :: Octave -> Duration -> Element
-e  :: Octave -> Duration -> Element
-es :: Octave -> Duration -> Element
-ff :: Octave -> Duration -> Element
-f  :: Octave -> Duration -> Element
-fs :: Octave -> Duration -> Element
-gf :: Octave -> Duration -> Element
-g  :: Octave -> Duration -> Element
-gs :: Octave -> Duration -> Element
-af :: Octave -> Duration -> Element
-a  :: Octave -> Duration -> Element
-as :: Octave -> Duration -> Element
-bf :: Octave -> Duration -> Element
-b  :: Octave -> Duration -> Element
-bs :: Octave -> Duration -> Element
+cf :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+c  :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+cs :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+df :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+d  :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+ds :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+ef :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+e  :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+es :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+ff :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+f  :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+fs :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+gf :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+g  :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+gs :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+af :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+a  :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+as :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+bf :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+b  :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
+bs :: Note Pitch b c => Octave -> Duration -> b -> ElementP c
 
 
-cf o = Note (Pitch C Flat o)
-c  o = Note (Pitch C Nat o)
-cs o = Note (Pitch C Sharp o)
-df o = Note (Pitch D Flat o)
-d  o = Note (Pitch D Nat o)
-ds o = Note (Pitch D Sharp o)
-ef o = Note (Pitch E Flat o)
-e  o = Note (Pitch E Nat o)
-es o = Note (Pitch E Sharp o)
-ff o = Note (Pitch F Flat o)
-f  o = Note (Pitch F Nat o)
-fs o = Note (Pitch F Sharp o)
-gf o = Note (Pitch G Flat o)
-g  o = Note (Pitch G Nat o)
-gs o = Note (Pitch G Sharp o)
-af o = Note (Pitch A Flat o)
-a  o = Note (Pitch A Nat o)
-as o = Note (Pitch A Sharp o)
-bf o = Note (Pitch B Flat o)
-b  o = Note (Pitch B Nat o)
-bs o = Note (Pitch B Sharp o)
+cf o dur attrs = Note (note (Pitch C Flat o) attrs) dur
+c  o dur attrs = Note (note (Pitch C Nat o) attrs) dur
+cs o dur attrs = Note (note (Pitch C Sharp o) attrs) dur
+df o dur attrs = Note (note (Pitch D Flat o) attrs) dur
+d  o dur attrs = Note (note (Pitch D Nat o) attrs) dur
+ds o dur attrs = Note (note (Pitch D Sharp o) attrs) dur
+ef o dur attrs = Note (note (Pitch E Flat o) attrs) dur
+e  o dur attrs = Note (note (Pitch E Nat o) attrs) dur
+es o dur attrs = Note (note (Pitch E Sharp o) attrs) dur
+ff o dur attrs = Note (note (Pitch F Flat o) attrs) dur
+f  o dur attrs = Note (note (Pitch F Nat o) attrs) dur
+fs o dur attrs = Note (note (Pitch F Sharp o) attrs) dur
+gf o dur attrs = Note (note (Pitch G Flat o) attrs) dur
+g  o dur attrs = Note (note (Pitch G Nat o) attrs) dur
+gs o dur attrs = Note (note (Pitch G Sharp o) attrs) dur
+af o dur attrs = Note (note (Pitch A Flat o) attrs) dur
+a  o dur attrs = Note (note (Pitch A Nat o) attrs) dur
+as o dur attrs = Note (note (Pitch A Sharp o) attrs) dur
+bf o dur attrs = Note (note (Pitch B Flat o) attrs) dur
+b  o dur attrs = Note (note (Pitch B Nat o) attrs) dur
+bs o dur attrs = Note (note (Pitch B Sharp o) attrs) dur
 
 
 

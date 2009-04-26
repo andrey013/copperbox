@@ -18,7 +18,7 @@ module Mullein.LilyPondPercussion where
 
 import Mullein.CoreTypes
 import Mullein.Duration
-import Mullein.LilyPondConvert
+import Mullein.LilyPondNoteClass
 import Mullein.LilyPondOutput
 
 import Text.PrettyPrint.Leijen 
@@ -30,237 +30,238 @@ data DrumPitch = DrumPitch {
   deriving (Eq,Show)
 
 
-drum :: DrumPitch -> Duration -> ElementP DrumPitch
-drum dp d    = Note dp d
+type DrumNote = ElementP DrumPitch
 
+perc :: DrumPitch -> Duration -> DrumNote
+perc dp d    = Note dp d
 
-instance LyPitch DrumPitch where
+drum :: String -> String -> Duration -> DrumNote
+drum long short = perc (DrumPitch long short)
+
+instance LyNote DrumPitch where
+  rewritePitch = return
+  rewritePitches = return
   lyNote p od = text (drum_short_name p) <> optDuration od
   lyPitch p   = text $ drum_short_name p
 
--- no changes for DrumPitch
-instance LyPitchC DrumPitch where
-  lyPitchC new = return new
-  lyPitchesC xs = return xs
 
+acousticbassdrum      :: Duration -> DrumNote
+acousticbassdrum      = drum "acousticbassdrum" "bda"
 
-acousticbassdrum      :: DrumPitch
-acousticbassdrum      = DrumPitch "acousticbassdrum" "bda"
+bassdrum              :: Duration -> DrumNote                         
+bassdrum              = drum "bassdrum" "bd"
 
-bassdrum              :: DrumPitch                         
-bassdrum              = DrumPitch "bassdrum" "bd"
+hisidestick           :: Duration -> DrumNote
+hisidestick           = drum "hisidestick" "ssh"
 
-hisidestick           :: DrumPitch
-hisidestick           = DrumPitch "hisidestick" "ssh"
+sidestick             :: Duration -> DrumNote
+sidestick             = drum "sidestick" "ss"
 
-sidestick             :: DrumPitch
-sidestick             = DrumPitch "sidestick" "ss"
+losidestick           :: Duration -> DrumNote
+losidestick           = drum "losidestick" "ssl"
 
-losidestick           :: DrumPitch
-losidestick           = DrumPitch "losidestick" "ssl"
+acousticsnare         :: Duration -> DrumNote
+acousticsnare         = drum "acousticsnare" "sna"
 
-acousticsnare         :: DrumPitch
-acousticsnare         = DrumPitch "acousticsnare" "sna"
+snare                 :: Duration -> DrumNote
+snare                 = drum "snare" "sn"
 
-snare                 :: DrumPitch
-snare                 = DrumPitch "snare" "sn"
+handclap              :: Duration -> DrumNote
+handclap              = drum "handclap" "hc"
 
-handclap              :: DrumPitch
-handclap              = DrumPitch "handclap" "hc"
+electricsnare         :: Duration -> DrumNote
+electricsnare         = drum "electricsnare" "sne"
 
-electricsnare         :: DrumPitch
-electricsnare         = DrumPitch "electricsnare" "sne"
+lowfloortom           :: Duration -> DrumNote
+lowfloortom           = drum "lowfloortom" "tomfl"
 
-lowfloortom           :: DrumPitch
-lowfloortom           = DrumPitch "lowfloortom" "tomfl"
+closedhihat           :: Duration -> DrumNote
+closedhihat           = drum "closedhihat" "hhc"
 
-closedhihat           :: DrumPitch
-closedhihat           = DrumPitch "closedhihat" "hhc"
+hihat                 :: Duration -> DrumNote
+hihat                 = drum "hihat" "hh"
 
-hihat                 :: DrumPitch
-hihat                 = DrumPitch "hihat" "hh"
+highfloortom          :: Duration -> DrumNote
+highfloortom          = drum "highfloortom" "tomfh"
 
-highfloortom          :: DrumPitch
-highfloortom          = DrumPitch "highfloortom" "tomfh"
+pedalhihat            :: Duration -> DrumNote
+pedalhihat            = drum "pedalhihat" "hhp"
 
-pedalhihat            :: DrumPitch
-pedalhihat            = DrumPitch "pedalhihat" "hhp"
+lowtom                :: Duration -> DrumNote
+lowtom                = drum "lowtom" "toml"
 
-lowtom                :: DrumPitch
-lowtom                = DrumPitch "lowtom" "toml"
+openhihat             :: Duration -> DrumNote
+openhihat             = drum "openhihat" "hho"
 
-openhihat             :: DrumPitch
-openhihat             = DrumPitch "openhihat" "hho"
+halfopenhihat         :: Duration -> DrumNote
+halfopenhihat         = drum "halfopenhihat" "hhho"
 
-halfopenhihat         :: DrumPitch
-halfopenhihat         = DrumPitch "halfopenhihat" "hhho"
+lowmidtom             :: Duration -> DrumNote
+lowmidtom             = drum "lowmidtom" "tomml"
 
-lowmidtom             :: DrumPitch
-lowmidtom             = DrumPitch "lowmidtom" "tomml"
+himidtom              :: Duration -> DrumNote
+himidtom              = drum "himidtom" "tommh"
 
-himidtom              :: DrumPitch
-himidtom              = DrumPitch "himidtom" "tommh"
+crashcymbala          :: Duration -> DrumNote
+crashcymbala          = drum "crashcymbala" "cymca"
 
-crashcymbala          :: DrumPitch
-crashcymbala          = DrumPitch "crashcymbala" "cymca"
+crashcymbal           :: Duration -> DrumNote
+crashcymbal           = drum "crashcymbal" "cymc"
 
-crashcymbal           :: DrumPitch
-crashcymbal           = DrumPitch "crashcymbal" "cymc"
+hightom               :: Duration -> DrumNote
+hightom               = drum "hightom" "tomh"
 
-hightom               :: DrumPitch
-hightom               = DrumPitch "hightom" "tomh"
+ridecymbala           :: Duration -> DrumNote
+ridecymbala           = drum "ridecymbala" "cymra"
 
-ridecymbala           :: DrumPitch
-ridecymbala           = DrumPitch "ridecymbala" "cymra"
+ridecymbal            :: Duration -> DrumNote
+ridecymbal            = drum "ridecymbal" "cymr"
 
-ridecymbal            :: DrumPitch
-ridecymbal            = DrumPitch "ridecymbal" "cymr"
+chinesecymbal         :: Duration -> DrumNote
+chinesecymbal         = drum "chinesecymbal" "cymch"
 
-chinesecymbal         :: DrumPitch
-chinesecymbal         = DrumPitch "chinesecymbal" "cymch"
+ridebell              :: Duration -> DrumNote
+ridebell              = drum "ridebell" "rb"
 
-ridebell              :: DrumPitch
-ridebell              = DrumPitch "ridebell" "rb"
+tambourine            :: Duration -> DrumNote
+tambourine            = drum "tambourine" "tamb"
 
-tambourine            :: DrumPitch
-tambourine            = DrumPitch "tambourine" "tamb"
+splashcymbal          :: Duration -> DrumNote
+splashcymbal          = drum "splashcymbal" "cyms"
 
-splashcymbal          :: DrumPitch
-splashcymbal          = DrumPitch "splashcymbal" "cyms"
+cowbell               :: Duration -> DrumNote
+cowbell               = drum "cowbell" "cb"
 
-cowbell               :: DrumPitch
-cowbell               = DrumPitch "cowbell" "cb"
+crashcymbalb          :: Duration -> DrumNote
+crashcymbalb          = drum "crashcymbalb" "cymcb"
 
-crashcymbalb          :: DrumPitch
-crashcymbalb          = DrumPitch "crashcymbalb" "cymcb"
+vibraslap             :: Duration -> DrumNote
+vibraslap             = drum "vibraslap" "vibs"
 
-vibraslap             :: DrumPitch
-vibraslap             = DrumPitch "vibraslap" "vibs"
+ridecymbalb           :: Duration -> DrumNote
+ridecymbalb           = drum "ridecymbalb" "cymrb"
 
-ridecymbalb           :: DrumPitch
-ridecymbalb           = DrumPitch "ridecymbalb" "cymrb"
+mutehibongo           :: Duration -> DrumNote
+mutehibongo           = drum "mutehibongo" "bohm"
 
-mutehibongo           :: DrumPitch
-mutehibongo           = DrumPitch "mutehibongo" "bohm"
+hibongo               :: Duration -> DrumNote
+hibongo               = drum "hibongo" "boh"
 
-hibongo               :: DrumPitch
-hibongo               = DrumPitch "hibongo" "boh"
+openhibongo           :: Duration -> DrumNote
+openhibongo           = drum "openhibongo" "boho"
 
-openhibongo           :: DrumPitch
-openhibongo           = DrumPitch "openhibongo" "boho"
+mutelobongo           :: Duration -> DrumNote
+mutelobongo           = drum "mutelobongo" "bolm"
 
-mutelobongo           :: DrumPitch
-mutelobongo           = DrumPitch "mutelobongo" "bolm"
+lobongo               :: Duration -> DrumNote
+lobongo               = drum "lobongo" "bol"
 
-lobongo               :: DrumPitch
-lobongo               = DrumPitch "lobongo" "bol"
+openlobongo           :: Duration -> DrumNote
+openlobongo           = drum "openlobongo" "bolo"
 
-openlobongo           :: DrumPitch
-openlobongo           = DrumPitch "openlobongo" "bolo"
+mutehiconga           :: Duration -> DrumNote
+mutehiconga           = drum "mutehiconga" "cghm"
 
-mutehiconga           :: DrumPitch
-mutehiconga           = DrumPitch "mutehiconga" "cghm"
+muteloconga           :: Duration -> DrumNote
+muteloconga           = drum "muteloconga" "cglm"
 
-muteloconga           :: DrumPitch
-muteloconga           = DrumPitch "muteloconga" "cglm"
+openhiconga           :: Duration -> DrumNote
+openhiconga           = drum "openhiconga" "cgho"
 
-openhiconga           :: DrumPitch
-openhiconga           = DrumPitch "openhiconga" "cgho"
+hiconga               :: Duration -> DrumNote
+hiconga               = drum "hiconga" "cgh"
 
-hiconga               :: DrumPitch
-hiconga               = DrumPitch "hiconga" "cgh"
+openloconga           :: Duration -> DrumNote
+openloconga           = drum "openloconga" "cglo"
 
-openloconga           :: DrumPitch
-openloconga           = DrumPitch "openloconga" "cglo"
+loconga               :: Duration -> DrumNote
+loconga               = drum "loconga" "cgl"
 
-loconga               :: DrumPitch
-loconga               = DrumPitch "loconga" "cgl"
+hitimbale             :: Duration -> DrumNote
+hitimbale             = drum "hitimbale" "timh"
 
-hitimbale             :: DrumPitch
-hitimbale             = DrumPitch "hitimbale" "timh"
+lotimbale             :: Duration -> DrumNote
+lotimbale             = drum "lotimbale" "timl"
 
-lotimbale             :: DrumPitch
-lotimbale             = DrumPitch "lotimbale" "timl"
+hiagogo               :: Duration -> DrumNote
+hiagogo               = drum "hiagogo" "agh"
 
-hiagogo               :: DrumPitch
-hiagogo               = DrumPitch "hiagogo" "agh"
+loagogo               :: Duration -> DrumNote
+loagogo               = drum "loagogo" "agl"
 
-loagogo               :: DrumPitch
-loagogo               = DrumPitch "loagogo" "agl"
+cabasa                :: Duration -> DrumNote
+cabasa                = drum "cabasa" "cab"
 
-cabasa                :: DrumPitch
-cabasa                = DrumPitch "cabasa" "cab"
+maracas               :: Duration -> DrumNote
+maracas               = drum "maracas" "mar"
 
-maracas               :: DrumPitch
-maracas               = DrumPitch "maracas" "mar"
+shortwhistle          :: Duration -> DrumNote
+shortwhistle          = drum "shortwhistle" "whs"
 
-shortwhistle          :: DrumPitch
-shortwhistle          = DrumPitch "shortwhistle" "whs"
+longwhistle           :: Duration -> DrumNote
+longwhistle           = drum "longwhistle" "whl"
 
-longwhistle           :: DrumPitch
-longwhistle           = DrumPitch "longwhistle" "whl"
+shortguiro            :: Duration -> DrumNote
+shortguiro            = drum "shortguiro" "guis"
 
-shortguiro            :: DrumPitch
-shortguiro            = DrumPitch "shortguiro" "guis"
+longguiro             :: Duration -> DrumNote
+longguiro             = drum "longguiro" "guil"
 
-longguiro             :: DrumPitch
-longguiro             = DrumPitch "longguiro" "guil"
+guiro                 :: Duration -> DrumNote
+guiro                 = drum "guiro" "gui"
 
-guiro                 :: DrumPitch
-guiro                 = DrumPitch "guiro" "gui"
+claves                :: Duration -> DrumNote
+claves                = drum "claves" "cl"
 
-claves                :: DrumPitch
-claves                = DrumPitch "claves" "cl"
+hiwoodblock           :: Duration -> DrumNote
+hiwoodblock           = drum "hiwoodblock" "whi"
 
-hiwoodblock           :: DrumPitch
-hiwoodblock           = DrumPitch "hiwoodblock" "whi"
+lowoodblock           :: Duration -> DrumNote
+lowoodblock           = drum "lowoodblock" "wbl"
 
-lowoodblock           :: DrumPitch
-lowoodblock           = DrumPitch "lowoodblock" "wbl"
+mutecuica             :: Duration -> DrumNote
+mutecuica             = drum "mutecuica" "cuim"
 
-mutecuica             :: DrumPitch
-mutecuica             = DrumPitch "mutecuica" "cuim"
+opencuica             :: Duration -> DrumNote
+opencuica             = drum "opencuica" "cuio"
 
-opencuica             :: DrumPitch
-opencuica             = DrumPitch "opencuica" "cuio"
+mutetriangle          :: Duration -> DrumNote
+mutetriangle          = drum "mutetriangle" "trim"
 
-mutetriangle          :: DrumPitch
-mutetriangle          = DrumPitch "mutetriangle" "trim"
+triangle              :: Duration -> DrumNote
+triangle              = drum "triangle" "tri"
 
-triangle              :: DrumPitch
-triangle              = DrumPitch "triangle" "tri"
+opentriangle          :: Duration -> DrumNote
+opentriangle          = drum "opentriangle" "trio"
 
-opentriangle          :: DrumPitch
-opentriangle          = DrumPitch "opentriangle" "trio"
+oneup                 :: Duration -> DrumNote
+oneup                 = drum "oneup" "ua"
 
-oneup                 :: DrumPitch
-oneup                 = DrumPitch "oneup" "ua"
+twoup                 :: Duration -> DrumNote
+twoup                 = drum "twoup" "ub"
 
-twoup                 :: DrumPitch
-twoup                 = DrumPitch "twoup" "ub"
+threeup               :: Duration -> DrumNote
+threeup               = drum "threeup" "uc"
 
-threeup               :: DrumPitch
-threeup               = DrumPitch "threeup" "uc"
+fourup                :: Duration -> DrumNote
+fourup                = drum "fourup" "ud"
 
-fourup                :: DrumPitch
-fourup                = DrumPitch "fourup" "ud"
+fiveup                :: Duration -> DrumNote
+fiveup                = drum "fiveup" "ue"
 
-fiveup                :: DrumPitch
-fiveup                = DrumPitch "fiveup" "ue"
+onedown               :: Duration -> DrumNote
+onedown               = drum "onedown" "da"
 
-onedown               :: DrumPitch
-onedown               = DrumPitch "onedown" "da"
+twodown               :: Duration -> DrumNote
+twodown               = drum "twodown" "db"
 
-twodown               :: DrumPitch
-twodown               = DrumPitch "twodown" "db"
+threedown             :: Duration -> DrumNote
+threedown             = drum "threedown" "dc"
 
-threedown             :: DrumPitch
-threedown             = DrumPitch "threedown" "dc"
+fourdown              :: Duration -> DrumNote
+fourdown              = drum "fourdown" "dd"
 
-fourdown              :: DrumPitch
-fourdown              = DrumPitch "fourdown" "dd"
-
-fivedown              :: DrumPitch
-fivedown              = DrumPitch "fivedown" "de"
+fivedown              :: Duration -> DrumNote
+fivedown              = drum "fivedown" "de"
 
 

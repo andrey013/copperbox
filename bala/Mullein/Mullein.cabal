@@ -26,6 +26,7 @@ library
   
   exposed-modules:
     Mullein.AbcConvert,
+    Mullein.AbcNoteClass
     Mullein.AbcOutput,
     Mullein.Bracket,
     Mullein.Core,
@@ -33,6 +34,7 @@ library
     Mullein.Duration,
     Mullein.LabelSet,
     Mullein.LilyPondConvert,
+    Mullein.LilyPondNoteClass,
     Mullein.LilyPondOutput,
     Mullein.LilyPondPercussion,
     Mullein.NamedElements,

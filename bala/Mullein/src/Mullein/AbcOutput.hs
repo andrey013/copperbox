@@ -17,6 +17,7 @@
 
 module Mullein.AbcOutput where
 
+import Mullein.AbcNoteClass
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Pitch
@@ -41,40 +42,30 @@ data AbcFragment = MidtuneField Doc
                  | Suffix String        -- e.g. "|" or ":|"
   deriving (Show)
 
-
--- For ABC, having a type class to print pitches is currently superfluous.
--- Whereas LilyPond has some obviously different pitches (common pitches 
--- c4,d4 etc, and drum pitches) ABC only has common pitches.
--- For the time being ABC follows LilyPond, by the logic that if I ever
--- add annotations they will probably be paired with playable notes 
--- (i.e. pitches).
-
-class AbcPitch e where
-  abcNote  :: e -> Duration -> Doc   -- for notes
-  abcPitch :: e -> Doc               -- for pitches within chords, graces notes,
-
-instance AbcPitch Pitch where
-  abcNote p dm = note p dm
-  abcPitch p   = note p 1
+{-
+instance AbcNote Pitch where
+  respell        = naturalize
+  abcNote p dm   = note p dm
+  abcPitch p     = note p 1
+  inlineAnno     = Nothing
+-}
 
 
-
-
-outputAbc :: AbcPitch e => Key -> Meter -> [Int] -> PartP e -> Doc
+outputAbc :: AbcNote e => Key -> Meter -> [Int] -> PartP e -> Doc
 outputAbc k m ns a = postProcess ns $ evalState (oPart a) s0 where
     s0 = St { current_key = k, current_meter = m } 
 
 
-oPart :: AbcPitch e => PartP e -> M (S.Seq AbcFragment)
+oPart :: AbcNote e => PartP e -> M (S.Seq AbcFragment)
 oPart (Part as)          =
     foldlM (\a e -> (a ><) <$> oPhrase e) S.empty as
 
-oPhrase :: AbcPitch e => PhraseP e -> M (S.Seq AbcFragment)
+oPhrase :: AbcNote e => PhraseP e -> M (S.Seq AbcFragment)
 oPhrase (Phrase a)       = oMotif a
 oPhrase (Repeated a)     = repeated <$> oMotif a
 oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a  <*> oMotif x <*> oMotif y
                                          
-oMotif :: AbcPitch e => MotifP e -> M (S.Seq AbcFragment)
+oMotif :: AbcNote e => MotifP e -> M (S.Seq AbcFragment)
 oMotif (Motif k m bs)    = 
     mcons2 <$> keyChange k  <*> meterChange m <*> foldlM fn S.empty bs
   where
@@ -83,25 +74,25 @@ oMotif (Motif k m bs)    =
     g             = fmap MidtuneField
 
 
-oBar :: AbcPitch e => BarP e -> M Doc
+oBar :: AbcNote e => BarP e -> M Doc
 oBar (Bar a)             = oUnison a
 oBar (Overlay a as)      = (\x xs -> overlay $ x:xs) 
                                   <$> oUnison a 
                                   <*> mapM oUnison as
 
 
-oUnison :: AbcPitch e => UnisonP e -> M Doc
+oUnison :: AbcNote e => UnisonP e -> M Doc
 oUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '-'
                                                            else empty)
                                   <$> mapM oBracket ps
 
-oBracket :: AbcPitch e => BracketP e -> M Doc
+oBracket :: AbcNote e => BracketP e -> M Doc
 oBracket (Singleton e)   = pure $ oElement e
 oBracket (Bracket es)    = pure $ hcat $ map oElement es
 
 
 
-oElement :: AbcPitch e => ElementP e -> Doc
+oElement :: AbcNote e => ElementP e -> Doc
 oElement (Note p dm)      = abcNote p dm
 oElement (Rest dm)        = char 'z' <> multiplier dm
 oElement (Spacer dm)      = char 'x' <> multiplier dm
@@ -230,8 +221,8 @@ field ch d = char ch <> colon <> d
 overlay :: [Doc] -> Doc
 overlay = vsep . punctuate (text " & ")    
 
-note :: Pitch -> Duration -> Doc 
-note p m = pitch p <> multiplier m
+printNote :: Pitch -> Duration -> Doc 
+printNote p m = pitch p <> multiplier m
 
 
 data PitchChar = UPPER | LOWER
