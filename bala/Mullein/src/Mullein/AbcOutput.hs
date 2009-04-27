@@ -20,21 +20,17 @@ module Mullein.AbcOutput where
 import Mullein.AbcNoteClass
 import Mullein.CoreTypes
 import Mullein.Duration
+import Mullein.OutputCommon
 import Mullein.Pitch
 import Mullein.Utils
 
 import Control.Applicative hiding ( empty )
 import Control.Monad.State
 import Data.Foldable ( foldlM, toList )
-import Data.Sequence ( (<|), (|>), (><), ViewL(..), viewl )
+import Data.Sequence ( (<|), (><), ViewL(..), viewl )
 import qualified Data.Sequence as S
 import Data.Ratio
 import Text.PrettyPrint.Leijen hiding ( (<$>) )
-
-data St = St { current_key :: Key, current_meter :: Meter }
-data Env = Env {}
-
-type M a = State St a
 
 
 type AbcFragment = OutputFragment BarDiv
@@ -57,13 +53,8 @@ oPhrase (Repeated a)     = repeated <$> oMotif a
 oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a  <*> oMotif x <*> oMotif y
                                          
 oMotif :: AbcNote e => MotifP e -> M (S.Seq AbcFragment)
-oMotif (Motif k m bs)    = 
-    mcons2 <$> keyChange k  <*> meterChange m <*> foldlM fn S.empty bs
-  where
-    fn se a       = (\x -> se |> BarOutput x) <$> oBar a
-    mcons2 x y xs = (g x) `mbCons` (g y) `mbCons` xs
-    g             = fmap MidtuneCmd
-
+oMotif (Motif k m bs)    = motifFragment 
+    <$> keyChange k keyField <*> meterChange m meterField <*> mapM oBar bs
 
 oBar :: AbcNote e => BarP e -> M Doc
 oBar (Bar a)             = oUnison a
@@ -109,16 +100,8 @@ postProcess ns = fn ns . dropRepStart where
     fn (i:is) se                = printLine xs `nextLine` fn is se' where
                                     (xs,se') = fragSplitAt i se
 
--- If a tune starts with a repeated, the repeat start sign '|:', doesn't
--- need to be printed
-dropRepStart :: S.Seq AbcFragment -> S.Seq AbcFragment
-dropRepStart s0 = step $ S.viewl s0 where
-    step (Prefix RepStart :< se) = se
-    step _                       = s0
 
 
--- This isn't right - dropF drops too many and repeats aren't partitioned 
--- correctly
 fragSplitAt :: Int 
             -> S.Seq AbcFragment
             -> ([AbcFragment], S.Seq AbcFragment)
@@ -160,11 +143,6 @@ barDiv SglBar                 = char '|'
 barDiv DblBar                 = text "||"
 
 
-intersperseBars :: [AbcFragment] -> [AbcFragment]
-intersperseBars (BarOutput d1 : BarOutput d2 : xs) = 
-    BarOutput d1 : Suffix SglBar : intersperseBars (BarOutput d2 : xs)
-intersperseBars (x:xs)      = x : intersperseBars xs
-intersperseBars []          = []
   
 
 --------------------------------------------------------------------------------
@@ -175,24 +153,6 @@ infixr 5 `mbCons`
 mbCons :: Maybe a -> S.Seq a -> S.Seq a
 mbCons Nothing  = id
 mbCons (Just a) = (a <|) 
-
-
-
-keyChange :: Key -> M (Maybe Doc)
-keyChange new = do 
-    old <- gets current_key 
-    if (new==old) 
-       then return Nothing
-       else do { modify $ \s -> s{current_key=new} 
-               ; return $ Just $ keyField new } 
-
-meterChange :: Meter -> M (Maybe Doc)
-meterChange new = do 
-    old <- gets current_meter
-    if (new==old) 
-       then return Nothing
-       else do { modify $ \s -> s{current_meter=new} 
-               ; return $ Just $ meterField new } 
 
 
 
@@ -273,14 +233,4 @@ multiplier dn | dn == 1   = empty
     fn (1,d) = char '/' <> integer d
     fn (n,d) = integer n <> char '/' <> integer d
 
-
-repeated :: S.Seq AbcFragment -> S.Seq AbcFragment
-repeated se = Prefix RepStart <| (se |> Suffix RepEnd) 
-
-fsrepeat :: S.Seq AbcFragment
-         -> S.Seq AbcFragment
-         -> S.Seq AbcFragment
-         -> S.Seq AbcFragment
-fsrepeat se x y = Prefix  RepStart <| se >< end where
-    end = Prefix (NRep 1)  <| x >< (Prefix (NRep 2) <| (y |> Suffix RepEnd)) 
 

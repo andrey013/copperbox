@@ -10,7 +10,7 @@ import Mullein.Core
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.LilyPondConvert
-import Mullein.LilyPondOutput hiding ( repeated )
+import Mullein.LilyPondOutput
 import Mullein.LilyPondPercussion
 import Mullein.NamedElements
 import Mullein.Score

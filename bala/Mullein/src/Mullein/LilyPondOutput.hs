@@ -21,41 +21,48 @@ import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.LabelSet
 import Mullein.LilyPondNoteClass
+import Mullein.OutputCommon
 import Mullein.Pitch
 import Mullein.Utils
 
 import Control.Applicative hiding ( empty )
 import Control.Monad.State
+import Data.Foldable ( foldlM, toList )
+import Data.Sequence ( (><) )
+import qualified Data.Sequence as S
+
 
 import Text.PrettyPrint.Leijen hiding ( (<$>) ) 
 import qualified Text.PrettyPrint.Leijen as PP
 
-data St  = St { current_key :: Key, current_meter :: Meter }
 
-type M a = State St a
+
+type LilyPondFragment = OutputFragment BarDiv
 
 newtype LilyPondOutput = LilyPondOutput { getLilyPondOutput :: Doc }
 
 
 generateLilyPond :: LyNote e => Key -> Meter -> PartP e -> LilyPondOutput
-generateLilyPond k m a = LilyPondOutput $ evalState (oPart a) s0 where
+generateLilyPond k m a = 
+    LilyPondOutput $ postProcess $ evalState (oPart a) s0 
+  where
     s0 = St k m
 
 
 
-oPart :: LyNote e => PartP e -> M Doc
-oPart (Part as)          = vsep <$> mapM oPhrase as
+oPart :: LyNote e => PartP e -> M (S.Seq LilyPondFragment)
+oPart (Part as)          =
+    foldlM (\a e -> (a ><) <$> oPhrase e) S.empty as
 
-oPhrase :: LyNote e => PhraseP e -> M Doc
+
+oPhrase :: LyNote e => PhraseP e -> M (S.Seq LilyPondFragment)
 oPhrase (Phrase a)       = oMotif a
 oPhrase (Repeated a)     = repeated <$> oMotif a
 oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a <*> oMotif x <*> oMotif y
 
-oMotif :: LyNote e => MotifP e -> M Doc
-oMotif (Motif k _ bs)    = fn <$> keyChange k <*> mapM oBar bs
-  where
-    fn True  xs = key k <+> (hsep $ punctuate (text " |") xs)
-    fn _     xs = hsep $ punctuate (text " |") xs
+oMotif :: LyNote e => MotifP e -> M (S.Seq LilyPondFragment)
+oMotif (Motif k m bs)    = motifFragment 
+    <$> keyChange k keyCmd <*> meterChange m meterCmd  <*> mapM oBar bs
 
 
 oBar :: LyNote e => BarP e -> M Doc
@@ -95,19 +102,37 @@ coerceDuration d | d <= 0    = Nothing
                  | otherwise = Just d
 
 
+--------------------------------------------------------------------------------
+-- post process
+
+postProcess :: S.Seq LilyPondFragment -> Doc
+postProcess = fn . dropRepStart where
+  fn se | S.null se           = empty
+        | otherwise           = printLine $ toList se
+
+
+
+printLine :: [LilyPondFragment] -> Doc
+printLine  = step empty . intersperseBars  where
+    step acc []                    = acc
+    step acc (MidtuneCmd d : xs)   = step (acc `nextLine` d 
+                                               `nextLine` empty) xs
+    step acc (BarOutput d : xs)    = step (acc `nextLine` d) xs
+    step acc (Prefix s : xs)       = step (acc <+> barDiv s) xs 
+    step acc (Suffix s : xs)       = step (acc <+> barDiv s) xs
+
+
+barDiv :: BarDiv -> Doc
+barDiv RepStart               = repStart
+barDiv RepEnd                 = repEnd
+barDiv (NRep n) | n == 1      = repStart
+                | otherwise   = command "alternative"
+barDiv SglBar                 = char '|'
+barDiv DblBar                 = command "bar" <+> dquotes (text "||")
+
 
 --------------------------------------------------------------------------------
 -- helpers
-
--- ... COMMON ...
-
-keyChange :: Key -> M Bool
-keyChange new = do 
-    old <- gets current_key 
-    if (new==old) 
-       then return False
-       else do {modify $ \s -> s{current_key=new} ; return True } 
-
 
 
 overlay :: [Doc] -> Doc
@@ -167,8 +192,8 @@ command = (char '\\' <>) . text
 
 
 -- This implementation of variant key signatures is not so good...
-key :: Key -> Doc
-key k@(Key (PitchLabel l a) m xs) 
+keyCmd :: Key -> Doc
+keyCmd k@(Key (PitchLabel l a) m xs) 
     | null xs   = command "key" <+> pitchLabel l a <+> mode m
     | otherwise = command "set" <+> text "Staff.keySignature" 
                                 <+> text "= #`" <> parens scm 
@@ -184,6 +209,10 @@ key k@(Key (PitchLabel l a) m xs)
     g DoubleFlat  = text ",DOUBLE-FLAT"
 
 
+meterCmd :: Meter -> Doc
+meterCmd _ = text "\\meter - TODO"
+
+
 mode :: Mode -> Doc
 mode Major        = command "major"
 mode Minor        = command "minor"
@@ -196,10 +225,17 @@ mode Phrygian     = command "phrygian"
 mode Locrian      = command "locrian"
 
 
-repeated :: Doc -> Doc 
-repeated d = command "repeat" <+> text "volta 2" <+> braces d
+
+repStart :: Doc
+repStart = command "repeat" <+> text "volta 2" <+> lbrace
+
+repEnd :: Doc
+repEnd = rbrace
+
+{-
 
 fsrepeat :: Doc -> Doc -> Doc -> Doc
 fsrepeat a x y = 
     command "repeat" <+> text "volta 2" <+> (braces a)
         PP.<$> command "alternative" <+> braces ((braces x) <+> (braces y))
+-}

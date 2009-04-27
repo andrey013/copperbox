@@ -19,8 +19,8 @@ import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Utils
 
-import Data.Ratio
 
+import Data.Ratio
 
 --------------------------------------------------------------------------------
 -- Note lists
@@ -73,3 +73,6 @@ log2whole :: Integral a => a -> Bool
 log2whole = (==0) . snd . pf . logBase 2 . fromIntegral where
     pf :: Double -> (Int, Double)
     pf = properFraction
+
+
+

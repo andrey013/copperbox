@@ -21,7 +21,8 @@ module Mullein.LilyPondDoc where
 
 import Mullein.CoreTypes
 import Mullein.Duration
-import Mullein.LilyPondOutput ( LilyPondOutput(..), command )
+import Mullein.LilyPondOutput ( LilyPondOutput(..), command, note )
+import Mullein.Pitch
 import Mullein.Utils
 
 import Text.PrettyPrint.Leijen 
@@ -66,6 +67,8 @@ book ps = P $ command "book" <+> nestBraces (vsep $ map unP ps)
 
 data CtxScore 
 
+instance Concat CtxScore CtxScore where
+  P a +++ P b = P $ a <$> b
 
 score :: P CtxScore -> P CtxBook
 score p = P $ command "score" <+> nestBraces (unP p)
@@ -89,6 +92,14 @@ metercmd _k = P $ command "meter" <+> comment "Meter - TODO"
 -- for instance where this is necessary.
 setcmd :: Doc -> P CtxScore
 setcmd d = P $ command "set" <+> d
+
+
+clef :: String -> P CtxScore 
+clef s = P $ command "clef" <+> text s
+
+relative :: Pitch -> P CtxScore 
+relative p = P $ command "relative" <+> note p
+
 
 lilypondOutput :: LilyPondOutput -> P CtxScore
 lilypondOutput = P . getLilyPondOutput  
