@@ -9,6 +9,7 @@ import Mullein.Core
 import Mullein.CoreTypes
 import Mullein.LabelSet
 import Mullein.LilyPondConvert
+import qualified Mullein.LilyPondDoc as Ly
 import Mullein.LilyPondOutput
 import Mullein.NamedElements
 import Mullein.Score

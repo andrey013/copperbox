@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# OPTIONS -Wall #-}
 --------------------------------------------------------------------------------
 -- |
@@ -18,6 +19,7 @@ module Mullein.CoreTypes where
 import Mullein.Duration
 import Mullein.Pitch
 
+import Text.PrettyPrint.Leijen ( Doc )
 
 
 
@@ -100,4 +102,14 @@ instance Temporal (ElementP e) where
 
 instance Spacer (ElementP e) where
   spacer d     = Spacer d  
+
+--------------------------------------------------------------------------------
+-- Pretty printing score
+
+newtype P a = P { unP :: Doc }
+
+
+infixl 5 +++
+class Concat ctx ctx' where
+  (+++)  :: P ctx -> P ctx' -> P ctx'
 

@@ -35,6 +35,7 @@ library
     Mullein.Duration,
     Mullein.LabelSet,
     Mullein.LilyPondConvert,
+    Mullein.LilyPondDoc,
     Mullein.LilyPondNoteClass,
     Mullein.LilyPondOutput,
     Mullein.LilyPondPercussion,
