@@ -28,7 +28,8 @@ import Text.PrettyPrint.Leijen ( putDoc )
 main = putDoc $ Abc.getAbcOutput $ 
          Abc.generateAbc a_major (fst twoFourTime) (repeat 4) bulgarian6
 
-ly = putDoc $ Ly.outputLy a_major (fst twoFourTime) bulg6 where
+ly = putDoc $ Ly.getLilyPondOutput $  
+       Ly.generateLilyPond a_major (fst twoFourTime) bulg6 where
   bulg6 = Ly.convertToLy c4 part1_8
 
 

@@ -54,17 +54,28 @@ ssf_abc_output =
     generateAbc e_flat_major (fst twoFourTime) (repeat 4) ssf_abc_part
 
 
-
-ly = putDoc $ outputLy e_flat_major (fst twoFourTime) ssf_ly where
-  ssf_ly = convertToLy c4 ssf_score
-
 abc_score = tunenum 1 +++ title "Stars and Stripes Forever" 
                       +++ meterinfo (fst twoFourTime)
                       +++ keyinfo a_flat_major
-                      +++ tune ssf_abc_output
+                      +++ abcOutput ssf_abc_output
 
 main = putDoc $ unP $ abc_score
 
+-- Alternative, LilyPond...
+
+ssf_ly_part :: PartP ScNote
+ssf_ly_part = convertToLy c4 ssf_score
+
+
+ssf_ly_output :: LilyPondOutput
+ssf_ly_output = generateLilyPond e_flat_major (fst twoFourTime) ssf_ly_part
+
+
+ly_score = header +++ body where
+    header = Ly.header [Ly.title "Stars and Stripes Forever"]
+    body   = Ly.book [Ly.score (Ly.lilypondOutput ssf_ly_output)]
+
+lyMain = putDoc $ unP $ ly_score
 
 
 ---

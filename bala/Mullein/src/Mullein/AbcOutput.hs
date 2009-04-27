@@ -36,12 +36,8 @@ data Env = Env {}
 
 type M a = State St a
 
-data AbcFragment = MidtuneField Doc 
-                 | BarOutput Doc
-                 | Prefix String        -- e.g. "|:" 
-                 | Suffix String        -- e.g. "|" or ":|"
-  deriving (Show)
 
+type AbcFragment = OutputFragment BarDiv
 
 newtype AbcOutput = AbcOutput { getAbcOutput :: Doc }
 
@@ -66,7 +62,7 @@ oMotif (Motif k m bs)    =
   where
     fn se a       = (\x -> se |> BarOutput x) <$> oBar a
     mcons2 x y xs = (g x) `mbCons` (g y) `mbCons` xs
-    g             = fmap MidtuneField
+    g             = fmap MidtuneCmd
 
 
 oBar :: AbcNote e => BarP e -> M Doc
@@ -105,6 +101,7 @@ oElement (GraceNotes xs)  = braces $ hcat $ map f xs where
 -- When generating ABC we must do extra work to accommodate this.
 
 
+
 postProcess :: [Int] -> S.Seq AbcFragment -> Doc
 postProcess ns = fn ns . dropRepStart where
     fn _      se  | S.null se   = empty
@@ -116,14 +113,14 @@ postProcess ns = fn ns . dropRepStart where
 -- need to be printed
 dropRepStart :: S.Seq AbcFragment -> S.Seq AbcFragment
 dropRepStart s0 = step $ S.viewl s0 where
-    step (Prefix "|:" :< se) = se
-    step _                   = s0
+    step (Prefix RepStart :< se) = se
+    step _                       = s0
 
 
 -- This isn't right - dropF drops too many and repeats aren't partitioned 
 -- correctly
 fragSplitAt :: Int 
-            -> S.Seq AbcFragment 
+            -> S.Seq AbcFragment
             -> ([AbcFragment], S.Seq AbcFragment)
 fragSplitAt i se = (\(xs,(_,vw)) -> (xs,g vw)) $  anaSt phi (i,viewl se) 
   where
@@ -145,18 +142,27 @@ fragSplitAt i se = (\(xs,(_,vw)) -> (xs,g vw)) $  anaSt phi (i,viewl se)
 printLine :: [AbcFragment] -> Doc
 printLine  = step empty . intersperseBars  where
     step acc []                    = acc
-    step acc (MidtuneField d : xs) = step (acc <> linecont `nextLine` d 
+    step acc (MidtuneCmd d : xs)   = step (acc <> linecont `nextLine` d 
                                                            `nextLine` empty) xs
     step acc (BarOutput d : xs)    = step (acc <> d) xs
-    step acc (Prefix s : xs)       = step (acc <> text s) xs 
-    step acc (Suffix s : xs)       = step (acc <> text s) xs
+    step acc (Prefix s : xs)       = step (acc <> barDiv s) xs 
+    step acc (Suffix s : xs)       = step (acc <> barDiv s) xs
 
     linecont = char '\\'
 
 
+barDiv :: BarDiv -> Doc
+barDiv RepStart               = text "|:"
+barDiv RepEnd                 = text ":|"
+barDiv (NRep n) | n == 1      = text "|[1"
+                | otherwise   = text ":|[" <> int n  -- note, extra colon
+barDiv SglBar                 = char '|'
+barDiv DblBar                 = text "||"
+
+
 intersperseBars :: [AbcFragment] -> [AbcFragment]
 intersperseBars (BarOutput d1 : BarOutput d2 : xs) = 
-    BarOutput d1 : Suffix "|" : intersperseBars (BarOutput d2 : xs)
+    BarOutput d1 : Suffix SglBar : intersperseBars (BarOutput d2 : xs)
 intersperseBars (x:xs)      = x : intersperseBars xs
 intersperseBars []          = []
   
@@ -269,12 +275,12 @@ multiplier dn | dn == 1   = empty
 
 
 repeated :: S.Seq AbcFragment -> S.Seq AbcFragment
-repeated se = Prefix "|:" <| (se |> Suffix ":|") 
+repeated se = Prefix RepStart <| (se |> Suffix RepEnd) 
 
-fsrepeat :: S.Seq AbcFragment 
-         -> S.Seq AbcFragment 
+fsrepeat :: S.Seq AbcFragment
          -> S.Seq AbcFragment
          -> S.Seq AbcFragment
-fsrepeat se x y = Prefix "|:" <| se >< end where
-    end = Prefix "|[1"  <| x >< (Prefix ":|[2" <| (y |> Suffix ":|")) 
+         -> S.Seq AbcFragment
+fsrepeat se x y = Prefix  RepStart <| se >< end where
+    end = Prefix (NRep 1)  <| x >< (Prefix (NRep 2) <| (y |> Suffix RepEnd)) 
 

@@ -34,9 +34,11 @@ data St  = St { current_key :: Key, current_meter :: Meter }
 
 type M a = State St a
 
+newtype LilyPondOutput = LilyPondOutput { getLilyPondOutput :: Doc }
 
-outputLy :: LyNote e => Key -> Meter -> PartP e -> Doc
-outputLy k m a = evalState (oPart a) s0 where
+
+generateLilyPond :: LyNote e => Key -> Meter -> PartP e -> LilyPondOutput
+generateLilyPond k m a = LilyPondOutput $ evalState (oPart a) s0 where
     s0 = St k m
 
 

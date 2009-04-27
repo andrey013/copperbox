@@ -128,3 +128,7 @@ dblangles = enclose (text "<<") (text ">>")
 infixr 5 `nextLine`
 nextLine :: Doc -> Doc -> Doc 
 nextLine = (<$>)
+
+
+doubleQuote :: String -> Doc
+doubleQuote = dquotes . string

@@ -18,7 +18,8 @@ import Mullein.Score
 import Text.PrettyPrint.Leijen ( putDoc )
 
 
-main = putDoc $ outputLy c_major (fst fourFourTime) drums where
+main = putDoc $ getLilyPondOutput $ 
+         generateLilyPond c_major (fst fourFourTime) drums where
   drums = convertToLy c4 drum_part
 
 dMotif = motif c_major fourFourTime
