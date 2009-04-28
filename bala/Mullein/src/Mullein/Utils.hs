@@ -20,6 +20,7 @@ module Mullein.Utils where
 import Control.Applicative ( Applicative(..) )
 import Control.Monad.State
 import Data.List ( unfoldr )
+import Data.Monoid
 import Data.Ratio
 
 import Text.PrettyPrint.Leijen
@@ -64,7 +65,39 @@ unfoldr2 :: (s1 -> s2 -> Maybe (a,s1,s2)) -> s1 -> s2 -> [a]
 unfoldr2 f s1 s2 = case f s1 s2 of
     Nothing     -> []
     Just (a,s1',s2') -> a : unfoldr2 f s1' s2'
-    
+
+
+unfoldMonoidR :: Monoid a => (st -> Maybe (a,st)) -> a -> st -> a 
+unfoldMonoidR f a0 s = step $ f s where
+    step Nothing        = a0
+    step (Just (a,s'))  = a `mappend` step (f s')
+
+unfoldMonoidL :: Monoid a => (st -> Maybe (a,st)) -> a -> st -> a 
+unfoldMonoidL f a0 s = step $ f s where
+    step Nothing        = a0
+    step (Just (a,s'))  = let a' = step (f s') in a' `seq`  a' `mappend` a
+
+
+genUnfold :: (st -> Maybe (a,st)) -> (a -> a -> a) -> a -> st -> a
+genUnfold f g a0 s = step $ f s where
+    step Nothing        = a0
+    step (Just (a,s'))  = a `g` step (f s')
+
+-- genUnfold with 2 states...
+genUnfold2 :: (s1 -> s2 -> Maybe (a,s1,s2)) -> (a -> a -> a) -> a -> s1 -> s2 -> a
+genUnfold2 f g a0 s t = step $ f s t where
+    step Nothing          = a0
+    step (Just (a,s',t')) = a `g` step (f s' t')
+
+ 
+
+
+-- supply a (potentially different) reduction function at each step.
+
+veryGenUnfold :: (st -> Maybe (a -> a -> a, a,st)) -> a -> st -> a
+veryGenUnfold  f a0 s = step $ f s where
+   step Nothing           = a0
+   step (Just (op,a,s'))  = a `op` step (f s')
 
 
 -- 'specs'
@@ -128,6 +161,9 @@ dblangles = enclose (text "<<") (text ">>")
 infixr 5 `nextLine`
 nextLine :: Doc -> Doc -> Doc 
 nextLine = (<$>)
+
+sglLine :: Doc -> Doc 
+sglLine d = d <> line
 
 
 doubleQuote :: String -> Doc

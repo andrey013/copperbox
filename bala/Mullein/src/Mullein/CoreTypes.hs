@@ -104,16 +104,7 @@ instance Spacer (ElementP e) where
   spacer d     = Spacer d  
 
 --------------------------------------------------------------------------------
--- Post processing and pretty printing scores
-
-data OutputFragment a = MidtuneCmd Doc 
-                      | BarOutput Doc
-                      | Prefix a        -- e.g. "|:" 
-                      | Suffix a        -- e.g. "|" or ":|"
-  deriving (Show)
-
-data BarDiv = RepStart | RepEnd | NRep Int | SglBar | DblBar 
-  deriving (Eq,Show)
+-- Pretty printing scores
 
 
 -- A Phantom type 

@@ -37,7 +37,6 @@ import qualified Text.PrettyPrint.Leijen as PP
 
 
 
-type LilyPondFragment = OutputFragment BarDiv
 
 newtype LilyPondOutput = LilyPondOutput { getLilyPondOutput :: Doc }
 
@@ -50,17 +49,17 @@ generateLilyPond k m a =
 
 
 
-oPart :: LyNote e => PartP e -> M (S.Seq LilyPondFragment)
+oPart :: LyNote e => PartP e -> M (S.Seq OutputFragment)
 oPart (Part as)          =
     foldlM (\a e -> (a ><) <$> oPhrase e) S.empty as
 
 
-oPhrase :: LyNote e => PhraseP e -> M (S.Seq LilyPondFragment)
+oPhrase :: LyNote e => PhraseP e -> M (S.Seq OutputFragment)
 oPhrase (Phrase a)       = oMotif a
 oPhrase (Repeated a)     = repeated <$> oMotif a
 oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a <*> oMotif x <*> oMotif y
 
-oMotif :: LyNote e => MotifP e -> M (S.Seq LilyPondFragment)
+oMotif :: LyNote e => MotifP e -> M (S.Seq OutputFragment)
 oMotif (Motif k m bs)    = motifFragment 
     <$> keyChange k keyCmd <*> meterChange m meterCmd  <*> mapM oBar bs
 
@@ -105,31 +104,73 @@ coerceDuration d | d <= 0    = Nothing
 --------------------------------------------------------------------------------
 -- post process
 
-postProcess :: S.Seq LilyPondFragment -> Doc
-postProcess = fn . dropRepStart where
-  fn se | S.null se           = empty
-        | otherwise           = printLine $ toList se
+-- Note LilyPond drops the printed repeat start if the repeat is the first
+-- element (so we don't have to).
+
+postProcess :: S.Seq OutputFragment -> Doc
+postProcess = fn . intersperseBars . toList . addDblEnd where
+  fn []           = empty
+  fn xs           = printFrags xs
 
 
+printFrags :: [OutputFragment] -> Doc
+printFrags  = genUnfold2 phi nextLine empty 0 where
+    phi _ []                    = Nothing
+    phi i (MidtuneCmd d : xs)   = Just (indent (i*2) d,i,xs)
+    
+    -- lookahead
+    phi i (BarOutput d : SglBar : xs)    
+                                = Just (indent (i*2) d <+> sgl_bar,i,xs)
+    phi i (BarOutput d : DblBar : xs) 
+                                = Just (indent (i*2) d <+> dbl_bar,i,xs)
+   
+    phi i (BarOutput d : xs)    = Just (indent (i*2) d,i,xs)
 
-printLine :: [LilyPondFragment] -> Doc
-printLine  = step empty . intersperseBars  where
-    step acc []                    = acc
-    step acc (MidtuneCmd d : xs)   = step (acc `nextLine` d 
-                                               `nextLine` empty) xs
-    step acc (BarOutput d : xs)    = step (acc `nextLine` d) xs
-    step acc (Prefix s : xs)       = step (acc <+> barDiv s) xs 
-    step acc (Suffix s : xs)       = step (acc <+> barDiv s) xs
+    phi i (RepStart : xs)       = Just (indent (i*2) repeat_text, 1, xs)
+    phi i (RepEnding n : xs) 
+          | n == 1              = Just (indent (i*2) alt_start, i+1, xs)
+          | otherwise           = Just (indent (i*2) alt_next, i, xs)
+    phi i (RepEnd : xs)         = Just (endBraces i, 0, xs)
+    phi i (SglBar : xs)         = Just (indent (i*2) sgl_bar, i, xs)
+    phi i (DblBar : xs)         = Just (indent (i*2) dbl_bar, i, xs)   
 
 
-barDiv :: BarDiv -> Doc
+repeat_text :: Doc
+repeat_text = command "repeat" <+> text "volta 2" <+> lbrace
+
+alt_start :: Doc
+alt_start = space <> rbrace `nextLine` command "alternative" <+> lbrace 
+                            `nextLine` lbrace
+
+alt_next :: Doc
+alt_next = space <> rbrace `nextLine` lbrace
+
+dbl_bar :: Doc 
+dbl_bar = command "bar" <+> dquotes (text "||")
+
+sgl_bar :: Doc
+sgl_bar = text "|"
+
+
+endBraces :: Int -> Doc
+endBraces i | i <=0     = empty
+            | otherwise = indent ((i-2)*2) rbrace `nextLine` endBraces (i-1)
+
+{-
+barDiv :: OutputFragment -> Doc
 barDiv RepStart               = repStart
-barDiv RepEnd                 = repEnd
-barDiv (NRep n) | n == 1      = repStart
-                | otherwise   = command "alternative"
+barDiv RepEnd                 = rbrace
+barDiv (RepEnding n) | n == 1      = command "alternative" <+> lbrace
+                     | otherwise   = command "alternative"
 barDiv SglBar                 = char '|'
 barDiv DblBar                 = command "bar" <+> dquotes (text "||")
 
+repStart :: Doc
+repStart = command "repeat" <+> text "volta 2" <+> lbrace
+
+repEnd :: Doc
+repEnd = rbrace
+-}
 
 --------------------------------------------------------------------------------
 -- helpers
@@ -137,6 +178,7 @@ barDiv DblBar                 = command "bar" <+> dquotes (text "||")
 
 overlay :: [Doc] -> Doc
 overlay = dblangles . vsep . punctuate (text " \\")    
+
 
 
 note :: Pitch -> Doc 

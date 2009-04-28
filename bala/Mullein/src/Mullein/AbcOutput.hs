@@ -27,13 +27,12 @@ import Mullein.Utils
 import Control.Applicative hiding ( empty )
 import Control.Monad.State
 import Data.Foldable ( foldlM, toList )
-import Data.Sequence ( (<|), (><), ViewL(..), viewl )
+import Data.Sequence ( (<|), (><) )
 import qualified Data.Sequence as S
 import Data.Ratio
 import Text.PrettyPrint.Leijen hiding ( (<$>) )
 
 
-type AbcFragment = OutputFragment BarDiv
 
 newtype AbcOutput = AbcOutput { getAbcOutput :: Doc }
 
@@ -43,16 +42,16 @@ generateAbc k m ns a = AbcOutput $ postProcess ns $ evalState (oPart a) s0 where
     s0 = St { current_key = k, current_meter = m } 
 
 
-oPart :: AbcNote e => PartP e -> M (S.Seq AbcFragment)
+oPart :: AbcNote e => PartP e -> M (S.Seq OutputFragment)
 oPart (Part as)          =
     foldlM (\a e -> (a ><) <$> oPhrase e) S.empty as
 
-oPhrase :: AbcNote e => PhraseP e -> M (S.Seq AbcFragment)
+oPhrase :: AbcNote e => PhraseP e -> M (S.Seq OutputFragment)
 oPhrase (Phrase a)       = oMotif a
 oPhrase (Repeated a)     = repeated <$> oMotif a
 oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a  <*> oMotif x <*> oMotif y
                                          
-oMotif :: AbcNote e => MotifP e -> M (S.Seq AbcFragment)
+oMotif :: AbcNote e => MotifP e -> M (S.Seq OutputFragment)
 oMotif (Motif k m bs)    = motifFragment 
     <$> keyChange k keyField <*> meterChange m meterField <*> mapM oBar bs
 
@@ -93,47 +92,57 @@ oElement (GraceNotes xs)  = braces $ hcat $ map f xs where
 
 
 
-postProcess :: [Int] -> S.Seq AbcFragment -> Doc
-postProcess ns = fn ns . dropRepStart where
-    fn _      se  | S.null se   = empty
-    fn []     se                = printLine $ toList se
-    fn (i:is) se                = printLine xs `nextLine` fn is se' where
-                                    (xs,se') = fragSplitAt i se
-
-
-
-fragSplitAt :: Int 
-            -> S.Seq AbcFragment
-            -> ([AbcFragment], S.Seq AbcFragment)
-fragSplitAt i se = (\(xs,(_,vw)) -> (xs,g vw)) $  anaSt phi (i,viewl se) 
+postProcess :: [Int] -> S.Seq OutputFragment -> Doc
+postProcess ns = 
+    fn ns . intersperseBars . toList . addDblEnd . dropRepStart
   where
-    phi (_, EmptyL)             = Nothing
-    phi (n, BarOutput d :< sa)  
-            | n >  0            = Just (BarOutput d, (n-1, viewl sa))
+    fn _      []              = empty
+    fn []     xs              = printFrags xs
+    fn (i:is) xs              = printFrags ls `nextLine` fn is xs' where
+                                    (ls,xs') = fragSplitAt i xs
+
+
+
+fragSplitAt :: Int -> [OutputFragment] -> ([OutputFragment], [OutputFragment])
+fragSplitAt i frags = extract $ anaSt phi (i,frags) 
+  where
+    phi (_, [])                 = Nothing
+    phi (n, (BarOutput d : xs))
+            | n >  0            = Just (BarOutput d, (n-1,xs))
             | otherwise         = Nothing
-    phi (n, Prefix s :< sa) 
-            | n >  0            = Just (Prefix s, (n, viewl sa)) -- take prefix (don't decr)
+
+    phi (n, (RepStart : xs))
+            | n >  0            = Just (RepStart, (n, xs)) -- take prefix (don't decr)
+            | otherwise         = Nothing
+
+    -- likewise for RepEnding which is also a prefix
+    phi (n, (RepEnding z : xs))
+            | n >  0            = Just (RepEnding z, (n, xs))
             | otherwise         = Nothing
 
    -- can always take a suffix or midtune field
-    phi (n, s :< sa)            = Just (s, (n, viewl sa))
+    phi (n, (x:xs))             = Just (x, (n, xs))
 
-    g EmptyL                    = S.empty
-    g (a :< sa)                 = a <| sa
+    extract (xs,(_,vw))         = (xs,vw)
 
- 
-printLine :: [AbcFragment] -> Doc
-printLine  = step empty . intersperseBars  where
-    step acc []                    = acc
-    step acc (MidtuneCmd d : xs)   = step (acc <> linecont `nextLine` d 
-                                                           `nextLine` empty) xs
-    step acc (BarOutput d : xs)    = step (acc <> d) xs
-    step acc (Prefix s : xs)       = step (acc <> barDiv s) xs 
-    step acc (Suffix s : xs)       = step (acc <> barDiv s) xs
+printFrags :: [OutputFragment] -> Doc
+printFrags  = genUnfold phi (<>) empty where
+    phi []                    = Nothing
+    phi (MidtuneCmd d : xs)   = Just (linecont `nextLine` d 
+                                               `nextLine` empty, xs)
+    phi (BarOutput d : xs)    = Just (d, xs)
+    phi (RepStart : xs)       = Just (text "|:", xs)
+    phi (RepEnd : xs)         = Just (text ":|", xs)
+    phi (RepEnding n : xs) 
+                | n == 1      = Just (text "|[1", xs)
+                | otherwise   = Just (text ":|[" <> int n, xs)  -- note, extra colon
+    phi (SglBar : xs)         = Just (char '|', xs)
+    phi (DblBar : xs)         = Just (text "||", xs)
 
     linecont = char '\\'
 
 
+{-
 barDiv :: BarDiv -> Doc
 barDiv RepStart               = text "|:"
 barDiv RepEnd                 = text ":|"
@@ -141,6 +150,7 @@ barDiv (NRep n) | n == 1      = text "|[1"
                 | otherwise   = text ":|[" <> int n  -- note, extra colon
 barDiv SglBar                 = char '|'
 barDiv DblBar                 = text "||"
+-}
 
 
   
