@@ -12,7 +12,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined
+-- Portability :  GHC
 --
 -- Named musical elements (e.g. notes, keys) within the NoteCtx monad
 --

@@ -8,16 +8,15 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  Flexible instances, mptc.
+-- Portability :  GHC
 --
--- An interface for Haskore to Mullein
+-- Translate Haskore's Music datatype to Mullein scores for each instrument.
 --
 --------------------------------------------------------------------------------
 
 
 module MulleinHaskore.System where
 
--- import MulleinHaskore.MusicFold
 
 import Mullein.Core
 import Mullein.CoreTypes
@@ -45,8 +44,18 @@ type Line  = (OnsetTime, Seq M.Element)
 
 -- A system where each instrument has all parallel overlays split 
 -- into seperate lines. 
--- The lines can be merged into overlays later...
+-- Later the lines can be merged into overlays on demand...
 type System = SystemP [Line]
+
+-- Helpers to build scores 
+instMotif :: InstName -> Key -> MetricalSpec -> System -> M.Motif
+instMotif name k m sys = M.motif k m ovs where
+    ovs = makeOverlays name sys
+
+linearPart :: M.Motif -> M.Part
+linearPart m = M.part [M.phrase m]
+
+---
 
 
 makeOverlays :: InstName -> System -> OverlayList M.ScNote
@@ -68,19 +77,11 @@ mergeParallels (x:xs) = foldl' fn (M.primary $ mkLine x) xs
 
 
 
--- 
-
 default_instrument :: H.IName
 default_instrument = "default"
 
 buildSystem :: H.Music -> System
-buildSystem = parSystem default_instrument
-
-
-
-
-parSystem :: InstName -> H.Music -> System
-parSystem instr = foldr fn Map.empty . snd . untree 0 instr 
+buildSystem = foldr fn Map.empty . snd . untree 0 default_instrument
   where
    fn :: InstLine -> System -> System
    fn (name,o,se) m = maybe (Map.insert name [(o,se)] m)
@@ -96,7 +97,7 @@ untree start instr = step start (instr,start,empty) []
                                       where sc  = M.ScNote p' xs'
                                             p'  = cPitch p
                                             d'  = cDur d
-                                            xs' = []
+                                            xs' = const [] xs  -- TODO translate xs
 
     step t z zs (H.Rest d)          = (t+d', z `snoc` (Rest d'):zs)
                                       where d' = cDur d

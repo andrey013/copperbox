@@ -8,6 +8,7 @@ module Scale where
 import Haskore
 
 import MulleinHaskore.Abc
+import MulleinHaskore.LilyPond
 import qualified MulleinHaskore.System as M
 
 import qualified Mullein.AbcConvert       as M
@@ -38,32 +39,16 @@ fourFourTime = M.metricalSpec 4 4
 
 main = simpleAbc "piano" M.g_major fourFourTime (M.buildSystem gMajor)
 
+lyMain = simpleLilyPond "piano" M.g_major fourFourTime (M.buildSystem gMajor)
+
+
 demoMidi = test gMajor
 
 
-chord1 = (g 4 qn []) :=: (b 4 qn []) :=: (d 4 qn [])
+chord1 = Instr "piano" $ Tempo 2 $
+           (g 4 qn []) :=: (b 4 qn []) :=: (d 4 qn [])
 
-{-
- 
-fourFourTime :: M.MetricalSpec
-fourFourTime = M.metricalSpec 4 4
+chordOut = simpleAbc "piano" M.g_major fourFourTime (M.buildSystem chord1)
 
-gMajor_melody = f $ snd $ head sys1 where
-    f    = M.melody M.g_major fourFourTime 
-    sys1 = M.system' gMajor
+chordOutLy = simpleLilyPond "piano" M.g_major fourFourTime (M.buildSystem chord1)
 
-gMajor_abc :: M.Part
-gMajor_abc = M.convertToAbc lset M.eighth gMajor_melody where
-  lset = maybe (error "lset missing") id $ M.makeLabelSet M.g_major
-
-gMajor_ly :: M.Part
-gMajor_ly = M.convertToLy M.c4 gMajor_melody where
-  lset = maybe (error "lset missing") id $ M.makeLabelSet M.g_major
-
-
-
-abcPrint = putDoc $ M.outputAbc M.g_major (fst fourFourTime) (repeat 4) gMajor_abc
-
-lyPrint  = putDoc $ M.outputLy M.g_major (fst fourFourTime) gMajor_ly
-
--}

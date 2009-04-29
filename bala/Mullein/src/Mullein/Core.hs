@@ -7,7 +7,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  GHC
 --
 -- Common functions operating on core types
 --
