@@ -6,6 +6,8 @@
 module Scale where
 
 import Haskore
+
+import MulleinHaskore.Abc
 import qualified MulleinHaskore.System as M
 
 import qualified Mullein.AbcConvert       as M
@@ -28,26 +30,15 @@ gMajNotes = line [g 4 qn [], a 4 qn [], b 4 qn [], c 5 qn [],
 
 gMajor = Instr "piano" (Tempo 2 gMajNotes)
 
-demo0 = test gMajor
 
-demo1' = M.untree 0 "no-inst" gMajor
-
-ovs1 :: M.OverlayList M.ScNote
-ovs1 = maybe (error "missing") M.mergeParallels 
-          $ Map.lookup "piano" $ M.parSystem "no-inst" gMajor
-
-score1 = M.part [M.phrase $ M.motif M.g_major fourFourTime ovs1] 
  
 fourFourTime :: M.MetricalSpec
 fourFourTime = M.metricalSpec 4 4
 
 
-gMajor_abc :: M.Part
-gMajor_abc = M.convertToAbc smap M.du8 score1 where
-  smap = maybe (error "spelling map missing") id $ M.makeSpellingMap M.g_major []
+main = simpleAbc "piano" M.g_major fourFourTime (M.buildSystem gMajor)
 
-main = putDoc $ M.getAbcOutput $ 
-         M.generateAbc M.g_major (fst fourFourTime) (repeat 4) gMajor_abc
+demoMidi = test gMajor
 
 
 chord1 = (g 4 qn []) :=: (b 4 qn []) :=: (d 4 qn [])

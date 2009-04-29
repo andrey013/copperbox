@@ -34,23 +34,26 @@ import Data.Ratio
 import Data.Sequence hiding ( null )
 import qualified Data.Sequence as S
 
+type InstName = String
 
--- Note Munz converts Music not Perfomance...
+type SystemP e = Map.Map InstName e 
 
-type System e = Map.Map H.IName e 
+type OnsetTime = Duration
 
-system :: H.Music -> System e
-system _ = undefined
+type InstLine = (InstName, OnsetTime, Seq M.Element)
+type Line  = (OnsetTime, Seq M.Element)
 
-
-melody :: Key -> MetricalSpec -> [M.Element] -> M.Part
-melody k m xs = M.part [p1] where 
-    p1 = M.phrase $ M.motif k m (M.primary xs) 
-
-
--- Get out of the Hudak tree as quickly as possible...
+-- A system where each instrument has all parallel overlays split 
+-- into seperate lines. 
+-- The lines can be merged into overlays later...
+type System = SystemP [Line]
 
 
+makeOverlays :: InstName -> System -> OverlayList M.ScNote
+makeOverlays name sys = maybe failure mergeParallels $ Map.lookup name sys
+  where
+    failure = error $ "makeOverlays - could not find instrument " ++ name ++
+                      "in the score."  
 
 mergeParallels :: [(Duration,Seq M.Element)] -> OverlayList M.ScNote
 mergeParallels []     = ([],[])
@@ -64,23 +67,31 @@ mergeParallels (x:xs) = foldl' fn (M.primary $ mkLine x) xs
     mkLine (d,se) = M.space d : toList se
 
 
-type MLine = (Duration, H.IName, Seq M.Element)
+
+-- 
+
+default_instrument :: H.IName
+default_instrument = "default"
+
+buildSystem :: H.Music -> System
+buildSystem = parSystem default_instrument
 
 
-parSystem :: H.IName -> H.Music -> System [(Duration,Seq M.Element)]
+
+
+parSystem :: InstName -> H.Music -> System
 parSystem instr = foldr fn Map.empty . snd . untree 0 instr 
   where
-   fn :: MLine -> System [(Duration,Seq M.Element)] 
-               -> System [(Duration,Seq M.Element)]
-   fn (o,name,se) m = maybe (Map.insert name [(o,se)] m)
+   fn :: InstLine -> System -> System
+   fn (name,o,se) m = maybe (Map.insert name [(o,se)] m)
                             (\xs -> Map.insert name ((o,se):xs) m)
                             (Map.lookup name m)
 
 
-untree :: Duration -> H.IName -> H.Music -> (Duration, [MLine])
-untree start instr = step start (start,instr,empty) []
+untree :: Duration -> H.IName -> H.Music -> (Duration, [InstLine])
+untree start instr = step start (instr,start,empty) []
   where
-    step :: Duration -> MLine -> [MLine] -> H.Music -> (Duration, [MLine])
+    step :: Duration -> InstLine -> [InstLine] -> H.Music -> (Duration, [InstLine])
     step t z zs (H.Note p d xs)     = (t+d', z `snoc` (Note sc d'):zs) 
                                       where sc  = M.ScNote p' xs'
                                             p'  = cPitch p
@@ -112,14 +123,8 @@ untree start instr = step start (start,instr,empty) []
     
     step t z zs (H.Phrase _ mus)    = step t z zs mus
 
-    snoc (t,name,se) e = (t,name,se |> e)
+    snoc (name,t,se) e = (name,t,se |> e)
 
-{-
-instrStart :: H.IName -> MLine -> MLine
-instrStart n (t,se) = case viewl se of
-                        (HskInstr _ :< _) -> (t,se)
-                        _                 -> (t,HskInstr n <| se)
--}                           
 
 
 

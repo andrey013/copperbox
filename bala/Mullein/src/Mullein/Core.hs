@@ -60,6 +60,10 @@ metricalSpec n d
            ++ "meter that is neither simple or compound."
 
 
+unitNote :: MetricalSpec -> Duration
+unitNote (m,_) | meterFraction m >= 3%4 = 1%8
+               | otherwise              = 1%16
+
 
 -- Note compoundMeter and simpleMeter overlap
 
