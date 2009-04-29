@@ -44,8 +44,7 @@ generateLilyPond :: LyNote e => Key -> Meter -> PartP e -> LilyPondOutput
 generateLilyPond k m a = 
     LilyPondOutput $ postProcess $ evalState (oPart a) s0 
   where
-    s0 = St k m
-
+    s0       = St k m
 
 
 oPart :: LyNote e => PartP e -> M (S.Seq OutputFragment)
@@ -60,7 +59,7 @@ oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a <*> oMotif x <*> oMotif y
 
 oMotif :: LyNote e => MotifP e -> M (S.Seq OutputFragment)
 oMotif (Motif k m bs)    = motifFragment 
-    <$> keyChange k keyCmd <*> meterChange m meterCmd  <*> mapM oBar bs
+    <$> keyChange k keyCmd <*> meterChange m timeCmd  <*> mapM oBar bs
 
 
 oBar :: LyNote e => BarP e -> M Doc
@@ -172,9 +171,8 @@ note (Pitch l a o) = pitchLabel l a <> ove o where
           | otherwise   = empty
 
 
-
--- lilypond middle c is c' 
--- HNotate middle c is c4
+-- LilyPond - middle c is c' (i.e. octave 1) 
+-- Mullein  - middle c is c4 (i.e. octave 4)
 rescale :: Pitch -> Pitch
 rescale (Pitch l a o)   = Pitch l a (o-3)
 
@@ -223,8 +221,8 @@ keyCmd (Key (PitchLabel l a) m) = command "key" <+> pitchLabel l a <+> mode m
 
 
 
-meterCmd :: Meter -> Doc
-meterCmd m = command "meter" <+> fn m where
+timeCmd :: Meter -> Doc
+timeCmd m = command "time" <+> fn m where
    fn (TimeSig n d) = integer n <> char '/' <> integer d
    fn CommonTime    = text "4/4"
    fn CutTime       = text "2/2"

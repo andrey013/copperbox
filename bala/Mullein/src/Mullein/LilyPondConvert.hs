@@ -29,7 +29,7 @@ import Control.Applicative
 import Control.Monad.State
 import Data.Ratio
 
-data St = St { relative_pitch :: Pitch, relative_duration :: Duration }
+data St = St { relative_pitch :: Maybe Pitch, relative_duration :: Duration }
 
 
 type CM a = State St a
@@ -37,10 +37,16 @@ type CM a = State St a
 instance ExchangePitch (State St) where
   exchangePitch = exchPitch
 
+convertToLyRelative :: LyNote e => Pitch -> PartP e -> PartP e
+convertToLyRelative rp = convert (Just rp)
 
-convertToLy :: LyNote e => Pitch -> PartP e -> PartP e
-convertToLy rp e = evalState (cPart e) s0 where
-    s0 = St  {relative_pitch=rp, relative_duration=1%4}
+convertToLyAbsolute :: LyNote e => PartP e -> PartP e
+convertToLyAbsolute = convert Nothing
+
+
+convert :: LyNote e => Maybe Pitch -> PartP e -> PartP e
+convert mb_rp e = evalState (cPart e) s0 where
+    s0 = St  {relative_pitch=mb_rp, relative_duration=1%4}
 
 cPart :: LyNote e => PartP e -> CM (PartP e)
 cPart (Part as)           = Part <$> mapM cPhrase as
@@ -85,13 +91,6 @@ cElement (Chord _ _)      = error "Chord"
 cElement (GraceNotes _)   = error "GraceNotes"
 
 
-{-
--- Pitch is always treated as relative (wrap with a newtype to get absolute)
-instance LyPitchC Pitch where
-  lyPitchC new = exchPitch new >>= \old -> return $ relPitch old new
-  lyPitchesC _xs = error $ "lyPitches -- todo"
--}
-
 
 --------------------------------------------------------------------------------
 -- helpers
@@ -104,9 +103,11 @@ exchDuration new = do
 
 exchPitch :: Pitch -> CM Pitch
 exchPitch new = do
-    old <- gets relative_pitch
-    modify $ \s -> s {relative_pitch=new}
-    return old
+    mb_old <- gets relative_pitch
+    maybe (return new) justCont mb_old
+  where
+    justCont old = do { modify $ \s -> s {relative_pitch=Just new}
+                      ; return old }
 
 
 resetDuration :: CM ()

@@ -21,7 +21,7 @@ module Mullein.LilyPondDoc where
 
 import Mullein.CoreTypes
 import Mullein.Duration
-import Mullein.LilyPondOutput ( LilyPondOutput(..), command, note )
+import Mullein.LilyPondOutput
 import Mullein.Pitch
 import Mullein.Utils
 
@@ -81,10 +81,10 @@ usedef :: String -> P CtxScore
 usedef = P . command
 
 keycmd :: Key -> P CtxScore
-keycmd _k = P $ command "key" <+> comment "Key - TODO"
+keycmd = P . keyCmd
 
-metercmd :: Meter -> P CtxScore
-metercmd _k = P $ command "meter" <+> comment "Meter - TODO"
+time :: Meter -> P CtxScore
+time = P . timeCmd
 
 -- | The @set@ command allows LilyPond properties to be modified
 -- with arbitrary Scheme code.
@@ -97,8 +97,12 @@ setcmd d = P $ command "set" <+> d
 clef :: String -> P CtxScore 
 clef s = P $ command "clef" <+> text s
 
-relative :: Pitch -> P CtxScore 
-relative p = P $ command "relative" <+> note p
+relative :: Pitch -> P CtxScore -> P CtxScore 
+relative p expr = P $ command "relative" <+> note (rescale p) 
+                       <+> nestBraces (unP expr) 
+
+melody :: Pitch -> Key -> Meter -> P CtxScore -> P CtxScore
+melody p k m expr = relative p (keycmd k +++ time m +++ expr)
 
 
 lilypondOutput :: LilyPondOutput -> P CtxScore

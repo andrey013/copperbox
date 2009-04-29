@@ -20,7 +20,7 @@ import Text.PrettyPrint.Leijen ( putDoc )
 
 main = putDoc $ getLilyPondOutput $ 
          generateLilyPond c_major (fst fourFourTime) drums where
-  drums = convertToLy c4 drum_part
+  drums = convertToLyAbsolute drum_part
 
 dMotif = motif c_major fourFourTime
 

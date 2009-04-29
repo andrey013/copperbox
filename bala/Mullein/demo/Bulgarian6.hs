@@ -30,7 +30,7 @@ main = putDoc $ Abc.getAbcOutput $
 
 ly = putDoc $ Ly.getLilyPondOutput $  
        Ly.generateLilyPond a_major (fst twoFourTime) bulg6 where
-  bulg6 = Ly.convertToLy c4 part1_8
+  bulg6 = Ly.convertToLyRelative c4 part1_8
 
 
 bulgarian6 :: Part
