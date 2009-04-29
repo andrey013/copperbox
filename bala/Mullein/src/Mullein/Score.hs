@@ -83,7 +83,7 @@ data NoteAttribute = Fingering Int
   deriving (Eq,Show)
 
 data ScNote = ScNote Pitch [NoteAttribute]
-
+  deriving (Show)
 
 -- Synonyms for the common case where we approximate Haskore
 type Part      = PartP ScNote
