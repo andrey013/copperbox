@@ -65,11 +65,11 @@ import Mullein.Bracket
 import Mullein.Core
 import Mullein.CoreTypes
 import Mullein.Duration
-import Mullein.LabelSet ( naturalize )
 import Mullein.LilyPondNoteClass
 import qualified Mullein.LilyPondConvert as Ly
 import qualified Mullein.LilyPondOutput as Ly
 import Mullein.Pitch
+import Mullein.SpellingMap ( naturalize )
 
 import Data.Ratio
 import Text.PrettyPrint.Leijen ( (<>) )

@@ -19,7 +19,6 @@ module Mullein.LilyPondOutput where
 
 import Mullein.CoreTypes
 import Mullein.Duration
-import Mullein.LabelSet
 import Mullein.LilyPondNoteClass
 import Mullein.OutputCommon
 import Mullein.Pitch
@@ -156,21 +155,6 @@ endBraces :: Int -> Doc
 endBraces i | i <=0     = empty
             | otherwise = indent ((i-2)*2) rbrace `nextLine` endBraces (i-1)
 
-{-
-barDiv :: OutputFragment -> Doc
-barDiv RepStart               = repStart
-barDiv RepEnd                 = rbrace
-barDiv (RepEnding n) | n == 1      = command "alternative" <+> lbrace
-                     | otherwise   = command "alternative"
-barDiv SglBar                 = char '|'
-barDiv DblBar                 = command "bar" <+> dquotes (text "||")
-
-repStart :: Doc
-repStart = command "repeat" <+> text "volta 2" <+> lbrace
-
-repEnd :: Doc
-repEnd = rbrace
--}
 
 --------------------------------------------------------------------------------
 -- helpers
@@ -235,24 +219,15 @@ command = (char '\\' <>) . text
 
 -- This implementation of variant key signatures is not so good...
 keyCmd :: Key -> Doc
-keyCmd k@(Key (PitchLabel l a) m xs) 
-    | null xs   = command "key" <+> pitchLabel l a <+> mode m
-    | otherwise = command "set" <+> text "Staff.keySignature" 
-                                <+> text "= #`" <> parens scm 
+keyCmd (Key (PitchLabel l a) m) = command "key" <+> pitchLabel l a <+> mode m
 
-  where
-    scm           = vsep $ map f $ trebleKeyMarks k
-    f (o,s,acdt)  = parens ((parens $ int o <> PP.dot <> int s) 
-                            <+> PP.dot <+> g acdt)
-    g Nat         = text ",NAT"
-    g Sharp       = text ",SHARP"
-    g DoubleSharp = text ",DOUBLE-SHARP"
-    g Flat        = text ",FLAT"
-    g DoubleFlat  = text ",DOUBLE-FLAT"
 
 
 meterCmd :: Meter -> Doc
-meterCmd _ = text "\\meter - TODO"
+meterCmd m = command "meter" <+> fn m where
+   fn (TimeSig n d) = integer n <> char '/' <> integer d
+   fn CommonTime    = text "4/4"
+   fn CutTime       = text "2/2"
 
 
 mode :: Mode -> Doc
@@ -268,16 +243,3 @@ mode Locrian      = command "locrian"
 
 
 
-repStart :: Doc
-repStart = command "repeat" <+> text "volta 2" <+> lbrace
-
-repEnd :: Doc
-repEnd = rbrace
-
-{-
-
-fsrepeat :: Doc -> Doc -> Doc -> Doc
-fsrepeat a x y = 
-    command "repeat" <+> text "volta 2" <+> (braces a)
-        PP.<$> command "alternative" <+> braces ((braces x) <+> (braces y))
--}

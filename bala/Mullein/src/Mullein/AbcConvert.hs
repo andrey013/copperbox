@@ -20,23 +20,23 @@ module Mullein.AbcConvert where
 import Mullein.AbcNoteClass
 import Mullein.CoreTypes
 import Mullein.Duration
-import Mullein.LabelSet
+import Mullein.SpellingMap
 import Mullein.Utils () -- State Applicative instance
 
 import Control.Applicative
 import Control.Monad.State
 import Data.Ratio
 
-data St = St { label_set :: LabelSet, unit_note_length :: Duration }
+data St = St { spelling_map :: SpellingMap, unit_note_length :: Duration }
 
 
 type CM a = State St a
 
 
 
-convertToAbc :: AbcNote e => LabelSet -> Duration -> PartP e -> PartP e
-convertToAbc lset unl e = evalState (cPart e) s0 where
-    s0 = St  {label_set=lset, unit_note_length=unl} 
+convertToAbc :: AbcNote e => SpellingMap -> Duration -> PartP e -> PartP e
+convertToAbc smap unl e = evalState (cPart e) s0 where
+    s0 = St  {spelling_map=smap, unit_note_length=unl} 
 
 cPart :: AbcNote e => PartP e -> CM (PartP e)
 cPart (Part as)           = Part <$> mapM cPhrase as
@@ -66,9 +66,9 @@ cBracket (Bracket as)     = Bracket   <$> mapM cElement as
 
 
 cElement :: AbcNote e => ElementP e -> CM (ElementP e)
-cElement (Note p d)       = (\lset unl -> 
-                             Note (respell lset p) (unitRescale unl d))
-                              <$> gets label_set <*> gets unit_note_length
+cElement (Note p d)       = (\smap unl -> 
+                             Note (respell smap p) (unitRescale unl d))
+                              <$> gets spelling_map <*> gets unit_note_length
 cElement (Rest d)         = (\unl -> Rest $ unitRescale unl d)
                               <$> gets unit_note_length
 cElement (Spacer d)       = (\unl -> Spacer $ unitRescale unl d)

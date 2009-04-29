@@ -12,10 +12,10 @@ import Mullein.Bracket
 import Mullein.Core
 import Mullein.CoreTypes
 import Mullein.Duration
-import Mullein.LabelSet
 import Mullein.NamedElements
 import Mullein.Pitch
 import Mullein.Score
+import Mullein.SpellingMap
 import Mullein.Utils
 
 import qualified Mullein.LilyPondConvert as Ly
@@ -35,7 +35,7 @@ ly = putDoc $ Ly.getLilyPondOutput $
 
 bulgarian6 :: Part
 bulgarian6 = convertToAbc lset sn part1_8 where
-  lset = maybe (error "lset missing") id $ makeLabelSet a_major
+  lset = maybe (error "lset missing") id $ makeSpellingMap a_major []
 
 
 amMotif = motif a_major twoFourTime

@@ -33,7 +33,6 @@ library
     Mullein.Core,
     Mullein.CoreTypes,
     Mullein.Duration,
-    Mullein.LabelSet,
     Mullein.LilyPondConvert,
     Mullein.LilyPondDoc,
     Mullein.LilyPondNoteClass,
@@ -43,6 +42,7 @@ library
     Mullein.OutputCommon,
     Mullein.Pitch,
     Mullein.Score,
+    Mullein.SpellingMap,
     Mullein.Utils
   other-modules:
     

@@ -142,15 +142,6 @@ printFrags  = genUnfold phi (<>) empty where
     linecont = char '\\'
 
 
-{-
-barDiv :: BarDiv -> Doc
-barDiv RepStart               = text "|:"
-barDiv RepEnd                 = text ":|"
-barDiv (NRep n) | n == 1      = text "|[1"
-                | otherwise   = text ":|[" <> int n  -- note, extra colon
-barDiv SglBar                 = char '|'
-barDiv DblBar                 = text "||"
--}
 
 
   
@@ -167,12 +158,11 @@ mbCons (Just a) = (a <|)
 
 
 keyField :: Key -> Doc
-keyField (Key k m xs) = field 'K' keyspec where
-    keyspec        = pitchLabel k UPPER <> modeSpec m <> extras
+keyField (Key k m) = field 'K' keyspec where
+    keyspec        = pitchLabel k UPPER <> modeSpec m
     -- Don't print \maj\ here
     modeSpec Major = empty
     modeSpec x     = mode x 
-    extras         = hsep $ map (pitchLabel `flip` LOWER) xs
 
 
 meterField :: Meter -> Doc

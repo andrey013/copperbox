@@ -16,7 +16,7 @@
 module Mullein.AbcNoteClass where
 
 import Mullein.Duration
-import Mullein.LabelSet
+import Mullein.SpellingMap
 
 import Text.PrettyPrint.Leijen
 
@@ -25,7 +25,7 @@ class AbcNote e where
   -- as absolute values, whereas Mullein (and LilyPond) represent 
   -- pitches as absolute values. 
   -- Notes are respelt during the conversion to Abc  
-  respell  :: LabelSet -> e -> e
+  respell  :: SpellingMap -> e -> e
 
   -- (notes) ...
   abcNote  :: e -> Duration -> Doc

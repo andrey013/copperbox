@@ -411,7 +411,7 @@ du128 = 1%128
 -- keys
 
 majorKey :: PitchLetter -> Accidental -> Key
-majorKey l a = Key (PitchLabel l a) Major []
+majorKey l a = Key (PitchLabel l a) Major
  
 c_major :: Key
 c_major = majorKey C Nat
@@ -461,7 +461,7 @@ c_flat_major = majorKey C Flat
 
 
 minorKey :: PitchLetter -> Accidental -> Key
-minorKey l a = Key (PitchLabel l a) Minor []
+minorKey l a = Key (PitchLabel l a) Minor
 
 a_minor :: Key
 a_minor = minorKey A Nat

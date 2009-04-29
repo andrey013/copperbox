@@ -7,12 +7,12 @@ import Mullein.AbcDoc
 import Mullein.AbcOutput
 import Mullein.Core
 import Mullein.CoreTypes
-import Mullein.LabelSet
 import Mullein.LilyPondConvert
 import qualified Mullein.LilyPondDoc as Ly
 import Mullein.LilyPondOutput
 import Mullein.NamedElements
 import Mullein.Score
+import Mullein.SpellingMap
 
 import Text.PrettyPrint.Leijen ( putDoc )
 
@@ -47,7 +47,7 @@ ssf_score = part $ map (phrase .  mkMotif) [m1,m2,m3,m4]
 
 ssf_abc_part :: PartP ScNote 
 ssf_abc_part = convertToAbc lset sn ssf_score where
-  lset = maybe (error "lset missing") id $ makeLabelSet e_flat_major
+  lset = maybe (error "lset missing") id $ makeSpellingMap e_flat_major []
 
 ssf_abc_output :: AbcOutput
 ssf_abc_output = 

@@ -32,9 +32,13 @@ type MeterPattern = [Duration]
 type MetricalSpec = (Meter,MeterPattern)
 
   
-data Key = Key PitchLabel Mode [PitchLabel]
+data Key = Key PitchLabel Mode
   deriving (Eq,Show) 
 
+
+-- ABC has /extended keys/ that contain a list of modifiers to the 
+-- pitches in the original key.
+data ExtKey = ExtKey Key [PitchLabel]
   
 data Mode = Major | Minor | Lydian | Ionian | Mixolydian
           | Dorian | Aeolian | Phrygian | Locrian 

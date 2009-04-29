@@ -56,5 +56,10 @@ instance Arbitrary Mode where
   coarbitrary = variant . fromEnum
 
 instance Arbitrary Key where
-  arbitrary = Key <$> arbitrary <*> arbitrary <*> arbitrary
-  coarbitrary (Key l m ls) = coarbitrary l . coarbitrary m . coarbitrary ls 
+  arbitrary = Key <$> arbitrary <*> arbitrary
+  coarbitrary (Key l m) = coarbitrary l . coarbitrary m
+
+instance Arbitrary ExtKey where
+  arbitrary = ExtKey <$> arbitrary <*> arbitrary
+  coarbitrary (ExtKey k ps) = coarbitrary k . coarbitrary ps
+
