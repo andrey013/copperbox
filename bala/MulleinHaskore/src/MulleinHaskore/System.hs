@@ -22,7 +22,9 @@ import Mullein.Core
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Pitch
+
 import qualified Mullein.Score       as M
+import qualified Mullein.ScorePrint  as PP
 
 import qualified Haskore.Basics      as H
 
@@ -32,6 +34,8 @@ import qualified Data.Map as Map
 import Data.Ratio
 import Data.Sequence hiding ( null )
 import qualified Data.Sequence as S
+
+import Text.PrettyPrint.Leijen
 
 type InstName = String
 
@@ -90,7 +94,7 @@ buildSystem = foldr fn Map.empty . snd . untree 0 default_instrument
 
 
 untree :: Duration -> H.IName -> H.Music -> (Duration, [InstLine])
-untree start instr = step start (instr,start,empty) []
+untree start instr = step start (instr,start,S.empty) []
   where
     step :: Duration -> InstLine -> [InstLine] -> H.Music -> (Duration, [InstLine])
     step t z zs (H.Note p d xs)     = (t+d', z `snoc` (Note sc d'):zs) 
@@ -159,4 +163,14 @@ cDur :: H.Dur -> Duration
 cDur r = n%d where 
     n = fromIntegral $ numerator r
     d = fromIntegral $ denominator r 
+--------------------------------------------------------------------------------
+-- pretty print
 
+ppInstSys :: InstName -> Key -> MetricalSpec -> System -> Doc
+ppInstSys name k m sys = PP.part part
+  where
+    motif  = instMotif name k m sys
+    part   = linearPart motif
+
+printPart :: M.Part -> Doc
+printPart _ = text "TODO"

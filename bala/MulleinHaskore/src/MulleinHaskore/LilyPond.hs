@@ -42,8 +42,6 @@ simpleLilyPond name k m sys = unP $ scoreTemplate "Ly" middle_c k m ly_out
     ly_score  = convertToLyRelative middle_c ly_part
     ly_out    = generateLilyPond k (fst m) ly_score
 
--- NOTE octaveDist might not be working as expected when generating ssf.lhs
-
 scoreTemplate :: String 
               -> Pitch 
               -> Key 

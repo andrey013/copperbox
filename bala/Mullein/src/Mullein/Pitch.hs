@@ -181,14 +181,15 @@ instance PP.Pretty Pitch where
   pretty (Pitch l a o)  = PP.pretty l PP.<> PP.pretty a PP.<> PP.int o
 
 instance PP.Pretty PitchLetter where
-  pretty         = PP.text . show
+  pretty         = PP.char . toLowerLChar 
+
 
 instance PP.Pretty Accidental where
   pretty Nat          = PP.empty
-  pretty Sharp        = PP.char '#'
-  pretty Flat         = PP.char 'b'
-  pretty DoubleSharp  = PP.text "##"
-  pretty DoubleFlat   = PP.text "bb"
+  pretty Sharp        = PP.char 's'
+  pretty Flat         = PP.char 'f'
+  pretty DoubleSharp  = PP.text "ss"
+  pretty DoubleFlat   = PP.text "ff"
 
 
     

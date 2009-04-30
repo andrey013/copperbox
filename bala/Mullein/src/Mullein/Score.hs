@@ -72,7 +72,7 @@ import Mullein.Pitch
 import Mullein.SpellingMap ( naturalize )
 
 import Data.Ratio
-import Text.PrettyPrint.Leijen ( (<>) )
+import Text.PrettyPrint.Leijen ( Pretty(..), (<>) )
 
 
 
@@ -102,6 +102,8 @@ class Note a b c | c -> a b where
 --------------------------------------------------------------------------------
 -- instances
 
+instance Pretty ScNote where
+  pretty (ScNote p _) = pretty p
 
 instance AbcNote ScNote where
   respell lset (ScNote p attrs)  = ScNote (naturalize lset p) attrs
