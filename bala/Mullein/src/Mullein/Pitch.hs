@@ -106,6 +106,12 @@ toLowerLChar :: PitchLetter -> Char
 toLowerLChar = toLower . toUpperLChar
 
 
+
+-- LilyPond - middle c is c' (i.e. octave 1) 
+-- Mullein  - middle c is c5 (i.e. octave 5)
+rescaleOctave :: Int -> Pitch -> Pitch
+rescaleOctave i (Pitch l a o)   = Pitch l a (o+i)
+
   
   
 -- This will need pitch spelling
@@ -151,7 +157,7 @@ instance Semitones Accidental where
 -- ceses ->- fisis
 -- cbb   ->- f##   -- fourth 
 octaveDist :: Pitch -> Pitch -> Int
-octaveDist p p' =
+octaveDist p p' = 
     fn (abs $ arithmeticDistance p p') (if p > p' then negate else id) 
   where
     fn dist f 

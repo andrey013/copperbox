@@ -37,6 +37,9 @@ data CtxHeader
 instance Concat CtxTopLevel CtxTopLevel where
   P a +++ P b  = P $ a <$> b
 
+version :: String -> P CtxTopLevel
+version s    = P $ command "version" <+> doubleQuote s
+
 header :: [P CtxHeader] -> P CtxTopLevel
 header xs = P $ command "header" <$> nestBraces body where
     body = vsep (map unP xs)
@@ -98,7 +101,7 @@ clef :: String -> P CtxScore
 clef s = P $ command "clef" <+> text s
 
 relative :: Pitch -> P CtxScore -> P CtxScore 
-relative p expr = P $ command "relative" <+> note (rescale p) 
+relative p expr = P $ command "relative" <+> note (rescaleOctave (-4)  p) 
                        <+> nestBraces (unP expr) 
 
 melody :: Pitch -> Key -> Meter -> P CtxScore -> P CtxScore

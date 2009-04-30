@@ -25,9 +25,10 @@ import qualified Mullein.SpellingMap      as M
 import qualified Data.Map as Map
 import Text.PrettyPrint.Leijen ( putDoc )
 
+-- start from g above middle c ( where middle c is c 5)
 
-gMajNotes = line [g 4 qn [], a 4 qn [], b 4 qn [], c 5 qn [],
-                  d 5 qn [], e 5 qn [], fs 5 qn [], g 5 qn [] ]
+gMajNotes = line [g 5 qn [], a 5 qn [], b 5 qn [], c 6 qn [],
+                  d 6 qn [], e 6 qn [], fs 6 qn [], g 6 qn [] ]
 
 gMajor = Instr "piano" (Tempo 2 gMajNotes)
 
@@ -39,16 +40,19 @@ fourFourTime = M.metricalSpec 4 4
 
 main = simpleAbc "piano" M.g_major fourFourTime (M.buildSystem gMajor)
 
-lyMain = simpleLilyPond "piano" M.g_major fourFourTime (M.buildSystem gMajor)
+lyMain = writeFile "scale.ly" (show ly) where
+    ly = simpleLilyPond "piano" M.g_major fourFourTime (M.buildSystem gMajor)
 
 
 demoMidi = test gMajor
 
 
 chord1 = Instr "piano" $ Tempo 2 $
-           (g 4 qn []) :=: (b 4 qn []) :=: (d 4 qn [])
+           (g 5 qn []) :=: (b 5 qn []) :=: (d 5 qn [])
 
 chordOut = simpleAbc "piano" M.g_major fourFourTime (M.buildSystem chord1)
 
 chordOutLy = simpleLilyPond "piano" M.g_major fourFourTime (M.buildSystem chord1)
 
+
+octD = M.octaveDist M.c5 M.g5

@@ -24,6 +24,9 @@ module Mullein.NamedElements (
 
 
     middle_c,
+        
+    c5, d5, e5, f5, g5, a5, b5,
+    cs5, df5, ds5, ef5, fs5, gf5, gs5, af5, as5, bf5,
 
     c4, d4, e4, f4, g4, a4, b4,
     cs4, df4, ds4, ef4, fs4, gf4, gs4, af4, as4, bf4,
@@ -36,9 +39,6 @@ module Mullein.NamedElements (
   
     c1, d1, e1, f1, g1, a1, b1,
     cs1, df1, ds1, ef1, fs1, gf1, gs1, af1, as1, bf1,
-        
-    c5, d5, e5, f5, g5, a5, b5,
-    cs5, df5, ds5, ef5, fs5, gf5, gs5, af5, as5, bf5,
     
     c6, d6, e6, f6, g6, a6, b6,
     cs6, df6, ds6, ef6, fs6, gf6, gs6, af6, as6, bf6,
@@ -124,7 +124,44 @@ pchFlat :: PitchLetter -> Int -> Pitch
 pchFlat n o   = Pitch n Flat o
 
 middle_c :: Pitch
-middle_c = pchNat C 4
+middle_c = pchNat C 5
+
+
+c5        :: Pitch
+d5        :: Pitch 
+e5        :: Pitch
+f5        :: Pitch
+g5        :: Pitch
+a5        :: Pitch 
+b5        :: Pitch 
+cs5       :: Pitch 
+df5       :: Pitch 
+ds5       :: Pitch 
+ef5       :: Pitch
+fs5       :: Pitch
+gf5       :: Pitch 
+gs5       :: Pitch 
+af5       :: Pitch 
+as5       :: Pitch 
+bf5       :: Pitch
+c5        = pchNat C 5
+d5        = pchNat D 5
+e5        = pchNat E 5
+f5        = pchNat F 5
+g5        = pchNat G 5
+a5        = pchNat A 5
+b5        = pchNat B 5
+cs5       = pchSharp C 5
+df5       = pchFlat D 5
+ds5       = pchSharp D 5
+ef5       = pchFlat E 5
+fs5       = pchSharp F 5
+gf5       = pchFlat G 5
+gs5       = pchSharp G 5
+af5       = pchFlat A 5
+as5       = pchSharp A 5
+bf5       = pchFlat B 5
+
 
 c4        :: Pitch
 d4        :: Pitch 
@@ -267,41 +304,6 @@ af1       = pchFlat A 1
 as1       = pchSharp A 1
 bf1       = pchFlat B 1
 
-
-c5        :: Pitch
-d5        :: Pitch 
-e5        :: Pitch
-f5        :: Pitch
-g5        :: Pitch
-a5        :: Pitch 
-b5        :: Pitch 
-cs5       :: Pitch 
-df5       :: Pitch 
-ds5       :: Pitch 
-ef5       :: Pitch
-fs5       :: Pitch
-gf5       :: Pitch 
-gs5       :: Pitch 
-af5       :: Pitch 
-as5       :: Pitch 
-bf5       :: Pitch
-c5        = pchNat C 5
-d5        = pchNat D 5
-e5        = pchNat E 5
-f5        = pchNat F 5
-g5        = pchNat G 5
-a5        = pchNat A 5
-b5        = pchNat B 5
-cs5       = pchSharp C 5
-df5       = pchFlat D 5
-ds5       = pchSharp D 5
-ef5       = pchFlat E 5
-fs5       = pchSharp F 5
-gf5       = pchFlat G 5
-gs5       = pchSharp G 5
-af5       = pchFlat A 5
-as5       = pchSharp A 5
-bf5       = pchFlat B 5
 
 c6        :: Pitch
 d6        :: Pitch 

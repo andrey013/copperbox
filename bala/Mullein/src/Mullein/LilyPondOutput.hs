@@ -171,11 +171,6 @@ note (Pitch l a o) = pitchLabel l a <> ove o where
           | otherwise   = empty
 
 
--- LilyPond - middle c is c' (i.e. octave 1) 
--- Mullein  - middle c is c4 (i.e. octave 4)
-rescale :: Pitch -> Pitch
-rescale (Pitch l a o)   = Pitch l a (o-3)
-
 pitchLabel :: PitchLetter -> Accidental -> Doc
 pitchLabel l a = char (toLowerLChar l) <> accidental a
   where 

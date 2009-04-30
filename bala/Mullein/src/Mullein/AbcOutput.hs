@@ -188,15 +188,18 @@ printNote p m = pitch p <> multiplier m
 
 data PitchChar = UPPER | LOWER
   deriving (Eq,Show)
-  
+
+
+-- Mullein - middle c is C5
+-- Abc - middle c is 'C' upper case c  
 pitch :: Pitch -> Doc
 pitch (Pitch l a o) 
-    | o > 4     = pitchLabel (PitchLabel l a) LOWER <> octave o 
+    | o > 5     = pitchLabel (PitchLabel l a) LOWER <> octave o 
     | otherwise = pitchLabel (PitchLabel l a) UPPER <> octave o 
   where
     octave :: Int -> Doc
-    octave i  | i > 5       = text (replicate (i-5) '\'') 
-              | i < 4       = text (replicate (4-i) ',')
+    octave i  | i > 6       = text (replicate (i-6) '\'') 
+              | i < 5       = text (replicate (5-i) ',')
               | otherwise   = empty
 
 

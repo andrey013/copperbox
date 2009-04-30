@@ -111,7 +111,7 @@ instance AbcNote ScNote where
 
 
 instance LyNote ScNote where
-  rewritePitch (ScNote new attrs) = do 
+  rewritePitch (ScNote pch attrs) = let new = Ly.rescale pch in  do 
      old <- exchangePitch new
      return $ ScNote (Ly.relPitch old new) attrs
 
@@ -169,11 +169,6 @@ space = Spacer
 chord :: [e] -> Duration -> ElementP e
 chord xs dur = Chord xs dur
 
-{-
--- alternative to @note@ with more general type
-(%%) :: e -> Duration -> ElementP e
-(%%) pch dur = Note pch dur
--}
 
 instance Note Pitch [NoteAttribute] ScNote where
   note p xs = ScNote p xs 

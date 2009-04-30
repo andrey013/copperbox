@@ -37,12 +37,16 @@ type CM a = State St a
 instance ExchangePitch (State St) where
   exchangePitch = exchPitch
 
+
+
 convertToLyRelative :: LyNote e => Pitch -> PartP e -> PartP e
-convertToLyRelative rp = convert (Just rp)
+convertToLyRelative rp = convert (Just $ rescale rp)
 
 convertToLyAbsolute :: LyNote e => PartP e -> PartP e
 convertToLyAbsolute = convert Nothing
 
+rescale :: Pitch -> Pitch
+rescale p = rescaleOctave (-4) p
 
 convert :: LyNote e => Maybe Pitch -> PartP e -> PartP e
 convert mb_rp e = evalState (cPart e) s0 where
@@ -119,11 +123,12 @@ relativeDuration old drn | old == drn = -1
                          | otherwise = drn
 
 
+
 -- LilyPond middle c is c' (aka `c 1`)
--- Mullein middle c is c4
+-- Mullein middle c is c5
 absPitch :: Pitch -> Pitch -> Pitch
-absPitch _ (Pitch l a o) = Pitch l a (o-3)
+absPitch _ (Pitch l a o) = Pitch l a (o-4)
 
 
 relPitch :: Pitch -> Pitch -> Pitch
-relPitch old pch@(Pitch l a _) = Pitch l a (pch `octaveDist` old)
+relPitch old pch@(Pitch l a _) = Pitch l a (octaveDist old pch)

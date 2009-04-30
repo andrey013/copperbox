@@ -128,7 +128,8 @@ untree start instr = step start (instr,start,empty) []
 
 
 
-
+-- Haskore - middle_c is (C,5)
+-- Mullein - middle_c is c5
                         
 cPitch :: H.Pitch -> Pitch
 cPitch (H.Cf, o)    = Pitch C Flat o
