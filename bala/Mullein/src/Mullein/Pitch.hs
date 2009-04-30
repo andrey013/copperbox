@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  GHC
 --
 -- Pitch representation.
 --
@@ -157,15 +157,15 @@ instance Semitones Accidental where
 -- ceses ->- fisis
 -- cbb   ->- f##   -- fourth 
 octaveDist :: Pitch -> Pitch -> Int
-octaveDist p p' = 
-    fn (abs $ arithmeticDistance p p') (if p > p' then negate else id) 
+octaveDist p p' = sign . fn . (`divMod` 7) . abs $ arithmeticDist p p'
   where
-    fn dist f 
-      | dist <= 4 = 0
-      | otherwise = f $ (dist - 4) `div` 6 + 1 
-   
-arithmeticDistance :: Pitch -> Pitch -> Int
-arithmeticDistance (Pitch l _ o) (Pitch l' _ o') = 
+    fn (d,m) | d >=0 && m > 4     = 1 + d  -- only for postive numbers
+             | otherwise          = d
+    sign a | p <= p'              = a
+           | otherwise            = negate a          
+             
+arithmeticDist :: Pitch -> Pitch -> Int
+arithmeticDist (Pitch l _ o) (Pitch l' _ o') = 
     dist (o * 7 + fromEnum l) (o' * 7 + fromEnum l')
   where
     dist i i'
