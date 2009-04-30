@@ -17,6 +17,7 @@
 
 module Mullein.SpellingMap (
   SpellingMap,
+  rename,
   naturalize,
   makeSpellingMap,
   spellingMap,
@@ -54,6 +55,9 @@ import qualified Data.Map as Map
 newtype SpellingMap = SpellingMap { getSpellingMap :: Map.Map Int PitchLabel }
   deriving (Show)
 
+
+rename :: SpellingMap -> Pitch -> Pitch
+rename lbls p = maybe p id $ findPitchSpelling p lbls
 
 -- Cancel the accidental if the pitch is found in the label set
 -- This is the transformation needed for Abc: 

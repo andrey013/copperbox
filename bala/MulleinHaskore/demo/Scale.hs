@@ -37,11 +37,13 @@ gMajor = Instr "piano" (Tempo 2 gMajNotes)
 fourFourTime :: M.MetricalSpec
 fourFourTime = M.metricalSpec 4 4
 
+smap :: M.SpellingMap
+smap = maybe (error "missing smap") id $ M.makeSpellingMap M.g_major []
 
-main = simpleAbc "piano" M.g_major fourFourTime (M.buildSystem gMajor)
+main = simpleAbc "piano" M.g_major fourFourTime (M.buildSystem smap gMajor)
 
 lyMain = writeFile "scale.ly" (show ly) where
-    ly = simpleLilyPond "piano" M.g_major fourFourTime (M.buildSystem gMajor)
+    ly = simpleLilyPond "piano" M.g_major fourFourTime (M.buildSystem smap gMajor)
 
 
 demoMidi = test gMajor
@@ -50,9 +52,9 @@ demoMidi = test gMajor
 chord1 = Instr "piano" $ Tempo 2 $
            (g 5 qn []) :=: (b 5 qn []) :=: (d 5 qn [])
 
-chordOut = simpleAbc "piano" M.g_major fourFourTime (M.buildSystem chord1)
+chordOut = simpleAbc "piano" M.g_major fourFourTime (M.buildSystem smap chord1)
 
-chordOutLy = simpleLilyPond "piano" M.g_major fourFourTime (M.buildSystem chord1)
+chordOutLy = simpleLilyPond "piano" M.g_major fourFourTime (M.buildSystem smap chord1)
 
 
 octD = M.octaveDist M.c5 M.g5

@@ -42,6 +42,7 @@ library
     Mullein.OutputCommon,
     Mullein.Pitch,
     Mullein.Score,
+    Mullein.ScorePrint,
     Mullein.SpellingMap,
     Mullein.Utils
   other-modules:

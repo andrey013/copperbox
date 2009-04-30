@@ -7,8 +7,9 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 > import MulleinHaskore.LilyPond
 > import MulleinHaskore.System ( buildSystem )
 >
-> import qualified Mullein.NamedElements as M
 > import qualified Mullein.Core          as M
+> import qualified Mullein.NamedElements as M
+> import qualified Mullein.SpellingMap   as M
 >
 > ssfMelody = line (m1 ++ m2 ++ m3 ++ m4)
 > m1 = [			{-	trilln 2 5 (bf 6 en []), -}
@@ -39,6 +40,8 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 > ssf_ly = 
 >     writeFile "ssf.ly" text
 >   where
->     text = show $ simpleLilyPond "flute" M.e_flat_major twoFourTime (buildSystem ssf)
+>     text = show $ simpleLilyPond "flute" M.e_flat_major twoFourTime sys
+>     sys  = buildSystem smap ssf
+>     smap = maybe (error $ "missing smap") id $ M.makeSpellingMap M.e_flat_major []
 >     twoFourTime = M.metricalSpec 2 4
 >

@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
  
 --------------------------------------------------------------------------------
@@ -22,11 +23,15 @@ import Mullein.Core
 import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Pitch
+import Mullein.SpellingMap
 
 import qualified Mullein.Score       as M
 import qualified Mullein.ScorePrint  as PP
 
 import qualified Haskore.Basics      as H
+
+import Control.Applicative
+import Control.Monad.Reader
 
 import Data.Foldable ( toList )
 import Data.List ( foldl' )
@@ -35,7 +40,11 @@ import Data.Ratio
 import Data.Sequence hiding ( null )
 import qualified Data.Sequence as S
 
-import Text.PrettyPrint.Leijen
+import qualified Text.PrettyPrint.Leijen as PP
+
+type TransM a = Reader Env a
+
+data Env = Env { transp :: Int, spelling :: SpellingMap }
 
 type InstName = String
 
@@ -51,6 +60,12 @@ type Line  = (OnsetTime, Seq M.Element)
 -- Later the lines can be merged into overlays on demand...
 type System = SystemP [Line]
 
+
+instance Applicative (Reader Env) where
+  pure  = return
+  (<*>) = ap
+
+--------------------------------------------------------------------------------
 -- Helpers to build scores 
 instMotif :: InstName -> Key -> MetricalSpec -> System -> M.Motif
 instMotif name k m sys = M.motif k m ovs where
@@ -59,7 +74,8 @@ instMotif name k m sys = M.motif k m ovs where
 linearPart :: M.Motif -> M.Part
 linearPart m = M.part [M.phrase m]
 
----
+---------------------------------------------------------------------------------
+-- Translate Haskore's Music so it can be used by Mullein
 
 
 makeOverlays :: InstName -> System -> OverlayList M.ScNote
@@ -84,52 +100,58 @@ mergeParallels (x:xs) = foldl' fn (M.primary $ mkLine x) xs
 default_instrument :: H.IName
 default_instrument = "default"
 
-buildSystem :: H.Music -> System
-buildSystem = foldr fn Map.empty . snd . untree 0 default_instrument
+buildSystem :: SpellingMap -> H.Music -> System
+buildSystem smap mus = 
+    foldr fn Map.empty $ snd $ runReader (untree 0 default_instrument mus) env
   where
-   fn :: InstLine -> System -> System
-   fn (name,o,se) m = maybe (Map.insert name [(o,se)] m)
+    fn :: InstLine -> System -> System
+    fn (name,o,se) m = maybe (Map.insert name [(o,se)] m)
                             (\xs -> Map.insert name ((o,se):xs) m)
                             (Map.lookup name m)
+    env = Env { transp = 0, spelling = smap }
 
-
-untree :: Duration -> H.IName -> H.Music -> (Duration, [InstLine])
+untree :: Duration -> H.IName -> H.Music -> TransM (Duration, [InstLine])
 untree start instr = step start (instr,start,S.empty) []
   where
-    step :: Duration -> InstLine -> [InstLine] -> H.Music -> (Duration, [InstLine])
-    step t z zs (H.Note p d xs)     = (t+d', z `snoc` (Note sc d'):zs) 
-                                      where sc  = M.ScNote p' xs'
-                                            p'  = cPitch p
-                                            d'  = cDur d
-                                            xs' = const [] xs  -- TODO translate xs
+    step :: Duration -> InstLine -> [InstLine] -> H.Music -> TransM (Duration, [InstLine])
+    step t z zs (H.Note p d xs)     = (\note -> (t+ cDur d, z `snoc` note:zs)) 
+                                        <$> mkNote p d xs
 
-    step t z zs (H.Rest d)          = (t+d', z `snoc` (Rest d'):zs)
+    step t z zs (H.Rest d)          = pure (t+d', z `snoc` (Rest d'):zs)
                                       where d' = cDur d
 
 
-    step t z zs (lhs H.:+: rhs)     = step t' z' zs' rhs
-                                      where (t',z':zs') = step t z zs lhs
-    
-    step t z zs (lhs H.:=: rhs)     = step t z (zs++zs') lhs
-                                      where (_,zs') = untree t instr rhs
+    step t z zs (lhs H.:+: rhs)     = do { (t',z':zs') <- step t z zs lhs
+                                         ; step t' z' zs' rhs }
+
+
+    step t z zs (lhs H.:=: rhs)     = do { (_,zs') <- untree t instr rhs
+                                         ; step t z (zs++zs') lhs }
 
     step t z zs (H.Tempo _ mus)     = step t z zs mus
 
-    step t z zs (H.Trans _ mus)     = step t z zs mus
+    step t z zs (H.Trans i mus)     = do { j <- asks transp
+                                         ; local (\e -> e {transp=j+i}) 
+                                                 (step t z zs mus) }
 
-    step t z zs (H.Instr nom mus)   = (t,z `add` (zs++zs')) where 
-                                        zs' = snd $ untree t nom mus
-
-                                        add (d,nm,se) xs 
-                                            | S.null se = xs
-                                            | otherwise = (d,nm,se):xs
+    step t z zs (H.Instr nom mus)   = (\(_,zs') -> (t,z `add` (zs++zs')))
+                                        <$> untree t nom mus
 
     step t z zs (H.Player _ mus)    = step t z zs mus
     
     step t z zs (H.Phrase _ mus)    = step t z zs mus
 
     snoc (name,t,se) e = (name,t,se |> e)
+    
+    add (d,nm,se) xs  | S.null se = xs
+                      | otherwise = (d,nm,se):xs
 
+
+mkNote :: H.Pitch -> H.Dur -> [H.NoteAttribute] -> TransM M.Element
+mkNote p d _xs = (\t smap -> Note (M.ScNote (fn p t smap) []) (cDur d))
+                   <$> asks transp <*> asks spelling
+  where 
+    fn pch i smap = rename smap (transpose i (cPitch pch))
 
 
 -- Haskore - middle_c is (C,5)
@@ -166,11 +188,8 @@ cDur r = n%d where
 --------------------------------------------------------------------------------
 -- pretty print
 
-ppInstSys :: InstName -> Key -> MetricalSpec -> System -> Doc
+ppInstSys :: InstName -> Key -> MetricalSpec -> System -> PP.Doc
 ppInstSys name k m sys = PP.part part
   where
     motif  = instMotif name k m sys
     part   = linearPart motif
-
-printPart :: M.Part -> Doc
-printPart _ = text "TODO"

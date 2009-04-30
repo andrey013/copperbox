@@ -9,8 +9,9 @@
 > import MulleinHaskore.LilyPond
 > import MulleinHaskore.System ( buildSystem, ppInstSys )
 >
-> import qualified Mullein.NamedElements as M
 > import qualified Mullein.Core          as M
+> import qualified Mullein.NamedElements as M
+> import qualified Mullein.SpellingMap   as M
 
 An example of self-similar, or fractal, music.
 
@@ -84,12 +85,15 @@ the score is printed in the wrong octave.
 > t7_ly = 
 >     writeFile "t7.ly" text
 >   where
->     text = show $ simpleLilyPond "piano" M.c_major fourFourTime (buildSystem $ sim2 4)
+>     text = show $ simpleLilyPond "piano" M.c_major fourFourTime sys
+>     sys  = buildSystem smap $ sim2 4
 >     fourFourTime = M.metricalSpec 4 4
+>     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.c_major []
 >
-> t7_debug = ppInstSys "piano" M.c_major fourFourTime (buildSystem $ sim2 4)
+> t7_debug = ppInstSys "piano" M.c_major fourFourTime (buildSystem smap $ sim2 4)
 >   where 
 >     fourFourTime = M.metricalSpec 4 4
+>     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.c_major []
 >
 
 \end{verbatim} }

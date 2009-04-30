@@ -135,6 +135,12 @@ fromSemitones i = Pitch l a o
     pitchVal 11 = (B,Nat)
     pitchVal _  = error "fromSemitones - not unreachable after all!" 
 
+-- | Traspose a pitch - note the result may have an unorthodox 
+-- pitch spelling. You should respell the result with respect to
+-- a scale after this operation. 
+transpose :: Int -> Pitch -> Pitch
+transpose i p = fromSemitones $ i + semitones p
+
 instance Semitones PitchLetter where    
   semitones C = 0
   semitones D = 2
