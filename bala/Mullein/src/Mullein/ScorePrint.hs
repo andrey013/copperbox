@@ -124,7 +124,7 @@ prime :: Doc
 prime = char '\''
 
 djoin :: Doc -> Doc -> Doc
-djoin a b = a <> char '/' <> b
+djoin a b = a <> char '.' <> b
 
 tildesep :: [Doc] -> Doc
 tildesep = foldr tilde empty where 

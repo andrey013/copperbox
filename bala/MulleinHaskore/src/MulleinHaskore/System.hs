@@ -188,8 +188,9 @@ cDur r = n%d where
 --------------------------------------------------------------------------------
 -- pretty print
 
-ppInstSys :: InstName -> Key -> MetricalSpec -> System -> PP.Doc
-ppInstSys name k m sys = PP.part part
+printSystem :: InstName -> Key -> MetricalSpec -> System -> IO ()
+printSystem name k m sys = putStrLn $ PP.displayS sdoc [] 
   where
-    motif  = instMotif name k m sys
+    sdoc   = PP.renderPretty 0.8 80 (PP.part part)
     part   = linearPart motif
+    motif  = instMotif name k m sys

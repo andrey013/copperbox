@@ -195,7 +195,7 @@ optDuration = maybe empty df
     -- TODO - ideally we shouldn't have 'error' errors here, we should be
     -- using throwError. But that means making a lot of pure code monadic
     -- ... is there another way to do it?
-    durn n d      = error $ "lyDuration failed on - " ++ show n ++ "%" ++ show d
+    durn n d      = error $ "optDuration failed on - " ++ show n ++ "%" ++ show d
 
     dots :: Int -> (Doc -> Doc)
     dots i | i > 0     = (<> text (replicate i '.'))
