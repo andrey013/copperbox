@@ -25,10 +25,11 @@ import Mullein.Duration
 import Mullein.Pitch
 import Mullein.SpellingMap
 
+import qualified Haskore.Basics      as H
+import qualified Mullein.Rewriting   as R
 import qualified Mullein.Score       as M
 import qualified Mullein.ScorePrint  as PP
 
-import qualified Haskore.Basics      as H
 
 import Control.Applicative
 import Control.Monad.Reader
@@ -42,6 +43,8 @@ import qualified Data.Sequence as S
 
 import qualified Text.PrettyPrint.Leijen as PP
 
+type AElem = R.Alphabet M.ScNote
+
 type TransM a = Reader Env a
 
 data Env = Env { transp :: Int, spelling :: SpellingMap }
@@ -52,8 +55,8 @@ type SystemP e = Map.Map InstName e
 
 type OnsetTime = Duration
 
-type InstLine = (InstName, OnsetTime, Seq M.Element)
-type Line  = (OnsetTime, Seq M.Element)
+type InstLine = (InstName, OnsetTime, Seq AElem)
+type Line  = (OnsetTime, [AElem])
 
 -- A system where each instrument has all parallel overlays split 
 -- into seperate lines. 
@@ -79,21 +82,24 @@ linearPart m = M.part [M.phrase m]
 
 
 makeOverlays :: InstName -> System -> OverlayList M.ScNote
-makeOverlays name sys = maybe failure mergeParallels $ Map.lookup name sys
+makeOverlays name sys = 
+    maybe failure (mergeParallels . map conv) $ Map.lookup name sys
   where
+    conv (d,xs) = (d,R.alphabetToElementP xs) 
     failure = error $ "makeOverlays - could not find instrument " ++ name ++
                       "in the score."  
 
-mergeParallels :: [(Duration,Seq M.Element)] -> OverlayList M.ScNote
+
+mergeParallels :: [(Duration,[M.Element])] -> OverlayList M.ScNote
 mergeParallels []     = ([],[])
 mergeParallels (x:xs) = foldl' fn (M.primary $ mkLine x) xs
   where
-    fn :: OverlayList M.ScNote -> (Duration, Seq M.Element) -> OverlayList M.ScNote
+    fn :: OverlayList M.ScNote -> (Duration, [M.Element]) -> OverlayList M.ScNote
     fn acc z      = M.addOverlay 0 (mkLine z) acc 
 
-    mkLine :: (Duration, Seq M.Element) -> [M.Element]
-    mkLine (0,se) = toList se
-    mkLine (d,se) = M.space d : toList se
+    mkLine :: (Duration, [M.Element]) -> [M.Element]
+    mkLine (0,ls) = ls
+    mkLine (d,ls) = M.space d : ls
 
 
 
@@ -105,8 +111,9 @@ buildSystem smap mus =
     foldr fn Map.empty $ snd $ runReader (untree 0 default_instrument mus) env
   where
     fn :: InstLine -> System -> System
-    fn (name,o,se) m = maybe (Map.insert name [(o,se)] m)
-                            (\xs -> Map.insert name ((o,se):xs) m)
+    fn (name,o,se) m = let line = toList se in 
+                       maybe (Map.insert name [(o,line)] m)
+                            (\xs -> Map.insert name ((o,line):xs) m)
                             (Map.lookup name m)
     env = Env { transp = 0, spelling = smap }
 
@@ -114,10 +121,10 @@ untree :: Duration -> H.IName -> H.Music -> TransM (Duration, [InstLine])
 untree start instr = step start (instr,start,S.empty) []
   where
     step :: Duration -> InstLine -> [InstLine] -> H.Music -> TransM (Duration, [InstLine])
-    step t z zs (H.Note p d xs)     = (\note -> (t+ cDur d, z `snoc` note:zs)) 
-                                        <$> mkNote p d xs
+    step t z zs (H.Note p d xs)     = (\note -> (t + cDur d, z `snoc` note:zs)) 
+                                        <$> mkANote p xs d
 
-    step t z zs (H.Rest d)          = pure (t+d', z `snoc` (Rest d'):zs)
+    step t z zs (H.Rest d)          = pure (t+d', z `snoc` (arest d'):zs)
                                       where d' = cDur d
 
 
@@ -147,11 +154,29 @@ untree start instr = step start (instr,start,S.empty) []
                       | otherwise = (d,nm,se):xs
 
 
-mkNote :: H.Pitch -> H.Dur -> [H.NoteAttribute] -> TransM M.Element
-mkNote p d _xs = (\t smap -> Note (M.ScNote (fn p t smap) []) (cDur d))
+mkNote :: H.Pitch -> [H.NoteAttribute] -> H.Dur -> TransM M.Element
+mkNote p _xs d = (\t smap -> Note (M.ScNote (fn p t smap) []) (cDur d))
                    <$> asks transp <*> asks spelling
   where 
     fn pch i smap = rename smap (transpose i (cPitch pch))
+
+
+mkANote :: H.Pitch -> [H.NoteAttribute] -> H.Dur -> TransM AElem
+mkANote p _xs d = (\t smap -> anote (fn p t smap) [] (cDur d))
+                   <$> asks transp <*> asks spelling
+  where 
+    fn pch i smap = rename smap (transpose i (cPitch pch))
+
+
+-- constructors for Alphabet ScNote
+anote :: Pitch -> [M.NoteAttribute] -> Duration -> AElem
+anote p xs d = R.N (M.ScNote p xs) d
+
+arest :: Duration -> AElem
+arest d = R.R d
+
+aspacer :: Duration -> AElem
+aspacer d = R.S d
 
 
 -- Haskore - middle_c is (C,5)

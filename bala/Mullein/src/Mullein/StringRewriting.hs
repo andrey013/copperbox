@@ -94,9 +94,15 @@ runMatcherT = unMatcherT
 type H a = [a] -> [a]
 
 
--- For the present, only type-preserving rules are considered
--- (the output list has the same type as the input list).
--- This could easily be generalized.
+-- Type-preserving rules have the same input and output token type.
+-- However, rules are free to expand or contract the input at each 
+-- step. e.g.
+--
+-- B3  -> BBB  - replace two tokens with three
+-- BBB -> B3   - replace three tokens with two
+--
+-- This is why internally rules are represented as Hughes lists
+-- so we can append freely.
 --
 -- @r@ and @m@ are the answer continuation and monad types.
 -- Generally they will be left as type variables when writing
@@ -104,6 +110,76 @@ type H a = [a] -> [a]
 type RuleTP tok m = MatcherT tok (H tok,[tok]) m (H tok) 
 
 
+type RuleTC tok out m = MatcherT tok (H out,[tok]) m (H out)
+ 
+
+
+--------------------------------------------------------------------------------
+-- general Applicative combinators 
+
+(<:>) :: Applicative f => f a -> f [a] -> f [a]
+(<:>) p1 p2 = (:) <$> p1 <*> p2
+
+choice :: Alternative f => [f a] -> f a
+choice = foldr (<|>) empty 
+   
+count :: Applicative f => Int -> f a -> f [a]
+count i p | i <= 0    = pure []
+          | otherwise = p <:> count (i-1) p 
+          
+between :: Applicative f => f open -> f close -> f a -> f a
+between o c a = o *> a <* c
+
+          
+option :: Alternative f => a -> f a -> f a
+option x p          = p <|> pure x
+
+optionMaybe :: Alternative f => f a -> f (Maybe a)
+optionMaybe = optional
+
+-- aka Parsecs /optional/
+optionUnit :: Alternative f => f a -> f ()
+optionUnit p = () <$ p <|> pure ()
+
+skipMany1 :: Alternative f => f a -> f ()
+skipMany1 p = p *> skipMany p
+
+skipMany :: Alternative f => f a -> f ()
+skipMany p = many_p
+  where many_p = some_p <|> pure ()
+        some_p = p       *> many_p
+
+-- | @many1@ an alias for @some@. 
+many1 :: Alternative f => f a -> f [a]
+many1 = some
+
+sepBy :: Alternative f => f a -> f b -> f [a]
+sepBy p sep = sepBy1 p sep <|> pure []
+
+sepBy1 :: Alternative f => f a -> f b -> f [a]
+sepBy1 p sep = p <:> step where
+    step = (sep *> p) <:> step <|> pure []
+
+sepEndBy :: Alternative f => f a -> f b -> f [a]
+sepEndBy p sep = sepEndBy1 p sep <|> pure []
+
+sepEndBy1 :: Alternative f => f a -> f b -> f [a]
+sepEndBy1 p sep = (p <* sep) <:> step where
+    step = (p <* sep) <:> step <|> pure []
+    
+manyTill :: Alternative f => f a -> f b -> f [a]
+manyTill p end = step <|> pure [] where
+    step = p <:> (step <|> (pure [] <$> end))
+    
+-- And a monadic one...
+
+-- | @satisfies@ needs /bind/ so its monadic and not applicative.
+satisfies :: MonadPlus m => m a -> (a -> Bool) -> m a
+satisfies p f = p >>= (\x -> if f x then return x else mzero)
+
+
+--------------------------------------------------------------------------------
+-- specific matchers
 
 -- match any token
 one :: MatcherT tok r m tok
@@ -111,13 +187,8 @@ one = MatcherT $ \sk fk ts ln -> f sk fk ts ln where
     f _  fk []     ln  = fk ln
     f sk fk (t:ts) ln  = sk t fk ts ln
 
-
--- match if the predicate yields True
-pmatch :: MatcherT tok r m a -> (a -> Bool) -> MatcherT tok r m a
-pmatch p f = p >>= (\x -> if f x then return x else mzero)
-
 pmatchOne :: (tok -> Bool) -> MatcherT tok r m tok
-pmatchOne p = pmatch one p
+pmatchOne p = satisfies one p
 
 
 -- match a literal
@@ -125,6 +196,7 @@ lit :: Eq tok =>  tok -> MatcherT tok r m tok
 lit t = MatcherT $ \sk fk ts ln -> case ts of 
    (x:xs) -> if x==t then sk x fk xs ln else fk ln
    _      -> fk ln
+
 
 
 idOne :: RuleTP tok m
@@ -141,7 +213,7 @@ listH :: [a] -> H a
 listH xs = (xs++)
 
 
-
+-- type preserving rewrite strategy
 rewriteTP :: Monad m => RuleTP tok m -> [tok] -> m [tok]
 rewriteTP f input = step id input where
     step g [] = return $ g []
@@ -161,5 +233,32 @@ rewriteTP1 p xs ys = runMatcherT p succK failK xs ys
 
 
 -- rewrite with the Identity monad
-rewriteId :: RuleTP tok Identity -> [tok] -> [tok]
-rewriteId = (runIdentity .) . rewriteTP
+rewriteTP'id :: RuleTP tok Identity -> [tok] -> [tok]
+rewriteTP'id = (runIdentity .) . rewriteTP
+
+
+-- type RuleTP tok m = MatcherT tok (H tok,[tok]) m (H tok) 
+
+
+-- type changing rewrite strategy
+rewriteTC :: Monad m => MatcherT tok (H out,[tok]) m (H out) -> [tok] -> m [out]
+rewriteTC f input = step id input where
+    step g [] = return $ g []
+    step g xs = do (ansH,rest) <- rewriteTC1 f xs xs 
+                   step (g . ansH) rest 
+
+
+rewriteTC1 :: Monad m => MatcherT tok (H out,[tok]) m (H out) 
+           -> [tok] -> [tok] -> m (H out,[tok])
+rewriteTC1 p xs ys = runMatcherT p succK failK xs ys 
+  where
+    succK ans _ ts _ = return (ans,ts)
+    failK ts         = error $ "rewriteTC1 didn't consume all input " 
+                               ++ show (length ts) 
+                               ++ " items remaining."
+
+
+-- rewriteTC'id :: MatcherT tok (H out,[tok]) Identity (H out) -> [tok] -> [out]
+
+rewriteTC'id :: RuleTC tok out Identity -> [tok] -> [out]
+rewriteTC'id = (runIdentity .) . rewriteTC

@@ -24,6 +24,7 @@
 
 module Mullein.Rewriting where
 
+import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.StringRewriting
 
@@ -52,7 +53,58 @@ instance Temporal (Alphabet e) where
     swapDuration _ (G e d)    = G e d
 
 
+
+--------------------------------------------------------------------------------
+-- type changing rewrite from (Alphabet e) to Element e
+
+
+-- Notes, rests, spacers map one to one 
+mUnary :: Match r m e
+mUnary = pmatchOne p where
+  p (N _ _)     = True
+  p (R _)       = True
+  p (S _)       = True
+  p _           = False
+
+rUnary :: RuleTC (Alphabet e) (ElementP e) m
+rUnary = (wrapH . fn) <$> mUnary where
+  fn (N e d)    = Note e d
+  fn (R d)      = Rest d
+  fn (S d)      = Spacer d
+
+  -- This should be unreachable if mUnary matches correctly
+  fn _          = error $ "rUnary - match failure"
+
+
+-- This is a problem!!!
+-- ElementP will probably need extending with a Tie constructor.
+-- For the moment ties are lost.
+
+rTie :: Eq e => RuleTC (Alphabet e) (ElementP e) m
+rTie = id <$ lit T
+
+rGrace :: RuleTC (Alphabet e) (ElementP e) m
+rGrace = (wrapH . fn) <$> many1 (pmatchOne p) where
+  p (G _ _) = True
+  p _       = False
+
+  fn xs     = GraceNotes $ map extract xs
+  
+  extract (G e d) = (e,d)
+  extract _       = error $ "rGrace - match failure" -- unreachable?
+
+
+alphabetToElementP :: Eq e => [Alphabet e] -> [ElementP e]
+alphabetToElementP = rewriteTC'id (choice [rUnary,rTie,rGrace])
+
+
+--------------------------------------------------------------------------------
+
+
 type Match r m e = MatcherT (Alphabet e) r m (Alphabet e)
+
+
+
 
 
 note :: Match r m e
@@ -64,7 +116,7 @@ eqD :: Temporal e => Duration -> e -> Bool
 eqD d e = d == duration e 
 
 matchesD :: Duration -> Match r m e -> Match r m e
-matchesD d fn = pmatch fn (d `eqD`)
+matchesD d fn = satisfies fn (d `eqD`)
 
 
 appogiaturaQn :: RuleTP (Alphabet e) m
