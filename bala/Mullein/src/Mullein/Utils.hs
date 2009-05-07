@@ -154,7 +154,7 @@ doclines = vsep `oo` step where
     step (n:ns) ds  = hsep ls : step ns rs where (ls,rs) = splitAt n ds
 
 dblangles :: Doc -> Doc 
-dblangles = enclose (text "<<") (text ">>")
+dblangles = enclose (text "<< ") (text " >>")
 
 
 -- an alternative to (<$>) when Control.Applicative is alos imported

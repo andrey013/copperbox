@@ -23,6 +23,8 @@ import Mullein.Pitch
 import Data.Ratio
 import Text.PrettyPrint.Leijen
 
+-- TODO bar numbering
+
 part :: Pretty e => PartP e -> Doc
 part (Part es)            = lsep $ map phrase es
 

@@ -56,22 +56,39 @@
 > childSong6 = Instr "piano" (Tempo 3 (Phrase [Dyn SF] bassLine :=: mainVoice))
 >
 > cs6_ly = 
->     writeFile "childSong6.ly" text
+>     writeFile "childSong6.001.ly" text
 >   where
->     text = show $ simpleLilyPond "piano" M.g_major fourFourTime sys
+>     text = show $ simpleLilyPond "piano" M.d_major fourFourTime sys
 >     sys  = buildSystem smap childSong6
 >     fourFourTime = M.metricalSpec 4 4
->     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.g_major []
+>     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.d_major []
 >
-> cs6_debug = printSystem "piano" M.g_major fourFourTime (buildSystem smap childSong6)
+> cs6_debug = printSystem M.d_major fourFourTime (buildSystem smap childSong6)
 >   where 
 >     fourFourTime = M.metricalSpec 4 4
->     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.g_major []
+>     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.d_major []
 >
 
 Note - (hn+en) cannot be printed by Mullein.
 Maybe the mertical splitting code should see this as something to be 
-split in two and tied. 
+split in two and tied.
+
+
+
+> -- helping Mullein:
+> -- avoid as much parallelism as possible.
+>
+> childSong6Bass = Instr "piano" (Tempo 3 (Phrase [Dyn SF] bassLine))
+> childSong6Main = Instr "piano" (Tempo 3 (Phrase [Dyn SF] mainVoice))
+>
+> cs6_ly2 = 
+>     writeFile "childSong6.002.ly" text
+>   where
+>     text = show $ simpleLilyPond "piano" M.d_major fourFourTime sys
+>     sys  = buildSystem smap childSong6Main
+>     fourFourTime = M.metricalSpec 4 4
+>     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.d_major []
+ 
 
 
 \end{verbatim} }

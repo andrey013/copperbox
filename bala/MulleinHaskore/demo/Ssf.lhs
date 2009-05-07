@@ -12,7 +12,7 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 > import qualified Mullein.SpellingMap   as M
 >
 > ssfMelody = line (m1 ++ m2 ++ m3 ++ m4)
-> m1 = [			{-	trilln 2 5 (bf 6 en []), -}
+> m1 = [				trilln 2 5 (bf 6 en []), 
 > 	Phrase [Art staccato]    (line [ef 7 en [],
 >			   		ef 6 en [],
 >			   		ef 7 en []])]
@@ -31,7 +31,7 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 >	Phrase [Art staccato]    (line [bf 6 en [],
 >			   		ef 7 en []])]
 >
-> m4 = [			{-	trill 2 tn (bf 6 qn []), -}
+> m4 = [				trill 2 tn (bf 6 qn []), 
 >					bf 6 sn [],
 >					denr]
 >

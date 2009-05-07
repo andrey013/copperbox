@@ -160,7 +160,7 @@ endBraces i | i <=0     = empty
 
 
 overlay :: [Doc] -> Doc
-overlay = dblangles . vsep . punctuate (text " \\")    
+overlay = dblangles . vsep . punctuate (text " \\\\")    
 
 
 
@@ -195,7 +195,7 @@ optDuration = maybe empty df
     -- TODO - ideally we shouldn't have 'error' errors here, we should be
     -- using throwError. But that means making a lot of pure code monadic
     -- ... is there another way to do it?
-    durn n d      = error $ "optDuration failed on - " ++ show n ++ "%" ++ show d
+    durn n d      = comment $ show n ++ "%" ++ show d
 
     dots :: Int -> (Doc -> Doc)
     dots i | i > 0     = (<> text (replicate i '.'))
@@ -208,6 +208,9 @@ lyBeam []     = empty
 
 command :: String -> Doc
 command = (char '\\' <>) . text 
+
+comment :: String -> Doc
+comment s = text "%{" <+> string s  <+> text "%}"
 
 
 -- This implementation of variant key signatures is not so good...

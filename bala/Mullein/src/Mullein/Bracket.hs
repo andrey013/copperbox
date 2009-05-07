@@ -141,6 +141,8 @@ consumes d ys = step 0 ys where
                                  (c',ls,rs) = step (c + duration x) xs     
 
 
+
+
 ---------------------------------------------------------------------------------
 -- overlay
 

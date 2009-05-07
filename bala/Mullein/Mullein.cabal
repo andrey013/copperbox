@@ -41,9 +41,11 @@ library
     Mullein.NamedElements,
     Mullein.OutputCommon,
     Mullein.Pitch,
+    Mullein.Rewriting,
     Mullein.Score,
     Mullein.ScorePrint,
     Mullein.SpellingMap,
+    Mullein.StringRewriting,
     Mullein.Utils
   other-modules:
     

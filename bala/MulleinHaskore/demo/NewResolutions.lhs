@@ -246,7 +246,7 @@ New Resolutions by Jean-Luc Ponty, Scott O'Neil, and John Garvin
 >     fourFourTime = M.metricalSpec 4 4
 >     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.c_major []
 >
-> nr_debug = printSystem "marimba" M.c_major fourFourTime (buildSystem smap newResolutions)
+> nr_debug = printSystem M.c_major fourFourTime (buildSystem smap newResolutions)
 >   where 
 >     fourFourTime = M.metricalSpec 4 4
 >     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.c_major []

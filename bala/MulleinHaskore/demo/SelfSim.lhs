@@ -7,7 +7,7 @@
 >
 > import Haskore
 > import MulleinHaskore.LilyPond
-> import MulleinHaskore.System ( buildSystem, ppInstSys )
+> import MulleinHaskore.System ( buildSystem, printSystem )
 >
 > import qualified Mullein.Core          as M
 > import qualified Mullein.NamedElements as M
@@ -90,7 +90,7 @@ the score is printed in the wrong octave.
 >     fourFourTime = M.metricalSpec 4 4
 >     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.c_major []
 >
-> t7_debug = ppInstSys "piano" M.c_major fourFourTime (buildSystem smap $ sim2 4)
+> t7_debug = printSystem M.c_major fourFourTime (buildSystem smap $ sim2 4)
 >   where 
 >     fourFourTime = M.metricalSpec 4 4
 >     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.c_major []
