@@ -5,7 +5,7 @@
 -- |
 -- Module      :  MulleinHaskore.System
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
@@ -117,6 +117,9 @@ buildSystem smap mus =
                             (Map.lookup name m)
     env = Env { transp = 0, spelling = smap }
 
+
+ 
+
 untree :: Duration -> H.IName -> H.Music -> TransM (Duration, [InstLine])
 untree start instr = step start (instr,start,S.empty) []
   where
@@ -152,6 +155,8 @@ untree start instr = step start (instr,start,S.empty) []
     
     add (d,nm,se) xs  | S.null se = xs
                       | otherwise = (d,nm,se):xs
+
+
 
 
 mkNote :: H.Pitch -> [H.NoteAttribute] -> H.Dur -> TransM M.Element

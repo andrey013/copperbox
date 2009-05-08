@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  GHC
 --
 -- Generating Mullein from Haskore automatically is problemmatic. 
 -- Note lengths in Haskore need some degree of interpretation to turn 
