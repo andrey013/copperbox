@@ -101,6 +101,9 @@ alphabetToElementP = rewriteTC'id (choice [rUnary,rTie,rGrace])
 --------------------------------------------------------------------------------
 
 
+preserving :: RuleTP (Alphabet e) m -> RuleTP (Alphabet e) m
+preserving r = r <|> idOne
+
 type Match r m e = MatcherT (Alphabet e) r m (Alphabet e)
 
 
@@ -122,12 +125,10 @@ matchesD d fn = satisfies fn (d `eqD`)
 appogiaturaQn :: RuleTP (Alphabet e) m
 appogiaturaQn = (\(N e _) (N e' _) -> listH [G e tn, N e' qn]) 
     <$> matchesD (1%32) note  <*> matchesD (1%4 - 1%32) note
+  where
+    tn :: Duration
+    tn = 1%32
 
-
-
-tn :: Duration
-tn = 1%32
-
-qn :: Duration
-qn = 1%4
+    qn :: Duration
+    qn = 1%4
 

@@ -40,7 +40,7 @@ import Data.Ratio
 import Data.Sequence hiding ( null )
 import qualified Data.Sequence as S
 
-
+import qualified Text.PrettyPrint.Leijen as PP
 
 
 type OnsetTime = Duration
@@ -252,6 +252,8 @@ defaultMotifSkeleton k mspec = MotifSkeleton {
   where
     failKey = error $ "could not make SpellingMap for " ++ show k  
 
+
+
 motifSkel :: Monad m => H.IName -> MotifSkeleton m -> H.Music -> Maybe M.Motif
 motifSkel name skel skore = step <$> findInst name skore 
   where
@@ -265,6 +267,10 @@ motifSkel name skel skore = step <$> findInst name skore
 
 --------------------------------------------------------------------------------
 -- helpers 
+
+renderDocEighty :: PP.Doc -> String
+renderDocEighty = (PP.displayS `flip` []) . PP.renderPretty 0.8 80
+
 
 singleMotifPart :: M.Motif -> M.Part
 singleMotifPart m = M.part [M.phrase m]
