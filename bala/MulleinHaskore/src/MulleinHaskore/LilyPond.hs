@@ -48,18 +48,48 @@ scoreTemplate :: String
               -> MetricalSpec 
               -> LilyPondOutput 
               -> P CtxTopLevel
-scoreTemplate score_title rel_pitch key_sig meter_spec ly_output = 
+scoreTemplate score_title' rel_pitch' key_sig' meter_spec' ly_output = 
     prolog +++ body 
   where
-    prolog = version lilypond_version +++ header [title score_title]
-    body   = book [score (melody rel_pitch
-                                 key_sig
-                                 (fst meter_spec) 
+    prolog = version lilypond_version +++ header [title score_title']
+    body   = book [score (melody rel_pitch'
+                                 key_sig'
+                                 (fst meter_spec') 
                                  (lilypondOutput ly_output))]
 
 
     
 
+data SingleMelodyScoreSkeleton = SingleMelodyScoreSkeleton {
+        score_title     :: String,
+        key_sig         :: Key,
+        meter_spec      :: MetricalSpec,
+        rel_pitch       :: Pitch
+      }
 
+defaultSingleMelodyScoreSkeleton :: String 
+                                 -> Key 
+                                 -> MetricalSpec 
+                                 -> SingleMelodyScoreSkeleton 
+defaultSingleMelodyScoreSkeleton t k m = SingleMelodyScoreSkeleton {
+        score_title     = t,
+        key_sig         = k,
+        meter_spec      = m,
+        rel_pitch       = middle_c
+      }                          
+
+
+singleMelodyScoreSkel :: SingleMelodyScoreSkeleton -> M.Part -> Doc
+singleMelodyScoreSkel skel mus = unP $ prolog +++ body
+  where 
+    ly_score  = convertToLyRelative (rel_pitch skel) mus
+    ly_output = generateLilyPond (key_sig skel) 
+                                 (fst $ meter_spec skel) 
+                                 ly_score
+    prolog    = version lilypond_version +++ header [title $ score_title skel]
+    body      = book [score (melody (rel_pitch skel)
+                                    (key_sig skel)
+                                    (fst $ meter_spec skel) 
+                                    (lilypondOutput ly_output))]
 
 

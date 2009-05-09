@@ -6,6 +6,7 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 > import Haskore
 > import MulleinHaskore.LilyPond
 > import MulleinHaskore.System ( buildSystem )
+> import MulleinHaskore.Translate
 >
 > import qualified Mullein.Core          as M
 > import qualified Mullein.NamedElements as M
@@ -44,4 +45,18 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 >     sys  = buildSystem smap ssf
 >     smap = maybe (error $ "missing smap") id $ M.makeSpellingMap M.e_flat_major []
 >     twoFourTime = M.metricalSpec 2 4
+>
+>
+> ssf_ly2 = singleMelodyScoreSkel lySkel $ singleMotifPart 
+>                                        $ maybe failK id
+>                                        $ motifSkel "flute" mSkel ssf 
+>   where 
+>     mSkel     = defaultMotifSkeleton ssf_key ssf_mtr
+>     lySkel    = defaultSingleMelodyScoreSkeleton "Stars and Stripes Forever" 
+>                                                  ssf_key 
+>                                                  ssf_mtr
+>     ssf_key   = M.e_flat_major
+>     ssf_mtr   = M.metricalSpec 2 4
+> 
+>     failK     = error "Could not find/render flute part"
 >
