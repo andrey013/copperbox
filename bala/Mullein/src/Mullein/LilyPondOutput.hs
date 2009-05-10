@@ -87,9 +87,11 @@ oElement (Note p d)       = lyNote p (coerceDuration d)
 oElement (Rest d)         = char 'r' <> oDuration d
 oElement (Spacer d)       = char 's' <> oDuration d
 oElement (Chord ps d)     = angles (hsep $ map lyPitch ps) <> oDuration d
-oElement (GraceNotes xs)   = command "grace" <+> braces (lyBeam $ map f xs) where
-                               f (p,d) = lyNote p (coerceDuration d) 
+oElement (GraceNotes [x]) = command "grace" <+> braces (oGrace x) where
+oElement (GraceNotes xs)  = command "grace" <+> braces (lyBeam $ map oGrace xs)
 
+oGrace :: LyNote e => (e,Duration) -> Doc
+oGrace (p,d) = lyNote p (coerceDuration d)
 
 oDuration :: Duration -> Doc
 oDuration = optDuration . coerceDuration

@@ -91,21 +91,46 @@ fitTill d0 es = step d0 es where
 -- tuple the two elements of state together.
 -- The state is (1) the stack of durations for each beam group, 
 -- and (2) the input stream of notes.
- 
+
+-- Note for LilyPond - graces cannot start or end a beam group.
+
+-- beam does not ensure that the end of a bracket is either a 
+-- note or a chord... It should.
+
 beam :: [Duration] -> [ElementP e] -> [BracketP e]
-beam = unfoldr2 fn where
+beam = concat `oo` unfoldr2 fn where
     -- notes exhausted
     fn _          []          = Nothing
 
     -- beam lengths exhausted, return singletons 
-    fn []         (x:xs)      = Just (Singleton x, [],xs)
+    fn []         (x:xs)      = Just ([Singleton x], [],xs)
 
     fn dstk       (x:xs)  
-        | duration x > (1%8)  = Just (Singleton x, reduceStk (duration x) dstk, xs)
+        | duration x > (1%8)  || not (noteOrChord x) 
+                              = Just ([Singleton x], reduceStk (duration x) dstk, xs)
     
     fn dstk@(d:_) xs          = let (count,l,r) = beamGroup1 d xs in 
-                                Just (Bracket l, reduceStk count dstk, r)
+                                Just (unwindBracket l, reduceStk count dstk, r)
 
+
+noteOrChord :: ElementP e -> Bool
+noteOrChord (Note _ _)  = True
+noteOrChord (Chord _ _) = True
+noteOrChord _           = False
+
+mkBracket :: [ElementP e] -> BracketP e
+mkBracket [x] = Singleton x
+mkBracket xs  = Bracket xs 
+
+
+-- this is too complicated, we need a better bracketing algorithm
+-- (unwind a bracket to make sure it ends in a note or chord) 
+unwindBracket :: [ElementP e] -> [BracketP e]
+unwindBracket xs = brack1 : others
+  where
+    (revothers,revnotes) = span (not . noteOrChord) $ reverse xs
+    brack1 = mkBracket $ reverse revnotes 
+    others = map Singleton $ reverse revothers
 
 -- cannot reduce stack by negative amounts...
 reduceStk :: Duration -> [Duration] -> [Duration]
@@ -140,9 +165,7 @@ consumes d ys = step 0 ys where
                         GT -> (c', x:ls,rs) where 
                                  (c',ls,rs) = step (c + duration x) xs     
 
-
-
-
+  
 ---------------------------------------------------------------------------------
 -- overlay
 
