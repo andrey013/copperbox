@@ -7,12 +7,17 @@
 > import Haskore
 >
 > import MulleinHaskore.LilyPond
-> import MulleinHaskore.System ( buildSystem, printSystem )
+> import MulleinHaskore.Translate
 >
+> import Mullein.Rewriting
+> import Mullein.StringRewriting
 > import qualified Mullein.Core          as M
 > import qualified Mullein.NamedElements as M
+> import qualified Mullein.Rewriting     as M
 > import qualified Mullein.SpellingMap   as M
 >
+> import Control.Applicative
+> import Data.Ratio
 > 
 > -- note updaters for mappings
 > fd d n = n d v
@@ -54,41 +59,79 @@
 > 
 > -- Putting it all together:
 > childSong6 = Instr "piano" (Tempo 3 (Phrase [Dyn SF] bassLine :=: mainVoice))
->
-> cs6_ly = 
->     writeFile "childSong6.001.ly" text
->   where
->     text = show $ simpleLilyPond "piano" M.d_major fourFourTime sys
->     sys  = buildSystem smap childSong6
->     fourFourTime = M.metricalSpec 4 4
->     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.d_major []
->
-> cs6_debug = printSystem M.d_major fourFourTime (buildSystem smap childSong6)
->   where 
->     fourFourTime = M.metricalSpec 4 4
->     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.d_major []
->
+
 
 Note - (hn+en) cannot be printed by Mullein.
 Maybe the mertical splitting code should see this as something to be 
 split in two and tied.
 
 
-
+>
 > -- helping Mullein:
 > -- avoid as much parallelism as possible.
 >
 > childSong6Bass = Instr "piano" (Tempo 3 (Phrase [Dyn SF] bassLine))
 > childSong6Main = Instr "piano" (Tempo 3 (Phrase [Dyn SF] mainVoice))
 >
-> cs6_ly2 = 
->     writeFile "childSong6.002.ly" text
->   where
->     text = show $ simpleLilyPond "piano" M.d_major fourFourTime sys
->     sys  = buildSystem smap childSong6Main
->     fourFourTime = M.metricalSpec 4 4
->     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.d_major []
- 
 
+> 
+> cs6_ly = writeFile "childsong6.ly" 
+>                    $ renderDocEighty 
+>                    $ singleMelodyScoreSkel lySkel
+>                    $ singleMotifPart 
+>                    $ maybe failK id
+>                    $ motifSkel "piano" mSkel childSong6Main
+>   where 
+>     mSkel     = (defaultMotifSkeleton cs6_key cs6_mtr) { rwrules = cs6_rules }
+>     cs6_rules = [ elimHnEn, graceTnQn, elimDhnDhn ]
+>     lySkel    = defaultSingleMelodyScoreSkeleton "Children's Song No.6" 
+>                                                  cs6_key 
+>                                                  cs6_mtr
+> 
+>     failK     = error "Could not find/render piano part"
+>
+> cs6_key   = M.d_major
+> cs6_mtr   = M.withMeterPattern [3%8,3%8] $ M.metricalSpec 6 8 
+
+
+
+Ideally elimHnEn should tie the two notes is produces from
+one (hn+en) note. This doesn't happen as there ties are
+not at the 'element' level in the syntax tree.
+
+
+>
+> elimHnEn :: RuleTP AlphElem m
+> elimHnEn = preserving $ 
+>     (\(N p _) -> listH [N p (1%2), N p (1%8)]) <$> matchesD (5%8) note
+>
+> -- grace where tn preceeds a (qn-tn)
+> graceTnQn :: RuleTP AlphElem m 
+> graceTnQn =  preserving $
+>     (\(N p _) (N p' _) -> listH [M.G p (1%32), N p' (1%4)]) 
+>         <$> matchesD (1%32) note <*> matchesD ((1%4)-(1%32)) note
+>
+>
+> elimDhnDhn :: RuleTP AlphElem m
+> elimDhnDhn = preserving $ 
+>     (\(N p _) -> listH [N p (3%4), N p (3%4)]) <$> matchesD (3%2) note
+> 
+
+>
+> cs6B_ly = writeFile "childsong6Bass.ly" 
+>                    $ renderDocEighty 
+>                    $ singleMelodyScoreSkel lySkel
+>                    $ singleMotifPart 
+>                    $ maybe failK id
+>                    $ motifSkel "piano" mSkel childSong6Bass
+>   where 
+>     mSkel     = (defaultMotifSkeleton cs6_key cs6_mtr) { rwrules = cs6_rules }
+>     cs6_rules = [ elimHnEn, graceTnQn, elimDhnDhn ]
+>     lySkel    = defaultSingleMelodyScoreSkeleton "Children's Song No.6" 
+>                                                  cs6_key 
+>                                                  cs6_mtr
+> 
+>     failK     = error "Could not find/render piano part"
+>
 
 \end{verbatim} }

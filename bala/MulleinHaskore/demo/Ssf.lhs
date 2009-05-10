@@ -5,7 +5,6 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 > module Ssf where
 > import Haskore
 > import MulleinHaskore.LilyPond
-> import MulleinHaskore.System ( buildSystem )
 > import MulleinHaskore.Translate
 >
 > import Mullein.Rewriting
@@ -72,6 +71,9 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 >     (\(N p _:_) -> wrapH (N p (1%4))) <$> count 8 (matchesD (1%32) note)
 >
 
+Debugging 
+
+>
 > ssf_ly0 = error $ show 
 >                             $ maybe failK id
 >                             $ motifSkel "flute" mSkel ssf 

@@ -67,16 +67,20 @@ cBracket (Bracket as)     = Bracket   <$> mapM cElement as
 
 cElement :: AbcNote e => ElementP e -> CM (ElementP e)
 cElement (Note p d)       = (\smap unl -> 
-                             Note (respell smap p) (unitRescale unl d))
+                              Note (respell smap p) (unitRescale unl d))
                               <$> gets spelling_map <*> gets unit_note_length
 cElement (Rest d)         = (\unl -> Rest $ unitRescale unl d)
                               <$> gets unit_note_length
 cElement (Spacer d)       = (\unl -> Spacer $ unitRescale unl d)
                               <$> gets unit_note_length
-cElement (Chord _ _)      = error "A.Chord"
-cElement (GraceNotes _)   = error "A.GraceNotes"
+cElement (Chord ps d)     = (\smap unl -> Chord (map (respell smap) ps) 
+                                                (unitRescale unl d)) 
+                              <$> gets spelling_map <*> gets unit_note_length
+cElement (GraceNotes xs)  = GraceNotes <$> mapM cGraceNote xs
 
-
+cGraceNote :: AbcNote e => GraceNoteP e -> CM (GraceNoteP e)
+cGraceNote (e,d)          = (\smap unl -> (respell smap e, unitRescale unl d)) 
+                              <$> gets spelling_map <*> gets unit_note_length
 
 --------------------------------------------------------------------------------
 -- helpers

@@ -91,9 +91,13 @@ cElement (Rest d)         = (\rd -> Rest $ relativeDuration rd d)
                               <$> exchDuration d
 cElement (Spacer d)       = (\rd -> Spacer $ relativeDuration rd d)
                               <$> exchDuration d
-cElement (Chord _ _)      = error "Chord"
-cElement (GraceNotes _)   = error "GraceNotes"
+cElement (Chord ps d)     = (\ps' rd -> Chord ps' (relativeDuration rd d))
+                              <$> mapM rewritePitch ps <*> exchDuration d
+cElement (GraceNotes xs)  = GraceNotes <$> mapM cGraceNote xs
 
+cGraceNote :: LyNote e => GraceNoteP e -> CM (GraceNoteP e)
+cGraceNote (e,d)          = (\e' rd -> (e', relativeDuration rd d))
+                              <$> rewritePitch e <*> exchDuration d
 
 
 --------------------------------------------------------------------------------

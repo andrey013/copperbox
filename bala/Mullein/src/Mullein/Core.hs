@@ -59,6 +59,8 @@ metricalSpec n d
     err_msg = "simpleMetricalSpec - can't generate a meter pattern for a "
            ++ "meter that is neither simple or compound."
 
+withMeterPattern :: MeterPattern -> MetricalSpec -> MetricalSpec
+withMeterPattern m (ts,_) = (ts,m) 
 
 unitNote :: MetricalSpec -> Duration
 unitNote (m,_) | meterFraction m >= 3%4 = 1%8
