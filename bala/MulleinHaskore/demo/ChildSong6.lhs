@@ -103,18 +103,18 @@ not at the 'element' level in the syntax tree.
 >
 > elimHnEn :: RuleTP AlphElem m
 > elimHnEn = preserving $ 
->     (\(N p _) -> listH [N p (1%2), N p (1%8)]) <$> matchesD (5%8) note
+>     (\(N p _) -> listD [N p (1%2), N p (1%8)]) <$> matchesDur (5%8) note
 >
 > -- grace where tn preceeds a (qn-tn)
 > graceTnQn :: RuleTP AlphElem m 
 > graceTnQn =  preserving $
->     (\(N p _) (N p' _) -> listH [M.G p (1%32), N p' (1%4)]) 
->         <$> matchesD (1%32) note <*> matchesD ((1%4)-(1%32)) note
+>     (\(N p _) (N p' _) -> listD [M.G p (1%32), N p' (1%4)]) 
+>         <$> matchesDur (1%32) note <*> matchesDur ((1%4)-(1%32)) note
 >
 >
 > elimDhnDhn :: RuleTP AlphElem m
 > elimDhnDhn = preserving $ 
->     (\(N p _) -> listH [N p (3%4), N p (3%4)]) <$> matchesD (3%2) note
+>     (\(N p _) -> listD [N p (3%4), N p (3%4)]) <$> matchesDur (3%2) note
 > 
 
 >

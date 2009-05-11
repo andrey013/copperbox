@@ -67,7 +67,7 @@ mUnary = pmatchOne p where
   p _           = False
 
 rUnary :: RuleTC (Alphabet e) (ElementP e) m
-rUnary = (wrapH . fn) <$> mUnary where
+rUnary = (wrapD . fn) <$> mUnary where
   fn (N e d)    = Note e d
   fn (R d)      = Rest d
   fn (S d)      = Spacer d
@@ -81,10 +81,10 @@ rUnary = (wrapH . fn) <$> mUnary where
 -- For the moment ties are lost.
 
 rTie :: Eq e => RuleTC (Alphabet e) (ElementP e) m
-rTie = id <$ lit T
+rTie = zeroD <$ lit T
 
 rGrace :: RuleTC (Alphabet e) (ElementP e) m
-rGrace = (wrapH . fn) <$> many1 (pmatchOne p) where
+rGrace = (wrapD . fn) <$> many1 (pmatchOne p) where
   p (G _ _) = True
   p _       = False
 
@@ -115,16 +115,16 @@ note = pmatchOne p where
    p (N _ _) = True
    p _       = False
 
-eqD :: Temporal e => Duration -> e -> Bool
-eqD d e = d == duration e 
+eqDur :: Temporal e => Duration -> e -> Bool
+eqDur d e = d == duration e 
 
-matchesD :: Duration -> Match r m e -> Match r m e
-matchesD d fn = satisfies fn (d `eqD`)
+matchesDur :: Duration -> Match r m e -> Match r m e
+matchesDur d fn = satisfies fn (d `eqDur`)
 
 
 appogiaturaQn :: RuleTP (Alphabet e) m
-appogiaturaQn = (\(N e _) (N e' _) -> listH [G e tn, N e' qn]) 
-    <$> matchesD (1%32) note  <*> matchesD (1%4 - 1%32) note
+appogiaturaQn = (\(N e _) (N e' _) -> listD [G e tn, N e' qn]) 
+    <$> matchesDur (1%32) note  <*> matchesDur (1%4 - 1%32) note
   where
     tn :: Duration
     tn = 1%32

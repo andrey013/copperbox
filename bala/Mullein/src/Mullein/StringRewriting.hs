@@ -29,6 +29,8 @@ module Mullein.StringRewriting where
 import Control.Applicative
 import Control.Monad.Identity
 
+import qualified Data.DList as D
+
 ----
 
 ----
@@ -90,8 +92,6 @@ runMatcherT :: MatcherT tok r m a
 runMatcherT = unMatcherT
 
 
--- type H - aka Hughes lists, see worker wrapper paper
-type H a = [a] -> [a]
 
 
 -- Type-preserving rules have the same input and output token type.
@@ -107,10 +107,10 @@ type H a = [a] -> [a]
 -- @r@ and @m@ are the answer continuation and monad types.
 -- Generally they will be left as type variables when writing
 -- signatures.
-type RuleTP tok m = MatcherT tok (H tok,[tok]) m (H tok) 
+type RuleTP tok m = MatcherT tok (D.DList tok,[tok]) m (D.DList tok) 
 
 
-type RuleTC tok out m = MatcherT tok (H out,[tok]) m (H out)
+type RuleTC tok out m = MatcherT tok (D.DList out,[tok]) m (D.DList out)
  
 
 
@@ -200,36 +200,37 @@ lit t = MatcherT $ \sk fk ts ln -> case ts of
 
 
 idOne :: RuleTP tok m
-idOne = wrapH <$> one
-
-wrap :: a -> [a]
-wrap a = [a]
+idOne = wrapD <$> one
 
 
-wrapH :: a -> H a
-wrapH a = ([a] ++)
+wrapD :: a -> D.DList a
+wrapD a = D.singleton a
 
-listH :: [a] -> H a
-listH xs = (xs++)
+listD :: [a] -> D.DList a
+listD = D.fromList
+
+zeroD :: D.DList a
+zeroD = D.empty
+
 
 
 -- type preserving rewrite strategy
 rewriteTP :: Monad m => RuleTP tok m -> [tok] -> m [tok]
-rewriteTP f input = step id input where
-    step g [] = return $ g []
+rewriteTP f input = step zeroD input where
+    step g [] = return $ D.toList g
     step g xs = do (ansH,rest) <- rewriteTP1 f xs xs 
-                   step (g . ansH) rest 
+                   step (g `D.append` ansH) rest 
 
 
 -- rewrite1 runs the supplied rewrite rule and returns the answer, plus
 -- the remaining input.
 -- If the rewrite fails the failure continuation returns the initial 
 -- input as the answer. This means that rewrites must be type-preserving.
-rewriteTP1 :: Monad m => RuleTP tok m -> [tok] -> [tok] -> m (H tok,[tok])
+rewriteTP1 :: Monad m => RuleTP tok m -> [tok] -> [tok] -> m (D.DList tok,[tok])
 rewriteTP1 p xs ys = runMatcherT p succK failK xs ys 
   where
     succK ans _ ts _ = return (ans,ts)
-    failK ts         = return (listH ts, []) 
+    failK ts         = return (listD ts, []) 
 
 
 -- rewrite with the Identity monad
@@ -237,19 +238,18 @@ rewriteTP'id :: RuleTP tok Identity -> [tok] -> [tok]
 rewriteTP'id = (runIdentity .) . rewriteTP
 
 
--- type RuleTP tok m = MatcherT tok (H tok,[tok]) m (H tok) 
 
 
 -- type changing rewrite strategy
-rewriteTC :: Monad m => MatcherT tok (H out,[tok]) m (H out) -> [tok] -> m [out]
-rewriteTC f input = step id input where
-    step g [] = return $ g []
+rewriteTC :: Monad m =>  RuleTC tok out m -> [tok] -> m [out]
+rewriteTC f input = step D.empty input where
+    step g [] = return $ D.toList g
     step g xs = do (ansH,rest) <- rewriteTC1 f xs xs 
-                   step (g . ansH) rest 
+                   step (g `D.append` ansH) rest 
 
 
-rewriteTC1 :: Monad m => MatcherT tok (H out,[tok]) m (H out) 
-           -> [tok] -> [tok] -> m (H out,[tok])
+rewriteTC1 :: Monad m 
+           => RuleTC tok out m -> [tok] -> [tok] -> m (D.DList out,[tok])
 rewriteTC1 p xs ys = runMatcherT p succK failK xs ys 
   where
     succK ans _ ts _ = return (ans,ts)
@@ -258,7 +258,6 @@ rewriteTC1 p xs ys = runMatcherT p succK failK xs ys
                                ++ " items remaining."
 
 
--- rewriteTC'id :: MatcherT tok (H out,[tok]) Identity (H out) -> [tok] -> [out]
 
 rewriteTC'id :: RuleTC tok out Identity -> [tok] -> [out]
 rewriteTC'id = (runIdentity .) . rewriteTC

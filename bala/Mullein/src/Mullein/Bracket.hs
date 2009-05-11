@@ -23,7 +23,9 @@ import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Utils
 
+import qualified Data.DList as DL
 import Data.List (foldl')
+import Data.Monoid
 import Data.Ratio
 
 data TieStatus = Tied | NotTied
@@ -94,43 +96,70 @@ fitTill d0 es = step d0 es where
 
 -- Note for LilyPond - graces cannot start or end a beam group.
 
--- beam does not ensure that the end of a bracket is either a 
--- note or a chord... It should.
-
 beam :: [Duration] -> [ElementP e] -> [BracketP e]
-beam = concat `oo` unfoldr2 fn where
-    -- notes exhausted
-    fn _          []          = Nothing
+beam = DL.toList `oo` unfoldrMonoid2 fn where
+    -- notes exhausted, finish the unfold
+    fn _           []         = Nothing
 
-    -- beam lengths exhausted, return singletons 
-    fn []         (x:xs)      = Just ([Singleton x], [],xs)
-
+    -- beam lengths exhausted, package up the remaining items as singletons
+    fn []          xs         = let trail = DL.fromList $ map Singleton xs
+                                in Just (trail,[],[]) 
+                                
     fn dstk       (x:xs)  
-        | duration x > (1%8)  || not (noteOrChord x) 
-                              = Just ([Singleton x], reduceStk (duration x) dstk, xs)
-    
+        | duration x > (1%8)  || not (noc x) 
+                              = Just (sglD x, reduceStk (duration x) dstk, xs)
+
     fn dstk@(d:_) xs          = let (count,l,r) = beamGroup1 d xs in 
-                                Just (unwindBracket l, reduceStk count dstk, r)
+                                Just (l, reduceStk count dstk, r)
+                                
+
+beamGroup1 :: Duration 
+              -> [ElementP e] 
+              -> (Duration, DL.DList (BracketP e), [ElementP e])
+beamGroup1 d0 = step d0 DL.empty [] where
+    
+    -- input exahusted 
+    step d dacc stk []        = (d, dacc `mappend` unwindStack stk, []) 
+
+    -- duration 0 - end of beam group    
+    step 0 dacc stk xs        = (0, dacc `mappend` unwindStack stk, xs)
+ 
+    -- element too big for a beam group, make it a singleton
+    step d dacc stk (e:es) 
+         | duration e > d     = let dlist = dacc `mappend` unwindStack stk
+                                                 `mappend` sglD e 
+                                in (d - duration e, dlist, es)
+    
+    -- cannot start the stack w                      
+    step d dacc []  (e:es) 
+         | noc e              = step (d - duration e) dacc [e] es
+         | otherwise          = step (d - duration e) (dacc `mappend` sglD e) [] es
+
+    -- at this point - element dur must be smaller than d and stk has elements
+    -- so cons it to the stack (as the stk should be in reverse order)
+    step d dacc stk (e:es)    = step (d - duration e) dacc (e:stk) es 
 
 
-noteOrChord :: ElementP e -> Bool
-noteOrChord (Note _ _)  = True
-noteOrChord (Chord _ _) = True
-noteOrChord _           = False
+-- stack is reversed so we can see whether or not the end has 
+-- notes or chords 
+unwindStack :: [ElementP e] -> DL.DList (BracketP e)
+unwindStack []                     = DL.empty
+unwindStack (e:es) | noc e         = DL.singleton $ mkBracket $ reverse (e:es)
+                   | otherwise     = unwindStack es `mappend` sglD e
+
+-- noc - note or chord
+noc :: ElementP e -> Bool
+noc (Note _ _)  = True
+noc (Chord _ _) = True
+noc _           = False
+
+sglD :: ElementP e -> DL.DList (BracketP e)
+sglD = DL.singleton . Singleton
 
 mkBracket :: [ElementP e] -> BracketP e
 mkBracket [x] = Singleton x
 mkBracket xs  = Bracket xs 
 
-
--- this is too complicated, we need a better bracketing algorithm
--- (unwind a bracket to make sure it ends in a note or chord) 
-unwindBracket :: [ElementP e] -> [BracketP e]
-unwindBracket xs = brack1 : others
-  where
-    (revothers,revnotes) = span (not . noteOrChord) $ reverse xs
-    brack1 = mkBracket $ reverse revnotes 
-    others = map Singleton $ reverse revothers
 
 -- cannot reduce stack by negative amounts...
 reduceStk :: Duration -> [Duration] -> [Duration]
@@ -140,31 +169,6 @@ reduceStk d (x:xs)  | d == x    = xs
                     | d > x     = reduceStk (d-x) xs
                     | otherwise = (d-x):xs 
                       
-                      
--- beamGroup1 is always called on non-empty list
-
-beamGroup1 :: Temporal a => Duration -> [a] -> (Duration,[a],[a])
-beamGroup1 d xs = if c >= d then (c,[l],rs) else (c+c', l:ls', rs')  
-  where
-    (c,l,rs)     = consume1 xs
-    (c',ls',rs') = consumes (d-c) rs
-
--- beaming must always consume at least one note...
--- (and consume1 always called on non-empty list)
-consume1 :: Temporal a => [a] -> (Duration,a,[a])
-consume1 (x:xs) = (duration x,x,xs)
-consume1 []     = error $ "consume1 - unreachable"
-
-
-consumes :: Temporal a => Duration -> [a] -> (Duration,[a],[a])
-consumes d ys = step 0 ys where
-    step c []       = (c,[],[])
-    step c (x:xs)   = case d `compare` (c + duration x) of
-                        EQ -> (d, [x],xs) 
-                        LT -> (c, [],xs)
-                        GT -> (c', x:ls,rs) where 
-                                 (c',ls,rs) = step (c + duration x) xs     
-
   
 ---------------------------------------------------------------------------------
 -- overlay

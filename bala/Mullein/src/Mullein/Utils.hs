@@ -63,17 +63,25 @@ anaSt f s0 = case (f s0) of
 
 unfoldr2 :: (s1 -> s2 -> Maybe (a,s1,s2)) -> s1 -> s2 -> [a]
 unfoldr2 f s1 s2 = case f s1 s2 of
-    Nothing     -> []
+    Nothing          -> []
     Just (a,s1',s2') -> a : unfoldr2 f s1' s2'
 
 
-unfoldMonoidR :: Monoid a => (st -> Maybe (a,st)) -> a -> st -> a 
-unfoldMonoidR f a0 s = step $ f s where
+unfoldrMonoid :: Monoid a => (st -> Maybe (a,st)) -> a -> st -> a 
+unfoldrMonoid f a0 s = step $ f s where
     step Nothing        = a0
     step (Just (a,s'))  = a `mappend` step (f s')
 
-unfoldMonoidL :: Monoid a => (st -> Maybe (a,st)) -> a -> st -> a 
-unfoldMonoidL f a0 s = step $ f s where
+unfoldrMonoid2 :: Monoid a 
+               => (s1 -> s2 -> Maybe (a,s1,s2)) -> s1 -> s2 -> a
+unfoldrMonoid2 f s1 s2 = case f s1 s2 of
+    Nothing          -> mempty
+    Just (a,s1',s2') -> a `mappend` unfoldrMonoid2 f s1' s2'
+ 
+
+
+unfoldlMonoid :: Monoid a => (st -> Maybe (a,st)) -> a -> st -> a 
+unfoldlMonoid f a0 s = step $ f s where
     step Nothing        = a0
     step (Just (a,s'))  = let a' = step (f s') in a' `seq`  a' `mappend` a
 
@@ -90,7 +98,7 @@ genUnfold2 f g a0 s t = step $ f s t where
     step (Just (a,s',t')) = a `g` step (f s' t')
 
  
-
+{-
 
 -- supply a (potentially different) reduction function at each step.
 
@@ -98,6 +106,8 @@ veryGenUnfold :: (st -> Maybe (a -> a -> a, a,st)) -> a -> st -> a
 veryGenUnfold  f a0 s = step $ f s where
    step Nothing           = a0
    step (Just (op,a,s'))  = a `op` step (f s')
+
+-}
 
 
 -- 'specs'

@@ -64,11 +64,11 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 >
 > elimTrill40 :: RuleTP AlphElem m
 > elimTrill40 = preserving $ 
->     (\(N p _:_) -> wrapH (N p (1%8))) <$> count 5 (matchesD (1%40) note)
+>     (\(N p _:_) -> wrapD (N p (1%8))) <$> count 5 (matchesDur (1%40) note)
 >
 > elimTrill32 :: RuleTP AlphElem m
 > elimTrill32 = preserving $ 
->     (\(N p _:_) -> wrapH (N p (1%4))) <$> count 8 (matchesD (1%32) note)
+>     (\(N p _:_) -> wrapD (N p (1%4))) <$> count 8 (matchesDur (1%32) note)
 >
 
 Debugging 
