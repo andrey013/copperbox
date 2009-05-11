@@ -106,7 +106,7 @@ beam = DL.toList `oo` unfoldrMonoid2 fn where
                                 in Just (trail,[],[]) 
                                 
     fn dstk       (x:xs)  
-        | duration x > (1%8)  || not (noc x) 
+        | duration x >= (1%4) || not (noc x) 
                               = Just (sglD x, reduceStk (duration x) dstk, xs)
 
     fn dstk@(d:_) xs          = let (count,l,r) = beamGroup1 d xs in 
@@ -129,6 +129,13 @@ beamGroup1 d0 = step d0 DL.empty [] where
          | duration e > d     = let dlist = dacc `mappend` unwindStack stk
                                                  `mappend` sglD e 
                                 in (d - duration e, dlist, es)
+
+    -- element too big to be beamed, but still 'fits' in the beam group
+    step d dacc stk (e:es) 
+         | duration e >= 1%4  = let dacc' = dacc `mappend` unwindStack stk
+                                                 `mappend` sglD e 
+                                in step (d - duration e) dacc' [] es
+
     
     -- cannot start the stack w                      
     step d dacc []  (e:es) 
