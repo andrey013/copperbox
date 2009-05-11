@@ -96,16 +96,23 @@ time = P . timeCmd
 setcmd :: Doc -> P CtxScore
 setcmd d = P $ command "set" <+> d
 
+type ClefName = String
 
-clef :: String -> P CtxScore 
+clef :: ClefName -> P CtxScore 
 clef s = P $ command "clef" <+> text s
 
 relative :: Pitch -> P CtxScore -> P CtxScore 
 relative p expr = P $ command "relative" <+> note (rescaleOctave (-4)  p) 
                        <+> nestBraces (unP expr) 
 
-melody :: Pitch -> Key -> Meter -> P CtxScore -> P CtxScore
-melody p k m expr = relative p (keycmd k +++ time m +++ expr)
+melody :: Pitch -> Key -> Meter -> ClefName -> P CtxScore -> P CtxScore
+melody p k m c expr = relative p (keycmd k +++ time m +++ clef c +++ expr)
+
+doubleAngles :: [P CtxScore] -> P CtxScore
+doubleAngles xs = P $ nestDblAngles (vsep $ map unP xs)
+
+newStaff :: P CtxScore -> P CtxScore
+newStaff s = P $ command "new" <+> text "Staff" <+> unP s
 
 
 lilypondOutput :: LilyPondOutput -> P CtxScore
@@ -126,3 +133,6 @@ equation s d = text s <+> equals <+> d
 
 nestBraces :: Doc -> Doc
 nestBraces d = lbrace <$> indent 2 d <$> rbrace 
+
+nestDblAngles :: Doc -> Doc
+nestDblAngles d = text "<<" <$> indent 2 d <$> text ">>"

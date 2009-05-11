@@ -77,17 +77,16 @@ split in two and tied.
 > 
 > cs6_ly = writeFile "childsong6.ly" 
 >                    $ renderDocEighty 
->                    $ singleMelodyScoreSkel lySkel
->                    $ singleMotifPart 
->                    $ maybe failK id
->                    $ motifSkel "piano" mSkel childSong6Main
+>                    $ pianoScoreSkel lySkel treb bass
 >   where 
 >     mSkel     = (defaultMotifSkeleton cs6_key cs6_mtr) { rwrules = cs6_rules }
+>     mkPart    = singleMotifPart . maybe failK id . motifSkel "piano" mSkel
 >     cs6_rules = [ elimHnEn, graceTnQn, elimDhnDhn ]
->     lySkel    = defaultSingleMelodyScoreSkeleton "Children's Song No.6" 
->                                                  cs6_key 
->                                                  cs6_mtr
-> 
+>     lySkel    = defaultMelodyScoreSkeleton "Children's Song No.6" 
+>                                            cs6_key 
+>                                            cs6_mtr
+>     treb      = mkPart childSong6Main
+>     bass      = mkPart childSong6Bass 
 >     failK     = error "Could not find/render piano part"
 >
 > cs6_key   = M.d_major
@@ -117,21 +116,5 @@ not at the 'element' level in the syntax tree.
 >     (\(N p _) -> listD [N p (3%4), N p (3%4)]) <$> matchesDur (3%2) note
 > 
 
->
-> cs6B_ly = writeFile "childsong6Bass.ly" 
->                    $ renderDocEighty 
->                    $ singleMelodyScoreSkel lySkel
->                    $ singleMotifPart 
->                    $ maybe failK id
->                    $ motifSkel "piano" mSkel childSong6Bass
->   where 
->     mSkel     = (defaultMotifSkeleton cs6_key cs6_mtr) { rwrules = cs6_rules }
->     cs6_rules = [ elimHnEn, graceTnQn, elimDhnDhn ]
->     lySkel    = defaultSingleMelodyScoreSkeleton "Children's Song No.6" 
->                                                  cs6_key 
->                                                  cs6_mtr
-> 
->     failK     = error "Could not find/render piano part"
->
 
 \end{verbatim} }

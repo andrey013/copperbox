@@ -260,9 +260,9 @@ Note, some pitch spelling is rather strange (maybe the key is wrong).
 >   where 
 >     mSkel     = (defaultMotifSkeleton nr_key nr_mtr) { rwrules = nr_rules }
 >     nr_rules  = [ elim11_16 ]
->     lySkel    = defaultSingleMelodyScoreSkeleton "New Resolutions" 
->                                                  nr_key 
->                                                  nr_mtr
+>     lySkel    = defaultMelodyScoreSkeleton "New Resolutions" 
+>                                            nr_key 
+>                                            nr_mtr
 > 
 >     failK     = error "Could not find/render vib part"
 >

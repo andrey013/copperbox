@@ -36,36 +36,60 @@ lilypond_version = "2.12.2"
 
     
 
-data SingleMelodyScoreSkeleton = SingleMelodyScoreSkeleton {
-        score_title     :: String,
-        key_sig         :: Key,
-        meter_spec      :: MetricalSpec,
-        rel_pitch       :: Pitch
+data MelodyScoreSkeleton = MelodyScoreSkeleton {
+        scoreTitle      :: String,
+        keySig          :: Key,
+        meterSpec       :: MetricalSpec,
+        relativePitch   :: Pitch
       }
 
-defaultSingleMelodyScoreSkeleton :: String 
-                                 -> Key 
-                                 -> MetricalSpec 
-                                 -> SingleMelodyScoreSkeleton 
-defaultSingleMelodyScoreSkeleton t k m = SingleMelodyScoreSkeleton {
-        score_title     = t,
-        key_sig         = k,
-        meter_spec      = m,
-        rel_pitch       = middle_c
+defaultMelodyScoreSkeleton :: String 
+                           -> Key 
+                           -> MetricalSpec 
+                           -> MelodyScoreSkeleton 
+defaultMelodyScoreSkeleton t k m = MelodyScoreSkeleton {
+        scoreTitle      = t,
+        keySig          = k,
+        meterSpec       = m,
+        relativePitch   = middle_c
       }                          
 
 
-singleMelodyScoreSkel :: SingleMelodyScoreSkeleton -> M.Part -> Doc
+singleMelodyScoreSkel :: MelodyScoreSkeleton -> M.Part -> Doc
 singleMelodyScoreSkel skel mus = unP $ prolog +++ body
   where 
-    ly_score  = convertToLyRelative (rel_pitch skel) mus
-    ly_output = generateLilyPond (key_sig skel) 
-                                 (fst $ meter_spec skel) 
+    ly_score  = convertToLyRelative (relativePitch skel) mus
+    ly_output = generateLilyPond (keySig skel) 
+                                 (fst $ meterSpec skel) 
                                  ly_score
-    prolog    = version lilypond_version +++ header [title $ score_title skel]
-    body      = book [score (melody (rel_pitch skel)
-                                    (key_sig skel)
-                                    (fst $ meter_spec skel) 
+    prolog    = version lilypond_version +++ header [title $ scoreTitle skel]
+    body      = book [score (melody (relativePitch skel)
+                                    (keySig skel)
+                                    (fst $ meterSpec skel) 
+                                    "treble"
                                     (lilypondOutput ly_output))]
 
 
+pianoScoreSkel :: MelodyScoreSkeleton -> M.Part -> M.Part -> Doc
+pianoScoreSkel skel treble_part bass_part = 
+    unP $ prolog +++ treble_decl +++ bass_decl +++ body
+  where
+    mkPart skore  = generateLilyPond (keySig skel) (fst $ meterSpec skel)    
+                        $ convertToLyRelative (relativePitch skel) skore
+
+    treble_ly     = mkPart treble_part 
+    bass_ly       = mkPart bass_part
+
+    treble_decl   = definition "treblePart" (melodySkel skel "treble" treble_ly) 
+    bass_decl     = definition "bassPart"   (melodySkel skel "bass" bass_ly) 
+    
+    prolog        = version lilypond_version +++ header [title $ scoreTitle skel]
+    body          = book [score (doubleAngles [ newStaff (usedef "treblePart")
+                                              , newStaff (usedef "bassPart")   ])]
+
+melodySkel :: MelodyScoreSkeleton -> String -> LilyPondOutput -> P CtxScore
+melodySkel skel clefName lyOut = melody (relativePitch skel)
+                                        (keySig skel)
+                                        (fst $ meterSpec skel) 
+                                        clefName
+                                        (lilypondOutput lyOut)

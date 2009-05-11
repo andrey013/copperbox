@@ -51,9 +51,9 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 >   where 
 >     mSkel     = (defaultMotifSkeleton ssf_key ssf_mtr) { rwrules = elim_ts }
 >     elim_ts   = [elimTrill40, elimTrill32]
->     lySkel    = defaultSingleMelodyScoreSkeleton "Stars and Stripes Forever" 
->                                                  ssf_key 
->                                                  ssf_mtr
+>     lySkel    = defaultMelodyScoreSkeleton "Stars and Stripes Forever" 
+>                                            ssf_key 
+>                                            ssf_mtr
 >     ssf_key   = M.e_flat_major
 >     ssf_mtr   = M.metricalSpec 2 4
 > 
@@ -71,20 +71,3 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 >     (\(N p _:_) -> wrapD (N p (1%4))) <$> count 8 (matchesDur (1%32) note)
 >
 
-Debugging 
-
->
-> ssf_ly0 = error $ show 
->                             $ maybe failK id
->                             $ motifSkel "flute" mSkel ssf 
->   where 
->     mSkel     = (defaultMotifSkeleton ssf_key ssf_mtr) { rwrules = elim_ts }
->     elim_ts   = [elimTrill40, elimTrill32]
->     lySkel    = defaultSingleMelodyScoreSkeleton "Stars and Stripes Forever" 
->                                                  ssf_key 
->                                                  ssf_mtr
->     ssf_key   = M.e_flat_major
->     ssf_mtr   = M.metricalSpec 2 4
-> 
->     failK     = error "Could not find/render flute part"
->
