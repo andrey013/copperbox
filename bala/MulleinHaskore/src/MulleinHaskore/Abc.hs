@@ -10,23 +10,26 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- An interface for Haskore to Mullein
+-- Helpers for Abc construction / output.
 --
 --------------------------------------------------------------------------------
 
 
 module MulleinHaskore.Abc where
 
-import MulleinHaskore.System
+-- import MulleinHaskore.System
 
 import Mullein.AbcConvert
 import Mullein.AbcDoc
 import Mullein.AbcOutput
 import Mullein.Core
-import Mullein.CoreTypes
 import Mullein.SpellingMap
 
 import Text.PrettyPrint.Leijen
+
+{-
+
+-- TODO follow LilyPond example
 
 simpleAbc :: InstName -> Key -> MetricalSpec -> System -> Doc
 simpleAbc name k m sys = unP $ scoreTemplate 1 "ABC -" k m abc_out
@@ -52,6 +55,7 @@ scoreTemplate i score_title k m abc_output =
               +++ keyinfo  k
               +++ abcOutput abc_output
 
+-}
 
 
 --

@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  GHC
 --
 -- Convert to Abc
 --
@@ -18,7 +18,7 @@
 module Mullein.AbcConvert where
 
 import Mullein.AbcNoteClass
-import Mullein.CoreTypes
+import Mullein.Core
 import Mullein.Duration
 import Mullein.SpellingMap
 import Mullein.Utils () -- State Applicative instance

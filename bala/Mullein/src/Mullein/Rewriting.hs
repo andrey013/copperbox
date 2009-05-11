@@ -24,7 +24,7 @@
 
 module Mullein.Rewriting where
 
-import Mullein.CoreTypes
+import Mullein.Core
 import Mullein.Duration
 import Mullein.StringRewriting
 

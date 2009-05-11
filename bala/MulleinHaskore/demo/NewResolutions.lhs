@@ -6,13 +6,23 @@ New Resolutions by Jean-Luc Ponty, Scott O'Neil, and John Garvin
 > import ChildSong6 ( times )
 > import Data.Ratio
 >
-> import MulleinHaskore.LilyPond
-> import MulleinHaskore.System ( buildSystem, printSystem )
+
 >
+> import MulleinHaskore.LilyPond
+> import MulleinHaskore.Translate hiding ( cDur )
+>
+> import Mullein.Rewriting hiding ( Alphabet(..) )
+> import Mullein.StringRewriting
 > import qualified Mullein.Core          as M
 > import qualified Mullein.NamedElements as M
+> import qualified Mullein.Rewriting     as M
 > import qualified Mullein.SpellingMap   as M
+>
+> import Control.Applicative
+>
 
+
+>
 > nrContext = Context {cTime = 0,
 >                      cPlayer = fancyPlayer,
 >                      cInst = "Marimba",
@@ -238,19 +248,31 @@ New Resolutions by Jean-Luc Ponty, Scott O'Neil, and John Garvin
 >        play
 > -}
 
-> nr_ly = 
->     writeFile "newResolutions.ly" text
->   where
->     text = show $ simpleLilyPond "marimba" M.c_major fourFourTime sys
->     sys  = buildSystem smap newResolutions
->     fourFourTime = M.metricalSpec 4 4
->     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.c_major []
->
-> nr_debug = printSystem M.c_major fourFourTime (buildSystem smap newResolutions)
->   where 
->     fourFourTime = M.metricalSpec 4 4
->     smap = maybe (error $ "smap missing") id $ M.makeSpellingMap M.c_major []
->
+Note, some pitch spelling is rather strange (maybe the key is wrong). 
 
-Like ChildSong6, this needs an extension to Mullein's metrical spiltting
-to split and tie (semi-)regular note lengths e.g. 11%16
+> 
+> nr_ly = writeFile "newResol.ly" 
+>                    $ renderDocEighty 
+>                    $ singleMelodyScoreSkel lySkel
+>                    $ singleMotifPart 
+>                    $ maybe failK id
+>                    $ motifSkel "vib" mSkel vibMelody3
+>   where 
+>     mSkel     = (defaultMotifSkeleton nr_key nr_mtr) { rwrules = nr_rules }
+>     nr_rules  = [ elim11_16 ]
+>     lySkel    = defaultSingleMelodyScoreSkeleton "New Resolutions" 
+>                                                  nr_key 
+>                                                  nr_mtr
+> 
+>     failK     = error "Could not find/render vib part"
+>
+> nr_key   = M.e_flat_major
+> nr_mtr   = M.metricalSpec 4 4 
+>
+> elim11_16 :: RuleTP AlphElem m
+> elim11_16 = preserving $ 
+>     (\(M.N p _) -> listD [M.N p (1%2), M.N p (3%8)]) <$> matchesDur (11%16) note
+>
+> 
+> vibMelody3 = Instr "vib" (Phrase [Dyn SF] melody3)
+>

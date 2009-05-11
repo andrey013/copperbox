@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined
+-- Portability :  GHC
 --
 -- SpellingMap - a map from semitone count to pitch name.
 -- Used by Abc for pitch spelling tones in a scale.
@@ -24,7 +24,7 @@ module Mullein.SpellingMap (
   pitchNames,
   ) where
 
-import Mullein.CoreTypes ( Key(..), Mode(..) )
+import Mullein.Core ( Key(..), Mode(..) )
 import Mullein.Pitch
 import Mullein.Utils
 

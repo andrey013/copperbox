@@ -4,11 +4,11 @@
 -- |
 -- Module      :  MulleinHaskore.LilyPond
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined 
+-- Portability :  GHC
 --
 -- Output LilyPond
 --
@@ -17,9 +17,9 @@
 
 module MulleinHaskore.LilyPond where
 
-import MulleinHaskore.System
+-- import MulleinHaskore.System
 
-import Mullein.CoreTypes
+import Mullein.Core
 import Mullein.LilyPondConvert
 import Mullein.LilyPondDoc
 import Mullein.LilyPondOutput
@@ -32,30 +32,6 @@ import Text.PrettyPrint.Leijen
 
 lilypond_version :: String
 lilypond_version = "2.12.2"
-
-simpleLilyPond :: InstName -> Key -> MetricalSpec -> System -> Doc
-simpleLilyPond name k m sys = unP $ scoreTemplate "Ly" middle_c k m ly_out
-  where
-    ly_motif  = instMotif name k m sys
-    ly_part   = linearPart ly_motif
-    ly_score  :: M.Part 
-    ly_score  = convertToLyRelative middle_c ly_part
-    ly_out    = generateLilyPond k (fst m) ly_score
-
-scoreTemplate :: String 
-              -> Pitch 
-              -> Key 
-              -> MetricalSpec 
-              -> LilyPondOutput 
-              -> P CtxTopLevel
-scoreTemplate score_title' rel_pitch' key_sig' meter_spec' ly_output = 
-    prolog +++ body 
-  where
-    prolog = version lilypond_version +++ header [title score_title']
-    body   = book [score (melody rel_pitch'
-                                 key_sig'
-                                 (fst meter_spec') 
-                                 (lilypondOutput ly_output))]
 
 
     

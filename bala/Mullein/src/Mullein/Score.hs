@@ -63,7 +63,6 @@ import qualified Mullein.AbcOutput as Abc
 import Mullein.AbcNoteClass
 import Mullein.Bracket
 import Mullein.Core
-import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.LilyPondNoteClass
 import qualified Mullein.LilyPondConvert as Ly

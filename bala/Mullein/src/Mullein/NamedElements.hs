@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined
+-- Portability :  GHC
 --
 -- Named musical elements e.g. notes, keys...
 --
@@ -66,7 +66,7 @@ module Mullein.NamedElements (
 
 
 import Mullein.Duration
-import Mullein.CoreTypes
+import Mullein.Core
 import Mullein.Pitch
 
 import Data.Ratio

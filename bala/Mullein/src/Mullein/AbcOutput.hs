@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  GHC
 --
 -- Pretty print Abc
 --
@@ -18,7 +18,7 @@
 module Mullein.AbcOutput where
 
 import Mullein.AbcNoteClass
-import Mullein.CoreTypes
+import Mullein.Core
 import Mullein.Duration
 import Mullein.OutputCommon
 import Mullein.Pitch

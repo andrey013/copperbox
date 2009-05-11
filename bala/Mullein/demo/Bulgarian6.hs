@@ -10,7 +10,6 @@ import Mullein.AbcConvert
 import qualified Mullein.AbcOutput as Abc
 import Mullein.Bracket
 import Mullein.Core
-import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.NamedElements
 import Mullein.Pitch

@@ -8,15 +8,15 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined
+-- Portability : GHC
 --
--- Common utils...
+-- Represent LilyPond percussion notes
 --
 --------------------------------------------------------------------------------
 
 module Mullein.LilyPondPercussion where
 
-import Mullein.CoreTypes
+import Mullein.Core
 import Mullein.Duration
 import Mullein.LilyPondNoteClass
 import Mullein.LilyPondOutput

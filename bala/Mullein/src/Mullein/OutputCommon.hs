@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  GHC
 --
 -- Common code for LilyPond and ABC output (e.g. same Monad)
 --
@@ -17,7 +17,7 @@
 
 module Mullein.OutputCommon where
 
-import Mullein.CoreTypes
+import Mullein.Core
 import Mullein.Duration
 
 import Control.Monad.State

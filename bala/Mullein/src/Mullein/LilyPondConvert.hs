@@ -9,7 +9,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  GHC
 --
 -- Convert to LilyPond
 --
@@ -19,7 +19,7 @@
 module Mullein.LilyPondConvert where
 
 
-import Mullein.CoreTypes
+import Mullein.Core
 import Mullein.Duration
 import Mullein.LilyPondNoteClass
 import Mullein.Pitch

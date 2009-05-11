@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  GHC
 --
 -- Pretty print LilyPond
 --
@@ -17,7 +17,7 @@
 
 module Mullein.LilyPondOutput where
 
-import Mullein.CoreTypes
+import Mullein.Core
 import Mullein.Duration
 import Mullein.LilyPondNoteClass
 import Mullein.OutputCommon

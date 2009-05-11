@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined
+-- Portability :  GHC
 --
 -- Bar splitting and beam grouping.
 --
@@ -19,7 +19,6 @@
 module Mullein.Bracket where
 
 import Mullein.Core
-import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.Utils
 

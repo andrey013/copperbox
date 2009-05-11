@@ -7,7 +7,6 @@
 module Drums where
 
 import Mullein.Core
-import Mullein.CoreTypes
 import Mullein.Duration
 import Mullein.LilyPondConvert
 import Mullein.LilyPondOutput

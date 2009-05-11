@@ -18,8 +18,7 @@
 
 module MulleinHaskore.Translate where
 
-import Mullein.Core ( OverlayList )
-import Mullein.CoreTypes ( Key, MetricalSpec )
+import Mullein.Core ( OverlayList, Key, MetricalSpec )
 import Mullein.Duration
 import Mullein.Rewriting
 import Mullein.SpellingMap

@@ -92,11 +92,11 @@ split in two and tied.
 >
 > cs6_key   = M.d_major
 > cs6_mtr   = M.withMeterPattern [3%8,3%8] $ M.metricalSpec 6 8 
-
+>
 
 
 Ideally elimHnEn should tie the two notes is produces from
-one (hn+en) note. This doesn't happen as there ties are
+one (hn+en) note. This doesn't happen (yet?) as ties are
 not at the 'element' level in the syntax tree.
 
 
