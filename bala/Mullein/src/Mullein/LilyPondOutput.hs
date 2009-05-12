@@ -15,7 +15,15 @@
 --------------------------------------------------------------------------------
 
 
-module Mullein.LilyPondOutput where
+module Mullein.LilyPondOutput ( 
+  LilyPondOutput(..),
+  generateLilyPond,
+  note,
+  optDuration,
+  command,
+  keyCmd,
+  timeCmd,
+  ) where
 
 import Mullein.Core
 import Mullein.Duration
@@ -44,37 +52,37 @@ generateLilyPond :: LyNote e => Key -> Meter -> PartP e -> LilyPondOutput
 generateLilyPond k m a = 
     LilyPondOutput $ postProcess $ evalState (oPart a) s0 
   where
-    s0       = St k m
+    s0       = OutputSt k m
 
 
-oPart :: LyNote e => PartP e -> M (S.Seq OutputFragment)
+oPart :: LyNote e => PartP e -> OutputM (S.Seq OutputFragment)
 oPart (Part as)          =
     foldlM (\a e -> (a ><) <$> oPhrase e) S.empty as
 
 
-oPhrase :: LyNote e => PhraseP e -> M (S.Seq OutputFragment)
+oPhrase :: LyNote e => PhraseP e -> OutputM (S.Seq OutputFragment)
 oPhrase (Phrase a)       = oMotif a
 oPhrase (Repeated a)     = repeated <$> oMotif a
 oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a <*> oMotif x <*> oMotif y
 
-oMotif :: LyNote e => MotifP e -> M (S.Seq OutputFragment)
+oMotif :: LyNote e => MotifP e -> OutputM (S.Seq OutputFragment)
 oMotif (Motif k m bs)    = motifFragment 
     <$> keyChange k keyCmd <*> meterChange m timeCmd  <*> mapM oBar bs
 
 
-oBar :: LyNote e => BarP e -> M Doc
+oBar :: LyNote e => BarP e -> OutputM Doc
 oBar (Bar a)             = oUnison a
 oBar (Overlay a as)      = (\x xs -> overlay $ x:xs) 
                                   <$> oUnison a 
                                   <*> mapM oUnison as
 
 
-oUnison :: LyNote e => UnisonP e -> M Doc
+oUnison :: LyNote e => UnisonP e -> OutputM Doc
 oUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '~'
                                                            else empty)
                                   <$> mapM oBracket ps
 
-oBracket :: LyNote e => BracketP e -> M Doc
+oBracket :: LyNote e => BracketP e -> OutputM Doc
 oBracket (Singleton e)   = return $ oElement e
 oBracket (Bracket es)    = return $ lyBeam $ map oElement es
 

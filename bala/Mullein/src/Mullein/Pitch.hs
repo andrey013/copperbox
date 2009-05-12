@@ -14,10 +14,28 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Pitch where
+module Mullein.Pitch ( 
+  Pitch(..),
+  Octave,
+  PitchLetter(..),
+  Accidental(..),
+  PitchLabel(..),
+
+  Semitones(..),
+  transpose,
 
 
-import Data.Char (toUpper, toLower)
+  toUpperLChar,
+  toLowerLChar,
+
+
+  rescaleOctave,
+  octaveDist,
+
+  ) where
+
+
+import Data.Char ( toLower )
 
 import qualified Text.PrettyPrint.Leijen as PP
 
@@ -81,17 +99,6 @@ instance Semitones PitchLabel where
   
   
 
-fromLChar :: Char -> Maybe PitchLetter 
-fromLChar = letter . toUpper 
-  where      
-    letter 'C'    = Just C   
-    letter 'D'    = Just D
-    letter 'E'    = Just E   
-    letter 'F'    = Just F
-    letter 'G'    = Just G   
-    letter 'A'    = Just A
-    letter 'B'    = Just B   
-    letter _      = Nothing
   
 toUpperLChar :: PitchLetter -> Char  
 toUpperLChar C         = 'C'  

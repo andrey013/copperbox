@@ -11,7 +11,7 @@
 -- Portability :  GHC
 --
 -- SpellingMap - a map from semitone count to pitch name.
--- Used by Abc for pitch spelling tones in a scale.
+-- Used by LilyPond and ABC for pitch spelling tones in a scale.
 --
 --------------------------------------------------------------------------------
 

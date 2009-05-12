@@ -16,7 +16,16 @@
 --------------------------------------------------------------------------------
 
 
-module Mullein.LilyPondConvert where
+module Mullein.LilyPondConvert (
+  -- conversion functions
+  convertToLyRelative,
+  convertToLyAbsolute,
+
+  rescale,
+  absPitch,
+  relPitch,
+
+  ) where
 
 
 import Mullein.Core

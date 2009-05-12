@@ -7,13 +7,15 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined
+-- Portability :  GHC
 --
 -- Operations a /Note/ must support to be renderable with ABC.
 --
 --------------------------------------------------------------------------------
 
-module Mullein.AbcNoteClass where
+module Mullein.AbcNoteClass (
+  AbcNote(..),
+  ) where
 
 import Mullein.Duration
 import Mullein.SpellingMap

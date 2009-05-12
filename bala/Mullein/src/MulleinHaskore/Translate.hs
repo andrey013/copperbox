@@ -11,7 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Translate Haskore's Music datatype to Mullein scores for each instrument.
+-- Extract an instrument from Haskore's Music and translate it to Mullein. 
 --
 --------------------------------------------------------------------------------
 
@@ -145,12 +145,12 @@ untree start skore = step start (start,S.empty) [] skore
   where
     step :: Duration -> SAlphLine -> [AlphLine] -> H.Music 
          -> TransposeM (Duration, SAlphLine, [AlphLine])
-    step t z zs (H.Note p d xs)     = (\nt -> (t + cDur d, z `snoc` nt, zs))  
+    step t z zs (H.Note p d xs)     = (\nt -> (t + cDuration d, z `snoc` nt, zs))  
                                         <$> mkANote p xs d
 
 
     step t z zs (H.Rest d)          = return (t+d', z `snoc` arest d', zs)
-                                      where d' = cDur d
+                                      where d' = cDuration d
 
 
     step t z zs (lhs H.:+: rhs)     = do { (t',z',zs') <- step t z zs lhs
@@ -180,7 +180,7 @@ sline (d,se) = (d,F.toList se)
 
 
 mkANote :: H.Pitch -> [H.NoteAttribute] -> H.Dur -> TransposeM AlphElem
-mkANote p _xs d = (\t smap -> anote (fn p t smap) [] (cDur d))
+mkANote p _xs d = (\t smap -> anote (fn p t smap) [] (cDuration d))
                    <$> asks transp <*> asks spelling
   where 
     fn pch i smap = rename smap (M.transpose i (cPitch pch))
@@ -314,8 +314,8 @@ cPitch (H.B,  o)    = M.Pitch M.B M.Nat o
 cPitch (H.Bs, o)    = M.Pitch M.B M.Sharp o
 
 
-cDur :: H.Dur -> Duration
-cDur r = n%d where 
+cDuration :: H.Dur -> Duration
+cDuration r = n%d where 
     n = fromIntegral $ numerator r
     d = fromIntegral $ denominator r 
 

@@ -9,13 +9,40 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined
+-- Portability :  GHC
 --
 -- Common utils...
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Utils where
+module Mullein.Utils ( 
+  
+  -- special zips, unfolds etc.
+  longZipWith,
+  anaMap,
+  anaSt,
+  unfoldr2,
+  unfoldrMonoid,
+  unfoldlMonoid,
+  genUnfold,
+  genUnfold2,
+  unfoldrMonoid2, 
+  
+  oo, ooo, oooo,
+
+  prod,
+  enumFromCyc,
+  nextOf,
+  rational,
+
+  -- extra pretty printers
+  doclines,
+  dblangles,
+  nextLine,
+  sglLine,
+  doubleQuote,
+
+  ) where
 
 import Control.Applicative ( Applicative(..) )
 import Control.Monad.State
@@ -23,17 +50,12 @@ import Data.List ( unfoldr )
 import Data.Monoid
 import Data.Ratio
 
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen hiding ( rational )
 
 instance Applicative (State s) where
   pure  = return
   (<*>) = ap
 
--- special zipWith that zips all of the first list
-overlayZipWith :: (a -> b -> c) -> (a -> c) -> [a] -> [b] -> [c]
-overlayZipWith f g (x:xs) (y:ys) = f x y : overlayZipWith f g xs ys
-overlayZipWith f g (x:xs) []     = g x   : overlayZipWith f g xs []
-overlayZipWith _ _ []     _      = []
 
 
 longZipWith :: (a -> b -> c) -> (a -> c) -> (b -> c) -> [a] -> [b] -> [c]
@@ -97,17 +119,6 @@ genUnfold2 f g a0 s t = step $ f s t where
     step Nothing          = a0
     step (Just (a,s',t')) = a `g` step (f s' t')
 
- 
-{-
-
--- supply a (potentially different) reduction function at each step.
-
-veryGenUnfold :: (st -> Maybe (a -> a -> a, a,st)) -> a -> st -> a
-veryGenUnfold  f a0 s = step $ f s where
-   step Nothing           = a0
-   step (Just (op,a,s'))  = a `op` step (f s')
-
--}
 
 
 -- 'specs'
@@ -121,18 +132,6 @@ ooo f g = ((f .) .) . g
 oooo :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
 oooo f g = (((f .) .) .) . g    
     
--- Reverse application and composition
-
-infixl 7 #
-
-( # ) :: a -> (a -> b) -> b 
-x # f = f x
-
-
-infixl 7 ##
-
-( ## ) :: (a -> b) -> (b -> c) -> (a -> c) 
-g ## f = f . g
 
 prod :: (a -> c) -> (b -> d) -> (a,b) -> (c,d) 
 prod f g (a,b) = (f a,g b)

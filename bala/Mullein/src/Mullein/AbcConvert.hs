@@ -10,12 +10,14 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Convert to Abc
+-- Convert to ABC
 --
 --------------------------------------------------------------------------------
 
 
-module Mullein.AbcConvert where
+module Mullein.AbcConvert (
+  convertToABC,
+  ) where
 
 import Mullein.AbcNoteClass
 import Mullein.Core
@@ -34,8 +36,8 @@ type CM a = State St a
 
 
 
-convertToAbc :: AbcNote e => SpellingMap -> Duration -> PartP e -> PartP e
-convertToAbc smap unl e = evalState (cPart e) s0 where
+convertToABC :: AbcNote e => SpellingMap -> Duration -> PartP e -> PartP e
+convertToABC smap unl e = evalState (cPart e) s0 where
     s0 = St  {spelling_map=smap, unit_note_length=unl} 
 
 cPart :: AbcNote e => PartP e -> CM (PartP e)

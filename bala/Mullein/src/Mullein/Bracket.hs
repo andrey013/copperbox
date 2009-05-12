@@ -16,7 +16,10 @@
 
 
 
-module Mullein.Bracket where
+module Mullein.Bracket ( 
+  bracket,
+  
+  ) where
 
 import Mullein.Core
 import Mullein.Duration
@@ -43,11 +46,12 @@ bracket1 :: MetricalSpec -> [ElementP e] -> [BarP e]
 bracket1 mspec notes = partitionAndBeam bs bss notes where
     (bs,bss) = repeatSpec 0 mspec   
 
+{-
 -- TODO bracketing with anacrusis  
 bracket1Ana :: Duration -> MetricalSpec -> [ElementP e] -> [BarP e]
 bracket1Ana anacrusis mspec notes = partitionAndBeam bs bss notes where
     (bs,bss) = repeatSpec anacrusis mspec     
-
+-}
 
 repeatSpec :: Duration -> MetricalSpec -> ([Duration],[[Duration]])
 repeatSpec 0 (b,bs) = (repeat $ meterFraction b, repeat bs)

@@ -9,9 +9,9 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  GHC
 --
--- Convert to Abc
+-- Arbitrary instances for QuickCheck testing.
 --
 --------------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@
 
 module Mullein.ArbitraryInstances where
 
-import Mullein.CoreTypes
+import Mullein.Core
 import Mullein.Pitch
 
 
@@ -59,7 +59,4 @@ instance Arbitrary Key where
   arbitrary = Key <$> arbitrary <*> arbitrary
   coarbitrary (Key l m) = coarbitrary l . coarbitrary m
 
-instance Arbitrary ExtKey where
-  arbitrary = ExtKey <$> arbitrary <*> arbitrary
-  coarbitrary (ExtKey k ps) = coarbitrary k . coarbitrary ps
 

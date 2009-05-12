@@ -10,7 +10,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  to be determined.
+-- Portability :  GHC
 --
 -- Document combinators for ABC.
 --
@@ -30,7 +30,7 @@
 module Mullein.AbcDoc where
 
 import Mullein.AbcOutput ( AbcOutput(..), field, keyField, meterField ) 
-import Mullein.CoreTypes
+import Mullein.Core
 import Mullein.Duration
 
 import Text.PrettyPrint.Leijen 

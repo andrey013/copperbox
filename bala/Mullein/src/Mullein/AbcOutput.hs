@@ -10,12 +10,19 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Pretty print Abc
+-- Pretty print ABC.
 --
 --------------------------------------------------------------------------------
 
 
-module Mullein.AbcOutput where
+module Mullein.AbcOutput ( 
+  AbcOutput(..),
+  generateABC,
+  printNote,
+  field, 
+  keyField,
+  meterField,
+  ) where
 
 import Mullein.AbcNoteClass
 import Mullein.Core
@@ -27,7 +34,7 @@ import Mullein.Utils
 import Control.Applicative hiding ( empty )
 import Control.Monad.State
 import Data.Foldable ( foldlM, toList )
-import Data.Sequence ( (<|), (><) )
+import Data.Sequence ( (><) )
 import qualified Data.Sequence as S
 import Data.Ratio
 import Text.PrettyPrint.Leijen hiding ( (<$>) )
@@ -37,37 +44,37 @@ import Text.PrettyPrint.Leijen hiding ( (<$>) )
 newtype AbcOutput = AbcOutput { getAbcOutput :: Doc }
 
 
-generateAbc :: AbcNote e => Key -> Meter -> [Int] -> PartP e -> AbcOutput
-generateAbc k m ns a = AbcOutput $ postProcess ns $ evalState (oPart a) s0 where
-    s0 = St { current_key = k, current_meter = m } 
+generateABC :: AbcNote e => Key -> Meter -> [Int] -> PartP e -> AbcOutput
+generateABC k m ns a = AbcOutput $ postProcess ns $ evalState (oPart a) s0 where
+    s0 = OutputSt { current_key = k, current_meter = m } 
 
 
-oPart :: AbcNote e => PartP e -> M (S.Seq OutputFragment)
+oPart :: AbcNote e => PartP e -> OutputM (S.Seq OutputFragment)
 oPart (Part as)          =
     foldlM (\a e -> (a ><) <$> oPhrase e) S.empty as
 
-oPhrase :: AbcNote e => PhraseP e -> M (S.Seq OutputFragment)
+oPhrase :: AbcNote e => PhraseP e -> OutputM (S.Seq OutputFragment)
 oPhrase (Phrase a)       = oMotif a
 oPhrase (Repeated a)     = repeated <$> oMotif a
 oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a  <*> oMotif x <*> oMotif y
                                          
-oMotif :: AbcNote e => MotifP e -> M (S.Seq OutputFragment)
+oMotif :: AbcNote e => MotifP e -> OutputM (S.Seq OutputFragment)
 oMotif (Motif k m bs)    = motifFragment 
     <$> keyChange k keyField <*> meterChange m meterField <*> mapM oBar bs
 
-oBar :: AbcNote e => BarP e -> M Doc
+oBar :: AbcNote e => BarP e -> OutputM Doc
 oBar (Bar a)             = oUnison a
 oBar (Overlay a as)      = (\x xs -> overlay $ x:xs) 
                                   <$> oUnison a 
                                   <*> mapM oUnison as
 
 
-oUnison :: AbcNote e => UnisonP e -> M Doc
+oUnison :: AbcNote e => UnisonP e -> OutputM Doc
 oUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '-'
                                                            else empty)
                                   <$> mapM oBracket ps
 
-oBracket :: AbcNote e => BracketP e -> M Doc
+oBracket :: AbcNote e => BracketP e -> OutputM Doc
 oBracket (Singleton e)   = pure $ oElement e
 oBracket (Bracket es)    = pure $ hcat $ map oElement es
 
@@ -149,11 +156,6 @@ printFrags  = genUnfold phi (<>) empty where
 --------------------------------------------------------------------------------
 -- helpers
 
-
-infixr 5 `mbCons`
-mbCons :: Maybe a -> S.Seq a -> S.Seq a
-mbCons Nothing  = id
-mbCons (Just a) = (a <|) 
 
 
 

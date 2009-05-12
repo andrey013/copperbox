@@ -11,7 +11,7 @@ New Resolutions by Jean-Luc Ponty, Scott O'Neil, and John Garvin
 > import MulleinHaskore.LilyPond
 > import MulleinHaskore.Rewriting hiding ( Alphabet(..) )
 > import MulleinHaskore.StringRewriting
-> import MulleinHaskore.Translate hiding ( cDur )
+> import MulleinHaskore.Translate
 >
 > import qualified MulleinHaskore.Rewriting     as M
 >

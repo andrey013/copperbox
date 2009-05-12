@@ -15,7 +15,34 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Core where
+module Mullein.Core ( 
+  MeterPattern,
+  MetricalSpec,
+  Key(..),
+  Mode(..),
+  
+  meterFraction,
+  metricalSpec,
+  withMeterPattern,
+  unitNote,
+
+  PartP(..),
+  PhraseP(..),
+  MotifP(..),
+  BarP(..),
+  Tied,
+  UnisonP(..),
+  BracketP(..),
+  ElementP(..),
+  GraceNoteP,
+  
+  BarNum,
+  OverlayList,
+
+  P(..),
+  Concat(..),
+
+  ) where
 
 
 import Mullein.Duration
@@ -39,9 +66,6 @@ data Key = Key PitchLabel Mode
   deriving (Eq,Show) 
 
 
--- ABC has /extended keys/ that contain a list of modifiers to the 
--- pitches in the original key.
-data ExtKey = ExtKey Key [PitchLabel]
   
 data Mode = Major | Minor | Lydian | Ionian | Mixolydian
           | Dorian | Aeolian | Phrygian | Locrian 

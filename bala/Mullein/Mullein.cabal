@@ -8,7 +8,7 @@ homepage:         http://code.google.com/p/copperbox/
 category:         Music
 synopsis:         Mullein
 description:
-  A DSEL for generating musical scores via Abc and LilyPond. 
+  A post-processor for generating ABC or LilyPond from Haskore. 
 
 build-type:         Simple
 stability:          alpha
@@ -21,7 +21,8 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base, wl-pprint, containers, mtl, dlist
+  build-depends:      base, wl-pprint, containers, mtl, dlist, haskore-vintage,
+                      QuickCheck
 
   
   exposed-modules:
@@ -29,9 +30,9 @@ library
     Mullein.AbcDoc,
     Mullein.AbcNoteClass,
     Mullein.AbcOutput,
+    Mullein.ArbitraryInstances,
     Mullein.Bracket,
     Mullein.Core,
-    Mullein.CoreTypes,
     Mullein.Duration,
     Mullein.LilyPondConvert,
     Mullein.LilyPondDoc,
@@ -42,7 +43,6 @@ library
     Mullein.OutputCommon,
     Mullein.Pitch,
     Mullein.Score,
-    Mullein.ScorePrint,
     Mullein.SpellingMap,
     Mullein.Utils,
     MulleinHaskore.Abc,

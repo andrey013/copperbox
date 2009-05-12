@@ -38,7 +38,6 @@ module Mullein.Score (
     
     motif,
     primary, addOverlay,
---    notelist,
 
     rest, space, chord,
     

@@ -15,7 +15,21 @@
 --------------------------------------------------------------------------------
 
 
-module Mullein.OutputCommon where
+module Mullein.OutputCommon (
+  OutputFragment(..),
+  OutputM,
+  OutputSt(..),
+  keyChange,
+  meterChange,
+  
+  appendBarFragment,
+  motifFragment,
+  repeated,
+  fsrepeat,
+  dropRepStart,
+  addDblEnd,
+  intersperseBars,
+  ) where
 
 import Mullein.Core
 import Mullein.Duration
@@ -36,13 +50,13 @@ data OutputFragment = MidtuneCmd Doc
   deriving (Show)
 
 
-data St  = St { current_key :: Key, current_meter :: Meter }
+data OutputSt  = OutputSt { current_key :: Key, current_meter :: Meter }
 
-type M a = State St a
+type OutputM a = State OutputSt a
 
 
 
-keyChange :: Key -> (Key -> Doc) -> M (Maybe Doc)
+keyChange :: Key -> (Key -> Doc) -> OutputM (Maybe Doc)
 keyChange new pp = do 
     old <- gets current_key 
     if (new==old) 
@@ -51,7 +65,7 @@ keyChange new pp = do
 
 
 
-meterChange :: Meter -> (Meter -> Doc) -> M (Maybe Doc)
+meterChange :: Meter -> (Meter -> Doc) -> OutputM (Maybe Doc)
 meterChange new pp = do 
     old <- gets current_meter
     if (new==old) 

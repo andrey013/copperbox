@@ -25,7 +25,7 @@ import Text.PrettyPrint.Leijen ( putDoc )
 
 
 main = putDoc $ Abc.getAbcOutput $ 
-         Abc.generateAbc a_major (fst twoFourTime) (repeat 4) bulgarian6
+         Abc.generateABC a_major (fst twoFourTime) (repeat 4) bulgarian6
 
 ly = putDoc $ Ly.getLilyPondOutput $  
        Ly.generateLilyPond a_major (fst twoFourTime) bulg6 where
@@ -33,7 +33,7 @@ ly = putDoc $ Ly.getLilyPondOutput $
 
 
 bulgarian6 :: Part
-bulgarian6 = convertToAbc lset sn part1_8 where
+bulgarian6 = convertToABC lset sn part1_8 where
   lset = maybe (error "lset missing") id $ makeSpellingMap a_major []
 
 
