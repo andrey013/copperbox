@@ -5,10 +5,10 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 > module Ssf where
 > import Haskore
 > import MulleinHaskore.LilyPond
+> import MulleinHaskore.Rewriting
+> import MulleinHaskore.StringRewriting
 > import MulleinHaskore.Translate
 >
-> import Mullein.Rewriting
-> import Mullein.StringRewriting
 > import qualified Mullein.Core          as M
 > import qualified Mullein.NamedElements as M
 > import qualified Mullein.SpellingMap   as M

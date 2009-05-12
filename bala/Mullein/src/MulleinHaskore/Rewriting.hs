@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Mullein.Rewriting
+-- Module      :  MulleinHaskore.Rewriting
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -22,11 +22,11 @@
 --------------------------------------------------------------------------------
 
 
-module Mullein.Rewriting where
+module MulleinHaskore.Rewriting where
 
+import MulleinHaskore.StringRewriting
 import Mullein.Core
 import Mullein.Duration
-import Mullein.StringRewriting
 
 import Control.Applicative
 import Data.Ratio

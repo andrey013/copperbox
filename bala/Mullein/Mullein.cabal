@@ -41,12 +41,15 @@ library
     Mullein.NamedElements,
     Mullein.OutputCommon,
     Mullein.Pitch,
-    Mullein.Rewriting,
     Mullein.Score,
     Mullein.ScorePrint,
     Mullein.SpellingMap,
-    Mullein.StringRewriting,
-    Mullein.Utils
+    Mullein.Utils,
+    MulleinHaskore.Abc,
+    MulleinHaskore.LilyPond,
+    MulleinHaskore.Rewriting,
+    MulleinHaskore.StringRewriting,
+    MulleinHaskore.Translate
   other-modules:
     
   extensions:

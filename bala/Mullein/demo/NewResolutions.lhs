@@ -9,13 +9,14 @@ New Resolutions by Jean-Luc Ponty, Scott O'Neil, and John Garvin
 
 >
 > import MulleinHaskore.LilyPond
+> import MulleinHaskore.Rewriting hiding ( Alphabet(..) )
+> import MulleinHaskore.StringRewriting
 > import MulleinHaskore.Translate hiding ( cDur )
 >
-> import Mullein.Rewriting hiding ( Alphabet(..) )
-> import Mullein.StringRewriting
+> import qualified MulleinHaskore.Rewriting     as M
+>
 > import qualified Mullein.Core          as M
 > import qualified Mullein.NamedElements as M
-> import qualified Mullein.Rewriting     as M
 > import qualified Mullein.SpellingMap   as M
 >
 > import Control.Applicative

@@ -18,11 +18,12 @@
 
 module MulleinHaskore.Translate where
 
+import MulleinHaskore.Rewriting
+import MulleinHaskore.StringRewriting
+
 import Mullein.Core ( OverlayList, Key, MetricalSpec )
 import Mullein.Duration
-import Mullein.Rewriting
 import Mullein.SpellingMap
-import Mullein.StringRewriting
 
 import qualified Mullein.Pitch       as M
 import qualified Mullein.Score       as M

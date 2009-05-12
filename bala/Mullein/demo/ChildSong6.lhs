@@ -8,12 +8,12 @@
 >
 > import MulleinHaskore.LilyPond
 > import MulleinHaskore.Translate
+> import MulleinHaskore.Rewriting
+> import MulleinHaskore.StringRewriting
+> import qualified MulleinHaskore.Rewriting     as M
 >
-> import Mullein.Rewriting
-> import Mullein.StringRewriting
 > import qualified Mullein.Core          as M
 > import qualified Mullein.NamedElements as M
-> import qualified Mullein.Rewriting     as M
 > import qualified Mullein.SpellingMap   as M
 >
 > import Control.Applicative

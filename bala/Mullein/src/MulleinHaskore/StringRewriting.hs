@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Mullein.StringRewriting
+-- Module      :  MulleinHaskore.StringRewriting
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -24,7 +24,7 @@
 --------------------------------------------------------------------------------
 
 
-module Mullein.StringRewriting where
+module MulleinHaskore.StringRewriting where
 
 import Control.Applicative
 import Control.Monad.Identity
