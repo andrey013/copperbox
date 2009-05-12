@@ -15,9 +15,14 @@
 --------------------------------------------------------------------------------
 
 
-module MulleinHaskore.LilyPond where
+module MulleinHaskore.LilyPond ( 
+  lilypondVersion,
+  MelodyScoreSkeleton(..),
+  defaultMelodyScoreSkeleton,
+  singleMelodyScoreSkel,
+  pianoScoreSkel,
+  ) where
 
--- import MulleinHaskore.System
 
 import Mullein.Core
 import Mullein.LilyPondConvert
@@ -30,8 +35,8 @@ import qualified Mullein.Score as M
 
 import Text.PrettyPrint.Leijen
 
-lilypond_version :: String
-lilypond_version = "2.12.2"
+lilypondVersion :: String
+lilypondVersion = "2.12.2"
 
 
     
@@ -62,7 +67,7 @@ singleMelodyScoreSkel skel mus = unP $ prolog +++ body
     ly_output = generateLilyPond (keySig skel) 
                                  (fst $ meterSpec skel) 
                                  ly_score
-    prolog    = version lilypond_version +++ header [title $ scoreTitle skel]
+    prolog    = version lilypondVersion +++ header [title $ scoreTitle skel]
     body      = book [score (melody (relativePitch skel)
                                     (keySig skel)
                                     (fst $ meterSpec skel) 
@@ -83,7 +88,7 @@ pianoScoreSkel skel treble_part bass_part =
     treble_decl   = definition "treblePart" (melodySkel skel "treble" treble_ly) 
     bass_decl     = definition "bassPart"   (melodySkel skel "bass" bass_ly) 
     
-    prolog        = version lilypond_version +++ header [title $ scoreTitle skel]
+    prolog        = version lilypondVersion +++ header [title $ scoreTitle skel]
     body          = book [score (doubleAngles [ newStaff (usedef "treblePart")
                                               , newStaff (usedef "bassPart")   ])]
 

@@ -24,7 +24,41 @@
 --------------------------------------------------------------------------------
 
 
-module MulleinHaskore.StringRewriting where
+module MulleinHaskore.StringRewriting ( 
+  MatcherT,
+  runMatcherT, 
+  RuleTP,
+  RuleTC,
+
+  -- match combinators 
+  ( <:> ),
+  choice,
+  count,
+  between,
+  option,
+  optionMaybe,
+  optionUnit,
+  skipMany,
+  skipMany1,
+  many1,
+  sepBy,
+  sepBy1,
+  sepEndBy,
+  sepEndBy1,
+  manyTill,
+  satisfies,
+
+  one,
+  pmatchOne,
+  lit,
+
+  rewriteTP,
+  rewriteTP'id,
+
+  rewriteTC,
+  rewriteTC'id,
+
+  ) where
 
 import Control.Applicative
 import Control.Monad.Identity
@@ -141,13 +175,14 @@ optionMaybe = optional
 optionUnit :: Alternative f => f a -> f ()
 optionUnit p = () <$ p <|> pure ()
 
-skipMany1 :: Alternative f => f a -> f ()
-skipMany1 p = p *> skipMany p
-
 skipMany :: Alternative f => f a -> f ()
 skipMany p = many_p
   where many_p = some_p <|> pure ()
         some_p = p       *> many_p
+
+
+skipMany1 :: Alternative f => f a -> f ()
+skipMany1 p = p *> skipMany p
 
 -- | @many1@ an alias for @some@. 
 many1 :: Alternative f => f a -> f [a]
@@ -198,25 +233,15 @@ lit t = MatcherT $ \sk fk ts ln -> case ts of
    _      -> fk ln
 
 
+--------------------------------------------------------------------------------
+-- 
 
-idOne :: RuleTP tok m
-idOne = wrapD <$> one
-
-
-wrapD :: a -> D.DList a
-wrapD a = D.singleton a
-
-listD :: [a] -> D.DList a
-listD = D.fromList
-
-zeroD :: D.DList a
-zeroD = D.empty
 
 
 
 -- type preserving rewrite strategy
 rewriteTP :: Monad m => RuleTP tok m -> [tok] -> m [tok]
-rewriteTP f input = step zeroD input where
+rewriteTP f input = step D.empty input where
     step g [] = return $ D.toList g
     step g xs = do (ansH,rest) <- rewriteTP1 f xs xs 
                    step (g `D.append` ansH) rest 
@@ -230,7 +255,7 @@ rewriteTP1 :: Monad m => RuleTP tok m -> [tok] -> [tok] -> m (D.DList tok,[tok])
 rewriteTP1 p xs ys = runMatcherT p succK failK xs ys 
   where
     succK ans _ ts _ = return (ans,ts)
-    failK ts         = return (listD ts, []) 
+    failK ts         = return (D.fromList ts, []) 
 
 
 -- rewrite with the Identity monad

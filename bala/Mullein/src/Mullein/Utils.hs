@@ -41,7 +41,7 @@ module Mullein.Utils (
   nextLine,
   sglLine,
   doubleQuote,
-
+  renderDocEighty,
   ) where
 
 import Control.Applicative ( Applicative(..) )
@@ -177,3 +177,7 @@ sglLine d = d <> line
 
 doubleQuote :: String -> Doc
 doubleQuote = dquotes . string
+
+renderDocEighty :: Doc -> String
+renderDocEighty = (displayS `flip` []) . renderPretty 0.8 80
+

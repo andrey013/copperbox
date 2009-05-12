@@ -12,6 +12,7 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 > import qualified Mullein.Core          as M
 > import qualified Mullein.NamedElements as M
 > import qualified Mullein.SpellingMap   as M
+> import qualified Mullein.Utils         as M
 >
 > import Control.Applicative
 > import Data.Ratio
@@ -43,7 +44,7 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 > ssf = Instr "flute" (Tempo 2 (ssfMelody))
 >
 >
-> ssf_ly = writeFile "ssf.ly" $ renderDocEighty 
+> ssf_ly = writeFile "ssf.ly" $ M.renderDocEighty 
 >                             $ singleMelodyScoreSkel lySkel
 >                             $ singleMotifPart 
 >                             $ maybe failK id
@@ -64,10 +65,10 @@ The first phrase of the flute part of "Stars and Stripes Forever."
 >
 > elimTrill40 :: RuleTP AlphElem m
 > elimTrill40 = preserving $ 
->     (\(N p _:_) -> wrapD (N p (1%8))) <$> count 5 (matchesDur (1%40) note)
+>     (\(N p _:_) -> wrapD (N p (1%8))) <$> count 5 (matchDur (1%40) matchnote)
 >
 > elimTrill32 :: RuleTP AlphElem m
 > elimTrill32 = preserving $ 
->     (\(N p _:_) -> wrapD (N p (1%4))) <$> count 8 (matchesDur (1%32) note)
+>     (\(N p _:_) -> wrapD (N p (1%4))) <$> count 8 (matchDur (1%32) matchnote)
 >
 

@@ -18,6 +18,7 @@ New Resolutions by Jean-Luc Ponty, Scott O'Neil, and John Garvin
 > import qualified Mullein.Core          as M
 > import qualified Mullein.NamedElements as M
 > import qualified Mullein.SpellingMap   as M
+> import qualified Mullein.Utils         as M
 >
 > import Control.Applicative
 >
@@ -253,7 +254,7 @@ Note, some pitch spelling is rather strange (maybe the key is wrong).
 
 > 
 > nr_ly = writeFile "newResol.ly" 
->                    $ renderDocEighty 
+>                    $ M.renderDocEighty 
 >                    $ singleMelodyScoreSkel lySkel
 >                    $ singleMotifPart 
 >                    $ maybe failK id
@@ -272,7 +273,7 @@ Note, some pitch spelling is rather strange (maybe the key is wrong).
 >
 > elim11_16 :: RuleTP AlphElem m
 > elim11_16 = preserving $ 
->     (\(M.N p _) -> listD [M.N p (1%2), M.N p (3%8)]) <$> matchesDur (11%16) note
+>     (\(M.N p _) -> listD [M.N p (1%2), M.N p (3%8)]) <$> matchDur (11%16) matchnote
 >
 > 
 > vibMelody3 = Instr "vib" (Phrase [Dyn SF] melody3)

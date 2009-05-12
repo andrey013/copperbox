@@ -16,7 +16,16 @@
 --------------------------------------------------------------------------------
 
 
-module MulleinHaskore.Translate where
+module MulleinHaskore.Translate (
+  AlphElem,
+
+  MotifSkeleton(..),
+  defaultMotifSkeleton,
+  motifSkel,
+  singleMotifPart,
+  linearPart,
+
+  ) where
 
 import MulleinHaskore.Rewriting
 import MulleinHaskore.StringRewriting
@@ -40,7 +49,6 @@ import Data.Ratio
 import Data.Sequence hiding ( null )
 import qualified Data.Sequence as S
 
-import qualified Text.PrettyPrint.Leijen as PP
 
 
 type OnsetTime = Duration
@@ -198,10 +206,12 @@ rewriteLines run rw = map rwline
   where
    rwline (d,xs) = (d, run $ rewriteTP rw xs)
 
+{-
 
 rewriteLines'Id :: RuleTP AlphElem Identity -> [AlphLine] -> [AlphLine]
 rewriteLines'Id = rewriteLines runIdentity
 
+-}
 
 alphLinesToElemLines :: [AlphLine] -> [ElemLine]
 alphLinesToElemLines = map rwline
@@ -268,8 +278,6 @@ motifSkel name skel skore = step <$> findInst name skore
 --------------------------------------------------------------------------------
 -- helpers 
 
-renderDocEighty :: PP.Doc -> String
-renderDocEighty = (PP.displayS `flip` []) . PP.renderPretty 0.8 80
 
 
 singleMotifPart :: M.Motif -> M.Part
@@ -283,8 +291,6 @@ anote p xs d = N (M.ScNote p xs) d
 arest :: Duration -> AlphElem
 arest d = R d
 
-aspacer :: Duration -> AlphElem
-aspacer d = S d
 
 
 -- Haskore - middle_c is (C,5)

@@ -10,25 +10,41 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Generating Mullein from Haskore automatically is problemmatic. 
+-- Automatically translating Haskore to Mullein is problemmatic. 
 -- Note lengths in Haskore need some degree of interpretation to turn 
 -- into LilyPond or ABC note lengths, e.g. in Haskore trills/grace notes 
 -- are arbitrary short durations. It is difficult to autmatically 
 -- recognize trills a note list with short tuplets (n-plets), so perhaps
 -- the most useful solution is to make the note list available to the 
 -- user and allow arbitrary rewrites on it.
--- This is the first attempt...
 --
 --------------------------------------------------------------------------------
 
 
-module MulleinHaskore.Rewriting where
+module MulleinHaskore.Rewriting ( 
+  Alphabet(..),
+  Match,
+  alphabetToElementP,
+  
+  wrapD,
+  listD,
+  zeroD,
+
+  preserving,
+  idOne,
+  matchnote,
+  matchDur,
+  eqDur,
+  appogiaturaQn,
+
+  ) where
 
 import MulleinHaskore.StringRewriting
 import Mullein.Core
 import Mullein.Duration
 
 import Control.Applicative
+import qualified Data.DList as D
 import Data.Ratio
 
 
@@ -52,6 +68,7 @@ instance Temporal (Alphabet e) where
     swapDuration _ T          = T
     swapDuration _ (G e d)    = G e d
 
+type Match r m e = MatcherT (Alphabet e) r m (Alphabet e)
 
 
 --------------------------------------------------------------------------------
@@ -101,30 +118,42 @@ alphabetToElementP = rewriteTC'id (choice [rUnary,rTie,rGrace])
 --------------------------------------------------------------------------------
 
 
+
+wrapD :: a -> D.DList a
+wrapD a = D.singleton a
+
+listD :: [a] -> D.DList a
+listD = D.fromList
+
+zeroD :: D.DList a
+zeroD = D.empty
+
+
 preserving :: RuleTP (Alphabet e) m -> RuleTP (Alphabet e) m
 preserving r = r <|> idOne
 
-type Match r m e = MatcherT (Alphabet e) r m (Alphabet e)
+idOne :: RuleTP tok m
+idOne = wrapD <$> one
 
 
 
 
 
-note :: Match r m e
-note = pmatchOne p where 
+matchnote :: Match r m e
+matchnote = pmatchOne p where 
    p (N _ _) = True
    p _       = False
 
 eqDur :: Temporal e => Duration -> e -> Bool
 eqDur d e = d == duration e 
 
-matchesDur :: Duration -> Match r m e -> Match r m e
-matchesDur d fn = satisfies fn (d `eqDur`)
+matchDur :: Duration -> Match r m e -> Match r m e
+matchDur d fn = satisfies fn (d `eqDur`)
 
 
 appogiaturaQn :: RuleTP (Alphabet e) m
 appogiaturaQn = (\(N e _) (N e' _) -> listD [G e tn, N e' qn]) 
-    <$> matchesDur (1%32) note  <*> matchesDur (1%4 - 1%32) note
+    <$> matchDur (1%32) matchnote  <*> matchDur (1%4 - 1%32) matchnote
   where
     tn :: Duration
     tn = 1%32

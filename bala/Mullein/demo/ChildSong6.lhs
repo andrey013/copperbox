@@ -15,6 +15,7 @@
 > import qualified Mullein.Core          as M
 > import qualified Mullein.NamedElements as M
 > import qualified Mullein.SpellingMap   as M
+> import qualified Mullein.Utils         as M
 >
 > import Control.Applicative
 > import Data.Ratio
@@ -76,7 +77,7 @@ split in two and tied.
 
 > 
 > cs6_ly = writeFile "childsong6.ly" 
->                    $ renderDocEighty 
+>                    $ M.renderDocEighty 
 >                    $ pianoScoreSkel lySkel treb bass
 >   where 
 >     mSkel     = (defaultMotifSkeleton cs6_key cs6_mtr) { rwrules = cs6_rules }
@@ -102,18 +103,18 @@ not at the 'element' level in the syntax tree.
 >
 > elimHnEn :: RuleTP AlphElem m
 > elimHnEn = preserving $ 
->     (\(N p _) -> listD [N p (1%2), N p (1%8)]) <$> matchesDur (5%8) note
+>     (\(N p _) -> listD [N p (1%2), N p (1%8)]) <$> matchDur (5%8) matchnote
 >
 > -- grace where tn preceeds a (qn-tn)
 > graceTnQn :: RuleTP AlphElem m 
 > graceTnQn =  preserving $
 >     (\(N p _) (N p' _) -> listD [M.G p (1%32), N p' (1%4)]) 
->         <$> matchesDur (1%32) note <*> matchesDur ((1%4)-(1%32)) note
+>         <$> matchDur (1%32) matchnote <*> matchDur ((1%4)-(1%32)) matchnote
 >
 >
 > elimDhnDhn :: RuleTP AlphElem m
 > elimDhnDhn = preserving $ 
->     (\(N p _) -> listD [N p (3%4), N p (3%4)]) <$> matchesDur (3%2) note
+>     (\(N p _) -> listD [N p (3%4), N p (3%4)]) <$> matchDur (3%2) matchnote
 > 
 
 
