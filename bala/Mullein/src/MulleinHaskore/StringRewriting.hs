@@ -17,8 +17,8 @@
 -- 
 -- The salient feature of string rewriting is that rules have 
 -- aribtrary lookahead in the input stream. This is not the case 
--- for maps or folds. Also string rewriting is implacably linear
--- (i.e. list-y) unlike Strafunski and its children where the
+-- for maps or folds. Also string rewriting is essentially linear
+-- (i.e. /listy/) unlike Strafunski and its successors where the
 -- traversal is syntax directed.
 --
 --------------------------------------------------------------------------------

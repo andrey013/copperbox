@@ -250,10 +250,19 @@ New Resolutions by Jean-Luc Ponty, Scott O'Neil, and John Garvin
 >        play
 > -}
 
-Note, some pitch spelling is rather strange (maybe the key is wrong). 
+New Resolutions reveals rather uncomfortable shortcomings in 
+Mullein's translation of Haskore's parallel operator :=:.
+We only attempt to print 'vibMelody3' - one could edit the 
+code below to attempt to print 'newResolutions' but the output 
+if it even compiles in LilyPond would generate a graphic score
+reminiscent of Stockhausen.
+
+ 
+Note too that some pitch spelling is rather strange (maybe the key 
+is wrong). 
 
 > 
-> nr_ly = writeFile "newResol.ly" 
+> nr_ly = writeFile "newResolutions.ly" 
 >                    $ M.renderDocEighty 
 >                    $ singleMelodyScoreSkel lySkel
 >                    $ singleMotifPart 

@@ -6,18 +6,35 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Music
-synopsis:         Mullein
+synopsis:         A toolkit for generating LilyPond and ABC scores. 
 description:
-  A post-processor for generating ABC or LilyPond from Haskore. 
+  Mullein is a toolkit for generating ABC and LilyPond scores. It aims 
+  to generate /good/ quality scores - that's to say the output should
+  resemble hand-written scores. The current package is snapshot of 
+  Mullein, it is specialized to enable LilyPond output from Haskore. 
+  .
+  Whilst Haskore is eminently suited to describing music that can 
+  be played with a synthesizer, it is not an ideal candidate for 
+  generating scores. Lots of crucial information - key signature, 
+  time signature, etc. - is not represented in Haskore. To overcome
+  this, Mullein puts a high annotation burden on the user. Haskore 
+  modules must be augmented with laborious instructions to help 
+  the rendering process. The package includes three examples
+  from the original Haskore package that have been sufficiently 
+  annotated to generate LilyPond.
+  .
+  (c) 2009 Stephen Tetley
 
 build-type:         Simple
-stability:          alpha
+stability:          highly unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
-  README.txt,
   demo/Bulgarian6.hs,
-  test/TestLabelSet.hs
+  demo/Drums.hs
+  demo/ChildSong6.lhs,
+  demo/NewResolutions.lhs,
+  demo/Ssf.lhs  
 
 library
   hs-source-dirs:     src
@@ -45,7 +62,6 @@ library
     Mullein.Score,
     Mullein.SpellingMap,
     Mullein.Utils,
-    MulleinHaskore.Abc,
     MulleinHaskore.LilyPond,
     MulleinHaskore.Rewriting,
     MulleinHaskore.StringRewriting,
