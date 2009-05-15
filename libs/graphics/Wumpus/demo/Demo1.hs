@@ -3,7 +3,10 @@
 
 module Demo1 where
 
-import Graphics.Wumpus.Base
+import Graphics.Wumpus.Matrix
+import Graphics.Wumpus.Wumpus
+
+import Data.SG
 
 import MonadLib
 
