@@ -3,7 +3,9 @@
 
 module Demo1 where
 
+
 import qualified Graphics.Wumpus.Matrix as CTM
+import Graphics.Wumpus.SVGColours
 import Graphics.Wumpus.Wumpus
 
 import Data.SG

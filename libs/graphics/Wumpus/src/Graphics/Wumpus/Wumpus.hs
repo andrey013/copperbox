@@ -21,15 +21,18 @@
 
 module Graphics.Wumpus.Wumpus where
 
+import Graphics.Wumpus.Colour 
 import qualified Graphics.Wumpus.Matrix as CTM
 
 import qualified Data.DList as DL
+import Data.SG ( Triple(..) )
 import MonadLib
 
 data PsState = PsState { 
        pageNum      :: Int,  
        bBox         :: BoundingBox,
-       cTM          :: CTM.PsMatrix
+       cTM          :: CTM.PsMatrix,
+       cColour      :: Colour3 
     }
   deriving (Eq,Show)
 
@@ -47,7 +50,8 @@ st0 :: PsState
 st0 = PsState { 
         pageNum  = 1,
         bBox     = BoundingBox 0.0 0.0 0.0 0.0,
-        cTM      = CTM.initmatrix
+        cTM      = CTM.initmatrix,
+        cColour  = wumpusBlack
       }
 
 type PsOutput = DL.DList Char
@@ -157,6 +161,21 @@ withPage m = pageStart >> m >>= \a -> pageEnd >> return a
 --------------------------------------------------------------------------------
 -- graphics state operators 
 
+-- c.f. local of the Reader monad. 
+-- Checkpoint the state, run the computation restore the state 
+-- This pattern is very common in PostScript where the action 
+-- is run between @gsave@ and @grestore@.
+saveExecRestore :: Monad m => PsT m a -> PsT m a
+saveExecRestore m = do 
+    command0 "gsave"
+    st  <- get
+    a   <- m
+    set st
+    command0 "grestore"
+    return a
+
+
+
 setlinewidth :: Monad m => Double -> PsT m ()
 setlinewidth n = command1 "setlinewidth" (show n) 
 
@@ -174,12 +193,20 @@ setmiterlimit n = command1 "setmiterlimit" (show n)
 setgray :: Monad m => Double -> PsT m ()
 setgray n = command1 "setgray" (show n)
 
+setColour :: Monad m => Colour3 -> PsT m ()
+setColour c = sets_ (\s -> s {cColour = c} )
+
+
 sethsbcolor :: Monad m => Double -> Double -> Double -> PsT m ()
-sethsbcolor h s b = command3 "sethsbcolor" (show h) (show s) (show b)
+sethsbcolor h s b = do 
+    setColour $ hsb2rgb' h s b
+    command3 "sethsbcolor" (show h) (show s) (show b)
 
 
 setrgbcolor :: Monad m => Double -> Double -> Double -> PsT m ()
-setrgbcolor r g b = command3 "setrgbcolor" (show r) (show g) (show b)
+setrgbcolor r g b = do 
+  setColour $ Triple (r,g,b)
+  command3 "setrgbcolor" (show r) (show g) (show b)
 
 
 --------------------------------------------------------------------------------

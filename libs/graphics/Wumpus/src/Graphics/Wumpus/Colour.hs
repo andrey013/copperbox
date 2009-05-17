@@ -91,4 +91,18 @@ rgb2gray (Triple (r,g,b)) = 0.3 * r + 0.59 * g + 0.11 * b
 
 
 
+wumpusBlack :: Colour3
+wumpusBlack = Triple (0,0,0)
+
+wumpusWhite :: Colour3
+wumpusWhite = Triple (1,1,1)
+
+wumpusRed :: Colour3
+wumpusRed = Triple (1,0,0)
+
+wumpusGreen :: Colour3 
+wumpusGreen = Triple (0,1,0)
+
+wumpusBlue :: Colour3
+wumpusBlue = Triple (0,0,1)
 
