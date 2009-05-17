@@ -154,7 +154,35 @@ withPage m = pageStart >> m >>= \a -> pageEnd >> return a
     pageEnd   = comment "-------------------"    
 
 
+--------------------------------------------------------------------------------
+-- graphics state operators 
 
+setlinewidth :: Monad m => Double -> PsT m ()
+setlinewidth n = command1 "setlinewidth" (show n) 
+
+
+setlinecap :: Monad m => Int -> PsT m ()
+setlinecap i = command1 "setlinecap" (show i) 
+
+setlinejoin :: Monad m => Int -> PsT m ()
+setlinejoin i = command1 "setlinejoin" (show i) 
+
+setmiterlimit :: Monad m => Double -> PsT m ()
+setmiterlimit n = command1 "setmiterlimit" (show n) 
+
+
+setgray :: Monad m => Double -> PsT m ()
+setgray n = command1 "setgray" (show n)
+
+sethsbcolor :: Monad m => Double -> Double -> Double -> PsT m ()
+sethsbcolor h s b = command3 "sethsbcolor" (show h) (show s) (show b)
+
+
+setrgbcolor :: Monad m => Double -> Double -> Double -> PsT m ()
+setrgbcolor r g b = command3 "setrgbcolor" (show r) (show g) (show b)
+
+
+--------------------------------------------------------------------------------
 -- matrix operations
 
 
@@ -185,6 +213,7 @@ concat matrix = do
     command1 "concat" (CTM.printmatrix matrix)
     updateCTM $ \ctm -> ctm `CTM.multiply` matrix
 
+--------------------------------------------------------------------------------
 -- Path construction operators
 
 
@@ -225,4 +254,13 @@ closepath = command0 "closepath"
 
 clip :: Monad m => PsT m ()
 clip = command0 "clip" 
+
+--------------------------------------------------------------------------------
+--  painting operators
+
+fill :: Monad m => PsT m ()
+fill = command0 "fill"
+
+stroke :: Monad m => PsT m ()
+stroke = command0 "stroke"
 

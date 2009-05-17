@@ -3,7 +3,7 @@
 
 module Demo1 where
 
-import Graphics.Wumpus.Matrix
+import qualified Graphics.Wumpus.Matrix as CTM
 import Graphics.Wumpus.Wumpus
 
 import Data.SG
@@ -30,6 +30,19 @@ demo3 = putStr $
 
 
 
-demo4 = putStr $ runWumpus st0 $ arrows1 where
-  arrows1 = withPage $ do 
-              newpath
+demo4 = writePS "square.ps" $ runWumpus st0 $ drawing1 where
+  drawing1 = do 
+               translate 20 20
+               newpath
+               moveto 0  0 
+               lineto 0  70
+               lineto 70 70
+               lineto 70  0
+               closepath
+               fill
+               stroke
+
+writePS :: FilePath -> String -> IO ()
+writePS filepath pstext = writeFile filepath (bang ++ pstext) 
+  where
+    bang = "%!PS-Adobe-2.0\n"
