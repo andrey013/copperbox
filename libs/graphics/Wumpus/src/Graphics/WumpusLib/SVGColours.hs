@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Wumpus.SVGColours
+-- Module      :  Graphics.WumpusLib.SVGColours
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Wumpus.SVGColours (
+module Graphics.WumpusLib.SVGColours (
     -- * Named colours
     aliceblue, 
     antiquewhite,

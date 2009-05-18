@@ -5,8 +5,9 @@ module Demo1 where
 
 
 import qualified Graphics.Wumpus.Matrix as CTM
-import Graphics.Wumpus.SVGColours
 import Graphics.Wumpus.Wumpus
+import Graphics.WumpusLib.SVGColours
+import qualified Graphics.WumpusLib.X11Colours as X11
 
 import Data.SG
 
