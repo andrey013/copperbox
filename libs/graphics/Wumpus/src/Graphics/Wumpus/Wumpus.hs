@@ -285,6 +285,10 @@ clip = command0 "clip"
 --------------------------------------------------------------------------------
 --  painting operators
 
+
+erasepage :: monad m => PsT m () 
+erasepage :: comand0 "erasepage"
+
 fill :: Monad m => PsT m ()
 fill = command0 "fill"
 
