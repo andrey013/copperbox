@@ -23,35 +23,43 @@ module Graphics.Wumpus.Wumpus where
 
 import Graphics.Wumpus.Colour 
 import qualified Graphics.Wumpus.Matrix as CTM
+import Graphics.Wumpus.Vector
 
 import qualified Data.DList as DL
-import Data.SG ( Triple(..) )
 import MonadLib
+
+-- TODO some graphical objects (e.g. arrows) will need to know
+-- the currentpoint. (??) 
+
+type Point2 = DVec2
 
 data PsState = PsState { 
        pageNum      :: Int,  
        bBox         :: BoundingBox,
        cTM          :: CTM.PsMatrix,
-       cColour      :: Colour3 
+       cColour      :: Colour3,
+       cLineWidth   :: Double
     }
   deriving (Eq,Show)
 
 
 data BoundingBox = BoundingBox { 
-       xZero       :: Double, 
-       yZero       :: Double, 
-       xOne        :: Double, 
-       yOne        :: Double 
+       xZero        :: Double, 
+       yZero        :: Double, 
+       xOne         :: Double, 
+       yOne         :: Double 
     }
   deriving (Eq,Show)              
 
 
+
 st0 :: PsState 
 st0 = PsState { 
-        pageNum  = 1,
-        bBox     = BoundingBox 0.0 0.0 0.0 0.0,
-        cTM      = CTM.initmatrix,
-        cColour  = wumpusBlack
+        pageNum     = 1,
+        bBox        = BoundingBox 0.0 0.0 0.0 0.0,
+        cTM         = CTM.initmatrix,
+        cColour     = wumpusBlack,
+        cLineWidth  = 1
       }
 
 type PsOutput = DL.DList Char
@@ -205,7 +213,7 @@ sethsbcolor h s b = do
 
 setrgbcolor :: Monad m => Double -> Double -> Double -> PsT m ()
 setrgbcolor r g b = do 
-  setColour $ Triple (r,g,b)
+  setColour $ V3 r g b
   command3 "setrgbcolor" (show r) (show g) (show b)
 
 
@@ -244,8 +252,13 @@ concat matrix = do
 -- Path construction operators
 
 
+
+
 newpath :: Monad m => PsT m ()
 newpath = command0 "newpath"
+
+-- There is no equivalent to PostScript's @currentpoint@ command. 
+
 
 -- Note - it is preferable to show doubles as 0.0 rather than 0.
 -- In PostScript the coercion from int to float is apparently 

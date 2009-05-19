@@ -17,9 +17,10 @@
 
 module Graphics.Wumpus.Colour where
 
-import Data.SG
 
-type Colour3 = Triple Double
+import Graphics.Wumpus.Vector
+
+type Colour3 = DVec3
 
 max3 :: Double -> Double -> Double -> Double
 max3 a b c = max (max a b) c
@@ -34,26 +35,32 @@ med3 a b c = if c <= x then x else if c > y then y else c
     order p q | p <= q    = (p,q)
               | otherwise = (q,p)
 
+mkColour :: Double -> Double -> Double -> Colour3
+mkColour r g b = V3 r g b
+
+triple :: (Double, Double, Double) -> Colour3
+triple (r,g,b) = mkColour r g b
+
 
 eV :: Colour3
-eV = Triple (1,1,1)
+eV = V3 1 1 1
 
 -- Acknowledgment - the conversion functions are derived from
 -- the documentation to Dr. Uwe Kern's xcolor LaTeX package
 
 rgb2hsb' :: Double -> Double -> Double -> Colour3
-rgb2hsb' r g b = rgb2hsb $ Triple (r,g,b)
+rgb2hsb' r g b = rgb2hsb $ V3 r g b
 
 hsb2rgb' :: Double -> Double -> Double -> Colour3
-hsb2rgb' h s b = hsb2rgb $ Triple (h,s,b)
+hsb2rgb' h s b = hsb2rgb $ V3 h s b
 
 rgb2gray' :: Double -> Double -> Double -> Double
-rgb2gray' r g b = rgb2gray $ Triple (r,g,b) 
+rgb2gray' r g b = rgb2gray $ V3 r g b 
 
 
 
 rgb2hsb :: Colour3 -> Colour3
-rgb2hsb (Triple(r,g,b)) = Triple (hue,sat,bri)
+rgb2hsb (V3 r g b) = V3 hue sat bri
   where
     x     = max3 r g b
     y     = med3 r g b
@@ -73,36 +80,36 @@ rgb2hsb (Triple(r,g,b)) = Triple (hue,sat,bri)
 
 
 hsb2rgb :: Colour3 -> Colour3
-hsb2rgb (Triple(hue,sat,bri)) = bri `scaleRel` (eV - (sat `scaleRel` fV))
+hsb2rgb (V3 hue sat bri) = bri *> (eV - (sat *> fV))
   where
     i     :: Int
     i     = floor $ (6 * hue)
     f     = (6 * hue) - fromIntegral i
-    fV    | i == 0    = Triple (0,1-f,1)
-          | i == 1    = Triple (f,0,1)
-          | i == 2    = Triple (1,0,1-f)
-          | i == 3    = Triple (1,f,0)
-          | i == 4    = Triple (1-f,1,0)
-          | i == 5    = Triple (0,1,f)
-          | otherwise = Triple (0,1,1)
+    fV    | i == 0    = triple (0,1-f,1)
+          | i == 1    = triple (f,0,1)
+          | i == 2    = triple (1,0,1-f)
+          | i == 3    = triple (1,f,0)
+          | i == 4    = triple (1-f,1,0)
+          | i == 5    = triple (0,1,f)
+          | otherwise = triple (0,1,1)
           
 rgb2gray :: Colour3 -> Double
-rgb2gray (Triple (r,g,b)) = 0.3 * r + 0.59 * g + 0.11 * b 
+rgb2gray (V3 r g b) = 0.3 * r + 0.59 * g + 0.11 * b 
 
 
 
 wumpusBlack :: Colour3
-wumpusBlack = Triple (0,0,0)
+wumpusBlack = triple (0,0,0)
 
 wumpusWhite :: Colour3
-wumpusWhite = Triple (1,1,1)
+wumpusWhite = triple (1,1,1)
 
 wumpusRed :: Colour3
-wumpusRed = Triple (1,0,0)
+wumpusRed = triple (1,0,0)
 
 wumpusGreen :: Colour3 
-wumpusGreen = Triple (0,1,0)
+wumpusGreen = triple (0,1,0)
 
 wumpusBlue :: Colour3
-wumpusBlue = Triple (0,0,1)
+wumpusBlue = triple (0,0,1)
 
