@@ -11,7 +11,7 @@ import Graphics.WumpusLib.Arrow
 demo1 :: IO ()
 demo1 = writePS "arrow.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { translate 60 380 
-                ; arrow (V2 0 0) (V2 40 40) }
+                ; arrow (P2 0 0) (P2 40 40) }
              
 
 demo0 :: IO ()

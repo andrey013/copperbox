@@ -21,8 +21,8 @@ import Graphics.Wumpus.Vector
 import Graphics.Wumpus.Wumpus
 
 
-arrow :: Monad m => Point2 -> Point2 -> PsT m ()
-arrow p1@(V2 x1 y1) p2@(V2 x2 y2) = saveExecRestore $ do
+arrow :: Monad m => DPoint2 -> DPoint2 -> PsT m ()
+arrow p1@(P2 x1 y1) p2@(P2 x2 y2) = saveExecRestore $ do
     setmiterlimit 1 
     newpath
     moveto x1 y1

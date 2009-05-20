@@ -58,6 +58,28 @@ instance Fractional a => Fractional (Vec2 a) where
 
 
 
+data Point2 a = P2 !a !a
+  deriving (Eq,Show)
+
+type DPoint2 = Point2 Double
+
+instance Num a => Num (Point2 a) where
+  (+) (P2 a b) (P2 x y) = P2 (a+x) (b+y)
+  (-) (P2 a b) (P2 x y) = P2 (a-x) (b-y)
+  (*) (P2 a b) (P2 x y) = P2 (a*x) (b*y)
+  abs (P2 a b)          = P2 (abs a) (abs b)
+  negate (P2 a b)       = P2 (negate a) (negate b)
+  signum (P2 a b)       = P2 (signum a) (signum b)
+  fromInteger i         = P2 (fromInteger i) (fromInteger i)
+
+instance Fractional a => Fractional (Point2 a) where
+  (/) (P2 a b) (P2 x y) = P2 (a/x) (b/y)
+  recip (P2 a b)        = P2 (recip a) (recip b)
+  fromRational a        = P2 (fromRational a) (fromRational a)
+
+
+
+
 infixl 8 *> 
 class ScalarMult t where 
   (*>) :: Num a => a -> t a -> t a

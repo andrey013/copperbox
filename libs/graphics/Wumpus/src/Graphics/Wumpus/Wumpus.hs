@@ -31,7 +31,6 @@ import MonadLib
 -- TODO some graphical objects (e.g. arrows) will need to know
 -- the currentpoint. (??) 
 
-type Point2 = DVec2
 
 data PsState = PsState { 
        pageNum      :: Int,  
