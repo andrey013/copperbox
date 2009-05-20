@@ -55,6 +55,9 @@ data PsMatrix = PsMatrix { matrix_component :: DMatrix2'2, vector_component :: D
   deriving (Eq,Show)
 
 
+psMatrix :: ((Double,Double),(Double,Double)) -> (Double,Double) -> PsMatrix
+psMatrix ((a,b),(c,d)) (e,f) = PsMatrix (M2'2 a b c d) (V2 e f)
+
 -- square22 :: Double -> Double -> Double -> Double -> SquareMatrix Pair Double
 -- square22 a b c d = SquareMatrix (Pair (Pair(a,b), Pair(c,d)))
 

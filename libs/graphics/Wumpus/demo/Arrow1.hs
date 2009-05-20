@@ -29,8 +29,3 @@ demo0 = writePS "arrow0.ps" $ runWumpus st0 $ drawing1 where
                closepath
                stroke
 
-
-writePS :: FilePath -> String -> IO ()
-writePS filepath pstext = writeFile filepath (bang ++ pstext) 
-  where
-    bang = "%!PS-Adobe-2.0\n"

@@ -97,6 +97,12 @@ pstId st m = runId $ runPsT st m
 runWumpus :: PsState -> PsT Id a -> String
 runWumpus = ((DL.toList . snd) .) . pstId
 
+
+writePS :: FilePath -> String -> IO ()
+writePS filepath pstext = writeFile filepath (bang ++ pstext) 
+  where
+    bang = "%!PS-Adobe-2.0\n"
+
 --------------------------------------------------------------------------------
 -- writer monad helpers
 
