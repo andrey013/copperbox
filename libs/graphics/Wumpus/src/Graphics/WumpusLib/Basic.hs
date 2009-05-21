@@ -17,7 +17,7 @@
 
 module Graphics.WumpusLib.Basic where
 
-import Graphics.Wumpus.Matrix ( psMatrix )
+import Graphics.Wumpus.CTM ( psMatrix )
 import Graphics.Wumpus.Wumpus
 
 import Prelude hiding ( concat ) 

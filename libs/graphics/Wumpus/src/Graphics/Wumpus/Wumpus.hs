@@ -22,7 +22,7 @@
 module Graphics.Wumpus.Wumpus where
 
 import Graphics.Wumpus.Colour 
-import qualified Graphics.Wumpus.Matrix as CTM
+import qualified Graphics.Wumpus.CTM as CTM
 import Graphics.Wumpus.Vector
 
 import qualified Data.DList as DL

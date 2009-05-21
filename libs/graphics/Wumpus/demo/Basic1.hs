@@ -8,7 +8,7 @@ import Graphics.WumpusLib.Basic
 
 
 demo1 :: IO ()
-demo1 = writePS "basic.ps" $ runWumpus st0 $ drawing1 where
+demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { translate 60 380 
                 ; line (0,0) (0,150)
                 ; line (0,0) (150,0)
