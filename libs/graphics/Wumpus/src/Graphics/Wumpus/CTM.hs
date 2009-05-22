@@ -17,6 +17,7 @@
 
 module Graphics.Wumpus.CTM where
 
+import Graphics.Wumpus.Math
 import Graphics.Wumpus.Matrix
 import Graphics.Wumpus.Vector
 
@@ -38,7 +39,7 @@ psMatrix ((a,b),(c,d)) (e,f) = PsMatrix (M2'2 a b c d) (V2 e f)
 
 
 initmatrix :: PsMatrix
-initmatrix = PsMatrix identityMatrix vzero
+initmatrix = PsMatrix identityMatrix zero
 
 
 multiply :: PsMatrix -> PsMatrix -> PsMatrix

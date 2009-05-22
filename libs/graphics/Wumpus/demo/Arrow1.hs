@@ -2,7 +2,7 @@
 
 module Arrow1 where
 
-import Graphics.Wumpus.Vector
+import Graphics.Wumpus.Point
 import Graphics.Wumpus.Wumpus
 import Graphics.WumpusLib.Arrow
 
