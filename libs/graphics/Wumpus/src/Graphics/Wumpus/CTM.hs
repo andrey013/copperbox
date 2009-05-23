@@ -17,12 +17,11 @@
 
 module Graphics.Wumpus.CTM where
 
-import Graphics.Wumpus.Math
 import Graphics.Wumpus.Matrix
 import Graphics.Wumpus.Vector
 
--- type Vector2  = Pair Double
--- type Matrix22 = Matrix22' Double
+import Data.VectorSpace
+
 
 data PsMatrix = PsMatrix { matrix_component :: DMatrix2'2, vector_component :: DVec2 }
   deriving (Eq,Show)
@@ -39,7 +38,7 @@ psMatrix ((a,b),(c,d)) (e,f) = PsMatrix (M2'2 a b c d) (V2 e f)
 
 
 initmatrix :: PsMatrix
-initmatrix = PsMatrix identityMatrix zero
+initmatrix = PsMatrix identityMatrix zeroV
 
 
 multiply :: PsMatrix -> PsMatrix -> PsMatrix

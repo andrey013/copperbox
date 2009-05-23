@@ -18,7 +18,6 @@
 
 module Graphics.Wumpus.Matrix where
 
-import Graphics.Wumpus.Math
 
 data Matrix2'2 a = M2'2 !a !a !a !a
   deriving (Eq)
@@ -80,6 +79,7 @@ instance Num a => Num (Matrix3'3 a) where
     where a'              = fromInteger a 
 
 
+{-
 instance Num a => Zero (Matrix2'2 a) where
   zero = M2'2 0 0  0 0 
 
@@ -87,6 +87,8 @@ instance Num a => Zero (Matrix2'2 a) where
 
 instance Num a => Zero (Matrix3'3 a) where
   zero = M3'3 0 0 0   0 0 0  0 0 0
+
+-}
 
 
 class IdentityMatrix t where

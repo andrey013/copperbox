@@ -17,8 +17,9 @@
 
 module Graphics.Wumpus.Colour where
 
-
 import Graphics.Wumpus.Vector
+
+import Data.VectorSpace
 
 type Colour3 = DVec3
 
@@ -80,7 +81,7 @@ rgb2hsb (V3 r g b) = V3 hue sat bri
 
 
 hsb2rgb :: Colour3 -> Colour3
-hsb2rgb (V3 hue sat bri) = bri *> (eV - (sat *> fV))
+hsb2rgb (V3 hue sat bri) = bri *^ (eV - (sat *^ fV))
   where
     i     :: Int
     i     = floor $ (6 * hue)

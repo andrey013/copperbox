@@ -1,3 +1,6 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -17,8 +20,9 @@
 
 module Graphics.Wumpus.Vector where
 
-import Graphics.Wumpus.Math
-import Graphics.Wumpus.Point ( Point2(..) )
+-- import Graphics.Wumpus.Point ( Point2(..) )
+
+import Data.VectorSpace
 
 data Vec2 a = V2 !a !a
   deriving (Eq,Show)
@@ -63,18 +67,27 @@ instance Fractional a => Fractional (Vec3 a) where
 
 
 
-
-instance Num a => Zero (Vec2 a) where
-  zero = V2 0 0 
- 
-instance Num a => Zero (Vec3 a) where
-  zero = V3 0 0 0 
+instance Num a => AdditiveGroup (Vec2 a) where
+  zeroV = V2 0 0 
+  (^+^) = (+)
+  negateV = negate
 
 
+instance Num a => AdditiveGroup (Vec3 a) where
+  zeroV = V3 0 0 0
+  (^+^) = (+)
+  negateV = negate
+
+
+
+
+
+{-
 
 mkvector :: Num a => Point2 a -> Point2 a -> Vec2 a
 mkvector (P2 x1 y1) (P2 x2 y2) = V2 (x2-x1) (y2-y1)
 
+-}
 
 
 class EuclidianNorm t where
@@ -92,34 +105,36 @@ instance Direction2 Vec2 where
    direction (V2 a b) = atan (a/b)
 
 
-infixl 8 *> 
-class ScalarMult t where 
-  (*>) :: Num a => a -> t a -> t a
 
-instance ScalarMult Vec2 where
-  o *> (V2 a b) = V2 (o*a) (o*b)
+instance (Num a, VectorSpace a) => VectorSpace (Vec2 a) where
+  type Scalar (Vec2 a) = Scalar a
+  s *^ (V2 a b) = V2 (s*^a) (s*^b)
 
-instance ScalarMult Vec3 where
-  o *> (V3 a b c) = V3 (o*a) (o*b) (o*c)
-
+instance (Num a, VectorSpace a) => VectorSpace (Vec3 a) where
+  type Scalar (Vec3 a) = Scalar a
+  s *^ (V3 a b c) = V3 (s*^a) (s*^b) (s*^c)
 
 
-infixl 7 .>
 
-class ScalarProduct t where
-  (.>) :: Num a => t a -> t a -> a
+-- scalar (dot / inner) product via the class InnerSpace
+
+instance (Num a, InnerSpace a, AdditiveGroup (Scalar a)) 
+    => InnerSpace (Vec2 a) where
+  (V2 a b) <.> (V2 a' b') = (a <.> a') ^+^ (b <.> b')
 
 
-instance ScalarProduct Vec2 where
-  (.>) (V2 a b) (V2 x y) = a*x + b*y
 
-instance ScalarProduct Vec3 where
-  (.>) (V3 a b c) (V3 x y z) = a*x + b*y + c*z
+instance (Num a, InnerSpace a, AdditiveGroup (Scalar a)) 
+    => InnerSpace (Vec3 a) where
+  (V3 a b c) <.> (V3 a' b' c') = (a <.> a') ^+^ (b <.> b') ^+^ (c <.> c')
+
+
+
 
 
 -- two vectors in R2 are perpendicular iff their dot product is 0
 perp :: DVec2 -> DVec2 -> Bool
-perp = ((==0) .) . (.>)
+perp = ((==0) .) . (<.>)
 
 
 
