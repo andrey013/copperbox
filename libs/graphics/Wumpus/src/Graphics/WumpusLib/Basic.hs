@@ -18,7 +18,13 @@
 module Graphics.WumpusLib.Basic where
 
 import Graphics.Wumpus.CTM ( psMatrix )
+import Graphics.Wumpus.Instances
+import Graphics.Wumpus.Matrix
+import Graphics.Wumpus.Point
+import Graphics.Wumpus.Vector
 import Graphics.Wumpus.Wumpus
+
+import Data.AffineSpace
 
 import Prelude hiding ( concat ) 
 
@@ -83,7 +89,24 @@ diamond (x1,y1) (x2,_y2) = saveExecRestore $ do
   where
     w = x2/2
 
+--- diamond again
 
+unitSquare :: DPoint2 -> [DPoint2]
+unitSquare p = [p, p .+^ (V2 0 1), p .+^ (V2 1 1), p .+^ (V2 1 0)] 
+
+polygon2 :: Monad m => [DPoint2] -> PsT m ()
+polygon2 []            = return ()
+polygon2 ((P2 x y):ps) = closeStrokePathSkel $ do 
+   moveto x y
+   mapM_ (\(P2 a b) -> lineto a b) ps 
+
+
+diamond2 :: Monad m => (Double,Double) -> (Double,Double) -> PsT m ()
+diamond2 (x1,y1) (w,h) = polygon2 $  map (trans1.scale1.rot1) xs where
+  xs     = unitSquare $ P2 0 0
+  rot1   = vecMult $ rotationMatrix (pi/4)
+  scale1 = vecMult $ scalingMatrix w h
+  trans1 = vecMult $ translationMatrix x1 y1
 
 --------------------------------------------------------------------------------
 -- arcs and ellipses

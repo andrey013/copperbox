@@ -67,17 +67,6 @@ instance Fractional a => Fractional (Vec3 a) where
 
 
 
-instance Num a => AdditiveGroup (Vec2 a) where
-  zeroV = V2 0 0 
-  (^+^) = (+)
-  negateV = negate
-
-
-instance Num a => AdditiveGroup (Vec3 a) where
-  zeroV = V3 0 0 0
-  (^+^) = (+)
-  negateV = negate
-
 
 
 
@@ -104,6 +93,18 @@ class Direction2 t where
 instance Direction2 Vec2 where
    direction (V2 a b) = atan (a/b)
 
+
+
+instance Num a => AdditiveGroup (Vec2 a) where
+  zeroV = V2 0 0 
+  (^+^) = (+)
+  negateV = negate
+
+
+instance Num a => AdditiveGroup (Vec3 a) where
+  zeroV = V3 0 0 0
+  (^+^) = (+)
+  negateV = negate
 
 
 instance (Num a, VectorSpace a) => VectorSpace (Vec2 a) where

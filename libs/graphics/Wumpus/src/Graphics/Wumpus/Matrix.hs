@@ -79,16 +79,6 @@ instance Num a => Num (Matrix3'3 a) where
     where a'              = fromInteger a 
 
 
-{-
-instance Num a => Zero (Matrix2'2 a) where
-  zero = M2'2 0 0  0 0 
-
-
-
-instance Num a => Zero (Matrix3'3 a) where
-  zero = M3'3 0 0 0   0 0 0  0 0 0
-
--}
 
 
 class IdentityMatrix t where
@@ -125,3 +115,14 @@ instance Determinant Matrix3'3 where
 
 invertible :: (Determinant t, Num a) => t a -> Bool
 invertible = (/=) 0 . det
+
+
+scalingMatrix :: Num a => a -> a -> Matrix3'3 a
+scalingMatrix sx sy = M3'3  sx 0 0   0 sy 0   0 0 1
+
+translationMatrix :: Num a => a -> a -> Matrix3'3 a
+translationMatrix x y = M3'3 1 0 0  0 1 0  x y 1
+
+rotationMatrix :: Floating a => a -> Matrix3'3 a
+rotationMatrix a = M3'3 (cos a) (- sin a) 0 (sin a) (cos a) 0  0 0 1
+ 

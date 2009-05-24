@@ -21,16 +21,18 @@
 module Graphics.Wumpus.Point where
 
 
-import Graphics.Wumpus.Vector
 
-import Data.AffineSpace
-import Data.VectorSpace
+-- import Data.AffineSpace
+-- import Data.VectorSpace
 
 
 data Point2 a = P2 !a !a
   deriving (Eq,Show)
 
 type DPoint2 = Point2 Double
+
+
+-- Hmm, do Points have a genuine (+) operation?
 
 instance Num a => Num (Point2 a) where
   (+) (P2 a b) (P2 x y) = P2 (a+x) (b+y)
@@ -49,17 +51,6 @@ instance Fractional a => Fractional (Point2 a) where
 
 
 
-
-instance Num a => AdditiveGroup (Point2 a) where
-  zeroV = P2 0 0 
-  (^+^) = (+)
-  negateV = negate
-
-
-instance (AffineSpace a, Num (Diff a)) => AffineSpace (Point2 a) where
-  type Diff (Point2 a) = Vec2 (Diff a)
-  (P2 a b) .-. (P2 x y)   = V2 (a .-. x) (b .-. y)
-  (P2 a b) .+^ (V2 vx vy) = P2 (a .+^ vx) (b .+^ vy)
 
 
 

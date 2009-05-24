@@ -6,7 +6,6 @@ import Graphics.Wumpus.Wumpus
 import Graphics.WumpusLib.Basic
 
 
-
 demo1 :: IO ()
 demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { translate 60 380 
@@ -22,4 +21,5 @@ demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
                 ; polygon [(140,5), (140,30), (170,5), (170,30)]
                 ; diamond (10,50) (30,30)
                 ; disk (10,50) 2
+                ; diamond2 (80,50) (30,20)
                 }
