@@ -38,10 +38,10 @@ arrow p1@(P2 x1 y1) p2@(P2 x2 y2) = saveExecRestore $ do
 
 
 
-d2r :: Double -> Double 
+d2r :: Floating a => a -> a 
 d2r = (*) (pi/180)
 
-r2d :: Double -> Double
+r2d :: Floating a => a -> a
 r2d = (*) (180/pi)
 
 

@@ -4,6 +4,7 @@ module Basic1 where
 
 import Wumpus.Core.Wumpus
 import Wumpus.Drawing.Basic
+import Wumpus.Drawing.SVGColours
 
 import Wumpus.Core.Point
 
@@ -22,7 +23,9 @@ demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
                 ; polygon [(140,5), (140,30), (170,5), (170,30)]
                 ; diamond (10,50) (30,30)
                 ; disk (10,50) 2
-                ; diamond2 (80,50) (30,20)
+                ; drawPolygon (lineColour blueviolet $ lineWidth 1 
+                                          $ fillColour burlywood $ envId)
+                    $ diamond2 (80,50) (30,20)
                 ; setrgbcolor 1 0 0
                 ; plusDot (P2 150 50)
                 }

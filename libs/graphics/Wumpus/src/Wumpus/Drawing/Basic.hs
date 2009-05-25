@@ -17,6 +17,7 @@
 
 module Wumpus.Drawing.Basic where
 
+import Wumpus.Core.Colour
 import Wumpus.Core.CTM ( psMatrix )
 import Wumpus.Core.Instances
 import Wumpus.Core.Matrix
@@ -28,6 +29,9 @@ import Data.AffineSpace
 import Data.VectorSpace
 
 import Prelude hiding ( concat ) 
+
+type RgbColour = Colour3
+type Point = DPoint2
 
 strokePathSkel :: Monad m => PsT m a -> PsT m a
 strokePathSkel m = saveExecRestore $ do
@@ -92,18 +96,120 @@ diamond (x1,y1) (x2,_y2) = saveExecRestore $ do
 
 --- diamond again
 
-unitSquare :: DPoint2 -> [DPoint2]
+unitSquare :: Point -> Polygon
 unitSquare p = [p, p .+^ (V2 0 1), p .+^ (V2 1 1), p .+^ (V2 1 0)] 
 
-polygon2 :: Monad m => [DPoint2] -> PsT m ()
-polygon2 []            = return ()
-polygon2 ((P2 x y):ps) = closeStrokePathSkel $ do 
-   moveto x y
-   mapM_ (\(P2 a b) -> lineto a b) ps 
+type Polygon = [Point]
 
 
-diamond2 :: Monad m => (Double,Double) -> (Double,Double) -> PsT m ()
-diamond2 (x1,y1) (w,h) = polygon2 $  map (trans1.scale1.rot1) xs where
+-- drawing a two colour polygon (path one colour, fill another)
+-- uses the trick from Bill Casselman MI section 1.8
+
+drawPolygon :: PolygonEnv -> [DPoint2] -> WumpusM ()
+drawPolygon _   []            = return ()
+drawPolygon env ((P2 x y):ps) =  saveExecRestore $ do 
+   case env of 
+     PolygonEnv (Just fEnv) (Just sEnv) -> do 
+         polygonPath
+         gsave
+         whenMb (mbFillColour fEnv) rgbSetColour
+         fill
+         grestore
+         whenMb (mbLineColour sEnv) rgbSetColour
+         whenMb (mbLineWidth sEnv) setlinewidth
+         stroke
+         
+     PolygonEnv (Just fEnv) _           -> do 
+         polygonPath
+         whenMb (mbFillColour fEnv) rgbSetColour
+         fill
+     PolygonEnv Nothing     (Just sEnv) -> do
+         polygonPath
+         whenMb (mbLineColour sEnv) rgbSetColour
+         whenMb (mbLineWidth sEnv) setlinewidth
+         stroke
+
+     -- default is a stroked path
+     _                                  -> polygonPath >> stroke    
+       
+  where
+    polygonPath = do 
+      newpath
+      moveto x y
+      mapM_ (\(P2 a b) -> lineto a b) ps 
+      closepath
+
+rgbSetColour :: RgbColour -> WumpusM ()
+rgbSetColour (V3 r g b) = setrgbcolor r g b
+
+whenMb :: Monad m => Maybe a -> (a -> m ()) -> m()
+whenMb a sk = maybe (return ()) sk a 
+   
+data Fill = Fill { mbFillColour :: Maybe RgbColour }
+
+data Stroke = Stroke { mbLineWidth :: Maybe Double, mbLineColour :: Maybe RgbColour }
+
+data PolygonEnv = PolygonEnv { mbFill :: Maybe Fill, mbStroke :: Maybe Stroke }
+
+class Env env where
+  envId :: env
+
+instance Env Fill where
+  envId = Fill Nothing
+
+instance Env Stroke where
+  envId = Stroke Nothing Nothing
+
+instance Env (Maybe a) where
+  envId = Nothing
+
+instance Env PolygonEnv where
+  envId = PolygonEnv envId envId
+
+class FillColour env where 
+  fillColour :: RgbColour -> env -> env
+
+instance FillColour Fill where
+  fillColour c e = e { mbFillColour = Just c }
+
+instance (Env e, FillColour e) => FillColour (Maybe e) where
+  fillColour c (Just e) = Just $ fillColour c e
+  fillColour c Nothing  = Just $ fillColour c envId
+ 
+instance FillColour PolygonEnv where
+  fillColour c (PolygonEnv f s) = PolygonEnv (fillColour c f) s
+
+
+class LineWidth env where
+  lineWidth :: Double -> env -> env 
+
+instance LineWidth Stroke where
+  lineWidth w e = e { mbLineWidth = Just w }
+
+instance (Env e, LineWidth e) => LineWidth (Maybe e) where
+  lineWidth w (Just e) = Just $ lineWidth w e
+  lineWidth w Nothing  = Just $ lineWidth w envId
+
+instance LineWidth PolygonEnv where
+  lineWidth w (PolygonEnv f s) = PolygonEnv f (lineWidth w s) 
+
+class LineColour env where
+  lineColour :: RgbColour -> env -> env 
+
+instance LineColour Stroke where
+  lineColour c e = e { mbLineColour = Just c }
+
+instance (Env e, LineColour e) => LineColour (Maybe e) where
+  lineColour c (Just e) = Just $ lineColour c e
+  lineColour c Nothing  = Just $ lineColour c envId
+
+instance LineColour PolygonEnv where
+  lineColour c (PolygonEnv f s) = PolygonEnv f (lineColour c s) 
+
+
+
+diamond2 :: (Double,Double) -> (Double,Double) -> Polygon
+diamond2 (x1,y1) (w,h) = map (trans1.scale1.rot1) xs where
   xs     = unitSquare $ P2 0 0
   rot1   = vecMult $ rotationMatrix (pi/4)
   scale1 = vecMult $ scalingMatrix w h

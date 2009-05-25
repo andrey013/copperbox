@@ -63,6 +63,9 @@ st0 = PsState {
 
 type PsOutput = DL.DList Char
 
+type WumpusM a = PsT Id a
+
+
 newtype PsT m a = PsT { unPs :: StateT PsState (WriterT PsOutput m) a }
 
 runPsT :: Monad m => PsState -> PsT m a -> m (a,PsOutput)
@@ -94,7 +97,7 @@ evalPsT st m = runPsT st m >>= \(_,ps) -> return ps
 pstId :: PsState -> PsT Id a -> (a,PsOutput)
 pstId st m = runId $ runPsT st m  
 
-runWumpus :: PsState -> PsT Id a -> String
+runWumpus :: PsState -> WumpusM a -> String
 runWumpus = ((DL.toList . snd) .) . pstId
 
 
@@ -186,6 +189,12 @@ saveExecRestore m = do
     set st
     command0 "grestore"
     return a
+
+gsave :: Monad m => PsT m ()
+gsave = command0 "gsave"
+
+grestore :: Monad m => PsT m ()
+grestore = command0 "grestore"
 
 
 
