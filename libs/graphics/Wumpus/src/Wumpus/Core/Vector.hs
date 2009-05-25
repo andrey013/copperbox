@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Wumpus.Vector
+-- Module      :  Wumpus.Core.Vector
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -18,9 +18,7 @@
 --------------------------------------------------------------------------------
 
 
-module Graphics.Wumpus.Vector where
-
--- import Graphics.Wumpus.Point ( Point2(..) )
+module Wumpus.Core.Vector where
 
 import Data.VectorSpace
 

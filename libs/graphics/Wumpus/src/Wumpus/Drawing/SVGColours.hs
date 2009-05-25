@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.WumpusLib.SVGColours
+-- Module      :  Wumpus.Drawing.SVGColours
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.WumpusLib.SVGColours (
+module Wumpus.Drawing.SVGColours (
     -- * Named colours
     aliceblue, 
     antiquewhite,
@@ -166,8 +166,8 @@ module Graphics.WumpusLib.SVGColours (
 ) where
 
 
-import Graphics.Wumpus.Colour ( Colour3 )
-import Graphics.Wumpus.Vector ( Vec3(..) )
+import Wumpus.Core.Colour ( Colour3 )
+import Wumpus.Core.Vector ( Vec3(..) )
 
 
 import Prelude hiding ( tan )

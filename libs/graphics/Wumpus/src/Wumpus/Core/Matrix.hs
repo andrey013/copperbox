@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Wumpus.Matrix
+-- Module      :  Wumpus.Core.Matrix
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 --------------------------------------------------------------------------------
 
 
-module Graphics.Wumpus.Matrix where
+module Wumpus.Core.Matrix where
 
 
 data Matrix2'2 a = M2'2 !a !a !a !a
@@ -121,8 +121,11 @@ scalingMatrix :: Num a => a -> a -> Matrix3'3 a
 scalingMatrix sx sy = M3'3  sx 0 0   0 sy 0   0 0 1
 
 translationMatrix :: Num a => a -> a -> Matrix3'3 a
-translationMatrix x y = M3'3 1 0 0  0 1 0  x y 1
+translationMatrix x y = M3'3 1 0 x  0 1 y  0 0 1
+
 
 rotationMatrix :: Floating a => a -> Matrix3'3 a
-rotationMatrix a = M3'3 (cos a) (- sin a) 0 (sin a) (cos a) 0  0 0 1
+rotationMatrix a = M3'3 (cos a) (- sin a) 0 
+                        (sin a) (cos a)   0  
+                        0 0 1
  

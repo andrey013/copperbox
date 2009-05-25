@@ -4,10 +4,10 @@
 module Demo1 where
 
 
-import qualified Graphics.Wumpus.Matrix as CTM
-import Graphics.Wumpus.Wumpus
-import Graphics.WumpusLib.SVGColours
-import qualified Graphics.WumpusLib.X11Colours as X11
+import qualified Wumpus.Core.Matrix as CTM
+import Wumpus.Core.Wumpus
+import Wumpus.Drawing.SVGColours
+import qualified Wumpus.Drawing.X11Colours as X11
 
 import Data.SG
 

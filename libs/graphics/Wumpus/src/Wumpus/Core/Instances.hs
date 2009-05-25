@@ -7,7 +7,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Wumpus.Instances
+-- Module      :  Wumpus.Core.Instances
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -20,12 +20,12 @@
 --------------------------------------------------------------------------------
 
 
-module Graphics.Wumpus.Instances where
+module Wumpus.Core.Instances where
 
 
-import Graphics.Wumpus.Point
-import Graphics.Wumpus.Matrix
-import Graphics.Wumpus.Vector
+import Wumpus.Core.Point
+import Wumpus.Core.Matrix
+import Wumpus.Core.Vector
 
 import Data.AffineSpace
 import Data.VectorSpace
@@ -53,6 +53,9 @@ class VecMult t u where
 instance VecMult Matrix3'3 Vec3 where
   vecMult (M3'3 a b c d e f g h i) (V3 m n o) = 
     V3 (a*m+b*n+c*o) (d*m+e*n+f*o) (g*m+h*n+i*o)
+
+
+-- need to take care here vis-a-vis row / column vectors...
 
 instance VecMult Matrix3'3 Point2 where
   vecMult m (P2 a b) = P2 x y where

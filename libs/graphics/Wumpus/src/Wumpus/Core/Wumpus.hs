@@ -6,7 +6,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Wumpus.Wumpus
+-- Module      :  Wumpus.Core.Wumpus
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -19,11 +19,11 @@
 --------------------------------------------------------------------------------
 
 
-module Graphics.Wumpus.Wumpus where
+module Wumpus.Core.Wumpus where
 
-import Graphics.Wumpus.Colour 
-import qualified Graphics.Wumpus.CTM as CTM
-import Graphics.Wumpus.Vector
+import Wumpus.Core.Colour 
+import qualified Wumpus.Core.CTM as CTM
+import Wumpus.Core.Vector
 
 import qualified Data.DList as DL
 import MonadLib

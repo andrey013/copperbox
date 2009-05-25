@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.WumpusLib.Arrow
+-- Module      :  Wumpus.Drawing.Arrow
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -15,10 +15,10 @@
 --------------------------------------------------------------------------------
 
 
-module Graphics.WumpusLib.Arrow where
+module Wumpus.Drawing.Arrow where
 
-import Graphics.Wumpus.Point
-import Graphics.Wumpus.Wumpus
+import Wumpus.Core.Point
+import Wumpus.Core.Wumpus
 
 
 arrow :: Monad m => DPoint2 -> DPoint2 -> PsT m ()

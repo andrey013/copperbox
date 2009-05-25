@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.WumpusLib.X11Colours
+-- Module      :  Wumpus.Drawing.X11Colours
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.WumpusLib.X11Colours (
+module Wumpus.Drawing.X11Colours (
     -- * Named X11 colours
     antiqueWhite1,
     antiqueWhite2,
@@ -336,8 +336,8 @@ module Graphics.WumpusLib.X11Colours (
 
   ) where
 
-import Graphics.Wumpus.Vector ( Vec3(..) )
-import Graphics.Wumpus.Colour ( Colour3 )
+import Wumpus.Core.Vector ( Vec3(..) )
+import Wumpus.Core.Colour ( Colour3 )
 
 
 antiqueWhite1           :: Colour3

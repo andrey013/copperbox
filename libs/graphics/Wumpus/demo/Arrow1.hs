@@ -2,14 +2,14 @@
 
 module Arrow1 where
 
-import Graphics.Wumpus.Point
-import Graphics.Wumpus.Wumpus
-import Graphics.WumpusLib.Arrow
+import Wumpus.Core.Point
+import Wumpus.Core.Wumpus
+import Wumpus.Drawing.Arrow
 
 
 
 demo1 :: IO ()
-demo1 = writePS "arrow.ps" $ runWumpus st0 $ drawing1 where
+demo1 = writePS "arrow1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { translate 60 380 
                 ; arrow (P2 0 0) (P2 40 40) }
              

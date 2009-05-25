@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Wumpus.Colour
+-- Module      :  Wumpus.Core.Colour
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -15,9 +15,9 @@
 --------------------------------------------------------------------------------
 
 
-module Graphics.Wumpus.Colour where
+module Wumpus.Core.Colour where
 
-import Graphics.Wumpus.Vector
+import Wumpus.Core.Vector
 
 import Data.VectorSpace
 

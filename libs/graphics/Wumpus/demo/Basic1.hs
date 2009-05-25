@@ -2,9 +2,10 @@
 
 module Basic1 where
 
-import Graphics.Wumpus.Wumpus
-import Graphics.WumpusLib.Basic
+import Wumpus.Core.Wumpus
+import Wumpus.Drawing.Basic
 
+import Wumpus.Core.Point
 
 demo1 :: IO ()
 demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
@@ -22,4 +23,6 @@ demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
                 ; diamond (10,50) (30,30)
                 ; disk (10,50) 2
                 ; diamond2 (80,50) (30,20)
+                ; setrgbcolor 1 0 0
+                ; plusDot (P2 150 50)
                 }

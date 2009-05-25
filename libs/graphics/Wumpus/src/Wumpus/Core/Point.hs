@@ -1,11 +1,8 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Wumpus.Point
+-- Module      :  Wumpus.Core.Point
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -18,12 +15,8 @@
 --------------------------------------------------------------------------------
 
 
-module Graphics.Wumpus.Point where
+module Wumpus.Core.Point where
 
-
-
--- import Data.AffineSpace
--- import Data.VectorSpace
 
 
 data Point2 a = P2 !a !a

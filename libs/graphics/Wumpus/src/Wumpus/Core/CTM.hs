@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Wumpus.CTM
+-- Module      :  Wumpus.Core.CTM
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -15,10 +15,10 @@
 --------------------------------------------------------------------------------
 
 
-module Graphics.Wumpus.CTM where
+module Wumpus.Core.CTM where
 
-import Graphics.Wumpus.Matrix
-import Graphics.Wumpus.Vector
+import Wumpus.Core.Matrix
+import Wumpus.Core.Vector
 
 import Data.VectorSpace
 

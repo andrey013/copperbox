@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.WumpusLib.Basic
+-- Module      :  Wumpus.Drawing.Basic
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -15,16 +15,17 @@
 --------------------------------------------------------------------------------
 
 
-module Graphics.WumpusLib.Basic where
+module Wumpus.Drawing.Basic where
 
-import Graphics.Wumpus.CTM ( psMatrix )
-import Graphics.Wumpus.Instances
-import Graphics.Wumpus.Matrix
-import Graphics.Wumpus.Point
-import Graphics.Wumpus.Vector
-import Graphics.Wumpus.Wumpus
+import Wumpus.Core.CTM ( psMatrix )
+import Wumpus.Core.Instances
+import Wumpus.Core.Matrix
+import Wumpus.Core.Point
+import Wumpus.Core.Vector
+import Wumpus.Core.Wumpus
 
 import Data.AffineSpace
+import Data.VectorSpace
 
 import Prelude hiding ( concat ) 
 
@@ -143,3 +144,21 @@ ellipticarc (x,y) (rh,rv) ang1 ang2 = saveExecRestore $ do
   arc x y rh ang1 ang2
   stroke
 
+
+
+-- dots
+
+plusDot :: Monad m => DPoint2 -> PsT m ()
+plusDot (P2 x y) = do
+    line2 (trans1 p1) (trans1 p2)
+    line2 (trans1.rot1 $ p1) (trans1.rot1 $ p2)
+  where 
+    p1 = zeroV .+^ (V2 (-2) 0)
+    p2 = zeroV .+^ (V2 2 0)  
+    
+    rot1   = vecMult $ rotationMatrix (pi/2)
+    trans1 = vecMult $ translationMatrix x y
+
+
+line2 :: Monad m => DPoint2 -> DPoint2 -> PsT m ()
+line2 (P2 a b) (P2 m n) = line (a,b) (m,n)
