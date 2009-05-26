@@ -21,10 +21,11 @@ demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
                 ; ellipse (60,5) (15,10)
                 ; ellipticarc (120,5) (15,10) 0 270
                 ; polygon [(140,5), (140,30), (170,5), (170,30)]
-                ; drawPolygon envId $ diamond (10,50) (30,30)
+                ; drawPolygon $ diamond (10,50) (30,30)
                 ; drawDisk $ disk (10,50) 2
-                ; drawPolygon (lineColour blueViolet $ lineWidth 1 
-                                          $ fillColour burlywood $ envId)
+                -- Arrgh -- its now a problem accessing values...
+                ; drawPolygon {- (lineColour blueViolet $ lineWidth 1 
+                                          $ fillColour burlywood $ envId) -}
                     $ diamond (80,50) (30,20)
                 ; setrgbcolor 1 0 0
                 ; plusDot (P2 150 50)

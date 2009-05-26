@@ -21,7 +21,7 @@ import Wumpus.Core.Point
 import Wumpus.Core.Wumpus
 
 
-arrow :: Monad m => DPoint2 -> DPoint2 -> PsT m ()
+arrow :: DPoint2 -> DPoint2 -> WumpusM ()
 arrow p1@(P2 x1 y1) p2@(P2 x2 y2) = saveExecRestore $ do
     setmiterlimit 1 
     newpath
@@ -46,7 +46,7 @@ r2d = (*) (180/pi)
 
 
 
-vee :: Monad m => Double -> Double -> Double -> PsT m ()
+vee :: Double -> Double -> Double -> WumpusM ()
 vee x y theta = saveExecRestore $ do
    setmiterlimit 1
    newpath
@@ -60,7 +60,7 @@ vee x y theta = saveExecRestore $ do
    stroke
 
 
-triangle :: Monad m => Double -> Double -> Double -> PsT m ()
+triangle :: Double -> Double -> Double -> WumpusM ()
 triangle x y theta = saveExecRestore $ do
    newpath
    moveto x y

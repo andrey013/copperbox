@@ -124,49 +124,50 @@ writeln :: WriterM m PsOutput => String -> m ()
 writeln s = write s >> writeChar '\n'
 
 
-comment :: WriterM m PsOutput => String -> m ()
-comment s = write "%%" >> writeln s
-
-type Command = String
-
-command0 :: WriterM m PsOutput => Command -> m ()
-command0 cmd = writeln cmd
-
 writeArg :: WriterM m PsOutput => String -> m () 
 writeArg s = write s >> writeChar ' '
 
-command1 :: WriterM m PsOutput => Command -> String -> m ()
+
+
+type Command = String
+
+comment :: String -> WumpusM ()
+comment s = write "%%" >> writeln s
+
+
+command0 :: Command -> WumpusM ()
+command0 cmd = writeln cmd
+
+command1 :: Command -> String -> WumpusM ()
 command1 cmd arg1 = writeArg arg1 >> writeln cmd
 
 
-command2 :: WriterM m PsOutput => Command -> String -> String -> m ()
+command2 :: Command -> String -> String -> WumpusM ()
 command2 cmd arg1 arg2 = 
    writeArg arg1 >> writeArg arg2 >> writeln cmd
 
-command3 :: WriterM m PsOutput => Command -> String -> String -> String -> m ()
+command3 :: Command -> String -> String -> String -> WumpusM ()
 command3 cmd arg1 arg2 arg3 = 
    writeArg arg1 >> writeArg arg2 >> writeArg arg3 >> writeln cmd
 
-command4 :: WriterM m PsOutput 
-         => Command -> String -> String -> String -> String -> m ()
+command4 :: Command -> String -> String -> String -> String -> WumpusM ()
 command4 cmd arg1 arg2 arg3 arg4 = 
    writeArg arg1 >> writeArg arg2 >> writeArg arg3 >> writeArg arg4 >> writeln cmd
 
-command5 :: WriterM m PsOutput 
-         => Command -> String -> String -> String -> String -> String -> m ()
+command5 :: Command -> String -> String -> String -> String -> String -> WumpusM ()
 command5 cmd arg1 arg2 arg3 arg4 arg5 = 
    mapM_ writeArg [arg1, arg2, arg3, arg4, arg5 ] >> writeln cmd
 
 
-getPageNum :: Monad m => PsT m Int
+getPageNum :: WumpusM Int
 getPageNum = pageNum `fmap` get 
 
 
-getCTM :: Monad m => PsT m CTM.PsMatrix
+getCTM :: WumpusM  CTM.PsMatrix
 getCTM = cTM `fmap` get
 
 
-withPage :: Monad m => PsT m a -> PsT m a
+withPage :: WumpusM a -> WumpusM a
 withPage m = pageStart >> m >>= \a -> pageEnd >> return a 
   where
     pageStart = getPageNum >>= \i -> comment $ "Page" ++ show i
@@ -181,7 +182,7 @@ withPage m = pageStart >> m >>= \a -> pageEnd >> return a
 -- Checkpoint the state, run the computation restore the state 
 -- This pattern is very common in PostScript where the action 
 -- is run between @gsave@ and @grestore@.
-saveExecRestore :: Monad m => PsT m a -> PsT m a
+saveExecRestore :: WumpusM a -> WumpusM a
 saveExecRestore m = do 
     command0 "gsave"
     st  <- get
@@ -190,42 +191,42 @@ saveExecRestore m = do
     command0 "grestore"
     return a
 
-gsave :: Monad m => PsT m ()
+gsave :: WumpusM ()
 gsave = command0 "gsave"
 
-grestore :: Monad m => PsT m ()
+grestore :: WumpusM ()
 grestore = command0 "grestore"
 
 
 
-setlinewidth :: Monad m => Double -> PsT m ()
+setlinewidth :: Double -> WumpusM ()
 setlinewidth n = command1 "setlinewidth" (show n) 
 
 
-setlinecap :: Monad m => Int -> PsT m ()
+setlinecap :: Int -> WumpusM ()
 setlinecap i = command1 "setlinecap" (show i) 
 
-setlinejoin :: Monad m => Int -> PsT m ()
+setlinejoin :: Int -> WumpusM ()
 setlinejoin i = command1 "setlinejoin" (show i) 
 
-setmiterlimit :: Monad m => Double -> PsT m ()
+setmiterlimit :: Double -> WumpusM ()
 setmiterlimit n = command1 "setmiterlimit" (show n) 
 
 
-setgray :: Monad m => Double -> PsT m ()
+setgray :: Double -> WumpusM ()
 setgray n = command1 "setgray" (show n)
 
-setColour :: Monad m => Colour3 -> PsT m ()
+setColour :: Colour3 -> WumpusM ()
 setColour c = sets_ (\s -> s {cColour = c} )
 
 
-sethsbcolor :: Monad m => Double -> Double -> Double -> PsT m ()
+sethsbcolor :: Double -> Double -> Double -> WumpusM ()
 sethsbcolor h s b = do 
     setColour $ hsb2rgb' h s b
     command3 "sethsbcolor" (show h) (show s) (show b)
 
 
-setrgbcolor :: Monad m => Double -> Double -> Double -> PsT m ()
+setrgbcolor :: Double -> Double -> Double -> WumpusM ()
 setrgbcolor r g b = do 
   setColour $ V3 r g b
   command3 "setrgbcolor" (show r) (show g) (show b)
@@ -235,29 +236,29 @@ setrgbcolor r g b = do
 -- matrix operations
 
 
-updateCTM :: Monad m => (CTM.PsMatrix -> CTM.PsMatrix) -> PsT m ()
+updateCTM :: (CTM.PsMatrix -> CTM.PsMatrix) -> WumpusM ()
 updateCTM fn = getCTM >>= \ctm -> sets_ (\s -> s {cTM = fn ctm} )
 
 -- emit the postscript and shadow the matrix transformation
 
-translate :: Monad m => Double -> Double -> PsT m ()
+translate :: Double -> Double -> WumpusM ()
 translate tx ty = do
     command2 "translate" (show tx) (show ty)
     updateCTM $ \ctm -> CTM.translate tx ty ctm
 
 
-scale :: Monad m => Double -> Double -> PsT m ()
+scale :: Double -> Double -> WumpusM ()
 scale sx sy = do
     command2 "scale" (show sx) (show sy)
     updateCTM $ \ctm -> CTM.scale sx sy ctm
          
 
-rotate :: Monad m => Double -> PsT m ()
+rotate :: Double -> WumpusM ()
 rotate ang = do
     command1 "rotate" (show ang)
     updateCTM $ \ctm -> CTM.rotate ang ctm
 
-concat :: Monad m => CTM.PsMatrix -> PsT m ()
+concat :: CTM.PsMatrix -> WumpusM ()
 concat matrix = do 
     command1 "concat" (CTM.printmatrix matrix)
     updateCTM $ \ctm -> ctm `CTM.multiply` matrix
@@ -268,7 +269,7 @@ concat matrix = do
 
 
 
-newpath :: Monad m => PsT m ()
+newpath :: WumpusM ()
 newpath = command0 "newpath"
 
 -- There is no equivalent to PostScript's @currentpoint@ command. 
@@ -278,47 +279,47 @@ newpath = command0 "newpath"
 -- In PostScript the coercion from int to float is apparently 
 -- quite expensive.
 
-moveto :: Monad m => Double -> Double -> PsT m ()
+moveto :: Double -> Double -> WumpusM ()
 moveto x y = command2 "moveto" (show x) (show y)
 
-rmoveto :: Monad m => Double -> Double -> PsT m ()
+rmoveto :: Double -> Double -> WumpusM ()
 rmoveto x y = command2 "rmoveto" (show x) (show y)
 
 
-lineto :: Monad m => Double -> Double -> PsT m ()
+lineto :: Double -> Double -> WumpusM ()
 lineto x y = command2 "lineto" (show x) (show y)
 
-rlineto :: Monad m => Double -> Double -> PsT m ()
+rlineto :: Double -> Double -> WumpusM ()
 rlineto x y = command2 "rlineto" (show x) (show y)
 
 
-arc :: Monad m => Double -> Double -> Double -> Double -> Double -> PsT m ()
+arc :: Double -> Double -> Double -> Double -> Double -> WumpusM ()
 arc x y r ang1 ang2 = 
     command5 "arc" (show x) (show y) (show r) (show ang1) (show ang2)
 
-arcn :: Monad m => Double -> Double -> Double -> Double -> Double -> PsT m ()
+arcn :: Double -> Double -> Double -> Double -> Double -> WumpusM ()
 arcn x y r ang1 ang2 = 
     command5 "arcn" (show x) (show y) (show r) (show ang1) (show ang2)
 
 
 
 
-closepath :: Monad m => PsT m ()
+closepath :: WumpusM ()
 closepath = command0 "closepath" 
 
-clip :: Monad m => PsT m ()
+clip :: WumpusM ()
 clip = command0 "clip" 
 
 --------------------------------------------------------------------------------
 --  painting operators
 
 
-erasepage :: Monad m => PsT m () 
+erasepage :: WumpusM () 
 erasepage = command0 "erasepage"
 
-fill :: Monad m => PsT m ()
+fill :: WumpusM ()
 fill = command0 "fill"
 
-stroke :: Monad m => PsT m ()
+stroke :: WumpusM ()
 stroke = command0 "stroke"
 

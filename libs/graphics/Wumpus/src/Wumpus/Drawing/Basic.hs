@@ -32,21 +32,26 @@ import Prelude hiding ( concat )
 type RgbColour = Colour3
 type Point = DPoint2
 
-strokePathSkel :: Monad m => PsT m a -> PsT m a
+type Radius = Double
+type Origin = Point
+
+
+
+strokePathSkel :: WumpusM a -> WumpusM a
 strokePathSkel m = saveExecRestore $ do
   newpath
   a <- m
   stroke
   return a
 
-fillPathSkel :: Monad m => PsT m a -> PsT m a
+fillPathSkel :: WumpusM a -> WumpusM a
 fillPathSkel m = saveExecRestore $ do
   newpath
   a <- m
   fill
   return a
 
-closeStrokePathSkel :: Monad m => PsT m a -> PsT m a
+closeStrokePathSkel :: WumpusM a -> WumpusM a
 closeStrokePathSkel m = saveExecRestore $ do
   newpath
   a <- m
@@ -54,7 +59,7 @@ closeStrokePathSkel m = saveExecRestore $ do
   stroke
   return a
 
-closeFillPathSkel :: Monad m => PsT m a -> PsT m a
+closeFillPathSkel :: WumpusM a -> WumpusM a
 closeFillPathSkel m = saveExecRestore $ do
   newpath
   a <- m
@@ -62,23 +67,25 @@ closeFillPathSkel m = saveExecRestore $ do
   fill
   return a
 
-type Line = (Point,Point)
+-- really a line segment...
+data Line = Line Point Point 
+  deriving (Eq,Show)
 
 line :: (Double,Double) -> (Double,Double) -> Line
-line (x1,y1) (x2,y2) = (P2 x1 y1, P2 x2 y2) 
+line (x1,y1) (x2,y2) = Line (P2 x1 y1) (P2 x2 y2) 
 
 drawLine :: Line -> WumpusM ()
-drawLine (P2 x1 y1, P2 x2 y2) = strokePathSkel $ do 
-  moveto x1 y1
-  lineto x2 y2
+drawLine (Line (P2 x1 y1) (P2 x2 y2)) = strokePathSkel $ do 
+    moveto x1 y1
+    lineto x2 y2
 
-polygon :: Monad m => [(Double,Double)] -> PsT m ()
+polygon :: [(Double,Double)] -> WumpusM ()
 polygon []         = return ()
 polygon ((x,y):ps) = closeStrokePathSkel $ do 
-   moveto x y
-   mapM_ (uncurry lineto) ps 
+    moveto x y
+    mapM_ (uncurry lineto) ps 
 
-squarepath :: Monad m => (Double,Double) -> (Double,Double) -> PsT m ()
+squarepath :: (Double,Double) -> (Double,Double) -> WumpusM ()
 squarepath (x1,y1) (x2,y2) = do 
   moveto x1 y1
   lineto x1 y2
@@ -86,48 +93,54 @@ squarepath (x1,y1) (x2,y2) = do
   lineto x2 y1
   closepath
 
-unitSquare :: Point -> Polygon
-unitSquare p = [p, p .+^ (V2 0 1), p .+^ (V2 1 1), p .+^ (V2 1 0)] 
+-- should this generate a Polygon or its path?
+-- unitSquare :: Point -> Polygon
+unitSquare :: Point -> [Point]
+unitSquare p = usqr where 
+    usqr = [p, p .+^ (V2 0 1), p .+^ (V2 1 1), p .+^ (V2 1 0)]
 
-type Polygon = [Point]
+data Polygon = Polygon [Point] PolygonEnv
+  deriving (Eq,Show)
 
 
 -- drawing a two colour polygon (path one colour, fill another)
 -- uses the trick from Bill Casselman MI section 1.8
 
-drawPolygon :: PolygonEnv -> [DPoint2] -> WumpusM ()
-drawPolygon _   []            = return ()
-drawPolygon env ((P2 x y):ps) =  saveExecRestore $ do 
-   case env of 
-     PolygonEnv (Just fEnv) (Just sEnv) -> do 
-         polygonPath
-         gsave
-         setRgbColour $ _fillColour fEnv
-         fill
-         grestore
-         setRgbColour $ _lineColour sEnv
-         setlinewidth $ _lineWidth sEnv
-         stroke
+drawPolygon :: Polygon -> WumpusM ()
+drawPolygon (Polygon []            _  ) = return ()
+drawPolygon (Polygon ((P2 x y):ps) env) = saveExecRestore $ do 
+    case env of
+      PolygonEnv (Just fEnv) (Just sEnv) ->
+        do { polygonPath
+           ; gsave
+           ; setRgbColour $ _fillColour fEnv
+           ; fill
+           ; grestore
+           ; setRgbColour $ _lineColour sEnv
+           ; setlinewidth $ _lineWidth sEnv
+           ; stroke
+           }
          
-     PolygonEnv (Just fEnv) _           -> do 
-         polygonPath
-         setRgbColour $ _fillColour fEnv
-         fill
-     PolygonEnv Nothing     (Just sEnv) -> do
-         polygonPath
-         setRgbColour $ _lineColour sEnv
-         setlinewidth $ _lineWidth sEnv
-         stroke
-
-     -- default is a stroked path
-     _                                  -> polygonPath >> stroke    
+      PolygonEnv (Just fEnv) _           ->
+        do { polygonPath
+           ; setRgbColour $ _fillColour fEnv
+           ; fill
+           }
+      PolygonEnv Nothing     (Just sEnv) ->
+        do { polygonPath
+           ; setRgbColour $ _lineColour sEnv
+           ; setlinewidth $ _lineWidth sEnv
+           ; stroke
+           }
+      -- default is a stroked path
+      _                                  -> do { polygonPath; stroke }
        
   where
     polygonPath = do 
-      newpath
-      moveto x y
-      mapM_ (\(P2 a b) -> lineto a b) ps 
-      closepath
+        newpath
+        moveto x y
+        mapM_ (\(P2 a b) -> lineto a b) ps 
+        closepath
 
 setRgbColour :: RgbColour -> WumpusM ()
 setRgbColour (V3 r g b) = setrgbcolor r g b
@@ -172,6 +185,8 @@ instance (Env e, FillColour e) => FillColour (Maybe e) where
 instance FillColour PolygonEnv where
   fillColour c (PolygonEnv f s) = PolygonEnv (fillColour c f) s
 
+instance FillColour Polygon where
+  fillColour c (Polygon ps e) = Polygon ps (fillColour c e)
 
 class LineWidth env where
   lineWidth :: Double -> env -> env 
@@ -202,25 +217,23 @@ instance LineColour PolygonEnv where
 
 
 diamond :: (Double,Double) -> (Double,Double) -> Polygon
-diamond (x1,y1) (w,h) = map (trans1.scale1.rot1) xs where
-  xs     = unitSquare $ P2 0 0
-  rot1   = vecMult $ rotationMatrix (pi/4)
-  scale1 = vecMult $ scalingMatrix w h
-  trans1 = vecMult $ translationMatrix x1 y1
+diamond (x1,y1) (w,h) = Polygon xs envId 
+  where
+    xs     = map (trans1.scale1.rot1) $ unitSquare $ P2 0 0
+    rot1   = vecMult $ rotationMatrix (pi/4)
+    scale1 = vecMult $ scalingMatrix w h
+    trans1 = vecMult $ translationMatrix x1 y1
 
 --------------------------------------------------------------------------------
 -- arcs and ellipses
 
-type Radius = Double
-type Origin = Point
-
-type Circle = (Origin,Radius)
+data Circle = Circle Origin Radius Stroke
 
 circle :: (Double,Double) -> Double -> Circle
-circle (x,y) r = (P2 x y, r)
+circle (x,y) r  = Circle (P2 x y) r envId
 
 drawCircle  :: Circle -> WumpusM ()
-drawCircle (P2 x y, r) = closeStrokePathSkel $ 
+drawCircle (Circle (P2 x y) r env) = closeStrokePathSkel $ 
   arc x y r 0 360 
 
 data Disk = Disk Origin Radius Fill
@@ -238,12 +251,12 @@ drawDisk (Disk (P2 x y) r (Fill c)) = closeFillPathSkel $ do
   arc x y r 0 360
 
 
-wedge :: Monad m => (Double,Double) -> Double -> Double -> Double -> PsT m ()
+wedge :: (Double,Double) -> Double -> Double -> Double -> WumpusM ()
 wedge (x,y) r ang1 ang2 =  closeStrokePathSkel $ do
   moveto x y
   arc x y r ang1 ang2
  
-ellipse :: Monad m => (Double,Double) -> (Double,Double) -> PsT m ()
+ellipse :: (Double,Double) -> (Double,Double) -> WumpusM ()
 ellipse (x,y) (rh,rv) = saveExecRestore $ do 
   scale 1 (rv/rh)
   newpath
@@ -252,8 +265,7 @@ ellipse (x,y) (rh,rv) = saveExecRestore $ do
   stroke
 
 
-ellipticarc :: Monad m 
-            => (Double,Double) -> (Double,Double) -> Double -> Double -> PsT m ()
+ellipticarc :: (Double,Double) -> (Double,Double) -> Double -> Double -> WumpusM ()
 ellipticarc (x,y) (rh,rv) ang1 ang2 = saveExecRestore $ do 
   scale 1 (rv/rh)
   newpath
@@ -266,8 +278,8 @@ ellipticarc (x,y) (rh,rv) ang1 ang2 = saveExecRestore $ do
 
 plusDot :: Point -> WumpusM ()
 plusDot (P2 x y) = do
-    drawLine (trans1 p1, trans1 p2)
-    drawLine (trans1.rot1 $ p1, trans1.rot1 $ p2)
+    drawLine $ Line (trans1 p1) (trans1 p2)
+    drawLine $ Line (trans1.rot1 $ p1) (trans1.rot1 $ p2)
   where 
     p1 = zeroV .+^ (V2 (-2) 0)
     p2 = zeroV .+^ (V2 2 0)  
