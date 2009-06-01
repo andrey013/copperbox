@@ -1,24 +1,24 @@
-diff -u ./CTBase.dcl ../../../temp/clastic/CTBase.dcl
---- ./CTBase.dcl	2009-05-31 21:59:44.875000000 +0100
-+++ ../../../temp/clastic/CTBase.dcl	2001-11-04 13:24:04.000000000 +0000
+diff -u ../../../temp/clastic/CTBase.dcl ./CTBase.dcl
+--- ../../../temp/clastic/CTBase.dcl	2001-11-04 13:24:04.000000000 +0000
++++ ./CTBase.dcl	2009-05-31 21:59:44.875000000 +0100
 @@ -48,7 +48,7 @@
  triangle :: !.(Vec2 a) !.(Vec2 a) !.(Vec2 a) -> .(!.(Vec2 !a) -> b) 
              | one,zero b & *,+,-,/,<,one,zero a
  
--colmap :: [.(a !b, !b)] .IMethod !b -> a !b | *>,<+> a & *,+,-,/,<,half,one,three,two,fromReal b
-+colmap :: [!.(a !b, !b)] .IMethod !b -> a !b | *>,<+> a & *,+,-,/,<,half,one,three,two,fromReal b
+-colmap :: [!.(a !b, !b)] .IMethod !b -> a !b | *>,<+> a & *,+,-,/,<,half,one,three,two,fromReal b
++colmap :: [.(a !b, !b)] .IMethod !b -> a !b | *>,<+> a & *,+,-,/,<,half,one,three,two,fromReal b
  
  rotated3_cs :: !a !a !.(Vec3 a) v:(!(Vec3 a)-> .b)-> u:(!.(Vec3 a)-> .b) 
     | *,+,-,~a,[u<=v]
-diff -u ./CTBase.icl ../../../temp/clastic/CTBase.icl
---- ./CTBase.icl	2009-05-31 21:59:57.796875000 +0100
-+++ ../../../temp/clastic/CTBase.icl	2001-11-05 01:15:52.000000000 +0000
+diff -u ../../../temp/clastic/CTBase.icl ./CTBase.icl
+--- ../../../temp/clastic/CTBase.icl	2001-11-05 01:15:52.000000000 +0000
++++ ./CTBase.icl	2009-05-31 21:59:57.796875000 +0100
 @@ -158,7 +158,7 @@
  
  
  // General gradient map, usually for colours
--colmap :: [.(a !b, !b)] .IMethod !b -> a !b | *>,<+> a & *,+,-,/,<,half,one,three,two,fromReal b  
-+colmap :: [!.(a !b, !b)] .IMethod !b -> a !b | *>,<+> a & *,+,-,/,<,half,one,three,two,fromReal b  
+-colmap :: [!.(a !b, !b)] .IMethod !b -> a !b | *>,<+> a & *,+,-,/,<,half,one,three,two,fromReal b  
++colmap :: [.(a !b, !b)] .IMethod !b -> a !b | *>,<+> a & *,+,-,/,<,half,one,three,two,fromReal b  
  colmap [(i0,a0):r] meth t = mkc i0 a0 r where
    mkc i0 a0 [(i1,a1):q]
      | t < a0 = i0
@@ -26,68 +26,68 @@ diff -u ./CTBase.icl ../../../temp/clastic/CTBase.icl
   # k=entier(2.0*z)
   # n=entier(2.0*y)
   # m=entier(2.0*x)
-- = toReal ((n pmod 2 + m pmod 2 + k pmod 2) rem 2)
-+ = toReal ((n pmod 2 + m pmod 2 + k pmod 2) mod 2)
+- = toReal ((n pmod 2 + m pmod 2 + k pmod 2) mod 2)
++ = toReal ((n pmod 2 + m pmod 2 + k pmod 2) rem 2)
  
  
  
-diff -u ./CTColour.dcl ../../../temp/clastic/CTColour.dcl
---- ./CTColour.dcl	2009-05-31 22:14:19.515625000 +0100
-+++ ../../../temp/clastic/CTColour.dcl	2001-11-01 23:02:16.000000000 +0000
+diff -u ../../../temp/clastic/CTColour.dcl ./CTColour.dcl
+--- ../../../temp/clastic/CTColour.dcl	2001-11-01 23:02:16.000000000 +0000
++++ ./CTColour.dcl	2009-05-31 22:14:19.515625000 +0100
 @@ -8,7 +8,7 @@
  // Basic colour routines, etc.
  
  import CTGeneral, StdEnv
--from StdPictureDef import ::Colour(RGB),::RGBColour;
-+from StdPictureDef import Colour,RGBColour,RGB
+-from StdPictureDef import Colour,RGBColour,RGB
++from StdPictureDef import ::Colour(RGB),::RGBColour;
  
  :: RealCol a = {tr::a,tg::a,tb::a}
  :: RealColour :== RealCol !Real
-diff -u ./CTColour.icl ../../../temp/clastic/CTColour.icl
---- ./CTColour.icl	2009-05-31 22:23:52.000000000 +0100
-+++ ../../../temp/clastic/CTColour.icl	2001-11-04 10:56:50.000000000 +0000
+diff -u ../../../temp/clastic/CTColour.icl ./CTColour.icl
+--- ../../../temp/clastic/CTColour.icl	2001-11-04 10:56:50.000000000 +0000
++++ ./CTColour.icl	2009-05-31 22:23:52.000000000 +0100
 @@ -8,7 +8,7 @@
  // Basic colour routines, etc.
  
  import CTGeneral,StdEnv
--from StdPictureDef import ::Colour(RGB),::RGBColour{r,g,b};
-+from StdPictureDef import Colour,RGBColour,RGB
+-from StdPictureDef import Colour,RGBColour,RGB
++from StdPictureDef import ::Colour(RGB),::RGBColour{r,g,b};
  
  
  // Real colours (or, more than reals. I keep it generic in order
-diff -u ./CTFunalg.dcl ../../../temp/clastic/CTFunalg.dcl
---- ./CTFunalg.dcl	2009-05-31 22:21:36.218750000 +0100
-+++ ../../../temp/clastic/CTFunalg.dcl	2001-09-24 00:35:30.000000000 +0100
+diff -u ../../../temp/clastic/CTFunalg.dcl ./CTFunalg.dcl
+--- ../../../temp/clastic/CTFunalg.dcl	2001-09-24 00:35:30.000000000 +0100
++++ ./CTFunalg.dcl	2009-05-31 22:21:36.218750000 +0100
 @@ -25,7 +25,7 @@
  (*->) infixr 7 :: w:(a -> b) v:(a -> c b) -> u:(a -> c b) | *> c & * b,[u<=v,u<=w]
  minf :: w:(a -> b) v:(a -> b) -> u:(a -> b) | < b, [u<=v,u<=w]
  maxf :: w:(a -> b) v:(a -> b) -> u:(a -> b) | < b, [u<=v,u<=w]
--posit :: v:(.a -> b) -> u:(.a -> b) | Ord b & zero b,[u<=v]
-+posit :: v:(.a -> b) -> u:(.a -> b) | <,zero b,[u<=v]
+-posit :: v:(.a -> b) -> u:(.a -> b) | <,zero b,[u<=v]
++posit :: v:(.a -> b) -> u:(.a -> b) | Ord b & zero b,[u<=v]
  
  translated :: !a .(!a -> .b) !a -> .b | - a
  scaled :: !a v:(a->.b) -> u:(a->.b) | /a,[u <=v]
-diff -u ./CTFunalg.icl ../../../temp/clastic/CTFunalg.icl
---- ./CTFunalg.icl	2009-05-31 22:21:04.578125000 +0100
-+++ ../../../temp/clastic/CTFunalg.icl	2001-10-28 10:28:36.000000000 +0000
+diff -u ../../../temp/clastic/CTFunalg.icl ./CTFunalg.icl
+--- ../../../temp/clastic/CTFunalg.icl	2001-10-28 10:28:36.000000000 +0000
++++ ./CTFunalg.icl	2009-05-31 22:21:04.578125000 +0100
 @@ -62,7 +62,7 @@
  minf f g = \x -> min (f x) (g x)
  maxf :: w:(a -> b) v:(a -> b) -> u:(a -> b) | < b, [u<=v,u<=w]
  maxf f g = \x -> max (f x) (g x)
--posit :: v:(.a -> b) -> u:(.a -> b) | Ord b & zero b,[u<=v]
-+posit :: v:(.a -> b) -> u:(.a -> b) | <,zero b,[u<=v]
+-posit :: v:(.a -> b) -> u:(.a -> b) | <,zero b,[u<=v]
++posit :: v:(.a -> b) -> u:(.a -> b) | Ord b & zero b,[u<=v]
  posit f = max zero o f
  
  // Transformer functionals (generic)
-diff -u ./CTGeneral.dcl ../../../temp/clastic/CTGeneral.dcl
---- ./CTGeneral.dcl	2009-05-31 22:35:36.406250000 +0100
-+++ ../../../temp/clastic/CTGeneral.dcl	2001-10-26 00:12:38.000000000 +0100
+diff -u ../../../temp/clastic/CTGeneral.dcl ./CTGeneral.dcl
+--- ../../../temp/clastic/CTGeneral.dcl	2001-10-26 00:12:38.000000000 +0100
++++ ./CTGeneral.dcl	2009-05-31 22:35:36.406250000 +0100
 @@ -92,7 +92,7 @@
  instance mod Real
  imod :: !Int !Real -> !Real
  bytes :: !Int -> !(!Int,!Int)
--digits :: !Int -> ![Int]
-+digits :: !Int -> ![!Int]
+-digits :: !Int -> ![!Int]
++digits :: !Int -> ![Int]
  getint :: !{#Char} !Int -> !Int
  
  cmask :: a .b .b -> .b | == , zero a
@@ -95,20 +95,20 @@ diff -u ./CTGeneral.dcl ../../../temp/clastic/CTGeneral.dcl
  max3 :: !a !a !a -> a | < a
  min3 :: !a !a !a -> a | < a
  minmax3 :: !a !a !a -> (a,a) | < a
--minmax :: ![a] -> (a,a) | < a
-+minmax :: ![!a] -> (a,a) | < a
+-minmax :: ![!a] -> (a,a) | < a
++minmax :: ![a] -> (a,a) | < a
  symdiff :: !a !a -> !a | -,abs a
  
  zipWith :: (.a -> .(.b -> .c)) [.a] [.b] -> [.c]
-diff -u ./CTGeneral.icl ../../../temp/clastic/CTGeneral.icl
---- ./CTGeneral.icl	2009-05-31 22:35:03.468750000 +0100
-+++ ../../../temp/clastic/CTGeneral.icl	2001-10-28 10:08:24.000000000 +0000
+diff -u ../../../temp/clastic/CTGeneral.icl ./CTGeneral.icl
+--- ../../../temp/clastic/CTGeneral.icl	2001-10-28 10:08:24.000000000 +0000
++++ ./CTGeneral.icl	2009-05-31 22:35:03.468750000 +0100
 @@ -204,7 +204,7 @@
   
  (pmod) infix 7  :: !Int !Int -> Int 
  (pmod) a b
-- # r=a rem b
-+ # r=a mod b
+- # r=a mod b
++ # r=a rem b
   | r<0 = r+b
   = r
  // Modulo in Real domain
@@ -116,16 +116,16 @@ diff -u ./CTGeneral.icl ../../../temp/clastic/CTGeneral.icl
  imod :: !Int !Real -> !Real
  imod m r
   # ir = entier r
-- # nr = ir rem m
-+ # nr = ir mod m
+- # nr = ir mod m
++ # nr = ir rem m
   = r - toReal(ir-nr)
  
  // ==============
  bytes :: !Int -> !(!Int,!Int)
--bytes n = (n rem 256,n/256)
--digits :: !Int -> ![Int]
-+bytes n = (n mod 256,n/256)
-+digits :: !Int -> ![!Int]
+-bytes n = (n mod 256,n/256)
+-digits :: !Int -> ![!Int]
++bytes n = (n rem 256,n/256)
++digits :: !Int -> ![Int]
  digits n
    # (a4,n4)=bytes n
    # (a3,n3)=bytes n4
@@ -133,20 +133,20 @@ diff -u ./CTGeneral.icl ../../../temp/clastic/CTGeneral.icl
  minmax3 x y z | x<y = (min x z,max y z)
                = (min y z,max x z)
  
--minmax :: ![a] -> (a,a) | < a
-+minmax :: ![!a] -> (a,a) | < a
+-minmax :: ![!a] -> (a,a) | < a
++minmax :: ![a] -> (a,a) | < a
  minmax [x:q] = nx x x q where
    nx n x [] = (n,x)
    nx n x [y:p] =
-diff -u ./CTRandom.icl ../../../temp/clastic/CTRandom.icl
---- ./CTRandom.icl	2009-05-31 23:12:07.765625000 +0100
-+++ ../../../temp/clastic/CTRandom.icl	2001-11-05 00:53:16.000000000 +0000
+diff -u ../../../temp/clastic/CTRandom.icl ./CTRandom.icl
+--- ../../../temp/clastic/CTRandom.icl	2001-11-05 00:53:16.000000000 +0000
++++ ./CTRandom.icl	2009-05-31 23:12:07.765625000 +0100
 @@ -82,7 +82,7 @@
    # n = 497 + (79*ix) bitxor (37*iy)
    # n = (n<<13) bitxor n
    =  (toReal (n*(n*n*599479+649657)+1376312589)/2147483648.0,
--      toReal (n*(n*n*15731+789221)+1376312589)/2147483648.0)
-+      toReal (n*(n*n*15731 +789221)+1376312589)/2147483648.0)
+-      toReal (n*(n*n*15731 +789221)+1376312589)/2147483648.0)
++      toReal (n*(n*n*15731+789221)+1376312589)/2147483648.0)
  
  rgxy :: .Int .Int a a -> a | *,+,cos,fromReal,sin a
  rgxy ix iy a b
@@ -154,10 +154,10 @@ diff -u ./CTRandom.icl ../../../temp/clastic/CTRandom.icl
    # n = 497 + (79*ix) bitxor (37*iy) bitxor (97*iz)
    # n = (n<<13) bitxor n
    # n2=n*n
--  =  (V3 (toReal (n*(n2*599479+649657)+1376312589))
--         (toReal (n*(n2*15731+789221)+1376312589))
-+  =  (V3 (toReal (n*(n2*599479   +649657)+1376312589))
-+         (toReal (n*(n2*15731    +789221)+1376312589))
+-  =  (V3 (toReal (n*(n2*599479   +649657)+1376312589))
+-         (toReal (n*(n2*15731    +789221)+1376312589))
++  =  (V3 (toReal (n*(n2*599479+649657)+1376312589))
++         (toReal (n*(n2*15731+789221)+1376312589))
           (toReal (n*(n2*6700417+18837001)+1376312589))
            >/ 2147483648.0)
  ergvecxyz :: !Int !Int !Int !(Vec3 !Real) -> Real
@@ -165,58 +165,58 @@ diff -u ./CTRandom.icl ../../../temp/clastic/CTRandom.icl
    # n = 497 + (79*ix) bitxor (113*iy)
    # n = (n<<13) bitxor n
    # n2=n*n
--  =  (V2 (toReal (n*(n2*599479+649657)+1376312589))
-+  =  (V2 (toReal (n*(n2*599479   +649657)+1376312589))
+-  =  (V2 (toReal (n*(n2*599479   +649657)+1376312589))
++  =  (V2 (toReal (n*(n2*599479+649657)+1376312589))
           (toReal (n*(n2*6700417+18837001)+1376312589))
            >/ 2147483648.0)
  
-diff -u ./CTTile.icl ../../../temp/clastic/CTTile.icl
---- ./CTTile.icl	2009-05-31 20:11:41.625000000 +0100
-+++ ../../../temp/clastic/CTTile.icl	2001-10-26 10:11:20.000000000 +0100
+diff -u ../../../temp/clastic/CTTile.icl ./CTTile.icl
+--- ../../../temp/clastic/CTTile.icl	2001-10-26 10:11:20.000000000 +0100
++++ ./CTTile.icl	2009-05-31 20:11:41.625000000 +0100
 @@ -108,9 +108,9 @@
  brickwall :: !.Real !.Real !.Real-> v:(y:(!RVec2-> .a)-> u:(x:(RVec2-> .a)-> 
               w:(!.RVec2-> .a))), [w<=x,u w<=y,u<=v]
  brickwall a b mwidth
--  # sax = a*>X2axis
--  # tax = (0.5*a)*>X2axis + b*>Y2axis
--  # bcell = mkunitcell sax tax
-+  # Sax = a*>X2axis
-+  # Tax = (0.5*a)*>X2axis + b*>Y2axis
-+  # bcell = mkunitcell Sax Tax
+-  # Sax = a*>X2axis
+-  # Tax = (0.5*a)*>X2axis + b*>Y2axis
+-  # bcell = mkunitcell Sax Tax
++  # sax = a*>X2axis
++  # tax = (0.5*a)*>X2axis + b*>Y2axis
++  # bcell = mkunitcell sax tax
    # co = bcell.st_dot
    # nrs = bcell.norms2
    # sp0 = V2 (0.5-0.5*co/nrs) 0.5 
-diff -u ./CTUtils.dcl ../../../temp/clastic/CTUtils.dcl
---- ./CTUtils.dcl	2009-05-31 21:54:03.234375000 +0100
-+++ ../../../temp/clastic/CTUtils.dcl	2001-09-22 20:14:48.000000000 +0100
+diff -u ../../../temp/clastic/CTUtils.dcl ./CTUtils.dcl
+--- ../../../temp/clastic/CTUtils.dcl	2001-09-22 20:14:48.000000000 +0100
++++ ./CTUtils.dcl	2009-05-31 21:54:03.234375000 +0100
 @@ -9,12 +9,12 @@
  import StdEnv, StdPicture, CTView
  
  :: NTree a = NVoid | NNd a (NTree a) (NTree a)
--treesort :: ![a] -> ![a] | < a
--quicksort :: ![a] -> ![a] | < a
-+treesort :: ![!a] -> ![!a] | < a
-+quicksort :: ![!a] -> ![!a] | < a
+-treesort :: ![!a] -> ![!a] | < a
+-quicksort :: ![!a] -> ![!a] | < a
++treesort :: ![a] -> ![a] | < a
++quicksort :: ![a] -> ![a] | < a
  
  normallist :: a a .[a] -> .[a] | *,+,-,/,< a
--ufold :: (!a -> .(*b -> *b)) *b ![a] -> *b
--plotline :: .Viewport [.Vec2 Real] -> .(*Picture -> *Picture)
--plotfun :: .Viewport .Int .Int (RealCol .Real) (Real -> .Real) *Picture -> *Picture
--plotfuns :: .Viewport ![(.Int,.Int,RealCol .Real,Real -> .Real)] *Picture -> *Picture
-+ufold :: (!a -> .(*b -> *b)) *b ![!a] -> *b
-+plotline :: .Viewport [.Vec2 Real] -> .(*Picture -> .Picture)
-+plotfun :: .Viewport .Int .Int (RealCol .Real) (Real -> .Real) *Picture -> .Picture
-+plotfuns :: .Viewport ![(.Int,.Int,RealCol .Real,Real -> .Real)] *Picture -> .Picture
+-ufold :: (!a -> .(*b -> *b)) *b ![!a] -> *b
+-plotline :: .Viewport [.Vec2 Real] -> .(*Picture -> .Picture)
+-plotfun :: .Viewport .Int .Int (RealCol .Real) (Real -> .Real) *Picture -> .Picture
+-plotfuns :: .Viewport ![(.Int,.Int,RealCol .Real,Real -> .Real)] *Picture -> .Picture
++ufold :: (!a -> .(*b -> *b)) *b ![a] -> *b
++plotline :: .Viewport [.Vec2 Real] -> .(*Picture -> *Picture)
++plotfun :: .Viewport .Int .Int (RealCol .Real) (Real -> .Real) *Picture -> *Picture
++plotfuns :: .Viewport ![(.Int,.Int,RealCol .Real,Real -> .Real)] *Picture -> *Picture
  
-diff -u ./CTUtils.icl ../../../temp/clastic/CTUtils.icl
---- ./CTUtils.icl	2009-05-31 21:54:10.968750000 +0100
-+++ ../../../temp/clastic/CTUtils.icl	2001-09-22 20:14:28.000000000 +0100
+diff -u ../../../temp/clastic/CTUtils.icl ./CTUtils.icl
+--- ../../../temp/clastic/CTUtils.icl	2001-09-22 20:14:28.000000000 +0100
++++ ./CTUtils.icl	2009-05-31 21:54:10.968750000 +0100
 @@ -14,7 +14,7 @@
  // Sorting
  
  :: NTree a = NVoid | NNd a (NTree a) (NTree a)
--treesort :: ![a] -> ![a] | < a
-+treesort :: ![!a] -> ![!a] | < a
+-treesort :: ![!a] -> ![!a] | < a
++treesort :: ![a] -> ![a] | < a
  treesort [] = []
  treesort l = flat (build l NVoid) [] where
    flat NVoid t = t
@@ -224,8 +224,8 @@ diff -u ./CTUtils.icl ../../../temp/clastic/CTUtils.icl
    inst x (NNd y lft rgt) | x<=y = NNd y (inst x lft) rgt
                           = NNd y lft (inst x rgt)
  
--quicksort :: ![a] -> ![a] | < a
-+quicksort :: ![!a] -> ![!a] | < a
+-quicksort :: ![!a] -> ![!a] | < a
++quicksort :: ![a] -> ![a] | < a
  quicksort l = qsort l [] where
    qsort :: ![a] !*[a] -> !*[a] | < a
    qsort [] t = t
@@ -233,22 +233,22 @@ diff -u ./CTUtils.icl ../../../temp/clastic/CTUtils.icl
    # (mn,mx) = minmax lst
    # rng = (fmax - fmin)/(mx-mn)
    = map (\x->(x-mn)*rng + fmin) lst
--ufold :: (!a -> .(*b -> *b)) *b ![a] -> *b
-+ufold :: (!a -> .(*b -> *b)) *b ![!a] -> *b
+-ufold :: (!a -> .(*b -> *b)) *b ![!a] -> *b
++ufold :: (!a -> .(*b -> *b)) *b ![a] -> *b
  ufold op ubuf [x:q]
    # ubuf = op x ubuf
    = ufold op ubuf q
  ufold _ ubuf [] = ubuf
  
--plotline :: .Viewport [.Vec2 Real] -> .(*Picture -> *Picture)
-+plotline :: .Viewport [.Vec2 Real] -> .(*Picture -> .Picture)
+-plotline :: .Viewport [.Vec2 Real] -> .(*Picture -> .Picture)
++plotline :: .Viewport [.Vec2 Real] -> .(*Picture -> *Picture)
  plotline vport l = 
    plotl (map (vport.vpix) l) 
    where
      plotl [a:q] pic
        = ufold (\x p -> drawLineTo x p) (setPenPos a pic) q
--plotfun :: .Viewport .Int .Int (RealCol .Real) (Real -> .Real) *Picture -> *Picture
-+plotfun :: .Viewport .Int .Int (RealCol .Real) (Real -> .Real) *Picture -> .Picture
+-plotfun :: .Viewport .Int .Int (RealCol .Real) (Real -> .Real) *Picture -> .Picture
++plotfun :: .Viewport .Int .Int (RealCol .Real) (Real -> .Real) *Picture -> *Picture
  plotfun vport np wd colr f pic
   # pic = setPenColour (convertCol colr) (setPenSize wd pic)
   # xmin = vport.xmin
@@ -256,152 +256,152 @@ diff -u ./CTUtils.icl ../../../temp/clastic/CTUtils.icl
   # xl = [xmin,xmin+dlt .. xmax]
   = plotline vport (map (\x ->(V2 x (f x))) xl) pic
  
--plotfuns :: .Viewport ![(.Int,.Int,RealCol .Real,Real -> .Real)] *Picture -> *Picture
-+plotfuns :: .Viewport ![(.Int,.Int,RealCol .Real,Real -> .Real)] *Picture -> .Picture
+-plotfuns :: .Viewport ![(.Int,.Int,RealCol .Real,Real -> .Real)] *Picture -> .Picture
++plotfuns :: .Viewport ![(.Int,.Int,RealCol .Real,Real -> .Real)] *Picture -> *Picture
  plotfuns vport flist pic
   = ufold (\(np,wd,col,f) p -> plotfun vport np wd col f p)
      pic flist
-diff -u ./CTVector.dcl ../../../temp/clastic/CTVector.dcl
---- ./CTVector.dcl	2009-06-01 12:08:03.187500000 +0100
-+++ ../../../temp/clastic/CTVector.dcl	2001-10-26 12:38:40.000000000 +0100
-@@ -43,8 +43,7 @@
+diff -u ../../../temp/clastic/CTVector.dcl ./CTVector.dcl
+--- ../../../temp/clastic/CTVector.dcl	2001-10-26 12:38:40.000000000 +0100
++++ ./CTVector.dcl	2009-06-01 12:08:03.187500000 +0100
+@@ -43,7 +43,8 @@
  tospher :: !.(Vec3 !a) -> Vec3 a | *,+,/,<,==,acos,atan,fromReal,sqrt,zero a
  fromspher :: !.(Vec3 !a) -> Vec3 a | *,==,cos,sin,zero a
  rot3_cs :: !a !a !.(Vec3 !a) !.(Vec3 !a) -> Vec3 a | *,+,- a
--// rot3 :: !a -> .(!.(Vec3 !a) -> .(!.(Vec3 !a) -> Vec3 a)) | *,+,-,cos,sin a
--rot3 :: !a -> (.(Vec3 a) -> (.(Vec3 a) -> Vec3 a)) | * a & + a & - a & cos a & sin a
-+rot3 :: !a -> .(!.(Vec3 !a) -> .(!.(Vec3 !a) -> Vec3 a)) | *,+,-,cos,sin a
+-rot3 :: !a -> .(!.(Vec3 !a) -> .(!.(Vec3 !a) -> Vec3 a)) | *,+,-,cos,sin a
++// rot3 :: !a -> .(!.(Vec3 !a) -> .(!.(Vec3 !a) -> Vec3 a)) | *,+,-,cos,sin a
++rot3 :: !a -> (.(Vec3 a) -> (.(Vec3 a) -> Vec3 a)) | * a & + a & - a & cos a & sin a
  findrot :: !.(Vec3 a) !.(Vec3 a)-> .(!a,!a,!(Vec3 a)) | *,+,-,/,sqrt a
  
  
-diff -u ./CTVector.icl ../../../temp/clastic/CTVector.icl
---- ./CTVector.icl	2009-06-01 12:07:45.968750000 +0100
-+++ ../../../temp/clastic/CTVector.icl	2001-11-05 02:01:38.000000000 +0000
-@@ -99,8 +99,7 @@
+diff -u ../../../temp/clastic/CTVector.icl ./CTVector.icl
+--- ../../../temp/clastic/CTVector.icl	2001-11-05 02:01:38.000000000 +0000
++++ ./CTVector.icl	2009-06-01 12:07:45.968750000 +0100
+@@ -99,7 +99,8 @@
    # v3 = n /\ vperp
    = vpar + co*>vperp + si*>v3
  
--//rot3 :: !a -> .(!.(Vec3 !a) -> .(!.(Vec3 !a) -> Vec3 a)) | *,+,-,cos,sin a
--rot3 :: !a -> (.(Vec3 a) -> (.(Vec3 a) -> Vec3 a)) | * a & + a & - a & cos a & sin a
-+rot3 :: !a -> .(!.(Vec3 !a) -> .(!.(Vec3 !a) -> Vec3 a)) | *,+,-,cos,sin a
+-rot3 :: !a -> .(!.(Vec3 !a) -> .(!.(Vec3 !a) -> Vec3 a)) | *,+,-,cos,sin a
++//rot3 :: !a -> .(!.(Vec3 !a) -> .(!.(Vec3 !a) -> Vec3 a)) | *,+,-,cos,sin a
++rot3 :: !a -> (.(Vec3 a) -> (.(Vec3 a) -> Vec3 a)) | * a & + a & - a & cos a & sin a
  rot3 ang = rot3_cs co si
  where
   co=cos ang
-diff -u ./CTView.icl ../../../temp/clastic/CTView.icl
---- ./CTView.icl	2009-05-31 22:30:43.171875000 +0100
-+++ ../../../temp/clastic/CTView.icl	2001-10-28 09:32:02.000000000 +0000
-@@ -128,10 +128,9 @@
+diff -u ../../../temp/clastic/CTView.icl ./CTView.icl
+--- ../../../temp/clastic/CTView.icl	2001-10-28 09:32:02.000000000 +0000
++++ ./CTView.icl	2009-05-31 22:30:43.171875000 +0100
+@@ -128,9 +128,10 @@
    h=:vport.height
    w=:vport.width
    w3=:3*w
--  pad =: w rem 4
-+  pad =: w mod 4
+-  pad =: w mod 4
++  pad =: w rem 4
    isize =: (w3+pad)*h
    fsize =: isize+54
--  head :: ![Int]
++  head :: ![Int]
    head =: [66,77]++digits fsize++zer4++[54,0,0,0,40,0,0,0]++digits w++digits h++
     [1,0,24,0]++zer4++digits isize ++ [35,11,0,0,35,11,0,0]++zer4++zer4
    a :: *{#Char}
-@@ -164,7 +163,7 @@
+@@ -163,7 +164,7 @@
   w=:getint bm 18
   h=:getint bm 22
   w3=:3*w
-- pad =: w rem 4
-+ pad =: w mod 4
+- pad =: w mod 4
++ pad =: w rem 4
   wid =: w3+pad
   cr c = fromChar c / 256.0
   gp i j
-diff -u ./CTWindow.dcl ../../../temp/clastic/CTWindow.dcl
---- ./CTWindow.dcl	2009-06-01 12:03:51.296875000 +0100
-+++ ../../../temp/clastic/CTWindow.dcl	2001-10-10 17:23:22.000000000 +0100
+diff -u ../../../temp/clastic/CTWindow.dcl ./CTWindow.dcl
+--- ../../../temp/clastic/CTWindow.dcl	2001-10-10 17:23:22.000000000 +0100
++++ ./CTWindow.dcl	2009-06-01 12:03:51.296875000 +0100
 @@ -13,10 +13,10 @@
  import Notice
  import CTMapping
  
--mkportwin :: .{#Char} .Viewport (*Picture -> *Picture) -> Window .NilLS .a *(PSt .b)
-+mkportwin :: .{#Char} .Viewport (.Picture -> *Picture) -> Window .NilLS .a *(PSt .b)
+-mkportwin :: .{#Char} .Viewport (.Picture -> *Picture) -> Window .NilLS .a *(PSt .b)
++mkportwin :: .{#Char} .Viewport (*Picture -> *Picture) -> Window .NilLS .a *(PSt .b)
  //mainwindow :: (a .Void *(PSt .Void)) *World -> .World | Windows a
--mainwindow :: (Window .NilLS Void *(PSt .Void)) *World -> *World
--drawDib :: !{#.Char} !.Int !.Int !*Picture -> *Picture
-+mainwindow :: (Window NilLS .Void *(PSt .Void)) *World -> *World
-+drawDib :: !{#.Char} !.Int !.Int !*Picture -> .Picture
+-mainwindow :: (Window NilLS .Void *(PSt .Void)) *World -> *World
+-drawDib :: !{#.Char} !.Int !.Int !*Picture -> .Picture
++mainwindow :: (Window .NilLS Void *(PSt .Void)) *World -> *World
++drawDib :: !{#.Char} !.Int !.Int !*Picture -> *Picture
  txwindow :: {#.Char} !Int !Int !Real !Real !Real !Real (!(Vec2 !Real)->RealCol .Real)->.(*World -> .World)
  texturwin :: {#.Char} .Viewport ((Vec2 !Real) -> RealCol .Real) -> .(*World -> .World)
  
-@@ -25,46 +25,41 @@
+@@ -25,41 +25,46 @@
  notixt :: [.{#Char}] .{#Char} !*(.a,*PSt .b) -> *(.a,*PSt .b)
  about :: .(*(.a,*PSt .b) -> *(.a,*PSt .b))
  nope :: .(*(.a,*PSt .b) -> *(.a,*PSt .b))
--getMstate :: Id !*(.a,!*PSt .b) -> *(Bool,*(.a,*PSt .b))
--getSqstate :: Id !*(.a,*PSt .b) -> *(Bool,*(.a,*PSt .b))
--togglesq :: !Id [Id] !*(.a,!*PSt .b) -> *(.a,*PSt .b)
-+getMstate :: .Id !*(.a,!*PSt .b) -> *(Bool,*(.a,*PSt .b))
-+getSqstate :: .Id !*(.a,*PSt .b) -> *(.Bool,*(.a,*PSt .b))
-+togglesq :: !.Id [.Id] !*(.a,!*PSt .b) -> *(.a,*PSt .b)
+-getMstate :: .Id !*(.a,!*PSt .b) -> *(Bool,*(.a,*PSt .b))
+-getSqstate :: .Id !*(.a,*PSt .b) -> *(.Bool,*(.a,*PSt .b))
+-togglesq :: !.Id [.Id] !*(.a,!*PSt .b) -> *(.a,*PSt .b)
++getMstate :: Id !*(.a,!*PSt .b) -> *(Bool,*(.a,*PSt .b))
++getSqstate :: Id !*(.a,*PSt .b) -> *(Bool,*(.a,*PSt .b))
++togglesq :: !Id [Id] !*(.a,!*PSt .b) -> *(.a,*PSt .b)
  
  
  :: Txobj = {port::Viewport,bmap::{#Char}}
--//showBitmap :: !*(.a,!*PSt u:(.Int,w:[y:(.Id,u1:Txobj)])) -> *(.a,*PSt v:(Int,x:[z:(Id,u2:Txobj)])),[u1<=u2,y<=z,w<=x,u<=v]
--showBitmap :: !*(.a,!*PSt (Int,[(Id,Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
--savbitmap :: !*(.a,!*PSt (b,[(Id,Txobj)])) -> *(.a,*PSt (b,[(Id,Txobj)]))
-+showBitmap :: !*(.a,!*PSt u:(.Int,w:[y:(.Id,u1:Txobj)])) -> *(.a,*PSt v:(Int,x:[z:(Id,u2:Txobj)])),[u1<=u2,y<=z,w<=x,u<=v]
-+savbitmap :: !*(.a,!*PSt (b,[(.Id,.Txobj)])) -> *(.a,*PSt (b,[(Id,Txobj)]))
+-showBitmap :: !*(.a,!*PSt u:(.Int,w:[y:(.Id,u1:Txobj)])) -> *(.a,*PSt v:(Int,x:[z:(Id,u2:Txobj)])),[u1<=u2,y<=z,w<=x,u<=v]
+-savbitmap :: !*(.a,!*PSt (b,[(.Id,.Txobj)])) -> *(.a,*PSt (b,[(Id,Txobj)]))
++//showBitmap :: !*(.a,!*PSt u:(.Int,w:[y:(.Id,u1:Txobj)])) -> *(.a,*PSt v:(Int,x:[z:(Id,u2:Txobj)])),[u1<=u2,y<=z,w<=x,u<=v]
++showBitmap :: !*(.a,!*PSt (Int,[(Id,Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
++savbitmap :: !*(.a,!*PSt (b,[(Id,Txobj)])) -> *(.a,*PSt (b,[(Id,Txobj)]))
  findact :: a [(a,.Txobj)] -> {#Char} | == a
--//addwin :: .a .Viewport {#.Char} !*(PSt u:(.Int,w:[y:(.a,u1:Txobj)])) -> *PSt v:(Int,x:[z:(.a,u2:Txobj)]),[u1<=u2,y<=z,w<=x,u<=v] 
--addwin :: a .Viewport {#.Char} !*(PSt (Int,[(a,Txobj)])) -> *PSt (Int,[(a,Txobj)])
--close :: !*(PSt (Int,[(Id,a)])) -> *PSt (Int,[(Id,a)])
--//removeact :: a u:[w:(a,.b)] -> (.Bool,v:[x:(a,.b)]) | == a, [w<=x,u<=v]
--removeact :: a [(a,b)] -> (Bool,[(a,b)]) | == a
-+addwin :: .a .Viewport {#.Char} !*(PSt u:(.Int,w:[y:(.a,u1:Txobj)])) -> *PSt v:(Int,x:[z:(.a,u2:Txobj)]),[u1<=u2,y<=z,w<=x,u<=v] 
-+close :: !*(PSt (.Int,[(.Id,a)])) -> *PSt (Int,[(Id,a)])
-+removeact :: a u:[w:(a,.b)] -> (.Bool,v:[x:(a,.b)]) | == a, [w<=x,u<=v]
+-addwin :: .a .Viewport {#.Char} !*(PSt u:(.Int,w:[y:(.a,u1:Txobj)])) -> *PSt v:(Int,x:[z:(.a,u2:Txobj)]),[u1<=u2,y<=z,w<=x,u<=v] 
+-close :: !*(PSt (.Int,[(.Id,a)])) -> *PSt (Int,[(Id,a)])
+-removeact :: a u:[w:(a,.b)] -> (.Bool,v:[x:(a,.b)]) | == a, [w<=x,u<=v]
++//addwin :: .a .Viewport {#.Char} !*(PSt u:(.Int,w:[y:(.a,u1:Txobj)])) -> *PSt v:(Int,x:[z:(.a,u2:Txobj)]),[u1<=u2,y<=z,w<=x,u<=v] 
++addwin :: a .Viewport {#.Char} !*(PSt (Int,[(a,Txobj)])) -> *PSt (Int,[(a,Txobj)])
++close :: !*(PSt (Int,[(Id,a)])) -> *PSt (Int,[(Id,a)])
++//removeact :: a u:[w:(a,.b)] -> (.Bool,v:[x:(a,.b)]) | == a, [w<=x,u<=v]
++removeact :: a [(a,b)] -> (Bool,[(a,b)]) | == a
  
  fchoices :: ![(.a,.b)] -> [(.a,.(.c -> .c))]
--inpline :: .String Id a Id b -> LayoutControl (:+: .TextControl (:+: .EditControl .EditControl)) .c .d | toString a & toString b
--inpline3 :: .String Id a Id b Id c -> LayoutControl (:+: .TextControl (:+: .EditControl (:+: .EditControl .EditControl))) .d .e | toString a & toString b & toString c
-+inpline :: .String .Id a .Id b -> LayoutControl (:+: .TextControl (:+: .EditControl .EditControl)) .c .d | toString a & toString b
-+inpline3 :: .String .Id a .Id b .Id c -> LayoutControl (:+: .TextControl (:+: .EditControl (:+: .EditControl .EditControl))) .d .e | toString a & toString b & toString c
+-inpline :: .String .Id a .Id b -> LayoutControl (:+: .TextControl (:+: .EditControl .EditControl)) .c .d | toString a & toString b
+-inpline3 :: .String .Id a .Id b .Id c -> LayoutControl (:+: .TextControl (:+: .EditControl (:+: .EditControl .EditControl))) .d .e | toString a & toString b & toString c
++inpline :: .String Id a Id b -> LayoutControl (:+: .TextControl (:+: .EditControl .EditControl)) .c .d | toString a & toString b
++inpline3 :: .String Id a Id b Id c -> LayoutControl (:+: .TextControl (:+: .EditControl (:+: .EditControl .EditControl))) .d .e | toString a & toString b & toString c
  
  quit :== closeProcess
--togmark :: !.Bool Id !*(PSt .a) -> *PSt .a
-+togmark :: !.Bool .Id !*(PSt .a) -> *PSt .a
+-togmark :: !.Bool .Id !*(PSt .a) -> *PSt .a
++togmark :: !.Bool Id !*(PSt .a) -> *PSt .a
  stbuts :: .(.a -> .(.b -> .(.c -> *(.d,*PSt .e) -> *(.d,*PSt .e)))) .a .b .c -> LayoutControl (:+: .ButtonControl .ButtonControl) .d *(PSt .e)
  isT2 :: !.(Texture a) -> .Bool
  isT3 :: !.(Texture a) -> .Bool
  
--//createdbwin :: .Viewport .{#Char} ((Vec2 !Real) -> RealCol !.Real) !*(.a,*PSt (.Int,[(.Id,.Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
--createdbwin :: .Viewport .{#Char} ((Vec2 !Real) -> RealCol !.Real) !*(.a,*PSt (Int,[(Id,Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
--makeport :: ![(.{#Char},.Texture Real)] !Id ![Id] !*(Id,*PSt (Int,[(Id,Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)]))
--whichf :: ![(a,b)] !WState !Id -> (a,b)
--//v2dialog :: [(.String,.Texture Real)] .Id (.[a],.[b]) .[Id] *(.Id,*PSt (.Int,[(.Id,.Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)])) | toString a & toString b
--v2dialog :: [(.String,.Texture Real)] Id (.[a],.[b]) [Id] *(Id,*PSt (Int,[(Id,Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)])) | toString a & toString b
-+createdbwin :: .Viewport .{#Char} ((Vec2 !Real) -> RealCol !.Real) !*(.a,*PSt (.Int,[(.Id,.Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
-+makeport :: ![(.{#Char},.Texture Real)] .Id !.[Id] !*(.Id,*PSt (.Int,[(.Id,.Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)]))
-+whichf :: ![(.a,.b)] .WState .Id -> (.a,.b)
-+v2dialog :: [(.String,.Texture Real)] .Id (.[a],.[b]) .[Id] *(.Id,*PSt (.Int,[(.Id,.Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)])) | toString a & toString b
+-createdbwin :: .Viewport .{#Char} ((Vec2 !Real) -> RealCol !.Real) !*(.a,*PSt (.Int,[(.Id,.Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
+-makeport :: ![(.{#Char},.Texture Real)] .Id !.[Id] !*(.Id,*PSt (.Int,[(.Id,.Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)]))
+-whichf :: ![(.a,.b)] .WState .Id -> (.a,.b)
+-v2dialog :: [(.String,.Texture Real)] .Id (.[a],.[b]) .[Id] *(.Id,*PSt (.Int,[(.Id,.Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)])) | toString a & toString b
++//createdbwin :: .Viewport .{#Char} ((Vec2 !Real) -> RealCol !.Real) !*(.a,*PSt (.Int,[(.Id,.Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
++createdbwin :: .Viewport .{#Char} ((Vec2 !Real) -> RealCol !.Real) !*(.a,*PSt (Int,[(Id,Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
++makeport :: ![(.{#Char},.Texture Real)] !Id ![Id] !*(Id,*PSt (Int,[(Id,Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)]))
++whichf :: ![(a,b)] !WState !Id -> (a,b)
++//v2dialog :: [(.String,.Texture Real)] .Id (.[a],.[b]) .[Id] *(.Id,*PSt (.Int,[(.Id,.Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)])) | toString a & toString b
++v2dialog :: [(.String,.Texture Real)] Id (.[a],.[b]) [Id] *(Id,*PSt (Int,[(Id,Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)])) | toString a & toString b
  
  vget :: [(.a,.Maybe b)] (.c,.d) -> (.Viewscreen,(.c,.d)) | toInt , toReal b
  
  txdialog :: .(*a -> *([(.String,.Texture Real)],*World)) *a -> .World | Ids a
--initinterf :: [(.{#Char},.Texture Real)] Id [Id] [Id] !*(PSt (Int,[(Id,Txobj)])) -> *PSt (Int,[(Id,Txobj)])
--v3dialog :: [(.String,.Texture Real)] a (.[b],.[c]) [Id] *(Id,*PSt (Int,[(Id,Txobj)])) 
-+initinterf :: [(.{#Char},.Texture Real)] .Id [.Id] [.Id] !*(PSt (.Int,[(.Id,.Txobj)])) -> *PSt (Int,[(Id,Txobj)])
-+v3dialog :: [(.String,.Texture Real)] a (.[b],.[c]) .[Id] *(.Id,*PSt (.Int,[(.Id,.Txobj)])) 
+-initinterf :: [(.{#Char},.Texture Real)] .Id [.Id] [.Id] !*(PSt (.Int,[(.Id,.Txobj)])) -> *PSt (Int,[(Id,Txobj)])
+-v3dialog :: [(.String,.Texture Real)] a (.[b],.[c]) .[Id] *(.Id,*PSt (.Int,[(.Id,.Txobj)])) 
++initinterf :: [(.{#Char},.Texture Real)] Id [Id] [Id] !*(PSt (Int,[(Id,Txobj)])) -> *PSt (Int,[(Id,Txobj)])
++v3dialog :: [(.String,.Texture Real)] a (.[b],.[c]) [Id] *(Id,*PSt (Int,[(Id,Txobj)])) 
              -> *(Id,*PSt (Int,[(Id,Txobj)])) | toString b & toString c
--m3port :: ![(.{#Char},.Texture Real)] .b ![Id] !*(Id,*PSt (Int,[(Id,Txobj)])) 
-+m3port :: ![(.{#Char},.Texture Real)] .b !.[Id] !*(.Id,*PSt (.Int,[(.Id,.Txobj)])) 
+-m3port :: ![(.{#Char},.Texture Real)] .b !.[Id] !*(.Id,*PSt (.Int,[(.Id,.Txobj)])) 
++m3port :: ![(.{#Char},.Texture Real)] .b ![Id] !*(Id,*PSt (Int,[(Id,Txobj)])) 
            -> *(Id,*PSt (Int,[(Id,Txobj)]))
  
  
-diff -u ./CTWindow.icl ../../../temp/clastic/CTWindow.icl
---- ./CTWindow.icl	2009-06-01 12:03:36.343750000 +0100
-+++ ../../../temp/clastic/CTWindow.icl	2001-10-10 17:22:58.000000000 +0100
+diff -u ../../../temp/clastic/CTWindow.icl ./CTWindow.icl
+--- ../../../temp/clastic/CTWindow.icl	2001-10-10 17:22:58.000000000 +0100
++++ ./CTWindow.icl	2009-06-01 12:03:36.343750000 +0100
 @@ -14,7 +14,7 @@
  import CTMapping 
  
  // Make Viewport window.
--mkportwin :: .{#Char} .Viewport (*Picture -> *Picture) -> Window .NilLS .a *(PSt .b)
-+mkportwin :: .{#Char} .Viewport (.Picture -> *Picture) -> Window .NilLS .a *(PSt .b)
+-mkportwin :: .{#Char} .Viewport (.Picture -> *Picture) -> Window .NilLS .a *(PSt .b)
++mkportwin :: .{#Char} .Viewport (*Picture -> *Picture) -> Window .NilLS .a *(PSt .b)
  mkportwin title vport renderer =
   Window title NilLS
    [ WindowViewSize size, WindowClose (noLS closeProcess)
@@ -409,21 +409,21 @@ diff -u ./CTWindow.icl ../../../temp/clastic/CTWindow.icl
    maxd = {x=org.x+size.w,y=org.y+size.h}
  
  //mainwindow :: (a .Void *(PSt .Void)) *World -> .World | Windows a
--mainwindow :: (Window .NilLS Void *(PSt .Void)) *World -> *World
-+mainwindow :: (Window NilLS .Void *(PSt .Void)) *World -> *World
+-mainwindow :: (Window NilLS .Void *(PSt .Void)) *World -> *World
++mainwindow :: (Window .NilLS Void *(PSt .Void)) *World -> *World
  mainwindow window world = startIO SDI Void
      (snd o openWindow Void window) [ProcessClose closeProcess] world
  
--drawDib :: !{#.Char} !.Int !.Int !*Picture -> *Picture
-+drawDib :: !{#.Char} !.Int !.Int !*Picture -> .Picture
+-drawDib :: !{#.Char} !.Int !.Int !*Picture -> .Picture
++drawDib :: !{#.Char} !.Int !.Int !*Picture -> *Picture
  drawDib a w h pic
    # sz = (w,h)
--  # (hdc, tb) = winCreateScreenHDC OSNewToolbox
--  # (hbmp,tb) = winCreateBitmap w a hdc tb
--  # tb        = winDestroyScreenHDC (hdc,tb)
-+  # (hdc, tb) = WinCreateScreenHDC OSNewToolbox
-+  # (hbmp,tb) = WinCreateBitmap w a hdc tb
-+  # tb        = WinDestroyScreenHDC (hdc,tb)
+-  # (hdc, tb) = WinCreateScreenHDC OSNewToolbox
+-  # (hbmp,tb) = WinCreateBitmap w a hdc tb
+-  # tb        = WinDestroyScreenHDC (hdc,tb)
++  # (hdc, tb) = winCreateScreenHDC OSNewToolbox
++  # (hbmp,tb) = winCreateBitmap w a hdc tb
++  # tb        = winDestroyScreenHDC (hdc,tb)
    # bitmap = {originalSize=sz,reSize=sz,bitmapContents=a,bitmapHandle=hbmp}
    = drawAt zero (toBitmap bitmap) pic
  
@@ -431,21 +431,21 @@ diff -u ./CTWindow.icl ../../../temp/clastic/CTWindow.icl
  nope :: .(*(.a,*PSt .b) -> *(.a,*PSt .b))
  nope = notixt ["Not implemented yet"] "Sorry"
  
--getMstate :: Id !*(.a,!*PSt .b) -> *(Bool,*(.a,*PSt .b))
-+getMstate :: .Id !*(.a,!*PSt .b) -> *(Bool,*(.a,*PSt .b))
+-getMstate :: .Id !*(.a,!*PSt .b) -> *(Bool,*(.a,*PSt .b))
++getMstate :: Id !*(.a,!*PSt .b) -> *(Bool,*(.a,*PSt .b))
  getMstate id (ls,pst=:{io})
    # (Just mst,io) = getParentMenu id io
    # (bol,mrk) = getMenuElementMarkState id mst
    = (marked mrk,(ls,{pst & io=io}))
  
--getSqstate :: Id !*(.a,*PSt .b) -> *(Bool,*(.a,*PSt .b))
-+getSqstate :: .Id !*(.a,*PSt .b) -> *(.Bool,*(.a,*PSt .b))
+-getSqstate :: .Id !*(.a,*PSt .b) -> *(.Bool,*(.a,*PSt .b))
++getSqstate :: Id !*(.a,*PSt .b) -> *(Bool,*(.a,*PSt .b))
  getSqstate id (loc,pst)
    # (Just wst, pst) = accPIO (getParentWindow id) pst
    # (bool, Just l) = getCheckControlSelection id wst
    = (isMember 1 l,(loc,pst))
--togglesq :: !Id [Id] !*(.a,!*PSt .b) -> *(.a,*PSt .b)
-+togglesq :: !.Id [.Id] !*(.a,!*PSt .b) -> *(.a,*PSt .b)
+-togglesq :: !.Id [.Id] !*(.a,!*PSt .b) -> *(.a,*PSt .b)
++togglesq :: !Id [Id] !*(.a,!*PSt .b) -> *(.a,*PSt .b)
  togglesq myid ables st
    # (bstate,(loc,pst)) = getSqstate myid st
    | bstate = (loc,(appPIO (disableControls ables) pst))
@@ -453,8 +453,8 @@ diff -u ./CTWindow.icl ../../../temp/clastic/CTWindow.icl
  
  :: Txobj = {port::Viewport,bmap::{#Char}}
  
--showBitmap :: !*(.a,!*PSt (Int,[(Id,Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
-+showBitmap :: !*(.a,!*PSt u:(.Int,w:[y:(.Id,u1:Txobj)])) -> *(.a,*PSt v:(Int,x:[z:(Id,u2:Txobj)])),[u1<=u2,y<=z,w<=x,u<=v]
+-showBitmap :: !*(.a,!*PSt u:(.Int,w:[y:(.Id,u1:Txobj)])) -> *(.a,*PSt v:(Int,x:[z:(Id,u2:Txobj)])),[u1<=u2,y<=z,w<=x,u<=v]
++showBitmap :: !*(.a,!*PSt (Int,[(Id,Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
  showBitmap (ls,env)
   # (maybeFile,env)	= selectInputFile env
   | isNothing maybeFile = (ls,env)
@@ -462,8 +462,8 @@ diff -u ./CTWindow.icl ../../../temp/clastic/CTWindow.icl
   # env = addwin nwid port bm env
   = (ls,env)
  
--savbitmap :: !*(.a,!*PSt (b,[(Id,Txobj)])) -> *(.a,*PSt (b,[(Id,Txobj)]))
-+savbitmap :: !*(.a,!*PSt (b,[(.Id,.Txobj)])) -> *(.a,*PSt (b,[(Id,Txobj)]))
+-savbitmap :: !*(.a,!*PSt (b,[(.Id,.Txobj)])) -> *(.a,*PSt (b,[(Id,Txobj)]))
++savbitmap :: !*(.a,!*PSt (b,[(Id,Txobj)])) -> *(.a,*PSt (b,[(Id,Txobj)]))
  savbitmap st=:(ls,ps=:{io})
   # (mwid,io) = getActiveWindow io
   # ps = {ps & io=io}
@@ -471,15 +471,15 @@ diff -u ./CTWindow.icl ../../../temp/clastic/CTWindow.icl
     | fst a == id = (snd a).bmap
     = findact id q 
  
--addwin :: a .Viewport {#.Char} !*(PSt (Int,[(a,Txobj)])) -> *PSt (Int,[(a,Txobj)])  
-+addwin :: .a .Viewport {#.Char} !*(PSt u:(.Int,w:[y:(.a,u1:Txobj)])) -> *PSt v:(Int,x:[z:(.a,u2:Txobj)]),[u1<=u2,y<=z,w<=x,u<=v]  
+-addwin :: .a .Viewport {#.Char} !*(PSt u:(.Int,w:[y:(.a,u1:Txobj)])) -> *PSt v:(Int,x:[z:(.a,u2:Txobj)]),[u1<=u2,y<=z,w<=x,u<=v]  
++addwin :: a .Viewport {#.Char} !*(PSt (Int,[(a,Txobj)])) -> *PSt (Int,[(a,Txobj)])  
  addwin wid port bmap ps
    # entr = (wid,{port=port,bmap=bmap})
    # ps = appPLoc (\(n,ls) -> (n+1,[entr:ls])) ps
    = ps
    
--close :: !*(PSt (Int,[(Id,a)])) -> *PSt (Int,[(Id,a)])
-+close :: !*(PSt (.Int,[(.Id,a)])) -> *PSt (Int,[(Id,a)])
+-close :: !*(PSt (.Int,[(.Id,a)])) -> *PSt (Int,[(Id,a)])
++close :: !*(PSt (Int,[(Id,a)])) -> *PSt (Int,[(Id,a)])
  close ps=:{io}
    # (mwid,io) = getActiveWindow io
    # ps = {ps & io=io}
@@ -487,8 +487,8 @@ diff -u ./CTWindow.icl ../../../temp/clastic/CTWindow.icl
    | not bool = ps
    # ps = appPLoc (\_ -> (n-1,lst)) ps
    = closeActiveWindow ps
--removeact :: a [(a,b)] -> (Bool,[(a,b)]) | == a
-+removeact :: a u:[w:(a,.b)] -> (.Bool,v:[x:(a,.b)]) | == a, [w<=x,u<=v]
+-removeact :: a u:[w:(a,.b)] -> (.Bool,v:[x:(a,.b)]) | == a, [w<=x,u<=v]
++removeact :: a [(a,b)] -> (Bool,[(a,b)]) | == a
  removeact id [a:q]
   | fst a == id = (True,q)
   = (bres, [a : qq]) with (bres,qq) = removeact id q
@@ -496,8 +496,8 @@ diff -u ./CTWindow.icl ../../../temp/clastic/CTWindow.icl
   fc [] = []
   fc [(funame,f) : rst] = [(funame, id) : fc rst]
  
--inpline :: .String Id a Id b -> LayoutControl (:+: .TextControl (:+: .EditControl .EditControl)) .c .d | toString a & toString b
-+inpline :: .String .Id a .Id b -> LayoutControl (:+: .TextControl (:+: .EditControl .EditControl)) .c .d | toString a & toString b
+-inpline :: .String .Id a .Id b -> LayoutControl (:+: .TextControl (:+: .EditControl .EditControl)) .c .d | toString a & toString b
++inpline :: .String Id a Id b -> LayoutControl (:+: .TextControl (:+: .EditControl .EditControl)) .c .d | toString a & toString b
  inpline txt id1 v1 id2 v2 = LayoutControl
    (   TextControl txt [ControlWidth (PixelWidth 110)]
    :+: EditControl (toString v1) (ContentWidth "000.0000") 1
@@ -505,8 +505,8 @@ diff -u ./CTWindow.icl ../../../temp/clastic/CTWindow.icl
           [ControlId id2,ControlPos (RightToPrev,OffsetVector {vx=3,vy=0})]
    ) [ControlHMargin 0 0,ControlVMargin 0 0,ControlItemSpace 0 0,
       ControlPos (BelowPrev,zero)]
--inpline3 :: .String Id a Id b Id c -> LayoutControl (:+: .TextControl (:+: .EditControl (:+: .EditControl .EditControl))) .d .e | toString a & toString b & toString c
-+inpline3 :: .String .Id a .Id b .Id c -> LayoutControl (:+: .TextControl (:+: .EditControl (:+: .EditControl .EditControl))) .d .e | toString a & toString b & toString c
+-inpline3 :: .String .Id a .Id b .Id c -> LayoutControl (:+: .TextControl (:+: .EditControl (:+: .EditControl .EditControl))) .d .e | toString a & toString b & toString c
++inpline3 :: .String Id a Id b Id c -> LayoutControl (:+: .TextControl (:+: .EditControl (:+: .EditControl .EditControl))) .d .e | toString a & toString b & toString c
  inpline3 txt id1 v1 id2 v2 id3 v3 = LayoutControl
    (   TextControl txt [ControlWidth (PixelWidth 110)]
    :+: EditControl (toString v1) (ContentWidth "000.0000") 1
@@ -514,8 +514,8 @@ diff -u ./CTWindow.icl ../../../temp/clastic/CTWindow.icl
       ControlPos (BelowPrev,zero)]
  
  quit :== closeProcess
--togmark :: !.Bool Id !*(PSt .a) -> *PSt .a
-+togmark :: !.Bool .Id !*(PSt .a) -> *PSt .a
+-togmark :: !.Bool .Id !*(PSt .a) -> *PSt .a
++togmark :: !.Bool Id !*(PSt .a) -> *PSt .a
  togmark bool aid pst
     | bool = appPIO(markMenuItems [aid]) pst
     = appPIO(unmarkMenuItems [aid]) pst
@@ -523,8 +523,8 @@ diff -u ./CTWindow.icl ../../../temp/clastic/CTWindow.icl
  isT3 (T3 f) = True
  isT3 _      = False
  
--createdbwin :: .Viewport .{#Char} ((Vec2 !Real) -> RealCol !.Real) !*(.a,*PSt (Int,[(Id,Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
-+createdbwin :: .Viewport .{#Char} ((Vec2 !Real) -> RealCol !.Real) !*(.a,*PSt (.Int,[(.Id,.Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
+-createdbwin :: .Viewport .{#Char} ((Vec2 !Real) -> RealCol !.Real) !*(.a,*PSt (.Int,[(.Id,.Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
++createdbwin :: .Viewport .{#Char} ((Vec2 !Real) -> RealCol !.Real) !*(.a,*PSt (Int,[(Id,Txobj)])) -> *(.a,*PSt (Int,[(Id,Txobj)]))
  createdbwin port title txfun (ls,ps)
    # (w,h,bm) = makeDib port txfun
    # org = {x=0,y=0}
@@ -532,56 +532,56 @@ diff -u ./CTWindow.icl ../../../temp/clastic/CTWindow.icl
    # (errw,ps) = openWindow Void win ps 
    = (ls,ps)
  
--makeport :: ![(.{#Char},.Texture Real)] !Id ![Id] !*(Id,*PSt (Int,[(Id,Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)]))
-+makeport :: ![(.{#Char},.Texture Real)] .Id !.[Id] !*(.Id,*PSt (.Int,[(.Id,.Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)]))
+-makeport :: ![(.{#Char},.Texture Real)] .Id !.[Id] !*(.Id,*PSt (.Int,[(.Id,.Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)]))
++makeport :: ![(.{#Char},.Texture Real)] !Id ![Id] !*(Id,*PSt (Int,[(Id,Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)]))
  makeport fset cid idx=:[id1:_] st=:(ls,ps)
    # (Just wst, ps) = accPIO (getParentWindow id1) ps
    # outl = getControlTexts (take 6 idx) wst
-@@ -245,13 +245,12 @@
+@@ -245,12 +245,13 @@
      | square = ((toReal s2,toReal s2,toReal s4,toReal s4,toInt s6,toInt s6),st)
      = ((toReal s1,toReal s2,toReal s3,toReal s4,toInt s5,toInt s6),st)
  
--//whichf :: ![(.a,.b)] .WState .Id -> (.a,.b)
--whichf :: ![(a,b)] !WState !Id -> (a,b)
-+whichf :: ![(.a,.b)] .WState .Id -> (.a,.b)
+-whichf :: ![(.a,.b)] .WState .Id -> (.a,.b)
++//whichf :: ![(.a,.b)] .WState .Id -> (.a,.b)
++whichf :: ![(a,b)] !WState !Id -> (a,b)
  whichf fset wst cid
    # (bool, Just indx) = getPopUpControlSelection cid wst
    = fset!!(indx-1)
  
--v2dialog :: [(.String,.Texture Real)] Id (.[a],.[b]) [Id] *(Id,*PSt (Int,[(Id,Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)])) | toString a & toString b
-+v2dialog :: [(.String,.Texture Real)] .Id (.[a],.[b]) .[Id] *(.Id,*PSt (.Int,[(.Id,.Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)])) | toString a & toString b
+-v2dialog :: [(.String,.Texture Real)] .Id (.[a],.[b]) .[Id] *(.Id,*PSt (.Int,[(.Id,.Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)])) | toString a & toString b
++v2dialog :: [(.String,.Texture Real)] Id (.[a],.[b]) [Id] *(Id,*PSt (Int,[(Id,Txobj)])) -> *(Id,*PSt (Int,[(Id,Txobj)])) | toString a & toString b
  v2dialog fset cid ([xi,xa,yi,ya],[ww,hh])
           idx=:[id1,id2,id3,id4,id5,id6,id7,id8 : idb] st=:(ls,pst) 
   # stdbuts = stbuts makeport fset cid idx
-@@ -296,7 +295,7 @@
+@@ -295,7 +296,7 @@
    = startIO MDI (0,[]) (initinterf funset cid ids jds) //[]: list of windows
         [ProcessClose quit] world
  
--initinterf :: [(.{#Char},.Texture Real)] Id [Id] [Id] !*(PSt (Int,[(Id,Txobj)])) -> *PSt (Int,[(Id,Txobj)])
-+initinterf :: [(.{#Char},.Texture Real)] .Id [.Id] [.Id] !*(PSt (.Int,[(.Id,.Txobj)])) -> *PSt (Int,[(Id,Txobj)])
+-initinterf :: [(.{#Char},.Texture Real)] .Id [.Id] [.Id] !*(PSt (.Int,[(.Id,.Txobj)])) -> *PSt (Int,[(Id,Txobj)])
++initinterf :: [(.{#Char},.Texture Real)] Id [Id] [Id] !*(PSt (Int,[(Id,Txobj)])) -> *PSt (Int,[(Id,Txobj)])
  initinterf funset cid ids jds pst
   # (mid,pst)  = openId pst
   # (err1,pst) = openMenu (ids!!19) menu1 pst
-@@ -335,7 +334,7 @@
+@@ -334,7 +335,7 @@
     # pst = togmark (not ismark) aid pst
     = notixt txt "OK" (ls,pst)
  
--v3dialog :: [(.String,.Texture Real)] a (.[b],.[c]) [Id] *(Id,*PSt (Int,[(Id,Txobj)])) 
-+v3dialog :: [(.String,.Texture Real)] a (.[b],.[c]) .[Id] *(.Id,*PSt (.Int,[(.Id,.Txobj)])) 
+-v3dialog :: [(.String,.Texture Real)] a (.[b],.[c]) .[Id] *(.Id,*PSt (.Int,[(.Id,.Txobj)])) 
++v3dialog :: [(.String,.Texture Real)] a (.[b],.[c]) [Id] *(Id,*PSt (Int,[(Id,Txobj)])) 
              -> *(Id,*PSt (Int,[(Id,Txobj)])) | toString b & toString c
  v3dialog fset cid ([cx,cy,cz,ux,uy,uz,lx,ly,lz,foc,amb],[ww,hh])
           idx=:[id1,id2,id3,id4,id5,id6,id7,id8,id9 : idb]  st=:(ls,pst)
-@@ -369,7 +368,7 @@
+@@ -368,7 +369,7 @@
   # ((err,Just ls), pst) = openModalDialog ls dial pst
   = (ls,pst)
  
--m3port :: ![(.{#Char},.Texture Real)] .b ![Id] !*(Id,*PSt (Int,[(Id,Txobj)])) 
-+m3port :: ![(.{#Char},.Texture Real)] .b !.[Id] !*(.Id,*PSt (.Int,[(.Id,.Txobj)])) 
+-m3port :: ![(.{#Char},.Texture Real)] .b !.[Id] !*(.Id,*PSt (.Int,[(.Id,.Txobj)])) 
++m3port :: ![(.{#Char},.Texture Real)] .b ![Id] !*(Id,*PSt (Int,[(Id,Txobj)])) 
            -> *(Id,*PSt (Int,[(Id,Txobj)]))
  m3port fset cid idx=:[id1:_] st=:(ls,ps)
    # (Just wst, ps) = accPIO (getParentWindow id1) ps
 Only in .: Clean System Files
-Common subdirectories: ./Examples and ../../../temp/clastic/Examples
-Common subdirectories: ./Extras and ../../../temp/clastic/Extras
-Common subdirectories: ./Images and ../../../temp/clastic/Images
+Common subdirectories: ../../../temp/clastic/Examples and ./Examples
+Common subdirectories: ../../../temp/clastic/Extras and ./Extras
+Common subdirectories: ../../../temp/clastic/Images and ./Images
 Only in .: _old
