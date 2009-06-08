@@ -29,7 +29,7 @@ import Data.VectorSpace
 
 import Prelude hiding ( concat ) 
 
-type RgbColour = Colour3
+type RgbColour = DColour3
 type Point = DPoint2
 
 type Radius = Double
@@ -143,7 +143,7 @@ drawPolygon (Polygon ((P2 x y):ps) env) = saveExecRestore $ do
         closepath
 
 setRgbColour :: RgbColour -> WumpusM ()
-setRgbColour (V3 r g b) = setrgbcolor r g b
+setRgbColour (C3 r g b) = setrgbcolor r g b
 
 whenMb :: Monad m => Maybe a -> (a -> m ()) -> m()
 whenMb a sk = maybe (return ()) sk a 

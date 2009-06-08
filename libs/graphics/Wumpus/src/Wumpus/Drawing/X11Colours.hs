@@ -336,722 +336,721 @@ module Wumpus.Drawing.X11Colours (
 
   ) where
 
-import Wumpus.Core.Vector ( Vec3(..) )
-import Wumpus.Core.Colour ( Colour3 )
-
-
-antiqueWhite1           :: Colour3
-antiqueWhite2           :: Colour3
-antiqueWhite3           :: Colour3
-antiqueWhite4           :: Colour3
-antiqueWhite1           = V3 1   0.936   0.86
-antiqueWhite2           = V3 0.932   0.875   0.8
-antiqueWhite3           = V3 0.804   0.752   0.69
-antiqueWhite4           = V3 0.545   0.512   0.47
-
-aquamarine1             :: Colour3
-aquamarine2             :: Colour3
-aquamarine3             :: Colour3
-aquamarine4             :: Colour3
-aquamarine1             = V3 0.498  1   0.83
-aquamarine2             = V3 0.464   0.932   0.776
-aquamarine3             = V3 0.4   0.804   0.668
-aquamarine4             = V3 0.27   0.545   0.455
-
-azure1                  :: Colour3
-azure2                  :: Colour3
-azure3                  :: Colour3
-azure4                  :: Colour3
-azure1                  = V3 0.94  1  1
-azure2                  = V3 0.88   0.932   0.932
-azure3                  = V3 0.756   0.804   0.804
-azure4                  = V3 0.512   0.545   0.545
-
-bisque1                 :: Colour3
-bisque2                 :: Colour3
-bisque3                 :: Colour3
-bisque4                 :: Colour3
-bisque1                 = V3 1   0.894   0.77
-bisque2                 = V3 0.932   0.835   0.716
-bisque3                 = V3 0.804   0.716   0.62
-bisque4                 = V3 0.545   0.49   0.42
-
-blue1                   :: Colour3
-blue2                   :: Colour3
-blue3                   :: Colour3
-blue4                   :: Colour3
-blue1                   = V3 0  0  1
-blue2                   = V3 0  0   0.932
-blue3                   = V3 0  0   0.804
-blue4                   = V3 0  0   0.545
-
-brown1                  :: Colour3
-brown2                  :: Colour3
-brown3                  :: Colour3
-brown4                  :: Colour3
-brown1                  = V3 1   0.25   0.25
-brown2                  = V3 0.932   0.23   0.23
-brown3                  = V3 0.804   0.2   0.2
-brown4                  = V3 0.545   0.136   0.136
-
-burlywood1              :: Colour3
-burlywood2              :: Colour3
-burlywood3              :: Colour3
-burlywood4              :: Colour3
-burlywood1              = V3 1   0.828   0.608
-burlywood2              = V3 0.932   0.772   0.57
-burlywood3              = V3 0.804   0.668   0.49
-burlywood4              = V3 0.545   0.45   0.332
-
-cadetBlue1              :: Colour3
-cadetBlue2              :: Colour3
-cadetBlue3              :: Colour3
-cadetBlue4              :: Colour3
-cadetBlue1              = V3 0.596   0.96  1
-cadetBlue2              = V3 0.556   0.898   0.932
-cadetBlue3              = V3 0.48   0.772   0.804
-cadetBlue4              = V3 0.325   0.525   0.545
-
-chartreuse1             :: Colour3
-chartreuse2             :: Colour3
-chartreuse3             :: Colour3
-chartreuse4             :: Colour3
-chartreuse1             = V3 0.498  1  0
-chartreuse2             = V3 0.464   0.932  0
-chartreuse3             = V3 0.4   0.804  0
-chartreuse4             = V3 0.27   0.545  0
-
-chocolate1              :: Colour3
-chocolate2              :: Colour3
-chocolate3              :: Colour3
-chocolate4              :: Colour3
-chocolate1              = V3 1   0.498   0.14
-chocolate2              = V3 0.932   0.464   0.13
-chocolate3              = V3 0.804   0.4   0.112
-chocolate4              = V3 0.545   0.27   0.075
-
-coral1                  :: Colour3
-coral2                  :: Colour3
-coral3                  :: Colour3
-coral4                  :: Colour3
-coral1                  = V3 1   0.448   0.336
-coral2                  = V3 0.932   0.415   0.312
-coral3                  = V3 0.804   0.356   0.27
-coral4                  = V3 0.545   0.244   0.185
-
-cornsilk1               :: Colour3
-cornsilk2               :: Colour3
-cornsilk3               :: Colour3
-cornsilk4               :: Colour3
-cornsilk1               = V3 1   0.972   0.864
-cornsilk2               = V3 0.932   0.91   0.804
-cornsilk3               = V3 0.804   0.785   0.694
-cornsilk4               = V3 0.545   0.532   0.47
-
-cyan1                   :: Colour3
-cyan2                   :: Colour3
-cyan3                   :: Colour3
-cyan4                   :: Colour3
-cyan1                   = V3 0   1   1
-cyan2                   = V3 0   0.932   0.932
-cyan3                   = V3 0   0.804   0.804
-cyan4                   = V3 0   0.545   0.545
-
-darkGoldenrod1          :: Colour3
-darkGoldenrod2          :: Colour3
-darkGoldenrod3          :: Colour3
-darkGoldenrod4          :: Colour3
-darkGoldenrod1          = V3 1   0.725   0.06
-darkGoldenrod2          = V3 0.932   0.68   0.055
-darkGoldenrod3          = V3 0.804   0.585   0.048
-darkGoldenrod4          = V3 0.545   0.396   0.03
-
-darkOliveGreen1         :: Colour3
-darkOliveGreen2         :: Colour3
-darkOliveGreen3         :: Colour3
-darkOliveGreen4         :: Colour3
-darkOliveGreen1         = V3 0.792  1   0.44
-darkOliveGreen2         = V3 0.736   0.932   0.408
-darkOliveGreen3         = V3 0.635   0.804   0.352
-darkOliveGreen4         = V3 0.43   0.545   0.24
-
-darkOrange1             :: Colour3
-darkOrange2             :: Colour3
-darkOrange3             :: Colour3
-darkOrange4             :: Colour3
-darkOrange1             = V3 1   0.498  0
-darkOrange2             = V3 0.932   0.464  0
-darkOrange3             = V3 0.804   0.4  0
-darkOrange4             = V3 0.545   0.27  0
-
-darkOrchid1             :: Colour3
-darkOrchid2             :: Colour3
-darkOrchid3             :: Colour3
-darkOrchid4             :: Colour3
-darkOrchid1             = V3 0.75   0.244  1
-darkOrchid2             = V3 0.698   0.228   0.932
-darkOrchid3             = V3 0.604   0.196   0.804
-darkOrchid4             = V3 0.408   0.132   0.545
-
-darkSeaGreen1           :: Colour3
-darkSeaGreen2           :: Colour3
-darkSeaGreen3           :: Colour3
-darkSeaGreen4           :: Colour3
-darkSeaGreen1           = V3 0.756  1   0.756
-darkSeaGreen2           = V3 0.705   0.932   0.705
-darkSeaGreen3           = V3 0.608   0.804   0.608
-darkSeaGreen4           = V3 0.41   0.545   0.41
-
-darkSlateGray1          :: Colour3
-darkSlateGray2          :: Colour3
-darkSlateGray3          :: Colour3
-darkSlateGray4          :: Colour3
-darkSlateGray1          = V3 0.592  1  1
-darkSlateGray2          = V3 0.552   0.932   0.932
-darkSlateGray3          = V3 0.475   0.804   0.804
-darkSlateGray4          = V3 0.32   0.545   0.545
-
-deepPink1               :: Colour3
-deepPink2               :: Colour3
-deepPink3               :: Colour3
-deepPink4               :: Colour3
-deepPink1               = V3 1   0.08   0.576
-deepPink2               = V3 0.932   0.07   0.536
-deepPink3               = V3 0.804   0.064   0.464
-deepPink4               = V3 0.545   0.04   0.312
-
-deepSkyBlue1            :: Colour3
-deepSkyBlue2            :: Colour3
-deepSkyBlue3            :: Colour3
-deepSkyBlue4            :: Colour3
-deepSkyBlue1            = V3 0   0.75  1
-deepSkyBlue2            = V3 0   0.698   0.932
-deepSkyBlue3            = V3 0   0.604   0.804
-deepSkyBlue4            = V3 0   0.408   0.545
-
-dodgerBlue1             :: Colour3
-dodgerBlue2             :: Colour3
-dodgerBlue3             :: Colour3
-dodgerBlue4             :: Colour3
-dodgerBlue1             = V3 0.116   0.565  1
-dodgerBlue2             = V3 0.11   0.525   0.932
-dodgerBlue3             = V3 0.094   0.455   0.804
-dodgerBlue4             = V3 0.064   0.305   0.545
-
-firebrick1              :: Colour3
-firebrick2              :: Colour3
-firebrick3              :: Colour3
-firebrick4              :: Colour3
-firebrick1              = V3 1   0.19   0.19
-firebrick2              = V3 0.932   0.172   0.172
-firebrick3              = V3 0.804   0.15   0.15
-firebrick4              = V3 0.545   0.1   0.1
-
-gold1                   :: Colour3
-gold2                   :: Colour3
-gold3                   :: Colour3
-gold4                   :: Colour3
-gold1                   = V3 1   0.844  0
-gold2                   = V3 0.932   0.79  0
-gold3                   = V3 0.804   0.68  0
-gold4                   = V3 0.545   0.46  0
-
-goldenrod1              :: Colour3
-goldenrod2              :: Colour3
-goldenrod3              :: Colour3
-goldenrod4              :: Colour3
-goldenrod1              = V3 1   0.756   0.145
-goldenrod2              = V3 0.932   0.705   0.132
-goldenrod3              = V3 0.804   0.608   0.112
-goldenrod4              = V3 0.545   0.41   0.08
-
-green1                  :: Colour3
-green2                  :: Colour3
-green3                  :: Colour3
-green4                  :: Colour3
-green1                  = V3 0  1  0
-green2                  = V3 0   0.932  0
-green3                  = V3 0   0.804  0
-green4                  = V3 0   0.545  0
-
-honeydew1               :: Colour3
-honeydew2               :: Colour3
-honeydew3               :: Colour3
-honeydew4               :: Colour3
-honeydew1               = V3 0.94  1   0.94
-honeydew2               = V3 0.88   0.932   0.88
-honeydew3               = V3 0.756   0.804   0.756
-honeydew4               = V3 0.512   0.545   0.512
-
-hotPink1                :: Colour3
-hotPink2                :: Colour3
-hotPink3                :: Colour3
-hotPink4                :: Colour3
-hotPink1                = V3 1   0.43   0.705
-hotPink2                = V3 0.932   0.415   0.655
-hotPink3                = V3 0.804   0.376   0.565
-hotPink4                = V3 0.545   0.228   0.385
-
-indianRed1              :: Colour3
-indianRed2              :: Colour3
-indianRed3              :: Colour3
-indianRed4              :: Colour3
-indianRed1              = V3 1   0.415   0.415
-indianRed2              = V3 0.932   0.39   0.39
-indianRed3              = V3 0.804   0.332   0.332
-indianRed4              = V3 0.545   0.228   0.228
-
-ivory1                  :: Colour3
-ivory2                  :: Colour3
-ivory3                  :: Colour3
-ivory4                  :: Colour3
-ivory1                  = V3 1   1   0.94
-ivory2                  = V3 0.932   0.932   0.88
-ivory3                  = V3 0.804   0.804   0.756
-ivory4                  = V3 0.545   0.545   0.512
-
-khaki1                  :: Colour3
-khaki2                  :: Colour3
-khaki3                  :: Colour3
-khaki4                  :: Colour3
-khaki1                  = V3 1   0.965   0.56
-khaki2                  = V3 0.932   0.9   0.52
-khaki3                  = V3 0.804   0.776   0.45
-khaki4                  = V3 0.545   0.525   0.305
-
-lavenderBlush1          :: Colour3
-lavenderBlush2          :: Colour3
-lavenderBlush3          :: Colour3
-lavenderBlush4          :: Colour3
-lavenderBlush1          = V3 1   0.94   0.96
-lavenderBlush2          = V3 0.932   0.88   0.898
-lavenderBlush3          = V3 0.804   0.756   0.772
-lavenderBlush4          = V3 0.545   0.512   0.525
-
-lemonChiffon1           :: Colour3
-lemonChiffon2           :: Colour3
-lemonChiffon3           :: Colour3
-lemonChiffon4           :: Colour3
-lemonChiffon1           = V3 1   0.98   0.804
-lemonChiffon2           = V3 0.932   0.912   0.75
-lemonChiffon3           = V3 0.804   0.79   0.648
-lemonChiffon4           = V3 0.545   0.536   0.44
-
-lightBlue1              :: Colour3
-lightBlue2              :: Colour3
-lightBlue3              :: Colour3
-lightBlue4              :: Colour3
-lightBlue1              = V3 0.75   0.936  1
-lightBlue2              = V3 0.698   0.875   0.932
-lightBlue3              = V3 0.604   0.752   0.804
-lightBlue4              = V3 0.408   0.512   0.545
-
-lightCyan1              :: Colour3
-lightCyan2              :: Colour3
-lightCyan3              :: Colour3
-lightCyan4              :: Colour3
-lightCyan1              = V3 0.88  1  1
-lightCyan2              = V3 0.82   0.932   0.932
-lightCyan3              = V3 0.705   0.804   0.804
-lightCyan4              = V3 0.48   0.545   0.545
-
-lightGoldenrod1         :: Colour3
-lightGoldenrod2         :: Colour3
-lightGoldenrod3         :: Colour3
-lightGoldenrod4         :: Colour3
-lightGoldenrod1         = V3 1   0.925   0.545
-lightGoldenrod2         = V3 0.932   0.864   0.51
-lightGoldenrod3         = V3 0.804   0.745   0.44
-lightGoldenrod4         = V3 0.545   0.505   0.298
-
-lightPink1              :: Colour3
-lightPink2              :: Colour3
-lightPink3              :: Colour3
-lightPink4              :: Colour3
-lightPink1              = V3 1   0.684   0.725
-lightPink2              = V3 0.932   0.635   0.68
-lightPink3              = V3 0.804   0.55   0.585
-lightPink4              = V3 0.545   0.372   0.396
-
-lightSalmon1            :: Colour3
-lightSalmon2            :: Colour3
-lightSalmon3            :: Colour3
-lightSalmon4            :: Colour3
-lightSalmon1            = V3 1   0.628   0.48
-lightSalmon2            = V3 0.932   0.585   0.448
-lightSalmon3            = V3 0.804   0.505   0.385
-lightSalmon4            = V3 0.545   0.34   0.26
-
-lightSkyBlue1           :: Colour3
-lightSkyBlue2           :: Colour3
-lightSkyBlue3           :: Colour3
-lightSkyBlue4           :: Colour3
-lightSkyBlue1           = V3 0.69   0.888  1
-lightSkyBlue2           = V3 0.644   0.828   0.932
-lightSkyBlue3           = V3 0.552   0.712   0.804
-lightSkyBlue4           = V3 0.376   0.484   0.545
-
-lightSteelBlue1         :: Colour3
-lightSteelBlue2         :: Colour3
-lightSteelBlue3         :: Colour3
-lightSteelBlue4         :: Colour3
-lightSteelBlue1         = V3 0.792   0.884  1
-lightSteelBlue2         = V3 0.736   0.824   0.932
-lightSteelBlue3         = V3 0.635   0.71   0.804
-lightSteelBlue4         = V3 0.43   0.484   0.545
-
-lightYellow1            :: Colour3
-lightYellow2            :: Colour3
-lightYellow3            :: Colour3
-lightYellow4            :: Colour3
-lightYellow1            = V3 1  1   0.88
-lightYellow2            = V3 0.932   0.932   0.82
-lightYellow3            = V3 0.804   0.804   0.705
-lightYellow4            = V3 0.545   0.545   0.48
-
-magenta1                :: Colour3
-magenta2                :: Colour3
-magenta3                :: Colour3
-magenta4                :: Colour3
-magenta1                = V3 1  0  1
-magenta2                = V3 0.932  0   0.932
-magenta3                = V3 0.804  0   0.804
-magenta4                = V3 0.545  0   0.545
-
-maroon1                 :: Colour3
-maroon2                 :: Colour3
-maroon3                 :: Colour3
-maroon4                 :: Colour3
-maroon1                 = V3 1   0.204   0.7
-maroon2                 = V3 0.932   0.19   0.655
-maroon3                 = V3 0.804   0.16   0.565
-maroon4                 = V3 0.545   0.11   0.385
-
-mediumOrchid1           :: Colour3
-mediumOrchid2           :: Colour3
-mediumOrchid3           :: Colour3
-mediumOrchid4           :: Colour3
-mediumOrchid1           = V3 0.88   0.4  1
-mediumOrchid2           = V3 0.82   0.372   0.932
-mediumOrchid3           = V3 0.705   0.32   0.804
-mediumOrchid4           = V3 0.48   0.215   0.545
-
-mediumPurple1           :: Colour3
-mediumPurple2           :: Colour3
-mediumPurple3           :: Colour3
-mediumPurple4           :: Colour3
-mediumPurple1           = V3 0.67   0.51  1
-mediumPurple2           = V3 0.624   0.475   0.932
-mediumPurple3           = V3 0.536   0.408   0.804
-mediumPurple4           = V3 0.365   0.28   0.545
-
-mistyRose1              :: Colour3
-mistyRose2              :: Colour3
-mistyRose3              :: Colour3
-mistyRose4              :: Colour3
-mistyRose1              = V3 1   0.894   0.884
-mistyRose2              = V3 0.932   0.835   0.824
-mistyRose3              = V3 0.804   0.716   0.71
-mistyRose4              = V3 0.545   0.49   0.484
-
-navajoWhite1            :: Colour3
-navajoWhite2            :: Colour3
-navajoWhite3            :: Colour3
-navajoWhite4            :: Colour3
-navajoWhite1            = V3 1   0.87   0.68
-navajoWhite2            = V3 0.932   0.81   0.63
-navajoWhite3            = V3 0.804   0.7   0.545
-navajoWhite4            = V3 0.545   0.475   0.37
-
-oliveDrab1              :: Colour3
-oliveDrab2              :: Colour3
-oliveDrab3              :: Colour3
-oliveDrab4              :: Colour3
-oliveDrab1              = V3 0.752  1   0.244
-oliveDrab2              = V3 0.7   0.932   0.228
-oliveDrab3              = V3 0.604   0.804   0.196
-oliveDrab4              = V3 0.41   0.545   0.132
-
-orange1                 :: Colour3
-orange2                 :: Colour3
-orange3                 :: Colour3
-orange4                 :: Colour3
-orange1                 = V3 1   0.648  0
-orange2                 = V3 0.932   0.604  0
-orange3                 = V3 0.804   0.52  0
-orange4                 = V3 0.545   0.352  0
-
-orangeRed1              :: Colour3
-orangeRed2              :: Colour3
-orangeRed3              :: Colour3
-orangeRed4              :: Colour3
-orangeRed1              = V3 1   0.27  0
-orangeRed2              = V3 0.932   0.25  0
-orangeRed3              = V3 0.804   0.215  0
-orangeRed4              = V3 0.545   0.145  0
-
-orchid1                 :: Colour3
-orchid2                 :: Colour3
-orchid3                 :: Colour3
-orchid4                 :: Colour3
-orchid1                 = V3 1   0.512   0.98
-orchid2                 = V3 0.932   0.48   0.912
-orchid3                 = V3 0.804   0.41   0.79
-orchid4                 = V3 0.545   0.28   0.536
-
-paleGreen1              :: Colour3
-paleGreen2              :: Colour3
-paleGreen3              :: Colour3
-paleGreen4              :: Colour3
-paleGreen1              = V3 0.604  1   0.604
-paleGreen2              = V3 0.565   0.932   0.565
-paleGreen3              = V3 0.488   0.804   0.488
-paleGreen4              = V3 0.33   0.545   0.33
-
-paleTurquoise1          :: Colour3
-paleTurquoise2          :: Colour3
-paleTurquoise3          :: Colour3
-paleTurquoise4          :: Colour3
-paleTurquoise1          = V3 0.732  1  1
-paleTurquoise2          = V3 0.684   0.932   0.932
-paleTurquoise3          = V3 0.59   0.804   0.804
-paleTurquoise4          = V3 0.4   0.545   0.545
-
-paleVioletRed1          :: Colour3
-paleVioletRed2          :: Colour3
-paleVioletRed3          :: Colour3
-paleVioletRed4          :: Colour3
-paleVioletRed1          = V3 1   0.51   0.67
-paleVioletRed2          = V3 0.932   0.475   0.624
-paleVioletRed3          = V3 0.804   0.408   0.536
-paleVioletRed4          = V3 0.545   0.28   0.365
-
-peachPuff1              :: Colour3
-peachPuff2              :: Colour3
-peachPuff3              :: Colour3
-peachPuff4              :: Colour3
-peachPuff1              = V3 1   0.855   0.725
-peachPuff2              = V3 0.932   0.796   0.68
-peachPuff3              = V3 0.804   0.688   0.585
-peachPuff4              = V3 0.545   0.468   0.396
-
-pink1                   :: Colour3
-pink2                   :: Colour3
-pink3                   :: Colour3
-pink4                   :: Colour3
-pink1                   = V3 1   0.71   0.772
-pink2                   = V3 0.932   0.664   0.72
-pink3                   = V3 0.804   0.57   0.62
-pink4                   = V3 0.545   0.39   0.424
-
-plum1                   :: Colour3
-plum2                   :: Colour3
-plum3                   :: Colour3
-plum4                   :: Colour3
-plum1                   = V3 1   0.732  1
-plum2                   = V3 0.932   0.684   0.932
-plum3                   = V3 0.804   0.59   0.804
-plum4                   = V3 0.545   0.4   0.545
-
-purple1                 :: Colour3
-purple2                 :: Colour3
-purple3                 :: Colour3
-purple4                 :: Colour3
-purple1                 = V3 0.608   0.19  1
-purple2                 = V3 0.57   0.172   0.932
-purple3                 = V3 0.49   0.15   0.804
-purple4                 = V3 0.332   0.1   0.545
-
-red1                    :: Colour3
-red2                    :: Colour3
-red3                    :: Colour3
-red4                    :: Colour3
-red1                    = V3 1  0  0
-red2                    = V3 0.932  0  0
-red3                    = V3 0.804  0  0
-red4                    = V3 0.545  0  0
-
-rosyBrown1              :: Colour3
-rosyBrown2              :: Colour3
-rosyBrown3              :: Colour3
-rosyBrown4              :: Colour3
-rosyBrown1              = V3 1   0.756   0.756
-rosyBrown2              = V3 0.932   0.705   0.705
-rosyBrown3              = V3 0.804   0.608   0.608
-rosyBrown4              = V3 0.545   0.41   0.41
-
-royalBlue1              :: Colour3
-royalBlue2              :: Colour3
-royalBlue3              :: Colour3
-royalBlue4              :: Colour3
-royalBlue1              = V3 0.284   0.464  1
-royalBlue2              = V3 0.264   0.43   0.932
-royalBlue3              = V3 0.228   0.372   0.804
-royalBlue4              = V3 0.152   0.25   0.545
-
-salmon1                 :: Colour3
-salmon2                 :: Colour3
-salmon3                 :: Colour3
-salmon4                 :: Colour3
-salmon1                 = V3 1   0.55   0.41
-salmon2                 = V3 0.932   0.51   0.385
-salmon3                 = V3 0.804   0.44   0.33
-salmon4                 = V3 0.545   0.298   0.224
-
-seaGreen1               :: Colour3
-seaGreen2               :: Colour3
-seaGreen3               :: Colour3
-seaGreen4               :: Colour3
-seaGreen1               = V3 0.33  1   0.624
-seaGreen2               = V3 0.305   0.932   0.58
-seaGreen3               = V3 0.264   0.804   0.5
-seaGreen4               = V3 0.18   0.545   0.34
-
-seashell1               :: Colour3
-seashell2               :: Colour3
-seashell3               :: Colour3
-seashell4               :: Colour3
-seashell1               = V3 1   0.96   0.932
-seashell2               = V3 0.932   0.898   0.87
-seashell3               = V3 0.804   0.772   0.75
-seashell4               = V3 0.545   0.525   0.51
-
-sienna1                 :: Colour3
-sienna2                 :: Colour3
-sienna3                 :: Colour3
-sienna4                 :: Colour3
-sienna1                 = V3 1   0.51   0.28
-sienna2                 = V3 0.932   0.475   0.26
-sienna3                 = V3 0.804   0.408   0.224
-sienna4                 = V3 0.545   0.28   0.15
-
-skyBlue1                :: Colour3
-skyBlue2                :: Colour3
-skyBlue3                :: Colour3
-skyBlue4                :: Colour3
-skyBlue1                = V3 0.53   0.808  1
-skyBlue2                = V3 0.494   0.752   0.932
-skyBlue3                = V3 0.424   0.65   0.804
-skyBlue4                = V3 0.29   0.44   0.545
-
-slateBlue1              :: Colour3
-slateBlue2              :: Colour3
-slateBlue3              :: Colour3
-slateBlue4              :: Colour3
-slateBlue1              = V3 0.512   0.435  1
-slateBlue2              = V3 0.48   0.404   0.932
-slateBlue3              = V3 0.41   0.35   0.804
-slateBlue4              = V3 0.28   0.235   0.545
-
-slateGray1              :: Colour3
-slateGray2              :: Colour3
-slateGray3              :: Colour3
-slateGray4              :: Colour3
-slateGray1              = V3 0.776   0.888  1
-slateGray2              = V3 0.725   0.828   0.932
-slateGray3              = V3 0.624   0.712   0.804
-slateGray4              = V3 0.424   0.484   0.545
-
-snow1                   :: Colour3
-snow2                   :: Colour3
-snow3                   :: Colour3
-snow4                   :: Colour3
-snow1                   = V3 1   0.98   0.98
-snow2                   = V3 0.932   0.912   0.912
-snow3                   = V3 0.804   0.79   0.79
-snow4                   = V3 0.545   0.536   0.536
-
-springGreen1            :: Colour3
-springGreen2            :: Colour3
-springGreen3            :: Colour3
-springGreen4            :: Colour3
-springGreen1            = V3 0  1   0.498
-springGreen2            = V3 0   0.932   0.464
-springGreen3            = V3 0   0.804   0.4
-springGreen4            = V3 0   0.545   0.27
-
-steelBlue1              :: Colour3
-steelBlue2              :: Colour3
-steelBlue3              :: Colour3
-steelBlue4              :: Colour3
-steelBlue1              = V3 0.39   0.72  1
-steelBlue2              = V3 0.36   0.675   0.932
-steelBlue3              = V3 0.31   0.58   0.804
-steelBlue4              = V3 0.21   0.392   0.545
-
-tan1                    :: Colour3
-tan2                    :: Colour3
-tan3                    :: Colour3
-tan4                    :: Colour3
-tan1                    = V3 1   0.648   0.31
-tan2                    = V3 0.932   0.604   0.288
-tan3                    = V3 0.804   0.52   0.248
-tan4                    = V3 0.545   0.352   0.17
-
-thistle1                :: Colour3
-thistle2                :: Colour3
-thistle3                :: Colour3
-thistle4                :: Colour3
-thistle1                = V3 1   0.884  1
-thistle2                = V3 0.932   0.824   0.932
-thistle3                = V3 0.804   0.71   0.804
-thistle4                = V3 0.545   0.484   0.545
-
-tomato1                 :: Colour3
-tomato2                 :: Colour3
-tomato3                 :: Colour3
-tomato4                 :: Colour3
-tomato1                 = V3 1   0.39   0.28
-tomato2                 = V3 0.932   0.36   0.26
-tomato3                 = V3 0.804   0.31   0.224
-tomato4                 = V3 0.545   0.21   0.15
-
-turquoise1              :: Colour3
-turquoise2              :: Colour3
-turquoise3              :: Colour3
-turquoise4              :: Colour3
-turquoise1              = V3 0   0.96  1
-turquoise2              = V3 0   0.898   0.932
-turquoise3              = V3 0   0.772   0.804
-turquoise4              = V3 0   0.525   0.545
-
-violetRed1              :: Colour3
-violetRed2              :: Colour3
-violetRed3              :: Colour3
-violetRed4              :: Colour3
-violetRed1              = V3 1   0.244   0.59
-violetRed2              = V3 0.932   0.228   0.55
-violetRed3              = V3 0.804   0.196   0.47
-violetRed4              = V3 0.545   0.132   0.32
-
-wheat1                  :: Colour3
-wheat2                  :: Colour3
-wheat3                  :: Colour3
-wheat4                  :: Colour3
-wheat1                  = V3 1   0.905   0.73
-wheat2                  = V3 0.932   0.848   0.684
-wheat3                  = V3 0.804   0.73   0.59
-wheat4                  = V3 0.545   0.494   0.4
-
-yellow1                 :: Colour3
-yellow2                 :: Colour3
-yellow3                 :: Colour3
-yellow4                 :: Colour3
-yellow1                 = V3 1  1  0
-yellow2                 = V3 0.932   0.932  0
-yellow3                 = V3 0.804   0.804  0
-yellow4                 = V3 0.545   0.545  0
-
-gray0                   :: Colour3
-green0                  :: Colour3
-grey0                   :: Colour3
-maroon0                 :: Colour3
-purple0                 :: Colour3
-gray0                   = V3 0.745  0.745  0.745
-green0                  = V3 0      1      0
-grey0                   = V3 0.745  0.745  0.745
-maroon0                 = V3 0.69   0.19   0.376
-purple0                 = V3 0.628  0.125  0.94
+import Wumpus.Core.Colour ( Colour3(..), DColour3 )
+
+
+antiqueWhite1           :: DColour3
+antiqueWhite2           :: DColour3
+antiqueWhite3           :: DColour3
+antiqueWhite4           :: DColour3
+antiqueWhite1           = C3 1   0.936   0.86
+antiqueWhite2           = C3 0.932   0.875   0.8
+antiqueWhite3           = C3 0.804   0.752   0.69
+antiqueWhite4           = C3 0.545   0.512   0.47
+
+aquamarine1             :: DColour3
+aquamarine2             :: DColour3
+aquamarine3             :: DColour3
+aquamarine4             :: DColour3
+aquamarine1             = C3 0.498  1   0.83
+aquamarine2             = C3 0.464   0.932   0.776
+aquamarine3             = C3 0.4   0.804   0.668
+aquamarine4             = C3 0.27   0.545   0.455
+
+azure1                  :: DColour3
+azure2                  :: DColour3
+azure3                  :: DColour3
+azure4                  :: DColour3
+azure1                  = C3 0.94  1  1
+azure2                  = C3 0.88   0.932   0.932
+azure3                  = C3 0.756   0.804   0.804
+azure4                  = C3 0.512   0.545   0.545
+
+bisque1                 :: DColour3
+bisque2                 :: DColour3
+bisque3                 :: DColour3
+bisque4                 :: DColour3
+bisque1                 = C3 1   0.894   0.77
+bisque2                 = C3 0.932   0.835   0.716
+bisque3                 = C3 0.804   0.716   0.62
+bisque4                 = C3 0.545   0.49   0.42
+
+blue1                   :: DColour3
+blue2                   :: DColour3
+blue3                   :: DColour3
+blue4                   :: DColour3
+blue1                   = C3 0  0  1
+blue2                   = C3 0  0   0.932
+blue3                   = C3 0  0   0.804
+blue4                   = C3 0  0   0.545
+
+brown1                  :: DColour3
+brown2                  :: DColour3
+brown3                  :: DColour3
+brown4                  :: DColour3
+brown1                  = C3 1   0.25   0.25
+brown2                  = C3 0.932   0.23   0.23
+brown3                  = C3 0.804   0.2   0.2
+brown4                  = C3 0.545   0.136   0.136
+
+burlywood1              :: DColour3
+burlywood2              :: DColour3
+burlywood3              :: DColour3
+burlywood4              :: DColour3
+burlywood1              = C3 1   0.828   0.608
+burlywood2              = C3 0.932   0.772   0.57
+burlywood3              = C3 0.804   0.668   0.49
+burlywood4              = C3 0.545   0.45   0.332
+
+cadetBlue1              :: DColour3
+cadetBlue2              :: DColour3
+cadetBlue3              :: DColour3
+cadetBlue4              :: DColour3
+cadetBlue1              = C3 0.596   0.96  1
+cadetBlue2              = C3 0.556   0.898   0.932
+cadetBlue3              = C3 0.48   0.772   0.804
+cadetBlue4              = C3 0.325   0.525   0.545
+
+chartreuse1             :: DColour3
+chartreuse2             :: DColour3
+chartreuse3             :: DColour3
+chartreuse4             :: DColour3
+chartreuse1             = C3 0.498  1  0
+chartreuse2             = C3 0.464   0.932  0
+chartreuse3             = C3 0.4   0.804  0
+chartreuse4             = C3 0.27   0.545  0
+
+chocolate1              :: DColour3
+chocolate2              :: DColour3
+chocolate3              :: DColour3
+chocolate4              :: DColour3
+chocolate1              = C3 1   0.498   0.14
+chocolate2              = C3 0.932   0.464   0.13
+chocolate3              = C3 0.804   0.4   0.112
+chocolate4              = C3 0.545   0.27   0.075
+
+coral1                  :: DColour3
+coral2                  :: DColour3
+coral3                  :: DColour3
+coral4                  :: DColour3
+coral1                  = C3 1   0.448   0.336
+coral2                  = C3 0.932   0.415   0.312
+coral3                  = C3 0.804   0.356   0.27
+coral4                  = C3 0.545   0.244   0.185
+
+cornsilk1               :: DColour3
+cornsilk2               :: DColour3
+cornsilk3               :: DColour3
+cornsilk4               :: DColour3
+cornsilk1               = C3 1   0.972   0.864
+cornsilk2               = C3 0.932   0.91   0.804
+cornsilk3               = C3 0.804   0.785   0.694
+cornsilk4               = C3 0.545   0.532   0.47
+
+cyan1                   :: DColour3
+cyan2                   :: DColour3
+cyan3                   :: DColour3
+cyan4                   :: DColour3
+cyan1                   = C3 0   1   1
+cyan2                   = C3 0   0.932   0.932
+cyan3                   = C3 0   0.804   0.804
+cyan4                   = C3 0   0.545   0.545
+
+darkGoldenrod1          :: DColour3
+darkGoldenrod2          :: DColour3
+darkGoldenrod3          :: DColour3
+darkGoldenrod4          :: DColour3
+darkGoldenrod1          = C3 1   0.725   0.06
+darkGoldenrod2          = C3 0.932   0.68   0.055
+darkGoldenrod3          = C3 0.804   0.585   0.048
+darkGoldenrod4          = C3 0.545   0.396   0.03
+
+darkOliveGreen1         :: DColour3
+darkOliveGreen2         :: DColour3
+darkOliveGreen3         :: DColour3
+darkOliveGreen4         :: DColour3
+darkOliveGreen1         = C3 0.792  1   0.44
+darkOliveGreen2         = C3 0.736   0.932   0.408
+darkOliveGreen3         = C3 0.635   0.804   0.352
+darkOliveGreen4         = C3 0.43   0.545   0.24
+
+darkOrange1             :: DColour3
+darkOrange2             :: DColour3
+darkOrange3             :: DColour3
+darkOrange4             :: DColour3
+darkOrange1             = C3 1   0.498  0
+darkOrange2             = C3 0.932   0.464  0
+darkOrange3             = C3 0.804   0.4  0
+darkOrange4             = C3 0.545   0.27  0
+
+darkOrchid1             :: DColour3
+darkOrchid2             :: DColour3
+darkOrchid3             :: DColour3
+darkOrchid4             :: DColour3
+darkOrchid1             = C3 0.75   0.244  1
+darkOrchid2             = C3 0.698   0.228   0.932
+darkOrchid3             = C3 0.604   0.196   0.804
+darkOrchid4             = C3 0.408   0.132   0.545
+
+darkSeaGreen1           :: DColour3
+darkSeaGreen2           :: DColour3
+darkSeaGreen3           :: DColour3
+darkSeaGreen4           :: DColour3
+darkSeaGreen1           = C3 0.756  1   0.756
+darkSeaGreen2           = C3 0.705   0.932   0.705
+darkSeaGreen3           = C3 0.608   0.804   0.608
+darkSeaGreen4           = C3 0.41   0.545   0.41
+
+darkSlateGray1          :: DColour3
+darkSlateGray2          :: DColour3
+darkSlateGray3          :: DColour3
+darkSlateGray4          :: DColour3
+darkSlateGray1          = C3 0.592  1  1
+darkSlateGray2          = C3 0.552   0.932   0.932
+darkSlateGray3          = C3 0.475   0.804   0.804
+darkSlateGray4          = C3 0.32   0.545   0.545
+
+deepPink1               :: DColour3
+deepPink2               :: DColour3
+deepPink3               :: DColour3
+deepPink4               :: DColour3
+deepPink1               = C3 1   0.08   0.576
+deepPink2               = C3 0.932   0.07   0.536
+deepPink3               = C3 0.804   0.064   0.464
+deepPink4               = C3 0.545   0.04   0.312
+
+deepSkyBlue1            :: DColour3
+deepSkyBlue2            :: DColour3
+deepSkyBlue3            :: DColour3
+deepSkyBlue4            :: DColour3
+deepSkyBlue1            = C3 0   0.75  1
+deepSkyBlue2            = C3 0   0.698   0.932
+deepSkyBlue3            = C3 0   0.604   0.804
+deepSkyBlue4            = C3 0   0.408   0.545
+
+dodgerBlue1             :: DColour3
+dodgerBlue2             :: DColour3
+dodgerBlue3             :: DColour3
+dodgerBlue4             :: DColour3
+dodgerBlue1             = C3 0.116   0.565  1
+dodgerBlue2             = C3 0.11   0.525   0.932
+dodgerBlue3             = C3 0.094   0.455   0.804
+dodgerBlue4             = C3 0.064   0.305   0.545
+
+firebrick1              :: DColour3
+firebrick2              :: DColour3
+firebrick3              :: DColour3
+firebrick4              :: DColour3
+firebrick1              = C3 1   0.19   0.19
+firebrick2              = C3 0.932   0.172   0.172
+firebrick3              = C3 0.804   0.15   0.15
+firebrick4              = C3 0.545   0.1   0.1
+
+gold1                   :: DColour3
+gold2                   :: DColour3
+gold3                   :: DColour3
+gold4                   :: DColour3
+gold1                   = C3 1   0.844  0
+gold2                   = C3 0.932   0.79  0
+gold3                   = C3 0.804   0.68  0
+gold4                   = C3 0.545   0.46  0
+
+goldenrod1              :: DColour3
+goldenrod2              :: DColour3
+goldenrod3              :: DColour3
+goldenrod4              :: DColour3
+goldenrod1              = C3 1   0.756   0.145
+goldenrod2              = C3 0.932   0.705   0.132
+goldenrod3              = C3 0.804   0.608   0.112
+goldenrod4              = C3 0.545   0.41   0.08
+
+green1                  :: DColour3
+green2                  :: DColour3
+green3                  :: DColour3
+green4                  :: DColour3
+green1                  = C3 0  1  0
+green2                  = C3 0   0.932  0
+green3                  = C3 0   0.804  0
+green4                  = C3 0   0.545  0
+
+honeydew1               :: DColour3
+honeydew2               :: DColour3
+honeydew3               :: DColour3
+honeydew4               :: DColour3
+honeydew1               = C3 0.94  1   0.94
+honeydew2               = C3 0.88   0.932   0.88
+honeydew3               = C3 0.756   0.804   0.756
+honeydew4               = C3 0.512   0.545   0.512
+
+hotPink1                :: DColour3
+hotPink2                :: DColour3
+hotPink3                :: DColour3
+hotPink4                :: DColour3
+hotPink1                = C3 1   0.43   0.705
+hotPink2                = C3 0.932   0.415   0.655
+hotPink3                = C3 0.804   0.376   0.565
+hotPink4                = C3 0.545   0.228   0.385
+
+indianRed1              :: DColour3
+indianRed2              :: DColour3
+indianRed3              :: DColour3
+indianRed4              :: DColour3
+indianRed1              = C3 1   0.415   0.415
+indianRed2              = C3 0.932   0.39   0.39
+indianRed3              = C3 0.804   0.332   0.332
+indianRed4              = C3 0.545   0.228   0.228
+
+ivory1                  :: DColour3
+ivory2                  :: DColour3
+ivory3                  :: DColour3
+ivory4                  :: DColour3
+ivory1                  = C3 1   1   0.94
+ivory2                  = C3 0.932   0.932   0.88
+ivory3                  = C3 0.804   0.804   0.756
+ivory4                  = C3 0.545   0.545   0.512
+
+khaki1                  :: DColour3
+khaki2                  :: DColour3
+khaki3                  :: DColour3
+khaki4                  :: DColour3
+khaki1                  = C3 1   0.965   0.56
+khaki2                  = C3 0.932   0.9   0.52
+khaki3                  = C3 0.804   0.776   0.45
+khaki4                  = C3 0.545   0.525   0.305
+
+lavenderBlush1          :: DColour3
+lavenderBlush2          :: DColour3
+lavenderBlush3          :: DColour3
+lavenderBlush4          :: DColour3
+lavenderBlush1          = C3 1   0.94   0.96
+lavenderBlush2          = C3 0.932   0.88   0.898
+lavenderBlush3          = C3 0.804   0.756   0.772
+lavenderBlush4          = C3 0.545   0.512   0.525
+
+lemonChiffon1           :: DColour3
+lemonChiffon2           :: DColour3
+lemonChiffon3           :: DColour3
+lemonChiffon4           :: DColour3
+lemonChiffon1           = C3 1   0.98   0.804
+lemonChiffon2           = C3 0.932   0.912   0.75
+lemonChiffon3           = C3 0.804   0.79   0.648
+lemonChiffon4           = C3 0.545   0.536   0.44
+
+lightBlue1              :: DColour3
+lightBlue2              :: DColour3
+lightBlue3              :: DColour3
+lightBlue4              :: DColour3
+lightBlue1              = C3 0.75   0.936  1
+lightBlue2              = C3 0.698   0.875   0.932
+lightBlue3              = C3 0.604   0.752   0.804
+lightBlue4              = C3 0.408   0.512   0.545
+
+lightCyan1              :: DColour3
+lightCyan2              :: DColour3
+lightCyan3              :: DColour3
+lightCyan4              :: DColour3
+lightCyan1              = C3 0.88  1  1
+lightCyan2              = C3 0.82   0.932   0.932
+lightCyan3              = C3 0.705   0.804   0.804
+lightCyan4              = C3 0.48   0.545   0.545
+
+lightGoldenrod1         :: DColour3
+lightGoldenrod2         :: DColour3
+lightGoldenrod3         :: DColour3
+lightGoldenrod4         :: DColour3
+lightGoldenrod1         = C3 1   0.925   0.545
+lightGoldenrod2         = C3 0.932   0.864   0.51
+lightGoldenrod3         = C3 0.804   0.745   0.44
+lightGoldenrod4         = C3 0.545   0.505   0.298
+
+lightPink1              :: DColour3
+lightPink2              :: DColour3
+lightPink3              :: DColour3
+lightPink4              :: DColour3
+lightPink1              = C3 1   0.684   0.725
+lightPink2              = C3 0.932   0.635   0.68
+lightPink3              = C3 0.804   0.55   0.585
+lightPink4              = C3 0.545   0.372   0.396
+
+lightSalmon1            :: DColour3
+lightSalmon2            :: DColour3
+lightSalmon3            :: DColour3
+lightSalmon4            :: DColour3
+lightSalmon1            = C3 1   0.628   0.48
+lightSalmon2            = C3 0.932   0.585   0.448
+lightSalmon3            = C3 0.804   0.505   0.385
+lightSalmon4            = C3 0.545   0.34   0.26
+
+lightSkyBlue1           :: DColour3
+lightSkyBlue2           :: DColour3
+lightSkyBlue3           :: DColour3
+lightSkyBlue4           :: DColour3
+lightSkyBlue1           = C3 0.69   0.888  1
+lightSkyBlue2           = C3 0.644   0.828   0.932
+lightSkyBlue3           = C3 0.552   0.712   0.804
+lightSkyBlue4           = C3 0.376   0.484   0.545
+
+lightSteelBlue1         :: DColour3
+lightSteelBlue2         :: DColour3
+lightSteelBlue3         :: DColour3
+lightSteelBlue4         :: DColour3
+lightSteelBlue1         = C3 0.792   0.884  1
+lightSteelBlue2         = C3 0.736   0.824   0.932
+lightSteelBlue3         = C3 0.635   0.71   0.804
+lightSteelBlue4         = C3 0.43   0.484   0.545
+
+lightYellow1            :: DColour3
+lightYellow2            :: DColour3
+lightYellow3            :: DColour3
+lightYellow4            :: DColour3
+lightYellow1            = C3 1  1   0.88
+lightYellow2            = C3 0.932   0.932   0.82
+lightYellow3            = C3 0.804   0.804   0.705
+lightYellow4            = C3 0.545   0.545   0.48
+
+magenta1                :: DColour3
+magenta2                :: DColour3
+magenta3                :: DColour3
+magenta4                :: DColour3
+magenta1                = C3 1  0  1
+magenta2                = C3 0.932  0   0.932
+magenta3                = C3 0.804  0   0.804
+magenta4                = C3 0.545  0   0.545
+
+maroon1                 :: DColour3
+maroon2                 :: DColour3
+maroon3                 :: DColour3
+maroon4                 :: DColour3
+maroon1                 = C3 1   0.204   0.7
+maroon2                 = C3 0.932   0.19   0.655
+maroon3                 = C3 0.804   0.16   0.565
+maroon4                 = C3 0.545   0.11   0.385
+
+mediumOrchid1           :: DColour3
+mediumOrchid2           :: DColour3
+mediumOrchid3           :: DColour3
+mediumOrchid4           :: DColour3
+mediumOrchid1           = C3 0.88   0.4  1
+mediumOrchid2           = C3 0.82   0.372   0.932
+mediumOrchid3           = C3 0.705   0.32   0.804
+mediumOrchid4           = C3 0.48   0.215   0.545
+
+mediumPurple1           :: DColour3
+mediumPurple2           :: DColour3
+mediumPurple3           :: DColour3
+mediumPurple4           :: DColour3
+mediumPurple1           = C3 0.67   0.51  1
+mediumPurple2           = C3 0.624   0.475   0.932
+mediumPurple3           = C3 0.536   0.408   0.804
+mediumPurple4           = C3 0.365   0.28   0.545
+
+mistyRose1              :: DColour3
+mistyRose2              :: DColour3
+mistyRose3              :: DColour3
+mistyRose4              :: DColour3
+mistyRose1              = C3 1   0.894   0.884
+mistyRose2              = C3 0.932   0.835   0.824
+mistyRose3              = C3 0.804   0.716   0.71
+mistyRose4              = C3 0.545   0.49   0.484
+
+navajoWhite1            :: DColour3
+navajoWhite2            :: DColour3
+navajoWhite3            :: DColour3
+navajoWhite4            :: DColour3
+navajoWhite1            = C3 1   0.87   0.68
+navajoWhite2            = C3 0.932   0.81   0.63
+navajoWhite3            = C3 0.804   0.7   0.545
+navajoWhite4            = C3 0.545   0.475   0.37
+
+oliveDrab1              :: DColour3
+oliveDrab2              :: DColour3
+oliveDrab3              :: DColour3
+oliveDrab4              :: DColour3
+oliveDrab1              = C3 0.752  1   0.244
+oliveDrab2              = C3 0.7   0.932   0.228
+oliveDrab3              = C3 0.604   0.804   0.196
+oliveDrab4              = C3 0.41   0.545   0.132
+
+orange1                 :: DColour3
+orange2                 :: DColour3
+orange3                 :: DColour3
+orange4                 :: DColour3
+orange1                 = C3 1   0.648  0
+orange2                 = C3 0.932   0.604  0
+orange3                 = C3 0.804   0.52  0
+orange4                 = C3 0.545   0.352  0
+
+orangeRed1              :: DColour3
+orangeRed2              :: DColour3
+orangeRed3              :: DColour3
+orangeRed4              :: DColour3
+orangeRed1              = C3 1   0.27  0
+orangeRed2              = C3 0.932   0.25  0
+orangeRed3              = C3 0.804   0.215  0
+orangeRed4              = C3 0.545   0.145  0
+
+orchid1                 :: DColour3
+orchid2                 :: DColour3
+orchid3                 :: DColour3
+orchid4                 :: DColour3
+orchid1                 = C3 1   0.512   0.98
+orchid2                 = C3 0.932   0.48   0.912
+orchid3                 = C3 0.804   0.41   0.79
+orchid4                 = C3 0.545   0.28   0.536
+
+paleGreen1              :: DColour3
+paleGreen2              :: DColour3
+paleGreen3              :: DColour3
+paleGreen4              :: DColour3
+paleGreen1              = C3 0.604  1   0.604
+paleGreen2              = C3 0.565   0.932   0.565
+paleGreen3              = C3 0.488   0.804   0.488
+paleGreen4              = C3 0.33   0.545   0.33
+
+paleTurquoise1          :: DColour3
+paleTurquoise2          :: DColour3
+paleTurquoise3          :: DColour3
+paleTurquoise4          :: DColour3
+paleTurquoise1          = C3 0.732  1  1
+paleTurquoise2          = C3 0.684   0.932   0.932
+paleTurquoise3          = C3 0.59   0.804   0.804
+paleTurquoise4          = C3 0.4   0.545   0.545
+
+paleVioletRed1          :: DColour3
+paleVioletRed2          :: DColour3
+paleVioletRed3          :: DColour3
+paleVioletRed4          :: DColour3
+paleVioletRed1          = C3 1   0.51   0.67
+paleVioletRed2          = C3 0.932   0.475   0.624
+paleVioletRed3          = C3 0.804   0.408   0.536
+paleVioletRed4          = C3 0.545   0.28   0.365
+
+peachPuff1              :: DColour3
+peachPuff2              :: DColour3
+peachPuff3              :: DColour3
+peachPuff4              :: DColour3
+peachPuff1              = C3 1   0.855   0.725
+peachPuff2              = C3 0.932   0.796   0.68
+peachPuff3              = C3 0.804   0.688   0.585
+peachPuff4              = C3 0.545   0.468   0.396
+
+pink1                   :: DColour3
+pink2                   :: DColour3
+pink3                   :: DColour3
+pink4                   :: DColour3
+pink1                   = C3 1   0.71   0.772
+pink2                   = C3 0.932   0.664   0.72
+pink3                   = C3 0.804   0.57   0.62
+pink4                   = C3 0.545   0.39   0.424
+
+plum1                   :: DColour3
+plum2                   :: DColour3
+plum3                   :: DColour3
+plum4                   :: DColour3
+plum1                   = C3 1   0.732  1
+plum2                   = C3 0.932   0.684   0.932
+plum3                   = C3 0.804   0.59   0.804
+plum4                   = C3 0.545   0.4   0.545
+
+purple1                 :: DColour3
+purple2                 :: DColour3
+purple3                 :: DColour3
+purple4                 :: DColour3
+purple1                 = C3 0.608   0.19  1
+purple2                 = C3 0.57   0.172   0.932
+purple3                 = C3 0.49   0.15   0.804
+purple4                 = C3 0.332   0.1   0.545
+
+red1                    :: DColour3
+red2                    :: DColour3
+red3                    :: DColour3
+red4                    :: DColour3
+red1                    = C3 1  0  0
+red2                    = C3 0.932  0  0
+red3                    = C3 0.804  0  0
+red4                    = C3 0.545  0  0
+
+rosyBrown1              :: DColour3
+rosyBrown2              :: DColour3
+rosyBrown3              :: DColour3
+rosyBrown4              :: DColour3
+rosyBrown1              = C3 1   0.756   0.756
+rosyBrown2              = C3 0.932   0.705   0.705
+rosyBrown3              = C3 0.804   0.608   0.608
+rosyBrown4              = C3 0.545   0.41   0.41
+
+royalBlue1              :: DColour3
+royalBlue2              :: DColour3
+royalBlue3              :: DColour3
+royalBlue4              :: DColour3
+royalBlue1              = C3 0.284   0.464  1
+royalBlue2              = C3 0.264   0.43   0.932
+royalBlue3              = C3 0.228   0.372   0.804
+royalBlue4              = C3 0.152   0.25   0.545
+
+salmon1                 :: DColour3
+salmon2                 :: DColour3
+salmon3                 :: DColour3
+salmon4                 :: DColour3
+salmon1                 = C3 1   0.55   0.41
+salmon2                 = C3 0.932   0.51   0.385
+salmon3                 = C3 0.804   0.44   0.33
+salmon4                 = C3 0.545   0.298   0.224
+
+seaGreen1               :: DColour3
+seaGreen2               :: DColour3
+seaGreen3               :: DColour3
+seaGreen4               :: DColour3
+seaGreen1               = C3 0.33  1   0.624
+seaGreen2               = C3 0.305   0.932   0.58
+seaGreen3               = C3 0.264   0.804   0.5
+seaGreen4               = C3 0.18   0.545   0.34
+
+seashell1               :: DColour3
+seashell2               :: DColour3
+seashell3               :: DColour3
+seashell4               :: DColour3
+seashell1               = C3 1   0.96   0.932
+seashell2               = C3 0.932   0.898   0.87
+seashell3               = C3 0.804   0.772   0.75
+seashell4               = C3 0.545   0.525   0.51
+
+sienna1                 :: DColour3
+sienna2                 :: DColour3
+sienna3                 :: DColour3
+sienna4                 :: DColour3
+sienna1                 = C3 1   0.51   0.28
+sienna2                 = C3 0.932   0.475   0.26
+sienna3                 = C3 0.804   0.408   0.224
+sienna4                 = C3 0.545   0.28   0.15
+
+skyBlue1                :: DColour3
+skyBlue2                :: DColour3
+skyBlue3                :: DColour3
+skyBlue4                :: DColour3
+skyBlue1                = C3 0.53   0.808  1
+skyBlue2                = C3 0.494   0.752   0.932
+skyBlue3                = C3 0.424   0.65   0.804
+skyBlue4                = C3 0.29   0.44   0.545
+
+slateBlue1              :: DColour3
+slateBlue2              :: DColour3
+slateBlue3              :: DColour3
+slateBlue4              :: DColour3
+slateBlue1              = C3 0.512   0.435  1
+slateBlue2              = C3 0.48   0.404   0.932
+slateBlue3              = C3 0.41   0.35   0.804
+slateBlue4              = C3 0.28   0.235   0.545
+
+slateGray1              :: DColour3
+slateGray2              :: DColour3
+slateGray3              :: DColour3
+slateGray4              :: DColour3
+slateGray1              = C3 0.776   0.888  1
+slateGray2              = C3 0.725   0.828   0.932
+slateGray3              = C3 0.624   0.712   0.804
+slateGray4              = C3 0.424   0.484   0.545
+
+snow1                   :: DColour3
+snow2                   :: DColour3
+snow3                   :: DColour3
+snow4                   :: DColour3
+snow1                   = C3 1   0.98   0.98
+snow2                   = C3 0.932   0.912   0.912
+snow3                   = C3 0.804   0.79   0.79
+snow4                   = C3 0.545   0.536   0.536
+
+springGreen1            :: DColour3
+springGreen2            :: DColour3
+springGreen3            :: DColour3
+springGreen4            :: DColour3
+springGreen1            = C3 0  1   0.498
+springGreen2            = C3 0   0.932   0.464
+springGreen3            = C3 0   0.804   0.4
+springGreen4            = C3 0   0.545   0.27
+
+steelBlue1              :: DColour3
+steelBlue2              :: DColour3
+steelBlue3              :: DColour3
+steelBlue4              :: DColour3
+steelBlue1              = C3 0.39   0.72  1
+steelBlue2              = C3 0.36   0.675   0.932
+steelBlue3              = C3 0.31   0.58   0.804
+steelBlue4              = C3 0.21   0.392   0.545
+
+tan1                    :: DColour3
+tan2                    :: DColour3
+tan3                    :: DColour3
+tan4                    :: DColour3
+tan1                    = C3 1   0.648   0.31
+tan2                    = C3 0.932   0.604   0.288
+tan3                    = C3 0.804   0.52   0.248
+tan4                    = C3 0.545   0.352   0.17
+
+thistle1                :: DColour3
+thistle2                :: DColour3
+thistle3                :: DColour3
+thistle4                :: DColour3
+thistle1                = C3 1   0.884  1
+thistle2                = C3 0.932   0.824   0.932
+thistle3                = C3 0.804   0.71   0.804
+thistle4                = C3 0.545   0.484   0.545
+
+tomato1                 :: DColour3
+tomato2                 :: DColour3
+tomato3                 :: DColour3
+tomato4                 :: DColour3
+tomato1                 = C3 1   0.39   0.28
+tomato2                 = C3 0.932   0.36   0.26
+tomato3                 = C3 0.804   0.31   0.224
+tomato4                 = C3 0.545   0.21   0.15
+
+turquoise1              :: DColour3
+turquoise2              :: DColour3
+turquoise3              :: DColour3
+turquoise4              :: DColour3
+turquoise1              = C3 0   0.96  1
+turquoise2              = C3 0   0.898   0.932
+turquoise3              = C3 0   0.772   0.804
+turquoise4              = C3 0   0.525   0.545
+
+violetRed1              :: DColour3
+violetRed2              :: DColour3
+violetRed3              :: DColour3
+violetRed4              :: DColour3
+violetRed1              = C3 1   0.244   0.59
+violetRed2              = C3 0.932   0.228   0.55
+violetRed3              = C3 0.804   0.196   0.47
+violetRed4              = C3 0.545   0.132   0.32
+
+wheat1                  :: DColour3
+wheat2                  :: DColour3
+wheat3                  :: DColour3
+wheat4                  :: DColour3
+wheat1                  = C3 1   0.905   0.73
+wheat2                  = C3 0.932   0.848   0.684
+wheat3                  = C3 0.804   0.73   0.59
+wheat4                  = C3 0.545   0.494   0.4
+
+yellow1                 :: DColour3
+yellow2                 :: DColour3
+yellow3                 :: DColour3
+yellow4                 :: DColour3
+yellow1                 = C3 1  1  0
+yellow2                 = C3 0.932   0.932  0
+yellow3                 = C3 0.804   0.804  0
+yellow4                 = C3 0.545   0.545  0
+
+gray0                   :: DColour3
+green0                  :: DColour3
+grey0                   :: DColour3
+maroon0                 :: DColour3
+purple0                 :: DColour3
+gray0                   = C3 0.745  0.745  0.745
+green0                  = C3 0      1      0
+grey0                   = C3 0.745  0.745  0.745
+maroon0                 = C3 0.69   0.19   0.376
+purple0                 = C3 0.628  0.125  0.94
 
 
 

@@ -25,6 +25,11 @@ data Point2 a = P2 !a !a
 type DPoint2 = Point2 Double
 
 
+
+instance Functor Point2 where
+  fmap f (P2 a b) = P2 (f a) (f b)
+
+
 -- Hmm, do Points have a genuine (+) operation?
 
 instance Num a => Num (Point2 a) where

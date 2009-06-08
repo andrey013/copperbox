@@ -5,6 +5,7 @@ module Basic1 where
 import Wumpus.Core.Wumpus
 import Wumpus.Drawing.Basic
 import Wumpus.Drawing.SVGColours
+import qualified Wumpus.Drawing.X11Colours as X11
 
 import Wumpus.Core.Point
 

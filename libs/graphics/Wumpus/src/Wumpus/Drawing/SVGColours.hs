@@ -166,453 +166,452 @@ module Wumpus.Drawing.SVGColours (
 ) where
 
 
-import Wumpus.Core.Colour ( Colour3 )
-import Wumpus.Core.Vector ( Vec3(..) )
+import Wumpus.Core.Colour ( Colour3(..), DColour3 )
 
 
 import Prelude hiding ( tan )
   
   
-aliceBlue           :: Colour3
-aliceBlue           = V3 0.941  0.973  1.0
+aliceBlue           :: DColour3
+aliceBlue           = C3 0.941  0.973  1.0
 
-antiqueWhite        :: Colour3
-antiqueWhite        = V3 0.980  0.922  0.843
+antiqueWhite        :: DColour3
+antiqueWhite        = C3 0.980  0.922  0.843
 
-aqua                :: Colour3
-aqua                = V3 0.0  1.0  1.0
+aqua                :: DColour3
+aqua                = C3 0.0  1.0  1.0
 
-aquamarine          :: Colour3
-aquamarine          = V3 0.498  1.0  0.831
+aquamarine          :: DColour3
+aquamarine          = C3 0.498  1.0  0.831
 
-azure               :: Colour3
-azure               = V3 0.941  1.0  1.0
+azure               :: DColour3
+azure               = C3 0.941  1.0  1.0
 
-beige               :: Colour3  
-beige               = V3 0.961  0.961  0.863
+beige               :: DColour3  
+beige               = C3 0.961  0.961  0.863
 
-bisque              :: Colour3
-bisque              = V3 1.0  0.894  0.769
+bisque              :: DColour3
+bisque              = C3 1.0  0.894  0.769
 
-black               :: Colour3
-black               = V3 0.0  0.0  0.0
+black               :: DColour3
+black               = C3 0.0  0.0  0.0
 
-blanchedAlmond      :: Colour3
-blanchedAlmond      = V3 1.0  0.922  0.804
+blanchedAlmond      :: DColour3
+blanchedAlmond      = C3 1.0  0.922  0.804
 
-blue                :: Colour3
-blue                = V3 0.0  0.0  1.0
+blue                :: DColour3
+blue                = C3 0.0  0.0  1.0
 
-blueViolet          :: Colour3
-blueViolet          = V3 0.541  0.169  0.886
+blueViolet          :: DColour3
+blueViolet          = C3 0.541  0.169  0.886
 
-brown               :: Colour3
-brown               = V3 0.647  0.165  0.165
+brown               :: DColour3
+brown               = C3 0.647  0.165  0.165
 
-burlywood           :: Colour3
-burlywood           = V3 0.871  0.722  0.529
+burlywood           :: DColour3
+burlywood           = C3 0.871  0.722  0.529
 
-cadetBlue           :: Colour3
-cadetBlue           = V3 0.373  0.620  0.627
+cadetBlue           :: DColour3
+cadetBlue           = C3 0.373  0.620  0.627
 
-chartreuse          :: Colour3
-chartreuse          = V3 0.498  1.0  0.0
+chartreuse          :: DColour3
+chartreuse          = C3 0.498  1.0  0.0
 
-chocolate           :: Colour3
-chocolate           = V3 0.824  0.412  0.118
+chocolate           :: DColour3
+chocolate           = C3 0.824  0.412  0.118
 
-coral               :: Colour3
-coral               = V3 1.0  0.498  0.314
+coral               :: DColour3
+coral               = C3 1.0  0.498  0.314
 
-cornflowerBlue      :: Colour3
-cornflowerBlue      = V3 0.392  0.584  0.929
+cornflowerBlue      :: DColour3
+cornflowerBlue      = C3 0.392  0.584  0.929
 
-cornsilk            :: Colour3
-cornsilk            = V3 1.0  0.973  0.863
+cornsilk            :: DColour3
+cornsilk            = C3 1.0  0.973  0.863
 
-crimson             :: Colour3
-crimson             = V3 0.863  0.078  0.235
+crimson             :: DColour3
+crimson             = C3 0.863  0.078  0.235
 
-cyan                :: Colour3
-cyan                = V3 0.0  1.0  1.0
+cyan                :: DColour3
+cyan                = C3 0.0  1.0  1.0
 
-darkBlue            :: Colour3
-darkBlue            = V3 0.0  0.0  0.545
+darkBlue            :: DColour3
+darkBlue            = C3 0.0  0.0  0.545
 
-darkCyan            :: Colour3
-darkCyan            = V3 0.0  0.545  0.545
+darkCyan            :: DColour3
+darkCyan            = C3 0.0  0.545  0.545
 
-darkGoldenrod       :: Colour3
-darkGoldenrod       = V3 0.722  0.545  0.043
+darkGoldenrod       :: DColour3
+darkGoldenrod       = C3 0.722  0.545  0.043
 
-darkGray            :: Colour3
-darkGray            = V3 0.663  0.663  0.663
+darkGray            :: DColour3
+darkGray            = C3 0.663  0.663  0.663
 
-darkGreen           :: Colour3
-darkGreen           = V3 0.0  0.392  0.0
+darkGreen           :: DColour3
+darkGreen           = C3 0.0  0.392  0.0
 
-darkGrey            :: Colour3
-darkGrey            = V3 0.663  0.663  0.663
+darkGrey            :: DColour3
+darkGrey            = C3 0.663  0.663  0.663
 
-darkKhaki           :: Colour3
-darkKhaki           = V3 0.741  0.718  0.420
+darkKhaki           :: DColour3
+darkKhaki           = C3 0.741  0.718  0.420
 
-darkMagenta         :: Colour3
-darkMagenta         = V3 0.545  0.0  0.545
+darkMagenta         :: DColour3
+darkMagenta         = C3 0.545  0.0  0.545
 
-darkOliveGreen      :: Colour3
-darkOliveGreen      = V3 0.333  0.420  0.184
+darkOliveGreen      :: DColour3
+darkOliveGreen      = C3 0.333  0.420  0.184
 
-darkOrange          :: Colour3
-darkOrange          = V3 1.0  0.549  0.0
+darkOrange          :: DColour3
+darkOrange          = C3 1.0  0.549  0.0
 
-darkOrchid          :: Colour3
-darkOrchid          = V3 0.600  0.196  0.800
+darkOrchid          :: DColour3
+darkOrchid          = C3 0.600  0.196  0.800
 
-darkRed             :: Colour3
-darkRed             = V3 0.545  0.0  0.0
+darkRed             :: DColour3
+darkRed             = C3 0.545  0.0  0.0
 
-darkSalmon          :: Colour3
-darkSalmon          = V3 0.914  0.588  0.478
+darkSalmon          :: DColour3
+darkSalmon          = C3 0.914  0.588  0.478
 
-darkSeaGreen        :: Colour3
-darkSeaGreen        = V3 0.561  0.737  0.561
+darkSeaGreen        :: DColour3
+darkSeaGreen        = C3 0.561  0.737  0.561
 
-darkSlateBlue       :: Colour3
-darkSlateBlue       = V3 0.282  0.239  0.545
+darkSlateBlue       :: DColour3
+darkSlateBlue       = C3 0.282  0.239  0.545
 
-darkSlateGray       :: Colour3
-darkSlateGray       = V3 0.184  0.310  0.310
+darkSlateGray       :: DColour3
+darkSlateGray       = C3 0.184  0.310  0.310
 
-darkSlateGrey       :: Colour3
-darkSlateGrey       = V3 0.184  0.310  0.310
+darkSlateGrey       :: DColour3
+darkSlateGrey       = C3 0.184  0.310  0.310
 
-darkTurquoise       :: Colour3
-darkTurquoise       = V3 0.0  0.808  0.820
+darkTurquoise       :: DColour3
+darkTurquoise       = C3 0.0  0.808  0.820
 
-darkViolet          :: Colour3
-darkViolet          = V3 0.580  0.0  0.827
+darkViolet          :: DColour3
+darkViolet          = C3 0.580  0.0  0.827
 
-deepPink            :: Colour3
-deepPink            = V3 1.0  0.078  0.576
+deepPink            :: DColour3
+deepPink            = C3 1.0  0.078  0.576
 
-deepSkyBlue         :: Colour3
-deepSkyBlue         = V3 0.0  0.750  1.0
+deepSkyBlue         :: DColour3
+deepSkyBlue         = C3 0.0  0.750  1.0
 
-dimGray             :: Colour3
-dimGray             = V3 0.412  0.412  0.412
+dimGray             :: DColour3
+dimGray             = C3 0.412  0.412  0.412
 
-dimGrey             :: Colour3
-dimGrey             = V3 0.412  0.412  0.412
+dimGrey             :: DColour3
+dimGrey             = C3 0.412  0.412  0.412
 
-dodgerBlue          :: Colour3
-dodgerBlue          = V3 0.118  0.565  1.0
+dodgerBlue          :: DColour3
+dodgerBlue          = C3 0.118  0.565  1.0
 
-firebrick           :: Colour3
-firebrick           = V3 0.698  0.133  0.133
+firebrick           :: DColour3
+firebrick           = C3 0.698  0.133  0.133
 
-floralWhite         :: Colour3
-floralWhite         = V3 1.0  0.980  0.941
+floralWhite         :: DColour3
+floralWhite         = C3 1.0  0.980  0.941
 
-forestGreen         :: Colour3
-forestGreen         = V3 0.133  0.545  0.133
+forestGreen         :: DColour3
+forestGreen         = C3 0.133  0.545  0.133
 
-fuchsia             :: Colour3
-fuchsia             = V3 1.0  0.0  1.0
+fuchsia             :: DColour3
+fuchsia             = C3 1.0  0.0  1.0
 
-gainsboro           :: Colour3
-gainsboro           = V3 0.863  0.863  0.863
+gainsboro           :: DColour3
+gainsboro           = C3 0.863  0.863  0.863
 
-ghostWhite          :: Colour3
-ghostWhite          = V3 0.973  0.973  1.0
+ghostWhite          :: DColour3
+ghostWhite          = C3 0.973  0.973  1.0
 
-gold                :: Colour3
-gold                = V3 1.0  0.843  0.0
+gold                :: DColour3
+gold                = C3 1.0  0.843  0.0
 
-goldenrod           :: Colour3
-goldenrod           = V3 0.855  0.647  0.125
+goldenrod           :: DColour3
+goldenrod           = C3 0.855  0.647  0.125
 
-gray                :: Colour3
-gray                = V3 0.5  0.5  0.5
+gray                :: DColour3
+gray                = C3 0.5  0.5  0.5
 
-grey                :: Colour3
-grey                = V3 0.5  0.5  0.5
+grey                :: DColour3
+grey                = C3 0.5  0.5  0.5
 
-green               :: Colour3
-green               = V3 0.0  0.5  0.0
+green               :: DColour3
+green               = C3 0.0  0.5  0.0
 
-greenYellow         :: Colour3
-greenYellow         = V3 0.678  1.0  0.184
+greenYellow         :: DColour3
+greenYellow         = C3 0.678  1.0  0.184
 
-honeydew            :: Colour3
-honeydew            = V3 0.941  1.0  0.941
+honeydew            :: DColour3
+honeydew            = C3 0.941  1.0  0.941
 
-hotPink             :: Colour3
-hotPink             = V3 1.0  0.412  0.706
+hotPink             :: DColour3
+hotPink             = C3 1.0  0.412  0.706
 
-indianRed           :: Colour3
-indianRed           = V3 0.804  0.361  0.361
+indianRed           :: DColour3
+indianRed           = C3 0.804  0.361  0.361
 
-indigo              :: Colour3
-indigo              = V3 0.294  0.0  0.510
+indigo              :: DColour3
+indigo              = C3 0.294  0.0  0.510
 
-ivory               :: Colour3
-ivory               = V3 1.0  1.0  0.941
+ivory               :: DColour3
+ivory               = C3 1.0  1.0  0.941
 
-khaki               :: Colour3
-khaki               = V3 0.941  0.902  0.549
+khaki               :: DColour3
+khaki               = C3 0.941  0.902  0.549
 
-lavender            :: Colour3
-lavender            = V3 0.902  0.902  0.980
+lavender            :: DColour3
+lavender            = C3 0.902  0.902  0.980
 
-lavenderBlush       :: Colour3
-lavenderBlush       = V3 1.0  0.941  0.961
+lavenderBlush       :: DColour3
+lavenderBlush       = C3 1.0  0.941  0.961
 
-lawnGreen           :: Colour3
-lawnGreen           = V3 0.486  0.988  0.0
+lawnGreen           :: DColour3
+lawnGreen           = C3 0.486  0.988  0.0
 
-lemonChiffon        :: Colour3
-lemonChiffon        = V3 1.0  0.980  0.804
+lemonChiffon        :: DColour3
+lemonChiffon        = C3 1.0  0.980  0.804
 
-lightBlue           :: Colour3
-lightBlue           = V3 0.678  0.847  0.902
+lightBlue           :: DColour3
+lightBlue           = C3 0.678  0.847  0.902
 
-lightCoral          :: Colour3
-lightCoral          = V3 0.941  0.5  0.5
+lightCoral          :: DColour3
+lightCoral          = C3 0.941  0.5  0.5
 
-lightCyan           :: Colour3
-lightCyan           = V3 0.878  1.0  1.0
+lightCyan           :: DColour3
+lightCyan           = C3 0.878  1.0  1.0
 
-lightGoldenrodYellow  :: Colour3
-lightGoldenrodYellow  = V3 0.980  0.980  0.824
+lightGoldenrodYellow  :: DColour3
+lightGoldenrodYellow  = C3 0.980  0.980  0.824
 
-lightGray           :: Colour3
-lightGray           = V3 0.827  0.827  0.827
+lightGray           :: DColour3
+lightGray           = C3 0.827  0.827  0.827
 
-lightGreen          :: Colour3
-lightGreen          = V3 0.565  0.933  0.565
+lightGreen          :: DColour3
+lightGreen          = C3 0.565  0.933  0.565
 
-lightGrey           :: Colour3
-lightGrey           = V3 0.827  0.827  0.827
+lightGrey           :: DColour3
+lightGrey           = C3 0.827  0.827  0.827
 
-lightPink           :: Colour3
-lightPink           = V3 1.0  0.714  0.757
+lightPink           :: DColour3
+lightPink           = C3 1.0  0.714  0.757
 
-lightSalmon         :: Colour3
-lightSalmon         = V3 1.0  0.627  0.478
+lightSalmon         :: DColour3
+lightSalmon         = C3 1.0  0.627  0.478
 
-lightSeaGreen       :: Colour3
-lightSeaGreen       = V3 0.125  0.698  0.666
+lightSeaGreen       :: DColour3
+lightSeaGreen       = C3 0.125  0.698  0.666
 
-lightSkyBlue        :: Colour3
-lightSkyBlue        = V3 0.529  0.808  0.980
+lightSkyBlue        :: DColour3
+lightSkyBlue        = C3 0.529  0.808  0.980
 
-lightSlateGray      :: Colour3
-lightSlateGray      = V3 0.466  0.533  0.600
+lightSlateGray      :: DColour3
+lightSlateGray      = C3 0.466  0.533  0.600
 
-lightSlateGrey      :: Colour3
-lightSlateGrey      = V3 0.466  0.533  0.600
+lightSlateGrey      :: DColour3
+lightSlateGrey      = C3 0.466  0.533  0.600
 
-lightSteelBlue      :: Colour3
-lightSteelBlue      = V3 0.690  0.769  0.871
+lightSteelBlue      :: DColour3
+lightSteelBlue      = C3 0.690  0.769  0.871
 
-lightYellow         :: Colour3
-lightYellow         = V3 1.0  1.0  0.878
+lightYellow         :: DColour3
+lightYellow         = C3 1.0  1.0  0.878
 
-lime                :: Colour3
-lime                = V3 0.0  1.0  0.0
+lime                :: DColour3
+lime                = C3 0.0  1.0  0.0
 
-limeGreen           :: Colour3
-limeGreen           = V3 0.196  0.804  0.196
+limeGreen           :: DColour3
+limeGreen           = C3 0.196  0.804  0.196
 
-linen               :: Colour3
-linen               = V3 0.980  0.941  0.902
+linen               :: DColour3
+linen               = C3 0.980  0.941  0.902
 
-magenta             :: Colour3
-magenta             = V3 1.0  0.0  1.0
+magenta             :: DColour3
+magenta             = C3 1.0  0.0  1.0
 
-maroon              :: Colour3
-maroon              = V3 0.5  0.0  0.0
+maroon              :: DColour3
+maroon              = C3 0.5  0.0  0.0
 
-mediumAquamarine    :: Colour3
-mediumAquamarine    = V3 0.4  0.804  0.666
+mediumAquamarine    :: DColour3
+mediumAquamarine    = C3 0.4  0.804  0.666
 
-mediumBlue          :: Colour3
-mediumBlue          = V3 0.0  0.0  0.804
+mediumBlue          :: DColour3
+mediumBlue          = C3 0.0  0.0  0.804
 
-mediumOrchid        :: Colour3
-mediumOrchid        = V3 0.729  0.333  0.827
+mediumOrchid        :: DColour3
+mediumOrchid        = C3 0.729  0.333  0.827
 
-mediumPurple        :: Colour3
-mediumPurple        = V3 0.576  0.439  0.859
+mediumPurple        :: DColour3
+mediumPurple        = C3 0.576  0.439  0.859
 
-mediumSeaGreen      :: Colour3
-mediumSeaGreen      = V3 0.235  0.702  0.443
+mediumSeaGreen      :: DColour3
+mediumSeaGreen      = C3 0.235  0.702  0.443
 
-mediumSlateBlue     :: Colour3
-mediumSlateBlue     = V3 0.482  0.408  0.933
+mediumSlateBlue     :: DColour3
+mediumSlateBlue     = C3 0.482  0.408  0.933
 
-mediumSpringGreen   :: Colour3
-mediumSpringGreen   = V3 0.0  0.980  0.604
+mediumSpringGreen   :: DColour3
+mediumSpringGreen   = C3 0.0  0.980  0.604
 
-mediumTurquoise     :: Colour3
-mediumTurquoise     = V3 0.282  0.820  0.800
+mediumTurquoise     :: DColour3
+mediumTurquoise     = C3 0.282  0.820  0.800
 
-mediumVioletRed     :: Colour3
-mediumVioletRed     = V3 0.780  0.082  0.522
+mediumVioletRed     :: DColour3
+mediumVioletRed     = C3 0.780  0.082  0.522
 
-midnightBlue        :: Colour3
-midnightBlue        = V3 0.098  0.098  0.439
+midnightBlue        :: DColour3
+midnightBlue        = C3 0.098  0.098  0.439
 
-mintcream           :: Colour3
-mintcream           = V3 0.961  1.0  0.980
+mintcream           :: DColour3
+mintcream           = C3 0.961  1.0  0.980
 
-mistyrose           :: Colour3
-mistyrose           = V3 1.0  0.894  0.882
+mistyrose           :: DColour3
+mistyrose           = C3 1.0  0.894  0.882
 
-moccasin            :: Colour3
-moccasin            = V3 1.0  0.894  0.710
+moccasin            :: DColour3
+moccasin            = C3 1.0  0.894  0.710
 
-navajoWhite         :: Colour3
-navajoWhite         = V3 1.0  0.871  0.678
+navajoWhite         :: DColour3
+navajoWhite         = C3 1.0  0.871  0.678
 
-navy                :: Colour3
-navy                = V3 0.0  0.0  0.5
+navy                :: DColour3
+navy                = C3 0.0  0.0  0.5
 
-oldlace             :: Colour3
-oldlace             = V3 0.992  0.961  0.902
+oldlace             :: DColour3
+oldlace             = C3 0.992  0.961  0.902
 
-olive               :: Colour3
-olive               = V3 0.5  0.5  0.0
+olive               :: DColour3
+olive               = C3 0.5  0.5  0.0
 
-oliveDrab           :: Colour3
-oliveDrab           = V3 0.420  0.557  0.137
+oliveDrab           :: DColour3
+oliveDrab           = C3 0.420  0.557  0.137
 
-orange              :: Colour3
-orange              = V3 1.0  0.647  0.0
+orange              :: DColour3
+orange              = C3 1.0  0.647  0.0
 
-orangeRed           :: Colour3
-orangeRed           = V3 1.0  0.271  0.0
+orangeRed           :: DColour3
+orangeRed           = C3 1.0  0.271  0.0
 
-orchid              :: Colour3
-orchid              = V3 0.855  0.439  0.839
+orchid              :: DColour3
+orchid              = C3 0.855  0.439  0.839
 
-paleGoldenrod       :: Colour3
-paleGoldenrod       = V3 0.933  0.910  0.666
+paleGoldenrod       :: DColour3
+paleGoldenrod       = C3 0.933  0.910  0.666
 
-paleGreen           :: Colour3
-paleGreen           = V3 0.596  0.984  0.596
+paleGreen           :: DColour3
+paleGreen           = C3 0.596  0.984  0.596
 
-paleTurquoise       :: Colour3
-paleTurquoise       = V3 0.686  0.933  0.933
+paleTurquoise       :: DColour3
+paleTurquoise       = C3 0.686  0.933  0.933
 
-paleVioletRed       :: Colour3
-paleVioletRed       = V3 0.859  0.439  0.576
+paleVioletRed       :: DColour3
+paleVioletRed       = C3 0.859  0.439  0.576
 
-papayawhip          :: Colour3
-papayawhip          = V3 1.0  0.937  0.835
+papayawhip          :: DColour3
+papayawhip          = C3 1.0  0.937  0.835
 
-peachpuff           :: Colour3
-peachpuff           = V3 1.0  0.855  0.725
+peachpuff           :: DColour3
+peachpuff           = C3 1.0  0.855  0.725
 
-peru                :: Colour3
-peru                = V3 0.804  0.522  0.247
+peru                :: DColour3
+peru                = C3 0.804  0.522  0.247
 
-pink                :: Colour3
-pink                = V3 1.0  0.753  0.796
+pink                :: DColour3
+pink                = C3 1.0  0.753  0.796
 
-plum                :: Colour3
-plum                = V3 0.867  0.627  0.867
+plum                :: DColour3
+plum                = C3 0.867  0.627  0.867
 
-powderBlue          :: Colour3
-powderBlue          = V3 0.690  0.878  0.902
+powderBlue          :: DColour3
+powderBlue          = C3 0.690  0.878  0.902
 
-purple              :: Colour3
-purple              = V3 0.5  0.0  0.5
+purple              :: DColour3
+purple              = C3 0.5  0.0  0.5
 
-red                 :: Colour3
-red                 = V3 1.0  0.0  0.0
+red                 :: DColour3
+red                 = C3 1.0  0.0  0.0
 
-rosyBrown           :: Colour3
-rosyBrown           = V3 0.737  0.561  0.561
+rosyBrown           :: DColour3
+rosyBrown           = C3 0.737  0.561  0.561
 
-royalBlue           :: Colour3
-royalBlue           = V3 0.255  0.412  0.882
+royalBlue           :: DColour3
+royalBlue           = C3 0.255  0.412  0.882
 
-saddleBrown         :: Colour3
-saddleBrown         = V3 0.545  0.271  0.075
+saddleBrown         :: DColour3
+saddleBrown         = C3 0.545  0.271  0.075
 
-salmon              :: Colour3
-salmon              = V3 0.980  0.5  0.447
+salmon              :: DColour3
+salmon              = C3 0.980  0.5  0.447
 
-sandyBrown          :: Colour3
-sandyBrown          = V3 0.957  0.643  0.376
+sandyBrown          :: DColour3
+sandyBrown          = C3 0.957  0.643  0.376
 
-seaGreen            :: Colour3
-seaGreen            = V3 0.180  0.545  0.341
+seaGreen            :: DColour3
+seaGreen            = C3 0.180  0.545  0.341
 
-seashell            :: Colour3
-seashell            = V3 1.0  0.961  0.933
+seashell            :: DColour3
+seashell            = C3 1.0  0.961  0.933
 
-sienna              :: Colour3
-sienna              = V3 0.627  0.322  0.176
+sienna              :: DColour3
+sienna              = C3 0.627  0.322  0.176
 
-silver              :: Colour3
-silver              = V3 0.753  0.753  0.753
+silver              :: DColour3
+silver              = C3 0.753  0.753  0.753
 
-skyBlue             :: Colour3
-skyBlue             = V3 0.529  0.808  0.922
+skyBlue             :: DColour3
+skyBlue             = C3 0.529  0.808  0.922
 
-slateBlue           :: Colour3
-slateBlue           = V3 0.416  0.353  0.804
+slateBlue           :: DColour3
+slateBlue           = C3 0.416  0.353  0.804
 
-slateGray           :: Colour3
-slateGray           = V3 0.439  0.5  0.565
+slateGray           :: DColour3
+slateGray           = C3 0.439  0.5  0.565
 
-slateGrey           :: Colour3
-slateGrey           = V3 0.439  0.5  0.565
+slateGrey           :: DColour3
+slateGrey           = C3 0.439  0.5  0.565
 
-snow                :: Colour3
-snow                = V3 1.0  0.980  0.980
+snow                :: DColour3
+snow                = C3 1.0  0.980  0.980
 
-springGreen         :: Colour3
-springGreen         = V3 0.0  1.0  0.498
+springGreen         :: DColour3
+springGreen         = C3 0.0  1.0  0.498
 
-steelBlue           :: Colour3
-steelBlue           = V3 0.275  0.510  0.706
+steelBlue           :: DColour3
+steelBlue           = C3 0.275  0.510  0.706
 
-tan                 :: Colour3
-tan                 = V3 0.824  0.706  0.549
+tan                 :: DColour3
+tan                 = C3 0.824  0.706  0.549
 
-teal                :: Colour3
-teal                = V3 0.0  0.5  0.5
+teal                :: DColour3
+teal                = C3 0.0  0.5  0.5
 
-thistle             :: Colour3
-thistle             = V3 0.847  0.750  0.847
+thistle             :: DColour3
+thistle             = C3 0.847  0.750  0.847
 
-tomato              :: Colour3
-tomato              = V3 1.0  0.388  0.278
+tomato              :: DColour3
+tomato              = C3 1.0  0.388  0.278
 
-turquoise           :: Colour3
-turquoise           = V3 0.251  0.878  0.816
+turquoise           :: DColour3
+turquoise           = C3 0.251  0.878  0.816
 
-violet              :: Colour3
-violet              = V3 0.933  0.510  0.933
+violet              :: DColour3
+violet              = C3 0.933  0.510  0.933
 
-wheat               :: Colour3
-wheat               = V3 0.961  0.871  0.702
+wheat               :: DColour3
+wheat               = C3 0.961  0.871  0.702
 
-white               :: Colour3
-white               = V3 1.0  1.0  1.0
+white               :: DColour3
+white               = C3 1.0  1.0  1.0
 
-whitesmoke          :: Colour3
-whitesmoke          = V3 0.961  0.961  0.961
+whitesmoke          :: DColour3
+whitesmoke          = C3 0.961  0.961  0.961
 
-yellow              :: Colour3
-yellow              = V3 1.0  1.0  0.0
+yellow              :: DColour3
+yellow              = C3 1.0  1.0  0.0
 
-yellowGreen         :: Colour3
-yellowGreen         = V3 0.604  0.804  0.196
+yellowGreen         :: DColour3
+yellowGreen         = C3 0.604  0.804  0.196
 
 
 

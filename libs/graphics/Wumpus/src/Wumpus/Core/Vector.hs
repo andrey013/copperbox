@@ -22,6 +22,8 @@ module Wumpus.Core.Vector where
 
 import Data.VectorSpace
 
+import Data.Monoid
+
 data Vec2 a = V2 !a !a
   deriving (Eq,Show)
 
@@ -31,6 +33,24 @@ data Vec3 a = V3 !a !a !a
   deriving (Eq,Show)
 
 type DVec3 = Vec3 Double 
+
+instance Functor Vec2 where
+  fmap f (V2 a b) = V2 (f a) (f b)
+
+instance Functor Vec3 where
+  fmap f (V3 a b c) = V3 (f a) (f b) (f c)
+
+
+-- Vectors have a sensible Monoid instance as addition
+
+instance Num a => Monoid (Vec2 a) where
+  mempty = V2 0 0
+  V2 a b `mappend` V2 x y = V2 (a+x) (b+y) 
+
+instance Num a => Monoid (Vec3 a) where
+  mempty = V3 0 0 0
+  V3 a b c `mappend` V3 x y z = V3 (a+x) (b+y) (c+z)
+
 
 
 instance Num a => Num (Vec2 a) where
@@ -64,17 +84,6 @@ instance Fractional a => Fractional (Vec3 a) where
   fromRational a            = V3 (fromRational a) (fromRational a) (fromRational a)
 
 
-
-
-
-
-
-{-
-
-mkvector :: Num a => Point2 a -> Point2 a -> Vec2 a
-mkvector (P2 x1 y1) (P2 x2 y2) = V2 (x2-x1) (y2-y1)
-
--}
 
 
 class EuclidianNorm t where
