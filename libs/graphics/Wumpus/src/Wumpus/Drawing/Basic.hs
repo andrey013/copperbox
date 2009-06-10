@@ -19,6 +19,7 @@ module Wumpus.Drawing.Basic where
 
 import Wumpus.Core.Colour
 import Wumpus.Core.Instances
+import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Vector
@@ -225,7 +226,7 @@ drawDisk (Disk (P2 x y) r (Fill c)) = closeFillPathSkel $ do
 
 -- dots
 
-
+{-
 plusDot :: Point -> WumpusM ()
 plusDot (P2 x y) = do
     drawLine $ Line (trans1 p1) (trans1 p2)
@@ -236,5 +237,23 @@ plusDot (P2 x y) = do
     
     rot1   = ((rotationMatrix (pi/2)) *#)
     trans1 = ((translationMatrix x y) *#)
+-}
+
+plusDot :: Point -> [DLineSegment]
+plusDot (P2 x y) = [ls1,ls2]
+  where
+    ls1 = lineTo (trans1 p1) (trans1 p2)
+    ls2 = lineTo (trans1.rot1 $ p1) (trans1.rot1 $ p2)
+
+    p1 = origin .+^ (V2 (-2) 0)
+    p2 = origin .+^ (V2 2 0)  
+    
+    rot1   = ((rotationMatrix (pi/2)) *#)
+    trans1 = ((translationMatrix x y) *#)
 
 
+
+drawLineSegment :: DLineSegment -> WumpusM ()
+drawLineSegment (LS pt v) = closeStrokePathSkel $ do 
+    movetoPt pt
+    rlinetoVec v

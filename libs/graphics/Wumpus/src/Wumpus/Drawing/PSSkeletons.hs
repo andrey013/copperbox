@@ -18,8 +18,12 @@
 module Wumpus.Drawing.PSSkeletons where
 
 import Wumpus.Core.Colour
+import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
+import Wumpus.Core.Vector
 import Wumpus.Core.Wumpus
+
+import Data.AffineSpace
 
 
 import Prelude hiding ( concat ) 
@@ -74,6 +78,15 @@ squarepath (x1,y1) (x2,y2) = do
   lineto x2 y2
   lineto x2 y1
   closepath
+
+
+movetoPt :: DPoint2 -> WumpusM ()
+movetoPt (P2 x y) = moveto x y
+
+rlinetoVec :: DVec2 -> WumpusM ()
+rlinetoVec v = rlineto x y where
+  P2 x y = origin .+^ v
+
 
 
 --- Old rubbish...

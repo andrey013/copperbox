@@ -30,5 +30,5 @@ demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
                                           $ fillColour burlywood $ envId) -}
                     $ diamond (80,50) (30,20)
                 ; setrgbcolor 1 0 0
-                ; plusDot (P2 150 50)
+                ; mapM_ drawLineSegment $ plusDot (P2 150 50)
                 }

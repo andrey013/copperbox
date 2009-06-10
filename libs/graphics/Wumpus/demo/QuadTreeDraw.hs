@@ -64,12 +64,12 @@ scaleSq = prod scalePt
 prod f (a,b) = (f a, f b) 
 
 scalePt :: DPoint2 -> DPoint2 
-scalePt = vecMult tM
+scalePt = (tM *#)
   where
    tM = scalingMatrix 40 40  
 
 transPt :: DPoint2 -> DPoint2 
-transPt = vecMult tM
+transPt =  (tM *#)
   where
    tM = translationMatrix 40 40  
 
