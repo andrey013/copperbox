@@ -69,3 +69,4 @@ midpoint :: Fractional a => Point2 a -> Point2 a -> Point2 a
 midpoint (P2 x y) (P2 x' y') = P2 (x+(x'-x)/2) (y+(y'-y)/2)
 
 
+

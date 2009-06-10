@@ -83,9 +83,8 @@ squarepath (x1,y1) (x2,y2) = do
 movetoPt :: DPoint2 -> WumpusM ()
 movetoPt (P2 x y) = moveto x y
 
-rlinetoVec :: DVec2 -> WumpusM ()
-rlinetoVec v = rlineto x y where
-  P2 x y = origin .+^ v
+linetoPt :: DPoint2 -> WumpusM ()
+linetoPt (P2 x y) = lineto x y 
 
 
 

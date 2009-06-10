@@ -18,12 +18,13 @@
 module Wumpus.Drawing.Basic where
 
 import Wumpus.Core.Colour
-import Wumpus.Core.Instances
+import Wumpus.Core.Instances 
 import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
+import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
-import Wumpus.Core.Wumpus
+import Wumpus.Core.Wumpus hiding ( translate, rotate )
 
 import Wumpus.Drawing.PSSkeletons
 
@@ -226,34 +227,24 @@ drawDisk (Disk (P2 x y) r (Fill c)) = closeFillPathSkel $ do
 
 -- dots
 
-{-
-plusDot :: Point -> WumpusM ()
-plusDot (P2 x y) = do
-    drawLine $ Line (trans1 p1) (trans1 p2)
-    drawLine $ Line (trans1.rot1 $ p1) (trans1.rot1 $ p2)
-  where 
-    p1 = origin .+^ (V2 (-2) 0)
-    p2 = origin .+^ (V2 2 0)  
-    
-    rot1   = ((rotationMatrix (pi/2)) *#)
-    trans1 = ((translationMatrix x y) *#)
--}
-
 plusDot :: Point -> [DLineSegment]
-plusDot (P2 x y) = [ls1,ls2]
+plusDot (P2 x y) = map (translate x y) [ls1,ls2]
   where
-    ls1 = lineTo (trans1 p1) (trans1 p2)
-    ls2 = lineTo (trans1.rot1 $ p1) (trans1.rot1 $ p2)
+    ls1 = lineTo p1 p2
+    ls2 = rotate90 ls1
+    p1, p2 ::Point
+    p1  = origin .+^ (V2 (-2) 0)
+    p2  = origin .+^ (V2 2 0)  
 
-    p1 = origin .+^ (V2 (-2) 0)
-    p2 = origin .+^ (V2 2 0)  
-    
-    rot1   = ((rotationMatrix (pi/2)) *#)
-    trans1 = ((translationMatrix x y) *#)
 
+asterisk :: Point -> [DLineSegment]
+asterisk (P2 x y) = zipWith fn (replicate 5 ls1) [0..4]
+  where
+   ls1 = vline origin 2  
+   fn ln theta = translate x y $ rotate ((2*theta*pi)/5) ln
 
 
 drawLineSegment :: DLineSegment -> WumpusM ()
-drawLineSegment (LS pt v) = closeStrokePathSkel $ do 
-    movetoPt pt
-    rlinetoVec v
+drawLineSegment (LS p p') = closeStrokePathSkel $ do 
+    movetoPt p
+    linetoPt p'

@@ -31,4 +31,5 @@ demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
                     $ diamond (80,50) (30,20)
                 ; setrgbcolor 1 0 0
                 ; mapM_ drawLineSegment $ plusDot (P2 150 50)
+                ; mapM_ drawLineSegment $ asterisk (P2 140 50)
                 }
