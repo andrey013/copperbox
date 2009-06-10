@@ -17,7 +17,8 @@
 
 module Wumpus.Core.Point where
 
-
+import Data.AffineSpace
+import Data.VectorSpace
 
 data Point2 a = P2 !a !a
   deriving (Eq,Show)
@@ -49,6 +50,14 @@ instance Fractional a => Fractional (Point2 a) where
 
 
 
+instance Num a => AdditiveGroup (Point2 a) where
+  zeroV = P2 0 0 
+  (^+^) = (+)
+  negateV = negate
 
+
+
+midpoint :: Fractional a => Point2 a -> Point2 a -> Point2 a
+midpoint (P2 x y) (P2 x' y') = P2 (x+(x'-x)/2) (y+(y'-y)/2)
 
 

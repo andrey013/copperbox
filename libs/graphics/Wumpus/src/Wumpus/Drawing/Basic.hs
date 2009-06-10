@@ -29,7 +29,7 @@ import Data.VectorSpace
 
 import Prelude hiding ( concat ) 
 
-type RgbColour = DColour3
+type RgbColour = DRGB
 type Point = DPoint2
 
 type Radius = Double
@@ -68,8 +68,9 @@ closeFillPathSkel m = saveExecRestore $ do
   return a
 
 -- really a line segment...
-data Line = Line Point Point 
+data Line = Line DPoint2 DPoint2 
   deriving (Eq,Show)
+
 
 line :: (Double,Double) -> (Double,Double) -> Line
 line (x1,y1) (x2,y2) = Line (P2 x1 y1) (P2 x2 y2) 
@@ -79,11 +80,17 @@ drawLine (Line (P2 x1 y1) (P2 x2 y2)) = strokePathSkel $ do
     moveto x1 y1
     lineto x2 y2
 
-polygon :: [(Double,Double)] -> WumpusM ()
-polygon []         = return ()
-polygon ((x,y):ps) = closeStrokePathSkel $ do 
+drawPoint :: DPoint2 -> WumpusM ()
+drawPoint = polygon . unitSquare
+
+polygon :: [DPoint2] -> WumpusM ()
+polygon []          = return ()
+polygon (P2 x y:ps) = closeStrokePathSkel $ do 
     moveto x y
-    mapM_ (uncurry lineto) ps 
+    mapM_ lineto' ps 
+  where
+    lineto' (P2 a b) = lineto a b
+
 
 squarepath :: (Double,Double) -> (Double,Double) -> WumpusM ()
 squarepath (x1,y1) (x2,y2) = do 
@@ -143,7 +150,7 @@ drawPolygon (Polygon ((P2 x y):ps) env) = saveExecRestore $ do
         closepath
 
 setRgbColour :: RgbColour -> WumpusM ()
-setRgbColour (C3 r g b) = setrgbcolor r g b
+setRgbColour (RGB3 r g b) = setrgbcolor r g b
 
 whenMb :: Monad m => Maybe a -> (a -> m ()) -> m()
 whenMb a sk = maybe (return ()) sk a 
@@ -220,9 +227,9 @@ diamond :: (Double,Double) -> (Double,Double) -> Polygon
 diamond (x1,y1) (w,h) = Polygon xs envId 
   where
     xs     = map (trans1.scale1.rot1) $ unitSquare $ P2 0 0
-    rot1   = vecMult $ rotationMatrix (pi/4)
-    scale1 = vecMult $ scalingMatrix w h
-    trans1 = vecMult $ translationMatrix x1 y1
+    rot1   = (*#) $ rotationMatrix (pi/4)
+    scale1 = (*#) $ scalingMatrix w h
+    trans1 = (*#) $ translationMatrix x1 y1
 
 --------------------------------------------------------------------------------
 -- arcs and ellipses
@@ -284,6 +291,6 @@ plusDot (P2 x y) = do
     p1 = zeroV .+^ (V2 (-2) 0)
     p2 = zeroV .+^ (V2 2 0)  
     
-    rot1   = vecMult $ rotationMatrix (pi/2)
-    trans1 = vecMult $ translationMatrix x y
+    rot1   = ((rotationMatrix (pi/2)) *#)
+    trans1 = ((translationMatrix x y) *#)
 

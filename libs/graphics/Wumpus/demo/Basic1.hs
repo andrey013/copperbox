@@ -5,7 +5,7 @@ module Basic1 where
 import Wumpus.Core.Wumpus
 import Wumpus.Drawing.Basic
 import Wumpus.Drawing.SVGColours
-import qualified Wumpus.Drawing.X11Colours as X11
+-- import qualified Wumpus.Drawing.X11Colours as X11
 
 import Wumpus.Core.Point
 
@@ -21,7 +21,7 @@ demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
                 ; setgray 0 
                 ; ellipse (60,5) (15,10)
                 ; ellipticarc (120,5) (15,10) 0 270
-                ; polygon [(140,5), (140,30), (170,5), (170,30)]
+                ; polygon [(P2 140 5), (P2 140 30), (P2 170 5), (P2 170 30)]
                 ; drawPolygon $ diamond (10,50) (30,30)
                 ; drawDisk $ disk (10,50) 2
                 -- Arrgh -- its now a problem accessing values...

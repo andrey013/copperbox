@@ -28,17 +28,10 @@ import Wumpus.Core.Matrix
 import Wumpus.Core.Vector
 
 import Data.AffineSpace
-import Data.VectorSpace
+-- import Data.VectorSpace
 
 
 
-
-
-
-instance Num a => AdditiveGroup (Point2 a) where
-  zeroV = P2 0 0 
-  (^+^) = (+)
-  negateV = negate
 
 
 instance (AffineSpace a, Num (Diff a)) => AffineSpace (Point2 a) where
@@ -47,16 +40,18 @@ instance (AffineSpace a, Num (Diff a)) => AffineSpace (Point2 a) where
   (P2 a b) .+^ (V2 vx vy) = P2 (a .+^ vx) (b .+^ vy)
 
 
+infixr 7 *# 
+
 class VecMult t u where 
-  vecMult :: Num a => t a -> u a -> u a
+  (*#) :: Num a => t a -> u a -> u a
 
 instance VecMult Matrix3'3 Vec3 where
-  vecMult (M3'3 a b c d e f g h i) (V3 m n o) = 
+  (*#) (M3'3 a b c d e f g h i) (V3 m n o) = 
     V3 (a*m+b*n+c*o) (d*m+e*n+f*o) (g*m+h*n+i*o)
 
 
 -- need to take care here vis-a-vis row / column vectors...
 
 instance VecMult Matrix3'3 Point2 where
-  vecMult m (P2 a b) = P2 x y where
-   (V3 x y _) = m `vecMult` (V3 a b 1)
+  (*#) m (P2 a b) = P2 x y where (V3 x y _) = m *# (V3 a b 1)
+

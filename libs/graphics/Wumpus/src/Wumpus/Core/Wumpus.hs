@@ -36,7 +36,7 @@ data PsState = PsState {
        pageNum      :: Int,  
        bBox         :: BoundingBox,
        cTM          :: CTM.PsMatrix,
-       cColour      :: DColour3,
+       cColour      :: DRGB,
        cLineWidth   :: Double
     }
   deriving (Eq,Show)
@@ -216,7 +216,7 @@ setmiterlimit n = command1 "setmiterlimit" (show n)
 setgray :: Double -> WumpusM ()
 setgray n = command1 "setgray" (show n)
 
-setColour :: DColour3 -> WumpusM ()
+setColour :: DRGB -> WumpusM ()
 setColour c = sets_ (\s -> s {cColour = c} )
 
 
@@ -228,7 +228,7 @@ sethsbcolor h s b = do
 
 setrgbcolor :: Double -> Double -> Double -> WumpusM ()
 setrgbcolor r g b = do 
-  setColour $ C3 r g b
+  setColour $ RGB3 r g b
   command3 "setrgbcolor" (show r) (show g) (show b)
 
 
