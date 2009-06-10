@@ -24,48 +24,20 @@ import Wumpus.Core.Point
 import Wumpus.Core.Vector
 import Wumpus.Core.Wumpus
 
+import Wumpus.Drawing.PSSkeletons
+
+
 import Data.AffineSpace
 import Data.VectorSpace
 
 import Prelude hiding ( concat ) 
 
-type RgbColour = DRGB
 type Point = DPoint2
 
 type Radius = Double
 type Origin = Point
 
 
-
-strokePathSkel :: WumpusM a -> WumpusM a
-strokePathSkel m = saveExecRestore $ do
-  newpath
-  a <- m
-  stroke
-  return a
-
-fillPathSkel :: WumpusM a -> WumpusM a
-fillPathSkel m = saveExecRestore $ do
-  newpath
-  a <- m
-  fill
-  return a
-
-closeStrokePathSkel :: WumpusM a -> WumpusM a
-closeStrokePathSkel m = saveExecRestore $ do
-  newpath
-  a <- m
-  closepath
-  stroke
-  return a
-
-closeFillPathSkel :: WumpusM a -> WumpusM a
-closeFillPathSkel m = saveExecRestore $ do
-  newpath
-  a <- m
-  closepath
-  fill
-  return a
 
 -- really a line segment...
 data Line = Line DPoint2 DPoint2 
@@ -82,14 +54,6 @@ drawLine (Line (P2 x1 y1) (P2 x2 y2)) = strokePathSkel $ do
 
 drawPoint :: DPoint2 -> WumpusM ()
 drawPoint = polygon . unitSquare
-
-polygon :: [DPoint2] -> WumpusM ()
-polygon []          = return ()
-polygon (P2 x y:ps) = closeStrokePathSkel $ do 
-    moveto x y
-    mapM_ lineto' ps 
-  where
-    lineto' (P2 a b) = lineto a b
 
 
 squarepath :: (Double,Double) -> (Double,Double) -> WumpusM ()
@@ -258,39 +222,19 @@ drawDisk (Disk (P2 x y) r (Fill c)) = closeFillPathSkel $ do
   arc x y r 0 360
 
 
-wedge :: (Double,Double) -> Double -> Double -> Double -> WumpusM ()
-wedge (x,y) r ang1 ang2 =  closeStrokePathSkel $ do
-  moveto x y
-  arc x y r ang1 ang2
- 
-ellipse :: (Double,Double) -> (Double,Double) -> WumpusM ()
-ellipse (x,y) (rh,rv) = saveExecRestore $ do 
-  scale 1 (rv/rh)
-  newpath
-  arc x y rh 0 360
-  closepath
-  stroke
-
-
-ellipticarc :: (Double,Double) -> (Double,Double) -> Double -> Double -> WumpusM ()
-ellipticarc (x,y) (rh,rv) ang1 ang2 = saveExecRestore $ do 
-  scale 1 (rv/rh)
-  newpath
-  arc x y rh ang1 ang2
-  stroke
-
-
 
 -- dots
+
 
 plusDot :: Point -> WumpusM ()
 plusDot (P2 x y) = do
     drawLine $ Line (trans1 p1) (trans1 p2)
     drawLine $ Line (trans1.rot1 $ p1) (trans1.rot1 $ p2)
   where 
-    p1 = zeroV .+^ (V2 (-2) 0)
-    p2 = zeroV .+^ (V2 2 0)  
+    p1 = origin .+^ (V2 (-2) 0)
+    p2 = origin .+^ (V2 2 0)  
     
     rot1   = ((rotationMatrix (pi/2)) *#)
     trans1 = ((translationMatrix x y) *#)
+
 

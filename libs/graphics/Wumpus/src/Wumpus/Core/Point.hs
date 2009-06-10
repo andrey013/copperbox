@@ -17,8 +17,8 @@
 
 module Wumpus.Core.Point where
 
-import Data.AffineSpace
-import Data.VectorSpace
+-- import Data.AffineSpace
+-- import Data.VectorSpace
 
 data Point2 a = P2 !a !a
   deriving (Eq,Show)
@@ -33,6 +33,7 @@ instance Functor Point2 where
 
 -- Hmm, do Points have a genuine (+) operation?
 
+{-
 instance Num a => Num (Point2 a) where
   (+) (P2 a b) (P2 x y) = P2 (a+x) (b+y)
   (-) (P2 a b) (P2 x y) = P2 (a-x) (b-y)
@@ -55,6 +56,13 @@ instance Num a => AdditiveGroup (Point2 a) where
   (^+^) = (+)
   negateV = negate
 
+-}
+
+origin :: Num a => Point2 a
+origin = P2 0 0
+
+zeroPt :: Num a => Point2 a
+zeroPt = P2 0 0 
 
 
 midpoint :: Fractional a => Point2 a -> Point2 a -> Point2 a

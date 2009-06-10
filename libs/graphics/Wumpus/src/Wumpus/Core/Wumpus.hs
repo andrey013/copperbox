@@ -232,6 +232,19 @@ setrgbcolor r g b = do
   command3 "setrgbcolor" (show r) (show g) (show b)
 
 
+
+
+
+rgb2hsb' :: Double -> Double -> Double -> DHSB
+rgb2hsb' r g b = rgb2hsb $ (RGB3 r g b)
+
+hsb2rgb' :: Double -> Double -> Double -> DRGB
+hsb2rgb' h s b = hsb2rgb $ (HSB3 h s b)
+
+rgb2gray' :: Double -> Double -> Double -> Double
+rgb2gray' r g b = rgb2gray $ (RGB3 r g b) 
+
+
 --------------------------------------------------------------------------------
 -- matrix operations
 

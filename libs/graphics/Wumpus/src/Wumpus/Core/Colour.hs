@@ -78,21 +78,11 @@ mkColour r g b = RGB3 r g b
 
 
 
-eV :: DRGB
-eV = RGB3 1 1 1
+vE :: DRGB
+vE = RGB3 1 1 1
 
 -- Acknowledgment - the conversion functions are derived from
 -- the documentation to Dr. Uwe Kern's xcolor LaTeX package
-
-
-rgb2hsb' :: Double -> Double -> Double -> DHSB
-rgb2hsb' r g b = rgb2hsb $ (RGB3 r g b)
-
-hsb2rgb' :: Double -> Double -> Double -> DRGB
-hsb2rgb' h s b = hsb2rgb $ (HSB3 h s b)
-
-rgb2gray' :: Double -> Double -> Double -> Double
-rgb2gray' r g b = rgb2gray $ (RGB3 r g b) 
 
 
 
@@ -117,7 +107,7 @@ rgb2hsb (RGB3 r g b) = HSB3 hue sat bri
 
 
 hsb2rgb :: DHSB -> DRGB
-hsb2rgb (HSB3 hue sat bri) = bri *^ (eV - (sat *^ fV))
+hsb2rgb (HSB3 hue sat bri) = bri *^ (vE - (sat *^ fV))
   where
     i     :: Int
     i     = floor $ (6 * hue)
@@ -133,6 +123,24 @@ hsb2rgb (HSB3 hue sat bri) = bri *^ (eV - (sat *^ fV))
 rgb2gray :: DRGB -> Double
 rgb2gray (RGB3 r g b) = 0.3 * r + 0.59 * g + 0.11 * b 
 
+gray2rgb :: Double -> DRGB
+gray2rgb gray = gray *^ vE
+
+hsb2gray :: DHSB -> Double
+hsb2gray (HSB3 _ _ b) = b 
+
+gray2hsb :: Double -> DHSB
+gray2hsb gray = HSB3 0 0 gray
+
+
+
+
+--------------------------------------------------------------------------------
+
+-- Some colours
+
+-- The long prefix stops name clashes with the X11Colours / SVGColours.
+-- Generally you would import this module and one of X11 / SVG.
 
 
 wumpusBlack :: DRGB
