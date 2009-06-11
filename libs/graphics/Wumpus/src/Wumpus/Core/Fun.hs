@@ -82,3 +82,14 @@ lZipWith f (p:ps) (q:qs) = f p q : lZipWith f ps qs
 
 
 
+-- 'specs'
+
+oo :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+oo f g = (f .) . g
+
+ooo :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
+ooo f g = ((f .) .) . g
+
+oooo :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
+oooo f g = (((f .) .) .) . g   
+

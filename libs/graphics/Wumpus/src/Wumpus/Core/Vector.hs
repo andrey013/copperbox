@@ -20,6 +20,8 @@
 
 module Wumpus.Core.Vector where
 
+import Wumpus.Core.Fun
+
 import Data.VectorSpace
 
 import Data.Monoid
@@ -101,11 +103,6 @@ instance Direction2 Vec2 where
    direction (V2 a b) = atan (a/b)
 
 
--- This needs a more general signature...
--- magnitude :: (Floating a, InnerSpace (t a), t ~ Scalar a) => t a -> a
-magnitude :: Vec2 Double -> Double
-magnitude v@(V2 _ _) = sqrt (v <.> v)
-
 instance Num a => AdditiveGroup (Vec2 a) where
   zeroV = V2 0 0 
   (^+^) = (+)
@@ -143,12 +140,23 @@ instance (Num a, InnerSpace a, AdditiveGroup (Scalar a))
 
 
 
+-- first function just here to test second function...
+magnitude' :: Vec2 Double -> Double
+magnitude' v@(V2 _ _) = sqrt (v <.> v)
+
+magnitude :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) => t a -> a
+magnitude v = sqrt (v <.> v)
+
 
 -- two vectors in R2 are perpendicular iff their dot product is 0
-perp :: DVec2 -> DVec2 -> Bool
-perp = ((==0) .) . (<.>)
+perp' :: DVec2 -> DVec2 -> Bool
+perp' = ((==0) .) . (<.>)
+
+perp :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) => t a -> t a -> Bool
+perp = (==0) `oo` (<.>)
 
 
+-- note normal function in Data.Cross
 
 
 

@@ -111,3 +111,76 @@ ellipticarc (x,y) (rh,rv) ang1 ang2 = saveExecRestore $ do
   arc x y rh ang1 ang2
   stroke
 
+
+
+--- More old stuff
+
+{-
+   
+data Fill = Fill { _fillColour :: RgbColour }
+  deriving (Eq,Show)
+
+data Stroke = Stroke { _lineWidth :: Double, _lineColour :: RgbColour }
+  deriving (Eq,Show)
+
+data PolygonEnv = PolygonEnv { mbFill :: Maybe Fill, mbStroke :: Maybe Stroke }
+  deriving (Eq,Show)
+
+class Env env where
+  envId :: env
+
+instance Env Fill where
+  envId = Fill wumpusBlack
+
+instance Env Stroke where
+  envId = Stroke 1 wumpusBlack
+
+instance Env (Maybe a) where
+  envId = Nothing
+
+instance Env PolygonEnv where
+  envId = PolygonEnv envId envId
+
+class FillColour env where 
+  fillColour :: RgbColour -> env -> env
+
+instance FillColour Fill where
+  fillColour c e = e { _fillColour = c }
+
+instance (Env e, FillColour e) => FillColour (Maybe e) where
+  fillColour c (Just e) = Just $ fillColour c e
+  fillColour c Nothing  = Just $ fillColour c envId
+ 
+instance FillColour PolygonEnv where
+  fillColour c (PolygonEnv f s) = PolygonEnv (fillColour c f) s
+
+instance FillColour Polygon where
+  fillColour c (Polygon ps e) = Polygon ps (fillColour c e)
+
+class LineWidth env where
+  lineWidth :: Double -> env -> env 
+
+instance LineWidth Stroke where
+  lineWidth w e = e { _lineWidth = w }
+
+instance (Env e, LineWidth e) => LineWidth (Maybe e) where
+  lineWidth w (Just e) = Just $ lineWidth w e
+  lineWidth w Nothing  = Just $ lineWidth w envId
+
+instance LineWidth PolygonEnv where
+  lineWidth w (PolygonEnv f s) = PolygonEnv f (lineWidth w s) 
+
+class LineColour env where
+  lineColour :: RgbColour -> env -> env 
+
+instance LineColour Stroke where
+  lineColour c e = e { _lineColour = c }
+
+instance (Env e, LineColour e) => LineColour (Maybe e) where
+  lineColour c (Just e) = Just $ lineColour c e
+  lineColour c Nothing  = Just $ lineColour c envId
+
+instance LineColour PolygonEnv where
+  lineColour c (PolygonEnv f s) = PolygonEnv f (lineColour c s) 
+
+-}
