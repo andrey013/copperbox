@@ -101,6 +101,10 @@ instance Direction2 Vec2 where
    direction (V2 a b) = atan (a/b)
 
 
+-- This needs a more general signature...
+-- magnitude :: (Floating a, InnerSpace (t a), t ~ Scalar a) => t a -> a
+magnitude :: Vec2 Double -> Double
+magnitude v@(V2 _ _) = sqrt (v <.> v)
 
 instance Num a => AdditiveGroup (Vec2 a) where
   zeroV = V2 0 0 

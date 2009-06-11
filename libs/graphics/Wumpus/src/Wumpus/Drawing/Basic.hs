@@ -24,7 +24,7 @@ import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
-import Wumpus.Core.Wumpus hiding ( translate, rotate )
+import Wumpus.Core.Wumpus hiding ( translate, rotate, scale )
 
 import Wumpus.Drawing.PSSkeletons
 
@@ -227,22 +227,49 @@ drawDisk (Disk (P2 x y) r (Fill c)) = closeFillPathSkel $ do
 
 -- dots
 
-plusDot :: Point -> [DLineSegment]
-plusDot (P2 x y) = map (translate x y) [ls1,ls2]
+dotPlus :: Point -> [DLineSegment]
+dotPlus (P2 x y) = map (translate x y) [ls1,ls2]
   where
-    ls1 = lineTo p1 p2
+    ls1 = hline (P2 (-2) 0) 4
     ls2 = rotate90 ls1
-    p1, p2 ::Point
-    p1  = origin .+^ (V2 (-2) 0)
-    p2  = origin .+^ (V2 2 0)  
+  
+
+dotX :: Point -> [DLineSegment]
+dotX (P2 x y) = map (translate x y) [ls1,ls2]
+  where
+    ls1 = rotate30 $ vline (P2 0 (-2)) 4
+    ls2 = rotate (5*pi/3) $ ls1
 
 
-asterisk :: Point -> [DLineSegment]
-asterisk (P2 x y) = zipWith fn (replicate 5 ls1) [0..4]
+dotAsterisk :: Point -> [DLineSegment]
+dotAsterisk (P2 x y) = map (translate x y) $ circular (replicate 5 ls1)
   where
    ls1 = vline origin 2  
-   fn ln theta = translate x y $ rotate ((2*theta*pi)/5) ln
 
+
+dotTriangle :: Point -> Polygon
+dotTriangle = polyDot (P2 0 2) 3
+
+dotSquare :: Point -> Polygon
+dotSquare = polyDot (P2 1.5 1.5) 4
+
+dotPentagon :: Point -> Polygon
+dotPentagon = polyDot (P2 0 1.5) 5 
+
+polyDot :: Point -> Int -> Point -> Polygon
+polyDot pt1 n (P2 x y) = Polygon xs envId
+  where
+    xs = map (translate x y) $ circular $ replicate n pt1 
+
+dotDiamond :: Point -> Polygon
+dotDiamond (P2 x y) = Polygon (map (translate x y) [p1,p2,p3,p4]) envId
+  where
+   p1 = P2 0 1.5
+   p2 = P2 (-1) 0
+   p3 = reflectY p1
+   p4 = reflectX p2
+
+ 
 
 drawLineSegment :: DLineSegment -> WumpusM ()
 drawLineSegment (LS p p') = closeStrokePathSkel $ do 

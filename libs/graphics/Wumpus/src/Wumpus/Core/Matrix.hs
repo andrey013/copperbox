@@ -128,4 +128,7 @@ rotationMatrix :: Floating a => a -> Matrix3'3 a
 rotationMatrix a = M3'3 (cos a) (- sin a) 0 
                         (sin a) (cos a)   0  
                         0 0 1
- 
+
+-- No reflectionMatrix function
+-- A reflection about the x-axis is a scale of 1 (-1)
+-- A reflection about the y-axis is a scale of (-1) 1
