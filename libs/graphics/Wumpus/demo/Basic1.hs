@@ -11,6 +11,9 @@ import Wumpus.Drawing.PSSkeletons
 import Wumpus.Drawing.SVGColours
 -- import qualified Wumpus.Drawing.X11Colours as X11
 
+import Wumpus.Core.Fun
+
+
 demo1 :: IO ()
 demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { translate 60 380 
@@ -27,11 +30,10 @@ demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
                 ; polygon [(P2 140 5), (P2 140 30), (P2 170 5), (P2 170 30)]
                 ; drawPolygon $ diamond (30,30) (P2 10 50)
                 ; drawDisk $ disk (10,50) 2
-                -- Arrgh -- its now a problem accessing values...
-                ; drawPolygon {- (lineColour blueViolet $ lineWidth 1 
-                                          $ fillColour burlywood $ envId) -}
-                    $ diamond (30,20) (P2 80 50) 
-                ; setrgbcolor 1 0 0
+                -- Properties currently not implemented ...
+                -- lineColour blueViolet $ lineWidth 1 $ fillColour burlywood
+                ; drawPolygon $ diamond (30,20) (P2 80 50) 
+                ; setRgbColour blueViolet
                 ; mapM_ drawLineSegment $ dotPlus  (P2 120 50)
                 ; mapM_ drawLineSegment $ dotAsterisk (P2 130 50)
                 ; drawPolygon $ dotTriangle        (P2 140 50)

@@ -128,6 +128,17 @@ writeArg :: WriterM m PsOutput => String -> m ()
 writeArg s = write s >> writeChar ' '
 
 
+dtrunc :: Double -> String
+dtrunc d | abs d < 0.0001  = "0.0"
+         | d < 0.0           = '-' :  show (abs tx)
+         | otherwise         = show tx
+  where
+    tx :: Double
+    tx = (realToFrac (roundi (d*1000000.0))) / 1000000.0
+ 
+    roundi :: RealFrac a => a -> Integer
+    roundi = round
+
 
 type Command = String
 
@@ -157,6 +168,11 @@ command4 cmd arg1 arg2 arg3 arg4 =
 command5 :: Command -> String -> String -> String -> String -> String -> WumpusM ()
 command5 cmd arg1 arg2 arg3 arg4 arg5 = 
    mapM_ writeArg [arg1, arg2, arg3, arg4, arg5 ] >> writeln cmd
+
+command6 :: Command -> String -> String -> String -> 
+                       String -> String -> String -> WumpusM ()
+command6 cmd arg1 arg2 arg3 arg4 arg5 arg6 = 
+   mapM_ writeArg [arg1, arg2, arg3, arg4, arg5, arg6 ] >> writeln cmd
 
 
 getPageNum :: WumpusM Int
@@ -214,7 +230,7 @@ setmiterlimit n = command1 "setmiterlimit" (show n)
 
 
 setgray :: Double -> WumpusM ()
-setgray n = command1 "setgray" (show n)
+setgray n = command1 "setgray" (dtrunc n)
 
 setColour :: DRGB -> WumpusM ()
 setColour c = sets_ (\s -> s {cColour = c} )
@@ -223,13 +239,13 @@ setColour c = sets_ (\s -> s {cColour = c} )
 sethsbcolor :: Double -> Double -> Double -> WumpusM ()
 sethsbcolor h s b = do 
     setColour $ hsb2rgb' h s b
-    command3 "sethsbcolor" (show h) (show s) (show b)
+    command3 "sethsbcolor" (dtrunc h) (dtrunc s) (dtrunc b)
 
 
 setrgbcolor :: Double -> Double -> Double -> WumpusM ()
 setrgbcolor r g b = do 
   setColour $ RGB3 r g b
-  command3 "setrgbcolor" (show r) (show g) (show b)
+  command3 "setrgbcolor" (dtrunc r) (dtrunc g) (dtrunc b)
 
 
 
@@ -293,14 +309,14 @@ newpath = command0 "newpath"
 -- quite expensive.
 
 moveto :: Double -> Double -> WumpusM ()
-moveto x y = command2 "moveto" (show x) (show y)
+moveto x y = command2 "moveto" (dtrunc x) (dtrunc y)
 
 rmoveto :: Double -> Double -> WumpusM ()
-rmoveto x y = command2 "rmoveto" (show x) (show y)
+rmoveto x y = command2 "rmoveto" (dtrunc x) (dtrunc y)
 
 
 lineto :: Double -> Double -> WumpusM ()
-lineto x y = command2 "lineto" (show x) (show y)
+lineto x y = command2 "lineto" (dtrunc x) (dtrunc y)
 
 rlineto :: Double -> Double -> WumpusM ()
 rlineto x y = command2 "rlineto" (show x) (show y)
@@ -315,6 +331,11 @@ arcn x y r ang1 ang2 =
     command5 "arcn" (show x) (show y) (show r) (show ang1) (show ang2)
 
 
+curveto :: Double -> Double -> Double -> Double -> 
+                     Double -> Double -> WumpusM ()
+curveto x1 y1 x2 y2 x3 y3 = 
+    command6 "curveto" (dtrunc x1) (dtrunc y1) (dtrunc x2) (dtrunc y2)
+                       (dtrunc x3) (dtrunc y3)
 
 
 closepath :: WumpusM ()

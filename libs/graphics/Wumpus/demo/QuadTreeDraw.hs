@@ -3,6 +3,7 @@
 module QuadTreeDraw where
 
 import Wumpus.Core.Instances
+import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Wumpus hiding ( concat )
@@ -14,20 +15,20 @@ import qualified Data.Foldable as F
 -- Note a square of 400x400 PS points will fit on an A4 page
 
 
-sqlines :: (DPoint2,DPoint2) -> [Line]
+sqlines :: (DPoint2,DPoint2) -> [DLineSegment]
 sqlines (P2 x0 y0, P2 x1 y1) = [t,r,b,l]  -- clockwise
   where
-    t = Line (P2 x0 y1) (P2 x1 y1)
-    r = Line (P2 x1 y1) (P2 x1 y0)
-    b = Line (P2 x1 y0) (P2 x0 y0)
-    l = Line (P2 x0 y0) (P2 x0 y1)
+    t = lineTo (P2 x0 y1) (P2 x1 y1)
+    r = lineTo (P2 x1 y1) (P2 x1 y0)
+    b = lineTo (P2 x1 y0) (P2 x0 y0)
+    l = lineTo (P2 x0 y0) (P2 x0 y1)
 
-midlines :: (DPoint2,DPoint2) -> [Line]
+midlines :: (DPoint2,DPoint2) -> [DLineSegment]
 midlines (p1@(P2 x0 y0), p2@(P2 x1 y1)) = [v,h]  -- clockwise
   where
     P2 x' y' = midpoint p1 p2
-    v        = Line (P2 x' y0) (P2 x' y1)
-    h        = Line (P2 x0 y') (P2 x1 y')
+    v        = lineTo (P2 x' y0) (P2 x' y1)
+    h        = lineTo (P2 x0 y') (P2 x1 y')
 
 -- drawIt sq = mapM_ drawLine $ sqlines sq
 
@@ -43,7 +44,7 @@ outputQuadTree name tree =  writePS name $ runWumpus st0 $ drawing1 where
                 ; mapM_ drawPoint $ treepoints tree
                 }
 
-treelines :: QuadTree (DPoint2,DPoint2) DPoint2 -> [Line]
+treelines :: QuadTree (DPoint2,DPoint2) DPoint2 -> [DLineSegment]
 treelines (Empty sq)  = [] -- sqlines sq
 treelines (Leaf sq _) = [] -- sqlines sq
 treelines (Quad _ sq nw ne se sw) =

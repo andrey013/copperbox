@@ -73,6 +73,12 @@ unfoldlMap f s0 (x:xs) = let (acc,st) = unfoldlMap f s0 xs in
                            Just (a,st_final) -> (a:acc,st_final)   
 
 
+-- surely this one has been /discovered/ many times?
+twomap :: (a -> a -> b) -> [a] -> [b]
+twomap f (a:b:xs) = f a b : twomap f (b:xs)
+twomap f _        = []
+
+
 
 -- homogeneous long zipWith
 lZipWith :: (a -> a -> a) -> [a] -> [a] -> [a]

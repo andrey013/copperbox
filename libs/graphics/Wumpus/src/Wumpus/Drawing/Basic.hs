@@ -18,6 +18,7 @@
 module Wumpus.Drawing.Basic where
 
 import Wumpus.Core.Colour
+import Wumpus.Core.Curve
 import Wumpus.Core.Instances 
 import Wumpus.Core.Line
 import Wumpus.Core.Matrix
@@ -106,7 +107,16 @@ drawDisk (Disk (P2 x y) r) = closeFillPathSkel $ do
   arc x y r 0 360
 
 
+drawCurve :: DCurve -> WumpusM ()
+drawCurve (Curve (P2 px0 py0) (P2 cx1 cy1) (P2 cx2 cy2) (P2 px3 py3)) = 
+  strokePathSkel $  do 
+    moveto px0 py0
+    curveto cx1 cy1 cx2 cy2 px3 py3
 
+
+
+
+--------------------------------------------------------------------------------
 -- dots
 
 dotPlus :: Point -> [DLineSegment]
