@@ -5,6 +5,7 @@ module Hyperbola where
 
 import Wumpus.Core.Curve
 import Wumpus.Core.Point
+import qualified Wumpus.Core.Transformations as W
 import Wumpus.Core.Wumpus
 
 import Wumpus.Drawing.Basic
@@ -56,7 +57,41 @@ demo1 = writePS "hyperbola1.ps" $ runWumpus st0 $ drawing1 where
                 ; setRgbColour blueViolet
                 ; let curves2 = hyperbola (-2) 2 2
                 ; mapM_ drawCurve $ map (scalePoints 30) curves2
+                ------
+                ; translate 0 100
+                ; setRgbColour coral
+                ; let bcurve = Curve (P2 0 0) (P2 5.0 50) (P2 45 50) (P2 50 0)
+                ; drawCurve bcurve
+                ; let (c1,c2) = subdivide bcurve
+                ; drawCurve $ ctranslate 0 40 c1
+                ; setRgbColour skyBlue
+                ; drawCurve $ ctranslate 0 40 c2
                 }
 
 scalePoints :: Double -> DCurve -> DCurve
 scalePoints d = fmap (d*)
+
+-- temp hack
+ctranslate :: Double -> Double -> DCurve -> DCurve
+ctranslate x y (Curve p0 p1 p2 p3) = 
+  Curve (W.translate x y p0) (W.translate x y p1) (W.translate x y p2) (W.translate x y p3) 
+
+cubicPoly :: Num a => a -> a -> a -> a -> a -> a
+cubicPoly a0 a1 a2 a3 x = a3*(x*x*x) + a2*(x*x) + a1*x + a0
+
+
+horner :: Num a => a -> [a] -> a
+horner t = foldr1 fn where 
+  fn i a = a*t + i
+
+
+-- n^3 + 3n^2 + n - 7
+
+d0 = (2^3) + (3*2^2) + 2 - 7 
+
+d1 = cubicPoly (-7) 1 3 1  2
+ 
+
+d2 = horner 2 [-7,1,3,1]
+
+

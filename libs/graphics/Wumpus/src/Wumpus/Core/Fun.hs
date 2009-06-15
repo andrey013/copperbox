@@ -99,3 +99,8 @@ ooo f g = ((f .) .) . g
 oooo :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
 oooo f g = (((f .) .) .) . g   
 
+
+
+-- 
+
+

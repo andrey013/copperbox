@@ -21,6 +21,7 @@ module Wumpus.Core.Curve where
 import Wumpus.Core.Fun
 import Wumpus.Core.Line
 import Wumpus.Core.Point
+import Wumpus.Core.Vector
 
 import Data.AffineSpace
 import Data.VectorSpace
@@ -32,10 +33,29 @@ type DCurve = Curve Double
 
 
 instance Functor Curve where
-  fmap f (Curve p1 cp1 cp2 p2) = 
-    Curve (fmap f p1) (fmap f cp1) (fmap f cp2) (fmap f p2)
+  fmap f (Curve p0 p1 p2 p3) = 
+    Curve (fmap f p0) (fmap f p1) (fmap f p2) (fmap f p3)
 
 
+
+-- de casteljau's algorithm
+subdivide :: DCurve -> (DCurve,DCurve)
+subdivide (Curve p0 p1 p2 p3) = 
+    (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)
+  where
+    v1, v2, v3 :: Vec2 Double
+    v1    = p1 .-. p0
+    v2    = p2 .-. p1
+    v3    = p3 .-. p2
+    p01   = p0 .+^ v1 ^/ 2     -- p+v->p
+    p12   = p1 .+^ v2 ^/ 2
+    p23   = p2 .+^ v3 ^/ 2
+    v01   = p12 .-. p01
+    v02   = p23 .-. p12
+    p012  = p01 .+^ v01 ^/ 2
+    p123  = p12 .+^ v02 ^/ 2
+    v001  = p123 .-. p012
+    p0123 = p012 .+^ v001 ^/ 2   
 
 
 {-
