@@ -61,13 +61,14 @@ subdivide (Curve p0 p1 p2 p3) =
 
 -- Shemanarev's algorithm
 
-smoothw (x:xs) = smooth $ (x:xs) ++ [x]
 
-smooth xs = intermap curver eps
+smoothw k xs = take (length xs) $ smoothBase k (cycle xs)
+
+
+smoothBase k xs = intermap curver eps
   where
-   pfs  = intermap3 (pipaep `ooo` proportion) xs
+   pfs  = intermap3 (pipaep k `ooo` proportion) xs
    eps  = combi xs pfs
-
 
 
 combi (a:b:c:xs) (f:fs)  = fn b : combi (b:c:xs) fs 
@@ -76,22 +77,29 @@ combi _          _       = []
 
 
 
-
 -- calculate Bi and return a function to be applied to midpoints
-proportion :: DPoint2 -> DPoint2 -> DPoint2 -> (DPoint2 -> DPoint2)
-proportion p0 p1 p2 = \p -> (p .+^ (p1 .-. p0) / (p2 .-. p1))
+proportion :: DPoint2 -> DPoint2 -> DPoint2 -> (DPoint2 -> DPoint2 -> DPoint2)
+proportion p0 p1 p2 = \mp0 mp1 -> let l1  = p1 .-. p0
+                                      l2  = p2 .-. p1
+                                      r   = magnitude l1 / magnitude l2  
+                                      l01 = mp1 .-. mp0                                      
+                                  in mp0 .+^ (l01 ^/ (2*r))
 
 
 -- points-in-proportion-at-end-point
 -- Given a function from mid-point -> Bi, generate a function that 
 -- takes a end-point an returns the three control points positioned  
 -- relative to the end point
-pipaep :: (DPoint2 -> DPoint2) 
+pipaep :: Double -> (DPoint2 -> DPoint2 -> DPoint2) 
        -> (DPoint2 -> DPoint2 -> (DPoint2 -> (DPoint2,DPoint2,DPoint2))) 
-pipaep fn  = \mp0 mp1 -> \ep -> let bi = fn mp0; v = ep .-. bi
-                                in (mp0 .+^ v, ep, mp1 .+^ v)
+pipaep k fn  = \mp0 mp1 -> \ep -> let bi  = fn mp0 mp1 
+                                      v   = ep  .-. bi
+                                      p00 = mp0 .+^ v
+                                      p01 = mp1 .+^ v
+                                      (p00',p01')= adjustvk p00 ep p01 k
+                                  in (p00',ep,p01')
+
 
 
 curver :: (DPoint2,DPoint2,DPoint2) -> (DPoint2,DPoint2,DPoint2) -> DCurve
 curver (_,p0,p1) (p2,p3,_) = Curve p0 p1 p2 p3
-

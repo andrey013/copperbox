@@ -61,10 +61,6 @@ vline p@(P2 x y) a = LS p (P2 x (y+a))
 
 -- operations
 
-{-
-midpoint :: (Fractional a, AffineSpace a, Diff a ~ a) => LineSegment a -> Point2 a
-midpoint (LS p p') = p .+^ ((p' .-. p)/2) 
--}
 
 segmentLength :: (Floating a, InnerSpace a,  AffineSpace a, 
                   Diff a ~ a, a ~ Scalar a )  

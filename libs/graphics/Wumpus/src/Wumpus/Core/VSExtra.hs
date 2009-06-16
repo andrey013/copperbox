@@ -25,5 +25,12 @@ import Data.VectorSpace
 
 
 midpoint :: (Fractional (Scalar (Diff p)), AffineSpace p, VectorSpace (Diff p))
-            => p -> p -> p
+         => p -> p -> p
 midpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
+
+
+adjustvk :: (Fractional (Scalar (Diff p)), AffineSpace p, VectorSpace (Diff p))
+         => p -> p -> p -> Scalar (Diff p) -> (p,p)
+adjustvk p0 p1 p2 k = (p1 .+^ vl,p1 .+^ vr) where
+  vl = (p0 .-. p1) ^* k
+  vr = (p2 .-. p1) ^* k
