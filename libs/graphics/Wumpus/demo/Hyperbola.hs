@@ -66,7 +66,20 @@ demo1 = writePS "hyperbola1.ps" $ runWumpus st0 $ drawing1 where
                 ; drawCurve $ ctranslate 0 40 c1
                 ; setRgbColour skyBlue
                 ; drawCurve $ ctranslate 0 40 c2
+                ; curveHack
                 }
+
+
+curveHack :: WumpusM ()
+curveHack = do 
+    translate 0 100
+    setRgbColour darkSeaGreen
+    drawPolygon $ Polygon xs
+    setRgbColour blueViolet
+    mapM_ drawBezier cs
+  where
+    xs = [P2 70 30, P2 0 20, P2 90 90, P2 100 0]
+    cs = smoothw xs
 
 scalePoints :: Double -> DCurve -> DCurve
 scalePoints d = fmap (d*)

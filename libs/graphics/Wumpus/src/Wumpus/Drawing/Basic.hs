@@ -108,11 +108,20 @@ drawDisk (Disk (P2 x y) r) = closeFillPathSkel $ do
 
 
 drawCurve :: DCurve -> WumpusM ()
-drawCurve (Curve (P2 px0 py0) (P2 cx1 cy1) (P2 cx2 cy2) (P2 px3 py3)) = 
+drawCurve (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
   strokePathSkel $  do 
-    moveto px0 py0
-    curveto cx1 cy1 cx2 cy2 px3 py3
+    moveto x0 y0
+    curveto x1 y1 x2 y2 x3 y3
 
+
+-- also draw control points
+drawBezier :: DCurve -> WumpusM ()
+drawBezier (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
+  strokePathSkel $  do 
+    moveto x1 y1             -- start from point1
+    lineto x0 y0
+    curveto x1 y1 x2 y2 x3 y3
+    lineto x2 y2
 
 
 

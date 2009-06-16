@@ -19,6 +19,7 @@
 
 module Wumpus.Core.Curve where
 
+import Wumpus.Core.Fun
 import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
 import Wumpus.Core.VSExtra
@@ -55,34 +56,42 @@ subdivide (Curve p0 p1 p2 p3) =
 
 
 
-{-
 
 ----
 
 -- Shemanarev's algorithm
 
+smoothw (x:xs) = smooth $ (x:xs) ++ [x]
+
+smooth xs = intermap curver eps
+  where
+   pfs  = intermap3 (pipaep `ooo` proportion) xs
+   eps  = combi xs pfs
 
 
 
-simpleSmooth xs = ys where
-  ys = innerLines $ midpoints xs
-  ps = outerProportions xs
+combi (a:b:c:xs) (f:fs)  = fn b : combi (b:c:xs) fs 
+                           where fn = f (midpoint a b) (midpoint b c)
+combi _          _       = []
 
 
-midpoints :: (AffineSpace a, Fractional a, Diff a ~ a) 
-          => [LineSegment a] -> [Point2 a]
-midpoints = map midpoint 
-
-innerLines :: [Point2 a] -> [LineSegment a]
-innerLines = twomap lineTo
-
-outerProportions :: (Floating a, InnerSpace a,  AffineSpace a, 
-                     Diff a ~ a, a ~ Scalar a )  
-                 => [LineSegment a] -> [a]
-outerProportions = twomap fn where
-  fn l1 l2 = segmentLength l1 / segmentLength l2
 
 
--- divideInner :: LineSegment a -> a -> (Point2 a, Point2 a, Point2 a)
--- divideInner 
--}
+-- calculate Bi and return a function to be applied to midpoints
+proportion :: DPoint2 -> DPoint2 -> DPoint2 -> (DPoint2 -> DPoint2)
+proportion p0 p1 p2 = \p -> (p .+^ (p1 .-. p0) / (p2 .-. p1))
+
+
+-- points-in-proportion-at-end-point
+-- Given a function from mid-point -> Bi, generate a function that 
+-- takes a end-point an returns the three control points positioned  
+-- relative to the end point
+pipaep :: (DPoint2 -> DPoint2) 
+       -> (DPoint2 -> DPoint2 -> (DPoint2 -> (DPoint2,DPoint2,DPoint2))) 
+pipaep fn  = \mp0 mp1 -> \ep -> let bi = fn mp0; v = ep .-. bi
+                                in (mp0 .+^ v, ep, mp1 .+^ v)
+
+
+curver :: (DPoint2,DPoint2,DPoint2) -> (DPoint2,DPoint2,DPoint2) -> DCurve
+curver (_,p0,p1) (p2,p3,_) = Curve p0 p1 p2 p3
+
