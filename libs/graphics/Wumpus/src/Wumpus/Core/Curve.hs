@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,10 +19,9 @@
 
 module Wumpus.Core.Curve where
 
-import Wumpus.Core.Fun
-import Wumpus.Core.Line
+import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
-import Wumpus.Core.Vector
+import Wumpus.Core.VSExtra
 
 import Data.AffineSpace
 import Data.VectorSpace
@@ -38,24 +38,21 @@ instance Functor Curve where
 
 
 
+
 -- de casteljau's algorithm
-subdivide :: DCurve -> (DCurve,DCurve)
+subdivide :: (Fractional (Scalar (Diff a)), Num (Diff a),
+              VectorSpace (Diff a),  AffineSpace a)  
+          => Curve a -> (Curve a, Curve a)
 subdivide (Curve p0 p1 p2 p3) = 
     (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)
   where
-    v1, v2, v3 :: Vec2 Double
-    v1    = p1 .-. p0
-    v2    = p2 .-. p1
-    v3    = p3 .-. p2
-    p01   = p0 .+^ v1 ^/ 2     -- p+v->p
-    p12   = p1 .+^ v2 ^/ 2
-    p23   = p2 .+^ v3 ^/ 2
-    v01   = p12 .-. p01
-    v02   = p23 .-. p12
-    p012  = p01 .+^ v01 ^/ 2
-    p123  = p12 .+^ v02 ^/ 2
-    v001  = p123 .-. p012
-    p0123 = p012 .+^ v001 ^/ 2   
+    p01   = midpoint p0    p1
+    p12   = midpoint p1    p2
+    p23   = midpoint p2    p3
+    p012  = midpoint p01   p12
+    p123  = midpoint p12   p23
+    p0123 = midpoint p012  p123
+
 
 
 {-
@@ -63,6 +60,9 @@ subdivide (Curve p0 p1 p2 p3) =
 ----
 
 -- Shemanarev's algorithm
+
+
+
 
 simpleSmooth xs = ys where
   ys = innerLines $ midpoints xs

@@ -6,7 +6,9 @@ import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
+import Wumpus.Core.VSExtra
 import Wumpus.Core.Wumpus hiding ( concat )
+
 import Wumpus.Drawing.QuadTree
 import Wumpus.Drawing.Basic
 

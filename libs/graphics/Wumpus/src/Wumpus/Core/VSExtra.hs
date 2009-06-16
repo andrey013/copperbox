@@ -1,0 +1,29 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# OPTIONS -Wall #-}
+
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Wumpus.Core.VSExtra
+-- Copyright   :  (c) Stephen Tetley 2009
+-- License     :  BSD3
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  GHC
+--
+-- Extra functions built on the Vector Space lib.
+--
+--------------------------------------------------------------------------------
+
+
+module Wumpus.Core.VSExtra where
+
+import Data.AffineSpace
+import Data.VectorSpace
+
+
+midpoint :: (Fractional (Scalar (Diff p)), AffineSpace p, VectorSpace (Diff p))
+            => p -> p -> p
+midpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
