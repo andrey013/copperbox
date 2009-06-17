@@ -5,26 +5,23 @@ module Basic1 where
 
 import Wumpus.Core.Line
 import Wumpus.Core.Point
-import Wumpus.Core.Wumpus
+import Wumpus.Core.PostScript
 import Wumpus.Drawing.Basic
 import Wumpus.Drawing.PSSkeletons
 import Wumpus.Drawing.SVGColours
--- import qualified Wumpus.Drawing.X11Colours as X11
-
-import Wumpus.Core.Fun
 
 
 demo1 :: IO ()
 demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
-  drawing1 = do { translate 60 380 
+  drawing1 = do { ps_translate 60 380 
                 ; drawLine $ lineTo (P2 0 0) (P2 0 150)
                 ; drawLine $ lineTo (P2 0 0) (P2 150 0)
                 ; drawCircle $ circle (5,5) 15
-                ; setgray 0.5
+                ; ps_setgray 0.5
                 -- fillColour darkSeaGreen 
                 ; drawDisk $  disk (60,5) 15
                 ; wedge (100,5) 15 0 60
-                ; setgray 0 
+                ; ps_setgray 0 
                 ; ellipse (60,5) (15,10)
                 ; ellipticarc (120,5) (15,10) 0 270
                 ; polygon [(P2 140 5), (P2 140 30), (P2 170 5), (P2 170 30)]

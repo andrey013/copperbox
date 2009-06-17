@@ -3,6 +3,21 @@
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Wumpus.Drawing.QuadTree
+-- Copyright   :  (c) Stephen Tetley 2009
+-- License     :  BSD3
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  GHC
+--
+-- Quad Tree data structure
+--
+--------------------------------------------------------------------------------
+
+
 module Wumpus.Drawing.QuadTree where
 
 import Wumpus.Core.Instances

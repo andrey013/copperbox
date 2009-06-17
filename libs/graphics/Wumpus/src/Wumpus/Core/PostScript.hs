@@ -6,7 +6,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.Wumpus
+-- Module      :  Wumpus.Core.PostScript
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -19,7 +19,7 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Wumpus where
+module Wumpus.Core.PostScript where
 
 import Wumpus.Core.Colour 
 import qualified Wumpus.Core.CTM as CTM
@@ -27,9 +27,6 @@ import Wumpus.Core.Vector
 
 import qualified Data.DList as DL
 import MonadLib
-
--- TODO some graphical objects (e.g. arrows) will need to know
--- the currentpoint. (??) 
 
 
 data PsState = PsState { 
@@ -207,43 +204,43 @@ saveExecRestore m = do
     command0 "grestore"
     return a
 
-gsave :: WumpusM ()
-gsave = command0 "gsave"
+ps_gsave :: WumpusM ()
+ps_gsave = command0 "gsave"
 
-grestore :: WumpusM ()
-grestore = command0 "grestore"
-
-
-
-setlinewidth :: Double -> WumpusM ()
-setlinewidth n = command1 "setlinewidth" (show n) 
+ps_grestore :: WumpusM ()
+ps_grestore = command0 "grestore"
 
 
-setlinecap :: Int -> WumpusM ()
-setlinecap i = command1 "setlinecap" (show i) 
 
-setlinejoin :: Int -> WumpusM ()
-setlinejoin i = command1 "setlinejoin" (show i) 
-
-setmiterlimit :: Double -> WumpusM ()
-setmiterlimit n = command1 "setmiterlimit" (show n) 
+ps_setlinewidth :: Double -> WumpusM ()
+ps_setlinewidth n = command1 "setlinewidth" (show n) 
 
 
-setgray :: Double -> WumpusM ()
-setgray n = command1 "setgray" (dtrunc n)
+ps_setlinecap :: Int -> WumpusM ()
+ps_setlinecap i = command1 "setlinecap" (show i) 
+
+ps_setlinejoin :: Int -> WumpusM ()
+ps_setlinejoin i = command1 "setlinejoin" (show i) 
+
+ps_setmiterlimit :: Double -> WumpusM ()
+ps_setmiterlimit n = command1 "setmiterlimit" (show n) 
+
+
+ps_setgray :: Double -> WumpusM ()
+ps_setgray n = command1 "setgray" (dtrunc n)
 
 setColour :: DRGB -> WumpusM ()
 setColour c = sets_ (\s -> s {cColour = c} )
 
 
-sethsbcolor :: Double -> Double -> Double -> WumpusM ()
-sethsbcolor h s b = do 
+ps_sethsbcolor :: Double -> Double -> Double -> WumpusM ()
+ps_sethsbcolor h s b = do 
     setColour $ hsb2rgb' h s b
     command3 "sethsbcolor" (dtrunc h) (dtrunc s) (dtrunc b)
 
 
-setrgbcolor :: Double -> Double -> Double -> WumpusM ()
-setrgbcolor r g b = do 
+ps_setrgbcolor :: Double -> Double -> Double -> WumpusM ()
+ps_setrgbcolor r g b = do 
   setColour $ RGB3 r g b
   command3 "setrgbcolor" (dtrunc r) (dtrunc g) (dtrunc b)
 
@@ -270,25 +267,25 @@ updateCTM fn = getCTM >>= \ctm -> sets_ (\s -> s {cTM = fn ctm} )
 
 -- emit the postscript and shadow the matrix transformation
 
-translate :: Double -> Double -> WumpusM ()
-translate tx ty = do
+ps_translate :: Double -> Double -> WumpusM ()
+ps_translate tx ty = do
     command2 "translate" (show tx) (show ty)
     updateCTM $ \ctm -> CTM.translate tx ty ctm
 
 
-scale :: Double -> Double -> WumpusM ()
-scale sx sy = do
+ps_scale :: Double -> Double -> WumpusM ()
+ps_scale sx sy = do
     command2 "scale" (show sx) (show sy)
     updateCTM $ \ctm -> CTM.scale sx sy ctm
          
 
-rotate :: Double -> WumpusM ()
-rotate ang = do
+ps_rotate :: Double -> WumpusM ()
+ps_rotate ang = do
     command1 "rotate" (show ang)
     updateCTM $ \ctm -> CTM.rotate ang ctm
 
-concat :: CTM.PsMatrix -> WumpusM ()
-concat matrix = do 
+ps_concat :: CTM.PsMatrix -> WumpusM ()
+ps_concat matrix = do 
     command1 "concat" (CTM.printmatrix matrix)
     updateCTM $ \ctm -> ctm `CTM.multiply` matrix
 
@@ -298,8 +295,8 @@ concat matrix = do
 
 
 
-newpath :: WumpusM ()
-newpath = command0 "newpath"
+ps_newpath :: WumpusM ()
+ps_newpath = command0 "newpath"
 
 -- There is no equivalent to PostScript's @currentpoint@ command. 
 
@@ -308,52 +305,52 @@ newpath = command0 "newpath"
 -- In PostScript the coercion from int to float is apparently 
 -- quite expensive.
 
-moveto :: Double -> Double -> WumpusM ()
-moveto x y = command2 "moveto" (dtrunc x) (dtrunc y)
+ps_moveto :: Double -> Double -> WumpusM ()
+ps_moveto x y = command2 "moveto" (dtrunc x) (dtrunc y)
 
-rmoveto :: Double -> Double -> WumpusM ()
-rmoveto x y = command2 "rmoveto" (dtrunc x) (dtrunc y)
-
-
-lineto :: Double -> Double -> WumpusM ()
-lineto x y = command2 "lineto" (dtrunc x) (dtrunc y)
-
-rlineto :: Double -> Double -> WumpusM ()
-rlineto x y = command2 "rlineto" (show x) (show y)
+ps_rmoveto :: Double -> Double -> WumpusM ()
+ps_rmoveto x y = command2 "rmoveto" (dtrunc x) (dtrunc y)
 
 
-arc :: Double -> Double -> Double -> Double -> Double -> WumpusM ()
-arc x y r ang1 ang2 = 
+ps_lineto :: Double -> Double -> WumpusM ()
+ps_lineto x y = command2 "lineto" (dtrunc x) (dtrunc y)
+
+ps_rlineto :: Double -> Double -> WumpusM ()
+ps_rlineto x y = command2 "rlineto" (show x) (show y)
+
+
+ps_arc :: Double -> Double -> Double -> Double -> Double -> WumpusM ()
+ps_arc x y r ang1 ang2 = 
     command5 "arc" (show x) (show y) (show r) (show ang1) (show ang2)
 
-arcn :: Double -> Double -> Double -> Double -> Double -> WumpusM ()
-arcn x y r ang1 ang2 = 
+ps_arcn :: Double -> Double -> Double -> Double -> Double -> WumpusM ()
+ps_arcn x y r ang1 ang2 = 
     command5 "arcn" (show x) (show y) (show r) (show ang1) (show ang2)
 
 
-curveto :: Double -> Double -> Double -> Double -> 
+ps_curveto :: Double -> Double -> Double -> Double -> 
                      Double -> Double -> WumpusM ()
-curveto x1 y1 x2 y2 x3 y3 = 
+ps_curveto x1 y1 x2 y2 x3 y3 = 
     command6 "curveto" (dtrunc x1) (dtrunc y1) (dtrunc x2) (dtrunc y2)
                        (dtrunc x3) (dtrunc y3)
 
 
-closepath :: WumpusM ()
-closepath = command0 "closepath" 
+ps_closepath :: WumpusM ()
+ps_closepath = command0 "closepath" 
 
-clip :: WumpusM ()
-clip = command0 "clip" 
+ps_clip :: WumpusM ()
+ps_clip = command0 "clip" 
 
 --------------------------------------------------------------------------------
 --  painting operators
 
 
-erasepage :: WumpusM () 
-erasepage = command0 "erasepage"
+ps_erasepage :: WumpusM () 
+ps_erasepage = command0 "erasepage"
 
-fill :: WumpusM ()
-fill = command0 "fill"
+ps_fill :: WumpusM ()
+ps_fill = command0 "fill"
 
-stroke :: WumpusM ()
-stroke = command0 "stroke"
+ps_stroke :: WumpusM ()
+ps_stroke = command0 "stroke"
 

@@ -17,57 +17,52 @@
 
 module Wumpus.Drawing.Arrow where
 
+import Wumpus.Core.Fun
 import Wumpus.Core.Point
-import Wumpus.Core.Wumpus
+import Wumpus.Core.PostScript
 
 
 arrow :: DPoint2 -> DPoint2 -> WumpusM ()
 arrow p1@(P2 x1 y1) p2@(P2 x2 y2) = saveExecRestore $ do
-    setmiterlimit 1 
-    newpath
-    moveto x1 y1
-    lineto x2 y2 
-    rotate (360 - r2d theta)
-    rlineto (-10) (-4)
-    rmoveto   10    4   -- back to origin
-    rlineto (-10)   4
-    closepath
-    stroke
+    ps_setmiterlimit 1 
+    ps_newpath
+    ps_moveto x1 y1
+    ps_lineto x2 y2 
+    ps_rotate (360 - r2d theta)
+    ps_rlineto (-10) (-4)
+    ps_rmoveto   10    4   -- back to origin
+    ps_rlineto (-10)   4
+    ps_closepath
+    ps_stroke
   where
     theta = tan (y2-y1/x2-x1)
 
 
 
-d2r :: Floating a => a -> a 
-d2r = (*) (pi/180)
-
-r2d :: Floating a => a -> a
-r2d = (*) (180/pi)
-
 
 
 vee :: Double -> Double -> Double -> WumpusM ()
 vee x y theta = saveExecRestore $ do
-   setmiterlimit 1
-   newpath
-   moveto x y
-   translate x y
-   rotate theta
-   rlineto (-10) (-4)
-   rmoveto   10    4   -- back to origin
-   rlineto (-10)   4
-   closepath
-   stroke
+   ps_setmiterlimit 1
+   ps_newpath
+   ps_moveto x y
+   ps_translate x y
+   ps_rotate theta
+   ps_rlineto (-10) (-4)
+   ps_rmoveto   10    4   -- back to origin
+   ps_rlineto (-10)   4
+   ps_closepath
+   ps_stroke
 
 
 triangle :: Double -> Double -> Double -> WumpusM ()
 triangle x y theta = saveExecRestore $ do
-   newpath
-   moveto x y
-   translate x y
-   rotate theta
-   rlineto (-10) (-4)
-   rlineto   0     8  
-   closepath
-   fill
+   ps_newpath
+   ps_moveto x y
+   ps_translate x y
+   ps_rotate theta
+   ps_rlineto (-10) (-4)
+   ps_rlineto   0     8  
+   ps_closepath
+   ps_fill
  

@@ -23,9 +23,9 @@ import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
+import Wumpus.Core.PostScript
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
-import Wumpus.Core.Wumpus hiding ( translate, rotate, scale )
 
 import Wumpus.Drawing.PSSkeletons
 
@@ -43,8 +43,8 @@ type Origin = Point
 
 drawLine :: DLineSegment -> WumpusM ()
 drawLine (LS (P2 x1 y1) (P2 x2 y2)) = strokePathSkel $ do 
-    moveto x1 y1
-    lineto x2 y2
+    ps_moveto x1 y1
+    ps_lineto x2 y2
 
 drawPoint :: DPoint2 -> WumpusM ()
 drawPoint = polygon . unitSquare
@@ -62,15 +62,15 @@ data Polygon = Polygon [Point]
 drawPolygon :: Polygon -> WumpusM ()
 drawPolygon (Polygon [])            = return ()
 drawPolygon (Polygon ((P2 x y):ps)) = saveExecRestore $ do 
-    newpath
-    moveto x y
-    mapM_ (\(P2 a b) -> lineto a b) ps 
-    closepath
-    stroke
+    ps_newpath
+    ps_moveto x y
+    mapM_ (\(P2 a b) -> ps_lineto a b) ps 
+    ps_closepath
+    ps_stroke
 
 
 setRgbColour :: RgbColour -> WumpusM ()
-setRgbColour (RGB3 r g b) = setrgbcolor r g b
+setRgbColour (RGB3 r g b) = ps_setrgbcolor r g b
 
 whenMb :: Monad m => Maybe a -> (a -> m ()) -> m()
 whenMb a sk = maybe (return ()) sk a 
@@ -94,7 +94,7 @@ circle (x,y) r  = Circle (P2 x y) r
 
 drawCircle  :: Circle -> WumpusM ()
 drawCircle (Circle (P2 x y) r) = closeStrokePathSkel $ 
-  arc x y r 0 360 
+  ps_arc x y r 0 360 
 
 data Disk = Disk Origin Radius
   deriving (Eq,Show)
@@ -104,24 +104,24 @@ disk (x,y) r = Disk (P2 x y) r
 
 drawDisk  :: Disk -> WumpusM ()
 drawDisk (Disk (P2 x y) r) = closeFillPathSkel $ do
-  arc x y r 0 360
+  ps_arc x y r 0 360
 
 
 drawCurve :: DCurve -> WumpusM ()
 drawCurve (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
   strokePathSkel $  do 
-    moveto x0 y0
-    curveto x1 y1 x2 y2 x3 y3
+    ps_moveto x0 y0
+    ps_curveto x1 y1 x2 y2 x3 y3
 
 
 -- also draw control points
 drawBezier :: DCurve -> WumpusM ()
 drawBezier (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
   strokePathSkel $  do 
-    moveto x1 y1             -- start from point1
-    lineto x0 y0
-    curveto x1 y1 x2 y2 x3 y3
-    lineto x2 y2
+    ps_moveto x1 y1             -- start from point1
+    ps_lineto x0 y0
+    ps_curveto x1 y1 x2 y2 x3 y3
+    ps_lineto x2 y2
 
 
 

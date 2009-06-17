@@ -5,8 +5,8 @@ module Hyperbola where
 
 import Wumpus.Core.Curve
 import Wumpus.Core.Point
-import qualified Wumpus.Core.Transformations as W
-import Wumpus.Core.Wumpus
+import Wumpus.Core.PostScript
+import Wumpus.Core.Transformations
 import Wumpus.Core.VSExtra ( adjustvk ) 
 
 import Wumpus.Drawing.Basic
@@ -52,14 +52,14 @@ demo2 = hyperbola (-2) 2 4
 
 demo1 :: IO ()
 demo1 = writePS "hyperbola1.ps" $ runWumpus st0 $ drawing1 where
-  drawing1 = do { translate 150 380 
+  drawing1 = do { ps_translate 150 380 
                 ; let curves1 = hyperbola (-2) 2 1
                 ; mapM_ drawCurve $ map (scalePoints 30) curves1
                 ; setRgbColour blueViolet
                 ; let curves2 = hyperbola (-2) 2 2
                 ; mapM_ drawCurve $ map (scalePoints 30) curves2
                 ------
-                ; translate 0 100
+                ; ps_translate 0 100
                 ; setRgbColour coral
                 ; let bcurve = Curve (P2 0 0) (P2 5.0 50) (P2 45 50) (P2 50 0)
                 ; drawCurve bcurve
@@ -67,11 +67,11 @@ demo1 = writePS "hyperbola1.ps" $ runWumpus st0 $ drawing1 where
                 ; drawCurve $ ctranslate 0 40 c1
                 ; setRgbColour skyBlue
                 ; drawCurve $ ctranslate 0 40 c2
-                ; translate 0 100
+                ; ps_translate 0 100
                 ; curveHack [P2 60 30, P2 0 15, P2 90 90, P2 100 0]
-                ; translate 200 (-100)
+                ; ps_translate 200 (-100)
                 ; curveHack [P2 10 10, P2 40 10, P2 40 40, P2 10 40] 
-                ; translate 0 (100)
+                ; ps_translate 0 (100)
                 ; ajtest
                 }
 
@@ -84,7 +84,7 @@ curveHack xs = do
     setRgbColour blueViolet
     mapM_ drawBezier cs
   where
-    cs = smoothw 0.8 xs
+    cs = smoothw 0.6 xs
 
 ajtest :: WumpusM ()
 ajtest = do 
@@ -104,7 +104,7 @@ scalePoints d = fmap (d*)
 -- temp hack
 ctranslate :: Double -> Double -> DCurve -> DCurve
 ctranslate x y (Curve p0 p1 p2 p3) = 
-  Curve (W.translate x y p0) (W.translate x y p1) (W.translate x y p2) (W.translate x y p3) 
+  Curve (translate x y p0) (translate x y p1) (translate x y p2) (translate x y p3) 
 
 cubicPoly :: Num a => a -> a -> a -> a -> a -> a
 cubicPoly a0 a1 a2 a3 x = a3*(x*x*x) + a2*(x*x) + a1*x + a0

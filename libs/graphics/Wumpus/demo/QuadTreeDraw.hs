@@ -6,8 +6,8 @@ import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
+import Wumpus.Core.PostScript
 import Wumpus.Core.VSExtra
-import Wumpus.Core.Wumpus hiding ( concat )
 
 import Wumpus.Drawing.QuadTree
 import Wumpus.Drawing.Basic
@@ -40,9 +40,9 @@ demo1 = outputQuadTree "tree1.ps" demo_qt
 
 outputQuadTree :: FilePath -> QuadTree (DPoint2,DPoint2) DPoint2 -> IO ()
 outputQuadTree name tree =  writePS name $ runWumpus st0 $ drawing1 where
-  drawing1 = do { translate 20 20
+  drawing1 = do { ps_translate 20 20
                 ; mapM_ drawLine $ treelines tree
-                ; setrgbcolor 1 0 0
+                ; ps_setrgbcolor 1 0 0
                 ; mapM_ drawPoint $ treepoints tree
                 }
 
