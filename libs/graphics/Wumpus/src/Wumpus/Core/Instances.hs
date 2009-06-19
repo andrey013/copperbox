@@ -53,7 +53,7 @@ instance VecMult Matrix3'3 Vec3 where
 -- need to take care here vis-a-vis row / column vectors...
 
 instance VecMult Matrix3'3 Vec2 where
-  (*#) m (V2 a b) = V2 x y where (V3 x y _) = m *# (V3 a b 1)
+  (*#) m (V2 a b) = V2 x y where (V3 x y _) = m *# (V3 a b 0)
 
 
 instance VecMult Matrix3'3 Point2 where

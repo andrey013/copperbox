@@ -68,17 +68,18 @@ demo1 = writePS "hyperbola1.ps" $ runWumpus st0 $ drawing1 where
                 ; setRgbColour skyBlue
                 ; drawCurve $ ctranslate 0 40 c2
                 ; ps_translate 0 100
+                ; ps_setdash [2,1] 0
                 ; curveHack [P2 60 30, P2 0 15, P2 90 90, P2 100 0]
                 ; ps_translate 200 (-100)
                 ; curveHack [P2 10 10, P2 40 10, P2 40 40, P2 10 40] 
                 ; ps_translate 0 (100)
+                ; ps_setdash [] 0
                 ; ajtest
                 }
 
 
 curveHack :: [DPoint2] -> WumpusM ()
 curveHack xs = do 
-    -- translate 0 100
     setRgbColour darkSeaGreen
     drawPolygon $ Polygon xs
     setRgbColour blueViolet

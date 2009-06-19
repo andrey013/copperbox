@@ -156,6 +156,22 @@ perp :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) => t a -> t a -> Bool
 perp = (==0) `oo` (<.>)
 
 
+-- construct a vector with horizontal displacement
+
+class HVec t where 
+  hvec :: Num a => a -> t a
+
+instance HVec Vec2 where
+  hvec d = V2 d 0
+
+-- construct a vector with vertical displacement 
+class VVec t where
+  vvec :: Num a => a -> t a
+
+instance VVec Vec2 where
+  vvec d = V2 0 d
+
+
 -- note normal function in Data.Cross
 
 

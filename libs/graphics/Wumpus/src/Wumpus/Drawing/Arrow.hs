@@ -18,8 +18,24 @@
 module Wumpus.Drawing.Arrow where
 
 import Wumpus.Core.Fun
+import Wumpus.Core.Instances
 import Wumpus.Core.Point
 import Wumpus.Core.PostScript
+import Wumpus.Core.Transformations
+import Wumpus.Core.Vector
+
+import Wumpus.Drawing.Basic
+
+import Data.AffineSpace
+
+
+arrowheadTriangle :: Double -> Double -> (Double -> DPoint2 -> Polygon)
+arrowheadTriangle d ang = 
+  \theta endpoint -> let p0 = endpoint .+^ (hvec (-d))
+                     in Polygon [rotate (pi-ang) p0, endpoint, rotate (pi+ang) p0]
+
+
+
 
 
 arrow :: DPoint2 -> DPoint2 -> WumpusM ()

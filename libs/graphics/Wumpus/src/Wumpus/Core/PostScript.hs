@@ -28,6 +28,7 @@ import Wumpus.Core.Vector
 import qualified Data.DList as DL
 import MonadLib
 
+import Data.List ( foldl' )
 
 data PsState = PsState { 
        pageNum      :: Int,  
@@ -172,6 +173,12 @@ command6 cmd arg1 arg2 arg3 arg4 arg5 arg6 =
    mapM_ writeArg [arg1, arg2, arg3, arg4, arg5, arg6 ] >> writeln cmd
 
 
+showArray :: (a -> ShowS) -> [a] -> String
+showArray _ []     = "[ ]"
+showArray f (x:xs) = sfun "]" 
+  where 
+    sfun = foldl' (\a e -> a . (' ':) . f e) (('[':) . f x) xs
+                              
 getPageNum :: WumpusM Int
 getPageNum = pageNum `fmap` get 
 
@@ -215,7 +222,7 @@ ps_grestore = command0 "grestore"
 ps_setlinewidth :: Double -> WumpusM ()
 ps_setlinewidth n = command1 "setlinewidth" (show n) 
 
-
+-- 0 = butt, 1 = round, 2 = square
 ps_setlinecap :: Int -> WumpusM ()
 ps_setlinecap i = command1 "setlinecap" (show i) 
 
@@ -225,6 +232,9 @@ ps_setlinejoin i = command1 "setlinejoin" (show i)
 ps_setmiterlimit :: Double -> WumpusM ()
 ps_setmiterlimit n = command1 "setmiterlimit" (show n) 
 
+
+ps_setdash :: [Int] -> Int -> WumpusM ()
+ps_setdash arr n = command2 "setdash" (showArray shows arr) (show n)
 
 ps_setgray :: Double -> WumpusM ()
 ps_setgray n = command1 "setgray" (dtrunc n)
