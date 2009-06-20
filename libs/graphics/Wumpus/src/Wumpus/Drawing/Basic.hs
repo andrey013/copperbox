@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -35,10 +36,9 @@ import Data.VectorSpace
 
 import Prelude hiding ( concat ) 
 
-type Point = DPoint2
 
 type Radius = Double
-type Origin = Point
+type Origin = DPoint2
 
 
 drawLine :: DLineSegment2 -> WumpusM ()
@@ -51,13 +51,17 @@ drawPoint = polygon . unitSquare
 
 -- should this generate a Polygon or its path?
 -- unitSquare :: Point -> Polygon
-unitSquare :: Point -> [Point]
+unitSquare :: DPoint2 -> [DPoint2]
 unitSquare p = usqr where 
     usqr = [p, p .+^ (V2 0 1), p .+^ (V2 1 1), p .+^ (V2 1 0)]
 
-data Polygon = Polygon [Point]
+data Polygon = Polygon [DPoint2]
   deriving (Eq,Show)
 
+
+instance Pointwise Polygon where
+  type Pt Polygon = DPoint2
+  pointwise f (Polygon xs) = Polygon $ map f xs
 
 drawPolygon :: Polygon -> WumpusM ()
 drawPolygon (Polygon [])            = return ()
@@ -76,7 +80,7 @@ whenMb :: Monad m => Maybe a -> (a -> m ()) -> m()
 whenMb a sk = maybe (return ()) sk a 
 
 
-diamond :: (Double,Double) -> Point -> Polygon
+diamond :: (Double,Double) -> DPoint2 -> Polygon
 diamond (w,h) (P2 x1 y1) = Polygon xs
   where
     xs     = map (trans1.scale1.rot1) $ unitSquare $ P2 0 0
@@ -128,41 +132,41 @@ drawBezier (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) =
 --------------------------------------------------------------------------------
 -- dots
 
-dotPlus :: Point -> [DLineSegment2]
+dotPlus :: DPoint2 -> [DLineSegment2]
 dotPlus (P2 x y) = map (translate x y) [ls1,ls2]
   where
     ls1 = hline (P2 (-2) 0) 4
     ls2 = rotate90 ls1
   
 
-dotX :: Point -> [DLineSegment2]
+dotX :: DPoint2 -> [DLineSegment2]
 dotX (P2 x y) = map (translate x y) [ls1,ls2]
   where
     ls1 = rotate30 $ vline (P2 0 (-2)) 4
     ls2 = rotate (5*pi/3) $ ls1
 
 
-dotAsterisk :: Point -> [DLineSegment2]
+dotAsterisk :: DPoint2 -> [DLineSegment2]
 dotAsterisk (P2 x y) = map (translate x y) $ circular (replicate 5 ls1)
   where
    ls1 = vline origin 2  
 
 
-dotTriangle :: Point -> Polygon
+dotTriangle :: DPoint2 -> Polygon
 dotTriangle = polyDot (P2 0 2) 3
 
-dotSquare :: Point -> Polygon
+dotSquare :: DPoint2 -> Polygon
 dotSquare = polyDot (P2 1.5 1.5) 4
 
-dotPentagon :: Point -> Polygon
+dotPentagon :: DPoint2 -> Polygon
 dotPentagon = polyDot (P2 0 1.5) 5 
 
-polyDot :: Point -> Int -> Point -> Polygon
+polyDot :: DPoint2 -> Int -> DPoint2 -> Polygon
 polyDot pt1 n (P2 x y) = Polygon xs
   where
     xs = map (translate x y) $ circular $ replicate n pt1 
 
-dotDiamond :: Point -> Polygon
+dotDiamond :: DPoint2 -> Polygon
 dotDiamond (P2 x y) = Polygon (map (translate x y) [p1,p2,p3,p4])
   where
    p1 = P2 0 1.5

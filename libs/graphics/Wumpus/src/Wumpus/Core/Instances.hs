@@ -39,6 +39,9 @@ instance (AffineSpace a, Num (Diff a)) => AffineSpace (Point2 a) where
   (P2 a b) .-. (P2 x y)   = V2 (a .-. x) (b .-. y)
   (P2 a b) .+^ (V2 vx vy) = P2 (a .+^ vx) (b .+^ vy)
 
+--------------------------------------------------------------------------------
+-- Matrix / Vector multiplication (homogeneous coordinates)
+
 
 infixr 7 *# 
 
@@ -49,13 +52,30 @@ instance VecMult Matrix3'3 Vec3 where
   (*#) (M3'3 a b c d e f g h i) (V3 m n o) = 
     V3 (a*m+b*n+c*o) (d*m+e*n+f*o) (g*m+h*n+i*o)
 
-
--- need to take care here vis-a-vis row / column vectors...
+-- Note - column vector representation
 
 instance VecMult Matrix3'3 Vec2 where
-  (*#) m (V2 a b) = V2 x y where (V3 x y _) = m *# (V3 a b 0)
+  (M3'3 a b c d e f _ _ _) *# (V2 m n) = V2 (a*m+b*n+c*0) (d*m+e*n+f*0)
 
 
 instance VecMult Matrix3'3 Point2 where
-  (*#) m (P2 a b) = P2 x y where (V3 x y _) = m *# (V3 a b 1)
+  (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a*m+b*n+c*1) (d*m+e*n+f*1)
 
+
+--------------------------------------------------------------------------------
+-- 'Pointwise' transformation
+
+
+-- pointwise trafo (Polygon xs) = Polygon $ map trafo xs 
+
+
+class Pointwise sh where
+  type Pt sh :: *
+  pointwise :: (Pt sh -> Pt sh) -> sh -> sh
+
+
+
+instance Pointwise (Point2 a) where
+  type Pt (Point2 a) = Point2 a
+  pointwise f pt = f pt
+ 

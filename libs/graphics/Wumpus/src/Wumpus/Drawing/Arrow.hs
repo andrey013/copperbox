@@ -17,6 +17,7 @@
 
 module Wumpus.Drawing.Arrow where
 
+import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.PostScript
@@ -28,15 +29,15 @@ import Wumpus.Drawing.Basic
 import Data.AffineSpace
 
 
+
+
 arrowheadTriangle :: Double -> Double -> (Double -> DPoint2 -> Polygon)
 arrowheadTriangle d ang = 
   \theta endpoint -> let p0 = endpoint .+^ (hvec (-d))
                          pg = Polygon [ rotateAbout (pi-ang) endpoint p0, 
                                         endpoint, 
                                         rotateAbout (pi+ang) endpoint p0]
-                     in rotTemp theta endpoint pg
-  where 
-    rotTemp a end (Polygon xs) = Polygon $ map (rotateAbout a end) xs
+                     in pointwise (rotateAbout theta endpoint) pg
 
 
 arrowheadVee :: Double -> Double -> (Double -> DPoint2 -> [DLineSegment2])
@@ -44,10 +45,8 @@ arrowheadVee d ang =
   \theta endpoint -> let p0  = endpoint .+^ (hvec (-d))
                          p01 = rotateAbout (pi-ang) endpoint p0
                          p02 = rotateAbout (pi+ang) endpoint p0
-                     in map (rotTemp theta endpoint) 
+                     in map (pointwise (rotateAbout theta endpoint))
                             [ lineTo p01 endpoint, lineTo endpoint p02]
-  where 
-    rotTemp a end (LS2 p p') = LS2 (rotateAbout a end p) (rotateAbout a end p')
 
 
 

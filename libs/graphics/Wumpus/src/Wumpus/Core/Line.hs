@@ -46,6 +46,11 @@ instance Functor LineSegment2 where
 instance VecMult Matrix3'3 LineSegment2 where
   (*#) m3'3 (LS2 p p') = LS2 (m3'3 *# p) (m3'3 *# p')
 
+instance Pointwise (LineSegment2 a) where
+  type Pt (LineSegment2 a) = Point2 a
+  pointwise f (LS2 p p') = LS2 (f p) (f p')
+
+
 
 -- construct
 lineTo :: Point2 a -> Point2 a -> LineSegment2 a
