@@ -39,15 +39,15 @@ instance Num a => Ortho (Frame2 a) where
   ortho ogin = Frame2 ogin (V2 1 0) (V2 0 1)
 
 
-pif :: DPoint2 -> Frame2 Double -> DPoint2
-pif = pointInFrame 
+piw :: DPoint2 -> Frame2 Double -> DPoint2
+piw = pointInWorld
 
 
 -- Given a point and a frame, return the point in world coordinates
-pointInFrame :: (Num a, AffineSpace a, VectorSpace a, 
+pointInWorld :: (Num a, AffineSpace a, VectorSpace a, 
                  Scalar a ~ a, a ~ Diff a)
              => Point2 a -> Frame2 a -> Point2 a
-pointInFrame (P2 x y) (Frame2 o xv yv) = (o .+^ xv') .+^ yv'
+pointInWorld (P2 x y) (Frame2 o xv yv) = (o .+^ xv') .+^ yv'
   where 
     xv' = x *^ xv
     yv' = y *^ yv

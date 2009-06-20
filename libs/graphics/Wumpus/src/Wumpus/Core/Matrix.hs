@@ -124,11 +124,20 @@ translationMatrix :: Num a => a -> a -> Matrix3'3 a
 translationMatrix x y = M3'3 1 0 x  0 1 y  0 0 1
 
 
-rotationMatrix :: Floating a => a -> Matrix3'3 a
-rotationMatrix a = M3'3 (cos a) (- sin a) 0 
-                        (sin a) (cos a)   0  
-                        0 0 1
 
+
+rotationMatrix :: Floating a => a -> Matrix3'3 a
+rotationMatrix ang = M3'3 (cos ang) (- sin ang) 0 
+                          (sin ang) (cos ang)   0  
+                          0         0           1
+
+rotationMatrix' :: Floating a => a -> a -> a -> Matrix3'3 a
+rotationMatrix' ang x y = mT * (rotationMatrix ang) * mTinv
+  where
+    mT    = M3'3 1 0 x     0 1 y     0 0 1
+    mTinv = M3'3 1 0 (-x)  0 1 (-y)  0 0 1
+
+ 
 -- No reflectionMatrix function
 -- A reflection about the x-axis is a scale of 1 (-1)
 -- A reflection about the y-axis is a scale of (-1) 1

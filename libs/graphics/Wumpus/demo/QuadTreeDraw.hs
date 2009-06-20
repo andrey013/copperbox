@@ -17,7 +17,7 @@ import qualified Data.Foldable as F
 -- Note a square of 400x400 PS points will fit on an A4 page
 
 
-sqlines :: (DPoint2,DPoint2) -> [DLineSegment]
+sqlines :: (DPoint2,DPoint2) -> [DLineSegment2]
 sqlines (P2 x0 y0, P2 x1 y1) = [t,r,b,l]  -- clockwise
   where
     t = lineTo (P2 x0 y1) (P2 x1 y1)
@@ -25,7 +25,7 @@ sqlines (P2 x0 y0, P2 x1 y1) = [t,r,b,l]  -- clockwise
     b = lineTo (P2 x1 y0) (P2 x0 y0)
     l = lineTo (P2 x0 y0) (P2 x0 y1)
 
-midlines :: (DPoint2,DPoint2) -> [DLineSegment]
+midlines :: (DPoint2,DPoint2) -> [DLineSegment2]
 midlines (p1@(P2 x0 y0), p2@(P2 x1 y1)) = [v,h]  -- clockwise
   where
     P2 x' y' = midpoint p1 p2
@@ -46,7 +46,7 @@ outputQuadTree name tree =  writePS name $ runWumpus st0 $ drawing1 where
                 ; mapM_ drawPoint $ treepoints tree
                 }
 
-treelines :: QuadTree (DPoint2,DPoint2) DPoint2 -> [DLineSegment]
+treelines :: QuadTree (DPoint2,DPoint2) DPoint2 -> [DLineSegment2]
 treelines (Empty sq)  = [] -- sqlines sq
 treelines (Leaf sq _) = [] -- sqlines sq
 treelines (Quad _ sq nw ne se sw) =

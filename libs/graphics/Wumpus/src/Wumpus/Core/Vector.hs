@@ -141,16 +141,24 @@ instance (Num a, InnerSpace a, AdditiveGroup (Scalar a))
 
 
 -- first function just here to test second function...
-magnitude' :: Vec2 Double -> Double
-magnitude' v@(V2 _ _) = sqrt (v <.> v)
+-- note Data.VectorSpace supplies magnitude
+ 
+magnitudeD :: DVec2 -> Double
+magnitudeD v@(V2 _ _) = sqrt (v <.> v)
 
-magnitude :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) => t a -> a
-magnitude v = sqrt (v <.> v)
+magnitude' :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) => t a -> a
+magnitude' v = sqrt (v <.> v)
+
+vangleD :: DVec2 -> DVec2 -> Double 
+vangleD = vangle 
+
+vangle :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) => t a -> t a -> a
+vangle u v = acos ((u<.>v) / ((magnitude u) * (magnitude v)))    
 
 
 -- two vectors in R2 are perpendicular iff their dot product is 0
-perp' :: DVec2 -> DVec2 -> Bool
-perp' = ((==0) .) . (<.>)
+perpD :: DVec2 -> DVec2 -> Bool
+perpD = perp
 
 perp :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) => t a -> t a -> Bool
 perp = (==0) `oo` (<.>)

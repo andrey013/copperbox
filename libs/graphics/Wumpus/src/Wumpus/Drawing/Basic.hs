@@ -41,8 +41,8 @@ type Radius = Double
 type Origin = Point
 
 
-drawLine :: DLineSegment -> WumpusM ()
-drawLine (LS (P2 x1 y1) (P2 x2 y2)) = strokePathSkel $ do 
+drawLine :: DLineSegment2 -> WumpusM ()
+drawLine (LS2 (P2 x1 y1) (P2 x2 y2)) = strokePathSkel $ do 
     ps_moveto x1 y1
     ps_lineto x2 y2
 
@@ -128,21 +128,21 @@ drawBezier (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) =
 --------------------------------------------------------------------------------
 -- dots
 
-dotPlus :: Point -> [DLineSegment]
+dotPlus :: Point -> [DLineSegment2]
 dotPlus (P2 x y) = map (translate x y) [ls1,ls2]
   where
     ls1 = hline (P2 (-2) 0) 4
     ls2 = rotate90 ls1
   
 
-dotX :: Point -> [DLineSegment]
+dotX :: Point -> [DLineSegment2]
 dotX (P2 x y) = map (translate x y) [ls1,ls2]
   where
     ls1 = rotate30 $ vline (P2 0 (-2)) 4
     ls2 = rotate (5*pi/3) $ ls1
 
 
-dotAsterisk :: Point -> [DLineSegment]
+dotAsterisk :: Point -> [DLineSegment2]
 dotAsterisk (P2 x y) = map (translate x y) $ circular (replicate 5 ls1)
   where
    ls1 = vline origin 2  
@@ -172,7 +172,7 @@ dotDiamond (P2 x y) = Polygon (map (translate x y) [p1,p2,p3,p4])
 
  
 
-drawLineSegment :: DLineSegment -> WumpusM ()
-drawLineSegment (LS p p') = closeStrokePathSkel $ do 
+drawLineSegment :: DLineSegment2 -> WumpusM ()
+drawLineSegment (LS2 p p') = closeStrokePathSkel $ do 
     movetoPt p
     linetoPt p'

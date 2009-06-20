@@ -21,11 +21,15 @@ module Wumpus.Core.Transformations where
 
 import Wumpus.Core.Instances
 import Wumpus.Core.Matrix
+import Wumpus.Core.Point 
 
 import Data.List ( mapAccumR )
 
 rotate :: (Floating a, VecMult Matrix3'3 t) => a -> t a -> t a 
 rotate a = ((rotationMatrix a) *#) 
+
+rotateAbout :: (Floating a, VecMult Matrix3'3 t) => a -> Point2 a -> t a -> t a 
+rotateAbout a (P2 x y) = ((rotationMatrix' a x y) *#) 
 
 rotate90 :: (Floating a, VecMult Matrix3'3 t) => t a -> t a 
 rotate90 = rotate (pi/2) 

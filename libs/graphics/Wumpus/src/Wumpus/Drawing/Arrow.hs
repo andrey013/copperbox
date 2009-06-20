@@ -32,8 +32,12 @@ import Data.AffineSpace
 arrowheadTriangle :: Double -> Double -> (Double -> DPoint2 -> Polygon)
 arrowheadTriangle d ang = 
   \theta endpoint -> let p0 = endpoint .+^ (hvec (-d))
-                     in Polygon [rotate (pi-ang) p0, endpoint, rotate (pi+ang) p0]
-
+                         pg = Polygon [ rotateAbout (pi-ang) endpoint p0, 
+                                        endpoint, 
+                                        rotateAbout (pi+ang) endpoint p0]
+                     in rTemp theta endpoint pg
+  where 
+    rTemp a end (Polygon xs) = Polygon $ map (rotateAbout a end) xs
 
 
 
