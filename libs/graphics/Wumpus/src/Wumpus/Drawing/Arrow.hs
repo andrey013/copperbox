@@ -17,8 +17,7 @@
 
 module Wumpus.Drawing.Arrow where
 
-import Wumpus.Core.Fun
-import Wumpus.Core.Instances
+import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.PostScript
 import Wumpus.Core.Transformations
@@ -35,54 +34,39 @@ arrowheadTriangle d ang =
                          pg = Polygon [ rotateAbout (pi-ang) endpoint p0, 
                                         endpoint, 
                                         rotateAbout (pi+ang) endpoint p0]
-                     in rTemp theta endpoint pg
+                     in rotTemp theta endpoint pg
   where 
-    rTemp a end (Polygon xs) = Polygon $ map (rotateAbout a end) xs
+    rotTemp a end (Polygon xs) = Polygon $ map (rotateAbout a end) xs
 
 
-
-
-arrow :: DPoint2 -> DPoint2 -> WumpusM ()
-arrow p1@(P2 x1 y1) p2@(P2 x2 y2) = saveExecRestore $ do
-    ps_setmiterlimit 1 
-    ps_newpath
-    ps_moveto x1 y1
-    ps_lineto x2 y2 
-    ps_rotate (360 - r2d theta)
-    ps_rlineto (-10) (-4)
-    ps_rmoveto   10    4   -- back to origin
-    ps_rlineto (-10)   4
-    ps_closepath
-    ps_stroke
-  where
-    theta = tan (y2-y1/x2-x1)
+arrowheadVee :: Double -> Double -> (Double -> DPoint2 -> [DLineSegment2])
+arrowheadVee d ang = 
+  \theta endpoint -> let p0  = endpoint .+^ (hvec (-d))
+                         p01 = rotateAbout (pi-ang) endpoint p0
+                         p02 = rotateAbout (pi+ang) endpoint p0
+                     in map (rotTemp theta endpoint) 
+                            [ lineTo p01 endpoint, lineTo endpoint p02]
+  where 
+    rotTemp a end (LS2 p p') = LS2 (rotateAbout a end p) (rotateAbout a end p')
 
 
 
 
 
-vee :: Double -> Double -> Double -> WumpusM ()
-vee x y theta = saveExecRestore $ do
-   ps_setmiterlimit 1
-   ps_newpath
-   ps_moveto x y
-   ps_translate x y
-   ps_rotate theta
-   ps_rlineto (-10) (-4)
-   ps_rmoveto   10    4   -- back to origin
-   ps_rlineto (-10)   4
-   ps_closepath
-   ps_stroke
+-- TODO - tip should be more general, e.g. list of lines, or arcs
+data Arrow a = Arrow (LineSegment2 a) Polygon
+  deriving (Eq,Show)
+
+type DArrow = Arrow Double
+
+arrow :: DPoint2 -> DPoint2 -> DArrow
+arrow p p' = Arrow ln tip where
+  ln    = lineTo p p'
+  theta = pi + (atan $ gradient ln) 
+  tip   = arrowheadTriangle 10 (pi/10) theta p'
 
 
-triangle :: Double -> Double -> Double -> WumpusM ()
-triangle x y theta = saveExecRestore $ do
-   ps_newpath
-   ps_moveto x y
-   ps_translate x y
-   ps_rotate theta
-   ps_rlineto (-10) (-4)
-   ps_rlineto   0     8  
-   ps_closepath
-   ps_fill
+drawArrow :: DArrow -> WumpusM () 
+drawArrow (Arrow ln tip) = drawLine ln >> drawPolygon tip
  
+
