@@ -23,14 +23,10 @@ module Wumpus.Core.Line where
 import Wumpus.Core.Instances
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
-import Wumpus.Core.Vector
 
 import Data.AffineSpace
 import Data.VectorSpace
 
-
--- To determine...
--- (pt x vec) or (pt x pt)?
 
 
 data LineSegment2 a = LS2 (Point2 a) (Point2 a)

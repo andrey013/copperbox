@@ -23,7 +23,6 @@ module Wumpus.Core.PostScript where
 
 import Wumpus.Core.Colour 
 import qualified Wumpus.Core.CTM as CTM
-import Wumpus.Core.Vector
 
 import qualified Data.DList as DL
 import MonadLib

@@ -76,12 +76,12 @@ unfoldlMap f s0 (x:xs) = let (acc,st) = unfoldlMap f s0 xs in
 -- surely this one has been /discovered/ many times?
 intermap :: (a -> a -> b) -> [a] -> [b]
 intermap f (a:b:xs) = f a b : intermap f (b:xs)
-intermap f _        = []
+intermap _ _        = []
 
 
 intermap3 :: (a -> a -> a -> b) -> [a] -> [b]
 intermap3 f (a:b:c:xs) = f a b c : intermap3 f (b:c:xs)
-intermap3 f _          = []
+intermap3 _ _          = []
 
 
 -- homogeneous long zipWith

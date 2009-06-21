@@ -30,11 +30,7 @@ import Wumpus.Core.Vector
 
 import Wumpus.Drawing.PSSkeletons
 
-
 import Data.AffineSpace
-import Data.VectorSpace
-
-import Prelude hiding ( concat ) 
 
 
 type Radius = Double

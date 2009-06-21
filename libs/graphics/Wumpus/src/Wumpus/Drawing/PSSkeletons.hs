@@ -21,12 +21,7 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
 import Wumpus.Core.PostScript
-import Wumpus.Core.Vector
 
-import Data.AffineSpace
-
-
-import Prelude hiding ( concat ) 
 
 
 type RgbColour = DRGB

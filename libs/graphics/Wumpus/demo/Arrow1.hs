@@ -19,6 +19,7 @@ demo1 = writePS "arrow1.ps" $ runWumpus st0 $ drawing1 where
                 ; arrowhead1 (P2 0 0) (P2 10 50) (arrowheadTriangle 10 (pi/10)) drawPolygon
                 ; arrowhead1 (P2 10 0) (P2 20 50) (arrowheadVee 10 (pi/10)) 
                                                   (mapM_ drawLine)
+                ; arrowhead1 (P2 20 0) (P2 30 50) (arrowheadPerp 5) (mapM_ drawLine)
                 }
              
 arrowhead1 :: DPoint2 -> DPoint2 -> (Double -> DPoint2 -> a) 

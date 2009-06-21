@@ -61,16 +61,18 @@ subdivide (Curve p0 p1 p2 p3) =
 
 -- Shemanarev's algorithm
 
-
+smoothw :: Double -> [DPoint2] -> [DCurve]
 smoothw k xs = take (length xs) $ smoothBase k (cycle xs)
 
-
+smoothBase :: Double -> [DPoint2] -> [DCurve]
 smoothBase k xs = intermap curver eps
   where
    pfs  = intermap3 (pipaep k `ooo` proportion) xs
    eps  = combi xs pfs
 
 
+combi :: (Fractional (Scalar (Diff t)), AffineSpace t, VectorSpace (Diff t))
+      => [t] -> [t -> t -> t -> a] -> [a]
 combi (a:b:c:xs) (f:fs)  = fn b : combi (b:c:xs) fs 
                            where fn = f (midpoint a b) (midpoint b c)
 combi _          _       = []

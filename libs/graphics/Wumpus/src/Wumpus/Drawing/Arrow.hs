@@ -33,24 +33,28 @@ import Data.AffineSpace
 
 arrowheadTriangle :: Double -> Double -> (Double -> DPoint2 -> Polygon)
 arrowheadTriangle d ang = 
-  \theta endpoint -> let p0 = endpoint .+^ (hvec (-d))
-                         pg = Polygon [ rotateAbout (pi-ang) endpoint p0, 
-                                        endpoint, 
-                                        rotateAbout (pi+ang) endpoint p0]
-                     in pointwise (rotateAbout theta endpoint) pg
+  \theta endpt -> let p0 = endpt .+^ (hvec (-d))
+                      pg = Polygon [ rotateAbout (pi-ang) endpt p0, 
+                                     endpt, 
+                                     rotateAbout (pi+ang) endpt p0]
+                  in pointwise (rotateAbout theta endpt) pg
 
 
 arrowheadVee :: Double -> Double -> (Double -> DPoint2 -> [DLineSegment2])
 arrowheadVee d ang = 
-  \theta endpoint -> let p0  = endpoint .+^ (hvec (-d))
-                         p01 = rotateAbout (pi-ang) endpoint p0
-                         p02 = rotateAbout (pi+ang) endpoint p0
-                     in map (pointwise (rotateAbout theta endpoint))
-                            [ lineTo p01 endpoint, lineTo endpoint p02]
+  \theta endpt -> let p0  = endpt .+^ (hvec (-d))
+                      p01 = rotateAbout (pi-ang) endpt p0
+                      p02 = rotateAbout (pi+ang) endpt p0
+                  in map (pointwise (rotateAbout theta endpt))
+                            [ lineTo p01 endpt, lineTo endpt p02]
 
 
 
-
+arrowheadPerp :: Double -> (Double -> DPoint2 -> [DLineSegment2])
+arrowheadPerp d = 
+  \theta endpt -> let p0 = endpt .+^ (hvec (-d))
+                      p1 = endpt .+^ (hvec d)
+                  in [pointwise (rotateAbout (theta+pi/2) endpt) (lineTo p0 p1)]
 
 -- TODO - tip should be more general, e.g. list of lines, or arcs
 data Arrow a = Arrow (LineSegment2 a) Polygon

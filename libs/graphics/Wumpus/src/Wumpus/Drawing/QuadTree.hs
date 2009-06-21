@@ -20,7 +20,7 @@
 
 module Wumpus.Drawing.QuadTree where
 
-import Wumpus.Core.Instances
+import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
 import Wumpus.Core.VSExtra
 
