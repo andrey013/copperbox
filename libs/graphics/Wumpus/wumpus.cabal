@@ -1,0 +1,58 @@
+name:             Wumpus
+version:          0.1
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Graphics
+synopsis:         Geometry kernel and vector drawing. 
+description:
+  Geometry kernel and vector drawing.
+
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Demo1
+
+library
+  hs-source-dirs:     src
+  build-depends:      base, vector-space, monadLib, dlist
+
+  
+  exposed-modules:
+    Wumpus.Core.Colour,
+    Wumpus.Core.Curve,
+    Wumpus.Core.Frame,
+    Wumpus.Core.Fun,
+    Wumpus.Core.Instances,
+    Wumpus.Core.Line,
+    Wumpus.Core.Matrix,
+    Wumpus.Core.Point,
+    Wumpus.Core.PostScript,
+    Wumpus.Core.Transformations,
+    Wumpus.Core.Vector,
+    Wumpus.Core.VSExtra,
+    Wumpus.Drawing.Arrow,
+    Wumpus.Drawing.Basic,
+    Wumpus.Drawing.Grid,
+    Wumpus.Drawing.PSSkeletons,
+    Wumpus.Drawing.QuadTree,
+    Wumpus.Drawing.SVGColours,
+    Wumpus.Drawing.X11Colours
+
+  other-modules:
+    Wumpus.Core.CTM
+
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  

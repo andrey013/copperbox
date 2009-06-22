@@ -19,6 +19,7 @@
 module Wumpus.Core.Frame where
 
 import Wumpus.Core.Instances
+import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Vector
 
@@ -28,6 +29,7 @@ import Data.VectorSpace
 data Frame2 a = Frame2 (Point2 a) (Vec2 a) (Vec2 a) 
   deriving (Eq,Show)
 
+type DFrame2 = Frame2 Double
 
 class Ortho fr where
   type Point fr :: *
@@ -52,3 +54,11 @@ pointInWorld (P2 x y) (Frame2 o xv yv) = (o .+^ xv') .+^ yv'
     xv' = x *^ xv
     yv' = y *^ yv
 
+
+ftofD :: DFrame2 -> DFrame2 -> Matrix3'3 Double
+ftofD = ftof
+
+ftof (Frame2 o xv yv) (Frame2 o' xv' yv') = 
+     M3'3 (xv' <.> xv) (yv' <.> xv) ((o' .-. o) <.> xv)
+          (xv' <.> yv) (yv' <.> yv) ((o' .-. o) <.> yv)
+          0            0            1

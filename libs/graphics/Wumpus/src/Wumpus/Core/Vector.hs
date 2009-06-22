@@ -43,6 +43,7 @@ instance Functor Vec3 where
   fmap f (V3 a b c) = V3 (f a) (f b) (f c)
 
 
+
 -- Vectors have a sensible Monoid instance as addition
 
 instance Num a => Monoid (Vec2 a) where
@@ -84,8 +85,6 @@ instance Fractional a => Fractional (Vec3 a) where
   (/) (V3 a b c) (V3 x y z) = V3 (a/x) (b/y) (c/z)
   recip (V3 a b c)          = V3 (recip a) (recip b) (recip c)
   fromRational a            = V3 (fromRational a) (fromRational a) (fromRational a)
-
-
 
 
 class EuclidianNorm t where
