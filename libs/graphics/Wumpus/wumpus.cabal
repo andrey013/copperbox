@@ -44,8 +44,9 @@ library
     Wumpus.Drawing.X11Colours
 
   other-modules:
-    Wumpus.Core.CTM
-
+    Wumpus.Core.CTM,
+    Wumpus.Test.TypeRestrict
+    
   extensions:
     
 

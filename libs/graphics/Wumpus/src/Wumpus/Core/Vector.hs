@@ -93,6 +93,13 @@ class EuclidianNorm t where
 instance EuclidianNorm Vec2 where
   euclidianNorm (V2 a b) = sqrt $ (a*a) + (b*b)
 
+
+-- in 3D the norm is the square root of the dot product 
+-- sqrt (v<.>v), or sqrt (a1^2) (a2^2) (a3^2)
+
+instance EuclidianNorm Vec3 where
+  euclidianNorm (V3 a b c) = sqrt $ (a*a) + (b*b) + (c*c)
+
 -- direction in 2D space
 
 class Direction2 t where   
@@ -101,6 +108,16 @@ class Direction2 t where
 instance Direction2 Vec2 where
    direction (V2 a b) = atan (a/b)
 
+
+class Independent t where
+  independent :: Fractional a => t a -> t a -> Bool
+  
+
+instance Independent Vec2 where
+  independent (V2 a1 a2) (V2 b1 b2) = (a1/a2) /= (b1/b2)
+
+--------------------------------------------------------------------------------
+-- Vector space and related instances
 
 instance Num a => AdditiveGroup (Vec2 a) where
   zeroV = V2 0 0 
@@ -139,29 +156,34 @@ instance (Num a, InnerSpace a, AdditiveGroup (Scalar a))
 
 
 
--- first function just here to test second function...
--- note Data.VectorSpace supplies magnitude
- 
-magnitudeD :: DVec2 -> Double
-magnitudeD v@(V2 _ _) = sqrt (v <.> v)
 
-magnitude' :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) => t a -> a
-magnitude' v = sqrt (v <.> v)
 
-vangleD :: DVec2 -> DVec2 -> Double 
-vangleD = vangle 
+--------------------------------------------------------------------------------
+-- Operations
 
 vangle :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) => t a -> t a -> a
 vangle u v = acos ((u<.>v) / ((magnitude u) * (magnitude v)))    
 
 
+direction2 :: Floating a => Vec2 a -> a
+direction2 (V2 x y) = atan (y/x)
+
+  
+-- Test whether the vectors are perpendicular
 -- two vectors in R2 are perpendicular iff their dot product is 0
-perpD :: DVec2 -> DVec2 -> Bool
-perpD = perp
+perpendicular :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) 
+              => t a -> t a -> Bool
+perpendicular = (==0) `oo` (<.>)
 
-perp :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) => t a -> t a -> Bool
-perp = (==0) `oo` (<.>)
+-- alternative name for perpendicular
+orthogonal :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) 
+              => t a -> t a -> Bool
+orthogonal = (==0) `oo` (<.>)
 
+
+
+
+--------------------------------------------------------------------------------
 
 -- construct a vector with horizontal displacement
 

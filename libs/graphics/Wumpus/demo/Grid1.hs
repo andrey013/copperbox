@@ -13,6 +13,10 @@ import Wumpus.Drawing.Basic
 import Wumpus.Drawing.Grid
 import Wumpus.Drawing.X11Colours
 
+--
+import Wumpus.Test.TypeRestrict
+import Wumpus.Core.VSExtra
+
 demo1 :: IO ()
 demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { ps_translate 60 380 
@@ -45,3 +49,7 @@ d003 = m *# (P2 2 4)
 d004 = P2 (4 - sqrt 2) (2 + 3*(sqrt 2))
 
 d005 = d003 == d004
+
+
+d006 :: (DVec2,DVec2)
+d006 = let f = rotate (pi/4) in (f $ V2 1 0, f $ V2 0 1)

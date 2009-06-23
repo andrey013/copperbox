@@ -26,17 +26,33 @@ data Point2 a = P2 !a !a
 type DPoint2 = Point2 Double
 
 
+data Point3 a = P3 !a !a !a
+  deriving (Eq,Show)
+
+type DPoint3 = Point3 Double
+
+
 
 instance Functor Point2 where
   fmap f (P2 a b) = P2 (f a) (f b)
 
+instance Functor Point3 where
+  fmap f (P3 a b c) = P3 (f a) (f b) (f c)
 
 
-origin :: Num a => Point2 a
-origin = P2 0 0
 
-zeroPt :: Num a => Point2 a
-zeroPt = P2 0 0 
+class StdOrigin pt where
+  stdOrigin :: pt
+  zeroPt    :: pt
+  zeroPt    = stdOrigin
 
+instance Num a => StdOrigin (Point2 a) where
+  stdOrigin = P2 0 0
+  zeroPt    = P2 0 0 
+
+
+instance Num a => StdOrigin (Point3 a) where
+  stdOrigin = P3 0 0 0
+  zeroPt    = P3 0 0 0
 
 
