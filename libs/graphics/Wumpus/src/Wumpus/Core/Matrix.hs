@@ -16,8 +16,36 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Matrix where
+module Wumpus.Core.Matrix (
+  -- * Matrix types
+  Matrix2'2(..), DMatrix2'2,
+  Matrix3'3(..), DMatrix3'3,
 
+  -- * Construct identity matrix
+  IdentityMatrix(..),
+
+  -- * Transposition
+  Transpose(..),
+
+  -- * Determinant
+  Determinant(..),
+  invertible,
+
+  -- * Square Matrices
+  SquareMatrix(..),
+
+  -- * Common transformation matrices (for 2D homogeneous coordinates)
+  scalingMatrix,
+  translationMatrix,
+  rotationMatrix,
+  rotationMatrix'
+ 
+  ) where
+
+
+
+--------------------------------------------------------------------------------
+-- Matrix types and standard instances
 
 data Matrix2'2 a = M2'2 !a !a !a !a
   deriving (Eq)
@@ -79,7 +107,18 @@ instance Num a => Num (Matrix3'3 a) where
     where a'              = fromInteger a 
 
 
+instance Functor Matrix2'2 where
+  fmap fn (M2'2 a b c d) = M2'2 (fn a) (fn b)  (fn c) (fn d)
 
+instance Functor Matrix3'3 where
+  fmap fn (M3'3 a b c d e f g h i) =
+    M3'3 (fn a) (fn b) (fn c)  (fn d) (fn e) (fn f)  (fn g) (fn h) (fn i)
+
+
+
+
+--------------------------------------------------------------------------------
+-- Construct identity matrix
 
 class IdentityMatrix t where
   identityMatrix :: Num a => t a 
@@ -89,7 +128,10 @@ instance IdentityMatrix Matrix2'2 where
 
 instance IdentityMatrix Matrix3'3 where
   identityMatrix = M3'3 1 0 0  0 1 0  0 0 1
-  
+
+
+--------------------------------------------------------------------------------
+-- Transposition  
 
 class Transpose t t' where
   transpose :: t a -> t' a
@@ -100,7 +142,8 @@ instance Transpose Matrix2'2 Matrix2'2 where
 instance Transpose Matrix3'3 Matrix3'3 where
   transpose (M3'3 a b c d e f g h i) = M3'3 a d g  b e h  c f i
 
-
+--------------------------------------------------------------------------------
+-- Determinant
 
 class Determinant t where
   det :: Num a => t a -> a
@@ -112,10 +155,47 @@ instance Determinant Matrix3'3 where
   det (M3'3 a b c d e f g h i) = a*e*i - a*f*h - b*d*i + b*f*g + c*d*h - c*e*g
 
 
-
+-- | A matrix is invertible if it\'s determininat is not zero.
 invertible :: (Determinant t, Num a) => t a -> Bool
 invertible = (/=) 0 . det
 
+
+
+--------------------------------------------------------------------------------
+-- Square matrices
+
+-- | Operations and predicates on square matrices.
+class SquareMatrix t where
+  trace               :: Num a => t a -> a
+  isDiagonal          :: Num a => t a -> Bool
+  diagonals           :: t a -> [a]
+  counterDiagonals    :: t a -> [a] 
+  isScalarMatrix      :: Num a => t a -> Bool
+
+instance SquareMatrix Matrix2'2 where 
+  trace             (M2'2 a _  _ d) = a+d
+  isDiagonal        (M2'2 _ b  c _) = b==0 && c==0
+  diagonals         (M2'2 a _  _ d) = [a,d]  
+  counterDiagonals  (M2'2 _ b  c _) = [b,c]
+  isScalarMatrix  m@(M2'2 a _  _ d) = isDiagonal m && a==d
+
+instance SquareMatrix Matrix3'3 where
+  trace             (M3'3 a _ _  _ e _  _ _ i) = a+e+i
+  isDiagonal        (M3'3 _ b c  d _ f  g h _) = b==0 && c==0 && d==0 && f==0 
+                                                      && g==0 && h==0
+  diagonals         (M3'3 a _ _  _ e _  _ _ i) = [a,e,i]
+  counterDiagonals  (M3'3 _ _ c  _ e _  g _ _) = [c,e,g]
+  isScalarMatrix  m@(M3'3 a _ _  _ e _  _ _ i) = isDiagonal m && a==e && e==i
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- Common transformation matrices (for 2d homogeneous coordinates)
 
 scalingMatrix :: Num a => a -> a -> Matrix3'3 a
 scalingMatrix sx sy = M3'3  sx 0 0   0 sy 0   0 0 1

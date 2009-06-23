@@ -145,7 +145,7 @@ dotX (P2 x y) = map (translate x y) [ls1,ls2]
 dotAsterisk :: DPoint2 -> [DLineSegment2]
 dotAsterisk (P2 x y) = map (translate x y) $ circular (replicate 5 ls1)
   where
-   ls1 = vline origin 2  
+   ls1 = vline stdOrigin 2  
 
 
 dotTriangle :: DPoint2 -> Polygon

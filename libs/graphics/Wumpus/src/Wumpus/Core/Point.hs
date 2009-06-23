@@ -15,10 +15,18 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Point where
+module Wumpus.Core.Point (
+  -- * Point types
+  Point2(..), DPoint2,
+  Point3(..), DPoint3,
 
--- import Data.AffineSpace
--- import Data.VectorSpace
+  -- * Represent a point at the origin
+  StdOrigin(..),
+ 
+  ) where
+
+--------------------------------------------------------------------------------
+-- Point types and standard instances
 
 data Point2 a = P2 !a !a
   deriving (Eq,Show)
@@ -40,7 +48,11 @@ instance Functor Point3 where
   fmap f (P3 a b c) = P3 (f a) (f b) (f c)
 
 
+--------------------------------------------------------------------------------
+-- Represent a point at the origin
 
+-- | Construct a point at the origin. @zeroPt@ should generally be considered
+-- a synonym for the origin (but it can be overriden).
 class StdOrigin pt where
   stdOrigin :: pt
   zeroPt    :: pt

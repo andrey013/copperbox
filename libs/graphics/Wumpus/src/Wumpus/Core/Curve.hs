@@ -17,7 +17,16 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Curve where
+module Wumpus.Core.Curve ( 
+  -- * Curve types  
+  Curve(..), DCurve,
+  
+  -- * de Casteljau\'s algorithm
+  subdivide,
+
+  -- * Shemanarev\'s smoothing algorithm
+  smoothw,
+  ) where
 
 import Wumpus.Core.Fun
 import Wumpus.Core.Instances ()
@@ -26,6 +35,9 @@ import Wumpus.Core.VSExtra
 
 import Data.AffineSpace
 import Data.VectorSpace
+
+--------------------------------------------------------------------------------
+-- Curve types and standard instances
 
 data Curve a = Curve (Point2 a) (Point2 a) (Point2 a) (Point2 a)
   deriving (Eq,Show)
@@ -39,8 +51,10 @@ instance Functor Curve where
 
 
 
+--------------------------------------------------------------------------------
+-- operations
 
--- de casteljau's algorithm
+-- de Casteljau's algorithm
 subdivide :: (Fractional (Scalar (Diff a)), Num (Diff a),
               VectorSpace (Diff a),  AffineSpace a)  
           => Curve a -> (Curve a, Curve a)
