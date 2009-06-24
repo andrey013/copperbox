@@ -11,7 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Matrix type
+-- Matrices
 --
 --------------------------------------------------------------------------------
 
@@ -38,8 +38,15 @@ module Wumpus.Core.Matrix (
   scalingMatrix,
   translationMatrix,
   rotationMatrix,
-  rotationMatrix'
- 
+  rotationMatrix',
+
+  --
+  Indexical(..),
+
+  elementarySwapRows,
+  elementaryReplace_i,
+  elementaryReplace_i_j,
+
   ) where
 
 
@@ -192,6 +199,88 @@ instance SquareMatrix Matrix3'3 where
 
 
 
+--------------------------------------------------------------------------------
+-- Indexed access to the matrix...
+
+class Indexical t where
+  toIndexical   :: t a -> t (Int,Int,a)
+  fromIndexical :: t (Int,Int,a) -> t a
+  atIx          :: Int -> Int -> t a -> a
+ 
+-- third-of-three
+toft :: (a,b,c) -> c
+toft (_,_,c) = c
+
+
+instance Indexical Matrix2'2 where
+  toIndexical (M2'2 a b c d) = M2'2 (1,1,a) (1,2,b) 
+                                    (2,1,c) (2,2,d)
+
+  fromIndexical = fmap toft
+
+  atIx 1 1 (M2'2 a _ _ _) = a
+  atIx 1 2 (M2'2 _ b _ _) = b
+  atIx 2 1 (M2'2 _ _ c _) = c
+  atIx 2 2 (M2'2 _ _ _ d) = d
+  atIx i j _              = error $ 
+      "index " ++ show (i,j) ++ " out-of-bounds of a 2x2 matrix" 
+   
+instance Indexical Matrix3'3 where
+  toIndexical (M3'3 a b c d e f g h i) = 
+    M3'3 (1,1,a) (1,2,b) (1,3,c) 
+         (2,1,d) (2,2,e) (2,3,f)
+         (3,1,g) (3,2,h) (3,3,i)
+
+  fromIndexical = fmap toft
+
+  atIx 1 1 (M3'3 a _ _  _ _ _  _ _ _) = a
+  atIx 1 2 (M3'3 _ b _  _ _ _  _ _ _) = b
+  atIx 1 3 (M3'3 _ _ c  _ _ _  _ _ _) = c
+  atIx 2 1 (M3'3 _ _ _  d _ _  _ _ _) = d
+  atIx 2 2 (M3'3 _ _ _  _ e _  _ _ _) = e
+  atIx 2 3 (M3'3 _ _ _  _ _ f  _ _ _) = f       
+  atIx 3 1 (M3'3 _ _ _  _ _ _  g _ _) = g
+  atIx 3 2 (M3'3 _ _ _  _ _ _  _ h _) = h
+  atIx 3 3 (M3'3 _ _ _  _ _ _  _ _ i) = i       
+  atIx i j _                          = error $ 
+      "index " ++ show (i,j) ++ " out-of-bounds of a 3x3 matrix" 
+
+
+
+
+--------------------------------------------------------------------------------
+-- Elementary matrices
+
+-- | swap rows
+elementarySwapRows :: (Num a, Functor t, Indexical t, IdentityMatrix t) 
+                => Int -> Int -> t a
+elementarySwapRows i j = fmap fn . toIndexical $ identityMatrix 
+  where fn (k,l,o) | k/=i && k/=j && l/=k = 0
+                   | k/=i && k/=j && l==k = 1
+                   | k==i && l/=j         = 0
+                   | k==i && l==j         = 1
+                   | k==j && l/=i         = 0
+                   | k==j && l==i         = 1
+                   | otherwise            = o 
+
+elementaryReplace_i :: (Num a, Functor t, Indexical t, IdentityMatrix t) 
+                      => Int -> a -> t a
+elementaryReplace_i i a = fmap fn . toIndexical $ identityMatrix
+  where fn (k,l,o) | k/=i && l/=k = 0
+                   | k/=i && l==k = 1
+                   | k==i && l==i = a
+                   | otherwise    = o
+
+
+elementaryReplace_i_j :: (Num a, Functor t, Indexical t, IdentityMatrix t) 
+                      => Int -> Int -> a -> t a
+elementaryReplace_i_j i j a = fmap fn . toIndexical $ identityMatrix
+  where fn (k,l,o) | k/=j && l/=k         = 0
+                   | k/=j && l==k         = 1
+                   | k==j && l/=i && l/=j = 0
+                   | k==j && l==j         = 1
+                   | k==j && l==i         = a
+                   | otherwise            = o
 
 
 --------------------------------------------------------------------------------

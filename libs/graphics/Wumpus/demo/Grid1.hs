@@ -16,6 +16,8 @@ import Wumpus.Drawing.X11Colours
 --
 import Wumpus.Test.TypeRestrict
 import Wumpus.Core.VSExtra
+import Wumpus.Core.Matrix
+
 
 demo1 :: IO ()
 demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
@@ -29,6 +31,15 @@ demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
                 }
   frame1 = Frame2 (P2 0 0) (V2 1 0) (V2 0 0.5)
 
+
+s01 :: Matrix3'3 Double 
+s01 = elementarySwapRows 2 3 
+
+s02 :: Matrix3'3 Double
+s02 = elementaryReplace_i 2 6.0
+
+s03 :: Matrix3'3 Double
+s03 = elementaryReplace_i_j 3 1 2.0
 
 d001 = m *# (P2 2 2) 
   where
