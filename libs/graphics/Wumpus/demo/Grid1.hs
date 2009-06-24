@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
 
 
 module Grid1 where
@@ -33,6 +35,23 @@ demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
   frame1 = Frame2 (P2 0 0) (V2 1 0) (V2 0 0.5)
 
 
+fG :: DFrame2 
+fG = Frame2 go ge1 ge2 where
+  go  = P2 5 1
+  ge1 = V2 (-2) (-1)
+  ge2 = V2 0 1
+
+pF :: DPoint2
+pF = P2 3 2 
+
+dummy1 = pF `inFrame` fG
+
+w :: DVec2
+w = V2 2 1
+
+dummy2 = w `inFrame` fG
+
+---------------------------------------------------------------------
 v01 :: Matrix3'3 Double
 v01 = (M3'3  1 3 0   2 (-2) 1   (-4) 1 (-1) )
 

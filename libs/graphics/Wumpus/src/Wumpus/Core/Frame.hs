@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -25,13 +26,15 @@ module Wumpus.Core.Frame (
   Ortho(..),
   OrthonormalFrame(..),
 
+  inFrame, 
+
   pointInWorld,
   vectorInWorld,
   ftof,
 
   ) where
 
-import Wumpus.Core.Instances ()
+import Wumpus.Core.Instances
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Vector
@@ -98,6 +101,21 @@ instance OrthonormalFrame Frame3 where
 
 
 
+-- | point/vector in frame
+inFrame :: (Floating a, VectorSpace a, VecMult Matrix3'3 t, a ~ Scalar a) 
+     => t a -> Frame2 a -> t a 
+inFrame p f = (frameMinv f) *# p
+
+
+frameMinv :: (Fractional a, VectorSpace a, a ~ Scalar a) 
+          => Frame2 a -> Matrix3'3 a
+frameMinv (Frame2 (P2 x y) (V2 v01 v02) (V2 v11 v12)) = 
+  inverse $ M3'3 v01  v11 x
+                 v02  v12 y
+                 0    0   1
+
+
+
 -- Given a point and a frame, return the point in world coordinates
 pointInWorld :: (Num a, AffineSpace a, VectorSpace a, 
                  Scalar a ~ a, a ~ Diff a)
@@ -108,8 +126,6 @@ vectorInWorld :: (Num a, AffineSpace a, VectorSpace a,
                  Scalar a ~ a, a ~ Diff a)
              => Vec2 a -> Frame2 a -> Vec2 a
 vectorInWorld (V2 x y) (Frame2 _ e0 e1) = (x *^ e0) + (y *^ e1)
-
-
 
 
 
