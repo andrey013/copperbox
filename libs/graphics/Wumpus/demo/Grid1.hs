@@ -18,6 +18,7 @@ import Wumpus.Test.TypeRestrict
 import Wumpus.Core.VSExtra
 import Wumpus.Core.Matrix
 
+import Data.VectorSpace
 
 demo1 :: IO ()
 demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
@@ -30,6 +31,25 @@ demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
                 ; mapM_ drawLine $ grid' (P2 0 0) (P2 5 4) frame1
                 }
   frame1 = Frame2 (P2 0 0) (V2 1 0) (V2 0 0.5)
+
+
+v01 :: Matrix3'3 Double
+v01 = (M3'3  1 3 0   2 (-2) 1   (-4) 1 (-1) )
+
+v02 = inverse v01
+
+v03 = v01 * v02
+
+w01 :: Matrix2'2 Double
+w01 = M2'2 4 3  3 2
+
+w02 = inverse w01
+
+w03 = w01 * w02
+
+
+
+
 
 
 s01 :: Matrix3'3 Double 
