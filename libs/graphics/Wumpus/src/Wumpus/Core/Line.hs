@@ -49,8 +49,9 @@ instance Pointwise (LineSegment Point2 a) where
   pointwise f (LS p p') = LS (f p) (f p')
 
 
+--------------------------------------------------------------------------------
 
--- construct
+-- construction
 lineTo :: pt a -> pt a -> LineSegment pt a
 lineTo = LS --  p1 v where v = p2 .-. p1
 
@@ -61,7 +62,7 @@ hline p@(P2 x y) a = LS p (P2 (x+a) y)
 vline :: Num a => Point2 a -> a -> LineSegment Point2 a
 vline p@(P2 x y) a = LS p (P2 x (y+a))
 
-
+--------------------------------------------------------------------------------
 -- operations
 
 opposite :: LineSegment pt a -> LineSegment pt a
@@ -69,10 +70,6 @@ opposite (LS p p') = LS p' p
 
 gradient :: Floating a => LineSegment Point2 a -> a
 gradient (LS (P2 x y) (P2 x' y')) = (y'-y) / (x'-x) 
-
-
-segmentLengthD :: DLineSegment2 -> Double
-segmentLengthD = segmentLength
 
 
 

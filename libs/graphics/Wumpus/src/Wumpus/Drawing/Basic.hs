@@ -93,7 +93,7 @@ circle :: (Double,Double) -> Double -> Circle
 circle (x,y) r  = Circle (P2 x y) r
 
 drawCircle  :: Circle -> WumpusM ()
-drawCircle (Circle (P2 x y) r) = closeStrokePathSkel $ 
+drawCircle (Circle (P2 x y) r) = strokePathSkel $ 
   ps_arc x y r 0 360 
 
 data Disk = Disk Origin Radius
@@ -103,13 +103,13 @@ disk :: (Double,Double) -> Double -> Disk
 disk (x,y) r = Disk (P2 x y) r
 
 drawDisk  :: Disk -> WumpusM ()
-drawDisk (Disk (P2 x y) r) = closeFillPathSkel $ do
+drawDisk (Disk (P2 x y) r) = fillPathSkel $ do
   ps_arc x y r 0 360
 
 
 drawCurve :: DCurve -> WumpusM ()
 drawCurve (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
-  strokePathSkel $  do 
+  strokeOpenPathSkel $  do 
     ps_moveto x0 y0
     ps_curveto x1 y1 x2 y2 x3 y3
 
@@ -117,7 +117,7 @@ drawCurve (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) =
 -- also draw control points
 drawBezier :: DCurve -> WumpusM ()
 drawBezier (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
-  strokePathSkel $  do 
+  strokeOpenPathSkel $  do 
     ps_moveto x1 y1             -- start from point1
     ps_lineto x0 y0
     ps_curveto x1 y1 x2 y2 x3 y3
@@ -173,6 +173,6 @@ dotDiamond (P2 x y) = Polygon (map (translate x y) [p1,p2,p3,p4])
  
 
 drawLineSegment :: DLineSegment2 -> WumpusM ()
-drawLineSegment (LS p p') = closeStrokePathSkel $ do 
+drawLineSegment (LS p p') = strokeOpenPathSkel $  do 
     movetoPt p
     linetoPt p'

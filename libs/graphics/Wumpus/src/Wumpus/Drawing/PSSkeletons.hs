@@ -26,40 +26,46 @@ import Wumpus.Core.PostScript
 
 type RgbColour = DRGB
 
+data PathStyle = Stroke | Fill | Clip
+  deriving (Eq,Show) 
 
-strokePathSkel :: WumpusM a -> WumpusM a
-strokePathSkel m = saveExecRestore $ do
+-- can only stroke an /open/ path... 
+strokeOpenPathSkel :: WumpusM a -> WumpusM a
+strokeOpenPathSkel m = saveExecRestore $ do
   ps_newpath
   a <- m
   ps_stroke
   return a
+
+
+
+closedPathSkel :: PathStyle -> WumpusM a -> WumpusM a
+closedPathSkel pstyle m = saveExecRestore $ do
+    ps_newpath
+    a <- m
+    ps_closepath
+    drawCmd
+    return a
+  where
+    drawCmd = case pstyle of 
+                Stroke -> ps_stroke
+                Fill   -> ps_fill   
+                _      -> ps_clip
 
 fillPathSkel :: WumpusM a -> WumpusM a
-fillPathSkel m = saveExecRestore $ do
-  ps_newpath
-  a <- m
-  ps_fill
-  return a
+fillPathSkel = closedPathSkel Fill
 
-closeStrokePathSkel :: WumpusM a -> WumpusM a
-closeStrokePathSkel m = saveExecRestore $ do
-  ps_newpath
-  a <- m
-  ps_closepath
-  ps_stroke
-  return a
+strokePathSkel :: WumpusM a -> WumpusM a
+strokePathSkel = closedPathSkel Stroke
 
-closeFillPathSkel :: WumpusM a -> WumpusM a
-closeFillPathSkel m = saveExecRestore $ do
-  ps_newpath
-  a <- m
-  ps_closepath
-  ps_fill
-  return a
+clipPathSkel :: WumpusM a -> WumpusM a
+clipPathSkel = closedPathSkel Clip
 
+
+-- needs a rethink vis Fill/Stroke/Clip...
 polygon :: [DPoint2] -> WumpusM ()
 polygon []          = return ()
-polygon (P2 x y:ps) = closeStrokePathSkel $ do 
+polygon (P2 x y:ps) = strokePathSkel $ do 
     ps_moveto x y
     mapM_ lineto' ps 
   where
@@ -86,7 +92,7 @@ linetoPt (P2 x y) = ps_lineto x y
 --- Old rubbish...
 
 wedge :: (Double,Double) -> Double -> Double -> Double -> WumpusM ()
-wedge (x,y) r ang1 ang2 =  closeStrokePathSkel $ do
+wedge (x,y) r ang1 ang2 =  strokePathSkel $ do
   ps_moveto x y
   ps_arc x y r ang1 ang2
  

@@ -59,3 +59,11 @@ piw = pointInWorld
 
 ftofD :: DFrame2 -> DFrame2 -> Matrix3'3 Double
 ftofD = ftof
+
+
+--------------------------------------------------------------------------------
+-- Wumpus.Core.Line
+
+segmentLengthD :: DLineSegment2 -> Double
+segmentLengthD = segmentLength
+

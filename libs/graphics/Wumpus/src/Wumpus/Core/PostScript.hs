@@ -177,6 +177,9 @@ showArray _ []     = "[ ]"
 showArray f (x:xs) = sfun "]" 
   where 
     sfun = foldl' (\a e -> a . (' ':) . f e) (('[':) . f x) xs
+
+showStr :: String -> String 
+showStr s = '(' : xs where xs = s++[')']
                               
 getPageNum :: WumpusM Int
 getPageNum = pageNum `fmap` get 
@@ -363,3 +366,18 @@ ps_fill = command0 "fill"
 ps_stroke :: WumpusM ()
 ps_stroke = command0 "stroke"
 
+--------------------------------------------------------------------------------
+-- Character and font operators
+
+
+ps_findfont :: String -> WumpusM ()
+ps_findfont key = command1 "findfont" ('/' : key)
+
+ps_setfont :: WumpusM ()
+ps_setfont = command0 "setfont"
+
+ps_show :: String -> WumpusM ()
+ps_show = command1 "show" . showStr
+
+ps_scalefont :: Double -> WumpusM () 
+ps_scalefont sc = command1 "scalefont" (dtrunc sc)
