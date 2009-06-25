@@ -18,6 +18,8 @@
 module Wumpus.Core.Fun where
 
 
+import Data.List ( unfoldr )
+
 -- Pairs
 
 fork :: (a -> b, a -> c) -> a -> (b,c)
@@ -90,6 +92,13 @@ lZipWith _ []     qs     = qs
 lZipWith _ ps     []     = ps
 lZipWith f (p:ps) (q:qs) = f p q : lZipWith f ps qs 
 
+
+-- | build a list of steps i upto value a
+steps :: (Num a, Ord a) => Int -> a -> [a]
+steps i a = unfoldr phi i' where
+  phi x | x < a     = Just (x,x+i')
+        | otherwise = Nothing
+  i' = fromIntegral i
 
 
 -- 'specs'

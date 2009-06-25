@@ -19,6 +19,7 @@
 module Wumpus.Test.TypeRestrict where
 
 import Wumpus.Core.Frame
+import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Vector

@@ -26,80 +26,14 @@ demo1 :: IO ()
 demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { ps_translate 60 380 
                 ; setRgbColour dodgerBlue1 
-                ; mapM_ drawLine $ grid (P2 0 0) (P2 5 4) 
+                ; mapM_ drawLine $ oldGrid (P2 0 0) (P2 5 4) 
                 ---
                 ; ps_translate 0 100
                 ; setRgbColour dodgerBlue4
-                ; mapM_ drawLine $ grid' (P2 0 0) (P2 5 4) frame1
+                ; mapM_ drawLine $ grid 10 10 (P2 50 40) origin 
                 }
   frame1 = Frame2 (P2 0 0) (V2 1 0) (V2 0 0.5)
+  origin = P2 0 0
 
 
-fG :: DFrame2 
-fG = Frame2 go ge1 ge2 where
-  go  = P2 5 1
-  ge1 = V2 (-2) (-1)
-  ge2 = V2 0 1
-
-pF :: DPoint2
-pF = P2 3 2 
-
-dummy1 = pF `inFrame` fG
-
-w :: DVec2
-w = V2 2 1
-
-dummy2 = w `inFrame` fG
-
----------------------------------------------------------------------
-v01 :: Matrix3'3 Double
-v01 = (M3'3  1 3 0   2 (-2) 1   (-4) 1 (-1) )
-
-v02 = inverse v01
-
-v03 = v01 * v02
-
-w01 :: Matrix2'2 Double
-w01 = M2'2 4 3  3 2
-
-w02 = inverse w01
-
-w03 = w01 * w02
-
-
-
-
-
-
-s01 :: Matrix3'3 Double 
-s01 = elementarySwapRows 2 3 
-
-s02 :: Matrix3'3 Double
-s02 = elementaryReplace_i 2 6.0
-
-s03 :: Matrix3'3 Double
-s03 = elementaryReplace_i_j 3 1 2.0
-
-d001 = m *# (P2 2 2) 
-  where
-    m = ftofD (ortho (P2 0 0)) (ortho (P2 1 1))
-
-
-d002 = m *# (P2 2 2) 
-  where
-    m = ftofD (ortho (P2 1 1)) (ortho (P2 0 0)) 
-
-
-d003 = m *# (P2 2 4) 
-  where
-    m = ftofD e f 
-    e = Frame2 (P2 0 0) (V2 1 0) (V2 0 1)
-    f = Frame2 (P2 4 2) (rotate (pi/4) (V2 1 0)) (rotate (pi/4) (V2 0 1))
-
-d004 = P2 (4 - sqrt 2) (2 + 3*(sqrt 2))
-
-d005 = d003 == d004
-
-
-d006 :: (DVec2,DVec2)
-d006 = let f = rotate (pi/4) in (f $ V2 1 0, f $ V2 0 1)
+-- dummy1 = steps 4 10.0

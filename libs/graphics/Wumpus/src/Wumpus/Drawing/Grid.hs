@@ -17,38 +17,38 @@
 
 module Wumpus.Drawing.Grid where
 
-import Wumpus.Core.Frame
+import Wumpus.Core.Fun
 import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
+import Wumpus.Drawing.BasicCF
+
 import Data.AffineSpace
 
--- Two points:
--- 1. Don't really want to be enumerating doubles
--- 2. What is the relation between a grid and a frame? 
---   (then we can dispose of the arbitrary scaling)
+--  What is the relation between a grid and a frame? 
 
-grid :: DPoint2 -> DPoint2 -> [DLineSegment2]
-grid (P2 x0 y0) (P2 x1 y1) = map (pointwise (scale 10 10)) $ hlines ++ vlines 
+
+oldGrid :: DPoint2 -> DPoint2 -> [DLineSegment2]
+oldGrid (P2 x0 y0) (P2 x1 y1) = map (pointwise (scale 10 10)) $ hlines ++ vlines 
   where
     hlines = [ lineTo (P2 x0 y) (P2 x1 y) | y <- [y0..y1]]
     vlines = [ lineTo (P2 x y0) (P2 x y1) | x <- [x0..x1]]
 
 
+type Grid = LineBag
 
--- not an improvement...
-grid' :: DPoint2 -> DPoint2 -> (DFrame2 -> [DLineSegment2])
-grid' (P2 x0 y0) (P2 x1 y1) = \(Frame2 _ xv yv) -> 
-  let fV p   = p .+^ xv + yv
-      hlines = [ lineTo (fV $ P2 x0 y) (fV $ P2 x1 y) | y <- [y0..y1]]
-      vlines = [ lineTo (fV $ P2 x y0) (fV $ P2 x y1) | x <- [x0..x1]]
-  in map (pointwise (scale 10 10)) $ hlines ++ vlines 
+-- | simple borderless grid
+grid :: Int -> Int -> DPoint2 -> Grid
+grid xstep ystep tr = \o -> let vecbound = tr .-. o in
+                            hlines vecbound o ++ vlines vecbound o
+  where
+    hlines (V2 x y) o = zipWith xtrans (steps xstep x) (repeat $ line (vvec y) o)
+    vlines (V2 x y) o = zipWith ytrans (steps ystep y) (repeat $ line (hvec x) o)
+    xtrans d = translate d 0 
+    ytrans d = translate 0 d
 
 
 
-makeVector :: Point2 Double -> Point2 Double -> Vec2 Double
-makeVector = (.-.)
-  

@@ -69,6 +69,14 @@ drawPolygon (Polygon ((P2 x y):ps)) = saveExecRestore $ do
     ps_stroke
 
 
+drawLineBag :: [DLineSegment2] -> WumpusM ()
+drawLineBag []  = return ()
+drawLineBag xs  = strokeOpenPathSkel $ mapM_ step xs
+  where
+    step (LS (P2 x1 y1) (P2 x2 y2)) = do 
+      ps_moveto x1 y1
+      ps_lineto x2 y2
+
 setRgbColour :: RgbColour -> WumpusM ()
 setRgbColour (RGB3 r g b) = ps_setrgbcolor r g b
 

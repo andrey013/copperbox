@@ -21,6 +21,9 @@ module Wumpus.Drawing.Label where
 import Wumpus.Core.Point
 import Wumpus.Core.PostScript
 
+data Label = Label String
+
+
 
 setupFont :: String -> Double -> WumpusM ()
 setupFont name sc = do 
