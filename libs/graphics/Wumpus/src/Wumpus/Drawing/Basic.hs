@@ -38,7 +38,7 @@ type Origin = DPoint2
 
 
 drawLine :: DLineSegment2 -> WumpusM ()
-drawLine (LS2 (P2 x1 y1) (P2 x2 y2)) = strokePathSkel $ do 
+drawLine (LS (P2 x1 y1) (P2 x2 y2)) = strokePathSkel $ do 
     ps_moveto x1 y1
     ps_lineto x2 y2
 
@@ -173,6 +173,6 @@ dotDiamond (P2 x y) = Polygon (map (translate x y) [p1,p2,p3,p4])
  
 
 drawLineSegment :: DLineSegment2 -> WumpusM ()
-drawLineSegment (LS2 p p') = closeStrokePathSkel $ do 
+drawLineSegment (LS p p') = closeStrokePathSkel $ do 
     movetoPt p
     linetoPt p'

@@ -1,6 +1,8 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE KindSignatures             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -29,47 +31,54 @@ import Data.VectorSpace
 
 
 
-data LineSegment2 a = LS2 (Point2 a) (Point2 a)
+data LineSegment (pt :: * -> *) a = LS (pt a) (pt a)
   deriving (Eq,Show)
 
-type DLineSegment2 = LineSegment2 Double
+type DLineSegment2 = LineSegment Point2 Double
 
 
-instance Functor LineSegment2 where
-  fmap f (LS2 p p') = LS2 (fmap f p) (fmap f p')
+instance Functor pt => Functor (LineSegment pt) where
+  fmap f (LS p p') = LS (fmap f p) (fmap f p')
 
  
-instance VecMult Matrix3'3 LineSegment2 where
-  (*#) m3'3 (LS2 p p') = LS2 (m3'3 *# p) (m3'3 *# p')
+instance VecMult Matrix3'3 (LineSegment Point2) where
+  (*#) m3'3 (LS p p') = LS (m3'3 *# p) (m3'3 *# p')
 
-instance Pointwise (LineSegment2 a) where
-  type Pt (LineSegment2 a) = Point2 a
-  pointwise f (LS2 p p') = LS2 (f p) (f p')
+instance Pointwise (LineSegment Point2 a) where
+  type Pt (LineSegment Point2 a) = Point2 a
+  pointwise f (LS p p') = LS (f p) (f p')
 
 
 
 -- construct
-lineTo :: Point2 a -> Point2 a -> LineSegment2 a
-lineTo = LS2 --  p1 v where v = p2 .-. p1
+lineTo :: pt a -> pt a -> LineSegment pt a
+lineTo = LS --  p1 v where v = p2 .-. p1
 
 
-hline :: Num a => Point2 a -> a -> LineSegment2 a
-hline p@(P2 x y) a = LS2 p (P2 (x+a) y)
+hline :: Num a => Point2 a -> a -> LineSegment Point2 a
+hline p@(P2 x y) a = LS p (P2 (x+a) y)
 
-vline :: Num a => Point2 a -> a -> LineSegment2 a
-vline p@(P2 x y) a = LS2 p (P2 x (y+a))
+vline :: Num a => Point2 a -> a -> LineSegment Point2 a
+vline p@(P2 x y) a = LS p (P2 x (y+a))
 
 
 -- operations
 
-opposite :: LineSegment2 a -> LineSegment2 a
-opposite (LS2 p p') = LS2 p' p
+opposite :: LineSegment pt a -> LineSegment pt a
+opposite (LS p p') = LS p' p
 
-gradient :: Floating a => LineSegment2 a -> a
-gradient (LS2 (P2 x y) (P2 x' y')) = (y'-y) / (x'-x) 
+gradient :: Floating a => LineSegment Point2 a -> a
+gradient (LS (P2 x y) (P2 x' y')) = (y'-y) / (x'-x) 
 
 
-segmentLength :: (Floating a, InnerSpace a,  AffineSpace a, 
-                  Diff a ~ a, a ~ Scalar a )  
-              => LineSegment2 a -> a
-segmentLength (LS2 p p') = distance p' p
+segmentLengthD :: DLineSegment2 -> Double
+segmentLengthD = segmentLength
+
+
+
+segmentLength :: (Floating (Scalar (Diff (pt a))), 
+                  InnerSpace (Diff (pt a)), AffineSpace (pt a) )
+              => LineSegment pt a -> Scalar (Diff (pt a))
+
+segmentLength (LS p p') = distance p' p
+
