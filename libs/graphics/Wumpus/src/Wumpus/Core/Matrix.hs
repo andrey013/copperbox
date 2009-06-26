@@ -17,42 +17,45 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Matrix (
+module Wumpus.Core.Matrix 
+  (
   -- * Matrix types
-  Matrix2'2(..), DMatrix2'2,
-  Matrix3'3(..), DMatrix3'3,
+    Matrix2'2(..)
+  , DMatrix2'2
+  , Matrix3'3(..)
+  , DMatrix3'3
 
   -- * Construct identity matrix
-  IdentityMatrix(..),
+  , IdentityMatrix(..)
 
   -- * Transposition
-  Transpose(..),
+  , Transpose(..)
 
   -- * Determinant
-  Determinant(..),
-  invertible,
+  , Determinant(..)
+  , invertible
 
   -- * Square Matrices
-  SquareMatrix(..),
+  , SquareMatrix(..)
 
   -- * Indexed access
-  Indexical(..),
+  , Indexical(..)
 
   -- * Elementary matrices
-  elementarySwapRows,
-  elementaryReplace_i,
-  elementaryReplace_i_j,
+  , elementarySwapRows
+  , elementaryReplace_i
+  , elementaryReplace_i_j
 
 
   -- * Invert a matrix
-  Inverse(..),
+  , Inverse(..)
 
 
   -- * Common transformation matrices (for 2D homogeneous coordinates)
-  scalingMatrix,
-  translationMatrix,
-  rotationMatrix,
-  rotationMatrix',
+  , scalingMatrix
+  , translationMatrix
+  , rotationMatrix
+  , rotationMatrix'
 
   ) where
 

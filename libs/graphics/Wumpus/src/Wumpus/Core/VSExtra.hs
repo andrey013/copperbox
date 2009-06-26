@@ -19,10 +19,11 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.VSExtra (
-  midpoint,
-  adjustvk,
-  isZeroV,
+module Wumpus.Core.VSExtra 
+  (
+    midpoint
+  , adjustvk
+  , isZeroV
   ) where
 
 import Data.AffineSpace

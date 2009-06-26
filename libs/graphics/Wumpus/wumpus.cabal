@@ -37,6 +37,7 @@ library
     Wumpus.Core.VSExtra,
     Wumpus.Drawing.Arrow,
     Wumpus.Drawing.Basic,
+    Wumpus.Drawing.BasicCF,
     Wumpus.Drawing.Grid,
     Wumpus.Drawing.PSSkeletons,
     Wumpus.Drawing.QuadTree,

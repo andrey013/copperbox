@@ -15,13 +15,16 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Point (
+module Wumpus.Core.Point 
+  (
   -- * Point types
-  Point2(..), DPoint2,
-  Point3(..), DPoint3,
+    Point2(..)
+  , DPoint2
+  , Point3(..)
+  , DPoint3
 
   -- * Represent a point at the origin
-  StdOrigin(..),
+  , StdOrigin(..)
  
   ) where
 

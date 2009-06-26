@@ -16,7 +16,35 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Colour where
+module Wumpus.Core.Colour 
+  (
+  -- Colour types
+    RGB3(..)
+  , DRGB
+  , HSB3(..)
+  , DHSB
+
+  -- * Operations
+  , rgb2hsb
+  , hsb2rgb
+
+  , rgb2gray
+  , gray2rgb
+
+  , hsb2gray
+  , gray2hsb
+  
+  -- * Predefined colours
+  , wumpusBlack
+  , wumpusWhite
+  , wumpusRed
+  , wumpusGreen
+  , wumpusBlue
+
+  ) where
+
+import Wumpus.Core.Fun
+
 
 import Data.VectorSpace
 
@@ -59,19 +87,6 @@ data HSB3 a = HSB3 !a !a !a
 type DHSB = HSB3 Double 
 
 
-
-max3 :: Double -> Double -> Double -> Double
-max3 a b c = max (max a b) c
-
-min3 :: Double -> Double -> Double -> Double
-min3 a b c = min (min a b) c
-
-med3 :: Double -> Double -> Double -> Double
-med3 a b c = if c <= x then x else if c > y then y else c
-  where 
-    (x,y)                 = order a b
-    order p q | p <= q    = (p,q)
-              | otherwise = (q,p)
 
 mkColour :: Num a => a -> a -> a -> RGB3 a
 mkColour r g b = RGB3 r g b

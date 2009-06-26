@@ -17,15 +17,17 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Curve ( 
+module Wumpus.Core.Curve 
+  ( 
   -- * Curve types  
-  Curve(..), DCurve,
+    Curve(..)
+  , DCurve
   
   -- * de Casteljau\'s algorithm
-  subdivide,
+  , subdivide
 
   -- * Shemanarev\'s smoothing algorithm
-  smoothw,
+  , smoothw
   ) where
 
 import Wumpus.Core.Fun

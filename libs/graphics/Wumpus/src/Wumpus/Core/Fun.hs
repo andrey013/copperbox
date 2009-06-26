@@ -45,13 +45,29 @@ ifpair :: (a -> b -> Bool) -> (a -> c) -> (b -> c) -> (a,b) -> c
 ifpair p tk ek (a,b) | p a b     = tk a
                      | otherwise = ek b
 
--- type restrcicted to homogenous pairs
+-- type restricted to homogenous pairs
 cond :: (a -> a -> Bool) -> (a,a) -> a
 cond p (a,b) | p a b     = a
              | otherwise = b
 
 -- apply :: (a -> b -> c) -> (a,b) -> c
 -- apply is uncurry
+
+
+
+max3 :: Double -> Double -> Double -> Double
+max3 a b c = max (max a b) c
+
+min3 :: Double -> Double -> Double -> Double
+min3 a b c = min (min a b) c
+
+med3 :: Double -> Double -> Double -> Double
+med3 a b c = if c <= x then x else if c > y then y else c
+  where 
+    (x,y)                 = order a b
+    order p q | p <= q    = (p,q)
+              | otherwise = (q,p)
+
 
 
 ---- more functionals

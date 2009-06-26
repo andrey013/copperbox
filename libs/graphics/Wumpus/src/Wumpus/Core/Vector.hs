@@ -18,7 +18,27 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Vector where
+module Wumpus.Core.Vector
+  (
+  -- * Vector types
+    Vec2(..)
+  , DVec2
+  , Vec3(..)
+  , DVec3
+
+  -- * Operations
+  , EuclidianNorm(..)
+  , Direction2(..)
+  , Independent(..)
+
+  , vangle
+  , direction2
+  , perpendicular
+  , orthogonal
+  , HVec(..)
+  , VVec(..)
+
+  ) where
 
 import Wumpus.Core.Fun
 

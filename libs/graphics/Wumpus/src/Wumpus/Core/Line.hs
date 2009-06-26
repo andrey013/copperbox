@@ -20,7 +20,23 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Line where
+module Wumpus.Core.Line 
+  (
+  -- * Line types
+    LineSegment(..)
+  , DLineSegment2
+
+  -- * Construction
+  , lineTo
+  , hline
+  , vline
+
+  -- * Operations
+  , opposite
+  , gradient
+  , segmentLength
+
+  ) where
 
 import Wumpus.Core.Instances
 import Wumpus.Core.Matrix

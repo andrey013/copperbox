@@ -17,20 +17,23 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Frame ( 
+module Wumpus.Core.Frame 
+  ( 
   -- * Frames types
-  Frame2(..), DFrame2,
-  Frame3(..), DFrame3,
+    Frame2(..)
+  , DFrame2
+  , Frame3(..)
+  , DFrame3
 
   -- * Operations
-  Ortho(..),
-  OrthonormalFrame(..),
+  , Ortho(..)
+  , OrthonormalFrame(..)
 
-  inFrame, 
+  , inFrame
 
-  pointInWorld,
-  vectorInWorld,
-  ftof,
+  , pointInWorld
+  , vectorInWorld
+  , ftof
 
   ) where
 

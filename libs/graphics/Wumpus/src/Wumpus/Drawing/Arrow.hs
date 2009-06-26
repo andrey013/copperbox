@@ -57,7 +57,7 @@ arrowheadPerp d =
                   in [pointwise (rotateAbout (theta+pi/2) endpt) (lineTo p0 p1)]
 
 -- TODO - tip should be more general, e.g. list of lines, or arcs
-data Arrow a = Arrow (LineSegment2 a) Polygon
+data Arrow a = Arrow (LineSegment Point2 a) Polygon
   deriving (Eq,Show)
 
 type DArrow = Arrow Double

@@ -16,7 +16,38 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Transformations where
+module Wumpus.Core.Transformations 
+  (
+  -- * Rotation
+    rotate
+  , rotateAbout
+  , rotate90
+  , rotate90About
+  , rotate30
+  , rotate30About
+  , rotate45
+  , rotate45About
+  , rotate60
+  , rotate60About
+  , rotate120
+  , rotate120About
+
+  -- * Iterated rotation
+  , circular
+
+  -- * Scale
+  , scale
+  , uniformScale
+
+  -- * Translation
+  , translate
+  , translateBy
+
+  -- * Reflection
+  , reflectX
+  , reflectY
+  
+  ) where
 
 
 import Wumpus.Core.Instances
