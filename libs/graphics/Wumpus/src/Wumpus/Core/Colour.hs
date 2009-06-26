@@ -54,8 +54,12 @@ data RGB3 a = RGB3 !a !a !a
 type DRGB = RGB3 Double
 
 
-data HSV a = HSV !a !a !a
+data HSB3 a = HSB3 !a !a !a 
   deriving (Eq,Show)
+
+type DHSB = HSB3 Double 
+
+
 
 instance Num a => Num (RGB3 a) where
   (+) (RGB3 a b c) (RGB3 x y z) = RGB3 (a+x) (b+y) (c+z)
@@ -81,16 +85,32 @@ instance (Num a, VectorSpace a) => VectorSpace (RGB3 a) where
   s *^ (RGB3 a b c) = RGB3 (s*^a) (s*^b) (s*^c)
 
 
-data HSB3 a = HSB3 !a !a !a 
-  deriving (Eq,Show)
 
-type DHSB = HSB3 Double 
+instance Num a => Num (HSB3 a) where
+  (+) (HSB3 a b c) (HSB3 x y z) = HSB3 (a+x) (b+y) (c+z)
+  (-) (HSB3 a b c) (HSB3 x y z) = HSB3 (a-x) (b-y) (c-z)
+  (*) (HSB3 a b c) (HSB3 x y z) = HSB3 (a*x) (b*y) (c*z)
+  abs (HSB3 a b c)            = HSB3 (abs a) (abs b) (abs c)
+  negate (HSB3 a b c)         = HSB3 (negate a) (negate b) (negate c)
+  signum (HSB3 a b c)         = HSB3 (signum a) (signum b) (signum c)
+  fromInteger i = HSB3 (fromInteger i) (fromInteger i) (fromInteger i)
 
+instance Fractional a => Fractional (HSB3 a) where
+  (/) (HSB3 a b c) (HSB3 x y z) = HSB3 (a/x) (b/y) (c/z)
+  recip (HSB3 a b c)            = HSB3 (recip a) (recip b) (recip c)
+  fromRational a = HSB3 (fromRational a) (fromRational a) (fromRational a)
+ 
+instance Num a => AdditiveGroup (HSB3 a) where
+  zeroV = HSB3 0 0 0
+  (^+^) = (+)
+  negateV = negate
 
+instance (Num a, VectorSpace a) => VectorSpace (HSB3 a) where
+  type Scalar (HSB3 a) = Scalar a
+  s *^ (HSB3 a b c) = HSB3 (s*^a) (s*^b) (s*^c)
 
-mkColour :: Num a => a -> a -> a -> RGB3 a
-mkColour r g b = RGB3 r g b
-
+--------------------------------------------------------------------------------
+-- Operations
 
 
 vE :: DRGB

@@ -52,3 +52,15 @@ grid xstep ystep tr = \o -> let vecbound = tr .-. o in
 
 
 
+vgrid :: Num a => (Integer,Integer) -> (Integer,Integer) -> [Vec2 a]
+vgrid (i,j) (i',j') = [ mkvec a b | b <- [j..j']
+                                  , a <- [i..i'] ]
+  where
+    mkvec a b = V2 (fromInteger a) (fromInteger b)
+
+calendarGrid :: Num a => Int -> Int -> [Vec2 a]
+calendarGrid st n = map transp $ take n $ drop st $  vgrid (0,0) (6,5)
+  where
+    transp (V2 x y) = (V2 x (tot-y))
+    tot  = let (a,b) = (fromIntegral n) `divMod` 7 in 
+           if (st+b >7) then (fromIntegral $ a+1) else (fromIntegral a)

@@ -54,14 +54,17 @@ cond p (a,b) | p a b     = a
 -- apply is uncurry
 
 
-
-max3 :: Double -> Double -> Double -> Double
+-- | max of 3
+max3 :: Ord a => a -> a -> a -> a
 max3 a b c = max (max a b) c
 
-min3 :: Double -> Double -> Double -> Double
+-- | min of 3
+min3 :: Ord a => a -> a -> a -> a
 min3 a b c = min (min a b) c
 
-med3 :: Double -> Double -> Double -> Double
+
+-- | median of 3
+med3 :: Ord a => a -> a -> a -> a
 med3 a b c = if c <= x then x else if c > y then y else c
   where 
     (x,y)                 = order a b
@@ -109,16 +112,23 @@ lZipWith _ ps     []     = ps
 lZipWith f (p:ps) (q:qs) = f p q : lZipWith f ps qs 
 
 
--- | build a list of steps i upto value a
-intervals :: (Num a, Ord a) => Int -> a -> [a]
-intervals = steps
+-- | build a list of @i@ divisions of @a@.
+divisions :: (RealFrac a, Ord a) => Int -> a -> [a]
+divisions i a = steps j a where j = floor $ a / realToFrac i
 
--- TODO rename...
+-- | build a list of @i@ divisions of @a@.
+divisions' :: (Integral a, Ord a) => Int -> a -> [a]
+divisions' i a = steps j a where j = fromIntegral a `div` i
+
+
+
+-- | build a list of by enumerating @i@ steps upto value @a@.
 steps :: (Num a, Ord a) => Int -> a -> [a]
 steps i a = unfoldr phi i' where
   phi x | x < a     = Just (x,x+i')
         | otherwise = Nothing
   i' = fromIntegral i
+
 
 
 -- 'specs'
@@ -143,3 +153,5 @@ d2r = (*) (pi/180)
 
 r2d :: Floating a => a -> a
 r2d = (*) (180/pi)
+
+
