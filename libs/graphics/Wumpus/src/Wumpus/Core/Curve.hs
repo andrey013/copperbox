@@ -57,8 +57,7 @@ instance Functor Curve where
 -- operations
 
 -- de Casteljau's algorithm
-subdivide :: (Fractional (Scalar (Diff a)), Num (Diff a),
-              VectorSpace (Diff a),  AffineSpace a)  
+subdivide :: (Fractional (Scalar a), Num a, VectorSpace a,  AffineSpace a)  
           => Curve a -> (Curve a, Curve a)
 subdivide (Curve p0 p1 p2 p3) = 
     (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)

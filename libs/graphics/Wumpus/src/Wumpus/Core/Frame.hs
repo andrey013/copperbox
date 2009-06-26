@@ -105,7 +105,7 @@ instance OrthonormalFrame Frame3 where
 
 
 -- | point/vector in frame
-inFrame :: (Floating a, VectorSpace a, VecMult Matrix3'3 t, a ~ Scalar a) 
+inFrame :: (Floating a, VectorSpace a, MatrixMult Matrix3'3 t, a ~ Scalar a) 
      => t a -> Frame2 a -> t a 
 inFrame p f = (frameMinv f) *# p
 

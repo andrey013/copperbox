@@ -18,9 +18,9 @@
 module Wumpus.Drawing.Grid where
 
 import Wumpus.Core.Fun
-import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Point
+import Wumpus.Core.Pointwise
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 

@@ -24,6 +24,9 @@ module Wumpus.Core.Matrix
   , DMatrix2'2
   , Matrix3'3(..)
   , DMatrix3'3
+  
+  -- * Matrix multiply
+  , MatrixMult(..)
 
   -- * Construct identity matrix
   , IdentityMatrix(..)
@@ -158,6 +161,15 @@ instance (Num a, VectorSpace a) => VectorSpace (Matrix3'3 a) where
   s *^ (M3'3 a b c  d e f  g h i) = M3'3 (s*^a) (s*^b) (s*^c) 
                                          (s*^d) (s*^e) (s*^f)
                                          (s*^g) (s*^h) (s*^i)
+
+
+--------------------------------------------------------------------------------
+-- Matrix multiply
+
+infixr 7 *# 
+
+class MatrixMult t u where 
+  (*#) :: Num a => t a -> u a -> u a
 
 
 --------------------------------------------------------------------------------

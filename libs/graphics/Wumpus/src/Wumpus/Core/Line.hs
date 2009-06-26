@@ -38,9 +38,11 @@ module Wumpus.Core.Line
 
   ) where
 
-import Wumpus.Core.Instances
+import Wumpus.Core.Instances ()
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
+import Wumpus.Core.Pointwise
+
 
 import Data.AffineSpace
 import Data.VectorSpace
@@ -57,7 +59,7 @@ instance Functor pt => Functor (LineSegment pt) where
   fmap f (LS p p') = LS (fmap f p) (fmap f p')
 
  
-instance VecMult Matrix3'3 (LineSegment Point2) where
+instance MatrixMult Matrix3'3 (LineSegment Point2) where
   (*#) m3'3 (LS p p') = LS (m3'3 *# p) (m3'3 *# p')
 
 instance Pointwise (LineSegment Point2 a) where

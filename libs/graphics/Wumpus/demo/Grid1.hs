@@ -8,6 +8,7 @@ import Wumpus.Core.Frame
 import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Point
+import Wumpus.Core.Pointwise
 import Wumpus.Core.PostScript
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector

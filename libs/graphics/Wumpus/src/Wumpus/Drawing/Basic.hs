@@ -20,10 +20,10 @@ module Wumpus.Drawing.Basic where
 
 import Wumpus.Core.Colour
 import Wumpus.Core.Curve
-import Wumpus.Core.Instances 
 import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
+import Wumpus.Core.Pointwise
 import Wumpus.Core.PostScript
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
