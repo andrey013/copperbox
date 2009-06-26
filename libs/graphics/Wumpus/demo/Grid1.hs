@@ -40,10 +40,5 @@ demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
 calgrid :: [LineBag]
 calgrid = zipWith fn (calendarGrid 0 30) (repeat dotX) where
   fn :: DVec2 -> LineBag -> LineBag
-  fn (V2 x y) df = \o -> map  (fz (x*30) (y*30)) $ df o
-  fz x y (LS p p') = LS (translate x y p) (translate x y p')
+  fn (V2 x y) df = pointwise (translate (x*30) (y*30)) df
 
-
-translatef :: (Floating a, VecMult Matrix3'3 t ) 
-           => a -> a -> (b -> t a) -> (b -> t a) 
-translatef x y f = \b -> translate x y (f b)

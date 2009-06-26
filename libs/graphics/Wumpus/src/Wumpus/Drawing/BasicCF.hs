@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,7 +20,7 @@
 module Wumpus.Drawing.BasicCF where
 
 -- import Wumpus.Core.Frame
--- import Wumpus.Core.Instances
+import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Transformations
@@ -32,6 +34,10 @@ type Line        = DPoint2 -> DLineSegment2
 type Polygon     = DPoint2 -> B.Polygon
 type LineBag     = DPoint2 -> [DLineSegment2]  -- unjoined lines
 
+
+instance Pointwise LineBag where
+  type Pt LineBag = DPoint2
+  pointwise f pf = pf . f
 
 line :: DVec2 -> Line
 

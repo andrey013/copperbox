@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS -Wall #-}
 {-# OPTIONS -fno-warn-orphans #-}
@@ -79,3 +80,11 @@ instance Pointwise (Point2 a) where
   type Pt (Point2 a) = Point2 a
   pointwise f pt = f pt
  
+instance Pointwise (Vec2 a) where
+  type Pt (Vec2 a) = Vec2 a
+  pointwise f pt = f pt
+
+
+instance Pointwise (a -> a) where
+  type Pt (a->a) = a
+  pointwise f pt = \a -> pt (f a)
