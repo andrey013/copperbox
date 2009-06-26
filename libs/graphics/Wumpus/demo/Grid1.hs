@@ -29,8 +29,8 @@ demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
                 ; mapM_ drawLine $ oldGrid (P2 0 0) (P2 5 4) 
                 ---
                 ; ps_translate 0 100
-                ; setRgbColour dodgerBlue4
-                ; mapM_ drawLine $ grid 10 10 (P2 50 40) origin 
+                ; setRgbColour dodgerBlue1
+                ; mapM_ drawLine $ grid 20 20 (P2 150 140) origin 
                 }
   frame1 = Frame2 (P2 0 0) (V2 1 0) (V2 0 0.5)
   origin = P2 0 0

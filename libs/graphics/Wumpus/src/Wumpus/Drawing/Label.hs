@@ -21,9 +21,14 @@ module Wumpus.Drawing.Label where
 import Wumpus.Core.Point
 import Wumpus.Core.PostScript
 
-data Label = Label String
+data Label = Label DPoint2 String
+  deriving (Eq,Show)
+
+type CoLabel = DPoint2 -> Label
 
 
+label :: String -> CoLabel
+label text = \o -> Label o text
 
 setupFont :: String -> Double -> WumpusM ()
 setupFont name sc = do 
@@ -32,7 +37,9 @@ setupFont name sc = do
    ps_setfont
 
 -- labels must be drawn wrt a start point
-drawText :: DPoint2 -> String -> WumpusM ()
-drawText (P2 x y) text = do 
+drawLabel :: Label -> WumpusM ()
+drawLabel (Label (P2 x y) text) = do 
   ps_moveto x y
   ps_show text
+
+

@@ -22,6 +22,7 @@ module Wumpus.Core.Transformations where
 import Wumpus.Core.Instances
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point 
+import Wumpus.Core.Vector 
 
 import Data.List ( mapAccumR )
 
@@ -83,6 +84,9 @@ uniformScale a = scale a a
 
 translate :: (Floating a, VecMult Matrix3'3 t) => a -> a -> t a -> t a 
 translate x y = ((translationMatrix x y) *#)
+
+translateBy :: (Floating a, VecMult Matrix3'3 t) => Vec2 a -> t a -> t a 
+translateBy (V2 x y) = translate x y
 
 reflectX :: (Num a, VecMult Matrix3'3 t) => t a -> t a
 reflectX = scale (-1) 1

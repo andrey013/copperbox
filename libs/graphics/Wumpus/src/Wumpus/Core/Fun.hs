@@ -94,6 +94,10 @@ lZipWith f (p:ps) (q:qs) = f p q : lZipWith f ps qs
 
 
 -- | build a list of steps i upto value a
+intervals :: (Num a, Ord a) => Int -> a -> [a]
+intervals = steps
+
+-- TODO rename...
 steps :: (Num a, Ord a) => Int -> a -> [a]
 steps i a = unfoldr phi i' where
   phi x | x < a     = Just (x,x+i')
