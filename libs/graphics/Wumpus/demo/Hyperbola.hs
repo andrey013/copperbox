@@ -5,6 +5,7 @@ module Hyperbola where
 
 import Wumpus.Core.Curve
 import Wumpus.Core.Point
+import Wumpus.Core.Pointwise
 import Wumpus.Core.PostScript
 import Wumpus.Core.Transformations
 import Wumpus.Core.VSExtra ( adjustvk ) 
@@ -91,7 +92,7 @@ ajtest :: WumpusM ()
 ajtest = do 
     mapM_ (drawPolygon . dotTriangle) [p0,p1,p2]
     setRgbColour firebrick
-    mapM_ (drawPolygon . dotDiamond . fmap (+20)) [pA,p1,pB]
+    mapM_ (drawPolygon . dotDiamond . pointwise (translate 20 20)) [pA,p1,pB]
   where
     p0 = P2 0  40 
     p1 = P2 20 30
@@ -100,7 +101,8 @@ ajtest = do
 
 
 scalePoints :: Double -> DCurve -> DCurve
-scalePoints d = fmap (d*)
+scalePoints d = pointwise (uniformScale d)
+
 
 -- temp hack
 ctranslate :: Double -> Double -> DCurve -> DCurve

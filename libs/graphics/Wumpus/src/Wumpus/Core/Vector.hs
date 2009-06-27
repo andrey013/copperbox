@@ -41,6 +41,7 @@ module Wumpus.Core.Vector
   ) where
 
 import Wumpus.Core.Fun
+import Wumpus.Core.Pointwise
 
 import Data.VectorSpace
 
@@ -93,7 +94,7 @@ instance Num a => Num (Vec3 a) where
   abs (V3 a b c)            = V3 (abs a) (abs b) (abs c)
   negate (V3 a b c)         = V3 (negate a) (negate b) (negate c)
   signum (V3 a b c)         = V3 (signum a) (signum b) (signum c)
-  fromInteger i             = V3 (fromInteger i) (fromInteger i) (fromInteger i)
+  fromInteger i             = V3 i' i' i' where i' = fromInteger i
 
 
 instance Fractional a => Fractional (Vec2 a) where
@@ -104,8 +105,19 @@ instance Fractional a => Fractional (Vec2 a) where
 instance Fractional a => Fractional (Vec3 a) where
   (/) (V3 a b c) (V3 x y z) = V3 (a/x) (b/y) (c/z)
   recip (V3 a b c)          = V3 (recip a) (recip b) (recip c)
-  fromRational a            = V3 (fromRational a) (fromRational a) (fromRational a)
+  fromRational a            = V3 a' a' a' where a' = fromRational a
 
+
+instance Pointwise (Vec2 a) where
+  type Pt (Vec2 a) = Vec2 a
+  pointwise f v = f v
+
+instance Pointwise (Vec3 a) where
+  type Pt (Vec3 a) = Vec3 a
+  pointwise f v = f v
+
+ 
+--------------------------------------------------------------------------------
 
 class EuclidianNorm t where
   euclidianNorm :: Floating a => t a -> a

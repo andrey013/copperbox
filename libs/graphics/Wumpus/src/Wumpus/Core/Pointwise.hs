@@ -42,22 +42,7 @@ instance Pointwise (a -> a) where
   type Pt (a->a) = a
   pointwise f pf = \a -> pf (f a)
 
-instance Pointwise [a] where 
-  type Pt [a] = a
-  pointwise f pts = map f pts 
+instance Pointwise a => Pointwise [a] where 
+  type Pt [a] = Pt a
+  pointwise f pts = map (pointwise f) pts 
 
-
-{-
-
-
-
-instance Pointwise (Point2 a) where
-  type Pt (Point2 a) = Point2 a
-  pointwise f pt = f pt
- 
-instance Pointwise (Vec2 a) where
-  type Pt (Vec2 a) = Vec2 a
-  pointwise f pt = f pt
-
-
--}

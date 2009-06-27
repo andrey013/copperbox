@@ -18,7 +18,7 @@
 
 module Wumpus.Core.Colour 
   (
-  -- Colour types
+  -- * Colour types
     RGB3(..)
   , DRGB
   , HSB3(..)

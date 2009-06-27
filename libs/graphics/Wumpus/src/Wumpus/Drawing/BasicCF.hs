@@ -38,8 +38,16 @@ instance Pointwise LineBag where
   type Pt LineBag = DPoint2
   pointwise f pf = pf . f
 
-line :: DVec2 -> Line
+instance Pointwise Line where
+  type Pt Line = DPoint2
+  pointwise f pf = pf . f
 
+instance Pointwise Polygon where
+  type Pt Polygon = DPoint2 
+  pointwise f pf = pf . f
+
+
+line :: DVec2 -> Line
 line v = \o -> LS o (o .+^ v)
 
 -- | Draw a regular polgon with @n@ sides, and displacement @vec@ from the

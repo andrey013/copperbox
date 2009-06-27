@@ -37,6 +37,29 @@ type Radius = Double
 type Origin = DPoint2
 
 
+data Polygon = Polygon [DPoint2]
+  deriving (Eq,Show)
+
+
+instance Pointwise Polygon where
+  type Pt Polygon = DPoint2
+  pointwise f (Polygon xs) = Polygon $ map f xs
+
+
+
+data Circle = Circle Origin Radius
+  deriving (Eq,Show)
+
+
+instance Pointwise Circle where
+  type Pt Circle = DPoint2
+  pointwise f (Circle o r) = Circle (f o) r
+
+
+--------------------------------------------------------------------------------
+
+
+
 drawLine :: DLineSegment2 -> WumpusM ()
 drawLine (LS (P2 x1 y1) (P2 x2 y2)) = strokePathSkel $ do 
     ps_moveto x1 y1
@@ -50,14 +73,6 @@ drawPoint = polygon . unitSquare
 unitSquare :: DPoint2 -> [DPoint2]
 unitSquare p = usqr where 
     usqr = [p, p .+^ (V2 0 1), p .+^ (V2 1 1), p .+^ (V2 1 0)]
-
-data Polygon = Polygon [DPoint2]
-  deriving (Eq,Show)
-
-
-instance Pointwise Polygon where
-  type Pt Polygon = DPoint2
-  pointwise f (Polygon xs) = Polygon $ map f xs
 
 drawPolygon :: Polygon -> WumpusM ()
 drawPolygon (Polygon [])            = return ()
@@ -94,8 +109,6 @@ diamond (w,h) (P2 x1 y1) = Polygon xs
 
 --------------------------------------------------------------------------------
 -- arcs and ellipses
-
-data Circle = Circle Origin Radius
 
 circle :: (Double,Double) -> Double -> Circle
 circle (x,y) r  = Circle (P2 x y) r

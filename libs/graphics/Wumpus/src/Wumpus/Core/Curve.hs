@@ -33,6 +33,7 @@ module Wumpus.Core.Curve
 import Wumpus.Core.Fun
 import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
+import Wumpus.Core.Pointwise
 import Wumpus.Core.VSExtra
 
 import Data.AffineSpace
@@ -51,6 +52,10 @@ instance Functor Curve where
   fmap f (Curve p0 p1 p2 p3) = 
     Curve (fmap f p0) (fmap f p1) (fmap f p2) (fmap f p3)
 
+
+instance Pointwise (Curve a) where
+  type Pt (Curve a) = Point2 a
+  pointwise f (Curve p0 p1 p2 p3) = Curve (f p0) (f p1) (f p2) (f p3)
 
 
 --------------------------------------------------------------------------------

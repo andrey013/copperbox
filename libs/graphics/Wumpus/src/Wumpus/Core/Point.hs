@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -28,6 +29,8 @@ module Wumpus.Core.Point
  
   ) where
 
+import Wumpus.Core.Pointwise
+
 --------------------------------------------------------------------------------
 -- Point types and standard instances
 
@@ -49,6 +52,16 @@ instance Functor Point2 where
 
 instance Functor Point3 where
   fmap f (P3 a b c) = P3 (f a) (f b) (f c)
+
+
+instance Pointwise (Point2 a) where
+  type Pt (Point2 a) = Point2 a
+  pointwise f pt = f pt
+
+
+instance Pointwise (Point3 a) where
+  type Pt (Point3 a) = Point3 a
+  pointwise f pt = f pt
 
 
 --------------------------------------------------------------------------------
