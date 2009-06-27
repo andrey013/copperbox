@@ -28,12 +28,17 @@ module Wumpus.Core.Curve
 
   -- * Shemanarev\'s smoothing algorithm
   , smoothw
+
+  -- * Bezier curve of circle segment
+  , circleSegment
+
   ) where
 
 import Wumpus.Core.Fun
 import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
+import Wumpus.Core.Vector
 import Wumpus.Core.VSExtra
 
 import Data.AffineSpace
@@ -125,3 +130,17 @@ pipaep k fn  = \mp0 mp1 -> \ep -> let bi  = fn mp0 mp1
 
 curver :: (DPoint2,DPoint2,DPoint2) -> (DPoint2,DPoint2,DPoint2) -> DCurve
 curver (_,p0,p1) (p2,p3,_) = Curve p0 p1 p2 p3
+
+
+--------------------------------------------------------------------------------
+
+
+-- Acknowledgment - this appears due to Gernot Hoffmann
+-- ang should be less then 90o (pi/2)
+circleSegment :: (Floating a, AffineSpace a) => a -> Curve a
+circleSegment ang = Curve p0 p1 p2 p3 where
+  k  = (4/3) * tan (ang / 4)
+  p0 = P2 1 0
+  p3 = P2 (cos ang) (sin ang)
+  p1 = P2 1 k
+  p2 = p3 .+^ (V2 (k * sin ang) (-k * cos ang)) 
