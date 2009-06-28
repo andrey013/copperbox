@@ -114,12 +114,8 @@ lZipWith f (p:ps) (q:qs) = f p q : lZipWith f ps qs
 
 -- | build a list of @i@ divisions of @a@.
 divisions :: (RealFrac a, Ord a) => Int -> a -> [a]
-divisions i a = steps j a where j = floor $ a / realToFrac i
-
--- | build a list of @i@ divisions of @a@.
-divisions' :: (Integral a, Ord a) => Int -> a -> [a]
-divisions' i a = steps j a where j = fromIntegral a `div` i
-
+divisions i a = take i $ iterate (+j) 0 where
+  j = a / realToFrac i
 
 
 -- | build a list of by enumerating @i@ steps upto value @a@.

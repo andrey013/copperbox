@@ -40,6 +40,7 @@ library
     Wumpus.Drawing.Basic,
     Wumpus.Drawing.BasicCF,
     Wumpus.Drawing.Grid,
+    Wumpus.Drawing.Plot,
     Wumpus.Drawing.PSSkeletons,
     Wumpus.Drawing.QuadTree,
     Wumpus.Drawing.SVGColours,

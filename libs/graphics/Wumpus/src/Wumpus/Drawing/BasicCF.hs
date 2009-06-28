@@ -65,7 +65,14 @@ diamond w h = \o -> B.Polygon $ map (o .+^) xs
     vh = hvec (w/2)
     vv = vvec (h/2)
 
+--------------------------------------------------------------------------------
+-- Dots
 
+dotSquare :: Polygon
+dotSquare = regularPolygon 4 (V2 (sqrt 2) (sqrt 2))
+
+dotPentagon :: Polygon 
+dotPentagon = regularPolygon 5 (V2 0 2)
 
 dotPlus :: LineBag
 dotPlus = sequence [lv,lh]
