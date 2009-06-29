@@ -26,11 +26,15 @@ module Wumpus.Core.Vector
   , Vec3(..)
   , DVec3
 
-  -- * Operations
+  -- * Type class operations
   , EuclidianNorm(..)
   , Direction2(..)
   , Independent(..)
 
+  -- * Construct
+  , vec2
+  
+  -- * Operations
   , vangle
   , direction2
   , perpendicular
@@ -187,6 +191,13 @@ instance (Num a, InnerSpace a, AdditiveGroup (Scalar a))
 
 
 
+--------------------------------------------------------------------------------
+
+-- | Construct a vector from and angle and a magnitude
+vec2 :: Floating a => a -> a -> Vec2 a
+vec2 ang d = V2 x y where
+  x = d * cos ang
+  y = d * sin ang
 
 
 

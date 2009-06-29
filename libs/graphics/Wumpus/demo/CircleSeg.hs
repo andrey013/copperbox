@@ -19,6 +19,7 @@ import Wumpus.Drawing.X11Colours
 
 import Data.AffineSpace
 
+
 demo1 :: IO ()
 demo1 = writePS "circleseg1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { ps_translate 40 680 
@@ -29,6 +30,8 @@ demo1 = writePS "circleseg1.ps" $ runWumpus st0 $ drawing1 where
                 ; B.setRgbColour steelBlue1
                 ; B.drawBezier $ pointwise (uniformScale 60) $ circleSegment (pi/4)
                 ---
+                ; B.drawBezier $ pointwise (translate 100 0) $ bezierWedge 20 0 (pi/2)
+                
                 ; ps_translate 0 (-100)
                 ; mapM_ dpo $ pointwise (uniformScale 30) $ plotSine 
                 ---
@@ -38,6 +41,13 @@ demo1 = writePS "circleseg1.ps" $ runWumpus st0 $ drawing1 where
                 ; B.drawBezier $ pointwise (uniformScale 30) $ cwd sin cos 2 3
                 ; B.drawBezier $ pointwise (uniformScale 30) $ cwd sin cos 3 4
                 ; B.drawBezier $ pointwise (uniformScale 30) $ cwd sin cos 4 5
+                --
+                ; ps_translate 0 (-50)
+                ; mapM_ (B.drawCurve . pointwise (uniformScale 10)) 
+                                     $ sinePath 20
+                ; ps_translate 0 (-50)
+                ; mapM_ (B.drawCurve . pointwise (scale 5 2.5)) 
+                                     $ cosPath 50
                 }
 
 dpo :: DVec2 -> WumpusM ()
@@ -61,7 +71,15 @@ cwd f f' c d  = Curve p0 p1 p2 p3 where
   p2 = P2 (d - h/3) ((f d) - (h/3)*(f' d))
   p3 = P2 d         (f d)
 
+sinePath :: (Fractional a, Floating a, Ord a) => Int -> [Curve a]
+sinePath n = intermap (cwd sin cos) $ steps 1 (fromIntegral n)
+    
+cosPath :: (Fractional a, Floating a, Ord a) => Int -> [Curve a]
+cosPath n = intermap (cwd cos (negate . sin)) $ steps 1 (fromIntegral n)
 
+
+
+{-
 cws :: Fractional a => (a -> a) -> a -> a -> Curve a 
 cws f x h = Curve p0 p1 p2 p3 where
   p0 = P2 x           (f x)
@@ -69,6 +87,8 @@ cws f x h = Curve p0 p1 p2 p3 where
   p2 = P2 (x+(2*h)/3) ((f d) - (h/3)*(g $ x+h))
   p3 = P2 d           (f $ x+h)
   g  = 
+-}
+
 
 
 simpsons :: Fractional a => (a -> a) -> a -> a -> a
