@@ -5,6 +5,7 @@ module Data.Stream.StreamCalculus
   (
     (<:)
   , (<<)
+  , prime
   , const
 
   , inverse
@@ -16,7 +17,9 @@ module Data.Stream.StreamCalculus
   , expos
   , deriv
   , blam
+  , delta
   , (<.>)
+  , sroot
   ) where
 
 import Data.Stream
@@ -43,6 +46,10 @@ infixr 5 <<
 --------------------------------------------------------------------------------
 
 --
+
+-- | @prime@ is tail
+prime :: Stream a -> Stream a
+prime = tail
 
 -- stream addition (which is a zip)
 (#+) :: Num a => Stream a -> Stream a -> Stream a 
@@ -76,13 +83,17 @@ instance (Num a) => Num (Stream a) where
 
 
 
-
+-- | Multiplicative inverse
 inverse :: Fractional a => Stream a -> Stream a
 inverse fs = f0 <:> (negate $ const f0) #* ft #* inverse fs 
   where
     f0 = 1/head fs
     ft = tail fs
 
+
+instance Fractional a => Fractional (Stream a) where
+  recip         = inverse
+  fromRational  = const . fromRational
 
 -- | Formal variable
 cX :: Num a => Stream a
@@ -126,12 +137,13 @@ expos fs = exp f <: ft <#> expos fs
 deriv :: Num a => Stream a -> Stream a
 deriv fs = tail (cX <#> (tail fs)) 
 
--- (big lambda)C 
+-- (big lambda)C - Laplace Carlson transformation
 blam :: Num a => Stream a -> Stream a
 blam fs = head fs <: deriv fs 
 
 
-
+delta :: Num a => Stream a -> Stream a
+delta fs = tail fs - fs
 
 -- Don't use
 -- gsum :: Num a => Stream (Stream a) -> Stream a
@@ -141,7 +153,15 @@ blam fs = head fs <: deriv fs
 
 -- | composition
 (<.>) :: Num a => Stream a -> Stream a -> Stream a
-fs <.> gs = f <: gt * (ft * gs) where
-  f  = head fs
-  ft = tail fs
-  gt = tail gs 
+fs <.> gs = f <: gt * (ft <.> gs) 
+  where
+    f  = head fs
+    ft = tail fs
+    gt = tail gs 
+
+
+sroot :: Floating a => Stream a -> Stream a
+sroot fs = s0 <: ((tail fs) / (const s0 + sroot fs) )
+  where
+    s0 = sqrt (head fs)
+   
