@@ -45,13 +45,14 @@ import Wumpus.Core.Instances ()
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
+import Wumpus.Core.Radian
 import Wumpus.Core.Vector
 import Wumpus.Core.VSExtra
 
 import Data.AffineSpace
 import Data.VectorSpace
 
-
+import Control.Applicative ( pure )
 
 data LineSegment (pt :: * -> *) a = LS (pt a) (pt a)
   deriving (Eq,Show)
@@ -93,7 +94,7 @@ vline p@(P2 x y) a = LS p (P2 x (y+a))
 -- | A line from point @p@ in the direction @theta@ from x-axis
 -- of length @a@
 aline :: (Floating a, AffineSpace (pt a), Vec2 a ~ Diff (pt a)) 
-      => pt a -> a -> a -> LineSegment pt a
+      => pt a -> Radian a -> a -> LineSegment pt a
 aline p theta a = LS p (p .+^ vec2 theta a)
 
 --------------------------------------------------------------------------------
@@ -104,8 +105,8 @@ opposite :: LineSegment pt a -> LineSegment pt a
 opposite (LS p p') = LS p' p
 
 -- | Angle ccw from x-axis
-langle :: Floating a => LineSegment Point2 a -> a
-langle (LS (P2 x y) (P2 x' y')) = atan $ (y'-y) / (x'-x) 
+langle :: Floating a => LineSegment Point2 a -> Radian a
+langle (LS (P2 x y) (P2 x' y')) = pure $ atan $ (y'-y) / (x'-x) 
 
 
 

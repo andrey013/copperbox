@@ -10,6 +10,8 @@ import Wumpus.Drawing.Basic
 import Wumpus.Drawing.X11Colours
 
 
+import Wumpus.Core.Radian
+
 demo1 :: IO ()
 demo1 = writePS "arrow1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { ps_translate 60 380 
@@ -23,13 +25,14 @@ demo1 = writePS "arrow1.ps" $ runWumpus st0 $ drawing1 where
                 ; mapM_ drawLine $ arrowCenterMarker $ lineTo (P2 30 0) (P2 40 50)
                 }
              
-arrowhead1 :: DPoint2 -> DPoint2 -> (Double -> DPoint2 -> a) 
+arrowhead1 :: DPoint2 -> DPoint2 -> (DRadian -> DPoint2 -> a) 
                 -> (a -> WumpusM()) -> WumpusM ()
 arrowhead1 start_pt end_pt arrHead drawFun = 
     do { drawLine $ arrline
        ; drawFun $ arrHead theta end_pt
        }
   where
+    theta    :: DRadian
     arrline  = lineTo start_pt end_pt
     theta    = pi + (langle arrline)
 

@@ -21,6 +21,7 @@ import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.PostScript
+import Wumpus.Core.Radian
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
@@ -31,7 +32,7 @@ import Data.AffineSpace
 
 
 
-arrowheadTriangle :: Double -> Double -> (Double -> DPoint2 -> Polygon)
+arrowheadTriangle :: Double -> DRadian -> (DRadian -> DPoint2 -> Polygon)
 arrowheadTriangle d ang = 
   \theta endpt -> let p0 = endpt .+^ (hvec (-d))
                       pg = Polygon [ rotateAbout (pi-ang) endpt p0, 
@@ -40,7 +41,8 @@ arrowheadTriangle d ang =
                   in pointwise (rotateAbout theta endpt) pg
 
 
-arrowheadVee :: Double -> Double -> (Double -> DPoint2 -> [DLineSegment2])
+arrowheadVee :: Double -> DRadian
+             -> (DRadian -> DPoint2 -> [DLineSegment2])
 arrowheadVee d ang = 
   \theta endpt -> let p0  = endpt .+^ (hvec (-d))
                       p01 = rotateAbout (pi-ang) endpt p0
@@ -50,7 +52,7 @@ arrowheadVee d ang =
 
 
 
-arrowheadPerp :: Double -> (Double -> DPoint2 -> [DLineSegment2])
+arrowheadPerp :: Double -> (DRadian -> DPoint2 -> [DLineSegment2])
 arrowheadPerp d = 
   \theta endpt -> let p0 = endpt .+^ (hvec (-d))
                       p1 = endpt .+^ (hvec d)

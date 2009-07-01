@@ -46,6 +46,7 @@ module Wumpus.Core.Vector
 
 import Wumpus.Core.Fun
 import Wumpus.Core.Pointwise
+import Wumpus.Core.Radian
 
 import Data.VectorSpace
 
@@ -194,8 +195,8 @@ instance (Num a, InnerSpace a, AdditiveGroup (Scalar a))
 --------------------------------------------------------------------------------
 
 -- | Construct a vector from and angle and a magnitude
-vec2 :: Floating a => a -> a -> Vec2 a
-vec2 ang d = V2 x y where
+vec2 :: Floating a => Radian a -> a -> Vec2 a
+vec2 (Radian ang) d = V2 x y where
   x = d * cos ang
   y = d * sin ang
 

@@ -52,14 +52,15 @@ module Wumpus.Core.Transformations
 
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point 
+import Wumpus.Core.Radian
 import Wumpus.Core.Vector 
 
 import Data.List ( mapAccumR )
 
-rotate :: (Floating a, MatrixMult Matrix3'3 t) => a -> t a -> t a 
+rotate :: (Floating a, MatrixMult Matrix3'3 t) => Radian a -> t a -> t a 
 rotate a = ((rotationMatrix a) *#) 
 
-rotateAbout :: (Floating a, MatrixMult Matrix3'3 t) => a -> Point2 a -> t a -> t a 
+rotateAbout :: (Floating a, MatrixMult Matrix3'3 t) => Radian a -> Point2 a -> t a -> t a 
 rotateAbout a (P2 x y) = ((rotationMatrix' a x y) *#) 
 
 rotate90 :: (Floating a, MatrixMult Matrix3'3 t) => t a -> t a 

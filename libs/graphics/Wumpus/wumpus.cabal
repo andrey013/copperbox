@@ -33,6 +33,7 @@ library
     Wumpus.Core.Point,
     Wumpus.Core.Pointwise,
     Wumpus.Core.PostScript,
+    Wumpus.Core.Radian,
     Wumpus.Core.Transformations,
     Wumpus.Core.Vector,
     Wumpus.Core.VSExtra,
