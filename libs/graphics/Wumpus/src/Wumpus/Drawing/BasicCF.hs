@@ -19,7 +19,7 @@
 
 module Wumpus.Drawing.BasicCF where
 
-import Wumpus.Core.Line
+import Wumpus.Core.Line hiding ( line )
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Transformations

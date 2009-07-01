@@ -32,7 +32,7 @@ module Wumpus.Core.Curve
   -- * Bezier curve of circle segment
   , circleSegment
 
-  , bezierWedge
+  , bezierArc
 
   ) where
 
@@ -149,8 +149,8 @@ circleSegment ang = Curve p0 p1 p2 p3 where
 
 
 --
-bezierWedge :: (Floating a, AffineSpace a) => a -> a -> a -> Curve a
-bezierWedge r ang1 ang2 = Curve p0 p1 p2 p3 where
+bezierArc :: (Floating a, AffineSpace a) => a -> a -> a -> Curve a
+bezierArc r ang1 ang2 = Curve p0 p1 p2 p3 where
   theta = ang2 - ang1
   e     = r * ((2 * sin (theta/2)) / (1+ 2* cos (theta/2))) 
   p0    = zeroPt .+^ vec2 ang1 r

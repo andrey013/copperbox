@@ -56,6 +56,15 @@ arrowheadPerp d =
                       p1 = endpt .+^ (hvec d)
                   in [pointwise (rotateAbout (theta+pi/2) endpt) (lineTo p0 p1)]
 
+
+arrowCenterMarker :: DLineSegment2 -> [DLineSegment2]
+arrowCenterMarker ls = [ls,cm] where
+  p     = lineCenter ls 
+  theta = langle ls
+  p0    = p .+^ vec2 (theta + pi/2) 2
+  p1    = p .+^ vec2 (theta - pi/2) 2
+  cm    = lineTo p0 p1
+
 -- TODO - tip should be more general, e.g. list of lines, or arcs
 data Arrow a = Arrow (LineSegment Point2 a) Polygon
   deriving (Eq,Show)
@@ -65,7 +74,7 @@ type DArrow = Arrow Double
 arrow :: DPoint2 -> DPoint2 -> DArrow
 arrow p p' = Arrow ln tip where
   ln    = lineTo p p'
-  theta = pi + (atan $ gradient ln) 
+  theta = pi + (langle ln) 
   tip   = arrowheadTriangle 10 (pi/10) theta p'
 
 

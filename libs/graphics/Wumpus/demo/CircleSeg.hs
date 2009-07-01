@@ -30,7 +30,7 @@ demo1 = writePS "circleseg1.ps" $ runWumpus st0 $ drawing1 where
                 ; B.setRgbColour steelBlue1
                 ; B.drawBezier $ pointwise (uniformScale 60) $ circleSegment (pi/4)
                 ---
-                ; B.drawBezier $ pointwise (translate 100 0) $ bezierWedge 20 0 (pi/2)
+                ; B.drawBezier $ pointwise (translate 100 0) $ bezierArc 20 0 (pi/2)
                 
                 ; ps_translate 0 (-100)
                 ; mapM_ dpo $ pointwise (uniformScale 30) $ plotSine 

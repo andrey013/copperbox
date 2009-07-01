@@ -16,19 +16,20 @@ demo1 = writePS "arrow1.ps" $ runWumpus st0 $ drawing1 where
                 ; drawArrow $ arrow (P2 0 0) (P2 40 40) 
                 ; setRgbColour dodgerBlue1 
                 ; ps_translate 100 0
-                ; arrowhead1 (P2 0 0) (P2 10 50) (arrowheadTriangle 10 (pi/10)) drawPolygon
+                ; arrowhead1 (P2 0 0)  (P2 10 50) (arrowheadTriangle 10 (pi/10)) drawPolygon
                 ; arrowhead1 (P2 10 0) (P2 20 50) (arrowheadVee 10 (pi/10)) 
                                                   (mapM_ drawLine)
                 ; arrowhead1 (P2 20 0) (P2 30 50) (arrowheadPerp 5) (mapM_ drawLine)
+                ; mapM_ drawLine $ arrowCenterMarker $ lineTo (P2 30 0) (P2 40 50)
                 }
              
 arrowhead1 :: DPoint2 -> DPoint2 -> (Double -> DPoint2 -> a) 
                 -> (a -> WumpusM()) -> WumpusM ()
 arrowhead1 start_pt end_pt arrHead drawFun = 
-    do { drawLine $ aline
+    do { drawLine $ arrline
        ; drawFun $ arrHead theta end_pt
        }
   where
-    aline    = lineTo start_pt end_pt
-    theta    = pi + (atan $ gradient aline)
+    arrline  = lineTo start_pt end_pt
+    theta    = pi + (langle arrline)
 
