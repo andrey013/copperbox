@@ -1,4 +1,6 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -23,13 +25,21 @@ module Wumpus.Core.Point
   , DPoint2
   , Point3(..)
   , DPoint3
+  , WeightedPoint(..)
 
   -- * Represent a point at the origin
   , StdOrigin(..)
+  
+  -- * Affine combination
+  , affcomb
  
   ) where
 
 import Wumpus.Core.Pointwise
+
+import Data.AffineSpace
+import Data.VectorSpace
+
 
 --------------------------------------------------------------------------------
 -- Point types and standard instances
@@ -44,6 +54,11 @@ data Point3 a = P3 !a !a !a
   deriving (Eq,Show)
 
 type DPoint3 = Point3 Double
+
+
+-- Weighted points
+data WeightedPoint w  (pt :: * -> *) a = WPoint w (pt a)
+  deriving (Eq,Show)
 
 
 
@@ -83,4 +98,18 @@ instance Num a => StdOrigin (Point3 a) where
   stdOrigin = P3 0 0 0
   zeroPt    = P3 0 0 0
 
+
+--------------------------------------------------------------------------------
+-- Affine combination
+
+
+
+-- | Affine combination of weighted points. 
+-- Note the weight a1 and a2 must satisfy: a1 + a2 = 1 
+affcomb :: (Fractional (Scalar (Diff (pt a))), 
+            AffineSpace (pt a), VectorSpace (Diff (pt a))) 
+        => WeightedPoint Rational pt a -> WeightedPoint Rational pt a -> pt a
+affcomb (WPoint a1 p1) (WPoint a2 p2) 
+    | a1+a2 == 1 = p1 .+^ (fromRational a2) *^ (p2 .-. p1)
+    | otherwise  = error "affcomb: weights do not sum to 1" 
 

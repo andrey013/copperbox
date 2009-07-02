@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -68,3 +69,11 @@ ftofD = ftof
 segmentLengthD :: DLineSegment2 -> Double
 segmentLengthD = segmentLength
 
+
+
+-- Points - affine combination
+
+affcombD :: WeightedPoint Rational Point2 Double 
+         -> WeightedPoint Rational Point2 Double
+         -> Point2 Double
+affcombD = affcomb

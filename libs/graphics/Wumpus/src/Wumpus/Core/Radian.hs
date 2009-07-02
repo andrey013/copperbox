@@ -29,7 +29,7 @@ import Control.Applicative
 --------------------------------------------------------------------------------
 -- Radian as a distinct type, parametric on numberic type
 
-newtype Radian a = Radian { getRadian :: a }
+newtype Radian a = Radian { fromRadian :: a }
   deriving (Eq,Ord,Show,Num,Real,Fractional,Floating,RealFrac,RealFloat)
 
 

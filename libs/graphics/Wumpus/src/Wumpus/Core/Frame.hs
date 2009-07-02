@@ -37,7 +37,7 @@ module Wumpus.Core.Frame
 
   ) where
 
-import Wumpus.Core.Instances
+import Wumpus.Core.Instances ()
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Vector

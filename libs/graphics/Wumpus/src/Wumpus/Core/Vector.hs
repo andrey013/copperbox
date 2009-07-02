@@ -113,6 +113,10 @@ instance Fractional a => Fractional (Vec3 a) where
   fromRational a            = V3 a' a' a' where a' = fromRational a
 
 
+
+-- Note, it might not be geometrically correct to allow translations on 
+-- vectors.
+ 
 instance Pointwise (Vec2 a) where
   type Pt (Vec2 a) = Vec2 a
   pointwise f v = f v
