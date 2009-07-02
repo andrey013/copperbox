@@ -73,7 +73,7 @@ segmentLengthD = segmentLength
 
 -- Points - affine combination
 
-affcombD :: WeightedPoint Rational Point2 Double 
+affineCombine2D :: WeightedPoint Rational Point2 Double 
          -> WeightedPoint Rational Point2 Double
          -> Point2 Double
-affcombD = affcomb
+affineCombine2D = affineCombine2

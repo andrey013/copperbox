@@ -31,8 +31,8 @@ module Wumpus.Core.Point
   , StdOrigin(..)
   
   -- * Affine combination
-  , affcomb
- 
+  , affineCombine
+  , affineCombine2
   ) where
 
 import Wumpus.Core.Pointwise
@@ -103,13 +103,29 @@ instance Num a => StdOrigin (Point3 a) where
 -- Affine combination
 
 
+-- | Affine combinatation of a list of weighted points.
+-- Note the weights must sum to 1.
+affineCombine :: (Fractional (Scalar (Diff (pt a))), 
+                  AffineSpace (pt a), VectorSpace (Diff (pt a))) 
+              => [WeightedPoint Rational pt a] -> pt a
+affineCombine (WPoint a1 p1 : xs) = post $ foldr fn (a1,p1) xs 
+  where 
+    fn (WPoint an pn) (a,p) = (a+an,p .+^ (fromRational an) *^ (pn .-. p1)) 
+    post (a,p) | a==1       = p
+               | otherwise  = error "affineCombine: weights do not sum to 1"
+affineCombine []                  = error "affineCombine: empty"
 
--- | Affine combination of weighted points. 
+
+
+-- | Affine combination of two weighted points. 
 -- Note the weight a1 and a2 must satisfy: a1 + a2 = 1 
-affcomb :: (Fractional (Scalar (Diff (pt a))), 
-            AffineSpace (pt a), VectorSpace (Diff (pt a))) 
-        => WeightedPoint Rational pt a -> WeightedPoint Rational pt a -> pt a
-affcomb (WPoint a1 p1) (WPoint a2 p2) 
+affineCombine2 :: (Fractional (Scalar (Diff (pt a))), 
+                   AffineSpace (pt a), VectorSpace (Diff (pt a))) 
+               => WeightedPoint Rational pt a 
+               -> WeightedPoint Rational pt a 
+               -> pt a
+affineCombine2 (WPoint a1 p1) (WPoint a2 p2) 
     | a1+a2 == 1 = p1 .+^ (fromRational a2) *^ (p2 .-. p1)
     | otherwise  = error "affcomb: weights do not sum to 1" 
+
 

@@ -17,7 +17,6 @@
 
 module Wumpus.Core.Fun where
 
-
 import Data.List ( unfoldr )
 
 -- Pairs
@@ -139,15 +138,5 @@ oooo :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
 oooo f g = (((f .) .) .) . g   
 
 
-
--- 
-
--- degrees / radians
-
-d2r :: Floating a => a -> a 
-d2r = (*) (pi/180)
-
-r2d :: Floating a => a -> a
-r2d = (*) (180/pi)
 
 

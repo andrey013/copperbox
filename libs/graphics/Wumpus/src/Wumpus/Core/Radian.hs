@@ -20,8 +20,13 @@ module Wumpus.Core.Radian
   (
   -- * Radian type
     Radian(..)
-
   , DRadian
+
+  -- * Operations 
+  -- ** Conversion
+  , d2r
+  , r2d
+
   ) where
 
 import Control.Applicative
@@ -44,3 +49,15 @@ instance Applicative Radian where
 
 
 type DRadian = Radian Double
+
+
+--------------------------------------------------------------------------------
+
+
+-- degrees / radians
+
+d2r :: Floating a => a -> Radian a 
+d2r = Radian . (*) (pi/180)
+
+r2d :: Floating a => Radian a -> a
+r2d = (*) (180/pi) . fromRadian
