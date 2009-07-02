@@ -1,6 +1,6 @@
 {-# OPTIONS -Wall #-}
 
-module Label1 where
+module Label where
 
 import Wumpus.Core.Fun
 import Wumpus.Core.Line

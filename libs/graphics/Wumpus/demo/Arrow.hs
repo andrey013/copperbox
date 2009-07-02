@@ -1,6 +1,6 @@
 {-# OPTIONS -Wall #-}
 
-module Arrow1 where
+module Arrow where
 
 import Wumpus.Core.Line
 import Wumpus.Core.Point

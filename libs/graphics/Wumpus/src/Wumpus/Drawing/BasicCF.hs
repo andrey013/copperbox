@@ -49,13 +49,9 @@ instance Pointwise Poly where
 line :: DVec2 -> Line
 line v = \o -> LS o (o .+^ v)
 
--- | Draw a regular polgon with @n@ sides, and displacement @vec@ from the
--- center for the first point.
-regularPolygon :: Int -> DVec2 -> Poly
-regularPolygon n vec = Polygon . points 
-  where 
-    points (P2 x y) = map (translate x y) $ circular $ replicate n (P2 0 0 .+^ vec) 
-
+transOrigin :: (Floating a, Pointwise sh, Pt sh ~ Point2 a) 
+            => sh -> Point2 a -> sh
+transOrigin z = \(P2 x y) -> pointwise (translate x y) z
 
 diamond :: Double -> Double -> Poly
 diamond w h = \o -> Polygon $ map (o .+^) xs 
@@ -68,10 +64,10 @@ diamond w h = \o -> Polygon $ map (o .+^) xs
 -- Dots
 
 dotSquare :: Poly
-dotSquare = regularPolygon 4 (V2 (sqrt 2) (sqrt 2))
+dotSquare = transOrigin $ regularPolygon 4 (V2 (sqrt 2) (sqrt 2))
 
 dotPentagon :: Poly
-dotPentagon = regularPolygon 5 (V2 0 2)
+dotPentagon = transOrigin $ regularPolygon 5 (V2 0 2)
 
 dotPlus :: LineBag
 dotPlus = sequence [lv,lh]

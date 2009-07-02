@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts           #-}
 
 
-module Grid1 where
+module Grid where
 
 import Wumpus.Core.Frame
 import Wumpus.Core.Instances

@@ -1,6 +1,6 @@
 {-# OPTIONS -Wall #-}
 
-module Basic1 where
+module Basic where
 
 
 import Wumpus.Core.Line

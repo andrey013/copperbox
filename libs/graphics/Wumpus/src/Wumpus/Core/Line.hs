@@ -54,6 +54,11 @@ import Data.VectorSpace
 
 import Control.Applicative ( pure )
 
+
+--------------------------------------------------------------------------------
+-- Line types and standard instances
+
+
 data LineSegment (pt :: * -> *) a = LS (pt a) (pt a)
   deriving (Eq,Show)
 

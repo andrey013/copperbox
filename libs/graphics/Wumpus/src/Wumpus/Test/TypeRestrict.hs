@@ -23,7 +23,19 @@ import Wumpus.Core.Frame
 import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
+import Wumpus.Core.Polygon
 import Wumpus.Core.Vector
+
+
+--------------------------------------------------------------------------------
+-- Wumpus.Core.Point 
+
+
+affineCombine2D :: WeightedPoint Rational Point2 Double 
+         -> WeightedPoint Rational Point2 Double
+         -> Point2 Double
+affineCombine2D = affineCombine2
+
 
 --------------------------------------------------------------------------------
 -- Wumpus.Core.Vector
@@ -71,9 +83,9 @@ segmentLengthD = segmentLength
 
 
 
--- Points - affine combination
 
-affineCombine2D :: WeightedPoint Rational Point2 Double 
-         -> WeightedPoint Rational Point2 Double
-         -> Point2 Double
-affineCombine2D = affineCombine2
+--------------------------------------------------------------------------------
+-- Wumpus.Core.Polygon
+
+regularPolygonD :: Int -> DVec2 -> DPolygon
+regularPolygonD = regularPolygon
