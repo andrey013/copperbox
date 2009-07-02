@@ -19,7 +19,10 @@
 module Wumpus.Drawing.Label where
 
 import Wumpus.Core.Point
-import Wumpus.Core.PostScript
+
+import Wumpus.Drawing.PostScript
+
+
 
 data Label = Label DPoint2 String
   deriving (Eq,Show)

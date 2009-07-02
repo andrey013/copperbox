@@ -5,8 +5,9 @@ module Basic1 where
 
 import Wumpus.Core.Line
 import Wumpus.Core.Point
-import Wumpus.Core.PostScript
+
 import Wumpus.Drawing.Basic
+import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.PSSkeletons
 import Wumpus.Drawing.SVGColours
 

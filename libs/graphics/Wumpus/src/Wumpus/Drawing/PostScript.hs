@@ -6,7 +6,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.PostScript
+-- Module      :  Wumpus.Drawing.PostScript
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -19,10 +19,11 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.PostScript where
+module Wumpus.Drawing.PostScript where
 
 import Wumpus.Core.Colour 
-import qualified Wumpus.Core.CTM as CTM
+
+import qualified Wumpus.Drawing.PostScriptCTM as CTM
 
 import qualified Data.DList as DL
 import MonadLib

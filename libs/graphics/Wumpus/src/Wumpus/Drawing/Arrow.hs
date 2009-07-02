@@ -20,19 +20,20 @@ module Wumpus.Drawing.Arrow where
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
-import Wumpus.Core.PostScript
+import Wumpus.Core.Polygon
 import Wumpus.Core.Radian
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
 import Wumpus.Drawing.Basic
+import Wumpus.Drawing.PostScript
 
 import Data.AffineSpace
 
 
 
 
-arrowheadTriangle :: Double -> DRadian -> (DRadian -> DPoint2 -> Polygon)
+arrowheadTriangle :: Double -> DRadian -> (DRadian -> DPoint2 -> DPolygon)
 arrowheadTriangle d ang = 
   \theta endpt -> let p0 = endpt .+^ (hvec (-d))
                       pg = Polygon [ rotateAbout (pi-ang) endpt p0, 
@@ -68,7 +69,7 @@ arrowCenterMarker ls = [ls,cm] where
   cm    = lineTo p0 p1
 
 -- TODO - tip should be more general, e.g. list of lines, or arcs
-data Arrow a = Arrow (LineSegment Point2 a) Polygon
+data Arrow a = Arrow (LineSegment Point2 a) (Polygon a)
   deriving (Eq,Show)
 
 type DArrow = Arrow Double

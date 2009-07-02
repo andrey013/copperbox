@@ -24,10 +24,11 @@ import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
-import Wumpus.Core.PostScript
+import Wumpus.Core.Polygon
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
+import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.PSSkeletons
 
 import Data.AffineSpace
@@ -36,14 +37,6 @@ import Data.AffineSpace
 type Radius = Double
 type Origin = DPoint2
 
-
-data Polygon = Polygon [DPoint2]
-  deriving (Eq,Show)
-
-
-instance Pointwise Polygon where
-  type Pt Polygon = DPoint2
-  pointwise f (Polygon xs) = Polygon $ map f xs
 
 
 
@@ -68,13 +61,13 @@ drawLine (LS (P2 x1 y1) (P2 x2 y2)) = strokePathSkel $ do
 drawPoint :: DPoint2 -> WumpusM ()
 drawPoint = polygon . unitSquare
 
--- should this generate a Polygon or its path?
--- unitSquare :: Point -> Polygon
+-- should this generate a DPolygon or its path?
+-- unitSquare :: Point -> DPolygon
 unitSquare :: DPoint2 -> [DPoint2]
 unitSquare p = usqr where 
     usqr = [p, p .+^ (V2 0 1), p .+^ (V2 1 1), p .+^ (V2 1 0)]
 
-drawPolygon :: Polygon -> WumpusM ()
+drawPolygon :: DPolygon -> WumpusM ()
 drawPolygon (Polygon [])            = return ()
 drawPolygon (Polygon ((P2 x y):ps)) = saveExecRestore $ do 
     ps_newpath
@@ -99,7 +92,7 @@ whenMb :: Monad m => Maybe a -> (a -> m ()) -> m()
 whenMb a sk = maybe (return ()) sk a 
 
 
-diamond :: (Double,Double) -> DPoint2 -> Polygon
+diamond :: (Double,Double) -> DPoint2 -> DPolygon
 diamond (w,h) (P2 x1 y1) = Polygon xs
   where
     xs     = map (trans1.scale1.rot1) $ unitSquare $ P2 0 0
@@ -169,21 +162,21 @@ dotAsterisk (P2 x y) = map (translate x y) $ circular (replicate 5 ls1)
    ls1 = vline stdOrigin 2  
 
 
-dotTriangle :: DPoint2 -> Polygon
+dotTriangle :: DPoint2 -> DPolygon
 dotTriangle = polyDot (P2 0 2) 3
 
-dotSquare :: DPoint2 -> Polygon
+dotSquare :: DPoint2 -> DPolygon
 dotSquare = polyDot (P2 1.5 1.5) 4
 
-dotPentagon :: DPoint2 -> Polygon
+dotPentagon :: DPoint2 -> DPolygon
 dotPentagon = polyDot (P2 0 1.5) 5 
 
-polyDot :: DPoint2 -> Int -> DPoint2 -> Polygon
+polyDot :: DPoint2 -> Int -> DPoint2 -> DPolygon
 polyDot pt1 n (P2 x y) = Polygon xs
   where
     xs = map (translate x y) $ circular $ replicate n pt1 
 
-dotDiamond :: DPoint2 -> Polygon
+dotDiamond :: DPoint2 -> DPolygon
 dotDiamond (P2 x y) = Polygon (map (translate x y) [p1,p2,p3,p4])
   where
    p1 = P2 0 1.5

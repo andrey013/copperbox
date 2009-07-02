@@ -20,7 +20,8 @@ module Wumpus.Drawing.PSSkeletons where
 import Wumpus.Core.Colour
 import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
-import Wumpus.Core.PostScript
+
+import Wumpus.Drawing.PostScript
 
 
 

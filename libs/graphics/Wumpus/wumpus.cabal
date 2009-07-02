@@ -32,7 +32,7 @@ library
     Wumpus.Core.Matrix,
     Wumpus.Core.Point,
     Wumpus.Core.Pointwise,
-    Wumpus.Core.PostScript,
+    Wumpus.Core.Polygon,
     Wumpus.Core.Radian,
     Wumpus.Core.Transformations,
     Wumpus.Core.Vector,
@@ -41,14 +41,16 @@ library
     Wumpus.Drawing.Basic,
     Wumpus.Drawing.BasicCF,
     Wumpus.Drawing.Grid,
+    Wumpus.Drawing.Label,
     Wumpus.Drawing.Plot,
+    Wumpus.Drawing.PostScript,
+    Wumpus.Drawing.PostScriptCTM,
     Wumpus.Drawing.PSSkeletons,
     Wumpus.Drawing.QuadTree,
     Wumpus.Drawing.SVGColours,
     Wumpus.Drawing.X11Colours
 
   other-modules:
-    Wumpus.Core.CTM,
     Wumpus.Test.TypeRestrict
     
   extensions:

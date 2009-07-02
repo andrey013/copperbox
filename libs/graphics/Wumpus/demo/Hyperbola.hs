@@ -6,12 +6,13 @@ module Hyperbola where
 import Wumpus.Core.Curve
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
-import Wumpus.Core.PostScript
+import Wumpus.Core.Polygon
 import Wumpus.Core.Transformations
 import Wumpus.Core.VSExtra ( adjustvk ) 
 
 import Wumpus.Drawing.Basic
 import Wumpus.Drawing.Plot
+import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.SVGColours
 
 

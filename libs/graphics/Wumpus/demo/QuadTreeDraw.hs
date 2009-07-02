@@ -6,10 +6,10 @@ import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
-import Wumpus.Core.PostScript
 import Wumpus.Core.VSExtra
 
 import Wumpus.Drawing.QuadTree
+import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.Basic
 
 import qualified Data.Foldable as F

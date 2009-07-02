@@ -9,13 +9,13 @@ import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
-import Wumpus.Core.PostScript
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
 import qualified Wumpus.Drawing.Basic as B
 import Wumpus.Drawing.BasicCF
 import Wumpus.Drawing.Grid
+import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.X11Colours
 
 --

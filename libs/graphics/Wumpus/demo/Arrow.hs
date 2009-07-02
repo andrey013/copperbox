@@ -4,9 +4,9 @@ module Arrow1 where
 
 import Wumpus.Core.Line
 import Wumpus.Core.Point
-import Wumpus.Core.PostScript
 import Wumpus.Drawing.Arrow
 import Wumpus.Drawing.Basic
+import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.X11Colours
 
 

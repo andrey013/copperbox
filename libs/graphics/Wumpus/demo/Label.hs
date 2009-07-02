@@ -5,10 +5,10 @@ module Label1 where
 import Wumpus.Core.Fun
 import Wumpus.Core.Line
 import Wumpus.Core.Point
-import Wumpus.Core.PostScript
 
 import Wumpus.Drawing.Basic
 import Wumpus.Drawing.Label
+import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.X11Colours
 
 

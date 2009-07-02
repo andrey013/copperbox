@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.CTM
+-- Module      :  Wumpus.Drawing.PostScriptCTM
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.CTM where
+module Wumpus.Drawing.PostScriptCTM where
 
 import Wumpus.Core.Matrix
 import Wumpus.Core.Vector
