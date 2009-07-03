@@ -20,9 +20,9 @@
 
 module Wumpus.Drawing.QuadTree where
 
+import Wumpus.Core.Geometric
 import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
-import Wumpus.Core.VSExtra
 
 import Data.Foldable hiding ( foldr )
 import Data.Monoid

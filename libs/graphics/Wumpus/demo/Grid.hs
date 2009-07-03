@@ -20,7 +20,7 @@ import Wumpus.Drawing.X11Colours
 
 --
 import Wumpus.Test.TypeRestrict
-import Wumpus.Core.VSExtra
+import Wumpus.Core.Geometric
 import Wumpus.Core.Matrix
 
 import Data.VectorSpace

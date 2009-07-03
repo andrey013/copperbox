@@ -205,8 +205,9 @@ vec2 (Radian ang) d = V2 x y where
 --------------------------------------------------------------------------------
 -- Operations
 
-vangle :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) => t a -> t a -> a
-vangle u v = acos ((u<.>v) / ((magnitude u) * (magnitude v)))    
+vangle :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) 
+       => t a -> t a -> Radian a
+vangle u v = toRadian $ acos ((u<.>v) / ((magnitude u) * (magnitude v)))    
 
 
   

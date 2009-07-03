@@ -3,6 +3,8 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE OverlappingInstances       #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -41,13 +43,13 @@ module Wumpus.Core.Line
 
   ) where
 
+import Wumpus.Core.Geometric
 import Wumpus.Core.Instances ()
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Radian
 import Wumpus.Core.Vector
-import Wumpus.Core.VSExtra
 
 import Data.AffineSpace
 import Data.VectorSpace
@@ -75,6 +77,18 @@ instance MatrixMult Matrix3'3 (LineSegment Point2) where
 instance Pointwise (LineSegment Point2 a) where
   type Pt (LineSegment Point2 a) = Point2 a
   pointwise f (LS p p') = LS (f p) (f p')
+
+--------------------------------------------------------------------------------
+-- Other instances
+
+
+-- This drags in Undecidable Instances...
+
+instance (Floating (Scalar (Diff (pt a))), 
+          InnerSpace (Diff (pt a)), AffineSpace (pt a) )
+    => Congruent (LineSegment pt a) where
+  congruent l l' = segmentLength l == segmentLength l' 
+
 
 
 --------------------------------------------------------------------------------
@@ -104,6 +118,12 @@ aline p theta a = LS p (p .+^ vec2 theta a)
 
 --------------------------------------------------------------------------------
 -- operations
+
+
+
+
+
+
 
 -- | Reverse the direction of a line
 opposite :: LineSegment pt a -> LineSegment pt a

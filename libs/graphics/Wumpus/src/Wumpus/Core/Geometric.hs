@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.VSExtra
+-- Module      :  Wumpus.Core.Geometric
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,20 +14,37 @@
 -- Portability :  GHC
 --
 -- Extra functions built on the Vector Space lib with no dependencies on 
--- the Wumpus data types.
+-- the Wumpus data types and typeclasses with no Wumpus dependencies.
 --
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.VSExtra 
+module Wumpus.Core.Geometric
   (
-    midpoint
+  -- * Type classes
+    Congruent(..)
+
+  -- * Functions
+  , midpoint
   , adjustvk
   , isZeroV
   ) where
 
 import Data.AffineSpace
 import Data.VectorSpace
+
+--------------------------------------------------------------------------------
+-- Type classes
+
+class Congruent a where
+  congruent :: a -> a -> Bool
+
+
+
+
+--------------------------------------------------------------------------------
+-- Functions
+
 
 -- | midpoint between two points
 midpoint :: (Fractional (Scalar (Diff p)), AffineSpace p, VectorSpace (Diff p))

@@ -24,6 +24,7 @@ import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Polygon
+import Wumpus.Core.Radian
 import Wumpus.Core.Vector
 
 
@@ -40,7 +41,7 @@ affineCombine2D = affineCombine2
 --------------------------------------------------------------------------------
 -- Wumpus.Core.Vector
 
-vangleD :: DVec2 -> DVec2 -> Double 
+vangleD :: DVec2 -> DVec2 -> DRadian
 vangleD = vangle 
 
 

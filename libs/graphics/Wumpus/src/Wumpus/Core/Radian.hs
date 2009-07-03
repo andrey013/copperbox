@@ -38,6 +38,7 @@ module Wumpus.Core.Radian
 
   ) where
 
+
 import Control.Applicative
 
 --------------------------------------------------------------------------------

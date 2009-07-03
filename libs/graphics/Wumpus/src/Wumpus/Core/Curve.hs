@@ -37,12 +37,12 @@ module Wumpus.Core.Curve
   ) where
 
 import Wumpus.Core.Fun
+import Wumpus.Core.Geometric
 import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Radian
 import Wumpus.Core.Vector
-import Wumpus.Core.VSExtra
 
 import Data.AffineSpace
 import Data.VectorSpace

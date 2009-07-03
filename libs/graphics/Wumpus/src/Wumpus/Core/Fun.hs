@@ -104,6 +104,9 @@ intermap3 f (a:b:c:xs) = f a b c : intermap3 f (b:c:xs)
 intermap3 _ _          = []
 
 
+-- alternatively ...
+
+
 -- | windowed map, window size is 2 and start point is cycled.
 windowedMap2c :: (a -> a -> b) -> [a] -> [b]
 windowedMap2c f (a:b:xs) = step (a:b:xs) where
@@ -111,6 +114,19 @@ windowedMap2c f (a:b:xs) = step (a:b:xs) where
   step (x:y:zs) = f x y : step (y:zs)
   step []       = error $ "windowedMap2c: unreachable"
 windowedMap2c _ _        = error $ "windowedMap2c: list must have at least 2 elements"
+
+
+-- | windowed map, window size is 3 and 2 start points are cycled.
+windowedMap3c :: (a -> a -> a -> b) -> [a] -> [b]
+windowedMap3c f (a:b:xs) = step (a:b:xs) where
+  step [y,z]      = [f y z a, f z a b] -- cycle 2
+  step (x:y:z:zs) = f x y z : step (y:z:zs)
+  step _         = error $ "windowedMap3c: unreachable"
+windowedMap3c _ _        = error $ "windowedMap3c: list must have at least 2 elements"
+
+
+
+
 
 -- | windowed fold, window size is 2 and start point is cycled.
 windowedFoldR2c :: (a -> a -> b -> b) -> b -> [a] -> b

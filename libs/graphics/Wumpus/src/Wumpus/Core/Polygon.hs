@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -26,6 +27,10 @@ module Wumpus.Core.Polygon
 
   -- * Predicates
   , simplePolygon
+  , concavePolygon
+
+  -- * Operations
+  , interiorAngles
 
   ) where
 
@@ -33,9 +38,12 @@ import Wumpus.Core.Fun
 import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
+import Wumpus.Core.Radian
 import Wumpus.Core.Transformations
+import Wumpus.Core.Vector
 
 import Data.AffineSpace
+import Data.VectorSpace
 
 import Data.List ( nub )
 
@@ -86,4 +94,21 @@ simplePolygon (Polygon ps)
     fn p p' n       | p==p'     = n+1
                     | otherwise = n
              
-         
+
+-- | A polygon is concave if at least 1 interior angle is greater then pi/2.
+-- concavePolygon :: (Ord a, Floating a) => Polygon a -> Bool
+concavePolygon :: (a ~ Scalar a, Ord a, Floating a, AffineSpace a, InnerSpace a)
+               => Polygon a -> Bool
+concavePolygon = any (>pi/2) . interiorAngles
+
+
+
+--------------------------------------------------------------------------------
+-- Operations
+
+-- Extract the interior angles.
+
+interiorAngles :: (a ~ Scalar a, Floating a, AffineSpace a, InnerSpace a)
+               => Polygon a -> [Radian a]
+interiorAngles (Polygon ps) = windowedMap3c intAng ps where
+  intAng a b c = vangle (a .-. b) (c .-. b)

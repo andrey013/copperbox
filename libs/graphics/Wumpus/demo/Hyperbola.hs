@@ -4,11 +4,11 @@ module Hyperbola where
 
 
 import Wumpus.Core.Curve
+import Wumpus.Core.Geometric ( adjustvk ) 
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Polygon
 import Wumpus.Core.Transformations
-import Wumpus.Core.VSExtra ( adjustvk ) 
 
 import Wumpus.Drawing.Basic
 import Wumpus.Drawing.Plot

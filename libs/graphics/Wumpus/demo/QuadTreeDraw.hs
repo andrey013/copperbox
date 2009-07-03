@@ -2,11 +2,11 @@
 
 module QuadTreeDraw where
 
+import Wumpus.Core.Geometric ( adjustvk ) 
 import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
-import Wumpus.Core.VSExtra
 
 import Wumpus.Drawing.QuadTree
 import Wumpus.Drawing.PostScript
