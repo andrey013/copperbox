@@ -28,7 +28,6 @@ module Wumpus.Core.Vector
 
   -- * Type class operations
   , EuclidianNorm(..)
-  , Direction2(..)
   , Independent(..)
 
   -- * Construct
@@ -125,6 +124,8 @@ instance Pointwise (Vec3 a) where
   type Pt (Vec3 a) = Vec3 a
   pointwise f v = f v
 
+instance Direction2 Vec2 where
+   direction2 (V2 a b) = toRadian $ atan (a/b)
  
 --------------------------------------------------------------------------------
 
@@ -141,13 +142,8 @@ instance EuclidianNorm Vec2 where
 instance EuclidianNorm Vec3 where
   euclidianNorm (V3 a b c) = sqrt $ (a*a) + (b*b) + (c*c)
 
--- direction in 2D space
 
-class Direction2 t where   
-   direction :: Floating a => t a -> a
 
-instance Direction2 Vec2 where
-   direction (V2 a b) = atan (a/b)
 
 
 class Independent t where
@@ -212,9 +208,6 @@ vec2 (Radian ang) d = V2 x y where
 vangle :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) => t a -> t a -> a
 vangle u v = acos ((u<.>v) / ((magnitude u) * (magnitude v)))    
 
-
-direction2 :: Floating a => Vec2 a -> a
-direction2 (V2 x y) = atan (y/x)
 
   
 -- Test whether the vectors are perpendicular

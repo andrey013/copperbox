@@ -27,9 +27,12 @@ module Wumpus.Core.Point
   , DPoint3
   , WeightedPoint(..)
 
-  -- * Represent a point at the origin
-  , StdOrigin(..)
+  -- * Construction
+  , ZeroPt(..)
   
+  -- * Predicates 
+  , collinear
+
   -- * Affine combination
   , affineCombine
   , affineCombine2
@@ -80,23 +83,36 @@ instance Pointwise (Point3 a) where
 
 
 --------------------------------------------------------------------------------
+-- Construction
+
 -- Represent a point at the origin
 
--- | Construct a point at the origin. @zeroPt@ should generally be considered
--- a synonym for the origin (but it can be overriden).
-class StdOrigin pt where
-  stdOrigin :: pt
+-- | Construct a point at the origin. 
+class ZeroPt pt where
   zeroPt    :: pt
-  zeroPt    = stdOrigin
 
-instance Num a => StdOrigin (Point2 a) where
-  stdOrigin = P2 0 0
+
+instance Num a => ZeroPt (Point2 a) where
   zeroPt    = P2 0 0 
 
 
-instance Num a => StdOrigin (Point3 a) where
-  stdOrigin = P3 0 0 0
+instance Num a => ZeroPt (Point3 a) where
   zeroPt    = P3 0 0 0
+
+
+--------------------------------------------------------------------------------
+-- Predicates
+
+-- | Are the three points in the same line?
+collinear :: Real a => Point2 a -> Point2 a -> Point2 a -> Bool
+collinear (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) = rat1 == rat2
+  where 
+    x1' = toRational x1
+    y1' = toRational y1
+    
+    rat1 = ((toRational y2)-y1') / ((toRational x2)-x1')
+    rat2 = ((toRational y3)-y1') / ((toRational x3)-x1')
+
 
 
 --------------------------------------------------------------------------------

@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -21,8 +22,16 @@ module Wumpus.Core.Radian
   -- * Radian type
     Radian(..)
   , DRadian
+  
+  -- * Construction
+  , toRadian
+
+  -- * Predicates
+  , complementary
 
   -- * Operations 
+  , Direction2(..)
+
   -- ** Conversion
   , d2r
   , r2d
@@ -50,8 +59,32 @@ instance Applicative Radian where
 
 type DRadian = Radian Double
 
+--------------------------------------------------------------------------------
+-- Construction
+
+toRadian :: a -> Radian a
+toRadian = Radian
+
+
 
 --------------------------------------------------------------------------------
+-- Predicates
+
+-- Note - are /toRational/ hacks like this one valid?
+
+complementary :: (Real a,Floating a) => Radian a -> Radian a -> Bool
+complementary (Radian a) (Radian b) = toRational (a+b) == toRational (pi/2::Double)
+
+
+
+--------------------------------------------------------------------------------
+-- Operations
+
+
+-- direction in 2D space
+
+class Direction2 t where   
+  direction2 :: Floating a => t a -> Radian a
 
 
 -- degrees / radians

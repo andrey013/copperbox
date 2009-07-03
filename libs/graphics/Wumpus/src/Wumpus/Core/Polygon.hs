@@ -24,15 +24,20 @@ module Wumpus.Core.Polygon
   -- * Construction
   , regularPolygon
 
+  -- * Predicates
+  , simplePolygon
+
   ) where
 
-
+import Wumpus.Core.Fun
 import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Transformations
 
 import Data.AffineSpace
+
+import Data.List ( nub )
 
 --------------------------------------------------------------------------------
 -- Polygon types and standard instances
@@ -64,3 +69,21 @@ regularPolygon n vec = Polygon ps
   where 
     ps = circular $ replicate n (P2 0 0 .+^ vec) 
 
+
+
+
+--------------------------------------------------------------------------------
+-- predicates
+
+-- | This definition is not satisfactory...
+simplePolygon :: Eq a => Polygon a -> Bool
+simplePolygon (Polygon ps) 
+   | length ps >= 2 = total_len == length (nub ps)
+   | otherwise      = error $ "simplePolygon: malformed too few points"
+  where
+    total_len       = (length ps) - consecutive_pts
+    consecutive_pts = windowedFoldR2c fn 0 ps
+    fn p p' n       | p==p'     = n+1
+                    | otherwise = n
+             
+         

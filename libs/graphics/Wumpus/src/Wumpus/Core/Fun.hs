@@ -104,6 +104,32 @@ intermap3 f (a:b:c:xs) = f a b c : intermap3 f (b:c:xs)
 intermap3 _ _          = []
 
 
+-- | windowed map, window size is 2 and start point is cycled.
+windowedMap2c :: (a -> a -> b) -> [a] -> [b]
+windowedMap2c f (a:b:xs) = step (a:b:xs) where
+  step [z]      = [f z a]
+  step (x:y:zs) = f x y : step (y:zs)
+  step []       = error $ "windowedMap2c: unreachable"
+windowedMap2c _ _        = error $ "windowedMap2c: list must have at least 2 elements"
+
+-- | windowed fold, window size is 2 and start point is cycled.
+windowedFoldR2c :: (a -> a -> b -> b) -> b -> [a] -> b
+windowedFoldR2c f b0 (a:b:xs) = step b0 (a:b:xs)  where
+  step ac [z]       = f z a ac
+  step ac (x:y:zs)  = f x y (step ac (y:zs))
+  step _  []        = error $ "windowedFoldR2c: unreachable"
+windowedFoldR2c _ _  _        = error $ "windowedFoldR2c: list must have at least 2 elements"
+
+
+-- | windowed fold, window size is 2 and start point is cycled.
+windowedFoldL2c :: (b -> a -> a -> b) -> b -> [a] -> b
+windowedFoldL2c f b0 (a:b:xs) = step b0 (a:b:xs)  where
+  step ac [z]       = f ac z a
+  step ac (x:y:zs)  = step (f ac x y) (y:zs)
+  step _  []        = error $ "windowedFoldL2c: unreachable"
+windowedFoldL2c _ _  _        = error $ "windowedFoldL2c: list must have at least 2 elements"
+
+
 -- homogeneous long zipWith
 lZipWith :: (a -> a -> a) -> [a] -> [a] -> [a]
 lZipWith _ []     qs     = qs
