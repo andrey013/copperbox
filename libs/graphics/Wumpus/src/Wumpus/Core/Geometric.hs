@@ -23,6 +23,7 @@ module Wumpus.Core.Geometric
   (
   -- * Type classes
     Congruent(..)
+  , Converse(..)
 
   -- * Functions
   , midpoint
@@ -39,7 +40,9 @@ import Data.VectorSpace
 class Congruent a where
   congruent :: a -> a -> Bool
 
-
+-- | Reverse the direction of some ordered object (line, polyline etc).
+class Converse a where 
+  converse :: a -> a
 
 
 --------------------------------------------------------------------------------

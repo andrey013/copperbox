@@ -17,7 +17,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Line segment
+-- Line segments and polylines
 --
 --------------------------------------------------------------------------------
 
@@ -25,8 +25,13 @@
 module Wumpus.Core.Line 
   (
   -- * Line types
+  -- ** Line segments
     LineSegment(..)
   , DLineSegment2
+
+  -- ** Poly lines
+  , PolyLine(..)
+  , DPolyLine2
 
   -- * Construction
   , line
@@ -36,7 +41,7 @@ module Wumpus.Core.Line
   , aline
 
   -- * Operations
-  , opposite
+  , converse
   , langle
   , segmentLength
   , lineCenter
@@ -64,7 +69,15 @@ import Control.Applicative ( pure )
 data LineSegment (pt :: * -> *) a = LS (pt a) (pt a)
   deriving (Eq,Show)
 
+-- LineSegment in 2-space.
 type DLineSegment2 = LineSegment Point2 Double
+
+
+data PolyLine (pt :: * -> *) a = PolyLine [pt a]
+  deriving (Eq,Show)
+
+-- | PolyLine in 2-space.
+type DPolyLine2 = PolyLine Point2 Double
 
 
 instance Functor pt => Functor (LineSegment pt) where
@@ -78,6 +91,20 @@ instance Pointwise (LineSegment Point2 a) where
   type Pt (LineSegment Point2 a) = Point2 a
   pointwise f (LS p p') = LS (f p) (f p')
 
+
+instance Functor pt => Functor (PolyLine pt) where
+  fmap f (PolyLine ps) = PolyLine (map (fmap f) ps)
+
+
+instance MatrixMult Matrix3'3 (PolyLine Point2) where
+  (*#) m3'3 (PolyLine ps) = PolyLine (map (m3'3 *#) ps)
+
+instance Pointwise (PolyLine Point2 a) where
+  type Pt (PolyLine Point2 a) = Point2 a
+  pointwise f (PolyLine ps) = PolyLine (map f ps)
+
+
+
 --------------------------------------------------------------------------------
 -- Other instances
 
@@ -88,6 +115,16 @@ instance (Floating (Scalar (Diff (pt a))),
           InnerSpace (Diff (pt a)), AffineSpace (pt a) )
     => Congruent (LineSegment pt a) where
   congruent l l' = segmentLength l == segmentLength l' 
+
+
+
+
+-- | Reverse the direction of a line
+instance Converse (LineSegment pt a) where
+  converse (LS p p') = LS p' p
+
+instance Converse (PolyLine pt a) where
+  converse (PolyLine xs) = PolyLine $ reverse xs
 
 
 
@@ -125,9 +162,6 @@ aline p theta a = LS p (p .+^ vec2 theta a)
 
 
 
--- | Reverse the direction of a line
-opposite :: LineSegment pt a -> LineSegment pt a
-opposite (LS p p') = LS p' p
 
 -- | Angle ccw from x-axis
 langle :: Floating a => LineSegment Point2 a -> Radian a

@@ -22,8 +22,17 @@ module Wumpus.Core.Polygon
   -- * Polygon types
     Polygon(..)
   , DPolygon
+
+  , BoundingBox(..)
+  , DBoundingBox
+
+
   -- * Construction
   , regularPolygon
+  , squareAt
+  , square
+  , rectangleAt
+  , rectangle
 
   -- * Predicates
   , simplePolygon
@@ -31,6 +40,7 @@ module Wumpus.Core.Polygon
 
   -- * Operations
   , interiorAngles
+  , boundingBox
 
   ) where
 
@@ -57,6 +67,16 @@ data Polygon a = Polygon [Point2 a]
 
 type DPolygon = Polygon Double
 
+-- | Bounding box, two point representation (bottom-left and top-right). 
+data BoundingBox a = BBox { bbBottomLeft :: Point2 a, bbTopRight :: Point2 a }
+  deriving (Eq,Show)
+
+type DBoundingBox = BoundingBox Double
+
+
+
+
+
 instance Pointwise (Polygon a) where
   type Pt (Polygon a) = (Point2 a)
   pointwise f (Polygon xs) = Polygon $ map f xs
@@ -68,15 +88,41 @@ instance Pointwise (Polygon a) where
 -- Construction
 
 
--- | Draw a regular polgon with @n@ sides, and displacement @vec@ from the
+-- | Create a regular polgon with @n@ sides, and displacement @vec@ from the
 -- origin for the first point.
 
 regularPolygon :: (AffineSpace a, Floating a)
                => Int -> Diff (Point2 a) -> Polygon a
 regularPolygon n vec = Polygon ps
   where 
-    ps = circular $ replicate n (P2 0 0 .+^ vec) 
+    ps = circular $ replicate n (zeroPt .+^ vec) 
 
+
+-- | Create a square with bottom-left corner @p@ and side-length @d@.
+squareAt :: (Num a, AffineSpace a) => Point2 a -> a -> Polygon a
+squareAt p d = Polygon $ [p,p2,p3,p4] where
+  p2 = p  .+^ hvec d
+  p3 = p2 .+^ vvec d
+  p4 = p3 .+^ (hvec $ negate d)
+  
+
+-- | Create a square with side-length d. Note bottom-left corner is at 
+-- coordinate (0,0).
+square :: (Num a, AffineSpace a) => a -> Polygon a
+square = squareAt zeroPt
+
+-- | Create a rectangle with bottom-left corner @p@ and width @w@ and
+-- height @h@.
+rectangleAt :: (Num a, AffineSpace a) => Point2 a -> a -> a -> Polygon a
+rectangleAt p w h = Polygon $ [p,p2,p3,p4] where
+  p2 = p  .+^ hvec w
+  p3 = p2 .+^ vvec h
+  p4 = p3 .+^ (hvec $ negate w)
+  
+-- | Create a rectangle of width @w@ and height @h@. 
+-- Note bottom-left corner is at coordinate (0,0).
+rectangle :: (Num a, AffineSpace a) => a -> a -> Polygon a
+rectangle = rectangleAt zeroPt
 
 
 
@@ -106,9 +152,18 @@ concavePolygon = any (>pi/2) . interiorAngles
 --------------------------------------------------------------------------------
 -- Operations
 
--- Extract the interior angles.
-
+-- | Extract the interior angles of polygon.
 interiorAngles :: (a ~ Scalar a, Floating a, AffineSpace a, InnerSpace a)
                => Polygon a -> [Radian a]
 interiorAngles (Polygon ps) = windowedMap3c intAng ps where
   intAng a b c = vangle (a .-. b) (c .-. b)
+
+-- | Calculate the bounding box of a polygon.
+boundingBox :: Ord a => Polygon a -> BoundingBox a
+boundingBox (Polygon (p:ps)) = uncurry BBox $ foldr fn (p,p) ps
+  where
+    fn (P2 x y) (P2 xmin ymin, P2 xmax ymax) = 
+       (P2 (min x xmin) (min y ymin), P2 (max x xmax) (max y ymax))
+boundingBox (Polygon _)      = error $ "boundingBox: degenerate polygon"
+
+

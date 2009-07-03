@@ -15,36 +15,77 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Fun where
+module Wumpus.Core.Fun 
+  ( 
+  -- * Pairs
+    fork
+  , prod
+  , both
+  , exch
+  , outer
+  , inner
+  , cond
+
+  -- * Three values  
+  , max3
+  , min3
+  , med3
+
+  -- * Functionals
+  , unfoldrMap
+  , unfoldlMap
+  , intermap
+  , intermap3
+  , windowedMap2c
+  , windowedMap3c
+  , windowedFoldR2c
+  , windowedFoldL2c
+  , lZipWith
+  
+  -- * Index generation
+  , steps
+  , divisions
+
+  -- * Composition with specs
+  , oo
+  , ooo
+  , oooo
+
+  ) where
 
 import Data.List ( unfoldr )
 
 -- Pairs
 
+-- | Apply the pair of functions to the same argument returning the 
+-- pair of answers.
 fork :: (a -> b, a -> c) -> a -> (b,c)
 fork (f,g) a = (f a, g a)
 
+-- | Apply the first function to the first argument and the second 
+-- function to the second, return the pair of answers. 
 prod :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
 prod f g (a,b) = (f a, g b)
 
+-- | Apply the function to both elements of the pair.
 both :: (a -> b) -> (a,a) -> (b,b)
 both f (a,b) = (f a, f b)
 
+-- | Swap the elements of the pair.
 exch :: (a,b) -> (b,a)
 exch (a,b) = (b,a)
 
+-- | Return the /outer/ elements of the argument pairs.
 outer :: (a,b) -> (c,d) -> (a,d)
 outer (a,_) (_,d) = (a,d)
 
+-- | Return the /inner/ elements of the argument pairs.
 inner :: (a,b) -> (c,d) -> (b,c)
 inner (_,b) (c,_) = (b,c)
 
 
-ifpair :: (a -> b -> Bool) -> (a -> c) -> (b -> c) -> (a,b) -> c 
-ifpair p tk ek (a,b) | p a b     = tk a
-                     | otherwise = ek b
-
--- type restricted to homogenous pairs
+-- | Apply the predicate to the pair, if true return the first element
+-- if false retur the second.
 cond :: (a -> a -> Bool) -> (a,a) -> a
 cond p (a,b) | p a b     = a
              | otherwise = b
@@ -146,7 +187,7 @@ windowedFoldL2c f b0 (a:b:xs) = step b0 (a:b:xs)  where
 windowedFoldL2c _ _  _        = error $ "windowedFoldL2c: list must have at least 2 elements"
 
 
--- homogeneous long zipWith
+-- | Homogeneous long zipWith.
 lZipWith :: (a -> a -> a) -> [a] -> [a] -> [a]
 lZipWith _ []     qs     = qs
 lZipWith _ ps     []     = ps
