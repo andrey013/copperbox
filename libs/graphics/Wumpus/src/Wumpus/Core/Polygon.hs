@@ -33,6 +33,8 @@ module Wumpus.Core.Polygon
   , square
   , rectangleAt
   , rectangle
+  , isoscelesTriangleAt
+  , isoscelesTriangle
 
   -- * Predicates
   , simplePolygon
@@ -124,7 +126,18 @@ rectangleAt p w h = Polygon $ [p,p2,p3,p4] where
 rectangle :: (Num a, AffineSpace a) => a -> a -> Polygon a
 rectangle = rectangleAt zeroPt
 
+-- | Create an isosceles rectangle with bottom-left corner @p@, the base 
+-- in on the horizontal plane with width @bw@. Height is @h@.
+isoscelesTriangleAt :: (Fractional a, AffineSpace a) 
+                    => Point2 a -> a -> a -> Polygon a
+isoscelesTriangleAt p bw h = Polygon [p,p2,p3] where
+  p2 = p .+^ hvec bw
+  p3 = p .+^ V2 (bw/2) h  
 
+-- | Create a isosceles triangle with base width @w@ and height @h@. 
+-- Note bottom-left corner is at coordinate (0,0).
+isoscelesTriangle :: (Fractional a, AffineSpace a) => a -> a -> Polygon a
+isoscelesTriangle = isoscelesTriangleAt zeroPt
 
 --------------------------------------------------------------------------------
 -- predicates

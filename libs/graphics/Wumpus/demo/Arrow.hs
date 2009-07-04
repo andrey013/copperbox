@@ -15,7 +15,7 @@ import Wumpus.Core.Radian
 demo1 :: IO ()
 demo1 = writePS "arrow1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { ps_translate 60 380 
-                ; drawArrow $ arrow (P2 0 0) (P2 40 40) 
+                ; drawArrow $ arrow (P2 0 0) (P2 40 0) 
                 ; setRgbColour dodgerBlue1 
                 ; ps_translate 100 0
                 ; arrowhead1 (P2 0 0)  (P2 10 50) (arrowheadTriangle 10 (pi/10)) drawPolygon
@@ -34,5 +34,5 @@ arrowhead1 start_pt end_pt arrHead drawFun =
   where
     theta    :: DRadian
     arrline  = lineTo start_pt end_pt
-    theta    = pi + (langle arrline)
+    theta    = langle arrline
 

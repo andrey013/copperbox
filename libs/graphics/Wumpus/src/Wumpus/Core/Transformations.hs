@@ -112,7 +112,7 @@ uniformScale :: (Floating a, MatrixMult Matrix3'3 t) => a -> t a -> t a
 uniformScale a = scale a a 
 
 
-
+-- | translate @x@ @y@.
 translate :: (Floating a, MatrixMult Matrix3'3 t) => a -> a -> t a -> t a 
 translate x y = ((translationMatrix x y) *#)
 

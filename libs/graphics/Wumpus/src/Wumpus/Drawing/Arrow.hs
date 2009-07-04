@@ -17,6 +17,7 @@
 
 module Wumpus.Drawing.Arrow where
 
+import Wumpus.Core.Frame
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
@@ -35,11 +36,11 @@ import Data.AffineSpace
 
 arrowheadTriangle :: Double -> DRadian -> (DRadian -> DPoint2 -> DPolygon)
 arrowheadTriangle d ang = 
-  \theta endpt -> let p0 = endpt .+^ (hvec (-d))
-                      pg = Polygon [ rotateAbout (pi-ang) endpt p0, 
-                                     endpt, 
-                                     rotateAbout (pi+ang) endpt p0]
-                  in pointwise (rotateAbout theta endpt) pg
+  \theta endpt -> let halfBW = d * fromRadian (tan ang) 
+                      tri = isoscelesTriangleAt endpt (2*halfBW) d
+                  in   pointwise (rotateAbout (theta - pi/2) endpt)
+                     $ pointwise (inFrame `flip` (ortho $ P2 halfBW d))
+                     $ tri
 
 
 arrowheadVee :: Double -> DRadian
@@ -48,7 +49,7 @@ arrowheadVee d ang =
   \theta endpt -> let p0  = endpt .+^ (hvec (-d))
                       p01 = rotateAbout (pi-ang) endpt p0
                       p02 = rotateAbout (pi+ang) endpt p0
-                  in map (pointwise (rotateAbout theta endpt))
+                  in map (pointwise (rotateAbout (theta - pi) endpt))
                             [ lineTo p01 endpt, lineTo endpt p02]
 
 
@@ -77,7 +78,7 @@ type DArrow = Arrow Double
 arrow :: DPoint2 -> DPoint2 -> DArrow
 arrow p p' = Arrow ln tip where
   ln    = lineTo p p'
-  theta = pi + (langle ln) 
+  theta = {- pi/2 + -} (langle ln) 
   tip   = arrowheadTriangle 10 (pi/10) theta p'
 
 
