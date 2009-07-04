@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE OverlappingInstances       #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS -Wall #-}
@@ -28,24 +29,27 @@ module Wumpus.Core.Line
   -- ** Line segments
     LineSegment(..)
   , DLineSegment2
+  , CoLineSegment
 
   -- ** Poly lines
   , PolyLine(..)
   , DPolyLine2
+  , CoPolyLine
 
-  -- * Construction
+   -- * Construction
   , line
-  , lineTo
   , hline
   , vline
   , aline
+
+  , lineTo
 
   -- * Operations
   , converse
   , langle
   , segmentLength
   , lineCenter
-
+  , expandLine
   ) where
 
 import Wumpus.Core.Geometric
@@ -73,11 +77,17 @@ data LineSegment (pt :: * -> *) a = LS (pt a) (pt a)
 type DLineSegment2 = LineSegment Point2 Double
 
 
+type CoLineSegment pt a = pt a -> LineSegment pt a  
+
+
 data PolyLine (pt :: * -> *) a = PolyLine [pt a]
   deriving (Eq,Show)
 
 -- | PolyLine in 2-space.
 type DPolyLine2 = PolyLine Point2 Double
+
+
+type CoPolyLine pt a = pt a -> PolyLine pt a  
 
 
 instance Functor pt => Functor (LineSegment pt) where
@@ -87,9 +97,6 @@ instance Functor pt => Functor (LineSegment pt) where
 instance MatrixMult Matrix3'3 (LineSegment Point2) where
   (*#) m3'3 (LS p p') = LS (m3'3 *# p) (m3'3 *# p')
 
-instance Pointwise (LineSegment Point2 a) where
-  type Pt (LineSegment Point2 a) = Point2 a
-  pointwise f (LS p p') = LS (f p) (f p')
 
 
 instance Functor pt => Functor (PolyLine pt) where
@@ -99,10 +106,24 @@ instance Functor pt => Functor (PolyLine pt) where
 instance MatrixMult Matrix3'3 (PolyLine Point2) where
   (*#) m3'3 (PolyLine ps) = PolyLine (map (m3'3 *#) ps)
 
+
+instance Pointwise (LineSegment Point2 a) where
+  type Pt (LineSegment Point2 a) = Point2 a
+  pointwise f (LS p p') = LS (f p) (f p')
+
+instance Pointwise (CoLineSegment pt a) where
+  type Pt (CoLineSegment pt a) = pt a
+  pointwise f pf = pf . f
+
 instance Pointwise (PolyLine Point2 a) where
   type Pt (PolyLine Point2 a) = Point2 a
   pointwise f (PolyLine ps) = PolyLine (map f ps)
 
+
+instance ExtractPoints (LineSegment Point2 a) where
+  type Pnt (LineSegment Point2 a) = Point2 a
+  extractPoints (LS p p') = [p,p']
+  endPoint (LS _ p') = p'
 
 
 --------------------------------------------------------------------------------
@@ -132,26 +153,29 @@ instance Converse (PolyLine pt a) where
 
 -- construction
 
-line :: AffineSpace (pt a) => pt a -> Diff (pt a) -> LineSegment pt a
-line p v = LS p (p .+^ v)
-
-lineTo :: pt a -> pt a -> LineSegment pt a
-lineTo = LS --  p1 v where v = p2 .-. p1
+line :: AffineSpace (pt a) => Diff (pt a) -> CoLineSegment pt a
+line v = \p -> LS p (p .+^ v)
 
 -- | Horizontal line from point @p@ of length @a@ .
-hline :: Num a => Point2 a -> a -> LineSegment Point2 a
-hline p@(P2 x y) a = LS p (P2 (x+a) y)
+hline :: (Num a, AffineSpace a) => a -> CoLineSegment Point2 a
+hline a = line (V2 a 0)
 
 -- | Vertical line from point @p@ of length @a@.
-vline :: Num a => Point2 a -> a -> LineSegment Point2 a
-vline p@(P2 x y) a = LS p (P2 x (y+a))
+vline :: (Num a, AffineSpace a) => a -> CoLineSegment Point2 a
+vline a = line (V2 0 a) 
 
 
 -- | A line from point @p@ in the direction @theta@ from x-axis
 -- of length @a@
 aline :: (Floating a, AffineSpace (pt a), Vec2 a ~ Diff (pt a)) 
-      => pt a -> Radian a -> a -> LineSegment pt a
-aline p theta a = LS p (p .+^ vec2 theta a)
+      => Radian a -> a -> CoLineSegment pt a
+aline theta a = line (avec2 theta a)
+
+
+
+lineTo :: pt a -> pt a -> LineSegment pt a
+lineTo = LS --  p1 v where v = p2 .-. p1
+
 
 --------------------------------------------------------------------------------
 -- operations
@@ -180,4 +204,9 @@ lineCenter :: (Fractional (Scalar (Diff (pt a))),
            => LineSegment pt a -> pt a
 lineCenter (LS p p') = midpoint p' p
 
-
+-- | Expand line 
+expandLine :: (Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a)
+            => Scalar (Diff (Point2 a)) -> LineSegment Point2 a -> LineSegment Point2 a
+expandLine n ln =  LS (p .-^ v) (p .+^ v) where
+  v = avec2 (langle ln) (n*segmentLength ln/2)
+  p = lineCenter ln

@@ -9,7 +9,6 @@ import Wumpus.Drawing.Basic
 import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.X11Colours
 
-
 import Wumpus.Core.Radian
 
 demo1 :: IO ()

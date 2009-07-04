@@ -31,7 +31,7 @@ module Wumpus.Core.Vector
   , Independent(..)
 
   -- * Construct
-  , vec2
+  , avec2
   
   -- * Operations
   , vangle
@@ -195,8 +195,8 @@ instance (Num a, InnerSpace a, AdditiveGroup (Scalar a))
 --------------------------------------------------------------------------------
 
 -- | Construct a vector from and angle and a magnitude
-vec2 :: Floating a => Radian a -> a -> Vec2 a
-vec2 (Radian ang) d = V2 x y where
+avec2 :: Floating a => Radian a -> a -> Vec2 a
+avec2 (Radian ang) d = V2 x y where
   x = d * cos ang
   y = d * sin ang
 

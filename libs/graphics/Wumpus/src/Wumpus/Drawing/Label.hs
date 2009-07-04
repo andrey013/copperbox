@@ -1,3 +1,4 @@
+{-# LANGUAGE KindSignatures             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -23,14 +24,17 @@ import Wumpus.Core.Point
 import Wumpus.Drawing.PostScript
 
 
-
-data Label = Label DPoint2 String
+-- Labels are always oriented in 2-space
+data Label a  = Label (Point2 a) String
   deriving (Eq,Show)
 
-type CoLabel = DPoint2 -> Label
+type CoLabel a = Point2 a -> Label a
+
+type DLabel = Label Double
+type DCoLabel = CoLabel Double
 
 
-label :: String -> CoLabel
+label :: String -> CoLabel a
 label text = \o -> Label o text
 
 setupFont :: String -> Double -> WumpusM ()
@@ -40,7 +44,7 @@ setupFont name sc = do
    ps_setfont
 
 -- labels must be drawn wrt a start point
-drawLabel :: Label -> WumpusM ()
+drawLabel :: DLabel -> WumpusM ()
 drawLabel (Label (P2 x y) text) = do 
   ps_moveto x y
   ps_show text

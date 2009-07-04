@@ -25,6 +25,8 @@ module Wumpus.Core.Geometric
     Congruent(..)
   , Converse(..)
 
+  , ExtractPoints(..)
+  
   -- * Functions
   , midpoint
   , adjustvk
@@ -43,6 +45,14 @@ class Congruent a where
 -- | Reverse the direction of some ordered object (line, polyline etc).
 class Converse a where 
   converse :: a -> a
+
+
+-- | Extract points from a polygon, polyline etc..
+class ExtractPoints t where
+  type Pnt t :: *
+  extractPoints :: t -> [Pnt t]
+  endPoint      :: t -> Pnt t
+
 
 
 --------------------------------------------------------------------------------

@@ -28,21 +28,12 @@ import Wumpus.Core.Vector
 
 import Data.AffineSpace
 
-type Line        = DPoint2 -> DLineSegment2
-type Poly        = DPoint2 -> DPolygon
+type Line        = CoLineSegment Point2 Double
 type LineBag     = DPoint2 -> [DLineSegment2]  -- unjoined lines
 
 
 instance Pointwise LineBag where
   type Pt LineBag = DPoint2
-  pointwise f pf = pf . f
-
-instance Pointwise Line where
-  type Pt Line = DPoint2
-  pointwise f pf = pf . f
-
-instance Pointwise Poly where
-  type Pt Poly = DPoint2 
   pointwise f pf = pf . f
 
 
@@ -53,7 +44,7 @@ transOrigin :: (Floating a, Pointwise sh, Pt sh ~ Point2 a)
             => sh -> Point2 a -> sh
 transOrigin z = \(P2 x y) -> pointwise (translate x y) z
 
-diamond :: Double -> Double -> Poly
+diamond :: Double -> Double -> DCoPolygon
 diamond w h = \o -> Polygon $ map (o .+^) xs 
   where
     xs = [vh,vv, reflectX vh, reflectY vv]
@@ -63,11 +54,11 @@ diamond w h = \o -> Polygon $ map (o .+^) xs
 --------------------------------------------------------------------------------
 -- Dots
 
-dotSquare :: Poly
-dotSquare = transOrigin $ regularPolygon 4 (V2 (sqrt 2) (sqrt 2))
+dotSquare :: DCoPolygon
+dotSquare = square 2
 
-dotPentagon :: Poly
-dotPentagon = transOrigin $ regularPolygon 5 (V2 0 2)
+dotPentagon :: DCoPolygon
+dotPentagon = regularPolygon 5 2
 
 dotPlus :: LineBag
 dotPlus = sequence [lv,lh]

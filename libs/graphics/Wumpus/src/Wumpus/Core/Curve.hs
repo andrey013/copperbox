@@ -155,7 +155,7 @@ bezierArc :: (Floating a, AffineSpace a)
 bezierArc r ang1 ang2 = Curve p0 p1 p2 p3 where
   theta = ang2 - ang1
   e     = r * fromRadian ((2 * sin (theta/2)) / (1+ 2* cos (theta/2))) 
-  p0    = zeroPt .+^ vec2 ang1 r
-  p3    = zeroPt .+^ vec2 ang2 r
-  p1    = p0 .+^ vec2 (ang1 + pi/2) e
-  p2    = p3 .+^ vec2 (ang2 - pi/2) e
+  p0    = zeroPt .+^ avec2 ang1 r
+  p3    = zeroPt .+^ avec2 ang2 r
+  p1    = p0 .+^ avec2 (ang1 + pi/2) e
+  p2    = p3 .+^ avec2 (ang2 - pi/2) e

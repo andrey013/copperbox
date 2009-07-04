@@ -18,6 +18,7 @@
 module Wumpus.Drawing.Arrow where
 
 import Wumpus.Core.Frame
+import Wumpus.Core.Geometric
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
@@ -32,7 +33,9 @@ import Wumpus.Drawing.PostScript
 import Data.AffineSpace
 
 
-
+veeArrow :: DLineSegment2 -> [DLineSegment2]
+veeArrow ln = ln:vs where
+  vs = arrowheadVee 10 (pi/10) (langle ln) (endPoint ln) 
 
 arrowheadTriangle :: Double -> DRadian -> (DRadian -> DPoint2 -> DPolygon)
 arrowheadTriangle d ang = 
@@ -65,8 +68,8 @@ arrowCenterMarker :: DLineSegment2 -> [DLineSegment2]
 arrowCenterMarker ls = [ls,cm] where
   p     = lineCenter ls 
   theta = langle ls
-  p0    = p .+^ vec2 (theta + pi/2) 2
-  p1    = p .+^ vec2 (theta - pi/2) 2
+  p0    = p .+^ avec2 (theta + pi/2) 2
+  p1    = p .+^ avec2 (theta - pi/2) 2
   cm    = lineTo p0 p1
 
 -- TODO - tip should be more general, e.g. list of lines, or arcs

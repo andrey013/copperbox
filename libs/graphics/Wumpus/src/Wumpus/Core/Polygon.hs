@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -42,10 +43,15 @@ module Wumpus.Core.Polygon
   -- * Operations
   , interiorAngles
   , boundingBox
-
+  , topLeftBottomRight
+  , bottomLeft
+  , bottomRight
+  , topLeft
+  , topRight
   ) where
 
 import Wumpus.Core.Fun
+import Wumpus.Core.Geometric
 import Wumpus.Core.Instances ()
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
@@ -81,23 +87,40 @@ type DCoPolygon  = CoPolygon Double
 
 
 instance Pointwise (Polygon a) where
-  type Pt (Polygon a) = (Point2 a)
+  type Pt (Polygon a) = Point2 a
   pointwise f (Polygon xs) = Polygon $ map f xs
 
 
+instance Pointwise (CoPolygon a) where
+  type Pt (CoPolygon a) = Point2 a
+  pointwise f pf = pf . f
 
+instance ExtractPoints (Polygon a) where
+  type Pnt (Polygon a) = Point2 a
+  extractPoints (Polygon xs) = xs
+  endPoint (Polygon (x:_))   = x        -- start point is also end point   
+  endPoint (Polygon _)       = error "endPoint: malformed Polygon, too few points"
+
+instance ExtractPoints (BoundingBox a) where
+  type Pnt (BoundingBox a) = Point2 a
+  extractPoints (BBox p1@(P2 xmin ymin) p2@(P2 xmax ymax)) = [p1,br,p2,tl]
+    where br = P2 xmax ymin
+          tl = P2 xmin ymax
+  endPoint (BBox start _) = start       -- start point is also end point   
+                
 --------------------------------------------------------------------------------
 -- Construction
 
+-- NOTE - supplying the displacement vector to regularPolygon /feels/ wrong.
+-- This function needs a re-think.
 
 -- | Create a regular polgon with @n@ sides, and displacement @vec@ from the
--- origin for the first point.
-
+-- centre for the first point.
 regularPolygon :: (AffineSpace a, Floating a)
-               => Int -> Diff (Point2 a) -> Polygon a
-regularPolygon n vec = Polygon ps
+               => Int -> a -> CoPolygon a
+regularPolygon n radius = Polygon . pf
   where 
-    ps = circular $ replicate n (zeroPt .+^ vec) 
+    pf = \pt -> circular $ replicate n (pt .+^ (V2 0 radius)) 
 
 
 -- Note square and rectangle are both 'turtle drawn' and use the @iter@ 
@@ -170,5 +193,28 @@ boundingBox (Polygon (p:ps)) = uncurry BBox $ foldr fn (p,p) ps
     fn (P2 x y) (P2 xmin ymin, P2 xmax ymax) = 
        (P2 (min x xmin) (min y ymin), P2 (max x xmax) (max y ymax))
 boundingBox (Polygon _)      = error $ "boundingBox: degenerate polygon"
+
+
+-- | Extract the opposite corners (tl,br) of a bounding box.
+topLeftBottomRight :: BoundingBox a -> (Point2 a,Point2 a)
+topLeftBottomRight (BBox (P2 xmin ymin) (P2 xmax ymax)) = 
+  (P2 xmin ymax, P2 xmax ymin) 
+
+-- | bl of bounding box.
+bottomLeft  :: BoundingBox a -> Point2 a
+bottomLeft  = bbBottomLeft
+
+-- | br of bounding box.
+bottomRight :: BoundingBox a -> Point2 a
+bottomRight (BBox (P2 _ y) (P2 x _)) = P2 x y
+
+-- | tl of bounding box.
+topLeft     :: BoundingBox a -> Point2 a
+topLeft (BBox (P2 x _) (P2 _ y))     = P2 x y
+ 
+-- | tr of bounding box.
+topRight    :: BoundingBox a -> Point2 a
+topRight    = bbTopRight
+
 
 

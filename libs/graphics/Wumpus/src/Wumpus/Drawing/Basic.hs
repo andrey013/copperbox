@@ -88,8 +88,6 @@ drawLineBag xs  = strokeOpenPathSkel $ mapM_ step xs
 setRgbColour :: RgbColour -> WumpusM ()
 setRgbColour (RGB3 r g b) = ps_setrgbcolor r g b
 
-whenMb :: Monad m => Maybe a -> (a -> m ()) -> m()
-whenMb a sk = maybe (return ()) sk a 
 
 
 diamond :: (Double,Double) -> DPoint2 -> DPolygon
@@ -145,21 +143,21 @@ drawBezier (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) =
 dotPlus :: DPoint2 -> [DLineSegment2]
 dotPlus (P2 x y) = map (translate x y) [ls1,ls2]
   where
-    ls1 = hline (P2 (-2) 0) 4
+    ls1 = hline 4 (P2 (-2) 0)
     ls2 = rotate90 ls1
   
 
 dotX :: DPoint2 -> [DLineSegment2]
 dotX (P2 x y) = map (translate x y) [ls1,ls2]
   where
-    ls1 = rotate30 $ vline (P2 0 (-2)) 4
+    ls1 = rotate30 $ vline 4 (P2 0 (-2))
     ls2 = rotate (5*pi/3) $ ls1
 
 
 dotAsterisk :: DPoint2 -> [DLineSegment2]
 dotAsterisk (P2 x y) = map (translate x y) $ circular (replicate 5 ls1)
   where
-   ls1 = vline zeroPt 2  
+   ls1 = vline 2 zeroPt
 
 
 dotTriangle :: DPoint2 -> DPolygon
