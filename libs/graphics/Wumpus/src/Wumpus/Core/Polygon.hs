@@ -22,6 +22,8 @@ module Wumpus.Core.Polygon
   -- * Polygon types
     Polygon(..)
   , DPolygon
+  , CoPolygon
+  , DCoPolygon
 
   , BoundingBox(..)
   , DBoundingBox
@@ -29,11 +31,8 @@ module Wumpus.Core.Polygon
 
   -- * Construction
   , regularPolygon
-  , squareAt
   , square
-  , rectangleAt
   , rectangle
-  , isoscelesTriangleAt
   , isoscelesTriangle
 
   -- * Predicates
@@ -76,13 +75,14 @@ data BoundingBox a = BBox { bbBottomLeft :: Point2 a, bbTopRight :: Point2 a }
 type DBoundingBox = BoundingBox Double
 
 
+type CoPolygon a = Point2 a -> Polygon a
+type DCoPolygon  = CoPolygon Double
 
 
 
 instance Pointwise (Polygon a) where
   type Pt (Polygon a) = (Point2 a)
   pointwise f (Polygon xs) = Polygon $ map f xs
-
 
 
 
@@ -100,44 +100,36 @@ regularPolygon n vec = Polygon ps
     ps = circular $ replicate n (zeroPt .+^ vec) 
 
 
--- | Create a square with bottom-left corner @p@ and side-length @d@.
-squareAt :: (Num a, AffineSpace a) => Point2 a -> a -> Polygon a
-squareAt p d = Polygon $ [p,p2,p3,p4] where
-  p2 = p  .+^ hvec d
-  p3 = p2 .+^ vvec d
-  p4 = p3 .+^ (hvec $ negate d)
-  
+-- Note square and rectangle are both 'turtle drawn' and use the @iter@ 
+-- functional to successively transform the current point.
 
--- | Create a square with side-length d. Note bottom-left corner is at 
--- coordinate (0,0).
-square :: (Num a, AffineSpace a) => a -> Polygon a
-square = squareAt zeroPt
+-- | Create a square with bottom-left corner @p@ and side-length @d@.
+square :: (Num a, AffineSpace a) => a -> CoPolygon a
+square d = Polygon . iter [id,f2,f3,f4] where
+  f2 = (.+^ hvec d)
+  f3 = (.+^ vvec d)
+  f4 = (.+^ (hvec $ negate d))
+  
 
 -- | Create a rectangle with bottom-left corner @p@ and width @w@ and
 -- height @h@.
-rectangleAt :: (Num a, AffineSpace a) => Point2 a -> a -> a -> Polygon a
-rectangleAt p w h = Polygon $ [p,p2,p3,p4] where
-  p2 = p  .+^ hvec w
-  p3 = p2 .+^ vvec h
-  p4 = p3 .+^ (hvec $ negate w)
-  
--- | Create a rectangle of width @w@ and height @h@. 
--- Note bottom-left corner is at coordinate (0,0).
-rectangle :: (Num a, AffineSpace a) => a -> a -> Polygon a
-rectangle = rectangleAt zeroPt
+rectangle :: (Num a, AffineSpace a) => a -> a -> CoPolygon a
+rectangle w h = Polygon . iter [id,f2,f3,f4] where
+  f2 = (.+^ hvec w)
+  f3 = (.+^ vvec h)
+  f4 = (.+^ (hvec $ negate w))
+
 
 -- | Create an isosceles rectangle with bottom-left corner @p@, the base 
 -- in on the horizontal plane with width @bw@. Height is @h@.
-isoscelesTriangleAt :: (Fractional a, AffineSpace a) 
-                    => Point2 a -> a -> a -> Polygon a
-isoscelesTriangleAt p bw h = Polygon [p,p2,p3] where
-  p2 = p .+^ hvec bw
-  p3 = p .+^ V2 (bw/2) h  
+isoscelesTriangle :: (Fractional a, AffineSpace a) 
+                  => a -> a -> CoPolygon a
+isoscelesTriangle bw h = Polygon . sequence [id,f2,f3] where
+  f2 = (.+^ hvec bw)
+  f3 = (.+^ V2 (bw/2) h)
 
--- | Create a isosceles triangle with base width @w@ and height @h@. 
--- Note bottom-left corner is at coordinate (0,0).
-isoscelesTriangle :: (Fractional a, AffineSpace a) => a -> a -> Polygon a
-isoscelesTriangle = isoscelesTriangleAt zeroPt
+
+
 
 --------------------------------------------------------------------------------
 -- predicates

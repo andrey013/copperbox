@@ -32,6 +32,7 @@ module Wumpus.Core.Fun
   , med3
 
   -- * Functionals
+  , iter
   , unfoldrMap
   , unfoldlMap
   , intermap
@@ -114,6 +115,14 @@ med3 a b c = if c <= x then x else if c > y then y else c
 
 
 ---- more functionals
+
+-- | Iterate the list of functions over the accumulating value, return
+-- the list of results. @iter@ is similar to  @sequence@, except 
+-- @sequence@ applies all its functions to the initial value.
+iter :: [a -> a] -> a -> [a]
+iter []     _ = []
+iter (f:fs) a = let a' = f a in a' : iter fs a' 
+
 
 -- unfoldrMap is the unfold analogue of accumMapR
 -- we can signal exhaustion early by the Maybe type                

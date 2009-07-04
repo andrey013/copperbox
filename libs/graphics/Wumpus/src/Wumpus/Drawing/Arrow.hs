@@ -37,7 +37,7 @@ import Data.AffineSpace
 arrowheadTriangle :: Double -> DRadian -> (DRadian -> DPoint2 -> DPolygon)
 arrowheadTriangle d ang = 
   \theta endpt -> let halfBW = d * fromRadian (tan ang) 
-                      tri = isoscelesTriangleAt endpt (2*halfBW) d
+                      tri    = isoscelesTriangle (2*halfBW) d endpt
                   in   pointwise (rotateAbout (theta - pi/2) endpt)
                      $ pointwise (inFrame `flip` (ortho $ P2 halfBW d))
                      $ tri
