@@ -11,7 +11,16 @@ import Wumpus.Drawing.Basic
 import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.X11Colours
 
--- dummy1 = endTangent $ testCurve (pi/2)
+
+
+{-
+import Data.AffineSpace
+
+dummy1 = gravesenLength 0.01 $ testCurve (pi/2)
+dummy2 :: Double
+dummy2 = distance (P2 0 50) (P2 50 (0::Double))
+-}
+
 
 demo1 :: IO ()
 demo1 = writePS "arrow1.ps" $ runWumpus st0 $ drawing1 where
@@ -33,7 +42,19 @@ demo1 = writePS "arrow1.ps" $ runWumpus st0 $ drawing1 where
                 ; drawCurveArr $ veeArrowC $ testCurve (pi/3)
                 ; ps_translate 10 0
                 ; drawCurveArr $ veeArrowC $ testCurve (pi/4)
+                ; setRgbColour skyBlue1
+                ; drawLineBag $ dotPlus $ cubic (testCurve (pi/4)) 0.9
+                ; drawLineBag $ dotPlus $ cubic (testCurve (pi/4)) 0.5
+                ; ps_translate 40 0
+                ; drawCurveArr $ veeArrowC $ straightBezier
                 
+                -- subdividet
+                ; ps_translate (-120) 60
+                ; let (a,b) = subdividet 0.9 $ testCurve (pi/2)
+                ; setRgbColour brown1
+                ; drawCurve a
+                ; setRgbColour chartreuse1
+                ; drawCurve b 
                 }
                              
 arrowhead1 :: DPoint2 -> DPoint2 -> (DRadian -> DPoint2 -> a) 
@@ -57,3 +78,5 @@ testCurve :: DRadian -> DCurve
 testCurve = bezierArc 50 0
 
 
+straightBezier :: DCurve
+straightBezier = Curve (P2 0 0) (P2 20 20) (P2 40 40) (P2 60 60)

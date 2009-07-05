@@ -25,6 +25,7 @@ module Wumpus.Core.Curve
   
   -- * de Casteljau\'s algorithm
   , subdivide
+  , subdividet
 
   -- * Shemanarev\'s smoothing algorithm
   , smoothw
@@ -36,6 +37,9 @@ module Wumpus.Core.Curve
 
   -- * tangents
   , endTangent
+
+  , cubic
+  , gravesenLength
 
 
   ) where
@@ -50,6 +54,9 @@ import Wumpus.Core.Vector
 
 import Data.AffineSpace
 import Data.VectorSpace
+
+
+default (Integer,Rational,Double)
 
 --------------------------------------------------------------------------------
 -- Curve types and standard instances
@@ -78,6 +85,9 @@ instance ExtractPoints (Curve a) where
   extractPoints (Curve p0 p1 p2 p3) = [p0,p1,p2,p3]
   endPoint (Curve _ _ _ p3)         = p3
 
+instance Converse (Curve a) where
+  converse (Curve p0 p1 p2 p3) = Curve p3 p2 p1 p0
+
 
 --------------------------------------------------------------------------------
 -- operations
@@ -96,7 +106,20 @@ subdivide (Curve p0 p1 p2 p3) =
     p0123 = midpoint p012  p123
 
 
-
+subdividet :: (Fractional (Scalar a), Real a, VectorSpace a,  AffineSpace a)  
+           => a -> Curve a -> (Curve a, Curve a)
+subdividet t (Curve p0 p1 p2 p3) = 
+    (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)
+  where
+    p01   = affc p0    p1
+    p12   = affc p1    p2
+    p23   = affc p2    p3
+    p012  = affc p01   p12
+    p123  = affc p12   p23
+    p0123 = affc p012  p123
+    
+    affc pa pb = affineCombine2 (WPoint (toRational $ 1-t) pa) 
+                                (WPoint (toRational t)     pb)
 
 ----
 
@@ -178,3 +201,44 @@ bezierArc r ang1 ang2 = Curve p0 p1 p2 p3 where
 endTangent :: (Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a) 
            => Curve a -> Radian a
 endTangent (Curve _ _ p2 p3) = vangle (p2 .-. p3)
+
+
+-- | Weighted point on a bezier curve - via the famous cubic bezier formula.
+cubic :: (Real a, Fractional (Scalar a), AffineSpace a, VectorSpace a) 
+      =>  Curve a -> a -> Point2 a
+cubic (Curve p0 p1 p2 p3) t = 
+    affineCombine [WPoint w0 p0, WPoint w1 p1, WPoint w2 p2, WPoint w3 p3]
+  where
+    t',w0,w1,w2,w3 :: Rational
+    t' = toRational t
+    w0 = (1-t')^(3::Integer)
+    w1 = 3*t'*(1-t')^(2::Integer)
+    w2 = 3 * (t'^(2::Integer)) * (1-t')
+    w3 = t'^(3::Integer)
+
+
+controlPolygonLength :: (Floating a,  AffineSpace a, 
+                         InnerSpace a, a ~ Scalar a) 
+                     => Curve a -> a
+controlPolygonLength (Curve p0 p1 p2 p3) = 
+  distance p0 p1 + distance p1 p2 + distance p2 p3
+
+cordLength :: (Floating a,  AffineSpace a, InnerSpace a, a ~ Scalar a) 
+           => Curve a -> a
+cordLength (Curve p0 _ _ p3) = distance p0 p3
+
+-- | Gravesen\'s bezier arc-length approximation. 
+-- Note this implementation is parametrized on error tolerance.
+gravesenLength :: (Floating a, Ord a, AffineSpace a, 
+                   InnerSpace a, a ~ Scalar a) 
+               => a -> Curve a -> a
+gravesenLength err_tol crv = step crv where
+  step c = let l1 = controlPolygonLength c 
+               l0 = cordLength c
+           in if   l1-l0 > err_tol
+              then let (a,b) = subdivide c in step a + step b
+              else 0.5*l0 + 0.5*l1
+
+
+
+

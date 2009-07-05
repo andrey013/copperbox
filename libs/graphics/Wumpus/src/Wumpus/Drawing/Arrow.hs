@@ -41,9 +41,19 @@ veeArrow ln = ln:vs where
 -- This illustrates Wumpus's biggest current problem - what is the 
 -- /union/ of a curve and an arrowhead (made up of line segments)?
 
+-- Also has the problem that the arrow head is tangent to the end,
+-- it should probably follow the secant of its /height/ instead.
+
+
 veeArrowC :: DCurve -> (DCurve,[DLineSegment2])
 veeArrowC crv = (crv,vs) where
-  vs = arrowheadVee 10 (pi/10) (pi - endTangent crv) (endPoint crv) 
+  vs = arrowheadVee 10 (pi/10) (pi - (d1 - 0.5*(d1-d0))  ) (endPoint crv) 
+  al = gravesenLength 0.1 crv
+  t  = al-10/al       -- go back the length of the arrow head
+  d1 = endTangent crv
+  d0 = if t>0 then let (_,b) = subdividet t crv in endTangent $ converse b
+              else d1
+   
 
 
 arrowheadTriangle :: Double -> DRadian -> (DRadian -> DPoint2 -> DPolygon)
