@@ -25,8 +25,8 @@ demo1 = writePS "circleseg1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { ps_translate 40 680 
                 ; B.setRgbColour tomato4
                 ; B.drawPolygon $ B.dotDiamond zeroPt
-                ; B.drawLine $ hline zeroPt 70
-                ; B.drawLine $ pointwise (rotateAbout (pi/4) zeroPt) $ hline zeroPt 70
+                ; B.drawLine $ hline 70 zeroPt
+                ; B.drawLine $ pointwise (rotateAbout (pi/4) zeroPt) $ hline 70 zeroPt
                 ; B.setRgbColour steelBlue1
                 ; B.drawBezier $ pointwise (uniformScale 60) $ circleSegment (pi/4)
                 ---

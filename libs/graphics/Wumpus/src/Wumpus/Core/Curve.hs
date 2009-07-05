@@ -34,6 +34,10 @@ module Wumpus.Core.Curve
 
   , bezierArc
 
+  -- * tangents
+  , endTangent
+
+
   ) where
 
 import Wumpus.Core.Fun
@@ -61,9 +65,18 @@ instance Functor Curve where
     Curve (fmap f p0) (fmap f p1) (fmap f p2) (fmap f p3)
 
 
+
+-- Geometrical instances
+
 instance Pointwise (Curve a) where
   type Pt (Curve a) = Point2 a
   pointwise f (Curve p0 p1 p2 p3) = Curve (f p0) (f p1) (f p2) (f p3)
+
+
+instance ExtractPoints (Curve a) where
+  type Pnt (Curve a) = Point2 a
+  extractPoints (Curve p0 p1 p2 p3) = [p0,p1,p2,p3]
+  endPoint (Curve _ _ _ p3)         = p3
 
 
 --------------------------------------------------------------------------------
@@ -159,3 +172,9 @@ bezierArc r ang1 ang2 = Curve p0 p1 p2 p3 where
   p3    = zeroPt .+^ avec2 ang2 r
   p1    = p0 .+^ avec2 (ang1 + pi/2) e
   p2    = p3 .+^ avec2 (ang2 - pi/2) e
+
+
+
+endTangent :: (Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a) 
+           => Curve a -> Radian a
+endTangent (Curve _ _ p2 p3) = vangle (p2 .-. p3)

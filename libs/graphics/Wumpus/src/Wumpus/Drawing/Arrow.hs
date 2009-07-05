@@ -17,6 +17,7 @@
 
 module Wumpus.Drawing.Arrow where
 
+import Wumpus.Core.Curve
 import Wumpus.Core.Frame
 import Wumpus.Core.Geometric
 import Wumpus.Core.Line
@@ -36,6 +37,14 @@ import Data.AffineSpace
 veeArrow :: DLineSegment2 -> [DLineSegment2]
 veeArrow ln = ln:vs where
   vs = arrowheadVee 10 (pi/10) (langle ln) (endPoint ln) 
+
+-- This illustrates Wumpus's biggest current problem - what is the 
+-- /union/ of a curve and an arrowhead (made up of line segments)?
+
+veeArrowC :: DCurve -> (DCurve,[DLineSegment2])
+veeArrowC crv = (crv,vs) where
+  vs = arrowheadVee 10 (pi/10) (pi - endTangent crv) (endPoint crv) 
+
 
 arrowheadTriangle :: Double -> DRadian -> (DRadian -> DPoint2 -> DPolygon)
 arrowheadTriangle d ang = 

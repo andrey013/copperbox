@@ -184,7 +184,7 @@ concavePolygon = any (>pi/2) . interiorAngles
 interiorAngles :: (a ~ Scalar a, Floating a, AffineSpace a, InnerSpace a)
                => Polygon a -> [Radian a]
 interiorAngles (Polygon ps) = windowedMap3c intAng ps where
-  intAng a b c = vangle (a .-. b) (c .-. b)
+  intAng a b c = interiorAngle (a .-. b) (c .-. b)
 
 -- | Calculate the bounding box of a polygon.
 boundingBox :: Ord a => Polygon a -> BoundingBox a

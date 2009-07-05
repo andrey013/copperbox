@@ -2,7 +2,7 @@
 
 module QuadTreeDraw where
 
-import Wumpus.Core.Geometric ( adjustvk ) 
+import Wumpus.Core.Geometric 
 import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Matrix

@@ -41,7 +41,7 @@ affineCombine2D = affineCombine2
 --------------------------------------------------------------------------------
 -- Wumpus.Core.Vector
 
-vangleD :: DVec2 -> DVec2 -> DRadian
+vangleD :: DVec2 -> DRadian
 vangleD = vangle 
 
 

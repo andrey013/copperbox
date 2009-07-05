@@ -34,6 +34,7 @@ module Wumpus.Core.Vector
   , avec2
   
   -- * Operations
+  , interiorAngle
   , vangle
   , direction2
   , perpendicular
@@ -205,10 +206,16 @@ avec2 (Radian ang) d = V2 x y where
 --------------------------------------------------------------------------------
 -- Operations
 
-vangle :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) 
+-- | Interior angle between two vector
+interiorAngle :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) 
        => t a -> t a -> Radian a
-vangle u v = toRadian $ acos ((u<.>v) / ((magnitude u) * (magnitude v)))    
+interiorAngle u v = toRadian $ acos ((u<.>v) / ((magnitude u) * (magnitude v)))    
 
+
+-- | Angle between the vector and the horizontal plane.
+vangle :: (HVec t, InnerSpace (t a), Floating a, a ~ Scalar (t a)) 
+       => t a -> Radian a
+vangle v = interiorAngle v (hvec 1)
 
   
 -- Test whether the vectors are perpendicular
@@ -235,6 +242,9 @@ class HVec t where
 instance HVec Vec2 where
   hvec d = V2 d 0
 
+instance HVec Vec3 where
+  hvec d = V3 d 0 0
+
 -- construct a vector with vertical displacement 
 class VVec t where
   vvec :: Num a => a -> t a
@@ -242,6 +252,8 @@ class VVec t where
 instance VVec Vec2 where
   vvec d = V2 0 d
 
+instance VVec Vec3 where
+  vvec d = V3 0 d 0
 
 -- note normal function in Data.Cross
 
