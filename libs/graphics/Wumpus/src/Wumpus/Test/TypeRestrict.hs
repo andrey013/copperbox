@@ -32,10 +32,13 @@ import Wumpus.Core.Vector
 -- Wumpus.Core.Point 
 
 
-affineCombine2D :: WeightedPoint Rational Point2 Double 
-         -> WeightedPoint Rational Point2 Double
-         -> Point2 Double
-affineCombine2D = affineCombine2
+affCombine2 :: WtPoint Point2 Double -> WtPoint Point2 Double -> Point2 Double
+affCombine2 = (|+|)
+
+
+affSum  :: [WtPoint Point2 Double] -> Point2 Double
+affSum = affineSum
+
 
 
 --------------------------------------------------------------------------------

@@ -25,7 +25,7 @@ module Wumpus.Core.Point
   , DPoint2
   , Point3(..)
   , DPoint3
-  , WeightedPoint(..)
+  , WtPoint(..)
 
   -- * Construction
   , ZeroPt(..)
@@ -34,8 +34,9 @@ module Wumpus.Core.Point
   , collinear
 
   -- * Affine combination
-  , affineCombine
-  , affineCombine2
+  , (|+|)  
+  , affineSum
+
   ) where
 
 import Wumpus.Core.Pointwise
@@ -60,7 +61,7 @@ type DPoint3 = Point3 Double
 
 
 -- Weighted points
-data WeightedPoint w  (pt :: * -> *) a = WPoint w (pt a)
+data WtPoint (pt :: * -> *) a = WP a (pt a)
   deriving (Eq,Show)
 
 
@@ -118,30 +119,38 @@ collinear (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) = rat1 == rat2
 --------------------------------------------------------------------------------
 -- Affine combination
 
+infixl 6 |+|
 
--- | Affine combinatation of a list of weighted points.
+
+-- | Affine combination of two weighted points.
+-- Note the sum of the weights a1 and a2 must satisfy: @a1 + a2 = 1@
+
+
+(|+|) :: (a ~ Diff (pt (Scalar a)),
+          Real (Scalar a), 
+          AffineSpace (pt (Scalar a)), 
+          VectorSpace a) 
+      => WtPoint pt (Scalar a) -> WtPoint pt (Scalar a) -> pt (Scalar a)
+
+(WP a1 p1) |+| (WP a2 p2) 
+    | toRational (a1+a2) == 1 = p1 .+^ (a2 *^ (p2 .-. p1))
+    | otherwise               = error "affine combination: weights do not sum to 1" 
+
+
+
+-- | Affine combination summing a list of weighted points.
 -- Note the weights must sum to 1.
-affineCombine :: (Fractional (Scalar (Diff (pt a))), 
-                  AffineSpace (pt a), VectorSpace (Diff (pt a))) 
-              => [WeightedPoint Rational pt a] -> pt a
-affineCombine (WPoint a1 p1 : xs) = post $ foldr fn (a1,p1) xs 
+
+affineSum :: (a ~ Diff (pt (Scalar a)),
+              Real (Scalar a), 
+              AffineSpace (pt (Scalar a)), 
+              VectorSpace a)  
+          => [WtPoint pt (Scalar a)] -> pt (Scalar a)
+affineSum []              = error "affineSum: empty"
+affineSum (WP a1 p1 : xs) = post $ foldr fn (a1, p1) xs 
   where 
-    fn (WPoint an pn) (a,p) = (a+an,p .+^ (fromRational an) *^ (pn .-. p1)) 
-    post (a,p) | a==1       = p
-               | otherwise  = error "affineCombine: weights do not sum to 1"
-affineCombine []                  = error "affineCombine: empty"
-
-
-
--- | Affine combination of two weighted points. 
--- Note the weight a1 and a2 must satisfy: a1 + a2 = 1 
-affineCombine2 :: (Fractional (Scalar (Diff (pt a))), 
-                   AffineSpace (pt a), VectorSpace (Diff (pt a))) 
-               => WeightedPoint Rational pt a 
-               -> WeightedPoint Rational pt a 
-               -> pt a
-affineCombine2 (WPoint a1 p1) (WPoint a2 p2) 
-    | a1+a2 == 1 = p1 .+^ (fromRational a2) *^ (p2 .-. p1)
-    | otherwise  = error "affcomb: weights do not sum to 1" 
+    fn (WP an pn) (tot,pt) = (tot+an, pt .+^ (an *^ (pn .-. p1)))
+    post (a,p) | toRational a == 1  = p
+               | otherwise          = error "affineSum: weights do not sum to 1"
 
 

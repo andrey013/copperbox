@@ -106,8 +106,11 @@ subdivide (Curve p0 p1 p2 p3) =
     p0123 = midpoint p012  p123
 
 
-subdividet :: (Fractional (Scalar a), Real a, VectorSpace a,  AffineSpace a)  
-           => a -> Curve a -> (Curve a, Curve a)
+
+subdividet :: (a ~ Scalar a, Real a, VectorSpace a,  AffineSpace a)  
+           => Scalar (Vec2 a) 
+           -> Curve (Scalar (Vec2 a)) 
+           -> (Curve (Scalar (Vec2 a)), Curve (Scalar (Vec2 a)))
 subdividet t (Curve p0 p1 p2 p3) = 
     (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)
   where
@@ -118,8 +121,7 @@ subdividet t (Curve p0 p1 p2 p3) =
     p123  = affc p12   p23
     p0123 = affc p012  p123
     
-    affc pa pb = affineCombine2 (WPoint (toRational $ 1-t) pa) 
-                                (WPoint (toRational t)     pb)
+    affc pa pb = (WP (1-t) pa) |+| (WP t pb)
 
 ----
 
@@ -204,17 +206,16 @@ endTangent (Curve _ _ p2 p3) = vangle (p2 .-. p3)
 
 
 -- | Weighted point on a bezier curve - via the famous cubic bezier formula.
-cubic :: (Real a, Fractional (Scalar a), AffineSpace a, VectorSpace a) 
-      =>  Curve a -> a -> Point2 a
-cubic (Curve p0 p1 p2 p3) t = 
-    affineCombine [WPoint w0 p0, WPoint w1 p1, WPoint w2 p2, WPoint w3 p3]
+
+cubic :: (a ~ Scalar a, Real a, AffineSpace a, VectorSpace a) 
+      =>  Curve (Scalar (Vec2 a)) -> Scalar (Vec2 a) -> Point2 (Scalar (Vec2 a))
+
+cubic (Curve p0 p1 p2 p3) t = affineSum [WP w0 p0, WP w1 p1, WP w2 p2, WP w3 p3]
   where
-    t',w0,w1,w2,w3 :: Rational
-    t' = toRational t
-    w0 = (1-t')^(3::Integer)
-    w1 = 3*t'*(1-t')^(2::Integer)
-    w2 = 3 * (t'^(2::Integer)) * (1-t')
-    w3 = t'^(3::Integer)
+    w0 = (1-t)^(3::Integer)
+    w1 = 3*t*(1-t)^(2::Integer)
+    w2 = 3 * (t^(2::Integer)) * (1-t)
+    w3 = t^(3::Integer)
 
 
 controlPolygonLength :: (Floating a,  AffineSpace a, 
