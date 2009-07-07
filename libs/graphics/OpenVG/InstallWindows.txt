@@ -1,7 +1,7 @@
 It is tedious to install ShivaVG on Windows with MinGW/Msys (I 
-don't think Cygwin will work at all). With GHC-6.10.1 most 
-people appear to be following these instructions to install 
-HOpenGL and HGLUT - they are the ones I followed:
+don't think Cygwin will work at all). With GHC-6.10.1 (and 6.10.2,
+and 6.10.3 ?) most people appear to be following these instructions 
+to install HOpenGL and HGLUT - they are the ones I followed:
 
 http://netsuperbrain.com/blog/posts/freeglut-windows-hopengl-hglut/
 
@@ -14,9 +14,9 @@ Here's what I did:
 I dropped the archive into my home directory
 C:\msys\1.0\home\stephen
 
-> tar xvfz shivavg-0.2.0.tar.gz
+> tar xvfz shivavg-0.2.1.tar.gz
 
-> cd shivavg-0.2.0/src
+> cd shivavg-0.2.1/src
 
 > gcc -O2 -c *.c -I../include/VG
 
@@ -46,18 +46,18 @@ Now you should be able to build the Haskell binding to Shiva:
 I dropped the archive into my home directory
 C:\msys\1.0\home\stephen
 
-> tar xvfz OpenVG-0.1.tar.gz
+> tar xvfz OpenVG-0.2.tar.gz
 
-> cd OpenVG-0.1
+> cd OpenVG-0.2
 > runhaskell Setup.hs configure
 > runhaskell Setup.hs build
 > runhaskell Setup.hs install
 > runhaskell Setup.hs haddock
 
 To run the test you need to copy `openvg32.dll` from
-the shivavg src directory into OpenVG-0.1/examples.
+the shivavg src directory into OpenVG-0.2/examples.
 The cd to examples and run with:
-> runhaskell -lopenvg TestVgu.hs
+> runhaskell -lopenvg32 TestVgu.hs
 
 This should display a white window with some line drawn
 shapes.

@@ -3,8 +3,8 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.OpenVG
--- Copyright   :  (c) Stephen Tetley 2008
--- License     :  BSD-style (see the LICENSE file in the distribution)
+-- Copyright   :  (c) Stephen Tetley 2008, 2009
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable

@@ -4,7 +4,7 @@
 -- |
 -- Module      :  Graphics.Rendering.OpenVG.Util.Colors
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (see the LICENSE file in the distribution)
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
@@ -167,7 +167,7 @@ module Graphics.Rendering.OpenVG.Util.Colors (
 ) where
 
 import Graphics.Rendering.OpenGL.GL ( 
-    Color4(..), Color3(..), GLfloat, GLubyte )
+    Color4(..), Color3(..), GLfloat )
 
 import Prelude hiding ( tan )
 

@@ -5,8 +5,8 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.OpenVG.VGU.CInternals
--- Copyright   :  (c) Stephen Tetley 2008
--- License     :  BSD-style (see the LICENSE file in the distribution)
+-- Copyright   :  (c) Stephen Tetley 2008, 2009
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
@@ -78,11 +78,8 @@ foreign import ccall unsafe "vg/openvg.h vguArc"
            -> VGfloat -> VGfloat
            -> VGenum 
            -> IO VGUErrorCode'  
-                 
-{-
 
--- not implemented by shiva-vg
-
+-- Stubbed in shivaVG 0.2.1 (not implemented)
 foreign import ccall unsafe "vg/openvg.h vguComputeWarpQuadToSquare"
     vguComputeWarpQuadToSquare :: VGfloat -> VGfloat 
                                -> VGfloat -> VGfloat
@@ -91,7 +88,7 @@ foreign import ccall unsafe "vg/openvg.h vguComputeWarpQuadToSquare"
                                -> Ptr VGfloat
                                -> IO VGUErrorCode'  
 
-
+-- Stubbed in shivaVG 0.2.1 (not implemented)
 foreign import ccall unsafe "vg/openvg.h vguComputeWarpSquareToQuad"
     vguComputeWarpSquareToQuad :: VGfloat -> VGfloat 
                                -> VGfloat -> VGfloat
@@ -100,6 +97,7 @@ foreign import ccall unsafe "vg/openvg.h vguComputeWarpSquareToQuad"
                                -> Ptr VGfloat
                                -> IO VGUErrorCode'  
 
+-- Stubbed in shivaVG 0.2.1 (not implemented)
 foreign import ccall unsafe "vg/openvg.h vguComputeWarpQuadToQuad"
     vguComputeWarpQuadToQuad :: VGfloat -> VGfloat 
                              -> VGfloat -> VGfloat
@@ -111,6 +109,7 @@ foreign import ccall unsafe "vg/openvg.h vguComputeWarpQuadToQuad"
                              -> VGfloat -> VGfloat
                              -> Ptr VGfloat
                              -> IO VGUErrorCode'  
--}  
+
+
 
 -- end of file

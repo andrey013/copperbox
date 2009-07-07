@@ -4,7 +4,7 @@
 -- |
 -- Module      :  Graphics.Rendering.OpenVG.Util.PathCommands
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (see the LICENSE file in the distribution)
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
