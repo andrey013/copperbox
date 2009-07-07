@@ -14,9 +14,9 @@ Here's what I did:
 I dropped the archive into my home directory
 C:\msys\1.0\home\stephen
 
-> tar xvfz shivavg-0.2.1.tar.gz
+> tar xvfz shivavg-0.2.0.tar.gz
 
-> cd shivavg-0.2.1/src
+> cd shivavg-0.2.0/src
 
 > gcc -O2 -c *.c -I../include/VG
 
@@ -46,13 +46,13 @@ Now you should be able to build the Haskell binding to Shiva:
 I dropped the archive into my home directory
 C:\msys\1.0\home\stephen
 
-> tar xvfz OpenVG-0.2.tar.gz
+> tar xvfz OpenVG-0.1.tar.gz
 
-> cd OpenVG-0.2
-> runhaskell Setup.hs configure
-> runhaskell Setup.hs build
-> runhaskell Setup.hs install
-> runhaskell Setup.hs haddock
+> cd OpenVG-0.1
+> runhaskell Setup.lhs configure
+> runhaskell Setup.lhs build
+> runhaskell Setup.lhs install
+> runhaskell Setup.lhs haddock
 
 To run the test you need to copy `openvg32.dll` from
 the shivavg src directory into OpenVG-0.2/examples.
@@ -105,11 +105,4 @@ then double-clicking on test_tiger.exe should work.
 
 
 
-  
 
-  
-
- 
-
-   
-   

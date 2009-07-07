@@ -39,8 +39,9 @@ module Graphics.Rendering.OpenVG.VG.BasicTypes (
 
 #include <vg/openvg.h>
 
-import Data.Word ( Word32 )
 import Graphics.Rendering.OpenGL.GL.BasicTypes
+
+import Foreign.Ptr
 
 type VGfloat    = GLfloat
 type VGbyte     = GLbyte
@@ -74,10 +75,12 @@ unmarshalBool x
     | otherwise = error ("unmarshalBool: illegal value " ++ show x)
   
     
-type VGHandle = #type VGHandle
+newtype VGHandle = VGHandle (Ptr ())
+
 
 vg_INVALID_HANDLE :: VGHandle 
-vg_INVALID_HANDLE = #const VG_INVALID_HANDLE
+vg_INVALID_HANDLE = VGHandle nullPtr
+
 
 type VGPath  = VGHandle
 type VGImage = VGHandle

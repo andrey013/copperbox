@@ -4,9 +4,17 @@ Haskell OpenVG 0.1 binds to ShivaVG-0.2.0
 Haskell OpenVG 0.2 binds to ShivaVG-0.2.1
 
 I've tested the bindings on both Windows XP (MinGW/Msys) 
-and MacOSX leopard.
+and MacOSX Leopard.
 
-KNOWN PROBLEMS:
+On MacOSX both the 0.2 and 0.1 bindings seem work on 
+their respective libraries.
+
+On Windows I've not been able to get the 0.2 bindings to work,
+so go with Haskell OpenVG 0.1 and ShivaVG-0.2.0.
+
+
+
+OTHER PROBLEMS:
 
 MacOSX - runhaskell / GHCi freeze the shell when you try to run
 the example TestVgu.hs. You will have to compile it first.

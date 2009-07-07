@@ -10,6 +10,8 @@ synopsis:         OpenVG (shivag-0.2.1) binding
 description:
   A Haskell binding for the OpenVG vector graphics API version 1.0.1
   specifically the shivavg-0.2.1 implementation.
+  *** Windows users - use version 1.0 and ShivaVG-0.2.0. ***
+
 
 build-type:         Simple
 stability:          alpha
