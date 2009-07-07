@@ -107,7 +107,8 @@ subdivide (Curve p0 p1 p2 p3) =
 
 
 
-subdividet :: (a ~ Scalar a, Real a, VectorSpace a,  AffineSpace a)  
+subdividet :: (a ~ Scalar a, Fractional a, Real a,
+               VectorSpace a,  AffineSpace a)  
            => Scalar (Vec2 a) 
            -> Curve (Scalar (Vec2 a)) 
            -> (Curve (Scalar (Vec2 a)), Curve (Scalar (Vec2 a)))
@@ -207,7 +208,7 @@ endTangent (Curve _ _ p2 p3) = vangle (p2 .-. p3)
 
 -- | Weighted point on a bezier curve - via the famous cubic bezier formula.
 
-cubic :: (a ~ Scalar a, Real a, AffineSpace a, VectorSpace a) 
+cubic :: (a ~ Scalar a, Fractional a, Real a, AffineSpace a, VectorSpace a) 
       =>  Curve (Scalar (Vec2 a)) -> Scalar (Vec2 a) -> Point2 (Scalar (Vec2 a))
 
 cubic (Curve p0 p1 p2 p3) t = affineSum [WP w0 p0, WP w1 p1, WP w2 p2, WP w3 p3]

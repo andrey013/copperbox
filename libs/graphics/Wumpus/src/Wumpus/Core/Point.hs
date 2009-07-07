@@ -60,8 +60,11 @@ data Point3 a = P3 !a !a !a
 type DPoint3 = Point3 Double
 
 
--- Weighted points
-data WtPoint (pt :: * -> *) a = WP a (pt a)
+-- | Weighted points
+-- The weight type @i@ should support (==) happily. 
+-- Integer or Rational would be suitable candidates - for the affine functions
+-- it must support realToFrac.
+data WtPoint (pt :: * -> *) i a = WP i (pt a)
   deriving (Eq,Show)
 
 
@@ -119,37 +122,39 @@ collinear (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) = rat1 == rat2
 --------------------------------------------------------------------------------
 -- Affine combination
 
+-- Note - adding a convex sum operation is possible, i.e. enforcing that 
+-- a1 + a2 = 1 AND 0 <= a1 <= 1, 0 <= a2 <= 1. But it seems unnecessary.
+
+ 
+
 infixl 6 |+|
 
 
 -- | Affine combination of two weighted points.
 -- Note the sum of the weights a1 and a2 must satisfy: @a1 + a2 = 1@
 
-
-(|+|) :: (a ~ Diff (pt (Scalar a)),
-          Real (Scalar a), 
-          AffineSpace (pt (Scalar a)), 
-          VectorSpace a) 
-      => WtPoint pt (Scalar a) -> WtPoint pt (Scalar a) -> pt (Scalar a)
-
+(|+|) :: (Real i,
+          Fractional (Scalar (Diff (pt a))), 
+          AffineSpace (pt a), 
+          VectorSpace (Diff (pt a)))
+      => WtPoint pt i a -> WtPoint pt i a -> pt a
 (WP a1 p1) |+| (WP a2 p2) 
-    | toRational (a1+a2) == 1 = p1 .+^ (a2 *^ (p2 .-. p1))
-    | otherwise               = error "affine combination: weights do not sum to 1" 
+    | a1+a2 == 1    = p1 .+^ ((realToFrac a2) *^ (p2 .-. p1))
+    | otherwise     = error "affine combination: weights do not sum to 1" 
 
 
 
 -- | Affine combination summing a list of weighted points.
 -- Note the weights must sum to 1.
-
-affineSum :: (a ~ Diff (pt (Scalar a)),
-              Real (Scalar a), 
-              AffineSpace (pt (Scalar a)), 
-              VectorSpace a)  
-          => [WtPoint pt (Scalar a)] -> pt (Scalar a)
+affineSum :: (Real i, 
+              Fractional (Scalar (Diff (pt a))), 
+              AffineSpace (pt a), 
+              VectorSpace (Diff (pt a)))
+          => [WtPoint pt i a] -> pt a
 affineSum []              = error "affineSum: empty"
 affineSum (WP a1 p1 : xs) = post $ foldr fn (a1, p1) xs 
   where 
-    fn (WP an pn) (tot,pt) = (tot+an, pt .+^ (an *^ (pn .-. p1)))
+    fn (WP an pn) (tot,pt) = (tot+an, pt .+^ ((realToFrac an) *^ (pn .-. p1)))
     post (a,p) | toRational a == 1  = p
                | otherwise          = error "affineSum: weights do not sum to 1"
 

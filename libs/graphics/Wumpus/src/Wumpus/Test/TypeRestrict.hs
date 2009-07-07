@@ -27,16 +27,20 @@ import Wumpus.Core.Polygon
 import Wumpus.Core.Radian
 import Wumpus.Core.Vector
 
+import Data.Ratio
+
 
 --------------------------------------------------------------------------------
 -- Wumpus.Core.Point 
 
 
-affCombine2 :: WtPoint Point2 Double -> WtPoint Point2 Double -> Point2 Double
+affCombine2 :: WtPoint Point2 Rational Double 
+            -> WtPoint Point2 Rational Double 
+            -> Point2 Double
 affCombine2 = (|+|)
 
 
-affSum  :: [WtPoint Point2 Double] -> Point2 Double
+affSum  :: [WtPoint Point2 Rational Double] -> Point2 Double
 affSum = affineSum
 
 
