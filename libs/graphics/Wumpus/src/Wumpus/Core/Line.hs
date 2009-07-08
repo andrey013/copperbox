@@ -153,16 +153,19 @@ instance Converse (PolyLine pt a) where
 
 -- construction
 
+-- | Line from vector.
 line :: AffineSpace (pt a) => Diff (pt a) -> CoLineSegment pt a
 line v = \p -> LS p (p .+^ v)
 
 -- | Horizontal line from point @p@ of length @a@ .
-hline :: (Num a, AffineSpace a) => a -> CoLineSegment Point2 a
-hline a = line (V2 a 0)
+hline :: (Num a, AffineSpace (pt a), HVec t, t a ~ Diff (pt a)) 
+      => a -> CoLineSegment pt a
+hline a = line (hvec a)
 
 -- | Vertical line from point @p@ of length @a@.
-vline :: (Num a, AffineSpace a) => a -> CoLineSegment Point2 a
-vline a = line (V2 0 a) 
+vline :: (Num a, AffineSpace (pt a), VVec t, t a ~ Diff (pt a)) 
+      => a -> CoLineSegment pt a
+vline a = line (vvec a)
 
 
 -- | A line from point @p@ in the direction @theta@ from x-axis

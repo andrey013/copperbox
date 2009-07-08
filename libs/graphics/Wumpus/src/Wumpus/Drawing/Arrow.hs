@@ -33,6 +33,7 @@ import Wumpus.Drawing.PostScript
 
 import Data.AffineSpace
 
+import Data.Ratio
 
 veeArrow :: DLineSegment2 -> [DLineSegment2]
 veeArrow ln = ln:vs where
@@ -47,17 +48,20 @@ veeArrow ln = ln:vs where
 
 veeArrowC :: DCurve -> (DCurve,[DLineSegment2])
 veeArrowC crv = (crv,vs) where
-  vs = arrowheadVee 10 (pi/10) (pi + (d1 - 0.5*(d1-d0))) (endPoint crv) 
-  al = gravesenLength 0.1 crv
-  t  = al-10/al       -- go back the length of the arrow head
+  vs = arrowheadVee 10 (pi/10) (pi + d1 + halfdiff d1 d2) (endPoint crv) 
   d1 = endTangent crv
-  d0 = if t>0 then let (_,b) = subdividet t crv in endTangent $ converse b
+  cl = floor $ gravesenLength 0.1 crv
+  t  = (cl-10) % cl       -- go back the length of the arrow head
+  d2 = if t>0 then let (a,_) = subdividet t crv in endTangent a
               else d1
 
--- wrong! we want the normal/perp at the end of the line not the tangent
+  halfdiff a b = (interior a b) / 2
+
+
+
 perpArrowC :: DCurve -> (DCurve,[DLineSegment2])
 perpArrowC crv = (crv,vs) where
-  vs = arrowheadPerp 10 (endTangent crv {- + pi/2 -} ) (endPoint crv)
+  vs = arrowheadPerp 5 (endTangent crv) (endPoint crv)
 
 
 arrowheadTriangle :: Double -> DRadian -> (DRadian -> DPoint2 -> DPolygon)

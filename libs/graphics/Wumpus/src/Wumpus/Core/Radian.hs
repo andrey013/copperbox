@@ -32,6 +32,8 @@ module Wumpus.Core.Radian
   -- * Operations 
   , Direction2(..)
 
+  , interior
+
   -- ** Conversion
   , d2r
   , r2d
@@ -73,9 +75,15 @@ toRadian = Radian
 
 
 --------------------------------------------------------------------------------
+-- NOTE - The numeric types and their conversions need working out.
+-- Are /toRational/ hacks like the one in complementary to get (==) valid?
+--------------------------------------------------------------------------------
+
+
+
+--------------------------------------------------------------------------------
 -- Predicates
 
--- Note - are /toRational/ hacks like this one valid?
 
 complementary :: (Real a,Floating a) => Radian a -> Radian a -> Bool
 complementary (Radian a) (Radian b) = toRational (a+b) == toRational (pi/2::Double)
@@ -90,6 +98,13 @@ complementary (Radian a) (Radian b) = toRational (a+b) == toRational (pi/2::Doub
 
 class Direction2 t where   
   direction2 :: Floating a => t a -> Radian a
+
+-- | The interior between two angles - shortest distance (negative cw) or 
+-- (positive ccw).
+interior :: (Real a, Fractional a, Ord a) => Radian a -> Radian a -> Radian a
+interior a b = fn (b-a)
+  where 
+    fn d = if (realToFrac $ d) > pi then ((fromRational $ 2* toRational pi) - d) else d
 
 
 -- degrees / radians

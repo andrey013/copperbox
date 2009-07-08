@@ -97,3 +97,6 @@ segmentLengthD = segmentLength
 
 regularPolygonD :: Int -> Double -> DCoPolygon
 regularPolygonD = regularPolygon
+
+
+

@@ -13,9 +13,9 @@ import Wumpus.Drawing.Label
 import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.X11Colours
 
+import Data.Ratio
 
-
-import Data.AffineSpace
+-- import Data.AffineSpace
 
 {-
 dummy1 = gravesenLength 0.01 $ testCurve (pi/2)
@@ -23,6 +23,8 @@ dummy2 :: Double
 dummy2 = distance (P2 0 50) (P2 50 (0::Double))
 -}
 
+dummy3 = r2d $ interior 0 (negate $ d2r 45)
+dummy4 = r2d $ interior 0 (d2r 170)
 
 demo1 :: IO ()
 demo1 = writePS "arrow1.ps" $ runWumpus st0 $ drawing1 where
@@ -51,6 +53,9 @@ demo1 = writePS "arrow1.ps" $ runWumpus st0 $ drawing1 where
                 ; drawCurve a
                 ; setRgbColour chartreuse1
                 ; drawCurve b 
+                -- 
+                ; ps_translate 0 100
+                ; splitCurve $ testCurve (pi/2)
                 }
 
 curvedArrs :: (DCurve -> (DCurve,[DLineSegment2])) -> WumpusM ()
@@ -83,7 +88,7 @@ arrowhead1 start_pt end_pt arrHead drawFun =
 drawCurveArr :: (DCurve, [DLineSegment2]) -> WumpusM ()
 drawCurveArr (c,xs) = do
   setRgbColour coral1
-  drawBezier c
+  drawCurve c
   setRgbColour aquamarine1
   mapM_ drawLine xs
   let et = endTangent c
@@ -97,3 +102,18 @@ testCurve = bezierArc 50 0
 
 straightBezier :: DCurve
 straightBezier = Curve (P2 0 0) (P2 20 20) (P2 40 40) (P2 60 60)
+
+splitCurve :: DCurve -> WumpusM ()
+splitCurve crv = do 
+    { setRgbColour darkGoldenrod1
+    ; drawBezier a
+    ; setRgbColour cyan4
+    ; drawBezier b  
+    }
+  where
+    cl    = floor $ gravesenLength 0.1 crv
+    t     = (cl-10) % cl       -- go back the length of the arrow head
+    (a,b) = subdividet t crv
+       
+
+

@@ -107,9 +107,9 @@ subdivide (Curve p0 p1 p2 p3) =
 
 
 
-subdividet :: (a ~ Scalar a, Fractional a, Real a,
+subdividet :: (a ~ Scalar a, Fractional a, Real i,
                VectorSpace a,  AffineSpace a)  
-           => Scalar (Vec2 a) 
+           => i -- Scalar (Vec2 a) 
            -> Curve (Scalar (Vec2 a)) 
            -> (Curve (Scalar (Vec2 a)), Curve (Scalar (Vec2 a)))
 subdividet t (Curve p0 p1 p2 p3) = 
