@@ -29,9 +29,14 @@ module Wumpus.Core.Vector
   -- * Type class operations
   , EuclidianNorm(..)
   , Independent(..)
+  , HVec(..)
+  , VVec(..)
+
 
   -- * Construct
+  , freeVector
   , avec2
+  , bisector
   
   -- * Operations
   , interiorAngle
@@ -39,8 +44,6 @@ module Wumpus.Core.Vector
   , direction2
   , perpendicular
   , orthogonal
-  , HVec(..)
-  , VVec(..)
 
   ) where
 
@@ -48,6 +51,7 @@ import Wumpus.Core.Fun
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Radian
 
+import Data.AffineSpace
 import Data.VectorSpace
 
 import Data.Monoid
@@ -68,6 +72,8 @@ instance Functor Vec2 where
 instance Functor Vec3 where
   fmap f (V3 a b c) = V3 (f a) (f b) (f c)
 
+--------------------------------------------------------------------------------
+-- Type class instances
 
 
 -- Vectors have a sensible Monoid instance as addition
@@ -127,32 +133,7 @@ instance Pointwise (Vec3 a) where
 
 instance Direction2 Vec2 where
    direction2 (V2 a b) = toRadian $ atan (a/b)
- 
---------------------------------------------------------------------------------
 
-class EuclidianNorm t where
-  euclidianNorm :: Floating a => t a -> a
-
-instance EuclidianNorm Vec2 where
-  euclidianNorm (V2 a b) = sqrt $ (a*a) + (b*b)
-
-
--- in 3D the norm is the square root of the dot product 
--- sqrt (v<.>v), or sqrt (a1^2) (a2^2) (a3^2)
-
-instance EuclidianNorm Vec3 where
-  euclidianNorm (V3 a b c) = sqrt $ (a*a) + (b*b) + (c*c)
-
-
-
-
-
-class Independent t where
-  independent :: Fractional a => t a -> t a -> Bool
-  
-
-instance Independent Vec2 where
-  independent (V2 a1 a2) (V2 b1 b2) = (a1/a2) /= (b1/b2)
 
 --------------------------------------------------------------------------------
 -- Vector space and related instances
@@ -192,14 +173,84 @@ instance (Num a, InnerSpace a, AdditiveGroup (Scalar a))
   (V3 a b c) <.> (V3 a' b' c') = (a <.> a') ^+^ (b <.> b') ^+^ (c <.> c')
 
 
+ 
+--------------------------------------------------------------------------------
+-- Vector type classes
+
+
+class EuclidianNorm t where
+  euclidianNorm :: Floating a => t a -> a
+
+instance EuclidianNorm Vec2 where
+  euclidianNorm (V2 a b) = sqrt $ (a*a) + (b*b)
+
+
+-- in 3D the norm is the square root of the dot product 
+-- sqrt (v<.>v), or sqrt (a1^2) (a2^2) (a3^2)
+
+instance EuclidianNorm Vec3 where
+  euclidianNorm (V3 a b c) = sqrt $ (a*a) + (b*b) + (c*c)
+
+
+
+class Independent t where
+  independent :: Fractional a => t a -> t a -> Bool
+  
+
+instance Independent Vec2 where
+  independent (V2 a1 a2) (V2 b1 b2) = (a1/a2) /= (b1/b2)
+
+
+
+-- | Construct a vector with horizontal displacement
+-- and test the sign of the horizontal component
+class HVec t where 
+  hvec    :: Num a => a -> t a
+  hsignum :: Num a => t a -> a
+
+
+instance HVec Vec2 where
+  hvec d                = V2 d 0
+  hsignum (V2 a _)      = signum a
+
+instance HVec Vec3 where
+  hvec d                = V3 d 0 0
+  hsignum (V3 a _ _)    = signum a
+
+-- | Construct a vector with vertical displacement 
+-- and test the sign of the vertical component
+class VVec t where
+  vvec    :: Num a => a -> t a
+  vsignum :: Num a => t a -> a
+
+instance VVec Vec2 where
+  vvec d                = V2 0 d
+  vsignum (V2 _ b)      = signum b
+
+instance VVec Vec3 where
+  vvec d                = V3 0 d 0
+  vsignum (V3 _ b _)    = signum b
+
+
 
 --------------------------------------------------------------------------------
+-- Construction
+
+-- | The free vector from point @a@ to point @b@.
+freeVector :: AffineSpace pt => pt -> pt -> Diff pt
+freeVector a b = b .-. a 
+
 
 -- | Construct a vector from and angle and a magnitude
 avec2 :: Floating a => Radian a -> a -> Vec2 a
 avec2 (Radian ang) d = V2 x y where
   x = d * cos ang
   y = d * sin ang
+
+
+-- | Construct the vector that bisects the vectors @u@ and @v@.
+bisector :: (VectorSpace v, Num v, Fractional (Scalar v)) => v -> v -> v
+bisector u v = u + ((v-u)^*0.5)
 
 
 
@@ -232,38 +283,7 @@ orthogonal = (==0) `oo` (<.>)
 
 
 
-
 --------------------------------------------------------------------------------
-
--- | Construct a vector with horizontal displacement
--- and test the sign of the horizontal component
-class HVec t where 
-  hvec    :: Num a => a -> t a
-  hsignum :: Num a => t a -> a
-
-
-instance HVec Vec2 where
-  hvec d                = V2 d 0
-  hsignum (V2 a _)      = signum a
-
-instance HVec Vec3 where
-  hvec d                = V3 d 0 0
-  hsignum (V3 a _ _)    = signum a
-
--- | Construct a vector with vertical displacement 
--- and test the sign of the vertical component
-class VVec t where
-  vvec    :: Num a => a -> t a
-  vsignum :: Num a => t a -> a
-
-instance VVec Vec2 where
-  vvec d                = V2 0 d
-  vsignum (V2 _ b)      = signum b
-
-instance VVec Vec3 where
-  vvec d                = V3 0 d 0
-  vsignum (V3 _ b _)    = signum b
-
 
 -- note normal function in Data.Cross
 

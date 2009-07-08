@@ -42,20 +42,15 @@ veeArrow ln = ln:vs where
 -- This illustrates Wumpus's biggest current problem - what is the 
 -- /union/ of a curve and an arrowhead (made up of line segments)?
 
--- Also has the problem that the arrow head is tangent to the end,
--- it should probably follow the secant of its /height/ instead.
-
 
 veeArrowC :: DCurve -> (DCurve,[DLineSegment2])
 veeArrowC crv = (crv,vs) where
-  vs = arrowheadVee 10 (pi/10) (pi + d1 + halfdiff d1 d2) (endPoint crv) 
-  d1 = endTangent crv
+  vs = arrowheadVee 10 (pi/10) (pi + (vangle $ bisector v1 v2)) (endPoint crv) 
+  v1 = endTangentVector crv
   cl = floor $ gravesenLength 0.1 crv
   t  = (cl-10) % cl       -- go back the length of the arrow head
-  d2 = if t>0 then let (a,_) = subdividet t crv in endTangent a
-              else d1
-
-  halfdiff a b = (interior a b) / 2
+  v2 = if t>0 then endTangentVector $ fst $ subdividet t crv else v1
+  
 
 
 

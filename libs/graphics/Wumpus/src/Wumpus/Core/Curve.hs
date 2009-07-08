@@ -36,7 +36,10 @@ module Wumpus.Core.Curve
   , bezierArc
 
   -- * tangents
+  , startTangent
   , endTangent
+  , startTangentVector
+  , endTangentVector
 
   , cubic
   , gravesenLength
@@ -199,11 +202,38 @@ bezierArc r ang1 ang2 = Curve p0 p1 p2 p3 where
   p1    = p0 .+^ avec2 (ang1 + pi/2) e
   p2    = p3 .+^ avec2 (ang2 - pi/2) e
 
+--------------------------------------------------------------------------------
+-- Tangents
+
+startTangent :: (Ord a, Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a) 
+             => Curve a -> Radian a
+startTangent = vangle . startTangentVector
 
 
 endTangent :: (Ord a, Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a) 
            => Curve a -> Radian a
-endTangent (Curve _ _ p2 p3) = vangle (p2 .-. p3)
+endTangent = vangle . endTangentVector
+
+
+
+startTangentVector :: (Ord a, Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a) 
+             => Curve a -> Vec2 a
+startTangentVector (Curve p0 p1 _ _) = freeVector p0 p1
+
+
+endTangentVector :: (Ord a, Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a) 
+           => Curve a -> Vec2 a
+endTangentVector (Curve _ _ p2 p3) = freeVector p3 p2
+
+
+
+
+
+
+
+
+
+
 
 
 -- | Weighted point on a bezier curve - via the famous cubic bezier formula.
