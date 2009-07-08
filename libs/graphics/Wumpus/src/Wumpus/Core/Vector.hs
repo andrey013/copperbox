@@ -212,11 +212,12 @@ interiorAngle :: (InnerSpace (t a), Floating a, a ~ Scalar (t a))
 interiorAngle u v = toRadian $ acos ((u<.>v) / ((magnitude u) * (magnitude v)))    
 
 
--- | Angle between the vector and the horizontal plane.
-vangle :: (HVec t, InnerSpace (t a), Floating a, a ~ Scalar (t a)) 
+-- | CCW angle between the vector and the horizontal plane.
+vangle :: (HVec t, VVec t, Ord a, Floating a,
+           InnerSpace (t a), a ~ Scalar (t a)) 
        => t a -> Radian a
-vangle v = interiorAngle v (hvec 1)
-
+vangle v | vsignum v >= 0 = interiorAngle v (hvec 1)
+         | otherwise      = 2*pi - interiorAngle v (hvec 1)
   
 -- Test whether the vectors are perpendicular
 -- two vectors in R2 are perpendicular iff their dot product is 0
@@ -234,26 +235,35 @@ orthogonal = (==0) `oo` (<.>)
 
 --------------------------------------------------------------------------------
 
--- construct a vector with horizontal displacement
-
+-- | Construct a vector with horizontal displacement
+-- and test the sign of the horizontal component
 class HVec t where 
-  hvec :: Num a => a -> t a
+  hvec    :: Num a => a -> t a
+  hsignum :: Num a => t a -> a
+
 
 instance HVec Vec2 where
-  hvec d = V2 d 0
+  hvec d                = V2 d 0
+  hsignum (V2 a _)      = signum a
 
 instance HVec Vec3 where
-  hvec d = V3 d 0 0
+  hvec d                = V3 d 0 0
+  hsignum (V3 a _ _)    = signum a
 
--- construct a vector with vertical displacement 
+-- | Construct a vector with vertical displacement 
+-- and test the sign of the vertical component
 class VVec t where
-  vvec :: Num a => a -> t a
+  vvec    :: Num a => a -> t a
+  vsignum :: Num a => t a -> a
 
 instance VVec Vec2 where
-  vvec d = V2 0 d
+  vvec d                = V2 0 d
+  vsignum (V2 _ b)      = signum b
 
 instance VVec Vec3 where
-  vvec d = V3 0 d 0
+  vvec d                = V3 0 d 0
+  vsignum (V3 _ b _)    = signum b
+
 
 -- note normal function in Data.Cross
 

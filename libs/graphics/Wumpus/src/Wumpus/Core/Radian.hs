@@ -45,7 +45,11 @@ import Control.Applicative
 -- Radian as a distinct type, parametric on numberic type
 
 newtype Radian a = Radian { fromRadian :: a }
-  deriving (Eq,Ord,Show,Num,Real,Fractional,Floating,RealFrac,RealFloat)
+  deriving (Eq,Ord,Num,Real,Fractional,Floating,RealFrac,RealFloat)
+
+
+instance Show a => Show (Radian a) where
+ showsPrec i (Radian a) = showsPrec i a
 
 
 instance Functor Radian where

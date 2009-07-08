@@ -201,7 +201,7 @@ bezierArc r ang1 ang2 = Curve p0 p1 p2 p3 where
 
 
 
-endTangent :: (Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a) 
+endTangent :: (Ord a, Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a) 
            => Curve a -> Radian a
 endTangent (Curve _ _ p2 p3) = vangle (p2 .-. p3)
 
