@@ -20,14 +20,18 @@
 module Wumpus.Core.Radian
   (
   -- * Radian type
-    Radian(..)
-  , DRadian
+    Radian
   
   -- * Construction
   , toRadian
 
+  -- * Extraction
+  , fromRadian
+
   -- * Predicates
   , complementary
+  , obtuse
+  , rightAngle
 
   -- * Operations 
   , Direction2(..)
@@ -41,54 +45,60 @@ module Wumpus.Core.Radian
   ) where
 
 
-import Control.Applicative
+radian_epsilon :: Double
+radian_epsilon = 0.0001
 
 --------------------------------------------------------------------------------
--- Radian as a distinct type, parametric on numberic type
 
-newtype Radian a = Radian { fromRadian :: a }
-  deriving (Eq,Ord,Num,Real,Fractional,Floating,RealFrac,RealFloat)
+-- | Radian is represented with a distinct type. 
+-- E quality and ordering are approximate where the epsilon is 0.0001.
+newtype Radian = Radian { getRadian :: Double }
+  deriving (Num,Real,Fractional,Floating,RealFrac,RealFloat)
 
 
-instance Show a => Show (Radian a) where
+instance Show Radian where
  showsPrec i (Radian a) = showsPrec i a
 
+instance Eq Radian where (==) = req
 
-instance Functor Radian where
-  fmap f (Radian a) = Radian (f a)
+instance Ord Radian where
+  compare a b | a `req` b = EQ
+              | otherwise = getRadian a `compare` getRadian b
 
-
-instance Applicative Radian where
-  pure = Radian
-  (<*>) (Radian f) (Radian a) = Radian (f a)
-
-
-
-type DRadian = Radian Double
 
 --------------------------------------------------------------------------------
 -- Construction
 
-toRadian :: a -> Radian a
-toRadian = Radian
+toRadian :: Real a => a -> Radian 
+toRadian = Radian . realToFrac
 
 
+-- Extraction 
 
---------------------------------------------------------------------------------
--- NOTE - The numeric types and their conversions need working out.
--- Are /toRational/ hacks like the one in complementary to get (==) valid?
---------------------------------------------------------------------------------
-
+fromRadian :: Fractional a => Radian -> a
+fromRadian = realToFrac . getRadian
 
 
 --------------------------------------------------------------------------------
 -- Predicates
 
+req :: Radian -> Radian -> Bool
+req a b = (fromRadian $ abs (a-b)) < radian_epsilon
 
-complementary :: (Real a,Floating a) => Radian a -> Radian a -> Bool
-complementary (Radian a) (Radian b) = toRational (a+b) == toRational (pi/2::Double)
+rlt :: Radian -> Radian -> Bool
+rlt a b = (a<b) && not (a `req` b)
 
+rgt :: Radian -> Radian -> Bool
+rgt a b = (a>b) && not (a `req` b)
 
+complementary :: Radian -> Radian -> Bool
+complementary a b = (a+b)`req` (pi/2)
+
+obtuse :: Radian -> Bool
+obtuse a = (pi/2) `rlt` a && a `rlt` pi
+
+rightAngle :: Radian -> Bool
+rightAngle a = a `req` (pi/2)
 
 --------------------------------------------------------------------------------
 -- Operations
@@ -97,20 +107,22 @@ complementary (Radian a) (Radian b) = toRational (a+b) == toRational (pi/2::Doub
 -- direction in 2D space
 
 class Direction2 t where   
-  direction2 :: Floating a => t a -> Radian a
+  direction2 :: (Real a, Floating a) => t a -> Radian
 
 -- | The interior between two angles - shortest distance (negative cw) or 
 -- (positive ccw).
-interior :: (Real a, Fractional a, Ord a) => Radian a -> Radian a -> Radian a
+interior :: Radian -> Radian -> Radian
 interior a b = fn (b-a)
   where 
-    fn d = if (realToFrac $ d) > pi then ((fromRational $ 2* toRational pi) - d) else d
+    fn d = if d `rgt` pi then (2*pi)-d else d
 
 
 -- degrees / radians
 
-d2r :: Floating a => a -> Radian a 
-d2r = Radian . (*) (pi/180)
+d2r :: (Floating a, Real a) => a -> Radian
+d2r = Radian . realToFrac . (*) (pi/180)
 
-r2d :: Floating a => Radian a -> a
+r2d :: (Floating a, Real a) => Radian -> a
 r2d = (*) (180/pi) . fromRadian
+
+

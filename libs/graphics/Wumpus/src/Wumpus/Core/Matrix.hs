@@ -386,12 +386,14 @@ translationMatrix x y = M3'3 1 0 x  0 1 y  0 0 1
 
 
 
-rotationMatrix :: Floating a => Radian a -> Matrix3'3 a
-rotationMatrix (Radian ang) = M3'3 (cos ang) (- sin ang) 0 
-                                   (sin ang) (cos ang)   0  
-                                   0         0           1
+rotationMatrix :: (Floating a, Real a) => Radian -> Matrix3'3 a
+rotationMatrix a = M3'3 (cos ang) (- sin ang) 0 
+                        (sin ang) (cos ang)   0  
+                        0         0           1
+  where
+    ang = fromRadian a
 
-rotationMatrix' :: Floating a => Radian a -> a -> a -> Matrix3'3 a
+rotationMatrix' :: (Floating a, Real a) => Radian -> a -> a -> Matrix3'3 a
 rotationMatrix' ang x y = mT * (rotationMatrix ang) * mTinv
   where
     mT    = M3'3 1 0 x     0 1 y     0 0 1

@@ -48,7 +48,7 @@ affSum = affineSum
 --------------------------------------------------------------------------------
 -- Wumpus.Core.Vector
 
-vangleD :: DVec2 -> DRadian
+vangleD :: DVec2 -> Radian
 vangleD = vangle 
 
 

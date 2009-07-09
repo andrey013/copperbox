@@ -57,48 +57,61 @@ import Wumpus.Core.Vector
 
 import Data.List ( mapAccumR )
 
-rotate :: (Floating a, MatrixMult Matrix3'3 t) => Radian a -> t a -> t a 
+rotate :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+       => Radian -> t a -> t a 
 rotate a = ((rotationMatrix a) *#) 
 
-rotateAbout :: (Floating a, MatrixMult Matrix3'3 t) => Radian a -> Point2 a -> t a -> t a 
+rotateAbout :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+            => Radian -> Point2 a -> t a -> t a 
 rotateAbout a (P2 x y) = ((rotationMatrix' a x y) *#) 
 
-rotate90 :: (Floating a, MatrixMult Matrix3'3 t) => t a -> t a 
+rotate90 :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+         => t a -> t a 
 rotate90 = rotate (pi/2) 
 
-rotate90About :: (Floating a, MatrixMult Matrix3'3 t) => Point2 a -> t a -> t a 
+rotate90About :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+              => Point2 a -> t a -> t a 
 rotate90About = rotateAbout (pi/2)
 
 
-rotate30 :: (Floating a, MatrixMult Matrix3'3 t) => t a -> t a 
+rotate30 :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+         => t a -> t a 
 rotate30 = rotate (pi/6) 
 
-rotate30About :: (Floating a, MatrixMult Matrix3'3 t) => Point2 a -> t a -> t a 
+rotate30About :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+              => Point2 a -> t a -> t a 
 rotate30About = rotateAbout (pi/6)
 
 
-rotate45 :: (Floating a, MatrixMult Matrix3'3 t) => t a -> t a 
+rotate45 :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+         => t a -> t a 
 rotate45 = rotate (pi/4) 
 
-rotate45About :: (Floating a, MatrixMult Matrix3'3 t) => Point2 a -> t a -> t a 
+rotate45About :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+              => Point2 a -> t a -> t a 
 rotate45About = rotateAbout (pi/4)
 
 
-rotate60 :: (Floating a, MatrixMult Matrix3'3 t) => t a -> t a 
+rotate60 :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+         => t a -> t a 
 rotate60 = rotate (2*pi/3) 
 
-rotate60About :: (Floating a, MatrixMult Matrix3'3 t) => Point2 a -> t a -> t a 
+rotate60About :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+              => Point2 a -> t a -> t a 
 rotate60About = rotateAbout (2*pi/3)
 
 
-rotate120 :: (Floating a, MatrixMult Matrix3'3 t) => t a -> t a 
+rotate120 :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+          => t a -> t a 
 rotate120 = rotate (4*pi/3) 
 
-rotate120About :: (Floating a, MatrixMult Matrix3'3 t) => Point2 a -> t a -> t a 
+rotate120About :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+               => Point2 a -> t a -> t a 
 rotate120About = rotateAbout (4*pi/3)
 
 
-circular :: (Floating a, MatrixMult Matrix3'3 t) => [t a] -> [t a]
+circular :: (Floating a, Real a, MatrixMult Matrix3'3 t) 
+         => [t a] -> [t a]
 circular xs = snd $ mapAccumR fn 0 xs 
   where
     fn ang a = (ang+1, rotate (2*ang*pi/len) a)

@@ -45,6 +45,7 @@ veeArrow ln = ln:vs where
 
 veeArrowC :: DCurve -> (DCurve,[DLineSegment2])
 veeArrowC crv = (crv,vs) where
+  cl :: Integer
   vs = arrowheadVee 10 (pi/10) (pi + (vangle $ bisector v1 v2)) (endPoint crv) 
   v1 = endTangentVector crv
   cl = floor $ gravesenLength 0.1 crv
@@ -59,7 +60,7 @@ perpArrowC crv = (crv,vs) where
   vs = arrowheadPerp 5 (endTangent crv) (endPoint crv)
 
 
-arrowheadTriangle :: Double -> DRadian -> (DRadian -> DPoint2 -> DPolygon)
+arrowheadTriangle :: Double -> Radian -> (Radian -> DPoint2 -> DPolygon)
 arrowheadTriangle d ang = 
   \theta endpt -> let halfBW = d * fromRadian (tan ang) 
                       tri    = isoscelesTriangle (2*halfBW) d endpt
@@ -68,8 +69,8 @@ arrowheadTriangle d ang =
                      $ tri
 
 
-arrowheadVee :: Double -> DRadian
-             -> (DRadian -> DPoint2 -> [DLineSegment2])
+arrowheadVee :: Double -> Radian
+             -> (Radian -> DPoint2 -> [DLineSegment2])
 arrowheadVee d ang = 
   \theta endpt -> let p0  = endpt .+^ (hvec (-d))
                       p01 = rotateAbout (pi-ang) endpt p0
@@ -79,7 +80,7 @@ arrowheadVee d ang =
 
 
 
-arrowheadPerp :: Double -> (DRadian -> DPoint2 -> [DLineSegment2])
+arrowheadPerp :: Double -> (Radian -> DPoint2 -> [DLineSegment2])
 arrowheadPerp d = 
   \theta endpt -> let p0 = endpt .+^ (hvec (-d))
                       p1 = endpt .+^ (hvec d)

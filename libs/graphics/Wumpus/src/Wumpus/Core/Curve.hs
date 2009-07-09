@@ -193,7 +193,7 @@ circleSegment ang = Curve p0 p1 p2 p3 where
 
 --
 bezierArc :: (Floating a, AffineSpace a) 
-          => a -> Radian a -> Radian a -> Curve a
+          => a -> Radian -> Radian -> Curve a
 bezierArc r ang1 ang2 = Curve p0 p1 p2 p3 where
   theta = ang2 - ang1
   e     = r * fromRadian ((2 * sin (theta/2)) / (1+ 2* cos (theta/2))) 
@@ -205,13 +205,15 @@ bezierArc r ang1 ang2 = Curve p0 p1 p2 p3 where
 --------------------------------------------------------------------------------
 -- Tangents
 
-startTangent :: (Ord a, Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a) 
-             => Curve a -> Radian a
+startTangent :: (Ord a, Floating a, Real a, 
+                 AffineSpace a, InnerSpace a, a ~ Scalar a) 
+             => Curve a -> Radian
 startTangent = vangle . startTangentVector
 
 
-endTangent :: (Ord a, Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a) 
-           => Curve a -> Radian a
+endTangent :: (Ord a, Floating a, Real a, 
+               AffineSpace a, InnerSpace a, a ~ Scalar a) 
+           => Curve a -> Radian
 endTangent = vangle . endTangentVector
 
 

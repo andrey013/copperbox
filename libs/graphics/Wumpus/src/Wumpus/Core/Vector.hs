@@ -242,10 +242,11 @@ freeVector a b = b .-. a
 
 
 -- | Construct a vector from and angle and a magnitude
-avec2 :: Floating a => Radian a -> a -> Vec2 a
-avec2 (Radian ang) d = V2 x y where
-  x = d * cos ang
-  y = d * sin ang
+avec2 :: Floating a => Radian -> a -> Vec2 a
+avec2 theta d = V2 x y where
+  ang = fromRadian theta
+  x   = d * cos ang
+  y   = d * sin ang
 
 
 -- | Construct the vector that bisects the vectors @u@ and @v@.
@@ -258,15 +259,16 @@ bisector u v = u + ((v-u)^*0.5)
 -- Operations
 
 -- | Interior angle between two vector
-interiorAngle :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) 
-       => t a -> t a -> Radian a
+interiorAngle :: (Real a, Floating a, 
+                  InnerSpace (t a), a ~ Scalar (t a)) 
+              => t a -> t a -> Radian
 interiorAngle u v = toRadian $ acos ((u<.>v) / ((magnitude u) * (magnitude v)))    
 
 
 -- | CCW angle between the vector and the horizontal plane.
-vangle :: (HVec t, VVec t, Ord a, Floating a,
+vangle :: (HVec t, VVec t, Ord a, Floating a, Real a,
            InnerSpace (t a), a ~ Scalar (t a)) 
-       => t a -> Radian a
+       => t a -> Radian
 vangle v | vsignum v >= 0 = interiorAngle v (hvec 1)
          | otherwise      = 2*pi - interiorAngle v (hvec 1)
   

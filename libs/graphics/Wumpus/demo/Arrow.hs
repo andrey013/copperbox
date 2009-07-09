@@ -73,14 +73,14 @@ curvedArrs proc =
      ; drawCurveArr $ proc $ straightBezier
      }
                              
-arrowhead1 :: DPoint2 -> DPoint2 -> (DRadian -> DPoint2 -> a) 
+arrowhead1 :: DPoint2 -> DPoint2 -> (Radian -> DPoint2 -> a) 
                 -> (a -> WumpusM()) -> WumpusM ()
 arrowhead1 start_pt end_pt arrHead drawFun = 
     do { drawLine $ arrline
        ; drawFun $ arrHead theta end_pt
        }
   where
-    theta    :: DRadian
+    theta    :: Radian
     arrline  = lineTo start_pt end_pt
     theta    = langle arrline
 
@@ -96,7 +96,7 @@ drawCurveArr (c,xs) = do
   drawLabel $ label (show et) (endPoint c)
 
 
-testCurve :: DRadian -> DCurve
+testCurve :: Radian -> DCurve
 testCurve = bezierArc 50 0
 
 

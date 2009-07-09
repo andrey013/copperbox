@@ -63,8 +63,6 @@ import Wumpus.Core.Vector
 import Data.AffineSpace
 import Data.VectorSpace
 
-import Control.Applicative ( pure )
-
 
 --------------------------------------------------------------------------------
 -- Line types and standard instances
@@ -171,7 +169,7 @@ vline a = line (vvec a)
 -- | A line from point @p@ in the direction @theta@ from x-axis
 -- of length @a@
 aline :: (Floating a, AffineSpace (pt a), Vec2 a ~ Diff (pt a)) 
-      => Radian a -> a -> CoLineSegment pt a
+      => Radian -> a -> CoLineSegment pt a
 aline theta a = line (avec2 theta a)
 
 
@@ -191,8 +189,8 @@ lineTo = LS --  p1 v where v = p2 .-. p1
 
 
 -- | Angle ccw from x-axis
-langle :: Floating a => LineSegment Point2 a -> Radian a
-langle (LS (P2 x y) (P2 x' y')) = pure $ atan $ (y'-y) / (x'-x) 
+langle :: (Floating a, Real a) => LineSegment Point2 a -> Radian
+langle (LS (P2 x y) (P2 x' y')) = toRadian $ atan $ (y'-y) / (x'-x) 
 
 
 
@@ -208,8 +206,11 @@ lineCenter :: (Fractional (Scalar (Diff (pt a))),
 lineCenter (LS p p') = midpoint p' p
 
 -- | Expand line 
-expandLine :: (Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a)
-            => Scalar (Diff (Point2 a)) -> LineSegment Point2 a -> LineSegment Point2 a
+expandLine :: (Floating a, Real a, AffineSpace a, 
+               InnerSpace a, a ~ Scalar a)
+           => Scalar (Diff (Point2 a)) 
+           -> LineSegment Point2 a 
+           -> LineSegment Point2 a
 expandLine n ln =  LS (p .-^ v) (p .+^ v) where
   v = avec2 (langle ln) (n*segmentLength ln/2)
   p = lineCenter ln

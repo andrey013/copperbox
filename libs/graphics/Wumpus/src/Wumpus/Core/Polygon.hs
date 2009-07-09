@@ -116,7 +116,7 @@ instance ExtractPoints (BoundingBox a) where
 
 -- | Create a regular polgon with @n@ sides, and displacement @vec@ from the
 -- centre for the first point.
-regularPolygon :: (AffineSpace a, Floating a)
+regularPolygon :: (Floating a, Real a, AffineSpace a)
                => Int -> a -> CoPolygon a
 regularPolygon n radius = Polygon . pf
   where 
@@ -171,7 +171,8 @@ simplePolygon (Polygon ps)
 
 -- | A polygon is concave if at least 1 interior angle is greater then pi/2.
 -- concavePolygon :: (Ord a, Floating a) => Polygon a -> Bool
-concavePolygon :: (a ~ Scalar a, Ord a, Floating a, AffineSpace a, InnerSpace a)
+concavePolygon :: (Ord a, Floating a, Real a, 
+                   AffineSpace a, InnerSpace a, a ~ Scalar a)
                => Polygon a -> Bool
 concavePolygon = any (>pi/2) . interiorAngles
 
@@ -181,8 +182,9 @@ concavePolygon = any (>pi/2) . interiorAngles
 -- Operations
 
 -- | Extract the interior angles of polygon.
-interiorAngles :: (a ~ Scalar a, Floating a, AffineSpace a, InnerSpace a)
-               => Polygon a -> [Radian a]
+interiorAngles :: (a ~ Scalar a, Floating a, Real a, 
+                   AffineSpace a, InnerSpace a)
+               => Polygon a -> [Radian]
 interiorAngles (Polygon ps) = windowedMap3c intAng ps where
   intAng a b c = interiorAngle (a .-. b) (c .-. b)
 
