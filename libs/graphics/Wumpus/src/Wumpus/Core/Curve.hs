@@ -22,6 +22,11 @@ module Wumpus.Core.Curve
   -- * Curve types  
     Curve(..)
   , DCurve
+  , CoCurve
+  , DCoCurve
+
+  -- * Construction
+  , tildeCurve
   
   -- * de Casteljau\'s algorithm
   , subdivide
@@ -69,6 +74,10 @@ data Curve a = Curve (Point2 a) (Point2 a) (Point2 a) (Point2 a)
 
 type DCurve = Curve Double
 
+type CoCurve a = Point2 a -> Curve a
+
+type DCoCurve = CoCurve Double
+
 
 instance Functor Curve where
   fmap f (Curve p0 p1 p2 p3) = 
@@ -90,6 +99,18 @@ instance ExtractPoints (Curve a) where
 
 instance Converse (Curve a) where
   converse (Curve p0 p1 p2 p3) = Curve p3 p2 p1 p0
+
+
+--------------------------------------------------------------------------------
+-- Construction
+
+-- | Create a tilde (sinusodial) curve about the horizontal plane.
+
+tildeCurve :: (Floating a, AffineSpace a, Converse (Vec2 a)) => a -> CoCurve a
+tildeCurve w = \pt -> let endpt = pt .+^ hvec w
+                      in Curve pt (pt .+^ v) (endpt .+^ converse v) endpt
+  where 
+    v = avec2 (pi/4) (w/2)
 
 
 --------------------------------------------------------------------------------
@@ -218,17 +239,19 @@ endTangent = vangle . endTangentVector
 
 
 
-startTangentVector :: (Ord a, Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a) 
-             => Curve a -> Vec2 a
+startTangentVector :: (Ord a, Floating a, 
+                       AffineSpace a, InnerSpace a, a ~ Scalar a) 
+                   => Curve a -> Vec2 a
 startTangentVector (Curve p0 p1 _ _) = freeVector p0 p1
 
 
-endTangentVector :: (Ord a, Floating a, AffineSpace a, InnerSpace a, a ~ Scalar a) 
-           => Curve a -> Vec2 a
+endTangentVector :: (Ord a, Floating a, 
+                     AffineSpace a, InnerSpace a, a ~ Scalar a) 
+                 => Curve a -> Vec2 a
 endTangentVector (Curve _ _ p2 p3) = freeVector p3 p2
 
 
-
+--------------------------------------------------------------------------------
 
 
 

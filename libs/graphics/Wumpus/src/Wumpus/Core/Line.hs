@@ -30,11 +30,13 @@ module Wumpus.Core.Line
     LineSegment(..)
   , DLineSegment2
   , CoLineSegment
+  , DCoLineSegment2
 
   -- ** Poly lines
   , PolyLine(..)
   , DPolyLine2
   , CoPolyLine
+  , DCoPolyLine2
 
    -- * Construction
   , line
@@ -77,6 +79,9 @@ type DLineSegment2 = LineSegment Point2 Double
 
 type CoLineSegment pt a = pt a -> LineSegment pt a  
 
+type DCoLineSegment2 = CoLineSegment Point2 Double
+
+-- Poly Lines
 
 data PolyLine (pt :: * -> *) a = PolyLine [pt a]
   deriving (Eq,Show)
@@ -86,6 +91,8 @@ type DPolyLine2 = PolyLine Point2 Double
 
 
 type CoPolyLine pt a = pt a -> PolyLine pt a  
+
+type DCoPolyLine2 = CoPolyLine Point2 Double
 
 
 instance Functor pt => Functor (LineSegment pt) where
@@ -180,11 +187,6 @@ lineTo = LS --  p1 v where v = p2 .-. p1
 
 --------------------------------------------------------------------------------
 -- operations
-
-
-
-
-
 
 
 

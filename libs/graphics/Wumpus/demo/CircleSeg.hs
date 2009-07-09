@@ -48,6 +48,10 @@ demo1 = writePS "circleseg1.ps" $ runWumpus st0 $ drawing1 where
                 ; ps_translate 0 (-50)
                 ; mapM_ (B.drawCurve . pointwise (scale 5 2.5)) 
                                      $ cosPath 50
+                --
+                ; ps_translate 0 (-50)
+                ; B.drawBezier $ tildeCurve 50 (P2 0  0)
+                ; B.drawCurve  $ tildeCurve 50 (P2 60 0)
                 }
 
 dpo :: DVec2 -> WumpusM ()

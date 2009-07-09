@@ -51,7 +51,7 @@ radian_epsilon = 0.0001
 --------------------------------------------------------------------------------
 
 -- | Radian is represented with a distinct type. 
--- E quality and ordering are approximate where the epsilon is 0.0001.
+-- Equality and ordering are approximate where the epsilon is 0.0001.
 newtype Radian = Radian { getRadian :: Double }
   deriving (Num,Real,Fractional,Floating,RealFrac,RealFloat)
 
@@ -112,16 +112,18 @@ class Direction2 t where
 -- | The interior between two angles - shortest distance (negative cw) or 
 -- (positive ccw).
 interior :: Radian -> Radian -> Radian
-interior a b = fn (b-a)
+interior a b = if d `rgt` pi then (2*pi)-d else d
   where 
-    fn d = if d `rgt` pi then (2*pi)-d else d
+    d = b-a
 
 
 -- degrees / radians
 
+-- | Degrees to radians.
 d2r :: (Floating a, Real a) => a -> Radian
 d2r = Radian . realToFrac . (*) (pi/180)
 
+-- | Radians to degrees.
 r2d :: (Floating a, Real a) => Radian -> a
 r2d = (*) (180/pi) . fromRadian
 

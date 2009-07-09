@@ -48,6 +48,7 @@ module Wumpus.Core.Vector
   ) where
 
 import Wumpus.Core.Fun
+import Wumpus.Core.Geometric
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Radian
 
@@ -133,6 +134,10 @@ instance Pointwise (Vec3 a) where
 
 instance Direction2 Vec2 where
    direction2 (V2 a b) = toRadian $ atan (a/b)
+
+-- Converse of a vector is same magintude, opposite direction
+instance Num a => Converse (Vec2 a) where
+  converse (V2 a b) = V2 (-a) (-b)
 
 
 --------------------------------------------------------------------------------
