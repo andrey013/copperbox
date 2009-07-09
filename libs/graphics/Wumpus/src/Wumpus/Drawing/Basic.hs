@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -21,7 +22,6 @@ module Wumpus.Drawing.Basic where
 import Wumpus.Core.Colour
 import Wumpus.Core.Curve
 import Wumpus.Core.Line
-import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Polygon
@@ -38,10 +38,16 @@ type Radius = Double
 type Origin = DPoint2
 
 
+type LineBag     = DPoint2 -> [DLineSegment2]  -- unjoined lines
 
 
 data Circle = Circle Origin Radius
   deriving (Eq,Show)
+
+
+instance Pointwise LineBag where
+  type Pt LineBag = DPoint2
+  pointwise f pf = pf . f
 
 
 instance Pointwise Circle where
@@ -50,6 +56,12 @@ instance Pointwise Circle where
 
 
 --------------------------------------------------------------------------------
+
+
+transOrigin :: (Floating a, Pointwise sh, Pt sh ~ Point2 a) 
+            => sh -> Point2 a -> sh
+transOrigin z = \(P2 x y) -> pointwise (translate x y) z
+
 
 
 
@@ -90,13 +102,13 @@ setRgbColour (RGB3 r g b) = ps_setrgbcolor r g b
 
 
 
-diamond :: (Double,Double) -> DPoint2 -> DPolygon
-diamond (w,h) (P2 x1 y1) = Polygon xs
+diamond :: Double -> Double -> DCoPolygon
+diamond w h = \o -> Polygon $ map (o .+^) xs 
   where
-    xs     = map (trans1.scale1.rot1) $ unitSquare $ P2 0 0
-    rot1   = (*#) $ rotationMatrix (pi/4)
-    scale1 = (*#) $ scalingMatrix w h
-    trans1 = (*#) $ translationMatrix x1 y1
+    xs = [vh,vv, reflectX vh, reflectY vv]
+    vh = hvec (w/2)
+    vv = vvec (h/2)
+
 
 --------------------------------------------------------------------------------
 -- arcs and ellipses
@@ -140,19 +152,28 @@ drawBezier (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) =
 --------------------------------------------------------------------------------
 -- dots
 
-dotPlus :: DPoint2 -> [DLineSegment2]
-dotPlus (P2 x y) = map (translate x y) [ls1,ls2]
-  where
-    ls1 = hline 4 (P2 (-2) 0)
-    ls2 = rotate90 ls1
-  
 
-dotX :: DPoint2 -> [DLineSegment2]
-dotX (P2 x y) = map (translate x y) [ls1,ls2]
-  where
-    ls1 = rotate30 $ vline 4 (P2 0 (-2))
-    ls2 = rotate (5*pi/3) $ ls1
+dotSquare :: DCoPolygon
+dotSquare = square 2
 
+dotPentagon :: DCoPolygon
+dotPentagon = regularPolygon 5 2
+
+dotPlus :: LineBag
+dotPlus = sequence [lv,lh]
+  where
+    lh  = translate (-2) 0 . line (hvec 4::Vec2 Double)
+    lv  = translate 0 (-2) . line (vvec 4)
+   
+
+dotX :: LineBag
+dotX = sequence [ls1,ls2]
+  where
+    ls1 o = rotateAbout (pi/6) o $ translate 0 (-2) $ line (vvec 4 :: Vec2 Double) o
+    ls2 o = rotateAbout (5*pi/3) o $ ls1 o
+
+
+-- old dots...
 
 dotAsterisk :: DPoint2 -> [DLineSegment2]
 dotAsterisk (P2 x y) = map (translate x y) $ circular (replicate 5 ls1)
@@ -163,11 +184,7 @@ dotAsterisk (P2 x y) = map (translate x y) $ circular (replicate 5 ls1)
 dotTriangle :: DPoint2 -> DPolygon
 dotTriangle = polyDot (P2 0 2) 3
 
-dotSquare :: DPoint2 -> DPolygon
-dotSquare = polyDot (P2 1.5 1.5) 4
 
-dotPentagon :: DPoint2 -> DPolygon
-dotPentagon = polyDot (P2 0 1.5) 5 
 
 polyDot :: DPoint2 -> Int -> DPoint2 -> DPolygon
 polyDot pt1 n (P2 x y) = Polygon xs

@@ -7,6 +7,7 @@ import Wumpus.Core.Geometric
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Radian
+
 import Wumpus.Drawing.Arrow
 import Wumpus.Drawing.Basic
 import Wumpus.Drawing.Label

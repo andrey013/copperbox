@@ -12,8 +12,7 @@ import Wumpus.Core.Pointwise
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
-import qualified Wumpus.Drawing.Basic as B
-import Wumpus.Drawing.BasicCF
+import Wumpus.Drawing.Basic
 import Wumpus.Drawing.Grid
 import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.X11Colours
@@ -28,11 +27,11 @@ import Data.VectorSpace
 demo1 :: IO ()
 demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { ps_translate 60 380 
-                ; B.setRgbColour dodgerBlue1
-                ; mapM_ B.drawLine $ grid 20 20 (P2 150 140) origin 
+                ; setRgbColour dodgerBlue1
+                ; mapM_ drawLine $ grid 20 20 (P2 150 140) origin 
                 ---
                 ; ps_translate 200 0
-                ; mapM_ B.drawLineBag $ sequence calgrid (P2 0 0)
+                ; mapM_ drawLineBag $ sequence calgrid (P2 0 0)
                 }
   frame1 = Frame2 (P2 0 0) (V2 1 0) (V2 0 0.5)
   origin = P2 0 0

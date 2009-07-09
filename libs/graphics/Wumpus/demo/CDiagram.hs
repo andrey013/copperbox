@@ -11,7 +11,7 @@ import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
 import Wumpus.Drawing.Arrow
-import qualified Wumpus.Drawing.Basic as B
+import Wumpus.Drawing.Basic
 import Wumpus.Drawing.Label
 import Wumpus.Drawing.PostScript
 
@@ -27,7 +27,7 @@ demo1 = writePS "cdiagram1.ps" $ runWumpus st0 $ drawing1 where
 diagram1 :: WumpusM ()
 diagram1 = mapM_ drawArr arrs >> mapM_ drawLabel labels
  
-drawArr = B.drawLine
+drawArr = drawLine
 
 
 arrs :: [DLineSegment2]

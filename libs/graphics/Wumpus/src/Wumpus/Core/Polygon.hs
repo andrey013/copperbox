@@ -111,8 +111,6 @@ instance ExtractPoints (BoundingBox a) where
 --------------------------------------------------------------------------------
 -- Construction
 
--- NOTE - supplying the displacement vector to regularPolygon /feels/ wrong.
--- This function needs a re-think.
 
 -- | Create a regular polgon with @n@ sides, and displacement @vec@ from the
 -- centre for the first point.

@@ -39,7 +39,6 @@ library
     Wumpus.Core.Vector,
     Wumpus.Drawing.Arrow,
     Wumpus.Drawing.Basic,
-    Wumpus.Drawing.BasicCF,
     Wumpus.Drawing.Grid,
     Wumpus.Drawing.Label,
     Wumpus.Drawing.Plot,

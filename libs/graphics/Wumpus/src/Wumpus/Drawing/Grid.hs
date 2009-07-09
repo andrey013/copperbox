@@ -18,13 +18,13 @@
 module Wumpus.Drawing.Grid where
 
 import Wumpus.Core.Fun
-import Wumpus.Core.Line hiding ( line )
+import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
-import Wumpus.Drawing.BasicCF
+import Wumpus.Drawing.Basic
 
 import Data.AffineSpace
 

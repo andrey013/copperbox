@@ -15,7 +15,25 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Drawing.Arrow where
+module Wumpus.Drawing.Arrow 
+  ( 
+    veeArrow
+  , veeArrowC
+  , perpArrowC
+  , arrowCenterMarker
+
+  -- * Arrowhead construction
+  , arrowheadTriangle
+  , arrowheadVee
+  , arrowheadPerp
+
+  -- * OLD 
+  , Arrow(..)
+  , DArrow
+  , arrow
+  , drawArrow
+
+  ) where
 
 import Wumpus.Core.Curve
 import Wumpus.Core.Frame
@@ -39,8 +57,9 @@ veeArrow :: DLineSegment2 -> [DLineSegment2]
 veeArrow ln = ln:vs where
   vs = arrowheadVee 10 (pi/10) (langle ln) (endPoint ln) 
 
--- This illustrates Wumpus's biggest current problem - what is the 
--- /union/ of a curve and an arrowhead (made up of line segments)?
+-- This illustrates the biggest problem that Wumpus has at present 
+-- - what is the  /union/ of a curve and an arrowhead (made up of 
+-- line segments)?
 
 
 veeArrowC :: DCurve -> (DCurve,[DLineSegment2])
@@ -59,6 +78,18 @@ perpArrowC :: DCurve -> (DCurve,[DLineSegment2])
 perpArrowC crv = (crv,vs) where
   vs = arrowheadPerp 5 (endTangent crv) (endPoint crv)
 
+
+arrowCenterMarker :: DLineSegment2 -> [DLineSegment2]
+arrowCenterMarker ls = [ls,cm] where
+  p     = lineCenter ls 
+  theta = langle ls
+  p0    = p .+^ avec2 (theta + pi/2) 2
+  p1    = p .+^ avec2 (theta - pi/2) 2
+  cm    = lineTo p0 p1
+
+
+--------------------------------------------------------------------------------
+-- Arrowhead construction
 
 arrowheadTriangle :: Double -> Radian -> (Radian -> DPoint2 -> DPolygon)
 arrowheadTriangle d ang = 
@@ -86,14 +117,10 @@ arrowheadPerp d =
                       p1 = endpt .+^ (hvec d)
                   in [pointwise (rotateAbout (theta+pi/2) endpt) (lineTo p0 p1)]
 
+--------------------------------------------------------------------------------
+-- OLD - arrow type 
 
-arrowCenterMarker :: DLineSegment2 -> [DLineSegment2]
-arrowCenterMarker ls = [ls,cm] where
-  p     = lineCenter ls 
-  theta = langle ls
-  p0    = p .+^ avec2 (theta + pi/2) 2
-  p1    = p .+^ avec2 (theta - pi/2) 2
-  cm    = lineTo p0 p1
+
 
 -- TODO - tip should be more general, e.g. list of lines, or arcs
 data Arrow a = Arrow (LineSegment Point2 a) (Polygon a)

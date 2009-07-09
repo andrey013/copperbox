@@ -26,11 +26,11 @@ demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
                 ; ellipse (60,5) (15,10)
                 ; ellipticarc (120,5) (15,10) 0 270
                 ; polygon [(P2 140 5), (P2 140 30), (P2 170 5), (P2 170 30)]
-                ; drawPolygon $ diamond (30,30) (P2 10 50)
+                ; drawPolygon $ diamond 30 30 (P2 10 50)
                 ; drawDisk $ disk (10,50) 2
                 -- Properties currently not implemented ...
                 -- lineColour blueViolet $ lineWidth 1 $ fillColour burlywood
-                ; drawPolygon $ diamond (30,20) (P2 80 50) 
+                ; drawPolygon $ diamond 30 20 (P2 80 50) 
                 ; setRgbColour blueViolet
                 ; mapM_ drawLineSegment $ dotPlus  (P2 120 50)
                 ; mapM_ drawLineSegment $ dotAsterisk (P2 130 50)
