@@ -128,8 +128,8 @@ instance Pointwise (PolyLine Point2 a) where
 instance ExtractPoints (LineSegment Point2 a) where
   type Pnt (LineSegment Point2 a) = Point2 a
   extractPoints (LS p p') = [p,p']
-  endPoint (LS _ p') = p'
-
+  endPoint (LS _ p')      = p'
+  startPoint (LS p _)     = p
 
 --------------------------------------------------------------------------------
 -- Other instances

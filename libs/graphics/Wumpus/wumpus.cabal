@@ -31,6 +31,7 @@ library
     Wumpus.Core.Instances,
     Wumpus.Core.Line,
     Wumpus.Core.Matrix,
+    Wumpus.Core.Path,
     Wumpus.Core.Point,
     Wumpus.Core.Pointwise,
     Wumpus.Core.Polygon,

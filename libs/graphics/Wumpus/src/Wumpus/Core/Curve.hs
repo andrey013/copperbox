@@ -96,6 +96,8 @@ instance ExtractPoints (Curve a) where
   type Pnt (Curve a) = Point2 a
   extractPoints (Curve p0 p1 p2 p3) = [p0,p1,p2,p3]
   endPoint (Curve _ _ _ p3)         = p3
+  startPoint (Curve p0 _ _ _)       = p0
+
 
 instance Converse (Curve a) where
   converse (Curve p0 p1 p2 p3) = Curve p3 p2 p1 p0

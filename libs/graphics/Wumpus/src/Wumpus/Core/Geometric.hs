@@ -52,7 +52,7 @@ class ExtractPoints t where
   type Pnt t :: *
   extractPoints :: t -> [Pnt t]
   endPoint      :: t -> Pnt t
-
+  startPoint    :: t -> Pnt t
 
 
 --------------------------------------------------------------------------------

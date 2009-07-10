@@ -36,7 +36,7 @@ midlines (p1@(P2 x0 y0), p2@(P2 x1 y1)) = [v,h]  -- clockwise
 
 
 demo1 :: IO ()
-demo1 = outputQuadTree "tree1.ps" demo_qt
+demo1 = outputQuadTree "quadtree1.ps" demo_qt
 
 outputQuadTree :: FilePath -> QuadTree (DPoint2,DPoint2) DPoint2 -> IO ()
 outputQuadTree name tree =  writePS name $ runWumpus st0 $ drawing1 where

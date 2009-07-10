@@ -100,6 +100,7 @@ instance ExtractPoints (Polygon a) where
   extractPoints (Polygon xs) = xs
   endPoint (Polygon (x:_))   = x        -- start point is also end point   
   endPoint (Polygon _)       = error "endPoint: malformed Polygon, too few points"
+  startPoint                 = endPoint  
 
 instance ExtractPoints (BoundingBox a) where
   type Pnt (BoundingBox a) = Point2 a
@@ -107,18 +108,18 @@ instance ExtractPoints (BoundingBox a) where
     where br = P2 xmax ymin
           tl = P2 xmin ymax
   endPoint (BBox start _) = start       -- start point is also end point   
+  startPoint              = endPoint  
                 
 --------------------------------------------------------------------------------
 -- Construction
 
 
--- | Create a regular polgon with @n@ sides, and displacement @vec@ from the
--- centre for the first point.
+-- | Create a regular polygon with @n@ sides and /radius/ @r@.
 regularPolygon :: (Floating a, Real a, AffineSpace a)
                => Int -> a -> CoPolygon a
-regularPolygon n radius = Polygon . pf
+regularPolygon n r = Polygon . pf
   where 
-    pf = \pt -> circular $ replicate n (pt .+^ (V2 0 radius)) 
+    pf = \pt -> circular $ replicate n (pt .+^ (V2 0 r)) 
 
 
 -- Note square and rectangle are both 'turtle drawn' and use the @iter@ 
