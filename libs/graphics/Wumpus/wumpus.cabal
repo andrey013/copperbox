@@ -19,7 +19,7 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base, vector-space, monadLib, dlist
+  build-depends:      base < 5, vector-space, monadLib, dlist
 
   
   exposed-modules:

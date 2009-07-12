@@ -16,14 +16,15 @@
 --------------------------------------------------------------------------------
 
 
-module Mullein.LilyPondConvert (
+module Mullein.LilyPondConvert
+  (
   -- conversion functions
-  convertToLyRelative,
-  convertToLyAbsolute,
+    convertToLyRelative
+  , convertToLyAbsolute
 
-  rescale,
-  absPitch,
-  relPitch,
+  , rescale
+  , absPitch
+  , relPitch
 
   ) where
 

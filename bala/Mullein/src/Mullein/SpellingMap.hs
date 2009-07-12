@@ -15,13 +15,18 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.SpellingMap (
-  SpellingMap,
-  rename,
-  naturalize,
-  makeSpellingMap,
-  spellingMap,
-  pitchNames,
+module Mullein.SpellingMap 
+  (
+  -- * Types
+    SpellingMap
+
+  -- * Operations
+  , rename
+  , naturalize
+  , makeSpellingMap
+  , spellingMap
+  , pitchNames
+
   ) where
 
 import Mullein.Core ( Key(..), Mode(..) )

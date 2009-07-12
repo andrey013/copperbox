@@ -14,23 +14,27 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Pitch ( 
-  Pitch(..),
-  Octave,
-  PitchLetter(..),
-  Accidental(..),
-  PitchLabel(..),
+module Mullein.Pitch 
+  ( 
+  -- * Pitch types
+    Pitch(..)
+  , Octave
+  , PitchLetter(..)
+  , Accidental(..)
+  , PitchLabel(..)
 
-  Semitones(..),
-  transpose,
+  -- * Type classes
+  , Semitones(..)
+
+  , transpose
 
 
-  toUpperLChar,
-  toLowerLChar,
+  , toUpperLChar
+  , toLowerLChar
 
 
-  rescaleOctave,
-  octaveDist,
+  , rescaleOctave
+  , octaveDist
 
   ) where
 

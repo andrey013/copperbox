@@ -18,43 +18,48 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Score (
-    ScNote(..),
-    Part, 
-    Phrase,
-    Motif,
-    Bar,
-    Unison,
-    Bracket,
-    Element,
-    GraceNote,
+module Mullein.Score 
+  (
+    ScNote(..)
+  , Part
+  , Phrase
+  , Motif
+  , Bar
+  , Unison
+  , Bracket
+  , Element
+  , GraceNote
 
-    Note(..),
-    NoteAttribute(..),
+  , Note(..)
+  , NoteAttribute(..)
 
-    part,
+  , part
 
-    phrase, repeated, fsrepeat,
+  , phrase
+  , repeated
+  , fsrepeat
     
-    motif,
-    primary, addOverlay,
+  , motif
+  , primary
+  , addOverlay
 
-    rest, space, chord,
+  , rest
+  , space
+  , chord
     
     
-    -- notes
-    cf, c, cs, df, d, ds, ef, e, es,
-    ff, f, fs, gf, g, gs, af, a, as,
-    bf, b, bs,
+  -- notes
+  , cf, c, cs, df, d, ds, ef, e, es
+  , ff, f, fs, gf, g, gs, af, a, as
+  , bf, b, bs
 
     -- durations
-    wn, hn, qn, en, sn, tn,
-    dhn, dqn, den, dsn,
+  , wn, hn, qn, en, sn, tn
+  , dhn, dqn, den, dsn
     
     -- rests
-    wnr, hnr, qnr, enr, snr, tnr,
-    dhnr, dqnr, denr, dsnr,
-
+  , wnr, hnr, qnr, enr, snr, tnr
+  , dhnr, dqnr, denr, dsnr
 
  ) where
 

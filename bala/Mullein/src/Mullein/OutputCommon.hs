@@ -15,20 +15,23 @@
 --------------------------------------------------------------------------------
 
 
-module Mullein.OutputCommon (
-  OutputFragment(..),
-  OutputM,
-  OutputSt(..),
-  keyChange,
-  meterChange,
+module Mullein.OutputCommon 
+  (
+    OutputFragment(..)
+  , OutputM
+  , OutputSt(..)
+
+  , keyChange
+  , meterChange
   
-  appendBarFragment,
-  motifFragment,
-  repeated,
-  fsrepeat,
-  dropRepStart,
-  addDblEnd,
-  intersperseBars,
+  , appendBarFragment
+  , motifFragment
+  , repeated
+  , fsrepeat
+  , dropRepStart
+  , addDblEnd
+  , intersperseBars
+
   ) where
 
 import Mullein.Core

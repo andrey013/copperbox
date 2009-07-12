@@ -15,20 +15,25 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Duration ( 
-  Duration,
-  Meter(..),
+module Mullein.Duration 
+  ( 
+  -- * Duration types
+    Duration
+  , Meter(..)
 
-  Temporal(..),
-  Spacer(..),
+  -- * Type classes
+  , Temporal(..)
+  , Spacer(..)
   
-  dot, dotn,
+  -- * Operations
+  , dot 
+  , dotn
 
-  AugDuration(..),
-  rationalize,
-  pdElements,
-  augDuration,
-  ppDuration,
+  , AugDuration(..)
+  , rationalize
+  , pdElements
+  , augDuration
+  , ppDuration
 
   ) where
 

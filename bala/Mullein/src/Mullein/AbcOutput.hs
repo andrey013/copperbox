@@ -15,13 +15,15 @@
 --------------------------------------------------------------------------------
 
 
-module Mullein.AbcOutput ( 
-  AbcOutput(..),
-  generateABC,
-  printNote,
-  field, 
-  keyField,
-  meterField,
+module Mullein.AbcOutput 
+  ( 
+    AbcOutput(..)
+    
+  , generateABC
+  , printNote
+  , field
+  , keyField
+  , meterField
   ) where
 
 import Mullein.AbcNoteClass

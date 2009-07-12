@@ -13,8 +13,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.AbcNoteClass (
-  AbcNote(..),
+module Mullein.AbcNoteClass 
+  (
+  -- * Type class 
+    AbcNote(..)
+
   ) where
 
 import Mullein.Duration

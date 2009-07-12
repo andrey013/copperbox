@@ -15,14 +15,17 @@
 --------------------------------------------------------------------------------
 
 
-module Mullein.LilyPondOutput ( 
-  LilyPondOutput(..),
-  generateLilyPond,
-  note,
-  optDuration,
-  command,
-  keyCmd,
-  timeCmd,
+module Mullein.LilyPondOutput 
+  ( 
+    LilyPondOutput(..)
+
+  , generateLilyPond
+  , note
+  , optDuration
+  , command
+  , keyCmd
+  , timeCmd
+
   ) where
 
 import Mullein.Core

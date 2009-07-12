@@ -16,8 +16,9 @@
 
 
 
-module Mullein.Bracket ( 
-  bracket,
+module Mullein.Bracket 
+  ( 
+    bracket
   
   ) where
 

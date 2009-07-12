@@ -26,7 +26,7 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base, OpenGL >= 2.2, GLUT >= 2.1.1.2
+  build-depends:      base < 5, OpenGL >= 2.2, GLUT >= 2.1.1.2
 
   
   exposed-modules:

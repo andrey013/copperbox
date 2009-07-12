@@ -14,54 +14,56 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.NamedElements (
+module Mullein.NamedElements 
+  (
 
-    -- * Named pitches
-    -- $pitchdoc 
-    c_nat, d_nat, e_nat, f_nat, g_nat, a_nat, b_nat, 
-    c_sharp, d_sharp, f_sharp, g_sharp, a_sharp, 
-    d_flat, e_flat, g_flat, a_flat, b_flat,
+  -- * Named pitches
+  -- $pitchdoc 
+    c_nat, d_nat, e_nat, f_nat, g_nat, a_nat, b_nat
+  , c_sharp, d_sharp, f_sharp, g_sharp, a_sharp
+  , d_flat, e_flat, g_flat, a_flat, b_flat
 
 
-    middle_c,
+  , middle_c
         
-    c5, d5, e5, f5, g5, a5, b5,
-    cs5, df5, ds5, ef5, fs5, gf5, gs5, af5, as5, bf5,
+  , c5, d5, e5, f5, g5, a5, b5
+  , cs5, df5, ds5, ef5, fs5, gf5, gs5, af5, as5, bf5
 
-    c4, d4, e4, f4, g4, a4, b4,
-    cs4, df4, ds4, ef4, fs4, gf4, gs4, af4, as4, bf4,
+  , c4, d4, e4, f4, g4, a4, b4
+  , cs4, df4, ds4, ef4, fs4, gf4, gs4, af4, as4, bf4
     
-    c3, d3, e3, f3, g3, a3, b3,
-    cs3, df3, ds3, ef3, fs3, gf3, gs3, af3, as3, bf3,
+  , c3, d3, e3, f3, g3, a3, b3
+  , cs3, df3, ds3, ef3, fs3, gf3, gs3, af3, as3, bf3
   
-    c2, d2, e2, f2, g2, a2, b2,
-    cs2, df2, ds2, ef2, fs2, gf2, gs2, af2, as2, bf2,
+  , c2, d2, e2, f2, g2, a2, b2
+  , cs2, df2, ds2, ef2, fs2, gf2, gs2, af2, as2, bf2
   
-    c1, d1, e1, f1, g1, a1, b1,
-    cs1, df1, ds1, ef1, fs1, gf1, gs1, af1, as1, bf1,
+  , c1, d1, e1, f1, g1, a1, b1
+  , cs1, df1, ds1, ef1, fs1, gf1, gs1, af1, as1, bf1
     
-    c6, d6, e6, f6, g6, a6, b6,
-    cs6, df6, ds6, ef6, fs6, gf6, gs6, af6, as6, bf6,
+  , c6, d6, e6, f6, g6, a6, b6
+  , cs6, df6, ds6, ef6, fs6, gf6, gs6, af6, as6, bf6
   
-    c7, d7, e7, f7, g7, a7, b7,
-    cs7, df7, ds7, ef7, fs7, gf7, gs7, af7, as7, bf7,
+  , c7, d7, e7, f7, g7, a7, b7
+  , cs7, df7, ds7, ef7, fs7, gf7, gs7, af7, as7, bf7
     
-    -- * Named durations
-    longa, breve,
-    du1, du2, du4, du8, du16, du32, du64, du128,  
+  -- * Named durations
+  , longa, breve
+  , du1, du2, du4, du8, du16, du32, du64, du128
 
-    -- * Named keys
-    -- ** Major
-    c_major, g_major, d_major, a_major, e_major, b_major, f_sharp_major,
-    c_sharp_major,
-    f_major, b_flat_major, e_flat_major, a_flat_major, d_flat_major,
-    g_flat_major, c_flat_major,
+  -- * Named keys
+  -- ** Major
+  , c_major, g_major, d_major, a_major, e_major, b_major, f_sharp_major
+  , c_sharp_major
+  , f_major, b_flat_major, e_flat_major, a_flat_major, d_flat_major
+  , g_flat_major, c_flat_major
     
-    -- ** Minor
-    a_minor, e_minor, b_minor, 
-    f_sharp_minor, c_sharp_minor, g_sharp_minor, d_sharp_minor, a_sharp_minor,
-    d_minor, g_minor, c_minor, f_minor,
-    b_flat_minor, e_flat_minor, a_flat_minor, 
+  -- ** Minor
+  , a_minor, e_minor, b_minor
+  , f_sharp_minor, c_sharp_minor, g_sharp_minor, d_sharp_minor, a_sharp_minor
+  , d_minor, g_minor, c_minor, f_minor
+  , b_flat_minor, e_flat_minor, a_flat_minor
+
  ) where
 
 

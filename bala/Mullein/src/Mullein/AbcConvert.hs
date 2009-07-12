@@ -15,8 +15,9 @@
 --------------------------------------------------------------------------------
 
 
-module Mullein.AbcConvert (
-  convertToABC,
+module Mullein.AbcConvert 
+  (
+    convertToABC
   ) where
 
 import Mullein.AbcNoteClass

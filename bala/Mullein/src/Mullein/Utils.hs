@@ -18,30 +18,33 @@
 module Mullein.Utils ( 
   
   -- special zips, unfolds etc.
-  longZipWith,
-  anaMap,
-  anaSt,
-  unfoldr2,
-  unfoldrMonoid,
-  unfoldlMonoid,
-  genUnfold,
-  genUnfold2,
-  unfoldrMonoid2, 
+    longZipWith
+  , anaMap
+  , anaSt
+  , unfoldr2
+  , unfoldrMonoid
+  , unfoldlMonoid
+  , genUnfold
+  , genUnfold2
+  , unfoldrMonoid2
   
-  oo, ooo, oooo,
+  , oo
+  , ooo 
+  , oooo
 
-  prod,
-  enumFromCyc,
-  nextOf,
-  rational,
+  , prod
+  , enumFromCyc
+  , nextOf
+  , rational
 
   -- extra pretty printers
-  doclines,
-  dblangles,
-  nextLine,
-  sglLine,
-  doubleQuote,
-  renderDocEighty,
+  , doclines
+  , dblangles
+  , nextLine
+  , sglLine
+  , doubleQuote
+  , renderDocEighty
+
   ) where
 
 import Control.Applicative ( Applicative(..) )

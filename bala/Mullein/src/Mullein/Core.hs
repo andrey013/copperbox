@@ -15,32 +15,34 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Core ( 
-  MeterPattern,
-  MetricalSpec,
-  Key(..),
-  Mode(..),
+module Mullein.Core 
+  ( 
+  -- * Types
+    MeterPattern
+  , MetricalSpec
+  , Key(..)
+  , Mode(..)
   
-  meterFraction,
-  metricalSpec,
-  withMeterPattern,
-  unitNote,
+  , meterFraction
+  , metricalSpec
+  , withMeterPattern
+  , unitNote
 
-  PartP(..),
-  PhraseP(..),
-  MotifP(..),
-  BarP(..),
-  Tied,
-  UnisonP(..),
-  BracketP(..),
-  ElementP(..),
-  GraceNoteP,
+  , PartP(..)
+  , PhraseP(..)
+  , MotifP(..)
+  , BarP(..)
+  , Tied
+  , UnisonP(..)
+  , BracketP(..)
+  , ElementP(..)
+  , GraceNoteP
   
-  BarNum,
-  OverlayList,
+  , BarNum
+  , OverlayList
 
-  P(..),
-  Concat(..),
+  , P(..)
+  , Concat(..)
 
   ) where
 
