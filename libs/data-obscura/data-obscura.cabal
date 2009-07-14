@@ -1,0 +1,54 @@
+name:             data-obscura
+version:          0.1
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Data
+synopsis:         Obscure data types 
+description:
+  A collection of specialized data types, patterned after their
+  famous cousins in the Hierarchical Libraries, but modelling 
+  restricted construction patterns.
+  . 
+  List1 - non-empty lists.
+  .
+  FPList - so called /fence-post/ lists. Fence-post list has 
+    two element types and ensures that only regular shaped 
+    lists can be constructed: a, aba, ababa, etc
+  .
+  OptionOM - the Maybe type represents zero or one elements,
+    OptionOM represents one or many elements.
+    
+ 
+
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Demo1
+
+library
+  hs-source-dirs:     src
+  build-depends:      base<5
+
+  
+  exposed-modules:
+    Data.FPList,
+    Data.List1,
+    Data.OptionOM
+
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
