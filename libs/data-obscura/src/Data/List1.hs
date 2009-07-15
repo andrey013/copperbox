@@ -41,6 +41,12 @@ module Data.List1
   )
   where
 
+
+import Control.Applicative
+import Data.Foldable ( Foldable, foldMap )
+import Data.Monoid
+import Data.Traversable
+
 import Prelude hiding ( head, last, tail, length, reverse, map, zip, zipWith )
 
 infixr 5 :<<
@@ -55,6 +61,15 @@ instance Show a => Show (List1 a) where
 instance Functor List1 where
   fmap f (Singleton a) = Singleton (f a)
   fmap f (a :<< ne)    = (f a) :<< (fmap f ne)
+
+
+instance Foldable List1 where
+  foldMap f (Singleton a) = f a
+  foldMap f (a :<< ne)    = f a `mappend` foldMap f ne
+
+instance Traversable List1 where
+  traverse f (Singleton a) = Singleton <$> f a
+  traverse f (a :<< ne)    = (:<<) <$> f a <*> traverse f ne
 
 
 -- | Convert a standard list into a non-empty list. 

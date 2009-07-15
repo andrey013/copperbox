@@ -16,10 +16,11 @@ description:
   .
   FPList - so called /fence-post/ lists. Fence-post list has 
     two element types and ensures that only regular shaped 
-    lists can be constructed: a, aba, ababa, etc
+    lists can be constructed: a, aba, ababa, etc.
   .
-  OptionOM - the Maybe type represents zero or one elements,
-    OptionOM represents one or many elements.
+  OneMany - the Maybe type represents zero or one elements,
+    OneMany is an analogous type that represents one or many 
+    elements.
     
  
 
@@ -38,7 +39,9 @@ library
   exposed-modules:
     Data.FPList,
     Data.List1,
-    Data.OptionOM
+    Data.OneMany,
+    Data.ZeroMany,
+    Data.ZeroOneMany
 
   other-modules:
     
