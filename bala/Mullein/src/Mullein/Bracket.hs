@@ -16,170 +16,148 @@
 
 
 
-module Mullein.Bracket 
-  ( 
-    bracket
-  
-  ) where
+module Mullein.Bracket where
 
 import Mullein.Core
 import Mullein.Duration
 import Mullein.Utils
 
-import qualified Data.DList as DL
-import Data.List (foldl')
-import Data.Monoid
+
+import Data.OneMany
+
+import Data.List ( foldl' )
 import Data.Ratio
 
-data TieStatus = Tied | NotTied
+
+data Hyphenated = Hyphenated | NotHyphenated
   deriving (Eq,Show)
+
+
+data Step a s = Done | Skip s | Yield a s
+  deriving (Eq)
+
+data Binary a = One a | Two a a
+  deriving (Eq,Show)
+
+
+apoSkipList :: (st -> a -> Step b st) -> (st -> [a] -> [b]) -> st -> [a] -> [b]
+apoSkipList f g st0 xs0 = step st0 xs0 where
+  step s []     = g s []
+  step s (x:xs) = case f s x of
+                    Done       -> g s (x:xs)     -- x must be re-queued
+                    Skip s'    -> step s' xs
+                    Yield a s' -> a : step s' xs
+           
+
+-- | Skipping apomorphism that is unfolded /along/ a list
+-- Unfortunately, a single beam step can produce two results 
+-- a. the current accumulation & b. a single note too long for a beam group
+-- so we have to pollute what could be a general combinator @apoSkipList@ 
+-- with the result wrapped in the Binary type.
+
+apoSkipListB :: (st -> a -> Step (Binary b) st) -> (st -> [a] -> [b]) -> st -> [a] -> [b]
+apoSkipListB f g st0 xs0 = step st0 xs0 where
+  step s []     = g s []
+  step s (x:xs) = case f s x of
+                    Done               -> g s (x:xs)     -- x must be re-queued
+                    Skip s'            -> step s' xs
+                    Yield (One a) s'   -> a : step s' xs
+                    Yield (Two a b) s' -> a : b :step s' xs
+
+
+--------------------------------------------------------------------------------
+-- bar & beam
+-- type EP e = ElementP e
+
+bracket' :: Temporal e => MeterPattern -> [e] -> [(Hyphenated,[OneMany e])]
+bracket' mp notes = map beamer $ bar (sum mp) notes 
+  where 
+    beamer (h,xs) = (h, beam mp xs)
 
 
 bracket :: Key -> MetricalSpec -> OverlayList e -> MotifP e
 bracket k mspec (p,xs) = Motif k time_sig $ foldl' zipOverlays prime ovs
   where
-    prime    = bracket1 mspec p
-    ovs      = map (prod id (bracket1 mspec)) xs
+    prime    = [] -- convToOld $ bracket' (snd mspec) p
+    ovs      = [] -- map (prod id (convToOld . bracket' (snd mspec))) xs
     time_sig = fst mspec
 
+convToOld :: [(Hyphenated,[OneMany e])] -> [BarP e]
+convToOld = undefined
 
-bracket1 :: MetricalSpec -> [ElementP e] -> [BarP e]
-bracket1 mspec notes = partitionAndBeam bs bss notes where
-    (bs,bss) = repeatSpec 0 mspec   
-
-{-
--- TODO bracketing with anacrusis  
-bracket1Ana :: Duration -> MetricalSpec -> [ElementP e] -> [BarP e]
-bracket1Ana anacrusis mspec notes = partitionAndBeam bs bss notes where
-    (bs,bss) = repeatSpec anacrusis mspec     
--}
-
-repeatSpec :: Duration -> MetricalSpec -> ([Duration],[[Duration]])
-repeatSpec 0 (b,bs) = (repeat $ meterFraction b, repeat bs)
-repeatSpec a (b,bs) = (reduceStk a ds, reduceStk a bs : repeat bs) where 
-    ds = repeat $ meterFraction b
-
-             
-partitionAndBeam :: [Duration] -> [[Duration]] -> [ElementP e] -> [BarP e]
-partitionAndBeam ds_bar dss_beam notes = 
-    zipWith fn (divideToBars ds_bar notes) dss_beam 
-  where    
-    fn (_,[])      _  = Bar $ Unison [] False
-    fn (Tied, bar) ds = Bar $ Unison (beam ds bar) True 
-    fn (_, bar)    ds = Bar $ Unison (beam ds bar) False
-
-    
--- split a list of notes into bars of given duration 
-divideToBars :: Temporal a => [Duration] -> [a] -> [(TieStatus, [a])] 
-divideToBars ds ns = fst $ anaMap fn (NotTied,ns) ds where
-  fn _ (_,  []) = Nothing
-  fn d (tie,xs) = let (ls, opt_split, rest) = fitTill d xs in
-                  maybe (Just ((tie,ls), (NotTied, rest)))
-                        (\split_note -> Just ((tie,ls), (Tied, split_note : rest)))
-                        opt_split
-
-  
-fitTill :: Temporal a => Duration -> [a] -> ([a], Maybe a, [a])
-fitTill d0 es = step d0 es where
-    step _ []     = ([],Nothing,[]) 
-    step d (x:xs) = let d' = duration x in 
-                    case d' `compare` d of
-                        EQ -> ([x],Nothing,xs)
-                        LT -> (x:ls,pivot,rs) where
-                                (ls,pivot,rs) = fitTill (d-d') xs
-                        GT -> ([swapDuration d x], Just $ swapDuration (d'-d) x, xs)
-                         
 --------------------------------------------------------------------------------
--- beaming
+-- bar
 
--- beam splitting as an unfold. 
--- For syntactical clarity we use a 'double unfoldr' rather than 
--- tuple the two elements of state together.
--- The state is (1) the stack of durations for each beam group, 
--- and (2) the input stream of notes.
+bar :: Temporal e => Duration -> [e] -> [(Hyphenated,[e])]
+bar bar_len ns = apoSkipList (barStep bar_len) barFlush ([],0) ns
 
--- Note for LilyPond - graces cannot start or end a beam group.
 
-beam :: [Duration] -> [ElementP e] -> [BracketP e]
-beam = DL.toList `oo` unfoldrMonoid2 fn where
-    -- notes exhausted, finish the unfold
-    fn _           []         = Nothing
-
-    -- beam lengths exhausted, package up the remaining items as singletons
-    fn []          xs         = let trail = DL.fromList $ map Singleton xs
-                                in Just (trail,[],[]) 
-                                
-    fn dstk       (x:xs)  
-        | duration x >= (1%4) || not (noc x) 
-                              = Just (sglD x, reduceStk (duration x) dstk, xs)
-
-    fn dstk@(d:_) xs          = let (count,l,r) = beamGroup1 d xs in 
-                                Just (l, reduceStk count dstk, r)
-                                
-
-beamGroup1 :: Duration 
-              -> [ElementP e] 
-              -> (Duration, DL.DList (BracketP e), [ElementP e])
-beamGroup1 d0 = step d0 DL.empty [] where
-    
-    -- input exahusted 
-    step d dacc stk []        = (d, dacc `mappend` unwindStack stk, []) 
-
-    -- duration 0 - end of beam group    
-    step 0 dacc stk xs        = (0, dacc `mappend` unwindStack stk, xs)
+barStep :: Temporal e
+        => Duration -> ([e],Duration) -> e
+        -> Step (Hyphenated,[e]) ([e],Duration)
+barStep bar_len (ca,i) note = step (duration note) where
+  step n | i+n > bar_len  = let (l,r) = split i note in 
+                            Yield (Hyphenated, reverse $ l:ca) ([r],duration r)
+         | i+n == bar_len = Yield (NotHyphenated, reverse $ note:ca) ([],0)
+         | otherwise      = Skip (note:ca,i+n)
  
-    -- element too big for a beam group, make it a singleton
-    step d dacc stk (e:es) 
-         | duration e > d     = let dlist = dacc `mappend` unwindStack stk
-                                                 `mappend` sglD e 
-                                in (d - duration e, dlist, es)
+split :: Temporal e => Duration -> e -> (e,e)
+split i note = (swapDuration i note, swapDuration (n-i) note) 
+  where n = duration note
+  
 
-    -- element too big to be beamed, but still 'fits' in the beam group
-    step d dacc stk (e:es) 
-         | duration e >= 1%4  = let dacc' = dacc `mappend` unwindStack stk
-                                                 `mappend` sglD e 
-                                in step (d - duration e) dacc' [] es
-
-    
-    -- cannot start the stack w                      
-    step d dacc []  (e:es) 
-         | noc e              = step (d - duration e) dacc [e] es
-         | otherwise          = step (d - duration e) (dacc `mappend` sglD e) [] es
-
-    -- at this point - element dur must be smaller than d and stk has elements
-    -- so cons it to the stack (as the stk should be in reverse order)
-    step d dacc stk (e:es)    = step (d - duration e) dacc (e:stk) es 
+-- 
+barFlush :: ([e],Duration) -> [e] -> [(Hyphenated,[e])]
+barFlush ([],_) _ = []
+barFlush (ca,_) _ = [(NotHyphenated, reverse ca)]
 
 
--- stack is reversed so we can see whether or not the end has 
--- notes or chords 
-unwindStack :: [ElementP e] -> DL.DList (BracketP e)
-unwindStack []                     = DL.empty
-unwindStack (e:es) | noc e         = DL.singleton $ mkBracket $ reverse (e:es)
-                   | otherwise     = unwindStack es `mappend` sglD e
 
--- noc - note or chord
-noc :: ElementP e -> Bool
-noc (Note _ _)  = True
-noc (Chord _ _) = True
-noc _           = False
-
-sglD :: ElementP e -> DL.DList (BracketP e)
-sglD = DL.singleton . Singleton
-
-mkBracket :: [ElementP e] -> BracketP e
-mkBracket [x] = Singleton x
-mkBracket xs  = Bracket xs 
+--------------------------------------------------------------------------------
+-- beam
 
 
--- cannot reduce stack by negative amounts...
-reduceStk :: Duration -> [Duration] -> [Duration]
-reduceStk d stk     | d <= 0    = stk       
-reduceStk _ []                  = []
-reduceStk d (x:xs)  | d == x    = xs
-                    | d > x     = reduceStk (d-x) xs
-                    | otherwise = (d-x):xs 
+beam :: Temporal e => MeterPattern -> [e] ->  [OneMany e]
+beam mp notes = apoSkipListB beamStep beamFlush ([],mp) notes
+
+
+beamFlush :: Temporal e => ([e],MeterPattern) -> [e] -> [OneMany e]
+beamFlush ([],_)  rs = map one rs
+beamFlush (cca,_) rs = fromList (reverse cca) : map one rs
+
+beamStep :: Temporal e => ([e],MeterPattern) 
+         -> e
+         -> Step (Binary (OneMany e)) ([e],MeterPattern)
+beamStep (ca,stk) e = maybe Done (sk (duration e)) (top stk) where
+  sk n d | n >= 1%4 || n > d  = next ca     (Just e) (consume n stk)
+         | n == d             = next (e:ca) Nothing  (consume n stk)
+         | otherwise          = skip (e:ca) (consume n stk)
+
+  next []  Nothing  ss = Skip ([],ss)
+  next []  (Just a) ss = Yield (One (one a)) ([],ss)
+  next cca (Just a) ss = Yield (Two (fromList $ reverse cca) (one a)) ([],ss)
+  next cca _        ss = Yield (One (fromList $ reverse cca)) ([],ss)
+
+  skip cca ss          = Skip (cca,ss) 
+
+
+
+
+-- Maybe the top of the stack.
+top :: [a] -> Maybe a
+top (x:_) = Just x
+top []    = Nothing
+
+
+-- reduce the MeterPattern stack by the duration
+consume :: (Num a, Ord a) => a -> [a] -> [a]
+consume _ []                  = []
+consume n (x:xs) | n < x      = (x-n):xs
+                 | n == x     = xs
+                 | otherwise  = consume (n-x) xs
+
                       
+
   
 ---------------------------------------------------------------------------------
 -- overlay

@@ -24,7 +24,8 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base < 5, wl-pprint, containers, mtl, dlist, QuickCheck
+  build-depends:      base < 5, wl-pprint, containers, mtl, dlist, QuickCheck,
+                      data-obscura
 
   
   exposed-modules:

@@ -17,6 +17,9 @@
 module Data.ZeroOneMany
   ( 
      ZeroOneMany
+  , zero 
+  , one
+  , many
 
   , summary
 
@@ -34,7 +37,7 @@ module Data.ZeroOneMany
 
   ) where
 
-import Control.Applicative
+import Control.Applicative hiding ( many )
 import Data.Foldable ( Foldable, foldMap )
 import Data.Monoid
 import Data.Traversable
@@ -57,6 +60,25 @@ instance Traversable ZeroOneMany where
   traverse _ Zero         = pure Zero
   traverse f (One x)      = One <$> f x
   traverse f (Many xs)    = Many <$> traverse f xs
+
+
+
+-- | Construct Zero.
+zero :: ZeroOneMany a
+zero = Zero
+
+
+-- | Construct One.
+one :: a -> ZeroOneMany a
+one = One
+
+-- | Construct Many. Not this function throws a error if the list has
+-- zero or one elements
+many :: [a] -> ZeroOneMany a
+many []  = error "ZeroOneMany.many: cannot build Many from empty list"
+many [a] = error "ZeroOneMany.many: cannot build Many from singleton list"
+many xs  = Many xs
+
 
 
 -- | Reduce one or many elements to a summary value, return the 

@@ -17,7 +17,8 @@
 module Data.ZeroMany
   ( 
      ZeroMany
-
+  , zero
+  , many
 
   , isMany
   , isZero
@@ -30,7 +31,7 @@ module Data.ZeroMany
 
   ) where
 
-import Control.Applicative
+import Control.Applicative hiding ( many )
 import Data.Foldable ( Foldable, foldMap )
 import Data.Monoid
 import Data.Traversable
@@ -50,6 +51,18 @@ instance Foldable ZeroMany where
 instance Traversable ZeroMany where
   traverse _ Zero      = pure Zero
   traverse f (Many xs) = Many <$> traverse f xs
+
+
+
+-- | Construct Zero.
+zero :: ZeroMany a
+zero = Zero
+
+-- | Construct Many. Not this function throws a error if the list has
+-- zero elements
+many :: [a] -> ZeroMany a
+many []  = error "ZeroMany.many: cannot build Many from empty list"
+many xs  = Many xs
 
 
 isMany :: ZeroMany a -> Bool

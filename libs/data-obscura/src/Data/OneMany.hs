@@ -17,6 +17,8 @@
 module Data.OneMany
   ( 
      OneMany
+  , one
+  , many
 
   , summary
 
@@ -33,7 +35,7 @@ module Data.OneMany
 
   ) where
 
-import Control.Applicative
+import Control.Applicative hiding ( many )
 import Data.Foldable ( Foldable, foldMap )
 import Data.Traversable
 
@@ -52,6 +54,18 @@ instance Foldable OneMany where
 instance Traversable OneMany where
   traverse f (One x)      = One <$> f x
   traverse f (Many xs)    = Many <$> traverse f xs
+
+
+-- | Construct One.
+one :: a -> OneMany a
+one = One
+
+-- | Construct Many. Not this function throws a error if the list has
+-- zero or one elements
+many :: [a] -> OneMany a
+many []   = error "OneMany.many: cannot build Many from empty list"
+many [_a] = error "OneMany.many: cannot build Many from singleton list"
+many xs   = Many xs
 
 
 -- | Reduce one or many elements to a summary value.
