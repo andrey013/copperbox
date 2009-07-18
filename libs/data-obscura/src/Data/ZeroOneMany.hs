@@ -21,7 +21,8 @@ module Data.ZeroOneMany
   , one
   , many
 
-  , summary
+  , zeroOneMany
+  , cons
 
   , isMany
   , isOne
@@ -44,6 +45,15 @@ import Data.Traversable
 
 data ZeroOneMany a = Zero | One a | Many [a]
   deriving (Eq,Show)
+
+
+instance Monoid (ZeroOneMany a) where
+  mempty = Zero
+  (Many xs) `mappend` (Many ys) = Many (xs ++ ys)
+  (Many xs) `mappend` (One y)   = Many (xs++[y])
+  (One x)   `mappend` y         = cons x y
+  Zero      `mappend` b         = b
+  a         `mappend` Zero      = a
 
 
 instance Functor ZeroOneMany where
@@ -75,18 +85,28 @@ one = One
 -- | Construct Many. Not this function throws a error if the list has
 -- zero or one elements
 many :: [a] -> ZeroOneMany a
-many []  = error "ZeroOneMany.many: cannot build Many from empty list"
-many [a] = error "ZeroOneMany.many: cannot build Many from singleton list"
-many xs  = Many xs
+many []   = error "ZeroOneMany.many: cannot build Many from empty list"
+many [_x] = error "ZeroOneMany.many: cannot build Many from singleton list"
+many xs   = Many xs
 
 
 
--- | Reduce one or many elements to a summary value, return the 
--- default value if Zero.
-summary :: (a -> b) -> ([a] -> b) -> b -> ZeroOneMany a -> b
-summary _ _ b Zero    = b
-summary f _ _ (One x)   = f x
-summary _ g _ (Many xs) = g xs
+-- | Case analysis for the ZeroOneMany type (c.f @either@ on the Either 
+-- type or @maybe@ on the Maybe type). 
+zeroOneMany :: b -> (a -> b) -> ([a] -> b) -> ZeroOneMany a -> b
+zeroOneMany b _ _  Zero     = b
+zeroOneMany _ f _ (One x)   = f x
+zeroOneMany _ _ g (Many xs) = g xs
+
+
+-- | Prepend an element. Obviously this transforms a Zero to a One and a
+-- One to a Many.
+cons :: a -> ZeroOneMany a -> ZeroOneMany a
+cons x Zero      = One x
+cons x (One y)   = Many [x,y]
+cons x (Many xs) = Many (x:xs)
+
+
 
 isMany :: ZeroOneMany a -> Bool
 isMany (Many _) = True

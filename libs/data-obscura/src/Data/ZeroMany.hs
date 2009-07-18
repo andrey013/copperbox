@@ -20,6 +20,9 @@ module Data.ZeroMany
   , zero
   , many
 
+  , zeroMany
+  , cons
+
   , isMany
   , isZero
 
@@ -39,6 +42,12 @@ import Data.Traversable
 data ZeroMany a = Zero | Many [a]
   deriving (Eq,Show)
 
+instance Monoid (ZeroMany a) where
+  mempty = Zero
+  (Many xs) `mappend` (Many ys) = Many (xs ++ ys)
+  Zero      `mappend` b         = b
+  a         `mappend` Zero      = a
+  
 
 instance Functor ZeroMany where
   fmap _ Zero      = Zero
@@ -63,6 +72,20 @@ zero = Zero
 many :: [a] -> ZeroMany a
 many []  = error "ZeroMany.many: cannot build Many from empty list"
 many xs  = Many xs
+
+
+-- | Case analysis for the ZeroMany type (c.f @either@ on the Either 
+-- type or @maybe@ on the Maybe type). 
+zeroMany :: b -> ([a] -> b) -> ZeroMany a -> b
+zeroMany b _ Zero      = b
+zeroMany _ f (Many xs) = f xs
+
+
+
+-- | Prepend an element. Obviously this transforms a Zero to a Many.
+cons :: a -> ZeroMany a -> ZeroMany a
+cons x Zero      = Many [x]
+cons x (Many xs) = Many (x:xs)
 
 
 isMany :: ZeroMany a -> Bool

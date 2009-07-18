@@ -20,7 +20,8 @@ module Data.OneMany
   , one
   , many
 
-  , summary
+  , oneMany
+  , cons
 
   , isMany
   , isOne
@@ -42,6 +43,7 @@ import Data.Traversable
 data OneMany a = One a | Many [a]
   deriving (Eq,Show)
 
+-- No natural Monoid instance for OneMany.
 
 instance Functor OneMany where
   fmap f (One x)   = One (f x)
@@ -68,10 +70,17 @@ many [_a] = error "OneMany.many: cannot build Many from singleton list"
 many xs   = Many xs
 
 
--- | Reduce one or many elements to a summary value.
-summary :: (a -> b) -> ([a] -> b) -> OneMany a -> b
-summary f _ (One x)   = f x
-summary _ g (Many xs) = g xs
+-- | Case analysis for the OneMany type (c.f @either@ on the Either type or 
+-- @maybe@ on the Maybe type). 
+oneMany :: (a -> b) -> ([a] -> b) -> OneMany a -> b
+oneMany f _ (One x)   = f x
+oneMany _ g (Many xs) = g xs
+
+-- | Prepend an element. Obviously this transforms a One to a Many.
+cons :: a -> OneMany a -> OneMany a
+cons x (One y)   = Many [x,y]
+cons x (Many xs) = Many (x:xs)
+
 
 isMany :: OneMany a -> Bool
 isMany (Many _) = True

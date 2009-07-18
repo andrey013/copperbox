@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -15,47 +14,48 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Duration 
-  ( 
-  -- * Duration types
-    Duration
-  , Meter(..)
-
-  -- * Type classes
-  , HasDuration(..)
-  , Spacer(..)
-  
-  -- * Operations
-  , dot 
-  , dotn
-
-  , AugDuration(..)
-  , rationalize
-  , pdElements
-  , augDuration
-  , ppDuration
-
-  ) where
 
 
-import Data.List (unfoldr)
+module Mullein.Duration where
+
+import Data.OneMany
+
+import Data.Monoid
 import Data.Ratio
 
-import Text.PrettyPrint.Leijen hiding ( dot )
+-- rational duration x dot count
+newtype D1 = D1 { getComponent :: (Rational,Int) }
+ deriving Eq
 
-type Duration = Rational 
-
-
--- For /universality/ meter is defined according to Abc's representation.
--- LilyPond will simply generate @TimeSig@ cases.
-data Meter = TimeSig Integer Integer 
-           -- | CommonTime is 4/4
-           | CommonTime 
-           -- | CutTime is 2/2
-           | CutTime
-  deriving (Eq,Show)
+instance Ord D1 where
+  compare d1 d2 = sumD1 d1 `compare` sumD1 d2
 
 
+data Duration = DZero 
+              | Dn (OneMany D1)
+  deriving Eq
+
+
+instance Ord Duration where
+  compare d1 d2 = extent d1 `compare` extent d2
+
+
+instance Show Duration where
+  show = ('#' :) . show . extent
+
+
+
+instance Monoid Duration where
+  mempty  = DZero
+  mappend = (#+)
+
+{-
+  a     `mappend` DZero = a
+  DZero `mappend` b     = b
+  a     `mappend
+                | isZero b  = a
+                | otherwise = a #+ b   
+-}
 
 class HasDuration a where
   getDuration  :: a -> Duration
@@ -68,96 +68,117 @@ instance HasDuration Duration where
 
 class Spacer a where
   spacer :: Duration -> a
+
+
+
+-- Zero durations do exist (the duration of a grace notes is officially
+-- zero), however we ought not to be able to construct them. 
+isZero :: Duration -> Bool
+isZero DZero = True
+isZero _    = False
+
+dZero :: Duration
+dZero = DZero
+
+-- | Composite durations have more than 1 component typically they
+-- will be represented as tied notes.
+isComposite :: Duration -> Bool
+isComposite DZero   = False
+isComposite (Dn om) = isOne om 
+
+
+
+components :: Duration -> [(Rational,Int)]
+components DZero   = []
+components (Dn om) = oneMany (wrap . getComponent) (map getComponent) om 
+  where wrap a = [a]
    
 
-dot :: Duration -> Duration
-dot = dotn 1
 
-dotn :: Int -> Duration -> Duration
-dotn i d | i < 1 = d
-         | otherwise  = d + step i (d /2)
+-- | @extent@ is the sum of all symbolic components of a duration.
+extent :: Duration -> Rational
+extent DZero = 0 
+extent (Dn xs) = oneMany sumD1 (foldr (\a s -> s + sumD1 a) 0) xs
+
+
+
+sumD1 :: D1 -> Rational
+sumD1 (D1 (r,i)) | i <= 0 = r
+sumD1 (D1 (r,i))          = step r (r/2) i where
+  step acc _ 0 = acc
+  step acc h n = step (acc + h) (h/2) (n-1)
+
+
+-- | Add (concatenate) two durations. 
+-- Addition (concatenation) produces a symbolic value equivalent 
+-- to the two durations being tied: @1/4 #+ 1/4 = 1/4~1/4@.
+-- It does not perform numeric addition: @1/4 #+ 1/4 /= 1/2@.
+(#+) :: Duration -> Duration -> Duration
+DZero  #+ b      = b
+a      #+ DZero  = a
+Dn oml #+ Dn omr = Dn $ foldr cons omr (toList oml)
+
+       
+-- | Dot a duration. 
+-- Note, if the duration represents a concatenation of two or more 
+-- primitive durations only the first will be dotted.
+dot :: Duration -> Duration
+dot DZero = error "Duration.dot - cannot dot 0 duration"
+dot (Dn om) = Dn $ oneMany (one . dot1) (many . first dot1) om
   where
-    step 0 _ = 0
-    step n d' = d' + step (n-1) (d' / 2)
-             
+    dot1 (D1 (a,n))   = D1 (a,n+1)
+    first f (x:xs)  = f x:xs
+    first _ []      = error $ "Duration.dot - bad list"  -- should be unreachable in this case
   
 
---------------------------------------------------------------------------------
--- 
 
-
-
-type DotCount = Int 
-   
--- Augmented duration - i.e. the ratio is normalized to a /musically useful/ 
--- one and labelled with the dot count
-data AugDuration = AugDuration Rational DotCount 
-  deriving (Eq,Show)
-
-
--- | @'rationalize'@ - turn a AugDuration back into a Rational which 
--- may normalize it. 
-rationalize :: AugDuration -> Rational
-rationalize (AugDuration r n) | n >  0     = sum $ r : unfoldr phi (n,r/2)
-                              | otherwise  = r 
-  where 
-    phi (0,_) = Nothing
-    phi (i,a) = Just (a,(i-1,a/2)) 
-
-    
-pdElements :: AugDuration -> (Int,Int,Int)  
-pdElements (AugDuration r dc) = 
-  (fromIntegral $ numerator r, fromIntegral $ denominator r, dc) 
-
-
-augDuration :: Duration -> AugDuration
-augDuration r  
-    | r <= 0    = AugDuration 0 0
-    | otherwise = if r == rationalize r' then r' else AugDuration r 0
-  where 
-    r' = approximateDuration r 
-    
-
-
-    
-approximateDuration :: Duration -> AugDuration
-approximateDuration drn 
-    | drn > 1   = mkApprox (nearestUp drn) 
-    | drn < 1   = mkApprox (nearestDown drn)
-    | otherwise = AugDuration (1%1) 0
+{-
+best :: Rational -> Int ->  Duration
+best _ i | i < 1     = error "Duration.best - iteration counter must be >= 1"
+best r i | r >= 1    = stepUp wn (r-1) (i-1)
+         | otherwise = undefined 
   where
-    mkApprox :: Rational -> AugDuration
-    mkApprox r = AugDuration r (dotting drn r)
+    stepUp ac _ 0    = ac
+    stepUp ac v n    | v < 1     = ac #+ (stepDown v n)
+                     | otherwise = stepUp (ac #+ wn) (v-1) (n-1)
 
-    nearestUp :: Rational -> Rational
-    nearestUp r = step (1 % 1) (2 * (1 % 1)) where
-      step n k | k > r      = n
-               | otherwise  = step k (2 * k)
-       
-    
-    nearestDown :: Rational -> Rational
-    nearestDown r = step ((1 % 1) / 2) where
-      step k | k <= r     = k
-             | otherwise  = step (k / 2)
-    
-    
-    dotting :: Rational -> Rational -> Int
-    dotting d dapprox | d == dapprox  = 0
-                      | otherwise     = step 1 where
-      step i | dotn i dapprox > d = (i-1)
-             | i > 3              = i
-             | otherwise          = step (i+1) 
+    stepDown _ _     = undefined  -- remember stepDown "is" (/2)
+-}
 
 
-ppDuration :: Duration -> Doc 
-ppDuration = pretty . augDuration
+
+mkDuration :: Rational -> Duration
+mkDuration r = Dn $ one $ D1 (r,0)
 
 
-instance Pretty AugDuration where
-  pretty (AugDuration r dc) =  integer (numerator r) 
-                            <> char '/' 
-                            <> integer (denominator r) 
-                            <> text (replicate dc '.') 
-      
-      
-      
+longa :: Duration
+breve :: Duration
+wn    :: Duration
+hn    :: Duration
+qn    :: Duration
+en    :: Duration
+sn    :: Duration
+tn    :: Duration
+
+
+longa = mkDuration 4
+breve = mkDuration 2
+wn    = mkDuration 1
+hn    = mkDuration (1%2)
+qn    = mkDuration (1%4)
+en    = mkDuration (1%8)
+sn    = mkDuration (1%16)
+tn    = mkDuration (1%32)
+
+dhn :: Duration
+dqn :: Duration
+den :: Duration
+dsn :: Duration
+
+dhn = dot hn
+dqn = dot qn 
+den = dot en 
+dsn = dot sn
+
+
+

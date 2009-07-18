@@ -20,7 +20,8 @@
 module Mullein.Core 
   ( 
   -- * Types
-    MeterPattern
+    Meter(..)
+  , MeterPattern
   , MetricalSpec
   , Key(..)
   , Mode(..)
@@ -59,6 +60,16 @@ import Text.PrettyPrint.Leijen ( Doc )
 -- Musical representation
 
 
+-- For /universality/ meter is defined according to Abc's representation.
+-- LilyPond will simply generate @TimeSig@ cases.
+data Meter = TimeSig Integer Integer 
+           -- | CommonTime is 4/4
+           | CommonTime 
+           -- | CutTime is 2/2
+           | CutTime
+  deriving (Eq,Show)
+
+
 type MeterPattern = [Duration] 
 
 type MetricalSpec = (Meter,MeterPattern)
@@ -77,7 +88,7 @@ data Mode = Major | Minor | Lydian | Ionian | Mixolydian
 --------------------------------------------------------------------------------
 -- Meter utils
 
-meterFraction :: Meter -> Duration
+meterFraction :: Meter -> Rational
 meterFraction (TimeSig n d) = n%d
 meterFraction CommonTime    = 4%4 
 meterFraction CutTime       = 2%2 
@@ -85,8 +96,8 @@ meterFraction CutTime       = 2%2
 
 metricalSpec :: Int -> Int -> MetricalSpec
 metricalSpec n d 
-      | compoundMeter  n d  = (time_sig, replicate 3 $ (rational n d) / 3)
-      | simpleMeter n d     = (time_sig, replicate n (rational 1 d))
+      | compoundMeter  n d  = (time_sig, replicate 3 $ mkDuration $ (rational n d) / 3)
+      | simpleMeter n d     = (time_sig, replicate n $ mkDuration $ rational 1 d)
       | otherwise           = error $ err_msg
   where
     time_sig = TimeSig (fromIntegral n) (fromIntegral d)
@@ -98,8 +109,8 @@ withMeterPattern :: MeterPattern -> MetricalSpec -> MetricalSpec
 withMeterPattern m (ts,_) = (ts,m) 
 
 unitNote :: MetricalSpec -> Duration
-unitNote (m,_) | meterFraction m >= 3%4 = 1%8
-               | otherwise              = 1%16
+unitNote (m,_) | meterFraction m >= 3%4 = en -- 1%8
+               | otherwise              = sn -- 1%16
 
 
 -- Note compoundMeter and simpleMeter overlap
@@ -162,7 +173,7 @@ instance HasDuration (ElementP e) where
   getDuration (Rest d)       = d
   getDuration (Spacer d)     = d
   getDuration (Chord d _)    = d
-  getDuration (GraceNotes _) = 0
+  getDuration (GraceNotes _) = dZero
       
   setDuration d (Note _ p)      = Note d p
   setDuration d (Rest _)        = Rest d

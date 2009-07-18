@@ -32,6 +32,7 @@ import Data.OneMany
 
 import Text.PrettyPrint.Leijen
 
+import Data.Ratio
 
 class LyOutput e where
   type LyDur e :: *
@@ -128,7 +129,7 @@ oDuration :: Duration -> Doc
 oDuration = optDuration . coerceDuration
 
 coerceDuration :: Duration -> Maybe Duration
-coerceDuration d | d <= 0    = Nothing
+coerceDuration d | isZero d  = Nothing
                  | otherwise = Just d
 
 
@@ -222,6 +223,33 @@ pitchLabel l a = char (toLowerLChar l) <> accidental a
     accidental DoubleFlat     = text "eses"
 
 
+
+optDuration :: Maybe Duration -> Doc
+optDuration = maybe empty (df . components) where
+  df []       = empty
+  df [(r,dc)] = dots dc $ durn (numerator r) (denominator r)
+  df xs       = error $ "optDuration - composite todo..." 
+
+
+durn :: Integer -> Integer -> Doc
+durn 4 1      = command "longa"
+durn 2 1      = command "breve"
+durn 1 i      = integer i
+    -- TODO - ideally we shouldn't have 'error' errors here, we should be
+    -- using throwError. But that means making a lot of pure code monadic
+    -- ... is there another way to do it?
+durn n d      = comment $ show n ++ "%" ++ show d
+
+
+dots :: Int -> (Doc -> Doc)
+dots i | i > 0     = (<> text (replicate i '.'))
+       | otherwise = id
+  
+
+
+
+{-
+
 optDuration :: Maybe Duration -> Doc
 optDuration = maybe empty df
   where
@@ -241,6 +269,7 @@ optDuration = maybe empty df
     dots i | i > 0     = (<> text (replicate i '.'))
            | otherwise = id
 
+-}
 
 lyBeam :: [Doc] -> Doc
 lyBeam (x:xs) = x <> char '[' <+> hsep xs <> char ']'

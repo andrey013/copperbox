@@ -25,9 +25,6 @@ module Mullein.NamedElements
   , ff, f, fs, gf, g, gs, af, a, as
   , bf, b, bs
 
-    -- durations
-  , wn, hn, qn, en, sn, tn
-  , dhn, dqn, den, dsn
     
     -- rests
   , wnr, hnr, qnr, enr, snr, tnr
@@ -64,10 +61,6 @@ module Mullein.NamedElements
   
   , c7, d7, e7, f7, g7, a7, b7
   , cs7, df7, ds7, ef7, fs7, gf7, gs7, af7, as7, bf7
-    
-  -- * Named durations
-  , longa, breve
-  , du1, du2, du4, du8, du16, du32, du64, du128
 
   -- * Named keys
   -- ** Major
@@ -143,31 +136,6 @@ bs o dur attrs = Note dur (mkNote (Pitch B Sharp o) attrs)
 
 
 -- durations
-
-wn :: Duration
-
-hn :: Duration
-qn :: Duration
-en :: Duration
-sn :: Duration
-tn :: Duration
-
-wn = 1
-hn = 1%2
-qn = 1%4
-en = 1%8
-sn = 1%16
-tn = 1%32
-
-dhn :: Duration
-dqn :: Duration
-den :: Duration
-dsn :: Duration
-
-dhn = 3%4
-dqn = 3%8
-den = 3%16
-dsn = 3%32
 
 -- rests
 
@@ -499,40 +467,6 @@ gs7       = pchSharp G 7
 af7       = pchFlat A 7
 as7       = pchSharp A 7
 bf7       = pchFlat B 7
-
---------------------------------------------------------------------------------
--- Durations
-
-longa :: Duration
-longa = 4
-
-breve :: Duration
-breve = 2
-
-du1   :: Duration
-du1   = 1
-
-du2   :: Duration
-du2   = 1%2
-
-du4   :: Duration
-du4   = 1%4
-
-du8   :: Duration
-du8   = 1%8
-
-du16  :: Duration
-du16  = 1%16
-
-du32  :: Duration
-du32  = 1%32
-
-du64  :: Duration
-du64  = 1%64
-
-du128 :: Duration
-du128 = 1%128
-
 
 --------------------------------------------------------------------------------
 -- keys
