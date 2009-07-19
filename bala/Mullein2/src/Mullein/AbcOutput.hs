@@ -27,6 +27,7 @@ import Data.OneMany
 
 import Text.PrettyPrint.Leijen hiding ( (<$>) )
 
+import Data.Ratio
 
 
 class AbcOutput e where
@@ -56,8 +57,8 @@ instance AbcOutput ScNote where
 
 
 
-oBarOverlay :: AbcGlyph e => (Bool,[OneMany e]) -> Doc
-oBarOverlay (tied,xs) = hsep (map omBeam xs) <> if tied then char '~' else empty
+oBarOverlay :: AbcGlyph e => (Tied,[OneMany e]) -> Doc
+oBarOverlay (ptied,xs) = hsep (map omBeam xs) <> if ptied then char '~' else empty
 
 
 omBeam :: AbcGlyph e => OneMany e -> Doc
@@ -154,15 +155,12 @@ mode Locrian      = text "loc"
 
 
 multiplier :: Duration -> Doc
-multiplier _dn = int 2
+multiplier = df . abc (1%16) where
+  df []           = empty
+  df [(Unit)]     = empty
+  df [(Mult n)]   = integer n
+  df [(Div n)]    = char '/' <> integer n
+  df [(Frac n d)] = integer n <> char '/' <> integer d
+  df _xs          = error $ "multiplier - composite todo..." 
 
-{-    
-multiplier :: Duration -> Doc
-multiplier dn | dn == 1   = empty
-              | otherwise = fn (numerator dn, denominator dn)
-  where
-    fn (n,1) = integer n
-    fn (1,d) = char '/' <> integer d
-    fn (n,d) = integer n <> char '/' <> integer d
 
--}

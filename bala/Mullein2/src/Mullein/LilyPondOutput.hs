@@ -58,7 +58,7 @@ instance LyOutput ScNote where
 -- oBar 
 
 oBarOverlay :: LilyPondGlyph e => (Bool,[OneMany e]) -> Doc
-oBarOverlay (tied,xs) = hsep (map omBeam xs) <> if tied then char '~' else empty
+oBarOverlay (ptied,xs) = hsep (map omBeam xs) <> if ptied then char '~' else empty
 
 
 omBeam :: LilyPondGlyph e => OneMany e -> Doc

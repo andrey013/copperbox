@@ -150,19 +150,20 @@ dot (Dn om) = Dn $ oneMany (one . dot1) (many . first dot1) om
     first _ []      = error $ "Duration.dot - bad list"  -- should be unreachable in this case
   
 
+splitDuration :: Rational -> Duration -> (Maybe Duration, Duration)
+splitDuration _   DZero = (Nothing,DZero)
+splitDuration r d@(Dn om) | isOne om  = (Nothing,d)
+                          | otherwise = splitls r (toList om)
+  where 
+    splitls _ [x]    = (Nothing, Dn $ one x) -- cannot exhaust righthand side
+    splitls r (x:xs) = let d1 = sumD1 x in case compare r d1 of
+                          LT -> jcons x (splitls (r-d1) xs)
+                          EQ -> (Just $ Dn $ one x, Dn $ fromList xs)
+                          GT -> (Nothing, Dn $ fromList (x:xs))
+    jcons x (Nothing,drest) = (Just $ Dn $ one x, drest)
+    jcons x (Just lf,drest) = (Just $ (Dn $ one x) #+ lf, drest)            
 
-{-
-best :: Rational -> Int ->  Duration
-best _ i | i < 1     = error "Duration.best - iteration counter must be >= 1"
-best r i | r >= 1    = stepUp wn (r-1) (i-1)
-         | otherwise = undefined 
-  where
-    stepUp ac _ 0    = ac
-    stepUp ac v n    | v < 1     = ac #+ (stepDown v n)
-                     | otherwise = stepUp (ac #+ wn) (v-1) (n-1)
 
-    stepDown _ _     = undefined  -- remember stepDown "is" (/2)
--}
 
 
 lilypond :: Duration -> [(Either String Int,Int)]
@@ -180,7 +181,20 @@ lilypond (Dn om) = map (prod fn id . getComponent) $ toList om where
   fn Breve = Left "breve"
   fn Longa = Left "longa"
 
+data AbcMultiplier = Unit | Mult Integer | Div Integer | Frac Integer Integer
+  deriving (Eq,Show)
 
+abc :: Rational -> Duration -> [AbcMultiplier]
+abc _   DZero   = [] 
+abc unl (Dn om) = map (fn . fork numerator denominator . (/unl) . sumD1) $ toList om
+  where  
+    fork f g a = (f a, g a)
+    fn (1,1)   = Unit
+    fn (1,dn)  = Div dn
+    fn (nm,1)  = Mult nm
+    fn (nm,dn) = Frac nm dn
+
+ 
 mkDuration :: Numeral -> Duration
 mkDuration nm = Dn $ one $ D1 (nm,0)
 

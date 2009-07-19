@@ -27,14 +27,15 @@ import Data.OneMany
 import Data.Ratio
 
 
-type Hyphenated = Bool
-
-
 data Step a s = Done | Skip s | Yield a s
   deriving (Eq)
 
 data Binary a = One a | Two a a
   deriving (Eq,Show)
+
+
+ratDuration :: HasDuration e => e -> Rational
+ratDuration = extent . getDuration
 
 
 apoSkipList :: (st -> a -> Step b st) -> (st -> [a] -> [b]) -> st -> [a] -> [b]
@@ -47,9 +48,10 @@ apoSkipList f g st0 xs0 = step st0 xs0 where
            
 
 -- | Skipping apomorphism that is unfolded /along/ a list
--- Unfortunately, a single beam step can produce two results 
--- a. the current accumulation & b. a single note too long for a beam group
--- so we have to pollute what could be a general combinator @apoSkipList@ 
+-- Unfortunately, a single beam step can produce two results:
+--   1. the current accumulation 
+--   2. a single note too long for a beam group
+-- So we have to pollute what could be a general combinator @apoSkipList@ 
 -- with the result wrapped in the Binary type.
 
 apoSkipListB :: (st -> a -> Step (Binary b) st) -> (st -> [a] -> [b]) -> st -> [a] -> [b]
@@ -59,13 +61,14 @@ apoSkipListB f g st0 xs0 = step st0 xs0 where
                     Done               -> g s (x:xs)     -- x must be re-queued
                     Skip s'            -> step s' xs
                     Yield (One a) s'   -> a : step s' xs
-                    Yield (Two a b) s' -> a : b :step s' xs
+                    Yield (Two a b) s' -> a : b : step s' xs
+
 
 
 --------------------------------------------------------------------------------
 -- bar & beam
 
-bracket :: HasDuration e => MeterPattern -> [e] -> [(Hyphenated,[OneMany e])]
+bracket :: HasDuration e => MeterPattern -> [e] -> [(Tied,[OneMany e])]
 bracket mp notes = map beamer $ bar (sum mp) notes 
   where 
     beamer (h,xs) = (h, beam mp xs)
@@ -73,35 +76,43 @@ bracket mp notes = map beamer $ bar (sum mp) notes
 
 --------------------------------------------------------------------------------
 -- bar
- -- Rational ?
 
-bar :: HasDuration e => Rational -> [e] -> [(Hyphenated,[e])]
+bar :: HasDuration e => Rational -> [e] -> [(Tied,[e])]
 bar bar_len ns = apoSkipList (barStep bar_len) barFlush ([],0) ns
 
 
-barStep :: HasDuration e
-        => Rational -> ([e],Rational) -> e
-        -> Step (Hyphenated,[e]) ([e],Rational)
-barStep bar_len (ca,i) note = step (extent $ getDuration note) where
-  step n | i+n > bar_len  = let (l,r) = split i note in 
-                            Yield (hyphenated, reverse $ l:ca) ([r], extent $ getDuration r)
-         | i+n == bar_len = Yield (notHyphenated, reverse $ note:ca) ([],0)
-         | otherwise      = Skip (note:ca,i+n)
- 
-split :: HasDuration e => Rational -> e -> (e,e)
-split i note = error $ "Bracket.split todo" -- (setDuration i note, setDuration (n-i) note) 
-  where n = getDuration note
-  
-hyphenated :: Bool
-hyphenated = True
+barStep :: HasDuration e 
+        => Rational -> ([e],Rational) -> e -> Step (Tied,[e]) ([e],Rational)
+barStep bar_len (ca,i) note = 
+    case compare (i+note_len) bar_len of
 
-notHyphenated :: Bool
-notHyphenated = False
+      -- fits with room to spare (add to accumulator)
+      LT -> Skip (note:ca,i+note_len)
+    
+      -- exact fit ("close" the bar)
+      EQ -> Yield (notTied, reverse $ note:ca) ([],0)
+
+      -- too big (split if possible)
+      GT -> case split i note of
+              Just (l,r) -> Yield (tied, reverse $ l:ca) (pushback r)
+
+              -- The note doesn't fit but it won't split either
+              -- so push it back...
+              Nothing    -> Yield (notTied, reverse $ ca) (pushback note)
+  where
+    pushback a = ([a], ratDuration a)
+    note_len   = ratDuration note
+
+split :: HasDuration e => Rational -> e -> Maybe (e,e)
+split i note = fn $ splitDuration i $ getDuration note
+  where
+    fn (Just left, right) = Just (setDuration left note, setDuration right note)
+    fn (Nothing,_)        = Nothing
 
 -- 
-barFlush :: ([e],Rational) -> [e] -> [(Hyphenated,[e])]
+barFlush :: ([e],Rational) -> [e] -> [(Tied,[e])]
 barFlush ([],_) _ = []
-barFlush (ca,_) _ = [(notHyphenated, reverse ca)]
+barFlush (ca,_) _ = [(notTied, reverse ca)]
 
 
 
@@ -120,7 +131,7 @@ beamFlush (cca,_) rs = fromList (reverse cca) : map one rs
 beamStep :: HasDuration e => ([e],[Rational]) 
          -> e
          -> Step (Binary (OneMany e)) ([e],[Rational])
-beamStep (ca,stk) e = maybe Done (sk (extent $ getDuration e)) (top stk) where
+beamStep (ca,stk) e = maybe Done (sk (ratDuration e)) (top stk) where
   sk n d | n >= 1%4 || n > d  = next ca     (Just e) (consume n stk)
          | n == d             = next (e:ca) Nothing  (consume n stk)
          | otherwise          = skip (e:ca) (consume n stk)

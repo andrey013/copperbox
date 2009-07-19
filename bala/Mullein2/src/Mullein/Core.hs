@@ -20,7 +20,11 @@
 module Mullein.Core 
   ( 
   -- * Types
-    Meter(..)
+    Tied
+  , tied
+  , notTied
+
+  , Meter(..)
   , MeterPattern
   , MetricalSpec
   , Key(..)
@@ -58,6 +62,16 @@ import Text.PrettyPrint.Leijen ( Doc )
 
 --------------------------------------------------------------------------------
 -- Musical representation
+
+
+type Tied = Bool
+
+  
+tied    :: Tied
+tied    = True
+
+notTied :: Tied
+notTied = False
 
 
 -- For /universality/ meter is defined according to Abc's representation.
