@@ -82,7 +82,6 @@ import Mullein.Duration
 import Mullein.Core
 import Mullein.Pitch
 
-import Data.Ratio
 
 
 

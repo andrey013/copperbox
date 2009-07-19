@@ -69,8 +69,8 @@ data Meter = TimeSig Integer Integer
            | CutTime
   deriving (Eq,Show)
 
-
-type MeterPattern = [Duration] 
+-- MeterPatterns are not [Duration]...
+type MeterPattern = [Rational] 
 
 type MetricalSpec = (Meter,MeterPattern)
 
@@ -96,9 +96,11 @@ meterFraction CutTime       = 2%2
 
 metricalSpec :: Int -> Int -> MetricalSpec
 metricalSpec n d 
-      | compoundMeter  n d  = (time_sig, replicate 3 $ mkDuration $ (rational n d) / 3)
-      | simpleMeter n d     = (time_sig, replicate n $ mkDuration $ rational 1 d)
+
+      | compoundMeter  n d  = (time_sig, replicate 3 $ (rational n d) / 3)
+      | simpleMeter n d     = (time_sig, replicate n $ rational 1 d)
       | otherwise           = error $ err_msg
+
   where
     time_sig = TimeSig (fromIntegral n) (fromIntegral d)
  

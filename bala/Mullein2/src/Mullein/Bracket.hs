@@ -66,7 +66,7 @@ apoSkipListB f g st0 xs0 = step st0 xs0 where
 -- bar & beam
 
 bracket :: HasDuration e => MeterPattern -> [e] -> [(Hyphenated,[OneMany e])]
-bracket mp notes = map beamer $ bar (sum $ map extent mp) notes 
+bracket mp notes = map beamer $ bar (sum mp) notes 
   where 
     beamer (h,xs) = (h, beam mp xs)
 
@@ -110,7 +110,7 @@ barFlush (ca,_) _ = [(notHyphenated, reverse ca)]
 
 
 beam :: HasDuration e => MeterPattern -> [e] ->  [OneMany e]
-beam mp notes = apoSkipListB beamStep beamFlush ([],map extent mp) notes
+beam mp notes = apoSkipListB beamStep beamFlush ([],mp) notes
 
 
 beamFlush :: HasDuration e => ([e],z) -> [e] -> [OneMany e]

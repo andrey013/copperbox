@@ -24,17 +24,24 @@ import Data.Monoid
 import Data.Ratio
 
 -- rational duration x dot count
-newtype D1 = D1 { getComponent :: (Rational,Int) }
+newtype D1 = D1 { getComponent :: (Numeral,Int) }
  deriving Eq
 
-instance Ord D1 where
-  compare d1 d2 = sumD1 d1 `compare` sumD1 d2
+
+data Numeral = N128  | N64   | N32   | N16
+             | N8    | N4    | N2    | N1
+             | Breve | Longa
+  deriving (Eq,Ord)
+
 
 
 data Duration = DZero 
               | Dn (OneMany D1)
   deriving Eq
 
+
+instance Ord D1 where
+  compare d1 d2 = sumD1 d1 `compare` sumD1 d2
 
 instance Ord Duration where
   compare d1 d2 = extent d1 `compare` extent d2
@@ -69,7 +76,17 @@ instance HasDuration Duration where
 class Spacer a where
   spacer :: Duration -> a
 
-
+toRat :: Numeral -> Rational
+toRat N128  = 1%128
+toRat N64   = 1%64
+toRat N32   = 1%32
+toRat N16   = 1%16
+toRat N8    = 1%8
+toRat N4    = 1%4
+toRat N2    = 1%2
+toRat N1    = 1
+toRat Breve = 2
+toRat Longa = 4
 
 -- Zero durations do exist (the duration of a grace notes is officially
 -- zero), however we ought not to be able to construct them. 
@@ -90,8 +107,10 @@ isComposite (Dn om) = isOne om
 
 components :: Duration -> [(Rational,Int)]
 components DZero   = []
-components (Dn om) = oneMany (wrap . getComponent) (map getComponent) om 
-  where wrap a = [a]
+components (Dn om) = oneMany (wrap . un . getComponent) (map (un . getComponent)) om 
+  where 
+    wrap a = [a]
+    un (nm,i) = (toRat nm,i)
    
 
 
@@ -103,8 +122,8 @@ extent (Dn xs) = oneMany sumD1 (foldr (\a s -> s + sumD1 a) 0) xs
 
 
 sumD1 :: D1 -> Rational
-sumD1 (D1 (r,i)) | i <= 0 = r
-sumD1 (D1 (r,i))          = step r (r/2) i where
+sumD1 (D1 (nm,i)) | i <= 0 = toRat nm
+sumD1 (D1 (nm,i))          = let r = toRat nm in step r (r/2) i where
   step acc _ 0 = acc
   step acc h n = step (acc + h) (h/2) (n-1)
 
@@ -146,9 +165,24 @@ best r i | r >= 1    = stepUp wn (r-1) (i-1)
 -}
 
 
+lilypond :: Duration -> [(Either String Int,Int)]
+lilypond DZero   = []
+lilypond (Dn om) = map (prod fn id . getComponent) $ toList om where
+  prod f g (a,b) = (f a, g b)
+  fn N128  = Right 128
+  fn N64   = Right 64
+  fn N32   = Right 32
+  fn N16   = Right 16
+  fn N8    = Right 8
+  fn N4    = Right 4
+  fn N2    = Right 2
+  fn N1    = Right 1
+  fn Breve = Left "breve"
+  fn Longa = Left "longa"
 
-mkDuration :: Rational -> Duration
-mkDuration r = Dn $ one $ D1 (r,0)
+
+mkDuration :: Numeral -> Duration
+mkDuration nm = Dn $ one $ D1 (nm,0)
 
 
 longa :: Duration
@@ -161,14 +195,14 @@ sn    :: Duration
 tn    :: Duration
 
 
-longa = mkDuration 4
-breve = mkDuration 2
-wn    = mkDuration 1
-hn    = mkDuration (1%2)
-qn    = mkDuration (1%4)
-en    = mkDuration (1%8)
-sn    = mkDuration (1%16)
-tn    = mkDuration (1%32)
+longa = mkDuration Longa
+breve = mkDuration Breve
+wn    = mkDuration N1
+hn    = mkDuration N2
+qn    = mkDuration N4
+en    = mkDuration N8
+sn    = mkDuration N16
+tn    = mkDuration N32
 
 dhn :: Duration
 dqn :: Duration

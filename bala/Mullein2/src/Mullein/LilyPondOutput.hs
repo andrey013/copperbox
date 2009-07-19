@@ -22,8 +22,6 @@ module Mullein.LilyPondOutput  where
 
 import Mullein.Core
 import Mullein.Duration
--- import Mullein.LilyPondNoteClass
--- import Mullein.OutputCommon
 import Mullein.Pitch
 import Mullein.Utils
 
@@ -32,7 +30,6 @@ import Data.OneMany
 
 import Text.PrettyPrint.Leijen
 
-import Data.Ratio
 
 class LyOutput e where
   type LyDur e :: *
@@ -225,51 +222,17 @@ pitchLabel l a = char (toLowerLChar l) <> accidental a
 
 
 optDuration :: Maybe Duration -> Doc
-optDuration = maybe empty (df . components) where
-  df []       = empty
-  df [(r,dc)] = dots dc $ durn (numerator r) (denominator r)
-  df xs       = error $ "optDuration - composite todo..." 
+optDuration = maybe empty (df . lilypond) where
+  df []        = empty
+  df [(ed,dc)] = dots dc $ either command int ed
+  df _xs       = error $ "optDuration - composite todo..." 
 
-
-durn :: Integer -> Integer -> Doc
-durn 4 1      = command "longa"
-durn 2 1      = command "breve"
-durn 1 i      = integer i
-    -- TODO - ideally we shouldn't have 'error' errors here, we should be
-    -- using throwError. But that means making a lot of pure code monadic
-    -- ... is there another way to do it?
-durn n d      = comment $ show n ++ "%" ++ show d
 
 
 dots :: Int -> (Doc -> Doc)
 dots i | i > 0     = (<> text (replicate i '.'))
        | otherwise = id
   
-
-
-
-{-
-
-optDuration :: Maybe Duration -> Doc
-optDuration = maybe empty df
-  where
-    df 0   = empty
-    df drn = let (n,d,dc) = pdElements $ augDuration drn
-             in dots dc $ durn n d
-
-    durn 4 1      = command "longa"
-    durn 2 1      = command "breve"
-    durn 1 i      = int i
-    -- TODO - ideally we shouldn't have 'error' errors here, we should be
-    -- using throwError. But that means making a lot of pure code monadic
-    -- ... is there another way to do it?
-    durn n d      = comment $ show n ++ "%" ++ show d
-
-    dots :: Int -> (Doc -> Doc)
-    dots i | i > 0     = (<> text (replicate i '.'))
-           | otherwise = id
-
--}
 
 lyBeam :: [Doc] -> Doc
 lyBeam (x:xs) = x <> char '[' <+> hsep xs <> char ']'
