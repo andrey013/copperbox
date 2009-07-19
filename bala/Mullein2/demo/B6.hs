@@ -2,6 +2,7 @@
 
 module B6 where
 
+import qualified Mullein.AbcOutput as ABC
 import Mullein.Bracket
 import Mullein.Core
 import Mullein.Duration
@@ -14,6 +15,8 @@ import Text.PrettyPrint.Leijen
 b1'4 = bracket (snd twoFourTime) bars1'4
 
 demo1 = vsep $ map oBarOverlay b1'4
+
+demo2 = vsep $ map ABC.oBarOverlay b1'4
 
 twoFourTime :: MetricalSpec
 twoFourTime = metricalSpec 2 4

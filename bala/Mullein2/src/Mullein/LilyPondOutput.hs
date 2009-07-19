@@ -33,8 +33,8 @@ import Text.PrettyPrint.Leijen
 
 class LyOutput e where
   type LyDur e :: *
-  lydocNote  :: e -> LyDur e -> Doc
-  lydocPitch :: e -> Doc
+  lyNote  :: e -> LyDur e -> Doc
+  lyPitch :: e -> Doc
 
 
 class LilyPondGlyph e where
@@ -44,56 +44,16 @@ instance LilyPondGlyph (ElementP ScNote) where
   lyGlyph = oElement  
 
 instance LyOutput Pitch where
-  type LyDur Pitch = Maybe Duration
-  lydocNote p od = note p <> optDuration od
-  lydocPitch = note
+  type LyDur Pitch = Duration
+  lyNote p od = note p <> optDuration od
+  lyPitch = note
 
 instance LyOutput ScNote where
-  type LyDur ScNote = Maybe Duration
-  lydocNote (ScNote p _) od = note p <> optDuration od
-  lydocPitch (ScNote p _) = note p
+  type LyDur ScNote = Duration
+  lyNote (ScNote p _) od = note p <> optDuration od
+  lyPitch (ScNote p _) = note p
 
 
-
-newtype LilyPondOutput = LilyPondOutput { getLilyPondOutput :: Doc }
-
-{-
-
-generateLilyPond :: LyNote e => Key -> Meter -> PartP e -> LilyPondOutput
-generateLilyPond k m a = 
-    LilyPondOutput $ postProcess $ evalState (oPart a) s0 
-  where
-    s0       = OutputSt k m
-
-
-oPart :: LyNote e => PartP e -> OutputM (S.Seq OutputFragment)
-oPart (Part as)          =
-    foldlM (\a e -> (a ><) <$> oPhrase e) S.empty as
-
-
-oPhrase :: LyNote e => PhraseP e -> OutputM (S.Seq OutputFragment)
-oPhrase (Phrase a)       = oMotif a
-oPhrase (Repeated a)     = repeated <$> oMotif a
-oPhrase (FSRepeat a x y) = fsrepeat <$> oMotif a <*> oMotif x <*> oMotif y
-
-oMotif :: LyNote e => MotifP e -> OutputM (S.Seq OutputFragment)
-oMotif (Motif k m bs)    = motifFragment 
-    <$> keyChange k keyCmd <*> meterChange m timeCmd  <*> mapM oBar bs
-
-
-oBar :: LyNote e => BarP e -> OutputM Doc
-oBar (Bar a)             = oUnison a
-oBar (Overlay a as)      = (\x xs -> overlay $ x:xs) 
-                                  <$> oUnison a 
-                                  <*> mapM oUnison as
-
-
-oUnison :: LyNote e => UnisonP e -> OutputM Doc
-oUnison (Unison ps tied) = (\xs -> hsep xs <> if tied then char '~'
-                                                           else empty)
-                                  <$> mapM oBracket ps
-
--}
 
 -- oBar 
 
@@ -104,68 +64,29 @@ oBarOverlay (tied,xs) = hsep (map omBeam xs) <> if tied then char '~' else empty
 omBeam :: LilyPondGlyph e => OneMany e -> Doc
 omBeam = oneMany lyGlyph (lyBeam . map lyGlyph) 
 
-oBracket :: (LyOutput e, LyDur e ~ Maybe Duration) => OneMany (ElementP e) -> Doc
+oBracket :: (LyOutput e, LyDur e ~ Duration) => OneMany (ElementP e) -> Doc
 oBracket = oneMany oElement (lyBeam . map oElement)
 
 
 -- TODO check whether or not successive notes in chords and graces
 -- change the relative pitch
 
-oElement :: (LyOutput pch, LyDur pch ~ Maybe Duration)  => ElementP pch -> Doc
-oElement (Note d p)       = lydocNote p (coerceDuration d)
-oElement (Rest d)         = char 'r' <> oDuration d
-oElement (Spacer d)       = char 's' <> oDuration d
-oElement (Chord d ps)     = angles (hsep $ map lydocPitch ps) <> oDuration d
+oElement :: (LyOutput pch, LyDur pch ~ Duration)  => ElementP pch -> Doc
+oElement (Note d p)       = lyNote p d
+oElement (Rest d)         = char 'r' <> optDuration d
+oElement (Spacer d)       = char 's' <> optDuration d
+oElement (Chord d ps)     = angles (hsep $ map lyPitch ps) <> optDuration d
 oElement (GraceNotes [x]) = command "grace" <+> braces (oGrace x) where
 oElement (GraceNotes xs)  = command "grace" <+> braces (lyBeam $ map oGrace xs)
 
-oGrace :: (LyOutput e, LyDur e ~ Maybe Duration) => (e,Duration) -> Doc
-oGrace (p,d) = lydocNote p (coerceDuration d)
-
-oDuration :: Duration -> Doc
-oDuration = optDuration . coerceDuration
-
-coerceDuration :: Duration -> Maybe Duration
-coerceDuration d | isZero d  = Nothing
-                 | otherwise = Just d
-
+oGrace :: (LyOutput e, LyDur e ~ Duration) => (e,Duration) -> Doc
+oGrace (p,d) = lyNote p d
 
 --------------------------------------------------------------------------------
 -- post process
 
 -- Note LilyPond drops the printed repeat start if the repeat is the first
 -- element (so we don't have to).
-
-{-
-
-postProcess :: S.Seq OutputFragment -> Doc
-postProcess = fn . intersperseBars . toList . addDblEnd where
-  fn []           = empty
-  fn xs           = printFrags xs
-
-
-printFrags :: [OutputFragment] -> Doc
-printFrags  = genUnfold2 phi nextLine empty 0 where
-    phi _ []                    = Nothing
-    phi i (MidtuneCmd d : xs)   = Just (indent (i*2) d,i,xs)
-    
-    -- lookahead
-    phi i (BarOutput d : SglBar : xs)    
-                                = Just (indent (i*2) d <+> sgl_bar,i,xs)
-    phi i (BarOutput d : DblBar : xs) 
-                                = Just (indent (i*2) d <+> dbl_bar,i,xs)
-   
-    phi i (BarOutput d : xs)    = Just (indent (i*2) d,i,xs)
-
-    phi i (RepStart : xs)       = Just (indent (i*2) repeat_text, 1, xs)
-    phi i (RepEnding n : xs) 
-          | n == 1              = Just (indent (i*2) alt_start, i+1, xs)
-          | otherwise           = Just (indent (i*2) alt_next, i, xs)
-    phi i (RepEnd : xs)         = Just (endBraces i, 0, xs)
-    phi i (SglBar : xs)         = Just (indent (i*2) sgl_bar, i, xs)
-    phi i (DblBar : xs)         = Just (indent (i*2) dbl_bar, i, xs)   
-
--}
 
 
 
@@ -221,8 +142,8 @@ pitchLabel l a = char (toLowerLChar l) <> accidental a
 
 
 
-optDuration :: Maybe Duration -> Doc
-optDuration = maybe empty (df . lilypond) where
+optDuration :: Duration -> Doc
+optDuration = df . lilypond where
   df []        = empty
   df [(ed,dc)] = dots dc $ either command int ed
   df _xs       = error $ "optDuration - composite todo..." 
