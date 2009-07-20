@@ -14,44 +14,19 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Pitch 
-  ( 
-  -- * Pitch types
-    Pitch(..)
-  , Octave
-  , PitchLetter(..)
-  , Accidental(..)
-  , PitchLabel(..)
-
-  -- * Type classes
-  , HasPitch(..)
-  , Semitones(..)
-
-
-
-  , label
-  , octave
-  , pitch
-
-  , transpose
-
-
-
-  , toUpperLChar
-  , toLowerLChar
-
-
-  , rescaleOctave
-  , octaveDist
-
-  ) where
+module Mullein.Pitch where
 
 
 import Data.Char ( toLower )
+import qualified Data.Map as Map
+
 
 import qualified Text.PrettyPrint.Leijen as PP
 
 type Octave  = Int
+
+type SpellingMap = Map.Map PitchLabel PitchLabel
+
 
 -- | To print ABC,  Natural must be distinct from 
 -- no-accidental. Hence the Maybe onAccidental.
@@ -110,11 +85,9 @@ instance Ord PitchLabel where
   compare (PitchLabel l a) (PitchLabel l' a') = (l,a) `compare` (l',a')
 
 
-class HasPitch a where
-  getPitch :: a -> Pitch
-  setPitch :: Pitch -> a -> a
-
-
+-- No equivalent to HasDuration for Pitch as cardinality is
+-- a problem.
+-- For instance, chords have more than one pitch, rests have no pitch
 
 
 label :: Pitch -> PitchLabel
@@ -125,6 +98,15 @@ octave (Pitch _ _ o) =o
 
 pitch :: PitchLabel -> Octave -> Pitch
 pitch (PitchLabel l a) o = Pitch l a o
+
+root :: PitchLabel -> PitchLabel
+root (PitchLabel l _) = PitchLabel l Nothing
+
+natural :: PitchLabel -> PitchLabel
+natural (PitchLabel l _) = PitchLabel l (Just Nat)
+
+
+
 
   
 class Semitones a where semitones :: a -> Int
@@ -223,6 +205,55 @@ arithmeticDist (Pitch l _ o) (Pitch l' _ o') =
     dist i i'
       | i > i'      = negate $ 1 + (i - i')
       | otherwise   = 1 + (i' - i)
+
+
+--------------------------------------------------------------------------------
+-- Pitch spelling for ABC
+
+{-
+-- 7 sharps:   C#      A#m      G#Mix   D#Dor   E#Phr   F#Lyd   B#Loc
+-- 6 sharps:   F#      D#m      C#Mix   G#Dor   A#Phr   BLyd    E#Loc
+-- 5 sharps:   B       G#m      F#Mix   C#Dor   D#Phr   ELyd    A#Loc
+-- 4 sharps:   E       C#m      BMix    F#Dor   G#Phr   ALyd    D#Loc
+-- 3 sharps:   A       F#m      EMix    BDor    C#Phr   DLyd    G#Loc
+-- 2 sharps:   D       Bm       AMix    EDor    F#Phr   GLyd    C#Loc
+-- 1 sharp :   G       Em       DMix    ADor    BPhr    CLyd    F#Loc
+-- 0 sharps:   C       Am       GMix    DDor    EPhr    FLyd    BLoc
+-- 1 flat  :   F       Dm       CMix    GDor    APhr    BbLyd   ELoc
+-- 2 flats :   Bb      Gm       FMix    CDor    DPhr    EbLyd   ALoc
+-- 3 flats :   Eb      Cm       BbMix   FDor    GPhr    AbLyd   DLoc
+-- 4 flats :   Ab      Fm       EbMix   BbDor   CPhr    DbLyd   GLoc
+-- 5 flats :   Db      Bbm      AbMix   EbDor   FPhr    GbLyd   CLoc
+-- 6 flats :   Gb      Ebm      DbMix   AbDor   BbPhr   CbLyd   FLoc
+-- 7 flats :   Cb      Abm      GbMix   DbDor   EbPhr   FbLyd   BbLoc
+-}
+
+
+
+spell :: SpellingMap -> Pitch -> Pitch
+spell m p = maybe p relabel $ Map.lookup (label p) m
+  where
+    relabel lbl = pitch lbl (octave p)
+
+
+spellingMap :: Int -> SpellingMap
+spellingMap n 
+    | abs n > 7 = error "Pitch.spellingMap - more sharps/flats than notes."
+    | n == 0    = Map.empty
+    | n >  0    = build $ nsharps n
+    | otherwise = build $ nflats (abs n)          
+  where
+    build = foldr fn Map.empty where
+      fn lbl m = Map.insert (root lbl) (natural lbl) 
+               $ Map.insert lbl (root lbl) m
+
+nsharps :: Int -> [PitchLabel]
+nsharps n = map sharp $ take n [F,C,G,D,A,E,B] where
+  sharp l = PitchLabel l (Just Sharp)
+
+nflats :: Int -> [PitchLabel]
+nflats n = map flat $ take n [B,E,A,D,G,C,F] where
+  flat l = PitchLabel l (Just Flat)
 
 
   

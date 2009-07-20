@@ -164,6 +164,7 @@ type Element = ElementP ScNote
 type GraceNoteP e = (e, Duration)
 
 
+
 data NoteAttribute = Fingering Int
   deriving (Eq,Show)
 
@@ -197,9 +198,9 @@ instance HasDuration (ElementP e) where
   setDuration d (Chord _ se)    = Chord d se
   setDuration _ (GraceNotes se) = GraceNotes se
 
-
 instance Spacer (ElementP e) where
   spacer d     = Spacer d  
+
 
 --------------------------------------------------------------------------------
 -- Note lists
