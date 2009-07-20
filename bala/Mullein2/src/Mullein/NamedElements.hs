@@ -110,27 +110,27 @@ b  :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
 bs :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
 
 
-cf o dur attrs = Note dur (mkNote (Pitch C Flat o) attrs)
-c  o dur attrs = Note dur (mkNote (Pitch C Nat o) attrs)
-cs o dur attrs = Note dur (mkNote (Pitch C Sharp o) attrs)
-df o dur attrs = Note dur (mkNote (Pitch D Flat o) attrs)
-d  o dur attrs = Note dur (mkNote (Pitch D Nat o) attrs)
-ds o dur attrs = Note dur (mkNote (Pitch D Sharp o) attrs)
-ef o dur attrs = Note dur (mkNote (Pitch E Flat o) attrs)
-e  o dur attrs = Note dur (mkNote (Pitch E Nat o) attrs)
-es o dur attrs = Note dur (mkNote (Pitch E Sharp o) attrs)
-ff o dur attrs = Note dur (mkNote (Pitch F Flat o) attrs)
-f  o dur attrs = Note dur (mkNote (Pitch F Nat o) attrs)
-fs o dur attrs = Note dur (mkNote (Pitch F Sharp o) attrs)
-gf o dur attrs = Note dur (mkNote (Pitch G Flat o) attrs)
-g  o dur attrs = Note dur (mkNote (Pitch G Nat o) attrs)
-gs o dur attrs = Note dur (mkNote (Pitch G Sharp o) attrs)
-af o dur attrs = Note dur (mkNote (Pitch A Flat o) attrs)
-a  o dur attrs = Note dur (mkNote (Pitch A Nat o) attrs)
-as o dur attrs = Note dur (mkNote (Pitch A Sharp o) attrs)
-bf o dur attrs = Note dur (mkNote (Pitch B Flat o) attrs)
-b  o dur attrs = Note dur (mkNote (Pitch B Nat o) attrs)
-bs o dur attrs = Note dur (mkNote (Pitch B Sharp o) attrs)
+cf o dur attrs = Note dur (mkNote (Pitch C (Just Flat) o) attrs)
+c  o dur attrs = Note dur (mkNote (Pitch C Nothing o) attrs)
+cs o dur attrs = Note dur (mkNote (Pitch C (Just Sharp) o) attrs)
+df o dur attrs = Note dur (mkNote (Pitch D (Just Flat) o) attrs)
+d  o dur attrs = Note dur (mkNote (Pitch D Nothing o) attrs)
+ds o dur attrs = Note dur (mkNote (Pitch D (Just Sharp) o) attrs)
+ef o dur attrs = Note dur (mkNote (Pitch E (Just Flat) o) attrs)
+e  o dur attrs = Note dur (mkNote (Pitch E Nothing o) attrs)
+es o dur attrs = Note dur (mkNote (Pitch E (Just Sharp) o) attrs)
+ff o dur attrs = Note dur (mkNote (Pitch F (Just Flat) o) attrs)
+f  o dur attrs = Note dur (mkNote (Pitch F Nothing o) attrs)
+fs o dur attrs = Note dur (mkNote (Pitch F (Just Sharp) o) attrs)
+gf o dur attrs = Note dur (mkNote (Pitch G (Just Flat) o) attrs)
+g  o dur attrs = Note dur (mkNote (Pitch G Nothing o) attrs)
+gs o dur attrs = Note dur (mkNote (Pitch G (Just Sharp) o) attrs)
+af o dur attrs = Note dur (mkNote (Pitch A (Just Flat) o) attrs)
+a  o dur attrs = Note dur (mkNote (Pitch A Nothing o) attrs)
+as o dur attrs = Note dur (mkNote (Pitch A (Just Sharp) o) attrs)
+bf o dur attrs = Note dur (mkNote (Pitch B (Just Flat) o) attrs)
+b  o dur attrs = Note dur (mkNote (Pitch B Nothing o) attrs)
+bs o dur attrs = Note dur (mkNote (Pitch B (Just Sharp) o) attrs)
 
 
 
@@ -176,44 +176,44 @@ f_nat     :: PitchLabel
 g_nat     :: PitchLabel
 a_nat     :: PitchLabel
 b_nat     :: PitchLabel
-c_nat     = PitchLabel C Nat
-d_nat     = PitchLabel D Nat
-e_nat     = PitchLabel E Nat
-f_nat     = PitchLabel F Nat
-g_nat     = PitchLabel G Nat
-a_nat     = PitchLabel A Nat
-b_nat     = PitchLabel B Nat
+c_nat     = PitchLabel C Nothing
+d_nat     = PitchLabel D Nothing
+e_nat     = PitchLabel E Nothing
+f_nat     = PitchLabel F Nothing
+g_nat     = PitchLabel G Nothing
+a_nat     = PitchLabel A Nothing
+b_nat     = PitchLabel B Nothing
 
 c_sharp   :: PitchLabel
 d_sharp   :: PitchLabel
 f_sharp   :: PitchLabel 
 g_sharp   :: PitchLabel 
 a_sharp   :: PitchLabel
-c_sharp   = PitchLabel C Sharp
-d_sharp   = PitchLabel D Sharp
-f_sharp   = PitchLabel F Sharp
-g_sharp   = PitchLabel G Sharp
-a_sharp   = PitchLabel A Sharp
+c_sharp   = PitchLabel C (Just Sharp)
+d_sharp   = PitchLabel D (Just Sharp)
+f_sharp   = PitchLabel F (Just Sharp)
+g_sharp   = PitchLabel G (Just Sharp)
+a_sharp   = PitchLabel A (Just Sharp)
 
 d_flat    :: PitchLabel
 e_flat    :: PitchLabel
 g_flat    :: PitchLabel
 a_flat    :: PitchLabel
 b_flat    :: PitchLabel
-d_flat    = PitchLabel D Flat
-e_flat    = PitchLabel E Flat
-g_flat    = PitchLabel G Flat
-a_flat    = PitchLabel A Flat
-b_flat    = PitchLabel B Flat
+d_flat    = PitchLabel D (Just Flat)
+e_flat    = PitchLabel E (Just Flat)
+g_flat    = PitchLabel G (Just Flat)
+a_flat    = PitchLabel A (Just Flat)
+b_flat    = PitchLabel B (Just Flat)
 
 pchNat :: PitchLetter -> Int -> Pitch
-pchNat n o    = Pitch n Nat o
+pchNat n o    = Pitch n Nothing o
 
 pchSharp :: PitchLetter -> Int -> Pitch
-pchSharp n o  = Pitch n Sharp o
+pchSharp n o  = Pitch n (Just Sharp) o
 
 pchFlat :: PitchLetter -> Int -> Pitch
-pchFlat n o   = Pitch n Flat o
+pchFlat n o   = Pitch n (Just Flat) o
 
 middle_c :: Pitch
 middle_c = pchNat C 5
@@ -448,7 +448,7 @@ gf7       :: Pitch
 gs7       :: Pitch 
 af7       :: Pitch 
 as7       :: Pitch 
-bf7       ::  Pitch
+bf7       :: Pitch
 c7        = pchNat C 7
 d7        = pchNat D 7
 e7        = pchNat E 7
@@ -471,7 +471,10 @@ bf7       = pchFlat B 7
 -- keys
 
 majorKey :: PitchLetter -> Accidental -> Key
-majorKey l atl = Key (PitchLabel l atl) Major
+majorKey l atl = Key (PitchLabel l (fn atl)) Major
+  where 
+    fn Nat = Nothing
+    fn act = Just act
  
 c_major :: Key
 c_major = majorKey C Nat
@@ -521,7 +524,10 @@ c_flat_major = majorKey C Flat
 
 
 minorKey :: PitchLetter -> Accidental -> Key
-minorKey l atl = Key (PitchLabel l atl) Minor
+minorKey l atl = Key (PitchLabel l (fn atl)) Minor
+  where 
+    fn Nat = Nothing
+    fn act   = Just act
 
 a_minor :: Key
 a_minor = minorKey A Nat

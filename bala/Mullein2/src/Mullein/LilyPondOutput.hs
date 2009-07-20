@@ -130,11 +130,11 @@ note (Pitch l a o) = pitchLabel l a <> ove o where
           | otherwise   = empty
 
 
-pitchLabel :: PitchLetter -> Accidental -> Doc
-pitchLabel l a = char (toLowerLChar l) <> accidental a
+pitchLabel :: PitchLetter -> Maybe Accidental -> Doc
+pitchLabel l a = char (toLowerLChar l) <> maybe empty accidental a
   where 
     accidental :: Accidental -> Doc
-    accidental Nat            = empty
+    accidental Nat            = text "!"    -- check correctness
     accidental Sharp          = text "is"
     accidental Flat           = text "es"
     accidental DoubleSharp    = text "isis"

@@ -27,7 +27,14 @@ module Mullein.Pitch
   , HasPitch(..)
   , Semitones(..)
 
+
+
+  , label
+  , octave
+  , pitch
+
   , transpose
+
 
 
   , toUpperLChar
@@ -46,7 +53,10 @@ import qualified Text.PrettyPrint.Leijen as PP
 
 type Octave  = Int
 
-data Pitch = Pitch PitchLetter Accidental Octave
+-- | To print ABC,  Natural must be distinct from 
+-- no-accidental. Hence the Maybe onAccidental.
+
+data Pitch = Pitch PitchLetter (Maybe Accidental) Octave
   deriving (Eq,Show)
 
 data PitchLetter = C | D | E | F | G | A | B
@@ -55,7 +65,7 @@ data PitchLetter = C | D | E | F | G | A | B
 data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp 
   deriving (Bounded,Enum,Eq,Ord,Show)
 
-data PitchLabel = PitchLabel PitchLetter Accidental
+data PitchLabel = PitchLabel PitchLetter (Maybe Accidental)
   deriving (Eq,Show)
   
   
@@ -74,27 +84,48 @@ instance Enum PitchLabel where
           fn B = 11
 
   
-  toEnum 0    = PitchLabel C Nat
-  toEnum 1    = PitchLabel C Sharp
-  toEnum 2    = PitchLabel D Nat
-  toEnum 3    = PitchLabel D Sharp
-  toEnum 4    = PitchLabel E Nat
-  toEnum 5    = PitchLabel F Nat
-  toEnum 6    = PitchLabel F Sharp
-  toEnum 7    = PitchLabel G Nat
-  toEnum 8    = PitchLabel G Sharp
-  toEnum 9    = PitchLabel A Nat
-  toEnum 10   = PitchLabel A Sharp
-  toEnum 11   = PitchLabel B Nat
+  toEnum 0    = PitchLabel C Nothing
+  toEnum 1    = PitchLabel C (Just Sharp)
+  toEnum 2    = PitchLabel D Nothing
+  toEnum 3    = PitchLabel D (Just Sharp)
+  toEnum 4    = PitchLabel E Nothing
+  toEnum 5    = PitchLabel F Nothing
+  toEnum 6    = PitchLabel F (Just Sharp)
+  toEnum 7    = PitchLabel G Nothing
+  toEnum 8    = PitchLabel G (Just Sharp)
+  toEnum 9    = PitchLabel A Nothing
+  toEnum 10   = PitchLabel A (Just Sharp)
+  toEnum 11   = PitchLabel B Nothing
   toEnum i    = error $ "Pitch.toEnum " ++ show i ++ " outside bounds"
   
 instance Bounded PitchLabel where
   maxBound = toEnum 11
   minBound = toEnum 0
 
+
+-- | The Ord instance of a Pitch label is not numerically sound, as 
+-- it does not respect the semitone count. 
+-- It is defined only to allow PitchLabels to be stored in a finite map.
+instance Ord PitchLabel where
+  compare (PitchLabel l a) (PitchLabel l' a') = (l,a) `compare` (l',a')
+
+
 class HasPitch a where
   getPitch :: a -> Pitch
   setPitch :: Pitch -> a -> a
+
+
+
+
+label :: Pitch -> PitchLabel
+label (Pitch l a _) = PitchLabel l a
+
+octave :: Pitch -> Octave
+octave (Pitch _ _ o) =o
+
+pitch :: PitchLabel -> Octave -> Pitch
+pitch (PitchLabel l a) o = Pitch l a o
+
   
 class Semitones a where semitones :: a -> Int
     
@@ -104,7 +135,8 @@ instance Semitones Pitch where
 instance Semitones PitchLabel where
   semitones (PitchLabel l a) = semitones l + semitones a
   
-  
+instance Semitones a => Semitones (Maybe a) where
+  semitones = maybe 0 semitones
 
   
 toUpperLChar :: PitchLetter -> Char  
@@ -135,18 +167,18 @@ fromSemitones i = Pitch l a o
     (o,ni)      = i `divMod` 12
     (l,a)       = pitchVal ni                   
                  
-    pitchVal  0 = (C,Nat)
-    pitchVal  1 = (C,Sharp)
-    pitchVal  2 = (D,Nat)
-    pitchVal  3 = (D,Sharp)
-    pitchVal  4 = (E,Nat)
-    pitchVal  5 = (F,Nat)
-    pitchVal  6 = (F,Sharp)
-    pitchVal  7 = (G,Nat)
-    pitchVal  8 = (G,Sharp)
-    pitchVal  9 = (A,Nat)
-    pitchVal 10 = (A,Sharp)
-    pitchVal 11 = (B,Nat)
+    pitchVal  0 = (C,Nothing)
+    pitchVal  1 = (C,Just Sharp)
+    pitchVal  2 = (D,Nothing)
+    pitchVal  3 = (D,Just Sharp)
+    pitchVal  4 = (E,Nothing)
+    pitchVal  5 = (F,Nothing)
+    pitchVal  6 = (F,Just Sharp)
+    pitchVal  7 = (G,Nothing)
+    pitchVal  8 = (G,Just Sharp)
+    pitchVal  9 = (A,Nothing)
+    pitchVal 10 = (A,Just Sharp)
+    pitchVal 11 = (B,Nothing)
     pitchVal _  = error "fromSemitones - not unreachable after all!" 
 
 -- | Traspose a pitch - note the result may have an unorthodox 

@@ -21,7 +21,7 @@ module Mullein.AbcOutput where
 
 import Mullein.Core
 import Mullein.Duration
-import Mullein.Pitch
+import Mullein.Pitch hiding (pitch, octave)
 
 import Data.OneMany
 
@@ -132,11 +132,11 @@ pitch (Pitch l a o)
 
 pitchLabel :: PitchLabel -> PitchChar -> Doc
 pitchLabel (PitchLabel l a) pc 
-    | pc == LOWER   = accidental a <> (char . toLowerLChar) l
-    | otherwise     = accidental a <> (char . toUpperLChar) l
+    | pc == LOWER   = (maybe empty accidental a) <> (char . toLowerLChar) l
+    | otherwise     = (maybe empty accidental a) <> (char . toUpperLChar) l
   where     
     accidental :: Accidental -> Doc
-    accidental Nat           = empty    
+    accidental Nat           = char '='    
     accidental Sharp         = char '^' 
     accidental Flat          = char '_' 
     accidental DoubleSharp   = text "^^"

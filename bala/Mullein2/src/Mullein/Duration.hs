@@ -56,13 +56,6 @@ instance Monoid Duration where
   mempty  = DZero
   mappend = (#+)
 
-{-
-  a     `mappend` DZero = a
-  DZero `mappend` b     = b
-  a     `mappend
-                | isZero b  = a
-                | otherwise = a #+ b   
--}
 
 class HasDuration a where
   getDuration  :: a -> Duration
@@ -147,14 +140,15 @@ dot (Dn om) = Dn $ oneMany (one . dot1) (many . first dot1) om
   where
     dot1 (D1 (a,n))   = D1 (a,n+1)
     first f (x:xs)  = f x:xs
-    first _ []      = error $ "Duration.dot - bad list"  -- should be unreachable in this case
+    first _ []      = error $ "Duration.dot - bad list"  -- unreachable (?)
   
 
 splitDuration :: Rational -> Duration -> (Maybe Duration, Duration)
-splitDuration _   DZero = (Nothing,DZero)
-splitDuration r d@(Dn om) | isOne om  = (Nothing,d)
-                          | otherwise = splitls r (toList om)
+splitDuration _   DZero                 = (Nothing,DZero)
+splitDuration r0 d@(Dn om) | isOne om   = (Nothing,d)
+                           | otherwise  = splitls r0 (toList om)
   where 
+    splitls _ []     = error "Duration.splitDuration empty" -- unreachable (?)
     splitls _ [x]    = (Nothing, Dn $ one x) -- cannot exhaust righthand side
     splitls r (x:xs) = let d1 = sumD1 x in case compare r d1 of
                           LT -> jcons x (splitls (r-d1) xs)
