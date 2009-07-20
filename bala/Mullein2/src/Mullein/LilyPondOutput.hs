@@ -79,8 +79,8 @@ oElement (Chord d ps)     = angles (hsep $ map lyPitch ps) <> optDuration d
 oElement (GraceNotes [x]) = command "grace" <+> braces (oGrace x) where
 oElement (GraceNotes xs)  = command "grace" <+> braces (lyBeam $ map oGrace xs)
 
-oGrace :: (LyOutput e, LyDur e ~ Duration) => (e,Duration) -> Doc
-oGrace (p,d) = lyNote p d
+oGrace :: (LyOutput e, LyDur e ~ Duration) => GraceNoteP e -> Doc
+oGrace (GraceNote d p) = lyNote p d
 
 --------------------------------------------------------------------------------
 -- post process

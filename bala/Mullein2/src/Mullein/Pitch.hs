@@ -106,6 +106,13 @@ natural :: PitchLabel -> PitchLabel
 natural (PitchLabel l _) = PitchLabel l (Just Nat)
 
 
+-- | Provide fmap-like access to the Pitch component embedded 
+-- in some arbitrary structure.
+class PitchMap e where
+  pitchMap :: (Pitch -> Pitch) -> e -> e 
+
+instance PitchMap Pitch where
+  pitchMap = ($)
 
 
   
@@ -230,10 +237,14 @@ arithmeticDist (Pitch l _ o) (Pitch l' _ o') =
 
 
 
-spell :: SpellingMap -> Pitch -> Pitch
-spell m p = maybe p relabel $ Map.lookup (label p) m
+
+spell :: PitchMap e => SpellingMap -> e -> e
+spell sm = pitchMap (spell' sm)
+
+spell' :: SpellingMap -> Pitch -> Pitch
+spell' sm p@(Pitch _ _ o) = pitch (fn $ label p) o
   where
-    relabel lbl = pitch lbl (octave p)
+    fn lbl = maybe lbl id $ Map.lookup lbl sm
 
 
 spellingMap :: Int -> SpellingMap

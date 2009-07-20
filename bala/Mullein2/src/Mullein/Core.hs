@@ -37,14 +37,11 @@ module Mullein.Core
 
   , ElementP(..)
   , Element
-  , GraceNoteP
+  , GraceNoteP(..)
   , NoteAttribute(..)
   , ScNote(..)
 
   , Note(..)
-
-  
-  , BarNum
 
   , P(..)
   , Concat(..)
@@ -161,7 +158,9 @@ data ElementP e = Note   Duration e
 
 type Element = ElementP ScNote
         
-type GraceNoteP e = (e, Duration)
+data GraceNoteP e = GraceNote Duration e
+  deriving (Eq,Show)
+
 
 
 
@@ -202,11 +201,18 @@ instance Spacer (ElementP e) where
   spacer d     = Spacer d  
 
 
---------------------------------------------------------------------------------
--- Note lists
+instance PitchMap ScNote where
+  pitchMap f (ScNote p as) = ScNote (f p) as
 
+instance PitchMap e => PitchMap (ElementP e) where
+  pitchMap f (Note d e)       = Note d (pitchMap f e)
+  pitchMap _ (Rest d)         = Rest d
+  pitchMap _ (Spacer d)       = Spacer d
+  pitchMap f (Chord d ps)     = Chord d (map (pitchMap f) ps)
+  pitchMap f (GraceNotes xs)  = GraceNotes (map (pitchMap f) xs)
 
-type BarNum = Int
+instance PitchMap e => PitchMap (GraceNoteP e) where
+  pitchMap f (GraceNote d p) = GraceNote d (pitchMap f p)
 
 
 

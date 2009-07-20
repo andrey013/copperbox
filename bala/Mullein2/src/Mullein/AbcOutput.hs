@@ -75,7 +75,7 @@ oElement (Spacer dm)      = char 'x' <> multiplier dm
 oElement (Chord dm ps)    = brackets $ hcat $ map f ps where
                               f p = abcPitch p <> multiplier dm 
 oElement (GraceNotes xs)  = braces $ hcat $ map f xs where
-                              f (p,dm) = abcPitch p <> multiplier dm
+                              f (GraceNote dm p) = abcPitch p <> multiplier dm
   
 
 --------------------------------------------------------------------------------

@@ -19,16 +19,14 @@ demo1 = vsep $ map oBarOverlay b1'4
 
 demo2 = vsep $ map ABC.oBarOverlay xs where
   
-  xs = bracket (snd twoFourTime) $ map respell bars1'4
+  xs = bracket (snd twoFourTime) $ map (spell amaj) bars1'4
   amaj = spellingMap 3
   
-  respell :: Element -> Element
-  respell (Note d (ScNote pch as)) = Note d (ScNote (spell amaj pch) as)
-  respell (Rest d)                 = Rest d
   -- ...
 
 twoFourTime :: MetricalSpec
 twoFourTime = metricalSpec 2 4
+
 
 
 
