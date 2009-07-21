@@ -60,14 +60,95 @@ longa, breve, \nicefrac{1}{1}, \nicefrac{1}{2}, \nicefrac{1}{4},
 
 
 \section{Micro guide to LilyPond}
+LilyPond is a comprehensive music typesetting system. The name 
+LilyPond is synonymous with both the system and the music 
+desciption format (prosiacally \emph{LilyPond files}).
+Presentation is impeccably flexible, with it one can produce 
+simple tunes, orchestral scores, string tablature, even MIDI. Of 
+course, it can seem bewildering when first encountered, 
+especially if one is unfamiliar with is forebear \TeX.
+
+Presentation - the details of how to structure scores, systems - 
+is too various to be covered succintly here. These notes cover 
+only details relevant to the fragments that Mullein can output.
+
+Two fortuitous details beforehand: LilyPond allows musical 
+fragments to be named as variables then refered to elsewhere,
+secondly, scores can be divided amongst files and included in a
+master file with the \verb+\include+ command. These features are 
+invaluable for working with Mullein - volatile, generated 
+fragments can be isolated in their own files, minimizing the 
+chances of overwriting carefully handwritten document masters.
+ 
 \subsection{Pitch}
-LilyPond has two modes for representing octaves - relative and 
-absolute - with relative mode appearing to be most popular for 
-score authors. Relative mode allows slightly more concise scores, 
-as octave annotations are only needed when the pitch change 
-between two successive notes is greater than five half-steps.
+Middle C is represented by the symbol \verb+c'+. All pitches 
+are spelt with lowercase letters. Altered pitches must 
+be spelt with their accidental whether or not the accidental 
+will be printed according to the key signature. In G major
+\verb+f+ will be printed as F$\natural$, \verb+fis+ will be
+printed as F. LilyPond uses Dutch suffixes for sharp 
+(\verb+is+) and flat (\verb+es+), it can be configured to use
+English or another language, but convention prefers Dutch.
+
+Octaves are raised with one-or-more apostrophes and lowered 
+with one-or-more commas. For example, \verb+c''+ is C one octave 
+above middle C, \verb+c+ is C one octave below middle C and 
+\verb+c,+ is C two octaves below middle C. A side issue, why 
+LilyPond doesn't represent middle C as \verb+c+ is somewhat 
+mysterious.
+
+LilyPond has two modes for representing octave information - 
+relative and absolute - with relative mode appearing to be most 
+popular for score authors. Relative mode allows slightly more 
+concise scores, as octave annotations are only needed when the 
+staff spacing between two successive notes is greater than three 
+in either direction (accidentals are ingored in the calculation).
+
+\subsection{Duration}
+Durations are denoted by numerals following the notes pitch:
+\verb+c'1+ represents a whole note, \verb+c'2+ a half note, 
+\verb+c'4+ a quarter note, etc. Dotted notes are made by placing 
+a dot after the numeral (\verb+c'4.+). To improve concision, 
+when a series of notes shares the same duration only the first 
+needs annotation. For instance, four eighth notes followed by a 
+quarter note - \verb+d'8 e d c c4+. Dotted notes are an exception 
+to this rule: all dotted notes must be specified regardless of
+what they succeed.
+
+\subsection{Metrical division: Beaming and bar lines}
+LilyPond will beam note groups automatically according to the 
+time signature. As there are often various rhythmic divisions 
+possible for a time signature this is not always ideal. Notes 
+can be beamed manually by grouping them within square brackets 
+(\verb+[]+).
+
+Scores can ellide bar lines, LilyPond will place them 
+automatically. Automatic bar lines can be overriden - LilyPond 
+will report a warning to the console during rendering if the 
+duration of the bar does not agree with the time signature.
+
 
 \section{Micro guide to ABC}
+ABC is a music notation format. Various tools exist to turn ABC 
+files into something useful - PostScript scores, MIDI. 
+\verb+abc2ps+ and \verb+abcm2ps+ both convert ABC to PostScript, 
+\verb+abcm2ps+ is a later system an supports some very useful 
+features from the ABC 2.0 draft standard (particularly voice 
+overlays). 
+
+ABC files define tunes or their collective \emph{tunebooks}. ABC 
+does not attempt to match LilyPond's utility, one could not 
+prepare an orchestral score in ABC. Tunes have a simple prologue
+defining title, key signature, meter etc. and then a tune body
+listing the notes. Due to the modest scale of ABC, generating a
+whole file programmatically is not unreasonable.\footnote{In 
+constrast LilyPond is simply to large to usefully embed it 
+Haskell. It is more fruitful to generate fragments in Haskell 
+and assemble them with handwritten LilyPond in a master document, 
+one can then use whatever LilyPond commands one wishes.} Indeed, 
+as the include file mechanisms of ABC are somewhat limited whole 
+file generation should probably be preferred.
+
 \subsection{Pitch}
 Middle C is represented by the symbol \verb+C+.
 The two octaves spanning the treble clef are represented
@@ -104,7 +185,7 @@ tune, or derived from the meter. The derivation is:
 if the meter expressed as a decimal is $\geqq$ 0.75 then the 
 unit note length is an eighth, otherwise it is a sixteenth.
 
-\subsection{Metrical division: Beaming and Bar lines}
+\subsection{Metrical division: Beaming and bar lines}
 Notes to be joined within a beam group must be grouped together
 without spaces, which makes the ABC format whitespace sensitive!
 ABC is permissive in its interpretation of a beam group: if the 
