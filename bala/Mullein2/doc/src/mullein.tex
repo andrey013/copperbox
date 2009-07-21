@@ -1,0 +1,123 @@
+
+\documentclass{article}
+
+\usepackage{amssymb}
+\usepackage{nicefrac}
+\usepackage{alltt}
+\usepackage{comment}
+
+
+\begin{document}
+\author{Stephen Peter Tetley}
+\title{Mullein User Guide}
+\maketitle
+\tableofcontents
+
+\section{Introduction}
+\subsection{What is Mullein?}
+Mullein is set of modules for music description language written 
+in Haskell. Mullein is primarily inspired by Paul Hudak's 
+Haskore system, but Mullein has a different objective to Haskore: 
+Mullein describes musical structures for rendering as printed 
+scores; Haskore describes musical structures for 
+\emph{performance}, where a perfomance is typically rendered to 
+a sound file. 
+
+Ideally Mullein would not be a separate system to Haskore, but
+an extension allowing Haskore to generate scores as well 
+as performances. Unfortunately Haskore with its emphasis on 
+performance is not well suited to describing scores. Valuable
+musical information for score printing is not readily available
+in Haskore. The most obvious example is duration - Haskore 
+records note durations as absolute values, in printed scores 
+durations are symbolic (a eighth note always has the same 
+symbolic duration \nicefrac{1}{8} regardless of the tempo 
+of the music). While is easy to recover note durations from 
+simple Haskore performances it is very difficult to recover 
+durations in if a score has trills or other ornaments.
+
+An early prototype of Mullein tried to alleviate this problem 
+by allowing Haskore performances to be augmented with rewriting 
+rules to recover symbolic durations from absolute ones. But the 
+additional machinary was excessive and hardly intuitive, 
+strongly suggesting that abandoning compatibility with Haskore
+was best option for Mullein.
+
+\begin{comment}
+
+unit note length
+
+pitch relative to scale 
+
+Mullein represents durations symbolically... 
+\begin{alltt} 
+longa, breve, \nicefrac{1}{1}, \nicefrac{1}{2}, \nicefrac{1}{4},
+\nicefrac{1}{8}, \nicefrac{1}{16}
+\end{alltt}
+\end{comment}
+
+
+
+
+\section{Micro guide to LilyPond}
+\subsection{Pitch}
+LilyPond has two modes for representing octaves - relative and 
+absolute - with relative mode appearing to be most popular for 
+score authors. Relative mode allows slightly more concise scores, 
+as octave annotations are only needed when the pitch change 
+between two successive notes is greater than five half-steps.
+
+\section{Micro guide to ABC}
+\subsection{Pitch}
+Middle C is represented by the symbol \verb+C+.
+The two octaves spanning the treble clef are represented
+with the pitches \verb+C-Bc-b+. Pitches outside this range are 
+formed by appending commas or apostrophes. Each comma appended 
+lowers the octave, e.g. \verb+C,,+ is c two octaves below middle 
+C. Similarly appending apostrophes raises the octave \verb+c'+ 
+is one octave above \verb+c+ (and two octaves above middle C). 
+ABC allows equivalent octave spellings, although the merit of 
+this in practice is questionable. These alternatives all denote 
+middle C: \verb+C  c,  C,'  c,,'  c,',+
+
+ABC tunes have a key signature defined in the header prologue 
+(if the key signature is not specified it defaults to C major).
+With this context established, notes only need to be augmented 
+with accidentals if the accidental needs printing. For instance, 
+in G major the note \verb+F+ in the score represents the 
+absolute pitch F$\sharp$, but following notational conventions 
+the sharp is ellided, a musician knows to play it as 
+F$\sharp$ from the key signature. In G major, \verb+=F+ prints 
+F$\natural$ and \verb+^F+ prints F$\sharp$, decorating the F 
+with a cautionary (though strictly superfluous) sharp. 
+
+\subsection{Duration}
+Durations in ABC tunes are denoted by multiplers of the 
+\emph{unit note length} rather than absolute values. This is a 
+shorthand to reduce typing, no annotation is needed to notes 
+whose duration equals the unit note length. A note G with 
+duration double the unit note length is \verb+G2+, with duration 
+half the unit note length it is \verb+G/2+.
+
+The unit note length is either specified in the header of the 
+tune, or derived from the meter. The derivation is: 
+if the meter expressed as a decimal is $\geqq$ 0.75 then the 
+unit note length is an eighth, otherwise it is a sixteenth.
+
+\subsection{Metrical division: Beaming and Bar lines}
+Notes to be joined within a beam group must be grouped together
+without spaces, which makes the ABC format whitespace sensitive!
+ABC is permissive in its interpretation of a beam group: if the 
+group includes a note that cannot be beamed (say a quarter or half
+note) it will be printed singularly and the beam group will be 
+resumed. The flipside of this flexibility with beam groups is a
+score is free to designate beam groups that have no correlation  
+with the pulsation implied by a tune's meter.
+
+Barring is entirely at the mercy of the user. Bars are be printed 
+where they are placed, neither \verb+abc2ps+ or \verb+abcm2ps+ 
+appear to give warnings when bars are too long or too short for 
+the meter.
+
+
+\end{document}
