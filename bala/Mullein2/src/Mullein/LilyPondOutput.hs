@@ -123,7 +123,6 @@ runRewriteDuration :: HasDuration e => [(Tied,[OneMany e])] -> [(Tied,[OneMany e
 runRewriteDuration bars = evalState (mapM fn bars) s0 where
   fn (tie_status,gs) = do gs' <- mapM fn' gs
                           return (tie_status, gs')
-
   fn' om = mapM rewriteDuration (toList om) >>= return . fromList
 
   s0 = St undefined dZero
@@ -199,30 +198,6 @@ command = (char '\\' <>) . text
 comment :: String -> Doc
 comment s = text "%{" <+> string s  <+> text "%}"
 
-
--- This implementation of variant key signatures is not so good...
-keyCmd :: Key -> Doc
-keyCmd (Key (PitchLabel l a) m) = command "key" <+> pitchLabel l a <+> mode m
-
-
-
-timeCmd :: Meter -> Doc
-timeCmd m = command "time" <+> fn m where
-   fn (TimeSig n d) = integer n <> char '/' <> integer d
-   fn CommonTime    = text "4/4"
-   fn CutTime       = text "2/2"
-
-
-mode :: Mode -> Doc
-mode Major        = command "major"
-mode Minor        = command "minor"
-mode Lydian       = command "lydian"
-mode Ionian       = command "ionian"
-mode Mixolydian   = command "mixolydian"
-mode Dorian       = command "dorian"
-mode Aeolian      = command "aeolian"
-mode Phrygian     = command "phrygian"
-mode Locrian      = command "locrian"
 
 
 

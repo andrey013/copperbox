@@ -17,17 +17,17 @@ import Text.PrettyPrint.Leijen
 
 demo1 = vsep $ map oBarOverlay $ runRewriteDuration xs
   where
-    xs = bracket (snd twoFourTime) $ map (pitchMap changeOctave) bars1'4
+    xs = bracket twoFourTime $ map (pitchMap changeOctave) bars1'4
 
 demo2 = vsep $ map ABC.oBarOverlay xs where
   
-  xs = bracket (snd twoFourTime) $ map (spell amaj) bars1'4
+  xs = bracket twoFourTime $ map (spell amaj) bars1'4
   amaj = spellingMap 3
   
   -- ...
 
-twoFourTime :: MetricalSpec
-twoFourTime = metricalSpec 2 4
+twoFourTime :: MeterPattern
+twoFourTime = meterPattern 2 4
 
 
 changeOctave :: Pitch -> Pitch

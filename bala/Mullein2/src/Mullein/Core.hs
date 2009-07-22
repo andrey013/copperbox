@@ -19,32 +19,21 @@
 
 module Mullein.Core 
   ( 
+
   -- * Types
     Tied
   , tied
   , notTied
 
-  , Meter(..)
   , MeterPattern
-  , MetricalSpec
-  , Key(..)
-  , Mode(..)
-  
-  , meterFraction
-  , metricalSpec
-  , withMeterPattern
-  , unitNote
+  , meterPattern
 
   , ElementP(..)
   , Element
   , GraceNoteP(..)
   , NoteAttribute(..)
   , ScNote(..)
-
   , Note(..)
-
-  , P(..)
-  , Concat(..)
 
   ) where
 
@@ -55,7 +44,7 @@ import Mullein.Utils
 
 
 import Data.Ratio
-import Text.PrettyPrint.Leijen ( Doc )
+
 
 --------------------------------------------------------------------------------
 -- Musical representation
@@ -71,60 +60,23 @@ notTied :: Tied
 notTied = False
 
 
--- For /universality/ meter is defined according to Abc's representation.
--- LilyPond will simply generate @TimeSig@ cases.
-data Meter = TimeSig Integer Integer 
-           -- | CommonTime is 4/4
-           | CommonTime 
-           -- | CutTime is 2/2
-           | CutTime
-  deriving (Eq,Show)
-
 -- MeterPatterns are not [Duration]...
 type MeterPattern = [Rational] 
 
-type MetricalSpec = (Meter,MeterPattern)
-
-  
-data Key = Key PitchLabel Mode
-  deriving (Eq,Show) 
-
-
-  
-data Mode = Major | Minor | Lydian | Ionian | Mixolydian
-          | Dorian | Aeolian | Phrygian | Locrian 
-  deriving (Bounded,Enum,Eq,Ord,Show) 
 
 
 --------------------------------------------------------------------------------
 -- Meter utils
-
-meterFraction :: Meter -> Rational
-meterFraction (TimeSig n d) = n%d
-meterFraction CommonTime    = 4%4 
-meterFraction CutTime       = 2%2 
            
 
-metricalSpec :: Int -> Int -> MetricalSpec
-metricalSpec n d 
-
-      | compoundMeter  n d  = (time_sig, replicate 3 $ (rational n d) / 3)
-      | simpleMeter n d     = (time_sig, replicate n $ rational 1 d)
+meterPattern :: Int -> Int -> MeterPattern
+meterPattern n d 
+      | compoundMeter  n d  = replicate 3 $ (rational n d) / 3
+      | simpleMeter n d     = replicate n $ rational 1 d
       | otherwise           = error $ err_msg
-
   where
-    time_sig = TimeSig (fromIntegral n) (fromIntegral d)
- 
-    err_msg = "simpleMetricalSpec - can't generate a meter pattern for a "
+    err_msg = "meterPattern - can't generate a meter pattern for a "
            ++ "meter that is neither simple or compound."
-
-withMeterPattern :: MeterPattern -> MetricalSpec -> MetricalSpec
-withMeterPattern m (ts,_) = (ts,m) 
-
-unitNote :: MetricalSpec -> Duration
-unitNote (m,_) | meterFraction m >= 3%4 = en -- 1%8
-               | otherwise              = sn -- 1%16
-
 
 -- Note compoundMeter and simpleMeter overlap
 
@@ -226,17 +178,6 @@ instance PitchMap e => PitchMap (GraceNoteP e) where
 
   pitchMapM mf (GraceNote d p) = pitchMapM mf p >>= return . GraceNote d
 
---------------------------------------------------------------------------------
--- Pretty printing scores
-
-
--- A Phantom type 
-newtype P a = P { unP :: Doc }
-
-
-infixl 5 +++
-class Concat ctx ctx' where
-  (+++)  :: P ctx -> P ctx' -> P ctx'
 
 
 

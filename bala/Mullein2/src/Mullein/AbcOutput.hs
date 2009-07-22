@@ -84,21 +84,6 @@ oElement (GraceNotes xs)  = braces $ hcat $ map f xs where
 
 
 
-keyField :: Key -> Doc
-keyField (Key k m) = field 'K' keyspec where
-    keyspec        = pitchLabel k UPPER <> modeSpec m
-    -- Don't print \maj\ here
-    modeSpec Major = empty
-    modeSpec x     = mode x 
-
-
-meterField :: Meter -> Doc
-meterField = field 'M' . f where
-    f (TimeSig n d) = integer n <> char '/' <> integer d
-    f CommonTime    = text "C"
-    f CutTime       = text "C|"
-
-
 field :: Char -> Doc -> Doc
 field ch d = char ch <> colon <> d
 
@@ -141,17 +126,6 @@ pitchLabel (PitchLabel l a) pc
     accidental Flat          = char '_' 
     accidental DoubleSharp   = text "^^"
     accidental DoubleFlat    = text "__"
-
-mode :: Mode -> Doc
-mode Major        = text "maj"
-mode Minor        = text "min"
-mode Lydian       = text "lyd"
-mode Ionian       = text "ion" 
-mode Mixolydian   = text "mix"
-mode Dorian       = text "dor"
-mode Aeolian      = text "aeo"
-mode Phrygian     = text "phr"
-mode Locrian      = text "loc"
 
 
 multiplier :: Duration -> Doc
