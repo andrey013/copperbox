@@ -21,8 +21,6 @@ import Data.Char ( toLower )
 import qualified Data.Map as Map
 
 
-import qualified Text.PrettyPrint.Leijen as PP
-
 type Octave  = Int
 
 type SpellingMap = Map.Map PitchLabel PitchLabel
@@ -109,11 +107,12 @@ natural (PitchLabel l _) = PitchLabel l (Just Nat)
 -- | Provide fmap-like access to the Pitch component embedded 
 -- in some arbitrary structure.
 class PitchMap e where
-  pitchMap :: (Pitch -> Pitch) -> e -> e 
+  pitchMap  :: (Pitch -> Pitch) -> e -> e 
+  pitchMapM :: Monad m => (Pitch -> m Pitch) -> e -> m e
 
 instance PitchMap Pitch where
   pitchMap = ($)
-
+  pitchMapM mf p = mf p   
 
   
 class Semitones a where semitones :: a -> Int
@@ -148,33 +147,7 @@ rescaleOctave :: Int -> Pitch -> Pitch
 rescaleOctave i (Pitch l a o)   = Pitch l a (o+i)
 
   
-  
--- This will need pitch spelling
-fromSemitones :: Int -> Pitch
-fromSemitones i = Pitch l a o
-  where
-    (o,ni)      = i `divMod` 12
-    (l,a)       = pitchVal ni                   
-                 
-    pitchVal  0 = (C,Nothing)
-    pitchVal  1 = (C,Just Sharp)
-    pitchVal  2 = (D,Nothing)
-    pitchVal  3 = (D,Just Sharp)
-    pitchVal  4 = (E,Nothing)
-    pitchVal  5 = (F,Nothing)
-    pitchVal  6 = (F,Just Sharp)
-    pitchVal  7 = (G,Nothing)
-    pitchVal  8 = (G,Just Sharp)
-    pitchVal  9 = (A,Nothing)
-    pitchVal 10 = (A,Just Sharp)
-    pitchVal 11 = (B,Nothing)
-    pitchVal _  = error "fromSemitones - not unreachable after all!" 
 
--- | Traspose a pitch - note the result may have an unorthodox 
--- pitch spelling. You should respell the result with respect to
--- a scale after this operation. 
-transpose :: Int -> Pitch -> Pitch
-transpose i p = fromSemitones $ i + semitones p
 
 instance Semitones PitchLetter where    
   semitones C = 0
@@ -197,21 +170,25 @@ instance Semitones Accidental where
 -- See Lilypond (6.1.6 - relative octaves)
 -- ceses ->- fisis
 -- cbb   ->- f##   -- fourth 
-octaveDist :: Pitch -> Pitch -> Int
-octaveDist p p' = sign . fn . (`divMod` 7) . abs $ arithmeticDist p p'
+lyOctaveDist :: Pitch -> Pitch -> Int
+lyOctaveDist p p' = sign . fn . (`divMod` 7) . abs $ arithmeticDist p p'
   where
-    fn (d,m) | d >=0 && m > 4     = 1 + d  -- only for postive numbers
+    fn (d,m) | m > 4              = 1 + d
              | otherwise          = d
     sign a | p <= p'              = a
            | otherwise            = negate a          
-             
+
+-- | The arithmetic distance between pitches is a /retrograde/ count of 
+-- the pitch letters. Retrograde meaning that the starting letter is 
+-- counted e.g. the distance from C4 to C4 is 1 not 0. 
 arithmeticDist :: Pitch -> Pitch -> Int
-arithmeticDist (Pitch l _ o) (Pitch l' _ o') = 
-    dist (o * 7 + fromEnum l) (o' * 7 + fromEnum l')
+arithmeticDist p p' = retro $ lexval p' - lexval p
   where
-    dist i i'
-      | i > i'      = negate $ 1 + (i - i')
-      | otherwise   = 1 + (i' - i)
+    retro i | i >= 0   = i+1
+            |otherwise = i-1
+
+    -- 'lexical' value, i.e Pitch value without accidental alteration.  
+    lexval (Pitch l _ o) = fromEnum l + 7*o
 
 
 --------------------------------------------------------------------------------
@@ -265,25 +242,6 @@ nsharps n = map sharp $ take n [F,C,G,D,A,E,B] where
 nflats :: Int -> [PitchLabel]
 nflats n = map flat $ take n [B,E,A,D,G,C,F] where
   flat l = PitchLabel l (Just Flat)
-
-
-  
---------------------------------------------------------------------------------
--- pretty print 
-
-instance PP.Pretty Pitch where
-  pretty (Pitch l a o)  = PP.pretty l PP.<> PP.pretty a PP.<> PP.int o
-
-instance PP.Pretty PitchLetter where
-  pretty         = PP.char . toLowerLChar 
-
-
-instance PP.Pretty Accidental where
-  pretty Nat          = PP.empty
-  pretty Sharp        = PP.char 's'
-  pretty Flat         = PP.char 'f'
-  pretty DoubleSharp  = PP.text "ss"
-  pretty DoubleFlat   = PP.text "ff"
 
 
     

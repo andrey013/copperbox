@@ -94,8 +94,14 @@ dZero = DZero
 -- will be represented as tied notes.
 isComposite :: Duration -> Bool
 isComposite DZero   = False
-isComposite (Dn om) = isOne om 
+isComposite (Dn om) = not $ isOne om 
 
+
+isDotted :: Duration -> Bool
+isDotted DZero   = False 
+isDotted (Dn om) = oneMany isDot1 (const False) om
+  where
+    isDot1 (D1 (_,d)) = d>0
 
 
 components :: Duration -> [(Rational,Int)]

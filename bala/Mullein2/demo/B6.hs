@@ -13,9 +13,11 @@ import Mullein.Utils
 
 import Text.PrettyPrint.Leijen
 
-b1'4 = bracket (snd twoFourTime) bars1'4
 
-demo1 = vsep $ map oBarOverlay b1'4
+
+demo1 = vsep $ map oBarOverlay $ runRewriteDuration xs
+  where
+    xs = bracket (snd twoFourTime) $ map (pitchMap changeOctave) bars1'4
 
 demo2 = vsep $ map ABC.oBarOverlay xs where
   
@@ -28,7 +30,8 @@ twoFourTime :: MetricalSpec
 twoFourTime = metricalSpec 2 4
 
 
-
+changeOctave :: Pitch -> Pitch
+changeOctave (Pitch l a o) = Pitch l a (o-4)
 
 
 bars1'4 :: [Element]

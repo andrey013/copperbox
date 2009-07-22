@@ -20,7 +20,7 @@ in Haskell. Mullein is primarily inspired by Paul Hudak's
 Haskore system, but Mullein has a different objective to Haskore: 
 Mullein describes musical structures for rendering as printed 
 scores; Haskore describes musical structures for 
-\emph{performance}, where a perfomance is typically rendered to 
+\emph{performance}, where a performance is typically rendered to 
 a sound file. 
 
 Ideally Mullein would not be a separate system to Haskore, but
@@ -39,7 +39,7 @@ durations in if a score has trills or other ornaments.
 An early prototype of Mullein tried to alleviate this problem 
 by allowing Haskore performances to be augmented with rewriting 
 rules to recover symbolic durations from absolute ones. But the 
-additional machinary was excessive and hardly intuitive, 
+additional machinery was excessive and hardly intuitive, 
 strongly suggesting that abandoning compatibility with Haskore
 was best option for Mullein.
 
@@ -62,18 +62,18 @@ longa, breve, \nicefrac{1}{1}, \nicefrac{1}{2}, \nicefrac{1}{4},
 \section{Micro guide to LilyPond}
 LilyPond is a comprehensive music typesetting system. The name 
 LilyPond is synonymous with both the system and the music 
-desciption format (prosiacally \emph{LilyPond files}).
+description format (prosaically \emph{LilyPond files}).
 Presentation is impeccably flexible, with it one can produce 
 simple tunes, orchestral scores, string tablature, even MIDI. Of 
 course, it can seem bewildering when first encountered, 
 especially if one is unfamiliar with is forebear \TeX.
 
 Presentation - the details of how to structure scores, systems - 
-is too various to be covered succintly here. These notes cover 
+is too various to be covered succinctly here. These notes cover 
 only details relevant to the fragments that Mullein can output.
 
 Two fortuitous details beforehand: LilyPond allows musical 
-fragments to be named as variables then refered to elsewhere,
+fragments to be named as variables then referred to elsewhere,
 secondly, scores can be divided amongst files and included in a
 master file with the \verb+\include+ command. These features are 
 invaluable for working with Mullein - volatile, generated 
@@ -82,8 +82,8 @@ chances of overwriting carefully handwritten document masters.
  
 \subsection{Pitch}
 Middle C is represented by the symbol \verb+c'+. All pitches 
-are spelt with lowercase letters. Altered pitches must 
-be spelt with their accidental whether or not the accidental 
+are spelled with lowercase letters. Altered pitches must 
+be spelled with their accidental whether or not the accidental 
 will be printed according to the key signature. In G major
 \verb+f+ will be printed as F$\natural$, \verb+fis+ will be
 printed as F. LilyPond uses Dutch suffixes for sharp 
@@ -102,7 +102,7 @@ relative and absolute - with relative mode appearing to be most
 popular for score authors. Relative mode allows slightly more 
 concise scores, as octave annotations are only needed when the 
 staff spacing between two successive notes is greater than three 
-in either direction (accidentals are ingored in the calculation).
+in either direction (accidentals are ignored in the calculation).
 
 \subsection{Duration}
 Durations are denoted by numerals following the notes pitch:
@@ -122,8 +122,8 @@ possible for a time signature this is not always ideal. Notes
 can be beamed manually by grouping them within square brackets 
 (\verb+[]+).
 
-Scores can ellide bar lines, LilyPond will place them 
-automatically. Automatic bar lines can be overriden - LilyPond 
+Scores can elide bar lines, LilyPond will place them 
+automatically. Automatic bar lines can be overrode - LilyPond 
 will report a warning to the console during rendering if the 
 duration of the bar does not agree with the time signature.
 
@@ -136,13 +136,13 @@ files into something useful - PostScript scores, MIDI.
 features from the ABC 2.0 draft standard (particularly voice 
 overlays). 
 
-ABC files define tunes or their collective \emph{tunebooks}. ABC 
+ABC files define tunes or their collective \emph{tune-books}. ABC 
 does not attempt to match LilyPond's utility, one could not 
 prepare an orchestral score in ABC. Tunes have a simple prologue
 defining title, key signature, meter etc. and then a tune body
 listing the notes. Due to the modest scale of ABC, generating a
 whole file programmatically is not unreasonable.\footnote{In 
-constrast LilyPond is simply to large to usefully embed it 
+contrast LilyPond is simply to large to usefully embed it 
 Haskell. It is more fruitful to generate fragments in Haskell 
 and assemble them with handwritten LilyPond in a master document, 
 one can then use whatever LilyPond commands one wishes.} Indeed, 
@@ -167,13 +167,13 @@ With this context established, notes only need to be augmented
 with accidentals if the accidental needs printing. For instance, 
 in G major the note \verb+F+ in the score represents the 
 absolute pitch F$\sharp$, but following notational conventions 
-the sharp is ellided, a musician knows to play it as 
+the sharp is elided, a musician knows to play it as 
 F$\sharp$ from the key signature. In G major, \verb+=F+ prints 
 F$\natural$ and \verb+^F+ prints F$\sharp$, decorating the F 
 with a cautionary (though strictly superfluous) sharp. 
 
 \subsection{Duration}
-Durations in ABC tunes are denoted by multiplers of the 
+Durations in ABC tunes are denoted by multipliers of the 
 \emph{unit note length} rather than absolute values. This is a 
 shorthand to reduce typing, no annotation is needed to notes 
 whose duration equals the unit note length. A note G with 
@@ -187,11 +187,11 @@ unit note length is an eighth, otherwise it is a sixteenth.
 
 \subsection{Metrical division: Beaming and bar lines}
 Notes to be joined within a beam group must be grouped together
-without spaces, which makes the ABC format whitespace sensitive!
+without spaces, which makes the ABC format white space sensitive!
 ABC is permissive in its interpretation of a beam group: if the 
 group includes a note that cannot be beamed (say a quarter or half
 note) it will be printed singularly and the beam group will be 
-resumed. The flipside of this flexibility with beam groups is a
+resumed. The flip side of this flexibility with beam groups is a
 score is free to designate beam groups that have no correlation  
 with the pulsation implied by a tune's meter.
 

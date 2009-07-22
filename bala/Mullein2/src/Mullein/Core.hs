@@ -203,6 +203,9 @@ instance Spacer (ElementP e) where
 
 instance PitchMap ScNote where
   pitchMap f (ScNote p as) = ScNote (f p) as
+  
+  pitchMapM mf (ScNote p as) = pitchMapM mf p >>= \p' -> return $ ScNote p' as
+
 
 instance PitchMap e => PitchMap (ElementP e) where
   pitchMap f (Note d e)       = Note d (pitchMap f e)
@@ -211,10 +214,17 @@ instance PitchMap e => PitchMap (ElementP e) where
   pitchMap f (Chord d ps)     = Chord d (map (pitchMap f) ps)
   pitchMap f (GraceNotes xs)  = GraceNotes (map (pitchMap f) xs)
 
+  pitchMapM mf (Note d e)       = pitchMapM mf e >>= return . Note d
+  pitchMapM _  (Rest d)         = return $ Rest d
+  pitchMapM _  (Spacer d)       = return $ Spacer d
+  pitchMapM mf (Chord d ps)     = mapM (pitchMapM mf) ps >>= return . Chord d
+  pitchMapM mf (GraceNotes xs)  = mapM (pitchMapM mf) xs >>= return . GraceNotes 
+
+
 instance PitchMap e => PitchMap (GraceNoteP e) where
   pitchMap f (GraceNote d p) = GraceNote d (pitchMap f p)
 
-
+  pitchMapM mf (GraceNote d p) = pitchMapM mf p >>= return . GraceNote d
 
 --------------------------------------------------------------------------------
 -- Pretty printing scores

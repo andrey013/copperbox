@@ -25,10 +25,12 @@ import Mullein.Duration
 import Mullein.Pitch
 import Mullein.Utils
 
-
 import Data.OneMany
 
 import Text.PrettyPrint.Leijen
+
+import Control.Monad.State
+
 
 
 class LyOutput e where
@@ -112,7 +114,35 @@ endBraces i | i <=0     = empty
             | otherwise = indent ((i-2)*2) rbrace `nextLine` endBraces (i-1)
 
 
+--------------------------------------------------------------------------------
+-- rewriting
 
+data St = St { relativePitch :: Maybe Pitch, relativeDuration :: Duration }
+
+runRewriteDuration :: HasDuration e => [(Tied,[OneMany e])] -> [(Tied,[OneMany e])]
+runRewriteDuration bars = map fn bars where
+  fn (tie_status,groups) = (tie_status,evalState (mapM fn' groups) s0)
+   
+  fn' om = mapM rewriteDuration (toList om) >>= return . fromList
+
+  s0 = St undefined dZero
+
+instance HasDuration St where
+  getDuration            = relativeDuration
+  setDuration d (St p _) = St p d
+
+rewriteDuration :: (HasDuration e, HasDuration st) => e -> State st e
+rewriteDuration e = let d = getDuration e in do 
+    old <- gets getDuration
+    if d==old then return $ setDuration dZero e
+              else updateCurrent d >> return e
+  where
+    -- | The logic here is not good - duration type needs a rethink...
+    updateCurrent d | isComposite d = setZero
+                    | isDotted d    = setZero 
+                    | otherwise     = modify $ setDuration d
+
+    setZero         = modify $ setDuration dZero   
 
 --------------------------------------------------------------------------------
 -- helpers
