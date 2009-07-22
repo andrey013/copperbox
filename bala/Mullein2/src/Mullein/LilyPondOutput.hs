@@ -120,9 +120,10 @@ endBraces i | i <=0     = empty
 data St = St { relativePitch :: Maybe Pitch, relativeDuration :: Duration }
 
 runRewriteDuration :: HasDuration e => [(Tied,[OneMany e])] -> [(Tied,[OneMany e])]
-runRewriteDuration bars = map fn bars where
-  fn (tie_status,groups) = (tie_status,evalState (mapM fn' groups) s0)
-   
+runRewriteDuration bars = evalState (mapM fn bars) s0 where
+  fn (tie_status,gs) = do gs' <- mapM fn' gs
+                          return (tie_status, gs')
+
   fn' om = mapM rewriteDuration (toList om) >>= return . fromList
 
   s0 = St undefined dZero
@@ -143,6 +144,9 @@ rewriteDuration e = let d = getDuration e in do
                     | otherwise     = modify $ setDuration d
 
     setZero         = modify $ setDuration dZero   
+
+
+
 
 --------------------------------------------------------------------------------
 -- helpers
