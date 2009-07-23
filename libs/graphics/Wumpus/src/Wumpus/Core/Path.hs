@@ -55,3 +55,10 @@ withLine = rep . Left
 withCurve :: CoCurve a -> H (CoPathSegment a)
 withCurve = rep . Right
 
+{-
+data PathSegment a = PLine (LineSegment Point2 a)
+                   | PCurve  (Curve a)
+  deriving (Eq,Show)
+
+-}
+

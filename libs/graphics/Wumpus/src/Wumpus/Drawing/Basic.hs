@@ -33,6 +33,7 @@ import Wumpus.Drawing.PSSkeletons
 
 import Data.AffineSpace
 
+import Data.Monoid
 
 type Radius = Double
 type Origin = DPoint2
@@ -54,6 +55,34 @@ instance Pointwise Circle where
   type Pt Circle = DPoint2
   pointwise f (Circle o r) = Circle (f o) r
 
+
+--------------------------------------------------------------------------------
+-- Picture data type - composing PostScript drawings
+
+-- Acknowledgment - the Image data type is modelled diratcly after the 
+-- Image type in Antony Courtney's Haven.
+
+newtype Picture = Picture { 
+       getPicture   :: DPoint2 -> (WumpusM (), DBoundingBox)
+    }
+
+
+psDraw :: Picture -> PostScript
+psDraw pic = runWumpus st0 (fst $ (getPicture pic) zeroPt)
+
+
+at :: Picture -> DPoint2 -> Picture
+at pic p2 = Picture $ \_ -> (getPicture pic) p2
+
+over :: Picture -> Picture -> Picture
+over pic1 pic2 = Picture $ 
+    \pt -> let (mf1,bb1) = (getPicture pic1) pt
+               (mf2,bb2) = (getPicture pic2) pt 
+           in (mf1 >> mf2, bb1 `mappend` bb2) 
+ 
+ 
+picPolygon :: DCoPolygon -> Picture
+picPolygon pf = Picture $ \pt -> (strokePolygon $ pf pt, boundingBox $ pf pt) 
 
 --------------------------------------------------------------------------------
 
@@ -79,9 +108,15 @@ unitSquare :: DPoint2 -> [DPoint2]
 unitSquare p = usqr where 
     usqr = [p, p .+^ (V2 0 1), p .+^ (V2 1 1), p .+^ (V2 1 0)]
 
+
+-- to do - differentiate between draw / stroke / fill / clip
 drawPolygon :: DPolygon -> WumpusM ()
-drawPolygon (Polygon [])            = return ()
-drawPolygon (Polygon ((P2 x y):ps)) = saveExecRestore $ do 
+drawPolygon = strokePolygon
+
+
+strokePolygon :: DPolygon -> WumpusM ()
+strokePolygon (Polygon [])            = return ()
+strokePolygon (Polygon ((P2 x y):ps)) = saveExecRestore $ do 
     ps_newpath
     ps_moveto x y
     mapM_ (\(P2 a b) -> ps_lineto a b) ps 

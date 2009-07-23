@@ -21,6 +21,7 @@ module Wumpus.Drawing.Label where
 
 import Wumpus.Core.Point
 
+import Wumpus.Drawing.GraphicsState
 import Wumpus.Drawing.PostScript
 
 
@@ -36,6 +37,12 @@ type DCoLabel = CoLabel Double
 
 label :: String -> CoLabel a
 label text = \o -> Label o text
+
+initFont :: Font -> WumpusM ()
+initFont (Font name sz) = do
+  ps_findfont name
+  ps_scalefont sz
+  ps_setfont
 
 setupFont :: String -> Double -> WumpusM ()
 setupFont name sc = do 

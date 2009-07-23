@@ -63,6 +63,7 @@ import Data.AffineSpace
 import Data.VectorSpace
 
 import Data.List ( nub )
+import Data.Monoid
 
 --------------------------------------------------------------------------------
 -- Polygon types and standard instances
@@ -109,6 +110,10 @@ instance ExtractPoints (BoundingBox a) where
           tl = P2 xmin ymax
   endPoint (BBox start _) = start       -- start point is also end point   
   startPoint              = endPoint  
+
+instance (Fractional a, Ord a) => Monoid (BoundingBox a) where
+  mempty  = BBox (P2 inf inf) (P2 (-inf) (-inf))  where inf = 1/0
+  mappend = bbProd
                 
 --------------------------------------------------------------------------------
 -- Construction
@@ -194,6 +199,16 @@ boundingBox (Polygon (p:ps)) = uncurry BBox $ foldr fn (p,p) ps
     fn (P2 x y) (P2 xmin ymin, P2 xmax ymax) = 
        (P2 (min x xmin) (min y ymin), P2 (max x xmax) (max y ymax))
 boundingBox (Polygon _)      = error $ "boundingBox: degenerate polygon"
+
+
+bbProd :: Ord a => BoundingBox a -> BoundingBox a -> BoundingBox a
+bbProd (BBox (P2 xmin1 ymin1) (P2 xmax1 ymax1))
+       (BBox (P2 xmin2 ymin2) (P2 xmax2 ymax2))
+  = BBox (P2 (min xmin1 xmin2) (min ymin1 ymin2)) 
+         (P2 (max xmax1 xmax2) (max ymax1 ymax2))
+
+
+
 
 
 -- | Extract the opposite corners (tl,br) of a bounding box.

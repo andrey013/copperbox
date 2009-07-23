@@ -40,3 +40,8 @@ demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
                 ; mapM_ drawLineSegment $ dotX     (P2 170 50)
                 ; drawPolygon $ dotDiamond         (P2 180 50)
                 }
+
+demo2 :: IO ()
+demo2 = writePS "basic2.ps" (psDraw img1) where
+  img1 = (picPolygon $ diamond 40 40) `at` (P2 50 300)
+

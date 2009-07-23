@@ -30,6 +30,8 @@ import MonadLib
 
 import Data.List ( foldl' )
 
+type PostScript = String
+
 data PsState = PsState { 
        pageNum      :: Int,  
        bBox         :: BoundingBox,
