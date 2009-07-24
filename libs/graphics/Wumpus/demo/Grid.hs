@@ -31,14 +31,16 @@ demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
                 ; mapM_ drawLine $ grid 20 20 (P2 150 140) origin 
                 ---
                 ; ps_translate 200 0
-                ; mapM_ drawLineBag $ sequence calgrid (P2 0 0)
+--                ; mapM_ drawLineBag $ sequence calgrid (P2 0 0)
                 }
   frame1 = Frame2 (P2 0 0) (V2 1 0) (V2 0 0.5)
   origin = P2 0 0
 
-
+{-
 calgrid :: [LineBag]
 calgrid = zipWith fn (calendarGrid 0 30) (repeat dotX) where
   fn :: DVec2 -> LineBag -> LineBag
   fn (V2 x y) df = pointwise (translate (x*30) (y*30)) df
+-}
+
 

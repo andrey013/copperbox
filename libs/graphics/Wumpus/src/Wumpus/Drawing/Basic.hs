@@ -1,5 +1,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -21,6 +23,8 @@ module Wumpus.Drawing.Basic where
 
 import Wumpus.Core.Colour
 import Wumpus.Core.Curve
+import Wumpus.Core.Fun
+import Wumpus.Core.Geometric
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
@@ -33,22 +37,17 @@ import Wumpus.Drawing.PSSkeletons
 
 import Data.AffineSpace
 
+import Data.List
 import Data.Monoid
 
 type Radius = Double
 type Origin = DPoint2
 
 
-type LineBag     = DPoint2 -> [DLineSegment2]  -- unjoined lines
-
 
 data Circle = Circle Origin Radius
   deriving (Eq,Show)
 
-
-instance Pointwise LineBag where
-  type Pt LineBag = DPoint2
-  pointwise f pf = pf . f
 
 
 instance Pointwise Circle where
@@ -74,7 +73,8 @@ psDraw pic = runWumpus st0 (fst $ (getPicture pic) zeroPt)
 place :: Picture -> DPoint2 -> Picture
 place pic p2 = Picture $ \_ -> (getPicture pic) p2
 
- 
+picEmpty :: Picture
+picEmpty = Picture $ \pt -> (return (), BBox pt pt) 
  
 picPolygon :: DCoPolygon -> Picture
 picPolygon pf = Picture $ \pt -> (strokePolygon $ pf pt, boundingBox $ pf pt) 
@@ -87,25 +87,47 @@ picColour c pic = Picture $
 
 
 
-over :: Picture -> Picture -> Picture
-over pic1 pic2 = Picture $ 
-    \pt -> let (mf1,bb1) = (getPicture pic1) pt
-               (mf2,bb2) = (getPicture pic2) pt 
-           in (mf1 >> mf2, bb1 `mappend` bb2) 
+type BBTransf a = BoundingBox a -> BoundingBox a -> Vec2 a
+
+
+composePics :: BBTransf Double -> Picture -> Picture -> Picture
+composePics bbDif pic base = Picture $ 
+    \pt -> let (mfb,bxb) = (getPicture base) pt
+               (_,bb)    = (getPicture pic) pt
+               v1        = bbDif bb bxb
+               (mfa,bxa) = (getPicture pic) $ pt .+^ v1 
+           in (mfb >> mfa, bxb `mappend` bxa) 
+
+
 
 below :: Picture -> Picture -> Picture
-below pic1 pic2 = Picture $ 
-    \pt -> let (mf1,bb1) = (getPicture pic1) pt
-               (_,bb)    = (getPicture pic2) pt
-               v1        = centerTop bb .-. centerBottom bb1
-               (mf2,bb2) = (getPicture pic2) $ pt .-^ v1 
-           in (mf1 >> mf2, bb1 `mappend` bb2) 
+below = composePics (\a b -> centerBottom b .-. centerTop a)
 
-centered :: Picture -> Picture 
-centered pic = Picture $ \pt -> let (_,bb) = (getPicture pic) pt
-                                    pt'    = center bb
-                                in (getPicture pic) pt'
+above :: Picture -> Picture -> Picture
+above = composePics (\a b -> centerTop b .-. centerBottom a)
 
+-- Note composePics composes @a@ wrt @b@,  here we need 
+-- to compose @b@ wrt @a@.
+(<+>) :: Picture -> Picture -> Picture
+(<+>) = flip $ composePics (\a b -> rightCenter b .-. leftCenter a)
+
+-- Note composePics composes @a@ wrt @b@,  here we need 
+-- to compose @b@ wrt @a@.
+(</>) :: Picture -> Picture -> Picture
+(</>) = flip $ composePics (\a b -> centerBottom b .-. centerTop a)
+
+
+
+-- center picture a inside picture b
+centeredInside :: Picture -> Picture -> Picture
+centeredInside = composePics (\a b -> center b .-. center a)
+
+
+hcat :: [Picture] -> Picture
+hcat = foldl' (<+>) picEmpty
+
+vcat :: [Picture] -> Picture
+vcat = foldl' (</>) picEmpty
 
 
 --------------------------------------------------------------------------------
@@ -220,52 +242,55 @@ drawBezier (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) =
 -- dots
 
 
-dotSquare :: DCoPolygon
-dotSquare = square 2
+dotSquare :: Picture
+dotSquare = Picture $ \pt -> 
+    let sq = square 4 pt in (strokePolygon sq, boundingBox sq)
 
-dotPentagon :: DCoPolygon
-dotPentagon = regularPolygon 5 2
 
-dotPlus :: LineBag
-dotPlus = sequence [lv,lh]
+
+dotPlus :: Picture
+dotPlus = Picture $ \pt ->
+    fork (mapM_ drawLine . mkLines, bounds . extractPoints . mkLines) pt
   where
+    mkLines = sequence [lh,lv]
     lh  = translate (-2) 0 . line (hvec 4::Vec2 Double)
     lv  = translate 0 (-2) . line (vvec 4)
    
 
-dotX :: LineBag
-dotX = sequence [ls1,ls2]
+dotX :: Picture 
+dotX = Picture $ \pt -> 
+    fork (mapM_ drawLine . mkLines, bounds . extractPoints . mkLines) pt
   where
+    mkLines = sequence [ls1,ls2]
     ls1 o = rotateAbout (pi/6) o $ translate 0 (-2) $ line (vvec 4 :: Vec2 Double) o
     ls2 o = rotateAbout (5*pi/3) o $ ls1 o
 
 
--- old dots...
 
-dotAsterisk :: DPoint2 -> [DLineSegment2]
-dotAsterisk (P2 x y) = map (translate x y) $ circular (replicate 5 ls1)
+
+dotAsterisk :: Picture
+dotAsterisk = Picture $ \(P2 x y) -> 
+    let ls =  map (translate x y) $ circular (replicate 5 $ ls1)
+    in (mapM_ drawLine ls, bounds . extractPoints $ ls)
   where
    ls1 = vline 2 zeroPt
 
 
-dotTriangle :: DPoint2 -> DPolygon
-dotTriangle = polyDot (P2 0 2) 3
+
+polyDot :: Int -> Picture
+polyDot sides = Picture $ \pt -> 
+    let pgon = regularPolygon sides 2 pt in (strokePolygon pgon, boundingBox pgon)
 
 
+dotTriangle :: Picture
+dotTriangle = polyDot 3
 
-polyDot :: DPoint2 -> Int -> DPoint2 -> DPolygon
-polyDot pt1 n (P2 x y) = Polygon xs
-  where
-    xs = map (translate x y) $ circular $ replicate n pt1 
+dotDiamond :: Picture
+dotDiamond = polyDot 4
 
-dotDiamond :: DPoint2 -> DPolygon
-dotDiamond (P2 x y) = Polygon (map (translate x y) [p1,p2,p3,p4])
-  where
-   p1 = P2 0 1.5
-   p2 = P2 (-1) 0
-   p3 = reflectY p1
-   p4 = reflectX p2
 
+dotPentagon :: Picture
+dotPentagon = polyDot 5
  
 
 drawLineSegment :: DLineSegment2 -> WumpusM ()

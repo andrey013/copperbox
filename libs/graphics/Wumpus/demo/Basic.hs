@@ -12,7 +12,6 @@ import Wumpus.Drawing.PSSkeletons
 import Wumpus.Drawing.SVGColours
 
 
-
 demo1 :: IO ()
 demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { ps_translate 60 380 
@@ -33,23 +32,32 @@ demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
                 -- lineColour blueViolet $ lineWidth 1 $ fillColour burlywood
                 ; drawPolygon $ diamond 30 20 (P2 80 50) 
                 ; setRgbColour blueViolet
-                ; mapM_ drawLineSegment $ dotPlus  (P2 120 50)
-                ; mapM_ drawLineSegment $ dotAsterisk (P2 130 50)
-                ; drawPolygon $ dotTriangle        (P2 140 50)
-                ; drawPolygon $ dotSquare          (P2 150 50)
-                ; drawPolygon $ dotPentagon        (P2 160 50)
-                ; mapM_ drawLineSegment $ dotX     (P2 170 50)
-                ; drawPolygon $ dotDiamond         (P2 180 50)
+--                ; drawPolygon $ dotDiamond         (P2 180 50)
                 }
 
 demo2 :: IO ()
-demo2 = writePS "basic2.ps" (psDraw pic1) where
+demo2 = writePS "basic2.ps" (psDraw $ (pic1 <+> pic2) `place` (P2 50 300) )
 
 pic1 :: Picture
-pic1 = ((dia1 `below` dia2) `below` dia3 `below` dia4 ) `place` (P2 50 300)
+-- pic1 = (dia4 `below` dia3 `below` dia2 `below` dia1 )
+pic1 = vcat [dia1,dia2,dia3,dia4]
   where
     dia1 = picColour blueViolet    $ (picPolygon $ diamond 40 40)
     dia2 = picColour darkSeaGreen  $ (picPolygon $ diamond 40 40)
     dia3 = picColour darkSeaGreen  $ (picPolygon $ diamond 20 20)
     dia4 = picColour darkSeaGreen  $ (picPolygon $ diamond 15 15)
 
+
+
+
+pic2 :: Picture
+pic2 = (dia1 </> dia2)
+  where
+    dia1 = picColour blueViolet    $ (picPolygon $ diamond 40 40)
+    dia2 = picColour darkSeaGreen  $ (picPolygon $ diamond 30 30)
+
+demo3 :: IO ()
+demo3 = writePS "basic3.ps" (psDraw $ dots `place` (P2 50 300) )
+  where
+    dots = dotX </> dotPlus </> dotAsterisk </> dotSquare </> dotPentagon
+                </> dotTriangle </> dotDiamond

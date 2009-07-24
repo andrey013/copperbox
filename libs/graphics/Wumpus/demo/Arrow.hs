@@ -68,8 +68,8 @@ curvedArrs proc =
      ; ps_translate 10 0
      ; drawCurveArr $ proc $ testCurve (pi/4)
      ; setRgbColour skyBlue1
-     ; drawLineBag $ dotPlus $ cubic (testCurve (pi/4)) 0.9
-     ; drawLineBag $ dotPlus $ cubic (testCurve (pi/4)) 0.5
+--     ; drawLineBag $ dotPlus $ cubic (testCurve (pi/4)) 0.9
+--     ; drawLineBag $ dotPlus $ cubic (testCurve (pi/4)) 0.5
      ; ps_translate 50 0
      ; drawCurveArr $ proc $ straightBezier
      }

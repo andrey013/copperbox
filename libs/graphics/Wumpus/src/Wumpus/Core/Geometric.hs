@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -53,6 +54,14 @@ class ExtractPoints t where
   extractPoints :: t -> [Pnt t]
   endPoint      :: t -> Pnt t
   startPoint    :: t -> Pnt t
+
+
+
+instance ExtractPoints (t a) => ExtractPoints [t a] where
+  type Pnt [t a] = Pnt (t a)
+  extractPoints = concatMap extractPoints 
+  endPoint = last . extractPoints
+  startPoint = head . extractPoints
 
 
 --------------------------------------------------------------------------------

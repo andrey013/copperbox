@@ -23,7 +23,7 @@ demo1 :: IO ()
 demo1 = writePS "circleseg1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { ps_translate 40 680 
                 ; setRgbColour tomato4
-                ; drawPolygon $ dotDiamond zeroPt
+--                ; drawPolygon $ dotDiamond zeroPt
                 ; drawLine $ hline 70 zeroPt
                 ; drawLine $ pointwise (rotateAbout (pi/4) zeroPt) $ hline 70 zeroPt
                 ; setRgbColour steelBlue1
@@ -54,7 +54,9 @@ demo1 = writePS "circleseg1.ps" $ runWumpus st0 $ drawing1 where
                 }
 
 dpo :: DVec2 -> WumpusM ()
-dpo = drawPolygon . dotSquare . (zeroPt .+^)
+-- dpo = drawPolygon . dotSquare . (zeroPt .+^)
+dpo _  = return ()
+
 
 plotSine :: [DVec2]
 plotSine = [V2 t (sin t) | t <- divisions 50 10 ]

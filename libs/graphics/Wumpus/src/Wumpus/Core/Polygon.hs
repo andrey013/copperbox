@@ -43,6 +43,8 @@ module Wumpus.Core.Polygon
   -- * Operations
   , interiorAngles
   , boundingBox
+  , bounds
+
   , topLeftBottomRight
   , bottomLeft
   , bottomRight
@@ -51,8 +53,8 @@ module Wumpus.Core.Polygon
   , center
   , centerTop
   , centerBottom
-  , centerLeft
-  , centerRight
+  , leftCenter
+  , rightCenter
   
   ) where
 
@@ -130,7 +132,9 @@ regularPolygon :: (Floating a, Real a, AffineSpace a)
                => Int -> a -> CoPolygon a
 regularPolygon n r = Polygon . pf
   where 
-    pf = \pt -> circular $ replicate n (pt .+^ (V2 0 r)) 
+    pf = \(P2 x y) -> map (translate x y) 
+                          $ circular 
+                          $ replicate n (zeroPt .+^ (V2 0 r)) 
 
 
 -- Note square and rectangle are both 'turtle drawn' and use the @iter@ 
@@ -200,11 +204,15 @@ interiorAngles (Polygon ps) = windowedMap3c intAng ps where
 
 -- | Calculate the bounding box of a polygon.
 boundingBox :: Ord a => Polygon a -> BoundingBox a
-boundingBox (Polygon (p:ps)) = uncurry BBox $ foldr fn (p,p) ps
+boundingBox (Polygon ps) = bounds ps
+
+
+bounds :: Ord a => [Point2 a] -> BoundingBox a
+bounds []     = error $ "Polygon.bounds - empty list"
+bounds (p:ps) = uncurry BBox $ foldr fn (p,p) ps
   where
     fn (P2 x y) (P2 xmin ymin, P2 xmax ymax) = 
        (P2 (min x xmin) (min y ymin), P2 (max x xmax) (max y ymax))
-boundingBox (Polygon _)      = error $ "boundingBox: degenerate polygon"
 
 
 bbProd :: Ord a => BoundingBox a -> BoundingBox a -> BoundingBox a
@@ -256,11 +264,11 @@ centerBottom (BBox (P2 xmin ymin) (P2 xmax _)) = P2 (xmin + 0.5*(xmax-xmin)) ymi
 
 
 -- center of the left side of a bounding box (aka West).
-centerLeft :: Fractional a => BoundingBox a -> Point2 a
-centerLeft (BBox (P2 xmin ymin) (P2 _ ymax)) = P2 xmin (ymin + 0.5*(ymax-ymin))
+leftCenter :: Fractional a => BoundingBox a -> Point2 a
+leftCenter (BBox (P2 xmin ymin) (P2 _ ymax)) = P2 xmin (ymin + 0.5*(ymax-ymin))
 
 
 -- center of the right side of a bounding box (aka East).
-centerRight :: Fractional a => BoundingBox a -> Point2 a
-centerRight (BBox (P2 _ ymin) (P2 xmax ymax)) = P2 xmax (ymin + 0.5*(ymax-ymin))
+rightCenter :: Fractional a => BoundingBox a -> Point2 a
+rightCenter (BBox (P2 _ ymin) (P2 xmax ymax)) = P2 xmax (ymin + 0.5*(ymax-ymin))
 
