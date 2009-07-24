@@ -22,8 +22,7 @@
 module Wumpus.Drawing.PostScript where
 
 import Wumpus.Core.Colour 
-
-import qualified Wumpus.Drawing.PostScriptCTM as CTM
+import Wumpus.Drawing.GraphicsState
 
 import qualified Data.DList as DL
 import MonadLib
@@ -34,31 +33,19 @@ type PostScript = String
 
 data PsState = PsState { 
        pageNum      :: Int,  
-       bBox         :: BoundingBox,
-       cTM          :: CTM.PsMatrix,
-       cColour      :: DRGB,
-       cLineWidth   :: Double
+       cPen         :: Pen,
+       cFont        :: Font,
+       cColour      :: DRGB
     }
   deriving (Eq,Show)
-
-
-data BoundingBox = BoundingBox { 
-       xZero        :: Double, 
-       yZero        :: Double, 
-       xOne         :: Double, 
-       yOne         :: Double 
-    }
-  deriving (Eq,Show)              
-
 
 
 st0 :: PsState 
 st0 = PsState { 
         pageNum     = 1,
-        bBox        = BoundingBox 0.0 0.0 0.0 0.0,
-        cTM         = CTM.initmatrix,
-        cColour     = wumpusBlack,
-        cLineWidth  = 1
+        cPen        = newPen,
+        cFont       = helvetica 10,
+        cColour     = wumpusBlack
       }
 
 type PsOutput = DL.DList Char
@@ -105,6 +92,67 @@ writePS :: FilePath -> String -> IO ()
 writePS filepath pstext = writeFile filepath (bang ++ pstext) 
   where
     bang = "%!PS-Adobe-2.0\n"
+
+--------------------------------------------------------------------------------
+
+-- Some effort is made to optimize the PostScript.
+-- When the graphics state changes, only show the parts that change.
+
+
+whenDiff :: Eq a => a -> a -> WumpusM () -> WumpusM ()
+whenDiff a b dk = if a==b then dk else return ()
+
+class WumpusDiff a where
+  wumpusDiff :: a -> a -> WumpusM ()
+
+instance WumpusDiff DRGB where
+  wumpusDiff new@(RGB3 r g b) old = whenDiff new old (ps_setrgbcolor r g b)
+
+instance WumpusDiff Font where 
+  wumpusDiff new@(Font nn nsz) old@(Font on osz) =
+      whenDiff new old (diffName nn on >> diffSize nsz osz >> ps_setfont)
+    where
+      diffName n o = whenDiff n o (do { (Font _ sz) <- cFont `fmap` get
+                                      ; sets_ (\s -> s {cFont = Font n sz} )
+                                      ;  ps_findfont n })
+
+      diffSize n o = whenDiff n o (do { (Font nm _) <- cFont `fmap` get
+                                      ; sets_ (\s -> s {cFont = Font nm n} )
+                                      ; ps_scalefont n })
+
+
+instance WumpusDiff Pen where
+  wumpusDiff new@(Pen nw nc nj nd) old@(Pen ow oc oj od) = 
+    whenDiff new old (do { sets_ (\s -> s { cPen = new})
+                         ; diffWidth nw ow
+                         ; diffCap nc oc
+                         ; diffJoin nj oj
+                         ; diffDash nd od })
+    where
+      diffWidth n o = whenDiff n o (ps_setlinewidth n)
+      diffCap n o   = whenDiff n o (ps_setlinecap $ fromEnum n)
+      diffJoin n o  = whenDiff n o (ps_setlinejoin $ fromEnum n)
+      diffDash n o  = whenDiff n o (setDash n)
+      
+      setDash Solid       = ps_setdash [] 0 
+      setDash (Dash x xs) = ps_setdash xs x
+
+
+withPen :: Pen -> WumpusM a -> WumpusM a
+withPen p mf = do 
+    old <- cPen `fmap` get
+    if p==old then mf else saveExecRestore (wumpusDiff p old >> mf)
+
+withFont :: Font -> WumpusM a -> WumpusM a
+withFont ft mf = do 
+    old <- cFont `fmap` get
+    if ft==old then mf else saveExecRestore (wumpusDiff ft old >> mf)
+
+
+withColour :: DRGB -> WumpusM a -> WumpusM a
+withColour c@(RGB3 r g b) mf = do
+    old <- cColour `fmap` get
+    if c==old then mf else saveExecRestore (ps_setrgbcolor r g b >> mf)
 
 --------------------------------------------------------------------------------
 -- writer monad helpers
@@ -187,9 +235,6 @@ showStr s = '(' : xs where xs = s++[')']
 getPageNum :: WumpusM Int
 getPageNum = pageNum `fmap` get 
 
-
-getCTM :: WumpusM  CTM.PsMatrix
-getCTM = cTM `fmap` get
 
 
 withPage :: WumpusM a -> WumpusM a
@@ -276,33 +321,21 @@ rgb2gray' r g b = rgb2gray $ (RGB3 r g b)
 --------------------------------------------------------------------------------
 -- matrix operations
 
-
-updateCTM :: (CTM.PsMatrix -> CTM.PsMatrix) -> WumpusM ()
-updateCTM fn = getCTM >>= \ctm -> sets_ (\s -> s {cTM = fn ctm} )
-
--- emit the postscript and shadow the matrix transformation
-
 ps_translate :: Double -> Double -> WumpusM ()
 ps_translate tx ty = do
     command2 "translate" (show tx) (show ty)
-    updateCTM $ \ctm -> CTM.translate tx ty ctm
 
 
 ps_scale :: Double -> Double -> WumpusM ()
 ps_scale sx sy = do
     command2 "scale" (show sx) (show sy)
-    updateCTM $ \ctm -> CTM.scale sx sy ctm
          
 
 ps_rotate :: Double -> WumpusM ()
 ps_rotate ang = do
     command1 "rotate" (show ang)
-    updateCTM $ \ctm -> CTM.rotate ang ctm
 
-ps_concat :: CTM.PsMatrix -> WumpusM ()
-ps_concat matrix = do 
-    command1 "concat" (CTM.printmatrix matrix)
-    updateCTM $ \ctm -> ctm `CTM.multiply` matrix
+
 
 --------------------------------------------------------------------------------
 -- Path construction operators

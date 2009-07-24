@@ -12,6 +12,7 @@ import Wumpus.Drawing.PSSkeletons
 import Wumpus.Drawing.SVGColours
 
 
+
 demo1 :: IO ()
 demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { ps_translate 60 380 
@@ -42,6 +43,13 @@ demo1 = writePS "basic1.ps" $ runWumpus st0 $ drawing1 where
                 }
 
 demo2 :: IO ()
-demo2 = writePS "basic2.ps" (psDraw img1) where
-  img1 = (picPolygon $ diamond 40 40) `at` (P2 50 300)
+demo2 = writePS "basic2.ps" (psDraw pic1) where
+
+pic1 :: Picture
+pic1 = ((dia1 `below` dia2) `below` dia3 `below` dia4 ) `place` (P2 50 300)
+  where
+    dia1 = picColour blueViolet    $ (picPolygon $ diamond 40 40)
+    dia2 = picColour darkSeaGreen  $ (picPolygon $ diamond 40 40)
+    dia3 = picColour darkSeaGreen  $ (picPolygon $ diamond 20 20)
+    dia4 = picColour darkSeaGreen  $ (picPolygon $ diamond 15 15)
 

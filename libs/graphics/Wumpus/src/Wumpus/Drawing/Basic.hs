@@ -71,18 +71,50 @@ psDraw :: Picture -> PostScript
 psDraw pic = runWumpus st0 (fst $ (getPicture pic) zeroPt)
 
 
-at :: Picture -> DPoint2 -> Picture
-at pic p2 = Picture $ \_ -> (getPicture pic) p2
+place :: Picture -> DPoint2 -> Picture
+place pic p2 = Picture $ \_ -> (getPicture pic) p2
+
+ 
+ 
+picPolygon :: DCoPolygon -> Picture
+picPolygon pf = Picture $ \pt -> (strokePolygon $ pf pt, boundingBox $ pf pt) 
+
+
+picColour :: DRGB -> Picture -> Picture
+picColour c pic = Picture $ 
+    \pt -> let (mf,bb) = (getPicture pic) pt in (withColour c mf,bb)
+
+
+
 
 over :: Picture -> Picture -> Picture
 over pic1 pic2 = Picture $ 
     \pt -> let (mf1,bb1) = (getPicture pic1) pt
                (mf2,bb2) = (getPicture pic2) pt 
            in (mf1 >> mf2, bb1 `mappend` bb2) 
- 
- 
-picPolygon :: DCoPolygon -> Picture
-picPolygon pf = Picture $ \pt -> (strokePolygon $ pf pt, boundingBox $ pf pt) 
+
+below :: Picture -> Picture -> Picture
+below pic1 pic2 = Picture $ 
+    \pt -> let (mf1,bb1) = (getPicture pic1) pt
+               (_,bb)    = (getPicture pic2) pt
+               v1        = centerTop bb .-. centerBottom bb1
+               (mf2,bb2) = (getPicture pic2) $ pt .-^ v1 
+           in (mf1 >> mf2, bb1 `mappend` bb2) 
+
+centered :: Picture -> Picture 
+centered pic = Picture $ \pt -> let (_,bb) = (getPicture pic) pt
+                                    pt'    = center bb
+                                in (getPicture pic) pt'
+
+
+
+--------------------------------------------------------------------------------
+
+
+
+
+
+
 
 --------------------------------------------------------------------------------
 

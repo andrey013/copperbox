@@ -48,6 +48,12 @@ module Wumpus.Core.Polygon
   , bottomRight
   , topLeft
   , topRight
+  , center
+  , centerTop
+  , centerBottom
+  , centerLeft
+  , centerRight
+  
   ) where
 
 import Wumpus.Core.Fun
@@ -233,4 +239,28 @@ topRight    :: BoundingBox a -> Point2 a
 topRight    = bbTopRight
 
 
+
+-- center of the top of a bounding box (aka North).
+center :: Fractional a => BoundingBox a -> Point2 a
+center (BBox (P2 xmin ymin) (P2 xmax ymax)) = 
+    P2 (xmin + (0.5*(xmax-xmin))) (ymin + (0.5*(ymax-ymin))) 
+
+
+-- center of the top of a bounding box (aka North).
+centerTop :: Fractional a => BoundingBox a -> Point2 a
+centerTop (BBox (P2 xmin _) (P2 xmax ymax)) = P2 (xmin + 0.5*(xmax-xmin)) ymax
+
+-- center of the bottom of a bounding box (aka South).
+centerBottom :: Fractional a => BoundingBox a -> Point2 a
+centerBottom (BBox (P2 xmin ymin) (P2 xmax _)) = P2 (xmin + 0.5*(xmax-xmin)) ymin
+
+
+-- center of the left side of a bounding box (aka West).
+centerLeft :: Fractional a => BoundingBox a -> Point2 a
+centerLeft (BBox (P2 xmin ymin) (P2 _ ymax)) = P2 xmin (ymin + 0.5*(ymax-ymin))
+
+
+-- center of the right side of a bounding box (aka East).
+centerRight :: Fractional a => BoundingBox a -> Point2 a
+centerRight (BBox (P2 _ ymin) (P2 xmax ymax)) = P2 xmax (ymin + 0.5*(ymax-ymin))
 

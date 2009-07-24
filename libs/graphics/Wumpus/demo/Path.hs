@@ -12,7 +12,6 @@ import Wumpus.Drawing.Label
 import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.X11Colours
 
-import Wumpus.Drawing.GraphicsState
 
 import Prelude hiding ( abs )
 
