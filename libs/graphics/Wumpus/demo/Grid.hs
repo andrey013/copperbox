@@ -28,10 +28,11 @@ demo1 :: IO ()
 demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
   drawing1 = do { ps_translate 60 380 
                 ; setRgbColour dodgerBlue1
-                ; mapM_ drawLine $ grid 20 20 (P2 150 140) origin 
+                ; fst $ getPicture (grid 20 20 (P2 150 140)) $ origin 
                 ---
                 ; ps_translate 200 0
 --                ; mapM_ drawLineBag $ sequence calgrid (P2 0 0)
+                ; fst $ (getPicture (replic 6 (V2 10 0) dotTriangle)) $ (P2 200 0)
                 }
   frame1 = Frame2 (P2 0 0) (V2 1 0) (V2 0 0.5)
   origin = P2 0 0

@@ -18,9 +18,11 @@
 module Wumpus.Drawing.Grid where
 
 import Wumpus.Core.Fun
+import Wumpus.Core.Geometric
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
+import Wumpus.Core.Polygon
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
@@ -38,18 +40,34 @@ oldGrid (P2 x0 y0) (P2 x1 y1) = map (pointwise (scale 10 10)) $ hlines ++ vlines
     vlines = [ lineTo (P2 x y0) (P2 x y1) | x <- [x0..x1]]
 
 
-type Grid = LineBag
+type Grid = Picture
 
--- | simple borderless grid
+
+-- This communicates nothing about how to draw a grid and 
+-- needs a rethink...
+
+-- | simple borderless grid  
 grid :: Int -> Int -> DPoint2 -> Grid
-grid xstep ystep tr = \o -> let vecbound = tr .-. o in
-                            hlines vecbound o ++ vlines vecbound o
+grid xstep ystep tr = Picture $ \pt -> 
+    let ls = hlines pt ++ vlines pt in 
+    (mapM_ drawLine ls, bounds $ extractPoints ls)
   where
-    hlines (V2 x y) o = zipWith xtrans (steps xstep x) (repeat $ line (vvec y) o)
-    vlines (V2 x y) o = zipWith ytrans (steps ystep y) (repeat $ line (hvec x) o)
+    hlines o = let (V2 x y) = tr .-. o in 
+               zipWith xtrans (steps xstep x) (repeat $ line (vvec y) o)
+    vlines o = let (V2 x y) = tr .-. o in
+               zipWith ytrans (steps ystep y) (repeat $ line (hvec x) o)
     xtrans d = translate d 0 
     ytrans d = translate 0 d
 
+{-
+
+gridZ :: Int -> Int -> DPoint2 -> Grid
+gridZ xstep ystep tr = Picture $ \pt ->
+   replic (nv pt) (V2 (fromIntegral xstep) 0) (picLines [vline2])
+ where
+   nv pt = let (V2 a _) = tr .-. pt in floor (a / fromIntegral xstep)
+   vline2 pt = (vline $ vertical $ tr .-. pt) pt
+-}
 
 
 vgrid :: Num a => (Integer,Integer) -> (Integer,Integer) -> [Vec2 a]

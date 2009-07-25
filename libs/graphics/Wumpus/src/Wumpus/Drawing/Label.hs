@@ -20,23 +20,32 @@
 module Wumpus.Drawing.Label where
 
 import Wumpus.Core.Point
+import Wumpus.Core.Polygon
 
+import Wumpus.Drawing.Basic
 import Wumpus.Drawing.GraphicsState
 import Wumpus.Drawing.PostScript
 
 
--- Labels are always oriented in 2-space
-data Label a  = Label (Point2 a) String
-  deriving (Eq,Show)
-
-type CoLabel a = Point2 a -> Label a
-
-type DLabel = Label Double
-type DCoLabel = CoLabel Double
+-- Labels are drawn inside a clipping rectangle. This puts a burden on the 
+-- user to check the output to see that the clipping rect is large enough
+-- for the text it contains.
 
 
-label :: String -> CoLabel a
-label text = \o -> Label o text
+picLabel :: String -> Double -> Double -> Picture
+picLabel text w h = Picture $ \pt -> 
+    (clipPolygon (cliprect pt) $ drawLabel text pt, boundingBox $ cliprect pt)
+  where
+    cliprect pt = (rectangle w h) pt
+
+
+-- labels must be drawn wrt a start point
+drawLabel :: String -> DPoint2 -> WumpusM ()
+drawLabel text (P2 x y) = do 
+  ps_moveto x y
+  ps_show text
+
+
 
 initFont :: Font -> WumpusM ()
 initFont (Font name sz) = do
@@ -49,11 +58,5 @@ setupFont name sc = do
    ps_findfont name
    ps_scalefont sc
    ps_setfont
-
--- labels must be drawn wrt a start point
-drawLabel :: DLabel -> WumpusM ()
-drawLabel (Label (P2 x y) text) = do 
-  ps_moveto x y
-  ps_show text
 
 

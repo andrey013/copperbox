@@ -18,7 +18,7 @@ demo1 = writePS "label1.ps" $ runWumpus st0 $ drawing1 where
                 ; ps_translate 60 380 
                 ; setRgbColour seaGreen1 
                 ; drawLine $ LS (P2 0 0) (P2 50 40) 
-                ; drawLabel $ label "text1" (P2 0 0)
+                ; fst $ getPicture (picLabel "text1" 40 10) $ (P2 0 0)
                 --
                 ; ps_translate 0 100
                 ; setRgbColour mistyRose4
@@ -28,6 +28,6 @@ demo1 = writePS "label1.ps" $ runWumpus st0 $ drawing1 where
 
 
 labelGrid :: WumpusM ()
-labelGrid = mapM_ drawLabel ls where
+labelGrid = mapM_ (\lbl -> fst $ (getPicture lbl) zeroPt) ls where
   ls = zipWith fn [1..10] (steps 30 300.0)
-  fn i x = label (show (i,0)) (P2 x 0)
+  fn i x = picLabel (show (i,0)) 20 10 `place` (P2 x 0)

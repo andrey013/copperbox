@@ -84,7 +84,18 @@ picColour :: DRGB -> Picture -> Picture
 picColour c pic = Picture $ 
     \pt -> let (mf,bb) = (getPicture pic) pt in (withColour c mf,bb)
 
+picLines :: [DCoLineSegment2] -> Picture
+picLines xs = Picture $ \pt -> 
+    (mapM_ drawLine $ sequence xs pt, bounds . extractPoints $ sequence xs pt)
 
+
+
+multiput :: Int -> DVec2 -> Picture -> Picture
+multiput n disp pic = Picture $ \pt ->
+    foldl' fn (return(),mempty) (mkPoints pt)
+  where
+    mkPoints pt = scanl (.+^) pt (replicate n disp)
+    fn (mf,bb) pt = prod (mf >>) (bb `mappend`) $ (getPicture pic) pt
 
 
 type BBTransf a = BoundingBox a -> BoundingBox a -> Vec2 a
@@ -178,6 +189,19 @@ strokePolygon (Polygon ((P2 x y):ps)) = saveExecRestore $ do
     ps_stroke
 
 
+clipPolygon :: DPolygon -> WumpusM a -> WumpusM a
+clipPolygon (Polygon [])            mf = mf
+clipPolygon (Polygon ((P2 x y):ps)) mf = saveExecRestore $ do 
+    ps_newpath
+    ps_moveto x y
+    mapM_ (\(P2 a b) -> ps_lineto a b) ps 
+    ps_closepath
+    ps_clip
+    mf
+
+
+
+
 drawLineBag :: [DLineSegment2] -> WumpusM ()
 drawLineBag []  = return ()
 drawLineBag xs  = strokeOpenPathSkel $ mapM_ step xs
@@ -247,23 +271,16 @@ dotSquare = Picture $ \pt ->
     let sq = square 4 pt in (strokePolygon sq, boundingBox sq)
 
 
-
 dotPlus :: Picture
-dotPlus = Picture $ \pt ->
-    fork (mapM_ drawLine . mkLines, bounds . extractPoints . mkLines) pt
-  where
-    mkLines = sequence [lh,lv]
-    lh  = translate (-2) 0 . line (hvec 4::Vec2 Double)
-    lv  = translate 0 (-2) . line (vvec 4)
-   
+dotPlus = picLines [lh,lv] where
+  lh  = translate (-2) 0 . line (hvec 4::Vec2 Double)
+  lv  = translate 0 (-2) . line (vvec 4)
+
 
 dotX :: Picture 
-dotX = Picture $ \pt -> 
-    fork (mapM_ drawLine . mkLines, bounds . extractPoints . mkLines) pt
-  where
-    mkLines = sequence [ls1,ls2]
-    ls1 o = rotateAbout (pi/6) o $ translate 0 (-2) $ line (vvec 4 :: Vec2 Double) o
-    ls2 o = rotateAbout (5*pi/3) o $ ls1 o
+dotX = picLines [ls1,ls2] where
+  ls1 o = rotateAbout (pi/6) o $ translate 0 (-2) $ line (vvec 4 :: Vec2 Double) o
+  ls2 o = rotateAbout (5*pi/3) o $ ls1 o
 
 
 

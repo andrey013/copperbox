@@ -25,8 +25,10 @@ demo1 = writePS "cdiagram1.ps" $ runWumpus st0 $ drawing1 where
  
 
 diagram1 :: WumpusM ()
-diagram1 = mapM_ drawArr arrs >> mapM_ drawLabel labels
- 
+diagram1 = mapM_ drawArr arrs >> mapM_ (\lbl -> fst $ getPicture lbl $ origin) labels
+   where
+    origin = zeroPt
+
 drawArr = drawLine
 
 
@@ -41,12 +43,13 @@ arrs = concat $ sequence [f1,f2,f3,f4] $ boundingBox $ square 100 zeroPt
 
 -- P B 
 -- A C
-labels ::[DLabel]
+labels :: [Picture]
 labels = sequence [fP, fB, fA, fC] $ boundingBox $ square 100 zeroPt
   where
-    fP = label "P" . movexy . topLeft
-    fB = label "B" . movexy . topRight
-    fA = label "A" . movexy . bottomLeft
-    fC = label "C" . movexy . bottomRight
+    fP = (picLabel "P" 10 10 `place`) . movexy . topLeft
+    fB = (picLabel "B" 10 10 `place`) . movexy . topRight
+    fA = (picLabel "A" 10 10 `place`) . movexy . bottomLeft
+    fC = (picLabel "C" 10 10 `place`) . movexy . bottomRight
 
-    movexy = pointwise (translate (-4) (-4))
+    movexy = pointwise (translate (-5) (-5))
+

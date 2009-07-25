@@ -44,6 +44,8 @@ module Wumpus.Core.Vector
   , direction2
   , perpendicular
   , orthogonal
+  , horizontal
+  , vertical
 
   ) where
 
@@ -210,9 +212,8 @@ instance Independent Vec2 where
 -- | Construct a vector with horizontal displacement
 -- and test the sign of the horizontal component
 class HVec t where 
-  hvec    :: Num a => a -> t a
-  hsignum :: Num a => t a -> a
-
+  hvec       :: Num a => a -> t a
+  hsignum    :: Num a => t a -> a 
 
 instance HVec Vec2 where
   hvec d                = V2 d 0
@@ -288,6 +289,15 @@ orthogonal :: (InnerSpace (t a), Floating a, a ~ Scalar (t a))
               => t a -> t a -> Bool
 orthogonal = (==0) `oo` (<.>)
 
+
+-- | Derive the horizontal component
+horizontal :: Num a => Vec2 a -> Vec2 a
+horizontal (V2 a _) = V2 a 0
+
+
+-- | Derive the vertical component
+vertical :: Num a => Vec2 a -> Vec2 a
+vertical (V2 _ b) = V2 0 b
 
 
 --------------------------------------------------------------------------------
