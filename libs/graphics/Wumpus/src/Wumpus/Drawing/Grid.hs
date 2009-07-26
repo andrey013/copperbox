@@ -69,6 +69,21 @@ gridZ xstep ystep tr = Picture $ \pt ->
    vline2 pt = (vline $ vertical $ tr .-. pt) pt
 -}
 
+gridZ :: Double -> Double -> Double -> Double -> Picture
+gridZ xstep ystep w h = Picture $ \pt -> 
+    fork (mapM_ drawLine, bounds . extractPoints) (gridlines pt)
+  where
+    xpoints pt@(P2 x0 _) = genPoints (\(P2 x _) -> x < x0+w) 
+                                     (\(P2 x _) -> P2 (x+xstep) 0)
+                                     pt
+    ypoints pt@(P2 _ y0) = genPoints (\(P2 _ y) -> y < y0+h) 
+                                     (\(P2 _ y) -> P2 0 (y+ystep))
+                                     pt
+    hlines = map (hline w) . ypoints 
+    vlines = map (vline h) . xpoints
+
+    gridlines pt = hlines pt ++ vlines pt     
+
 
 vgrid :: Num a => (Integer,Integer) -> (Integer,Integer) -> [Vec2 a]
 vgrid (i,j) (i',j') = [ mkvec a b | b <- [j..j']

@@ -89,7 +89,8 @@ picLines xs = Picture $ \pt ->
     (mapM_ drawLine $ sequence xs pt, bounds . extractPoints $ sequence xs pt)
 
 
-
+-- | Repeat a picture @n@ times, at each iteration displace by the 
+-- vector @disp@.
 multiput :: Int -> DVec2 -> Picture -> Picture
 multiput n disp pic = Picture $ \pt ->
     foldl' fn (return(),mempty) (mkPoints pt)
@@ -143,7 +144,12 @@ vcat = foldl' (</>) picEmpty
 
 --------------------------------------------------------------------------------
 
-
+-- | Generate a list of points [pt, f pt, f (f pt), ...] while the 
+-- predicate @p@ holds. 
+genPoints :: (Point2 a -> Bool) -> (Point2 a -> Point2 a) -> Point2 a -> [Point2 a]
+genPoints p f = unfoldr phi where
+  phi pt | p pt      = Just (pt,f pt)
+         | otherwise = Nothing
 
 
 

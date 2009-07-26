@@ -42,8 +42,13 @@ module Wumpus.Core.Polygon
 
   -- * Operations
   , interiorAngles
+
+  -- * Bounding box
   , boundingBox
   , bounds
+  , within
+  , width 
+  , height
 
   , topLeftBottomRight
   , bottomLeft
@@ -202,6 +207,11 @@ interiorAngles :: (a ~ Scalar a, Floating a, Real a,
 interiorAngles (Polygon ps) = windowedMap3c intAng ps where
   intAng a b c = interiorAngle (a .-. b) (c .-. b)
 
+
+--------------------------------------------------------------------------------
+-- Bounding box
+
+
 -- | Calculate the bounding box of a polygon.
 boundingBox :: Ord a => Polygon a -> BoundingBox a
 boundingBox (Polygon ps) = bounds ps
@@ -222,7 +232,17 @@ bbProd (BBox (P2 xmin1 ymin1) (P2 xmax1 ymax1))
          (P2 (max xmax1 xmax2) (max ymax1 ymax2))
 
 
+within :: Ord a => Point2 a -> BoundingBox a -> Bool
+within (P2 x y) (BBox (P2 xmin ymin) (P2 xmax ymax)) = 
+   x >= xmin && x <= xmax && y >= ymin && y <= ymax
 
+
+width :: Num a => BoundingBox a -> a
+width (BBox (P2 xmin _) (P2 xmax _)) = xmin + (xmax-xmin)
+
+
+height :: Num a => BoundingBox a -> a
+height (BBox (P2 _ ymin) (P2 _ ymax)) = ymin + (ymax-ymin)
 
 
 -- | Extract the opposite corners (tl,br) of a bounding box.
