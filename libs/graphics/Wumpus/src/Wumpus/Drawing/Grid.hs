@@ -21,62 +21,22 @@ import Wumpus.Core.Fun
 import Wumpus.Core.Geometric
 import Wumpus.Core.Line
 import Wumpus.Core.Point
-import Wumpus.Core.Pointwise
 import Wumpus.Core.Polygon
-import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
 import Wumpus.Drawing.Basic
 
-import Data.AffineSpace
-
---  What is the relation between a grid and a frame? 
 
 
-oldGrid :: DPoint2 -> DPoint2 -> [DLineSegment2]
-oldGrid (P2 x0 y0) (P2 x1 y1) = map (pointwise (scale 10 10)) $ hlines ++ vlines 
-  where
-    hlines = [ lineTo (P2 x0 y) (P2 x1 y) | y <- [y0..y1]]
-    vlines = [ lineTo (P2 x y0) (P2 x y1) | x <- [x0..x1]]
 
-
-type Grid = Picture
-
-
--- This communicates nothing about how to draw a grid and 
--- needs a rethink...
-
--- | simple borderless grid  
-grid :: Int -> Int -> DPoint2 -> Grid
-grid xstep ystep tr = Picture $ \pt -> 
-    let ls = hlines pt ++ vlines pt in 
-    (mapM_ drawLine ls, bounds $ extractPoints ls)
-  where
-    hlines o = let (V2 x y) = tr .-. o in 
-               zipWith xtrans (steps xstep x) (repeat $ line (vvec y) o)
-    vlines o = let (V2 x y) = tr .-. o in
-               zipWith ytrans (steps ystep y) (repeat $ line (hvec x) o)
-    xtrans d = translate d 0 
-    ytrans d = translate 0 d
-
-{-
-
-gridZ :: Int -> Int -> DPoint2 -> Grid
-gridZ xstep ystep tr = Picture $ \pt ->
-   replic (nv pt) (V2 (fromIntegral xstep) 0) (picLines [vline2])
- where
-   nv pt = let (V2 a _) = tr .-. pt in floor (a / fromIntegral xstep)
-   vline2 pt = (vline $ vertical $ tr .-. pt) pt
--}
-
-gridZ :: Double -> Double -> Double -> Double -> Picture
-gridZ xstep ystep w h = Picture $ \pt -> 
+grid :: Double -> Double -> Double -> Double -> Picture
+grid xstep ystep w h = Picture $ \pt -> 
     fork (mapM_ drawLine, bounds . extractPoints) (gridlines pt)
   where
-    xpoints pt@(P2 x0 _) = genPoints (\(P2 x _) -> x < x0+w) 
+    xpoints pt@(P2 x0 _) = genPoints (\(P2 x _) -> x <~= (x0+w))
                                      (\(P2 x _) -> P2 (x+xstep) 0)
                                      pt
-    ypoints pt@(P2 _ y0) = genPoints (\(P2 _ y) -> y < y0+h) 
+    ypoints pt@(P2 _ y0) = genPoints (\(P2 _ y) -> y <~= (y0+h))
                                      (\(P2 _ y) -> P2 0 (y+ystep))
                                      pt
     hlines = map (hline w) . ypoints 

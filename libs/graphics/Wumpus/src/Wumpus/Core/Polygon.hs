@@ -232,6 +232,7 @@ bbProd (BBox (P2 xmin1 ymin1) (P2 xmax1 ymax1))
          (P2 (max xmax1 xmax2) (max ymax1 ymax2))
 
 
+
 within :: Ord a => Point2 a -> BoundingBox a -> Bool
 within (P2 x y) (BBox (P2 xmin ymin) (P2 xmax ymax)) = 
    x >= xmin && x <= xmax && y >= ymin && y <= ymax

@@ -26,6 +26,9 @@ module Wumpus.Core.Fun
   , inner
   , cond
 
+  -- * Approximate equality
+  , Approx(..)
+
   -- * Three values  
   , max3
   , min3
@@ -94,6 +97,26 @@ cond p (a,b) | p a b     = a
 -- apply :: (a -> b -> c) -> (a,b) -> c
 -- apply is uncurry
 
+
+--------------------------------------------------------------------------------
+-- Equality with approximation
+
+infix 4 =~=, <~= , >~=
+
+
+class Approx a where
+  epsilon :: a
+  (=~=) :: a -> a -> Bool 
+  (<~=) :: a -> a -> Bool
+  (>~=) :: a -> a -> Bool
+  
+  
+instance Approx Double where
+  epsilon = 0.0001
+  a =~= b = a+epsilon >b && a-epsilon < b
+  
+  a <~= b = a < b || a =~= b
+  a >~= b = a > b || a =~= b
 
 -- | max of 3
 max3 :: Ord a => a -> a -> a -> a
