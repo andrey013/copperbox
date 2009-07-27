@@ -22,8 +22,6 @@ module Wumpus.Core.Curve
   -- * Curve types  
     Curve(..)
   , DCurve
-  , CoCurve
-  , DCoCurve
 
   -- * Construction
   , tildeCurve
@@ -74,9 +72,9 @@ data Curve a = Curve (Point2 a) (Point2 a) (Point2 a) (Point2 a)
 
 type DCurve = Curve Double
 
-type CoCurve a = Point2 a -> Curve a
+-- type CoCurve a = Point2 a -> Curve a
 
-type DCoCurve = CoCurve Double
+-- type DCoCurve = CoCurve Double
 
 
 instance Functor Curve where
@@ -108,7 +106,8 @@ instance Converse (Curve a) where
 
 -- | Create a tilde (sinusodial) curve about the horizontal plane.
 
-tildeCurve :: (Floating a, AffineSpace a, Converse (Vec2 a)) => a -> CoCurve a
+tildeCurve :: (Floating a, AffineSpace a, Converse (Vec2 a)) 
+           => a -> Co2 a (Curve a)
 tildeCurve w = \pt -> let endpt = pt .+^ hvec w
                       in Curve pt (pt .+^ v) (endpt .+^ converse v) endpt
   where 

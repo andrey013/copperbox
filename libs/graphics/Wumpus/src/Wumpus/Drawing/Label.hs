@@ -30,7 +30,11 @@ import Wumpus.Drawing.PostScript
 -- Labels are drawn inside a clipping rectangle. This puts a burden on the 
 -- user to check the output to see that the clipping rect is large enough
 -- for the text it contains.
-
+-- 
+-- One option would be to add support for em/ex for some of the standard
+-- PostSript fonts (Helvetica, Times-Roman). em is the approx width of 
+-- 'M' in the current font, ex is the approx height of 'x'. 
+-- It would not be too burdensome to measure a few fonts...
 
 picLabel :: String -> Double -> Double -> Picture
 picLabel text w h = Picture $ \pt -> 

@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
@@ -23,8 +24,6 @@ module Wumpus.Core.Polygon
   -- * Polygon types
     Polygon(..)
   , DPolygon
-  , CoPolygon
-  , DCoPolygon
 
   , BoundingBox(..)
   , DBoundingBox
@@ -95,8 +94,8 @@ data BoundingBox a = BBox { bbBottomLeft :: Point2 a, bbTopRight :: Point2 a }
 type DBoundingBox = BoundingBox Double
 
 
-type CoPolygon a = Point2 a -> Polygon a
-type DCoPolygon  = CoPolygon Double
+-- type CoPolygon a = Point2 a -> Polygon a
+-- type DCoPolygon  = CoPolygon Double
 
 
 
@@ -104,10 +103,6 @@ instance Pointwise (Polygon a) where
   type Pt (Polygon a) = Point2 a
   pointwise f (Polygon xs) = Polygon $ map f xs
 
-
-instance Pointwise (CoPolygon a) where
-  type Pt (CoPolygon a) = Point2 a
-  pointwise f pf = pf . f
 
 instance ExtractPoints (Polygon a) where
   type Pnt (Polygon a) = Point2 a
@@ -134,7 +129,7 @@ instance (Fractional a, Ord a) => Monoid (BoundingBox a) where
 
 -- | Create a regular polygon with @n@ sides and /radius/ @r@.
 regularPolygon :: (Floating a, Real a, AffineSpace a)
-               => Int -> a -> CoPolygon a
+               => Int -> a -> Co2 a (Polygon a)
 regularPolygon n r = Polygon . pf
   where 
     pf = \(P2 x y) -> map (translate x y) 
@@ -146,7 +141,7 @@ regularPolygon n r = Polygon . pf
 -- functional to successively transform the current point.
 
 -- | Create a square with bottom-left corner @p@ and side-length @d@.
-square :: (Num a, AffineSpace a) => a -> CoPolygon a
+square :: (Num a, AffineSpace a) => a -> Co2 a (Polygon a)
 square d = Polygon . iter [id,f2,f3,f4] where
   f2 = (.+^ hvec d)
   f3 = (.+^ vvec d)
@@ -155,7 +150,7 @@ square d = Polygon . iter [id,f2,f3,f4] where
 
 -- | Create a rectangle with bottom-left corner @p@ and width @w@ and
 -- height @h@.
-rectangle :: (Num a, AffineSpace a) => a -> a -> CoPolygon a
+rectangle :: (Num a, AffineSpace a) => a -> a -> Co2 a (Polygon a)
 rectangle w h = Polygon . iter [id,f2,f3,f4] where
   f2 = (.+^ hvec w)
   f3 = (.+^ vvec h)
@@ -165,7 +160,7 @@ rectangle w h = Polygon . iter [id,f2,f3,f4] where
 -- | Create an isosceles rectangle with bottom-left corner @p@, the base 
 -- in on the horizontal plane with width @bw@. Height is @h@.
 isoscelesTriangle :: (Fractional a, AffineSpace a) 
-                  => a -> a -> CoPolygon a
+                  => a -> a -> Co2 a (Polygon a)
 isoscelesTriangle bw h = Polygon . sequence [id,f2,f3] where
   f2 = (.+^ hvec bw)
   f3 = (.+^ V2 (bw/2) h)

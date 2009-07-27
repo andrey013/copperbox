@@ -76,7 +76,7 @@ place pic p2 = Picture $ \_ -> (getPicture pic) p2
 picEmpty :: Picture
 picEmpty = Picture $ \pt -> (return (), BBox pt pt) 
  
-picPolygon :: DCoPolygon -> Picture
+picPolygon :: (DPoint2 -> DPolygon) -> Picture
 picPolygon pf = Picture $ \pt -> (strokePolygon $ pf pt, boundingBox $ pf pt) 
 
 
@@ -84,7 +84,7 @@ picColour :: DRGB -> Picture -> Picture
 picColour c pic = Picture $ 
     \pt -> let (mf,bb) = (getPicture pic) pt in (withColour c mf,bb)
 
-picLines :: [DCoLineSegment2] -> Picture
+picLines :: [DPoint2 -> DLineSegment2] -> Picture
 picLines xs = Picture $ \pt -> 
     (mapM_ drawLine $ sequence xs pt, bounds . extractPoints $ sequence xs pt)
 
@@ -221,7 +221,7 @@ setRgbColour (RGB3 r g b) = ps_setrgbcolor r g b
 
 
 
-diamond :: Double -> Double -> DCoPolygon
+diamond :: Double -> Double -> (DPoint2 -> DPolygon)
 diamond w h = \o -> Polygon $ map (o .+^) xs 
   where
     xs = [vh,vv, reflectX vh, reflectY vv]

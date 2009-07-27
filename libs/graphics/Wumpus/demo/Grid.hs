@@ -33,8 +33,7 @@ demo1 = writePS "grid1.ps" $ runWumpus st0 $ drawing1 where
                 ; fst $ getPicture (grid 20 20 100 80) $ origin 
                 ---
                 ; ps_translate 200 0
---                ; mapM_ drawLineBag $ sequence calgrid (P2 0 0)
-                ; fst $ (getPicture (multiput 6 (V2 10 0) dotTriangle)) $ (P2 200 0)
+                ; fst $ (getPicture (multiput 6 (V2 10 0) dotTriangle)) $ (P2 100 0)
                 ; fst $ (getPicture (grid 10 10 50 40)) $ P2 0 0
                 }
   frame1 = Frame2 (P2 0 0) (V2 1 0) (V2 0 0.5)

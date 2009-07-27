@@ -1,6 +1,8 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -26,6 +28,7 @@ module Wumpus.Core.Point
   , Point3(..)
   , DPoint3
   , WtPoint(..)
+  , Co2
 
   -- * Construction
   , ZeroPt(..)
@@ -68,6 +71,9 @@ data WtPoint (pt :: * -> *) i a = WP i (pt a)
   deriving (Eq,Show)
 
 
+-- | Functional type from domain Point2 to codomain @object@.
+type Co2 a object = Point2 a -> object 
+
 
 instance Functor Point2 where
   fmap f (P2 a b) = P2 (f a) (f b)
@@ -84,6 +90,12 @@ instance Pointwise (Point2 a) where
 instance Pointwise (Point3 a) where
   type Pt (Point3 a) = Point3 a
   pointwise f pt = f pt
+
+
+
+instance Pointwise (Co2 a (t a)) where
+  type Pt (Co2 a (t a)) = Point2 a
+  pointwise f pf = pf . f
 
 
 --------------------------------------------------------------------------------

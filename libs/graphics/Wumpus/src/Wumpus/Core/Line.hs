@@ -29,14 +29,10 @@ module Wumpus.Core.Line
   -- ** Line segments
     LineSegment(..)
   , DLineSegment2
-  , CoLineSegment
-  , DCoLineSegment2
 
   -- ** Poly lines
   , PolyLine(..)
   , DPolyLine2
-  , CoPolyLine
-  , DCoPolyLine2
 
    -- * Construction
   , line
@@ -77,9 +73,6 @@ data LineSegment (pt :: * -> *) a = LS (pt a) (pt a)
 type DLineSegment2 = LineSegment Point2 Double
 
 
-type CoLineSegment pt a = pt a -> LineSegment pt a  
-
-type DCoLineSegment2 = CoLineSegment Point2 Double
 
 -- Poly Lines
 
@@ -89,10 +82,6 @@ data PolyLine (pt :: * -> *) a = PolyLine [pt a]
 -- | PolyLine in 2-space.
 type DPolyLine2 = PolyLine Point2 Double
 
-
-type CoPolyLine pt a = pt a -> PolyLine pt a  
-
-type DCoPolyLine2 = CoPolyLine Point2 Double
 
 
 instance Functor pt => Functor (LineSegment pt) where
@@ -115,10 +104,6 @@ instance MatrixMult Matrix3'3 (PolyLine Point2) where
 instance Pointwise (LineSegment Point2 a) where
   type Pt (LineSegment Point2 a) = Point2 a
   pointwise f (LS p p') = LS (f p) (f p')
-
-instance Pointwise (CoLineSegment pt a) where
-  type Pt (CoLineSegment pt a) = pt a
-  pointwise f pf = pf . f
 
 instance Pointwise (PolyLine Point2 a) where
   type Pt (PolyLine Point2 a) = Point2 a
@@ -159,24 +144,24 @@ instance Converse (PolyLine pt a) where
 -- construction
 
 -- | Line from vector.
-line :: AffineSpace (pt a) => Diff (pt a) -> CoLineSegment pt a
+line :: AffineSpace (pt a) => Diff (pt a) -> (pt a -> LineSegment pt a)
 line v = \p -> LS p (p .+^ v)
 
 -- | Horizontal line from point @p@ of length @a@ .
 hline :: (Num a, AffineSpace (pt a), HVec t, t a ~ Diff (pt a)) 
-      => a -> CoLineSegment pt a
+      => a -> (pt a -> LineSegment pt a)
 hline a = line (hvec a)
 
 -- | Vertical line from point @p@ of length @a@.
 vline :: (Num a, AffineSpace (pt a), VVec t, t a ~ Diff (pt a)) 
-      => a -> CoLineSegment pt a
+      => a -> (pt a -> LineSegment pt a)
 vline a = line (vvec a)
 
 
 -- | A line from point @p@ in the direction @theta@ from x-axis
 -- of length @a@
 aline :: (Floating a, AffineSpace (pt a), Vec2 a ~ Diff (pt a)) 
-      => Radian -> a -> CoLineSegment pt a
+      => Radian -> a -> (pt a -> LineSegment pt a)
 aline theta a = line (avec2 theta a)
 
 
