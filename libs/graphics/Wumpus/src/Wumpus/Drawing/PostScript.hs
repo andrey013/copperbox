@@ -31,34 +31,15 @@ import Data.List ( foldl' )
 
 type PostScript = String
 
-data PsState = PsState { 
-       pageNum      :: Int,  
-       cPen         :: Pen,
-       cFont        :: Font,
-       cColour      :: DRGB
-    }
-  deriving (Eq,Show)
-
-
-st0 :: PsState 
-st0 = PsState { 
-        pageNum     = 1,
-        cPen        = newPen,
-        cFont       = helvetica 10,
-        cColour     = wumpusBlack
-      }
-
 type PsOutput = DL.DList Char
 
 type WumpusM a = PsT Id a
 
 
-newtype PsT m a = PsT { unPs :: StateT PsState (WriterT PsOutput m) a }
+newtype PsT m a = PsT { unPs :: ReaderT PsEnv (WriterT PsOutput m) a }
 
-runPsT :: Monad m => PsState -> PsT m a -> m (a,PsOutput)
-runPsT st m = (runWriterT $ runStateT st (unPs m)) >>= extr
-  where
-    extr ((a,_st),ps) = return (a,ps)
+runPsT :: Monad m => PsEnv -> PsT m a -> m (a,PsOutput)
+runPsT st m = runWriterT $ runReaderT st (unPs m) 
 
 instance Monad m => Functor (PsT m) where
   fmap f (PsT mf) = PsT $ fmap f mf 
@@ -70,22 +51,30 @@ instance Monad m => Monad (PsT m) where
 instance Monad m => WriterM (PsT m) PsOutput where
   put = PsT . put
 
-instance Monad m => StateM (PsT m) PsState where
-  get = PsT $ get
-  set = PsT . set
+instance Monad m => ReaderM (PsT m) PsEnv where
+  ask = PsT $ ask
+
+instance Monad m => RunReaderM (PsT m) PsEnv where
+  local e mf = PsT $ local e (unPs mf)
 
 instance MonadT PsT where
   lift = PsT . lift . lift 
 
 
-evalPsT :: Monad m => PsState -> PsT m a -> m PsOutput
-evalPsT st m = runPsT st m >>= \(_,ps) -> return ps
+pstId :: PsEnv -> PsT Id a -> (a,PsOutput)
+pstId env m = runId $ runPsT env m  
 
-pstId :: PsState -> PsT Id a -> (a,PsOutput)
-pstId st m = runId $ runPsT st m  
-
-runWumpus :: PsState -> WumpusM a -> String
+runWumpus :: PsEnv -> WumpusM a -> String
 runWumpus = ((DL.toList . snd) .) . pstId
+
+
+env0 :: PsEnv 
+env0 = PsEnv { 
+        cPen        = newPen,
+        cFont       = helvetica 10,
+        cColour     = wumpusBlack
+      }
+
 
 
 writePS :: FilePath -> String -> IO ()
@@ -93,66 +82,6 @@ writePS filepath pstext = writeFile filepath (bang ++ pstext)
   where
     bang = "%!PS-Adobe-2.0\n"
 
---------------------------------------------------------------------------------
-
--- Some effort is made to optimize the PostScript.
--- When the graphics state changes, only show the parts that change.
-
-
-whenDiff :: Eq a => a -> a -> WumpusM () -> WumpusM ()
-whenDiff a b dk = if a==b then dk else return ()
-
-class WumpusDiff a where
-  wumpusDiff :: a -> a -> WumpusM ()
-
-instance WumpusDiff DRGB where
-  wumpusDiff new@(RGB3 r g b) old = whenDiff new old (ps_setrgbcolor r g b)
-
-instance WumpusDiff Font where 
-  wumpusDiff new@(Font nn nsz) old@(Font on osz) =
-      whenDiff new old (diffName nn on >> diffSize nsz osz >> ps_setfont)
-    where
-      diffName n o = whenDiff n o (do { (Font _ sz) <- cFont `fmap` get
-                                      ; sets_ (\s -> s {cFont = Font n sz} )
-                                      ;  ps_findfont n })
-
-      diffSize n o = whenDiff n o (do { (Font nm _) <- cFont `fmap` get
-                                      ; sets_ (\s -> s {cFont = Font nm n} )
-                                      ; ps_scalefont n })
-
-
-instance WumpusDiff Pen where
-  wumpusDiff new@(Pen nw nc nj nd) old@(Pen ow oc oj od) = 
-    whenDiff new old (do { sets_ (\s -> s { cPen = new})
-                         ; diffWidth nw ow
-                         ; diffCap nc oc
-                         ; diffJoin nj oj
-                         ; diffDash nd od })
-    where
-      diffWidth n o = whenDiff n o (ps_setlinewidth n)
-      diffCap n o   = whenDiff n o (ps_setlinecap $ fromEnum n)
-      diffJoin n o  = whenDiff n o (ps_setlinejoin $ fromEnum n)
-      diffDash n o  = whenDiff n o (setDash n)
-      
-      setDash Solid       = ps_setdash [] 0 
-      setDash (Dash x xs) = ps_setdash xs x
-
-
-withPen :: Pen -> WumpusM a -> WumpusM a
-withPen p mf = do 
-    old <- cPen `fmap` get
-    if p==old then mf else saveExecRestore (wumpusDiff p old >> mf)
-
-withFont :: Font -> WumpusM a -> WumpusM a
-withFont ft mf = do 
-    old <- cFont `fmap` get
-    if ft==old then mf else saveExecRestore (wumpusDiff ft old >> mf)
-
-
-withColour :: DRGB -> WumpusM a -> WumpusM a
-withColour c@(RGB3 r g b) mf = do
-    old <- cColour `fmap` get
-    if c==old then mf else saveExecRestore (ps_setrgbcolor r g b >> mf)
 
 --------------------------------------------------------------------------------
 -- writer monad helpers
@@ -193,34 +122,11 @@ type Command = String
 comment :: String -> WumpusM ()
 comment s = write "%%" >> writeln s
 
+command :: Command -> [String] -> WumpusM ()
+command cmd xs = mapM_ writeArg xs >> writeln cmd
 
 command0 :: Command -> WumpusM ()
-command0 cmd = writeln cmd
-
-command1 :: Command -> String -> WumpusM ()
-command1 cmd arg1 = writeArg arg1 >> writeln cmd
-
-
-command2 :: Command -> String -> String -> WumpusM ()
-command2 cmd arg1 arg2 = 
-   writeArg arg1 >> writeArg arg2 >> writeln cmd
-
-command3 :: Command -> String -> String -> String -> WumpusM ()
-command3 cmd arg1 arg2 arg3 = 
-   writeArg arg1 >> writeArg arg2 >> writeArg arg3 >> writeln cmd
-
-command4 :: Command -> String -> String -> String -> String -> WumpusM ()
-command4 cmd arg1 arg2 arg3 arg4 = 
-   writeArg arg1 >> writeArg arg2 >> writeArg arg3 >> writeArg arg4 >> writeln cmd
-
-command5 :: Command -> String -> String -> String -> String -> String -> WumpusM ()
-command5 cmd arg1 arg2 arg3 arg4 arg5 = 
-   mapM_ writeArg [arg1, arg2, arg3, arg4, arg5 ] >> writeln cmd
-
-command6 :: Command -> String -> String -> String -> 
-                       String -> String -> String -> WumpusM ()
-command6 cmd arg1 arg2 arg3 arg4 arg5 arg6 = 
-   mapM_ writeArg [arg1, arg2, arg3, arg4, arg5, arg6 ] >> writeln cmd
+command0 cmd = command cmd []
 
 
 showArray :: (a -> ShowS) -> [a] -> String
@@ -232,110 +138,96 @@ showArray f (x:xs) = sfun "]"
 showStr :: String -> String 
 showStr s = '(' : xs where xs = s++[')']
                               
-getPageNum :: WumpusM Int
-getPageNum = pageNum `fmap` get 
-
 
 
 withPage :: WumpusM a -> WumpusM a
 withPage m = pageStart >> m >>= \a -> pageEnd >> return a 
   where
-    pageStart = getPageNum >>= \i -> comment $ "Page" ++ show i
+    pageStart = comment $ "Page " ++ show (1::Int)
 
     pageEnd   = comment "-------------------"    
 
-
+ 
 --------------------------------------------------------------------------------
 -- graphics state operators 
 
--- c.f. local of the Reader monad. 
+-- c.f. local of the Reader monad (mapReader in MonadLib). 
 -- Checkpoint the state, run the computation restore the state 
 -- This pattern is very common in PostScript where the action 
 -- is run between @gsave@ and @grestore@.
-saveExecRestore :: WumpusM a -> WumpusM a
-saveExecRestore m = do 
-    command0 "gsave"
-    st  <- get
-    a   <- m
-    set st
+saveExecRestore :: (PsEnv -> PsEnv) -> WumpusM a -> WumpusM a
+saveExecRestore f mf = do 
+    command0 "gsave" 
+    a   <- mapReader f mf
     command0 "grestore"
     return a
 
-ps_gsave :: WumpusM ()
-ps_gsave = command0 "gsave"
 
-ps_grestore :: WumpusM ()
-ps_grestore = command0 "grestore"
-
-
-
-ps_setlinewidth :: Double -> WumpusM ()
-ps_setlinewidth n = command1 "setlinewidth" (show n) 
-
--- 0 = butt, 1 = round, 2 = square
-ps_setlinecap :: Int -> WumpusM ()
-ps_setlinecap i = command1 "setlinecap" (show i) 
-
-ps_setlinejoin :: Int -> WumpusM ()
-ps_setlinejoin i = command1 "setlinejoin" (show i) 
-
-ps_setmiterlimit :: Double -> WumpusM ()
-ps_setmiterlimit n = command1 "setmiterlimit" (show n) 
-
-
-ps_setdash :: [Int] -> Int -> WumpusM ()
-ps_setdash arr n = command2 "setdash" (showArray shows arr) (show n)
-
-ps_setgray :: Double -> WumpusM ()
-ps_setgray n = command1 "setgray" (dtrunc n)
-
-setColour :: DRGB -> WumpusM ()
-setColour c = sets_ (\s -> s {cColour = c} )
-
-
-ps_sethsbcolor :: Double -> Double -> Double -> WumpusM ()
-ps_sethsbcolor h s b = do 
-    setColour $ hsb2rgb' h s b
-    command3 "sethsbcolor" (dtrunc h) (dtrunc s) (dtrunc b)
-
-
-ps_setrgbcolor :: Double -> Double -> Double -> WumpusM ()
-ps_setrgbcolor r g b = do 
-  setColour $ RGB3 r g b
-  command3 "setrgbcolor" (dtrunc r) (dtrunc g) (dtrunc b)
+withDiff :: Eq e 
+         => (PsEnv -> e) 
+         -> (PsEnv -> PsEnv) 
+         -> e 
+         -> WumpusM () 
+         -> WumpusM a 
+         -> WumpusM a
+withDiff query update e updCmd mf =
+  asks query >>= \v -> if (e==v) then mf 
+                                 else saveExecRestore update (updCmd >> mf)
 
 
 
+withRgbColour :: DRGB -> WumpusM a -> WumpusM a
+withRgbColour c mf = 
+    withDiff cColour (\e -> e {cColour=c}) c (updColour c) mf
+  where
+    updColour (RGB3 r g b) = command "setrgbcolor" $ map dtrunc [r,g,b]
+
+withGray :: Double -> WumpusM a -> WumpusM a
+withGray gray mf = 
+    withDiff cColour (\e -> e {cColour = c}) c (updColour gray) mf
+  where
+    c = gray2rgb gray
+    updColour g = command "setgray" [dtrunc g]
 
 
-rgb2hsb' :: Double -> Double -> Double -> DHSB
-rgb2hsb' r g b = rgb2hsb $ (RGB3 r g b)
+withPen :: Pen -> WumpusM a -> WumpusM a
+withPen pen mf = 
+    withDiff cPen (\e -> e {cPen=pen}) pen updPen mf 
+  where
+    updPen = do
+        command "setlinewidth"  [dtrunc $ lineWidth pen]
+        command "setmiterlimit" [dtrunc $ miterLimit pen]
+        command "setlinecap"    [show   $ lineCap pen]
+        command "setlinejoin"   [show   $ lineJoin pen]
+        setDash (dashPattern pen)  
+        
+    setDash Solid        = command "setdash" ["[]", "0"]
+    setDash (Dash n arr) = command "setdash" [showArray shows arr, show n]
 
-hsb2rgb' :: Double -> Double -> Double -> DRGB
-hsb2rgb' h s b = hsb2rgb $ (HSB3 h s b)
 
-rgb2gray' :: Double -> Double -> Double -> Double
-rgb2gray' r g b = rgb2gray $ (RGB3 r g b) 
+withFont :: Font -> WumpusM a -> WumpusM a 
+withFont font mf = 
+    withDiff cFont (\e -> e {cFont=font}) font (updFont font) mf
+  where
+    updFont (Font name sz) = do
+        command "findfont" ['/' : name]
+        command "scalefont" [show sz]
+        command "setfont" []
 
 
---------------------------------------------------------------------------------
--- matrix operations
+helvetica :: Int -> Font
+helvetica us = Font "Helvetica" us
 
+timesRoman :: Int -> Font
+timesRoman us = Font "Times-Roman" us
+
+
+
+-- TODO - this is useful, but it changes the PostScript graphics state
+-- so it really should be incorpated into the Env.
 ps_translate :: Double -> Double -> WumpusM ()
 ps_translate tx ty = do
-    command2 "translate" (show tx) (show ty)
-
-
-ps_scale :: Double -> Double -> WumpusM ()
-ps_scale sx sy = do
-    command2 "scale" (show sx) (show sy)
-         
-
-ps_rotate :: Double -> WumpusM ()
-ps_rotate ang = do
-    command1 "rotate" (show ang)
-
-
+    command "translate" $ map dtrunc [tx,ty]
 
 --------------------------------------------------------------------------------
 -- Path construction operators
@@ -344,7 +236,7 @@ ps_rotate ang = do
 
 
 ps_newpath :: WumpusM ()
-ps_newpath = command0 "newpath"
+ps_newpath = command "newpath" []
 
 -- There is no equivalent to PostScript's @currentpoint@ command. 
 
@@ -354,33 +246,32 @@ ps_newpath = command0 "newpath"
 -- quite expensive.
 
 ps_moveto :: Double -> Double -> WumpusM ()
-ps_moveto x y = command2 "moveto" (dtrunc x) (dtrunc y)
+ps_moveto x y = command "moveto" [dtrunc x, dtrunc y]
 
 ps_rmoveto :: Double -> Double -> WumpusM ()
-ps_rmoveto x y = command2 "rmoveto" (dtrunc x) (dtrunc y)
+ps_rmoveto x y = command "rmoveto" [dtrunc x, dtrunc y]
 
 
 ps_lineto :: Double -> Double -> WumpusM ()
-ps_lineto x y = command2 "lineto" (dtrunc x) (dtrunc y)
+ps_lineto x y = command "lineto" [dtrunc x, dtrunc y]
 
 ps_rlineto :: Double -> Double -> WumpusM ()
-ps_rlineto x y = command2 "rlineto" (show x) (show y)
+ps_rlineto x y = command "rlineto" [dtrunc x, dtrunc y]
 
 
 ps_arc :: Double -> Double -> Double -> Double -> Double -> WumpusM ()
 ps_arc x y r ang1 ang2 = 
-    command5 "arc" (show x) (show y) (show r) (show ang1) (show ang2)
+    command "arc" $ map dtrunc [x,y,r,ang1,ang2]
 
 ps_arcn :: Double -> Double -> Double -> Double -> Double -> WumpusM ()
 ps_arcn x y r ang1 ang2 = 
-    command5 "arcn" (show x) (show y) (show r) (show ang1) (show ang2)
+    command "arcn" $ map dtrunc [x,y,r,ang1,ang2]
 
 
 ps_curveto :: Double -> Double -> Double -> Double -> 
                      Double -> Double -> WumpusM ()
 ps_curveto x1 y1 x2 y2 x3 y3 = 
-    command6 "curveto" (dtrunc x1) (dtrunc y1) (dtrunc x2) (dtrunc y2)
-                       (dtrunc x3) (dtrunc y3)
+    command "curveto" $ map dtrunc [x1,y1, x2,y2, x3,y3]
 
 
 ps_closepath :: WumpusM ()
@@ -393,9 +284,6 @@ ps_clip = command0 "clip"
 --  painting operators
 
 
-ps_erasepage :: WumpusM () 
-ps_erasepage = command0 "erasepage"
-
 ps_fill :: WumpusM ()
 ps_fill = command0 "fill"
 
@@ -406,14 +294,6 @@ ps_stroke = command0 "stroke"
 -- Character and font operators
 
 
-ps_findfont :: String -> WumpusM ()
-ps_findfont key = command1 "findfont" ('/' : key)
-
-ps_setfont :: WumpusM ()
-ps_setfont = command0 "setfont"
-
 ps_show :: String -> WumpusM ()
-ps_show = command1 "show" . showStr
+ps_show str = command "show" [showStr str]
 
-ps_scalefont :: Double -> WumpusM () 
-ps_scalefont sc = command1 "scalefont" (dtrunc sc)

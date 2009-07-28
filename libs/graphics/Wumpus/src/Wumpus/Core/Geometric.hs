@@ -1,5 +1,4 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -14,8 +13,8 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Extra functions built on the Vector Space lib with no dependencies on 
--- the Wumpus data types and typeclasses with no Wumpus dependencies.
+-- Extra functions and classes (some built on the Vector Space lib) 
+-- with no dependencies on the Wumpus types and typeclasses.
 --
 --------------------------------------------------------------------------------
 
@@ -85,3 +84,5 @@ adjustvk p0 p1 p2 k = (p1 .+^ vl,p1 .+^ vr) where
 -- | Predicate to test if the vector is zero.
 isZeroV :: (AdditiveGroup v,Eq v) => v -> Bool
 isZeroV = (==) zeroV
+
+

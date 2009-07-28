@@ -84,7 +84,7 @@ pathExtractPoints (Path _ _ sp)
     fn (PLine (LS p0 p1))           ls = p0:p1: safeTail ls
     fn (PCurve (Curve p0 p1 p2 p3)) ls = p0:p1:p2:p3: safeTail ls   
     safeTail []     = []
-    safeTail (x:xs) = xs
+    safeTail (_:xs) = xs
 
 --------------------------------------------------------------------------------
 -- Operations

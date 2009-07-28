@@ -24,7 +24,6 @@ import Wumpus.Core.Point
 import Wumpus.Core.Polygon
 
 import Wumpus.Drawing.Basic
-import Wumpus.Drawing.GraphicsState
 import Wumpus.Drawing.PostScript
 
 
@@ -37,10 +36,14 @@ import Wumpus.Drawing.PostScript
 -- 'M' in the current font, ex is the approx height of 'x'. 
 -- It would not be too burdensome to measure a few fonts...
 
+
+-- Note as Labels use a clipping path they must be enclosed in a 
+-- saveExecRestore. 
+
 picLabel :: String -> Double -> Double -> Picture
-picLabel text w h = Picture $ \pt -> 
-    (clipPolygon (cliprect pt) $ drawLabel text pt, boundingBox $ cliprect pt)
+picLabel text w h = Picture $ \pt -> (mf pt, boundingBox $ cliprect pt)
   where
+    mf pt = saveExecRestore id $ clipPolygon (cliprect pt) $ drawLabel text pt
     cliprect pt = (rectangle w h) pt
 
 
@@ -51,17 +54,5 @@ drawLabel text (P2 x y) = do
   ps_show text
 
 
-
-initFont :: Font -> WumpusM ()
-initFont (Font name sz) = do
-  ps_findfont name
-  ps_scalefont sz
-  ps_setfont
-
-setupFont :: String -> Double -> WumpusM ()
-setupFont name sc = do 
-   ps_findfont name
-   ps_scalefont sc
-   ps_setfont
 
 

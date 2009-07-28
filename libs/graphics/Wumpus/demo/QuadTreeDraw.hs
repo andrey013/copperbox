@@ -2,6 +2,7 @@
 
 module QuadTreeDraw where
 
+import Wumpus.Core.Colour
 import Wumpus.Core.Geometric 
 import Wumpus.Core.Instances
 import Wumpus.Core.Line
@@ -39,11 +40,11 @@ demo1 :: IO ()
 demo1 = outputQuadTree "quadtree1.ps" demo_qt
 
 outputQuadTree :: FilePath -> QuadTree (DPoint2,DPoint2) DPoint2 -> IO ()
-outputQuadTree name tree =  writePS name $ runWumpus st0 $ drawing1 where
+outputQuadTree name tree =  writePS name $ runWumpus env0 $ drawing1 where
   drawing1 = do { ps_translate 20 20
                 ; mapM_ drawLine $ treelines tree
-                ; ps_setrgbcolor 1 0 0
-                ; mapM_ drawPoint $ treepoints tree
+                ; withRgbColour (RGB3 1 0 0) $ 
+                      mapM_ drawPoint $ treepoints tree
                 }
 
 treelines :: QuadTree (DPoint2,DPoint2) DPoint2 -> [DLineSegment2]

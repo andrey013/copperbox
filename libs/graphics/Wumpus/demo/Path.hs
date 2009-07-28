@@ -8,7 +8,6 @@ import Wumpus.Core.Path
 import Wumpus.Core.Point
 
 import Wumpus.Drawing.Basic
-import Wumpus.Drawing.Label
 import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.X11Colours
 
@@ -16,11 +15,10 @@ import Wumpus.Drawing.X11Colours
 import Prelude hiding ( abs )
 
 demo1 :: IO ()
-demo1 = writePS "path1.ps" $ runWumpus st0 $ drawing1 where
-  drawing1 = do { setupFont "Times-Roman" 9
-                ; ps_translate 60 480 
-                ; setRgbColour maroon0
-                ; drawLine $ lineS1 (zeroPt::DPoint2)
+demo1 = writePS "path1.ps" $ runWumpus env0 $ drawing1 where
+  drawing1 = withFont (timesRoman 9) $ do 
+                { ps_translate 60 480 
+                ; withRgbColour maroon0 $ drawLine $ lineS1 (zeroPt::DPoint2)
                 ; drawPath $ htildev (P2 0 60)
                 }
 

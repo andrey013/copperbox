@@ -13,17 +13,16 @@ import Wumpus.Drawing.X11Colours
 
 
 demo1 :: IO ()
-demo1 = writePS "label1.ps" $ runWumpus st0 $ drawing1 where
-  drawing1 = do { setupFont "Times-Roman" 15
-                ; ps_translate 60 380 
-                ; setRgbColour seaGreen1 
-                ; drawLine $ LS (P2 0 0) (P2 50 40) 
+demo1 = writePS "label1.ps" $ runWumpus env0 $ drawing1 where
+  drawing1 = withFont (timesRoman 15) $  do 
+                { ps_translate 60 380 
+                ; withRgbColour seaGreen1 $ 
+                      drawLine $ LS (P2 0 0) (P2 50 40) 
                 ; fst $ getPicture (picLabel "text1" 40 10) $ (P2 0 0)
                 --
                 ; ps_translate 0 100
-                ; setRgbColour mistyRose4
-                ; setupFont "Times-Roman" 10
-                ; labelGrid
+                ; withRgbColour seaGreen4 $ 
+                      withFont (timesRoman 5) $ labelGrid
                 }
 
 

@@ -32,7 +32,7 @@ data PathStyle = Stroke | Fill | Clip
 
 -- can only stroke an /open/ path... 
 strokeOpenPathSkel :: WumpusM a -> WumpusM a
-strokeOpenPathSkel m = saveExecRestore $ do
+strokeOpenPathSkel m = do
   ps_newpath
   a <- m
   ps_stroke
@@ -41,7 +41,7 @@ strokeOpenPathSkel m = saveExecRestore $ do
 
 
 closedPathSkel :: PathStyle -> WumpusM a -> WumpusM a
-closedPathSkel pstyle m = saveExecRestore $ do
+closedPathSkel pstyle m = do
     ps_newpath
     a <- m
     ps_closepath
@@ -89,27 +89,4 @@ linetoPt :: DPoint2 -> WumpusM ()
 linetoPt (P2 x y) = ps_lineto x y 
 
 
-
---- Old rubbish...
-
-wedge :: (Double,Double) -> Double -> Double -> Double -> WumpusM ()
-wedge (x,y) r ang1 ang2 =  strokePathSkel $ do
-  ps_moveto x y
-  ps_arc x y r ang1 ang2
- 
-ellipse :: (Double,Double) -> (Double,Double) -> WumpusM ()
-ellipse (x,y) (rh,rv) = saveExecRestore $ do 
-  ps_scale 1 (rv/rh)
-  ps_newpath
-  ps_arc x y rh 0 360
-  ps_closepath
-  ps_stroke
-
-
-ellipticarc :: (Double,Double) -> (Double,Double) -> Double -> Double -> WumpusM ()
-ellipticarc (x,y) (rh,rv) ang1 ang2 = saveExecRestore $ do 
-  ps_scale 1 (rv/rh)
-  ps_newpath
-  ps_arc x y rh ang1 ang2
-  ps_stroke
 

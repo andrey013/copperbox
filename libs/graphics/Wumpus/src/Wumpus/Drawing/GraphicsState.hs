@@ -15,7 +15,29 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Drawing.GraphicsState where
+module Wumpus.Drawing.GraphicsState 
+  (
+  -- * Graphics state types
+    PsEnv(..)
+
+  , LineCap(..)
+  , JoinStyle(..)
+  , DashPattern(..)
+  , Pen(..)
+  , newPen
+
+  , Font(..)
+   
+  )where
+
+import Wumpus.Core.Colour
+
+data PsEnv = PsEnv { 
+       cPen         :: Pen,
+       cFont        :: Font,
+       cColour      :: DRGB
+    }
+  deriving (Eq,Show)
 
 
 data LineCap = CapButt | CapRound | CapSquare
@@ -29,6 +51,7 @@ data DashPattern = Solid | Dash Int [Int]
 
 data Pen = Pen { 
       lineWidth     :: Double,
+      miterLimit    :: Double,
       lineCap       :: LineCap,
       lineJoin      :: JoinStyle,
       dashPattern   :: DashPattern 
@@ -39,6 +62,7 @@ data Pen = Pen {
 
 newPen :: Pen
 newPen = Pen { lineWidth    = 1.0,          
+               miterLimit   = 10.0,
                lineCap      = CapButt, 
                lineJoin     = JoinMiter,    
                dashPattern  = Solid }
@@ -46,12 +70,6 @@ newPen = Pen { lineWidth    = 1.0,
 
 data Font = Font { 
       fontName    :: String,
-      unitSize    :: Double
+      unitSize    :: Int
     }
   deriving (Eq,Show)
-
-helvetica :: Double -> Font
-helvetica us = Font "Helvetica" us
-
-timesRoman :: Double -> Font
-timesRoman us = Font "Times-Roman" us

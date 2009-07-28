@@ -1,7 +1,4 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -67,7 +64,7 @@ newtype Picture = Picture {
 
 
 psDraw :: Picture -> PostScript
-psDraw pic = runWumpus st0 (fst $ (getPicture pic) zeroPt)
+psDraw pic = runWumpus env0 (fst $ (getPicture pic) zeroPt)
 
 
 place :: Picture -> DPoint2 -> Picture
@@ -82,7 +79,7 @@ picPolygon pf = Picture $ \pt -> (strokePolygon $ pf pt, boundingBox $ pf pt)
 
 picColour :: DRGB -> Picture -> Picture
 picColour c pic = Picture $ 
-    \pt -> let (mf,bb) = (getPicture pic) pt in (withColour c mf,bb)
+    \pt -> let (mf,bb) = (getPicture pic) pt in (withRgbColour c mf,bb)
 
 picLines :: [DPoint2 -> DLineSegment2] -> Picture
 picLines xs = Picture $ \pt -> 
@@ -187,7 +184,7 @@ drawPolygon = strokePolygon
 
 strokePolygon :: DPolygon -> WumpusM ()
 strokePolygon (Polygon [])            = return ()
-strokePolygon (Polygon ((P2 x y):ps)) = saveExecRestore $ do 
+strokePolygon (Polygon ((P2 x y):ps)) = do 
     ps_newpath
     ps_moveto x y
     mapM_ (\(P2 a b) -> ps_lineto a b) ps 
@@ -197,7 +194,7 @@ strokePolygon (Polygon ((P2 x y):ps)) = saveExecRestore $ do
 
 clipPolygon :: DPolygon -> WumpusM a -> WumpusM a
 clipPolygon (Polygon [])            mf = mf
-clipPolygon (Polygon ((P2 x y):ps)) mf = saveExecRestore $ do 
+clipPolygon (Polygon ((P2 x y):ps)) mf = do 
     ps_newpath
     ps_moveto x y
     mapM_ (\(P2 a b) -> ps_lineto a b) ps 
@@ -215,9 +212,6 @@ drawLineBag xs  = strokeOpenPathSkel $ mapM_ step xs
     step (LS (P2 x1 y1) (P2 x2 y2)) = do 
       ps_moveto x1 y1
       ps_lineto x2 y2
-
-setRgbColour :: RgbColour -> WumpusM ()
-setRgbColour (RGB3 r g b) = ps_setrgbcolor r g b
 
 
 
