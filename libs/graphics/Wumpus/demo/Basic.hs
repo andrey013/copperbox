@@ -5,10 +5,10 @@ module Basic where
 
 import Wumpus.Core.Line
 import Wumpus.Core.Point
+import Wumpus.Core.Polygon
 
 import Wumpus.Drawing.Basic
 import Wumpus.Drawing.PostScript
-import Wumpus.Drawing.PSSkeletons
 import Wumpus.Drawing.SVGColours
 
 
@@ -22,7 +22,7 @@ demo1 = writePS "basic1.ps" $ runWumpus env0 $ drawing1 where
 --                ; wedge (100,5) 15 0 60
 --                ; withGray 0 $ ellipse (60,5) (15,10)
 --                ; ellipticarc (120,5) (15,10) 0 270
-                ; polygon [(P2 140 5), (P2 140 30), (P2 170 5), (P2 170 30)]
+                ; drawPolygon $ Polygon [P2 140 5, P2 140 30, P2 170 5, P2 170 30]
                 ; drawPolygon $ diamond 30 30 (P2 10 50)
                 ; drawDisk $ disk (10,50) 2
                 -- Properties currently not implemented ...

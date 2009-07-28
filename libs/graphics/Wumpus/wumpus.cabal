@@ -46,7 +46,6 @@ library
     Wumpus.Drawing.Label,
     Wumpus.Drawing.Plot,
     Wumpus.Drawing.PostScript,
-    Wumpus.Drawing.PSSkeletons,
     Wumpus.Drawing.QuadTree,
     Wumpus.Drawing.SVGColours,
     Wumpus.Drawing.X11Colours

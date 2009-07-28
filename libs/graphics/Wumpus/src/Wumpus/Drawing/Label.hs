@@ -37,7 +37,7 @@ import Wumpus.Drawing.PostScript
 -- It would not be too burdensome to measure a few fonts...
 
 
--- Note as Labels use a clipping path they must be enclosed in a 
+-- Note - Labels use a clipping path so they must be bracketed with  
 -- saveExecRestore. 
 
 picLabel :: String -> Double -> Double -> Picture

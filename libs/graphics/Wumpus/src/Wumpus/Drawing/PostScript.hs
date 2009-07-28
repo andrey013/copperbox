@@ -125,8 +125,6 @@ comment s = write "%%" >> writeln s
 command :: Command -> [String] -> WumpusM ()
 command cmd xs = mapM_ writeArg xs >> writeln cmd
 
-command0 :: Command -> WumpusM ()
-command0 cmd = command cmd []
 
 
 showArray :: (a -> ShowS) -> [a] -> String
@@ -157,9 +155,9 @@ withPage m = pageStart >> m >>= \a -> pageEnd >> return a
 -- is run between @gsave@ and @grestore@.
 saveExecRestore :: (PsEnv -> PsEnv) -> WumpusM a -> WumpusM a
 saveExecRestore f mf = do 
-    command0 "gsave" 
+    command "gsave" []
     a   <- mapReader f mf
-    command0 "grestore"
+    command "grestore" []
     return a
 
 
@@ -275,20 +273,20 @@ ps_curveto x1 y1 x2 y2 x3 y3 =
 
 
 ps_closepath :: WumpusM ()
-ps_closepath = command0 "closepath" 
+ps_closepath = command "closepath" []
 
 ps_clip :: WumpusM ()
-ps_clip = command0 "clip" 
+ps_clip = command "clip" []
 
 --------------------------------------------------------------------------------
 --  painting operators
 
 
 ps_fill :: WumpusM ()
-ps_fill = command0 "fill"
+ps_fill = command "fill" []
 
 ps_stroke :: WumpusM ()
-ps_stroke = command0 "stroke"
+ps_stroke = command "stroke" []
 
 --------------------------------------------------------------------------------
 -- Character and font operators

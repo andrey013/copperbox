@@ -30,7 +30,6 @@ import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
 import Wumpus.Drawing.PostScript
-import Wumpus.Drawing.PSSkeletons
 
 import Data.AffineSpace
 
@@ -159,6 +158,40 @@ transOrigin :: (Floating a, Pointwise sh, Pt sh ~ Point2 a)
             => sh -> Point2 a -> sh
 transOrigin z = \(P2 x y) -> pointwise (translate x y) z
 
+--------------------------------------------------------------------------------
+
+
+data PathStyle = Stroke | Fill | Clip
+  deriving (Eq,Show) 
+
+-- can only stroke an /open/ path... (fill has odd behaviour)
+strokeOpenPathSkel :: WumpusM a -> WumpusM a
+strokeOpenPathSkel m = do
+  ps_newpath
+  a <- m
+  ps_stroke
+  return a
+
+closedPathSkel :: PathStyle -> WumpusM a -> WumpusM a
+closedPathSkel pstyle m = do
+    ps_newpath
+    a <- m
+    ps_closepath
+    drawCmd pstyle
+    return a
+  where
+    drawCmd Stroke = ps_stroke
+    drawCmd Fill   = ps_fill   
+    drawCmd Clip   = ps_clip
+
+fillPathSkel :: WumpusM a -> WumpusM a
+fillPathSkel = closedPathSkel Fill
+
+strokePathSkel :: WumpusM a -> WumpusM a
+strokePathSkel = closedPathSkel Stroke
+
+clipPathSkel :: WumpusM a -> WumpusM a
+clipPathSkel = closedPathSkel Clip
 
 
 
@@ -168,13 +201,7 @@ drawLine (LS (P2 x1 y1) (P2 x2 y2)) = strokePathSkel $ do
     ps_lineto x2 y2
 
 drawPoint :: DPoint2 -> WumpusM ()
-drawPoint = polygon . unitSquare
-
--- should this generate a DPolygon or its path?
--- unitSquare :: Point -> DPolygon
-unitSquare :: DPoint2 -> [DPoint2]
-unitSquare p = usqr where 
-    usqr = [p, p .+^ (V2 0 1), p .+^ (V2 1 1), p .+^ (V2 1 0)]
+drawPoint = strokePolygon . unitSquare
 
 
 -- to do - differentiate between draw / stroke / fill / clip
@@ -184,22 +211,14 @@ drawPolygon = strokePolygon
 
 strokePolygon :: DPolygon -> WumpusM ()
 strokePolygon (Polygon [])            = return ()
-strokePolygon (Polygon ((P2 x y):ps)) = do 
-    ps_newpath
-    ps_moveto x y
-    mapM_ (\(P2 a b) -> ps_lineto a b) ps 
-    ps_closepath
-    ps_stroke
+strokePolygon (Polygon ((P2 x y):ps)) =
+    strokePathSkel $ ps_moveto x y >> mapM_ (\(P2 a b) -> ps_lineto a b) ps 
 
 
 clipPolygon :: DPolygon -> WumpusM a -> WumpusM a
 clipPolygon (Polygon [])            mf = mf
 clipPolygon (Polygon ((P2 x y):ps)) mf = do 
-    ps_newpath
-    ps_moveto x y
-    mapM_ (\(P2 a b) -> ps_lineto a b) ps 
-    ps_closepath
-    ps_clip
+    clipPathSkel $ ps_moveto x y >> mapM_ (\(P2 a b) -> ps_lineto a b) ps 
     mf
 
 
@@ -309,8 +328,3 @@ dotDiamond = polyDot 4
 dotPentagon :: Picture
 dotPentagon = polyDot 5
  
-
-drawLineSegment :: DLineSegment2 -> WumpusM ()
-drawLineSegment (LS p p') = strokeOpenPathSkel $  do 
-    movetoPt p
-    linetoPt p'

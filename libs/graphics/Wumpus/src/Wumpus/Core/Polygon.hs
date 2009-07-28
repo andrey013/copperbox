@@ -28,6 +28,8 @@ module Wumpus.Core.Polygon
   -- * Construction
   , regularPolygon
   , square
+  , unitSquare
+
   , rectangle
   , isoscelesTriangle
 
@@ -104,6 +106,9 @@ square d = Polygon . iter [id,f2,f3,f4] where
   f3 = (.+^ vvec d)
   f4 = (.+^ (hvec $ negate d))
   
+unitSquare :: (Num a, AffineSpace a) => Point2 a -> Polygon a
+unitSquare = square 1 
+
 
 -- | Create a rectangle with bottom-left corner @p@ and width @w@ and
 -- height @h@.
