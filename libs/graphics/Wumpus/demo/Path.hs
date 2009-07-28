@@ -3,7 +3,7 @@
 module Path where
 
 import Wumpus.Core.Curve
-import Wumpus.Core.Line
+import Wumpus.Core.Line hiding (lineTo)
 import Wumpus.Core.Path
 import Wumpus.Core.Point
 
@@ -21,21 +21,20 @@ demo1 = writePS "path1.ps" $ runWumpus st0 $ drawing1 where
                 ; ps_translate 60 480 
                 ; setRgbColour maroon0
                 ; drawLine $ lineS1 (zeroPt::DPoint2)
-                ; drawPath $ path htildev (P2 0 60)
+                ; drawPath $ htildev (P2 0 60)
                 }
 
-lineS1 :: DCoLineSegment2
+lineS1 :: DPoint2 -> DLineSegment2
 lineS1 = hline 60
 
 
-htildev :: H (CoPathSegment Double)
-htildev = withLine (hline 10) . withCurve (tildeCurve 40) . withLine (vline 20)
+htildev :: DPoint2 -> DPath
+htildev = \pt -> newPath pt `lineTo` (hline 10) `curveTo` (tildeCurve 40) 
+                            `lineTo` (vline 20)
 
-path :: H (CoPathSegment Double) -> DPoint2 -> [PathSegment Double]
-path f pt = abs f pt 
 
-drawPath :: [PathSegment Double] -> WumpusM ()
-drawPath = mapM_ fn where
+drawPath :: DPath -> WumpusM ()
+drawPath = mapM_ fn . unPath where
   fn (Left ln)   = drawLine ln
   fn (Right crv) = drawCurve crv
 

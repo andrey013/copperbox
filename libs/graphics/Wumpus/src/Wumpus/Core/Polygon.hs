@@ -25,10 +25,6 @@ module Wumpus.Core.Polygon
     Polygon(..)
   , DPolygon
 
-  , BoundingBox(..)
-  , DBoundingBox
-
-
   -- * Construction
   , regularPolygon
   , square
@@ -42,23 +38,6 @@ module Wumpus.Core.Polygon
   -- * Operations
   , interiorAngles
 
-  -- * Bounding box
-  , boundingBox
-  , bounds
-  , within
-  , width 
-  , height
-
-  , topLeftBottomRight
-  , bottomLeft
-  , bottomRight
-  , topLeft
-  , topRight
-  , center
-  , centerTop
-  , centerBottom
-  , leftCenter
-  , rightCenter
   
   ) where
 
@@ -75,7 +54,6 @@ import Data.AffineSpace
 import Data.VectorSpace
 
 import Data.List ( nub )
-import Data.Monoid
 
 --------------------------------------------------------------------------------
 -- Polygon types and standard instances
@@ -86,16 +64,6 @@ data Polygon a = Polygon [Point2 a]
 
 
 type DPolygon = Polygon Double
-
--- | Bounding box, two point representation (bottom-left and top-right). 
-data BoundingBox a = BBox { bbBottomLeft :: Point2 a, bbTopRight :: Point2 a }
-  deriving (Eq,Show)
-
-type DBoundingBox = BoundingBox Double
-
-
--- type CoPolygon a = Point2 a -> Polygon a
--- type DCoPolygon  = CoPolygon Double
 
 
 
@@ -111,17 +79,6 @@ instance ExtractPoints (Polygon a) where
   endPoint (Polygon _)       = error "endPoint: malformed Polygon, too few points"
   startPoint                 = endPoint  
 
-instance ExtractPoints (BoundingBox a) where
-  type Pnt (BoundingBox a) = Point2 a
-  extractPoints (BBox p1@(P2 xmin ymin) p2@(P2 xmax ymax)) = [p1,br,p2,tl]
-    where br = P2 xmax ymin
-          tl = P2 xmin ymax
-  endPoint (BBox start _) = start       -- start point is also end point   
-  startPoint              = endPoint  
-
-instance (Fractional a, Ord a) => Monoid (BoundingBox a) where
-  mempty  = BBox (P2 inf inf) (P2 (-inf) (-inf))  where inf = 1/0
-  mappend = bbProd
                 
 --------------------------------------------------------------------------------
 -- Construction
@@ -201,90 +158,4 @@ interiorAngles :: (a ~ Scalar a, Floating a, Real a,
                => Polygon a -> [Radian]
 interiorAngles (Polygon ps) = windowedMap3c intAng ps where
   intAng a b c = interiorAngle (a .-. b) (c .-. b)
-
-
---------------------------------------------------------------------------------
--- Bounding box
-
-
--- | Calculate the bounding box of a polygon.
-boundingBox :: Ord a => Polygon a -> BoundingBox a
-boundingBox (Polygon ps) = bounds ps
-
-
-bounds :: Ord a => [Point2 a] -> BoundingBox a
-bounds []     = error $ "Polygon.bounds - empty list"
-bounds (p:ps) = uncurry BBox $ foldr fn (p,p) ps
-  where
-    fn (P2 x y) (P2 xmin ymin, P2 xmax ymax) = 
-       (P2 (min x xmin) (min y ymin), P2 (max x xmax) (max y ymax))
-
-
-bbProd :: Ord a => BoundingBox a -> BoundingBox a -> BoundingBox a
-bbProd (BBox (P2 xmin1 ymin1) (P2 xmax1 ymax1))
-       (BBox (P2 xmin2 ymin2) (P2 xmax2 ymax2))
-  = BBox (P2 (min xmin1 xmin2) (min ymin1 ymin2)) 
-         (P2 (max xmax1 xmax2) (max ymax1 ymax2))
-
-
-
-within :: Ord a => Point2 a -> BoundingBox a -> Bool
-within (P2 x y) (BBox (P2 xmin ymin) (P2 xmax ymax)) = 
-   x >= xmin && x <= xmax && y >= ymin && y <= ymax
-
-
-width :: Num a => BoundingBox a -> a
-width (BBox (P2 xmin _) (P2 xmax _)) = xmin + (xmax-xmin)
-
-
-height :: Num a => BoundingBox a -> a
-height (BBox (P2 _ ymin) (P2 _ ymax)) = ymin + (ymax-ymin)
-
-
--- | Extract the opposite corners (tl,br) of a bounding box.
-topLeftBottomRight :: BoundingBox a -> (Point2 a,Point2 a)
-topLeftBottomRight (BBox (P2 xmin ymin) (P2 xmax ymax)) = 
-  (P2 xmin ymax, P2 xmax ymin) 
-
--- | bl of bounding box.
-bottomLeft  :: BoundingBox a -> Point2 a
-bottomLeft  = bbBottomLeft
-
--- | br of bounding box.
-bottomRight :: BoundingBox a -> Point2 a
-bottomRight (BBox (P2 _ y) (P2 x _)) = P2 x y
-
--- | tl of bounding box.
-topLeft     :: BoundingBox a -> Point2 a
-topLeft (BBox (P2 x _) (P2 _ y))     = P2 x y
- 
--- | tr of bounding box.
-topRight    :: BoundingBox a -> Point2 a
-topRight    = bbTopRight
-
-
-
--- center of the top of a bounding box (aka North).
-center :: Fractional a => BoundingBox a -> Point2 a
-center (BBox (P2 xmin ymin) (P2 xmax ymax)) = 
-    P2 (xmin + (0.5*(xmax-xmin))) (ymin + (0.5*(ymax-ymin))) 
-
-
--- center of the top of a bounding box (aka North).
-centerTop :: Fractional a => BoundingBox a -> Point2 a
-centerTop (BBox (P2 xmin _) (P2 xmax ymax)) = P2 (xmin + 0.5*(xmax-xmin)) ymax
-
--- center of the bottom of a bounding box (aka South).
-centerBottom :: Fractional a => BoundingBox a -> Point2 a
-centerBottom (BBox (P2 xmin ymin) (P2 xmax _)) = P2 (xmin + 0.5*(xmax-xmin)) ymin
-
-
--- center of the left side of a bounding box (aka West).
-leftCenter :: Fractional a => BoundingBox a -> Point2 a
-leftCenter (BBox (P2 xmin ymin) (P2 _ ymax)) = P2 xmin (ymin + 0.5*(ymax-ymin))
-
-
--- center of the right side of a bounding box (aka East).
-rightCenter :: Fractional a => BoundingBox a -> Point2 a
-rightCenter (BBox (P2 _ ymin) (P2 xmax ymax)) = P2 xmax (ymin + 0.5*(ymax-ymin))
 

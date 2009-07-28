@@ -17,11 +17,11 @@
 
 module Wumpus.Drawing.Grid where
 
+import Wumpus.Core.BoundingBox
 import Wumpus.Core.Fun
 import Wumpus.Core.Geometric
 import Wumpus.Core.Line
 import Wumpus.Core.Point
-import Wumpus.Core.Polygon
 import Wumpus.Core.Vector
 
 import Wumpus.Drawing.Basic

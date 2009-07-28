@@ -19,10 +19,11 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base < 5, vector-space, monadLib, dlist
+  build-depends:      base < 5, containers, vector-space, monadLib, dlist
 
   
   exposed-modules:
+    Wumpus.Core.BoundingBox,
     Wumpus.Core.Colour,
     Wumpus.Core.Curve,
     Wumpus.Core.Frame,

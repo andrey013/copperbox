@@ -19,6 +19,7 @@
 
 module Wumpus.Drawing.Label where
 
+import Wumpus.Core.BoundingBox
 import Wumpus.Core.Point
 import Wumpus.Core.Polygon
 

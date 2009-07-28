@@ -21,6 +21,7 @@
 
 module Wumpus.Drawing.Basic where
 
+import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Curve
 import Wumpus.Core.Fun
@@ -113,20 +114,20 @@ composePics bbDif pic base = Picture $
 
 
 below :: Picture -> Picture -> Picture
-below = composePics (\a b -> centerBottom b .-. centerTop a)
+below = composePics (\a b -> south b .-. north a)
 
 above :: Picture -> Picture -> Picture
-above = composePics (\a b -> centerTop b .-. centerBottom a)
+above = composePics (\a b -> north b .-. south a)
 
 -- Note composePics composes @a@ wrt @b@,  here we need 
 -- to compose @b@ wrt @a@.
 (<+>) :: Picture -> Picture -> Picture
-(<+>) = flip $ composePics (\a b -> rightCenter b .-. leftCenter a)
+(<+>) = flip $ composePics (\a b -> east b .-. west a)
 
 -- Note composePics composes @a@ wrt @b@,  here we need 
 -- to compose @b@ wrt @a@.
 (</>) :: Picture -> Picture -> Picture
-(</>) = flip $ composePics (\a b -> centerBottom b .-. centerTop a)
+(</>) = flip $ composePics (\a b -> south b .-. north a)
 
 
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -10,8 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Path - currently just a (not very pleasing) experiment to make paths 
--- with /function composition/.
+-- Paths 
 --
 --------------------------------------------------------------------------------
 
@@ -24,13 +24,39 @@ import Wumpus.Core.Geometric
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 
-import Prelude hiding ( abs )
+import qualified Data.Foldable as F
+import Data.Sequence
 
-data Path = Path 
+
+-- | Unlike PGF/TikZ for instance (and PostScript itself), we don\'t 
+-- have MoveTo gaps in the path. 
+
+data Path a = Path { 
+       pathStart  :: Point2 a,
+       pathEnd    :: Point2 a,
+       pathBody   :: Seq (PathSegment a)
+    }                    
+
+type DPath = Path Double
 
 data PathSegment a = PLine (LineSegment Point2 a)
-                   | PCurve  (Curve a)
+                   | PCurve (Curve a)
   deriving (Eq,Show)
 
+newPath :: Point2 a -> Path a
+newPath p = Path p p empty
 
+curveTo :: Path a -> (Point2 a -> Curve a) -> Path a
+curveTo (Path s e ps) cf = Path s (endPoint c) (ps |> PCurve c)
+  where c = cf e
 
+lineTo :: Path a -> (Point2 a -> LineSegment Point2 a) -> Path a
+lineTo (Path s e ps) lf = Path s (endPoint l) (ps |> PLine l)
+  where l = lf e
+
+-- temporary...
+unPath :: Path a -> [Either (LineSegment Point2 a) (Curve a)]
+unPath (Path _ _ ps) = F.foldr fn [] ps
+  where
+    fn (PLine l)  xs = Left l : xs
+    fn (PCurve c) xs = Right c : xs 
