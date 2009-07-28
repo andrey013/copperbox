@@ -90,7 +90,7 @@ instance Pointwise (Curve a) where
   pointwise f (Curve p0 p1 p2 p3) = Curve (f p0) (f p1) (f p2) (f p3)
 
 
-instance ExtractPoints (Curve a) where
+instance HasPoints (Curve a) where
   type Pnt (Curve a) = Point2 a
   extractPoints (Curve p0 p1 p2 p3) = [p0,p1,p2,p3]
   endPoint (Curve _ _ _ p3)         = p3
@@ -107,7 +107,7 @@ instance Converse (Curve a) where
 -- | Create a tilde (sinusodial) curve about the horizontal plane.
 
 tildeCurve :: (Floating a, AffineSpace a, Converse (Vec2 a)) 
-           => a -> Co2 a (Curve a)
+           => a -> (Point2 a -> Curve a)
 tildeCurve w = \pt -> let endpt = pt .+^ hvec w
                       in Curve pt (pt .+^ v) (endpt .+^ converse v) endpt
   where 

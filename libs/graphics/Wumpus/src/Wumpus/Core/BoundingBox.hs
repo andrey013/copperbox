@@ -25,15 +25,7 @@ module Wumpus.Core.BoundingBox
     BoundingBox(..)
   , DBoundingBox
 
-
-  -- * Predicates
-  , simplePolygon
-  , concavePolygon
-
   -- * Operations
-  , interiorAngles
-
-  -- * Bounding box
   , boundingBox
   , bounds
   , within
@@ -71,7 +63,7 @@ data BoundingBox a = BBox { bbBottomLeft :: Point2 a, bbTopRight :: Point2 a }
 type DBoundingBox = BoundingBox Double
 
 
-instance ExtractPoints (BoundingBox a) where
+instance HasPoints (BoundingBox a) where
   type Pnt (BoundingBox a) = Point2 a
   extractPoints (BBox p1@(P2 xmin ymin) p2@(P2 xmax ymax)) = [p1,br,p2,tl]
     where br = P2 xmax ymin
@@ -88,12 +80,16 @@ instance (Fractional a, Ord a) => Monoid (BoundingBox a) where
 
 -- | Calculate the bounding box of a polygon.
 boundingBox :: Ord a => Polygon a -> BoundingBox a
-boundingBox (Polygon ps) = bounds ps
+boundingBox (Polygon ps) = bounds' ps
 
 
-bounds :: Ord a => [Point2 a] -> BoundingBox a
-bounds []     = error $ "Polygon.bounds - empty list"
-bounds (p:ps) = uncurry BBox $ foldr fn (p,p) ps
+bounds :: (HasPoints t, Ord a, Pnt t ~ Point2 a) 
+       => t -> BoundingBox a
+bounds = bounds' . extractPoints
+
+bounds' :: Ord a => [Point2 a] -> BoundingBox a
+bounds' []     = error $ "Polygon.bounds' - empty list"
+bounds' (p:ps) = uncurry BBox $ foldr fn (p,p) ps
   where
     fn (P2 x y) (P2 xmin ymin, P2 xmax ymax) = 
        (P2 (min x xmin) (min y ymin), P2 (max x xmax) (max y ymax))

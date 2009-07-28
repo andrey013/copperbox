@@ -110,7 +110,7 @@ instance Pointwise (PolyLine Point2 a) where
   pointwise f (PolyLine ps) = PolyLine (map f ps)
 
 
-instance ExtractPoints (LineSegment Point2 a) where
+instance HasPoints (LineSegment Point2 a) where
   type Pnt (LineSegment Point2 a) = Point2 a
   extractPoints (LS p p') = [p,p']
   endPoint (LS _ p')      = p'

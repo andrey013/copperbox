@@ -72,7 +72,7 @@ instance Pointwise (Polygon a) where
   pointwise f (Polygon xs) = Polygon $ map f xs
 
 
-instance ExtractPoints (Polygon a) where
+instance HasPoints (Polygon a) where
   type Pnt (Polygon a) = Point2 a
   extractPoints (Polygon xs) = xs
   endPoint (Polygon (x:_))   = x        -- start point is also end point   
@@ -86,7 +86,7 @@ instance ExtractPoints (Polygon a) where
 
 -- | Create a regular polygon with @n@ sides and /radius/ @r@.
 regularPolygon :: (Floating a, Real a, AffineSpace a)
-               => Int -> a -> Co2 a (Polygon a)
+               => Int -> a -> (Point2 a -> Polygon a)
 regularPolygon n r = Polygon . pf
   where 
     pf = \(P2 x y) -> map (translate x y) 
@@ -98,7 +98,7 @@ regularPolygon n r = Polygon . pf
 -- functional to successively transform the current point.
 
 -- | Create a square with bottom-left corner @p@ and side-length @d@.
-square :: (Num a, AffineSpace a) => a -> Co2 a (Polygon a)
+square :: (Num a, AffineSpace a) => a -> (Point2 a -> Polygon a)
 square d = Polygon . iter [id,f2,f3,f4] where
   f2 = (.+^ hvec d)
   f3 = (.+^ vvec d)
@@ -107,7 +107,7 @@ square d = Polygon . iter [id,f2,f3,f4] where
 
 -- | Create a rectangle with bottom-left corner @p@ and width @w@ and
 -- height @h@.
-rectangle :: (Num a, AffineSpace a) => a -> a -> Co2 a (Polygon a)
+rectangle :: (Num a, AffineSpace a) => a -> a -> (Point2 a -> Polygon a)
 rectangle w h = Polygon . iter [id,f2,f3,f4] where
   f2 = (.+^ hvec w)
   f3 = (.+^ vvec h)
@@ -117,7 +117,7 @@ rectangle w h = Polygon . iter [id,f2,f3,f4] where
 -- | Create an isosceles rectangle with bottom-left corner @p@, the base 
 -- in on the horizontal plane with width @bw@. Height is @h@.
 isoscelesTriangle :: (Fractional a, AffineSpace a) 
-                  => a -> a -> Co2 a (Polygon a)
+                  => a -> a -> (Point2 a -> Polygon a)
 isoscelesTriangle bw h = Polygon . sequence [id,f2,f3] where
   f2 = (.+^ hvec bw)
   f3 = (.+^ V2 (bw/2) h)

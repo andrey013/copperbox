@@ -26,7 +26,7 @@ module Wumpus.Core.Geometric
     Congruent(..)
   , Converse(..)
 
-  , ExtractPoints(..)
+  , HasPoints(..)
   
   -- * Functions
   , midpoint
@@ -49,7 +49,7 @@ class Converse a where
 
 
 -- | Extract points from a polygon, polyline etc..
-class ExtractPoints t where
+class HasPoints t where
   type Pnt t :: *
   extractPoints :: t -> [Pnt t]
   endPoint      :: t -> Pnt t
@@ -57,7 +57,7 @@ class ExtractPoints t where
 
 
 
-instance ExtractPoints (t a) => ExtractPoints [t a] where
+instance HasPoints (t a) => HasPoints [t a] where
   type Pnt [t a] = Pnt (t a)
   extractPoints = concatMap extractPoints 
   endPoint = last . extractPoints

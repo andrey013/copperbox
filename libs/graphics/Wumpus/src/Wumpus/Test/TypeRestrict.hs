@@ -95,7 +95,7 @@ segmentLengthD = segmentLength
 --------------------------------------------------------------------------------
 -- Wumpus.Core.Polygon
 
-regularPolygonD :: Int -> Double -> Co2 Double DPolygon
+regularPolygonD :: Int -> Double -> (DPoint2 -> DPolygon)
 regularPolygonD = regularPolygon
 
 

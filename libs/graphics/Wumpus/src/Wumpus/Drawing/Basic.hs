@@ -25,7 +25,6 @@ import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Curve
 import Wumpus.Core.Fun
-import Wumpus.Core.Geometric
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
@@ -87,7 +86,7 @@ picColour c pic = Picture $
 
 picLines :: [DPoint2 -> DLineSegment2] -> Picture
 picLines xs = Picture $ \pt -> 
-    (mapM_ drawLine $ sequence xs pt, bounds . extractPoints $ sequence xs pt)
+    (mapM_ drawLine $ sequence xs pt, bounds $ sequence xs pt)
 
 
 -- | Repeat a picture @n@ times, at each iteration displace by the 
@@ -295,7 +294,7 @@ dotX = picLines [ls1,ls2] where
 dotAsterisk :: Picture
 dotAsterisk = Picture $ \(P2 x y) -> 
     let ls =  map (translate x y) $ circular (replicate 5 $ ls1)
-    in (mapM_ drawLine ls, bounds . extractPoints $ ls)
+    in (mapM_ drawLine ls, bounds $ ls)
   where
    ls1 = vline 2 zeroPt
 
