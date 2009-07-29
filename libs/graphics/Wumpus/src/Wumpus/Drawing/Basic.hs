@@ -147,6 +147,7 @@ newtype Picture2 = Picture2 {
 
 
 infixr 6 <++>
+infixr 5 <//>
 
 (<++>) :: Picture2 -> Picture2 -> Picture2
 picL <++> picR = Picture2 $ \frm -> 
@@ -157,9 +158,33 @@ picL <++> picR = Picture2 $ \frm ->
     in (cmdl >> cmdr, bbl `mappend` bbr) 
 
 
+(<//>) :: Picture2 -> Picture2 -> Picture2
+picT <//> picB = Picture2 $ \frm -> 
+    let (cmdt,bbt) = (getPicture2 picT) frm
+        (_,bbtemp) = (getPicture2 picB) frm
+        vdiff      = south bbt .-. north bbtemp
+        (cmdb,bbb) = (getPicture2 picB) (displaceOrigin vdiff frm)
+    in (cmdt >> cmdb, bbt `mappend` bbb) 
+
+
+centered2 :: Picture2 -> Picture2 -> Picture2
+picT `centered2` picB = Picture2 $ \frm -> 
+    let (cmdt,bbt) = (getPicture2 picT) frm
+        (_,bbtemp) = (getPicture2 picB) frm
+        vdiff      = center bbt .-. center bbtemp
+        (cmdb,bbb) = (getPicture2 picB) (displaceOrigin vdiff frm)
+    in (cmdt >> cmdb, bbt `mappend` bbb) 
+
 
 picEmpty2 :: Picture2
 picEmpty2 = Picture2 $ \frm -> let o = origin frm in (return (), BBox o o) 
+
+
+hcat2 :: [Picture2] -> Picture2
+hcat2 = foldl' (<++>) picEmpty2
+
+vcat2 :: [Picture2] -> Picture2
+vcat2 = foldl' (<//>) picEmpty2
 
 
 picPolygon2 :: DPolygon -> Picture2
@@ -167,6 +192,12 @@ picPolygon2 p = Picture2 $ \frm ->
   let p' = withinFrame frm p in (strokePolygon p', boundingBox p')
 
 
+displace :: Double -> Double -> Picture2 -> Picture2
+displace x y p = Picture2 $ \frm -> (getPicture2 p) $ displaceOrigin (V2 x y) frm
+
+picColour2 :: DRGB -> Picture2 -> Picture2
+picColour2 c pic = Picture2 $ \frm ->
+    let (mf,bb) = (getPicture2 pic) frm in (withRgbColour c mf,bb)
 
 
 psDraw2 :: Picture2 -> PostScript

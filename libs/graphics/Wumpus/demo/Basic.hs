@@ -59,10 +59,16 @@ demo3 = writePS "basic3.ps" (psDraw $ dots `place` (P2 50 300) )
                 </> dotTriangle </> dotDiamond
 
 demo4 :: IO ()
-demo4 = writePS "basic4.ps" (psDraw2 $ squares)
+demo4 = writePS "basic4.ps" (psDraw2 $ displace 10 300 squares)
   where
     squares = picPolygon2 (square 10 zeroPt) 
          <++> picPolygon2 (square 20 zeroPt)
          <++> picPolygon2 (square 30 zeroPt)
          <++> picPolygon2 (square 40 zeroPt)
          <++> picPolygon2 (square 50 zeroPt)
+         <//> innerSquares
+         <//> cattySquares
+    innerSquares = (picColour2 blueViolet $ picPolygon2 (square 50 zeroPt))
+       `centered2` (picColour2 darkSeaGreen $ picPolygon2 (square 30 zeroPt))
+    
+    cattySquares = hcat2 $ replicate 8 (picPolygon2 $ square 20 zeroPt)
