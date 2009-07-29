@@ -51,95 +51,6 @@ instance Pointwise Circle where
   type Pt Circle = DPoint2
   pointwise f (Circle o r) = Circle (f o) r
 
-{-
-
---------------------------------------------------------------------------------
--- Picture data type - composing PostScript drawings
-
--- Acknowledgment - the Picture data type is modelled directly on the 
--- Picture/Image types in Antony Courtney's Haven.
-
-newtype Picture = Picture { 
-       getPicture   :: DPoint2 -> (WumpusM (), DBoundingBox)
-    }
-
-
-psDraw :: Picture -> PostScript
-psDraw pic = runWumpus env0 (fst $ (getPicture pic) zeroPt)
-
-
-place :: Picture -> DPoint2 -> Picture
-place pic p2 = Picture $ \_ -> (getPicture pic) p2
-
-picEmpty :: Picture
-picEmpty = Picture $ \pt -> (return (), BBox pt pt) 
- 
-picPolygon :: (DPoint2 -> DPolygon) -> Picture
-picPolygon pf = Picture $ \pt -> (strokePolygon $ pf pt, boundingBox $ pf pt) 
-
-
-picColour :: DRGB -> Picture -> Picture
-picColour c pic = Picture $ 
-    \pt -> let (mf,bb) = (getPicture pic) pt in (withRgbColour c mf,bb)
-
-picLines :: [DPoint2 -> DLineSegment2] -> Picture
-picLines xs = Picture $ \pt -> 
-    (mapM_ drawLine $ sequence xs pt, bounds $ sequence xs pt)
-
-
--- | Repeat a picture @n@ times, at each iteration displace by the 
--- vector @disp@.
-multiput :: Int -> DVec2 -> Picture -> Picture
-multiput n disp pic = Picture $ \pt ->
-    foldl' fn (return(),mempty) (mkPoints pt)
-  where
-    mkPoints pt = scanl (.+^) pt (replicate n disp)
-    fn (mf,bb) pt = prod (mf >>) (bb `mappend`) $ (getPicture pic) pt
-
-
-type BBTransf a = BoundingBox a -> BoundingBox a -> Vec2 a
-
-
-composePics :: BBTransf Double -> Picture -> Picture -> Picture
-composePics bbDif pic base = Picture $ 
-    \pt -> let (mfb,bxb) = (getPicture base) pt
-               (_,bb)    = (getPicture pic) pt
-               v1        = bbDif bb bxb
-               (mfa,bxa) = (getPicture pic) $ pt .+^ v1 
-           in (mfb >> mfa, bxb `mappend` bxa) 
-
-
-
-below :: Picture -> Picture -> Picture
-below = composePics (\a b -> south b .-. north a)
-
-above :: Picture -> Picture -> Picture
-above = composePics (\a b -> north b .-. south a)
-
--- Note composePics composes @a@ wrt @b@,  here we need 
--- to compose @b@ wrt @a@.
-(<+>) :: Picture -> Picture -> Picture
-(<+>) = flip $ composePics (\a b -> east b .-. west a)
-
--- Note composePics composes @a@ wrt @b@,  here we need 
--- to compose @b@ wrt @a@.
-(</>) :: Picture -> Picture -> Picture
-(</>) = flip $ composePics (\a b -> south b .-. north a)
-
-
-
--- center picture a inside picture b
-centeredInside :: Picture -> Picture -> Picture
-centeredInside = composePics (\a b -> center b .-. center a)
-
-
-hcat :: [Picture] -> Picture
-hcat = foldl' (<+>) picEmpty
-
-vcat :: [Picture] -> Picture
-vcat = foldl' (</>) picEmpty
-
--}
 
 --------------------------------------------------------------------------------
 
@@ -170,13 +81,21 @@ picT <//> picB = Picture $ \frm ->
 
 
 centered :: Picture -> Picture -> Picture
-picT `centered` picB = Picture $ \frm -> 
-    let (cmdt,bbt) = (getPicture picT) frm
-        (_,bbtemp) = (getPicture picB) frm
-        vdiff      = center bbt .-. center bbtemp
-        (cmdb,bbb) = (getPicture picB) (displaceOrigin vdiff frm)
-    in (cmdt >> cmdb, bbt `mappend` bbb) 
+centered pic1 pic2 = Picture $ \frm -> 
+    let (cmd1,bb1) = (getPicture pic1) frm
+        (_,bbtemp) = (getPicture pic2) frm
+        vdiff      = center bb1 .-. center bbtemp
+        (cmd2,bb2) = (getPicture pic2) (displaceOrigin vdiff frm)
+    in (cmd1 >> cmd2, bb1 `mappend` bb2) 
 
+
+-- | A union of two pictures does just groups the pictures in a 
+-- common bounding box. It does not move either picture.
+picUnion :: Picture -> Picture -> Picture 
+picUnion pic1 pic2 = Picture $ \frm -> 
+    let (cmd1,bb1) = (getPicture pic1) frm
+        (cmd2,bb2) = (getPicture pic2) frm
+    in (cmd1 >> cmd2, bb1 `mappend` bb2) 
 
 picEmpty :: Picture
 picEmpty = Picture $ \frm -> let o = origin frm in (return (), BBox o o) 
@@ -189,6 +108,27 @@ hcat = foldl' (<++>) picEmpty
 vcat :: [Picture] -> Picture
 vcat = foldl' (<//>) picEmpty
 
+hcatSep :: Double -> [Picture] -> Picture 
+hcatSep _    []     = picEmpty
+hcatSep xsep (x:xs) = foldl' fn x xs
+  where
+    fn acc a = acc <++> sep <++> a
+    sep      = blankPicture xsep 0 
+
+
+
+vcatSep :: Double -> [Picture] -> Picture 
+vcatSep _    []      = picEmpty
+vcatSep ysep (x:xs)  = foldl' fn x xs
+  where
+    fn acc a = acc <//> sep <//> a
+    sep      = blankPicture 0 ysep
+
+
+-- | Create a blank (empty) Picture of width @w@ and height @h@.
+blankPicture :: Double -> Double -> Picture
+blankPicture w h = Picture $ \frm -> let rect = withinFrame frm (rectangle w h zeroPt) 
+                                     in (return (), boundingBox rect)
 
 -- | Repeat a picture @n@ times, at each iteration displace by the 
 -- vector @disp@.
@@ -217,6 +157,12 @@ picLines xs = Picture $ \frm ->
 
 displace :: Double -> Double -> Picture -> Picture
 displace x y p = Picture $ \frm -> (getPicture p) $ displaceOrigin (V2 x y) frm
+
+
+vdisplace :: DVec2 -> Picture -> Picture
+vdisplace v p = Picture $ \frm -> (getPicture p) $ displaceOrigin v frm
+
+
 
 picColour :: DRGB -> Picture -> Picture
 picColour c pic = Picture $ \frm ->

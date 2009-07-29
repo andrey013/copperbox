@@ -36,6 +36,8 @@ module Wumpus.Core.Fun
 
   -- * Functionals
   , iter
+  , paraR
+  , paraL
   , unfoldrMap
   , unfoldlMap
   , intermap
@@ -145,6 +147,21 @@ med3 a b c = if c <= x then x else if c > y then y else c
 iter :: [a -> a] -> a -> [a]
 iter []     _ = []
 iter (f:fs) a = let a' = f a in a' : iter fs a' 
+
+
+
+-- | paramorphism (generalizes cata)
+paraR :: (a -> ([a], b) -> b) -> b -> [a] -> b
+paraR phi b0 = step b0
+  where step b []     = b
+        step b (x:xs) = phi x (xs, step b xs)
+
+
+-- | paramorphism (generalizes cata)
+paraL :: (([a], b) -> a -> b) -> b -> [a] -> b
+paraL phi b0 = step b0
+  where step b []     = b
+        step b (x:xs) = step (phi (xs,b) x) xs
 
 
 -- unfoldrMap is the unfold analogue of accumMapR
