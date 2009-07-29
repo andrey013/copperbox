@@ -21,6 +21,7 @@ module Wumpus.Drawing.Basic where
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Curve
+import Wumpus.Core.Frame
 import Wumpus.Core.Fun
 import Wumpus.Core.Line
 import Wumpus.Core.Point
@@ -54,8 +55,8 @@ instance Pointwise Circle where
 --------------------------------------------------------------------------------
 -- Picture data type - composing PostScript drawings
 
--- Acknowledgment - the Image data type is modelled diratcly after the 
--- Image type in Antony Courtney's Haven.
+-- Acknowledgment - the Picture data type is modelled directly on the 
+-- Picture/Image types in Antony Courtney's Haven.
 
 newtype Picture = Picture { 
        getPicture   :: DPoint2 -> (WumpusM (), DBoundingBox)
@@ -140,6 +141,40 @@ vcat = foldl' (</>) picEmpty
 
 --------------------------------------------------------------------------------
 
+newtype Picture2 = Picture2 { 
+       getPicture2   :: DFrame2 -> (WumpusM (), DBoundingBox)
+    }
+
+
+infixr 6 <++>
+
+(<++>) :: Picture2 -> Picture2 -> Picture2
+picL <++> picR = Picture2 $ \frm -> 
+    let (cmdl,bbl) = (getPicture2 picL) frm
+        (_,bbtemp) = (getPicture2 picR) frm
+        vdiff      = east bbl .-. west bbtemp
+        (cmdr,bbr) = (getPicture2 picR) (displaceOrigin vdiff frm)
+    in (cmdl >> cmdr, bbl `mappend` bbr) 
+
+
+
+picEmpty2 :: Picture2
+picEmpty2 = Picture2 $ \frm -> let o = origin frm in (return (), BBox o o) 
+
+
+picPolygon2 :: DPolygon -> Picture2
+picPolygon2 p = Picture2 $ \frm -> 
+  let p' = withinFrame frm p in (strokePolygon p', boundingBox p')
+
+
+
+
+psDraw2 :: Picture2 -> PostScript
+psDraw2 pic = runWumpus env0 (fst $ (getPicture2 pic) (ortho zeroPt))
+
+
+--------------------------------------------------------------------------------
+
 -- | Generate a list of points [pt, f pt, f (f pt), ...] while the 
 -- predicate @p@ holds. 
 genPoints :: (Point2 a -> Bool) -> (Point2 a -> Point2 a) -> Point2 a -> [Point2 a]
@@ -161,7 +196,7 @@ transOrigin z = \(P2 x y) -> pointwise (translate x y) z
 --------------------------------------------------------------------------------
 
 
-data PathStyle = Stroke | Fill | Clip
+data PathCmd = Stroke | Fill | Clip
   deriving (Eq,Show) 
 
 -- can only stroke an /open/ path... (fill has odd behaviour)
@@ -172,12 +207,12 @@ strokeOpenPathSkel m = do
   ps_stroke
   return a
 
-closedPathSkel :: PathStyle -> WumpusM a -> WumpusM a
-closedPathSkel pstyle m = do
+closedPathSkel :: PathCmd -> WumpusM a -> WumpusM a
+closedPathSkel pcmd m = do
     ps_newpath
     a <- m
     ps_closepath
-    drawCmd pstyle
+    drawCmd pcmd
     return a
   where
     drawCmd Stroke = ps_stroke
@@ -204,22 +239,23 @@ drawPoint :: DPoint2 -> WumpusM ()
 drawPoint = strokePolygon . unitSquare
 
 
--- to do - differentiate between draw / stroke / fill / clip
-drawPolygon :: DPolygon -> WumpusM ()
-drawPolygon = strokePolygon
-
 
 strokePolygon :: DPolygon -> WumpusM ()
 strokePolygon (Polygon [])            = return ()
 strokePolygon (Polygon ((P2 x y):ps)) =
     strokePathSkel $ ps_moveto x y >> mapM_ (\(P2 a b) -> ps_lineto a b) ps 
 
+fillPolygon :: DPolygon -> WumpusM ()
+fillPolygon (Polygon [])            = return ()
+fillPolygon (Polygon ((P2 x y):ps)) =
+    fillPathSkel $ ps_moveto x y >> mapM_ (\(P2 a b) -> ps_lineto a b) ps 
+
 
 clipPolygon :: DPolygon -> WumpusM a -> WumpusM a
 clipPolygon (Polygon [])            mf = mf
-clipPolygon (Polygon ((P2 x y):ps)) mf = do 
-    clipPathSkel $ ps_moveto x y >> mapM_ (\(P2 a b) -> ps_lineto a b) ps 
-    mf
+clipPolygon (Polygon ((P2 x y):ps)) mf = clip >> mf 
+  where
+    clip = clipPathSkel $ ps_moveto x y >> mapM_ (\(P2 a b) -> ps_lineto a b) ps
 
 
 

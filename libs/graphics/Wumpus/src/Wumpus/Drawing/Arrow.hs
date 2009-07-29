@@ -136,6 +136,6 @@ arrow p p' = Arrow ln tip where
 
 
 drawArrow :: DArrow -> WumpusM () 
-drawArrow (Arrow ln tip) = drawLine ln >> drawPolygon tip
+drawArrow (Arrow ln tip) = drawLine ln >> fillPolygon tip
  
 

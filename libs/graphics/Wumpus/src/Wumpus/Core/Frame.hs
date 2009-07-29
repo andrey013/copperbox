@@ -28,10 +28,12 @@ module Wumpus.Core.Frame
   -- * Operations
   , Ortho(..)
   , OrthonormalFrame(..)
+  , DisplaceOrigin(..)
 
   , inFrame
 
   , pointInWorld
+  , withinFrame
   , vectorInWorld
   , ftof
 
@@ -40,6 +42,7 @@ module Wumpus.Core.Frame
 import Wumpus.Core.Instances ()
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
+import Wumpus.Core.Pointwise
 import Wumpus.Core.Vector
 
 import Data.AffineSpace
@@ -75,15 +78,17 @@ type DFrame3 = Frame3 Double
 class Ortho fr where
   type Point fr :: *
   ortho :: Point fr -> fr
+  origin :: fr -> Point fr
 
 instance Num a => Ortho (Frame2 a) where
   type Point (Frame2 a) = Point2 a
   ortho ogin = Frame2 ogin (V2 1 0) (V2 0 1)
+  origin (Frame2 o _ _) = o
 
 instance Num a => Ortho (Frame3 a) where
   type Point (Frame3 a) = Point3 a
   ortho ogin = Frame3 ogin (V3 1 0 0) (V3 0 1 0) (V3 0 0 1)
-
+  origin (Frame3 o _ _ _) = o
 
 
 -- | Is the frame orthonormal - i.e. are all basis vectors orthogonal
@@ -101,6 +106,20 @@ instance OrthonormalFrame Frame3 where
                      && euclidianNorm xv == 1
                      && euclidianNorm yv == 1
                      && euclidianNorm zv == 1
+
+
+class DisplaceOrigin fr where
+  type Vect fr :: *
+  displaceOrigin :: Vect fr -> fr -> fr
+
+instance (Num a, AffineSpace a) => DisplaceOrigin (Frame2 a) where
+  type Vect (Frame2 a) = Vec2 a
+  displaceOrigin v (Frame2 o vx vy) = Frame2 (o.+^v) vx vy
+
+
+instance (Num a, AffineSpace a) => DisplaceOrigin (Frame3 a) where
+  type Vect (Frame3 a) = Vec3 a
+  displaceOrigin v (Frame3 o vx vy vz) = Frame3 (o.+^v) vx vy vz
 
 
 
@@ -124,6 +143,16 @@ pointInWorld :: (Num a, AffineSpace a, VectorSpace a,
                  Scalar a ~ a, a ~ Diff a)
              => Point2 a -> Frame2 a -> Point2 a
 pointInWorld (P2 x y) (Frame2 o e0 e1) = (o .+^ (x *^ e0)) .+^ (y *^ e1)
+
+
+-- pointInWorld as pointwise ...
+withinFrame :: (Num a, Pointwise (s a), VectorSpace a, AffineSpace a,
+                Pt (s a) ~ Point2 a, Scalar a ~ a) 
+            => Frame2 a -> s a -> s a
+withinFrame (Frame2 o vx vy) s = pointwise fn s
+  where
+    fn (P2 x y) = (o .+^ (x*^vx)) .+^ (y*^vy)
+
 
 vectorInWorld :: (Num a, AffineSpace a, VectorSpace a, 
                  Scalar a ~ a, a ~ Diff a)

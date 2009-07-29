@@ -28,16 +28,20 @@ import Wumpus.Core.Matrix
 import Wumpus.Core.Vector
 
 import Data.AffineSpace
--- import Data.VectorSpace
-
-
-
 
 
 instance (AffineSpace a, Num a) => AffineSpace (Point2 a) where
   type Diff (Point2 a) = Vec2 a
-  (P2 a b) .-. (P2 x y)   = V2 (a - x)  (b - y)
-  (P2 a b) .+^ (V2 vx vy) = P2 (a + vx) (b + vy)
+  (P2 a b) .-. (P2 x y)   = V2 (a-x)  (b-y)
+  (P2 a b) .+^ (V2 vx vy) = P2 (a+vx) (b+vy)
+
+
+instance (AffineSpace a, Num a) => AffineSpace (Point3 a) where
+  type Diff (Point3 a) = Vec3 a
+  (P3 a b c) .-. (P3 x y z)    = V3 (a-x)  (b-y) (c-z)
+  (P3 a b c) .+^ (V3 vx vy vz) = P3 (a+vx) (b+vy) (c+vz)
+
+
 
 --------------------------------------------------------------------------------
 -- Matrix / Vector multiplication (homogeneous coordinates)
