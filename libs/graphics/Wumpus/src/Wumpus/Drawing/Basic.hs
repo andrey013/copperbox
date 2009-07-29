@@ -51,6 +51,7 @@ instance Pointwise Circle where
   type Pt Circle = DPoint2
   pointwise f (Circle o r) = Circle (f o) r
 
+{-
 
 --------------------------------------------------------------------------------
 -- Picture data type - composing PostScript drawings
@@ -138,70 +139,92 @@ hcat = foldl' (<+>) picEmpty
 vcat :: [Picture] -> Picture
 vcat = foldl' (</>) picEmpty
 
+-}
 
 --------------------------------------------------------------------------------
 
-newtype Picture2 = Picture2 { 
-       getPicture2   :: DFrame2 -> (WumpusM (), DBoundingBox)
+newtype Picture = Picture { 
+       getPicture   :: DFrame2 -> (WumpusM (), DBoundingBox)
     }
 
 
 infixr 6 <++>
 infixr 5 <//>
 
-(<++>) :: Picture2 -> Picture2 -> Picture2
-picL <++> picR = Picture2 $ \frm -> 
-    let (cmdl,bbl) = (getPicture2 picL) frm
-        (_,bbtemp) = (getPicture2 picR) frm
+(<++>) :: Picture -> Picture -> Picture
+picL <++> picR = Picture $ \frm -> 
+    let (cmdl,bbl) = (getPicture picL) frm
+        (_,bbtemp) = (getPicture picR) frm
         vdiff      = east bbl .-. west bbtemp
-        (cmdr,bbr) = (getPicture2 picR) (displaceOrigin vdiff frm)
+        (cmdr,bbr) = (getPicture picR) (displaceOrigin vdiff frm)
     in (cmdl >> cmdr, bbl `mappend` bbr) 
 
 
-(<//>) :: Picture2 -> Picture2 -> Picture2
-picT <//> picB = Picture2 $ \frm -> 
-    let (cmdt,bbt) = (getPicture2 picT) frm
-        (_,bbtemp) = (getPicture2 picB) frm
+(<//>) :: Picture -> Picture -> Picture
+picT <//> picB = Picture $ \frm -> 
+    let (cmdt,bbt) = (getPicture picT) frm
+        (_,bbtemp) = (getPicture picB) frm
         vdiff      = south bbt .-. north bbtemp
-        (cmdb,bbb) = (getPicture2 picB) (displaceOrigin vdiff frm)
+        (cmdb,bbb) = (getPicture picB) (displaceOrigin vdiff frm)
     in (cmdt >> cmdb, bbt `mappend` bbb) 
 
 
-centered2 :: Picture2 -> Picture2 -> Picture2
-picT `centered2` picB = Picture2 $ \frm -> 
-    let (cmdt,bbt) = (getPicture2 picT) frm
-        (_,bbtemp) = (getPicture2 picB) frm
+centered :: Picture -> Picture -> Picture
+picT `centered` picB = Picture $ \frm -> 
+    let (cmdt,bbt) = (getPicture picT) frm
+        (_,bbtemp) = (getPicture picB) frm
         vdiff      = center bbt .-. center bbtemp
-        (cmdb,bbb) = (getPicture2 picB) (displaceOrigin vdiff frm)
+        (cmdb,bbb) = (getPicture picB) (displaceOrigin vdiff frm)
     in (cmdt >> cmdb, bbt `mappend` bbb) 
 
 
-picEmpty2 :: Picture2
-picEmpty2 = Picture2 $ \frm -> let o = origin frm in (return (), BBox o o) 
+picEmpty :: Picture
+picEmpty = Picture $ \frm -> let o = origin frm in (return (), BBox o o) 
 
 
-hcat2 :: [Picture2] -> Picture2
-hcat2 = foldl' (<++>) picEmpty2
 
-vcat2 :: [Picture2] -> Picture2
-vcat2 = foldl' (<//>) picEmpty2
+hcat :: [Picture] -> Picture
+hcat = foldl' (<++>) picEmpty
+
+vcat :: [Picture] -> Picture
+vcat = foldl' (<//>) picEmpty
 
 
-picPolygon2 :: DPolygon -> Picture2
-picPolygon2 p = Picture2 $ \frm -> 
+-- | Repeat a picture @n@ times, at each iteration displace by the 
+-- vector @disp@.
+multiput :: Int -> DVec2 -> Picture -> Picture
+multiput n disp pic = Picture $ \frm ->
+    foldl' (fn frm) (return(),mempty) vecs
+  where
+    vecs :: [DVec2]
+    vecs  = scanl (+) disp (replicate (n-1) disp)
+
+    fn :: DFrame2 -> (WumpusM (), DBoundingBox) -> DVec2 -> (WumpusM (), DBoundingBox)
+    fn frm (mf,bb) (V2 x y) = 
+       prod (mf >>) (bb `mappend`) $ (getPicture $ displace x y pic) frm
+
+
+picPolygon :: DPolygon -> Picture
+picPolygon p = Picture $ \frm -> 
   let p' = withinFrame frm p in (strokePolygon p', boundingBox p')
 
 
-displace :: Double -> Double -> Picture2 -> Picture2
-displace x y p = Picture2 $ \frm -> (getPicture2 p) $ displaceOrigin (V2 x y) frm
-
-picColour2 :: DRGB -> Picture2 -> Picture2
-picColour2 c pic = Picture2 $ \frm ->
-    let (mf,bb) = (getPicture2 pic) frm in (withRgbColour c mf,bb)
+picLines :: [DLineSegment2] -> Picture
+picLines xs = Picture $ \frm -> 
+    let xs' = map (withinFrame frm) xs
+    in (mapM_ drawLine xs', bounds xs')
 
 
-psDraw2 :: Picture2 -> PostScript
-psDraw2 pic = runWumpus env0 (fst $ (getPicture2 pic) (ortho zeroPt))
+displace :: Double -> Double -> Picture -> Picture
+displace x y p = Picture $ \frm -> (getPicture p) $ displaceOrigin (V2 x y) frm
+
+picColour :: DRGB -> Picture -> Picture
+picColour c pic = Picture $ \frm ->
+    let (mf,bb) = (getPicture pic) frm in (withRgbColour c mf,bb)
+
+
+psDraw :: Picture -> PostScript
+psDraw pic = runWumpus env0 (fst $ (getPicture pic) (ortho zeroPt))
 
 
 --------------------------------------------------------------------------------
@@ -353,36 +376,43 @@ drawBezier (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) =
 
 
 dotSquare :: Picture
-dotSquare = Picture $ \pt -> 
-    let sq = square 4 pt in (strokePolygon sq, boundingBox sq)
+dotSquare = Picture $ \frm -> 
+    let sq = (withinFrame frm $ square 4 zeroPt) in (strokePolygon sq, boundingBox sq)
 
 
 dotPlus :: Picture
-dotPlus = picLines [lh,lv] where
-  lh  = translate (-2) 0 . line (hvec 4::Vec2 Double)
-  lv  = translate 0 (-2) . line (vvec 4)
+dotPlus = Picture $ \frm -> 
+    (mapM_ drawLine [lh frm,lv frm], bounds [lh frm,lv frm])
+  where
+    lh  = translate (-2) 0 . line (hvec 4::Vec2 Double) . origin
+    lv  = translate 0 (-2) . line (vvec 4) . origin
 
 
 dotX :: Picture 
-dotX = picLines [ls1,ls2] where
-  ls1 o = rotateAbout (pi/6) o $ translate 0 (-2) $ line (vvec 4 :: Vec2 Double) o
-  ls2 o = rotateAbout (5*pi/3) o $ ls1 o
+dotX = Picture $ \frm -> 
+     (mapM_ drawLine [ls1 (origin frm), ls2 (origin frm)], 
+      bounds [ls1 (origin frm), ls2 (origin frm)])
+  where
+    ls1 o = rotateAbout (pi/6) o $ translate 0 (-2) $ line (vvec 4 :: Vec2 Double) o
+    ls2 o = rotateAbout (5*pi/3) o $ ls1 o
 
 
 
 
 dotAsterisk :: Picture
-dotAsterisk = Picture $ \(P2 x y) -> 
-    let ls =  map (translate x y) $ circular (replicate 5 $ ls1)
-    in (mapM_ drawLine ls, bounds $ ls)
+dotAsterisk = Picture $ \frm -> 
+    let ls =  trans frm $ circular (replicate 5 $ ls1)
+    in (mapM_ drawLine ls, bounds ls)
   where
    ls1 = vline 2 zeroPt
+   trans (Frame2 o vx vy) xs = map (translate x y) xs where
+     (P2 x y) = (o .+^ vx) .+^ vy 
 
 
 
 polyDot :: Int -> Picture
-polyDot sides = Picture $ \pt -> 
-    let pgon = regularPolygon sides 2 pt in (strokePolygon pgon, boundingBox pgon)
+polyDot sides = Picture $ \frm -> 
+    let pgon = regularPolygon sides 2 (origin frm) in (strokePolygon pgon, boundingBox pgon)
 
 
 dotTriangle :: Picture

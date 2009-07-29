@@ -2,6 +2,7 @@
 
 module Label where
 
+import Wumpus.Core.Frame
 import Wumpus.Core.Fun
 import Wumpus.Core.Line
 import Wumpus.Core.Point
@@ -18,7 +19,7 @@ demo1 = writePS "label1.ps" $ runWumpus env0 $ drawing1 where
                 { ps_translate 60 380 
                 ; withRgbColour seaGreen1 $ 
                       drawLine $ LS (P2 0 0) (P2 50 40) 
-                ; fst $ getPicture (picLabel "text1" 40 10) $ (P2 0 0)
+                ; fst $ getPicture (picLabel "text1" 40 10) $ ortho (P2 0 0)
                 --
                 ; ps_translate 0 100
                 ; withRgbColour seaGreen4 $ 
@@ -27,6 +28,6 @@ demo1 = writePS "label1.ps" $ runWumpus env0 $ drawing1 where
 
 
 labelGrid :: WumpusM ()
-labelGrid = mapM_ (\lbl -> fst $ (getPicture lbl) zeroPt) ls where
+labelGrid = mapM_ (\lbl -> fst $ (getPicture lbl) $ ortho zeroPt) ls where
   ls = zipWith fn [1..10] (steps 30 300.0)
-  fn i x = picLabel (show (i,0)) 20 10 `place` (P2 x 0)
+  fn i x = displace x 0 $ picLabel (show (i,0)) 20 10

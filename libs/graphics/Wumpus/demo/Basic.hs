@@ -27,48 +27,47 @@ demo1 = writePS "basic1.ps" $ runWumpus env0 $ drawing1 where
                 ; drawDisk $ disk (10,50) 2
                 -- Properties currently not implemented ...
                 -- lineColour blueViolet $ lineWidth 1 $ fillColour burlywood
-                ; strokePolygon $ diamond 30 20 (P2 80 50) 
+                ; strokePolygon $ diamond 30 20 (P2 80 50)
        --         ; withRgbColour blueViolet $ drawPolygon $ dotDiamond (P2 180 50)
                 }
 
 demo2 :: IO ()
-demo2 = writePS "basic2.ps" (psDraw $ (pic1 <+> pic2) `place` (P2 50 300) )
+demo2 = writePS "basic2.ps" (psDraw $ displace 50 300 (pic1 <++> pic2) )
 
 pic1 :: Picture
--- pic1 = (dia4 `below` dia3 `below` dia2 `below` dia1 )
 pic1 = vcat [dia1,dia2,dia3,dia4]
   where
-    dia1 = picColour blueViolet    $ (picPolygon $ diamond 40 40)
-    dia2 = picColour darkSeaGreen  $ (picPolygon $ diamond 40 40)
-    dia3 = picColour darkSeaGreen  $ (picPolygon $ diamond 20 20)
-    dia4 = picColour darkSeaGreen  $ (picPolygon $ diamond 15 15)
+    dia1 = picColour blueViolet    $ (picPolygon $ diamond 40 40 zeroPt)
+    dia2 = picColour darkSeaGreen  $ (picPolygon $ diamond 40 40 zeroPt)
+    dia3 = picColour darkSeaGreen  $ (picPolygon $ diamond 20 20 zeroPt)
+    dia4 = picColour darkSeaGreen  $ (picPolygon $ diamond 15 15 zeroPt)
 
 
 
 
 pic2 :: Picture
-pic2 = (dia1 </> dia2)
+pic2 = (dia1 <//> dia2)
   where
-    dia1 = picColour blueViolet    $ (picPolygon $ diamond 40 40)
-    dia2 = picColour darkSeaGreen  $ (picPolygon $ diamond 30 30)
+    dia1 = picColour blueViolet    $ (picPolygon $ diamond 40 40 zeroPt)
+    dia2 = picColour darkSeaGreen  $ (picPolygon $ diamond 30 30 zeroPt)
 
 demo3 :: IO ()
-demo3 = writePS "basic3.ps" (psDraw $ dots `place` (P2 50 300) )
+demo3 = writePS "basic3.ps" (psDraw $ displace 50 300 dots)
   where
-    dots = dotX </> dotPlus </> dotAsterisk </> dotSquare </> dotPentagon
-                </> dotTriangle </> dotDiamond
+    dots = dotX <++> dotPlus <++> dotAsterisk <++> dotSquare <++> dotPentagon
+                <++> dotTriangle <++> dotDiamond
 
 demo4 :: IO ()
-demo4 = writePS "basic4.ps" (psDraw2 $ displace 10 300 squares)
+demo4 = writePS "basic4.ps" (psDraw $ displace 10 300 squares)
   where
-    squares = picPolygon2 (square 10 zeroPt) 
-         <++> picPolygon2 (square 20 zeroPt)
-         <++> picPolygon2 (square 30 zeroPt)
-         <++> picPolygon2 (square 40 zeroPt)
-         <++> picPolygon2 (square 50 zeroPt)
+    squares = picPolygon (square 10 zeroPt) 
+         <++> picPolygon (square 20 zeroPt)
+         <++> picPolygon (square 30 zeroPt)
+         <++> picPolygon (square 40 zeroPt)
+         <++> picPolygon (square 50 zeroPt)
          <//> innerSquares
          <//> cattySquares
-    innerSquares = (picColour2 blueViolet $ picPolygon2 (square 50 zeroPt))
-       `centered2` (picColour2 darkSeaGreen $ picPolygon2 (square 30 zeroPt))
+    innerSquares = (picColour blueViolet $ picPolygon (square 50 zeroPt))
+       `centered` (picColour darkSeaGreen $ picPolygon (square 30 zeroPt))
     
-    cattySquares = hcat2 $ replicate 8 (picPolygon2 $ square 20 zeroPt)
+    cattySquares = hcat $ replicate 8 (picPolygon $ square 20 zeroPt)

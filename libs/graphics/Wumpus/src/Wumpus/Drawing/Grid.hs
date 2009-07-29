@@ -18,6 +18,7 @@
 module Wumpus.Drawing.Grid where
 
 import Wumpus.Core.BoundingBox
+import Wumpus.Core.Frame
 import Wumpus.Core.Fun
 import Wumpus.Core.Line
 import Wumpus.Core.Point
@@ -29,8 +30,8 @@ import Wumpus.Drawing.Basic
 
 
 grid :: Double -> Double -> Double -> Double -> Picture
-grid xstep ystep w h = Picture $ \pt -> 
-    fork (mapM_ drawLine, bounds) (gridlines pt)
+grid xstep ystep w h = Picture $ \frm -> 
+    fork (mapM_ drawLine, bounds) (gridlines frm)
   where
     xpoints pt@(P2 x0 _) = genPoints (\(P2 x _) -> x <~= (x0+w))
                                      (\(P2 x _) -> P2 (x+xstep) 0)
@@ -41,7 +42,7 @@ grid xstep ystep w h = Picture $ \pt ->
     hlines = map (hline w) . ypoints 
     vlines = map (vline h) . xpoints
 
-    gridlines pt = hlines pt ++ vlines pt     
+    gridlines frm = let pt = withinFrame frm zeroPt in hlines pt ++ vlines pt     
 
 
 vgrid :: Num a => (Integer,Integer) -> (Integer,Integer) -> [Vec2 a]

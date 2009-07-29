@@ -20,6 +20,7 @@
 module Wumpus.Drawing.Label where
 
 import Wumpus.Core.BoundingBox
+import Wumpus.Core.Frame
 import Wumpus.Core.Point
 import Wumpus.Core.Polygon
 
@@ -41,10 +42,11 @@ import Wumpus.Drawing.PostScript
 -- saveExecRestore. 
 
 picLabel :: String -> Double -> Double -> Picture
-picLabel text w h = Picture $ \pt -> (mf pt, boundingBox $ cliprect pt)
+picLabel text w h = Picture $ \frm -> (mf frm, boundingBox $ cliprect frm)
   where
-    mf pt = saveExecRestore id $ clipPolygon (cliprect pt) $ drawLabel text pt
-    cliprect pt = (rectangle w h) pt
+    mf frm = saveExecRestore id $ clipPolygon (cliprect frm) 
+                                $ drawLabel text (origin frm)
+    cliprect frm = (rectangle w h) (origin frm)
 
 
 -- labels must be drawn wrt a start point
