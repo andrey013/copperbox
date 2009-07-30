@@ -3,6 +3,7 @@
 module Arrow where
 
 import Wumpus.Core.Curve
+import Wumpus.Core.Frame
 import Wumpus.Core.Geometric
 import Wumpus.Core.Line
 import Wumpus.Core.Point
@@ -34,7 +35,7 @@ demo1 = writePS "arrow1.ps" $ runWumpus env0 $ drawing1 where
                 ; drawArrow $ arrow (P2 0 0) (P2 40 0) 
                 ; withRgbColour dodgerBlue1 $ do
                     ps_translate 100 0
-                    arrowhead1 (P2 0 0)  (P2 10 50) (arrowheadTriangle 10 (pi/10)) drawPolygon
+                    arrowhead1 (P2 0 0)  (P2 10 50) (arrowheadTriangle 10 (pi/10)) fillPolygon
                     arrowhead1 (P2 10 0) (P2 20 50) (arrowheadVee 10 (pi/10)) 
                                                   (mapM_ drawLine)
                     arrowhead1 (P2 20 0) (P2 30 50) (arrowheadPerp 5) (mapM_ drawLine)
@@ -89,7 +90,7 @@ drawCurveArr (c,xs) = do
   withRgbColour aquamarine1 $ mapM_ drawLine xs
   let et = endTangent c
   withRgbColour darkSlateGray4 $ 
-      fst $ getPicture (picLabel (show et) 40 20) $ (endPoint c)
+      fst $ getPicture (picLabel (show et) 40 20) (ortho $ endPoint c)
 
 
 testCurve :: Radian -> DCurve

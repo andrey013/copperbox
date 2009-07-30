@@ -26,7 +26,7 @@ module Wumpus.Core.Vector
   , Vec3(..)
   , DVec3
 
-  -- * Type class operations
+  -- * Vector type classes
   , EuclidianNorm(..)
   , Independent(..)
   , HVec(..)

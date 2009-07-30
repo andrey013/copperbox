@@ -73,15 +73,6 @@ magnitude' v = sqrt (v <.> v)
 --------------------------------------------------------------------------------
 -- Wumpus.Core.Frame
 
-piw :: DPoint2 -> Frame2 Double -> DPoint2
-piw = pointInWorld
-
-
-
-
-ftofD :: DFrame2 -> DFrame2 -> Matrix3'3 Double
-ftofD = ftof
-
 
 --------------------------------------------------------------------------------
 -- Wumpus.Core.Line

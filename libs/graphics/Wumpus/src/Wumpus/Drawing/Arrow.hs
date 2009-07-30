@@ -96,7 +96,7 @@ arrowheadTriangle d ang =
   \theta endpt -> let halfBW = d * fromRadian (tan ang) 
                       tri    = isoscelesTriangle (2*halfBW) d endpt
                   in   pointwise (rotateAbout (theta - pi/2) endpt)
-                     $ pointwise (inFrame `flip` (ortho $ P2 halfBW d))
+                     $ pointwise (inFrame (ortho $ P2 halfBW d))
                      $ tri
 
 

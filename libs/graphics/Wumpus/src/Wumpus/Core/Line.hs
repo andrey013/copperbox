@@ -141,9 +141,13 @@ instance Converse (PolyLine pt a) where
 
 -- construction
 
--- | Line from vector.
-line :: AffineSpace (pt a) => Diff (pt a) -> (pt a -> LineSegment pt a)
-line v = \p -> LS p (p .+^ v)
+-- Lines are created /without/ respect to frames even though they 
+-- are created at arbitrary points. A frame becomes necessary only 
+-- later extraction of /points as coordinates/.
+
+-- | Line from vector starting from Point.
+line :: AffineSpace (pt a) => Diff (pt a) -> pt a -> LineSegment pt a
+line v p = LS p (p .+^ v)
 
 -- | Horizontal line from point @p@ of length @a@ .
 hline :: (Num a, AffineSpace (pt a), HVec t, t a ~ Diff (pt a)) 

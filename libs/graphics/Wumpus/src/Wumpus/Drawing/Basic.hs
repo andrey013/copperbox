@@ -89,6 +89,7 @@ centered pic1 pic2 = Picture $ \frm ->
     in (cmd1 >> cmd2, bb1 `mappend` bb2) 
 
 
+
 -- | A union of two pictures does just groups the pictures in a 
 -- common bounding box. It does not move either picture.
 picUnion :: Picture -> Picture -> Picture 
