@@ -3,6 +3,7 @@
 module CDiagram where
 
 import Wumpus.Core.BoundingBox
+import Wumpus.Core.Frame
 import Wumpus.Core.Geometric
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
@@ -26,9 +27,7 @@ demo1 = writePS "cdiagram1.ps" $ runWumpus env0 $ drawing1 where
  
 
 diagram1 :: WumpusM ()
-diagram1 = mapM_ drawArr arrs >> mapM_ (\lbl -> fst $ getPicture lbl $ origin) labels
-   where
-    origin = zeroPt
+diagram1 = mapM_ drawArr arrs >> mapM_ (\lbl -> fst $ getPicture lbl $ ortho zeroPt) labels
 
 drawArr = drawLine
 
@@ -45,12 +44,8 @@ arrs = concat $ sequence [f1,f2,f3,f4] $ boundingBox $ square 100 zeroPt
 -- P B 
 -- A C
 labels :: [Picture]
-labels = sequence [fP, fB, fA, fC] $ boundingBox $ square 100 zeroPt
+labels = zipWith fn ["A","C","B","P"] (extractPoints $ square 100 zeroPt)
   where
-    fP = (picLabel "P" 10 10 `place`) . movexy . northWest
-    fB = (picLabel "B" 10 10 `place`) . movexy . northEast
-    fA = (picLabel "A" 10 10 `place`) . movexy . southWest
-    fC = (picLabel "C" 10 10 `place`) . movexy . southEast
+    fn c pt@(P2 x y) = displace (x-5) (y-5) $ picLabel c 10 10
 
-    movexy = pointwise (translate (-5) (-5))
 

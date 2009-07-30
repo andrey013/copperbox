@@ -44,11 +44,17 @@ module Wumpus.Core.BoundingBox
   , northWest
   , southWest
   
+  , centeredAt
+  
   ) where
 
 import Wumpus.Core.Geometric
 import Wumpus.Core.Point
+import Wumpus.Core.Pointwise
 import Wumpus.Core.Polygon
+import Wumpus.Core.Vector
+
+import Data.AffineSpace
 
 import Data.Monoid
 
@@ -173,6 +179,16 @@ northWest (BBox (P2 x _) (P2 _ y))     = P2 x y
 southWest :: BoundingBox a -> Point2 a
 southWest = bbBottomLeft
 
+
+-- | Center a shape at the supplied point.
+
+centeredAt :: (Fractional a, Ord a, HasPoints shape, Pointwise shape, 
+               AffineSpace (Pt shape), 
+               Pnt shape ~ Point2 a, Diff (Pt shape) ~ Vec2 a) 
+           => shape -> Point2 a -> shape
+centeredAt sh pt = pointwise (.+^ diff) sh
+  where
+    diff = pt .-. center (bounds sh) 
 
 
 

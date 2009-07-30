@@ -4,7 +4,6 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
-{-# LANGUAGE OverlappingInstances       #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS -Wall #-}
 
@@ -122,11 +121,10 @@ instance HasPoints (LineSegment Point2 a) where
 
 -- This drags in Undecidable Instances...
 
-instance (Floating (Scalar (Diff (pt a))), 
-          InnerSpace (Diff (pt a)), AffineSpace (pt a) )
+instance (Floating a, InnerSpace v, AffineSpace (pt a),
+          v ~ Diff (pt a), Scalar v ~ a)
     => Congruent (LineSegment pt a) where
   congruent l l' = segmentLength l == segmentLength l' 
-
 
 
 
@@ -180,11 +178,9 @@ langle :: (Floating a, Real a) => LineSegment Point2 a -> Radian
 langle (LS (P2 x y) (P2 x' y')) = toRadian $ atan $ (y'-y) / (x'-x) 
 
 
-
-segmentLength :: (Floating (Scalar (Diff (pt a))), 
-                  InnerSpace (Diff (pt a)), AffineSpace (pt a) )
-              => LineSegment pt a -> Scalar (Diff (pt a))
-
+segmentLength :: (Floating a, InnerSpace v, AffineSpace (pt a),
+                  v ~ Diff (pt a), a ~ Scalar v)
+              => LineSegment pt a -> Scalar (Diff (pt a))    
 segmentLength (LS p p') = distance p' p
 
 lineCenter :: (Fractional (Scalar (Diff (pt a))), 
