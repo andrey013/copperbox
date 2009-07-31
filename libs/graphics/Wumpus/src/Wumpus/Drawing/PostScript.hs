@@ -71,7 +71,7 @@ runWumpus = ((DL.toList . snd) .) . pstId
 env0 :: PsEnv 
 env0 = PsEnv { 
         cPen        = newPen,
-        cFont       = helvetica 10,
+        cFont       = Font "Helvetica" 10,
         cColour     = wumpusBlack
       }
 
@@ -212,12 +212,6 @@ localFont font mf =
         command "scalefont" [show sz]
         command "setfont" []
 
-
-helvetica :: Int -> Font
-helvetica us = Font "Helvetica" us
-
-timesRoman :: Int -> Font
-timesRoman us = Font "Times-Roman" us
 
 
 

@@ -24,6 +24,7 @@ import Wumpus.Core.Curve
 import Wumpus.Core.Frame
 import Wumpus.Core.Fun
 import Wumpus.Core.Line
+import Wumpus.Core.Path
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Polygon
@@ -48,7 +49,8 @@ newtype Picture = Picture {
 psDraw :: Picture -> PostScript
 psDraw pic = runWumpus env0 (fst $ (getPicture pic) (ortho zeroPt))
 
-
+writePicture :: FilePath -> Picture -> IO ()
+writePicture filepath pic = writeFile filepath $ psDraw pic
 
 -- | Create an empty picture.
 picEmpty :: Picture
@@ -170,10 +172,12 @@ picLines xs = Picture $ \frm ->
 
 picLine :: DLineSegment2 -> Picture
 picLine ln = Picture $ \frm -> 
-    let ln' = (withinFrame frm) ln
+    let ln' = withinFrame frm ln
     in (drawLine ln', bounds ln')
 
-
+picPath :: DPath -> Picture
+picPath p = Picture $ \frm ->
+   let p' = withinFrame frm p in (drawPath p', bounds p')
 
 displace :: Double -> Double -> Picture -> Picture
 displace x y p = Picture $ \frm -> (getPicture p) $ displaceOrigin (V2 x y) frm
@@ -201,6 +205,15 @@ withFont ft pic = Picture $ \frm ->
 
 
 --------------------------------------------------------------------------------
+
+
+
+helvetica :: Int -> Font
+helvetica us = Font "Helvetica" us
+
+timesRoman :: Int -> Font
+timesRoman us = Font "Times-Roman" us
+
 
 -- | Generate a list of points [pt, f pt, f (f pt), ...] while the 
 -- predicate @p@ holds. 
@@ -295,6 +308,16 @@ drawLineBag xs  = strokeOpenPathSkel $ mapM_ step xs
       ps_moveto x1 y1
       ps_lineto x2 y2
 
+
+drawPath :: DPath -> WumpusM ()
+drawPath path = strokeOpenPathSkel $ do 
+    ps_moveto x y
+    mapM_ draw1 $ unPath path
+  where
+    (P2 x y) = pathStart path
+    draw1 (Left (LS _ (P2 x1 y1)))                            = ps_lineto x1 y1
+    draw1 (Right (Curve _ (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) )) = 
+        ps_curveto x1 y1 x2 y2 x3 y3
 
 
 diamond :: Double -> Double -> (DPoint2 -> DPolygon)

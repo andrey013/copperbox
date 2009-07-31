@@ -8,12 +8,11 @@ import Wumpus.Core.Point
 import Wumpus.Core.Polygon
 
 import Wumpus.Drawing.Basic
-import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.SVGColours
 
 
 demo1 :: IO ()
-demo1 = writePS "basic1.ps" $ (psDraw $ displace 60 380 drawing1) where
+demo1 = writePicture "basic1.ps" (displace 60 380 drawing1) where
   drawing1 =    (picLine $ lineTo (P2 0 0) (P2 0 150))
            <..> (picLine $ lineTo (P2 0 0) (P2 150 0))
            <..> (picCircle $ circle (5,5) 15)
@@ -25,7 +24,7 @@ demo1 = writePS "basic1.ps" $ (psDraw $ displace 60 380 drawing1) where
 
 
 demo2 :: IO ()
-demo2 = writePS "basic2.ps" (psDraw $ displace 50 300 (pic1 <++> pic2))
+demo2 = writePicture "basic2.ps" (displace 50 300 (pic1 <++> pic2))
 
 pic1 :: Picture
 pic1 = vcat [dia1,dia2,dia3,dia4]
@@ -45,13 +44,13 @@ pic2 = (dia1 <//> dia2)
     dia2 = withRgbColour darkSeaGreen  $ (picPolygon $ diamond 30 30 zeroPt)
 
 demo3 :: IO ()
-demo3 = writePS "basic3.ps" (psDraw $ displace 50 300 dots)
+demo3 = writePicture "basic3.ps" (displace 50 300 dots)
   where
     dots = dotX <++> dotPlus <++> dotAsterisk <++> dotSquare <++> dotPentagon
                 <++> dotTriangle <++> dotDiamond
 
 demo4 :: IO ()
-demo4 = writePS "basic4.ps" (psDraw $ displace 10 300 squares)
+demo4 = writePicture "basic4.ps" (displace 10 300 squares)
   where
     squares = picPolygon (square 10 zeroPt) 
          <++> picPolygon (square 20 zeroPt)
