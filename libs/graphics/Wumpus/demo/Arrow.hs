@@ -19,14 +19,6 @@ import Data.Ratio
 
 -- import Data.AffineSpace
 
-{-
-dummy1 = gravesenLength 0.01 $ testCurve (pi/2)
-dummy2 :: Double
-dummy2 = distance (P2 0 50) (P2 50 (0::Double))
--}
-
-dummy3 = r2d $ interior 0 (negate $ d2r 45)
-dummy4 = r2d $ interior 0 (d2r 170)
 
 demo1 :: IO ()
 demo1 = writePS "arrow1.ps" $ runWumpus env0 $ drawing1 where
@@ -110,5 +102,15 @@ splitCurve crv = do
     t     = (cl-10) % cl       -- go back the length of the arrow head
     (a,b) = subdividet t crv
        
+
+{-
+dummy1 = gravesenLength 0.01 $ testCurve (pi/2)
+dummy2 :: Double
+dummy2 = distance (P2 0 50) (P2 50 (0::Double))
+
+
+dummy3 = r2d $ interior 0 (negate $ d2r 45)
+dummy4 = r2d $ interior 0 (d2r 170)
+-}
 
 

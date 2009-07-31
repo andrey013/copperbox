@@ -1,43 +1,28 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
-
+{-# OPTIONS -Wall #-}
 
 module Grid where
 
-import Wumpus.Core.Frame
-import Wumpus.Core.Instances
-import Wumpus.Core.Line
-import Wumpus.Core.Point
-import Wumpus.Core.Pointwise
-import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
 import Wumpus.Drawing.Basic
 import Wumpus.Drawing.Grid
-import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.X11Colours
 
---
-import Wumpus.Test.TypeRestrict
-import Wumpus.Core.Geometric
-import Wumpus.Core.Matrix
 
-import Data.VectorSpace
-
-import Wumpus.Core.Fun
 
 demo1 :: IO ()
-demo1 = writePS "grid1.ps" $ runWumpus env0 $ drawing1 where
-  drawing1 = do { ps_translate 60 380 
-                ; fst $ getPicture (withRgbColour dodgerBlue1 $ grid 20 20 100 80) 
-                      $ (ortho (P2 0 0))
-                ---
-                ; ps_translate 200 0
-                ; fst $ (getPicture (multiput 6 (V2 10 0) dotTriangle)) $ (ortho (P2 100 0))
-                ; fst $ (getPicture (grid 10 10 50 40)) $ (ortho (P2 0 0))
-                }
-  frame1 = Frame2 (P2 0 0) (V2 1 0) (V2 0 0.5)
-  origin = P2 0 0
+demo1 = writePicture "grid1.ps" drawing1 where
+  drawing1  = displace 60 380 $ 
+                grid1 <..> (displace 200 0 grid2) <..> (displace 300 0 triangles)
+  
+  grid1     = withRgbColour dodgerBlue1 $ grid 20 20 100 80
+                    
+  grid2     = grid 10 10 50 40
+
+  triangles = multiput 6 (V2 10 0) dotTriangle
+
 
 {-
 calgrid :: [LineBag]

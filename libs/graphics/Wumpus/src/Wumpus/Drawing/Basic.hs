@@ -112,6 +112,11 @@ alignAtOrigin pic = Picture $ \frm ->
 
 
 
+-- | Concatenate all the pictures with (<..>) preserving there 
+-- original positions.
+cat :: [Picture] -> Picture
+cat = foldl' (<..>) picEmpty
+
 
 -- | Concatenate all the pictures horizontally with (<++>).
 hcat :: [Picture] -> Picture
@@ -400,12 +405,21 @@ picCircle p = Picture $ \frm ->
   let p' = pointwise (coord frm) p in (drawCircle p', circleBB p')
 
 
+
+picCurve :: DCurve -> Picture
+picCurve c = Picture $ \frm -> 
+  let c' = pointwise (coord frm) c in (drawCurve c', bounds c')
+
 drawCurve :: DCurve -> WumpusM ()
 drawCurve (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
   strokeOpenPathSkel $  do 
     ps_moveto x0 y0
     ps_curveto x1 y1 x2 y2 x3 y3
 
+
+picBezier :: DCurve -> Picture
+picBezier c = Picture $ \frm -> 
+  let c' = pointwise (coord frm) c in (drawBezier c', bounds c')
 
 -- also draw control points
 drawBezier :: DCurve -> WumpusM ()

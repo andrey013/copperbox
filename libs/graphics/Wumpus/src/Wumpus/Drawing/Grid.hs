@@ -33,14 +33,14 @@ grid :: Double -> Double -> Double -> Double -> Picture
 grid xstep ystep w h = Picture $ \frm -> 
     fork (mapM_ drawLine, bounds) (gridlines frm)
   where
-    xpoints pt@(P2 x0 _) = genPoints (\(P2 x _) -> x <~= (x0+w))
-                                     (\(P2 x _) -> P2 (x+xstep) 0)
+    xpoints pt@(P2 x0 y) = genPoints (\(P2 x _) -> x <~= (x0+w))
+                                     (\(P2 x _) -> P2 (x+xstep) y)
                                      pt
-    ypoints pt@(P2 _ y0) = genPoints (\(P2 _ y) -> y <~= (y0+h))
-                                     (\(P2 _ y) -> P2 0 (y+ystep))
+    ypoints pt@(P2 x y0) = genPoints (\(P2 _ y) -> y <~= (y0+h))
+                                     (\(P2 _ y) -> P2 x (y+ystep))
                                      pt
-    hlines = map (hline w) . ypoints 
-    vlines = map (vline h) . xpoints
+    hlines ogin = map (hline w) $ ypoints ogin
+    vlines ogin = map (vline h) $ xpoints ogin
 
     gridlines frm = let pt = withinFrame frm zeroPt in hlines pt ++ vlines pt     
 

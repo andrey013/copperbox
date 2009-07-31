@@ -1,19 +1,32 @@
-
+{-# OPTIONS -Wall #-}
 
 module QuadTreeDraw where
 
 import Wumpus.Core.Colour
+import Wumpus.Core.Fun
 import Wumpus.Core.Geometric 
-import Wumpus.Core.Instances
 import Wumpus.Core.Line
 import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 
 import Wumpus.Drawing.QuadTree
-import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.Basic
 
 import qualified Data.Foldable as F
+
+
+demo1 :: IO ()
+demo1 = writePicture "quadtree1.ps" (drawQuadTree demo_qt) where
+
+
+drawQuadTree :: QuadTree (DPoint2,DPoint2) DPoint2 -> Picture
+drawQuadTree tree = drawing1 where
+  drawing1 = displace 20 20 (picLines (treeLines tree) <..> points)
+  points = withRgbColour wumpusRed $ 
+             cat $ map (\(P2 x y) -> displace x y dotPlus) $ treePoints tree
+
+
+
 
 -- Note a square of 400x400 PS points will fit on an A4 page
 
@@ -33,39 +46,23 @@ midlines (p1@(P2 x0 y0), p2@(P2 x1 y1)) = [v,h]  -- clockwise
     v        = lineTo (P2 x' y0) (P2 x' y1)
     h        = lineTo (P2 x0 y') (P2 x1 y')
 
--- drawIt sq = mapM_ drawLine $ sqlines sq
 
-
-demo1 :: IO ()
-demo1 = outputQuadTree "quadtree1.ps" demo_qt
-
-outputQuadTree :: FilePath -> QuadTree (DPoint2,DPoint2) DPoint2 -> IO ()
-outputQuadTree name tree =  writePS name $ runWumpus env0 $ drawing1 where
-  drawing1 = do { ps_translate 20 20
-                ; mapM_ drawLine $ treelines tree
-                ; localRgbColour (RGB3 1 0 0) $ 
-                      mapM_ drawPoint $ treepoints tree
-                }
-
-treelines :: QuadTree (DPoint2,DPoint2) DPoint2 -> [DLineSegment2]
-treelines (Empty sq)  = [] -- sqlines sq
-treelines (Leaf sq _) = [] -- sqlines sq
-treelines (Quad _ sq nw ne se sw) =
-    sqlines sq' ++ midlines sq' ++ (concat $ map treelines [nw,ne,se,sw])
+treeLines :: QuadTree (DPoint2,DPoint2) DPoint2 -> [DLineSegment2]
+treeLines (Empty _sq)             = [] -- sqlines sq
+treeLines (Leaf _sq _)            = [] -- sqlines sq
+treeLines (Quad _ sq nw ne se sw) =
+    sqlines sq' ++ midlines sq' ++ (concat $ map treeLines [nw,ne,se,sw])
   where
     sq' = scaleSq sq
 
 
-treepoints :: QuadTree (DPoint2,DPoint2) DPoint2 -> [DPoint2]
-treepoints = F.foldr fn [] where
+treePoints :: QuadTree (DPoint2,DPoint2) DPoint2 -> [DPoint2]
+treePoints = F.foldr fn [] where
   fn a = (:) (scalePt a)
 
-main = demo1
 
 scaleSq :: (DPoint2,DPoint2) -> (DPoint2,DPoint2)
-scaleSq = prod scalePt
-
-prod f (a,b) = (f a, f b) 
+scaleSq = prod scalePt scalePt
 
 scalePt :: DPoint2 -> DPoint2 
 scalePt = (tM *#)
