@@ -30,6 +30,7 @@ import Wumpus.Core.Polygon
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
+import Wumpus.Drawing.GraphicsState
 import Wumpus.Drawing.PostScript
 
 import Data.AffineSpace
@@ -37,31 +38,41 @@ import Data.AffineSpace
 import Data.List
 import Data.Monoid
 
-type Radius = Double
-type Origin = DPoint2
-
-
-
-data Circle = Circle Origin Radius
-  deriving (Eq,Show)
-
-
-
-instance Pointwise Circle where
-  type Pt Circle = DPoint2
-  pointwise f (Circle o r) = Circle (f o) r
-
-
 --------------------------------------------------------------------------------
 
 newtype Picture = Picture { 
        getPicture   :: DFrame2 -> (WumpusM (), DBoundingBox)
     }
 
+-- | Draw a picture, generating PostScript output.
+psDraw :: Picture -> PostScript
+psDraw pic = runWumpus env0 (fst $ (getPicture pic) (ortho zeroPt))
 
+
+
+-- | Create an empty picture.
+picEmpty :: Picture
+picEmpty = Picture $ \frm -> let o = origin frm in (return (), BBox o o) 
+
+
+infixr 7 <..>
 infixr 6 <++>
 infixr 5 <//>
 
+
+
+-- | Neutral composition (i.e. union) of two pictures. Neither 
+-- picture is moved - the composition just groups the pictures in 
+-- a common bounding box.
+(<..>) :: Picture -> Picture -> Picture 
+pic1 <..> pic2 = Picture $ \frm -> 
+    let (cmd1,bb1) = (getPicture pic1) frm
+        (cmd2,bb2) = (getPicture pic2) frm
+    in (cmd1 >> cmd2, bb1 `mappend` bb2) 
+
+
+-- | Horizontal composition of pictures. (c.f pretty-print
+-- combinator (<+>) ) 
 (<++>) :: Picture -> Picture -> Picture
 picL <++> picR = Picture $ \frm -> 
     let (cmdl,bbl) = (getPicture picL) frm
@@ -70,7 +81,7 @@ picL <++> picR = Picture $ \frm ->
         (cmdr,bbr) = (getPicture picR) (displaceOrigin vdiff frm)
     in (cmdl >> cmdr, bbl `mappend` bbr) 
 
-
+-- | Vertical composition of pictures. 
 (<//>) :: Picture -> Picture -> Picture
 picT <//> picB = Picture $ \frm -> 
     let (cmdt,bbt) = (getPicture picT) frm
@@ -79,7 +90,7 @@ picT <//> picB = Picture $ \frm ->
         (cmdb,bbb) = (getPicture picB) (displaceOrigin vdiff frm)
     in (cmdt >> cmdb, bbt `mappend` bbb) 
 
-
+-- | Center the second picture at the center point of the first picture. 
 centered :: Picture -> Picture -> Picture
 centered pic1 pic2 = Picture $ \frm -> 
     let (cmd1,bb1) = (getPicture pic1) frm
@@ -88,27 +99,28 @@ centered pic1 pic2 = Picture $ \frm ->
         (cmd2,bb2) = (getPicture pic2) (displaceOrigin vdiff frm)
     in (cmd1 >> cmd2, bb1 `mappend` bb2) 
 
-
-
--- | A union of two pictures does just groups the pictures in a 
--- common bounding box. It does not move either picture.
-picUnion :: Picture -> Picture -> Picture 
-picUnion pic1 pic2 = Picture $ \frm -> 
-    let (cmd1,bb1) = (getPicture pic1) frm
-        (cmd2,bb2) = (getPicture pic2) frm
-    in (cmd1 >> cmd2, bb1 `mappend` bb2) 
-
-picEmpty :: Picture
-picEmpty = Picture $ \frm -> let o = origin frm in (return (), BBox o o) 
+-- | Align the picture so that it's bottom-left corner is at the 
+-- origin of the frame.
+alignAtOrigin :: Picture -> Picture
+alignAtOrigin pic = Picture $ \frm ->
+  let (_,bbtemp) = (getPicture pic) frm
+      vdiff      = southEast bbtemp .-. (origin frm)
+  in (getPicture pic) (displaceOrigin vdiff frm)
 
 
 
+
+
+-- | Concatenate all the pictures horizontally with (<++>).
 hcat :: [Picture] -> Picture
 hcat = foldl' (<++>) picEmpty
 
+-- | Concatenate all the pictures vertically with (<//>).
 vcat :: [Picture] -> Picture
 vcat = foldl' (<//>) picEmpty
 
+-- | Concatenate all the pictures horizontally separated by a 
+-- space of @xsep@ units.
 hcatSep :: Double -> [Picture] -> Picture 
 hcatSep _    []     = picEmpty
 hcatSep xsep (x:xs) = foldl' fn x xs
@@ -117,7 +129,8 @@ hcatSep xsep (x:xs) = foldl' fn x xs
     sep      = blankPicture xsep 0 
 
 
-
+-- | Concatenate all the pictures vertically separated by a 
+-- space of @ysep@ units.
 vcatSep :: Double -> [Picture] -> Picture 
 vcatSep _    []      = picEmpty
 vcatSep ysep (x:xs)  = foldl' fn x xs
@@ -155,6 +168,12 @@ picLines xs = Picture $ \frm ->
     let xs' = map (withinFrame frm) xs
     in (mapM_ drawLine xs', bounds xs')
 
+picLine :: DLineSegment2 -> Picture
+picLine ln = Picture $ \frm -> 
+    let ln' = (withinFrame frm) ln
+    in (drawLine ln', bounds ln')
+
+
 
 displace :: Double -> Double -> Picture -> Picture
 displace x y p = Picture $ \frm -> (getPicture p) $ displaceOrigin (V2 x y) frm
@@ -165,13 +184,20 @@ vdisplace v p = Picture $ \frm -> (getPicture p) $ displaceOrigin v frm
 
 
 
-picColour :: DRGB -> Picture -> Picture
-picColour c pic = Picture $ \frm ->
-    let (mf,bb) = (getPicture pic) frm in (withRgbColour c mf,bb)
+withRgbColour :: DRGB -> Picture -> Picture
+withRgbColour c pic = Picture $ \frm ->
+    let (mf,bb) = (getPicture pic) frm in (localRgbColour c mf,bb)
+
+withGray :: Double -> Picture -> Picture
+withGray n pic = Picture $ \frm ->
+    let (mf,bb) = (getPicture pic) frm in (localGray n mf,bb)
 
 
-psDraw :: Picture -> PostScript
-psDraw pic = runWumpus env0 (fst $ (getPicture pic) (ortho zeroPt))
+withFont :: Font -> Picture -> Picture
+withFont ft pic = Picture $ \frm ->
+    let (mf,bb) = (getPicture pic) frm in (localFont ft mf,bb)
+
+
 
 
 --------------------------------------------------------------------------------
@@ -282,6 +308,26 @@ diamond w h = \o -> Polygon $ map (o .+^) xs
 --------------------------------------------------------------------------------
 -- arcs and ellipses
 
+-- TODO - circle and disk should be dots (for dots drawing directly with 
+-- PostScript's arc command will be efficient).
+-- More general circles (that support translation) should then use Core.Curve.
+
+type Radius = Double
+type Origin = DPoint2
+
+
+
+data Circle = Circle Origin Radius
+  deriving (Eq,Show)
+
+
+
+instance Pointwise Circle where
+  type Pt Circle = DPoint2
+  pointwise f (Circle o r) = Circle (f o) r
+
+
+
 circle :: (Double,Double) -> Double -> Circle
 circle (x,y) r  = Circle (P2 x y) r
 
@@ -291,6 +337,27 @@ drawCircle (Circle (P2 x y) r) = strokePathSkel $
 
 data Disk = Disk Origin Radius
   deriving (Eq,Show)
+
+instance Pointwise Disk where
+  type Pt Disk = DPoint2
+  pointwise f (Disk o r) = Disk (f o) r
+
+diskBB :: Disk -> DBoundingBox
+diskBB (Disk o r) = boundingBox $ Polygon [s,e,n,w] 
+  where
+    n = o .+^ vvec r
+    s = o .+^ vvec (-r)
+    e = o .+^ hvec r
+    w = o .+^ hvec (-r)
+
+circleBB :: Circle -> DBoundingBox
+circleBB (Circle o r) = boundingBox $ Polygon [s,e,n,w] 
+  where
+    n = o .+^ vvec r
+    s = o .+^ vvec (-r)
+    e = o .+^ hvec r
+    w = o .+^ hvec (-r)
+
    
 disk :: (Double,Double) -> Double -> Disk
 disk (x,y) r = Disk (P2 x y) r
@@ -298,6 +365,16 @@ disk (x,y) r = Disk (P2 x y) r
 drawDisk  :: Disk -> WumpusM ()
 drawDisk (Disk (P2 x y) r) = fillPathSkel $ do
   ps_arc x y r 0 360
+
+
+picDisk :: Disk -> Picture
+picDisk p = Picture $ \frm -> 
+  let p' = pointwise (coord frm) p in (drawDisk p', diskBB p')
+
+
+picCircle :: Circle -> Picture
+picCircle p = Picture $ \frm -> 
+  let p' = pointwise (coord frm) p in (drawCircle p', circleBB p')
 
 
 drawCurve :: DCurve -> WumpusM ()

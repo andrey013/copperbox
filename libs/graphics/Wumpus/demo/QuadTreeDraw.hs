@@ -43,7 +43,7 @@ outputQuadTree :: FilePath -> QuadTree (DPoint2,DPoint2) DPoint2 -> IO ()
 outputQuadTree name tree =  writePS name $ runWumpus env0 $ drawing1 where
   drawing1 = do { ps_translate 20 20
                 ; mapM_ drawLine $ treelines tree
-                ; withRgbColour (RGB3 1 0 0) $ 
+                ; localRgbColour (RGB3 1 0 0) $ 
                       mapM_ drawPoint $ treepoints tree
                 }
 

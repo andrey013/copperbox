@@ -16,9 +16,9 @@ import Prelude hiding ( abs )
 
 demo1 :: IO ()
 demo1 = writePS "path1.ps" $ runWumpus env0 $ drawing1 where
-  drawing1 = withFont (timesRoman 9) $ do 
+  drawing1 = localFont (timesRoman 9) $ do 
                 { ps_translate 60 480 
-                ; withRgbColour maroon0 $ drawLine $ lineS1 (zeroPt::DPoint2)
+                ; localRgbColour maroon0 $ drawLine $ lineS1 (zeroPt::DPoint2)
                 ; drawPath $ htildev (P2 0 60)
                 }
 

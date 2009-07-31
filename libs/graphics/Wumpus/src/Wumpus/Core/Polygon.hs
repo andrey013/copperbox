@@ -39,13 +39,14 @@ module Wumpus.Core.Polygon
 
   -- * Operations
   , interiorAngles
-
-  
+  , simpleOrientation
+  , reverseOrientation  
   ) where
 
 import Wumpus.Core.Fun
 import Wumpus.Core.Geometric
 import Wumpus.Core.Instances ()
+import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Radian
@@ -61,7 +62,7 @@ import Data.List ( nub )
 -- Polygon types and standard instances
 
 
-data Polygon a = Polygon [Point2 a]
+newtype Polygon a = Polygon { getPolygonPoints :: [Point2 a] }
   deriving (Eq,Show)
 
 
@@ -164,3 +165,26 @@ interiorAngles :: (a ~ Scalar a, Floating a, Real a,
 interiorAngles (Polygon ps) = windowedMap3c intAng ps where
   intAng a b c = interiorAngle (a .-. b) (c .-. b)
 
+-- | Simple algorithm to deduce orientation of a polygon.
+-- Will throw an error if it cannot find two successive vertices 
+-- that are not collinear.
+simpleOrientation :: Real a => Polygon a -> Orientation
+simpleOrientation (Polygon ps) = sign $ det $ mkMat $ noncollinear ps
+  where
+    noncollinear (x:y:z:xs) 
+       | not (collinear x y z)  = (x,y,z)
+       | otherwise              = noncollinear (y:z:xs)
+    noncollinear _              = error $ "Polygon.simpleOrientation - "
+                                       ++ "could not find viable vertices."
+
+    mkMat (P2 x1 y1, P2 x2 y2, P2 x3 y3) = M3'3 1 x1 y1 1 x2 y2 1 x3 y3
+
+    sign a | a < 0     = CW
+           | a > 0     = CCW
+           | otherwise = error "Polygon.simpleOrientation - det=0"
+
+
+-- | Reverse the orientation of the polygon (i.e. reverse 
+-- the list of points that represent the polygon).
+reverseOrientation :: Polygon a -> Polygon a
+reverseOrientation = Polygon . reverse . getPolygonPoints

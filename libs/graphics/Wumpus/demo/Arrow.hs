@@ -30,10 +30,10 @@ dummy4 = r2d $ interior 0 (d2r 170)
 
 demo1 :: IO ()
 demo1 = writePS "arrow1.ps" $ runWumpus env0 $ drawing1 where
-  drawing1 = withFont (timesRoman 9) $ do 
+  drawing1 = localFont (timesRoman 9) $ do 
                 { ps_translate 60 480 
                 ; drawArrow $ arrow (P2 0 0) (P2 40 0) 
-                ; withRgbColour dodgerBlue1 $ do
+                ; localRgbColour dodgerBlue1 $ do
                     ps_translate 100 0
                     arrowhead1 (P2 0 0)  (P2 10 50) (arrowheadTriangle 10 (pi/10)) fillPolygon
                     arrowhead1 (P2 10 0) (P2 20 50) (arrowheadVee 10 (pi/10)) 
@@ -51,21 +51,21 @@ demo1 = writePS "arrow1.ps" $ runWumpus env0 $ drawing1 where
                 -- subdividet
                 ; ps_translate (-60) 60
                 ; let (a,b) = subdividet 0.9 $ testCurve (pi/2)
-                ; withRgbColour brown1 $ drawCurve a
-                ; withRgbColour chartreuse1 $ drawCurve b 
+                ; localRgbColour brown1 $ drawCurve a
+                ; localRgbColour chartreuse1 $ drawCurve b 
                 -- 
                 ; ps_translate 0 100
                 ; splitCurve $ testCurve (pi/2)
                 }
 
 curvedArrs :: (DCurve -> (DCurve,[DLineSegment2])) -> WumpusM ()
-curvedArrs proc = withRgbColour coral1 $ 
+curvedArrs proc = localRgbColour coral1 $ 
   do { drawCurveArr $ proc $ testCurve (pi/2)
      ; ps_translate 10 0
      ; drawCurveArr $ proc $ testCurve (pi/3)
      ; ps_translate 10 0
      ; drawCurveArr $ proc $ testCurve (pi/4)
-     ; withRgbColour skyBlue1 $ do
+     ; localRgbColour skyBlue1 $ do
 --       drawLineBag $ dotPlus $ cubic (testCurve (pi/4)) 0.9
 --       drawLineBag $ dotPlus $ cubic (testCurve (pi/4)) 0.5
          ps_translate 50 0
@@ -86,10 +86,10 @@ arrowhead1 start_pt end_pt arrHead drawFun =
 
 drawCurveArr :: (DCurve, [DLineSegment2]) -> WumpusM ()
 drawCurveArr (c,xs) = do
-  withRgbColour coral1 $ drawCurve c
-  withRgbColour aquamarine1 $ mapM_ drawLine xs
+  localRgbColour coral1 $ drawCurve c
+  localRgbColour aquamarine1 $ mapM_ drawLine xs
   let et = endTangent c
-  withRgbColour darkSlateGray4 $ 
+  localRgbColour darkSlateGray4 $ 
       fst $ getPicture (picLabel (show et) 40 20) (ortho $ endPoint c)
 
 
@@ -102,8 +102,8 @@ straightBezier = Curve (P2 0 0) (P2 20 20) (P2 40 40) (P2 60 60)
 
 splitCurve :: DCurve -> WumpusM ()
 splitCurve crv = do 
-    { withRgbColour darkGoldenrod1 $ drawBezier a
-    ; withRgbColour cyan4 $ drawBezier b  
+    { localRgbColour darkGoldenrod1 $ drawBezier a
+    ; localRgbColour cyan4 $ drawBezier b  
     }
   where
     cl    = floor $ gravesenLength 0.1 crv

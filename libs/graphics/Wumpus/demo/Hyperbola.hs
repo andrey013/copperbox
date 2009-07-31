@@ -24,17 +24,17 @@ demo1 = writePS "hyperbola1.ps" $ runWumpus env0 $ drawing1 where
   drawing1 = do { ps_translate 150 380 
                 ; let curves1 = hyperbola (-2) 2 1
                 ; mapM_ drawCurve $ map (scalePoints 30) curves1
-                ; withRgbColour blueViolet $ do
+                ; localRgbColour blueViolet $ do
                     let curves2 = hyperbola (-2) 2 2
                     mapM_ drawCurve $ map (scalePoints 30) curves2
                 ------
                 ; ps_translate 0 100
-                ; withRgbColour coral $ do
+                ; localRgbColour coral $ do
                     let bcurve = Curve (P2 0 0) (P2 5.0 50) (P2 45 50) (P2 50 0)
                     drawCurve bcurve
                     let (c1,c2) = subdivide bcurve
                     drawCurve $ ctranslate 0 40 c1
-                    withRgbColour skyBlue $ drawCurve $ ctranslate 0 40 c2
+                    localRgbColour skyBlue $ drawCurve $ ctranslate 0 40 c2
                 ; ps_translate 0 100
 --                ; ps_setdash [2,1] 0
                 ; curveHack [P2 60 30, P2 0 15, P2 90 90, P2 100 0]
@@ -48,8 +48,8 @@ demo1 = writePS "hyperbola1.ps" $ runWumpus env0 $ drawing1 where
 
 curveHack :: [DPoint2] -> WumpusM ()
 curveHack xs = do 
-    withRgbColour darkSeaGreen $ drawPolygon $ Polygon xs
-    withRgbColour blueViolet   $  mapM_ drawBezier cs
+    localRgbColour darkSeaGreen $ strokePolygon $ Polygon xs
+    localRgbColour blueViolet   $ mapM_ drawBezier cs
   where
     cs = smoothw 0.6 xs
 
@@ -57,7 +57,7 @@ curveHack xs = do
 ajtest :: WumpusM ()
 ajtest = do 
     mapM_ (drawPolygon . dotTriangle) [p0,p1,p2]
-    withRgbColour firebrick $ 
+    localRgbColour firebrick $ 
         mapM_ (drawPolygon . dotDiamond . pointwise (translate 20 20)) [pA,p1,pB]
   where
     p0 = P2 0  40 

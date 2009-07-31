@@ -22,11 +22,11 @@ import Data.AffineSpace
 demo1 :: IO ()
 demo1 = writePS "circleseg1.ps" $ runWumpus env0 $ drawing1 where
   drawing1 = do { ps_translate 40 680 
-                ; withRgbColour tomato4 $ do
+                ; localRgbColour tomato4 $ do
                       -- drawPolygon $ dotDiamond zeroPt
                       drawLine $ hline 70 zeroPt
                       drawLine $ pointwise (rotateAbout (pi/4) zeroPt) $ hline 70 zeroPt
-                ; withRgbColour steelBlue1 $ do 
+                ; localRgbColour steelBlue1 $ do 
                       drawBezier $ pointwise (uniformScale 60) $ circleSegment (pi/4)
                 ---
                       drawBezier $ pointwise (translate 100 0) $ bezierArc 20 0 (pi/2)

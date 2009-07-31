@@ -13,16 +13,20 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Extra functions and classes (some built on the Vector Space lib) 
--- with no dependencies on the Wumpus types and typeclasses.
+-- Extra datatypes, functions and classes (some built on the 
+-- VectorSpace lib), no dependencies other Wumpus modules.
 --
 --------------------------------------------------------------------------------
 
 
 module Wumpus.Core.Geometric
   (
+  -- * Types
+    Orientation(..)
+
+
   -- * Type classes
-    Congruent(..)
+  , Congruent(..)
   , Converse(..)
 
   , HasPoints(..)
@@ -37,8 +41,15 @@ import Data.AffineSpace
 import Data.VectorSpace
 
 --------------------------------------------------------------------------------
+
+data Orientation = CW | CCW
+  deriving (Eq,Show)
+
+
+--------------------------------------------------------------------------------
 -- Type classes
 
+-- | Have two objects the same size and shape?
 class Congruent a where
   congruent :: a -> a -> Bool
 

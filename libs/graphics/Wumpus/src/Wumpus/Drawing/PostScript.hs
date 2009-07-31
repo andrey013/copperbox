@@ -174,22 +174,22 @@ withDiff query update e updCmd mf =
 
 
 
-withRgbColour :: DRGB -> WumpusM a -> WumpusM a
-withRgbColour c mf = 
+localRgbColour :: DRGB -> WumpusM a -> WumpusM a
+localRgbColour c mf = 
     withDiff cColour (\e -> e {cColour=c}) c (updColour c) mf
   where
     updColour (RGB3 r g b) = command "setrgbcolor" $ map dtrunc [r,g,b]
 
-withGray :: Double -> WumpusM a -> WumpusM a
-withGray gray mf = 
+localGray :: Double -> WumpusM a -> WumpusM a
+localGray gray mf = 
     withDiff cColour (\e -> e {cColour = c}) c (updColour gray) mf
   where
     c = gray2rgb gray
     updColour g = command "setgray" [dtrunc g]
 
 
-withPen :: Pen -> WumpusM a -> WumpusM a
-withPen pen mf = 
+localPen :: Pen -> WumpusM a -> WumpusM a
+localPen pen mf = 
     withDiff cPen (\e -> e {cPen=pen}) pen updPen mf 
   where
     updPen = do
@@ -203,8 +203,8 @@ withPen pen mf =
     setDash (Dash n arr) = command "setdash" [showArray shows arr, show n]
 
 
-withFont :: Font -> WumpusM a -> WumpusM a 
-withFont font mf = 
+localFont :: Font -> WumpusM a -> WumpusM a 
+localFont font mf = 
     withDiff cFont (\e -> e {cFont=font}) font (updFont font) mf
   where
     updFont (Font name sz) = do

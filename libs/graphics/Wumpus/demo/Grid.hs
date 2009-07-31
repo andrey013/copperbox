@@ -29,7 +29,7 @@ import Wumpus.Core.Fun
 demo1 :: IO ()
 demo1 = writePS "grid1.ps" $ runWumpus env0 $ drawing1 where
   drawing1 = do { ps_translate 60 380 
-                ; fst $ getPicture (picColour dodgerBlue1 $ grid 20 20 100 80) 
+                ; fst $ getPicture (withRgbColour dodgerBlue1 $ grid 20 20 100 80) 
                       $ (ortho (P2 0 0))
                 ---
                 ; ps_translate 200 0

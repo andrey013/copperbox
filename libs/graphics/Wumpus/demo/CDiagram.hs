@@ -20,7 +20,7 @@ import Wumpus.Drawing.PostScript
 
 demo1 :: IO ()
 demo1 = writePS "cdiagram1.ps" $ runWumpus env0 $ drawing1 where
-  drawing1 = withFont (timesRoman 15) $ do 
+  drawing1 = localFont (timesRoman 15) $ do 
                 { ps_translate 60 480 
                 ; diagram1
                 }
