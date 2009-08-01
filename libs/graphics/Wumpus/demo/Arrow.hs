@@ -3,8 +3,7 @@
 module Arrow where
 
 import Wumpus.Core.Curve
-import Wumpus.Core.Frame
-import Wumpus.Core.Geometric
+import Wumpus.Core.Fun
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Radian
@@ -12,78 +11,78 @@ import Wumpus.Core.Radian
 import Wumpus.Drawing.Arrow
 import Wumpus.Drawing.Basic
 import Wumpus.Drawing.Label
-import Wumpus.Drawing.PostScript
 import Wumpus.Drawing.X11Colours
 
 import Data.Ratio
 
--- import Data.AffineSpace
 
 
 demo1 :: IO ()
-demo1 = writePS "arrow1.ps" $ runWumpus env0 $ drawing1 where
-  drawing1 = localFont (timesRoman 9) $ do 
-                { ps_translate 60 480 
-                ; drawArrow $ arrow (P2 0 0) (P2 40 0) 
-                ; localRgbColour dodgerBlue1 $ do
-                    ps_translate 100 0
-                    arrowhead1 (P2 0 0)  (P2 10 50) (arrowheadTriangle 10 (pi/10)) fillPolygon
-                    arrowhead1 (P2 10 0) (P2 20 50) (arrowheadVee 10 (pi/10)) 
-                                                  (mapM_ drawLine)
-                    arrowhead1 (P2 20 0) (P2 30 50) (arrowheadPerp 5) (mapM_ drawLine)
-                ; mapM_ drawLine $ arrowCenterMarker $ lineTo (P2 30 0) (P2 40 50)
+demo1 = writePicture "arrow1.ps" drawing1 where
+  drawing1 = displace 60 380 $ withFont (timesRoman 9) $
+               arr1 <..> arrheads1 <..> cm1 
+                    <..> c_vees    <..> p_vees
+                    <..> subs1     <..> splits1
 
-                -- curved arrows
-                ; ps_translate 100 0
-                ; curvedArrs veeArrowC
-                
-                ; ps_translate (-60) 60
-                ; curvedArrs perpArrowC
-                                
-                -- subdividet
-                ; ps_translate (-60) 60
-                ; let (a,b) = subdividet 0.9 $ testCurve (pi/2)
-                ; localRgbColour brown1 $ drawCurve a
-                ; localRgbColour chartreuse1 $ drawCurve b 
-                -- 
-                ; ps_translate 0 100
-                ; splitCurve $ testCurve (pi/2)
-                }
+  arr1      = picArrow $ arrow (P2 0 0) (P2 40 0) 
 
-curvedArrs :: (DCurve -> (DCurve,[DLineSegment2])) -> WumpusM ()
-curvedArrs proc = localRgbColour coral1 $ 
-  do { drawCurveArr $ proc $ testCurve (pi/2)
-     ; ps_translate 10 0
-     ; drawCurveArr $ proc $ testCurve (pi/3)
-     ; ps_translate 10 0
-     ; drawCurveArr $ proc $ testCurve (pi/4)
-     ; localRgbColour skyBlue1 $ do
---       drawLineBag $ dotPlus $ cubic (testCurve (pi/4)) 0.9
---       drawLineBag $ dotPlus $ cubic (testCurve (pi/4)) 0.5
-         ps_translate 50 0
-         drawCurveArr $ proc $ straightBezier
-     }
-                             
-arrowhead1 :: DPoint2 -> DPoint2 -> (Radian -> DPoint2 -> a) 
-                -> (a -> WumpusM()) -> WumpusM ()
-arrowhead1 start_pt end_pt arrHead drawFun = 
-    do { drawLine $ arrline
-       ; drawFun $ arrHead theta end_pt
-       }
+  arrheads1 = displace 50 0 $ withRgbColour dodgerBlue1 $ cat
+                [ arrowhead1 (P2 0 0) 
+                             (P2 10 50) 
+                             (picPolygon `oo` arrowheadTriangle 10 (pi/10))
+                , arrowhead1 (P2 10 0) 
+                             (P2 20 50) 
+                             (picLines `oo` arrowheadVee 10 (pi/10))
+                , arrowhead1 (P2 20 0) 
+                             (P2 30 50) 
+                             (picLines `oo` arrowheadPerp 5)
+                ]
+
+  cm1       = displace 100 0 $ picLines $ arrowCenterMarker $ 
+                lineTo (P2 30 0) (P2 40 50)
+               
+
+  c_vees    = displace 0 100 $ curvedArrs veeArrowC
+
+  p_vees    = displace 0 160 $ curvedArrs perpArrowC
+
+  subs1     = let (a,b) = subdividet (0.9::Double) $ testCurve (pi/2) in
+              displace 0 230 $ 
+                       (withRgbColour brown1 $ picCurve a)
+                  <..> (withRgbColour chartreuse1 $ picCurve b)
+
+  splits1   = displace 200 230 $
+                splitCurve $ testCurve (pi/2)
+
+
+curvedArrs :: (DCurve -> (DCurve,[DLineSegment2])) -> Picture
+curvedArrs proc = withRgbColour coral1 $ 
+                     cs <..> (curveArr $ proc straightBezier)
+                        <..> dotty
+  where
+    cs    = hcatSep 10 [ fn (pi/2), fn (pi/3), fn (pi/4) ]
+    fn    = curveArr . proc . testCurve  
+    dotty = withRgbColour skyBlue1 $ d1 <..> d2
+    d1    = (movePt dotPlus) $ cubic (testCurve (pi/4)) 0.9
+    d2    = (movePt dotPlus) $ cubic (testCurve (pi/4)) 0.5
+    movePt pic = \(P2 x y) -> displace x y pic
+
+                    
+arrowhead1 :: DPoint2 -> DPoint2 -> (Radian -> DPoint2 -> Picture) -> Picture
+arrowhead1 start_pt end_pt arrHead = 
+    (picLine  arrline) <..> (arrHead theta end_pt)
   where
     theta    :: Radian
     arrline  = lineTo start_pt end_pt
     theta    = langle arrline
 
 
-drawCurveArr :: (DCurve, [DLineSegment2]) -> WumpusM ()
-drawCurveArr (c,xs) = do
-  localRgbColour coral1 $ drawCurve c
-  localRgbColour aquamarine1 $ mapM_ drawLine xs
-  let et = endTangent c
-  localRgbColour darkSlateGray4 $ 
-      fst $ getPicture (picLabel (show et) 40 20) (ortho $ endPoint c)
-
+curveArr :: (DCurve, [DLineSegment2]) -> Picture
+curveArr (c,xs) = 
+         (withRgbColour coral1 $ picCurve c)
+    <..> (withRgbColour aquamarine1 $ picLines xs)
+    <..> (withRgbColour darkSlateGray4 $ 
+            picLabel (show (endTangent c)) 40 20)
 
 testCurve :: Radian -> DCurve
 testCurve = bezierArc 50 0
@@ -92,14 +91,13 @@ testCurve = bezierArc 50 0
 straightBezier :: DCurve
 straightBezier = Curve (P2 0 0) (P2 20 20) (P2 40 40) (P2 60 60)
 
-splitCurve :: DCurve -> WumpusM ()
-splitCurve crv = do 
-    { localRgbColour darkGoldenrod1 $ drawBezier a
-    ; localRgbColour cyan4 $ drawBezier b  
-    }
+splitCurve :: DCurve -> Picture
+splitCurve crv =  
+         (withRgbColour darkGoldenrod1 $ picBezier a)
+    <..> (withRgbColour cyan4 $ picBezier b)
   where
     cl    = floor $ gravesenLength 0.1 crv
-    t     = (cl-10) % cl       -- go back the length of the arrow head
+    t     = (cl-10) % (cl::Integer)       -- go back the length of the arrow head
     (a,b) = subdividet t crv
        
 

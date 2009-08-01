@@ -31,10 +31,11 @@ module Wumpus.Drawing.Arrow
   , Arrow(..)
   , DArrow
   , arrow
-  , drawArrow
+  , picArrow
 
   ) where
 
+import Wumpus.Core.BoundingBox
 import Wumpus.Core.Curve
 import Wumpus.Core.Frame
 import Wumpus.Core.Geometric
@@ -134,6 +135,12 @@ arrow p p' = Arrow ln tip where
   theta = {- pi/2 + -} (langle ln) 
   tip   = arrowheadTriangle 10 (pi/10) theta p'
 
+
+picArrow :: DArrow -> Picture 
+picArrow (Arrow ln poly) = Picture $ \frm -> 
+  let ln'  = pointwise (coord frm) ln
+      arr' = Arrow ln' (pointwise (coord frm) poly)
+  in (drawArrow arr', bounds ln')
 
 drawArrow :: DArrow -> WumpusM () 
 drawArrow (Arrow ln tip) = drawLine ln >> fillPolygon tip
