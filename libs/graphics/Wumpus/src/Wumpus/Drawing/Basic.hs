@@ -1,4 +1,6 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -44,6 +46,15 @@ import Data.Monoid
 newtype Picture = Picture { 
        getPicture   :: DFrame2 -> (WumpusM (), DBoundingBox)
     }
+
+-- Is Picture really - ReaderT DFrame2 (Writer (PostScript,DBoundingBox)) a ?
+
+-- instance HasBoundingBox (Picture -> DFrame2) Double where
+--  getBoundingBox = getBoundingBox_picture
+
+getBoundingBox_picture :: Picture -> DFrame2 -> BoundingBox Double
+getBoundingBox_picture pic frm = snd $ (getPicture pic) frm
+
 
 -- | Draw a picture, generating PostScript output.
 psDraw :: Picture -> PostScript
@@ -149,7 +160,7 @@ vcatSep ysep (x:xs)  = foldl' fn x xs
 -- | Create a blank (empty) Picture of width @w@ and height @h@.
 blankPicture :: Double -> Double -> Picture
 blankPicture w h = Picture $ \frm -> let rect = withinFrame frm (rectangle w h zeroPt) 
-                                     in (return (), boundingBox rect)
+                                     in (return (), getBoundingBox rect)
 
 -- | Repeat a picture @n@ times, at each iteration displace by the 
 -- vector @disp@.
@@ -167,7 +178,7 @@ multiput n disp pic = Picture $ \frm ->
 
 picPolygon :: DPolygon -> Picture
 picPolygon p = Picture $ \frm -> 
-  let p' = withinFrame frm p in (strokePolygon p', boundingBox p')
+  let p' = withinFrame frm p in (strokePolygon p', getBoundingBox p')
 
 
 picLines :: [DLineSegment2] -> Picture
@@ -187,6 +198,8 @@ picPath p = Picture $ \frm ->
 displace :: Double -> Double -> Picture -> Picture
 displace x y p = Picture $ \frm -> (getPicture p) $ displaceOrigin (V2 x y) frm
 
+at :: Picture -> (Double,Double) -> Picture
+at pic (x,y) = displace x y pic
 
 vdisplace :: DVec2 -> Picture -> Picture
 vdisplace v p = Picture $ \frm -> (getPicture p) $ displaceOrigin v frm
@@ -371,7 +384,7 @@ instance Pointwise Disk where
   pointwise f (Disk o r) = Disk (f o) r
 
 diskBB :: Disk -> DBoundingBox
-diskBB (Disk o r) = boundingBox $ Polygon [s,e,n,w] 
+diskBB (Disk o r) = getBoundingBox $ Polygon [s,e,n,w] 
   where
     n = o .+^ vvec r
     s = o .+^ vvec (-r)
@@ -379,7 +392,7 @@ diskBB (Disk o r) = boundingBox $ Polygon [s,e,n,w]
     w = o .+^ hvec (-r)
 
 circleBB :: Circle -> DBoundingBox
-circleBB (Circle o r) = boundingBox $ Polygon [s,e,n,w] 
+circleBB (Circle o r) = getBoundingBox $ Polygon [s,e,n,w] 
   where
     n = o .+^ vvec r
     s = o .+^ vvec (-r)
@@ -438,7 +451,7 @@ drawBezier (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) =
 
 dotSquare :: Picture
 dotSquare = Picture $ \frm -> 
-    let sq = (withinFrame frm $ square 4 zeroPt) in (strokePolygon sq, boundingBox sq)
+    let sq = (withinFrame frm $ square 4 zeroPt) in (strokePolygon sq, getBoundingBox sq)
 
 
 dotPlus :: Picture
@@ -473,7 +486,8 @@ dotAsterisk = Picture $ \frm ->
 
 polyDot :: Int -> Picture
 polyDot sides = Picture $ \frm -> 
-    let pgon = regularPolygon sides 2 (origin frm) in (strokePolygon pgon, boundingBox pgon)
+    let pgon = regularPolygon sides 2 (origin frm) 
+    in (strokePolygon pgon, getBoundingBox pgon)
 
 
 dotTriangle :: Picture

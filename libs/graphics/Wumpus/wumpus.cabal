@@ -35,6 +35,7 @@ library
     Wumpus.Core.Path,
     Wumpus.Core.Point,
     Wumpus.Core.Pointwise,
+    Wumpus.Core.Polar,
     Wumpus.Core.Polygon,
     Wumpus.Core.Radian,
     Wumpus.Core.Transformations,

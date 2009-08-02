@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
@@ -25,8 +26,9 @@ module Wumpus.Core.BoundingBox
     BoundingBox(..)
   , DBoundingBox
 
+  , HasBoundingBox(..)
+
   -- * Operations
-  , boundingBox
   , bounds
   , within
   , width 
@@ -69,6 +71,7 @@ data BoundingBox a = BBox { bbBottomLeft :: Point2 a, bbTopRight :: Point2 a }
 type DBoundingBox = BoundingBox Double
 
 
+
 instance HasPoints (BoundingBox a) where
   type Pnt (BoundingBox a) = Point2 a
   extractPoints (BBox p1@(P2 xmin ymin) p2@(P2 xmax ymax)) = [p1,br,p2,tl]
@@ -80,13 +83,20 @@ instance HasPoints (BoundingBox a) where
 instance (Fractional a, Ord a) => Monoid (BoundingBox a) where
   mempty  = BBox (P2 inf inf) (P2 (-inf) (-inf))  where inf = 1/0
   mappend = bbProd
+
+-------------------------------------------------------------------------------
+
+
+class HasBoundingBox sh a where
+  getBoundingBox :: sh -> BoundingBox a 
+
                 
 --------------------------------------------------------------------------------
 -- Construction
 
 -- | Calculate the bounding box of a polygon.
-boundingBox :: Ord a => Polygon a -> BoundingBox a
-boundingBox (Polygon ps) = bounds' ps
+instance Ord a => HasBoundingBox (Polygon a) a where
+  getBoundingBox (Polygon ps) = bounds' ps
 
 
 bounds :: (HasPoints t, Ord a, Pnt t ~ Point2 a) 
