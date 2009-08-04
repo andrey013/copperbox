@@ -30,7 +30,7 @@ import Wumpus.Drawing.Basic
 
 
 grid :: Double -> Double -> Double -> Double -> Picture
-grid xstep ystep w h = Picture $ \frm -> 
+grid xstep ystep w h = withFrame $ \frm -> 
     fork (mapM_ drawLine, bounds) (gridlines frm)
   where
     xpoints pt@(P2 x0 y) = genPoints (\(P2 x _) -> x <~= (x0+w))

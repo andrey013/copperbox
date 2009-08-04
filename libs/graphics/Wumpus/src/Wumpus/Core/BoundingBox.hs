@@ -81,7 +81,7 @@ instance HasPoints (BoundingBox a) where
   startPoint              = endPoint  
 
 instance (Fractional a, Ord a) => Monoid (BoundingBox a) where
-  mempty  = BBox (P2 inf inf) (P2 (-inf) (-inf))  where inf = 1/0
+  mempty  = BBox (P2 inf inf) (P2 (-inf) (-inf)) where inf = 1/0
   mappend = bbProd
 
 -------------------------------------------------------------------------------
@@ -89,6 +89,10 @@ instance (Fractional a, Ord a) => Monoid (BoundingBox a) where
 
 class HasBoundingBox sh a where
   getBoundingBox :: sh -> BoundingBox a 
+
+instance Pointwise (BoundingBox a) where
+  type Pt (BoundingBox a) = Point2 a
+  pointwise fn (BBox a b) = BBox (fn a) (fn b)
 
                 
 --------------------------------------------------------------------------------

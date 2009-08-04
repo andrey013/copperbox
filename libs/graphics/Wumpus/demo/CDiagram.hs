@@ -30,7 +30,7 @@ diagram1 = picLines arrs <..> cat labels
 
 
 arrs :: [DLineSegment2]
-arrs = concat $ sequence [f1,f2,f3,f4] $ boundingBox $ square 100 zeroPt 
+arrs = concat $ sequence [f1,f2,f3,f4] $ bounds $ square 100 zeroPt 
   where
     f1 = veeArrow . expandLine (0.8) . hline   100  . northWest
     f2 = veeArrow . expandLine (0.8) . vline (-100) . northWest

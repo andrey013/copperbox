@@ -27,13 +27,23 @@ import Wumpus.Drawing.GraphicsState
 import qualified Data.DList as DL
 import MonadLib
 
+import Data.Monoid
 import Data.List ( foldl' )
+
+
+
 
 type PostScript = String
 
 type PsOutput = DL.DList Char
 
 type WumpusM a = PsT Id a
+
+
+
+instance Monoid (WumpusM ()) where
+  mempty  = return ()
+  mappend = (>>) 
 
 
 newtype PsT m a = PsT { unPs :: ReaderT PsEnv (WriterT PsOutput m) a }

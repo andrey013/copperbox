@@ -17,6 +17,7 @@ demo1 = writePicture "label1.ps" drawing1 where
             <..> (picLabel "text1" 40 10)
             <..> displace 0 100 (withRgbColour seaGreen4 $ 
                                    withFont (timesRoman 5) $ labelGrid)
+            <..> (displace 0 200 $ picText "line1\nline2" 40 20 10)
 
   someLine = withRgbColour seaGreen1 $ 
                       picLine $ LS (P2 0 0) (P2 50 40) 

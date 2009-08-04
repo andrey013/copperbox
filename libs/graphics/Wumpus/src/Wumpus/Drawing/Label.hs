@@ -46,7 +46,7 @@ import Control.Monad ( zipWithM_ )
 -- saveExecRestore. 
 
 picLabel :: String -> Double -> Double -> Picture
-picLabel text w h = Picture $ \frm -> (mf frm, getBoundingBox $ cliprect frm)
+picLabel text w h = withFrame $ \frm -> (mf frm, getBoundingBox $ cliprect frm)
   where
     mf frm = saveExecRestore id $ clipPolygon (cliprect frm) 
                                 $ drawLabel text (origin frm)
@@ -59,7 +59,7 @@ picLabel text w h = Picture $ \frm -> (mf frm, getBoundingBox $ cliprect frm)
 -- currently this draws from bottom to top (hence the reverse of the list),
 -- it needs improving...
 picText :: String -> Double -> Double -> Double -> Picture
-picText text w h line_height = Picture $ \frm -> (mf frm, getBoundingBox $ cliprect frm)
+picText text w h line_height = withFrame $ \frm -> (mf frm, getBoundingBox $ cliprect frm)
   where
     
     mf frm = saveExecRestore id $ clipPolygon (cliprect frm) 

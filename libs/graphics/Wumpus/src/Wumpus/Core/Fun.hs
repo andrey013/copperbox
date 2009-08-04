@@ -21,7 +21,7 @@ module Wumpus.Core.Fun
     fork
   , prod
   , both
-  , exch
+  , swap
   , outer
   , inner
   , cond
@@ -78,8 +78,8 @@ both :: (a -> b) -> (a,a) -> (b,b)
 both f (a,b) = (f a, f b)
 
 -- | Swap the elements of the pair.
-exch :: (a,b) -> (b,a)
-exch (a,b) = (b,a)
+swap :: (a,b) -> (b,a)
+swap (a,b) = (b,a)
 
 -- | Return the /outer/ elements of the argument pairs.
 outer :: (a,b) -> (c,d) -> (a,d)

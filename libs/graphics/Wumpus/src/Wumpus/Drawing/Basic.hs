@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
@@ -36,36 +37,41 @@ import Wumpus.Core.Vector
 import Wumpus.Drawing.GraphicsState
 import Wumpus.Drawing.PostScript
 
+import MonadLib.Monads
 import Data.AffineSpace
+
 
 import Data.List
 import Data.Monoid
 
 --------------------------------------------------------------------------------
 
-newtype Picture = Picture { 
-       getPicture   :: DFrame2 -> (WumpusM (), DBoundingBox)
-    }
+type Picture  = Reader DFrame2 (WumpusM (), DBoundingBox)
+type Position = Picture -> Reader DFrame2 DPoint2
 
--- Is Picture really - ReaderT DFrame2 (Writer (PostScript,DBoundingBox)) a ?
-
--- instance HasBoundingBox (Picture -> DFrame2) Double where
---  getBoundingBox = getBoundingBox_picture
-
-getBoundingBox_picture :: Picture -> DFrame2 -> BoundingBox Double
-getBoundingBox_picture pic frm = snd $ (getPicture pic) frm
+-- | The mappend of a Picture is /neutral composition/. 
+instance Monoid Picture where
+  mempty = return (return (), mempty)
+  mappend p p' = do p1 <- p
+                    p2 <- p'
+                    return $ p1 `mappend` p2
 
 
+ 
 -- | Draw a picture, generating PostScript output.
 psDraw :: Picture -> PostScript
-psDraw pic = runWumpus env0 (fst $ (getPicture pic) (ortho zeroPt))
+psDraw pic = runWumpus env0 (fst $ runReader (ortho zeroPt) pic)
+
 
 writePicture :: FilePath -> Picture -> IO ()
 writePicture filepath pic = writeFile filepath $ psDraw pic
 
+
+
+
 -- | Create an empty picture.
 picEmpty :: Picture
-picEmpty = Picture $ \frm -> let o = origin frm in (return (), BBox o o) 
+picEmpty = return (return (), mempty) 
 
 
 infixr 7 <..>
@@ -74,51 +80,50 @@ infixr 5 <//>
 
 
 
+extractPosition :: (DBoundingBox -> DPoint2) -> Position
+extractPosition f = liftM (f . snd) 
+
+
 -- | Neutral composition (i.e. union) of two pictures. Neither 
 -- picture is moved - the composition just groups the pictures in 
 -- a common bounding box.
 (<..>) :: Picture -> Picture -> Picture 
-pic1 <..> pic2 = Picture $ \frm -> 
-    let (cmd1,bb1) = (getPicture pic1) frm
-        (cmd2,bb2) = (getPicture pic2) frm
-    in (cmd1 >> cmd2, bb1 `mappend` bb2) 
+(<..>) = mappend
+
+
+composeTwo :: (DBoundingBox -> DPoint2) 
+           -> (DBoundingBox -> DPoint2)
+           -> Picture 
+           -> Picture 
+           -> Picture
+composeTwo f1 f2 pic1 pic2 = do 
+  p1@(_,bb1)  <- pic1
+  (_,bb2)     <- pic2
+  p2          <- mapReader (displaceOrigin $ f1 bb1 .-. f2 bb2) pic2
+  return $ p1 `mappend` p2
 
 
 -- | Horizontal composition of pictures. (c.f pretty-print
 -- combinator (<+>) ) 
 (<++>) :: Picture -> Picture -> Picture
-picL <++> picR = Picture $ \frm -> 
-    let (cmdl,bbl) = (getPicture picL) frm
-        (_,bbtemp) = (getPicture picR) frm
-        vdiff      = east bbl .-. west bbtemp
-        (cmdr,bbr) = (getPicture picR) (displaceOrigin vdiff frm)
-    in (cmdl >> cmdr, bbl `mappend` bbr) 
+(<++>) = composeTwo east west
+
 
 -- | Vertical composition of pictures. 
 (<//>) :: Picture -> Picture -> Picture
-picT <//> picB = Picture $ \frm -> 
-    let (cmdt,bbt) = (getPicture picT) frm
-        (_,bbtemp) = (getPicture picB) frm
-        vdiff      = south bbt .-. north bbtemp
-        (cmdb,bbb) = (getPicture picB) (displaceOrigin vdiff frm)
-    in (cmdt >> cmdb, bbt `mappend` bbb) 
+(<//>) = composeTwo south north
+
 
 -- | Center the second picture at the center point of the first picture. 
 centered :: Picture -> Picture -> Picture
-centered pic1 pic2 = Picture $ \frm -> 
-    let (cmd1,bb1) = (getPicture pic1) frm
-        (_,bbtemp) = (getPicture pic2) frm
-        vdiff      = center bb1 .-. center bbtemp
-        (cmd2,bb2) = (getPicture pic2) (displaceOrigin vdiff frm)
-    in (cmd1 >> cmd2, bb1 `mappend` bb2) 
+centered = composeTwo center center
+
 
 -- | Align the picture so that it's bottom-left corner is at the 
 -- origin of the frame.
 alignAtOrigin :: Picture -> Picture
-alignAtOrigin pic = Picture $ \frm ->
-  let (_,bbtemp) = (getPicture pic) frm
-      vdiff      = southEast bbtemp .-. (origin frm)
-  in (getPicture pic) (displaceOrigin vdiff frm)
+alignAtOrigin pic = pic >>= \(_,bb) ->
+  mapReader (\frm -> displaceOrigin (southEast bb .-. origin frm) frm) pic
 
 
 
@@ -159,13 +164,13 @@ vcatSep ysep (x:xs)  = foldl' fn x xs
 
 -- | Create a blank (empty) Picture of width @w@ and height @h@.
 blankPicture :: Double -> Double -> Picture
-blankPicture w h = Picture $ \frm -> let rect = withinFrame frm (rectangle w h zeroPt) 
+blankPicture w h = withFrame $ \frm -> let rect = withinFrame frm (rectangle w h zeroPt) 
                                      in (return (), getBoundingBox rect)
 
 -- | Repeat a picture @n@ times, at each iteration displace by the 
 -- vector @disp@.
 multiput :: Int -> DVec2 -> Picture -> Picture
-multiput n disp pic = Picture $ \frm ->
+multiput n disp pic = withFrame $ \frm ->
     foldl' (fn frm) (return(),mempty) vecs
   where
     vecs :: [DVec2]
@@ -173,51 +178,51 @@ multiput n disp pic = Picture $ \frm ->
 
     fn :: DFrame2 -> (WumpusM (), DBoundingBox) -> DVec2 -> (WumpusM (), DBoundingBox)
     fn frm (mf,bb) (V2 x y) = 
-       prod (mf >>) (bb `mappend`) $ (getPicture $ displace x y pic) frm
+       prod (mf >>) (bb `mappend`) $ (runReader frm (displace x y pic))
 
 
 picPolygon :: DPolygon -> Picture
-picPolygon p = Picture $ \frm -> 
+picPolygon p = withFrame $ \frm -> 
   let p' = withinFrame frm p in (strokePolygon p', getBoundingBox p')
 
 
 picLines :: [DLineSegment2] -> Picture
-picLines xs = Picture $ \frm -> 
+picLines xs = withFrame $ \frm -> 
     let xs' = map (withinFrame frm) xs
     in (mapM_ drawLine xs', bounds xs')
 
 picLine :: DLineSegment2 -> Picture
-picLine ln = Picture $ \frm -> 
+picLine ln = withFrame $ \frm -> 
     let ln' = withinFrame frm ln
     in (drawLine ln', bounds ln')
 
 picPath :: DPath -> Picture
-picPath p = Picture $ \frm ->
+picPath p = withFrame $ \frm ->
    let p' = withinFrame frm p in (drawPath p', bounds p')
 
 displace :: Double -> Double -> Picture -> Picture
-displace x y p = Picture $ \frm -> (getPicture p) $ displaceOrigin (V2 x y) frm
+displace x y p = withFrame $ \frm -> runReader (displaceOrigin (V2 x y) frm) p
 
 at :: Picture -> (Double,Double) -> Picture
 at pic (x,y) = displace x y pic
 
 vdisplace :: DVec2 -> Picture -> Picture
-vdisplace v p = Picture $ \frm -> (getPicture p) $ displaceOrigin v frm
+vdisplace v p = withFrame $ \frm -> runReader (displaceOrigin v frm) p
 
 
 
 withRgbColour :: DRGB -> Picture -> Picture
-withRgbColour c pic = Picture $ \frm ->
-    let (mf,bb) = (getPicture pic) frm in (localRgbColour c mf,bb)
+withRgbColour c pic = withFrame $ \frm ->
+    let (mf,bb) = runReader frm pic in (localRgbColour c mf,bb)
 
 withGray :: Double -> Picture -> Picture
-withGray n pic = Picture $ \frm ->
-    let (mf,bb) = (getPicture pic) frm in (localGray n mf,bb)
+withGray n pic = withFrame $ \frm ->
+    let (mf,bb) = runReader frm pic in (localGray n mf,bb)
 
 
 withFont :: Font -> Picture -> Picture
-withFont ft pic = Picture $ \frm ->
-    let (mf,bb) = (getPicture pic) frm in (localFont ft mf,bb)
+withFont ft pic = withFrame $ \frm ->
+    let (mf,bb) = runReader frm pic in (localFont ft mf,bb)
 
 
 
@@ -409,18 +414,18 @@ drawDisk (Disk (P2 x y) r) = fillPathSkel $ do
 
 
 picDisk :: Disk -> Picture
-picDisk p = Picture $ \frm -> 
+picDisk p = withFrame $ \frm -> 
   let p' = pointwise (coord frm) p in (drawDisk p', diskBB p')
 
 
 picCircle :: Circle -> Picture
-picCircle p = Picture $ \frm -> 
+picCircle p = withFrame $ \frm -> 
   let p' = pointwise (coord frm) p in (drawCircle p', circleBB p')
 
 
 
 picCurve :: DCurve -> Picture
-picCurve c = Picture $ \frm -> 
+picCurve c = withFrame $ \frm -> 
   let c' = pointwise (coord frm) c in (drawCurve c', bounds c')
 
 drawCurve :: DCurve -> WumpusM ()
@@ -431,7 +436,7 @@ drawCurve (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) =
 
 
 picBezier :: DCurve -> Picture
-picBezier c = Picture $ \frm -> 
+picBezier c = withFrame $ \frm -> 
   let c' = pointwise (coord frm) c in (drawBezier c', bounds c')
 
 -- also draw control points
@@ -450,12 +455,12 @@ drawBezier (Curve (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) =
 
 
 dotSquare :: Picture
-dotSquare = Picture $ \frm -> 
+dotSquare = withFrame $ \frm -> 
     let sq = (withinFrame frm $ square 4 zeroPt) in (strokePolygon sq, getBoundingBox sq)
 
 
 dotPlus :: Picture
-dotPlus = Picture $ \frm -> 
+dotPlus = withFrame $ \frm -> 
     (mapM_ drawLine [lh frm,lv frm], bounds [lh frm,lv frm])
   where
     lh  = translate (-2) 0 . line (hvec 4::Vec2 Double) . origin
@@ -463,7 +468,7 @@ dotPlus = Picture $ \frm ->
 
 
 dotX :: Picture 
-dotX = Picture $ \frm -> 
+dotX = withFrame $ \frm -> 
      (mapM_ drawLine [ls1 (origin frm), ls2 (origin frm)], 
       bounds [ls1 (origin frm), ls2 (origin frm)])
   where
@@ -474,7 +479,7 @@ dotX = Picture $ \frm ->
 
 
 dotAsterisk :: Picture
-dotAsterisk = Picture $ \frm -> 
+dotAsterisk = withFrame $ \frm -> 
     let ls =  trans frm $ circular (replicate 5 $ ls1)
     in (mapM_ drawLine ls, bounds ls)
   where
@@ -485,7 +490,7 @@ dotAsterisk = Picture $ \frm ->
 
 
 polyDot :: Int -> Picture
-polyDot sides = Picture $ \frm -> 
+polyDot sides = withFrame $ \frm -> 
     let pgon = regularPolygon sides 2 (origin frm) 
     in (strokePolygon pgon, getBoundingBox pgon)
 
@@ -500,3 +505,5 @@ dotDiamond = polyDot 4
 dotPentagon :: Picture
 dotPentagon = polyDot 5
  
+withFrame :: (DFrame2 -> a) -> Reader DFrame2 a
+withFrame f = ask >>= return . f

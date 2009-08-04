@@ -137,7 +137,7 @@ arrow p p' = Arrow ln tip where
 
 
 picArrow :: DArrow -> Picture 
-picArrow (Arrow ln poly) = Picture $ \frm -> 
+picArrow (Arrow ln poly) = withFrame $ \frm -> 
   let ln'  = pointwise (coord frm) ln
       arr' = Arrow ln' (pointwise (coord frm) poly)
   in (drawArrow arr', bounds ln')
