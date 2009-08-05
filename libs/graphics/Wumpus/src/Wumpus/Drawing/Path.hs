@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.Path
+-- Module      :  Wumpus.Drawing.Path
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -17,7 +17,7 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Path where
+module Wumpus.Drawing.Path where
 
 
 import Wumpus.Core.Curve

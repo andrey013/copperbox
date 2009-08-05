@@ -29,7 +29,6 @@ import Wumpus.Core.Curve
 import Wumpus.Core.Frame
 import Wumpus.Core.Fun
 import Wumpus.Core.Line
-import Wumpus.Core.Path
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Polygon
@@ -37,6 +36,7 @@ import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
 import Wumpus.Drawing.GraphicsState
+import Wumpus.Drawing.Path
 import Wumpus.Drawing.PostScript
 
 import MonadLib.Monads
