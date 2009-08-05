@@ -23,8 +23,8 @@ demo1 = writePicture "node1.ps"  drawing1 where
   -- Note the extracted positions are relative to the already displaced
   -- frame, hence the runReader bit.
   -- Clearly this is a hack, how to do this properly needs thinking about.
-  arr1      = do pt1 <- extractPosition center node1
-                 pt2 <- extractPosition center node2
+  arr1      = do pt1 <- extractCoordinate center node1
+                 pt2 <- extractCoordinate center node2
                  return $ runReader (ortho zeroPt) (picArrow $ arrow pt1 pt2)
 
 

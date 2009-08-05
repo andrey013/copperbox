@@ -1,0 +1,89 @@
+%!PS-Adobe-2.0
+%%Pages: 1
+%%EndComments
+%%Page: 1 1
+
+/draw-emex { 2 dict begin
+  /em exch def
+  /ex exch def
+  0 setgray
+%  300 0 moveto
+%  em 10 string cvs show
+
+  200 0 moveto
+  (M) show
+
+  350 0 moveto
+  (x) show
+
+  1 0 0 setrgbcolor
+  %% em width of M
+  newpath
+  200  -2  moveto
+  ex   0   rlineto 
+  stroke
+
+  %% ex height of x
+  newpath
+  348  0   moveto
+  0    em  rlineto
+  stroke
+
+
+} def 
+
+/Times-Roman findfont
+20 scalefont
+setfont
+
+
+gsave
+20 650 translate
+0 0 moveto
+(Times-Roman 40) show
+
+/Times-Roman findfont
+40 scalefont
+setfont
+34.5 18 draw-emex
+grestore
+
+gsave
+20 600 translate
+0 0 moveto
+(Times-Roman 60) show
+
+/Times-Roman findfont
+60 scalefont
+setfont
+51.75 27 draw-emex
+grestore
+
+
+gsave
+20 550 translate
+0 0 moveto
+(Helvetica 40) show
+
+/Helvetica findfont
+40 scalefont
+setfont
+32 21 draw-emex
+grestore
+
+
+gsave
+20 500 translate
+0 0 moveto
+(Helvetica 60) show
+
+/Helvetica findfont
+60 scalefont
+setfont
+48 32.5 draw-emex
+grestore
+
+
+showpage
+
+%%EOF

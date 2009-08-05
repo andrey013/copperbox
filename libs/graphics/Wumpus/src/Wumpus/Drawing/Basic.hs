@@ -3,6 +3,8 @@
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
+{-# OPTIONS -fno-warn-orphans #-}
+
 
 --------------------------------------------------------------------------------
 -- |
@@ -40,22 +42,29 @@ import Wumpus.Drawing.PostScript
 import MonadLib.Monads
 import Data.AffineSpace
 
-
+import Control.Applicative
 import Data.List
 import Data.Monoid
 
 --------------------------------------------------------------------------------
 
 type Picture  = Reader DFrame2 (WumpusM (), DBoundingBox)
-type Position = Picture -> Reader DFrame2 DPoint2
+type Coordinate = Picture -> Reader DFrame2 DPoint2
+
+
+-- (<*>) is `ap` which is missing in MonadLib
+ 
+instance Applicative (Reader a) where
+  pure = return
+  (<*>) ef ex  = do f <- ef
+                    x <- ex 
+                    return $ f x
+
 
 -- | The mappend of a Picture is /neutral composition/. 
 instance Monoid Picture where
   mempty = return (return (), mempty)
-  mappend p p' = do p1 <- p
-                    p2 <- p'
-                    return $ p1 `mappend` p2
-
+  mappend p p' = mappend <$> p <*> p'
 
  
 -- | Draw a picture, generating PostScript output.
@@ -80,8 +89,8 @@ infixr 5 <//>
 
 
 
-extractPosition :: (DBoundingBox -> DPoint2) -> Position
-extractPosition f = liftM (f . snd) 
+extractCoordinate :: (DBoundingBox -> DPoint2) -> Coordinate
+extractCoordinate f = liftM (f . snd) 
 
 
 -- | Neutral composition (i.e. union) of two pictures. Neither 
