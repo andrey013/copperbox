@@ -62,16 +62,16 @@ class Converse a where
 class HasPoints t where
   type Pnt t :: *
   extractPoints :: t -> [Pnt t]
-  endPoint      :: t -> Pnt t
   startPoint    :: t -> Pnt t
+  endPoint      :: t -> Pnt t
 
 
 
 instance HasPoints (t a) => HasPoints [t a] where
   type Pnt [t a] = Pnt (t a)
   extractPoints = concatMap extractPoints 
-  endPoint = last . extractPoints
   startPoint = head . extractPoints
+  endPoint = last . extractPoints
 
 
 --------------------------------------------------------------------------------

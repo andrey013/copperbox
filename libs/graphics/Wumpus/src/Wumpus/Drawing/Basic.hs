@@ -36,7 +36,7 @@ import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
 import Wumpus.Drawing.GraphicsState
-import Wumpus.Drawing.Path
+import Wumpus.Drawing.Path0   -- for the time being use the old version
 import Wumpus.Drawing.PostScript
 
 import MonadLib.Monads
@@ -351,6 +351,7 @@ drawPath path = strokeOpenPathSkel $ do
     draw1 (Right (Curve _ (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) )) = 
         ps_curveto x1 y1 x2 y2 x3 y3
 
+   
 
 diamond :: Double -> Double -> (DPoint2 -> DPolygon)
 diamond w h = \o -> Polygon $ map (o .+^) xs 
