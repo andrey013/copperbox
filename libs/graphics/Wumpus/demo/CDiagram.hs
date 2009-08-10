@@ -13,8 +13,9 @@ import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
 import Wumpus.Drawing.Arrow
-import Wumpus.Drawing.Basic
 import Wumpus.Drawing.Label
+import Wumpus.Drawing.Path
+import Wumpus.Drawing.Picture
 import Wumpus.Drawing.PostScript
 
 
@@ -25,7 +26,7 @@ demo1 = writePicture "cdiagram1.ps" drawing1 where
  
 
 diagram1 :: Picture
-diagram1 = picLines arrs <..> cat labels
+diagram1 = (picPath stroke $ segmentPath arrs) <..> cat labels
 
 
 
@@ -43,6 +44,6 @@ arrs = concat $ sequence [f1,f2,f3,f4] $ bounds $ square 100 zeroPt
 labels :: [Picture]
 labels = zipWith fn ["A","C","B","P"] (extractPoints $ square 100 zeroPt)
   where
-    fn c pt@(P2 x y) = displace (x-5) (y-5) $ picLabel c 10 10
+    fn c pt@(P2 x y) = picLabel $ label c 10 10 pt
 
 

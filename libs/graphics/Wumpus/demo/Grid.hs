@@ -6,11 +6,12 @@ module Grid where
 
 import Wumpus.Core.Vector
 
-import Wumpus.Drawing.Basic
 import Wumpus.Drawing.Grid
+import Wumpus.Drawing.Picture
 import Wumpus.Drawing.X11Colours
 
 
+{-
 
 demo1 :: IO ()
 demo1 = writePicture "grid1.ps" drawing1 where
@@ -23,6 +24,7 @@ demo1 = writePicture "grid1.ps" drawing1 where
 
   triangles = multiput 6 (V2 10 0) dotTriangle
 
+-}
 
 {-
 calgrid :: [LineBag]

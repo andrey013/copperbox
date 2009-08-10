@@ -12,8 +12,8 @@ import Wumpus.Core.Pointwise
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
-import Wumpus.Drawing.Basic
--- import Wumpus.Drawing.PostScript
+import Wumpus.Drawing.Picture
+import Wumpus.Drawing.Path
 import Wumpus.Drawing.X11Colours
 
 -- import Data.AffineSpace
@@ -26,18 +26,22 @@ demo1 = writePicture "circleseg1.ps" drawing1 where
 
   pic1 = withRgbColour tomato4 $ 
                 dotDiamond
-           <..> (picLine $ hline 70 zeroPt)
-           <..> (picLine $ pointwise (rotateAbout (pi/4) zeroPt) $ hline 70 zeroPt)
+           <..> (picPath stroke $ straightLine $ hline 70 zeroPt)
+           <..> (picPath stroke $ straightLine $ 
+                   pointwise (rotateAbout (pi/4) zeroPt) $ hline 70 zeroPt)
 
   pic2 = withRgbColour steelBlue1 $
-                (picBezier $ pointwise (uniformScale 60) $ circleSegment (pi/4))
-           <..> (picBezier $ pointwise (translate 100 0) $ bezierArc 20 0 (pi/2))
+                (picPath stroke $ bezierPath $ 
+                   pointwise (uniformScale 60) $ circleSegment (pi/4))
+           <..> (picPath stroke $ bezierPath $ 
+                   pointwise (translate 100 0) $ bezierArc 20 0 (pi/2))
 
 
   sinePic = displace 0 (-100) $ dpo $ pointwise (uniformScale 30) $ plotSine
   
   beziers = displace 0 (-150) $ cat $ zipWith fn [0..4] [1..5] where
-      fn a b = picBezier $ pointwise (uniformScale 30) $ cwd sin cos a b
+      fn a b = picPath stroke $ bezierPath $ 
+                 pointwise (uniformScale 30) $ cwd sin cos a b
 
   sine1   = displace 0 (-200) $ cat $ 
                 map (picCurve . pointwise (uniformScale 10) ) $ sinePath 20
@@ -49,9 +53,15 @@ demo1 = writePicture "circleseg1.ps" drawing1 where
                                 picBezier (tildeCurve 50 (P2 60 0))
 
 
+picCurve :: DCurve -> Picture
+picCurve = picPath stroke . bezierPath 
+
+picBezier c@(Curve p0 p1 p2 p3) = picCurve c <..> ctrlLines where
+  ctrlLines = picPath stroke $ segmentPath $ [LS p0 p1, LS p3 p2]
+
 
 dpo :: [DVec2] -> Picture
-dpo = cat . map (vdisplace `flip` dotSquare)
+dpo = cat . map (displacePicture `flip` dotSquare)
 
 
 plotSine :: [DVec2]

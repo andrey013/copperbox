@@ -19,14 +19,17 @@
 
 module Wumpus.Drawing.Path where
 
-
+import Wumpus.Core.Colour
+import Wumpus.Core.Curve
 import Wumpus.Core.Geometric
 import Wumpus.Core.Instances ()
-import Wumpus.Core.Line hiding ( lineTo )
+import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Radian
 import Wumpus.Core.Vector
+
+import Wumpus.Drawing.GraphicsState
 
 import Data.AffineSpace
 
@@ -36,15 +39,26 @@ import Data.Sequence
 import qualified Data.Sequence as S
 
 
-{-
--- TO DO - rather than a use a global graphics state, associate
--- /styles/ with the rendering of a particular path.
+-- /Visual path/
+data VPath a = VPath { 
+        pathAttr :: PathAttr, 
+        pathSegments :: (Path a)
+      }
+  deriving (Eq,Show)
 
-data PathCmd = Stroke Pen
-             | Fill   DRGB 
-             | Clip
+data PathAttr = Stroke DRGB Pen
+              | Fill   DRGB 
+              | Clip
   deriving (Eq,Show) 
--}
+
+stroke :: PathAttr
+stroke = Stroke wumpusBlack newPen
+
+fill :: PathAttr
+fill = Fill wumpusBlack
+
+mapPath :: (Path a -> Path b) -> VPath a -> VPath b
+mapPath f (VPath attr sp) = VPath attr (f sp) 
 
 -- A closed path will allow reopening by adding a LineTo the 
 -- start point. While this is somewhat quirky, it is saves going
@@ -67,7 +81,7 @@ data Path a = Path {
   deriving (Eq,Show)
 
 
-type DPath = Path Double
+type DVPath = VPath Double
 
 
 -- | Segments are stored as vectors. This makes moving a path a 
@@ -155,6 +169,13 @@ pathExtractPoints (Path s e sp) = (s:) . snd $ F.foldr fn (initial e,[]) sp
 newPath :: Point2 a -> Path a
 newPath p = Path p (EndPoint p) empty
 
+straightLine :: Num a => LineSegment Point2 a -> Path a
+straightLine (LS p1 p2) = newPath p1 `lineTo` p2
+
+
+bezierPath :: Num a => Curve a -> Path a
+bezierPath (Curve p0 p1 p2 p3) = newPath p0 `curveTo` (p1,p2,p3)  
+
 
 tracePoints :: Num a => [Point2 a] -> Path a
 tracePoints (x:xs) = foldl' lineTo (newPath x) xs
@@ -198,14 +219,24 @@ firstTwoPoints (Path s _ sp)  = fn $ viewl sp where
   fn (RCurveTo v1 _ _ :< _)   = (s,s .+^ v1)
   fn EmptyL                   = error "Path.firstTwoPoints - bad path, no segments"
 
- 
-
+-- | Make an open path from line segments. If consecutive segments
+-- do not share (end-point, start-point) then insert a RMoveTo.
+segmentPath :: Num a => [LineSegment Point2 a] -> Path a
+segmentPath []              = error "Path.segmentPath - empty list"
+segmentPath ((LS p1 p2):xs) = foldl' fn (straightLine $ LS p1 p2) xs
+  where
+    fn path (LS p p') | p == endPoint path = path `lineTo` p'
+                      | otherwise          = path `moveTo` p `lineTo` p'
 
 class LineTo t where
   lineTo :: Num a => Path a -> t a -> Path a
+  moveTo :: Num a => Path a -> t a -> Path a
 
+
+-- Package the points as a tuple to favour infix application 
+-- rather than partial application.
 class CurveTo t where
-  curveTo :: Path a -> t a -> t a -> t a -> Path a
+  curveTo :: Num a => Path a -> (t a, t a, t a) -> Path a
 
 
 
@@ -214,11 +245,35 @@ instance LineTo Point2 where
     where v = p .-. e 
   lineTo path@(Path _ (PathClosed _) _) p = lineTo (reopenPath path) p
 
+  moveTo      (Path s (EndPoint e) sp)  p = Path s (EndPoint p) (sp |> RMoveTo v)
+    where v = p .-. e 
+  moveTo path@(Path _ (PathClosed _) _) p = moveTo (reopenPath path) p
+
+instance CurveTo Point2 where
+  curveTo      (Path s (EndPoint e) sp)  (p1,p2,p3) = 
+      Path s (EndPoint p3) (sp |> RCurveTo v1 v2 v3)
+    where 
+      v1 = p1 .-. e
+      v2 = p2 .-. p1
+      v3 = p3 .-. p2
+     
+  curveTo path@(Path _ (PathClosed _) _) tup = curveTo (reopenPath path) tup
+  
 
 instance LineTo Vec2 where
   lineTo      (Path s (EndPoint e) sp)  v = Path s (EndPoint p) (sp |> RLineTo v)
     where p = e .+^ v
   lineTo path@(Path _ (PathClosed _) _) v = lineTo (reopenPath path) v
+
+  moveTo      (Path s (EndPoint e) sp)  v = Path s (EndPoint p) (sp |> RMoveTo v)
+    where p = e .+^ v
+  moveTo path@(Path _ (PathClosed _) _) v = moveTo (reopenPath path) v
+
+
+changeColour :: DRGB -> PathAttr -> PathAttr  
+changeColour c (Stroke _ pen)   = Stroke c pen
+changeColour c (Fill   _)       = Fill c 
+changeColour _ Clip             = Clip
 
 
 

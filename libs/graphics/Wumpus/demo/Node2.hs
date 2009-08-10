@@ -4,7 +4,7 @@ module Node2 where
 
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Frame
-import Wumpus.Core.Instances
+-- import Wumpus.Core.Instances
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Polygon
@@ -32,6 +32,8 @@ demo1 = writePicture "node2.ps"  drawing1 where
   arr1      = arrow pt1 (pt2 .-. pt1)  
 
 
+
+
 -- from Arrow which currently depends on the old picture type
 
 
@@ -45,9 +47,9 @@ arrowheadTriangle d ang =
 
 
 arrow :: DPoint2 -> DVec2 -> Picture
-arrow p v = (picPath ln) <..> tip
+arrow p v = (picPath $ VPath stroke ln) <..> tip
   where
     ln    = newPath p `lineTo` v
     theta = endGradient ln
-    tip   = picPolygon $ arrowheadTriangle 10 (pi/10) theta (p .+^ v)
+    tip   = picPolygon stroke $ arrowheadTriangle 10 (pi/10) theta (p .+^ v)
  

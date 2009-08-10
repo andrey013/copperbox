@@ -33,13 +33,13 @@ module Wumpus.Core.Line
   , PolyLine(..)
   , DPolyLine2
 
-   -- * Construction
+  -- * Construction
+  , lineSegment
   , line
   , hline
   , vline
   , aline
 
-  , lineTo
 
   -- * Operations
   , converse
@@ -141,6 +141,10 @@ instance Converse (PolyLine pt a) where
 
 -- construction
 
+
+lineSegment :: pt a -> pt a -> LineSegment pt a
+lineSegment = LS
+
 -- Lines are created /without/ respect to frames even though they 
 -- are created at arbitrary points. A frame becomes necessary only 
 -- later extraction of /points as coordinates/.
@@ -167,9 +171,6 @@ aline :: (Floating a, AffineSpace (pt a), Vec2 a ~ Diff (pt a))
 aline theta a = line (avec2 theta a)
 
 
-
-lineTo :: pt a -> pt a -> LineSegment pt a
-lineTo = LS --  p1 v where v = p2 .-. p1
 
 
 --------------------------------------------------------------------------------

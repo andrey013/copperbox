@@ -18,17 +18,24 @@
 module Wumpus.Drawing.Picture where
 
 import Wumpus.Core.BoundingBox
+import Wumpus.Core.Colour
+import Wumpus.Core.Curve
 import Wumpus.Core.Geometric
+import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Polygon
+import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
+import Wumpus.Drawing.GraphicsState
+import Wumpus.Drawing.Label
 import Wumpus.Drawing.Path
 import Wumpus.Drawing.PostScript
 
 import Data.AffineSpace
 
 import qualified Data.Foldable as F
+import Data.List ( foldl' ) 
 import Data.Monoid
 
 
@@ -37,85 +44,199 @@ import Data.Monoid
 -- than points.
 
 
-data Picture = Picture { bbox :: DBoundingBox, paths :: [DPath] }
+data Picture = Picture { 
+      picBBox     :: DBoundingBox, 
+      picPaths    :: [DVPath],
+      picLabels   :: [Label Double] 
+    }
   deriving (Show)
 
+
 instance Monoid Picture where
-  mempty = Picture mempty []
-  Picture bb ps `mappend` Picture bb' ps' = Picture (bb `mappend` bb')
-                                                    (ps ++ ps') 
+  mempty = Picture mempty [] []
+  Picture bb ps ls `mappend` Picture bb' ps' ls' = 
+    Picture (bb `mappend` bb') (ps ++ ps') (ls ++ ls')
 
 
 extractCoordinate :: (DBoundingBox -> DPoint2) -> Picture -> DPoint2
-extractCoordinate f = f . bbox
+extractCoordinate f = f . picBBox
 
 
 infixr 7 <..>
 infixr 6 <++>
 infixr 5 <//>
 
+picEmpty :: Picture
+picEmpty = mempty
+
+empty :: Picture -> Bool
+empty (Picture bb [] []) | bb == mempty = True
+empty _                                 = False
+
 (<..>) :: Picture -> Picture -> Picture
 (<..>) = mappend
 
 (<++>) :: Picture -> Picture -> Picture
-(<++>) p1 p2 = let v = (east $ bbox p1) .-. (west $ bbox p2) 
-               in p1 `mappend` (displacePicture v p2)  
-
-
+(<++>) p1 p2 | empty p1  = p2
+             | empty p2  = p1
+             | otherwise = p1 `mappend` (displacePicture v p2)  
+   where 
+     v = (east $ picBBox p1) .-. (west $ picBBox p2) 
+        
 (<//>) :: Picture -> Picture -> Picture
-(<//>) p1 p2 = let v = (south $ bbox p1) .-. (north $ bbox p2) 
-               in p1 `mappend` (displacePicture v p2)  
+(<//>) p1 p2 | empty p1  = p2
+             | empty p2  = p1
+             | otherwise = p1 `mappend` (displacePicture v p2)  
+   where  
+     v = (south $ picBBox p1) .-. (north $ picBBox p2) 
+      
+
+centered :: Picture -> Picture -> Picture
+centered p1 p2 | empty p1  = p2
+               | empty p2  = p1
+               | otherwise = p1 `mappend` (displacePicture v p2)  
+  where 
+    v = (center $ picBBox p1) .-. (center $ picBBox p2) 
 
 
 displacePicture :: DVec2 -> Picture -> Picture
-displacePicture v (Picture (BBox bl tr) ps) = 
-    Picture (BBox (bl .+^ v) (tr .+^ v)) (map (displacePath v) ps)
+displacePicture v (Picture (BBox bl tr) ps ls) = Picture bb' ps' ls' 
+  where
+    bb' = BBox (bl .+^ v) (tr .+^ v)
+    ps' = map (mapPath (displacePath v)) ps
+    ls' = map (displaceLabel v) ls
+
+
 
 at :: Picture -> (Double,Double) -> Picture
 at p (x,y) = displacePicture (V2 x y) p
 
+displace :: Double -> Double -> Picture -> Picture
+displace x y = displacePicture (V2 x y) 
 
-picPolygon :: DPolygon -> Picture
-picPolygon pgon = Picture (getBoundingBox pgon) [path]
+
+multiput :: Int -> DVec2 -> Picture -> Picture
+multiput n disp pic = 
+    foldl' (\p v -> p <..> (displacePicture v pic)) pic vecs
   where
-    path = closePath . tracePoints . extractPoints $ pgon
-
-picPath :: DPath -> Picture
-picPath p = Picture (bounds p)  [p]
+    vecs  = scanl (+) disp (replicate (n-1) disp)
 
 
-polyDot :: Int -> Picture 
-polyDot n = picPolygon $ regularPolygon n 2 zeroPt
+-- | Concatenate all the pictures with (<..>) preserving there 
+-- original positions.
+cat :: [Picture] -> Picture
+cat = foldl' (<..>) picEmpty
 
 
-dotTriangle :: Picture
-dotTriangle = polyDot 3
+-- | Concatenate all the pictures horizontally with (<++>).
+hcat :: [Picture] -> Picture
+hcat = foldl' (<++>) picEmpty
 
-dotDiamond :: Picture
-dotDiamond = polyDot 4
+-- | Concatenate all the pictures vertically with (<//>).
+vcat :: [Picture] -> Picture
+vcat = foldl' (<//>) picEmpty
+
+-- | Concatenate all the pictures horizontally separated by a 
+-- space of @xsep@ units.
+hcatSep :: Double -> [Picture] -> Picture 
+hcatSep _    []     = picEmpty
+hcatSep xsep (x:xs) = foldl' fn x xs
+  where
+    fn acc a = acc <++> sep <++> a
+    sep      = blankPicture xsep 0 
+
+
+-- | Concatenate all the pictures vertically separated by a 
+-- space of @ysep@ units.
+vcatSep :: Double -> [Picture] -> Picture 
+vcatSep _    []      = picEmpty
+vcatSep ysep (x:xs)  = foldl' fn x xs
+  where
+    fn acc a = acc <//> sep <//> a
+    sep      = blankPicture 0 ysep
 
 
 
-writePicture :: FilePath -> Picture -> IO ()
-writePicture filepath pic = writeFile filepath $ psDraw pic
+-- | Create a blank (empty) Picture of width @w@ and height @h@.
+blankPicture :: Double -> Double -> Picture
+blankPicture w h = Picture (BBox zeroPt (P2 w h)) [] []
+
+
+
+picPolygon :: PathAttr -> DPolygon -> Picture
+picPolygon style pgon = Picture (getBoundingBox pgon) [path] []
+  where
+    path = VPath style . closePath . tracePoints . extractPoints $ pgon
+
+picPath :: PathAttr -> Path Double -> Picture
+picPath style p = Picture (bounds p)  [VPath style p] []
+
+
+picLabel :: Label Double -> Picture
+picLabel lbl = Picture (labelRect lbl) [] [lbl]
+
+
+
+
+-- TODO
+-- The withRgbColour, withGray functions should work on Paths
+-- not Pictures. For temporary compatibility they work Pictures.
+
+
+withRgbColour :: DRGB -> Picture -> Picture
+withRgbColour c (Picture bb ps ls) = Picture bb (map fn ps) ls
+  where
+   fn (VPath attrs path) = VPath (changeColour c attrs) path
+
+
+withGray :: Double -> Picture -> Picture
+withGray n = withRgbColour (gray2rgb n)
+
+withFont :: Font -> Picture -> Picture
+withFont _ = id
+
+
+
+--------------------------------------------------------------------------------
+-- output
  
 -- | Draw a picture, generating PostScript output.
 psDraw :: Picture -> PostScript
-psDraw pic = runWumpus env0 (drawPicture pic)
+psDraw pic = prologue ++ runWumpus env0 (drawPicture pic) ++ epilogue
+  where
+    prologue = unlines $ [ "%!PS-Adobe-2.0"
+                         , "%%Pages: 1"
+                         , "%%EndComments"
+                         , "%%Page: 1 1"
+                         , ""
+                         ]
+
+                   
+    epilogue = unlines $ [ "showpage", "", "%%EOF", ""]
+
+writePicture :: FilePath -> Picture -> IO ()
+writePicture filepath pic = writeFile filepath $ psDraw pic
+
 
 
 drawPicture :: Picture -> WumpusM ()
-drawPicture (Picture _ ps) = mapM_ drawPath ps 
+drawPicture (Picture _ ps ls) = defaultFont >> mapM_ drawPath ps >> mapM_ drawLabel ls
+  where
+    defaultFont = do        
+        command "findfont" ["/Times-Roman"]
+        command "scalefont" [show (10::Int)]
+        command "setfont" []
 
-drawPath :: DPath -> WumpusM ()
-drawPath (Path p0@(P2 x0 y0) end sp) = do 
+
+drawPath :: DVPath -> WumpusM ()
+drawPath (VPath attrs (Path p0@(P2 x0 y0) end sp)) = withAttrs attrs $ do 
     ps_newpath
     ps_moveto x0 y0
     F.foldlM step p0 sp 
-    endPath end
+    optClose end
   where
-    endPath (PathClosed _) = ps_closepath >> ps_stroke
-    endPath _              = ps_stroke
+    optClose (PathClosed _) = ps_closepath
+    optClose _              = return ()
     
     step p (RMoveTo v)         = let p'@(P2 x y) = p .+^ v
                                  in ps_moveto x y >> return p'
@@ -126,4 +247,123 @@ drawPath (Path p0@(P2 x0 y0) end sp) = do
                                      p2@(P2 x2 y2) = p1 .+^ v2
                                      p3@(P2 x3 y3) = p2 .+^ v3
                                  in ps_curveto x1 y1 x2 y2 x3 y3 >> return p3
+
+
+withAttrs :: PathAttr -> WumpusM () -> WumpusM ()
+withAttrs (Stroke c p) mf = localRgbColour c $ localPen p $ mf >> ps_stroke
+withAttrs (Fill c)     mf = localRgbColour c $ mf >> ps_fill
+withAttrs Clip         mf = mf >> ps_clip
+
+
+-- labels must be drawn wrt a start point
+
+drawLabel :: Label Double -> WumpusM ()
+drawLabel (Label ss (P2 x y) (BBox _ (P2 x' y')) _lh) = 
+  localFont (timesRoman 10) $ do
+    ps_moveto     x  y
+    ps_lineto     x  y'
+    ps_lineto     x' y'
+    ps_lineto     x' y
+    ps_closepath
+    ps_clip
+    ps_moveto     x  y
+    ps_show ss
+
+
+
+helvetica :: Int -> Font
+helvetica us = Font "Helvetica" us
+
+timesRoman :: Int -> Font
+timesRoman us = Font "Times-Roman" us
+
+
+
+
+--------------------------------------------------------------------------------
+-- Dots etc.
+
+
+
+polyDot :: Int -> Picture 
+polyDot n = picPolygon stroke $ regularPolygon n 2 zeroPt
+
+
+dotTriangle :: Picture
+dotTriangle = polyDot 3
+
+dotDiamond :: Picture
+dotDiamond = polyDot 4
+
+
+dotPentagon :: Picture
+dotPentagon = polyDot 5
+
+
+dotX :: Picture 
+dotX = picPath stroke path
+  where
+    l1    = vline 2 $ P2 0 (-1)
+    ls1   = rotate (pi/6)   l1
+    ls2   = rotate (5*pi/3) l1
+    path  = segmentPath [ls1,ls2]
+
+ 
+
+dotPlus :: Picture
+dotPlus = picPath stroke path
+  where
+    hl    = hline 2 $ P2 (-1) 0
+    vl    = vline 2 $ P2 0    (-1)
+    path  = segmentPath [hl,vl]
+
+
+dotSquare :: Picture
+dotSquare = picPolygon stroke $ rectangle 2 2 (P2 (-1) (-1))
+
+
+
+
+dotAsterisk :: Picture
+dotAsterisk = picPath stroke path
+  where
+   vl     = vline 2 (P2 0 (-1))
+   path   = segmentPath . circular $ replicate 5 vl
+
+
+diamond ::  Double -> Double -> PathAttr -> Picture
+diamond wth hght attr = picPolygon attr $ Polygon ps 
+  where
+    vh      = hvec (0.5*wth)
+    vv      = vvec (0.5*hght) 
+    s       = zeroPt .-^ vv
+    w       = zeroPt .+^ vh
+    n       = zeroPt .+^ vv
+    e       = zeroPt .-^ vh
+    ps      = [s,w,n,e]
+
+
+
+-- To consider - Picture might be better having a parametric type
+-- hence diamond could have this type: 
+-- diamond :: Real a => a -> a -> Picture a
+-- 
+-- Or maybe Picture should be parametric on the point type...
+
+
+
+circle :: Double -> Path Double 
+circle r = closePath $ foldl' fn (newPath $ P2 r 0) arcs
+  where
+    arcs = bezierCircle 3 r
+    fn path (Curve _ p1 p2 p3) = path `curveTo` (p1,p2,p3)
+
+-- | make a circle centered at the origin, radius @r@.
+picCircle :: Double -> Picture
+picCircle = picPath stroke . circle
+
+-- | Make a disk (filled circle)
+picDisk :: Double -> Picture
+picDisk = picPath fill . circle
+
 

@@ -38,6 +38,9 @@ module Wumpus.Core.Curve
 
   , bezierArc
 
+  , bezierCircle
+
+
   -- * tangents
   , startTangent
   , endTangent
@@ -204,18 +207,18 @@ curver (_,p0,p1) (p2,p3,_) = Curve p0 p1 p2 p3
 
 -- Acknowledgment - this appears due to Gernot Hoffmann
 -- ang should be less then 90o (pi/2)
-circleSegment :: (Floating a, AffineSpace a) => a -> Curve a
+circleSegment :: (Floating a, AffineSpace a) => Radian -> Curve a
 circleSegment ang = Curve p0 p1 p2 p3 where
   k  = (4/3) * tan (ang / 4)
   p0 = P2 1 0
-  p3 = P2 (cos ang) (sin ang)
-  p1 = P2 1 k
-  p2 = p3 .+^ (V2 (k * sin ang) (-k * cos ang)) 
+  p3 = P2 (fromRadian $ cos ang) (fromRadian $ sin ang)
+  p1 = P2 1 (fromRadian k)
+  p2 = p3 .+^ (V2 (fromRadian $ k * sin ang) (fromRadian $ -k * cos ang)) 
 
 
 --
-bezierArc :: (Floating a, AffineSpace a) 
-          => a -> Radian -> Radian -> Curve a
+
+bezierArc :: Floating a => a -> Radian -> Radian -> Curve a
 bezierArc r ang1 ang2 = Curve p0 p1 p2 p3 where
   theta = ang2 - ang1
   e     = r * fromRadian ((2 * sin (theta/2)) / (1+ 2* cos (theta/2))) 
@@ -223,6 +226,28 @@ bezierArc r ang1 ang2 = Curve p0 p1 p2 p3 where
   p3    = zeroPt .+^ avec2 ang2 r
   p1    = p0 .+^ avec2 (ang1 + pi/2) e
   p2    = p3 .+^ avec2 (ang2 - pi/2) e
+
+
+
+-- | Make a circle from bezier curves - @n@ is the number of 
+-- subdivsions per quadrant.
+bezierCircle :: Floating a => Int -> a -> [Curve a]
+bezierCircle n r = map (\(a,b) -> bezierArc r a b) quads
+  where
+    quads :: [(Radian,Radian)]
+    quads   = subs (n*4) (2 * pi)   -- 4 times n for all 4 quadrants
+
+
+
+
+subs :: Fractional a => Int -> a -> [(a,a)]
+subs n a = zip xs ys
+  where
+    a' = a / fromIntegral n
+    ds = replicate (n-1) a'
+    xs = scanl (+) 0  ds
+    ys = scanl (+) a' ds
+
 
 --------------------------------------------------------------------------------
 -- Tangents

@@ -26,16 +26,12 @@ module Wumpus.Drawing.Arrow
   , arrowheadTriangle
   , arrowheadVee
   , arrowheadPerp
-
-  -- * OLD 
-  , Arrow(..)
-  , DArrow
+  
   , arrow
-  , picArrow
 
   ) where
 
-import Wumpus.Core.BoundingBox
+-- import Wumpus.Core.BoundingBox
 import Wumpus.Core.Curve
 import Wumpus.Core.Frame
 import Wumpus.Core.Geometric
@@ -47,8 +43,8 @@ import Wumpus.Core.Radian
 import Wumpus.Core.Transformations
 import Wumpus.Core.Vector
 
-import Wumpus.Drawing.Basic
-import Wumpus.Drawing.PostScript
+import Wumpus.Drawing.Path
+-- import Wumpus.Drawing.PostScript
 
 import Data.AffineSpace
 
@@ -86,7 +82,7 @@ arrowCenterMarker ls = [ls,cm] where
   theta = langle ls
   p0    = p .+^ avec2 (theta + pi/2) 2
   p1    = p .+^ avec2 (theta - pi/2) 2
-  cm    = lineTo p0 p1
+  cm    = LS p0 p1
 
 
 --------------------------------------------------------------------------------
@@ -108,7 +104,7 @@ arrowheadVee d ang =
                       p01 = rotateAbout (pi-ang) endpt p0
                       p02 = rotateAbout (pi+ang) endpt p0
                   in map (pointwise (rotateAbout (theta - pi) endpt))
-                            [ lineTo p01 endpt, lineTo endpt p02]
+                            [LS p01 endpt, LS endpt p02]
 
 
 
@@ -116,11 +112,22 @@ arrowheadPerp :: Double -> (Radian -> DPoint2 -> [DLineSegment2])
 arrowheadPerp d = 
   \theta endpt -> let p0 = endpt .+^ (hvec (-d))
                       p1 = endpt .+^ (hvec d)
-                  in [pointwise (rotateAbout (theta+pi/2) endpt) (lineTo p0 p1)]
+                  in [pointwise (rotateAbout (theta+pi/2) endpt) (LS p0 p1)]
+
+
+
+
+arrow :: DPoint2 -> DPoint2 -> Path Double
+arrow p p' = segmentPath (ln:tip) where
+  ln    = LS p p'
+  theta = {- pi/2 + -} (langle ln) 
+  tip   = arrowheadVee 10 (pi/10) theta p'
+
 
 --------------------------------------------------------------------------------
 -- OLD - arrow type 
 
+{-
 
 
 -- TODO - tip should be more general, e.g. list of lines, or arcs
@@ -144,5 +151,6 @@ picArrow (Arrow ln poly) = withFrame $ \frm ->
 
 drawArrow :: DArrow -> WumpusM () 
 drawArrow (Arrow ln tip) = drawLine ln >> fillPolygon tip
- 
+
+-} 
 

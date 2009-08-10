@@ -5,12 +5,14 @@ module Hyperbola where
 
 import Wumpus.Core.Curve
 import Wumpus.Core.Geometric ( adjustvk ) 
+import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Polygon
 import Wumpus.Core.Transformations
 
-import Wumpus.Drawing.Basic
+import Wumpus.Drawing.Picture
+import Wumpus.Drawing.Path
 import Wumpus.Drawing.Plot
 import Wumpus.Drawing.SVGColours
 
@@ -41,9 +43,16 @@ demo1 = writePicture "hyperbola1.ps" drawing1 where
 
 
 
+picCurve :: DCurve -> Picture
+picCurve = picPath stroke . bezierPath 
+
+picBezier c@(Curve p0 p1 p2 p3) = picCurve c <..> ctrlLines where
+  ctrlLines = picPath stroke $ segmentPath $ [LS p0 p1, LS p3 p2]
+
+
 curveHack :: [DPoint2] -> Picture
 curveHack xs = 
-         (withRgbColour darkSeaGreen $ picPolygon $ Polygon xs)
+         (withRgbColour darkSeaGreen $ picPolygon stroke $ Polygon xs)
     <..> (withRgbColour blueViolet   $ cat $ map picBezier cs)
   where
     cs = smoothw 0.6 xs
