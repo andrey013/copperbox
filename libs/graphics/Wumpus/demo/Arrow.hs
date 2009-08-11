@@ -84,7 +84,7 @@ curveArr (c,xs) =
          (withRgbColour coral1 $ picPath stroke $ bezierPath c)
     <..> (withRgbColour aquamarine1 $ picPath stroke $ segmentPath xs)
     <..> (withRgbColour darkSlateGray4 $ 
-            picLabel $ label (show (endTangent c)) 40 20 zeroPt)
+            picLabel timesRoman10 $ label (show (endTangent c)) 40 20 zeroPt)
 
 testCurve :: Radian -> DCurve
 testCurve = bezierArc 50 0

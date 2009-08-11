@@ -19,7 +19,6 @@
 
 module Wumpus.Drawing.Path where
 
-import Wumpus.Core.Colour
 import Wumpus.Core.Curve
 import Wumpus.Core.Geometric
 import Wumpus.Core.Instances ()
@@ -29,7 +28,6 @@ import Wumpus.Core.Pointwise
 import Wumpus.Core.Radian
 import Wumpus.Core.Vector
 
-import Wumpus.Drawing.GraphicsState
 
 import Data.AffineSpace
 
@@ -38,27 +36,6 @@ import Data.List ( foldl' )
 import Data.Sequence
 import qualified Data.Sequence as S
 
-
--- /Visual path/
-data VPath a = VPath { 
-        pathAttr :: PathAttr, 
-        pathSegments :: (Path a)
-      }
-  deriving (Eq,Show)
-
-data PathAttr = Stroke DRGB Pen
-              | Fill   DRGB 
-              | Clip
-  deriving (Eq,Show) 
-
-stroke :: PathAttr
-stroke = Stroke wumpusBlack newPen
-
-fill :: PathAttr
-fill = Fill wumpusBlack
-
-mapPath :: (Path a -> Path b) -> VPath a -> VPath b
-mapPath f (VPath attr sp) = VPath attr (f sp) 
 
 -- A closed path will allow reopening by adding a LineTo the 
 -- start point. While this is somewhat quirky, it is saves going
@@ -81,7 +58,7 @@ data Path a = Path {
   deriving (Eq,Show)
 
 
-type DVPath = VPath Double
+type DPath = Path Double
 
 
 -- | Segments are stored as vectors. This makes moving a path a 
@@ -269,31 +246,6 @@ instance LineTo Vec2 where
     where p = e .+^ v
   moveTo path@(Path _ (PathClosed _) _) v = moveTo (reopenPath path) v
 
-
-changeColour :: DRGB -> PathAttr -> PathAttr  
-changeColour c (Stroke _ pen)   = Stroke c pen
-changeColour c (Fill   _)       = Fill c 
-changeColour _ Clip             = Clip
-
-
-
-{-
-curveTo :: Path a -> (Point2 a -> Curve a) -> Path a
-curveTo (Path s e sp) cf = Path s (endPoint c) (sp |> PCurve c)
-  where c = cf e
-
-lineTo :: Path a -> (Point2 a -> LineSegment Point2 a) -> Path a
-lineTo (Path s e sp) lf = Path s (endPoint l) (sp |> PLine l)
-  where l = lf e
-
-straight :: Path a -> Point2 a -> Path a
-straight (Path s e sp) p = Path s p (sp |> PLine (LS e p))
-
-curved :: Path a -> (Point2 a, Point2 a, Point2 a) -> Path a
-curved (Path s e sp) (p1,p2,p3) = Path s p3 (sp |> PCurve (Curve e p1 p2 p3))
-
-
--}
 
 unPath :: Path a -> [PathSegment a] 
 unPath (Path _ _ sp) = F.toList sp

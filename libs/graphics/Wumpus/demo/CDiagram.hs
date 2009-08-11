@@ -44,6 +44,6 @@ arrs = concat $ sequence [f1,f2,f3,f4] $ bounds $ square 100 zeroPt
 labels :: [Picture]
 labels = zipWith fn ["A","C","B","P"] (extractPoints $ square 100 zeroPt)
   where
-    fn c pt@(P2 x y) = picLabel $ label c 10 10 pt
+    fn c pt@(P2 x y) = picLabel timesRoman10 $ label c 10 10 pt
 
 

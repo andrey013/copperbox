@@ -46,16 +46,43 @@ import Data.Monoid
 
 data Picture = Picture { 
       picBBox     :: DBoundingBox, 
-      picPaths    :: [DVPath],
-      picLabels   :: [Label Double] 
+      picParts    :: [PictureElement]
     }
   deriving (Show)
 
+data PictureElement = PicPath  PathAttr (Path Double)
+                    | PicLabel LabelAttr (Label Double)
+  deriving (Show)
+
+data PathAttr = Stroke DRGB Pen
+              | Fill   DRGB 
+              | Clip
+  deriving (Eq,Show) 
+
+
+data LabelAttr = LabelAttr DRGB Font
+  deriving (Eq,Show)
+
+
+stroke :: PathAttr
+stroke = Stroke wumpusBlack newPen
+
+fill :: PathAttr
+fill = Fill wumpusBlack
+
+timesRoman10 :: LabelAttr
+timesRoman10 = LabelAttr wumpusBlack (timesRoman 10) 
+
+changeColour :: DRGB -> PathAttr -> PathAttr  
+changeColour c (Stroke _ pen)   = Stroke c pen
+changeColour c (Fill   _)       = Fill c 
+changeColour _ Clip             = Clip
+
 
 instance Monoid Picture where
-  mempty = Picture mempty [] []
-  Picture bb ps ls `mappend` Picture bb' ps' ls' = 
-    Picture (bb `mappend` bb') (ps ++ ps') (ls ++ ls')
+  mempty = Picture mempty []
+  Picture bb es `mappend` Picture bb' es' = 
+    Picture (bb `mappend` bb') (es ++ es')
 
 
 extractCoordinate :: (DBoundingBox -> DPoint2) -> Picture -> DPoint2
@@ -70,8 +97,8 @@ picEmpty :: Picture
 picEmpty = mempty
 
 empty :: Picture -> Bool
-empty (Picture bb [] []) | bb == mempty = True
-empty _                                 = False
+empty (Picture bb [] ) | bb == mempty = True
+empty _                               = False
 
 (<..>) :: Picture -> Picture -> Picture
 (<..>) = mappend
@@ -100,11 +127,12 @@ centered p1 p2 | empty p1  = p2
 
 
 displacePicture :: DVec2 -> Picture -> Picture
-displacePicture v (Picture (BBox bl tr) ps ls) = Picture bb' ps' ls' 
+displacePicture v (Picture (BBox bl tr) es) = Picture bb' (map fn es)
   where
     bb' = BBox (bl .+^ v) (tr .+^ v)
-    ps' = map (mapPath (displacePath v)) ps
-    ls' = map (displaceLabel v) ls
+    fn (PicPath a p) = PicPath a (displacePath v p)
+    fn (PicLabel a l) = PicLabel a (displaceLabel v l)
+
 
 
 
@@ -159,21 +187,21 @@ vcatSep ysep (x:xs)  = foldl' fn x xs
 
 -- | Create a blank (empty) Picture of width @w@ and height @h@.
 blankPicture :: Double -> Double -> Picture
-blankPicture w h = Picture (BBox zeroPt (P2 w h)) [] []
+blankPicture w h = Picture (BBox zeroPt (P2 w h)) []
 
 
 
 picPolygon :: PathAttr -> DPolygon -> Picture
-picPolygon style pgon = Picture (getBoundingBox pgon) [path] []
+picPolygon style pgon = Picture (getBoundingBox pgon) [path]
   where
-    path = VPath style . closePath . tracePoints . extractPoints $ pgon
+    path = PicPath style . closePath . tracePoints . extractPoints $ pgon
 
 picPath :: PathAttr -> Path Double -> Picture
-picPath style p = Picture (bounds p)  [VPath style p] []
+picPath style p = Picture (bounds p)  [PicPath style p]
 
 
-picLabel :: Label Double -> Picture
-picLabel lbl = Picture (labelRect lbl) [] [lbl]
+picLabel :: LabelAttr -> Label Double -> Picture
+picLabel style lbl = Picture (labelRect lbl) [PicLabel style lbl]
 
 
 
@@ -184,10 +212,10 @@ picLabel lbl = Picture (labelRect lbl) [] [lbl]
 
 
 withRgbColour :: DRGB -> Picture -> Picture
-withRgbColour c (Picture bb ps ls) = Picture bb (map fn ps) ls
+withRgbColour c (Picture bb es) = Picture bb (map fn es) 
   where
-   fn (VPath attrs path) = VPath (changeColour c attrs) path
-
+   fn (PicPath attr path) = PicPath (changeColour c attr) path
+   fn (PicLabel attr lbl) = PicLabel attr lbl -- TODO  
 
 withGray :: Double -> Picture -> Picture
 withGray n = withRgbColour (gray2rgb n)
@@ -220,16 +248,19 @@ writePicture filepath pic = writeFile filepath $ psDraw pic
 
 
 drawPicture :: Picture -> WumpusM ()
-drawPicture (Picture _ ps ls) = defaultFont >> mapM_ drawPath ps >> mapM_ drawLabel ls
+drawPicture (Picture _ es) = defaultFont >> mapM_ drawElt es
   where
+    drawElt (PicPath attr p)  = drawPath attr p
+    drawElt (PicLabel attr l) = drawLabel attr l
+
     defaultFont = do        
         command "findfont" ["/Times-Roman"]
         command "scalefont" [show (10::Int)]
         command "setfont" []
 
 
-drawPath :: DVPath -> WumpusM ()
-drawPath (VPath attrs (Path p0@(P2 x0 y0) end sp)) = withAttrs attrs $ do 
+drawPath :: PathAttr -> Path Double -> WumpusM ()
+drawPath attrs (Path p0@(P2 x0 y0) end sp) = withAttrs attrs $ do 
     ps_newpath
     ps_moveto x0 y0
     F.foldlM step p0 sp 
@@ -257,8 +288,8 @@ withAttrs Clip         mf = mf >> ps_clip
 
 -- labels must be drawn wrt a start point
 
-drawLabel :: Label Double -> WumpusM ()
-drawLabel (Label ss (P2 x y) (BBox _ (P2 x' y')) _lh) = 
+drawLabel :: LabelAttr -> Label Double -> WumpusM ()
+drawLabel attr (Label ss (P2 x y) (BBox _ (P2 x' y')) _lh) = 
   localFont (timesRoman 10) $ do
     ps_moveto     x  y
     ps_lineto     x  y'
