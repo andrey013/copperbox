@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -39,20 +41,21 @@ import Data.List ( foldl' )
 import Data.Monoid
 
 
--- Reminder - there is some merit in changing the representation
--- in Core.Polygon of a Polygon to be a list of vectors rather 
--- than points.
+-- THE HERE CODE IS HORRIBLE...
+-- I've recently changed to make geometric objects parametric on
+-- point type. There are still design issues to work out in the
+-- lower layers, so Picture which depends on them has been changed
+-- just enough to allow (some of)* the examples to compile. 
+-- 
+-- * Some of the examples wil be broken.
 
-
-data Picture = Picture { 
-      picBBox     :: DBoundingBox, 
-      picParts    :: [PictureElement]
+data Picture pt = Picture { 
+      picBBox     :: BoundingBox pt, 
+      picParts    :: [PictureElement pt]
     }
-  deriving (Show)
 
-data PictureElement = PicPath  PathAttr (Path Double)
-                    | PicLabel LabelAttr (Label Double)
-  deriving (Show)
+data PictureElement pt = PicPath  PathAttr (Path pt)
+                       | PicLabel LabelAttr (Label pt)
 
 data PathAttr = Stroke DRGB Pen
               | Fill   DRGB 
@@ -70,6 +73,10 @@ stroke = Stroke wumpusBlack newPen
 fill :: PathAttr
 fill = Fill wumpusBlack
 
+clip :: PathAttr
+clip = Clip
+
+
 timesRoman10 :: LabelAttr
 timesRoman10 = LabelAttr wumpusBlack (timesRoman 10) 
 
@@ -79,13 +86,14 @@ changeColour c (Fill   _)       = Fill c
 changeColour _ Clip             = Clip
 
 
-instance Monoid Picture where
+-- instance Monoid (BoundingBox pt) =>  Monoid (Picture pt) where
+instance Monoid (Picture (Point2 Double)) where
   mempty = Picture mempty []
   Picture bb es `mappend` Picture bb' es' = 
     Picture (bb `mappend` bb') (es ++ es')
 
 
-extractCoordinate :: (DBoundingBox -> DPoint2) -> Picture -> DPoint2
+extractCoordinate :: (DBoundingBox -> DPoint2) -> Picture (Point2 Double) -> DPoint2
 extractCoordinate f = f . picBBox
 
 
@@ -93,24 +101,24 @@ infixr 7 <..>
 infixr 6 <++>
 infixr 5 <//>
 
-picEmpty :: Picture
+picEmpty :: Picture (Point2 Double)
 picEmpty = mempty
 
-empty :: Picture -> Bool
-empty (Picture bb [] ) | bb == mempty = True
-empty _                               = False
+empty :: Picture (Point2 Double) -> Bool
+empty (Picture bb []) | bb == mempty = True
+empty _                              = False
 
-(<..>) :: Picture -> Picture -> Picture
+(<..>) :: Picture (Point2 Double) -> Picture (Point2 Double) -> Picture (Point2 Double)
 (<..>) = mappend
 
-(<++>) :: Picture -> Picture -> Picture
+(<++>) :: Picture (Point2 Double) -> Picture (Point2 Double) -> Picture (Point2 Double) 
 (<++>) p1 p2 | empty p1  = p2
              | empty p2  = p1
              | otherwise = p1 `mappend` (displacePicture v p2)  
    where 
      v = (east $ picBBox p1) .-. (west $ picBBox p2) 
         
-(<//>) :: Picture -> Picture -> Picture
+(<//>) :: Picture (Point2 Double) -> Picture (Point2 Double) -> Picture (Point2 Double)
 (<//>) p1 p2 | empty p1  = p2
              | empty p2  = p1
              | otherwise = p1 `mappend` (displacePicture v p2)  
@@ -118,7 +126,7 @@ empty _                               = False
      v = (south $ picBBox p1) .-. (north $ picBBox p2) 
       
 
-centered :: Picture -> Picture -> Picture
+centered :: Picture (Point2 Double) -> Picture (Point2 Double) -> Picture (Point2 Double)
 centered p1 p2 | empty p1  = p2
                | empty p2  = p1
                | otherwise = p1 `mappend` (displacePicture v p2)  
@@ -126,7 +134,7 @@ centered p1 p2 | empty p1  = p2
     v = (center $ picBBox p1) .-. (center $ picBBox p2) 
 
 
-displacePicture :: DVec2 -> Picture -> Picture
+displacePicture :: DVec2 -> Picture (Point2 Double) -> Picture (Point2 Double)
 displacePicture v (Picture (BBox bl tr) es) = Picture bb' (map fn es)
   where
     bb' = BBox (bl .+^ v) (tr .+^ v)
@@ -136,14 +144,14 @@ displacePicture v (Picture (BBox bl tr) es) = Picture bb' (map fn es)
 
 
 
-at :: Picture -> (Double,Double) -> Picture
+at :: Picture (Point2 Double) -> (Double,Double) -> Picture (Point2 Double)
 at p (x,y) = displacePicture (V2 x y) p
 
-displace :: Double -> Double -> Picture -> Picture
+displace :: Double -> Double -> Picture (Point2 Double) -> Picture (Point2 Double)
 displace x y = displacePicture (V2 x y) 
 
 
-multiput :: Int -> DVec2 -> Picture -> Picture
+multiput :: Int -> DVec2 -> Picture (Point2 Double) -> Picture (Point2 Double)
 multiput n disp pic = 
     foldl' (\p v -> p <..> (displacePicture v pic)) pic vecs
   where
@@ -152,21 +160,21 @@ multiput n disp pic =
 
 -- | Concatenate all the pictures with (<..>) preserving there 
 -- original positions.
-cat :: [Picture] -> Picture
+cat :: [Picture (Point2 Double)] -> Picture (Point2 Double)
 cat = foldl' (<..>) picEmpty
 
 
 -- | Concatenate all the pictures horizontally with (<++>).
-hcat :: [Picture] -> Picture
+hcat :: [Picture (Point2 Double)] -> Picture (Point2 Double)
 hcat = foldl' (<++>) picEmpty
 
 -- | Concatenate all the pictures vertically with (<//>).
-vcat :: [Picture] -> Picture
+vcat :: [Picture (Point2 Double)] -> Picture (Point2 Double)
 vcat = foldl' (<//>) picEmpty
 
 -- | Concatenate all the pictures horizontally separated by a 
 -- space of @xsep@ units.
-hcatSep :: Double -> [Picture] -> Picture 
+hcatSep :: Double -> [Picture (Point2 Double)] -> Picture (Point2 Double)
 hcatSep _    []     = picEmpty
 hcatSep xsep (x:xs) = foldl' fn x xs
   where
@@ -176,7 +184,7 @@ hcatSep xsep (x:xs) = foldl' fn x xs
 
 -- | Concatenate all the pictures vertically separated by a 
 -- space of @ysep@ units.
-vcatSep :: Double -> [Picture] -> Picture 
+vcatSep :: Double -> [Picture (Point2 Double)] -> Picture (Point2 Double)
 vcatSep _    []      = picEmpty
 vcatSep ysep (x:xs)  = foldl' fn x xs
   where
@@ -186,21 +194,22 @@ vcatSep ysep (x:xs)  = foldl' fn x xs
 
 
 -- | Create a blank (empty) Picture of width @w@ and height @h@.
-blankPicture :: Double -> Double -> Picture
+blankPicture :: Double -> Double -> Picture (Point2 Double)
 blankPicture w h = Picture (BBox zeroPt (P2 w h)) []
 
 
 
-picPolygon :: PathAttr -> DPolygon -> Picture
+picPolygon :: PathAttr -> Polygon (Point2 Double) -> Picture (Point2 Double)
 picPolygon style pgon = Picture (getBoundingBox pgon) [path]
   where
     path = PicPath style . closePath . tracePoints . extractPoints $ pgon
 
-picPath :: PathAttr -> Path Double -> Picture
+picPath :: (Num a, Ord a) 
+        => PathAttr -> Path (Point2 a) -> Picture (Point2 a)
 picPath style p = Picture (bounds p)  [PicPath style p]
 
 
-picLabel :: LabelAttr -> Label Double -> Picture
+picLabel :: LabelAttr -> Label pt -> Picture pt
 picLabel style lbl = Picture (labelRect lbl) [PicLabel style lbl]
 
 
@@ -211,16 +220,16 @@ picLabel style lbl = Picture (labelRect lbl) [PicLabel style lbl]
 -- not Pictures. For temporary compatibility they work Pictures.
 
 
-withRgbColour :: DRGB -> Picture -> Picture
+withRgbColour :: DRGB -> Picture pt -> Picture pt 
 withRgbColour c (Picture bb es) = Picture bb (map fn es) 
   where
    fn (PicPath attr path) = PicPath (changeColour c attr) path
    fn (PicLabel attr lbl) = PicLabel attr lbl -- TODO  
 
-withGray :: Double -> Picture -> Picture
+withGray :: Double -> Picture pt -> Picture pt
 withGray n = withRgbColour (gray2rgb n)
 
-withFont :: Font -> Picture -> Picture
+withFont :: Font -> Picture pt -> Picture pt
 withFont _ = id
 
 
@@ -229,7 +238,7 @@ withFont _ = id
 -- output
  
 -- | Draw a picture, generating PostScript output.
-psDraw :: Picture -> PostScript
+psDraw :: Picture (Point2 Double) -> PostScript
 psDraw pic = prologue ++ runWumpus env0 (drawPicture pic) ++ epilogue
   where
     prologue = unlines $ [ "%!PS-Adobe-2.0"
@@ -241,13 +250,13 @@ psDraw pic = prologue ++ runWumpus env0 (drawPicture pic) ++ epilogue
 
                    
     epilogue = unlines $ [ "showpage", "", "%%EOF", ""]
-
-writePicture :: FilePath -> Picture -> IO ()
+ 
+writePicture :: FilePath -> Picture (Point2 Double) -> IO ()
 writePicture filepath pic = writeFile filepath $ psDraw pic
 
 
 
-drawPicture :: Picture -> WumpusM ()
+drawPicture :: Picture (Point2 Double) -> WumpusM ()
 drawPicture (Picture _ es) = defaultFont >> mapM_ drawElt es
   where
     drawElt (PicPath attr p)  = drawPath attr p
@@ -259,7 +268,7 @@ drawPicture (Picture _ es) = defaultFont >> mapM_ drawElt es
         command "setfont" []
 
 
-drawPath :: PathAttr -> Path Double -> WumpusM ()
+drawPath :: PathAttr -> Path (Point2 Double) -> WumpusM ()
 drawPath attrs (Path p0@(P2 x0 y0) end sp) = withAttrs attrs $ do 
     ps_newpath
     ps_moveto x0 y0
@@ -288,7 +297,7 @@ withAttrs Clip         mf = mf >> ps_clip
 
 -- labels must be drawn wrt a start point
 
-drawLabel :: LabelAttr -> Label Double -> WumpusM ()
+drawLabel :: LabelAttr -> Label (Point2 Double) -> WumpusM ()
 drawLabel attr (Label ss (P2 x y) (BBox _ (P2 x' y')) _lh) = 
   localFont (timesRoman 10) $ do
     ps_moveto     x  y
@@ -297,7 +306,7 @@ drawLabel attr (Label ss (P2 x y) (BBox _ (P2 x' y')) _lh) =
     ps_lineto     x' y
     ps_closepath
     ps_clip
-    ps_moveto     x  y
+    ps_moveto     x  y  -- this loses descenders
     ps_show ss
 
 
@@ -316,53 +325,60 @@ timesRoman us = Font "Times-Roman" us
 
 
 
-polyDot :: Int -> Picture 
+polyDot :: Int -> Picture (Point2 Double)
 polyDot n = picPolygon stroke $ regularPolygon n 2 zeroPt
 
 
-dotTriangle :: Picture
+dotTriangle :: Picture (Point2 Double)
 dotTriangle = polyDot 3
 
-dotDiamond :: Picture
+dotDiamond :: Picture (Point2 Double)
 dotDiamond = polyDot 4
 
 
-dotPentagon :: Picture
+dotPentagon :: Picture (Point2 Double)
 dotPentagon = polyDot 5
 
 
-dotX :: Picture 
+dotX :: Picture (Point2 Double)
+dotX = undefined
+{-
 dotX = picPath stroke path
   where
     l1    = vline 2 $ P2 0 (-1)
     ls1   = rotate (pi/6)   l1
     ls2   = rotate (5*pi/3) l1
     path  = segmentPath [ls1,ls2]
-
+-}
  
 
-dotPlus :: Picture
+dotPlus :: Picture (Point2 Double)
+dotPlus = undefined
+{-
 dotPlus = picPath stroke path
   where
     hl    = hline 2 $ P2 (-1) 0
     vl    = vline 2 $ P2 0    (-1)
     path  = segmentPath [hl,vl]
+-}
 
-
-dotSquare :: Picture
+dotSquare :: Picture (Point2 Double)
 dotSquare = picPolygon stroke $ rectangle 2 2 (P2 (-1) (-1))
 
 
 
 
-dotAsterisk :: Picture
+dotAsterisk :: Picture (Point2 Double)
+dotAsterisk = undefined
+{-
 dotAsterisk = picPath stroke path
   where
+   vl     :: LineSegment (Point2 Double)
    vl     = vline 2 (P2 0 (-1))
    path   = segmentPath . circular $ replicate 5 vl
+-}
 
-
-diamond ::  Double -> Double -> PathAttr -> Picture
+diamond ::  Double -> Double -> PathAttr -> Picture (Point2 Double)
 diamond wth hght attr = picPolygon attr $ Polygon ps 
   where
     vh      = hvec (0.5*wth)
@@ -375,26 +391,20 @@ diamond wth hght attr = picPolygon attr $ Polygon ps
 
 
 
--- To consider - Picture might be better having a parametric type
--- hence diamond could have this type: 
--- diamond :: Real a => a -> a -> Picture a
--- 
--- Or maybe Picture should be parametric on the point type...
 
-
-
-circle :: Double -> Path Double 
+circle :: Double -> Path (Point2 Double)
 circle r = closePath $ foldl' fn (newPath $ P2 r 0) arcs
   where
+    arcs :: [Curve (Point2 Double)]
     arcs = bezierCircle 3 r
     fn path (Curve _ p1 p2 p3) = path `curveTo` (p1,p2,p3)
 
 -- | make a circle centered at the origin, radius @r@.
-picCircle :: Double -> Picture
+picCircle :: Double -> Picture (Point2 Double)
 picCircle = picPath stroke . circle
 
 -- | Make a disk (filled circle)
-picDisk :: Double -> Picture
+picDisk :: Double -> Picture (Point2 Double)
 picDisk = picPath fill . circle
 
 

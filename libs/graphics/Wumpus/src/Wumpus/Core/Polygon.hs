@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -62,21 +63,21 @@ import Data.List ( nub )
 -- Polygon types and standard instances
 
 
-newtype Polygon a = Polygon { getPolygonPoints :: [Point2 a] }
+newtype Polygon pt = Polygon { getPolygonPoints :: [pt] }
   deriving (Eq,Show)
 
 
-type DPolygon = Polygon Double
+type DPolygon = Polygon (Point2 Double)
 
 
 
-instance Pointwise (Polygon a) where
-  type Pt (Polygon a) = Point2 a
+instance Pointwise (Polygon pt) where
+  type Pt (Polygon pt) = pt
   pointwise f (Polygon xs) = Polygon $ map f xs
 
 
-instance HasPoints (Polygon a) where
-  type Pnt (Polygon a) = Point2 a
+instance HasPoints (Polygon pt) where
+  type Pnt (Polygon pt) = pt
   extractPoints (Polygon xs) = xs
   endPoint (Polygon (x:_))   = x        -- start point is also end point   
   endPoint (Polygon _)       = error "endPoint: malformed Polygon, too few points"
@@ -88,9 +89,16 @@ instance HasPoints (Polygon a) where
 
 
 -- | Create a regular polygon with @n@ sides and /radius/ @r@.
-regularPolygon :: (Floating a, Real a, AffineSpace a)
-               => Int -> a -> (Point2 a -> Polygon a)
-regularPolygon n r = Polygon . pf
+
+-- Note MatrixMult requires kind (* -> *) for both arguments, which means
+-- we have to use some parametric point type (pt a) rather then just pt.
+-- 
+-- Some needs some more thought...
+
+regularPolygon :: (Floating a, Real a, ZeroPt (pt a), MatrixMult Matrix3'3 pt,
+                   AffineSpace (pt a), Cartesian2 pt, Diff (pt a) ~ Vec2 a)
+                => Int -> a -> (pt a -> Polygon (pt a))
+regularPolygon n r = Polygon . pf . toPoint2
   where 
     pf = \(P2 x y) -> map (translate x y) 
                           $ circular 
@@ -101,19 +109,24 @@ regularPolygon n r = Polygon . pf
 -- functional to successively transform the current point.
 
 -- | Create a square with bottom-left corner @p@ and side-length @d@.
-square :: (Num a, AffineSpace a) => a -> (Point2 a -> Polygon a)
+-- square :: (Num a, AffineSpace pt, Scalar pt ~ a) => a -> (pt -> Polygon pt)
+
+square :: (Num a, AffineSpace pt, Diff pt ~ Vec2 a) 
+       => a -> pt -> Polygon pt
 square d = Polygon . iter [id,f2,f3,f4] where
   f2 = (.+^ hvec d)
   f3 = (.+^ vvec d)
   f4 = (.+^ (hvec $ negate d))
   
-unitSquare :: (Num a, AffineSpace a) => Point2 a -> Polygon a
+unitSquare :: (Num a, AffineSpace pt, Diff pt ~ Vec2 a) 
+           => pt -> Polygon pt
 unitSquare = square 1 
 
 
 -- | Create a rectangle with bottom-left corner @p@ and width @w@ and
 -- height @h@.
-rectangle :: (Num a, AffineSpace a) => a -> a -> (Point2 a -> Polygon a)
+rectangle :: (Num a, AffineSpace pt, Diff pt ~ Vec2 a) 
+          => a -> a -> pt -> Polygon pt
 rectangle w h = Polygon . iter [id,f2,f3,f4] where
   f2 = (.+^ hvec w)
   f3 = (.+^ vvec h)
@@ -122,8 +135,8 @@ rectangle w h = Polygon . iter [id,f2,f3,f4] where
 
 -- | Create an isosceles rectangle with bottom-left corner @p@, the base 
 -- in on the horizontal plane with width @bw@. Height is @h@.
-isoscelesTriangle :: (Fractional a, AffineSpace a) 
-                  => a -> a -> (Point2 a -> Polygon a)
+isoscelesTriangle :: (Fractional a, AffineSpace pt, Diff pt ~ Vec2 a) 
+                  => a -> a -> (pt -> Polygon pt)
 isoscelesTriangle bw h = Polygon . sequence [id,f2,f3] where
   f2 = (.+^ hvec bw)
   f3 = (.+^ V2 (bw/2) h)
@@ -147,28 +160,33 @@ simplePolygon (Polygon ps)
              
 
 -- | A polygon is concave if at least 1 interior angle is greater then pi/2.
--- concavePolygon :: (Ord a, Floating a) => Polygon a -> Bool
-concavePolygon :: (Ord a, Floating a, Real a, 
-                   AffineSpace a, InnerSpace a, a ~ Scalar a)
-               => Polygon a -> Bool
+concavePolygon :: (Ord a, Num a, Real a, Floating a, 
+                   AffineSpace pt, InnerSpace a, Scalar a ~ a, Diff pt ~ Vec2 a)
+               => Polygon pt -> Bool
 concavePolygon = any (>pi/2) . interiorAngles
+
 
 
 
 --------------------------------------------------------------------------------
 -- Operations
 
+
 -- | Extract the interior angles of polygon.
-interiorAngles :: (a ~ Scalar a, Floating a, Real a, 
-                   AffineSpace a, InnerSpace a)
-               => Polygon a -> [Radian]
+interiorAngles :: (Num a, Real a, Floating a, 
+                   AffineSpace pt, InnerSpace a, Scalar a ~ a, Diff pt ~ Vec2 a)
+               => Polygon pt -> [Radian]
 interiorAngles (Polygon ps) = windowedMap3c intAng ps where
   intAng a b c = interiorAngle (a .-. b) (c .-. b)
+
+
+
 
 -- | Simple algorithm to deduce orientation of a polygon.
 -- Will throw an error if it cannot find two successive vertices 
 -- that are not collinear.
-simpleOrientation :: Real a => Polygon a -> Orientation
+simpleOrientation :: (Collinear (pt Double), Cartesian2 pt) 
+                  => Polygon (pt Double) -> Orientation
 simpleOrientation (Polygon ps) = sign $ det $ mkMat $ noncollinear ps
   where
     noncollinear (x:y:z:xs) 
@@ -177,7 +195,11 @@ simpleOrientation (Polygon ps) = sign $ det $ mkMat $ noncollinear ps
     noncollinear _              = error $ "Polygon.simpleOrientation - "
                                        ++ "could not find viable vertices."
 
-    mkMat (P2 x1 y1, P2 x2 y2, P2 x3 y3) = M3'3 1 x1 y1 1 x2 y2 1 x3 y3
+    mkMat (p1,p2,p3) = M3'3 1 x1 y1 1 x2 y2 1 x3 y3 where  
+                           (P2 x1 y1::Point2 Double) = toPoint2 p1
+                           P2 x2 y2 = toPoint2 p2
+                           P2 x3 y3 = toPoint2 p3
+                      
 
     sign a | a < 0     = CW
            | a > 0     = CCW
@@ -186,5 +208,5 @@ simpleOrientation (Polygon ps) = sign $ det $ mkMat $ noncollinear ps
 
 -- | Reverse the orientation of the polygon (i.e. reverse 
 -- the list of points that represent the polygon).
-reverseOrientation :: Polygon a -> Polygon a
+reverseOrientation :: Polygon pt -> Polygon pt
 reverseOrientation = Polygon . reverse . getPolygonPoints

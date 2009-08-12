@@ -28,7 +28,7 @@ demo1 = writePicture "basic1.ps" (displace 60 380 drawing1) where
 demo2 :: IO ()
 demo2 = writePicture "basic2.ps" (displace 50 300 (pic1 <++> pic2))
 
-pic1 :: Picture
+pic1 :: Picture (Point2 Double)
 pic1 = vcat [dia1,dia2,dia3,dia4]
   where
     dia1 = withRgbColour blueViolet    $ diamond 40 40 stroke
@@ -39,7 +39,7 @@ pic1 = vcat [dia1,dia2,dia3,dia4]
 
 
 
-pic2 :: Picture
+pic2 :: Picture (Point2 Double)
 pic2 = (dia1 <//> dia2)
   where
     dia1 = withRgbColour blueViolet    $ diamond 40 40 stroke

@@ -32,9 +32,12 @@ module Wumpus.Core.Point
 
   -- * Construction
   , ZeroPt(..)
+
+  -- * Conversion
+  , Cartesian2(..)
   
   -- * Predicates 
-  , collinear
+  , Collinear(..)
 
   -- * Affine combination
   , (|+|)  
@@ -117,17 +120,40 @@ instance Num a => ZeroPt (Point3 a) where
 
 
 --------------------------------------------------------------------------------
+-- Conversion
+
+-- This was introduced for convenience when changing the representation of 
+-- Polygons and curves to be parametric on points (rather than the unit /Double/
+-- or whatever of Point2).
+-- 
+-- I need to decide whether it is still necessary, or better replaced with 
+-- something else...
+
+class Cartesian2 pt where
+  toPoint2   :: pt a -> Point2 a
+  fromPoint2 :: Point2 a -> pt a
+
+
+instance Cartesian2 Point2 where
+  toPoint2 = id
+  fromPoint2 = id
+
+
+--------------------------------------------------------------------------------
 -- Predicates
 
 -- | Are the three points in the same line?
-collinear :: Real a => Point2 a -> Point2 a -> Point2 a -> Bool
-collinear (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) = rat1 == rat2
-  where 
-    x1' = toRational x1
-    y1' = toRational y1
+class Collinear pt where
+  collinear :: pt -> pt -> pt -> Bool
+
+instance Real a => Collinear (Point2 a) where
+  collinear (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) = rat1 == rat2
+    where 
+      x1'  = toRational x1
+      y1'  = toRational y1
     
-    rat1 = ((toRational y2)-y1') / ((toRational x2)-x1')
-    rat2 = ((toRational y3)-y1') / ((toRational x3)-x1')
+      rat1 = ((toRational y2)-y1') / ((toRational x2)-x1')
+      rat2 = ((toRational y3)-y1') / ((toRational x3)-x1')
 
 
 
@@ -145,11 +171,9 @@ infixl 6 |+|
 -- | Affine combination of two weighted points.
 -- Note the sum of the weights a1 and a2 must satisfy: @a1 + a2 = 1@
 
-(|+|) :: (Real i,
-          Fractional (Scalar (Diff (pt a))), 
-          AffineSpace (pt a), 
-          VectorSpace (Diff (pt a)))
-      => WtPoint pt i a -> WtPoint pt i a -> pt a
+(|+|) :: (Real n, Fractional a, AffineSpace (pt a), VectorSpace v,
+          Diff (pt a) ~ v, Scalar v ~ a)
+      => WtPoint pt n a -> WtPoint pt n a -> pt a
 (WP a1 p1) |+| (WP a2 p2) 
     | a1+a2 == 1    = p1 .+^ ((realToFrac a2) *^ (p2 .-. p1))
     | otherwise     = error "affine combination: weights do not sum to 1" 
@@ -158,11 +182,9 @@ infixl 6 |+|
 
 -- | Affine combination summing a list of weighted points.
 -- Note the weights must sum to 1.
-affineSum :: (Real i, 
-              Fractional (Scalar (Diff (pt a))), 
-              AffineSpace (pt a), 
-              VectorSpace (Diff (pt a)))
-          => [WtPoint pt i a] -> pt a
+affineSum :: (Real n, Fractional a, AffineSpace (pt a), VectorSpace v,
+              Diff (pt a) ~ v, Scalar v ~ a)
+          => [WtPoint pt n a] -> pt a
 affineSum []              = error "affineSum: empty"
 affineSum (WP a1 p1 : xs) = post $ foldr fn (a1, p1) xs 
   where 

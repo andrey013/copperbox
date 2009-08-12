@@ -23,6 +23,7 @@ module Wumpus.Core.Curve
     Curve(..)
   , DCurve
 
+
   -- * Construction
   , tildeCurve
   
@@ -65,36 +66,29 @@ import Data.AffineSpace
 import Data.VectorSpace
 
 
-default (Integer,Rational,Double)
-
 --------------------------------------------------------------------------------
 -- Curve types and standard instances
 
-data Curve a = Curve (Point2 a) (Point2 a) (Point2 a) (Point2 a)
+data Curve pt = Curve pt pt pt pt
   deriving (Eq,Show)
 
-type DCurve = Curve Double
-
--- type CoCurve a = Point2 a -> Curve a
-
--- type DCoCurve = CoCurve Double
+type DCurve = Curve (Point2 Double)
 
 
 instance Functor Curve where
-  fmap f (Curve p0 p1 p2 p3) = 
-    Curve (fmap f p0) (fmap f p1) (fmap f p2) (fmap f p3)
+  fmap f (Curve p0 p1 p2 p3) = Curve (f p0) (f p1) (f p2) (f p3)
 
 
 
 -- Geometrical instances
 
-instance Pointwise (Curve a) where
-  type Pt (Curve a) = Point2 a
+instance Pointwise (Curve pt) where
+  type Pt (Curve pt) = pt
   pointwise f (Curve p0 p1 p2 p3) = Curve (f p0) (f p1) (f p2) (f p3)
 
 
-instance HasPoints (Curve a) where
-  type Pnt (Curve a) = Point2 a
+instance HasPoints (Curve pt) where
+  type Pnt (Curve pt) = pt
   extractPoints (Curve p0 p1 p2 p3) = [p0,p1,p2,p3]
   endPoint (Curve _ _ _ p3)         = p3
   startPoint (Curve p0 _ _ _)       = p0
@@ -104,13 +98,14 @@ instance Converse (Curve a) where
   converse (Curve p0 p1 p2 p3) = Curve p3 p2 p1 p0
 
 
+
 --------------------------------------------------------------------------------
 -- Construction
 
 -- | Create a tilde (sinusodial) curve about the horizontal plane.
 
-tildeCurve :: (Floating a, AffineSpace a, Converse (Vec2 a)) 
-           => a -> (Point2 a -> Curve a)
+tildeCurve :: (Floating a, AffineSpace (pt a), Converse (Vec2 a), Diff (pt a) ~ Vec2 a) 
+           => a -> (pt a -> Curve (pt a))
 tildeCurve w = \pt -> let endpt = pt .+^ hvec w
                       in Curve pt (pt .+^ v) (endpt .+^ converse v) endpt
   where 
@@ -121,8 +116,9 @@ tildeCurve w = \pt -> let endpt = pt .+^ hvec w
 -- operations
 
 -- de Casteljau's algorithm
-subdivide :: (Fractional (Scalar a), Num a, VectorSpace a,  AffineSpace a)  
-          => Curve a -> (Curve a, Curve a)
+subdivide :: (Fractional a, Num a, 
+              VectorSpace v,  AffineSpace pt, Diff pt ~ v, Scalar v ~ a)  
+          => Curve pt -> (Curve pt, Curve pt)
 subdivide (Curve p0 p1 p2 p3) = 
     (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)
   where
@@ -135,11 +131,9 @@ subdivide (Curve p0 p1 p2 p3) =
 
 
 
-subdividet :: (a ~ Scalar a, Fractional a, Real i,
-               VectorSpace a,  AffineSpace a)  
-           => i -- Scalar (Vec2 a) 
-           -> Curve (Scalar (Vec2 a)) 
-           -> (Curve (Scalar (Vec2 a)), Curve (Scalar (Vec2 a)))
+subdividet :: (Fractional a, Real a1, VectorSpace v,  AffineSpace (pt a),
+               Diff (pt a) ~ v, Scalar v ~ a)  
+           => a1 -> Curve (pt a) -> (Curve (pt a), Curve (pt a))
 subdividet t (Curve p0 p1 p2 p3) = 
     (Curve p0 p01 p012 p0123, Curve p0123 p123 p23 p3)
   where
@@ -166,8 +160,8 @@ smoothBase k xs = intermap curver eps
    eps  = combi xs pfs
 
 
-combi :: (Fractional (Scalar (Diff t)), AffineSpace t, VectorSpace (Diff t))
-      => [t] -> [t -> t -> t -> a] -> [a]
+combi :: (Fractional a, AffineSpace pt, VectorSpace v, Diff pt ~ v, Scalar v ~ a)
+      => [pt] -> [pt -> pt -> pt -> b] -> [b]
 combi (a:b:c:xs) (f:fs)  = fn b : combi (b:c:xs) fs 
                            where fn = f (midpoint a b) (midpoint b c)
 combi _          _       = []
@@ -205,9 +199,11 @@ curver (_,p0,p1) (p2,p3,_) = Curve p0 p1 p2 p3
 --------------------------------------------------------------------------------
 
 
+
 -- Acknowledgment - this appears due to Gernot Hoffmann
 -- ang should be less then 90o (pi/2)
-circleSegment :: (Floating a, AffineSpace a) => Radian -> Curve a
+circleSegment :: (Floating a, AffineSpace (Point2 a), Scalar (Diff (Point2 a)) ~ a) 
+              => Radian -> Curve (Point2 a)
 circleSegment ang = Curve p0 p1 p2 p3 where
   k  = (4/3) * tan (ang / 4)
   p0 = P2 1 0
@@ -218,7 +214,8 @@ circleSegment ang = Curve p0 p1 p2 p3 where
 
 --
 
-bezierArc :: Floating a => a -> Radian -> Radian -> Curve a
+bezierArc :: (Floating a, ZeroPt pt, AffineSpace pt, Diff pt ~ Vec2 a, Scalar (Vec2 a) ~ a) 
+          => a -> Radian -> Radian -> Curve pt
 bezierArc r ang1 ang2 = Curve p0 p1 p2 p3 where
   theta = ang2 - ang1
   e     = r * fromRadian ((2 * sin (theta/2)) / (1+ 2* cos (theta/2))) 
@@ -231,7 +228,9 @@ bezierArc r ang1 ang2 = Curve p0 p1 p2 p3 where
 
 -- | Make a circle from bezier curves - @n@ is the number of 
 -- subdivsions per quadrant.
-bezierCircle :: Floating a => Int -> a -> [Curve a]
+bezierCircle :: (Floating a, ZeroPt pt, AffineSpace pt, 
+                 Diff pt ~ Vec2 a, Scalar (Vec2 a) ~ a) 
+             => Int -> a -> [Curve pt]
 bezierCircle n r = map (\(a,b) -> bezierArc r a b) quads
   where
     quads :: [(Radian,Radian)]
@@ -252,28 +251,29 @@ subs n a = zip xs ys
 --------------------------------------------------------------------------------
 -- Tangents
 
-startTangent :: (Ord a, Floating a, Real a, 
-                 AffineSpace a, InnerSpace a, a ~ Scalar a) 
-             => Curve a -> Radian
+startTangent :: (Ord a, Floating a, Real a, HVec t, VVec t,
+                 AffineSpace pt, InnerSpace v, Diff pt ~ v, Scalar v ~ a, v ~ t a) 
+             => Curve pt -> Radian
 startTangent = vangle . startTangentVector
 
 
-endTangent :: (Ord a, Floating a, Real a, 
-               AffineSpace a, InnerSpace a, a ~ Scalar a) 
-           => Curve a -> Radian
+
+endTangent :: (Ord a, Floating a, Real a, HVec t, VVec t,
+               AffineSpace pt, InnerSpace v, Diff pt ~ v, Scalar v ~ a, v ~ t a) 
+           => Curve pt -> Radian
 endTangent = vangle . endTangentVector
 
 
 
-startTangentVector :: (Ord a, Floating a, 
-                       AffineSpace a, InnerSpace a, a ~ Scalar a) 
-                   => Curve a -> Vec2 a
+startTangentVector :: (Ord a, Floating a, AffineSpace pt, InnerSpace v, 
+                       Diff pt ~ v, Scalar v ~ a) 
+                   => Curve pt -> v
 startTangentVector (Curve p0 p1 _ _) = freeVector p0 p1
 
 
-endTangentVector :: (Ord a, Floating a, 
-                     AffineSpace a, InnerSpace a, a ~ Scalar a) 
-                 => Curve a -> Vec2 a
+endTangentVector :: (Ord a, Floating a, AffineSpace pt, InnerSpace v, 
+                     Diff pt ~ v, Scalar v ~ a) 
+                 => Curve pt -> v
 endTangentVector (Curve _ _ p2 p3) = freeVector p3 p2
 
 
@@ -289,8 +289,9 @@ endTangentVector (Curve _ _ p2 p3) = freeVector p3 p2
 
 -- | Weighted point on a bezier curve - via the famous cubic bezier formula.
 
-cubic :: (a ~ Scalar a, Fractional a, Real a, AffineSpace a, VectorSpace a) 
-      =>  Curve (Scalar (Vec2 a)) -> Scalar (Vec2 a) -> Point2 (Scalar (Vec2 a))
+cubic :: (Fractional a, Real a, AffineSpace (pt a), VectorSpace v, 
+          Diff (pt a) ~ v, Scalar v ~ a)
+      =>  Curve (pt a) -> a -> pt a
 
 cubic (Curve p0 p1 p2 p3) t = affineSum [WP w0 p0, WP w1 p1, WP w2 p2, WP w3 p3]
   where
@@ -300,21 +301,11 @@ cubic (Curve p0 p1 p2 p3) t = affineSum [WP w0 p0, WP w1 p1, WP w2 p2, WP w3 p3]
     w3 = t^(3::Integer)
 
 
-controlPolygonLength :: (Floating a,  AffineSpace a, 
-                         InnerSpace a, a ~ Scalar a) 
-                     => Curve a -> a
-controlPolygonLength (Curve p0 p1 p2 p3) = 
-  distance p0 p1 + distance p1 p2 + distance p2 p3
-
-cordLength :: (Floating a,  AffineSpace a, InnerSpace a, a ~ Scalar a) 
-           => Curve a -> a
-cordLength (Curve p0 _ _ p3) = distance p0 p3
-
 -- | Gravesen\'s bezier arc-length approximation. 
 -- Note this implementation is parametrized on error tolerance.
-gravesenLength :: (Floating a, Ord a, AffineSpace a, 
-                   InnerSpace a, a ~ Scalar a) 
-               => a -> Curve a -> a
+gravesenLength :: (Floating a, Ord a, AffineSpace pt, InnerSpace v, 
+                   Diff pt ~ v, Scalar v ~ a)  
+               => a -> Curve pt -> a
 gravesenLength err_tol crv = step crv where
   step c = let l1 = controlPolygonLength c 
                l0 = cordLength c
@@ -324,4 +315,15 @@ gravesenLength err_tol crv = step crv where
 
 
 
+controlPolygonLength :: (Floating a,  AffineSpace pt, InnerSpace v, 
+                         Diff pt ~ v, Scalar v ~ a) 
+                     => Curve pt -> a
+controlPolygonLength (Curve p0 p1 p2 p3) = 
+  distance p0 p1 + distance p1 p2 + distance p2 p3
+
+
+cordLength ::(Floating a,  AffineSpace pt, InnerSpace v, 
+              Diff pt ~ v, Scalar v ~ a) 
+           => Curve pt -> a
+cordLength (Curve p0 _ _ p3) = distance p0 p3
 

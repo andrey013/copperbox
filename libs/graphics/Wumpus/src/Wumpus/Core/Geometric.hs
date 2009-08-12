@@ -49,6 +49,7 @@ data Orientation = CW | CCW
 --------------------------------------------------------------------------------
 -- Type classes
 
+
 -- | Have two objects the same size and shape?
 class Congruent a where
   congruent :: a -> a -> Bool
@@ -79,15 +80,15 @@ instance HasPoints (t a) => HasPoints [t a] where
 
 
 -- | midpoint between two points
-midpoint :: (Fractional (Scalar (Diff p)), AffineSpace p, VectorSpace (Diff p))
+midpoint :: (Fractional a, AffineSpace p, VectorSpace v, Diff p ~ v, Scalar v ~ a)
          => p -> p -> p
 midpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
 
 
 -- | @p0@, @p1@ and @p2@ represent 3 points on a line, @adjustvk@ redraws 
 -- @p0@ and @p2@ to be /nearer/ @p1@ by the scaling factor @k@.
-adjustvk :: (Fractional (Scalar (Diff p)), AffineSpace p, VectorSpace (Diff p))
-         => p -> p -> p -> Scalar (Diff p) -> (p,p)
+adjustvk :: (Fractional a, AffineSpace p, VectorSpace v, Diff p ~ v, Scalar v ~ a)
+         => p -> p -> p -> a -> (p,p)
 adjustvk p0 p1 p2 k = (p1 .+^ vl,p1 .+^ vr) where
   vl = (p0 .-. p1) ^* k
   vr = (p2 .-. p1) ^* k

@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE KindSignatures             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -157,25 +158,25 @@ instance Num a => AdditiveGroup (Vec3 a) where
   negateV = negate
 
 
-instance (Num a, VectorSpace a) => VectorSpace (Vec2 a) where
-  type Scalar (Vec2 a) = Scalar a
-  s *^ (V2 a b) = V2 (s*^a) (s*^b)
+instance Num a => VectorSpace (Vec2 a) where
+  type Scalar (Vec2 a) = a
+  s *^ (V2 a b) = V2 (s*a) (s*b)
 
-instance (Num a, VectorSpace a) => VectorSpace (Vec3 a) where
-  type Scalar (Vec3 a) = Scalar a
-  s *^ (V3 a b c) = V3 (s*^a) (s*^b) (s*^c)
+instance Num a => VectorSpace (Vec3 a) where
+  type Scalar (Vec3 a) = a
+  s *^ (V3 a b c) = V3 (s*a) (s*b) (s*c)
 
 
 
 -- scalar (dot / inner) product via the class InnerSpace
 
-instance (Num a, InnerSpace a, AdditiveGroup (Scalar a)) 
+instance (Num a, InnerSpace a, Scalar a ~ a) 
     => InnerSpace (Vec2 a) where
   (V2 a b) <.> (V2 a' b') = (a <.> a') ^+^ (b <.> b')
 
 
 
-instance (Num a, InnerSpace a, AdditiveGroup (Scalar a)) 
+instance (Num a, InnerSpace a, Scalar a ~ a) 
     => InnerSpace (Vec3 a) where
   (V3 a b c) <.> (V3 a' b' c') = (a <.> a') ^+^ (b <.> b') ^+^ (c <.> c')
 
@@ -208,10 +209,12 @@ instance Independent Vec2 where
   independent (V2 a1 a2) (V2 b1 b2) = (a1/a2) /= (b1/b2)
 
 
+-- Alternatively these could be built as
+--   hvec :: (Num v, Scalar v ~ a) => a -> v
 
 -- | Construct a vector with horizontal displacement
 -- and test the sign of the horizontal component
-class HVec t where 
+class HVec (t :: * -> *) where 
   hvec       :: Num a => a -> t a
   hsignum    :: Num a => t a -> a 
 
@@ -225,7 +228,7 @@ instance HVec Vec3 where
 
 -- | Construct a vector with vertical displacement 
 -- and test the sign of the vertical component
-class VVec t where
+class VVec (t :: * -> *) where
   vvec    :: Num a => a -> t a
   vsignum :: Num a => t a -> a
 
@@ -272,9 +275,9 @@ interiorAngle u v = toRadian $ acos ((u<.>v) / ((magnitude u) * (magnitude v)))
 
 
 -- | CCW angle between the vector and the horizontal plane.
-vangle :: (HVec t, VVec t, Ord a, Floating a, Real a,
-           InnerSpace (t a), a ~ Scalar (t a)) 
-       => t a -> Radian
+vangle :: (HVec t, VVec t, Ord a, Floating a, Real a, InnerSpace v, 
+           Scalar v ~ a, v ~ t a) 
+       => v -> Radian
 vangle v | vsignum v >= 0 = interiorAngle v (hvec 1)
          | otherwise      = 2*pi - interiorAngle v (hvec 1)
   

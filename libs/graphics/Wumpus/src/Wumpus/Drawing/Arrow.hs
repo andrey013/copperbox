@@ -117,7 +117,7 @@ arrowheadPerp d =
 
 
 
-arrow :: DPoint2 -> DPoint2 -> Path Double
+arrow :: DPoint2 -> DPoint2 -> Path DPoint2
 arrow p p' = segmentPath (ln:tip) where
   ln    = LS p p'
   theta = {- pi/2 + -} (langle ln) 

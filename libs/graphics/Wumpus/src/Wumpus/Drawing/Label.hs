@@ -1,4 +1,4 @@
-{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -25,6 +25,7 @@ import Wumpus.Core.Point
 import Wumpus.Core.Vector
 
 import Data.AffineSpace
+import Data.VectorSpace
 
 -- Labels are drawn inside a clipping rectangle. This puts a burden on the 
 -- user to check the output to see that the clipping rect is large enough
@@ -35,29 +36,30 @@ import Data.AffineSpace
 -- 'M' in the current font, ex is the approx height of 'x'. 
 -- It would not be too burdensome to measure a few fonts...
 
-data Label a = Label { 
+data Label pt = Label { 
       labelText       :: String,
-      labelBottomLeft :: Point2 a,
-      labelRect       :: BoundingBox a,
-      labelLineHeight :: Double
+      labelBottomLeft :: pt,
+      labelRect       :: BoundingBox pt,
+      labelLineHeight :: Scalar (Diff pt) 
     }
-  deriving (Eq,Show)
+
 
 
 -- Note - Labels use a clipping path so they must be bracketed with  
 -- saveExecRestore. 
 
-label :: String -> Double -> Double -> DPoint2 -> Label Double
+label :: String -> Double -> Double -> DPoint2 -> Label (Point2 Double)
 label ss w h pt = Label ss pt bbox h where
     bbox = BBox pt (pt .+^ (V2 w h))
 
-text :: String -> Double -> Double -> Double -> DPoint2 -> Label Double
+text :: String -> Double -> Double -> Double -> DPoint2 -> Label (Point2 Double)
 text ss w h lh pt = Label ss pt bbox lh where
     bbox = BBox pt (pt .+^ (V2 w h))
 
 
 
-displaceLabel :: Num a => Vec2 a -> Label a -> Label a
+displaceLabel :: (Num a, AffineSpace pt, Diff pt ~ v, Scalar v ~ a) 
+              => v -> Label pt -> Label pt
 displaceLabel v (Label s p (BBox a b) lh) = 
   Label s (p .+^ v) (BBox (a .+^ v) (b .+^ v)) lh
 
