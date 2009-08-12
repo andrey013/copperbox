@@ -34,6 +34,7 @@ import Wumpus.Drawing.Label
 import Wumpus.Drawing.Path
 import Wumpus.Drawing.PostScript
 
+import Data.AdditiveGroup
 import Data.AffineSpace
 
 import qualified Data.Foldable as F
@@ -155,7 +156,7 @@ multiput :: Int -> DVec2 -> Picture (Point2 Double) -> Picture (Point2 Double)
 multiput n disp pic = 
     foldl' (\p v -> p <..> (displacePicture v pic)) pic vecs
   where
-    vecs  = scanl (+) disp (replicate (n-1) disp)
+    vecs  = scanl (^+^) disp (replicate (n-1) disp)
 
 
 -- | Concatenate all the pictures with (<..>) preserving there 

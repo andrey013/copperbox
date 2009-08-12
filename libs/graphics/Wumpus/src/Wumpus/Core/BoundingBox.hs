@@ -73,13 +73,13 @@ instance HasPoints DBoundingBox  where
 
 instance (Fractional a, Ord a) => Monoid (BoundingBox (Point2 a)) where
   mempty  = BBox (P2 inf inf) (P2 (-inf) (-inf)) where inf = 1/0
-  mappend = bbProd
+  mappend = bbUnion
 
 -------------------------------------------------------------------------------
 
 
-class HasBoundingBox sh a where
-  getBoundingBox :: sh -> BoundingBox a 
+class HasBoundingBox sh pt where
+  getBoundingBox :: sh -> BoundingBox pt
 
 instance Pointwise (BoundingBox pt) where
   type Pt (BoundingBox pt) = pt
@@ -113,12 +113,12 @@ bounds' (p:ps) = uncurry BBox $ foldr fn (p,p) ps
 
 
 
-bbProd :: Ord a 
+bbUnion :: Ord a 
        => BoundingBox (Point2 a) 
        -> BoundingBox (Point2 a) 
        -> BoundingBox (Point2 a)
-bbProd (BBox (P2 xmin1 ymin1) (P2 xmax1 ymax1))
-       (BBox (P2 xmin2 ymin2) (P2 xmax2 ymax2))
+bbUnion (BBox (P2 xmin1 ymin1) (P2 xmax1 ymax1))
+        (BBox (P2 xmin2 ymin2) (P2 xmax2 ymax2))
   = BBox (P2 (min xmin1 xmin2) (min ymin1 ymin2)) 
          (P2 (max xmax1 xmax2) (max ymax1 ymax2))
 

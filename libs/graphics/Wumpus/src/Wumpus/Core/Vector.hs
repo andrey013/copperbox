@@ -90,42 +90,6 @@ instance Num a => Monoid (Vec3 a) where
   mempty = V3 0 0 0
   V3 a b c `mappend` V3 x y z = V3 (a+x) (b+y) (c+z)
 
-
-
-instance Num a => Num (Vec2 a) where
-  (+) (V2 a b) (V2 x y) = V2 (a+x) (b+y)
-  (-) (V2 a b) (V2 x y) = V2 (a-x) (b-y)
-  (*) (V2 a b) (V2 x y) = V2 (a*x) (b*y)
-  abs (V2 a b)          = V2 (abs a) (abs b)
-  negate (V2 a b)       = V2 (negate a) (negate b)
-  signum (V2 a b)       = V2 (signum a) (signum b)
-  fromInteger i         = V2 (fromInteger i) (fromInteger i)
-
-
-instance Num a => Num (Vec3 a) where
-  (+) (V3 a b c) (V3 x y z) = V3 (a+x) (b+y) (c+z)
-  (-) (V3 a b c) (V3 x y z) = V3 (a-x) (b-y) (c-z)
-  (*) (V3 a b c) (V3 x y z) = V3 (a*x) (b*y) (c*z)
-  abs (V3 a b c)            = V3 (abs a) (abs b) (abs c)
-  negate (V3 a b c)         = V3 (negate a) (negate b) (negate c)
-  signum (V3 a b c)         = V3 (signum a) (signum b) (signum c)
-  fromInteger i             = V3 i' i' i' where i' = fromInteger i
-
-
-instance Fractional a => Fractional (Vec2 a) where
-  (/) (V2 a b) (V2 x y) = V2 (a/x) (b/y)
-  recip (V2 a b)        = V2 (recip a) (recip b)
-  fromRational a        = V2 (fromRational a) (fromRational a)
-
-instance Fractional a => Fractional (Vec3 a) where
-  (/) (V3 a b c) (V3 x y z) = V3 (a/x) (b/y) (c/z)
-  recip (V3 a b c)          = V3 (recip a) (recip b) (recip c)
-  fromRational a            = V3 a' a' a' where a' = fromRational a
-
-
-
--- Note, it might not be geometrically correct to allow translations on 
--- vectors.
  
 instance Pointwise (Vec2 a) where
   type Pt (Vec2 a) = Vec2 a
@@ -148,14 +112,14 @@ instance Num a => Converse (Vec2 a) where
 
 instance Num a => AdditiveGroup (Vec2 a) where
   zeroV = V2 0 0 
-  (^+^) = (+)
-  negateV = negate
+  (^+^) = mappend
+  negateV (V2 a b) = V2 (-a) (-b) 
 
 
 instance Num a => AdditiveGroup (Vec3 a) where
   zeroV = V3 0 0 0
-  (^+^) = (+)
-  negateV = negate
+  (^+^) = mappend
+  negateV (V3 a b c) = V3 (-a) (-b) (-c)
 
 
 instance Num a => VectorSpace (Vec2 a) where
