@@ -47,16 +47,19 @@ instance Num a => AffineSpace (Point3 a) where
 -- Matrix / Vector multiplication (homogeneous coordinates)
 
 
-instance MatrixMult Matrix3'3 Vec3 where
+instance Num a => MatrixMult Matrix3'3  (Vec3 a) where
+  type MatrixParam (Vec3 a) = a   
   (*#) (M3'3 a b c d e f g h i) (V3 m n o) = 
     V3 (a*m+b*n+c*o) (d*m+e*n+f*o) (g*m+h*n+i*o)
 
 -- Note - column vector representation
 
-instance MatrixMult Matrix3'3 Vec2 where
+instance Num a => MatrixMult Matrix3'3 (Vec2 a) where
+  type MatrixParam (Vec2 a) = a       
   (M3'3 a b c d e f _ _ _) *# (V2 m n) = V2 (a*m+b*n+c*0) (d*m+e*n+f*0)
 
 
-instance MatrixMult Matrix3'3 Point2 where
+instance Num a => MatrixMult Matrix3'3 (Point2 a) where
+  type MatrixParam (Point2 a) = a
   (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a*m+b*n+c*1) (d*m+e*n+f*1)
 

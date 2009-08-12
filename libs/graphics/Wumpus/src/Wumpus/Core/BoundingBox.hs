@@ -54,6 +54,9 @@ import Data.Monoid
 --------------------------------------------------------------------------------
 -- Polygon types and standard instances
 
+-- Hmm, maybe BoundingBox should always have rectangular coords
+-- i.e. Point2 and it should be parameterized on the numeric unit 
+-- instead (like it used to be).
 
 -- | Bounding box, two point representation (bottom-left and top-right). 
 data BoundingBox pt = BBox { bbBottomLeft :: pt, bbTopRight :: pt }

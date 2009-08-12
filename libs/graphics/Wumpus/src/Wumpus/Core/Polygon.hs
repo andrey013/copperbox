@@ -95,8 +95,9 @@ instance HasPoints (Polygon pt) where
 -- 
 -- Some needs some more thought...
 
-regularPolygon :: (Floating a, Real a, ZeroPt (pt a), MatrixMult Matrix3'3 pt,
-                   AffineSpace (pt a), Cartesian2 pt, Diff (pt a) ~ Vec2 a)
+regularPolygon :: (Floating a, Real a, ZeroPt (pt a), MatrixMult Matrix3'3 (pt a),
+                   AffineSpace (pt a), Cartesian2 pt, Diff (pt a) ~ Vec2 a,
+                   MatrixParam (pt a) ~ a)
                 => Int -> a -> (pt a -> Polygon (pt a))
 regularPolygon n r = Polygon . pf . toPoint2
   where 

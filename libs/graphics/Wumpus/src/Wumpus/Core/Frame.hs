@@ -149,14 +149,14 @@ withinFrame frm s = pointwise (coord frm) s
 -- I've forgotten the point of this one though it is needed by Drawing.Arrow
 
 -- | point/vector in frame
-inFrame :: (Floating a, VectorSpace a, MatrixMult Matrix3'3 t, a ~ Scalar a) 
-     => Frame2 a -> t a -> t a 
+inFrame :: (Floating a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
+     => Frame2 a -> t -> t
 inFrame frm p = (frameMinv frm) *# p
 
 
 
-frameMinv :: (Fractional a, VectorSpace a, a ~ Scalar a) 
-          => Frame2 a -> Matrix3'3 a
+-- frameMinv :: Fractional a 
+--           => Frame2 a -> Matrix3'3 a
 frameMinv (Frame2 (P2 x y) (V2 v01 v02) (V2 v11 v12)) = 
   inverse $ M3'3 v01  v11 x
                  v02  v12 y

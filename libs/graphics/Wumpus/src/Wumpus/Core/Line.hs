@@ -88,20 +88,22 @@ type DPolyLine2 = PolyLine (Point2 Double)
 instance Functor LineSegment where
   fmap f (LS p p') = LS (f p) (f p')
 
-{-
-instance MatrixMult Matrix3'3 LineSegment  where
+
+instance MatrixMult Matrix3'3 pt => MatrixMult Matrix3'3 (LineSegment pt) where
+  type MatrixParam (LineSegment pt) = MatrixParam pt
   (*#) m3'3 (LS p p') = LS (m3'3 *# p) (m3'3 *# p')
--}
+
 
 
 instance Functor PolyLine where
   fmap f (PolyLine ps) = PolyLine (map f ps)
 
 
-{-
-instance MatrixMult Matrix3'3 (PolyLine Point2) where
+
+instance MatrixMult Matrix3'3 pt => MatrixMult Matrix3'3 (PolyLine pt) where
+  type MatrixParam (PolyLine pt) = MatrixParam pt
   (*#) m3'3 (PolyLine ps) = PolyLine (map (m3'3 *#) ps)
--}
+
 
 instance Pointwise (LineSegment pt) where
   type Pt (LineSegment pt) = pt

@@ -152,17 +152,17 @@ instance Num a => AdditiveGroup (Matrix3'3 a) where
   negateV = negate
  
 
-instance (Num a, VectorSpace a) => VectorSpace (Matrix2'2 a) where
-  type Scalar (Matrix2'2 a) = Scalar a
-  s *^ (M2'2 a b  c d) = M2'2 (s*^a) (s*^b)  (s*^c) (s*^d)
+instance Num a => VectorSpace (Matrix2'2 a) where
+  type Scalar (Matrix2'2 a) = a
+  s *^ (M2'2 a b  c d) = M2'2 (s*a) (s*b)  (s*c) (s*d)
 
 
 
-instance (Num a, VectorSpace a) => VectorSpace (Matrix3'3 a) where
-  type Scalar (Matrix3'3 a) = Scalar a
-  s *^ (M3'3 a b c  d e f  g h i) = M3'3 (s*^a) (s*^b) (s*^c) 
-                                         (s*^d) (s*^e) (s*^f)
-                                         (s*^g) (s*^h) (s*^i)
+instance Num a => VectorSpace (Matrix3'3 a) where
+  type Scalar (Matrix3'3 a) = a
+  s *^ (M3'3 a b c  d e f  g h i) = M3'3 (s*a) (s*b) (s*c) 
+                                         (s*d) (s*e) (s*f)
+                                         (s*g) (s*h) (s*i)
 
 
 --------------------------------------------------------------------------------
@@ -170,8 +170,9 @@ instance (Num a, VectorSpace a) => VectorSpace (Matrix3'3 a) where
 
 infixr 7 *# 
 
-class MatrixMult t u where 
-  (*#) :: Num a => t a -> u a -> u a
+class MatrixMult mat t where 
+  type MatrixParam t :: *
+  (*#) :: MatrixParam t ~ a => mat a -> t -> t
 
 
 --------------------------------------------------------------------------------
@@ -336,19 +337,20 @@ elementaryReplace_i_j i j a = fmap fn . toIndexical $ identityMatrix
 -------------------------------------------------------------------------------
 
 class Inverse t where
-  inverse ::  (Fractional a, VectorSpace a, a ~ Scalar a) => t a -> t a 
+  inverse :: t -> t
 
-instance Inverse Matrix2'2 where
+instance Fractional a => Inverse (Matrix2'2 a) where
   inverse = inverse2'2
 
-instance Inverse Matrix3'3 where
+instance Fractional a => Inverse (Matrix3'3 a) where
   inverse = inverse3'3
 
-inverse2'2 :: (Fractional a, VectorSpace a, a ~ Scalar a) => Matrix2'2 a -> Matrix2'2 a 
+
+inverse2'2 :: Fractional a => Matrix2'2 a -> Matrix2'2 a 
 inverse2'2 m@(M2'2 a b c d) = (1 / det m) *^ (M2'2 d (-b)  (-c) a)
 
 
-inverse3'3 :: (Fractional a, VectorSpace a, a ~ Scalar a) => Matrix3'3 a -> Matrix3'3 a 
+inverse3'3 :: Fractional a => Matrix3'3 a -> Matrix3'3 a 
 inverse3'3 m = (1 / det m) *^ adjoint3'3 m
 
 adjoint3'3 :: Num a => Matrix3'3 a -> Matrix3'3 a 

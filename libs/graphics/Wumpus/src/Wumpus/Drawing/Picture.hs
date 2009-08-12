@@ -342,26 +342,22 @@ dotPentagon = polyDot 5
 
 
 dotX :: Picture (Point2 Double)
-dotX = undefined
-{-
 dotX = picPath stroke path
   where
     l1    = vline 2 $ P2 0 (-1)
     ls1   = rotate (pi/6)   l1
     ls2   = rotate (5*pi/3) l1
     path  = segmentPath [ls1,ls2]
--}
+
  
 
 dotPlus :: Picture (Point2 Double)
-dotPlus = undefined
-{-
 dotPlus = picPath stroke path
   where
     hl    = hline 2 $ P2 (-1) 0
     vl    = vline 2 $ P2 0    (-1)
     path  = segmentPath [hl,vl]
--}
+
 
 dotSquare :: Picture (Point2 Double)
 dotSquare = picPolygon stroke $ rectangle 2 2 (P2 (-1) (-1))
@@ -370,14 +366,12 @@ dotSquare = picPolygon stroke $ rectangle 2 2 (P2 (-1) (-1))
 
 
 dotAsterisk :: Picture (Point2 Double)
-dotAsterisk = undefined
-{-
 dotAsterisk = picPath stroke path
   where
    vl     :: LineSegment (Point2 Double)
    vl     = vline 2 (P2 0 (-1))
    path   = segmentPath . circular $ replicate 5 vl
--}
+
 
 diamond ::  Double -> Double -> PathAttr -> Picture (Point2 Double)
 diamond wth hght attr = picPolygon attr $ Polygon ps 

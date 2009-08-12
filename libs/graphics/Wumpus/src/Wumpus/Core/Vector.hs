@@ -224,7 +224,7 @@ avec2 theta d = V2 x y where
 
 -- | Construct the vector that bisects the vectors @u@ and @v@.
 bisector :: (VectorSpace v, Fractional a, Scalar v ~ a) => v -> v -> v
-bisector u v = u ^+^ ((v ^-^ u)^*0.5)
+bisector u v = u ^+^ ((v ^-^ u) ^* 0.5)
 
 
 
@@ -234,7 +234,7 @@ bisector u v = u ^+^ ((v ^-^ u)^*0.5)
 -- | Interior angle between two vector
 interiorAngle :: (Real a, Floating a, InnerSpace v, Scalar v ~ a) 
               => v -> v -> Radian
-interiorAngle u v = toRadian $ acos ((u<.>v) / ((magnitude u) * (magnitude v)))    
+interiorAngle u v = toRadian $ acos ((u <.> v) / ((magnitude u) * (magnitude v)))    
 
 
 -- | CCW angle between the vector and the horizontal plane.
