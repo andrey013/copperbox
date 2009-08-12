@@ -191,10 +191,10 @@ instance Fractional a => ReferencePoints (Point2 a) where
 
 -- | Center a shape at the supplied point.
 
--- centeredAt :: (Fractional a, Ord a, HasPoints shape, Pointwise shape, 
---               AffineSpace (Pt shape), 
---               Pnt shape ~ Point2 a, Diff (Pt shape) ~ Vec2 a) 
---           => shape -> Point2 a -> shape
+centeredAt :: (Fractional a, Ord a, HasPoints shape, Pointwise shape, 
+               AffineSpace (Pt shape), 
+               Pnt shape ~ Point2 a, Diff (Pt shape) ~ Vec2 a) 
+           => shape -> Point2 a -> shape
 centeredAt sh pt = pointwise (.+^ diff) sh
   where
     diff = pt .-. center (bounds sh) 

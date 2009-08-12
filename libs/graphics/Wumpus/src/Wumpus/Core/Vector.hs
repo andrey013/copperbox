@@ -174,33 +174,33 @@ instance Independent Vec2 where
 
 
 -- Alternatively these could be built as
---   hvec :: (Num v, Scalar v ~ a) => a -> v
+--   hvec :: (Num a, Scalar v ~ a) => a -> v
 
 -- | Construct a vector with horizontal displacement
 -- and test the sign of the horizontal component
-class HVec (t :: * -> *) where 
-  hvec       :: Num a => a -> t a
-  hsignum    :: Num a => t a -> a 
+class HVec v where 
+  hvec       :: (Scalar v ~ a) => a -> v
+  hsignum    :: (Scalar v ~ a) => v -> a 
 
-instance HVec Vec2 where
+instance Num a => HVec (Vec2 a) where
   hvec d                = V2 d 0
   hsignum (V2 a _)      = signum a
 
-instance HVec Vec3 where
+instance Num a => HVec (Vec3 a) where
   hvec d                = V3 d 0 0
   hsignum (V3 a _ _)    = signum a
 
 -- | Construct a vector with vertical displacement 
 -- and test the sign of the vertical component
-class VVec (t :: * -> *) where
-  vvec    :: Num a => a -> t a
-  vsignum :: Num a => t a -> a
+class VVec v where
+  vvec    :: (Scalar v ~ a) => a -> v
+  vsignum :: (Scalar v ~ a) => v -> a
 
-instance VVec Vec2 where
+instance Num a => VVec (Vec2 a) where
   vvec d                = V2 0 d
   vsignum (V2 _ b)      = signum b
 
-instance VVec Vec3 where
+instance Num a => VVec (Vec3 a) where
   vvec d                = V3 0 d 0
   vsignum (V3 _ b _)    = signum b
 
@@ -223,8 +223,8 @@ avec2 theta d = V2 x y where
 
 
 -- | Construct the vector that bisects the vectors @u@ and @v@.
-bisector :: (VectorSpace v, Num v, Fractional (Scalar v)) => v -> v -> v
-bisector u v = u + ((v-u)^*0.5)
+bisector :: (VectorSpace v, Fractional a, Scalar v ~ a) => v -> v -> v
+bisector u v = u ^+^ ((v ^-^ u)^*0.5)
 
 
 
@@ -232,28 +232,27 @@ bisector u v = u + ((v-u)^*0.5)
 -- Operations
 
 -- | Interior angle between two vector
-interiorAngle :: (Real a, Floating a, 
-                  InnerSpace (t a), a ~ Scalar (t a)) 
-              => t a -> t a -> Radian
+interiorAngle :: (Real a, Floating a, InnerSpace v, Scalar v ~ a) 
+              => v -> v -> Radian
 interiorAngle u v = toRadian $ acos ((u<.>v) / ((magnitude u) * (magnitude v)))    
 
 
 -- | CCW angle between the vector and the horizontal plane.
-vangle :: (HVec t, VVec t, Ord a, Floating a, Real a, InnerSpace v, 
-           Scalar v ~ a, v ~ t a) 
+vangle :: (HVec v, VVec v, Ord a, Floating a, Real a, InnerSpace v, 
+           Scalar v ~ a) 
        => v -> Radian
 vangle v | vsignum v >= 0 = interiorAngle v (hvec 1)
          | otherwise      = 2*pi - interiorAngle v (hvec 1)
   
 -- Test whether the vectors are perpendicular
 -- two vectors in R2 are perpendicular iff their dot product is 0
-perpendicular :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) 
-              => t a -> t a -> Bool
+perpendicular :: (Floating a, InnerSpace v, Scalar v ~ a) 
+              => v -> v -> Bool
 perpendicular = (==0) `oo` (<.>)
 
 -- alternative name for perpendicular
-orthogonal :: (InnerSpace (t a), Floating a, a ~ Scalar (t a)) 
-              => t a -> t a -> Bool
+orthogonal :: (Floating a, InnerSpace v, Scalar v ~ a) 
+              => v -> v -> Bool
 orthogonal = (==0) `oo` (<.>)
 
 

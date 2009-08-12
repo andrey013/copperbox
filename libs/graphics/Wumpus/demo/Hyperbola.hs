@@ -9,7 +9,7 @@ import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Polygon
-import Wumpus.Core.Transformations
+import Wumpus.Core.Transform
 
 import Wumpus.Drawing.Picture
 import Wumpus.Drawing.Path

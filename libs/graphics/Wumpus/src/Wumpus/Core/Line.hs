@@ -159,14 +159,12 @@ line v p = LS p (p .+^ v)
 
 
 -- | Horizontal line from point @p@ of length @a@ .
-hline :: (Num a, AffineSpace pt, HVec t,
-          Diff pt ~ v, Scalar v ~ a, v ~ t a)
+hline :: (Num a, AffineSpace pt, HVec v, Diff pt ~ v, Scalar v ~ a)
       => a -> (pt -> LineSegment pt)
 hline a = line (hvec a)
 
 -- | Vertical line from point @p@ of length @a@.
-vline :: (Num a, AffineSpace pt, VVec t,
-          Diff pt ~ v, Scalar v ~ a, v ~ t a) 
+vline :: (Num a, AffineSpace pt, VVec v, Diff pt ~ v, Scalar v ~ a) 
        => a -> (pt -> LineSegment pt)
 vline a = line (vvec a)
 

@@ -26,7 +26,7 @@ import Wumpus.Core.Geometric
 import Wumpus.Core.Line
 import Wumpus.Core.Point
 import Wumpus.Core.Polygon
-import Wumpus.Core.Transformations
+import Wumpus.Core.Transform
 import Wumpus.Core.Vector
 
 import Wumpus.Drawing.GraphicsState

@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.Transformations
+-- Module      :  Wumpus.Core.Transform
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.Transformations 
+module Wumpus.Core.Transform
   (
   -- * Rotation
     rotate

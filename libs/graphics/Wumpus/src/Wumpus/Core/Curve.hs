@@ -251,15 +251,17 @@ subs n a = zip xs ys
 --------------------------------------------------------------------------------
 -- Tangents
 
-startTangent :: (Ord a, Floating a, Real a, HVec t, VVec t,
-                 AffineSpace pt, InnerSpace v, Diff pt ~ v, Scalar v ~ a, v ~ t a) 
+startTangent :: (Ord a, Floating a, Real a, HVec v, VVec v,
+                 AffineSpace pt, InnerSpace v, 
+                 Diff pt ~ v, Scalar v ~ a) 
              => Curve pt -> Radian
 startTangent = vangle . startTangentVector
 
 
 
-endTangent :: (Ord a, Floating a, Real a, HVec t, VVec t,
-               AffineSpace pt, InnerSpace v, Diff pt ~ v, Scalar v ~ a, v ~ t a) 
+endTangent :: (Ord a, Floating a, Real a, HVec v, VVec v, 
+               AffineSpace pt, InnerSpace v, 
+               Diff pt ~ v, Scalar v ~ a) 
            => Curve pt -> Radian
 endTangent = vangle . endTangentVector
 
@@ -289,9 +291,9 @@ endTangentVector (Curve _ _ p2 p3) = freeVector p3 p2
 
 -- | Weighted point on a bezier curve - via the famous cubic bezier formula.
 
-cubic :: (Fractional a, Real a, AffineSpace (pt a), VectorSpace v, 
-          Diff (pt a) ~ v, Scalar v ~ a)
-      =>  Curve (pt a) -> a -> pt a
+cubic :: (Fractional a, Real a, AffineSpace pt, VectorSpace v, 
+          Diff pt ~ v, Scalar v ~ a)
+      =>  Curve pt -> a -> pt
 
 cubic (Curve p0 p1 p2 p3) t = affineSum [WP w0 p0, WP w1 p1, WP w2 p2, WP w3 p3]
   where

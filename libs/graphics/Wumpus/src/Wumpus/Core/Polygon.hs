@@ -51,7 +51,7 @@ import Wumpus.Core.Matrix
 import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Radian
-import Wumpus.Core.Transformations
+import Wumpus.Core.Transform
 import Wumpus.Core.Vector
 
 import Data.AffineSpace

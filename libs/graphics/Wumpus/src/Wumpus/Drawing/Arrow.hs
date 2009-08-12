@@ -40,7 +40,7 @@ import Wumpus.Core.Point
 import Wumpus.Core.Pointwise
 import Wumpus.Core.Polygon
 import Wumpus.Core.Radian
-import Wumpus.Core.Transformations
+import Wumpus.Core.Transform
 import Wumpus.Core.Vector
 
 import Wumpus.Drawing.Path

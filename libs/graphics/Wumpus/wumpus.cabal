@@ -37,7 +37,7 @@ library
     Wumpus.Core.Polar,
     Wumpus.Core.Polygon,
     Wumpus.Core.Radian,
-    Wumpus.Core.Transformations,
+    Wumpus.Core.Transform,
     Wumpus.Core.Vector,
     Wumpus.Drawing.Arrow,
     Wumpus.Drawing.GraphicsState,

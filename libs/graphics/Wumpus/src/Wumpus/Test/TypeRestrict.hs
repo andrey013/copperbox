@@ -34,13 +34,13 @@ import Data.Ratio
 -- Wumpus.Core.Point 
 
 
-affCombine2 :: WtPoint Point2 Rational Double 
-            -> WtPoint Point2 Rational Double 
+affCombine2 :: WtPoint (Point2 Double) Rational
+            -> WtPoint (Point2 Double) Rational
             -> Point2 Double
 affCombine2 = (|+|)
 
 
-affSum  :: [WtPoint Point2 Rational Double] -> Point2 Double
+affSum  :: [WtPoint (Point2 Double) Rational] -> Point2 Double
 affSum = affineSum
 
 

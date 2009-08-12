@@ -28,7 +28,6 @@ module Wumpus.Core.Point
   , Point3(..)
   , DPoint3
   , WtPoint(..)
-  , Co2
 
   -- * Construction
   , ZeroPt(..)
@@ -68,14 +67,11 @@ type DPoint3 = Point3 Double
 
 -- | Weighted points
 -- The weight type @i@ should support (==) happily. 
--- Integer or Rational would be suitable candidates - for the affine functions
+-- Rational would be a suitable candidate - for the affine functions
 -- it must support realToFrac.
-data WtPoint (pt :: * -> *) i a = WP i (pt a)
+data WtPoint pt i = WP i pt
   deriving (Eq,Show)
 
-
--- | Functional type from domain Point2 to codomain @object@.
-type Co2 a object = Point2 a -> object 
 
 
 instance Functor Point2 where
@@ -95,10 +91,6 @@ instance Pointwise (Point3 a) where
   pointwise f pt = f pt
 
 
-
-instance Pointwise (Co2 a (t a)) where
-  type Pt (Co2 a (t a)) = Point2 a
-  pointwise f pf = pf . f
 
 
 --------------------------------------------------------------------------------
@@ -171,9 +163,9 @@ infixl 6 |+|
 -- | Affine combination of two weighted points.
 -- Note the sum of the weights a1 and a2 must satisfy: @a1 + a2 = 1@
 
-(|+|) :: (Real n, Fractional a, AffineSpace (pt a), VectorSpace v,
-          Diff (pt a) ~ v, Scalar v ~ a)
-      => WtPoint pt n a -> WtPoint pt n a -> pt a
+(|+|) :: (Real n, Fractional a, AffineSpace pt, VectorSpace v,
+          Diff pt ~ v, Scalar v ~ a)
+      => WtPoint pt n -> WtPoint pt n -> pt
 (WP a1 p1) |+| (WP a2 p2) 
     | a1+a2 == 1    = p1 .+^ ((realToFrac a2) *^ (p2 .-. p1))
     | otherwise     = error "affine combination: weights do not sum to 1" 
@@ -182,9 +174,9 @@ infixl 6 |+|
 
 -- | Affine combination summing a list of weighted points.
 -- Note the weights must sum to 1.
-affineSum :: (Real n, Fractional a, AffineSpace (pt a), VectorSpace v,
-              Diff (pt a) ~ v, Scalar v ~ a)
-          => [WtPoint pt n a] -> pt a
+affineSum :: (Real n, Fractional a, AffineSpace pt, VectorSpace v,
+              Diff pt ~ v, Scalar v ~ a)
+          => [WtPoint pt n] -> pt
 affineSum []              = error "affineSum: empty"
 affineSum (WP a1 p1 : xs) = post $ foldr fn (a1, p1) xs 
   where 
