@@ -33,7 +33,7 @@ module Wumpus.Core.Point
   , ZeroPt(..)
 
   -- * Conversion
-  , Cartesian2(..)
+  , Rectangular(..)
   
   -- * Predicates 
   , Collinear(..)
@@ -121,12 +121,12 @@ instance Num a => ZeroPt (Point3 a) where
 -- I need to decide whether it is still necessary, or better replaced with 
 -- something else...
 
-class Cartesian2 pt where
+class Rectangular pt where
   toPoint2   :: pt a -> Point2 a
   fromPoint2 :: Point2 a -> pt a
 
 
-instance Cartesian2 Point2 where
+instance Rectangular Point2 where
   toPoint2 = id
   fromPoint2 = id
 

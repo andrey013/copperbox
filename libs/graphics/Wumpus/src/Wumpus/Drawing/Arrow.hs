@@ -31,7 +31,7 @@ module Wumpus.Drawing.Arrow
 
   ) where
 
--- import Wumpus.Core.BoundingBox
+import Wumpus.Core.BoundingBox
 import Wumpus.Core.Curve
 import Wumpus.Core.Frame
 import Wumpus.Core.Geometric
@@ -90,11 +90,11 @@ arrowCenterMarker ls = [ls,cm] where
 
 arrowheadTriangle :: Double -> Radian -> (Radian -> DPoint2 -> DPolygon)
 arrowheadTriangle d ang = 
-  \theta endpt -> let halfBW = d * fromRadian (tan ang) 
-                      tri    = isoscelesTriangle (2*halfBW) d endpt
-                  in   pointwise (rotateAbout (theta - pi/2) endpt)
-                     $ pointwise (inFrame (ortho $ P2 halfBW d))
-                     $ tri
+  \theta endpt@(P2 x y) -> let halfBW = d * fromRadian (tan ang) 
+                               tri    = translate x y (isoscelesTriangle (2*halfBW) d)
+                           in   pointwise (rotateAbout (theta - pi/2) endpt)
+                                $ pointwise (inFrame (ortho $ P2 halfBW d))
+                                $ tri
 
 
 arrowheadVee :: Double -> Radian

@@ -130,11 +130,11 @@ uniformScale a = scale a a
 
 
 -- | translate @x@ @y@.
-translate :: (Floating a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
+translate :: (Num a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
           => a -> a -> t -> t 
 translate x y = ((translationMatrix x y) *#)
 
-translateBy :: (Floating a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
+translateBy :: (Num a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
             => Vec2 a -> t -> t 
 translateBy (V2 x y) = translate x y
 

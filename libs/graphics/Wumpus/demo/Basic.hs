@@ -54,14 +54,14 @@ demo3 = writePicture "basic3.ps" (displace 50 300 dots)
 demo4 :: IO ()
 demo4 = writePicture "basic4.ps" (displace 10 300 squares)
   where
-    squares = picPolygon stroke (square 10 zeroPt) 
-         <++> picPolygon stroke (square 20 zeroPt)
-         <++> picPolygon stroke (square 30 zeroPt)
-         <++> picPolygon stroke (square 40 zeroPt)
-         <++> picPolygon stroke (square 50 zeroPt)
+    squares = picPolygon stroke (square 10) 
+         <++> picPolygon stroke (square 20)
+         <++> picPolygon stroke (square 30)
+         <++> picPolygon stroke (square 40)
+         <++> picPolygon stroke (square 50)
          <//> innerSquares
          <//> cattySquares
-    innerSquares = (withRgbColour blueViolet $ picPolygon stroke (square 50 zeroPt))
-        `centered` (withRgbColour darkSeaGreen $ picPolygon stroke (square 30 zeroPt))
+    innerSquares = (withRgbColour blueViolet $ picPolygon stroke (square 50))
+        `centered` (withRgbColour darkSeaGreen $ picPolygon stroke (square 30))
     
-    cattySquares = hcat $ replicate 8 (picPolygon stroke $ square 20 zeroPt)
+    cattySquares = hcat $ replicate 8 (picPolygon stroke $ square 20)

@@ -327,7 +327,7 @@ timesRoman us = Font "Times-Roman" us
 
 
 polyDot :: Int -> Picture (Point2 Double)
-polyDot n = picPolygon stroke $ regularPolygon n 2 zeroPt
+polyDot n = picPolygon stroke $ regularPolygon n 2
 
 
 dotTriangle :: Picture (Point2 Double)
@@ -360,7 +360,7 @@ dotPlus = picPath stroke path
 
 
 dotSquare :: Picture (Point2 Double)
-dotSquare = picPolygon stroke $ rectangle 2 2 (P2 (-1) (-1))
+dotSquare = picPolygon stroke $ translate (-1) (-1) $ rectangle 2 2
 
 
 

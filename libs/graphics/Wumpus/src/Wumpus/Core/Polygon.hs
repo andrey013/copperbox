@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
@@ -83,62 +84,59 @@ instance HasPoints (Polygon pt) where
   endPoint (Polygon _)       = error "endPoint: malformed Polygon, too few points"
   startPoint                 = endPoint  
 
+
+instance MatrixMult Matrix3'3 pt => MatrixMult Matrix3'3 (Polygon pt) where
+  type MatrixParam (Polygon pt) = MatrixParam pt
+  (*#) m3'3 (Polygon ps) = Polygon (map (m3'3 *#) ps)
+
+
                 
 --------------------------------------------------------------------------------
 -- Construction
 
 
--- | Create a regular polygon with @n@ sides and /radius/ @r@.
-
--- Note MatrixMult requires kind (* -> *) for both arguments, which means
--- we have to use some parametric point type (pt a) rather then just pt.
--- 
--- Some needs some more thought...
-
-regularPolygon :: (Floating a, Real a, ZeroPt (pt a), MatrixMult Matrix3'3 (pt a),
-                   AffineSpace (pt a), Cartesian2 pt, Diff (pt a) ~ Vec2 a,
-                   MatrixParam (pt a) ~ a)
-                => Int -> a -> (pt a -> Polygon (pt a))
-regularPolygon n r = Polygon . pf . toPoint2
-  where 
-    pf = \(P2 x y) -> map (translate x y) 
-                          $ circular 
-                          $ replicate n (zeroPt .+^ (V2 0 r)) 
+-- | Create a regular polygon with @n@ sides and /radius/ @r@ 
+-- centered at the origin.
+regularPolygon :: (Floating a, Real a, ZeroPt pt, MatrixMult Matrix3'3 pt,
+                   AffineSpace pt, Diff pt ~ Vec2 a,
+                   MatrixParam pt ~ a)
+                => Int -> a -> Polygon pt
+regularPolygon n r = Polygon $ circular $ replicate n (zeroPt .+^ (V2 0 r)) 
 
 
 -- Note square and rectangle are both 'turtle drawn' and use the @iter@ 
 -- functional to successively transform the current point.
 
--- | Create a square with bottom-left corner @p@ and side-length @d@.
--- square :: (Num a, AffineSpace pt, Scalar pt ~ a) => a -> (pt -> Polygon pt)
-
-square :: (Num a, AffineSpace pt, Diff pt ~ Vec2 a) 
-       => a -> pt -> Polygon pt
-square d = Polygon . iter [id,f2,f3,f4] where
+-- | Create a square with bottom left corner at the origin and 
+-- side-length @d@.
+square :: (Num a, AffineSpace pt, ZeroPt pt, Diff pt ~ Vec2 a) 
+       => a -> Polygon pt
+square d = Polygon $ iter [id,f2,f3,f4] zeroPt where
   f2 = (.+^ hvec d)
   f3 = (.+^ vvec d)
   f4 = (.+^ (hvec $ negate d))
   
-unitSquare :: (Num a, AffineSpace pt, Diff pt ~ Vec2 a) 
-           => pt -> Polygon pt
+unitSquare :: (Num a, AffineSpace pt, ZeroPt pt, Diff pt ~ Vec2 a) 
+           => Polygon pt
 unitSquare = square 1 
 
 
--- | Create a rectangle with bottom-left corner @p@ and width @w@ and
+-- | Create a rectangle with bottom-left corner at the origin and width @w@ and
 -- height @h@.
-rectangle :: (Num a, AffineSpace pt, Diff pt ~ Vec2 a) 
-          => a -> a -> pt -> Polygon pt
-rectangle w h = Polygon . iter [id,f2,f3,f4] where
+rectangle :: (Num a, AffineSpace pt, ZeroPt pt, Diff pt ~ Vec2 a) 
+          => a -> a -> Polygon pt
+rectangle w h = Polygon $ iter [id,f2,f3,f4] zeroPt where
   f2 = (.+^ hvec w)
   f3 = (.+^ vvec h)
   f4 = (.+^ (hvec $ negate w))
 
 
--- | Create an isosceles rectangle with bottom-left corner @p@, the base 
--- in on the horizontal plane with width @bw@. Height is @h@.
-isoscelesTriangle :: (Fractional a, AffineSpace pt, Diff pt ~ Vec2 a) 
-                  => a -> a -> (pt -> Polygon pt)
-isoscelesTriangle bw h = Polygon . sequence [id,f2,f3] where
+-- | Create an isosceles rectangle with bottom-left corner at the 
+-- origin, the base on the horizontal plane with width @bw@. The 
+-- height is @h@.
+isoscelesTriangle :: (Fractional a, AffineSpace pt, ZeroPt pt, Diff pt ~ Vec2 a) 
+                  => a -> a -> Polygon pt
+isoscelesTriangle bw h = Polygon $ sequence [id,f2,f3] zeroPt where
   f2 = (.+^ hvec bw)
   f3 = (.+^ V2 (bw/2) h)
 
@@ -186,7 +184,7 @@ interiorAngles (Polygon ps) = windowedMap3c intAng ps where
 -- | Simple algorithm to deduce orientation of a polygon.
 -- Will throw an error if it cannot find two successive vertices 
 -- that are not collinear.
-simpleOrientation :: (Collinear (pt Double), Cartesian2 pt) 
+simpleOrientation :: (Collinear (pt Double), Rectangular pt) 
                   => Polygon (pt Double) -> Orientation
 simpleOrientation (Polygon ps) = sign $ det $ mkMat $ noncollinear ps
   where
