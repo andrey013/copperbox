@@ -20,10 +20,9 @@
 module Mullein.Core 
   ( 
 
+    Tied(..)
+
   -- * Types
-    Tied
-  , tied
-  , notTied
 
   , MeterPattern
   , meterPattern
@@ -31,6 +30,11 @@ module Mullein.Core
   , Glyph(..)
   , StdGlyph
   , GraceNote(..)
+
+  , Bar(..)
+  , PulseL
+  , Pulse(..)
+
   , NoteAttribute(..)
   , ScNote(..)
   , Note(..)
@@ -46,18 +50,15 @@ import Mullein.Utils
 import Data.Ratio
 
 
+
+
+class Tied e where
+  mkTie :: e
+
+
 --------------------------------------------------------------------------------
 -- Musical representation
 
-
-type Tied = Bool
-
-  
-tied    :: Tied
-tied    = True
-
-notTied :: Tied
-notTied = False
 
 
 -- MeterPatterns are not [Duration]...
@@ -114,10 +115,24 @@ data Glyph drn note = Note   drn note
 type StdGlyph = Glyph Duration Pitch
 
 
--- Wrap a newtype to be distinct from pair...
-
-data GraceNote drn pch = GraceNote drn pch
+data GraceNote drn note = GraceNote drn note
   deriving (Eq,Show)
+
+
+
+data Bar e = Bar (PulseL e)
+           | OverlayL [PulseL e] 
+  deriving (Eq,Show)
+
+type PulseL e = [Pulse e]
+
+-- Pulse / pulsation -- a metrical division of a bar
+data Pulse e = Pulse e
+             | BeamedL [e]
+  deriving (Eq,Show)
+
+
+
 
 
 data NoteAttribute = Fingering Int
@@ -125,6 +140,9 @@ data NoteAttribute = Fingering Int
 
 data ScNote = ScNote Pitch [NoteAttribute]
   deriving (Eq,Show)
+
+instance Tied (Glyph d n) where
+  mkTie = Tie
 
 class Note a where
   type Attr a :: * 

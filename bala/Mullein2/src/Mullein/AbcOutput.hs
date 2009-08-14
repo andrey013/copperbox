@@ -23,8 +23,6 @@ import Mullein.Core
 import Mullein.Duration
 import Mullein.Pitch hiding (pitch, octave)
 
-import Data.OneMany
-
 import Text.PrettyPrint.Leijen hiding ( (<$>) )
 
 import Data.Ratio
@@ -57,15 +55,15 @@ instance AbcOutput ScNote where
 
 
 
-oBarOverlay :: AbcGlyph e => (Tied,[OneMany e]) -> Doc
-oBarOverlay (ptied,xs) = hsep (map omBeam xs) <> if ptied then char '~' else empty
+oBarOverlay :: AbcGlyph e => Bar e -> Doc
+oBarOverlay (Bar xs) = hsep (map omBeam xs)
+oBarOverlay _        = error "oBarOverlay TODO"
 
 
-omBeam :: AbcGlyph e => OneMany e -> Doc
-omBeam = oneMany abcGlyph (hcat . map abcGlyph) 
+omBeam :: AbcGlyph e => Pulse e -> Doc
+omBeam (Pulse e)    = abcGlyph e
+omBeam (BeamedL es) = hcat $ map abcGlyph es
 
-oBracket :: (AbcOutput e, AbcDur e ~ Duration) => OneMany (Glyph Duration e) -> Doc
-oBracket = oneMany oElement (hcat . map oElement)
 
 
 oElement :: (AbcOutput e, AbcDur e ~ Duration) => Glyph Duration e -> Doc

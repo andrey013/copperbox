@@ -21,9 +21,6 @@ module Mullein.Bracket where
 import Mullein.Core
 import Mullein.Duration
 
-
-import Data.OneMany
-
 import Data.Ratio
 
 
@@ -68,21 +65,20 @@ apoSkipListB f g st0 xs0 = step st0 xs0 where
 --------------------------------------------------------------------------------
 -- bar & beam
 
-bracket :: HasDuration e => MeterPattern -> [e] -> [(Tied,[OneMany e])]
-bracket mp notes = map beamer $ bar (sum mp) notes 
-  where 
-    beamer (h,xs) = (h, beam mp xs)
+bracket :: (HasDuration e, Tied e) => MeterPattern -> [e] -> [Bar e]
+bracket mp = map (Bar . beam mp) . bar (sum mp)
 
 
 --------------------------------------------------------------------------------
 -- bar
 
-bar :: HasDuration e => Rational -> [e] -> [(Tied,[e])]
+
+bar :: (HasDuration e, Tied e) => Rational -> [e] -> [[e]]
 bar bar_len ns = apoSkipList (barStep bar_len) barFlush ([],0) ns
 
 
-barStep :: HasDuration e 
-        => Rational -> ([e],Rational) -> e -> Step (Tied,[e]) ([e],Rational)
+barStep :: (HasDuration e, Tied e) 
+        => Rational -> ([e],Rational) -> e -> Step [e] ([e],Rational)
 barStep bar_len (ca,i) note = 
     case compare (i+note_len) bar_len of
 
@@ -90,18 +86,21 @@ barStep bar_len (ca,i) note =
       LT -> Skip (note:ca,i+note_len)
     
       -- exact fit ("close" the bar)
-      EQ -> Yield (notTied, reverse $ note:ca) ([],0)
+      EQ -> Yield (reverse $ note:ca) ([],0)
 
       -- too big (split if possible)
       GT -> case split i note of
-              Just (l,r) -> Yield (tied, reverse $ l:ca) (pushback r)
+              Just (l,r) -> Yield (reverse $ tied $ l:ca) (pushback r)
 
               -- The note doesn't fit but it won't split either
               -- so push it back...
-              Nothing    -> Yield (notTied, reverse $ ca) (pushback note)
+              Nothing    -> Yield (reverse $ ca) (pushback note)
   where
     pushback a = ([a], ratDuration a)
     note_len   = ratDuration note
+
+
+    tied xs   = mkTie : xs
 
 split :: HasDuration e => Rational -> e -> Maybe (e,e)
 split i note = fn $ splitDuration i $ getDuration note
@@ -110,9 +109,9 @@ split i note = fn $ splitDuration i $ getDuration note
     fn (Nothing,_)        = Nothing
 
 -- 
-barFlush :: ([e],Rational) -> [e] -> [(Tied,[e])]
+barFlush :: ([e],Rational) -> [e] -> [[e]]
 barFlush ([],_) _ = []
-barFlush (ca,_) _ = [(notTied, reverse ca)]
+barFlush (ca,_) _ = [reverse ca]
 
 
 
@@ -120,29 +119,35 @@ barFlush (ca,_) _ = [(notTied, reverse ca)]
 -- beam
 
 
-beam :: HasDuration e => MeterPattern -> [e] ->  [OneMany e]
+beam :: HasDuration e => MeterPattern -> [e] ->  [Pulse e]
 beam mp notes = apoSkipListB beamStep beamFlush ([],mp) notes
 
 
-beamFlush :: HasDuration e => ([e],z) -> [e] -> [OneMany e]
-beamFlush ([],_)  rs = map one rs
-beamFlush (cca,_) rs = fromList (reverse cca) : map one rs
-
 beamStep :: HasDuration e => ([e],[Rational]) 
          -> e
-         -> Step (Binary (OneMany e)) ([e],[Rational])
+         -> Step (Binary (Pulse e)) ([e],[Rational])
 beamStep (ca,stk) e = maybe Done (sk (ratDuration e)) (top stk) where
   sk n d | n >= 1%4 || n > d  = next ca     (Just e) (consume n stk)
          | n == d             = next (e:ca) Nothing  (consume n stk)
          | otherwise          = skip (e:ca) (consume n stk)
 
   next []  Nothing  ss = Skip ([],ss)
-  next []  (Just a) ss = Yield (One (one a)) ([],ss)
-  next cca (Just a) ss = Yield (Two (fromList $ reverse cca) (one a)) ([],ss)
-  next cca _        ss = Yield (One (fromList $ reverse cca)) ([],ss)
+  next []  (Just a) ss = Yield (One (Pulse a)) ([],ss)
+  next cca (Just a) ss = Yield (Two (toPulse $ reverse cca) (Pulse a)) ([],ss)
+  next cca _        ss = Yield (One (toPulse $ reverse cca)) ([],ss)
 
   skip cca ss          = Skip (cca,ss) 
 
+
+beamFlush :: HasDuration e => ([e],z) -> [e] -> [Pulse e]
+beamFlush ([],_)  rs = map Pulse rs
+beamFlush (cca,_) rs = toPulse (reverse cca) : map Pulse rs
+
+
+toPulse :: [a] -> Pulse a
+toPulse []  = error "Bracket.toPulse: cannot build Pulse from empty list"
+toPulse [x] = Pulse x
+toPulse xs  = BeamedL xs
 
 
 

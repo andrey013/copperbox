@@ -25,12 +25,12 @@ import Mullein.Duration
 import Mullein.Pitch
 import Mullein.Utils
 
-import Data.OneMany
 
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen hiding ( (<$>) )
 
+import Control.Applicative hiding ( empty )
 import Control.Monad.State
-
+-- import qualified Data.Traversable as T
 
 
 class LyOutput e where
@@ -53,17 +53,20 @@ instance LyOutput Pitch where
 
 
 
--- oBar 
+ 
 
-oBarOverlay :: LilyPondGlyph e => (Bool,[OneMany e]) -> Doc
-oBarOverlay (ptied,xs) = hsep (map omBeam xs) <> if ptied then char '~' else empty
+oBarOverlay :: LilyPondGlyph e => Bar e -> Doc
+oBarOverlay (Bar xs) = hsep (map omBeam xs)
+oBarOverlay _        = error "oBarOverlay TODO"
 
 
-omBeam :: LilyPondGlyph e => OneMany e -> Doc
-omBeam = oneMany lyGlyph (lyBeam . map lyGlyph) 
+omBeam :: LilyPondGlyph e => Pulse e -> Doc
+omBeam (Pulse e)    = lyGlyph e
+omBeam (BeamedL es) = lyBeam $  map lyGlyph es
 
-oBracket :: (LyOutput e, LyDur e ~ Duration) => OneMany (Glyph Duration e) -> Doc
-oBracket = oneMany oElement (lyBeam . map oElement)
+
+-- oBracket :: (LyOutput e, LyDur e ~ Duration) => OneMa (Glyph Duration e) -> Doc
+-- oBracket = oneMany oElement (lyBeam . map oElement)
 
 
 -- TODO check whether or not successive notes in chords and graces
@@ -116,11 +119,12 @@ endBraces i | i <=0     = empty
 
 data St = St { relativePitch :: Maybe Pitch, relativeDuration :: Duration }
 
-runRewriteDuration :: HasDuration e => [(Tied,[OneMany e])] -> [(Tied,[OneMany e])]
+runRewriteDuration :: HasDuration e => [Bar e] -> [Bar e]
 runRewriteDuration bars = evalState (mapM fn bars) s0 where
-  fn (tie_status,gs) = do gs' <- mapM fn' gs
-                          return (tie_status, gs')
-  fn' om = mapM rewriteDuration (toList om) >>= return . fromList
+  fn (Bar ps)       = Bar <$> mapM fn' ps
+  fn (OverlayL ovs) = OverlayL <$> mapM (mapM fn') ovs
+  fn' (Pulse e)     = Pulse <$> rewriteDuration e
+  fn' (BeamedL xs)  = BeamedL <$> mapM rewriteDuration xs 
 
   s0 = St undefined dZero
 
