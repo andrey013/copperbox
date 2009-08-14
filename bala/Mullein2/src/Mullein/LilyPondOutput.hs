@@ -42,7 +42,7 @@ class LyOutput e where
 class LilyPondGlyph e where
   lyGlyph :: e -> Doc
 
-instance LilyPondGlyph (ElementP ScNote) where
+instance LilyPondGlyph (Glyph Duration Pitch) where
   lyGlyph = oElement  
 
 instance LyOutput Pitch where
@@ -50,10 +50,6 @@ instance LyOutput Pitch where
   lyNote p od = note p <> optDuration od
   lyPitch = note
 
-instance LyOutput ScNote where
-  type LyDur ScNote = Duration
-  lyNote (ScNote p _) od = note p <> optDuration od
-  lyPitch (ScNote p _) = note p
 
 
 
@@ -66,22 +62,23 @@ oBarOverlay (ptied,xs) = hsep (map omBeam xs) <> if ptied then char '~' else emp
 omBeam :: LilyPondGlyph e => OneMany e -> Doc
 omBeam = oneMany lyGlyph (lyBeam . map lyGlyph) 
 
-oBracket :: (LyOutput e, LyDur e ~ Duration) => OneMany (ElementP e) -> Doc
+oBracket :: (LyOutput e, LyDur e ~ Duration) => OneMany (Glyph Duration e) -> Doc
 oBracket = oneMany oElement (lyBeam . map oElement)
 
 
 -- TODO check whether or not successive notes in chords and graces
 -- change the relative pitch
 
-oElement :: (LyOutput pch, LyDur pch ~ Duration)  => ElementP pch -> Doc
+oElement :: (LyOutput pch, LyDur pch ~ Duration)  => Glyph Duration pch -> Doc
 oElement (Note d p)       = lyNote p d
 oElement (Rest d)         = char 'r' <> optDuration d
 oElement (Spacer d)       = char 's' <> optDuration d
 oElement (Chord d ps)     = angles (hsep $ map lyPitch ps) <> optDuration d
 oElement (GraceNotes [x]) = command "grace" <+> braces (oGrace x) where
 oElement (GraceNotes xs)  = command "grace" <+> braces (lyBeam $ map oGrace xs)
+oElement Tie              = char '~'
 
-oGrace :: (LyOutput e, LyDur e ~ Duration) => GraceNoteP e -> Doc
+oGrace :: (LyOutput e, LyDur e ~ Duration) => GraceNote Duration e -> Doc
 oGrace (GraceNote d p) = lyNote p d
 
 --------------------------------------------------------------------------------
@@ -97,7 +94,7 @@ lydocRepeat = command "repeat" <+> text "volta 2" <+> lbrace
 
 altStart :: Doc
 altStart = space <> rbrace `nextLine` command "alternative" <+> lbrace 
-                            `nextLine` lbrace
+                           `nextLine` lbrace
 
 altNext :: Doc
 altNext = space <> rbrace `nextLine` lbrace
@@ -138,8 +135,7 @@ rewriteDuration e = let d = getDuration e in do
               else updateCurrent d >> return e
   where
     -- | The logic here is not good - duration type needs a rethink...
-    updateCurrent d | isComposite d = setZero
-                    | isDotted d    = setZero 
+    updateCurrent d | isDotted d    = setZero 
                     | otherwise     = modify $ setDuration d
 
     setZero         = modify $ setDuration dZero   
@@ -176,10 +172,8 @@ pitchLabel l a = char (toLowerLChar l) <> maybe empty accidental a
 
 
 optDuration :: Duration -> Doc
-optDuration = df . lilypond where
-  df []        = empty
-  df [(ed,dc)] = dots dc $ either command int ed
-  df _xs       = error $ "optDuration - composite todo..." 
+optDuration = maybe empty df . lilypond where
+  df (ed,dc) = dots dc $ either command int ed
 
 
 

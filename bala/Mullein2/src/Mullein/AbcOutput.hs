@@ -41,7 +41,7 @@ class AbcGlyph e where
 
 
 
-instance AbcGlyph (ElementP ScNote) where
+instance AbcGlyph (Glyph Duration Pitch) where
   abcGlyph = oElement  
 
 instance AbcOutput Pitch where
@@ -64,11 +64,11 @@ oBarOverlay (ptied,xs) = hsep (map omBeam xs) <> if ptied then char '~' else emp
 omBeam :: AbcGlyph e => OneMany e -> Doc
 omBeam = oneMany abcGlyph (hcat . map abcGlyph) 
 
-oBracket :: (AbcOutput e, AbcDur e ~ Duration) => OneMany (ElementP e) -> Doc
+oBracket :: (AbcOutput e, AbcDur e ~ Duration) => OneMany (Glyph Duration e) -> Doc
 oBracket = oneMany oElement (hcat . map oElement)
 
 
-oElement :: (AbcOutput e, AbcDur e ~ Duration) => ElementP e -> Doc
+oElement :: (AbcOutput e, AbcDur e ~ Duration) => Glyph Duration e -> Doc
 oElement (Note dm p)      = abcNote p dm
 oElement (Rest dm)        = char 'z' <> multiplier dm
 oElement (Spacer dm)      = char 'x' <> multiplier dm
@@ -76,7 +76,7 @@ oElement (Chord dm ps)    = brackets $ hcat $ map f ps where
                               f p = abcPitch p <> multiplier dm 
 oElement (GraceNotes xs)  = braces $ hcat $ map f xs where
                               f (GraceNote dm p) = abcPitch p <> multiplier dm
-  
+oElement Tie              = char '~'
 
 --------------------------------------------------------------------------------
 -- helpers
@@ -129,12 +129,12 @@ pitchLabel (PitchLabel l a) pc
 
 
 multiplier :: Duration -> Doc
-multiplier = df . abc (1%16) where
-  df []           = empty
-  df [(Unit)]     = empty
-  df [(Mult n)]   = integer n
-  df [(Div n)]    = char '/' <> integer n
-  df [(Frac n d)] = integer n <> char '/' <> integer d
-  df _xs          = error $ "multiplier - composite todo..." 
+multiplier = maybe empty df . abc (1%16) where
+  df Unit       = empty
+  df (Mult n)   = integer n
+  df (Div n)    = char '/' <> integer n
+  df (Frac n d) = integer n <> char '/' <> integer d
+
+
 
 

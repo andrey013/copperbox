@@ -75,50 +75,50 @@ import Mullein.Pitch
 
 
 -- notes
-cf :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-c  :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-cs :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-df :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-d  :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-ds :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-ef :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-e  :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-es :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-ff :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-f  :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-fs :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-gf :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-g  :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-gs :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-af :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-a  :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-as :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-bf :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-b  :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
-bs :: (Note e, Pch e ~ Pitch) => Octave -> Duration -> Attr e -> ElementP e
+cf :: Octave -> Duration -> Glyph Duration Pitch
+c  :: Octave -> Duration -> Glyph Duration Pitch
+cs :: Octave -> Duration -> Glyph Duration Pitch
+df :: Octave -> Duration -> Glyph Duration Pitch
+d  :: Octave -> Duration -> Glyph Duration Pitch
+ds :: Octave -> Duration -> Glyph Duration Pitch
+ef :: Octave -> Duration -> Glyph Duration Pitch
+e  :: Octave -> Duration -> Glyph Duration Pitch
+es :: Octave -> Duration -> Glyph Duration Pitch
+ff :: Octave -> Duration -> Glyph Duration Pitch
+f  :: Octave -> Duration -> Glyph Duration Pitch
+fs :: Octave -> Duration -> Glyph Duration Pitch
+gf :: Octave -> Duration -> Glyph Duration Pitch
+g  :: Octave -> Duration -> Glyph Duration Pitch
+gs :: Octave -> Duration -> Glyph Duration Pitch
+af :: Octave -> Duration -> Glyph Duration Pitch
+a  :: Octave -> Duration -> Glyph Duration Pitch
+as :: Octave -> Duration -> Glyph Duration Pitch
+bf :: Octave -> Duration -> Glyph Duration Pitch
+b  :: Octave -> Duration -> Glyph Duration Pitch
+bs :: Octave -> Duration -> Glyph Duration Pitch
 
 
-cf o dur attrs = Note dur (mkNote (Pitch C (Just Flat) o) attrs)
-c  o dur attrs = Note dur (mkNote (Pitch C Nothing o) attrs)
-cs o dur attrs = Note dur (mkNote (Pitch C (Just Sharp) o) attrs)
-df o dur attrs = Note dur (mkNote (Pitch D (Just Flat) o) attrs)
-d  o dur attrs = Note dur (mkNote (Pitch D Nothing o) attrs)
-ds o dur attrs = Note dur (mkNote (Pitch D (Just Sharp) o) attrs)
-ef o dur attrs = Note dur (mkNote (Pitch E (Just Flat) o) attrs)
-e  o dur attrs = Note dur (mkNote (Pitch E Nothing o) attrs)
-es o dur attrs = Note dur (mkNote (Pitch E (Just Sharp) o) attrs)
-ff o dur attrs = Note dur (mkNote (Pitch F (Just Flat) o) attrs)
-f  o dur attrs = Note dur (mkNote (Pitch F Nothing o) attrs)
-fs o dur attrs = Note dur (mkNote (Pitch F (Just Sharp) o) attrs)
-gf o dur attrs = Note dur (mkNote (Pitch G (Just Flat) o) attrs)
-g  o dur attrs = Note dur (mkNote (Pitch G Nothing o) attrs)
-gs o dur attrs = Note dur (mkNote (Pitch G (Just Sharp) o) attrs)
-af o dur attrs = Note dur (mkNote (Pitch A (Just Flat) o) attrs)
-a  o dur attrs = Note dur (mkNote (Pitch A Nothing o) attrs)
-as o dur attrs = Note dur (mkNote (Pitch A (Just Sharp) o) attrs)
-bf o dur attrs = Note dur (mkNote (Pitch B (Just Flat) o) attrs)
-b  o dur attrs = Note dur (mkNote (Pitch B Nothing o) attrs)
-bs o dur attrs = Note dur (mkNote (Pitch B (Just Sharp) o) attrs)
+cf o dur = Note dur (Pitch C (Just Flat) o)
+c  o dur = Note dur (Pitch C Nothing o)
+cs o dur = Note dur (Pitch C (Just Sharp) o)
+df o dur = Note dur (Pitch D (Just Flat) o)
+d  o dur = Note dur (Pitch D Nothing o)
+ds o dur = Note dur (Pitch D (Just Sharp) o)
+ef o dur = Note dur (Pitch E (Just Flat) o)
+e  o dur = Note dur (Pitch E Nothing o)
+es o dur = Note dur (Pitch E (Just Sharp) o)
+ff o dur = Note dur (Pitch F (Just Flat) o)
+f  o dur = Note dur (Pitch F Nothing o)
+fs o dur = Note dur (Pitch F (Just Sharp) o)
+gf o dur = Note dur (Pitch G (Just Flat) o)
+g  o dur = Note dur (Pitch G Nothing o)
+gs o dur = Note dur (Pitch G (Just Sharp) o)
+af o dur = Note dur (Pitch A (Just Flat) o)
+a  o dur = Note dur (Pitch A Nothing o)
+as o dur = Note dur (Pitch A (Just Sharp) o)
+bf o dur = Note dur (Pitch B (Just Flat) o)
+b  o dur = Note dur (Pitch B Nothing o)
+bs o dur = Note dur (Pitch B (Just Sharp) o)
 
 
 
@@ -126,12 +126,12 @@ bs o dur attrs = Note dur (mkNote (Pitch B (Just Sharp) o) attrs)
 
 -- rests
 
-wnr :: ElementP e
-hnr :: ElementP e
-qnr :: ElementP e
-enr :: ElementP e
-snr :: ElementP e
-tnr :: ElementP e
+wnr :: Glyph Duration Pitch
+hnr :: Glyph Duration Pitch
+qnr :: Glyph Duration Pitch
+enr :: Glyph Duration Pitch
+snr :: Glyph Duration Pitch
+tnr :: Glyph Duration Pitch
 
 wnr = Rest wn
 hnr = Rest hn
@@ -140,10 +140,10 @@ enr = Rest en
 snr = Rest sn
 tnr = Rest tn
 
-dhnr :: ElementP e
-dqnr :: ElementP e
-denr :: ElementP e
-dsnr :: ElementP e
+dhnr :: Glyph Duration Pitch
+dqnr :: Glyph Duration Pitch
+denr :: Glyph Duration Pitch
+dsnr :: Glyph Duration Pitch
 
 dhnr = Rest dhn
 dqnr = Rest dqn

@@ -34,18 +34,18 @@ changeOctave :: Pitch -> Pitch
 changeOctave (Pitch l a o) = Pitch l a (o-4)
 
 
-bars1'4 :: [Element]
+bars1'4 :: [StdGlyph]
 bars1'4 =  
-  [ a 4 sn [], b 4 sn [], cs 5 sn [], cs 5 sn [], cs 5 sn [], a 4 sn [], 
-               cs 5 sn [], cs 5 sn []
+  [ a 4 sn, b 4 sn, cs 5 sn, cs 5 sn, cs 5 sn, a 4 sn, 
+               cs 5 sn, cs 5 sn
   -- bar 2
-  , cs 5 sn [], a 4 sn [], b 4 sn [], cs 5 sn [], b 4 sn [], a 4 sn [], 
-                a 4 sn [], snr
+  , cs 5 sn, a 4 sn, b 4 sn, cs 5 sn, b 4 sn, a 4 sn, 
+                a 4 sn, snr
   -- bar 3
-  , e 5 sn [], d 5 sn [], cs 5 sn [], b 4 sn [], cs 5 sn [], a 4 sn [], 
-               b 4 sn [], cs 5 sn []
+  , e 5 sn, d 5 sn, cs 5 sn, b 4 sn, cs 5 sn, a 4 sn, 
+               b 4 sn, cs 5 sn
   -- bar 4
-  , a 4 sn [], b 4 sn [], b 4 sn [], a 4 sn [], a 4 en [], enr
+  , a 4 sn, b 4 sn, b 4 sn, a 4 sn, a 4 en, enr
   ]
 
 

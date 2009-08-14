@@ -28,9 +28,9 @@ module Mullein.Core
   , MeterPattern
   , meterPattern
 
-  , ElementP(..)
-  , Element
-  , GraceNoteP(..)
+  , Glyph(..)
+  , StdGlyph
+  , GraceNote(..)
   , NoteAttribute(..)
   , ScNote(..)
   , Note(..)
@@ -97,23 +97,27 @@ log2whole = (==0) . snd . pf . logBase 2 . fromIntegral where
 -- Representing scores 
 
 
--- Pitch is the typical parameter for Element syntax tree.
--- However other variations so as LilyPond percussion can be handled.
--- With LilyPond percussion each note is a drum name rather than a pitch. 
+-- Glyphs are parametric on duration and /note/ - a note may hold more 
+-- info than just pitch (i.e. fingering, string number). Alternatively
+-- it might something that is not really pitch such as a drum name for
+-- LilyPond percussion.
 
-data ElementP e = Note   Duration e
-                | Rest   Duration
-                | Spacer Duration
-                | Chord  Duration [e]
-                | GraceNotes [GraceNoteP e]
+
+data Glyph drn note = Note   drn note
+                    | Rest   drn
+                    | Spacer drn
+                    | Chord  drn [note]
+                    | GraceNotes [GraceNote drn note]
+                    | Tie
   deriving (Eq,Show)
 
-type Element = ElementP ScNote
-        
-data GraceNoteP e = GraceNote Duration e
+type StdGlyph = Glyph Duration Pitch
+
+
+-- Wrap a newtype to be distinct from pair...
+
+data GraceNote drn pch = GraceNote drn pch
   deriving (Eq,Show)
-
-
 
 
 data NoteAttribute = Fingering Int
@@ -136,20 +140,22 @@ instance Note ScNote where
 
 
 
-instance HasDuration (ElementP e) where 
+instance HasDuration (Glyph Duration pch) where 
   getDuration (Note d _)     = d
   getDuration (Rest d)       = d
   getDuration (Spacer d)     = d
   getDuration (Chord d _)    = d
   getDuration (GraceNotes _) = dZero
+  getDuration Tie            = dZero
       
   setDuration d (Note _ p)      = Note d p
   setDuration d (Rest _)        = Rest d
   setDuration d (Spacer _)      = Spacer d
   setDuration d (Chord _ se)    = Chord d se
   setDuration _ (GraceNotes se) = GraceNotes se
+  setDuration _ Tie             = Tie
 
-instance Spacer (ElementP e) where
+instance Spacer (Glyph Duration pch) where
   spacer d     = Spacer d  
 
 
@@ -159,21 +165,23 @@ instance PitchMap ScNote where
   pitchMapM mf (ScNote p as) = pitchMapM mf p >>= \p' -> return $ ScNote p' as
 
 
-instance PitchMap e => PitchMap (ElementP e) where
+instance PitchMap note => PitchMap (Glyph drn note) where
   pitchMap f (Note d e)       = Note d (pitchMap f e)
   pitchMap _ (Rest d)         = Rest d
   pitchMap _ (Spacer d)       = Spacer d
   pitchMap f (Chord d ps)     = Chord d (map (pitchMap f) ps)
   pitchMap f (GraceNotes xs)  = GraceNotes (map (pitchMap f) xs)
+  pitchMap _ Tie              = Tie
+
 
   pitchMapM mf (Note d e)       = pitchMapM mf e >>= return . Note d
   pitchMapM _  (Rest d)         = return $ Rest d
   pitchMapM _  (Spacer d)       = return $ Spacer d
   pitchMapM mf (Chord d ps)     = mapM (pitchMapM mf) ps >>= return . Chord d
   pitchMapM mf (GraceNotes xs)  = mapM (pitchMapM mf) xs >>= return . GraceNotes 
+  pitchMapM _  Tie              = return Tie
 
-
-instance PitchMap e => PitchMap (GraceNoteP e) where
+instance PitchMap note => PitchMap (GraceNote drn note) where
   pitchMap f (GraceNote d p) = GraceNote d (pitchMap f p)
 
   pitchMapM mf (GraceNote d p) = pitchMapM mf p >>= return . GraceNote d
