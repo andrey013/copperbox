@@ -1,4 +1,9 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
+
 
 --------------------------------------------------------------------------------
 -- |
@@ -20,8 +25,45 @@ module Mullein.Bracket where
 
 import Mullein.Core
 import Mullein.Duration
+import Mullein.Utils
+
+import MonadLib.Monads
+import qualified Data.DList as D
 
 import Data.Ratio
+
+newtype SnocWriterT e m a = SnocWriterT { 
+          getSnocWriterT :: D.DList e -> m (a, D.DList e) }
+
+instance Monad m => Monad (SnocWriterT e m) where
+  return a = SnocWriterT $ \dl -> return (a,dl)
+  mf >>= k = SnocWriterT $ \dl -> getSnocWriterT mf dl >>= \(a,dl') ->
+                                  (getSnocWriterT . k) a dl'
+
+instance MonadT (SnocWriterT e) where
+  lift mf = SnocWriterT $ \dl -> mf >>= \a -> return (a,dl)
+
+runSnocWriterT :: Monad m => SnocWriterT e m a -> m (a, D.DList e)
+runSnocWriterT mf = getSnocWriterT mf $ D.empty
+
+-- type family Elem c :: *
+
+
+class Monad m => SnocWriterM m where
+  type DiffElem m :: *
+  snoc :: DiffElem m -> m () 
+
+
+
+instance (Monad m) => SnocWriterM (SnocWriterT e m) where
+  type DiffElem (SnocWriterT e m) = e
+  snoc e = SnocWriterT $ \dl -> return ((), dl `D.snoc` e)  
+
+{-
+-- cannot make a WriterM instance as the parameter 
+instance Monad m => WriterM (SnocWriterT e m) (D.DList e) where
+  put e = SnocWriterT $ \dl -> return ((), dl `D.snoc` e)
+-}               
 
 
 data Step a s = Done | Skip s | Yield a s
@@ -65,13 +107,21 @@ apoSkipListB f g st0 xs0 = step st0 xs0 where
 --------------------------------------------------------------------------------
 -- bar & beam
 
-bracket :: (HasDuration e, Tied e) => MeterPattern -> [e] -> [Bar e]
-bracket mp = map (Bar . beam mp) . bar (sum mp)
+-- bracket :: (HasDuration e, Tied e) => MeterPattern -> [e] -> [Bar e]
+-- bracket mp = map (Bar . beam mp) . bar (sum mp)
 
+
+bracket :: (HasDuration e, Tied e) => MeterPattern -> [e] -> [Bar e]
+bracket mp notes = runId $ 
+    barM (sum mp) notes >>= mapM (\es -> beamM mp es >>= return . Bar)
 
 --------------------------------------------------------------------------------
 -- bar
 
+-- In LilyPond, if a series of notes does not divide properly 
+-- into bars then the bar on the left gets the 'bad' note making 
+-- it too long, the spill duration of ther long note is then 
+-- subtracted from the bar on the right.
 
 bar :: (HasDuration e, Tied e) => Rational -> [e] -> [[e]]
 bar bar_len ns = apoSkipList (barStep bar_len) barFlush ([],0) ns
@@ -107,6 +157,27 @@ split i note = fn $ splitDuration i $ getDuration note
   where
     fn (Just left, right) = Just (setDuration left note, setDuration right note)
     fn (Nothing,_)        = Nothing
+
+
+barM :: (Monad m, HasDuration e) => Rational -> [e] -> m [[e]]
+barM barlen ns = runSnocWriterT (consumeSt barStepM (0,[]) ns) >>= fn
+  where
+    fn ((_,[]),dlist)  = return $ D.toList dlist
+    fn ((_,cca),dlist) = return $ D.toList $ dlist `D.snoc` (reverse cca)
+ 
+
+    barStepM e (n,cca) = let ed = ratDuration e 
+                         in case (n+ed) `compare` barlen of
+                           GT -> snoc (reverse $ e:cca) >>
+                                 emptySpan barlen ed    >>= \x ->
+                                 return (x,[])
+                           EQ -> snoc (reverse $ e:cca) >> return (0,[])
+                           LT -> return (n+ed,e:cca)
+
+emptySpan :: (SnocWriterM m, DiffElem m ~ [a]) => Rational -> Rational -> m Rational
+emptySpan barlen n = let (blank_count,x) = n `divModR` barlen in 
+    replicateM_ (fromIntegral blank_count) (snoc []) >> return x
+
 
 -- 
 barFlush :: ([e],Rational) -> [e] -> [[e]]
@@ -144,6 +215,38 @@ beamFlush ([],_)  rs = map Pulse rs
 beamFlush (cca,_) rs = toPulse (reverse cca) : map Pulse rs
 
 
+
+
+beamM :: (HasDuration e, Monad m) => MeterPattern -> [e] -> m [Pulse e]
+beamM mp notes = runSnocWriterT (consumeSt beamStepM (mp,[]) notes) >>= fn
+  where
+    fn ((_,[]),dlist)  = return $ D.toList dlist
+    fn ((_,cca),dlist) = return $ D.toList $ dlist `D.snoc` (toPulse $ reverse cca)
+
+beamStepM :: (HasDuration e, SnocWriterM m, DiffElem m ~ Pulse e)
+          => e -> (MeterPattern,[e]) -> m (MeterPattern,[e])
+beamStepM e ([],cca)          = putPulsation cca >> putPulse1 e >> return ([],[])
+beamStepM e (stk@(a:rs),cca)  = fn (ratDuration e) 
+  where
+    fn n | n >= 1%4 || n > a  = putPulsation cca >> putPulse1 e 
+                                                 >> return (consume n stk,[])
+         | n == a             = putPulsation (e:cca) >> return (rs,[])
+         | otherwise          = return (consume n stk, e:cca)
+
+                                            
+-- Run a stateful computation over a list, return the final state
+consumeSt :: Monad m => (a -> st -> m st) -> st -> [a] -> m st
+consumeSt _  st []     = return st
+consumeSt mf st (a:as) = mf a st >>= \st' -> consumeSt mf st' as  
+
+putPulse1 :: (SnocWriterM m, DiffElem m ~ Pulse e) => e -> m ()
+putPulse1 a = snoc $ Pulse a
+
+putPulsation :: (SnocWriterM m, DiffElem m ~ Pulse e) => [e] -> m ()
+putPulsation []  = return ()
+putPulsation [a] = snoc $ Pulse a
+putPulsation cca = snoc $ BeamedL $ reverse cca
+
 toPulse :: [a] -> Pulse a
 toPulse []  = error "Bracket.toPulse: cannot build Pulse from empty list"
 toPulse [x] = Pulse x
@@ -169,20 +272,8 @@ consume n (x:xs) | n < x      = (x-n):xs
   
 ---------------------------------------------------------------------------------
 -- overlay
-{-
 
-zipOverlays :: [BarP e] -> (BarNum,[BarP e]) -> [BarP e]
-zipOverlays bs (bnum,bs') = prefix ++ longZipWith f id id suffix bs' where
-    (prefix,suffix)        = splitAt bnum bs
-    f (Bar v)        b2    = if null vs then Bar v else Overlay v vs where
-                                 vs = voices b2
-    f (Overlay v vs) b2    = Overlay v (vs ++ voices b2) 
 
-    voices (Bar v)         = if nullVoice v then [] else [v]
-    voices (Overlay v vs)  = v:vs
-    
-nullVoice :: UnisonP e -> Bool
-nullVoice (Unison xs _) = null xs
-
--}
+zipOverlays :: [Bar e] -> [Bar e] -> [Bar e]
+zipOverlays = endoLongZip gappend
 

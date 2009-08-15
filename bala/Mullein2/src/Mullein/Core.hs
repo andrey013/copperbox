@@ -132,6 +132,12 @@ data Pulse e = Pulse e
   deriving (Eq,Show)
 
 
+instance Groupoid (Bar e) where
+  Bar ps       `gappend` Bar ps'       = OverlayL [ps,ps']
+  Bar ps       `gappend` OverlayL pps  = OverlayL $ ps:pps
+  OverlayL pps `gappend` Bar ps        = OverlayL $ pps ++ [ps]
+  OverlayL pps `gappend` OverlayL pps' = OverlayL $ pps ++ pps'
+  
 
 
 

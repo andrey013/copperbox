@@ -15,10 +15,16 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Utils ( 
+module Mullein.Utils 
+  ( 
   
+    Groupoid(..)
+
+  , divModR
+
   -- special zips, unfolds etc.
-    longZipWith
+  , longZipWith
+  , endoLongZip
   , anaMap
   , anaSt
   , unfoldr2
@@ -55,10 +61,28 @@ import Data.Ratio
 
 import Text.PrettyPrint.Leijen hiding ( rational )
 
+
+class Groupoid a where
+  gappend :: a -> a -> a
+
+
 instance Applicative (State s) where
   pure  = return
   (<*>) = ap
 
+
+--------------------------------------------------------------------------------
+-- divMod (with rounding) for rationals 
+
+-- check - 8.0 `divModR` 0.75
+
+-- prop_mod_postive a b = let (_,md) = a `divModR` b in signum md == 1
+
+divModR :: (Integral b) => Ratio b -> Ratio b -> (b, Ratio b)
+divModR a b = let a1 = a / b; a2 = floor a1 in (a2, a-((a2%1)*b))
+
+
+--------------------------------------------------------------------------------
 
 
 longZipWith :: (a -> b -> c) -> (a -> c) -> (b -> c) -> [a] -> [b] -> [c]
@@ -68,6 +92,13 @@ longZipWith f g h as bs = step as bs where
     step []     (y:ys) = h y : step [] ys
     step []     []     = []
  
+
+endoLongZip :: (a -> a -> a) -> [a] -> [a] -> [a]
+endoLongZip f (x:xs) (y:ys) = f x y : endoLongZip f xs ys
+endoLongZip _ []     ys     = ys
+endoLongZip _ xs     []     = xs
+
+
 
 -- anaMap is the unfold analogue of accumMapL
 -- we can signal exhaustion early by the Maybe type                
