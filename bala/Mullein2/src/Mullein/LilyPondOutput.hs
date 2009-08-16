@@ -115,23 +115,45 @@ sglBar = text "|"
 
 
 endBraces :: Int -> Doc
-endBraces i | i <=0     = empty
+endBraces i | i <=0     = emptyDoc
             | otherwise = indent ((i-2)*2) rbrace `nextLine` endBraces (i-1)
 
 
 --------------------------------------------------------------------------------
 -- rewriting
 
-data St = St { relativePitch :: Maybe Pitch, relativeDuration :: Duration }
 
-lyRewrite :: Phrase (Glyph Pitch Duration) -> Phrase (Glyph Pitch (Maybe Duration))
-lyRewrite bars = undefined
+data St = St { relativePitch :: Maybe Pitch, relativeDuration :: Duration }
+ 
+rewritePitch :: Pitch -> Phrase (Glyph Pitch drn) -> Phrase (Glyph Pitch drn)
+rewritePitch rp bars = fst $ runState rp (mapM (T.mapM fn) bars)
+  where
+    fn gly = inside (changePitch `flip` gly)    
+
+inside :: (s -> (a,s)) -> State s a
+inside f = get >>= \s -> let (a,s') = f s in set s' >> return a
+
+changePitch :: Pitch -> Glyph Pitch drn -> (Glyph Pitch drn,Pitch)  
+changePitch p0 (Note p d)       = (Note (alterPitch p0 p) d, p)
+changePitch p0 (Rest d)         = (Rest d, p0)
+changePitch p0 (Spacer d)       = (Spacer d, p0)
+changePitch p0 (Chord ps d)     = (Chord ps' d,p') 
+                                  where (ps',p') = changeChordP p0 ps
+changePitch p0 (GraceNotes xs)  = (GraceNotes xs',p')
+                                  where (xs',p') = changeGraceP p0 xs
+changePitch p0 Tie              = (Tie,p0) 
 
 
 changeGraceP :: Pitch -> [GraceNote Pitch d] -> ([GraceNote Pitch d],Pitch)
 changeGraceP p0 xs = anaMap fn p0 xs where
   fn (GraceNote pch d) p = Just (GraceNote (alterPitch p pch) d,pch)
 
+
+changeChordP :: Pitch -> [Pitch] -> ([Pitch],Pitch)
+changeChordP p0 xs = post $ anaMap fn p0 xs where
+  fn pch p = Just (alterPitch p pch,pch)
+  post ([],_)       = ([],p0)
+  post (ps@(p:_),_) = (ps,p)
 
 alterPitch :: Pitch -> Pitch -> Pitch
 alterPitch p p'@(Pitch l oa _) = Pitch l oa (lyOctaveDist p p')
@@ -185,11 +207,11 @@ note :: Pitch -> Doc
 note (Pitch l a o) = pitchLabel l a <> ove o where
     ove i | i > 0       = text $ replicate i       '\''
           | i < 0       = text $ replicate (abs i) ','
-          | otherwise   = empty
+          | otherwise   = emptyDoc
 
 
 pitchLabel :: PitchLetter -> Maybe Accidental -> Doc
-pitchLabel l a = char (toLowerLChar l) <> maybe empty accidental a
+pitchLabel l a = char (toLowerLChar l) <> maybe emptyDoc accidental a
   where 
     accidental :: Accidental -> Doc
     accidental Nat            = text "!"    -- check correctness
@@ -201,7 +223,7 @@ pitchLabel l a = char (toLowerLChar l) <> maybe empty accidental a
 
 
 optDuration :: Duration -> Doc
-optDuration = maybe empty df . lilypond where
+optDuration = maybe emptyDoc df . lilypond where
   df (ed,dc) = dots dc $ either command int ed
 
 
@@ -213,7 +235,7 @@ dots i | i > 0     = (<> text (replicate i '.'))
 
 lyBeam :: [Doc] -> Doc
 lyBeam (x:xs) = x <> char '[' <+> hsep xs <> char ']'
-lyBeam []     = empty
+lyBeam []     = emptyDoc
 
 command :: String -> Doc
 command = (char '\\' <>) . text 

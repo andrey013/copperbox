@@ -50,6 +50,7 @@ module Mullein.Utils
   , sglLine
   , doubleQuote
   , renderDocEighty
+  , emptyDoc
 
   ) where
 
@@ -59,8 +60,8 @@ import Data.List ( unfoldr )
 import Data.Monoid
 import Data.Ratio
 
-import Text.PrettyPrint.Leijen hiding ( rational )
-
+import Text.PrettyPrint.Leijen hiding ( empty, rational )
+import qualified Text.PrettyPrint.Leijen as PP
 
 class Groupoid a where
   gappend :: a -> a -> a
@@ -107,6 +108,7 @@ anaMap _ s0 []     = ([],s0)
 anaMap f s0 (x:xs) = case (f x s0) of
     Nothing       -> ([],s0)
     Just (a,st)   -> (a:as,b) where (as,b) = anaMap f st xs
+
 
 
 -- variant of /apomorphism/, but we return the final state 
@@ -215,3 +217,5 @@ doubleQuote = dquotes . string
 renderDocEighty :: Doc -> String
 renderDocEighty = (displayS `flip` []) . renderPretty 0.8 80
 
+emptyDoc :: Doc
+emptyDoc = PP.empty

@@ -122,7 +122,7 @@ numeralLy N1    = Right 1
 numeralLy Breve = Left "breve"
 numeralLy Longa = Left "longa"
 
-data AbcMultiplier = Unit | Mult Integer | Div Integer | Frac Integer Integer
+data AbcMultiplier = IdenM | Mult Integer | Div Integer | Frac Integer Integer
   deriving (Eq,Show)
 
 abc :: Rational -> Duration -> Maybe AbcMultiplier
@@ -133,7 +133,7 @@ multiplierABC :: Rational -> Duration -> AbcMultiplier
 multiplierABC unl nd = (fn . fork numerator denominator) $ (extent nd) / unl
   where  
     fork f g a = (f a, g a)
-    fn (1,1)   = Unit
+    fn (1,1)   = IdenM
     fn (1,dn)  = Div dn
     fn (nm,1)  = Mult nm
     fn (nm,dn) = Frac nm dn

@@ -128,7 +128,7 @@ pitchLabel (PitchLabel l a) pc
 
 multiplier :: Duration -> Doc
 multiplier = maybe empty df . abc (1%16) where
-  df Unit       = empty
+  df IdenM      = empty
   df (Mult n)   = integer n
   df (Div n)    = char '/' <> integer n
   df (Frac n d) = integer n <> char '/' <> integer d

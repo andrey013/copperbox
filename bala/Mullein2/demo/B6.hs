@@ -15,7 +15,7 @@ import Text.PrettyPrint.Leijen
 
 
 
-demo1 = vsep $ map oBarOverlay $ runRewriteDuration xs
+demo1 = vsep $ map oBarOverlay $ rewritePitch c3 $ runRewriteDuration xs
   where
     xs = phrase twoFourTime $ map (pitchMap changeOctave) bars1'4
 
