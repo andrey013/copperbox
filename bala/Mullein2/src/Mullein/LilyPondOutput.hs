@@ -47,7 +47,7 @@ class LyOutput e where
 class LilyPondGlyph e where
   lyGlyph :: e -> Doc
 
-instance LilyPondGlyph (Glyph Duration Pitch) where
+instance LilyPondGlyph (Glyph Pitch Duration) where
   lyGlyph = oElement  
 
 instance LyOutput Pitch where
@@ -77,17 +77,17 @@ omBeam (BeamedL es) = lyBeam $  map lyGlyph es
 -- TODO check whether or not successive notes in chords and graces
 -- change the relative pitch
 
-oElement :: (LyOutput pch, LyDur pch ~ Duration)  => Glyph Duration pch -> Doc
-oElement (Note d p)       = lyNote p d
+oElement :: (LyOutput pch, LyDur pch ~ Duration)  => Glyph pch Duration -> Doc
+oElement (Note p d)       = lyNote p d
 oElement (Rest d)         = char 'r' <> optDuration d
 oElement (Spacer d)       = char 's' <> optDuration d
-oElement (Chord d ps)     = angles (hsep $ map lyPitch ps) <> optDuration d
+oElement (Chord ps d)     = angles (hsep $ map lyPitch ps) <> optDuration d
 oElement (GraceNotes [x]) = command "grace" <+> braces (oGrace x) where
 oElement (GraceNotes xs)  = command "grace" <+> braces (lyBeam $ map oGrace xs)
 oElement Tie              = char '~'
 
-oGrace :: (LyOutput e, LyDur e ~ Duration) => GraceNote Duration e -> Doc
-oGrace (GraceNote d p) = lyNote p d
+oGrace :: (LyOutput e, LyDur e ~ Duration) => GraceNote e Duration -> Doc
+oGrace (GraceNote p d) = lyNote p d
 
 --------------------------------------------------------------------------------
 -- post process
@@ -124,7 +124,21 @@ endBraces i | i <=0     = empty
 
 data St = St { relativePitch :: Maybe Pitch, relativeDuration :: Duration }
 
-runRewriteDuration :: (HasDuration e, T.Traversable t) => [t e] -> [t e]
+lyRewrite :: Phrase (Glyph Pitch Duration) -> Phrase (Glyph Pitch (Maybe Duration))
+lyRewrite bars = undefined
+
+
+changeGraceP :: Pitch -> [GraceNote Pitch d] -> ([GraceNote Pitch d],Pitch)
+changeGraceP p0 xs = anaMap fn p0 xs where
+  fn (GraceNote pch d) p = Just (GraceNote (alterPitch p pch) d,pch)
+
+
+alterPitch :: Pitch -> Pitch -> Pitch
+alterPitch p p'@(Pitch l oa _) = Pitch l oa (lyOctaveDist p p')
+ 
+
+
+runRewriteDuration :: HasDuration e => Phrase e -> Phrase e
 runRewriteDuration bars = fst $ runState s0 (mapM (T.traverse rewriteDuration) bars) 
   where
     s0 = St undefined dZero
@@ -133,8 +147,13 @@ instance HasDuration St where
   getDuration            = relativeDuration
   setDuration d (St p _) = St p d
 
--- Dotted durations must always be specified even if the
--- same dotted duration appears /contiguously/. 
+-- /Relative Duration/ - dotted durations must always be specified 
+-- even if the same dotted duration appears /contiguously/. All 
+-- notes inside a grace expression change relative duration, even 
+-- though a grace expression is considered collectively to have 
+-- /no duration/.
+
+
 
 rewriteDuration :: (HasDuration e) => e -> State St e
 rewriteDuration e = let d = getDuration e in do 
@@ -148,7 +167,9 @@ rewriteDuration e = let d = getDuration e in do
 
     setZero         = sets_ (\s -> s {relativeDuration=dZero})
 
-
+-- /Relative Pitch/ - all notes inside a grace expression change 
+-- relative pitch. Only the first note of a chord changes relative 
+-- pitch.
 
 
 --------------------------------------------------------------------------------

@@ -75,50 +75,50 @@ import Mullein.Pitch
 
 
 -- notes
-cf :: Octave -> Duration -> Glyph Duration Pitch
-c  :: Octave -> Duration -> Glyph Duration Pitch
-cs :: Octave -> Duration -> Glyph Duration Pitch
-df :: Octave -> Duration -> Glyph Duration Pitch
-d  :: Octave -> Duration -> Glyph Duration Pitch
-ds :: Octave -> Duration -> Glyph Duration Pitch
-ef :: Octave -> Duration -> Glyph Duration Pitch
-e  :: Octave -> Duration -> Glyph Duration Pitch
-es :: Octave -> Duration -> Glyph Duration Pitch
-ff :: Octave -> Duration -> Glyph Duration Pitch
-f  :: Octave -> Duration -> Glyph Duration Pitch
-fs :: Octave -> Duration -> Glyph Duration Pitch
-gf :: Octave -> Duration -> Glyph Duration Pitch
-g  :: Octave -> Duration -> Glyph Duration Pitch
-gs :: Octave -> Duration -> Glyph Duration Pitch
-af :: Octave -> Duration -> Glyph Duration Pitch
-a  :: Octave -> Duration -> Glyph Duration Pitch
-as :: Octave -> Duration -> Glyph Duration Pitch
-bf :: Octave -> Duration -> Glyph Duration Pitch
-b  :: Octave -> Duration -> Glyph Duration Pitch
-bs :: Octave -> Duration -> Glyph Duration Pitch
+cf :: Octave -> Duration -> Glyph Pitch Duration
+c  :: Octave -> Duration -> Glyph Pitch Duration
+cs :: Octave -> Duration -> Glyph Pitch Duration
+df :: Octave -> Duration -> Glyph Pitch Duration
+d  :: Octave -> Duration -> Glyph Pitch Duration
+ds :: Octave -> Duration -> Glyph Pitch Duration
+ef :: Octave -> Duration -> Glyph Pitch Duration
+e  :: Octave -> Duration -> Glyph Pitch Duration
+es :: Octave -> Duration -> Glyph Pitch Duration
+ff :: Octave -> Duration -> Glyph Pitch Duration
+f  :: Octave -> Duration -> Glyph Pitch Duration
+fs :: Octave -> Duration -> Glyph Pitch Duration
+gf :: Octave -> Duration -> Glyph Pitch Duration
+g  :: Octave -> Duration -> Glyph Pitch Duration
+gs :: Octave -> Duration -> Glyph Pitch Duration
+af :: Octave -> Duration -> Glyph Pitch Duration
+a  :: Octave -> Duration -> Glyph Pitch Duration
+as :: Octave -> Duration -> Glyph Pitch Duration
+bf :: Octave -> Duration -> Glyph Pitch Duration
+b  :: Octave -> Duration -> Glyph Pitch Duration
+bs :: Octave -> Duration -> Glyph Pitch Duration
 
 
-cf o dur = Note dur (Pitch C (Just Flat) o)
-c  o dur = Note dur (Pitch C Nothing o)
-cs o dur = Note dur (Pitch C (Just Sharp) o)
-df o dur = Note dur (Pitch D (Just Flat) o)
-d  o dur = Note dur (Pitch D Nothing o)
-ds o dur = Note dur (Pitch D (Just Sharp) o)
-ef o dur = Note dur (Pitch E (Just Flat) o)
-e  o dur = Note dur (Pitch E Nothing o)
-es o dur = Note dur (Pitch E (Just Sharp) o)
-ff o dur = Note dur (Pitch F (Just Flat) o)
-f  o dur = Note dur (Pitch F Nothing o)
-fs o dur = Note dur (Pitch F (Just Sharp) o)
-gf o dur = Note dur (Pitch G (Just Flat) o)
-g  o dur = Note dur (Pitch G Nothing o)
-gs o dur = Note dur (Pitch G (Just Sharp) o)
-af o dur = Note dur (Pitch A (Just Flat) o)
-a  o dur = Note dur (Pitch A Nothing o)
-as o dur = Note dur (Pitch A (Just Sharp) o)
-bf o dur = Note dur (Pitch B (Just Flat) o)
-b  o dur = Note dur (Pitch B Nothing o)
-bs o dur = Note dur (Pitch B (Just Sharp) o)
+cf o dur = Note (Pitch C (Just Flat) o) dur
+c  o dur = Note (Pitch C Nothing o) dur
+cs o dur = Note (Pitch C (Just Sharp) o) dur
+df o dur = Note (Pitch D (Just Flat) o) dur
+d  o dur = Note (Pitch D Nothing o) dur
+ds o dur = Note (Pitch D (Just Sharp) o) dur
+ef o dur = Note (Pitch E (Just Flat) o) dur
+e  o dur = Note (Pitch E Nothing o) dur
+es o dur = Note (Pitch E (Just Sharp) o) dur
+ff o dur = Note (Pitch F (Just Flat) o) dur
+f  o dur = Note (Pitch F Nothing o) dur
+fs o dur = Note (Pitch F (Just Sharp) o) dur
+gf o dur = Note (Pitch G (Just Flat) o) dur
+g  o dur = Note (Pitch G Nothing o) dur
+gs o dur = Note (Pitch G (Just Sharp) o) dur
+af o dur = Note (Pitch A (Just Flat) o) dur
+a  o dur = Note (Pitch A Nothing o) dur
+as o dur = Note (Pitch A (Just Sharp) o) dur
+bf o dur = Note (Pitch B (Just Flat) o) dur
+b  o dur = Note (Pitch B Nothing o) dur
+bs o dur = Note (Pitch B (Just Sharp) o) dur
 
 
 
@@ -126,12 +126,12 @@ bs o dur = Note dur (Pitch B (Just Sharp) o)
 
 -- rests
 
-wnr :: Glyph Duration Pitch
-hnr :: Glyph Duration Pitch
-qnr :: Glyph Duration Pitch
-enr :: Glyph Duration Pitch
-snr :: Glyph Duration Pitch
-tnr :: Glyph Duration Pitch
+wnr :: Glyph Pitch Duration
+hnr :: Glyph Pitch Duration
+qnr :: Glyph Pitch Duration
+enr :: Glyph Pitch Duration
+snr :: Glyph Pitch Duration
+tnr :: Glyph Pitch Duration
 
 wnr = Rest wn
 hnr = Rest hn
@@ -140,10 +140,10 @@ enr = Rest en
 snr = Rest sn
 tnr = Rest tn
 
-dhnr :: Glyph Duration Pitch
-dqnr :: Glyph Duration Pitch
-denr :: Glyph Duration Pitch
-dsnr :: Glyph Duration Pitch
+dhnr :: Glyph Pitch Duration
+dqnr :: Glyph Pitch Duration
+denr :: Glyph Pitch Duration
+dsnr :: Glyph Pitch Duration
 
 dhnr = Rest dhn
 dqnr = Rest dqn

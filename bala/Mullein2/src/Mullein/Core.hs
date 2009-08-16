@@ -31,6 +31,7 @@ module Mullein.Core
   , StdGlyph
   , GraceNote(..)
 
+  , Phrase
   , Bar(..)
   , PulseL
   , Pulse(..)
@@ -107,21 +108,21 @@ log2whole = (==0) . snd . pf . logBase 2 . fromIntegral where
 -- LilyPond percussion.
 
 
-data Glyph drn note = Note   drn note
+data Glyph note drn = Note   note drn
                     | Rest   drn
                     | Spacer drn
-                    | Chord  drn [note]
-                    | GraceNotes [GraceNote drn note]
+                    | Chord  [note] drn
+                    | GraceNotes [GraceNote note drn]
                     | Tie
   deriving (Eq,Show)
 
-type StdGlyph = Glyph Duration Pitch
+type StdGlyph = Glyph Pitch Duration
 
 
-data GraceNote drn note = GraceNote drn note
+data GraceNote note drn = GraceNote note drn
   deriving (Eq,Show)
 
-
+type Phrase e = [Bar e]
 
 data Bar e = Bar (PulseL e)
            | OverlayL [PulseL e] 
@@ -191,22 +192,22 @@ instance Note ScNote where
 
 
 
-instance HasDuration (Glyph Duration pch) where 
-  getDuration (Note d _)     = d
+instance HasDuration (Glyph pch Duration) where 
+  getDuration (Note _ d)     = d
   getDuration (Rest d)       = d
   getDuration (Spacer d)     = d
-  getDuration (Chord d _)    = d
+  getDuration (Chord _ d)    = d
   getDuration (GraceNotes _) = dZero
   getDuration Tie            = dZero
       
-  setDuration d (Note _ p)      = Note d p
+  setDuration d (Note p _)      = Note p d
   setDuration d (Rest _)        = Rest d
   setDuration d (Spacer _)      = Spacer d
-  setDuration d (Chord _ se)    = Chord d se
+  setDuration d (Chord se _)    = Chord se d
   setDuration _ (GraceNotes se) = GraceNotes se
   setDuration _ Tie             = Tie
 
-instance Spacer (Glyph Duration pch) where
+instance Spacer (Glyph pch Duration) where
   spacer d     = Spacer d  
 
 
@@ -216,26 +217,26 @@ instance PitchMap ScNote where
   pitchMapM mf (ScNote p as) = pitchMapM mf p >>= \p' -> return $ ScNote p' as
 
 
-instance PitchMap note => PitchMap (Glyph drn note) where
-  pitchMap f (Note d e)       = Note d (pitchMap f e)
+instance PitchMap note => PitchMap (Glyph note drn) where
+  pitchMap f (Note e d)       = Note (pitchMap f e) d
   pitchMap _ (Rest d)         = Rest d
   pitchMap _ (Spacer d)       = Spacer d
-  pitchMap f (Chord d ps)     = Chord d (map (pitchMap f) ps)
+  pitchMap f (Chord ps d)     = Chord (map (pitchMap f) ps) d
   pitchMap f (GraceNotes xs)  = GraceNotes (map (pitchMap f) xs)
   pitchMap _ Tie              = Tie
 
 
-  pitchMapM mf (Note d e)       = pitchMapM mf e >>= return . Note d
+  pitchMapM mf (Note e d)       = pitchMapM mf e >>= \p -> return (Note p d)
   pitchMapM _  (Rest d)         = return $ Rest d
   pitchMapM _  (Spacer d)       = return $ Spacer d
-  pitchMapM mf (Chord d ps)     = mapM (pitchMapM mf) ps >>= return . Chord d
+  pitchMapM mf (Chord ps d)     = mapM (pitchMapM mf) ps >>= \ps' -> return (Chord ps' d)
   pitchMapM mf (GraceNotes xs)  = mapM (pitchMapM mf) xs >>= return . GraceNotes 
   pitchMapM _  Tie              = return Tie
 
-instance PitchMap note => PitchMap (GraceNote drn note) where
-  pitchMap f (GraceNote d p) = GraceNote d (pitchMap f p)
+instance PitchMap note => PitchMap (GraceNote note drn) where
+  pitchMap f (GraceNote p d) = GraceNote (pitchMap f p) d
 
-  pitchMapM mf (GraceNote d p) = pitchMapM mf p >>= return . GraceNote d
+  pitchMapM mf (GraceNote p d) = pitchMapM mf p >>= \p' -> return (GraceNote p' d)
 
 
 

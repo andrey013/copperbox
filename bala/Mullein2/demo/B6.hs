@@ -17,11 +17,11 @@ import Text.PrettyPrint.Leijen
 
 demo1 = vsep $ map oBarOverlay $ runRewriteDuration xs
   where
-    xs = bracket twoFourTime $ map (pitchMap changeOctave) bars1'4
+    xs = phrase twoFourTime $ map (pitchMap changeOctave) bars1'4
 
 demo2 = vsep $ map ABC.oBarOverlay xs where
   
-  xs = bracket twoFourTime $ map (spell amaj) bars1'4
+  xs = phrase twoFourTime $ map (spell amaj) bars1'4
   amaj = spellingMap 3
   
   -- ...

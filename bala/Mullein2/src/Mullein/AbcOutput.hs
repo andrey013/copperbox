@@ -39,7 +39,7 @@ class AbcGlyph e where
 
 
 
-instance AbcGlyph (Glyph Duration Pitch) where
+instance AbcGlyph (Glyph Pitch Duration) where
   abcGlyph = oElement  
 
 instance AbcOutput Pitch where
@@ -66,14 +66,14 @@ omBeam (BeamedL es) = hcat $ map abcGlyph es
 
 
 
-oElement :: (AbcOutput e, AbcDur e ~ Duration) => Glyph Duration e -> Doc
-oElement (Note dm p)      = abcNote p dm
+oElement :: (AbcOutput e, AbcDur e ~ Duration) => Glyph e Duration -> Doc
+oElement (Note p dm)      = abcNote p dm
 oElement (Rest dm)        = char 'z' <> multiplier dm
 oElement (Spacer dm)      = char 'x' <> multiplier dm
-oElement (Chord dm ps)    = brackets $ hcat $ map f ps where
+oElement (Chord ps dm)    = brackets $ hcat $ map f ps where
                               f p = abcPitch p <> multiplier dm 
 oElement (GraceNotes xs)  = braces $ hcat $ map f xs where
-                              f (GraceNote dm p) = abcPitch p <> multiplier dm
+                              f (GraceNote p dm) = abcPitch p <> multiplier dm
 oElement Tie              = char '~'
 
 --------------------------------------------------------------------------------
