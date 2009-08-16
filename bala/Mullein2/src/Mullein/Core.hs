@@ -47,6 +47,9 @@ import Mullein.Pitch
 import Mullein.Utils
 
 
+import Control.Applicative
+import Data.Foldable
+import Data.Traversable hiding ( mapM )
 import Data.Ratio
 
 
@@ -130,6 +133,30 @@ type PulseL e = [Pulse e]
 data Pulse e = Pulse e
              | BeamedL [e]
   deriving (Eq,Show)
+
+instance Functor Bar where
+  fmap f (Bar xs)      = Bar $ fmap (fmap f) xs
+  fmap f (OverlayL xs) = OverlayL $ map (fmap (fmap f)) xs
+
+instance Functor Pulse where
+  fmap f (Pulse e) = Pulse (f e) 
+  fmap f (BeamedL es) = BeamedL $ map f es
+
+instance Foldable Bar where
+  foldMap f (Bar xs) = foldMap (foldMap f) xs
+  foldMap f (OverlayL xs) = foldMap (foldMap (foldMap f)) xs
+
+instance Foldable Pulse where
+  foldMap f (Pulse e) = f e
+  foldMap f (BeamedL es) = foldMap f es
+
+instance Traversable Bar where
+  traverse f (Bar xs) = Bar <$> traverse (traverse f) xs
+  traverse f (OverlayL xs) = OverlayL <$> traverse (traverse (traverse f)) xs
+
+instance Traversable Pulse where
+  traverse f (Pulse e) = Pulse <$> f e
+  traverse f (BeamedL es) = BeamedL <$> traverse f es
 
 
 instance Groupoid (Bar e) where

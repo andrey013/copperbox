@@ -25,13 +25,18 @@ import Mullein.Duration
 import Mullein.Pitch
 import Mullein.Utils
 
+import MonadLib.Monads
 
 import Text.PrettyPrint.Leijen hiding ( (<$>) )
 
 import Control.Applicative hiding ( empty )
-import Control.Monad.State
--- import qualified Data.Traversable as T
+import Control.Monad
+import qualified Data.Traversable as T
 
+
+instance Applicative (State st) where
+  pure = return
+  (<*>) = ap
 
 class LyOutput e where
   type LyDur e :: *
@@ -119,30 +124,29 @@ endBraces i | i <=0     = empty
 
 data St = St { relativePitch :: Maybe Pitch, relativeDuration :: Duration }
 
-runRewriteDuration :: HasDuration e => [Bar e] -> [Bar e]
-runRewriteDuration bars = evalState (mapM fn bars) s0 where
-  fn (Bar ps)       = Bar <$> mapM fn' ps
-  fn (OverlayL ovs) = OverlayL <$> mapM (mapM fn') ovs
-  fn' (Pulse e)     = Pulse <$> rewriteDuration e
-  fn' (BeamedL xs)  = BeamedL <$> mapM rewriteDuration xs 
-
-  s0 = St undefined dZero
+runRewriteDuration :: (HasDuration e, T.Traversable t) => [t e] -> [t e]
+runRewriteDuration bars = fst $ runState s0 (mapM (T.traverse rewriteDuration) bars) 
+  where
+    s0 = St undefined dZero
 
 instance HasDuration St where
   getDuration            = relativeDuration
   setDuration d (St p _) = St p d
 
-rewriteDuration :: (HasDuration e, HasDuration st) => e -> State st e
+-- Dotted durations must always be specified even if the
+-- same dotted duration appears /contiguously/. 
+
+rewriteDuration :: (HasDuration e) => e -> State St e
 rewriteDuration e = let d = getDuration e in do 
-    old <- gets getDuration
+    old <- relativeDuration `fmap` get
     if d==old then return $ setDuration dZero e
               else updateCurrent d >> return e
   where
     -- | The logic here is not good - duration type needs a rethink...
     updateCurrent d | isDotted d    = setZero 
-                    | otherwise     = modify $ setDuration d
+                    | otherwise     = sets_ (\s -> s {relativeDuration=d})
 
-    setZero         = modify $ setDuration dZero   
+    setZero         = sets_ (\s -> s {relativeDuration=dZero})
 
 
 

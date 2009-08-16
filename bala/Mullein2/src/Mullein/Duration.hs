@@ -19,7 +19,6 @@
 module Mullein.Duration where
 
 
--- import Data.Monoid
 import Data.Ratio
 
 
@@ -43,12 +42,6 @@ instance Show Duration where
   show = ('#' :) . show . extent
 
 
-{- 
--- Not sure it is wise to support /addition/.
-instance Monoid Duration where
-  mempty  = DZero
-  mappend = (#+)
--}
 
 class HasDuration a where
   getDuration  :: a -> Duration
@@ -102,21 +95,6 @@ extent (D1 n dc) | dc <= 0   = toRat n
     step acc _ 0 = acc
     step acc h i = step (acc + h) (h/2) (i-1)
 
-{-
-
--- | Add (concatenate) two durations. 
--- Addition (concatenation) produces a symbolic value equivalent 
--- to the two durations being tied: @1/4 #+ 1/4 = 1/4~1/4@.
--- It does not perform numeric addition: @1/4 #+ 1/4 /= 1/2@.
-(#+) :: Duration -> Duration -> Duration
-DZero     #+ b      = b
-a      #+ DZero     = a
-D1 a   #+ D1 b   = Dn [a,b]
-D1 a   #+ Dn ys  = Dn (a:ys)
-Dn xs  #+ D1 y   = Dn $ xs ++ [y]
-Dn xs  #+ Dn ys  = Dn $ xs ++ ys
-
--}
 
        
 -- | Dot a duration. 
@@ -127,26 +105,6 @@ dot DZero     = error "Duration.dot - cannot dot 0 duration"
 dot (D1 n dc) = D1 n (dc+1)
 
 
-
-splitDuration :: Rational -> Duration -> (Maybe Duration, Duration)
-splitDuration _ DZero                  = (Nothing,DZero)
-splitDuration _ (D1 _ _)               = (Nothing,DZero)
-
-{-
-splitDuration _  d@(D1 _)               = (Nothing,d)
-splitDuration r0   (Dn xs)              = splitls r0 xs
-  where 
-    splitls _ []     = error "Duration.splitDuration empty" -- unreachable (?)
-    splitls _ [y]    = (Nothing, D1 y) -- cannot exhaust righthand side
-    splitls r (y:ys) = let d1 = sumND y in case compare r d1 of
-                          LT -> jcons y (splitls (r-d1) ys)
-                          EQ -> (Just $ D1 y, Dn ys)
-                          GT -> (Nothing, Dn (y:ys))
-    jcons x (Nothing,drest) = (Just $ D1 x, drest)
-    jcons x (Just lf,drest) = (Just $ (D1 x #+ lf), drest)            
-
-
--}
 
 lilypond :: Duration -> Maybe (Either String Int,Int)
 lilypond DZero     = Nothing
