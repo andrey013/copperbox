@@ -29,14 +29,9 @@ import MonadLib.Monads
 
 import Text.PrettyPrint.Leijen hiding ( (<$>) )
 
-import Control.Applicative hiding ( empty )
 import Control.Monad
 import qualified Data.Traversable as T
 
-
-instance Applicative (State st) where
-  pure = return
-  (<*>) = ap
 
 class LyOutput e where
   type LyDur e :: *
@@ -47,11 +42,11 @@ class LyOutput e where
 class LilyPondGlyph e where
   lyGlyph :: e -> Doc
 
-instance LilyPondGlyph (Glyph Pitch Duration) where
+instance LilyPondGlyph (Glyph Pitch (Maybe Duration)) where
   lyGlyph = oElement  
 
 instance LyOutput Pitch where
-  type LyDur Pitch = Duration
+  type LyDur Pitch = Maybe Duration
   lyNote p od = note p <> optDuration od
   lyPitch = note
 
@@ -77,7 +72,7 @@ omBeam (BeamedL es) = lyBeam $  map lyGlyph es
 -- TODO check whether or not successive notes in chords and graces
 -- change the relative pitch
 
-oElement :: (LyOutput pch, LyDur pch ~ Duration)  => Glyph pch Duration -> Doc
+oElement :: (LyOutput pch, LyDur pch ~ Maybe Duration)  => Glyph pch (Maybe Duration) -> Doc
 oElement (Note p d)       = lyNote p d
 oElement (Rest d)         = char 'r' <> optDuration d
 oElement (Spacer d)       = char 's' <> optDuration d
@@ -86,7 +81,7 @@ oElement (GraceNotes [x]) = command "grace" <+> braces (oGrace x) where
 oElement (GraceNotes xs)  = command "grace" <+> braces (lyBeam $ map oGrace xs)
 oElement Tie              = char '~'
 
-oGrace :: (LyOutput e, LyDur e ~ Duration) => GraceNote e Duration -> Doc
+oGrace :: (LyOutput e, LyDur e ~ Maybe Duration) => GraceNote e (Maybe Duration) -> Doc
 oGrace (GraceNote p d) = lyNote p d
 
 --------------------------------------------------------------------------------
@@ -123,7 +118,6 @@ endBraces i | i <=0     = emptyDoc
 -- rewriting
 
 
-data St = St { relativePitch :: Maybe Pitch, relativeDuration :: Duration }
  
 rewritePitch :: Pitch -> Phrase (Glyph Pitch drn) -> Phrase (Glyph Pitch drn)
 rewritePitch rp bars = fst $ runState rp (mapM (T.mapM fn) bars)
@@ -144,6 +138,12 @@ changePitch p0 (GraceNotes xs)  = (GraceNotes xs',p')
 changePitch p0 Tie              = (Tie,p0) 
 
 
+
+-- /Relative Pitch/ - all notes inside a grace expression change 
+-- relative pitch. Only the first note of a chord changes relative 
+-- pitch.
+
+
 changeGraceP :: Pitch -> [GraceNote Pitch d] -> ([GraceNote Pitch d],Pitch)
 changeGraceP p0 xs = anaMap fn p0 xs where
   fn (GraceNote pch d) p = Just (GraceNote (alterPitch p pch) d,pch)
@@ -159,39 +159,37 @@ alterPitch :: Pitch -> Pitch -> Pitch
 alterPitch p p'@(Pitch l oa _) = Pitch l oa (lyOctaveDist p p')
  
 
-
-runRewriteDuration :: HasDuration e => Phrase e -> Phrase e
-runRewriteDuration bars = fst $ runState s0 (mapM (T.traverse rewriteDuration) bars) 
+ 
+rewriteDuration :: Phrase (Glyph note Duration) 
+                -> Phrase (Glyph note (Maybe Duration))
+rewriteDuration bars = fst $ runState dZero (mapM (T.mapM fn) bars)
   where
-    s0 = St undefined dZero
-
-instance HasDuration St where
-  getDuration            = relativeDuration
-  setDuration d (St p _) = St p d
-
--- /Relative Duration/ - dotted durations must always be specified 
--- even if the same dotted duration appears /contiguously/. All 
--- notes inside a grace expression change relative duration, even 
--- though a grace expression is considered collectively to have 
--- /no duration/.
+    fn gly = inside (changeDuration `flip` gly)    
 
 
+changeDuration :: Duration 
+               -> Glyph note Duration 
+               -> (Glyph note (Maybe Duration),Duration)  
+changeDuration d0 (Note p d)       = (Note p (alterDuration d0 d), d)
+changeDuration d0 (Rest d)         = (Rest (alterDuration d0 d), d)
+changeDuration d0 (Spacer d)       = (Spacer (alterDuration d0 d), d)
+changeDuration d0 (Chord ps d)     = (Chord ps (alterDuration d0 d), d)
+changeDuration d0 (GraceNotes xs)  = (GraceNotes xs',d')
+                                     where (xs',d') = changeGraceD d0 xs
+changeDuration d0 Tie              = (Tie,d0) 
 
-rewriteDuration :: (HasDuration e) => e -> State St e
-rewriteDuration e = let d = getDuration e in do 
-    old <- relativeDuration `fmap` get
-    if d==old then return $ setDuration dZero e
-              else updateCurrent d >> return e
-  where
-    -- | The logic here is not good - duration type needs a rethink...
-    updateCurrent d | isDotted d    = setZero 
-                    | otherwise     = sets_ (\s -> s {relativeDuration=d})
+changeGraceD :: Duration 
+             -> [GraceNote note Duration] 
+             -> ([GraceNote note (Maybe Duration)],Duration)
+changeGraceD d0 xs = anaMap fn d0 xs where
+  fn (GraceNote p drn) d = Just (GraceNote p (alterDuration d drn),d)
 
-    setZero         = sets_ (\s -> s {relativeDuration=dZero})
 
--- /Relative Pitch/ - all notes inside a grace expression change 
--- relative pitch. Only the first note of a chord changes relative 
--- pitch.
+alterDuration :: Duration -> Duration -> Maybe Duration
+alterDuration d0 d | d0 == d && not (isDotted d) = Nothing
+                   | otherwise                   = Just d 
+
+    
 
 
 --------------------------------------------------------------------------------
@@ -222,8 +220,9 @@ pitchLabel l a = char (toLowerLChar l) <> maybe emptyDoc accidental a
 
 
 
-optDuration :: Duration -> Doc
-optDuration = maybe emptyDoc df . lilypond where
+optDuration :: Maybe Duration -> Doc
+optDuration Nothing  = emptyDoc
+optDuration (Just d) = maybe emptyDoc df $ lilypond d where
   df (ed,dc) = dots dc $ either command int ed
 
 
