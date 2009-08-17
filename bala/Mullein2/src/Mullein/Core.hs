@@ -191,7 +191,6 @@ instance Note ScNote where
 
 
 
-
 instance HasDuration (Glyph pch Duration) where 
   getDuration (Note _ d)     = d
   getDuration (Rest d)       = d
@@ -199,16 +198,11 @@ instance HasDuration (Glyph pch Duration) where
   getDuration (Chord _ d)    = d
   getDuration (GraceNotes _) = dZero
   getDuration Tie            = dZero
-      
-  setDuration d (Note p _)      = Note p d
-  setDuration d (Rest _)        = Rest d
-  setDuration d (Spacer _)      = Spacer d
-  setDuration d (Chord se _)    = Chord se d
-  setDuration _ (GraceNotes se) = GraceNotes se
-  setDuration _ Tie             = Tie
+
 
 instance Spacer (Glyph pch Duration) where
   spacer d     = Spacer d  
+
 
 
 instance PitchMap ScNote where

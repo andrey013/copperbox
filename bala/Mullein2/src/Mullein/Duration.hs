@@ -45,11 +45,9 @@ instance Show Duration where
 
 class HasDuration a where
   getDuration  :: a -> Duration
-  setDuration  :: Duration -> a -> a
 
 instance HasDuration Duration where
   getDuration  = id
-  setDuration  = const
 
 
 class Spacer a where

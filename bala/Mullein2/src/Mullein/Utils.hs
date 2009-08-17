@@ -51,6 +51,7 @@ module Mullein.Utils
   , doubleQuote
   , renderDocEighty
   , emptyDoc
+  , spacedBraces
 
   ) where
 
@@ -219,3 +220,6 @@ renderDocEighty = (displayS `flip` []) . renderPretty 0.8 80
 
 emptyDoc :: Doc
 emptyDoc = PP.empty
+
+spacedBraces :: Doc -> Doc
+spacedBraces = enclose (text "{ ") (text " }")

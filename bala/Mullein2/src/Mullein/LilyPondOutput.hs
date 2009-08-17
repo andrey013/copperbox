@@ -54,23 +54,35 @@ instance LyOutput Pitch where
 
 
  
+-- Not so sure ...
+-- might be better to return (Bar Doc)
 
-oBarOverlay :: LilyPondGlyph e => Bar e -> Doc
-oBarOverlay (Bar xs) = hsep (map omBeam xs)
-oBarOverlay _        = error "oBarOverlay TODO"
+type DOverlay   = Doc
+type DBar       = [DOverlay]
+type DPhrase    = [DBar]
+
+oPhrase :: LilyPondGlyph e => Phrase e -> DPhrase
+oPhrase = map oBarOverlay
+
+
+oBarOverlay :: LilyPondGlyph e => Bar e -> DBar
+oBarOverlay (Bar xs)       = [hsep $ map omBeam xs]
+oBarOverlay (OverlayL xss) = map (hsep . map omBeam) xss
+
+
+oBarOverlay' :: LilyPondGlyph e => Bar e -> Doc
+oBarOverlay' (Bar xs)       = hsep (map omBeam xs)
+oBarOverlay' (OverlayL xss) = overlay $ map (\xs -> hsep (map omBeam xs)) xss
 
 
 omBeam :: LilyPondGlyph e => Pulse e -> Doc
 omBeam (Pulse e)    = lyGlyph e
-omBeam (BeamedL es) = lyBeam $  map lyGlyph es
+omBeam (BeamedL es) = lyBeam $ map lyGlyph es
 
 
 -- oBracket :: (LyOutput e, LyDur e ~ Duration) => OneMa (Glyph Duration e) -> Doc
 -- oBracket = oneMany oElement (lyBeam . map oElement)
 
-
--- TODO check whether or not successive notes in chords and graces
--- change the relative pitch
 
 oElement :: (LyOutput pch, LyDur pch ~ Maybe Duration)  => Glyph pch (Maybe Duration) -> Doc
 oElement (Note p d)       = lyNote p d
@@ -102,11 +114,11 @@ altStart = space <> rbrace `nextLine` command "alternative" <+> lbrace
 altNext :: Doc
 altNext = space <> rbrace `nextLine` lbrace
 
-dblBar :: Doc 
-dblBar = command "bar" <+> dquotes (text "||")
+doubleBar :: Doc 
+doubleBar = command "bar" <+> dquotes (text "||")
 
-sglBar :: Doc
-sglBar = text "|"
+singleBar :: Doc
+singleBar = text "|"
 
 
 endBraces :: Int -> Doc
@@ -195,9 +207,18 @@ alterDuration d0 d | d0 == d && not (isDotted d) = Nothing
 --------------------------------------------------------------------------------
 -- helpers
 
+simpleOutput :: DPhrase -> Doc
+simpleOutput = vsep . map ((<+> singleBar) . simpleOverlay) 
+
+
+simpleOverlay :: [DOverlay] -> Doc
+simpleOverlay []  = empty
+simpleOverlay [a] = a
+simpleOverlay xs  = overlay xs
 
 overlay :: [Doc] -> Doc
-overlay = dblangles . vsep . punctuate (text " \\\\")    
+overlay = dblangles . vsep . punctuate (text " \\\\") . map spacedBraces
+
 
 
 
@@ -231,7 +252,9 @@ dots :: Int -> (Doc -> Doc)
 dots i | i > 0     = (<> text (replicate i '.'))
        | otherwise = id
   
-
+-- | Beams - first element printed outside the square brackets, e.g.:
+-- @ c [e g] @
+--  
 lyBeam :: [Doc] -> Doc
 lyBeam (x:xs) = x <> char '[' <+> hsep xs <> char ']'
 lyBeam []     = emptyDoc
