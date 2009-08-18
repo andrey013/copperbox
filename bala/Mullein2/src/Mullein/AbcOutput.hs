@@ -39,16 +39,16 @@ class AbcGlyph e where
 
 
 
-instance AbcGlyph (Glyph Pitch Duration) where
-  abcGlyph = oElement  
+instance AbcGlyph (Glyph Pitch AbcMultiplier) where
+  abcGlyph = oGlyph 
 
 instance AbcOutput Pitch where
-  type AbcDur Pitch = Duration
+  type AbcDur Pitch = AbcMultiplier
   abcNote p d = printNote p d
   abcPitch = pitch
 
 instance AbcOutput ScNote where
-  type AbcDur ScNote = Duration
+  type AbcDur ScNote = AbcMultiplier
   abcNote (ScNote p _) d = printNote p d
   abcPitch (ScNote p _) = pitch p
 
@@ -66,18 +66,44 @@ omBeam (BeamedL es) = hcat $ map abcGlyph es
 
 
 
-oElement :: (AbcOutput e, AbcDur e ~ Duration) => Glyph e Duration -> Doc
-oElement (Note p dm)      = abcNote p dm
-oElement (Rest dm)        = char 'z' <> multiplier dm
-oElement (Spacer dm)      = char 'x' <> multiplier dm
-oElement (Chord ps dm)    = brackets $ hcat $ map f ps where
+oGlyph :: (AbcOutput e, AbcDur e ~ AbcMultiplier) => Glyph e AbcMultiplier -> Doc
+oGlyph (Note p dm)      = abcNote p dm
+oGlyph (Rest dm)        = char 'z' <> multiplier dm
+oGlyph (Spacer dm)      = char 'x' <> multiplier dm
+oGlyph (Chord ps dm)    = brackets $ hcat $ map f ps where
                               f p = abcPitch p <> multiplier dm 
-oElement (GraceNotes xs)  = braces $ hcat $ map f xs where
+oGlyph (GraceNotes xs)  = braces $ hcat $ map f xs where
                               f (GraceNote p dm) = abcPitch p <> multiplier dm
-oElement Tie              = char '~'
+oGlyph Tie              = char '~'
 
 --------------------------------------------------------------------------------
 -- helpers
+
+
+
+ 
+rewriteDuration :: Rational 
+                -> Phrase (Glyph note Duration) 
+                -> Phrase (Glyph note AbcMultiplier)
+rewriteDuration r bars = map (fmap (changeDuration r)) bars
+
+
+changeDuration :: Rational
+               -> Glyph note Duration 
+               -> (Glyph note AbcMultiplier)
+changeDuration r (Note p d)       = Note p $ abcMultiplier r d
+changeDuration r (Rest d)         = Rest $ abcMultiplier r d
+changeDuration r (Spacer d)       = Spacer $ abcMultiplier r d
+changeDuration r (Chord ps d)     = Chord ps $ abcMultiplier r d
+changeDuration r (GraceNotes xs)  = GraceNotes $ changeGraceD r xs
+changeDuration _ Tie              = Tie
+
+changeGraceD :: Rational 
+             -> [GraceNote note Duration] 
+             -> [GraceNote note AbcMultiplier]
+changeGraceD r xs = map fn xs where
+  fn (GraceNote p d) = GraceNote p (abcMultiplier r d)
+
 
 
 
@@ -92,7 +118,7 @@ field ch d = char ch <> colon <> d
 overlay :: [Doc] -> Doc
 overlay = vsep . punctuate (text " & ")    
 
-printNote :: Pitch -> Duration -> Doc 
+printNote :: Pitch -> AbcMultiplier -> Doc 
 printNote p m = pitch p <> multiplier m
 
 
@@ -126,12 +152,11 @@ pitchLabel (PitchLabel l a) pc
     accidental DoubleFlat    = text "__"
 
 
-multiplier :: Duration -> Doc
-multiplier = maybe empty df . abc (1%16) where
-  df IdenM      = empty
-  df (Mult n)   = integer n
-  df (Div n)    = char '/' <> integer n
-  df (Frac n d) = integer n <> char '/' <> integer d
+multiplier :: AbcMultiplier -> Doc
+multiplier IdenM      = empty
+multiplier (Mult n)   = integer n
+multiplier (Div n)    = char '/' <> integer n
+multiplier (Frac n d) = integer n <> char '/' <> integer d
 
 
 

@@ -43,7 +43,7 @@ class LilyPondGlyph e where
   lyGlyph :: e -> Doc
 
 instance LilyPondGlyph (Glyph Pitch (Maybe Duration)) where
-  lyGlyph = oElement  
+  lyGlyph = oGlyph
 
 instance LyOutput Pitch where
   type LyDur Pitch = Maybe Duration
@@ -80,18 +80,15 @@ omBeam (Pulse e)    = lyGlyph e
 omBeam (BeamedL es) = lyBeam $ map lyGlyph es
 
 
--- oBracket :: (LyOutput e, LyDur e ~ Duration) => OneMa (Glyph Duration e) -> Doc
--- oBracket = oneMany oElement (lyBeam . map oElement)
 
-
-oElement :: (LyOutput pch, LyDur pch ~ Maybe Duration)  => Glyph pch (Maybe Duration) -> Doc
-oElement (Note p d)       = lyNote p d
-oElement (Rest d)         = char 'r' <> optDuration d
-oElement (Spacer d)       = char 's' <> optDuration d
-oElement (Chord ps d)     = angles (hsep $ map lyPitch ps) <> optDuration d
-oElement (GraceNotes [x]) = command "grace" <+> braces (oGrace x) where
-oElement (GraceNotes xs)  = command "grace" <+> braces (lyBeam $ map oGrace xs)
-oElement Tie              = char '~'
+oGlyph :: (LyOutput pch, LyDur pch ~ Maybe Duration)  => Glyph pch (Maybe Duration) -> Doc
+oGlyph (Note p d)       = lyNote p d
+oGlyph (Rest d)         = char 'r' <> optDuration d
+oGlyph (Spacer d)       = char 's' <> optDuration d
+oGlyph (Chord ps d)     = angles (hsep $ map lyPitch ps) <> optDuration d
+oGlyph (GraceNotes [x]) = command "grace" <+> braces (oGrace x) where
+oGlyph (GraceNotes xs)  = command "grace" <+> braces (lyBeam $ map oGrace xs)
+oGlyph Tie              = char '~'
 
 oGrace :: (LyOutput e, LyDur e ~ Maybe Duration) => GraceNote e (Maybe Duration) -> Doc
 oGrace (GraceNote p d) = lyNote p d
@@ -243,8 +240,9 @@ pitchLabel l a = char (toLowerLChar l) <> maybe emptyDoc accidental a
 
 optDuration :: Maybe Duration -> Doc
 optDuration Nothing  = emptyDoc
-optDuration (Just d) = maybe emptyDoc df $ lilypond d where
-  df (ed,dc) = dots dc $ either command int ed
+optDuration (Just d) = maybe emptyDoc df $ lyRepresentation d where
+  df (LyCmd ss,dc) = dots dc $ command ss 
+  df (LyNum i,dc)  = dots dc $ int i
 
 
 

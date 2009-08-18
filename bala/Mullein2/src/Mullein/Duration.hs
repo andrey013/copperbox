@@ -102,33 +102,34 @@ dot :: Duration -> Duration
 dot DZero     = error "Duration.dot - cannot dot 0 duration"
 dot (D1 n dc) = D1 n (dc+1)
 
+data LyNumeral = LyCmd String
+               | LyNum Int
 
+lyRepresentation :: Duration -> Maybe (LyNumeral,Int)
+lyRepresentation DZero     = Nothing
+lyRepresentation (D1 n dc) = Just (lyNumeral n, dc)
 
-lilypond :: Duration -> Maybe (Either String Int,Int)
-lilypond DZero     = Nothing
-lilypond (D1 n dc) = Just (numeralLy n, dc)
-
-numeralLy :: Numeral -> Either String Int
-numeralLy N128  = Right 128
-numeralLy N64   = Right 64
-numeralLy N32   = Right 32
-numeralLy N16   = Right 16
-numeralLy N8    = Right 8
-numeralLy N4    = Right 4
-numeralLy N2    = Right 2
-numeralLy N1    = Right 1
-numeralLy Breve = Left "breve"
-numeralLy Longa = Left "longa"
+lyNumeral :: Numeral -> LyNumeral
+lyNumeral N128  = LyNum 128
+lyNumeral N64   = LyNum 64
+lyNumeral N32   = LyNum 32
+lyNumeral N16   = LyNum 16
+lyNumeral N8    = LyNum 8
+lyNumeral N4    = LyNum 4
+lyNumeral N2    = LyNum 2
+lyNumeral N1    = LyNum 1
+lyNumeral Breve = LyCmd "breve"
+lyNumeral Longa = LyCmd "longa"
 
 data AbcMultiplier = IdenM | Mult Integer | Div Integer | Frac Integer Integer
   deriving (Eq,Show)
 
-abc :: Rational -> Duration -> Maybe AbcMultiplier
-abc _   DZero     = Nothing
-abc unl d         = Just $ multiplierABC unl d
+abcRepresentation :: Rational -> Duration -> Maybe AbcMultiplier
+abcRepresentation _   DZero     = Nothing
+abcRepresentation unl d         = Just $ abcMultiplier unl d
 
-multiplierABC :: Rational -> Duration -> AbcMultiplier
-multiplierABC unl nd = (fn . fork numerator denominator) $ (extent nd) / unl
+abcMultiplier :: Rational -> Duration -> AbcMultiplier
+abcMultiplier unl nd = (fn . fork numerator denominator) $ (extent nd) / unl
   where  
     fork f g a = (f a, g a)
     fn (1,1)   = IdenM
