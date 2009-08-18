@@ -192,7 +192,7 @@ instance HasDuration (Glyph pch) where
 
 
 instance Spacer (Glyph pch Duration) where
-  spacer d     = Spacer d  
+  makeSpacer d     = Spacer d  
 
 
 

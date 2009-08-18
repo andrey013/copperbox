@@ -51,7 +51,7 @@ class HasDuration (t :: * -> *) where
 
 
 class Spacer a where
-  spacer :: Duration -> a
+  makeSpacer :: Duration -> a
 
 toRat :: Numeral -> Rational
 toRat N128  = 1%128

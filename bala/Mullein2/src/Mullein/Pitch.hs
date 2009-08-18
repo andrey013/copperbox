@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
+
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Mullein.Pitch
@@ -94,8 +95,8 @@ label (Pitch l a _) = PitchLabel l a
 octave :: Pitch -> Octave
 octave (Pitch _ _ o) =o
 
-pitch :: PitchLabel -> Octave -> Pitch
-pitch (PitchLabel l a) o = Pitch l a o
+makePitch :: PitchLabel -> Octave -> Pitch
+makePitch (PitchLabel l a) o = Pitch l a o
 
 root :: PitchLabel -> PitchLabel
 root (PitchLabel l _) = PitchLabel l Nothing
@@ -221,7 +222,7 @@ arithmeticDist p p' = retro $ lexval p' - lexval p
 -- spell sm = pitchMap (spell' sm)
 
 spell :: SpellingMap -> Pitch -> Pitch
-spell sm p@(Pitch _ _ o) = pitch (fn $ label p) o
+spell sm p@(Pitch _ _ o) = makePitch (fn $ label p) o
   where
     fn lbl = maybe lbl id $ Map.lookup lbl sm
 

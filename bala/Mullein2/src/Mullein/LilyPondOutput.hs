@@ -1,6 +1,4 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -63,32 +61,16 @@ data Direction = Above | Below | Center
 
 
 
-class LyOutput e where
-  type LyDur e :: *
-  lyNote  :: e -> LyDur e -> Doc
-  lyPitch :: e -> Doc
-
 
 class LilyPondGlyph e where
   lyGlyph :: e -> Doc
 
 instance LilyPondGlyph (Glyph Pitch (Maybe Duration)) where
-  lyGlyph = oGlyph
-
-instance LyOutput Pitch where
-  type LyDur Pitch = Maybe Duration
-  lyNote p od = note p <> optDuration od
-  lyPitch = note
+  lyGlyph = oGlyph pitch
 
 
 instance LilyPondGlyph (Glyph DrumPitch (Maybe Duration)) where
-  lyGlyph = oGlyph
-
-
-instance LyOutput DrumPitch where
-  type LyDur DrumPitch = Maybe Duration
-  lyNote (DrumPitch short _) od = text short <> optDuration od
-  lyPitch (DrumPitch short _) = text short
+  lyGlyph = oGlyph (\(DrumPitch short _) -> text short)
 
 
 oPhrase :: LilyPondGlyph e => Phrase e -> DPhrase
@@ -106,17 +88,17 @@ omBeam (BeamedL es) = lyBeam $ map lyGlyph es
 
 
 
-oGlyph :: (LyOutput pch, LyDur pch ~ Maybe Duration)  => Glyph pch (Maybe Duration) -> Doc
-oGlyph (Note p d)       = lyNote p d
-oGlyph (Rest d)         = char 'r' <> optDuration d
-oGlyph (Spacer d)       = char 's' <> optDuration d
-oGlyph (Chord ps d)     = angles (hsep $ map lyPitch ps) <> optDuration d
-oGlyph (GraceNotes [x]) = command "grace" <+> braces (oGrace x) where
-oGlyph (GraceNotes xs)  = command "grace" <+> braces (lyBeam $ map oGrace xs)
-oGlyph Tie              = char '~'
+oGlyph :: (pch -> Doc) -> Glyph pch (Maybe Duration) -> Doc
+oGlyph f (Note p d)       = f p <> optDuration d
+oGlyph _ (Rest d)         = char 'r' <> optDuration d
+oGlyph _ (Spacer d)       = char 's' <> optDuration d
+oGlyph f (Chord ps d)     = angles (hsep $ map f ps) <> optDuration d
+oGlyph f (GraceNotes [x]) = command "grace" <+> braces (oGrace f x) where
+oGlyph f (GraceNotes xs)  = command "grace" <+> braces (lyBeam $ map (oGrace f) xs)
+oGlyph _ Tie              = char '~'
 
-oGrace :: (LyOutput e, LyDur e ~ Maybe Duration) => GraceNote e (Maybe Duration) -> Doc
-oGrace (GraceNote p d) = lyNote p d
+oGrace :: (pch -> Doc) -> GraceNote pch (Maybe Duration) -> Doc
+oGrace f (GraceNote p d) = f p <> optDuration d
 
 
 
@@ -276,10 +258,11 @@ direction Above  = char '^'
 direction Below  = char '_'
 direction Center = char '-'
 
+note :: Pitch -> Maybe Duration -> Doc
+note p md = pitch p <> optDuration md
 
-
-note :: Pitch -> Doc 
-note (Pitch l a o) = pitchLabel l a <> ove o where
+pitch :: Pitch -> Doc 
+pitch (Pitch l a o) = pitchLabel l a <> ove o where
     ove i | i > 0       = text $ replicate i       '\''
           | i < 0       = text $ replicate (abs i) ','
           | otherwise   = emptyDoc
