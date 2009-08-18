@@ -27,7 +27,7 @@ demo1 = simpleOutput $ oPhrase $ rewritePitch middle_c $ rewriteDuration xs
     xs = phrase twoFourTime $ b6_bars1'4
 
 demo2 :: Doc
-demo2 = vsep $ map ABC.oBarOverlay $ ABC.rewriteDuration (1%16) xs 
+demo2 = ABC.simpleOutput $ ABC.oPhrase $ ABC.rewriteDuration (1%16) xs 
   where
    xs   = phrase twoFourTime $ map (spell amaj) b6_bars1'4
    amaj = spellingMap 3

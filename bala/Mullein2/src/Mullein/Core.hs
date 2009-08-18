@@ -24,6 +24,7 @@ import Mullein.Duration
 import Mullein.Pitch
 import Mullein.Utils
 
+import Text.PrettyPrint.Leijen ( Doc )
 
 import Control.Applicative
 import Data.Foldable
@@ -75,6 +76,78 @@ log2whole = (==0) . snd . pf . logBase 2 . fromIntegral where
 --------------------------------------------------------------------------------
 -- Representing scores 
 
+-- Phrases/Bars/Pulsations
+
+-- Note - overlay is unfortunately essential. It would be nice if 
+-- overlays could be delegated to a PP combinator, it is needed in 
+-- the LilyPond relative pitch / relative duration transformations.
+
+type Phrase e = [Bar e]
+
+data Bar e = Bar (PulseL e)
+           | OverlayL [PulseL e] 
+  deriving (Eq,Show)
+
+type PulseL e = [Pulse e]
+
+-- Pulse / pulsation -- a metrical division of a bar
+data Pulse e = Pulse e
+             | BeamedL [e]
+  deriving (Eq,Show)
+
+-- Functor
+
+instance Functor Bar where
+  fmap f (Bar xs)      = Bar $ fmap (fmap f) xs
+  fmap f (OverlayL xs) = OverlayL $ map (fmap (fmap f)) xs
+
+instance Functor Pulse where
+  fmap f (Pulse e) = Pulse (f e) 
+  fmap f (BeamedL es) = BeamedL $ map f es
+
+-- Foldable
+
+instance Foldable Bar where
+  foldMap f (Bar xs) = foldMap (foldMap f) xs
+  foldMap f (OverlayL xs) = foldMap (foldMap (foldMap f)) xs
+
+instance Foldable Pulse where
+  foldMap f (Pulse e) = f e
+  foldMap f (BeamedL es) = foldMap f es
+
+-- Traversable
+
+instance Traversable Bar where
+  traverse f (Bar xs) = Bar <$> traverse (traverse f) xs
+  traverse f (OverlayL xs) = OverlayL <$> traverse (traverse (traverse f)) xs
+
+instance Traversable Pulse where
+  traverse f (Pulse e) = Pulse <$> f e
+  traverse f (BeamedL es) = BeamedL <$> traverse f es
+
+
+-------
+
+-- It is much more flexible to treat Bars and Overlays as Docs 
+-- after they have been beamed and rendered. This way we can have
+-- arbitrary functions for /mixing/ overlays e.g. prefixing each 
+-- overlay with stemUp or stemDown commands.
+
+type DOverlay   = Doc
+type DBar       = [DOverlay]
+type DPhrase    = [DBar]
+
+
+----
+
+-- The glyph type is usefully comprehensive for representing 
+-- musical /atoms/ (notes and rests). Chords and graces notes
+-- turn out to be special cases that can't be represented as lists
+-- of notes - they need to signal special /directives/ score 
+-- output. Spacer rests are unprinted rests, they are essential
+-- for polyphonic music where independent musical lines are 
+-- printed on the same staff. Ties support the printing of notes 
+-- with elaborate duration.
 
 -- Glyphs are parametric on duration and /pitch/ - a pitch may 
 -- hold more info than just pitch (i.e. fingering, string number). 
@@ -91,66 +164,14 @@ data Glyph pch drn = Note   pch drn
                    | Tie
   deriving (Eq,Show)
 
-type StdGlyph = Glyph Pitch Duration
-
-
--- Drums
-
-data DrumPitch = DrumPitch { 
-      drum_long_name   :: String, 
-      drum_short_name  :: String 
-    }
-  deriving (Eq,Show)
-
-
-type DrumGlyph = Glyph DrumPitch Duration
 
 data GraceNote pch drn = GraceNote pch drn
   deriving (Eq,Show)
 
-type Phrase e = [Bar e]
 
-data Bar e = Bar (PulseL e)
-           | OverlayL [PulseL e] 
-  deriving (Eq,Show)
-
-type PulseL e = [Pulse e]
-
--- Pulse / pulsation -- a metrical division of a bar
-data Pulse e = Pulse e
-             | BeamedL [e]
-  deriving (Eq,Show)
-
-instance Functor Bar where
-  fmap f (Bar xs)      = Bar $ fmap (fmap f) xs
-  fmap f (OverlayL xs) = OverlayL $ map (fmap (fmap f)) xs
-
-instance Functor Pulse where
-  fmap f (Pulse e) = Pulse (f e) 
-  fmap f (BeamedL es) = BeamedL $ map f es
-
-instance Foldable Bar where
-  foldMap f (Bar xs) = foldMap (foldMap f) xs
-  foldMap f (OverlayL xs) = foldMap (foldMap (foldMap f)) xs
-
-instance Foldable Pulse where
-  foldMap f (Pulse e) = f e
-  foldMap f (BeamedL es) = foldMap f es
-
-instance Traversable Bar where
-  traverse f (Bar xs) = Bar <$> traverse (traverse f) xs
-  traverse f (OverlayL xs) = OverlayL <$> traverse (traverse (traverse f)) xs
-
-instance Traversable Pulse where
-  traverse f (Pulse e) = Pulse <$> f e
-  traverse f (BeamedL es) = BeamedL <$> traverse f es
+type StdGlyph = Glyph Pitch Duration
 
 
-instance Groupoid (Bar e) where
-  Bar ps       `gappend` Bar ps'       = OverlayL [ps,ps']
-  Bar ps       `gappend` OverlayL pps  = OverlayL $ ps:pps
-  OverlayL pps `gappend` Bar ps        = OverlayL $ pps ++ [ps]
-  OverlayL pps `gappend` OverlayL pps' = OverlayL $ pps ++ pps'
   
 
 

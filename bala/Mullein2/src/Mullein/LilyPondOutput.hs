@@ -33,6 +33,36 @@ import Control.Monad
 import qualified Data.Traversable as T
 
 
+
+--------------------------------------------------------------------------------
+-- Alternative types
+
+-- Drums
+
+data DrumPitch = DrumPitch { 
+      drum_long_name   :: String, 
+      drum_short_name  :: String 
+    }
+  deriving (Eq,Show)
+
+
+type DrumGlyph = Glyph DrumPitch Duration
+
+
+-- Spacer marks are /syntax/ are the glyph level.
+
+data SpacerMark drn = SpacerMark Direction Doc drn
+  deriving (Show)
+
+data Direction = Above | Below | Center
+  deriving (Eq,Show)
+
+
+--------------------------------------------------------------------------------
+
+
+
+
 class LyOutput e where
   type LyDur e :: *
   lyNote  :: e -> LyDur e -> Doc
@@ -61,11 +91,6 @@ instance LyOutput DrumPitch where
   lyPitch (DrumPitch short _) = text short
 
 
-
-type DOverlay   = Doc
-type DBar       = [DOverlay]
-type DPhrase    = [DBar]
-
 oPhrase :: LilyPondGlyph e => Phrase e -> DPhrase
 oPhrase = map oBarOverlay
 
@@ -73,11 +98,6 @@ oPhrase = map oBarOverlay
 oBarOverlay :: LilyPondGlyph e => Bar e -> DBar
 oBarOverlay (Bar xs)       = [hsep $ map omBeam xs]
 oBarOverlay (OverlayL xss) = map (hsep . map omBeam) xss
-
-
-oBarOverlay' :: LilyPondGlyph e => Bar e -> Doc
-oBarOverlay' (Bar xs)       = hsep (map omBeam xs)
-oBarOverlay' (OverlayL xss) = overlay $ map (\xs -> hsep (map omBeam xs)) xss
 
 
 omBeam :: LilyPondGlyph e => Pulse e -> Doc
@@ -213,10 +233,10 @@ alterDuration d0 d | d0 == d && not (isDotted d) = Nothing
 -- helpers
 
 simpleOutput :: DPhrase -> Doc
-simpleOutput = vsep . map ((<+> singleBar) . simpleOverlay) 
+simpleOutput = vsep . map ((<+> singleBar) . simpleOverlay)
 
 
-simpleOverlay :: [DOverlay] -> Doc
+simpleOverlay :: [Doc] -> Doc
 simpleOverlay []  = empty
 simpleOverlay [a] = a
 simpleOverlay xs  = overlay xs
@@ -224,6 +244,11 @@ simpleOverlay xs  = overlay xs
 overlay :: [Doc] -> Doc
 overlay = dblangles . vsep . punctuate (text " \\\\") . map spacedBraces
 
+
+direction :: Direction -> Doc 
+direction Above  = char '^' 
+direction Below  = char '_'
+direction Center = char '-'
 
 
 

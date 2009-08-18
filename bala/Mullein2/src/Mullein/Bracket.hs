@@ -163,11 +163,4 @@ consume n (x:xs) | n < x      = (x-n):xs
 ratDuration :: HasDuration e => e -> Rational
 ratDuration = extent . getDuration                      
 
-  
----------------------------------------------------------------------------------
--- overlay
-
-
-zipOverlays :: [Bar e] -> [Bar e] -> [Bar e]
-zipOverlays = endoLongZip gappend
 

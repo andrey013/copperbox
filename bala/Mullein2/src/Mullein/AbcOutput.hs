@@ -54,10 +54,21 @@ instance AbcOutput ScNote where
 
 
 
-
+{-
 oBarOverlay :: AbcGlyph e => Bar e -> Doc
 oBarOverlay (Bar xs) = hsep (map omBeam xs)
 oBarOverlay _        = error "oBarOverlay TODO"
+-}
+
+oPhrase :: AbcGlyph e => Phrase e -> DPhrase
+oPhrase = map oBarOverlay
+
+
+oBarOverlay :: AbcGlyph e => Bar e -> DBar
+oBarOverlay (Bar xs)       = [hsep $ map omBeam xs]
+oBarOverlay (OverlayL xss) = map (hsep . map omBeam) xss
+
+
 
 
 omBeam :: AbcGlyph e => Pulse e -> Doc
@@ -113,7 +124,11 @@ field ch d = char ch <> colon <> d
 
 
 
+simpleOutput :: DPhrase -> Doc
+simpleOutput = vsep . map ((<+> singleBar) . overlay)
 
+singleBar :: Doc
+singleBar = char '|'
 
 overlay :: [Doc] -> Doc
 overlay = vsep . punctuate (text " & ")    
