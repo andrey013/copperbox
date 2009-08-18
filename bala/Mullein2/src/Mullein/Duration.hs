@@ -1,3 +1,4 @@
+{-# LANGUAGE KindSignatures             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -43,11 +44,10 @@ instance Show Duration where
 
 
 
-class HasDuration a where
-  getDuration  :: a -> Duration
+class HasDuration (t :: * -> *) where
+  getDuration  :: t Duration -> Duration
 
-instance HasDuration Duration where
-  getDuration  = id
+
 
 
 class Spacer a where

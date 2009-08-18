@@ -103,6 +103,7 @@ root (PitchLabel l _) = PitchLabel l Nothing
 natural :: PitchLabel -> PitchLabel
 natural (PitchLabel l _) = PitchLabel l (Just Nat)
 
+{-
 
 -- | Provide fmap-like access to the Pitch component embedded 
 -- in some arbitrary structure.
@@ -114,6 +115,7 @@ instance PitchMap Pitch where
   pitchMap = ($)
   pitchMapM mf p = mf p   
 
+-}
   
 class Semitones a where semitones :: a -> Int
     
@@ -215,11 +217,11 @@ arithmeticDist p p' = retro $ lexval p' - lexval p
 
 
 
-spell :: PitchMap e => SpellingMap -> e -> e
-spell sm = pitchMap (spell' sm)
+-- spell :: PitchMap e => SpellingMap -> e -> e
+-- spell sm = pitchMap (spell' sm)
 
-spell' :: SpellingMap -> Pitch -> Pitch
-spell' sm p@(Pitch _ _ o) = pitch (fn $ label p) o
+spell :: SpellingMap -> Pitch -> Pitch
+spell sm p@(Pitch _ _ o) = pitch (fn $ label p) o
   where
     fn lbl = maybe lbl id $ Map.lookup lbl sm
 

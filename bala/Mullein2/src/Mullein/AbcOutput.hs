@@ -88,26 +88,28 @@ oGlyph (GraceNotes xs)  = braces $ hcat $ map f xs where
 oGlyph Tie              = char '~'
 
 --------------------------------------------------------------------------------
--- helpers
+-- rewriting
 
 
+-- Change Duration to a multiplier
+
+class ChangeDurationAbc t where
+  changeDurationAbc :: Rational -> t Duration -> t AbcMultiplier
 
  
-rewriteDuration :: Rational 
-                -> Phrase (Glyph note Duration) 
-                -> Phrase (Glyph note AbcMultiplier)
-rewriteDuration r bars = map (fmap (changeDuration r)) bars
+rewriteDuration :: ChangeDurationAbc t 
+                => Rational 
+                -> Phrase (t Duration) 
+                -> Phrase (t AbcMultiplier)
+rewriteDuration r bars = map (fmap (changeDurationAbc r)) bars
 
-
-changeDuration :: Rational
-               -> Glyph note Duration 
-               -> (Glyph note AbcMultiplier)
-changeDuration r (Note p d)       = Note p $ abcMultiplier r d
-changeDuration r (Rest d)         = Rest $ abcMultiplier r d
-changeDuration r (Spacer d)       = Spacer $ abcMultiplier r d
-changeDuration r (Chord ps d)     = Chord ps $ abcMultiplier r d
-changeDuration r (GraceNotes xs)  = GraceNotes $ changeGraceD r xs
-changeDuration _ Tie              = Tie
+instance ChangeDurationAbc (Glyph pch) where
+  changeDurationAbc r (Note p d)       = Note p $ abcMultiplier r d
+  changeDurationAbc r (Rest d)         = Rest $ abcMultiplier r d
+  changeDurationAbc r (Spacer d)       = Spacer $ abcMultiplier r d
+  changeDurationAbc r (Chord ps d)     = Chord ps $ abcMultiplier r d
+  changeDurationAbc r (GraceNotes xs)  = GraceNotes $ changeGraceD r xs
+  changeDurationAbc _ Tie              = Tie
 
 changeGraceD :: Rational 
              -> [GraceNote note Duration] 
@@ -116,8 +118,34 @@ changeGraceD r xs = map fn xs where
   fn (GraceNote p d) = GraceNote p (abcMultiplier r d)
 
 
+-- Pitch spelling
+
+class ChangePitchAbc t where
+  changePitchAbc :: SpellingMap -> t Pitch drn -> t Pitch drn
+
+ 
+rewritePitch :: ChangePitchAbc t 
+             => SpellingMap 
+             -> Phrase (t Pitch drn) 
+             -> Phrase (t Pitch drn)
+rewritePitch smap bars = map (fmap (changePitchAbc smap)) bars
 
 
+instance ChangePitchAbc Glyph where
+  changePitchAbc sm (Note p d)       = Note (spell sm p) d
+  changePitchAbc _  (Rest d)         = Rest d
+  changePitchAbc _  (Spacer d)       = Spacer d
+  changePitchAbc sm (Chord ps d)     = Chord (map (spell sm) ps) d
+  changePitchAbc sm (GraceNotes xs)  = GraceNotes (map (changePitchAbc sm) xs)
+  changePitchAbc _  Tie              = Tie
+
+
+instance ChangePitchAbc GraceNote where
+  changePitchAbc sm (GraceNote p d) = GraceNote (spell sm p) d
+
+
+
+--------------------------------------------------------------------------------
 
 field :: Char -> Doc -> Doc
 field ch d = char ch <> colon <> d

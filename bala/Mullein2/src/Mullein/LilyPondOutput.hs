@@ -154,25 +154,82 @@ endBraces i | i <=0     = emptyDoc
 --------------------------------------------------------------------------------
 -- rewriting
 
+-- Duration
+
+
+-- The duration change for LilyPond is stateful (it is 
+-- relative to the previous duration), so we have to pass the 
+-- state around c.f. unfoldr or the State monad. 
+-- Having a simple ChangeDuration class is not useful here. Such 
+-- a class might be something like:
+--
+-- @ class ChangeDuration t where
+-- @   changeDuration :: d -> t Duration -> t d
+--
+
+-- mnemonic LR - (L)ilypond (R)elative
+
+class ChangeDurationLR t where
+  changeDurationLR :: Duration -> t Duration -> (t (Maybe Duration), Duration)
 
  
-rewritePitch :: Pitch -> Phrase (Glyph Pitch drn) -> Phrase (Glyph Pitch drn)
+rewriteDuration :: ChangeDurationLR t
+                => Phrase (t Duration) -> Phrase (t (Maybe Duration))
+rewriteDuration bars = fst $ runState dZero (mapM (T.mapM fn) bars)
+  where
+    fn gly = inside $ (changeDurationLR `flip`  gly)    
+
+
+instance ChangeDurationLR (Glyph pch) where
+  changeDurationLR d0 (Note p d)       = (Note p (alterDuration d0 d), d)
+  changeDurationLR d0 (Rest d)         = (Rest (alterDuration d0 d), d)
+  changeDurationLR d0 (Spacer d)       = (Spacer (alterDuration d0 d), d)
+  changeDurationLR d0 (Chord ps d)     = (Chord ps (alterDuration d0 d), d)
+  changeDurationLR d0 (GraceNotes xs)  = (GraceNotes xs',d')
+                                          where (xs',d') = changeGraceD d0 xs
+  changeDurationLR d0 Tie              = (Tie,d0) 
+
+
+
+changeGraceD :: Duration 
+             -> [GraceNote note Duration] 
+             -> ([GraceNote note (Maybe Duration)],Duration)
+changeGraceD d0 xs = anaMap fn d0 xs where
+  fn (GraceNote p drn) d = Just (GraceNote p (alterDuration d drn),d)
+
+
+alterDuration :: Duration -> Duration -> Maybe Duration
+alterDuration d0 d | d0 == d && not (isDotted d) = Nothing
+                   | otherwise                   = Just d 
+
+    
+
+-- Relative Pitch
+
+
+
+class ChangePitchLR t where
+  changePitchLR :: Pitch -> t Pitch drn -> (t Pitch drn, Pitch)
+
+ 
+rewritePitch :: ChangePitchLR t 
+             => Pitch -> Phrase (t Pitch drn) -> Phrase (t Pitch drn)
 rewritePitch rp bars = fst $ runState rp (mapM (T.mapM fn) bars)
   where
-    fn gly = inside (changePitch `flip` gly)    
+    fn gly = inside (changePitchLR `flip` gly)    
 
 inside :: (s -> (a,s)) -> State s a
 inside f = get >>= \s -> let (a,s') = f s in set s' >> return a
 
-changePitch :: Pitch -> Glyph Pitch drn -> (Glyph Pitch drn,Pitch)  
-changePitch p0 (Note p d)       = (Note (alterPitch p0 p) d, p)
-changePitch p0 (Rest d)         = (Rest d, p0)
-changePitch p0 (Spacer d)       = (Spacer d, p0)
-changePitch p0 (Chord ps d)     = (Chord ps' d,p') 
-                                  where (ps',p') = changeChordP p0 ps
-changePitch p0 (GraceNotes xs)  = (GraceNotes xs',p')
-                                  where (xs',p') = changeGraceP p0 xs
-changePitch p0 Tie              = (Tie,p0) 
+instance ChangePitchLR Glyph where
+  changePitchLR p0 (Note p d)       = (Note (alterPitch p0 p) d, p)
+  changePitchLR p0 (Rest d)         = (Rest d, p0)
+  changePitchLR p0 (Spacer d)       = (Spacer d, p0)
+  changePitchLR p0 (Chord ps d)     = (Chord ps' d,p') 
+                                       where (ps',p') = changeChordP p0 ps
+  changePitchLR p0 (GraceNotes xs)  = (GraceNotes xs',p')
+                                       where (xs',p') = changeGraceP p0 xs
+  changePitchLR p0 Tie              = (Tie,p0) 
 
 
 
@@ -196,37 +253,6 @@ alterPitch :: Pitch -> Pitch -> Pitch
 alterPitch p p'@(Pitch l oa _) = Pitch l oa (lyOctaveDist p p')
  
 
- 
-rewriteDuration :: Phrase (Glyph note Duration) 
-                -> Phrase (Glyph note (Maybe Duration))
-rewriteDuration bars = fst $ runState dZero (mapM (T.mapM fn) bars)
-  where
-    fn gly = inside (changeDuration `flip` gly)    
-
-
-changeDuration :: Duration 
-               -> Glyph note Duration 
-               -> (Glyph note (Maybe Duration),Duration)  
-changeDuration d0 (Note p d)       = (Note p (alterDuration d0 d), d)
-changeDuration d0 (Rest d)         = (Rest (alterDuration d0 d), d)
-changeDuration d0 (Spacer d)       = (Spacer (alterDuration d0 d), d)
-changeDuration d0 (Chord ps d)     = (Chord ps (alterDuration d0 d), d)
-changeDuration d0 (GraceNotes xs)  = (GraceNotes xs',d')
-                                     where (xs',d') = changeGraceD d0 xs
-changeDuration d0 Tie              = (Tie,d0) 
-
-changeGraceD :: Duration 
-             -> [GraceNote note Duration] 
-             -> ([GraceNote note (Maybe Duration)],Duration)
-changeGraceD d0 xs = anaMap fn d0 xs where
-  fn (GraceNote p drn) d = Just (GraceNote p (alterDuration d drn),d)
-
-
-alterDuration :: Duration -> Duration -> Maybe Duration
-alterDuration d0 d | d0 == d && not (isDotted d) = Nothing
-                   | otherwise                   = Just d 
-
-    
 
 
 --------------------------------------------------------------------------------

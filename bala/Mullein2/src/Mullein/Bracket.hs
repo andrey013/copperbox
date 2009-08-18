@@ -69,7 +69,7 @@ instance Monad m => WriterM (SnocWriterT e m) (D.DList e) where
 -- bar & beam
 
 
-phrase :: (HasDuration e) => MeterPattern -> [e] -> Phrase e
+phrase :: (HasDuration t) => MeterPattern -> [t Duration] -> Phrase (t Duration)
 phrase mp notes = runId $ 
     barM (sum mp) notes >>= mapM (\es -> beamM mp es >>= return . Bar)
 
@@ -82,7 +82,7 @@ phrase mp notes = runId $
 -- subtracted from the bar on the right.
 
 
-barM :: (Monad m, HasDuration e) => Rational -> [e] -> m [[e]]
+barM :: (Monad m, HasDuration t) => Rational -> [t Duration] -> m [[t Duration]]
 barM barlen ns = runSnocWriterT (consumeSt barStepM (0,[]) ns) >>= fn
   where
     fn ((_,[]),dlist)  = return $ D.toList dlist
@@ -109,14 +109,17 @@ emptySpan barlen n = let (blank_count,x) = n `divModR` barlen in
 
 
 
-beamM :: (HasDuration e, Monad m) => MeterPattern -> [e] -> m [Pulse e]
+beamM :: (HasDuration t, Monad m) 
+      => MeterPattern -> [t Duration] -> m [Pulse (t Duration)]
 beamM mp notes = runSnocWriterT (consumeSt beamStepM (mp,[]) notes) >>= fn
   where
     fn ((_,[]),dlist)  = return $ D.toList dlist
     fn ((_,cca),dlist) = return $ D.toList $ dlist `D.snoc` (toPulse $ reverse cca)
 
-beamStepM :: (HasDuration e, SnocWriterM m, DiffElem m ~ Pulse e)
-          => e -> (MeterPattern,[e]) -> m (MeterPattern,[e])
+beamStepM :: (HasDuration t, SnocWriterM m, DiffElem m ~ Pulse (t Duration))
+          => t Duration 
+          -> (MeterPattern,[t Duration]) 
+          -> m (MeterPattern,[t Duration])
 beamStepM e ([],cca)          = putPulsation cca >> putPulse1 e >> return ([],[])
 beamStepM e (stk@(a:rs),cca)  = fn (ratDuration e) 
   where
@@ -160,7 +163,7 @@ consume n (x:xs) | n < x      = (x-n):xs
                  | otherwise  = consume (n-x) xs
 
 
-ratDuration :: HasDuration e => e -> Rational
+ratDuration :: HasDuration t => t Duration -> Rational
 ratDuration = extent . getDuration                      
 
 

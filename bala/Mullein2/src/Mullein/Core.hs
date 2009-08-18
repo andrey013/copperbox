@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
@@ -184,21 +182,7 @@ data ScNote = ScNote Pitch [NoteAttribute]
 
 
 
-
-class Note a where
-  type Attr a :: * 
-  type Pch  a :: * 
-  mkNote :: Pch a -> Attr a -> a 
-
-instance Note ScNote where
-  type Attr ScNote = [NoteAttribute]
-  type Pch  ScNote = Pitch
-
-  mkNote pch as = ScNote pch as
-
-
-
-instance HasDuration (Glyph pch Duration) where 
+instance HasDuration (Glyph pch) where 
   getDuration (Note _ d)     = d
   getDuration (Rest d)       = d
   getDuration (Spacer d)     = d
@@ -209,36 +193,6 @@ instance HasDuration (Glyph pch Duration) where
 
 instance Spacer (Glyph pch Duration) where
   spacer d     = Spacer d  
-
-
-
-instance PitchMap ScNote where
-  pitchMap f (ScNote p as) = ScNote (f p) as
-  
-  pitchMapM mf (ScNote p as) = pitchMapM mf p >>= \p' -> return $ ScNote p' as
-
-
-instance PitchMap note => PitchMap (Glyph note drn) where
-  pitchMap f (Note e d)       = Note (pitchMap f e) d
-  pitchMap _ (Rest d)         = Rest d
-  pitchMap _ (Spacer d)       = Spacer d
-  pitchMap f (Chord ps d)     = Chord (map (pitchMap f) ps) d
-  pitchMap f (GraceNotes xs)  = GraceNotes (map (pitchMap f) xs)
-  pitchMap _ Tie              = Tie
-
-
-  pitchMapM mf (Note e d)       = pitchMapM mf e >>= \p -> return (Note p d)
-  pitchMapM _  (Rest d)         = return $ Rest d
-  pitchMapM _  (Spacer d)       = return $ Spacer d
-  pitchMapM mf (Chord ps d)     = mapM (pitchMapM mf) ps >>= \ps' -> return (Chord ps' d)
-  pitchMapM mf (GraceNotes xs)  = mapM (pitchMapM mf) xs >>= return . GraceNotes 
-  pitchMapM _  Tie              = return Tie
-
-instance PitchMap note => PitchMap (GraceNote note drn) where
-  pitchMap f (GraceNote p d) = GraceNote (pitchMap f p) d
-
-  pitchMapM mf (GraceNote p d) = pitchMapM mf p >>= \p' -> return (GraceNote p' d)
-
 
 
 
