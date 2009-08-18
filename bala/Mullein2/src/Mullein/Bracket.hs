@@ -69,7 +69,7 @@ instance Monad m => WriterM (SnocWriterT e m) (D.DList e) where
 -- bar & beam
 
 
-phrase :: (HasDuration e, Tied e) => MeterPattern -> [e] -> Phrase e
+phrase :: (HasDuration e) => MeterPattern -> [e] -> Phrase e
 phrase mp notes = runId $ 
     barM (sum mp) notes >>= mapM (\es -> beamM mp es >>= return . Bar)
 

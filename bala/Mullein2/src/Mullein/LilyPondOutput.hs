@@ -51,11 +51,16 @@ instance LyOutput Pitch where
   lyPitch = note
 
 
+instance LilyPondGlyph (Glyph DrumPitch (Maybe Duration)) where
+  lyGlyph = oGlyph
 
 
- 
--- Not so sure ...
--- might be better to return (Bar Doc)
+instance LyOutput DrumPitch where
+  type LyDur DrumPitch = Maybe Duration
+  lyNote (DrumPitch short _) od = text short <> optDuration od
+  lyPitch (DrumPitch short _) = text short
+
+
 
 type DOverlay   = Doc
 type DBar       = [DOverlay]
@@ -92,6 +97,9 @@ oGlyph Tie              = char '~'
 
 oGrace :: (LyOutput e, LyDur e ~ Maybe Duration) => GraceNote e (Maybe Duration) -> Doc
 oGrace (GraceNote p d) = lyNote p d
+
+
+
 
 --------------------------------------------------------------------------------
 -- post process

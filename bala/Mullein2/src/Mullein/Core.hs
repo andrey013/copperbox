@@ -17,30 +17,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Core 
-  ( 
-
-    Tied(..)
-
-  -- * Types
-
-  , MeterPattern
-  , meterPattern
-
-  , Glyph(..)
-  , StdGlyph
-  , GraceNote(..)
-
-  , Phrase
-  , Bar(..)
-  , PulseL
-  , Pulse(..)
-
-  , NoteAttribute(..)
-  , ScNote(..)
-  , Note(..)
-
-  ) where
+module Mullein.Core where
 
 
 import Mullein.Duration
@@ -55,9 +32,6 @@ import Data.Ratio
 
 
 
-
-class Tied e where
-  mkTie :: e
 
 
 --------------------------------------------------------------------------------
@@ -102,24 +76,36 @@ log2whole = (==0) . snd . pf . logBase 2 . fromIntegral where
 -- Representing scores 
 
 
--- Glyphs are parametric on duration and /note/ - a note may hold more 
--- info than just pitch (i.e. fingering, string number). Alternatively
--- it might something that is not really pitch such as a drum name for
--- LilyPond percussion.
+-- Glyphs are parametric on duration and /pitch/ - a pitch may 
+-- hold more info than just pitch (i.e. fingering, string number). 
+-- A pitch does not have to be the Pitch type in Mullein.Pitch 
+-- it might be e.g. LilyPond drum pitch which is really just an 
+-- enumeration of drum names.
 
 
-data Glyph note drn = Note   note drn
-                    | Rest   drn
-                    | Spacer drn
-                    | Chord  [note] drn
-                    | GraceNotes [GraceNote note drn]
-                    | Tie
+data Glyph pch drn = Note   pch drn
+                   | Rest   drn
+                   | Spacer drn
+                   | Chord  [pch] drn
+                   | GraceNotes [GraceNote pch drn]
+                   | Tie
   deriving (Eq,Show)
 
 type StdGlyph = Glyph Pitch Duration
 
 
-data GraceNote note drn = GraceNote note drn
+-- Drums
+
+data DrumPitch = DrumPitch { 
+      drum_long_name   :: String, 
+      drum_short_name  :: String 
+    }
+  deriving (Eq,Show)
+
+
+type DrumGlyph = Glyph DrumPitch Duration
+
+data GraceNote pch drn = GraceNote pch drn
   deriving (Eq,Show)
 
 type Phrase e = [Bar e]
@@ -175,8 +161,8 @@ data NoteAttribute = Fingering Int
 data ScNote = ScNote Pitch [NoteAttribute]
   deriving (Eq,Show)
 
-instance Tied (Glyph d n) where
-  mkTie = Tie
+
+
 
 class Note a where
   type Attr a :: * 

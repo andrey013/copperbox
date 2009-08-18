@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -12,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Named musical elements e.g. notes, keys...
+-- Named musical elements e.g. notes, rests, LilyPond drum pitches...
 --
 --------------------------------------------------------------------------------
 
@@ -62,6 +60,81 @@ module Mullein.NamedElements
   , c7, d7, e7, f7, g7, a7, b7
   , cs7, df7, ds7, ef7, fs7, gf7, gs7, af7, as7, bf7
 
+  -- * Drum pitches
+  -- $drumpitchdoc 
+  , acousticbassdrum
+  , bassdrum                        
+  , hisidestick
+  , sidestick
+  , losidestick
+  , acousticsnare
+  , snare                 
+  , handclap              
+  , electricsnare         
+  , lowfloortom           
+  , closedhihat           
+  , hihat                 
+  , highfloortom          
+  , pedalhihat            
+  , lowtom                
+  , openhihat             
+  , halfopenhihat         
+  , lowmidtom             
+  , himidtom              
+  , crashcymbala
+  , crashcymbal           
+  , hightom               
+  , ridecymbala           
+  , ridecymbal            
+  , chinesecymbal         
+  , ridebell
+  , tambourine
+  , splashcymbal
+  , cowbell               
+  , crashcymbalb
+  , vibraslap
+  , ridecymbalb
+  , mutehibongo           
+  , hibongo               
+  , openhibongo           
+  , mutelobongo           
+  , lobongo               
+  , openlobongo           
+  , mutehiconga           
+  , muteloconga           
+  , openhiconga           
+  , hiconga               
+  , openloconga
+  , loconga               
+  , hitimbale             
+  , lotimbale             
+  , hiagogo               
+  , loagogo               
+  , cabasa                
+  , maracas               
+  , shortwhistle          
+  , longwhistle           
+  , shortguiro            
+  , longguiro             
+  , guiro                 
+  , claves                
+  , hiwoodblock           
+  , lowoodblock           
+  , mutecuica             
+  , opencuica             
+  , mutetriangle          
+  , triangle              
+  , opentriangle          
+  , oneup                 
+  , twoup                 
+  , threeup               
+  , fourup                
+  , fiveup                
+  , onedown               
+  , twodown               
+  , threedown             
+  , fourdown              
+  , fivedown
 
  ) where
 
@@ -126,12 +199,12 @@ bs o dur = Note (Pitch B (Just Sharp) o) dur
 
 -- rests
 
-wnr :: Glyph Pitch Duration
-hnr :: Glyph Pitch Duration
-qnr :: Glyph Pitch Duration
-enr :: Glyph Pitch Duration
-snr :: Glyph Pitch Duration
-tnr :: Glyph Pitch Duration
+wnr :: Glyph pch Duration
+hnr :: Glyph pch Duration
+qnr :: Glyph pch Duration
+enr :: Glyph pch Duration
+snr :: Glyph pch Duration
+tnr :: Glyph pch Duration
 
 wnr = Rest wn
 hnr = Rest hn
@@ -140,10 +213,10 @@ enr = Rest en
 snr = Rest sn
 tnr = Rest tn
 
-dhnr :: Glyph Pitch Duration
-dqnr :: Glyph Pitch Duration
-denr :: Glyph Pitch Duration
-dsnr :: Glyph Pitch Duration
+dhnr :: Glyph pch Duration
+dqnr :: Glyph pch Duration
+denr :: Glyph pch Duration
+dsnr :: Glyph pch Duration
 
 dhnr = Rest dhn
 dqnr = Rest dqn
@@ -455,3 +528,157 @@ af7       = pchFlat A 7
 as7       = pchSharp A 7
 bf7       = pchFlat B 7
 
+
+--------------------------------------------------------------------------------
+-- Drum pitches
+-- $drumpitchdoc 
+-- LilyPond percussion pitches. 
+
+acousticbassdrum      :: DrumPitch
+bassdrum              :: DrumPitch                         
+hisidestick           :: DrumPitch
+sidestick             :: DrumPitch
+losidestick           :: DrumPitch
+acousticsnare         :: DrumPitch
+snare                 :: DrumPitch
+handclap              :: DrumPitch
+electricsnare         :: DrumPitch
+lowfloortom           :: DrumPitch
+closedhihat           :: DrumPitch
+hihat                 :: DrumPitch
+highfloortom          :: DrumPitch
+pedalhihat            :: DrumPitch
+lowtom                :: DrumPitch
+openhihat             :: DrumPitch
+halfopenhihat         :: DrumPitch
+lowmidtom             :: DrumPitch
+himidtom              :: DrumPitch
+crashcymbala          :: DrumPitch
+crashcymbal           :: DrumPitch
+hightom               :: DrumPitch
+ridecymbala           :: DrumPitch
+ridecymbal            :: DrumPitch
+chinesecymbal         :: DrumPitch
+ridebell              :: DrumPitch
+tambourine            :: DrumPitch
+splashcymbal          :: DrumPitch
+cowbell               :: DrumPitch
+crashcymbalb          :: DrumPitch
+vibraslap             :: DrumPitch
+ridecymbalb           :: DrumPitch
+mutehibongo           :: DrumPitch
+hibongo               :: DrumPitch
+openhibongo           :: DrumPitch
+mutelobongo           :: DrumPitch
+lobongo               :: DrumPitch
+openlobongo           :: DrumPitch
+mutehiconga           :: DrumPitch
+muteloconga           :: DrumPitch
+openhiconga           :: DrumPitch
+hiconga               :: DrumPitch
+openloconga           :: DrumPitch
+loconga               :: DrumPitch
+hitimbale             :: DrumPitch
+lotimbale             :: DrumPitch
+hiagogo               :: DrumPitch
+loagogo               :: DrumPitch
+cabasa                :: DrumPitch
+maracas               :: DrumPitch
+shortwhistle          :: DrumPitch
+longwhistle           :: DrumPitch
+shortguiro            :: DrumPitch
+longguiro             :: DrumPitch
+guiro                 :: DrumPitch
+claves                :: DrumPitch
+hiwoodblock           :: DrumPitch
+lowoodblock           :: DrumPitch
+mutecuica             :: DrumPitch
+opencuica             :: DrumPitch
+mutetriangle          :: DrumPitch
+triangle              :: DrumPitch
+opentriangle          :: DrumPitch
+oneup                 :: DrumPitch
+twoup                 :: DrumPitch
+threeup               :: DrumPitch
+fourup                :: DrumPitch
+fiveup                :: DrumPitch
+onedown               :: DrumPitch
+twodown               :: DrumPitch
+threedown             :: DrumPitch
+fourdown              :: DrumPitch
+fivedown              :: DrumPitch
+
+
+acousticbassdrum      = DrumPitch "acousticbassdrum"   "bda"
+bassdrum              = DrumPitch "bassdrum"           "bd"
+hisidestick           = DrumPitch "hisidestick"        "ssh"
+sidestick             = DrumPitch "sidestick"          "ss"
+losidestick           = DrumPitch "losidestick"        "ssl"
+acousticsnare         = DrumPitch "acousticsnare"      "sna"
+snare                 = DrumPitch "snare"              "sn"
+handclap              = DrumPitch "handclap"           "hc"
+electricsnare         = DrumPitch "electricsnare"      "sne"
+lowfloortom           = DrumPitch "lowfloortom"        "tomfl"
+closedhihat           = DrumPitch "closedhihat"        "hhc"
+hihat                 = DrumPitch "hihat"              "hh"
+highfloortom          = DrumPitch "highfloortom"       "tomfh"
+pedalhihat            = DrumPitch "pedalhihat"         "hhp"
+lowtom                = DrumPitch "lowtom"             "toml"
+openhihat             = DrumPitch "openhihat"          "hho"
+halfopenhihat         = DrumPitch "halfopenhihat"      "hhho"
+lowmidtom             = DrumPitch "lowmidtom"          "tomml"
+himidtom              = DrumPitch "himidtom"           "tommh"
+crashcymbala          = DrumPitch "crashcymbala"       "cymca"
+crashcymbal           = DrumPitch "crashcymbal"        "cymc"
+hightom               = DrumPitch "hightom"            "tomh"
+ridecymbala           = DrumPitch "ridecymbala"        "cymra"
+ridecymbal            = DrumPitch "ridecymbal"         "cymr"
+chinesecymbal         = DrumPitch "chinesecymbal"      "cymch"
+ridebell              = DrumPitch "ridebell"           "rb"
+tambourine            = DrumPitch "tambourine"         "tamb"
+splashcymbal          = DrumPitch "splashcymbal"       "cyms"
+cowbell               = DrumPitch "cowbell"            "cb"
+crashcymbalb          = DrumPitch "crashcymbalb"       "cymcb"
+vibraslap             = DrumPitch "vibraslap"          "vibs"
+ridecymbalb           = DrumPitch "ridecymbalb"        "cymrb"
+mutehibongo           = DrumPitch "mutehibongo"        "bohm"
+hibongo               = DrumPitch "hibongo"            "boh"
+openhibongo           = DrumPitch "openhibongo"        "boho"
+mutelobongo           = DrumPitch "mutelobongo"        "bolm"
+lobongo               = DrumPitch "lobongo"            "bol"
+openlobongo           = DrumPitch "openlobongo"        "bolo"
+mutehiconga           = DrumPitch "mutehiconga"        "cghm"
+muteloconga           = DrumPitch "muteloconga"        "cglm"
+openhiconga           = DrumPitch "openhiconga"        "cgho"
+hiconga               = DrumPitch "hiconga"            "cgh"
+openloconga           = DrumPitch "openloconga"        "cglo"
+loconga               = DrumPitch "loconga"            "cgl"
+hitimbale             = DrumPitch "hitimbale"          "timh"
+lotimbale             = DrumPitch "lotimbale"          "timl"
+hiagogo               = DrumPitch "hiagogo"            "agh"
+loagogo               = DrumPitch "loagogo"            "agl"
+cabasa                = DrumPitch "cabasa"             "cab"
+maracas               = DrumPitch "maracas"            "mar"
+shortwhistle          = DrumPitch "shortwhistle"       "whs"
+longwhistle           = DrumPitch "longwhistle"        "whl"
+shortguiro            = DrumPitch "shortguiro"         "guis"
+longguiro             = DrumPitch "longguiro"          "guil"
+guiro                 = DrumPitch "guiro"              "gui"
+claves                = DrumPitch "claves"             "cl"
+hiwoodblock           = DrumPitch "hiwoodblock"        "whi"
+lowoodblock           = DrumPitch "lowoodblock"        "wbl"
+mutecuica             = DrumPitch "mutecuica"          "cuim"
+opencuica             = DrumPitch "opencuica"          "cuio"
+mutetriangle          = DrumPitch "mutetriangle"       "trim"
+triangle              = DrumPitch "triangle"           "tri"
+opentriangle          = DrumPitch "opentriangle"       "trio"
+oneup                 = DrumPitch "oneup"              "ua"
+twoup                 = DrumPitch "twoup"              "ub"
+threeup               = DrumPitch "threeup"            "uc"
+fourup                = DrumPitch "fourup"             "ud"
+fiveup                = DrumPitch "fiveup"             "ue"
+onedown               = DrumPitch "onedown"            "da"
+twodown               = DrumPitch "twodown"            "db"
+threedown             = DrumPitch "threedown"          "dc"
+fourdown              = DrumPitch "fourdown"           "dd"
+fivedown              = DrumPitch "fivedown"           "de"
