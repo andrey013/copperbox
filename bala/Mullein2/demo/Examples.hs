@@ -6,6 +6,7 @@ import qualified Mullein.AbcOutput as ABC
 import Mullein.Bracket
 import Mullein.Core
 import Mullein.Duration
+import Mullein.Extended
 import Mullein.LilyPondOutput
 import Mullein.NamedElements
 import Mullein.Pitch
@@ -26,10 +27,10 @@ demo1 = simpleOutput $ oPhrase $ rewritePitch middle_c $ rewriteDuration xs
   where
     xs = phrase twoFourTime b6_bars1'4
 
-demo2 :: Doc
-demo2 = ABC.simpleOutput $ ABC.oPhrase 
-                         $ ABC.rewritePitch amaj
-                         $ ABC.rewriteDuration (1%16) xs 
+demo1a :: Doc
+demo1a = ABC.simpleOutput $ ABC.oPhrase 
+                          $ ABC.rewritePitch amaj
+                          $ ABC.rewriteDuration (1%16) xs 
   where
    xs   = phrase twoFourTime b6_bars1'4
    amaj = spellingMap 3
@@ -41,7 +42,7 @@ twoFourTime = meterPattern 2 4
 
 
 
-b6_bars1'4 :: [StdGlyph]
+b6_bars1'4 :: [PDGlyph]
 b6_bars1'4 =  
   [ a 4 sn, b 4 sn, cs 5 sn, cs 5 sn, cs 5 sn, a 4 sn, 
                cs 5 sn, cs 5 sn
@@ -59,8 +60,8 @@ b6_bars1'4 =
 -- Example 2
 -- LilyPond Percussion
 
-demo3 :: Doc
-demo3 = simpleOutput $ oPhrase $ rewriteDuration xs
+demo2 :: Doc
+demo2 = simpleOutput $ oPhrase $ rewriteDuration xs
   where
     xs = phrase fourFourTime $ drums1
 
@@ -75,4 +76,18 @@ drums1 :: [DrumGlyph]
 drums1 = [drum snare qn, qnr, drum snare qn, qnr]
 
 
+--------------------------------------------------------------------------------
+-- Example 3
+-- Fingering annotations
+
+
+demo3 :: Doc
+demo3 = simpleOutput $ oPhrase $ rewritePitch middle_c $ rewriteDuration xs
+  where
+    xs :: Phrase FingeredGlyph
+    xs = phrase fourFourTime $ two_chords
+
+
+two_chords :: [FingeredGlyph]
+two_chords = [ f 5 sn %% 2, a 5 sn %% 1, d 6 sn %% 3, g 6 sn %% 4]
 

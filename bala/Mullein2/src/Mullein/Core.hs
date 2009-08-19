@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -166,22 +167,11 @@ data Glyph pch drn = Note   pch drn
 data GraceNote pch drn = GraceNote pch drn
   deriving (Eq,Show)
 
-
-type StdGlyph = Glyph Pitch Duration
+-- (P)itch (D)uration glyph
+type PDGlyph = Glyph Pitch Duration
 
 
   
-
-
-
-data NoteAttribute = Fingering Int
-  deriving (Eq,Show)
-
-data ScNote = ScNote Pitch [NoteAttribute]
-  deriving (Eq,Show)
-
-
-
 instance HasDuration (Glyph pch) where 
   getDuration (Note _ d)     = d
   getDuration (Rest d)       = d
@@ -194,6 +184,19 @@ instance HasDuration (Glyph pch) where
 instance Spacer (Glyph pch Duration) where
   makeSpacer d     = Spacer d  
 
+
+class MakeNote e where
+  makeNote :: Pitch -> Duration -> e
+
+class MakeRest e where
+  makeRest :: Duration -> e 
+
+
+instance MakeNote PDGlyph where
+  makeNote pch drn = Note pch drn
+
+instance MakeRest PDGlyph where
+  makeRest drn = Rest drn
 
 
 

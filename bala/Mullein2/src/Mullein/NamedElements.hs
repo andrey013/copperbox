@@ -145,54 +145,51 @@ import Mullein.LilyPondOutput
 import Mullein.Pitch
 
 
-
-
-
 -- notes
-cf :: Octave -> Duration -> Glyph Pitch Duration
-c  :: Octave -> Duration -> Glyph Pitch Duration
-cs :: Octave -> Duration -> Glyph Pitch Duration
-df :: Octave -> Duration -> Glyph Pitch Duration
-d  :: Octave -> Duration -> Glyph Pitch Duration
-ds :: Octave -> Duration -> Glyph Pitch Duration
-ef :: Octave -> Duration -> Glyph Pitch Duration
-e  :: Octave -> Duration -> Glyph Pitch Duration
-es :: Octave -> Duration -> Glyph Pitch Duration
-ff :: Octave -> Duration -> Glyph Pitch Duration
-f  :: Octave -> Duration -> Glyph Pitch Duration
-fs :: Octave -> Duration -> Glyph Pitch Duration
-gf :: Octave -> Duration -> Glyph Pitch Duration
-g  :: Octave -> Duration -> Glyph Pitch Duration
-gs :: Octave -> Duration -> Glyph Pitch Duration
-af :: Octave -> Duration -> Glyph Pitch Duration
-a  :: Octave -> Duration -> Glyph Pitch Duration
-as :: Octave -> Duration -> Glyph Pitch Duration
-bf :: Octave -> Duration -> Glyph Pitch Duration
-b  :: Octave -> Duration -> Glyph Pitch Duration
-bs :: Octave -> Duration -> Glyph Pitch Duration
+cf :: MakeNote e => Octave -> Duration -> e
+c  :: MakeNote e => Octave -> Duration -> e
+cs :: MakeNote e => Octave -> Duration -> e
+df :: MakeNote e => Octave -> Duration -> e
+d  :: MakeNote e => Octave -> Duration -> e
+ds :: MakeNote e => Octave -> Duration -> e
+ef :: MakeNote e => Octave -> Duration -> e
+e  :: MakeNote e => Octave -> Duration -> e
+es :: MakeNote e => Octave -> Duration -> e
+ff :: MakeNote e => Octave -> Duration -> e
+f  :: MakeNote e => Octave -> Duration -> e
+fs :: MakeNote e => Octave -> Duration -> e
+gf :: MakeNote e => Octave -> Duration -> e
+g  :: MakeNote e => Octave -> Duration -> e
+gs :: MakeNote e => Octave -> Duration -> e
+af :: MakeNote e => Octave -> Duration -> e
+a  :: MakeNote e => Octave -> Duration -> e
+as :: MakeNote e => Octave -> Duration -> e
+bf :: MakeNote e => Octave -> Duration -> e
+b  :: MakeNote e => Octave -> Duration -> e
+bs :: MakeNote e => Octave -> Duration -> e
 
 
-cf o dur = Note (Pitch C (Just Flat) o) dur
-c  o dur = Note (Pitch C Nothing o) dur
-cs o dur = Note (Pitch C (Just Sharp) o) dur
-df o dur = Note (Pitch D (Just Flat) o) dur
-d  o dur = Note (Pitch D Nothing o) dur
-ds o dur = Note (Pitch D (Just Sharp) o) dur
-ef o dur = Note (Pitch E (Just Flat) o) dur
-e  o dur = Note (Pitch E Nothing o) dur
-es o dur = Note (Pitch E (Just Sharp) o) dur
-ff o dur = Note (Pitch F (Just Flat) o) dur
-f  o dur = Note (Pitch F Nothing o) dur
-fs o dur = Note (Pitch F (Just Sharp) o) dur
-gf o dur = Note (Pitch G (Just Flat) o) dur
-g  o dur = Note (Pitch G Nothing o) dur
-gs o dur = Note (Pitch G (Just Sharp) o) dur
-af o dur = Note (Pitch A (Just Flat) o) dur
-a  o dur = Note (Pitch A Nothing o) dur
-as o dur = Note (Pitch A (Just Sharp) o) dur
-bf o dur = Note (Pitch B (Just Flat) o) dur
-b  o dur = Note (Pitch B Nothing o) dur
-bs o dur = Note (Pitch B (Just Sharp) o) dur
+cf o dur = makeNote (Pitch C (Just Flat) o) dur
+c  o dur = makeNote (Pitch C Nothing o) dur
+cs o dur = makeNote (Pitch C (Just Sharp) o) dur
+df o dur = makeNote (Pitch D (Just Flat) o) dur
+d  o dur = makeNote (Pitch D Nothing o) dur
+ds o dur = makeNote (Pitch D (Just Sharp) o) dur
+ef o dur = makeNote (Pitch E (Just Flat) o) dur
+e  o dur = makeNote (Pitch E Nothing o) dur
+es o dur = makeNote (Pitch E (Just Sharp) o) dur
+ff o dur = makeNote (Pitch F (Just Flat) o) dur
+f  o dur = makeNote (Pitch F Nothing o) dur
+fs o dur = makeNote (Pitch F (Just Sharp) o) dur
+gf o dur = makeNote (Pitch G (Just Flat) o) dur
+g  o dur = makeNote (Pitch G Nothing o) dur
+gs o dur = makeNote (Pitch G (Just Sharp) o) dur
+af o dur = makeNote (Pitch A (Just Flat) o) dur
+a  o dur = makeNote (Pitch A Nothing o) dur
+as o dur = makeNote (Pitch A (Just Sharp) o) dur
+bf o dur = makeNote (Pitch B (Just Flat) o) dur
+b  o dur = makeNote (Pitch B Nothing o) dur
+bs o dur = makeNote (Pitch B (Just Sharp) o) dur
 
 
 
@@ -200,29 +197,29 @@ bs o dur = Note (Pitch B (Just Sharp) o) dur
 
 -- rests
 
-wnr :: Glyph pch Duration
-hnr :: Glyph pch Duration
-qnr :: Glyph pch Duration
-enr :: Glyph pch Duration
-snr :: Glyph pch Duration
-tnr :: Glyph pch Duration
+wnr :: MakeRest e => e
+hnr :: MakeRest e => e
+qnr :: MakeRest e => e
+enr :: MakeRest e => e
+snr :: MakeRest e => e
+tnr :: MakeRest e => e
 
-wnr = Rest wn
-hnr = Rest hn
-qnr = Rest qn
-enr = Rest en
-snr = Rest sn
-tnr = Rest tn
+wnr = makeRest wn
+hnr = makeRest hn
+qnr = makeRest qn
+enr = makeRest en
+snr = makeRest sn
+tnr = makeRest tn
 
-dhnr :: Glyph pch Duration
-dqnr :: Glyph pch Duration
-denr :: Glyph pch Duration
-dsnr :: Glyph pch Duration
+dhnr :: MakeRest e => e
+dqnr :: MakeRest e => e
+denr :: MakeRest e => e
+dsnr :: MakeRest e => e
 
-dhnr = Rest dhn
-dqnr = Rest dqn
-denr = Rest den
-dsnr = Rest dsn
+dhnr = makeRest dhn
+dqnr = makeRest dqn
+denr = makeRest den
+dsnr = makeRest dsn
 
 
 --------------------------------------------------------------------------------

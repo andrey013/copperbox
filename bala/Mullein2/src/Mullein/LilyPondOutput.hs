@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -47,6 +48,10 @@ data DrumPitch = DrumPitch {
 type DrumGlyph = Glyph DrumPitch Duration
 
 
+instance MakeRest DrumGlyph where
+  makeRest drn = Rest drn
+
+
 -- Spacer marks are /syntax/ are the glyph level.
 
 data SpacerMark drn = SpacerMark Direction Doc drn
@@ -90,12 +95,11 @@ omBeam (BeamedL es) = lyBeam $ map lyGlyph es
 
 oGlyph :: (pch -> Doc) -> Glyph pch (Maybe Duration) -> Doc
 oGlyph f (Note p d)       = f p <> optDuration d
-oGlyph _ (Rest d)         = char 'r' <> optDuration d
-oGlyph _ (Spacer d)       = char 's' <> optDuration d
-oGlyph f (Chord ps d)     = angles (hsep $ map f ps) <> optDuration d
-oGlyph f (GraceNotes [x]) = command "grace" <+> braces (oGrace f x) where
-oGlyph f (GraceNotes xs)  = command "grace" <+> braces (lyBeam $ map (oGrace f) xs)
-oGlyph _ Tie              = char '~'
+oGlyph _ (Rest d)         = rest d
+oGlyph _ (Spacer d)       = spacer d
+oGlyph f (Chord ps d)     = chordForm (map f ps) d
+oGlyph f (GraceNotes xs)  = graceForm (map (oGrace f) xs)
+oGlyph _ Tie              = tie
 
 oGrace :: (pch -> Doc) -> GraceNote pch (Maybe Duration) -> Doc
 oGrace f (GraceNote p d) = f p <> optDuration d
@@ -188,14 +192,12 @@ alterDuration d0 d | d0 == d && not (isDotted d) = Nothing
 
 -- Relative Pitch
 
-
-
 class ChangePitchLR t where
-  changePitchLR :: Pitch -> t Pitch drn -> (t Pitch drn, Pitch)
+  changePitchLR :: HasPitch pch => Pitch -> t pch drn -> (t pch drn, Pitch)
 
  
-rewritePitch :: ChangePitchLR t 
-             => Pitch -> Phrase (t Pitch drn) -> Phrase (t Pitch drn)
+rewritePitch :: (ChangePitchLR t, HasPitch pch) 
+             => Pitch -> Phrase (t pch drn) -> Phrase (t pch drn)
 rewritePitch rp bars = fst $ runState rp (mapM (T.mapM fn) bars)
   where
     fn gly = inside (changePitchLR `flip` gly)    
@@ -204,7 +206,8 @@ inside :: (s -> (a,s)) -> State s a
 inside f = get >>= \s -> let (a,s') = f s in set s' >> return a
 
 instance ChangePitchLR Glyph where
-  changePitchLR p0 (Note p d)       = (Note (alterPitch p0 p) d, p)
+  changePitchLR p0 (Note p d)       = (Note p' d, getPitch p)
+                                      where p' = alterPitch p0 p
   changePitchLR p0 (Rest d)         = (Rest d, p0)
   changePitchLR p0 (Spacer d)       = (Spacer d, p0)
   changePitchLR p0 (Chord ps d)     = (Chord ps' d,p') 
@@ -220,19 +223,27 @@ instance ChangePitchLR Glyph where
 -- pitch.
 
 
-changeGraceP :: Pitch -> [GraceNote Pitch d] -> ([GraceNote Pitch d],Pitch)
+changeGraceP :: HasPitch pch 
+             => Pitch -> [GraceNote pch d] -> ([GraceNote pch d],Pitch)
 changeGraceP p0 xs = anaMap fn p0 xs where
-  fn (GraceNote pch d) p = Just (GraceNote (alterPitch p pch) d,pch)
+  fn (GraceNote pch d) p = Just (GraceNote (alterPitch p pch) d, getPitch pch)
 
 
-changeChordP :: Pitch -> [Pitch] -> ([Pitch],Pitch)
+changeChordP :: HasPitch pch => Pitch -> [pch] -> ([pch],Pitch)
 changeChordP p0 xs = post $ anaMap fn p0 xs where
-  fn pch p = Just (alterPitch p pch,pch)
+  fn pch st = Just (alterPitch st pch, getPitch pch)
   post ([],_)       = ([],p0)
-  post (ps@(p:_),_) = (ps,p)
+  post (ps@(p:_),_) = (ps,getPitch p)
 
-alterPitch :: Pitch -> Pitch -> Pitch
-alterPitch p p'@(Pitch l oa _) = Pitch l oa (lyOctaveDist p p')
+alterPitch :: HasPitch pch => Pitch -> pch -> pch
+alterPitch p0 pch = setPitch p1 pch
+  where
+    p  = getPitch pch
+    p1 = modifyOctave p0 p 
+    
+
+modifyOctave :: Pitch -> Pitch -> Pitch
+modifyOctave p p'@(Pitch l oa _) = Pitch l oa (lyOctaveDist p p')
  
 
 
@@ -267,6 +278,22 @@ pitch (Pitch l a o) = pitchLabel l a <> ove o where
           | i < 0       = text $ replicate (abs i) ','
           | otherwise   = emptyDoc
 
+rest :: Maybe Duration -> Doc
+rest md = char 'r' <> optDuration md
+
+spacer :: Maybe Duration -> Doc
+spacer md = char 's' <> optDuration md
+
+chordForm :: [Doc] -> Maybe Duration -> Doc
+chordForm xs md = angles (hsep xs) <> optDuration md
+
+graceForm :: [Doc] -> Doc
+graceForm [x] = command "grace" <+> braces x where
+graceForm xs  = command "grace" <+> braces (lyBeam xs)
+
+
+tie :: Doc
+tie = char '~'
 
 pitchLabel :: PitchLetter -> Maybe Accidental -> Doc
 pitchLabel l a = char (toLowerLChar l) <> maybe emptyDoc accidental a

@@ -41,6 +41,17 @@ data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp
 
 data PitchLabel = PitchLabel PitchLetter (Maybe Accidental)
   deriving (Eq,Show)
+
+
+
+class HasPitch p where
+  getPitch :: p -> Pitch
+  setPitch :: Pitch -> p -> p
+
+instance HasPitch Pitch where
+  getPitch = id
+  setPitch = const
+
   
   
 instance Ord Pitch where
