@@ -25,7 +25,7 @@ demo2 = ABC.simpleOutput $ ABC.oPhrase
                          $ ABC.rewriteDuration (1%16) xs 
   where
     xs = phrase twoFourTime bars1'4
-    amaj = spellingMap 3
+    amaj = makeSpellingMap 3
 
 
 

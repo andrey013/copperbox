@@ -239,11 +239,11 @@ alterPitch :: HasPitch pch => Pitch -> pch -> pch
 alterPitch p0 pch = setPitch p1 pch
   where
     p  = getPitch pch
-    p1 = modifyOctave p0 p 
+    p1 = changeOctave p0 p 
     
 
-modifyOctave :: Pitch -> Pitch -> Pitch
-modifyOctave p p'@(Pitch l oa _) = Pitch l oa (lyOctaveDist p p')
+changeOctave :: Pitch -> Pitch -> Pitch
+changeOctave p p' = modifyOctave (lyOctaveDist p p') p'
  
 
 

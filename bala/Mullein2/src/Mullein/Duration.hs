@@ -1,4 +1,3 @@
-{-# LANGUAGE KindSignatures             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -17,7 +16,48 @@
 
 
 
-module Mullein.Duration where
+module Mullein.Duration 
+  (
+  -- * Duration type
+    Duration
+  
+  -- * Classes
+  , HasDuration(..)
+  , Spacer(..)
+  
+  -- * Operations
+  , toRat
+  , isZero
+  , isDotted
+  , dot
+  , components
+  , extent
+  
+  -- * LilyPond representation
+  , LyNumeral(..)
+  , lyRepresentation
+
+  -- * ABC representation
+  , AbcMultiplier(..)
+  , abcRepresentation
+  , abcMultiplier
+
+  -- * Named durations
+  , dZero
+  , longa
+  , breve
+  , wn
+  , hn
+  , qn
+  , en
+  , sn
+  , tn
+  , dhn
+  , dqn
+  , den
+  , dsn
+  
+  ) where
 
 
 import Data.Ratio
@@ -31,9 +71,21 @@ data Numeral = N128  | N64   | N32   | N16
 
 
 data Duration = DZero
-              | D1 { dNumeral :: Numeral, dotCount :: Int }
+              | D1 { _dNumeral :: Numeral, _dotCount :: Int }
   deriving Eq
 
+--------------------------------------------------------------------------------
+-- Classes
+
+
+class HasDuration t where
+  getDuration  :: t Duration -> Duration
+
+class Spacer a where
+  makeSpacer :: Duration -> a
+
+
+-- Std instances
 
 instance Ord Duration where
   compare d1 d2 = extent d1 `compare` extent d2
@@ -42,16 +94,7 @@ instance Ord Duration where
 instance Show Duration where
   show = ('#' :) . show . extent
 
-
-
-class HasDuration (t :: * -> *) where
-  getDuration  :: t Duration -> Duration
-
-
-
-
-class Spacer a where
-  makeSpacer :: Duration -> a
+--------------------------------------------------------------------------------
 
 toRat :: Numeral -> Rational
 toRat N128  = 1%128
@@ -65,19 +108,25 @@ toRat N1    = 1
 toRat Breve = 2
 toRat Longa = 4
 
+
 -- Zero durations do exist (the duration of a grace notes is officially
 -- zero), however we ought not to be able to construct them. 
 isZero :: Duration -> Bool
 isZero DZero = True
 isZero _     = False
 
-dZero :: Duration
-dZero = DZero
-
 
 isDotted :: Duration -> Bool
 isDotted DZero     = False 
 isDotted (D1 _ dc) = dc>0
+
+       
+-- | Dot a duration. 
+-- Note, if the duration represents a concatenation of two or more 
+-- primitive durations only the first will be dotted.
+dot :: Duration -> Duration
+dot DZero     = error "Duration.dot - cannot dot 0 duration"
+dot (D1 n dc) = D1 n (dc+1)
 
 
 components :: Duration -> (Rational,Int)
@@ -93,14 +142,8 @@ extent (D1 n dc) | dc <= 0   = toRat n
     step acc _ 0 = acc
     step acc h i = step (acc + h) (h/2) (i-1)
 
-
-       
--- | Dot a duration. 
--- Note, if the duration represents a concatenation of two or more 
--- primitive durations only the first will be dotted.
-dot :: Duration -> Duration
-dot DZero     = error "Duration.dot - cannot dot 0 duration"
-dot (D1 n dc) = D1 n (dc+1)
+--------------------------------------------------------------------------------
+-- LilyPond representation
 
 data LyNumeral = LyCmd String
                | LyNum Int
@@ -121,6 +164,9 @@ lyNumeral N1    = LyNum 1
 lyNumeral Breve = LyCmd "breve"
 lyNumeral Longa = LyCmd "longa"
 
+--------------------------------------------------------------------------------
+-- ABC representation
+
 data AbcMultiplier = IdenM | Mult Integer | Div Integer | Frac Integer Integer
   deriving (Eq,Show)
 
@@ -137,9 +183,16 @@ abcMultiplier unl nd = (fn . fork numerator denominator) $ (extent nd) / unl
     fn (nm,1)  = Mult nm
     fn (nm,dn) = Frac nm dn
 
+--------------------------------------------------------------------------------
+-- Named durations
+
+
+dZero :: Duration
+dZero = DZero
+
  
-mkDuration :: Numeral -> Duration
-mkDuration nm = D1 nm 0
+makeDuration :: Numeral -> Duration
+makeDuration nm = D1 nm 0
 
 
 longa :: Duration
@@ -152,14 +205,14 @@ sn    :: Duration
 tn    :: Duration
 
 
-longa = mkDuration Longa
-breve = mkDuration Breve
-wn    = mkDuration N1
-hn    = mkDuration N2
-qn    = mkDuration N4
-en    = mkDuration N8
-sn    = mkDuration N16
-tn    = mkDuration N32
+longa = makeDuration Longa
+breve = makeDuration Breve
+wn    = makeDuration N1
+hn    = makeDuration N2
+qn    = makeDuration N4
+en    = makeDuration N8
+sn    = makeDuration N16
+tn    = makeDuration N32
 
 dhn   :: Duration
 dqn   :: Duration

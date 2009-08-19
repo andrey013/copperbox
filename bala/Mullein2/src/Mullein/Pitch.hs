@@ -15,16 +15,41 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Pitch where
+module Mullein.Pitch 
+ ( 
+ -- * Pitch types 
+   Pitch(..)
+ , PitchLetter(..)
+ , Accidental(..)
+ , Octave
+ , PitchLabel(..)
+
+ -- * Classes
+ , HasPitch(..)
+
+ -- * Operations
+ , label
+ , octave
+ , makePitch
+ , root
+ , natural
+ , toUpperLChar
+ , toLowerLChar
+ , modifyOctave
+ , lyOctaveDist
+ , arithmeticDist
+
+ -- * Pitch spelling
+ , SpellingMap
+ , spell
+ , makeSpellingMap
+
+ ) where
 
 
 import Data.Char ( toLower )
 import qualified Data.Map as Map
 
-
-type Octave  = Int
-
-type SpellingMap = Map.Map PitchLabel PitchLabel
 
 
 -- | To print ABC,  Natural must be distinct from 
@@ -39,10 +64,13 @@ data PitchLetter = C | D | E | F | G | A | B
 data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp 
   deriving (Bounded,Enum,Eq,Ord,Show)
 
+type Octave  = Int
+
 data PitchLabel = PitchLabel PitchLetter (Maybe Accidental)
   deriving (Eq,Show)
 
-
+--------------------------------------------------------------------------------
+-- Classes
 
 class HasPitch p where
   getPitch :: p -> Pitch
@@ -52,84 +80,10 @@ instance HasPitch Pitch where
   getPitch = id
   setPitch = const
 
-  
-  
-instance Ord Pitch where
-  compare p1 p2 = semitones p1 `compare` semitones p2
-
-
-instance Enum PitchLabel where 
-  fromEnum (PitchLabel l a) = (fn l + semitones a) `mod` 12
-    where fn C = 0
-          fn D = 2
-          fn E = 4
-          fn F = 5
-          fn G = 7
-          fn A = 9
-          fn B = 11
 
   
-  toEnum 0    = PitchLabel C Nothing
-  toEnum 1    = PitchLabel C (Just Sharp)
-  toEnum 2    = PitchLabel D Nothing
-  toEnum 3    = PitchLabel D (Just Sharp)
-  toEnum 4    = PitchLabel E Nothing
-  toEnum 5    = PitchLabel F Nothing
-  toEnum 6    = PitchLabel F (Just Sharp)
-  toEnum 7    = PitchLabel G Nothing
-  toEnum 8    = PitchLabel G (Just Sharp)
-  toEnum 9    = PitchLabel A Nothing
-  toEnum 10   = PitchLabel A (Just Sharp)
-  toEnum 11   = PitchLabel B Nothing
-  toEnum i    = error $ "Pitch.toEnum " ++ show i ++ " outside bounds"
-  
-instance Bounded PitchLabel where
-  maxBound = toEnum 11
-  minBound = toEnum 0
-
-
--- | The Ord instance of a Pitch label is not numerically sound, as 
--- it does not respect the semitone count. 
--- It is defined only to allow PitchLabels to be stored in a finite map.
-instance Ord PitchLabel where
-  compare (PitchLabel l a) (PitchLabel l' a') = (l,a) `compare` (l',a')
-
-
--- No equivalent to HasDuration for Pitch as cardinality is
--- a problem.
--- For instance, chords have more than one pitch, rests have no pitch
-
-
-label :: Pitch -> PitchLabel
-label (Pitch l a _) = PitchLabel l a
-
-octave :: Pitch -> Octave
-octave (Pitch _ _ o) =o
-
-makePitch :: PitchLabel -> Octave -> Pitch
-makePitch (PitchLabel l a) o = Pitch l a o
-
-root :: PitchLabel -> PitchLabel
-root (PitchLabel l _) = PitchLabel l Nothing
-
-natural :: PitchLabel -> PitchLabel
-natural (PitchLabel l _) = PitchLabel l (Just Nat)
-
-{-
-
--- | Provide fmap-like access to the Pitch component embedded 
--- in some arbitrary structure.
-class PitchMap e where
-  pitchMap  :: (Pitch -> Pitch) -> e -> e 
-  pitchMapM :: Monad m => (Pitch -> m Pitch) -> e -> m e
-
-instance PitchMap Pitch where
-  pitchMap = ($)
-  pitchMapM mf p = mf p   
-
--}
-  
-class Semitones a where semitones :: a -> Int
+class Semitones a where 
+  semitones :: a -> Int
     
 instance Semitones Pitch where
   semitones (Pitch l a o) = semitones l + semitones a + (12 * o)
@@ -139,29 +93,6 @@ instance Semitones PitchLabel where
   
 instance Semitones a => Semitones (Maybe a) where
   semitones = maybe 0 semitones
-
-  
-toUpperLChar :: PitchLetter -> Char  
-toUpperLChar C         = 'C'  
-toUpperLChar D         = 'D'
-toUpperLChar E         = 'E'   
-toUpperLChar F         = 'F'
-toUpperLChar G         = 'G'   
-toUpperLChar A         = 'A'
-toUpperLChar B         = 'B'   
-
-toLowerLChar :: PitchLetter -> Char 
-toLowerLChar = toLower . toUpperLChar
-
-
-
--- LilyPond - middle c is c' (i.e. octave 1) 
--- Mullein  - middle c is c5 (i.e. octave 5)
-rescaleOctave :: Int -> Pitch -> Pitch
-rescaleOctave i (Pitch l a o)   = Pitch l a (o+i)
-
-  
-
 
 instance Semitones PitchLetter where    
   semitones C = 0
@@ -178,12 +109,80 @@ instance Semitones Accidental where
   semitones Flat         = (-1)
   semitones DoubleSharp  = 2
   semitones DoubleFlat   = (-2)
+  
+
+-- Standard instances
+  
+instance Ord Pitch where
+  compare p1 p2 = semitones p1 `compare` semitones p2
+
+-- | The Ord instance of a Pitch label is not numerically sound, as 
+-- it does not respect the semitone count. 
+-- It is defined only to allow PitchLabels to be stored in a finite map.
+instance Ord PitchLabel where
+  compare (PitchLabel l a) (PitchLabel l' a') = (l,a) `compare` (l',a')
+
+
+--------------------------------------------------------------------------------
+
+-- | Extract the @PitchLabel@ from a @Pitch@.
+label :: Pitch -> PitchLabel
+label (Pitch l a _) = PitchLabel l a
+
+
+-- | Extract the octave from a @Pitch@.
+octave :: Pitch -> Octave
+octave (Pitch _ _ o) = o
+
+-- | Make a @Pitch@ with a @PitchLabel@ and an @Octave@ designation.
+makePitch :: PitchLabel -> Octave -> Pitch
+makePitch (PitchLabel l a) o = Pitch l a o
+
+-- | Drop the accidental of a @PitchLabel@.
+root :: PitchLabel -> PitchLabel
+root (PitchLabel l _) = PitchLabel l Nothing
+
+-- | Change the accidental of a @PitchLabel@ making it a
+-- natural (when printed the natural sign will be appear 
+-- as a cautaionary accidental). 
+natural :: PitchLabel -> PitchLabel
+natural (PitchLabel l _) = PitchLabel l (Just Nat)
+
+
+-- | Print the PitchLetter as an upper case letter.
+toUpperLChar :: PitchLetter -> Char  
+toUpperLChar C         = 'C'  
+toUpperLChar D         = 'D'
+toUpperLChar E         = 'E'   
+toUpperLChar F         = 'F'
+toUpperLChar G         = 'G'   
+toUpperLChar A         = 'A'
+toUpperLChar B         = 'B'   
+
+-- | Print the PitchLetter as a lower case letter.
+toLowerLChar :: PitchLetter -> Char 
+toLowerLChar = toLower . toUpperLChar
+
+
+-- | Modifiy the octave deginator:
+-- @
+--   LilyPond - middle c is c' (i.e. octave 1) 
+--   Mullein  - middle c is c5 (i.e. octave 5)
+-- @
+modifyOctave :: Int -> Pitch -> Pitch
+modifyOctave i (Pitch l a _)   = Pitch l a i
+
+  
 
 
 
+-- | Calculate the octave distance for LilyPond. 
+-- The distance is modulo an interval of a fifth.
 -- See Lilypond (6.1.6 - relative octaves)
--- ceses ->- fisis
--- cbb   ->- f##   -- fourth 
+-- @
+--   ceses ->- fisis
+--   cbb   ->- f##   -- fourth 
+-- @
 lyOctaveDist :: Pitch -> Pitch -> Int
 lyOctaveDist p p' = sign . fn . (`divMod` 7) . abs $ arithmeticDist p p'
   where
@@ -228,18 +227,19 @@ arithmeticDist p p' = retro $ lexval p' - lexval p
 
 
 
+type SpellingMap = Map.Map PitchLabel PitchLabel
 
--- spell :: PitchMap e => SpellingMap -> e -> e
--- spell sm = pitchMap (spell' sm)
 
 spell :: SpellingMap -> Pitch -> Pitch
 spell sm p@(Pitch _ _ o) = makePitch (fn $ label p) o
   where
     fn lbl = maybe lbl id $ Map.lookup lbl sm
 
-
-spellingMap :: Int -> SpellingMap
-spellingMap n 
+-- | Make a spelling map with @n@ accidentals. If @n@ is positive
+-- the accidentals will be sharps, if @n@ s negative the 
+-- accidentals will be flats.
+makeSpellingMap :: Int -> SpellingMap
+makeSpellingMap n 
     | abs n > 7 = error "Pitch.spellingMap - more sharps/flats than notes."
     | n == 0    = Map.empty
     | n >  0    = build $ nsharps n

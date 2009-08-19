@@ -12,11 +12,19 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Extended music representation datatypes (e.g. Pitch with fingering)
+-- Extended music representation datatypes (e.g. pitch with fingering)
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Extended where
+module Mullein.Extended 
+  (
+  -- * Notes with fingering annotations
+    Finger
+  , FingeredPitch(..)
+  , FingeredGlyph
+  , (%%)
+
+  ) where
 
 import Mullein.Core
 import Mullein.Duration
