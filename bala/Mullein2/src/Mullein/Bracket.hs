@@ -21,7 +21,12 @@
 
 
 
-module Mullein.Bracket where
+module Mullein.Bracket 
+  ( 
+  -- * Partition into bars and pulsations
+    phrase
+
+  ) where
 
 import Mullein.Core
 import Mullein.Duration
@@ -57,18 +62,14 @@ instance (Monad m) => SnocWriterM (SnocWriterT e m) where
   type DiffElem (SnocWriterT e m) = e
   snoc e = SnocWriterT $ \dl -> return ((), dl `D.snoc` e)  
 
-{-
--- cannot make a WriterM instance as the parameter 
-instance Monad m => WriterM (SnocWriterT e m) (D.DList e) where
-  put e = SnocWriterT $ \dl -> return ((), dl `D.snoc` e)
--}               
-
 
 
 --------------------------------------------------------------------------------
 -- bar & beam
 
-
+-- | Partition into bars and pulsations. A pulsation is either 
+-- a single notes or a group of notes joined with a beam. 
+-- Pulsations illustrate the division of the bar into beats.
 phrase :: (HasDuration t) => MeterPattern -> [t Duration] -> Phrase (t Duration)
 phrase mp notes = runId $ 
     barM (sum mp) notes >>= mapM (\es -> beamM mp es >>= return . Bar)
@@ -148,11 +149,6 @@ toPulse [x] = Pulse x
 toPulse xs  = BeamedL xs
 
 
-
--- Maybe the top of the stack.
-top :: [a] -> Maybe a
-top (x:_) = Just x
-top []    = Nothing
 
 
 -- reduce the MeterPattern stack by the duration

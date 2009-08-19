@@ -30,7 +30,7 @@ demo2 = ABC.simpleOutput $ ABC.oPhrase
 
 
 twoFourTime :: MeterPattern
-twoFourTime = meterPattern 2 4
+twoFourTime = makeMeterPattern 2 4
 
 
 changeOctave :: Pitch -> Pitch

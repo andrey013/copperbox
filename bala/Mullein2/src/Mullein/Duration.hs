@@ -26,7 +26,6 @@ module Mullein.Duration
   , Spacer(..)
   
   -- * Operations
-  , toRat
   , isZero
   , isDotted
   , dot
@@ -96,18 +95,6 @@ instance Show Duration where
 
 --------------------------------------------------------------------------------
 
-toRat :: Numeral -> Rational
-toRat N128  = 1%128
-toRat N64   = 1%64
-toRat N32   = 1%32
-toRat N16   = 1%16
-toRat N8    = 1%8
-toRat N4    = 1%4
-toRat N2    = 1%2
-toRat N1    = 1
-toRat Breve = 2
-toRat Longa = 4
-
 
 -- Zero durations do exist (the duration of a grace notes is officially
 -- zero), however we ought not to be able to construct them. 
@@ -141,6 +128,21 @@ extent (D1 n dc) | dc <= 0   = toRat n
   where
     step acc _ 0 = acc
     step acc h i = step (acc + h) (h/2) (i-1)
+
+
+
+toRat :: Numeral -> Rational
+toRat N128  = 1%128
+toRat N64   = 1%64
+toRat N32   = 1%32
+toRat N16   = 1%16
+toRat N8    = 1%8
+toRat N4    = 1%4
+toRat N2    = 1%2
+toRat N1    = 1
+toRat Breve = 2
+toRat Longa = 4
+
 
 --------------------------------------------------------------------------------
 -- LilyPond representation

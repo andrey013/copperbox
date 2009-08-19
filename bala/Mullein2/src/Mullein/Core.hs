@@ -16,7 +16,32 @@
 --
 --------------------------------------------------------------------------------
 
-module Mullein.Core where
+module Mullein.Core 
+  (
+
+  -- * Meter patterns
+    MeterPattern
+  , makeMeterPattern
+
+  -- * Score representation
+  , Phrase
+  , Bar(..)
+  , Pulse(..)
+
+  , DPhrase
+  , DBar
+  , DOverlay
+
+  -- ** Glyphs
+  , Glyph(..)
+  , GraceNote(..)
+  , PDGlyph
+
+  -- * Classes
+  , MakeNote(..)
+  , MakeRest(..)
+   
+  ) where
 
 
 import Mullein.Duration
@@ -35,23 +60,20 @@ import Data.Ratio
 
 
 --------------------------------------------------------------------------------
--- Musical representation
+-- Meter patterns
 
 
+-- Implementation note - MeterPatterns must support arithmetic
+-- so are lists of Rationals rather that the lists of Duration.
 
--- MeterPatterns are not [Duration]...
+
 type MeterPattern = [Rational] 
+     
 
-
-
---------------------------------------------------------------------------------
--- Meter utils
-           
-
-meterPattern :: Int -> Int -> MeterPattern
-meterPattern n d 
-      | compoundMeter  n d  = replicate 3 $ (rational n d) / 3
-      | simpleMeter n d     = replicate n $ rational 1 d
+makeMeterPattern :: Int -> Int -> MeterPattern
+makeMeterPattern n d 
+      | compoundMeter  n d  = replicate 3 $ (makeRational n d) / 3
+      | simpleMeter n d     = replicate n $ makeRational 1 d
       | otherwise           = error $ err_msg
   where
     err_msg = "meterPattern - can't generate a meter pattern for a "
@@ -73,7 +95,7 @@ log2whole = (==0) . snd . pf . logBase 2 . fromIntegral where
 
  
 --------------------------------------------------------------------------------
--- Representing scores 
+-- Score representation
 
 -- Phrases/Bars/Pulsations
 
@@ -131,15 +153,16 @@ instance Traversable Pulse where
 -- after they have been beamed and rendered. This way we can have
 -- arbitrary functions for /mixing/ overlays e.g. prefixing each 
 -- overlay with stemUp or stemDown commands.
-
-type DOverlay   = Doc
-type DBar       = [DOverlay]
 type DPhrase    = [DBar]
 
+type DBar       = [DOverlay]
 
-----
+type DOverlay   = Doc
 
--- The glyph type is usefully comprehensive for representing 
+--------------------------------------------------------------------------------
+-- Glyphs
+
+-- | The glyph type is usefully comprehensive for representing 
 -- musical /atoms/ (notes and rests). Chords and graces notes
 -- turn out to be special cases that can't be represented as lists
 -- of notes - they need to signal special /directives/ score 
@@ -147,8 +170,8 @@ type DPhrase    = [DBar]
 -- for polyphonic music where independent musical lines are 
 -- printed on the same staff. Ties support the printing of notes 
 -- with elaborate duration.
-
--- Glyphs are parametric on duration and /pitch/ - a pitch may 
+--
+-- Glyphs are parametric on duration and pitch - a pitch may 
 -- hold more info than just pitch (i.e. fingering, string number). 
 -- A pitch does not have to be the Pitch type in Mullein.Pitch 
 -- it might be e.g. LilyPond drum pitch which is really just an 
@@ -167,10 +190,21 @@ data Glyph pch drn = Note   pch drn
 data GraceNote pch drn = GraceNote pch drn
   deriving (Eq,Show)
 
--- (P)itch (D)uration glyph
+-- | (P)itch (D)uration glyph - the standard note format.
 type PDGlyph = Glyph Pitch Duration
 
 
+
+--------------------------------------------------------------------------------
+-- Classess
+
+class MakeNote e where
+  makeNote :: Pitch -> Duration -> e
+
+class MakeRest e where
+  makeRest :: Duration -> e 
+
+-- instances
   
 instance HasDuration (Glyph pch) where 
   getDuration (Note _ d)     = d
@@ -184,12 +218,6 @@ instance HasDuration (Glyph pch) where
 instance Spacer (Glyph pch Duration) where
   makeSpacer d     = Spacer d  
 
-
-class MakeNote e where
-  makeNote :: Pitch -> Duration -> e
-
-class MakeRest e where
-  makeRest :: Duration -> e 
 
 
 instance MakeNote PDGlyph where

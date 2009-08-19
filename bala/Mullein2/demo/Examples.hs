@@ -38,7 +38,7 @@ demo1a = ABC.simpleOutput $ ABC.oPhrase
 
 
 twoFourTime :: MeterPattern
-twoFourTime = meterPattern 2 4
+twoFourTime = makeMeterPattern 2 4
 
 
 
@@ -67,7 +67,7 @@ demo2 = simpleOutput $ oPhrase $ rewriteDuration xs
 
 
 fourFourTime :: MeterPattern
-fourFourTime = meterPattern 4 4
+fourFourTime = makeMeterPattern 4 4
 
 drum :: DrumPitch -> Duration -> DrumGlyph
 drum p drn = Note p drn
