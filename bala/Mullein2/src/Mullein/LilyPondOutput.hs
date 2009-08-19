@@ -17,7 +17,41 @@
 --------------------------------------------------------------------------------
 
 
-module Mullein.LilyPondOutput  where
+module Mullein.LilyPondOutput 
+  (
+  -- * Glyph class
+    LilyPondGlyph(..)
+
+  -- * Render    
+  , renderPhrase
+
+  -- * Rewriting
+  , ChangeDurationLR(..)
+  , rewriteDuration
+  
+  , ChangePitchLR(..)
+  , rewritePitch
+
+  -- * Post-process and pretty print
+  , simpleOutput 
+
+  , note
+  , pitch
+  , rest
+  , spacer
+  , chordForm
+  , graceForm
+  , tie
+  , optDuration
+
+  , doubleBar
+  , singleBar 
+
+  -- * Alternative types
+  , DrumPitch(..)
+  , DrumGlyph
+   
+  ) where
 
 import Mullein.Core
 import Mullein.Duration
@@ -26,47 +60,18 @@ import Mullein.Utils
 
 import MonadLib.Monads
 
-import Text.PrettyPrint.Leijen hiding ( (<$>) )
+import Text.PrettyPrint.Leijen
 
 import Control.Monad
 import qualified Data.Traversable as T
 
 
 
---------------------------------------------------------------------------------
--- Alternative types
-
--- Drums
-
-data DrumPitch = DrumPitch { 
-      drum_long_name   :: String, 
-      drum_short_name  :: String 
-    }
-  deriving (Eq,Show)
-
-
-type DrumGlyph = Glyph DrumPitch Duration
-
-
-instance MakeRest DrumGlyph where
-  makeRest drn = Rest drn
-
-
--- Spacer marks are /syntax/ are the glyph level.
-
-data SpacerMark drn = SpacerMark Direction Doc drn
-  deriving (Show)
-
-data Direction = Above | Below | Center
-  deriving (Eq,Show)
-
 
 --------------------------------------------------------------------------------
+-- Classes
 
-
-
-
-
+-- | To be renderable as LilyPond, glyphs must implement this class.
 class LilyPondGlyph e where
   lyGlyph :: e -> Doc
 
@@ -78,8 +83,14 @@ instance LilyPondGlyph (Glyph DrumPitch (Maybe Duration)) where
   lyGlyph = oGlyph (\(DrumPitch short _) -> text short)
 
 
-oPhrase :: LilyPondGlyph e => Phrase e -> DPhrase
-oPhrase = map oBarOverlay
+--------------------------------------------------------------------------------
+-- Render
+
+-- | Render a phrase. This function returns a 'DPhrase' which is 
+-- a list of list of Doc. To generate output, it must be 
+-- post-processed. One such post-processor is 'simpleOutput'...
+renderPhrase :: LilyPondGlyph e => Phrase e -> DPhrase
+renderPhrase = map oBarOverlay
 
 
 oBarOverlay :: LilyPondGlyph e => Bar e -> DBar
@@ -105,36 +116,6 @@ oGrace :: (pch -> Doc) -> GraceNote pch (Maybe Duration) -> Doc
 oGrace f (GraceNote p d) = f p <> optDuration d
 
 
-
-
---------------------------------------------------------------------------------
--- post process
-
--- Note LilyPond drops the printed repeat start if the repeat is the first
--- element (so we don't have to).
-
-
-
-lydocRepeat :: Doc
-lydocRepeat = command "repeat" <+> text "volta 2" <+> lbrace
-
-altStart :: Doc
-altStart = space <> rbrace `nextLine` command "alternative" <+> lbrace 
-                           `nextLine` lbrace
-
-altNext :: Doc
-altNext = space <> rbrace `nextLine` lbrace
-
-doubleBar :: Doc 
-doubleBar = command "bar" <+> dquotes (text "||")
-
-singleBar :: Doc
-singleBar = text "|"
-
-
-endBraces :: Int -> Doc
-endBraces i | i <=0     = emptyDoc
-            | otherwise = indent ((i-2)*2) rbrace `nextLine` endBraces (i-1)
 
 
 --------------------------------------------------------------------------------
@@ -251,6 +232,8 @@ changeOctave p p' = modifyOctave (lyOctaveDist p p') p'
 --------------------------------------------------------------------------------
 -- helpers
 
+
+
 simpleOutput :: DPhrase -> Doc
 simpleOutput = vsep . map ((<+> singleBar) . simpleOverlay)
 
@@ -263,11 +246,6 @@ simpleOverlay xs  = overlay xs
 overlay :: [Doc] -> Doc
 overlay = dblangles . vsep . punctuate (text " \\\\") . map spacedBraces
 
-
-direction :: Direction -> Doc 
-direction Above  = char '^' 
-direction Below  = char '_'
-direction Center = char '-'
 
 note :: Pitch -> Maybe Duration -> Doc
 note p md = pitch p <> optDuration md
@@ -329,9 +307,81 @@ lyBeam []     = emptyDoc
 command :: String -> Doc
 command = (char '\\' <>) . text 
 
+{-
+
+-- TODO - Will it be better to have a separate module for LilyPond
+-- pretty printers?
+
+
 comment :: String -> Doc
 comment s = text "%{" <+> string s  <+> text "%}"
 
+direction :: Direction -> Doc 
+direction Above  = char '^' 
+direction Below  = char '_'
+direction Center = char '-'
+
+
+-- Note LilyPond drops the printed repeat start if the repeat is the first
+-- element (so we don't have to).
+
+
+lydocRepeat :: Doc
+lydocRepeat = command "repeat" <+> text "volta 2" <+> lbrace
+
+altStart :: Doc
+altStart = space <> rbrace `nextLine` command "alternative" <+> lbrace 
+                           `nextLine` lbrace
+
+altNext :: Doc
+altNext = space <> rbrace `nextLine` lbrace
+-}
+
+doubleBar :: Doc 
+doubleBar = command "bar" <+> dquotes (text "||")
+
+singleBar :: Doc
+singleBar = text "|"
+
+
+{-
+
+endBraces :: Int -> Doc
+endBraces i | i <=0     = emptyDoc
+            | otherwise = indent ((i-2)*2) rbrace `nextLine` endBraces (i-1)
+
+-}
 
 
 
+--------------------------------------------------------------------------------
+-- Alternative types 
+
+-- Maybe these should be in Mullein.Extended ?
+
+-- Drums
+
+data DrumPitch = DrumPitch { 
+      drum_long_name   :: String, 
+      drum_short_name  :: String 
+    }
+  deriving (Eq,Show)
+
+
+type DrumGlyph = Glyph DrumPitch Duration
+
+
+instance MakeRest DrumGlyph where
+  makeRest drn = Rest drn
+
+{-
+
+-- Spacer marks are /syntax/ are the glyph level.
+
+data SpacerMark drn = SpacerMark Direction Doc drn
+  deriving (Show)
+
+data Direction = Above | Below | Center
+  deriving (Eq,Show)
+
+-}

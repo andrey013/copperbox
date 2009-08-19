@@ -16,22 +16,64 @@
 --------------------------------------------------------------------------------
 
 
-module Mullein.AbcOutput where
+module Mullein.AbcOutput 
+  (
+  -- * Glyph class
+    AbcGlyph(..)
+
+  -- * Render    
+  , renderPhrase
+
+  -- * Rewriting
+  , ChangeDurationAbc(..)
+  , rewriteDuration
+  
+  , ChangePitchAbc(..)
+  , rewritePitch
+
+  -- * Post-process and pretty print
+  , simpleOutput 
+
+  ) where
 
 import Mullein.Core
 import Mullein.Duration
 import Mullein.Pitch hiding ( octave )
 
-import Text.PrettyPrint.Leijen hiding ( (<$>) )
+import Text.PrettyPrint.Leijen
 
 import Data.Ratio
 
+
+--------------------------------------------------------------------------------
+-- Classes
+
+-- | To be renderable as ABC, glyphs must implement this class.
 class AbcGlyph e where
   abcGlyph :: e -> Doc
 
 
-oPhrase :: AbcGlyph e => Phrase e -> DPhrase
-oPhrase = map oBarOverlay
+
+instance AbcGlyph (Glyph Pitch AbcMultiplier) where
+  abcGlyph (Note p dm)      = note p dm
+  abcGlyph (Rest dm)        = rest dm
+  abcGlyph (Spacer dm)      = spacer dm
+  abcGlyph (Chord ps dm)    = chord $ map (note `flip` dm) ps 
+  abcGlyph (GraceNotes xs)  = graceNotes $ map abcGrace xs
+  abcGlyph Tie              = tie
+
+abcGrace :: GraceNote Pitch AbcMultiplier -> Doc
+abcGrace (GraceNote p dm) = note p dm
+
+
+--------------------------------------------------------------------------------
+
+
+-- | Render a phrase. This function returns a 'DPhrase' which is 
+-- a list of list of Doc. To generate output, it must be 
+-- post-processed. One such post-processor is 'simpleOutput'...
+renderPhrase :: AbcGlyph e => Phrase e -> DPhrase
+renderPhrase = map oBarOverlay
 
 oBarOverlay :: AbcGlyph e => Bar e -> DBar
 oBarOverlay (Bar xs)       = [hsep $ map omBeam xs]
@@ -42,18 +84,6 @@ omBeam (Pulse e)    = abcGlyph e
 omBeam (BeamedL es) = hcat $ map abcGlyph es
 
 
-
-
-instance AbcGlyph (Glyph Pitch AbcMultiplier) where
-  abcGlyph (Note p dm)      = note p dm
-  abcGlyph (Rest dm)        = rest dm
-  abcGlyph (Spacer dm)      = spacer dm
-  abcGlyph (Chord ps dm)    = chord $ map (note `flip` dm) ps 
-  abcGlyph (GraceNotes xs)  = graceNotes $ map abcGlyph xs
-  abcGlyph Tie              = tie
-
-instance AbcGlyph (GraceNote Pitch AbcMultiplier) where
-  abcGlyph (GraceNote p dm) = note p dm
 
 --------------------------------------------------------------------------------
 -- rewriting
@@ -112,11 +142,6 @@ instance ChangePitchAbc GraceNote where
 
 
 --------------------------------------------------------------------------------
-
-field :: Char -> Doc -> Doc
-field ch d = char ch <> colon <> d
-
-
 
 simpleOutput :: DPhrase -> Doc
 simpleOutput = vsep . map ((<+> singleBar) . overlay)
@@ -183,6 +208,12 @@ multiplier (Mult n)   = integer n
 multiplier (Div n)    = char '/' <> integer n
 multiplier (Frac n d) = integer n <> char '/' <> integer d
 
+{-
+
+field :: Char -> Doc -> Doc
+field ch d = char ch <> colon <> d
+
+-}
 
 
 

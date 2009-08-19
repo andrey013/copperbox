@@ -174,7 +174,7 @@ type DOverlay   = Doc
 -- Glyphs are parametric on duration and pitch - a pitch may 
 -- hold more info than just pitch (i.e. fingering, string number). 
 -- A pitch does not have to be the Pitch type in Mullein.Pitch 
--- it might be e.g. LilyPond drum pitch which is really just an 
+-- it might be e.g. a LilyPond drum pitch which is really just an 
 -- enumeration of drum names.
 
 

@@ -25,6 +25,7 @@ module Mullein.Bracket
   ( 
   -- * Partition into bars and pulsations
     phrase
+  , freePhrase
 
   ) where
 
@@ -36,6 +37,7 @@ import MonadLib.Monads
 import qualified Data.DList as D
 
 import Data.Ratio
+
 
 newtype SnocWriterT e m a = SnocWriterT { 
           getSnocWriterT :: D.DList e -> m (a, D.DList e) }
@@ -70,9 +72,21 @@ instance (Monad m) => SnocWriterM (SnocWriterT e m) where
 -- | Partition into bars and pulsations. A pulsation is either 
 -- a single notes or a group of notes joined with a beam. 
 -- Pulsations illustrate the division of the bar into beats.
-phrase :: (HasDuration t) => MeterPattern -> [t Duration] -> Phrase (t Duration)
+-- The length of the bars will be the sum of the meter pattern.
+phrase :: HasDuration t
+       => MeterPattern -> [t Duration] -> Phrase (t Duration)
 phrase mp notes = runId $ 
-    barM (sum mp) notes >>= mapM (\es -> beamM mp es >>= return . Bar)
+  barM (sum mp) notes >>= mapM (\es -> beamM mp es >>= return . Bar)
+
+-- | Partition into pulsations and return one long bar. Use this 
+-- function for free metered music, the MeterPattern should be
+-- infinite.
+freePhrase :: HasDuration t
+       => MeterPattern -> [t Duration] -> Phrase (t Duration)
+freePhrase mp notes = runId $ do 
+  xs <- beamM mp notes
+  return $ [Bar xs]
+
 
 --------------------------------------------------------------------------------
 -- bar

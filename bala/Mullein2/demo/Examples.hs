@@ -23,12 +23,12 @@ import Data.Ratio
 
 
 demo1 :: Doc
-demo1 = simpleOutput $ oPhrase $ rewritePitch middle_c $ rewriteDuration xs
+demo1 = simpleOutput $ renderPhrase $ rewritePitch middle_c $ rewriteDuration xs
   where
     xs = phrase twoFourTime b6_bars1'4
 
 demo1a :: Doc
-demo1a = ABC.simpleOutput $ ABC.oPhrase 
+demo1a = ABC.simpleOutput $ ABC.renderPhrase 
                           $ ABC.rewritePitch amaj
                           $ ABC.rewriteDuration (1%16) xs 
   where
@@ -61,7 +61,7 @@ b6_bars1'4 =
 -- LilyPond Percussion
 
 demo2 :: Doc
-demo2 = simpleOutput $ oPhrase $ rewriteDuration xs
+demo2 = simpleOutput $ renderPhrase $ rewriteDuration xs
   where
     xs = phrase fourFourTime $ drums1
 
@@ -82,7 +82,7 @@ drums1 = [drum snare qn, qnr, drum snare qn, qnr]
 
 
 demo3 :: Doc
-demo3 = simpleOutput $ oPhrase $ rewritePitch middle_c $ rewriteDuration xs
+demo3 = simpleOutput $ renderPhrase $ rewritePitch middle_c $ rewriteDuration xs
   where
     xs :: Phrase FingeredGlyph
     xs = phrase fourFourTime $ two_chords

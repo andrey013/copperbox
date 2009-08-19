@@ -16,11 +16,11 @@ import Text.PrettyPrint.Leijen
 import Data.Ratio
 
 
-demo1 = simpleOutput $ oPhrase $ rewritePitch middle_c $ rewriteDuration xs
+demo1 = simpleOutput $ renderPhrase $ rewritePitch middle_c $ rewriteDuration xs
   where
     xs = phrase twoFourTime $ bars1'4
 
-demo2 = ABC.simpleOutput $ ABC.oPhrase 
+demo2 = ABC.simpleOutput $ ABC.renderPhrase 
                          $ ABC.rewritePitch amaj 
                          $ ABC.rewriteDuration (1%16) xs 
   where
