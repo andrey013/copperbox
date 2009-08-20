@@ -33,7 +33,7 @@ module Mullein.Utils
 
   , prod
 
-  -- extra pretty printers
+  -- * Extra pretty printers
   , doclines
   , dblangles
   , nextLine
@@ -41,7 +41,7 @@ module Mullein.Utils
   , doubleQuote
   , renderDocEighty
   , emptyDoc
-  , spacedBraces
+  , spaceBraces
 
   ) where
 
@@ -134,5 +134,5 @@ renderDocEighty = (displayS `flip` []) . renderPretty 0.8 80
 emptyDoc :: Doc
 emptyDoc = PP.empty
 
-spacedBraces :: Doc -> Doc
-spacedBraces = enclose (text "{ ") (text " }")
+spaceBraces :: Doc -> Doc
+spaceBraces = enclose (text "{ ") (text " }")

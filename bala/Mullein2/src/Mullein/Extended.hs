@@ -82,13 +82,13 @@ instance LilyPondGlyph (Glyph FingeredPitch (Maybe Duration)) where
 
 pitchDurationFinger :: FingeredPitch -> Maybe Duration -> Doc
 pitchDurationFinger (FingeredPitch p mi) md = 
-  pitch p <> optDuration md <> optFingering mi
+  pitch p <> maybe empty duration md <> maybe empty fingering mi
 
 pitchFinger :: FingeredPitch -> Doc
-pitchFinger (FingeredPitch p mi) = pitch p <> optFingering mi
+pitchFinger (FingeredPitch p mi) = pitch p <> maybe empty fingering mi
 
-optFingering :: Maybe Finger -> Doc
-optFingering = maybe empty (\i -> char '-' <> int i) 
+fingering :: Finger -> Doc
+fingering i = char '-' <> int i
 
 
 

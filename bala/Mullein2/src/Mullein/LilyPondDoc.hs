@@ -17,22 +17,75 @@
 
 module Mullein.LilyPondDoc
   (
+  -- * Printing glyphs
     note
   , pitch
   , pitchLabel
-  , optDuration
-  , overlay
+  , duration
   , rest
   , spacer
+  , tie
+
   , chordForm
   , graceForm
-  , tie
-  , beam
-  , doubleBar
-  , singleBar
+  , beamForm
+
+  -- * LilyPond literals and syntax
+  -- *** Commands and comments
   , command
   , comment
+
+  -- *** Bar lines
+  , doubleBar
+  , singleBar
+
+  -- *** Stems
+  , stemUp
+  , stemDown
+  , stemNeutral
+
+  -- *** Clefs
+  , clef
+
+  -- *** Unmetered music
+  , cadenzaOn
+  , cadenzaOff
+
+  -- *** Key signature
+  , key
+
+  -- *** Score structure
+  , nestBraces
+  , overlay
+  , score
+  , context
+  , new
+  , newStaff
+  , markup
+  , book
+  , bookpart
+  , version
+  , layout
+  , layoutExpr
   , relative
+
+  -- *** Titles
+  , header
+  , headerElement
+  , dedication
+  , title
+  , subtitle
+  , instrument
+  , composer
+  , copyright
+  , tagline
+
+  -- *** Files and variables
+  , include
+  , variable 
+  , midi
+  , midiExpr
+
   ) where
 
 
@@ -40,24 +93,32 @@ import Mullein.Duration
 import Mullein.Pitch
 import Mullein.Utils
 
-
 import Text.PrettyPrint.Leijen
 
+import Data.Char ( isAlpha )
 
 
+
+--------------------------------------------------------------------------------
+-- Printing glyphs
+
+-- | Print a note, the duration is a Maybe value. Nothing 
+-- that the note has the same duration as the previous glyph.
 note :: Pitch -> Maybe Duration -> Doc
-note p md = pitch p <> optDuration md
+note p md = pitch p <> maybe empty duration md
 
+-- | Print a Pitch.
 pitch :: Pitch -> Doc 
-pitch (Pitch l a o) = pitchLabel l a <> ove o where
+pitch pch@(Pitch _ _ o) = pitchLabel (label pch) <> ove o where
     ove i | i > 0       = text $ replicate i       '\''
           | i < 0       = text $ replicate (abs i) ','
           | otherwise   = empty
 
 
-
-pitchLabel :: PitchLetter -> Maybe Accidental -> Doc
-pitchLabel l a = char (toLowerLChar l) <> maybe empty accidental a
+-- | Print a 'PitchLabel'.
+pitchLabel :: PitchLabel -> Doc
+pitchLabel (PitchLabel l ma) = 
+    char (toLowerLChar l) <> maybe empty accidental ma
   where 
     accidental :: Accidental -> Doc
     accidental Nat            = text "!"    -- check correctness
@@ -66,75 +127,67 @@ pitchLabel l a = char (toLowerLChar l) <> maybe empty accidental a
     accidental DoubleSharp    = text "isis"
     accidental DoubleFlat     = text "eses"
 
+-- | Print a Duration.
+duration :: Duration -> Doc
+duration = maybe empty df . lyRepresentation
+  where
+    df (LyCmd ss,dc) = dots dc $ command ss 
+    df (LyNum i,dc)  = dots dc $ int i
 
-optDuration :: Maybe Duration -> Doc
-optDuration Nothing  = empty
-optDuration (Just d) = maybe empty df $ lyRepresentation d where
-  df (LyCmd ss,dc) = dots dc $ command ss 
-  df (LyNum i,dc)  = dots dc $ int i
-
-
-dots :: Int -> (Doc -> Doc)
-dots i | i > 0     = (<> text (replicate i '.'))
-       | otherwise = id
-
+    dots :: Int -> (Doc -> Doc)
+    dots i | i > 0     = (<> text (replicate i '.'))
+           | otherwise = id
 
 
-overlay :: [Doc] -> Doc
-overlay = dblangles . vsep . punctuate (text " \\\\") . map spacedBraces
 
-
+-- | Print a rest, duration is a Maybe value - Nothing indicates
+-- that the rest has the same duration as the previous glyph.  
 rest :: Maybe Duration -> Doc
-rest md = char 'r' <> optDuration md
+rest md = char 'r' <> maybe empty duration md
 
+
+-- | Print a invisible rest, commonly used to align overlayed 
+-- bars. Duration is a Maybe value - Nothing indicates
+-- that the spacer has the same duration as the previous glyph.  
 spacer :: Maybe Duration -> Doc
-spacer md = char 's' <> optDuration md
+spacer md = char 's' <> maybe empty duration md
 
-chordForm :: [Doc] -> Maybe Duration -> Doc
-chordForm xs md = angles (hsep xs) <> optDuration md
-
-graceForm :: [Doc] -> Doc
-graceForm [x] = command "grace" <+> braces x where
-graceForm xs  = command "grace" <+> braces (beam xs)
-
-
+-- | Print a tie.
 tie :: Doc
 tie = char '~'
 
+
+-- | Chords - notes printed inside angle brackets, followed by 
+-- duration, e.g.:
+-- @ 
+--  \<c e g\>4
+-- @ 
+chordForm :: [Doc] -> Maybe Duration -> Doc
+chordForm xs md = angles (hsep xs) <> maybe empty duration md
+
+
+-- | Grace notes - @\\grace@ command then expression inside braces,
+-- e.g:
+-- @ 
+--  \\grace { f32[ e] }
+-- @ 
+graceForm :: [Doc] -> Doc
+graceForm [x] = command "grace" <+> braces x where
+graceForm xs  = command "grace" <+> braces (beamForm xs)
+
   
 -- | Beams - first element printed outside the square brackets, e.g.:
--- @ c [e g] @
---  
-beam :: [Doc] -> Doc
-beam (x:xs) = x <> char '[' <+> hsep xs <> char ']'
-beam []     = emptyDoc
-
-
-doubleBar :: Doc 
-doubleBar = command "bar" <+> dquotes (text "||")
-
-singleBar :: Doc
-singleBar = text "|"
-
-
-command :: String -> Doc
-command = (char '\\' <>) . text 
-
-
-comment :: String -> Doc
-comment s = text "%{" <+> string s  <+> text "%}"
+-- @ 
+--  c16 [e g c]
+-- @ 
+beamForm :: [Doc] -> Doc
+beamForm (x:xs) = x <> char '[' <+> hsep xs <> char ']'
+beamForm []     = emptyDoc
 
 
 
-relative :: Pitch -> Doc -> Doc 
-relative p expr = command "relative" <+> pitch p' <+> nestBraces expr
-  where
-    p' = modifyOctave ((octave p) - 4) p
 
 
-
-nestBraces :: Doc -> Doc
-nestBraces d = lbrace <$> indent 2 d <$> rbrace 
 
 
 {-
@@ -167,5 +220,214 @@ endBraces i | i <=0     = emptyDoc
 
 -}
 
+--------------------------------------------------------------------------------
+-- Lilypond literals ans syntax
+
+
+-- *** Commands and comments
+
+-- | Print a some command, commands are prefixed with a slash, 
+-- e.g.: @\\voiceOne@, @\\unfoldRepeats@.
+command :: String -> Doc
+command = (char '\\' <>) . text 
+
+-- | Print a comment, comments can be multi-line.
+comment :: String -> Doc
+comment s = text "%{" <+> string s  <+> text "%}"
+
+
+-- *** Bar lines
+
+-- | Print a double bar line @||@.
+doubleBar :: Doc 
+doubleBar = command "bar" <+> dquotes (text "||")
+
+-- | Print a single bar line @|@.
+singleBar :: Doc
+singleBar = text "|"
+
+
+-- *** stems
+
+-- | @\\stemUp@.
+stemUp                  :: Doc
+stemUp                  = command "stemUp"  
+
+-- | @\\stemDown@.
+stemDown                :: Doc
+stemDown                = command "stemDown"    
+
+-- | @\\stemNeutral@.
+stemNeutral             :: Doc
+stemNeutral             = command "stemNeutral"  
+
+
+--------------------------------------------------------------------------------
+-- *** Clef
+
+-- | @\\clef ...@ - typical values @treble@, @alto@, @bass@, @tenor@, 
+-- @percussion@, @tabClef@.
+clef :: String -> Doc
+clef str = command "clef" <+> text str
+
+--------------------------------------------------------------------------------
+-- *** Unmetered music
+
+-- | @\\cadenzaOn@.
+cadenzaOn     :: Doc
+cadenzaOn     = command "cadenzaOn"
+
+-- | @\\cadenzaOff@.
+cadenzaOff    :: Doc
+cadenzaOff    = command "cadenzaOff"
+
+--------------------------------------------------------------------------------
+-- *** Key signature
+
+-- | @\\key ... ... @ - key pitch mode. Typical values of mode are
+-- @major@, @minor@, and the church modes @dorian@, @locrian@, etc.
+key :: PitchLabel -> String -> Doc
+key lbl mode = command "key" <+> pitchLabel lbl <+> command mode
+
+
+
+--------------------------------------------------------------------------------
+-- *** Score structure
+
+-- | Enclose expression within braces @{ ... }@. The open brace
+-- is printed on the current line, then a line break, then the  
+-- expression is printed with indent level two. The closing brace
+-- is printed on a new line.
+nestBraces :: Doc -> Doc
+nestBraces e = lbrace <$> indent 2 e <$> rbrace 
+
+-- | @\<\< ... \\\\ ... \>\>@ - print simultaneous expressions.
+overlay :: [Doc] -> Doc
+overlay = dblangles . vsep . punctuate (text " \\\\") . map spaceBraces
+
+
+-- | @\\score {\\n ...\\n }@.
+score                 :: Doc -> Doc
+score e               = command "score" <+> nestBraces e
+
+-- | @\\context {\\n ...\\n }@.
+context               :: Doc -> Doc
+context e            = command "context" <+> nestBraces e
+
+-- | @\\new ... { ... }@ - e.g. @Staff@, @Voice@ then expression.
+new                   :: String -> Doc -> Doc
+new ss e              = command "new" <+> text ss <+> spaceBraces e
+
+
+-- | @\\new Staff { ... }@.
+newStaff              :: Doc -> Doc
+newStaff              = new "Staff" 
+
+
+-- | @\\markup { ... }@.
+markup                :: Doc -> Doc
+markup e              = command "score" <+> spaceBraces e
+
+
+-- | @\\book {\\n ...\\n }@.
+book                  :: Doc -> Doc
+book e                = command "book" <+> nestBraces e
+
+
+-- | @\\bookpart {\\n ...\\n }@.
+bookpart              :: Doc -> Doc
+bookpart e            = command "bookpart" <+> nestBraces e
+
+
+-- | @\\version { ... }@.
+version               :: String -> Doc
+version ss            = command "version" <+> dquotes (text ss)
+
+
+-- | @\\layout { }@.
+layout                :: Doc
+layout                = command "layout" <+> braces space
+
+-- | @\\layout {\\n ...\\n }@.
+layoutExpr            :: Doc -> Doc
+layoutExpr e          = command "layout" <+> nestBraces e
+
+
+-- | @\\relative PITCH {\\n ... \\n}@ - print a relative block.
+-- The musical expression should have been transformed with
+-- 'rewitePitch' before being rendered to LilyPond.
+relative :: Pitch -> Doc -> Doc 
+relative p expr = command "relative" <+> pitch p' <+> nestBraces expr
+  where
+    p' = modifyOctave ((octave p) - 4) p
+
+
+--------------------------------------------------------------------------------
+-- *** Titles
+
+
+-- | @\header { ... }@ - print a header block.
+header                :: [Doc] -> Doc
+header xs             = command "header" <+> nestBraces (vcat xs)
+
+-- | @name = val@ - primitive combinator for building header 
+-- elements. Use this if you want markup, placement information etc.
+-- in the right-hand side.
+headerElement :: String -> Doc -> Doc
+headerElement name val = text name <+> equals <+> val
+
+-- | @dedication = \"...\"@.  
+dedication            :: String -> Doc
+dedication            = headerElement "dedication" . dquotes . text
+
+-- | @title = \"...\"@.  
+title                 :: String -> Doc
+title                 = headerElement "title" . dquotes . text
+
+-- | @subtitle = \"...\"@.  
+subtitle              :: String -> Doc
+subtitle              = headerElement "subtitle" . dquotes . text
+
+-- | @instrument = \"...\"@.  
+instrument            :: String -> Doc
+instrument            = headerElement "instrument" . dquotes . text
+
+-- | @composer = \"...\"@.  
+composer              :: String -> Doc
+composer              = headerElement "composer" . dquotes . text
+
+-- | @copyright = \"...\"@.  
+copyright             :: String -> Doc
+copyright             = headerElement "copyright" . dquotes . text
+
+-- | @tagline = \"...\"@.  
+tagline               :: String -> Doc
+tagline               = headerElement "tagline" . dquotes . text
+
+
+--------------------------------------------------------------------------------
+-- *** Files and variables
+
+
+-- | @\include \"...\"@ - print a header block.
+include               :: String -> Doc
+include ss            = command "include" <+> dquotes (text ss)
+
+-- | @varName = ...@ - define a variable. The variable name should only
+-- contain alphabetic characters, otherwise an error is thrown.
+variable              :: String -> Doc -> Doc
+variable ss e         
+  | all isAlpha ss    = text ss <+> equals <+> e
+  | otherwise         = error $ "LilyPondDoc.variable - " ++ ss ++ 
+                                " - should only contain alphabetic characters."
+
+
+-- | @\\midi { }@.
+midi                  :: Doc
+midi                  = command "book" <+> braces space
+
+-- | @\\midi {\\n ...\\n }@.
+midiExpr              :: Doc -> Doc
+midiExpr e            = command "book" <+> nestBraces e
 
 

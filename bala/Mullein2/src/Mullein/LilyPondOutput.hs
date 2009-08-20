@@ -90,12 +90,12 @@ oBarOverlay (OverlayL xss) = map (hsep . map omBeam) xss
 
 omBeam :: LilyPondGlyph e => Pulse e -> Doc
 omBeam (Pulse e)    = lyGlyph e
-omBeam (BeamedL es) = beam $ map lyGlyph es
+omBeam (BeamedL es) = beamForm $ map lyGlyph es
 
 
 
 oGlyph :: (pch -> Doc) -> Glyph pch (Maybe Duration) -> Doc
-oGlyph f (Note p d)       = f p <> optDuration d
+oGlyph f (Note p d)       = f p <> maybe empty duration d
 oGlyph _ (Rest d)         = rest d
 oGlyph _ (Spacer d)       = spacer d
 oGlyph f (Chord ps d)     = chordForm (map f ps) d
@@ -103,7 +103,7 @@ oGlyph f (GraceNotes xs)  = graceForm (map (oGrace f) xs)
 oGlyph _ Tie              = tie
 
 oGrace :: (pch -> Doc) -> GraceNote pch (Maybe Duration) -> Doc
-oGrace f (GraceNote p d) = f p <> optDuration d
+oGrace f (GraceNote p d) = f p <> maybe empty duration d
 
 
 
