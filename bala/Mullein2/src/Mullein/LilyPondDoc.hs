@@ -102,7 +102,7 @@ import Data.Char ( isAlpha )
 --------------------------------------------------------------------------------
 -- Printing glyphs
 
--- | Print a note, the duration is a Maybe value. Nothing 
+-- | Print a note, the duration is a Maybe value. Nothing indicates
 -- that the note has the same duration as the previous glyph.
 note :: Pitch -> Maybe Duration -> Doc
 note p md = pitch p <> maybe empty duration md
@@ -146,7 +146,7 @@ rest :: Maybe Duration -> Doc
 rest md = char 'r' <> maybe empty duration md
 
 
--- | Print a invisible rest, commonly used to align overlayed 
+-- | Print an invisible rest, commonly used to align overlayed 
 -- bars. Duration is a Maybe value - Nothing indicates
 -- that the spacer has the same duration as the previous glyph.  
 spacer :: Maybe Duration -> Doc
@@ -159,6 +159,7 @@ tie = char '~'
 
 -- | Chords - notes printed inside angle brackets, followed by 
 -- duration, e.g.:
+--
 -- @ 
 --  \<c e g\>4
 -- @ 
@@ -168,6 +169,7 @@ chordForm xs md = angles (hsep xs) <> maybe empty duration md
 
 -- | Grace notes - @\\grace@ command then expression inside braces,
 -- e.g:
+--
 -- @ 
 --  \\grace { f32[ e] }
 -- @ 
@@ -188,10 +190,11 @@ beamForm []     = emptyDoc
 
 
 
-
+--------------------------------------------------------------------------------
 
 {-
 
+-- TODO...
 
 direction :: Direction -> Doc 
 direction Above  = char '^' 
@@ -221,7 +224,7 @@ endBraces i | i <=0     = emptyDoc
 -}
 
 --------------------------------------------------------------------------------
--- Lilypond literals ans syntax
+-- Lilypond literals and syntax
 
 
 -- *** Commands and comments

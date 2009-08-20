@@ -36,6 +36,7 @@ module Mullein.AbcOutput
 
   ) where
 
+import Mullein.AbcDoc
 import Mullein.Core
 import Mullein.Duration
 import Mullein.Pitch hiding ( octave )
@@ -58,8 +59,8 @@ instance AbcGlyph (Glyph Pitch AbcMultiplier) where
   abcGlyph (Note p dm)      = note p dm
   abcGlyph (Rest dm)        = rest dm
   abcGlyph (Spacer dm)      = spacer dm
-  abcGlyph (Chord ps dm)    = chord $ map (note `flip` dm) ps 
-  abcGlyph (GraceNotes xs)  = graceNotes $ map abcGrace xs
+  abcGlyph (Chord ps dm)    = chordForm $ map (note `flip` dm) ps 
+  abcGlyph (GraceNotes xs)  = graceForm $ map abcGrace xs
   abcGlyph Tie              = tie
 
 abcGrace :: GraceNote Pitch AbcMultiplier -> Doc
@@ -145,75 +146,6 @@ instance ChangePitchAbc GraceNote where
 
 simpleOutput :: DPhrase -> Doc
 simpleOutput = vsep . map ((<+> singleBar) . overlay)
-
-singleBar :: Doc
-singleBar = char '|'
-
-overlay :: [Doc] -> Doc
-overlay = vsep . punctuate (text " & ")    
-
-note :: Pitch -> AbcMultiplier -> Doc 
-note p m = pitch p <> multiplier m
-
-rest :: AbcMultiplier -> Doc
-rest dm = char 'z' <> multiplier dm
-
-spacer :: AbcMultiplier -> Doc
-spacer dm      = char 'x' <> multiplier dm
-
-chord :: [Doc] -> Doc
-chord = brackets . hcat
-
-graceNotes :: [Doc] -> Doc
-graceNotes = braces . hcat
-
-tie :: Doc
-tie = char '~'
-
-
-data PitchChar = UPPER | LOWER
-  deriving (Eq,Show)
-
-
--- Mullein - middle c is C5
--- Abc - middle c is 'C' upper case c  
-pitch :: Pitch -> Doc
-pitch (Pitch l a o) 
-    | o > 5     = pitchLabel (PitchLabel l a) LOWER <> octave o 
-    | otherwise = pitchLabel (PitchLabel l a) UPPER <> octave o 
-  where
-    octave :: Int -> Doc
-    octave i  | i > 6       = text (replicate (i-6) '\'') 
-              | i < 5       = text (replicate (5-i) ',')
-              | otherwise   = empty
-
-
-
-pitchLabel :: PitchLabel -> PitchChar -> Doc
-pitchLabel (PitchLabel l a) pc 
-    | pc == LOWER   = (maybe empty accidental a) <> (char . toLowerLChar) l
-    | otherwise     = (maybe empty accidental a) <> (char . toUpperLChar) l
-  where     
-    accidental :: Accidental -> Doc
-    accidental Nat           = char '='    
-    accidental Sharp         = char '^' 
-    accidental Flat          = char '_' 
-    accidental DoubleSharp   = text "^^"
-    accidental DoubleFlat    = text "__"
-
-
-multiplier :: AbcMultiplier -> Doc
-multiplier IdenM      = empty
-multiplier (Mult n)   = integer n
-multiplier (Div n)    = char '/' <> integer n
-multiplier (Frac n d) = integer n <> char '/' <> integer d
-
-{-
-
-field :: Char -> Doc -> Doc
-field ch d = char ch <> colon <> d
-
--}
 
 
 
