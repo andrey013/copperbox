@@ -35,17 +35,6 @@ module Mullein.LilyPondOutput
   -- * Post-process and pretty print
   , simpleOutput 
 
-  , note
-  , pitch
-  , rest
-  , spacer
-  , chordForm
-  , graceForm
-  , tie
-  , optDuration
-
-  , doubleBar
-  , singleBar 
 
   -- * Alternative types
   , DrumPitch(..)
@@ -55,6 +44,7 @@ module Mullein.LilyPondOutput
 
 import Mullein.Core
 import Mullein.Duration
+import Mullein.LilyPondDoc
 import Mullein.Pitch
 import Mullein.Utils
 
@@ -100,7 +90,7 @@ oBarOverlay (OverlayL xss) = map (hsep . map omBeam) xss
 
 omBeam :: LilyPondGlyph e => Pulse e -> Doc
 omBeam (Pulse e)    = lyGlyph e
-omBeam (BeamedL es) = lyBeam $ map lyGlyph es
+omBeam (BeamedL es) = beam $ map lyGlyph es
 
 
 
@@ -243,114 +233,7 @@ simpleOverlay []  = empty
 simpleOverlay [a] = a
 simpleOverlay xs  = overlay xs
 
-overlay :: [Doc] -> Doc
-overlay = dblangles . vsep . punctuate (text " \\\\") . map spacedBraces
 
-
-note :: Pitch -> Maybe Duration -> Doc
-note p md = pitch p <> optDuration md
-
-pitch :: Pitch -> Doc 
-pitch (Pitch l a o) = pitchLabel l a <> ove o where
-    ove i | i > 0       = text $ replicate i       '\''
-          | i < 0       = text $ replicate (abs i) ','
-          | otherwise   = emptyDoc
-
-rest :: Maybe Duration -> Doc
-rest md = char 'r' <> optDuration md
-
-spacer :: Maybe Duration -> Doc
-spacer md = char 's' <> optDuration md
-
-chordForm :: [Doc] -> Maybe Duration -> Doc
-chordForm xs md = angles (hsep xs) <> optDuration md
-
-graceForm :: [Doc] -> Doc
-graceForm [x] = command "grace" <+> braces x where
-graceForm xs  = command "grace" <+> braces (lyBeam xs)
-
-
-tie :: Doc
-tie = char '~'
-
-pitchLabel :: PitchLetter -> Maybe Accidental -> Doc
-pitchLabel l a = char (toLowerLChar l) <> maybe emptyDoc accidental a
-  where 
-    accidental :: Accidental -> Doc
-    accidental Nat            = text "!"    -- check correctness
-    accidental Sharp          = text "is"
-    accidental Flat           = text "es"
-    accidental DoubleSharp    = text "isis"
-    accidental DoubleFlat     = text "eses"
-
-
-
-optDuration :: Maybe Duration -> Doc
-optDuration Nothing  = emptyDoc
-optDuration (Just d) = maybe emptyDoc df $ lyRepresentation d where
-  df (LyCmd ss,dc) = dots dc $ command ss 
-  df (LyNum i,dc)  = dots dc $ int i
-
-
-
-dots :: Int -> (Doc -> Doc)
-dots i | i > 0     = (<> text (replicate i '.'))
-       | otherwise = id
-  
--- | Beams - first element printed outside the square brackets, e.g.:
--- @ c [e g] @
---  
-lyBeam :: [Doc] -> Doc
-lyBeam (x:xs) = x <> char '[' <+> hsep xs <> char ']'
-lyBeam []     = emptyDoc
-
-command :: String -> Doc
-command = (char '\\' <>) . text 
-
-{-
-
--- TODO - Will it be better to have a separate module for LilyPond
--- pretty printers?
-
-
-comment :: String -> Doc
-comment s = text "%{" <+> string s  <+> text "%}"
-
-direction :: Direction -> Doc 
-direction Above  = char '^' 
-direction Below  = char '_'
-direction Center = char '-'
-
-
--- Note LilyPond drops the printed repeat start if the repeat is the first
--- element (so we don't have to).
-
-
-lydocRepeat :: Doc
-lydocRepeat = command "repeat" <+> text "volta 2" <+> lbrace
-
-altStart :: Doc
-altStart = space <> rbrace `nextLine` command "alternative" <+> lbrace 
-                           `nextLine` lbrace
-
-altNext :: Doc
-altNext = space <> rbrace `nextLine` lbrace
--}
-
-doubleBar :: Doc 
-doubleBar = command "bar" <+> dquotes (text "||")
-
-singleBar :: Doc
-singleBar = text "|"
-
-
-{-
-
-endBraces :: Int -> Doc
-endBraces i | i <=0     = emptyDoc
-            | otherwise = indent ((i-2)*2) rbrace `nextLine` endBraces (i-1)
-
--}
 
 
 

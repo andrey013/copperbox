@@ -28,6 +28,7 @@ module Mullein.Extended
 
 import Mullein.Core
 import Mullein.Duration
+import Mullein.LilyPondDoc
 import Mullein.LilyPondOutput
 import Mullein.Pitch
 

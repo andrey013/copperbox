@@ -2,11 +2,13 @@
 
 module Examples where
 
+import qualified Mullein.AbcDoc    as ABC
 import qualified Mullein.AbcOutput as ABC
 import Mullein.Bracket
 import Mullein.Core
 import Mullein.Duration
 import Mullein.Extended
+import Mullein.LilyPondDoc
 import Mullein.LilyPondOutput
 import Mullein.NamedElements
 import Mullein.Pitch
@@ -23,17 +25,23 @@ import Data.Ratio
 
 
 demo1 :: Doc
-demo1 = simpleOutput $ renderPhrase $ rewritePitch middle_c $ rewriteDuration xs
+demo1 = relative middle_c tune
   where
-    xs = phrase twoFourTime b6_bars1'4
+    tune = simpleOutput $ renderPhrase $ rewritePitch middle_c $ rewriteDuration xs
+    xs   = phrase twoFourTime b6_bars1'4
 
 demo1a :: Doc
-demo1a = ABC.simpleOutput $ ABC.renderPhrase 
-                          $ ABC.rewritePitch amaj
-                          $ ABC.rewriteDuration (1%16) xs 
+demo1a =  ABC.tunenum   1 
+      <$> ABC.title     "Bulgarian 6"
+      <$> ABC.key       "Amaj"
+      <$> ABC.meter     "2/4"
+      <$> tune
   where
-   xs   = phrase twoFourTime b6_bars1'4
-   amaj = makeSpellingMap 3
+    tune = ABC.simpleOutput $ ABC.renderPhrase 
+                            $ ABC.rewritePitch amaj
+                            $ ABC.rewriteDuration (1%16) xs 
+    xs   = phrase twoFourTime b6_bars1'4
+    amaj = makeSpellingMap 3
 
 
 
