@@ -144,8 +144,12 @@ instance ChangePitchAbc GraceNote where
 
 --------------------------------------------------------------------------------
 
+-- | Output ABC, four bars printed on each line. 
 simpleOutput :: DPhrase -> Doc
-simpleOutput = vsep . map ((<+> singleBar) . overlay)
+simpleOutput = four . map ((<+> singleBar) . overlay)
 
 
+four :: [Doc] -> Doc
+four (a:b:c:d:xs) = vsep (map (<> lineCont) [a,b,c]) <$> d <$> four xs
+four xs           = hsep xs
 

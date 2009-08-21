@@ -12,10 +12,14 @@ import Mullein.LilyPondDoc
 import Mullein.LilyPondOutput
 import Mullein.NamedElements
 import Mullein.Pitch
+import Mullein.Utils ( renderDocEighty )
 
 import Text.PrettyPrint.Leijen
 
 import Data.Ratio
+
+writeDoc :: FilePath -> Doc -> IO ()
+writeDoc filepath = writeFile filepath . renderDocEighty
 
 --------------------------------------------------------------------------------
 -- Example 1 
@@ -25,7 +29,8 @@ import Data.Ratio
 
 
 demo1 :: Doc
-demo1 = relative middle_c tune
+demo1 =  version "2.12.2" 
+     <$> score (relative middle_c $ key a_nat "major" <$> time 2 4 <$> tune)
   where
     tune = simpleOutput $ renderPhrase $ rewritePitch middle_c $ rewriteDuration xs
     xs   = phrase twoFourTime b6_bars1'4
@@ -33,8 +38,8 @@ demo1 = relative middle_c tune
 demo1a :: Doc
 demo1a =  ABC.tunenum   1 
       <$> ABC.title     "Bulgarian 6"
-      <$> ABC.key       "Amaj"
       <$> ABC.meter     "2/4"
+      <$> ABC.key       "Amaj"
       <$> tune
   where
     tune = ABC.simpleOutput $ ABC.renderPhrase 
@@ -43,6 +48,10 @@ demo1a =  ABC.tunenum   1
     xs   = phrase twoFourTime b6_bars1'4
     amaj = makeSpellingMap 3
 
+output1 :: IO ()
+output1 = do 
+  writeDoc "bulgarian6.ly"  demo1
+  writeDoc "bulgarian6.abc" demo1a
 
 
 twoFourTime :: MeterPattern
@@ -52,16 +61,16 @@ twoFourTime = makeMeterPattern 2 4
 
 b6_bars1'4 :: [PDGlyph]
 b6_bars1'4 =  
-  [ a 4 sn, b 4 sn, cs 5 sn, cs 5 sn, cs 5 sn, a 4 sn, 
-               cs 5 sn, cs 5 sn
+  [ a 5 sn, b 5 sn, cs 6 sn, cs 6 sn, cs 6 sn, a 5 sn, 
+            cs 6 sn, cs 6 sn
   -- bar 2
-  , cs 5 sn, a 4 sn, b 4 sn, cs 5 sn, b 4 sn, a 4 sn, 
-                a 4 sn, snr
+  , cs 6 sn, a 5 sn, b 5 sn, cs 6 sn, b 5 sn, a 5 sn, 
+             a 5 sn, snr
   -- bar 3
-  , e 5 sn, d 5 sn, cs 5 sn, b 4 sn, cs 5 sn, a 4 sn, 
-               b 4 sn, cs 5 sn
+  , e 6 sn, d 6 sn, cs 6 sn, b 5 sn, cs 6 sn, a 5 sn, 
+            b 5 sn, cs 6 sn
   -- bar 4
-  , a 4 sn, b 4 sn, b 4 sn, a 4 sn, a 4 en, enr
+  , a 5 sn, b 5 sn, b 5 sn, a 5 sn, a 5 en, enr
   ]
 
 --------------------------------------------------------------------------------

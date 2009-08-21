@@ -33,6 +33,7 @@ module Mullein.AbcDoc
   , singleBar
   , overlay
   , tie
+  , lineCont
   
   -- *** Fields
 
@@ -156,6 +157,28 @@ overlay = vsep . punctuate (text " & ")
 tie :: Doc
 tie = char '~'
 
+-- | Lines (newlines) are significant in ABC files. The number of
+-- bars printed on a staff line /is/ the number of bars dictated 
+-- in the score. E.g. this is fragment prints four bars on one 
+-- line:
+--
+-- @
+--  C D E F| G A B c| d e f g| a b c' d'|
+-- @
+-- 
+-- Clearly this could result in very long columns when a score file 
+-- has elaborate content (chords, overlays etc.), so lines can be 
+-- split lexically and continued with a slash @\\@.
+--
+-- @
+--  C D E F|\\ 
+--  G A B c|\\ 
+--  d e f g|\\
+--  a b c' d'|
+-- @
+--
+lineCont :: Doc
+lineCont = char '\\'
 
 -- ** Fields
 
@@ -180,16 +203,18 @@ composer :: String -> Doc
 composer = field 'C' . text
 
 -- | @M field@ - meter.
--- Note - the meter parameter should correspond to the meter component
--- of the @MetricalSpec@ used to generate the ABC tune.
+-- Note - the meter parameter should correspond to the meter 
+-- component of the @MetricalSpec@ used to generate the ABC tune. 
+-- Also the meter should come before the key field in a tune, 
+-- otherwise meter may get interpreted as a midtune field.
 meter :: String -> Doc
 meter = field 'M' . text
 
 -- | @Q field@ - tempo.
--- Note - the range of ABC tempos is very wide, therefore no attempt
--- is made to encapsulate /tempo/ as an abstract datatype. Instead
--- tempo is just a string literal. If you want to use a genuine literal
--- (e.g. Andante) make sure you double-quote it first.
+-- Note - the range of ABC tempos is very wide, therefore no 
+-- attempt is made to encapsulate /tempo/ as an abstract datatype. 
+-- Instead tempo is just a string literal. For genuine literals 
+-- (e.g. Andante) make sure they are double-quote first.
 tempo :: String -> Doc
 tempo = field 'Q' . text
 

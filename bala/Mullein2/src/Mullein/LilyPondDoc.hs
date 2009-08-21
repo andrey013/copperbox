@@ -35,6 +35,10 @@ module Mullein.LilyPondDoc
   , command
   , comment
 
+
+  -- *** Time signatures
+  , time
+  
   -- *** Bar lines
   , doubleBar
   , singleBar
@@ -237,6 +241,11 @@ command = (char '\\' <>) . text
 -- | Print a comment, comments can be multi-line.
 comment :: String -> Doc
 comment s = text "%{" <+> string s  <+> text "%}"
+
+-- *** Time signatures
+
+time :: Int -> Int -> Doc
+time n d = command "time" <+> int n <> char '/' <> int d
 
 
 -- *** Bar lines
