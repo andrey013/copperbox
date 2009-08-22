@@ -82,39 +82,39 @@ instance HasPitch Pitch where
 
 
   
-class Semitones a where 
-  semitones :: a -> Int
+class HasSemitones a where 
+  getSemitones :: a -> Int
     
-instance Semitones Pitch where
-  semitones (Pitch l a o) = semitones l + semitones a + (12 * o)
+instance HasSemitones Pitch where
+  getSemitones (Pitch l a o) = getSemitones l + getSemitones a + (12 * o)
 
-instance Semitones PitchLabel where
-  semitones (PitchLabel l a) = semitones l + semitones a
+instance HasSemitones PitchLabel where
+  getSemitones (PitchLabel l a) = getSemitones l + getSemitones a
   
-instance Semitones a => Semitones (Maybe a) where
-  semitones = maybe 0 semitones
+instance HasSemitones a => HasSemitones (Maybe a) where
+  getSemitones = maybe 0 getSemitones
 
-instance Semitones PitchLetter where    
-  semitones C = 0
-  semitones D = 2
-  semitones E = 4
-  semitones F = 5
-  semitones G = 7
-  semitones A = 9
-  semitones B = 11
+instance HasSemitones PitchLetter where    
+  getSemitones C = 0
+  getSemitones D = 2
+  getSemitones E = 4
+  getSemitones F = 5
+  getSemitones G = 7
+  getSemitones A = 9
+  getSemitones B = 11
 
-instance Semitones Accidental where 
-  semitones Nat          = 0
-  semitones Sharp        = 1
-  semitones Flat         = (-1)
-  semitones DoubleSharp  = 2
-  semitones DoubleFlat   = (-2)
+instance HasSemitones Accidental where 
+  getSemitones Nat          = 0
+  getSemitones Sharp        = 1
+  getSemitones Flat         = (-1)
+  getSemitones DoubleSharp  = 2
+  getSemitones DoubleFlat   = (-2)
   
 
 -- Standard instances
   
 instance Ord Pitch where
-  compare p1 p2 = semitones p1 `compare` semitones p2
+  compare p1 p2 = getSemitones p1 `compare` getSemitones p2
 
 -- | The Ord instance of a Pitch label is not numerically sound, as 
 -- it does not respect the semitone count. 
