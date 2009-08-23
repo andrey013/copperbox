@@ -5,7 +5,7 @@
 -- |
 -- Module      :  Bala.Pitch
 -- Copyright   :  (c) Stephen Tetley 2008
--- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
@@ -32,16 +32,16 @@ type Accidental = Int   -- 0 Nat, negative Flat, positive Sharp
 
 type Octave = Int
 
-data Pitch = Pitch PitchLetter Accidental Octave
+data Pitch = Pitch { 
+      pitchLetter :: PitchLetter, 
+      accidental  :: Accidental,
+      octave      :: Octave
+    }
   deriving (Eq,Show)
 
 data Interval = Interval { arithmeticDistance :: Int, halfStepCount :: Int }
   deriving (Eq,Ord,Show)
 
-
-
-accidental :: Pitch -> Accidental
-accidental (Pitch _ a _) = a
 
 --------------------------------------------------------------------------------
 -- Type classes 
@@ -94,4 +94,7 @@ spell l semicount = Pitch l a o
 
 middleC :: Pitch 
 middleC = Pitch C 0 5
+
+
+
 

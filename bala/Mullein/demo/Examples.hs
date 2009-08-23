@@ -12,14 +12,11 @@ import Mullein.LilyPondDoc
 import Mullein.LilyPondOutput
 import Mullein.NamedElements
 import Mullein.Pitch
-import Mullein.Utils ( renderDocEighty )
+import Mullein.Utils ( renderDocEighty, writeDoc )
 
 import Text.PrettyPrint.Leijen
 
 import Data.Ratio
-
-writeDoc :: FilePath -> Doc -> IO ()
-writeDoc filepath = writeFile filepath . renderDocEighty
 
 --------------------------------------------------------------------------------
 -- Example 1 

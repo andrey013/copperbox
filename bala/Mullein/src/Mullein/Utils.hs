@@ -39,9 +39,11 @@ module Mullein.Utils
   , nextLine
   , sglLine
   , doubleQuote
-  , renderDocEighty
   , emptyDoc
   , spaceBraces
+  
+  , writeDoc
+  , renderDocEighty
 
   ) where
 
@@ -128,11 +130,16 @@ sglLine d = d <> line
 doubleQuote :: String -> Doc
 doubleQuote = dquotes . string
 
-renderDocEighty :: Doc -> String
-renderDocEighty = (displayS `flip` []) . renderPretty 0.8 80
-
 emptyDoc :: Doc
 emptyDoc = PP.empty
 
 spaceBraces :: Doc -> Doc
 spaceBraces = enclose (text "{ ") (text " }")
+
+
+
+writeDoc :: FilePath -> Doc -> IO ()
+writeDoc filepath = writeFile filepath . renderDocEighty
+
+renderDocEighty :: Doc -> String
+renderDocEighty = (displayS `flip` []) . renderPretty 0.8 80
