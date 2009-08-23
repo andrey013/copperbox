@@ -33,6 +33,7 @@ library
     Mullein.Core,
     Mullein.Duration,
     Mullein.Extended,
+    Mullein.LilyPond,
     Mullein.LilyPondDoc,
     Mullein.LilyPondOutput,
     Mullein.NamedElements,
