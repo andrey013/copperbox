@@ -27,6 +27,7 @@ library
 
   
   exposed-modules:
+    Mullein.Abc,
     Mullein.AbcDoc,
     Mullein.AbcOutput,
     Mullein.Bracket,
