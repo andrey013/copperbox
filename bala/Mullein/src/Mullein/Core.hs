@@ -146,6 +146,12 @@ instance Traversable Pulse where
   traverse f (Pulse e) = Pulse <$> f e
   traverse f (BeamedL es) = BeamedL <$> traverse f es
 
+-- Groupoid 
+instance Groupoid (Bar e) where
+  (Bar x)       `gappend` (Bar y)       = OverlayL [x,y]
+  (Bar x)       `gappend` (OverlayL ys) = OverlayL $ x:ys
+  (OverlayL xs) `gappend` (Bar y)       = OverlayL $ xs ++ [y]
+  (OverlayL xs) `gappend` (OverlayL ys) = OverlayL $ xs ++ ys
 
 -------
 

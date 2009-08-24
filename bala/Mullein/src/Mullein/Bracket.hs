@@ -26,6 +26,7 @@ module Mullein.Bracket
   -- * Partition into bars and pulsations
     phrase
   , freePhrase
+  , overlayPhrases
 
   ) where
 
@@ -177,3 +178,9 @@ ratDuration :: HasDuration t => t Duration -> Rational
 ratDuration = extent . getDuration                      
 
 
+--------------------------------------------------------------------------------
+-- overlay
+
+overlayPhrases :: HasDuration t 
+        => Phrase (t Duration) -> Phrase (t Duration) -> Phrase (t Duration)
+overlayPhrases = longZip

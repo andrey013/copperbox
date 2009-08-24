@@ -21,6 +21,8 @@ module Mullein.Utils
   -- * Groupoid class 
     Groupoid(..)
 
+  , longZip
+
   -- * Functions
   , divModR
   , makeRational
@@ -55,6 +57,11 @@ import qualified Text.PrettyPrint.Leijen as PP
 class Groupoid a where
   gappend :: a -> a -> a
 
+
+longZip :: Groupoid a => [a] -> [a] -> [a]
+longZip []     ys     = ys
+longZip xs     []     = xs
+longZip (x:xs) (y:ys) = x `gappend` y : longZip xs ys
 
 
 --------------------------------------------------------------------------------

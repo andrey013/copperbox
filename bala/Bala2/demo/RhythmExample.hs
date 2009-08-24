@@ -19,34 +19,36 @@ import qualified Data.Set                 as Set
 
 demo0 = showBox dus
 
-dus :: SubsetPattern
-dus = makeSubsetPattern s 16 where
-  s = [0,2,5,7,10,13]
+dus :: RhythmPattern
+dus = makeRhythmPattern s 1 where
+  s = [N 2,N 2,R 1,N 2,N 1, R 1,N 2,N 1,R 2,N 2]
 
-afoxePat :: SubsetPattern
-afoxePat = makeSubsetPattern s 16 where
-  s = [1,3,5,7, 9,11,13,15]
-
-
-
-afoxe :: [PDGlyph]
-afoxe = interpret rest (take 20 $ cycle [f8,f16]) afoxePat where
-  f8               = adapt 2 (\_ -> c 5 en)  
-  f16              = adapt 1 (\_ -> c 5 sn)
-
-  rest 1           = snr
-  rest 2           = enr
-  rest n           = error $ "unrecognized rest duration " ++ show n
+afoxe_upper_rhythm :: RhythmPattern
+afoxe_upper_rhythm = makeRhythmPattern s 4 where
+  s =  [R 1, N 2,N 1]
 
 
-  adapt n fn i
-      | n == i     = (Nothing, fn n) 
-      | n <  i     = (Just $ i-n, fn n)
-      | otherwise  = error $ "Too small - saw " ++ show i ++ " expecting " ++ show n
-                                      
+-- Not quite right - first bar is a rest subsequent bars are 
+-- tied...
+afoxe_lower_rhythm :: RhythmPattern
+afoxe_lower_rhythm = makeRhythmPattern s 4 where
+  s =  [R 4, N 2,N 2]
 
-twoFourTime :: MeterPattern
-twoFourTime = makeMeterPattern 2 4
+
+
+afoxeU :: [PDGlyph]
+afoxeU = fmap fn $ takeNBars 4 8 $ toStream afoxe_upper_rhythm
+  where
+   fn (R 1) = snr
+   fn (N 1) = c 6 sn
+   fn (N 2) = c 6 en
+
+
+afoxeL :: [PDGlyph]
+afoxeL = fmap fn $ takeNBars 4 8 $ toStream afoxe_lower_rhythm
+  where
+   fn (R 4) = qnr
+   fn (N 2) = c 5 en
 
 
 demo1 :: Doc
@@ -54,7 +56,7 @@ demo1 =  version "2.12.2"
      <$> score (relative middle_c $ key c_nat "major" <$> time 2 4 <$> tune)
   where
     tune = simpleOutput $ renderPhrase $ rewritePitch middle_c $ rewriteDuration xs
-    xs   = phrase twoFourTime afoxe
+    xs   = overlayPhrases (phrase twoFourTime afoxeU) (phrase twoFourTime afoxeL)
 
 
 output1 :: IO ()
@@ -62,41 +64,6 @@ output1 = do
   writeDoc "afoxe.ly"  demo1
 
 
-dummy = quickRhythm dus
-  
+twoFourTime :: MeterPattern
+twoFourTime = makeMeterPattern 2 4
 
-quickRhythm = fork (id,WS.take 24) . toStream' where 
-  fork (f,g) (a,b) = (f a, g b)
-
-
-
---afoxe2 :: [PDGlyph]
-afoxe2 = prefix ana $ cross (WS.cycle [2,1]) rs 
-  where
-    (ana,rs) = toStream' afoxePat
-    prefix a | a > 0     = (Left a HS.<:) 
-             | otherwise = id
-
-
-
-afoxePat2 :: RhythmPattern
-afoxePat2 = RhythmPattern s where
-  s = [R 1, N 2,N 1]
-
-dummy2 = showBox $ toSubsetPattern afoxePat2
-
-quick2 = WS.take 24 
-
-afoxe3 :: [PDGlyph]
-afoxe3 = fmap fn $ takeNBars 4 8 $ toStream afoxePat2
-  where
-   fn (R 1) = snr
-   fn (N 1) = c 5 sn
-   fn (N 2) = c 5 en
-
-demo2 :: Doc
-demo2 =  version "2.12.2" 
-     <$> score (relative middle_c $ key c_nat "major" <$> time 2 4 <$> tune)
-  where
-    tune = simpleOutput $ renderPhrase $ rewritePitch middle_c $ rewriteDuration xs
-    xs   = phrase twoFourTime afoxe3
