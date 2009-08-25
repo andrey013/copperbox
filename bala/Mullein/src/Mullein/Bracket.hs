@@ -40,6 +40,25 @@ import qualified Data.DList as D
 import Data.Ratio
 
 
+--------------------------------------------------------------------------------
+
+-- /Extremity Beam/ certain gylphs (rests) should not be the 
+-- start or end of a beam group.
+
+class ExtBeam a where
+  extBeam :: a -> Bool
+
+instance ExtBeam (Glyph pch dur) where
+  extBeam (Note _ _)     = True
+  extBeam (Rest _)       = False
+  extBeam (Spacer _)     = True     -- Note - is this correct? 
+  extBeam (Chord _ _)    = True
+  extBeam (GraceNotes _) = False
+  extBeam Tie            = False
+
+--------------------------------------------------------------------------------
+-- Writer-like Snoc monad machinary
+
 newtype SnocWriterT e m a = SnocWriterT { 
           getSnocWriterT :: D.DList e -> m (a, D.DList e) }
 
@@ -74,7 +93,7 @@ instance (Monad m) => SnocWriterM (SnocWriterT e m) where
 -- a single notes or a group of notes joined with a beam. 
 -- Pulsations illustrate the division of the bar into beats.
 -- The length of the bars will be the sum of the meter pattern.
-phrase :: HasDuration t
+phrase :: (HasDuration t, ExtBeam (t Duration))
        => MeterPattern -> [t Duration] -> Phrase (t Duration)
 phrase mp notes = runId $ 
   barM (sum mp) notes >>= mapM (\es -> beamM mp es >>= return . Bar)
@@ -82,8 +101,8 @@ phrase mp notes = runId $
 -- | Partition into pulsations and return one long bar. Use this 
 -- function for free metered music, the MeterPattern should be
 -- infinite.
-freePhrase :: HasDuration t
-       => MeterPattern -> [t Duration] -> Phrase (t Duration)
+freePhrase :: (HasDuration t, ExtBeam (t Duration))
+           => MeterPattern -> [t Duration] -> Phrase (t Duration)
 freePhrase mp notes = runId $ do 
   xs <- beamM mp notes
   return $ [Bar xs]
@@ -125,23 +144,30 @@ emptySpan barlen n = let (blank_count,x) = n `divModR` barlen in
 
 
 
-beamM :: (HasDuration t, Monad m) 
+beamM :: (HasDuration t, Monad m, ExtBeam (t Duration)) 
       => MeterPattern -> [t Duration] -> m [Pulse (t Duration)]
 beamM mp notes = runSnocWriterT (consumeSt beamStepM (mp,[]) notes) >>= fn
   where
     fn ((_,[]),dlist)  = return $ D.toList dlist
     fn ((_,cca),dlist) = return $ D.toList $ dlist `D.snoc` (toPulse $ reverse cca)
 
-beamStepM :: (HasDuration t, SnocWriterM m, DiffElem m ~ Pulse (t Duration))
+    -- Problem - the /cca/ in the flush doesn't respect extBeam-ing, 
+    -- i.e. it might start or finish with a rest. This needs more 
+    -- thought.
+
+
+beamStepM :: (HasDuration t, SnocWriterM m, ExtBeam (t Duration), 
+              DiffElem m ~ Pulse (t Duration))
           => t Duration 
           -> (MeterPattern,[t Duration]) 
           -> m (MeterPattern,[t Duration])
-beamStepM e ([],cca)          = putPulsation cca >> putPulse1 e >> return ([],[])
+beamStepM e ([],cca)          = putPulsation (reverse cca) >> putPulse1 e 
+                                                           >> return ([],[])
 beamStepM e (stk@(a:rs),cca)  = fn (ratDuration e) 
   where
-    fn n | n >= 1%4 || n > a  = putPulsation cca >> putPulse1 e 
-                                                 >> return (consume n stk,[])
-         | n == a             = putPulsation (e:cca) >> return (rs,[])
+    fn n | n >= 1%4 || n > a  = putPulsation (reverse cca) >> putPulse1 e 
+                                  >> return (consume n stk,[])
+         | n == a             = putPulsation (reverse $ e:cca) >> return (rs,[])
          | otherwise          = return (consume n stk, e:cca)
 
                                             
@@ -153,15 +179,28 @@ consumeSt mf st (a:as) = mf a st >>= \st' -> consumeSt mf st' as
 putPulse1 :: (SnocWriterM m, DiffElem m ~ Pulse e) => e -> m ()
 putPulse1 a = snoc $ Pulse a
 
-putPulsation :: (SnocWriterM m, DiffElem m ~ Pulse e) => [e] -> m ()
-putPulsation []  = return ()
-putPulsation [a] = snoc $ Pulse a
-putPulsation cca = snoc $ BeamedL $ reverse cca
+
+putPulsation :: (SnocWriterM m, ExtBeam e, DiffElem m ~ Pulse e) 
+             => [e] -> m ()
+putPulsation xs = let (headsingles, body, tailsingles) = dblbreak extBeam xs 
+                  in do { mapM_ putPulse1 headsingles
+                        ; step body
+                        ; mapM_ putPulse1 tailsingles }
+  where
+    step []               = return ()
+    step [a]              = snoc $ Pulse a
+    step as               = snoc $ BeamedL as
+
 
 toPulse :: [a] -> Pulse a
 toPulse []  = error "Bracket.toPulse: cannot build Pulse from empty list"
 toPulse [x] = Pulse x
 toPulse xs  = BeamedL xs
+
+dblbreak :: (a -> Bool) -> [a] -> ([a],[a],[a])
+dblbreak p xs = (as,reverse sb,reverse sc) where
+  (as,bs)           = break p xs
+  (sc,sb)           = break p (reverse bs)
 
 
 

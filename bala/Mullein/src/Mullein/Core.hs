@@ -168,6 +168,9 @@ type DOverlay   = Doc
 --------------------------------------------------------------------------------
 -- Glyphs
 
+-- TODO - To handle triplets or their generalization /n-plets/, 
+-- glyph would need another special case.
+
 -- | The glyph type is usefully comprehensive for representing 
 -- musical /atoms/ (notes and rests). Chords and graces notes
 -- turn out to be special cases that can't be represented as lists
