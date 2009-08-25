@@ -141,15 +141,29 @@ emptySpan barlen n = let (blank_count,x) = n `divModR` barlen in
 --------------------------------------------------------------------------------
 -- beam
 
+data Status e = Fits e          -- Fits in the current beam group
+              | Completes e     -- Completes the current beam group
+              | Breaks e        -- Spans current and next beam group
+
+
+
+twinStatus :: HasDuration t => MeterPattern -> [t Duration] -> [Status (t Duration)]
+twinStatus = fst `oo` anaMap step where
+  step e []         = Just (Breaks e, [])
+  step e stk@(a:as) = fn (ratDuration e) where
+    fn n | n >= 1%4   = Just (Breaks e, consume n stk)
+         | n >  a     = Just (Breaks e, consume n stk) 
+         | n == a     = Just (Completes e, as)
+         | otherwise  = Just (Fits e, (a-n):as)
 
 
 
 beamM :: (HasDuration t, Monad m, ExtBeam (t Duration)) 
       => MeterPattern -> [t Duration] -> m [Pulse (t Duration)]
-beamM mp notes = runSnocWriterT (consumeSt beamStepM (mp,[]) notes) >>= fn
+beamM mp notes = runSnocWriterT (consumeSt beamStepM [] $ twinStatus mp notes) >>= fn
   where
-    fn ((_,[]),dlist)  = return $ D.toList dlist
-    fn ((_,cca),dlist) = return $ D.toList $ dlist `D.snoc` (toPulse $ reverse cca)
+    fn ([],dlist)  = return $ D.toList dlist
+    fn (cca,dlist) = return $ D.toList $ dlist `D.snoc` (toPulse $ reverse cca)
 
     -- Problem - the /cca/ in the flush doesn't respect extBeam-ing, 
     -- i.e. it might start or finish with a rest. This needs more 
@@ -158,17 +172,12 @@ beamM mp notes = runSnocWriterT (consumeSt beamStepM (mp,[]) notes) >>= fn
 
 beamStepM :: (HasDuration t, SnocWriterM m, ExtBeam (t Duration), 
               DiffElem m ~ Pulse (t Duration))
-          => t Duration 
-          -> (MeterPattern,[t Duration]) 
-          -> m (MeterPattern,[t Duration])
-beamStepM e ([],cca)          = putPulsation (reverse cca) >> putPulse1 e 
-                                                           >> return ([],[])
-beamStepM e (stk@(a:rs),cca)  = fn (ratDuration e) 
-  where
-    fn n | n >= 1%4 || n > a  = putPulsation (reverse cca) >> putPulse1 e 
-                                  >> return (consume n stk,[])
-         | n == a             = putPulsation (reverse $ e:cca) >> return (rs,[])
-         | otherwise          = return (consume n stk, e:cca)
+          => (Status (t Duration))
+          -> [t Duration]
+          -> m [t Duration]
+beamStepM (Fits e)      cca = return (e:cca) 
+beamStepM (Completes e) cca = putPulsation (reverse $ e:cca) >> return []
+beamStepM (Breaks e)    cca = putPulsation (reverse cca)     >> putPulse1 e >> return []
 
                                             
 -- Run a stateful computation over a list, return the final state
