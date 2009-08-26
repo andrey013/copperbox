@@ -37,6 +37,7 @@ import Mullein.Utils
 import MonadLib.Monads
 import qualified Data.DList as D
 
+import Data.List ( foldl' )
 import Data.Ratio
 
 
@@ -46,15 +47,15 @@ import Data.Ratio
 -- start or end of a beam group.
 
 class ExtBeam a where
-  extBeam :: a -> Bool
+  outerElement :: a -> Bool
 
 instance ExtBeam (Glyph pch dur) where
-  extBeam (Note _ _)     = True
-  extBeam (Rest _)       = False
-  extBeam (Spacer _)     = True     -- Note - is this correct? 
-  extBeam (Chord _ _)    = True
-  extBeam (GraceNotes _) = False
-  extBeam Tie            = False
+  outerElement (Note _ _)     = True
+  outerElement (Rest _)       = False
+  outerElement (Spacer _)     = True     -- Note - is this correct? 
+  outerElement (Chord _ _)    = True
+  outerElement (GraceNotes _) = False
+  outerElement Tie            = False
 
 --------------------------------------------------------------------------------
 -- Writer-like Snoc monad machinary
@@ -157,15 +158,62 @@ twinStatus = fst `oo` anaMap step where
          | otherwise  = Just (Fits e, (a-n):as)
 
 
+-- The current state of beaming is represented by a DList of 
+-- processed pulses (DList provides snoc-ing), and a reversed 
+-- list of the current beam group.
+type BeamAcc t = (D.DList (Pulse (t Duration)), [t Duration])
 
-beamM :: (HasDuration t, Monad m, ExtBeam (t Duration)) 
+beamM :: (HasDuration t, ExtBeam (t Duration), Monad m)
       => MeterPattern -> [t Duration] -> m [Pulse (t Duration)]
-beamM mp notes = runSnocWriterT (consumeSt beamStepM [] $ twinStatus mp notes) >>= fn
+beamM mp notes = return (beam2 mp notes)
+
+beam2 :: (HasDuration t, ExtBeam (t Duration))
+      => MeterPattern -> [t Duration] -> [Pulse (t Duration)]
+beam2 mp notes = (D.toList . fst . popBeam) $ 
+    foldl' beamStep (D.empty,[]) $ twinStatus mp notes
+ 
+beamStep :: ExtBeam (t Duration) 
+         => BeamAcc t -> Status (t Duration) -> BeamAcc t
+beamStep acc (Fits e)
+    | withinGroup acc         = pushIntoBeam e acc 
+    | outerElement e          = pushIntoBeam e acc
+    | otherwise               = snocPulse1 e acc
+beamStep acc (Completes e)    = popBeam $ pushIntoBeam e acc
+beamStep acc (Breaks e)       = snocPulse1 e acc 
+
+withinGroup :: BeamAcc t -> Bool
+withinGroup (_,cca) = null cca
+
+pushIntoBeam :: t Duration -> BeamAcc t -> BeamAcc t
+pushIntoBeam e (dl,cca) = (dl,e:cca)
+
+popBeam :: ExtBeam (t Duration) => BeamAcc t -> BeamAcc t
+popBeam (dl,[])  = (dl,[])
+popBeam (dl,cca) = ((dl `addBeam` body) `addSingles` tailsingles, [])
+  where
+    addBeam dlist []  = dlist
+    addBeam dlist [a] = dlist `D.snoc` (Pulse a)
+    addBeam dlist xs  = dlist `D.snoc` (BeamedL xs)
+
+    addSingles = foldl' (\a e -> a `D.snoc` (Pulse e)) 
+    
+    (tailsingles, body) = prod reverse reverse $ break outerElement cca
+
+snocPulse1 :: ExtBeam (t Duration) => t Duration -> BeamAcc t -> BeamAcc t
+snocPulse1 e acc = (dl `D.snoc` (Pulse e), [])
+  where (dl,_) = popBeam acc    -- popBeam always leaves righthand stack empty! 
+
+
+{-
+
+beamM' :: (HasDuration t, Monad m, ExtBeam (t Duration)) 
+      => MeterPattern -> [t Duration] -> m [Pulse (t Duration)]
+beamM' mp notes = runSnocWriterT (consumeSt beamStepM [] $ twinStatus mp notes) >>= fn
   where
     fn ([],dlist)  = return $ D.toList dlist
     fn (cca,dlist) = return $ D.toList $ dlist `D.snoc` (toPulse $ reverse cca)
 
-    -- Problem - the /cca/ in the flush doesn't respect extBeam-ing, 
+    -- Problem - the /cca/ in the flush doesn't respect outerElement-ing, 
     -- i.e. it might start or finish with a rest. This needs more 
     -- thought.
 
@@ -179,11 +227,6 @@ beamStepM (Fits e)      cca = return (e:cca)
 beamStepM (Completes e) cca = putPulsation (reverse $ e:cca) >> return []
 beamStepM (Breaks e)    cca = putPulsation (reverse cca)     >> putPulse1 e >> return []
 
-                                            
--- Run a stateful computation over a list, return the final state
-consumeSt :: Monad m => (a -> st -> m st) -> st -> [a] -> m st
-consumeSt _  st []     = return st
-consumeSt mf st (a:as) = mf a st >>= \st' -> consumeSt mf st' as  
 
 putPulse1 :: (SnocWriterM m, DiffElem m ~ Pulse e) => e -> m ()
 putPulse1 a = snoc $ Pulse a
@@ -191,7 +234,7 @@ putPulse1 a = snoc $ Pulse a
 
 putPulsation :: (SnocWriterM m, ExtBeam e, DiffElem m ~ Pulse e) 
              => [e] -> m ()
-putPulsation xs = let (headsingles, body, tailsingles) = dblbreak extBeam xs 
+putPulsation xs = let (headsingles, body, tailsingles) = dblbreak outerElement xs 
                   in do { mapM_ putPulse1 headsingles
                         ; step body
                         ; mapM_ putPulse1 tailsingles }
@@ -211,7 +254,7 @@ dblbreak p xs = (as,reverse sb,reverse sc) where
   (as,bs)           = break p xs
   (sc,sb)           = break p (reverse bs)
 
-
+-}
 
 
 -- reduce the MeterPattern stack by the duration
@@ -220,6 +263,12 @@ consume _ []                  = []
 consume n (x:xs) | n < x      = (x-n):xs
                  | n == x     = xs
                  | otherwise  = consume (n-x) xs
+
+                                            
+-- Run a stateful computation over a list, return the final state
+consumeSt :: Monad m => (a -> st -> m st) -> st -> [a] -> m st
+consumeSt _  st []     = return st
+consumeSt mf st (a:as) = mf a st >>= \st' -> consumeSt mf st' as  
 
 
 ratDuration :: HasDuration t => t Duration -> Rational
