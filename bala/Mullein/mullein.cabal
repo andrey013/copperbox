@@ -19,6 +19,8 @@ stability:          highly unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
+  demo/Examples.hs
+
 
 library
   hs-source-dirs:     src

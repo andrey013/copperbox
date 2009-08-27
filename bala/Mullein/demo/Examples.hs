@@ -12,7 +12,7 @@ import Mullein.LilyPondDoc
 import Mullein.LilyPondOutput
 import Mullein.NamedElements
 import Mullein.Pitch
-import Mullein.Utils ( renderDocEighty, writeDoc )
+import Mullein.Utils ( writeDoc )
 
 import Text.PrettyPrint.Leijen
 
