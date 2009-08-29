@@ -1,0 +1,46 @@
+name:             bala
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Some music modules 
+description:
+  Some music modules. 
+  .
+  (c) 2009 Stephen Tetley
+
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base < 5, wl-pprint, containers, vector-space, 
+                      Stream, hinze-streams
+
+  
+  exposed-modules:
+    Bala.ChordDiagram,
+    Bala.Pitch,
+    Bala.PitchClass,
+    Bala.RhythmPattern
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:  -Wall 
+  
+  includes: 
+  
+
+  
+  
+  

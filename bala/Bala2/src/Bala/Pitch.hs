@@ -75,13 +75,14 @@ instance AffineSpace Pitch where
   type Diff Pitch = Interval
   (.-.) p@(Pitch l _ o) p'@(Pitch l' _ o') = Interval ad hc 
     where
-      ad = (7*o + fromEnum l) - (7*o' + fromEnum l') 
+      ad = 1 + (7*o + fromEnum l) - (7*o' + fromEnum l') 
       hc = semitones p - semitones p'
-  (.+^) p@(Pitch l _ o) (Interval ad hc) = Pitch l' a' o' 
+
+  (.+^) p@(Pitch l _ o) (Interval ad sc) = Pitch l' a' o' 
     where
-      l' = toEnum $ (ad + fromEnum l) `mod` 7
-      a' = accidental $ spell l' (hc + semitones p)
-      o' = o + hc `div` 12
+      (carry,l') = fork (id,toEnum) $ ((ad-1) + fromEnum l) `divMod` 7
+      a' = accidental $ spell l' (sc + semitones p)
+      o' = o + carry + sc `div` 12
 
 spell :: PitchLetter -> Int -> Pitch
 spell l semicount = Pitch l a o 
@@ -90,7 +91,8 @@ spell l semicount = Pitch l a o
     a     = i - semitones l
 
  
-
+fork :: (a->c, b->d) -> (a,b) -> (c,d)
+fork (f,g) (a,b) = (f a, g b)
 
 middleC :: Pitch 
 middleC = Pitch C 0 5
