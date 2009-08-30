@@ -23,6 +23,10 @@ module Bala.Modulo
   -- * Integral coercion
   , Modulo12(..)
   , Modulo7(..)
+
+  , mod12
+  , mod7
+
   ) where
 
 -- Data types
@@ -110,6 +114,13 @@ instance Num Z7 where
   abs _         = error "Modular numbers are not signed"
 
 
+--------------------------------------------------------------------------------
+
+mod12 :: Integral a => a -> a
+mod12 = (`mod` 12)
+
+mod7 :: Integral a => a -> a
+mod7 = (`mod` 7)
 
 
 

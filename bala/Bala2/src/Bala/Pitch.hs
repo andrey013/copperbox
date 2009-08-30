@@ -79,11 +79,19 @@ instance Show Pitch where
            | i < 0     = showString (replicate (abs i) 'b')
            | otherwise = id
 
+-- | Note affine operations on PitchLetters are patterned on the 
+-- /retrograde/ counting used to calculate arithmetic distance.
+-- For instance the arithmetic distance from C to C is 1 (not zero),
+-- C to E is 3 (as the pitch letters C D and E are counted).
 instance AffineSpace PitchLetter where
   type Diff PitchLetter = Int
-  (.-.) a b = 1 + (fromZ7 $ toZ7 a - toZ7 b)
-  (.+^) = undefined
+  (.-.) a b = 1 + (mod7 $ fromEnum a - fromEnum b)
+  (.+^) l i | i > 0     = toEnum (mod7 $ (i-1) + fromEnum l) 
+            | i < 0     = toEnum (mod7 $ (i+1) + fromEnum l)
+            | otherwise = error "PitchLetter .+^ 0 - undefined"
 
+
+ 
 instance AdditiveGroup Interval where
   zeroV = Interval 0 0 
   (Interval ad hf) ^+^ (Interval ad' hf') = Interval (ad+ad') (hf+hf')
@@ -93,16 +101,22 @@ instance AdditiveGroup Interval where
 
 instance AffineSpace Pitch where
   type Diff Pitch = Interval
-  (.-.) p@(Pitch l _ o) p'@(Pitch l' _ o') = Interval ad hc 
+  (.-.) p@(Pitch l _ _) p'@(Pitch l' _ _) = Interval ad sc
     where
-      ad = 1 + (7*o + fromEnum l) - (7*o' + fromEnum l') 
-      hc = semitones p - semitones p'
-
-  (.+^) p@(Pitch l _ o) (Interval ad sc) = Pitch l' a' o' 
+      sc            = semitones p - semitones p'
+      octave_steps  = 7*(sc `div` 12)
+      ad0           = fromEnum $ l .-. l'
+      ad            = if signum octave_steps < 0
+                      then (negate ad0) + octave_steps
+                      else ad0 + octave_steps
+      
+  (.+^) p@(Pitch l _ o) (Interval ad sc) = Pitch lbl acd ove
     where
-      (carry,l') = fork (id,toEnum) $ ((ad-1) + fromEnum l) `divMod` 7
-      a' = accidental $ spell l' (sc + semitones p)
-      o' = o + carry + sc `div` 12
+      lbl       = l .+^ ad 
+      acd       = accidental $ spell lbl (sc + semitones p)
+      lbl_carry = if lbl < l && ad >0 then 1 else 0
+      sc_carry  = if (sc>=0) then sc `div` 12 else 1 + sc `div` 12
+      ove       = o + lbl_carry + sc_carry
 
 spell :: PitchLetter -> Int -> Pitch
 spell l semicount = Pitch l a o 
@@ -110,9 +124,6 @@ spell l semicount = Pitch l a o
     (o,i) = semicount `divMod` 12
     a     = i - semitones l
 
- 
-fork :: (a->c, b->d) -> (a,b) -> (c,d)
-fork (f,g) (a,b) = (f a, g b)
 
 middleC :: Pitch 
 middleC = Pitch C 0 5
