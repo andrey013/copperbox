@@ -17,6 +17,7 @@
 
 module Bala.Pitch  where
 
+import Bala.Modulo
 
 import Data.AdditiveGroup
 import Data.AffineSpace
@@ -37,7 +38,9 @@ data Pitch = Pitch {
       accidental  :: Accidental,
       octave      :: Octave
     }
-  deriving (Eq,Show)
+  deriving (Eq)
+
+
 
 data Interval = Interval { arithmeticDistance :: Int, halfStepCount :: Int }
   deriving (Eq,Ord,Show)
@@ -63,6 +66,23 @@ instance Semitones PitchLetter where
   
 --------------------------------------------------------------------------------
 -- Instances
+
+instance Modulo7 PitchLetter where
+  toZ7 = toZ7 . fromEnum
+  fromZ7 = toEnum . fromZ7
+
+
+instance Show Pitch where
+  showsPrec _ (Pitch l a o) = shows l . fa a . shows o 
+    where
+      fa i | i > 0     = showString (replicate i '#')
+           | i < 0     = showString (replicate (abs i) 'b')
+           | otherwise = id
+
+instance AffineSpace PitchLetter where
+  type Diff PitchLetter = Int
+  (.-.) a b = 1 + (fromZ7 $ toZ7 a - toZ7 b)
+  (.+^) = undefined
 
 instance AdditiveGroup Interval where
   zeroV = Interval 0 0 

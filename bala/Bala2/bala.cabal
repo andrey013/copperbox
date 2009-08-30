@@ -28,6 +28,8 @@ library
   
   exposed-modules:
     Bala.ChordDiagram,
+    Bala.Modulo,
+    Bala.NamedPitches,
     Bala.Pitch,
     Bala.PitchClass,
     Bala.RhythmPattern
