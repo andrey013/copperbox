@@ -50,19 +50,44 @@ data Interval = Interval { arithmeticDistance :: Int, halfStepCount :: Int }
 -- Type classes 
 
 class Semitones a where
-  semitones :: a -> Int
+  toSemitones   :: a -> Int
+  fromSemitones :: Int -> a
 
 instance Semitones Pitch where
-  semitones (Pitch l a o) = semitones l + a + (12 * o)
+  toSemitones (Pitch l a o) = toSemitones l + a + (12 * o)
+  fromSemitones i = Pitch lbl (m - toSemitones lbl) o 
+    where
+      (o,m) = i `divMod` 12
+      lbl   = fromSemitones m
+    
 
 instance Semitones PitchLetter where    
-  semitones C = 0
-  semitones D = 2
-  semitones E = 4
-  semitones F = 5
-  semitones G = 7
-  semitones A = 9
-  semitones B = 11
+  toSemitones C = 0
+  toSemitones D = 2
+  toSemitones E = 4
+  toSemitones F = 5
+  toSemitones G = 7
+  toSemitones A = 9
+  toSemitones B = 11
+  
+  -- fromSemitones favours sharps and a pitch created with
+  -- @fromSemitones@ may need respelling afterwards.
+  fromSemitones = fn . mod12 where
+    fn 0  = C
+    fn 1  = C
+    fn 2  = D
+    fn 3  = D
+    fn 4  = E
+    fn 5  = F
+    fn 6  = F
+    fn 7  = G
+    fn 8  = G 
+    fn 9  = A
+    fn 10 = A
+    fn _  = B
+
+
+
   
 --------------------------------------------------------------------------------
 -- Instances
@@ -70,6 +95,11 @@ instance Semitones PitchLetter where
 instance Modulo7 PitchLetter where
   toZ7 = toZ7 . fromEnum
   fromZ7 = toEnum . fromZ7
+
+instance Modulo12 Pitch where
+  toZ12 = toZ12 . toSemitones
+  fromZ12 = fromSemitones . fromZ12
+
 
 
 instance Show Pitch where
@@ -103,7 +133,7 @@ instance AffineSpace Pitch where
   type Diff Pitch = Interval
   (.-.) p@(Pitch l _ _) p'@(Pitch l' _ _) = Interval ad sc
     where
-      sc            = semitones p - semitones p'
+      sc            = toSemitones p - toSemitones p'
       octave_steps  = 7*(sc `div` 12)
       ad0           = fromEnum $ l .-. l'
       ad            = if signum octave_steps < 0
@@ -113,7 +143,7 @@ instance AffineSpace Pitch where
   (.+^) p@(Pitch l _ o) (Interval ad sc) = Pitch lbl acd ove
     where
       lbl       = l .+^ ad 
-      acd       = accidental $ spell lbl (sc + semitones p)
+      acd       = accidental $ spell lbl (sc + toSemitones p)
       lbl_carry = if lbl < l && ad >0 then 1 else 0
       sc_carry  = if (sc>=0) then sc `div` 12 else 1 + sc `div` 12
       ove       = o + lbl_carry + sc_carry
@@ -122,7 +152,7 @@ spell :: PitchLetter -> Int -> Pitch
 spell l semicount = Pitch l a o 
   where
     (o,i) = semicount `divMod` 12
-    a     = i - semitones l
+    a     = i - toSemitones l
 
 
 middleC :: Pitch 
@@ -130,4 +160,6 @@ middleC = Pitch C 0 5
 
 
 
-
+-- | Increment the semitone count.
+addSemitones :: Semitones a => a -> Int -> a
+addSemitones a i = fromSemitones (i + toSemitones a)

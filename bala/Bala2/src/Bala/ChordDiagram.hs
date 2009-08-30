@@ -21,6 +21,8 @@ import Bala.Pitch hiding ( F )
 
 import Data.AffineSpace
 
+import Data.Maybe
+
 data FretNum = X | F Int
   deriving (Eq,Ord)
 
@@ -67,7 +69,13 @@ pc :: Tuning -> [Pitch]
 pc (Tuning p ivls) = scanl (.+^) p ivls
 
 
-{-
+-- A Fingering is interpreted as a semitone increment - it cannot 
+-- be an interval as it has no notion of interval quality. So
+-- the pitch list should be /re-spelled/.
 pitchContent :: ChordDiagram -> Tuning -> [Pitch]
-pitchContent xs t = []
--}
+pitchContent xs t = catMaybes $ zipWith fn xs (pc t) where
+  fn X     _ = Nothing
+  fn (F i) p = Just $ p `addSemitones` i
+
+
+
