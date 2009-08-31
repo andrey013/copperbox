@@ -51,6 +51,15 @@ instance Num FretNum where
   fromInteger i | i < 0     = X
                 | otherwise = F $ fromInteger i
 
+
+
+standardTuning :: Tuning
+standardTuning = Tuning (Pitch E 0 4) [p4,p4,p4,mj4,p4]
+  where
+    p4  = Interval 4 5
+    mj4 = Interval 3 4
+
+
 -- Moveable chords...
 move :: Int -> ChordDiagram -> ChordDiagram
 move i xs | all (/=0) xs = map (fromIntegral i +) xs

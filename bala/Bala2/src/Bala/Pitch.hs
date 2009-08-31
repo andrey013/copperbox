@@ -38,12 +38,12 @@ data Pitch = Pitch {
       accidental  :: Accidental,
       octave      :: Octave
     }
-  deriving (Eq)
+  deriving Eq
 
 
 
 data Interval = Interval { arithmeticDistance :: Int, halfStepCount :: Int }
-  deriving (Eq,Ord,Show)
+  deriving Eq
 
 
 --------------------------------------------------------------------------------
@@ -92,14 +92,6 @@ instance Semitones PitchLetter where
 --------------------------------------------------------------------------------
 -- Instances
 
-instance Modulo7 PitchLetter where
-  toZ7 = toZ7 . fromEnum
-  fromZ7 = toEnum . fromZ7
-
-instance Modulo12 Pitch where
-  toZ12 = toZ12 . toSemitones
-  fromZ12 = fromSemitones . fromZ12
-
 
 
 instance Show Pitch where
@@ -108,6 +100,23 @@ instance Show Pitch where
       fa i | i > 0     = showString (replicate i '#')
            | i < 0     = showString (replicate (abs i) 'b')
            | otherwise = id
+
+instance Ord Pitch where
+  compare a b = compare (toSemitones a) (toSemitones b)
+
+
+instance Show Interval where
+  showsPrec p (Interval ad sc) = showsPrec p (ad,sc)
+
+
+instance Modulo7 PitchLetter where
+  toZ7   = toZ7 . fromEnum
+  fromZ7 = toEnum . fromZ7
+
+instance Modulo12 Pitch where
+  toZ12   = toZ12 . toSemitones
+  fromZ12 = fromSemitones . fromZ12
+
 
 -- | Note affine operations on PitchLetters are patterned on the 
 -- /retrograde/ counting used to calculate arithmetic distance.
@@ -121,7 +130,13 @@ instance AffineSpace PitchLetter where
             | otherwise = error "PitchLetter .+^ 0 - undefined"
 
 
- 
+-- zero is a problem for this representation of Intervals as it
+-- includes arithmetic distance with its /retrograde/ counting.
+-- The /subtraction/ of one pitch from itself produces the 
+-- interval (1,0), but interpreting this interval as zero is
+-- problemmatic for (simple minded, component-wise) addition:
+-- p + (1,0) + (1,0) /= p
+
 instance AdditiveGroup Interval where
   zeroV = Interval 0 0 
   (Interval ad hf) ^+^ (Interval ad' hf') = Interval (ad+ad') (hf+hf')
@@ -131,14 +146,12 @@ instance AdditiveGroup Interval where
 
 instance AffineSpace Pitch where
   type Diff Pitch = Interval
-  (.-.) p@(Pitch l _ _) p'@(Pitch l' _ _) = Interval ad sc
+  (.-.) p p' | p >= p'   = pdiff p p'
+             | otherwise = negateV $ pdiff p' p   -- flip args
     where
-      sc            = toSemitones p - toSemitones p'
-      octave_steps  = 7*(sc `div` 12)
-      ad0           = fromEnum $ l .-. l'
-      ad            = if signum octave_steps < 0
-                      then (negate ad0) + octave_steps
-                      else ad0 + octave_steps
+      pdiff a@(Pitch la _ _) b@(Pitch lb _ _) = Interval ad sc where
+        sc = toSemitones a - toSemitones b
+        ad = (7*(sc `div` 12)) + (fromEnum $ la .-. lb)
       
   (.+^) p@(Pitch l _ o) (Interval ad sc) = Pitch lbl acd ove
     where
@@ -163,3 +176,16 @@ middleC = Pitch C 0 5
 -- | Increment the semitone count.
 addSemitones :: Semitones a => a -> Int -> a
 addSemitones a i = fromSemitones (i + toSemitones a)
+
+
+{-
+iname :: Interval -> String
+iname (Interval ad sc) = maybe
+-}
+
+-- Simple interval from compound interval
+divSimple :: Interval -> (Int,Interval)
+divSimple (Interval ad sc) = (d, Interval ad' sc')
+  where
+    (d,sc') = sc `divMod` 12
+    ad'     = 1 + ((ad-1) `mod` 7)
