@@ -16,6 +16,7 @@
 
 module Bala.PitchClass where
 
+import Bala.Invert
 import Bala.Modulo
 
 import Data.Set hiding ( map )
@@ -36,8 +37,8 @@ makePitchClass = PitchClass . fromList . fmap toZ12
 transpose :: Z12 -> PitchClass -> PitchClass 
 transpose i = pcmap (+i)
 
-invert :: PitchClass -> PitchClass
-invert = pcmap negate
+instance Invert PitchClass where
+  invert = pcmap negate
 
 -- | aka invert and transpose
 inverti :: Z12 -> PitchClass -> PitchClass

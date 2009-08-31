@@ -17,6 +17,7 @@
 
 module Bala.Pitch  where
 
+import Bala.Invert
 import Bala.Modulo
 
 import Data.AdditiveGroup
@@ -130,17 +131,14 @@ instance AffineSpace PitchLetter where
             | otherwise = error "PitchLetter .+^ 0 - undefined"
 
 
--- zero is a problem for this representation of Intervals as it
--- includes arithmetic distance with its /retrograde/ counting.
--- The /subtraction/ of one pitch from itself produces the 
--- interval (1,0), but interpreting this interval as zero is
--- problemmatic for (simple minded, component-wise) addition:
--- p + (1,0) + (1,0) /= p
-
 instance AdditiveGroup Interval where
-  zeroV = Interval 0 0 
-  (Interval ad hf) ^+^ (Interval ad' hf') = Interval (ad+ad') (hf+hf')
-  negateV (Interval ad hf) = Interval (-ad) (-hf)
+  zeroV = Interval 1 0 
+  (Interval ad sc) ^+^ (Interval ad' sc') = Interval (ad + f ad') (sc+sc')
+    where f i | i > 0     = i-1
+              | i < 0 = i+1
+              | otherwise = error "^+^ ill-formed interval, ad should not be 0."
+
+  negateV (Interval ad sc) = Interval (-ad) (-sc)
 
 -- This will need some quickchecking...
 
@@ -161,6 +159,12 @@ instance AffineSpace Pitch where
       sc_carry  = if (sc>=0) then sc `div` 12 else 1 + sc `div` 12
       ove       = o + lbl_carry + sc_carry
 
+-- Note - cannot have an instance of AffineSpace for Pitch with:
+--   type Diff Pitch = Semitones
+--
+-- AffineSpace is not a MPTC.
+
+
 spell :: PitchLetter -> Int -> Pitch
 spell l semicount = Pitch l a o 
   where
@@ -177,15 +181,55 @@ middleC = Pitch C 0 5
 addSemitones :: Semitones a => a -> Int -> a
 addSemitones a i = fromSemitones (i + toSemitones a)
 
+instance Invert Interval where
+   -- Erk - this is correct only for simple intervals...
+  invert (Interval ad sc) = Interval (9 - ad) (12 - sc)
 
-{-
-iname :: Interval -> String
-iname (Interval ad sc) = maybe
--}
+
+data IntervalQuality = Diminished Int | Minor | Perfect | Major | Augmented Int
+  deriving (Eq)
+
+instance Show IntervalQuality where
+  showsPrec _ (Diminished n) = showString $ replicate n 'd'
+  showsPrec _ Minor          = showChar 'm'
+  showsPrec _ Perfect        = showChar 'P'
+  showsPrec _ Major          = showChar 'M'
+  showsPrec _ (Augmented n)  = showString $ replicate n 'A'
+
+intervalQuality :: Interval -> IntervalQuality
+intervalQuality (Interval ad sc) = 
+    either (dpa $ mod12 sc) (dmma $ mod12 sc) $ fn (amod7 ad)
+  where
+    fn 1 = Left   0
+    fn 2 = Right (1,2)
+    fn 3 = Right (3,4)
+    fn 4 = Left   5 
+    fn 5 = Left   7
+    fn 6 = Right (8,9)
+    fn 7 = Right (10,11)
+    fn _ = error "intervalQuality - unreachable (0)"
+
+    dpa s n | s > n     = Augmented (s-n)
+            | s < n     = Diminished (n-s)
+            | otherwise = Perfect
+
+    dmma s (mn,mj) | s == mn  = Minor
+                   | s == mj  = Major
+                   | s <  mn  = Diminished (mn-s)
+                   | s >  mj  = Augmented (s-mj)
+                   | otherwise = error "intervalQuality - unreachable (1)"
+                     
+
+intervalName :: Interval -> String
+intervalName ival@(Interval ad _) = show (intervalQuality ival) ++ show ad
+
+-- amod7 [1-7]
+amod7 :: Int -> Int
+amod7 i = 1 + ((i-1) `mod` 7) 
+
 
 -- Simple interval from compound interval
 divSimple :: Interval -> (Int,Interval)
-divSimple (Interval ad sc) = (d, Interval ad' sc')
+divSimple (Interval ad sc) = (d, Interval (amod7 ad) sc')
   where
     (d,sc') = sc `divMod` 12
-    ad'     = 1 + ((ad-1) `mod` 7)
