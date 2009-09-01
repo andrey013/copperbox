@@ -16,6 +16,7 @@
 
 module Bala.ChordDiagram where
 
+import Bala.Interval
 import Bala.Pitch hiding ( F )
 
 

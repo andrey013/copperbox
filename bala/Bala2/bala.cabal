@@ -23,11 +23,12 @@ extra-source-files:
 library
   hs-source-dirs:     src
   build-depends:      base < 5, wl-pprint, containers, vector-space, 
-                      Stream, hinze-streams
+                      Stream, hinze-streams, QuickCheck < 2
 
   
   exposed-modules:
     Bala.ChordDiagram,
+    Bala.Interval,
     Bala.Invert,
     Bala.Modulo,
     Bala.NamedPitches,
