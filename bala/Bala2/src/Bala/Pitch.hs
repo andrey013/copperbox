@@ -19,17 +19,18 @@ module Bala.Pitch  where
 
 import Bala.Interval
 import Bala.Modulo
+import Bala.RetroInt 
 
-import Data.AdditiveGroup
 import Data.AffineSpace
 
+import Data.Monoid
 import Test.QuickCheck
 
 --------------------------------------------------------------------------------
 -- Datatypes
 
 data PitchLetter = C | D | E | F | G | A | B
-  deriving (Enum,Eq,Ord,Show)
+  deriving (Bounded,Enum,Eq,Ord,Show)
 
 type Accidental = Int   -- 0 Nat, negative Flat, positive Sharp
 
@@ -127,41 +128,37 @@ instance Modulo12 Pitch where
   fromZ12 = fromSemitones . fromZ12
 
 
--- | Note affine operations on PitchLetters are patterned on the 
--- /retrograde/ counting used to calculate arithmetic distance.
--- For instance the arithmetic distance from C to C is 1 (not zero),
--- C to E is 3 (as the pitch letters C D and E are counted).
-instance AffineSpace PitchLetter where
-  type Diff PitchLetter = Int
-  (.-.) a b = 1 + (mod7 $ fromEnum a - fromEnum b)
-  (.+^) l i | i > 0     = toEnum (mod7 $ (i-1) + fromEnum l) 
-            | i < 0     = toEnum (mod7 $ (i+1) + fromEnum l)
-            | otherwise = error "PitchLetter .+^ 0 - undefined"
+-- Intervals are not considered to be signed!
+-- In fact the arithmetic distance and semitone count should 
+-- always be positive.
+-- This means the affine operations will not be associative. (sure?)
 
-
--- This will need some quickchecking...
 
 instance AffineSpace Pitch where
   type Diff Pitch = Interval
   (.-.) p p' | p >= p'   = pdiff p p'
-             | otherwise = negateV $ pdiff p' p   -- flip args
+             | otherwise = pdiff p' p   -- flip args
     where
-      pdiff a@(Pitch la _ _) b@(Pitch lb _ _) = Interval ad sc where
-        sc = toSemitones a - toSemitones b
-        ad = (7*(sc `div` 12)) + (fromEnum $ la .-. lb)
-      
+      pdiff lo@(Pitch llo _ _) hi@(Pitch lhi _ _) = Interval ad sc where
+        sc = toSemitones hi - toSemitones lo
+        ad = addOves (sc `div` 12) (llo `upTo` lhi)
+
+  -- ad and sc /should/ be positive!    
   (.+^) p@(Pitch l _ o) (Interval ad sc) = Pitch lbl acd ove
     where
-      lbl       = l .+^ ad 
+      lbl       = toEnum $ mod7 $ (fromEnum l) + ((fromRI ad) - 1) 
       acd       = accidental $ spell lbl (sc + toSemitones p)
-      lbl_carry = if lbl < l && ad >0 then 1 else 0
-      sc_carry  = if (sc>=0) then sc `div` 12 else 1 + sc `div` 12
-      ove       = o + lbl_carry + sc_carry
+      lbl_carry = if lbl < l then 1 else 0
+      ove       = o + lbl_carry + (sc `div` 12)
 
--- Note - cannot have an instance of AffineSpace for Pitch with:
---   type Diff Pitch = Semitones
---
--- AffineSpace is not a MPTC.
+
+addOves :: Int -> RI -> RI 
+addOves i = iter i (mappend $ toRI 8)
+  where 
+    iter n f a | n <= 0    = a
+               | otherwise = iter (n-1) f (f a)
+
+
 
 
 spell :: PitchLetter -> Int -> Pitch
@@ -179,3 +176,15 @@ middleC = Pitch C 0 5
 -- | Increment the semitone count.
 addSemitones :: Semitones a => a -> Int -> a
 addSemitones a i = fromSemitones (i + toSemitones a)
+
+
+
+upTo :: PitchLetter -> PitchLetter -> RI
+upTo a b | a == b    = mempty
+         | a >  b    = toRI $ 1 + (7 + fromEnum b) - fromEnum a
+         | otherwise = toRI $ 1 + (fromEnum b) - fromEnum a
+
+downTo :: PitchLetter -> PitchLetter -> RI
+downTo a b | a == b    = mempty
+           | a >  b    = toRI $ 1 + (fromEnum a) - fromEnum b
+           | otherwise = toRI $ 1 + (7 + fromEnum a) - fromEnum b

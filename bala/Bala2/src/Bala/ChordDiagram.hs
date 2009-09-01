@@ -57,8 +57,8 @@ instance Num FretNum where
 standardTuning :: Tuning
 standardTuning = Tuning (Pitch E 0 4) [p4,p4,p4,mj4,p4]
   where
-    p4  = Interval 4 5
-    mj4 = Interval 3 4
+    p4  = makeInterval 4 5
+    mj4 = makeInterval 3 4
 
 
 -- Moveable chords...

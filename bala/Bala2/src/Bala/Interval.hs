@@ -19,21 +19,24 @@ module Bala.Interval  where
 
 import Bala.Invert
 import Bala.Modulo
+import Bala.RetroInt
 
-import Data.AdditiveGroup
+import Data.AdditiveGroup -- VectorSpace
 
+import Data.Monoid
 import Test.QuickCheck
 
 --------------------------------------------------------------------------------
 -- Datatypes
 
 
-data Interval = Interval { arithmeticDistance :: Int, semitoneCount :: Int }
+data Interval = Interval { arithmeticDistance :: RI, semitoneCount :: Int }
   deriving Eq
 
 
 data IntervalQuality = Diminished Int | Minor | Perfect | Major | Augmented Int
   deriving (Eq)
+
 
 
 --------------------------------------------------------------------------------
@@ -49,27 +52,31 @@ data IntervalQuality = Diminished Int | Minor | Perfect | Major | Augmented Int
 instance Show Interval where
   showsPrec p (Interval ad sc) = showsPrec p (ad,sc)
 
+
 instance Arbitrary Interval where
-  arbitrary = arbitrary >>= \i -> geither i (genRegular i)
+  arbitrary = arbitrary >>= \i -> geither i (genRegular $ fromRI i)
     where
       geither i (Left j)      = return $ Interval i j
       geither i (Right (j,k)) = elements [j,k] >>= \l -> return (Interval i l)
   coarbitrary (Interval ad sc) = coarbitrary ad . coarbitrary sc
 
-instance AdditiveGroup Interval where
-  zeroV = Interval 1 0 
-  (Interval ad sc) ^+^ (Interval ad' sc') = Interval (ad + f ad') (sc+sc')
-    where f i | i > 0     = i-1
-              | i < 0     = i+1
-              | otherwise = error "^+^ ill-formed interval, ad should not be 0."
+instance Monoid Interval where
+  mempty = Interval mempty 0 
+  (Interval ad sc) `mappend` (Interval ad' sc') = Interval (ad `mappend` ad') (sc+sc')
 
-  negateV (Interval ad sc) = Interval (-ad) (-sc)
+
+instance AdditiveGroup Interval where
+  zeroV = mempty
+  (^+^) = mappend
+  negateV (Interval ad sc) = Interval ad (negate sc)  -- !!
 
 -- This will need some quickchecking...
 
 instance Invert Interval where
    -- Erk - this is correct only for simple intervals...
-  invert (Interval ad sc) = Interval (9 - ad) (12 - sc)
+  invert (Interval ad sc) = Interval ad' (12 - sc)
+    where
+      ad' = ad `rdif` toRI (9::Int)
 
 
 instance Show IntervalQuality where
@@ -83,7 +90,7 @@ instance Show IntervalQuality where
 
 intervalQuality :: Interval -> IntervalQuality
 intervalQuality (Interval ad sc) = 
-    either (dpa $ mod12 sc) (dmma $ mod12 sc) $ genRegular ad
+    either (dpa $ mod12 sc) (dmma $ mod12 sc) $ genRegular $ fromRI ad
   where
     dpa s n | s > n     = Augmented (s-n)
             | s < n     = Diminished (n-s)
@@ -110,29 +117,43 @@ genRegular = fn . amod7 where
 intervalName :: Interval -> String
 intervalName ival@(Interval ad _) = show (intervalQuality ival) ++ show ad
 
+makeInterval :: Int -> Int -> Interval
+makeInterval i j = Interval (toRI i) j
+
 -- 2 3 6 7
 minor :: Int -> Interval
-minor 2 = Interval 2 1
-minor 3 = Interval 3 3
-minor 6 = Interval 6 8
-minor 7 = Interval 7 10
+minor 2 = makeInterval 2 1
+minor 3 = makeInterval 3 3
+minor 6 = makeInterval 6 8
+minor 7 = makeInterval 7 10
 minor i = error $ "minor on " ++ show i
 
 major :: Int -> Interval
-major 2 = Interval 2 2
-major 3 = Interval 3 4
-major 6 = Interval 6 9
-major 7 = Interval 7 11
+major 2 = makeInterval 2 2
+major 3 = makeInterval 3 4
+major 6 = makeInterval 6 9
+major 7 = makeInterval 7 11
 major i = error $ "major on " ++ show i
+
+perfect :: Int -> Interval 
+perfect 1 = makeInterval 1 0
+perfect 4 = makeInterval 4 5
+perfect 5 = makeInterval 5 7
+perfect 8 = makeInterval 8 12
+perfect i = error $ "perfect on " ++ show i
 
 
 -- amod7 [1-7]
 amod7 :: Int -> Int
 amod7 i = 1 + ((i-1) `mod` 7) 
 
+amod7' :: RI -> RI
+amod7' i = toRI $  1 + (((fromRI i)-1) `mod` 7) 
+
+
 
 -- Simple interval from compound interval
 divSimple :: Interval -> (Int,Interval)
-divSimple (Interval ad sc) = (d, Interval (amod7 ad) sc')
+divSimple (Interval ad sc) = (d, Interval (amod7' ad) sc')
   where
     (d,sc') = sc `divMod` 12
