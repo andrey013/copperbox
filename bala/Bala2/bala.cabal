@@ -27,6 +27,7 @@ library
 
   
   exposed-modules:
+    Bala.Chord,
     Bala.ChordDiagram,
     Bala.Interval,
     Bala.Invert,
@@ -35,7 +36,8 @@ library
     Bala.Pitch,
     Bala.PitchClass,
     Bala.RetroInt,
-    Bala.RhythmPattern
+    Bala.RhythmPattern,
+    Bala.Scale
   other-modules:
     
   extensions:

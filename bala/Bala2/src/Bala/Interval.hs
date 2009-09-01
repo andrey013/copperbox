@@ -88,6 +88,10 @@ instance Show IntervalQuality where
 
 --------------------------------------------------------------------------------
 
+complement :: Interval -> Interval -> Bool
+complement a b = a `mappend` b == makeInterval 8 12 
+
+
 intervalQuality :: Interval -> IntervalQuality
 intervalQuality (Interval ad sc) = 
     either (dpa $ mod12 sc) (dmma $ mod12 sc) $ genRegular $ fromRI ad
@@ -120,27 +124,39 @@ intervalName ival@(Interval ad _) = show (intervalQuality ival) ++ show ad
 makeInterval :: Int -> Int -> Interval
 makeInterval i j = Interval (toRI i) j
 
+intervalPair :: Interval -> (Int,Int)
+intervalPair (Interval i j) = (fromRI i,j)
+
+
 -- 2 3 6 7
-minor :: Int -> Interval
-minor 2 = makeInterval 2 1
-minor 3 = makeInterval 3 3
-minor 6 = makeInterval 6 8
-minor 7 = makeInterval 7 10
-minor i = error $ "minor on " ++ show i
+major2 :: Interval
+major3 :: Interval
+major6 :: Interval
+major7 :: Interval
+major2 = makeInterval 2 2
+major3 = makeInterval 3 4
+major6 = makeInterval 6 9
+major7 = makeInterval 7 11
 
-major :: Int -> Interval
-major 2 = makeInterval 2 2
-major 3 = makeInterval 3 4
-major 6 = makeInterval 6 9
-major 7 = makeInterval 7 11
-major i = error $ "major on " ++ show i
 
-perfect :: Int -> Interval 
-perfect 1 = makeInterval 1 0
-perfect 4 = makeInterval 4 5
-perfect 5 = makeInterval 5 7
-perfect 8 = makeInterval 8 12
-perfect i = error $ "perfect on " ++ show i
+minor2 :: Interval
+minor3 :: Interval
+minor6 :: Interval
+minor7 :: Interval
+minor2 = makeInterval 2 1
+minor3 = makeInterval 3 3
+minor6 = makeInterval 6 8
+minor7 = makeInterval 7 10
+
+
+perfect1 :: Interval 
+perfect4 :: Interval 
+perfect5 :: Interval 
+perfect8 :: Interval 
+perfect1 = makeInterval 1 0
+perfect4 = makeInterval 4 5
+perfect5 = makeInterval 5 7
+perfect8 = makeInterval 8 12
 
 
 -- amod7 [1-7]
