@@ -151,3 +151,26 @@ dim13 = insert diminished13 . dim11
 
 aug13 :: Chord -> Chord
 aug13 = insert augmented13 . aug11
+
+
+--------------------------------------------------------------------------------
+-- Generate the triads for a scale
+
+
+type TriadPattern = [Pitch -> Chord]
+
+majorScaleTriads :: TriadPattern
+majorScaleTriads = 
+    [major, minor, minor, major, major, minor, diminished, major]
+
+naturalMinorTriads :: TriadPattern
+naturalMinorTriads = 
+    [minor, diminished, major, minor, minor, major, major, minor]
+
+harmonicMinorTriads :: TriadPattern
+harmonicMinorTriads = 
+    [minor, diminished, major, minor, major, major, diminished, minor]
+
+minorPentatonicBluesTriads :: TriadPattern
+minorPentatonicBluesTriads = 
+    [major, major, major, major, major, major]
