@@ -40,6 +40,8 @@ import Mullein.AbcDoc
 import Mullein.Core
 import Mullein.Duration
 import Mullein.Pitch hiding ( octave )
+import Mullein.Utils ( optDoc )
+
 
 import Text.PrettyPrint.Leijen
 
@@ -56,12 +58,12 @@ class AbcGlyph e where
 
 
 instance AbcGlyph (Glyph Pitch AbcMultiplier) where
-  abcGlyph (Note p dm)      = note p dm
+  abcGlyph (Note p dm t)    = note p dm <> optDoc t tie
   abcGlyph (Rest dm)        = rest dm
   abcGlyph (Spacer dm)      = spacer dm
-  abcGlyph (Chord ps dm)    = chordForm $ map (note `flip` dm) ps 
+  abcGlyph (Chord ps dm t)  = (chordForm $ map (note `flip` dm) ps) 
+                                <> optDoc t tie
   abcGlyph (GraceNotes xs)  = graceForm $ map abcGrace xs
-  abcGlyph Tie              = tie
 
 abcGrace :: GraceNote Pitch AbcMultiplier -> Doc
 abcGrace (GraceNote p dm) = note p dm
@@ -103,13 +105,12 @@ rewriteDuration :: ChangeDurationAbc t
 rewriteDuration r bars = map (fmap (changeDurationAbc r)) bars
 
 instance ChangeDurationAbc (Glyph pch) where
-  changeDurationAbc r (Note p d)       = Note p $ abcMultiplier r d
+  changeDurationAbc r (Note p d t)     = Note p (abcMultiplier r d) t
   changeDurationAbc r (Rest d)         = Rest $ abcMultiplier r d
   changeDurationAbc r (Spacer d)       = Spacer $ abcMultiplier r d
-  changeDurationAbc r (Chord ps d)     = Chord ps $ abcMultiplier r d
+  changeDurationAbc r (Chord ps d t)   = Chord ps (abcMultiplier r d) t
   changeDurationAbc r (GraceNotes xs)  = GraceNotes $ 
                                            map (changeDurationAbc r) xs
-  changeDurationAbc _ Tie              = Tie
 
 instance ChangeDurationAbc (GraceNote pch) where
   changeDurationAbc r (GraceNote p d) = GraceNote p (abcMultiplier r d)
@@ -129,12 +130,11 @@ rewritePitch smap bars = map (fmap (changePitchAbc smap)) bars
 
 
 instance ChangePitchAbc Glyph where
-  changePitchAbc sm (Note p d)       = Note (spell sm p) d
+  changePitchAbc sm (Note p d t)     = Note (spell sm p) d t
   changePitchAbc _  (Rest d)         = Rest d
   changePitchAbc _  (Spacer d)       = Spacer d
-  changePitchAbc sm (Chord ps d)     = Chord (map (spell sm) ps) d
+  changePitchAbc sm (Chord ps d t)   = Chord (map (spell sm) ps) d t
   changePitchAbc sm (GraceNotes xs)  = GraceNotes (map (changePitchAbc sm) xs)
-  changePitchAbc _  Tie              = Tie
 
 
 instance ChangePitchAbc GraceNote where

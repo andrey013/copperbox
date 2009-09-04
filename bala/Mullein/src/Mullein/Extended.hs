@@ -31,7 +31,7 @@ import Mullein.Duration
 import Mullein.LilyPondDoc
 import Mullein.LilyPondOutput
 import Mullein.Pitch
-
+import Mullein.Utils ( optDoc )
 
 import Text.PrettyPrint.Leijen
 
@@ -53,8 +53,8 @@ type FingeredGlyph = Glyph FingeredPitch Duration
 
 
 (%%) :: FingeredGlyph -> Int -> FingeredGlyph
-(Note (FingeredPitch p _) drn) %% i = Note (FingeredPitch p (Just i)) drn
-a                              %% _ = a
+(Note (FingeredPitch p _) drn t) %% i = Note (FingeredPitch p (Just i)) drn t
+a                                %% _ = a
 
 
 
@@ -64,25 +64,24 @@ instance HasPitch FingeredPitch where
 
 
 instance MakeNote FingeredGlyph where
-  makeNote pch drn = Note (FingeredPitch pch Nothing) drn
+  makeNote pch drn = Note (FingeredPitch pch Nothing) drn False
 
 instance MakeRest FingeredGlyph where
   makeRest drn = Rest drn
 
 
 instance LilyPondGlyph (Glyph FingeredPitch (Maybe Duration)) where
-  lyGlyph (Note p d)       = pitchDurationFinger p d
+  lyGlyph (Note p d t)     = pitchDurationFinger p d <> optDoc t tie
   lyGlyph (Rest d)         = rest d
   lyGlyph (Spacer d)       = spacer d
-  lyGlyph (Chord ps d)     = chordForm (map pitchFinger ps) d
+  lyGlyph (Chord ps d t)   = chordForm (map pitchFinger ps) d <> optDoc t tie
   lyGlyph (GraceNotes xs)  = graceForm $ map fn xs 
     where fn (GraceNote p d) = pitchDurationFinger p d
-  lyGlyph Tie              = tie
 
 
 pitchDurationFinger :: FingeredPitch -> Maybe Duration -> Doc
 pitchDurationFinger (FingeredPitch p mi) md = 
-  pitch p <> maybe empty duration md <> maybe empty fingering mi
+    pitch p <> maybe empty duration md <> maybe empty fingering mi
 
 pitchFinger :: FingeredPitch -> Doc
 pitchFinger (FingeredPitch p mi) = pitch p <> maybe empty fingering mi

@@ -95,16 +95,14 @@ omBeam (BeamedL es) = beamForm $ map lyGlyph es
 
 
 oGlyph :: (pch -> Doc) -> Glyph pch (Maybe Duration) -> Doc
-oGlyph f (Note p d)       = f p <> maybe empty duration d
+oGlyph f (Note p d t)     = f p <> maybe empty duration d <> optDoc t tie
 oGlyph _ (Rest d)         = rest d
 oGlyph _ (Spacer d)       = spacer d
-oGlyph f (Chord ps d)     = chordForm (map f ps) d
+oGlyph f (Chord ps d t)   = chordForm (map f ps) d <> optDoc t tie
 oGlyph f (GraceNotes xs)  = graceForm (map (oGrace f) xs)
-oGlyph _ Tie              = tie
 
 oGrace :: (pch -> Doc) -> GraceNote pch (Maybe Duration) -> Doc
 oGrace f (GraceNote p d) = f p <> maybe empty duration d
-
 
 
 
@@ -138,13 +136,12 @@ rewriteDuration bars = fst $ runState dZero (mapM (T.mapM fn) bars)
 
 
 instance ChangeDurationLR (Glyph pch) where
-  changeDurationLR d0 (Note p d)       = (Note p (alterDuration d0 d), d)
+  changeDurationLR d0 (Note p d t)     = (Note p (alterDuration d0 d) t, d)
   changeDurationLR d0 (Rest d)         = (Rest (alterDuration d0 d), d)
   changeDurationLR d0 (Spacer d)       = (Spacer (alterDuration d0 d), d)
-  changeDurationLR d0 (Chord ps d)     = (Chord ps (alterDuration d0 d), d)
+  changeDurationLR d0 (Chord ps d t)   = (Chord ps (alterDuration d0 d) t, d)
   changeDurationLR d0 (GraceNotes xs)  = (GraceNotes xs',d')
                                           where (xs',d') = changeGraceD d0 xs
-  changeDurationLR d0 Tie              = (Tie,d0) 
 
 
 
@@ -177,15 +174,14 @@ inside :: (s -> (a,s)) -> State s a
 inside f = get >>= \s -> let (a,s') = f s in set s' >> return a
 
 instance ChangePitchLR Glyph where
-  changePitchLR p0 (Note p d)       = (Note p' d, getPitch p)
+  changePitchLR p0 (Note p d t)     = (Note p' d t, getPitch p)
                                       where p' = alterPitch p0 p
   changePitchLR p0 (Rest d)         = (Rest d, p0)
   changePitchLR p0 (Spacer d)       = (Spacer d, p0)
-  changePitchLR p0 (Chord ps d)     = (Chord ps' d,p') 
+  changePitchLR p0 (Chord ps d t)   = (Chord ps' d t,p') 
                                        where (ps',p') = changeChordP p0 ps
   changePitchLR p0 (GraceNotes xs)  = (GraceNotes xs',p')
                                        where (xs',p') = changeGraceP p0 xs
-  changePitchLR p0 Tie              = (Tie,p0) 
 
 
 

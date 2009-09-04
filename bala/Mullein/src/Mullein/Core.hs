@@ -186,13 +186,13 @@ type DOverlay   = Doc
 -- it might be e.g. a LilyPond drum pitch which is really just an 
 -- enumeration of drum names.
 
+type Tie = Bool
 
-data Glyph pch drn = Note   pch drn
+data Glyph pch drn = Note   pch drn Tie
                    | Rest   drn
                    | Spacer drn
-                   | Chord  [pch] drn
+                   | Chord  [pch] drn Tie
                    | GraceNotes [GraceNote pch drn]
-                   | Tie
   deriving (Eq,Show)
 
 
@@ -216,12 +216,11 @@ class MakeRest e where
 -- instances
   
 instance HasDuration (Glyph pch) where 
-  getDuration (Note _ d)     = d
+  getDuration (Note _ d _)   = d
   getDuration (Rest d)       = d
   getDuration (Spacer d)     = d
-  getDuration (Chord _ d)    = d
+  getDuration (Chord _ d _)  = d
   getDuration (GraceNotes _) = dZero
-  getDuration Tie            = dZero
 
 
 instance Spacer (Glyph pch Duration) where
@@ -230,7 +229,7 @@ instance Spacer (Glyph pch Duration) where
 
 
 instance MakeNote PDGlyph where
-  makeNote pch drn = Note pch drn
+  makeNote pch drn = Note pch drn False
 
 instance MakeRest PDGlyph where
   makeRest drn = Rest drn

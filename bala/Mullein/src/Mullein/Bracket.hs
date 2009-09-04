@@ -50,12 +50,11 @@ class ExtBeam a where
   outerElement :: a -> Bool
 
 instance ExtBeam (Glyph pch dur) where
-  outerElement (Note _ _)     = True
+  outerElement (Note _ _ _)   = True
   outerElement (Rest _)       = False
   outerElement (Spacer _)     = True     -- Note - is this correct? 
-  outerElement (Chord _ _)    = True
+  outerElement (Chord _ _ _)  = True
   outerElement (GraceNotes _) = False
-  outerElement Tie            = False
 
 --------------------------------------------------------------------------------
 -- Writer-like Snoc monad machinary
@@ -107,7 +106,6 @@ freePhrase :: (HasDuration t, ExtBeam (t Duration))
 freePhrase mp notes = runId $ do 
   xs <- beamM mp notes
   return $ [Bar xs]
-
 
 --------------------------------------------------------------------------------
 -- bar

@@ -84,7 +84,7 @@ fourFourTime :: MeterPattern
 fourFourTime = makeMeterPattern 4 4
 
 drum :: DrumPitch -> Duration -> DrumGlyph
-drum p drn = Note p drn
+drum p drn = Note p drn False
 
 drums1 :: [DrumGlyph]
 drums1 = [drum snare qn, qnr, drum snare qn, qnr]

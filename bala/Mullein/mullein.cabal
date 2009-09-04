@@ -1,16 +1,16 @@
 name:             mullein
-version:          0.2.0
+version:          0.3.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Music
-synopsis:         A DSL for generating LilyPond and ABC scores. 
+synopsis:         A library for generating LilyPond and ABC scores. 
 description:
-  Mullein is a DSL for generating ABC and LilyPond scores. It aims 
-  to generate /good/ quality scores - that's to say the output should
-  resemble hand-written scores. 
+  Mullein is a library for generating ABC and LilyPond scores. 
+  It aims to generate /good/ quality scores - that's to say the 
+  output should resemble hand-written scores. 
   .
   (c) 2009 Stephen Tetley
 
@@ -24,7 +24,7 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base < 5, wl-pprint, containers, mtl, dlist, QuickCheck,
+  build-depends:      base < 5, wl-pprint, containers, dlist, QuickCheck,
                       monadLib
 
   

@@ -43,6 +43,7 @@ module Mullein.Utils
   , doubleQuote
   , emptyDoc
   , spaceBraces
+  , optDoc
   
   , writeDoc
   , renderDocEighty
@@ -143,7 +144,8 @@ emptyDoc = PP.empty
 spaceBraces :: Doc -> Doc
 spaceBraces = enclose (text "{ ") (text " }")
 
-
+optDoc :: Bool -> Doc -> Doc
+optDoc b doc = if b then doc else PP.empty
 
 writeDoc :: FilePath -> Doc -> IO ()
 writeDoc filepath = writeFile filepath . renderDocEighty

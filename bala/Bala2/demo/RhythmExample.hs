@@ -36,10 +36,15 @@ afoxeLs :: Stream PDGlyph
 afoxeLs = unwind phi 0 $ pulse afoxe_lower where
   phi _ 0 = (Left qnr, 1)
   phi _ 1 = (Left (c 5 en), 2)
-  phi _ 2 = (Right [c 5 en, {- Tie, -} c 5 qn], 1)
+  phi _ 2 = (Right [tied $ c 5 en, c 5 qn], 1)
+
+tied (Note pch drn _) = Note pch drn True
+tied (Chord ps drn _) = Chord ps drn True
+tied a                = a
+
 
 afoxeU = WS.take (4*6) afoxeUs
-afoxeL = WS.take (3+3*4) afoxeLs
+afoxeL = WS.take (4*3) afoxeLs
  
 
 
@@ -60,7 +65,8 @@ twoFourTime = makeMeterPattern 2 4
 
 
 
--- rest, note, note, note, note
+-- rest, note, note, note, no
+z0 = WS.take 20 $ pulse afoxe_lower
 
 z1 = WS.take 10 $ fmap (%16) $ pulse afoxe_upper 
 
