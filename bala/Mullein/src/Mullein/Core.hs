@@ -40,6 +40,7 @@ module Mullein.Core
   -- * Classes
   , MakeNote(..)
   , MakeRest(..)
+  , HasTie(..)
    
   ) where
 
@@ -213,8 +214,17 @@ class MakeNote e where
 class MakeRest e where
   makeRest :: Duration -> e 
 
+
+class HasTie a where
+  setTied :: a -> a
+
 -- instances
   
+instance HasTie (Glyph pch dur) where
+  setTied (Note p d _)   = Note p d True
+  setTied (Chord ps d _) = Chord ps d True
+  setTied e              = e
+
 instance HasDuration (Glyph pch) where 
   getDuration (Note _ d _)   = d
   getDuration (Rest d)       = d

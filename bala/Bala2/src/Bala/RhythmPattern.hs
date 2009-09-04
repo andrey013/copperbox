@@ -25,6 +25,7 @@ import qualified Data.Stream.Hinze.Stream as HS
 
 
 import Data.List ( unfoldr )
+import Data.Ratio
 import Data.Set ( Set )
 import qualified Data.Set as Set
 
@@ -54,6 +55,13 @@ makeSubsetPattern n xs
     | otherwise         = error "makeSubsetPattern - invalid data"
 
 
+repeatPattern :: Int -> SubsetPattern -> SubsetPattern
+repeatPattern n (SubsetPattern t oset) = SubsetPattern (t*n) (fn n oset)
+  where 
+    fn i st | i > 1     = fn (i-1) $ st `Set.union` Set.map (t*(i-1) +) oset
+            | otherwise = st
+
+
 
 -- | Print a SubsetPattern in /box notation/.
 showBox :: SubsetPattern -> String
@@ -62,8 +70,9 @@ showBox (SubsetPattern t st) = unfoldr phi 1 where
   phi n | n `Set.member` st = Just ('X',n+1)
         | otherwise         = Just ('.',n+1)
 
--- cannot use @diff@ in Hinze.Stream as repeating the subset 
--- pattern generates a /numerical reset/ in the stream.
+
+{-
+-- OLD...
 pulse :: SubsetPattern -> Stream Int
 pulse (SubsetPattern t st) = mydiff strm where
   strm      = (Set.toList st) << strm  
@@ -71,7 +80,22 @@ pulse (SubsetPattern t st) = mydiff strm where
 
   op a b | a > b        = a - b
          | otherwise    = (a+t) - b
+-}
 
+
+-- cannot use @diff@ in Hinze.Stream as repeating the subset 
+-- pattern generates a /numerical reset/ in the stream.
+pulse :: SubsetPattern -> Stream Rational
+pulse (SubsetPattern t st) = S.zipWith ((rat .) . dif) s (1 <:> s) where
+  s      = (Set.toList st) << s
+
+  rat a = (1 % fromIntegral t) * fromIntegral a
+  dif a b | a > b        = a - b
+          | otherwise    = (a+t) - b
+
+
+
+{-
 
 data E a = E a | Tied a 
   deriving (Eq,Show)
@@ -91,7 +115,7 @@ metricalPartition' sz = unwind fn 0 where
          | a+i > sz  = (Right [E $ sz-i, Tied $ i+a-sz], i+a-sz)
          | otherwise = (Left (E a),a+i)
 
-
+-}
 
 
 

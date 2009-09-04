@@ -7,40 +7,65 @@ module RhythmExample where
 
 import Bala.RhythmPattern
 
-import Mullein.LilyPond hiding ( Pulse )
+import Mullein.LilyPond hiding ( Pulse, rest )
 
 import Data.Stream ( Stream )
 import qualified Data.Stream              as WS
 import Data.Stream.Hinze.Stream ( (<:) )
 import qualified Data.Stream.Hinze.Stream as HS
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen hiding ( dot )
 
 import Data.Ratio
 import qualified Data.Set                 as Set
 
-afoxe_upper = makeSubsetPattern 8 [2,4,6,8]
-afoxe_lower = makeSubsetPattern 8 [5,7]
+afoxe_upper = repeatPattern 2 $ makeSubsetPattern 8 [2,4,6,8]
+afoxe_lower = repeatPattern 2 $ makeSubsetPattern 8 [5,7]
 
--- Hmmm, we're not actually using the pulsation pattern here!
+
 
 afoxeUs :: Stream PDGlyph
 afoxeUs = unwind phi 0 $ pulse afoxe_upper where
-  phi _ 0 = (Left snr, 1)
-  phi _ 1 = (Left (c 6 en), 2)
-  phi _ 2 = (Right [c 6 sn, snr], 1)
+  phi a 0 = (Left $ rest a, 1)
+  phi a 1 = (Left (c 6 $ balaDuration a), 2)
+  phi a 2 = (Right $ c16r16 a, 1)
 
--- Mullien - puts tie at start of new bar rather than end of 
--- old bar...
+
+c16r16 :: Rational -> [PDGlyph]
+c16r16 d = [c 6 $ balaDuration d1, rest d2]
+  where
+    (d1,d2) = split2 (1,1) d
+
 
 afoxeLs :: Stream PDGlyph
 afoxeLs = unwind phi 0 $ pulse afoxe_lower where
-  phi _ 0 = (Left qnr, 1)
-  phi _ 1 = (Left (c 5 en), 2)
-  phi _ 2 = (Right [tied $ c 5 en, c 5 qn], 1)
+  phi a 0 = (Left $ rest a, 1)
+  phi a 1 = (Left (c 5 $ balaDuration a), 2)
+  phi a 2 = (Right $ tied8'4 a, 1)
 
-tied (Note pch drn _) = Note pch drn True
-tied (Chord ps drn _) = Chord ps drn True
-tied a                = a
+
+tied8'4 :: Rational -> [PDGlyph]
+tied8'4 d = [setTied $ c 5 d1, c 5 d2]
+  where
+    (d1,d2) = fork (balaDuration,balaDuration) $ split2 (1,2) d
+
+split2 :: (Integer,Integer) -> Rational -> (Rational,Rational)
+split2 (a,b) r = ( r * (a%z), r *(b%z)) where z = a+b
+
+-- note :: Pitch -> Octave -> Rational -> PDGlyph
+-- note p o = makeNote p o . balaDuration
+
+rest :: Rational -> PDGlyph
+rest = makeRest . balaDuration
+
+fork (f,g) (a,b) = (f a, g b)
+
+balaDuration :: Rational -> Duration
+balaDuration  = either restErr id . rationalToDuration 
+  where
+    restErr :: ConversionError -> Duration
+    restErr e = error $ "balaDuration - cannot convert " 
+                      ++ show (getBadRational e)
+
 
 
 afoxeU = WS.take (4*6) afoxeUs
@@ -66,15 +91,14 @@ twoFourTime = makeMeterPattern 2 4
 
 
 -- rest, note, note, note, no
-z0 = WS.take 20 $ pulse afoxe_lower
+z_lower = WS.take 20 $ pulse afoxe_lower
 
-z1 = WS.take 10 $ fmap (%16) $ pulse afoxe_upper 
+z_upper = WS.take 10 $ pulse afoxe_upper 
 
 
-z2 = WS.take 10 $ metricalPartition 8 $ pulse afoxe_lower
-z2' = WS.take 10 $ metricalPartition' 8 $ pulse afoxe_lower
 
--- z3 = WS.take 20 $ pass 1 [idS, split, idS] () $ pulse afoxe_upper
+-- z2 = WS.take 10 $ metricalPartition 1 $ pulse afoxe_lower
+-- z2' = WS.take 10 $ metricalPartition' 1 $ pulse afoxe_lower
 
 
 
