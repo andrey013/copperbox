@@ -195,12 +195,12 @@ changeGraceP :: HasPitch pch
 changeGraceP p0 xs = anaMap fn p0 xs where
   fn (GraceNote pch d) p = Just (GraceNote (alterPitch p pch) d, getPitch pch)
 
-
+-- return changed pitches, plus first pitch of the /original/ chord
 changeChordP :: HasPitch pch => Pitch -> [pch] -> ([pch],Pitch)
-changeChordP p0 xs = post $ anaMap fn p0 xs where
+changeChordP p0 []       = ([],p0)
+changeChordP p0 xs@(p:_) = (fst $ anaMap fn p0 xs, getPitch p) where
   fn pch st = Just (alterPitch st pch, getPitch pch)
-  post ([],_)       = ([],p0)
-  post (ps@(p:_),_) = (ps,getPitch p)
+
 
 alterPitch :: HasPitch pch => Pitch -> pch -> pch
 alterPitch p0 pch = setPitch p1 pch

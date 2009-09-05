@@ -18,7 +18,7 @@ module Bala.Mullein.Abc
   ( 
 
   -- * Write temp file and render to ABC
-    abcBuffer  
+    abcRun 
   ) where
 
 import Mullein.Abc
@@ -32,8 +32,8 @@ import Text.PrettyPrint.Leijen
 
 
 
-abcBuffer :: Doc -> IO ()
-abcBuffer doc = do 
+abcRun :: Doc -> IO ()
+abcRun doc = do 
   writeDoc "temporary.abc" doc
   system "abcm2ps -O temporary.ps temporary.abc"
   return ()

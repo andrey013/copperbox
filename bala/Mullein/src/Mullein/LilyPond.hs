@@ -61,7 +61,6 @@ lilyPondSimple xs =  version "2.12.2"
   where
     tune = simpleOutput $ renderPhrase 
                         $ rewritePitch middle_c 
-                        $ rewriteDuration phrz
-    
-    phrz = freePhrase (makeMeterPattern 4 4) xs
+                        $ rewriteDuration 
+                        $ freePhrase (makeMeterPattern 4 4) xs
 

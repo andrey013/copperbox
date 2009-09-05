@@ -38,6 +38,11 @@ instance Show Chord where
 
 --------------------------------------------------------------------------------
 
+
+makeChord :: Pitch -> [Interval] -> Chord
+makeChord p = Chord p . IM.fromList . map intervalPair
+  
+
 extractIntervals :: Chord -> [Interval]
 extractIntervals = map (uncurry makeInterval) . IM.toAscList . chordIntervals
 

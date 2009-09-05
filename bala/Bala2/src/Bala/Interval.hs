@@ -127,6 +127,8 @@ makeInterval i j = Interval (toRI i) j
 intervalPair :: Interval -> (Int,Int)
 intervalPair (Interval i j) = (fromRI i,j)
 
+addOve :: Interval -> Interval
+addOve = mappend perfect8
 
 -- 2 3 6 7
 major2              :: Interval

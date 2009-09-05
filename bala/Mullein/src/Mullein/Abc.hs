@@ -66,7 +66,7 @@ abcSimple xs = tunenum   1
     tune = simpleOutput $ renderPhrase 
                         $ rewritePitch cmaj
                         $ rewriteDuration (1%8)
-                        $ phrase (makeMeterPattern 4 4) xs
+                        $ freePhrase (makeMeterPattern 4 4) xs
 
     cmaj = makeSpellingMap 0
 

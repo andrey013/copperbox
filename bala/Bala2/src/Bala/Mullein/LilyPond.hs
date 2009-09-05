@@ -17,7 +17,7 @@
 module Bala.Mullein.LilyPond
   ( 
   -- * Write temp file and render to LilyPond 
-    lilyPondBuffer  
+    lilyPondRun
   ) where
 
 import Mullein.LilyPond
@@ -32,8 +32,8 @@ import Text.PrettyPrint.Leijen
 
 
 
-lilyPondBuffer :: Doc -> IO ()
-lilyPondBuffer doc = do 
+lilyPondRun :: Doc -> IO ()
+lilyPondRun doc = do 
   writeDoc "temporary.ly" doc
   system "lilypond temporary.ly"
   return ()
