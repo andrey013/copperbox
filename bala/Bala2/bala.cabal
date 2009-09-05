@@ -17,8 +17,9 @@ stability:          highly unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
-
-
+  src/Bala/BalaMullein.hs
+  src/Bala/Mullien/Abc.hs
+  src/Bala/Mullein/LilyPond.hs
 
 library
   hs-source-dirs:     src

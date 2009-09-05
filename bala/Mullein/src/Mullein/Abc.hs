@@ -27,6 +27,11 @@ module Mullein.Abc
   , module Mullein.Pitch
   , renderDocEighty
   , writeDoc
+
+
+  -- * Simple free meter template
+  , abcSimple
+
   ) where
  
 import Mullein.AbcDoc
@@ -38,4 +43,30 @@ import Mullein.Extended
 import Mullein.NamedElements
 import Mullein.Pitch
 import Mullein.Utils ( renderDocEighty, writeDoc )
+
+import Text.PrettyPrint.Leijen
+
+import Data.Ratio
+
+--------------------------------------------------------------------------------
+
+-- Print a list of /notes/ in free meter, notionally in C major 
+-- - i.e. all sharps and flats will be printed explicitly.
+abcSimple :: ( HasPitch pch, ChangePitchAbc t
+             , HasDuration (t pch), ChangeDurationAbc (t pch)
+             , AbcGlyph (t pch AbcMultiplier)
+             , ExtBeam (t pch Duration) )
+          => [t pch Duration] -> Doc
+abcSimple xs = tunenum   1 
+      <$> title     ""
+      <$> key       "Cmaj"
+      <$> meter     "none"
+      <$> tune
+  where
+    tune = simpleOutput $ renderPhrase 
+                        $ rewritePitch cmaj
+                        $ rewriteDuration (1%8)
+                        $ phrase (makeMeterPattern 4 4) xs
+
+    cmaj = makeSpellingMap 0
 

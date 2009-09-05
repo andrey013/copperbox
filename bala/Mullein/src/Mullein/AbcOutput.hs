@@ -119,26 +119,29 @@ instance ChangeDurationAbc (GraceNote pch) where
 -- Pitch spelling
 
 class ChangePitchAbc t where
-  changePitchAbc :: SpellingMap -> t Pitch drn -> t Pitch drn
+  changePitchAbc :: HasPitch pch => SpellingMap -> t pch drn -> t pch drn
 
  
-rewritePitch :: ChangePitchAbc t 
+rewritePitch :: (HasPitch pch, ChangePitchAbc t)
              => SpellingMap 
-             -> Phrase (t Pitch drn) 
-             -> Phrase (t Pitch drn)
+             -> Phrase (t pch drn) 
+             -> Phrase (t pch drn)
 rewritePitch smap bars = map (fmap (changePitchAbc smap)) bars
 
 
 instance ChangePitchAbc Glyph where
-  changePitchAbc sm (Note p d t)     = Note (spell sm p) d t
+  changePitchAbc sm (Note p d t)     = Note (innerSpell sm p) d t
   changePitchAbc _  (Rest d)         = Rest d
   changePitchAbc _  (Spacer d)       = Spacer d
-  changePitchAbc sm (Chord ps d t)   = Chord (map (spell sm) ps) d t
+  changePitchAbc sm (Chord ps d t)   = Chord (map (innerSpell sm) ps) d t
   changePitchAbc sm (GraceNotes xs)  = GraceNotes (map (changePitchAbc sm) xs)
 
+innerSpell :: HasPitch p => SpellingMap -> p -> p
+innerSpell sm p  = setPitch p' p where 
+    p' = spell sm $ getPitch p
 
 instance ChangePitchAbc GraceNote where
-  changePitchAbc sm (GraceNote p d) = GraceNote (spell sm p) d
+  changePitchAbc sm (GraceNote p d) = GraceNote (innerSpell sm p) d
 
 
 

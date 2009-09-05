@@ -5,6 +5,7 @@
 
 module RhythmExample where
 
+import Bala.BalaMullein
 import Bala.RhythmPattern
 
 import Mullein.LilyPond hiding ( Pulse, rest )
@@ -21,52 +22,54 @@ import qualified Data.Set                 as Set
 afoxe_upper = repeatPattern 2 $ makeSubsetPattern 8 [2,4,6,8]
 afoxe_lower = repeatPattern 2 $ makeSubsetPattern 8 [5,7]
 
-
+one :: (Duration -> e) -> Rational -> Either e [e]
+one f = Left . f . toDuration
 
 afoxeUs :: Stream PDGlyph
 afoxeUs = unwind phi 0 $ pulse afoxe_upper where
-  phi a 0 = (Left $ rest a, 1)
-  phi a 1 = (Left (c 6 $ balaDuration a), 2)
+  phi a 0 = (one rest a, 1)
+  phi a 1 = (Left (c 6 $ toDuration a), 2)
   phi a 2 = (Right $ c16r16 a, 1)
 
 
 c16r16 :: Rational -> [PDGlyph]
-c16r16 d = [c 6 $ balaDuration d1, rest d2]
+c16r16 d = [c 6 $ toDuration d1, rest $ toDuration d2]
   where
     (d1,d2) = split2 (1,1) d
 
 
 afoxeLs :: Stream PDGlyph
 afoxeLs = unwind phi 0 $ pulse afoxe_lower where
-  phi a 0 = (Left $ rest a, 1)
-  phi a 1 = (Left (c 5 $ balaDuration a), 2)
+  phi a 0 = (one rest a, 1)
+  phi a 1 = (Left (c 5 $ toDuration a), 2)
   phi a 2 = (Right $ tied8'4 a, 1)
 
 
 tied8'4 :: Rational -> [PDGlyph]
 tied8'4 d = [setTied $ c 5 d1, c 5 d2]
   where
-    (d1,d2) = fork (balaDuration,balaDuration) $ split2 (1,2) d
+    (d1,d2) = fork (toDuration,toDuration) $ split2 (1,2) d
 
 split2 :: (Integer,Integer) -> Rational -> (Rational,Rational)
 split2 (a,b) r = ( r * (a%z), r *(b%z)) where z = a+b
 
 -- note :: Pitch -> Octave -> Rational -> PDGlyph
--- note p o = makeNote p o . balaDuration
+-- note p o = makeNote p o . toDuration
 
-rest :: Rational -> PDGlyph
-rest = makeRest . balaDuration
+rest :: Duration -> PDGlyph
+rest = makeRest 
 
 fork (f,g) (a,b) = (f a, g b)
 
+{-
 balaDuration :: Rational -> Duration
 balaDuration  = either restErr id . rationalToDuration 
   where
     restErr :: ConversionError -> Duration
     restErr e = error $ "balaDuration - cannot convert " 
                       ++ show (getBadRational e)
-
-
+ 
+-}
 
 afoxeU = WS.take (4*6) afoxeUs
 afoxeL = WS.take (4*3) afoxeLs

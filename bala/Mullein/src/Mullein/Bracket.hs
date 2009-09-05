@@ -23,8 +23,10 @@
 
 module Mullein.Bracket 
   ( 
+  -- * Start or end a beam group
+    ExtBeam(..)
   -- * Partition into bars and pulsations
-    phrase
+  ,  phrase
   , freePhrase
   , overlayPhrases
 
@@ -43,7 +45,7 @@ import Data.Ratio
 
 --------------------------------------------------------------------------------
 
--- /Extremity Beam/ certain gylphs (rests) should not be the 
+-- | /Extremity Beam/ - certain gylphs (rests) should not be the 
 -- start or end of a beam group.
 
 class ExtBeam a where
