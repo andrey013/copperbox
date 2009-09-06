@@ -1,4 +1,6 @@
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
+{-# OPTIONS -fno-warn-orphans #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -27,29 +29,39 @@ module Bala.BalaMullein
   -- * Constructors
   , mkNote
   , mkChord
+  , mkRest
 
   ) where
 
+import Bala.Duration
 import Bala.Mullein.Abc
 import Bala.Mullein.LilyPond
 import Bala.Pitch
 
-import Mullein.Duration
-import qualified Mullein.Pitch as M
-import qualified Mullein.Core  as M
+import qualified Mullein.Duration as M 
+import qualified Mullein.Pitch    as M
+import qualified Mullein.Core     as M
 
 
 import Data.Ratio
 
 --------------------------------------------------------------------------------
+
+
+instance M.HasDuration t => RationalDuration (t M.Duration) where
+  rationalDuration = M.extent . M.getDuration
+
+
+
+--------------------------------------------------------------------------------
 -- Duration
 
-toDuration :: Rational -> Duration
-toDuration  = either restErr id . rationalToDuration 
+toDuration :: Rational -> M.Duration
+toDuration  = either restErr id . M.rationalToDuration 
   where
-    restErr :: ConversionError -> Duration
+    restErr :: M.ConversionError -> M.Duration
     restErr e = error $ "balaDuration - cannot convert " 
-                      ++ show (getBadRational e)
+                      ++ show (M.getBadRational e)
  
 
 --------------------------------------------------------------------------------
@@ -82,3 +94,5 @@ mkNote p d = M.makeNote (toPitch p) (toDuration d)
 mkChord :: M.MakeChord e => [Pitch] -> Rational -> e
 mkChord ps d = M.makeChord (map toPitch ps) (toDuration d)
 
+mkRest :: M.MakeRest e => Rational -> e
+mkRest = M.makeRest . toDuration

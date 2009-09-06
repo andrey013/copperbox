@@ -72,20 +72,16 @@ showBox (SubsetPattern t st) = unfoldr phi 1 where
         | otherwise         = Just ('.',n+1)
 
 
-extractBars :: RationalDuration a => Rational -> Rational -> Int -> Stream a -> [a]
-extractBars asis barlen n = undefined
 
+-- If the stream is not /break/ perfectly at the end of a bar, 
+-- @extractBars@ will take 1 extra element.
+extractBars :: RationalDuration a 
+            => Rational -> Rational -> Integer -> Stream a -> [a]
+extractBars asis barlen n = unfoldSt phi 0 where
+  phi e acc | acc > maxn = Nothing
+            | otherwise  = Just (e,acc+ rationalDuration e)
+  maxn  = asis + (barlen*(n%1))
 
-{-
--- OLD...
-pulse :: SubsetPattern -> Stream Int
-pulse (SubsetPattern t st) = mydiff strm where
-  strm      = (Set.toList st) << strm  
-  mydiff s  = S.zipWith op s (1 <:> s)
-
-  op a b | a > b        = a - b
-         | otherwise    = (a+t) - b
--}
 
 
 -- cannot use @diff@ in Hinze.Stream as repeating the subset 
@@ -100,29 +96,21 @@ pulse (SubsetPattern t st) = S.zipWith ((rat .) . dif) s (1 <:> s) where
 
 
 
-{-
+unfoldSt :: (a -> st -> Maybe (b,st)) -> st -> Stream a -> [b]
+unfoldSt phi st strm = case phi (head strm) st of
+  Just (a,st') -> a : unfoldSt phi st' (tail strm)
+  Nothing      -> []
 
-data E a = E a | Tied a 
-  deriving (Eq,Show)
+rewrite :: [a -> [b]] -> Stream a -> Stream b
+rewrite fs = cross (S.cycle  fs) where
+  cross funs strm = xs << cross (tail funs) (tail strm) where
+                      xs = (head funs) $ head strm
+                  
 
-metricalPartition :: (Num a, Ord a) => a -> Stream a -> Stream (E a)
-metricalPartition sz str = step 0 (head str) (tail str) where 
-  step i hd rest 
-    | i+hd == sz = (E hd) <:> step 0 (head rest) (tail rest)  
-    | i+hd >  sz = (E $ sz-i ) <:> (Tied $ i+hd-sz)
-                               <:> step (i+hd-sz) (head rest) (tail rest)
-    | otherwise  = (E hd) <:> step (i+hd) (head rest) (tail rest)
-
-
-metricalPartition' :: (Num a, Ord a) => a -> Stream a -> Stream (E a)
-metricalPartition' sz = unwind fn 0 where
-  fn a i | a+i == sz = (Left (E a),0)
-         | a+i > sz  = (Right [E $ sz-i, Tied $ i+a-sz], i+a-sz)
-         | otherwise = (Left (E a),a+i)
-
--}
-
-
+anarewrite :: Int -> [a -> [a]] -> Stream a -> Stream a
+anarewrite i funs strm = xs << rewrite funs rest where
+  (xs,rest) = S.splitAt i strm
+ 
 
 -- buffered spigot
 bspigot :: (st -> Maybe ([b], st)) -> (st -> a -> st) -> st -> Stream a -> Stream b
