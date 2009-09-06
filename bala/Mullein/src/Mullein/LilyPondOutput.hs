@@ -84,8 +84,8 @@ renderPhrase = map oBarOverlay
 
 
 oBarOverlay :: LilyPondGlyph e => Bar e -> DBar
-oBarOverlay (Bar xs)       = [hsep $ map omBeam xs]
-oBarOverlay (OverlayL xss) = map (hsep . map omBeam) xss
+oBarOverlay (Bar xs)       = [fillSep $ map omBeam xs]
+oBarOverlay (OverlayL xss) = map (fillSep . map omBeam) xss
 
 
 omBeam :: LilyPondGlyph e => Pulse e -> Doc

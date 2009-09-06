@@ -30,6 +30,7 @@ library
   exposed-modules:
     Bala.Chord,
     Bala.ChordDiagram,
+    Bala.Duration,
     Bala.Interval,
     Bala.Invert,
     Bala.Modulo,

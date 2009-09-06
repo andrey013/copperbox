@@ -40,6 +40,7 @@ module Mullein.Core
   -- * Classes
   , MakeNote(..)
   , MakeRest(..)
+  , MakeChord(..)
   , HasTie(..)
    
   ) where
@@ -214,6 +215,9 @@ class MakeNote e where
 class MakeRest e where
   makeRest :: Duration -> e 
 
+class MakeChord e where
+  makeChord :: [Pitch] -> Duration -> e
+
 
 class HasTie a where
   setTied :: a -> a
@@ -244,6 +248,8 @@ instance MakeNote PDGlyph where
 instance MakeRest PDGlyph where
   makeRest drn = Rest drn
 
+instance MakeChord PDGlyph where
+  makeChord ps drn = Chord ps drn False
 
 
 

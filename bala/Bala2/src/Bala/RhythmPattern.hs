@@ -16,6 +16,7 @@
 
 module Bala.RhythmPattern where
 
+import Bala.Duration
 
 import Data.Stream ( Stream, (<:>), head, tail )
 import qualified Data.Stream as S
@@ -69,6 +70,10 @@ showBox (SubsetPattern t st) = unfoldr phi 1 where
   phi n | n > t             = Nothing
   phi n | n `Set.member` st = Just ('X',n+1)
         | otherwise         = Just ('.',n+1)
+
+
+extractBars :: RationalDuration a => Rational -> Rational -> Int -> Stream a -> [a]
+extractBars asis barlen n = undefined
 
 
 {-

@@ -23,6 +23,10 @@ module Bala.BalaMullein
   -- * Conversion
   , toDuration
   , toPitch
+  
+  -- * Constructors
+  , mkNote
+  , mkChord
 
   ) where
 
@@ -32,6 +36,8 @@ import Bala.Pitch
 
 import Mullein.Duration
 import qualified Mullein.Pitch as M
+import qualified Mullein.Core  as M
+
 
 import Data.Ratio
 
@@ -65,3 +71,14 @@ toAccidental n | n == (-2) = Just M.DoubleFlat
                | n == 1    = Just M.Sharp
                | n == 2    = Just M.DoubleSharp
                | otherwise = Nothing
+
+
+--------------------------------------------------------------------------------
+-- 
+
+mkNote :: M.MakeNote e => Pitch -> Rational -> e
+mkNote p d = M.makeNote (toPitch p) (toDuration d)
+
+mkChord :: M.MakeChord e => [Pitch] -> Rational -> e
+mkChord ps d = M.makeChord (map toPitch ps) (toDuration d)
+
