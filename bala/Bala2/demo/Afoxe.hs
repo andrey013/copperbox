@@ -5,16 +5,29 @@ module Afoxe where
 import Bala.BalaMullein
 import Bala.Chord
 import Bala.ChordDiagram
+import Bala.Duration
 import Bala.Interval
 import Bala.NamedPitches
 import Bala.Pitch 
+import Bala.RhythmPattern
 
 import Mullein.Abc ( abcSimple )
-import Mullein.LilyPond ( lilyPondSimple )
-import qualified Mullein.LilyPond as M
+import Mullein.LilyPond hiding ( Pitch, Duration, makeChord )
+import qualified Mullein.LilyPond               as M
+import qualified Mullein.NamedElements          as M
+
+import Data.AffineSpace
+
+import Data.Stream ( Stream, head, tail )
+import qualified Data.Stream                    as S
+import Data.Stream.Hinze.Stream ( (<<), (<:) )
+
+import Text.PrettyPrint.Leijen hiding ( dot )
+
 
 import Data.List ( sort )
 import Data.Ratio
+import Prelude hiding ( head, tail )
 
 -- Reverse application
 
@@ -52,15 +65,15 @@ g13_cd      = makeChordDiagram [3,x,3,4,5,x]
 
 
 mulleinChord :: Chord -> M.PDGlyph
-mulleinChord c = M.Chord (map toPitch $ chordPitches c) M.hn False
+mulleinChord c = mkChord (chordPitches c) (1%2)
 
 guitarChord :: ChordDiagram -> M.PDGlyph
-guitarChord cd = M.Chord xs M.hn False where
-    xs = sort $ map toPitch $ pitchContent standardTuning cd
+guitarChord cd = mkChord xs (1%2) where
+    xs = sort $ pitchContent standardTuning cd
 
-demo1 = abcRun $ abcSimple $ tempScore
+demoZ1 = abcRun $ abcSimple $ tempScore
 -- demo2 = lilyPondRun $ lilyPondSimple $ tempScore
-demo2 = lilyPondRun $ lilyPondSimple $ zipWith ($) pitchMaterial (replicate 20 $ 1%4)
+demoZ2 = lilyPondRun $ lilyPondSimple $ zipWith ($) pitchMaterial (replicate 20 $ 1%4)
 
 -- The /pitch material/ in afoxe exercise
 tempScore = xs ++ ys ++ zs
@@ -88,3 +101,91 @@ pitchMaterial = concat [wandering     c6over9 g4,
 
   where
     wanderingRoot ch = wandering ch (chordRoot ch)
+
+
+chordStream :: Stream Chord
+chordStream = drop1 $ strm where 
+  strm = concat xs << strm 
+  xs   = map (replicate 4 . noRoot) chordList
+
+
+drop1 :: Stream a -> Stream a
+drop1 = S.tail
+
+-- wanderin' bass
+wanderinStream :: Stream Pitch
+wanderinStream = S.drop 2 $ rewrite funs (S.cycle chordList) where
+  funs = map (. chordRoot) [ \a -> [a, mv a, mv a], \a -> [a,a,a]
+                           , \a -> [a, a, mv a], \a -> [a,a,a] ]
+  mv   = (.-^ (makeInterval 5 5))
+
+
+afoxe_upper, afoxe_lower :: SubsetPattern
+afoxe_upper = repeatPattern 2 $ makeSubsetPattern 8 [2,4,6,8]
+afoxe_lower = repeatPattern 2 $ makeSubsetPattern 8 [5,7]
+
+afoxe_upper_durs :: Stream Rational
+afoxe_upper_durs = anarewrite 1 funs (pulse afoxe_upper) where
+  funs = [wrap, \a -> let (x,y) = split2 (1,1) a in [x,y]] 
+
+afoxe_lower_durs :: Stream Rational
+afoxe_lower_durs = anarewrite 1 funs (pulse afoxe_lower) where
+  funs = [wrap, \a -> let (x,y) = split2 (1,2) a in [x,y]]
+
+
+wrap :: a -> [a]
+wrap a = [a] 
+
+
+split2 :: (Integer,Integer) -> Rational -> (Rational,Rational)
+split2 (a,b) r = ( r * (a%z), r *(b%z)) where z = a+b
+
+
+
+afoxeUsF :: Stream (Duration -> PDGlyph)
+afoxeUsF = mkStream $ paired chordStream where 
+  mkStream s = mkRest <: chord a <: chord b <: mkStream (tail s) where 
+               (a,b) = head s
+  chord      = mkChord . chordPitches    
+
+afoxeUs :: Stream PDGlyph
+afoxeUs = S.zipWith ($) afoxeUsF afoxe_upper_durs
+
+afoxeLsF :: Stream (Duration -> PDGlyph)
+afoxeLsF = mkRest <: S.zipWith ($) (S.cycle xs) wanderinStream where
+  xs = [mkNote, (setTied .) . mkNote, mkNote]
+
+
+afoxeLs :: Stream PDGlyph
+afoxeLs = S.zipWith ($) afoxeLsF afoxe_lower_durs
+
+
+paired :: Stream a -> Stream (a,a) 
+paired strm = (a,b) <: paired strm'' where
+  (a,strm')  = (head strm, tail strm)
+  (b,strm'') = (head strm', tail strm')
+
+
+-- afoxeU, afoxeL :: [PDGlyph]
+afoxeU = extractBars 0 (2%4) 4 afoxeUs
+afoxeL = extractBars 0 (2%4) 4 afoxeLs
+
+
+demo1 :: Doc
+demo1 =  version "2.12.2" 
+     <$> score (relative M.middle_c $ key M.c_nat "major" <$> time 2 4 <$> tune)
+  where
+    tune = simpleOutput $ renderPhrase 
+                        $ rewritePitch M.middle_c 
+                        $ rewriteDuration xs
+    xs   = overlayPhrases (phrase twoFourTime afoxeU) (phrase twoFourTime afoxeL)
+
+
+output1 :: IO ()
+output1 =  writeDoc "afoxe.ly"  demo1
+
+
+twoFourTime :: MeterPattern
+twoFourTime = makeMeterPattern 2 4
+
+

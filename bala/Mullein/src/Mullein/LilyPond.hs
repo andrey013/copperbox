@@ -12,6 +12,15 @@
 --
 -- Collective import module for LilyPond
 --
+-- Note - @Mullein.NamedElements@ is not exported, it exports many 
+-- short names (e.g. c,d,...) which are likely to cause name 
+-- clashes so it would usually be imported @qualified@.
+-- 
+-- Similarly not all the functions exported by 
+-- @Mullein.LilyPondDoc@ are re-exported by this module. If the 
+-- /missing/ functions are needed then the module should be 
+-- imported qualified.
+-- 
 --------------------------------------------------------------------------------
 
 
@@ -23,7 +32,6 @@ module Mullein.LilyPond
   , module Mullein.Extended
   , module Mullein.LilyPondDoc
   , module Mullein.LilyPondOutput
-  , module Mullein.NamedElements
   , module Mullein.Pitch
   , renderDocEighty
   , writeDoc
@@ -37,11 +45,13 @@ import Mullein.Bracket
 import Mullein.Core
 import Mullein.Duration
 import Mullein.Extended
-import Mullein.LilyPondDoc
+import Mullein.LilyPondDoc hiding ( note, pitch, pitchLabel, duration, 
+                                    spacer , tie )
 import Mullein.LilyPondOutput
-import Mullein.NamedElements
+import Mullein.NamedElements   -- not re-exported!
 import Mullein.Pitch
 import Mullein.Utils ( renderDocEighty, writeDoc )
+
 
 import Text.PrettyPrint.Leijen
 

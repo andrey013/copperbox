@@ -11,7 +11,9 @@ import Bala.BalaMullein
 import qualified Bala.NamedPitches as B
 import Bala.RhythmPattern
 
-import Mullein.LilyPond hiding ( Pulse, rest, a, b )
+import Mullein.LilyPond
+import qualified Mullein.NamedElements as M
+
 
 import Data.Stream ( Stream )
 import qualified Data.Stream              as S
@@ -58,9 +60,11 @@ afoxeL = extractBars 0 (2%4) 4 afoxeLs
 
 demo1 :: Doc
 demo1 =  version "2.12.2" 
-     <$> score (relative middle_c $ key c_nat "major" <$> time 2 4 <$> tune)
+     <$> score (relative M.middle_c $ key M.c_nat "major" <$> time 2 4 <$> tune)
   where
-    tune = simpleOutput $ renderPhrase $ rewritePitch middle_c $ rewriteDuration xs
+    tune = simpleOutput $ renderPhrase 
+                        $ rewritePitch M.middle_c 
+                        $ rewriteDuration xs
     xs   = overlayPhrases (phrase twoFourTime afoxeU) (phrase twoFourTime afoxeL)
 
 

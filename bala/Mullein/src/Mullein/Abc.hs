@@ -12,6 +12,14 @@
 --
 -- Collective import module for ABC
 --
+-- Note - @Mullein.NamedElements@ is not exported, it exports many 
+-- short names (e.g. c,d,...) which are likely to cause name 
+-- clashes so it would usually be imported @qualified@.
+-- 
+-- Similarly not all the functions exported by @Mullein.AbcDoc@ 
+-- are re-exported by this module. If the /missing/ functions are 
+-- needed then the module should be imported qualified.
+--
 --------------------------------------------------------------------------------
 
 
@@ -34,7 +42,7 @@ module Mullein.Abc
 
   ) where
  
-import Mullein.AbcDoc
+import Mullein.AbcDoc hiding ( note, pitch, pitchLabel, spacer, rest )
 import Mullein.AbcOutput
 import Mullein.Bracket
 import Mullein.Core
