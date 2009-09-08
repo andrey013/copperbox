@@ -23,6 +23,11 @@ module Mullein.Extended
   , FingeredPitch(..)
   , FingeredGlyph
   , (%%)
+  
+  -- * LilyPond drum pitches
+  , DrumPitch(..)
+  , DrumGlyph
+
 
   ) where
 
@@ -90,6 +95,39 @@ fingering :: Finger -> Doc
 fingering i = char '-' <> int i
 
 
+
+--------------------------------------------------------------------------------
+-- LilyPond drum pitches 
+
+data DrumPitch = DrumPitch { 
+      drum_long_name   :: String, 
+      drum_short_name  :: String 
+    }
+  deriving (Eq,Show)
+
+
+type DrumGlyph = Glyph DrumPitch Duration
+
+
+instance MakeRest DrumGlyph where
+  makeRest drn = Rest drn
+
+
+instance LilyPondGlyph (Glyph DrumPitch (Maybe Duration)) where
+  lyGlyph = oLyGlyph (\(DrumPitch short _) -> text short)
+
+
+{-
+
+-- Spacer marks are /syntax/ are the glyph level.
+
+data SpacerMark drn = SpacerMark Direction Doc drn
+  deriving (Show)
+
+data Direction = Above | Below | Center
+  deriving (Eq,Show)
+
+-}
 
 
 

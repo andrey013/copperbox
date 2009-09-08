@@ -24,6 +24,7 @@ module Mullein.LilyPondOutput
 
   -- * Render    
   , renderPhrase
+  , oLyGlyph
 
   -- * Rewriting
   , ChangeDurationLR(..)
@@ -35,10 +36,6 @@ module Mullein.LilyPondOutput
   -- * Post-process and pretty print
   , simpleOutput 
 
-
-  -- * Alternative types
-  , DrumPitch(..)
-  , DrumGlyph
    
   ) where
 
@@ -66,11 +63,8 @@ class LilyPondGlyph e where
   lyGlyph :: e -> Doc
 
 instance LilyPondGlyph (Glyph Pitch (Maybe Duration)) where
-  lyGlyph = oGlyph pitch
+  lyGlyph = oLyGlyph pitch
 
-
-instance LilyPondGlyph (Glyph DrumPitch (Maybe Duration)) where
-  lyGlyph = oGlyph (\(DrumPitch short _) -> text short)
 
 
 --------------------------------------------------------------------------------
@@ -94,12 +88,12 @@ omBeam (BeamedL es) = beamForm $ map lyGlyph es
 
 
 
-oGlyph :: (pch -> Doc) -> Glyph pch (Maybe Duration) -> Doc
-oGlyph f (Note p d t)     = f p <> maybe empty duration d <> optDoc t tie
-oGlyph _ (Rest d)         = rest d
-oGlyph _ (Spacer d)       = spacer d
-oGlyph f (Chord ps d t)   = chordForm (map f ps) d <> optDoc t tie
-oGlyph f (GraceNotes xs)  = graceForm (map (oGrace f) xs)
+oLyGlyph :: (pch -> Doc) -> Glyph pch (Maybe Duration) -> Doc
+oLyGlyph f (Note p d t)     = f p <> maybe empty duration d <> optDoc t tie
+oLyGlyph _ (Rest d)         = rest d
+oLyGlyph _ (Spacer d)       = spacer d
+oLyGlyph f (Chord ps d t)   = chordForm (map f ps) d <> optDoc t tie
+oLyGlyph f (GraceNotes xs)  = graceForm (map (oGrace f) xs)
 
 oGrace :: (pch -> Doc) -> GraceNote pch (Maybe Duration) -> Doc
 oGrace f (GraceNote p d) = f p <> maybe empty duration d
@@ -232,35 +226,3 @@ simpleOverlay xs  = overlay xs
 
 
 
-
---------------------------------------------------------------------------------
--- Alternative types 
-
--- Maybe these should be in Mullein.Extended ?
-
--- Drums
-
-data DrumPitch = DrumPitch { 
-      drum_long_name   :: String, 
-      drum_short_name  :: String 
-    }
-  deriving (Eq,Show)
-
-
-type DrumGlyph = Glyph DrumPitch Duration
-
-
-instance MakeRest DrumGlyph where
-  makeRest drn = Rest drn
-
-{-
-
--- Spacer marks are /syntax/ are the glyph level.
-
-data SpacerMark drn = SpacerMark Direction Doc drn
-  deriving (Show)
-
-data Direction = Above | Below | Center
-  deriving (Eq,Show)
-
--}

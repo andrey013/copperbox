@@ -141,7 +141,7 @@ module Mullein.NamedElements
 
 import Mullein.Duration
 import Mullein.Core
-import Mullein.LilyPondOutput
+import Mullein.Extended
 import Mullein.Pitch
 
 

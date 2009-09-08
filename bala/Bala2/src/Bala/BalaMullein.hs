@@ -31,6 +31,10 @@ module Bala.BalaMullein
   , mkChord
   , mkRest
 
+  -- ** LilyPond drums
+  , mkDrumNote
+  , mkDrumChord
+
   ) where
 
 import Bala.Duration
@@ -38,9 +42,10 @@ import Bala.Mullein.Abc
 import Bala.Mullein.LilyPond
 import Bala.Pitch
 
-import qualified Mullein.Duration as M 
-import qualified Mullein.Pitch    as M
-import qualified Mullein.Core     as M
+import qualified Mullein.Duration       as M 
+import qualified Mullein.Extended       as M
+import qualified Mullein.Pitch          as M
+import qualified Mullein.Core           as M
 
 
 import Data.Ratio
@@ -96,3 +101,12 @@ mkChord ps d = M.makeChord (map toPitch ps) (toDuration d)
 
 mkRest :: M.MakeRest e => Rational -> e
 mkRest = M.makeRest . toDuration
+
+-- LilyPond drums s
+
+mkDrumNote :: M.DrumPitch -> Rational -> M.DrumGlyph
+mkDrumNote p d = M.Note p (toDuration d) False
+
+
+mkDrumChord :: [M.DrumPitch] -> Rational -> M.DrumGlyph
+mkDrumChord ps d = M.Chord ps (toDuration d) False

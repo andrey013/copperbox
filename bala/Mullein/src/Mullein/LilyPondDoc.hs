@@ -72,6 +72,7 @@ module Mullein.LilyPondDoc
   , layout
   , layoutExpr
   , relative
+  , drummode
 
   -- *** Titles
   , header
@@ -86,7 +87,8 @@ module Mullein.LilyPondDoc
 
   -- *** Files and variables
   , include
-  , variable 
+  , variableDef
+  , variableUse
   , midi
   , midiExpr
 
@@ -373,6 +375,11 @@ relative p expr = command "relative" <+> pitch p' <+> nestBraces expr
   where
     p' = modifyOctave ((octave p) - 4) p
 
+-- | @\\drummode {\\n ...\\n }@.
+drummode            :: Doc -> Doc
+drummode e          = command "drummode" <+> nestBraces e
+
+
 
 --------------------------------------------------------------------------------
 -- *** Titles
@@ -427,12 +434,18 @@ include ss            = command "include" <+> dquotes (text ss)
 
 -- | @varName = ...@ - define a variable. The variable name should only
 -- contain alphabetic characters, otherwise an error is thrown.
-variable              :: String -> Doc -> Doc
-variable ss e         
+variableDef           :: String -> Doc -> Doc
+variableDef ss e         
   | all isAlpha ss    = text ss <+> equals <+> e
-  | otherwise         = error $ "LilyPondDoc.variable - " ++ ss ++ 
+  | otherwise         = error $ "LilyPondDoc.variableDef - " ++ ss ++ 
                                 " - should only contain alphabetic characters."
 
+
+variableUse           :: String -> Doc
+variableUse ss  
+  | all isAlpha ss    = command ss
+  | otherwise         = error $ "LilyPondDoc.variableUse - " ++ ss ++ 
+                                " - should only contain alphabetic characters."
 
 -- | @\\midi { }@.
 midi                  :: Doc

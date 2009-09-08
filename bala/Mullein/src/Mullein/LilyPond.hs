@@ -47,7 +47,7 @@ import Mullein.Duration
 import Mullein.Extended
 import Mullein.LilyPondDoc hiding ( note, pitch, pitchLabel, duration, 
                                     spacer , tie )
-import Mullein.LilyPondOutput
+import Mullein.LilyPondOutput hiding ( oLyGlyph )
 import Mullein.NamedElements   -- not re-exported!
 import Mullein.Pitch
 import Mullein.Utils ( renderDocEighty, writeDoc )
