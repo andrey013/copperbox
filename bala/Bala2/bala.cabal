@@ -28,6 +28,7 @@ library
 
   
   exposed-modules:
+    Bala.BeatPattern,
     Bala.Chord,
     Bala.ChordDiagram,
     Bala.Duration,
@@ -39,7 +40,8 @@ library
     Bala.PitchClass,
     Bala.RetroInt,
     Bala.RhythmPattern,
-    Bala.Scale
+    Bala.Scale,
+    Bala.Stream
   other-modules:
     
   extensions:

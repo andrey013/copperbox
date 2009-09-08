@@ -10,6 +10,7 @@ module RhythmExample where
 import Bala.BalaMullein
 import qualified Bala.NamedPitches as B
 import Bala.RhythmPattern
+import Bala.Stream
 
 import Mullein.LilyPond
 import qualified Mullein.NamedElements as M
@@ -37,15 +38,12 @@ afoxe_lower_durs = anarewrite 1 funs (pulse afoxe_lower) where
   funs = [wrap, \a -> let (x,y) = split2 (1,2) a in [x,y]]
 
 
-wrap :: a -> [a]
-wrap a = [a] 
-
 afoxeUs :: Stream PDGlyph
-afoxeUs = S.zipWith ($) funs afoxe_upper_durs where
+afoxeUs = zap funs afoxe_upper_durs where
   funs = S.cycle [mkRest, mkNote B.c6, mkNote B.c6]
 
 afoxeLs :: Stream PDGlyph
-afoxeLs = S.zipWith ($) funs afoxe_lower_durs where
+afoxeLs = zap funs afoxe_lower_durs where
   funs = mkRest <: S.cycle [mkNote B.c5, setTied . mkNote B.c5, mkNote B.c5]
 
 
@@ -75,19 +73,6 @@ output1 =  writeDoc "afoxe.ly"  demo1
 twoFourTime :: MeterPattern
 twoFourTime = makeMeterPattern 2 4
 
-
-
--- rest, note, note, note, no
-z_lower :: [Rational]
-z_lower = S.take 20 $ pulse afoxe_lower
-
-z_upper :: [Rational]
-z_upper = S.take 10 $ pulse afoxe_upper 
-
-
-
--- z2 = S.take 10 $ metricalPartition 1 $ pulse afoxe_lower
--- z2' = S.take 10 $ metricalPartition' 1 $ pulse afoxe_lower
 
 
 

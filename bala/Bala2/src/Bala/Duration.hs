@@ -25,7 +25,9 @@ module Bala.Duration
 
   -- * Operations
   , dotn
- 
+  
+  , split2 
+  , split3 
   
   -- * Named instances
   , longa
@@ -88,11 +90,17 @@ dotn i d | i < 1      = d
     step n r = r + step (n-1) (r / 2)
 
 
+
+split2 :: (Integer,Integer) -> Duration -> (Duration,Duration)
+split2 (a,b) r = (r*(a%z), r*(b%z)) where z = a+b
+
+
+split3 :: (Integer,Integer,Integer) -> Duration -> (Duration,Duration,Duration)
+split3 (a,b,c) r = (r*(a%z), r*(b%z), r*(c%z)) where z = a+b+c
+
       
 --------------------------------------------------------------------------------
 -- Named elements
-
-
 
 
 longa                       :: Duration

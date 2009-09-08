@@ -17,6 +17,7 @@
 module Bala.RhythmPattern where
 
 import Bala.Duration
+import Bala.Stream
 
 import Data.Stream ( Stream, (<:>), head, tail )
 import qualified Data.Stream as S
@@ -96,11 +97,6 @@ pulse (SubsetPattern t st) = S.zipWith ((rat .) . dif) s (1 <:> s) where
 
 
 
-unfoldSt :: (a -> st -> Maybe (b,st)) -> st -> Stream a -> [b]
-unfoldSt phi st strm = case phi (head strm) st of
-  Just (a,st') -> a : unfoldSt phi st' (tail strm)
-  Nothing      -> []
-
 rewrite :: [a -> [b]] -> Stream a -> Stream b
 rewrite fs = cross (S.cycle  fs) where
   cross funs strm = xs << cross (tail funs) (tail strm) where
@@ -111,3 +107,8 @@ anarewrite :: Int -> [a -> [a]] -> Stream a -> Stream a
 anarewrite i funs strm = xs << rewrite funs rest where
   (xs,rest) = S.splitAt i strm
  
+
+wrap :: a -> [a]
+wrap a = [a] 
+
+
