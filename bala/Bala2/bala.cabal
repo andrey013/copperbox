@@ -41,7 +41,8 @@ library
     Bala.RetroInt,
     Bala.RhythmPattern,
     Bala.Scale,
-    Bala.Stream
+    Bala.Stream,
+    Bala.Utils
   other-modules:
     
   extensions:

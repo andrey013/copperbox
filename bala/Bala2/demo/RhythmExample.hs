@@ -67,7 +67,7 @@ demo1 =  version "2.12.2"
 
 
 output1 :: IO ()
-output1 =  writeDoc "afoxe.ly"  demo1
+output1 =  runLilyPond "afoxe0.ly"  demo1
 
 
 twoFourTime :: MeterPattern

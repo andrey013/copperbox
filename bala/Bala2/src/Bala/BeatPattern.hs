@@ -20,6 +20,10 @@ module Bala.BeatPattern
     BeatPattern
   , Beat(..)
   
+  -- * Type classes
+  , InterpretRest(..)
+
+  -- * Combinators
   , rest
   , beat
   , beats 
@@ -27,10 +31,14 @@ module Bala.BeatPattern
   , (//)
   , times 
 
+  -- * Evaluation
+  , zipInterp
   , run0
   , run1
 
   ) where
+
+import Bala.Duration
 
 import Data.Ratio
 
@@ -48,9 +56,17 @@ data BeatPattern = BeatPattern { barlen :: Integer, apply :: HBeats Multiplier }
 
 --------------------------------------------------------------------------------
 
+-- | Interpret a rest (i.e. the R contructor of Beat) during 
+-- @zipInterp@.
+class InterpretRest e where
+  interpretRest :: Duration -> e
+
+
 instance Functor Beat where
   fmap f (B a) = B (f a)
   fmap f (R a) = R (f a)
+
+--------------------------------------------------------------------------------
 
 
 rep :: [Beat a] -> HBeats a
@@ -88,6 +104,12 @@ times n (BeatPattern len app) = BeatPattern len (iter n app) where
            | i == 1     = f
            | otherwise  = f . iter (i-1) f
   
+
+zipInterp :: InterpretRest e => [Duration -> e] -> [Beat Rational] -> [e]
+zipInterp fs     (R n:ys) = interpretRest n : zipInterp fs ys
+zipInterp (f:fs) (B n:ys) = f n : zipInterp fs ys
+zipInterp _      _        = []
+
 
 run0 :: BeatPattern -> [Beat Integer]
 run0 = ($ []) . apply

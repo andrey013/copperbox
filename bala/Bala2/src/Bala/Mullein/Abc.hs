@@ -17,12 +17,13 @@
 module Bala.Mullein.Abc
   ( 
 
-  -- * Write temp file and render to ABC
-    abcRun 
+  -- * Write a file and render to ABC
+    runABC
   ) where
 
 import Mullein.Abc
 
+import System.FilePath
 import System.Process ( system )
 import Text.PrettyPrint.Leijen
 
@@ -32,8 +33,12 @@ import Text.PrettyPrint.Leijen
 
 
 
-abcRun :: Doc -> IO ()
-abcRun doc = do 
-  writeDoc "temporary.abc" doc
-  system "abcm2ps -O temporary.ps temporary.abc"
+runABC :: FilePath -> Doc -> IO ()
+runABC path doc = let pathPS = makePSFilePath path in do 
+  writeDoc path doc
+  system $ "abcm2ps -O " ++ pathPS ++ " " ++ path 
   return ()
+
+
+makePSFilePath :: FilePath -> FilePath
+makePSFilePath = (addExtension `flip` "ps") . dropExtension

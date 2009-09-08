@@ -1,4 +1,6 @@
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
+{-# OPTIONS -fno-warn-orphans #-}
 
 -- ghci ...
 -- :set -i../src:../../Mullein/src
@@ -12,6 +14,7 @@ import Bala.Chord
 import Bala.Duration
 import Bala.Interval
 import Bala.NamedPitches
+import Bala.Utils
 
 import Mullein.LilyPond hiding ( Duration, rest, makeChord, B )
 import qualified Mullein.NamedElements          as M
@@ -22,13 +25,9 @@ import Text.PrettyPrint.Leijen hiding ( dot )
 
 import Data.Ratio
 
--- Reverse application
 
-infixl 7 #
-
-( # ) :: a -> (a -> b) -> b 
-x # f = f x
-
+instance InterpretRest PDGlyph where
+  interpretRest = mkRest
 
 --------------------------------------------------------------------------------
 -- chords
@@ -55,21 +54,12 @@ afoxe_upper = run1 (2%4) $ patt where
 afoxe_lower :: [Beat Rational] 
 afoxe_lower = rewriteRests $ run1 (2%4) afoxe_lower_patt
   where
-   rewriteRests = anarewrite 1 fn where
+   rewriteRests = mapAfter 1 fn where
      fn (R a) = B a
      fn a     = a
 
-anarewrite :: Int -> (a -> a) -> [a] -> [a]
-anarewrite i f xs = ys ++ map f zs where
-  (ys,zs) = splitAt i xs
-
 afoxe_lower_patt :: BeatPattern
 afoxe_lower_patt = times 4 $ rest 4 >< beats [2,2]
-
-zipInterp :: MakeRest e => [Duration -> e] -> [Beat Rational] -> [e]
-zipInterp fs     (R n:ys) = mkRest n : zipInterp fs ys
-zipInterp (f:fs) (B n:ys) = f n : zipInterp fs ys
-zipInterp _      _        = []
 
 chordList :: [Chord]
 chordList = [c6over9, a7sharp5, dmin9, g13]
@@ -77,12 +67,6 @@ chordList = [c6over9, a7sharp5, dmin9, g13]
 afoxeUBuilder :: [Duration -> PDGlyph]
 afoxeUBuilder = nrotate 1 $ ntimes 4 $ map upper3 chordList where
   upper3 = mkChord . chordPitches . noRoot
-
-ntimes :: Int -> [a] -> [a]
-ntimes i = concat . map (replicate i)
-
-nrotate :: Int -> [a] -> [a]
-nrotate i xs = let (h,t) = splitAt i xs in t++ h
 
 afoxeLBuilder :: [Duration -> PDGlyph]
 afoxeLBuilder = zipWith ($) funs $ nrotate 2 (ntimes 3 chordList) where
@@ -105,13 +89,13 @@ demo1 =  version "2.12.2"
     tune    = simpleOutput $ renderPhrase 
                            $ rewritePitch M.middle_c 
                            $ rewriteDuration xs
-    xs      :: Phrase PDGlyph
+
     xs      = overlayPhrases (phrase two4Tm afoxeU) (phrase two4Tm afoxeL)
 
     two4Tm  = makeMeterPattern 2 4
 
 output1 :: IO ()
-output1 =  writeDoc "afoxe.ly"  demo1
+output1 =  runLilyPond "afoxe.ly"  demo1
 
  
 
