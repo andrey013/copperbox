@@ -35,10 +35,13 @@ module Bala.BeatPattern
   , zipInterp
   , run0
   , run1
+  , unitBeat
 
   ) where
 
 import Bala.Duration
+import Bala.Utils
+
 
 import Data.Ratio
 
@@ -97,13 +100,13 @@ infixr 1 //
 f // g | barlen f == barlen g = BeatPattern (barlen g) (apply f . apply g)
        | otherwise            = error $ "unmatched bars"
 
-
+-- | Repeat a beat pattern n times.
 times :: Int -> BeatPattern -> BeatPattern
 times n (BeatPattern len app) = BeatPattern len (iter n app) where
-  iter i f | i <= 0     = id
-           | i == 1     = f
-           | otherwise  = f . iter (i-1) f
-  
+
+
+--------------------------------------------------------------------------------
+-- Evaluation
 
 zipInterp :: InterpretRest e => [Duration -> e] -> [Beat Rational] -> [e]
 zipInterp fs     (R n:ys) = interpretRest n : zipInterp fs ys
@@ -116,4 +119,25 @@ run0 = ($ []) . apply
 
 run1 :: Rational -> BeatPattern -> [Beat Rational]
 run1 t (BeatPattern n f) = map (fmap (\i -> t * (i%n))) $ f []
+
+{-
+-- Would this be better as a type preserving transformation?
+-- Of course it would be more complicated as a BeatPattern 
+-- is a (list-producting) function rather than an actual list.
+
+unitBeat :: BeatPattern -> [Beat Multiplier]
+unitBeat (BeatPattern _ app) = foldr fn [] $ app []
+  where
+    fn (R n) acc = iter (fromIntegral n) (R 1:) acc
+    fn (B n) acc = iter (fromIntegral n) (B 1:) acc
+-}
+
+
+-- (function) type preserving
+unitBeat :: BeatPattern -> BeatPattern
+unitBeat (BeatPattern n app) = BeatPattern n $ foldr fn id $ app []
+  where
+    fn (R n) f = iter (fromIntegral n) ((R 1 :) .) f 
+    fn (B 1) f = (B 1 :) . f 
+    fn (B n) f = (B 1 :) . iter (fromIntegral n) ((R 1 :) .) f
 

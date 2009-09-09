@@ -100,8 +100,8 @@ fingering i = char '-' <> int i
 -- LilyPond drum pitches 
 
 data DrumPitch = DrumPitch { 
-      drum_long_name   :: String, 
-      drum_short_name  :: String 
+      drumLongName   :: String, 
+      drumShortName  :: String 
     }
   deriving (Eq,Show)
 
@@ -114,7 +114,7 @@ instance MakeRest DrumGlyph where
 
 
 instance LilyPondGlyph (Glyph DrumPitch (Maybe Duration)) where
-  lyGlyph = oLyGlyph (\(DrumPitch short _) -> text short)
+  lyGlyph = oLyGlyph (text . drumShortName)
 
 
 {-

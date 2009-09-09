@@ -328,9 +328,9 @@ score e               = command "score" <+> nestBraces e
 context               :: Doc -> Doc
 context e            = command "context" <+> nestBraces e
 
--- | @\\new ... { ... }@ - e.g. @Staff@, @Voice@ then expression.
+-- | @\\new ... {\\n ...\\n }@ - e.g. @Staff@, @Voice@ then expression.
 new                   :: String -> Doc -> Doc
-new ss e              = command "new" <+> text ss <+> spaceBraces e
+new ss e              = command "new" <+> text ss <+> nestBraces e
 
 
 -- | @\\new Staff { ... }@.
