@@ -89,6 +89,8 @@ module Mullein.LilyPondDoc
   , include
   , variableDef
   , variableUse
+  , schemeDef
+
   , midi
   , midiExpr
 
@@ -440,19 +442,27 @@ variableDef ss e
   | otherwise         = error $ "LilyPondDoc.variableDef - " ++ ss ++ 
                                 " - should only contain alphabetic characters."
 
-
+-- | @\\varName@.
 variableUse           :: String -> Doc
 variableUse ss  
   | all isAlpha ss    = command ss
   | otherwise         = error $ "LilyPondDoc.variableUse - " ++ ss ++ 
                                 " - should only contain alphabetic characters."
 
+-- | @varName = #( ... )@.
+schemeDef :: String -> String -> Doc
+schemeDef ss str
+  | all isAlpha ss    = text ss <+> equals <+> char '#' <> (parens $ string str)
+  | otherwise         = error $ "LilyPondDoc.schemeDef - " ++ ss ++ 
+                                " - should only contain alphabetic characters."
+
+
 -- | @\\midi { }@.
 midi                  :: Doc
-midi                  = command "book" <+> braces space
+midi                  = command "midi" <+> braces space
 
 -- | @\\midi {\\n ...\\n }@.
 midiExpr              :: Doc -> Doc
-midiExpr e            = command "book" <+> nestBraces e
+midiExpr e            = command "midi" <+> nestBraces e
 
 

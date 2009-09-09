@@ -137,7 +137,7 @@ unitBeat (BeatPattern _ app) = foldr fn [] $ app []
 unitBeat :: BeatPattern -> BeatPattern
 unitBeat (BeatPattern n app) = BeatPattern n $ foldr fn id $ app []
   where
-    fn (R n) f = iter (fromIntegral n) ((R 1 :) .) f 
+    fn (R i) f = iter (fromIntegral i) ((R 1 :) .) f 
     fn (B 1) f = (B 1 :) . f 
-    fn (B n) f = (B 1 :) . iter (fromIntegral n) ((R 1 :) .) f
+    fn (B i) f = (B 1 :) . iter (fromIntegral i) ((R 1 :) .) f
 

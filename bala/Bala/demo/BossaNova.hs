@@ -39,21 +39,6 @@ bassdrum_pattern :: BeatPattern
 bassdrum_pattern = times 2 patt where
   patt = beat 1 >< rest 2 >< beats [1,1] >< rest 2 >< beat 1
 
--- Amalgamate beat patterns into a score
-makeDrumScore :: Rational -> Rational -> [DrumPitch] -> [BeatPattern] -> [DrumGlyph]
-makeDrumScore timesig unitDuration dps patts = 
-    map mkOne $ foldr (zipWith ($)) (repeat []) $ map buildPitchLine $ zip dps patts
-  where
-
-    buildPitchLine :: (DrumPitch,BeatPattern) -> [[DrumPitch] -> [DrumPitch]]
-    buildPitchLine (p,bp) = map fn $ run1 timesig $ unitBeat bp 
-      where fn (R _) = id
-            fn (B _) = (p:)
-
-    mkOne []  = mkRest unitDuration
-    mkOne [p] = mkDrumNote p unitDuration
-    mkOne ps  = mkDrumChord ps unitDuration
-
 bossa_score :: [DrumGlyph]
 bossa_score = 
   makeDrumScore (4%4) (1%8) [M.ridecymbal, M.sidestick, M.bassdrum] 
@@ -65,7 +50,9 @@ demo1 :: Doc
 demo1 =  version "2.12.2" 
      <$> header [title "Bossa nova"]
      <$> variableDef "bossaNova" (drummode (time 4 4 <$> stemUp <$> tune))
-     <$> book (score (new "DrumStaff"  ( variableUse "bossaNova")))
+     <$> book (score $ (new "DrumStaff"  ( variableUse "bossaNova")) 
+                    <$> layout
+                    <$> midi_part)
   where
     tune      = simpleOutput $ renderPhrase 
                              $ rewriteDuration xs
@@ -73,6 +60,10 @@ demo1 =  version "2.12.2"
     xs        = phrase four4Tm bossa_score
 
     four4Tm   = [2%4,2%4]
+    
+    midi_part = midiExpr $ context (command "Score" <$> 
+                                        (schemeDef "tempoWholesPerMinute" 
+                                                   "ly:make-moment 120 4"))
 
 output1 :: IO ()
 output1 = runLilyPond "bossanova.ly" demo1

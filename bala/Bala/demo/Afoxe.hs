@@ -84,7 +84,9 @@ afoxeL = zipInterp afoxeLBuilder afoxe_lower
 
 demo1 :: Doc
 demo1 =  version "2.12.2" 
-     <$> score (relative M.middle_c $ key M.c_nat "major" <$> time 2 4 <$> tune)
+     <$> variableDef "afoxe"  
+           (relative M.middle_c (key M.c_nat "major" <$> time 2 4 <$> tune))
+     <$> book (score (variableUse "afoxe" <$> layout <$> midi))
   where
     tune    = simpleOutput $ renderPhrase 
                            $ rewritePitch M.middle_c 

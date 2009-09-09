@@ -34,9 +34,11 @@ module Bala.BalaMullein
   -- ** LilyPond drums
   , mkDrumNote
   , mkDrumChord
+  , makeDrumScore
 
   ) where
 
+import qualified Bala.BeatPattern       as BP
 import Bala.Duration
 import Bala.Mullein.Abc
 import Bala.Mullein.LilyPond
@@ -110,3 +112,28 @@ mkDrumNote p d = M.Note p (toDuration d) False
 
 mkDrumChord :: [M.DrumPitch] -> Rational -> M.DrumGlyph
 mkDrumChord ps d = M.Chord ps (toDuration d) False
+
+
+
+-- Amalgamate beat patterns into a score
+makeDrumScore :: Rational 
+              -> Rational 
+              -> [M.DrumPitch] 
+              -> [BP.BeatPattern] 
+              -> [M.DrumGlyph]
+makeDrumScore timesig unitDuration dps patts = 
+    map mkOne $ foldr (zipWith ($)) (repeat []) 
+              $ map buildPitchLine 
+              $ zip dps patts
+  where
+
+    buildPitchLine :: (M.DrumPitch,BP.BeatPattern) 
+                   -> [[M.DrumPitch] 
+                   -> [M.DrumPitch]]
+    buildPitchLine (p,bp) = map fn $ BP.run1 timesig $ BP.unitBeat bp 
+      where fn (BP.R _) = id
+            fn (BP.B _) = (p:)
+
+    mkOne []  = mkRest unitDuration
+    mkOne [p] = mkDrumNote p unitDuration
+    mkOne ps  = mkDrumChord ps unitDuration
