@@ -28,9 +28,18 @@ module Mullein.Extended
   , DrumPitch(..)
   , DrumGlyph
 
+  -- * LilyPond /spacer marks/
+  , SpacerMark(..)
+  , SpacerGlyph
+  , SpacerAnnotation
+  , Direction(..)
+  , markupAboveSpacer
+  , markupBelowSpacer
+  , markupCenterSpacer
 
   ) where
 
+import Mullein.Bracket ( ExtBeam(..) )
 import Mullein.Core
 import Mullein.Duration
 import Mullein.LilyPondDoc
@@ -117,18 +126,60 @@ instance LilyPondGlyph (Glyph DrumPitch (Maybe Duration)) where
   lyGlyph = oLyGlyph (text . drumShortName)
 
 
-{-
+--------------------------------------------------------------------------------
+-- Spacer marks 
 
--- Spacer marks are /syntax/ are the glyph level.
+-- Spacer marks are an alternative to glyphs for LilyPond - they 
+-- are useful to separate markup from glyphs. For example you can 
+-- have a staff with two voice contexts: one context has the usual 
+-- glyphs for the melody, and the second context has guitar 
+-- chords (fretboard diagrams). To align the guitar chords with
+-- the chord changes in the melody, the chords are /carried/ by
+-- unprinted spacer rests.
 
-data SpacerMark drn = SpacerMark Direction Doc drn
+data SpacerMark drn = SpacerMark (Maybe SpacerAnnotation) drn
   deriving (Show)
+
+type SpacerGlyph = SpacerMark Duration
+
+type SpacerAnnotation = (Direction,Doc)
 
 data Direction = Above | Below | Center
   deriving (Eq,Show)
 
--}
+instance MakeRest SpacerGlyph where
+  makeRest = SpacerMark Nothing
 
+
+markupAboveSpacer :: Doc -> Duration -> SpacerGlyph
+markupAboveSpacer doc = SpacerMark (Just (Above,doc))
+
+
+markupBelowSpacer :: Doc -> Duration -> SpacerGlyph
+markupBelowSpacer doc = SpacerMark (Just (Below,doc))
+
+markupCenterSpacer :: Doc -> Duration -> SpacerGlyph
+markupCenterSpacer doc = SpacerMark (Just (Center,doc))
+
+instance LilyPondGlyph (SpacerMark (Maybe Duration)) where
+  lyGlyph (SpacerMark Nothing md)        = spacer md
+  lyGlyph (SpacerMark (Just (a,doc)) md) = fn a (spacer md) doc
+    where
+       fn Above  = (**^)
+       fn Below  = (**\)
+       fn Center = (**-) 
+      
+-- TODO in Bracket add a Bar transformation that doesn't beam
+instance ExtBeam (SpacerMark dur) where
+  outerElement (SpacerMark _ _)   = False
+
+
+instance HasDuration SpacerMark where
+  getDuration (SpacerMark _ d) = d
+
+
+instance ChangeDurationLR SpacerMark where
+  changeDurationLR d0 (SpacerMark a d) = (SpacerMark a (alterDuration d0 d), d)
 
 
 

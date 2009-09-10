@@ -35,6 +35,7 @@ module Mullein.LilyPond
   , module Mullein.Pitch
   , renderDocEighty
   , writeDoc
+  , dblangles
 
   -- * Simple free meter template
   , lilyPondSimple
@@ -44,13 +45,14 @@ module Mullein.LilyPond
 import Mullein.Bracket
 import Mullein.Core
 import Mullein.Duration
-import Mullein.Extended
+import Mullein.Extended hiding ( SpacerMark, SpacerAnnotation,
+                                 Direction )
 import Mullein.LilyPondDoc hiding ( note, pitch, pitchLabel, duration, 
                                     spacer , tie )
 import Mullein.LilyPondOutput hiding ( oLyGlyph )
 import Mullein.NamedElements   -- not re-exported!
 import Mullein.Pitch
-import Mullein.Utils ( renderDocEighty, writeDoc )
+import Mullein.Utils ( renderDocEighty, writeDoc, dblangles )
 
 
 import Text.PrettyPrint.Leijen

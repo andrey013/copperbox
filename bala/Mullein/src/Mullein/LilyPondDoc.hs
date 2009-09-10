@@ -30,6 +30,11 @@ module Mullein.LilyPondDoc
   , graceForm
   , beamForm
 
+  , (**^)
+  , (**-)
+  , (**\)
+
+
   -- * LilyPond literals and syntax
   -- *** Commands and comments
   , command
@@ -63,6 +68,7 @@ module Mullein.LilyPondDoc
   , overlay
   , score
   , context
+  , contextExpr
   , new
   , newStaff
   , markup
@@ -73,6 +79,7 @@ module Mullein.LilyPondDoc
   , layoutExpr
   , relative
   , drummode
+  , fretDiagram
 
   -- *** Titles
   , header
@@ -194,7 +201,16 @@ beamForm :: [Doc] -> Doc
 beamForm (x:xs) = x <> char '[' <+> hsep xs <> char ']'
 beamForm []     = emptyDoc
 
+infixr 6 **^, **-, **\
 
+(**^) :: Doc -> Doc -> Doc
+a **^ b = a <> char '^' <> b
+
+(**-) :: Doc -> Doc -> Doc
+a **- b = a <> char '-' <> b
+
+(**\) :: Doc -> Doc -> Doc
+a **\ b = a <> char '_' <> b
 
 
 
@@ -203,11 +219,6 @@ beamForm []     = emptyDoc
 {-
 
 -- TODO...
-
-direction :: Direction -> Doc 
-direction Above  = char '^' 
-direction Below  = char '_'
-direction Center = char '-'
 
 
 -- Note LilyPond drops the printed repeat start if the repeat is the first
@@ -326,9 +337,15 @@ overlay = dblangles . vsep . punctuate (text " \\\\") . map spaceBraces
 score                 :: Doc -> Doc
 score e               = command "score" <+> nestBraces e
 
--- | @\\context {\\n ...\\n }@.
+-- | @\\context ... @.
 context               :: Doc -> Doc
-context e            = command "context" <+> nestBraces e
+context e             = command "context" <+> e
+
+
+-- | @\\context {\\n ...\\n }@.
+contextExpr           :: Doc -> Doc
+contextExpr e         = command "context" <+> nestBraces e
+
 
 -- | @\\new ... {\\n ...\\n }@ - e.g. @Staff@, @Voice@ then expression.
 new                   :: String -> Doc -> Doc
@@ -340,9 +357,9 @@ newStaff              :: Doc -> Doc
 newStaff              = new "Staff" 
 
 
--- | @\\markup { ... }@.
+-- | @\\markup ... @.
 markup                :: Doc -> Doc
-markup e              = command "score" <+> spaceBraces e
+markup e              = command "markup" <+> e
 
 
 -- | @\\book {\\n ...\\n }@.
@@ -381,6 +398,11 @@ relative p expr = command "relative" <+> pitch p' <+> nestBraces expr
 drummode            :: Doc -> Doc
 drummode e          = command "drummode" <+> nestBraces e
 
+
+-- | @\\fret-diagram #"...\"@.  
+fretDiagram           :: String -> Doc
+fretDiagram s         = command "fret-diagram" <+> char '#' 
+                          <> (dquotes $ text s)
 
 
 --------------------------------------------------------------------------------
@@ -424,6 +446,8 @@ copyright             = headerElement "copyright" . dquotes . text
 -- | @tagline = \"...\"@.  
 tagline               :: String -> Doc
 tagline               = headerElement "tagline" . dquotes . text
+
+
 
 
 --------------------------------------------------------------------------------

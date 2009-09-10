@@ -29,7 +29,8 @@ module Mullein.LilyPondOutput
   -- * Rewriting
   , ChangeDurationLR(..)
   , rewriteDuration
-  
+  , alterDuration  
+
   , ChangePitchLR(..)
   , rewritePitch
 

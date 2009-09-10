@@ -11,6 +11,7 @@ module Afoxe where
 import Bala.BalaMullein
 import Bala.BeatPattern
 import Bala.Chord
+import Bala.ChordDiagram
 import Bala.Duration
 import Bala.Interval
 import Bala.NamedPitches
@@ -43,6 +44,21 @@ dmin9 = minor d5 # no5 # min9
 
 g13 :: Chord
 g13 = makeChord g4 [perfect1, minor7, major3 # addOve, major6 # addOve]
+
+
+-- chord diagrams
+c6over9'    :: ChordDiagram
+c6over9'    = makeChordDiagram [x,3,2,2,3,x]
+
+a7sharp5'   :: ChordDiagram
+a7sharp5'   = makeChordDiagram [5,x,5,6,6,x]
+
+dmin9'      :: ChordDiagram
+dmin9'      = makeChordDiagram [x,5,3,5,5,x]
+
+g13'        :: ChordDiagram
+g13'        = makeChordDiagram [3,x,3,4,5,x]
+
 
 
 --------------------------------------------------------------------------------
@@ -84,18 +100,49 @@ afoxeL = zipInterp afoxeLBuilder afoxe_lower
 
 demo1 :: Doc
 demo1 =  version "2.12.2" 
-     <$> variableDef "afoxe"  
+     <$$> chordListDoc
+     <$$> variableDef "afoxe"  
            (relative M.middle_c (key M.c_nat "major" <$> time 2 4 <$> tune))
-     <$> book (score (variableUse "afoxe" <$> layout <$> midi))
+     <$$> variableDef "afoxeChords" (nestBraces fdiags)
+     <$$> book (score (myStaff <$> layout <$> midi))
   where
+    myStaff = dblangles (new "Staff" 
+                          (dblangles (mkCtx "upper" "afoxeChords"
+                                       <$> mkCtx "lower" "afoxe" )))
+
+    mkCtx s v = context (dquotes $ text "Voice") 
+                  <+> equals <+> (dquotes $ text s) <+> command v
     tune    = simpleOutput $ renderPhrase 
                            $ rewritePitch M.middle_c 
                            $ rewriteDuration xs
+
+    fdiags  = simpleOutput $ renderPhrase 
+                           $ rewriteDuration 
+                           $ phrase two4Tm chordContext
 
     xs      = overlayPhrases (phrase two4Tm afoxeU) (phrase two4Tm afoxeL)
 
     two4Tm  = makeMeterPattern 2 4
 
+
+chordListDoc :: Doc
+chordListDoc = vsep $ 
+   map mkChordDoc [ ('W', "c6/9",  c6over9')
+                  , ('X', "a7#5",  a7sharp5')
+                  , ('Y', "Dmin9", dmin9')
+                  , ('Z', "G13",   g13')]
+  where
+   mkChordDoc (c,name,ch) = 
+           comment name 
+       <$> variableDef ("chord" ++[c]) 
+                       (markup (fretDiagram $ standardMarkup ch))
+       <$> text ""
+
+chordContext :: [SpacerGlyph]
+chordContext = map fn ["chordW", "chordX", "chordY", "chordZ"]
+  where
+    fn s =  markupAboveSpacer (command s) (toDuration $ 2%4)
+                
 output1 :: IO ()
 output1 =  runLilyPond "afoxe.ly"  demo1
 
