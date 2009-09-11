@@ -23,7 +23,6 @@ module Mullein.Duration
   
   -- * Classes
   , HasDuration(..)
-  , Spacer(..)
   
   -- * Operations
   , isZero
@@ -82,9 +81,6 @@ data Duration = DZero
 
 class HasDuration t where
   getDuration  :: t Duration -> Duration
-
-class Spacer a where
-  makeSpacer :: Duration -> a
 
 
 -- Std instances

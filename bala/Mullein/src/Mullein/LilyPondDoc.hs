@@ -71,6 +71,8 @@ module Mullein.LilyPondDoc
   , contextExpr
   , new
   , newStaff
+  , voiceOne
+  , voiceTwo
   , markup
   , book
   , bookpart
@@ -213,35 +215,6 @@ a **- b = a <> char '-' <> b
 a **\ b = a <> char '_' <> b
 
 
-
---------------------------------------------------------------------------------
-
-{-
-
--- TODO...
-
-
--- Note LilyPond drops the printed repeat start if the repeat is the first
--- element (so we don't have to).
-
-
-lydocRepeat :: Doc
-lydocRepeat = command "repeat" <+> text "volta 2" <+> lbrace
-
-altStart :: Doc
-altStart = space <> rbrace `nextLine` command "alternative" <+> lbrace 
-                           `nextLine` lbrace
-
-altNext :: Doc
-altNext = space <> rbrace `nextLine` lbrace
-
-
-endBraces :: Int -> Doc
-endBraces i | i <=0     = emptyDoc
-            | otherwise = indent ((i-2)*2) rbrace `nextLine` endBraces (i-1)
-
--}
-
 --------------------------------------------------------------------------------
 -- Lilypond literals and syntax
 
@@ -355,6 +328,16 @@ new ss e              = command "new" <+> text ss <+> nestBraces e
 -- | @\\new Staff { ... }@.
 newStaff              :: Doc -> Doc
 newStaff              = new "Staff" 
+
+
+-- | @\\voiceOne @.
+voiceOne              :: Doc
+voiceOne              = command "voiceOne"
+
+-- | @\\voiceTwo @.
+voiceTwo              :: Doc
+voiceTwo              = command "voiceTwo" 
+
 
 
 -- | @\\markup ... @.

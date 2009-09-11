@@ -22,7 +22,7 @@ module Mullein.Extended
     Finger
   , FingeredPitch(..)
   , FingeredGlyph
-  , (%%)
+  , finger
   
   -- * LilyPond drum pitches
   , DrumPitch(..)
@@ -36,6 +36,11 @@ module Mullein.Extended
   , markupAboveSpacer
   , markupBelowSpacer
   , markupCenterSpacer
+
+  -- * Extended Glyph, pitch annotated with  string number
+  , TabGlyph
+  , PitchPlusString(..)
+  , StringNumber
 
   ) where
 
@@ -58,7 +63,7 @@ type Finger = Int
 -- scores, especially where notes are repeated.
 
 data FingeredPitch = FingeredPitch { 
-       finPitch    ::Pitch, 
+       finPitch    :: Pitch, 
        finNumber   :: Maybe Finger
      }
   deriving (Eq,Show)
@@ -66,9 +71,9 @@ data FingeredPitch = FingeredPitch {
 type FingeredGlyph = Glyph FingeredPitch Duration
 
 
-(%%) :: FingeredGlyph -> Int -> FingeredGlyph
-(Note (FingeredPitch p _) drn t) %% i = Note (FingeredPitch p (Just i)) drn t
-a                                %% _ = a
+finger :: FingeredGlyph -> Int -> FingeredGlyph
+finger (Note (FingeredPitch p _) drn t)  i = Note (FingeredPitch p (Just i)) drn t
+finger a                                 _ = a
 
 
 
@@ -181,10 +186,49 @@ instance HasDuration SpacerMark where
 instance ChangeDurationLR SpacerMark where
   changeDurationLR d0 (SpacerMark a d) = (SpacerMark a (alterDuration d0 d), d)
 
+--------------------------------------------------------------------------------
+-- Tab Glyphs 
+
+-- Notes are annotated with string number
 
 
+type StringNumber = Int
+
+type TabGlyph = Glyph PitchPlusString Duration
+
+data PitchPlusString = PPS Pitch StringNumber
+  deriving (Eq)
+
+instance Show PitchPlusString where
+  showsPrec prec (PPS p i) = showsPrec prec (p,i)
 
 
+instance LilyPondGlyph (Glyph PitchPlusString (Maybe Duration)) where
+  lyGlyph (Note p d t)     = pitchDurationString p d <> optDoc t tie
+  lyGlyph (Rest d)         = rest d
+  lyGlyph (Spacer d)       = spacer d
+  lyGlyph (Chord ps d t)   = chordForm (map pitchPlusString ps) d 
+                               <> optDoc t tie
+  lyGlyph (GraceNotes xs)  = graceForm $ map fn xs 
+    where fn (GraceNote p d) = pitchDurationString p d
 
 
+pitchDurationString :: PitchPlusString -> Maybe Duration -> Doc
+pitchDurationString (PPS p i) md = 
+    pitch p <> maybe empty duration md <> stringnumber i
 
+pitchPlusString :: PitchPlusString -> Doc
+pitchPlusString (PPS p i) = pitch p <> stringnumber i
+
+stringnumber :: StringNumber -> Doc
+stringnumber i = char '\\' <> int i
+
+instance MakeNote (StringNumber -> TabGlyph) where
+  makeNote p d = \n -> Note (PPS p n) d False
+
+instance MakeChord ([StringNumber] -> TabGlyph) where
+  makeChord ps d = \ns -> Chord (zipWith PPS ps ns) d False
+
+instance HasPitch PitchPlusString where
+  getPitch (PPS p _)   = p
+  setPitch p (PPS _ i) = PPS p i

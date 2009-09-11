@@ -40,6 +40,7 @@ module Mullein.Core
   -- * Classes
   , MakeNote(..)
   , MakeRest(..)
+  , MakeSpacer(..)
   , MakeChord(..)
   , HasTie(..)
    
@@ -215,6 +216,9 @@ class MakeNote e where
 class MakeRest e where
   makeRest :: Duration -> e 
 
+class MakeSpacer e where
+  makeSpacer :: Duration -> e
+
 class MakeChord e where
   makeChord :: [Pitch] -> Duration -> e
 
@@ -237,16 +241,15 @@ instance HasDuration (Glyph pch) where
   getDuration (GraceNotes _) = dZero
 
 
-instance Spacer (Glyph pch Duration) where
-  makeSpacer d     = Spacer d  
-
-
 
 instance MakeNote PDGlyph where
   makeNote pch drn = Note pch drn False
 
 instance MakeRest PDGlyph where
   makeRest drn = Rest drn
+
+instance MakeSpacer (Glyph pch Duration) where
+  makeSpacer = Spacer 
 
 instance MakeChord PDGlyph where
   makeChord ps drn = Chord ps drn False

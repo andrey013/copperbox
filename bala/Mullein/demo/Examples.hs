@@ -103,5 +103,5 @@ demo3 = simpleOutput $ renderPhrase $ rewritePitch middle_c $ rewriteDuration xs
 
 
 two_chords :: [FingeredGlyph]
-two_chords = [ f 5 sn %% 2, a 5 sn %% 1, d 6 sn %% 3, g 6 sn %% 4]
+two_chords = [ f 5 sn `finger` 2, a 5 sn `finger` 1, d 6 sn `finger` 3, g 6 sn `finger` 4]
 

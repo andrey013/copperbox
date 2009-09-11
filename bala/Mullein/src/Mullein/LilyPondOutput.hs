@@ -34,6 +34,9 @@ module Mullein.LilyPondOutput
   , ChangePitchLR(..)
   , rewritePitch
 
+  , ChangePitchLA(..)
+  , rewritePitchAbs
+
   -- * Post-process and pretty print
   , simpleOutput 
 
@@ -202,13 +205,40 @@ alterPitch p0 pch = setPitch p1 pch
   where
     p  = getPitch pch
     p1 = changeOctave p0 p 
-    
+
+
 
 changeOctave :: Pitch -> Pitch -> Pitch
 changeOctave p p' = modifyOctave (lyOctaveDist p p') p'
+
+
+    
+-- LilyPond Absolute picth (4 octaves lower than Mullein)
+
+
+class ChangePitchLA t where
+  changePitchLA :: HasPitch pch => t pch drn -> t pch drn
+
  
+rewritePitchAbs :: (HasPitch pch, ChangePitchLA t)
+                => Phrase (t pch drn) -> Phrase (t pch drn)
+rewritePitchAbs = fmap (fmap changePitchLA) 
 
 
+instance ChangePitchLA Glyph where
+  changePitchLA (Note p d t)     = Note (oSub4 p) d t
+  changePitchLA (Rest d)         = Rest d
+  changePitchLA (Spacer d)       = Spacer d
+  changePitchLA (Chord ps d t)   = Chord (map oSub4 ps) d t 
+  changePitchLA (GraceNotes xs)  = GraceNotes (fmap changePitchLA xs)
+
+instance ChangePitchLA GraceNote where
+  changePitchLA (GraceNote p d)  = GraceNote (oSub4 p) d
+
+oSub4 :: HasPitch e => e -> e
+oSub4 e = let p = getPitch e in setPitch (fn p) e
+  where 
+    fn (Pitch l a o) = Pitch l a (o-4)
 
 --------------------------------------------------------------------------------
 -- helpers

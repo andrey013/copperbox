@@ -18,6 +18,7 @@ import Bala.NamedPitches
 import Bala.Utils
 
 import Mullein.LilyPond hiding ( Duration, rest, makeChord, B )
+import qualified Mullein.LilyPond               as M
 import qualified Mullein.NamedElements          as M
 
 import Data.AffineSpace
@@ -104,6 +105,7 @@ demo1 =  version "2.12.2"
      <$$> variableDef "afoxe"  
            (relative M.middle_c (key M.c_nat "major" <$> time 2 4 <$> tune))
      <$$> variableDef "afoxeChords" (nestBraces fdiags)
+     <$$> afoxeTabChordsDef
      <$$> book (score (myStaff <$> layout <$> midi))
   where
     myStaff = dblangles (new "Staff" 
@@ -122,7 +124,8 @@ demo1 =  version "2.12.2"
 
     xs      = overlayPhrases (phrase two4Tm afoxeU) (phrase two4Tm afoxeL)
 
-    two4Tm  = makeMeterPattern 2 4
+two4Tm :: MeterPattern
+two4Tm  = makeMeterPattern 2 4
 
 
 chordListDoc :: Doc
@@ -146,17 +149,34 @@ chordContext = map fn ["chordW", "chordX", "chordY", "chordZ"]
 output1 :: IO ()
 output1 =  runLilyPond "afoxe.ly"  demo1
 
- 
+
+tabChords :: [TabGlyph]
+tabChords = [ sp16, tabC M.en, tabC M.sn, sp16, tabC M.en, tabA M.sn
+            , sp16, tabA M.en, tabA M.sn, sp16, tabA M.en, tabD M.sn
+            , sp16, tabD M.en, tabD M.sn, sp16, tabD M.en, tabG M.sn
+            , sp16, tabG M.en, tabG M.sn, sp16, tabG M.en, tabC M.sn
+            ]
+  where
+    sp16  = makeSpacer M.sn
+    tabC  = tabChord c6over9 
+    tabA  = tabChord a7sharp5 
+    tabD  = tabChord dmin9
+    tabG  = tabChord g13
+
+tabChord ::  Chord -> M.Duration -> TabGlyph  
+tabChord ch d = M.makeChord (map toPitch $ chordPitches $ noRoot ch) 
+                            d $ [4,3,2::M.StringNumber]
 
 
----------------------------------------------------------------------------------
+afoxeTabChordsDef :: Doc
+afoxeTabChordsDef = variableDef "afoxeTabChords" $
+    nestBraces (    key M.c_nat "major" 
+                <$> time 2 4
+                <$> voiceOne
+                <$> chords )
+  where
+    chords = simpleOutput $ renderPhrase 
+                          $ rewriteDuration 
+                          $ rewritePitchAbs
+                          $ phrase two4Tm tabChords
 
-ex32 :: BeatPattern
-ex32 = rest 1 >< beats [1,1,1] >< beats [1,1,1,1]         //
-       rest 1 >< beats [1,1,1] >< rest 1 >< beats [1,1,1] //
-       rest 1 >< beats [1,1,1] >< rest 1 >< beats [2,1]   //
-       rest 1 >< beats [1,1,1] >< beats [1,2,1]           //
-       beat 4 >< rest 4
-
-demoZ1 :: [Beat Rational]
-demoZ1 = run1 (2%4) ex32
