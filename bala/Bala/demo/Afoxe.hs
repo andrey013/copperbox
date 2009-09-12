@@ -220,7 +220,7 @@ afoxeTabChordsDef = variableDef "afoxeTabChords" $
     chords = simpleOutput $ renderPhrase 
                           $ rewriteDuration 
                           $ rewritePitchAbs 5
-                          $ phrase two4Tm tabChords
+                          $ phrase' (sum two4Tm) tabChords
 
 afoxeTabBassDef :: Doc
 afoxeTabBassDef = variableDef "afoxeTabBass" $
@@ -232,4 +232,4 @@ afoxeTabBassDef = variableDef "afoxeTabBass" $
     basspart = simpleOutput $ renderPhrase 
                           $ rewriteDuration 
                           $ rewritePitchAbs 5
-                          $ phrase two4Tm tabBass
+                          $ phrase' (sum two4Tm) tabBass

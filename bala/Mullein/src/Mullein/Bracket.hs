@@ -26,8 +26,10 @@ module Mullein.Bracket
   -- * Start or end a beam group
     ExtBeam(..)
   -- * Partition into bars and pulsations
-  ,  phrase
+  , phrase
   , freePhrase
+  , phrase'     -- neeeds new name
+
   , overlayPhrases
 
   ) where
@@ -108,6 +110,14 @@ freePhrase :: (HasDuration t, ExtBeam (t Duration))
 freePhrase mp notes = runId $ do 
   xs <- beamM mp notes
   return $ [Bar xs]
+
+-- TODO - bar split without beam group
+
+phrase' :: HasDuration t => Rational -> [t Duration] -> Phrase (t Duration)
+phrase' barlen notes = runId $ 
+  barM barlen notes >>= mapM (\es -> mapM (return . Pulse) es >>= return . Bar)
+
+
 
 --------------------------------------------------------------------------------
 -- bar
