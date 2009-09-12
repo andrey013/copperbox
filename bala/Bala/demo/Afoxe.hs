@@ -15,9 +15,10 @@ import Bala.ChordDiagram
 import Bala.Duration
 import Bala.Interval
 import Bala.NamedPitches
+import Bala.Pitch hiding ( B )  -- TODO BeatPattern needs B renaming
 import Bala.Utils
 
-import Mullein.LilyPond hiding ( Duration, rest, makeChord, B )
+import Mullein.LilyPond hiding ( Duration, rest, makeChord, Pitch )
 import qualified Mullein.LilyPond               as M
 import qualified Mullein.NamedElements          as M
 
@@ -106,14 +107,9 @@ demo1 =  version "2.12.2"
            (relative M.middle_c (key M.c_nat "major" <$> time 2 4 <$> tune))
      <$$> variableDef "afoxeChords" (nestBraces fdiags)
      <$$> afoxeTabChordsDef
-     <$$> book (score (myStaff <$> layout <$> midi))
+     <$$> afoxeTabBassDef
+     <$$> book (score (staffGroupTemplate <$> layout <$> midi))
   where
-    myStaff = dblangles (new "Staff" 
-                          (dblangles (mkCtx "upper" "afoxeChords"
-                                       <$> mkCtx "lower" "afoxe" )))
-
-    mkCtx s v = context (dquotes $ text "Voice") 
-                  <+> equals <+> (dquotes $ text s) <+> command v
     tune    = simpleOutput $ renderPhrase 
                            $ rewritePitch M.middle_c 
                            $ rewriteDuration xs
@@ -126,6 +122,42 @@ demo1 =  version "2.12.2"
 
 two4Tm :: MeterPattern
 two4Tm  = makeMeterPattern 2 4
+
+{-
+    \new StaffGroup << 
+      \set StaffGroup.systemStartDelimiter = #'SystemStartSquare
+      
+      \new Staff 
+          << \context Voice = "upper" \afoxeChords 
+             \context Voice = "lower" \afoxe 
+          >> 
+      \new TabStaff {
+        \override TabStaff.Stem #'transparent = ##t %% Makes stems transparent
+        \override TabStaff.Beam #'transparent = ##t %% Makes beams transparent
+
+          << \context TabVoice = "upper" \afoxeTabChords 
+             \context TabVoice = "lower" \afoxeTabBass 
+          >>  
+      }
+    >>
+
+
+-}
+
+staffGroupTemplate :: Doc
+staffGroupTemplate = newStaffGroup $ simultaneous [noteStaff, tabStaff]
+  where 
+    noteStaff = newStaff $ simultaneous [v1,v2]
+    tabStaff  = newTabStaff $ nestBraces (simultaneous [overrides,tv1,tv2])
+    v1        = contextVoice "upper" (command "afoxeChords")
+    v2        = contextVoice "upper" (command "afoxe")
+    tv1       = contextTabVoice "upper" (command "afoxeTabChords")
+    tv2       = contextTabVoice "upper" (command "afoxeTabBass")
+
+overrides :: Doc
+overrides = vsep $ map text [o1,o2] where
+  o1 = "\\override TabStaff.Stem #'transparent = ##t %% Makes stems transparent"
+  o2 = "\\override TabStaff.Beam #'transparent = ##t %% Makes beams transparent"
 
 
 chordListDoc :: Doc
@@ -168,6 +200,16 @@ tabChord ch d = M.makeChord (map toPitch $ chordPitches $ noRoot ch)
                             d $ [4,3,2::M.StringNumber]
 
 
+tabBass :: [TabGlyph]
+tabBass = [ makeSpacer M.qn, tNote g4 M.en 6, setTied $ tNote a4 M.en 6
+          , tNote a4 M.qn 6, tNote a4 M.en 6, setTied $ tNote d5 M.en 5
+          , tNote d5 M.qn 5, tNote a4 M.en 6, setTied $ tNote g4 M.en 6
+          , tNote g4 M.qn 6, tNote g4 M.en 6, tNote c5 M.en 5]
+  where
+    tNote :: Pitch -> M.Duration -> M.StringNumber -> TabGlyph
+    tNote p d n = M.makeNote (toPitch p) d n
+    
+
 afoxeTabChordsDef :: Doc
 afoxeTabChordsDef = variableDef "afoxeTabChords" $
     nestBraces (    key M.c_nat "major" 
@@ -177,6 +219,17 @@ afoxeTabChordsDef = variableDef "afoxeTabChords" $
   where
     chords = simpleOutput $ renderPhrase 
                           $ rewriteDuration 
-                          $ rewritePitchAbs
+                          $ rewritePitchAbs 5
                           $ phrase two4Tm tabChords
 
+afoxeTabBassDef :: Doc
+afoxeTabBassDef = variableDef "afoxeTabBass" $
+    nestBraces (    key M.c_nat "major" 
+                <$> time 2 4
+                <$> voiceTwo
+                <$> basspart )
+  where
+    basspart = simpleOutput $ renderPhrase 
+                          $ rewriteDuration 
+                          $ rewritePitchAbs 5
+                          $ phrase two4Tm tabBass

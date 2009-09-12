@@ -49,7 +49,7 @@ import Mullein.Core
 import Mullein.Duration
 import Mullein.Extended
 import Mullein.NamedElements
-import Mullein.Pitch
+import Mullein.Pitch hiding ( C,D,E,F,G,A,B )
 import Mullein.Utils ( renderDocEighty, writeDoc )
 
 import Text.PrettyPrint.Leijen

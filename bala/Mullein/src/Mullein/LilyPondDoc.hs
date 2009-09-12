@@ -65,12 +65,17 @@ module Mullein.LilyPondDoc
 
   -- *** Score structure
   , nestBraces
+  , simultaneous
   , overlay
   , score
   , context
   , contextExpr
+  , contextVoice
+  , contextTabVoice
   , new
   , newStaff
+  , newStaffGroup
+  , newTabStaff
   , voiceOne
   , voiceTwo
   , markup
@@ -301,7 +306,16 @@ key lbl mode = command "key" <+> pitchLabel lbl <+> command mode
 nestBraces :: Doc -> Doc
 nestBraces e = lbrace <$> indent 2 e <$> rbrace 
 
--- | @\<\< ... \\\\ ... \>\>@ - print simultaneous expressions.
+
+-- | @\<\< \\n... \\n... \\n \>\>@ - print a list of expressions 
+-- within a simultaneous block. Each expression is printed on a
+-- separate line.
+simultaneous :: [Doc] -> Doc
+simultaneous ds = text "<<" <$> indent 2 (vsep ds) <$> text ">>"
+
+
+-- | @\<\< ... \\\\ ... \>\>@ - print simultaneous expressions 
+-- with a double forward slash separator.
 overlay :: [Doc] -> Doc
 overlay = dblangles . vsep . punctuate (text " \\\\") . map spaceBraces
 
@@ -320,14 +334,35 @@ contextExpr           :: Doc -> Doc
 contextExpr e         = command "context" <+> nestBraces e
 
 
--- | @\\new ... {\\n ...\\n }@ - e.g. @Staff@, @Voice@ then expression.
+-- | @\\context Voice = "..." ... @.
+contextVoice          :: String -> Doc -> Doc
+contextVoice s e      = context (text "Voice") 
+                          <+> equals <+> (dquotes $ text s) <+> e
+
+
+-- | @\\context TabVoice = "..." ... @.
+contextTabVoice       :: String -> Doc -> Doc
+contextTabVoice s e   = context (text "TabVoice") 
+                          <+> equals <+> (dquotes $ text s) <+> e
+
+
+-- | @\\new ... ... @ - e.g. @Staff@, @Voice@ then expression.
 new                   :: String -> Doc -> Doc
-new ss e              = command "new" <+> text ss <+> nestBraces e
+new ss e              = command "new" <+> text ss <+> e
 
 
--- | @\\new Staff { ... }@.
+-- | @\\new Staff ... @.
 newStaff              :: Doc -> Doc
 newStaff              = new "Staff" 
+
+-- | @\\new StaffGroup ... @.
+newStaffGroup         :: Doc -> Doc
+newStaffGroup         = new "StaffGroup" 
+
+
+-- | @\\new TabStaff ... @.
+newTabStaff           :: Doc -> Doc
+newTabStaff           = new "TabStaff" 
 
 
 -- | @\\voiceOne @.
@@ -382,7 +417,7 @@ drummode            :: Doc -> Doc
 drummode e          = command "drummode" <+> nestBraces e
 
 
--- | @\\fret-diagram #"...\"@.  
+-- | @\\fret-diagram #\"...\"@.  
 fretDiagram           :: String -> Doc
 fretDiagram s         = command "fret-diagram" <+> char '#' 
                           <> (dquotes $ text s)

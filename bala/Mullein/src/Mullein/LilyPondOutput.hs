@@ -211,34 +211,50 @@ alterPitch p0 pch = setPitch p1 pch
 changeOctave :: Pitch -> Pitch -> Pitch
 changeOctave p p' = modifyOctave (lyOctaveDist p p') p'
 
-
+--------------------------------------------------------------------------------
+-- Absolute pitch transformation
     
--- LilyPond Absolute picth (4 octaves lower than Mullein)
+-- LilyPond Absolute pitch (4 octaves lower than Mullein)
+--
+-- Middle C in Mullein is C-octave 5.
+-- Middle C in LilyPond is c' - in Mullein terms, after the 
+-- absolute pitch transformation, this is C-octave 1, the 
+-- octave designator is reduced by 4 to represent the number
+-- of apostrophes to print (a negative number represents the 
+-- number of commas to print, after taking the @abs@ of the 
+-- value).
+-- 
+-- HOWEVER, printing guitar tablature in absolute mode seems to 
+-- take middle c as C (C-octave 0), so 5 has to be subtracted 
+-- from the octave designator.
+--
+-- TODO - findout why this is the case.
+
 
 
 class ChangePitchLA t where
-  changePitchLA :: HasPitch pch => t pch drn -> t pch drn
+  changePitchLA :: HasPitch pch => Int -> t pch drn -> t pch drn
 
  
 rewritePitchAbs :: (HasPitch pch, ChangePitchLA t)
-                => Phrase (t pch drn) -> Phrase (t pch drn)
-rewritePitchAbs = fmap (fmap changePitchLA) 
+                => Int -> Phrase (t pch drn) -> Phrase (t pch drn)
+rewritePitchAbs i = fmap (fmap (changePitchLA i)) 
 
 
 instance ChangePitchLA Glyph where
-  changePitchLA (Note p d t)     = Note (oSub4 p) d t
-  changePitchLA (Rest d)         = Rest d
-  changePitchLA (Spacer d)       = Spacer d
-  changePitchLA (Chord ps d t)   = Chord (map oSub4 ps) d t 
-  changePitchLA (GraceNotes xs)  = GraceNotes (fmap changePitchLA xs)
+  changePitchLA i (Note p d t)     = Note (subOve i p) d t
+  changePitchLA _ (Rest d)         = Rest d
+  changePitchLA _ (Spacer d)       = Spacer d
+  changePitchLA i (Chord ps d t)   = Chord (map (subOve i) ps) d t 
+  changePitchLA i (GraceNotes xs)  = GraceNotes (fmap (changePitchLA i) xs)
 
 instance ChangePitchLA GraceNote where
-  changePitchLA (GraceNote p d)  = GraceNote (oSub4 p) d
+  changePitchLA i (GraceNote p d)  = GraceNote (subOve i p) d
 
-oSub4 :: HasPitch e => e -> e
-oSub4 e = let p = getPitch e in setPitch (fn p) e
+subOve :: HasPitch e => Int -> e -> e
+subOve i e = let p = getPitch e in setPitch (fn p) e
   where 
-    fn (Pitch l a o) = Pitch l a (o-4)
+    fn (Pitch l a o) = Pitch l a (o-i)
 
 --------------------------------------------------------------------------------
 -- helpers
