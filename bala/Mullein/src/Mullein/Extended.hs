@@ -183,14 +183,20 @@ instance HasDuration SpacerMark where
   getDuration (SpacerMark _ d) = d
 
 
-instance ChangeDurationLR SpacerMark where
-  changeDurationLR d0 (SpacerMark a d) = (SpacerMark a (alterDuration d0 d), d)
+instance ChangeDurationLyRel SpacerMark where
+  changeDurationLyRel d0 (SpacerMark a d) = (SpacerMark a (alterDuration d0 d), d)
 
 --------------------------------------------------------------------------------
 -- Tab Glyphs 
 
 -- Notes are annotated with string number
 
+-- TO CONSIDER...
+-- Having a new type for each /output style/ puts a high burden 
+-- on constructing and translating from one type to another. It 
+-- might be preferable to get rid of the LilyPondGlyph class 
+-- and parameterize the render functions with glyph-printer 
+-- function.
 
 type StringNumber = Int
 

@@ -35,7 +35,8 @@ module Mullein.Pitch
  , natural
  , toUpperLChar
  , toLowerLChar
- , modifyOctave
+ , setOctave
+ , displaceOctave
  , lyOctaveDist
  , arithmeticDist
 
@@ -164,15 +165,21 @@ toLowerLChar :: PitchLetter -> Char
 toLowerLChar = toLower . toUpperLChar
 
 
--- | Modifiy the octave deginator:
+-- | Set the octave deginator:
 -- @
 --   LilyPond - middle c is c' (i.e. octave 1) 
 --   Mullein  - middle c is c5 (i.e. octave 5)
 -- @
-modifyOctave :: Int -> Pitch -> Pitch
-modifyOctave i (Pitch l a _)   = Pitch l a i
+setOctave :: Int -> Pitch -> Pitch
+setOctave i (Pitch l a _)   = Pitch l a i
 
   
+-- | Modify the octave designator, e.g displace by (-4) for  
+-- LilyPond.
+displaceOctave :: HasPitch e => Int -> e -> e
+displaceOctave i e = let p = getPitch e in setPitch (fn p) e
+  where 
+    fn (Pitch l a o) = Pitch l a (o+i)
 
 
 

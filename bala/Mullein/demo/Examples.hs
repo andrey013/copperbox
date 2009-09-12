@@ -29,7 +29,9 @@ demo1 :: Doc
 demo1 =  version "2.12.2" 
      <$> score (relative middle_c $ key a_nat "major" <$> time 2 4 <$> tune)
   where
-    tune = simpleOutput $ renderPhrase $ rewritePitch middle_c $ rewriteDuration xs
+    tune = simpleOutput $ renderPhrase' lyGlyph 
+                        $ rewritePitch middle_c 
+                        $ rewriteDuration xs
     xs   = phrase twoFourTime b6_bars1'4
 
 demo1a :: Doc
@@ -39,7 +41,7 @@ demo1a =  ABC.tunenum   1
       <$> ABC.key       "Amaj"
       <$> tune
   where
-    tune = ABC.simpleOutput $ ABC.renderPhrase 
+    tune = ABC.simpleOutput $ ABC.renderPhrase' ABC.abcGlyph
                             $ ABC.rewritePitch amaj
                             $ ABC.rewriteDuration (1%16) xs 
     xs   = phrase twoFourTime b6_bars1'4

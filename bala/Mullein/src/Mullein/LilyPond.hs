@@ -62,8 +62,8 @@ import Text.PrettyPrint.Leijen
 
 -- Print a list of /notes/ in free meter, notionally in C major 
 -- - i.e. all sharps and flats will be printed explicitly.
-lilyPondSimple :: ( HasDuration (t pch), ChangeDurationLR (t pch)
-                  , HasPitch pch, ChangePitchLR t
+lilyPondSimple :: ( HasDuration (t pch), ChangeDurationLyRel (t pch)
+                  , HasPitch pch, ChangePitchLyRel t
                   , LilyPondGlyph (t pch (Maybe Duration))
                   , ExtBeam (t pch Duration) )
                => [t pch Duration] -> Doc

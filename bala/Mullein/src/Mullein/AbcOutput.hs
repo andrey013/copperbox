@@ -23,6 +23,7 @@ module Mullein.AbcOutput
 
   -- * Render    
   , renderPhrase
+  , renderPhrase'
 
   -- * Rewriting
   , ChangeDurationAbc(..)
@@ -85,6 +86,17 @@ oBarOverlay (OverlayL xss) = map (hsep . map omBeam) xss
 omBeam :: AbcGlyph e => Pulse e -> Doc
 omBeam (Pulse e)    = abcGlyph e
 omBeam (BeamedL es) = hcat $ map abcGlyph es
+
+renderPhrase' :: (e -> Doc) -> Phrase e -> DPhrase
+renderPhrase' f = map (renderBarOverlay f)
+
+renderBarOverlay :: (e -> Doc) -> Bar e -> DBar
+renderBarOverlay f (Bar xs)       = [hsep $ map (renderBeam f) xs]
+renderBarOverlay f (OverlayL xss) = map (hsep . map (renderBeam f)) xss
+
+renderBeam :: (e -> Doc) -> Pulse e -> Doc
+renderBeam f (Pulse e)    = f e
+renderBeam f (BeamedL es) = hcat $ map f es
 
 
 

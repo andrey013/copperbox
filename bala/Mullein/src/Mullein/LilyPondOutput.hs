@@ -24,17 +24,18 @@ module Mullein.LilyPondOutput
 
   -- * Render    
   , renderPhrase
+  , renderPhrase'
   , oLyGlyph
 
   -- * Rewriting
-  , ChangeDurationLR(..)
+  , ChangeDurationLyRel(..)
   , rewriteDuration
   , alterDuration  
 
-  , ChangePitchLR(..)
+  , ChangePitchLyRel(..)
   , rewritePitch
 
-  , ChangePitchLA(..)
+  , ChangePitchLyAbs(..)
   , rewritePitchAbs
 
   -- * Post-process and pretty print
@@ -80,7 +81,6 @@ instance LilyPondGlyph (Glyph Pitch (Maybe Duration)) where
 renderPhrase :: LilyPondGlyph e => Phrase e -> DPhrase
 renderPhrase = map oBarOverlay
 
-
 oBarOverlay :: LilyPondGlyph e => Bar e -> DBar
 oBarOverlay (Bar xs)       = [fillSep $ map omBeam xs]
 oBarOverlay (OverlayL xss) = map (fillSep . map omBeam) xss
@@ -89,6 +89,21 @@ oBarOverlay (OverlayL xss) = map (fillSep . map omBeam) xss
 omBeam :: LilyPondGlyph e => Pulse e -> Doc
 omBeam (Pulse e)    = lyGlyph e
 omBeam (BeamedL es) = beamForm $ map lyGlyph es
+
+
+
+renderPhrase' :: (e -> Doc) -> Phrase e -> DPhrase
+renderPhrase' f = map (renderBarOverlay f)
+
+
+renderBarOverlay :: (e -> Doc) -> Bar e -> DBar
+renderBarOverlay f (Bar xs)       = [fillSep $ map (renderBeam f) xs]
+renderBarOverlay f (OverlayL xss) = map (fillSep . map (renderBeam f)) xss
+
+
+renderBeam :: (e -> Doc) -> Pulse e -> Doc
+renderBeam f (Pulse e)    = f e
+renderBeam f (BeamedL es) = beamForm $ map f es
 
 
 
@@ -120,26 +135,24 @@ oGrace f (GraceNote p d) = f p <> maybe empty duration d
 -- @   changeDuration :: d -> t Duration -> t d
 --
 
--- mnemonic LR - (L)ilypond (R)elative
-
-class ChangeDurationLR t where
-  changeDurationLR :: Duration -> t Duration -> (t (Maybe Duration), Duration)
+class ChangeDurationLyRel t where
+  changeDurationLyRel :: Duration -> t Duration -> (t (Maybe Duration), Duration)
 
  
-rewriteDuration :: ChangeDurationLR t
+rewriteDuration :: ChangeDurationLyRel t
                 => Phrase (t Duration) -> Phrase (t (Maybe Duration))
 rewriteDuration bars = fst $ runState dZero (mapM (T.mapM fn) bars)
   where
-    fn gly = inside $ (changeDurationLR `flip`  gly)    
+    fn gly = inside $ (changeDurationLyRel `flip`  gly)    
 
 
-instance ChangeDurationLR (Glyph pch) where
-  changeDurationLR d0 (Note p d t)     = (Note p (alterDuration d0 d) t, d)
-  changeDurationLR d0 (Rest d)         = (Rest (alterDuration d0 d), d)
-  changeDurationLR d0 (Spacer d)       = (Spacer (alterDuration d0 d), d)
-  changeDurationLR d0 (Chord ps d t)   = (Chord ps (alterDuration d0 d) t, d)
-  changeDurationLR d0 (GraceNotes xs)  = (GraceNotes xs',d')
-                                          where (xs',d') = changeGraceD d0 xs
+instance ChangeDurationLyRel (Glyph pch) where
+  changeDurationLyRel d0 (Note p d t)     = (Note p (alterDuration d0 d) t, d)
+  changeDurationLyRel d0 (Rest d)         = (Rest (alterDuration d0 d), d)
+  changeDurationLyRel d0 (Spacer d)       = (Spacer (alterDuration d0 d), d)
+  changeDurationLyRel d0 (Chord ps d t)   = (Chord ps (alterDuration d0 d) t, d)
+  changeDurationLyRel d0 (GraceNotes xs)  = (GraceNotes xs',d')
+                                            where (xs',d') = changeGraceD d0 xs
 
 
 
@@ -158,28 +171,28 @@ alterDuration d0 d | d0 == d && not (isDotted d) = Nothing
 
 -- Relative Pitch
 
-class ChangePitchLR t where
-  changePitchLR :: HasPitch pch => Pitch -> t pch drn -> (t pch drn, Pitch)
+class ChangePitchLyRel t where
+  changePitchLyRel :: HasPitch pch => Pitch -> t pch drn -> (t pch drn, Pitch)
 
  
-rewritePitch :: (ChangePitchLR t, HasPitch pch) 
+rewritePitch :: (ChangePitchLyRel t, HasPitch pch) 
              => Pitch -> Phrase (t pch drn) -> Phrase (t pch drn)
 rewritePitch rp bars = fst $ runState rp (mapM (T.mapM fn) bars)
   where
-    fn gly = inside (changePitchLR `flip` gly)    
+    fn gly = inside (changePitchLyRel `flip` gly)    
 
 inside :: (s -> (a,s)) -> State s a
 inside f = get >>= \s -> let (a,s') = f s in set s' >> return a
 
-instance ChangePitchLR Glyph where
-  changePitchLR p0 (Note p d t)     = (Note p' d t, getPitch p)
-                                      where p' = alterPitch p0 p
-  changePitchLR p0 (Rest d)         = (Rest d, p0)
-  changePitchLR p0 (Spacer d)       = (Spacer d, p0)
-  changePitchLR p0 (Chord ps d t)   = (Chord ps' d t,p') 
-                                       where (ps',p') = changeChordP p0 ps
-  changePitchLR p0 (GraceNotes xs)  = (GraceNotes xs',p')
-                                       where (xs',p') = changeGraceP p0 xs
+instance ChangePitchLyRel Glyph where
+  changePitchLyRel p0 (Note p d t)     = (Note p' d t, getPitch p)
+                                         where p' = alterPitch p0 p
+  changePitchLyRel p0 (Rest d)         = (Rest d, p0)
+  changePitchLyRel p0 (Spacer d)       = (Spacer d, p0)
+  changePitchLyRel p0 (Chord ps d t)   = (Chord ps' d t,p') 
+                                         where (ps',p') = changeChordP p0 ps
+  changePitchLyRel p0 (GraceNotes xs)  = (GraceNotes xs',p')
+                                         where (xs',p') = changeGraceP p0 xs
 
 
 
@@ -209,7 +222,7 @@ alterPitch p0 pch = setPitch p1 pch
 
 
 changeOctave :: Pitch -> Pitch -> Pitch
-changeOctave p p' = modifyOctave (lyOctaveDist p p') p'
+changeOctave p p' = setOctave (lyOctaveDist p p') p'
 
 --------------------------------------------------------------------------------
 -- Absolute pitch transformation
@@ -228,33 +241,28 @@ changeOctave p p' = modifyOctave (lyOctaveDist p p') p'
 -- take middle c as C (C-octave 0), so 5 has to be subtracted 
 -- from the octave designator.
 --
--- TODO - findout why this is the case.
+-- TODO - find out why this is the case.
 
 
 
-class ChangePitchLA t where
-  changePitchLA :: HasPitch pch => Int -> t pch drn -> t pch drn
+class ChangePitchLyAbs t where
+  changePitchLyAbs :: HasPitch pch => Int -> t pch drn -> t pch drn
 
  
-rewritePitchAbs :: (HasPitch pch, ChangePitchLA t)
+rewritePitchAbs :: (HasPitch pch, ChangePitchLyAbs t)
                 => Int -> Phrase (t pch drn) -> Phrase (t pch drn)
-rewritePitchAbs i = fmap (fmap (changePitchLA i)) 
+rewritePitchAbs i = fmap (fmap (changePitchLyAbs i)) 
 
 
-instance ChangePitchLA Glyph where
-  changePitchLA i (Note p d t)     = Note (subOve i p) d t
-  changePitchLA _ (Rest d)         = Rest d
-  changePitchLA _ (Spacer d)       = Spacer d
-  changePitchLA i (Chord ps d t)   = Chord (map (subOve i) ps) d t 
-  changePitchLA i (GraceNotes xs)  = GraceNotes (fmap (changePitchLA i) xs)
+instance ChangePitchLyAbs Glyph where
+  changePitchLyAbs i (Note p d t)     = Note (displaceOctave i p) d t
+  changePitchLyAbs _ (Rest d)         = Rest d
+  changePitchLyAbs _ (Spacer d)       = Spacer d
+  changePitchLyAbs i (Chord ps d t)   = Chord (map (displaceOctave i) ps) d t 
+  changePitchLyAbs i (GraceNotes xs)  = GraceNotes (fmap (changePitchLyAbs i) xs)
 
-instance ChangePitchLA GraceNote where
-  changePitchLA i (GraceNote p d)  = GraceNote (subOve i p) d
-
-subOve :: HasPitch e => Int -> e -> e
-subOve i e = let p = getPitch e in setPitch (fn p) e
-  where 
-    fn (Pitch l a o) = Pitch l a (o-i)
+instance ChangePitchLyAbs GraceNote where
+  changePitchLyAbs i (GraceNote p d)  = GraceNote (displaceOctave i p) d
 
 --------------------------------------------------------------------------------
 -- helpers

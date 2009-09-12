@@ -28,7 +28,7 @@ module Mullein.Bracket
   -- * Partition into bars and pulsations
   , phrase
   , freePhrase
-  , phrase'     -- neeeds new name
+  , phraseNoPulses
 
   , overlayPhrases
 
@@ -111,10 +111,12 @@ freePhrase mp notes = runId $ do
   xs <- beamM mp notes
   return $ [Bar xs]
 
--- TODO - bar split without beam group
 
-phrase' :: HasDuration t => Rational -> [t Duration] -> Phrase (t Duration)
-phrase' barlen notes = runId $ 
+-- | Partition into bars only (no grouping into pulsations). Each 
+-- note or rest will effectively be a single pulse regardless of 
+-- its duration.
+phraseNoPulses :: HasDuration t => Rational -> [t Duration] -> Phrase (t Duration)
+phraseNoPulses barlen notes = runId $ 
   barM barlen notes >>= mapM (\es -> mapM (return . Pulse) es >>= return . Bar)
 
 

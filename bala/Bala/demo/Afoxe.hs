@@ -15,7 +15,7 @@ import Bala.ChordDiagram
 import Bala.Duration
 import Bala.Interval
 import Bala.NamedPitches
-import Bala.Pitch hiding ( B )  -- TODO BeatPattern needs B renaming
+import Bala.Pitch
 import Bala.Utils
 
 import Mullein.LilyPond hiding ( Duration, rest, makeChord, Pitch )
@@ -73,7 +73,7 @@ afoxe_lower :: [Beat Rational]
 afoxe_lower = rewriteRests $ run1 (2%4) afoxe_lower_patt
   where
    rewriteRests = mapAfter 1 fn where
-     fn (R a) = B a
+     fn (R a) = N a
      fn a     = a
 
 afoxe_lower_patt :: BeatPattern
@@ -123,26 +123,6 @@ demo1 =  version "2.12.2"
 two4Tm :: MeterPattern
 two4Tm  = makeMeterPattern 2 4
 
-{-
-    \new StaffGroup << 
-      \set StaffGroup.systemStartDelimiter = #'SystemStartSquare
-      
-      \new Staff 
-          << \context Voice = "upper" \afoxeChords 
-             \context Voice = "lower" \afoxe 
-          >> 
-      \new TabStaff {
-        \override TabStaff.Stem #'transparent = ##t %% Makes stems transparent
-        \override TabStaff.Beam #'transparent = ##t %% Makes beams transparent
-
-          << \context TabVoice = "upper" \afoxeTabChords 
-             \context TabVoice = "lower" \afoxeTabBass 
-          >>  
-      }
-    >>
-
-
--}
 
 staffGroupTemplate :: Doc
 staffGroupTemplate = newStaffGroup $ simultaneous [noteStaff, tabStaff]
@@ -219,8 +199,8 @@ afoxeTabChordsDef = variableDef "afoxeTabChords" $
   where
     chords = simpleOutput $ renderPhrase 
                           $ rewriteDuration 
-                          $ rewritePitchAbs 5
-                          $ phrase' (sum two4Tm) tabChords
+                          $ rewritePitchAbs (-5)
+                          $ phraseNoPulses (sum two4Tm) tabChords
 
 afoxeTabBassDef :: Doc
 afoxeTabBassDef = variableDef "afoxeTabBass" $
@@ -230,6 +210,6 @@ afoxeTabBassDef = variableDef "afoxeTabBass" $
                 <$> basspart )
   where
     basspart = simpleOutput $ renderPhrase 
-                          $ rewriteDuration 
-                          $ rewritePitchAbs 5
-                          $ phrase' (sum two4Tm) tabBass
+                            $ rewriteDuration 
+                            $ rewritePitchAbs (-5)
+                            $ phraseNoPulses (sum two4Tm) tabBass

@@ -50,7 +50,8 @@ import Data.Ratio
 
 type Multiplier = Integer
 
-data Beat a = B a | R a
+-- | Beats represented as (N)otes or (R)ests.
+data Beat a = N a | R a
   deriving (Eq,Show)
 
 type HBeats a = [Beat a] -> [Beat a]
@@ -66,7 +67,7 @@ class InterpretRest e where
 
 
 instance Functor Beat where
-  fmap f (B a) = B (f a)
+  fmap f (N a) = N (f a)
   fmap f (R a) = R (f a)
 
 --------------------------------------------------------------------------------
@@ -80,11 +81,11 @@ rest i = BeatPattern i (\xs -> R i:xs)
 
 
 beat :: Integer -> BeatPattern
-beat i = BeatPattern i (\xs -> B i:xs)
+beat i = BeatPattern i (\xs -> N i:xs)
 
 
 beats :: [Integer] -> BeatPattern
-beats xs = BeatPattern (sum xs) (rep $ map B xs)
+beats xs = BeatPattern (sum xs) (rep $ map N xs)
 
 -- This one might be more confusing 
 -- anacrusis :: Integer -> BeatPatten
@@ -110,7 +111,7 @@ times n (BeatPattern len app) = BeatPattern len (iter n app) where
 
 zipInterp :: InterpretRest e => [Duration -> e] -> [Beat Rational] -> [e]
 zipInterp fs     (R n:ys) = interpretRest n : zipInterp fs ys
-zipInterp (f:fs) (B n:ys) = f n : zipInterp fs ys
+zipInterp (f:fs) (N n:ys) = f n : zipInterp fs ys
 zipInterp _      _        = []
 
 
@@ -129,7 +130,7 @@ unitBeat :: BeatPattern -> [Beat Multiplier]
 unitBeat (BeatPattern _ app) = foldr fn [] $ app []
   where
     fn (R n) acc = iter (fromIntegral n) (R 1:) acc
-    fn (B n) acc = iter (fromIntegral n) (B 1:) acc
+    fn (N n) acc = iter (fromIntegral n) (N 1:) acc
 -}
 
 
@@ -138,6 +139,6 @@ unitBeat :: BeatPattern -> BeatPattern
 unitBeat (BeatPattern n app) = BeatPattern n $ foldr fn id $ app []
   where
     fn (R i) f = iter (fromIntegral i) ((R 1 :) .) f 
-    fn (B 1) f = (B 1 :) . f 
-    fn (B i) f = (B 1 :) . iter (fromIntegral i) ((R 1 :) .) f
+    fn (N 1) f = (N 1 :) . f 
+    fn (N i) f = (N 1 :) . iter (fromIntegral i) ((R 1 :) .) f
 

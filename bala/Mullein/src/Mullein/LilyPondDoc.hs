@@ -410,7 +410,7 @@ layoutExpr e          = command "layout" <+> nestBraces e
 relative :: Pitch -> Doc -> Doc 
 relative p expr = command "relative" <+> pitch p' <+> nestBraces expr
   where
-    p' = modifyOctave ((octave p) - 4) p
+    p' = setOctave ((octave p) - 4) p
 
 -- | @\\drummode {\\n ...\\n }@.
 drummode            :: Doc -> Doc
