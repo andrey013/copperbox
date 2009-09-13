@@ -60,7 +60,7 @@ demo1 :: Doc
 demo1 =  version "2.12.2" 
      <$> score (relative M.middle_c $ key M.c_nat "major" <$> time 2 4 <$> tune)
   where
-    tune = simpleOutput $ renderPhrase 
+    tune = simpleOutput $ renderPhrase lyGlyph
                         $ rewritePitch M.middle_c 
                         $ rewriteDuration xs
     xs   = overlayPhrases (phrase twoFourTime afoxeU) (phrase twoFourTime afoxeL)

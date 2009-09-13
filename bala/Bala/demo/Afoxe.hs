@@ -110,11 +110,11 @@ demo1 =  version "2.12.2"
      <$$> afoxeTabBassDef
      <$$> book (score (staffGroupTemplate <$> layout <$> midi))
   where
-    tune    = simpleOutput $ renderPhrase 
+    tune    = simpleOutput $ renderPhrase lyGlyph
                            $ rewritePitch M.middle_c 
                            $ rewriteDuration xs
 
-    fdiags  = simpleOutput $ renderPhrase 
+    fdiags  = simpleOutput $ renderPhrase lySpacerGlyph
                            $ rewriteDuration 
                            $ phrase two4Tm chordContext
 
@@ -197,7 +197,7 @@ afoxeTabChordsDef = variableDef "afoxeTabChords" $
                 <$> voiceOne
                 <$> chords )
   where
-    chords = simpleOutput $ renderPhrase 
+    chords = simpleOutput $ renderPhrase lyTabGlyph
                           $ rewriteDuration 
                           $ rewritePitchAbs (-5)
                           $ phraseNoPulses (sum two4Tm) tabChords
@@ -209,7 +209,7 @@ afoxeTabBassDef = variableDef "afoxeTabBass" $
                 <$> voiceTwo
                 <$> basspart )
   where
-    basspart = simpleOutput $ renderPhrase 
+    basspart = simpleOutput $ renderPhrase lyTabGlyph
                             $ rewriteDuration 
                             $ rewritePitchAbs (-5)
                             $ phraseNoPulses (sum two4Tm) tabBass

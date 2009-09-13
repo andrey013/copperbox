@@ -11,7 +11,7 @@ module BossaNova where
 import Bala.BalaMullein
 import Bala.BeatPattern
 
-import Mullein.LilyPond hiding ( Duration, rest, makeChord, B )
+import Mullein.LilyPond hiding ( Duration, rest, makeChord )
 import qualified Mullein.NamedElements          as M
 
 import Text.PrettyPrint.Leijen hiding ( dot )
@@ -54,16 +54,16 @@ demo1 =  version "2.12.2"
                     <$> layout
                     <$> midi_part)
   where
-    tune      = simpleOutput $ renderPhrase 
+    tune      = simpleOutput $ renderPhrase lyDrumGlyph
                              $ rewriteDuration xs
 
     xs        = phrase four4Tm bossa_score
 
     four4Tm   = [2%4,2%4]
     
-    midi_part = midiExpr $ context (command "Score" <$> 
-                                        (schemeDef "tempoWholesPerMinute" 
-                                                   "ly:make-moment 120 4"))
+    midi_part = midiExpr $ contextExpr (command "Score" <$> 
+                                         (schemeDef "tempoWholesPerMinute" 
+                                                    "ly:make-moment 120 4"))
 
 
 output1 :: IO ()

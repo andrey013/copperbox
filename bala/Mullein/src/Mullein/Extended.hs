@@ -22,23 +22,32 @@ module Mullein.Extended
     Finger
   , FingeredPitch(..)
   , FingeredGlyph
+  , FingeredGlyph'
+  , lyFingeredGlyph
   , finger
   
   -- * LilyPond drum pitches
   , DrumPitch(..)
   , DrumGlyph
+  , DrumGlyph'
+  , lyDrumGlyph
+
 
   -- * LilyPond /spacer marks/
   , SpacerMark(..)
   , SpacerGlyph
+  , SpacerGlyph'
   , SpacerAnnotation
   , Direction(..)
+  , lySpacerGlyph
   , markupAboveSpacer
   , markupBelowSpacer
   , markupCenterSpacer
 
   -- * Extended Glyph, pitch annotated with  string number
   , TabGlyph
+  , TabGlyph'
+  , lyTabGlyph
   , PitchPlusString(..)
   , StringNumber
 
@@ -68,8 +77,8 @@ data FingeredPitch = FingeredPitch {
      }
   deriving (Eq,Show)
 
-type FingeredGlyph = Glyph FingeredPitch Duration
-
+type FingeredGlyph  = Glyph FingeredPitch Duration
+type FingeredGlyph' = Glyph FingeredPitch (Maybe Duration)  
 
 finger :: FingeredGlyph -> Int -> FingeredGlyph
 finger (Note (FingeredPitch p _) drn t)  i = Note (FingeredPitch p (Just i)) drn t
@@ -88,13 +97,12 @@ instance MakeNote FingeredGlyph where
 instance MakeRest FingeredGlyph where
   makeRest drn = Rest drn
 
-
-instance LilyPondGlyph (Glyph FingeredPitch (Maybe Duration)) where
-  lyGlyph (Note p d t)     = pitchDurationFinger p d <> optDoc t tie
-  lyGlyph (Rest d)         = rest d
-  lyGlyph (Spacer d)       = spacer d
-  lyGlyph (Chord ps d t)   = chordForm (map pitchFinger ps) d <> optDoc t tie
-  lyGlyph (GraceNotes xs)  = graceForm $ map fn xs 
+lyFingeredGlyph :: FingeredGlyph' -> Doc
+lyFingeredGlyph (Note p d t)     = pitchDurationFinger p d <> optDoc t tie
+lyFingeredGlyph (Rest d)         = rest d
+lyFingeredGlyph (Spacer d)       = spacer d
+lyFingeredGlyph (Chord ps d t)   = chordForm (map pitchFinger ps) d <> optDoc t tie
+lyFingeredGlyph (GraceNotes xs)  = graceForm $ map fn xs 
     where fn (GraceNote p d) = pitchDurationFinger p d
 
 
@@ -120,15 +128,14 @@ data DrumPitch = DrumPitch {
   deriving (Eq,Show)
 
 
-type DrumGlyph = Glyph DrumPitch Duration
-
+type DrumGlyph  = Glyph DrumPitch Duration
+type DrumGlyph' = Glyph DrumPitch (Maybe Duration) 
 
 instance MakeRest DrumGlyph where
   makeRest drn = Rest drn
 
-
-instance LilyPondGlyph (Glyph DrumPitch (Maybe Duration)) where
-  lyGlyph = oLyGlyph (text . drumShortName)
+lyDrumGlyph :: DrumGlyph' -> Doc
+lyDrumGlyph = oLyGlyph (text . drumShortName)
 
 
 --------------------------------------------------------------------------------
@@ -145,7 +152,9 @@ instance LilyPondGlyph (Glyph DrumPitch (Maybe Duration)) where
 data SpacerMark drn = SpacerMark (Maybe SpacerAnnotation) drn
   deriving (Show)
 
-type SpacerGlyph = SpacerMark Duration
+type SpacerGlyph  = SpacerMark Duration
+type SpacerGlyph' = SpacerMark (Maybe Duration)
+
 
 type SpacerAnnotation = (Direction,Doc)
 
@@ -166,14 +175,14 @@ markupBelowSpacer doc = SpacerMark (Just (Below,doc))
 markupCenterSpacer :: Doc -> Duration -> SpacerGlyph
 markupCenterSpacer doc = SpacerMark (Just (Center,doc))
 
-instance LilyPondGlyph (SpacerMark (Maybe Duration)) where
-  lyGlyph (SpacerMark Nothing md)        = spacer md
-  lyGlyph (SpacerMark (Just (a,doc)) md) = fn a (spacer md) doc
+lySpacerGlyph :: SpacerGlyph' -> Doc
+lySpacerGlyph (SpacerMark Nothing md)        = spacer md
+lySpacerGlyph (SpacerMark (Just (a,doc)) md) = fn a (spacer md) doc
     where
        fn Above  = (**^)
        fn Below  = (**\)
        fn Center = (**-) 
-      
+
 -- TODO in Bracket add a Bar transformation that doesn't beam
 instance ExtBeam (SpacerMark dur) where
   outerElement (SpacerMark _ _)   = False
@@ -200,7 +209,8 @@ instance ChangeDurationLyRel SpacerMark where
 
 type StringNumber = Int
 
-type TabGlyph = Glyph PitchPlusString Duration
+type TabGlyph  = Glyph PitchPlusString Duration
+type TabGlyph' = Glyph PitchPlusString (Maybe Duration)
 
 data PitchPlusString = PPS Pitch StringNumber
   deriving (Eq)
@@ -209,14 +219,14 @@ instance Show PitchPlusString where
   showsPrec prec (PPS p i) = showsPrec prec (p,i)
 
 
-instance LilyPondGlyph (Glyph PitchPlusString (Maybe Duration)) where
-  lyGlyph (Note p d t)     = pitchDurationString p d <> optDoc t tie
-  lyGlyph (Rest d)         = rest d
-  lyGlyph (Spacer d)       = spacer d
-  lyGlyph (Chord ps d t)   = chordForm (map pitchPlusString ps) d 
+lyTabGlyph :: TabGlyph' -> Doc
+lyTabGlyph (Note p d t)    = pitchDurationString p d <> optDoc t tie
+lyTabGlyph (Rest d)        = rest d
+lyTabGlyph (Spacer d)      = spacer d
+lyTabGlyph (Chord ps d t)  = chordForm (map pitchPlusString ps) d 
                                <> optDoc t tie
-  lyGlyph (GraceNotes xs)  = graceForm $ map fn xs 
-    where fn (GraceNote p d) = pitchDurationString p d
+lyTabGlyph (GraceNotes xs) = graceForm $ map fn xs 
+  where fn (GraceNote p d) = pitchDurationString p d
 
 
 pitchDurationString :: PitchPlusString -> Maybe Duration -> Doc

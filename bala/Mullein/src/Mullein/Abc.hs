@@ -58,20 +58,29 @@ import Data.Ratio
 
 --------------------------------------------------------------------------------
 
--- Print a list of /notes/ in free meter, notionally in C major 
--- - i.e. all sharps and flats will be printed explicitly.
+
+{-
+-- Ideally we should have a type more like this that allows any
+-- glyph with pitch and duration to be printed rather than just a 
+-- PDGlyph
+
 abcSimple :: ( HasPitch pch, ChangePitchAbc t
              , HasDuration (t pch), ChangeDurationAbc (t pch)
              , AbcGlyph (t pch AbcMultiplier)
              , ExtBeam (t pch Duration) )
           => [t pch Duration] -> Doc
+-}
+
+-- Print a list of /notes/ in free meter, notionally in C major 
+-- - i.e. all sharps and flats will be printed explicitly.
+abcSimple :: [PDGlyph] -> Doc
 abcSimple xs = tunenum   1 
       <$> title     ""
       <$> key       "Cmaj"
       <$> meter     "none"
       <$> tune
   where
-    tune = simpleOutput $ renderPhrase 
+    tune = simpleOutput $ renderPhrase abcGlyph
                         $ rewritePitch cmaj
                         $ rewriteDuration (1%8)
                         $ freePhrase (makeMeterPattern 4 4) xs

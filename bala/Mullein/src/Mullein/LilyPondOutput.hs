@@ -19,12 +19,11 @@
 
 module Mullein.LilyPondOutput 
   (
-  -- * Glyph class
-    LilyPondGlyph(..)
 
   -- * Render    
+    PDGlyphLy
   , renderPhrase
-  , renderPhrase'
+  , lyGlyph
   , oLyGlyph
 
   -- * Rewriting
@@ -60,40 +59,17 @@ import qualified Data.Traversable as T
 
 
 
---------------------------------------------------------------------------------
--- Classes
-
--- | To be renderable as LilyPond, glyphs must implement this class.
-class LilyPondGlyph e where
-  lyGlyph :: e -> Doc
-
-instance LilyPondGlyph (Glyph Pitch (Maybe Duration)) where
-  lyGlyph = oLyGlyph pitch
-
-
 
 --------------------------------------------------------------------------------
 -- Render
 
+type PDGlyphLy = Glyph Pitch (Maybe Duration)
+
 -- | Render a phrase. This function returns a 'DPhrase' which is 
 -- a list of list of Doc. To generate output, it must be 
 -- post-processed. One such post-processor is 'simpleOutput'...
-renderPhrase :: LilyPondGlyph e => Phrase e -> DPhrase
-renderPhrase = map oBarOverlay
-
-oBarOverlay :: LilyPondGlyph e => Bar e -> DBar
-oBarOverlay (Bar xs)       = [fillSep $ map omBeam xs]
-oBarOverlay (OverlayL xss) = map (fillSep . map omBeam) xss
-
-
-omBeam :: LilyPondGlyph e => Pulse e -> Doc
-omBeam (Pulse e)    = lyGlyph e
-omBeam (BeamedL es) = beamForm $ map lyGlyph es
-
-
-
-renderPhrase' :: (e -> Doc) -> Phrase e -> DPhrase
-renderPhrase' f = map (renderBarOverlay f)
+renderPhrase :: (e -> Doc) -> Phrase e -> DPhrase
+renderPhrase f = map (renderBarOverlay f)
 
 
 renderBarOverlay :: (e -> Doc) -> Bar e -> DBar
@@ -105,6 +81,9 @@ renderBeam :: (e -> Doc) -> Pulse e -> Doc
 renderBeam f (Pulse e)    = f e
 renderBeam f (BeamedL es) = beamForm $ map f es
 
+
+lyGlyph :: PDGlyphLy -> Doc
+lyGlyph = oLyGlyph pitch
 
 
 oLyGlyph :: (pch -> Doc) -> Glyph pch (Maybe Duration) -> Doc

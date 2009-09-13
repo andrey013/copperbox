@@ -60,18 +60,25 @@ import Text.PrettyPrint.Leijen
 
 --------------------------------------------------------------------------------
 
--- Print a list of /notes/ in free meter, notionally in C major 
--- - i.e. all sharps and flats will be printed explicitly.
+{-
+-- Ideally we should have a type more like this that allows any
+-- glyph with pitch and duration to be printed rather than just a 
+-- PDGlyph
+
 lilyPondSimple :: ( HasDuration (t pch), ChangeDurationLyRel (t pch)
                   , HasPitch pch, ChangePitchLyRel t
-                  , LilyPondGlyph (t pch (Maybe Duration))
                   , ExtBeam (t pch Duration) )
                => [t pch Duration] -> Doc
+-}
+
+-- Print a list of /notes/ in free meter, notionally in C major 
+-- - i.e. all sharps and flats will be printed explicitly.
+lilyPondSimple :: [PDGlyph] -> Doc
 lilyPondSimple xs =  version "2.12.2" 
      <$> score (relative middle_c $ key c_nat "major" 
                                     <$> cadenzaOn <$> tune <$> cadenzaOff) 
   where
-    tune = simpleOutput $ renderPhrase 
+    tune = simpleOutput $ renderPhrase lyGlyph
                         $ rewritePitch middle_c 
                         $ rewriteDuration 
                         $ freePhrase (makeMeterPattern 4 4) xs

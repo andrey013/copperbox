@@ -18,12 +18,11 @@
 
 module Mullein.AbcOutput 
   (
-  -- * Glyph class
-    AbcGlyph(..)
 
   -- * Render    
+    PDGlyphAbc
   , renderPhrase
-  , renderPhrase'
+  , abcGlyph
 
   -- * Rewriting
   , ChangeDurationAbc(..)
@@ -49,46 +48,16 @@ import Text.PrettyPrint.Leijen
 import Data.Ratio
 
 
---------------------------------------------------------------------------------
--- Classes
-
--- | To be renderable as ABC, glyphs must implement this class.
-class AbcGlyph e where
-  abcGlyph :: e -> Doc
-
-
-
-instance AbcGlyph (Glyph Pitch AbcMultiplier) where
-  abcGlyph (Note p dm t)    = note p dm <> optDoc t tie
-  abcGlyph (Rest dm)        = rest dm
-  abcGlyph (Spacer dm)      = spacer dm
-  abcGlyph (Chord ps dm t)  = (chordForm $ map (note `flip` dm) ps) 
-                                <> optDoc t tie
-  abcGlyph (GraceNotes xs)  = graceForm $ map abcGrace xs
-
-abcGrace :: GraceNote Pitch AbcMultiplier -> Doc
-abcGrace (GraceNote p dm) = note p dm
-
 
 --------------------------------------------------------------------------------
 
+type PDGlyphAbc = Glyph Pitch AbcMultiplier
 
 -- | Render a phrase. This function returns a 'DPhrase' which is 
 -- a list of list of Doc. To generate output, it must be 
 -- post-processed. One such post-processor is 'simpleOutput'...
-renderPhrase :: AbcGlyph e => Phrase e -> DPhrase
-renderPhrase = map oBarOverlay
-
-oBarOverlay :: AbcGlyph e => Bar e -> DBar
-oBarOverlay (Bar xs)       = [hsep $ map omBeam xs]
-oBarOverlay (OverlayL xss) = map (hsep . map omBeam) xss
-
-omBeam :: AbcGlyph e => Pulse e -> Doc
-omBeam (Pulse e)    = abcGlyph e
-omBeam (BeamedL es) = hcat $ map abcGlyph es
-
-renderPhrase' :: (e -> Doc) -> Phrase e -> DPhrase
-renderPhrase' f = map (renderBarOverlay f)
+renderPhrase :: (e -> Doc) -> Phrase e -> DPhrase
+renderPhrase f = map (renderBarOverlay f)
 
 renderBarOverlay :: (e -> Doc) -> Bar e -> DBar
 renderBarOverlay f (Bar xs)       = [hsep $ map (renderBeam f) xs]
@@ -98,6 +67,17 @@ renderBeam :: (e -> Doc) -> Pulse e -> Doc
 renderBeam f (Pulse e)    = f e
 renderBeam f (BeamedL es) = hcat $ map f es
 
+abcGlyph :: PDGlyphAbc -> Doc
+abcGlyph  (Note p dm t)    = note p dm <> optDoc t tie
+abcGlyph (Rest dm)        = rest dm
+abcGlyph (Spacer dm)      = spacer dm
+abcGlyph (Chord ps dm t)  = (chordForm $ map (note `flip` dm) ps) 
+                              <> optDoc t tie
+abcGlyph (GraceNotes xs)  = graceForm $ map abcGrace xs
+
+
+abcGrace :: GraceNote Pitch AbcMultiplier -> Doc
+abcGrace (GraceNote p dm) = note p dm
 
 
 --------------------------------------------------------------------------------
