@@ -18,8 +18,13 @@
 
 module Mullein.Extended 
   (
+    printGlyph
+
+
   -- * Notes with fingering annotations
-    Finger
+  -- $finger_anno
+  , FingerNumber
+  , HasFingerNumber
   , FingeredGlyph
   , FingeredGlyph'
   , lyFingeredGlyph
@@ -43,34 +48,63 @@ module Mullein.Extended
   , markupBelowSpacer
   , markupCenterSpacer
 
-  -- * Extended Glyph, pitch annotated with  string number
+  -- * Tab string number
+  -- $tab_string_anno
+  , HasStringNumber(..)
+  , lyTabGlyph
   , TabGlyph
   , TabGlyph'
-  , lyTabGlyph
   , StringNumber
 
   ) where
 
-import Mullein.Bracket ( ExtBeam(..) )
 import Mullein.Core
 import Mullein.Duration
 import Mullein.LilyPondDoc
 import Mullein.LilyPondOutput
 import Mullein.Pitch
-import Mullein.Utils ( optDoc )
+import Mullein.Utils ( optDoc, mbDoc )
 
 import Text.PrettyPrint.Leijen
 
---------------------------------------------------------------------------------
--- Notes with fingering annotations
 
-type Finger = Int
+
+printGlyph ::(anno -> Doc) -> Glyph anno Pitch (Maybe Duration) -> Doc
+printGlyph f (Note a p d t)  = pitch p <> mbDoc duration d 
+                                       <> f a <> optDoc t tie
+printGlyph _ (Rest d)        = rest d
+printGlyph _ (Spacer d)      = spacer d
+printGlyph f (Chord ps d t)  = chordForm (map fn ps) d <> optDoc t tie
+                               where fn (a,p) = pitch p <> f a
+printGlyph f (GraceNotes xs) = graceForm $ map fn xs 
+    where fn (GraceNote a p d) = pitch p <> mbDoc duration d <> f a
+
+
+--------------------------------------------------------------------------------
+-- Notes with fingering annotations - LilyPond only
+
+-- $finger_anno
+-- Note form is \<pitch\>\<duration\>/-/\<finger_number\> 
+-- e.g. @c4-2@
+--
+-- Chord form is /</\<pitch\>/-/\<finger_number> .../>/\<duration\> 
+-- e.g. @\<c-1 e-2 g-4>2@
+
+
+type FingerNumber = Int
+
+class HasFingerNumber anno where 
+  getFingerNumber :: anno -> Maybe FingerNumber
+
+instance HasFingerNumber (Maybe Int) where
+  getFingerNumber = id
+
 
 -- Fingering is optional - numering every note would clutter up
 -- scores, especially where notes are repeated.
 
-type FingeredGlyph  = Glyph (Maybe Finger) Pitch Duration
-type FingeredGlyph' = Glyph (Maybe Finger) Pitch (Maybe Duration)  
+type FingeredGlyph  = Glyph (Maybe FingerNumber) Pitch Duration
+type FingeredGlyph' = Glyph (Maybe FingerNumber) Pitch (Maybe Duration)  
 
 finger :: FingeredGlyph -> Int -> FingeredGlyph
 finger (Note _ p drn t)  i = Note (Just i) p drn t
@@ -81,25 +115,13 @@ instance MakeNote FingeredGlyph where
   makeNote pch drn = Note Nothing pch drn False
 
 
-lyFingeredGlyph :: FingeredGlyph' -> Doc
-lyFingeredGlyph (Note mi p d t)  = pitchFingerDuration p mi d <> optDoc t tie
-lyFingeredGlyph (Rest d)         = rest d
-lyFingeredGlyph (Spacer d)       = spacer d
-lyFingeredGlyph (Chord ps d t)   = chordForm (map (uncurry pitchFinger) ps) d 
-                                     <> optDoc t tie
-lyFingeredGlyph (GraceNotes xs)  = graceForm $ map fn xs 
-    where fn (GraceNote mi p d) = pitchFingerDuration p mi d
+lyFingeredGlyph :: HasFingerNumber anno 
+                => Glyph anno Pitch (Maybe Duration) -> Doc
+lyFingeredGlyph = printGlyph (mbDoc fingerNumber . getFingerNumber)
 
 
-pitchFingerDuration :: Pitch -> Maybe Finger -> Maybe Duration -> Doc
-pitchFingerDuration p mi md = 
-    pitch p <> maybe empty duration md <> maybe empty fingering mi
-
-pitchFinger :: Maybe Finger -> Pitch -> Doc
-pitchFinger mi p = pitch p <> maybe empty fingering mi
-
-fingering :: Finger -> Doc
-fingering i = char '-' <> int i
+fingerNumber :: FingerNumber -> Doc
+fingerNumber i = char '-' <> int i
 
 
 
@@ -166,9 +188,11 @@ lySpacerGlyph (SpacerMark (Just (a,doc)) md) = fn a (spacer md) doc
        fn Below  = (**\)
        fn Center = (**-) 
 
--- TODO in Bracket add a Bar transformation that doesn't beam
-instance ExtBeam (SpacerMark dur) where
-  outerElement (SpacerMark _ _)   = False
+-- Should not need an ExtBeam instance as SpacerGlyphs should be 
+-- partitioned to bars with @phraseNoPulses@.
+--
+-- instance ExtBeam (SpacerMark dur) where
+--   outerElement (SpacerMark _ _)   = False
 
 
 instance HasDuration SpacerMark where
@@ -181,44 +205,36 @@ instance ChangeDurationLyRel SpacerMark where
 --------------------------------------------------------------------------------
 -- Tab Glyphs 
 
--- Notes are annotated with string number
 
--- TO CONSIDER...
--- Having a new type for each /output style/ puts a high burden 
--- on constructing and translating from one type to another. It 
--- might be preferable to get rid of the LilyPondGlyph class 
--- and parameterize the render functions with glyph-printer 
--- function.
+-- $tab_string_anno
+-- Note form is \<pitch\>\<duration\>/\/\<finger_number\> 
+-- e.g. @c4\\2@
+--
+-- Chord form is /</\<pitch\>/\/\<finger_number> .../>/\<duration\> 
+-- e.g. @\<c\\1 e\\2 g\\4>2@
+
+-- Notes are annotated with string number
 
 type StringNumber = Int
 
+class HasStringNumber anno where
+  getStringNumber :: anno -> StringNumber
+
+instance HasStringNumber Int where
+  getStringNumber = id
+
+lyTabGlyph :: HasStringNumber anno => Glyph anno Pitch (Maybe Duration) -> Doc
+lyTabGlyph = printGlyph (stringNumber . getStringNumber)
+
+stringNumber :: Int -> Doc
+stringNumber i = char '\\' <> int i
+
+
+
+-- NOTE - these types/instances are due for removal.
+
 type TabGlyph  = Glyph StringNumber Pitch Duration
 type TabGlyph' = Glyph StringNumber Pitch (Maybe Duration)
-
-
-lyTabGlyph :: TabGlyph' -> Doc
-lyTabGlyph (Note i p d t)  = pitchDurationString p i d <> optDoc t tie
-lyTabGlyph (Rest d)        = rest d
-lyTabGlyph (Spacer d)      = spacer d
-lyTabGlyph (Chord ps d t)  = chordForm (map (\(i,p) -> pitchPlusString p i) ps) d 
-                               <> optDoc t tie
-lyTabGlyph (GraceNotes xs) = graceForm $ map fn xs 
-  where fn (GraceNote i p d) = pitchDurationString p i d
-
-
-pitchDurationString :: Pitch -> StringNumber -> Maybe Duration -> Doc
-pitchDurationString p i md = 
-    pitch p <> maybe empty duration md <> stringnumber i
-
-pitchPlusString :: Pitch -> StringNumber -> Doc
-pitchPlusString p i = pitch p <> stringnumber i
-
-stringnumber :: StringNumber -> Doc
-stringnumber i = char '\\' <> int i
-
-
-
--- NOTE - these instances are due for removal.
 
 instance MakeNote (StringNumber -> TabGlyph) where
   makeNote p d = \n -> Note n p d False

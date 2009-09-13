@@ -33,7 +33,9 @@ module Mullein.Utils
   , ooo 
   , oooo
 
+  -- * Pairs
   , prod
+  , fork
 
   -- * Extra pretty printers
   , doclines
@@ -44,7 +46,8 @@ module Mullein.Utils
   , emptyDoc
   , spaceBraces
   , optDoc
-  
+  , mbDoc   
+
   , writeDoc
   , renderDocEighty
 
@@ -105,9 +108,13 @@ ooo f g = ((f .) .) . g
 oooo :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
 oooo f g = (((f .) .) .) . g    
     
+-- Pairs
 
 prod :: (a -> c) -> (b -> d) -> (a,b) -> (c,d) 
 prod f g (a,b) = (f a,g b)
+
+fork :: (a -> b, a -> c) -> a -> (b,c)
+fork (f,g) a = (f a, g a)
 
 ---------------------------------------------------------------------------------
 -- PPrint extras 
@@ -146,6 +153,9 @@ spaceBraces = enclose (text "{ ") (text " }")
 
 optDoc :: Bool -> Doc -> Doc
 optDoc b doc = if b then doc else PP.empty
+
+mbDoc ::  (a -> Doc) -> Maybe a -> Doc
+mbDoc f o = maybe PP.empty f o 
 
 writeDoc :: FilePath -> Doc -> IO ()
 writeDoc filepath = writeFile filepath . renderDocEighty
