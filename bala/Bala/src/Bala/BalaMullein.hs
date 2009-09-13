@@ -107,11 +107,13 @@ mkRest = M.makeRest . toDuration
 -- LilyPond drums s
 
 mkDrumNote :: M.DrumPitch -> Rational -> M.DrumGlyph
-mkDrumNote p d = M.Note p (toDuration d) False
+mkDrumNote p d = M.Note () p (toDuration d) False
 
 
 mkDrumChord :: [M.DrumPitch] -> Rational -> M.DrumGlyph
-mkDrumChord ps d = M.Chord ps (toDuration d) False
+mkDrumChord ps d = M.Chord (map f ps) (toDuration d) False
+  where f a = ((),a) 
+
 
 
 

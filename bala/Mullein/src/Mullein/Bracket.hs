@@ -53,8 +53,8 @@ import Data.Ratio
 class ExtBeam a where
   outerElement :: a -> Bool
 
-instance ExtBeam (Glyph pch dur) where
-  outerElement (Note _ _ _)   = True
+instance ExtBeam (Glyph anno pch dur) where
+  outerElement (Note _ _ _ _) = True
   outerElement (Rest _)       = False
   outerElement (Spacer _)     = True     -- Note - is this correct? 
   outerElement (Chord _ _ _)  = True

@@ -51,7 +51,7 @@ import Data.Ratio
 
 --------------------------------------------------------------------------------
 
-type PDGlyphAbc = Glyph Pitch AbcMultiplier
+type PDGlyphAbc = Glyph () Pitch AbcMultiplier
 
 -- | Render a phrase. This function returns a 'DPhrase' which is 
 -- a list of list of Doc. To generate output, it must be 
@@ -68,16 +68,16 @@ renderBeam f (Pulse e)    = f e
 renderBeam f (BeamedL es) = hcat $ map f es
 
 abcGlyph :: PDGlyphAbc -> Doc
-abcGlyph  (Note p dm t)    = note p dm <> optDoc t tie
+abcGlyph (Note _ p dm t)  = note p dm <> optDoc t tie
 abcGlyph (Rest dm)        = rest dm
 abcGlyph (Spacer dm)      = spacer dm
-abcGlyph (Chord ps dm t)  = (chordForm $ map (note `flip` dm) ps) 
+abcGlyph (Chord ps dm t)  = (chordForm $ map ((note `flip` dm) . snd) ps) 
                               <> optDoc t tie
 abcGlyph (GraceNotes xs)  = graceForm $ map abcGrace xs
 
 
-abcGrace :: GraceNote Pitch AbcMultiplier -> Doc
-abcGrace (GraceNote p dm) = note p dm
+abcGrace :: GraceNote () Pitch AbcMultiplier -> Doc
+abcGrace (GraceNote _ p dm) = note p dm
 
 
 --------------------------------------------------------------------------------
@@ -96,16 +96,16 @@ rewriteDuration :: ChangeDurationAbc t
                 -> Phrase (t AbcMultiplier)
 rewriteDuration r bars = map (fmap (changeDurationAbc r)) bars
 
-instance ChangeDurationAbc (Glyph pch) where
-  changeDurationAbc r (Note p d t)     = Note p (abcMultiplier r d) t
+instance ChangeDurationAbc (Glyph anno pch) where
+  changeDurationAbc r (Note a p d t)   = Note a p (abcMultiplier r d) t
   changeDurationAbc r (Rest d)         = Rest $ abcMultiplier r d
   changeDurationAbc r (Spacer d)       = Spacer $ abcMultiplier r d
   changeDurationAbc r (Chord ps d t)   = Chord ps (abcMultiplier r d) t
   changeDurationAbc r (GraceNotes xs)  = GraceNotes $ 
                                            map (changeDurationAbc r) xs
 
-instance ChangeDurationAbc (GraceNote pch) where
-  changeDurationAbc r (GraceNote p d) = GraceNote p (abcMultiplier r d)
+instance ChangeDurationAbc (GraceNote anno pch) where
+  changeDurationAbc r (GraceNote a p d) = GraceNote a p (abcMultiplier r d)
 
 
 -- Pitch spelling
@@ -121,19 +121,20 @@ rewritePitch :: (HasPitch pch, ChangePitchAbc t)
 rewritePitch smap bars = map (fmap (changePitchAbc smap)) bars
 
 
-instance ChangePitchAbc Glyph where
-  changePitchAbc sm (Note p d t)     = Note (innerSpell sm p) d t
+instance ChangePitchAbc (Glyph anno) where
+  changePitchAbc sm (Note a p d t)   = Note a (innerSpell sm p) d t
   changePitchAbc _  (Rest d)         = Rest d
   changePitchAbc _  (Spacer d)       = Spacer d
-  changePitchAbc sm (Chord ps d t)   = Chord (map (innerSpell sm) ps) d t
+  changePitchAbc sm (Chord ps d t)   = Chord (map fn ps) d t
+                                       where fn (a,p) = (a,innerSpell sm p)
   changePitchAbc sm (GraceNotes xs)  = GraceNotes (map (changePitchAbc sm) xs)
 
 innerSpell :: HasPitch p => SpellingMap -> p -> p
 innerSpell sm p  = setPitch p' p where 
     p' = spell sm $ getPitch p
 
-instance ChangePitchAbc GraceNote where
-  changePitchAbc sm (GraceNote p d) = GraceNote (innerSpell sm p) d
+instance ChangePitchAbc (GraceNote anno) where
+  changePitchAbc sm (GraceNote a p d) = GraceNote a (innerSpell sm p) d
 
 
 

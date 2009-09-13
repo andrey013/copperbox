@@ -191,19 +191,19 @@ type DOverlay   = Doc
 
 type Tie = Bool
 
-data Glyph pch drn = Note   pch drn Tie
-                   | Rest   drn
-                   | Spacer drn
-                   | Chord  [pch] drn Tie
-                   | GraceNotes [GraceNote pch drn]
+data Glyph noteinfo pch drn = Note   noteinfo pch drn Tie
+                            | Rest   drn
+                            | Spacer drn
+                            | Chord  [(noteinfo,pch)] drn Tie
+                            | GraceNotes [GraceNote noteinfo pch drn]
   deriving (Eq,Show)
 
 
-data GraceNote pch drn = GraceNote pch drn
+data GraceNote noteinfo pch drn = GraceNote noteinfo pch drn
   deriving (Eq,Show)
 
 -- | (P)itch (D)uration glyph - the standard note format.
-type PDGlyph = Glyph Pitch Duration
+type PDGlyph = Glyph () Pitch Duration
 
 
 
@@ -228,13 +228,13 @@ class HasTie a where
 
 -- instances
   
-instance HasTie (Glyph pch dur) where
-  setTied (Note p d _)   = Note p d True
-  setTied (Chord ps d _) = Chord ps d True
-  setTied e              = e
+instance HasTie (Glyph anno pch dur) where
+  setTied (Note anno p d _)   = Note anno p d True
+  setTied (Chord ps d _)      = Chord ps d True
+  setTied e                   = e
 
-instance HasDuration (Glyph pch) where 
-  getDuration (Note _ d _)   = d
+instance HasDuration (Glyph anno pch) where 
+  getDuration (Note _ _ d _)   = d
   getDuration (Rest d)       = d
   getDuration (Spacer d)     = d
   getDuration (Chord _ d _)  = d
@@ -243,16 +243,16 @@ instance HasDuration (Glyph pch) where
 
 
 instance MakeNote PDGlyph where
-  makeNote pch drn = Note pch drn False
+  makeNote pch drn = Note () pch drn False
 
-instance MakeRest PDGlyph where
+instance MakeRest (Glyph anno pch Duration) where
   makeRest drn = Rest drn
 
-instance MakeSpacer (Glyph pch Duration) where
+instance MakeSpacer (Glyph anno pch Duration) where
   makeSpacer = Spacer 
 
 instance MakeChord PDGlyph where
-  makeChord ps drn = Chord ps drn False
+  makeChord ps drn = Chord (zip (repeat ()) ps) drn False
 
 
 

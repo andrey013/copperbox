@@ -63,7 +63,7 @@ import qualified Data.Traversable as T
 --------------------------------------------------------------------------------
 -- Render
 
-type PDGlyphLy = Glyph Pitch (Maybe Duration)
+type PDGlyphLy = Glyph () Pitch (Maybe Duration)
 
 -- | Render a phrase. This function returns a 'DPhrase' which is 
 -- a list of list of Doc. To generate output, it must be 
@@ -86,15 +86,15 @@ lyGlyph :: PDGlyphLy -> Doc
 lyGlyph = oLyGlyph pitch
 
 
-oLyGlyph :: (pch -> Doc) -> Glyph pch (Maybe Duration) -> Doc
-oLyGlyph f (Note p d t)     = f p <> maybe empty duration d <> optDoc t tie
+oLyGlyph :: (pch -> Doc) -> Glyph anno pch (Maybe Duration) -> Doc
+oLyGlyph f (Note _ p d t)   = f p <> maybe empty duration d <> optDoc t tie
 oLyGlyph _ (Rest d)         = rest d
 oLyGlyph _ (Spacer d)       = spacer d
-oLyGlyph f (Chord ps d t)   = chordForm (map f ps) d <> optDoc t tie
+oLyGlyph f (Chord ps d t)   = chordForm (map (f . snd) ps) d <> optDoc t tie
 oLyGlyph f (GraceNotes xs)  = graceForm (map (oGrace f) xs)
 
-oGrace :: (pch -> Doc) -> GraceNote pch (Maybe Duration) -> Doc
-oGrace f (GraceNote p d) = f p <> maybe empty duration d
+oGrace :: (pch -> Doc) -> GraceNote anno pch (Maybe Duration) -> Doc
+oGrace f (GraceNote _ p d) = f p <> maybe empty duration d
 
 
 
@@ -125,21 +125,21 @@ rewriteDuration bars = fst $ runState dZero (mapM (T.mapM fn) bars)
     fn gly = inside $ (changeDurationLyRel `flip`  gly)    
 
 
-instance ChangeDurationLyRel (Glyph pch) where
-  changeDurationLyRel d0 (Note p d t)     = (Note p (alterDuration d0 d) t, d)
-  changeDurationLyRel d0 (Rest d)         = (Rest (alterDuration d0 d), d)
-  changeDurationLyRel d0 (Spacer d)       = (Spacer (alterDuration d0 d), d)
-  changeDurationLyRel d0 (Chord ps d t)   = (Chord ps (alterDuration d0 d) t, d)
-  changeDurationLyRel d0 (GraceNotes xs)  = (GraceNotes xs',d')
-                                            where (xs',d') = changeGraceD d0 xs
+instance ChangeDurationLyRel (Glyph anno pch) where
+  changeDurationLyRel d0 (Note anno p d t) = (Note anno p (alterDuration d0 d) t, d)
+  changeDurationLyRel d0 (Rest d)          = (Rest (alterDuration d0 d), d)
+  changeDurationLyRel d0 (Spacer d)        = (Spacer (alterDuration d0 d), d)
+  changeDurationLyRel d0 (Chord ps d t)    = (Chord ps (alterDuration d0 d) t, d)
+  changeDurationLyRel d0 (GraceNotes xs)   = (GraceNotes xs',d')
+                                             where (xs',d') = changeGraceD d0 xs
 
 
 
 changeGraceD :: Duration 
-             -> [GraceNote note Duration] 
-             -> ([GraceNote note (Maybe Duration)],Duration)
+             -> [GraceNote anno note Duration] 
+             -> ([GraceNote anno note (Maybe Duration)],Duration)
 changeGraceD d0 xs = anaMap fn d0 xs where
-  fn (GraceNote p drn) d = Just (GraceNote p (alterDuration d drn),d)
+  fn (GraceNote a p drn) d = Just (GraceNote a p (alterDuration d drn),d)
 
 
 alterDuration :: Duration -> Duration -> Maybe Duration
@@ -163,8 +163,8 @@ rewritePitch rp bars = fst $ runState rp (mapM (T.mapM fn) bars)
 inside :: (s -> (a,s)) -> State s a
 inside f = get >>= \s -> let (a,s') = f s in set s' >> return a
 
-instance ChangePitchLyRel Glyph where
-  changePitchLyRel p0 (Note p d t)     = (Note p' d t, getPitch p)
+instance ChangePitchLyRel (Glyph anno) where
+  changePitchLyRel p0 (Note a p d t)   = (Note a p' d t, getPitch p)
                                          where p' = alterPitch p0 p
   changePitchLyRel p0 (Rest d)         = (Rest d, p0)
   changePitchLyRel p0 (Spacer d)       = (Spacer d, p0)
@@ -181,15 +181,16 @@ instance ChangePitchLyRel Glyph where
 
 
 changeGraceP :: HasPitch pch 
-             => Pitch -> [GraceNote pch d] -> ([GraceNote pch d],Pitch)
+             => Pitch -> [GraceNote anno pch d] -> ([GraceNote anno pch d],Pitch)
 changeGraceP p0 xs = anaMap fn p0 xs where
-  fn (GraceNote pch d) p = Just (GraceNote (alterPitch p pch) d, getPitch pch)
+  fn (GraceNote anno pch d) p = Just (GraceNote anno pch' d, getPitch pch)
+                                where pch' = alterPitch p pch
 
 -- return changed pitches, plus first pitch of the /original/ chord
-changeChordP :: HasPitch pch => Pitch -> [pch] -> ([pch],Pitch)
-changeChordP p0 []       = ([],p0)
-changeChordP p0 xs@(p:_) = (fst $ anaMap fn p0 xs, getPitch p) where
-  fn pch st = Just (alterPitch st pch, getPitch pch)
+changeChordP :: HasPitch pch => Pitch -> [(anno,pch)] -> ([(anno,pch)],Pitch)
+changeChordP p0 []            = ([],p0)
+changeChordP p0 xs@((_,p):_)  = (fst $ anaMap fn p0 xs, getPitch p) where
+  fn (anno,pch) st = Just ((anno,alterPitch st pch), getPitch pch)
 
 
 alterPitch :: HasPitch pch => Pitch -> pch -> pch
@@ -233,15 +234,16 @@ rewritePitchAbs :: (HasPitch pch, ChangePitchLyAbs t)
 rewritePitchAbs i = fmap (fmap (changePitchLyAbs i)) 
 
 
-instance ChangePitchLyAbs Glyph where
-  changePitchLyAbs i (Note p d t)     = Note (displaceOctave i p) d t
+instance ChangePitchLyAbs (Glyph anno) where
+  changePitchLyAbs i (Note a p d t)   = Note a (displaceOctave i p) d t
   changePitchLyAbs _ (Rest d)         = Rest d
   changePitchLyAbs _ (Spacer d)       = Spacer d
-  changePitchLyAbs i (Chord ps d t)   = Chord (map (displaceOctave i) ps) d t 
+  changePitchLyAbs i (Chord ps d t)   = Chord (map fn ps) d t 
+                                        where fn (a,p) = (a,displaceOctave i p)
   changePitchLyAbs i (GraceNotes xs)  = GraceNotes (fmap (changePitchLyAbs i) xs)
 
-instance ChangePitchLyAbs GraceNote where
-  changePitchLyAbs i (GraceNote p d)  = GraceNote (displaceOctave i p) d
+instance ChangePitchLyAbs (GraceNote anno) where
+  changePitchLyAbs i (GraceNote a p d)  = GraceNote a (displaceOctave i p) d
 
 --------------------------------------------------------------------------------
 -- helpers
