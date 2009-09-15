@@ -25,6 +25,7 @@ module Bala.Utils
   , mapAfter
   , ntimes
   , nrotate
+  , unfoldMap
 
   ) where
 
@@ -53,3 +54,11 @@ ntimes i = concat . map (replicate i)
 
 nrotate :: Int -> [a] -> [a]
 nrotate i xs = let (h,t) = splitAt i xs in t++ h
+
+
+-- | aka @anaMap@ in Bala
+unfoldMap  :: (a -> st -> Maybe (b,st)) -> st -> [a] -> ([b],st) 
+unfoldMap _ s0 []     = ([],s0)     
+unfoldMap f s0 (x:xs) = case (f x s0) of
+    Nothing       -> ([],s0)
+    Just (a,st)   -> (a:as,b) where (as,b) = unfoldMap f st xs
