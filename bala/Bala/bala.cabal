@@ -24,7 +24,7 @@ extra-source-files:
 library
   hs-source-dirs:     src
   build-depends:      base < 5, wl-pprint, containers, vector-space, 
-                      Stream, hinze-streams, QuickCheck < 2
+                      QuickCheck < 2
 
   
   exposed-modules:
@@ -39,10 +39,8 @@ library
     Bala.Pitch,
     Bala.PitchClass,
     Bala.RetroInt,
-    Bala.RhythmPattern,
     Bala.Scale,
     Bala.SequenceManipulation,
-    Bala.Stream,
     Bala.Utils
   other-modules:
     

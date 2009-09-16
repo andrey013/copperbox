@@ -18,7 +18,16 @@ module Bala.Mullein.LilyPond
   ( 
   -- * Write a file and render to LilyPond 
     runLilyPond 
+
+  -- * Guitar chords / fret diagrams
+  , LyGuitarChord(..)
+  , chordDiagramDef
+
   ) where
+
+
+import Bala.Chord
+import Bala.ChordDiagram
 
 import Mullein.LilyPond
 
@@ -37,3 +46,23 @@ runLilyPond path doc = do
   writeDoc path doc
   system $ "lilypond " ++ path
   return ()
+
+
+ 
+--------------------------------------------------------------------------------
+-- LilyPond
+
+
+data LyGuitarChord = LyGuitarChord { 
+      getChordName    :: String,
+      getChordAlias   :: String, 
+      getChord        :: Chord, 
+      getFretDiagram  :: ChordDiagram 
+    }
+
+
+chordDiagramDef :: LyGuitarChord -> Doc
+chordDiagramDef (LyGuitarChord name alias _ diag) = 
+    comment name <$> variableDef alias (fn diag)
+  where
+    fn = markup . fretDiagram . standardMarkup

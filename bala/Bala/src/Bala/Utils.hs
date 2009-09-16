@@ -23,13 +23,17 @@ module Bala.Utils
   , iter
   
   , mapAfter
-  , ntimes
-  , nrotate
   , unfoldMap
+  
+  -- * Extra pretty printers
+  , ( <^> )
+  , vsepsep
 
   ) where
 
-import Data.List ( splitAt )
+import Text.PrettyPrint.Leijen
+
+import Data.List ( splitAt, foldl' )
 
 -- Reverse application
 
@@ -44,16 +48,11 @@ iter :: Int -> (a -> a) -> a -> a
 iter n f a | n <= 0    = a
            | otherwise = iter (n-1) f (f a)
 
+
 mapAfter :: Int -> (a -> a) -> [a] -> [a]
 mapAfter i f xs = ys ++ map f zs where
   (ys,zs) = splitAt i xs
 
-
-ntimes :: Int -> [a] -> [a]
-ntimes i = concat . map (replicate i)
-
-nrotate :: Int -> [a] -> [a]
-nrotate i xs = let (h,t) = splitAt i xs in t++ h
 
 
 -- | aka @anaMap@ in Bala
@@ -62,3 +61,15 @@ unfoldMap _ s0 []     = ([],s0)
 unfoldMap f s0 (x:xs) = case (f x s0) of
     Nothing       -> ([],s0)
     Just (a,st)   -> (a:as,b) where (as,b) = unfoldMap f st xs
+
+
+--------------------------------------------------------------------------------
+-- Extra pretty printers
+
+infixr 5 <^>
+(<^>) :: Doc -> Doc -> Doc 
+(<^>) a b = a <$$> text "" <$$> b
+
+vsepsep :: [Doc] -> Doc 
+vsepsep []     = empty
+vsepsep (x:xs) = foldl' (<^>) x xs

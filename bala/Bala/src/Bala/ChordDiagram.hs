@@ -101,4 +101,3 @@ pitchContent t (ChordDiagram xs) = catMaybes $ zipWith fn xs (pc t) where
 -- So a @toChord@ function is not realistic (at least for the
 -- representation of intervals used by Bala).
 
- 

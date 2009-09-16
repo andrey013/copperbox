@@ -17,7 +17,7 @@ import Bala.Duration
 import Bala.Interval
 import Bala.NamedPitches
 import Bala.SequenceManipulation
-import Bala.Utils hiding ( ntimes ) -- ntimes to be deleted
+import Bala.Utils
 
 import Mullein.LilyPond hiding ( Duration, rest, makeChord, Pitch )
 import qualified Mullein.LilyPond               as M
@@ -30,13 +30,6 @@ import Text.PrettyPrint.Leijen hiding ( dot )
 import Data.Ratio
 
 
-data GuitarChord = GC { 
-      getChordName    :: String,
-      getChordAlias   :: String, 
-      getChord        :: Chord, 
-      getFretDiagram  :: ChordDiagram 
-    }
-
 instance InterpretRest PDGlyph where
   interpretRest = mkRest
 
@@ -46,37 +39,32 @@ instance InterpretRest TabGlyph where
 instance HasTie (StringNumber -> TabGlyph) where
   setTied f = \i -> setTied (f i)
 
-infixr 5 <^>
-(<^>) :: Doc -> Doc -> Doc 
-(<^>) a b = a <$$> text "" <$$> b
-
-
 --------------------------------------------------------------------------------
 -- chords
 
-c6over9 :: GuitarChord
-c6over9 = GC nm as ch cd where
+c6over9 :: LyGuitarChord
+c6over9 = LyGuitarChord nm as ch cd where
   nm = "C6/9"
   as = "chordW"
   ch = makeChord c5 [perfect1, major3, major6, major9]
   cd = makeChordDiagram [x,3,2,2,3,x]
 
-a7sharp5 :: GuitarChord
-a7sharp5 = GC nm as ch cd where
+a7sharp5 :: LyGuitarChord
+a7sharp5 = LyGuitarChord nm as ch cd where
   nm = "A7#5"
   as = "chordX"
   ch = makeChord a4 [perfect1, minor7, major3 # addOve, minor6 # addOve]
   cd = makeChordDiagram [5,x,5,6,6,x]
 
-dmin9 :: GuitarChord
-dmin9 = GC nm as ch cd where
+dmin9 :: LyGuitarChord
+dmin9 = LyGuitarChord nm as ch cd where
   nm = "Dmin9"
   as = "chordY"
   ch = minor d5 # no5 # min9
   cd = makeChordDiagram [x,5,3,5,5,x]
 
-g13 :: GuitarChord
-g13 = GC nm as ch cd where
+g13 :: LyGuitarChord
+g13 = LyGuitarChord nm as ch cd where
   nm = "G13"
   as = "chordZ"
   ch = makeChord g4 [perfect1, minor7, major3 # addOve, major6 # addOve]
@@ -86,7 +74,7 @@ g13 = GC nm as ch cd where
 
 --------------------------------------------------------------------------------
 
-chordList :: [GuitarChord]
+chordList :: [LyGuitarChord]
 chordList = [c6over9, a7sharp5, dmin9, g13]
 
 
@@ -104,7 +92,7 @@ afoxe_lower = rewriteRests $ run1 (2%4) afoxe_lower_patt
     afoxe_lower_patt :: BeatPattern
     afoxe_lower_patt = times 4 $ rest 4 >< beats [2,2]
 
-expandedChordPattern :: [GuitarChord]
+expandedChordPattern :: [LyGuitarChord]
 expandedChordPattern = ntimes 4 chordList <<& 1
 
 
@@ -162,12 +150,8 @@ two4Tm  = makeMeterPattern 2 4
 
 
 
-fretDiagramsDef :: [Doc]
-fretDiagramsDef = map phi chordList where
-  phi (GC name alias _ diag) =  comment name 
-                            <$> variableDef alias (chi diag)
-  chi = markup . fretDiagram . standardMarkup
-
+fretDiagramsDef :: Doc
+fretDiagramsDef = vsepsep $ map chordDiagramDef chordList
 
 fretDiagramsUse :: [SpacerGlyph]
 fretDiagramsUse = zipWith mkFDiag chordList (repeat (2%4)) where
@@ -183,7 +167,7 @@ overrides = vsep $ map text [o1,o2] where
 
 demo1 :: Doc
 demo1 =  version "2.12.2" 
-     <^> (vsep fretDiagramsDef)
+     <^> fretDiagramsDef
      <^> variableDef "afoxeChordDiags" (nestBraces fdUse)
      <^> variableDef "afoxeNotes"  
            (relative M.middle_c (key M.c_nat "major" <$> time 2 4 <$> tune))
