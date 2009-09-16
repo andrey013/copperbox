@@ -28,6 +28,7 @@ module Bala.Utils
   -- * Extra pretty printers
   , ( <^> )
   , vsepsep
+  , ( <$*> )
 
   ) where
 
@@ -73,3 +74,7 @@ infixr 5 <^>
 vsepsep :: [Doc] -> Doc 
 vsepsep []     = empty
 vsepsep (x:xs) = foldl' (<^>) x xs
+
+infixr 6 <$*>
+(<$*>) :: Doc -> Maybe Doc -> Doc 
+(<$*>) a ob = maybe a (a <$>) ob

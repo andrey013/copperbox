@@ -78,6 +78,10 @@ chordList :: [LyGuitarChord]
 chordList = [c6over9, a7sharp5, dmin9, g13]
 
 
+expandedChordPattern :: [LyGuitarChord]
+expandedChordPattern = ntimes 4 chordList <<& 1
+
+
 afoxe_upper :: [Beat Rational]
 afoxe_upper = run1 (2%4) $ patt where
   patt = times 4 $ rest 1 >< beats [2,1] >< rest 1 >< beats [2,1]
@@ -91,9 +95,6 @@ afoxe_lower = rewriteRests $ run1 (2%4) afoxe_lower_patt
 
     afoxe_lower_patt :: BeatPattern
     afoxe_lower_patt = times 4 $ rest 4 >< beats [2,2]
-
-expandedChordPattern :: [LyGuitarChord]
-expandedChordPattern = ntimes 4 chordList <<& 1
 
 
 bassPattern :: (MakeNote e, HasTie e) => [Duration -> e]
@@ -168,19 +169,14 @@ overrides = vsep $ map text [o1,o2] where
 demo1 :: Doc
 demo1 =  version "2.12.2" 
      <^> fretDiagramsDef
-     <^> variableDef "afoxeChordDiags" (nestBraces fdUse)
+     <^> fretDiagramPictures "afoxeChordDiags" (sum two4Tm) fretDiagramsUse
      <^> variableDef "afoxeNotes"  
            (relative M.middle_c (key M.c_nat "major" <$> time 2 4 <$> tune))
 
-     <^> afoxeTabChordsDef
-     <^> afoxeTabBassDef
+     <^> afoxeTabDef
 
      <^> book (score (staffGroupTemplate <$> layout <$> midi))
   where
-    fdUse   = simpleOutput $ renderPhrase lySpacerGlyph
-                           $ rewriteDuration 
-                           $ phraseNoPulses (sum two4Tm) fretDiagramsUse
-
     tune    = simpleOutput $ renderPhrase lyGlyph
                            $ rewritePitch M.middle_c 
                            $ rewriteDuration xs
@@ -202,31 +198,12 @@ staffGroupTemplate = newStaffGroup $ simultaneous [noteStaff, tabStaff]
 
 
 
-afoxeTabChordsDef :: Doc
-afoxeTabChordsDef = variableDef "afoxeTabChords" $
-    nestBraces (    key M.c_nat "major" 
-                <$> time 2 4
-                <$> voiceOne
-                <$> chords )
-  where
-    chords = simpleOutput $ renderPhrase lyTabGlyph
-                          $ rewriteDuration 
-                          $ rewritePitchAbs (-5)
-                          $ phraseNoPulses (sum two4Tm) chordTabVoice
-
-
-afoxeTabBassDef :: Doc
-afoxeTabBassDef = variableDef "afoxeTabBass" $
-    nestBraces (    key M.c_nat "major" 
-                <$> time 2 4
-                <$> voiceTwo
-                <$> basspart )
-  where
-    basspart = simpleOutput $ renderPhrase lyTabGlyph
-                            $ rewriteDuration 
-                            $ rewritePitchAbs (-5)
-                            $ phraseNoPulses (sum two4Tm) bassTabVoice
-
+afoxeTabDef :: Doc
+afoxeTabDef = chordBassTabDef ("afoxeTabChords",chordTabVoice)
+                              ("afoxeTabBass",  bassTabVoice)
+                              (M.c_nat, "major")
+                              (2,4)
+                              (sum two4Tm)
 
                 
 output1 :: IO ()
