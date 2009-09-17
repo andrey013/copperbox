@@ -14,6 +14,7 @@ import Bala.Duration
 import Bala.Interval
 import Bala.Mullein
 import Bala.NamedPitches
+import Bala.Pitch
 import Bala.SequenceManipulation
 import Bala.Utils
 
@@ -130,7 +131,7 @@ expand f i = \d -> f d i
 
 chordVoicefs :: [Duration -> PDGlyph]
 chordVoicefs = chs where
-  chs = map (mkChord . chordPitches . noRoot . getChord) expandedChordPattern
+  chs = map (mkChord . pitchContent . noRoot . getChord) expandedChordPattern
 
 
 chordTabfs :: [Duration -> TabGlyph]
@@ -138,7 +139,7 @@ chordTabfs = chs where
   chs = map (tabChord . getChord) expandedChordPattern
 
   tabChord ::  Chord -> Duration -> TabGlyph  
-  tabChord ch d = M.makeChord (map toPitch $ chordPitches $ noRoot ch) 
+  tabChord ch d = M.makeChord (map toPitch $ pitchContent $ noRoot ch) 
                               (toDuration d) $ [4,3,2::M.StringNumber]
 
 

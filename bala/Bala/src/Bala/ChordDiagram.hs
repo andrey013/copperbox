@@ -30,7 +30,7 @@ module Bala.ChordDiagram
   , standardTuning
   , move
   , standardMarkup
-  , pitchContent
+  , extractPitches
 
   ) where
 
@@ -40,7 +40,7 @@ import Bala.Pitch
 
 import Data.AffineSpace
 
-import Data.Maybe
+import Data.Maybe ( catMaybes )
 
 data FretNum = X | FN Int
   deriving (Eq,Ord)
@@ -79,6 +79,13 @@ instance Num FretNum where
   fromInteger i | i < 0     = X
                 | otherwise = FN $ fromInteger i
 
+
+instance PitchContent Tuning where
+  pitchContent (Tuning p ivls) = scanl (.+^) p ivls
+
+instance IntervalContent Tuning where
+  intervalContent = intervalSteps
+
 --------------------------------------------------------------------------------
 -- operations
 
@@ -111,19 +118,22 @@ standardMarkup (ChordDiagram xs) =
     snums = reverse [1.. length xs]
 
 
-pc :: Tuning -> [Pitch]
-pc (Tuning p ivls) = scanl (.+^) p ivls
-
-
+-- A chord diagram only represents pitches with respect to a
+-- tuning, hence we can't use the PitchContent type class.
+-- 
 -- A Fingering is interpreted as a semitone increment - it cannot 
 -- be an interval as it has no notion of interval quality. So
 -- the pitch list should be /re-spelled/.
-pitchContent :: Tuning -> ChordDiagram -> [Pitch]
-pitchContent t (ChordDiagram xs) = catMaybes $ zipWith fn xs (pc t) where
-  fn X      _ = Nothing
-  fn (FN i) p = Just $ p `addSemitones` i
+extractPitches :: Tuning -> ChordDiagram -> [Pitch]
+extractPitches t (ChordDiagram xs) = 
+    catMaybes $ zipWith fn xs (pitchContent t) 
+  where
+    fn X      _ = Nothing
+    fn (FN i) p = Just $ p `addSemitones` i
 
 -- Chord diagrams do not contain any pitch quality information.
 -- So a @toChord@ function is not realistic (at least for the
 -- representation of intervals used by Bala).
+
+
 

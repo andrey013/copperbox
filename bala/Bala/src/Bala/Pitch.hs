@@ -25,6 +25,7 @@ module Bala.Pitch
 
   -- * Type classes  
   , Semitones(..)
+  , PitchContent(..)
 
   -- * Operations  
   , middleC
@@ -101,7 +102,9 @@ instance Semitones PitchLetter where
     fn 10 = A
     fn _  = B
 
-
+-- | Extract the pitch content from some aggregate object (e.g. a chord).
+class PitchContent c where 
+  pitchContent :: c -> [Pitch]
 
   
 --------------------------------------------------------------------------------

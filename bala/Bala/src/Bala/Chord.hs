@@ -17,12 +17,11 @@
 module Bala.Chord 
   (
   -- * Datatypes
-    Chord(..)
-
+    Chord
+  , chordRoot 
+  
   -- * Operations
   , makeChord
-  , extractIntervals
-  , chordPitches
   , major
   , minor
   , diminished
@@ -77,7 +76,14 @@ data Chord = Chord { chordRoot :: Pitch, chordIntervals :: IntMap Int }
 
 instance Show Chord where
   showsPrec n ch@(Chord p _) = 
-    shows p . showChar ':' . showsPrec n (map intervalName $ extractIntervals ch)
+    shows p . showChar ':' . showsPrec n (map intervalName $ intervalContent ch)
+
+
+instance PitchContent Chord  where 
+  pitchContent ch@(Chord p _) = map (p .+^) $ intervalContent ch
+
+instance IntervalContent Chord where
+  intervalContent = map (uncurry makeInterval) . IM.toAscList . chordIntervals
 
 
 --------------------------------------------------------------------------------
@@ -86,14 +92,6 @@ instance Show Chord where
 makeChord :: Pitch -> [Interval] -> Chord
 makeChord p = Chord p . IM.fromList . map intervalPair
   
-
-extractIntervals :: Chord -> [Interval]
-extractIntervals = map (uncurry makeInterval) . IM.toAscList . chordIntervals
-
-chordPitches :: Chord -> [Pitch]
-chordPitches ch@(Chord p _) = map (p .+^) $ extractIntervals ch
-
-
 
 literalForm :: Pitch -> [Interval] -> Chord
 literalForm p ivals = Chord p $ IM.fromList $ map intervalPair ivals

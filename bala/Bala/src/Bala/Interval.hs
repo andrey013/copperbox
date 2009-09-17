@@ -23,6 +23,9 @@ module Bala.Interval
   , semitoneCount
   , IntervalQuality(..) 
 
+  -- * Type classes
+  , IntervalContent(..)
+
   -- * Operations
   , makeInterval
   , intervalQuality
@@ -103,6 +106,9 @@ data IntervalQuality = Diminished Int | Minor | Perfect | Major | Augmented Int
 --------------------------------------------------------------------------------
 -- Type classes 
 
+-- | Extract the pitch content from some aggregate object (e.g. a chord).
+class IntervalContent c where
+  intervalContent :: c -> [Interval]
 
   
 --------------------------------------------------------------------------------
