@@ -2,14 +2,10 @@
 {-# OPTIONS -Wall #-}
 {-# OPTIONS -fno-warn-orphans #-}
 
--- ghci ...
--- :set -i../src:../../Mullein/src
-
-
 module BossaNova where
 
-import Bala.BalaMullein
 import Bala.BeatPattern
+import Bala.Mullein
 
 import Mullein.LilyPond hiding ( Duration, rest, makeChord )
 import qualified Mullein.NamedElements          as M

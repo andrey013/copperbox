@@ -17,14 +17,12 @@ stability:          highly unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
-  src/Bala/BalaMullein.hs
-  src/Bala/Mullien/Abc.hs
-  src/Bala/Mullein/LilyPond.hs
 
 library
   hs-source-dirs:     src
-  build-depends:      base < 5, wl-pprint, containers, vector-space, 
-                      QuickCheck < 2
+  build-depends:      base < 5, process, filepath, 
+                      wl-pprint, containers, vector-space, 
+                      QuickCheck < 2, mullein > 0.4
 
   
   exposed-modules:
@@ -35,10 +33,12 @@ library
     Bala.Interval,
     Bala.Invert,
     Bala.Modulo,
+    Bala.Mullein,
+    Bala.Mullein.Abc,
+    Bala.Mullein.LilyPond,
     Bala.NamedPitches,
     Bala.Pitch,
     Bala.PitchClass,
-    Bala.RetroInt,
     Bala.Scale,
     Bala.SequenceManipulation,
     Bala.Utils

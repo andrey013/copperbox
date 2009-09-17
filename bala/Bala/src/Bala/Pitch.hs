@@ -19,11 +19,9 @@ module Bala.Pitch  where
 
 import Bala.Interval
 import Bala.Modulo
-import Bala.RetroInt 
 
 import Data.AffineSpace
 
-import Data.Monoid
 import Test.QuickCheck
 
 --------------------------------------------------------------------------------
@@ -139,21 +137,26 @@ instance AffineSpace Pitch where
   (.-.) p p' | p >= p'   = pdiff p p'
              | otherwise = pdiff p' p   -- flip args
     where
-      pdiff lo@(Pitch llo _ _) hi@(Pitch lhi _ _) = Interval ad sc where
+      pdiff lo@(Pitch llo _ _) hi@(Pitch lhi _ _) = makeInterval ad sc where
         sc = toSemitones hi - toSemitones lo
         ad = addOves (sc `div` 12) (llo `upTo` lhi)
 
   -- ad and sc /should/ be positive!    
   (.+^) p@(Pitch l _ o) (Interval ad sc) = Pitch lbl acd ove
     where
-      lbl       = toEnum $ mod7 $ (fromEnum l) + ((fromRI ad) - 1) 
+      lbl       = toEnum $ mod7 $ (fromEnum l) + (ad - 1) 
       acd       = accidental $ spell lbl (sc + toSemitones p)
       lbl_carry = if lbl < l then 1 else 0
       ove       = o + lbl_carry + (sc `div` 12)
 
 
-addOves :: Int -> RI -> RI 
-addOves i = iter i (mappend $ toRI 8)
+-- TODO.
+-- This isn't a good place for dealing with arithmetic distances 
+-- and their funny counting. Even though arithmetic distances are
+-- no longer a distinct type the code should be localized in 
+-- Bala.Interval.
+addOves :: Int -> Int -> Int
+addOves i = iter i (+(8-1))   -- check
   where 
     iter n f a | n <= 0    = a
                | otherwise = iter (n-1) f (f a)
@@ -179,12 +182,12 @@ addSemitones a i = fromSemitones (i + toSemitones a)
 
 
 
-upTo :: PitchLetter -> PitchLetter -> RI
-upTo a b | a == b    = mempty
-         | a >  b    = toRI $ 1 + (7 + fromEnum b) - fromEnum a
-         | otherwise = toRI $ 1 + (fromEnum b) - fromEnum a
+upTo :: PitchLetter -> PitchLetter -> Int
+upTo a b | a == b    = 1
+         | a >  b    = 1 + (7 + fromEnum b) - fromEnum a
+         | otherwise = 1 + (fromEnum b) - fromEnum a
 
-downTo :: PitchLetter -> PitchLetter -> RI
-downTo a b | a == b    = mempty
-           | a >  b    = toRI $ 1 + (fromEnum a) - fromEnum b
-           | otherwise = toRI $ 1 + (7 + fromEnum a) - fromEnum b
+downTo :: PitchLetter -> PitchLetter -> Int
+downTo a b | a == b    = 1
+           | a >  b    = 1 + (fromEnum a) - fromEnum b
+           | otherwise = 1 + (7 + fromEnum a) - fromEnum b

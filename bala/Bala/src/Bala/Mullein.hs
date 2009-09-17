@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.BalaMullein
+-- Module      :  Bala.Mullein
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.BalaMullein
+module Bala.Mullein
   ( 
   -- * Re-export internal modules
     module Bala.Mullein.Abc

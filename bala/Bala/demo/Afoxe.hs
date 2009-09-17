@@ -9,12 +9,12 @@
 
 module Afoxe where
 
-import Bala.BalaMullein
 import Bala.BeatPattern
 import Bala.Chord
 import Bala.ChordDiagram
 import Bala.Duration
 import Bala.Interval
+import Bala.Mullein
 import Bala.NamedPitches
 import Bala.SequenceManipulation
 import Bala.Utils

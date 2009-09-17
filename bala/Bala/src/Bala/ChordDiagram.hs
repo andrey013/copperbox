@@ -17,6 +17,7 @@
 module Bala.ChordDiagram where
 
 import Bala.Interval
+import Bala.NamedPitches ( e4 )
 import Bala.Pitch
 
 import Data.AffineSpace
@@ -63,7 +64,7 @@ makeChordDiagram :: [FretNum] -> ChordDiagram
 makeChordDiagram = ChordDiagram
 
 standardTuning :: Tuning
-standardTuning = Tuning (Pitch E 0 4) [p4,p4,p4,mj4,p4]
+standardTuning = Tuning e4 [p4,p4,p4,mj4,p4]
   where
     p4  = makeInterval 4 5
     mj4 = makeInterval 3 4
