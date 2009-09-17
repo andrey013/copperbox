@@ -14,7 +14,18 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.PitchClass where
+module Bala.PitchClass 
+  ( 
+  -- * Datatypes
+    PitchClass
+
+  -- * Operations  
+  , makePitchClass
+  , transpose
+  , inverti
+  , primeform
+
+  ) where
 
 import Bala.Invert
 import Bala.Modulo

@@ -14,7 +14,28 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Scale where
+module Bala.Scale 
+  ( 
+  -- * Datatypes
+    Scale
+
+  -- * Operations
+  , extractPitches
+
+  -- * Named scales
+  , majorScale
+  , naturalMinorScale
+  , ionianMode
+  , dorianMode
+  , phrygianMode
+  , lydianMode
+  , mixolydianMode
+  , aeolianMode
+  , locrianMode
+  , majorPentatonicBlues
+  , minorPentatonicBlues
+
+  ) where
 
 import Bala.Interval
 import Bala.Pitch

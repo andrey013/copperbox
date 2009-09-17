@@ -15,10 +15,26 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Pitch  where
+module Bala.Pitch 
+  (
+  -- * Datatypes
+    Pitch(..)
+  , PitchLetter(..)
+  , Accidental
+  , Octave
+
+  -- * Type classes  
+  , Semitones(..)
+
+  -- * Operations  
+  , middleC
+  , addSemitones
+
+  ) where
 
 import Bala.Interval
 import Bala.Modulo
+import Bala.Utils
 
 import Data.AffineSpace
 
@@ -27,12 +43,6 @@ import Test.QuickCheck
 --------------------------------------------------------------------------------
 -- Datatypes
 
-data PitchLetter = C | D | E | F | G | A | B
-  deriving (Bounded,Enum,Eq,Ord,Show)
-
-type Accidental = Int   -- 0 Nat, negative Flat, positive Sharp
-
-type Octave = Int
 
 data Pitch = Pitch { 
       pitchLetter :: PitchLetter, 
@@ -40,6 +50,13 @@ data Pitch = Pitch {
       octave      :: Octave
     }
   deriving Eq
+
+data PitchLetter = C | D | E | F | G | A | B
+  deriving (Bounded,Enum,Eq,Ord,Show)
+
+type Accidental = Int   -- 0 Nat, negative Flat, positive Sharp
+
+type Octave = Int
 
 
 
@@ -137,30 +154,24 @@ instance AffineSpace Pitch where
   (.-.) p p' | p >= p'   = pdiff p p'
              | otherwise = pdiff p' p   -- flip args
     where
-      pdiff lo@(Pitch llo _ _) hi@(Pitch lhi _ _) = makeInterval ad sc where
-        sc = toSemitones hi - toSemitones lo
-        ad = addOves (sc `div` 12) (llo `upTo` lhi)
 
   -- ad and sc /should/ be positive!    
-  (.+^) p@(Pitch l _ o) (Interval ad sc) = Pitch lbl acd ove
+  (.+^) p@(Pitch l _ o) ival = Pitch lbl acd ove
     where
+      (ad,sc)   = intervalPair ival
       lbl       = toEnum $ mod7 $ (fromEnum l) + (ad - 1) 
       acd       = accidental $ spell lbl (sc + toSemitones p)
       lbl_carry = if lbl < l then 1 else 0
       ove       = o + lbl_carry + (sc `div` 12)
 
+pdiff :: Pitch -> Pitch -> Interval
+pdiff lo@(Pitch llo _ _) hi@(Pitch lhi _ _) = addOves o $ makeInterval ad sc 
+  where
+    (o,sc) = (toSemitones hi - toSemitones lo) `divMod` 12
+    ad     = llo `upTo` lhi
 
--- TODO.
--- This isn't a good place for dealing with arithmetic distances 
--- and their funny counting. Even though arithmetic distances are
--- no longer a distinct type the code should be localized in 
--- Bala.Interval.
-addOves :: Int -> Int -> Int
-addOves i = iter i (+(8-1))   -- check
-  where 
-    iter n f a | n <= 0    = a
-               | otherwise = iter (n-1) f (f a)
-
+    addOves :: Int -> Interval -> Interval
+    addOves i = iter i addOctave
 
 
 
@@ -186,8 +197,9 @@ upTo :: PitchLetter -> PitchLetter -> Int
 upTo a b | a == b    = 1
          | a >  b    = 1 + (7 + fromEnum b) - fromEnum a
          | otherwise = 1 + (fromEnum b) - fromEnum a
-
+{-
 downTo :: PitchLetter -> PitchLetter -> Int
 downTo a b | a == b    = 1
            | a >  b    = 1 + (fromEnum a) - fromEnum b
            | otherwise = 1 + (7 + fromEnum a) - fromEnum b
+-}

@@ -3,8 +3,6 @@
 {-# OPTIONS -Wall #-}
 {-# OPTIONS -fno-warn-orphans #-}
 
--- ghci ...
--- :set -i../src:../../Mullein/src
 
 
 module Afoxe where
@@ -53,7 +51,7 @@ a7sharp5 :: LyGuitarChord
 a7sharp5 = LyGuitarChord nm as ch cd where
   nm = "A7#5"
   as = "chordX"
-  ch = makeChord a4 [perfect1, minor7, major3 # addOve, minor6 # addOve]
+  ch = makeChord a4 [perfect1, minor7, major3 # addOctave, minor6 # addOctave]
   cd = makeChordDiagram [5,x,5,6,6,x]
 
 dmin9 :: LyGuitarChord
@@ -67,7 +65,7 @@ g13 :: LyGuitarChord
 g13 = LyGuitarChord nm as ch cd where
   nm = "G13"
   as = "chordZ"
-  ch = makeChord g4 [perfect1, minor7, major3 # addOve, major6 # addOve]
+  ch = makeChord g4 [perfect1, minor7, major3 # addOctave, major6 # addOctave]
   cd = makeChordDiagram [3,x,3,4,5,x]
 
 

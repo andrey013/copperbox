@@ -15,7 +15,69 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Interval  where
+module Bala.Interval 
+  ( 
+  -- * Datatypes
+    Interval
+  , arithmeticDistance
+  , semitoneCount
+  , IntervalQuality(..) 
+
+  -- * Operations
+  , makeInterval
+  , intervalQuality
+  , isComplement
+  , intervalName
+  , intervalPair
+  , addOctave
+  , divSimple
+
+  -- ** Named intervals
+  , unison
+  , major2
+  , major3
+  , major6
+  , major7
+  , major9
+  , major10
+  , minor2
+  , minor3
+  , minor6
+  , minor7
+  , minor9
+  , minor10
+  , perfect1
+  , perfect4
+  , perfect5
+  , perfect8
+  , perfect11
+  , perfect12
+  , augmented2
+  , augmented3
+  , augmented4
+  , augmented5
+  , augmented6
+  , augmented7
+  , augmented8
+  , augmented9
+  , augmented11
+  , augmented12
+  , augmented13
+  , diminished2
+  , diminished3
+  , diminished4
+  , diminished5
+  , diminished6
+  , diminished7
+  , diminished8
+  , diminished9
+  , diminished11
+  , diminished12
+  , diminished13
+  , octave1
+  , octave2
+
+  ) where
 
 import Bala.Invert
 import Bala.Modulo
@@ -90,6 +152,17 @@ instance Show IntervalQuality where
 
 --------------------------------------------------------------------------------
 
+-- | @makeInterval arithmetic-distance semintone-count@ - 0 is an
+-- illegal value for arithmetic distance and will generate a 
+-- runtime error. 
+makeInterval :: Int -> Int -> Interval
+makeInterval i j | i /= 0    = Interval i j
+                 | otherwise = error msg
+  where
+    msg = "Interval.makeInterval - cannot make interval with arthimetic " 
+       ++ " distance == 0."
+
+
 -- | rdif is the analogue to subtraction on arithmetic distances, 
 -- but it is the difference between the larger and the smaller 
 -- and hence will always generate a positive answer.
@@ -97,8 +170,8 @@ rdif :: Int -> Int -> Int
 rdif a b = max a b - ((min a b) - 1)
 
 
-complement :: Interval -> Interval -> Bool
-complement a b = a `mappend` b == makeInterval 8 12 
+isComplement :: Interval -> Interval -> Bool
+isComplement a b = a `mappend` b == makeInterval 8 12 
 
 
 intervalQuality :: Interval -> IntervalQuality
@@ -113,7 +186,7 @@ intervalQuality (Interval ad sc) =
                    | s == mj  = Major
                    | s <  mn  = Diminished (mn-s)
                    | s >  mj  = Augmented (s-mj)
-                   | otherwise = error "intervalQuality - unreachable (1)"
+                   | otherwise = error "intervalQuality - unreachable"
                      
 genRegular :: Int -> Either Int (Int,Int)
 genRegular = fn . amod7 where
@@ -130,18 +203,25 @@ genRegular = fn . amod7 where
 intervalName :: Interval -> String
 intervalName ival@(Interval ad _) = show (intervalQuality ival) ++ show ad
 
-makeInterval :: Int -> Int -> Interval
-makeInterval i j | i /= 0    = Interval i j
-                 | otherwise = error msg
-  where
-    msg = "Interval.makeInterval - cannot make interval with arthimetic " 
-       ++ " distance == 0."
-
 intervalPair :: Interval -> (Int,Int)
 intervalPair (Interval i j) = (i,j)
 
-addOve :: Interval -> Interval
-addOve = mappend perfect8
+addOctave :: Interval -> Interval
+addOctave = mappend perfect8
+
+
+-- amod7 [1-7]
+amod7 :: Int -> Int
+amod7 i = 1 + ((i-1) `mod` 7) 
+
+
+
+-- Simple interval from compound interval
+divSimple :: Interval -> (Int,Interval)
+divSimple (Interval ad sc) = (d, Interval (amod7 ad) sc')
+  where
+    (d,sc') = sc `divMod` 12
+
 
 -- 2 3 6 7
 
@@ -187,29 +267,6 @@ perfect8            = makeInterval 8 12
 perfect11           = perfect8 `mappend` perfect4
 perfect12           = perfect8 `mappend` perfect5
 
-diminished2         :: Interval
-diminished3         :: Interval
-diminished4         :: Interval
-diminished5         :: Interval
-diminished6         :: Interval
-diminished7         :: Interval
-diminished8         :: Interval
-diminished9         :: Interval
-diminished11        :: Interval
-diminished12        :: Interval
-diminished13        :: Interval
-diminished2         = makeInterval 2 0
-diminished3         = makeInterval 3 2
-diminished4         = makeInterval 4 4
-diminished5         = makeInterval 5 6
-diminished6         = makeInterval 6 7
-diminished7         = makeInterval 7 9
-diminished8         = makeInterval 8 11
-diminished9         = perfect8 `mappend` diminished2
-diminished11        = perfect8 `mappend` diminished4 
-diminished12        = perfect8 `mappend` diminished5
-diminished13        = perfect8 `mappend` diminished6 
-
 
 augmented2          :: Interval
 augmented3          :: Interval
@@ -234,21 +291,34 @@ augmented11         = perfect8 `mappend` augmented4
 augmented12         = perfect8 `mappend` augmented5
 augmented13         = perfect8 `mappend` augmented6 
 
+
+
+diminished2         :: Interval
+diminished3         :: Interval
+diminished4         :: Interval
+diminished5         :: Interval
+diminished6         :: Interval
+diminished7         :: Interval
+diminished8         :: Interval
+diminished9         :: Interval
+diminished11        :: Interval
+diminished12        :: Interval
+diminished13        :: Interval
+diminished2         = makeInterval 2 0
+diminished3         = makeInterval 3 2
+diminished4         = makeInterval 4 4
+diminished5         = makeInterval 5 6
+diminished6         = makeInterval 6 7
+diminished7         = makeInterval 7 9
+diminished8         = makeInterval 8 11
+diminished9         = perfect8 `mappend` diminished2
+diminished11        = perfect8 `mappend` diminished4 
+diminished12        = perfect8 `mappend` diminished5
+diminished13        = perfect8 `mappend` diminished6 
+
 -- naming changes for these
 octave1             :: Interval
 octave2             :: Interval
 octave1             = makeInterval 8 12
 octave2             = makeInterval 15 24
 
-
--- amod7 [1-7]
-amod7 :: Int -> Int
-amod7 i = 1 + ((i-1) `mod` 7) 
-
-
-
--- Simple interval from compound interval
-divSimple :: Interval -> (Int,Interval)
-divSimple (Interval ad sc) = (d, Interval (amod7 ad) sc')
-  where
-    (d,sc') = sc `divMod` 12

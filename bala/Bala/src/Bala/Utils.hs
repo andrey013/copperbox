@@ -18,7 +18,6 @@ module Bala.Utils
   ( 
   -- * Various functions
 
-  -- ** reverse application
     ( # )
   , iter
   

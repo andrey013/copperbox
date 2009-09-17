@@ -14,7 +14,51 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Chord where
+module Bala.Chord 
+  (
+  -- * Datatypes
+    Chord(..)
+
+  -- * Operations
+  , makeChord
+  , extractIntervals
+  , chordPitches
+  , major
+  , minor
+  , diminished
+  , augmented
+
+  -- ** Transformers
+  , noRoot
+  , no3
+  , no5
+  , no7
+  , no9
+  , no11
+  , no13
+  , sus4
+
+  , maj7
+  , maj9
+  , min7
+  , min9
+  , min11
+  , aug9
+  , aug11
+  , aug13
+  , dim7
+  , dim9
+  , dim11
+  , dim13
+
+  -- * Traids
+  , TriadPattern
+  , majorScaleTriads
+  , naturalMinorTriads
+  , harmonicMinorTriads
+  , minorPentatonicBluesTriads
+
+  ) where
 
 import Bala.Interval
 import Bala.Pitch
@@ -86,76 +130,58 @@ delete i = immap (IM.delete i)
 -- /An Object-Oriented Representation of Pitch-Classes, Intervals,
 -- Scales and Chords: The basic MusES/
 
-noRoot :: Chord -> Chord
-noRoot = delete 1
-
-no3 :: Chord -> Chord
-no3 = delete 3
-
-no5 :: Chord -> Chord
-no5 = delete 5
-
-no7 :: Chord -> Chord
-no7 = delete 7
-
-no9 :: Chord -> Chord
-no9 = delete 9
-
-no11 :: Chord -> Chord
-no11 = delete 11
-
-no13 :: Chord -> Chord
-no13 = delete 13
+noRoot      :: Chord -> Chord
+no3         :: Chord -> Chord
+no5         :: Chord -> Chord
+no7         :: Chord -> Chord
+no9         :: Chord -> Chord
+no11        :: Chord -> Chord
+no13        :: Chord -> Chord
+noRoot      = delete 1
+no3         = delete 3
+no5         = delete 5
+no7         = delete 7
+no9         = delete 9
+no11        = delete 11
+no13        = delete 13
 
 
-min7 :: Chord -> Chord
-min7 = insert minor7
-
-maj7 :: Chord -> Chord
-maj7 = insert major7
-
-dim7 :: Chord -> Chord
-dim7 = insert diminished7
+sus4        :: Chord -> Chord
+sus4        = insert perfect4 . delete 3
 
 
-sus4 :: Chord -> Chord
-sus4 = insert perfect4 . delete 3
+maj7        :: Chord -> Chord
+maj9        :: Chord -> Chord
+maj7        = insert major7
+maj9        = insert major9 . maj7 
 
--- dim7 :: Chord -> Chord
--- dim7 = stepForm [perfect1, minor3, diminished5, diminished7]
-
-dim9 :: Chord -> Chord
-dim9 = insert diminished9 . insert minor7
-
-maj9 :: Chord -> Chord
-maj9 = insert major9 . maj7 
-
-min9 :: Chord -> Chord
-min9 = insert major9 . min7 
-
-aug9 :: Chord -> Chord
-aug9 = insert augmented9 . insert minor7
+min7        :: Chord -> Chord
+min9        :: Chord -> Chord
+min11       :: Chord -> Chord
+min7        = insert minor7
+min9        = insert major9 . min7 
+min11       = insert perfect11 . min9 
 
 
-dim11 :: Chord -> Chord
-dim11 = insert diminished11 . dim9
+aug9        :: Chord -> Chord
+aug11       :: Chord -> Chord
+aug13       :: Chord -> Chord
+aug9        = insert augmented9 . insert minor7
+aug11       = insert augmented11 . aug9
+aug13       = insert augmented13 . aug11
 
-min11 :: Chord -> Chord
-min11 = insert perfect11 . min9 
-
-aug11 :: Chord -> Chord
-aug11 = insert augmented11 . aug9
-
-
-dim13 :: Chord -> Chord
-dim13 = insert diminished13 . dim11
+dim7        :: Chord -> Chord
+dim9        :: Chord -> Chord
+dim11       :: Chord -> Chord
+dim13       :: Chord -> Chord
+dim7        = insert diminished7
+dim9        = insert diminished9 . insert minor7
+dim11       = insert diminished11 . dim9
+dim13       = insert diminished13 . dim11
 
 
 -- maj13 :: Chord -> Chord
 -- maj13 = insert major9 . maj9
-
-aug13 :: Chord -> Chord
-aug13 = insert augmented13 . aug11
 
 
 --------------------------------------------------------------------------------

@@ -14,7 +14,25 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.ChordDiagram where
+module Bala.ChordDiagram 
+  ( 
+  -- * Datatypes
+    FretNum
+  , ChordDiagram
+  , getChordDiagram
+  , Tuning 
+  , lowestString
+  , intervalSteps
+
+  -- * Operations
+  , makeChordDiagram
+  , x
+  , standardTuning
+  , move
+  , standardMarkup
+  , pitchContent
+
+  ) where
 
 import Bala.Interval
 import Bala.NamedPitches ( e4 )
@@ -31,14 +49,16 @@ newtype ChordDiagram = ChordDiagram { getChordDiagram :: [FretNum] }
   deriving (Eq)
 
 
-x :: FretNum 
-x = X
-
 data Tuning = Tuning { 
       lowestString :: Pitch, 
       intervalSteps :: [Interval] 
     }
   deriving (Eq,Show)
+
+
+--------------------------------------------------------------------------------
+-- type class instances
+
 
 instance Show FretNum where
   showsPrec _ X      = showChar 'x'
@@ -59,6 +79,11 @@ instance Num FretNum where
   fromInteger i | i < 0     = X
                 | otherwise = FN $ fromInteger i
 
+--------------------------------------------------------------------------------
+-- operations
+
+x :: FretNum 
+x = X
 
 makeChordDiagram :: [FretNum] -> ChordDiagram
 makeChordDiagram = ChordDiagram
