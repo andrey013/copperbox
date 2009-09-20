@@ -134,8 +134,8 @@ makeDrumScore timesig unitDuration dps patts =
                    -> [M.DrumPitch]]
     buildPitchLine (p,bp) = map fn $ run1 timesig $ unitBeat bp 
       where 
-        fn (N _) = (p:)
-        fn (R _) = id        
+        fn (Nb _) = (p:)
+        fn (Rb _) = id        
 
     mkOne []  = mkRest unitDuration
     mkOne [p] = mkDrumNote p unitDuration

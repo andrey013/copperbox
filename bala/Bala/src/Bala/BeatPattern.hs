@@ -40,7 +40,7 @@ module Bala.BeatPattern
   ) where
 
 import Bala.Duration
-import Bala.Utils
+import Bala.Kleene
 
 
 import Data.Ratio
@@ -50,42 +50,40 @@ import Data.Ratio
 
 type Multiplier = Integer
 
--- | Beats represented as (N)otes or (R)ests.
-data Beat a = N a | R a
+-- | Beats represented as (N)ote beats or (R)est beats.
+data Beat a = Nb a | Rb a
   deriving (Eq,Show)
 
-type HBeats a = [Beat a] -> [Beat a]
-
-data BeatPattern = BeatPattern { barlen :: Integer, apply :: HBeats Multiplier }
+data BeatPattern = BeatPattern { 
+      barlen :: Integer, 
+      kleene :: Kleene (Beat Multiplier) 
+    }
 
 --------------------------------------------------------------------------------
 
--- | Interpret a rest (i.e. the R contructor of Beat) during 
+-- | Interpret a rest (i.e. the Rb contructor of Beat) during 
 -- @zipInterp@.
 class InterpretRest e where
   interpretRest :: Duration -> e
 
 
 instance Functor Beat where
-  fmap f (N a) = N (f a)
-  fmap f (R a) = R (f a)
+  fmap f (Nb a) = Nb (f a)
+  fmap f (Rb a) = Rb (f a)
 
 --------------------------------------------------------------------------------
 
 
-rep :: [Beat a] -> HBeats a
-rep xs = (xs ++)
-
 rest :: Integer -> BeatPattern
-rest i = BeatPattern i (\xs -> R i:xs)
+rest i = BeatPattern i (O $ Rb i)
 
 
 beat :: Integer -> BeatPattern
-beat i = BeatPattern i (\xs -> N i:xs)
+beat i = BeatPattern i (O $ Nb i)
 
 
 beats :: [Integer] -> BeatPattern
-beats xs = BeatPattern (sum xs) (rep $ map N xs)
+beats xs = BeatPattern (sum xs) (fromList $ map Nb xs)
 
 -- This one might be more confusing 
 -- anacrusis :: Integer -> BeatPatten
@@ -93,52 +91,45 @@ beats xs = BeatPattern (sum xs) (rep $ map N xs)
 
 infixr 2 ><
 (><) :: BeatPattern -> BeatPattern -> BeatPattern
-f >< g = BeatPattern (barlen f + barlen g) (apply f . apply g)
+a >< b = BeatPattern (barlen a + barlen b) (S (kleene a) (kleene b))
 
 
 infixr 1 //
 (//) :: BeatPattern -> BeatPattern -> BeatPattern
-f // g | barlen f == barlen g = BeatPattern (barlen g) (apply f . apply g)
+a // b | barlen a == barlen b = BeatPattern (barlen b) (S (kleene a) (kleene b))
        | otherwise            = error $ "unmatched bars"
 
 -- | Repeat a beat pattern n times.
 times :: Int -> BeatPattern -> BeatPattern
-times n (BeatPattern len app) = BeatPattern len (iter n app) where
+times n (BeatPattern len app) = BeatPattern len (R n app)
 
 
 --------------------------------------------------------------------------------
 -- Evaluation
 
 zipInterp :: InterpretRest e => [Duration -> e] -> [Beat Rational] -> [e]
-zipInterp fs     (R n:ys) = interpretRest n : zipInterp fs ys
-zipInterp (f:fs) (N n:ys) = f n : zipInterp fs ys
+zipInterp fs     (Rb n:ys) = interpretRest n : zipInterp fs ys
+zipInterp (f:fs) (Nb n:ys) = f n : zipInterp fs ys
 zipInterp _      _        = []
 
 
 run0 :: BeatPattern -> [Beat Integer]
-run0 = ($ []) . apply
+run0 = toList . kleene
 
 run1 :: Rational -> BeatPattern -> [Beat Rational]
-run1 t (BeatPattern n f) = map (fmap (\i -> t * (i%n))) $ f []
-
-{-
--- Would this be better as a type preserving transformation?
--- Of course it would be more complicated as a BeatPattern 
--- is a (list-producting) function rather than an actual list.
-
-unitBeat :: BeatPattern -> [Beat Multiplier]
-unitBeat (BeatPattern _ app) = foldr fn [] $ app []
-  where
-    fn (R n) acc = iter (fromIntegral n) (R 1:) acc
-    fn (N n) acc = iter (fromIntegral n) (N 1:) acc
--}
+run1 t (BeatPattern n kl) = map (fmap (\i -> t * (i%n))) $ toList kl
 
 
--- (function) type preserving
 unitBeat :: BeatPattern -> BeatPattern
-unitBeat (BeatPattern n app) = BeatPattern n $ foldr fn id $ app []
+unitBeat (BeatPattern i kl) = BeatPattern i $ expand kl
   where
-    fn (R i) f = iter (fromIntegral i) ((R 1 :) .) f 
-    fn (N 1) f = (N 1 :) . f 
-    fn (N i) f = (N 1 :) . iter (fromIntegral i) ((R 1 :) .) f
-
+    expand :: Kleene (Beat Multiplier) -> Kleene (Beat Multiplier)
+    expand = gfold fE fO fS fR fA
+    fE   = E
+    fO (Nb n) | n <= 1    = O $ Nb n
+              | otherwise = S (O $ Nb 1) (R (fromIntegral $ n-1) (O $ Rb 1))
+    fO (Rb n) | n <= 1    = O $ Rb n
+              | otherwise = R (fromIntegral n) (O $ Rb 1)
+    fS   = S
+    fR   = R
+    fA   = A  

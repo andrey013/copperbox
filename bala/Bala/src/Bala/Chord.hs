@@ -22,10 +22,15 @@ module Bala.Chord
   
   -- * Operations
   , makeChord
+  , chordTone 
   , major
   , minor
   , diminished
   , augmented
+
+  , insert      -- Ideally this wouldn't be exported
+  , delete      --         - ditto -
+
 
   -- ** Transformers
   , noRoot
@@ -91,7 +96,10 @@ instance IntervalContent Chord where
 
 makeChord :: Pitch -> [Interval] -> Chord
 makeChord p = Chord p . IM.fromList . map intervalPair
-  
+
+
+chordTone :: Int -> Chord -> Pitch
+chordTone n ch = (pitchContent ch)!!n  
 
 literalForm :: Pitch -> [Interval] -> Chord
 literalForm p ivals = Chord p $ IM.fromList $ map intervalPair ivals

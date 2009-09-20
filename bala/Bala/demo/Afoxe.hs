@@ -89,8 +89,8 @@ afoxe_lower :: [Beat Rational]
 afoxe_lower = rewriteRests $ run1 (2%4) afoxe_lower_patt
   where
     rewriteRests = mapAfter 1 fn where
-      fn (R a) = N a
-      fn a     = a
+      fn (Rb a) = Nb a
+      fn a      = a
 
     afoxe_lower_patt :: BeatPattern
     afoxe_lower_patt = times 4 $ rest 4 >< beats [2,2]
