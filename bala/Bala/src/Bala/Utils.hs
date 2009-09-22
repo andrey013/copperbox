@@ -23,6 +23,8 @@ module Bala.Utils
   
   , mapAfter
   , unfoldMap
+  , matchZipWith
+  , remZipWith
   
   -- * Extra pretty printers
   , ( <^> )
@@ -61,6 +63,20 @@ unfoldMap _ s0 []     = ([],s0)
 unfoldMap f s0 (x:xs) = case (f x s0) of
     Nothing       -> ([],s0)
     Just (a,st)   -> (a:as,b) where (as,b) = unfoldMap f st xs
+
+
+
+matchZipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+matchZipWith _ []     []     = []
+matchZipWith f (x:xs) (y:ys) = f x y : matchZipWith f xs ys
+matchZipWith _ _      _      = error "matchZipWith - unmatched lists"
+
+-- | zipWith that returns the remainer of the second list on 
+-- exhausting the first.
+remZipWith :: (a -> b -> c) -> [a] -> [b] -> ([c],[b])
+remZipWith _ []     ys     = ([],ys)
+remZipWith f (x:xs) (y:ys) = (f x y:zs,ys') where (zs,ys') = remZipWith f xs ys
+remZipWith _ _      []     = error "remZipWith - first list longer than second"
 
 
 --------------------------------------------------------------------------------

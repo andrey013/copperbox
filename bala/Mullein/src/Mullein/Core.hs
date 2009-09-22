@@ -1,7 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -40,10 +37,13 @@ module Mullein.Core
   , PDGlyph
 
   -- * Classes
-  , MakeNote(..)
   , MakeRest(..)
   , MakeSpacer(..)
   , HasTie(..)
+
+  -- * Builders
+  , makeNote
+  , makeChord
    
   ) where
 
@@ -211,21 +211,12 @@ type PDGlyph = Glyph () Pitch Duration
 --------------------------------------------------------------------------------
 -- Classes
 
--- TODO - MakeNote doesn't seem quite right: all the current 
--- instances are building Glyphs with for some fixed set of the 
--- type parameters (anno,pch,drn) - they don't actually use 
--- overloading in a significant way.
-
-class MakeNote e where
-  type NoteAnno e
-  makeNote  :: Pitch -> NoteAnno e -> Duration -> e
-  makeChord :: [(Pitch, NoteAnno e)] -> Duration -> e
-
-class MakeRest e where
-  makeRest :: Duration -> e 
-
 class MakeSpacer e where
   makeSpacer :: Duration -> e
+
+class MakeSpacer e => MakeRest e where
+  makeRest :: Duration -> e 
+
 
 
 class HasTie a where
@@ -247,11 +238,6 @@ instance HasDuration (Glyph anno pch) where
 
 
 
-instance MakeNote PDGlyph where
-  type NoteAnno PDGlyph = ()
-  makeNote pch _ drn = Note () pch drn False
-  makeChord aps drn = Chord (map swap aps) drn False
-
 instance MakeRest (Glyph anno pch Duration) where
   makeRest drn = Rest drn
 
@@ -260,6 +246,16 @@ instance MakeSpacer (Glyph anno pch Duration) where
 
 
 
+
+--------------------------------------------------------------------------------
+-- Builders
+
+
+makeNote  :: Pitch -> anno -> Duration -> Glyph anno Pitch Duration
+makeNote p a d = Note a p d False
+
+makeChord :: [(Pitch, anno)] -> Duration -> Glyph anno Pitch Duration
+makeChord pas d = Chord (map swap pas) d False
 
 
 

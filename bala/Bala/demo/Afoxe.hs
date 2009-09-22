@@ -29,15 +29,12 @@ import Text.PrettyPrint.Leijen hiding ( dot )
 import Data.Ratio
 
 
+
 instance InterpretRest PDGlyph where
   interpretRest = mkRest
 
 instance InterpretRest TabGlyph where
   interpretRest = makeSpacer . toDuration
-{-
-instance HasTie (StringNumber -> TabGlyph) where
-  setTied f = \i -> setTied (f i)
--}
 
 --------------------------------------------------------------------------------
 -- chords
@@ -120,19 +117,14 @@ chordTabVoice = zipInterp chordTabfs afoxe_upper
 
 
 bassTabVoice :: [TabGlyph]
-bassTabVoice = zipInterp (zipWith expand bassPattern strings) afoxe_lower
+bassTabVoice = replaceRests $ distAnnos' expand strings 
+                            $ zipInterp bassPattern afoxe_lower
   where
     strings    :: [StringNumber]
     strings    = [6,6,6,6, 5,5, 6,6,6,6, 5]
 
-expand :: (Duration -> PDGlyph) 
-       -> StringNumber 
-       -> (Duration -> TabGlyph)
-expand f i = \d -> f d `annoStringNumber` i
-
-annoStringNumber (Note _ p d t) i = Note i p d t
-annoStringNumber g              _ = error $ "annoStringNumber not total."
-
+    expand :: StringNumber -> () ->StringNumber
+    expand i _ = i
 
 chordVoicefs :: [Duration -> PDGlyph]
 chordVoicefs = chs where

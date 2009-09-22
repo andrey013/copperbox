@@ -25,7 +25,10 @@ module Bala.Mullein
   -- * Conversion
   , toDuration
   , toPitch
-  
+
+  -- * Rewriting
+  , replaceRests
+    
   -- * Constructors
   , mkNote
   , mkChord
@@ -36,6 +39,12 @@ module Bala.Mullein
   , mkDrumChord
   , makeDrumScore
 
+
+  -- * Annotation
+  , Annos(..)
+  , distAnnos
+  , distAnnos'
+
   ) where
 
 import Bala.BeatPattern
@@ -43,7 +52,9 @@ import Bala.Duration
 import Bala.Mullein.Abc
 import Bala.Mullein.LilyPond
 import Bala.Pitch
+import Bala.Utils
 
+import Mullein.Core ( Glyph(..), GraceNote(..) )
 import qualified Mullein.Duration       as M 
 import qualified Mullein.Extended       as M
 import qualified Mullein.Pitch          as M
@@ -93,17 +104,26 @@ toAccidental n | n == (-2) = Just M.DoubleFlat
 
 
 --------------------------------------------------------------------------------
+-- Rewriting
+
+replaceRests :: [Glyph anno pch drn] -> [Glyph anno pch drn]
+replaceRests = map fn where
+  fn (Rest d) = Spacer d
+  fn a        = a
+
+
+--------------------------------------------------------------------------------
 -- 
 
 
--- Annotations!
+-- TODO - Annotations!
 
-mkNote :: M.MakeNote e => Pitch -> Rational -> e
-mkNote p d = M.makeNote (toPitch p) undefined (toDuration d)
+mkNote :: Pitch -> Rational -> M.PDGlyph
+mkNote p d = M.makeNote (toPitch p) () (toDuration d)
 
-mkChord :: M.MakeNote e => [Pitch] -> Rational -> e
+mkChord :: [Pitch] -> Rational -> M.PDGlyph
 mkChord ps d = M.makeChord (map fn ps) (toDuration d) where
-  fn p = (toPitch p,undefined)
+  fn p = (toPitch p,())
 
 mkRest :: M.MakeRest e => Rational -> e
 mkRest = M.makeRest . toDuration
@@ -144,3 +164,64 @@ makeDrumScore timesig unitDuration dps patts =
     mkOne []  = mkRest unitDuration
     mkOne [p] = mkDrumNote p unitDuration
     mkOne ps  = mkDrumChord ps unitDuration
+
+
+--------------------------------------------------------------------------------
+-- Annotation after creation - ideally annotations should happend 
+-- DURING creation
+
+
+
+
+data Annos a = NA   a
+             | CAs [a]
+             | GAs [a]
+     
+
+
+distAnnos :: (ax -> ay -> az) -> [Annos ax] -> [Glyph ay p d] -> [Glyph az p d]
+distAnnos upd annos glyphs = step annos glyphs where
+  step (NA  a:xs)  (Note a' p d t:ys) = Note (upd a a') p d t : step xs ys
+
+  step (CAs as:xs) (Chord pas d t:ys) = Chord pas' d t : step xs ys where
+      pas' = matchZipWith chUpd as pas
+      chUpd a (a',p) = (upd a a', p)
+
+  step (GAs as:xs) (GraceNotes gs:ys) = GraceNotes gs' : step xs ys where
+      gs' = matchZipWith grUpd as gs 
+      grUpd a (GraceNote a' p d) = GraceNote (upd a a') p d
+
+  step xs          (Rest d:ys)        = Rest d : step xs ys
+
+  step xs          (Spacer d:ys)      = Spacer d : step xs ys
+
+  -- Annos need not be empty, the might be a circular list for example...
+  step _           []                 = []         
+
+  -- But running out of annos before running out of /content/ is an error...
+  step _           _                  = error $ 
+                                          "distAnnos - less annos than content."
+       
+
+
+distAnnos' :: (ax -> ay -> az) -> [ax] -> [Glyph ay p d] -> [Glyph az p d]
+distAnnos' upd annos glyphs = step annos glyphs where
+  step (a:xs) (Note a' p d t:ys) = Note (upd a a') p d t : step xs ys
+
+  step xs     (Chord pas d t:ys) = Chord pas' d t : step xs' ys where
+      (pas',xs') = remZipWith chUpd pas xs
+      chUpd (a',p) a = (upd a a', p)
+
+
+  step xs (GraceNotes gs:ys) = GraceNotes gs' : step xs' ys where
+      (gs',xs') = remZipWith grUpd gs xs
+      grUpd (GraceNote a' p d) a = GraceNote (upd a a') p d
+
+  step xs     (Rest d:ys)        = Rest d : step xs ys
+
+  step xs     (Spacer d:ys)      = Spacer d : step xs ys
+  
+  step _      []                 = []
+
+  step []     _                  = error $ 
+                                     "distAnnos' - less annos than content."

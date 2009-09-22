@@ -97,7 +97,6 @@ anaMap f s0 (x:xs) = case (f x s0) of
     Just (a,st)   -> (a:as,b) where (as,b) = anaMap f st xs
 
 
-
 -- 'specs'
 
 oo :: (c -> d) -> (a -> b -> c) -> a -> b -> d

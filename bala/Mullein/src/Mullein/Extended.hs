@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -31,7 +29,6 @@ module Mullein.Extended
   , FingeredGlyph
   , FingeredGlyph'
   , lyFingeredGlyph
-  , finger
   
   -- * LilyPond drum pitches
   , DrumPitch(..)
@@ -66,7 +63,7 @@ import Mullein.Duration
 import Mullein.LilyPondDoc
 import Mullein.LilyPondOutput
 import Mullein.Pitch
-import Mullein.Utils ( swap, optDoc, mbDoc )
+import Mullein.Utils ( optDoc, mbDoc )
 
 import Text.PrettyPrint.Leijen
 
@@ -116,16 +113,6 @@ instance HasFingerNumber (Maybe FingerNumber) where
 
 type FingeredGlyph  = Glyph (Maybe FingerNumber) Pitch Duration
 type FingeredGlyph' = Glyph (Maybe FingerNumber) Pitch (Maybe Duration)  
-
-finger :: FingeredGlyph -> Int -> FingeredGlyph
-finger (Note _ p drn t)  i = Note (Just (FingerNumber i)) p drn t
-finger a                 _ = a
-
-
-instance MakeNote FingeredGlyph where
-  type NoteAnno FingeredGlyph = Maybe FingerNumber
-  makeNote pch anno drn = Note anno pch drn False
-  makeChord pas drn = Chord (map swap pas) drn False
 
 
 lyFingeredGlyph :: HasFingerNumber anno 
@@ -179,8 +166,11 @@ type SpacerAnnotation = (Direction,Doc)
 data Direction = Above | Below | Center
   deriving (Eq,Show)
 
+instance MakeSpacer SpacerGlyph where
+  makeSpacer = SpacerMark Nothing
+
 instance MakeRest SpacerGlyph where
-  makeRest = SpacerMark Nothing
+  makeRest = makeSpacer
 
 
 markupAboveSpacer :: Doc -> Duration -> SpacerGlyph
@@ -254,9 +244,4 @@ stringNumber (StringNumber i) = char '\\' <> int i
 
 type TabGlyph  = Glyph StringNumber Pitch Duration
 type TabGlyph' = Glyph StringNumber Pitch (Maybe Duration)
-
-instance MakeNote TabGlyph where
-  type NoteAnno TabGlyph = StringNumber
-  makeNote p n d = Note n p d False
-  makeChord pas d = Chord (map swap pas) d False
 
