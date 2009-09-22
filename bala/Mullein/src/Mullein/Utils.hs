@@ -36,6 +36,7 @@ module Mullein.Utils
   -- * Pairs
   , prod
   , fork
+  , swap
 
   -- * Extra pretty printers
   , doclines
@@ -115,6 +116,10 @@ prod f g (a,b) = (f a,g b)
 
 fork :: (a -> b, a -> c) -> a -> (b,c)
 fork (f,g) a = (f a, g a)
+
+swap :: (a,b) -> (b,a)
+swap (a,b) = (b,a)
+
 
 ---------------------------------------------------------------------------------
 -- PPrint extras 

@@ -22,7 +22,9 @@ module Bala.Chord
   
   -- * Operations
   , makeChord
-  , chordTone 
+  , nthTone
+  , chordThird
+  , chordFifth
   , major
   , minor
   , diminished
@@ -98,8 +100,21 @@ makeChord :: Pitch -> [Interval] -> Chord
 makeChord p = Chord p . IM.fromList . map intervalPair
 
 
-chordTone :: Int -> Chord -> Pitch
-chordTone n ch = (pitchContent ch)!!n  
+
+nthTone :: Int -> Chord -> Maybe Pitch
+nthTone i (Chord rp imap) = 
+  maybe Nothing (Just . (rp .+^) . makeInterval i) $ IM.lookup i imap
+
+chordThird :: Chord -> Maybe Pitch
+chordThird = nthTone 3
+
+
+chordFifth :: Chord -> Maybe Pitch
+chordFifth = nthTone 5
+
+
+-- chordTone :: Int -> Chord -> Pitch
+-- chordTone n ch = (pitchContent ch)!!n  
 
 literalForm :: Pitch -> [Interval] -> Chord
 literalForm p ivals = Chord p $ IM.fromList $ map intervalPair ivals

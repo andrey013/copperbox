@@ -40,9 +40,11 @@ module Bala.BeatPattern
   ) where
 
 import Bala.Duration
-import Bala.Kleene
 
+import Data.JoinList ( JoinList, wrap, gfold, fromList, toList )
+import qualified Data.JoinList as JL
 
+import Data.Monoid
 import Data.Ratio
 
 --------------------------------------------------------------------------------
@@ -55,8 +57,8 @@ data Beat a = Nb a | Rb a
   deriving (Eq,Show)
 
 data BeatPattern = BeatPattern { 
-      barlen :: Integer, 
-      kleene :: Kleene (Beat Multiplier) 
+      barlen  :: Integer, 
+      jlbeats :: JoinList (Beat Multiplier) 
     }
 
 --------------------------------------------------------------------------------
@@ -75,11 +77,11 @@ instance Functor Beat where
 
 
 rest :: Integer -> BeatPattern
-rest i = BeatPattern i (O $ Rb i)
+rest i = BeatPattern i (wrap $ Rb i)
 
 
 beat :: Integer -> BeatPattern
-beat i = BeatPattern i (O $ Nb i)
+beat i = BeatPattern i (wrap $ Nb i)
 
 
 beats :: [Integer] -> BeatPattern
@@ -91,17 +93,17 @@ beats xs = BeatPattern (sum xs) (fromList $ map Nb xs)
 
 infixr 2 ><
 (><) :: BeatPattern -> BeatPattern -> BeatPattern
-a >< b = BeatPattern (barlen a + barlen b) (S (kleene a) (kleene b))
+a >< b = BeatPattern (barlen a + barlen b) (jlbeats a `mappend` jlbeats b)
 
 
 infixr 1 //
 (//) :: BeatPattern -> BeatPattern -> BeatPattern
-a // b | barlen a == barlen b = BeatPattern (barlen b) (S (kleene a) (kleene b))
+a // b | barlen a == barlen b = BeatPattern (barlen b) (jlbeats a `mappend` jlbeats b)
        | otherwise            = error $ "unmatched bars"
 
 -- | Repeat a beat pattern n times.
 times :: Int -> BeatPattern -> BeatPattern
-times n (BeatPattern len app) = BeatPattern len (R n app)
+times n (BeatPattern len app) = BeatPattern len (JL.repeated n app)
 
 
 --------------------------------------------------------------------------------
@@ -114,7 +116,7 @@ zipInterp _      _        = []
 
 
 run0 :: BeatPattern -> [Beat Integer]
-run0 = toList . kleene
+run0 = toList . jlbeats
 
 run1 :: Rational -> BeatPattern -> [Beat Rational]
 run1 t (BeatPattern n kl) = map (fmap (\i -> t * (i%n))) $ toList kl
@@ -123,13 +125,12 @@ run1 t (BeatPattern n kl) = map (fmap (\i -> t * (i%n))) $ toList kl
 unitBeat :: BeatPattern -> BeatPattern
 unitBeat (BeatPattern i kl) = BeatPattern i $ expand kl
   where
-    expand :: Kleene (Beat Multiplier) -> Kleene (Beat Multiplier)
-    expand = gfold fE fO fS fR fA
-    fE   = E
-    fO (Nb n) | n <= 1    = O $ Nb n
-              | otherwise = S (O $ Nb 1) (R (fromIntegral $ n-1) (O $ Rb 1))
-    fO (Rb n) | n <= 1    = O $ Rb n
-              | otherwise = R (fromIntegral n) (O $ Rb 1)
-    fS   = S
-    fR   = R
-    fA   = A  
+    expand :: JoinList (Beat Multiplier) -> JoinList (Beat Multiplier)
+    expand = gfold fE fS fJ
+    fE        = JL.empty
+    fS (Nb n) | n <= 1    = wrap $ Nb n
+              | otherwise = mappend (wrap $ Nb 1) 
+                                    (JL.replicate (fromIntegral $ n-1) (Rb 1))
+    fS (Rb n) | n <= 1    = wrap $ Rb n
+              | otherwise = JL.replicate (fromIntegral n) (Rb 1)
+    fJ        = mappend

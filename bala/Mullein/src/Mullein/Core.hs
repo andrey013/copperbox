@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
@@ -41,7 +43,6 @@ module Mullein.Core
   , MakeNote(..)
   , MakeRest(..)
   , MakeSpacer(..)
-  , MakeChord(..)
   , HasTie(..)
    
   ) where
@@ -191,11 +192,11 @@ type DOverlay   = Doc
 
 type Tie = Bool
 
-data Glyph noteinfo pch drn = Note   noteinfo pch drn Tie
-                            | Rest   drn
-                            | Spacer drn
-                            | Chord  [(noteinfo,pch)] drn Tie
-                            | GraceNotes [GraceNote noteinfo pch drn]
+data Glyph anno pch drn = Note   anno pch drn Tie
+                        | Rest   drn
+                        | Spacer drn
+                        | Chord  [(anno,pch)] drn Tie
+                        | GraceNotes [GraceNote anno pch drn]
   deriving (Eq,Show)
 
 
@@ -208,19 +209,23 @@ type PDGlyph = Glyph () Pitch Duration
 
 
 --------------------------------------------------------------------------------
--- Classess
+-- Classes
+
+-- TODO - MakeNote doesn't seem quite right: all the current 
+-- instances are building Glyphs with for some fixed set of the 
+-- type parameters (anno,pch,drn) - they don't actually use 
+-- overloading in a significant way.
 
 class MakeNote e where
-  makeNote :: Pitch -> Duration -> e
+  type NoteAnno e
+  makeNote  :: Pitch -> NoteAnno e -> Duration -> e
+  makeChord :: [(Pitch, NoteAnno e)] -> Duration -> e
 
 class MakeRest e where
   makeRest :: Duration -> e 
 
 class MakeSpacer e where
   makeSpacer :: Duration -> e
-
-class MakeChord e where
-  makeChord :: [Pitch] -> Duration -> e
 
 
 class HasTie a where
@@ -243,16 +248,15 @@ instance HasDuration (Glyph anno pch) where
 
 
 instance MakeNote PDGlyph where
-  makeNote pch drn = Note () pch drn False
+  type NoteAnno PDGlyph = ()
+  makeNote pch _ drn = Note () pch drn False
+  makeChord aps drn = Chord (map swap aps) drn False
 
 instance MakeRest (Glyph anno pch Duration) where
   makeRest drn = Rest drn
 
 instance MakeSpacer (Glyph anno pch Duration) where
   makeSpacer = Spacer 
-
-instance MakeChord PDGlyph where
-  makeChord ps drn = Chord (zip (repeat ()) ps) drn False
 
 
 

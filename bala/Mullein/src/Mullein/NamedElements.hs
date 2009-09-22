@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -146,50 +147,50 @@ import Mullein.Pitch
 
 
 -- notes
-cf :: MakeNote e => Octave -> Duration -> e
-c  :: MakeNote e => Octave -> Duration -> e
-cs :: MakeNote e => Octave -> Duration -> e
-df :: MakeNote e => Octave -> Duration -> e
-d  :: MakeNote e => Octave -> Duration -> e
-ds :: MakeNote e => Octave -> Duration -> e
-ef :: MakeNote e => Octave -> Duration -> e
-e  :: MakeNote e => Octave -> Duration -> e
-es :: MakeNote e => Octave -> Duration -> e
-ff :: MakeNote e => Octave -> Duration -> e
-f  :: MakeNote e => Octave -> Duration -> e
-fs :: MakeNote e => Octave -> Duration -> e
-gf :: MakeNote e => Octave -> Duration -> e
-g  :: MakeNote e => Octave -> Duration -> e
-gs :: MakeNote e => Octave -> Duration -> e
-af :: MakeNote e => Octave -> Duration -> e
-a  :: MakeNote e => Octave -> Duration -> e
-as :: MakeNote e => Octave -> Duration -> e
-bf :: MakeNote e => Octave -> Duration -> e
-b  :: MakeNote e => Octave -> Duration -> e
-bs :: MakeNote e => Octave -> Duration -> e
+cf :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+c  :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+cs :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+df :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+d  :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+ds :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+ef :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+e  :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+es :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+ff :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+f  :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+fs :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+gf :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+g  :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+gs :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+af :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+a  :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+as :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+bf :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+b  :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
+bs :: (MakeNote e, NoteAnno e ~ a) => Octave -> a -> Duration -> e
 
 
-cf o dur = makeNote (Pitch C (Just Flat) o) dur
-c  o dur = makeNote (Pitch C Nothing o) dur
-cs o dur = makeNote (Pitch C (Just Sharp) o) dur
-df o dur = makeNote (Pitch D (Just Flat) o) dur
-d  o dur = makeNote (Pitch D Nothing o) dur
-ds o dur = makeNote (Pitch D (Just Sharp) o) dur
-ef o dur = makeNote (Pitch E (Just Flat) o) dur
-e  o dur = makeNote (Pitch E Nothing o) dur
-es o dur = makeNote (Pitch E (Just Sharp) o) dur
-ff o dur = makeNote (Pitch F (Just Flat) o) dur
-f  o dur = makeNote (Pitch F Nothing o) dur
-fs o dur = makeNote (Pitch F (Just Sharp) o) dur
-gf o dur = makeNote (Pitch G (Just Flat) o) dur
-g  o dur = makeNote (Pitch G Nothing o) dur
-gs o dur = makeNote (Pitch G (Just Sharp) o) dur
-af o dur = makeNote (Pitch A (Just Flat) o) dur
-a  o dur = makeNote (Pitch A Nothing o) dur
-as o dur = makeNote (Pitch A (Just Sharp) o) dur
-bf o dur = makeNote (Pitch B (Just Flat) o) dur
-b  o dur = makeNote (Pitch B Nothing o) dur
-bs o dur = makeNote (Pitch B (Just Sharp) o) dur
+cf o anno dur = makeNote (Pitch C (Just Flat) o)  anno dur
+c  o anno dur = makeNote (Pitch C Nothing o)      anno dur
+cs o anno dur = makeNote (Pitch C (Just Sharp) o) anno dur
+df o anno dur = makeNote (Pitch D (Just Flat) o)  anno dur
+d  o anno dur = makeNote (Pitch D Nothing o)      anno dur
+ds o anno dur = makeNote (Pitch D (Just Sharp) o) anno dur
+ef o anno dur = makeNote (Pitch E (Just Flat) o)  anno dur
+e  o anno dur = makeNote (Pitch E Nothing o)      anno dur
+es o anno dur = makeNote (Pitch E (Just Sharp) o) anno dur
+ff o anno dur = makeNote (Pitch F (Just Flat) o)  anno dur
+f  o anno dur = makeNote (Pitch F Nothing o)      anno dur
+fs o anno dur = makeNote (Pitch F (Just Sharp) o) anno dur
+gf o anno dur = makeNote (Pitch G (Just Flat) o)  anno dur
+g  o anno dur = makeNote (Pitch G Nothing o)      anno dur
+gs o anno dur = makeNote (Pitch G (Just Sharp) o) anno dur
+af o anno dur = makeNote (Pitch A (Just Flat) o)  anno dur
+a  o anno dur = makeNote (Pitch A Nothing o)      anno dur
+as o anno dur = makeNote (Pitch A (Just Sharp) o) anno dur
+bf o anno dur = makeNote (Pitch B (Just Flat) o)  anno dur
+b  o anno dur = makeNote (Pitch B Nothing o)      anno dur
+bs o anno dur = makeNote (Pitch B (Just Sharp) o) anno dur
 
 
 

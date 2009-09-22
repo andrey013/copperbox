@@ -1,5 +1,8 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -63,7 +66,7 @@ import Mullein.Duration
 import Mullein.LilyPondDoc
 import Mullein.LilyPondOutput
 import Mullein.Pitch
-import Mullein.Utils ( optDoc, mbDoc )
+import Mullein.Utils ( swap, optDoc, mbDoc )
 
 import Text.PrettyPrint.Leijen
 
@@ -91,13 +94,21 @@ printGlyph f (GraceNotes xs) = graceForm $ map fn xs
 -- e.g. @\<c-1 e-2 g-4>2@
 
 
-type FingerNumber = Int
+newtype FingerNumber = FingerNumber Int
+  deriving (Eq,Ord,Num)
+
+
+instance Show FingerNumber where
+  showsPrec p (FingerNumber i) = showsPrec p i
+
 
 class HasFingerNumber anno where 
   getFingerNumber :: anno -> Maybe FingerNumber
-
-instance HasFingerNumber (Maybe Int) where
+  setFingerNumber :: FingerNumber -> anno -> anno
+ 
+instance HasFingerNumber (Maybe FingerNumber) where
   getFingerNumber = id
+  setFingerNumber = const . Just
 
 
 -- Fingering is optional - numering every note would clutter up
@@ -107,12 +118,14 @@ type FingeredGlyph  = Glyph (Maybe FingerNumber) Pitch Duration
 type FingeredGlyph' = Glyph (Maybe FingerNumber) Pitch (Maybe Duration)  
 
 finger :: FingeredGlyph -> Int -> FingeredGlyph
-finger (Note _ p drn t)  i = Note (Just i) p drn t
+finger (Note _ p drn t)  i = Note (Just (FingerNumber i)) p drn t
 finger a                 _ = a
 
 
 instance MakeNote FingeredGlyph where
-  makeNote pch drn = Note Nothing pch drn False
+  type NoteAnno FingeredGlyph = Maybe FingerNumber
+  makeNote pch anno drn = Note anno pch drn False
+  makeChord pas drn = Chord (map swap pas) drn False
 
 
 lyFingeredGlyph :: HasFingerNumber anno 
@@ -121,7 +134,7 @@ lyFingeredGlyph = printGlyph (mbDoc fingerNumber . getFingerNumber)
 
 
 fingerNumber :: FingerNumber -> Doc
-fingerNumber i = char '-' <> int i
+fingerNumber (FingerNumber i) = char '-' <> int i
 
 
 
@@ -203,7 +216,7 @@ instance ChangeDurationLyRel SpacerMark where
   changeDurationLyRel d0 (SpacerMark a d) = (SpacerMark a (alterDuration d0 d), d)
 
 --------------------------------------------------------------------------------
--- Tab Glyphs 
+-- Tab Glyphs with string number
 
 
 -- $tab_string_anno
@@ -215,19 +228,25 @@ instance ChangeDurationLyRel SpacerMark where
 
 -- Notes are annotated with string number
 
-type StringNumber = Int
+newtype StringNumber = StringNumber Int
+  deriving (Eq,Ord,Num)
+
+instance Show StringNumber where
+  showsPrec p (StringNumber i) = showsPrec p i
 
 class HasStringNumber anno where
   getStringNumber :: anno -> StringNumber
+  setStringNumber :: StringNumber -> anno -> anno
 
-instance HasStringNumber Int where
+instance HasStringNumber StringNumber where
   getStringNumber = id
+  setStringNumber = const
 
 lyTabGlyph :: HasStringNumber anno => Glyph anno Pitch (Maybe Duration) -> Doc
 lyTabGlyph = printGlyph (stringNumber . getStringNumber)
 
-stringNumber :: Int -> Doc
-stringNumber i = char '\\' <> int i
+stringNumber :: StringNumber -> Doc
+stringNumber (StringNumber i) = char '\\' <> int i
 
 
 
@@ -236,9 +255,8 @@ stringNumber i = char '\\' <> int i
 type TabGlyph  = Glyph StringNumber Pitch Duration
 type TabGlyph' = Glyph StringNumber Pitch (Maybe Duration)
 
-instance MakeNote (StringNumber -> TabGlyph) where
-  makeNote p d = \n -> Note n p d False
-
-instance MakeChord ([StringNumber] -> TabGlyph) where
-  makeChord ps d = \ns -> Chord (zip ns ps) d False
+instance MakeNote TabGlyph where
+  type NoteAnno TabGlyph = StringNumber
+  makeNote p n d = Note n p d False
+  makeChord pas d = Chord (map swap pas) d False
 

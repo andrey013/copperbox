@@ -95,11 +95,15 @@ toAccidental n | n == (-2) = Just M.DoubleFlat
 --------------------------------------------------------------------------------
 -- 
 
-mkNote :: M.MakeNote e => Pitch -> Rational -> e
-mkNote p d = M.makeNote (toPitch p) (toDuration d)
 
-mkChord :: M.MakeChord e => [Pitch] -> Rational -> e
-mkChord ps d = M.makeChord (map toPitch ps) (toDuration d)
+-- Annotations!
+
+mkNote :: M.MakeNote e => Pitch -> Rational -> e
+mkNote p d = M.makeNote (toPitch p) undefined (toDuration d)
+
+mkChord :: M.MakeNote e => [Pitch] -> Rational -> e
+mkChord ps d = M.makeChord (map fn ps) (toDuration d) where
+  fn p = (toPitch p,undefined)
 
 mkRest :: M.MakeRest e => Rational -> e
 mkRest = M.makeRest . toDuration

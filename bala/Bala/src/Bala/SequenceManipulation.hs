@@ -39,12 +39,6 @@ module Bala.SequenceManipulation
 import Prelude hiding ( head, tail, zipWith )
 
 
--- import Data.Stream ( Stream, head, tail, zipWith )
--- import qualified Data.Stream as S
-
--- import Data.Stream.Hinze.Stream ( (<:) )
--- import qualified Data.Stream.Hinze.Stream as HS
-
 infixl 4 <<&, &>>
 
 -- | Rotate n times to the left.

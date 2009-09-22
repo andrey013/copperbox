@@ -22,7 +22,7 @@ library
   hs-source-dirs:     src
   build-depends:      base < 5, process, filepath, 
                       wl-pprint, containers, vector-space, 
-                      QuickCheck < 2, mullein > 0.4
+                      QuickCheck < 2, mullein > 0.4, joinlist >= 0.1.0
 
   
   exposed-modules:
@@ -32,7 +32,6 @@ library
     Bala.Duration,
     Bala.Interval,
     Bala.Invert,
-    Bala.Kleene,
     Bala.Modulo,
     Bala.Mullein,
     Bala.Mullein.Abc,

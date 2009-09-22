@@ -34,9 +34,10 @@ instance InterpretRest PDGlyph where
 
 instance InterpretRest TabGlyph where
   interpretRest = makeSpacer . toDuration
-
+{-
 instance HasTie (StringNumber -> TabGlyph) where
   setTied f = \i -> setTied (f i)
+-}
 
 --------------------------------------------------------------------------------
 -- chords
@@ -96,7 +97,7 @@ afoxe_lower = rewriteRests $ run1 (2%4) afoxe_lower_patt
     afoxe_lower_patt = times 4 $ rest 4 >< beats [2,2]
 
 
-bassPattern :: (MakeNote e, HasTie e) => [Duration -> e]
+bassPattern :: [Duration -> PDGlyph]
 bassPattern = zipWith ($) funs chs
   where
     chs  = map getChord $ ((drop 1 $ ntimes 3 chordList) <<& 1)
@@ -124,10 +125,14 @@ bassTabVoice = zipInterp (zipWith expand bassPattern strings) afoxe_lower
     strings    :: [StringNumber]
     strings    = [6,6,6,6, 5,5, 6,6,6,6, 5]
 
-expand :: (Duration -> StringNumber -> TabGlyph) 
+expand :: (Duration -> PDGlyph) 
        -> StringNumber 
        -> (Duration -> TabGlyph)
-expand f i = \d -> f d i
+expand f i = \d -> f d `annoStringNumber` i
+
+annoStringNumber (Note _ p d t) i = Note i p d t
+annoStringNumber g              _ = error $ "annoStringNumber not total."
+
 
 chordVoicefs :: [Duration -> PDGlyph]
 chordVoicefs = chs where
@@ -139,8 +144,9 @@ chordTabfs = chs where
   chs = map (tabChord . getChord) expandedChordPattern
 
   tabChord ::  Chord -> Duration -> TabGlyph  
-  tabChord ch d = M.makeChord (map toPitch $ pitchContent $ noRoot ch) 
-                              (toDuration d) $ [4,3,2::M.StringNumber]
+  tabChord ch d = M.makeChord (zip (map toPitch $ pitchContent $ noRoot ch) strs)
+                              (toDuration d) 
+    where strs = [4,3,2::M.StringNumber]
 
 
 

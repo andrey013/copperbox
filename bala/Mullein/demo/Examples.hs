@@ -60,16 +60,16 @@ twoFourTime = makeMeterPattern 2 4
 
 b6_bars1'4 :: [PDGlyph]
 b6_bars1'4 =  
-  [ a 5 sn, b 5 sn, cs 6 sn, cs 6 sn, cs 6 sn, a 5 sn, 
-            cs 6 sn, cs 6 sn
+  [ a 5 () sn, b 5 () sn, cs 6 () sn, cs 6 () sn, cs 6 () sn, a 5 () sn, 
+               cs 6 () sn, cs 6 () sn
   -- bar 2
-  , cs 6 sn, a 5 sn, b 5 sn, cs 6 sn, b 5 sn, a 5 sn, 
-             a 5 sn, snr
+  , cs 6 () sn, a 5 () sn, b 5 () sn, cs 6 () sn, b 5 () sn, a 5 () sn, 
+             a 5 () sn, snr
   -- bar 3
-  , e 6 sn, d 6 sn, cs 6 sn, b 5 sn, cs 6 sn, a 5 sn, 
-            b 5 sn, cs 6 sn
+  , e 6 () sn, d 6 () sn, cs 6 () sn, b 5 () sn, cs 6 () sn, a 5 () sn, 
+            b 5 () sn, cs 6 () sn
   -- bar 4
-  , a 5 sn, b 5 sn, b 5 sn, a 5 sn, a 5 en, enr
+  , a 5 () sn, b 5 () sn, b 5 () sn, a 5 () sn, a 5 () en, enr
   ]
 
 --------------------------------------------------------------------------------
@@ -107,5 +107,5 @@ demo3 = simpleOutput $ renderPhrase lyFingeredGlyph
 
 
 two_chords :: [FingeredGlyph]
-two_chords = [ f 5 sn `finger` 2, a 5 sn `finger` 1, d 6 sn `finger` 3, g 6 sn `finger` 4]
+two_chords = [ f 5 (Just 2) sn, a 5 (Just 1) sn, d 6 (Just 3) sn, g 6 (Just 4) sn]
 
