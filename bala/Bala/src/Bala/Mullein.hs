@@ -118,12 +118,12 @@ replaceRests = map fn where
 
 -- TODO - Annotations!
 
-mkNote :: Pitch -> Rational -> M.PDGlyph
-mkNote p d = M.makeNote (toPitch p) () (toDuration d)
+mkNote :: Pitch -> anno -> Rational -> M.StdGlyph anno
+mkNote p anno d = M.makeNote (toPitch p) anno (toDuration d)
 
-mkChord :: [Pitch] -> Rational -> M.PDGlyph
-mkChord ps d = M.makeChord (map fn ps) (toDuration d) where
-  fn p = (toPitch p,())
+mkChord :: [(Pitch,anno)] -> Rational -> M.StdGlyph anno
+mkChord pas d = M.makeChord (map fn pas) (toDuration d) where
+  fn (p,a) = (toPitch p,a)
 
 mkRest :: M.MakeRest e => Rational -> e
 mkRest = M.makeRest . toDuration
@@ -167,8 +167,8 @@ makeDrumScore timesig unitDuration dps patts =
 
 
 --------------------------------------------------------------------------------
--- Annotation after creation - ideally annotations should happend 
--- DURING creation
+-- Annotation after creation - ideally annotations should be part 
+-- of creation...
 
 
 

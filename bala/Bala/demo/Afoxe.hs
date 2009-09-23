@@ -99,11 +99,11 @@ bassPattern = zipWith ($) funs chs
   where
     chs  = map getChord $ ((drop 1 $ ntimes 3 chordList) <<& 1)
     funs = [mv,  tied,fn,fn, tied,fn,mv, tied,fn,fn, fn]
-    fn   = mkNote . chordRoot
-    mv   = mkNote . (.-^ (makeInterval 5 5)) . chordRoot
-    tied = (setTied .) . mkNote . chordRoot
+    fn   = annoZero . mkNote . chordRoot
+    mv   = annoZero . mkNote . (.-^ (makeInterval 5 5)) . chordRoot
+    tied = (setTied .) . annoZero . mkNote . chordRoot
 
-
+    annoZero f = f ()
 
 chordVoice :: [PDGlyph]
 chordVoice = zipInterp chordVoicefs afoxe_upper
@@ -128,8 +128,8 @@ bassTabVoice = replaceRests $ distAnnos' expand strings
 
 chordVoicefs :: [Duration -> PDGlyph]
 chordVoicefs = chs where
-  chs = map (mkChord . pitchContent . noRoot . getChord) expandedChordPattern
-
+  chs = map (mkChord . map aZ . pitchContent . noRoot . getChord) expandedChordPattern
+  aZ p = (p,())
 
 chordTabfs :: [Duration -> TabGlyph]
 chordTabfs = chs where
@@ -157,9 +157,9 @@ fretDiagramsUse = zipWith mkFDiag chordList (repeat (2%4)) where
 
 
 overrides :: Doc
-overrides = vsep $ map text [o1,o2] where
-  o1 = "\\override TabStaff.Stem #'transparent = ##t %% Makes stems transparent"
-  o2 = "\\override TabStaff.Beam #'transparent = ##t %% Makes beams transparent"
+overrides = vsep [o1,o2] where
+  o1 = override "TabStaff.Stem" "transparent" lyTrue
+  o2 = override "TabStaff.Beam" "transparent" lyTrue
 
 
 

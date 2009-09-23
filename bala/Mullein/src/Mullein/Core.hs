@@ -34,6 +34,7 @@ module Mullein.Core
   -- ** Glyphs
   , Glyph(..)
   , GraceNote(..)
+  , StdGlyph
   , PDGlyph
 
   -- * Classes
@@ -203,8 +204,10 @@ data Glyph anno pch drn = Note   anno pch drn Tie
 data GraceNote noteinfo pch drn = GraceNote noteinfo pch drn
   deriving (Eq,Show)
 
--- | (P)itch (D)uration glyph - the standard note format.
-type PDGlyph = Glyph () Pitch Duration
+type StdGlyph anno = Glyph anno Pitch Duration
+
+-- | (P)itch (D)uration glyph - basic unannotated note format.
+type PDGlyph = StdGlyph ()
 
 
 
@@ -251,10 +254,10 @@ instance MakeSpacer (Glyph anno pch Duration) where
 -- Builders
 
 
-makeNote  :: Pitch -> anno -> Duration -> Glyph anno Pitch Duration
+makeNote  :: Pitch -> anno -> Duration -> StdGlyph anno
 makeNote p a d = Note a p d False
 
-makeChord :: [(Pitch, anno)] -> Duration -> Glyph anno Pitch Duration
+makeChord :: [(Pitch, anno)] -> Duration -> StdGlyph anno
 makeChord pas d = Chord (map swap pas) d False
 
 

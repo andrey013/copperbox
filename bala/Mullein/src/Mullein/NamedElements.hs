@@ -146,27 +146,27 @@ import Mullein.Pitch
 
 
 -- notes
-cf :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-c  :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-cs :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-df :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-d  :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-ds :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-ef :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-e  :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-es :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-ff :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-f  :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-fs :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-gf :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-g  :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-gs :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-af :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-a  :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-as :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-bf :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-b  :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
-bs :: Octave -> anno -> Duration -> Glyph anno Pitch Duration
+cf :: Octave -> anno -> Duration -> StdGlyph anno
+c  :: Octave -> anno -> Duration -> StdGlyph anno
+cs :: Octave -> anno -> Duration -> StdGlyph anno
+df :: Octave -> anno -> Duration -> StdGlyph anno
+d  :: Octave -> anno -> Duration -> StdGlyph anno
+ds :: Octave -> anno -> Duration -> StdGlyph anno
+ef :: Octave -> anno -> Duration -> StdGlyph anno
+e  :: Octave -> anno -> Duration -> StdGlyph anno
+es :: Octave -> anno -> Duration -> StdGlyph anno
+ff :: Octave -> anno -> Duration -> StdGlyph anno
+f  :: Octave -> anno -> Duration -> StdGlyph anno
+fs :: Octave -> anno -> Duration -> StdGlyph anno
+gf :: Octave -> anno -> Duration -> StdGlyph anno
+g  :: Octave -> anno -> Duration -> StdGlyph anno
+gs :: Octave -> anno -> Duration -> StdGlyph anno
+af :: Octave -> anno -> Duration -> StdGlyph anno
+a  :: Octave -> anno -> Duration -> StdGlyph anno
+as :: Octave -> anno -> Duration -> StdGlyph anno
+bf :: Octave -> anno -> Duration -> StdGlyph anno
+b  :: Octave -> anno -> Duration -> StdGlyph anno
+bs :: Octave -> anno -> Duration -> StdGlyph anno
 
 
 cf o anno dur = makeNote (Pitch C (Just Flat) o)  anno dur

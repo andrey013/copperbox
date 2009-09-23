@@ -34,36 +34,37 @@ module Mullein.LilyPondDoc
   , (**-)
   , (**\)
 
+  , lyTrue
+  , lyFalse
 
   -- * LilyPond literals and syntax
-  -- *** Commands and comments
+  -- ** Commands and comments
   , command
   , comment
 
 
-  -- *** Time signatures
+  -- ** Time and key signatures
   , time
+  , key
+
   
-  -- *** Bar lines
+  -- ** Bar lines
   , doubleBar
   , singleBar
 
-  -- *** Stems
+  -- ** Stems
   , stemUp
   , stemDown
   , stemNeutral
 
-  -- *** Clefs
+  -- ** Clefs
   , clef
 
-  -- *** Unmetered music
+  -- ** Unmetered music
   , cadenzaOn
   , cadenzaOff
 
-  -- *** Key signature
-  , key
-
-  -- *** Score structure
+  -- ** Score structure
   , nestBraces
   , simultaneous
   , overlay
@@ -88,7 +89,7 @@ module Mullein.LilyPondDoc
   , drummode
   , fretDiagram
 
-  -- *** Titles
+  -- ** Titles
   , header
   , headerElement
   , dedication
@@ -99,12 +100,14 @@ module Mullein.LilyPondDoc
   , copyright
   , tagline
 
-  -- *** Files and variables
+  -- ** Files, variables, overrides
   , include
   , variableDef
   , variableUse
   , schemeDef
+  , override
 
+  -- ** Midi directives
   , midi
   , midiExpr
 
@@ -219,29 +222,43 @@ a **- b = a <> char '-' <> b
 (**\) :: Doc -> Doc -> Doc
 a **\ b = a <> char '_' <> b
 
+-- | @ #t @
+lyTrue :: Doc
+lyTrue = text "#t"
+
+-- | @ #f @
+lyFalse :: Doc 
+lyFalse = text "#f"
 
 --------------------------------------------------------------------------------
 -- Lilypond literals and syntax
 
 
--- *** Commands and comments
+-- Commands and comments
 
 -- | Print a some command, commands are prefixed with a slash, 
 -- e.g.: @\\voiceOne@, @\\unfoldRepeats@.
 command :: String -> Doc
 command = (char '\\' <>) . text 
 
--- | Print a comment, comments can be multi-line.
+-- | @{% ... %}@ - print a comment, comments can be multi-line.
 comment :: String -> Doc
 comment s = text "%{" <+> string s  <+> text "%}"
 
--- *** Time signatures
+-- Time and key signatures
 
+-- | @\\time .../... @ - time signature.
 time :: Int -> Int -> Doc
 time n d = command "time" <+> int n <> char '/' <> int d
 
 
--- *** Bar lines
+-- | @\\key ... ... @ - key pitch mode. Typical values of mode are
+-- @major@, @minor@, and the church modes @dorian@, @locrian@, etc.
+key :: PitchLabel -> String -> Doc
+key lbl mode = command "key" <+> pitchLabel lbl <+> command mode
+
+
+-- Bar lines
 
 -- | Print a double bar line @||@.
 doubleBar :: Doc 
@@ -252,7 +269,7 @@ singleBar :: Doc
 singleBar = text "|"
 
 
--- *** stems
+-- stems
 
 -- | @\\stemUp@.
 stemUp                  :: Doc
@@ -268,7 +285,7 @@ stemNeutral             = command "stemNeutral"
 
 
 --------------------------------------------------------------------------------
--- *** Clef
+-- Clef
 
 -- | @\\clef ...@ - typical values @treble@, @alto@, @bass@, @tenor@, 
 -- @percussion@, @tabClef@.
@@ -276,7 +293,7 @@ clef :: String -> Doc
 clef str = command "clef" <+> text str
 
 --------------------------------------------------------------------------------
--- *** Unmetered music
+-- Unmetered music
 
 -- | @\\cadenzaOn@.
 cadenzaOn     :: Doc
@@ -286,18 +303,10 @@ cadenzaOn     = command "cadenzaOn"
 cadenzaOff    :: Doc
 cadenzaOff    = command "cadenzaOff"
 
---------------------------------------------------------------------------------
--- *** Key signature
-
--- | @\\key ... ... @ - key pitch mode. Typical values of mode are
--- @major@, @minor@, and the church modes @dorian@, @locrian@, etc.
-key :: PitchLabel -> String -> Doc
-key lbl mode = command "key" <+> pitchLabel lbl <+> command mode
-
 
 
 --------------------------------------------------------------------------------
--- *** Score structure
+-- Score structure
 
 -- | Enclose expression within braces @{ ... }@. The open brace
 -- is printed on the current line, then a line break, then the  
@@ -424,7 +433,7 @@ fretDiagram s         = command "fret-diagram" <+> char '#'
 
 
 --------------------------------------------------------------------------------
--- *** Titles
+-- Titles
 
 
 -- | @\header { ... }@ - print a header block.
@@ -469,7 +478,7 @@ tagline               = headerElement "tagline" . dquotes . text
 
 
 --------------------------------------------------------------------------------
--- *** Files and variables
+-- Files, variables, overides
 
 
 -- | @\include \"...\"@ - print a header block.
@@ -484,20 +493,30 @@ variableDef ss e
   | otherwise         = error $ "LilyPondDoc.variableDef - " ++ ss ++ 
                                 " - should only contain alphabetic characters."
 
--- | @\\varName@.
+-- | @\\varName@ - the variable name should only contain 
+-- alphabetic characters.
 variableUse           :: String -> Doc
 variableUse ss  
   | all isAlpha ss    = command ss
   | otherwise         = error $ "LilyPondDoc.variableUse - " ++ ss ++ 
                                 " - should only contain alphabetic characters."
 
--- | @varName = #( ... )@.
+-- | @varName = #( ... )@ - the variable name should only contain 
+-- alphabetic characters.
 schemeDef :: String -> String -> Doc
 schemeDef ss str
   | all isAlpha ss    = text ss <+> equals <+> char '#' <> (parens $ string str)
   | otherwise         = error $ "LilyPondDoc.schemeDef - " ++ ss ++ 
                                 " - should only contain alphabetic characters."
 
+-- | @\\override ... #'... = #...@
+override :: String -> String -> Doc -> Doc
+override obj prop d = command "override" <+> text obj  <+> text "#'" 
+                                         <>  text prop <+> equals 
+                                         <+> char '#'  <> d
+
+--------------------------------------------------------------------------------
+-- Midi directives
 
 -- | @\\midi { }@.
 midi                  :: Doc
