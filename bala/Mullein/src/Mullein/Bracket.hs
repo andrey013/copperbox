@@ -31,6 +31,7 @@ module Mullein.Bracket
   , phraseNoPulses
 
   , overlayPhrases
+  , overlayNoteLists
 
   ) where
 
@@ -42,6 +43,7 @@ import MonadLib.Monads
 import qualified Data.DList as D
 
 import Data.Foldable ( foldlM )
+import Data.List ( foldl1' )
 import Data.Ratio
 
 
@@ -93,9 +95,9 @@ instance (Monad m) => SnocWriterM (SnocWriterT e m) where
 --------------------------------------------------------------------------------
 -- bar & beam
 
--- | Partition into bars and pulsations. A pulsation is either 
--- a single notes or a group of notes joined with a beam. 
--- Pulsations illustrate the division of the bar into beats.
+-- | Partition a notelist into bars and pulsations. A pulsation 
+-- is either a single notes or a group of notes joined with a 
+-- beam. Pulsations illustrate the division of the bar into beats.
 -- The length of the bars will be the sum of the meter pattern.
 phrase :: (HasDuration t, ExtBeam (t Duration))
        => MeterPattern -> [t Duration] -> Phrase (t Duration)
@@ -237,3 +239,10 @@ ratDuration = extent . getDuration
 overlayPhrases :: HasDuration t 
         => Phrase (t Duration) -> Phrase (t Duration) -> Phrase (t Duration)
 overlayPhrases = longZip
+
+
+-- | Overlay a list of note-lists after phrasing them with the 
+-- same meter pattern.
+overlayNoteLists :: (HasDuration t, ExtBeam (t Duration) ) 
+         => MeterPattern -> [[t Duration]] -> Phrase (t Duration)
+overlayNoteLists mp = foldl1' overlayPhrases . map (phrase mp) 

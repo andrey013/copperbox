@@ -116,8 +116,6 @@ replaceRests = map fn where
 -- 
 
 
--- TODO - Annotations!
-
 mkNote :: Pitch -> anno -> Rational -> M.StdGlyph anno
 mkNote p anno d = M.makeNote (toPitch p) anno (toDuration d)
 
@@ -128,7 +126,7 @@ mkChord pas d = M.makeChord (map fn pas) (toDuration d) where
 mkRest :: M.MakeRest e => Rational -> e
 mkRest = M.makeRest . toDuration
 
--- LilyPond drums s
+-- LilyPond drums
 
 mkDrumNote :: M.DrumPitch -> Rational -> M.DrumGlyph
 mkDrumNote p d = M.Note () p (toDuration d) False

@@ -20,8 +20,11 @@ module Bala.Mullein.LilyPond
     runLilyPond 
 
   -- * Guitar chords / fret diagrams
-  , LyGuitarChord(..)
-  , chordDiagramDef
+  , DefName
+  , ChordName
+  , FretDiagramDef
+  , fretDiagramDef
+  , fretDiagramDefs
 
   -- * Document templates
   , tabPartDef
@@ -31,8 +34,7 @@ module Bala.Mullein.LilyPond
   ) where
 
 
-import Bala.Chord
-import Bala.ChordDiagram
+import Bala.ChordDiagram hiding ( x )
 import Bala.Utils
 
 import Mullein.LilyPond
@@ -59,20 +61,23 @@ runLilyPond path doc = do
 -- LilyPond
 
 
-data LyGuitarChord = LyGuitarChord { 
-      getChordName    :: String,
-      getChordAlias   :: String, 
-      getChord        :: Chord, 
-      getFretDiagram  :: ChordDiagram 
-    }
+type DefName        = String
+type ChordName      = String
+
+type FretDiagramDef = (DefName,ChordName,ChordDiagram)
 
 
-chordDiagramDef :: LyGuitarChord -> Doc
-chordDiagramDef (LyGuitarChord name alias _ diag) = 
-    comment name <$> variableDef alias (fn diag)
+
+fretDiagramDef :: DefName -> ChordName -> ChordDiagram -> Doc
+fretDiagramDef defname propername diag = 
+    comment propername <$> variableDef defname (fn diag)
   where
     fn = markup . fretDiagram . standardMarkup
 
+fretDiagramDefs :: [FretDiagramDef] -> Doc
+fretDiagramDefs = vsepsep . map (\(x,y,z) -> fretDiagramDef x y z)
+
+-- uncurry3 ?
 
 ----------------------------------------------------------------------------------
 -- Templates

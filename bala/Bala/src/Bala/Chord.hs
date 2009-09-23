@@ -105,9 +105,9 @@ nthTone :: Int -> Chord -> Maybe Pitch
 nthTone i (Chord rp imap) = 
   maybe Nothing (Just . (rp .+^) . makeInterval i) $ IM.lookup i imap
 
+
 chordThird :: Chord -> Maybe Pitch
 chordThird = nthTone 3
-
 
 chordFifth :: Chord -> Maybe Pitch
 chordFifth = nthTone 5

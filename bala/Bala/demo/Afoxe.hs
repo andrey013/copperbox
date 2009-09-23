@@ -39,43 +39,42 @@ instance InterpretRest TabGlyph where
 --------------------------------------------------------------------------------
 -- chords
 
-c6over9 :: LyGuitarChord
-c6over9 = LyGuitarChord nm as ch cd where
-  nm = "C6/9"
-  as = "chordW"
-  ch = makeChord c5 [perfect1, major3, major6, major9]
-  cd = makeChordDiagram [x,3,2,2,3,x]
+c6over9 :: Chord
+c6over9 = makeChord c5 [perfect1, major3, major6, major9]
 
-a7sharp5 :: LyGuitarChord
-a7sharp5 = LyGuitarChord nm as ch cd where
-  nm = "A7#5"
-  as = "chordX"
-  ch = makeChord a4 [perfect1, minor7, major3 # addOctave, minor6 # addOctave]
-  cd = makeChordDiagram [5,x,5,6,6,x]
+c6over9' :: FretDiagramDef
+c6over9' = ("ChordW", "C6/9", makeChordDiagram [x,3,2,2,3,x])
 
-dmin9 :: LyGuitarChord
-dmin9 = LyGuitarChord nm as ch cd where
-  nm = "Dmin9"
-  as = "chordY"
-  ch = minor d5 # no5 # min9
-  cd = makeChordDiagram [x,5,3,5,5,x]
+a7sharp5 :: Chord
+a7sharp5 = makeChord a4 [perfect1, minor7, major3 # addOctave, minor6 # addOctave]
 
-g13 :: LyGuitarChord
-g13 = LyGuitarChord nm as ch cd where
-  nm = "G13"
-  as = "chordZ"
-  ch = makeChord g4 [perfect1, minor7, major3 # addOctave, major6 # addOctave]
-  cd = makeChordDiagram [3,x,3,4,5,x]
+a7sharp5' :: FretDiagramDef
+a7sharp5' = ("chordX", "A7#5", makeChordDiagram [5,x,5,6,6,x])
+
+dmin9 :: Chord
+dmin9 = minor d5 # no5 # min9
+
+dmin9' :: FretDiagramDef
+dmin9' = ("ChordY", "Dmin9", makeChordDiagram [x,5,3,5,5,x])
+
+g13 :: Chord
+g13 =  makeChord g4 [perfect1, minor7, major3 # addOctave, major6 # addOctave]
+
+g13' :: FretDiagramDef
+g13' = ("ChordZ", "G13", makeChordDiagram [3,x,3,4,5,x])
 
 
 
 --------------------------------------------------------------------------------
 
-chordList :: [LyGuitarChord]
+chordList :: [Chord]
 chordList = [c6over9, a7sharp5, dmin9, g13]
 
+fretDiags :: [FretDiagramDef]
+fretDiags = [c6over9', a7sharp5', dmin9', g13']
 
-expandedChordPattern :: [LyGuitarChord]
+
+expandedChordPattern :: [Chord]
 expandedChordPattern = ntimes 4 chordList <<& 1
 
 
@@ -97,7 +96,7 @@ afoxe_lower = rewriteRests $ run1 (2%4) afoxe_lower_patt
 bassPattern :: [Duration -> PDGlyph]
 bassPattern = zipWith ($) funs chs
   where
-    chs  = map getChord $ ((drop 1 $ ntimes 3 chordList) <<& 1)
+    chs  = (drop 1 $ ntimes 3 chordList) <<& 1
     funs = [mv,  tied,fn,fn, tied,fn,mv, tied,fn,fn, fn]
     fn   = annoZero . mkNote . chordRoot
     mv   = annoZero . mkNote . (.-^ (makeInterval 5 5)) . chordRoot
@@ -128,12 +127,12 @@ bassTabVoice = replaceRests $ distAnnos' expand strings
 
 chordVoicefs :: [Duration -> PDGlyph]
 chordVoicefs = chs where
-  chs = map (mkChord . map aZ . pitchContent . noRoot . getChord) expandedChordPattern
+  chs = map (mkChord . map aZ . pitchContent . noRoot) expandedChordPattern
   aZ p = (p,())
 
 chordTabfs :: [Duration -> TabGlyph]
 chordTabfs = chs where
-  chs = map (tabChord . getChord) expandedChordPattern
+  chs = map tabChord expandedChordPattern
 
   tabChord ::  Chord -> Duration -> TabGlyph  
   tabChord ch d = M.makeChord (zip (map toPitch $ pitchContent $ noRoot ch) strs)
@@ -149,12 +148,12 @@ two4Tm  = makeMeterPattern 2 4
 
 
 fretDiagramsDef :: Doc
-fretDiagramsDef = vsepsep $ map chordDiagramDef chordList
+fretDiagramsDef = fretDiagramDefs fretDiags
 
 fretDiagramsUse :: [SpacerGlyph]
-fretDiagramsUse = zipWith mkFDiag chordList (repeat (2%4)) where
-  mkFDiag ch d = markupAboveSpacer (command $ getChordAlias ch) (toDuration d)
-
+fretDiagramsUse = zipWith mkFDiag fretDiags (repeat (2%4)) where
+  mkFDiag ch d = markupAboveSpacer (command $ fst3 ch) (toDuration d)
+  fst3 (a,_,_) = a
 
 overrides :: Doc
 overrides = vsep [o1,o2] where

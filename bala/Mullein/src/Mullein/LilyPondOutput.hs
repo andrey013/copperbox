@@ -21,8 +21,7 @@ module Mullein.LilyPondOutput
   (
 
   -- * Render    
-    PDGlyphLy
-  , renderPhrase
+    renderPhrase
   , lyGlyph
   , oLyGlyph
 
@@ -63,7 +62,6 @@ import qualified Data.Traversable as T
 --------------------------------------------------------------------------------
 -- Render
 
-type PDGlyphLy = Glyph () Pitch (Maybe Duration)
 
 -- | Render a phrase. This function returns a 'DPhrase' which is 
 -- a list of list of Doc. To generate output, it must be 
@@ -82,7 +80,7 @@ renderBeam f (Pulse e)    = f e
 renderBeam f (BeamedL es) = beamForm $ map f es
 
 
-lyGlyph :: PDGlyphLy -> Doc
+lyGlyph :: Glyph anno Pitch (Maybe Duration) -> Doc
 lyGlyph = oLyGlyph pitch
 
 

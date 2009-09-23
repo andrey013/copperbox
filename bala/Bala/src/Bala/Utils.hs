@@ -31,6 +31,20 @@ module Bala.Utils
   , vsepsep
   , ( <$*> )
 
+  -- * Specs!  
+  , oo
+  , ooo 
+  , oooo
+
+  -- * Pairs
+  , swap 
+  , fork
+  , prod
+  , prod'
+  , dup
+  , dist
+
+
   ) where
 
 import Text.PrettyPrint.Leijen
@@ -93,3 +107,41 @@ vsepsep (x:xs) = foldl' (<^>) x xs
 infixr 6 <$*>
 (<$*>) :: Doc -> Maybe Doc -> Doc 
 (<$*>) a ob = maybe a (a <$>) ob
+
+
+
+--------------------------------------------------------------------------------
+-- 'specs'
+
+oo :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+oo f g = (f .) . g
+
+ooo :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
+ooo f g = ((f .) .) . g
+
+oooo :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
+oooo f g = (((f .) .) .) . g    
+
+--------------------------------------------------------------------------------
+-- Pairs
+
+
+swap :: (a,b) -> (b,a)
+swap (a,b) = (b,a)
+
+fork :: (a -> b, a -> c) -> a -> (b,c)
+fork (f,g) a = (f a,g a)
+
+prod :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
+prod f g (a,b) = (f a, g b)
+
+prod' :: (a -> c, b -> d) -> (a,b) -> (c,d)
+prod' (f,g) (a,b) = (f a, g b)
+
+-- exl and exr are fst and snd respectively so are not defined here.
+
+dup :: a -> (a,a)
+dup a = (a,a)
+
+dist :: (a -> b) -> (a,a) -> (b,b)
+dist = (uncurry prod) . dup
