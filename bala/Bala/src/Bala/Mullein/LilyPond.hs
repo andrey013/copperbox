@@ -23,7 +23,7 @@ module Bala.Mullein.LilyPond
   , time'
 
   -- * Guitar chords / fret diagrams
-  , DefName
+  , FretDiagramAlias
   , ChordName
   , FretDiagramDef
   , fretDiagramDef
@@ -69,14 +69,14 @@ time' = time . timeSignature
 -- LilyPond guitar notation
 
 
-type DefName        = String
-type ChordName      = String
+type FretDiagramAlias = String
+type ChordName        = String
 
-type FretDiagramDef = (DefName,ChordName,ChordDiagram)
+type FretDiagramDef = (FretDiagramAlias,ChordName,ChordDiagram)
 
 
 
-fretDiagramDef :: DefName -> ChordName -> ChordDiagram -> Doc
+fretDiagramDef :: FretDiagramAlias -> ChordName -> ChordDiagram -> Doc
 fretDiagramDef defname propername diag = 
     comment propername <$> variableDef defname (fn diag)
   where

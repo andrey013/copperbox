@@ -113,10 +113,12 @@ standardMarkup :: ChordDiagram -> String
 standardMarkup (ChordDiagram xs) = 
     ($ "") . prefix (length xs) . foldr fn id $ zip snums xs
   where
-    fn (i,j) f = shows i . showChar '-' . shows j . showChar ';' . f
+    fn (i,j) f = shows i . showChar '-' . showsStrNum j . showChar ';' . f
     prefix i f = showString "w:" . shows i . showChar ';' . f
     snums = reverse [1.. length xs]
 
+    showsStrNum i | i == 0    = showChar 'o'
+                  | otherwise = shows i
 
 -- A chord diagram only represents pitches with respect to a
 -- tuning, hence we can't use the PitchContent type class.

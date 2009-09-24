@@ -9,7 +9,7 @@
 
 module BluesE where
 
-import Bala.BeatPattern hiding ( Beat(..) )
+import Bala.BeatPattern
 import Bala.Chord
 import Bala.ChordDiagram
 import Bala.Interval
@@ -28,17 +28,12 @@ import Data.JoinList ( JoinList, toList, join )
 
 import Text.PrettyPrint.Leijen hiding ( dot, (<>) )
 
-
+import Data.Ratio
 
 infixr 5 <<>>
 (<<>>) :: JoinList a -> JoinList a -> JoinList a
 (<<>>) = join
 
-instance InterpretRest PDGlyph where
-  interpretRest = mkRest
-
-instance InterpretRest TabGlyph where
-  interpretRest = makeSpacer . toDuration
 
 --------------------------------------------------------------------------------
 -- chords
@@ -106,9 +101,30 @@ melody = zipWith ($) (toList score) (rhy1 ++ rhy1 ++ rhy3)
     rhy1        = [M.wn,M.wn,M.hn,M.hn,M.wn]
     rhy3        = [M.hn,M.hn,M.hn,M.hn,M.wn,M.wn]
 
+
+
+instance InterpretRest SpacerGlyph where
+  interpretRest = makeSpacer . toDuration
+
+fret_picts :: [SpacerGlyph]
+fret_picts = interp fn $ run1 (4%4) diags_patt
+
+  where
+    fn d name = markupAboveSpacer (command name) (toDuration d)
+
+    diags_patt :: FretDiagramPattern
+    diags_patt = fretpic "EChord" 1 // rest 1 // rest 1 // rest 1 //
+                 fretpic "AChord" 1 // rest 1 // fretpic "EChord" 1 // rest 1 //
+                 fretpic "BSevenChord" 1 // fretpic "AChord" 1 //
+                         fretpic "EChord" 1 // rest 1
+
 bluesDoc :: Doc
 bluesDoc  =  version "2.12.2" 
          <^> fretDiagramDefs fret_diags
+         <^> fretDiagramPictures "FretScore" 
+                               (sum $ meterPattern M.four_four_time) 
+                               fret_picts
+
          <^> notes_def
          <^> blues_tab_def
          <^> book (scoreExpr (staff_group_doc <$> layout <$> midi_spec))
@@ -143,10 +159,14 @@ blues_tab_def = chordBassTabDef (M.e_nat, "major")
 staff_group_doc :: Doc
 staff_group_doc = newStaffGroup $ simultaneous [noteStaff, tabStaff]
   where 
-    noteStaff = newStaff    $ command "Blues"
+    noteStaff = newStaff    $ simultaneous [v1,v2]
     tabStaff  = newTabStaff $ nestBraces (simultaneous [overrides,tv1,tv2])
+    v1        = contextVoice    "upper" (command "FretScore")
+    v2        = contextVoice    "lower" (command "Blues")
     tv1       = contextTabVoice "upper" (command "BluesTabMelody")
     tv2       = contextTabVoice "lower" (command "BluesTabBass")
+
+
 
 
 

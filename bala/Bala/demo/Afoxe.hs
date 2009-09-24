@@ -78,15 +78,15 @@ expandedChordPattern :: [Chord]
 expandedChordPattern = ntimes 4 chordList <<& 1
 
 
-afoxe_upper :: [Beat Rational]
+afoxe_upper :: [Beat Rational ()]
 afoxe_upper = run1 (2%4) $ patt where
   patt = times 4 $ rest 1 >< beats [2,1] >< rest 1 >< beats [2,1]
 
-afoxe_lower :: [Beat Rational] 
+afoxe_lower :: [Beat Rational ()] 
 afoxe_lower = rewriteRests $ run1 (2%4) afoxe_lower_patt
   where
     rewriteRests = mapAfter 1 fn where
-      fn (Rb a) = Nb a
+      fn (Rb a) = Nb a ()
       fn a      = a
 
     afoxe_lower_patt :: BeatPattern
@@ -105,19 +105,19 @@ bassPattern = zipWith ($) funs chs
     annoZero f = f ()
 
 chordVoice :: [PDGlyph]
-chordVoice = zipInterp chordVoicefs afoxe_upper
+chordVoice = leftInterp chordVoicefs afoxe_upper
 
 bassVoice :: [PDGlyph]
-bassVoice = zipInterp bassPattern afoxe_lower
+bassVoice = leftInterp bassPattern afoxe_lower
 
 
 chordTabVoice :: [TabGlyph]
-chordTabVoice = zipInterp chordTabfs afoxe_upper
+chordTabVoice = leftInterp chordTabfs afoxe_upper
 
 
 bassTabVoice :: [TabGlyph]
 bassTabVoice = replaceRests $ distAnnos' expand strings 
-                            $ zipInterp bassPattern afoxe_lower
+                            $ leftInterp bassPattern afoxe_lower
   where
     strings    :: [StringNumber]
     strings    = [6,6,6,6, 5,5, 6,6,6,6, 5]

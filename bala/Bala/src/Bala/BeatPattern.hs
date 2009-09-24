@@ -17,8 +17,10 @@
 module Bala.BeatPattern
   ( 
   -- * Data types
-    BeatPattern
+    Multiplier
+  , MetricalPattern(..)
   , Beat(..)
+  , BeatPattern
   
   -- * Type classes
   , InterpretRest(..)
@@ -33,6 +35,8 @@ module Bala.BeatPattern
 
   -- * Evaluation
   , zipInterp
+  , leftInterp
+  , interp
   , run0
   , run1
   , unitBeat
@@ -52,14 +56,20 @@ import Data.Ratio
 
 type Multiplier = Integer
 
+
+data MetricalPattern a = MetricalPattern { 
+      barlen  :: Integer, 
+      jlbeats :: JoinList (Beat Multiplier a) 
+    }
+
+
 -- | Beats represented as (N)ote beats or (R)est beats.
-data Beat a = Nb a | Rb a
+data Beat duration a = Nb duration a 
+                     | Rb duration
   deriving (Eq,Show)
 
-data BeatPattern = BeatPattern { 
-      barlen  :: Integer, 
-      jlbeats :: JoinList (Beat Multiplier) 
-    }
+type BeatPattern = MetricalPattern ()   
+
 
 --------------------------------------------------------------------------------
 
@@ -69,67 +79,83 @@ class InterpretRest e where
   interpretRest :: Duration -> e
 
 
-instance Functor Beat where
-  fmap f (Nb a) = Nb (f a)
-  fmap f (Rb a) = Rb (f a)
+instance Functor (Beat duration) where
+  fmap f (Nb d a) = Nb d (f a)
+  fmap _ (Rb d)   = Rb d
+
+
+durmap :: (d -> d') -> Beat d a -> Beat d' a
+durmap f (Nb d a) = Nb (f d) a
+durmap f (Rb d)   = Rb (f d)
+
 
 --------------------------------------------------------------------------------
 
 
-rest :: Integer -> BeatPattern
-rest i = BeatPattern i (wrap $ Rb i)
+rest :: Integer -> MetricalPattern a
+rest i = MetricalPattern i (wrap $ Rb i)
 
 
 beat :: Integer -> BeatPattern
-beat i = BeatPattern i (wrap $ Nb i)
+beat i = MetricalPattern i (wrap $ Nb i ())
 
 
 beats :: [Integer] -> BeatPattern
-beats xs = BeatPattern (sum xs) (fromList $ map Nb xs)
-
--- This one might be more confusing 
--- anacrusis :: Integer -> BeatPatten
--- anacrusis i = BeatPattern i id
+beats xs = MetricalPattern (sum xs) (fromList $ map (Nb `flip` ()) xs)
 
 infixr 2 ><
-(><) :: BeatPattern -> BeatPattern -> BeatPattern
-a >< b = BeatPattern (barlen a + barlen b) (jlbeats a `mappend` jlbeats b)
+(><) :: MetricalPattern a -> MetricalPattern a -> MetricalPattern a
+a >< b = MetricalPattern (barlen a + barlen b) (jlbeats a `mappend` jlbeats b)
 
 
 infixr 1 //
-(//) :: BeatPattern -> BeatPattern -> BeatPattern
-a // b | barlen a == barlen b = BeatPattern (barlen b) (jlbeats a `mappend` jlbeats b)
+(//) :: MetricalPattern a -> MetricalPattern a -> MetricalPattern a
+a // b | barlen a == barlen b = MetricalPattern (barlen b) (jlbeats a `mappend` jlbeats b)
        | otherwise            = error $ "unmatched bars"
 
 -- | Repeat a beat pattern n times.
-times :: Int -> BeatPattern -> BeatPattern
-times n (BeatPattern len app) = BeatPattern len (JL.repeated n app)
+times :: Int -> MetricalPattern a -> MetricalPattern a
+times n (MetricalPattern len app) = MetricalPattern len (JL.repeated n app)
 
 
 --------------------------------------------------------------------------------
 -- Evaluation
 
-zipInterp :: InterpretRest e => [Duration -> e] -> [Beat Rational] -> [e]
-zipInterp fs     (Rb n:ys) = interpretRest n : zipInterp fs ys
-zipInterp (f:fs) (Nb n:ys) = f n : zipInterp fs ys
-zipInterp _      _        = []
+zipInterp :: InterpretRest e 
+          => [Duration -> a -> e] -> [Beat Rational a] -> [e]
+zipInterp fs     (Rb n:ys)   = interpretRest n : zipInterp fs ys
+zipInterp (f:fs) (Nb n a:ys) = f n a : zipInterp fs ys
+zipInterp _      _           = []
+
+-- Ho hum ... too many interp functions...
+interp :: InterpretRest e 
+          => (Duration -> a -> e) -> [Beat Rational a] -> [e]
+interp f (Rb n:ys)   = interpretRest n : interp f ys
+interp f (Nb n a:ys) = f n a : interp f ys
+interp _      _      = []
 
 
-run0 :: BeatPattern -> [Beat Integer]
+leftInterp :: InterpretRest e 
+           => [Duration -> e] -> [Beat Rational a] -> [e]
+leftInterp fs     (Rb n:ys)   = interpretRest n : leftInterp fs ys
+leftInterp (f:fs) (Nb n _:ys) = f n : leftInterp fs ys
+leftInterp _      _           = []
+
+
+run0 :: MetricalPattern a -> [Beat Integer a]
 run0 = toList . jlbeats
 
-run1 :: Rational -> BeatPattern -> [Beat Rational]
-run1 t (BeatPattern n kl) = map (fmap (\i -> t * (i%n))) $ toList kl
+run1 :: Rational -> MetricalPattern a -> [Beat Rational a]
+run1 t (MetricalPattern n kl) = map (durmap ((t*) . (%n))) $ toList kl
 
 
-unitBeat :: BeatPattern -> BeatPattern
-unitBeat (BeatPattern i kl) = BeatPattern i $ expand kl
+unitBeat :: MetricalPattern a -> MetricalPattern a
+unitBeat (MetricalPattern i kl) = MetricalPattern i $ expand kl
   where
-    expand :: JoinList (Beat Multiplier) -> JoinList (Beat Multiplier)
     expand = gfold fE fS fJ
     fE        = JL.empty
-    fS (Nb n) | n <= 1    = wrap $ Nb n
-              | otherwise = mappend (wrap $ Nb 1) 
+    fS (Nb n a) | n <= 1    = wrap $ Nb n a
+                | otherwise = mappend (wrap $ Nb 1 a) 
                                     (JL.replicate (fromIntegral $ n-1) (Rb 1))
     fS (Rb n) | n <= 1    = wrap $ Rb n
               | otherwise = JL.replicate (fromIntegral n) (Rb 1)

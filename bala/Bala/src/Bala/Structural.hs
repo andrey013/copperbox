@@ -16,8 +16,13 @@
 
 module Bala.Structural
   ( 
-  -- * ...
-    string1
+  -- * fret diagrams
+    FretDiagramPattern
+  , fretpic
+
+
+  -- *** ...
+  , string1
   , string2
   , strings
 
@@ -48,9 +53,11 @@ module Bala.Structural
 
   ) where
 
+import Bala.BeatPattern
 import Bala.Chord
 import Bala.Pitch
 import Bala.Mullein
+import Bala.Mullein.LilyPond
 import Bala.Utils
 
 
@@ -64,6 +71,10 @@ import qualified Data.JoinList as JL
 
 --------------------------------------------------------------------------------
 
+type FretDiagramPattern = MetricalPattern FretDiagramAlias
+
+fretpic :: FretDiagramAlias -> Multiplier -> FretDiagramPattern
+fretpic name i = MetricalPattern i (wrap $ Nb i name)
 
 
 --------------------------------------------------------------------------------
