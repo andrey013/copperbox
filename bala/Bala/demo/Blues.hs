@@ -12,20 +12,18 @@ module BluesE where
 import Bala.BeatPattern hiding ( Beat(..) )
 import Bala.Chord
 import Bala.ChordDiagram
-import Bala.Duration
 import Bala.Interval
-import Bala.MelodyPattern
 import Bala.Mullein
-import Bala.NamedPitches ( e4, a4, b4, d5, g5, b5, e6 )
-import Bala.Pitch hiding ( PitchLetter(..) )
+import Bala.NamedPitches ( e4, a4, b4 )
+import Bala.Structural
 import Bala.Utils
 
-import Mullein.LilyPond hiding ( Duration, rest, makeChord, Pitch )
+import Mullein.LilyPond hiding ( Duration, rest, makeChord, Pitch, score )
 import qualified Mullein.LilyPond               as M
 import qualified Mullein.NamedElements          as M
 
 
-import Data.JoinList ( JoinList, fromList, toList, join, wrap )
+import Data.JoinList ( JoinList, toList, join )
 
 
 import Text.PrettyPrint.Leijen hiding ( dot, (<>) )
@@ -78,10 +76,11 @@ fret_diags = [eChord', aChord', b7Chord']
 output1 :: IO ()
 output1 = runLilyPond "blues.ly" bluesDoc
 
-guitarStrings :: [PDGlyph]
-guitarStrings = zipWith fn [e4,a4,d5,g5,b5,e6] (repeat M.wn)
-  where
-    fn p d = M.makeNote (toPitch p) () d
+
+-- guitarStrings :: [PDGlyph]
+-- guitarStrings = zipWith fn [e4,a4,d5,g5,b5,e6] (repeat M.wn)
+--   where
+--     fn p d = M.makeNote (toPitch p) () d
 
 
 bass :: [StdGlyph StringNumber]
@@ -97,76 +96,24 @@ bass = zipWith ($) (toList score) (repeat M.qn)
 melody :: [StdGlyph StringNumber]
 melody = zipWith ($) (toList score) (rhy1 ++ rhy1 ++ rhy3)
   where
-    (ex,ey,ez) = high3 eChord
-    (ax,ay,az) = high3 aChord
-    (bx,by,bz) = high3 b7Chord
-    es         = strings [3,2,1,2,3]         [ex,ey,ez,ey,ex]
-    aes        = strings [3,2,1,2,3]         [ax,ay,ez,ey,ex]
-    b7aes      = strings [2,1,1,2,1,2]       [by,bz,az,ay,ez,ey]
-    score      = es   <<>> aes  <<>> b7aes
-    rhy1       = [M.wn,M.wn,M.hn,M.hn,M.wn]
-    rhy3       = [M.hn,M.hn,M.hn,M.hn,M.wn,M.wn]
-
-
-type GlyphF anno = M.Duration -> StdGlyph anno
-
-
-unpair :: (a,a) -> JoinList a
-unpair = (uncurry join) . dist wrap
-
-anno1 :: a -> Pitch -> GlyphF a
-anno1 = flip $ M.makeNote . toPitch
-
-anno2 :: (a,a) -> (Pitch,Pitch) -> (GlyphF a, GlyphF a)
-anno2 = (uncurry prod) . dist anno1
-
-annos :: [a] -> [Pitch] -> [GlyphF a]
-annos = matchZipWith anno1
-
-
-string1 :: StringNumber -> Pitch -> JoinList (GlyphF StringNumber)
-string1 = wrap `oo` anno1
-
-string2 :: (StringNumber,StringNumber) 
-        -> (Pitch,Pitch) 
-        -> JoinList (GlyphF StringNumber)
-string2 = unpair `oo` anno2
-
-
-strings :: [StringNumber] -> [Pitch] -> JoinList (GlyphF StringNumber)
-strings = fromList `oo` annos
-
-
-rootFifth :: Chord -> (Pitch,Pitch)
-rootFifth ch = (chordRoot ch, maybe err id $ chordFifth ch)
-  where
-    err = error $ "Chord " ++ show ch ++ " has no fifth."
-
-
-rootSeventh :: Chord -> (Pitch,Pitch)
-rootSeventh ch = (chordRoot ch, maybe err id $ nthTone 8 ch)
-  where
-    err = error $ "Chord " ++ show ch ++ " has no eighth (octave)."
-
-
-
-bass2 :: Chord -> (Pitch,Pitch)
-bass2 ch = (chordRoot ch, fn ch) where
-  fn = maybe (error $ "bass2 - chord " ++ show ch ++ " has no third") id . chordThird
-  
-high3 :: Chord -> (Pitch,Pitch,Pitch) 
-high3 = step . pitchContent where
-  step [x,y,z] = (x,y,z)
-  step (_:xs)  = step xs
-  step _       = error $ "high3 - too few tones in chord."
-  
+    (ex,ey,ez)  = high3 eChord
+    (ax,ay,az)  = high3 aChord
+    (_bx,by,bz) = high3 b7Chord
+    es          = strings [3,2,1,2,3]         [ex,ey,ez,ey,ex]
+    aes         = strings [3,2,1,2,3]         [ax,ay,ez,ey,ex]
+    b7aes       = strings [2,1,1,2,1,2]       [by,bz,az,ay,ez,ey]
+    score       = es   <<>> aes  <<>> b7aes
+    rhy1        = [M.wn,M.wn,M.hn,M.hn,M.wn]
+    rhy3        = [M.hn,M.hn,M.hn,M.hn,M.wn,M.wn]
 
 bluesDoc :: Doc
 bluesDoc  =  version "2.12.2" 
          <^> fretDiagramDefs fret_diags
          <^> notes_def
          <^> blues_tab_def
-         <^> book (scoreExpr (staff_group_doc <$> layout <$> midi))
+         <^> book (scoreExpr (staff_group_doc <$> layout <$> midi_spec))
+  where
+    midi_spec = midiContextScoreTempo 120 4
 
 
 notes_def :: Doc

@@ -15,7 +15,7 @@ import Bala.Interval
 import Bala.Mullein
 import Bala.NamedPitches
 import Bala.Pitch
-import Bala.SequenceManipulation
+import Bala.Structural hiding ( strings )
 import Bala.Utils
 
 import Mullein.LilyPond hiding ( Duration, rest, makeChord, Pitch )

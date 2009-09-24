@@ -40,7 +40,7 @@ library
     Bala.Pitch,
     Bala.PitchClass,
     Bala.Scale,
-    Bala.SequenceManipulation,
+    Bala.Structural,
     Bala.Utils
   other-modules:
     
