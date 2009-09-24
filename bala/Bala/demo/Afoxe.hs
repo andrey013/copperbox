@@ -141,11 +141,6 @@ chordTabfs = chs where
 
 
 
-two4Tm :: MeterPattern
-two4Tm  = makeMeterPattern 2 4
-
-
-
 
 fretDiagramsDef :: Doc
 fretDiagramsDef = fretDiagramDefs fretDiags
@@ -165,19 +160,23 @@ overrides = vsep [o1,o2] where
 demo1 :: Doc
 demo1 =  version "2.12.2" 
      <^> fretDiagramsDef
-     <^> fretDiagramPictures "afoxeChordDiags" (sum two4Tm) fretDiagramsUse
+     <^> fretDiagramPictures "afoxeChordDiags" 
+                             (sum $ meterPattern M.two_four_time) 
+                             fretDiagramsUse
      <^> variableDef "afoxeNotes"  
-           (relative M.middle_c (key M.c_nat "major" <$> time 2 4 <$> tune))
+           (relative M.middle_c (key M.c_nat "major" 
+                                     <$> time' M.two_four_time 
+                                     <$> tune))
 
      <^> afoxeTabDef
 
-     <^> book (score (staffGroupTemplate <$> layout <$> midi))
+     <^> book (scoreExpr (staffGroupTemplate <$> layout <$> midi))
   where
     tune    = simpleOutput $ renderPhrase lyGlyph
                            $ rewritePitch M.middle_c 
                            $ rewriteDuration xs
-    xs      = overlayPhrases (phrase two4Tm chordVoice)
-                             (phrase two4Tm bassVoice)
+    xs      = overlayNoteLists (meterPattern M.two_four_time)
+                               [chordVoice, bassVoice]
 
 
 
@@ -195,12 +194,11 @@ staffGroupTemplate = newStaffGroup $ simultaneous [noteStaff, tabStaff]
 
 
 afoxeTabDef :: Doc
-afoxeTabDef = chordBassTabDef ("afoxeTabChords",chordTabVoice)
+afoxeTabDef = chordBassTabDef (M.c_nat, "major")
+                              M.two_four_time
+                              ("afoxeTabChords",chordTabVoice)
                               ("afoxeTabBass",  bassTabVoice)
-                              (M.c_nat, "major")
-                              (2,4)
-                              (sum two4Tm)
-
+                              
                 
 output1 :: IO ()
 output1 =  runLilyPond "afoxe.ly"  demo1

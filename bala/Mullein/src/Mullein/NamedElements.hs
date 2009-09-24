@@ -16,15 +16,18 @@
 
 module Mullein.NamedElements 
   (
-
+  
+  -- * Metrical specs
+    four_four_time
+  , two_four_time
     
-  -- note functions
-    cf, c, cs, df, d, ds, ef, e, es
+  -- * Note construction functions
+  , cf, c, cs, df, d, ds, ef, e, es
   , ff, f, fs, gf, g, gs, af, a, as
   , bf, b, bs
 
     
-    -- rests
+  -- * Rests
   , wnr, hnr, qnr, enr, snr, tnr
   , dhnr, dqnr, denr, dsnr
 
@@ -145,7 +148,23 @@ import Mullein.Extended
 import Mullein.Pitch
 
 
+--------------------------------------------------------------------------------
+-- Metrical specs
+
+-- | 4/4 time.
+four_four_time :: MetricalSpec
+four_four_time = MetricalSpec (4,4) (makeMeterPattern 4 4)
+
+-- | 2/4 time.
+two_four_time :: MetricalSpec
+two_four_time = MetricalSpec (2,4) (makeMeterPattern 2 4)
+
+
+
+
+--------------------------------------------------------------------------------
 -- notes
+
 cf :: Octave -> anno -> Duration -> StdGlyph anno
 c  :: Octave -> anno -> Duration -> StdGlyph anno
 cs :: Octave -> anno -> Duration -> StdGlyph anno

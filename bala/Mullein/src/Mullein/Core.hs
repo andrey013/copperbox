@@ -18,10 +18,12 @@
 module Mullein.Core 
   (
 
-  -- * Meter patterns
+  -- * Meter patterns and time signatures
     MeterPattern
   , makeMeterPattern
-
+  , TimeSignature
+  , MetricalSpec(..)
+  
   -- * Score representation
   , Phrase
   , Bar(..)
@@ -96,6 +98,17 @@ log2whole :: Integral a => a -> Bool
 log2whole = (==0) . snd . pf . logBase 2 . fromIntegral where
     pf :: Double -> (Int, Double)
     pf = properFraction
+
+-------------------------------------------------------------------------------
+-- Time signatures
+
+type TimeSignature = (Int,Int)
+
+data MetricalSpec = MetricalSpec { 
+        timeSignature :: TimeSignature,
+        meterPattern  :: MeterPattern
+      }
+  deriving (Eq,Show)
 
 
  

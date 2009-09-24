@@ -19,6 +19,9 @@ module Bala.Mullein.LilyPond
   -- * Write a file and render to LilyPond 
     runLilyPond 
 
+  -- * Shorthand
+  , time'
+
   -- * Guitar chords / fret diagrams
   , DefName
   , ChordName
@@ -30,6 +33,7 @@ module Bala.Mullein.LilyPond
   , tabPartDef
   , chordBassTabDef
   , fretDiagramPictures
+  , midiContextScoreTempo
 
   ) where
 
@@ -56,9 +60,13 @@ runLilyPond path doc = do
   return ()
 
 
+-- | @\\time ... @ - extracts the time signature from a 
+-- MetricalSpec 
+time' :: MetricalSpec -> Doc
+time' = time . timeSignature
  
 --------------------------------------------------------------------------------
--- LilyPond
+-- LilyPond guitar notation
 
 
 type DefName        = String
@@ -87,29 +95,29 @@ fretDiagramDefs = vsepsep . map (\(x,y,z) -> fretDiagramDef x y z)
 
 tabPartDef  :: String 
             -> (PitchLabel,String) 
-            -> (Int,Int) 
-            -> Rational 
+            -> MetricalSpec
             -> (Maybe Doc) 
             -> [TabGlyph] 
             -> Doc
-tabPartDef name (p,mode) (n,d) barlen mbvoice glyphs = 
-    variableDef name (nestBraces ( key p mode <$> time n d <$*> mbvoice
-                                              <$> mkContent glyphs))
+tabPartDef name (p,mode) mspec mbvoice glyphs = 
+    variableDef name (nestBraces ( key p mode <$>  (time $ timeSignature mspec) 
+                                              <$*> mbvoice
+                                              <$>  mkContent glyphs))
   where 
     mkContent = simpleOutput . renderPhrase lyTabGlyph 
                              . rewriteDuration 
                              . rewritePitchAbs (-5)
-                             . phraseNoPulses barlen
+                             . phraseNoPulses (sum $ meterPattern mspec)
 
 
-chordBassTabDef :: (String,[TabGlyph]) -> (String,[TabGlyph])
-                -> (PitchLabel,String)
-                -> (Int,Int)
-                -> Rational
+chordBassTabDef :: (PitchLabel,String)
+                -> MetricalSpec
+                -> (String,[TabGlyph]) 
+                -> (String,[TabGlyph])
                 -> Doc
-chordBassTabDef (chname,chglyphs) (bsname,bsglyphs) keydesc timedesc barlen = 
-      tabPartDef chname keydesc timedesc barlen (Just voiceOne) chglyphs
-  <^> tabPartDef bsname keydesc timedesc barlen (Just voiceTwo) bsglyphs
+chordBassTabDef keydesc mspec (chname,chglyphs) (bsname,bsglyphs) = 
+      tabPartDef chname keydesc mspec (Just voiceOne) chglyphs
+  <^> tabPartDef bsname keydesc mspec (Just voiceTwo) bsglyphs
 
 
 fretDiagramPictures :: String -> Rational -> [SpacerGlyph] -> Doc
@@ -120,3 +128,17 @@ fretDiagramPictures name barlen spacers =
                              . rewriteDuration 
                              . phraseNoPulses barlen
 
+-- MidiExpr
+
+-- | midi context with a tempo directive: 
+-- @ 
+-- \\midi { 
+--    \\context { 
+--       \\Score 
+--         tempoWholesPerMinute = #(ly:makeMoment ... ...)
+--    }
+-- }
+-- @ 
+midiContextScoreTempo :: Int -> Int -> Doc
+midiContextScoreTempo n nw = midiExpr $ contextExpr doc where
+  doc = command "Score" <$> tempoWholesPerMinute n nw

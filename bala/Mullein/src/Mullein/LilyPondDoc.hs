@@ -69,6 +69,7 @@ module Mullein.LilyPondDoc
   , simultaneous
   , overlay
   , score
+  , scoreExpr
   , context
   , contextExpr
   , contextVoice
@@ -87,6 +88,8 @@ module Mullein.LilyPondDoc
   , layoutExpr
   , relative
   , drummode
+  
+  -- ** Fret diagrams
   , fretDiagram
 
   -- ** Titles
@@ -110,10 +113,13 @@ module Mullein.LilyPondDoc
   -- ** Midi directives
   , midi
   , midiExpr
-
+  , tempoWholesPerMinute
+  , midiMinimumVolume
+  , midiMaximumVolume
   ) where
 
 
+import Mullein.Core
 import Mullein.Duration
 import Mullein.Pitch
 import Mullein.Utils
@@ -248,8 +254,8 @@ comment s = text "%{" <+> string s  <+> text "%}"
 -- Time and key signatures
 
 -- | @\\time .../... @ - time signature.
-time :: Int -> Int -> Doc
-time n d = command "time" <+> int n <> char '/' <> int d
+time :: TimeSignature -> Doc
+time (n,d) = command "time" <+> int n <> char '/' <> int d
 
 
 -- | @\\key ... ... @ - key pitch mode. Typical values of mode are
@@ -329,29 +335,36 @@ overlay :: [Doc] -> Doc
 overlay = dblangles . vsep . punctuate (text " \\\\") . map spaceBraces
 
 
--- | @\\score {\\n ...\\n }@.
-score                 :: Doc -> Doc
-score e               = command "score" <+> nestBraces e
+-- | @\\score@.
+-- NOTE - LilyPond commonly uses @\\Score@ with uppercase start 
+-- (which one is more appropriate for this combinator is to 
+-- resolve).
+score                 :: Doc
+score                 = command "score"
 
--- | @\\context ... @.
-context               :: Doc -> Doc
-context e             = command "context" <+> e
+-- | @\\score {\\n ...\\n }@.
+scoreExpr             :: Doc -> Doc
+scoreExpr e           = command "score" <+> nestBraces e
+
+-- | @\\context@.
+context               :: Doc
+context               = command "context"
 
 
 -- | @\\context {\\n ...\\n }@.
 contextExpr           :: Doc -> Doc
-contextExpr e         = command "context" <+> nestBraces e
+contextExpr e         = context <+> nestBraces e
 
 
 -- | @\\context Voice = "..." ... @.
 contextVoice          :: String -> Doc -> Doc
-contextVoice s e      = context (text "Voice") 
+contextVoice s e      = context <+> (text "Voice") 
                           <+> equals <+> (dquotes $ text s) <+> e
 
 
 -- | @\\context TabVoice = "..." ... @.
 contextTabVoice       :: String -> Doc -> Doc
-contextTabVoice s e   = context (text "TabVoice") 
+contextTabVoice s e   = context <+> (text "TabVoice") 
                           <+> equals <+> (dquotes $ text s) <+> e
 
 
@@ -503,9 +516,9 @@ variableUse ss
 
 -- | @varName = #( ... )@ - the variable name should only contain 
 -- alphabetic characters.
-schemeDef :: String -> String -> Doc
-schemeDef ss str
-  | all isAlpha ss    = text ss <+> equals <+> char '#' <> (parens $ string str)
+schemeDef :: String -> Doc -> Doc
+schemeDef ss d
+  | all isAlpha ss    = text ss <+> equals <+> char '#' <> d
   | otherwise         = error $ "LilyPondDoc.schemeDef - " ++ ss ++ 
                                 " - should only contain alphabetic characters."
 
@@ -527,3 +540,18 @@ midiExpr              :: Doc -> Doc
 midiExpr e            = command "midi" <+> nestBraces e
 
 
+-- | @tempoWholesPerMinute = #(ly:make-moment ... ...)@.
+-- - notes x note-length. e.g. 72 4 - 72 quarter notes per minute.
+tempoWholesPerMinute :: Int -> Int -> Doc
+tempoWholesPerMinute n nw = schemeDef "tempoWholesPerMinute" moment 
+  where
+    moment = parens $ text "ly:make-moment" <+> int n <+> int nw
+
+
+-- | @midiMinimumVolume = #...@.
+midiMinimumVolume :: Float -> Doc
+midiMinimumVolume = schemeDef "midiMinimumVolume" . text . ftrunc
+
+-- | @midiMinimumVolume = #...@.
+midiMaximumVolume :: Float -> Doc
+midiMaximumVolume = schemeDef "midiMaximumVolume" . text . ftrunc

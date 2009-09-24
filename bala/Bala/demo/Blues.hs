@@ -42,9 +42,6 @@ instance InterpretRest PDGlyph where
 instance InterpretRest TabGlyph where
   interpretRest = makeSpacer . toDuration
 
-instance HasTie (StringNumber -> TabGlyph) where
-  setTied f = \i -> setTied (f i)
-
 --------------------------------------------------------------------------------
 -- chords
 
@@ -164,37 +161,35 @@ high3 = step . pitchContent where
   step _       = error $ "high3 - too few tones in chord."
   
 
-four4Tm :: MeterPattern
-four4Tm = makeMeterPattern 4 4
-
-
 bluesDoc :: Doc
 bluesDoc  =  version "2.12.2" 
          <^> fretDiagramDefs fret_diags
          <^> notes_def
          <^> blues_tab_def
-         <^> book (score (staff_group_doc <$> layout <$> midi))
+         <^> book (scoreExpr (staff_group_doc <$> layout <$> midi))
 
 
 notes_def :: Doc
 notes_def = variableDef "Blues" $
-    relative M.middle_c (key M.e_nat "major" <$> time 4 4 <$> tune)
+    relative M.middle_c (key M.e_nat "major" 
+                             <$> time' M.four_four_time
+                             <$> tune)
   where
     tune    = simpleOutput $ renderPhrase lyGlyph
                            $ rewritePitch M.middle_c 
                            $ rewriteDuration 
-                           $ overlayNoteLists four4Tm [melody, bass]
+                           $ overlayNoteLists (meterPattern M.four_four_time) 
+                                              [melody, bass]
 
 
 
 
 blues_tab_def :: Doc
-blues_tab_def = chordBassTabDef ("BluesTabMelody",  melody)
+blues_tab_def = chordBassTabDef (M.e_nat, "major")
+                                M.four_four_time
+                                ("BluesTabMelody",  melody)
                                 ("BluesTabBass",    bass)
-                                (M.e_nat, "major")
-                                (4,4)
-                                (sum four4Tm)
-
+                                
 
 
 

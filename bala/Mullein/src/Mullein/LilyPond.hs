@@ -75,8 +75,8 @@ lilyPondSimple :: ( HasDuration (t pch), ChangeDurationLyRel (t pch)
 -- - i.e. all sharps and flats will be printed explicitly.
 lilyPondSimple :: [PDGlyph] -> Doc
 lilyPondSimple xs =  version "2.12.2" 
-     <$> score (relative middle_c $ key c_nat "major" 
-                                    <$> cadenzaOn <$> tune <$> cadenzaOff) 
+     <$> scoreExpr (relative middle_c $ key c_nat "major" 
+                                     <$> cadenzaOn <$> tune <$> cadenzaOff) 
   where
     tune = simpleOutput $ renderPhrase lyGlyph
                         $ rewritePitch middle_c 

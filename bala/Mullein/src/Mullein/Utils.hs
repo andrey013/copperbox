@@ -33,6 +33,9 @@ module Mullein.Utils
   , ooo 
   , oooo
 
+  , ftrunc
+  , dtrunc
+
   -- * Pairs
   , prod
   , fork
@@ -118,6 +121,24 @@ fork (f,g) a = (f a, g a)
 
 swap :: (a,b) -> (b,a)
 swap (a,b) = (b,a)
+
+
+--------------------------------------------------------------------------------
+
+ftrunc :: Float -> String
+ftrunc = dtrunc . realToFrac
+
+
+dtrunc :: Double -> String
+dtrunc d | abs d < 0.0001  = "0.0"
+         | d < 0.0           = '-' :  show (abs tx)
+         | otherwise         = show tx
+  where
+    tx :: Double
+    tx = (realToFrac (roundi (d*1000000.0))) / 1000000.0
+ 
+    roundi :: RealFrac a => a -> Integer
+    roundi = round
 
 
 ---------------------------------------------------------------------------------

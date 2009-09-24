@@ -27,12 +27,14 @@ import Data.Ratio
 
 demo1 :: Doc
 demo1 =  version "2.12.2" 
-     <$> score (relative middle_c $ key a_nat "major" <$> time 2 4 <$> tune)
+     <$> scoreExpr (relative middle_c $ key a_nat "major" 
+                          <$> (time $ timeSignature two_four_time)
+                          <$> tune)
   where
     tune = simpleOutput $ renderPhrase lyGlyph 
                         $ rewritePitch middle_c 
                         $ rewriteDuration xs
-    xs   = phrase twoFourTime b6_bars1'4
+    xs   = phrase (meterPattern two_four_time) b6_bars1'4
 
 demo1a :: Doc
 demo1a =  ABC.tunenum   1 
@@ -44,17 +46,13 @@ demo1a =  ABC.tunenum   1
     tune = ABC.simpleOutput $ ABC.renderPhrase ABC.abcGlyph
                             $ ABC.rewritePitch amaj
                             $ ABC.rewriteDuration (1%16) xs 
-    xs   = phrase twoFourTime b6_bars1'4
+    xs   = phrase (meterPattern two_four_time) b6_bars1'4
     amaj = makeSpellingMap 3
 
 output1 :: IO ()
 output1 = do 
   writeDoc "bulgarian6.ly"  demo1
   writeDoc "bulgarian6.abc" demo1a
-
-
-twoFourTime :: MeterPattern
-twoFourTime = makeMeterPattern 2 4
 
 
 
@@ -79,11 +77,8 @@ b6_bars1'4 =
 demo2 :: Doc
 demo2 = simpleOutput $ renderPhrase lyDrumGlyph $ rewriteDuration xs
   where
-    xs = phrase fourFourTime $ drums1
+    xs = phrase (meterPattern four_four_time) drums1
 
-
-fourFourTime :: MeterPattern
-fourFourTime = makeMeterPattern 4 4
 
 drum :: DrumPitch -> Duration -> DrumGlyph
 drum p drn = Note () p drn False
@@ -103,7 +98,7 @@ demo3 = simpleOutput $ renderPhrase lyFingeredGlyph
                      $ rewriteDuration xs
   where
     xs :: Phrase FingeredGlyph
-    xs = phrase fourFourTime $ two_chords
+    xs = phrase (meterPattern four_four_time) two_chords
 
 
 two_chords :: [FingeredGlyph]

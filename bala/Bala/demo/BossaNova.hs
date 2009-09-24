@@ -45,10 +45,11 @@ bossa_score =
 demo1 :: Doc
 demo1 =  version "2.12.2" 
      <$> header [title "Bossa nova"]
-     <$> variableDef "bossaNova" (drummode (time 4 4 <$> stemUp <$> tune))
-     <$> book (score $ (new "DrumStaff"  ( variableUse "bossaNova")) 
-                    <$> layout
-                    <$> midi_part)
+     <$> variableDef "bossaNova" 
+                     (drummode (time' M.four_four_time <$> stemUp <$> tune))
+     <$> book (scoreExpr $ (new "DrumStaff"  ( variableUse "bossaNova")) 
+                        <$> layout
+                        <$> midi_part)
   where
     tune      = simpleOutput $ renderPhrase lyDrumGlyph
                              $ rewriteDuration xs
@@ -57,10 +58,7 @@ demo1 =  version "2.12.2"
 
     four4Tm   = [2%4,2%4]
     
-    midi_part = midiExpr $ contextExpr (command "Score" <$> 
-                                         (schemeDef "tempoWholesPerMinute" 
-                                                    "ly:make-moment 120 4"))
-
+    midi_part = midiContextScoreTempo 120 4
 
 output1 :: IO ()
 output1 = runLilyPond "bossanova.ly" demo1
