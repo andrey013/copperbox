@@ -55,6 +55,8 @@ import Mullein.Duration
 import Mullein.Pitch
 import Mullein.Utils
 
+import Data.Groupoid    -- package: groupoid
+
 import Text.PrettyPrint.Leijen ( Doc )
 
 import Control.Applicative

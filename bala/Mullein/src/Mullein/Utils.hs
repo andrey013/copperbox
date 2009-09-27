@@ -18,10 +18,7 @@
 module Mullein.Utils 
   ( 
   
-  -- * Groupoid class 
-    Groupoid(..)
-
-  , longZip
+    longZip
 
   -- * Functions
   , divModR
@@ -57,13 +54,13 @@ module Mullein.Utils
 
   ) where
 
+import Data.Groupoid    -- package: groupoid
+
 import Data.Ratio
 
 import Text.PrettyPrint.Leijen hiding ( empty, rational )
 import qualified Text.PrettyPrint.Leijen as PP
 
-class Groupoid a where
-  gappend :: a -> a -> a
 
 
 longZip :: Groupoid a => [a] -> [a] -> [a]
