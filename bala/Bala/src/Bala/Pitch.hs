@@ -200,9 +200,5 @@ upTo :: PitchLetter -> PitchLetter -> Int
 upTo a b | a == b    = 1
          | a >  b    = 1 + (7 + fromEnum b) - fromEnum a
          | otherwise = 1 + (fromEnum b) - fromEnum a
-{-
-downTo :: PitchLetter -> PitchLetter -> Int
-downTo a b | a == b    = 1
-           | a >  b    = 1 + (fromEnum a) - fromEnum b
-           | otherwise = 1 + (7 + fromEnum a) - fromEnum b
--}
+
+

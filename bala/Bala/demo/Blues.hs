@@ -9,7 +9,7 @@
 
 module BluesE where
 
-import Bala.BeatPattern
+import Bala.BeatPatternOld
 import Bala.Chord
 import Bala.ChordDiagram
 import Bala.Interval
@@ -17,6 +17,7 @@ import Bala.Mullein
 import Bala.NamedPitches ( e4, a4, b4 )
 import Bala.Structural
 import Bala.Utils
+
 
 import Mullein.LilyPond hiding ( Duration, rest, makeChord, Pitch, score )
 import qualified Mullein.LilyPond               as M

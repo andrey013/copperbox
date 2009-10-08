@@ -81,7 +81,7 @@ instance RationalDuration Duration where
 
 --------------------------------------------------------------------------------
 
-
+-- | Dot a duration.
 dotn :: Int -> Duration -> Duration
 dotn i d | i < 1      = d
          | otherwise  = d + step i (d /2)
@@ -90,11 +90,11 @@ dotn i d | i < 1      = d
     step n r = r + step (n-1) (r / 2)
 
 
-
+-- | Partition a duration into two parts.
 split2 :: (Integer,Integer) -> Duration -> (Duration,Duration)
 split2 (a,b) r = (r*(a%z), r*(b%z)) where z = a+b
 
-
+-- | Partition a duration into three parts.
 split3 :: (Integer,Integer,Integer) -> Duration -> (Duration,Duration,Duration)
 split3 (a,b,c) r = (r*(a%z), r*(b%z), r*(c%z)) where z = a+b+c
 
@@ -183,3 +183,5 @@ ttn   = thirty_second
      
 sfn   :: Duration
 sfn   = sixty_fourth
+
+

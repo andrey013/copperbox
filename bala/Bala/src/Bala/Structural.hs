@@ -53,7 +53,7 @@ module Bala.Structural
 
   ) where
 
-import Bala.BeatPattern
+import Bala.BeatPatternOld
 import Bala.Chord
 import Bala.Pitch
 import Bala.Mullein

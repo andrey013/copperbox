@@ -27,11 +27,13 @@ module Data.JoinList
   -- * Join list datatype
     JoinList
 
-  -- * Elementary construction  
+  -- * Construction  
   , empty
   , wrap
   , ( ++ )
   , join
+  , cons
+  , snoc
 
   -- * Basic functions  
   , null
@@ -134,6 +136,14 @@ infixr 5 `join`
 -- Prelude.
 join :: JoinList a -> JoinList a -> JoinList a
 join = (++)
+
+-- | Cons an element to the front of the join list.
+cons :: a -> JoinList a -> JoinList a
+cons a xs = (wrap a) ++ xs  
+
+-- | Snoc an element to the tail of the join list.
+snoc :: JoinList a -> a -> JoinList a
+snoc xs a = xs ++ (wrap a)
 
 
 --------------------------------------------------------------------------------

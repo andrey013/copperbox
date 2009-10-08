@@ -7,7 +7,7 @@
 
 module Afoxe where
 
-import Bala.BeatPattern
+import Bala.BeatPatternOld
 import Bala.Chord
 import Bala.ChordDiagram
 import Bala.Duration

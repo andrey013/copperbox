@@ -39,7 +39,6 @@ module Bala.Mullein
   , mkDrumChord
   , makeDrumScore
 
-
   -- * Annotation
   , Annos(..)
   , distAnnos
@@ -60,7 +59,10 @@ import qualified Mullein.Extended       as M
 import qualified Mullein.Pitch          as M
 import qualified Mullein.Core           as M
 
+import Data.JoinList ( JoinList, wrap, toList )
+import qualified Data.JoinList as JL
 
+import Data.Monoid
 import Data.Ratio
 
 --------------------------------------------------------------------------------
@@ -139,29 +141,39 @@ mkDrumChord ps d = M.Chord (map f ps) (toDuration d) False
 
 
 
--- Amalgamate beat patterns into a score
+
 makeDrumScore :: Rational 
-              -> Rational 
-              -> [M.DrumPitch] 
-              -> [BeatPattern] 
+              -> (Int,[Rational]) 
+              -> [(M.DrumPitch,[BeatS Rational (JoinList M.DrumPitch)])] 
               -> [M.DrumGlyph]
-makeDrumScore timesig unitDuration dps patts = 
-    map mkOne $ foldr (zipWith ($)) (repeat []) 
-              $ map buildPitchLine 
-              $ zip dps patts
+makeDrumScore _   _      []     = []
+makeDrumScore unl (n,mp) (x:xs) = drumglyphs unl $ foldr fn (build1 x) xs
   where
+    build1 (dpch,ps) = drumpitchLine ps dpch mp n 
+    fn e acc = zipWith mappend (build1 e) acc
 
-    buildPitchLine :: (M.DrumPitch, BeatPattern) 
-                   -> [[M.DrumPitch] 
-                   -> [M.DrumPitch]]
-    buildPitchLine (p,bp) = map fn $ run1 timesig $ unitBeat bp 
-      where 
-        fn (Nb _ _) = (p:)
-        fn (Rb _)   = id        
+drumpitchLine :: [BeatS Rational (JoinList M.DrumPitch)] 
+              -> M.DrumPitch 
+              -> [Rational] 
+              -> Int 
+              -> [JoinList M.DrumPitch] 
+drumpitchLine bp dpitch mp n = unnest $ zipWith fn bp (repeatList n mp)
+  where
+    fn pf un = pf (const $ wrap dpitch) (const JL.empty) un 
+    repeatList = concat `oo` replicate
 
-    mkOne []  = mkRest unitDuration
-    mkOne [p] = mkDrumNote p unitDuration
-    mkOne ps  = mkDrumChord ps unitDuration
+
+unnest :: [JoinList a] -> [a] 
+unnest = foldr fn [] where
+  fn jl acc = toList jl ++ acc 
+
+drumglyphs :: Rational -> [JoinList M.DrumPitch] -> [M.DrumGlyph]
+drumglyphs unl = map (fn . toList) where
+  fn []   = mkRest unl
+  fn [a]  = mkDrumNote a unl
+  fn xs   = mkDrumChord xs unl
+
+
 
 
 --------------------------------------------------------------------------------

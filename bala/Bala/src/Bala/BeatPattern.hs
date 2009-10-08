@@ -17,146 +17,243 @@
 module Bala.BeatPattern
   ( 
   -- * Data types
-    Multiplier
-  , MetricalPattern(..)
-  , Beat(..)
-  , BeatPattern
-  
-  -- * Type classes
-  , InterpretRest(..)
+    BeatS  
 
-  -- * Combinators
-  , rest
-  , beat
-  , beats 
-  , (><)
-  , (//)
-  , times 
+
+
+  -- * subdivsion helpers
+  , subdivide
+  , subdivide2
+  , subdivide3
+  , subdivide4  
+
+  -- * Beat patterns
+  -- ** 2 beat subdivision  
+  , _none2 
+  , _x, x_, xx
+
+  -- ** 3 beat subdivision
+  , _none3
+  , __x, _x_, _xx, x__, x_x, xx_, xxx
+
+  -- ** 4 beat subdivision
+  , _none4
+  , ___x, __x_, __xx, _x__, _x_x, _xx_, _xxx
+  , x___, x__x, x_x_, x_xx, xx__, xx_x, xxx_, xxxx
 
   -- * Evaluation
-  , zipInterp
-  , leftInterp
-  , interp
-  , run0
-  , run1
-  , unitBeat
 
   ) where
 
-import Bala.Duration
-
-import Data.JoinList ( JoinList, wrap, gfold, fromList, toList )
+import Data.JoinList ( JoinList, join, wrap )
 import qualified Data.JoinList as JL
 
-import Data.Monoid
-import Data.Ratio
 
 --------------------------------------------------------------------------------
 -- Data types
 
-type Multiplier = Integer
 
-
-data MetricalPattern a = MetricalPattern { 
-      barlen  :: Integer, 
-      jlbeats :: JoinList (Beat Multiplier a) 
-    }
-
-
--- | Beats represented as (N)ote beats or (R)est beats.
-data Beat duration a = Nb duration a 
-                     | Rb duration
-  deriving (Eq,Show)
-
-type BeatPattern = MetricalPattern ()   
+type BeatS a b = (a -> b) -> (a -> b) -> a -> JoinList b
 
 
 --------------------------------------------------------------------------------
+-- subdivision
 
--- | Interpret a rest (i.e. the Rb contructor of Beat) during 
--- @zipInterp@.
-class InterpretRest e where
-  interpretRest :: Duration -> e
+subdivide :: Fractional a => Int -> a -> [a]
+subdivide n r = replicate n (r / (fromIntegral n))
 
+subdivide2 :: Fractional a => a -> (a,a)
+subdivide2 r = (r/2,r/2) 
 
-instance Functor (Beat duration) where
-  fmap f (Nb d a) = Nb d (f a)
-  fmap _ (Rb d)   = Rb d
+subdivide3 :: Fractional a => a -> (a,a,a)
+subdivide3 r = (r/3,r/3,r/3) 
 
-
-durmap :: (d -> d') -> Beat d a -> Beat d' a
-durmap f (Nb d a) = Nb (f d) a
-durmap f (Rb d)   = Rb (f d)
+subdivide4 :: Fractional a => a -> (a,a,a,a)
+subdivide4 r = (r/4,r/4,r/4,r/4) 
 
 
 --------------------------------------------------------------------------------
+-- 2 beat subdivision
+
+hprod :: (t -> u -> v) -> (a -> t) -> (b -> u) -> (a,b) -> v
+hprod phi f g (a,b) = phi (f a) (g b)
+
+-- Oh No! - we can abuse underscores in variable names to make 
+-- beat patterns. 
+_none2 :: Fractional a => BeatS a b
+_none2 _ sp = hprod join sp' sp' . subdivide2 
+  where sp' = wrap . sp
 
 
-rest :: Integer -> MetricalPattern a
-rest i = MetricalPattern i (wrap $ Rb i)
+_x :: Fractional a => BeatS a b
+_x f sp = hprod join  f' sp' . subdivide2 
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+x_ :: Fractional a => BeatS a b
+x_ f sp = hprod join f' sp' . subdivide2
+  where f'  = wrap . f
+        sp' = wrap . sp
 
 
-beat :: Integer -> BeatPattern
-beat i = MetricalPattern i (wrap $ Nb i ())
-
-
-beats :: [Integer] -> BeatPattern
-beats xs = MetricalPattern (sum xs) (fromList $ map (Nb `flip` ()) xs)
-
-infixr 2 ><
-(><) :: MetricalPattern a -> MetricalPattern a -> MetricalPattern a
-a >< b = MetricalPattern (barlen a + barlen b) (jlbeats a `mappend` jlbeats b)
-
-
-infixr 1 //
-(//) :: MetricalPattern a -> MetricalPattern a -> MetricalPattern a
-a // b | barlen a == barlen b = MetricalPattern (barlen b) (jlbeats a `mappend` jlbeats b)
-       | otherwise            = error $ "unmatched bars"
-
--- | Repeat a beat pattern n times.
-times :: Int -> MetricalPattern a -> MetricalPattern a
-times n (MetricalPattern len app) = MetricalPattern len (JL.repeated n app)
+xx :: Fractional a => BeatS a b
+xx f _ = hprod join f' f' . subdivide2
+  where f'  = wrap . f
 
 
 --------------------------------------------------------------------------------
--- Evaluation
+-- 3 beat subdivision
 
-zipInterp :: InterpretRest e 
-          => [Duration -> a -> e] -> [Beat Rational a] -> [e]
-zipInterp fs     (Rb n:ys)   = interpretRest n : zipInterp fs ys
-zipInterp (f:fs) (Nb n a:ys) = f n a : zipInterp fs ys
-zipInterp _      _           = []
+join3 :: JoinList a -> JoinList a -> JoinList a -> JoinList a
+join3 = (join .) . join
 
--- Ho hum ... too many interp functions...
-interp :: InterpretRest e 
-          => (Duration -> a -> e) -> [Beat Rational a] -> [e]
-interp f (Rb n:ys)   = interpretRest n : interp f ys
-interp f (Nb n a:ys) = f n a : interp f ys
-interp _      _      = []
+hprod3 :: (t -> u -> v -> w) -> (a -> t) -> (b -> u) -> (c -> v) -> (a,b,c) -> w
+hprod3 phi f g h (a,b,c) = phi (f a) (g b) (h c) 
+
+_none3 :: Fractional a => BeatS a b
+_none3 _ sp = hprod3 join3 sp' sp' sp' . subdivide3
+  where sp' = wrap . sp
+
+__x :: Fractional a => BeatS a b
+__x f sp = hprod3 join3 sp' sp' f' . subdivide3
+  where f'  = wrap . f
+        sp' = wrap . sp
+  
+_x_ :: Fractional a => BeatS a b
+_x_ f sp = hprod3 join3 sp' f' sp' . subdivide3
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+_xx :: Fractional a => BeatS a b
+_xx f sp = hprod3 join3 sp' f' f' . subdivide3
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+x__ :: Fractional a => BeatS a b
+x__ f sp = hprod3 join3 f' sp' sp' . subdivide3
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+x_x :: Fractional a => BeatS a b
+x_x f sp = hprod3 join3 f' sp' f' . subdivide3
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+xx_ :: Fractional a => BeatS a b
+xx_ f sp = hprod3 join3 f' f' sp' . subdivide3
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+xxx :: Fractional a => BeatS a b
+xxx f _ = hprod3 join3 f' f' f' . subdivide3
+  where f'  = wrap . f
 
 
-leftInterp :: InterpretRest e 
-           => [Duration -> e] -> [Beat Rational a] -> [e]
-leftInterp fs     (Rb n:ys)   = interpretRest n : leftInterp fs ys
-leftInterp (f:fs) (Nb n _:ys) = f n : leftInterp fs ys
-leftInterp _      _           = []
+--------------------------------------------------------------------------------
+-- 4 beat subdivision
+
+join4 :: JoinList a -> JoinList a -> JoinList a -> JoinList a -> JoinList a
+join4 = (((join .) .) join .) . join
 
 
-run0 :: MetricalPattern a -> [Beat Integer a]
-run0 = toList . jlbeats
+hprod4 :: (t -> u -> v -> w -> x) 
+       -> (a -> t) 
+       -> (b -> u) 
+       -> (c -> v) 
+       -> (d -> w) 
+       -> (a,b,c,d) 
+       -> x
+hprod4 phi f g h i (a,b,c,d) = phi (f a) (g b) (h c) (i d)
 
-run1 :: Rational -> MetricalPattern a -> [Beat Rational a]
-run1 t (MetricalPattern n kl) = map (durmap ((t*) . (%n))) $ toList kl
+_none4 :: Fractional a => BeatS a b
+_none4 _ sp = hprod4 join4 sp' sp' sp' sp' . subdivide4
+  where sp' = wrap . sp
+
+___x :: Fractional a => BeatS a b
+___x f sp = hprod4 join4 sp' sp' sp' f' . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+__x_ :: Fractional a => BeatS a b
+__x_ f sp = hprod4 join4 sp' sp' f' sp' . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
 
 
-unitBeat :: MetricalPattern a -> MetricalPattern a
-unitBeat (MetricalPattern i kl) = MetricalPattern i $ expand kl
-  where
-    expand = gfold fE fS fJ
-    fE        = JL.empty
-    fS (Nb n a) | n <= 1    = wrap $ Nb n a
-                | otherwise = mappend (wrap $ Nb 1 a) 
-                                    (JL.replicate (fromIntegral $ n-1) (Rb 1))
-    fS (Rb n) | n <= 1    = wrap $ Rb n
-              | otherwise = JL.replicate (fromIntegral n) (Rb 1)
-    fJ        = mappend
+__xx :: Fractional a => BeatS a b
+__xx f sp = hprod4 join4 sp' sp' f' f' . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+
+_x__ :: Fractional a => BeatS a b
+_x__ f sp = hprod4 join4 sp' f' sp' sp' . subdivide4 
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+
+_x_x :: Fractional a => BeatS a b
+_x_x f sp = hprod4 join4 sp' f' sp' f'  . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+
+_xx_ :: Fractional a => BeatS a b
+_xx_ f sp = hprod4 join4 sp' f' f' sp' . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+_xxx :: Fractional a => BeatS a b
+_xxx f sp = hprod4 join4 sp' f' f' f' . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+x___ :: Fractional a => BeatS a b
+x___ f sp = hprod4 join4 f' sp' sp' sp' . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+x__x :: Fractional a => BeatS a b
+x__x f sp = hprod4 join4 f' sp' sp' f' . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+
+x_x_ :: Fractional a => BeatS a b
+x_x_ f sp = hprod4 join4 f' sp' f' sp' . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+x_xx :: Fractional a => BeatS a b
+x_xx f sp = hprod4 join4 f' sp' f' f' . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+xx__ :: Fractional a => BeatS a b
+xx__ f sp = hprod4 join4 f' f' sp' sp' . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+xx_x :: Fractional a => BeatS a b
+xx_x f sp = hprod4 join4 f' f' sp' f' . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+xxx_ :: Fractional a => BeatS a b
+xxx_ f sp = hprod4 join4 f' f' f' sp' . subdivide4
+  where f'  = wrap . f
+        sp' = wrap . sp
+
+xxxx :: Fractional a => BeatS a b
+xxxx f _ = hprod4 join4 f' f' f' f' . subdivide4
+  where f' = wrap . f
+
+
+
+
+
+
+
+
+
+

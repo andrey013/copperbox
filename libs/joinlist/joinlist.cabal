@@ -1,5 +1,5 @@
 name:             joinlist
-version:          0.1.0
+version:          0.1.1
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -22,6 +22,9 @@ description:
   *  Meng Wang, Jeremy Gibbons, Kazutaka Matsuda, Zhenjiang Hu 
      'Translucent Abstraction: Safe Views through Invertible 
      Programming'
+  . 
+  . Changelog
+  . 0.1.1 - added cons and snoc
 
 build-type:         Simple
 stability:          highly unstable

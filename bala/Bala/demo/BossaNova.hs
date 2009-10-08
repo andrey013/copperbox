@@ -1,6 +1,5 @@
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
-{-# OPTIONS -fno-warn-orphans #-}
+
 
 module BossaNova where
 
@@ -12,34 +11,30 @@ import qualified Mullein.NamedElements          as M
 
 import Text.PrettyPrint.Leijen hiding ( dot )
 
-
 import Data.Ratio
 
 
-instance InterpretRest DrumGlyph where
-  interpretRest = mkRest
-
 --------------------------------------------------------------------------------
 
-ridecymbal_pattern :: BeatPattern
-ridecymbal_pattern = times 2 $ beats [1,1,1,1] >< beats [1,1,1,1]
 
+ride_cymbal  :: Fractional a => [BeatS a b]
+side_stick   :: Fractional a => [BeatS a b]
+bass_drum    :: Fractional a => [BeatS a b]
 
-sidestick_pattern :: BeatPattern
-sidestick_pattern =
-  beat 1 >< rest 2 >< beat 1 >< rest 2 >< beat 1 >< rest 1 //
-  rest 2 >< beat 1 >< rest 2 >< beat 1 >< rest 2
+ride_cymbal  = [ xxxx, xxxx, xxxx, xxxx ]
+side_stick   = [ x__x, __x_, __x_, _x__ ]
+bass_drum    = [ x__x, x__x, x__x, x__x ]
 
+two_half_notes :: [Rational]
+two_half_notes = [2%4, 2%4]
 
-bassdrum_pattern :: BeatPattern
-bassdrum_pattern = times 2 patt where
-  patt = beat 1 >< rest 2 >< beats [1,1] >< rest 2 >< beat 1
 
 bossa_score :: [DrumGlyph]
 bossa_score = 
-  makeDrumScore (4%4) (1%8) [M.ridecymbal, M.sidestick, M.bassdrum] 
-                            [ridecymbal_pattern, sidestick_pattern, 
-                             bassdrum_pattern]
+  makeDrumScore (1%8) (2,two_half_notes) [ (M.ridecymbal, ride_cymbal)
+                             , (M.sidestick,  side_stick)
+                             , (M.bassdrum,   bass_drum)
+                 ] 
 
 
 demo1 :: Doc
