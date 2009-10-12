@@ -30,6 +30,10 @@ import Z12
 
 type Triad = (Z12,Z12,Z12)
 
+-- See Section 5. from Crans, Fiore and Satyendra: 
+-- 'Musical Actions on Dihedral Groups' 
+-- for the defintions of P, L & R
+
 nrP :: Triad -> Triad 
 nrP (y1,y2,y3) = invertn (fromZ12 $ y1+y3) (y1,y2,y3)
 

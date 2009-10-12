@@ -29,6 +29,8 @@ module Bala.Modulo
 
   ) where
 
+import Data.AdditiveGroup
+
 -- Data types
 
 newtype Z12 = Z12 Int
@@ -88,7 +90,7 @@ liftBZ12 op (Z12 a) (Z12 b) = Z12 $ mod (a `op` b) 12
 
 instance Num Z12 where
   (+) = liftBZ12 (+)
-  (-) = liftBZ12 (*)
+  (-) = liftBZ12 (-)
   (*) = liftBZ12 (*)
   negate        = liftUZ12 negate
   fromInteger i = Z12 $ (fromInteger i) `mod` 12
@@ -106,12 +108,23 @@ liftBZ7 op (Z7 a) (Z7 b) = Z7 $ mod (a `op` b) 7
 
 instance Num Z7 where
   (+) = liftBZ7 (+)
-  (-) = liftBZ7 (*)
+  (-) = liftBZ7 (-)
   (*) = liftBZ7 (*)
   negate        = liftUZ7 negate
   fromInteger i = Z7 $ (fromInteger i) `mod` 7
   signum _      = error "Modular numbers are not signed"
   abs _         = error "Modular numbers are not signed"
+
+
+instance AdditiveGroup Z12 where
+  zeroV = Z12 0
+  (^+^) = liftBZ12 (+)
+  negateV = liftUZ12 negate
+
+instance AdditiveGroup Z7 where
+  zeroV = Z7 0
+  (^+^) = liftBZ7 (+)
+  negateV = liftUZ7 negate
 
 
 --------------------------------------------------------------------------------

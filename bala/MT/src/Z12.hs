@@ -43,7 +43,7 @@ liftBZ12 op (Z12 a) (Z12 b) = Z12 $ mod (a `op` b) 12
 
 instance Num Z12 where
   (+) = liftBZ12 (+)
-  (-) = liftBZ12 (*)
+  (-) = liftBZ12 (-)
   (*) = liftBZ12 (*)
   negate        = liftUZ12 negate
   fromInteger i = Z12 $ (fromInteger i) `mod` 12

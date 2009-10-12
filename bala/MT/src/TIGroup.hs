@@ -25,6 +25,9 @@ module TIGroup
 
 import Data.Sequence
 
+-- Currently TIGroup allows application to singletons and 
+-- collectives. This is non-standard and potentially silly.
+  
 class TIGroup a where 
   transpose :: Int -> a -> a 
   invert    :: a -> a
