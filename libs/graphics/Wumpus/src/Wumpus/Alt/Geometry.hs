@@ -46,6 +46,16 @@ data Point2 a = P2 !a !a
 
 type DPoint2 = Point2 Double
 
+
+
+-- | Two dimensional frame.
+data Frame2 a = Frame2 (Point2 a) (Vec2 a) (Vec2 a) 
+  deriving (Eq,Show)
+
+type DFrame2 = Frame2 Double
+
+
+
 -- 3x3 matrix
 data Matrix3'3 a = M3'3 !a !a !a  !a !a !a  !a !a !a
   deriving (Eq)
@@ -62,7 +72,6 @@ radian_epsilon = 0.0001
 -- Equality and ordering are approximate where the epsilon is 0.0001.
 newtype Radian = Radian { getRadian :: Double }
   deriving (Num,Real,Fractional,Floating,RealFrac,RealFloat)
-
 
 
 --------------------------------------------------------------------------------
@@ -236,6 +245,30 @@ instance Num a => MatrixMult Matrix3'3 (Vec2 a) where
 instance Num a => MatrixMult Matrix3'3 (Point2 a) where
   type MatrixParam (Point2 a) = a
   (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a*m+b*n+c*1) (d*m+e*n+f*1)
+
+
+--------------------------------------------------------------------------------
+-- Points
+
+zeroPt :: Num a => Point2 a
+zeroPt = P2 0 0
+
+--------------------------------------------------------------------------------
+-- Frame operations
+
+ortho :: Num a => Point2 a -> Frame2 a
+ortho o = Frame2 o (V2 1 0) (V2 0 1)
+
+displaceOrigin :: Num a => Vec2 a -> Frame2 a -> Frame2 a
+displaceOrigin v (Frame2 o vx vy) = Frame2 (o.+^v) vx vy
+
+coord :: Num a => Frame2 a -> Point2 a -> Point2 a
+coord (Frame2 o e0 e1) (P2 x y) = (o .+^ (x *^ e0)) .+^ (y *^ e1)
+
+
+pointInFrame :: Num a => Point2 a -> Frame2 a -> Point2 a
+pointInFrame (P2 x y) (Frame2 o vx vy) = (o .+^ (vx ^* x)) .+^ (vy ^* y)  
+
 
 --------------------------------------------------------------------------------
 -- Matrix construction

@@ -71,7 +71,7 @@ instance (Ord a, Num a) => Monoid (BoundingRect a) where
 
 -- 
 brPolygon :: (Num a, Ord a) => Polygon a -> BoundingRect a
-brPolygon (Polygon [])          = BRect 0 0
+brPolygon (Polygon [])            = BRect 0 0
 brPolygon (Polygon (V2 x0 y0:vs)) = post $ foldl' fn ((x0,x0),(y0,y0)) vs
   where
     post ((xmin,xmax),(ymin,ymax)) = BRect (xmax-xmin) (ymax-ymin)
