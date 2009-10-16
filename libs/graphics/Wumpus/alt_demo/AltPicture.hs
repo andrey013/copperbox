@@ -2,6 +2,7 @@
 
 module AltPicture where
 
+import Wumpus.Alt.Geometry
 import Wumpus.Alt.Picture
 
 funnyshape :: DPolygon

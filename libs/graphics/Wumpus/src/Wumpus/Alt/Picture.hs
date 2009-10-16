@@ -2,7 +2,7 @@
 {-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS -Wall #-}
 
------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Alt.Picture
 -- Copyright   :  (c) Stephen Tetley 2009
@@ -12,10 +12,11 @@
 -- Portability :  GHC only
 --
 --
------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 module Wumpus.Alt.Picture where
 
+import Wumpus.Alt.Geometry
 import Wumpus.Drawing.PostScript
 
 import Data.VectorSpace
@@ -29,13 +30,10 @@ data Picture v a = Empty
                  | Picture v (Picture v a) (Picture v a)
   deriving (Eq,Show) 
 
-data Vec2 a = V2 !a !a
-  deriving (Eq,Show)
-
-type DVec2 = Vec2 Double
 
 data BoundingRect a = BRect { brw :: a, brh :: a }
   deriving (Eq,Show)
+
 
 type DBoundingRect = BoundingRect Double
 
@@ -64,32 +62,6 @@ instance (Ord a, Num a) => Monoid (BoundingRect a) where
   mempty = BRect 0 0 
   mappend = unionBRect
 
--- Vectors have a sensible Monoid instance as addition
-
-instance Num a => Monoid (Vec2 a) where
-  mempty = V2 0 0
-  V2 a b `mappend` V2 x y = V2 (a+x) (b+y) 
-
-
---------------------------------------------------------------------------------
--- Vector space and related instances
-
-instance Num a => AdditiveGroup (Vec2 a) where
-  zeroV = V2 0 0 
-  V2 a b ^+^ V2 x y = V2 (a+x) (b+y) 
-  negateV (V2 a b) = V2 (-a) (-b) 
-
-
-instance Num a => VectorSpace (Vec2 a) where
-  type Scalar (Vec2 a) = a
-  s *^ (V2 a b) = V2 (s*a) (s*b)
-
-
--- scalar (dot / inner) product via the class InnerSpace
-
-instance (Num a, InnerSpace a, Scalar a ~ a) 
-    => InnerSpace (Vec2 a) where
-  (V2 a b) <.> (V2 a' b') = (a <.> a') ^+^ (b <.> b')
 
 
 --------------------------------------------------------------------------------
