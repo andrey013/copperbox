@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Alt.Picture
+-- Module      :  Wumpus.Alt.PictureZ
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see LICENSE)
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Alt.Picture where
+module Wumpus.Alt.PictureZ where
 
 import Wumpus.Alt.Geometry
 import Wumpus.Drawing.PostScript
@@ -62,17 +62,21 @@ instance (Ord a, Num a) => Monoid (BoundingRect a) where
   mempty = BRect 0 0 
   mappend = unionBounds
 
-
+-- No functor instance for Picture - applying a function to the 
+-- /polygon/ may change them measure. E.g. a scale would also
+-- change the bounding box
 
 --------------------------------------------------------------------------------
 
--- Trace the polygon finding the /extremity/...
+
+-- 
 brPolygon :: (Num a, Ord a) => Polygon a -> BoundingRect a
-brPolygon (Polygon vs) = post $ foldl' fn ((0,0), V2 0 0) vs
+brPolygon (Polygon [])          = BRect 0 0
+brPolygon (Polygon (V2 x0 y0:vs)) = post $ foldl' fn ((x0,x0),(y0,y0)) vs
   where
-    post ((xmax,ymax),_) = BRect xmax ymax
-    fn ((x0,y0), vc) v = ((max x0 x,max y0 y), vc') 
-                             where vc'@(V2 x y) = vc ^+^ v
+    post ((xmin,xmax),(ymin,ymax)) = BRect (xmax-xmin) (ymax-ymin)
+    fn ((xmin,xmax),(ymin,ymax)) (V2 x y) = 
+        ((min xmin x,max xmax x),(min ymin y,max ymax y))
 
 type MPicture t a = Picture (Measure a) (t a)
 
@@ -81,7 +85,7 @@ picPolygon p = Single (zeroV,brPolygon p) p
 
 
 (<>) :: (Num a, Ord a) => MPicture t a -> MPicture t a -> MPicture t a
-Empty  <> a      = a
+Empty  <> b      = b
 a      <> Empty  = a
 a      <> b      = Picture (zeroV,br) a (move b v) 
                    where br0 = picBounds a 
@@ -93,7 +97,6 @@ Empty `overlay` a     = a
 a     `overlay` Empty = a
 a     `overlay` b     = Picture (zeroV,br) a b
                         where br = unionBounds (picBounds a) (picBounds b)
-
 
 picBounds :: (Num a, Ord a) => MPicture t a -> BoundingRect a
 picBounds Empty                = mempty
@@ -120,7 +123,6 @@ center = fn . picBounds
     fn (BRect w h) = V2 (w/2) (h/2)
 
 
-
 transformPicture :: (Num a, Ord a) 
                  => (Vec2 a -> Vec2 a) 
                  -> MPicture Polygon a 
@@ -134,7 +136,6 @@ transformPicture _ _                  = error $ "composite Picture todo"
 instance Pointwise (Polygon a) where
   type Pt (Polygon a) = Vec2 a
   pointwise f (Polygon xs) = Polygon $ map f xs
-
 
 --------------------------------------------------------------------------------
 
@@ -171,7 +172,7 @@ drawPoly :: (Double,Double) -> Polygon Double -> WumpusM ()
 drawPoly (x,y) (Polygon xs) = do 
     ps_newpath
     ps_moveto x y
-    mapM_ (\(V2 a b) -> ps_rlineto a b) xs
+    mapM_ (\(V2 a b) -> ps_lineto (x+a) (y+b)) xs
     ps_closepath
     ps_stroke  
 
