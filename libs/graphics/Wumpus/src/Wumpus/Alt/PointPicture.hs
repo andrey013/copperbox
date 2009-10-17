@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -38,8 +39,8 @@ data BoundingBox a = BBox { blcorner :: Point2 a, trcorner :: Point2 a }
 
 type DBoundingBox = BoundingBox Double
 
--- Measure = (_relative_ displacement x bounding box)
-type Measure a = (Vec2 a, BoundingBox a) 
+-- Measure = (_current_ frame x bounding box)
+type Measure a = (Frame2 a, BoundingBox a) 
 
 type DMeasure = Measure Double
 
@@ -81,13 +82,13 @@ bbPolygon (Polygon (p:ps)) = foldl' fn (BBox p p) ps
 type MPicture t a = Picture (Measure a) (t a)
 
 picPolygon :: (Num a, Ord a) => Polygon a -> Picture (Measure a) (Polygon a)
-picPolygon p = Single (zeroV,bbPolygon p) p
+picPolygon p = Single (ortho zeroPt,bbPolygon p) p
 
 
 (<>) :: (Num a, Ord a) => MPicture t a -> MPicture t a -> MPicture t a
 Empty  <> a      = a
 a      <> Empty  = a
-a      <> b      = Picture (zeroV,br) a b' 
+a      <> b      = Picture (ortho zeroPt,br) a b' 
                    where 
                      (P2 right _) = trcorner $ picBounds a
                      (P2 left _)  = blcorner $ picBounds b
@@ -98,7 +99,7 @@ a      <> b      = Picture (zeroV,br) a b'
 overlay :: (Num a, Ord a) => MPicture t a -> MPicture t a -> MPicture t a
 Empty `overlay` a     = a
 a     `overlay` Empty = a
-a     `overlay` b     = Picture (zeroV,br) a b
+a     `overlay` b     = Picture (ortho zeroPt,br) a b
                         where br = unionBounds (picBounds a) (picBounds b)
 
 
@@ -107,11 +108,12 @@ picBounds Empty                = error $ "picBounds Empty"
 picBounds (Single (_,bb) _)    = bb
 picBounds (Picture (_,bb) _ _) = bb
 
-picDisplacement :: Num a => MPicture t a -> Vec2 a
-picDisplacement Empty               = zeroV
+{-
+picDisplacement :: Num a => MPicture t a -> Frame2 a
+picDisplacement Empty               = ortho zeroPt
 picDisplacement (Single (v,_) _)    = v
 picDisplacement (Picture (v,_) _ _) = v 
-
+-}
 
 bbWidth :: Num a => BoundingBox a -> a
 bbWidth (BBox (P2 xmin _) (P2 xmax _)) = xmax - xmin
@@ -119,8 +121,8 @@ bbWidth (BBox (P2 xmin _) (P2 xmax _)) = xmax - xmin
 
 move :: Num a => MPicture t a -> Vec2 a -> MPicture t a
 move Empty                 _ = Empty
-move (Single  (v0,br) p)   v = Single (v0 ^+^ v, pointwise (.+^ v) br) p
-move (Picture (v0,br) a b) v = Picture (v0 ^+^ v, pointwise (.+^ v) br) a b
+move (Single  (fr,br) p)   v = Single (displaceOrigin v fr, pointwise (.+^ v) br) p
+move (Picture (fr,br) a b) v = Picture (displaceOrigin v fr, pointwise (.+^ v) br) a b
   
 
 center :: (Fractional a, Ord a) => MPicture t a -> Point2 a
@@ -151,6 +153,10 @@ instance Pointwise (BoundingBox a) where
   pointwise f (BBox bl tr) = BBox (f bl) (f tr)
 
 
+
+pinfinf :: forall a. Num a => Frame2 a -> Frame2 a -> (Point2 a -> Point2 a)
+pinfinf f1 f2 = (pointInFrame `flip` f1) . (pointInFrame `flip` f2)
+
 --------------------------------------------------------------------------------
 
 
@@ -162,8 +168,9 @@ writePicture filepath pic = writeFile filepath $ psDraw pic
 
 -- | Draw a picture, generating PostScript output.
 psDraw :: MPicture Polygon Double -> PostScript
-psDraw pic = prologue ++ runWumpus env0 (drawPicture zeroV pic) ++ epilogue
+psDraw pic = prologue ++ runWumpus env0 (drawPicture k pic) ++ epilogue
   where
+    k        = pointInFrame `flip` (ortho zeroPt)
     prologue = unlines $ [ "%!PS-Adobe-2.0"
                          , "%%Pages: 1"
                          , "%%EndComments"
@@ -175,22 +182,24 @@ psDraw pic = prologue ++ runWumpus env0 (drawPicture zeroV pic) ++ epilogue
                    
     epilogue = unlines $ [ "showpage", "", "%%EOF", ""]
 
-drawPicture :: Vec2 Double -> MPicture Polygon Double -> WumpusM ()
+drawPicture :: (Point2 Double -> Point2 Double) 
+            -> MPicture Polygon Double 
+            -> WumpusM ()
 drawPicture _ Empty                 = return ()
-drawPicture v0 (Single (v1,_) p) = do
-    drawPoly (v0 ^+^ v1) p
-drawPicture v0 (Picture (v1,_) a b) = do
-  drawPicture (v0 ^+^ v1) a
-  drawPicture (v0 ^+^ v1) b
+drawPicture f (Single (g,_) p) = do
+    drawPoly (f . (pointInFrame `flip` g)) p
+drawPicture f (Picture (g,_) a b) = do
+  drawPicture (f . (pointInFrame `flip` g)) a
+  drawPicture (f . (pointInFrame `flip` g)) b
 
 
-drawPoly :: Vec2 Double -> Polygon Double -> WumpusM ()
+drawPoly :: (Point2 Double -> Point2 Double) -> Polygon Double -> WumpusM ()
 drawPoly _          (Polygon [])          = return ()
-drawPoly (V2 vx vy) (Polygon (P2 x y:xs)) = do  
+drawPoly f (Polygon (pt:pts)) = let P2 x y = f pt in do  
     ps_newpath
-    ps_moveto (x+vx) (y+vy)
-    mapM_ drawPt xs
+    ps_moveto x y
+    mapM_ drawPt pts
     ps_closepath
     ps_stroke  
   where
-    drawPt (P2 px py) = ps_lineto (px+vx) (py+vy)
+    drawPt pt = let P2 x y = f pt in ps_lineto x y
