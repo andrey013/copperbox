@@ -17,14 +17,12 @@
 
 module Wumpus.Alt.Picture where
 
+import Wumpus.Alt.BoundingBox hiding ( center )
 import Wumpus.Alt.Geometry
 import Wumpus.Drawing.PostScript
 
 import Data.AffineSpace
 import Data.VectorSpace
-
-import Data.List ( foldl' )
-import Data.Groupoid
 
 
 data Picture v a = Empty
@@ -32,12 +30,6 @@ data Picture v a = Empty
                  | Picture v (Picture v a) (Picture v a)
   deriving (Eq,Show) 
 
-
-data BoundingBox a = BBox { bottomLeft :: Point2 a, topRight :: Point2 a }
-  deriving (Eq,Show)
-
-
-type DBoundingBox = BoundingBox Double
 
 -- Measure = (_current_ frame x bounding box)
 type Measure a = (Frame2 a, BoundingBox a) 
@@ -50,40 +42,15 @@ newtype Polygon a = Polygon { vertexList :: [Point2 a] }
 type DPolygon = Polygon Double
 
 
-
 --------------------------------------------------------------------------------
-
-unionBounds :: Ord a => BoundingBox a -> BoundingBox a -> BoundingBox a
-unionBounds (BBox pmin pmax) (BBox pmin' pmax') = 
-    BBox (umin pmin pmin') (umax pmax pmax')
-  where
-    umin (P2 x y) (P2 x' y') = P2 (min x x') (min y y')
-    umax (P2 x y) (P2 x' y') = P2 (max x x') (max y y')
-
-
--- We don't consider BBox to have a (nice) zero, hence 
--- the Groupoid instance
-
-instance Ord a => Groupoid (BoundingBox a) where
-  gappend = unionBounds
-
-
---------------------------------------------------------------------------------
-
--- Trace the polygon finding the /extremity/...
-bbPolygon :: (Num a, Ord a) => Polygon a -> BoundingBox a
-bbPolygon (Polygon [])     = error $ "malformed Polygon - empty list"
-bbPolygon (Polygon (p:ps)) = foldl' fn (BBox p p) ps
-  where
-    fn (BBox (P2 xmin ymin) (P2 xmax ymax)) (P2 x y) = 
-        BBox (P2 (min xmin x) (min ymin y)) (P2 (max xmax x) (max ymax y))
-
 
 type MPicture t a = Picture (Measure a) (t a)
 
 picPolygon :: (Num a, Ord a) => Polygon a -> Picture (Measure a) (Polygon a)
 picPolygon p = Single (ortho zeroPt,bbPolygon p) p
 
+bbPolygon :: (Num a, Ord a) => Polygon a -> BoundingBox a
+bbPolygon (Polygon xs)     = trace xs 
 
 (<>) :: (Num a, Ord a) => MPicture t a -> MPicture t a -> MPicture t a
 Empty  <> a      = a
@@ -93,7 +60,7 @@ a      <> b      = Picture (ortho zeroPt,br) a b'
                      (P2 right _) = topRight $ picBounds a
                      (P2 left _)  = bottomLeft $ picBounds b
                      b'           = move b (V2 (right-left) 0)
-                     br           = unionBounds (picBounds a) (picBounds b')
+                     br           = union (picBounds a) (picBounds b')
 
 (</>) :: (Num a, Ord a) => MPicture t a -> MPicture t a -> MPicture t a
 Empty  </> a      = a
@@ -103,7 +70,7 @@ a      </> b      = Picture (ortho zeroPt,br) a b'
                       (P2 _ bottom) = bottomLeft $ picBounds a
                       (P2 _ top)    = topRight $ picBounds b
                       b'            = move b (V2 0 (bottom-top))
-                      br            = unionBounds (picBounds a) (picBounds b')
+                      br            = union (picBounds a) (picBounds b')
 
 
 
@@ -111,7 +78,7 @@ overlay :: (Num a, Ord a) => MPicture t a -> MPicture t a -> MPicture t a
 Empty `overlay` a     = a
 a     `overlay` Empty = a
 a     `overlay` b     = Picture (ortho zeroPt,br) a b
-                        where br = unionBounds (picBounds a) (picBounds b)
+                        where br = union (picBounds a) (picBounds b)
 
 
 picBounds :: (Num a, Ord a) => MPicture t a -> BoundingBox a
@@ -119,12 +86,6 @@ picBounds Empty                = error $ "picBounds Empty"
 picBounds (Single (_,bb) _)    = bb
 picBounds (Picture (_,bb) _ _) = bb
 
-
-bbWidth :: Num a => BoundingBox a -> a
-bbWidth (BBox (P2 xmin _) (P2 xmax _)) = xmax - xmin
-
-bbHeight :: Num a => BoundingBox a -> a
-bbHeight (BBox (P2 _ ymin) (P2 _ ymax)) = ymax - ymin
 
 
 
@@ -158,7 +119,7 @@ transformPicture f (Picture (fr,_) a b) = Picture (fr,br') a' b'
   where 
     a'  = transformPicture f a
     b'  = transformPicture f b
-    br' = picBounds a' `unionBounds` picBounds b'
+    br' = picBounds a' `union` picBounds b'
 -}
 
 
@@ -189,11 +150,12 @@ instance Pointwise (Polygon a) where
   pointwise f (Polygon xs) = Polygon $ map f xs
 
 
-
+{-
+-- Can this go?
 instance Pointwise (BoundingBox a) where
   type Pt (BoundingBox a) = Point2 a
   pointwise f (BBox bl tr) = BBox (f bl) (f tr)
-
+-}
 
 --------------------------------------------------------------------------------
 
