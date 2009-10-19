@@ -111,6 +111,23 @@ southEast = bottomRight
 southWest = bottomLeft
 northWest = topLeft 
 
+--------------------------------------------------------------------------------
+
+-- /planes/ on the bounding box
+
+leftPlane :: BoundingBox a -> a
+leftPlane (BBox (P2 l _) _) = l
+
+rightPlane :: BoundingBox a -> a
+rightPlane (BBox _ (P2 r _)) = r
+
+lowerPlane :: BoundingBox a -> a
+lowerPlane (BBox (P2 _ l) _) = l
+
+upperPlane :: BoundingBox a -> a
+upperPlane (BBox _ (P2 _ u)) = u
+
+
 
 
 

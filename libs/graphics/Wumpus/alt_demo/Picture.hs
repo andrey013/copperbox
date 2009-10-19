@@ -40,3 +40,7 @@ demo4 = writePicture "abovesquare.ps" p1
   where
     p1 = psquare </> psquares 
    
+demo5 = writePicture "oversquares.ps" p1
+  where
+    p1 = psquare `overlay` (rotatePicture (pi/4) psquares)
+   

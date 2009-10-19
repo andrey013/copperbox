@@ -25,18 +25,18 @@ import Data.AffineSpace
 import Data.VectorSpace
 
 
-data Picture v a = Empty
-                 | Single v a
-                 | Picture v (Picture v a) (Picture v a)
+data Picture u = Empty
+               | Single (Measure u) (Polygon u)
+               | Picture (Measure u) (Picture u) (Picture u)
   deriving (Eq,Show) 
 
 
 -- Measure = (_current_ frame x bounding box)
-type Measure a = (Frame2 a, BoundingBox a) 
+type Measure u = (Frame2 u, BoundingBox u) 
 
 type DMeasure = Measure Double
 
-newtype Polygon a = Polygon { vertexList :: [Point2 a] }
+newtype Polygon u = Polygon { vertexList :: [Point2 u] }
   deriving (Eq,Show)
 
 type DPolygon = Polygon Double
@@ -44,44 +44,41 @@ type DPolygon = Polygon Double
 
 --------------------------------------------------------------------------------
 
-type MPicture t a = Picture (Measure a) (t a)
 
-picPolygon :: (Num a, Ord a) => Polygon a -> Picture (Measure a) (Polygon a)
+picPolygon :: (Num a, Ord a) => Polygon a -> Picture a
 picPolygon p = Single (ortho zeroPt,bbPolygon p) p
 
 bbPolygon :: (Num a, Ord a) => Polygon a -> BoundingBox a
 bbPolygon (Polygon xs)     = trace xs 
 
-(<>) :: (Num a, Ord a) => MPicture t a -> MPicture t a -> MPicture t a
-Empty  <> a      = a
-a      <> Empty  = a
-a      <> b      = Picture (ortho zeroPt,br) a b' 
-                   where 
-                     (P2 right _) = topRight $ picBounds a
-                     (P2 left _)  = bottomLeft $ picBounds b
-                     b'           = move b (V2 (right-left) 0)
-                     br           = union (picBounds a) (picBounds b')
+arrange :: (Num a, Ord a)
+        => (Picture a -> Picture a -> Vec2 a) 
+        -> Picture a 
+        -> Picture a 
+        -> Picture a
+arrange _ a     Empty = a
+arrange _ Empty b     = b
+arrange f a     b     = Picture (ortho zeroPt, bb) a b' where
+  v  = f a b
+  b' = move b v
+  bb = union (picBounds a) (picBounds b')
+   
 
-(</>) :: (Num a, Ord a) => MPicture t a -> MPicture t a -> MPicture t a
-Empty  </> a      = a
-a      </> Empty  = a
-a      </> b      = Picture (ortho zeroPt,br) a b' 
-                    where 
-                      (P2 _ bottom) = bottomLeft $ picBounds a
-                      (P2 _ top)    = topRight $ picBounds b
-                      b'            = move b (V2 0 (bottom-top))
-                      br            = union (picBounds a) (picBounds b')
+(<>) :: (Num a, Ord a) => Picture a -> Picture a -> Picture a
+(<>) = arrange (\a b -> 
+    let x = (rightPlane $ picBounds a) - (leftPlane $ picBounds b) in V2 x 0)
+   
 
 
+(</>) :: (Num a, Ord a) => Picture a -> Picture a -> Picture a
+(</>) = arrange (\a b -> 
+    let y = (lowerPlane $ picBounds a) - (upperPlane $ picBounds b) in V2 0 y)
 
-overlay :: (Num a, Ord a) => MPicture t a -> MPicture t a -> MPicture t a
-Empty `overlay` a     = a
-a     `overlay` Empty = a
-a     `overlay` b     = Picture (ortho zeroPt,br) a b
-                        where br = union (picBounds a) (picBounds b)
+overlay :: (Num a, Ord a) => Picture a -> Picture a -> Picture a
+overlay = arrange (\_ _ -> V2 0 0)
 
 
-picBounds :: (Num a, Ord a) => MPicture t a -> BoundingBox a
+picBounds :: (Num a, Ord a) => Picture a -> BoundingBox a
 picBounds Empty                = error $ "picBounds Empty"
 picBounds (Single (_,bb) _)    = bb
 picBounds (Picture (_,bb) _ _) = bb
@@ -89,43 +86,21 @@ picBounds (Picture (_,bb) _ _) = bb
 
 
 
-move :: Num a => MPicture t a -> Vec2 a -> MPicture t a
+move :: Num a => Picture a -> Vec2 a -> Picture a
 move Empty                 _ = Empty
-move (Single  (fr,br) p)   v = Single (displaceOrigin v fr, pointwise (.+^ v) br) p
-move (Picture (fr,br) a b) v = Picture (displaceOrigin v fr, pointwise (.+^ v) br) a b
+move (Single  (fr,bb) p)   v = Single (displaceOrigin v fr, pointwise (.+^ v) bb) p
+move (Picture (fr,bb) a b) v = Picture (displaceOrigin v fr, pointwise (.+^ v) bb) a b
   
 
-center :: (Fractional a, Ord a) => MPicture t a -> Point2 a
+center :: (Fractional a, Ord a) => Picture a -> Point2 a
 center Empty = zeroPt
 center p     = fn $ picBounds p
   where
     fn (BBox bl tr) = bl .+^ (0.5 *^ (tr .-. bl))
 
 
-{-
--- Actually this isn't so nice, it doesn't transform the picture
--- but its components, thus a rotation on a sequence of crosses
--- + + + will rotate each one x x x  
-transformPicture :: (Num a, Ord a) 
-                 => (Point2 a -> Point2 a) 
-                 -> MPicture Polygon a 
-                 -> MPicture Polygon a
-transformPicture _ Empty                = Empty
-transformPicture f (Single (fr,_) a)    = Single (fr,br') a' 
-  where 
-    a'  = pointwise f a
-    br' = bbPolygon a'
-transformPicture f (Picture (fr,_) a b) = Picture (fr,br') a' b'
-  where 
-    a'  = transformPicture f a
-    b'  = transformPicture f b
-    br' = picBounds a' `union` picBounds b'
--}
-
-
 -- This is a rotation about the origin...
-rotatePicture :: (Real a, Floating a)
-              => Radian -> MPicture Polygon a -> MPicture Polygon a
+rotatePicture :: (Real a, Floating a) => Radian -> Picture a -> Picture a
 rotatePicture _   Empty                 = Empty
 rotatePicture ang (Single (fr,bb) a)    = 
     Single (rotateFrame ang fr, rotateBBox ang bb) a
@@ -150,23 +125,16 @@ instance Pointwise (Polygon a) where
   pointwise f (Polygon xs) = Polygon $ map f xs
 
 
-{-
--- Can this go?
-instance Pointwise (BoundingBox a) where
-  type Pt (BoundingBox a) = Point2 a
-  pointwise f (BBox bl tr) = BBox (f bl) (f tr)
--}
-
 --------------------------------------------------------------------------------
 
 
  
-writePicture :: FilePath -> MPicture Polygon Double -> IO ()
+writePicture :: FilePath -> Picture Double -> IO ()
 writePicture filepath pic = writeFile filepath $ psDraw pic
 
 
 -- | Draw a picture, generating PostScript output.
-psDraw :: MPicture Polygon Double -> PostScript
+psDraw :: Picture Double -> PostScript
 psDraw pic = prologue ++ runWumpus env0 (drawPicture k pic) ++ epilogue
   where
     k        = pointInFrame `flip` (ortho zeroPt)
@@ -182,7 +150,7 @@ psDraw pic = prologue ++ runWumpus env0 (drawPicture k pic) ++ epilogue
     epilogue = unlines $ [ "showpage", "", "%%EOF", ""]
 
 drawPicture :: (Point2 Double -> Point2 Double) 
-            -> MPicture Polygon Double 
+            -> Picture Double 
             -> WumpusM ()
 drawPicture _ Empty                 = return ()
 drawPicture f (Single (g,_) p) = do
