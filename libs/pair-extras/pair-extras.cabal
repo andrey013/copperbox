@@ -1,0 +1,42 @@
+name:             pair-extras
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Data
+synopsis:         Functions on pairs.
+description:
+  Functions on pairs - the useful ones @fork@ and @prod@ are 
+  well established [1] but unfortunately not present in the 
+  Hierarchical Libraries.
+  .
+  [1] See for instance, Jeremy Gibbons lecture notes 
+  'Calculating Functional Programs'
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+
+library
+  hs-source-dirs:     src
+  build-depends:      base<5
+
+  
+  exposed-modules:
+    Data.PairExtras
+
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
