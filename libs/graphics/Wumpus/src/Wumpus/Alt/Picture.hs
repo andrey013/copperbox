@@ -31,7 +31,8 @@ import Data.VectorSpace
 import Data.List ( foldl' )
 
 data Picture u = Empty
-               | Single (Measure u) (Path u)
+               | Single  (Measure u) (Path u)
+               | Multi   (Measure u) [Path u]
                | Picture (Measure u) (Picture u) (Picture u)
   deriving (Eq,Show) 
 
@@ -65,7 +66,7 @@ type DPolygon = Polygon Double
 
 --------------------------------------------------------------------------------
 
-instance Groupoid (Path a) where
+instance Groupoid (Path u) where
   Path dp st xs `gappend` Path _ st' xs' = Path dp st (xs ++ (Ls st' : xs'))
 
 
@@ -76,12 +77,22 @@ regularPolygon :: (Floating u, Real u)
 regularPolygon n r = Polygon $ circular $ replicate n (zeroPt .+^ (V2 0 r)) 
 
 
+-- | Create an isosceles rectangle with bottom-left corner at the 
+-- origin, the base on the horizontal plane with width @bw@. The 
+-- height is @h@.
+isoscelesTriangle :: Fractional u => u -> u -> Polygon u
+isoscelesTriangle bw h = Polygon $ sequence [id,f2,f3] zeroPt where
+  f2 = (.+^ hvec bw)
+  f3 = (.+^ V2 (bw/2) h)
+
+
+
 straightLinePath :: [Point2 u] -> (Point2 u, [PathSeg u])
 straightLinePath []     = error "polygonPath - empty Polygon"
 straightLinePath (x:xs) = (x, map Ls xs)
 
   
-picPolygon :: (Num a, Ord a) => DrawProp -> Polygon a -> Picture a
+picPolygon :: (Num u, Ord u) => DrawProp -> Polygon u -> Picture u
 picPolygon dp (Polygon xs) = Single (ortho zeroPt,trace xs) path
   where 
     path         = Path dp start segs
@@ -91,6 +102,8 @@ picPolygon dp (Polygon xs) = Single (ortho zeroPt,trace xs) path
 picPath :: (Num u, Ord u) => Path u -> Picture u
 picPath p = Single (ortho zeroPt, tracePath p) p
 
+picMultiPath :: (Num u, Ord u) => [Path u] -> Picture u
+picMultiPath ps = Multi (ortho zeroPt, gconcat (map tracePath ps)) ps
 
 tracePath :: (Num u, Ord u) => Path u -> BoundingBox u
 tracePath = trace . extractPoints
@@ -100,71 +113,81 @@ extractPoints (Path _ st xs) = st : foldr f [] xs where
     f (Ls p)        acc = p : acc
     f (Cs p1 p2 p3) acc = p1 : p2 : p3 : acc 
 
-bbPolygon :: (Num a, Ord a) => Polygon a -> BoundingBox a
+extractPolygonPath :: Polygon u -> Path u
+extractPolygonPath p = Path CloseStroke p0 ps where
+  (p0,ps) = straightLinePath $ vertexList p 
+
+
+
+bbPolygon :: (Num u, Ord u) => Polygon u -> BoundingBox u
 bbPolygon (Polygon xs)     = trace xs 
 
-arrange :: (Num a, Ord a)
-        => (Picture a -> Picture a -> Vec2 a) 
-        -> Picture a 
-        -> Picture a 
-        -> Picture a
+arrange :: (Num u, Ord u)
+        => (Picture u -> Picture u -> Vec2 u) 
+        -> Picture u
+        -> Picture u 
+        -> Picture u
 arrange _ a     Empty = a
 arrange _ Empty b     = b
 arrange f a     b     = Picture (ortho zeroPt, bb) a b' where
-    b' = move b (f a b)
+    b' = move (f a b) b
     bb = union (picBounds a) (picBounds b')
    
    
 
-(<>) :: (Num a, Ord a) => Picture a -> Picture a -> Picture a
+(<>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 (<>) = arrange $ twine fn (rightPlane . picBounds) (leftPlane . picBounds)
   where fn = hvec `oo` (-) 
 
 
-(</>) :: (Num a, Ord a) => Picture a -> Picture a -> Picture a
+(</>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 (</>) = arrange $ twine fn (lowerPlane . picBounds) (upperPlane . picBounds)
   where fn = vvec `oo` (-)
 
-overlay :: (Num a, Ord a) => Picture a -> Picture a -> Picture a
+overlay :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 overlay = arrange (\_ _ -> V2 0 0)
 
-overlays :: (Num a, Ord a) => [Picture a] -> Picture a
+overlays :: (Num u, Ord u) => [Picture u] -> Picture u
 overlays []     = error "overlays - empty list"
 overlays (x:xs) = foldl' overlay x xs
 
-picBounds :: (Num a, Ord a) => Picture a -> BoundingBox a
+picBounds :: (Num u, Ord u) => Picture u -> BoundingBox u
 picBounds Empty                = error $ "picBounds Empty"
 picBounds (Single (_,bb) _)    = bb
+picBounds (Multi (_,bb) _)     = bb
 picBounds (Picture (_,bb) _ _) = bb
 
 
+mapMeasure :: (Measure u -> Measure u) -> Picture u -> Picture u
+mapMeasure _ Empty            = Empty
+mapMeasure f (Single  m p)    = Single (f m) p
+mapMeasure f (Multi   m ps)   = Multi (f m) ps
+mapMeasure f (Picture m a  b) = Picture (f m) a b
 
 
-move :: Num a => Picture a -> Vec2 a -> Picture a
-move Empty                 _ = Empty
-move (Single  (fr,bb) p)   v = Single (displaceOrigin v fr, pointwise (.+^ v) bb) p
-move (Picture (fr,bb) a b) v = Picture (displaceOrigin v fr, pointwise (.+^ v) bb) a b
+move :: Num u => Vec2 u -> Picture u -> Picture u
+move v = mapMeasure (moveMeasure v) 
+
   
+moveMeasure :: Num u => Vec2 u -> Measure u -> Measure u
+moveMeasure v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb) 
 
-center :: (Fractional a, Ord a) => Picture a -> Point2 a
+center :: (Fractional u, Ord u) => Picture u -> Point2 u
 center Empty = zeroPt
 center p     = fn $ picBounds p where
     fn (BBox bl tr) = bl .+^ (0.5 *^ (tr .-. bl))
 
 
 -- This is a rotation about the origin...
-rotatePicture :: (Real a, Floating a) => Radian -> Picture a -> Picture a
-rotatePicture _   Empty                 = Empty
-rotatePicture ang (Single (fr,bb) a)    = 
-    Single (rotateFrame ang fr, rotateBBox ang bb) a
-rotatePicture ang (Picture (fr,bb) a b) =
-    Picture (rotateFrame ang fr, rotateBBox ang bb) a b
+rotatePicture :: (Real u, Floating u) => Radian -> Picture u -> Picture u
+rotatePicture ang = mapMeasure $ prod (rotateFrame ang) (rotateBBox ang)
 
-rotateFrame :: (Real a, Floating a) => Radian -> Frame2 a -> Frame2 a
+
+rotateFrame :: (Real u, Floating u) => Radian -> Frame2 u -> Frame2 u
 rotateFrame ang (Frame2 o vx vy) = Frame2 o (rotate ang vx) (rotate ang vy)    
 
-rotateBBox :: (Real a, Floating a) 
-             => Radian -> BoundingBox a -> BoundingBox a
+rotateBBox :: (Real u, Floating u) 
+           => Radian -> BoundingBox u -> BoundingBox u
 rotateBBox ang (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = 
     trace $ map (rotate ang) [bl, br, tr, tl]
   where
@@ -213,11 +236,13 @@ psDraw pic = prologue ++ runWumpus env0 (drawPicture k pic) ++ epilogue
 drawPicture :: (Point2 Double -> Point2 Double) 
             -> Picture Double 
             -> WumpusM ()
-drawPicture _ Empty               = return ()
-drawPicture f (Single (g,_) p)    = drawPath (f . (pointInFrame `flip` g)) p
-drawPicture f (Picture (g,_) a b) = do
-    drawPicture (f . (pointInFrame `flip` g)) a
-    drawPicture (f . (pointInFrame `flip` g)) b
+drawPicture _ Empty                = return ()
+drawPicture f (Single (fr,_) p)    = drawPath (f . (pointInFrame `flip` fr)) p
+drawPicture f (Multi (fr,_) ps)    = 
+    mapM_ (drawPath (f . (pointInFrame `flip` fr))) ps
+drawPicture f (Picture (fr,_) a b) = do
+    drawPicture (f . (pointInFrame `flip` fr)) a
+    drawPicture (f . (pointInFrame `flip` fr)) b
 
 
 drawPath :: (Point2 Double -> Point2 Double) -> Path Double -> WumpusM ()

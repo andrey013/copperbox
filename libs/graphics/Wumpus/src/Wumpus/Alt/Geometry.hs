@@ -49,7 +49,7 @@ type DPoint2 = Point2 Double
 
 
 -- | Two dimensional frame.
-data Frame2 a = Frame2 (Point2 a) (Vec2 a) (Vec2 a) 
+data Frame2 a = Frame2 (Point2 a) (Vec2 a) (Vec2 a)
   deriving (Eq,Show)
 
 type DFrame2 = Frame2 Double
