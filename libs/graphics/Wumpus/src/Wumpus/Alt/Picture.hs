@@ -28,7 +28,7 @@ import Data.VectorSpace
 
 
 data Picture u = Empty
-               | Single (Measure u) (Polygon u)
+               | Single (Measure u) (Path u)
                | Picture (Measure u) (Picture u) (Picture u)
   deriving (Eq,Show) 
 
@@ -38,6 +38,17 @@ type Measure u = (Frame2 u, BoundingBox u)
 
 type DMeasure = Measure Double
 
+data DrawProp = Fill | Stroke | Crop 
+  deriving (Eq,Show)
+
+
+data PathSeg u = Cs (Point2 u) (Point2 u) (Point2 u)
+               | Ls (Point2 u)
+  deriving (Eq,Show)
+
+data Path u = Path DrawProp (Point2 u) [PathSeg u]
+  deriving (Eq,Show)
+
 newtype Polygon u = Polygon { vertexList :: [Point2 u] }
   deriving (Eq,Show)
 
@@ -46,9 +57,22 @@ type DPolygon = Polygon Double
 
 --------------------------------------------------------------------------------
 
+-- | Create a regular polygon with @n@ sides and /radius/ @r@ 
+-- centered at the origin.
+regularPolygon :: (Floating u, Real u)
+               => Int -> u -> Polygon u
+regularPolygon n r = Polygon $ circular $ replicate n (zeroPt .+^ (V2 0 r)) 
 
-picPolygon :: (Num a, Ord a) => Polygon a -> Picture a
-picPolygon p = Single (ortho zeroPt,bbPolygon p) p
+
+straightLinePath :: [Point2 u] -> (Point2 u, [PathSeg u])
+straightLinePath []     = error "polygonPath - empty Polygon"
+straightLinePath (x:xs) = (x, map Ls xs)
+  
+picPolygon :: (Num a, Ord a) => DrawProp -> Polygon a -> Picture a
+picPolygon dp (Polygon xs) = Single (ortho zeroPt,trace xs) path
+  where 
+    path         = Path dp start segs
+    (start,segs) = straightLinePath xs
 
 bbPolygon :: (Num a, Ord a) => Polygon a -> BoundingBox a
 bbPolygon (Polygon xs)     = trace xs 
@@ -152,21 +176,26 @@ psDraw pic = prologue ++ runWumpus env0 (drawPicture k pic) ++ epilogue
 drawPicture :: (Point2 Double -> Point2 Double) 
             -> Picture Double 
             -> WumpusM ()
-drawPicture _ Empty                 = return ()
-drawPicture f (Single (g,_) p) = do
-    drawPoly (f . (pointInFrame `flip` g)) p
+drawPicture _ Empty               = return ()
+drawPicture f (Single (g,_) p)    = drawPath (f . (pointInFrame `flip` g)) p
 drawPicture f (Picture (g,_) a b) = do
     drawPicture (f . (pointInFrame `flip` g)) a
     drawPicture (f . (pointInFrame `flip` g)) b
 
 
-drawPoly :: (Point2 Double -> Point2 Double) -> Polygon Double -> WumpusM ()
-drawPoly _          (Polygon [])          = return ()
-drawPoly f (Polygon (pt:pts)) = let P2 x y = f pt in do  
+drawPath :: (Point2 Double -> Point2 Double) -> Path Double -> WumpusM ()
+drawPath f (Path dp pt xs) = let P2 x y = f pt in do  
     ps_newpath
     ps_moveto x y
-    mapM_ drawPt pts
+    mapM_ drawLineSeg xs
     ps_closepath
-    ps_stroke  
+    finalize dp   
   where
-    drawPt p = let P2 x y = f p in ps_lineto x y
+    drawLineSeg (Ls p)        = let P2 x y = f p in ps_lineto x y
+    drawLineSeg (Cs p1 p2 p3) = let P2 x1 y1 = f p1
+                                    P2 x2 y2 = f p2
+                                    P2 x3 y3 = f p2
+                                in ps_curveto x1 y1 x2 y2 x3 y3
+    finalize Stroke = ps_stroke
+    finalize Fill   = ps_fill
+    finalize Crop   = ps_clip
