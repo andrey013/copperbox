@@ -1,4 +1,4 @@
-name:             pair-extras
+name:             fun-extras
 version:          0.1.0
 license:          BSD3
 license-file:     LICENSE
@@ -6,14 +6,16 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Data
-synopsis:         Functions on pairs.
+synopsis:         Common (and uncommon) functions.
 description:
-  Functions on pairs - the useful ones @fork@ and @prod@ are 
-  well established [1] but unfortunately not present in the 
-  Hierarchical Libraries.
-  .
-  [1] See for instance, Jeremy Gibbons lecture notes 
-  'Calculating Functional Programs'
+  Extra functions that are /missing/ from Data.Function and 
+  Data.Tuple where missing is not necessarily a value judgement.
+  I.e. these functions may be too synthetic, too obscure, 
+  already available via function instances for monads / 
+  applicatives / arrows... But as most of the functions here 
+  have been presented in the literature it does seem worthwhile 
+  at least to compile them.
+
 build-type:         Simple
 stability:          highly unstable
 cabal-version:      >= 1.2
@@ -26,7 +28,7 @@ library
 
   
   exposed-modules:
-    Data.PairExtras
+    Data.FunctionExtras
 
   other-modules:
     
