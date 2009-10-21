@@ -18,12 +18,7 @@
 module Wumpus.Core.Fun 
   ( 
   -- * Pairs
-    fork
-  , prod
-  , both
-  , swap
-  , outer
-  , inner
+    both
   , cond
 
   -- * Approximate equality
@@ -52,10 +47,6 @@ module Wumpus.Core.Fun
   , steps
   , divisions
 
-  -- * Composition with specs
-  , oo
-  , ooo
-  , oooo
 
   ) where
 
@@ -63,35 +54,13 @@ import Data.List ( unfoldr )
 
 -- Pairs
 
--- | Apply the pair of functions to the same argument returning the 
--- pair of answers.
-fork :: (a -> b, a -> c) -> a -> (b,c)
-fork (f,g) a = (f a, g a)
-
--- | Apply the first function to the first argument and the second 
--- function to the second, return the pair of answers. 
-prod :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
-prod f g (a,b) = (f a, g b)
-
 -- | Apply the function to both elements of the pair.
 both :: (a -> b) -> (a,a) -> (b,b)
 both f (a,b) = (f a, f b)
 
--- | Swap the elements of the pair.
-swap :: (a,b) -> (b,a)
-swap (a,b) = (b,a)
-
--- | Return the /outer/ elements of the argument pairs.
-outer :: (a,b) -> (c,d) -> (a,d)
-outer (a,_) (_,d) = (a,d)
-
--- | Return the /inner/ elements of the argument pairs.
-inner :: (a,b) -> (c,d) -> (b,c)
-inner (_,b) (c,_) = (b,c)
-
 
 -- | Apply the predicate to the pair, if true return the first element
--- if false retur the second.
+-- if false return the second.
 cond :: (a -> a -> Bool) -> (a,a) -> a
 cond p (a,b) | p a b     = a
              | otherwise = b
@@ -183,7 +152,8 @@ unfoldlMap f s0 (x:xs) = let (acc,st) = unfoldlMap f s0 xs in
                            Just (a,st_final) -> (a:acc,st_final)   
 
 
--- surely this one has been /discovered/ many times?
+
+-- surely this one has been /discovered/ many times? 
 intermap :: (a -> a -> b) -> [a] -> [b]
 intermap f (a:b:xs) = f a b : intermap f (b:xs)
 intermap _ _        = []
@@ -193,6 +163,7 @@ intermap3 :: (a -> a -> a -> b) -> [a] -> [b]
 intermap3 f (a:b:c:xs) = f a b c : intermap3 f (b:c:xs)
 intermap3 _ _          = []
 
+-- note the above two work as paramorphisms
 
 -- alternatively ...
 
@@ -257,17 +228,6 @@ steps i a = unfoldr phi i' where
   i' = fromIntegral i
 
 
-
--- 'specs'
-
-oo :: (c -> d) -> (a -> b -> c) -> a -> b -> d
-oo f g = (f .) . g
-
-ooo :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
-ooo f g = ((f .) .) . g
-
-oooo :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
-oooo f g = (((f .) .) .) . g   
 
 
 

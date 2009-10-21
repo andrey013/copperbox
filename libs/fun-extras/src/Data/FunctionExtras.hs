@@ -20,7 +20,10 @@ module Data.FunctionExtras
   ( 
   -- * Combinators
     ( # )
-  , sprime
+  , subst
+  , subst'
+  , twine
+
     
   -- * Pairs
   , fork
@@ -58,11 +61,23 @@ infixl 7 #
 ( # ) :: a -> (a -> b) -> b 
 x # f = f x
 
+-- | S combinator - subst.
+-- Familiar as Applicative's (<*>) operator:
+-- f (b -> c) -> f b -> f c where f = ((->) a)
+subst :: (a -> b -> c) -> (a -> b) -> a -> c
+subst f g a = f a (g a) 
+
 -- | The big Phi, or Turner's @S'@ combinator.
 -- Known to Haskell programmers as liftM2 when written:
 -- (a1 -> a2 -> r) -> m a1 -> m a2 -> m r where m = ((->) a)
-sprime :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
-sprime p q r s = p (q s) (r s)
+subst' :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
+subst' p q r s = p (q s) (r s)
+
+
+-- | A variant of the @D2@ or dovekie combinator - the argument
+-- order has been changed, to be more for Haskellers.
+twine :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
+twine p q r s t = p (q s) (r t) 
 
 
 --------------------------------------------------------------------------------

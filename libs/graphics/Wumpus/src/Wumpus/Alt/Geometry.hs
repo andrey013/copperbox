@@ -246,6 +246,17 @@ instance Num a => MatrixMult Matrix3'3 (Point2 a) where
   type MatrixParam (Point2 a) = a
   (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a*m+b*n+c*1) (d*m+e*n+f*1)
 
+--------------------------------------------------------------------------------
+-- Vectors
+
+hvec :: Num a => a -> Vec2 a
+hvec d = V2 d 0
+
+vvec :: Num a => a -> Vec2 a
+vvec d = V2 0 d
+
+
+
 
 --------------------------------------------------------------------------------
 -- Points

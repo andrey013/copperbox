@@ -2,7 +2,7 @@
 
 module ImportAll where
 
-import Data.FunExtras
+import Data.FunctionExtras
 
 between :: (Fractional a, Ord a) => a -> Bool
 between = uncurry (&&) . fork (< 0.5) (> -0.5)

@@ -21,8 +21,10 @@ import Wumpus.Alt.BoundingBox hiding ( center )
 import Wumpus.Alt.Geometry
 import Wumpus.Drawing.PostScript
 
+import Data.FunctionExtras
 import Data.AffineSpace
 import Data.VectorSpace
+
 
 
 data Picture u = Empty
@@ -59,20 +61,19 @@ arrange :: (Num a, Ord a)
 arrange _ a     Empty = a
 arrange _ Empty b     = b
 arrange f a     b     = Picture (ortho zeroPt, bb) a b' where
-  v  = f a b
-  b' = move b v
-  bb = union (picBounds a) (picBounds b')
+    b' = move b (f a b)
+    bb = union (picBounds a) (picBounds b')
+   
    
 
 (<>) :: (Num a, Ord a) => Picture a -> Picture a -> Picture a
-(<>) = arrange (\a b -> 
-    let x = (rightPlane $ picBounds a) - (leftPlane $ picBounds b) in V2 x 0)
-   
+(<>) = arrange $ twine fn (rightPlane . picBounds) (leftPlane . picBounds)
+  where fn = hvec `oo` (-) 
 
 
 (</>) :: (Num a, Ord a) => Picture a -> Picture a -> Picture a
-(</>) = arrange (\a b -> 
-    let y = (lowerPlane $ picBounds a) - (upperPlane $ picBounds b) in V2 0 y)
+(</>) = arrange $ twine fn (lowerPlane . picBounds) (upperPlane . picBounds)
+  where fn = vvec `oo` (-)
 
 overlay :: (Num a, Ord a) => Picture a -> Picture a -> Picture a
 overlay = arrange (\_ _ -> V2 0 0)
@@ -94,8 +95,7 @@ move (Picture (fr,bb) a b) v = Picture (displaceOrigin v fr, pointwise (.+^ v) b
 
 center :: (Fractional a, Ord a) => Picture a -> Point2 a
 center Empty = zeroPt
-center p     = fn $ picBounds p
-  where
+center p     = fn $ picBounds p where
     fn (BBox bl tr) = bl .+^ (0.5 *^ (tr .-. bl))
 
 
@@ -113,7 +113,7 @@ rotateFrame ang (Frame2 o vx vy) = Frame2 o (rotate ang vx) (rotate ang vy)
 rotateBBox :: (Real a, Floating a) 
              => Radian -> BoundingBox a -> BoundingBox a
 rotateBBox ang (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = 
-    bbPolygon $ Polygon $ map (rotate ang) [bl, br, tr, tl]
+    trace $ map (rotate ang) [bl, br, tr, tl]
   where
     br = P2 x1 y0
     tl = P2 x0 y1
