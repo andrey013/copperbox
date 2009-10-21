@@ -21,11 +21,14 @@ import Wumpus.Alt.BoundingBox hiding ( center )
 import Wumpus.Alt.Geometry
 import Wumpus.Drawing.PostScript
 
+
 import Data.FunctionExtras
+import Data.Groupoid
+
 import Data.AffineSpace
 import Data.VectorSpace
 
-
+import Data.List ( foldl' )
 
 data Picture u = Empty
                | Single (Measure u) (Path u)
@@ -38,7 +41,7 @@ type Measure u = (Frame2 u, BoundingBox u)
 
 type DMeasure = Measure Double
 
-data DrawProp = Fill | Stroke | Crop 
+data DrawProp = OpenStroke | CloseStroke | Fill | Crop 
   deriving (Eq,Show)
 
 
@@ -46,8 +49,13 @@ data PathSeg u = Cs (Point2 u) (Point2 u) (Point2 u)
                | Ls (Point2 u)
   deriving (Eq,Show)
 
+type DPathSeg = PathSeg Double
+
 data Path u = Path DrawProp (Point2 u) [PathSeg u]
   deriving (Eq,Show)
+
+type DPath = Path Double
+
 
 newtype Polygon u = Polygon { vertexList :: [Point2 u] }
   deriving (Eq,Show)
@@ -56,6 +64,10 @@ type DPolygon = Polygon Double
 
 
 --------------------------------------------------------------------------------
+
+instance Groupoid (Path a) where
+  Path dp st xs `gappend` Path _ st' xs' = Path dp st (xs ++ (Ls st' : xs'))
+
 
 -- | Create a regular polygon with @n@ sides and /radius/ @r@ 
 -- centered at the origin.
@@ -67,12 +79,26 @@ regularPolygon n r = Polygon $ circular $ replicate n (zeroPt .+^ (V2 0 r))
 straightLinePath :: [Point2 u] -> (Point2 u, [PathSeg u])
 straightLinePath []     = error "polygonPath - empty Polygon"
 straightLinePath (x:xs) = (x, map Ls xs)
+
   
 picPolygon :: (Num a, Ord a) => DrawProp -> Polygon a -> Picture a
 picPolygon dp (Polygon xs) = Single (ortho zeroPt,trace xs) path
   where 
     path         = Path dp start segs
     (start,segs) = straightLinePath xs
+
+
+picPath :: (Num u, Ord u) => Path u -> Picture u
+picPath p = Single (ortho zeroPt, tracePath p) p
+
+
+tracePath :: (Num u, Ord u) => Path u -> BoundingBox u
+tracePath = trace . extractPoints
+
+extractPoints :: Path u -> [Point2 u]
+extractPoints (Path _ st xs) = st : foldr f [] xs where
+    f (Ls p)        acc = p : acc
+    f (Cs p1 p2 p3) acc = p1 : p2 : p3 : acc 
 
 bbPolygon :: (Num a, Ord a) => Polygon a -> BoundingBox a
 bbPolygon (Polygon xs)     = trace xs 
@@ -102,6 +128,9 @@ arrange f a     b     = Picture (ortho zeroPt, bb) a b' where
 overlay :: (Num a, Ord a) => Picture a -> Picture a -> Picture a
 overlay = arrange (\_ _ -> V2 0 0)
 
+overlays :: (Num a, Ord a) => [Picture a] -> Picture a
+overlays []     = error "overlays - empty list"
+overlays (x:xs) = foldl' overlay x xs
 
 picBounds :: (Num a, Ord a) => Picture a -> BoundingBox a
 picBounds Empty                = error $ "picBounds Empty"
@@ -148,6 +177,14 @@ instance Pointwise (Polygon a) where
   type Pt (Polygon a) = Point2 a
   pointwise f (Polygon xs) = Polygon $ map f xs
 
+instance Pointwise (Path u) where
+  type Pt (Path u) = Point2 u
+  pointwise f (Path dp st xs) = Path dp (f st) (map (pointwise f) xs)
+
+instance Pointwise (PathSeg u) where
+  type Pt (PathSeg u) = Point2 u
+  pointwise f (Ls p)        = Ls (f p)
+  pointwise f (Cs p1 p2 p3) = Cs (f p1) (f p2) (f p3)
 
 --------------------------------------------------------------------------------
 
@@ -188,14 +225,14 @@ drawPath f (Path dp pt xs) = let P2 x y = f pt in do
     ps_newpath
     ps_moveto x y
     mapM_ drawLineSeg xs
-    ps_closepath
     finalize dp   
   where
     drawLineSeg (Ls p)        = let P2 x y = f p in ps_lineto x y
     drawLineSeg (Cs p1 p2 p3) = let P2 x1 y1 = f p1
                                     P2 x2 y2 = f p2
-                                    P2 x3 y3 = f p2
+                                    P2 x3 y3 = f p3
                                 in ps_curveto x1 y1 x2 y2 x3 y3
-    finalize Stroke = ps_stroke
-    finalize Fill   = ps_fill
-    finalize Crop   = ps_clip
+    finalize OpenStroke  = ps_stroke
+    finalize CloseStroke = ps_closepath >> ps_stroke
+    finalize Fill        = ps_closepath >> ps_fill
+    finalize Crop        = ps_closepath >> ps_clip

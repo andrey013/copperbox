@@ -264,6 +264,10 @@ vvec d = V2 0 d
 zeroPt :: Num a => Point2 a
 zeroPt = P2 0 0
 
+langle :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
+langle (P2 x y) (P2 x' y') = toRadian $ atan $ (y'-y) / (x'-x) 
+
+
 --------------------------------------------------------------------------------
 -- Frame operations
 

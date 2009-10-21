@@ -16,7 +16,7 @@ funnyshape = Polygon
   [ P2 0 0, P2 20 0, P2 20 10, P2 30 10, P2 30 20, P2 0 20 ]
 
 
-psquare = picPolygon Stroke square
+psquare = picPolygon CloseStroke square
 pfunnyshape = picPolygon Fill funnyshape
 
 demo0 = writePicture "funnyshape.ps" pfunnyshape
@@ -48,4 +48,4 @@ demo5 = writePicture "oversquares.ps" p1
 
 demo6 = writePicture "hexagon.ps" p1 
   where
-    p1 = picPolygon Stroke $ regularPolygon 6 50
+    p1 = picPolygon CloseStroke $ regularPolygon 6 50
