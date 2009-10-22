@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 ------------------------------------------------------------------------------
@@ -318,56 +319,53 @@ originatedRotationMatrix ang (P2 x y) = mT * (rotationMatrix ang) * mTinv
     mT    = M3'3 1 0 x     0 1 y     0 0 1
     mTinv = M3'3 1 0 (-x)  0 1 (-y)  0 0 1
 
-rotate :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-       => Radian -> t -> t
-rotate a = ((rotationMatrix a) *#)
+class Rotate t where
+  rotate :: Radian -> t -> t
 
-rotateAbout :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-            => Radian -> Point2 a -> t -> t 
-rotateAbout a pt = ((originatedRotationMatrix a pt) *#) 
+class RotateAbout t u where
+  rotateAbout :: Radian -> Point2 u -> t -> t 
 
-rotate90 :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-         => t -> t 
+instance (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
+    => Rotate t where
+  rotate a = ((rotationMatrix a) *#)
+
+instance (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
+    => RotateAbout t a where
+  rotateAbout a pt = ((originatedRotationMatrix a pt) *#) 
+  
+
+rotate90 :: Rotate t => t -> t 
 rotate90 = rotate (pi/2) 
 
-rotate90About :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-              => Point2 a -> t -> t 
+rotate90About :: RotateAbout t u => Point2 u -> t -> t 
 rotate90About = rotateAbout (pi/2)
 
 
-rotate30 :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-         => t -> t 
+rotate30 :: Rotate t => t -> t 
 rotate30 = rotate (pi/6) 
 
-rotate30About :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-              => Point2 a -> t -> t 
+rotate30About :: RotateAbout t u => Point2 u -> t -> t 
 rotate30About = rotateAbout (pi/6)
 
 
-rotate45 :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-         => t -> t 
+rotate45 :: Rotate t => t -> t 
 rotate45 = rotate (pi/4) 
 
-rotate45About :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-              => Point2 a -> t -> t 
+rotate45About :: RotateAbout t u => Point2 u -> t -> t 
 rotate45About = rotateAbout (pi/4)
 
 
-rotate60 :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-         => t -> t 
+rotate60 :: Rotate t => t -> t 
 rotate60 = rotate (2*pi/3) 
 
-rotate60About :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-              => Point2 a -> t -> t 
+rotate60About :: RotateAbout t u => Point2 u -> t -> t 
 rotate60About = rotateAbout (2*pi/3)
 
 
-rotate120 :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-          => t -> t 
+rotate120 :: Rotate t => t -> t 
 rotate120 = rotate (4*pi/3) 
 
-rotate120About :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-               => Point2 a -> t -> t 
+rotate120About :: RotateAbout t u => Point2 u -> t -> t 
 rotate120About = rotateAbout (4*pi/3)
 
 
@@ -379,31 +377,35 @@ circular xs = snd $ mapAccumR fn 0 xs
     len      = fromIntegral $ length xs
 
 
-scale :: (Num a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-      => a -> a -> t -> t 
-scale x y = ((scalingMatrix x y) *#) 
 
-uniformScale :: (Floating a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-             => a -> t -> t 
+class Scale t u where
+  scale :: u -> u -> t -> t
+
+instance (Num u, MatrixMult Matrix3'3 t, MatrixParam t ~ u) 
+    => Scale t u where
+  scale x y = ((scalingMatrix x y) *#) 
+
+uniformScale :: Scale t u => u -> t -> t 
 uniformScale a = scale a a 
 
 
+reflectX :: forall t u. (Num u, Scale t u) => t -> t
+reflectX = scale (-1::u) 1
+
+reflectY :: forall t u. (Num u, Scale t u) => t -> t
+reflectY = scale (1::u) (-1)
+
+
+class Translate t u where
+   translate :: u -> u -> t -> t
+
 -- | translate @x@ @y@.
-translate :: (Num a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-          => a -> a -> t -> t 
-translate x y = ((translationMatrix x y) *#)
+instance (Num u, MatrixMult Matrix3'3 t, MatrixParam t ~ u) 
+    => Translate t u where
+  translate x y = ((translationMatrix x y) *#)
 
-translateBy :: (Num a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-            => Vec2 a -> t -> t 
+translateBy :: Translate t u => Vec2 u -> t -> t 
 translateBy (V2 x y) = translate x y
-
-reflectX :: (Num a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-         => t -> t
-reflectX = scale (-1) 1
-
-reflectY :: (Num a, MatrixMult Matrix3'3 t, MatrixParam t ~ a) 
-         => t -> t
-reflectY = scale 1 (-1)
 
 
 

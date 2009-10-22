@@ -1,6 +1,8 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -196,18 +198,59 @@ center p     = fn $ picBounds p where
     fn (BBox bl tr) = bl .+^ (0.5 *^ (tr .-. bl))
 
 
+instance (Floating u, Real u) => Rotate (Picture u) where
+  rotate = rotatePicture 
+
+instance (Floating u, Real u) => RotateAbout (Picture u) u where
+  rotateAbout = rotatePictureAbout
+
+
+
+instance (Num u, Ord u) => Scale (Picture u) u where
+  scale = scalePicture
+
+instance (Num u, Ord u) => Translate (Picture u) u where
+  translate = translatePicture
+
+
 -- This is a rotation about the origin...
+
 rotatePicture :: (Real u, Floating u) => Radian -> Picture u -> Picture u
-rotatePicture ang = mapMeasure $ prod (rotateFrame ang) (rotateBBox ang)
+rotatePicture = subst' transformPicture rotate rotate
 
 
-rotateFrame :: (Real u, Floating u) => Radian -> Frame2 u -> Frame2 u
-rotateFrame ang (Frame2 o vx vy) = Frame2 o (rotate ang vx) (rotate ang vy)    
+rotatePictureAbout :: (Real u, Floating u) 
+                   => Radian -> Point2 u -> Picture u -> Picture u
+rotatePictureAbout ang pt = 
+    transformPicture (rotateAbout ang pt) (rotateAbout ang pt)
+  
+scalePicture :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
+scalePicture x y = transformPicture (scale x y) (scale x y)
 
-rotateBBox :: (Real u, Floating u) 
-           => Radian -> BoundingBox u -> BoundingBox u
-rotateBBox ang (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = 
-    trace $ map (rotate ang) [bl, br, tr, tl]
+translatePicture :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
+translatePicture x y = transformPicture (translate x y) (translate x y)
+
+-- This is probably wrong...
+-- Need to becareful to ensure the bbox is always represented 
+-- in world coordinates and we are probably translating the 
+-- origin when we shouldn't.
+
+transformPicture :: (Num u, Ord u) 
+                 => (Point2 u -> Point2 u) 
+                 -> (Vec2 u -> Vec2 u) 
+                 -> Picture u 
+                 -> Picture u
+transformPicture fp fv = 
+    mapMeasure $ prod (transformFrame fp fv) (transformBBox fp)
+
+
+transformFrame :: (Point2 u -> Point2 u) -> (Vec2 u -> Vec2 u) -> Frame2 u -> Frame2 u
+transformFrame fp fv (Frame2 o vx vy) = Frame2 (fp o) (fv vx) (fv vy)    
+
+transformBBox :: (Num u, Ord u)
+              => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
+transformBBox fp (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = 
+    trace $ map fp [bl, br, tr, tl]
   where
     br = P2 x1 y0
     tl = P2 x0 y1
