@@ -170,9 +170,9 @@ overlays :: (Num u, Ord u) => [Picture u] -> Picture u
 overlays []     = error "overlays - empty list"
 overlays (x:xs) = foldl' overlay x xs
 
-andBounds :: (Num u, Ord u) => Picture u -> Picture u
-andBounds Empty = Empty
-andBounds p     = p `overlay` pbb where
+drawBounds :: (Num u, Ord u) => Picture u -> Picture u
+drawBounds Empty = Empty
+drawBounds p     = p `overlay` pbb where
     bb  = picBounds p
     pbb = picPolygon CStroke (Polygon $ corners bb)
                    
@@ -210,15 +210,18 @@ center p     = fn $ picBounds p where
 instance (Floating u, Real u) => Rotate (Picture u) where
   rotate = rotatePicture 
 
-instance (Floating u, Real u) => RotateAbout (Picture u) u where
+instance (Floating u, Real u) => RotateAbout (Picture u) where
+  type RotateAboutUnit (Picture u) = u
   rotateAbout = rotatePictureAbout
 
 
 
-instance (Num u, Ord u) => Scale (Picture u) u where
+instance (Num u, Ord u) => Scale (Picture u) where
+  type ScaleUnit (Picture u) = u
   scale = scalePicture
 
-instance (Num u, Ord u) => Translate (Picture u) u where
+instance (Num u, Ord u) => Translate (Picture u) where
+  type TranslateUnit (Picture u) = u
   translate = translatePicture
 
 
@@ -239,10 +242,6 @@ scalePicture x y = transformPicture (scale x y) (scale x y)
 translatePicture :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
 translatePicture x y = transformPicture (translate x y) (translate x y)
 
--- This is probably wrong...
--- Need to becareful to ensure the bbox is always represented 
--- in world coordinates and we are probably translating the 
--- origin when we shouldn't.
 
 transformPicture :: (Num u, Ord u) 
                  => (Point2 u -> Point2 u) 
