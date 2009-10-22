@@ -68,9 +68,10 @@ newtype Polygon u = Polygon { vertexList :: [Point2 u] }
 type DPolygon = Polygon Double
 
 data Label u = Label {
-      labelFontSize :: u,
-      labelRowDisp  :: u,
-      labelText     :: [String] 
+      labelInitialHeight  :: u, -- store the height /before/ any affine trafos
+      labelFontSize       :: u,
+      labelRowDisp        :: u,
+      labelText           :: [String] 
     }
   deriving (Eq,Show)
 
@@ -120,7 +121,7 @@ picMultiPath ps = Multi (ortho zeroPt, gconcat (map tracePath ps)) ps
 picLabel :: (Num u, Ord u) => u -> u -> u -> u -> String -> Picture u
 picLabel fonth vdisp w h text = TLabel (ortho zeroPt, bb) label where
   bb    = trace [zeroPt, P2 w h]
-  label = Label fonth vdisp (lines text) 
+  label = Label h fonth vdisp (lines text) 
 
 
 tracePath :: (Num u, Ord u) => Path u -> BoundingBox u
@@ -168,6 +169,14 @@ overlay = arrange (\_ _ -> V2 0 0)
 overlays :: (Num u, Ord u) => [Picture u] -> Picture u
 overlays []     = error "overlays - empty list"
 overlays (x:xs) = foldl' overlay x xs
+
+andBounds :: (Num u, Ord u) => Picture u -> Picture u
+andBounds Empty = Empty
+andBounds p     = p `overlay` pbb where
+    bb  = picBounds p
+    pbb = picPolygon CStroke (Polygon $ corners bb)
+                   
+
 
 picBounds :: (Num u, Ord u) => Picture u -> BoundingBox u
 picBounds Empty                = error $ "picBounds Empty"
@@ -247,13 +256,12 @@ transformPicture fp fv =
 transformFrame :: (Point2 u -> Point2 u) -> (Vec2 u -> Vec2 u) -> Frame2 u -> Frame2 u
 transformFrame fp fv (Frame2 o vx vy) = Frame2 (fp o) (fv vx) (fv vy)    
 
+
+-- Bounding boxes need recalculating after a transformation.
+-- For instance after a reflection in the y-axis br becomes bl.
 transformBBox :: (Num u, Ord u)
               => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
-transformBBox fp (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = 
-    trace $ map fp [bl, br, tr, tl]
-  where
-    br = P2 x1 y0
-    tl = P2 x0 y1
+transformBBox fp = trace . map fp . corners
 
 
 
@@ -306,7 +314,7 @@ drawPicture f (Single (fr,_) p)    = drawPath (composeFrames f fr) p
 drawPicture f (Multi (fr,_) ps)    = 
     mapM_ (drawPath (composeFrames f fr)) ps
 drawPicture f (TLabel (fr,bb) l)   = 
-    drawLabel (composeFrames f fr) (bottomLeft bb) (height bb) l
+    drawLabel (composeFrames f fr) (bottomLeft bb) l
 drawPicture f (Picture (fr,_) a b) = do
     drawPicture (composeFrames f fr) a
     drawPicture (composeFrames f fr) b
@@ -337,17 +345,17 @@ drawPath f (Path dp pt xs) = let P2 x y = f pt in do
 
 drawLabel :: (Point2 Double -> Point2 Double) 
           -> Point2 Double 
-          -> Double 
           -> Label Double 
           -> WumpusM ()
-drawLabel fn (P2 x y) totalh (Label fonth rowdisp xs) = do
+drawLabel fn (P2 x y) (Label totalh fonth rowdisp xs) = do
     ps_moveto x y
     ps_gsave
     ps_concat a b c d e f
     zipWithM_ drawTextLine xs vecs
     ps_grestore
   where
-    drawTextLine str (V2 vx vy) = ps_moveto (x+vx) (y+vy) >> ps_show str
+    drawTextLine str (V2 vx vy) = comment (show vx ++ ", " ++ show vy) >> 
+                                  ps_moveto vx vy >> ps_show str
     vecs          = labelDisplacements fonth totalh rowdisp (length xs) 
     (a,b,c,d,e,f) = makeCTM fn
 

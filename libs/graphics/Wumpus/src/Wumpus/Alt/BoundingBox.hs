@@ -63,6 +63,12 @@ trace (p:ps) = foldl' fn (BBox p p) ps
         BBox (P2 (min xmin x) (min ymin y)) (P2 (max xmax x) (max ymax y))
 
 
+corners :: BoundingBox a -> [Point2 a]
+corners (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = [bl, br, tr, tl] where
+    br = P2 x1 y0
+    tl = P2 x0 y1
+
+
 within :: Ord a => Point2 a -> BoundingBox a -> Bool
 within (P2 x y) (BBox (P2 xmin ymin) (P2 xmax ymax)) = 
    x >= xmin && x <= xmax && y >= ymin && y <= ymax
@@ -73,7 +79,6 @@ width (BBox (P2 xmin _) (P2 xmax _)) = xmax - xmin
 
 height :: Num a => BoundingBox a -> a
 height (BBox (P2 _ ymin) (P2 _ ymax)) = ymax - ymin
-
 
 
 --------------------------------------------------------------------------------

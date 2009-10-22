@@ -130,7 +130,7 @@ dtrunc d | abs d < 0.0001  = "0.0"
 type Command = String
 
 comment :: String -> WumpusM ()
-comment s = write "%%" >> writeln s
+comment s = write "%% " >> writeln s
 
 command :: Command -> [String] -> WumpusM ()
 command cmd xs = mapM_ writeArg xs >> writeln cmd
