@@ -259,15 +259,19 @@ drawPicture :: (Point2 Double -> Point2 Double)
             -> Picture Double 
             -> WumpusM ()
 drawPicture _ Empty                = return ()
-drawPicture f (Single (fr,_) p)    = drawPath (f . (pointInFrame `flip` fr)) p
+drawPicture f (Single (fr,_) p)    = drawPath (composeFrames f fr) p
 drawPicture f (Multi (fr,_) ps)    = 
-    mapM_ (drawPath (f . (pointInFrame `flip` fr))) ps
-drawPicture f (TLabel (fr,bb) l)   = drawLabel (bottomLeft bb) (height bb) l
-                                     
-
+    mapM_ (drawPath (composeFrames f fr)) ps
+drawPicture f (TLabel (fr,bb) l)   = 
+    drawLabel (composeFrames f fr) (bottomLeft bb) (height bb) l
 drawPicture f (Picture (fr,_) a b) = do
-    drawPicture (f . (pointInFrame `flip` fr)) a
-    drawPicture (f . (pointInFrame `flip` fr)) b
+    drawPicture (composeFrames f fr) a
+    drawPicture (composeFrames f fr) b
+
+
+composeFrames :: Num u 
+              => (Point2 u -> Point2 u) -> Frame2 u -> (Point2 u -> Point2 u)
+composeFrames f fr = f . (pointInFrame `flip` fr)
 
 
 drawPath :: (Point2 Double -> Point2 Double) -> Path Double -> WumpusM ()
@@ -288,14 +292,28 @@ drawPath f (Path dp pt xs) = let P2 x y = f pt in do
     finalize CCrop   = ps_closepath >> ps_clip
 
 
-drawLabel :: Point2 Double -> Double -> Label Double -> WumpusM ()
-drawLabel (P2 x y) totalh (Label fonth rowdisp xs) = do
+drawLabel :: (Point2 Double -> Point2 Double) 
+          -> Point2 Double 
+          -> Double 
+          -> Label Double 
+          -> WumpusM ()
+drawLabel fn (P2 x y) totalh (Label fonth rowdisp xs) = do
     ps_moveto x y
+    ps_gsave
+    ps_concat a b c d e f
     zipWithM_ drawTextLine xs vecs
+    ps_grestore
   where
     drawTextLine str (V2 vx vy) = ps_moveto (x+vx) (y+vy) >> ps_show str
-    vecs = labelDisplacements fonth totalh rowdisp (length xs) 
- 
+    vecs          = labelDisplacements fonth totalh rowdisp (length xs) 
+    (a,b,c,d,e,f) = makeCTM fn
+
+makeCTM :: Num u => (Point2 u -> Point2 u) -> (u,u,u,u,u,u)
+makeCTM f = (x0-o0, x1-o1, y0-o0, y1-o1, o0, o1) where
+   P2 x0 x1 = f (P2 1 0)
+   P2 y0 y1 = f (P2 0 1)
+   P2 o0 o1 = f (P2 0 0)
+
 
 labelDisplacements :: Fractional u => u -> u -> u -> Int -> [Vec2 u]
 labelDisplacements fonth totalh rowdisp nrows = 

@@ -223,13 +223,22 @@ localFont font mf =
         command "setfont" []
 
 
+ps_gsave :: WumpusM ()
+ps_gsave = command "gsave" []
 
+ps_grestore :: WumpusM () 
+ps_grestore = command "grestore" []
 
--- TODO - this is useful, but it changes the PostScript graphics state
--- so it really should be incorpated into the Env.
 ps_translate :: Double -> Double -> WumpusM ()
 ps_translate tx ty = do
     command "translate" $ map dtrunc [tx,ty]
+
+-- Do not use setmatrix for changing the CTM use concat
+ps_concat :: Double -> Double -> Double 
+          -> Double -> Double -> Double 
+          -> WumpusM ()
+ps_concat a b c d e f = command "concat" [mat] where 
+    mat = showArray ((++) . dtrunc) [a,b,c,d,e,f]
 
 --------------------------------------------------------------------------------
 -- Path construction operators
