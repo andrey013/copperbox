@@ -28,12 +28,14 @@ import Data.Groupoid
 import Data.AffineSpace
 import Data.VectorSpace
 
+import Control.Monad ( zipWithM_ )
 import Data.List ( foldl' )
 
 data Picture u = Empty
-               | Single  (Measure u) (Path u)
-               | Multi   (Measure u) [Path u]
-               | Picture (Measure u) (Picture u) (Picture u)
+               | Single   (Measure u) (Path u)
+               | Multi    (Measure u) [Path u]
+               | TLabel   (Measure u) (Label u)
+               | Picture  (Measure u) (Picture u) (Picture u)
   deriving (Eq,Show) 
 
 
@@ -42,7 +44,7 @@ type Measure u = (Frame2 u, BoundingBox u)
 
 type DMeasure = Measure Double
 
-data DrawProp = OpenStroke | CloseStroke | Fill | Crop 
+data DrawProp = OStroke | CStroke | CFill | CCrop 
   deriving (Eq,Show)
 
 
@@ -62,6 +64,13 @@ newtype Polygon u = Polygon { vertexList :: [Point2 u] }
   deriving (Eq,Show)
 
 type DPolygon = Polygon Double
+
+data Label u = Label {
+      labelFontSize :: u,
+      labelRowDisp  :: u,
+      labelText     :: [String] 
+    }
+  deriving (Eq,Show)
 
 
 --------------------------------------------------------------------------------
@@ -105,6 +114,13 @@ picPath p = Single (ortho zeroPt, tracePath p) p
 picMultiPath :: (Num u, Ord u) => [Path u] -> Picture u
 picMultiPath ps = Multi (ortho zeroPt, gconcat (map tracePath ps)) ps
 
+
+picLabel :: (Num u, Ord u) => u -> u -> u -> u -> String -> Picture u
+picLabel fonth vdisp w h text = TLabel (ortho zeroPt, bb) label where
+  bb    = trace [zeroPt, P2 w h]
+  label = Label fonth vdisp (lines text) 
+
+
 tracePath :: (Num u, Ord u) => Path u -> BoundingBox u
 tracePath = trace . extractPoints
 
@@ -114,7 +130,7 @@ extractPoints (Path _ st xs) = st : foldr f [] xs where
     f (Cs p1 p2 p3) acc = p1 : p2 : p3 : acc 
 
 extractPolygonPath :: Polygon u -> Path u
-extractPolygonPath p = Path CloseStroke p0 ps where
+extractPolygonPath p = Path CStroke p0 ps where
   (p0,ps) = straightLinePath $ vertexList p 
 
 
@@ -153,8 +169,9 @@ overlays (x:xs) = foldl' overlay x xs
 
 picBounds :: (Num u, Ord u) => Picture u -> BoundingBox u
 picBounds Empty                = error $ "picBounds Empty"
-picBounds (Single (_,bb) _)    = bb
-picBounds (Multi (_,bb) _)     = bb
+picBounds (Single  (_,bb) _)   = bb
+picBounds (Multi   (_,bb) _)   = bb
+picBounds (TLabel  (_,bb) _)   = bb
 picBounds (Picture (_,bb) _ _) = bb
 
 
@@ -162,6 +179,7 @@ mapMeasure :: (Measure u -> Measure u) -> Picture u -> Picture u
 mapMeasure _ Empty            = Empty
 mapMeasure f (Single  m p)    = Single (f m) p
 mapMeasure f (Multi   m ps)   = Multi (f m) ps
+mapMeasure f (TLabel  m l)    = TLabel (f m) l 
 mapMeasure f (Picture m a  b) = Picture (f m) a b
 
 
@@ -227,6 +245,10 @@ psDraw pic = prologue ++ runWumpus env0 (drawPicture k pic) ++ epilogue
                          , "%%EndComments"
                          , "%%Page: 1 1"
                          , ""
+                         --- these are temporary...
+                         , "/Times-Roman findfont"
+                         , "10 scalefont"
+                         , "setfont"
                          , "200 400 translate"
                          ]
 
@@ -240,6 +262,9 @@ drawPicture _ Empty                = return ()
 drawPicture f (Single (fr,_) p)    = drawPath (f . (pointInFrame `flip` fr)) p
 drawPicture f (Multi (fr,_) ps)    = 
     mapM_ (drawPath (f . (pointInFrame `flip` fr))) ps
+drawPicture f (TLabel (fr,bb) l)   = drawLabel (bottomLeft bb) (height bb) l
+                                     
+
 drawPicture f (Picture (fr,_) a b) = do
     drawPicture (f . (pointInFrame `flip` fr)) a
     drawPicture (f . (pointInFrame `flip` fr)) b
@@ -257,7 +282,25 @@ drawPath f (Path dp pt xs) = let P2 x y = f pt in do
                                     P2 x2 y2 = f p2
                                     P2 x3 y3 = f p3
                                 in ps_curveto x1 y1 x2 y2 x3 y3
-    finalize OpenStroke  = ps_stroke
-    finalize CloseStroke = ps_closepath >> ps_stroke
-    finalize Fill        = ps_closepath >> ps_fill
-    finalize Crop        = ps_closepath >> ps_clip
+    finalize OStroke = ps_stroke
+    finalize CStroke = ps_closepath >> ps_stroke
+    finalize CFill   = ps_closepath >> ps_fill
+    finalize CCrop   = ps_closepath >> ps_clip
+
+
+drawLabel :: Point2 Double -> Double -> Label Double -> WumpusM ()
+drawLabel (P2 x y) totalh (Label fonth rowdisp xs) = do
+    ps_moveto x y
+    zipWithM_ drawTextLine xs vecs
+  where
+    drawTextLine str (V2 vx vy) = ps_moveto (x+vx) (y+vy) >> ps_show str
+    vecs = labelDisplacements fonth totalh rowdisp (length xs) 
+ 
+
+labelDisplacements :: Fractional u => u -> u -> u -> Int -> [Vec2 u]
+labelDisplacements fonth totalh rowdisp nrows = 
+    reverse $ take nrows $ iterate (^+^ vvec (fonth+rowdisp)) (vvec start)
+  where
+    n         = fromIntegral nrows
+    internalh = fonth*n + rowdisp*(n-1)
+    start     = 0.5 * (totalh-internalh)

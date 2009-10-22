@@ -36,7 +36,7 @@ arrowline :: (Floating u, Real u)
           -> Point2 u
           -> Point2 u 
           -> Arrow u
-arrowline mk p p' = Arrow (Path OpenStroke p [Ls p'] : tip) where
+arrowline mk p p' = Arrow (Path OStroke p [Ls p'] : tip) where
   theta = langle p p'
   tip   = mk theta p'
 
@@ -51,7 +51,7 @@ arrowheadVee filled d ang =
   \theta endpt -> let p0   = endpt .+^ (hvec (-d))
                       p01  = rotateAbout (pi-ang) endpt p0
                       p02  = rotateAbout (pi+ang) endpt p0
-                      styl = if filled then Fill else OpenStroke
+                      styl = if filled then CFill else OStroke
                       path = Path styl p01 (map Ls [endpt,p02])
                   in pointwise (rotateAbout (theta - pi) endpt) path
 
@@ -63,7 +63,7 @@ arrowheadPerp :: (Floating u, Real u) => u -> (Radian -> Point2 u -> Path u)
 arrowheadPerp d = 
   \theta endpt -> let p0   = endpt .+^ (hvec (-d))
                       p1   = endpt .+^ (hvec d)
-                      path = Path OpenStroke p0 [Ls p1]
+                      path = Path OStroke p0 [Ls p1]
                   in pointwise (rotateAbout (theta+pi/2) endpt) path
 
 arrowTri :: (Floating u, Real u) => Point2 u -> Point2 u -> Arrow u
