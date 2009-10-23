@@ -7,7 +7,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Alt.Picture
+-- Module      :  Wumpus.Core.Picture
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see LICENSE)
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -17,11 +17,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Alt.Picture where
+module Wumpus.Core.Picture where
 
-import Wumpus.Alt.BoundingBox hiding ( center )
-import Wumpus.Alt.Geometry
-import Wumpus.Drawing.PostScript
+import Wumpus.Core.BoundingBox hiding ( center )
+import Wumpus.Core.Geometry
+import Wumpus.Core.PostScript
 
 
 import Data.FunctionExtras

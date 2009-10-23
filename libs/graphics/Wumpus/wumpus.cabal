@@ -1,58 +1,37 @@
 name:             Wumpus
-version:          0.1
+version:          0.2
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Graphics
-synopsis:         Geometry kernel and vector drawing. 
+synopsis:         PostScript generation and vector drawing. 
 description:
-  Geometry kernel and vector drawing.
-
+  PostScript generation and vector drawing.
 build-type:         Simple
 stability:          highly unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
-  demo/Demo1
+  demo/Picture
 
 library
   hs-source-dirs:     src
-  build-depends:      base < 5, containers, vector-space, monadLib, dlist
+  build-depends:      base < 5, containers, vector-space, monadLib, dlist,
+                      groupoid, fun-extras
 
   
   exposed-modules:
     Wumpus.Core.BoundingBox,
     Wumpus.Core.Colour,
-    Wumpus.Core.Curve,
-    Wumpus.Core.Frame,
-    Wumpus.Core.Fun,
-    Wumpus.Core.Geometric,
-    Wumpus.Core.Instances,
-    Wumpus.Core.Line,
-    Wumpus.Core.Matrix,
-    Wumpus.Core.Point,
-    Wumpus.Core.Pointwise,
-    Wumpus.Core.Polar,
-    Wumpus.Core.Polygon,
-    Wumpus.Core.Radian,
-    Wumpus.Core.Transform,
-    Wumpus.Core.Vector,
-    Wumpus.Drawing.Arrow,
-    Wumpus.Drawing.GraphicsState,
-    Wumpus.Drawing.Grid,
-    Wumpus.Drawing.Label,
-    Wumpus.Drawing.Path,
-    Wumpus.Drawing.Picture,
-    Wumpus.Drawing.Plot,
-    Wumpus.Drawing.PostScript,
-    Wumpus.Drawing.QuadTree,
-    Wumpus.Drawing.SVGColours,
-    Wumpus.Drawing.X11Colours
+    Wumpus.Core.Geometry,
+    Wumpus.Core.Picture,
+    Wumpus.Core.PostScript,
+    Wumpus.Core.Utils,
+    Wumpus.Extra.Arrow
 
   other-modules:
-    Wumpus.Test.TypeRestrict
     
   extensions:
     

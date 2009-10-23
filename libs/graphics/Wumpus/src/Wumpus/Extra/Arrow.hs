@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Alt.Arrow
+-- Module      :  Wumpus.Extra.Arrow
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see LICENSE)
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -12,10 +12,10 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Alt.Arrow where
+module Wumpus.Extra.Arrow where
 
-import Wumpus.Alt.Geometry
-import Wumpus.Alt.Picture
+import Wumpus.Core.Geometry
+import Wumpus.Core.Picture
 
 import Data.FunctionExtras
 import Data.AffineSpace

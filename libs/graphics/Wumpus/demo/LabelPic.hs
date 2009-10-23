@@ -1,10 +1,8 @@
 
 module LabelPic where
 
-import Wumpus.Alt.Geometry
-import Wumpus.Alt.Picture
-
-import Wumpus.Drawing.PostScript
+import Wumpus.Core.Geometry
+import Wumpus.Core.Picture
 
 lbl1 :: Picture Double
 lbl1 = picLabel 10 1 30 26 "Hello\nWorld"
@@ -34,4 +32,3 @@ demo3 = writePicture "label3.ps" p
         `overlay` (drawBounds $ scale 3 3 lbl1)
 
 
-test1 = runWumpus env0 (ps_concat 1 0 0 1 0 0)

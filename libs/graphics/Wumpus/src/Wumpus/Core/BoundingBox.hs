@@ -1,206 +1,137 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Wumpus.Core.BoundingBox
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD3
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  experimental
+-- Portability :  GHC only
 --
--- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
--- Portability :  GHC
---
--- BoundingBox
 --
 --------------------------------------------------------------------------------
 
+module Wumpus.Core.BoundingBox where
 
-module Wumpus.Core.BoundingBox
-  (
-  -- * Bounding box types
-    BoundingBox(..)
-  , DBoundingBox
+import Wumpus.Core.Geometry
 
-  , HasBoundingBox(..)
+import Data.Groupoid
 
-  -- * Operations
-  , bounds
-  , within
-  , width 
-  , height
-  , oppositeCorners
+import Data.List ( foldl' )
 
-  , ReferencePoints(..) 
-  
-  , centeredAt
-  
-  ) where
 
-import Wumpus.Core.Geometric
-import Wumpus.Core.Point
-import Wumpus.Core.Pointwise
-import Wumpus.Core.Polygon
-import Wumpus.Core.Vector
-
-import Data.AffineSpace
-
-import Data.Monoid
-
---------------------------------------------------------------------------------
--- Polygon types and standard instances
-
--- Hmm, maybe BoundingBox should always have rectangular coords
--- i.e. Point2 and it should be parameterized on the numeric unit 
--- instead (like it used to be).
-
--- | Bounding box, two point representation (bottom-left and top-right). 
-data BoundingBox pt = BBox { bbBottomLeft :: pt, bbTopRight :: pt }
+data BoundingBox a = BBox { bottomLeft :: Point2 a, topRight :: Point2 a }
   deriving (Eq,Show)
 
-type DBoundingBox = BoundingBox (Point2 Double)
+type DBoundingBox = BoundingBox Double
 
 
 
-instance HasPoints DBoundingBox  where
-  type Pnt DBoundingBox = Point2 Double
-  extractPoints (BBox p1@(P2 xmin ymin) p2@(P2 xmax ymax)) = [p1,br,p2,tl]
-    where br = P2 xmax ymin
-          tl = P2 xmin ymax
-  endPoint (BBox start _) = start       -- start point is also end point   
-  startPoint              = endPoint  
-
-instance (Fractional a, Ord a) => Monoid (BoundingBox (Point2 a)) where
-  mempty  = BBox (P2 inf inf) (P2 (-inf) (-inf)) where inf = 1/0
-  mappend = bbUnion
-
--------------------------------------------------------------------------------
-
-
-class HasBoundingBox sh pt where
-  getBoundingBox :: sh -> BoundingBox pt
-
-instance Pointwise (BoundingBox pt) where
-  type Pt (BoundingBox pt) = pt
-  pointwise fn (BBox a b) = BBox (fn a) (fn b)
-
-                
 --------------------------------------------------------------------------------
--- Construction
 
-
--- | Calculate the bounding box of a polygon.
-instance Ord a => HasBoundingBox (Polygon (Point2 a)) (Point2 a) where
-  getBoundingBox (Polygon ps) = bounds' ps
-
-
-
-bounds :: (HasPoints t, Ord a, Pnt t ~ Point2 a) 
-       => t -> BoundingBox (Point2 a)
-bounds = bounds' . extractPoints
-
-bounds' :: Ord a => [Point2 a] -> BoundingBox (Point2 a)
-bounds' []     = error $ "Polygon.bounds' - empty list"
-bounds' (p:ps) = uncurry BBox $ foldr fn (p,p) ps
+union :: Ord a => BoundingBox a -> BoundingBox a -> BoundingBox a
+union (BBox pmin pmax) (BBox pmin' pmax') = 
+    BBox (umin pmin pmin') (umax pmax pmax')
   where
-    fn (P2 x y) (P2 xmin ymin, P2 xmax ymax) = 
-       (P2 (min x xmin) (min y ymin), P2 (max x xmax) (max y ymax))
+    umin (P2 x y) (P2 x' y') = P2 (min x x') (min y y')
+    umax (P2 x y) (P2 x' y') = P2 (max x x') (max y y')
+
+
+-- We don't consider BBox to have a (nice) zero, hence 
+-- the Groupoid instance rather than a Monoid instance.
+
+instance Ord a => Groupoid (BoundingBox a) where
+  gappend = union
+
+instance Pointwise (BoundingBox a) where
+  type Pt (BoundingBox a) = Point2 a
+  pointwise f (BBox bl tr) = BBox (f bl) (f tr)
 
 
 --------------------------------------------------------------------------------
--- Operations
 
 
+-- Trace the point list finding the /extremity/...
 
-bbUnion :: Ord a 
-       => BoundingBox (Point2 a) 
-       -> BoundingBox (Point2 a) 
-       -> BoundingBox (Point2 a)
-bbUnion (BBox (P2 xmin1 ymin1) (P2 xmax1 ymax1))
-        (BBox (P2 xmin2 ymin2) (P2 xmax2 ymax2))
-  = BBox (P2 (min xmin1 xmin2) (min ymin1 ymin2)) 
-         (P2 (max xmax1 xmax2) (max ymax1 ymax2))
-
+trace :: (Num a, Ord a) => [Point2 a] -> BoundingBox a
+trace []     = error $ "BoundingBox.trace - empty list"
+trace (p:ps) = foldl' fn (BBox p p) ps
+  where
+    fn (BBox (P2 xmin ymin) (P2 xmax ymax)) (P2 x y) = 
+        BBox (P2 (min xmin x) (min ymin y)) (P2 (max xmax x) (max ymax y))
 
 
-within :: Ord a => Point2 a -> BoundingBox (Point2 a) -> Bool
+corners :: BoundingBox a -> [Point2 a]
+corners (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = [bl, br, tr, tl] where
+    br = P2 x1 y0
+    tl = P2 x0 y1
+
+
+within :: Ord a => Point2 a -> BoundingBox a -> Bool
 within (P2 x y) (BBox (P2 xmin ymin) (P2 xmax ymax)) = 
    x >= xmin && x <= xmax && y >= ymin && y <= ymax
 
 
-width :: Num a => BoundingBox (Point2 a) -> a
-width (BBox (P2 xmin _) (P2 xmax _)) = xmin + (xmax-xmin)
+width :: Num a => BoundingBox a -> a
+width (BBox (P2 xmin _) (P2 xmax _)) = xmax - xmin
 
+height :: Num a => BoundingBox a -> a
+height (BBox (P2 _ ymin) (P2 _ ymax)) = ymax - ymin
 
-height :: Num a => BoundingBox (Point2 a) -> a
-height (BBox (P2 _ ymin) (P2 _ ymax)) = ymin + (ymax-ymin)
-
-
--- | Extract the opposite corners (tl,br) of a bounding box.
-oppositeCorners :: BoundingBox (Point2 a) -> (Point2 a,Point2 a)
-oppositeCorners (BBox (P2 xmin ymin) (P2 xmax ymax)) = 
-  (P2 xmin ymax, P2 xmax ymin) 
 
 --------------------------------------------------------------------------------
--- Points on a bounding box
 
-class ReferencePoints pt where
-  -- | Center (middle point) of a bounding box.
-  center    :: BoundingBox pt -> pt
-  -- | @north@ - middle point on the top of a bounding box.
-  north     :: BoundingBox pt -> pt
-  -- | @south@ - middle point on the bottom of a bounding box.
-  south     :: BoundingBox pt -> pt
-  -- | @east@ - middle point on the right side of the bounding box.
-  east      :: BoundingBox pt -> pt
-  -- | @west@ - middle point on the left side of the bounding box.
-  west      :: BoundingBox pt -> pt
-  -- | @northEast@ top-right corner of the bounding box.
-  northEast :: BoundingBox pt -> pt
-  -- | @southEast@ - bottom-right corner of the bounding box.
-  southEast :: BoundingBox pt -> pt
-  -- | @southWest@ - bottom-left corner of the bounding box.
-  southWest :: BoundingBox pt -> pt
-  -- | @northWest@ - top-left corner of the bounding box.
-  northWest :: BoundingBox pt -> pt 
+-- points on the boundary
 
-  -- defaults
-  northEast = bbTopRight
-  southWest = bbBottomLeft
+topLeft :: BoundingBox a -> Point2 a
+topLeft (BBox (P2 xmin _) (P2 _ ymax)) = P2 xmin ymax
 
+bottomRight :: BoundingBox a -> Point2 a
+bottomRight (BBox (P2 _ ymin) (P2 xmax _)) = P2 xmax ymin
 
+center :: Fractional a => BoundingBox a -> Point2 a
+center (BBox (P2 x y) (P2 x' y')) = P2 (x+ 0.5*(x'-x)) (y+0.5*(y'-x))
 
-instance Fractional a => ReferencePoints (Point2 a) where
-  center (BBox (P2 xmin ymin) (P2 xmax ymax)) = 
-    P2 (xmin + (0.5*(xmax-xmin))) (ymin + (0.5*(ymax-ymin))) 
+north :: Fractional a => BoundingBox a -> Point2 a
+north (BBox (P2 xmin _) (P2 xmax ymax)) = P2 (xmin + 0.5*(xmax-xmin)) ymax
 
-  north (BBox (P2 xmin _) (P2 xmax ymax)) = P2 (xmin + 0.5*(xmax-xmin)) ymax
+south :: Fractional a => BoundingBox a -> Point2 a
+south (BBox (P2 xmin ymin) (P2 xmax _)) = P2 (xmin + 0.5*(xmax-xmin)) ymin
 
-  south (BBox (P2 xmin ymin) (P2 xmax _)) = P2 (xmin + 0.5*(xmax-xmin)) ymin
+east :: Fractional a => BoundingBox a -> Point2 a
+east (BBox (P2 _ ymin) (P2 xmax ymax)) = P2 xmax (ymin + 0.5*(ymax-ymin))
 
-  east (BBox (P2 _ ymin) (P2 xmax ymax)) = P2 xmax (ymin + 0.5*(ymax-ymin))
+west :: Fractional a => BoundingBox a -> Point2 a
+west (BBox (P2 xmin ymin) (P2 _ ymax)) = P2 xmin (ymin + 0.5*(ymax-ymin))
 
-  west (BBox (P2 xmin ymin) (P2 _ ymax)) = P2 xmin (ymin + 0.5*(ymax-ymin))
+northEast :: BoundingBox a -> Point2 a
+southEast :: BoundingBox a -> Point2 a
+southWest :: BoundingBox a -> Point2 a
+northWest :: BoundingBox a -> Point2 a
 
-  southEast (BBox (P2 _ y) (P2 x _)) = P2 x y
+northEast = topRight
+southEast = bottomRight
+southWest = bottomLeft
+northWest = topLeft 
 
-  northWest (BBox (P2 x _) (P2 _ y))     = P2 x y
- 
+--------------------------------------------------------------------------------
 
+-- /planes/ on the bounding box
 
--- | Center a shape at the supplied point.
+leftPlane :: BoundingBox a -> a
+leftPlane (BBox (P2 l _) _) = l
 
-centeredAt :: (Fractional a, Ord a, HasPoints shape, Pointwise shape, 
-               AffineSpace (Pt shape), 
-               Pnt shape ~ Point2 a, Diff (Pt shape) ~ Vec2 a) 
-           => shape -> Point2 a -> shape
-centeredAt sh pt = pointwise (.+^ diff) sh
-  where
-    diff = pt .-. center (bounds sh) 
+rightPlane :: BoundingBox a -> a
+rightPlane (BBox _ (P2 r _)) = r
+
+lowerPlane :: BoundingBox a -> a
+lowerPlane (BBox (P2 _ l) _) = l
+
+upperPlane :: BoundingBox a -> a
+upperPlane (BBox _ (P2 _ u)) = u
+
 
 
 

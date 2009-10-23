@@ -9,7 +9,7 @@
 
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Alt.Geometry
+-- Module      :  Wumpus.Core.Geometry
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see LICENSE)
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -19,7 +19,7 @@
 -- 2D geometry
 --------------------------------------------------------------------------------
 
-module Wumpus.Alt.Geometry where
+module Wumpus.Core.Geometry where
 
 
 import Data.AffineSpace

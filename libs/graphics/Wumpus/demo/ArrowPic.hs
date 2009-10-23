@@ -2,9 +2,9 @@
 
 module ArrowPic where
 
-import Wumpus.Alt.Arrow
-import Wumpus.Alt.Geometry
-import Wumpus.Alt.Picture
+import Wumpus.Extra.Arrow
+import Wumpus.Core.Geometry
+import Wumpus.Core.Picture
 
 
 arr1 :: Arrow Double

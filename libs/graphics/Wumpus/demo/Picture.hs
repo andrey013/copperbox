@@ -2,8 +2,8 @@
 
 module Picture where
 
-import Wumpus.Alt.Geometry
-import Wumpus.Alt.Picture
+import Wumpus.Core.Geometry
+import Wumpus.Core.Picture
 
 import Data.VectorSpace
 

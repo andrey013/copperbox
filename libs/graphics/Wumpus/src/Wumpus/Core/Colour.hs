@@ -43,7 +43,7 @@ module Wumpus.Core.Colour
 
   ) where
 
-import Wumpus.Core.Fun
+import Wumpus.Core.Utils
 
 
 import Data.VectorSpace
