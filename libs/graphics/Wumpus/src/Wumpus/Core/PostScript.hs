@@ -22,7 +22,6 @@
 module Wumpus.Core.PostScript where
 
 import Wumpus.Core.Colour 
-import Wumpus.Core.GraphicsState
 
 import qualified Data.DList as DL
 import MonadLib
@@ -78,12 +77,59 @@ runWumpus :: PsEnv -> WumpusM a -> String
 runWumpus = ((DL.toList . snd) .) . pstId
 
 
+--------------------------------------------------------------------------------
+-- Graphics state datatypes
+
+data PsEnv = PsEnv { 
+       cPen         :: Pen,
+       cFont        :: Font,
+       cColour      :: DRGB
+    }
+  deriving (Eq,Show)
+
+
 env0 :: PsEnv 
 env0 = PsEnv { 
         cPen        = newPen,
         cFont       = Font "Helvetica" 10,
         cColour     = wumpusBlack
       }
+
+
+
+data LineCap = CapButt | CapRound | CapSquare
+  deriving (Enum,Eq,Show)
+
+data JoinStyle = JoinMiter | JoinRound | JoinBevel
+  deriving (Enum,Eq,Show)
+
+data DashPattern = Solid | Dash Int [Int]
+  deriving (Eq,Show)
+
+data Pen = Pen { 
+      lineWidth     :: Double,
+      miterLimit    :: Double,
+      lineCap       :: LineCap,
+      lineJoin      :: JoinStyle,
+      dashPattern   :: DashPattern 
+    }
+  deriving (Eq,Show)
+
+
+
+newPen :: Pen
+newPen = Pen { lineWidth    = 1.0,          
+               miterLimit   = 10.0,
+               lineCap      = CapButt, 
+               lineJoin     = JoinMiter,    
+               dashPattern  = Solid }
+
+
+data Font = Font { 
+      fontName    :: String,
+      unitSize    :: Int
+    }
+  deriving (Eq,Show)
 
 
 
