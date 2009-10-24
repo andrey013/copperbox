@@ -4,11 +4,14 @@ module LabelPic where
 import Wumpus.Core.Geometry
 import Wumpus.Core.Picture
 
-import Wumpus.Core.PostScript -- temporary til fonts/pens are sorted out
+import Wumpus.Extra.X11Colours
 
+-- import Wumpus.Core.PostScript -- temporary til fonts/pens are sorted out
+
+import Data.FunctionExtras ( (#) )
 
 lbl1 :: Picture Double
-lbl1 = picLabel' (Just (PSRgb 0 1 1), []) 10 1 30 26 "Hello\nWorld"
+lbl1 = picLabel 10 1 30 26 "Hello\nWorld" # setRGBColour aquamarine4 
 
 
 

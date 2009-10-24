@@ -20,6 +20,7 @@
 module Wumpus.Core.Picture where
 
 import Wumpus.Core.BoundingBox hiding ( center )
+import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.PostScript
 
@@ -278,6 +279,25 @@ transformBBox :: (Num u, Ord u)
 transformBBox fp = trace . map fp . corners
 
 
+setRGBColour :: DRGB -> Picture u -> Picture u
+setRGBColour (RGB3 r g b) = updateProps f f where 
+    f (_,xs) = (Just (PSRgb r g b),xs)
+
+
+
+
+-- Note /Multi/ pictures are not updated
+updateProps :: (PathProps -> PathProps) 
+            -> (LabelProps -> LabelProps) 
+            -> Picture u  
+            -> Picture u
+updateProps _ _ Empty                 = Empty
+updateProps f _ (Single  m prop p)    = Single m (f prop) p
+updateProps _ _ (Multi   m ps)        = Multi m ps              -- NO-OP!
+updateProps _ g (TLabel  m prop l)    = TLabel m (g prop) l 
+updateProps f _ (Picture m prop a  b) = Picture m (f prop) a b
+
+
 
 instance Pointwise (Polygon a) where
   type Pt (Polygon a) = Point2 a
@@ -347,7 +367,7 @@ updatePen :: PathProps -> WumpusM () -> WumpusM ()
 updatePen prop@(mbc,xs) ma
     | nullProps prop = ma
     | otherwise      = do { ps_gsave
-                          ; optSetColour mbc
+                          ; optColourCommand mbc
                           ; mapM_ penCommand xs
                           ; ma
                           ; ps_grestore
@@ -364,7 +384,7 @@ updateFont :: LabelProps -> WumpusM () -> WumpusM ()
 updateFont prop@(mbc,xs) ma 
     | nullProps prop = ma
     | otherwise      = do { ps_gsave
-                          ; optSetColour mbc
+                          ; optColourCommand mbc
                           ; mapM_ fontCommand xs
                           ; ma
                           ; ps_grestore
@@ -374,13 +394,13 @@ fontCommand :: FontAttr -> WumpusM ()
 fontCommand (FontName name) = ps_findfont name
 fontCommand (FontSize n)    = ps_scalefont n
 
-optSetColour :: Maybe PSColour -> WumpusM ()
-optSetColour = maybe (return ()) setColour
+optColourCommand :: Maybe PSColour -> WumpusM ()
+optColourCommand = maybe (return ()) colourCommand
 
-setColour :: PSColour -> WumpusM ()
-setColour (PSRgb r g b) = ps_setrgbcolor r g b
-setColour (PSHsb h s v) = ps_sethsbcolor h s v
-setColour (PSGray a)    = ps_setgray a
+colourCommand :: PSColour -> WumpusM ()
+colourCommand (PSRgb r g b) = ps_setrgbcolor r g b
+colourCommand (PSHsb h s v) = ps_sethsbcolor h s v
+colourCommand (PSGray a)    = ps_setgray a
 
 
 drawPath :: (Point2 Double -> Point2 Double) -> Path Double -> WumpusM ()
