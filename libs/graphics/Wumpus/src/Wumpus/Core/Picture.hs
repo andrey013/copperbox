@@ -31,8 +31,13 @@ import Data.Groupoid
 import Data.AffineSpace
 import Data.VectorSpace
 
-import Control.Monad ( zipWithM_ )
-import Data.List ( foldl' )
+import Control.Monad            ( zipWithM_ )
+import qualified Data.Foldable  as F
+import Data.List                ( foldl' )
+import Data.Sequence            ( Seq, (|>) )
+import qualified Data.Sequence  as S
+
+
 
 data Picture u = Empty
                | Single   (Measure u) PathProps (Path u)
@@ -42,10 +47,11 @@ data Picture u = Empty
   deriving (Eq,Show) 
 
 type Colour = Maybe PSColour
+type Font   = Maybe FontAttr
 
-type PictureProps = (Colour,[PenAttr])
-type PathProps    = (Colour,[PenAttr])
-type LabelProps   = (Colour,[FontAttr])
+type PictureProps = (Colour, Seq PenAttr)
+type PathProps    = (Colour, Seq PenAttr)
+type LabelProps   = (Colour, Font)
 
 -- Measure = (_current_ frame x bounding box)
 type Measure u = (Frame2 u, BoundingBox u) 
@@ -88,9 +94,12 @@ instance Groupoid (Path u) where
   Path dp st xs `gappend` Path _ st' xs' = Path dp st (xs ++ (Ls st' : xs'))
 
 
-noProp :: (Colour,[a])
-noProp = (Nothing,[])
+noProp :: (Colour,Seq a)
+noProp = (Nothing,S.empty)
 
+
+noFontProp :: (Colour,Font)
+noFontProp = (Nothing,Nothing)
 
 -- | Create a regular polygon with @n@ sides and /radius/ @r@ 
 -- centered at the origin.
@@ -130,15 +139,10 @@ picMultiPath ps = Multi (ortho zeroPt, gconcat (map tracePath ps)) (map f ps)
 
 
 picLabel :: (Num u, Ord u) => u -> u -> u -> u -> String -> Picture u
-picLabel fonth vdisp w h text = TLabel (ortho zeroPt, bb) noProp label where
+picLabel fonth vdisp w h text = TLabel (ortho zeroPt, bb) noFontProp label where
   bb    = trace [zeroPt, P2 w h]
   label = Label h fonth vdisp (lines text) 
 
-picLabel' :: (Num u, Ord u) => LabelProps -> u -> u -> u -> u -> String -> Picture u
-picLabel' fcmds fonth vdisp w h text = TLabel (ortho zeroPt, bb) fcmds label 
-  where
-    bb    = trace [zeroPt, P2 w h]
-    label = Label h fonth vdisp (lines text) 
 
 tracePath :: (Num u, Ord u) => Path u -> BoundingBox u
 tracePath = trace . extractPoints
@@ -283,6 +287,38 @@ setRGBColour :: DRGB -> Picture u -> Picture u
 setRGBColour (RGB3 r g b) = updateProps f f where 
     f (_,xs) = (Just (PSRgb r g b),xs)
 
+setHSBColour :: DHSB -> Picture u -> Picture u
+setHSBColour (HSB3 h s b) = updateProps f f where 
+    f (_,xs) = (Just (PSHsb h s b),xs)
+
+setGray :: Double -> Picture u -> Picture u
+setGray a = updateProps f f where 
+    f (_,xs) = (Just (PSGray a),xs)
+
+setLineWidth :: Double -> Picture u -> Picture u
+setLineWidth a = updateProps f id where 
+    f (c,se) = (c,se |> LineWidth a)   -- must be /last/.
+
+setMiterLimit :: Double -> Picture u -> Picture u
+setMiterLimit a = updateProps f id where 
+    f (c,se) = (c,se |> MiterLimit a)
+
+setLineCap :: LineCap -> Picture u -> Picture u
+setLineCap a = updateProps f id where 
+    f (c,se) = (c,se |> LineCap a)
+
+setLineJoin :: LineJoin -> Picture u -> Picture u
+setLineJoin a = updateProps f id where 
+    f (c,se) = (c,se |> LineJoin a)
+
+setDashPattern :: DashPattern -> Picture u -> Picture u
+setDashPattern a = updateProps f id where 
+    f (c,se) = (c,se |> DashPattern a)
+
+
+setFont :: String -> Int -> Picture u -> Picture u
+setFont name sz = updateProps id g where 
+    g (c,_) = (c,Just $ FontAttr name sz)
 
 
 
@@ -364,11 +400,11 @@ composeFrames :: Num u
 composeFrames f fr = f . (pointInFrame `flip` fr)
 
 updatePen :: PathProps -> WumpusM () -> WumpusM ()
-updatePen prop@(mbc,xs) ma
+updatePen prop@(mbc,se) ma
     | nullProps prop = ma
     | otherwise      = do { ps_gsave
                           ; optColourCommand mbc
-                          ; mapM_ penCommand xs
+                          ; F.mapM_ penCommand se
                           ; ma
                           ; ps_grestore
                           }
@@ -381,18 +417,20 @@ penCommand (LineJoin lj)    = ps_setlinejoin lj
 penCommand (DashPattern dp) = ps_setdash dp
 
 updateFont :: LabelProps -> WumpusM () -> WumpusM ()
-updateFont prop@(mbc,xs) ma 
-    | nullProps prop = ma
-    | otherwise      = do { ps_gsave
-                          ; optColourCommand mbc
-                          ; mapM_ fontCommand xs
-                          ; ma
-                          ; ps_grestore
-                          }
+updateFont prop@(mbc,mfnt) ma 
+    | nullFontProps prop = ma
+    | otherwise          = do { ps_gsave
+                              ; optColourCommand mbc
+                              ; optFontCommand mfnt
+                              ; ma
+                              ; ps_grestore
+                              }
+
+optFontCommand :: Maybe FontAttr -> WumpusM ()
+optFontCommand = maybe (return ()) fontCommand
 
 fontCommand :: FontAttr -> WumpusM ()
-fontCommand (FontName name) = ps_findfont name
-fontCommand (FontSize n)    = ps_scalefont n
+fontCommand (FontAttr name sz) = ps_findfont name >> ps_scalefont sz >> ps_setfont
 
 optColourCommand :: Maybe PSColour -> WumpusM ()
 optColourCommand = maybe (return ()) colourCommand
@@ -453,6 +491,10 @@ labelDisplacements fonth totalh rowdisp nrows =
     start     = 0.5 * (totalh-internalh)
 
 
-nullProps :: (Colour,[a]) -> Bool
-nullProps (Nothing,[]) = True 
+nullProps :: (Colour, Seq a) -> Bool
+nullProps (Nothing,se) = S.null se
 nullProps _            = False
+
+nullFontProps :: (Colour, Font) -> Bool
+nullFontProps (Nothing,Nothing) = True
+nullFontProps _                 = False

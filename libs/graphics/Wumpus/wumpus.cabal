@@ -29,8 +29,9 @@ library
     Wumpus.Core.Picture,
     Wumpus.Core.PostScript,
     Wumpus.Core.Utils,
-    Wumpus.Extra.Arrow
-
+    Wumpus.Extra.Arrow,
+    Wumpus.Extra.SVGColours,
+    Wumpus.Extra.X11Colours
   other-modules:
     
   extensions:
