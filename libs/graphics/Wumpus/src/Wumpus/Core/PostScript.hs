@@ -21,7 +21,7 @@
 
 module Wumpus.Core.PostScript where
 
-import Wumpus.Core.Colour 
+-- import Wumpus.Core.Colour 
 
 import qualified Data.DList as DL
 import MonadLib
@@ -81,11 +81,13 @@ writePS filepath pstext = writeFile filepath (bang ++ pstext)
 -- Graphics state datatypes
 
 
-data GraphicsState = PenUpdate Pen
-                   | FontUpdate Font
-                   | ColourCmd DRGB
+data Pen = LineWidth   Double
+         | MiterLimit  Double
+         | LineCap     LineCap
+         | LineJoin    LineJoin
+         | DashPattern DashPattern 
+         | PenColour   PSColour
   deriving (Eq,Show)
-
 
 data LineCap = CapButt | CapRound | CapSquare
   deriving (Enum,Eq,Show)
@@ -96,20 +98,14 @@ data LineJoin = JoinMiter | JoinRound | JoinBevel
 data DashPattern = Solid | Dash Int [Int]
   deriving (Eq,Show)
 
-data Pen = LineWidth   Double
-         | MiterLimit  Double
-         | LineCap     LineCap
-         | LineJoin    LineJoin
-         | DashPattern DashPattern 
-  deriving (Eq,Show)
 
-
-data Font = FontName String
-          | FontSize Int
+data Font = FontName   String
+          | FontSize   Int
+          | FontColour PSColour
   deriving (Eq,Show)
 
 data PSColour = PSRgb  Double Double Double
-              | PSHsv  Double Double Double
+              | PSHsb  Double Double Double
               | PSGray Double
   deriving (Eq,Show)
 
@@ -212,6 +208,9 @@ ps_setgray = command "setgray" . return . dtrunc
 
 ps_setrgbcolor :: Double -> Double -> Double -> WumpusM ()
 ps_setrgbcolor r g b = command "setrgbcolor" $ map dtrunc [r,g,b]
+
+ps_sethsbcolor :: Double -> Double -> Double -> WumpusM ()
+ps_sethsbcolor h s b = command "sethsbcolor" $ map dtrunc [h,s,b]
 
 
 --------------------------------------------------------------------------------

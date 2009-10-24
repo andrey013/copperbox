@@ -4,8 +4,11 @@ module LabelPic where
 import Wumpus.Core.Geometry
 import Wumpus.Core.Picture
 
+import Wumpus.Core.PostScript -- temporary til fonts/pens are sorted out
+
+
 lbl1 :: Picture Double
-lbl1 = picLabel 10 1 30 26 "Hello\nWorld"
+lbl1 = picLabel' [FontColour (PSRgb 0 1 1)] 10 1 30 26 "Hello\nWorld"
 
 
 

@@ -30,13 +30,14 @@ import Data.Groupoid
 import Data.AffineSpace
 import Data.VectorSpace
 
-import Control.Monad ( zipWithM_ )
-import Data.List ( foldl' )
+import Control.Monad ( zipWithM_, when )
+import Data.List ( foldl', find )
+import Data.Maybe ( isJust )
 
 data Picture u = Empty
-               | Single   (Measure u) (Path u)
-               | Multi    (Measure u) [Path u]
-               | TLabel   (Measure u) (Label u)
+               | Single   (Measure u) [Pen] (Path u)
+               | Multi    (Measure u) [([Pen],Path u)]
+               | TLabel   (Measure u) [Font] (Label u)
                | Picture  (Measure u) (Picture u) (Picture u)
   deriving (Eq,Show) 
 
@@ -105,24 +106,30 @@ straightLinePath (x:xs) = (x, map Ls xs)
 
   
 picPolygon :: (Num u, Ord u) => DrawProp -> Polygon u -> Picture u
-picPolygon dp (Polygon xs) = Single (ortho zeroPt,trace xs) path
+picPolygon dp (Polygon xs) = Single (ortho zeroPt,trace xs) [] path
   where 
     path         = Path dp start segs
     (start,segs) = straightLinePath xs
 
 
 picPath :: (Num u, Ord u) => Path u -> Picture u
-picPath p = Single (ortho zeroPt, tracePath p) p
+picPath p = Single (ortho zeroPt, tracePath p) [] p
 
 picMultiPath :: (Num u, Ord u) => [Path u] -> Picture u
-picMultiPath ps = Multi (ortho zeroPt, gconcat (map tracePath ps)) ps
+picMultiPath ps = Multi (ortho zeroPt, gconcat (map tracePath ps)) (map f ps)
+  where f a = ([],a)
 
 
 picLabel :: (Num u, Ord u) => u -> u -> u -> u -> String -> Picture u
-picLabel fonth vdisp w h text = TLabel (ortho zeroPt, bb) label where
+picLabel fonth vdisp w h text = TLabel (ortho zeroPt, bb) [] label where
   bb    = trace [zeroPt, P2 w h]
   label = Label h fonth vdisp (lines text) 
 
+picLabel' :: (Num u, Ord u) => [Font] -> u -> u -> u -> u -> String -> Picture u
+picLabel' fcmds fonth vdisp w h text = TLabel (ortho zeroPt, bb) fcmds label 
+  where
+    bb    = trace [zeroPt, P2 w h]
+    label = Label h fonth vdisp (lines text) 
 
 tracePath :: (Num u, Ord u) => Path u -> BoundingBox u
 tracePath = trace . extractPoints
@@ -180,18 +187,18 @@ drawBounds p     = p `overlay` pbb where
 
 picBounds :: (Num u, Ord u) => Picture u -> BoundingBox u
 picBounds Empty                = error $ "picBounds Empty"
-picBounds (Single  (_,bb) _)   = bb
+picBounds (Single  (_,bb) _ _) = bb
 picBounds (Multi   (_,bb) _)   = bb
-picBounds (TLabel  (_,bb) _)   = bb
+picBounds (TLabel  (_,bb) _ _) = bb
 picBounds (Picture (_,bb) _ _) = bb
 
 
 mapMeasure :: (Measure u -> Measure u) -> Picture u -> Picture u
-mapMeasure _ Empty            = Empty
-mapMeasure f (Single  m p)    = Single (f m) p
-mapMeasure f (Multi   m ps)   = Multi (f m) ps
-mapMeasure f (TLabel  m l)    = TLabel (f m) l 
-mapMeasure f (Picture m a  b) = Picture (f m) a b
+mapMeasure _ Empty              = Empty
+mapMeasure f (Single  m pen p)  = Single (f m) pen p
+mapMeasure f (Multi   m ps)     = Multi (f m) ps
+mapMeasure f (TLabel  m font l) = TLabel (f m) font l 
+mapMeasure f (Picture m a  b)   = Picture (f m) a b
 
 
 move :: Num u => Vec2 u -> Picture u -> Picture u
@@ -308,13 +315,14 @@ psDraw pic = prologue ++ runWumpus (drawPicture k pic) ++ epilogue
 drawPicture :: (Point2 Double -> Point2 Double) 
             -> Picture Double 
             -> WumpusM ()
-drawPicture _ Empty                = return ()
-drawPicture f (Single (fr,_) p)    = drawPath (composeFrames f fr) p
-drawPicture f (Multi (fr,_) ps)    = 
-    mapM_ (drawPath (composeFrames f fr)) ps
-drawPicture f (TLabel (fr,bb) l)   = 
-    drawLabel (composeFrames f fr) (bottomLeft bb) l
-drawPicture f (Picture (fr,_) a b) = do
+drawPicture _ Empty                   = return ()
+drawPicture f (Single (fr,_) pen p)   =
+    updatePen pen $ drawPath (composeFrames f fr) p
+drawPicture f (Multi (fr,_) ps)       = 
+    mapM_ (\(pen,p) -> updatePen pen $ drawPath (composeFrames f fr) p) ps
+drawPicture f (TLabel (fr,bb) font l) =
+    updateFont font $ drawLabel (composeFrames f fr) (bottomLeft bb) l
+drawPicture f (Picture (fr,_) a b)    = do
     drawPicture (composeFrames f fr) a
     drawPicture (composeFrames f fr) b
 
@@ -322,6 +330,47 @@ drawPicture f (Picture (fr,_) a b) = do
 composeFrames :: Num u 
               => (Point2 u -> Point2 u) -> Frame2 u -> (Point2 u -> Point2 u)
 composeFrames f fr = f . (pointInFrame `flip` fr)
+
+updatePen :: [Pen] -> WumpusM () -> WumpusM ()
+updatePen [] ma = ma
+updatePen ps ma = do 
+    ps_gsave
+    mapM_ penCommand ps
+    ma
+    ps_grestore
+
+penCommand :: Pen -> WumpusM ()
+penCommand (LineWidth d)    = ps_setlinewidth d
+penCommand (MiterLimit d)   = ps_setmiterlimit d
+penCommand (LineCap lc)     = ps_setlinecap lc
+penCommand (LineJoin lj)    = ps_setlinejoin lj
+penCommand (DashPattern dp) = ps_setdash dp
+penCommand (PenColour c)    = setColour c
+
+updateFont :: [Font] -> WumpusM () -> WumpusM ()
+updateFont [] ma = ma
+updateFont ps ma = do 
+    ps_gsave
+    mapM_ fontCommand ps
+    when (hasFontChange ps) ps_setfont
+    ma
+    ps_grestore
+  where
+    hasFontChange = isJust . find match
+    match (FontName _) = True
+    match (FontSize _) = True
+    match _            = False
+
+fontCommand :: Font -> WumpusM ()
+fontCommand (FontName name) = ps_findfont name
+fontCommand (FontSize n)    = ps_scalefont n
+fontCommand (FontColour c)  = setColour c
+
+
+setColour :: PSColour -> WumpusM ()
+setColour (PSRgb r g b) = ps_setrgbcolor r g b
+setColour (PSHsb h s v) = ps_sethsbcolor h s v
+setColour (PSGray a)    = ps_setgray a
 
 
 drawPath :: (Point2 Double -> Point2 Double) -> Path Double -> WumpusM ()
