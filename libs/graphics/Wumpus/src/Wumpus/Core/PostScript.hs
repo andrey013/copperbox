@@ -45,10 +45,10 @@ instance Monoid (WumpusM ()) where
   mappend = (>>) 
 
 
-newtype PsT m a = PsT { unPs :: ReaderT PsEnv (WriterT PsOutput m) a }
+newtype PsT m a = PsT { unPs :: WriterT PsOutput m a }
 
-runPsT :: Monad m => PsEnv -> PsT m a -> m (a,PsOutput)
-runPsT st m = runWriterT $ runReaderT st (unPs m) 
+runPsT :: Monad m => PsT m a -> m (a,PsOutput)
+runPsT m = runWriterT (unPs m) 
 
 instance Monad m => Functor (PsT m) where
   fmap f (PsT mf) = PsT $ fmap f mf 
@@ -60,83 +60,59 @@ instance Monad m => Monad (PsT m) where
 instance Monad m => WriterM (PsT m) PsOutput where
   put = PsT . put
 
-instance Monad m => ReaderM (PsT m) PsEnv where
-  ask = PsT $ ask
-
-instance Monad m => RunReaderM (PsT m) PsEnv where
-  local e mf = PsT $ local e (unPs mf)
-
 instance MonadT PsT where
-  lift = PsT . lift . lift 
+  lift = PsT . lift
 
 
-pstId :: PsEnv -> PsT Id a -> (a,PsOutput)
-pstId env m = runId $ runPsT env m  
+pstId :: PsT Id a -> (a,PsOutput)
+pstId m = runId $ runPsT m  
 
-runWumpus :: PsEnv -> WumpusM a -> String
-runWumpus = ((DL.toList . snd) .) . pstId
-
-
---------------------------------------------------------------------------------
--- Graphics state datatypes
-
-data PsEnv = PsEnv { 
-       cPen         :: Pen,
-       cFont        :: Font,
-       cColour      :: DRGB
-    }
-  deriving (Eq,Show)
-
-
-env0 :: PsEnv 
-env0 = PsEnv { 
-        cPen        = newPen,
-        cFont       = Font "Helvetica" 10,
-        cColour     = wumpusBlack
-      }
-
-
-
-data LineCap = CapButt | CapRound | CapSquare
-  deriving (Enum,Eq,Show)
-
-data JoinStyle = JoinMiter | JoinRound | JoinBevel
-  deriving (Enum,Eq,Show)
-
-data DashPattern = Solid | Dash Int [Int]
-  deriving (Eq,Show)
-
-data Pen = Pen { 
-      lineWidth     :: Double,
-      miterLimit    :: Double,
-      lineCap       :: LineCap,
-      lineJoin      :: JoinStyle,
-      dashPattern   :: DashPattern 
-    }
-  deriving (Eq,Show)
-
-
-
-newPen :: Pen
-newPen = Pen { lineWidth    = 1.0,          
-               miterLimit   = 10.0,
-               lineCap      = CapButt, 
-               lineJoin     = JoinMiter,    
-               dashPattern  = Solid }
-
-
-data Font = Font { 
-      fontName    :: String,
-      unitSize    :: Int
-    }
-  deriving (Eq,Show)
-
+runWumpus :: WumpusM a -> String
+runWumpus = (DL.toList . snd)  . pstId
 
 
 writePS :: FilePath -> String -> IO ()
 writePS filepath pstext = writeFile filepath (bang ++ pstext) 
   where
     bang = "%!PS-Adobe-2.0\n"
+
+
+--------------------------------------------------------------------------------
+-- Graphics state datatypes
+
+
+data GraphicsState = PenUpdate Pen
+                   | FontUpdate Font
+                   | ColourCmd DRGB
+  deriving (Eq,Show)
+
+
+data LineCap = CapButt | CapRound | CapSquare
+  deriving (Enum,Eq,Show)
+
+data LineJoin = JoinMiter | JoinRound | JoinBevel
+  deriving (Enum,Eq,Show)
+
+data DashPattern = Solid | Dash Int [Int]
+  deriving (Eq,Show)
+
+data Pen = LineWidth   Double
+         | MiterLimit  Double
+         | LineCap     LineCap
+         | LineJoin    LineJoin
+         | DashPattern DashPattern 
+  deriving (Eq,Show)
+
+
+data Font = FontName String
+          | FontSize Int
+  deriving (Eq,Show)
+
+data PSColour = PSRgb  Double Double Double
+              | PSHsv  Double Double Double
+              | PSGray Double
+  deriving (Eq,Show)
+
 
 
 --------------------------------------------------------------------------------
@@ -201,72 +177,9 @@ withPage m = pageStart >> m >>= \a -> pageEnd >> return a
 
     pageEnd   = comment "-------------------"    
 
- 
+
 --------------------------------------------------------------------------------
--- graphics state operators 
-
--- c.f. local of the Reader monad (mapReader in MonadLib). 
--- Checkpoint the state, run the computation restore the state 
--- This pattern is very common in PostScript where the action 
--- is run between @gsave@ and @grestore@.
-saveExecRestore :: (PsEnv -> PsEnv) -> WumpusM a -> WumpusM a
-saveExecRestore f mf = do 
-    command "gsave" []
-    a   <- mapReader f mf
-    command "grestore" []
-    return a
-
-
-withDiff :: Eq e 
-         => (PsEnv -> e) 
-         -> (PsEnv -> PsEnv) 
-         -> e 
-         -> WumpusM () 
-         -> WumpusM a 
-         -> WumpusM a
-withDiff query update e updCmd mf =
-  asks query >>= \v -> if (e==v) then mf 
-                                 else saveExecRestore update (updCmd >> mf)
-
-
-
-localRgbColour :: DRGB -> WumpusM a -> WumpusM a
-localRgbColour c mf = 
-    withDiff cColour (\e -> e {cColour=c}) c (updColour c) mf
-  where
-    updColour (RGB3 r g b) = command "setrgbcolor" $ map dtrunc [r,g,b]
-
-localGray :: Double -> WumpusM a -> WumpusM a
-localGray gray mf = 
-    withDiff cColour (\e -> e {cColour = c}) c (updColour gray) mf
-  where
-    c = gray2rgb gray
-    updColour g = command "setgray" [dtrunc g]
-
-
-localPen :: Pen -> WumpusM a -> WumpusM a
-localPen pen mf = 
-    withDiff cPen (\e -> e {cPen=pen}) pen updPen mf 
-  where
-    updPen = do
-        command "setlinewidth"  [dtrunc $ lineWidth pen]
-        command "setmiterlimit" [dtrunc $ miterLimit pen]
-        command "setlinecap"    [show   $ lineCap pen]
-        command "setlinejoin"   [show   $ lineJoin pen]
-        setDash (dashPattern pen)  
-        
-    setDash Solid        = command "setdash" ["[]", "0"]
-    setDash (Dash n arr) = command "setdash" [showArray shows arr, show n]
-
-
-localFont :: Font -> WumpusM a -> WumpusM a 
-localFont font mf = 
-    withDiff cFont (\e -> e {cFont=font}) font (updFont font) mf
-  where
-    updFont (Font name sz) = do
-        command "findfont" ['/' : name]
-        command "scalefont" [show sz]
-        command "setfont" []
+-- graphics state operators
 
 
 ps_gsave :: WumpusM ()
@@ -274,6 +187,35 @@ ps_gsave = command "gsave" []
 
 ps_grestore :: WumpusM () 
 ps_grestore = command "grestore" []
+
+
+ps_setlinewidth :: Double -> WumpusM ()
+ps_setlinewidth = command "setlinewidth" . return . dtrunc
+
+ps_setlinecap :: LineCap -> WumpusM ()
+ps_setlinecap = command "setlinecap" . return . show . fromEnum
+
+ps_setlinejoin :: LineJoin -> WumpusM ()
+ps_setlinejoin = command "setlinejoin" . return . show . fromEnum
+
+ps_setmiterlimit :: Double -> WumpusM ()
+ps_setmiterlimit = command "setmiterlimit" . return . dtrunc
+
+ps_setdash :: DashPattern -> WumpusM ()
+ps_setdash Solid        = command "setdash" ["[]", "0"]
+ps_setdash (Dash n arr) = command "setdash" [showArray shows arr, show n]
+
+
+ps_setgray :: Double -> WumpusM ()
+ps_setgray = command "setgray" . return . dtrunc 
+
+
+ps_setrgbcolor :: Double -> Double -> Double -> WumpusM ()
+ps_setrgbcolor r g b = command "setrgbcolor" $ map dtrunc [r,g,b]
+
+
+--------------------------------------------------------------------------------
+-- coordinate system and matrix operators 
 
 ps_translate :: Double -> Double -> WumpusM ()
 ps_translate tx ty = do
@@ -286,11 +228,9 @@ ps_concat :: Double -> Double -> Double
 ps_concat a b c d e f = command "concat" [mat] where 
     mat = showArray ((++) . dtrunc) [a,b,c,d,e,f]
 
+
 --------------------------------------------------------------------------------
 -- Path construction operators
-
-
-
 
 ps_newpath :: WumpusM ()
 ps_newpath = command "newpath" []
@@ -350,6 +290,14 @@ ps_stroke = command "stroke" []
 --------------------------------------------------------------------------------
 -- Character and font operators
 
+ps_findfont :: String -> WumpusM () 
+ps_findfont = command "findfont" . return . ('/' :)
+
+ps_scalefont :: Int -> WumpusM ()
+ps_scalefont = command "scalefont" . return . show
+
+ps_setfont :: WumpusM ()
+ps_setfont = command "setfont" []
 
 ps_show :: String -> WumpusM ()
 ps_show str = command "show" [showStr str]

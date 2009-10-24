@@ -287,7 +287,7 @@ writePicture filepath pic = writeFile filepath $ psDraw pic
 
 -- | Draw a picture, generating PostScript output.
 psDraw :: Picture Double -> PostScript
-psDraw pic = prologue ++ runWumpus env0 (drawPicture k pic) ++ epilogue
+psDraw pic = prologue ++ runWumpus (drawPicture k pic) ++ epilogue
   where
     k        = pointInFrame `flip` (ortho zeroPt)
     prologue = unlines $ [ "%!PS-Adobe-2.0"

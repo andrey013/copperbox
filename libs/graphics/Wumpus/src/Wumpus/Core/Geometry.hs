@@ -21,7 +21,6 @@
 
 module Wumpus.Core.Geometry where
 
-
 import Data.AffineSpace
 import Data.VectorSpace
 
