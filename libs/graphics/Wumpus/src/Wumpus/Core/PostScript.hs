@@ -81,12 +81,11 @@ writePS filepath pstext = writeFile filepath (bang ++ pstext)
 -- Graphics state datatypes
 
 
-data Pen = LineWidth   Double
-         | MiterLimit  Double
-         | LineCap     LineCap
-         | LineJoin    LineJoin
-         | DashPattern DashPattern 
-         | PenColour   PSColour
+data PenAttr = LineWidth   Double
+             | MiterLimit  Double
+             | LineCap     LineCap
+             | LineJoin    LineJoin
+             | DashPattern DashPattern 
   deriving (Eq,Show)
 
 data LineCap = CapButt | CapRound | CapSquare
@@ -99,9 +98,8 @@ data DashPattern = Solid | Dash Int [Int]
   deriving (Eq,Show)
 
 
-data Font = FontName   String
-          | FontSize   Int
-          | FontColour PSColour
+data FontAttr = FontName   String
+              | FontSize   Int
   deriving (Eq,Show)
 
 data PSColour = PSRgb  Double Double Double
