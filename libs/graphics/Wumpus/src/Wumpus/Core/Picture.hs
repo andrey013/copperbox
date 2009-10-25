@@ -74,11 +74,6 @@ data Path u = Path DrawProp (Point2 u) [PathSeg u]
 type DPath = Path Double
 
 
-newtype Polygon u = Polygon { vertexList :: [Point2 u] }
-  deriving (Eq,Show)
-
-type DPolygon = Polygon Double
-
 data Label u = Label {
       labelInitialHeight  :: u, -- store the height /before/ any affine trafos
       labelFontSize       :: u,
@@ -94,137 +89,14 @@ instance Groupoid (Path u) where
   Path dp st xs `gappend` Path _ st' xs' = Path dp st (xs ++ (Ls st' : xs'))
 
 
-noProp :: (Colour,Seq a)
-noProp = (Nothing,S.empty)
+instance Pointwise (Path u) where
+  type Pt (Path u) = Point2 u
+  pointwise f (Path dp st xs) = Path dp (f st) (map (pointwise f) xs)
 
-
-noFontProp :: (Colour,Font)
-noFontProp = (Nothing,Nothing)
-
--- | Create a regular polygon with @n@ sides and /radius/ @r@ 
--- centered at the origin.
-regularPolygon :: (Floating u, Real u)
-               => Int -> u -> Polygon u
-regularPolygon n r = Polygon $ circular $ replicate n (zeroPt .+^ (V2 0 r)) 
-
-
--- | Create an isosceles rectangle with bottom-left corner at the 
--- origin, the base on the horizontal plane with width @bw@. The 
--- height is @h@.
-isoscelesTriangle :: Fractional u => u -> u -> Polygon u
-isoscelesTriangle bw h = Polygon $ sequence [id,f2,f3] zeroPt where
-  f2 = (.+^ hvec bw)
-  f3 = (.+^ V2 (bw/2) h)
-
-
-
-straightLinePath :: [Point2 u] -> (Point2 u, [PathSeg u])
-straightLinePath []     = error "polygonPath - empty Polygon"
-straightLinePath (x:xs) = (x, map Ls xs)
-
-  
-picPolygon :: (Num u, Ord u) => DrawProp -> Polygon u -> Picture u
-picPolygon dp (Polygon xs) = Single (ortho zeroPt,trace xs) noProp path
-  where 
-    path         = Path dp start segs
-    (start,segs) = straightLinePath xs
-
-
-picPath :: (Num u, Ord u) => Path u -> Picture u
-picPath p = Single (ortho zeroPt, tracePath p) noProp p
-
-picMultiPath :: (Num u, Ord u) => [Path u] -> Picture u
-picMultiPath ps = Multi (ortho zeroPt, gconcat (map tracePath ps)) (map f ps)
-  where f a = (noProp,a)
-
-
-picLabel :: (Num u, Ord u) => u -> u -> u -> u -> String -> Picture u
-picLabel fonth vdisp w h text = TLabel (ortho zeroPt, bb) noFontProp label where
-  bb    = trace [zeroPt, P2 w h]
-  label = Label h fonth vdisp (lines text) 
-
-
-tracePath :: (Num u, Ord u) => Path u -> BoundingBox u
-tracePath = trace . extractPoints
-
-extractPoints :: Path u -> [Point2 u]
-extractPoints (Path _ st xs) = st : foldr f [] xs where
-    f (Ls p)        acc = p : acc
-    f (Cs p1 p2 p3) acc = p1 : p2 : p3 : acc 
-
-extractPolygonPath :: Polygon u -> Path u
-extractPolygonPath p = Path CStroke p0 ps where
-  (p0,ps) = straightLinePath $ vertexList p 
-
-
-
-bbPolygon :: (Num u, Ord u) => Polygon u -> BoundingBox u
-bbPolygon (Polygon xs)     = trace xs 
-
-arrange :: (Num u, Ord u)
-        => (Picture u -> Picture u -> Vec2 u) 
-        -> Picture u
-        -> Picture u 
-        -> Picture u
-arrange _ a     Empty = a
-arrange _ Empty b     = b
-arrange f a     b     = Picture (ortho zeroPt, bb) noProp a b' where
-    b' = move (f a b) b
-    bb = union (picBounds a) (picBounds b')
-    
-   
-
-(<>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-(<>) = arrange $ twine fn (rightPlane . picBounds) (leftPlane . picBounds)
-  where fn = hvec `oo` (-) 
-
-
-(</>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-(</>) = arrange $ twine fn (lowerPlane . picBounds) (upperPlane . picBounds)
-  where fn = vvec `oo` (-)
-
-overlay :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-overlay = arrange (\_ _ -> V2 0 0)
-
-overlays :: (Num u, Ord u) => [Picture u] -> Picture u
-overlays []     = error "overlays - empty list"
-overlays (x:xs) = foldl' overlay x xs
-
-drawBounds :: (Num u, Ord u) => Picture u -> Picture u
-drawBounds Empty = Empty
-drawBounds p     = p `overlay` pbb where
-    bb  = picBounds p
-    pbb = picPolygon CStroke (Polygon $ corners bb)
-                   
-
-
-picBounds :: (Num u, Ord u) => Picture u -> BoundingBox u
-picBounds Empty                  = error $ "picBounds Empty"
-picBounds (Single  (_,bb) _ _)   = bb
-picBounds (Multi   (_,bb) _)     = bb
-picBounds (TLabel  (_,bb) _ _)   = bb
-picBounds (Picture (_,bb) _ _ _) = bb
-
-
-mapMeasure :: (Measure u -> Measure u) -> Picture u -> Picture u
-mapMeasure _ Empty                 = Empty
-mapMeasure f (Single  m prop p)    = Single (f m) prop p
-mapMeasure f (Multi   m ps)        = Multi (f m) ps
-mapMeasure f (TLabel  m prop l)    = TLabel (f m) prop l 
-mapMeasure f (Picture m prop a  b) = Picture (f m) prop a b
-
-
-move :: Num u => Vec2 u -> Picture u -> Picture u
-move v = mapMeasure (moveMeasure v) 
-
-  
-moveMeasure :: Num u => Vec2 u -> Measure u -> Measure u
-moveMeasure v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb) 
-
-center :: (Fractional u, Ord u) => Picture u -> Point2 u
-center Empty = zeroPt
-center p     = fn $ picBounds p where
-    fn (BBox bl tr) = bl .+^ (0.5 *^ (tr .-. bl))
+instance Pointwise (PathSeg u) where
+  type Pt (PathSeg u) = Point2 u
+  pointwise f (Ls p)        = Ls (f p)
+  pointwise f (Cs p1 p2 p3) = Cs (f p1) (f p2) (f p3)
 
 
 instance (Floating u, Real u) => Rotate (Picture u) where
@@ -233,8 +105,6 @@ instance (Floating u, Real u) => Rotate (Picture u) where
 instance (Floating u, Real u) => RotateAbout (Picture u) where
   type RotateAboutUnit (Picture u) = u
   rotateAbout = rotatePictureAbout
-
-
 
 instance (Num u, Ord u) => Scale (Picture u) where
   type ScaleUnit (Picture u) = u
@@ -245,7 +115,7 @@ instance (Num u, Ord u) => Translate (Picture u) where
   translate = translatePicture
 
 
--- This is a rotation about the origin...
+-- Helpers for the affine transformations
 
 rotatePicture :: (Real u, Floating u) => Radian -> Picture u -> Picture u
 rotatePicture = subst' transformPicture rotate rotate
@@ -272,6 +142,7 @@ transformPicture fp fv =
     mapMeasure $ prod (transformFrame fp fv) (transformBBox fp)
 
 
+
 transformFrame :: (Point2 u -> Point2 u) -> (Vec2 u -> Vec2 u) -> Frame2 u -> Frame2 u
 transformFrame fp fv (Frame2 o vx vy) = Frame2 (fp o) (fv vx) (fv vy)    
 
@@ -281,6 +152,123 @@ transformFrame fp fv (Frame2 o vx vy) = Frame2 (fp o) (fv vx) (fv vy)
 transformBBox :: (Num u, Ord u)
               => (Point2 u -> Point2 u) -> BoundingBox u -> BoundingBox u
 transformBBox fp = trace . map fp . corners
+
+
+--------------------------------------------------------------------------------
+
+
+noProp :: (Colour,Seq a)
+noProp = (Nothing,S.empty)
+
+
+noFontProp :: (Colour,Font)
+noFontProp = (Nothing,Nothing)
+
+
+nullProps :: (Colour, Seq a) -> Bool
+nullProps (Nothing,se) = S.null se
+nullProps _            = False
+
+nullFontProps :: (Colour, Font) -> Bool
+nullFontProps (Nothing,Nothing) = True
+nullFontProps _                 = False
+
+
+
+straightLinePath :: [Point2 u] -> (Point2 u, [PathSeg u])
+straightLinePath []     = error "polygonPath - empty Polygon"
+straightLinePath (x:xs) = (x, map Ls xs)
+
+
+picPath :: (Num u, Ord u) => Path u -> Picture u
+picPath p = Single (ortho zeroPt, tracePath p) noProp p
+
+picMultiPath :: (Num u, Ord u) => [Path u] -> Picture u
+picMultiPath ps = Multi (ortho zeroPt, gconcat (map tracePath ps)) (map f ps)
+  where f a = (noProp,a)
+
+
+picLabel :: (Num u, Ord u) => u -> u -> u -> u -> String -> Picture u
+picLabel fonth vdisp w h text = TLabel (ortho zeroPt, bb) noFontProp label where
+  bb    = trace [zeroPt, P2 w h]
+  label = Label h fonth vdisp (lines text) 
+
+
+tracePath :: (Num u, Ord u) => Path u -> BoundingBox u
+tracePath = trace . extractPoints
+
+extractPoints :: Path u -> [Point2 u]
+extractPoints (Path _ st xs) = st : foldr f [] xs where
+    f (Ls p)        acc = p : acc
+    f (Cs p1 p2 p3) acc = p1 : p2 : p3 : acc 
+
+
+arrange :: (Num u, Ord u)
+        => (Picture u -> Picture u -> Vec2 u) 
+        -> Picture u
+        -> Picture u 
+        -> Picture u
+arrange _ a     Empty = a
+arrange _ Empty b     = b
+arrange f a     b     = Picture (ortho zeroPt, bb) noProp a b' where
+    b' = move (f a b) b
+    bb = union (extractBounds a) (extractBounds b')
+    
+   
+
+(<>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
+(<>) = arrange $ 
+         twine fn (rightPlane . extractBounds) (leftPlane . extractBounds)
+  where fn = hvec `oo` (-) 
+
+
+(</>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
+(</>) = arrange $ 
+          twine fn (lowerPlane . extractBounds) (upperPlane . extractBounds)
+  where fn = vvec `oo` (-)
+
+overlay :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
+overlay = arrange (\_ _ -> V2 0 0)
+
+overlays :: (Num u, Ord u) => [Picture u] -> Picture u
+overlays []     = error "overlays - empty list"
+overlays (x:xs) = foldl' overlay x xs
+
+drawBounds :: (Num u, Ord u) => Picture u -> Picture u
+drawBounds Empty = Empty
+drawBounds p     = p `overlay` (picPath $ Path CStroke p0 ps) where
+    bb      = extractBounds p
+    (p0,ps) = straightLinePath $ corners bb 
+
+
+extractBounds :: (Num u, Ord u) => Picture u -> BoundingBox u
+extractBounds Empty                  = error $ "extractBounds Empty"
+extractBounds (Single  (_,bb) _ _)   = bb
+extractBounds (Multi   (_,bb) _)     = bb
+extractBounds (TLabel  (_,bb) _ _)   = bb
+extractBounds (Picture (_,bb) _ _ _) = bb
+
+
+mapMeasure :: (Measure u -> Measure u) -> Picture u -> Picture u
+mapMeasure _ Empty                 = Empty
+mapMeasure f (Single  m prop p)    = Single (f m) prop p
+mapMeasure f (Multi   m ps)        = Multi (f m) ps
+mapMeasure f (TLabel  m prop l)    = TLabel (f m) prop l 
+mapMeasure f (Picture m prop a  b) = Picture (f m) prop a b
+
+
+move :: Num u => Vec2 u -> Picture u -> Picture u
+move v = mapMeasure (moveMeasure v) 
+
+  
+moveMeasure :: Num u => Vec2 u -> Measure u -> Measure u
+moveMeasure v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb) 
+
+center :: (Fractional u, Ord u) => Picture u -> Point2 u
+center Empty = zeroPt
+center p     = fn $ extractBounds p where
+    fn (BBox bl tr) = bl .+^ (0.5 *^ (tr .-. bl))
+
 
 
 setRGBColour :: DRGB -> Picture u -> Picture u
@@ -335,21 +323,8 @@ updateProps f _ (Picture m prop a  b) = Picture m (f prop) a b
 
 
 
-instance Pointwise (Polygon a) where
-  type Pt (Polygon a) = Point2 a
-  pointwise f (Polygon xs) = Polygon $ map f xs
-
-instance Pointwise (Path u) where
-  type Pt (Path u) = Point2 u
-  pointwise f (Path dp st xs) = Path dp (f st) (map (pointwise f) xs)
-
-instance Pointwise (PathSeg u) where
-  type Pt (PathSeg u) = Point2 u
-  pointwise f (Ls p)        = Ls (f p)
-  pointwise f (Cs p1 p2 p3) = Cs (f p1) (f p2) (f p3)
-
 --------------------------------------------------------------------------------
-
+-- Render to PostScript
 
  
 writePicture :: FilePath -> Picture Double -> IO ()
@@ -490,11 +465,3 @@ labelDisplacements fonth totalh rowdisp nrows =
     internalh = fonth*n + rowdisp*(n-1)
     start     = 0.5 * (totalh-internalh)
 
-
-nullProps :: (Colour, Seq a) -> Bool
-nullProps (Nothing,se) = S.null se
-nullProps _            = False
-
-nullFontProps :: (Colour, Font) -> Bool
-nullFontProps (Nothing,Nothing) = True
-nullFontProps _                 = False

@@ -4,6 +4,7 @@ module Picture where
 
 import Wumpus.Core.Geometry
 import Wumpus.Core.Picture
+import Wumpus.Extra.Polygon
 
 import Data.VectorSpace
 

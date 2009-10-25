@@ -14,7 +14,10 @@ stability:          highly unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
-  demo/Picture
+  demo/ArrowPic.hs,
+  demo/Picture.hs,
+  demo/LabelPic.hs
+
 
 library
   hs-source-dirs:     src
@@ -30,6 +33,7 @@ library
     Wumpus.Core.PostScript,
     Wumpus.Core.Utils,
     Wumpus.Extra.Arrow,
+    Wumpus.Extra.Polygon,
     Wumpus.Extra.SVGColours,
     Wumpus.Extra.X11Colours
   other-modules:
