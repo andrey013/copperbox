@@ -180,6 +180,10 @@ straightLinePath []     = error "polygonPath - empty Polygon"
 straightLinePath (x:xs) = (x, map Ls xs)
 
 
+picEmpty :: Picture u
+picEmpty = Empty
+
+
 picPath :: (Num u, Ord u) => Path u -> Picture u
 picPath p = Single (ortho zeroPt, tracePath p) noProp p
 
@@ -226,6 +230,10 @@ arrange f a     b     = Picture (ortho zeroPt, bb) noProp a b' where
 (</>) = arrange $ 
           twine fn (lowerPlane . extractBounds) (upperPlane . extractBounds)
   where fn = vvec `oo` (-)
+
+
+at :: Num u => Picture u -> Point2 u -> Picture u
+at p (P2 x y) = move (V2 x y) p
 
 overlay :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
 overlay = arrange (\_ _ -> V2 0 0)

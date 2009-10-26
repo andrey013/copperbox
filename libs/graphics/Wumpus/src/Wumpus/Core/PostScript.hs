@@ -45,17 +45,17 @@ instance Monoid (WumpusM ()) where
   mappend = (>>) 
 
 
-newtype PsT m a = PsT { unPs :: WriterT PsOutput m a }
+newtype PsT m a = PsT { unPsT :: WriterT PsOutput m a }
 
 runPsT :: Monad m => PsT m a -> m (a,PsOutput)
-runPsT m = runWriterT (unPs m) 
+runPsT m = runWriterT (unPsT m) 
 
 instance Monad m => Functor (PsT m) where
   fmap f (PsT mf) = PsT $ fmap f mf 
 
 instance Monad m => Monad (PsT m) where
   return a  = PsT $ return a
-  ma >>= f  = PsT $ unPs ma >>= unPs . f
+  ma >>= f  = PsT $ unPsT ma >>= unPsT . f
 
 instance Monad m => WriterM (PsT m) PsOutput where
   put = PsT . put

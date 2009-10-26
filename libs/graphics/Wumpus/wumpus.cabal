@@ -1,5 +1,5 @@
 name:             Wumpus
-version:          0.2
+version:          0.3.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -15,8 +15,9 @@ cabal-version:      >= 1.2
 
 extra-source-files:
   demo/ArrowPic.hs,
-  demo/Picture.hs,
-  demo/LabelPic.hs
+  demo/GridPic.hs,
+  demo/LabelPic.hs,
+  demo/Picture.hs
 
 
 library
@@ -33,6 +34,7 @@ library
     Wumpus.Core.PostScript,
     Wumpus.Core.Utils,
     Wumpus.Extra.Arrow,
+    Wumpus.Extra.Grid,
     Wumpus.Extra.Polygon,
     Wumpus.Extra.SVGColours,
     Wumpus.Extra.X11Colours

@@ -3,10 +3,7 @@ module LabelPic where
 
 import Wumpus.Core.Geometry
 import Wumpus.Core.Picture
-
 import Wumpus.Extra.X11Colours
-
--- import Wumpus.Core.PostScript -- temporary til fonts/pens are sorted out
 
 import Data.FunctionExtras ( (#) )
 
