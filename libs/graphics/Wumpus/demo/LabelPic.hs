@@ -8,8 +8,8 @@ import Wumpus.Extra.X11Colours
 import Data.FunctionExtras ( (#) )
 
 lbl1 :: Picture Double
-lbl1 = picLabel 10 1 30 26 "Hello\nWorld" # setRGBColour aquamarine4 
-                                          # setFont "Helvetica" 12
+lbl1 = picLabel 10 3 "Hello\nWorld" # setRGBColour aquamarine4 
+                                    # setFont "Helvetica" 12
 
 
 

@@ -92,7 +92,7 @@ bottomRight :: BoundingBox a -> Point2 a
 bottomRight (BBox (P2 _ ymin) (P2 xmax _)) = P2 xmax ymin
 
 center :: Fractional a => BoundingBox a -> Point2 a
-center (BBox (P2 x y) (P2 x' y')) = P2 (x+ 0.5*(x'-x)) (y+0.5*(y'-x))
+center (BBox (P2 x y) (P2 x' y')) = P2 (x+0.5*(x'-x)) (y+0.5*(y'-x))
 
 north :: Fractional a => BoundingBox a -> Point2 a
 north (BBox (P2 xmin _) (P2 xmax ymax)) = P2 (xmin + 0.5*(xmax-xmin)) ymax

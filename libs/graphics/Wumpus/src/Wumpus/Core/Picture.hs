@@ -31,20 +31,24 @@ import Data.Groupoid
 import Data.AffineSpace
 import Data.VectorSpace
 
-import Control.Monad            ( zipWithM_ )
+-- import Control.Monad            ( zipWithM_ )
 import qualified Data.Foldable  as F
-import Data.List                ( foldl' )
+import Data.List                ( foldl', mapAccumR )
 import Data.Sequence            ( Seq, (|>) )
 import qualified Data.Sequence  as S
 
 
 
 data Picture u = Empty
-               | Single   (Measure u) PathProps (Path u)
-               | Multi    (Measure u) [(PathProps,Path u)]
-               | TLabel   (Measure u) LabelProps (Label u)
+               | Single   (Measure u) (Primitive u)
+               | Multi    (Measure u) [Primitive u] -- multiple prims in same affine frame
                | Picture  (Measure u) PictureProps (Picture u) (Picture u)
   deriving (Eq,Show) 
+
+data Primitive u = Path1  PathProps (Path u)
+                 | Label1 LabelProps (Label u) 
+  deriving (Eq,Show)
+
 
 type Colour = Maybe PSColour
 type Font   = Maybe FontAttr
@@ -74,12 +78,7 @@ data Path u = Path DrawProp (Point2 u) [PathSeg u]
 type DPath = Path Double
 
 
-data Label u = Label {
-      labelInitialHeight  :: u, -- store the height /before/ any affine trafos
-      labelFontSize       :: u,
-      labelRowDisp        :: u,
-      labelText           :: [String] 
-    }
+data Label u = Label (Point2 u) String
   deriving (Eq,Show)
 
 
@@ -185,17 +184,29 @@ picEmpty = Empty
 
 
 picPath :: (Num u, Ord u) => Path u -> Picture u
-picPath p = Single (ortho zeroPt, tracePath p) noProp p
+picPath p = Single (ortho zeroPt, tracePath p) (Path1 noProp p)
 
 picMultiPath :: (Num u, Ord u) => [Path u] -> Picture u
 picMultiPath ps = Multi (ortho zeroPt, gconcat (map tracePath ps)) (map f ps)
-  where f a = (noProp,a)
+  where f = Path1 noProp
+
+picLabel1 :: (Num u, Ord u) => Int -> String -> Picture u
+picLabel1 fontsz str = Single (ortho zeroPt, bb) lbl where
+  bb  = BBox zeroPt (P2 w (fromIntegral fontsz))
+  w   = fromIntegral $ fontsz * length str
+  lbl = Label1 noFontProp (Label zeroPt str) 
 
 
-picLabel :: (Num u, Ord u) => u -> u -> u -> u -> String -> Picture u
-picLabel fonth vdisp w h text = TLabel (ortho zeroPt, bb) noFontProp label where
-  bb    = trace [zeroPt, P2 w h]
-  label = Label h fonth vdisp (lines text) 
+picLabel :: forall u. (Num u, Ord u) => Int -> Int -> String -> Picture u
+picLabel fontsz linespace str = Multi (ortho zeroPt, bb) lbls where
+  xs   = lines str
+  lc   = length xs
+  w    = fromIntegral $ fontsz * (maximum . map length) xs
+  h    = fromIntegral $ fontsz * lc + linespace*(lc-1)
+  bb   = BBox zeroPt (P2 w h)
+  lbls = snd $ mapAccumR fn zeroPt xs
+  fn pt ss = let pt' = pt .+^ (V2 (0::u) (fromIntegral $ fontsz + linespace))
+             in (pt', Label1 noFontProp (Label pt ss))
 
 
 tracePath :: (Num u, Ord u) => Path u -> BoundingBox u
@@ -251,17 +262,15 @@ drawBounds p     = p `overlay` (picPath $ Path CStroke p0 ps) where
 
 extractBounds :: (Num u, Ord u) => Picture u -> BoundingBox u
 extractBounds Empty                  = error $ "extractBounds Empty"
-extractBounds (Single  (_,bb) _ _)   = bb
+extractBounds (Single  (_,bb) _)     = bb
 extractBounds (Multi   (_,bb) _)     = bb
-extractBounds (TLabel  (_,bb) _ _)   = bb
 extractBounds (Picture (_,bb) _ _ _) = bb
 
 
 mapMeasure :: (Measure u -> Measure u) -> Picture u -> Picture u
 mapMeasure _ Empty                 = Empty
-mapMeasure f (Single  m prop p)    = Single (f m) prop p
+mapMeasure f (Single  m prim)      = Single (f m) prim
 mapMeasure f (Multi   m ps)        = Multi (f m) ps
-mapMeasure f (TLabel  m prop l)    = TLabel (f m) prop l 
 mapMeasure f (Picture m prop a  b) = Picture (f m) prop a b
 
 
@@ -317,18 +326,26 @@ setFont name sz = updateProps id g where
     g (c,_) = (c,Just $ FontAttr name sz)
 
 
+-- This is too destructive and needs a rethink...
+-- In essence it goes against the grain of picture being created
+-- /bottom-up/. 
 
--- Note /Multi/ pictures are not updated
 updateProps :: (PathProps -> PathProps) 
             -> (LabelProps -> LabelProps) 
             -> Picture u  
             -> Picture u
 updateProps _ _ Empty                 = Empty
-updateProps f _ (Single  m prop p)    = Single m (f prop) p
-updateProps _ _ (Multi   m ps)        = Multi m ps              -- NO-OP!
-updateProps _ g (TLabel  m prop l)    = TLabel m (g prop) l 
+updateProps f g (Single  m prim)      = Single m (updatePrimProps f g prim)
+updateProps f g (Multi   m ps)        = Multi m (map (updatePrimProps f g) ps)
 updateProps f _ (Picture m prop a  b) = Picture m (f prop) a b
 
+
+updatePrimProps :: (PathProps -> PathProps) 
+                -> (LabelProps -> LabelProps) 
+                -> Primitive u  
+                -> Primitive u
+updatePrimProps f _ (Path1 p a)  = Path1 (f p) a
+updatePrimProps _ g (Label1 p a) = Label1 (g p) a
 
 
 --------------------------------------------------------------------------------
@@ -364,19 +381,22 @@ drawPicture :: (Point2 Double -> Point2 Double)
             -> WumpusM ()
 drawPicture _ Empty                     = return ()
 
-drawPicture f (Single (fr,_) prop p)    =
-    updatePen prop $ drawPath (composeFrames f fr) p
+drawPicture f (Single (fr,_) prim)    =
+    drawPrimitive (composeFrames f fr) prim
 
 drawPicture f (Multi (fr,_) ps)         = 
-    mapM_ (\(prop,p) -> updatePen prop $ drawPath (composeFrames f fr) p) ps
-
-drawPicture f (TLabel (fr,bb) font l)   =
-    updateFont font $ drawLabel (composeFrames f fr) (bottomLeft bb) l
+    mapM_ (drawPrimitive (composeFrames f fr)) ps
 
 drawPicture f (Picture (fr,_) prop a b) = updatePen prop $ do
     drawPicture (composeFrames f fr) a
     drawPicture (composeFrames f fr) b
 
+
+drawPrimitive :: (Point2 Double -> Point2 Double) 
+              -> Primitive Double 
+              -> WumpusM ()
+drawPrimitive f (Path1 props p)  = updatePen props $ drawPath f p
+drawPrimitive f (Label1 props l) = updateFont props $ drawLabel f l
 
 composeFrames :: Num u 
               => (Point2 u -> Point2 u) -> Frame2 u -> (Point2 u -> Point2 u)
@@ -442,20 +462,16 @@ drawPath f (Path dp pt xs) = let P2 x y = f pt in do
     finalize CCrop   = ps_closepath >> ps_clip
 
 
-drawLabel :: (Point2 Double -> Point2 Double) 
-          -> Point2 Double 
+drawLabel :: (Point2 Double -> Point2 Double)
           -> Label Double 
           -> WumpusM ()
-drawLabel fn (P2 x y) (Label totalh fonth rowdisp xs) = do
+drawLabel fn (Label pt str) = let P2 x y = fn pt in do
     ps_moveto x y
     ps_gsave
     ps_concat a b c d e f
-    zipWithM_ drawTextLine xs vecs
+    ps_show str
     ps_grestore
   where
-    drawTextLine str (V2 vx vy) = comment (show vx ++ ", " ++ show vy) >> 
-                                  ps_moveto vx vy >> ps_show str
-    vecs          = labelDisplacements fonth totalh rowdisp (length xs) 
     (a,b,c,d,e,f) = makeCTM fn
 
 makeCTM :: Num u => (Point2 u -> Point2 u) -> (u,u,u,u,u,u)
@@ -464,12 +480,4 @@ makeCTM f = (x0-o0, x1-o1, y0-o0, y1-o1, o0, o1) where
    P2 y0 y1 = f (P2 0 1)
    P2 o0 o1 = f (P2 0 0)
 
-
-labelDisplacements :: Fractional u => u -> u -> u -> Int -> [Vec2 u]
-labelDisplacements fonth totalh rowdisp nrows = 
-    reverse $ take nrows $ iterate (^+^ vvec (fonth+rowdisp)) (vvec start)
-  where
-    n         = fromIntegral nrows
-    internalh = fonth*n + rowdisp*(n-1)
-    start     = 0.5 * (totalh-internalh)
 
