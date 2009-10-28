@@ -2,11 +2,16 @@
 
 module Picture where
 
+import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.Picture
 import Wumpus.Extra.Polygon
 
+import Data.FunctionExtras ( (#) )
 import Data.VectorSpace
+
+import Text.PrettyPrint.Leijen
+
 
 square :: DPolygon 
 square = Polygon
@@ -20,34 +25,44 @@ funnyshape = Polygon
 psquare = picPolygon CStroke square
 pfunnyshape = picPolygon CFill funnyshape
 
-demo0 = writePicture "funnyshape.ps" pfunnyshape
+test01 = pretty $ move (V2 100 40) psquare
+test02 = pretty $ rotate45 psquare
 
-demo1 = writePicture "square.ps" psquare
+demo0 = writePicture "picture0.ps" pfunnyshape
+
+demo1 = writePicture "picture1.ps" psquare
 
 
-pic1 = psquare <> (pfunnyshape <> pfunnyshape) <> psquare
+pic1 = psquare <*> (pfunnyshape <*> pfunnyshape) <*> psquare
 
-psquares = psquare <> psquare <> psquare
+psquares = psquare <*> psquare <*> psquare
 
-demo2 = writePicture "squares.ps" psquares
+demo2 = writePicture "picture2.ps" psquares
 
     
 
-demo3 = writePicture "rotsquare.ps" p1 
+demo3 = writePicture "picture3.ps" p1 
   where     
-    p1 = psquare <> (rotatePicture (pi/4) psquares) <> psquares
+    p1 = psquare <*> (rotate45About (center psquares) psquares) <*> psquare
 
+d3 = pretty $ psquare <*> (rotate45About (center psquares) psquares) <*> psquare
 
-demo4 = writePicture "abovesquare.ps" p1
+demo4 = writePicture "picture4.ps" p1
   where
-    p1 = psquare </> psquares 
+    p1 = psquare <||> (psquares # setRGBColour (RGB3 1 0 1))
    
-demo5 = writePicture "oversquares.ps" p1
+d4 = pretty $ psquare <||> (psquares # setRGBColour (RGB3 1 0 1))
+
+demo5 = writePicture "picture5.ps" p1
   where
     p1 = psquare `overlay` (rotatePicture (pi/4) psquares)
    
 
-demo6 = writePicture "hexagon.ps" p1 
+demo6 = writePicture "picture6.ps" p1 
   where
     p1 = picPolygon CStroke $ regularPolygon 6 50
 
+
+demo7 = writePicture "picture7.ps" p1
+  where
+    p1 = psquare `overlay` (rotate45 psquare)

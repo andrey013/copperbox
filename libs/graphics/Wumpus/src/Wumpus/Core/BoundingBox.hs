@@ -19,6 +19,8 @@ import Wumpus.Core.Geometry
 
 import Data.Groupoid
 
+import Text.PrettyPrint.Leijen
+
 import Data.List ( foldl' )
 
 
@@ -28,6 +30,9 @@ data BoundingBox a = BBox { bottomLeft :: Point2 a, topRight :: Point2 a }
 type DBoundingBox = BoundingBox Double
 
 
+
+instance Pretty a => Pretty (BoundingBox a) where
+  pretty (BBox p0 p1) = text "|_" <+> pretty p0 <+> pretty p1 <+> text "_|" 
 
 --------------------------------------------------------------------------------
 

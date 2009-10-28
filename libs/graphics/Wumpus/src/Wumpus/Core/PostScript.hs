@@ -147,8 +147,8 @@ dtrunc d | abs d < 0.0001  = "0.0"
 
 type Command = String
 
-comment :: String -> WumpusM ()
-comment s = write "%% " >> writeln s
+ps_comment :: String -> WumpusM ()
+ps_comment s = write "%% " >> writeln s
 
 command :: Command -> [String] -> WumpusM ()
 command cmd xs = mapM_ writeArg xs >> writeln cmd
@@ -169,9 +169,9 @@ showStr s = '(' : xs where xs = s++[')']
 withPage :: WumpusM a -> WumpusM a
 withPage m = pageStart >> m >>= \a -> pageEnd >> return a 
   where
-    pageStart = comment $ "Page " ++ show (1::Int)
+    pageStart = ps_comment $ "Page " ++ show (1::Int)
 
-    pageEnd   = comment "-------------------"    
+    pageEnd   = ps_comment "-------------------"    
 
 
 --------------------------------------------------------------------------------

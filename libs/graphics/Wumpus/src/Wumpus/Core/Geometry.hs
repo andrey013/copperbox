@@ -21,8 +21,12 @@
 
 module Wumpus.Core.Geometry where
 
+import Data.FunctionExtras
+
 import Data.AffineSpace
 import Data.VectorSpace
+
+import Text.PrettyPrint.Leijen
 
 import Data.List ( mapAccumR )
 import Data.Monoid
@@ -123,6 +127,16 @@ instance Num a => Monoid (Vec2 a) where
   mappend = lift2Vec2 (+) 
 
 
+-- Affine frames also have a sensible Monoid instance
+
+instance (Num a, InnerSpace (Vec2 a)) => Monoid (Frame2 a) where
+  mempty = ortho zeroPt
+  mappend = concatFrames
+
+
+
+
+
 instance Show a => Show (Matrix3'3 a) where
   show (M3'3 a b c d e f g h i) = "(M3'3 " ++ body ++ ")" where
     body = show [[a,b,c],[d,e,f],[g,h,i]]
@@ -156,6 +170,30 @@ instance Ord Radian where
   compare a b | a `req` b = EQ
               | otherwise = getRadian a `compare` getRadian b
 
+--------------------------------------------------------------------------------
+-- Pretty printing
+
+instance Pretty a => Pretty (Vec2 a) where
+  pretty (V2 a b) = angles (char '|' <+> pretty a <+> pretty b <+> char '|')
+
+instance Pretty a => Pretty (Point2 a) where
+  pretty (P2 a b) = brackets (char '|' <+> pretty a <+> pretty b <+> char '|')
+
+instance Pretty a => Pretty (Frame2 a) where
+  pretty (Frame2 o xv yv) = braces $
+      text "O:" <> pretty o <+> text "xv:" <> pretty xv 
+                            <+> text "yv:" <> pretty yv
+
+instance Pretty a => Pretty (Matrix3'3 a) where
+  pretty (M3'3 a b c  d e f  g h i) = 
+      matline a b c <$> matline d e f <$> matline g h i
+    where
+      matline x y z = char '|' <+> (hcat $ map (fill 8 . pretty) [x,y,z]) 
+                               <+> char '|'   
+
+
+instance Pretty Radian where
+  pretty (Radian d) = double d <> text ":rad"
 
 --------------------------------------------------------------------------------
 -- Vector space and related instances
@@ -284,6 +322,24 @@ coord (Frame2 o e0 e1) (P2 x y) = (o .+^ (x *^ e0)) .+^ (y *^ e1)
 pointInFrame :: Num a => Point2 a -> Frame2 a -> Point2 a
 pointInFrame (P2 x y) (Frame2 o vx vy) = (o .+^ (vx ^* x)) .+^ (vy ^* y)  
 
+frame2Matrix :: Num a =>  Frame2 a -> Matrix3'3 a
+frame2Matrix (Frame2 (P2 e f) (V2 a c) (V2 b d)) = M3'3 a b e  c d f  0 0 1
+
+matrix2Frame :: Matrix3'3 a -> Frame2 a
+matrix2Frame (M3'3 a b e c d f _ _ _) = Frame2 (P2 e f) (V2 a c) (V2 b d)
+
+
+concatFrames :: (Num a, InnerSpace (Vec2 a)) => Frame2 a -> Frame2 a -> Frame2 a
+concatFrames = matrix2Frame `oo` twine (*) frame2Matrix frame2Matrix
+
+
+
+-- | Is the at (0,0) and are the basis vectors orthogonal with 
+-- unit length?
+standardFrame :: Num a => Frame2 a -> Bool
+standardFrame (Frame2 (P2 0 0) (V2 1 0) (V2 0 1)) = True
+standardFrame _                                   = False
+
 
 --------------------------------------------------------------------------------
 -- Matrix construction
@@ -300,7 +356,7 @@ translationMatrix :: Num a => a -> a -> Matrix3'3 a
 translationMatrix x y = M3'3 1 0 x  0 1 y  0 0 1
 
 rotationMatrix :: (Floating a, Real a) => Radian -> Matrix3'3 a
-rotationMatrix a = M3'3 (cos ang) (- sin ang) 0 
+rotationMatrix a = M3'3 (cos ang) (negate $ sin ang) 0 
                         (sin ang) (cos ang)   0  
                         0         0           1
   where ang = fromRadian a

@@ -22,7 +22,8 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base < 5, containers, vector-space, monadLib, dlist,
+  build-depends:      base < 5, containers, wl-print, vector-space, 
+                      monadLib, dlist,
                       groupoid, fun-extras
 
   

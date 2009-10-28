@@ -31,9 +31,11 @@ import Data.Groupoid
 import Data.AffineSpace
 import Data.VectorSpace
 
--- import Control.Monad            ( zipWithM_ )
+import Text.PrettyPrint.Leijen
+
 import qualified Data.Foldable  as F
 import Data.List                ( foldl', mapAccumR )
+import Data.Monoid
 import Data.Sequence            ( Seq, (|>) )
 import qualified Data.Sequence  as S
 
@@ -58,13 +60,20 @@ type PathProps    = (Colour, Seq PenAttr)
 type LabelProps   = (Colour, Font)
 
 -- Measure = (_current_ frame x bounding box)
-type Measure u = (Frame2 u, BoundingBox u) 
+-- /optimize/ the standard frame representing it as Nothing
+
+type MbFrame u  = Maybe (Frame2 u)
+type Measure u = (MbFrame u, BoundingBox u) 
 
 type DMeasure = Measure Double
 
 data DrawProp = OStroke | CStroke | CFill | CCrop 
   deriving (Eq,Show)
 
+data Path u = Path DrawProp (Point2 u) [PathSeg u]
+  deriving (Eq,Show)
+
+type DPath = Path Double
 
 data PathSeg u = Cs (Point2 u) (Point2 u) (Point2 u)
                | Ls (Point2 u)
@@ -72,14 +81,46 @@ data PathSeg u = Cs (Point2 u) (Point2 u) (Point2 u)
 
 type DPathSeg = PathSeg Double
 
-data Path u = Path DrawProp (Point2 u) [PathSeg u]
-  deriving (Eq,Show)
-
-type DPath = Path Double
 
 
 data Label u = Label (Point2 u) String
   deriving (Eq,Show)
+
+
+--------------------------------------------------------------------------------
+-- Pretty printing
+
+instance Pretty u => Pretty (Picture u) where
+  pretty Empty                = text "*empty*"
+  pretty (Single m prim)      = ppMeasure m <$> indent 2 (pretty prim)
+
+  pretty (Multi m prims)      = ppMeasure m <$> indent 2 (list $ map pretty prims)
+  pretty (Picture m _ pl pr)  = 
+      ppMeasure m <$> indent 2 (text "LEFT" <+> pretty pl)
+                  <$> indent 2 (text "RGHT" <+> pretty pr)
+
+     
+
+ppMeasure :: Pretty u => Measure u -> Doc
+ppMeasure (fr,bbox) = align (ppfr fr <$> pretty bbox) where
+   ppfr Nothing   = text "*std-frame*"
+   ppfr (Just a)  = pretty a
+
+
+instance Pretty u => Pretty (Primitive u) where
+  pretty (Path1 _ path) = pretty "path:" <+> pretty path
+  pretty (Label1 _ lbl) = pretty lbl
+
+instance Pretty u => Pretty (Path u) where
+   pretty (Path _ pt ps) = pretty pt <> hcat (map pretty ps)
+
+instance Pretty u => Pretty (PathSeg u) where
+  pretty (Cs p1 p2 p3) = text ".*" <> pretty p1 <> text ",," <> pretty p2 
+                                                <> text "*." <> pretty p3
+  pretty (Ls pt)       = text "--" <> pretty pt
+
+instance Pretty u => Pretty (Label u) where
+  pretty (Label pt s) = dquotes (text s) <> char '@' <> pretty pt
 
 
 --------------------------------------------------------------------------------
@@ -141,9 +182,16 @@ transformPicture fp fv =
     mapMeasure $ prod (transformFrame fp fv) (transformBBox fp)
 
 
+-- Shouldn't transforming the frame be the inverse transformation?
 
-transformFrame :: (Point2 u -> Point2 u) -> (Vec2 u -> Vec2 u) -> Frame2 u -> Frame2 u
-transformFrame fp fv (Frame2 o vx vy) = Frame2 (fp o) (fv vx) (fv vy)    
+transformFrame :: Num u
+               => (Point2 u -> Point2 u) 
+               -> (Vec2 u -> Vec2 u) 
+               -> MbFrame u 
+               -> MbFrame u
+transformFrame fp fv = Just . trf . maybe (ortho zeroPt) id  
+  where
+    trf (Frame2 o vx vy) = Frame2 (fp o) (fv vx) (fv vy)    
 
 
 -- Bounding boxes need recalculating after a transformation.
@@ -184,21 +232,23 @@ picEmpty = Empty
 
 
 picPath :: (Num u, Ord u) => Path u -> Picture u
-picPath p = Single (ortho zeroPt, tracePath p) (Path1 noProp p)
+picPath p = Single (Nothing, tracePath p) (Path1 noProp p)
 
 picMultiPath :: (Num u, Ord u) => [Path u] -> Picture u
-picMultiPath ps = Multi (ortho zeroPt, gconcat (map tracePath ps)) (map f ps)
+picMultiPath ps = Multi (Nothing, gconcat (map tracePath ps)) (map f ps)
   where f = Path1 noProp
 
+-- The width guesses by picLabel1 and picLabel are very poor...
+
 picLabel1 :: (Num u, Ord u) => Int -> String -> Picture u
-picLabel1 fontsz str = Single (ortho zeroPt, bb) lbl where
+picLabel1 fontsz str = Single (Nothing, bb) lbl where
   bb  = BBox zeroPt (P2 w (fromIntegral fontsz))
   w   = fromIntegral $ fontsz * length str
   lbl = Label1 noFontProp (Label zeroPt str) 
 
 
 picLabel :: forall u. (Num u, Ord u) => Int -> Int -> String -> Picture u
-picLabel fontsz linespace str = Multi (ortho zeroPt, bb) lbls where
+picLabel fontsz linespace str = Multi (Nothing, bb) lbls where
   xs   = lines str
   lc   = length xs
   w    = fromIntegral $ fontsz * (maximum . map length) xs
@@ -207,6 +257,8 @@ picLabel fontsz linespace str = Multi (ortho zeroPt, bb) lbls where
   lbls = snd $ mapAccumR fn zeroPt xs
   fn pt ss = let pt' = pt .+^ (V2 (0::u) (fromIntegral $ fontsz + linespace))
              in (pt', Label1 noFontProp (Label pt ss))
+
+
 
 
 tracePath :: (Num u, Ord u) => Path u -> BoundingBox u
@@ -225,20 +277,20 @@ arrange :: (Num u, Ord u)
         -> Picture u
 arrange _ a     Empty = a
 arrange _ Empty b     = b
-arrange f a     b     = Picture (ortho zeroPt, bb) noProp a b' where
+arrange f a     b     = Picture (Nothing, bb) noProp a b' where
     b' = move (f a b) b
     bb = union (extractBounds a) (extractBounds b')
     
    
 
-(<>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-(<>) = arrange $ 
+(<*>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
+(<*>) = arrange $ 
          twine fn (rightPlane . extractBounds) (leftPlane . extractBounds)
   where fn = hvec `oo` (-) 
 
 
-(</>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-(</>) = arrange $ 
+(<||>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
+(<||>) = arrange $ 
           twine fn (lowerPlane . extractBounds) (upperPlane . extractBounds)
   where fn = vvec `oo` (-)
 
@@ -279,7 +331,9 @@ move v = mapMeasure (moveMeasure v)
 
   
 moveMeasure :: Num u => Vec2 u -> Measure u -> Measure u
-moveMeasure v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb) 
+moveMeasure v (fr,bb) = (Just $ displaceOrigin v fr', pointwise (.+^ v) bb) 
+  where
+    fr' = maybe (ortho zeroPt) id fr
 
 center :: (Fractional u, Ord u) => Picture u -> Point2 u
 center Empty = zeroPt
@@ -358,9 +412,8 @@ writePicture filepath pic = writeFile filepath $ psDraw pic
 
 -- | Draw a picture, generating PostScript output.
 psDraw :: Picture Double -> PostScript
-psDraw pic = prologue ++ runWumpus (drawPicture k pic) ++ epilogue
+psDraw pic = prologue ++ runWumpus (drawPicture Nothing pic) ++ epilogue
   where
-    k        = pointInFrame `flip` (ortho zeroPt)
     prologue = unlines $ [ "%!PS-Adobe-2.0"
                          , "%%Pages: 1"
                          , "%%EndComments"
@@ -376,31 +429,32 @@ psDraw pic = prologue ++ runWumpus (drawPicture k pic) ++ epilogue
                    
     epilogue = unlines $ [ "showpage", "", "%%EOF", ""]
 
-drawPicture :: (Point2 Double -> Point2 Double) 
-            -> Picture Double 
-            -> WumpusM ()
-drawPicture _ Empty                     = return ()
+drawPicture :: MbFrame Double -> Picture Double  -> WumpusM ()
+drawPicture _  Empty                      = return ()
 
-drawPicture f (Single (fr,_) prim)    =
-    drawPrimitive (composeFrames f fr) prim
+drawPicture f0 (Single (fr,bb) prim)      = do
+    bbComment bb
+    drawPrimitive (f0 `mappend` fr) prim
 
-drawPicture f (Multi (fr,_) ps)         = 
-    mapM_ (drawPrimitive (composeFrames f fr)) ps
+drawPicture f0 (Multi (fr,bb) ps)         = do
+    bbComment bb
+    mapM_ (drawPrimitive (f0 `mappend` fr)) ps
 
-drawPicture f (Picture (fr,_) prop a b) = updatePen prop $ do
-    drawPicture (composeFrames f fr) a
-    drawPicture (composeFrames f fr) b
+drawPicture f0 (Picture (fr,bb) prop a b) = updatePen prop $ do
+    bbComment bb
+    drawPicture (f0 `mappend` fr) a
+    drawPicture (f0 `mappend` fr) b
 
 
-drawPrimitive :: (Point2 Double -> Point2 Double) 
-              -> Primitive Double 
-              -> WumpusM ()
-drawPrimitive f (Path1 props p)  = updatePen props $ drawPath f p
-drawPrimitive f (Label1 props l) = updateFont props $ drawLabel f l
+bbComment :: BoundingBox Double -> WumpusM ()
+bbComment (BBox (P2 x0 y0) (P2 x1 y1)) = 
+    ps_comment $ "bounding-box " ++ show (x0,y0) ++ ".." ++ show (x1,y1)
 
-composeFrames :: Num u 
-              => (Point2 u -> Point2 u) -> Frame2 u -> (Point2 u -> Point2 u)
-composeFrames f fr = f . (pointInFrame `flip` fr)
+drawPrimitive :: MbFrame Double -> Primitive Double -> WumpusM ()
+drawPrimitive fr (Path1 props p)  = 
+    updatePen props $ updateFrame fr $ drawPath p
+drawPrimitive fr (Label1 props l) = 
+    updateFont props $ updateFrame fr $ drawLabel l
 
 updatePen :: PathProps -> WumpusM () -> WumpusM ()
 updatePen prop@(mbc,se) ma
@@ -443,18 +497,32 @@ colourCommand (PSRgb r g b) = ps_setrgbcolor r g b
 colourCommand (PSHsb h s v) = ps_sethsbcolor h s v
 colourCommand (PSGray a)    = ps_setgray a
 
+-- 3 5 scale
+-- [ 3 0 0 5 0 0 ] concat
+-- 100 300 translate
+-- [ 1 0 0 1 100 300 ] concat
+-- [ cos(angle) sin(angle) -sin(angle) cos(angle) 0 0 ]
 
-drawPath :: (Point2 Double -> Point2 Double) -> Path Double -> WumpusM ()
-drawPath f (Path dp pt xs) = let P2 x y = f pt in do  
+updateFrame :: MbFrame Double -> WumpusM () -> WumpusM ()
+updateFrame Nothing                                     ma = ma
+updateFrame (Just (Frame2 (P2 e f) (V2 a c) (V2 b d)))  ma = do
+    ps_gsave
+    ps_concat a b c d e f
+    ma
+    ps_grestore
+    
+    
+drawPath :: Path Double -> WumpusM ()
+drawPath (Path dp pt xs) = let P2 x y = pt in do  
     ps_newpath
     ps_moveto x y
     mapM_ drawLineSeg xs
     finalize dp   
   where
-    drawLineSeg (Ls p)        = let P2 x y = f p in ps_lineto x y
-    drawLineSeg (Cs p1 p2 p3) = let P2 x1 y1 = f p1
-                                    P2 x2 y2 = f p2
-                                    P2 x3 y3 = f p3
+    drawLineSeg (Ls p)        = let P2 x y = p in ps_lineto x y
+    drawLineSeg (Cs p1 p2 p3) = let P2 x1 y1 = p1
+                                    P2 x2 y2 = p2
+                                    P2 x3 y3 = p3
                                 in ps_curveto x1 y1 x2 y2 x3 y3
     finalize OStroke = ps_stroke
     finalize CStroke = ps_closepath >> ps_stroke
@@ -462,17 +530,10 @@ drawPath f (Path dp pt xs) = let P2 x y = f pt in do
     finalize CCrop   = ps_closepath >> ps_clip
 
 
-drawLabel :: (Point2 Double -> Point2 Double)
-          -> Label Double 
-          -> WumpusM ()
-drawLabel fn (Label pt str) = let P2 x y = fn pt in do
+drawLabel :: Label Double -> WumpusM ()
+drawLabel (Label pt str) = let P2 x y = pt in do
     ps_moveto x y
-    ps_gsave
-    ps_concat a b c d e f
     ps_show str
-    ps_grestore
-  where
-    (a,b,c,d,e,f) = makeCTM fn
 
 makeCTM :: Num u => (Point2 u -> Point2 u) -> (u,u,u,u,u,u)
 makeCTM f = (x0-o0, x1-o1, y0-o0, y1-o1, o0, o1) where

@@ -35,7 +35,7 @@ instance Pointwise (Polygon a) where
 
   
 picPolygon :: (Num u, Ord u) => DrawProp -> Polygon u -> Picture u
-picPolygon dp (Polygon xs) = Single (ortho zeroPt,trace xs) (Path1 noProp path)
+picPolygon dp (Polygon xs) = Single (Nothing,trace xs) (Path1 noProp path)
   where 
     path         = Path dp start segs
     (start,segs) = straightLinePath xs
