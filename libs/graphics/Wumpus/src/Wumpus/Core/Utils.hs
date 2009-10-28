@@ -24,6 +24,8 @@ module Wumpus.Core.Utils
   , min3
   , med3
 
+  -- * truncate / print a double
+  , dtrunc
 
   ) where
 
@@ -46,4 +48,14 @@ med3 a b c = if c <= x then x else if c > y then y else c
 
 
 
+dtrunc :: Double -> String
+dtrunc d | abs d < 0.0001  = "0.0"
+         | d < 0.0           = '-' :  show (abs tx)
+         | otherwise         = show tx
+  where
+    tx :: Double
+    tx = (realToFrac (roundi (d*1000000.0))) / 1000000.0
+ 
+    roundi :: RealFrac a => a -> Integer
+    roundi = round
 

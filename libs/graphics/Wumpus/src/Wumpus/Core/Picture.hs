@@ -459,8 +459,8 @@ bbComment (BBox (P2 x0 y0) (P2 x1 y1)) =
 
 drawPrimitive :: MbFrame Double -> Primitive Double -> WumpusM ()
 drawPrimitive fr (Path1 props p)  = 
---    updatePen props $ updateFrame fr $ drawPath p
-    updatePen props $ drawPathFr fr p
+    updatePen props $ updateFrame fr $ drawPath p
+--    updatePen props $ drawPathFr fr p
 
 drawPrimitive fr (Label1 props l) = 
     updateFont props $ updateFrame fr $ drawLabel l
@@ -512,14 +512,19 @@ colourCommand (PSGray a)    = ps_setgray a
 -- [ 1 0 0 1 100 300 ] concat
 -- [ cos(angle) sin(angle) -sin(angle) cos(angle) 0 0 ]
 
+-- wumpus 
+-- [ cos(a) -sin(a) 0 | sin(a) cos(a) 0 | 0 0 1 ]
+
 updateFrame :: MbFrame Double -> WumpusM () -> WumpusM ()
-updateFrame Nothing                                     ma = ma
-updateFrame (Just (Frame2 (P2 e f) (V2 a c) (V2 b d)))  ma = do
+updateFrame Nothing                                              ma = ma
+updateFrame (Just (Frame2 (P2 o0 o1) (V2 e00 e01) (V2 e10 e11))) ma = do
     ps_gsave
-    ps_concat a b c d e f
+    ps_concat e0x e0y e1x e1y ox oy 
     ma
     ps_grestore
-    
+  where
+    M3'3 e0x e1x ox  e0y e1y oy  _ _ _ = invert $ M3'3 e00 e10 o0  e01 e11 o1 0 0 1
+ 
     
 drawPath :: Path Double -> WumpusM ()
 drawPath (Path dp pt xs) = let P2 x y = pt in do  

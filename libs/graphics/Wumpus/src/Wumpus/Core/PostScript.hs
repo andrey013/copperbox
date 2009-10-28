@@ -21,7 +21,7 @@
 
 module Wumpus.Core.PostScript where
 
--- import Wumpus.Core.Colour 
+import Wumpus.Core.Utils ( dtrunc )
 
 import qualified Data.DList as DL
 import MonadLib
@@ -133,16 +133,6 @@ writeArg :: WriterM m PsOutput => String -> m ()
 writeArg s = write s >> writeChar ' '
 
 
-dtrunc :: Double -> String
-dtrunc d | abs d < 0.0001  = "0.0"
-         | d < 0.0           = '-' :  show (abs tx)
-         | otherwise         = show tx
-  where
-    tx :: Double
-    tx = (realToFrac (roundi (d*1000000.0))) / 1000000.0
- 
-    roundi :: RealFrac a => a -> Integer
-    roundi = round
 
 
 type Command = String

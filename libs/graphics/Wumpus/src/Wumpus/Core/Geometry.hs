@@ -21,6 +21,8 @@
 
 module Wumpus.Core.Geometry where
 
+import Wumpus.Core.Utils ( dtrunc )
+
 import Data.FunctionExtras
 
 import Data.AffineSpace
@@ -184,12 +186,13 @@ instance Pretty a => Pretty (Frame2 a) where
       text "O:" <> pretty o <+> text "xv:" <> pretty xv 
                             <+> text "yv:" <> pretty yv
 
-instance Pretty a => Pretty (Matrix3'3 a) where
+instance Real a => Pretty (Matrix3'3 a) where
   pretty (M3'3 a b c  d e f  g h i) = 
       matline a b c <$> matline d e f <$> matline g h i
     where
-      matline x y z = char '|' <+> (hcat $ map (fill 8 . pretty) [x,y,z]) 
-                               <+> char '|'   
+      matline x y z = char '|' 
+         <+> (hcat $ map (fill 12 . text . dtrunc . realToFrac) [x,y,z]) 
+         <+> char '|'   
 
 
 instance Pretty Radian where
@@ -374,6 +377,47 @@ originatedRotationMatrix ang (P2 x y) = mT * (rotationMatrix ang) * mTinv
     mT    = M3'3 1 0 x     0 1 y     0 0 1
     mTinv = M3'3 1 0 (-x)  0 1 (-y)  0 0 1
 
+
+
+-- inversion
+
+invert :: Fractional a => Matrix3'3 a -> Matrix3'3 a 
+invert m = (1 / determinant m) *^ adjoint m
+
+determinant :: Num a => Matrix3'3 a -> a
+determinant (M3'3 a b c d e f g h i) = a*e*i - a*f*h - b*d*i + b*f*g + c*d*h - c*e*g
+
+transpose :: Matrix3'3 a -> Matrix3'3 a
+transpose (M3'3 a b c d e f g h i) = M3'3 a d g  b e h  c f i
+
+adjoint :: Num a => Matrix3'3 a -> Matrix3'3 a 
+adjoint = transpose . cofactor . mofm
+
+mofm :: Num a => Matrix3'3 a -> Matrix3'3 a
+mofm (M3'3 a b c  d e f  g h i)  = M3'3 m11 m12 m13  m21 m22 m23 m31 m32 m33
+  where  
+    m11 = (e*i) - (f*h)
+    m12 = (d*i) - (f*g)
+    m13 = (d*h) - (e*g)
+    m21 = (b*i) - (c*h)
+    m22 = (a*i) - (c*g)
+    m23 = (a*h) - (b*g)
+    m31 = (b*f) - (c*e)
+    m32 = (a*f) - (c*d)
+    m33 = (a*e) - (b*d)
+
+
+cofactor :: Num a => Matrix3'3 a -> Matrix3'3 a
+cofactor (M3'3 a b c  d e f  g h i) = 
+    M3'3   a  (-b)   c
+         (-d)   e  (-f)
+           g  (-h)   i
+
+
+--------------------------------------------------------------------------------
+-- Affine transformations 
+
+
 class Rotate t where
   rotate :: Radian -> t -> t
 
@@ -490,5 +534,14 @@ translateBy :: (Translate t, TranslateUnit t ~ u) => Vec2 u -> t -> t
 translateBy (V2 x y) = translate x y
 
 
+--------------------------------------------------------------------------------
+-- degrees / radians
 
+-- | Degrees to radians.
+d2r :: (Floating a, Real a) => a -> Radian
+d2r = Radian . realToFrac . (*) (pi/180)
+
+-- | Radians to degrees.
+r2d :: (Floating a, Real a) => Radian -> a
+r2d = (*) (180/pi) . fromRadian
 
