@@ -43,7 +43,7 @@ demo2 = writePicture "picture2.ps" psquares
 
 demo3 = writePicture "picture3.ps" p1 
   where     
-    p1 = psquare <*> (rotate45About (center psquares) psquares) <*> psquare
+    p1 = psquare <*> (drawFrame $ rotate45About (center psquares) psquares) <*> psquare
 
 d3 = pretty $ psquare <*> (rotate45About (center psquares) psquares) <*> psquare
 

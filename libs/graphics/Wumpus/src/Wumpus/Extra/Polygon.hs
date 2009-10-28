@@ -17,10 +17,15 @@
 module Wumpus.Extra.Polygon where
 
 import Wumpus.Core.BoundingBox
+import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.Picture
 
+import Data.FunctionExtras ( (#) )
+import Data.Groupoid
+
 import Data.AffineSpace
+
 
 
 
@@ -33,18 +38,26 @@ instance Pointwise (Polygon a) where
   type Pt (Polygon a) = Point2 a
   pointwise f (Polygon xs) = Polygon $ map f xs
 
-  
+ 
+drawFrame :: (Num u, Ord u) => Picture u -> Picture u
+drawFrame p = p `overlay` (frp # setRGBColour wumpusRed)
+  where
+    (Frame2 o vx vy) = extractFrame p
+    xbasis           = straightLinePath OStroke [o, o .+^ vx]
+    ybasis           = straightLinePath OStroke [o, o .+^ vy]
+    bb               = tracePath xbasis `gappend` tracePath ybasis
+    frp              = Multi (Nothing,bb) [Path1 noProp xbasis, Path1 noProp ybasis]
+
+ 
 picPolygon :: (Num u, Ord u) => DrawProp -> Polygon u -> Picture u
 picPolygon dp (Polygon xs) = Single (Nothing,trace xs) (Path1 noProp path)
   where 
-    path         = Path dp start segs
-    (start,segs) = straightLinePath xs
+    path = straightLinePath dp xs
 
 
 
 extractPolygonPath :: Polygon u -> Path u
-extractPolygonPath p = Path CStroke p0 ps where
-  (p0,ps) = straightLinePath $ vertexList p 
+extractPolygonPath p = straightLinePath CStroke $ vertexList p 
 
 
 bbPolygon :: (Num u, Ord u) => Polygon u -> BoundingBox u

@@ -131,7 +131,7 @@ instance Num a => Monoid (Vec2 a) where
 
 instance (Num a, InnerSpace (Vec2 a)) => Monoid (Frame2 a) where
   mempty = ortho zeroPt
-  mappend = concatFrames
+  mappend = frameProduct
 
 
 
@@ -329,8 +329,8 @@ matrix2Frame :: Matrix3'3 a -> Frame2 a
 matrix2Frame (M3'3 a b e c d f _ _ _) = Frame2 (P2 e f) (V2 a c) (V2 b d)
 
 
-concatFrames :: (Num a, InnerSpace (Vec2 a)) => Frame2 a -> Frame2 a -> Frame2 a
-concatFrames = matrix2Frame `oo` twine (*) frame2Matrix frame2Matrix
+frameProduct :: (Num a, InnerSpace (Vec2 a)) => Frame2 a -> Frame2 a -> Frame2 a
+frameProduct = matrix2Frame `oo` twine (*) frame2Matrix frame2Matrix
 
 
 

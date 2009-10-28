@@ -222,9 +222,9 @@ nullFontProps _                 = False
 
 
 
-straightLinePath :: [Point2 u] -> (Point2 u, [PathSeg u])
-straightLinePath []     = error "polygonPath - empty Polygon"
-straightLinePath (x:xs) = (x, map Ls xs)
+straightLinePath :: DrawProp -> [Point2 u] -> Path u
+straightLinePath _     []     = error "straightLinePath - empty point list"
+straightLinePath props (x:xs) = Path props x (map Ls xs)
 
 
 picEmpty :: Picture u
@@ -307,9 +307,9 @@ overlays (x:xs) = foldl' overlay x xs
 
 drawBounds :: (Num u, Ord u) => Picture u -> Picture u
 drawBounds Empty = Empty
-drawBounds p     = p `overlay` (picPath $ Path CStroke p0 ps) where
-    bb      = extractBounds p
-    (p0,ps) = straightLinePath $ corners bb 
+drawBounds p     = p `overlay` (picPath path) where
+    bb   = extractBounds p
+    path = straightLinePath CStroke $ corners bb 
 
 
 extractBounds :: (Num u, Ord u) => Picture u -> BoundingBox u
@@ -317,6 +317,13 @@ extractBounds Empty                  = error $ "extractBounds Empty"
 extractBounds (Single  (_,bb) _)     = bb
 extractBounds (Multi   (_,bb) _)     = bb
 extractBounds (Picture (_,bb) _ _ _) = bb
+
+extractFrame :: Num u => Picture u -> Frame2 u
+extractFrame Empty                  = ortho zeroPt
+extractFrame (Single  (fr,_) _)     = maybe (ortho zeroPt) id fr
+extractFrame (Multi   (fr,_) _)     = maybe (ortho zeroPt) id fr
+extractFrame (Picture (fr,_) _ _ _) = maybe (ortho zeroPt) id fr
+
 
 
 mapMeasure :: (Measure u -> Measure u) -> Picture u -> Picture u
@@ -452,7 +459,9 @@ bbComment (BBox (P2 x0 y0) (P2 x1 y1)) =
 
 drawPrimitive :: MbFrame Double -> Primitive Double -> WumpusM ()
 drawPrimitive fr (Path1 props p)  = 
-    updatePen props $ updateFrame fr $ drawPath p
+--    updatePen props $ updateFrame fr $ drawPath p
+    updatePen props $ drawPathFr fr p
+
 drawPrimitive fr (Label1 props l) = 
     updateFont props $ updateFrame fr $ drawLabel l
 
@@ -517,17 +526,37 @@ drawPath (Path dp pt xs) = let P2 x y = pt in do
     ps_newpath
     ps_moveto x y
     mapM_ drawLineSeg xs
-    finalize dp   
+    closePath dp   
   where
     drawLineSeg (Ls p)        = let P2 x y = p in ps_lineto x y
     drawLineSeg (Cs p1 p2 p3) = let P2 x1 y1 = p1
                                     P2 x2 y2 = p2
                                     P2 x3 y3 = p3
                                 in ps_curveto x1 y1 x2 y2 x3 y3
-    finalize OStroke = ps_stroke
-    finalize CStroke = ps_closepath >> ps_stroke
-    finalize CFill   = ps_closepath >> ps_fill
-    finalize CCrop   = ps_closepath >> ps_clip
+
+
+    
+drawPathFr :: MbFrame Double -> Path Double -> WumpusM ()
+drawPathFr frm (Path dp pt xs) = let P2 x y = pointInFrame pt fr in do  
+    ps_newpath
+    ps_moveto x y
+    mapM_ drawLineSeg xs
+    closePath dp   
+  where
+    fr                        = maybe (ortho zeroPt) id frm
+    drawLineSeg (Ls p)        = let P2 x y = pointInFrame p fr in ps_lineto x y
+    drawLineSeg (Cs p1 p2 p3) = let P2 x1 y1 = pointInFrame p1 fr
+                                    P2 x2 y2 = pointInFrame p2 fr
+                                    P2 x3 y3 = pointInFrame p3 fr
+                                in ps_curveto x1 y1 x2 y2 x3 y3
+
+
+
+closePath :: DrawProp -> WumpusM ()
+closePath OStroke = ps_stroke
+closePath CStroke = ps_closepath >> ps_stroke
+closePath CFill   = ps_closepath >> ps_fill
+closePath CCrop   = ps_closepath >> ps_clip
 
 
 drawLabel :: Label Double -> WumpusM ()
