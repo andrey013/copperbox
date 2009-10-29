@@ -55,14 +55,49 @@ type DPoint2 = Point2 Double
 
 
 -- | Two dimensional frame.
-data Frame2 a = Frame2 (Point2 a) (Vec2 a) (Vec2 a)
+data Frame2 a = Frame2 (Vec2 a) (Vec2 a) (Point2 a)
   deriving (Eq,Show)
 
 type DFrame2 = Frame2 Double
 
 
 
--- 3x3 matrix
+-- | 3x3 matrix, considered to be in row-major form.
+-- 
+-- > (M3'3 a b c
+-- >       d e f
+-- >       g h i)
+--
+-- For instance the rotation matrix is represented as
+--
+-- >  ( cos(a) -sin(a) 0
+-- >    sin(a)  cos(a) 0  
+-- >      0         0  1 )
+--
+-- This is congruent with the form presented in Santos -  
+-- Example 45, page 17 extended to 3x3. 
+--
+-- ref. David A. Santos /Multivariable and Vector Calculus/,
+-- July 17, 2008 Version.
+--
+-- The right-most column is considered to represent a
+-- coordinate:
+--
+-- >  ( 1 0 x
+-- >    0 1 y  
+-- >    0 0 1 ) 
+-- >
+-- 
+-- So a translation matrix representing the displacement in x 
+-- of 40 and in y of 10 would be:
+--
+-- >  ( 1 0 40
+-- >    0 1 10  
+-- >    0 0 1  ) 
+-- >
+-- 
+
+
 data Matrix3'3 a = M3'3 !a !a !a  !a !a !a  !a !a !a
   deriving (Eq)
 
@@ -182,9 +217,10 @@ instance Pretty a => Pretty (Point2 a) where
   pretty (P2 a b) = brackets (char '|' <+> pretty a <+> pretty b <+> char '|')
 
 instance Pretty a => Pretty (Frame2 a) where
-  pretty (Frame2 o xv yv) = braces $
-      text "O:" <> pretty o <+> text "xv:" <> pretty xv 
-                            <+> text "yv:" <> pretty yv
+  pretty (Frame2 e0 e1 o) = braces $
+        text "e0:" <> pretty e0
+    <+> text "e1:" <> pretty e1
+    <+> text "o:" <> pretty o
 
 instance Real a => Pretty (Matrix3'3 a) where
   pretty (M3'3 a b c  d e f  g h i) = 
@@ -313,23 +349,28 @@ langle (P2 x y) (P2 x' y') = toRadian $ atan $ (y'-y) / (x'-x)
 -- Frame operations
 
 ortho :: Num a => Point2 a -> Frame2 a
-ortho o = Frame2 o (V2 1 0) (V2 0 1)
+ortho o = Frame2 (V2 1 0) (V2 0 1) o
 
 displaceOrigin :: Num a => Vec2 a -> Frame2 a -> Frame2 a
-displaceOrigin v (Frame2 o vx vy) = Frame2 (o.+^v) vx vy
+displaceOrigin v (Frame2 e0 e1 o) = Frame2 e0 e1 (o.+^v)
 
 coord :: Num a => Frame2 a -> Point2 a -> Point2 a
-coord (Frame2 o e0 e1) (P2 x y) = (o .+^ (x *^ e0)) .+^ (y *^ e1)
+coord (Frame2 e0 e1 o) (P2 x y) = (o .+^ (x *^ e0)) .+^ (y *^ e1)
 
 
 pointInFrame :: Num a => Point2 a -> Frame2 a -> Point2 a
-pointInFrame (P2 x y) (Frame2 o vx vy) = (o .+^ (vx ^* x)) .+^ (vy ^* y)  
+pointInFrame (P2 x y) (Frame2 vx vy o) = (o .+^ (vx ^* x)) .+^ (vy ^* y)  
 
 frame2Matrix :: Num a =>  Frame2 a -> Matrix3'3 a
-frame2Matrix (Frame2 (P2 e f) (V2 a c) (V2 b d)) = M3'3 a b e  c d f  0 0 1
+frame2Matrix (Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) = 
+    M3'3 e0x e1x ox  
+         e0y e1y oy 
+         0   0   1
 
 matrix2Frame :: Matrix3'3 a -> Frame2 a
-matrix2Frame (M3'3 a b e c d f _ _ _) = Frame2 (P2 e f) (V2 a c) (V2 b d)
+matrix2Frame (M3'3 e0x e1x ox 
+                   e0y e1y oy
+                   _   _   _ ) = Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
 
 
 frameProduct :: (Num a, InnerSpace (Vec2 a)) => Frame2 a -> Frame2 a -> Frame2 a
@@ -337,10 +378,10 @@ frameProduct = matrix2Frame `oo` twine (*) frame2Matrix frame2Matrix
 
 
 
--- | Is the at (0,0) and are the basis vectors orthogonal with 
--- unit length?
+-- | Is the origin at (0,0) and are the basis vectors orthogonal 
+-- with unit length?
 standardFrame :: Num a => Frame2 a -> Bool
-standardFrame (Frame2 (P2 0 0) (V2 1 0) (V2 0 1)) = True
+standardFrame (Frame2 (V2 1 0) (V2 0 1) (P2 0 0)) = True
 standardFrame _                                   = False
 
 
@@ -348,20 +389,26 @@ standardFrame _                                   = False
 -- Matrix construction
 
 identityMatrix :: Num a => Matrix3'3 a
-identityMatrix = M3'3 1 0 0  0 1 0  0 0 1
+identityMatrix = M3'3 1 0 0  
+                      0 1 0  
+                      0 0 1
 
 -- Common transformation matrices (for 2d homogeneous coordinates)
 
 scalingMatrix :: Num a => a -> a -> Matrix3'3 a
-scalingMatrix sx sy = M3'3  sx 0 0   0 sy 0   0 0 1
+scalingMatrix sx sy = M3'3  sx 0  0   
+                            0  sy 0   
+                            0  0  1
 
 translationMatrix :: Num a => a -> a -> Matrix3'3 a
-translationMatrix x y = M3'3 1 0 x  0 1 y  0 0 1
+translationMatrix x y = M3'3 1 0 x  
+                             0 1 y  
+                             0 0 1
 
 rotationMatrix :: (Floating a, Real a) => Radian -> Matrix3'3 a
 rotationMatrix a = M3'3 (cos ang) (negate $ sin ang) 0 
-                        (sin ang) (cos ang)   0  
-                        0         0           1
+                        (sin ang) (cos ang)          0  
+                        0         0                  1
   where ang = fromRadian a
 
 -- No reflectionMatrix function
@@ -374,8 +421,13 @@ originatedRotationMatrix :: (Floating a, Real a)
                          => Radian -> (Point2 a) -> Matrix3'3 a
 originatedRotationMatrix ang (P2 x y) = mT * (rotationMatrix ang) * mTinv
   where
-    mT    = M3'3 1 0 x     0 1 y     0 0 1
-    mTinv = M3'3 1 0 (-x)  0 1 (-y)  0 0 1
+    mT    = M3'3 1 0 x     
+                 0 1 y     
+                 0 0 1
+
+    mTinv = M3'3 1 0 (-x)  
+                 0 1 (-y)  
+                 0 0   1
 
 
 
@@ -388,13 +440,21 @@ determinant :: Num a => Matrix3'3 a -> a
 determinant (M3'3 a b c d e f g h i) = a*e*i - a*f*h - b*d*i + b*f*g + c*d*h - c*e*g
 
 transpose :: Matrix3'3 a -> Matrix3'3 a
-transpose (M3'3 a b c d e f g h i) = M3'3 a d g  b e h  c f i
+transpose (M3'3 a b c 
+                d e f 
+                g h i) = M3'3 a d g  
+                              b e h  
+                              c f i
 
 adjoint :: Num a => Matrix3'3 a -> Matrix3'3 a 
 adjoint = transpose . cofactor . mofm
 
 mofm :: Num a => Matrix3'3 a -> Matrix3'3 a
-mofm (M3'3 a b c  d e f  g h i)  = M3'3 m11 m12 m13  m21 m22 m23 m31 m32 m33
+mofm (M3'3 a b c  
+           d e f  
+           g h i)  = M3'3 m11 m12 m13  
+                          m21 m22 m23 
+                          m31 m32 m33
   where  
     m11 = (e*i) - (f*h)
     m12 = (d*i) - (f*g)
@@ -408,10 +468,11 @@ mofm (M3'3 a b c  d e f  g h i)  = M3'3 m11 m12 m13  m21 m22 m23 m31 m32 m33
 
 
 cofactor :: Num a => Matrix3'3 a -> Matrix3'3 a
-cofactor (M3'3 a b c  d e f  g h i) = 
-    M3'3   a  (-b)   c
-         (-d)   e  (-f)
-           g  (-h)   i
+cofactor (M3'3 a b c  
+               d e f  
+               g h i) = M3'3   a  (-b)   c
+                             (-d)   e  (-f)
+                               g  (-h)   i
 
 
 --------------------------------------------------------------------------------

@@ -42,9 +42,9 @@ instance Pointwise (Polygon a) where
 drawFrame :: (Num u, Ord u) => Picture u -> Picture u
 drawFrame p = p `overlay` (frp # setRGBColour wumpusRed)
   where
-    (Frame2 o vx vy) = extractFrame p
-    xbasis           = straightLinePath OStroke [o, o .+^ vx]
-    ybasis           = straightLinePath OStroke [o, o .+^ vy]
+    (Frame2 e0 e1 o) = extractFrame p
+    xbasis           = straightLinePath OStroke [o, o .+^ e0]
+    ybasis           = straightLinePath OStroke [o, o .+^ e1]
     bb               = tracePath xbasis `gappend` tracePath ybasis
     frp              = Multi (Nothing,bb) [Path1 noProp xbasis, Path1 noProp ybasis]
 

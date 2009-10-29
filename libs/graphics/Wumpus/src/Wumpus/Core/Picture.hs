@@ -191,7 +191,7 @@ transformFrame :: Num u
                -> MbFrame u
 transformFrame fp fv = Just . trf . maybe (ortho zeroPt) id  
   where
-    trf (Frame2 o vx vy) = Frame2 (fp o) (fv vx) (fv vy)    
+    trf (Frame2 e0 e1 o) = Frame2 (fv e0) (fv e1) (fp o)
 
 
 -- Bounding boxes need recalculating after a transformation.

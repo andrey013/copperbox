@@ -121,7 +121,7 @@ class ToCTM a where
   toCTM :: a -> CTM
 
 instance Real a => ToCTM (Frame2 a) where
-  toCTM (Frame2 (P2 ox oy) (V2 e1x e1y) (V2 e2x e2y )) 
+  toCTM (Frame2 (V2 e1x e1y) (V2 e2x e2y) (P2 ox oy)) 
     = CTM (toD e1x, toD e1y) (toD e2x, toD e2y) (toD ox, toD oy)
  
 
