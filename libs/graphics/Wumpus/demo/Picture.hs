@@ -33,9 +33,9 @@ demo0 = writePicture "picture0.ps" pfunnyshape
 demo1 = writePicture "picture1.ps" psquare
 
 
-pic1 = psquare <*> (pfunnyshape <*> pfunnyshape) <*> psquare
+pic1 = psquare <..> (pfunnyshape <..> pfunnyshape) <..> psquare
 
-psquares = psquare <*> psquare <*> psquare
+psquares = psquare <..> psquare <..> psquare
 
 demo2 = writePicture "picture2.ps" psquares
 
@@ -43,9 +43,9 @@ demo2 = writePicture "picture2.ps" psquares
 
 demo3 = writePicture "picture3.ps" p1 
   where     
-    p1 = psquare <*> (drawFrame $ rotate45About (center psquares) psquares) <*> psquare
+    p1 = psquare <..> (drawFrame $ rotate45About (center psquares) psquares) <..> psquare
 
-d3 = pretty $ psquare <*> (rotate45About (center psquares) psquares) <*> psquare
+d3 = pretty $ psquare <..> (rotate45About (center psquares) psquares) <..> psquare
 
 demo4 = writePicture "picture4.ps" p1
   where

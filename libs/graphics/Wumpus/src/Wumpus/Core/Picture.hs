@@ -35,7 +35,6 @@ import Text.PrettyPrint.Leijen
 
 import qualified Data.Foldable  as F
 import Data.List                ( foldl', mapAccumR )
-import Data.Monoid
 import Data.Sequence            ( Seq, (|>) )
 import qualified Data.Sequence  as S
 
@@ -283,9 +282,9 @@ arrange f a     b     = Picture (Nothing, bb) noProp a b' where
     
    
 
-(<*>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-(<*>) = arrange $ 
-         twine fn (rightPlane . extractBounds) (leftPlane . extractBounds)
+(<..>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
+(<..>) = arrange $ 
+           twine fn (rightPlane . extractBounds) (leftPlane . extractBounds)
   where fn = hvec `oo` (-) 
 
 
@@ -419,7 +418,7 @@ writePicture filepath pic = writeFile filepath $ psDraw pic
 
 -- | Draw a picture, generating PostScript output.
 psDraw :: Picture Double -> PostScript
-psDraw pic = prologue ++ runWumpus (drawPicture Nothing pic) ++ epilogue
+psDraw pic = prologue ++ runWumpus (drawPicture pic) ++ epilogue
   where
     prologue = unlines $ [ "%!PS-Adobe-2.0"
                          , "%%Pages: 1"
@@ -436,34 +435,39 @@ psDraw pic = prologue ++ runWumpus (drawPicture Nothing pic) ++ epilogue
                    
     epilogue = unlines $ [ "showpage", "", "%%EOF", ""]
 
-drawPicture :: MbFrame Double -> Picture Double  -> WumpusM ()
-drawPicture _  Empty                      = return ()
+-- | DrawPicture 
+-- Frame changes, representing scalings translation, rotations...
+-- are drawn when they are encountered as a @concat@ statement in a 
+-- block of @gsave ... grestore@.
 
-drawPicture f0 (Single (fr,bb) prim)      = do
-    bbComment bb
-    drawPrimitive (f0 `mappend` fr) prim
+drawPicture :: Picture Double  -> WumpusM ()
+drawPicture Empty                     = return ()
+drawPicture (Single (fr,_) prim)      = updateFrame fr $ drawPrimitive prim
+drawPicture (Multi (fr,_) ps)         = updateFrame fr $ mapM_ drawPrimitive ps
+drawPicture (Picture (fr,_) prop a b) = updatePen prop $ do
+    updateFrame fr $ drawPicture  a
+    updateFrame fr $ drawPicture  b
 
-drawPicture f0 (Multi (fr,bb) ps)         = do
-    bbComment bb
-    mapM_ (drawPrimitive (f0 `mappend` fr)) ps
+updateFrame :: MbFrame Double -> WumpusM () -> WumpusM ()
+updateFrame Nothing    ma = ma
+updateFrame (Just frm) ma = do
+    ps_gsave
+    ps_concat $ toCTM frm
+    ma
+    ps_grestore
 
-drawPicture f0 (Picture (fr,bb) prop a b) = updatePen prop $ do
-    bbComment bb
-    drawPicture (f0 `mappend` fr) a
-    drawPicture (f0 `mappend` fr) b
 
 
 bbComment :: BoundingBox Double -> WumpusM ()
 bbComment (BBox (P2 x0 y0) (P2 x1 y1)) = 
     ps_comment $ "bounding-box " ++ show (x0,y0) ++ ".." ++ show (x1,y1)
 
-drawPrimitive :: MbFrame Double -> Primitive Double -> WumpusM ()
-drawPrimitive fr (Path1 props p)  = 
-    updatePen props $ updateFrame fr $ drawPath p
---    updatePen props $ drawPathFr fr p
+drawPrimitive :: Primitive Double -> WumpusM ()
+drawPrimitive (Path1 props p)  = 
+    updatePen props $ drawPath p
 
-drawPrimitive fr (Label1 props l) = 
-    updateFont props $ updateFrame fr $ drawLabel l
+drawPrimitive (Label1 props l) = 
+    updateFont props $ drawLabel l
 
 updatePen :: PathProps -> WumpusM () -> WumpusM ()
 updatePen prop@(mbc,se) ma
@@ -506,25 +510,6 @@ colourCommand (PSRgb r g b) = ps_setrgbcolor r g b
 colourCommand (PSHsb h s v) = ps_sethsbcolor h s v
 colourCommand (PSGray a)    = ps_setgray a
 
--- 3 5 scale
--- [ 3 0 0 5 0 0 ] concat
--- 100 300 translate
--- [ 1 0 0 1 100 300 ] concat
--- [ cos(angle) sin(angle) -sin(angle) cos(angle) 0 0 ]
-
--- wumpus 
--- [ cos(a) -sin(a) 0 | sin(a) cos(a) 0 | 0 0 1 ]
-
-updateFrame :: MbFrame Double -> WumpusM () -> WumpusM ()
-updateFrame Nothing    ma = ma
-updateFrame (Just frm) ma = do
-    ps_gsave
-    ps_concat ctm
-    ma
-    ps_grestore
-  where
-    ctm = toCTM $ invert $ frame2Matrix frm
- 
     
 drawPath :: Path Double -> WumpusM ()
 drawPath (Path dp pt xs) = let P2 x y = pt in do  
@@ -539,21 +524,6 @@ drawPath (Path dp pt xs) = let P2 x y = pt in do
                                     P2 x3 y3 = p3
                                 in ps_curveto x1 y1 x2 y2 x3 y3
 
-
-    
-drawPathFr :: MbFrame Double -> Path Double -> WumpusM ()
-drawPathFr frm (Path dp pt xs) = let P2 x y = pointInFrame pt fr in do  
-    ps_newpath
-    ps_moveto x y
-    mapM_ drawLineSeg xs
-    closePath dp   
-  where
-    fr                        = maybe (ortho zeroPt) id frm
-    drawLineSeg (Ls p)        = let P2 x y = pointInFrame p fr in ps_lineto x y
-    drawLineSeg (Cs p1 p2 p3) = let P2 x1 y1 = pointInFrame p1 fr
-                                    P2 x2 y2 = pointInFrame p2 fr
-                                    P2 x3 y3 = pointInFrame p3 fr
-                                in ps_curveto x1 y1 x2 y2 x3 y3
 
 
 
