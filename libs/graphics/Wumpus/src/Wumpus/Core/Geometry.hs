@@ -54,7 +54,16 @@ type DPoint2 = Point2 Double
 
 
 
--- | Two dimensional frame.
+-- | A two dimensional frame.
+-- 
+-- The components are the two basis vectors @e0@ and @e1@ and 
+-- the origin @o@.
+--
+-- Typically these names for the elements will be used:
+--
+-- > Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
+-- 
+
 data Frame2 a = Frame2 (Vec2 a) (Vec2 a) (Point2 a)
   deriving (Eq,Show)
 
@@ -354,12 +363,23 @@ ortho o = Frame2 (V2 1 0) (V2 0 1) o
 displaceOrigin :: Num a => Vec2 a -> Frame2 a -> Frame2 a
 displaceOrigin v (Frame2 e0 e1 o) = Frame2 e0 e1 (o.+^v)
 
-coord :: Num a => Frame2 a -> Point2 a -> Point2 a
-coord (Frame2 e0 e1 o) (P2 x y) = (o .+^ (x *^ e0)) .+^ (y *^ e1)
-
 
 pointInFrame :: Num a => Point2 a -> Frame2 a -> Point2 a
 pointInFrame (P2 x y) (Frame2 vx vy o) = (o .+^ (vx ^* x)) .+^ (vy ^* y)  
+
+-- | Concatenate the elements of the frame as columns forming a
+-- 3x3 matrix. Points and vectors are considered homogeneous 
+-- coordinates - triples where the least element is either 0 
+-- indicating a vector or 1 indicating a point:
+--
+-- > Frame (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
+-- 
+-- becomes
+--
+-- > (M3'3 e0x e1x ox
+-- >       e0y e1y oy
+-- >        0   0   1  )
+--
 
 frame2Matrix :: Num a =>  Frame2 a -> Matrix3'3 a
 frame2Matrix (Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) = 
@@ -367,12 +387,25 @@ frame2Matrix (Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) =
          e0y e1y oy 
          0   0   1
 
+
+-- | Interpret the matrix as columns forming a frame.
+--
+-- > (M3'3 e0x e1x ox
+-- >       e0y e1y oy
+-- >        0   0   1  )
+--
+-- becomes
+--
+-- > Frame (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
+-- 
+
 matrix2Frame :: Matrix3'3 a -> Frame2 a
 matrix2Frame (M3'3 e0x e1x ox 
                    e0y e1y oy
                    _   _   _ ) = Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
 
 
+-- | /Multiplication/ of frames to form their product.
 frameProduct :: (Num a, InnerSpace (Vec2 a)) => Frame2 a -> Frame2 a -> Frame2 a
 frameProduct = matrix2Frame `oo` twine (*) frame2Matrix frame2Matrix
 
@@ -388,12 +421,26 @@ standardFrame _                                   = False
 --------------------------------------------------------------------------------
 -- Matrix construction
 
+-- | Construct the identity matrix:
+--
+-- > (M3'3 1 0 0
+-- >       0 1 0
+-- >       0 0 1 )
+--
+
 identityMatrix :: Num a => Matrix3'3 a
 identityMatrix = M3'3 1 0 0  
                       0 1 0  
                       0 0 1
 
 -- Common transformation matrices (for 2d homogeneous coordinates)
+
+-- | Construct a scaling matrix:
+--
+-- > (M3'3 sx 0  0
+-- >       0  sy 0
+-- >       0  0  1 )
+--
 
 scalingMatrix :: Num a => a -> a -> Matrix3'3 a
 scalingMatrix sx sy = M3'3  sx 0  0   

@@ -110,26 +110,71 @@ data PSColour = PSRgb  Double Double Double
               | PSGray Double
   deriving (Eq,Show)
 
-data CTM = CTM (Double,Double) (Double,Double) (Double,Double)
+-- | PostScript's current transformation matrix.
+-- 
+-- PostScript and its documentation considers the matrix to be 
+-- in this form:
+--
+-- > | a  b  0 |
+-- > | c  d  0 | 
+-- > | tx ty 1 |
+-- 
+-- i.e it considers the homogeneous coordinates of an affine 
+-- frame as /rows/ rather than /columns/ (Wumpus uses rows, as 
+-- they were the usual representation in the geometry 
+-- presentations that inspired it).
+-- 
+-- Using the component names that we have used in the 
+-- description of 'Frame2', the CTM is:
+--
+-- > | e0x  e0y  0 |
+-- > | e1x  e1y  0 | 
+-- > | ox   oy   1 |
+-- 
+-- The CTM is represented in PostScript as an array, using our 
+-- names its layout is
+--
+-- > [ e0x e0y e1x e1y ox oy ] 
+--
+-- Some examples, the scaling matrix:
+--
+-- > | sx 0  0 |
+-- > | 0  sy 0 |  = [ sx 0 0 sy 0 0 ]
+-- > | 0  0  1 |
+-- 
+-- Translation (displacement) :
+--
+-- > | 1  0  0 |
+-- > | 0  1  0 |  = [ 1 0 0 1 tx ty ]
+-- > | tx ty 1 |
+-- 
+-- Rotation:
+-- 
+-- > |  cos(a)  sin(a)  0 |
+-- > | -sin(a)  cos(a)  0 |  = [ cos(a) sin(a) -sin(a) cos(a) 0 0 ]
+-- > |    0       0     1 |
+
+data CTM = CTM Double Double  Double Double  Double Double
   deriving (Eq,Show)
 
 
 --------------------------------------------------------------------------------
 -- Conversion to CTM
 
+
 class ToCTM a where 
   toCTM :: a -> CTM
 
 instance Real a => ToCTM (Frame2 a) where
-  toCTM (Frame2 (V2 e1x e1y) (V2 e2x e2y) (P2 ox oy)) 
-    = CTM (toD e1x, toD e1y) (toD e2x, toD e2y) (toD ox, toD oy)
+  toCTM (Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) 
+    = CTM (toD e0x) (toD e0y) (toD e1x) (toD e1y) (toD ox) (toD oy)
  
 
 instance Real a => ToCTM (Matrix3'3 a) where
-  toCTM (M3'3 a b c  
-              d e f  
-              _ _ _) 
-    = CTM (toD a, toD d) (toD b, toD e) (toD c, toD f)
+  toCTM (M3'3 e0x e1x ox  
+              e0y e1y oy  
+              _   _   _  ) 
+    = CTM (toD e0x) (toD e0y) (toD e1x)(toD e1y) (toD ox) (toD oy)
 
 toD :: Real a => a -> Double 
 toD = realToFrac
@@ -235,7 +280,7 @@ ps_translate tx ty = do
 
 -- Do not use setmatrix for changing the CTM use concat
 ps_concat :: CTM -> WumpusM ()
-ps_concat (CTM (a,b) (c,d) (e,f)) = command "concat" [mat] where 
+ps_concat (CTM a b  c d  e f) = command "concat" [mat] where 
     mat = showArray ((++) . dtrunc) [a,b,c,d,e,f]
 
 
