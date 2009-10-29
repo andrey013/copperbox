@@ -516,14 +516,14 @@ colourCommand (PSGray a)    = ps_setgray a
 -- [ cos(a) -sin(a) 0 | sin(a) cos(a) 0 | 0 0 1 ]
 
 updateFrame :: MbFrame Double -> WumpusM () -> WumpusM ()
-updateFrame Nothing                                              ma = ma
-updateFrame (Just (Frame2 (P2 o0 o1) (V2 e00 e01) (V2 e10 e11))) ma = do
+updateFrame Nothing    ma = ma
+updateFrame (Just frm) ma = do
     ps_gsave
-    ps_concat e0x e0y e1x e1y ox oy 
+    ps_concat ctm
     ma
     ps_grestore
   where
-    M3'3 e0x e1x ox  e0y e1y oy  _ _ _ = invert $ M3'3 e00 e10 o0  e01 e11 o1 0 0 1
+    ctm = toCTM $ invert $ frame2Matrix frm
  
     
 drawPath :: Path Double -> WumpusM ()

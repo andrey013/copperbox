@@ -21,6 +21,7 @@
 
 module Wumpus.Core.PostScript where
 
+import Wumpus.Core.Geometry ( Frame2(..), Vec2(..), Point2(..), Matrix3'3(..) )
 import Wumpus.Core.Utils ( dtrunc )
 
 import qualified Data.DList as DL
@@ -109,7 +110,29 @@ data PSColour = PSRgb  Double Double Double
               | PSGray Double
   deriving (Eq,Show)
 
+data CTM = CTM (Double,Double) (Double,Double) (Double,Double)
+  deriving (Eq,Show)
 
+
+--------------------------------------------------------------------------------
+-- Conversion to CTM
+
+class ToCTM a where 
+  toCTM :: a -> CTM
+
+instance Real a => ToCTM (Frame2 a) where
+  toCTM (Frame2 (P2 ox oy) (V2 e1x e1y) (V2 e2x e2y )) 
+    = CTM (toD e1x, toD e1y) (toD e2x, toD e2y) (toD ox, toD oy)
+ 
+
+instance Real a => ToCTM (Matrix3'3 a) where
+  toCTM (M3'3 a b c  
+              d e f  
+              _ _ _) 
+    = CTM (toD a, toD d) (toD b, toD e) (toD c, toD f)
+
+toD :: Real a => a -> Double 
+toD = realToFrac
 
 --------------------------------------------------------------------------------
 -- writer monad helpers
@@ -211,10 +234,8 @@ ps_translate tx ty = do
     command "translate" $ map dtrunc [tx,ty]
 
 -- Do not use setmatrix for changing the CTM use concat
-ps_concat :: Double -> Double -> Double 
-          -> Double -> Double -> Double 
-          -> WumpusM ()
-ps_concat a b c d e f = command "concat" [mat] where 
+ps_concat :: CTM -> WumpusM ()
+ps_concat (CTM (a,b) (c,d) (e,f)) = command "concat" [mat] where 
     mat = showArray ((++) . dtrunc) [a,b,c,d,e,f]
 
 
