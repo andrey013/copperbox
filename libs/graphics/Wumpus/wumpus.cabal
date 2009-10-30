@@ -38,7 +38,8 @@ library
     Wumpus.Extra.Grid,
     Wumpus.Extra.Polygon,
     Wumpus.Extra.SVGColours,
-    Wumpus.Extra.X11Colours
+    Wumpus.Extra.X11Colours,
+    Wumpus.Geometry.Line
   other-modules:
     
   extensions:

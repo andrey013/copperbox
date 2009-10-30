@@ -335,13 +335,20 @@ instance Num a => MatrixMult Matrix3'3 (Point2 a) where
 --------------------------------------------------------------------------------
 -- Vectors
 
+-- | Construct a vector with horizontal displacement.
 hvec :: Num a => a -> Vec2 a
 hvec d = V2 d 0
 
+-- | Construct a vector with vertical displacement.
 vvec :: Num a => a -> Vec2 a
 vvec d = V2 0 d
 
-
+-- | Construct a vector from an angle and magnitude.
+avec :: Floating a => Radian -> a -> Vec2 a
+avec theta d = V2 x y where
+  ang = fromRadian theta
+  x   = d * cos ang
+  y   = d * sin ang
 
 
 --------------------------------------------------------------------------------
@@ -486,6 +493,10 @@ invert m = (1 / determinant m) *^ adjoint m
 determinant :: Num a => Matrix3'3 a -> a
 determinant (M3'3 a b c d e f g h i) = a*e*i - a*f*h - b*d*i + b*f*g + c*d*h - c*e*g
 
+
+adjoint :: Num a => Matrix3'3 a -> Matrix3'3 a 
+adjoint = transpose . cofactor . mofm
+
 transpose :: Matrix3'3 a -> Matrix3'3 a
 transpose (M3'3 a b c 
                 d e f 
@@ -493,14 +504,18 @@ transpose (M3'3 a b c
                               b e h  
                               c f i
 
-adjoint :: Num a => Matrix3'3 a -> Matrix3'3 a 
-adjoint = transpose . cofactor . mofm
+cofactor :: Num a => Matrix3'3 a -> Matrix3'3 a
+cofactor (M3'3 a b c  
+               d e f  
+               g h i) = M3'3   a  (-b)   c
+                             (-d)   e  (-f)
+                               g  (-h)   i
 
 mofm :: Num a => Matrix3'3 a -> Matrix3'3 a
 mofm (M3'3 a b c  
-           d e f  
-           g h i)  = M3'3 m11 m12 m13  
-                          m21 m22 m23 
+               d e f  
+               g h i)  = M3'3 m11 m12 m13  
+                              m21 m22 m23 
                           m31 m32 m33
   where  
     m11 = (e*i) - (f*h)
@@ -512,14 +527,6 @@ mofm (M3'3 a b c
     m31 = (b*f) - (c*e)
     m32 = (a*f) - (c*d)
     m33 = (a*e) - (b*d)
-
-
-cofactor :: Num a => Matrix3'3 a -> Matrix3'3 a
-cofactor (M3'3 a b c  
-               d e f  
-               g h i) = M3'3   a  (-b)   c
-                             (-d)   e  (-f)
-                               g  (-h)   i
 
 
 --------------------------------------------------------------------------------
