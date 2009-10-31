@@ -278,6 +278,12 @@ ps_translate :: Double -> Double -> WumpusM ()
 ps_translate tx ty = do
     command "translate" $ map dtrunc [tx,ty]
 
+ps_scale :: Double -> Double -> WumpusM ()
+ps_scale tx ty = do
+    command "scale" $ map dtrunc [tx,ty]
+
+
+
 -- Do not use setmatrix for changing the CTM use concat
 ps_concat :: CTM -> WumpusM ()
 ps_concat (CTM a b  c d  e f) = command "concat" [mat] where 

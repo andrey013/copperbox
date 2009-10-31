@@ -46,8 +46,34 @@ data Picture u = Empty
                | Picture  (Measure u) PictureProps (Picture u) (Picture u)
   deriving (Eq,Show) 
 
-data Primitive u = Path1  PathProps (Path u)
-                 | Label1 LabelProps (Label u) 
+
+-- Ellipses are a primitive so they can be drawn efficiently.
+-- 
+-- Arcs are path primitives in PostScript, however following that
+-- example for Wumpus is tricky. Arcs don't have the nice 
+-- properties of bezier curves where affine transformations can 
+-- just transform the control points and a bounding box can be 
+-- considered the bounds of the control points.
+-- 
+-- So if we making arc a type of path (with curve and line 
+-- segment) would create a lot of hard work. Instead we use
+-- the PostScript command @arc@ only to create ellipses and
+-- circles (ellipses are actually circles with non-uniform 
+-- scaling).
+--
+
+
+
+
+
+data Primitive u = Path1    PathProps (Path u)
+                 | Label1   LabelProps (Label u) 
+                 | Ellipse1 { 
+                      ellipseProps  :: EllipseProps,
+                      ellipseCenter :: Point2 u,
+                      ellipseWidth  :: u,
+                      ellipseHeight :: u 
+                    } 
   deriving (Eq,Show)
 
 
@@ -56,14 +82,6 @@ data Path u = Path DrawProp (Point2 u) [PathSeg u]
 
 type DPath = Path Double
 
--- It would be handy to represent arcs (which are a primitive in 
--- PostScript) then we can easily draw circles. Unfortunately 
--- arcs don't have the nice property of bezier curves where 
--- affine transformations can just transform the control points 
--- and a bounding box can be considered the bounds of the control
--- points.
--- 
--- Making /ellipse/ a primitive is a possibilty.
 
 data PathSeg u = PCurve  (Point2 u) (Point2 u) (Point2 u)
                | PLine   (Point2 u)
@@ -77,12 +95,13 @@ data Label u = Label (Point2 u) String
 type DLabel = Label Double
 
 
-type Colour = Maybe PSColour
-type Font   = Maybe FontAttr
+type MbColour = Maybe PSColour
+type MbFont   = Maybe FontAttr
 
-type PictureProps = (Colour, Seq PenAttr)
-type PathProps    = (Colour, Seq PenAttr)
-type LabelProps   = (Colour, Font)
+type PictureProps = (MbColour, Seq PenAttr)
+type PathProps    = (MbColour, Seq PenAttr)
+type LabelProps   = (MbColour, MbFont)
+type EllipseProps = (MbColour, DrawProp)
 
 -- Measure = (_current_ frame x bounding box)
 -- /optimize/ the standard frame representing it as Nothing
@@ -119,8 +138,12 @@ ppMeasure (fr,bbox) = align (ppfr fr <$> pretty bbox) where
 
 
 instance Pretty u => Pretty (Primitive u) where
-  pretty (Path1 _ path) = pretty "path:" <+> pretty path
-  pretty (Label1 _ lbl) = pretty lbl
+  pretty (Path1 _ path)     = pretty "path:" <+> pretty path
+  pretty (Label1 _ lbl)     = pretty lbl
+  pretty (Ellipse1 _ c w h) = pretty "ellipse" <+> pretty c
+                                               <+> text "w:" <> pretty w
+                                               <+> text "h:" <> pretty h
+
 
 instance Pretty u => Pretty (Path u) where
    pretty (Path _ pt ps) = pretty pt <> hcat (map pretty ps)
@@ -215,19 +238,19 @@ transformBBox fp = trace . map fp . corners
 --------------------------------------------------------------------------------
 
 
-noProp :: (Colour,Seq a)
+noProp :: (MbColour,Seq a)
 noProp = (Nothing,S.empty)
 
 
-noFontProp :: (Colour,Font)
+noFontProp :: (MbColour,MbFont)
 noFontProp = (Nothing,Nothing)
 
 
-nullProps :: (Colour, Seq a) -> Bool
+nullProps :: (MbColour, Seq a) -> Bool
 nullProps (Nothing,se) = S.null se
 nullProps _            = False
 
-nullFontProps :: (Colour, Font) -> Bool
+nullFontProps :: (MbColour, MbFont) -> Bool
 nullFontProps (Nothing,Nothing) = True
 nullFontProps _                 = False
 
@@ -269,7 +292,11 @@ picLabel fontsz linespace str = Multi (Nothing, bb) lbls where
   fn pt ss = let pt' = pt .+^ (V2 (0::u) (fromIntegral $ fontsz + linespace))
              in (pt', Label1 noFontProp (Label pt ss))
 
-
+picEllipse :: Num u => EllipseProps -> u -> u -> Picture u
+picEllipse dp w h = Single (Nothing,bb) ellp where
+    v    = V2 w h
+    bb   = BBox (zeroPt .-^ v) (zeroPt .+^ v)
+    ellp = Ellipse1 dp zeroPt w h
 
 
 tracePath :: (Num u, Ord u) => Path u -> BoundingBox u
@@ -416,9 +443,11 @@ updatePrimProps :: (PathProps -> PathProps)
                 -> (LabelProps -> LabelProps) 
                 -> Primitive u  
                 -> Primitive u
-updatePrimProps f _ (Path1 p a)  = Path1 (f p) a
-updatePrimProps _ g (Label1 p a) = Label1 (g p) a
-
+updatePrimProps f _ (Path1 p a)        = Path1 (f p) a
+updatePrimProps _ g (Label1 p a)       = Label1 (g p) a
+updatePrimProps _ _ (Ellipse1 _ _ _ _) = error $ "updatePrimProps - ellipse"
+  -- throw an error for the time baing, 
+  -- this function as a whole is ill-defined
 
 --------------------------------------------------------------------------------
 -- Render to PostScript
@@ -475,11 +504,10 @@ bbComment (BBox (P2 x0 y0) (P2 x1 y1)) =
     ps_comment $ "bounding-box " ++ show (x0,y0) ++ ".." ++ show (x1,y1)
 
 drawPrimitive :: Primitive Double -> WumpusM ()
-drawPrimitive (Path1 props p)  = 
-    updatePen props $ drawPath p
-
-drawPrimitive (Label1 props l) = 
-    updateFont props $ drawLabel l
+drawPrimitive (Path1 props p)           = updatePen props $ drawPath p
+drawPrimitive (Label1 props l)          = updateFont props $ drawLabel l
+drawPrimitive (Ellipse1 (mbc,dp) c w h) = updateColour mbc $ 
+                                              drawEllipse dp c w h
 
 updatePen :: PathProps -> WumpusM () -> WumpusM ()
 updatePen prop@(mbc,se) ma
@@ -507,6 +535,16 @@ updateFont prop@(mbc,mfnt) ma
                               ; ma
                               ; ps_grestore
                               }
+
+updateColour :: MbColour -> WumpusM () -> WumpusM ()
+updateColour Nothing  ma = ma 
+updateColour (Just c) ma = do { ps_gsave
+                              ; colourCommand c
+                              ; ma
+                              ; ps_grestore
+                              }
+
+
 
 optFontCommand :: Maybe FontAttr -> WumpusM ()
 optFontCommand = maybe (return ()) fontCommand
@@ -537,7 +575,20 @@ drawPathSeg (PCurve p1 p2 p3) = let P2 x1 y1 = p1
                                     P2 x3 y3 = p3
                                 in ps_curveto x1 y1 x2 y2 x3 y3
 
+-- | Currently this is not very good as it uses a PostScript's
+-- @scale@ operator - this will vary the line width during the
+-- drawing of a stroked ellipse.
+drawEllipse :: DrawProp -> Point2 Double -> Double -> Double -> WumpusM ()
+drawEllipse dp (P2 x y) w h 
+    | w==h      = drawArc dp x y w
+    | otherwise = do { ps_gsave
+                     ; ps_scale 1 (h/w) -- Not so good -- changes stroke width
+                     ; drawArc dp x y w
+                     ; ps_grestore
+                     }
 
+drawArc :: DrawProp -> Double -> Double -> Double -> WumpusM ()
+drawArc dp x y r = ps_arc x y r 0 360 >> closePath dp
 
 
 closePath :: DrawProp -> WumpusM ()
