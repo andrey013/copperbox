@@ -51,6 +51,32 @@ data Primitive u = Path1  PathProps (Path u)
   deriving (Eq,Show)
 
 
+data Path u = Path DrawProp (Point2 u) [PathSeg u]
+  deriving (Eq,Show)
+
+type DPath = Path Double
+
+-- It would be handy to represent arcs (which are a primitive in 
+-- PostScript) then we can easily draw circles. Unfortunately 
+-- arcs don't have the nice property of bezier curves where 
+-- affine transformations can just transform the control points 
+-- and a bounding box can be considered the bounds of the control
+-- points.
+-- 
+-- Making /ellipse/ a primitive is a possibilty.
+
+data PathSeg u = PCurve  (Point2 u) (Point2 u) (Point2 u)
+               | PLine   (Point2 u)
+  deriving (Eq,Show)
+
+type DPathSeg = PathSeg Double
+
+data Label u = Label (Point2 u) String
+  deriving (Eq,Show)
+
+type DLabel = Label Double
+
+
 type Colour = Maybe PSColour
 type Font   = Maybe FontAttr
 
@@ -69,21 +95,7 @@ type DMeasure = Measure Double
 data DrawProp = OStroke | CStroke | CFill | CCrop 
   deriving (Eq,Show)
 
-data Path u = Path DrawProp (Point2 u) [PathSeg u]
-  deriving (Eq,Show)
 
-type DPath = Path Double
-
-data PathSeg u = Cs (Point2 u) (Point2 u) (Point2 u)
-               | Ls (Point2 u)
-  deriving (Eq,Show)
-
-type DPathSeg = PathSeg Double
-
-
-
-data Label u = Label (Point2 u) String
-  deriving (Eq,Show)
 
 
 --------------------------------------------------------------------------------
@@ -114,9 +126,9 @@ instance Pretty u => Pretty (Path u) where
    pretty (Path _ pt ps) = pretty pt <> hcat (map pretty ps)
 
 instance Pretty u => Pretty (PathSeg u) where
-  pretty (Cs p1 p2 p3) = text ".*" <> pretty p1 <> text ",," <> pretty p2 
-                                                <> text "*." <> pretty p3
-  pretty (Ls pt)       = text "--" <> pretty pt
+  pretty (PCurve p1 p2 p3)    = text ".*" <> pretty p1 <> text ",," <> pretty p2 
+                                          <> text "*." <> pretty p3
+  pretty (PLine pt)           = text "--" <> pretty pt
 
 instance Pretty u => Pretty (Label u) where
   pretty (Label pt s) = dquotes (text s) <> char '@' <> pretty pt
@@ -125,7 +137,7 @@ instance Pretty u => Pretty (Label u) where
 --------------------------------------------------------------------------------
 
 instance Groupoid (Path u) where
-  Path dp st xs `gappend` Path _ st' xs' = Path dp st (xs ++ (Ls st' : xs'))
+  Path dp st xs `gappend` Path _ st' xs' = Path dp st (xs ++ (PLine st' : xs'))
 
 
 instance Pointwise (Path u) where
@@ -134,9 +146,9 @@ instance Pointwise (Path u) where
 
 instance Pointwise (PathSeg u) where
   type Pt (PathSeg u) = Point2 u
-  pointwise f (Ls p)        = Ls (f p)
-  pointwise f (Cs p1 p2 p3) = Cs (f p1) (f p2) (f p3)
-
+  pointwise f (PLine p)         = PLine (f p)
+  pointwise f (PCurve p1 p2 p3) = PCurve (f p1) (f p2) (f p3)
+  
 
 instance (Floating u, Real u) => Rotate (Picture u) where
   rotate = rotatePicture 
@@ -223,7 +235,7 @@ nullFontProps _                 = False
 
 straightLinePath :: DrawProp -> [Point2 u] -> Path u
 straightLinePath _     []     = error "straightLinePath - empty point list"
-straightLinePath props (x:xs) = Path props x (map Ls xs)
+straightLinePath props (x:xs) = Path props x (map PLine xs)
 
 
 picEmpty :: Picture u
@@ -265,8 +277,8 @@ tracePath = trace . extractPoints
 
 extractPoints :: Path u -> [Point2 u]
 extractPoints (Path _ st xs) = st : foldr f [] xs where
-    f (Ls p)        acc = p : acc
-    f (Cs p1 p2 p3) acc = p1 : p2 : p3 : acc 
+    f (PLine p)         acc = p : acc
+    f (PCurve p1 p2 p3) acc = p1 : p2 : p3 : acc 
 
 
 arrange :: (Num u, Ord u)
@@ -515,11 +527,12 @@ drawPath :: Path Double -> WumpusM ()
 drawPath (Path dp pt xs) = let P2 x y = pt in do  
     ps_newpath
     ps_moveto x y
-    mapM_ drawLineSeg xs
+    mapM_ drawPathSeg xs
     closePath dp   
-  where
-    drawLineSeg (Ls p)        = let P2 x y = p in ps_lineto x y
-    drawLineSeg (Cs p1 p2 p3) = let P2 x1 y1 = p1
+
+drawPathSeg :: PathSeg Double -> WumpusM ()
+drawPathSeg (PLine p)         = let P2 x y = p in ps_lineto x y
+drawPathSeg (PCurve p1 p2 p3) = let P2 x1 y1 = p1
                                     P2 x2 y2 = p2
                                     P2 x3 y3 = p3
                                 in ps_curveto x1 y1 x2 y2 x3 y3

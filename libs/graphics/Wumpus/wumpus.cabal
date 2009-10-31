@@ -39,6 +39,8 @@ library
     Wumpus.Extra.Polygon,
     Wumpus.Extra.SVGColours,
     Wumpus.Extra.X11Colours,
+    Wumpus.Geometry.Base,
+    Wumpus.Geometry.Curve,
     Wumpus.Geometry.Line
   other-modules:
     

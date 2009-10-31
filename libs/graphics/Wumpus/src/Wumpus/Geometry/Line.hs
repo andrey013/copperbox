@@ -21,6 +21,7 @@
 module Wumpus.Geometry.Line where
 
 import Wumpus.Core.Geometry
+import Wumpus.Geometry.Base
 
 import Data.AffineSpace
 import Data.VectorSpace
@@ -29,6 +30,8 @@ import Data.VectorSpace
 data Line u = Line !u !u !u 
   deriving (Eq,Show)
 
+-- Would parametric form be more useful 
+-- i.e. P2 .+^ (a)V2
 
 -- | A straight line between 2 points.
 data LineSegment u = LS2 (Point2 u) (Point2 u)
@@ -119,9 +122,10 @@ alineSegment theta a = dispLineSegment (avec theta a)
 -- operations
 
 
--- | Reverse the direction of a line segment.
-converse :: LineSegment u -> LineSegment u
-converse (LS2 p0 p1) = LS2 p1 p0
+-- Reverse the direction of a line segment.
+
+instance Converse (LineSegment u) where
+  converse (LS2 p0 p1) = LS2 p1 p0
 
 slope :: (Fractional u, Real u) => Line u -> u
 slope (Line a b _) = (-a)/b 
