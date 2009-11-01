@@ -22,7 +22,7 @@ module Wumpus.Core.Picture where
 import Wumpus.Core.BoundingBox hiding ( center )
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
-import Wumpus.Core.PictureLanguage hiding ( (<>) )
+import Wumpus.Core.PictureLanguage
 import Wumpus.Core.PostScript
 
 
@@ -30,7 +30,6 @@ import Data.FunctionExtras
 import Data.Groupoid
 
 import Data.AffineSpace
-import Data.VectorSpace
 
 import Text.PrettyPrint.Leijen
 
@@ -341,32 +340,6 @@ extractPoints (Path _ st xs) = st : foldr f [] xs where
     f (PCurve p1 p2 p3) acc = p1 : p2 : p3 : acc 
 
 
-arrange :: (Num u, Ord u)
-        => (Picture u -> Picture u -> Vec2 u) 
-        -> Picture u
-        -> Picture u 
-        -> Picture u
-arrange _ a     Empty = a
-arrange _ Empty b     = b
-arrange f a     b     = Picture (Nothing, bb) noProp a b' where
-    b' = movePic (f a b) b
-    bb = union (extractBounds a) (extractBounds b')
-    
-   
-
-(<..>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-(<..>) = arrange $ 
-           twine fn (rightPlane . extractBounds) (leftPlane . extractBounds)
-  where fn = hvec `oo` (-) 
-
-
-(<||>) :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-(<||>) = arrange $ 
-          twine fn (lowerPlane . extractBounds) (upperPlane . extractBounds)
-  where fn = vvec `oo` (-)
-
-
-
 drawBounds :: (Num u, Ord u) => Picture u -> Picture u
 drawBounds Empty = Empty
 drawBounds p     = p `composite` (picPath path) where
@@ -404,12 +377,15 @@ moveMeasure v (fr,bb) = (Just $ displaceOrigin v fr', pointwise (.+^ v) bb)
   where
     fr' = maybe (ortho zeroPt) id fr
 
+{-
 center :: (Fractional u, Ord u) => Picture u -> Point2 u
 center Empty = zeroPt
 center p     = fn $ extractBounds p where
     fn (BBox bl tr) = bl .+^ (0.5 *^ (tr .-. bl))
+-}
 
 
+-- The property handling code that follows is dubious...
 
 setRGBColour :: DRGB -> Picture u -> Picture u
 setRGBColour (RGB3 r g b) = updateProps f f where 

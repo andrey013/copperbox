@@ -18,13 +18,13 @@ demo1 = writePicture "label1.ps" lbl1
 
 demo2 = writePicture "label2.ps" p
   where
-    p = lbl1 <> lbl1 <> (rotateAbout (pi/4) (center lbl1) lbl1) <> lbl1
+    p = lbl1 ->- lbl1 ->- (rotateAbout (pi/4) (center lbl1) lbl1) ->- lbl1
 
 demo2' = writePicture "label2a.ps" p
   where
-    p = (drawBounds lbl1) <> 
-        (drawBounds lbl1) <> 
-        (drawBounds $ rotateAbout (pi/4) (center lbl1) lbl1) <> 
+    p = (drawBounds lbl1) ->- 
+        (drawBounds lbl1) ->- 
+        (drawBounds $ rotateAbout (pi/4) (center lbl1) lbl1) ->- 
         (drawBounds lbl1)
 
 

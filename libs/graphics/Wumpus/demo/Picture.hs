@@ -36,9 +36,9 @@ demo1 = writePicture "picture1.ps" psquare
 
 
 
-pic1 = psquare <> (pfunnyshape <> pfunnyshape) <> psquare
+pic1 = psquare ->- (pfunnyshape ->- pfunnyshape) ->- psquare
 
-psquares = psquare <> psquare <> psquare
+psquares = psquare ->- psquare ->- psquare
 
 demo2 = writePicture "picture2.ps" psquares
 
@@ -46,15 +46,15 @@ demo2 = writePicture "picture2.ps" psquares
 
 demo3 = writePicture "picture3.ps" p1 
   where     
-    p1 = psquare <> (drawFrame $ rotate45About (center psquares) psquares) <> psquare
+    p1 = psquare ->- (drawFrame $ rotate45About (center psquares) psquares) ->- psquare
 
-d3 = pretty $ psquare <> (rotate45About (center psquares) psquares) <> psquare
+d3 = pretty $ psquare ->- (rotate45About (center psquares) psquares) ->- psquare
 
 demo4 = writePicture "picture4.ps" p1
   where
-    p1 = psquare <//> (psquares # setRGBColour (RGB3 1 0 1))
+    p1 = psquare -//- (psquares # setRGBColour (RGB3 1 0 1))
    
-d4 = pretty $ psquare <//> (psquares # setRGBColour (RGB3 1 0 1))
+d4 = pretty $ psquare -//- (psquares # setRGBColour (RGB3 1 0 1))
 
 demo5 = writePicture "picture5.ps" p1
   where
@@ -69,4 +69,10 @@ demo6 = writePicture "picture6.ps" p1
 demo7 = writePicture "picture7.ps" p1
   where
     p1 = psquare `composite` (rotate45 psquare)
+
+
+demo8 = writePicture "picture8.ps" p1
+  where
+    p1 = psquare -@- (rotate45 psquare)
+
 

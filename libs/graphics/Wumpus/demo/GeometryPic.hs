@@ -4,6 +4,7 @@ module GeometryPic where
 
 import Wumpus.Core.Geometry
 import Wumpus.Core.Picture
+import Wumpus.Core.PictureLanguage
 import Wumpus.Core.PostScript
 import Wumpus.Geometry.Curve
 import Wumpus.Geometry.Line
@@ -27,6 +28,6 @@ demo3 = writePicture "circle.ps" p1
 
 demo4 = writePicture "ellipse.ps" p1
   where
-    p1 = picEllipse (Nothing,CStroke) 80 40 <..> picEllipse (Nothing,CFill) 10 10
+    p1 = picEllipse (Nothing,CStroke) 80 40 ->- picEllipse (Nothing,CFill) 10 10
 
 
