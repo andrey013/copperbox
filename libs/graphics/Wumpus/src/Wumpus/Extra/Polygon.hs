@@ -20,6 +20,7 @@ import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.Picture
+import Wumpus.Core.PictureLanguage
 
 import Data.FunctionExtras ( (#) )
 import Data.Groupoid
@@ -40,7 +41,7 @@ instance Pointwise (Polygon a) where
 
  
 drawFrame :: (Num u, Ord u) => Picture u -> Picture u
-drawFrame p = p `overlay` (frp # setRGBColour wumpusRed)
+drawFrame p = p `composite` (frp # setRGBColour wumpusRed)
   where
     (Frame2 e0 e1 o) = extractFrame p
     xbasis           = straightLinePath OStroke [o, o .+^ e0]

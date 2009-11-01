@@ -22,6 +22,7 @@ module Wumpus.Core.Picture where
 import Wumpus.Core.BoundingBox hiding ( center )
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
+import Wumpus.Core.PictureLanguage hiding ( (<>) )
 import Wumpus.Core.PostScript
 
 
@@ -34,7 +35,7 @@ import Data.VectorSpace
 import Text.PrettyPrint.Leijen
 
 import qualified Data.Foldable  as F
-import Data.List                ( foldl', mapAccumR )
+import Data.List                ( mapAccumR )
 import Data.Sequence            ( Seq, (|>) )
 import qualified Data.Sequence  as S
 
@@ -238,6 +239,38 @@ transformBBox fp = trace . map fp . corners
 --------------------------------------------------------------------------------
 
 
+instance (Num u, Ord u) => Horizontal (Picture u) where
+  type HUnit (Picture u) = u
+
+  moveH a    = movePic (hvec a) 
+  leftBound  = leftPlane . extractBounds
+  rightBound = rightPlane . extractBounds
+
+instance (Num u, Ord u) => Vertical (Picture u) where
+  type VUnit (Picture u) = u
+
+  moveV a     = movePic (vvec a) 
+  topBound    = upperPlane . extractBounds
+  bottomBound = lowerPlane . extractBounds
+
+instance (Num u, Ord u) => Composite (Picture u) where
+  cempty  = picEmpty
+
+  a     `composite` Empty = a
+  Empty `composite` b     = b
+  a     `composite` b     = Picture (Nothing, bb) noProp a b where
+                            bb = union (extractBounds a) (extractBounds b)
+
+
+
+instance (Num u, Ord u, Horizontal (Picture u), Vertical (Picture u),
+          HUnit (Picture u) ~ VUnit (Picture u)) => 
+      PMove (Picture u) where
+  pmove x y = movePic (V2 x y)
+
+
+--------------------------------------------------------------------------------
+
 noProp :: (MbColour,Seq a)
 noProp = (Nothing,S.empty)
 
@@ -316,7 +349,7 @@ arrange :: (Num u, Ord u)
 arrange _ a     Empty = a
 arrange _ Empty b     = b
 arrange f a     b     = Picture (Nothing, bb) noProp a b' where
-    b' = move (f a b) b
+    b' = movePic (f a b) b
     bb = union (extractBounds a) (extractBounds b')
     
    
@@ -333,19 +366,10 @@ arrange f a     b     = Picture (Nothing, bb) noProp a b' where
   where fn = vvec `oo` (-)
 
 
-at :: Num u => Picture u -> Point2 u -> Picture u
-at p (P2 x y) = move (V2 x y) p
-
-overlay :: (Num u, Ord u) => Picture u -> Picture u -> Picture u
-overlay = arrange (\_ _ -> V2 0 0)
-
-overlays :: (Num u, Ord u) => [Picture u] -> Picture u
-overlays []     = error "overlays - empty list"
-overlays (x:xs) = foldl' overlay x xs
 
 drawBounds :: (Num u, Ord u) => Picture u -> Picture u
 drawBounds Empty = Empty
-drawBounds p     = p `overlay` (picPath path) where
+drawBounds p     = p `composite` (picPath path) where
     bb   = extractBounds p
     path = straightLinePath CStroke $ corners bb 
 
@@ -371,8 +395,8 @@ mapMeasure f (Multi   m ps)        = Multi (f m) ps
 mapMeasure f (Picture m prop a  b) = Picture (f m) prop a b
 
 
-move :: Num u => Vec2 u -> Picture u -> Picture u
-move v = mapMeasure (moveMeasure v) 
+movePic :: Num u => Vec2 u -> Picture u -> Picture u
+movePic v = mapMeasure (moveMeasure v) 
 
   
 moveMeasure :: Num u => Vec2 u -> Measure u -> Measure u

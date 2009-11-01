@@ -1,5 +1,5 @@
 name:             Wumpus
-version:          0.3.0
+version:          0.4.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -32,6 +32,7 @@ library
     Wumpus.Core.Colour,
     Wumpus.Core.Geometry,
     Wumpus.Core.Picture,
+    Wumpus.Core.PictureLanguage,
     Wumpus.Core.PostScript,
     Wumpus.Core.Utils,
     Wumpus.Extra.Arrow,
