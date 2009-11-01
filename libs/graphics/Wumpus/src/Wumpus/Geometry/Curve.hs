@@ -93,20 +93,11 @@ bezierArc pt r ang1 ang2 = Curve p0 p1 p2 p3 where
 -- | Make a circle from Bezier curves - @n@ is the number of 
 -- subdivsions per quadrant.
 bezierCircle :: (Fractional u, Floating u) => Int -> Point2 u -> u -> [Curve u]
-bezierCircle n pt r = map (\(a,b) -> bezierArc pt r a b) quads
-  where
-    quads :: [(Radian,Radian)]
-    quads   = subs (n*4) (2 * pi)   -- 4 times n for all 4 quadrants
+bezierCircle n pt r = para phi [] $ subdivisions (n*4) (2*pi) where
+   phi a (b:_,acc) = bezierArc pt r a b : acc
+   phi _ (_,acc)   = acc 
 
-    subs :: Int -> Radian -> [(Radian,Radian)]
-    subs i a = zip xs ys where
-        a' = a / fromIntegral i
-        ds = replicate (i-1) a'
-        xs = scanl (+) 0  ds
-        ys = scanl (+) a' ds
-
-
-
+  
 
 --------------------------------------------------------------------------------
 -- operations
