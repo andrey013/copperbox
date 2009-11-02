@@ -284,6 +284,9 @@ nullFontProps :: (MbColour, MbFont) -> Bool
 nullFontProps (Nothing,Nothing) = True
 nullFontProps _                 = False
 
+nullPicture :: Picture u -> Bool
+nullPicture Empty = True
+nullPicture _     = False
 
 
 straightLinePath :: DrawProp -> [Point2 u] -> Path u

@@ -214,8 +214,8 @@ showArray f (x:xs) = sfun "]"
   where 
     sfun = foldl' (\a e -> a . (' ':) . f e) (('[':) . f x) xs
 
-showStr :: String -> String 
-showStr s = '(' : xs where xs = s++[')']
+bracketString :: String -> String 
+bracketString s = '(' : xs where xs = s++[')']
                               
 
 
@@ -335,6 +335,16 @@ ps_fill = command "fill" []
 ps_stroke :: WumpusM ()
 ps_stroke = command "stroke" []
 
+
+--------------------------------------------------------------------------------
+-- Output operators
+
+ps_showpage :: WumpusM ()
+ps_showpage = command "showpage" []
+
+
+
+
 --------------------------------------------------------------------------------
 -- Character and font operators
 
@@ -357,7 +367,7 @@ ps_setfont :: WumpusM ()
 ps_setfont = command "setfont" []
 
 ps_show :: String -> WumpusM ()
-ps_show str = command "show" [showStr str]
+ps_show str = command "show" [bracketString str]
 
 --------------------------------------------------------------------------------
 -- document structuring conventions
@@ -376,8 +386,8 @@ dsc_comment name xs = write "%%" >> write name >> write ": " >> writeln body
   where body = concat (intersperse " " xs)
 
 -- | @ %%BoundingBox: ... ... ... ... @  /llx lly urx ury/
-dsc_BoundingBox :: (Double,Double,Double,Double) -> WumpusM ()
-dsc_BoundingBox (llx,lly,urx,ury) = 
+dsc_BoundingBox :: Double -> Double -> Double -> Double -> WumpusM ()
+dsc_BoundingBox llx lly urx ury = 
   dsc_comment "BoundingBox"  (map roundup [llx,lly,urx,ury])
 
 -- | @ %%CreationDate: ... @
@@ -393,9 +403,9 @@ dsc_Pages = dsc_comment "Pages" . return . show
 
 
 -- | @ %%Page: ... ... @
-dsc_Page :: Int -> Int -> WumpusM ()
+dsc_Page :: String -> Int -> WumpusM ()
 dsc_Page label ordinal = 
-    dsc_comment "Page" (map show [label,ordinal])
+    dsc_comment "Page" [label, show ordinal]
 
 
 -- | @ %%EndComments @
@@ -405,19 +415,4 @@ dsc_EndComments = dsc_comment "EndComments" []
 -- | @ %%EOF @
 dsc_EOF :: WumpusM ()
 dsc_EOF = dsc_comment "EOF" []
-
-
-
-writePS :: FilePath -> String -> IO ()
-writePS filepath pstext = writeFile filepath (bang ++ pstext) 
-  where
-    bang = "%!PS-Adobe-2.0\n"
-
-writeEPS :: (Double,Double,Double,Double) -> FilePath -> String -> IO ()
-writeEPS bbox filepath pstext = writeFile filepath (prolog ++ pstext) 
-  where
-    prolog = "%!PS-Adobe-3.0 EPSF-3.0\n"
-           ++ "%%BoundingBox: " ++ bounds bbox
-    bounds (llx,lly,urx,ury) = roundup llx ++ " " ++ roundup lly ++ " " ++
-                               roundup urx ++ " " ++ roundup ury ++ " " 
 

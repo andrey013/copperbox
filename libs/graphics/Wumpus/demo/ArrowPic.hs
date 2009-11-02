@@ -20,5 +20,7 @@ arr3 = arrowTri (P2 20 0) (P2 120 100)
 
 -- mkPic = overlays . map picPath
 
-demo1 = writePicture "arrow1.ps" (picArrow arr1 `composite` picArrow arr2
-                                                `composite` picArrow arr3)
+demo1 = writeEPS "arrow1.eps" Nothing p1 
+  where 
+    p1 = picArrow arr1 `composite` picArrow arr2
+                       `composite` picArrow arr3

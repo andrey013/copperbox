@@ -21,6 +21,6 @@ nodeAt :: (Int,Int) -> String -> PlacedNode
 nodeAt (x,y) name = (NamedNode name, P2 x y) 
 
 
-demo1 = writePicture "grid1.ps" pic1 where
+demo1 = writeEPS "grid1.eps" (Just ("Courier", 12)) pic1 where
   pic1 = nodePicture $ nodeMap 100 50 grid1
 

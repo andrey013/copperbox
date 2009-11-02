@@ -94,7 +94,7 @@ mkTimeStamp = getClockTime >>= toCalendarTime >>= return . format
     pad2 i | i < 10    = '0' : show i
            | otherwise = show i  
 
--- | Applicative version of (monadic) sequence.
+-- | Applicative version of (monadic) 'sequence'.
 -- Because we use MonadLib we don't want to bring in 
 -- Control.Monad.Instances ()
 sequenceA :: Applicative f => [f a] -> f [a]

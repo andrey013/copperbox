@@ -15,13 +15,13 @@ lbl1 = picLabel 10 3 "Hello\nWorld" # setRGBColour aquamarine4
 
 
 
-demo1 = writePicture "label1.ps" lbl1
+demo1 = writeEPS "label1.eps" (Just ("Times-Roman",10)) lbl1
 
-demo2 = writePicture "label2.ps" p
+demo2 = writeEPS "label2.eps" (Just ("Times-Roman",10)) p
   where
     p = lbl1 ->- lbl1 ->- (rotateAbout (pi/4) (center lbl1) lbl1) ->- lbl1
 
-demo2' = writePicture "label2a.ps" p
+demo2' = writeEPS "label2a.eps" (Just ("Times-Roman",10)) p
   where
     p = (drawBounds lbl1) ->- 
         (drawBounds lbl1) ->- 
@@ -31,7 +31,7 @@ demo2' = writePicture "label2a.ps" p
 
 
 
-demo3 = writePicture "label3.ps" p
+demo3 = writeEPS "label3.eps" (Just ("Times-Roman",10)) p
   where
     p =           (drawBounds lbl1) 
         `composite` (drawBounds $ scale 2 2 lbl1)

@@ -30,9 +30,9 @@ pfunnyshape = picPolygon CFill funnyshape
 test01 = pretty $ movePic (V2 100 40) psquare
 test02 = pretty $ rotate45 psquare
 
-demo0 = writePicture "picture0.ps" pfunnyshape
+demo0 = writePS "picture0.ps" Nothing [pfunnyshape]
 
-demo1 = writePicture "picture1.ps" psquare
+demo1 = writePS "picture1.ps" Nothing [psquare]
 
 
 
@@ -41,38 +41,38 @@ pic1 = psquare ->- (pfunnyshape ->- pfunnyshape) ->- psquare
 
 psquares = psquare ->- psquare ->- psquare
 
-demo2 = writePicture "picture2.ps" psquares
+demo2 = writePS "picture2.ps" Nothing [psquares]
 
     
 
-demo3 = writePicture "picture3.ps" p1 
+demo3 = writeEPS "picture3.eps" Nothing p1 
   where     
     p1 = psquare ->- (drawFrame $ rotate45About (center psquares) psquares) ->- psquare
 
 d3 = pretty $ psquare ->- (rotate45About (center psquares) psquares) ->- psquare
 
-demo4 = writePicture "picture4.ps" p1
+demo4 = writeEPS "picture4.eps" Nothing p1
   where
     p1 = psquare -//- (psquares # setRGBColour (RGB3 1 0 1))
    
 d4 = pretty $ psquare -//- (psquares # setRGBColour (RGB3 1 0 1))
 
-demo5 = writePicture "picture5.ps" p1
+demo5 = writeEPS "picture5.eps" Nothing p1
   where
     p1 = psquare `composite` (rotatePicture (pi/4) psquares)
    
 
-demo6 = writePicture "picture6.ps" p1 
+demo6 = writeEPS "picture6.eps" Nothing  p1 
   where
     p1 = picPolygon CStroke $ regularPolygon 6 50
 
 
-demo7 = writePicture "picture7.ps" p1
+demo7 = writeEPS "picture7.eps" Nothing p1
   where
     p1 = psquare `composite` (rotate45 psquare)
 
 
-demo8 = writePicture "picture8.ps" p1
+demo8 = writeEPS "picture8.eps" Nothing p1
   where
     p1 = psquare -@- (rotate45 psquare)
 

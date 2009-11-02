@@ -20,60 +20,125 @@ import Wumpus.Core.Picture
 import Wumpus.Core.PostScript
 import Wumpus.Core.Utils
 
-
+import Control.Monad ( zipWithM_ )
 import qualified Data.Foldable  as F
+
+type FontSpec = (String,Int)
+
 
 
 --------------------------------------------------------------------------------
 -- Render to PostScript
 
  
-writePicture :: FilePath -> Picture Double -> IO ()
-writePicture filepath pic = do 
+writePS :: FilePath -> Maybe FontSpec -> [Picture Double] -> IO ()
+writePS filepath mbFs pic = do 
     timestamp <- mkTimeStamp
-    writeFile filepath $ psDraw timestamp pic
+    writeFile filepath $ psDraw timestamp mbFs pic
 
-
+writeEPS :: FilePath -> Maybe FontSpec -> Picture Double -> IO ()
+writeEPS filepath mbFs pic = do
+    timestamp <- mkTimeStamp
+    writeFile filepath $ epsDraw timestamp mbFs pic
 
 -- | Draw a picture, generating PostScript output.
-psDraw :: String -> Picture Double -> PostScript
-psDraw timestamp pic = prologue ++ runWumpus (drawPicture pic) ++ epilogue
+psDraw :: String -> Maybe FontSpec -> [Picture Double] -> PostScript
+psDraw timestamp mbFs pics = runWumpus $ do
+    psHeader 1 timestamp
+    zipWithM_ (psDrawPage mbFs) pages pics
+    psFooter
   where
-    prologue = unlines $ [ "%!PS-Adobe-2.0"
-                         , "%%CreationDate: " ++ timestamp
-                         , "%%Pages: 1"
-                         , "%%EndComments"
-                         , "%%Page: 1 1"
-                         , ""
-                         --- these are temporary...
-                         , "/Times-Roman findfont"
-                         , "10 scalefont"
-                         , "setfont"
-                         , "200 400 translate"
-                         ]
+    pages = map (\i -> (show i,i)) [1..]
 
-                   
-    epilogue = unlines $ [ "showpage", "", "%%EOF", ""]
 
-psHeader :: Int -> WumpusM ()
-psHeader pagecount = do
+psDrawPage :: Maybe FontSpec -> (String,Int) -> Picture Double -> WumpusM ()
+psDrawPage mbFs (lbl,ordinal) pic = do
+    dsc_Page lbl ordinal
+    ps_gsave
+    optFontSpec mbFs 
+    cmdtrans
+    drawPicture pic
+    ps_grestore
+    ps_showpage
+  where
+    bb0       = if nullPicture pic then BBox zeroPt zeroPt 
+                                   else extractBounds pic
+    (mbTx,_)  = translateBBox bb0
+    cmdtrans  = maybe (return ()) (\(x,y) -> ps_translate x y) mbTx
+  
+
+
+-- Note the bounding box may have negative components - if it does
+-- it will need tranlating.
+
+epsDraw :: String -> Maybe FontSpec -> Picture Double -> PostScript
+epsDraw timestamp mbFs pic = runWumpus $ do 
+    epsHeader bb timestamp      
+    ps_gsave
+    optFontSpec mbFs
+    cmdtrans
+    drawPicture pic
+    ps_grestore
+    epsFooter  
+  where
+    bb0       = if nullPicture pic then BBox zeroPt zeroPt 
+                                   else extractBounds pic
+    (mbTx,bb) = translateBBox bb0
+    cmdtrans  = maybe (return ()) (\(x,y) -> ps_translate x y) mbTx
+     
+optFontSpec :: Maybe FontSpec -> WumpusM ()
+optFontSpec Nothing          = return ()
+optFontSpec (Just (name,sz)) = do 
+    ps_findfont name
+    ps_scalefont sz
+    ps_setfont
+
+psHeader :: Int -> String -> WumpusM ()
+psHeader pagecount timestamp = do
     bang_PS
     dsc_Pages pagecount
+    dsc_CreationDate $ bracketString timestamp
     dsc_EndComments
 
 
-{-
-epsDraw :: Picture Double -> PostScript
-epsDraw pic = prologue ++ runWumpus (drawPicture pic) ++ epilogue
+epsHeader :: BoundingBox Double -> String -> WumpusM ()
+epsHeader (BBox (P2 llx lly) (P2 urx ury)) timestamp = do
+    bang_EPS
+    dsc_BoundingBox llx lly urx ury
+    dsc_CreationDate $ bracketString timestamp
+    dsc_EndComments
+
+
+psFooter :: WumpusM ()
+psFooter = dsc_EOF
+
+
+epsFooter :: WumpusM ()
+epsFooter = do
+    ps_showpage
+    dsc_EOF
+
+-- Create margins at the left and bottom of 4 points...
+
+translateBBox :: BoundingBox Double 
+              -> (Maybe (Double,Double), BoundingBox Double)
+translateBBox bb@(BBox (P2 llx lly) (P2 urx ury))
+    | llx < 4 || lly < 4  = (Just (x,y), BBox ll ur)            
+    | otherwise           = (Nothing, bb)
   where 
--}
+     x  = 4 - llx
+     y  = 4 - lly
+     ll = P2 (llx+x) (lly+x)
+     ur = P2 (urx+x) (ury+y)  
+
+
 
 -- | DrawPicture 
 -- Frame changes, representing scalings translation, rotations...
 -- are drawn when they are encountered as a @concat@ statement in a 
 -- block of @gsave ... grestore@.
 
-drawPicture :: Picture Double  -> WumpusM ()
+drawPicture :: Picture Double -> WumpusM ()
 drawPicture Empty                     = return ()
 drawPicture (Single (fr,_) prim)      = updateFrame fr $ drawPrimitive prim
 drawPicture (Multi (fr,_) ps)         = updateFrame fr $ mapM_ drawPrimitive ps
