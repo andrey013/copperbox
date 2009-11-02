@@ -12,7 +12,15 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.OutputPostScript where
+module Wumpus.Core.OutputPostScript 
+  ( 
+  -- * Font loading information
+    FontSpec
+  
+  -- * Output PostScript
+  , writePS
+  , writeEPS
+  ) where
 
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Geometry
@@ -23,6 +31,18 @@ import Wumpus.Core.Utils
 import Control.Monad ( zipWithM_ )
 import qualified Data.Foldable  as F
 
+
+-- | FontSpec = (font-name,font-size)
+--
+-- The following fonts are expected to exist on most platforms:
+--
+-- > Times-Roman  Times-Italic  Times-Bold  Times-Bolditalic
+-- > Helvetica  Helvetica-Oblique  Helvetica-Bold  Helvetica-Bold-Oblique
+-- > Courier  Courier-Oblique  Courier-Bold  Courier-Bold-Oblique
+-- > Symbol
+--
+-- List from Bill Casselman \'Mathematical Illustrations\' p279.
+
 type FontSpec = (String,Int)
 
 
@@ -30,12 +50,24 @@ type FontSpec = (String,Int)
 --------------------------------------------------------------------------------
 -- Render to PostScript
 
- 
+-- | Write a series of pictures to a Postscript file. Each 
+-- picture will be printed on a separate page. 
+--
+-- If the picture contains text labels, you should provide a 
+-- FontSpec to transmit @findfont@, @scalefont@ etc. commands 
+-- to PostScript.    
 writePS :: FilePath -> Maybe FontSpec -> [Picture Double] -> IO ()
 writePS filepath mbFs pic = do 
     timestamp <- mkTimeStamp
     writeFile filepath $ psDraw timestamp mbFs pic
 
+-- | Write a picture to an EPS (Encapsulated PostScript) file. 
+-- The .eps file can then be imported or embedded in another 
+-- document.
+--
+-- If the picture contains text labels, you should provide a 
+-- FontSpec to transmit @findfont@, @scalefont@ etc. commands 
+-- to PostScript.    
 writeEPS :: FilePath -> Maybe FontSpec -> Picture Double -> IO ()
 writeEPS filepath mbFs pic = do
     timestamp <- mkTimeStamp
@@ -57,7 +89,7 @@ psDrawPage mbFs (lbl,ordinal) pic = do
     ps_gsave
     optFontSpec mbFs 
     cmdtrans
-    drawPicture pic
+    outputPicture pic
     ps_grestore
     ps_showpage
   where
@@ -68,8 +100,8 @@ psDrawPage mbFs (lbl,ordinal) pic = do
   
 
 
--- Note the bounding box may have negative components - if it does
--- it will need tranlating.
+-- Note the bounding box may have negative components - if it 
+-- does it will need translating.
 
 epsDraw :: String -> Maybe FontSpec -> Picture Double -> PostScript
 epsDraw timestamp mbFs pic = runWumpus $ do 
@@ -77,7 +109,7 @@ epsDraw timestamp mbFs pic = runWumpus $ do
     ps_gsave
     optFontSpec mbFs
     cmdtrans
-    drawPicture pic
+    outputPicture pic
     ps_grestore
     epsFooter  
   where
@@ -128,23 +160,25 @@ translateBBox bb@(BBox (P2 llx lly) (P2 urx ury))
   where 
      x  = 4 - llx
      y  = 4 - lly
-     ll = P2 (llx+x) (lly+x)
+     ll = P2 (llx+x) (lly+y)
      ur = P2 (urx+x) (ury+y)  
 
 
 
--- | DrawPicture 
+-- | outputPicture 
 -- Frame changes, representing scalings translation, rotations...
 -- are drawn when they are encountered as a @concat@ statement in a 
 -- block of @gsave ... grestore@.
 
-drawPicture :: Picture Double -> WumpusM ()
-drawPicture Empty                     = return ()
-drawPicture (Single (fr,_) prim)      = updateFrame fr $ drawPrimitive prim
-drawPicture (Multi (fr,_) ps)         = updateFrame fr $ mapM_ drawPrimitive ps
-drawPicture (Picture (fr,_) prop a b) = updatePen prop $ do
-    updateFrame fr $ drawPicture  a
-    updateFrame fr $ drawPicture  b
+outputPicture :: Picture Double -> WumpusM ()
+outputPicture Empty                     = return ()
+outputPicture (Single (fr,_) prim)      = 
+    updateFrame fr $ outputPrimitive prim
+outputPicture (Multi (fr,_) ps)         = 
+    updateFrame fr $ mapM_ outputPrimitive ps
+outputPicture (Picture (fr,_) prop a b) = updatePen prop $ do
+    updateFrame fr $ outputPicture  a
+    updateFrame fr $ outputPicture  b
 
 updateFrame :: MbFrame Double -> WumpusM () -> WumpusM ()
 updateFrame Nothing    ma = ma
@@ -156,15 +190,11 @@ updateFrame (Just frm) ma = do
 
 
 
-bbComment :: BoundingBox Double -> WumpusM ()
-bbComment (BBox (P2 x0 y0) (P2 x1 y1)) = 
-    ps_comment $ "bounding-box " ++ show (x0,y0) ++ ".." ++ show (x1,y1)
-
-drawPrimitive :: Primitive Double -> WumpusM ()
-drawPrimitive (Path1 props p)           = updatePen props $ drawPath p
-drawPrimitive (Label1 props l)          = updateFont props $ drawLabel l
-drawPrimitive (Ellipse1 (mbc,dp) c w h) = updateColour mbc $ 
-                                              drawEllipse dp c w h
+outputPrimitive :: Primitive Double -> WumpusM ()
+outputPrimitive (Path1 props p)           = updatePen props $ outputPath p
+outputPrimitive (Label1 props l)          = updateFont props $ outputLabel l
+outputPrimitive (Ellipse1 (mbc,dp) c w h) = updateColour mbc $ 
+                                              outputEllipse dp c w h
 
 updatePen :: PathProps -> WumpusM () -> WumpusM ()
 updatePen prop@(mbc,se) ma
@@ -218,34 +248,35 @@ colourCommand (PSHsb h s v) = ps_sethsbcolor h s v
 colourCommand (PSGray a)    = ps_setgray a
 
     
-drawPath :: Path Double -> WumpusM ()
-drawPath (Path dp pt xs) = let P2 x y = pt in do  
+outputPath :: Path Double -> WumpusM ()
+outputPath (Path dp pt xs) = let P2 x y = pt in do  
     ps_newpath
     ps_moveto x y
-    mapM_ drawPathSeg xs
+    mapM_ outputPathSeg xs
     closePath dp   
 
-drawPathSeg :: PathSeg Double -> WumpusM ()
-drawPathSeg (PLine p)         = let P2 x y = p in ps_lineto x y
-drawPathSeg (PCurve p1 p2 p3) = let P2 x1 y1 = p1
-                                    P2 x2 y2 = p2
-                                    P2 x3 y3 = p3
-                                in ps_curveto x1 y1 x2 y2 x3 y3
+outputPathSeg :: PathSeg Double -> WumpusM ()
+outputPathSeg (PLine (P2 x y))  = ps_lineto x y
+outputPathSeg (PCurve p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3 
+  where
+    P2 x1 y1 = p1
+    P2 x2 y2 = p2
+    P2 x3 y3 = p3
 
 -- | Currently this is not very good as it uses a PostScript's
 -- @scale@ operator - this will vary the line width during the
 -- drawing of a stroked ellipse.
-drawEllipse :: DrawProp -> Point2 Double -> Double -> Double -> WumpusM ()
-drawEllipse dp (P2 x y) w h 
-    | w==h      = drawArc dp x y w
+outputEllipse :: DrawProp -> Point2 Double -> Double -> Double -> WumpusM ()
+outputEllipse dp (P2 x y) w h 
+    | w==h      = outputArc dp x y w
     | otherwise = do { ps_gsave
                      ; ps_scale 1 (h/w) -- Not so good -- changes stroke width
-                     ; drawArc dp x y w
+                     ; outputArc dp x y w
                      ; ps_grestore
                      }
 
-drawArc :: DrawProp -> Double -> Double -> Double -> WumpusM ()
-drawArc dp x y r = ps_arc x y r 0 360 >> closePath dp
+outputArc :: DrawProp -> Double -> Double -> Double -> WumpusM ()
+outputArc dp x y r = ps_arc x y r 0 360 >> closePath dp
 
 
 closePath :: DrawProp -> WumpusM ()
@@ -255,15 +286,10 @@ closePath CFill   = ps_closepath >> ps_fill
 closePath CCrop   = ps_closepath >> ps_clip
 
 
-drawLabel :: Label Double -> WumpusM ()
-drawLabel (Label pt str) = let P2 x y = pt in do
+outputLabel :: Label Double -> WumpusM ()
+outputLabel (Label pt str) = let P2 x y = pt in do
     ps_moveto x y
     ps_show str
 
-makeCTM :: Num u => (Point2 u -> Point2 u) -> (u,u,u,u,u,u)
-makeCTM f = (x0-o0, x1-o1, y0-o0, y1-o1, o0, o1) where
-   P2 x0 x1 = f (P2 1 0)
-   P2 y0 y1 = f (P2 0 1)
-   P2 o0 o1 = f (P2 0 0)
 
 

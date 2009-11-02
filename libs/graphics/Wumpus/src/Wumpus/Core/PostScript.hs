@@ -348,7 +348,7 @@ ps_showpage = command "showpage" []
 --------------------------------------------------------------------------------
 -- Character and font operators
 
--- | The following fonts are expected exist on most platforms:
+-- | The following fonts are expected to exist on most platforms:
 --
 -- > Times-Roman  Times-Italic  Times-Bold  Times-Bolditalic
 -- > Helvetica  Helvetica-Oblique  Helvetica-Bold  Helvetica-Bold-Oblique
