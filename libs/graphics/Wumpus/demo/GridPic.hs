@@ -2,6 +2,7 @@
 module GridPic where
 
 import Wumpus.Core.Geometry
+import Wumpus.Core.OutputPostScript
 import Wumpus.Core.Picture
 import Wumpus.Extra.Grid
 

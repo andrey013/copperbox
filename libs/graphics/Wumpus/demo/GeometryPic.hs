@@ -3,6 +3,7 @@
 module GeometryPic where
 
 import Wumpus.Core.Geometry
+import Wumpus.Core.OutputPostScript
 import Wumpus.Core.Picture
 import Wumpus.Core.PictureLanguage
 import Wumpus.Core.PostScript

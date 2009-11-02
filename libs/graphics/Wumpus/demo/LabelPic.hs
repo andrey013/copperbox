@@ -2,6 +2,7 @@
 module LabelPic where
 
 import Wumpus.Core.Geometry
+import Wumpus.Core.OutputPostScript
 import Wumpus.Core.Picture
 import Wumpus.Core.PictureLanguage
 import Wumpus.Extra.X11Colours

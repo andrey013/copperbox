@@ -22,13 +22,13 @@
 module Wumpus.Core.PostScript where
 
 import Wumpus.Core.Geometry ( Frame2(..), Vec2(..), Point2(..), Matrix3'3(..) )
-import Wumpus.Core.Utils ( dtrunc )
+import Wumpus.Core.Utils ( dtrunc, roundup )
 
 import qualified Data.DList as DL
 import MonadLib
 
 import Data.Monoid
-import Data.List ( foldl' )
+import Data.List ( foldl', intersperse )
 
 
 
@@ -71,11 +71,6 @@ pstId m = runId $ runPsT m
 runWumpus :: WumpusM a -> String
 runWumpus = (DL.toList . snd)  . pstId
 
-
-writePS :: FilePath -> String -> IO ()
-writePS filepath pstext = writeFile filepath (bang ++ pstext) 
-  where
-    bang = "%!PS-Adobe-2.0\n"
 
 
 --------------------------------------------------------------------------------
@@ -224,14 +219,6 @@ showStr s = '(' : xs where xs = s++[')']
                               
 
 
-withPage :: WumpusM a -> WumpusM a
-withPage m = pageStart >> m >>= \a -> pageEnd >> return a 
-  where
-    pageStart = ps_comment $ "Page " ++ show (1::Int)
-
-    pageEnd   = ps_comment "-------------------"    
-
-
 --------------------------------------------------------------------------------
 -- graphics state operators
 
@@ -351,6 +338,15 @@ ps_stroke = command "stroke" []
 --------------------------------------------------------------------------------
 -- Character and font operators
 
+-- | The following fonts are expected exist on most platforms:
+--
+-- > Times-Roman  Times-Italic  Times-Bold  Times-Bolditalic
+-- > Helvetica  Helvetica-Oblique  Helvetica-Bold  Helvetica-Bold-Oblique
+-- > Courier  Courier-Oblique  Courier-Bold  Courier-Bold-Oblique
+-- > Symbol
+--
+-- List from Bill Casselman \'Mathematical Illustrations\' p279.
+
 ps_findfont :: String -> WumpusM () 
 ps_findfont = command "findfont" . return . ('/' :)
 
@@ -362,4 +358,66 @@ ps_setfont = command "setfont" []
 
 ps_show :: String -> WumpusM ()
 ps_show str = command "show" [showStr str]
+
+--------------------------------------------------------------------------------
+-- document structuring conventions
+
+-- | @ %!PS-Adobe-3.0 @
+bang_PS :: WumpusM ()
+bang_PS = writeln "%!PS-Adobe-3.0"
+
+-- | @ %!PS-Adobe-3.0 EPSF-3.0 @
+bang_EPS :: WumpusM ()
+bang_EPS = writeln "%!PS-Adobe-3.0 EPSF-3.0"
+
+dsc_comment :: String -> [String] -> WumpusM ()
+dsc_comment name [] = write "%%" >> writeln name
+dsc_comment name xs = write "%%" >> write name >> write ": " >> writeln body
+  where body = concat (intersperse " " xs)
+
+-- | @ %%BoundingBox: ... ... ... ... @  /llx lly urx ury/
+dsc_BoundingBox :: (Double,Double,Double,Double) -> WumpusM ()
+dsc_BoundingBox (llx,lly,urx,ury) = 
+  dsc_comment "BoundingBox"  (map roundup [llx,lly,urx,ury])
+
+-- | @ %%CreationDate: ... @
+-- 
+-- The creation date is informational and never interpreted, 
+-- thus the format is entirely arbitrary.
+dsc_CreationDate :: String -> WumpusM ()
+dsc_CreationDate = dsc_comment "CreationDate" . return
+
+-- | @ %%Pages: ... @
+dsc_Pages :: Int -> WumpusM ()
+dsc_Pages = dsc_comment "Pages" . return . show
+
+
+-- | @ %%Page: ... ... @
+dsc_Page :: Int -> Int -> WumpusM ()
+dsc_Page label ordinal = 
+    dsc_comment "Page" (map show [label,ordinal])
+
+
+-- | @ %%EndComments @
+dsc_EndComments :: WumpusM ()
+dsc_EndComments = dsc_comment "EndComments" []
+
+-- | @ %%EOF @
+dsc_EOF :: WumpusM ()
+dsc_EOF = dsc_comment "EOF" []
+
+
+
+writePS :: FilePath -> String -> IO ()
+writePS filepath pstext = writeFile filepath (bang ++ pstext) 
+  where
+    bang = "%!PS-Adobe-2.0\n"
+
+writeEPS :: (Double,Double,Double,Double) -> FilePath -> String -> IO ()
+writeEPS bbox filepath pstext = writeFile filepath (prolog ++ pstext) 
+  where
+    prolog = "%!PS-Adobe-3.0 EPSF-3.0\n"
+           ++ "%%BoundingBox: " ++ bounds bbox
+    bounds (llx,lly,urx,ury) = roundup llx ++ " " ++ roundup lly ++ " " ++
+                               roundup urx ++ " " ++ roundup ury ++ " " 
 

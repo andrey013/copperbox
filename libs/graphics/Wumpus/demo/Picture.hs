@@ -4,6 +4,7 @@ module Picture where
 
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
+import Wumpus.Core.OutputPostScript
 import Wumpus.Core.Picture
 import Wumpus.Core.PictureLanguage
 import Wumpus.Extra.Polygon

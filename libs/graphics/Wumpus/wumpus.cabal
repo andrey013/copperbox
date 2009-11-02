@@ -22,7 +22,8 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base < 5, containers, wl-pprint, vector-space, 
+  build-depends:      base < 5, containers, old-time,
+                      wl-pprint, vector-space, 
                       monadLib, dlist,
                       groupoid, fun-extras
 
@@ -31,6 +32,7 @@ library
     Wumpus.Core.BoundingBox,
     Wumpus.Core.Colour,
     Wumpus.Core.Geometry,
+    Wumpus.Core.OutputPostScript,
     Wumpus.Core.Picture,
     Wumpus.Core.PictureLanguage,
     Wumpus.Core.PostScript,
