@@ -24,7 +24,7 @@ library
   hs-source-dirs:     src
   build-depends:      base < 5, containers, old-time,
                       wl-pprint, vector-space, 
-                      monadLib, dlist,
+                      monadLib, xml, dlist,
                       groupoid, fun-extras
 
   
@@ -34,6 +34,7 @@ library
     Wumpus.Core.Colour,
     Wumpus.Core.Geometry,
     Wumpus.Core.OutputPostScript,
+    Wumpus.Core.OutputSVG,
     Wumpus.Core.Picture,
     Wumpus.Core.PictureLanguage,
     Wumpus.Core.PostScript,

@@ -61,10 +61,6 @@ data Picture u = Empty
 -- scaling).
 --
 
-
-
-
-
 data Primitive u = Path1    PathProps (Path u)
                  | Label1   LabelProps (Label u) 
                  | Ellipse1 { 

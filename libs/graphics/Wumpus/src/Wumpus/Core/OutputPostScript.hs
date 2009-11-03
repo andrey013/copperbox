@@ -269,7 +269,7 @@ outputPathSeg (PCurve p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
     P2 x2 y2 = p2
     P2 x3 y3 = p3
 
--- | Currently this is not very good as it uses a PostScript's
+-- | This is not very good as it uses a PostScript's
 -- @scale@ operator - this will vary the line width during the
 -- drawing of a stroked ellipse.
 outputEllipse :: DrawProp -> Point2 Double -> Double -> Double -> WumpusM ()

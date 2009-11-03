@@ -1,5 +1,6 @@
 
 
+
 module P55 where
 
 import Wumpus.Core
