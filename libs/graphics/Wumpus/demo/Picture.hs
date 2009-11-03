@@ -15,6 +15,8 @@ import Data.VectorSpace
 import Text.PrettyPrint.Leijen ( pretty )
 
 
+
+
 square :: DPolygon 
 square = Polygon
   [ P2 0 0, P2 40 0, P2 40 40, P2 0 40 ]
@@ -47,7 +49,7 @@ demo2 = writePS "picture2.ps" Nothing [psquares]
 
 demo3 = writeEPS "picture3.eps" Nothing p1 
   where     
-    p1 = psquare ->- (drawFrame $ rotate45About (center psquares) psquares) ->- psquare
+    p1 = psquare ->- (rotate45About (center psquares) psquares) ->- psquare
 
 d3 = pretty $ psquare ->- (rotate45About (center psquares) psquares) ->- psquare
 

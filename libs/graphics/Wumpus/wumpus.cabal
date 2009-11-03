@@ -29,6 +29,7 @@ library
 
   
   exposed-modules:
+    Wumpus.Core,
     Wumpus.Core.BoundingBox,
     Wumpus.Core.Colour,
     Wumpus.Core.Geometry,
@@ -42,6 +43,7 @@ library
     Wumpus.Extra.Polygon,
     Wumpus.Extra.SVGColours,
     Wumpus.Extra.X11Colours,
+    Wumpus.Geometry,
     Wumpus.Geometry.Base,
     Wumpus.Geometry.Curve,
     Wumpus.Geometry.Line
