@@ -21,7 +21,7 @@
 
 module Wumpus.Core.Geometry where
 
-import Wumpus.Core.Utils ( dtrunc )
+import Wumpus.Core.Utils ( CMinMax(..), dtrunc )
 
 import Data.FunctionExtras
 
@@ -308,6 +308,12 @@ instance Pointwise (Vec2 a) where
 instance Pointwise (Point2 a) where
   type Pt (Point2 a) = Point2 a
   pointwise f pt = f pt
+
+--------------------------------------------------------------------------------
+
+instance Ord a => CMinMax (Point2 a) where
+  cmin (P2 x y) (P2 x' y') = P2 (min x x') (min y y')
+  cmax (P2 x y) (P2 x' y') = P2 (max x x') (max y y')
 
 --------------------------------------------------------------------------------
 -- Matrix multiply

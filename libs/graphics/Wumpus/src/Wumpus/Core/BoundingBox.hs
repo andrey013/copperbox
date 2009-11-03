@@ -10,21 +10,38 @@
 -- Stability   :  experimental
 -- Portability :  GHC only
 --
+-- Bounding box that supports 'mempty'.
 --
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.BoundingBox where
 
 import Wumpus.Core.Geometry
-
-import Data.Groupoid
+import Wumpus.Core.Utils ( CMinMax(..), within )
 
 import Text.PrettyPrint.Leijen
 
-import Data.List ( foldl' )
+import Data.Monoid
 
 
-data BoundingBox a = BBox { bottomLeft :: Point2 a, topRight :: Point2 a }
+-- | Bounding box of a picture.
+-- 
+-- We want to represent empty pictures and their concatentation:
+-- 
+-- > empty ++ empty = empty
+-- > empty ++ pic1  = pic1
+-- 
+-- Therefore the bounding box representation is obliged to 
+-- support the bounds of an empty picture. One /trick/ is to 
+-- place represent the empty bounding box with lower left corner
+-- at +infinity and upper-right corner at -infinity. Thus the 
+-- union operation which finds the component-wise min of the 
+-- lowerleft coordinates and component-wise max of the 
+-- upper-right works. However this only works for points with
+-- a unit type supporting infinity.
+-- 
+data BoundingBox a = ZeroBB 
+                   | BBox { llPoint :: Point2 a, urPoint :: Point2 a }
   deriving (Eq,Show)
 
 type DBoundingBox = BoundingBox Double
@@ -32,26 +49,26 @@ type DBoundingBox = BoundingBox Double
 
 
 instance Pretty a => Pretty (BoundingBox a) where
+  pretty ZeroBB       = text "|_ +inf -inf _|"
   pretty (BBox p0 p1) = text "|_" <+> pretty p0 <+> pretty p1 <+> text "_|" 
 
 --------------------------------------------------------------------------------
 
 union :: Ord a => BoundingBox a -> BoundingBox a -> BoundingBox a
-union (BBox pmin pmax) (BBox pmin' pmax') = 
-    BBox (umin pmin pmin') (umax pmax pmax')
-  where
-    umin (P2 x y) (P2 x' y') = P2 (min x x') (min y y')
-    umax (P2 x y) (P2 x' y') = P2 (max x x') (max y y')
-
+ZeroBB     `union` b            = b
+a          `union` ZeroBB       = a
+BBox ll ur `union` BBox ll' ur' = BBox (cmin ll ll') (cmax ur ur')
 
 -- We don't consider BBox to have a (nice) zero, hence 
 -- the Groupoid instance rather than a Monoid instance.
 
-instance Ord a => Groupoid (BoundingBox a) where
-  gappend = union
+instance Ord a => Monoid (BoundingBox a) where
+  mempty  = ZeroBB
+  mappend = union
 
 instance Pointwise (BoundingBox a) where
   type Pt (BoundingBox a) = Point2 a
+  pointwise _ ZeroBB       = ZeroBB
   pointwise f (BBox bl tr) = BBox (f bl) (f tr)
 
 
@@ -61,60 +78,79 @@ instance Pointwise (BoundingBox a) where
 -- Trace the point list finding the /extremity/...
 
 trace :: (Num a, Ord a) => [Point2 a] -> BoundingBox a
-trace []     = error $ "BoundingBox.trace - empty list"
-trace (p:ps) = foldl' fn (BBox p p) ps
-  where
-    fn (BBox (P2 xmin ymin) (P2 xmax ymax)) (P2 x y) = 
-        BBox (P2 (min xmin x) (min ymin y)) (P2 (max xmax x) (max ymax y))
+trace []     = ZeroBB
+trace (p:ps) = uncurry BBox $ foldr (\z (a,b) -> (cmin z a, cmax z b) ) (p,p) ps
 
+-- TO CHECK:
+-- Corners might be a problem with the introduction of ZeroBB...
 
 corners :: BoundingBox a -> [Point2 a]
+corners ZeroBB                             = []   
 corners (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = [bl, br, tr, tl] where
     br = P2 x1 y0
     tl = P2 x0 y1
 
 
-within :: Ord a => Point2 a -> BoundingBox a -> Bool
-within (P2 x y) (BBox (P2 xmin ymin) (P2 xmax ymax)) = 
-   x >= xmin && x <= xmax && y >= ymin && y <= ymax
+withinBB :: Ord a => Point2 a -> BoundingBox a -> Bool
+withinBB _ ZeroBB       = False
+withinBB p (BBox ll ur) = within p ll ur
 
 
 width :: Num a => BoundingBox a -> a
+width ZeroBB                         = 0
 width (BBox (P2 xmin _) (P2 xmax _)) = xmax - xmin
 
 height :: Num a => BoundingBox a -> a
+height ZeroBB                         = 0
 height (BBox (P2 _ ymin) (P2 _ ymax)) = ymax - ymin
 
 
 --------------------------------------------------------------------------------
 
 -- points on the boundary
+-- These types become horrible with the introduction of ZeroBB
 
-topLeft :: BoundingBox a -> Point2 a
-topLeft (BBox (P2 xmin _) (P2 _ ymax)) = P2 xmin ymax
 
-bottomRight :: BoundingBox a -> Point2 a
-bottomRight (BBox (P2 _ ymin) (P2 xmax _)) = P2 xmax ymin
+bottomLeft :: BoundingBox a -> Maybe (Point2 a)
+bottomLeft ZeroBB      = Nothing
+bottomLeft (BBox ll _) = Just ll
 
-center :: Fractional a => BoundingBox a -> Point2 a
-center (BBox (P2 x y) (P2 x' y')) = P2 (x+0.5*(x'-x)) (y+0.5*(y'-x))
+topRight :: BoundingBox a -> Maybe (Point2 a)
+topRight ZeroBB      = Nothing
+topRight (BBox _ ur) = Just ur
 
-north :: Fractional a => BoundingBox a -> Point2 a
-north (BBox (P2 xmin _) (P2 xmax ymax)) = P2 (xmin + 0.5*(xmax-xmin)) ymax
+topLeft :: BoundingBox a -> Maybe (Point2 a)
+topLeft ZeroBB                         = Nothing
+topLeft (BBox (P2 xmin _) (P2 _ ymax)) = Just $ P2 xmin ymax
 
-south :: Fractional a => BoundingBox a -> Point2 a
-south (BBox (P2 xmin ymin) (P2 xmax _)) = P2 (xmin + 0.5*(xmax-xmin)) ymin
+bottomRight :: BoundingBox a -> Maybe (Point2 a)
+bottomRight ZeroBB                         = Nothing
+bottomRight (BBox (P2 _ ymin) (P2 xmax _)) = Just $ P2 xmax ymin
 
-east :: Fractional a => BoundingBox a -> Point2 a
-east (BBox (P2 _ ymin) (P2 xmax ymax)) = P2 xmax (ymin + 0.5*(ymax-ymin))
+center :: Fractional a => BoundingBox a -> Maybe (Point2 a)
+center ZeroBB                     = Nothing
+center (BBox (P2 x y) (P2 x' y')) = Just $ P2 (x+0.5*(x'-x)) (y+0.5*(y'-x))
 
-west :: Fractional a => BoundingBox a -> Point2 a
-west (BBox (P2 xmin ymin) (P2 _ ymax)) = P2 xmin (ymin + 0.5*(ymax-ymin))
+north :: Fractional a => BoundingBox a -> Maybe (Point2 a)
+north ZeroBB                            = Nothing
+north (BBox (P2 xmin _) (P2 xmax ymax)) = Just $ P2 (xmin + 0.5*(xmax-xmin)) ymax
 
-northEast :: BoundingBox a -> Point2 a
-southEast :: BoundingBox a -> Point2 a
-southWest :: BoundingBox a -> Point2 a
-northWest :: BoundingBox a -> Point2 a
+south :: Fractional a => BoundingBox a -> Maybe (Point2 a)
+south ZeroBB                            = Nothing
+south (BBox (P2 xmin ymin) (P2 xmax _)) = Just $ P2 (xmin + 0.5*(xmax-xmin)) ymin
+
+east :: Fractional a => BoundingBox a -> Maybe (Point2 a)
+east ZeroBB                            = Nothing
+east (BBox (P2 _ ymin) (P2 xmax ymax)) = Just $ P2 xmax (ymin + 0.5*(ymax-ymin))
+
+west :: Fractional a => BoundingBox a -> Maybe (Point2 a)
+west ZeroBB                            = Nothing
+west (BBox (P2 xmin ymin) (P2 _ ymax)) = Just $ P2 xmin (ymin + 0.5*(ymax-ymin))
+
+northEast :: BoundingBox a -> Maybe (Point2 a)
+southEast :: BoundingBox a -> Maybe (Point2 a)
+southWest :: BoundingBox a -> Maybe (Point2 a)
+northWest :: BoundingBox a -> Maybe (Point2 a)
 
 northEast = topRight
 southEast = bottomRight
@@ -125,17 +161,21 @@ northWest = topLeft
 
 -- /planes/ on the bounding box
 
-leftPlane :: BoundingBox a -> a
-leftPlane (BBox (P2 l _) _) = l
+leftPlane :: BoundingBox a -> Maybe a
+leftPlane ZeroBB            = Nothing
+leftPlane (BBox (P2 l _) _) = Just l
 
-rightPlane :: BoundingBox a -> a
-rightPlane (BBox _ (P2 r _)) = r
+rightPlane :: BoundingBox a -> Maybe a
+rightPlane ZeroBB            = Nothing
+rightPlane (BBox _ (P2 r _)) = Just r
 
-lowerPlane :: BoundingBox a -> a
-lowerPlane (BBox (P2 _ l) _) = l
+lowerPlane :: BoundingBox a -> Maybe a
+lowerPlane ZeroBB            = Nothing
+lowerPlane (BBox (P2 _ l) _) = Just l
 
-upperPlane :: BoundingBox a -> a
-upperPlane (BBox _ (P2 _ u)) = u
+upperPlane :: BoundingBox a -> Maybe a
+upperPlane ZeroBB            = Nothing
+upperPlane (BBox _ (P2 _ u)) = Just u
 
 
 

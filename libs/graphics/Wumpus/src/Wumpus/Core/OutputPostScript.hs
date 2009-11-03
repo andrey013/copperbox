@@ -134,12 +134,17 @@ psHeader pagecount timestamp = do
 
 
 epsHeader :: BoundingBox Double -> String -> WumpusM ()
-epsHeader (BBox (P2 llx lly) (P2 urx ury)) timestamp = do
+epsHeader bb timestamp = do
     bang_EPS
     dsc_BoundingBox llx lly urx ury
     dsc_CreationDate $ bracketString timestamp
     dsc_EndComments
+  where
+    (llx,lly,urx,ury) = getBounds bb
 
+getBounds :: Num u => BoundingBox u -> (u,u,u,u)
+getBounds ZeroBB                           = (0,0,0,0)
+getBounds (BBox (P2 llx lly) (P2 urx ury)) = (llx,lly,urx,ury)
 
 psFooter :: WumpusM ()
 psFooter = dsc_EOF
@@ -154,6 +159,7 @@ epsFooter = do
 
 translateBBox :: BoundingBox Double 
               -> (Maybe (Double,Double), BoundingBox Double)
+translateBBox ZeroBB      = (Nothing,ZeroBB)
 translateBBox bb@(BBox (P2 llx lly) (P2 urx ury))
     | llx < 4 || lly < 4  = (Just (x,y), BBox ll ur)            
     | otherwise           = (Nothing, bb)

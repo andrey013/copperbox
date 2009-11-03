@@ -23,10 +23,10 @@ import Wumpus.Core.Picture
 import Wumpus.Core.PictureLanguage
 
 import Data.FunctionExtras ( (#) )
-import Data.Groupoid
 
 import Data.AffineSpace
 
+import Data.Monoid
 
 
 
@@ -46,7 +46,7 @@ drawFrame p = p `composite` (frp # setRGBColour wumpusRed)
     (Frame2 e0 e1 o) = extractFrame p
     xbasis           = straightLinePath OStroke [o, o .+^ e0]
     ybasis           = straightLinePath OStroke [o, o .+^ e1]
-    bb               = tracePath xbasis `gappend` tracePath ybasis
+    bb               = tracePath xbasis `mappend` tracePath ybasis
     frp              = Multi (Nothing,bb) [Path1 noProp xbasis, Path1 noProp ybasis]
 
  

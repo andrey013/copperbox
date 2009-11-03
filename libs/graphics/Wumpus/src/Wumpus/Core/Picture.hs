@@ -33,6 +33,7 @@ import Data.AffineSpace
 import Text.PrettyPrint.Leijen
 
 import Data.List                ( mapAccumR )
+import Data.Monoid
 import Data.Sequence            ( Seq, (|>) )
 import qualified Data.Sequence  as S
 
@@ -235,20 +236,22 @@ transformBBox fp = trace . map fp . corners
 
 --------------------------------------------------------------------------------
 
+-- TO DO
+-- What should bounds be of an empty picture?
 
 instance (Num u, Ord u) => Horizontal (Picture u) where
   type HUnit (Picture u) = u
 
   moveH a    = movePic (hvec a) 
-  leftBound  = leftPlane . extractBounds
-  rightBound = rightPlane . extractBounds
+  leftBound  = maybe 0 id . leftPlane . extractBounds
+  rightBound = maybe 0 id . rightPlane . extractBounds
 
 instance (Num u, Ord u) => Vertical (Picture u) where
   type VUnit (Picture u) = u
 
   moveV a     = movePic (vvec a) 
-  topBound    = upperPlane . extractBounds
-  bottomBound = lowerPlane . extractBounds
+  topBound    = maybe 0 id . upperPlane . extractBounds
+  bottomBound = maybe 0 id . lowerPlane . extractBounds
 
 instance (Num u, Ord u) => Composite (Picture u) where
   cempty  = picEmpty
@@ -302,7 +305,7 @@ picPath :: (Num u, Ord u) => Path u -> Picture u
 picPath p = Single (Nothing, tracePath p) (Path1 noProp p)
 
 picMultiPath :: (Num u, Ord u) => [Path u] -> Picture u
-picMultiPath ps = Multi (Nothing, gconcat (map tracePath ps)) (map f ps)
+picMultiPath ps = Multi (Nothing, mconcat (map tracePath ps)) (map f ps)
   where f = Path1 noProp
 
 -- The width guesses by picLabel1 and picLabel are very poor...
@@ -349,7 +352,7 @@ drawBounds p     = p `composite` (picPath path) where
 
 
 extractBounds :: (Num u, Ord u) => Picture u -> BoundingBox u
-extractBounds Empty                  = error $ "extractBounds Empty"
+extractBounds Empty                  = ZeroBB
 extractBounds (Single  (_,bb) _)     = bb
 extractBounds (Multi   (_,bb) _)     = bb
 extractBounds (Picture (_,bb) _ _ _) = bb
