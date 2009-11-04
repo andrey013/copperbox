@@ -157,19 +157,6 @@ epsFooter = do
 
 -- Create margins at the left and bottom of 4 points...
 
-translateBBox :: BoundingBox Double 
-              -> (Maybe (Double,Double), BoundingBox Double)
-translateBBox ZeroBB      = (Nothing,ZeroBB)
-translateBBox bb@(BBox (P2 llx lly) (P2 urx ury))
-    | llx < 4 || lly < 4  = (Just (x,y), BBox ll ur)            
-    | otherwise           = (Nothing, bb)
-  where 
-     x  = 4 - llx
-     y  = 4 - lly
-     ll = P2 (llx+x) (lly+y)
-     ur = P2 (urx+x) (ury+y)  
-
-
 
 -- | outputPicture 
 -- Frame changes, representing scalings translation, rotations...

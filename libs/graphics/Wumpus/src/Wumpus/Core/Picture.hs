@@ -442,3 +442,21 @@ updatePrimProps _ _ (Ellipse1 _ _ _ _) = error $ "updatePrimProps - ellipse"
   -- throw an error for the time baing, 
   -- this function as a whole is ill-defined
 
+
+--------------------------------------------------------------------------------
+
+-- This needs is for PostScript and SVG output - it should be 
+-- hidden in the export list of Wumpus.Core
+
+translateBBox :: BoundingBox Double 
+              -> (Maybe (Double,Double), BoundingBox Double)
+translateBBox ZeroBB      = (Nothing,ZeroBB)
+translateBBox bb@(BBox (P2 llx lly) (P2 urx ury))
+    | llx < 4 || lly < 4  = (Just (x,y), BBox ll ur)            
+    | otherwise           = (Nothing, bb)
+  where 
+     x  = 4 - llx
+     y  = 4 - lly
+     ll = P2 (llx+x) (lly+y)
+     ur = P2 (urx+x) (ury+y)  
+

@@ -82,83 +82,99 @@ writeSVG filepath pic =
     writeFile filepath $ unlines $ map ppContent $ svgDraw pic 
 
 svgDraw :: Picture Double -> [Content]
-svgDraw p = [Text xmlVersion, Text svgDocType, svgpic] 
+svgDraw pic = [Text xmlVersion, Text svgDocType, svgpic] 
   where
-    svgpic = Elem $ svgElement llx lly urx ury [svgPicture p]
-    (llx,lly,urx,ury) = lowerLeftUpperRight (0,0,0,0) $ extractBounds p
+    svgpic    = Elem $ svgElement llx lly urx ury [pic_elt]
+    pic_elt   = add_attrs trans $ pictureElt pic
+    bb0       = if nullPicture pic then BBox zeroPt zeroPt 
+                                  else extractBounds pic
+    (mbTx,bb) = translateBBox bb0
+    trans     = maybe [] (\(x,y) -> [translateAttr x y]) mbTx
+    (llx,lly,urx,ury) = lowerLeftUpperRight (0,0,0,0) bb
 
 
-
-svgPicture :: Picture Double -> Element
-svgPicture Empty                     = gElement [] []
-svgPicture (Single (fr,_) prim)      = 
+pictureElt :: Picture Double -> Element
+pictureElt Empty                     = gElement [] []
+pictureElt (Single (fr,_) prim)      = 
     gElement (frameChange fr) [svgPrimitive prim]
-svgPicture (Multi (fr,_) ps)         = 
+pictureElt (Multi (fr,_) ps)         = 
     gElement (frameChange fr) (map svgPrimitive ps)
-svgPicture (Picture (fr,_) prop a b) = 
-    gElement (frameChange fr) [svgPicture a, svgPicture b]
+pictureElt (Picture (fr,_) prop a b) = 
+    gElement (frameChange fr) [pictureElt a, pictureElt b]
 
 svgPrimitive :: Primitive Double -> Element
-svgPrimitive (Path1 props p)           = svgPath props p
-svgPrimitive (Label1 props l)          = svgLabel props l
-svgPrimitive (Ellipse1 (mbc,dp) c w h) = svgEllipse dp c w h
+svgPrimitive (Path1 props p)           = pathElt props p
+svgPrimitive (Label1 props l)          = labelElt props l
+svgPrimitive (Ellipse1 (mbc,dp) c w h) = ellipseE dp c w h
 
 
-svgPath :: PathProps -> Path Double -> Element
-svgPath (mbc,_) (Path dp (P2 x y) xs) = 
-    unode "path" [d,fill mbc dp, stroke mbc dp] 
+pathElt :: PathProps -> Path Double -> Element
+pathElt (mbc,_) (Path dp (P2 x y) xs) = 
+    unode "path" [d,fillAttr mbc dp, strokeAttr mbc dp] 
   where
-    d    = unqualAttr "d" (pathString dp x y xs)
+    d    = unqualAttr "d" (pathDesc dp x y xs)
 
 
-svgLabel :: LabelProps -> Label Double -> Element
-svgLabel _ (Label (P2 x y) str) = unode "text" ([xattr,yattr], textct)
+labelElt :: LabelProps -> Label Double -> Element
+labelElt (mbc,mbf) (Label (P2 x y) str) = 
+    unode "text" (mbCons ocattr $ [xattr,yattr] ++ fontattrs, textct)
   where
-    xattr   = unqualAttr "x" $ show x
-    yattr   = unqualAttr "y" $ show y
-    textct  = Text $ CData CDataText str Nothing
+    xattr     = unqualAttr "x" $ show x
+    yattr     = unqualAttr "y" $ show y
+    textct    = Text $ CData CDataText str Nothing
+    ocattr    = fmap colourAttr mbc
+    fontattrs = maybe [] fontAttrs mbf
+
+
+
+mbCons :: Maybe a -> [a] -> [a]
+mbCons Nothing  = id
+mbCons (Just x) = (x:)
    
-fill :: Maybe PSColour -> DrawProp -> Attr
-fill mbc CFill = unqualAttr "fill" $ maybe "black" colourDesc mbc
-fill _   _     = unqualAttr "fill" "none"
+fillAttr :: Maybe PSColour -> DrawProp -> Attr
+fillAttr mbc CFill = unqualAttr "fill" $ maybe "black" colourDesc mbc
+fillAttr _   _     = unqualAttr "fill" "none"
 
 
-stroke :: Maybe PSColour -> DrawProp -> Attr
-stroke mbc OStroke = unqualAttr "stroke" $ maybe "black" colourDesc mbc
-stroke mbc CStroke = unqualAttr "stroke" $ maybe "black" colourDesc mbc
-stroke _   _       = unqualAttr "stroke" "none"
+strokeAttr :: Maybe PSColour -> DrawProp -> Attr
+strokeAttr mbc OStroke = unqualAttr "stroke" $ maybe "black" colourDesc mbc
+strokeAttr mbc CStroke = unqualAttr "stroke" $ maybe "black" colourDesc mbc
+strokeAttr _   _       = unqualAttr "stroke" "none"
 
 
 -- Clipping to think about...
 
 
-pathString :: DrawProp -> Double -> Double -> [PathSeg Double] -> String
-pathString dp x y xs = 
-    hsep $ closepath dp $ "M": show x : show y : map cmdPathSeg xs
+pathDesc :: DrawProp -> Double -> Double -> [PathSeg Double] -> String
+pathDesc dp x y xs = 
+    hsep $ closepath dp $ "M": show x : show y : map pathSegDesc xs
   where 
     closepath OStroke = id
     closepath _       = (++ ["Z"])
 
    
 
-cmdPathSeg :: PathSeg Double -> String
-cmdPathSeg (PLine (P2 x y))  = hsep ["L", show x, show y]
-cmdPathSeg (PCurve p1 p2 p3) = hsep $ "L" : map show [x1,y1,x2,y2,x3,y3]
+pathSegDesc :: PathSeg Double -> String
+pathSegDesc (PLine (P2 x y))  = hsep ["L", show x, show y]
+pathSegDesc (PCurve p1 p2 p3) = hsep $ "L" : map show [x1,y1,x2,y2,x3,y3]
   where
     P2 x1 y1 = p1
     P2 x2 y2 = p2
     P2 x3 y3 = p3
 
 
-svgEllipse :: DrawProp -> Point2 Double -> Double -> Double -> Element
-svgEllipse _dp p w h 
+ellipseE :: DrawProp -> Point2 Double -> Double -> Double -> Element
+ellipseE _dp p w h 
     | w == h    = unode "circle"  [cx,cy,rx]
     | otherwise = unode "ellipse" [cx,cy,rx,ry]
   where
     (cx,cy) = coords p
     rx      = unqualAttr "rx" $ show w
     ry      = unqualAttr "ry" $ show h
-     
+
+colourAttr :: PSColour -> Attr
+colourAttr = unqualAttr "color" . colourDesc
+
 
 colourDesc :: PSColour -> String
 colourDesc (PSRgb r g b) = rgbDesc $ RGB3 r g b
@@ -169,12 +185,24 @@ rgbDesc :: RGB3 Double -> String
 rgbDesc (RGB3 r g b) = "rgb" ++ show (range255 r,range255 g,range255 b)
 
 frameChange :: Maybe (Frame2 Double) -> [Attr]
-frameChange = maybe [] (return . transformAttr)
+frameChange = maybe [] (return . matrixAttr)
 
-transformAttr :: Frame2 Double -> Attr
-transformAttr fr = unqualAttr "transform" mstring where
+fontAttrs :: FontAttr -> [Attr]
+fontAttrs (FontAttr name sz) = 
+  [unqualAttr "font-family" name, unqualAttr "font-size" (show sz)]
+
+matrixAttr :: Frame2 Double -> Attr
+matrixAttr fr = unqualAttr "transform" mstring where
     mstring         = "matrix" ++ tupled (map dtrunc [a,b,c,d,e,f])
     CTM a b c d e f = toCTM fr
+
+translateAttr :: Double -> Double -> Attr
+translateAttr tx ty = unqualAttr "transform" tstring where
+   tstring = "translate" ++ tupled (map dtrunc [tx,ty])
+
+
+fontSizeAttr :: Int -> Attr
+fontSizeAttr = unqualAttr "font-size" . show
 
 coords :: Point2 Double -> (Attr,Attr)
 coords (P2 x y) = (unqualAttr "cx" (show x), unqualAttr "cy" (show y))
