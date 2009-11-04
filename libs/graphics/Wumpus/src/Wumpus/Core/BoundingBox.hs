@@ -91,6 +91,12 @@ corners (BBox bl@(P2 x0 y0) tr@(P2 x1 y1)) = [bl, br, tr, tl] where
     tl = P2 x0 y1
 
 
+lowerLeftUpperRight :: (a,a,a,a) -> BoundingBox a -> (a,a,a,a)
+lowerLeftUpperRight dflt ZeroBB                      = dflt
+lowerLeftUpperRight _   (BBox (P2 x0 y0) (P2 x1 y1)) = (x0,y0,x1,y1)
+
+
+
 withinBB :: Ord a => Point2 a -> BoundingBox a -> Bool
 withinBB _ ZeroBB       = False
 withinBB p (BBox ll ur) = within p ll ur

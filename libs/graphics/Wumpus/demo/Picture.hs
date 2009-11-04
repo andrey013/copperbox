@@ -5,6 +5,7 @@ module Picture where
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.OutputPostScript
+import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture
 import Wumpus.Core.PictureLanguage
 import Wumpus.Extra.Polygon
@@ -47,7 +48,9 @@ demo2 = writePS "picture2.ps" Nothing [psquares]
 
     
 
-demo3 = writeEPS "picture3.eps" Nothing p1 
+demo3 = do 
+    writeEPS "picture3.eps" Nothing p1 
+    writeSVG "picture3.svg" p1
   where     
     p1 = psquare ->- (rotate45About (center psquares) psquares) ->- psquare
 
