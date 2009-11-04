@@ -56,7 +56,9 @@ demo3 = do
 
 d3 = pretty $ psquare ->- (rotate45About (center psquares) psquares) ->- psquare
 
-demo4 = writeEPS "picture4.eps" Nothing p1
+demo4 = do 
+    writeEPS "picture4.eps" Nothing p1
+    writeSVG "picture4.svg" p1
   where
     p1 = psquare -//- (psquares # setRGBColour (RGB3 1 0 1))
    

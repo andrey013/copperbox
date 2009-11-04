@@ -22,8 +22,8 @@ module Wumpus.Core.Picture where
 import Wumpus.Core.BoundingBox hiding ( center )
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
+import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureLanguage
-import Wumpus.Core.PostScript
 
 import Data.FunctionExtras
 import Data.Groupoid

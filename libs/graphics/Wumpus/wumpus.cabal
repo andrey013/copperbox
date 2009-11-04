@@ -33,6 +33,7 @@ library
     Wumpus.Core.BoundingBox,
     Wumpus.Core.Colour,
     Wumpus.Core.Geometry,
+    Wumpus.Core.GraphicsState,
     Wumpus.Core.OutputPostScript,
     Wumpus.Core.OutputSVG,
     Wumpus.Core.Picture,

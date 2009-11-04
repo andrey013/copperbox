@@ -23,8 +23,8 @@ module Wumpus.Core.OutputSVG
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
+import Wumpus.Core.GraphicsState
 import Wumpus.Core.Picture
-import Wumpus.Core.PostScript
 import Wumpus.Core.Utils
 
 import Text.XML.Light
@@ -67,11 +67,10 @@ svgDocType = CData CDataRaw (line1 ++ "\n" ++ line2) (Just 1)
 gElement :: [Attr] -> [Element] -> Element
 gElement xs ys = unode "g" (xs,ys)
 
-svgElement :: Double -> Double -> Double -> Double -> [Element] -> Element
-svgElement llx lly urx ury xs = unode "svg" ([xmlns,vbox,version],xs)
+svgElement :: [Element] -> Element
+svgElement xs = unode "svg" ([xmlns,version],xs)
   where
     xmlns   = unqualAttr "xmlns" "http://www.w3.org/2000/svg"
-    vbox    = unqualAttr "viewBox" $ hsep $ map dtrunc [llx,lly,urx,ury] 
     version = unqualAttr "version" "1.1"  
 
 
@@ -81,17 +80,17 @@ writeSVG :: FilePath -> Picture Double -> IO ()
 writeSVG filepath pic = 
     writeFile filepath $ unlines $ map ppContent $ svgDraw pic 
 
+
 svgDraw :: Picture Double -> [Content]
 svgDraw pic = [Text xmlVersion, Text svgDocType, svgpic] 
   where
-    svgpic    = Elem $ svgElement llx lly urx ury [pic_elt]
-    pic_elt   = add_attrs trans $ pictureElt pic
+    svgpic    = Elem $ svgElement [pic_elt]
+    pic_elt   = gElement trans [pictureElt pic]
     bb0       = if nullPicture pic then BBox zeroPt zeroPt 
                                   else extractBounds pic
-    (mbTx,bb) = translateBBox bb0
+    (mbTx,_)  = translateBBox bb0
     trans     = maybe [] (\(x,y) -> [translateAttr x y]) mbTx
-    (llx,lly,urx,ury) = lowerLeftUpperRight (0,0,0,0) bb
-
+    
 
 pictureElt :: Picture Double -> Element
 pictureElt Empty                     = gElement [] []

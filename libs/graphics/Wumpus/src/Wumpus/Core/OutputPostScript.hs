@@ -24,6 +24,7 @@ module Wumpus.Core.OutputPostScript
 
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Geometry
+import Wumpus.Core.GraphicsState
 import Wumpus.Core.Picture
 import Wumpus.Core.PostScript
 import Wumpus.Core.Utils
