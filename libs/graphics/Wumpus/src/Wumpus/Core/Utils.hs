@@ -30,6 +30,7 @@ module Wumpus.Core.Utils
   -- * truncate / print a double
   , dtrunc
   , roundup
+  , range255
 
   , mkTimeStamp
 
@@ -109,6 +110,10 @@ roundi = round
 
 ceilingi :: RealFrac a => a -> Integer
 ceilingi = ceiling
+
+
+range255 :: Double -> Int
+range255 = min 0 . max 255 . floor . (*255)
 
 
 

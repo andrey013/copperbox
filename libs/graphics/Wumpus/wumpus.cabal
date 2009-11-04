@@ -39,6 +39,7 @@ library
     Wumpus.Core.Picture,
     Wumpus.Core.PictureLanguage,
     Wumpus.Core.PostScript,
+    Wumpus.Core.SVG,
     Wumpus.Core.Utils,
     Wumpus.Extra.Arrow,
     Wumpus.Extra.Grid,
