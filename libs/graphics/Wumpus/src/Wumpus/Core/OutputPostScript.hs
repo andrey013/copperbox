@@ -170,17 +170,18 @@ outputPicture (Single (fr,_) prim)      =
     updateFrame fr $ outputPrimitive prim
 outputPicture (Multi (fr,_) ps)         = 
     updateFrame fr $ mapM_ outputPrimitive ps
-outputPicture (Picture (fr,_) prop a b) = updatePen prop $ do
+outputPicture (Picture (fr,_) a b)      = do
     updateFrame fr $ outputPicture  a
     updateFrame fr $ outputPicture  b
 
-updateFrame :: MbFrame Double -> WumpusM () -> WumpusM ()
-updateFrame Nothing    ma = ma
-updateFrame (Just frm) ma = do
-    ps_gsave
-    ps_concat $ toCTM frm
-    ma
-    ps_grestore
+updateFrame :: Frame2 Double -> WumpusM () -> WumpusM ()
+updateFrame frm ma 
+  | standardFrame frm = ma
+  | otherwise         = do { ps_gsave
+                           ; ps_concat $ toCTM frm
+                           ; ma
+                           ; ps_grestore 
+                           }
 
 
 
@@ -191,10 +192,8 @@ outputPrimitive (Ellipse1 (mbc,dp) c w h) = updateColour mbc $
                                               outputEllipse dp c w h
 
 updatePen :: PathProps -> WumpusM () -> WumpusM ()
-updatePen prop@(mbc,se) ma
-    | nullProps prop = ma
-    | otherwise      = do { ps_gsave
-                          ; optColourCommand mbc
+updatePen (c,se) ma =  do { ps_gsave
+                          ; colourCommand c
                           ; F.mapM_ penCommand se
                           ; ma
                           ; ps_grestore
@@ -208,33 +207,28 @@ penCommand (LineJoin lj)    = ps_setlinejoin lj
 penCommand (DashPattern dp) = ps_setdash dp
 
 updateFont :: LabelProps -> WumpusM () -> WumpusM ()
-updateFont prop@(mbc,mfnt) ma 
-    | nullFontProps prop = ma
-    | otherwise          = do { ps_gsave
-                              ; optColourCommand mbc
-                              ; optFontCommand mfnt
-                              ; ma
-                              ; ps_grestore
-                              }
+updateFont (c,fnt) ma = do { ps_gsave
+                           ; colourCommand c
+                           ; fontCommand fnt
+                           ; ma
+                           ; ps_grestore
+                           }
 
-updateColour :: MbColour -> WumpusM () -> WumpusM ()
-updateColour Nothing  ma = ma 
-updateColour (Just c) ma = do { ps_gsave
-                              ; colourCommand c
-                              ; ma
-                              ; ps_grestore
-                              }
-
+-- TODO pass an enviroment and only write the colour change if it
+-- is different to the current colour.
+updateColour :: PSColour -> WumpusM () -> WumpusM ()
+updateColour c ma = do { ps_gsave
+                       ; colourCommand c
+                       ; ma
+                       ; ps_grestore
+                       }
 
 
-optFontCommand :: Maybe FontAttr -> WumpusM ()
-optFontCommand = maybe (return ()) fontCommand
+
 
 fontCommand :: FontAttr -> WumpusM ()
 fontCommand (FontAttr name sz) = ps_findfont name >> ps_scalefont sz >> ps_setfont
 
-optColourCommand :: Maybe PSColour -> WumpusM ()
-optColourCommand = maybe (return ()) colourCommand
 
 colourCommand :: PSColour -> WumpusM ()
 colourCommand (PSRgb r g b) = ps_setrgbcolor r g b

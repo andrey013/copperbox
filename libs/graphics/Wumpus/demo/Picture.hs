@@ -10,7 +10,6 @@ import Wumpus.Core.Picture
 import Wumpus.Core.PictureLanguage
 import Wumpus.Extra.Polygon
 
-import Data.FunctionExtras ( (#) )
 import Data.VectorSpace
 
 import Text.PrettyPrint.Leijen ( pretty )
@@ -60,9 +59,9 @@ demo4 = do
     writeEPS "picture4.eps" Nothing p1
     writeSVG "picture4.svg" p1
   where
-    p1 = psquare -//- (psquares # setRGBColour (RGB3 1 0 1))
+    p1 = psquare -//- psquares
    
-d4 = pretty $ psquare -//- (psquares # setRGBColour (RGB3 1 0 1))
+d4 = pretty $ psquare -//- psquares
 
 demo5 = writeEPS "picture5.eps" Nothing p1
   where

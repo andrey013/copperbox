@@ -104,6 +104,10 @@ content_text :: String -> Content
 content_text str = Text $ CData CDataText str Nothing
 
 
+-- | @ font-family=\"...\" @
+attr_fontfamily :: String -> Attr
+attr_fontfamily = unqualAttr "font-family" 
+
 -- | @ font-size=\"...\" @
 attr_fontsize :: Int -> Attr
 attr_fontsize = unqualAttr "font-size" . show
@@ -111,7 +115,7 @@ attr_fontsize = unqualAttr "font-size" . show
 
 
 -- | @ fill=\"rgb(..., ..., ...)\" @
-attr_fill :: PSColour ->  Attr
+attr_fill :: PSColour -> Attr
 attr_fill = unqualAttr "fill" . val_colour
 
 
@@ -130,3 +134,16 @@ val_colour (PSGray a)    = val_rgb $ gray2rgb a
 -- | @ rgb(..., ..., ...) @
 val_rgb :: RGB3 Double -> String
 val_rgb (RGB3 r g b) = "rgb" ++ show (range255 r,range255 g,range255 b)
+
+
+-- | c.f. PostScript's @moveto@.
+path_m :: Double -> Double -> String
+path_m x y  = hsep $ "M" : map dtrunc [x,y]
+
+-- | c.f. PostScript's @lineto@.
+path_l :: Double -> Double -> String
+path_l x y  = hsep $ "L" : map dtrunc [x,y]
+
+-- | c.f. PostScript's @curveto@.
+path_s :: Double -> Double -> Double -> Double -> Double -> Double -> String
+path_s x1 y1 x2 y2 x3 y3 =  hsep $ "S" : map dtrunc [x1,y1,x2,y2,x3,y3]

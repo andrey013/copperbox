@@ -17,12 +17,9 @@
 module Wumpus.Extra.Polygon where
 
 import Wumpus.Core.BoundingBox
-import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.Picture
 import Wumpus.Core.PictureLanguage
-
-import Data.FunctionExtras ( (#) )
 
 import Data.AffineSpace
 
@@ -41,17 +38,18 @@ instance Pointwise (Polygon a) where
 
  
 drawFrame :: (Num u, Ord u) => Picture u -> Picture u
-drawFrame p = p `composite` (frp # setRGBColour wumpusRed)
+drawFrame p = p `composite` frp
   where
     (Frame2 e0 e1 o) = extractFrame p
     xbasis           = straightLinePath OStroke [o, o .+^ e0]
     ybasis           = straightLinePath OStroke [o, o .+^ e1]
     bb               = tracePath xbasis `mappend` tracePath ybasis
-    frp              = Multi (Nothing,bb) [Path1 noProp xbasis, Path1 noProp ybasis]
+    frp              = Multi (frameDefault,bb) 
+                             [Path1 pathDefault xbasis, Path1 pathDefault ybasis]
 
  
 picPolygon :: (Num u, Ord u) => DrawProp -> Polygon u -> Picture u
-picPolygon dp (Polygon xs) = Single (Nothing,trace xs) (Path1 noProp path)
+picPolygon dp (Polygon xs) = Single (frameDefault,trace xs) (Path1 pathDefault path)
   where 
     path = straightLinePath dp xs
 

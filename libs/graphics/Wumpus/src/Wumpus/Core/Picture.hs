@@ -42,7 +42,7 @@ import qualified Data.Sequence  as S
 data Picture u = Empty
                | Single   (Measure u) (Primitive u)
                | Multi    (Measure u) [Primitive u] -- multiple prims in same affine frame
-               | Picture  (Measure u) PictureProps (Picture u) (Picture u)
+               | Picture  (Measure u) (Picture u) (Picture u)
   deriving (Eq,Show) 
 
 
@@ -90,19 +90,13 @@ data Label u = Label (Point2 u) String
 type DLabel = Label Double
 
 
-type MbColour = Maybe PSColour
-type MbFont   = Maybe FontAttr
-
-type PictureProps = (MbColour, Seq PenAttr)
-type PathProps    = (MbColour, Seq PenAttr)
-type LabelProps   = (MbColour, MbFont)
-type EllipseProps = (MbColour, DrawProp)
+type PathProps    = (PSColour, Seq PenAttr)
+type LabelProps   = (PSColour, FontAttr)
+type EllipseProps = (PSColour, DrawProp)
 
 -- Measure = (_current_ frame x bounding box)
--- /optimize/ the standard frame representing it as Nothing
 
-type MbFrame u  = Maybe (Frame2 u)
-type Measure u = (MbFrame u, BoundingBox u) 
+type Measure u = (Frame2 u, BoundingBox u) 
 
 type DMeasure = Measure Double
 
@@ -115,21 +109,20 @@ data DrawProp = OStroke | CStroke | CFill | CCrop
 --------------------------------------------------------------------------------
 -- Pretty printing
 
-instance Pretty u => Pretty (Picture u) where
-  pretty Empty                = text "*empty*"
-  pretty (Single m prim)      = ppMeasure m <$> indent 2 (pretty prim)
+instance (Num u, Pretty u) => Pretty (Picture u) where
+  pretty Empty              = text "*empty*"
+  pretty (Single m prim)    = ppMeasure m <$> indent 2 (pretty prim)
 
-  pretty (Multi m prims)      = ppMeasure m <$> indent 2 (list $ map pretty prims)
-  pretty (Picture m _ pl pr)  = 
+  pretty (Multi m prims)    = ppMeasure m <$> indent 2 (list $ map pretty prims)
+  pretty (Picture m pl pr)  = 
       ppMeasure m <$> indent 2 (text "LEFT" <+> pretty pl)
                   <$> indent 2 (text "RGHT" <+> pretty pr)
 
      
 
-ppMeasure :: Pretty u => Measure u -> Doc
-ppMeasure (fr,bbox) = align (ppfr fr <$> pretty bbox) where
-   ppfr Nothing   = text "*std-frame*"
-   ppfr (Just a)  = pretty a
+ppMeasure :: (Num u, Pretty u) => Measure u -> Doc
+ppMeasure (fr,bbox) = align (ppfr <$> pretty bbox) where
+   ppfr = if standardFrame fr then text "*std-frame*" else pretty fr
 
 
 instance Pretty u => Pretty (Primitive u) where
@@ -153,6 +146,9 @@ instance Pretty u => Pretty (Label u) where
 
 
 --------------------------------------------------------------------------------
+
+-- | Paths are sensibly a Groupoid - there is no notion of 
+-- /empty path/.
 
 instance Groupoid (Path u) where
   Path dp st xs `gappend` Path _ st' xs' = Path dp st (xs ++ (PLine st' : xs'))
@@ -216,11 +212,9 @@ transformPicture fp fv =
 transformFrame :: Num u
                => (Point2 u -> Point2 u) 
                -> (Vec2 u -> Vec2 u) 
-               -> MbFrame u 
-               -> MbFrame u
-transformFrame fp fv = Just . trf . maybe (ortho zeroPt) id  
-  where
-    trf (Frame2 e0 e1 o) = Frame2 (fv e0) (fv e1) (fp o)
+               -> Frame2 u 
+               -> Frame2 u
+transformFrame fp fv (Frame2 e0 e1 o) = Frame2 (fv e0) (fv e1) (fp o)
 
 
 -- Bounding boxes need recalculating after a transformation.
@@ -254,7 +248,7 @@ instance (Num u, Ord u) => Composite (Picture u) where
 
   a     `composite` Empty = a
   Empty `composite` b     = b
-  a     `composite` b     = Picture (Nothing, bb) noProp a b where
+  a     `composite` b     = Picture (frameDefault, bb) a b where
                             bb = union (extractBounds a) (extractBounds b)
 
 
@@ -267,21 +261,23 @@ instance (Num u, Ord u, Horizontal (Picture u), Vertical (Picture u),
 
 --------------------------------------------------------------------------------
 
-noProp :: (MbColour,Seq a)
-noProp = (Nothing,S.empty)
+-- aka the standard frame
+psBlack :: PSColour
+psBlack = PSRgb 0 0 0
+ 
+frameDefault :: Num u => Frame2 u 
+frameDefault = ortho zeroPt
+
+pathDefault :: PathProps 
+pathDefault = (psBlack, mempty)
+
+labelDefault :: LabelProps
+labelDefault = (psBlack, FontAttr "Courier" 10)
+
+ellipseDefault :: EllipseProps
+ellipseDefault = (psBlack, CFill)
 
 
-noFontProp :: (MbColour,MbFont)
-noFontProp = (Nothing,Nothing)
-
-
-nullProps :: (MbColour, Seq a) -> Bool
-nullProps (Nothing,se) = S.null se
-nullProps _            = False
-
-nullFontProps :: (MbColour, MbFont) -> Bool
-nullFontProps (Nothing,Nothing) = True
-nullFontProps _                 = False
 
 nullPicture :: Picture u -> Bool
 nullPicture Empty = True
@@ -298,23 +294,23 @@ picEmpty = Empty
 
 
 picPath :: (Num u, Ord u) => Path u -> Picture u
-picPath p = Single (Nothing, tracePath p) (Path1 noProp p)
+picPath p = Single (frameDefault, tracePath p) (Path1 pathDefault p)
 
 picMultiPath :: (Num u, Ord u) => [Path u] -> Picture u
-picMultiPath ps = Multi (Nothing, mconcat (map tracePath ps)) (map f ps)
-  where f = Path1 noProp
+picMultiPath ps = Multi (frameDefault, mconcat (map tracePath ps)) (map f ps)
+  where f = Path1 pathDefault
 
 -- The width guesses by picLabel1 and picLabel are very poor...
 
 picLabel1 :: (Num u, Ord u) => Int -> String -> Picture u
-picLabel1 fontsz str = Single (Nothing, bb) lbl where
+picLabel1 fontsz str = Single (frameDefault, bb) lbl where
   bb  = BBox zeroPt (P2 w (fromIntegral fontsz))
   w   = fromIntegral $ fontsz * length str
-  lbl = Label1 noFontProp (Label zeroPt str) 
+  lbl = Label1 labelDefault (Label zeroPt str) 
 
 
 picLabel :: forall u. (Num u, Ord u) => Int -> Int -> String -> Picture u
-picLabel fontsz linespace str = Multi (Nothing, bb) lbls where
+picLabel fontsz linespace str = Multi (frameDefault, bb) lbls where
   xs   = lines str
   lc   = length xs
   w    = fromIntegral $ fontsz * (maximum . map length) xs
@@ -322,10 +318,10 @@ picLabel fontsz linespace str = Multi (Nothing, bb) lbls where
   bb   = BBox zeroPt (P2 w h)
   lbls = snd $ mapAccumR fn zeroPt xs
   fn pt ss = let pt' = pt .+^ (V2 (0::u) (fromIntegral $ fontsz + linespace))
-             in (pt', Label1 noFontProp (Label pt ss))
+             in (pt', Label1 labelDefault (Label pt ss))
 
 picEllipse :: Num u => EllipseProps -> u -> u -> Picture u
-picEllipse dp w h = Single (Nothing,bb) ellp where
+picEllipse dp w h = Single (frameDefault,bb) ellp where
     v    = V2 w h
     bb   = BBox (zeroPt .-^ v) (zeroPt .+^ v)
     ellp = Ellipse1 dp zeroPt w h
@@ -348,24 +344,24 @@ drawBounds p     = p `composite` (picPath path) where
 
 
 extractBounds :: (Num u, Ord u) => Picture u -> BoundingBox u
-extractBounds Empty                  = ZeroBB
-extractBounds (Single  (_,bb) _)     = bb
-extractBounds (Multi   (_,bb) _)     = bb
-extractBounds (Picture (_,bb) _ _ _) = bb
+extractBounds Empty                = ZeroBB
+extractBounds (Single  (_,bb) _)   = bb
+extractBounds (Multi   (_,bb) _)   = bb
+extractBounds (Picture (_,bb) _ _) = bb
 
 extractFrame :: Num u => Picture u -> Frame2 u
-extractFrame Empty                  = ortho zeroPt
-extractFrame (Single  (fr,_) _)     = maybe (ortho zeroPt) id fr
-extractFrame (Multi   (fr,_) _)     = maybe (ortho zeroPt) id fr
-extractFrame (Picture (fr,_) _ _ _) = maybe (ortho zeroPt) id fr
+extractFrame Empty                = ortho zeroPt
+extractFrame (Single  (fr,_) _)   = fr
+extractFrame (Multi   (fr,_) _)   = fr
+extractFrame (Picture (fr,_) _ _) = fr
 
 
 
 mapMeasure :: (Measure u -> Measure u) -> Picture u -> Picture u
-mapMeasure _ Empty                 = Empty
-mapMeasure f (Single  m prim)      = Single (f m) prim
-mapMeasure f (Multi   m ps)        = Multi (f m) ps
-mapMeasure f (Picture m prop a  b) = Picture (f m) prop a b
+mapMeasure _ Empty            = Empty
+mapMeasure f (Single  m prim) = Single (f m) prim
+mapMeasure f (Multi   m ps)   = Multi (f m) ps
+mapMeasure f (Picture m a b)  = Picture (f m) a b
 
 
 movePic :: Num u => Vec2 u -> Picture u -> Picture u
@@ -373,74 +369,8 @@ movePic v = mapMeasure (moveMeasure v)
 
   
 moveMeasure :: Num u => Vec2 u -> Measure u -> Measure u
-moveMeasure v (fr,bb) = (Just $ displaceOrigin v fr', pointwise (.+^ v) bb) 
-  where
-    fr' = maybe (ortho zeroPt) id fr
+moveMeasure v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb) 
 
-
--- The property handling code that follows is dubious...
-
-setRGBColour :: DRGB -> Picture u -> Picture u
-setRGBColour (RGB3 r g b) = updateProps f f where 
-    f (_,xs) = (Just (PSRgb r g b),xs)
-
-setHSBColour :: DHSB -> Picture u -> Picture u
-setHSBColour (HSB3 h s b) = updateProps f f where 
-    f (_,xs) = (Just (PSHsb h s b),xs)
-
-setGray :: Double -> Picture u -> Picture u
-setGray a = updateProps f f where 
-    f (_,xs) = (Just (PSGray a),xs)
-
-setLineWidth :: Double -> Picture u -> Picture u
-setLineWidth a = updateProps f id where 
-    f (c,se) = (c,se |> LineWidth a)   -- must be /last/.
-
-setMiterLimit :: Double -> Picture u -> Picture u
-setMiterLimit a = updateProps f id where 
-    f (c,se) = (c,se |> MiterLimit a)
-
-setLineCap :: LineCap -> Picture u -> Picture u
-setLineCap a = updateProps f id where 
-    f (c,se) = (c,se |> LineCap a)
-
-setLineJoin :: LineJoin -> Picture u -> Picture u
-setLineJoin a = updateProps f id where 
-    f (c,se) = (c,se |> LineJoin a)
-
-setDashPattern :: DashPattern -> Picture u -> Picture u
-setDashPattern a = updateProps f id where 
-    f (c,se) = (c,se |> DashPattern a)
-
-
-setFont :: String -> Int -> Picture u -> Picture u
-setFont name sz = updateProps id g where 
-    g (c,_) = (c,Just $ FontAttr name sz)
-
-
--- This is too destructive and needs a rethink...
--- In essence it goes against the grain of picture being created
--- /bottom-up/. 
-
-updateProps :: (PathProps -> PathProps) 
-            -> (LabelProps -> LabelProps) 
-            -> Picture u  
-            -> Picture u
-updateProps _ _ Empty                 = Empty
-updateProps f g (Single  m prim)      = Single m (updatePrimProps f g prim)
-updateProps f g (Multi   m ps)        = Multi m (map (updatePrimProps f g) ps)
-updateProps f _ (Picture m prop a  b) = Picture m (f prop) a b
-
-
-updatePrimProps :: (PathProps -> PathProps) 
-                -> (LabelProps -> LabelProps) 
-                -> Primitive u  
-                -> Primitive u
-updatePrimProps f _ (Path1 p a)        = Path1 (f p) a
-updatePrimProps _ g (Label1 p a)       = Label1 (g p) a
-updatePrimProps _ _ (Ellipse1 _ _ _ _) = error $ "updatePrimProps - ellipse"
-  -- throw an error for the time baing, 
-  -- this function as a whole is ill-defined
 
 
 --------------------------------------------------------------------------------

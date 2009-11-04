@@ -55,11 +55,11 @@ svgDraw pic = [Text xmlVersion, Text svgDocType, svgpic]
 pictureElt :: Picture Double -> Element
 pictureElt Empty                     = gElement [] []
 pictureElt (Single (fr,_) prim)      = 
-    gElement (frameChange fr) [svgPrimitive prim]
+    gElement [frameChange fr] [svgPrimitive prim]
 pictureElt (Multi (fr,_) ps)         = 
-    gElement (frameChange fr) (map svgPrimitive ps)
-pictureElt (Picture (fr,_) prop a b) = 
-    gElement (frameChange fr) [pictureElt a, pictureElt b]
+    gElement [frameChange fr] (map svgPrimitive ps)
+pictureElt (Picture (fr,_) a b) = 
+    gElement [frameChange fr] [pictureElt a, pictureElt b]
 
 svgPrimitive :: Primitive Double -> Element
 svgPrimitive (Path1 props p)           = pathElt props p
@@ -68,35 +68,37 @@ svgPrimitive (Ellipse1 (mbc,dp) c w h) = ellipseE dp c w h
 
 
 pathElt :: PathProps -> Path Double -> Element
-pathElt (mbc,_) (Path dp (P2 x y) xs) = 
-    element_path ps # add_attrs [fillAttr mbc dp, strokeAttr mbc dp]
+pathElt (c,_) (Path dp (P2 x y) xs) = 
+    element_path ps # add_attrs [fillAttr c dp, strokeAttr c dp]
   where
     ps = pathDesc dp x y xs
 
 
 labelElt :: LabelProps -> Label Double -> Element
-labelElt (mbc,mbf) (Label (P2 x y) str) = 
-     element_text str # add_attrs (mbCons ocattr $ attr_ls ++ fontattrs)
+labelElt (c,FontAttr name sz) (Label (P2 x y) str) = 
+     element_text str # add_attrs xs
   where
-    attr_ls   = [attr_x x, attr_y y]
-    ocattr    = fmap attr_color mbc
-    fontattrs = maybe [] fontAttrs mbf
-
+    xs = [ attr_x x, 
+           attr_y y, 
+           attr_color c, 
+           attr_fontfamily name, 
+           attr_fontsize sz ]
+ 
 
 
 mbCons :: Maybe a -> [a] -> [a]
 mbCons Nothing  = id
 mbCons (Just x) = (x:)
    
-fillAttr :: Maybe PSColour -> DrawProp -> Attr
-fillAttr mbc CFill = unqualAttr "fill" $ maybe "black" val_colour mbc
-fillAttr _   _     = unqualAttr "fill" "none"
+fillAttr :: PSColour -> DrawProp -> Attr
+fillAttr c CFill = unqualAttr "fill" $ val_colour c
+fillAttr _   _   = unqualAttr "fill" "none"
 
 
-strokeAttr :: Maybe PSColour -> DrawProp -> Attr
-strokeAttr mbc OStroke = unqualAttr "stroke" $ maybe "black" val_colour mbc
-strokeAttr mbc CStroke = unqualAttr "stroke" $ maybe "black" val_colour mbc
-strokeAttr _   _       = unqualAttr "stroke" "none"
+strokeAttr :: PSColour -> DrawProp -> Attr
+strokeAttr c OStroke = unqualAttr "stroke" $ val_colour c
+strokeAttr c CStroke = unqualAttr "stroke" $ val_colour c
+strokeAttr _ _       = unqualAttr "stroke" "none"
 
 
 -- Clipping to think about...
@@ -104,7 +106,7 @@ strokeAttr _   _       = unqualAttr "stroke" "none"
 
 pathDesc :: DrawProp -> Double -> Double -> [PathSeg Double] -> [String]
 pathDesc dp x y xs = 
-    closepath dp $ "M": show x : show y : map pathSegDesc xs
+    closepath dp $ path_m x y : map pathSegDesc xs
   where 
     closepath OStroke = id
     closepath _       = (++ ["Z"])
@@ -112,12 +114,9 @@ pathDesc dp x y xs =
    
 
 pathSegDesc :: PathSeg Double -> String
-pathSegDesc (PLine (P2 x y))  = hsep ["L", show x, show y]
-pathSegDesc (PCurve p1 p2 p3) = hsep $ "L" : map show [x1,y1,x2,y2,x3,y3]
-  where
-    P2 x1 y1 = p1
-    P2 x2 y2 = p2
-    P2 x3 y3 = p3
+pathSegDesc (PLine (P2 x y))                          = path_l x y
+pathSegDesc (PCurve (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
+    path_s x1 y1 x2 y2 x3 y3
 
 
 ellipseE :: DrawProp -> Point2 Double -> Double -> Double -> Element
@@ -126,12 +125,8 @@ ellipseE _dp (P2 x y) w h
     | otherwise = unode "ellipse" [attr_x x, attr_y y, attr_rx w, attr_ry h]
 
 
-frameChange :: Maybe (Frame2 Double) -> [Attr]
-frameChange = maybe [] (return . matrixAttr)
-
-fontAttrs :: FontAttr -> [Attr]
-fontAttrs (FontAttr name sz) = 
-  [unqualAttr "font-family" name, attr_fontsize  sz]
+frameChange :: Frame2 Double -> Attr
+frameChange = matrixAttr
 
 matrixAttr :: Frame2 Double -> Attr
 matrixAttr fr = unqualAttr "transform" mstring where

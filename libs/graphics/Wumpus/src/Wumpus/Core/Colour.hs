@@ -35,11 +35,11 @@ module Wumpus.Core.Colour
   , gray2hsb
   
   -- * Predefined colours
-  , wumpusBlack
-  , wumpusWhite
-  , wumpusRed
-  , wumpusGreen
-  , wumpusBlue
+  , black
+  , white
+  , red
+  , green
+  , blue
 
   ) where
 
@@ -174,22 +174,21 @@ gray2hsb gray = HSB3 0 0 gray
 
 -- Some colours
 
--- The long prefix stops name clashes with the X11Colours / SVGColours.
--- Generally you would import this module and one of X11 / SVG.
+-- There will be name clashes with the X11Colours / SVGColours.
 
 
-wumpusBlack :: DRGB
-wumpusBlack = RGB3 0 0 0
+black :: DRGB
+black = RGB3 0 0 0
 
-wumpusWhite :: DRGB
-wumpusWhite = RGB3 1 1 1
+white :: DRGB
+white = RGB3 1 1 1
 
-wumpusRed :: DRGB
-wumpusRed = RGB3 1 0 0
+red :: DRGB
+red = RGB3 1 0 0
 
-wumpusGreen :: DRGB 
-wumpusGreen = RGB3 0 1 0
+green :: DRGB 
+green = RGB3 0 1 0
 
-wumpusBlue :: DRGB
-wumpusBlue = RGB3 0 0 1
+blue :: DRGB
+blue = RGB3 0 0 1
 
