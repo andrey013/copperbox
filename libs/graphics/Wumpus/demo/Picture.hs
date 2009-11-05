@@ -30,7 +30,7 @@ funnyshape = Polygon
 psquare = picPolygon CStroke square
 pfunnyshape = picPolygon CFill funnyshape
 
-test01 = pretty $ movePic (V2 100 40) psquare
+test01 = pretty $ translateBy (V2 100 40) psquare
 test02 = pretty $ rotate45 psquare
 
 demo0 = writePS "picture0.ps" Nothing [pfunnyshape]
@@ -67,7 +67,7 @@ d4 = pretty $ psquare -//- psquares
 
 demo5 = writeEPS "picture5.eps" Nothing p1
   where
-    p1 = psquare `composite` (rotatePicture (pi/4) psquares)
+    p1 = psquare `composite` (rotate (pi/4) psquares)
    
 
 demo6 = writeEPS "picture6.eps" Nothing  p1 

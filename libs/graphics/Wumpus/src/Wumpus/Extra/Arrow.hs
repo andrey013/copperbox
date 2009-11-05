@@ -21,12 +21,12 @@ import Wumpus.Core.Picture
 import Data.FunctionExtras
 import Data.AffineSpace
 
-newtype Arrow u = Arrow { arrowPaths :: [Path u] }
+newtype Arrow u = Arrow { arrowPaths :: [Path u] }  -- to do [(Props,Path u)]
 
 type DArrow = Arrow Double
 
 picArrow :: (Num u, Ord u) => Arrow u -> Picture u
-picArrow (Arrow xs) = picMultiPath xs
+picArrow (Arrow xs) = zmultipath xs
 
 arrow :: (Floating u, Real u) => Point2 u -> Point2 u -> Arrow u
 arrow = arrowline (return `oo` arrowheadVee False 10 (pi/10))

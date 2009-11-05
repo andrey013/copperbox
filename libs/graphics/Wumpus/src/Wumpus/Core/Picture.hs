@@ -3,6 +3,7 @@
 {-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -17,7 +18,48 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.Picture where
+module Wumpus.Core.Picture 
+  (
+  -- * Data types
+    Picture(..)
+  , Primitive(..)
+  , Path(..)
+  , DPath
+  , PathSeg(..)
+  , DPathSeg
+  , Label(..)
+  , DLabel
+
+  , PathProps                 -- hide in Wumpus.Core export?
+  , LabelProps                -- hide in Wumpus.Core export?
+  , DrawProp(..)              -- hide in Wumpus.Core export?
+
+  -- * Construction
+  , empty
+
+  , PicPath(..)
+  , zpath
+
+  , MultiPath(..)
+  , zmultipath
+
+  , picLabel
+  , picLabel1
+
+  , vertexPath  
+
+
+
+
+  -- * Operations
+  , nullPicture
+  , pathBounds
+  , extractBounds
+  , extractFrame
+  , translateBBox
+
+
+  ) where
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox hiding ( center )
@@ -32,10 +74,9 @@ import Data.AffineSpace
 
 import Text.PrettyPrint.Leijen hiding ( empty )
 
+import Control.Arrow ( (***) )
 import Data.List                ( mapAccumR )
 import Data.Monoid
-import Data.Sequence            ( Seq )
-import qualified Data.Sequence  as S
 
 
 
@@ -107,15 +148,13 @@ data Label u = Label (Point2 u) String
 type DLabel = Label Double
 
 
-type PathProps    = (PSColour, Seq PenAttr, DrawProp)
+type PathProps    = (PSColour, [PenAttr], DrawProp)
 type LabelProps   = (PSColour, FontAttr)
 type EllipseProps = (PSColour, DrawProp)
 
 -- Measure = (_current_ frame x bounding box)
 
 type Measure u = (Frame2 u, BoundingBox u) 
-
-type DMeasure = Measure Double
 
 
 -- | Note when drawn /filled/ and drawn /stroked/ the same 
@@ -145,8 +184,8 @@ instance (Num u, Pretty u) => Pretty (Picture u) where
       ppMeasure m <$> indent 2 (text "LEFT" <+> pretty pl)
                   <$> indent 2 (text "RGHT" <+> pretty pr)
 
-  pretty (Clip m path p)    = 
-      text "Clip:" <+> ppMeasure m <$> indent 2 (pretty path)
+  pretty (Clip m cpath p)   = 
+      text "Clip:" <+> ppMeasure m <$> indent 2 (pretty cpath)
                                    <$> indent 2 (pretty p)
 
 ppMeasure :: (Num u, Pretty u) => Measure u -> Doc
@@ -155,7 +194,7 @@ ppMeasure (fr,bbox) = align (ppfr <$> pretty bbox) where
 
 
 instance Pretty u => Pretty (Primitive u) where
-  pretty (Path1 _ path)     = pretty "path:" <+> pretty path
+  pretty (Path1 _ p)        = pretty "path:" <+> pretty p
   pretty (Label1 _ lbl)     = pretty lbl
   pretty (Ellipse1 _ c w h) = pretty "ellipse" <+> pretty c
                                                <+> text "w:" <> pretty w
@@ -300,42 +339,87 @@ psBlack = PSRgb 0 0 0
 frameDefault :: Num u => Frame2 u 
 frameDefault = ortho zeroPt
 
-pathDefault :: PathProps 
-pathDefault = (psBlack, mempty, OStroke)
 
--- Firefox seems to have a issues with Courier.
-
-labelDefault :: LabelProps
-labelDefault = (psBlack, FontAttr "Courier" "Courier New" 10)
-
-ellipseDefault :: EllipseProps
-ellipseDefault = (psBlack, CFill)
 
 
 --------------------------------------------------------------------------------
 -- Construction
-
--- The code here is ugly and needs thought...
 
 empty :: Picture u
 empty = Empty
 
 
 
+-- | Convert the list of vertices to a path of straight line 
+-- segments.
+vertexPath :: [Point2 u] -> Path u
+vertexPath []     = error "straightLinePath - empty point list"
+vertexPath (x:xs) = Path x (map PLine xs)
 
-straightLinePath :: [Point2 u] -> Path u
-straightLinePath []     = error "straightLinePath - empty point list"
-straightLinePath (x:xs) = Path x (map PLine xs)
+{-
+-- | Create a label
+label :: Point2 u -> String -> Label u
+label = Label
+-}
+
+--------------------------------------------------------------------------------
+-- Paths to pictures
 
 
+pathDefault :: PathProps 
+pathDefault = (psBlack, [], OStroke)
 
-picPath :: (Num u, Ord u) => DrawProp -> Path u -> Picture u
-picPath dp p = Single (frameDefault, pathBounds p) (Path1 (f dp pathDefault) p)
-  where f c (a,b,_) = (a,b,c)
 
-picMultiPath :: (Num u, Ord u) => [Path u] -> Picture u
-picMultiPath ps = Multi (frameDefault, mconcat (map pathBounds ps)) (map f ps)
-  where f = Path1 pathDefault
+mkPath :: (Num u, Ord u) => PathProps -> Path u -> Picture u
+mkPath props p = Single (frameDefault, pathBounds p) (Path1 props p)
+
+
+class PicPath t where
+  path :: (Num u, Ord u) => t -> Path u -> Picture u
+
+instance PicPath PathProps      where path = mkPath
+instance PicPath ()             where path () = mkPath pathDefault 
+instance PicPath DrawProp       where path p  = mkPath (psBlack,[],p)
+
+
+zpath ::  (Num u, Ord u) => Path u -> Picture u
+zpath = path pathDefault
+
+--------------------------------------------------------------------------------
+-- Paths to multi-pictures
+
+mkMultiPath :: (Num u, Ord u) => [(PathProps,Path u)] -> Picture u
+mkMultiPath xs = Multi (frameDefault,bb) (map (uncurry Path1) xs) 
+  where
+    bb = mconcat $ map (pathBounds . snd) xs
+
+
+class MultiPath t where
+  multipath :: (Num u, Ord u) => [(t,Path u)] -> Picture u
+ 
+instance MultiPath PathProps    where multipath = mkMultiPath
+
+instance MultiPath () where 
+  multipath = mkMultiPath . map (const pathDefault *** id)
+
+instance MultiPath DrawProp where 
+  multipath = mkMultiPath . map (expand *** id) 
+    where expand c = (psBlack,[],c)
+
+
+zmultipath :: (Num u, Ord u) => [Path u] -> Picture u
+zmultipath = mkMultiPath . zip (repeat pathDefault)
+ 
+
+--------------------------------------------------------------------------------
+-- Labels to pictures
+
+
+-- Firefox seems to have a issues with Courier.
+
+labelDefault :: LabelProps
+labelDefault = (psBlack, FontAttr "Courier" "Courier New" 10)
+
 
 -- The width guesses by picLabel1 and picLabel are very poor...
 
@@ -357,13 +441,26 @@ picLabel fontsz linespace str = Multi (frameDefault, bb) lbls where
   fn pt ss = let pt' = pt .+^ (V2 (0::u) (fromIntegral $ fontsz + linespace))
              in (pt', Label1 labelDefault (Label pt ss))
 
-picEllipse :: Num u => EllipseProps -> u -> u -> Picture u
-picEllipse dp w h = Single (frameDefault,bb) ellp where
-    v    = V2 w h
+
+--------------------------------------------------------------------------------
+
+
+mkEllipse :: Fractional u => EllipseProps -> u -> u -> Picture u
+mkEllipse props w h = Single (frameDefault,bb) ellp where
+    v    = V2 (w/2) (h/2)
     bb   = BBox (zeroPt .-^ v) (zeroPt .+^ v)
-    ellp = Ellipse1 dp zeroPt w h
+    ellp = Ellipse1 props zeroPt w h
 
 
+ellipseDefault :: EllipseProps
+ellipseDefault = (psBlack, CFill)
+
+
+
+class PicEllipse t where
+  ellipse :: Fractional u => t -> u -> u -> Picture u
+
+instance PicEllipse ()          where ellipse () = mkEllipse ellipseDefault 
 
 
 --------------------------------------------------------------------------------

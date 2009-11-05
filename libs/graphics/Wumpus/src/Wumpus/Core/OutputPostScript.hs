@@ -29,9 +29,7 @@ import Wumpus.Core.Picture
 import Wumpus.Core.PostScript
 import Wumpus.Core.Utils
 
-import Control.Monad ( zipWithM_ )
-import qualified Data.Foldable  as F
-import Data.Sequence ( Seq )
+import Control.Monad ( mapM_, zipWithM_ )
 
 -- | FontSpec = (font-name,font-size)
 --
@@ -173,8 +171,8 @@ outputPicture (Multi (fr,_) ps)         =
 outputPicture (Picture (fr,_) a b)      = do
     updateFrame fr $ outputPicture  a
     updateFrame fr $ outputPicture  b
-outputPicture (Clip (fr,_) path p)      = 
-    updateFrame fr $ do { clipPath path ; outputPicture p }
+outputPicture (Clip (fr,_) cp p)        = 
+    updateFrame fr $ do { clipPath cp ; outputPicture p }
 
 
 updateFrame :: Frame2 Double -> WumpusM () -> WumpusM ()
@@ -189,18 +187,18 @@ updateFrame frm ma
 
 
 outputPrimitive :: Primitive Double -> WumpusM ()
-outputPrimitive (Path1 (c,se,dp) p)       = updatePen c se $ outputPath dp p 
+outputPrimitive (Path1 (c,xs,dp) p)       = updatePen c xs $ outputPath dp p 
 outputPrimitive (Label1 props l)          = updateFont props $ outputLabel l
 outputPrimitive (Ellipse1 (mbc,dp) c w h) = updateColour mbc $ 
                                               outputEllipse dp c w h
 
-updatePen :: PSColour -> Seq PenAttr -> WumpusM () -> WumpusM ()
-updatePen c se ma =  do { ps_gsave
-                          ; colourCommand c
-                          ; F.mapM_ penCommand se
-                          ; ma
-                          ; ps_grestore
-                          }
+updatePen :: PSColour -> [PenAttr] -> WumpusM () -> WumpusM ()
+updatePen c xs ma = do 
+    ps_gsave
+    colourCommand c
+    mapM_ penCommand xs
+    ma
+    ps_grestore
 
 penCommand :: PenAttr -> WumpusM ()
 penCommand (LineWidth d)    = ps_setlinewidth d
@@ -210,23 +208,23 @@ penCommand (LineJoin lj)    = ps_setlinejoin lj
 penCommand (DashPattern dp) = ps_setdash dp
 
 updateFont :: LabelProps -> WumpusM () -> WumpusM ()
-updateFont (c,fnt) ma = do { ps_gsave
-                           ; colourCommand c
-                           ; fontCommand fnt
-                           ; ma
-                           ; ps_grestore
-                           }
+updateFont (c,fnt) ma = do 
+    ps_gsave
+    colourCommand c
+    fontCommand fnt
+    ma
+    ps_grestore
+    
 
 -- TODO pass an enviroment and only write the colour change if it
 -- is different to the current colour.
 updateColour :: PSColour -> WumpusM () -> WumpusM ()
-updateColour c ma = do { ps_gsave
-                       ; colourCommand c
-                       ; ma
-                       ; ps_grestore
-                       }
-
-
+updateColour c ma = do 
+    ps_gsave
+    colourCommand c
+    ma
+    ps_grestore
+    
 
 
 fontCommand :: FontAttr -> WumpusM ()
@@ -250,7 +248,7 @@ outputPath dp (Path (P2 x y) xs) = do
     closePath dp   
 
 clipPath :: Path Double -> WumpusM ()
-clipPath (Path pt xs) = let P2 x y = pt in do  
+clipPath (Path (P2 x y) xs) = do  
     ps_newpath
     ps_moveto x y
     mapM_ outputPathSeg xs
@@ -290,7 +288,7 @@ closePath CFill   = ps_closepath >> ps_fill
 
 
 outputLabel :: Label Double -> WumpusM ()
-outputLabel (Label pt str) = let P2 x y = pt in do
+outputLabel (Label (P2 x y) str) = do
     ps_moveto x y
     ps_show str
 

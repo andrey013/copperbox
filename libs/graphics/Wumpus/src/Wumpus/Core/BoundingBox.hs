@@ -14,12 +14,44 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.BoundingBox where
+module Wumpus.Core.BoundingBox 
+  ( 
+  -- * Types
+    BoundingBox(..)
+  , DBoundingBox
+  
+  -- * operations
+  , union 
+  , trace
+  , corners
+  , lowerLeftUpperRight
+  , withinBB
+  , width
+  , height
+  , bottomLeft
+  , topRight
+  , topLeft
+  , bottomRight
+  , center
+  , north
+  , south
+  , east
+  , west
+  , northEast
+  , southEast
+  , southWest
+  , northWest
+  , leftPlane
+  , rightPlane
+  , lowerPlane
+  , upperPlane
+
+  ) where
 
 import Wumpus.Core.Geometry
 import Wumpus.Core.Utils ( CMinMax(..), within )
 
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen hiding ( width )
 
 import Data.Monoid
 
