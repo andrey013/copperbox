@@ -70,7 +70,7 @@ svgPrimitive (Ellipse1 (_c,dp) mid w h) = ellipseE dp mid w h
 
 
 pathElt :: PathProps -> Path Double -> Element
-pathElt (c,_) (Path dp (P2 x y) xs) = 
+pathElt (c,_,dp) (Path (P2 x y) xs) = 
     element_path ps # add_attrs [fillAttr c dp, strokeAttr c dp]
   where
     ps = pathDesc dp x y xs
@@ -128,7 +128,7 @@ strokeAttr _ _       = unqualAttr "stroke" "none"
 -- Also the PostScript implementation would be no harder, and the 
 -- SVG implementation should be easier.
 --
--- UPDATE: Picture - been changed to match the above, which SVG
+-- UPDATE: Picture - been changed to match the above, which
 -- obliges the SVG output to go monadic so it can handle a 
 -- counter. This hasn't been done yet.
 

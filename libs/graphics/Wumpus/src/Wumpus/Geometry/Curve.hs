@@ -103,10 +103,10 @@ bezierCircle n pt r = para phi [] $ subdivisions (n*4) (2*pi) where
 -- operations
 
 curveToPath1 :: DrawProp -> Curve u -> Path u
-curveToPath1 dp (Curve p0 p1 p2 p3) = Path dp p0 [PCurve p1 p2 p3]
+curveToPath1 dp (Curve p0 p1 p2 p3) = Path p0 [PCurve p1 p2 p3]
 
 curvesToPath :: DrawProp -> [Curve u] -> Path u
 curvesToPath _  []                     = error $ "curvesToPath - empty list"
 curvesToPath dp (Curve p0 p1 p2 p3:cs) = 
-   Path dp p0 (PCurve p1 p2 p3 : map fn cs) where 
+   Path p0 (PCurve p1 p2 p3 : map fn cs) where 
       fn (Curve _ u v w) = PCurve u v w

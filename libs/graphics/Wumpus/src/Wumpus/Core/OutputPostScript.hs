@@ -31,7 +31,7 @@ import Wumpus.Core.Utils
 
 import Control.Monad ( zipWithM_ )
 import qualified Data.Foldable  as F
-
+import Data.Sequence ( Seq )
 
 -- | FontSpec = (font-name,font-size)
 --
@@ -189,13 +189,13 @@ updateFrame frm ma
 
 
 outputPrimitive :: Primitive Double -> WumpusM ()
-outputPrimitive (Path1 props p)           = updatePen props $ outputPath p
+outputPrimitive (Path1 (c,se,dp) p)       = updatePen c se $ outputPath dp p 
 outputPrimitive (Label1 props l)          = updateFont props $ outputLabel l
 outputPrimitive (Ellipse1 (mbc,dp) c w h) = updateColour mbc $ 
                                               outputEllipse dp c w h
 
-updatePen :: PathProps -> WumpusM () -> WumpusM ()
-updatePen (c,se) ma =  do { ps_gsave
+updatePen :: PSColour -> Seq PenAttr -> WumpusM () -> WumpusM ()
+updatePen c se ma =  do { ps_gsave
                           ; colourCommand c
                           ; F.mapM_ penCommand se
                           ; ma
@@ -242,18 +242,15 @@ colourCommand (PSHsb h s v) = ps_sethsbcolor h s v
 colourCommand (PSGray a)    = ps_setgray a
 
     
-outputPath :: Path Double -> WumpusM ()
-outputPath (Path dp pt xs) = let P2 x y = pt in do  
+outputPath :: DrawProp -> Path Double -> WumpusM ()
+outputPath dp (Path (P2 x y) xs) = do  
     ps_newpath
     ps_moveto x y
     mapM_ outputPathSeg xs
     closePath dp   
 
--- Hmm Path has Fill/Stroke when it is used as a clipping path.
--- Is the draw property in the right place...
-
 clipPath :: Path Double -> WumpusM ()
-clipPath (Path _ pt xs) = let P2 x y = pt in do  
+clipPath (Path pt xs) = let P2 x y = pt in do  
     ps_newpath
     ps_moveto x y
     mapM_ outputPathSeg xs

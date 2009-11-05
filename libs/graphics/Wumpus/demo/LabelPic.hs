@@ -15,9 +15,9 @@ import Data.FunctionExtras ( (#) )
 
 drawBounds :: (Num u, Ord u) => Picture u -> Picture u
 drawBounds Empty = Empty
-drawBounds p     = p `composite` (picPath path) where
+drawBounds p     = p `composite` (picPath CStroke path) where
     bb   = extractBounds p
-    path = straightLinePath CStroke $ corners bb
+    path = straightLinePath $ corners bb
 
 
 

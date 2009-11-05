@@ -41,22 +41,24 @@ drawFrame :: (Num u, Ord u) => Picture u -> Picture u
 drawFrame p = p `composite` frp
   where
     (Frame2 e0 e1 o) = extractFrame p
-    xbasis           = straightLinePath OStroke [o, o .+^ e0]
-    ybasis           = straightLinePath OStroke [o, o .+^ e1]
+    xbasis           = straightLinePath  [o, o .+^ e0]
+    ybasis           = straightLinePath  [o, o .+^ e1]
     bb               = pathBounds xbasis `mappend` pathBounds ybasis
     frp              = Multi (frameDefault,bb) 
                              [Path1 pathDefault xbasis, Path1 pathDefault ybasis]
 
  
 picPolygon :: (Num u, Ord u) => DrawProp -> Polygon u -> Picture u
-picPolygon dp (Polygon xs) = Single (frameDefault,trace xs) (Path1 pathDefault path)
+picPolygon dp (Polygon xs) = 
+    Single (frameDefault,trace xs) (Path1 (f dp pathDefault) path)
   where 
-    path = straightLinePath dp xs
+    path = straightLinePath xs
+    f c (a,b,_) = (a,b,c)
 
 
 
 extractPolygonPath :: Polygon u -> Path u
-extractPolygonPath p = straightLinePath CStroke $ vertexList p 
+extractPolygonPath p = straightLinePath $ vertexList p 
 
 
 bbPolygon :: (Num u, Ord u) => Polygon u -> BoundingBox u

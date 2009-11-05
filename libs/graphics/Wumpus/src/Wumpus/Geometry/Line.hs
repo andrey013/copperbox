@@ -170,4 +170,4 @@ expandLineSegment n l =  LS2 (p .-^ v) (p .+^ v) where
 -- To picture types
 
 lineSegmentToPath :: LineSegment u -> Path u
-lineSegmentToPath (LS2 p1 p2) = Path OStroke p1 [PLine p2]
+lineSegmentToPath (LS2 p1 p2) = Path p1 [PLine p2]
