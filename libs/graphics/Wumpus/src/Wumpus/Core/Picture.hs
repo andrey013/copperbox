@@ -20,7 +20,6 @@
 module Wumpus.Core.Picture where
 
 import Wumpus.Core.BoundingBox hiding ( center )
-import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureLanguage
@@ -34,7 +33,7 @@ import Text.PrettyPrint.Leijen
 
 import Data.List                ( mapAccumR )
 import Data.Monoid
-import Data.Sequence            ( Seq, (|>) )
+import Data.Sequence            ( Seq )
 import qualified Data.Sequence  as S
 
 
@@ -179,6 +178,7 @@ instance (Num u, Ord u) => Translate (Picture u) where
   type TranslateUnit (Picture u) = u
   translate = translatePicture
 
+--------------------------------------------------------------------------------
 
 -- Helpers for the affine transformations
 
@@ -261,6 +261,8 @@ instance (Num u, Ord u, Horizontal (Picture u), Vertical (Picture u),
 
 --------------------------------------------------------------------------------
 
+-- Default attributes
+
 -- aka the standard frame
 psBlack :: PSColour
 psBlack = PSRgb 0 0 0
@@ -278,10 +280,15 @@ ellipseDefault :: EllipseProps
 ellipseDefault = (psBlack, CFill)
 
 
+--------------------------------------------------------------------------------
+-- Construction
 
-nullPicture :: Picture u -> Bool
-nullPicture Empty = True
-nullPicture _     = False
+-- The code here is ugly and needs thought...
+
+picEmpty :: Picture u
+picEmpty = Empty
+
+
 
 
 straightLinePath :: DrawProp -> [Point2 u] -> Path u
@@ -289,15 +296,12 @@ straightLinePath _     []     = error "straightLinePath - empty point list"
 straightLinePath props (x:xs) = Path props x (map PLine xs)
 
 
-picEmpty :: Picture u
-picEmpty = Empty
-
 
 picPath :: (Num u, Ord u) => Path u -> Picture u
-picPath p = Single (frameDefault, tracePath p) (Path1 pathDefault p)
+picPath p = Single (frameDefault, pathBounds p) (Path1 pathDefault p)
 
 picMultiPath :: (Num u, Ord u) => [Path u] -> Picture u
-picMultiPath ps = Multi (frameDefault, mconcat (map tracePath ps)) (map f ps)
+picMultiPath ps = Multi (frameDefault, mconcat (map pathBounds ps)) (map f ps)
   where f = Path1 pathDefault
 
 -- The width guesses by picLabel1 and picLabel are very poor...
@@ -327,20 +331,25 @@ picEllipse dp w h = Single (frameDefault,bb) ellp where
     ellp = Ellipse1 dp zeroPt w h
 
 
-tracePath :: (Num u, Ord u) => Path u -> BoundingBox u
-tracePath = trace . extractPoints
-
-extractPoints :: Path u -> [Point2 u]
-extractPoints (Path _ st xs) = st : foldr f [] xs where
-    f (PLine p)         acc = p : acc
-    f (PCurve p1 p2 p3) acc = p1 : p2 : p3 : acc 
 
 
-drawBounds :: (Num u, Ord u) => Picture u -> Picture u
-drawBounds Empty = Empty
-drawBounds p     = p `composite` (picPath path) where
-    bb   = extractBounds p
-    path = straightLinePath CStroke $ corners bb 
+--------------------------------------------------------------------------------
+
+-- Operations on pictures and paths
+
+
+nullPicture :: Picture u -> Bool
+nullPicture Empty = True
+nullPicture _     = False
+
+
+
+
+pathBounds :: (Num u, Ord u) => Path u -> BoundingBox u
+pathBounds (Path _ st xs) = trace $ st : foldr f [] xs
+  where
+    f (PLine p1)        acc  = p1 : acc
+    f (PCurve p1 p2 p3) acc  = p1 : p2 : p3 : acc 
 
 
 extractBounds :: (Num u, Ord u) => Picture u -> BoundingBox u

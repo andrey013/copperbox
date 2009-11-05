@@ -47,7 +47,7 @@ svgDraw pic = [Text xmlVersion, Text svgDocType, svgpic]
     svgpic    = Elem $ svgElement [pic_elt]
     pic_elt   = gElement trans [pictureElt pic]
     bb0       = if nullPicture pic then BBox zeroPt zeroPt 
-                                  else extractBounds pic
+                                   else extractBounds pic
     (mbTx,_)  = translateBBox bb0
     trans     = maybe [] (\(x,y) -> [translateAttr x y]) mbTx
     
@@ -64,7 +64,7 @@ pictureElt (Picture (fr,_) a b) =
 svgPrimitive :: Primitive Double -> Element
 svgPrimitive (Path1 props p)           = pathElt props p
 svgPrimitive (Label1 props l)          = labelElt props l
-svgPrimitive (Ellipse1 (mbc,dp) c w h) = ellipseE dp c w h
+svgPrimitive (Ellipse1 (c,dp) mid w h) = ellipseE dp mid w h
 
 
 pathElt :: PathProps -> Path Double -> Element
@@ -78,17 +78,11 @@ labelElt :: LabelProps -> Label Double -> Element
 labelElt (c,FontAttr name sz) (Label (P2 x y) str) = 
      element_text str # add_attrs xs
   where
-    xs = [ attr_x x, 
-           attr_y y, 
-           attr_color c, 
+    xs = [ attr_x x, attr_y y, attr_color c, 
            attr_fontfamily name, 
            attr_fontsize sz ]
  
 
-
-mbCons :: Maybe a -> [a] -> [a]
-mbCons Nothing  = id
-mbCons (Just x) = (x:)
    
 fillAttr :: PSColour -> DrawProp -> Attr
 fillAttr c CFill = unqualAttr "fill" $ val_colour c
@@ -105,18 +99,14 @@ strokeAttr _ _       = unqualAttr "stroke" "none"
 
 
 pathDesc :: DrawProp -> Double -> Double -> [PathSeg Double] -> [String]
-pathDesc dp x y xs = 
-    closepath dp $ path_m x y : map pathSegDesc xs
+pathDesc dp x y xs = close dp $ path_m x y : map fn xs
   where 
-    closepath OStroke = id
-    closepath _       = (++ ["Z"])
+    fn (PLine (P2 x1 y1))                        = path_l x1 y1
+    fn (PCurve (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = path_s x1 y1 x2 y2 x3 y3
 
-   
+    close OStroke = id
+    close _       = (++ ["Z"])
 
-pathSegDesc :: PathSeg Double -> String
-pathSegDesc (PLine (P2 x y))                          = path_l x y
-pathSegDesc (PCurve (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
-    path_s x1 y1 x2 y2 x3 y3
 
 
 ellipseE :: DrawProp -> Point2 Double -> Double -> Double -> Element
@@ -136,9 +126,4 @@ matrixAttr fr = unqualAttr "transform" mstring where
 translateAttr :: Double -> Double -> Attr
 translateAttr tx ty = unqualAttr "transform" tstring where
    tstring = "translate" ++ tupled (map dtrunc [tx,ty])
-
-
-coords :: Point2 Double -> (Attr,Attr)
-coords (P2 x y) = (unqualAttr "cx" (show x), unqualAttr "cy" (show y))
-
 

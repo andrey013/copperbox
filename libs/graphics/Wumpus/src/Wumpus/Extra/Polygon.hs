@@ -43,7 +43,7 @@ drawFrame p = p `composite` frp
     (Frame2 e0 e1 o) = extractFrame p
     xbasis           = straightLinePath OStroke [o, o .+^ e0]
     ybasis           = straightLinePath OStroke [o, o .+^ e1]
-    bb               = tracePath xbasis `mappend` tracePath ybasis
+    bb               = pathBounds xbasis `mappend` pathBounds ybasis
     frp              = Multi (frameDefault,bb) 
                              [Path1 pathDefault xbasis, Path1 pathDefault ybasis]
 
