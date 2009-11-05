@@ -53,18 +53,20 @@ svgDraw pic = [Text xmlVersion, Text svgDocType, svgpic]
     
 
 pictureElt :: Picture Double -> Element
-pictureElt Empty                     = gElement [] []
-pictureElt (Single (fr,_) prim)      = 
+pictureElt Empty                   = gElement [] []
+pictureElt (Single (fr,_) prim)    = 
     gElement [frameChange fr] [svgPrimitive prim]
-pictureElt (Multi (fr,_) ps)         = 
+pictureElt (Multi (fr,_) ps)       = 
     gElement [frameChange fr] (map svgPrimitive ps)
-pictureElt (Picture (fr,_) a b) = 
+pictureElt (Picture (fr,_) a b)    = 
     gElement [frameChange fr] [pictureElt a, pictureElt b]
+pictureElt (Clip (_fr,_) _path _p) = error "Clip TODO" 
+
 
 svgPrimitive :: Primitive Double -> Element
 svgPrimitive (Path1 props p)           = pathElt props p
 svgPrimitive (Label1 props l)          = labelElt props l
-svgPrimitive (Ellipse1 (c,dp) mid w h) = ellipseE dp mid w h
+svgPrimitive (Ellipse1 (_c,dp) mid w h) = ellipseE dp mid w h
 
 
 pathElt :: PathProps -> Path Double -> Element
@@ -75,14 +77,22 @@ pathElt (c,_) (Path dp (P2 x y) xs) =
 
 
 labelElt :: LabelProps -> Label Double -> Element
-labelElt (c,FontAttr name sz) (Label (P2 x y) str) = 
+labelElt (c,FontAttr _ fam sz) (Label (P2 x y) str) = 
      element_text str # add_attrs xs
   where
     xs = [ attr_x x, attr_y y, attr_color c, 
-           attr_fontfamily name, 
+           attr_fontfamily fam, 
            attr_fontsize sz ]
  
 
+
+-- CFill   ==> stroke="none" fill="..."
+-- CStroke ==> stroke="..."  fill="none"
+-- OStroke ==> stroke="..."  fill="none"
+--
+-- A rule of thumb seems to be that SVG (at least SVG in Firefox)
+-- will try to fill unless told not to. So always label paths
+-- with @fill=...@ even if fill is @\"none\"@.
    
 fillAttr :: PSColour -> DrawProp -> Attr
 fillAttr c CFill = unqualAttr "fill" $ val_colour c
@@ -96,6 +106,31 @@ strokeAttr _ _       = unqualAttr "stroke" "none"
 
 
 -- Clipping to think about...
+--
+-- Clipping in PostScript works by changing the graphics state
+-- Clip a path, then all subsequent drawing will only be rendered
+-- when it is within the clip bounds. Clearly using clipping 
+-- paths within a @gsave ... grestore@ block is a good idea. This 
+-- is what Wumpus does. In some respects this clipping might be 
+-- considered implicit. 
+--
+-- SVG uses /tagging/. A clipPath element is declared and named 
+-- then referenced in subsequent elements via the clip-path 
+-- attribute - @clip-path=\"url(#clip_path_tag)\"@.
+--
+-- Vis-a-vis the picture language, there is a good argument to 
+-- make a clipping path one of the constructors of the Picture 
+-- type 
+-- 
+-- >   | Clip ... (Path u) (Picture u)
+--
+-- (->-) etc. on clipped pictures then have obvious meaning.
+-- Also the PostScript implementation would be no harder, and the 
+-- SVG implementation should be easier.
+--
+-- UPDATE: Picture - been changed to match the above, which SVG
+-- obliges the SVG output to go monadic so it can handle a 
+-- counter. This hasn't been done yet.
 
 
 pathDesc :: DrawProp -> Double -> Double -> [PathSeg Double] -> [String]

@@ -1,6 +1,7 @@
 
 module LabelPic where
 
+import Wumpus.Core.BoundingBox hiding ( center )
 import Wumpus.Core.Geometry
 import Wumpus.Core.OutputPostScript
 import Wumpus.Core.OutputSVG
@@ -9,6 +10,16 @@ import Wumpus.Core.PictureLanguage
 import Wumpus.Extra.X11Colours
 
 import Data.FunctionExtras ( (#) )
+
+
+
+drawBounds :: (Num u, Ord u) => Picture u -> Picture u
+drawBounds Empty = Empty
+drawBounds p     = p `composite` (picPath path) where
+    bb   = extractBounds p
+    path = straightLinePath CStroke $ corners bb
+
+
 
 lbl1 :: Picture Double
 lbl1 = picLabel 10 3 "Hello\nWorld" {- # setRGBColour aquamarine4 

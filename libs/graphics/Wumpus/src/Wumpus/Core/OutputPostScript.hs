@@ -173,6 +173,9 @@ outputPicture (Multi (fr,_) ps)         =
 outputPicture (Picture (fr,_) a b)      = do
     updateFrame fr $ outputPicture  a
     updateFrame fr $ outputPicture  b
+outputPicture (Clip (fr,_) path p)      = 
+    updateFrame fr $ do { clipPath path ; outputPicture p }
+
 
 updateFrame :: Frame2 Double -> WumpusM () -> WumpusM ()
 updateFrame frm ma 
@@ -227,7 +230,10 @@ updateColour c ma = do { ps_gsave
 
 
 fontCommand :: FontAttr -> WumpusM ()
-fontCommand (FontAttr name sz) = ps_findfont name >> ps_scalefont sz >> ps_setfont
+fontCommand (FontAttr name _ sz) = do
+    ps_findfont name
+    ps_scalefont sz
+    ps_setfont
 
 
 colourCommand :: PSColour -> WumpusM ()
@@ -242,6 +248,19 @@ outputPath (Path dp pt xs) = let P2 x y = pt in do
     ps_moveto x y
     mapM_ outputPathSeg xs
     closePath dp   
+
+-- Hmm Path has Fill/Stroke when it is used as a clipping path.
+-- Is the draw property in the right place...
+
+clipPath :: Path Double -> WumpusM ()
+clipPath (Path _ pt xs) = let P2 x y = pt in do  
+    ps_newpath
+    ps_moveto x y
+    mapM_ outputPathSeg xs
+    ps_closepath
+    ps_clip
+
+
 
 outputPathSeg :: PathSeg Double -> WumpusM ()
 outputPathSeg (PLine (P2 x y))  = ps_lineto x y
@@ -271,7 +290,6 @@ closePath :: DrawProp -> WumpusM ()
 closePath OStroke = ps_stroke
 closePath CStroke = ps_closepath >> ps_stroke
 closePath CFill   = ps_closepath >> ps_fill
-closePath CCrop   = ps_closepath >> ps_clip
 
 
 outputLabel :: Label Double -> WumpusM ()

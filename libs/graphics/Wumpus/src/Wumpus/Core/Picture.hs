@@ -42,6 +42,7 @@ data Picture u = Empty
                | Single   (Measure u) (Primitive u)
                | Multi    (Measure u) [Primitive u] -- multiple prims in same affine frame
                | Picture  (Measure u) (Picture u) (Picture u)
+               | Clip     (Measure u) (Path u)    (Picture u)
   deriving (Eq,Show) 
 
 
@@ -99,7 +100,17 @@ type Measure u = (Frame2 u, BoundingBox u)
 
 type DMeasure = Measure Double
 
-data DrawProp = OStroke | CStroke | CFill | CCrop 
+
+-- | Note when drawn /filled/ and drawn /stroked/ the same 
+-- polygon will have (slightly) different size: 
+-- 
+-- * A filled shape fills /within/ the boundary of the shape
+-- 
+-- * A stroked shape draws a pen line around the boundary 
+--   of the shape. The actual size depends on the thickness
+--   of the line (stroke width).
+--
+data DrawProp = OStroke | CStroke | CFill
   deriving (Eq,Show)
 
 
@@ -117,7 +128,9 @@ instance (Num u, Pretty u) => Pretty (Picture u) where
       ppMeasure m <$> indent 2 (text "LEFT" <+> pretty pl)
                   <$> indent 2 (text "RGHT" <+> pretty pr)
 
-     
+  pretty (Clip m path p)    = 
+      text "Clip:" <+> ppMeasure m <$> indent 2 (pretty path)
+                                   <$> indent 2 (pretty p)
 
 ppMeasure :: (Num u, Pretty u) => Measure u -> Doc
 ppMeasure (fr,bbox) = align (ppfr <$> pretty bbox) where
@@ -273,8 +286,10 @@ frameDefault = ortho zeroPt
 pathDefault :: PathProps 
 pathDefault = (psBlack, mempty)
 
+-- Firefox seems to have a issues with Courier.
+
 labelDefault :: LabelProps
-labelDefault = (psBlack, FontAttr "Courier" 10)
+labelDefault = (psBlack, FontAttr "Courier" "Courier New" 10)
 
 ellipseDefault :: EllipseProps
 ellipseDefault = (psBlack, CFill)
@@ -357,12 +372,14 @@ extractBounds Empty                = ZeroBB
 extractBounds (Single  (_,bb) _)   = bb
 extractBounds (Multi   (_,bb) _)   = bb
 extractBounds (Picture (_,bb) _ _) = bb
+extractBounds (Clip    (_,bb) _ _) = bb
 
 extractFrame :: Num u => Picture u -> Frame2 u
 extractFrame Empty                = ortho zeroPt
 extractFrame (Single  (fr,_) _)   = fr
 extractFrame (Multi   (fr,_) _)   = fr
 extractFrame (Picture (fr,_) _ _) = fr
+extractFrame (Clip    (fr,_) _ _) = fr
 
 
 
@@ -371,6 +388,7 @@ mapMeasure _ Empty            = Empty
 mapMeasure f (Single  m prim) = Single (f m) prim
 mapMeasure f (Multi   m ps)   = Multi (f m) ps
 mapMeasure f (Picture m a b)  = Picture (f m) a b
+mapMeasure f (Clip    m x p)  = Clip (f m) x p
 
 
 movePic :: Num u => Vec2 u -> Picture u -> Picture u

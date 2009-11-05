@@ -43,7 +43,11 @@ data DashPattern = Solid | Dash Int [Int]
 -- PostScript (or at least GhostScript) seems to require both
 -- attributes (name & size) are set at the same time.
 
-data FontAttr = FontAttr { fontName :: String, fontSize :: Int }
+data FontAttr = FontAttr { 
+                    fontName   :: String,   -- for PostScript
+                    fontFamily :: String,   -- for SVG
+                    fontSize   :: Int 
+                  }
   deriving (Eq,Show)
 
 data PSColour = PSRgb  Double Double Double

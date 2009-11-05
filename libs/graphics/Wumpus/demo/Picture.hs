@@ -43,8 +43,9 @@ pic1 = psquare ->- (pfunnyshape ->- pfunnyshape) ->- psquare
 
 psquares = psquare ->- psquare ->- psquare
 
-demo2 = writePS "picture2.ps" Nothing [psquares]
-
+demo2 = do 
+   writePS  "picture2.ps"  Nothing [psquares]
+   writeSVG "picture2.svg" psquares 
     
 
 demo3 = do 
