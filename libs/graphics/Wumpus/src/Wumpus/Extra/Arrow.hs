@@ -14,6 +14,7 @@
 
 module Wumpus.Extra.Arrow where
 
+import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.Picture
 

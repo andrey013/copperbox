@@ -66,7 +66,7 @@ mkLabel :: (Num u, Ord u) => String -> Picture u
 mkLabel s = picLabel 10 1 s 
 
 nodePicture :: (Num u, Ord u) => NodeMap u -> Picture u
-nodePicture = Map.foldWithKey fn picEmpty where
+nodePicture = Map.foldWithKey fn cempty where
   fn (NamedNode s) pt pic = pic `composite` (at pt $ mkLabel s)
   fn _             _  pic = pic
 

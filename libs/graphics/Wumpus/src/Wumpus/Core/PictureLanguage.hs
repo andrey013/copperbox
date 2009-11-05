@@ -14,11 +14,36 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.PictureLanguage where
+module Wumpus.Core.PictureLanguage 
+  (
+  -- * Type classes
+    Horizontal(..)
+  , Vertical(..)
+  , Composite(..)
+  , PMove(..)
+
+  -- * Derived operations
+  , ( ->- )
+  , ( -<- )
+  , ( -//- )
+  , ( -\\- )
+  , at
+  , stack
+  , hcenter
+  , vcenter
+  , center
+  , ( -@- )
+  , stackCenter
+ 
+  ) where
 
 import Wumpus.Core.Geometry ( Point2(..) )
 
 import Data.List ( foldl' )
+
+
+--------------------------------------------------------------------------------
+-- Type classes
 
 class Horizontal a where
   type HUnit a :: *
@@ -42,6 +67,9 @@ class Composite a where
 class (Vertical a, Horizontal a) => PMove a where
   pmove   :: HUnit a -> VUnit a -> a -> a
 
+
+--------------------------------------------------------------------------------
+-- Derived operations
 
 infixr 5 -//-
 infixr 6 ->-

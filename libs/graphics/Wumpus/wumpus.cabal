@@ -30,6 +30,7 @@ library
   
   exposed-modules:
     Wumpus.Core,
+    Wumpus.Core.AffineTrans,
     Wumpus.Core.BoundingBox,
     Wumpus.Core.Colour,
     Wumpus.Core.Geometry,

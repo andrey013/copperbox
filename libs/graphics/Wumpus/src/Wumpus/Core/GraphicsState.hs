@@ -15,7 +15,29 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.GraphicsState where
+module Wumpus.Core.GraphicsState 
+  (
+  -- * Data types  
+  
+  -- ** Pen (for drawing paths)
+    PenAttr(..)
+  , LineCap(..)
+  , LineJoin(..)
+  , DashPattern(..)
+
+  -- ** Font
+  , FontAttr(..)
+
+  -- ** Colour
+  , PSColour(..)
+
+  -- ** Current Translation Matrix
+  , CTM(..)
+
+  -- * Convert to CTM
+  , ToCTM(..)
+
+  ) where
 
 import Wumpus.Core.Geometry
 

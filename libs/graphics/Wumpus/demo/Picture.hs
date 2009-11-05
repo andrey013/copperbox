@@ -2,6 +2,7 @@
 
 module Picture where
 
+import Wumpus.Core.AffineTrans
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.OutputPostScript

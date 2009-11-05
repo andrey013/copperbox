@@ -16,6 +16,7 @@
 
 module Wumpus.Extra.Polygon where
 
+import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox
 import Wumpus.Core.Geometry
 import Wumpus.Core.Picture

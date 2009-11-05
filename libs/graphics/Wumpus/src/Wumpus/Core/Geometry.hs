@@ -19,7 +19,64 @@
 -- 2D geometry
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.Geometry where
+module Wumpus.Core.Geometry 
+  ( 
+  -- * Data types
+    Vec2(..)
+  , DVec2
+  , Point2(..)
+  , DPoint2
+  , Frame2(..)
+  , DFrame2
+  , Matrix3'3(..)
+  , DMatrix3'3
+  , Radian
+
+
+  -- * Pointwise type class
+  , Pointwise(..)
+
+  -- * Matrix multiply type class
+  , MatrixMult(..)
+
+  -- * Vector operations
+  , hvec
+  , vvec
+  , avec
+
+  -- * Point operations
+  , zeroPt
+  , langle
+
+  -- * Frame operations
+  , ortho
+  , displaceOrigin
+  , pointInFrame
+  , frame2Matrix
+  , matrix2Frame
+  , frameProduct
+  , standardFrame
+
+  -- * Matrix contruction
+  , identityMatrix
+  , scalingMatrix
+  , translationMatrix
+  , rotationMatrix
+  , originatedRotationMatrix
+
+  -- * matrix operations
+  , invert
+  , determinant
+  , transpose
+
+  -- * Radian operations
+  , req
+  , toRadian
+  , fromRadian
+  , d2r
+  , r2d
+
+  ) where
 
 import Wumpus.Core.Utils ( CMinMax(..), dtrunc )
 
@@ -28,9 +85,8 @@ import Data.FunctionExtras
 import Data.AffineSpace
 import Data.VectorSpace
 
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen hiding ( langle )
 
-import Data.List ( mapAccumR )
 import Data.Monoid
 
 
@@ -113,10 +169,6 @@ data Matrix3'3 a = M3'3 !a !a !a  !a !a !a  !a !a !a
 type DMatrix3'3 = Matrix3'3 Double
 
 
--- Radian numeric type
-
-radian_epsilon :: Double
-radian_epsilon = 0.0001
 
 -- | Radian is represented with a distinct type. 
 -- Equality and ordering are approximate where the epsilon is 0.0001.
@@ -137,15 +189,6 @@ lift2Matrix3'3 op (M3'3 a b c d e f g h i) (M3'3 m n o p q r s t u) =
            (d `op` p) (e `op` q) (f `op` r)  
            (g `op` s) (h `op` t) (i `op` u)
 
-
--- Radian construction
-toRadian :: Real a => a -> Radian 
-toRadian = Radian . realToFrac
-
-
--- Radian extraction 
-fromRadian :: Fractional a => Radian -> a
-fromRadian = realToFrac . getRadian
 
 
 --------------------------------------------------------------------------------
@@ -205,10 +248,6 @@ instance Num a => Num (Matrix3'3 a) where
 
 instance Show Radian where
   showsPrec i (Radian a) = showsPrec i a
-
-req :: Radian -> Radian -> Bool
-req a b = (fromRadian $ abs (a-b)) < radian_epsilon
-
 
 instance Eq Radian where (==) = req
 
@@ -535,128 +574,30 @@ mofm (M3'3 a b c
     m33 = (a*e) - (b*d)
 
 
---------------------------------------------------------------------------------
--- Affine transformations 
-
-
-class Rotate t where
-  rotate :: Radian -> t -> t
-
-
-instance (Floating a, Real a) => Rotate (Point2 a) where
-  rotate a = ((rotationMatrix a) *#)
-
-instance (Floating a, Real a) => Rotate (Vec2 a) where
-  rotate a = ((rotationMatrix a) *#)
-
-
-class RotateAbout t where
-  type RotateAboutUnit t
-  rotateAbout :: Radian -> Point2 (RotateAboutUnit t) -> t -> t 
-
-
-instance (Floating a, Real a) => RotateAbout (Point2 a) where
-  type RotateAboutUnit (Point2 a) = a
-  rotateAbout a pt = ((originatedRotationMatrix a pt) *#) 
-
-
-instance (Floating a, Real a) => RotateAbout (Vec2 a) where
-  type RotateAboutUnit (Vec2 a) = a
-  rotateAbout a pt = ((originatedRotationMatrix a pt) *#) 
-  
-
-rotate90 :: Rotate t => t -> t 
-rotate90 = rotate (pi/2) 
-
-rotate90About :: (RotateAbout t, RotateAboutUnit t ~ u) 
-              => Point2 u -> t -> t 
-rotate90About = rotateAbout (pi/2)
-
-
-rotate30 :: Rotate t => t -> t 
-rotate30 = rotate (pi/6) 
-
-rotate30About :: (RotateAbout t, RotateAboutUnit t ~ u) 
-              => Point2 u -> t -> t 
-rotate30About = rotateAbout (pi/6)
-
-
-rotate45 :: Rotate t => t -> t 
-rotate45 = rotate (pi/4) 
-
-rotate45About :: (RotateAbout t, RotateAboutUnit t ~ u) 
-              => Point2 u -> t -> t 
-rotate45About = rotateAbout (pi/4)
-
-
-rotate60 :: Rotate t => t -> t 
-rotate60 = rotate (2*pi/3) 
-
-rotate60About :: (RotateAbout t, RotateAboutUnit t ~ u) 
-              => Point2 u -> t -> t 
-rotate60About = rotateAbout (2*pi/3)
-
-
-rotate120 :: Rotate t => t -> t 
-rotate120 = rotate (4*pi/3) 
-
-rotate120About :: (RotateAbout t, RotateAboutUnit t ~ u) 
-               => Point2 u -> t -> t 
-rotate120About = rotateAbout (4*pi/3)
-
-
-circular :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a, Rotate t) 
-         => [t] -> [t]
-circular xs = snd $ mapAccumR fn 0 xs 
-  where
-    fn ang a = (ang+1, rotate (2*ang*pi/len) a)
-    len      = fromIntegral $ length xs
-
-
-
-class Scale t where
-  type ScaleUnit t
-  scale :: ScaleUnit t -> ScaleUnit t -> t -> t
-
-instance Num u => Scale (Point2 u) where
-  type ScaleUnit (Point2 u) = u
-  scale x y = ((scalingMatrix x y) *#) 
-
-instance Num u => Scale (Vec2 u) where
-  type ScaleUnit (Vec2 u) = u
-  scale x y = ((scalingMatrix x y) *#) 
-
-
-uniformScale :: (Scale t, ScaleUnit t ~ u) => u -> t -> t 
-uniformScale a = scale a a 
-
-
-reflectX :: (Num u, Scale t, ScaleUnit t ~ u) => t -> t
-reflectX = scale (-1) 1
-
-reflectY :: (Num u, Scale t, ScaleUnit t ~ u) => t -> t
-reflectY = scale 1 (-1)
-
-
-class Translate t where
-  type TranslateUnit t
-  translate :: TranslateUnit t -> TranslateUnit t -> t -> t
-
--- | translate @x@ @y@.
-instance Num u => Translate (Point2 u) where
-  type TranslateUnit (Point2 u) = u
-  translate x y = ((translationMatrix x y) *#)
-
-instance Num u => Translate (Vec2 u) where
-  type TranslateUnit (Vec2 u) = u
-  translate x y = ((translationMatrix x y) *#)
-
-translateBy :: (Translate t, TranslateUnit t ~ u) => Vec2 u -> t -> t 
-translateBy (V2 x y) = translate x y
-
 
 --------------------------------------------------------------------------------
--- degrees / radians
+-- Radians
+
+-- Radian numeric type
+
+radian_epsilon :: Double
+radian_epsilon = 0.0001
+
+
+req :: Radian -> Radian -> Bool
+req a b = (fromRadian $ abs (a-b)) < radian_epsilon
+
+
+
+-- Radian construction
+toRadian :: Real a => a -> Radian 
+toRadian = Radian . realToFrac
+
+
+-- Radian extraction 
+fromRadian :: Fractional a => Radian -> a
+fromRadian = realToFrac . getRadian
+
 
 -- | Degrees to radians.
 d2r :: (Floating a, Real a) => a -> Radian

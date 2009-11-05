@@ -16,14 +16,16 @@
 
 
 module Wumpus.Core
-  ( 
-    module Wumpus.Core.BoundingBox
+  (
+    module Wumpus.Core.AffineTrans 
+  , module Wumpus.Core.BoundingBox
   , module Wumpus.Core.Geometry
   , module Wumpus.Core.OutputPostScript
   , module Wumpus.Core.Picture
   , module Wumpus.Core.PictureLanguage
   ) where
 
+import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox hiding ( center )
 import Wumpus.Core.Geometry
 import Wumpus.Core.OutputPostScript

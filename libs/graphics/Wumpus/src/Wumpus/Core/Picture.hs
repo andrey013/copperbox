@@ -19,6 +19,7 @@
 
 module Wumpus.Core.Picture where
 
+import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox hiding ( center )
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
@@ -29,7 +30,7 @@ import Data.Groupoid
 
 import Data.AffineSpace
 
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen hiding ( empty )
 
 import Data.List                ( mapAccumR )
 import Data.Monoid
@@ -273,7 +274,7 @@ instance (Num u, Ord u) => Vertical (Picture u) where
   bottomBound = maybe 0 id . lowerPlane . extractBounds
 
 instance (Num u, Ord u) => Composite (Picture u) where
-  cempty  = picEmpty
+  cempty  = empty
 
   a     `composite` Empty = a
   Empty `composite` b     = b
@@ -316,8 +317,8 @@ ellipseDefault = (psBlack, CFill)
 
 -- The code here is ugly and needs thought...
 
-picEmpty :: Picture u
-picEmpty = Empty
+empty :: Picture u
+empty = Empty
 
 
 
