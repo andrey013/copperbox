@@ -1,12 +1,15 @@
 
 module LabelPic where
 
+import Wumpus.Core
+{-
 import Wumpus.Core.BoundingBox hiding ( center )
 import Wumpus.Core.Geometry
 import Wumpus.Core.OutputPostScript
 import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture
 import Wumpus.Core.PictureLanguage
+-}
 import Wumpus.Extra.X11Colours
 
 import Data.FunctionExtras ( (#) )
@@ -15,9 +18,9 @@ import Data.FunctionExtras ( (#) )
 
 drawBounds :: (Num u, Ord u) => Picture u -> Picture u
 drawBounds Empty = Empty
-drawBounds p     = p `composite` (picPath CStroke path) where
+drawBounds p     = p `composite` (path (CStroke []) ph) where
     bb   = extractBounds p
-    path = straightLinePath $ corners bb
+    ph   = vertexPath $ corners bb
 
 
 

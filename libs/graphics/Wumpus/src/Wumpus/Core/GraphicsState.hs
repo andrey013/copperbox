@@ -19,8 +19,8 @@ module Wumpus.Core.GraphicsState
   (
   -- * Data types  
   
-  -- ** Pen (for drawing paths)
-    PenAttr(..)
+  -- ** Stroke attributes
+    StrokeAttr(..)
   , LineCap(..)
   , LineJoin(..)
   , DashPattern(..)
@@ -45,11 +45,11 @@ import Wumpus.Core.Geometry
 -- Graphics state datatypes
 
 
-data PenAttr = LineWidth   Double
-             | MiterLimit  Double
-             | LineCap     LineCap
-             | LineJoin    LineJoin
-             | DashPattern DashPattern 
+data StrokeAttr = LineWidth   Double
+                | MiterLimit  Double
+                | LineCap     LineCap
+                | LineJoin    LineJoin
+                | DashPattern DashPattern 
   deriving (Eq,Show)
 
 data LineCap = CapButt | CapRound | CapSquare

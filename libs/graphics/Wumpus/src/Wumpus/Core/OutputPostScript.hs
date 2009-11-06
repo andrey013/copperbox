@@ -187,25 +187,9 @@ updateFrame frm ma
 
 
 outputPrimitive :: Primitive Double -> WumpusM ()
-outputPrimitive (Path1 (c,xs,dp) p)       = updatePen c xs $ outputPath dp p 
+outputPrimitive (Path1 (c,dp) p)          = outputPath dp c p 
 outputPrimitive (Label1 props l)          = updateFont props $ outputLabel l
-outputPrimitive (Ellipse1 (mbc,dp) c w h) = updateColour mbc $ 
-                                              outputEllipse dp c w h
-
-updatePen :: PSColour -> [PenAttr] -> WumpusM () -> WumpusM ()
-updatePen c xs ma = do 
-    ps_gsave
-    colourCommand c
-    mapM_ penCommand xs
-    ma
-    ps_grestore
-
-penCommand :: PenAttr -> WumpusM ()
-penCommand (LineWidth d)    = ps_setlinewidth d
-penCommand (MiterLimit d)   = ps_setmiterlimit d
-penCommand (LineCap lc)     = ps_setlinecap lc
-penCommand (LineJoin lj)    = ps_setlinejoin lj
-penCommand (DashPattern dp) = ps_setdash dp
+outputPrimitive (Ellipse1 (c,dp) ct w h)  = outputEllipse dp c ct w h
 
 updateFont :: LabelProps -> WumpusM () -> WumpusM ()
 updateFont (c,fnt) ma = do 
@@ -240,21 +224,52 @@ colourCommand (PSHsb h s v) = ps_sethsbcolor h s v
 colourCommand (PSGray a)    = ps_setgray a
 
     
-outputPath :: DrawProp -> Path Double -> WumpusM ()
-outputPath dp (Path (P2 x y) xs) = do  
+outputPath :: DrawProp -> PSColour -> Path Double -> WumpusM ()
+outputPath CFill        c p = updateColour c $ do  
+    startPath p
+    ps_closepath
+    ps_fill
+
+outputPath (CStroke xs) c p = updatePen c xs $ do
+    startPath p
+    ps_closepath
+    ps_stroke
+
+outputPath (OStroke xs) c p = updatePen c xs $ do
+    startPath p
+    ps_stroke
+  
+
+startPath :: Path Double -> WumpusM ()
+startPath (Path (P2 x y) xs) = do
     ps_newpath
     ps_moveto x y
     mapM_ outputPathSeg xs
-    closePath dp   
+
+
 
 clipPath :: Path Double -> WumpusM ()
-clipPath (Path (P2 x y) xs) = do  
-    ps_newpath
-    ps_moveto x y
-    mapM_ outputPathSeg xs
+clipPath p = do 
+    startPath p
     ps_closepath
     ps_clip
 
+
+
+updatePen :: PSColour -> [StrokeAttr] -> WumpusM () -> WumpusM ()
+updatePen c xs ma = do 
+    ps_gsave
+    colourCommand c
+    mapM_ penCommand xs
+    ma
+    ps_grestore
+
+penCommand :: StrokeAttr -> WumpusM ()
+penCommand (LineWidth d)    = ps_setlinewidth d
+penCommand (MiterLimit d)   = ps_setmiterlimit d
+penCommand (LineCap lc)     = ps_setlinecap lc
+penCommand (LineJoin lj)    = ps_setlinejoin lj
+penCommand (DashPattern dp) = ps_setdash dp
 
 
 outputPathSeg :: PathSeg Double -> WumpusM ()
@@ -268,23 +283,34 @@ outputPathSeg (PCurve p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
 -- | This is not very good as it uses a PostScript's
 -- @scale@ operator - this will vary the line width during the
 -- drawing of a stroked ellipse.
-outputEllipse :: DrawProp -> Point2 Double -> Double -> Double -> WumpusM ()
-outputEllipse dp (P2 x y) w h 
-    | w==h      = outputArc dp x y w
+outputEllipse :: DrawProp 
+              -> PSColour 
+              -> Point2 Double 
+              -> Double 
+              -> Double 
+              -> WumpusM ()
+outputEllipse dp c (P2 x y) w h 
+    | w==h      = outputArc dp c x y w
     | otherwise = do { ps_gsave
                      ; ps_scale 1 (h/w) -- Not so good -- changes stroke width
-                     ; outputArc dp x y w
+                     ; outputArc dp c x y w
                      ; ps_grestore
                      }
 
-outputArc :: DrawProp -> Double -> Double -> Double -> WumpusM ()
-outputArc dp x y r = ps_arc x y r 0 360 >> closePath dp
+outputArc ::  DrawProp ->PSColour -> Double -> Double -> Double -> WumpusM ()
+outputArc CFill        c x y r = updateColour c $ do 
+    ps_arc x y r 0 360 
+    ps_closepath
+    ps_fill
 
+outputArc (CStroke xs) c x y r = updatePen c xs $ do 
+    ps_arc x y r 0 360 
+    ps_closepath
+    ps_stroke
 
-closePath :: DrawProp -> WumpusM ()
-closePath OStroke = ps_stroke
-closePath CStroke = ps_closepath >> ps_stroke
-closePath CFill   = ps_closepath >> ps_fill
+outputArc (OStroke xs) c x y r = updatePen c xs $ do 
+    ps_arc x y r 0 360 
+    ps_stroke
 
 
 outputLabel :: Label Double -> WumpusM ()

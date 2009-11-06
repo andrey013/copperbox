@@ -27,7 +27,7 @@ funnyshape = Polygon
   [ P2 0 0, P2 20 0, P2 20 10, P2 30 10, P2 30 20, P2 0 20 ]
 
 
-psquare = picPolygon CStroke square
+psquare = picPolygon (CStroke []) square
 pfunnyshape = picPolygon CFill funnyshape
 
 test01 = pretty $ translateBy (V2 100 40) psquare
@@ -72,7 +72,7 @@ demo5 = writeEPS "picture5.eps" Nothing p1
 
 demo6 = writeEPS "picture6.eps" Nothing  p1 
   where
-    p1 = picPolygon CStroke $ regularPolygon 6 50
+    p1 = picPolygon (CStroke []) $ regularPolygon 6 50
 
 
 demo7 = writeEPS "picture7.eps" Nothing p1

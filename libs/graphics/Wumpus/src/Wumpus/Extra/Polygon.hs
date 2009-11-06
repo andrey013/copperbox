@@ -42,7 +42,7 @@ drawFrame p = p `composite` frp
     (Frame2 e0 e1 o) = extractFrame p
     xbasis           = vertexPath [o, o .+^ e0]
     ybasis           = vertexPath [o, o .+^ e1]
-    frp              = multipath  [(OStroke,xbasis), (OStroke,ybasis)]
+    frp              = multipath  [(OStroke [],xbasis), (OStroke [],ybasis)]
 
  
 picPolygon :: (Num u, Ord u) => DrawProp -> Polygon u -> Picture u

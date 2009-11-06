@@ -70,7 +70,7 @@ svgPrimitive (Ellipse1 (_c,dp) mid w h) = ellipseE dp mid w h
 
 
 pathElt :: PathProps -> Path Double -> Element
-pathElt (c,_,dp) (Path (P2 x y) xs) = 
+pathElt (c,dp) (Path (P2 x y) xs) = 
     element_path ps # add_attrs [fillAttr c dp, strokeAttr c dp]
   where
     ps = pathDesc dp x y xs
@@ -96,13 +96,13 @@ labelElt (c,FontAttr _ fam sz) (Label (P2 x y) str) =
    
 fillAttr :: PSColour -> DrawProp -> Attr
 fillAttr c CFill = unqualAttr "fill" $ val_colour c
-fillAttr _   _   = unqualAttr "fill" "none"
+fillAttr _ _     = unqualAttr "fill" "none"
 
 
 strokeAttr :: PSColour -> DrawProp -> Attr
-strokeAttr c OStroke = unqualAttr "stroke" $ val_colour c
-strokeAttr c CStroke = unqualAttr "stroke" $ val_colour c
-strokeAttr _ _       = unqualAttr "stroke" "none"
+strokeAttr c (OStroke _) = unqualAttr "stroke" $ val_colour c
+strokeAttr c (CStroke _) = unqualAttr "stroke" $ val_colour c
+strokeAttr _ _           = unqualAttr "stroke" "none"
 
 
 -- Clipping to think about...
@@ -139,8 +139,8 @@ pathDesc dp x y xs = close dp $ path_m x y : map fn xs
     fn (PLine (P2 x1 y1))                        = path_l x1 y1
     fn (PCurve (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = path_s x1 y1 x2 y2 x3 y3
 
-    close OStroke = id
-    close _       = (++ ["Z"])
+    close (OStroke _) = id
+    close _           = (++ ["Z"])
 
 
 

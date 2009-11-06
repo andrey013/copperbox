@@ -148,15 +148,6 @@ data Label u = Label (Point2 u) String
 type DLabel = Label Double
 
 
-type PathProps    = (PSColour, [PenAttr], DrawProp)
-type LabelProps   = (PSColour, FontAttr)
-type EllipseProps = (PSColour, DrawProp)
-
--- Measure = (_current_ frame x bounding box)
-
-type Measure u = (Frame2 u, BoundingBox u) 
-
-
 -- | Note when drawn /filled/ and drawn /stroked/ the same 
 -- polygon will have (slightly) different size: 
 -- 
@@ -166,8 +157,18 @@ type Measure u = (Frame2 u, BoundingBox u)
 --   of the shape. The actual size depends on the thickness
 --   of the line (stroke width).
 --
-data DrawProp = OStroke | CStroke | CFill
+data DrawProp = CFill | CStroke [StrokeAttr] | OStroke [StrokeAttr]
   deriving (Eq,Show)
+
+
+type PathProps    = (PSColour, DrawProp)
+type LabelProps   = (PSColour, FontAttr)
+type EllipseProps = (PSColour, DrawProp)
+
+-- Measure = (_current_ frame x bounding box)
+
+type Measure u = (Frame2 u, BoundingBox u) 
+
 
 
 
@@ -367,7 +368,7 @@ label = Label
 
 
 pathDefault :: PathProps 
-pathDefault = (psBlack, [], OStroke)
+pathDefault = (psBlack, OStroke [])
 
 
 mkPath :: (Num u, Ord u) => PathProps -> Path u -> Picture u
@@ -379,7 +380,7 @@ class PicPath t where
 
 instance PicPath PathProps      where path = mkPath
 instance PicPath ()             where path () = mkPath pathDefault 
-instance PicPath DrawProp       where path p  = mkPath (psBlack,[],p)
+instance PicPath DrawProp       where path p  = mkPath (psBlack,p)
 
 
 zpath ::  (Num u, Ord u) => Path u -> Picture u
@@ -404,7 +405,7 @@ instance MultiPath () where
 
 instance MultiPath DrawProp where 
   multipath = mkMultiPath . map (expand *** id) 
-    where expand c = (psBlack,[],c)
+    where expand c = (psBlack,c)
 
 
 zmultipath :: (Num u, Ord u) => [Path u] -> Picture u
