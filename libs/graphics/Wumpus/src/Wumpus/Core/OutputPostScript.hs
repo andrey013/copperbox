@@ -93,7 +93,7 @@ psDrawPage mbFs (lbl,ordinal) pic = do
     ps_showpage
   where
     bb0       = if nullPicture pic then BBox zeroPt zeroPt 
-                                   else extractBounds pic
+                                   else boundary pic
     (mbTx,_)  = translateBBox bb0
     cmdtrans  = maybe (return ()) (\(x,y) -> ps_translate x y) mbTx
   
@@ -113,7 +113,7 @@ epsDraw timestamp mbFs pic = runWumpus $ do
     epsFooter  
   where
     bb0       = if nullPicture pic then BBox zeroPt zeroPt 
-                                   else extractBounds pic
+                                   else boundary pic
     (mbTx,bb) = translateBBox bb0
     cmdtrans  = maybe (return ()) (\(x,y) -> ps_translate x y) mbTx
      

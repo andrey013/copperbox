@@ -2,13 +2,7 @@
 
 module Picture where
 
-import Wumpus.Core.AffineTrans
-import Wumpus.Core.Colour
-import Wumpus.Core.Geometry
-import Wumpus.Core.OutputPostScript
-import Wumpus.Core.OutputSVG
-import Wumpus.Core.Picture
-import Wumpus.Core.PictureLanguage
+import Wumpus.Core
 import Wumpus.Extra.Polygon
 
 import Data.VectorSpace

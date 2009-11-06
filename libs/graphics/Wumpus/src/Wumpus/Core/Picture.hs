@@ -53,8 +53,6 @@ module Wumpus.Core.Picture
 
   -- * Operations
   , nullPicture
-  , pathBounds
-  , extractBounds
   , extractFrame
   , translateBBox
 
@@ -118,6 +116,10 @@ data Picture u = Empty
 -- circles (ellipses are actually circles with non-uniform 
 -- scaling).
 --
+
+-- TODO storing centre and width and height of an ellispe
+-- is forcing calculations to use Fractional (to get the BBox).
+-- Maybe it would be better to store 'half width' and 'half height'
 
 data Primitive u = Path1    PathProps (Path u)
                  | Label1   LabelProps (Label u) 
@@ -303,15 +305,15 @@ instance (Num u, Ord u) => Horizontal (Picture u) where
   type HUnit (Picture u) = u
 
   moveH a    = movePic (hvec a) 
-  leftBound  = maybe 0 id . leftPlane . extractBounds
-  rightBound = maybe 0 id . rightPlane . extractBounds
+  leftBound  = maybe 0 id . leftPlane . boundary
+  rightBound = maybe 0 id . rightPlane . boundary
 
 instance (Num u, Ord u) => Vertical (Picture u) where
   type VUnit (Picture u) = u
 
   moveV a     = movePic (vvec a) 
-  topBound    = maybe 0 id . upperPlane . extractBounds
-  bottomBound = maybe 0 id . lowerPlane . extractBounds
+  topBound    = maybe 0 id . upperPlane . boundary
+  bottomBound = maybe 0 id . lowerPlane . boundary
 
 instance (Num u, Ord u) => Composite (Picture u) where
   cempty  = empty
@@ -319,7 +321,7 @@ instance (Num u, Ord u) => Composite (Picture u) where
   a     `composite` Empty = a
   Empty `composite` b     = b
   a     `composite` b     = Picture (frameDefault, bb) a b where
-                            bb = union (extractBounds a) (extractBounds b)
+                            bb = union (boundary a) (boundary b)
 
 
 
@@ -327,6 +329,34 @@ instance (Num u, Ord u, Horizontal (Picture u), Vertical (Picture u),
           HUnit (Picture u) ~ VUnit (Picture u)) => 
       PMove (Picture u) where
   pmove x y = movePic (V2 x y)
+
+--------------------------------------------------------------------------------
+-- Boundary
+
+instance (Num u, Ord u) => Boundary (Path u) where
+  type BoundaryUnit (Path u) = u
+  boundary (Path st xs) = trace $ st : foldr f [] xs where
+      f (PLine p1)        acc  = p1 : acc
+      f (PCurve p1 p2 p3) acc  = p1 : p2 : p3 : acc 
+
+
+instance (Num u, Ord u, Fractional u) => Boundary (Primitive u) where
+  type BoundaryUnit (Primitive u) = u
+  boundary (Path1 _ p)        = boundary p
+  boundary (Label1 _ _)       = error $ "boundary Label to do"
+  boundary (Ellipse1 _ c w h) = BBox (c .-^ v) (c .+^ v) 
+    where v = V2 (w/2) (h/2)
+
+
+instance Boundary (Picture u) where
+  type BoundaryUnit (Picture u) = u       
+  boundary Empty                = ZeroBB
+  boundary (Single  (_,bb) _)   = bb
+  boundary (Multi   (_,bb) _)   = bb
+  boundary (Picture (_,bb) _ _) = bb
+  boundary (Clip    (_,bb) _ _) = bb
+
+
 
 
 --------------------------------------------------------------------------------
@@ -358,13 +388,22 @@ vertexPath []     = error "straightLinePath - empty point list"
 vertexPath (x:xs) = Path x (map PLine xs)
 
 {-
--- | Create a label
-label :: Point2 u -> String -> Label u
-label = Label
+-- This lifts primitives to Pictures, is it preferable to going
+-- straight to pictures as the Path clas currently does?
+
+frame :: (Num u, Ord u, Fractional u) => Primitive u -> Picture u
+frame p = Single (frameDefault, boundary p) p 
+
+
 -}
+
 
 --------------------------------------------------------------------------------
 -- Paths to pictures
+
+
+-- should path make a picture or a primitive?
+
 
 
 pathDefault :: PathProps 
@@ -372,7 +411,7 @@ pathDefault = (psBlack, OStroke [])
 
 
 mkPath :: (Num u, Ord u) => PathProps -> Path u -> Picture u
-mkPath props p = Single (frameDefault, pathBounds p) (Path1 props p)
+mkPath props p = Single (frameDefault, boundary p) (Path1 props p)
 
 
 class PicPath t where
@@ -392,7 +431,7 @@ zpath = path pathDefault
 mkMultiPath :: (Num u, Ord u) => [(PathProps,Path u)] -> Picture u
 mkMultiPath xs = Multi (frameDefault,bb) (map (uncurry Path1) xs) 
   where
-    bb = mconcat $ map (pathBounds . snd) xs
+    bb = mconcat $ map (boundary . snd) xs
 
 
 class MultiPath t where
@@ -474,21 +513,6 @@ nullPicture Empty = True
 nullPicture _     = False
 
 
-
-
-pathBounds :: (Num u, Ord u) => Path u -> BoundingBox u
-pathBounds (Path st xs) = trace $ st : foldr f [] xs
-  where
-    f (PLine p1)        acc  = p1 : acc
-    f (PCurve p1 p2 p3) acc  = p1 : p2 : p3 : acc 
-
-
-extractBounds :: (Num u, Ord u) => Picture u -> BoundingBox u
-extractBounds Empty                = ZeroBB
-extractBounds (Single  (_,bb) _)   = bb
-extractBounds (Multi   (_,bb) _)   = bb
-extractBounds (Picture (_,bb) _ _) = bb
-extractBounds (Clip    (_,bb) _ _) = bb
 
 extractFrame :: Num u => Picture u -> Frame2 u
 extractFrame Empty                = ortho zeroPt

@@ -2,14 +2,6 @@
 module LabelPic where
 
 import Wumpus.Core
-{-
-import Wumpus.Core.BoundingBox hiding ( center )
-import Wumpus.Core.Geometry
-import Wumpus.Core.OutputPostScript
-import Wumpus.Core.OutputSVG
-import Wumpus.Core.Picture
-import Wumpus.Core.PictureLanguage
--}
 import Wumpus.Extra.X11Colours
 
 import Data.FunctionExtras ( (#) )

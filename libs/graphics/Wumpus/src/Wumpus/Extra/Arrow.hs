@@ -52,7 +52,7 @@ arrowheadVee filled d ang =
   \theta endpt -> let p0   = endpt .+^ (hvec (-d))
                       p01  = rotateAbout (pi-ang) endpt p0
                       p02  = rotateAbout (pi+ang) endpt p0
-                      styl = if filled then CFill else OStroke
+                      styl = if filled then CFill else (OStroke [])
                       path = Path p01 (map PLine [endpt,p02])
                   in pointwise (rotateAbout (theta - pi) endpt) path
 

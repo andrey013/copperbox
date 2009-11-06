@@ -47,7 +47,7 @@ svgDraw pic = [Text xmlVersion, Text svgDocType, svgpic]
     svgpic    = Elem $ svgElement [pic_elt]
     pic_elt   = gElement trans [pictureElt pic]
     bb0       = if nullPicture pic then BBox zeroPt zeroPt 
-                                   else extractBounds pic
+                                   else boundary pic
     (mbTx,_)  = translateBBox bb0
     trans     = maybe [] (\(x,y) -> [translateAttr x y]) mbTx
     

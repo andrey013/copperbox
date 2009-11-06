@@ -19,6 +19,9 @@ module Wumpus.Core.BoundingBox
   -- * Types
     BoundingBox(..)
   , DBoundingBox
+
+  -- * Type class
+  , Boundary(..)
   
   -- * operations
   , union 
@@ -79,24 +82,36 @@ data BoundingBox a = ZeroBB
 type DBoundingBox = BoundingBox Double
 
 
+--------------------------------------------------------------------------------
+-- instances
+
+-- BBox has been augmented with the special ZeroBB case to enable
+-- monoidal operations...
+
+instance Ord a => Monoid (BoundingBox a) where
+  mempty  = ZeroBB
+  mappend = union
+
 
 instance Pretty a => Pretty (BoundingBox a) where
   pretty ZeroBB       = text "|_ +inf -inf _|"
   pretty (BBox p0 p1) = text "|_" <+> pretty p0 <+> pretty p1 <+> text "_|" 
 
 --------------------------------------------------------------------------------
+-- Boundary class
+
+class Boundary a where
+  type BoundaryUnit a
+  boundary :: a -> BoundingBox (BoundaryUnit a)
+
+
+--------------------------------------------------------------------------------
+
 
 union :: Ord a => BoundingBox a -> BoundingBox a -> BoundingBox a
 ZeroBB     `union` b            = b
 a          `union` ZeroBB       = a
 BBox ll ur `union` BBox ll' ur' = BBox (cmin ll ll') (cmax ur ur')
-
--- We don't consider BBox to have a (nice) zero, hence 
--- the Groupoid instance rather than a Monoid instance.
-
-instance Ord a => Monoid (BoundingBox a) where
-  mempty  = ZeroBB
-  mappend = union
 
 instance Pointwise (BoundingBox a) where
   type Pt (BoundingBox a) = Point2 a
