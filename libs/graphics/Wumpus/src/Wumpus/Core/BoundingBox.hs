@@ -51,6 +51,7 @@ module Wumpus.Core.BoundingBox
 
   ) where
 
+import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.Utils ( CMinMax(..), within )
 
@@ -96,6 +97,17 @@ instance Ord a => Monoid (BoundingBox a) where
 instance Pretty a => Pretty (BoundingBox a) where
   pretty ZeroBB       = text "|_ +inf -inf _|"
   pretty (BBox p0 p1) = text "|_" <+> pretty p0 <+> pretty p1 <+> text "_|" 
+
+
+--------------------------------------------------------------------------------
+-- 
+
+instance (Num u, Ord u) => Scale (BoundingBox u) where
+  type ScaleUnit (BoundingBox u) = u
+  scale _ _ ZeroBB = ZeroBB
+  scale x y bb     = trace $ map (scale x y) $ corners bb
+
+
 
 --------------------------------------------------------------------------------
 -- Boundary class

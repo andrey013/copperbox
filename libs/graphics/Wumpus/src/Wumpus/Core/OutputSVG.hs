@@ -20,7 +20,6 @@ module Wumpus.Core.OutputSVG
 --  , writeSVG
 --  ) where
 
-import Wumpus.Core.BoundingBox
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.Picture
@@ -32,6 +31,7 @@ import Data.FunctionExtras ( (#) )
 import Text.XML.Light
 
 
+type Clipped = Bool
 
 
 --------------------------------------------------------------------------------
@@ -42,10 +42,11 @@ writeSVG filepath pic =
 
 
 svgDraw :: Picture Double -> [Content]
-svgDraw pic = {- runSVG $ do -} prefixXmlDecls $ topLevelPic mbvec svgpic
+svgDraw pic = prefixXmlDecls $ topLevelPic mbvec pic''
   where
-    svgpic    = pictureElt pic
-    (_,mbvec) = repositionProperties pic 
+    pic'      = coordChange pic
+    pic''     = runSVG $ pictureElt False pic'
+    (_,mbvec) = repositionProperties pic'
 
 
 prefixXmlDecls :: Element -> [Content]
@@ -55,28 +56,56 @@ topLevelPic :: Maybe (Vec2 Double) -> Element -> Element
 topLevelPic Nothing         p = svgElement [p]
 topLevelPic (Just (V2 x y)) p = svgElement [gElement [translateAttr x y] [p]]
 
-pictureElt :: Picture Double -> Element
-pictureElt Empty                   = gElement [] []
-pictureElt (Single (fr,_) prim)    = 
-    gElement [frameChange fr] [svgPrimitive prim]
-pictureElt (Multi (fr,_) ps)       = 
-    gElement [frameChange fr] (map svgPrimitive ps)
-pictureElt (Picture (fr,_) a b)    = 
-    gElement [frameChange fr] [pictureElt a, pictureElt b]
-pictureElt (Clip (_fr,_) _path _p) = error "Clip TODO" 
+pictureElt :: Clipped -> Picture Double -> SvgM Element
+pictureElt _ Empty                   = return $ gElement [] []
+
+pictureElt c (Single (fr,_) prim)    = do 
+    elt <- svgPrimitive c prim
+    return $ gElement [frameChange fr] [elt]
+
+pictureElt c (Multi (fr,_) ps)       = do
+    es <- mapM (svgPrimitive c) ps
+    return $ gElement [frameChange fr] es
+
+pictureElt c (Picture (fr,_) a b)    = do
+    e1 <- pictureElt c a
+    e2 <- pictureElt c b 
+    return $ gElement [frameChange fr] [e1,e2]
+
+pictureElt _ (Clip (fr,_) cp a) = do 
+   lbl <- newClipLabel 
+   e1  <- pictureElt True a
+   return $ gElement [frameChange fr] [clipPathElt lbl cp,e1]
 
 
-svgPrimitive :: Primitive Double -> Element
-svgPrimitive (Path1 props p)              = pathElt props p
-svgPrimitive (Label1 props l)             = labelElt props l
-svgPrimitive (Ellipse1 (_c,dp) mid hw hh) = ellipseE dp mid hw hh
+svgPrimitive :: Clipped -> Primitive Double -> SvgM Element
+svgPrimitive c (Path1 props p)            = clipAttrib c $ pathElt props p
+svgPrimitive c (Label1 props l)           = clipAttrib c $ labelElt props l
+svgPrimitive c (Ellipse1 props mid hw hh) = clipAttrib c $ 
+                                                ellipseE props mid hw hh
+
+clipAttrib :: Clipped -> Element -> SvgM Element
+clipAttrib False elt = return elt
+clipAttrib True  elt = do 
+    s <- currentClipLabel
+    return $ add_attr (attr_clippath s) elt
+
+
 
 
 pathElt :: PathProps -> Path Double -> Element
-pathElt (c,dp) (Path (P2 x y) xs) = 
+pathElt (c,dp) p = 
     element_path ps # add_attrs [fillAttr c dp, strokeAttr c dp]
   where
-    ps = pathDesc dp x y xs
+    ps = pathDesc dp p 
+
+
+clipPathElt :: String -> Path Double -> Element
+clipPathElt name p = 
+    element_clippath ps # add_attr (attr_id name)
+  where
+    ps = pathInstructions p ++ ["Z"]
+
 
 
 labelElt :: LabelProps -> Label Double -> Element
@@ -108,47 +137,32 @@ strokeAttr c (CStroke _) = unqualAttr "stroke" $ val_colour c
 strokeAttr _ _           = unqualAttr "stroke" "none"
 
 
--- Clipping to think about...
---
 -- Clipping in PostScript works by changing the graphics state
 -- Clip a path, then all subsequent drawing will only be rendered
 -- when it is within the clip bounds. Clearly using clipping 
--- paths within a @gsave ... grestore@ block is a good idea. This 
--- is what Wumpus does. In some respects this clipping might be 
--- considered implicit. 
+-- paths within a @gsave ... grestore@ block is a good idea...
 --
 -- SVG uses /tagging/. A clipPath element is declared and named 
 -- then referenced in subsequent elements via the clip-path 
 -- attribute - @clip-path=\"url(#clip_path_tag)\"@.
 --
--- Vis-a-vis the picture language, there is a good argument to 
--- make a clipping path one of the constructors of the Picture 
--- type 
--- 
--- >   | Clip ... (Path u) (Picture u)
---
--- (->-) etc. on clipped pictures then have obvious meaning.
--- Also the PostScript implementation would be no harder, and the 
--- SVG implementation should be easier.
---
--- UPDATE: Picture - been changed to match the above, which
--- obliges the SVG output to go monadic so it can handle a 
--- counter. This hasn't been done yet.
 
 
-pathDesc :: DrawProp -> Double -> Double -> [PathSeg Double] -> [String]
-pathDesc dp x y xs = close dp $ path_m x y : map fn xs
+pathDesc :: DrawProp -> Path Double -> [String]
+pathDesc dp p = close dp $ pathInstructions p
+  where 
+    close (OStroke _) = id
+    close _           = (++ ["Z"])
+
+pathInstructions :: Path Double -> [String]
+pathInstructions (Path (P2 x y) xs) = path_m x y : map fn xs
   where 
     fn (PLine (P2 x1 y1))                        = path_l x1 y1
     fn (PCurve (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = path_s x1 y1 x2 y2 x3 y3
 
-    close (OStroke _) = id
-    close _           = (++ ["Z"])
 
-
-
-ellipseE :: DrawProp -> Point2 Double -> Double -> Double -> Element
-ellipseE _dp (P2 x y) w h 
+ellipseE :: EllipseProps -> Point2 Double -> Double -> Double -> Element
+ellipseE _props (P2 x y) w h 
     | w == h    = unode "circle"  [attr_x x, attr_y y, attr_rx w]
     | otherwise = unode "ellipse" [attr_x x, attr_y y, attr_rx w, attr_ry h]
 

@@ -32,8 +32,9 @@ module Wumpus.Core.Picture
 
   , PathProps                   -- hide in Wumpus.Core export?
   , LabelProps                  -- hide in Wumpus.Core export?
+  , EllipseProps                -- 
   , DrawProp(..)                -- hide in Wumpus.Core export?
-
+  
   -- * Construction
   , empty
 
@@ -63,8 +64,10 @@ module Wumpus.Core.Picture
   -- * Operations
   , nullPicture
   , extractFrame
-  , repositionProperties
 
+  
+  , repositionProperties
+  , coordChange
 
   ) where
 
@@ -615,23 +618,49 @@ moveMeasure v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb)
 -- This needs is for PostScript and SVG output - it should be 
 -- hidden in the export list of Wumpus.Core
 
-translateBBox :: (Num u, Ord u) 
-              => BoundingBox u -> (BoundingBox u, Maybe (Vec2 u))
-translateBBox ZeroBB      = (ZeroBB, Nothing)
-translateBBox bb@(BBox (P2 llx lly) (P2 urx ury))
-    | llx < 4 || lly < 4  = (BBox ll ur, Just $ V2 x y)
-    | otherwise           = (bb, Nothing)
-  where 
-     x  = 4 - llx
-     y  = 4 - lly
-     ll = P2 (llx+x) (lly+y)
-     ur = P2 (urx+x) (ury+y)  
-
 
 -- If a picture has coordinates smaller than (P2 4 4) then it 
 -- needs repositioning before it is drawn to PostSCript or SVG.
 -- 
 -- (P2 4 4) gives a 4 pt margin - maybe it sould be (0,0) or 
 -- user defined.
+--
 repositionProperties :: (Num u, Ord u) => Picture u -> (BoundingBox u, Maybe (Vec2 u))
-repositionProperties = translateBBox . boundary
+repositionProperties = fn . boundary where
+  fn ZeroBB      = (ZeroBB, Nothing)
+  fn bb@(BBox (P2 llx lly) (P2 urx ury))
+      | llx < 4 || lly < 4  = (BBox ll ur, Just $ V2 x y)
+      | otherwise           = (bb, Nothing)
+    where 
+      x  = 4 - llx
+      y  = 4 - lly
+      ll = P2 (llx+x) (lly+y)
+      ur = P2 (urx+x) (ury+y)  
+
+-- Note the instances of Scale(..) for pictures just change the 
+-- frame. Here we need to change all the points in the Picture
+-- including the bounding boxes.
+
+-- THIS DOESN'T WORK
+
+coordChange :: forall u. (Num u, Ord u) => Picture u -> Picture u
+coordChange = fn
+  where
+    fn Empty            = Empty
+    fn (Single  m prim) = Single (g m) (h prim)
+    fn (Multi   m ps)   = Multi (g m) (map h ps)
+    fn (Picture m a b)  = Picture (g m) (fn a) (fn b)
+    fn (Clip    m x a)  = Clip (g m) x (fn a)
+
+    g :: Measure u -> Measure u
+    g (Frame2 e0 e1 o,bb) = (Frame2 e0' e1' o', scale 1 (-1) bb) where
+        e0' = scale 1 (-1) e0 
+        e1' = scale 1 (-1) e1 
+        o'  = scale 1 (-1) o
+       
+
+    h :: Primitive u -> Primitive u 
+    h (Path1 props p)             = Path1 props (pointwise (scale 1 (-1)) p)
+    h (Label1 props (Label pt s)) = Label1 props (Label (scale 1 (-1) pt) s) 
+    h (Ellipse1 props pt hw hh)   = Ellipse1 props (scale 1 (-1) pt) hw hh
+

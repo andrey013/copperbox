@@ -63,12 +63,12 @@ runSVG :: SvgM a -> a
 runSVG = fst . svgId
 
 
-currentClipPath :: SvgM String
-currentClipPath = get >>= return . clipname . clipCount
+currentClipLabel :: SvgM String
+currentClipLabel = get >>= return . clipname . clipCount
 
 
-nextClipPath :: SvgM String
-nextClipPath = do 
+newClipLabel :: SvgM String
+newClipLabel = do 
   i <- (get >>= return . clipCount)
   sets_ (\s -> s { clipCount=i+1 })
   return $ clipname i
@@ -144,6 +144,9 @@ attr_ry      = unqualAttr "ry" . dtrunc
 element_path :: [String] -> Element
 element_path = unode "path" . unqualAttr "d" . hsep
 
+element_clippath :: [String] -> Element
+element_clippath = unode "clipPath" . element_path
+
 element_text :: String -> Element
 element_text = unode "text" . content_text
 
@@ -161,6 +164,10 @@ attr_fontsize :: Int -> Attr
 attr_fontsize = unqualAttr "font-size" . show
 
 
+-- | @ id=\"...\" @
+attr_id :: String -> Attr
+attr_id = unqualAttr "id" 
+
 
 -- | @ fill=\"rgb(..., ..., ...)\" @
 attr_fill :: PSColour -> Attr
@@ -169,6 +176,11 @@ attr_fill = unqualAttr "fill" . val_colour
 
 attr_color :: PSColour -> Attr
 attr_color = unqualAttr "color" . val_colour
+
+-- | @ clip-path=\"url(#...)\" @
+attr_clippath :: String -> Attr
+attr_clippath = unqualAttr "clip-path" . val_url
+
 
 -- | @ rgb(..., ..., ...) @
 -- 
@@ -184,6 +196,10 @@ val_rgb :: RGB3 Double -> String
 val_rgb (RGB3 r g b) = "rgb" ++ show (range255 r,range255 g,range255 b)
 
 
+-- | @ url(#...) @
+val_url :: String -> String
+val_url s = "url" ++ parens ('#':s)
+  
 -- | c.f. PostScript's @moveto@.
 path_m :: Double -> Double -> String
 path_m x y  = hsep $ "M" : map dtrunc [x,y]
