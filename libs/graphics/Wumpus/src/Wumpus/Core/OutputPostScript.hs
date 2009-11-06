@@ -187,9 +187,9 @@ updateFrame frm ma
 
 
 outputPrimitive :: Primitive Double -> WumpusM ()
-outputPrimitive (Path1 (c,dp) p)          = outputPath dp c p 
-outputPrimitive (Label1 props l)          = updateFont props $ outputLabel l
-outputPrimitive (Ellipse1 (c,dp) ct w h)  = outputEllipse dp c ct w h
+outputPrimitive (Path1 (c,dp) p)           = outputPath dp c p 
+outputPrimitive (Label1 props l)           = updateFont props $ outputLabel l
+outputPrimitive (Ellipse1 (c,dp) ct hw hh) = outputEllipse dp c ct hw hh
 
 updateFont :: LabelProps -> WumpusM () -> WumpusM ()
 updateFont (c,fnt) ma = do 
@@ -289,11 +289,11 @@ outputEllipse :: DrawProp
               -> Double 
               -> Double 
               -> WumpusM ()
-outputEllipse dp c (P2 x y) w h 
-    | w==h      = outputArc dp c x y w
+outputEllipse dp c (P2 x y) hw hh 
+    | hw==hh    = outputArc dp c x y hw
     | otherwise = do { ps_gsave
-                     ; ps_scale 1 (h/w) -- Not so good -- changes stroke width
-                     ; outputArc dp c x y w
+                     ; ps_scale 1 (hh/hw) -- Not so good -- changes stroke width
+                     ; outputArc dp c x y hw
                      ; ps_grestore
                      }
 

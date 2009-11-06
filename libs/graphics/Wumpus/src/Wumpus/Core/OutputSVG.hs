@@ -64,9 +64,9 @@ pictureElt (Clip (_fr,_) _path _p) = error "Clip TODO"
 
 
 svgPrimitive :: Primitive Double -> Element
-svgPrimitive (Path1 props p)           = pathElt props p
-svgPrimitive (Label1 props l)          = labelElt props l
-svgPrimitive (Ellipse1 (_c,dp) mid w h) = ellipseE dp mid w h
+svgPrimitive (Path1 props p)              = pathElt props p
+svgPrimitive (Label1 props l)             = labelElt props l
+svgPrimitive (Ellipse1 (_c,dp) mid hw hh) = ellipseE dp mid hw hh
 
 
 pathElt :: PathProps -> Path Double -> Element

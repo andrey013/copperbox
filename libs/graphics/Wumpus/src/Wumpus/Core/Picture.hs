@@ -30,18 +30,27 @@ module Wumpus.Core.Picture
   , Label(..)
   , DLabel
 
-  , PathProps                 -- hide in Wumpus.Core export?
-  , LabelProps                -- hide in Wumpus.Core export?
-  , DrawProp(..)              -- hide in Wumpus.Core export?
+  , PathProps                   -- hide in Wumpus.Core export?
+  , LabelProps                  -- hide in Wumpus.Core export?
+  , DrawProp(..)                -- hide in Wumpus.Core export?
 
   -- * Construction
   , empty
+
+  , frame                       -- valuable?
+  , multi                       -- valuable?   
 
   , PicPath(..)
   , zpath
 
   , MultiPath(..)
   , zmultipath
+
+  , Stroke(..)
+  , zostroke
+  , zcstroke
+  , Fill(..)
+  , zfill
 
   , picLabel
   , picLabel1
@@ -116,18 +125,18 @@ data Picture u = Empty
 -- circles (ellipses are actually circles with non-uniform 
 -- scaling).
 --
-
--- TODO storing centre and width and height of an ellispe
--- is forcing calculations to use Fractional (to get the BBox).
--- Maybe it would be better to store 'half width' and 'half height'
+--
+-- Ellipses store half width and half height so they can be
+-- constructed (and have their bounding box calculated) just with
+-- multiplication.
 
 data Primitive u = Path1    PathProps (Path u)
                  | Label1   LabelProps (Label u) 
                  | Ellipse1 { 
-                      ellipseProps  :: EllipseProps,
-                      ellipseCenter :: Point2 u,
-                      ellipseWidth  :: u,
-                      ellipseHeight :: u 
+                      ellipseProps      :: EllipseProps,
+                      ellipseCenter     :: Point2 u,
+                      ellipseHalfWidth  :: u,
+                      ellipseHalfHeight :: u 
                     } 
   deriving (Eq,Show)
 
@@ -298,8 +307,8 @@ transformBBox fp = trace . map fp . corners
 
 --------------------------------------------------------------------------------
 
--- TO DO
--- What should bounds be of an empty picture?
+-- TO DETERMINE
+-- What should leftBound and rightBound be for an empty picture?
 
 instance (Num u, Ord u) => Horizontal (Picture u) where
   type HUnit (Picture u) = u
@@ -379,6 +388,16 @@ frameDefault = ortho zeroPt
 empty :: Picture u
 empty = Empty
 
+-- This lifts primitives to Pictures, is it preferable to going
+-- straight to pictures as the Path clas currently does?
+
+frame :: (Num u, Ord u, Fractional u) => Primitive u -> Picture u
+frame p = Single (frameDefault, boundary p) p 
+
+
+multi :: (Num u, Ord u, Fractional u) => [Primitive u] -> Picture u
+multi ps = Multi (frameDefault, mconcat $ map boundary ps) ps 
+
 
 
 -- | Convert the list of vertices to a path of straight line 
@@ -387,15 +406,9 @@ vertexPath :: [Point2 u] -> Path u
 vertexPath []     = error "straightLinePath - empty point list"
 vertexPath (x:xs) = Path x (map PLine xs)
 
-{-
--- This lifts primitives to Pictures, is it preferable to going
--- straight to pictures as the Path clas currently does?
-
-frame :: (Num u, Ord u, Fractional u) => Primitive u -> Picture u
-frame p = Single (frameDefault, boundary p) p 
 
 
--}
+
 
 
 --------------------------------------------------------------------------------
@@ -424,6 +437,63 @@ instance PicPath DrawProp       where path p  = mkPath (psBlack,p)
 
 zpath ::  (Num u, Ord u) => Path u -> Picture u
 zpath = path pathDefault
+
+-- Alternatively, take Paths to Primitives
+
+
+ostrokePath :: (Num u, Ord u) 
+            => PSColour -> [StrokeAttr] -> Path u -> Primitive u
+ostrokePath c attrs p = Path1 (c, OStroke attrs) p
+
+cstrokePath :: (Num u, Ord u) 
+            => PSColour -> [StrokeAttr] -> Path u -> Primitive u
+cstrokePath c attrs p = Path1 (c, CStroke attrs) p
+
+class Stroke t where
+  ostroke :: (Num u, Ord u) => t -> Path u -> Primitive u
+  cstroke :: (Num u, Ord u) => t -> Path u -> Primitive u
+
+instance Stroke (PSColour,[StrokeAttr]) where
+  ostroke = uncurry ostrokePath
+  cstroke = uncurry cstrokePath
+
+instance Stroke () where
+  ostroke () = ostrokePath psBlack []
+  cstroke () = cstrokePath psBlack []
+
+instance Stroke PSColour where
+  ostroke c = ostrokePath c []
+  cstroke c = cstrokePath c []
+
+zostroke :: (Num u, Ord u) => Path u -> Primitive u
+zostroke = ostrokePath psBlack []
+ 
+zcstroke :: (Num u, Ord u) => Path u -> Primitive u
+zcstroke = cstrokePath psBlack []
+
+
+
+
+-- fills only have one property - colour
+-- Having a fill class seems uniform as we have a stroke class 
+
+
+
+fillPath :: (Num u, Ord u) => PSColour -> Path u -> Primitive u
+fillPath c p = Path1 (c,CFill) p
+
+class Fill t where
+  fill :: (Num u, Ord u) => t -> Path u -> Primitive u
+ 
+
+instance Fill PSColour          where fill = fillPath
+instance Fill ()                where fill () = fillPath psBlack 
+instance Fill (Maybe PSColour)  where fill = fillPath . maybe psBlack id
+
+ 
+zfill :: (Num u, Ord u) => Path u -> Primitive u
+zfill = fillPath psBlack
+
 
 --------------------------------------------------------------------------------
 -- Paths to multi-pictures
@@ -485,11 +555,11 @@ picLabel fontsz linespace str = Multi (frameDefault, bb) lbls where
 --------------------------------------------------------------------------------
 
 
-mkEllipse :: Fractional u => EllipseProps -> u -> u -> Picture u
-mkEllipse props w h = Single (frameDefault,bb) ellp where
-    v    = V2 (w/2) (h/2)
+mkEllipse :: Num u => EllipseProps -> u -> u -> Picture u
+mkEllipse props hw hh = Single (frameDefault,bb) ellp where
+    v    = V2 hw hh
     bb   = BBox (zeroPt .-^ v) (zeroPt .+^ v)
-    ellp = Ellipse1 props zeroPt w h
+    ellp = Ellipse1 props zeroPt hw hh
 
 
 ellipseDefault :: EllipseProps
