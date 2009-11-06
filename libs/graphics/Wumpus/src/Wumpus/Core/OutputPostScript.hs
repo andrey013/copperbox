@@ -92,10 +92,8 @@ psDrawPage mbFs (lbl,ordinal) pic = do
     ps_grestore
     ps_showpage
   where
-    bb0       = if nullPicture pic then BBox zeroPt zeroPt 
-                                   else boundary pic
-    (mbTx,_)  = translateBBox bb0
-    cmdtrans  = maybe (return ()) (\(x,y) -> ps_translate x y) mbTx
+    (_,mbv)   = repositionProperties pic
+    cmdtrans  = maybe (return ()) (\(V2 x y) -> ps_translate x y) mbv
   
 
 
@@ -112,10 +110,8 @@ epsDraw timestamp mbFs pic = runWumpus $ do
     ps_grestore
     epsFooter  
   where
-    bb0       = if nullPicture pic then BBox zeroPt zeroPt 
-                                   else boundary pic
-    (mbTx,bb) = translateBBox bb0
-    cmdtrans  = maybe (return ()) (\(x,y) -> ps_translate x y) mbTx
+    (bb,mbv)  = repositionProperties pic
+    cmdtrans  = maybe (return ()) (\(V2 x y) -> ps_translate x y) mbv
      
 optFontSpec :: Maybe FontSpec -> WumpusM ()
 optFontSpec Nothing          = return ()

@@ -63,7 +63,7 @@ module Wumpus.Core.Picture
   -- * Operations
   , nullPicture
   , extractFrame
-  , translateBBox
+  , repositionProperties
 
 
   ) where
@@ -615,15 +615,23 @@ moveMeasure v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb)
 -- This needs is for PostScript and SVG output - it should be 
 -- hidden in the export list of Wumpus.Core
 
-translateBBox :: BoundingBox Double 
-              -> (Maybe (Double,Double), BoundingBox Double)
-translateBBox ZeroBB      = (Nothing,ZeroBB)
+translateBBox :: (Num u, Ord u) 
+              => BoundingBox u -> (BoundingBox u, Maybe (Vec2 u))
+translateBBox ZeroBB      = (ZeroBB, Nothing)
 translateBBox bb@(BBox (P2 llx lly) (P2 urx ury))
-    | llx < 4 || lly < 4  = (Just (x,y), BBox ll ur)            
-    | otherwise           = (Nothing, bb)
+    | llx < 4 || lly < 4  = (BBox ll ur, Just $ V2 x y)
+    | otherwise           = (bb, Nothing)
   where 
      x  = 4 - llx
      y  = 4 - lly
      ll = P2 (llx+x) (lly+y)
      ur = P2 (urx+x) (ury+y)  
 
+
+-- If a picture has coordinates smaller than (P2 4 4) then it 
+-- needs repositioning before it is drawn to PostSCript or SVG.
+-- 
+-- (P2 4 4) gives a 4 pt margin - maybe it sould be (0,0) or 
+-- user defined.
+repositionProperties :: (Num u, Ord u) => Picture u -> (BoundingBox u, Maybe (Vec2 u))
+repositionProperties = translateBBox . boundary

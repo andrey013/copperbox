@@ -42,15 +42,18 @@ writeSVG filepath pic =
 
 
 svgDraw :: Picture Double -> [Content]
-svgDraw pic = [Text xmlVersion, Text svgDocType, svgpic] 
+svgDraw pic = {- runSVG $ do -} prefixXmlDecls $ topLevelPic mbvec svgpic
   where
-    svgpic    = Elem $ svgElement [pic_elt]
-    pic_elt   = gElement trans [pictureElt pic]
-    bb0       = if nullPicture pic then BBox zeroPt zeroPt 
-                                   else boundary pic
-    (mbTx,_)  = translateBBox bb0
-    trans     = maybe [] (\(x,y) -> [translateAttr x y]) mbTx
-    
+    svgpic    = pictureElt pic
+    (_,mbvec) = repositionProperties pic 
+
+
+prefixXmlDecls :: Element -> [Content]
+prefixXmlDecls e = [Text xmlVersion, Text svgDocType, Elem e]    
+
+topLevelPic :: Maybe (Vec2 Double) -> Element -> Element
+topLevelPic Nothing         p = svgElement [p]
+topLevelPic (Just (V2 x y)) p = svgElement [gElement [translateAttr x y] [p]]
 
 pictureElt :: Picture Double -> Element
 pictureElt Empty                   = gElement [] []

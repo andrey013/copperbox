@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -24,14 +25,61 @@ import Wumpus.Core.Colour
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.Utils
 
+import MonadLib hiding ( version )
 import Text.XML.Light
 
 import Data.List ( intersperse )
 
+data SvgState = SvgSt { clipCount :: Int }
+
+type SvgM a = SvgT Id a
+
+newtype SvgT m a = SvgT { unSvgT :: StateT SvgState m a }
+
+runSvgT :: Monad m => SvgT m a -> m (a,SvgState)
+runSvgT m = runStateT st0 (unSvgT m) where
+    st0 = SvgSt { clipCount = 0 } 
+
+instance Monad m => Functor (SvgT m) where
+  fmap f (SvgT mf) = SvgT $ fmap f mf 
+
+instance Monad m => Monad (SvgT m) where
+  return a  = SvgT $ return a
+  ma >>= f  = SvgT $ unSvgT ma >>= unSvgT . f
+
+instance Monad m => StateM (SvgT m) SvgState where
+  get = SvgT $ get
+  set = SvgT . set
+
+instance MonadT SvgT where
+  lift = SvgT . lift
+
+
+svgId :: SvgT Id a -> (a,SvgState)
+svgId m = runId $ runSvgT m  
+
+
+runSVG :: SvgM a -> a
+runSVG = fst . svgId
+
+
+currentClipPath :: SvgM String
+currentClipPath = get >>= return . clipname . clipCount
+
+
+nextClipPath :: SvgM String
+nextClipPath = do 
+  i <- (get >>= return . clipCount)
+  sets_ (\s -> s { clipCount=i+1 })
+  return $ clipname i
+
+
+clipname :: Int -> String
+clipname = ("clip" ++) . show
 
 
 --------------------------------------------------------------------------------
--- Helpers for XML.Light
+-- Helpers for XML.Light and /data in strings/.
 
 unqualAttr :: String -> String -> Attr
 unqualAttr name val = Attr (unqual name) val
