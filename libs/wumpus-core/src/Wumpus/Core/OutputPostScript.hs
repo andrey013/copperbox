@@ -124,7 +124,7 @@ psHeader :: Int -> String -> WumpusM ()
 psHeader pagecount timestamp = do
     bang_PS
     dsc_Pages pagecount
-    dsc_CreationDate $ bracketString timestamp
+    dsc_CreationDate $ parens timestamp
     dsc_EndComments
 
 
@@ -132,7 +132,7 @@ epsHeader :: BoundingBox Double -> String -> WumpusM ()
 epsHeader bb timestamp = do
     bang_EPS
     dsc_BoundingBox llx lly urx ury
-    dsc_CreationDate $ bracketString timestamp
+    dsc_CreationDate $ parens timestamp
     dsc_EndComments
   where
     (llx,lly,urx,ury) = getBounds bb

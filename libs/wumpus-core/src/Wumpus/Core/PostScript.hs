@@ -19,10 +19,61 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Core.PostScript where
+module Wumpus.Core.PostScript 
+  (
+  -- * Types
+    PostScript
+  , WumpusM
+
+  , runWumpus
+
+  -- * Emit PostScript 
+  , ps_comment
+  
+  , ps_gsave
+  , ps_grestore
+  , ps_setlinewidth
+  , ps_setlinecap
+  , ps_setlinejoin
+  , ps_setmiterlimit
+  , ps_setdash
+  , ps_setgray
+  , ps_setrgbcolor
+  , ps_sethsbcolor
+  , ps_translate
+  , ps_scale
+  , ps_concat
+  , ps_newpath
+  , ps_moveto
+  , ps_rmoveto
+  , ps_lineto
+  , ps_rlineto
+  , ps_arc
+  , ps_arcn
+  , ps_curveto
+  , ps_closepath
+  , ps_clip
+  , ps_fill
+  , ps_stroke
+  , ps_showpage
+  , ps_findfont
+  , ps_scalefont
+  , ps_setfont
+  , ps_show
+  , bang_PS
+  , bang_EPS
+  , dsc_comment
+  , dsc_BoundingBox
+  , dsc_CreationDate
+  , dsc_Pages
+  , dsc_Page
+  , dsc_EndComments
+  , dsc_EOF
+
+  ) where
 
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.Utils ( dtrunc, roundup )
+import Wumpus.Core.Utils ( dtrunc, roundup, parens )
 
 import qualified Data.DList as DL
 import MonadLib
@@ -111,16 +162,13 @@ showArray _ []     = "[ ]"
 showArray f (x:xs) = sfun "]" 
   where 
     sfun = foldl' (\a e -> a . (' ':) . f e) (('[':) . f x) xs
-
-bracketString :: String -> String 
-bracketString s = '(' : xs where xs = s++[')']
                               
 
 
 --------------------------------------------------------------------------------
 -- graphics state operators
 
-
+-- | @ gsave @
 ps_gsave :: WumpusM ()
 ps_gsave = command "gsave" []
 
@@ -265,7 +313,7 @@ ps_setfont :: WumpusM ()
 ps_setfont = command "setfont" []
 
 ps_show :: String -> WumpusM ()
-ps_show str = command "show" [bracketString str]
+ps_show str = command "show" [parens str]
 
 --------------------------------------------------------------------------------
 -- document structuring conventions

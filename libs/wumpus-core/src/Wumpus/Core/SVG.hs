@@ -13,7 +13,46 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.SVG where
+module Wumpus.Core.SVG 
+  (
+  -- * SVG Monad 
+    SvgM
+  , runSVG
+  , newClipLabel
+  , currentClipLabel   
+
+
+  -- * Build SVG
+  , unqualAttr
+  , xmlVersion
+  , svgDocType
+  , gElement
+  , svgElement
+  , attr_x
+  , attr_y
+  , attr_rx
+  , attr_ry
+  , element_path
+  , element_clippath
+  , element_text
+  , content_text
+  , attr_fontfamily
+  , attr_fontsize
+  , attr_id
+  , attr_fill
+  , attr_color
+  , attr_clippath
+  , attr_transform
+  , val_matrix
+  , val_colour
+  , val_rgb
+  , val_url
+  , path_m
+  , path_l
+  , path_s
+
+
+  ) where
 
 import Wumpus.Core.Colour
 import Wumpus.Core.GraphicsState
@@ -22,7 +61,6 @@ import Wumpus.Core.Utils
 import MonadLib hiding ( version )
 import Text.XML.Light
 
-import Data.List ( intersperse )
 
 data SvgState = SvgSt { clipCount :: Int }
 
@@ -78,14 +116,6 @@ clipname = ("clip" ++) . show
 unqualAttr :: String -> String -> Attr
 unqualAttr name val = Attr (unqual name) val
 
-parens :: String -> String
-parens s = "(" ++ s  ++ ")"
-
-hsep :: [String] -> String
-hsep = concat . intersperse " "
-
-tupled :: [String] -> String
-tupled = parens . concat . intersperse ", " 
 
 --------------------------------------------------------------------------------
 -- SVG helpers

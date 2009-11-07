@@ -34,6 +34,11 @@ module Wumpus.Core.Utils
 
   , mkTimeStamp
 
+  , parens
+  , hsep
+  , tupled
+
+
   , sequenceA
   , (<:>) 
 
@@ -135,6 +140,22 @@ mkTimeStamp = getClockTime >>= toCalendarTime >>= return . format
     dfuns  = [ show . ctDay, show . ctMonth, show . ctYear ]
     pad2 i | i < 10    = '0' : show i
            | otherwise = show i  
+
+
+
+-- | Enclose string in parens.
+parens :: String -> String 
+parens s = "(" ++ s  ++ ")"
+
+-- | Separate with a space.
+hsep :: [String] -> String
+hsep = concat . intersperse " "
+
+-- | @ (..., ...)@
+tupled :: [String] -> String
+tupled = parens . concat . intersperse ", " 
+
+
 
 -- | Applicative version of (monadic) 'sequence'.
 -- Because we use MonadLib we don't want to bring in 

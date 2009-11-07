@@ -23,7 +23,7 @@ module Wumpus.Core.BoundingBox
   -- * Type class
   , Boundary(..)
   
-  -- * operations
+  -- * Operations
   , union 
   , trace
   , corners
