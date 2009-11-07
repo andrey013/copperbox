@@ -10,9 +10,8 @@ import Data.FunctionExtras ( (#) )
 
 drawBounds :: (Num u, Ord u) => Picture u -> Picture u
 drawBounds Empty = Empty
-drawBounds p     = p `composite` (path (CStroke []) ph) where
-    bb   = extractBounds p
-    ph   = vertexPath $ corners bb
+drawBounds p     = p `composite` (frame $ cstroke () ph) where
+    ph   = vertexPath $ corners $ boundary p
 
 
 
@@ -28,9 +27,9 @@ demo2 = writeEPS "label2.eps" (Just ("Times-Roman",10)) p
   where
     p = lbl1 ->- lbl1 ->- (rotateAbout (pi/4) (center lbl1) lbl1) ->- lbl1
 
-demo2' = do 
-    writeEPS "label2a.eps" (Just ("Times-Roman",10)) p
-    writeSVG "label2a.svg" p
+demo3 = do 
+    writeEPS "label3.eps" (Just ("Courier",10)) p
+    writeSVG "label3.svg" p
   where
     p = (drawBounds lbl1) ->- 
         (drawBounds lbl1) ->- 
@@ -40,7 +39,7 @@ demo2' = do
 
 
 
-demo3 = writeEPS "label3.eps" (Just ("Times-Roman",10)) p
+demo4 = writeEPS "label4.eps" (Just ("Times-Roman",10)) p
   where
     p =           (drawBounds lbl1) 
         `composite` (drawBounds $ scale 2 2 lbl1)

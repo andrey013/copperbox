@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -13,13 +14,14 @@
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.OutputSVG
-  where
---  ( 
---  
---  -- * Output SVG
---  , writeSVG
---  ) where
+  ( 
+  
+  -- * Output SVG
+    writeSVG
+  
+  ) where
 
+import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.Picture
@@ -32,6 +34,12 @@ import Text.XML.Light
 
 
 type Clipped = Bool
+
+
+
+
+coordChange ::  (Num u, Ord u, Scale t, u ~ ScaleUnit t) => t-> t
+coordChange = scale 1 (-1)
 
 
 --------------------------------------------------------------------------------
@@ -109,12 +117,17 @@ clipPathElt name p =
 
 
 labelElt :: LabelProps -> Label Double -> Element
-labelElt (c,FontAttr _ fam sz) (Label (P2 x y) str) = 
+labelElt (c,FontAttr _ fam sz) (Label pt str) = 
      element_text str # add_attrs xs
   where
-    xs = [ attr_x x, attr_y y, attr_color c, 
-           attr_fontfamily fam, 
-           attr_fontsize sz ]
+    P2 x y = coordChange pt
+    xs = [ attr_x x
+         , attr_y y 
+         , attr_transform $ val_matrix 1 0 0 (-1) 0 0
+         , attr_color c
+         , attr_fontfamily fam
+         , attr_fontsize sz 
+         ]
  
 
 
@@ -168,11 +181,7 @@ ellipseE _props (P2 x y) w h
 
 
 frameChange :: Frame2 Double -> Attr
-frameChange = matrixAttr
-
-matrixAttr :: Frame2 Double -> Attr
-matrixAttr fr = unqualAttr "transform" mstring where
-    mstring         = "matrix" ++ tupled (map dtrunc [a,b,c,d,e,f])
+frameChange fr = attr_transform $ val_matrix a b c d e f where
     CTM a b c d e f = toCTM fr
 
 translateAttr :: Double -> Double -> Attr

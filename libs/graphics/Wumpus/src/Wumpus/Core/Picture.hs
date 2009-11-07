@@ -67,7 +67,6 @@ module Wumpus.Core.Picture
 
   
   , repositionProperties
-  , coordChange
 
   ) where
 
@@ -352,12 +351,12 @@ instance (Num u, Ord u) => Boundary (Path u) where
       f (PCurve p1 p2 p3) acc  = p1 : p2 : p3 : acc 
 
 
-instance (Num u, Ord u, Fractional u) => Boundary (Primitive u) where
+instance (Num u, Ord u) => Boundary (Primitive u) where
   type BoundaryUnit (Primitive u) = u
   boundary (Path1 _ p)        = boundary p
   boundary (Label1 _ _)       = error $ "boundary Label to do"
-  boundary (Ellipse1 _ c w h) = BBox (c .-^ v) (c .+^ v) 
-    where v = V2 (w/2) (h/2)
+  boundary (Ellipse1 _ c hw hh) = BBox (c .-^ v) (c .+^ v) 
+    where v = V2 hw hh
 
 
 instance Boundary (Picture u) where
@@ -394,11 +393,11 @@ empty = Empty
 -- This lifts primitives to Pictures, is it preferable to going
 -- straight to pictures as the Path clas currently does?
 
-frame :: (Num u, Ord u, Fractional u) => Primitive u -> Picture u
+frame :: (Num u, Ord u) => Primitive u -> Picture u
 frame p = Single (frameDefault, boundary p) p 
 
 
-multi :: (Num u, Ord u, Fractional u) => [Primitive u] -> Picture u
+multi :: (Num u, Ord u) => [Primitive u] -> Picture u
 multi ps = Multi (frameDefault, mconcat $ map boundary ps) ps 
 
 
@@ -637,30 +636,4 @@ repositionProperties = fn . boundary where
       ll = P2 (llx+x) (lly+y)
       ur = P2 (urx+x) (ury+y)  
 
--- Note the instances of Scale(..) for pictures just change the 
--- frame. Here we need to change all the points in the Picture
--- including the bounding boxes.
-
--- THIS DOESN'T WORK
-
-coordChange :: forall u. (Num u, Ord u) => Picture u -> Picture u
-coordChange = fn
-  where
-    fn Empty            = Empty
-    fn (Single  m prim) = Single (g m) (h prim)
-    fn (Multi   m ps)   = Multi (g m) (map h ps)
-    fn (Picture m a b)  = Picture (g m) (fn a) (fn b)
-    fn (Clip    m x a)  = Clip (g m) x (fn a)
-
-    g :: Measure u -> Measure u
-    g (Frame2 e0 e1 o,bb) = (Frame2 e0' e1' o', scale 1 (-1) bb) where
-        e0' = scale 1 (-1) e0 
-        e1' = scale 1 (-1) e1 
-        o'  = scale 1 (-1) o
-       
-
-    h :: Primitive u -> Primitive u 
-    h (Path1 props p)             = Path1 props (pointwise (scale 1 (-1)) p)
-    h (Label1 props (Label pt s)) = Label1 props (Label (scale 1 (-1) pt) s) 
-    h (Ellipse1 props pt hw hh)   = Ellipse1 props (scale 1 (-1) pt) hw hh
 

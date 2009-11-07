@@ -181,6 +181,15 @@ attr_color = unqualAttr "color" . val_colour
 attr_clippath :: String -> Attr
 attr_clippath = unqualAttr "clip-path" . val_url
 
+-- | @ transform="..." @
+attr_transform :: String -> Attr
+attr_transform = unqualAttr "transform"
+
+-- | @ matrix(..., ..., ..., ..., ..., ...) @
+val_matrix :: Double -> Double -> Double 
+           -> Double -> Double -> Double -> String
+val_matrix a b c d e f = "matrix" ++ tupled (map dtrunc [a,b,c,d,e,f])
+
 
 -- | @ rgb(..., ..., ...) @
 -- 
