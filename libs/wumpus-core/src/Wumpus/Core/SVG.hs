@@ -10,7 +10,24 @@
 -- Stability   :  experimental
 -- Portability :  GHC only
 --
+-- SVG is represented using XML.Light. XML.Light is a simple,
+-- generic XML representation (almost) everything is an element 
+-- with attributes.
 --
+-- SVG output is monadic to handle clipping paths. SVG does not 
+-- achieve clipping by changing the graphics state. Instead a 
+-- clipping path has an id, subsequent elements that are bound by
+-- the clipping path are tagged with a @clip-path@ attribute that
+-- references the clipping path id: 
+--
+-- > clip-path=\"url(#clip1)\"
+-- 
+-- 
+-- The operations to build XML elements (e.g. element_path) don\'t 
+-- take more parameters than necessary. They are generally 
+-- expected to be augmented with attributes using 'add_attr' etc.
+-- from the XML.Light library.
+-- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.SVG 
@@ -64,6 +81,8 @@ import Text.XML.Light
 
 data SvgState = SvgSt { clipCount :: Int }
 
+-- | The SVG monad - which wraps a state monad to generate 
+-- fresh names.
 type SvgM a = SvgT Id a
 
 newtype SvgT m a = SvgT { unSvgT :: StateT SvgState m a }
@@ -90,15 +109,16 @@ instance MonadT SvgT where
 svgId :: SvgT Id a -> (a,SvgState)
 svgId m = runId $ runSvgT m  
 
-
+-- | Run the SVG monad.
 runSVG :: SvgM a -> a
 runSVG = fst . svgId
 
 
+-- | Get the current clip label.
 currentClipLabel :: SvgM String
 currentClipLabel = get >>= return . clipname . clipCount
 
-
+-- | Generate a new clip label.
 newClipLabel :: SvgM String
 newClipLabel = do 
   i <- (get >>= return . clipCount)
@@ -113,6 +133,7 @@ clipname = ("clip" ++) . show
 --------------------------------------------------------------------------------
 -- Helpers for XML.Light and /data in strings/.
 
+-- | Helper for XML.Light
 unqualAttr :: String -> String -> Attr
 unqualAttr name val = Attr (unqual name) val
 
@@ -120,22 +141,33 @@ unqualAttr name val = Attr (unqual name) val
 --------------------------------------------------------------------------------
 -- SVG helpers
 
-
+-- | @ \<?xml version=\"1.0\" standalone=\"yes\"?\> @
 xmlVersion :: CData
 xmlVersion = CData CDataRaw 
                    "<?xml version=\"1.0\" standalone=\"yes\"?>" 
                    (Just 1)
-
+-- |
+-- > <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"           
+-- >     "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" > 
+--
 svgDocType :: CData
 svgDocType = CData CDataRaw (line1 ++ "\n" ++ line2) (Just 1)
   where
     line1 = "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\""
     line2 = "  \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">"
 
--- <g> ... </g> is considered equaivalent to gsave ... grestore  
+-- | 
+-- > <g> ... </g>
+--
+-- Wumpus uses the g element (group) to achieve nesting. 
 gElement :: [Attr] -> [Element] -> Element
 gElement xs ys = unode "g" (xs,ys)
 
+-- |
+-- > <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+-- > ...
+-- > </svg>
+--
 svgElement :: [Element] -> Element
 svgElement xs = unode "svg" ([xmlns,version],xs)
   where
@@ -164,17 +196,27 @@ attr_rx      = unqualAttr "rx" . dtrunc
 attr_ry :: Double -> Attr
 attr_ry      = unqualAttr "ry" . dtrunc
 
-
+-- |
+-- > <path d="..." />
+--
 element_path :: [String] -> Element
 element_path = unode "path" . unqualAttr "d" . hsep
 
+-- |
+-- > <clipPath>
+-- > ...
+-- > </clipPath>
+--
 element_clippath :: [String] -> Element
 element_clippath = unode "clipPath" . element_path
 
+-- |
+-- > <text ... />
+--
 element_text :: String -> Element
 element_text = unode "text" . content_text
 
-
+-- | Render the string as 'CDataText' - see XML.Light.
 content_text :: String -> Content
 content_text str = Text $ CData CDataText str Nothing
 
@@ -197,7 +239,9 @@ attr_id = unqualAttr "id"
 attr_fill :: PSColour -> Attr
 attr_fill = unqualAttr "fill" . val_colour
 
-
+-- | @ color=\"rgb(..., ..., ...)\" @
+--
+-- Gray or HSB values will be converted to and rendered as RGB.
 attr_color :: PSColour -> Attr
 attr_color = unqualAttr "color" . val_colour
 
@@ -233,14 +277,20 @@ val_rgb (RGB3 r g b) = "rgb" ++ show (range255 r,range255 g,range255 b)
 val_url :: String -> String
 val_url s = "url" ++ parens ('#':s)
   
--- | c.f. PostScript's @moveto@.
+-- | @ M ... ... @
+--
+-- c.f. PostScript's @moveto@.
 path_m :: Double -> Double -> String
 path_m x y  = hsep $ "M" : map dtrunc [x,y]
 
--- | c.f. PostScript's @lineto@.
+-- | @ L ... ... @
+--
+-- c.f. PostScript's @lineto@.
 path_l :: Double -> Double -> String
 path_l x y  = hsep $ "L" : map dtrunc [x,y]
 
--- | c.f. PostScript's @curveto@.
+-- | @ S ... ... ... ... ... ... @
+-- 
+-- c.f. PostScript's @curveto@.
 path_s :: Double -> Double -> Double -> Double -> Double -> Double -> String
 path_s x1 y1 x2 y2 x3 y3 =  hsep $ "S" : map dtrunc [x1,y1,x2,y2,x3,y3]

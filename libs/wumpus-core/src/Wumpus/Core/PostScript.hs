@@ -16,6 +16,10 @@
 --
 -- Wumpus - Writer Monad PostScript 
 --
+-- PostScript is emitted line by line - there is no abstract
+-- syntax tree representing PostScript. So we use a writer 
+-- monad.
+---
 --------------------------------------------------------------------------------
 
 
@@ -73,13 +77,13 @@ module Wumpus.Core.PostScript
   ) where
 
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.Utils ( dtrunc, roundup, parens )
+import Wumpus.Core.Utils ( dtrunc, roundup, parens, hsep )
 
 import qualified Data.DList as DL
 import MonadLib
 
 import Data.Monoid
-import Data.List ( foldl', intersperse )
+import Data.List ( foldl' )
 
 
 
@@ -149,9 +153,6 @@ writeArg s = write s >> writeChar ' '
 
 type Command = String
 
-ps_comment :: String -> WumpusM ()
-ps_comment s = write "%% " >> writeln s
-
 command :: Command -> [String] -> WumpusM ()
 command cmd xs = mapM_ writeArg xs >> writeln cmd
 
@@ -165,6 +166,10 @@ showArray f (x:xs) = sfun "]"
                               
 
 
+-- | @ %% ... @
+ps_comment :: String -> WumpusM ()
+ps_comment s = write "%% " >> writeln s
+
 --------------------------------------------------------------------------------
 -- graphics state operators
 
@@ -172,34 +177,40 @@ showArray f (x:xs) = sfun "]"
 ps_gsave :: WumpusM ()
 ps_gsave = command "gsave" []
 
+-- | @ grestore @
 ps_grestore :: WumpusM () 
 ps_grestore = command "grestore" []
 
-
+-- | @ ... setlinewidth @
 ps_setlinewidth :: Double -> WumpusM ()
 ps_setlinewidth = command "setlinewidth" . return . dtrunc
 
+-- | @ ... setlinecap @
 ps_setlinecap :: LineCap -> WumpusM ()
 ps_setlinecap = command "setlinecap" . return . show . fromEnum
 
+-- | @ ... setlinejoin @
 ps_setlinejoin :: LineJoin -> WumpusM ()
 ps_setlinejoin = command "setlinejoin" . return . show . fromEnum
 
+-- | @ ... setmiterlimit @
 ps_setmiterlimit :: Double -> WumpusM ()
 ps_setmiterlimit = command "setmiterlimit" . return . dtrunc
 
+-- | @ [... ...] ... setdash @
 ps_setdash :: DashPattern -> WumpusM ()
 ps_setdash Solid        = command "setdash" ["[]", "0"]
 ps_setdash (Dash n arr) = command "setdash" [showArray shows arr, show n]
 
-
+-- | @ ... setgray @
 ps_setgray :: Double -> WumpusM ()
 ps_setgray = command "setgray" . return . dtrunc 
 
-
+-- | @ ... ... ... setrgbcolor @
 ps_setrgbcolor :: Double -> Double -> Double -> WumpusM ()
 ps_setrgbcolor r g b = command "setrgbcolor" $ map dtrunc [r,g,b]
 
+-- | @ ... ... ... sethsbcolor @
 ps_sethsbcolor :: Double -> Double -> Double -> WumpusM ()
 ps_sethsbcolor h s b = command "sethsbcolor" $ map dtrunc [h,s,b]
 
@@ -207,17 +218,20 @@ ps_sethsbcolor h s b = command "sethsbcolor" $ map dtrunc [h,s,b]
 --------------------------------------------------------------------------------
 -- coordinate system and matrix operators 
 
+-- | @ ... ... translate @
 ps_translate :: Double -> Double -> WumpusM ()
 ps_translate tx ty = do
     command "translate" $ map dtrunc [tx,ty]
 
+-- | @ ... ... scale @
 ps_scale :: Double -> Double -> WumpusM ()
 ps_scale tx ty = do
     command "scale" $ map dtrunc [tx,ty]
 
 
+-- Do not use setmatrix for changing the CTM use concat...
 
--- Do not use setmatrix for changing the CTM use concat
+-- | @ [... ... ... ... ... ...] concat @
 ps_concat :: CTM -> WumpusM ()
 ps_concat (CTM a b  c d  e f) = command "concat" [mat] where 
     mat = showArray ((++) . dtrunc) [a,b,c,d,e,f]
@@ -226,58 +240,64 @@ ps_concat (CTM a b  c d  e f) = command "concat" [mat] where
 --------------------------------------------------------------------------------
 -- Path construction operators
 
+-- | @ newpath @
 ps_newpath :: WumpusM ()
 ps_newpath = command "newpath" []
-
--- There is no equivalent to PostScript's @currentpoint@ command. 
 
 
 -- Note - it is preferable to show doubles as 0.0 rather than 0.
 -- In PostScript the coercion from int to float is apparently 
 -- quite expensive.
 
+-- | @ ... ... moveto @
 ps_moveto :: Double -> Double -> WumpusM ()
 ps_moveto x y = command "moveto" [dtrunc x, dtrunc y]
 
+-- | @ ... ... rmoveto @
 ps_rmoveto :: Double -> Double -> WumpusM ()
 ps_rmoveto x y = command "rmoveto" [dtrunc x, dtrunc y]
 
-
+-- | @ ... ... lineto @
 ps_lineto :: Double -> Double -> WumpusM ()
 ps_lineto x y = command "lineto" [dtrunc x, dtrunc y]
 
+-- | @ ... ... rlineto @
 ps_rlineto :: Double -> Double -> WumpusM ()
 ps_rlineto x y = command "rlineto" [dtrunc x, dtrunc y]
 
-
+-- | @ ... ... ... ... ... arc @
 ps_arc :: Double -> Double -> Double -> Double -> Double -> WumpusM ()
 ps_arc x y r ang1 ang2 = 
     command "arc" $ map dtrunc [x,y,r,ang1,ang2]
 
+-- | @ ... ... ... ... ... arcn @
 ps_arcn :: Double -> Double -> Double -> Double -> Double -> WumpusM ()
 ps_arcn x y r ang1 ang2 = 
     command "arcn" $ map dtrunc [x,y,r,ang1,ang2]
 
-
-ps_curveto :: Double -> Double -> Double -> Double -> 
-                     Double -> Double -> WumpusM ()
+-- | @ ... ... ... ... ... ... curveto @
+ps_curveto :: Double -> Double 
+           -> Double -> Double 
+           -> Double -> Double -> WumpusM ()
 ps_curveto x1 y1 x2 y2 x3 y3 = 
     command "curveto" $ map dtrunc [x1,y1, x2,y2, x3,y3]
 
-
+-- | @ closepath @
 ps_closepath :: WumpusM ()
 ps_closepath = command "closepath" []
 
+-- | @ clip @
 ps_clip :: WumpusM ()
 ps_clip = command "clip" []
 
 --------------------------------------------------------------------------------
 --  painting operators
 
-
+-- | @ fill @
 ps_fill :: WumpusM ()
 ps_fill = command "fill" []
 
+-- | @ stroke @
 ps_stroke :: WumpusM ()
 ps_stroke = command "stroke" []
 
@@ -285,9 +305,9 @@ ps_stroke = command "stroke" []
 --------------------------------------------------------------------------------
 -- Output operators
 
+-- | @ showpage @
 ps_showpage :: WumpusM ()
 ps_showpage = command "showpage" []
-
 
 
 
@@ -303,15 +323,19 @@ ps_showpage = command "showpage" []
 --
 -- List from Bill Casselman \'Mathematical Illustrations\' p279.
 
+-- | @ /... findfont @
 ps_findfont :: String -> WumpusM () 
 ps_findfont = command "findfont" . return . ('/' :)
 
+-- | @ ... scalefont @
 ps_scalefont :: Int -> WumpusM ()
 ps_scalefont = command "scalefont" . return . show
 
+-- | @ setfont @
 ps_setfont :: WumpusM ()
 ps_setfont = command "setfont" []
 
+-- | @ (...) show  @
 ps_show :: String -> WumpusM ()
 ps_show str = command "show" [parens str]
 
@@ -326,10 +350,11 @@ bang_PS = writeln "%!PS-Adobe-3.0"
 bang_EPS :: WumpusM ()
 bang_EPS = writeln "%!PS-Adobe-3.0 EPSF-3.0"
 
+-- | @ %%...: ... @
 dsc_comment :: String -> [String] -> WumpusM ()
 dsc_comment name [] = write "%%" >> writeln name
-dsc_comment name xs = write "%%" >> write name >> write ": " >> writeln body
-  where body = concat (intersperse " " xs)
+dsc_comment name xs = write "%%" >> write name >> write ": " >> writeln (hsep xs)
+
 
 -- | @ %%BoundingBox: ... ... ... ... @  /llx lly urx ury/
 dsc_BoundingBox :: Double -> Double -> Double -> Double -> WumpusM ()
