@@ -13,13 +13,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.SVG
-  where
---  ( 
---  
---  -- * Output SVG
---  , writeSVG
---  ) where
+module Wumpus.Core.SVG where
 
 import Wumpus.Core.Colour
 import Wumpus.Core.GraphicsState
@@ -197,7 +191,7 @@ val_matrix a b c d e f = "matrix" ++ tupled (map dtrunc [a,b,c,d,e,f])
 val_colour :: PSColour -> String
 val_colour (PSRgb r g b) = val_rgb $ RGB3 r g b
 val_colour (PSHsb h s b) = val_rgb $ hsb2rgb $ HSB3 h s b
-val_colour (PSGray a)    = val_rgb $ gray2rgb a
+val_colour (PSGray a)    = val_rgb $ gray2rgb (Gray a)
 
 
 -- | @ rgb(..., ..., ...) @

@@ -67,7 +67,7 @@ instance (Ord a, Ord b) => CMinMax (a,b) where
   cmax (x,y) (x',y') = (max x x', max y y')
 
 
-
+-- | Test whether a is within opper and lower.
 within :: Eq a => CMinMax a => a -> a -> a -> Bool
 within a lower upper = (cmin a lower) == lower && (cmax a upper) == upper
 
@@ -90,7 +90,13 @@ med3 a b c = if c <= x then x else if c > y then y else c
               | otherwise = (q,p)
 
 
-
+-- | Truncate the printed decimal representation of a Double.
+-- The is prefered to 'showFFloat' from Numeric as it produces
+-- shorter representations where appropriate.
+-- 
+-- 0.000000000 becomes 0.0 rather than however many digs are 
+-- specified.
+--  
 dtrunc :: Double -> String
 dtrunc d | abs d < 0.0001  = "0.0"
          | d < 0.0           = '-' :  show (abs tx)
@@ -98,25 +104,27 @@ dtrunc d | abs d < 0.0001  = "0.0"
   where
     tx :: Double
     tx = (realToFrac (roundi (d*1000000.0))) / 1000000.0
- 
 
-roundup :: Double -> String
-roundup = show . ceilingi
-
-
--- Avoid those annoying 'Defaulting ...' warnings...
 roundi :: RealFrac a => a -> Integer
 roundi = round
 
+-- | Take 'ceilingi' and show.
+roundup :: Double -> String
+roundup = show . ceilingi
+
+-- Avoid those annoying 'Defaulting ...' warnings...
 ceilingi :: RealFrac a => a -> Integer
 ceilingi = ceiling
 
-
+-- | Scale a Double between 0.0 and 1.0 to be an Int between 0 
+-- and 255.
 range255 :: Double -> Int
 range255 = min 0 . max 255 . floor . (*255)
 
 
-
+-- | Generate a time stamp for the output files. Note PostScript
+-- does no interpretation of the time stamp, it is solely for 
+-- information and so the representation is arbitrary.
 mkTimeStamp :: IO String
 mkTimeStamp = getClockTime >>= toCalendarTime >>= return . format
   where

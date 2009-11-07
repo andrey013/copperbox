@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -11,7 +12,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- RGB colour interpreted both as HSB and greyscale
+-- RGB, HSB, Gray colour types.
 --
 --------------------------------------------------------------------------------
 
@@ -23,6 +24,8 @@ module Wumpus.Core.Colour
   , DRGB
   , HSB3(..)
   , DHSB
+  , Gray(..)
+  , DGray
 
   -- * Operations
   , rgb2hsb
@@ -48,17 +51,33 @@ import Wumpus.Core.Utils
 
 import Data.VectorSpace
 
+-- | Red-Green-Blue - no alpha.
 data RGB3 a = RGB3 !a !a !a
   deriving (Eq,Show)
 
+-- | RGB representated by Double - values should be in the range
+-- 0.0 to 1.0. 
+-- 
+-- 1.0 represents full saturation, for instance red is 
+-- 1.0, 0.0, 0.0.
 type DRGB = RGB3 Double
 
 
+-- | Hue-Saturation-Brightness.
 data HSB3 a = HSB3 !a !a !a 
   deriving (Eq,Show)
 
+-- | HSB represented by Double - values should be in the range
+-- 0.0 to 1.0.
 type DHSB = HSB3 Double 
 
+
+newtype Gray a = Gray a
+  deriving (Eq,Num,Ord,Show)
+
+-- | Gray represented by a Double - values should be in the range
+-- 0.0 (black) to 1.0 (white).
+type DGray = Gray Double
 
 
 instance Num a => Num (RGB3 a) where
@@ -74,11 +93,13 @@ instance Fractional a => Fractional (RGB3 a) where
   (/) (RGB3 a b c) (RGB3 x y z) = RGB3 (a/x) (b/y) (c/z)
   recip (RGB3 a b c)            = RGB3 (recip a) (recip b) (recip c)
   fromRational a = RGB3 (fromRational a) (fromRational a) (fromRational a)
+
  
 instance Num a => AdditiveGroup (RGB3 a) where
   zeroV = RGB3 0 0 0
   (^+^) = (+)
   negateV = negate
+
 
 instance (Num a, VectorSpace a) => VectorSpace (RGB3 a) where
   type Scalar (RGB3 a) = Scalar a
@@ -99,11 +120,15 @@ instance Fractional a => Fractional (HSB3 a) where
   (/) (HSB3 a b c) (HSB3 x y z) = HSB3 (a/x) (b/y) (c/z)
   recip (HSB3 a b c)            = HSB3 (recip a) (recip b) (recip c)
   fromRational a = HSB3 (fromRational a) (fromRational a) (fromRational a)
+
+
  
 instance Num a => AdditiveGroup (HSB3 a) where
   zeroV = HSB3 0 0 0
   (^+^) = (+)
   negateV = negate
+
+
 
 instance (Num a, VectorSpace a) => VectorSpace (HSB3 a) where
   type Scalar (HSB3 a) = Scalar a
@@ -155,17 +180,17 @@ hsb2rgb (HSB3 hue sat bri) = bri *^ (vE - (sat *^ fV))
           | i == 5    = RGB3  0     1     f
           | otherwise = RGB3  0     1     1
           
-rgb2gray :: DRGB -> Double
-rgb2gray (RGB3 r g b) = 0.3 * r + 0.59 * g + 0.11 * b 
+rgb2gray :: DRGB -> DGray
+rgb2gray (RGB3 r g b) = Gray $ 0.3 * r + 0.59 * g + 0.11 * b 
 
-gray2rgb :: Double -> DRGB
-gray2rgb gray = gray *^ vE
+gray2rgb :: DGray -> DRGB
+gray2rgb (Gray a) = a *^ vE
 
-hsb2gray :: DHSB -> Double
-hsb2gray (HSB3 _ _ b) = b 
+hsb2gray :: DHSB -> DGray
+hsb2gray (HSB3 _ _ b) = Gray b 
 
-gray2hsb :: Double -> DHSB
-gray2hsb gray = HSB3 0 0 gray
+gray2hsb :: DGray -> DHSB
+gray2hsb (Gray a) = HSB3 0 0 a
 
 
 
@@ -176,19 +201,23 @@ gray2hsb gray = HSB3 0 0 gray
 
 -- There will be name clashes with the X11Colours / SVGColours.
 
-
+-- | Black - 0.0, 0.0, 0.0.
 black :: DRGB
 black = RGB3 0 0 0
 
+-- | White - 1.0, 1.0, 1.0.
 white :: DRGB
 white = RGB3 1 1 1
 
+-- | Red - 1.0, 0.0, 0.0.
 red :: DRGB
 red = RGB3 1 0 0
 
+-- | Green - 0.0, 1.0, 0.0.
 green :: DRGB 
 green = RGB3 0 1 0
 
+-- | Blue - 0.0, 0.0, 1.0.
 blue :: DRGB
 blue = RGB3 0 0 1
 
