@@ -2,7 +2,6 @@
 module LabelPic where
 
 import Wumpus.Core
-import Wumpus.Extra.X11Colours
 
 import Data.FunctionExtras ( (#) )
 

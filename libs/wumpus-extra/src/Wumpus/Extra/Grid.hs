@@ -15,10 +15,9 @@
 
 module Wumpus.Extra.Grid where
 
-import Wumpus.Core.Geometry
-import Wumpus.Core.Picture 
-import Wumpus.Core.PictureLanguage
-import Wumpus.Extra.Arrow
+import Wumpus.Core
+
+-- import Wumpus.Extra.Arrow
 
 
 import Data.Map ( Map )
@@ -58,8 +57,8 @@ remapCoord sx sy h (P2 x y) =
 nodeMap :: Num u => u -> u -> Grid -> NodeMap u
 nodeMap sx sy (Grid xs) = foldr fn Map.empty xs
   where
-    fn (n,c) mp = Map.insert n (remapCoord sx sy height c) mp
-    height      = foldr (\(_,P2 _ y) h -> max y h) 0 xs
+    fn (n,c) mp = Map.insert n (remapCoord sx sy hght c) mp
+    hght        = foldr (\(_,P2 _ y) h -> max y h) 0 xs
 
 
 mkLabel :: (Num u, Ord u) => String -> Picture u
@@ -74,4 +73,4 @@ nodePicture = Map.foldWithKey fn cempty where
 -- whoops don't know the size of the label's bbox...
 
 arrowPicture :: ArrowSpec -> u -> u -> NodeMap u -> Picture u
-arrowPicture (ArrowSpec from to) width height = undefined
+arrowPicture (ArrowSpec _from _to) _w _h = undefined

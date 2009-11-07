@@ -18,8 +18,8 @@
 
 module Wumpus.Geometry.Curve where
 
-import Wumpus.Core.Geometry
-import Wumpus.Core.Picture
+import Wumpus.Core
+
 import Wumpus.Geometry.Base
 
 import Data.AffineSpace
@@ -102,11 +102,11 @@ bezierCircle n pt r = para phi [] $ subdivisions (n*4) (2*pi) where
 --------------------------------------------------------------------------------
 -- operations
 
-curveToPath1 :: DrawProp -> Curve u -> Path u
-curveToPath1 dp (Curve p0 p1 p2 p3) = Path p0 [PCurve p1 p2 p3]
+curveToPath1 :: Curve u -> Path u
+curveToPath1 (Curve p0 p1 p2 p3) = Path p0 [PCurve p1 p2 p3]
 
-curvesToPath :: DrawProp -> [Curve u] -> Path u
-curvesToPath _  []                     = error $ "curvesToPath - empty list"
-curvesToPath dp (Curve p0 p1 p2 p3:cs) = 
+curvesToPath :: [Curve u] -> Path u
+curvesToPath []                     = error $ "curvesToPath - empty list"
+curvesToPath (Curve p0 p1 p2 p3:cs) = 
    Path p0 (PCurve p1 p2 p3 : map fn cs) where 
       fn (Curve _ u v w) = PCurve u v w

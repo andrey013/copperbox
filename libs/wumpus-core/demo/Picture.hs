@@ -3,79 +3,62 @@
 module Picture where
 
 import Wumpus.Core
-import Wumpus.Extra.Polygon
 
 import Data.VectorSpace
 
-import Text.PrettyPrint.Leijen ( pretty )
 
 
 
 
-square :: DPolygon 
-square = Polygon
+square :: DPicture 
+square = frame $ cstroke () $ vertexPath
   [ P2 0 0, P2 40 0, P2 40 40, P2 0 40 ]
 
-funnyshape :: DPolygon
-funnyshape = Polygon
+funnyshape :: DPicture
+funnyshape = frame $ cstroke () $ vertexPath
   [ P2 0 0, P2 20 0, P2 20 10, P2 30 10, P2 30 20, P2 0 20 ]
 
 
-psquare = picPolygon (CStroke []) square
-pfunnyshape = picPolygon CFill funnyshape
 
-test01 = pretty $ translateBy (V2 100 40) psquare
-test02 = pretty $ rotate45 psquare
-
-demo0 = writePS "picture0.ps" Nothing [pfunnyshape]
-
-demo1 = writePS "picture1.ps" Nothing [psquare]
+demo1 = writePS "picture1.ps" Nothing [funnyshape ->- square]
 
 
 
+pic1 = square ->- (funnyshape ->- funnyshape) ->- square
 
-pic1 = psquare ->- (pfunnyshape ->- pfunnyshape) ->- psquare
-
-psquares = psquare ->- psquare ->- psquare
+squares = square ->- square ->- square
 
 demo2 = do 
-   writePS  "picture2.ps"  Nothing [psquares]
-   writeSVG "picture2.svg" psquares 
+   writePS  "picture2.ps"  Nothing [squares]
+   writeSVG "picture2.svg" squares 
     
 
 demo3 = do 
     writeEPS "picture3.eps" Nothing p1 
     writeSVG "picture3.svg" p1
   where     
-    p1 = psquare ->- (rotate45About (center psquares) psquares) ->- psquare
+    p1 = square ->- (rotate45About (center squares) squares) ->- square
 
-d3 = pretty $ psquare ->- (rotate45About (center psquares) psquares) ->- psquare
 
 demo4 = do 
     writeEPS "picture4.eps" Nothing p1
     writeSVG "picture4.svg" p1
   where
-    p1 = psquare -//- psquares
+    p1 = square -//- squares
    
-d4 = pretty $ psquare -//- psquares
 
 demo5 = writeEPS "picture5.eps" Nothing p1
   where
-    p1 = psquare `composite` (rotate (pi/4) psquares)
+    p1 = square `composite` (rotate (pi/4) squares)
    
 
-demo6 = writeEPS "picture6.eps" Nothing  p1 
+demo6 = writeEPS "picture6.eps" Nothing p1
   where
-    p1 = picPolygon (CStroke []) $ regularPolygon 6 50
+    p1 = square `composite` (rotate45 square)
 
 
 demo7 = writeEPS "picture7.eps" Nothing p1
   where
-    p1 = psquare `composite` (rotate45 psquare)
-
-
-demo8 = writeEPS "picture8.eps" Nothing p1
-  where
-    p1 = psquare -@- (rotate45 psquare)
+    p1 = square -@- (rotate45 square)
 
 

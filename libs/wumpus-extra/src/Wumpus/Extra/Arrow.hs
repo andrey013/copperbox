@@ -14,9 +14,7 @@
 
 module Wumpus.Extra.Arrow where
 
-import Wumpus.Core.AffineTrans
-import Wumpus.Core.Geometry
-import Wumpus.Core.Picture
+import Wumpus.Core
 
 import Data.FunctionExtras
 import Data.AffineSpace
@@ -29,7 +27,7 @@ picArrow :: (Num u, Ord u) => Arrow u -> Picture u
 picArrow (Arrow xs) = zmultipath xs
 
 arrow :: (Floating u, Real u) => Point2 u -> Point2 u -> Arrow u
-arrow = arrowline (return `oo` arrowheadVee False 10 (pi/10))
+arrow = arrowline (return `oo` arrowheadVee 10 (pi/10))
 
 
 arrowline :: (Floating u, Real u) 
@@ -44,17 +42,15 @@ arrowline mk p p' = Arrow (Path p [PLine p'] : tip) where
 
 
 arrowheadVee :: (Floating u, Real u)
-             => Bool 
-             -> u 
+             => u 
              -> Radian
              -> (Radian -> Point2 u -> Path u)
-arrowheadVee filled d ang = 
+arrowheadVee d ang = 
   \theta endpt -> let p0   = endpt .+^ (hvec (-d))
                       p01  = rotateAbout (pi-ang) endpt p0
                       p02  = rotateAbout (pi+ang) endpt p0
-                      styl = if filled then CFill else (OStroke [])
-                      path = Path p01 (map PLine [endpt,p02])
-                  in pointwise (rotateAbout (theta - pi) endpt) path
+                      px   = Path p01 (map PLine [endpt,p02])
+                  in pointwise (rotateAbout (theta - pi) endpt) px
 
 arrowPerp :: (Floating u, Real u) => Point2 u -> Point2 u -> Arrow u
 arrowPerp = arrowline (return `oo` arrowheadPerp 10)
@@ -64,11 +60,11 @@ arrowheadPerp :: (Floating u, Real u) => u -> (Radian -> Point2 u -> Path u)
 arrowheadPerp d = 
   \theta endpt -> let p0   = endpt .+^ (hvec (-d))
                       p1   = endpt .+^ (hvec d)
-                      path = Path p0 [PLine p1]
-                  in pointwise (rotateAbout (theta+pi/2) endpt) path
+                      px = Path p0 [PLine p1]
+                  in pointwise (rotateAbout (theta+pi/2) endpt) px
 
 arrowTri :: (Floating u, Real u) => Point2 u -> Point2 u -> Arrow u
-arrowTri = arrowline (return `oo` arrowheadVee True 10 (pi/10))
+arrowTri = arrowline (return `oo` arrowheadVee 10 (pi/10))
 
 
 

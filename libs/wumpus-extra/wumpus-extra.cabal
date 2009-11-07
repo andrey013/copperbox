@@ -15,7 +15,7 @@ cabal-version:      >= 1.2
 
 extra-source-files:
   demo/ArrowPic.hs,
-  demo/GridPic.hs,
+  demo/GridPic.hs
 
 
 library
@@ -24,7 +24,7 @@ library
                       wl-pprint, vector-space, 
                       monadLib, xml, dlist,
                       groupoid, fun-extras,
-                      wumpus-core
+                      wumpus-core == 0.4.0
 
   
   exposed-modules:

@@ -22,7 +22,9 @@ module Wumpus.Core.Picture
   (
   -- * Data types
     Picture(..)
+  , DPicture
   , Primitive(..)
+  , DPrimitive
   , Path(..)
   , DPath
   , PathSeg(..)
@@ -53,8 +55,12 @@ module Wumpus.Core.Picture
   , Fill(..)
   , zfill
 
+  , Ellipse(..)
+  , zellipse
+
   , picLabel
   , picLabel1
+
 
   , vertexPath  
 
@@ -112,6 +118,8 @@ data Picture u = Empty
                | Clip     (Measure u) (Path u)      (Picture u)
   deriving (Eq,Show) 
 
+type DPicture = Picture Double
+
 
 -- Ellipses are a primitive so they can be drawn efficiently.
 -- 
@@ -141,6 +149,9 @@ data Primitive u = Path1    PathProps (Path u)
                       ellipseHalfHeight :: u 
                     } 
   deriving (Eq,Show)
+
+type DPrimitive = Primitive Double
+
 
 
 data Path u = Path (Point2 u) [PathSeg u]
@@ -557,11 +568,10 @@ picLabel fontsz linespace str = Multi (frameDefault, bb) lbls where
 --------------------------------------------------------------------------------
 
 
-mkEllipse :: Num u => EllipseProps -> u -> u -> Picture u
-mkEllipse props hw hh = Single (frameDefault,bb) ellp where
-    v    = V2 hw hh
-    bb   = BBox (zeroPt .-^ v) (zeroPt .+^ v)
-    ellp = Ellipse1 props zeroPt hw hh
+-- make a Primitive or a Picture?
+
+mkEllipse :: Num u => EllipseProps -> Point2 u -> u -> u -> Primitive u
+mkEllipse props pt hw hh = Ellipse1 props pt hw hh
 
 
 ellipseDefault :: EllipseProps
@@ -569,10 +579,14 @@ ellipseDefault = (psBlack, CFill)
 
 
 
-class PicEllipse t where
-  ellipse :: Fractional u => t -> u -> u -> Picture u
+class Ellipse t where
+  ellipse :: Fractional u => t -> Point2 u -> u -> u -> Primitive u
 
-instance PicEllipse ()          where ellipse () = mkEllipse ellipseDefault 
+instance Ellipse ()          where ellipse () = mkEllipse ellipseDefault 
+
+
+zellipse :: (Num u, Ord u) => Point2 u -> u -> u -> Primitive u
+zellipse = mkEllipse ellipseDefault
 
 
 --------------------------------------------------------------------------------
