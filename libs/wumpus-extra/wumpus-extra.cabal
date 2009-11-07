@@ -1,0 +1,51 @@
+name:             wumpus-extra
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Graphics
+synopsis:         Extra geometry and objects (arrows, grids) for Wumpus. 
+description:
+  Extra geometry and objects (arrows, grids) for Wumpus.
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/ArrowPic.hs,
+  demo/GridPic.hs,
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base < 5, containers, old-time,
+                      wl-pprint, vector-space, 
+                      monadLib, xml, dlist,
+                      groupoid, fun-extras,
+                      wumpus-core
+
+  
+  exposed-modules:
+    Wumpus.Extra.Arrow,
+    Wumpus.Extra.Grid,
+    Wumpus.Extra.Polygon,
+    Wumpus.Extra.SVGColours,
+    Wumpus.Extra.X11Colours,
+    Wumpus.Geometry,
+    Wumpus.Geometry.Base,
+    Wumpus.Geometry.Curve,
+    Wumpus.Geometry.Line
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  

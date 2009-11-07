@@ -1,0 +1,54 @@
+name:             wumpus-core
+version:          0.5.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Graphics
+synopsis:         PostScript and SVG generation. 
+description:
+  PostScript and SVG generation.
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/LabelPic.hs,
+  demo/Picture.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base < 5, containers, old-time,
+                      wl-pprint, vector-space, 
+                      monadLib, xml, dlist,
+                      groupoid, fun-extras
+
+  
+  exposed-modules:
+    Wumpus.Core,
+    Wumpus.Core.AffineTrans,
+    Wumpus.Core.BoundingBox,
+    Wumpus.Core.Colour,
+    Wumpus.Core.Geometry,
+    Wumpus.Core.GraphicsState,
+    Wumpus.Core.OutputPostScript,
+    Wumpus.Core.OutputSVG,
+    Wumpus.Core.Picture,
+    Wumpus.Core.PictureLanguage,
+    Wumpus.Core.PostScript,
+    Wumpus.Core.SVG,
+    Wumpus.Core.Utils,
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
