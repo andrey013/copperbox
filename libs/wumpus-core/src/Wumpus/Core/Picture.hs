@@ -36,24 +36,22 @@ module Wumpus.Core.Picture
   , LabelProps                  -- hide in Wumpus.Core export?
   , EllipseProps                -- 
   , DrawProp(..)                -- hide in Wumpus.Core export?
+  , DrawEllipse(..)
   
-  -- * Construction
+   -- * Construction
   , empty
 
-  , frame                       -- valuable?
-  , multi                       -- valuable?   
-
-  , PicPath(..)
-  , zpath
-
-  , MultiPath(..)
-  , zmultipath
+  , frame
+  , multi
 
   , Stroke(..)
   , zostroke
   , zcstroke
   , Fill(..)
   , zfill
+
+  , MultiPath(..)
+  , zmultipath
 
   , Ellipse(..)
   , zellipse
@@ -121,32 +119,36 @@ data Picture u = Empty
 type DPicture = Picture Double
 
 
--- Ellipses are a primitive so they can be drawn efficiently.
+-- | Wumpus\'s drawings are built from two fundamental 
+-- primitives: paths (line segments and Bezier curves) and 
+-- labels (single lines of text). 
 -- 
--- Arcs are path primitives in PostScript, however following that
--- example for Wumpus is tricky. Arcs don't have the nice 
--- properties of bezier curves where affine transformations can 
--- just transform the control points and a bounding box can be 
--- considered the bounds of the control points.
+-- Ellipses are a included as a primitive only for optimization 
+-- - drawing a reasonable circle with Bezier curves needs at 
+-- least eight curves. This is inconvenient for drawing dots 
+-- which can otherwise be drawn with a single @arc@ command.
 -- 
--- So if we making arc a type of path (with curve and line 
--- segment) would create a lot of hard work. Instead we use
--- the PostScript command @arc@ only to create ellipses and
--- circles (ellipses are actually circles with non-uniform 
--- scaling).
+-- Wumpus does not follow PostScript and employ arcs as general 
+-- path primitives - they are used only to draw ellipses. This 
+-- is because arcs do not enjoy the nice properties of Bezier 
+-- curves - the affine transformation of a Bezier curve is the 
+-- the same as the affine transformation of it\'s control points.
 --
+-- Ellipses are represented by their center, half-width and 
+-- half-height. Half-width and half-height are used so the 
+-- bounding box can be calculated using only multiplication, and 
+-- thus generally only obliging a Num constraint on the unit.
+-- Though typically for affine transformations a Fractional 
+-- constraint is also obliged.
 --
--- Ellipses store half width and half height so they can be
--- constructed (and have their bounding box calculated) just with
--- multiplication.
 
 data Primitive u = Path1    PathProps (Path u)
                  | Label1   LabelProps (Label u) 
                  | Ellipse1 { 
-                      ellipseProps      :: EllipseProps,
-                      ellipseCenter     :: Point2 u,
-                      ellipseHalfWidth  :: u,
-                      ellipseHalfHeight :: u 
+                      ellipse_props       :: EllipseProps,
+                      ellipse_center      :: Point2 u,
+                      ellipse_half_width  :: u,
+                      ellipse_half_height :: u 
                     } 
   deriving (Eq,Show)
 
@@ -166,7 +168,10 @@ data PathSeg u = PCurve  (Point2 u) (Point2 u) (Point2 u)
 
 type DPathSeg = PathSeg Double
 
-data Label u = Label (Point2 u) String
+data Label u = Label { 
+                   label_bottom_left :: Point2 u,
+                   label_text        ::  String
+                 }
   deriving (Eq,Show)
 
 type DLabel = Label Double
@@ -184,13 +189,15 @@ type DLabel = Label Double
 data DrawProp = CFill | CStroke [StrokeAttr] | OStroke [StrokeAttr]
   deriving (Eq,Show)
 
+-- | Ellipses and circles are always closed.
+data DrawEllipse = EFill | EStroke [StrokeAttr]
+  deriving (Eq,Show)
 
 type PathProps    = (PSColour, DrawProp)
 type LabelProps   = (PSColour, FontAttr)
-type EllipseProps = (PSColour, DrawProp)
+type EllipseProps = (PSColour, DrawEllipse)
 
--- Measure = (_current_ frame x bounding box)
-
+-- | Measure = (_current_ frame x bounding box)
 type Measure u = (Frame2 u, BoundingBox u) 
 
 
@@ -401,9 +408,7 @@ frameDefault = ortho zeroPt
 empty :: Picture u
 empty = Empty
 
--- This lifts primitives to Pictures, is it preferable to going
--- straight to pictures as the Path clas currently does?
-
+-- | Lifts primitives to Pictures...
 frame :: (Num u, Ord u) => Primitive u -> Picture u
 frame p = Single (frameDefault, boundary p) p 
 
@@ -422,36 +427,8 @@ vertexPath (x:xs) = Path x (map PLine xs)
 
 
 
-
-
 --------------------------------------------------------------------------------
--- Paths to pictures
-
-
--- should path make a picture or a primitive?
-
-
-
-pathDefault :: PathProps 
-pathDefault = (psBlack, OStroke [])
-
-
-mkPath :: (Num u, Ord u) => PathProps -> Path u -> Picture u
-mkPath props p = Single (frameDefault, boundary p) (Path1 props p)
-
-
-class PicPath t where
-  path :: (Num u, Ord u) => t -> Path u -> Picture u
-
-instance PicPath PathProps      where path = mkPath
-instance PicPath ()             where path () = mkPath pathDefault 
-instance PicPath DrawProp       where path p  = mkPath (psBlack,p)
-
-
-zpath ::  (Num u, Ord u) => Path u -> Picture u
-zpath = path pathDefault
-
--- Alternatively, take Paths to Primitives
+-- Take Paths to Primitives
 
 
 ostrokePath :: (Num u, Ord u) 
@@ -510,6 +487,10 @@ zfill = fillPath psBlack
 
 --------------------------------------------------------------------------------
 -- Paths to multi-pictures
+
+pathDefault :: PathProps 
+pathDefault = (psBlack, OStroke [])
+
 
 mkMultiPath :: (Num u, Ord u) => [(PathProps,Path u)] -> Picture u
 mkMultiPath xs = Multi (frameDefault,bb) (map (uncurry Path1) xs) 
@@ -570,23 +551,23 @@ picLabel fontsz linespace str = Multi (frameDefault, bb) lbls where
 
 -- make a Primitive or a Picture?
 
-mkEllipse :: Num u => EllipseProps -> Point2 u -> u -> u -> Primitive u
-mkEllipse props pt hw hh = Ellipse1 props pt hw hh
+mkEllipse :: Num u => PSColour -> DrawEllipse -> Point2 u -> u -> u -> Primitive u
+mkEllipse c dp pt hw hh = Ellipse1 (c,dp) pt hw hh
 
 
 ellipseDefault :: EllipseProps
-ellipseDefault = (psBlack, CFill)
+ellipseDefault = (psBlack, EFill)
 
 
 
 class Ellipse t where
   ellipse :: Fractional u => t -> Point2 u -> u -> u -> Primitive u
 
-instance Ellipse ()          where ellipse () = mkEllipse ellipseDefault 
-
+instance Ellipse ()          where ellipse () = uncurry mkEllipse ellipseDefault 
+instance Ellipse PSColour    where ellipse c  = mkEllipse c EFill
 
 zellipse :: (Num u, Ord u) => Point2 u -> u -> u -> Primitive u
-zellipse = mkEllipse ellipseDefault
+zellipse = uncurry mkEllipse ellipseDefault
 
 
 --------------------------------------------------------------------------------

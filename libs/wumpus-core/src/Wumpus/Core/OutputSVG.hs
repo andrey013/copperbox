@@ -40,7 +40,7 @@ module Wumpus.Core.OutputSVG
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.Picture hiding ( ellipse, path )
+import Wumpus.Core.Picture hiding ( ellipse )
 import Wumpus.Core.SVG
 
 import Data.FunctionExtras ( (#), subst' )
@@ -166,9 +166,7 @@ ellipse (c,dp) (P2 x y) w h
     circle_attrs  = [attr_x x, attr_y y, attr_rx w]
     ellipse_attrs = [attr_x x, attr_y y, attr_rx w, attr_ry h]
     style_attrs   = fill_a : stroke_a : opts
-      where  
-        (fill_a,stroke_a,opts) = drawProperties c dp
-    
+                    where (fill_a,stroke_a,opts) = drawEllipse c dp
 
 
 -- A rule of thumb seems to be that SVG (at least SVG in Firefox)
@@ -185,6 +183,11 @@ drawProperties = fn where
   fn c CFill        = (attr_fill c, attr_stroke_none, [])
   fn c (OStroke xs) = (attr_fill_none, attr_stroke c, map strokeAttribute xs)
   fn c (CStroke xs) = (attr_fill_none, attr_stroke c, map strokeAttribute xs)
+
+drawEllipse :: PSColour -> DrawEllipse -> (Attr, Attr, [Attr])
+drawEllipse = fn where
+  fn c EFill        = (attr_fill c, attr_stroke_none, [])
+  fn c (EStroke xs) = (attr_fill_none, attr_stroke c, map strokeAttribute xs)
  
 
 strokeAttribute :: StrokeAttr -> Attr

@@ -278,7 +278,7 @@ outputPathSeg (PCurve p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
 -- | This is not very good as it uses a PostScript's
 -- @scale@ operator - this will vary the line width during the
 -- drawing of a stroked ellipse.
-outputEllipse :: DrawProp 
+outputEllipse :: DrawEllipse 
               -> PSColour 
               -> Point2 Double 
               -> Double 
@@ -292,19 +292,15 @@ outputEllipse dp c (P2 x y) hw hh
                      ; ps_grestore
                      }
 
-outputArc ::  DrawProp ->PSColour -> Double -> Double -> Double -> WumpusM ()
-outputArc CFill        c x y r = updateColour c $ do 
+outputArc ::  DrawEllipse ->PSColour -> Double -> Double -> Double -> WumpusM ()
+outputArc EFill        c x y r = updateColour c $ do 
     ps_arc x y r 0 360 
     ps_closepath
     ps_fill
 
-outputArc (CStroke xs) c x y r = updatePen c xs $ do 
+outputArc (EStroke xs) c x y r = updatePen c xs $ do 
     ps_arc x y r 0 360 
     ps_closepath
-    ps_stroke
-
-outputArc (OStroke xs) c x y r = updatePen c xs $ do 
-    ps_arc x y r 0 360 
     ps_stroke
 
 
