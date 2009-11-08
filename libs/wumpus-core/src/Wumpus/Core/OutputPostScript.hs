@@ -196,8 +196,7 @@ updateFont (c,fnt) ma = do
     ps_grestore
     
 
--- TODO pass an enviroment and only write the colour change if it
--- is different to the current colour.
+
 updateColour :: PSColour -> WumpusM () -> WumpusM ()
 updateColour c ma = do 
     ps_gsave

@@ -81,6 +81,7 @@ module Wumpus.Core.SVG
   , val_colour
   , val_rgb
   , val_url
+  , val_translate
   , path_m
   , path_l
   , path_s
@@ -360,6 +361,10 @@ val_rgb (RGB3 r g b) = "rgb" ++ show (range255 r,range255 g,range255 b)
 -- | @ url(#...) @
 val_url :: String -> String
 val_url s = "url" ++ parens ('#':s)
+
+-- | @ translate(..., ...) @
+val_translate :: Double -> Double -> String
+val_translate x y = "translate" ++ tupled (map dtrunc [x,y])
   
 -- | @ M ... ... @
 --
