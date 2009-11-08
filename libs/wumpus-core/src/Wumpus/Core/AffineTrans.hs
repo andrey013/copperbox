@@ -34,7 +34,6 @@ module Wumpus.Core.AffineTrans
   , rotate90About
   , rotate120
   , rotate120About
-  , circular
   
   -- * Common scalings
   , uniformScale
@@ -48,7 +47,6 @@ module Wumpus.Core.AffineTrans
 
 import Wumpus.Core.Geometry
 
-import Data.List ( mapAccumR )
 
 
 --------------------------------------------------------------------------------
@@ -156,14 +154,6 @@ rotate120About :: (RotateAbout t, RotateAboutUnit t ~ u)
                => Point2 u -> t -> t 
 rotate120About = rotateAbout (4*pi/3)
 
-
--- | Rotate the list through a cirle...
-circular :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a, Rotate t) 
-         => [t] -> [t]
-circular xs = snd $ mapAccumR fn 0 xs 
-  where
-    fn ang a = (ang+1, rotate (2*ang*pi/len) a)
-    len      = fromIntegral $ length xs
 
 
 --------------------------------------------------------------------------------

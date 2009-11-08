@@ -17,6 +17,7 @@
 
 module Wumpus.Geometry.Base where
 
+import Data.List ( mapAccumR )
 
 
 -- | Reverse the direction of some ordered object (line segment, 
@@ -38,3 +39,17 @@ para :: (a -> ([a], b) -> b) -> b -> [a] -> b
 para phi b = step
   where step []     = b
         step (x:xs) = phi x (xs, step xs)
+
+
+-- | Rotate the list through a cirle...
+-- This function is used, but is it useful? 
+-- Less gnomically - maybe it should be a generator (@ t -> [t] @) 
+-- from some initial value (i.e. a point) rather than a 
+-- transformer (@ [t] -> [t] @).
+circular :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a, Rotate t) 
+         => [t] -> [t]
+circular xs = snd $ mapAccumR fn 0 xs 
+  where
+    fn ang a = (ang+1, rotate (2*ang*pi/len) a)
+    len      = fromIntegral $ length xs
+

@@ -28,14 +28,12 @@ import Wumpus.Core.Picture
 import Wumpus.Core.SVG
 import Wumpus.Core.Utils
 
-import Data.FunctionExtras ( (#) )
+import Data.FunctionExtras ( (#), subst' )
 
 import Text.XML.Light
 
 
-type Clipped = Bool
-
-
+type Clipped    = Bool
 
 
 coordChange ::  (Num u, Ord u, Scale t, u ~ ScaleUnit t) => t-> t
@@ -50,11 +48,10 @@ writeSVG filepath pic =
 
 
 svgDraw :: Picture Double -> [Content]
-svgDraw pic = prefixXmlDecls $ topLevelPic mbvec pic''
+svgDraw = prefixXmlDecls . subst' topLevelPic mkVec mkPic . coordChange 
   where
-    pic'      = coordChange pic
-    pic''     = runSVG $ pictureElt False pic'
-    (_,mbvec) = repositionProperties pic'
+    mkPic = runSVG . pictureElt False
+    mkVec = snd . repositionProperties
 
 
 prefixXmlDecls :: Element -> [Content]
@@ -103,9 +100,10 @@ clipAttrib True  elt = do
 
 pathElt :: PathProps -> Path Double -> Element
 pathElt (c,dp) p = 
-    element_path ps # add_attrs [fillAttr c dp, strokeAttr c dp]
+    element_path ps # add_attrs (fill_a : stroke_a : opts)
   where
-    ps = pathDesc dp p 
+    (fill_a,stroke_a,opts) = drawProperties c dp
+    ps                     = pathDesc dp p 
 
 
 clipPathElt :: String -> Path Double -> Element
@@ -138,16 +136,25 @@ labelElt (c,FontAttr _ fam sz) (Label pt str) =
 -- A rule of thumb seems to be that SVG (at least SVG in Firefox)
 -- will try to fill unless told not to. So always label paths
 -- with @fill=...@ even if fill is @\"none\"@.
+
+
+
+drawProperties :: PSColour -> DrawProp -> (Attr, Attr, [Attr])
+drawProperties = fn where
+  fn c CFill        = (attr_fill c, attr_stroke_none, [])
+  fn c (OStroke xs) = (attr_fill_none, attr_stroke c, map strokeAttribute xs)
+  fn c (CStroke xs) = (attr_fill_none, attr_stroke c, map strokeAttribute xs)
+ 
+
+strokeAttribute :: StrokeAttr -> Attr
+strokeAttribute (LineWidth a)    = attr_stroke_width a
+strokeAttribute (MiterLimit a)   = attr_stroke_miterlimit a
+strokeAttribute (LineCap lc)     = attr_stroke_linecap lc
+strokeAttribute (LineJoin lj)    = attr_stroke_linejoin lj
+strokeAttribute (DashPattern dp) = fn dp where
+   fn Solid         = attr_stroke_dasharray_none
+   fn (Dash _i _ns) = error $ "DashPattern not implemented yet..."
    
-fillAttr :: PSColour -> DrawProp -> Attr
-fillAttr c CFill = unqualAttr "fill" $ val_colour c
-fillAttr _ _     = unqualAttr "fill" "none"
-
-
-strokeAttr :: PSColour -> DrawProp -> Attr
-strokeAttr c (OStroke _) = unqualAttr "stroke" $ val_colour c
-strokeAttr c (CStroke _) = unqualAttr "stroke" $ val_colour c
-strokeAttr _ _           = unqualAttr "stroke" "none"
 
 
 -- Clipping in PostScript works by changing the graphics state
@@ -161,11 +168,11 @@ strokeAttr _ _           = unqualAttr "stroke" "none"
 --
 
 
-pathDesc :: DrawProp -> Path Double -> [String]
+pathDesc :: DrawProp -> Path Double -> SvgPath
 pathDesc dp p = close dp $ pathInstructions p
   where 
     close (OStroke _) = id
-    close _           = (++ ["Z"])
+    close _           = closePath
 
 pathInstructions :: Path Double -> [String]
 pathInstructions (Path (P2 x y) xs) = path_m x y : map fn xs
@@ -176,8 +183,8 @@ pathInstructions (Path (P2 x y) xs) = path_m x y : map fn xs
 
 ellipseE :: EllipseProps -> Point2 Double -> Double -> Double -> Element
 ellipseE _props (P2 x y) w h 
-    | w == h    = unode "circle"  [attr_x x, attr_y y, attr_rx w]
-    | otherwise = unode "ellipse" [attr_x x, attr_y y, attr_rx w, attr_ry h]
+    | w == h    = element_circle # add_attrs  [attr_x x, attr_y y, attr_rx w]
+    | otherwise = element_ellipse # add_attrs [attr_x x, attr_y y, attr_rx w, attr_ry h]
 
 
 frameChange :: Frame2 Double -> Attr
@@ -188,3 +195,7 @@ translateAttr :: Double -> Double -> Attr
 translateAttr tx ty = unqualAttr "transform" tstring where
    tstring = "translate" ++ tupled (map dtrunc [tx,ty])
 
+
+
+closePath :: SvgPath -> SvgPath 
+closePath xs = xs ++ ["Z"]

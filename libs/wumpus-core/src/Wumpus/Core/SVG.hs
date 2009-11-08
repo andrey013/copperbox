@@ -15,18 +15,19 @@
 -- with attributes.
 --
 -- SVG output is monadic to handle clipping paths. SVG does not 
--- achieve clipping by changing the graphics state. Instead a 
--- clipping path has an id, subsequent elements that are bound by
--- the clipping path are tagged with a @clip-path@ attribute that
--- references the clipping path id: 
+-- achieve clipping by changing the graphics state (being err 
+-- /declarative/ SVG doesn\'t have a graphics state as such). 
+-- Instead a clipping path has an id, subsequent elements that 
+-- are bound by the clipping path are tagged with a @clip-path@ 
+-- attribute that references the clipping path id: 
 --
 -- > clip-path=\"url(#clip1)\"
 -- 
 -- 
 -- The operations to build XML elements (e.g. element_path) don\'t 
--- take more parameters than necessary. They are generally 
--- expected to be augmented with attributes using 'add_attr' etc.
--- from the XML.Light library.
+-- take more parameters than necessary, and are expected to be 
+-- augmented with attributes using 'add_attr' and 'add_attrs' from 
+-- the XML.Light library.
 -- 
 --------------------------------------------------------------------------------
 
@@ -40,11 +41,16 @@ module Wumpus.Core.SVG
 
 
   -- * Build SVG
+  , SvgPath
+
   , unqualAttr
   , xmlVersion
   , svgDocType
   , gElement
   , svgElement
+  
+  , element_circle
+  , element_ellipse
   , attr_x
   , attr_y
   , attr_rx
@@ -57,6 +63,17 @@ module Wumpus.Core.SVG
   , attr_fontsize
   , attr_id
   , attr_fill
+  , attr_fill_none
+  , attr_stroke
+  , attr_stroke_none
+  , attr_stroke_width
+  , attr_stroke_miterlimit
+  , attr_stroke_linecap
+  , attr_stroke_linejoin
+
+  , attr_stroke_dasharray
+  , attr_stroke_dasharray_none
+
   , attr_color
   , attr_clippath
   , attr_transform
@@ -141,6 +158,9 @@ unqualAttr name val = Attr (unqual name) val
 --------------------------------------------------------------------------------
 -- SVG helpers
 
+type SvgPath = [String]
+
+
 -- | @ \<?xml version=\"1.0\" standalone=\"yes\"?\> @
 xmlVersion :: CData
 xmlVersion = CData CDataRaw 
@@ -179,6 +199,20 @@ svgElement xs = unode "svg" ([xmlns,version],xs)
 
 
 
+-- |
+-- > <circle/>
+--
+element_circle :: Element
+element_circle = unode "circle" ()
+
+-- |
+-- > <ellipse/>
+--
+element_ellipse :: Element
+element_ellipse = unode "ellipse" ()
+
+
+
 -- | @ rx=\"...\" @
 attr_x :: Double -> Attr
 attr_x      = unqualAttr "x" . dtrunc
@@ -199,19 +233,21 @@ attr_ry      = unqualAttr "ry" . dtrunc
 -- |
 -- > <path d="..." />
 --
-element_path :: [String] -> Element
-element_path = unode "path" . unqualAttr "d" . hsep
+-- Note the argument to this function is an attribute rather
+-- than content. We have no use for empty paths.
+element_path :: SvgPath -> Element
+element_path = unode "path" . attr_d
 
 -- |
 -- > <clipPath>
 -- > ...
 -- > </clipPath>
 --
-element_clippath :: [String] -> Element
+element_clippath :: SvgPath -> Element
 element_clippath = unode "clipPath" . element_path
 
 -- |
--- > <text ... />
+-- > <text>...</text>
 --
 element_text :: String -> Element
 element_text = unode "text" . content_text
@@ -234,10 +270,58 @@ attr_fontsize = unqualAttr "font-size" . show
 attr_id :: String -> Attr
 attr_id = unqualAttr "id" 
 
+-- | @ d="..." @
+attr_d :: SvgPath -> Attr
+attr_d = unqualAttr "d" . hsep
 
 -- | @ fill=\"rgb(..., ..., ...)\" @
 attr_fill :: PSColour -> Attr
 attr_fill = unqualAttr "fill" . val_colour
+
+-- | @ fill=\"none\" @
+attr_fill_none :: Attr
+attr_fill_none = unqualAttr "fill" "none"
+
+-- | @ stroke=\"rgb(..., ..., ...)\" @
+attr_stroke :: PSColour -> Attr
+attr_stroke = unqualAttr "stroke" . val_colour
+
+-- | @ stroke=\"none\" @
+attr_stroke_none :: Attr
+attr_stroke_none = unqualAttr "stroke" "none"
+
+-- | @ stroke-width=\"...\" @
+attr_stroke_width :: Double -> Attr
+attr_stroke_width = unqualAttr "stoke-width" . dtrunc
+
+
+-- | @ stroke-miterlimit=\"...\" @
+attr_stroke_miterlimit :: Double -> Attr
+attr_stroke_miterlimit = unqualAttr "stoke-miterlimit" . dtrunc
+
+-- | @ stroke-linejoin=\"...\" @
+attr_stroke_linejoin :: LineJoin -> Attr
+attr_stroke_linejoin JoinMiter = unqualAttr "stroke-linejoin" "miter"
+attr_stroke_linejoin JoinRound = unqualAttr "stroke-linejoin" "round"
+attr_stroke_linejoin JoinBevel = unqualAttr "stroke-linejoin" "bevel"
+
+
+
+attr_stroke_linecap :: LineCap -> Attr
+attr_stroke_linecap CapButt   = unqualAttr "stroke-linecap" "butt"
+attr_stroke_linecap CapRound  = unqualAttr "stroke-linecap" "round"
+attr_stroke_linecap CapSquare = unqualAttr "stroke-linecap" "square"
+
+
+-- | @ stroke-dasharray=\"...\" @
+attr_stroke_dasharray :: [Double] -> Attr
+attr_stroke_dasharray = unqualAttr "stoke-dasharray" . hsep . map dtrunc
+
+-- | @ stroke-dasharray=\"none\" @
+attr_stroke_dasharray_none :: Attr
+attr_stroke_dasharray_none = unqualAttr "stoke-dasharray" "none"
+
+
 
 -- | @ color=\"rgb(..., ..., ...)\" @
 --
@@ -294,3 +378,5 @@ path_l x y  = hsep $ "L" : map dtrunc [x,y]
 -- c.f. PostScript's @curveto@.
 path_s :: Double -> Double -> Double -> Double -> Double -> Double -> String
 path_s x1 y1 x2 y2 x3 y3 =  hsep $ "S" : map dtrunc [x1,y1,x2,y2,x3,y3]
+
+
