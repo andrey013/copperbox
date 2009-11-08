@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -37,8 +38,12 @@ module Wumpus.Core.GraphicsState
   -- * Convert to CTM
   , ToCTM(..)
 
+  -- * Convert to PSColour
+  , ToPSColour(..)
+
   ) where
 
+import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 
 
@@ -66,9 +71,9 @@ data DashPattern = Solid | Dash Int [Int]
 -- attributes (name & size) are set at the same time.
 
 data FontAttr = FontAttr { 
-                    fontName   :: String,   -- for PostScript
-                    fontFamily :: String,   -- for SVG
-                    fontSize   :: Int 
+                    font_name   :: String,   -- for PostScript
+                    font_family :: String,   -- for SVG
+                    font_size   :: Int 
                   }
   deriving (Eq,Show)
 
@@ -129,8 +134,7 @@ data CTM = CTM Double Double  Double Double  Double Double
 -- Conversion to CTM
 
 
-class ToCTM a where 
-  toCTM :: a -> CTM
+class ToCTM a where toCTM :: a -> CTM
 
 instance Real a => ToCTM (Frame2 a) where
   toCTM (Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) 
@@ -145,4 +149,22 @@ instance Real a => ToCTM (Matrix3'3 a) where
 
 toD :: Real a => a -> Double 
 toD = realToFrac
+
+
+--------------------------------------------------------------------------------
+-- Conversion to PSColour
+
+class ToPSColour a where toPSColour :: a -> PSColour
+
+instance ToPSColour (RGB3 Double) where
+  toPSColour (RGB3 r g b) = PSRgb r g b
+
+instance ToPSColour (HSB3 Double) where
+  toPSColour (HSB3 r g b) = PSHsb r g b
+
+instance ToPSColour (Gray Double) where
+  toPSColour (Gray a) = PSGray a
+
+
+
 
