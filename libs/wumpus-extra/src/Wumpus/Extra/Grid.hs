@@ -62,7 +62,7 @@ nodeMap sx sy (Grid xs) = foldr fn Map.empty xs
 
 
 mkLabel :: (Num u, Ord u) => String -> Picture u
-mkLabel s = picLabel 10 1 s 
+mkLabel s = frame $ ztextlabel zeroPt s 
 
 nodePicture :: (Num u, Ord u) => NodeMap u -> Picture u
 nodePicture = Map.foldWithKey fn cempty where

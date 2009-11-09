@@ -19,12 +19,12 @@ import Wumpus.Core
 import Data.FunctionExtras
 import Data.AffineSpace
 
-newtype Arrow u = Arrow { arrowPaths :: [Path u] }  -- to do [(Props,Path u)]
+newtype Arrow u = Arrow { arrowPaths :: [Primitive u] }
 
 type DArrow = Arrow Double
 
 picArrow :: (Num u, Ord u) => Arrow u -> Picture u
-picArrow (Arrow xs) = zmultipath xs
+picArrow (Arrow xs) = multi xs
 
 arrow :: (Floating u, Real u) => Point2 u -> Point2 u -> Arrow u
 arrow = arrowline (return `oo` arrowheadVee 10 (pi/10))
@@ -35,7 +35,8 @@ arrowline :: (Floating u, Real u)
           -> Point2 u
           -> Point2 u 
           -> Arrow u
-arrowline mk p p' = Arrow (Path p [PLine p'] : tip) where
+arrowline mk p p' = Arrow (map zostroke $ path1:tip) where
+  path1 = Path p [PLine p']
   theta = langle p p'
   tip   = mk theta p'
 

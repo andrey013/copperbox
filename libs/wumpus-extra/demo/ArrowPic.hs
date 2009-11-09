@@ -2,10 +2,7 @@
 
 module ArrowPic where
 
-import Wumpus.Core.Geometry
-import Wumpus.Core.OutputPostScript
-import Wumpus.Core.Picture
-import Wumpus.Core.PictureLanguage
+import Wumpus.Core
 import Wumpus.Extra.Arrow
 
 
@@ -20,7 +17,10 @@ arr3 = arrowTri (P2 20 0) (P2 120 100)
 
 -- mkPic = overlays . map picPath
 
-demo1 = writeEPS "arrow1.eps" Nothing p1 
+demo1 :: IO ()
+demo1 = do 
+    writeEPS "arrow1.eps" Nothing p1 
+    writeSVG "arrow1.svg" p1
   where 
     p1 = picArrow arr1 `composite` picArrow arr2
                        `composite` picArrow arr3

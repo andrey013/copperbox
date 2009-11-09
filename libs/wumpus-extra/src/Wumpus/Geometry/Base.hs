@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -16,6 +18,8 @@
 
 
 module Wumpus.Geometry.Base where
+
+import Wumpus.Core
 
 import Data.List ( mapAccumR )
 

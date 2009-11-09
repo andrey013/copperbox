@@ -16,11 +16,8 @@
 
 module Wumpus.Extra.Polygon where
 
-import Wumpus.Core.AffineTrans
-import Wumpus.Core.BoundingBox
-import Wumpus.Core.Geometry
-import Wumpus.Core.Picture
-import Wumpus.Core.PictureLanguage
+import Wumpus.Core
+import Wumpus.Geometry
 
 import Data.AffineSpace
 
@@ -42,11 +39,20 @@ drawFrame p = p `composite` frp
     (Frame2 e0 e1 o) = extractFrame p
     xbasis           = vertexPath [o, o .+^ e0]
     ybasis           = vertexPath [o, o .+^ e1]
-    frp              = multipath  [(OStroke [],xbasis), (OStroke [],ybasis)]
+    frp              = multi  [zostroke xbasis, zostroke ybasis]
 
  
-picPolygon :: (Num u, Ord u) => DrawProp -> Polygon u -> Picture u
-picPolygon dp (Polygon xs) = path dp (vertexPath xs)
+picPolygon :: (Num u, Ord u) => PathProps -> Polygon u -> Picture u
+picPolygon dp (Polygon xs) = frame $ Path1 dp (vertexPath xs)
+
+-- ARG! must work out what functions I need to do this prettily
+
+square :: Num u =>  u -> Point2 u -> Polygon u
+square side_length bl = Polygon $ xs where
+  xs = sequence [id,f1,f2,f3] bl
+  f1 = (.+^ hvec side_length)
+  f2 = (.+^ (V2 side_length side_length))
+  f3 = (.+^ vvec side_length)
 
 
 extractPolygonPath :: Polygon u -> Path u
