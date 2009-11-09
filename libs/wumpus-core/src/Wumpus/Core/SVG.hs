@@ -58,6 +58,7 @@ module Wumpus.Core.SVG
   , element_path
   , element_clippath
   , element_text
+  , element_tspan
   , content_text
   , attr_fontfamily
   , attr_fontsize
@@ -250,8 +251,15 @@ element_clippath = unode "clipPath" . element_path
 -- |
 -- > <text>...</text>
 --
-element_text :: String -> Element
-element_text = unode "text" . content_text
+element_text :: Node t => t -> Element
+element_text = unode "text" 
+
+-- |
+-- > <text>...</text>
+--
+element_tspan :: String -> Element
+element_tspan = unode "tspan" . content_text
+
 
 -- | Render the string as 'CDataText' - see XML.Light.
 content_text :: String -> Content

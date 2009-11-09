@@ -141,19 +141,22 @@ path (c,dp) p =
 -- Labels need the coordinate system remapping otherwise
 -- the will be printed upside down. Both the start point and 
 -- the label itself need transforming.
-
+-- 
+-- Also rendering coloured text is convoluted (needing the
+-- tspan element).
+-- 
 label :: LabelProps -> Label Double -> Element
 label (c,FontAttr _ fam sz) (Label pt str) = 
-     element_text str # add_attrs xs
+     element_text (element_tspan str # add_attrs tspan_xs) # add_attrs text_xs
   where
-    P2 x y = coordChange pt
-    xs = [ attr_x x
-         , attr_y y 
-         , attr_transform $ val_matrix 1 0 0 (-1) 0 0
-         , attr_color c
-         , attr_fontfamily fam
-         , attr_fontsize sz 
-         ]
+    P2 x y    = coordChange pt
+    text_xs   = [ attr_x x
+                , attr_y y 
+                , attr_transform $ val_matrix 1 0 0 (-1) 0 0
+                , attr_fontfamily fam
+                , attr_fontsize sz 
+                ]
+    tspan_xs  = [ attr_fill c ]
  
 
 -- If w==h the draw the ellipse as a circle

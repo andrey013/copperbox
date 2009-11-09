@@ -124,7 +124,10 @@ ceilingi = ceiling
 -- | Scale a Double between 0.0 and 1.0 to be an Int between 0 
 -- and 255.
 range255 :: Double -> Int
-range255 = min 0 . max 255 . floor . (*255)
+range255 = fn . floor . (*255) where
+  fn i | i < 0     = 0
+       | i > 255   = 255
+       | otherwise = i
 
 
 -- | Generate a time stamp for the output files. Note PostScript

@@ -43,6 +43,7 @@ module Wumpus.Core.Picture
 
   , frame
   , multi
+  , reframe
 
   , Stroke(..)
   , zostroke
@@ -53,6 +54,7 @@ module Wumpus.Core.Picture
 
   , TextLabel(..)
   , ztextlabel
+  , multilabel
 
   , Ellipse(..)
   , zellipse
@@ -346,7 +348,7 @@ instance (Num u, Ord u) => Composite (Picture u) where
 
   a     `composite` Empty = a
   Empty `composite` b     = b
-  a     `composite` b     = Picture (frameDefault, bb) a b where
+  a     `composite` b     = Picture (stdFrame, bb) a b where
                             bb = union (boundary a) (boundary b)
 
 
@@ -398,8 +400,8 @@ psBlack :: PSColour
 psBlack = PSRgb 0 0 0
  
 -- aka the standard frame
-frameDefault :: Num u => Frame2 u 
-frameDefault = ortho zeroPt
+stdFrame :: Num u => Frame2 u 
+stdFrame = ortho zeroPt
 
 
 
@@ -412,15 +414,16 @@ empty = Empty
 
 -- | Lifts primitives to Pictures...
 frame :: (Num u, Ord u) => Primitive u -> Picture u
-frame p = Single (frameDefault, boundary p) p 
-
--- maybe we need a similar function with a bounding box so it 
--- can build text labels within some bound
-
-
+frame p = Single (stdFrame, boundary p) p 
 
 multi :: (Num u, Ord u) => [Primitive u] -> Picture u
-multi ps = Multi (frameDefault, mconcat $ map boundary ps) ps 
+multi ps = Multi (stdFrame, mconcat $ map boundary ps) ps 
+
+
+-- | Lift primitives to pictures modifying the bounding box.
+reframe :: (Num u, Ord u) => Primitive u -> BoundingBox u -> Picture u
+reframe p@(Label1 _ _) bb = Single (stdFrame,bb) p
+reframe p              bb = Single (stdFrame,bb `mappend` boundary p) p
 
 
 
@@ -594,6 +597,19 @@ instance TextLabel (Gray Double,FontAttr) where
 -- and colour is black.
 ztextlabel :: Point2 u -> String -> Primitive u
 ztextlabel = mkTextLabel psBlack default_font
+
+
+
+-- Note - this current definition never allows the bounding box
+-- to be shrunk - a specific version for labels might be better
+--
+-- > multilabel :: (Num u, Ord u) => [Label u] -> BoundingBox u -> Picture u
+-- 
+
+multilabel :: (Num u, Ord u) 
+           => [Label u] -> LabelProps -> BoundingBox u -> Picture u
+multilabel ps props bb = Multi (stdFrame, bb) $ zipWith Label1 (repeat props) ps 
+
 
 --------------------------------------------------------------------------------
 
