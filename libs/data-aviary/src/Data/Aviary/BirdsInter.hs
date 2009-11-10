@@ -203,7 +203,7 @@ idstar = starling (starling kestrel)
 
 
 -- | I** combinator - identity bird twice removed
--- (not interdefined)
+-- (not inter-defined)
 idstarstar :: (a -> b -> c) -> a -> b -> c
 idstarstar f x y = f x y
 
@@ -280,20 +280,16 @@ thrush :: a -> (a -> b) -> b
 thrush = cardinal idiot
 
 -- | V combinator - vireo.
-vireo :: a -> b -> (a -> b -> c) -> c
+vireo :: a -> b -> (a -> b -> b) -> b
 vireo = bluebird cardinal thrush
 
 -- | V* combinator - vireo once removed.
--- ?? vireostar :: (b -> a -> b -> d) -> a -> b -> b -> d
---
--- *** PROBLEM ***
+vireostar :: (b -> a -> b -> d) -> a -> b -> b -> d
 vireostar = cardinalstar finchstar
 
 -- | V** combinator - vireo twice removed.
---
--- *** PROBLEM *** 
-vireostarstar :: (a -> d -> b -> c -> e) -> a -> b -> c -> d -> e
-vireostarstar = undefined
+vireostarstar :: (a -> c -> b -> c -> e) -> a -> b -> c -> c -> e
+vireostarstar = bluebird vireostar
 
 
 -- | W combinator - warbler - elementary duplicator.

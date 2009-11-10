@@ -274,11 +274,11 @@ vireo :: a -> b -> (a -> b -> c) -> c
 vireo x y f = f x y
 
 -- | V* combinator - vireo once removed.
-vireostar :: (b -> a -> c -> d) -> a -> b -> c -> d
+vireostar :: (b -> a -> b -> d) -> a -> b -> b -> d
 vireostar f x y z = f y x z
 
 -- | V** combinator - vireo twice removed.
-vireostarstar :: (a -> d -> b -> c -> e) -> a -> b -> c -> d -> e
+vireostarstar :: (a -> c -> b -> c -> e) -> a -> b -> c -> c -> e
 vireostarstar f s t u v = f s v t u
 
 
