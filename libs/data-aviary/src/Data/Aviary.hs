@@ -10,23 +10,16 @@
 -- Stability   :  experimental
 -- Portability :  to be determined
 --
--- Bird combinators
+-- Plainly named combinators
 -- 
 -----------------------------------------------------------------------------
 
 module Data.Aviary
   ( 
-  -- * Data.Function combinators as birds
-    idiot
-  , kestrel
-  , bluebird
-  , cardinal
-  , applicator
-  , psi
 
   -- * The real stuff
 
-  ,  ( # )
+    ( # )
   , subst
   , subst'
   , twine
@@ -45,41 +38,6 @@ import Data.Function
 --------------------------------------------------------------------------------
 -- Combinators
 
--- Bird named versions from Data.Function
-
-
-
-
--- | I combinator - identity bird / idiot - Haskell 'id'.
-idiot :: a -> a 
-idiot = id
-
--- | K combinator - kestrel - Haskell 'const'.
-kestrel :: a -> b -> a
-kestrel = const
-
--- | B combinator - bluebird - Haskell ('.').
-bluebird :: (b -> c) -> (a -> b) -> a -> c
-bluebird = (.)
-
-
--- | C combinator - cardinal - Haskell 'flip'.
-cardinal :: (a -> b -> c) -> b -> a -> c
-cardinal = flip
-
--- | A combinator - apply / applicator - Haskell ('$').
-applicator :: (a -> b) -> a -> b
-applicator = ($)
-
--- 'fix' unknown
-
--- | Psi combinator - psi bird (?) - Haskell 'on'.  
-psi :: (b -> b -> c) -> (a -> b) -> a -> a -> c
-psi = on
-
-
-
---------------------------------------------------------------------------------
 
 
 infixl 7 #
@@ -122,10 +80,12 @@ twine p q r s t = p (q s) (r t)
 -- (abs .) . (*) ==> abs `oo` (*)
 
 -- | Compose an arity 1 function with an arity 2 function.
+-- B1 - blackbird
 oo :: (c -> d) -> (a -> b -> c) -> a -> b -> d
 oo f g = (f .) . g
 
 -- | Compose an arity 1 function with an arity 3 function.
+-- B2 - bunting
 ooo :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
 ooo f g = ((f .) .) . g
 

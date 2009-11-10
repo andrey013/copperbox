@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.PairCalculus
+-- Module      :  Data.Aviary.PairCalculus
 -- Copyright   :  (c) Stephen Peter Tetley 2009
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 -- 
 -----------------------------------------------------------------------------
 
-module Data.PairCalculus
+module Data.Aviary.PairCalculus
   ( 
 
     
