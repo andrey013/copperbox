@@ -45,9 +45,8 @@ infixl 7 #
 -- | T combinator - thrush
 --
 -- Reverse application - the T combinator.
--- Available in Peter Thiemann's Wash and present in 'Client-Side 
--- Web Scripting in Haskell' - Erik Meijer, Daan Leijen & James 
--- Hook.
+-- Found in Peter Thiemann's Wash and the paper 'Client-Side Web 
+-- Scripting in Haskell' - Erik Meijer, Daan Leijen & James Hook.
 ( # ) :: a -> (a -> b) -> b 
 x # f = f x
 
@@ -55,23 +54,23 @@ x # f = f x
 -- Familiar as Applicative\'s ('<*>') operator:
 -- f (b -> c) -> f b -> f c where f = ((->) a)
 subst :: (a -> b -> c) -> (a -> b) -> a -> c
-subst f g a = f a (g a) 
+subst f g x = f x (g x) 
 
 -- | The big Phi, or Turner's @S'@ combinator.
 -- Known to Haskell programmers as liftM2 when written:
 -- (a1 -> a2 -> r) -> m a1 -> m a2 -> m r where m = ((->) a)
 subst' :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
-subst' p q r s = p (q s) (r s)
+subst' f g h x = f (g x) (h x)
 
 
 -- | A variant of the @D2@ or dovekie combinator - the argument
 -- order has been changed, to be more for Haskellers.
 twine :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
-twine p q r s t = p (q s) (r t) 
+twine f g h x y = f (g x) (h y) 
 
 
 --------------------------------------------------------------------------------
--- Specs
+-- Specs - blackbird, bunting, ...
 
 -- Alleviate your composing-sectioning mania with specs!
 -- The name becomes a pun on spectacles (glasses, specs), 

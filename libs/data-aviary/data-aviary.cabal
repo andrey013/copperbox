@@ -24,8 +24,10 @@ library
 
   
   exposed-modules:
-    Data.Aviary
-    Data.Aviary.Birds
+    Data.Aviary,
+    Data.Aviary.Birds,
+    Data.Aviary.BirdsInter
+    
 
   other-modules:
     

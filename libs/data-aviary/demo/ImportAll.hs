@@ -3,6 +3,9 @@
 module ImportAll where
 
 import Data.Aviary
+import Data.Aviary.Birds
+import qualified Data.Aviary.BirdsInter as Inter
+
 
 main :: IO ()
 main = putStrLn "Well, it compiles..."
@@ -19,6 +22,8 @@ test1 = f1 a == f2 a && f1 a == f3 a where
 
 -- lark doesn't type check
 -- lark = \a b -> a (b b)
+
+owl x y = y (x y)
 
 
 on' :: (b -> b -> c) -> (a -> b) -> a -> a -> c
