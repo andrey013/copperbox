@@ -24,7 +24,7 @@ library
                       wl-pprint, vector-space, 
                       monadLib, xml, dlist,
                       groupoid, fun-extras,
-                      wumpus-core == 0.4.0
+                      wumpus-core == 0.5.0
 
   
   exposed-modules:

@@ -22,7 +22,6 @@ import Wumpus.Geometry
 import Data.AffineSpace
 
 
-
 newtype Polygon u = Polygon { vertexList :: [Point2 u] }
   deriving (Eq,Show)
 
@@ -42,8 +41,17 @@ drawFrame p = p `composite` frp
     frp              = multi  [zostroke xbasis, zostroke ybasis]
 
  
-picPolygon :: (Num u, Ord u) => PathProps -> Polygon u -> Picture u
-picPolygon dp (Polygon xs) = frame $ Path1 dp (vertexPath xs)
+
+fillPolygon :: (Fill t, Num u, Ord u) => t -> Polygon u -> Primitive u
+fillPolygon = mab fill (vertexPath . vertexList) 
+
+strokePolygon :: (Fill t, Num u, Ord u) => t -> Polygon u -> Primitive u
+strokePolygon = mab fill (vertexPath . vertexList) 
+
+
+-- ARG which combinator is this one?
+mab :: (a -> c -> d) -> (b -> c) -> a -> b -> d
+mab g f a b = g a (f b)
 
 -- ARG! must work out what functions I need to do this prettily
 

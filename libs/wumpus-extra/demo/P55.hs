@@ -21,7 +21,7 @@ coordChange :: (Num u, Ord u) => Picture u -> Picture u
 coordChange = scale 1 (-1)
 
 rect100 :: Picture Double
-rect100 = picPolygon (PSGray 0.75, CFill) $ square 100 zeroPt
+rect100 = frame $ fillPolygon (PSGray 0.75) $ square 100 zeroPt
 
 example1 :: Picture Double
 example1 = coordChange $ rect100 `composite` line_stack where
