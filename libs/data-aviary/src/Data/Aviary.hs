@@ -20,11 +20,9 @@ module Data.Aviary
   -- * The real stuff
 
     ( # )
+  , ( ## )
   , subst
-  , subst'
-  , twine
-
-    
+  , bigphi
 
   -- * Specs
   , oo
@@ -50,23 +48,43 @@ infixl 7 #
 ( # ) :: a -> (a -> b) -> b 
 x # f = f x
 
+
+infixl 8 ##
+
+( ## ) :: (a -> b) -> (b -> c) -> a -> c
+f ## g = \x -> g (f x)
+ 
+
 -- | S combinator - subst.
--- Familiar as Applicative\'s ('<*>') operator:
+-- Familiar as Applicative\'s ('<*>') operator, which itself is 
+-- fmap:
+--
 -- f (b -> c) -> f b -> f c where f = ((->) a)
 subst :: (a -> b -> c) -> (a -> b) -> a -> c
 subst f g x = f x (g x) 
 
 -- | The big Phi, or Turner's @S'@ combinator.
--- Known to Haskell programmers as liftM2 when written:
+-- Known to Haskell programmers as liftA2 and liftM2 for the 
+-- Applicative and Monad instances of (->).
+--
 -- (a1 -> a2 -> r) -> m a1 -> m a2 -> m r where m = ((->) a)
-subst' :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
-subst' f g h x = f (g x) (h x)
+-- 
+-- Taste suggests you may prefer liftA2.
+--
+bigphi :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
+bigphi f g h x = f (g x) (h x)
 
+{-
+
+-- This one is a favourite but needs a name - I used to call
+-- it twine but would prefer something else.
 
 -- | A variant of the @D2@ or dovekie combinator - the argument
 -- order has been changed, to be more for Haskellers.
 twine :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
 twine f g h x y = f (g x) (h y) 
+
+-}
 
 
 --------------------------------------------------------------------------------

@@ -27,6 +27,7 @@ module Data.Aviary.Birds
   -- * Other birds (alphabetical)
   , becard
   , blackbird
+  , bluebird'
   , bunting
   , cardinal'
   , cardinalstar
@@ -56,6 +57,7 @@ module Data.Aviary.Birds
   , robinstar
   , robinstarstar
   , starling
+  , starling'
   , thrush
   , vireo
   , vireostar
@@ -120,6 +122,10 @@ becard f g h x = f (g (h x))
 -- | B1 combinator - blackbird - specs `oo`.
 blackbird :: (c -> d) -> (a -> b -> c) -> a -> b -> d
 blackbird f g x y = f (g x y)
+
+-- | B' combinator - bluebird prime.
+bluebird' :: (a -> c -> d) -> a -> (b -> c) -> b -> d
+bluebird' f x g y = f x (g y)
 
 -- | B2 combinator - bunting - specs `ooo`.
 bunting :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
@@ -263,6 +269,12 @@ robinstarstar f s t u v = f s u v t
 -- Substitution.
 starling :: (a -> b -> c) -> (a -> b) -> a -> c
 starling f g x = f x (g x)
+
+-- | S' combinator - starling prime - Turner\'s big phi. 
+-- Haskell: Applicative\'s liftA2 on functions.
+starling' :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
+starling' f g h x = f (g x) (h x)
+
 
 -- | T combinator - thrush.
 -- Haskell @(\#)@ in Peter Thiemann\'s Wash, reverse application.

@@ -27,6 +27,7 @@ module Data.Aviary.BirdsInter
   -- * Other birds (alphabetical)
   , becard
   , blackbird
+  , bluebird'
   , bunting
   , cardinal'
   , cardinalstar
@@ -56,6 +57,7 @@ module Data.Aviary.BirdsInter
   , robinstar
   , robinstarstar
   , starling
+  , starling'
   , thrush
   , vireo
   , vireostar
@@ -67,7 +69,7 @@ module Data.Aviary.BirdsInter
 
   ) where
 
-import Data.Function
+-- import Data.Function
 
 --------------------------------------------------------------------------------
 -- Combinators
@@ -83,7 +85,8 @@ idiot = starling kestrel kestrel
 
 -- | K combinator - kestrel - Haskell 'const'.
 -- Corresponds to the encoding of @true@ in the lambda calculus.
--- (not interdefined).
+--
+-- Not interdefined.
 kestrel :: a -> b -> a
 kestrel a _b = a 
 
@@ -97,18 +100,31 @@ cardinal :: (a -> b -> c) -> b -> a -> c
 cardinal = starling (bluebird bluebird starling) (kestrel kestrel)
 
 -- | A combinator - apply / applicator - Haskell ('$').
--- Definition - typing problem!
-applicator :: ((a -> b) -> a) -> (a -> b) -> a
-applicator = starling (starling kestrel)
+--
+-- Note: the efinition is @ C (B B I) I @ and not the familiar 
+-- @ S (S K) @ which as far as Haskell is concern has a different 
+-- type. 
+-- 
+-- @ (S(SK)) :: ((a -> b) -> a) -> (a -> b) -> a @
+applicator :: (a -> b) -> a -> b
+applicator = cardinal (bluebird bluebird idiot) idiot
+
+
 
 -- 'fix' - which Y is Haskell\'s fix? (certainly it\'s the least 
 -- fixed point)
 
 -- | Psi combinator - psi bird (?) - Haskell 'on'.  
 psi :: (b -> b -> c) -> (a -> b) -> a -> a -> c
-psi = on
+psi = c (b s (b (b c) (b (b (b b)) (c (b b (b b i)) (c (b b i) i))))) (c (b b i) i)
+  where
+    c = cardinal
+    b = bluebird
+    s = starling
+    i = idiot
 
-
+  -- TODO - This definition was built with a combinator calculator
+  -- For sanity it ought to be reduced 
 
 --------------------------------------------------------------------------------
 -- Other birds
@@ -122,6 +138,12 @@ becard = bluebird (bluebird bluebird) bluebird
 -- | B1 combinator - blackbird - specs `oo`.
 blackbird :: (c -> d) -> (a -> b -> c) -> a -> b -> d
 blackbird = bluebird bluebird bluebird
+
+
+-- | B' combinator - bluebird prime.
+bluebird' :: (a -> c -> d) -> a -> (b -> c) -> b -> d
+bluebird' = bluebird bluebird
+
 
 -- | B2 combinator - bunting - specs `ooo`.
 bunting :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
@@ -195,17 +217,16 @@ goldfinch = bluebird bluebird cardinal
 hummingbird :: (a -> b -> a -> c) -> a -> b -> c 
 hummingbird = bluebird warbler (bluebird cardinal)
 
--- | I* combinator - identity bird once removed
+-- | I* combinator - identity bird once removed.
 -- Alias of 'applicator', Haskell\'s ('$').
 -- Type signature 
-idstar :: ((a -> b) -> a) -> (a -> b) -> a
-idstar = starling (starling kestrel)
+idstar :: (a -> b) -> a -> b
+idstar = cardinal (bluebird bluebird idiot) idiot
 
 
--- | I** combinator - identity bird twice removed
--- (not inter-defined)
+-- | I** combinator - identity bird twice removed.
 idstarstar :: (a -> b -> c) -> a -> b -> c
-idstarstar f x y = f x y
+idstarstar = bluebird idstar
 
 
 -- | J combinator - jay.
@@ -262,7 +283,7 @@ robin = bluebird bluebird thrush
 robinstar :: (b -> c -> a -> d) -> a -> b -> c -> d
 robinstar = cardinalstar cardinalstar
 
--- | R* combinator - robin twice removed.
+-- | R** combinator - robin twice removed.
 robinstarstar :: (a -> c -> d -> b -> e) -> a -> b -> c -> d -> e
 robinstarstar = bluebird robinstar
 
@@ -270,9 +291,17 @@ robinstarstar = bluebird robinstar
 -- | S combinator - starling. 
 -- 
 -- Haskell: Applicative\'s @(\<*\>)@ on functions.
--- (not interdefined)
+--
+-- Not interdefined.
 starling :: (a -> b -> c) -> (a -> b) -> a -> c
 starling f g x = f x (g x)
+
+
+-- | S' combinator - starling prime - Turner\'s big phi. 
+-- Haskell: Applicative\'s liftA2 on functions.
+starling' :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
+starling' = bluebird (bluebird starling) bluebird
+
 
 -- | T combinator - thrush.
 -- Haskell @(\#)@ in Peter Thiemann\'s Wash, reverse application.
@@ -307,4 +336,4 @@ warblerstar = bluebird warbler
 
 -- | W** combinator - warbler twice removed.
 warblerstarstar :: (a -> b -> c -> c -> d) -> a -> b -> c -> d
-warblerstarstar = bluebird (bluebird warbler)
+warblerstarstar = bluebird warblerstar

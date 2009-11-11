@@ -7,16 +7,18 @@ import Data.Aviary.Birds
 import qualified Data.Aviary.BirdsInter as Inter
 
 
-main :: IO ()
-main = putStrLn "Well, it compiles..."
+-- | @ S (S K) @
+sparensSK :: ((a -> b) -> a) -> (a -> b) -> a 
+sparensSK = starling (starling kestrel)
 
-bluebird' :: (b -> c) -> (a -> b) -> a -> c
-bluebird' = \a b c -> a (b c)
+
+bluebird_alt :: (b -> c) -> (a -> b) -> a -> c
+bluebird_alt = \a b c -> a (b c)
 
 
 test1 = f1 a == f2 a && f1 a == f3 a where
-  f1 = bluebird  show (+1) 
-  f2 = bluebird' show (+1)
+  f1 = bluebird     show (+1) 
+  f2 = bluebird_alt show (+1)
   f3 = show . (+1)
   a  = 2000
 
