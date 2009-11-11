@@ -41,6 +41,7 @@ module Wumpus.Core.Utils
 
   , sequenceA
   , (<:>) 
+  , pairbimap     -- note defined in HEAD of Data.Aviary
 
   ) where
 
@@ -171,3 +172,10 @@ sequenceA = foldr (<:>) (pure [])
 infixr 6 <:>
 (<:>) :: Applicative f => f a -> f [a] -> f [a]
 (<:>) a b = (:) <$> a <*> b
+
+
+-- | A /product/ function. 
+-- Apply the function @f@ to the first element of the pair,
+-- and apply the function @g@ to the second element.
+pairbimap :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
+pairbimap f g (a,b) = (f a, g b)

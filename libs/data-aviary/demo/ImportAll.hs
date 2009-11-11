@@ -6,6 +6,7 @@ import Data.Aviary
 import Data.Aviary.Birds
 import qualified Data.Aviary.BirdsInter as Inter
 
+
 -- curried prod
 cprod :: (a -> c) -> (b -> d) -> a -> b -> (c,d)
 cprod = appro (,)

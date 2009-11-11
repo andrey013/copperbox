@@ -40,10 +40,10 @@ module Wumpus.Core.OutputSVG
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.Picture hiding ( ellipse )
+import Wumpus.Core.PictureInternal
 import Wumpus.Core.SVG
 
-import Data.FunctionExtras ( (#), subst' )
+import Data.Aviary ( (#), bigphi )
 
 import Text.XML.Light
 
@@ -63,7 +63,7 @@ writeSVG filepath pic =
 
 
 svgDraw :: Picture Double -> [Content]
-svgDraw = prefixXmlDecls . subst' topLevelPic mkVec mkPic . coordChange 
+svgDraw = prefixXmlDecls . bigphi topLevelPic mkVec mkPic . coordChange 
   where
     mkPic = runSVG . picture False
     mkVec = snd . repositionProperties

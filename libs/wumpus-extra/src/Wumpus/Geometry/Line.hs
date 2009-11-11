@@ -20,8 +20,8 @@
 
 module Wumpus.Geometry.Line where
 
-import Wumpus.Core.Geometry
-import Wumpus.Core.Picture
+import Wumpus.Core
+import Wumpus.Core.PictureInternal  -- TODO
 import Wumpus.Geometry.Base
 
 import Data.AffineSpace

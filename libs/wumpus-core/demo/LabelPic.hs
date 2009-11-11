@@ -3,7 +3,7 @@
 module LabelPic where
 
 import Wumpus.Core
-
+import Wumpus.Core.PictureInternal ( Picture(..) )
 
 
 --------------------------------------------------------------------------------

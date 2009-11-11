@@ -15,9 +15,10 @@
 module Wumpus.Extra.Arrow where
 
 import Wumpus.Core
+import Wumpus.Core.PictureInternal -- TODO
 
-import Data.FunctionExtras
 import Data.AffineSpace
+import Data.Aviary
 
 newtype Arrow u = Arrow { arrowPaths :: [Primitive u] }
 

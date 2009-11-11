@@ -30,6 +30,8 @@ module Data.Aviary
   , subst
   , bigphi
   , appro
+  , pairbimap
+  , eitherbimap
 
   -- * Specs
   , oo
@@ -95,6 +97,23 @@ bigphi f g h x = f (g x) (h x)
 --
 appro :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
 appro f g h x y = f (g x) (h y) 
+
+
+
+-- | Haskell has no standard Bifunctor class - probably because
+-- there aren\'t many natural instances @(,)@, @Either@, trees 
+-- with different nodes and leaves...
+--
+-- Rather than define the Bifunctor class in this dim, distant 
+-- corner we just implement the specialization to pairs.  
+pairbimap :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
+pairbimap f g (x,y) = (f x, g y)
+
+
+-- | Bimap for 'Either'.
+eitherbimap :: (a -> c) -> (b -> d) -> Either a b -> Either c d
+eitherbimap f _ (Left x)  = Left (f x)
+eitherbimap _ g (Right y) = Right (g y)
 
 
 --------------------------------------------------------------------------------

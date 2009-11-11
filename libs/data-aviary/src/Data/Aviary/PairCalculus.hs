@@ -11,81 +11,62 @@
 -- Portability :  to be determined
 --
 -- Pair calculus presented by Jeremy Gibbons in ...
--- 
+-- 'Calculating Functional Programs'
+--
 -----------------------------------------------------------------------------
 
 module Data.Aviary.PairCalculus
   ( 
 
     
-  -- * Pairs
+  -- * Fork, exl, exr ...
     fork
-  , prod
-  , dup
-  , swap
-
-  , prodc
-  , ufork
-
-  , outer
-  , inner
-  , firsts
-  , seconds
-
+  , exl
+  , exr
+  , pmap
   , undistl
   , distl
 
   ) where
 
---------------------------------------------------------------------------------
--- Combinators
-
-infixl 7 #
-
--- | Reverse application - the T combinator.
--- Available in Peter Thiemann's Wash and present in 'Client-Side 
--- Web Scripting in Haskell' - Erik Meijer, Daan Leijen & James 
--- Hook.
-( # ) :: a -> (a -> b) -> b 
-x # f = f x
-
--- | S combinator - subst.
--- Familiar as Applicative's (<*>) operator:
--- f (b -> c) -> f b -> f c where f = ((->) a)
-subst :: (a -> b -> c) -> (a -> b) -> a -> c
-subst f g a = f a (g a) 
-
--- | The big Phi, or Turner's @S'@ combinator.
--- Known to Haskell programmers as liftM2 when written:
--- (a1 -> a2 -> r) -> m a1 -> m a2 -> m r where m = ((->) a)
-subst' :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
-subst' p q r s = p (q s) (r s)
-
-
--- | A variant of the @D2@ or dovekie combinator - the argument
--- order has been changed, to be more for Haskellers.
-twine :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
-twine p q r s t = p (q s) (r t) 
 
 
 --------------------------------------------------------------------------------
-
--- Pairs 
-
---  Functions on pairs - the useful ones @fork@ and @prod@ are 
---  well established [1], some  but unfortunately not present in the 
---  Hierarchical Libraries.
---  .
---  [1] See for instance, Jeremy Gibbons lecture notes 
---  'Calculating Functional Programs'
 
 
 -- | Apply the functions @f@ and @g@ to the element @a@, 
--- returning the resulting pair. This is not the definition of
--- fork from the literature (see 'ufork'), but is perhaps more 
--- conventional. 
-fork :: (a -> b) -> (a -> c) -> a -> (b,c)
-fork f g a = (f a,g a)
+-- returning the resulting pair. 
+fork :: (a -> b,a -> c) -> a -> (b,c)
+fork (f,g) a = (f a,g a)
+
+
+-- | Destructor extracting the left component - aka fst.
+exl :: (a,b) -> a
+exl (a,_b) = a
+
+-- | Destructor extracting the left component - aka fst.
+exr :: (a,b) -> b
+exr (_a,b) = b
+
+-- | The product bifunctor.
+pmap :: (a -> c,b -> d) -> (a,b) -> (c,d)
+pmap (f,g) (a,b) = (f a,g b)
+
+
+
+-- | @undistl@.
+undistl :: Either (a,b) (a,c) -> (a, Either b c) 
+undistl (Left (a,b))  = (a,Left b)
+undistl (Right (a,c)) = (a,Right c)
+
+-- | @distl@.
+distl :: (a, Either b c) -> Either (a,b) (a,c)
+distl (a,Left b)  = Left (a,b)
+distl (a,Right c) = Right (a,c)
+
+
+
+{-
 
 -- | The /product/ function. 
 -- Apply the function @f@ to the first element of the pair,
@@ -126,10 +107,6 @@ undistl :: Either (a,b) (a,c) -> (a, Either b c)
 undistl (Left (a,b))  = (a,Left b)
 undistl (Right (a,c)) = (a,Right c)
 
--- | @distl@.
-distl :: (a, Either b c) -> Either (a,b) (a,c)
-distl (a,Left b)  = Left (a,b)
-distl (a,Right c) = Right (a,c)
 
 
 
@@ -151,23 +128,4 @@ firsts = prodc fst fst
 seconds :: (a,b) -> (c,d) -> (b,d)
 seconds = prodc snd snd
 
---------------------------------------------------------------------------------
--- Specs
-
--- Alleviate your composing-sectioning mania with specs!
--- The name becomes a pun on spectacles (glasses, specs), 
--- once you use infix directives @`oo`@.
--- E.g.:
--- (abs .) . (*) ==> abs `oo` (*)
-
--- | Compose an arity 1 function with an arity 2 function.
-oo :: (c -> d) -> (a -> b -> c) -> a -> b -> d
-oo f g = (f .) . g
-
--- | Compose an arity 1 function with an arity 3 function.
-ooo :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
-ooo f g = ((f .) .) . g
-
--- | Compose an arity 1 function with an arity 4 function.
-oooo :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
-oooo f g = (((f .) .) .) . g  
+-}

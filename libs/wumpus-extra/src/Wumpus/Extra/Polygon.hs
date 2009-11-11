@@ -22,6 +22,7 @@ import Wumpus.Geometry
 import Data.AffineSpace
 
 
+
 newtype Polygon u = Polygon { vertexList :: [Point2 u] }
   deriving (Eq,Show)
 
@@ -49,7 +50,8 @@ strokePolygon :: (Fill t, Num u, Ord u) => t -> Polygon u -> Primitive u
 strokePolygon = mab fill (vertexPath . vertexList) 
 
 
--- ARG which combinator is this one?
+-- ARG which combinator is this one? - it's not liftA2
+-- its bluebird' with arguments permuted
 mab :: (a -> c -> d) -> (b -> c) -> a -> b -> d
 mab g f a b = g a (f b)
 

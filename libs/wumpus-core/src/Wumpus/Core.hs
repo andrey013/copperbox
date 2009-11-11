@@ -25,6 +25,25 @@ module Wumpus.Core
   , module Wumpus.Core.OutputSVG
   , module Wumpus.Core.Picture
   , module Wumpus.Core.PictureLanguage
+
+  -- Export from Picture Internal
+  , Picture
+  , DPicture
+  , Primitive
+  , DPrimitive
+  , Path
+  , DPath
+  , PathSeg
+  , DPathSeg
+  , Label
+  , DLabel
+
+  , PathProps                   -- Better hidden?
+  , LabelProps                  --      "
+  , EllipseProps                --      "
+  , DrawProp                    --      "
+  , DrawEllipse                 --      "
+
   ) where
 
 import Wumpus.Core.AffineTrans
@@ -34,4 +53,5 @@ import Wumpus.Core.GraphicsState
 import Wumpus.Core.OutputPostScript
 import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture
+import Wumpus.Core.PictureInternal
 import Wumpus.Core.PictureLanguage

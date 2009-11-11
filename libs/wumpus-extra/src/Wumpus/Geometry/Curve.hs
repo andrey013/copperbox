@@ -19,6 +19,7 @@
 module Wumpus.Geometry.Curve where
 
 import Wumpus.Core
+import Wumpus.Core.PictureInternal  -- TODO
 
 import Wumpus.Geometry.Base
 

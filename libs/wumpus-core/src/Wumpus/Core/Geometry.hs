@@ -80,13 +80,14 @@ module Wumpus.Core.Geometry
 
 import Wumpus.Core.Utils ( CMinMax(..), dtrunc )
 
-import Data.FunctionExtras
+import Data.Aviary
 
 import Data.AffineSpace
 import Data.VectorSpace
 
 import Text.PrettyPrint.Leijen hiding ( langle )
 
+import Data.Function ( on )
 import Data.Monoid
 
 
@@ -459,7 +460,7 @@ matrix2Frame (M3'3 e0x e1x ox
 
 -- | /Multiplication/ of frames to form their product.
 frameProduct :: (Num a, InnerSpace (Vec2 a)) => Frame2 a -> Frame2 a -> Frame2 a
-frameProduct = matrix2Frame `oo` twine (*) frame2Matrix frame2Matrix
+frameProduct = matrix2Frame `oo` on (*) frame2Matrix
 
 
 

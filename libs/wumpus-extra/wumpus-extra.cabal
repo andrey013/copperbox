@@ -1,5 +1,5 @@
 name:             wumpus-extra
-version:          0.2.0
+version:          0.3.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -23,8 +23,8 @@ library
   build-depends:      base < 5, containers, old-time,
                       wl-pprint, vector-space, 
                       monadLib, xml, dlist,
-                      groupoid, fun-extras,
-                      wumpus-core == 0.5.0
+                      groupoid, data-aviary == 0.1.0,
+                      wumpus-core == 0.6.0
 
   
   exposed-modules:
