@@ -11,7 +11,13 @@
 -- Portability :  to be determined
 --
 -- Plainly named combinators
--- 
+--
+-- Sometimes permuted to be generally useful...
+--
+-- Note the fixity of @(\#)@ and @(\#\#)@ is not yet /fixed/.
+-- Some experience needs to be gathered as to whether the
+-- precendence levels are appropriate.
+--
 -----------------------------------------------------------------------------
 
 module Data.Aviary
@@ -23,6 +29,7 @@ module Data.Aviary
   , ( ## )
   , subst
   , bigphi
+  , appro
 
   -- * Specs
   , oo
@@ -67,24 +74,27 @@ subst f g x = f x (g x)
 -- Known to Haskell programmers as liftA2 and liftM2 for the 
 -- Applicative and Monad instances of (->).
 --
--- (a1 -> a2 -> r) -> m a1 -> m a2 -> m r where m = ((->) a)
+-- > (a1 -> a2 -> r) -> m a1 -> m a2 -> m r where m = ((->) a)
 -- 
 -- Taste suggests you may prefer liftA2.
 --
 bigphi :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
 bigphi f g h x = f (g x) (h x)
 
-{-
-
--- This one is a favourite but needs a name - I used to call
--- it twine but would prefer something else.
-
 -- | A variant of the @D2@ or dovekie combinator - the argument
--- order has been changed, to be more for Haskellers.
-twine :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
-twine f g h x y = f (g x) (h y) 
-
--}
+-- order has been changed to be more satisfying for Haskellers.
+--
+-- @appro@ is similar to the function @prod@ from the Pair 
+-- calculus, but @appro@ applies the first argument 
+-- @ f :: (c -> d -> e) @ to the two intermediate results.
+-- @prod@ always forms a pair from the intermediate results.
+--
+-- @on@ from Data.Function is similar but less general, where 
+-- the two intermediate results are formed by applying the same 
+-- function to the supplied arguments.
+--
+appro :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
+appro f g h x y = f (g x) (h y) 
 
 
 --------------------------------------------------------------------------------

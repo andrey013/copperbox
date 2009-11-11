@@ -10,8 +10,15 @@
 -- Stability   :  experimental
 -- Portability :  to be determined
 --
--- Bird monickered combinators interdefined
+-- Bird monickered combinators interdefined.
 -- 
+-- This module is intended for illustration (the type signatures!) 
+-- rather than utility.
+-- 
+-- The \'long reach\' Turner set { S, K, I, B, C, S\', B\', C\' }
+--
+-- The Joy et al. set { S, I, B, C, J(alt), S\', B\', C\', J(alt)\' } 
+--
 -----------------------------------------------------------------------------
 
 module Data.Aviary.BirdsInter
@@ -44,6 +51,8 @@ module Data.Aviary.BirdsInter
   , hummingbird
   , idstar
   , idstarstar
+  , jalt
+  , jalt'
   , jay
   , kite
   , owl
@@ -69,7 +78,7 @@ module Data.Aviary.BirdsInter
 
   ) where
 
--- import Data.Function
+
 
 --------------------------------------------------------------------------------
 -- Combinators
@@ -101,9 +110,9 @@ cardinal = starling (bluebird bluebird starling) (kestrel kestrel)
 
 -- | A combinator - apply / applicator - Haskell ('$').
 --
--- Note: the efinition is @ C (B B I) I @ and not the familiar 
--- @ S (S K) @ which as far as Haskell is concern has a different 
--- type. 
+-- Note: the definition here is @- C (B B I) I -@ and not the 
+-- familiar @- S (S K) -@ which as far as Haskell is concerned
+-- has a different type. 
 -- 
 -- @ (S(SK)) :: ((a -> b) -> a) -> (a -> b) -> a @
 applicator :: (a -> b) -> a -> b
@@ -135,7 +144,7 @@ psi = c (b s (b (b c) (b (b (b b)) (c (b b (b b i)) (c (b b i) i))))) (c (b b i)
 becard :: (c -> d) -> (b -> c) -> (a -> b) -> a -> d
 becard = bluebird (bluebird bluebird) bluebird
 
--- | B1 combinator - blackbird - specs `oo`.
+-- | B1 combinator - blackbird - specs 'oo'.
 blackbird :: (c -> d) -> (a -> b -> c) -> a -> b -> d
 blackbird = bluebird bluebird bluebird
 
@@ -145,7 +154,7 @@ bluebird' :: (a -> c -> d) -> a -> (b -> c) -> b -> d
 bluebird' = bluebird bluebird
 
 
--- | B2 combinator - bunting - specs `ooo`.
+-- | B2 combinator - bunting - specs 'ooo'.
 bunting :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
 bunting = bluebird (bluebird bluebird bluebird) bluebird
 
@@ -228,8 +237,23 @@ idstar = cardinal (bluebird bluebird idiot) idiot
 idstarstar :: (a -> b -> c) -> a -> b -> c
 idstarstar = bluebird idstar
 
+-- | Alternative J combinator - this is the J combintor of Joy,
+-- Rayward-Smith and Burton (see. Antoni Diller \'Compiling 
+-- Functional Languages\' page 104). It is not the J - jay 
+-- combinator of the literature.   
+jalt :: (a -> c) -> a -> b -> c
+jalt = bluebird kestrel
+
+
+-- | J' combinator - from Joy, Rayward-Smith and Burton.
+-- See the comment to 'jalt'.
+jalt' :: (a -> b -> d) -> a -> b -> c -> d
+jalt' = bluebird (bluebird kestrel)
+
 
 -- | J combinator - jay.
+--
+-- This is the usual J combinator.
 jay :: (a -> b -> b) -> a -> b -> a -> b
 jay = bluebird (bluebird cardinal) 
                (warbler (bluebird cardinal 

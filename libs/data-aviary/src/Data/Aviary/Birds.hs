@@ -11,6 +11,13 @@
 -- Portability :  to be determined
 --
 -- Bird monickered combinators
+--
+-- This module is intended for illustration (the type signatures!) 
+-- rather than utility.
+--
+-- The \'long reach\' Turner set { S, K, I, B, C, S\', B\', C\' }
+--
+-- The Joy et al. set { S, I, B, C, J(alt), S\', B\', C\', J(alt)\' } 
 -- 
 -----------------------------------------------------------------------------
 
@@ -44,6 +51,8 @@ module Data.Aviary.Birds
   , hummingbird
   , idstar
   , idstarstar
+  , jalt
+  , jalt'
   , jay
   , kite
   , owl
@@ -119,7 +128,7 @@ psi = on
 becard :: (c -> d) -> (b -> c) -> (a -> b) -> a -> d
 becard f g h x = f (g (h x))
 
--- | B1 combinator - blackbird - specs `oo`.
+-- | B1 combinator - blackbird - specs 'oo'.
 blackbird :: (c -> d) -> (a -> b -> c) -> a -> b -> d
 blackbird f g x y = f (g x y)
 
@@ -127,7 +136,7 @@ blackbird f g x y = f (g x y)
 bluebird' :: (a -> c -> d) -> a -> (b -> c) -> b -> d
 bluebird' f x g y = f x (g y)
 
--- | B2 combinator - bunting - specs `ooo`.
+-- | B2 combinator - bunting - specs 'ooo'.
 bunting :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
 bunting f g x y z = f (g x y z)
 
@@ -207,9 +216,26 @@ idstar f x = f x
 idstarstar :: (a -> b -> c) -> a -> b -> c
 idstarstar f x y = f x y
 
+
+-- | Alternative J combinator - this is the J combintor of Joy,
+-- Rayward-Smith and Burton (see. Antoni Diller \'Compiling 
+-- Functional Languages\' page 104). It is not the J - jay 
+-- combinator of the literature.   
+jalt :: (a -> c) -> a -> b -> c
+jalt f x _y = f x
+
+
+-- | J' combinator - from Joy, Rayward-Smith and Burton.
+-- See the comment to 'jalt'.
+jalt' :: (a -> b -> d) -> a -> b -> c -> d
+jalt' f x y _z = f x y
+
 -- | J combinator - jay.
+--
+-- This is the usual J combinator.
 jay :: (a -> b -> b) -> a -> b -> a -> b
 jay f x y z = f x (f z y)
+
 
 -- | Ki - kite.
 -- Corresponds to the encoding of @false@ in the lambda calculus.
@@ -231,6 +257,7 @@ quacky :: a -> (a -> b) -> (b -> c) -> c
 quacky x f g = g (f x)
 
 -- | Q combinator - queer bird.
+--
 -- Haskell @(\#\#)@ in Peter Thiemann\'s Wash, reverse composition.
 queer :: (a -> b) -> (b -> c) -> a -> c
 queer f g x = g (f x)
@@ -262,13 +289,14 @@ robinstar f x y z = f y z x
 robinstarstar :: (a -> c -> d -> b -> e) -> a -> b -> c -> d -> e
 robinstarstar f s t u v = f s u v t
 
-
--- | S combinator - starling - Haskell: Applicative\'s @(\<*\>)@ on 
--- functions.
+-- | S combinator - starling. 
+-- 
+-- Haskell: Applicative\'s @(\<*\>)@ on functions.
 --
 -- Substitution.
 starling :: (a -> b -> c) -> (a -> b) -> a -> c
 starling f g x = f x (g x)
+
 
 -- | S' combinator - starling prime - Turner\'s big phi. 
 -- Haskell: Applicative\'s liftA2 on functions.
