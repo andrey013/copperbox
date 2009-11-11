@@ -22,5 +22,5 @@ demo1 = do
     writeEPS "arrow1.eps" Nothing p1 
     writeSVG "arrow1.svg" p1
   where 
-    p1 = picArrow arr1 `composite` picArrow arr2
-                       `composite` picArrow arr3
+    p1 = picArrow arr1 `over` picArrow arr2
+                       `over` picArrow arr3

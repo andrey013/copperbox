@@ -34,7 +34,7 @@ instance Pointwise (Polygon a) where
 
  
 drawFrame :: (Num u, Ord u) => Picture u -> Picture u
-drawFrame p = p `composite` frp
+drawFrame p = p `over` frp
   where
     (Frame2 e0 e1 o) = extractFrame p
     xbasis           = vertexPath [o, o .+^ e0]

@@ -309,13 +309,28 @@ instance (Num u, Ord u) => Vertical (Picture u) where
   topBound    = maybe 0 id . upperPlane . boundary
   bottomBound = maybe 0 id . lowerPlane . boundary
 
+-- Note - picture is a binary tree and drawing is depth-first,
+-- left-to-right so pictures in the right of the tree potentially
+-- are drawn on top of pictures on the left.
+--
+-- So to print picture a _over_ picture b we form this node:
+--
+--  measure 
+--    /\
+--   /  \
+--  b    a
+--
+-- Hence `over` flips b and a
+
+
 instance (Num u, Ord u) => Composite (Picture u) where
   cempty  = Empty
 
-  a     `composite` Empty = a
-  Empty `composite` b     = b
-  a     `composite` b     = Picture (ortho zeroPt, bb) a b where
-                            bb = union (boundary a) (boundary b)
+  a     `over` Empty = a
+  Empty `over` b     = b
+  a     `over` b     = Picture (ortho zeroPt, bb) b a where
+                       bb = union (boundary a) (boundary b)
+                       
 
 
 

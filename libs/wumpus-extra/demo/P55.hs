@@ -24,7 +24,7 @@ rect100 :: Picture Double
 rect100 = frame $ fillPolygon (PSGray 0.75) $ square 100 zeroPt
 
 example1 :: Picture Double
-example1 = coordChange $ rect100 `composite` line_stack where
+example1 = coordChange $ line_stack `over` rect100 where
   line_stack = stack [diagonals 40 90, diagonals 60 62, diagonals 20 40]
 
 diagonals :: Int -> Int -> Picture Double

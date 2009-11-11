@@ -60,8 +60,11 @@ class Vertical a where
 -- | Essentially the Monoid class, but implementations of 
 -- 'composite' not should not move either picture.
 class Composite a where
-  composite :: a -> a -> a
-  cempty    :: a 
+  over    :: a -> a -> a
+  beneath :: a -> a -> a
+  cempty  :: a 
+
+  beneath = flip over
 
 -- Move in 2D
 class (Vertical a, Horizontal a) => PMove a where
@@ -76,7 +79,7 @@ infixr 6 ->-
 
 -- | Horizontal composition - place @b@ at the right of @a@.
 (->-) :: (Horizontal a, Composite a, Num u, u ~ HUnit a) => a -> a -> a
-a ->- b = composite a (moveH disp b) where disp = rightBound a - leftBound b 
+a ->- b = over a (moveH disp b) where disp = rightBound a - leftBound b 
 
 -- | Horizontal composition - place @a@ at the left of @b@.
 (-<-) :: (Horizontal a, Composite a, Num u, u ~ HUnit a) => a -> a -> a
@@ -84,7 +87,7 @@ a ->- b = composite a (moveH disp b) where disp = rightBound a - leftBound b
 
 -- | Vertical composition - place @b@ below @a@.
 (-//-) :: (Vertical a, Composite a, Num u, u ~ VUnit a) => a -> a -> a
-a -//- b = composite a (moveV disp b) where disp = bottomBound a - topBound b 
+a -//- b = over a (moveV disp b) where disp = bottomBound a - topBound b 
 
 -- | Vertical composition - place @a@ above @b@.
 (-\\-) :: (Vertical a, Composite a, Num u, u ~ VUnit a) => a -> a -> a
@@ -96,9 +99,9 @@ at :: (PMove a, u ~ VUnit a, VUnit a ~ HUnit a) => Point2 u -> a -> a
 at (P2 x y) p = pmove x y p
 
 
--- | Stack the pictures using 'composite'.
+-- | Stack the pictures using 'over'.
 stack :: Composite a => [a] -> a
-stack = foldl' composite cempty
+stack = foldl' over cempty
 
 
 -- | The (one-dimensional) point midway between the left bound
@@ -122,7 +125,7 @@ center a = P2 (hcenter a) (vcenter a)
 (-@-) :: (Horizontal a, Vertical a, Composite a, PMove a, Fractional u, 
              u ~ HUnit a, HUnit a ~ VUnit a)
          => a -> a -> a
-p1 -@- p2 = composite p1 (pmove x y p2) where
+p1 -@- p2 = over p1 (pmove x y p2) where
   x = hcenter p1 - hcenter p2
   y = vcenter p1 - vcenter p2
 

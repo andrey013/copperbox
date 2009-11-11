@@ -50,13 +50,13 @@ demo4 = do
 demo5 :: IO ()
 demo5 = writeEPS "picture5.eps" Nothing p1
   where
-    p1 = square `composite` (rotate (pi/4) squares)
+    p1 = square `over` (rotate (pi/4) squares)
    
 
 demo6 :: IO ()
 demo6 = writeEPS "picture6.eps" Nothing p1
   where
-    p1 = square `composite` (rotate45 square)
+    p1 = square `over` (rotate45 square)
 
 
 demo7 :: IO ()

@@ -66,7 +66,7 @@ mkLabel s = frame $ ztextlabel zeroPt s
 
 nodePicture :: (Num u, Ord u) => NodeMap u -> Picture u
 nodePicture = Map.foldWithKey fn cempty where
-  fn (NamedNode s) pt pic = pic `composite` (at pt $ mkLabel s)
+  fn (NamedNode s) pt pic = pic `over` (at pt $ mkLabel s)
   fn _             _  pic = pic
 
 
