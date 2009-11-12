@@ -27,6 +27,8 @@ plum = PSRgb 0.867  0.627  0.867
 black :: PSColour
 black = PSRgb 0 0 0 
 
+
+
 lbl1 :: Picture Double
 lbl1 = line1 -//- line2 where
   line1 = frame (textlabel attrs zeroPt "Hello")
@@ -34,22 +36,22 @@ lbl1 = line1 -//- line2 where
   attrs = (peru, FontAttr "Helvetica" "Helvetica" 12) 
 
 
-demo1 :: IO ()
-demo1 = do 
-    writeEPS "label1.eps" (Just ("Times-Roman",10)) lbl1
-    writeSVG "label1.svg" lbl1
+demo01 :: IO ()
+demo01 = do 
+    writeEPS "./out/label01.eps" (Just ("Times-Roman",10)) lbl1
+    writeSVG "./out/label01.svg" lbl1
 
-demo2 :: IO ()
-demo2 = do 
-    writeEPS "label2.eps" (Just ("Times-Roman",10)) p1
-    writeSVG "label2.svg" p1
+demo02 :: IO ()
+demo02 = do 
+    writeEPS "./out/label02.eps" (Just ("Times-Roman",10)) p1
+    writeSVG "./out/label02.svg" p1
   where
     p1 = lbl1 ->- lbl1 ->- (rotateAbout (pi/4) (center lbl1) lbl1) ->- lbl1
 
-demo3 :: IO ()
-demo3 = do 
-    writeEPS "label3.eps" (Just ("Courier",10)) p1
-    writeSVG "label3.svg" p1
+demo03 :: IO ()
+demo03 = do 
+    writeEPS "./out/label03.eps" (Just ("Courier",10)) p1
+    writeSVG "./out/label03.svg" p1
   where
     p1 = (drawBounds lbl1) ->- 
          (drawBounds lbl1) ->- 
@@ -58,8 +60,10 @@ demo3 = do
 
 
 
-demo4 :: IO ()
-demo4 = writeEPS "label4.eps" (Just ("Times-Roman",10)) p1
+demo04 :: IO ()
+demo04 = do
+    writeEPS "./out/label04.eps" (Just ("Times-Roman",10)) p1
+    writeSVG "./out/label04.svg" p1
   where
     p1 =        (drawBounds lbl1) 
          `over` (drawBounds $ scale 2 2 lbl1)
@@ -80,26 +84,26 @@ bigLetter col ch = uniformScale 5 $ frame $ textlabel attrs zeroPt [ch]
 
 
 -- | A should be above B, above T
-demo5 :: IO ()
-demo5 = do 
-    writeEPS "label5.eps" (Just ("Helvetica",12)) p1
-    writeSVG "label5.svg" p1
+demo05 :: IO ()
+demo05 = do 
+    writeEPS "./out/label05.eps" (Just ("Helvetica",12)) p1
+    writeSVG "./out/label05.svg" p1
   where
     p1 = uniformScale 10 $ stackCenter [bigA, bigB, bigT]
 
 
-demo6 :: IO ()
-demo6 = do 
-    writeEPS "label6.eps" (Just ("Helvetica",12)) p1
-    writeSVG "label6.svg" p1
+demo06 :: IO ()
+demo06 = do 
+    writeEPS "./out/label06.eps" (Just ("Helvetica",12)) p1
+    writeSVG "./out/label06.svg" p1
   where
     p1 = hsep 20 $ map (drawBounds . bigLetter peru) "abcdefg" 
 
 
-demo7 :: IO ()
-demo7 = do 
-    writeEPS "label7.eps" (Just ("Helvetica",12)) p1
-    writeSVG "label7.svg" p1
+demo07 :: IO ()
+demo07 = do 
+    writeEPS "./out/label07.eps" (Just ("Helvetica",12)) p1
+    writeSVG "./out/label07.svg" p1
   where
     p1 = pA ->- pB ->- pC ->- pA
     
@@ -108,10 +112,10 @@ demo7 = do
     pC = drawBounds $ move 0 10 $ bigLetter peru 'C'
 
 
-demo8 :: IO ()
-demo8 = do 
-    writeEPS "label8.eps" (Just ("Helvetica",12)) p1
-    writeSVG "label8.svg" p1
+demo08 :: IO ()
+demo08 = do 
+    writeEPS "./out/label08.eps" (Just ("Helvetica",12)) p1
+    writeSVG "./out/label08.svg" p1
   where
     p1 = hcat [pA, pB, pC, pA]
     
@@ -119,3 +123,25 @@ demo8 = do
     pB = drawBounds $ uniformScale 2 bigB
     pC = drawBounds $ move 0 10 $ bigLetter peru 'C'
 
+demo09 :: IO ()
+demo09 = do 
+    writeEPS "./out/label09.eps" (Just ("Helvetica",12)) p1
+    writeSVG "./out/label09.svg" p1
+  where
+    p1 = (bigA -//- bigB) ->- (bigA -\\- bigB) 
+    
+
+
+main :: IO ()
+main = do 
+  demo01
+  demo02
+  demo03
+  demo04
+  demo05
+  demo06
+  demo07
+  demo08
+  demo09
+
+  

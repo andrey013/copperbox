@@ -19,6 +19,7 @@ module Wumpus.Core.BoundingBox
   -- * Types
     BoundingBox(..)
   , DBoundingBox
+  , CardinalPoint(..)
 
   -- * Type class
   , Boundary(..)
@@ -30,21 +31,13 @@ module Wumpus.Core.BoundingBox
   , corners
   , lowerLeftUpperRight
   , withinBB
-  , width
-  , height
-  , bottomLeft
-  , topRight
-  , topLeft
-  , bottomRight
-  , center
-  , north
-  , south
-  , east
-  , west
-  , northEast
-  , southEast
-  , southWest
-  , northWest
+  , boundaryWidth
+  , boundaryHeight
+  , boundaryBottomLeft
+  , boundaryTopRight
+  , boundaryTopLeft
+  , boundaryBottomRight
+  , boundaryPoint
   , leftPlane
   , rightPlane
   , lowerPlane
@@ -82,6 +75,9 @@ data BoundingBox a = ZeroBB
   deriving (Eq,Show)
 
 type DBoundingBox = BoundingBox Double
+
+data CardinalPoint = C | N | NE | E | SE | S | SW | W | NW
+  deriving (Eq,Show)
 
 
 --------------------------------------------------------------------------------
@@ -164,66 +160,56 @@ withinBB _ ZeroBB       = False
 withinBB p (BBox ll ur) = within p ll ur
 
 
-width :: Num a => BoundingBox a -> a
-width ZeroBB                         = 0
-width (BBox (P2 xmin _) (P2 xmax _)) = xmax - xmin
+boundaryWidth :: Num a => BoundingBox a -> a
+boundaryWidth ZeroBB                         = 0
+boundaryWidth (BBox (P2 xmin _) (P2 xmax _)) = xmax - xmin
 
-height :: Num a => BoundingBox a -> a
-height ZeroBB                         = 0
-height (BBox (P2 _ ymin) (P2 _ ymax)) = ymax - ymin
+boundaryHeight :: Num a => BoundingBox a -> a
+boundaryHeight ZeroBB                         = 0
+boundaryHeight (BBox (P2 _ ymin) (P2 _ ymax)) = ymax - ymin
 
 
 --------------------------------------------------------------------------------
 
--- points on the boundary
+-- Points on the boundary
 -- These types become horrible with the introduction of ZeroBB
 
 
-bottomLeft :: BoundingBox a -> Maybe (Point2 a)
-bottomLeft ZeroBB      = Nothing
-bottomLeft (BBox ll _) = Just ll
+boundaryBottomLeft  :: BoundingBox a -> Maybe (Point2 a)
+boundaryBottomLeft  = mkPoint (\x y _ _-> P2 x y)
 
-topRight :: BoundingBox a -> Maybe (Point2 a)
-topRight ZeroBB      = Nothing
-topRight (BBox _ ur) = Just ur
+boundaryTopRight    :: BoundingBox a -> Maybe (Point2 a)
+boundaryTopRight    = mkPoint (\_ _ x y -> P2 x y)
 
-topLeft :: BoundingBox a -> Maybe (Point2 a)
-topLeft ZeroBB                         = Nothing
-topLeft (BBox (P2 xmin _) (P2 _ ymax)) = Just $ P2 xmin ymax
+boundaryTopLeft     :: BoundingBox a -> Maybe (Point2 a)
+boundaryTopLeft     = mkPoint (\x _ _ y -> P2 x y)
 
-bottomRight :: BoundingBox a -> Maybe (Point2 a)
-bottomRight ZeroBB                         = Nothing
-bottomRight (BBox (P2 _ ymin) (P2 xmax _)) = Just $ P2 xmax ymin
+boundaryBottomRight :: BoundingBox a -> Maybe (Point2 a)
+boundaryBottomRight = mkPoint (\_ y x _ -> P2 x y)
 
-center :: Fractional a => BoundingBox a -> Maybe (Point2 a)
-center ZeroBB                     = Nothing
-center (BBox (P2 x y) (P2 x' y')) = Just $ P2 (x+0.5*(x'-x)) (y+0.5*(y'-x))
+-- convoluted by avoids the Fractional obligation of boundaryPoint
+mkPoint :: (a -> a -> a -> a -> Point2 a) -> BoundingBox a -> Maybe (Point2 a)
+mkPoint _  ZeroBB = Nothing
+mkPoint fn (BBox (P2 x0 y0) (P2 x1 y1)) = Just $ fn x0 y0 x1 y1
 
-north :: Fractional a => BoundingBox a -> Maybe (Point2 a)
-north ZeroBB                            = Nothing
-north (BBox (P2 xmin _) (P2 xmax ymax)) = Just $ P2 (xmin + 0.5*(xmax-xmin)) ymax
 
-south :: Fractional a => BoundingBox a -> Maybe (Point2 a)
-south ZeroBB                            = Nothing
-south (BBox (P2 xmin ymin) (P2 xmax _)) = Just $ P2 (xmin + 0.5*(xmax-xmin)) ymin
+boundaryPoint :: Fractional a 
+              => CardinalPoint -> BoundingBox a -> Maybe (Point2 a)
+boundaryPoint _   ZeroBB                       = Nothing
+boundaryPoint loc (BBox (P2 x0 y0) (P2 x1 y1)) = Just $ fn loc where
+  fn C      = P2 xMid   yMid
+  fn N      = P2 xMid   y1
+  fn NE     = P2 x1     y1
+  fn E      = P2 x1     yMid
+  fn SE     = P2 x1     y0
+  fn S      = P2 xMid   y0
+  fn SW     = P2 x0     y0
+  fn W      = P2 x0     yMid
+  fn NW     = P2 x0     y1       
 
-east :: Fractional a => BoundingBox a -> Maybe (Point2 a)
-east ZeroBB                            = Nothing
-east (BBox (P2 _ ymin) (P2 xmax ymax)) = Just $ P2 xmax (ymin + 0.5*(ymax-ymin))
+  xMid      = x0 + 0.5 * (x1 - x0)
+  yMid      = y0 + 0.5 * (y1 - y0)
 
-west :: Fractional a => BoundingBox a -> Maybe (Point2 a)
-west ZeroBB                            = Nothing
-west (BBox (P2 xmin ymin) (P2 _ ymax)) = Just $ P2 xmin (ymin + 0.5*(ymax-ymin))
-
-northEast :: BoundingBox a -> Maybe (Point2 a)
-southEast :: BoundingBox a -> Maybe (Point2 a)
-southWest :: BoundingBox a -> Maybe (Point2 a)
-northWest :: BoundingBox a -> Maybe (Point2 a)
-
-northEast = topRight
-southEast = bottomRight
-southWest = bottomLeft
-northWest = topLeft 
 
 --------------------------------------------------------------------------------
 

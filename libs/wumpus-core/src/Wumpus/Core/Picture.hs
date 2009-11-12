@@ -50,7 +50,7 @@ module Wumpus.Core.Picture
 
   ) where
 
-import Wumpus.Core.BoundingBox hiding ( center )
+import Wumpus.Core.BoundingBox
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState

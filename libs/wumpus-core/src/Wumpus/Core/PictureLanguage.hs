@@ -16,9 +16,11 @@
 
 module Wumpus.Core.PictureLanguage 
   (
+    HAlign(..)
+  , VAlign(..)
 
   -- * Type family and classes
-    PUnit 
+  , PUnit 
   , PEmpty(..)
   , Horizontal(..)
   , Vertical(..)
@@ -28,6 +30,10 @@ module Wumpus.Core.PictureLanguage
 
   -- * Bounds
   , center
+  , topleft
+  , topright
+  , bottomleft
+  , bottomright
 
   -- * Composition
   , ( ->- )
@@ -46,6 +52,14 @@ module Wumpus.Core.PictureLanguage
   , hsep
   , vsep
  
+  -- * Compose with alignment
+  , alignH
+  , alignV
+  , hcatA
+  , vcatA
+  , hsepA
+  , vsepA
+
   ) where
 
 import Wumpus.Core.Geometry ( Point2(..), Vec2(..) )
@@ -59,14 +73,14 @@ import Data.List ( foldl' )
 -- Data types
 
 -- Alignment
-{-
+
 
 data HAlign = HTop | HCenter | HBottom
   deriving (Eq,Show)
 
 data VAlign = VLeft | VCenter | VRight
   deriving (Eq,Show)
--}
+
 
 
 
@@ -113,13 +127,44 @@ class Blank a where
 -- Operations on bounds
 
 -- | The center of a picture.
-center :: (Horizontal a, Vertical a, Fractional u, u ~ PUnit a)
-       => a -> Point2 u
+center :: (Horizontal a, Vertical a, Fractional u, u ~ PUnit a) => a -> Point2 u
 center a = P2 hcenter vcenter where  
-    hcenter = leftBound a + 0.5 * (rightBound a - leftBound a)
-    vcenter = bottomBound a + 0.5 * (topBound a - bottomBound a)
+    hcenter = leftBound a   + 0.5 * (rightBound a - leftBound a)
+    vcenter = bottomBound a + 0.5 * (topBound a   - bottomBound a)
+
+topleft       :: (Horizontal a, Vertical a, u ~ PUnit a) => a -> Point2 u
+topleft a     = P2 (leftBound a)  (topBound a)
+
+topright      :: (Horizontal a, Vertical a, u ~ PUnit a) => a -> Point2 u
+topright a    = P2 (rightBound a) (topBound a)
+
+bottomleft    :: (Horizontal a, Vertical a, u ~ PUnit a) => a -> Point2 u
+bottomleft a  = P2 (leftBound a)  (bottomBound a)
+
+bottomright   :: (Horizontal a, Vertical a, u ~ PUnit a) => a -> Point2 u
+bottomright a = P2 (rightBound a) (bottomBound a)
 
 
+leftmid       :: (Fractional u, Horizontal a, Vertical a, u ~ PUnit a) 
+              => a -> Point2 u
+leftmid a     = P2 (leftBound a) (midpt (bottomBound a) (topBound a))
+
+rightmid      :: (Fractional u, Horizontal a, Vertical a, u ~ PUnit a) 
+              => a -> Point2 u
+rightmid a    = P2 (rightBound a) (midpt (bottomBound a) (topBound a))
+
+
+topmid        :: (Fractional u, Horizontal a, Vertical a, u ~ PUnit a) 
+              => a -> Point2 u
+topmid a      = P2 (midpt (leftBound a) (rightBound a)) (topBound a)
+
+bottommid     :: (Fractional u, Horizontal a, Vertical a, u ~ PUnit a) 
+              => a -> Point2 u
+bottommid a   = P2 (midpt (leftBound a) (rightBound a)) (bottomBound a)
+
+
+midpt :: Fractional a => a -> a -> a
+midpt a b = a + 0.5*(b-a)
 
 --------------------------------------------------------------------------------
 -- Composition
@@ -227,11 +272,48 @@ vsep n (x:xs) = foldl' (vspace n) x xs
 --------------------------------------------------------------------------------
 -- Aligning pictures
 
-{-
 
--- TODO Next
+vecMove :: (Composite a, Move a, u ~ PUnit a) => a -> a -> (Vec2 u) -> a 
+vecMove a b (V2 x y) = a `over` (move x y) b 
 
-alignH :: HAlign -> a -> a -> a
-alignH ha a b = undefined
+alignH :: ( Fractional u, Composite a, Horizontal a, Vertical a, Move a
+          , u ~ PUnit a ) 
+       => HAlign -> a -> a -> a
+alignH HTop    p1 p2 = vecMove p1 p2 (topright p1    .-. topleft p2)
+alignH HCenter p1 p2 = vecMove p1 p2 (rightmid p1    .-. leftmid p2)
+alignH HBottom p1 p2 = vecMove p1 p2 (bottomright p1 .-. bottomleft p2)
 
--}
+alignV :: ( Fractional u, Composite a, Horizontal a, Vertical a, Move a
+          , u ~ PUnit a ) 
+       => VAlign -> a -> a -> a
+alignV VLeft   p1 p2 = vecMove p1 p2 (bottomleft p1  .-. topleft p2)
+alignV VCenter p1 p2 = vecMove p1 p2 (bottommid p1   .-. topmid p2)
+alignV VRight  p1 p2 = vecMove p1 p2 (bottomright p1 .-. topright p2)
+
+
+hcatA :: ( Fractional u, PEmpty a, Horizontal a, Vertical a
+         , Composite a, Move a, u ~ PUnit a)
+     => HAlign -> [a] -> a
+hcatA ha = foldl' op pempty where op = alignH ha
+
+vcatA :: ( Fractional u, PEmpty a, Horizontal a, Vertical a
+         , Composite a, Move a, u ~ PUnit a)
+     => VAlign -> [a] -> a
+vcatA va = foldl' op pempty where op = alignV va
+
+
+
+hsepA :: ( Fractional u, PEmpty a, Horizontal a, Vertical a
+         , Composite a, Move a, Blank a, u ~ PUnit a)
+     => HAlign -> u -> [a] -> a
+hsepA _  _ []     = pempty
+hsepA ha n (x:xs) = foldl' op x xs where 
+   a `op` b = alignH ha (alignH ha a (blankH n)) b 
+
+vsepA :: ( Fractional u, PEmpty a, Horizontal a, Vertical a
+         , Composite a, Move a, Blank a, u ~ PUnit a)
+     => VAlign -> u -> [a] -> a
+vsepA _  _ []     = pempty
+vsepA va n (x:xs) = foldl' op x xs where 
+   a `op` b = alignV va (alignV va a (blankV n)) b 
+

@@ -41,7 +41,7 @@ module Wumpus.Core.PictureInternal
   ) where
 
 import Wumpus.Core.AffineTrans
-import Wumpus.Core.BoundingBox hiding ( center )
+import Wumpus.Core.BoundingBox
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureLanguage hiding ( hcat, vcat, hsep, vsep )
