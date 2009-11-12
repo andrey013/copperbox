@@ -65,3 +65,10 @@ demo7 = writeEPS "picture7.eps" Nothing p1
     p1 = square -@- (rotate45 square)
 
 
+
+demo8 :: IO ()
+demo8 = do 
+    writeEPS "picture8.eps" Nothing p1
+    writeSVG "picture8.svg" p1
+  where
+    p1 = hspace 20 square square

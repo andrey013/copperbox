@@ -24,6 +24,7 @@ module Wumpus.Core.BoundingBox
   , Boundary(..)
   
   -- * Operations
+  , bbox
   , union 
   , trace
   , corners
@@ -120,11 +121,6 @@ class Boundary a where
 --------------------------------------------------------------------------------
 
 
-union :: Ord a => BoundingBox a -> BoundingBox a -> BoundingBox a
-ZeroBB     `union` b            = b
-a          `union` ZeroBB       = a
-BBox ll ur `union` BBox ll' ur' = BBox (cmin ll ll') (cmax ur ur')
-
 instance Pointwise (BoundingBox a) where
   type Pt (BoundingBox a) = Point2 a
   pointwise _ ZeroBB       = ZeroBB
@@ -133,6 +129,13 @@ instance Pointwise (BoundingBox a) where
 
 --------------------------------------------------------------------------------
 
+bbox :: Point2 a -> Point2 a -> BoundingBox a
+bbox = BBox 
+
+union :: Ord a => BoundingBox a -> BoundingBox a -> BoundingBox a
+ZeroBB     `union` b            = b
+a          `union` ZeroBB       = a
+BBox ll ur `union` BBox ll' ur' = BBox (cmin ll ll') (cmax ur ur')
 
 -- Trace the point list finding the /extremity/...
 

@@ -18,10 +18,13 @@ module Wumpus.Core.PictureLanguage
   (
   -- * Type classes
     PEmpty(..)
+  , HUnit
+  , VUnit
   , Horizontal(..)
   , Vertical(..)
   , Composite(..)
   , PMove(..)
+  , PBlank(..)
 
   -- * Derived operations
   , ( ->- )
@@ -35,6 +38,11 @@ module Wumpus.Core.PictureLanguage
   , center
   , ( -@- )
   , stackCenter
+
+  , blankH
+  , blankV
+  , hspace
+  , vspace
  
   ) where
 
@@ -49,14 +57,16 @@ import Data.List ( foldl' )
 class PEmpty a where
   pempty :: a
 
+type family HUnit a
+type family VUnit a :: *
+
+
 class Horizontal a where
-  type HUnit a :: *
   moveH      :: HUnit a -> a -> a
   leftBound  :: a -> HUnit a
   rightBound :: a -> HUnit a
 
 class Vertical a where
-  type VUnit a :: *
   moveV       :: VUnit a -> a -> a
   topBound    :: a -> VUnit a
   bottomBound :: a -> VUnit a
@@ -68,8 +78,13 @@ class Composite a where
   beneath = flip over
   
 -- Move in 2D
-class (Vertical a, Horizontal a) => PMove a where
-  pmove   :: HUnit a -> VUnit a -> a -> a
+class PMove a where
+  pmove   :: (u ~ HUnit a, u ~ VUnit a) => u -> u -> a -> a
+
+
+class PBlank a where
+  blank :: (u ~ HUnit a, u ~ VUnit a) => u -> u -> a
+
 
 
 --------------------------------------------------------------------------------
@@ -135,3 +150,34 @@ stackCenter :: (PEmpty a, Horizontal a, Vertical a, Composite a,
                 u ~ HUnit a, HUnit a ~ VUnit a)
             => [a] -> a
 stackCenter = foldl' (-@-) pempty
+
+
+
+--------------------------------------------------------------------------------
+
+
+blankH  :: (PBlank a, Num u, u ~ HUnit a, u ~ VUnit a) => u -> a
+blankH = blank `flip` 0
+
+blankV  :: (PBlank a, Num u, u ~ HUnit a, u ~ VUnit a) => u -> a
+blankV = blank 0
+
+
+
+-- | The following simple definition of hspace is invalid:
+--
+-- > hspace n a b = a ->- (moveH n b)
+-- 
+-- The movement due to @moveH n@ is annulled by the @->-@ 
+-- operator which moves relative to the bounding box.
+-- 
+-- The almost as simple definition below, seems to justify 
+-- including Blank as a Picture constructor.
+--
+hspace :: (Composite a, Horizontal a, PBlank a, u ~ HUnit a, u~ VUnit a, Num u) 
+       => u -> a -> a -> a
+hspace n a b = a ->- blankH n ->-  b
+
+vspace :: (Composite a, Vertical a, PBlank a, u ~ HUnit a, u ~ VUnit a, Num u) 
+       => u -> a -> a -> a
+vspace n a b = a -//- blankV n -//-  b
