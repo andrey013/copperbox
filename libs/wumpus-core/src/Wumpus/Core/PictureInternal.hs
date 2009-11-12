@@ -44,7 +44,7 @@ import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox hiding ( center )
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.PictureLanguage
+import Wumpus.Core.PictureLanguage hiding ( hcat, vcat, hsep, vsep )
 import Wumpus.Core.Utils
 
 import Data.Aviary
@@ -76,7 +76,7 @@ import Text.PrettyPrint.Leijen hiding ( empty )
 -- Apropos the constructors, Picture is a simple binary 
 -- leaf-labelled tree via 
 -- 
--- > Empty | Single (aka leaf) | Picture (aka tree)
+-- > PicEmpty (aka empty) | Single (aka leaf) | Picture (aka tree)
 --
 -- The additional constructors are convenience:
 --
@@ -90,10 +90,10 @@ import Text.PrettyPrint.Leijen hiding ( empty )
 -- @Clip@ nests a picture (tree) inside a clipping path.
 --
 
-data Picture u = Empty
-               | Blank    (Locale u)
+data Picture u = PicEmpty
+               | PicBlank (Locale u)
                | Single   (Locale u) (Primitive u)
-               | Multi    (Locale u) [Primitive u] -- multiple prims in same affine frame
+               | Multi    (Locale u) [Primitive u]
                | Picture  (Locale u) (Picture u)   (Picture u)
                | Clip     (Locale u) (Path u)      (Picture u)
   deriving (Eq,Show) 
@@ -207,8 +207,8 @@ type Locale u = (Frame2 u, BoundingBox u)
 -- Pretty printing
 
 instance (Num u, Pretty u) => Pretty (Picture u) where
-  pretty Empty              = text "*empty*"
-  pretty (Blank m)          = text "*BLANK*" <+> ppLocale m
+  pretty PicEmpty           = text "*empty*"
+  pretty (PicBlank m)       = text "*BLANK*" <+> ppLocale m
   pretty (Single m prim)    = ppLocale m <$> indent 2 (pretty prim)
 
   pretty (Multi m prims)    = ppLocale m <$> indent 2 (list $ map pretty prims)
@@ -331,7 +331,7 @@ transformBBox fp = trace . map fp . corners
 -- What should leftBound and rightBound be for an empty picture?
 
 instance PEmpty (Picture u) where
-  pempty  = Empty
+  pempty  = PicEmpty
 
 type instance PUnit (Picture u) = u
 
@@ -361,21 +361,21 @@ instance (Num u, Ord u) => Vertical (Picture u) where
 
 instance (Num u, Ord u) => Composite (Picture u) where
 
-  a     `over` Empty = a
-  Empty `over` b     = b
-  a     `over` b     = Picture (ortho zeroPt, bb) b a where
-                       bb = union (boundary a) (boundary b)
+  a        `over` PicEmpty = a
+  PicEmpty `over` b        = b
+  a        `over` b        = Picture (ortho zeroPt, bb) b a where
+                             bb = union (boundary a) (boundary b)
                        
 
 
 
 instance (Num u, Ord u, Horizontal (Picture u), Vertical (Picture u)) => 
-      PMove (Picture u) where
-  pmove x y = movePic (V2 x y)
+      Move (Picture u) where
+  move x y = movePic (V2 x y)
 
 
-instance Num u => PBlank (Picture u) where
-  blank w h = Blank (ortho zeroPt, bbox zeroPt (P2 w h))
+instance Num u => Blank (Picture u) where
+  blank w h = PicBlank (ortho zeroPt, bbox zeroPt (P2 w h))
 
 --------------------------------------------------------------------------------
 -- Boundary
@@ -402,12 +402,12 @@ instance (Num u, Ord u) => Boundary (Primitive u) where
 
 instance Boundary (Picture u) where
   type BoundaryUnit (Picture u) = u       
-  boundary Empty                = ZeroBB
-  boundary (Blank   (_,bb))     = bb
-  boundary (Single  (_,bb) _)   = bb
-  boundary (Multi   (_,bb) _)   = bb
-  boundary (Picture (_,bb) _ _) = bb
-  boundary (Clip    (_,bb) _ _) = bb
+  boundary PicEmpty              = ZeroBB
+  boundary (PicBlank (_,bb))     = bb
+  boundary (Single   (_,bb) _)   = bb
+  boundary (Multi    (_,bb) _)   = bb
+  boundary (Picture  (_,bb) _ _) = bb
+  boundary (Clip     (_,bb) _ _) = bb
 
 
 
@@ -418,12 +418,12 @@ instance Boundary (Picture u) where
 
 
 mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
-mapLocale _ Empty            = Empty
-mapLocale f (Blank   m)      = Blank (f m)
-mapLocale f (Single  m prim) = Single (f m) prim
-mapLocale f (Multi   m ps)   = Multi (f m) ps
-mapLocale f (Picture m a b)  = Picture (f m) a b
-mapLocale f (Clip    m x p)  = Clip (f m) x p
+mapLocale _ PicEmpty          = PicEmpty
+mapLocale f (PicBlank m)      = PicBlank (f m)
+mapLocale f (Single   m prim) = Single (f m) prim
+mapLocale f (Multi    m ps)   = Multi (f m) ps
+mapLocale f (Picture  m a b)  = Picture (f m) a b
+mapLocale f (Clip     m x p)  = Clip (f m) x p
 
 
 movePic :: Num u => Vec2 u -> Picture u -> Picture u

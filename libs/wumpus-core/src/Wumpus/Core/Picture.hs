@@ -80,7 +80,7 @@ stdFrame = ortho zeroPt
 -- Construction
 
 empty :: Picture u
-empty = Empty
+empty = PicEmpty
 
 -- | Lifts primitives to Pictures...
 frame :: (Num u, Ord u) => Primitive u -> Picture u
@@ -369,18 +369,18 @@ zellipse = uncurry mkEllipse ellipseDefault
 
 
 nullPicture :: Picture u -> Bool
-nullPicture Empty = True
-nullPicture _     = False
+nullPicture PicEmpty = True
+nullPicture _        = False
 
 
 
 extractFrame :: Num u => Picture u -> Frame2 u
-extractFrame Empty                = ortho zeroPt
-extractFrame (Blank   (fr,_))     = fr
-extractFrame (Single  (fr,_) _)   = fr
-extractFrame (Multi   (fr,_) _)   = fr
-extractFrame (Picture (fr,_) _ _) = fr
-extractFrame (Clip    (fr,_) _ _) = fr
+extractFrame PicEmpty              = ortho zeroPt
+extractFrame (PicBlank (fr,_))     = fr
+extractFrame (Single   (fr,_) _)   = fr
+extractFrame (Multi    (fr,_) _)   = fr
+extractFrame (Picture  (fr,_) _ _) = fr
+extractFrame (Clip     (fr,_) _ _) = fr
 
 
 

@@ -81,8 +81,8 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement [trans_attr] [p]]
 
 
 picture :: Clipped -> Picture Double -> SvgM Element
-picture _ Empty                   = return $ gElement [] []
-picture _ (Blank _)               = return $ gElement [] []
+picture _ PicEmpty                = return $ gElement [] []
+picture _ (PicBlank _)            = return $ gElement [] []
 picture c (Single (fr,_) prim)    = do 
     elt <- primitive c prim
     return $ gElement [frameChange fr] [elt]

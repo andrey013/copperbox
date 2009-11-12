@@ -4,8 +4,6 @@ module Picture where
 
 import Wumpus.Core
 
-
-
 square :: DPicture 
 square = frame $ cstroke () $ vertexPath
   [ P2 0 0, P2 40 0, P2 40 40, P2 0 40 ]
@@ -16,7 +14,9 @@ funnyshape = frame $ cstroke () $ vertexPath
 
 
 demo1 :: IO ()
-demo1 = writePS "picture1.ps" Nothing [funnyshape ->- square]
+demo1 = do 
+  writePS "picture1.ps" Nothing [funnyshape ->- square]
+  writeSVG "picture1.svg" $ stack [funnyshape ->- square]
 
 
 pic1 :: Picture Double
@@ -48,22 +48,34 @@ demo4 = do
    
 
 demo5 :: IO ()
-demo5 = writeEPS "picture5.eps" Nothing p1
+demo5 = do 
+    writeEPS "picture5.eps" Nothing p1
+    writeSVG "picture5.svg" p1
   where
     p1 = square `over` (rotate (pi/4) squares)
    
 
 demo6 :: IO ()
-demo6 = writeEPS "picture6.eps" Nothing p1
+demo6 = do 
+    writeEPS "picture6.eps" Nothing p1
+    writeSVG "picture6.svg" p1
   where
     p1 = square `over` (rotate45 square)
 
 
-demo7 :: IO ()
-demo7 = writeEPS "picture7.eps" Nothing p1
-  where
-    p1 = square -@- (rotate45 square)
+-- Note the move via @at@ is not apparent when SVG file is 
+-- viewed with Mozilla or Chrome - check picture7a.svg
+-- We only see that the move has /worked/ when we compose
+-- with with `over` a square at the origin. 
 
+demo7 :: IO ()
+demo7 = do 
+    writeEPS "picture7.eps" Nothing p1
+    writeSVG "picture7.svg" p1
+    writeSVG "picture7a.svg" p2
+  where
+    p1 = square `over` p2
+    p2 = (square `at` (P2 100 30))  -@- (rotate45 square)
 
 
 demo8 :: IO ()

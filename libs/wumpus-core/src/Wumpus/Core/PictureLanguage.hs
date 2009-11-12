@@ -16,38 +16,58 @@
 
 module Wumpus.Core.PictureLanguage 
   (
+
   -- * Type family and classes
     PUnit 
   , PEmpty(..)
   , Horizontal(..)
   , Vertical(..)
   , Composite(..)
-  , PMove(..)
-  , PBlank(..)
+  , Move(..)
+  , Blank(..)
 
-  -- * Derived operations
+  -- * Bounds
+  , center
+
+  -- * Composition
   , ( ->- )
   , ( -<- )
   , ( -//- )
   , ( -\\- )
   , at
   , stack
-  , hcenter
-  , vcenter
-  , center
+  , hcat 
+  , vcat
   , ( -@- )
   , stackCenter
 
-  , blankH
-  , blankV
   , hspace
   , vspace
+  , hsep
+  , vsep
  
   ) where
 
-import Wumpus.Core.Geometry ( Point2(..) )
+import Wumpus.Core.Geometry ( Point2(..), Vec2(..) )
+
+import Data.AffineSpace
 
 import Data.List ( foldl' )
+
+
+--------------------------------------------------------------------------------
+-- Data types
+
+-- Alignment
+{-
+
+data HAlign = HTop | HCenter | HBottom
+  deriving (Eq,Show)
+
+data VAlign = VLeft | VCenter | VRight
+  deriving (Eq,Show)
+-}
+
 
 
 --------------------------------------------------------------------------------
@@ -57,7 +77,7 @@ import Data.List ( foldl' )
 -- The unit type of /points/ within a Picture.
 type family PUnit a
 
-
+-- | Create an empty picture.
 class PEmpty a where
   pempty :: a
 
@@ -79,20 +99,41 @@ class Composite a where
   beneath = flip over
   
 -- Move in 2D
-class PMove a where
-  pmove :: PUnit a -> PUnit a -> a -> a
+class Move a where
+  move :: PUnit a -> PUnit a -> a -> a
 
 
-class PBlank a where
+class Blank a where
   blank :: PUnit a -> PUnit a -> a
 
 
 
 --------------------------------------------------------------------------------
--- Derived operations
+
+-- Operations on bounds
+
+-- | The center of a picture.
+center :: (Horizontal a, Vertical a, Fractional u, u ~ PUnit a)
+       => a -> Point2 u
+center a = P2 hcenter vcenter where  
+    hcenter = leftBound a + 0.5 * (rightBound a - leftBound a)
+    vcenter = bottomBound a + 0.5 * (topBound a - bottomBound a)
+
+
+
+--------------------------------------------------------------------------------
+-- Composition
 
 infixr 5 -//-
-infixr 6 ->-
+infixr 6 ->-, -@-
+
+
+-- | Center the pic1 on top of pic2.
+(-@-) :: (Horizontal a, Vertical a, Composite a, Move a, Fractional u, 
+             u ~ PUnit a)
+         => a -> a -> a
+p1 -@- p2 = p1 `over` (move x y p2) where V2 x y = center p1 .-. center p2
+
 
 -- | Horizontal composition - place @b@ at the right of @a@.
 (->-) :: (Horizontal a, Composite a, Num u, u ~ PUnit a) => a -> a -> a
@@ -112,41 +153,31 @@ a -//- b = over a (moveV disp b) where disp = bottomBound a - topBound b
 
 
 -- | Place the picture at the supplied point.
-at :: (PMove a, u ~ PUnit a) => Point2 u -> a -> a
-at (P2 x y) p = pmove x y p
+at :: (Move a, u ~ PUnit a) => a -> Point2 u  -> a
+p `at` (P2 x y) = move x y p
 
 
--- | Stack the pictures using 'over'.
+-- | Stack the pictures using 'over' - the first picture in the 
+-- list is drawn at the top, last picture is on drawn at the 
+-- bottom.
 stack :: (PEmpty a, Composite a) => [a] -> a
 stack = foldl' over pempty
 
+hcat :: (PEmpty a, Horizontal a, Composite a, Num u, u ~ PUnit a)
+     => [a] -> a
+hcat = foldl' (->-) pempty 
 
--- | The (one-dimensional) point midway between the left bound
--- and the right bound.
-hcenter :: (Horizontal a, Fractional u, u ~ PUnit a) => a -> u
-hcenter a = leftBound a + 0.5 * (rightBound a - leftBound a)
-
-
--- | The (one-dimensional) point midway between the left bound
--- and the right bound.
-vcenter :: (Vertical a, Fractional u, u ~ PUnit a) => a -> u
-vcenter a = bottomBound a + 0.5 * (topBound a - bottomBound a)
-
-center :: (Horizontal a, Vertical a, Fractional u, u ~ PUnit a)
-       => a -> Point2 u
-center a = P2 (hcenter a) (vcenter a)
+vcat :: (PEmpty a, Vertical a, Composite a, Num u, u ~ PUnit a)
+     => [a] -> a
+vcat = foldl' (-//-) pempty
 
 
 
-(-@-) :: (Horizontal a, Vertical a, Composite a, PMove a, Fractional u, 
-             u ~ PUnit a)
-         => a -> a -> a
-p1 -@- p2 = over p1 (pmove x y p2) where
-  x = hcenter p1 - hcenter p2
-  y = vcenter p1 - vcenter p2
-
+-- | Stack pictures centered ontop of each other - the first 
+-- picture in the list is drawn at the top, last picture is on 
+-- drawn at the bottom.
 stackCenter :: (PEmpty a, Horizontal a, Vertical a, Composite a, 
-                PMove a, Fractional u,
+                Move a, Fractional u,
                 u ~ PUnit a)
             => [a] -> a
 stackCenter = foldl' (-@-) pempty
@@ -156,10 +187,10 @@ stackCenter = foldl' (-@-) pempty
 --------------------------------------------------------------------------------
 
 
-blankH  :: (Num u, PBlank a, u ~ PUnit a) => u -> a
+blankH  :: (Num u, Blank a, u ~ PUnit a) => u -> a
 blankH = blank `flip` 0
 
-blankV  :: (Num u, PBlank a, u ~ PUnit a) => u -> a
+blankV  :: (Num u, Blank a, u ~ PUnit a) => u -> a
 blankV = blank 0
 
 
@@ -174,10 +205,33 @@ blankV = blank 0
 -- The almost as simple definition below, seems to justify 
 -- including Blank as a Picture constructor.
 --
-hspace :: (Num u, Composite a, Horizontal a, PBlank a, u ~ PUnit a) 
+hspace :: (Num u, Composite a, Horizontal a, Blank a, u ~ PUnit a) 
        => u -> a -> a -> a
 hspace n a b = a ->- blankH n ->-  b
 
-vspace :: (Num u, Composite a, Vertical a, PBlank a, u ~ PUnit a) 
+vspace :: (Num u, Composite a, Vertical a, Blank a, u ~ PUnit a) 
        => u -> a -> a -> a
 vspace n a b = a -//- blankV n -//-  b
+
+hsep :: (Num u, PEmpty a, Composite a, Horizontal a, Blank a, u ~ PUnit a) 
+       => u -> [a] -> a
+hsep _ []     = pempty
+hsep n (x:xs) = foldl' (hspace n) x xs 
+
+vsep :: (Num u, PEmpty a, Composite a, Vertical a, Blank a, u ~ PUnit a) 
+       => u -> [a] -> a
+vsep _ []     = pempty
+vsep n (x:xs) = foldl' (vspace n) x xs 
+
+
+--------------------------------------------------------------------------------
+-- Aligning pictures
+
+{-
+
+-- TODO Next
+
+alignH :: HAlign -> a -> a -> a
+alignH ha a b = undefined
+
+-}
