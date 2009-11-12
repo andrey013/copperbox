@@ -333,8 +333,7 @@ transformBBox fp = trace . map fp . corners
 instance PEmpty (Picture u) where
   pempty  = Empty
 
-type instance HUnit (Picture u) = u
-type instance VUnit (Picture u) = u
+type instance PUnit (Picture u) = u
 
 instance (Num u, Ord u) => Horizontal (Picture u) where
   moveH a    = movePic (hvec a) 
@@ -370,8 +369,7 @@ instance (Num u, Ord u) => Composite (Picture u) where
 
 
 
-instance (Num u, Ord u, Horizontal (Picture u), Vertical (Picture u),
-          HUnit (Picture u) ~ VUnit (Picture u)) => 
+instance (Num u, Ord u, Horizontal (Picture u), Vertical (Picture u)) => 
       PMove (Picture u) where
   pmove x y = movePic (V2 x y)
 
