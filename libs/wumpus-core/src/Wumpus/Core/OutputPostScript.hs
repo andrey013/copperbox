@@ -160,6 +160,7 @@ epsFooter = do
 
 outputPicture :: Picture Double -> WumpusM ()
 outputPicture Empty                     = return ()
+outputPicture (Blank  _)                = return ()
 outputPicture (Single (fr,_) prim)      = 
     updateFrame fr $ outputPrimitive prim
 outputPicture (Multi (fr,_) ps)         = 
@@ -183,9 +184,9 @@ updateFrame frm ma
 
 
 outputPrimitive :: Primitive Double -> WumpusM ()
-outputPrimitive (Path1 (c,dp) p)           = outputPath dp c p 
-outputPrimitive (Label1 props l)           = updateFont props $ outputLabel l
-outputPrimitive (Ellipse1 (c,dp) ct hw hh) = outputEllipse dp c ct hw hh
+outputPrimitive (PPath (c,dp) p)           = outputPath dp c p 
+outputPrimitive (PLabel props l)           = updateFont props $ outputLabel l
+outputPrimitive (PEllipse (c,dp) ct hw hh) = outputEllipse dp c ct hw hh
 
 updateFont :: LabelProps -> WumpusM () -> WumpusM ()
 updateFont (c,fnt) ma = do 

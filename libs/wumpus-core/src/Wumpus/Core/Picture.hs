@@ -92,7 +92,7 @@ multi ps = Multi (stdFrame, mconcat $ map boundary ps) ps
 
 -- | Lift primitives to pictures modifying the bounding box.
 reframe :: (Num u, Ord u) => Primitive u -> BoundingBox u -> Picture u
-reframe p@(Label1 _ _) bb = Single (stdFrame,bb) p
+reframe p@(PLabel _ _) bb = Single (stdFrame,bb) p
 reframe p              bb = Single (stdFrame,bb `mappend` boundary p) p
 
 
@@ -112,11 +112,11 @@ vertexPath (x:xs) = Path x (map PLine xs)
 
 ostrokePath :: (Num u, Ord u) 
             => PSColour -> [StrokeAttr] -> Path u -> Primitive u
-ostrokePath c attrs p = Path1 (c, OStroke attrs) p
+ostrokePath c attrs p = PPath (c, OStroke attrs) p
 
 cstrokePath :: (Num u, Ord u) 
             => PSColour -> [StrokeAttr] -> Path u -> Primitive u
-cstrokePath c attrs p = Path1 (c, CStroke attrs) p
+cstrokePath c attrs p = PPath (c, CStroke attrs) p
 
 class Stroke t where
   ostroke :: (Num u, Ord u) => t -> Path u -> Primitive u
@@ -202,7 +202,7 @@ zcstroke = cstrokePath psBlack []
 
 
 fillPath :: (Num u, Ord u) => PSColour -> Path u -> Primitive u
-fillPath c p = Path1 (c,CFill) p
+fillPath c p = PPath (c,CFill) p
 
 class Fill t where
   fill :: (Num u, Ord u) => t -> Path u -> Primitive u
@@ -223,7 +223,7 @@ zfill = fillPath psBlack
 -- Labels to primitive
 
 mkTextLabel :: PSColour -> FontAttr -> Point2 u -> String -> Primitive u
-mkTextLabel c attr pt txt = Label1 (c,attr) (Label pt txt)
+mkTextLabel c attr pt txt = PLabel (c,attr) (Label pt txt)
 
 -- SVG seems to have an issue with /Courier/ and needs /Courier New/.
 
@@ -278,13 +278,13 @@ ztextlabel = mkTextLabel psBlack default_font
 
 multilabel :: (Num u, Ord u) 
            => [Label u] -> LabelProps -> BoundingBox u -> Picture u
-multilabel ps props bb = Multi (stdFrame, bb) $ zipWith Label1 (repeat props) ps 
+multilabel ps props bb = Multi (stdFrame, bb) $ zipWith PLabel (repeat props) ps 
 
 
 --------------------------------------------------------------------------------
 
 mkEllipse :: Num u => PSColour -> DrawEllipse -> Point2 u -> u -> u -> Primitive u
-mkEllipse c dp pt hw hh = Ellipse1 (c,dp) pt hw hh
+mkEllipse c dp pt hw hh = PEllipse (c,dp) pt hw hh
 
 
 ellipseDefault :: EllipseProps
@@ -376,6 +376,7 @@ nullPicture _     = False
 
 extractFrame :: Num u => Picture u -> Frame2 u
 extractFrame Empty                = ortho zeroPt
+extractFrame (Blank   (fr,_))     = fr
 extractFrame (Single  (fr,_) _)   = fr
 extractFrame (Multi   (fr,_) _)   = fr
 extractFrame (Picture (fr,_) _ _) = fr

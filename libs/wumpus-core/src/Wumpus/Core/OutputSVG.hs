@@ -82,7 +82,7 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement [trans_attr] [p]]
 
 picture :: Clipped -> Picture Double -> SvgM Element
 picture _ Empty                   = return $ gElement [] []
-
+picture _ (Blank _)               = return $ gElement [] []
 picture c (Single (fr,_) prim)    = do 
     elt <- primitive c prim
     return $ gElement [frameChange fr] [elt]
@@ -103,9 +103,9 @@ picture _ (Clip (fr,_) p a) = do
 
 
 primitive :: Clipped -> Primitive Double -> SvgM Element
-primitive c (Path1 props p)            = clipAttrib c $ path props p
-primitive c (Label1 props l)           = clipAttrib c $ label props l
-primitive c (Ellipse1 props mid hw hh) = clipAttrib c $ 
+primitive c (PPath props p)            = clipAttrib c $ path props p
+primitive c (PLabel props l)           = clipAttrib c $ label props l
+primitive c (PEllipse props mid hw hh) = clipAttrib c $ 
                                                 ellipse props mid hw hh
 
 

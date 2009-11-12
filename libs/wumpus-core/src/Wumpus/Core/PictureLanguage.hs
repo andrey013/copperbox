@@ -17,7 +17,8 @@
 module Wumpus.Core.PictureLanguage 
   (
   -- * Type classes
-    Horizontal(..)
+    PEmpty(..)
+  , Horizontal(..)
   , Vertical(..)
   , Composite(..)
   , PMove(..)
@@ -45,6 +46,9 @@ import Data.List ( foldl' )
 --------------------------------------------------------------------------------
 -- Type classes
 
+class PEmpty a where
+  pempty :: a
+
 class Horizontal a where
   type HUnit a :: *
   moveH      :: HUnit a -> a -> a
@@ -57,15 +61,12 @@ class Vertical a where
   topBound    :: a -> VUnit a
   bottomBound :: a -> VUnit a
 
--- | Essentially the Monoid class, but implementations of 
--- 'composite' not should not move either picture.
 class Composite a where
   over    :: a -> a -> a
   beneath :: a -> a -> a
-  cempty  :: a 
 
   beneath = flip over
-
+  
 -- Move in 2D
 class (Vertical a, Horizontal a) => PMove a where
   pmove   :: HUnit a -> VUnit a -> a -> a
@@ -100,8 +101,8 @@ at (P2 x y) p = pmove x y p
 
 
 -- | Stack the pictures using 'over'.
-stack :: Composite a => [a] -> a
-stack = foldl' over cempty
+stack :: (PEmpty a, Composite a) => [a] -> a
+stack = foldl' over pempty
 
 
 -- | The (one-dimensional) point midway between the left bound
@@ -129,8 +130,8 @@ p1 -@- p2 = over p1 (pmove x y p2) where
   x = hcenter p1 - hcenter p2
   y = vcenter p1 - vcenter p2
 
-stackCenter :: (Horizontal a, Vertical a, Composite a, 
+stackCenter :: (PEmpty a, Horizontal a, Vertical a, Composite a, 
                 PMove a, Fractional u,
                 u ~ HUnit a, HUnit a ~ VUnit a)
             => [a] -> a
-stackCenter = foldl' (-@-) cempty
+stackCenter = foldl' (-@-) pempty

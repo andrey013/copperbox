@@ -34,7 +34,7 @@ module Wumpus.Core.PictureInternal
   , EllipseProps                -- 
   , DrawProp(..)                -- hide in Wumpus.Core export?
   , DrawEllipse(..)
-  
+  , Locale  
 
   , repositionProperties
 
@@ -73,10 +73,11 @@ import Text.PrettyPrint.Leijen hiding ( empty )
 --
 
 data Picture u = Empty
-               | Single   (Measure u) (Primitive u)
-               | Multi    (Measure u) [Primitive u] -- multiple prims in same affine frame
-               | Picture  (Measure u) (Picture u)   (Picture u)
-               | Clip     (Measure u) (Path u)      (Picture u)
+               | Blank    (Locale u)
+               | Single   (Locale u) (Primitive u)
+               | Multi    (Locale u) [Primitive u] -- multiple prims in same affine frame
+               | Picture  (Locale u) (Picture u)   (Picture u)
+               | Clip     (Locale u) (Path u)      (Picture u)
   deriving (Eq,Show) 
 
 type DPicture = Picture Double
@@ -105,9 +106,9 @@ type DPicture = Picture Double
 -- constraint is also obliged.
 --
 
-data Primitive u = Path1    PathProps (Path u)
-                 | Label1   LabelProps (Label u) 
-                 | Ellipse1 { 
+data Primitive u = PPath    PathProps (Path u)
+                 | PLabel   LabelProps (Label u) 
+                 | PEllipse { 
                       ellipse_props       :: EllipseProps,
                       ellipse_center      :: Point2 u,
                       ellipse_half_width  :: u,
@@ -160,8 +161,24 @@ type PathProps    = (PSColour, DrawProp)
 type LabelProps   = (PSColour, FontAttr)
 type EllipseProps = (PSColour, DrawEllipse)
 
--- | Measure = (_current_ frame x bounding box)
-type Measure u = (Frame2 u, BoundingBox u) 
+-- | Locale = (current frame x bounding box)
+-- 
+-- Pictures (and sub-pictures) are located within an affine frame.
+-- So pictures can be arranged (vertical and horizontal 
+-- composition) their bounding box is cached.
+--
+-- In Wumpus, affine transformations (scalings, rotations...)
+-- transform the frame rather than the constituent points of 
+-- the primitives. Changes of frame are transmitted to PostScript
+-- as @concat@ commands (and matrix transforms in SVG) - the 
+-- @point-in-world-coordinate@ of a point on a path is never 
+-- calculated.
+--  
+-- So that picture composition is remains stable under affine
+-- transformation, the corners of bounding boxes are transformed
+-- pointwise when the picture is scaled, rotated etc.
+--
+type Locale u = (Frame2 u, BoundingBox u) 
 
 
 
@@ -172,26 +189,27 @@ type Measure u = (Frame2 u, BoundingBox u)
 
 instance (Num u, Pretty u) => Pretty (Picture u) where
   pretty Empty              = text "*empty*"
-  pretty (Single m prim)    = ppMeasure m <$> indent 2 (pretty prim)
+  pretty (Blank m)          = text "*BLANK*" <+> ppLocale m
+  pretty (Single m prim)    = ppLocale m <$> indent 2 (pretty prim)
 
-  pretty (Multi m prims)    = ppMeasure m <$> indent 2 (list $ map pretty prims)
+  pretty (Multi m prims)    = ppLocale m <$> indent 2 (list $ map pretty prims)
   pretty (Picture m pl pr)  = 
-      ppMeasure m <$> indent 2 (text "LEFT" <+> pretty pl)
+      ppLocale m <$> indent 2 (text "LEFT" <+> pretty pl)
                   <$> indent 2 (text "RGHT" <+> pretty pr)
 
   pretty (Clip m cpath p)   = 
-      text "Clip:" <+> ppMeasure m <$> indent 2 (pretty cpath)
+      text "Clip:" <+> ppLocale m <$> indent 2 (pretty cpath)
                                    <$> indent 2 (pretty p)
 
-ppMeasure :: (Num u, Pretty u) => Measure u -> Doc
-ppMeasure (fr,bbox) = align (ppfr <$> pretty bbox) where
+ppLocale :: (Num u, Pretty u) => Locale u -> Doc
+ppLocale (fr,bbox) = align (ppfr <$> pretty bbox) where
    ppfr = if standardFrame fr then text "*std-frame*" else pretty fr
 
 
 instance Pretty u => Pretty (Primitive u) where
-  pretty (Path1 _ p)        = pretty "path:" <+> pretty p
-  pretty (Label1 _ lbl)     = pretty lbl
-  pretty (Ellipse1 _ c w h) = pretty "ellipse" <+> pretty c
+  pretty (PPath _ p)        = pretty "path:" <+> pretty p
+  pretty (PLabel _ lbl)     = pretty lbl
+  pretty (PEllipse _ c w h) = pretty "ellipse" <+> pretty c
                                                <+> text "w:" <> pretty w
                                                <+> text "h:" <> pretty h
 
@@ -268,7 +286,7 @@ transformPicture :: (Num u, Ord u)
                  -> Picture u 
                  -> Picture u
 transformPicture fp fv = 
-    mapMeasure $ pairbimap (transformFrame fp fv) (transformBBox fp)
+    mapLocale $ pairbimap (transformFrame fp fv) (transformBBox fp)
 
 
 -- Shouldn't transforming the frame be the inverse transformation?
@@ -293,6 +311,8 @@ transformBBox fp = trace . map fp . corners
 -- TO DETERMINE
 -- What should leftBound and rightBound be for an empty picture?
 
+instance PEmpty (Picture u) where
+  pempty  = Empty
 
 
 instance (Num u, Ord u) => Horizontal (Picture u) where
@@ -315,16 +335,15 @@ instance (Num u, Ord u) => Vertical (Picture u) where
 --
 -- So to print picture a _over_ picture b we form this node:
 --
---  measure 
---    /\
---   /  \
---  b    a
+-- >  measure 
+-- >    /\
+-- >   /  \
+-- >  b    a
 --
 -- Hence `over` flips b and a
 
 
 instance (Num u, Ord u) => Composite (Picture u) where
-  cempty  = Empty
 
   a     `over` Empty = a
   Empty `over` b     = b
@@ -354,17 +373,18 @@ instance (Num u, Ord u) => Boundary (Path u) where
 
 instance (Num u, Ord u) => Boundary (Primitive u) where
   type BoundaryUnit (Primitive u) = u
-  boundary (Path1 _ p)                  = boundary p
-  boundary (Label1 (_,a) (Label pt xs)) = BBox pt (pt .+^ (V2 w h))
+  boundary (PPath _ p)                  = boundary p
+  boundary (PLabel (_,a) (Label pt xs)) = BBox pt (pt .+^ (V2 w h))
     where w = fromIntegral $ length xs * font_size a
           h = fromIntegral $ font_size a
-  boundary (Ellipse1 _ c hw hh)         = BBox (c .-^ v) (c .+^ v) 
+  boundary (PEllipse _ c hw hh)         = BBox (c .-^ v) (c .+^ v) 
     where v = V2 hw hh
 
 
 instance Boundary (Picture u) where
   type BoundaryUnit (Picture u) = u       
   boundary Empty                = ZeroBB
+  boundary (Blank   (_,bb))     = bb
   boundary (Single  (_,bb) _)   = bb
   boundary (Multi   (_,bb) _)   = bb
   boundary (Picture (_,bb) _ _) = bb
@@ -378,20 +398,21 @@ instance Boundary (Picture u) where
 --
 
 
-mapMeasure :: (Measure u -> Measure u) -> Picture u -> Picture u
-mapMeasure _ Empty            = Empty
-mapMeasure f (Single  m prim) = Single (f m) prim
-mapMeasure f (Multi   m ps)   = Multi (f m) ps
-mapMeasure f (Picture m a b)  = Picture (f m) a b
-mapMeasure f (Clip    m x p)  = Clip (f m) x p
+mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
+mapLocale _ Empty            = Empty
+mapLocale f (Blank   m)      = Blank (f m)
+mapLocale f (Single  m prim) = Single (f m) prim
+mapLocale f (Multi   m ps)   = Multi (f m) ps
+mapLocale f (Picture m a b)  = Picture (f m) a b
+mapLocale f (Clip    m x p)  = Clip (f m) x p
 
 
 movePic :: Num u => Vec2 u -> Picture u -> Picture u
-movePic v = mapMeasure (moveMeasure v) 
+movePic v = mapLocale (moveLocale v) 
 
   
-moveMeasure :: Num u => Vec2 u -> Measure u -> Measure u
-moveMeasure v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb) 
+moveLocale :: Num u => Vec2 u -> Locale u -> Locale u
+moveLocale v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb) 
 
 --------------------------------------------------------------------------------
 
