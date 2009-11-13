@@ -19,12 +19,23 @@ module Wumpus.Geometry
   ( 
     module Wumpus.Geometry.Base
   , module Wumpus.Geometry.Curve
-  , module Wumpus.Geometry.Line
+  , module Wumpus.Geometry.LineEquation
+  , module Wumpus.Geometry.LineSegment
   , module Wumpus.Geometry.Polygon
+
+  , lineSegmentToLine
   ) where
 
 import Wumpus.Geometry.Base
 import Wumpus.Geometry.Curve
-import Wumpus.Geometry.Line
+import Wumpus.Geometry.LineEquation
+import Wumpus.Geometry.LineSegment
 import Wumpus.Geometry.Polygon
+
+
+
+
+lineSegmentToLine :: Num u => LineSegment u -> Line u
+lineSegmentToLine (LS2 p0 p1) = line p0 p1
+
 

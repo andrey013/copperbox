@@ -36,7 +36,8 @@ library
     Wumpus.Geometry,
     Wumpus.Geometry.Base,
     Wumpus.Geometry.Curve,
-    Wumpus.Geometry.Line,
+    Wumpus.Geometry.LineEquation,
+    Wumpus.Geometry.LineSegment,
     Wumpus.Geometry.Polygon
   other-modules:
     

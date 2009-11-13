@@ -21,6 +21,9 @@ module Wumpus.Geometry.Base where
 
 import Wumpus.Core
 
+import Data.AffineSpace
+import Data.VectorSpace
+
 import Data.List ( mapAccumR )
 
 
@@ -29,6 +32,8 @@ import Data.List ( mapAccumR )
 class Converse a where 
   converse :: a -> a
 
+-- | Counter-clockwise angle formed with the horizontal x-axis.
+class CCWAngle a where ccwAngle :: a -> Radian
 
 
 -- Subdivide a positive non-zero fractional number n times 
@@ -37,6 +42,11 @@ subdivisions :: Fractional a => Int -> a -> [a]
 subdivisions i a = take (i+1) $ iterate (+n) 0 where 
    n = a / fromIntegral i
 
+
+-- | Midpoint between two points.
+midpoint :: (Fractional a, AffineSpace p, VectorSpace v, Diff p ~ v, Scalar v ~ a)
+         => p -> p -> p
+midpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
 
 
 --------------------------------------------------------------------------------

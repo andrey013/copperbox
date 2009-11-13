@@ -9,7 +9,7 @@
 -- Stability   :  experimental
 -- Portability :  GHC only
 --
--- Grids...
+-- Grids, just a doodle...
 -- 
 --------------------------------------------------------------------------------
 
