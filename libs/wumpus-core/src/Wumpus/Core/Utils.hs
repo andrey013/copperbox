@@ -27,7 +27,8 @@ module Wumpus.Core.Utils
   , min3
   , med3
 
-  -- * truncate / print a double
+
+  -- * Truncate / print a double
   , dtrunc
   , roundup
   , range255
@@ -95,6 +96,12 @@ med3 a b c = if c <= x then x else if c > y then y else c
     order p q | p <= q    = (p,q)
               | otherwise = (q,p)
 
+
+--------------------------------------------------------------------------------
+
+-- TODO - this could / should be generalized to a typeclass 
+-- so the OutputPostScript and OutputSVG code can print more
+-- types then @Picture Double@.
 
 -- | Truncate the printed decimal representation of a Double.
 -- The is prefered to 'showFFloat' from Numeric as it produces

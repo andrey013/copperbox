@@ -71,7 +71,10 @@ import Data.Monoid
 -- a unit type supporting infinity.
 -- 
 data BoundingBox a = ZeroBB 
-                   | BBox { llPoint :: Point2 a, urPoint :: Point2 a }
+                   | BBox { 
+                         ll_corner :: Point2 a, 
+                         ur_corner :: Point2 a 
+                       }
   deriving (Eq,Show)
 
 type DBoundingBox = BoundingBox Double

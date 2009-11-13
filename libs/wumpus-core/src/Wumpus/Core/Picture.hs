@@ -23,6 +23,10 @@ module Wumpus.Core.Picture
   , multi
   , reframe
 
+  , vertexPath  
+  , curvedPath
+
+  -- * Constructing /primitives/
   , Stroke(..)
   , zostroke
   , zcstroke
@@ -36,9 +40,6 @@ module Wumpus.Core.Picture
 
   , Ellipse(..)
   , zellipse
-
-
-  , vertexPath  
 
 
 
@@ -100,9 +101,25 @@ reframe p              bb = Single (stdFrame,bb `mappend` boundary p) p
 -- | Convert the list of vertices to a path of straight line 
 -- segments.
 vertexPath :: [Point2 u] -> Path u
-vertexPath []     = error "straightLinePath - empty point list"
+vertexPath []     = error "Picture.vertexPath - empty point list"
 vertexPath (x:xs) = Path x (map PLine xs)
 
+
+-- Not a paramorphism as you want to consume3 rather than 
+-- look-ahead3...
+
+-- | Convert a list of vertices to a path of curve segments.
+-- The first point in the list makes the start point, each curve 
+-- segment thereafter takes 3 points. /Spare/ points at the end 
+-- are discarded. 
+curvedPath :: [Point2 u] -> Path u
+curvedPath []     = error "Picture.curvedPath - empty point list"
+curvedPath (x:xs) = Path x (fn xs) where
+  fn (a:b:c:ys) = PCurve a b c : fn ys 
+  fn _          = []
+
+
+  
 
 
 
