@@ -31,6 +31,7 @@ library
     Wumpus.Extra,
     Wumpus.Extra.Arrow,
     Wumpus.Extra.Dots,
+    Wumpus.Extra.Drawing,
     Wumpus.Extra.Grid,
     Wumpus.Extra.SVGColours,
     Wumpus.Extra.X11Colours,

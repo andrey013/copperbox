@@ -20,10 +20,19 @@ colouredSquare c sz =
 
 demo01 :: IO ()
 demo01 = do 
-    writeEPS "./out/picture01.eps" (Just ("Courier", 12)) pic1 
+    writeEPS "./out/picture01.eps" Nothing pic1 
     writeSVG "./out/picture01.svg" pic1 
   where
     pic1 = d1 `over` d2 `over` colouredSquare cadetBlue 50
     d1   = dotX    `at` P2 10 10
     d2   = dotPlus `at` P2 20 20
 
+
+demo02 :: IO ()
+demo02 = do 
+    writeEPS "./out/picture02.eps" Nothing pic1 
+    writeSVG "./out/picture02.svg" pic1 
+  where
+    pic1 = backgroundFill cornflowerBlue pempty
+
+    -- empty point list...

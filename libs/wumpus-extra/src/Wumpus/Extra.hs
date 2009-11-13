@@ -23,10 +23,12 @@ module Wumpus.Extra
   ( 
     module Wumpus.Extra.Arrow
   , module Wumpus.Extra.Dots
+  , module Wumpus.Extra.Drawing
   , module Wumpus.Extra.Grid
   ) where
 
 import Wumpus.Extra.Arrow
 import Wumpus.Extra.Dots
+import Wumpus.Extra.Drawing
 import Wumpus.Extra.Grid
 
