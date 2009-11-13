@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Extra.Polygon
+-- Module      :  Wumpus.Geometry.Polygon
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see LICENSE)
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -14,10 +14,10 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Extra.Polygon where
+module Wumpus.Geometry.Polygon where
 
 import Wumpus.Core
-import Wumpus.Geometry
+import Wumpus.Geometry.Base
 
 import Data.AffineSpace
 

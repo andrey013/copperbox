@@ -1,11 +1,12 @@
 
 module GridPic where
 
-import Wumpus.Core.Geometry
-import Wumpus.Core.OutputPostScript
-import Wumpus.Core.Picture
-import Wumpus.Extra.Grid
+import Wumpus.Core
+import Wumpus.Extra
 
+
+main :: IO ()
+main = sequence_ [ demo01 ]
 
 grid1 :: Grid
 grid1 = Grid xs where
@@ -21,6 +22,9 @@ nodeAt :: (Int,Int) -> String -> PlacedNode
 nodeAt (x,y) name = (NamedNode name, P2 x y) 
 
 
-demo1 = writeEPS "grid1.eps" (Just ("Courier", 12)) pic1 where
-  pic1 = nodePicture $ nodeMap 100 50 grid1
+demo01 = do 
+    writeEPS "./out/grid01.eps" (Just ("Courier", 12)) pic1 
+    writeSVG "./out/grid01.svg" pic1 
+  where
+    pic1 = nodePicture $ nodeMap 100 50 grid1
 

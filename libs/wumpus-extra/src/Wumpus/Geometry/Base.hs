@@ -38,11 +38,16 @@ subdivisions i a = take (i+1) $ iterate (+n) 0 where
    n = a / fromIntegral i
 
 
+
+--------------------------------------------------------------------------------
+
+
 -- | paramorphism (generalizes cata (foldr), folds right...)
 para :: (a -> ([a], b) -> b) -> b -> [a] -> b
 para phi b = step
   where step []     = b
         step (x:xs) = phi x (xs, step xs)
+
 
 
 -- | Rotate the list through a cirle...

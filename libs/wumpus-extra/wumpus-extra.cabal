@@ -15,8 +15,8 @@ cabal-version:      >= 1.2
 
 extra-source-files:
   demo/ArrowPic.hs,
-  demo/GridPic.hs
-
+  demo/GridPic.hs,
+  demo/P55.hs
 
 library
   hs-source-dirs:     src
@@ -28,15 +28,16 @@ library
 
   
   exposed-modules:
+    Wumpus.Extra,
     Wumpus.Extra.Arrow,
     Wumpus.Extra.Grid,
-    Wumpus.Extra.Polygon,
     Wumpus.Extra.SVGColours,
     Wumpus.Extra.X11Colours,
     Wumpus.Geometry,
     Wumpus.Geometry.Base,
     Wumpus.Geometry.Curve,
-    Wumpus.Geometry.Line
+    Wumpus.Geometry.Line,
+    Wumpus.Geometry.Polygon
   other-modules:
     
   extensions:

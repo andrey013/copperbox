@@ -20,8 +20,11 @@ module Wumpus.Geometry
     module Wumpus.Geometry.Base
   , module Wumpus.Geometry.Curve
   , module Wumpus.Geometry.Line
+  , module Wumpus.Geometry.Polygon
   ) where
 
 import Wumpus.Geometry.Base
 import Wumpus.Geometry.Curve
 import Wumpus.Geometry.Line
+import Wumpus.Geometry.Polygon
+

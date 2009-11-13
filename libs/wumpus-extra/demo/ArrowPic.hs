@@ -3,8 +3,12 @@
 module ArrowPic where
 
 import Wumpus.Core
-import Wumpus.Extra.Arrow
+import Wumpus.Extra
 
+
+main :: IO ()
+main = sequence_ 
+  [ demo01 ]
 
 arr1 :: Arrow Double
 arr1 = arrow (P2 0 0) (P2 100 100)
@@ -17,10 +21,10 @@ arr3 = arrowTri (P2 20 0) (P2 120 100)
 
 -- mkPic = overlays . map picPath
 
-demo1 :: IO ()
-demo1 = do 
-    writeEPS "arrow1.eps" Nothing p1 
-    writeSVG "arrow1.svg" p1
+demo01 :: IO ()
+demo01 = do 
+    writeEPS "./out/arrow01.eps" Nothing p1 
+    writeSVG "./out/arrow01.svg" p1
   where 
     p1 = picArrow arr1 `over` picArrow arr2
                        `over` picArrow arr3

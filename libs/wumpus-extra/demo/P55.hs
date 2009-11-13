@@ -4,7 +4,6 @@
 module P55 where
 
 import Wumpus.Core
-import Wumpus.Extra.Polygon
 import Wumpus.Geometry
 
 -- Note 
@@ -12,10 +11,14 @@ import Wumpus.Geometry
 -- PostScript has (0,0) at bottom left
 -- hence the @scale 1 (-1)@
 
+main :: IO ()
+main = sequence_ [ test01 ]
+
+
 test01 :: IO ()
 test01 = do 
-   writeEPS "P55ex1.eps" Nothing example1
-   writeSVG "P55ex1.svg" example1
+   writeEPS "./out/P55ex1.eps" Nothing example1
+   writeSVG "./out/P55ex1.svg" example1
 
 coordChange :: (Num u, Ord u) => Picture u -> Picture u
 coordChange = scale 1 (-1)

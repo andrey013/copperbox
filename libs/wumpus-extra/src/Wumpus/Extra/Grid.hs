@@ -17,7 +17,6 @@ module Wumpus.Extra.Grid where
 
 import Wumpus.Core
 
--- import Wumpus.Extra.Arrow
 
 
 import Data.Map ( Map )
@@ -65,8 +64,8 @@ mkLabel :: (Num u, Ord u) => String -> Picture u
 mkLabel s = frame $ ztextlabel zeroPt s 
 
 nodePicture :: (Num u, Ord u) => NodeMap u -> Picture u
-nodePicture = Map.foldWithKey fn cempty where
-  fn (NamedNode s) pt pic = pic `over` (at pt $ mkLabel s)
+nodePicture = Map.foldWithKey fn pempty where
+  fn (NamedNode s) pt pic = pic `over` (mkLabel s `at` pt)
   fn _             _  pic = pic
 
 
