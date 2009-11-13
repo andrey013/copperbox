@@ -65,8 +65,9 @@ square side_length bl = Polygon $ xs where
   f3 = (.+^ vvec side_length)
 
 
-extractPolygonPath :: Polygon u -> Path u
-extractPolygonPath p = vertexPath $ vertexList p 
+instance ExtractPath (Polygon u) where
+  type PathUnit (Polygon u) = u
+  extractPath = vertexPath . vertexList
 
 
 bbPolygon :: (Num u, Ord u) => Polygon u -> BoundingBox u

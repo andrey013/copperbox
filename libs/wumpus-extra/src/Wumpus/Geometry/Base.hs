@@ -27,13 +27,25 @@ import Data.VectorSpace
 import Data.List ( mapAccumR )
 
 
+--------------------------------------------------------------------------------
+-- Type classes
+
 -- | Reverse the direction of some ordered object (line segment, 
 -- bezier curve, ...).
+--
 class Converse a where 
   converse :: a -> a
 
 -- | Counter-clockwise angle formed with the horizontal x-axis.
+--
 class CCWAngle a where ccwAngle :: a -> Radian
+
+class ExtractPath a where 
+  type PathUnit a :: *
+  extractPath :: a -> Path (PathUnit a)
+
+--------------------------------------------------------------------------------
+-- Common ...
 
 
 -- Subdivide a positive non-zero fractional number n times 

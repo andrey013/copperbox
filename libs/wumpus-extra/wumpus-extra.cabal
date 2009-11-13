@@ -30,6 +30,7 @@ library
   exposed-modules:
     Wumpus.Extra,
     Wumpus.Extra.Arrow,
+    Wumpus.Extra.Dots,
     Wumpus.Extra.Grid,
     Wumpus.Extra.SVGColours,
     Wumpus.Extra.X11Colours,
