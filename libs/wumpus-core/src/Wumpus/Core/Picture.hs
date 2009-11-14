@@ -54,8 +54,7 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
 
-import Data.Monoid
-
+import Data.Groupoid
 
 
 
@@ -83,13 +82,13 @@ frame :: (Num u, Ord u) => Primitive u -> Picture u
 frame p = Single (stdFrame, boundary p) p 
 
 multi :: (Num u, Ord u) => [Primitive u] -> Picture u
-multi ps = Multi (stdFrame, mconcat $ map boundary ps) ps 
+multi ps = Multi (stdFrame, gconcat $ map boundary ps) ps 
 
 
 -- | Lift primitives to pictures modifying the bounding box.
 reframe :: (Num u, Ord u) => Primitive u -> BoundingBox u -> Picture u
 reframe p@(PLabel _ _) bb = Single (stdFrame,bb) p
-reframe p              bb = Single (stdFrame,bb `mappend` boundary p) p
+reframe p              bb = Single (stdFrame,bb `gappend` boundary p) p
 
 
 

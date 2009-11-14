@@ -138,7 +138,6 @@ epsHeader bb timestamp = do
     (llx,lly,urx,ury) = getBounds bb
 
 getBounds :: Num u => BoundingBox u -> (u,u,u,u)
-getBounds ZeroBB                           = (0,0,0,0)
 getBounds (BBox (P2 llx lly) (P2 urx ury)) = (llx,lly,urx,ury)
 
 psFooter :: WumpusM ()

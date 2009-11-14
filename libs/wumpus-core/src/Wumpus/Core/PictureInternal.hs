@@ -336,13 +336,13 @@ type instance PUnit (Picture u) = u
 
 instance (Num u, Ord u) => Horizontal (Picture u) where
   moveH a    = movePic (hvec a) 
-  leftBound  = maybe 0 id . leftPlane . boundary
-  rightBound = maybe 0 id . rightPlane . boundary
+  leftBound  = leftPlane . boundary
+  rightBound = rightPlane . boundary
 
 instance (Num u, Ord u) => Vertical (Picture u) where
   moveV a     = movePic (vvec a) 
-  topBound    = maybe 0 id . upperPlane . boundary
-  bottomBound = maybe 0 id . lowerPlane . boundary
+  topBound    = upperPlane . boundary
+  bottomBound = lowerPlane . boundary
 
 -- Note - picture is a binary tree and drawing is depth-first,
 -- left-to-right so pictures in the right of the tree potentially
@@ -441,7 +441,6 @@ moveLocale v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb)
 --
 repositionProperties :: (Num u, Ord u) => Picture u -> (BoundingBox u, Maybe (Vec2 u))
 repositionProperties = fn . boundary where
-  fn ZeroBB      = (ZeroBB, Nothing)
   fn bb@(BBox (P2 llx lly) (P2 urx ury))
       | llx < 4 || lly < 4  = (BBox ll ur, Just $ V2 x y)
       | otherwise           = (bb, Nothing)
