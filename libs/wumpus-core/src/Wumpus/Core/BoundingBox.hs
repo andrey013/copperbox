@@ -49,7 +49,7 @@ import Wumpus.Core.AffineTrans
 import Wumpus.Core.Geometry
 import Wumpus.Core.Utils ( CMinMax(..), within )
 
-import Data.Groupoid                    -- Should be Semigroup...
+import Data.Semigroup
 
 import Text.PrettyPrint.Leijen hiding ( width )
 
@@ -78,8 +78,8 @@ data CardinalPoint = C | N | NE | E | SE | S | SW | W | NW
 -- BBox has been augmented with the special ZeroBB case to enable
 -- monoidal operations...
 
-instance Ord a => Groupoid (BoundingBox a) where
-  gappend = union
+instance Ord a => Semigroup (BoundingBox a) where
+  append = union
 
 
 instance Pretty a => Pretty (BoundingBox a) where
@@ -89,7 +89,7 @@ instance Pretty a => Pretty (BoundingBox a) where
 --------------------------------------------------------------------------------
 -- 
 
-type instance AUnit (BoundingBox u) = u
+type instance DUnit (BoundingBox u) = u
 
 instance (Num u, Ord u) => Scale (BoundingBox u) where
   scale x y bb     = trace $ map (scale x y) $ corners bb

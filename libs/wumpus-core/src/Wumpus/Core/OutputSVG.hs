@@ -51,7 +51,7 @@ import Text.XML.Light
 type Clipped    = Bool
 
 
-coordChange ::  (Num u, Ord u, Scale t, u ~ AUnit t) => t -> t
+coordChange ::  (Num u, Ord u, Scale t, u ~ DUnit t) => t -> t
 coordChange = scale 1 (-1)
 
 

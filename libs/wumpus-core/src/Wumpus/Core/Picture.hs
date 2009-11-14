@@ -54,7 +54,7 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
 
-import Data.Groupoid
+import Data.Semigroup
 
 
 
@@ -81,14 +81,19 @@ stdFrame = ortho zeroPt
 frame :: (Num u, Ord u) => Primitive u -> Picture u
 frame p = Single (stdFrame, boundary p) p 
 
-multi :: (Num u, Ord u) => [Primitive u] -> Picture u
-multi ps = Multi (stdFrame, gconcat $ map boundary ps) ps 
 
+-- | Draw many primitives ion the same affine frame
+-- Throws empty list error on empty list.
+multi :: (Num u, Ord u) => [Primitive u] -> Picture u
+multi ps = Multi (stdFrame, sconcat $ map boundary ps) ps 
+  where 
+    sconcat []     = error $ "Picture.multi - empty list"
+    sconcat (x:xs) = foldr append x xs
 
 -- | Lift primitives to pictures modifying the bounding box.
 reframe :: (Num u, Ord u) => Primitive u -> BoundingBox u -> Picture u
 reframe p@(PLabel _ _) bb = Single (stdFrame,bb) p
-reframe p              bb = Single (stdFrame,bb `gappend` boundary p) p
+reframe p              bb = Single (stdFrame,bb `append` boundary p) p
 
 
 

@@ -21,8 +21,11 @@
 
 module Wumpus.Core.Geometry 
   ( 
+  -- * Type family 
+    DUnit
+  
   -- * Data types
-    Vec2(..)
+  , Vec2(..)
   , DVec2
   , Point2(..)
   , DPoint2
@@ -92,6 +95,12 @@ import Data.Monoid
 
 
 --------------------------------------------------------------------------------
+
+-- | Some unit of dimension usually double.
+
+type family DUnit a :: *
+
+
 
 -- Datatypes 
 
@@ -175,6 +184,13 @@ type DMatrix3'3 = Matrix3'3 Double
 -- Equality and ordering are approximate where the epsilon is 0.0001.
 newtype Radian = Radian { getRadian :: Double }
   deriving (Num,Real,Fractional,Floating,RealFrac,RealFloat)
+
+
+--------------------------------------------------------------------------------
+-- Family instances
+
+type instance DUnit (Point2 a) = a
+type instance DUnit (Vec2 a)   = a
 
 
 --------------------------------------------------------------------------------

@@ -48,9 +48,9 @@ import Wumpus.Core.PictureLanguage hiding ( hcat, vcat, hsep, vsep )
 import Wumpus.Core.Utils
 
 import Data.Aviary
-import Data.Groupoid
 
 import Data.AffineSpace
+import Data.Semigroup
 
 import Text.PrettyPrint.Leijen hiding ( empty )
 
@@ -246,11 +246,11 @@ instance Pretty u => Pretty (Label u) where
 
 --------------------------------------------------------------------------------
 
--- | Paths are sensibly a Groupoid - there is no notion of 
+-- | Paths are sensibly a Semigroup - there is no notion of 
 -- /empty path/.
 
-instance Groupoid (Path u) where
-  Path st xs `gappend` Path st' xs' = Path st (xs ++ (PLine st' : xs'))
+instance Semigroup (Path u) where
+  Path st xs `append` Path st' xs' = Path st (xs ++ (PLine st' : xs'))
 
 
 instance Pointwise (Path u) where
@@ -267,7 +267,7 @@ instance Pointwise (PathSeg u) where
 --------------------------------------------------------------------------------
 -- Affine trans instances
 
-type instance AUnit (Picture u) = u
+type instance DUnit (Picture u) = u
 
 instance (Floating u, Real u) => Rotate (Picture u) where
   rotate = rotatePicture 
