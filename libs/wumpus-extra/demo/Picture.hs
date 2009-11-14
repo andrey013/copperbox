@@ -10,7 +10,7 @@ import Wumpus.Geometry
 import Wumpus.Core.Colour  -- To correct in Wumpus.Core.hs
 
 main :: IO ()
-main = sequence_ [ demo01 ]
+main = sequence_ [ demo01, demo02 ]
 
 
 colouredSquare :: DRGB -> Double -> Picture Double
@@ -33,6 +33,4 @@ demo02 = do
     writeEPS "./out/picture02.eps" Nothing pic1 
     writeSVG "./out/picture02.svg" pic1 
   where
-    pic1 = backgroundFill cornflowerBlue pempty
-
-    -- empty point list...
+    pic1 = backgroundFill cornflowerBlue $ blankPicture (BBox zeroPt (P2 100 100))

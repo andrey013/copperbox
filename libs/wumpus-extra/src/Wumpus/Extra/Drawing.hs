@@ -15,12 +15,14 @@
 
 module Wumpus.Extra.Drawing 
   ( 
+  -- * Temporary - pending adding to wumpus-core
+    blankPicture
+  , clip
 
   -- * Picture transformers
-    backgroundFill
---  , clipPicture
---  , clipPictureToPath
---  , clipToBoundary
+  , backgroundFill
+  , clipPicture
+  , clipToBoundary
 
   ) where
 
@@ -28,7 +30,21 @@ module Wumpus.Extra.Drawing
 
 import Wumpus.Core
 
+import Wumpus.Core.PictureInternal ( Picture(..) ) -- TO REMOVE...
 
+
+--------------------------------------------------------------------------------
+-- These ones are scheduled to be added to wumpus-core...
+blankPicture :: Num u => BoundingBox u -> Picture u
+blankPicture bb = PicBlank (ortho zeroPt, bb)
+
+clip :: (Num u, Ord u) => Path u -> Picture u -> Picture u
+clip cp p = Clip (ortho zeroPt, boundary cp) cp p
+
+
+
+
+--------------------------------------------------------------------------------
 
 -- Picture transformers
 
@@ -37,17 +53,12 @@ backgroundFill c p = p `over` rect where
     rect = frame $ fill (toPSColour c) $ vertexPath $ corners $ boundary p
 
 
-{-
+clipPicture :: (Num u, Ord u) => BoundingBox u -> Picture u -> Picture u
+clipPicture bb p = clip (vertexPath $ corners bb) p
 
-clipPicture :: BoundingBox u -> Picture u -> Picture u
-clipPicture _ _ = undefined
+clipToBoundary :: (Num u, Ord u) => Picture u -> Picture u
+clipToBoundary p = clip (vertexPath $ corners $ boundary p) p
 
-clipPictureToPath :: Path u -> Picture u -> Picture u
-clipPictureToPath _ _ = undefined
 
-clipToBoundary :: Picture u -> Picture u
-clipToBoundary _ = undefined
-
--}
 
 

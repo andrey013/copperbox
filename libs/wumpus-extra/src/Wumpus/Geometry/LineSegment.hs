@@ -36,6 +36,9 @@ data LineSegment u = LS2 (Point2 u) (Point2 u)
 --------------------------------------------------------------------------------
 -- Instances
 
+type instance DUnit (LineSegment u) = u
+
+
 instance Functor LineSegment where
   fmap f (LS2 p0 p1) = LS2 (fmap f p0) (fmap f p1)
 
@@ -60,16 +63,13 @@ instance (Floating u, Real u) => Rotate (LineSegment u) where
 
 
 instance (Floating u, Real u) => RotateAbout (LineSegment u) where
-  type RotateAboutUnit (LineSegment u) = u
   rotateAbout r pt = pointwise (rotateAbout r pt) 
 
 instance (Floating u, Real u) => Scale (LineSegment u) where
-  type ScaleUnit (LineSegment u) = u
   scale x y = pointwise (scale x y) 
 
 
 instance (Floating u, Real u) => Translate (LineSegment u) where
-  type TranslateUnit (LineSegment u) = u
   translate x y = pointwise (translate x y) 
 
 

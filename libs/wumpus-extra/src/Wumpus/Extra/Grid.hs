@@ -40,10 +40,8 @@ type PlacedLabel u = (String,Point2 u)
 type NodeMap u = Map Node (Point2 u)
 
 
-data ArrowSpec = ArrowSpec (Node,Cardinal) (Node,Cardinal)
+data ArrowSpec = ArrowSpec (Node,CardinalPoint) (Node,CardinalPoint)
 
-data Cardinal = N' | E' | S' | W' | NE | SE | SW | NW
-  deriving (Eq,Show)
 
 
 -- /Grid/ coordinates have origin top-left, they are remapped to
@@ -63,8 +61,10 @@ nodeMap sx sy (Grid xs) = foldr fn Map.empty xs
 mkLabel :: (Num u, Ord u) => String -> Picture u
 mkLabel s = frame $ ztextlabel zeroPt s 
 
-nodePicture :: (Num u, Ord u) => NodeMap u -> Picture u
-nodePicture = Map.foldWithKey fn pempty where
+
+-- | Must supply an initial picture...
+nodePicture :: (Num u, Ord u) => NodeMap u -> Picture u -> Picture u
+nodePicture = flip (Map.foldWithKey fn)  where
   fn (NamedNode s) pt pic = pic `over` (mkLabel s `at` pt)
   fn _             _  pic = pic
 

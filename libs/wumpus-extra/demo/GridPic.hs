@@ -26,5 +26,6 @@ demo01 = do
     writeEPS "./out/grid01.eps" (Just ("Courier", 12)) pic1 
     writeSVG "./out/grid01.svg" pic1 
   where
-    pic1 = nodePicture $ nodeMap 100 50 grid1
-
+    pic1   = nodePicture (nodeMap 100 50 grid1) no_pic
+    
+    no_pic = blankPicture (BBox zeroPt zeroPt)
