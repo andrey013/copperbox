@@ -102,8 +102,9 @@ instance Pretty a => Pretty (BoundingBox a) where
 --------------------------------------------------------------------------------
 -- 
 
+type instance AUnit (BoundingBox u) = u
+
 instance (Num u, Ord u) => Scale (BoundingBox u) where
-  type ScaleUnit (BoundingBox u) = u
   scale _ _ ZeroBB = ZeroBB
   scale x y bb     = trace $ map (scale x y) $ corners bb
 

@@ -17,8 +17,9 @@
 
 module Wumpus.Core.AffineTrans
   ( 
-  -- * Type classes
-    Rotate(..)
+  -- * Type family and classes
+    AUnit
+  , Rotate(..)
   , RotateAbout(..)
   , Scale(..)
   , Translate(..)
@@ -52,6 +53,13 @@ import Wumpus.Core.Geometry
 --------------------------------------------------------------------------------
 -- Affine transformations 
 
+type family AUnit a :: *
+
+type instance AUnit (Point2 a) = a
+type instance AUnit (Vec2 a)   = a
+
+
+-- Rotate
 
 class Rotate t where
   rotate :: Radian -> t -> t
@@ -63,50 +71,42 @@ instance (Floating a, Real a) => Rotate (Point2 a) where
 instance (Floating a, Real a) => Rotate (Vec2 a) where
   rotate a = ((rotationMatrix a) *#)
 
+-- Rotate about
 
 class RotateAbout t where
-  type RotateAboutUnit t
-  rotateAbout :: Radian -> Point2 (RotateAboutUnit t) -> t -> t 
+  rotateAbout :: Radian -> Point2 (AUnit t) -> t -> t 
 
 
 instance (Floating a, Real a) => RotateAbout (Point2 a) where
-  type RotateAboutUnit (Point2 a) = a
   rotateAbout a pt = ((originatedRotationMatrix a pt) *#) 
 
 
 instance (Floating a, Real a) => RotateAbout (Vec2 a) where
-  type RotateAboutUnit (Vec2 a) = a
   rotateAbout a pt = ((originatedRotationMatrix a pt) *#) 
   
 --------------------------------------------------------------------------------
 -- Scale
 
 class Scale t where
-  type ScaleUnit t
-  scale :: ScaleUnit t -> ScaleUnit t -> t -> t
+  scale :: AUnit t -> AUnit t -> t -> t
 
 instance Num u => Scale (Point2 u) where
-  type ScaleUnit (Point2 u) = u
   scale x y = ((scalingMatrix x y) *#) 
 
 instance Num u => Scale (Vec2 u) where
-  type ScaleUnit (Vec2 u) = u
   scale x y = ((scalingMatrix x y) *#) 
 
 --------------------------------------------------------------------------------
 -- Translate
 
 class Translate t where
-  type TranslateUnit t
-  translate :: TranslateUnit t -> TranslateUnit t -> t -> t
+  translate :: AUnit t -> AUnit t -> t -> t
 
 -- | translate @x@ @y@.
 instance Num u => Translate (Point2 u) where
-  type TranslateUnit (Point2 u) = u
   translate x y = ((translationMatrix x y) *#)
 
 instance Num u => Translate (Vec2 u) where
-  type TranslateUnit (Vec2 u) = u
   translate x y = ((translationMatrix x y) *#)
 
 
@@ -119,39 +119,34 @@ instance Num u => Translate (Vec2 u) where
 rotate30 :: Rotate t => t -> t 
 rotate30 = rotate (pi/6) 
 
-rotate30About :: (RotateAbout t, RotateAboutUnit t ~ u) 
-              => Point2 u -> t -> t 
+rotate30About :: (RotateAbout t, AUnit t ~ u) => Point2 u -> t -> t 
 rotate30About = rotateAbout (pi/6)
 
 
 rotate45 :: Rotate t => t -> t 
 rotate45 = rotate (pi/4) 
 
-rotate45About :: (RotateAbout t, RotateAboutUnit t ~ u) 
-              => Point2 u -> t -> t 
+rotate45About :: (RotateAbout t, AUnit t ~ u) => Point2 u -> t -> t 
 rotate45About = rotateAbout (pi/4)
 
 
 rotate60 :: Rotate t => t -> t 
 rotate60 = rotate (2*pi/3) 
 
-rotate60About :: (RotateAbout t, RotateAboutUnit t ~ u) 
-              => Point2 u -> t -> t 
+rotate60About :: (RotateAbout t, AUnit t ~ u) => Point2 u -> t -> t 
 rotate60About = rotateAbout (2*pi/3)
 
 rotate90 :: Rotate t => t -> t 
 rotate90 = rotate (pi/2) 
 
-rotate90About :: (RotateAbout t, RotateAboutUnit t ~ u) 
-              => Point2 u -> t -> t 
+rotate90About :: (RotateAbout t, AUnit t ~ u) => Point2 u -> t -> t 
 rotate90About = rotateAbout (pi/2)
 
 
 rotate120 :: Rotate t => t -> t 
 rotate120 = rotate (4*pi/3) 
 
-rotate120About :: (RotateAbout t, RotateAboutUnit t ~ u) 
-               => Point2 u -> t -> t 
+rotate120About :: (RotateAbout t, AUnit t ~ u) => Point2 u -> t -> t 
 rotate120About = rotateAbout (4*pi/3)
 
 
@@ -159,20 +154,20 @@ rotate120About = rotateAbout (4*pi/3)
 --------------------------------------------------------------------------------
 -- Common scalings
 
-uniformScale :: (Scale t, ScaleUnit t ~ u) => u -> t -> t 
+uniformScale :: (Scale t, AUnit t ~ u) => u -> t -> t 
 uniformScale a = scale a a 
 
 
-reflectX :: (Num u, Scale t, ScaleUnit t ~ u) => t -> t
+reflectX :: (Num u, Scale t, AUnit t ~ u) => t -> t
 reflectX = scale (-1) 1
 
-reflectY :: (Num u, Scale t, ScaleUnit t ~ u) => t -> t
+reflectY :: (Num u, Scale t, AUnit t ~ u) => t -> t
 reflectY = scale 1 (-1)
 
 --------------------------------------------------------------------------------
 -- translations
 
-translateBy :: (Translate t, TranslateUnit t ~ u) => Vec2 u -> t -> t 
+translateBy :: (Translate t, AUnit t ~ u) => Vec2 u -> t -> t 
 translateBy (V2 x y) = translate x y
 
 

@@ -11,7 +11,6 @@ import Wumpus.Core.PictureInternal ( Picture(..) )
 
 
 drawBounds :: (Num u, Ord u) => Picture u -> Picture u
-drawBounds PicEmpty = PicEmpty
 drawBounds p        = p `over` (frame $ cstroke () ph) where
     ph   = vertexPath $ corners $ boundary p
 
@@ -89,7 +88,7 @@ demo05 = do
     writeEPS "./out/label05.eps" (Just ("Helvetica",12)) p1
     writeSVG "./out/label05.svg" p1
   where
-    p1 = uniformScale 10 $ stackCenter [bigA, bigB, bigT]
+    p1 = uniformScale 10 $ stackOntoCenter [bigA, bigB] bigT
 
 
 demo06 :: IO ()
@@ -97,7 +96,8 @@ demo06 = do
     writeEPS "./out/label06.eps" (Just ("Helvetica",12)) p1
     writeSVG "./out/label06.svg" p1
   where
-    p1 = hsep 20 $ map (drawBounds . bigLetter peru) "abcdefg" 
+    p1 = hsep 20 (fn 'a') (map fn "abcdefg")
+    fn = drawBounds . bigLetter peru
 
 
 demo07 :: IO ()
@@ -117,7 +117,7 @@ demo08 = do
     writeEPS "./out/label08.eps" (Just ("Helvetica",12)) p1
     writeSVG "./out/label08.svg" p1
   where
-    p1 = hcat [pA, pB, pC, pA]
+    p1 = hcat pA [pA, pB, pC]
     
     pA = drawBounds bigA
     pB = drawBounds $ uniformScale 2 bigB
@@ -133,15 +133,7 @@ demo09 = do
 
 
 main :: IO ()
-main = do 
-  demo01
-  demo02
-  demo03
-  demo04
-  demo05
-  demo06
-  demo07
-  demo08
-  demo09
-
-  
+main = sequence_
+  [ demo01, demo02, demo03, demo04, demo05
+  , demo06, demo07, demo08, demo09
+  ]  

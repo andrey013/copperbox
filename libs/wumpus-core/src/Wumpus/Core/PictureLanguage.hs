@@ -11,6 +11,9 @@
 -- Stability   :  experimental
 -- Portability :  GHC only
 --
+-- Picture language operations c.f. PPrint and 
+-- Text.PrettyPrint.HughesPJ, but fully in two dimensions 
+-- rather than horizontal + carriage return.
 --
 --------------------------------------------------------------------------------
 
@@ -21,7 +24,6 @@ module Wumpus.Core.PictureLanguage
 
   -- * Type family and classes
   , PUnit 
-  , PEmpty(..)
   , Horizontal(..)
   , Vertical(..)
   , Composite(..)
@@ -41,11 +43,11 @@ module Wumpus.Core.PictureLanguage
   , ( -//- )
   , ( -\\- )
   , at
-  , stack
+  , stackOnto
   , hcat 
   , vcat
   , ( -@- )
-  , stackCenter
+  , stackOntoCenter
 
   , hspace
   , vspace
@@ -90,10 +92,6 @@ data VAlign = VLeft | VCenter | VRight
 
 -- The unit type of /points/ within a Picture.
 type family PUnit a
-
--- | Create an empty picture.
-class PEmpty a where
-  pempty :: a
 
 
 class Horizontal a where
@@ -202,30 +200,34 @@ at :: (Move a, u ~ PUnit a) => a -> Point2 u  -> a
 p `at` (P2 x y) = move x y p
 
 
+-- stackOnto :: [a] -> a -> a
+-- This would obviate the need for pempty without needing a 
+-- non-empty list
+
 -- | Stack the pictures using 'over' - the first picture in the 
 -- list is drawn at the top, last picture is on drawn at the 
 -- bottom.
-stack :: (PEmpty a, Composite a) => [a] -> a
-stack = foldl' over pempty
+stackOnto :: (Composite a) => [a] -> a -> a
+stackOnto = flip (foldr over)
 
-hcat :: (PEmpty a, Horizontal a, Composite a, Num u, u ~ PUnit a)
-     => [a] -> a
-hcat = foldl' (->-) pempty 
+hcat :: (Horizontal a, Composite a, Num u, u ~ PUnit a)
+     => a -> [a] -> a
+hcat = foldl' (->-)
 
-vcat :: (PEmpty a, Vertical a, Composite a, Num u, u ~ PUnit a)
-     => [a] -> a
-vcat = foldl' (-//-) pempty
+vcat :: (Vertical a, Composite a, Num u, u ~ PUnit a)
+     => a -> [a] -> a
+vcat = foldl' (-//-)
 
 
 
 -- | Stack pictures centered ontop of each other - the first 
 -- picture in the list is drawn at the top, last picture is on 
 -- drawn at the bottom.
-stackCenter :: (PEmpty a, Horizontal a, Vertical a, Composite a, 
+stackOntoCenter :: (Horizontal a, Vertical a, Composite a, 
                 Move a, Fractional u,
                 u ~ PUnit a)
-            => [a] -> a
-stackCenter = foldl' (-@-) pempty
+            => [a] -> a -> a
+stackOntoCenter = flip $ foldr (-@-)
 
 
 
@@ -258,15 +260,13 @@ vspace :: (Num u, Composite a, Vertical a, Blank a, u ~ PUnit a)
        => u -> a -> a -> a
 vspace n a b = a -//- blankV n -//-  b
 
-hsep :: (Num u, PEmpty a, Composite a, Horizontal a, Blank a, u ~ PUnit a) 
-       => u -> [a] -> a
-hsep _ []     = pempty
-hsep n (x:xs) = foldl' (hspace n) x xs 
+hsep :: (Num u, Composite a, Horizontal a, Blank a, u ~ PUnit a) 
+       => u -> a -> [a] -> a
+hsep n = foldl' (hspace n)
 
-vsep :: (Num u, PEmpty a, Composite a, Vertical a, Blank a, u ~ PUnit a) 
-       => u -> [a] -> a
-vsep _ []     = pempty
-vsep n (x:xs) = foldl' (vspace n) x xs 
+vsep :: (Num u, Composite a, Vertical a, Blank a, u ~ PUnit a) 
+       => u -> a -> [a] -> a
+vsep n = foldl' (vspace n)
 
 
 --------------------------------------------------------------------------------
@@ -291,29 +291,27 @@ alignV VCenter p1 p2 = vecMove p1 p2 (bottommid p1   .-. topmid p2)
 alignV VRight  p1 p2 = vecMove p1 p2 (bottomright p1 .-. topright p2)
 
 
-hcatA :: ( Fractional u, PEmpty a, Horizontal a, Vertical a
+hcatA :: ( Fractional u, Horizontal a, Vertical a
          , Composite a, Move a, u ~ PUnit a)
-     => HAlign -> [a] -> a
-hcatA ha = foldl' op pempty where op = alignH ha
+     => HAlign -> a -> [a] -> a
+hcatA ha = foldl' (alignH ha)
 
-vcatA :: ( Fractional u, PEmpty a, Horizontal a, Vertical a
+vcatA :: ( Fractional u, Horizontal a, Vertical a
          , Composite a, Move a, u ~ PUnit a)
-     => VAlign -> [a] -> a
-vcatA va = foldl' op pempty where op = alignV va
+     => VAlign -> a -> [a] -> a
+vcatA va = foldl' (alignV va)
 
 
 
-hsepA :: ( Fractional u, PEmpty a, Horizontal a, Vertical a
+hsepA :: ( Fractional u, Horizontal a, Vertical a
          , Composite a, Move a, Blank a, u ~ PUnit a)
-     => HAlign -> u -> [a] -> a
-hsepA _  _ []     = pempty
-hsepA ha n (x:xs) = foldl' op x xs where 
+     => HAlign -> u -> a -> [a] -> a
+hsepA ha n = foldl' op where 
    a `op` b = alignH ha (alignH ha a (blankH n)) b 
 
-vsepA :: ( Fractional u, PEmpty a, Horizontal a, Vertical a
+vsepA :: ( Fractional u, Horizontal a, Vertical a
          , Composite a, Move a, Blank a, u ~ PUnit a)
-     => VAlign -> u -> [a] -> a
-vsepA _  _ []     = pempty
-vsepA va n (x:xs) = foldl' op x xs where 
+     => VAlign -> u -> a -> [a] -> a
+vsepA va n = foldl' op where 
    a `op` b = alignV va (alignV va a (blankV n)) b 
 

@@ -73,10 +73,10 @@ import Text.PrettyPrint.Leijen hiding ( empty )
 -- At some point a tree-rewriting step might be added to 
 -- coalesce some of the repeated graphics state updates.
 --
--- Apropos the constructors, Picture is a simple binary 
--- leaf-labelled tree via 
+-- Apropos the constructors, Picture is a simple non-empty 
+-- binary leaf-labelled tree via 
 -- 
--- > PicEmpty (aka empty) | Single (aka leaf) | Picture (aka tree)
+-- > Single (aka leaf) | Picture tree tree (aka tree)
 --
 -- The additional constructors are convenience:
 --
@@ -90,8 +90,8 @@ import Text.PrettyPrint.Leijen hiding ( empty )
 -- @Clip@ nests a picture (tree) inside a clipping path.
 --
 
-data Picture u = PicEmpty
-               | PicBlank (Locale u)
+
+data Picture u = PicBlank (Locale u)
                | Single   (Locale u) (Primitive u)
                | Multi    (Locale u) [Primitive u]
                | Picture  (Locale u) (Picture u)   (Picture u)
@@ -207,7 +207,6 @@ type Locale u = (Frame2 u, BoundingBox u)
 -- Pretty printing
 
 instance (Num u, Pretty u) => Pretty (Picture u) where
-  pretty PicEmpty           = text "*empty*"
   pretty (PicBlank m)       = text "*BLANK*" <+> ppLocale m
   pretty (Single m prim)    = ppLocale m <$> indent 2 (pretty prim)
 
@@ -264,19 +263,22 @@ instance Pointwise (PathSeg u) where
   pointwise f (PCurve p1 p2 p3) = PCurve (f p1) (f p2) (f p3)
   
 
+
+--------------------------------------------------------------------------------
+-- Affine trans instances
+
+type instance AUnit (Picture u) = u
+
 instance (Floating u, Real u) => Rotate (Picture u) where
   rotate = rotatePicture 
 
 instance (Floating u, Real u) => RotateAbout (Picture u) where
-  type RotateAboutUnit (Picture u) = u
   rotateAbout = rotatePictureAbout
 
 instance (Num u, Ord u) => Scale (Picture u) where
-  type ScaleUnit (Picture u) = u
   scale = scalePicture
 
 instance (Num u, Ord u) => Translate (Picture u) where
-  type TranslateUnit (Picture u) = u
   translate = translatePicture
 
 --------------------------------------------------------------------------------
@@ -330,9 +332,6 @@ transformBBox fp = trace . map fp . corners
 -- TO DETERMINE
 -- What should leftBound and rightBound be for an empty picture?
 
-instance PEmpty (Picture u) where
-  pempty  = PicEmpty
-
 type instance PUnit (Picture u) = u
 
 instance (Num u, Ord u) => Horizontal (Picture u) where
@@ -351,7 +350,7 @@ instance (Num u, Ord u) => Vertical (Picture u) where
 --
 -- So to print picture a _over_ picture b we form this node:
 --
--- >  measure 
+-- >  locale 
 -- >    /\
 -- >   /  \
 -- >  b    a
@@ -360,11 +359,8 @@ instance (Num u, Ord u) => Vertical (Picture u) where
 
 
 instance (Num u, Ord u) => Composite (Picture u) where
-
-  a        `over` PicEmpty = a
-  PicEmpty `over` b        = b
-  a        `over` b        = Picture (ortho zeroPt, bb) b a where
-                             bb = union (boundary a) (boundary b)
+  a `over` b = Picture (ortho zeroPt, bb) b a where
+               bb = union (boundary a) (boundary b)
                        
 
 
@@ -402,7 +398,6 @@ instance (Num u, Ord u) => Boundary (Primitive u) where
 
 instance Boundary (Picture u) where
   type BoundaryUnit (Picture u) = u       
-  boundary PicEmpty              = ZeroBB
   boundary (PicBlank (_,bb))     = bb
   boundary (Single   (_,bb) _)   = bb
   boundary (Multi    (_,bb) _)   = bb
@@ -418,7 +413,6 @@ instance Boundary (Picture u) where
 
 
 mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
-mapLocale _ PicEmpty          = PicEmpty
 mapLocale f (PicBlank m)      = PicBlank (f m)
 mapLocale f (Single   m prim) = Single (f m) prim
 mapLocale f (Multi    m ps)   = Multi (f m) ps

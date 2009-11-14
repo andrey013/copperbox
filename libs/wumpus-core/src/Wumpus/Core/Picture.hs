@@ -17,9 +17,7 @@ module Wumpus.Core.Picture
   (
   
    -- * Construction
-    empty
-
-  , frame
+    frame
   , multi
   , reframe
 
@@ -45,7 +43,6 @@ module Wumpus.Core.Picture
 
 
   -- * Operations
-  , nullPicture
   , extractFrame
 
 
@@ -80,8 +77,6 @@ stdFrame = ortho zeroPt
 --------------------------------------------------------------------------------
 -- Construction
 
-empty :: Picture u
-empty = PicEmpty
 
 -- | Lifts primitives to Pictures...
 frame :: (Num u, Ord u) => Primitive u -> Picture u
@@ -385,14 +380,9 @@ zellipse = uncurry mkEllipse ellipseDefault
 -- Operations on pictures and paths
 
 
-nullPicture :: Picture u -> Bool
-nullPicture PicEmpty = True
-nullPicture _        = False
-
 
 
 extractFrame :: Num u => Picture u -> Frame2 u
-extractFrame PicEmpty              = ortho zeroPt
 extractFrame (PicBlank (fr,_))     = fr
 extractFrame (Single   (fr,_) _)   = fr
 extractFrame (Multi    (fr,_) _)   = fr

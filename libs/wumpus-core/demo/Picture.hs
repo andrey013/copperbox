@@ -28,7 +28,7 @@ funnyshape = frame $ cstroke () $ vertexPath
 demo01 :: IO ()
 demo01 = do 
   writePS  "./out/picture01.ps" Nothing [funnyshape ->- square]
-  writeSVG "./out/picture01.svg" $ stack [funnyshape ->- square]
+  writeSVG "./out/picture01.svg" $ funnyshape ->- square
 
 
 pic1 :: Picture Double
@@ -119,7 +119,7 @@ demo10 = do
     writeEPS "./out/picture10.eps" Nothing p1
     writeSVG "./out/picture10.svg" p1
   where
-    p1 = vsepA VRight 5 [s1,s2,s3]
+    p1 = vsepA VRight 5 s1 [s2,s3]
     s1 = uniformScale 1.5  $ mkFilledSquare plum 
     s2 = uniformScale 1.75 $ mkFilledSquare peru
     s3 = scale 3 1.5       $ mkFilledSquare black
@@ -127,14 +127,7 @@ demo10 = do
 
 
 main :: IO ()
-main = do 
-  demo01
-  demo02
-  demo03
-  demo04
-  demo05
-  demo06
-  demo07
-  demo08
-  demo09
-  demo10
+main = sequence_
+  [ demo01, demo02, demo03, demo04, demo05
+  , demo06, demo07, demo08, demo09, demo10
+  ]

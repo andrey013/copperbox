@@ -19,6 +19,7 @@ module Wumpus.Core
   (
     module Wumpus.Core.AffineTrans 
   , module Wumpus.Core.BoundingBox
+  , module Wumpus.Core.Colour
   , module Wumpus.Core.Geometry
   , module Wumpus.Core.GraphicsState
   , module Wumpus.Core.OutputPostScript
@@ -48,6 +49,7 @@ module Wumpus.Core
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox
+import Wumpus.Core.Colour hiding ( black, white, red, green, blue )
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.OutputPostScript

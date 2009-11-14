@@ -51,7 +51,7 @@ import Text.XML.Light
 type Clipped    = Bool
 
 
-coordChange ::  (Num u, Ord u, Scale t, u ~ ScaleUnit t) => t-> t
+coordChange ::  (Num u, Ord u, Scale t, u ~ AUnit t) => t -> t
 coordChange = scale 1 (-1)
 
 
@@ -81,7 +81,6 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement [trans_attr] [p]]
 
 
 picture :: Clipped -> Picture Double -> SvgM Element
-picture _ PicEmpty                = return $ gElement [] []
 picture _ (PicBlank _)            = return $ gElement [] []
 picture c (Single (fr,_) prim)    = do 
     elt <- primitive c prim

@@ -159,7 +159,6 @@ epsFooter = do
 -- block of @gsave ... grestore@.
 
 outputPicture :: Picture Double -> WumpusM ()
-outputPicture PicEmpty                  = return ()
 outputPicture (PicBlank  _)             = return ()
 outputPicture (Single (fr,_) prim)      = 
     updateFrame fr $ outputPrimitive prim
