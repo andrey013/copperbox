@@ -5,27 +5,30 @@ import Wumpus.Core
 import Wumpus.Extra
 
 
+
 main :: IO ()
 main = sequence_ [ demo01 ]
 
-grid1 :: Grid
-grid1 = Grid xs where
-  xs = [ nodeAt (1,0) "Gal(M)"
-       , nodeAt (0,1) "delta"
-       , nodeAt (1,1) "Gal(N/M)"
-       , nodeAt (0,2) "(E/E')"
-       ]
-       
 
 
-nodeAt :: (Int,Int) -> String -> PlacedNode
-nodeAt (x,y) name = (NamedNode name, P2 x y) 
+mgrid01 = do 
+  nextcol 
+  gal_m   <- node "Gal(M)" 
+  row 
+  delta   <- node "delta" 
+  gal_nm  <- node "Gal(N/M)"
+  row 
+  ee      <- node "(E/E')"
 
+  return ()
 
 demo01 = do 
     writeEPS "./out/grid01.eps" (Just ("Courier", 12)) pic1 
     writeSVG "./out/grid01.svg" pic1 
   where
-    pic1   = nodePicture (nodeMap 100 50 grid1) no_pic
-    
+   
+    pic1   = nodePicture 100 50 3 elts no_pic
+    elts   = snd $ grid mgrid01 
     no_pic = blankPicture (BBox zeroPt zeroPt)
+
+
