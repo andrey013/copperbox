@@ -1,5 +1,5 @@
 name:             joinlist
-version:          0.1.1
+version:          0.2.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -9,22 +9,13 @@ category:         Data
 synopsis:         Join list - symmetric list type 
 description:
   A JoinList - a list type with with cheap catenation.
+  Currently somewhat /minimal/.
   .
-  The earliest attribution have found is to Richard Bird. 
-  An implementation exists in york-lava.
-  .
-  Cameo appearances:
-  .
-  *  GHC Team 'View patterns: lightweight views for Haskell'
-  .  
-  *  Mark Tullsen 'First Class Patterns'
-  .  
-  *  Meng Wang, Jeremy Gibbons, Kazutaka Matsuda, Zhenjiang Hu 
-     'Translucent Abstraction: Safe Views through Invertible 
-     Programming'
+  Changelog
   . 
-  . Changelog
-  . 0.1.1 - added cons and snoc
+  0.2.0 - more operations and some bugfixes (toList...), @wrap@
+  renamed to @singleton@.
+  
 
 build-type:         Simple
 stability:          highly unstable
@@ -34,14 +25,14 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base<5
+  build-depends:      base<5, dlist
 
   
   exposed-modules:
     Data.JoinList
 
   other-modules:
-    
+
   extensions:
     
 
