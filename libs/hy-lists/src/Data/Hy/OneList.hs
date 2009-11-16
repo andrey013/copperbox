@@ -33,12 +33,10 @@ module Data.Hy.OneList
 
   ) where
 
-import Data.Hy.DListDisguise
 
 import Control.Applicative              hiding ( empty )
 import Data.Foldable ( Foldable )
 import qualified Data.Foldable          as F
-import qualified Data.List              as List
 import Data.Monoid
 import Data.Traversable ( Traversable(..) )
 
@@ -55,9 +53,9 @@ data OneList a = One a | a :+ OneList a
 
 
 instance Show a => Show (OneList a) where
-  show = ('{' :) . List.concat . dlout . step where
-     step (One a)   = (dlwrap $ show a) ++++ dlwrap "}"
-     step (a :+ xs) = (dlwrap $ show a) ++++ dlwrap "," ++++ step xs
+  show = ('{':) . ($ []) . step where
+     step (One a)   = shows a . showChar '}'
+     step (a :+ xs) = shows a . showChar ',' . step xs
 
 --------------------------------------------------------------------------------
 
@@ -127,6 +125,7 @@ tail _         = error "Data.Hy.OneList.tail - single element list, no tail."
 map :: (a -> b) -> OneList a -> OneList b
 map f (One a)   = One (f a)
 map f (a :+ xs) = f a :+ map f xs
+
 
 
 -- No direct unfoldr - there is no equivalent to [] to produce 

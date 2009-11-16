@@ -35,10 +35,10 @@ module Data.Hy.SnocList
  , concat
  , length
  , para
+ , paral
  
  )  where
 
-import Data.Hy.DListDisguise
 
 
 import Control.Applicative              hiding ( empty )
@@ -62,9 +62,9 @@ data SnocList a = Lin | SnocList a :> a
 --------------------------------------------------------------------------------
 
 instance Show a => Show (SnocList a) where
-  show = List.concat . dlout . (dlsnoc `flip`  ">") . para phi (dlwrap "<") where
-     phi c (s,acc) | null s    = acc ++++ (dlwrap $ show c)
-                   | otherwise = acc ++++ (dlwrap $ ',' : show c)
+  show = ($ ">") . para phi ('<':)  where
+     phi c (s,f) | null s    = f . shows c
+                 | otherwise = f . showChar ',' . shows c
 
 --------------------------------------------------------------------------------
 
@@ -179,3 +179,8 @@ length = foldl (const . (+1)) 0
 para :: (a -> (SnocList a, b) -> b) -> b -> SnocList a -> b
 para _ e Lin       = e
 para f e (sc :> a) = f a (sc,para f e sc)
+
+
+paral :: (a -> (SnocList a, b) -> b) -> b -> SnocList a -> b
+paral _ e Lin       = e
+paral f e (sc :> a) = paral f (f a (sc,e)) sc
