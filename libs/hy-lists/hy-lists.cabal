@@ -10,7 +10,7 @@ synopsis:         Alternative list types with associated hylomorphisms.
 description:
   Lists 
   .
-   * HySnocList - figuratively speaking a backwards list. 
+   * SnocList - figuratively speaking a backwards list. 
      The regular list type from Prelude / Data.List builds by 
      prefixing aka /consing/ - adding elements to the front.
      A snoc list builds by suffixing aka /snocing/ adding 
@@ -18,7 +18,11 @@ description:
      .
      @ SnocList a = Lin | Snoc (SnocList a) a @
   .
-   * HyOneList  
+   * OneList - non-empty list, the nil construtor of a regular
+     list @[]@ is replaced by @(One _)@ which always has some 
+     element.
+     .
+     @ OneList a = One a | a :+ OneList a @
 
   .
   TODO - remove DList dependency.

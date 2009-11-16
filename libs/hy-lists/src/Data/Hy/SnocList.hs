@@ -41,12 +41,12 @@ module Data.Hy.SnocList
 import Data.Hy.DListDisguise
 
 
-import Control.Applicative hiding ( empty )
+import Control.Applicative              hiding ( empty )
 import Control.Monad ( MonadPlus(..) )
 import Data.Foldable ( Foldable )
-import qualified Data.Foldable as F
+import qualified Data.Foldable          as F
 import Data.Monoid
-import qualified Data.List as List
+import qualified Data.List              as List
 import Data.Traversable ( Traversable(..) )
 
 import Prelude hiding ( concat, foldl, foldr, last, length, map, null )
@@ -85,7 +85,7 @@ instance Foldable SnocList where
 
 instance Traversable SnocList where
   traverse _ Lin       = pure Lin
-  traverse f (sc :> a) = (:>) <$> (traverse f sc) <*> f a
+  traverse f (sc :> a) = (:>) <$> traverse f sc <*> f a
 
 --------------------------------------------------------------------------------
 

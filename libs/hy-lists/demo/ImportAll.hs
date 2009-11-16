@@ -3,10 +3,10 @@
 
 module ImportAll where
 
-import qualified Data.HyOneList  as One
-import Data.HySnocList ( SnocList(..) )
-import qualified Data.HySnocList as Snoc
-import Data.TransHylo
+import qualified Data.Hy.OneList  as One
+import Data.Hy.SnocList ( SnocList(..) )
+import qualified Data.Hy.SnocList as Snoc
+import Data.Hy.Hylomorphisms
 
 import qualified Data.List as List
 

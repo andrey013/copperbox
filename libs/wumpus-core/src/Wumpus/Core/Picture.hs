@@ -17,7 +17,8 @@ module Wumpus.Core.Picture
   (
   
    -- * Construction
-    frame
+    blankPicture
+  , frame
   , multi
   , reframe
 
@@ -31,6 +32,8 @@ module Wumpus.Core.Picture
 
   , Fill(..)
   , zfill
+  
+  , clip
 
   , TextLabel(..)
   , ztextlabel
@@ -54,6 +57,8 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
 
+import Data.Hy.OneList ( fromList )
+
 import Data.Semigroup
 
 
@@ -76,6 +81,8 @@ stdFrame = ortho zeroPt
 --------------------------------------------------------------------------------
 -- Construction
 
+blankPicture :: Num u => BoundingBox u -> Picture u
+blankPicture bb = PicBlank (stdFrame, bb)
 
 -- | Lifts primitives to Pictures...
 frame :: (Num u, Ord u) => Primitive u -> Picture u
@@ -84,8 +91,8 @@ frame p = Single (stdFrame, boundary p) p
 
 -- | Draw many primitives ion the same affine frame
 -- Throws empty list error on empty list.
-multi :: (Num u, Ord u) => [Primitive u] -> Picture u
-multi ps = Multi (stdFrame, sconcat $ map boundary ps) ps 
+multi :: (Num u, Ord u) => [Picture u] -> Picture u
+multi ps = Picture (stdFrame, sconcat $ map boundary ps) (fromList ps)
   where 
     sconcat []     = error $ "Picture.multi - empty list"
     sconcat (x:xs) = foldr append x xs
@@ -234,6 +241,12 @@ instance Fill (Gray Double)     where fill = fillPath . toPSColour
 zfill :: (Num u, Ord u) => Path u -> Primitive u
 zfill = fillPath psBlack
 
+--------------------------------------------------------------------------------
+-- Clipping 
+
+clip :: (Num u, Ord u) => Path u -> Picture u -> Picture u
+clip cp p = Clip (ortho zeroPt, boundary cp) cp p
+
 
 --------------------------------------------------------------------------------
 -- Labels to primitive
@@ -286,15 +299,14 @@ ztextlabel = mkTextLabel psBlack default_font
 
 
 
--- Note - this current definition never allows the bounding box
--- to be shrunk - a specific version for labels might be better
+-- (The implementation of this function needs attention).
 --
--- > multilabel :: (Num u, Ord u) => [Label u] -> BoundingBox u -> Picture u
--- 
-
 multilabel :: (Num u, Ord u) 
            => [Label u] -> LabelProps -> BoundingBox u -> Picture u
-multilabel ps props bb = Multi (stdFrame, bb) $ zipWith PLabel (repeat props) ps 
+multilabel ps props bb = 
+    Picture (stdFrame, bb) $ fromList 
+                           $ map frame
+                           $ zipWith PLabel (repeat props) ps 
 
 
 --------------------------------------------------------------------------------
@@ -389,8 +401,7 @@ zellipse = uncurry mkEllipse ellipseDefault
 extractFrame :: Num u => Picture u -> Frame2 u
 extractFrame (PicBlank (fr,_))     = fr
 extractFrame (Single   (fr,_) _)   = fr
-extractFrame (Multi    (fr,_) _)   = fr
-extractFrame (Picture  (fr,_) _ _) = fr
+extractFrame (Picture  (fr,_) _)   = fr
 extractFrame (Clip     (fr,_) _ _) = fr
 
 

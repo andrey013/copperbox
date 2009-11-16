@@ -23,8 +23,8 @@ library
   build-depends:      base < 5, containers, old-time,
                       wl-pprint, vector-space, 
                       monadLib, xml, dlist,
-                      algebra, data-aviary == 0.1.0
-
+                      algebra, data-aviary == 0.1.0,
+                      hy-lists
   
   exposed-modules:
     Wumpus.Core,

@@ -44,7 +44,12 @@ module Wumpus.Core.Utils
   , (<:>) 
   , pairbimap     -- note defined in HEAD of Data.Aviary
 
+  , mkList2       -- candidate for Data.Hy ?
+
   ) where
+
+
+import Data.Hy.OneList ( OneList(..) )
 
 import Control.Applicative
 import Data.List ( intersperse )
@@ -186,3 +191,7 @@ infixr 6 <:>
 -- and apply the function @g@ to the second element.
 pairbimap :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
 pairbimap f g (a,b) = (f a, g b)
+
+
+mkList2 :: a -> a -> OneList a
+mkList2 a b = a :+ One b

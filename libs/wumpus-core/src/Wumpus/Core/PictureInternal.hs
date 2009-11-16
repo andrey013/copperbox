@@ -48,6 +48,7 @@ import Wumpus.Core.PictureLanguage hiding ( hcat, vcat, hsep, vsep )
 import Wumpus.Core.Utils
 
 import Data.Aviary
+import Data.Hy.OneList ( OneList, toList )
 
 import Data.AffineSpace
 import Data.Semigroup
@@ -74,18 +75,17 @@ import Text.PrettyPrint.Leijen hiding ( empty )
 -- coalesce some of the repeated graphics state updates.
 --
 -- Apropos the constructors, Picture is a simple non-empty 
--- binary leaf-labelled tree via 
+-- leaf-labelled rose tree via 
 -- 
--- > Single (aka leaf) | Picture tree tree (aka tree)
+-- > Single (aka leaf) | Picture (OneList tree)
 --
+-- Where OneList is a variant of the standard list type that 
+-- disallows empty lists.
+-- 
 -- The additional constructors are convenience:
 --
--- @Blank@ has a bounding box but no content and is useful for
+-- @PickBlank@ has a bounding box but no content and is useful for
 -- some picture language operations (e.g. @hsep@).
---
--- @Multi@ is a optimisation allowing many primitives to be 
--- drawn within the same affine frame, sparing some gratuitous 
--- generation of @gsave ... grestore@ blocks.
 --
 -- @Clip@ nests a picture (tree) inside a clipping path.
 --
@@ -93,8 +93,7 @@ import Text.PrettyPrint.Leijen hiding ( empty )
 
 data Picture u = PicBlank (Locale u)
                | Single   (Locale u) (Primitive u)
-               | Multi    (Locale u) [Primitive u]
-               | Picture  (Locale u) (Picture u)   (Picture u)
+               | Picture  (Locale u) (OneList (Picture u))
                | Clip     (Locale u) (Path u)      (Picture u)
   deriving (Eq,Show) 
 
@@ -209,11 +208,8 @@ type Locale u = (Frame2 u, BoundingBox u)
 instance (Num u, Pretty u) => Pretty (Picture u) where
   pretty (PicBlank m)       = text "*BLANK*" <+> ppLocale m
   pretty (Single m prim)    = ppLocale m <$> indent 2 (pretty prim)
-
-  pretty (Multi m prims)    = ppLocale m <$> indent 2 (list $ map pretty prims)
-  pretty (Picture m pl pr)  = 
-      ppLocale m <$> indent 2 (text "LEFT" <+> pretty pl)
-                  <$> indent 2 (text "RGHT" <+> pretty pr)
+  pretty (Picture m ones)  = 
+      ppLocale m <$> indent 2 (list $ map pretty $ toList ones)
 
   pretty (Clip m cpath p)   = 
       text "Clip:" <+> ppLocale m <$> indent 2 (pretty cpath)
@@ -359,7 +355,7 @@ instance (Num u, Ord u) => Vertical (Picture u) where
 
 
 instance (Num u, Ord u) => Composite (Picture u) where
-  a `over` b = Picture (ortho zeroPt, bb) b a where
+  a `over` b = Picture (ortho zeroPt, bb) (mkList2 b a) where
                bb = union (boundary a) (boundary b)
                        
 
@@ -400,8 +396,7 @@ instance Boundary (Picture u) where
   type BoundaryUnit (Picture u) = u       
   boundary (PicBlank (_,bb))     = bb
   boundary (Single   (_,bb) _)   = bb
-  boundary (Multi    (_,bb) _)   = bb
-  boundary (Picture  (_,bb) _ _) = bb
+  boundary (Picture  (_,bb) _)   = bb
   boundary (Clip     (_,bb) _ _) = bb
 
 
@@ -415,8 +410,7 @@ instance Boundary (Picture u) where
 mapLocale :: (Locale u -> Locale u) -> Picture u -> Picture u
 mapLocale f (PicBlank m)      = PicBlank (f m)
 mapLocale f (Single   m prim) = Single (f m) prim
-mapLocale f (Multi    m ps)   = Multi (f m) ps
-mapLocale f (Picture  m a b)  = Picture (f m) a b
+mapLocale f (Picture  m ones) = Picture (f m) ones
 mapLocale f (Clip     m x p)  = Clip (f m) x p
 
 

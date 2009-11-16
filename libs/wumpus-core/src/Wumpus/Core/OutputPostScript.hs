@@ -30,6 +30,12 @@ import Wumpus.Core.PostScript
 import Wumpus.Core.Utils
 
 import Control.Monad ( mapM_, zipWithM_ )
+import qualified Data.Foldable as F
+
+
+
+
+
 
 -- | FontSpec = (font-name,font-size)
 --
@@ -161,11 +167,8 @@ outputPicture :: Picture Double -> WumpusM ()
 outputPicture (PicBlank  _)             = return ()
 outputPicture (Single (fr,_) prim)      = 
     updateFrame fr $ outputPrimitive prim
-outputPicture (Multi (fr,_) ps)         = 
-    updateFrame fr $ mapM_ outputPrimitive ps
-outputPicture (Picture (fr,_) a b)      = do
-    updateFrame fr $ outputPicture  a
-    updateFrame fr $ outputPicture  b
+outputPicture (Picture (fr,_) ones)      = do
+    updateFrame fr $ F.mapM_ outputPicture  ones
 outputPicture (Clip (fr,_) cp p)        = 
     updateFrame fr $ do { clipPath cp ; outputPicture p }
 

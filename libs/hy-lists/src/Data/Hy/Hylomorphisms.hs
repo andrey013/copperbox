@@ -35,5 +35,5 @@ hylol g f e a = case g a of
                   Nothing     -> e
                   Just (b,st) -> hylol g f (f e b) st
 
--- hyfilter :: (a -> Bool) 
--- 
+
+
