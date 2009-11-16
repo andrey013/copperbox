@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Data.SnocList
+-- Module      :  Data.Hy.SnocList
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -11,11 +11,11 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 -- 
---
+-- Snoc List
 --
 --------------------------------------------------------------------------------
 
-module Data.SnocList
+module Data.Hy.SnocList
  (
    SnocList(..)
  -- * Construction
@@ -38,7 +38,7 @@ module Data.SnocList
  
  )  where
 
-import Data.DListDisguise
+import Data.Hy.DListDisguise
 
 
 import Control.Applicative hiding ( empty )

@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Data.DListDisguise
+-- Module      :  Data.Hy.DListDisguise
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -17,7 +17,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Data.DListDisguise  
+module Data.Hy.DListDisguise  
   (
     dlempty
   , dlout

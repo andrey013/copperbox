@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Data.OneList
+-- Module      :  Data.Hy.OneList
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -11,11 +11,11 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 -- 
---
+-- Non-empty OneList
 --
 --------------------------------------------------------------------------------
 
-module Data.OneList 
+module Data.Hy.OneList 
   ( 
     OneList(..)
 
@@ -30,7 +30,7 @@ module Data.OneList
 
   ) where
 
-import Data.DListDisguise
+import Data.Hy.DListDisguise
 
 import qualified Data.List as List
 

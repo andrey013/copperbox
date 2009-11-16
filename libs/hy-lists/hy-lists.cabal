@@ -1,0 +1,59 @@
+name:             hy-lists
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Data
+synopsis:         Alternative list types with associated hylomorphisms. 
+description:
+  Lists 
+  .
+   * HySnocList - figuratively speaking a backwards list. 
+     The regular list type from Prelude / Data.List builds by 
+     prefixing aka /consing/ - adding elements to the front.
+     A snoc list builds by suffixing aka /snocing/ adding 
+     elements to the tail
+     .
+     @ SnocList a = Lin | Snoc (SnocList a) a @
+  .
+   * HyOneList  
+
+  .
+  TODO - remove DList dependency.
+  .
+  Changelog
+  .
+  0.1.0 - initial version.
+  
+
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+
+library
+  hs-source-dirs:     src
+  build-depends:      base<5, dlist
+
+  
+  exposed-modules:
+    Data.Hy.Hylomorphisms,
+    Data.Hy.OneList,
+    Data.Hy.SnocList
+
+  other-modules:
+    Data.Hy.DListDisguise
+  
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
