@@ -26,6 +26,7 @@ module Wumpus.Extra
   , module Wumpus.Extra.Drawing
   , module Wumpus.Extra.Grid
   , module Wumpus.Extra.SafeFonts
+  , module Wumpus.Extra.Text
   ) where
 
 import Wumpus.Extra.Arrow
@@ -33,4 +34,7 @@ import Wumpus.Extra.Dots
 import Wumpus.Extra.Drawing
 import Wumpus.Extra.Grid
 import Wumpus.Extra.SafeFonts
+import Wumpus.Extra.Text
+
+
 

@@ -23,63 +23,75 @@ module Wumpus.Extra.SafeFonts
   , timesRoman12
   , timesRoman18
   , timesRoman24
+  , timesRoman48
 
   , timesItalic10
   , timesItalic12
   , timesItalic18
   , timesItalic24
+  , timesItalic48
 
   , timesBold10
   , timesBold12
   , timesBold18
   , timesBold24
+  , timesBold48
 
   , timesBoldItalic10
   , timesBoldItalic12
   , timesBoldItalic18
   , timesBoldItalic24
+  , timesBoldItalic48
 
   -- * Helvetica
   , helvetica10
   , helvetica12
   , helvetica18
   , helvetica24
+  , helvetica48
 
   , helveticaOblique10
   , helveticaOblique12
   , helveticaOblique18
   , helveticaOblique24
+  , helveticaOblique48
 
   , helveticaBold10
   , helveticaBold12
   , helveticaBold18
   , helveticaBold24
+  , helveticaBold48
 
   , helveticaBoldOblique10
   , helveticaBoldOblique12
   , helveticaBoldOblique18
   , helveticaBoldOblique24
+  , helveticaBoldOblique48
 
   -- * Courier
   , courier10
   , courier12
   , courier18
   , courier24
+  , courier48
 
   , courierOblique10
   , courierOblique12
   , courierOblique18
   , courierOblique24
+  , courierOblique48
 
   , courierBold10
   , courierBold12
   , courierBold18
   , courierBold24
+  , courierBold48
 
   , courierBoldOblique10
   , courierBoldOblique12
   , courierBoldOblique18
   , courierBoldOblique24
+  , courierBoldOblique48
 
   -- * Symbol
   -- $symboldoc
@@ -87,6 +99,7 @@ module Wumpus.Extra.SafeFonts
   , symbol12
   , symbol18
   , symbol24
+  , symbol48
 
   ) where
 
@@ -120,6 +133,11 @@ timesRoman18 = mkTimesRoman 18
 timesRoman24 :: FontAttr
 timesRoman24 = mkTimesRoman 24
 
+timesRoman48 :: FontAttr
+timesRoman48 = mkTimesRoman 48
+
+-- Times Italic
+
 mkTimesItalic :: Int -> FontAttr
 mkTimesItalic = FontAttr "Times-Italic" "Times New Roman" SVG_ITALIC
 
@@ -134,6 +152,11 @@ timesItalic18 = mkTimesItalic 18
 
 timesItalic24 :: FontAttr
 timesItalic24 = mkTimesItalic 24
+
+timesItalic48 :: FontAttr
+timesItalic48 = mkTimesItalic 48
+
+-- Times Bold
 
 mkTimesBold :: Int -> FontAttr
 mkTimesBold = FontAttr "Times-Bold" "Times New Roman" SVG_BOLD
@@ -150,6 +173,11 @@ timesBold18 = mkTimesBold 18
 timesBold24 :: FontAttr
 timesBold24 = mkTimesBold 24
 
+timesBold48 :: FontAttr
+timesBold48 = mkTimesBold 48
+
+-- Times Bold Italic
+
 mkTimesBoldItalic :: Int -> FontAttr
 mkTimesBoldItalic = 
     FontAttr "Times-BoldItalic" "Times New Roman" SVG_BOLD_ITALIC
@@ -165,6 +193,9 @@ timesBoldItalic18 = mkTimesBoldItalic 18
 
 timesBoldItalic24 :: FontAttr
 timesBoldItalic24 = mkTimesBoldItalic 24
+
+timesBoldItalic48 :: FontAttr
+timesBoldItalic48 = mkTimesBoldItalic 48
 
 
 --------------------------------------------------------------------------------
@@ -186,6 +217,10 @@ helvetica18 = mkHelvetica 18
 helvetica24 :: FontAttr
 helvetica24 = mkHelvetica 24
 
+helvetica48 :: FontAttr
+helvetica48 = mkHelvetica 48
+
+-- Helvetica Oblique
 
 mkHelveticaOblique :: Int -> FontAttr
 mkHelveticaOblique = FontAttr "Helvetica-Oblique" "Helvetica" SVG_OBLIQUE
@@ -203,7 +238,11 @@ helveticaOblique18 = mkHelveticaOblique 18
 helveticaOblique24 :: FontAttr
 helveticaOblique24 = mkHelveticaOblique 24
 
+helveticaOblique48 :: FontAttr
+helveticaOblique48 = mkHelveticaOblique 48
 
+
+-- Helvetica Bold
 
 mkHelveticaBold :: Int -> FontAttr
 mkHelveticaBold = FontAttr "Helvetica-Bold" "Helvetica" SVG_BOLD
@@ -221,6 +260,10 @@ helveticaBold18 = mkHelveticaBold 18
 helveticaBold24 :: FontAttr
 helveticaBold24 = mkHelveticaBold 24
 
+helveticaBold48 :: FontAttr
+helveticaBold48 = mkHelveticaBold 48
+
+-- Helvetica Bold Oblique
 
 mkHelveticaBoldOblique :: Int -> FontAttr
 mkHelveticaBoldOblique = 
@@ -238,6 +281,9 @@ helveticaBoldOblique18 = mkHelveticaBoldOblique 18
 
 helveticaBoldOblique24 :: FontAttr
 helveticaBoldOblique24 = mkHelveticaBoldOblique 24
+
+helveticaBoldOblique48 :: FontAttr
+helveticaBoldOblique48 = mkHelveticaBoldOblique 48
 
 
 
@@ -260,6 +306,10 @@ courier18 = mkCourier 18
 courier24 :: FontAttr
 courier24 = mkCourier 24
 
+courier48 :: FontAttr
+courier48 = mkCourier 48
+
+-- Courier Oblique
 
 mkCourierOblique :: Int -> FontAttr
 mkCourierOblique = FontAttr "Courier-Oblique" "Courier New" SVG_OBLIQUE
@@ -277,7 +327,10 @@ courierOblique18 = mkCourierOblique 18
 courierOblique24 :: FontAttr
 courierOblique24 = mkCourierOblique 24
 
+courierOblique48 :: FontAttr
+courierOblique48 = mkCourierOblique 48
 
+-- Courier Bold
 
 mkCourierBold :: Int -> FontAttr
 mkCourierBold = FontAttr "Courier-Bold" "Courier New" SVG_BOLD
@@ -295,6 +348,10 @@ courierBold18 = mkCourierBold 18
 courierBold24 :: FontAttr
 courierBold24 = mkCourierBold 24
 
+courierBold48 :: FontAttr
+courierBold48 = mkCourierBold 48
+
+-- Courier Bold Oblique
 
 mkCourierBoldOblique :: Int -> FontAttr
 mkCourierBoldOblique = 
@@ -312,6 +369,9 @@ courierBoldOblique18 = mkCourierBoldOblique 18
 
 courierBoldOblique24 :: FontAttr
 courierBoldOblique24 = mkCourierBoldOblique 24
+
+courierBoldOblique48 :: FontAttr
+courierBoldOblique48 = mkCourierBoldOblique 48
 
 --------------------------------------------------------------------------------
 -- Symbol
@@ -335,6 +395,10 @@ symbol18 = mkSymbol 18
 
 symbol24 :: FontAttr
 symbol24 = mkSymbol 24
+
+symbol48 :: FontAttr
+symbol48 = mkSymbol 48
+
 
 
 
