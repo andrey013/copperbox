@@ -31,7 +31,7 @@ example1 = coordChange $ ls `stackOnto` rect100 where
   ls = [diagonals 40 90, diagonals 60 62, diagonals 20 40]
 
 diagonals :: Int -> Int -> Picture Double
-diagonals x y = multi $ map (zostroke . lineSegmentToPath) [l1,l2,l3] 
+diagonals x y = multi $ map (frame . zostroke . lineSegmentToPath) [l1,l2,l3]
   where
     l1 = mkLine x      y (x+20) (y-40)
     l2 = mkLine (x+10) y (x+30) (y-40)

@@ -15,12 +15,9 @@
 
 module Wumpus.Extra.Drawing 
   ( 
-  -- * Temporary - pending adding to wumpus-core
-    blankPicture
-  , clip
 
   -- * Picture transformers
-  , backgroundFill
+    backgroundFill
   , clipPicture
   , clipToBoundary
 
@@ -33,14 +30,17 @@ import Wumpus.Core
 import Wumpus.Core.PictureInternal ( Picture(..) ) -- TO REMOVE...
 
 
+{-
+
 --------------------------------------------------------------------------------
 -- These ones are scheduled to be added to wumpus-core...
 blankPicture :: Num u => BoundingBox u -> Picture u
 blankPicture bb = PicBlank (ortho zeroPt, bb)
 
+
 clip :: (Num u, Ord u) => Path u -> Picture u -> Picture u
 clip cp p = Clip (ortho zeroPt, boundary cp) cp p
-
+-}
 
 
 

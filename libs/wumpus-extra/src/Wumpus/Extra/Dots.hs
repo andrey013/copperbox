@@ -31,16 +31,16 @@ import Wumpus.Geometry
 -- Hmm these dots aren't very efficient being Pictures...
 
 dotX :: (Ord u, Floating u, Real u) => Picture u
-dotX = multi [ ostroke () $ lineSegmentToPath ls1
-             , ostroke () $ lineSegmentToPath ls2 ]
+dotX = multi $ map frame [ ostroke () $ lineSegmentToPath ls1
+                         , ostroke () $ lineSegmentToPath ls2 ]
   where
     ls1   = rotate (pi/6) $ vlineSegment 4 $ P2 0 (-2)
     ls2   = reflectX ls1
 
 
 dotPlus :: (Ord u, Floating u, Real u) => Picture u
-dotPlus = multi [ ostroke () $ lineSegmentToPath ls1
-                , ostroke () $ lineSegmentToPath ls2 ]
+dotPlus = multi $ map frame [ ostroke () $ lineSegmentToPath ls1
+                            , ostroke () $ lineSegmentToPath ls2 ]
   where
     ls1   = vlineSegment 4 $ P2 0 (-2)
     ls2   = hlineSegment 4 $ P2 (-2) 0

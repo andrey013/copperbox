@@ -172,6 +172,18 @@ outputPicture (Clip (fr,_) cp p)        =
     updateFrame fr $ do { clipPath cp ; outputPicture p }
 
 
+-- | @updateFrame@ performs one optimization:
+-- 
+-- If the frame is the standard frame @ [1 0 0 1 0 0] @ then 
+-- the monadic action is run as-is rather than being nested
+-- in a block:
+-- 
+-- > gsave 
+-- > [1 0 0 1 0 0] concat
+-- > ...
+-- > grestore
+--
+
 updateFrame :: Frame2 Double -> WumpusM () -> WumpusM ()
 updateFrame frm ma 
   | standardFrame frm = ma

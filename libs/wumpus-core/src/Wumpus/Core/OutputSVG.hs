@@ -86,16 +86,16 @@ picture :: Clipped -> Picture Double -> SvgM Element
 picture _ (PicBlank _)            = return $ gElement [] []
 picture c (Single (fr,_) prim)    = do 
     elt <- primitive c prim
-    return $ gElement [frameChange fr] [elt]
+    return $ gElement (maybe [] return $ frameChange fr) [elt]
 
 picture c (Picture (fr,_) ones)    = do
     es <- toListWithM (picture c) ones
-    return $ gElement [frameChange fr] es
+    return $ gElement (maybe [] return $ frameChange fr) es
 
 picture _ (Clip (fr,_) p a) = do 
    cp <- clipPath p
    e1 <- picture True a
-   return $ gElement [frameChange fr] [cp,e1]
+   return $ gElement (maybe [] return $ frameChange fr) [cp,e1]
 
 
 primitive :: Clipped -> Primitive Double -> SvgM Element
@@ -213,8 +213,11 @@ pathInstructions (Path (P2 x y) xs) = path_m x y : map fn xs
 
 
 
-frameChange :: Frame2 Double -> Attr
-frameChange fr = attr_transform $ val_matrix a b c d e f where
+frameChange :: Frame2 Double -> Maybe Attr
+frameChange fr 
+    | standardFrame fr = Nothing
+    | otherwise        = Just $ attr_transform $ val_matrix a b c d e f 
+  where
     CTM a b c d e f = toCTM fr
 
 
