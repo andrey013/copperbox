@@ -48,7 +48,6 @@ import Wumpus.Core.PictureLanguage hiding ( hcat, vcat, hsep, vsep )
 import Wumpus.Core.Utils
 
 import Data.Aviary
-import Data.Hy.OneList ( OneList, toList )
 
 import Data.AffineSpace
 import Data.Semigroup
@@ -209,7 +208,7 @@ instance (Num u, Pretty u) => Pretty (Picture u) where
   pretty (PicBlank m)       = text "*BLANK*" <+> ppLocale m
   pretty (Single m prim)    = ppLocale m <$> indent 2 (pretty prim)
   pretty (Picture m ones)  = 
-      ppLocale m <$> indent 2 (list $ map pretty $ toList ones)
+      ppLocale m <$> indent 2 (list $ toListWith pretty ones)
 
   pretty (Clip m cpath p)   = 
       text "Clip:" <+> ppLocale m <$> indent 2 (pretty cpath)

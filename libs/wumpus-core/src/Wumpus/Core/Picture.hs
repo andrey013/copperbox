@@ -56,8 +56,7 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
-
-import Data.Hy.OneList ( fromList )
+import Wumpus.Core.Utils
 
 import Data.Semigroup
 
@@ -75,11 +74,18 @@ psBlack = PSRgb 0 0 0
 stdFrame :: Num u => Frame2 u 
 stdFrame = ortho zeroPt
 
+--------------------------------------------------------------------------------
+-- OneList helper
 
 
+-- | This module (Wumpus.Core.Picture) should be the only 
+-- interface to the /outside world/ for creating 
 
 --------------------------------------------------------------------------------
 -- Construction
+
+
+
 
 blankPicture :: Num u => BoundingBox u -> Picture u
 blankPicture bb = PicBlank (stdFrame, bb)
@@ -92,10 +98,14 @@ frame p = Single (stdFrame, boundary p) p
 -- | Draw many primitives ion the same affine frame
 -- Throws empty list error on empty list.
 multi :: (Num u, Ord u) => [Picture u] -> Picture u
-multi ps = Picture (stdFrame, sconcat $ map boundary ps) (fromList ps)
+multi ps = Picture (stdFrame, sconcat $ map boundary ps) ones
   where 
-    sconcat []     = error $ "Picture.multi - empty list"
-    sconcat (x:xs) = foldr append x xs
+    sconcat []      = error err_msg
+    sconcat (x:xs)  = foldr append x xs
+
+    ones            = fromListErr err_msg ps
+
+    err_msg         = "Wumpus.Core.Picture.multi - empty list"
 
 -- | Lift primitives to pictures modifying the bounding box.
 reframe :: (Num u, Ord u) => Primitive u -> BoundingBox u -> Picture u
@@ -304,10 +314,11 @@ ztextlabel = mkTextLabel psBlack default_font
 multilabel :: (Num u, Ord u) 
            => [Label u] -> LabelProps -> BoundingBox u -> Picture u
 multilabel ps props bb = 
-    Picture (stdFrame, bb) $ fromList 
+    Picture (stdFrame, bb) $ fromListErr err_msg 
                            $ map frame
                            $ zipWith PLabel (repeat props) ps 
-
+  where 
+    err_msg = "Wumpus.Core.Picture.multilabel - empty list."
 
 --------------------------------------------------------------------------------
 

@@ -30,7 +30,6 @@ import Wumpus.Core.PostScript
 import Wumpus.Core.Utils
 
 import Control.Monad ( mapM_, zipWithM_ )
-import qualified Data.Foldable as F
 
 
 
@@ -168,7 +167,7 @@ outputPicture (PicBlank  _)             = return ()
 outputPicture (Single (fr,_) prim)      = 
     updateFrame fr $ outputPrimitive prim
 outputPicture (Picture (fr,_) ones)      = do
-    updateFrame fr $ F.mapM_ outputPicture  ones
+    updateFrame fr $ onesmapM_ outputPicture  ones
 outputPicture (Clip (fr,_) cp p)        = 
     updateFrame fr $ do { clipPath cp ; outputPicture p }
 

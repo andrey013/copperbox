@@ -42,13 +42,12 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.SVG
+import Wumpus.Core.Utils
 
 import Data.Aviary ( (#), bigphi )
-import Data.Hy.OneList ( toList )
 
 import Text.XML.Light
 
-import qualified Data.Traversable       as T
 
 
 type Clipped    = Bool
@@ -90,8 +89,8 @@ picture c (Single (fr,_) prim)    = do
     return $ gElement [frameChange fr] [elt]
 
 picture c (Picture (fr,_) ones)    = do
-    es <- T.mapM (picture c) ones
-    return $ gElement [frameChange fr] (toList es)
+    es <- toListWithM (picture c) ones
+    return $ gElement [frameChange fr] es
 
 picture _ (Clip (fr,_) p a) = do 
    cp <- clipPath p

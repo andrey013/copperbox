@@ -3,12 +3,15 @@
 
 module ImportAll where
 
-import Data.Hy.OneList                  ( OneList(..) )
+import Data.Hy.OneList                  ( OneList(..), onelist_des )
 import qualified Data.Hy.OneList        as One
 import Data.Hy.SnocList                 ( SnocList(..) )
 import qualified Data.Hy.SnocList       as Snoc
 import Data.Hy.Hylomorphisms
 
+import Control.Functor                  -- category-extras
+
+import Control.Monad ( ap, liftM, liftM2 )
 import qualified Data.List as List
 
 
@@ -64,17 +67,34 @@ foldr_reverse'not = foldr (:) []
  
 foldl_reverse = foldl (flip (:)) []
 
-hylo_mapM :: (a -> m a) -> OneList a -> m [a]
-hylo_mapM = undefined
+hylo_mapM :: Monad m => (a -> m b) -> OneList a -> m [b]
+hylo_mapM f = 
+    onehylorM (return . onelist_des) 
+              (appro (liftM2 (:)) f return) [] 
+
+hylo_map :: (a -> b) -> OneList a -> [b]
+hylo_map f = onehylor (onelist_des) (appro (:) f id)   [] 
+  
+-- The constructor is easily done with appor from Data.Aviary
+--  fn = appro (:) f id
+
+appro :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
+appro f g h x y = f (g x) (h y) 
+
 
 -- type Zero12 a b = Zero | One a | Two b
 
-onelist_de :: OneList a -> Either a (a, OneList a)
-onelist_de (One a)   = Left a
-onelist_de (a :+ xs) = Right (a,xs)
+
+-- can this be defined by composition?
+onelist_map_des :: (a -> b) -> OneList a -> Either b (b, OneList a)
+onelist_map_des f = bimap f (bimap f id) . onelist_des
+
+onelist_mapM_des :: Monad m 
+                => (a -> m b) -> OneList a -> m (Either b (b, OneList a))
+onelist_mapM_des f = bimapM f (bimapM f return) . onelist_des
 
 
-hylo_OneListToList = onehylor onelist_de (:) [] 
+hylo_OneListToList = onehylor onelist_des (:) [] 
 
 
 
@@ -83,3 +103,25 @@ takeWhileList pf = hylor (list_while_des pf) (:) []
 
 -- whoops reveresed!
 dropWhileList pf = snd . hylol list_des (flip $ list_drop_cons pf) (True,[])
+
+bimappair :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
+bimappair f g (x,y) = (f x, g y)
+
+
+-- | Bimap for 'Either'.
+bimapeither :: (a -> c) -> (b -> d) -> Either a b -> Either c d
+bimapeither f _ (Left x)  = Left (f x)
+bimapeither _ g (Right y) = Right (g y)
+
+
+bimappairM :: Monad m 
+           => (a -> m c) -> (b -> m d) -> (a,b) -> m (c,d)
+           
+bimappairM f g (x,y) = return (,) `ap` f x `ap` g y
+
+
+-- | Bimap for 'Either'.
+bimapeitherM :: Monad m 
+             => (a -> m c) -> (b -> m d) -> Either a b -> m (Either c d)
+bimapeitherM f _ (Left x)  = f x >>= return . Left 
+bimapeitherM _ g (Right y) = g y >>= return . Right

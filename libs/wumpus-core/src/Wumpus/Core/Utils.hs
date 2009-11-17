@@ -44,14 +44,22 @@ module Wumpus.Core.Utils
   , (<:>) 
   , pairbimap     -- note defined in HEAD of Data.Aviary
 
+  
+
+  -- * One type - non-empty list type
+  , OneList(..)
   , mkList2       -- candidate for Data.Hy ?
+  , onesmapM_
+  , toListWith
+  , toListWithM
+  , fromListErr
 
   ) where
 
 
-import Data.Hy.OneList ( OneList(..) )
 
 import Control.Applicative
+import Control.Monad ( ap )
 import Data.List ( intersperse )
 import System.Time 
 
@@ -193,5 +201,37 @@ pairbimap :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
 pairbimap f g (a,b) = (f a, g b)
 
 
+--------------------------------------------------------------------------------
+
+infixr 5 :+
+
+data OneList a = One a | a :+ OneList a
+  deriving (Eq)
+
+instance Show a => Show (OneList a) where
+  show = ('{':) . ($ []) . step where
+     step (One a)   = shows a . showChar '}'
+     step (a :+ xs) = shows a . showChar ',' . step xs
+
+
 mkList2 :: a -> a -> OneList a
 mkList2 a b = a :+ One b
+
+
+onesmapM_ :: Monad m => (a -> m b) -> OneList a -> m ()
+onesmapM_ f (One a)   = f a >> return ()
+onesmapM_ f (a :+ xs) = f a >> onesmapM_ f xs
+
+toListWith :: (a -> b) -> OneList a -> [b]
+toListWith f (One a)   = [f a]
+toListWith f (a :+ xs) = f a : toListWith f xs
+
+toListWithM :: Monad m => (a -> m b) -> OneList a -> m [b]
+toListWithM f (One a)   = return return `ap` f a
+toListWithM f (a :+ xs) = return (:) `ap` f a `ap` toListWithM f xs
+
+
+fromListErr :: String -> [a] -> OneList a
+fromListErr msg []     = error msg
+fromListErr _   [a]    = One a
+fromListErr msg (a:xs) = a :+ fromListErr msg xs

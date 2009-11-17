@@ -31,10 +31,22 @@ module Data.Hy.OneList
   , foldr
   , foldl
 
+  -- * Destructors
+  , onelist_des
+
+  -- * Hylomorphic transitions
+  , hylo_map
+  , hylo_mapM 
+
   ) where
 
 
+import Data.Hy.Hylomorphisms
+
+import Data.Aviary ( appro )
+
 import Control.Applicative              hiding ( empty )
+import Control.Monad ( liftM2 )
 import Data.Foldable ( Foldable )
 import qualified Data.Foldable          as F
 import Data.Monoid
@@ -155,4 +167,29 @@ foldl f b (a :+ xs) = foldl f (f b a) xs
 --
 -- > para f e (One a) = f a ( _??_ ,e)
 --
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- Destructors
+
+onelist_des :: OneList a -> Either a (a, OneList a)
+onelist_des (One a)   = Left a
+onelist_des (a :+ xs) = Right (a,xs)
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- Hylomorphic transitions
+
+hylo_map :: (a -> b) -> OneList a -> [b]
+hylo_map f = onehylor (onelist_des) (appro (:) f id)   [] 
+
+
+hylo_mapM :: Monad m => (a -> m b) -> OneList a -> m [b]
+hylo_mapM f = onehylorM (return . onelist_des) (appro (liftM2 (:)) f return) [] 
 

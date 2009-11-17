@@ -24,6 +24,7 @@ module Data.Hy.Hylomorphisms
 
   , onehylor
   , onehylol
+  , onehylorM
 
   -- * Destructors
   , list_des
@@ -67,6 +68,14 @@ onehylol :: (st -> Either a (a,st)) -> (b -> a -> b) -> b -> st -> b
 onehylol g f e a = case g a of
                   Left b       -> f e b
                   Right (b,st) -> onehylol g f (f e b) st
+
+
+-- | Monadic @onehylor@. 
+onehylorM :: Monad m 
+          => (st -> m (Either a (a,st))) -> (a -> b -> m b) -> b -> st -> m b
+onehylorM g f e a = g a >>= either lk rk where
+   lk b      = f b e
+   rk (b,st) = onehylorM g f e st >>= \e' -> f b e'
 
 
 --------------------------------------------------------------------------------
