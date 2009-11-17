@@ -28,6 +28,7 @@ module Wumpus.Core.GraphicsState
 
   -- ** Font
   , FontAttr(..)
+  , SVGFontStyle(..)
 
   -- ** Colour
   , PSColour(..)
@@ -71,10 +72,15 @@ data DashPattern = Solid | Dash Int [Int]
 -- attributes (name & size) are set at the same time.
 
 data FontAttr = FontAttr { 
-                    font_name   :: String,   -- for PostScript
-                    font_family :: String,   -- for SVG
-                    font_size   :: Int 
+                    font_name       :: String,        -- for PostScript
+                    svg_font_family :: String,        -- for SVG
+                    svg_font_style  :: SVGFontStyle,
+                    font_size       :: Int 
                   }
+  deriving (Eq,Show)
+
+data SVGFontStyle = SVG_REGULAR | SVG_BOLD | SVG_ITALIC | SVG_BOLD_ITALIC
+                  | SVG_OBLIQUE | SVG_BOLD_OBLIQUE
   deriving (Eq,Show)
 
 data PSColour = PSRgb  Double Double Double

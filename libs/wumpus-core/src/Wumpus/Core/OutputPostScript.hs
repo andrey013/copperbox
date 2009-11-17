@@ -220,7 +220,7 @@ updateColour c ma = do
 
 
 fontCommand :: FontAttr -> WumpusM ()
-fontCommand (FontAttr name _ sz) = do
+fontCommand (FontAttr name _ _ sz) = do
     ps_findfont name
     ps_scalefont sz
     ps_setfont

@@ -17,14 +17,10 @@
 module Wumpus.Extra.Drawing 
   ( 
 
-  -- * Pending addition to Wumpus.Core.Picture
-    frameMulti
- 
- , reflectXPlane  
- , reflectYPlane
+  -- * Pending addition to Wumpus.Core
 
   -- * Picture transformers
-  , backgroundFill
+    backgroundFill
   , clipPicture
   , clipToBoundary
 
@@ -36,19 +32,7 @@ import Wumpus.Core
 
 --------------------------------------------------------------------------------
 
--- Core.Picture
-frameMulti :: (Num u, Ord u) => [Primitive u] -> Picture u
-frameMulti = multi . map frame
-
--- Core.AffineTrans
-
-reflectXPlane :: (Num u, Scale t, Translate t, u ~ DUnit t) 
-              => Point2 u -> t -> t
-reflectXPlane (P2 x y) = translate x y . scale (-1) 1 . translate (-x) (-y)
-
-reflectYPlane :: (Num u, Scale t, Translate t, u ~ DUnit t) 
-              => Point2 u -> t -> t
-reflectYPlane (P2 x y) = translate x y . scale 1 (-1) . translate (-x) (-y)
+-- Pending addition to wumpus-core
 
 --------------------------------------------------------------------------------
 

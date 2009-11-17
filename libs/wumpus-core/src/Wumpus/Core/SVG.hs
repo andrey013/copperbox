@@ -60,8 +60,10 @@ module Wumpus.Core.SVG
   , element_text
   , element_tspan
   , content_text
-  , attr_fontfamily
-  , attr_fontsize
+  , attr_font_family
+  , attr_font_size
+  , attr_font_weight
+  , attr_font_style
   , attr_id
   , attr_fill
   , attr_fill_none
@@ -267,12 +269,20 @@ content_text str = Text $ CData CDataText str Nothing
 
 
 -- | @ font-family=\"...\" @
-attr_fontfamily :: String -> Attr
-attr_fontfamily = unqualAttr "font-family" 
+attr_font_family :: String -> Attr
+attr_font_family = unqualAttr "font-family" 
 
 -- | @ font-size=\"...\" @
-attr_fontsize :: Int -> Attr
-attr_fontsize = unqualAttr "font-size" . show
+attr_font_size :: Int -> Attr
+attr_font_size = unqualAttr "font-size" . show
+
+-- | @ font-weight=\"...\" @
+attr_font_weight :: String -> Attr
+attr_font_weight = unqualAttr "font-weight"
+
+-- | @ font-style=\"...\" @
+attr_font_style :: String -> Attr
+attr_font_style = unqualAttr "font-style"
 
 
 -- | @ id=\"...\" @

@@ -24,7 +24,6 @@ module Wumpus.Extra.Dots
 
 
 import Wumpus.Core
-import Wumpus.Extra.Drawing ( frameMulti, reflectYPlane ) -- TEMPORARY
 import Wumpus.Geometry
 
 -- NOTES

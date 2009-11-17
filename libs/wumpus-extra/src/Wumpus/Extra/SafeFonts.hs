@@ -9,8 +9,11 @@
 -- Stability   :  experimental
 -- Portability :  GHC only
 --
--- Dots
--- 
+-- Safe to use font / size combinations.
+--
+-- Consider drawing then uniform-scaling for other sizes in 
+-- PostScript.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Extra.SafeFonts
@@ -79,6 +82,7 @@ module Wumpus.Extra.SafeFonts
   , courierBoldOblique24
 
   -- * Symbol
+  -- $symboldoc
   , symbol10
   , symbol12
   , symbol18
@@ -102,7 +106,7 @@ import Wumpus.Core
 -- Times-Roman
 
 mkTimesRoman :: Int -> FontAttr
-mkTimesRoman = FontAttr "Times-Roman" "Times-Roman"
+mkTimesRoman = FontAttr "Times-Roman" "Times New Roman" SVG_REGULAR
 
 timesRoman10 :: FontAttr
 timesRoman10 = mkTimesRoman 10
@@ -117,7 +121,7 @@ timesRoman24 :: FontAttr
 timesRoman24 = mkTimesRoman 24
 
 mkTimesItalic :: Int -> FontAttr
-mkTimesItalic = FontAttr "Times-Italic" "Times Italic"
+mkTimesItalic = FontAttr "Times-Italic" "Times New Roman" SVG_ITALIC
 
 timesItalic10 :: FontAttr
 timesItalic10 = mkTimesItalic 10
@@ -132,7 +136,7 @@ timesItalic24 :: FontAttr
 timesItalic24 = mkTimesItalic 24
 
 mkTimesBold :: Int -> FontAttr
-mkTimesBold = FontAttr "Times-Bold" "Times Bold"
+mkTimesBold = FontAttr "Times-Bold" "Times New Roman" SVG_BOLD
 
 timesBold10 :: FontAttr
 timesBold10 = mkTimesBold 10
@@ -147,7 +151,8 @@ timesBold24 :: FontAttr
 timesBold24 = mkTimesBold 24
 
 mkTimesBoldItalic :: Int -> FontAttr
-mkTimesBoldItalic = FontAttr "Times-BoldItalic" "Times BoldItalic"
+mkTimesBoldItalic = 
+    FontAttr "Times-BoldItalic" "Times New Roman" SVG_BOLD_ITALIC
 
 timesBoldItalic10 :: FontAttr
 timesBoldItalic10 = mkTimesBoldItalic 10
@@ -166,7 +171,7 @@ timesBoldItalic24 = mkTimesBoldItalic 24
 -- Helvetica
 
 mkHelvetica :: Int -> FontAttr
-mkHelvetica = FontAttr "Helvetica" "Helvetica"
+mkHelvetica = FontAttr "Helvetica" "Helvetica" SVG_REGULAR
 
 
 helvetica10 :: FontAttr
@@ -183,7 +188,7 @@ helvetica24 = mkHelvetica 24
 
 
 mkHelveticaOblique :: Int -> FontAttr
-mkHelveticaOblique = FontAttr "Helvetica-Oblique" "Helvetica Oblique"
+mkHelveticaOblique = FontAttr "Helvetica-Oblique" "Helvetica" SVG_OBLIQUE
 
 
 helveticaOblique10 :: FontAttr
@@ -201,7 +206,7 @@ helveticaOblique24 = mkHelveticaOblique 24
 
 
 mkHelveticaBold :: Int -> FontAttr
-mkHelveticaBold = FontAttr "Helvetica-Bold" "Helvetica Bold"
+mkHelveticaBold = FontAttr "Helvetica-Bold" "Helvetica" SVG_BOLD
 
 
 helveticaBold10 :: FontAttr
@@ -218,7 +223,8 @@ helveticaBold24 = mkHelveticaBold 24
 
 
 mkHelveticaBoldOblique :: Int -> FontAttr
-mkHelveticaBoldOblique = FontAttr "Helvetica-Bold-Oblique" "Helvetica BoldOblique"
+mkHelveticaBoldOblique = 
+    FontAttr "Helvetica-Bold-Oblique" "Helvetica" SVG_BOLD_OBLIQUE
 
 
 helveticaBoldOblique10 :: FontAttr
@@ -240,7 +246,7 @@ helveticaBoldOblique24 = mkHelveticaBoldOblique 24
 -- Courier
 
 mkCourier :: Int -> FontAttr
-mkCourier = FontAttr "Courier" "Courier New"
+mkCourier = FontAttr "Courier" "Courier New" SVG_REGULAR
 
 courier10 :: FontAttr
 courier10 = mkCourier 10
@@ -256,7 +262,7 @@ courier24 = mkCourier 24
 
 
 mkCourierOblique :: Int -> FontAttr
-mkCourierOblique = FontAttr "Courier-Oblique" "Courier Oblique"
+mkCourierOblique = FontAttr "Courier-Oblique" "Courier New" SVG_OBLIQUE
 
 
 courierOblique10 :: FontAttr
@@ -274,7 +280,7 @@ courierOblique24 = mkCourierOblique 24
 
 
 mkCourierBold :: Int -> FontAttr
-mkCourierBold = FontAttr "Courier-Bold" "Courier Bold"
+mkCourierBold = FontAttr "Courier-Bold" "Courier New" SVG_BOLD
 
 
 courierBold10 :: FontAttr
@@ -291,7 +297,8 @@ courierBold24 = mkCourierBold 24
 
 
 mkCourierBoldOblique :: Int -> FontAttr
-mkCourierBoldOblique = FontAttr "Courier-Bold-Oblique" "Courier BoldOblique"
+mkCourierBoldOblique = 
+    FontAttr "Courier-Bold-Oblique" "Courier New" SVG_BOLD_OBLIQUE
 
 
 courierBoldOblique10 :: FontAttr
@@ -309,9 +316,13 @@ courierBoldOblique24 = mkCourierBoldOblique 24
 --------------------------------------------------------------------------------
 -- Symbol
 
+-- $symboldoc
+-- Symbol does not appear to be well supported by SVG.
+-- It renders in Chrome but not in Firefox.
 
 mkSymbol :: Int -> FontAttr
-mkSymbol = FontAttr "Symbol" "Symbol New"
+mkSymbol = FontAttr "Symbol" "Symbol" SVG_REGULAR
+
 
 symbol10 :: FontAttr
 symbol10 = mkSymbol 10

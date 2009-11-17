@@ -142,18 +142,28 @@ path (c,dp) p =
 -- tspan element).
 -- 
 label :: LabelProps -> Label Double -> Element
-label (c,FontAttr _ fam sz) (Label pt str) = 
-     element_text (element_tspan str # add_attrs tspan_xs) # add_attrs text_xs
+label (c,FontAttr _ fam style sz) (Label pt str) = 
+     element_text tspan_elt # add_attrs text_xs # add_attrs (fontStyle style)
   where
     P2 x y    = coordChange pt
     text_xs   = [ attr_x x
                 , attr_y y 
                 , attr_transform $ val_matrix 1 0 0 (-1) 0 0
-                , attr_fontfamily fam
-                , attr_fontsize sz 
+                , attr_font_family fam
+                , attr_font_size sz 
                 ]
-    tspan_xs  = [ attr_fill c ]
+    tspan_elt = element_tspan str # add_attrs [ attr_fill c ]
+
  
+fontStyle :: SVGFontStyle -> [Attr]
+fontStyle SVG_REGULAR      = []
+fontStyle SVG_BOLD         = [attr_font_weight "bold"]
+fontStyle SVG_ITALIC       = [attr_font_style "italic"]
+fontStyle SVG_BOLD_ITALIC  = 
+    [attr_font_weight "bold", attr_font_style "italic"]
+fontStyle SVG_OBLIQUE      = [attr_font_style "oblique"]
+fontStyle SVG_BOLD_OBLIQUE = 
+    [attr_font_weight "bold", attr_font_style "oblique"]
 
 -- If w==h the draw the ellipse as a circle
 

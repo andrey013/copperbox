@@ -277,7 +277,7 @@ mkTextLabel c attr pt txt = PLabel (c,attr) (Label pt txt)
 -- SVG seems to have an issue with /Courier/ and needs /Courier New/.
 
 default_font :: FontAttr
-default_font = FontAttr "Courier" "Courier New" 12
+default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 12
 
 class TextLabel t where 
   textlabel :: t -> Point2 u -> String -> Primitive u
