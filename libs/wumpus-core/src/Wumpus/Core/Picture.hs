@@ -19,13 +19,14 @@ module Wumpus.Core.Picture
    -- * Construction
     blankPicture
   , frame
+  , frameMulti
   , multi
   , reframe
 
   , vertexPath  
   , curvedPath
 
-  -- * Constructing /primitives/
+  -- * Constructing primitives
   , Stroke(..)
   , zostroke
   , zcstroke
@@ -90,9 +91,18 @@ stdFrame = ortho zeroPt
 blankPicture :: Num u => BoundingBox u -> Picture u
 blankPicture bb = PicBlank (stdFrame, bb)
 
--- | Lifts primitives to Pictures...
+-- | Lift a Primitive to a Picture, located in the standard frame.
 frame :: (Num u, Ord u) => Primitive u -> Picture u
 frame p = Single (stdFrame, boundary p) p 
+
+
+-- | Lift a list of Primitives to a composite Picture, all 
+-- Primitives will be located within the standard frame.
+-- The list of Primitives must be non-empty.
+--
+frameMulti :: (Num u, Ord u) => [Primitive u] -> Picture u
+frameMulti [] = error "Wumpus.Core.Picture.frameMulti - empty list"
+frameMulti xs = multi $ map frame xs
 
 
 -- | Draw many primitives ion the same affine frame

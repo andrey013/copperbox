@@ -24,23 +24,35 @@ module Wumpus.Extra.Dots
 
 
 import Wumpus.Core
+import Wumpus.Extra.Drawing ( frameMulti, reflectYPlane ) -- TEMPORARY
 import Wumpus.Geometry
 
--- 
+-- NOTES
+-- dotX -- colour, linewidth, ...
+-- makes sense to supply the origin, then we aren't having to 
+-- do extra affine transformations (gsave, concat, ..., grestore).
+--
+-- Also affine transforming Points, LineSegments etc. before
+-- they become pictures is _GOOD_! The calculations are done in 
+-- Wumpus and so don't cause extra (gsave... grestore) in 
+-- PostScript.
 
--- Hmm these dots aren't very efficient being Pictures...
 
-dotX :: (Ord u, Floating u, Real u) => Picture u
-dotX = multi $ map frame [ ostroke () $ lineSegmentToPath ls1
-                         , ostroke () $ lineSegmentToPath ls2 ]
+
+dotX :: (Ord u, Floating u, Real u, Stroke t) 
+     => t -> Point2 u -> Picture u
+dotX t pt = frameMulti $ map mkStroke [ls1, ls2]
   where
-    ls1   = rotate (pi/6) $ vlineSegment 4 $ P2 0 (-2)
-    ls2   = reflectX ls1
+    mkStroke = ostroke t . lineSegmentToPath 
+    ls1      = rotateAbout (pi/6) pt $ vlineSegmentC 2 pt
+    ls2      = reflectYPlane pt ls1  -- wrong
 
 
-dotPlus :: (Ord u, Floating u, Real u) => Picture u
-dotPlus = multi $ map frame [ ostroke () $ lineSegmentToPath ls1
-                            , ostroke () $ lineSegmentToPath ls2 ]
+dotPlus :: (Ord u, Floating u, Real u, Stroke t) 
+        => t -> Point2 u -> Picture u
+dotPlus t pt = frameMulti $ map mkStroke [ls1, ls2]
   where
-    ls1   = vlineSegment 4 $ P2 0 (-2)
-    ls2   = hlineSegment 4 $ P2 (-2) 0
+    mkStroke = ostroke t . lineSegmentToPath 
+    ls1   = vlineSegmentC 2 pt
+    ls2   = hlineSegmentC 2 pt
+

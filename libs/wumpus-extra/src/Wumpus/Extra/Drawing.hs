@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -16,8 +17,14 @@
 module Wumpus.Extra.Drawing 
   ( 
 
+  -- * Pending addition to Wumpus.Core.Picture
+    frameMulti
+ 
+ , reflectXPlane  
+ , reflectYPlane
+
   -- * Picture transformers
-    backgroundFill
+  , backgroundFill
   , clipPicture
   , clipToBoundary
 
@@ -27,22 +34,21 @@ module Wumpus.Extra.Drawing
 
 import Wumpus.Core
 
-import Wumpus.Core.PictureInternal ( Picture(..) ) -- TO REMOVE...
-
-
-{-
-
 --------------------------------------------------------------------------------
--- These ones are scheduled to be added to wumpus-core...
-blankPicture :: Num u => BoundingBox u -> Picture u
-blankPicture bb = PicBlank (ortho zeroPt, bb)
 
+-- Core.Picture
+frameMulti :: (Num u, Ord u) => [Primitive u] -> Picture u
+frameMulti = multi . map frame
 
-clip :: (Num u, Ord u) => Path u -> Picture u -> Picture u
-clip cp p = Clip (ortho zeroPt, boundary cp) cp p
--}
+-- Core.AffineTrans
 
+reflectXPlane :: (Num u, Scale t, Translate t, u ~ DUnit t) 
+              => Point2 u -> t -> t
+reflectXPlane (P2 x y) = translate x y . scale (-1) 1 . translate (-x) (-y)
 
+reflectYPlane :: (Num u, Scale t, Translate t, u ~ DUnit t) 
+              => Point2 u -> t -> t
+reflectYPlane (P2 x y) = translate x y . scale 1 (-1) . translate (-x) (-y)
 
 --------------------------------------------------------------------------------
 

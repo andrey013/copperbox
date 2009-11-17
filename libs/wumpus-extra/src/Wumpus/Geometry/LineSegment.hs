@@ -113,6 +113,13 @@ vlineSegment a = dispLineSegment (vvec a)
 alineSegment :: Floating u => Radian -> u -> Point2 u -> LineSegment u
 alineSegment theta a = dispLineSegment (avec theta a)
 
+-- | Horizontal line of length 2x@a@ centered at point @p@.
+hlineSegmentC :: Num u => u -> Point2 u -> LineSegment u
+hlineSegmentC hl (P2 x y) = LS2 (P2 (x-hl) y) (P2 (x+hl) y)
+
+-- | Vertical line of length 2x@a@ centered at point @p@.
+vlineSegmentC :: Num u => u -> Point2 u -> LineSegment u
+vlineSegmentC hl (P2 x y) = LS2 (P2 x (y-hl)) (P2 x (y+hl))
 
 
 

@@ -43,6 +43,10 @@ module Wumpus.Core.AffineTrans
   -- * Translate by a vector
   , translateBy
   
+  -- * Reflections in supplied plane rather than about the origin
+  , reflectXPlane
+  , reflectYPlane   
+
   ) where
 
 import Wumpus.Core.Geometry
@@ -165,3 +169,15 @@ translateBy :: (Translate t, DUnit t ~ u) => Vec2 u -> t -> t
 translateBy (V2 x y) = translate x y
 
 
+--------------------------------------------------------------------------------
+-- Translation and scaling
+
+-- | Reflect in the X plane that intersects the supplied point. 
+reflectXPlane :: (Num u, Scale t, Translate t, u ~ DUnit t) 
+              => Point2 u -> t -> t
+reflectXPlane (P2 x y) = translate x y . scale (-1) 1 . translate (-x) (-y)
+
+-- | Reflect in the Y plane that intersects the supplied point.
+reflectYPlane :: (Num u, Scale t, Translate t, u ~ DUnit t) 
+              => Point2 u -> t -> t
+reflectYPlane (P2 x y) = translate x y . scale 1 (-1) . translate (-x) (-y)
