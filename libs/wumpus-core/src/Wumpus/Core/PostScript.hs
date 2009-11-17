@@ -316,7 +316,7 @@ ps_showpage = command "showpage" []
 
 -- | The following fonts are expected to exist on most platforms:
 --
--- > Times-Roman  Times-Italic  Times-Bold  Times-Bolditalic
+-- > Times-Roman  Times-Italic  Times-Bold  Times-BoldItalic
 -- > Helvetica  Helvetica-Oblique  Helvetica-Bold  Helvetica-Bold-Oblique
 -- > Courier  Courier-Oblique  Courier-Bold  Courier-Bold-Oblique
 -- > Symbol
