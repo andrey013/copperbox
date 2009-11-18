@@ -19,9 +19,9 @@ module Wumpus.Core.Picture
    -- * Construction
     blankPicture
   , frame
+  , frameWithin
   , frameMulti
   , multi
-  , reframe
 
   , vertexPath  
   , curvedPath
@@ -48,7 +48,7 @@ module Wumpus.Core.Picture
 
   -- * Operations
   , extractFrame
-
+  , extendBoundary
 
   ) where
 
@@ -87,13 +87,34 @@ stdFrame = ortho zeroPt
 
 
 
-
+-- | Create a blank picture sized to the supplied bounding box.
+-- This is useful for spacing rows or columns of pictures.
 blankPicture :: Num u => BoundingBox u -> Picture u
 blankPicture bb = PicBlank (stdFrame, bb)
 
 -- | Lift a Primitive to a Picture, located in the standard frame.
 frame :: (Num u, Ord u) => Primitive u -> Picture u
 frame p = Single (stdFrame, boundary p) p 
+
+-- | Frame a picture within the supplied bounding box
+-- 
+-- A text label uses the supplied bounding box as is - no 
+-- clipping is performed if the bounding box is 
+-- smaller than the boundary size of the text. This may 
+-- cause strange overlap for subsequent composite pictures, and
+-- incorrect bounding box annotations in the prologue of the 
+-- generated EPS file. 
+-- 
+-- Paths and ellipses are bound within the union of the supplied 
+-- bounding box and the inherent bounding box or the path or 
+-- ellipse. Thus the bounding box will never reframed to a 
+-- smaller size than the /natural/ bounding box.
+--
+frameWithin :: (Num u, Ord u) => Primitive u -> BoundingBox u -> Picture u
+frameWithin p@(PLabel _ _) bb = Single (stdFrame,bb) p
+frameWithin p              bb = Single (stdFrame,bb `append` boundary p) p
+
+
 
 
 -- | Lift a list of Primitives to a composite Picture, all 
@@ -105,8 +126,8 @@ frameMulti [] = error "Wumpus.Core.Picture.frameMulti - empty list"
 frameMulti xs = multi $ map frame xs
 
 
--- | Draw many primitives ion the same affine frame
--- Throws empty list error on empty list.
+-- | Place multiple pictures within the same affine frame
+-- This function throws an error when supplied the empty list.
 multi :: (Num u, Ord u) => [Picture u] -> Picture u
 multi ps = Picture (stdFrame, sconcat $ map boundary ps) ones
   where 
@@ -116,11 +137,6 @@ multi ps = Picture (stdFrame, sconcat $ map boundary ps) ones
     ones            = fromListErr err_msg ps
 
     err_msg         = "Wumpus.Core.Picture.multi - empty list"
-
--- | Lift primitives to pictures modifying the bounding box.
-reframe :: (Num u, Ord u) => Primitive u -> BoundingBox u -> Picture u
-reframe p@(PLabel _ _) bb = Single (stdFrame,bb) p
-reframe p              bb = Single (stdFrame,bb `append` boundary p) p
 
 
 
@@ -418,7 +434,7 @@ zellipse = uncurry mkEllipse ellipseDefault
 
 
 
-
+-- | Should this really be public?
 extractFrame :: Num u => Picture u -> Frame2 u
 extractFrame (PicBlank (fr,_))     = fr
 extractFrame (Single   (fr,_) _)   = fr
@@ -426,5 +442,11 @@ extractFrame (Picture  (fr,_) _)   = fr
 extractFrame (Clip     (fr,_) _ _) = fr
 
 
-
+-- | Extend the bounding box of a picture. 
+extendBoundary :: Num u => u -> u -> Picture u -> Picture u
+extendBoundary x y = mapLocale (\(fr,bb) -> (fr, extBB bb)) 
+  where
+    extBB (BBox (P2 x0 y0) (P2 x1 y1)) = BBox pt1 pt2 where 
+        pt1 = P2 (x0-x) (y0-y)
+        pt2 = P2 (x1+x) (y1+y)
 

@@ -36,6 +36,7 @@ module Wumpus.Core.PictureInternal
   , DrawEllipse(..)
   , Locale  
 
+  , mapLocale
   , repositionProperties
 
   ) where

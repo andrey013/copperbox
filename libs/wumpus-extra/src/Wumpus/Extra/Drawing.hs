@@ -38,6 +38,8 @@ import Wumpus.Core
 
 -- Picture transformers
 
+-- | Fill the background of a picture (where the backgound area is 
+-- given by the bounding box).
 backgroundFill :: (Num u, Ord u) => ToPSColour c => c -> Picture u -> Picture u
 backgroundFill c p = p `over` rect where
     rect = frame $ fill (toPSColour c) $ vertexPath $ corners $ boundary p
@@ -48,7 +50,4 @@ clipPicture bb p = clip (vertexPath $ corners bb) p
 
 clipToBoundary :: (Num u, Ord u) => Picture u -> Picture u
 clipToBoundary p = clip (vertexPath $ corners $ boundary p) p
-
-
-
 
