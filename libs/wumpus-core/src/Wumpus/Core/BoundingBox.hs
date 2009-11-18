@@ -75,8 +75,7 @@ data CardinalPoint = C | N | NE | E | SE | S | SW | W | NW
 --------------------------------------------------------------------------------
 -- instances
 
--- BBox has been augmented with the special ZeroBB case to enable
--- monoidal operations...
+-- BBox is NOT monoidal - it\'s much simpler that way.
 
 instance Ord a => Semigroup (BoundingBox a) where
   append = union
@@ -99,12 +98,8 @@ instance (Num u, Ord u) => Scale (BoundingBox u) where
 --------------------------------------------------------------------------------
 -- Boundary class
 
--- There\'s  a strong sugestion we should have just one 
--- unit type family ...
-
 class Boundary a where
-  type BoundaryUnit a
-  boundary :: a -> BoundingBox (BoundaryUnit a)
+  boundary :: a -> BoundingBox (DUnit a)
 
 
 --------------------------------------------------------------------------------

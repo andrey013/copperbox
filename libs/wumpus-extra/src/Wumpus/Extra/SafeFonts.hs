@@ -23,24 +23,28 @@ module Wumpus.Extra.SafeFonts
   , timesRoman12
   , timesRoman18
   , timesRoman24
+  , timesRoman36
   , timesRoman48
 
   , timesItalic10
   , timesItalic12
   , timesItalic18
   , timesItalic24
+  , timesItalic36
   , timesItalic48
 
   , timesBold10
   , timesBold12
   , timesBold18
   , timesBold24
+  , timesBold36
   , timesBold48
 
   , timesBoldItalic10
   , timesBoldItalic12
   , timesBoldItalic18
   , timesBoldItalic24
+  , timesBoldItalic36
   , timesBoldItalic48
 
   -- * Helvetica
@@ -48,24 +52,28 @@ module Wumpus.Extra.SafeFonts
   , helvetica12
   , helvetica18
   , helvetica24
+  , helvetica36
   , helvetica48
 
   , helveticaOblique10
   , helveticaOblique12
   , helveticaOblique18
   , helveticaOblique24
+  , helveticaOblique36  
   , helveticaOblique48
 
   , helveticaBold10
   , helveticaBold12
   , helveticaBold18
   , helveticaBold24
+  , helveticaBold36
   , helveticaBold48
 
   , helveticaBoldOblique10
   , helveticaBoldOblique12
   , helveticaBoldOblique18
   , helveticaBoldOblique24
+  , helveticaBoldOblique36
   , helveticaBoldOblique48
 
   -- * Courier
@@ -73,24 +81,28 @@ module Wumpus.Extra.SafeFonts
   , courier12
   , courier18
   , courier24
+  , courier36
   , courier48
 
   , courierOblique10
   , courierOblique12
   , courierOblique18
   , courierOblique24
+  , courierOblique36
   , courierOblique48
 
   , courierBold10
   , courierBold12
   , courierBold18
   , courierBold24
+  , courierBold36
   , courierBold48
 
   , courierBoldOblique10
   , courierBoldOblique12
   , courierBoldOblique18
   , courierBoldOblique24
+  , courierBoldOblique36
   , courierBoldOblique48
 
   -- * Symbol
@@ -99,6 +111,7 @@ module Wumpus.Extra.SafeFonts
   , symbol12
   , symbol18
   , symbol24
+  , symbol36
   , symbol48
 
   ) where
@@ -133,6 +146,9 @@ timesRoman18 = mkTimesRoman 18
 timesRoman24 :: FontAttr
 timesRoman24 = mkTimesRoman 24
 
+timesRoman36 :: FontAttr
+timesRoman36 = mkTimesRoman 36
+
 timesRoman48 :: FontAttr
 timesRoman48 = mkTimesRoman 48
 
@@ -152,6 +168,9 @@ timesItalic18 = mkTimesItalic 18
 
 timesItalic24 :: FontAttr
 timesItalic24 = mkTimesItalic 24
+
+timesItalic36 :: FontAttr
+timesItalic36 = mkTimesItalic 36
 
 timesItalic48 :: FontAttr
 timesItalic48 = mkTimesItalic 48
@@ -173,6 +192,9 @@ timesBold18 = mkTimesBold 18
 timesBold24 :: FontAttr
 timesBold24 = mkTimesBold 24
 
+timesBold36 :: FontAttr
+timesBold36 = mkTimesBold 36
+
 timesBold48 :: FontAttr
 timesBold48 = mkTimesBold 48
 
@@ -193,6 +215,9 @@ timesBoldItalic18 = mkTimesBoldItalic 18
 
 timesBoldItalic24 :: FontAttr
 timesBoldItalic24 = mkTimesBoldItalic 24
+
+timesBoldItalic36 :: FontAttr
+timesBoldItalic36 = mkTimesBoldItalic 36
 
 timesBoldItalic48 :: FontAttr
 timesBoldItalic48 = mkTimesBoldItalic 48
@@ -217,6 +242,9 @@ helvetica18 = mkHelvetica 18
 helvetica24 :: FontAttr
 helvetica24 = mkHelvetica 24
 
+helvetica36 :: FontAttr
+helvetica36 = mkHelvetica 36
+
 helvetica48 :: FontAttr
 helvetica48 = mkHelvetica 48
 
@@ -237,6 +265,9 @@ helveticaOblique18 = mkHelveticaOblique 18
 
 helveticaOblique24 :: FontAttr
 helveticaOblique24 = mkHelveticaOblique 24
+
+helveticaOblique36 :: FontAttr
+helveticaOblique36 = mkHelveticaOblique 36
 
 helveticaOblique48 :: FontAttr
 helveticaOblique48 = mkHelveticaOblique 48
@@ -260,6 +291,9 @@ helveticaBold18 = mkHelveticaBold 18
 helveticaBold24 :: FontAttr
 helveticaBold24 = mkHelveticaBold 24
 
+helveticaBold36 :: FontAttr
+helveticaBold36 = mkHelveticaBold 36
+
 helveticaBold48 :: FontAttr
 helveticaBold48 = mkHelveticaBold 48
 
@@ -281,6 +315,9 @@ helveticaBoldOblique18 = mkHelveticaBoldOblique 18
 
 helveticaBoldOblique24 :: FontAttr
 helveticaBoldOblique24 = mkHelveticaBoldOblique 24
+
+helveticaBoldOblique36 :: FontAttr
+helveticaBoldOblique36 = mkHelveticaBoldOblique 36
 
 helveticaBoldOblique48 :: FontAttr
 helveticaBoldOblique48 = mkHelveticaBoldOblique 48
@@ -306,6 +343,9 @@ courier18 = mkCourier 18
 courier24 :: FontAttr
 courier24 = mkCourier 24
 
+courier36 :: FontAttr
+courier36 = mkCourier 36
+
 courier48 :: FontAttr
 courier48 = mkCourier 48
 
@@ -326,6 +366,9 @@ courierOblique18 = mkCourierOblique 18
 
 courierOblique24 :: FontAttr
 courierOblique24 = mkCourierOblique 24
+
+courierOblique36 :: FontAttr
+courierOblique36 = mkCourierOblique 36
 
 courierOblique48 :: FontAttr
 courierOblique48 = mkCourierOblique 48
@@ -348,6 +391,9 @@ courierBold18 = mkCourierBold 18
 courierBold24 :: FontAttr
 courierBold24 = mkCourierBold 24
 
+courierBold36 :: FontAttr
+courierBold36 = mkCourierBold 36
+
 courierBold48 :: FontAttr
 courierBold48 = mkCourierBold 48
 
@@ -369,6 +415,9 @@ courierBoldOblique18 = mkCourierBoldOblique 18
 
 courierBoldOblique24 :: FontAttr
 courierBoldOblique24 = mkCourierBoldOblique 24
+
+courierBoldOblique36 :: FontAttr
+courierBoldOblique36 = mkCourierBoldOblique 36
 
 courierBoldOblique48 :: FontAttr
 courierBoldOblique48 = mkCourierBoldOblique 48
@@ -395,6 +444,9 @@ symbol18 = mkSymbol 18
 
 symbol24 :: FontAttr
 symbol24 = mkSymbol 24
+
+symbol36 :: FontAttr
+symbol36 = mkSymbol 36
 
 symbol48 :: FontAttr
 symbol48 = mkSymbol 48

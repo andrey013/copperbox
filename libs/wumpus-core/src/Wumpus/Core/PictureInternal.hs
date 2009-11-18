@@ -37,6 +37,7 @@ module Wumpus.Core.PictureInternal
   , Locale  
 
   , mapLocale
+  , extractFrame
   , repositionProperties
 
   ) where
@@ -264,6 +265,8 @@ instance Pointwise (PathSeg u) where
 -- Affine trans instances
 
 type instance DUnit (Picture u) = u
+type instance DUnit (Primitive u) = u
+type instance DUnit (Path u) = u
 
 instance (Floating u, Real u) => Rotate (Picture u) where
   rotate = rotatePicture 
@@ -373,17 +376,16 @@ instance Num u => Blank (Picture u) where
 -- Boundary
 
 instance (Num u, Ord u) => Boundary (Path u) where
-  type BoundaryUnit (Path u) = u
   boundary (Path st xs) = trace $ st : foldr f [] xs where
       f (PLine p1)        acc  = p1 : acc
       f (PCurve p1 p2 p3) acc  = p1 : p2 : p3 : acc 
 
 
 -- Note - this will calculate a very bad bounding box for text.
--- Descenders will be clipped and width will be very long.
+-- Descenders will be transgress the boundary and width will be 
+-- very long.
 
 instance (Num u, Ord u) => Boundary (Primitive u) where
-  type BoundaryUnit (Primitive u) = u
   boundary (PPath _ p)                  = boundary p
   boundary (PLabel (_,a) (Label pt xs)) = BBox pt (pt .+^ (V2 w h))
     where w = fromIntegral $ length xs * font_size a
@@ -393,7 +395,6 @@ instance (Num u, Ord u) => Boundary (Primitive u) where
 
 
 instance Boundary (Picture u) where
-  type BoundaryUnit (Picture u) = u       
   boundary (PicBlank (_,bb))     = bb
   boundary (Single   (_,bb) _)   = bb
   boundary (Picture  (_,bb) _)   = bb
@@ -422,6 +423,15 @@ moveLocale :: Num u => Vec2 u -> Locale u -> Locale u
 moveLocale v (fr,bb) = (displaceOrigin v fr, pointwise (.+^ v) bb) 
 
 --------------------------------------------------------------------------------
+
+
+-- | Should this really be public?
+extractFrame :: Num u => Picture u -> Frame2 u
+extractFrame (PicBlank (fr,_))     = fr
+extractFrame (Single   (fr,_) _)   = fr
+extractFrame (Picture  (fr,_) _)   = fr
+extractFrame (Clip     (fr,_) _ _) = fr
+
 
 -- This needs is for PostScript and SVG output - it should be 
 -- hidden in the export list of Wumpus.Core

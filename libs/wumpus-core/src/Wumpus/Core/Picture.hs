@@ -47,7 +47,6 @@ module Wumpus.Core.Picture
 
 
   -- * Operations
-  , extractFrame
   , extendBoundary
 
   ) where
@@ -433,13 +432,6 @@ zellipse = uncurry mkEllipse ellipseDefault
 -- Operations on pictures and paths
 
 
-
--- | Should this really be public?
-extractFrame :: Num u => Picture u -> Frame2 u
-extractFrame (PicBlank (fr,_))     = fr
-extractFrame (Single   (fr,_) _)   = fr
-extractFrame (Picture  (fr,_) _)   = fr
-extractFrame (Clip     (fr,_) _ _) = fr
 
 
 -- | Extend the bounding box of a picture. 
