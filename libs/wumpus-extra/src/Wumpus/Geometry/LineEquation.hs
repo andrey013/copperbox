@@ -18,7 +18,23 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Geometry.LineEquation where
+module Wumpus.Geometry.LineEquation 
+  (
+  -- * Data types
+    Line(..)
+  , DLine
+  
+  -- * Construction
+  , line
+  , hline
+  , vline
+  , aline
+
+  -- * Operations
+  , slope
+
+  
+  ) where
 
 import Wumpus.Geometry.Base
 
@@ -29,6 +45,9 @@ import Data.AffineSpace
 -- | Line in equational form, i.e. @Ax + By + C = 0@.
 data Line u = Line !u !u !u 
   deriving (Eq,Show)
+
+type DLine = Line Double
+
 
 -- Would parametric form be more useful 
 -- i.e. P2 .+^ (a)V2

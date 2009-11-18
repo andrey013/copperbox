@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,7 +19,25 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Geometry.LineSegment where
+module Wumpus.Geometry.LineSegment 
+  (
+  -- * Data types
+    LineSegment(..)
+  , DLineSegment
+
+  -- * Contruction
+  , lineSegment
+  , lineSegmentV
+  , hlineSegment
+  , vlineSegment
+  , alineSegment
+  , hlineSegmentBisect
+  , vlineSegmentBisect
+
+  , expandLineSegment
+  , lineSegmentToPath
+  
+  ) where
 
 import Wumpus.Geometry.Base
 
@@ -31,6 +50,8 @@ import Data.VectorSpace
 -- | A straight line between 2 points.
 data LineSegment u = LS2 (Point2 u) (Point2 u)
   deriving (Eq,Show)
+
+type DLineSegment = LineSegment Double
 
 
 --------------------------------------------------------------------------------
@@ -84,6 +105,13 @@ instance Converse (LineSegment u) where
 instance (Floating u, Real u) => CCWAngle (LineSegment u) where
   ccwAngle (LS2 (P2 x y) (P2 x' y')) = toRadian $ atan $ (y'-y) / (x'-x) 
 
+instance (Floating u, InnerSpace v, v ~ Vec2 u) => 
+    ObjectLength (LineSegment u) where
+  objectLength (LS2 p0 p1) = distance p1 p0
+
+instance Fractional u => Midpoint (LineSegment u) where
+  midpoint (LS2 p0 p1) = midpointBetween p0 p1
+
 
 --------------------------------------------------------------------------------
 -- construction
@@ -94,32 +122,34 @@ lineSegment = LS2
 
 
 -- | Create a line with start point @p@ and end point @p .+^ v@.
-dispLineSegment :: Num u => Vec2 u -> Point2 u -> LineSegment u
-dispLineSegment v p = lineSegment p (p .+^ v)
+lineSegmentV :: Num u => Vec2 u -> Point2 u -> LineSegment u
+lineSegmentV v p = lineSegment p (p .+^ v)
 
 
 -- | Horizontal line of length @a@ from point @p@.
 hlineSegment :: Num u => u -> Point2 u -> LineSegment u
-hlineSegment a = dispLineSegment (hvec a)
+hlineSegment a = lineSegmentV (hvec a)
 
 
 -- | Vertical line segment of length @a@ from point @p@.
 vlineSegment :: Num u => u -> Point2 u -> LineSegment u
-vlineSegment a = dispLineSegment (vvec a)
+vlineSegment a = lineSegmentV (vvec a)
 
 
 -- | A line segment in the direction angle @theta@ from x-axis, of 
 -- length @a@, starting at point @p@.
 alineSegment :: Floating u => Radian -> u -> Point2 u -> LineSegment u
-alineSegment theta a = dispLineSegment (avec theta a)
+alineSegment theta a = lineSegmentV (avec theta a)
+
+
 
 -- | Horizontal line of length 2x@a@ centered at point @p@.
-hlineSegmentC :: Num u => u -> Point2 u -> LineSegment u
-hlineSegmentC hl (P2 x y) = LS2 (P2 (x-hl) y) (P2 (x+hl) y)
+hlineSegmentBisect :: Num u => u -> Point2 u -> LineSegment u
+hlineSegmentBisect hl (P2 x y) = LS2 (P2 (x-hl) y) (P2 (x+hl) y)
 
 -- | Vertical line of length 2x@a@ centered at point @p@.
-vlineSegmentC :: Num u => u -> Point2 u -> LineSegment u
-vlineSegmentC hl (P2 x y) = LS2 (P2 x (y-hl)) (P2 x (y+hl))
+vlineSegmentBisect :: Num u => u -> Point2 u -> LineSegment u
+vlineSegmentBisect hl (P2 x y) = LS2 (P2 x (y-hl)) (P2 x (y+hl))
 
 
 
@@ -128,22 +158,13 @@ vlineSegmentC hl (P2 x y) = LS2 (P2 x (y-hl)) (P2 x (y+hl))
 
 
 
--- | Line segment length.
-lsLength :: (Floating u, InnerSpace (Vec2 u)) => LineSegment u -> u
-lsLength (LS2 p0 p1) = distance p1 p0
-
-
--- | Line segment midpoint.
-lsMidpoint :: Fractional u => LineSegment u -> Point2 u
-lsMidpoint (LS2 p0 p1) = midpoint p0 p1
-
-
 -- | Expand line segment.
-expandLineSegment :: (Floating u, Real u, InnerSpace (Vec2 u)) 
+expandLineSegment :: (Floating u, Real u, InnerSpace v, v ~ Vec2 u) 
                   => u -> LineSegment u -> LineSegment u
-expandLineSegment n l =  LS2 (p .-^ v) (p .+^ v) where
-    v = avec (ccwAngle l) (n*lsLength l/2)
-    p = lsMidpoint l
+expandLineSegment n line =  LS2 (p .-^ v) (p .+^ v) where
+    l = objectLength line
+    v = avec (ccwAngle line) (l * 0.5 * n)
+    p = midpoint line
 
 
 

@@ -435,10 +435,17 @@ zellipse = uncurry mkEllipse ellipseDefault
 
 
 -- | Extend the bounding box of a picture. 
+--
+-- The bounding box is both horizontal directions by @x@ and 
+-- both vertical directions by @y@. @x@ and @y@ must be positive
+-- This function cannot be used to shrink a boundary.
+--
 extendBoundary :: Num u => u -> u -> Picture u -> Picture u
-extendBoundary x y = mapLocale (\(fr,bb) -> (fr, extBB bb)) 
+extendBoundary x y = mapLocale (\(fr,bb) -> (fr, extBB (posve x) (posve y) bb)) 
   where
-    extBB (BBox (P2 x0 y0) (P2 x1 y1)) = BBox pt1 pt2 where 
-        pt1 = P2 (x0-x) (y0-y)
-        pt2 = P2 (x1+x) (y1+y)
-
+    extBB x' y' (BBox (P2 x0 y0) (P2 x1 y1)) = BBox pt1 pt2 where 
+        pt1 = P2 (x0-x') (y0-y')
+        pt2 = P2 (x1+x') (y1+y')
+    
+    posve n | n < 0     = 0
+            | otherwise = n 

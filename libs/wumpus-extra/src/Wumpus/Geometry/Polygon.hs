@@ -57,7 +57,6 @@ instance Pointwise (Polygon a) where
 
 
 instance ExtractPath (Polygon u) where
-  type PathUnit (Polygon u) = u
   extractPath = vertexPath . vertexList
 
 instance (Num u, Ord u) => Boundary (Polygon u) where

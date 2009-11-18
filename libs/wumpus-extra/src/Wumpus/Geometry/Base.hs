@@ -17,7 +17,23 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Geometry.Base where
+module Wumpus.Geometry.Base 
+  (
+  -- * Type classes
+    Converse(..)
+  , CCWAngle(..)
+  , ExtractPath(..)
+  , ObjectLength(..)
+  , Midpoint(..)
+
+  -- * Operations
+  , subdivisions
+  , midpointBetween
+  , para
+  , circular
+
+
+  ) where
 
 import Wumpus.Core
 
@@ -40,9 +56,19 @@ class Converse a where
 --
 class CCWAngle a where ccwAngle :: a -> Radian
 
+
+-- | Extract the path from some object that can be /traced/.
 class ExtractPath a where 
-  type PathUnit a :: *
-  extractPath :: a -> Path (PathUnit a)
+  extractPath :: a -> Path (DUnit a)
+
+-- | Length of object (e.g. LineSegment).
+class ObjectLength a where 
+  objectLength :: a -> (DUnit a)
+
+class Midpoint a where
+  midpoint :: a -> Point2 (DUnit a)
+
+
 
 --------------------------------------------------------------------------------
 -- Common ...
@@ -56,9 +82,8 @@ subdivisions i a = take (i+1) $ iterate (+n) 0 where
 
 
 -- | Midpoint between two points.
-midpoint :: (Fractional a, AffineSpace p, VectorSpace v, Diff p ~ v, Scalar v ~ a)
-         => p -> p -> p
-midpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
+midpointBetween :: Fractional u => Point2 u -> Point2 u -> Point2 u
+midpointBetween p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
 
 
 --------------------------------------------------------------------------------

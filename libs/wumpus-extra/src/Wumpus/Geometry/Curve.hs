@@ -16,7 +16,20 @@
 --------------------------------------------------------------------------------
 
 
-module Wumpus.Geometry.Curve where
+module Wumpus.Geometry.Curve 
+  (
+  -- * Data types
+    Curve(..)
+  , DCurve
+
+  -- * Operations
+  , bezierArc
+  , bezierCircle
+
+  , curveToPath
+  , curvesToPath
+
+  ) where
 
 import Wumpus.Core
 import Wumpus.Core.PictureInternal  -- TODO
@@ -32,9 +45,6 @@ type DCurve = Curve (Point2 Double)
 
 
 
--- | Circle represented by center and radius
-data Circle u = Circle (Point2 u) u
-
 --------------------------------------------------------------------------------
 -- Instances
 
@@ -43,17 +53,12 @@ instance Functor Curve where
   fmap f (Curve p0 p1 p2 p3) = 
       Curve (fmap f p0) (fmap f p1) (fmap f p2) (fmap f p3)
 
-instance Functor Circle where
-  fmap f (Circle c r) = Circle (fmap f c) (f r)
 
 
 instance Pointwise (Curve u) where
   type Pt (Curve u) = Point2 u
   pointwise f (Curve p0 p1 p2 p3) = Curve (f p0) (f p1) (f p2) (f p3)
 
-instance Pointwise (Circle u) where
-  type Pt (Circle u) = Point2 u
-  pointwise f (Circle c r) = Circle (f c) r
 
 
 instance Converse (Curve a) where
@@ -62,16 +67,6 @@ instance Converse (Curve a) where
 --------------------------------------------------------------------------------
 -- affine transformations
 
-
--- No useful scale operation on a circle - a non-uniform scale 
--- would create an ellipse.
-
-{-
-
-instance Scale (Circle u) where
-  type ScaleUnit = u
-  scale x y (Circle c r) = 
--}
 
 --------------------------------------------------------------------------------
 -- construction
@@ -103,8 +98,8 @@ bezierCircle n pt r = para phi [] $ subdivisions (n*4) (2*pi) where
 --------------------------------------------------------------------------------
 -- operations
 
-curveToPath1 :: Curve u -> Path u
-curveToPath1 (Curve p0 p1 p2 p3) = Path p0 [PCurve p1 p2 p3]
+curveToPath :: Curve u -> Path u
+curveToPath (Curve p0 p1 p2 p3) = Path p0 [PCurve p1 p2 p3]
 
 curvesToPath :: [Curve u] -> Path u
 curvesToPath []                     = error $ "curvesToPath - empty list"

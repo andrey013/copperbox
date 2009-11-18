@@ -43,7 +43,7 @@ dotX :: (Ord u, Floating u, Real u, Stroke t)
 dotX t pt = frameMulti $ map mkStroke [ls1, ls2]
   where
     mkStroke = ostroke t . lineSegmentToPath 
-    ls1      = rotateAbout (pi/6) pt $ vlineSegmentC 2 pt
+    ls1      = rotateAbout (pi/6) pt $ vlineSegmentBisect 2 pt
     ls2      = reflectYPlane pt ls1  -- wrong
 
 
@@ -52,6 +52,6 @@ dotPlus :: (Ord u, Floating u, Real u, Stroke t)
 dotPlus t pt = frameMulti $ map mkStroke [ls1, ls2]
   where
     mkStroke = ostroke t . lineSegmentToPath 
-    ls1   = vlineSegmentC 2 pt
-    ls2   = hlineSegmentC 2 pt
+    ls1   = vlineSegmentBisect 2 pt
+    ls2   = hlineSegmentBisect 2 pt
 
