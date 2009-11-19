@@ -24,8 +24,8 @@ module Wumpus.Core.PictureInternal
   , DPrimitive
   , Path(..)
   , DPath
-  , PathSeg(..)
-  , DPathSeg
+  , PathSegment(..)
+  , DPathSegment
   , Label(..)
   , DLabel
 
@@ -35,7 +35,12 @@ module Wumpus.Core.PictureInternal
   , DrawProp(..)                -- hide in Wumpus.Core export?
   , DrawEllipse(..)
   , Locale  
+ 
+  -- * Type class
 
+  , PSUnit(..)
+  
+  -- * Extras
   , mapLocale
   , extractFrame
   , repositionProperties
@@ -139,21 +144,21 @@ type DPrimitive = Primitive Double
 
 
 
-data Path u = Path (Point2 u) [PathSeg u]
+data Path u = Path (Point2 u) [PathSegment u]
   deriving (Eq,Show)
 
 type DPath = Path Double
 
 
-data PathSeg u = PCurve  (Point2 u) (Point2 u) (Point2 u)
-               | PLine   (Point2 u)
+data PathSegment u = PCurve  (Point2 u) (Point2 u) (Point2 u)
+                   | PLine   (Point2 u)
   deriving (Eq,Show)
 
-type DPathSeg = PathSeg Double
+type DPathSegment = PathSegment Double
 
 data Label u = Label { 
                    label_bottom_left :: Point2 u,
-                   label_text        ::  String
+                   label_text        :: String
                  }
   deriving (Eq,Show)
 
@@ -200,9 +205,6 @@ type EllipseProps = (PSRgb, DrawEllipse)
 type Locale u = (Frame2 u, BoundingBox u) 
 
 
-
-
-
 --------------------------------------------------------------------------------
 -- Pretty printing
 
@@ -232,7 +234,7 @@ instance Pretty u => Pretty (Primitive u) where
 instance Pretty u => Pretty (Path u) where
    pretty (Path pt ps) = pretty pt <> hcat (map pretty ps)
 
-instance Pretty u => Pretty (PathSeg u) where
+instance Pretty u => Pretty (PathSegment u) where
   pretty (PCurve p1 p2 p3)    = text ".*" <> pretty p1 <> text ",," <> pretty p2 
                                           <> text "*." <> pretty p3
   pretty (PLine pt)           = text "--" <> pretty pt
@@ -254,8 +256,8 @@ instance Pointwise (Path u) where
   type Pt (Path u) = Point2 u
   pointwise f (Path st xs) = Path (f st) (map (pointwise f) xs)
 
-instance Pointwise (PathSeg u) where
-  type Pt (PathSeg u) = Point2 u
+instance Pointwise (PathSegment u) where
+  type Pt (PathSegment u) = Point2 u
   pointwise f (PLine p)         = PLine (f p)
   pointwise f (PCurve p1 p2 p3) = PCurve (f p1) (f p2) (f p3)
   

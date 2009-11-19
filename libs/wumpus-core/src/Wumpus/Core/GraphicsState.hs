@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
@@ -131,29 +132,28 @@ type PSRgb = RGB3 Double
 -- > | -sin(a)  cos(a)  0 |  = [ cos(a) sin(a) -sin(a) cos(a) 0 0 ]
 -- > |    0       0     1 |
 
-data CTM = CTM Double Double  Double Double  Double Double
+data CTM u = CTM !u !u  !u !u  !u !u
   deriving (Eq,Show)
 
+type instance DUnit (CTM u) = u
 
 --------------------------------------------------------------------------------
 -- Conversion to CTM
 
 
-class ToCTM a where toCTM :: a -> CTM
+class ToCTM a where 
+  toCTM :: u ~ DUnit a => a -> CTM u
 
-instance Real a => ToCTM (Frame2 a) where
+instance ToCTM (Frame2 a) where
   toCTM (Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) 
-    = CTM (toD e0x) (toD e0y) (toD e1x) (toD e1y) (toD ox) (toD oy)
+    = CTM e0x e0y  e1x e1y  ox oy
  
 
-instance Real a => ToCTM (Matrix3'3 a) where
+instance ToCTM (Matrix3'3 a) where
   toCTM (M3'3 e0x e1x ox  
               e0y e1y oy  
               _   _   _  ) 
-    = CTM (toD e0x) (toD e0y) (toD e1x)(toD e1y) (toD ox) (toD oy)
-
-toD :: Real a => a -> Double 
-toD = realToFrac
+    = CTM e0x e0y  e1x e1y  ox oy
 
 
 --------------------------------------------------------------------------------

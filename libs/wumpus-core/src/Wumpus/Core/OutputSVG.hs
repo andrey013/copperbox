@@ -59,12 +59,12 @@ coordChange = scale 1 (-1)
 
 --------------------------------------------------------------------------------
 
-writeSVG :: FilePath -> Picture Double -> IO ()
+writeSVG :: (Ord u, PSUnit u) => FilePath -> Picture u -> IO ()
 writeSVG filepath pic = 
     writeFile filepath $ unlines $ map ppContent $ svgDraw pic 
 
 
-svgDraw :: Picture Double -> [Content]
+svgDraw :: (Ord u, PSUnit u) => Picture u -> [Content]
 svgDraw = prefixXmlDecls . bigphi topLevelPic mkVec mkPic . coordChange 
   where
     mkPic = runSVG . picture False
@@ -74,7 +74,7 @@ svgDraw = prefixXmlDecls . bigphi topLevelPic mkVec mkPic . coordChange
 prefixXmlDecls :: Element -> [Content]
 prefixXmlDecls e = [Text xmlVersion, Text svgDocType, Elem e]    
 
-topLevelPic :: Maybe (Vec2 Double) -> Element -> Element
+topLevelPic :: PSUnit u => Maybe (Vec2 u) -> Element -> Element
 topLevelPic Nothing         p = svgElement [p]
 topLevelPic (Just (V2 x y)) p = svgElement [gElement [trans_attr] [p]] 
   where 
@@ -82,7 +82,7 @@ topLevelPic (Just (V2 x y)) p = svgElement [gElement [trans_attr] [p]]
 
 
 
-picture :: Clipped -> Picture Double -> SvgM Element
+picture :: (Ord u, PSUnit u) => Clipped -> Picture u -> SvgM Element
 picture _ (PicBlank _)            = return $ gElement [] []
 picture c (Single (fr,_) prim)    = do 
     elt <- primitive c prim
@@ -98,7 +98,7 @@ picture _ (Clip (fr,_) p a) = do
    return $ gElement (maybe [] return $ frameChange fr) [cp,e1]
 
 
-primitive :: Clipped -> Primitive Double -> SvgM Element
+primitive :: (Ord u, PSUnit u) => Clipped -> Primitive u -> SvgM Element
 primitive c (PPath props p)            = clipAttrib c $ path props p
 primitive c (PLabel props l)           = clipAttrib c $ label props l
 primitive c (PEllipse props mid hw hh) = clipAttrib c $ 
@@ -107,7 +107,7 @@ primitive c (PEllipse props mid hw hh) = clipAttrib c $
 
 
 -- All clipping paths are closed.
-clipPath :: Path Double -> SvgM Element
+clipPath :: PSUnit u => Path u -> SvgM Element
 clipPath p = do
     name <- newClipLabel
     return $ element_clippath ps # add_attr (attr_id name)
@@ -126,7 +126,7 @@ clipAttrib True  elt = do
 -- None of the remaining translation functions need to be in the
 -- SvgM monad.
 
-path :: PathProps -> Path Double -> Element
+path :: PSUnit u => PathProps -> Path u -> Element
 path (c,dp) p = 
     element_path ps # add_attrs (fill_a : stroke_a : opts)
   where
@@ -141,14 +141,14 @@ path (c,dp) p =
 -- Also rendering coloured text is convoluted (needing the
 -- tspan element).
 -- 
-label :: LabelProps -> Label Double -> Element
+label :: (Ord u, PSUnit u) => LabelProps -> Label u -> Element
 label (c,FontAttr _ fam style sz) (Label pt str) = 
      element_text tspan_elt # add_attrs text_xs # add_attrs (fontStyle style)
   where
     P2 x y    = coordChange pt
     text_xs   = [ attr_x x
                 , attr_y y 
-                , attr_transform $ val_matrix 1 0 0 (-1) 0 0
+                , attr_transform $ val_matrix 1 0 0 (-1) 0 (0::Double)
                 , attr_font_family fam
                 , attr_font_size sz 
                 ]
@@ -167,7 +167,7 @@ fontStyle SVG_BOLD_OBLIQUE =
 
 -- If w==h the draw the ellipse as a circle
 
-ellipse :: EllipseProps -> Point2 Double -> Double -> Double -> Element
+ellipse :: PSUnit u => EllipseProps -> Point2 u -> u -> u -> Element
 ellipse (c,dp) (P2 x y) w h 
     | w == h    = element_circle  # add_attrs (circle_attrs  ++ style_attrs)
     | otherwise = element_ellipse # add_attrs (ellipse_attrs ++ style_attrs)
@@ -210,20 +210,21 @@ strokeAttribute (DashPattern dp) = fn dp where
    
 
 
-svgPath :: DrawProp -> Path Double -> SvgPath
+svgPath :: PSUnit u => DrawProp -> Path u -> SvgPath
 svgPath (OStroke _) p = pathInstructions p
 svgPath _           p = closePath $ pathInstructions p
 
 
-pathInstructions :: Path Double -> [String]
-pathInstructions (Path (P2 x y) xs) = path_m x y : map fn xs
-  where 
-    fn (PLine (P2 x1 y1))                        = path_l x1 y1
-    fn (PCurve (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = path_s x1 y1 x2 y2 x3 y3
+pathInstructions :: PSUnit u => Path u -> [String]
+pathInstructions (Path (P2 x y) xs) = path_m x y : map pathSegment xs
+
+pathSegment :: PSUnit u => PathSegment u -> String
+pathSegment (PLine (P2 x1 y1))                        = path_l x1 y1
+pathSegment (PCurve (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = path_s x1 y1 x2 y2 x3 y3
 
 
 
-frameChange :: Frame2 Double -> Maybe Attr
+frameChange :: PSUnit u => Frame2 u -> Maybe Attr
 frameChange fr 
     | standardFrame fr = Nothing
     | otherwise        = Just $ attr_transform $ val_matrix a b c d e f 

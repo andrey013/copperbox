@@ -221,32 +221,32 @@ element_ellipse = unode "ellipse" ()
 
 
 -- | @ x=\"...\" @
-attr_x :: Double -> Attr
+attr_x :: PSUnit u => u -> Attr
 attr_x = unqualAttr "x" . dtrunc
 
 -- | @ y=\"...\" @
-attr_y :: Double -> Attr
+attr_y :: PSUnit u => u -> Attr
 attr_y = unqualAttr "y" . dtrunc
 
 -- | @ r=\"...\" @
-attr_r :: Double -> Attr
+attr_r :: PSUnit u => u -> Attr
 attr_r = unqualAttr "r" . dtrunc
 
 
 -- | @ rx=\"...\" @
-attr_rx :: Double -> Attr
+attr_rx :: PSUnit u => u -> Attr
 attr_rx = unqualAttr "rx" . dtrunc
 
 -- | @ ry=\"...\" @
-attr_ry :: Double -> Attr
+attr_ry :: PSUnit u => u -> Attr
 attr_ry = unqualAttr "ry" . dtrunc
 
 -- | @ cx=\"...\" @
-attr_cx :: Double -> Attr
+attr_cx :: PSUnit u => u -> Attr
 attr_cx = unqualAttr "cx" . dtrunc
 
 -- | @ cy=\"...\" @
-attr_cy :: Double -> Attr
+attr_cy :: PSUnit u => u -> Attr
 attr_cy = unqualAttr "cy" . dtrunc
 
 
@@ -312,7 +312,7 @@ attr_d :: SvgPath -> Attr
 attr_d = unqualAttr "d" . hsep
 
 -- | @ fill=\"rgb(..., ..., ...)\" @
-attr_fill :: PSColour c => c  -> Attr
+attr_fill :: PSColour c => c -> Attr
 attr_fill = unqualAttr "fill" . val_colour
 
 -- | @ fill=\"none\" @
@@ -328,12 +328,12 @@ attr_stroke_none :: Attr
 attr_stroke_none = unqualAttr "stroke" "none"
 
 -- | @ stroke-width=\"...\" @
-attr_stroke_width :: Double -> Attr
+attr_stroke_width :: PSUnit u => u -> Attr
 attr_stroke_width = unqualAttr "stoke-width" . dtrunc
 
 
 -- | @ stroke-miterlimit=\"...\" @
-attr_stroke_miterlimit :: Double -> Attr
+attr_stroke_miterlimit :: PSUnit u => u -> Attr
 attr_stroke_miterlimit = unqualAttr "stoke-miterlimit" . dtrunc
 
 -- | @ stroke-linejoin=\"...\" @
@@ -351,7 +351,7 @@ attr_stroke_linecap CapSquare = unqualAttr "stroke-linecap" "square"
 
 
 -- | @ stroke-dasharray=\"...\" @
-attr_stroke_dasharray :: [Double] -> Attr
+attr_stroke_dasharray :: PSUnit u => [u] -> Attr
 attr_stroke_dasharray = unqualAttr "stoke-dasharray" . hsep . map dtrunc
 
 -- | @ stroke-dasharray=\"none\" @
@@ -375,8 +375,7 @@ attr_transform :: String -> Attr
 attr_transform = unqualAttr "transform"
 
 -- | @ matrix(..., ..., ..., ..., ..., ...) @
-val_matrix :: Double -> Double -> Double 
-           -> Double -> Double -> Double -> String
+val_matrix :: PSUnit u => u -> u -> u -> u -> u -> u -> String
 val_matrix a b c d e f = "matrix" ++ tupled (map dtrunc [a,b,c,d,e,f])
 
 
@@ -398,25 +397,25 @@ val_url :: String -> String
 val_url s = "url" ++ parens ('#':s)
 
 -- | @ translate(..., ...) @
-val_translate :: Double -> Double -> String
+val_translate :: PSUnit u => u -> u -> String
 val_translate x y = "translate" ++ tupled (map dtrunc [x,y])
   
 -- | @ M ... ... @
 --
 -- c.f. PostScript's @moveto@.
-path_m :: Double -> Double -> String
+path_m :: PSUnit u => u -> u -> String
 path_m x y  = hsep $ "M" : map dtrunc [x,y]
 
 -- | @ L ... ... @
 --
 -- c.f. PostScript's @lineto@.
-path_l :: Double -> Double -> String
+path_l :: PSUnit u => u -> u -> String
 path_l x y  = hsep $ "L" : map dtrunc [x,y]
 
 -- | @ S ... ... ... ... ... ... @
 -- 
 -- c.f. PostScript's @curveto@.
-path_s :: Double -> Double -> Double -> Double -> Double -> Double -> String
+path_s :: PSUnit u => u -> u -> u -> u -> u -> u -> String
 path_s x1 y1 x2 y2 x3 y3 =  hsep $ "S" : map dtrunc [x1,y1,x2,y2,x3,y3]
 
 

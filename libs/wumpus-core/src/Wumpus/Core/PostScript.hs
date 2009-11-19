@@ -77,7 +77,7 @@ module Wumpus.Core.PostScript
   ) where
 
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.Utils ( dtrunc, roundup, parens, hsep )
+import Wumpus.Core.Utils ( PSUnit(..), roundup, parens, hsep )
 
 import qualified Data.DList as DL
 import MonadLib
@@ -182,7 +182,7 @@ ps_grestore :: WumpusM ()
 ps_grestore = command "grestore" []
 
 -- | @ ... setlinewidth @
-ps_setlinewidth :: Double -> WumpusM ()
+ps_setlinewidth :: PSUnit u => u -> WumpusM ()
 ps_setlinewidth = command "setlinewidth" . return . dtrunc
 
 -- | @ ... setlinecap @
@@ -194,7 +194,7 @@ ps_setlinejoin :: LineJoin -> WumpusM ()
 ps_setlinejoin = command "setlinejoin" . return . show . fromEnum
 
 -- | @ ... setmiterlimit @
-ps_setmiterlimit :: Double -> WumpusM ()
+ps_setmiterlimit :: PSUnit u => u -> WumpusM ()
 ps_setmiterlimit = command "setmiterlimit" . return . dtrunc
 
 -- | @ [... ...] ... setdash @
@@ -203,15 +203,15 @@ ps_setdash Solid        = command "setdash" ["[]", "0"]
 ps_setdash (Dash n arr) = command "setdash" [showArray shows arr, show n]
 
 -- | @ ... setgray @
-ps_setgray :: Double -> WumpusM ()
+ps_setgray :: PSUnit u => u -> WumpusM ()
 ps_setgray = command "setgray" . return . dtrunc 
 
 -- | @ ... ... ... setrgbcolor @
-ps_setrgbcolor :: Double -> Double -> Double -> WumpusM ()
+ps_setrgbcolor :: PSUnit u => u -> u -> u -> WumpusM ()
 ps_setrgbcolor r g b = command "setrgbcolor" $ map dtrunc [r,g,b]
 
 -- | @ ... ... ... sethsbcolor @
-ps_sethsbcolor :: Double -> Double -> Double -> WumpusM ()
+ps_sethsbcolor :: PSUnit u => u -> u -> u -> WumpusM ()
 ps_sethsbcolor h s b = command "sethsbcolor" $ map dtrunc [h,s,b]
 
 
@@ -219,12 +219,12 @@ ps_sethsbcolor h s b = command "sethsbcolor" $ map dtrunc [h,s,b]
 -- coordinate system and matrix operators 
 
 -- | @ ... ... translate @
-ps_translate :: Double -> Double -> WumpusM ()
+ps_translate :: PSUnit u => u -> u -> WumpusM ()
 ps_translate tx ty = do
     command "translate" $ map dtrunc [tx,ty]
 
 -- | @ ... ... scale @
-ps_scale :: Double -> Double -> WumpusM ()
+ps_scale :: PSUnit u => u -> u -> WumpusM ()
 ps_scale tx ty = do
     command "scale" $ map dtrunc [tx,ty]
 
@@ -232,7 +232,7 @@ ps_scale tx ty = do
 -- Do not use setmatrix for changing the CTM use concat...
 
 -- | @ [... ... ... ... ... ...] concat @
-ps_concat :: CTM -> WumpusM ()
+ps_concat :: PSUnit u => CTM u -> WumpusM ()
 ps_concat (CTM a b  c d  e f) = command "concat" [mat] where 
     mat = showArray ((++) . dtrunc) [a,b,c,d,e,f]
 
@@ -250,35 +250,33 @@ ps_newpath = command "newpath" []
 -- quite expensive.
 
 -- | @ ... ... moveto @
-ps_moveto :: Double -> Double -> WumpusM ()
+ps_moveto :: PSUnit u => u -> u -> WumpusM ()
 ps_moveto x y = command "moveto" [dtrunc x, dtrunc y]
 
 -- | @ ... ... rmoveto @
-ps_rmoveto :: Double -> Double -> WumpusM ()
+ps_rmoveto :: PSUnit u => u -> u -> WumpusM ()
 ps_rmoveto x y = command "rmoveto" [dtrunc x, dtrunc y]
 
 -- | @ ... ... lineto @
-ps_lineto :: Double -> Double -> WumpusM ()
+ps_lineto :: PSUnit u => u -> u -> WumpusM ()
 ps_lineto x y = command "lineto" [dtrunc x, dtrunc y]
 
 -- | @ ... ... rlineto @
-ps_rlineto :: Double -> Double -> WumpusM ()
+ps_rlineto :: PSUnit u => u -> u -> WumpusM ()
 ps_rlineto x y = command "rlineto" [dtrunc x, dtrunc y]
 
 -- | @ ... ... ... ... ... arc @
-ps_arc :: Double -> Double -> Double -> Double -> Double -> WumpusM ()
+ps_arc :: PSUnit u => u -> u -> u -> u -> u -> WumpusM ()
 ps_arc x y r ang1 ang2 = 
     command "arc" $ map dtrunc [x,y,r,ang1,ang2]
 
 -- | @ ... ... ... ... ... arcn @
-ps_arcn :: Double -> Double -> Double -> Double -> Double -> WumpusM ()
+ps_arcn :: PSUnit u => u -> u -> u -> u -> u -> WumpusM ()
 ps_arcn x y r ang1 ang2 = 
     command "arcn" $ map dtrunc [x,y,r,ang1,ang2]
 
 -- | @ ... ... ... ... ... ... curveto @
-ps_curveto :: Double -> Double 
-           -> Double -> Double 
-           -> Double -> Double -> WumpusM ()
+ps_curveto :: PSUnit u => u -> u -> u -> u -> u -> u -> WumpusM ()
 ps_curveto x1 y1 x2 y2 x3 y3 = 
     command "curveto" $ map dtrunc [x1,y1, x2,y2, x3,y3]
 
@@ -357,9 +355,9 @@ dsc_comment name xs = write "%%" >> write name >> write ": " >> writeln (hsep xs
 
 
 -- | @ %%BoundingBox: ... ... ... ... @  /llx lly urx ury/
-dsc_BoundingBox :: Double -> Double -> Double -> Double -> WumpusM ()
+dsc_BoundingBox :: PSUnit u => u -> u -> u -> u -> WumpusM ()
 dsc_BoundingBox llx lly urx ury = 
-  dsc_comment "BoundingBox"  (map roundup [llx,lly,urx,ury])
+  dsc_comment "BoundingBox"  (map (roundup . toDouble) [llx,lly,urx,ury])
 
 -- | @ %%CreationDate: ... @
 -- 

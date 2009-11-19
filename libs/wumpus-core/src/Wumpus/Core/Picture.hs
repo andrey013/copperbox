@@ -23,6 +23,10 @@ module Wumpus.Core.Picture
   , frameMulti
   , multi
 
+
+  , path
+  , lineTo
+  , curveTo
   , vertexPath  
   , curvedPath
 
@@ -91,6 +95,7 @@ stdFrame = ortho zeroPt
 blankPicture :: Num u => BoundingBox u -> Picture u
 blankPicture bb = PicBlank (stdFrame, bb)
 
+
 -- | Lift a Primitive to a Picture, located in the standard frame.
 frame :: (Num u, Ord u) => Primitive u -> Picture u
 frame p = Single (stdFrame, boundary p) p 
@@ -137,6 +142,19 @@ multi ps = Picture (stdFrame, sconcat $ map boundary ps) ones
 
     err_msg         = "Wumpus.Core.Picture.multi - empty list"
 
+
+
+-- | Create a Path from the start point and alist of PathSegments.
+path :: Point2 u -> [PathSegment u] -> Path u
+path = Path 
+
+-- | Create a straight-line PathSegment.
+lineTo :: Point2 u -> PathSegment u
+lineTo = PLine
+
+-- | Create a curved PathSegment.
+curveTo :: Point2 u -> Point2 u -> Point2 u -> PathSegment u
+curveTo = PCurve
 
 
 -- | Convert the list of vertices to a path of straight line 

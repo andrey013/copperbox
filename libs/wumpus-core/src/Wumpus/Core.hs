@@ -34,8 +34,8 @@ module Wumpus.Core
   , DPrimitive
   , Path
   , DPath
-  , PathSeg
-  , DPathSeg
+  , PathSegment
+  , DPathSegment
   , Label
   , DLabel
 

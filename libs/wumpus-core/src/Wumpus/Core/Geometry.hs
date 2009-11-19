@@ -81,7 +81,7 @@ module Wumpus.Core.Geometry
 
   ) where
 
-import Wumpus.Core.Utils ( CMinMax(..), dtrunc )
+import Wumpus.Core.Utils ( CMinMax(..), PSUnit(..) )
 
 import Data.Aviary
 
@@ -189,9 +189,10 @@ newtype Radian = Radian { getRadian :: Double }
 --------------------------------------------------------------------------------
 -- Family instances
 
-type instance DUnit (Point2 a) = a
-type instance DUnit (Vec2 a)   = a
-
+type instance DUnit (Point2 a)    = a
+type instance DUnit (Vec2 a)      = a
+type instance DUnit (Frame2 a)    = a
+type instance DUnit (Matrix3'3 a) = a
 
 --------------------------------------------------------------------------------
 -- lifters / convertors
@@ -287,12 +288,12 @@ instance Pretty a => Pretty (Frame2 a) where
     <+> text "e1:" <> pretty e1
     <+> text "o:" <> pretty o
 
-instance Real a => Pretty (Matrix3'3 a) where
+instance PSUnit a => Pretty (Matrix3'3 a) where
   pretty (M3'3 a b c  d e f  g h i) = 
       matline a b c <$> matline d e f <$> matline g h i
     where
       matline x y z = char '|' 
-         <+> (hcat $ map (fill 12 . text . dtrunc . realToFrac) [x,y,z]) 
+         <+> (hcat $ map (fill 12 . text . dtrunc) [x,y,z]) 
          <+> char '|'   
 
 

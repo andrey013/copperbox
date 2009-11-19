@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -29,7 +30,8 @@ module Wumpus.Core.Utils
 
 
   -- * Truncate / print a double
-  , dtrunc
+  , PSUnit(..)
+  , truncateDouble
   , roundup
 
   , clamp
@@ -66,6 +68,7 @@ module Wumpus.Core.Utils
 import Control.Applicative
 import Control.Monad ( ap )
 import Data.List ( intersperse )
+import Data.Ratio
 import System.Time 
 
 -- | /Component-wise/ min and max. 
@@ -116,10 +119,27 @@ med3 a b c = if c <= x then x else if c > y then y else c
 
 
 --------------------------------------------------------------------------------
+-- PS Unit
 
--- TODO - this could / should be generalized to a typeclass 
--- so the OutputPostScript and OutputSVG code can print more
--- types then @Picture Double@.
+class Num a => PSUnit a where
+  toDouble :: a -> Double
+  dtrunc   :: a -> String
+  
+  dtrunc = truncateDouble . toDouble
+
+instance PSUnit Double where
+  toDouble = id
+  dtrunc   = truncateDouble
+
+instance PSUnit Float where
+  toDouble = realToFrac
+
+instance PSUnit (Ratio Integer) where
+  toDouble = realToFrac
+
+instance PSUnit (Ratio Int) where
+  toDouble = realToFrac
+
 
 -- | Truncate the printed decimal representation of a Double.
 -- The is prefered to 'showFFloat' from Numeric as it produces
@@ -128,10 +148,10 @@ med3 a b c = if c <= x then x else if c > y then y else c
 -- 0.000000000 becomes 0.0 rather than however many digs are 
 -- specified.
 --  
-dtrunc :: Double -> String
-dtrunc d | abs d < 0.0001  = "0.0"
-         | d < 0.0           = '-' :  show (abs tx)
-         | otherwise         = show tx
+truncateDouble :: Double -> String
+truncateDouble d | abs d < 0.0001  = "0.0"
+                 | d < 0.0         = '-' :  show (abs tx)
+                 | otherwise       = show tx
   where
     tx :: Double
     tx = (realToFrac (roundi (d*1000000.0))) / 1000000.0

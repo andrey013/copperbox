@@ -46,7 +46,7 @@ import Control.Monad ( mapM_, zipWithM_ )
 -- > Courier  Courier-Oblique  Courier-Bold  Courier-Bold-Oblique
 -- > Symbol
 --
--- List from Bill Casselman \'Mathematical Illustrations\' p279.
+-- See the PostScript Language Reference Manual.
 
 type FontSpec = (String,Int)
 
@@ -61,7 +61,8 @@ type FontSpec = (String,Int)
 -- If the picture contains text labels, you should provide a 
 -- FontSpec to transmit @findfont@, @scalefont@ etc. commands 
 -- to PostScript.    
-writePS :: FilePath -> Maybe FontSpec -> [Picture Double] -> IO ()
+writePS :: (Fractional u, Ord u, PSUnit u) 
+        => FilePath -> Maybe FontSpec -> [Picture u] -> IO ()
 writePS filepath mbFs pic = do 
     timestamp <- mkTimeStamp
     writeFile filepath $ psDraw timestamp mbFs pic
@@ -73,13 +74,15 @@ writePS filepath mbFs pic = do
 -- If the picture contains text labels, you should provide a 
 -- FontSpec to transmit @findfont@, @scalefont@ etc. commands 
 -- to PostScript.    
-writeEPS :: FilePath -> Maybe FontSpec -> Picture Double -> IO ()
+writeEPS :: (Fractional u, Ord u, PSUnit u)  
+         => FilePath -> Maybe FontSpec -> Picture u -> IO ()
 writeEPS filepath mbFs pic = do
     timestamp <- mkTimeStamp
     writeFile filepath $ epsDraw timestamp mbFs pic
 
 -- | Draw a picture, generating PostScript output.
-psDraw :: String -> Maybe FontSpec -> [Picture Double] -> PostScript
+psDraw :: (Fractional u, Ord u, PSUnit u) 
+       => String -> Maybe FontSpec -> [Picture u] -> PostScript
 psDraw timestamp mbFs pics = runWumpus $ do
     psHeader 1 timestamp
     zipWithM_ (psDrawPage mbFs) pages pics
@@ -88,7 +91,8 @@ psDraw timestamp mbFs pics = runWumpus $ do
     pages = map (\i -> (show i,i)) [1..]
 
 
-psDrawPage :: Maybe FontSpec -> (String,Int) -> Picture Double -> WumpusM ()
+psDrawPage :: (Fractional u, Ord u, PSUnit u) 
+           => Maybe FontSpec -> (String,Int) -> Picture u -> WumpusM ()
 psDrawPage mbFs (lbl,ordinal) pic = do
     dsc_Page lbl ordinal
     ps_gsave
@@ -106,7 +110,8 @@ psDrawPage mbFs (lbl,ordinal) pic = do
 -- Note the bounding box may have negative components - if it 
 -- does it will need translating.
 
-epsDraw :: String -> Maybe FontSpec -> Picture Double -> PostScript
+epsDraw :: (Fractional u, Ord u, PSUnit u) 
+        => String -> Maybe FontSpec -> Picture u -> PostScript
 epsDraw timestamp mbFs pic = runWumpus $ do 
     epsHeader bb timestamp      
     ps_gsave
@@ -134,7 +139,7 @@ psHeader pagecount timestamp = do
     dsc_EndComments
 
 
-epsHeader :: BoundingBox Double -> String -> WumpusM ()
+epsHeader :: PSUnit u => BoundingBox u -> String -> WumpusM ()
 epsHeader bb timestamp = do
     bang_EPS
     dsc_BoundingBox llx lly urx ury
@@ -163,7 +168,7 @@ epsFooter = do
 -- are drawn when they are encountered as a @concat@ statement in a 
 -- block of @gsave ... grestore@.
 
-outputPicture :: Picture Double -> WumpusM ()
+outputPicture :: (Fractional u, PSUnit u) => Picture u -> WumpusM ()
 outputPicture (PicBlank  _)             = return ()
 outputPicture (Single (fr,_) prim)      = 
     updateFrame fr $ outputPrimitive prim
@@ -185,7 +190,7 @@ outputPicture (Clip (fr,_) cp p)        =
 -- > grestore
 --
 
-updateFrame :: Frame2 Double -> WumpusM () -> WumpusM ()
+updateFrame :: PSUnit u => Frame2 u -> WumpusM () -> WumpusM ()
 updateFrame frm ma 
   | standardFrame frm = ma
   | otherwise         = do { ps_gsave
@@ -196,7 +201,7 @@ updateFrame frm ma
 
 
 
-outputPrimitive :: Primitive Double -> WumpusM ()
+outputPrimitive :: (Fractional u, PSUnit u) => Primitive u -> WumpusM ()
 outputPrimitive (PPath (c,dp) p)           = outputPath dp c p 
 outputPrimitive (PLabel props l)           = updateFont props $ outputLabel l
 outputPrimitive (PEllipse (c,dp) ct hw hh) = outputEllipse dp c ct hw hh
@@ -233,7 +238,7 @@ colourCommand = cmd . psColour
     cmd (RGB3 r g b) = ps_setrgbcolor r g b
 
     
-outputPath :: PSColour c => DrawProp -> c -> Path Double -> WumpusM ()
+outputPath :: (PSColour c, PSUnit u) => DrawProp -> c -> Path u -> WumpusM ()
 outputPath CFill        c p = updateColour c $ do  
     startPath p
     ps_closepath
@@ -249,7 +254,7 @@ outputPath (OStroke xs) c p = updatePen c xs $ do
     ps_stroke
   
 
-startPath :: Path Double -> WumpusM ()
+startPath :: PSUnit u => Path u -> WumpusM ()
 startPath (Path (P2 x y) xs) = do
     ps_newpath
     ps_moveto x y
@@ -257,7 +262,7 @@ startPath (Path (P2 x y) xs) = do
 
 
 
-clipPath :: Path Double -> WumpusM ()
+clipPath :: PSUnit u => Path u -> WumpusM ()
 clipPath p = do 
     startPath p
     ps_closepath
@@ -281,7 +286,7 @@ penCommand (LineJoin lj)    = ps_setlinejoin lj
 penCommand (DashPattern dp) = ps_setdash dp
 
 
-outputPathSeg :: PathSeg Double -> WumpusM ()
+outputPathSeg :: PSUnit u => PathSegment u -> WumpusM ()
 outputPathSeg (PLine (P2 x y))  = ps_lineto x y
 outputPathSeg (PCurve p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3 
   where
@@ -292,23 +297,19 @@ outputPathSeg (PCurve p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
 -- | This is not very good as it uses a PostScript's
 -- @scale@ operator - this will vary the line width during the
 -- drawing of a stroked ellipse.
-outputEllipse :: PSColour c 
-              => DrawEllipse 
-              -> c
-              -> Point2 Double 
-              -> Double 
-              -> Double 
-              -> WumpusM ()
+outputEllipse :: (PSColour c, Fractional u, PSUnit u)
+              => DrawEllipse -> c -> Point2 u -> u -> u -> WumpusM ()
 outputEllipse dp c (P2 x y) hw hh 
     | hw==hh    = outputArc dp c x y hw
     | otherwise = do { ps_gsave
-                     ; ps_scale 1 (hh/hw) -- Not so good -- changes stroke width
+                     -- Not so good -- the next line changes stroke width...
+                     ; ps_scale 1 (hh/hw)
                      ; outputArc dp c x y hw
                      ; ps_grestore
                      }
 
-outputArc :: PSColour c 
-          => DrawEllipse -> c -> Double -> Double -> Double -> WumpusM ()
+outputArc :: (PSColour c, PSUnit u) 
+          => DrawEllipse -> c -> u -> u -> u -> WumpusM ()
 outputArc EFill        c x y r = updateColour c $ do 
     ps_arc x y r 0 360 
     ps_closepath
@@ -320,7 +321,7 @@ outputArc (EStroke xs) c x y r = updatePen c xs $ do
     ps_stroke
 
 
-outputLabel :: Label Double -> WumpusM ()
+outputLabel :: PSUnit u => Label u -> WumpusM ()
 outputLabel (Label (P2 x y) str) = do
     ps_moveto x y
     ps_show str
