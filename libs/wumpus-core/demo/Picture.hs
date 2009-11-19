@@ -6,14 +6,14 @@ import Wumpus.Core
 
 
 
-peru :: PSColour
-peru = PSRgb 0.804  0.522  0.247
+peru :: PSRgb
+peru = RGB3 0.804  0.522  0.247
 
-plum :: PSColour
-plum = PSRgb 0.867  0.627  0.867
+plum :: PSRgb
+plum = RGB3 0.867  0.627  0.867
 
-black :: PSColour
-black = PSRgb 0 0 0 
+black :: PSRgb
+black = RGB3 0 0 0 
 
 
 square :: DPicture 
@@ -97,7 +97,7 @@ demo08 = do
   where
     p1 = hspace 20 square square
 
-mkFilledSquare :: PSColour -> DPicture 
+mkFilledSquare :: (PSColour c, Fill c) => c -> DPicture 
 mkFilledSquare col = frame $ fill col $ vertexPath
   [ P2 0 0, P2 40 0, P2 40 40, P2 0 40 ]
 

@@ -67,8 +67,8 @@ import Data.Semigroup
 
 -- Default attributes
 
-psBlack :: PSColour
-psBlack = PSRgb 0 0 0
+psBlack :: PSRgb
+psBlack = RGB3 0 0 0
  
 -- aka the standard frame
 stdFrame :: Num u => Frame2 u 
@@ -169,11 +169,11 @@ curvedPath (x:xs) = Path x (fn xs) where
 
 
 ostrokePath :: (Num u, Ord u) 
-            => PSColour -> [StrokeAttr] -> Path u -> Primitive u
+            => PSRgb -> [StrokeAttr] -> Path u -> Primitive u
 ostrokePath c attrs p = PPath (c, OStroke attrs) p
 
 cstrokePath :: (Num u, Ord u) 
-            => PSColour -> [StrokeAttr] -> Path u -> Primitive u
+            => PSRgb -> [StrokeAttr] -> Path u -> Primitive u
 cstrokePath c attrs p = PPath (c, CStroke attrs) p
 
 class Stroke t where
@@ -184,21 +184,17 @@ instance Stroke () where
   ostroke () = ostrokePath psBlack []
   cstroke () = cstrokePath psBlack []
 
-instance Stroke PSColour where
-  ostroke c = ostrokePath c []
-  cstroke c = cstrokePath c []
-
 instance Stroke (RGB3 Double) where
-  ostroke c = ostrokePath (toPSColour c) []
-  cstroke c = cstrokePath (toPSColour c) []
+  ostroke c = ostrokePath (psColour c) []
+  cstroke c = cstrokePath (psColour c) []
 
 instance Stroke (HSB3 Double) where
-  ostroke c = ostrokePath (toPSColour c) []
-  cstroke c = cstrokePath (toPSColour c) []
+  ostroke c = ostrokePath (psColour c) []
+  cstroke c = cstrokePath (psColour c) []
 
 instance Stroke (Gray Double) where
-  ostroke c = ostrokePath (toPSColour c) []
-  cstroke c = cstrokePath (toPSColour c) []
+  ostroke c = ostrokePath (psColour c) []
+  cstroke c = cstrokePath (psColour c) []
 
 
 instance Stroke StrokeAttr where
@@ -210,37 +206,30 @@ instance Stroke [StrokeAttr] where
   cstroke xs = cstrokePath psBlack xs
 
 
-instance Stroke (PSColour,StrokeAttr) where
-  ostroke (c,x) = ostrokePath c [x]
-  cstroke (c,x) = cstrokePath c [x]
 
 instance Stroke (RGB3 Double,StrokeAttr) where
-  ostroke (c,x) = ostrokePath (toPSColour c) [x]
-  cstroke (c,x) = cstrokePath (toPSColour c) [x]
+  ostroke (c,x) = ostrokePath (psColour c) [x]
+  cstroke (c,x) = cstrokePath (psColour c) [x]
 
 instance Stroke (HSB3 Double,StrokeAttr) where
-  ostroke (c,x) = ostrokePath (toPSColour c) [x]
-  cstroke (c,x) = cstrokePath (toPSColour c) [x]
+  ostroke (c,x) = ostrokePath (psColour c) [x]
+  cstroke (c,x) = cstrokePath (psColour c) [x]
 
 instance Stroke (Gray Double,StrokeAttr) where
-  ostroke (c,x) = ostrokePath (toPSColour c) [x]
-  cstroke (c,x) = cstrokePath (toPSColour c) [x]
-
-instance Stroke (PSColour,[StrokeAttr]) where
-  ostroke (c,xs) = ostrokePath c xs
-  cstroke (c,xs) = cstrokePath c xs
+  ostroke (c,x) = ostrokePath (psColour c) [x]
+  cstroke (c,x) = cstrokePath (psColour c) [x]
 
 instance Stroke (RGB3 Double,[StrokeAttr]) where
-  ostroke (c,xs) = ostrokePath (toPSColour c) xs
-  cstroke (c,xs) = cstrokePath (toPSColour c) xs
+  ostroke (c,xs) = ostrokePath (psColour c) xs
+  cstroke (c,xs) = cstrokePath (psColour c) xs
 
 instance Stroke (HSB3 Double,[StrokeAttr]) where
-  ostroke (c,xs) = ostrokePath (toPSColour c) xs
-  cstroke (c,xs) = cstrokePath (toPSColour c) xs
+  ostroke (c,xs) = ostrokePath (psColour c) xs
+  cstroke (c,xs) = cstrokePath (psColour c) xs
 
 instance Stroke (Gray Double,[StrokeAttr]) where
-  ostroke (c,xs) = ostrokePath (toPSColour c) xs
-  cstroke (c,xs) = cstrokePath (toPSColour c) xs
+  ostroke (c,xs) = ostrokePath (psColour c) xs
+  cstroke (c,xs) = cstrokePath (psColour c) xs
 
 
 -- | Create an open stoke coloured black.
@@ -259,7 +248,7 @@ zcstroke = cstrokePath psBlack []
 
 
 
-fillPath :: (Num u, Ord u) => PSColour -> Path u -> Primitive u
+fillPath :: (Num u, Ord u) => PSRgb -> Path u -> Primitive u
 fillPath c p = PPath (c,CFill) p
 
 class Fill t where
@@ -267,10 +256,9 @@ class Fill t where
  
 
 instance Fill ()                where fill () = fillPath psBlack 
-instance Fill PSColour          where fill = fillPath
-instance Fill (RGB3 Double)     where fill = fillPath . toPSColour
-instance Fill (HSB3 Double)     where fill = fillPath . toPSColour
-instance Fill (Gray Double)     where fill = fillPath . toPSColour
+instance Fill (RGB3 Double)     where fill = fillPath . psColour
+instance Fill (HSB3 Double)     where fill = fillPath . psColour
+instance Fill (Gray Double)     where fill = fillPath . psColour
 
 -- | Create a filled path coloured black. 
 zfill :: (Num u, Ord u) => Path u -> Primitive u
@@ -286,7 +274,7 @@ clip cp p = Clip (ortho zeroPt, boundary cp) cp p
 --------------------------------------------------------------------------------
 -- Labels to primitive
 
-mkTextLabel :: PSColour -> FontAttr -> Point2 u -> String -> Primitive u
+mkTextLabel :: PSRgb -> FontAttr -> Point2 u -> String -> Primitive u
 mkTextLabel c attr pt txt = PLabel (c,attr) (Label pt txt)
 
 -- SVG seems to have an issue with /Courier/ and needs /Courier New/.
@@ -300,32 +288,26 @@ class TextLabel t where
 
 instance TextLabel () where textlabel () = mkTextLabel psBlack default_font
 
-instance TextLabel PSColour where
-  textlabel c = mkTextLabel c default_font
-
 instance TextLabel (RGB3 Double) where
-  textlabel c = mkTextLabel (toPSColour c) default_font
+  textlabel c = mkTextLabel (psColour c) default_font
 
 instance TextLabel (HSB3 Double) where
-  textlabel c = mkTextLabel (toPSColour c) default_font
+  textlabel c = mkTextLabel (psColour c) default_font
 
 instance TextLabel (Gray Double) where
-  textlabel c = mkTextLabel (toPSColour c) default_font
+  textlabel c = mkTextLabel (psColour c) default_font
 
 instance TextLabel FontAttr where
   textlabel a = mkTextLabel psBlack a
 
-instance TextLabel (PSColour,FontAttr) where
-  textlabel (c,a) = mkTextLabel c a
-
 instance TextLabel (RGB3 Double,FontAttr) where
-  textlabel (c,a) = mkTextLabel (toPSColour c) a
+  textlabel (c,a) = mkTextLabel (psColour c) a
 
 instance TextLabel (HSB3 Double,FontAttr) where
-  textlabel (c,a) = mkTextLabel (toPSColour c) a
+  textlabel (c,a) = mkTextLabel (psColour c) a
 
 instance TextLabel (Gray Double,FontAttr) where
-  textlabel (c,a) = mkTextLabel (toPSColour c) a
+  textlabel (c,a) = mkTextLabel (psColour c) a
 
 -- | Create a label where the font is @Courier@, text size is 10 
 -- and colour is black.
@@ -347,7 +329,8 @@ multilabel ps props bb =
 
 --------------------------------------------------------------------------------
 
-mkEllipse :: Num u => PSColour -> DrawEllipse -> Point2 u -> u -> u -> Primitive u
+mkEllipse :: Num u 
+          => PSRgb -> DrawEllipse -> Point2 u -> u -> u -> Primitive u
 mkEllipse c dp pt hw hh = PEllipse (c,dp) pt hw hh
 
 
@@ -365,7 +348,6 @@ class Ellipse t where
   ellipse :: Fractional u => t -> Point2 u -> u -> u -> Primitive u
 
 instance Ellipse ()             where ellipse () = zellipse
-instance Ellipse PSColour       where ellipse c  = mkEllipse c EFill
 instance Ellipse DrawEllipse    where ellipse dp = mkEllipse psBlack dp
 
 instance Ellipse StrokeAttr     where 
@@ -375,51 +357,42 @@ instance Ellipse [StrokeAttr]   where
     ellipse = mkEllipse psBlack . EStroke
 
 instance Ellipse (RGB3 Double) where 
-    ellipse c = mkEllipse (toPSColour c) EFill
+    ellipse c = mkEllipse (psColour c) EFill
 
 instance Ellipse (HSB3 Double) where 
-    ellipse c = mkEllipse (toPSColour c) EFill
+    ellipse c = mkEllipse (psColour c) EFill
 
 instance Ellipse (Gray Double) where 
-    ellipse c = mkEllipse (toPSColour c) EFill
+    ellipse c = mkEllipse (psColour c) EFill
 
-
-instance Ellipse (PSColour,DrawEllipse) where 
-    ellipse (c,dp) = mkEllipse c dp
 
 instance Ellipse (RGB3 Double,DrawEllipse) where 
-    ellipse (c,dp) = mkEllipse (toPSColour c) dp
+    ellipse (c,dp) = mkEllipse (psColour c) dp
 
 instance Ellipse (HSB3 Double,DrawEllipse) where 
-    ellipse (c,dp) = mkEllipse (toPSColour c) dp
+    ellipse (c,dp) = mkEllipse (psColour c) dp
 
 instance Ellipse (Gray Double,DrawEllipse) where 
-    ellipse (c,dp) = mkEllipse (toPSColour c) dp
+    ellipse (c,dp) = mkEllipse (psColour c) dp
 
-
-instance Ellipse (PSColour,StrokeAttr) where 
-    ellipse (c,x) = mkEllipse c (EStroke [x])
 
 instance Ellipse (RGB3 Double,StrokeAttr) where 
-    ellipse (c,x) = mkEllipse (toPSColour c) (EStroke [x])
+    ellipse (c,x) = mkEllipse (psColour c) (EStroke [x])
 
 instance Ellipse (HSB3 Double,StrokeAttr) where 
-    ellipse (c,x) = mkEllipse (toPSColour c) (EStroke [x])
+    ellipse (c,x) = mkEllipse (psColour c) (EStroke [x])
 
 instance Ellipse (Gray Double,StrokeAttr) where 
-    ellipse (c,x) = mkEllipse (toPSColour c) (EStroke [x])
-
-instance Ellipse (PSColour,[StrokeAttr]) where 
-    ellipse (c,xs) = mkEllipse c (EStroke xs)
+    ellipse (c,x) = mkEllipse (psColour c) (EStroke [x])
 
 instance Ellipse (RGB3 Double,[StrokeAttr]) where 
-    ellipse (c,xs) = mkEllipse (toPSColour c) (EStroke xs)
+    ellipse (c,xs) = mkEllipse (psColour c) (EStroke xs)
 
 instance Ellipse (HSB3 Double,[StrokeAttr]) where 
-    ellipse (c,xs) = mkEllipse (toPSColour c) (EStroke xs)
+    ellipse (c,xs) = mkEllipse (psColour c) (EStroke xs)
 
 instance Ellipse (Gray Double,[StrokeAttr]) where 
-    ellipse (c,xs) = mkEllipse (toPSColour c) (EStroke xs)
+    ellipse (c,xs) = mkEllipse (psColour c) (EStroke xs)
 
 
 -- | Create a black, filled ellipse. 
@@ -440,7 +413,7 @@ zellipse = uncurry mkEllipse ellipseDefault
 -- both vertical directions by @y@. @x@ and @y@ must be positive
 -- This function cannot be used to shrink a boundary.
 --
-extendBoundary :: Num u => u -> u -> Picture u -> Picture u
+extendBoundary :: (Num u, Ord u) => u -> u -> Picture u -> Picture u
 extendBoundary x y = mapLocale (\(fr,bb) -> (fr, extBB (posve x) (posve y) bb)) 
   where
     extBB x' y' (BBox (P2 x0 y0) (P2 x1 y1)) = BBox pt1 pt2 where 

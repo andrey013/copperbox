@@ -31,18 +31,23 @@ module Wumpus.Core.Utils
   -- * Truncate / print a double
   , dtrunc
   , roundup
-  , range255
 
+  , clamp
+  , ramp
+  , ramp255
+
+  -- * PostScript timetmap
   , mkTimeStamp
 
+  -- * Pretty printers for strings  
   , parens
   , hsep
   , tupled
 
-
+  -- * Extras  
   , sequenceA
   , (<:>) 
-  , pairbimap     -- note defined in HEAD of Data.Aviary
+
 
   
 
@@ -142,13 +147,18 @@ roundup = show . ceilingi
 ceilingi :: RealFrac a => a -> Integer
 ceilingi = ceiling
 
+
+clamp :: Ord a => a -> a -> a -> a 
+clamp a b x = max a (min b x)
+
+ramp :: Double -> Double
+ramp = clamp 0 1
+
 -- | Scale a Double between 0.0 and 1.0 to be an Int between 0 
 -- and 255.
-range255 :: Double -> Int
-range255 = fn . floor . (*255) where
-  fn i | i < 0     = 0
-       | i > 255   = 255
-       | otherwise = i
+ramp255 :: Double -> Int
+ramp255 = clamp 0 255  . ceiling . (*255)
+
 
 
 -- | Generate a time stamp for the output files. Note PostScript
@@ -193,12 +203,6 @@ infixr 6 <:>
 (<:>) :: Applicative f => f a -> f [a] -> f [a]
 (<:>) a b = (:) <$> a <*> b
 
-
--- | A /product/ function. 
--- Apply the function @f@ to the first element of the pair,
--- and apply the function @g@ to the second element.
-pairbimap :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
-pairbimap f g (a,b) = (f a, g b)
 
 
 --------------------------------------------------------------------------------

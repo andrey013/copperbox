@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -95,26 +96,23 @@ para phi b = step
         step (x:xs) = phi x (xs, step xs)
 
 
--- | Trace the supplied point around a circle centered at the 
--- origin, returning @n@ equally spaced points.
---
-circular :: (Floating u , Real u) => Int -> Point2 u -> [Point2 u]
-circular n pt = take n $ iterate (rotate r) pt
-  where
-    n' :: Double
-    n' = fromIntegral n
-    r = toRadian $  2*pi/ n'
+-- | @ circle n r @ 
+-- Trace @n@ equally spaced points around a circle of radius @r@
+-- centered at the origin. The points proceed counter-clockwise 
+-- from the the initial point on the x-axis.
+circular :: (Floating u , Real u) => Int -> u -> [Point2 u]
+circular = circularAbout zeroPt
 
--- | @ circularAbout ogin n pt ...@
--- Trace the supplied point around a circle centered at the 
--- the supplied origin @ogin@, returning @n@ equally spaced 
--- points.
+
+-- | @ circularAbout pt n r ...@
+-- Trace @n@ equally spaced points around a circle of radius @r@
+-- centered at @pt@. The points proceed counter-clockwise 
+-- from the the initial point on the x-axis.
 --
 circularAbout :: (Floating u , Real u) 
-              => Point2 u -> Int -> Point2 u -> [Point2 u]
-circularAbout ogin n pt = take n $ iterate (rotateAbout r ogin) pt
+              => Point2 u -> Int -> u -> [Point2 u]
+circularAbout pt n r = take n $ iterate (rotateAbout ang pt) px
   where
-    n' :: Double
-    n' = fromIntegral n
-    r = toRadian $  2*pi/ n'
+    ang  = let n'::Double = fromIntegral n in toRadian $  2*pi/ n'
+    px   = pt .+^ V2 0 r
 

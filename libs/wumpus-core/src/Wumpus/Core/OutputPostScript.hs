@@ -23,6 +23,7 @@ module Wumpus.Core.OutputPostScript
   ) where
 
 import Wumpus.Core.BoundingBox
+import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
@@ -210,7 +211,7 @@ updateFont (c,fnt) ma = do
     
 
 
-updateColour :: PSColour -> WumpusM () -> WumpusM ()
+updateColour :: PSColour c => c -> WumpusM () -> WumpusM ()
 updateColour c ma = do 
     ps_gsave
     colourCommand c
@@ -226,13 +227,13 @@ fontCommand (FontAttr name _ _ sz) = do
     ps_setfont
 
 
-colourCommand :: PSColour -> WumpusM ()
-colourCommand (PSRgb r g b) = ps_setrgbcolor r g b
-colourCommand (PSHsb h s v) = ps_sethsbcolor h s v
-colourCommand (PSGray a)    = ps_setgray a
+colourCommand :: PSColour c => c -> WumpusM ()
+colourCommand = cmd . psColour
+  where
+    cmd (RGB3 r g b) = ps_setrgbcolor r g b
 
     
-outputPath :: DrawProp -> PSColour -> Path Double -> WumpusM ()
+outputPath :: PSColour c => DrawProp -> c -> Path Double -> WumpusM ()
 outputPath CFill        c p = updateColour c $ do  
     startPath p
     ps_closepath
@@ -264,7 +265,7 @@ clipPath p = do
 
 
 
-updatePen :: PSColour -> [StrokeAttr] -> WumpusM () -> WumpusM ()
+updatePen :: PSColour c => c -> [StrokeAttr] -> WumpusM () -> WumpusM ()
 updatePen c xs ma = do 
     ps_gsave
     colourCommand c
@@ -291,8 +292,9 @@ outputPathSeg (PCurve p1 p2 p3) = ps_curveto x1 y1 x2 y2 x3 y3
 -- | This is not very good as it uses a PostScript's
 -- @scale@ operator - this will vary the line width during the
 -- drawing of a stroked ellipse.
-outputEllipse :: DrawEllipse 
-              -> PSColour 
+outputEllipse :: PSColour c 
+              => DrawEllipse 
+              -> c
               -> Point2 Double 
               -> Double 
               -> Double 
@@ -305,7 +307,8 @@ outputEllipse dp c (P2 x y) hw hh
                      ; ps_grestore
                      }
 
-outputArc ::  DrawEllipse ->PSColour -> Double -> Double -> Double -> WumpusM ()
+outputArc :: PSColour c 
+          => DrawEllipse -> c -> Double -> Double -> Double -> WumpusM ()
 outputArc EFill        c x y r = updateColour c $ do 
     ps_arc x y r 0 360 
     ps_closepath

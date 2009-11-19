@@ -176,9 +176,9 @@ data DrawProp = CFill | CStroke [StrokeAttr] | OStroke [StrokeAttr]
 data DrawEllipse = EFill | EStroke [StrokeAttr]
   deriving (Eq,Show)
 
-type PathProps    = (PSColour, DrawProp)
-type LabelProps   = (PSColour, FontAttr)
-type EllipseProps = (PSColour, DrawEllipse)
+type PathProps    = (PSRgb, DrawProp)
+type LabelProps   = (PSRgb, FontAttr)
+type EllipseProps = (PSRgb, DrawEllipse)
 
 -- | Locale = (current frame x bounding box)
 -- 
@@ -306,7 +306,7 @@ transformPicture :: (Num u, Ord u)
                  -> Picture u 
                  -> Picture u
 transformPicture fp fv = 
-    mapLocale $ pairbimap (transformFrame fp fv) (transformBBox fp)
+    mapLocale $ \(frm,bb) -> (transformFrame fp fv frm, transformBBox fp bb)
 
 
 -- Shouldn't transforming the frame be the inverse transformation?

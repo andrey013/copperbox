@@ -17,14 +17,14 @@ drawBounds p        = p `over` (frame $ cstroke () ph) where
 --------------------------------------------------------------------------------
 
 
-peru :: PSColour
-peru = PSRgb 0.804  0.522  0.247
+peru :: PSRgb
+peru = RGB3 0.804  0.522  0.247
 
-plum :: PSColour
-plum = PSRgb 0.867  0.627  0.867
+plum :: PSRgb
+plum = RGB3 0.867  0.627  0.867
 
-black :: PSColour
-black = PSRgb 0 0 0 
+black :: PSRgb
+black = RGB3 0 0 0 
 
 
 
@@ -76,7 +76,7 @@ bigA = bigLetter black 'A'
 bigB = bigLetter peru  'B'
 bigT = bigLetter plum  'T'
 
-bigLetter :: PSColour -> Char -> Picture Double
+bigLetter :: PSRgb -> Char -> Picture Double
 bigLetter col ch = uniformScale 5 $ frame $ textlabel attrs zeroPt [ch]
   where
     attrs = (col, FontAttr "Helvetica" "Helvetica" SVG_REGULAR 12) 

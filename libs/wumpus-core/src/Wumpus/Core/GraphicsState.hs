@@ -11,7 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Data type modelling the Graphics state
+-- Data types modelling the Graphics state
 --
 --------------------------------------------------------------------------------
 
@@ -31,7 +31,7 @@ module Wumpus.Core.GraphicsState
   , SVGFontStyle(..)
 
   -- ** Colour
-  , PSColour(..)
+  , PSRgb
 
   -- ** Current Translation Matrix
   , CTM(..)
@@ -40,13 +40,13 @@ module Wumpus.Core.GraphicsState
   , ToCTM(..)
 
   -- * Convert to PSColour
-  , ToPSColour(..)
+  , PSColour(..)
 
   ) where
 
 import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
-
+import Wumpus.Core.Utils
 
 -- Graphics state datatypes
 
@@ -83,10 +83,9 @@ data SVGFontStyle = SVG_REGULAR | SVG_BOLD | SVG_ITALIC | SVG_BOLD_ITALIC
                   | SVG_OBLIQUE | SVG_BOLD_OBLIQUE
   deriving (Eq,Show)
 
-data PSColour = PSRgb  Double Double Double
-              | PSHsb  Double Double Double
-              | PSGray Double
-  deriving (Eq,Show)
+type PSRgb = RGB3 Double
+
+
 
 -- | PostScript's current transformation matrix.
 -- 
@@ -160,16 +159,16 @@ toD = realToFrac
 --------------------------------------------------------------------------------
 -- Conversion to PSColour
 
-class ToPSColour a where toPSColour :: a -> PSColour
+class PSColour a where psColour :: a -> RGB3 Double
 
-instance ToPSColour (RGB3 Double) where
-  toPSColour (RGB3 r g b) = PSRgb r g b
+instance PSColour (RGB3 Double) where
+  psColour (RGB3 r g b) = RGB3 (ramp r) (ramp g) (ramp b)
 
-instance ToPSColour (HSB3 Double) where
-  toPSColour (HSB3 r g b) = PSHsb r g b
+instance PSColour (HSB3 Double) where
+  psColour = psColour . hsb2rgb
 
-instance ToPSColour (Gray Double) where
-  toPSColour (Gray a) = PSGray a
+instance PSColour (Gray Double) where
+  psColour = psColour . gray2rgb
 
 
 

@@ -294,7 +294,7 @@ attr_d :: SvgPath -> Attr
 attr_d = unqualAttr "d" . hsep
 
 -- | @ fill=\"rgb(..., ..., ...)\" @
-attr_fill :: PSColour -> Attr
+attr_fill :: PSColour c => c  -> Attr
 attr_fill = unqualAttr "fill" . val_colour
 
 -- | @ fill=\"none\" @
@@ -302,7 +302,7 @@ attr_fill_none :: Attr
 attr_fill_none = unqualAttr "fill" "none"
 
 -- | @ stroke=\"rgb(..., ..., ...)\" @
-attr_stroke :: PSColour -> Attr
+attr_stroke :: PSColour c => c -> Attr
 attr_stroke = unqualAttr "stroke" . val_colour
 
 -- | @ stroke=\"none\" @
@@ -345,7 +345,7 @@ attr_stroke_dasharray_none = unqualAttr "stoke-dasharray" "none"
 -- | @ color=\"rgb(..., ..., ...)\" @
 --
 -- Gray or HSB values will be converted to and rendered as RGB.
-attr_color :: PSColour -> Attr
+attr_color :: PSColour c => c -> Attr
 attr_color = unqualAttr "color" . val_colour
 
 -- | @ clip-path=\"url(#...)\" @
@@ -362,18 +362,17 @@ val_matrix :: Double -> Double -> Double
 val_matrix a b c d e f = "matrix" ++ tupled (map dtrunc [a,b,c,d,e,f])
 
 
+
 -- | @ rgb(..., ..., ...) @
 -- 
 -- HSB and gray scale are translated to RGB values.
-val_colour :: PSColour -> String
-val_colour (PSRgb r g b) = val_rgb $ RGB3 r g b
-val_colour (PSHsb h s b) = val_rgb $ hsb2rgb $ HSB3 h s b
-val_colour (PSGray a)    = val_rgb $ gray2rgb (Gray a)
+val_colour :: PSColour c => c -> String
+val_colour = val_rgb . psColour
 
 
 -- | @ rgb(..., ..., ...) @
 val_rgb :: RGB3 Double -> String
-val_rgb (RGB3 r g b) = "rgb" ++ show (range255 r,range255 g,range255 b)
+val_rgb (RGB3 r g b) = "rgb" ++ show (ramp255 r,ramp255 g,ramp255 b)
 
 
 -- | @ url(#...) @

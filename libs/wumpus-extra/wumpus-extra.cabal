@@ -24,7 +24,7 @@ library
                       wl-pprint, vector-space, 
                       monadLib, xml, dlist,
                       data-aviary == 0.1.0,
-                      wumpus-core >= 0.8.5
+                      wumpus-core >  0.9.0
 
   
   exposed-modules:

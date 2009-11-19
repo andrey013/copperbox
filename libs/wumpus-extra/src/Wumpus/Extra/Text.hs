@@ -134,10 +134,10 @@ textline = colouredTextline black
 
 -- | Coloured version of 'textline'. Same conditions vis bounding
 -- box metrics and start point apply. 
-colouredTextline :: (Fractional u, Ord u, ToPSColour c)
+colouredTextline :: (Fractional u, Ord u, PSColour c)
                  => c -> FontAttr -> Point2 u -> String -> Picture u
 colouredTextline  c attr pt s = 
-    frameWithin (textlabel (toPSColour c,attr) pt' s) bb
+    frameWithin (textlabel (psColour c,attr) pt' s) bb
   where
     sz          = font_size attr
     h           = textHeight sz

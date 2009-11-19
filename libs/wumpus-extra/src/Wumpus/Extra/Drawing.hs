@@ -40,9 +40,9 @@ import Wumpus.Core
 
 -- | Fill the background of a picture (where the backgound area is 
 -- given by the bounding box).
-backgroundFill :: (Num u, Ord u) => ToPSColour c => c -> Picture u -> Picture u
+backgroundFill :: (Num u, Ord u) => PSColour c => c -> Picture u -> Picture u
 backgroundFill c p = p `over` rect where
-    rect = frame $ fill (toPSColour c) $ vertexPath $ corners $ boundary p
+    rect = frame $ fill (psColour c) $ vertexPath $ corners $ boundary p
 
 
 clipPicture :: (Num u, Ord u) => BoundingBox u -> Picture u -> Picture u

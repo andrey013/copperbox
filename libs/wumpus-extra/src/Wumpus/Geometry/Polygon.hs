@@ -81,16 +81,20 @@ square w bl = Polygon $ sequence [id,v1,v2,v3] bl where
 -- centered at the supplied point.
 regularPolygon :: (Floating u, Real u)
                => Int -> u -> Point2 u -> Polygon u
-regularPolygon n r pt = Polygon $ circularAbout pt n (pt .+^ V2 r 0)
+regularPolygon n r pt = Polygon $ circularAbout pt n r
 
 
--- | Create an isosceles rectangle with bottom-left corner at the 
--- origin, the base on the horizontal plane with width @bw@. The 
--- height is @h@.
-isoscelesTriangle :: Fractional u => u -> u -> Polygon u
-isoscelesTriangle bw h = Polygon $ sequence [id,f2,f3] zeroPt where
-  f2 = (.+^ hvec bw)
-  f3 = (.+^ V2 (bw/2) h)
+
+
+-- | @isocelesTriangle bw h pt@
+--
+isoscelesTriangle :: Fractional u => u -> u -> Point2 u -> Polygon u
+isoscelesTriangle bw h pt = Polygon [br,top,bl] where
+  hh  = h/2
+  hw  = bw/2
+  top = pt .+^ vvec hh
+  br  = pt .+^ V2   hw  (-hh)
+  bl  = pt .+^ V2 (-hw) (-hh)
 
 
 --------------------------------------------------------------------------

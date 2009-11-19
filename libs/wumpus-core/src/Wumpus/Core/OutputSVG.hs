@@ -187,13 +187,13 @@ ellipse (c,dp) (P2 x y) w h
 -- OStroke ==> stroke="..."  fill="none"
 --
 
-drawProperties :: PSColour -> DrawProp -> (Attr, Attr, [Attr])
+drawProperties :: PSColour c => c -> DrawProp -> (Attr, Attr, [Attr])
 drawProperties = fn where
   fn c CFill        = (attr_fill c, attr_stroke_none, [])
   fn c (OStroke xs) = (attr_fill_none, attr_stroke c, map strokeAttribute xs)
   fn c (CStroke xs) = (attr_fill_none, attr_stroke c, map strokeAttribute xs)
 
-drawEllipse :: PSColour -> DrawEllipse -> (Attr, Attr, [Attr])
+drawEllipse :: PSColour c => c -> DrawEllipse -> (Attr, Attr, [Attr])
 drawEllipse = fn where
   fn c EFill        = (attr_fill c, attr_stroke_none, [])
   fn c (EStroke xs) = (attr_fill_none, attr_stroke c, map strokeAttribute xs)
