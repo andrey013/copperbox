@@ -17,7 +17,7 @@ main = sequence_ [ test01 ]
 
 test01 :: IO ()
 test01 = do 
-   writeEPS "./out/P55ex1.eps" Nothing example1
+   writeEPS "./out/P55ex1.eps" example1
    writeSVG "./out/P55ex1.svg" example1
 
 coordChange :: (Num u, Ord u) => Picture u -> Picture u

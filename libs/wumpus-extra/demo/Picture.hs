@@ -11,16 +11,17 @@ main :: IO ()
 main = sequence_ [ demo01, demo02 ]
 
 
-colouredSquare :: DRGB -> Double -> Picture Double
+colouredSquare :: (Num u, Ord u) => DRGB -> u -> Picture u
 colouredSquare c sz = 
   frame $ fill c $ extractPath $ square sz zeroPt 
 
 
 demo01 :: IO ()
 demo01 = do 
-    writeEPS "./out/picture01.eps" Nothing pic1 
+    writeEPS "./out/picture01.eps" pic1 
     writeSVG "./out/picture01.svg" pic1 
   where
+    pic1 :: Picture Double
     pic1 = uniformScale 5 $ stackOnto [d1,d2,d3,d4,d5,d6 1.0,d7]
                           $ colouredSquare cornsilk 100
     d1   = dotX         black   $ P2 10 10
@@ -34,8 +35,9 @@ demo01 = do
 
 demo02 :: IO ()
 demo02 = do 
-    writeEPS "./out/picture02.eps" Nothing pic1 
+    writeEPS "./out/picture02.eps" pic1 
     writeSVG "./out/picture02.svg" pic1 
   where
+    pic1 :: Picture Double
     pic1 = uniformScale 5 $ backgroundFill cornflowerBlue 
                           $ blankPicture (BBox zeroPt (P2 100 100))

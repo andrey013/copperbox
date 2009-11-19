@@ -34,7 +34,6 @@ module Wumpus.Geometry.Curve
 import Wumpus.Core
 
 import Wumpus.Geometry.Base
-import Wumpus.Geometry.CoreAdditions    -- TEMPORARY
 
 import Data.AffineSpace
 

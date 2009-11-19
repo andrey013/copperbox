@@ -15,7 +15,7 @@ main = sequence_ [ demo01 ]
 
 demo01 :: IO ()
 demo01 = do 
-    writeEPS "./out/text_pic01.eps" Nothing text_pic01
+    writeEPS "./out/text_pic01.eps" text_pic01
     writeSVG "./out/text_pic01.svg" text_pic01 
 
 

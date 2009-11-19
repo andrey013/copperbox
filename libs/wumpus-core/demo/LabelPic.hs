@@ -36,19 +36,19 @@ lbl1 = line1 -//- line2 where
 
 demo01 :: IO ()
 demo01 = do 
-    writeEPS "./out/label01.eps" (Just ("Times-Roman",10)) lbl1
+    writeEPS "./out/label01.eps" lbl1
     writeSVG "./out/label01.svg" lbl1
 
 demo02 :: IO ()
 demo02 = do 
-    writeEPS "./out/label02.eps" (Just ("Times-Roman",10)) p1
+    writeEPS "./out/label02.eps" p1
     writeSVG "./out/label02.svg" p1
   where
     p1 = lbl1 ->- lbl1 ->- (rotateAbout (pi/4) (center lbl1) lbl1) ->- lbl1
 
 demo03 :: IO ()
 demo03 = do 
-    writeEPS "./out/label03.eps" (Just ("Courier",10)) p1
+    writeEPS "./out/label03.eps" p1
     writeSVG "./out/label03.svg" p1
   where
     p1 = (drawBounds lbl1) ->- 
@@ -60,7 +60,7 @@ demo03 = do
 
 demo04 :: IO ()
 demo04 = do
-    writeEPS "./out/label04.eps" (Just ("Times-Roman",10)) p1
+    writeEPS "./out/label04.eps" p1
     writeSVG "./out/label04.svg" p1
   where
     p1 =        (drawBounds lbl1) 
@@ -84,7 +84,7 @@ bigLetter col ch = uniformScale 5 $ frame $ textlabel attrs zeroPt [ch]
 -- | A should be above B, above T
 demo05 :: IO ()
 demo05 = do 
-    writeEPS "./out/label05.eps" (Just ("Helvetica",12)) p1
+    writeEPS "./out/label05.eps" p1
     writeSVG "./out/label05.svg" p1
   where
     p1 = uniformScale 10 $ stackOntoCenter [bigA, bigB] bigT
@@ -92,7 +92,7 @@ demo05 = do
 
 demo06 :: IO ()
 demo06 = do 
-    writeEPS "./out/label06.eps" (Just ("Helvetica",12)) p1
+    writeEPS "./out/label06.eps" p1
     writeSVG "./out/label06.svg" p1
   where
     p1 = hsep 20 (fn 'a') (map fn "abcdefg")
@@ -101,7 +101,7 @@ demo06 = do
 
 demo07 :: IO ()
 demo07 = do 
-    writeEPS "./out/label07.eps" (Just ("Helvetica",12)) p1
+    writeEPS "./out/label07.eps" p1
     writeSVG "./out/label07.svg" p1
   where
     p1 = pA ->- pB ->- pC ->- pA
@@ -113,7 +113,7 @@ demo07 = do
 
 demo08 :: IO ()
 demo08 = do 
-    writeEPS "./out/label08.eps" (Just ("Helvetica",12)) p1
+    writeEPS "./out/label08.eps" p1
     writeSVG "./out/label08.svg" p1
   where
     p1 = hcat pA [pA, pB, pC]
@@ -124,7 +124,7 @@ demo08 = do
 
 demo09 :: IO ()
 demo09 = do 
-    writeEPS "./out/label09.eps" (Just ("Helvetica",12)) p1
+    writeEPS "./out/label09.eps" p1
     writeSVG "./out/label09.svg" p1
   where
     p1 = (bigA -//- bigB) ->- (bigA -\\- bigB) 

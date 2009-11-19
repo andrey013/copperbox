@@ -14,12 +14,12 @@
 
 module Wumpus.Core.OutputPostScript 
   ( 
-  -- * Font loading information
-    FontSpec
-  
   -- * Output PostScript
-  , writePS
+  -- $fontdoc
+    writePS
   , writeEPS
+
+
   ) where
 
 import Wumpus.Core.BoundingBox
@@ -37,7 +37,7 @@ import Control.Monad ( mapM_, zipWithM_ )
 
 
 
--- | FontSpec = (font-name,font-size)
+-- $fontdoc
 --
 -- The following fonts are expected to exist on most platforms:
 --
@@ -48,7 +48,7 @@ import Control.Monad ( mapM_, zipWithM_ )
 --
 -- See the PostScript Language Reference Manual.
 
-type FontSpec = (String,Int)
+-- type FontSpec = (String,Int)
 
 
 
@@ -62,10 +62,10 @@ type FontSpec = (String,Int)
 -- FontSpec to transmit @findfont@, @scalefont@ etc. commands 
 -- to PostScript.    
 writePS :: (Fractional u, Ord u, PSUnit u) 
-        => FilePath -> Maybe FontSpec -> [Picture u] -> IO ()
-writePS filepath mbFs pic = do 
+        => FilePath ->  [Picture u] -> IO ()
+writePS filepath pic = do 
     timestamp <- mkTimeStamp
-    writeFile filepath $ psDraw timestamp mbFs pic
+    writeFile filepath $ psDraw timestamp pic
 
 -- | Write a picture to an EPS (Encapsulated PostScript) file. 
 -- The .eps file can then be imported or embedded in another 
@@ -75,28 +75,27 @@ writePS filepath mbFs pic = do
 -- FontSpec to transmit @findfont@, @scalefont@ etc. commands 
 -- to PostScript.    
 writeEPS :: (Fractional u, Ord u, PSUnit u)  
-         => FilePath -> Maybe FontSpec -> Picture u -> IO ()
-writeEPS filepath mbFs pic = do
+         => FilePath -> Picture u -> IO ()
+writeEPS filepath pic = do
     timestamp <- mkTimeStamp
-    writeFile filepath $ epsDraw timestamp mbFs pic
+    writeFile filepath $ epsDraw timestamp pic
 
 -- | Draw a picture, generating PostScript output.
 psDraw :: (Fractional u, Ord u, PSUnit u) 
-       => String -> Maybe FontSpec -> [Picture u] -> PostScript
-psDraw timestamp mbFs pics = runWumpus $ do
+       => String ->  [Picture u] -> PostScript
+psDraw timestamp pics = runWumpus $ do
     psHeader 1 timestamp
-    zipWithM_ (psDrawPage mbFs) pages pics
+    zipWithM_ psDrawPage pages pics
     psFooter
   where
     pages = map (\i -> (show i,i)) [1..]
 
 
 psDrawPage :: (Fractional u, Ord u, PSUnit u) 
-           => Maybe FontSpec -> (String,Int) -> Picture u -> WumpusM ()
-psDrawPage mbFs (lbl,ordinal) pic = do
+           => (String,Int) -> Picture u -> WumpusM ()
+psDrawPage (lbl,ordinal) pic = do
     dsc_Page lbl ordinal
     ps_gsave
-    optFontSpec mbFs 
     cmdtrans
     outputPicture pic
     ps_grestore
@@ -111,11 +110,10 @@ psDrawPage mbFs (lbl,ordinal) pic = do
 -- does it will need translating.
 
 epsDraw :: (Fractional u, Ord u, PSUnit u) 
-        => String -> Maybe FontSpec -> Picture u -> PostScript
-epsDraw timestamp mbFs pic = runWumpus $ do 
+        => String -> Picture u -> PostScript
+epsDraw timestamp pic = runWumpus $ do 
     epsHeader bb timestamp      
     ps_gsave
-    optFontSpec mbFs
     cmdtrans
     outputPicture pic
     ps_grestore
@@ -124,12 +122,6 @@ epsDraw timestamp mbFs pic = runWumpus $ do
     (bb,mbv)  = repositionProperties pic
     cmdtrans  = maybe (return ()) (\(V2 x y) -> ps_translate x y) mbv
      
-optFontSpec :: Maybe FontSpec -> WumpusM ()
-optFontSpec Nothing          = return ()
-optFontSpec (Just (name,sz)) = do 
-    ps_findfont name
-    ps_scalefont sz
-    ps_setfont
 
 psHeader :: Int -> String -> WumpusM ()
 psHeader pagecount timestamp = do

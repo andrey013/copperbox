@@ -36,3 +36,4 @@ linesUnconnected _        = []
 
 lineStrip :: [Point2 u] -> Path u
 lineStrip = vertexPath
+

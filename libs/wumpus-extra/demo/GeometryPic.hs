@@ -24,16 +24,18 @@ dummy2 = lineSegmentToLine $ lineSegment (P2 2 2) (P2 10 10)
 
 
 demo01 = do 
-    writeEPS "./out/geometry01.eps" Nothing p1
+    writeEPS "./out/geometry01.eps" p1
     writeSVG "./out/geometry01.svg" p1
   where
+    p1 :: Picture Double
     p1 = frame $ cstroke () $ curvesToPath $ bezierCircle 4 (P2 10 10) 40
 
 
 demo02 = do
-    writeEPS "./out/geometry02.eps" Nothing p1
+    writeEPS "./out/geometry02.eps" p1
     writeSVG "./out/geometry02.svg" p1
   where
+    p1 :: Picture Double
     p1 = (frame $ ellipse () zeroPt 80 40) ->- (frame $ ellipse () zeroPt 10 10)
 
 

@@ -27,7 +27,7 @@ funnyshape = frame $ cstroke () $ vertexPath
 
 demo01 :: IO ()
 demo01 = do 
-  writePS  "./out/picture01.ps" Nothing [funnyshape ->- square]
+  writePS  "./out/picture01.ps"    [funnyshape ->- square]
   writeSVG "./out/picture01.svg" $ funnyshape ->- square
 
 
@@ -39,13 +39,13 @@ squares = square ->- square ->- square
 
 demo02 :: IO ()
 demo02 = do 
-   writePS  "./out/picture02.ps"  Nothing [squares]
+   writePS  "./out/picture02.ps"  [squares]
    writeSVG "./out/picture02.svg" squares 
     
 
 demo03 :: IO ()
 demo03 = do 
-    writeEPS "./out/picture03.eps" Nothing p1 
+    writeEPS "./out/picture03.eps" p1 
     writeSVG "./out/picture03.svg" p1
   where     
     p1 = square ->- (rotate45About (center squares) squares) ->- square
@@ -53,7 +53,7 @@ demo03 = do
 
 demo04 :: IO ()
 demo04 = do 
-    writeEPS "./out/picture04.eps" Nothing p1
+    writeEPS "./out/picture04.eps" p1
     writeSVG "./out/picture04.svg" p1
   where
     p1 = square -//- squares
@@ -61,7 +61,7 @@ demo04 = do
 
 demo05 :: IO ()
 demo05 = do 
-    writeEPS "./out/picture05.eps" Nothing p1
+    writeEPS "./out/picture05.eps" p1
     writeSVG "./out/picture05.svg" p1
   where
     p1 = square `over` (rotate (pi/4) squares)
@@ -69,7 +69,7 @@ demo05 = do
 
 demo06 :: IO ()
 demo06 = do 
-    writeEPS "./out/picture06.eps" Nothing p1
+    writeEPS "./out/picture06.eps" p1
     writeSVG "./out/picture06.svg" p1
   where
     p1 = square `over` (rotate45 square)
@@ -82,7 +82,7 @@ demo06 = do
 
 demo07 :: IO ()
 demo07 = do 
-    writeEPS "./out/picture07.eps" Nothing p1
+    writeEPS "./out/picture07.eps" p1
     writeSVG "./out/picture07.svg" p1
     writeSVG "./out/picture07a.svg" p2
   where
@@ -92,7 +92,7 @@ demo07 = do
 
 demo08 :: IO ()
 demo08 = do 
-    writeEPS "./out/picture08.eps" Nothing p1
+    writeEPS "./out/picture08.eps" p1
     writeSVG "./out/picture08.svg" p1
   where
     p1 = hspace 20 square square
@@ -104,7 +104,7 @@ mkFilledSquare col = frame $ fill col $ vertexPath
 
 demo09 :: IO ()
 demo09 = do 
-    writeEPS "./out/picture09.eps" Nothing p1
+    writeEPS "./out/picture09.eps" p1
     writeSVG "./out/picture09.svg" p1
   where
     p1 = (alignH HTop s1 s2) `op` s3
@@ -116,7 +116,7 @@ demo09 = do
 
 demo10 :: IO ()
 demo10 = do 
-    writeEPS "./out/picture10.eps" Nothing p1
+    writeEPS "./out/picture10.eps" p1
     writeSVG "./out/picture10.svg" p1
   where
     p1 = vsepA VRight 5 s1 [s2,s3]
