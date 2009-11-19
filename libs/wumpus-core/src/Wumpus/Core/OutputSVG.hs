@@ -172,8 +172,8 @@ ellipse (c,dp) (P2 x y) w h
     | w == h    = element_circle  # add_attrs (circle_attrs  ++ style_attrs)
     | otherwise = element_ellipse # add_attrs (ellipse_attrs ++ style_attrs)
   where
-    circle_attrs  = [attr_x x, attr_y y, attr_rx w]
-    ellipse_attrs = [attr_x x, attr_y y, attr_rx w, attr_ry h]
+    circle_attrs  = [attr_cx x, attr_cy y, attr_r w]
+    ellipse_attrs = [attr_cx x, attr_cy y, attr_rx w, attr_ry h]
     style_attrs   = fill_a : stroke_a : opts
                     where (fill_a,stroke_a,opts) = drawEllipse c dp
 

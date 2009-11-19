@@ -6,7 +6,6 @@ import Wumpus.Core
 import Wumpus.Extra
 import Wumpus.Extra.SVGColours
 
--- import Text.PrettyPrint.Leijen hiding ( empty )
 
 
 main :: IO ()

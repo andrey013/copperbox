@@ -23,10 +23,13 @@ demo01 = do
   where
     pic1 = uniformScale 5 $ d1 `over` d2
                                `over` d3 
+                               `over` d4
                                `over` colouredSquare cadetBlue 50
-    d1   = dotX black    $ P2 10 10
-    d2   = dotPlus black $ P2 20 20
-    d3   = dotDiamond black $ P2 40 20 
+    d1   = dotX         black   $ P2 10 10
+    d2   = dotPlus      black   $ P2 20 20
+    d3   = dotDiamond   black   $ P2 40 20 
+    d4   = dotDisk      black   $ P2 20 30
+
 
 demo02 :: IO ()
 demo02 = do 

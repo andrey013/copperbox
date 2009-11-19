@@ -53,8 +53,11 @@ module Wumpus.Core.SVG
   , element_ellipse
   , attr_x
   , attr_y
+  , attr_r
   , attr_rx
   , attr_ry
+  , attr_cx
+  , attr_cy
   , element_path
   , element_clippath
   , element_text
@@ -217,22 +220,37 @@ element_ellipse = unode "ellipse" ()
 
 
 
--- | @ rx=\"...\" @
+-- | @ x=\"...\" @
 attr_x :: Double -> Attr
-attr_x      = unqualAttr "x" . dtrunc
+attr_x = unqualAttr "x" . dtrunc
 
--- | @ ry=\"...\" @
+-- | @ y=\"...\" @
 attr_y :: Double -> Attr
-attr_y      = unqualAttr "y" . dtrunc
+attr_y = unqualAttr "y" . dtrunc
+
+-- | @ r=\"...\" @
+attr_r :: Double -> Attr
+attr_r = unqualAttr "r" . dtrunc
 
 
 -- | @ rx=\"...\" @
 attr_rx :: Double -> Attr
-attr_rx      = unqualAttr "rx" . dtrunc
+attr_rx = unqualAttr "rx" . dtrunc
 
 -- | @ ry=\"...\" @
 attr_ry :: Double -> Attr
-attr_ry      = unqualAttr "ry" . dtrunc
+attr_ry = unqualAttr "ry" . dtrunc
+
+-- | @ cx=\"...\" @
+attr_cx :: Double -> Attr
+attr_cx = unqualAttr "cx" . dtrunc
+
+-- | @ cy=\"...\" @
+attr_cy :: Double -> Attr
+attr_cy = unqualAttr "cy" . dtrunc
+
+
+
 
 -- |
 -- > <path d="..." />

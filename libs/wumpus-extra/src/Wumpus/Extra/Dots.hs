@@ -20,7 +20,7 @@ module Wumpus.Extra.Dots
     dotX
   , dotPlus
   , dotDiamond
-
+  , dotDisk
 
   ) where
 
@@ -31,8 +31,9 @@ import Wumpus.Geometry
 
 -- NOTES
 -- dotX -- colour, linewidth, ...
--- makes sense to supply the origin, then we aren't having to 
--- do extra affine transformations (gsave, concat, ..., grestore).
+-- It makes sense to supply the point that represents the center, 
+-- then we aren't having to do extra affine transformations 
+-- transmitted to PostScript as (gsave, concat, ..., grestore).
 --
 -- Also affine transforming Points, LineSegments etc. before
 -- they become pictures is _GOOD_! The calculations are done in 
@@ -61,3 +62,6 @@ dotPlus t pt = frameMulti $ map mkStroke [ls1, ls2]
 
 dotDiamond :: (Floating u, Real u, Fill t) => t -> Point2 u -> Picture u
 dotDiamond t pt = frame $ fillPolygon t $ regularPolygon 4 2 pt
+
+dotDisk :: (Ord u, Fractional u, Ellipse t) => t -> Point2 u -> Picture u
+dotDisk t pt = frame $ ellipse t pt 2 2
