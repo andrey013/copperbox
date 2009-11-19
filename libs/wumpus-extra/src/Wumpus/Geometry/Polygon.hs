@@ -64,21 +64,24 @@ instance (Num u, Ord u) => Boundary (Polygon u) where
 
 --------------------------------------------------------------------------------
 
-square :: Num u =>  u -> Point2 u -> Polygon u
-square side_length bl = Polygon $ xs where
-  xs = sequence [id,f1,f2,f3] bl
-  f1 = (.+^ hvec side_length)
-  f2 = (.+^ (V2 side_length side_length))
-  f3 = (.+^ vvec side_length)
+
+-- | Create a square of side length @n@ with bottom-left corner 
+-- located at the supplied point.
+--
+square :: Num u => u -> Point2 u -> Polygon u
+square w bl = Polygon $ sequence [id,v1,v2,v3] bl where
+    v1 = (.+^ hvec w)
+    v2 = (.+^ V2 w w)
+    v3 = (.+^ vvec w)
 
 
 
 
 -- | Create a regular polygon with @n@ sides and /radius/ @r@ 
--- centered at the origin.
+-- centered at the supplied point.
 regularPolygon :: (Floating u, Real u)
-               => Int -> u -> Polygon u
-regularPolygon n r = Polygon $ circular $ replicate n (zeroPt .+^ (V2 0 r)) 
+               => Int -> u -> Point2 u -> Polygon u
+regularPolygon n r pt = Polygon $ circularAbout pt n (pt .+^ V2 r 0)
 
 
 -- | Create an isosceles rectangle with bottom-left corner at the 

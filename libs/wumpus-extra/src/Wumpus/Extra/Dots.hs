@@ -19,6 +19,9 @@ module Wumpus.Extra.Dots
   -- * Dots
     dotX
   , dotPlus
+  , dotDiamond
+
+
   ) where
 
 
@@ -55,3 +58,6 @@ dotPlus t pt = frameMulti $ map mkStroke [ls1, ls2]
     ls1   = vlineSegmentBisect 2 pt
     ls2   = hlineSegmentBisect 2 pt
 
+
+dotDiamond :: (Floating u, Real u, Fill t) => t -> Point2 u -> Picture u
+dotDiamond t pt = frame $ fillPolygon t $ regularPolygon 4 2 pt

@@ -23,7 +23,7 @@ module Wumpus.Extra.Text
   , courier48_width
   , courier48_body_height
   , courier48_height
-  , courier48_descender_height
+  , courier48_descender_depth
   , courier48_spacer_width
 
   , widthAt48pt
@@ -50,6 +50,7 @@ type FontSize = Int
 courier48_width :: Num u => u
 courier48_width = 26
 
+
 -- | The height of a letter without accents, ascenders or 
 -- descenders in Courier at 48 pt .
 --
@@ -58,6 +59,7 @@ courier48_width = 26
 -- then capitals).
 courier48_body_height :: Num u => u 
 courier48_body_height = 30
+
 
 -- | The /common maximum/ height of a letter in Courier at 48pt.
 --
@@ -69,11 +71,14 @@ courier48_body_height = 30
 courier48_height :: Num u => u
 courier48_height = 48
 
--- | The height of a descender in Courier at 48 pt.
+
+-- | The depth of a descender in Courier at 48 pt.
 -- 
 -- Also the height of an ascender.
-courier48_descender_height :: Num u => u 
-courier48_descender_height = 9
+courier48_descender_depth :: Num u => u 
+courier48_descender_depth = 9
+
+
 
 -- | The spacing between letters printed directly with 
 -- PostScript\'s show command for Courier at 48 pt.
@@ -102,12 +107,12 @@ textWidth sz s = (fromIntegral sz)/48 * widthAt48pt s
 textHeight :: Num u =>  FontSize -> u
 textHeight = fromIntegral
 
--- | Descender height for font size @sz@.
+-- | Descender depth for font size @sz@.
 -- 
 -- (The metrics are taken from Courier, of course).
 --
-descenderHeight :: Fractional u => FontSize -> u
-descenderHeight sz =  (fromIntegral sz) / 48 * courier48_descender_height
+descenderDepth :: Fractional u => FontSize -> u
+descenderDepth sz =  (fromIntegral sz) / 48 * courier48_descender_depth
 
 
 -- | Draw a line of text at the given point. The bounding box is
@@ -125,6 +130,8 @@ textline :: (Fractional u, Ord u)
          => FontAttr -> Point2 u -> String -> Picture u
 textline = colouredTextline black
 
+
+
 -- | Coloured version of 'textline'. Same conditions vis bounding
 -- box metrics and start point apply. 
 colouredTextline :: (Fractional u, Ord u, ToPSColour c)
@@ -136,5 +143,5 @@ colouredTextline  c attr pt s =
     h           = textHeight sz
     w           = textWidth  sz s          
     bb          = bbox pt (pt .+^ (V2 w h))
-    pt'         = pt .+^ V2 0 (descenderHeight sz)
+    pt'         = pt .+^ V2 0 (descenderDepth sz)
 

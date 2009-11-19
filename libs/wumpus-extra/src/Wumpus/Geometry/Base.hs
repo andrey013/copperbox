@@ -31,7 +31,7 @@ module Wumpus.Geometry.Base
   , midpointBetween
   , para
   , circular
-
+  , circularAbout
 
   ) where
 
@@ -40,7 +40,6 @@ import Wumpus.Core
 import Data.AffineSpace
 import Data.VectorSpace
 
-import Data.List ( mapAccumR )
 
 
 --------------------------------------------------------------------------------
@@ -96,16 +95,26 @@ para phi b = step
         step (x:xs) = phi x (xs, step xs)
 
 
-
--- | Rotate the list through a cirle...
--- This function is used, but is it useful? 
--- Less gnomically - maybe it should be a generator (@ t -> [t] @) 
--- from some initial value (i.e. a point) rather than a 
--- transformer (@ [t] -> [t] @).
-circular :: (Floating a, Real a, MatrixMult Matrix3'3 t, MatrixParam t ~ a, Rotate t) 
-         => [t] -> [t]
-circular xs = snd $ mapAccumR fn 0 xs 
+-- | Trace the supplied point around a circle centered at the 
+-- origin, returning @n@ equally spaced points.
+--
+circular :: (Floating u , Real u) => Int -> Point2 u -> [Point2 u]
+circular n pt = take n $ iterate (rotate r) pt
   where
-    fn ang a = (ang+1, rotate (2*ang*pi/len) a)
-    len      = fromIntegral $ length xs
+    n' :: Double
+    n' = fromIntegral n
+    r = toRadian $  2*pi/ n'
+
+-- | @ circularAbout ogin n pt ...@
+-- Trace the supplied point around a circle centered at the 
+-- the supplied origin @ogin@, returning @n@ equally spaced 
+-- points.
+--
+circularAbout :: (Floating u , Real u) 
+              => Point2 u -> Int -> Point2 u -> [Point2 u]
+circularAbout ogin n pt = take n $ iterate (rotateAbout r ogin) pt
+  where
+    n' :: Double
+    n' = fromIntegral n
+    r = toRadian $  2*pi/ n'
 
