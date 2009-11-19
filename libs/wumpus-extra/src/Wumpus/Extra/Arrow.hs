@@ -15,7 +15,7 @@
 module Wumpus.Extra.Arrow where
 
 import Wumpus.Core
-import Wumpus.Core.PictureInternal -- TODO
+
 
 import Data.AffineSpace
 import Data.Aviary
@@ -37,7 +37,7 @@ arrowline :: (Floating u, Real u)
           -> Point2 u 
           -> Arrow u
 arrowline mk p p' = Arrow (map zostroke $ path1:tip) where
-  path1 = Path p [PLine p']
+  path1 = vertexPath [p,p']
   theta = langle p p'
   tip   = mk theta p'
 
@@ -51,7 +51,7 @@ arrowheadVee d ang =
   \theta endpt -> let p0   = endpt .+^ (hvec (-d))
                       p01  = rotateAbout (pi-ang) endpt p0
                       p02  = rotateAbout (pi+ang) endpt p0
-                      px   = Path p01 (map PLine [endpt,p02])
+                      px   = vertexPath [p01,endpt,p02]
                   in pointwise (rotateAbout (theta - pi) endpt) px
 
 arrowPerp :: (Floating u, Real u) => Point2 u -> Point2 u -> Arrow u
@@ -62,7 +62,7 @@ arrowheadPerp :: (Floating u, Real u) => u -> (Radian -> Point2 u -> Path u)
 arrowheadPerp d = 
   \theta endpt -> let p0   = endpt .+^ (hvec (-d))
                       p1   = endpt .+^ (hvec d)
-                      px = Path p0 [PLine p1]
+                      px   = vertexPath [p0,p1]
                   in pointwise (rotateAbout (theta+pi/2) endpt) px
 
 arrowTri :: (Floating u, Real u) => Point2 u -> Point2 u -> Arrow u

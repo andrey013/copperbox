@@ -22,7 +22,6 @@ module Wumpus.Geometry
   , module Wumpus.Geometry.LineEquation
   , module Wumpus.Geometry.LineSegment
   , module Wumpus.Geometry.Polygon
-
   , lineSegmentToLine
   ) where
 
@@ -33,7 +32,7 @@ import Wumpus.Geometry.LineSegment
 import Wumpus.Geometry.Polygon
 
 
-
+-- Avoid circular deps...
 
 lineSegmentToLine :: Num u => LineSegment u -> Line u
 lineSegmentToLine (LS2 p0 p1) = line p0 p1

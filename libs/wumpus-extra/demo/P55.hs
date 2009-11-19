@@ -24,7 +24,9 @@ coordChange :: (Num u, Ord u) => Picture u -> Picture u
 coordChange = scale 1 (-1)
 
 rect100 :: Picture Double
-rect100 = frame $ fillPolygon (PSGray 0.75) $ square 100 zeroPt
+rect100 = frame $ fillPolygon light_gray $ square 100 zeroPt
+  where
+    light_gray = psColour $ Gray (0.75::Double)
 
 example1 :: Picture Double
 example1 = coordChange $ ls `stackOnto` rect100 where

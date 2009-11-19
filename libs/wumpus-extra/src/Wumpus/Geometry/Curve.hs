@@ -32,9 +32,9 @@ module Wumpus.Geometry.Curve
   ) where
 
 import Wumpus.Core
-import Wumpus.Core.PictureInternal  -- TODO
 
 import Wumpus.Geometry.Base
+import Wumpus.Geometry.CoreAdditions    -- TEMPORARY
 
 import Data.AffineSpace
 
@@ -100,12 +100,12 @@ bezierCircle n pt r = para phi [] $ subdivisions (n*4) (2*pi) where
 -- operations
 
 curveToPath :: CubicBezier u -> Path u
-curveToPath (CubicBezier p0 p1 p2 p3) = Path p0 [PCurve p1 p2 p3]
+curveToPath (CubicBezier p0 p1 p2 p3) = path p0 [curveTo p1 p2 p3]
 
 
 
 curvesToPath :: [CubicBezier u] -> Path u
 curvesToPath []                     = error $ "curvesToPath - empty list"
 curvesToPath (CubicBezier p0 p1 p2 p3:cs) = 
-   Path p0 (PCurve p1 p2 p3 : map fn cs) where 
-      fn (CubicBezier _ u v w) = PCurve u v w
+   path p0 (curveTo p1 p2 p3 : map fn cs) where 
+      fn (CubicBezier _ u v w) = curveTo u v w

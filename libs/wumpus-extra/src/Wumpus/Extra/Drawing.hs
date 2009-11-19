@@ -17,8 +17,6 @@
 module Wumpus.Extra.Drawing 
   ( 
 
-  -- * Pending addition to Wumpus.Core
-
   -- * Picture transformers
     backgroundFill
   , clipPicture
@@ -30,9 +28,7 @@ module Wumpus.Extra.Drawing
 
 import Wumpus.Core
 
---------------------------------------------------------------------------------
 
--- Pending addition to wumpus-core
 
 --------------------------------------------------------------------------------
 

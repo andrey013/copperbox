@@ -21,14 +21,15 @@ demo01 = do
     writeEPS "./out/picture01.eps" Nothing pic1 
     writeSVG "./out/picture01.svg" pic1 
   where
-    pic1 = uniformScale 5 $ d1 `over` d2
-                               `over` d3 
-                               `over` d4
-                               `over` colouredSquare cadetBlue 50
+    pic1 = uniformScale 5 $ stackOnto [d1,d2,d3,d4,d5,d6 1.0,d7]
+                          $ colouredSquare cornsilk 100
     d1   = dotX         black   $ P2 10 10
     d2   = dotPlus      black   $ P2 20 20
     d3   = dotDiamond   black   $ P2 40 20 
     d4   = dotDisk      black   $ P2 20 30
+    d5   = dotSquare    black   $ P2 30 20
+    d6   = squareDot    black   $ P2 30 30 
+    d7   = dotCross     black   $ P2 40 30
 
 
 demo02 :: IO ()
