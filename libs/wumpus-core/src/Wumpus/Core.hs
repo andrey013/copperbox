@@ -27,6 +27,7 @@ module Wumpus.Core
   , module Wumpus.Core.OutputSVG
   , module Wumpus.Core.Picture
   , module Wumpus.Core.PictureLanguage
+  , module Wumpus.Core.TextEncoding
 
   -- Export from Picture Internal
   , Picture
@@ -59,3 +60,5 @@ import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PictureLanguage
+import Wumpus.Core.TextEncoding
+

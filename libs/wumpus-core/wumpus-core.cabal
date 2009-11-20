@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.10.6
+version:          0.10.7
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -40,6 +40,8 @@ library
     Wumpus.Core.PictureLanguage,
     Wumpus.Core.PostScript,
     Wumpus.Core.SVG,
+    Wumpus.Core.TextEncoding,
+    Wumpus.Core.TextLatin1,
     Wumpus.Core.Utils
   other-modules:
     
