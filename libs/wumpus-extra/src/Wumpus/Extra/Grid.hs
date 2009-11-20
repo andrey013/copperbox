@@ -108,14 +108,14 @@ node name = do
 
     
 
-nodePicture :: (Num u, Ord u)
+nodePicture :: (Fractional u, Ord u)
             => u -> u -> Int -> [GridElement] -> Picture u -> Picture u
 nodePicture sx sy h xs p = foldr fn p xs where
   fn (Node s pt) pic = pic `over` (mkLabel s `at` (remapCoord sx sy h pt))
   fn _           pic = pic
 
 
-mkLabel :: (Num u, Ord u) => String -> Picture u
+mkLabel :: (Fractional u, Ord u) => String -> Picture u
 mkLabel s = frame $ ztextlabel zeroPt s 
 
 

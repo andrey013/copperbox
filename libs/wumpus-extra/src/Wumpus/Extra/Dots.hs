@@ -63,7 +63,7 @@ import Data.AffineSpace
 --
 
 
-dotX :: (Ord u, Floating u, Real u, Stroke t) 
+dotX :: (Ord u, Floating u, Real u, Fractional u, Stroke t) 
      => t -> Point2 u -> Picture u
 dotX t pt = frameMulti $ map mkStroke [ls1, ls2]
   where
@@ -72,7 +72,7 @@ dotX t pt = frameMulti $ map mkStroke [ls1, ls2]
     ls2      = reflectYPlane pt ls1  -- wrong
 
 
-dotPlus :: (Ord u, Floating u, Real u, Stroke t) 
+dotPlus :: (Ord u, Floating u, Real u, Fractional u, Stroke t) 
         => t -> Point2 u -> Picture u
 dotPlus t pt = frameMulti $ map mkStroke [ls1, ls2]
   where
@@ -80,19 +80,21 @@ dotPlus t pt = frameMulti $ map mkStroke [ls1, ls2]
     ls1   = vlineSegmentBisect 2 pt
     ls2   = hlineSegmentBisect 2 pt
 
-dotCross :: (Ord u, Floating u, Real u, Stroke t) 
+dotCross :: (Ord u, Floating u, Real u, Fractional u, Stroke t) 
          => t -> Point2 u -> Picture u
 dotCross t pt = rotate45About pt $ dotPlus t pt
 
 
-dotDiamond :: (Floating u, Real u, Fill t) => t -> Point2 u -> Picture u
+dotDiamond :: (Floating u, Real u, Fractional u, Fill t) 
+           => t -> Point2 u -> Picture u
 dotDiamond t pt = frame $ fillPolygon t $ regularPolygon 4 2 pt
 
-dotDisk :: (Ord u, Fractional u, Ellipse t) => t -> Point2 u -> Picture u
+dotDisk :: (Fractional u, Ord u, Ellipse t) => t -> Point2 u -> Picture u
 dotDisk t pt = frame $ ellipse t pt 2 2
 
 
-dotSquare :: (Num u, Ord u, Fill t) => t -> Point2 u -> Picture u
+dotSquare :: (Fractional u, Ord u, Fill t) 
+          => t -> Point2 u -> Picture u
 dotSquare t p = frame $ fillPolygon t $ square 4 (p .-^ (V2 2 2))
 
 --------------------------------------------------------------------------------
@@ -106,7 +108,7 @@ type LineWidth u = u
 type Dot u = LineWidth u -> Picture u
 
 
-squareDot :: (Num u, Ord u, Stroke t) => t -> Point2 u -> Dot u
+squareDot :: (Num u, Ord u, Fractional u, Stroke t) => t -> Point2 u -> Dot u
 squareDot t p = frame . strokePolygon t . mkSquare where
   mkSquare lw = square (4*lw) (p .-^ (V2 (2*lw) (2*lw)))
 

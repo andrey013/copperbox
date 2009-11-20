@@ -97,7 +97,7 @@ blankPicture bb = PicBlank (stdFrame, bb)
 
 
 -- | Lift a Primitive to a Picture, located in the standard frame.
-frame :: (Num u, Ord u) => Primitive u -> Picture u
+frame :: (Fractional u, Ord u) => Primitive u -> Picture u
 frame p = Single (stdFrame, boundary p) p 
 
 -- | Frame a picture within the supplied bounding box
@@ -114,7 +114,7 @@ frame p = Single (stdFrame, boundary p) p
 -- ellipse. Thus the bounding box will never reframed to a 
 -- smaller size than the /natural/ bounding box.
 --
-frameWithin :: (Num u, Ord u) => Primitive u -> BoundingBox u -> Picture u
+frameWithin :: (Fractional u, Ord u) => Primitive u -> BoundingBox u -> Picture u
 frameWithin p@(PLabel _ _) bb = Single (stdFrame,bb) p
 frameWithin p              bb = Single (stdFrame,bb `append` boundary p) p
 
@@ -125,14 +125,14 @@ frameWithin p              bb = Single (stdFrame,bb `append` boundary p) p
 -- Primitives will be located within the standard frame.
 -- The list of Primitives must be non-empty.
 --
-frameMulti :: (Num u, Ord u) => [Primitive u] -> Picture u
+frameMulti :: (Fractional u, Ord u) => [Primitive u] -> Picture u
 frameMulti [] = error "Wumpus.Core.Picture.frameMulti - empty list"
 frameMulti xs = multi $ map frame xs
 
 
 -- | Place multiple pictures within the same affine frame
 -- This function throws an error when supplied the empty list.
-multi :: (Num u, Ord u) => [Picture u] -> Picture u
+multi :: (Fractional u, Ord u) => [Picture u] -> Picture u
 multi ps = Picture (stdFrame, sconcat $ map boundary ps) ones
   where 
     sconcat []      = error err_msg
@@ -336,7 +336,7 @@ ztextlabel = mkTextLabel psBlack default_font
 
 -- (The implementation of this function needs attention).
 --
-multilabel :: (Num u, Ord u) 
+multilabel :: (Fractional u, Ord u) 
            => [Label u] -> LabelProps -> BoundingBox u -> Picture u
 multilabel ps props bb = 
     Picture (stdFrame, bb) $ fromListErr err_msg 

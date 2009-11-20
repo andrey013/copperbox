@@ -9,7 +9,7 @@ import Wumpus.Core
 
 
 
-drawBounds :: (Num u, Ord u) => Picture u -> Picture u
+drawBounds :: (Fractional u, Ord u) => Picture u -> Picture u
 drawBounds p        = p `over` (frame $ cstroke () ph) where
     ph   = vertexPath $ corners $ boundary p
 

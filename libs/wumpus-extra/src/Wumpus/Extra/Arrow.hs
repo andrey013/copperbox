@@ -24,7 +24,7 @@ newtype Arrow u = Arrow { arrowPaths :: [Primitive u] }
 
 type DArrow = Arrow Double
 
-picArrow :: (Num u, Ord u) => Arrow u -> Picture u
+picArrow :: (Fractional u, Ord u) => Arrow u -> Picture u
 picArrow (Arrow xs) = multi $ map frame xs
 
 arrow :: (Floating u, Real u) => Point2 u -> Point2 u -> Arrow u

@@ -49,6 +49,7 @@ module Wumpus.Core.PictureInternal
 
 import Wumpus.Core.AffineTrans
 import Wumpus.Core.BoundingBox
+import Wumpus.Core.FontSize
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureLanguage hiding ( hcat, vcat, hsep, vsep )
@@ -387,11 +388,9 @@ instance (Num u, Ord u) => Boundary (Path u) where
 -- Descenders will be transgress the boundary and width will be 
 -- very long.
 
-instance (Num u, Ord u) => Boundary (Primitive u) where
+instance (Fractional u, Ord u) => Boundary (Primitive u) where
   boundary (PPath _ p)                  = boundary p
-  boundary (PLabel (_,a) (Label pt xs)) = BBox pt (pt .+^ (V2 w h))
-    where w = fromIntegral $ length xs * font_size a
-          h = fromIntegral $ font_size a
+  boundary (PLabel (_,a) (Label pt xs)) = textBounds (font_size a) pt xs
   boundary (PEllipse _ c hw hh)         = BBox (c .-^ v) (c .+^ v) 
     where v = V2 hw hh
 
