@@ -19,6 +19,7 @@ module Wumpus.Extra.Drawing
 
   -- * Picture transformers
     backgroundFill
+  , background
   , clipPicture
   , clipToBoundary
 
@@ -36,13 +37,20 @@ import Wumpus.Core
 
 -- | Fill the background of a picture (where the backgound area is 
 -- given by the bounding box).
-backgroundFill :: (Num u, Ord u) => PSColour c => c -> Picture u -> Picture u
+backgroundFill :: (Num u, Ord u, PSColour c) => c -> Picture u -> Picture u
 backgroundFill c p = p `over` rect where
     rect = frame $ fill (psColour c) $ vertexPath $ corners $ boundary p
+
+-- | Coloured but otherwise blank picture, bottom left at the 
+-- origin.
+background :: (Num u, Ord u, PSColour c) => c -> u -> u -> Picture u
+background c w h = 
+  frame $ fill (psColour c) $ vertexPath $ corners $ bbox zeroPt (P2 w h)
 
 
 clipPicture :: (Num u, Ord u) => BoundingBox u -> Picture u -> Picture u
 clipPicture bb p = clip (vertexPath $ corners bb) p
+
 
 clipToBoundary :: (Num u, Ord u) => Picture u -> Picture u
 clipToBoundary p = clip (vertexPath $ corners $ boundary p) p
