@@ -37,19 +37,19 @@ lbl1 = line1 -//- line2 where
 demo01 :: IO ()
 demo01 = do 
     writeEPS_latin1 "./out/label01.eps" lbl1
-    writeSVG "./out/label01.svg" lbl1
+    writeSVG_latin1 "./out/label01.svg" lbl1
 
 demo02 :: IO ()
 demo02 = do 
     writeEPS_latin1 "./out/label02.eps" p1
-    writeSVG "./out/label02.svg" p1
+    writeSVG_latin1 "./out/label02.svg" p1
   where
     p1 = lbl1 ->- lbl1 ->- (rotateAbout (pi/4) (center lbl1) lbl1) ->- lbl1
 
 demo03 :: IO ()
 demo03 = do 
     writeEPS_latin1 "./out/label03.eps" p1
-    writeSVG "./out/label03.svg" p1
+    writeSVG_latin1 "./out/label03.svg" p1
   where
     p1 = (drawBounds lbl1) ->- 
          (drawBounds lbl1) ->- 
@@ -61,7 +61,7 @@ demo03 = do
 demo04 :: IO ()
 demo04 = do
     writeEPS_latin1 "./out/label04.eps" p1
-    writeSVG "./out/label04.svg" p1
+    writeSVG_latin1 "./out/label04.svg" p1
   where
     p1 =        (drawBounds lbl1) 
          `over` (drawBounds $ scale 2 2 lbl1)
@@ -85,7 +85,7 @@ bigLetter col ch = uniformScale 5 $ frame $ textlabel attrs zeroPt [ch]
 demo05 :: IO ()
 demo05 = do 
     writeEPS_latin1 "./out/label05.eps" p1
-    writeSVG "./out/label05.svg" p1
+    writeSVG_latin1 "./out/label05.svg" p1
   where
     p1 = uniformScale 10 $ stackOntoCenter [bigA, bigB] bigT
 
@@ -93,7 +93,7 @@ demo05 = do
 demo06 :: IO ()
 demo06 = do 
     writeEPS_latin1 "./out/label06.eps" p1
-    writeSVG "./out/label06.svg" p1
+    writeSVG_latin1 "./out/label06.svg" p1
   where
     p1 = hsep 20 (fn 'a') (map fn "abcdefg")
     fn = drawBounds . bigLetter peru
@@ -102,7 +102,7 @@ demo06 = do
 demo07 :: IO ()
 demo07 = do 
     writeEPS_latin1 "./out/label07.eps" p1
-    writeSVG "./out/label07.svg" p1
+    writeSVG_latin1 "./out/label07.svg" p1
   where
     p1 = pA ->- pB ->- pC ->- pA
     
@@ -114,7 +114,7 @@ demo07 = do
 demo08 :: IO ()
 demo08 = do 
     writeEPS_latin1 "./out/label08.eps" p1
-    writeSVG "./out/label08.svg" p1
+    writeSVG_latin1 "./out/label08.svg" p1
   where
     p1 = hcat pA [pA, pB, pC]
     
@@ -125,14 +125,21 @@ demo08 = do
 demo09 :: IO ()
 demo09 = do 
     writeEPS_latin1 "./out/label09.eps" p1
-    writeSVG "./out/label09.svg" p1
+    writeSVG_latin1 "./out/label09.svg" p1
   where
     p1 = (bigA -//- bigB) ->- (bigA -\\- bigB) 
     
+demo10 :: IO ()
+demo10 = do 
+    writeEPS_latin1 "./out/label10.eps" p1
+    writeSVG_latin1 "./out/label10.svg" p1
+  where
+    p1 :: Picture Double
+    p1 = frame $ textlabel () zeroPt "myst&#egrave;re"
 
 
 main :: IO ()
 main = sequence_
   [ demo01, demo02, demo03, demo04, demo05
-  , demo06, demo07, demo08, demo09
+  , demo06, demo07, demo08, demo09, demo10
   ]  

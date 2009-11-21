@@ -34,6 +34,8 @@ module Wumpus.Core.OutputSVG
   
   -- * Output SVG
     writeSVG
+
+  , writeSVG_latin1
   
   ) where
 
@@ -43,9 +45,12 @@ import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.SVG
 import Wumpus.Core.TextEncoding
+import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
-import Data.Aviary ( (#), bigphi )
+import Data.Aviary ( (#) )
+
+import MonadLib hiding ( Label )
 
 import Text.XML.Light
 
@@ -60,20 +65,28 @@ coordChange = scale 1 (-1)
 
 --------------------------------------------------------------------------------
 
-writeSVG :: (Ord u, PSUnit u) => FilePath -> Picture u -> IO ()
-writeSVG filepath pic = 
-    writeFile filepath $ unlines $ map ppContent $ svgDraw pic 
+writeSVG :: (Ord u, PSUnit u) => FilePath -> TextEncoder -> Picture u -> IO ()
+writeSVG filepath enc pic = 
+    writeFile filepath $ unlines $ map ppContent $ svgDraw enc pic 
+
+writeSVG_latin1 :: (Ord u, PSUnit u) => FilePath -> Picture u -> IO ()
+writeSVG_latin1 filepath = writeSVG filepath latin1Encoder 
 
 
-svgDraw :: (Ord u, PSUnit u) => Picture u -> [Content]
-svgDraw = prefixXmlDecls . bigphi topLevelPic mkVec mkPic . coordChange 
+
+svgDraw :: (Ord u, PSUnit u) => TextEncoder -> Picture u -> [Content]
+svgDraw enc pic = runSVG enc $ 
+    picture False pic' >>= return . topLevelPic mbvec >>= prefixXmlDecls
   where
-    mkPic = runSVG . picture False
-    mkVec = snd . repositionProperties
+    pic'      = coordChange pic
+    (_,mbvec) = repositionProperties pic'
 
 
-prefixXmlDecls :: Element -> [Content]
-prefixXmlDecls e = [Text xmlVersion, Text svgDocType, Elem e]    
+prefixXmlDecls :: Element -> SvgM [Content]
+prefixXmlDecls e = do 
+    enc <- asks svg_encoding_name
+    let xmlv = xmlVersion enc
+    return $ [Text xmlv, Text svgDocType, Elem e]    
 
 topLevelPic :: PSUnit u => Maybe (Vec2 u) -> Element -> Element
 topLevelPic Nothing         p = svgElement [p]
@@ -117,19 +130,20 @@ clipPath p = do
 
 
 
-clipAttrib :: Clipped -> Element -> SvgM Element
-clipAttrib False elt = return elt
-clipAttrib True  elt = do 
-    s <- currentClipLabel
+clipAttrib :: Clipped -> SvgM Element -> SvgM Element
+clipAttrib False melt = melt
+clipAttrib True  melt = do 
+    s   <- currentClipLabel
+    elt <- melt
     return $ add_attr (attr_clippath s) elt
 
 
 -- None of the remaining translation functions need to be in the
 -- SvgM monad.
 
-path :: PSUnit u => PathProps -> Path u -> Element
+path :: PSUnit u => PathProps -> Path u -> SvgM Element
 path (c,dp) p = 
-    element_path ps # add_attrs (fill_a : stroke_a : opts)
+    return $ element_path ps # add_attrs (fill_a : stroke_a : opts)
   where
     (fill_a,stroke_a,opts) = drawProperties c dp
     ps                     = svgPath dp p 
@@ -142,9 +156,12 @@ path (c,dp) p =
 -- Also rendering coloured text is convoluted (needing the
 -- tspan element).
 -- 
-label :: (Ord u, PSUnit u) => LabelProps -> Label u -> Element
-label (c,FontAttr _ fam style sz) (Label pt entxt) = 
-     element_text tspan_elt # add_attrs text_xs # add_attrs (fontStyle style)
+label :: (Ord u, PSUnit u) => LabelProps -> Label u -> SvgM Element
+label (c,FontAttr _ fam style sz) (Label pt entxt) = do 
+     str <- encodedText entxt
+     let tspan_elt = element_tspan str # add_attrs [ attr_fill c ]
+     return $ element_text tspan_elt # add_attrs text_xs 
+                                     # add_attrs (fontStyle style)
   where
     P2 x y    = coordChange pt
     text_xs   = [ attr_x x
@@ -153,19 +170,30 @@ label (c,FontAttr _ fam style sz) (Label pt entxt) =
                 , attr_font_family fam
                 , attr_font_size sz 
                 ]
-    tspan_elt = element_tspan str # add_attrs [ attr_fill c ]
     
-    str       = encodedText entxt
+    
 
 
-encodedText :: EncodedText -> String 
-encodedText = concat . map textChunk . getEncodedText
+encodedText :: EncodedText -> SvgM String 
+encodedText entxt = 
+    let xs = getEncodedText entxt in mapM textChunk  xs >>= return . concat
 
-textChunk :: TextChunk -> String
-textChunk (SText s)  = s
-textChunk (EscInt i) = "#&" ++ show i ++ ";"
-textChunk (EscStr _s) = "" -- TODO
+-- | Unfortunately we can\'t readily put a comment in the 
+-- generated SVG when glyph-name lookup fails. Doing similar in 
+-- PostScript is easy because we are emiting /linear/ PostScript 
+-- as we go along. For SVG we are building an abstract syntax 
+-- tree.
+-- 
+textChunk :: TextChunk -> SvgM String
+textChunk (SText s)  = return s
+textChunk (EscInt i) = return $ escapeCharCode i
+textChunk (EscStr s) = 
+    asks (lookupByGlyphName s) >>= maybe failk (return . escapeCharCode) 
+  where
+    failk = asks svg_fallback >>= return . escapeCharCode 
 
+escapeCharCode :: CharCode -> String
+escapeCharCode i = "&#" ++ show i ++ ";"
 
  
 fontStyle :: SVGFontStyle -> [Attr]
@@ -180,10 +208,12 @@ fontStyle SVG_BOLD_OBLIQUE =
 
 -- If w==h the draw the ellipse as a circle
 
-ellipse :: PSUnit u => EllipseProps -> Point2 u -> u -> u -> Element
+ellipse :: PSUnit u => EllipseProps -> Point2 u -> u -> u -> SvgM Element
 ellipse (c,dp) (P2 x y) w h 
-    | w == h    = element_circle  # add_attrs (circle_attrs  ++ style_attrs)
-    | otherwise = element_ellipse # add_attrs (ellipse_attrs ++ style_attrs)
+    | w == h    = return $ element_circle  
+                         # add_attrs (circle_attrs  ++ style_attrs)
+    | otherwise = return $ element_ellipse 
+                         # add_attrs (ellipse_attrs ++ style_attrs)
   where
     circle_attrs  = [attr_cx x, attr_cy y, attr_r w]
     ellipse_attrs = [attr_cx x, attr_cy y, attr_rx w, attr_ry h]

@@ -97,7 +97,10 @@ module Wumpus.Core.SVG
 
 import Wumpus.Core.Colour
 import Wumpus.Core.GraphicsState
+import Wumpus.Core.TextEncoding
 import Wumpus.Core.Utils
+
+import Data.Aviary
 
 import MonadLib hiding ( version )
 import Text.XML.Light
@@ -109,10 +112,10 @@ data SvgState = SvgSt { clipCount :: Int }
 -- fresh names.
 type SvgM a = SvgT Id a
 
-newtype SvgT m a = SvgT { unSvgT :: StateT SvgState m a }
+newtype SvgT m a = SvgT { unSvgT :: StateT SvgState (ReaderT TextEncoder m) a }
 
-runSvgT :: Monad m => SvgT m a -> m (a,SvgState)
-runSvgT m = runStateT st0 (unSvgT m) where
+runSvgT :: Monad m => TextEncoder -> SvgT m a -> m (a,SvgState)
+runSvgT i m = runReaderT i $ runStateT st0 $ unSvgT m where
     st0 = SvgSt { clipCount = 0 } 
 
 instance Monad m => Functor (SvgT m) where
@@ -126,16 +129,19 @@ instance Monad m => StateM (SvgT m) SvgState where
   get = SvgT $ get
   set = SvgT . set
 
+instance Monad m => ReaderM (SvgT m) TextEncoder where
+  ask = SvgT $ ask
+
 instance MonadT SvgT where
-  lift = SvgT . lift
+  lift = SvgT . lift . lift
 
 
-svgId :: SvgT Id a -> (a,SvgState)
-svgId m = runId $ runSvgT m  
+svgId :: TextEncoder -> SvgT Id a -> (a,SvgState)
+svgId = runId `oo` runSvgT  
 
 -- | Run the SVG monad.
-runSVG :: SvgM a -> a
-runSVG = fst . svgId
+runSVG :: TextEncoder -> SvgM a -> a
+runSVG = fst `oo` svgId
 
 
 -- | Get the current clip label.
@@ -168,11 +174,13 @@ unqualAttr name val = Attr (unqual name) val
 type SvgPath = [String]
 
 
--- | @ \<?xml version=\"1.0\" standalone=\"yes\"?\> @
-xmlVersion :: CData
-xmlVersion = CData CDataRaw 
-                   "<?xml version=\"1.0\" standalone=\"yes\"?>" 
-                   (Just 1)
+-- | @ \<?xml version=\"1.0\" encoding=\"...\"?\> @
+--
+xmlVersion :: String -> CData
+xmlVersion s = CData CDataRaw 
+                     ("<?xml version=\"1.0\" encoding=\"" ++ s ++ "\"?>")
+                     (Just 1)
+
 -- |
 -- > <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"           
 -- >     "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" > 
@@ -283,7 +291,7 @@ element_tspan = unode "tspan" . content_text
 
 -- | Render the string as 'CDataText' - see XML.Light.
 content_text :: String -> Content
-content_text str = Text $ CData CDataText str Nothing
+content_text str = Text $ CData CDataRaw str Nothing
 
 
 -- | @ font-family=\"...\" @

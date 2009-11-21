@@ -27,8 +27,8 @@ funnyshape = frame $ cstroke () $ vertexPath
 
 demo01 :: IO ()
 demo01 = do 
-  writePS_latin1 "./out/picture01.ps"    [funnyshape ->- square]
-  writeSVG "./out/picture01.svg" $ funnyshape ->- square
+  writePS_latin1  "./out/picture01.ps"    [funnyshape ->- square]
+  writeSVG_latin1 "./out/picture01.svg" $ funnyshape ->- square
 
 
 pic1 :: Picture Double
@@ -39,38 +39,38 @@ squares = square ->- square ->- square
 
 demo02 :: IO ()
 demo02 = do 
-   writePS_latin1 "./out/picture02.ps"  [squares]
-   writeSVG "./out/picture02.svg" squares 
+   writePS_latin1  "./out/picture02.ps"  [squares]
+   writeSVG_latin1 "./out/picture02.svg" squares 
     
 
 demo03 :: IO ()
 demo03 = do 
-    writeEPS_latin1"./out/picture03.eps" p1 
-    writeSVG "./out/picture03.svg" p1
+    writeEPS_latin1 "./out/picture03.eps" p1 
+    writeSVG_latin1 "./out/picture03.svg" p1
   where     
     p1 = square ->- (rotate45About (center squares) squares) ->- square
 
 
 demo04 :: IO ()
 demo04 = do 
-    writeEPS_latin1"./out/picture04.eps" p1
-    writeSVG "./out/picture04.svg" p1
+    writeEPS_latin1 "./out/picture04.eps" p1
+    writeSVG_latin1 "./out/picture04.svg" p1
   where
     p1 = square -//- squares
    
 
 demo05 :: IO ()
 demo05 = do 
-    writeEPS_latin1"./out/picture05.eps" p1
-    writeSVG "./out/picture05.svg" p1
+    writeEPS_latin1 "./out/picture05.eps" p1
+    writeSVG_latin1 "./out/picture05.svg" p1
   where
     p1 = square `over` (rotate (pi/4) squares)
    
 
 demo06 :: IO ()
 demo06 = do 
-    writeEPS_latin1"./out/picture06.eps" p1
-    writeSVG "./out/picture06.svg" p1
+    writeEPS_latin1 "./out/picture06.eps" p1
+    writeSVG_latin1 "./out/picture06.svg" p1
   where
     p1 = square `over` (rotate45 square)
 
@@ -82,9 +82,9 @@ demo06 = do
 
 demo07 :: IO ()
 demo07 = do 
-    writeEPS_latin1"./out/picture07.eps" p1
-    writeSVG "./out/picture07.svg" p1
-    writeSVG "./out/picture07a.svg" p2
+    writeEPS_latin1 "./out/picture07.eps" p1
+    writeSVG_latin1 "./out/picture07.svg" p1
+    writeSVG_latin1 "./out/picture07a.svg" p2
   where
     p1 = square `over` p2
     p2 = (square `at` (P2 100 30))  -@- (rotate45 square)
@@ -92,8 +92,8 @@ demo07 = do
 
 demo08 :: IO ()
 demo08 = do 
-    writeEPS_latin1"./out/picture08.eps" p1
-    writeSVG "./out/picture08.svg" p1
+    writeEPS_latin1 "./out/picture08.eps" p1
+    writeSVG_latin1 "./out/picture08.svg" p1
   where
     p1 = hspace 20 square square
 
@@ -104,8 +104,8 @@ mkFilledSquare col = frame $ fill col $ vertexPath
 
 demo09 :: IO ()
 demo09 = do 
-    writeEPS_latin1"./out/picture09.eps" p1
-    writeSVG "./out/picture09.svg" p1
+    writeEPS_latin1 "./out/picture09.eps" p1
+    writeSVG_latin1 "./out/picture09.svg" p1
   where
     p1 = (alignH HTop s1 s2) `op` s3
     s1 = uniformScale 1.5  $ mkFilledSquare plum 
@@ -117,7 +117,7 @@ demo09 = do
 demo10 :: IO ()
 demo10 = do 
     writeEPS_latin1 "./out/picture10.eps" p1
-    writeSVG "./out/picture10.svg" p1
+    writeSVG_latin1 "./out/picture10.svg" p1
   where
     p1 = vsepA VRight 5 s1 [s2,s3]
     s1 = uniformScale 1.5  $ mkFilledSquare plum 
