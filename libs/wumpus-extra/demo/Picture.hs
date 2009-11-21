@@ -11,15 +11,15 @@ main :: IO ()
 main = sequence_ [ demo01, demo02, demo03 ]
 
 
-colouredSquare :: (Num u, Ord u) => DRGB -> u -> Picture u
+colouredSquare :: (Fractional u, Ord u) => DRGB -> u -> Picture u
 colouredSquare c sz = 
   frame $ fill c $ extractPath $ square sz zeroPt 
 
 
 demo01 :: IO ()
 demo01 = do 
-    writeEPS "./out/picture01.eps" pic1 
-    writeSVG "./out/picture01.svg" pic1 
+    writeEPS_latin1 "./out/picture01.eps" pic1 
+    writeSVG_latin1 "./out/picture01.svg" pic1 
   where
     pic1 :: Picture Double
     pic1 = uniformScale 5 $ stackOnto [d1,d2,d3,d4,d5,d6 1.0,d7]
@@ -35,8 +35,8 @@ demo01 = do
 
 demo02 :: IO ()
 demo02 = do 
-    writeEPS "./out/picture02.eps" pic1 
-    writeSVG "./out/picture02.svg" pic1 
+    writeEPS_latin1 "./out/picture02.eps" pic1 
+    writeSVG_latin1 "./out/picture02.svg" pic1 
   where
     pic1 :: Picture Double
     pic1 = uniformScale 5 $ backgroundFill cornflowerBlue 
@@ -45,8 +45,8 @@ demo02 = do
 
 demo03 :: IO ()
 demo03 = do 
-    writeEPS "./out/picture03.eps" pic1 
-    writeSVG "./out/picture03.svg" pic1 
+    writeEPS_latin1 "./out/picture03.eps" pic1 
+    writeSVG_latin1 "./out/picture03.svg" pic1 
   where
     pic1 :: Picture Double
     pic1 = hsepA HTop  20 col1 [col2]

@@ -15,8 +15,8 @@ main = sequence_ [ demo01 ]
 
 demo01 :: IO ()
 demo01 = do 
-    writeEPS "./out/text_pic01.eps" text_pic01
-    writeSVG "./out/text_pic01.svg" text_pic01 
+    writeEPS_latin1 "./out/text_pic01.eps" text_pic01
+    writeSVG_latin1 "./out/text_pic01.svg" text_pic01 
 
 
 all_nums, all_uppers, all_lowers :: String

@@ -13,14 +13,14 @@ import Data.List ( unfoldr )
 
 main :: IO ()
 main = do 
-    writeEPS "./out/font_courier.eps"   courier_pic
-    writeSVG "./out/font_courier.svg"   courier_pic
-    writeEPS "./out/font_times.eps"     times_pic
-    writeSVG "./out/font_times.svg"     times_pic
-    writeEPS "./out/font_helvetica.eps" helvetica_pic
-    writeSVG "./out/font_helvetica.svg" helvetica_pic
-    writeEPS "./out/font_symbol.eps"    symbol_pic
-    writeSVG "./out/font_symbol.svg"    symbol_pic
+    writeEPS_latin1 "./out/font_courier.eps"   courier_pic
+    writeSVG_latin1 "./out/font_courier.svg"   courier_pic
+    writeEPS_latin1 "./out/font_times.eps"     times_pic
+    writeSVG_latin1 "./out/font_times.svg"     times_pic
+    writeEPS_latin1 "./out/font_helvetica.eps" helvetica_pic
+    writeSVG_latin1 "./out/font_helvetica.svg" helvetica_pic
+    writeEPS_latin1 "./out/font_symbol.eps"    symbol_pic
+    writeSVG_latin1 "./out/font_symbol.svg"    symbol_pic
 
 --------------------------------------------------------------------------------
 -- Times

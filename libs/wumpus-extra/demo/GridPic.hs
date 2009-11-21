@@ -23,8 +23,8 @@ mgrid01 = do
   return ()
 
 demo01 = do 
-    writeEPS "./out/grid01.eps" pic1 
-    writeSVG "./out/grid01.svg" pic1 
+    writeEPS_latin1 "./out/grid01.eps" pic1 
+    writeSVG_latin1 "./out/grid01.svg" pic1 
   where
     pic1 :: Picture Double
     pic1   = nodePicture 100 50 3 elts no_pic
