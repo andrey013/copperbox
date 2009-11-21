@@ -18,7 +18,9 @@ module Wumpus.Core.OutputPostScript
   -- $fontdoc
     writePS
   , writeEPS
-
+  
+  , writePS_latin1
+  , writeEPS_latin1
 
   ) where
 
@@ -29,7 +31,10 @@ import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScript
 import Wumpus.Core.TextEncoding
+import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
+
+import MonadLib hiding ( Label )
 
 import Control.Monad ( mapM_, zipWithM_ )
 
@@ -63,10 +68,10 @@ import Control.Monad ( mapM_, zipWithM_ )
 -- FontSpec to transmit @findfont@, @scalefont@ etc. commands 
 -- to PostScript.    
 writePS :: (Fractional u, Ord u, PSUnit u) 
-        => FilePath ->  [Picture u] -> IO ()
-writePS filepath pic = do 
+        => FilePath -> TextEncoder -> [Picture u] -> IO ()
+writePS filepath enc pic = do 
     timestamp <- mkTimeStamp
-    writeFile filepath $ psDraw timestamp pic
+    writeFile filepath $ psDraw timestamp enc pic
 
 -- | Write a picture to an EPS (Encapsulated PostScript) file. 
 -- The .eps file can then be imported or embedded in another 
@@ -76,15 +81,34 @@ writePS filepath pic = do
 -- FontSpec to transmit @findfont@, @scalefont@ etc. commands 
 -- to PostScript.    
 writeEPS :: (Fractional u, Ord u, PSUnit u)  
-         => FilePath -> Picture u -> IO ()
-writeEPS filepath pic = do
+         => FilePath -> TextEncoder -> Picture u -> IO ()
+writeEPS filepath enc pic = do
     timestamp <- mkTimeStamp
-    writeFile filepath $ epsDraw timestamp pic
+    writeFile filepath $ epsDraw timestamp enc pic
+
+
+-- | Version of 'writePS' - using Latin1 encoding. 
+writePS_latin1 :: (Fractional u, Ord u, PSUnit u) 
+        => FilePath -> [Picture u] -> IO ()
+writePS_latin1 filepath = writePS filepath latin1Encoder 
+
+-- | Version of 'writeEPS' - using Latin1 encoding. 
+writeEPS_latin1 :: (Fractional u, Ord u, PSUnit u)  
+         => FilePath -> Picture u -> IO ()
+writeEPS_latin1 filepath = writeEPS filepath latin1Encoder
+
+
+
+
+
+
+
+
 
 -- | Draw a picture, generating PostScript output.
 psDraw :: (Fractional u, Ord u, PSUnit u) 
-       => String ->  [Picture u] -> PostScript
-psDraw timestamp pics = runWumpus $ do
+       => String -> TextEncoder -> [Picture u] -> PostScript
+psDraw timestamp enc pics = runWumpus enc $ do
     psHeader 1 timestamp
     zipWithM_ psDrawPage pages pics
     psFooter
@@ -111,8 +135,8 @@ psDrawPage (lbl,ordinal) pic = do
 -- does it will need translating.
 
 epsDraw :: (Fractional u, Ord u, PSUnit u) 
-        => String -> Picture u -> PostScript
-epsDraw timestamp pic = runWumpus $ do 
+        => String -> TextEncoder -> Picture u -> PostScript
+epsDraw timestamp enc pic = runWumpus enc $ do 
     epsHeader bb timestamp      
     ps_gsave
     cmdtrans
@@ -325,6 +349,18 @@ outputEncodedText = mapM_ outputTextChunk . getEncodedText
 
 outputTextChunk :: TextChunk -> WumpusM () 
 outputTextChunk (SText s)  = ps_show s
-outputTextChunk (EscInt _i) = ps_comment "Escape codes to do"
+
+outputTextChunk (EscInt i) = 
+    ask >>= \env -> maybe (failk env) ps_glyphshow $ lookupByCharCode i env
+  where
+    failk = missingCode i . ps_fallback  
+
 outputTextChunk (EscStr s) = ps_glyphshow s 
+
+missingCode :: CharCode -> GlyphName -> WumpusM ()
+missingCode i fallback =  do
+    ps_comment $ "missing lookup for &#" ++ show i ++ ";" 
+    ps_glyphshow fallback
+            
+
 

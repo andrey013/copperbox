@@ -78,12 +78,14 @@ module Wumpus.Core.PostScript
   ) where
 
 import Wumpus.Core.GraphicsState
+import Wumpus.Core.TextEncoding
 import Wumpus.Core.Utils ( PSUnit(..), roundup, parens, hsep )
+
+import Data.Aviary
 
 import qualified Data.DList as DL
 import MonadLib
 
-import Data.Monoid
 import Data.List ( foldl' )
 
 
@@ -96,16 +98,10 @@ type PsOutput = DL.DList Char
 type WumpusM a = PsT Id a
 
 
+newtype PsT m a = PsT { unPsT :: WriterT PsOutput (ReaderT TextEncoder m) a }
 
-instance Monoid (WumpusM ()) where
-  mempty  = return ()
-  mappend = (>>) 
-
-
-newtype PsT m a = PsT { unPsT :: WriterT PsOutput m a }
-
-runPsT :: Monad m => PsT m a -> m (a,PsOutput)
-runPsT m = runWriterT (unPsT m) 
+runPsT :: Monad m => TextEncoder -> PsT m a -> m (a,PsOutput)
+runPsT i m = runReaderT i $ runWriterT $ unPsT m
 
 instance Monad m => Functor (PsT m) where
   fmap f (PsT mf) = PsT $ fmap f mf 
@@ -117,15 +113,18 @@ instance Monad m => Monad (PsT m) where
 instance Monad m => WriterM (PsT m) PsOutput where
   put = PsT . put
 
+instance Monad m => ReaderM (PsT m) TextEncoder where
+  ask = PsT $ ask
+
 instance MonadT PsT where
-  lift = PsT . lift
+  lift = PsT . lift . lift
 
 
-pstId :: PsT Id a -> (a,PsOutput)
-pstId m = runId $ runPsT m  
+pstId :: TextEncoder -> PsT Id a -> (a,PsOutput)
+pstId = runId `oo` runPsT
 
-runWumpus :: WumpusM a -> String
-runWumpus = (DL.toList . snd)  . pstId
+runWumpus :: TextEncoder -> WumpusM a -> String
+runWumpus = (DL.toList . snd) `oo` pstId
 
 
 --------------------------------------------------------------------------------

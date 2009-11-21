@@ -35,7 +35,9 @@ latin1Encoder :: TextEncoder
 latin1Encoder = TextEncoder {
     ps_lookup         = Map.lookup `flip` codeToName,
     svg_lookup        = Map.lookup `flip` nameToCode,
-    svg_encoding_name = "ISO-8859-1"
+    svg_encoding_name = "ISO-8859-1",
+    ps_fallback       = "space",
+    svg_fallback      = 0o040
   }
 nameToCode :: Map.Map String Int
 nameToCode = Map.fromList latin1All

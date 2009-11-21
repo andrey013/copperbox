@@ -16,6 +16,7 @@
 module Wumpus.Core.TextEncoding
   ( 
     GlyphName
+  , CharCode
   , PostScriptLookup
   , SVGLookup
   , TextEncoder(..)
@@ -24,6 +25,8 @@ module Wumpus.Core.TextEncoding
   , TextChunk(..)
 
   , textLength
+  , lookupByCharCode  
+  , lookupByGlyphName
 
   , lexLabel
 
@@ -34,15 +37,19 @@ import Text.PrettyPrint.Leijen hiding ( SText )
 import Data.Char
 
 type GlyphName = String
+type CharCode  = Int 
 
-type PostScriptLookup = Int -> Maybe GlyphName
-type SVGLookup        = GlyphName -> Maybe Int
+type PostScriptLookup = CharCode -> Maybe GlyphName
+type SVGLookup        = GlyphName -> Maybe CharCode
 
 data TextEncoder = TextEncoder  {
                        ps_lookup         :: PostScriptLookup,
                        svg_lookup        :: SVGLookup,
-                       svg_encoding_name :: String
+                       svg_encoding_name :: String,
+                       ps_fallback       :: GlyphName,
+                       svg_fallback      :: CharCode
                      }
+                     
 
 
 newtype EncodedText = EncodedText { getEncodedText :: [TextChunk] }
@@ -71,6 +78,13 @@ textLength :: EncodedText -> Int
 textLength = foldr add 0 . getEncodedText where 
     add (SText s) n = n + length s
     add _         n = n + 1
+
+
+lookupByCharCode :: CharCode -> TextEncoder -> Maybe GlyphName
+lookupByCharCode i enc = (ps_lookup enc) i
+
+lookupByGlyphName :: GlyphName -> TextEncoder -> Maybe CharCode
+lookupByGlyphName i enc = (svg_lookup enc) i
 
 
 -- | Output to PostScript as @ /egrave glyphshow @
