@@ -1,5 +1,5 @@
 name:             wumpus-extra
-version:          0.3.0
+version:          0.4.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -24,7 +24,7 @@ library
                       wl-pprint, vector-space, 
                       monadLib, xml, dlist,
                       data-aviary == 0.1.0,
-                      wumpus-core >  0.10.0
+                      wumpus-core == 0.11.0
 
   
   exposed-modules:
@@ -34,6 +34,7 @@ library
     Wumpus.Extra.Drawing,
     Wumpus.Extra.Grid,
     Wumpus.Extra.Lines,
+    Wumpus.Extra.ScatterPlot,
     Wumpus.Extra.SVGColours,
     Wumpus.Extra.X11Colours,
     Wumpus.Geometry,

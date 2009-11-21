@@ -26,6 +26,7 @@ module Wumpus.Core.BoundingBox
   
   -- * Operations
   , bbox
+  , obbox
   , union 
   , trace
   , corners
@@ -114,6 +115,13 @@ instance Pointwise (BoundingBox a) where
 
 bbox :: Point2 a -> Point2 a -> BoundingBox a
 bbox = BBox 
+
+
+-- | Create a BoundingBox with bottom left corner at the origin,
+-- and dimensions @w@ and @h@.
+obbox :: Num a => a -> a -> BoundingBox a
+obbox w h = BBox zeroPt (P2 w h)
+
 
 union :: Ord a => BoundingBox a -> BoundingBox a -> BoundingBox a
 BBox ll ur `union` BBox ll' ur' = BBox (cmin ll ll') (cmax ur ur')

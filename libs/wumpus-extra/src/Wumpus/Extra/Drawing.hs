@@ -23,12 +23,23 @@ module Wumpus.Extra.Drawing
   , clipPicture
   , clipToBoundary
 
+  -- * Additions for wumpus-core
+  , obbox
+
   ) where
 
 
 
 import Wumpus.Core
 
+
+--------------------------------------------------------------------------------
+-- Add to Wumpus.Core
+
+-- | Create a BoundingBox with bottom left corner at the origin,
+-- and dimensions @w@ and @h@.
+obbox :: Num a => a -> a -> BoundingBox a
+obbox w h = BBox zeroPt (P2 w h)
 
 
 --------------------------------------------------------------------------------
