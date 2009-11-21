@@ -60,6 +60,7 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
+import Wumpus.Core.TextEncoding
 import Wumpus.Core.Utils
 
 import Data.Semigroup
@@ -293,7 +294,7 @@ clip cp p = Clip (ortho zeroPt, boundary cp) cp p
 -- Labels to primitive
 
 mkTextLabel :: PSRgb -> FontAttr -> Point2 u -> String -> Primitive u
-mkTextLabel c attr pt txt = PLabel (c,attr) (Label pt txt)
+mkTextLabel c attr pt txt = PLabel (c,attr) (Label pt $ lexLabel txt)
 
 -- SVG seems to have an issue with /Courier/ and needs /Courier New/.
 

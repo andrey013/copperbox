@@ -64,6 +64,7 @@ module Wumpus.Core.PostScript
   , ps_scalefont
   , ps_setfont
   , ps_show
+  , ps_glyphshow
   , bang_PS
   , bang_EPS
   , dsc_comment
@@ -335,7 +336,12 @@ ps_setfont = command "setfont" []
 
 -- | @ (...) show  @
 ps_show :: String -> WumpusM ()
-ps_show str = command "show" [parens str]
+ps_show = command "show" . return . parens
+
+-- | @ (...) show  @
+ps_glyphshow :: String -> WumpusM ()
+ps_glyphshow = command "glyphshow" . return . ('/':)
+
 
 --------------------------------------------------------------------------------
 -- document structuring conventions

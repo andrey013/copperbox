@@ -40,7 +40,7 @@ import Wumpus.Core.Geometry
 
 import Data.AffineSpace         -- vector-space
 
-
+type CharCount = Int
 type FontSize = Int
 
 -- | The width of a letter in Courier at 48 pt.
@@ -88,17 +88,17 @@ courier48_spacer_width = 3
 
 
 -- | Width of the supplied string when printed at 48pt.
-widthAt48pt :: Fractional u => String -> u
-widthAt48pt s = courier48_width * len + courier48_spacer_width * len_sub
+widthAt48pt :: Fractional u => CharCount -> u
+widthAt48pt n = courier48_width * len + courier48_spacer_width * len_sub
   where
-    len      = fromIntegral $ length s
+    len      = fromIntegral n
     len_sub  = len - 1.0
 
 --- | Text width at @sz@ point size of the string @s@. All
 -- characters are counted literally - special chars may cause
 -- problems (this a current deficiency of Wumpus).
-textWidth :: Fractional u => FontSize -> String -> u
-textWidth sz s = (fromIntegral sz)/48 * widthAt48pt s
+textWidth :: Fractional u => FontSize -> CharCount -> u
+textWidth sz n = (fromIntegral sz)/48 * widthAt48pt n
 
 -- | Text height is just identity/double-coercion, i.e. 
 -- @18 == 18.0@. The /size/ of a font is (apparently) the maximum
@@ -113,8 +113,8 @@ textHeight = fromIntegral
 descenderDepth :: Fractional u => FontSize -> u
 descenderDepth sz =  (fromIntegral sz) / 48 * courier48_descender_depth
 
--- | Find the bounding box for the string at the supplied 
--- font-size.
+-- | Find the bounding box for the character count at the 
+-- supplied font-size.
 -- 
 -- The supplied point represents the bottom left corner of the 
 -- a regular upper-case letter (that is without descenders).
@@ -126,10 +126,11 @@ descenderDepth sz =  (fromIntegral sz) / 48 * courier48_descender_depth
 -- For variable width fonts the calculated bounding box will 
 -- usually be too long.
 --
-textBounds :: Fractional u => FontSize -> Point2 u -> String -> BoundingBox u
-textBounds sz body_bl str = bbox bl tr where
+textBounds :: Fractional u 
+           => FontSize -> Point2 u -> CharCount -> BoundingBox u
+textBounds sz body_bl n = bbox bl tr where
     h           = textHeight sz
-    w           = textWidth  sz str
+    w           = textWidth  sz n
     dd          = descenderDepth sz
     bl          = body_bl .-^ V2 0 dd 
     tr          = bl .+^ V2 w h

@@ -28,6 +28,7 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScript
+import Wumpus.Core.TextEncoding
 import Wumpus.Core.Utils
 
 import Control.Monad ( mapM_, zipWithM_ )
@@ -314,9 +315,16 @@ outputArc (EStroke xs) c x y r = updatePen c xs $ do
 
 
 outputLabel :: PSUnit u => Label u -> WumpusM ()
-outputLabel (Label (P2 x y) str) = do
+outputLabel (Label (P2 x y) entxt) = do
     ps_moveto x y
-    ps_show str
+    outputEncodedText entxt
+--    ps_show str
 
+outputEncodedText :: EncodedText -> WumpusM () 
+outputEncodedText = mapM_ outputTextChunk . getEncodedText
 
+outputTextChunk :: TextChunk -> WumpusM () 
+outputTextChunk (SText s)  = ps_show s
+outputTextChunk (EscInt _i) = ps_comment "Escape codes to do"
+outputTextChunk (EscStr s) = ps_glyphshow s 
 

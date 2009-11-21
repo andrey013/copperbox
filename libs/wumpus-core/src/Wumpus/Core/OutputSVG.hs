@@ -42,6 +42,7 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.SVG
+import Wumpus.Core.TextEncoding
 import Wumpus.Core.Utils
 
 import Data.Aviary ( (#), bigphi )
@@ -142,7 +143,7 @@ path (c,dp) p =
 -- tspan element).
 -- 
 label :: (Ord u, PSUnit u) => LabelProps -> Label u -> Element
-label (c,FontAttr _ fam style sz) (Label pt str) = 
+label (c,FontAttr _ fam style sz) (Label pt entxt) = 
      element_text tspan_elt # add_attrs text_xs # add_attrs (fontStyle style)
   where
     P2 x y    = coordChange pt
@@ -153,6 +154,18 @@ label (c,FontAttr _ fam style sz) (Label pt str) =
                 , attr_font_size sz 
                 ]
     tspan_elt = element_tspan str # add_attrs [ attr_fill c ]
+    
+    str       = encodedText entxt
+
+
+encodedText :: EncodedText -> String 
+encodedText = concat . map textChunk . getEncodedText
+
+textChunk :: TextChunk -> String
+textChunk (SText s)  = s
+textChunk (EscInt i) = "#&" ++ show i ++ ";"
+textChunk (EscStr _s) = "" -- TODO
+
 
  
 fontStyle :: SVGFontStyle -> [Attr]

@@ -53,6 +53,7 @@ import Wumpus.Core.FontSize
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureLanguage hiding ( hcat, vcat, hsep, vsep )
+import Wumpus.Core.TextEncoding
 import Wumpus.Core.Utils
 
 import Data.Aviary
@@ -60,7 +61,7 @@ import Data.Aviary
 import Data.AffineSpace
 import Data.Semigroup
 
-import Text.PrettyPrint.Leijen hiding ( empty )
+import Text.PrettyPrint.Leijen
 
 
 
@@ -159,7 +160,7 @@ type DPathSegment = PathSegment Double
 
 data Label u = Label { 
                    label_bottom_left :: Point2 u,
-                   label_text        :: String
+                   label_text        :: EncodedText
                  }
   deriving (Eq,Show)
 
@@ -241,7 +242,7 @@ instance Pretty u => Pretty (PathSegment u) where
   pretty (PLine pt)           = text "--" <> pretty pt
 
 instance Pretty u => Pretty (Label u) where
-  pretty (Label pt s) = dquotes (text s) <> char '@' <> pretty pt
+  pretty (Label pt s) = dquotes (pretty s) <> char '@' <> pretty pt
 
 
 --------------------------------------------------------------------------------
@@ -390,7 +391,8 @@ instance (Num u, Ord u) => Boundary (Path u) where
 
 instance (Fractional u, Ord u) => Boundary (Primitive u) where
   boundary (PPath _ p)                  = boundary p
-  boundary (PLabel (_,a) (Label pt xs)) = textBounds (font_size a) pt xs
+  boundary (PLabel (_,a) (Label pt xs)) = textBounds (font_size a) pt char_count
+    where char_count = textLength xs
   boundary (PEllipse _ c hw hh)         = BBox (c .-^ v) (c .+^ v) 
     where v = V2 hw hh
 

@@ -17,13 +17,32 @@ module Wumpus.Core.TextLatin1
   ( 
     Latin1Name
   , Latin1ISOCode
+  
+  , latin1Encoder
 
   , latin1All
 
   ) where
 
+import Wumpus.Core.TextEncoding
+
+import qualified Data.Map as Map
+
 type Latin1Name = String
 type Latin1ISOCode = Int
+
+latin1Encoder :: TextEncoder
+latin1Encoder = TextEncoder {
+    ps_lookup         = Map.lookup `flip` codeToName,
+    svg_lookup        = Map.lookup `flip` nameToCode,
+    svg_encoding_name = "ISO-8859-1"
+  }
+nameToCode :: Map.Map String Int
+nameToCode = Map.fromList latin1All
+
+codeToName :: Map.Map Int String
+codeToName = foldr fn Map.empty latin1All where
+  fn (s,i) a = Map.insert i s a 
 
 latin1All :: [(Latin1Name, Latin1ISOCode)]
 latin1All = [ ("A",                     0o101)
