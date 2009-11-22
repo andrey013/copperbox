@@ -22,6 +22,7 @@ module Wumpus.Geometry.Polygon
 
   -- * Construction
   , square
+  , rectangle
   , regularPolygon
   , isoscelesTriangle
 
@@ -74,6 +75,14 @@ square w bl = Polygon $ sequence [id,v1,v2,v3] bl where
     v2 = (.+^ V2 w w)
     v3 = (.+^ vvec w)
 
+-- | Create a rectangle of width @w@ and height @h@ with the 
+-- bottom-left corner located at the supplied point.
+--
+rectangle :: Num u => u -> u -> Point2 u -> Polygon u
+rectangle w h bl = Polygon $ sequence [id,v1,v2,v3] bl where
+    v1 = (.+^ hvec w)
+    v2 = (.+^ V2 w h)
+    v3 = (.+^ vvec h)
 
 
 

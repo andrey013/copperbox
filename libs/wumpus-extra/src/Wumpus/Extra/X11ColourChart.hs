@@ -23,7 +23,7 @@ module Wumpus.Extra.X11ColourChart
 
 import Wumpus.Extra.X11Colours
 
-import Wumpus.Core.Colour ( RGB3(..), DRGB )
+import Wumpus.Core.Colour ( DRGB )
 
 
 all_x11_colours :: [(String,DRGB)]
