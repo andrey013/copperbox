@@ -28,16 +28,15 @@ test01 = do
     idata <- readIrisData
 
     let iris_virginica = mkIris "Iris-virginica" idata
-    let plot1 = scatterPlot (obbox 80 80) blue iris_virginica
+    let plot1 = scatterPlot 40 26 blue iris_virginica
 
     let iris_versicolor = mkIris "Iris-versicolor" idata 
-    let plot2 = scatterPlot (obbox 80 80) green iris_versicolor
+    let plot2 = scatterPlot 40 26 green iris_versicolor
 
     let iris_setosa = mkIris "Iris-setosa" idata 
-    let plot3 = scatterPlot (obbox 80 80) red iris_setosa
+    let plot3 = scatterPlot 40 26 maroon iris_setosa
 
-    let pic = plot1 -- plot1 `over` plot2 `over` plot3
---    let plot1 = scatterPlot (obbox 40 40) [P2 1 1, P2 10 10]
+    let pic = cropPlot $ plot1 `over` plot2 `over` plot3
     writeEPS_latin1 "./out/scatter01.eps" pic
     writeSVG_latin1 "./out/scatter01.svg" pic
 

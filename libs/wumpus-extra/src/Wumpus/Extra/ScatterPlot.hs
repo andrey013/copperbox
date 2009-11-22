@@ -20,13 +20,15 @@ module Wumpus.Extra.ScatterPlot
     PlotPoint(..)
 
   , scatterPlot
+  , cropPlot 
+
 
   ) where
 
 import Wumpus.Extra.Dots
 import Wumpus.Core
 
-
+-- import Data.Aviary
 
 class PlotPoint a where
   plotPoint :: a -> Point2 Double 
@@ -35,17 +37,12 @@ instance Real a => PlotPoint (Point2 a) where
   plotPoint = fmap realToFrac
 
 scatterPlot :: (PlotPoint a, Ellipse t) 
-            => BoundingBox Double -> t -> [a] -> Picture Double
-scatterPlot bb attr xs = multi $ map (dotDisk attr) points 
+             => Double -> Double -> t -> [a] -> Picture Double
+scatterPlot sx sy attr xs = multi $ map (dotDisk attr) points
   where
-    xs'                       = map plotPoint xs
-    ((xmin,xmax),(ymin,ymax)) = range xs'   
-    sx                        = boundaryWidth bb  / (xmax-xmin)
-    sy                        = boundaryHeight bb / (ymax-ymin)
-    points  = map (\(P2 x y) -> P2 (sx*(x-xmin)) (sy*(y-ymin))) xs'
+    points          = map (movePt . plotPoint) xs
+    movePt (P2 x y) = P2 (x*sx) (y*sy)
 
-
-
-range :: (Num u, Ord u) => [Point2 u] -> ((u,u),(u,u))
-range = fn . trace where
-  fn (BBox (P2 x0 y0) (P2 x1 y1)) = ((x0,x1), (y0,y1))
+cropPlot :: (Num u, Ord u) => Picture u -> Picture u
+cropPlot p = translate (-x) (-y) p where
+  (P2 x y) = boundaryBottomRight $ boundary p 

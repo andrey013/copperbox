@@ -14,156 +14,159 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Extra.SVGColours (
-    -- * Named colours
-    aliceBlue, 
-    antiqueWhite,
-    aqua,
-    aquamarine,
-    azure,
-    beige,
-    bisque,
-    black,
-    blanchedAlmond,
-    blue,
-    blueViolet,
-    brown,
-    burlywood,
-    cadetBlue,
-    chartreuse,
-    chocolate,
-    coral,
-    cornflowerBlue,
-    cornsilk,
-    crimson,
-    cyan,
-    darkBlue,
-    darkCyan,
-    darkGoldenrod,
-    darkGray,
-    darkGreen,
-    darkGrey,
-    darkKhaki,
-    darkMagenta,
-    darkOliveGreen,
-    darkOrange,
-    darkOrchid,
-    darkRed,
-    darkSalmon,
-    darkSeaGreen,
-    darkSlateBlue,
-    darkSlateGray,
-    darkSlateGrey,
-    darkTurquoise,
-    darkViolet,
-    deepPink,
-    deepSkyBlue,
-    dimGray,
-    dimGrey,
-    dodgerBlue,
-    firebrick,
-    floralWhite,
-    forestGreen,
-    fuchsia,
-    gainsboro,
-    ghostWhite,
-    gold,
-    goldenrod,
-    gray,
-    grey,
-    green,
-    greenYellow,
-    honeydew,
-    hotPink,
-    indianRed,
-    indigo,
-    ivory,
-    khaki,
-    lavender,
-    lavenderBlush,
-    lawnGreen,
-    lemonChiffon,
-    lightBlue,
-    lightCoral,
-    lightCyan,
-    lightGoldenrodYellow,
-    lightGray,
-    lightGreen,
-    lightGrey,
-    lightPink,
-    lightSalmon,
-    lightSeaGreen,
-    lightSkyBlue,
-    lightSlateGray,
-    lightSlateGrey,
-    lightSteelBlue,
-    lightYellow,
-    lime,
-    limeGreen,
-    linen,
-    magenta,
-    maroon,
-    mediumAquamarine,
-    mediumBlue,
-    mediumOrchid,
-    mediumPurple,
-    mediumSeaGreen,
-    mediumSlateBlue,
-    mediumSpringGreen,
-    mediumTurquoise,
-    mediumVioletRed,
-    midnightBlue,
-    mintcream,
-    mistyrose,
-    moccasin,
-    navajoWhite,
-    navy,
-    oldlace,
-    olive,
-    oliveDrab,
-    orange,
-    orangeRed,
-    orchid,
-    paleGoldenrod,
-    paleGreen,
-    paleTurquoise,
-    paleVioletRed,
-    papayawhip,
-    peachpuff,
-    peru,
-    pink,
-    plum,
-    powderBlue,
-    purple,
-    red,
-    rosyBrown,
-    royalBlue,
-    saddleBrown,
-    salmon,
-    sandyBrown,
-    seaGreen,
-    seashell,
-    sienna,
-    silver,
-    skyBlue,
-    slateBlue,
-    slateGray,
-    slateGrey,
-    snow,
-    springGreen,
-    steelBlue,
-    tan,
-    teal,
-    thistle,
-    tomato,
-    turquoise,
-    violet,
-    wheat,
-    white,
-    whitesmoke,
-    yellow,
-    yellowGreen
-) where
+module Wumpus.Extra.SVGColours 
+  (
+    
+  -- * Named colours
+    aliceBlue
+  , antiqueWhite
+  , aqua
+  , aquamarine
+  , azure
+  , beige
+  , bisque
+  , black
+  , blanchedAlmond
+  , blue
+  , blueViolet
+  , brown
+  , burlywood
+  , cadetBlue
+  , chartreuse
+  , chocolate
+  , coral
+  , cornflowerBlue
+  , cornsilk
+  , crimson
+  , cyan
+  , darkBlue
+  , darkCyan
+  , darkGoldenrod
+  , darkGray
+  , darkGreen
+  , darkGrey
+  , darkKhaki
+  , darkMagenta
+  , darkOliveGreen
+  , darkOrange
+  , darkOrchid
+  , darkRed
+  , darkSalmon
+  , darkSeaGreen
+  , darkSlateBlue
+  , darkSlateGray
+  , darkSlateGrey
+  , darkTurquoise
+  , darkViolet
+  , deepPink
+  , deepSkyBlue
+  , dimGray
+  , dimGrey
+  , dodgerBlue
+  , firebrick
+  , floralWhite
+  , forestGreen
+  , fuchsia
+  , gainsboro
+  , ghostWhite
+  , gold
+  , goldenrod
+  , gray
+  , grey
+  , green
+  , greenYellow
+  , honeydew
+  , hotPink
+  , indianRed
+  , indigo
+  , ivory
+  , khaki
+  , lavender
+  , lavenderBlush
+  , lawnGreen
+  , lemonChiffon
+  , lightBlue
+  , lightCoral
+  , lightCyan
+  , lightGoldenrodYellow
+  , lightGray
+  , lightGreen
+  , lightGrey
+  , lightPink
+  , lightSalmon
+  , lightSeaGreen
+  , lightSkyBlue
+  , lightSlateGray
+  , lightSlateGrey
+  , lightSteelBlue
+  , lightYellow
+  , lime
+  , limeGreen
+  , linen
+  , magenta
+  , maroon
+  , mediumAquamarine
+  , mediumBlue
+  , mediumOrchid
+  , mediumPurple
+  , mediumSeaGreen
+  , mediumSlateBlue
+  , mediumSpringGreen
+  , mediumTurquoise
+  , mediumVioletRed
+  , midnightBlue
+  , mintcream
+  , mistyrose
+  , moccasin
+  , navajoWhite
+  , navy
+  , oldlace
+  , olive
+  , oliveDrab
+  , orange
+  , orangeRed
+  , orchid
+  , paleGoldenrod
+  , paleGreen
+  , paleTurquoise
+  , paleVioletRed
+  , papayawhip
+  , peachpuff
+  , peru
+  , pink
+  , plum
+  , powderBlue
+  , purple
+  , red
+  , rosyBrown
+  , royalBlue
+  , saddleBrown
+  , salmon
+  , sandyBrown
+  , seaGreen
+  , seashell
+  , sienna
+  , silver
+  , skyBlue
+  , slateBlue
+  , slateGray
+  , slateGrey
+  , snow
+  , springGreen
+  , steelBlue
+  , tan
+  , teal
+  , thistle
+  , tomato
+  , turquoise
+  , violet
+  , wheat
+  , white
+  , whitesmoke
+  , yellow
+  , yellowGreen
+  
+  ) where
 
 
 import Wumpus.Core.Colour ( RGB3(..), DRGB )
@@ -171,6 +174,10 @@ import Wumpus.Core.Colour ( RGB3(..), DRGB )
 
 import Prelude hiding ( tan )
   
+
+
+
+--------------------------------------------------------------------------------
   
 aliceBlue           :: DRGB
 aliceBlue           = RGB3 0.941  0.973  1.0

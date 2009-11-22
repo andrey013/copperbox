@@ -14,330 +14,333 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Extra.X11Colours (
-    -- * Named X11 colours
-    antiqueWhite1,
-    antiqueWhite2,
-    antiqueWhite3,
-    antiqueWhite4,
-    aquamarine1,
-    aquamarine2,
-    aquamarine3,
-    aquamarine4,
-    azure1,
-    azure2,
-    azure3,
-    azure4,
-    bisque1,
-    bisque2,
-    bisque3,
-    bisque4,
-    blue1,
-    blue2,
-    blue3,
-    blue4,
-    brown1,
-    brown2,
-    brown3,
-    brown4,
-    burlywood1,
-    burlywood2,
-    burlywood3,
-    burlywood4,
-    cadetBlue1,
-    cadetBlue2,
-    cadetBlue3,
-    cadetBlue4,
-    chartreuse1,
-    chartreuse2,
-    chartreuse3,
-    chartreuse4,
-    chocolate1,
-    chocolate2,
-    chocolate3,
-    chocolate4,
-    coral1,
-    coral2,
-    coral3,
-    coral4,
-    cornsilk1,
-    cornsilk2,
-    cornsilk3,
-    cornsilk4,
-    cyan1,
-    cyan2,
-    cyan3,
-    cyan4,
-    darkGoldenrod1,
-    darkGoldenrod2,
-    darkGoldenrod3,
-    darkGoldenrod4,
-    darkOliveGreen1,
-    darkOliveGreen2,
-    darkOliveGreen3,
-    darkOliveGreen4,
-    darkOrange1,
-    darkOrange2,
-    darkOrange3,
-    darkOrange4,
-    darkOrchid1,
-    darkOrchid2,
-    darkOrchid3,
-    darkOrchid4,
-    darkSeaGreen1,
-    darkSeaGreen2,
-    darkSeaGreen3,
-    darkSeaGreen4,
-    darkSlateGray1,
-    darkSlateGray2,
-    darkSlateGray3,
-    darkSlateGray4,
-    deepPink1,
-    deepPink2,
-    deepPink3,
-    deepPink4,
-    deepSkyBlue1,
-    deepSkyBlue2,
-    deepSkyBlue3,
-    deepSkyBlue4,
-    dodgerBlue1,
-    dodgerBlue2,
-    dodgerBlue3,
-    dodgerBlue4,
-    firebrick1,
-    firebrick2,
-    firebrick3,
-    firebrick4,
-    gold1,
-    gold2,
-    gold3,
-    gold4,
-    goldenrod1,
-    goldenrod2,
-    goldenrod3,
-    goldenrod4,
-    green1,
-    green2,
-    green3,
-    green4,
-    honeydew1,
-    honeydew2,
-    honeydew3,
-    honeydew4,
-    hotPink1,
-    hotPink2,
-    hotPink3,
-    hotPink4,
-    indianRed1,
-    indianRed2,
-    indianRed3,
-    indianRed4,
-    ivory1,
-    ivory2,
-    ivory3,
-    ivory4,
-    khaki1,
-    khaki2,
-    khaki3,
-    khaki4,
-    lavenderBlush1,
-    lavenderBlush2,
-    lavenderBlush3,
-    lavenderBlush4,
-    lemonChiffon1,
-    lemonChiffon2,
-    lemonChiffon3,
-    lemonChiffon4,
-    lightBlue1,
-    lightBlue2,
-    lightBlue3,
-    lightBlue4,
-    lightCyan1,
-    lightCyan2,
-    lightCyan3,
-    lightCyan4,
-    lightGoldenrod1,
-    lightGoldenrod2,
-    lightGoldenrod3,
-    lightGoldenrod4,
-    lightPink1,
-    lightPink2,
-    lightPink3,
-    lightPink4,
-    lightSalmon1,
-    lightSalmon2,
-    lightSalmon3,
-    lightSalmon4,
-    lightSkyBlue1,
-    lightSkyBlue2,
-    lightSkyBlue3,
-    lightSkyBlue4,
-    lightSteelBlue1,
-    lightSteelBlue2,
-    lightSteelBlue3,
-    lightSteelBlue4,
-    lightYellow1,
-    lightYellow2,
-    lightYellow3,
-    lightYellow4,
-    magenta1,
-    magenta2,
-    magenta3,
-    magenta4,
-    maroon1,
-    maroon2,
-    maroon3,
-    maroon4,
-    mediumOrchid1,
-    mediumOrchid2,
-    mediumOrchid3,
-    mediumOrchid4,
-    mediumPurple1,
-    mediumPurple2,
-    mediumPurple3,
-    mediumPurple4,
-    mistyRose1,
-    mistyRose2,
-    mistyRose3,
-    mistyRose4,
-    navajoWhite1,
-    navajoWhite2,
-    navajoWhite3,
-    navajoWhite4,
-    oliveDrab1,
-    oliveDrab2,
-    oliveDrab3,
-    oliveDrab4,
-    orange1,
-    orange2,
-    orange3,
-    orange4,
-    orangeRed1,
-    orangeRed2,
-    orangeRed3,
-    orangeRed4,
-    orchid1,
-    orchid2,
-    orchid3,
-    orchid4,
-    paleGreen1,
-    paleGreen2,
-    paleGreen3,
-    paleGreen4,
-    paleTurquoise1,
-    paleTurquoise2,
-    paleTurquoise3,
-    paleTurquoise4,
-    paleVioletRed1,
-    paleVioletRed2,
-    paleVioletRed3,
-    paleVioletRed4,
-    peachPuff1,
-    peachPuff2,
-    peachPuff3,
-    peachPuff4,
-    pink1,
-    pink2,
-    pink3,
-    pink4,
-    plum1,
-    plum2,
-    plum3,
-    plum4,
-    purple1,
-    purple2,
-    purple3,
-    purple4,
-    red1,
-    red2,
-    red3,
-    red4,
-    rosyBrown1,
-    rosyBrown2,
-    rosyBrown3,
-    rosyBrown4,
-    royalBlue1,
-    royalBlue2,
-    royalBlue3,
-    royalBlue4,
-    salmon1,
-    salmon2,
-    salmon3,
-    salmon4,
-    seaGreen1,
-    seaGreen2,
-    seaGreen3,
-    seaGreen4,
-    seashell1,
-    seashell2,
-    seashell3,
-    seashell4,
-    sienna1,
-    sienna2,
-    sienna3,
-    sienna4,
-    skyBlue1,
-    skyBlue2,
-    skyBlue3,
-    skyBlue4,
-    slateBlue1,
-    slateBlue2,
-    slateBlue3,
-    slateBlue4,
-    slateGray1,
-    slateGray2,
-    slateGray3,
-    slateGray4,
-    snow1,
-    snow2,
-    snow3,
-    snow4,
-    springGreen1,
-    springGreen2,
-    springGreen3,
-    springGreen4,
-    steelBlue1,
-    steelBlue2,
-    steelBlue3,
-    steelBlue4,
-    tan1,
-    tan2,
-    tan3,
-    tan4,
-    thistle1,
-    thistle2,
-    thistle3,
-    thistle4,
-    tomato1,
-    tomato2,
-    tomato3,
-    tomato4,
-    turquoise1,
-    turquoise2,
-    turquoise3,
-    turquoise4,
-    violetRed1,
-    violetRed2,
-    violetRed3,
-    violetRed4,
-    wheat1,
-    wheat2,
-    wheat3,
-    wheat4,
-    yellow1,
-    yellow2,
-    yellow3,
-    yellow4,
-    gray0,
-    green0,
-    grey0,
-    maroon0,
-    purple0,
+module Wumpus.Extra.X11Colours
+  ( 
+  
+  -- * Named X11 colours
+    antiqueWhite1
+  , antiqueWhite2
+  , antiqueWhite3
+  , antiqueWhite4
+  , aquamarine1
+  , aquamarine2
+  , aquamarine3
+  , aquamarine4
+  , azure1
+  , azure2
+  , azure3
+  , azure4
+  , bisque1
+  , bisque2
+  , bisque3
+  , bisque4
+  , blue1
+  , blue2
+  , blue3
+  , blue4
+  , brown1
+  , brown2
+  , brown3
+  , brown4
+  , burlywood1
+  , burlywood2
+  , burlywood3
+  , burlywood4
+  , cadetBlue1
+  , cadetBlue2
+  , cadetBlue3
+  , cadetBlue4
+  , chartreuse1
+  , chartreuse2
+  , chartreuse3
+  , chartreuse4
+  , chocolate1
+  , chocolate2
+  , chocolate3
+  , chocolate4
+  , coral1
+  , coral2
+  , coral3
+  , coral4
+  , cornsilk1
+  , cornsilk2
+  , cornsilk3
+  , cornsilk4
+  , cyan1
+  , cyan2
+  , cyan3
+  , cyan4
+  , darkGoldenrod1
+  , darkGoldenrod2
+  , darkGoldenrod3
+  , darkGoldenrod4
+  , darkOliveGreen1
+  , darkOliveGreen2
+  , darkOliveGreen3
+  , darkOliveGreen4
+  , darkOrange1
+  , darkOrange2
+  , darkOrange3
+  , darkOrange4
+  , darkOrchid1
+  , darkOrchid2
+  , darkOrchid3
+  , darkOrchid4
+  , darkSeaGreen1
+  , darkSeaGreen2
+  , darkSeaGreen3
+  , darkSeaGreen4
+  , darkSlateGray1
+  , darkSlateGray2
+  , darkSlateGray3
+  , darkSlateGray4
+  , deepPink1
+  , deepPink2
+  , deepPink3
+  , deepPink4
+  , deepSkyBlue1
+  , deepSkyBlue2
+  , deepSkyBlue3
+  , deepSkyBlue4
+  , dodgerBlue1
+  , dodgerBlue2
+  , dodgerBlue3
+  , dodgerBlue4
+  , firebrick1
+  , firebrick2
+  , firebrick3
+  , firebrick4
+  , gold1
+  , gold2
+  , gold3
+  , gold4
+  , goldenrod1
+  , goldenrod2
+  , goldenrod3
+  , goldenrod4
+  , green1
+  , green2
+  , green3
+  , green4
+  , honeydew1
+  , honeydew2
+  , honeydew3
+  , honeydew4
+  , hotPink1
+  , hotPink2
+  , hotPink3
+  , hotPink4
+  , indianRed1
+  , indianRed2
+  , indianRed3
+  , indianRed4
+  , ivory1
+  , ivory2
+  , ivory3
+  , ivory4
+  , khaki1
+  , khaki2
+  , khaki3
+  , khaki4
+  , lavenderBlush1
+  , lavenderBlush2
+  , lavenderBlush3
+  , lavenderBlush4
+  , lemonChiffon1
+  , lemonChiffon2
+  , lemonChiffon3
+  , lemonChiffon4
+  , lightBlue1
+  , lightBlue2
+  , lightBlue3
+  , lightBlue4
+  , lightCyan1
+  , lightCyan2
+  , lightCyan3
+  , lightCyan4
+  , lightGoldenrod1
+  , lightGoldenrod2
+  , lightGoldenrod3
+  , lightGoldenrod4
+  , lightPink1
+  , lightPink2
+  , lightPink3
+  , lightPink4
+  , lightSalmon1
+  , lightSalmon2
+  , lightSalmon3
+  , lightSalmon4
+  , lightSkyBlue1
+  , lightSkyBlue2
+  , lightSkyBlue3
+  , lightSkyBlue4
+  , lightSteelBlue1
+  , lightSteelBlue2
+  , lightSteelBlue3
+  , lightSteelBlue4
+  , lightYellow1
+  , lightYellow2
+  , lightYellow3
+  , lightYellow4
+  , magenta1
+  , magenta2
+  , magenta3
+  , magenta4
+  , maroon1
+  , maroon2
+  , maroon3
+  , maroon4
+  , mediumOrchid1
+  , mediumOrchid2
+  , mediumOrchid3
+  , mediumOrchid4
+  , mediumPurple1
+  , mediumPurple2
+  , mediumPurple3
+  , mediumPurple4
+  , mistyRose1
+  , mistyRose2
+  , mistyRose3
+  , mistyRose4
+  , navajoWhite1
+  , navajoWhite2
+  , navajoWhite3
+  , navajoWhite4
+  , oliveDrab1
+  , oliveDrab2
+  , oliveDrab3
+  , oliveDrab4
+  , orange1
+  , orange2
+  , orange3
+  , orange4
+  , orangeRed1
+  , orangeRed2
+  , orangeRed3
+  , orangeRed4
+  , orchid1
+  , orchid2
+  , orchid3
+  , orchid4
+  , paleGreen1
+  , paleGreen2
+  , paleGreen3
+  , paleGreen4
+  , paleTurquoise1
+  , paleTurquoise2
+  , paleTurquoise3
+  , paleTurquoise4
+  , paleVioletRed1
+  , paleVioletRed2
+  , paleVioletRed3
+  , paleVioletRed4
+  , peachPuff1
+  , peachPuff2
+  , peachPuff3
+  , peachPuff4
+  , pink1
+  , pink2
+  , pink3
+  , pink4
+  , plum1
+  , plum2
+  , plum3
+  , plum4
+  , purple1
+  , purple2
+  , purple3
+  , purple4
+  , red1
+  , red2
+  , red3
+  , red4
+  , rosyBrown1
+  , rosyBrown2
+  , rosyBrown3
+  , rosyBrown4
+  , royalBlue1
+  , royalBlue2
+  , royalBlue3
+  , royalBlue4
+  , salmon1
+  , salmon2
+  , salmon3
+  , salmon4
+  , seaGreen1
+  , seaGreen2
+  , seaGreen3
+  , seaGreen4
+  , seashell1
+  , seashell2
+  , seashell3
+  , seashell4
+  , sienna1
+  , sienna2
+  , sienna3
+  , sienna4
+  , skyBlue1
+  , skyBlue2
+  , skyBlue3
+  , skyBlue4
+  , slateBlue1
+  , slateBlue2
+  , slateBlue3
+  , slateBlue4
+  , slateGray1
+  , slateGray2
+  , slateGray3
+  , slateGray4
+  , snow1
+  , snow2
+  , snow3
+  , snow4
+  , springGreen1
+  , springGreen2
+  , springGreen3
+  , springGreen4
+  , steelBlue1
+  , steelBlue2
+  , steelBlue3
+  , steelBlue4
+  , tan1
+  , tan2
+  , tan3
+  , tan4
+  , thistle1
+  , thistle2
+  , thistle3
+  , thistle4
+  , tomato1
+  , tomato2
+  , tomato3
+  , tomato4
+  , turquoise1
+  , turquoise2
+  , turquoise3
+  , turquoise4
+  , violetRed1
+  , violetRed2
+  , violetRed3
+  , violetRed4
+  , wheat1
+  , wheat2
+  , wheat3
+  , wheat4
+  , yellow1
+  , yellow2
+  , yellow3
+  , yellow4
+  , gray0
+  , green0
+  , grey0
+  , maroon0
+  , purple0
 
   ) where
 
 import Wumpus.Core.Colour ( RGB3(..), DRGB )
 
+--------------------------------------------------------------------------------
 
 antiqueWhite1           :: DRGB
 antiqueWhite2           :: DRGB
