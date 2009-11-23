@@ -34,9 +34,10 @@ module Wumpus.Geometry.Base
   , circular
   , circularAbout
 
-  , pointsRowwise
-  , pointsColwise
-  , countup, countdown
+  , ixDownLeftRight
+  , ixLeftRightDown
+  , countup
+  , countdown
 
   ) where
 
@@ -128,28 +129,28 @@ circularAbout pt n r = take n $ iterate (rotateAbout ang pt) px
 -- and let the f function change the index if necessary...
 -- Also the names don't highlight Left-Right or Up-Down.
 
-pointsColwise :: (Num u, Ord u) 
-              => u -> u -> u -> u -> (Point2 u -> Point2 u) -> [Point2 u]
-pointsColwise yfrom yto xfrom xto f = 
-    [f $ P2 x y | x <- countup   xfrom xto 1
-                , y <- countdown yfrom yto 1 ]
+ixDownLeftRight :: (Num u, Ord u) 
+              => Int -> Int -> (Point2 u -> Point2 u) -> [Point2 u]
+ixDownLeftRight row_count col_count fn = 
+    [fn $ P2 x y | x <- countup   (row_count - 1)
+                 , y <- countdown (col_count - 1) ]
 
 
-pointsRowwise :: (Num u, Ord u)
-              => u -> u -> u -> u -> (Point2 u -> Point2 u) -> [Point2 u]
-pointsRowwise xfrom xto yfrom yto f = 
-    [f $ P2 x y | y <- countdown yfrom yto 1
-                , x <- countup   xfrom xto 1 ]
+ixLeftRightDown :: (Num u, Ord u)
+              => Int -> Int -> (Point2 u -> Point2 u) -> [Point2 u]
+ixLeftRightDown row_count col_count fn = 
+    [fn $ P2 x y | y <- countdown (row_count - 1)
+                 , x <- countup   (col_count - 1) ]
 
 
-countdown :: (Num u, Ord u) => u -> u -> u -> [u]
-countdown from to step = unfoldr phi from where
-   phi i | i < to = Nothing
-   phi i         = Just (i,i-step)
+countdown :: Num u => Int -> [u]
+countdown = unfoldr phi where
+   phi i | i < 0 = Nothing
+   phi i         = Just (fromIntegral i,i-1)
 
 
-countup :: (Num u, Ord u) => u -> u -> u -> [u]
-countup from to step = unfoldr phi from where
-   phi i | i > to = Nothing
-   phi i          = Just (i,i+step)
+countup :: Num u => Int -> [u]
+countup n = unfoldr phi 0 where
+   phi i | i > n = Nothing
+   phi i         = Just (fromIntegral i,i+1)
 

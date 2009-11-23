@@ -27,9 +27,9 @@ test01 = do
     writeSVG_latin1 "./out/X11colours.svg" x11_land
   where
     svg, x11_land, x11_port :: Picture Double
-    svg = mkPic all_svg_colours (pointsColwise 59 0 0 4 (scalePt 160))
-    x11_land = mkPic all_x11_colours (pointsColwise 59 0 0 5 (scalePt 140))
-    x11_port = mkPic all_x11_colours (pointsColwise 71 0 0 4 (scalePt 140))
+    svg = mkPic all_svg_colours (ixDownLeftRight 4 60 (scalePt 160))
+    x11_land = mkPic all_x11_colours (ixDownLeftRight 6 60 (scalePt 140))
+    x11_port = mkPic all_x11_colours (ixDownLeftRight 5 72 (scalePt 140))
     
     mkPic cs pts = multi $ zipWith colourSample cs pts
 
