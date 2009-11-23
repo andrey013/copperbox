@@ -233,23 +233,26 @@ ellipse (c,dp) (P2 x y) w h
 drawProperties :: PSColour c => c -> DrawProp -> (Attr, Attr, [Attr])
 drawProperties = fn where
   fn c CFill        = (attr_fill c, attr_stroke_none, [])
-  fn c (OStroke xs) = (attr_fill_none, attr_stroke c, map strokeAttribute xs)
-  fn c (CStroke xs) = (attr_fill_none, attr_stroke c, map strokeAttribute xs)
+  fn c (OStroke xs) = (attr_fill_none, attr_stroke c, strokeAttributes xs)
+  fn c (CStroke xs) = (attr_fill_none, attr_stroke c, strokeAttributes xs)
 
 drawEllipse :: PSColour c => c -> DrawEllipse -> (Attr, Attr, [Attr])
 drawEllipse = fn where
   fn c EFill        = (attr_fill c, attr_stroke_none, [])
-  fn c (EStroke xs) = (attr_fill_none, attr_stroke c, map strokeAttribute xs)
+  fn c (EStroke xs) = (attr_fill_none, attr_stroke c, strokeAttributes xs)
  
 
-strokeAttribute :: StrokeAttr -> Attr
-strokeAttribute (LineWidth a)    = attr_stroke_width a
-strokeAttribute (MiterLimit a)   = attr_stroke_miterlimit a
-strokeAttribute (LineCap lc)     = attr_stroke_linecap lc
-strokeAttribute (LineJoin lj)    = attr_stroke_linejoin lj
-strokeAttribute (DashPattern dp) = fn dp where
-   fn Solid         = attr_stroke_dasharray_none
-   fn (Dash _i _ns) = error $ "DashPattern not implemented yet..."
+strokeAttributes :: [StrokeAttr] -> [Attr]
+strokeAttributes = foldr fn [] where
+  fn (LineWidth a)    = (:) (attr_stroke_width a)
+  fn (MiterLimit a)   = (:) (attr_stroke_miterlimit a)
+  fn (LineCap lc)     = (:) (attr_stroke_linecap lc)
+  fn (LineJoin lj)    = (:) (attr_stroke_linejoin lj)
+  fn (DashPattern dp) = dash dp where
+    dash Solid       = (:) (attr_stroke_dasharray_none)
+    dash (Dash _ []) = (:) (attr_stroke_dasharray_none)
+    dash (Dash i xs) = (:) (attr_stroke_dashoffset i) . 
+                       (:) (attr_stroke_dasharray xs)
    
 
 

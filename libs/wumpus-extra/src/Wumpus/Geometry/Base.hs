@@ -36,6 +36,9 @@ module Wumpus.Geometry.Base
 
   , ixDownLeftRight
   , ixLeftRightDown
+  , ixLeftRightUp
+  , ixUpLeftRight
+
   , countup
   , countdown
 
@@ -139,8 +142,23 @@ ixDownLeftRight row_count col_count fn =
 ixLeftRightDown :: (Num u, Ord u)
               => Int -> Int -> (Point2 u -> Point2 u) -> [Point2 u]
 ixLeftRightDown row_count col_count fn = 
-    [fn $ P2 x y | y <- countdown (row_count - 1)
-                 , x <- countup   (col_count - 1) ]
+    [fn $ P2 x y | y <- countdown (col_count - 1)
+                 , x <- countup   (row_count - 1) ]
+
+
+
+ixLeftRightUp :: (Num u, Ord u)
+              => Int -> Int -> (Point2 u -> Point2 u) -> [Point2 u]
+ixLeftRightUp row_count col_count fn = 
+    [fn $ P2 x y | y <- countup (col_count - 1)
+                 , x <- countup (row_count - 1) ]
+
+ixUpLeftRight :: (Num u, Ord u)
+              => Int -> Int -> (Point2 u -> Point2 u) -> [Point2 u]
+ixUpLeftRight row_count col_count fn = 
+    [fn $ P2 x y | x <- countup (row_count - 1)
+                 , y <- countup (col_count - 1) ]
+                 
 
 
 countdown :: Num u => Int -> [u]

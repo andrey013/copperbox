@@ -79,6 +79,7 @@ module Wumpus.Core.SVG
 
   , attr_stroke_dasharray
   , attr_stroke_dasharray_none
+  , attr_stroke_dashoffset
 
   , attr_color
   , attr_clippath
@@ -359,14 +360,16 @@ attr_stroke_linecap CapSquare = unqualAttr "stroke-linecap" "square"
 
 
 -- | @ stroke-dasharray=\"...\" @
-attr_stroke_dasharray :: PSUnit u => [u] -> Attr
-attr_stroke_dasharray = unqualAttr "stoke-dasharray" . hsep . map dtrunc
+attr_stroke_dasharray :: [Int] -> Attr
+attr_stroke_dasharray = unqualAttr "stroke-dasharray" . commasep . map show
 
 -- | @ stroke-dasharray=\"none\" @
 attr_stroke_dasharray_none :: Attr
-attr_stroke_dasharray_none = unqualAttr "stoke-dasharray" "none"
+attr_stroke_dasharray_none = unqualAttr "stroke-dasharray" "none"
 
-
+-- | @ stroke-dashoffset=\"...\" @
+attr_stroke_dashoffset :: Int -> Attr
+attr_stroke_dashoffset = unqualAttr "stroke-dashoffset" . show
 
 -- | @ color=\"rgb(..., ..., ...)\" @
 --

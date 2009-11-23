@@ -44,6 +44,7 @@ module Wumpus.Core.Utils
   -- * Pretty printers for strings  
   , parens
   , hsep
+  , commasep
   , tupled
 
   -- * Extras  
@@ -204,6 +205,9 @@ parens s = "(" ++ s  ++ ")"
 -- | Separate with a space.
 hsep :: [String] -> String
 hsep = concat . intersperse " "
+
+commasep :: [String] -> String
+commasep = concat . intersperse ","
 
 -- | @ (..., ...)@
 tupled :: [String] -> String

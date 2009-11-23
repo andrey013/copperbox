@@ -7,8 +7,9 @@ import Wumpus.Extra
 import Wumpus.Extra.SVGColours
 import Wumpus.Geometry
 
+
 main :: IO ()
-main = sequence_ [ demo01, demo02, demo03 ]
+main = sequence_ [ demo01, demo02, demo03, demo04 ]
 
 
 colouredSquare :: (Fractional u, Ord u) => DRGB -> u -> Picture u
@@ -80,3 +81,25 @@ demo03 = do
 mix :: [a] -> [a] -> [a]
 mix (x:xs) (y:ys) = x:y:mix xs ys
 mix _      _      = []
+
+
+demo04 :: IO ()
+demo04 = do 
+    writeEPS_latin1 "./out/picture04.eps" pic1 
+    writeSVG_latin1 "./out/picture04.svg" pic1 
+  where
+    pic1 :: Picture Double
+    pic1 = uniformScale 1.25 $ 
+             vsepA VLeft 20 (scanlikePic ps1) (map scanlikePic [ps2,ps3,ps4])
+    ps1  = ixDownLeftRight 8 6 (fmap (*18))
+    ps2  = ixLeftRightDown 8 6 (fmap (*18))
+    ps3  = ixLeftRightUp   8 6 (fmap (*18))
+    ps4  = ixUpLeftRight   8 6 (fmap (*18))
+
+scanlikePic :: [Point2 Double] -> Picture Double
+scanlikePic []     = error "scanlikePic - empty"
+scanlikePic (x:xs) = multi $ ls : start : rest 
+  where
+    ls     = frame $ ostroke () $ vertexPath (x:xs)
+    start  = dotDisk red x
+    rest   = map (dotDisk black) xs
