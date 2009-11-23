@@ -23,7 +23,7 @@ module Wumpus.Extra.SVGColourChart
 
 import Wumpus.Extra.SVGColours
 
-import Wumpus.Core.Colour ( RGB3(..), DRGB )
+import Wumpus.Core.Colour ( DRGB )
 
 
 import Prelude hiding ( tan )

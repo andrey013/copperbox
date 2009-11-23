@@ -23,14 +23,17 @@ test01 :: IO ()
 test01 = do 
     writeEPS_latin1 "./out/SVGcolours.eps" svg
     writeSVG_latin1 "./out/SVGcolours.svg" svg
-    writeEPS_latin1 "./out/X11colours.eps" $ uniformScale 0.75 x11
-    writeSVG_latin1 "./out/X11colours.svg" x11
+    writeEPS_latin1 "./out/X11colours.eps" $ uniformScale 0.75 x11_port
+    writeSVG_latin1 "./out/X11colours.svg" x11_land
   where
-    svg, x11 :: Picture Double
-    svg = mkPic all_svg_colours 160 
-    x11 = mkPic all_x11_colours 140
+    svg, x11_land, x11_port :: Picture Double
+    svg = mkPic all_svg_colours (pointsColwise 59 0 0 4 (scalePt 160))
+    x11_land = mkPic all_x11_colours (pointsColwise 59 0 0 5 (scalePt 140))
+    x11_port = mkPic all_x11_colours (pointsColwise 71 0 0 4 (scalePt 140))
     
-    mkPic cs w = multi $ zipWith colourSample cs (points w)
+    mkPic cs pts = multi $ zipWith colourSample cs pts
+
+    scalePt w (P2 x y) = P2 (x*w) (y*12) 
 
 colourSample :: (Fractional u, Ord u) 
              => (String,DRGB) -> Point2 u -> Picture u
@@ -39,11 +42,3 @@ colourSample (name,c) pt = multi [block, lbl] where
   lbl   = textline courier10 (pt .+^ hvec 18) name
 
 
--- infinite
-points :: (Num u, Ord u) => u -> [Point2 u]
-points w = [P2 (x*w) (y*12) | x <- iterate (+1) 0, y <- countdown 59 ]
-
-countdown :: (Num u, Ord u) => u -> [u]
-countdown = unfoldr phi where
-   phi i | i < 0 = Nothing
-   phi i         = Just (i,i-1)

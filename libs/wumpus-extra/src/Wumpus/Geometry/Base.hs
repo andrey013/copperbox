@@ -34,6 +34,10 @@ module Wumpus.Geometry.Base
   , circular
   , circularAbout
 
+  , pointsRowwise
+  , pointsColwise
+  , countup, countdown
+
   ) where
 
 import Wumpus.Core
@@ -41,7 +45,7 @@ import Wumpus.Core
 import Data.AffineSpace
 import Data.VectorSpace
 
-
+import Data.List
 
 --------------------------------------------------------------------------------
 -- Type classes
@@ -95,6 +99,8 @@ para phi b = step
   where step []     = b
         step (x:xs) = phi x (xs, step xs)
 
+--------------------------------------------------------------------------------
+-- Generating points
 
 -- | @ circle n r @ 
 -- Trace @n@ equally spaced points around a circle of radius @r@
@@ -115,4 +121,35 @@ circularAbout pt n r = take n $ iterate (rotateAbout ang pt) px
   where
     ang  = let n'::Double = fromIntegral n in toRadian $  2*pi/ n'
     px   = pt .+^ V2 0 r
+
+
+-- Urgh, should these definitions flip x and y args ? ...
+-- maybe we should work on number of rows and cols 
+-- and let the f function change the index if necessary...
+-- Also the names don't highlight Left-Right or Up-Down.
+
+pointsColwise :: (Num u, Ord u) 
+              => u -> u -> u -> u -> (Point2 u -> Point2 u) -> [Point2 u]
+pointsColwise yfrom yto xfrom xto f = 
+    [f $ P2 x y | x <- countup   xfrom xto 1
+                , y <- countdown yfrom yto 1 ]
+
+
+pointsRowwise :: (Num u, Ord u)
+              => u -> u -> u -> u -> (Point2 u -> Point2 u) -> [Point2 u]
+pointsRowwise xfrom xto yfrom yto f = 
+    [f $ P2 x y | y <- countdown yfrom yto 1
+                , x <- countup   xfrom xto 1 ]
+
+
+countdown :: (Num u, Ord u) => u -> u -> u -> [u]
+countdown from to step = unfoldr phi from where
+   phi i | i < to = Nothing
+   phi i         = Just (i,i-step)
+
+
+countup :: (Num u, Ord u) => u -> u -> u -> [u]
+countup from to step = unfoldr phi from where
+   phi i | i > to = Nothing
+   phi i          = Just (i,i+step)
 
