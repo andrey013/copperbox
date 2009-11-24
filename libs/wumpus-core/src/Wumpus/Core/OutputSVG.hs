@@ -230,7 +230,7 @@ ellipse (c,dp) (P2 x y) w h
 -- OStroke ==> stroke="..."  fill="none"
 --
 
-drawProperties :: PSColour c => c -> DrawProp -> (Attr, Attr, [Attr])
+drawProperties :: PSColour c => c -> DrawPath -> (Attr, Attr, [Attr])
 drawProperties = fn where
   fn c CFill        = (attr_fill c, attr_stroke_none, [])
   fn c (OStroke xs) = (attr_fill_none, attr_stroke c, strokeAttributes xs)
@@ -256,7 +256,7 @@ strokeAttributes = foldr fn [] where
    
 
 
-svgPath :: PSUnit u => DrawProp -> Path u -> SvgPath
+svgPath :: PSUnit u => DrawPath -> Path u -> SvgPath
 svgPath (OStroke _) p = pathInstructions p
 svgPath _           p = closePath $ pathInstructions p
 
@@ -266,7 +266,8 @@ pathInstructions (Path (P2 x y) xs) = path_m x y : map pathSegment xs
 
 pathSegment :: PSUnit u => PathSegment u -> String
 pathSegment (PLine (P2 x1 y1))                        = path_l x1 y1
-pathSegment (PCurve (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = path_s x1 y1 x2 y2 x3 y3
+pathSegment (PCurve (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
+    path_s x1 y1 x2 y2 x3 y3
 
 
 

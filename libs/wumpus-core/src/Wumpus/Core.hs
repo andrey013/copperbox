@@ -11,7 +11,8 @@
 -- Portability :  GHC
 --
 -- Common interface to Wumpus.Core...
---
+-- 
+-- 
 --------------------------------------------------------------------------------
 
 
@@ -44,7 +45,7 @@ module Wumpus.Core
   , PathProps                   -- Better hidden?
   , LabelProps                  --      "
   , EllipseProps                --      "
-  , DrawProp                    --      "
+  , DrawPath                    --      "
   , DrawEllipse                 --      "
 
   ) where
@@ -61,4 +62,6 @@ import Wumpus.Core.Picture
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PictureLanguage
 import Wumpus.Core.TextEncoding
+
+
 

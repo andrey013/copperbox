@@ -12,7 +12,8 @@
 -- Stability   :  experimental
 -- Portability :  GHC only
 --
---
+-- Internal representation of Pictures 
+-- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.PictureInternal 
@@ -32,7 +33,7 @@ module Wumpus.Core.PictureInternal
   , PathProps                   -- hide in Wumpus.Core export?
   , LabelProps                  -- hide in Wumpus.Core export?
   , EllipseProps                -- 
-  , DrawProp(..)                -- hide in Wumpus.Core export?
+  , DrawPath(..)                -- hide in Wumpus.Core export?
   , DrawEllipse(..)
   , Locale  
  
@@ -176,14 +177,14 @@ type DLabel = Label Double
 --   of the shape. The actual size depends on the thickness
 --   of the line (stroke width).
 --
-data DrawProp = CFill | CStroke [StrokeAttr] | OStroke [StrokeAttr]
+data DrawPath = CFill | CStroke [StrokeAttr] | OStroke [StrokeAttr]
   deriving (Eq,Show)
 
 -- | Ellipses and circles are always closed.
 data DrawEllipse = EFill | EStroke [StrokeAttr]
   deriving (Eq,Show)
 
-type PathProps    = (PSRgb, DrawProp)
+type PathProps    = (PSRgb, DrawPath)
 type LabelProps   = (PSRgb, FontAttr)
 type EllipseProps = (PSRgb, DrawEllipse)
 

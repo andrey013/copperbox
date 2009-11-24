@@ -258,7 +258,8 @@ fontCommand (FontAttr name _ _ sz) = do
 
 
     
-outputPath :: (PSColour c, PSUnit u) => DrawProp -> c -> Path u -> WumpusM ()
+outputPath :: (PSColour c, PSUnit u) 
+           => DrawPath -> c -> Path u -> WumpusM ()
 outputPath CFill        c p = updateColour c $ do  
     startPath p
     ps_closepath

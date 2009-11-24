@@ -14,12 +14,14 @@
 -- generic XML representation (almost) everything is an element 
 -- with attributes.
 --
--- SVG output is monadic to handle clipping paths. SVG does not 
--- achieve clipping by changing the graphics state (being err 
--- /declarative/ SVG doesn\'t have a graphics state as such). 
--- Instead a clipping path has an id, subsequent elements that 
--- are bound by the clipping path are tagged with a @clip-path@ 
--- attribute that references the clipping path id: 
+-- SVG output is monadic to handle clipping paths and 
+-- configurable text encoding via a Reader monad. 
+--
+-- SVG does not achieve clipping by changing the graphics state 
+-- (being /declarative/ SVG doesn\'t have a graphics state as 
+-- such). Instead a clipping path has an id, subsequent elements 
+-- that are bound by the clipping path are tagged with a 
+-- @clip-path@ attribute that references the clipping path id: 
 --
 -- > clip-path=\"url(#clip1)\"
 -- 
