@@ -1,12 +1,12 @@
 name:             wumpus-core
-version:          0.11.1
+version:          0.11.9
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Graphics
-synopsis:         PostScript and SVG generation. 
+synopsis:         Pure Haskell PostScript and SVG generation. 
 description:
   PostScript and SVG generation.
 build-type:         Simple
@@ -22,8 +22,8 @@ library
   hs-source-dirs:     src
   build-depends:      base < 5, containers, old-time,
                       wl-pprint, vector-space, 
-                      monadLib, xml, dlist,
-                      algebra, data-aviary
+                      monadLib, xml, dlist, algebra, 
+                      data-aviary > 0.1.0
                         
   exposed-modules:
     Wumpus.Core,

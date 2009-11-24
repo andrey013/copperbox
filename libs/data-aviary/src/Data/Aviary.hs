@@ -30,8 +30,6 @@ module Data.Aviary
   , subst
   , bigphi
   , appro
-  , pairbimap
-  , eitherbimap
 
   -- * Specs
   , oo
@@ -52,14 +50,20 @@ infixl 7 #
 -- | T combinator - thrush
 --
 -- Reverse application - the T combinator.
--- Found in Peter Thiemann's Wash and the paper 'Client-Side Web 
+-- Found in Peter Thiemann's WASH and the paper 'Client-Side Web 
 -- Scripting in Haskell' - Erik Meijer, Daan Leijen & James Hook.
+--
 ( # ) :: a -> (a -> b) -> b 
 x # f = f x
 
 
 infixl 8 ##
 
+-- | Q Combinator - the queer bitd.
+-- 
+-- Reverse composition - found in Peter Thiemann's WASH.
+-- You might perfer to use (<<<) from Control.Categoty.
+--
 ( ## ) :: (a -> b) -> (b -> c) -> a -> c
 f ## g = \x -> g (f x)
  
@@ -78,52 +82,48 @@ subst f g x = f x (g x)
 --
 -- > (a1 -> a2 -> r) -> m a1 -> m a2 -> m r where m = ((->) a)
 -- 
--- Taste suggests you may prefer liftA2.
+-- Taste suggests you may prefer liftA2 especially as @bigphi@ is
+-- not a great name (calling it s\' would take a very useful 
+-- variable name).
 --
 bigphi :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
 bigphi f g h x = f (g x) (h x)
 
 -- | A variant of the @D2@ or dovekie combinator - the argument
--- order has been changed to be more satisfying for Haskellers.
+-- order has been changed to be more satisfying for Haskellers:
 --
--- @appro@ is similar to the function @prod@ from the Pair 
--- calculus, but @appro@ applies the first argument 
--- @ f :: (c -> d -> e) @ to the two intermediate results.
--- @prod@ always forms a pair from the intermediate results.
+-- > (appro comb f g) x y
 --
+-- > (f x) `comb` (g y)
+-- 
 -- @on@ from Data.Function is similar but less general, where 
 -- the two intermediate results are formed by applying the same 
--- function to the supplied arguments.
+-- function to the supplied arguments:
+--
+-- > on = (appro comb f f)
 --
 appro :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
 appro f g h x y = f (g x) (h y) 
 
 
 
--- | Haskell has no standard Bifunctor class - probably because
--- there aren\'t many natural instances @(,)@, @Either@, trees 
--- with different nodes and leaves...
---
--- Rather than define the Bifunctor class in this dim, distant 
--- corner we just implement the specialization to pairs.  
-pairbimap :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
-pairbimap f g (x,y) = (f x, g y)
 
-
--- | Bimap for 'Either'.
-eitherbimap :: (a -> c) -> (b -> d) -> Either a b -> Either c d
-eitherbimap f _ (Left x)  = Left (f x)
-eitherbimap _ g (Right y) = Right (g y)
 
 
 --------------------------------------------------------------------------------
 -- Specs - blackbird, bunting, ...
 
 -- Alleviate your composing-sectioning mania with specs!
--- The name becomes a pun on spectacles (glasses, specs), 
--- once you use infix directives @`oo`@.
+--
 -- E.g.:
 -- (abs .) . (*) ==> abs `oo` (*)
+--
+-- The family name /specs/ (glasses, specs, lunettes) is a 
+-- visual pun when infix directives @`oo`@ are included. The 
+-- @o@\'s of individual combinators are a fraternal nod to 
+-- Clean and ML who use @o@ as function composition. Naturally
+-- we don\'t defined @o@ here and waste a good variable on a 
+-- redundant combinator.
 
 -- | Compose an arity 1 function with an arity 2 function.
 -- B1 - blackbird

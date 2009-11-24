@@ -18,7 +18,7 @@
 
 module Wumpus.Core.Utils
   ( 
-  
+
   -- * Component-wise min and max
     CMinMax(..)
   , within
@@ -56,7 +56,7 @@ module Wumpus.Core.Utils
 
   -- * One type - non-empty list type
   , OneList(..)
-  , mkList2       -- candidate for Data.Hy ?
+  , mkList2
   , onesmapM_
   , toListWith
   , toListWithM
@@ -71,6 +71,11 @@ import Control.Monad ( ap )
 import Data.List ( intersperse )
 import Data.Ratio
 import System.Time 
+
+
+
+
+--------------------------------------------------------------------------------
 
 -- | /Component-wise/ min and max. 
 -- Standard 'min' and 'max' via Ord are defined lexographically

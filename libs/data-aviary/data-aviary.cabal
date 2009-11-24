@@ -14,8 +14,11 @@ description:
   Plus a smaller set (Data.Avery) intended to be useful, 
   collecting combinators that have already /escaped/ (published 
   elsewhere) but aren\'t in Data.Function, along with some other 
-  favourites (e.g. pairmap).
+  favourites.
   .
+  Changelog:
+  . 
+  0.2.0 added Haddock docs for @(\#\#)@.
 
 build-type:         Simple
 stability:          highly unstable
