@@ -34,6 +34,8 @@ import Wumpus.Core.TextEncoding
 import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
+import Data.Aviary
+
 import MonadLib hiding ( Label )
 
 import Control.Monad ( mapM_, zipWithM_ )
@@ -195,28 +197,32 @@ outputPicture (Clip (fr,_) cp p)        =
     updateFrame fr $ do { clipPath cp ; outputPicture p }
 
 
--- | @updateFrame@ performs one optimization:
+-- | @updateFrame@ relies on the current frame, when translated
+-- to a matrix being invertible.
+--
+-- This is an allowable optimization because the current frame
+-- is only manipulated with the affine transformations (scalings, 
+-- rotations...) which are invertible. 
 -- 
+-- It also performs another optimization:
+--
 -- If the frame is the standard frame @ [1 0 0 1 0 0] @ then 
 -- the monadic action is run as-is rather than being nested
 -- in a block:
 -- 
--- > gsave 
 -- > [1 0 0 1 0 0] concat
 -- > ...
--- > grestore
+-- > [1 0 0 1 0 0] concat
 --
 
-updateFrame :: PSUnit u => Frame2 u -> WumpusM () -> WumpusM ()
+updateFrame :: (Fractional u, PSUnit u) => Frame2 u -> WumpusM () -> WumpusM ()
 updateFrame frm ma 
   | standardFrame frm = ma
-  | otherwise         = do { ps_gsave
-                           ; ps_concat $ toCTM frm
-                           ; ma
-                           ; ps_grestore 
+  | otherwise         = let m1 = frame2Matrix frm in 
+                        do { ps_concat $ toCTM m1
+                           ; ma 
+                           ; ps_concat $ toCTM $ invert m1
                            }
-
-
 
 outputPrimitive :: (Fractional u, PSUnit u) => Primitive u -> WumpusM ()
 outputPrimitive (PPath (c,dp) p)           = outputPath dp c p 
@@ -224,21 +230,22 @@ outputPrimitive (PLabel props l)           = updateFont props $ outputLabel l
 outputPrimitive (PEllipse (c,dp) ct hw hh) = outputEllipse dp c ct hw hh
 
 updateFont :: LabelProps -> WumpusM () -> WumpusM ()
-updateFont (c,fnt) ma = do 
-    ps_gsave
-    colourCommand c
-    fontCommand fnt
+updateFont (c,fnt) ma = updateColour c $ do 
+    mb_fnt <- deltaFontAttr fnt
+    maybe (return ()) fontCommand mb_fnt
     ma
-    ps_grestore
     
 
 
 updateColour :: PSColour c => c -> WumpusM () -> WumpusM ()
-updateColour c ma = do 
-    ps_gsave
-    colourCommand c
+updateColour c ma = let rgbc = psColour c in do 
+    mb_col  <- deltaRgbColour rgbc
+    maybe (return ()) colourCommand mb_col
     ma
-    ps_grestore
+  where
+    colourCommand :: DRGB -> WumpusM ()
+    colourCommand (RGB3 r g b) = ps_setrgbcolor r g b
+ 
     
 
 
@@ -249,10 +256,6 @@ fontCommand (FontAttr name _ _ sz) = do
     ps_setfont
 
 
-colourCommand :: PSColour c => c -> WumpusM ()
-colourCommand = cmd . psColour
-  where
-    cmd (RGB3 r g b) = ps_setrgbcolor r g b
 
     
 outputPath :: (PSColour c, PSUnit u) => DrawProp -> c -> Path u -> WumpusM ()
@@ -288,19 +291,22 @@ clipPath p = do
 
 
 updatePen :: PSColour c => c -> [StrokeAttr] -> WumpusM () -> WumpusM ()
-updatePen c xs ma = do 
-    ps_gsave
-    colourCommand c
-    mapM_ penCommand xs
-    ma
-    ps_grestore
+updatePen c xs ma = let (mset, mreset) = strokeSetReset xs in 
+                    updateColour c $ do { mset ; ma ; mreset }
 
-penCommand :: StrokeAttr -> WumpusM ()
-penCommand (LineWidth d)    = ps_setlinewidth d
-penCommand (MiterLimit d)   = ps_setmiterlimit d
-penCommand (LineCap lc)     = ps_setlinecap lc
-penCommand (LineJoin lj)    = ps_setlinejoin lj
-penCommand (DashPattern dp) = ps_setdash dp
+strokeSetReset :: [StrokeAttr] -> (WumpusM (), WumpusM ())
+strokeSetReset = foldr (appro link cmd id) (return (), return ())
+  where
+    link Nothing      funs    = funs 
+    link (Just (f,g)) (fs,gs) = (fs >> f, gs >> g)
+    
+    mkSetReset mf        = maybe Nothing (\(a,b) -> Just (mf a, mf b))
+    
+    cmd (LineWidth d)    = mkSetReset ps_setlinewidth  $ deltaStrokeWidth d
+    cmd (MiterLimit d)   = mkSetReset ps_setmiterlimit $ deltaMiterLimit d
+    cmd (LineCap lc)     = mkSetReset ps_setlinecap    $ deltaLineCap lc
+    cmd (LineJoin lj)    = mkSetReset ps_setlinejoin   $ deltaLineJoin lj
+    cmd (DashPattern dp) = mkSetReset ps_setdash       $ deltaDashPattern dp
 
 
 outputPathSeg :: PSUnit u => PathSegment u -> WumpusM ()

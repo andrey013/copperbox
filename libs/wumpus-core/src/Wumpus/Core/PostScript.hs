@@ -31,6 +31,16 @@ module Wumpus.Core.PostScript
 
   , runWumpus
 
+  -- * Deltas 
+  , deltaFontAttr
+  , deltaRgbColour
+
+  , deltaStrokeWidth
+  , deltaMiterLimit
+  , deltaLineCap
+  , deltaLineJoin
+  , deltaDashPattern
+ 
   -- * Emit PostScript 
   , ps_comment
   
@@ -77,6 +87,7 @@ module Wumpus.Core.PostScript
 
   ) where
 
+import Wumpus.Core.Colour
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.TextEncoding
 import Wumpus.Core.Utils ( PSUnit(..), roundup, parens, hsep )
@@ -89,6 +100,63 @@ import MonadLib
 import Data.List ( foldl' )
 
 
+-- Graphics state for PostScript Rendering
+--
+-- Values with no default value (e.g. font) in the graphics 
+-- state of the PostScript interpreter (not Wumpus\'s renderer) 
+-- are Maybes.
+-- 
+-- The graphics state is considered successive - all elements 
+-- have a colour and all text labels have a font. So during 
+-- processing there are two situations: 
+
+-- (1) If font or colour is the same as the last no state
+-- change needs to be printed.
+--
+-- (2) If the font or colour changes the update needs to be 
+-- printed, but as the next element always has a colour (and a
+-- font if it is a label), no @undo@ needs to be printed.
+--
+-- This contrasts with the behaviour for stroke attributes
+-- which needs @undo@.
+
+data PostScriptGS = PostScriptGS { 
+        gs_font         :: Maybe FontAttr,
+        gs_rgb_colour   :: DRGB
+      }
+  deriving (Eq,Show)
+
+
+
+-- | Stroke properties do not have to be fully specified in 
+-- Wumpus\'s picture types - i.e. a Path might have it\'s stroke 
+-- width set but nothing else.
+--
+-- If a path changes any of the stroke properties, it 
+-- immediately undoes the changes after drawing, returning the 
+-- the stroke values to their PostScript defaults.
+--
+-- This means Wumpus doesn't have to carry a nested environment 
+-- around as it renders to PostScript. As stroke properties can
+-- only be assigned to leaves in the picture tree, a nested 
+-- environment wouldn\'t really be an ideal fit anyway.
+
+
+gs_stroke_width :: Double
+gs_stroke_width = 1.0
+
+gs_miter_limit  :: Double
+gs_miter_limit  = 10.0
+
+gs_line_cap     :: LineCap
+gs_line_cap     = CapSquare
+
+gs_line_join    :: LineJoin
+gs_line_join    = JoinMiter
+
+gs_dash_pattern :: DashPattern
+gs_dash_pattern = Solid
+
 
 
 type PostScript = String
@@ -98,10 +166,19 @@ type PsOutput = DL.DList Char
 type WumpusM a = PsT Id a
 
 
-newtype PsT m a = PsT { unPsT :: WriterT PsOutput (ReaderT TextEncoder m) a }
+newtype PsT m a = PsT { 
+    unPsT :: StateT PostScriptGS 
+                    (WriterT PsOutput (ReaderT TextEncoder m)) a }
 
-runPsT :: Monad m => TextEncoder -> PsT m a -> m (a,PsOutput)
-runPsT i m = runReaderT i $ runWriterT $ unPsT m
+gs_init :: PostScriptGS 
+gs_init = PostScriptGS { gs_font           = Nothing
+                       , gs_rgb_colour     = black 
+                       }
+           
+            
+runPsT :: Monad m 
+       => TextEncoder -> PsT m a -> m ((a,PostScriptGS),PsOutput)
+runPsT i m = runReaderT i $ runWriterT $ runStateT gs_init $ unPsT m
 
 instance Monad m => Functor (PsT m) where
   fmap f (PsT mf) = PsT $ fmap f mf 
@@ -116,15 +193,71 @@ instance Monad m => WriterM (PsT m) PsOutput where
 instance Monad m => ReaderM (PsT m) TextEncoder where
   ask = PsT $ ask
 
+instance Monad m => StateM (PsT m) PostScriptGS where
+  set = PsT . set
+  get = PsT $ get
+
 instance MonadT PsT where
-  lift = PsT . lift . lift
+  lift = PsT . lift . lift . lift
 
 
-pstId :: TextEncoder -> PsT Id a -> (a,PsOutput)
+pstId :: TextEncoder -> PsT Id a -> ((a,PostScriptGS),PsOutput)
 pstId = runId `oo` runPsT
 
+-- | Drop state and result, take the Writer trace.
 runWumpus :: TextEncoder -> WumpusM a -> String
 runWumpus = (DL.toList . snd) `oo` pstId
+
+--------------------------------------------------------------------------------
+-- "Deltas" of the graphics state
+
+deltaFontAttr :: FontAttr -> WumpusM (Maybe FontAttr)
+deltaFontAttr new = get >>= maybe update diff . gs_font
+  where
+    update :: WumpusM (Maybe FontAttr)
+    update = sets_ (\s -> s { gs_font = Just new }) >> return (Just new)
+    
+    diff :: FontAttr -> WumpusM (Maybe FontAttr)
+    diff old | old == new = return Nothing
+             | otherwise  = update
+
+
+deltaRgbColour :: DRGB -> WumpusM (Maybe DRGB)
+deltaRgbColour new = get >>= diff . gs_rgb_colour
+  where
+    diff :: DRGB -> WumpusM (Maybe DRGB)
+    diff old | old == new = return Nothing
+             | otherwise  = do { sets_ (\s -> s { gs_rgb_colour = new })
+                               ; return (Just new)
+                               }
+
+
+deltaStrokeWidth :: Double -> Maybe (Double,Double)
+deltaStrokeWidth n
+    | n == gs_stroke_width = Nothing
+    | otherwise            = Just (n,gs_stroke_width)
+
+deltaMiterLimit :: Double -> Maybe (Double,Double)
+deltaMiterLimit n 
+    | n == gs_miter_limit  = Nothing
+    | otherwise            = Just (n,gs_miter_limit)
+
+
+deltaLineCap :: LineCap -> Maybe (LineCap,LineCap)
+deltaLineCap lc
+    | lc == gs_line_cap    = Nothing
+    | otherwise            = Just (lc,gs_line_cap)
+
+deltaLineJoin :: LineJoin -> Maybe (LineJoin,LineJoin)
+deltaLineJoin lj 
+    | lj == gs_line_join   = Nothing
+    | otherwise            = Just (lj,gs_line_join)
+
+deltaDashPattern :: DashPattern -> Maybe (DashPattern,DashPattern)
+deltaDashPattern p 
+    | p == gs_dash_pattern = Nothing
+    | otherwise            = Just (p,gs_dash_pattern)
+
 
 
 --------------------------------------------------------------------------------
