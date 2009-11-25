@@ -8,11 +8,20 @@
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
--- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
--- Portability :  GHC
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  unstable
+-- Portability :  GHC with TypeFamilies and more
 --
--- RGB, HSB, Gray colour types.
+--
+-- RGB, HSB, Gray colour types, and conversions between them.
+--
+-- Internally Wumpus uses @RGB3 Double@ with range [0.0, 1..0] 
+-- as the colour type. All colour values in the generated SVG or 
+-- PostScript files will be RGB.
+--
+-- Colour have Num instances for convenience, though the 
+-- operations of @Data.VectorSpace@ (instances also defined) 
+-- seem more approriate.
 --
 --------------------------------------------------------------------------------
 
@@ -73,12 +82,15 @@ type DHSB = HSB3 Double
 
 
 newtype Gray a = Gray a
-  deriving (Eq,Num,Ord,Show)
+  deriving (Eq,Num,Fractional,Ord,Show)
 
 -- | Gray represented by a Double - values should be in the range
 -- 0.0 (black) to 1.0 (white).
 type DGray = Gray Double
 
+
+--------------------------------------------------------------------------------
+-- Num instances
 
 instance Num a => Num (RGB3 a) where
   (+) (RGB3 a b c) (RGB3 x y z) = RGB3 (a+x) (b+y) (c+z)
@@ -88,23 +100,6 @@ instance Num a => Num (RGB3 a) where
   negate (RGB3 a b c)         = RGB3 (negate a) (negate b) (negate c)
   signum (RGB3 a b c)         = RGB3 (signum a) (signum b) (signum c)
   fromInteger i = RGB3 (fromInteger i) (fromInteger i) (fromInteger i)
-
-instance Fractional a => Fractional (RGB3 a) where
-  (/) (RGB3 a b c) (RGB3 x y z) = RGB3 (a/x) (b/y) (c/z)
-  recip (RGB3 a b c)            = RGB3 (recip a) (recip b) (recip c)
-  fromRational a = RGB3 (fromRational a) (fromRational a) (fromRational a)
-
- 
-instance Num a => AdditiveGroup (RGB3 a) where
-  zeroV = RGB3 0 0 0
-  (^+^) = (+)
-  negateV = negate
-
-
-instance (Num a, VectorSpace a) => VectorSpace (RGB3 a) where
-  type Scalar (RGB3 a) = Scalar a
-  s *^ (RGB3 a b c) = RGB3 (s*^a) (s*^b) (s*^c)
-
 
 
 instance Num a => Num (HSB3 a) where
@@ -116,23 +111,54 @@ instance Num a => Num (HSB3 a) where
   signum (HSB3 a b c)         = HSB3 (signum a) (signum b) (signum c)
   fromInteger i = HSB3 (fromInteger i) (fromInteger i) (fromInteger i)
 
+-- Num (Gray a) derived
+
+
+instance Fractional a => Fractional (RGB3 a) where
+  (/) (RGB3 a b c) (RGB3 x y z) = RGB3 (a/x) (b/y) (c/z)
+  recip (RGB3 a b c)            = RGB3 (recip a) (recip b) (recip c)
+  fromRational a = RGB3 (fromRational a) (fromRational a) (fromRational a)
+
 instance Fractional a => Fractional (HSB3 a) where
   (/) (HSB3 a b c) (HSB3 x y z) = HSB3 (a/x) (b/y) (c/z)
   recip (HSB3 a b c)            = HSB3 (recip a) (recip b) (recip c)
   fromRational a = HSB3 (fromRational a) (fromRational a) (fromRational a)
 
 
+-- Fractional (Gray a) derived
+
+--------------------------------------------------------------------------------
+-- Instances for VectorSpace
+
+ 
+instance Num a => AdditiveGroup (RGB3 a) where
+  zeroV = RGB3 0 0 0
+  (^+^) = (+)
+  negateV = negate
  
 instance Num a => AdditiveGroup (HSB3 a) where
   zeroV = HSB3 0 0 0
   (^+^) = (+)
   negateV = negate
 
+instance Num a => AdditiveGroup (Gray a) where
+  zeroV = Gray 0                -- black
+  (^+^) = (+)
+  negateV = negate
 
 
-instance (Num a, VectorSpace a) => VectorSpace (HSB3 a) where
-  type Scalar (HSB3 a) = Scalar a
-  s *^ (HSB3 a b c) = HSB3 (s*^a) (s*^b) (s*^c)
+instance Num a => VectorSpace (RGB3 a) where
+  type Scalar (RGB3 a) = a
+  s *^ (RGB3 a b c) = RGB3 (s*a) (s*b) (s*c)
+
+instance Num a => VectorSpace (HSB3 a) where
+  type Scalar (HSB3 a) = a
+  s *^ (HSB3 a b c) = HSB3 (s*a) (s*b) (s*c)
+
+instance Num a => VectorSpace (Gray a) where
+  type Scalar (Gray a) = a
+  s *^ (Gray a) = Gray (s*a)
+
 
 --------------------------------------------------------------------------------
 -- Operations
@@ -145,7 +171,7 @@ vE = RGB3 1 1 1
 -- the documentation to Dr. Uwe Kern's xcolor LaTeX package
 
 
-
+-- | Covert RGB \[0,1\] to HSB \[0,1\].
 rgb2hsb :: DRGB -> DHSB
 rgb2hsb (RGB3 r g b) = HSB3 hue sat bri
   where
@@ -165,7 +191,7 @@ rgb2hsb (RGB3 r g b) = HSB3 hue sat bri
         | otherwise           = (1/6) * (5+n)
 
 
-
+-- | Covert HSB \[0,1\] to RGB \[0,1\].
 hsb2rgb :: DHSB -> DRGB
 hsb2rgb (HSB3 hue sat bri) = bri *^ (vE - (sat *^ fV))
   where
@@ -180,15 +206,22 @@ hsb2rgb (HSB3 hue sat bri) = bri *^ (vE - (sat *^ fV))
           | i == 5    = RGB3  0     1     f
           | otherwise = RGB3  0     1     1
           
+-- | Covert RGB \[0,1\] to Gray \[0,1\].
 rgb2gray :: DRGB -> DGray
 rgb2gray (RGB3 r g b) = Gray $ 0.3 * r + 0.59 * g + 0.11 * b 
 
+
+-- | Covert Gray \[0,1\] to RGB \[0,1\].
 gray2rgb :: DGray -> DRGB
 gray2rgb (Gray a) = a *^ vE
 
+
+-- | Covert HSB \[0,1\] to Gray \[0,1\].
 hsb2gray :: DHSB -> DGray
 hsb2gray (HSB3 _ _ b) = Gray b 
 
+
+-- | Covert Gray \[0,1\] to HSB \[0,1\].
 gray2hsb :: DGray -> DHSB
 gray2hsb (Gray a) = HSB3 0 0 a
 

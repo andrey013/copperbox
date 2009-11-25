@@ -4,20 +4,30 @@
 -- |
 -- Module      :  Wumpus.Core.FontSize
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (see LICENSE)
--- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  experimental
--- Portability :  GHC only
+-- License     :  BSD3
 --
--- Text handling
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  unstable
+-- Portability :  GHC with TypeFamilies and more
+--
+-- Font size (aka bounding box) calculation.
+-- 
+-- Calculations are based on metrics derived from Courier at 48 
+-- pt. As Courier is a monospaced font, bounding boxes calculated 
+-- for other font families will usually have longer width than is
+-- apparent for the printed text. 
+-- 
+-- This is a deficiency of Wumpus, but alternatives would have
+-- significant implementation complexity.
 -- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.FontSize
   ( 
   
-  -- * Type synonym
+  -- * Type synonyms
     FontSize
+  , CharCount
 
   -- * Courier metrics at 48 point
   , courier48_width
@@ -126,7 +136,7 @@ descenderDepth sz =  (fromIntegral sz) / 48 * courier48_descender_depth
 -- For variable width fonts the calculated bounding box will 
 -- usually be too long.
 --
-textBounds :: Fractional u 
+textBounds :: (Fractional u, Ord u) 
            => FontSize -> Point2 u -> CharCount -> BoundingBox u
 textBounds sz body_bl n = bbox bl tr where
     h           = textHeight sz

@@ -7,7 +7,8 @@
 -- |
 -- Module      :  Wumpus.Core.AffineTrans
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (see LICENSE)
+-- License     :  BSD3
+--
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
 -- Portability :  GHC with TypeFamilies and more

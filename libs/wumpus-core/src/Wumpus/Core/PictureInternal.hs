@@ -374,7 +374,7 @@ instance (Num u, Ord u, Horizontal (Picture u), Vertical (Picture u)) =>
   move x y = movePic (V2 x y)
 
 
-instance Num u => Blank (Picture u) where
+instance (Num u, Ord u) => Blank (Picture u) where
   blank w h = PicBlank (ortho zeroPt, bbox zeroPt (P2 w h))
 
 --------------------------------------------------------------------------------

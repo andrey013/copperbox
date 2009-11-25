@@ -62,7 +62,9 @@ description:
   .
   Changelog:
   .
-  0.12.1 - more Haddock documenting.
+  0.12.1 - more Haddock documenting. 
+  @lowerLeftUpperRight@ removed from "Wumpus.Core.BoundingBox".
+  Added range checking and Ord obligation to @bbox@
   .
 build-type:         Simple
 stability:          highly unstable
