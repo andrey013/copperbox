@@ -7,11 +7,42 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
--- Portability :  GHC
+-- Stability   :  unstable 
+-- Portability :  GHC with TypeFamilies and more
 --
--- Common interface to Wumpus.Core...
--- 
+-- Common interface to Wumpus.Core.
+--
+-- This module re-exports types and functions from:
+--
+-- * "Wumpus.Core.AffineTrans"
+--
+-- * "Wumpus.Core.BoundingBox"
+--
+-- * "Wumpus.Core.Colour"
+--
+-- * "Wumpus.Core.FontSize"
+--
+-- * "Wumpus.Core.Geometry"
+--
+-- * "Wumpus.Core.GraphicsState"
+--
+-- * "Wumpus.Core.OutputPostScript"
+--
+-- * "Wumpus.Core.OutputSVG"
+--
+-- * "Wumpus.Core.Picture"
+--
+-- * "Wumpus.Core.PictureLanguage"
+--
+-- * "Wumpus.Core.TextEncoding"
+--
+--
+-- Named colours ( black, white etc.) are hidden from 
+-- "Wumpus.Core.Colour" to avoid collisions with modules that
+-- define colour sets (e.g. all the SVG colours). 
+--
+-- Some data types are exported "Wumpus.Core.PictureInternal" but
+-- are made opaque. 
 -- 
 --------------------------------------------------------------------------------
 

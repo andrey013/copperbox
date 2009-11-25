@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.12.0
+version:          0.12.1
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -30,8 +30,8 @@ description:
   For actually drawing pictures, diagrams, etc. Wumpus is very 
   low level. I am working on a complementary package 
   @wumpus-extra@ with higher-level stuff (polygons, arrows etc.)
-  but it is far too unstable for Hackage. Preview releases can be
-  found at http://code.google.com/p/copperbox/ though.
+  but it is too unstable for Hackage. Preview releases can be
+  found at <http://code.google.com/p/copperbox/> though.
   .
   Wumpus-core should be fairly stable from now on, except for
   the fact that more modules are exposed than strictly necessary
@@ -41,16 +41,17 @@ description:
   been carefully implemented. Some of the design decisions are
   not sophisticated (e.g. how attributes like colour are handled, 
   and the bounding boxes of text labels are calculated), so
-  Wumpus might be limited compared to other systems but its 
+  Wumpus might be limited compared to other systems. However its 
   design permits a simple implementation - which is a priority. 
-  Text encoding is the exception, the current implementation 
-  appears reasonable for Latin 1 but I\'m not sure about other 
-  character sets, and I might have to revise it significantly.
+  Text encoding an exception, I\'m not sure how reasonable the 
+  design is. The current implementation appears okay for Latin 1 
+  but I\'m not sure about other character sets, and I may have 
+  to revise it significantly.
   .
   /There is no documentation/ - the graphics model used by 
   Wumpus is different to PostScript or SVG, and Wumpus really 
   needs a manual. Unfortunately there isn\'t one yet, and I will 
-  be focusing on @wumpus-extra@ for the foreseeable future so a
+  be focusing on @wumpus-extra@ for the foreseeable future; so a
   manual won\'t be written soon. If you want FFI-free vector
   graphics and Wumpus seems to otherwise fit the task, please 
   email me and I will try to help.
@@ -58,7 +59,11 @@ description:
   \[1\] Because the output is simple, straight-line PostScript 
   code it is possible to use GraphicsMagick or similar tools to 
   convert Wumpus'\s EPS files to many other formats (bitmaps). 
- 
+  .
+  Changelog:
+  .
+  0.12.1 - more Haddock documenting.
+  .
 build-type:         Simple
 stability:          highly unstable
 cabal-version:      >= 1.2

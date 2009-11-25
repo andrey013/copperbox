@@ -9,10 +9,29 @@
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD-style (see LICENSE)
 -- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  experimental
--- Portability :  GHC only
+-- Stability   :  unstable
+-- Portability :  GHC with TypeFamilies and more
 --
--- Affine transformations
+-- Affine transformations.
+-- 
+-- The common affine transformations represented as type classes -
+-- scaling, rotation, translation.
+--
+-- Unlike other functional graphics systems (e.g. Clastic), Wumpus
+-- performs the affine transformations as matrix operations. This 
+-- simplifies the implementation of pictures 
+-- ("Wumpus.Core.PictureInternal"). When a picture is composed and 
+-- transformed, transformations will be performed directly on the 
+-- bounding box in Wumpus but the transformation of the 
+-- picture content (paths or text labels) will be communicated to 
+-- PostScript or SVG to render. This is because Wumpus has no 
+-- access to the paths that make fonts so cannot transform them 
+-- directly.
+-- 
+-- To generate efficient PostScript, Wumpus relies on the matrix
+-- representations of the affine transformations being invertible.
+-- Please do not scale elements by zero.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.AffineTrans
@@ -57,8 +76,7 @@ import Wumpus.Core.Geometry
 -- Affine transformations 
 
 
--- Rotate
-
+-- | Type class for rotation.
 class Rotate t where
   rotate :: Radian -> t -> t
 
@@ -69,8 +87,8 @@ instance (Floating a, Real a) => Rotate (Point2 a) where
 instance (Floating a, Real a) => Rotate (Vec2 a) where
   rotate a = ((rotationMatrix a) *#)
 
--- Rotate about
 
+-- | Type class for rotation about a point.
 class RotateAbout t where
   rotateAbout :: Radian -> Point2 (DUnit t) -> t -> t 
 
@@ -85,6 +103,7 @@ instance (Floating a, Real a) => RotateAbout (Vec2 a) where
 --------------------------------------------------------------------------------
 -- Scale
 
+-- | Type class for scaling.
 class Scale t where
   scale :: DUnit t -> DUnit t -> t -> t
 
@@ -97,10 +116,10 @@ instance Num u => Scale (Vec2 u) where
 --------------------------------------------------------------------------------
 -- Translate
 
+-- | Type class for translations.
 class Translate t where
   translate :: DUnit t -> DUnit t -> t -> t
 
--- | translate @x@ @y@.
 instance Num u => Translate (Point2 u) where
   translate x y = ((translationMatrix x y) *#)
 
@@ -113,37 +132,43 @@ instance Num u => Translate (Vec2 u) where
 
 
 
-
+-- | Rotate by 30 degrees about the origin. 
 rotate30 :: Rotate t => t -> t 
 rotate30 = rotate (pi/6) 
 
+-- | Rotate by 30 degrees about the supplied point.
 rotate30About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
 rotate30About = rotateAbout (pi/6)
 
-
+-- | Rotate by 45 degrees about the origin. 
 rotate45 :: Rotate t => t -> t 
 rotate45 = rotate (pi/4) 
 
+-- | Rotate by 45 degrees about the supplied point.
 rotate45About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
 rotate45About = rotateAbout (pi/4)
 
-
+-- | Rotate by 60 degrees about the origin. 
 rotate60 :: Rotate t => t -> t 
 rotate60 = rotate (2*pi/3) 
 
+-- | Rotate by 60 degrees about the supplied point.
 rotate60About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
 rotate60About = rotateAbout (2*pi/3)
 
+-- | Rotate by 90 degrees about the origin. 
 rotate90 :: Rotate t => t -> t 
 rotate90 = rotate (pi/2) 
 
+-- | Rotate by 90 degrees about the supplied point.
 rotate90About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
 rotate90About = rotateAbout (pi/2)
 
-
+-- | Rotate by 120 degrees about the origin. 
 rotate120 :: Rotate t => t -> t 
 rotate120 = rotate (4*pi/3) 
 
+-- | Rotate by 120 degrees about the supplied point.
 rotate120About :: (RotateAbout t, DUnit t ~ u) => Point2 u -> t -> t 
 rotate120About = rotateAbout (4*pi/3)
 
@@ -152,19 +177,22 @@ rotate120About = rotateAbout (4*pi/3)
 --------------------------------------------------------------------------------
 -- Common scalings
 
+-- | Scale both x and y dimensions by the same amount.
 uniformScale :: (Scale t, DUnit t ~ u) => u -> t -> t 
 uniformScale a = scale a a 
 
-
+-- | Reflect in the X-plane about the origin.
 reflectX :: (Num u, Scale t, DUnit t ~ u) => t -> t
 reflectX = scale (-1) 1
 
+-- | Reflect in the Y-plane about the origin.
 reflectY :: (Num u, Scale t, DUnit t ~ u) => t -> t
 reflectY = scale 1 (-1)
 
 --------------------------------------------------------------------------------
 -- translations
 
+-- | Translate by the x and y components of a vector.
 translateBy :: (Translate t, DUnit t ~ u) => Vec2 u -> t -> t 
 translateBy (V2 x y) = translate x y
 
