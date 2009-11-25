@@ -7,10 +7,11 @@
 -- |
 -- Module      :  Wumpus.Core.PictureInternal
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (see LICENSE)
+-- License     :  BSD3
+--
 -- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  experimental
--- Portability :  GHC only
+-- Stability   :  unstable
+-- Portability :  GHC with TypeFamilies and more
 --
 -- Internal representation of Pictures 
 -- 

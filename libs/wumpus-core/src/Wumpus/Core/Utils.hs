@@ -11,7 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Utility functions
+-- Utility functions and a OneList (non-empty list) data type.
 --
 --------------------------------------------------------------------------------
 

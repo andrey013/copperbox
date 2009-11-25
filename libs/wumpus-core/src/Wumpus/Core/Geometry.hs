@@ -11,12 +11,18 @@
 -- |
 -- Module      :  Wumpus.Core.Geometry
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (see LICENSE)
--- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  experimental
--- Portability :  GHC only
+-- License     :  BSD3
 --
--- 2D geometry
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  unstable
+-- Portability :  GHC with TypeFamilies and more
+--
+-- Objects and operations for 2D geometry.
+-- 
+-- Vector, point, affine frame, 3x3 matrix, and radian 
+-- representations, plus a type family @DUnit@ for parameterizing
+-- type classes with some /dimension/.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.Geometry 
@@ -104,15 +110,13 @@ type family DUnit a :: *
 
 -- Datatypes 
 
--- Vectors
-
+-- | 2D Vector - both components are strict.
 data Vec2 a = V2 !a !a
   deriving (Eq,Show)
 
 type DVec2 = Vec2 Double
 
--- Points
-
+-- | 2D Point - both components are strict.
 data Point2 a = P2 !a !a
   deriving (Eq,Show)
 
@@ -149,11 +153,9 @@ type DFrame2 = Frame2 Double
 -- >    sin(a)  cos(a) 0  
 -- >      0         0  1 )
 --
--- This is congruent with the form presented in Santos -  
--- Example 45, page 17 extended to 3x3. 
---
--- ref. David A. Santos /Multivariable and Vector Calculus/,
--- July 17, 2008 Version.
+-- This seems commplace in geometry texts, but PostScript 
+-- represents the @current-transformation-matrix@  in 
+-- column-major form.
 --
 -- The right-most column is considered to represent a
 -- coordinate:
@@ -181,7 +183,8 @@ type DMatrix3'3 = Matrix3'3 Double
 
 
 -- | Radian is represented with a distinct type. 
--- Equality and ordering are approximate where the epsilon is 0.0001.
+-- Equality and ordering are approximate where the epsilon 
+-- is 0.0001.
 newtype Radian = Radian { getRadian :: Double }
   deriving (Num,Real,Fractional,Floating,RealFrac,RealFloat)
 
@@ -212,6 +215,7 @@ lift2Matrix3'3 op (M3'3 a b c d e f g h i) (M3'3 m n o p q r s t u) =
 --------------------------------------------------------------------------------
 -- instances
 
+-- Functor
 
 instance Functor Vec2 where
   fmap f (V2 a b) = V2 (f a) (f b)
@@ -225,9 +229,9 @@ instance Functor Matrix3'3 where
     M3'3 (f m) (f n) (f o) (f p) (f q) (f r) (f s) (f t) (f u)
 
 
+-- Monoid
+
 -- Vectors have a sensible Monoid instance as addition, points don't
-
-
 
 instance Num a => Monoid (Vec2 a) where
   mempty  = V2 0 0
@@ -241,12 +245,13 @@ instance (Num a, InnerSpace (Vec2 a)) => Monoid (Frame2 a) where
   mappend = frameProduct
 
 
-
-
+-- Show
 
 instance Show a => Show (Matrix3'3 a) where
   show (M3'3 a b c d e f g h i) = "(M3'3 " ++ body ++ ")" where
     body = show [[a,b,c],[d,e,f],[g,h,i]]
+
+-- Num
 
 instance Num a => Num (Matrix3'3 a) where
   (+) = lift2Matrix3'3 (+) 
@@ -262,7 +267,7 @@ instance Num a => Num (Matrix3'3 a) where
   signum = fmap signum
   fromInteger a = M3'3 a' a' a'  a' a' a'  a' a' a' where a' = fromInteger a 
 
--- Radians
+-- Instances for Radian which are 'special'.
 
 instance Show Radian where
   showsPrec i (Radian a) = showsPrec i a
@@ -301,7 +306,7 @@ instance Pretty Radian where
   pretty (Radian d) = double d <> text ":rad"
 
 --------------------------------------------------------------------------------
--- Vector space and related instances
+-- Vector space instances
 
 instance Num a => AdditiveGroup (Vec2 a) where
   zeroV = V2 0 0 
@@ -340,11 +345,10 @@ instance Num a => VectorSpace (Matrix3'3 a) where
 --------------------------------------------------------------------------------
 
 -- | Pointwise is a Functor like type class, except that the 
--- container/element relationship is defined by a type family 
--- rather than a type parameter. This means that applied function 
--- must be type preserving.
-
-
+-- container/element relationship is defined via an associated 
+-- type rather than a type parameter. This means that applied 
+-- function must be type preserving.
+--
 class Pointwise sh where
   type Pt sh :: *
   pointwise :: (Pt sh -> Pt sh) -> sh -> sh
@@ -377,22 +381,18 @@ instance Ord a => CMinMax (Point2 a) where
 
 infixr 7 *# 
 
-class MatrixMult mat t where 
-  type MatrixParam t :: *
-  (*#) :: MatrixParam t ~ a => mat a -> t -> t
+-- | Matrix multiplication - typically of points and vectors 
+-- represented as homogeneous coordinates. 
+--
+class MatrixMult t where 
+  (*#) :: DUnit t ~ a => Matrix3'3 a -> t -> t
 
 
--- Matrix multiplication of points and vectors as per homogeneous 
--- coordinates (we don't perform the /last three/ multiplications
--- as we throw the result away).
- 
-instance Num a => MatrixMult Matrix3'3 (Vec2 a) where
-  type MatrixParam (Vec2 a) = a       
+instance Num a => MatrixMult (Vec2 a) where       
   (M3'3 a b c d e f _ _ _) *# (V2 m n) = V2 (a*m+b*n+c*0) (d*m+e*n+f*0)
 
 
-instance Num a => MatrixMult Matrix3'3 (Point2 a) where
-  type MatrixParam (Point2 a) = a
+instance Num a => MatrixMult(Point2 a) where
   (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a*m+b*n+c*1) (d*m+e*n+f*1)
 
 --------------------------------------------------------------------------------
@@ -417,9 +417,12 @@ avec theta d = V2 x y where
 --------------------------------------------------------------------------------
 -- Points
 
+-- | Construct a point at 0 0.
 zeroPt :: Num a => Point2 a
 zeroPt = P2 0 0
 
+-- | Calculate the counter-clockwise angle between two points 
+-- and the x-axis.
 langle :: (Floating u, Real u) => Point2 u -> Point2 u -> Radian
 langle (P2 x y) (P2 x' y') = toRadian $ atan $ (y'-y) / (x'-x) 
 
@@ -427,13 +430,17 @@ langle (P2 x y) (P2 x' y') = toRadian $ atan $ (y'-y) / (x'-x)
 --------------------------------------------------------------------------------
 -- Frame operations
 
+-- | Create a frame with standard (orthonormal bases) at the 
+-- supplied point.
 ortho :: Num a => Point2 a -> Frame2 a
 ortho o = Frame2 (V2 1 0) (V2 0 1) o
 
+-- | Displace the origin of the frame by the supplied vector.
 displaceOrigin :: Num a => Vec2 a -> Frame2 a -> Frame2 a
 displaceOrigin v (Frame2 e0 e1 o) = Frame2 e0 e1 (o.+^v)
 
-
+-- | \'World coordinate\' calculation of a point in the supplied
+-- frame.
 pointInFrame :: Num a => Point2 a -> Frame2 a -> Point2 a
 pointInFrame (P2 x y) (Frame2 vx vy o) = (o .+^ (vx ^* x)) .+^ (vy ^* y)  
 
@@ -468,7 +475,6 @@ frame2Matrix (Frame2 (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)) =
 --
 -- > Frame (V2 e0x e0y) (V2 e1x e1y) (P2 ox oy)
 -- 
-
 matrix2Frame :: Matrix3'3 a -> Frame2 a
 matrix2Frame (M3'3 e0x e1x ox 
                    e0y e1y oy
@@ -497,7 +503,6 @@ standardFrame _                                   = False
 -- >       0 1 0
 -- >       0 0 1 )
 --
-
 identityMatrix :: Num a => Matrix3'3 a
 identityMatrix = M3'3 1 0 0  
                       0 1 0  
@@ -511,17 +516,28 @@ identityMatrix = M3'3 1 0 0
 -- >       0  sy 0
 -- >       0  0  1 )
 --
-
 scalingMatrix :: Num a => a -> a -> Matrix3'3 a
 scalingMatrix sx sy = M3'3  sx 0  0   
                             0  sy 0   
                             0  0  1
 
+-- | Construct a translation matrix:
+--
+-- > (M3'3 1  0  x
+-- >       0  1  y
+-- >       0  0  1 )
+--
 translationMatrix :: Num a => a -> a -> Matrix3'3 a
 translationMatrix x y = M3'3 1 0 x  
                              0 1 y  
                              0 0 1
 
+-- | Construct a rotation matrix:
+--
+-- > (M3'3 cos(a)  -sin(a)  x
+-- >       sin(a)   cos(a)  y
+-- >       0        0       1 )
+--
 rotationMatrix :: (Floating a, Real a) => Radian -> Matrix3'3 a
 rotationMatrix a = M3'3 (cos ang) (negate $ sin ang) 0 
                         (sin ang) (cos ang)          0  
@@ -533,7 +549,13 @@ rotationMatrix a = M3'3 (cos ang) (negate $ sin ang) 0
 -- A reflection about the y-axis is a scale of (-1) 1
 
 
--- Rotation about some /point/.
+-- | Construct a matrix for rotation about some /point/.
+--
+-- This is the product of three matrices: T R T^-1
+-- 
+-- (T being the translation matrix, R the rotation matrix and
+-- T^-1 the inverse of the translation matrix).
+--
 originatedRotationMatrix :: (Floating a, Real a) 
                          => Radian -> (Point2 a) -> Matrix3'3 a
 originatedRotationMatrix ang (P2 x y) = mT * (rotationMatrix ang) * mTinv
@@ -548,24 +570,27 @@ originatedRotationMatrix ang (P2 x y) = mT * (rotationMatrix ang) * mTinv
 
 
 
--- inversion
-
+-- | Invert a matrix.
 invert :: Fractional a => Matrix3'3 a -> Matrix3'3 a 
 invert m = (1 / determinant m) *^ adjoint m
 
+-- | Determinant of a matrix.
 determinant :: Num a => Matrix3'3 a -> a
 determinant (M3'3 a b c d e f g h i) = a*e*i - a*f*h - b*d*i + b*f*g + c*d*h - c*e*g
 
-
-adjoint :: Num a => Matrix3'3 a -> Matrix3'3 a 
-adjoint = transpose . cofactor . mofm
-
+-- | Transpose a matrix.
 transpose :: Matrix3'3 a -> Matrix3'3 a
 transpose (M3'3 a b c 
                 d e f 
                 g h i) = M3'3 a d g  
                               b e h  
                               c f i
+
+-- Helpers
+
+adjoint :: Num a => Matrix3'3 a -> Matrix3'3 a 
+adjoint = transpose . cofactor . mofm
+
 
 cofactor :: Num a => Matrix3'3 a -> Matrix3'3 a
 cofactor (M3'3 a b c  
@@ -596,23 +621,24 @@ mofm (M3'3 a b c
 --------------------------------------------------------------------------------
 -- Radians
 
--- Radian numeric type
 
+-- | The epislion used for floating point equality on radians.
 radian_epsilon :: Double
 radian_epsilon = 0.0001
 
-
+-- | Equality on radians, this is the operation used for (==) in
+-- the Eq instance for Radian.
 req :: Radian -> Radian -> Bool
 req a b = (fromRadian $ abs (a-b)) < radian_epsilon
 
 
 
--- Radian construction
+-- | Convert to a radian.
 toRadian :: Real a => a -> Radian 
 toRadian = Radian . realToFrac
 
 
--- Radian extraction 
+-- | Convert from a Radian.
 fromRadian :: Fractional a => Radian -> a
 fromRadian = realToFrac . getRadian
 

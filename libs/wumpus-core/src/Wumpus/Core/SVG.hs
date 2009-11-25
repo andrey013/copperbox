@@ -5,10 +5,13 @@
 -- |
 -- Module      :  Wumpus.Core.SVG
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (see LICENSE)
+-- License     :  BSD3
+--
 -- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  experimental
--- Portability :  GHC only
+-- Stability   :  unstable
+-- Portability :  GHC with TypeFamilies and more
+--
+-- SVG generation.
 --
 -- SVG is represented using XML.Light. XML.Light is a simple,
 -- generic XML representation (almost) everything is an element 

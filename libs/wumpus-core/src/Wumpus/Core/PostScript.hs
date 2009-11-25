@@ -10,11 +10,11 @@
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
--- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
--- Portability :  GHC
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  unstable
+-- Portability :  GHC with TypeFamilies and more
 --
--- Wumpus - Writer Monad PostScript 
+-- PostScript generation via a Writer monad.
 --
 -- PostScript is emitted line by line - there is no abstract
 -- syntax tree representing PostScript. So we use a writer 

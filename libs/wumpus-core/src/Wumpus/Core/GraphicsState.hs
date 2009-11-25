@@ -8,9 +8,9 @@
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
--- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
--- Portability :  GHC
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  unstable
+-- Portability :  GHC with TypeFamilies and more
 --
 -- Data types modelling the Graphics state
 --

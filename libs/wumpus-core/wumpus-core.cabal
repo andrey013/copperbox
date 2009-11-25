@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.12.1
+version:          0.13.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -62,9 +62,17 @@ description:
   .
   Changelog:
   .
-  0.12.1 - more Haddock documenting. 
-  @lowerLeftUpperRight@ removed from "Wumpus.Core.BoundingBox".
-  Added range checking and Ord obligation to @bbox@
+  0.12.0 to 0.13.0:
+  .
+  * More Haddock documenting. 
+  .
+  * @lowerLeftUpperRight@ removed from "Wumpus.Core.BoundingBox".
+  .
+  * Added range checking and Ord obligation to @bbox@.
+  .
+  * Numeric instances for "Wumpus.Core.Colour" improved.
+  .
+  * MatrixMult type class simplified
   .
 build-type:         Simple
 stability:          highly unstable

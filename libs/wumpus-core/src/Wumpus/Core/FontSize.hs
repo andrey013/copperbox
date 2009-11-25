@@ -10,12 +10,12 @@
 -- Stability   :  unstable
 -- Portability :  GHC with TypeFamilies and more
 --
--- Font size (aka bounding box) calculation.
+-- Font size calculation for Label\'s bounding boxes.
 -- 
 -- Calculations are based on metrics derived from Courier at 48 
 -- pt. As Courier is a monospaced font, bounding boxes calculated 
 -- for other font families will usually have longer width than is
--- apparent for the printed text. 
+-- necessary for the printed text. 
 -- 
 -- This is a deficiency of Wumpus, but alternatives would have
 -- significant implementation complexity.
@@ -36,11 +36,12 @@ module Wumpus.Core.FontSize
   , courier48_descender_depth
   , courier48_spacer_width
 
+
+  -- * Metrics calculation
   , widthAt48pt
   , textWidth
   , textHeight
   , descenderDepth
-
   , textBounds
 
   ) where
@@ -111,15 +112,15 @@ textWidth :: Fractional u => FontSize -> CharCount -> u
 textWidth sz n = (fromIntegral sz)/48 * widthAt48pt n
 
 -- | Text height is just identity/double-coercion, i.e. 
--- @18 == 18.0@. The /size/ of a font is (apparently) the maximum
--- height (body + descender max + ascender max).
+-- @18 == 18.0@. The /size/ of a font is the maximum height:
+--
+-- > body + descender max + ascender max
+--
 textHeight :: Num u =>  FontSize -> u
 textHeight = fromIntegral
 
 -- | Descender depth for font size @sz@.
 -- 
--- (The metrics are taken from Courier, of course).
---
 descenderDepth :: Fractional u => FontSize -> u
 descenderDepth sz =  (fromIntegral sz) / 48 * courier48_descender_depth
 
