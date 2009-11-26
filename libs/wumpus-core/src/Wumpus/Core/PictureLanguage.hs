@@ -12,14 +12,20 @@
 -- Stability   :  unstable
 -- Portability :  GHC with TypeFamilies and more
 --
--- Picture language operations c.f. PPrint and 
--- Text.PrettyPrint.HughesPJ, but fully in two dimensions 
--- rather than horizontal + carriage return.
+-- Type classes and derived functions to compose 2D /pictures/.
+--
+-- The operations are fairly standard - see Regions in Paul 
+-- Hudak\'s \'The Haskell School of Expression' and the pretty
+-- printing libraries wl-pprint and Text.PrettyPrint.HughesPJ 
+-- (pretty printing combinators are some ways in \'One and a 
+-- half D\' as they have horizontal operations but only carriage 
+-- return in the vertical.
 --
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.PictureLanguage 
   (
+  -- * Data types for alignment 
     HAlign(..)
   , VAlign(..)
 
@@ -32,6 +38,7 @@ module Wumpus.Core.PictureLanguage
   , Blank(..)
 
   -- * Bounds
+  -- $boundsdoc
   , center
   , topleft
   , topright
@@ -39,6 +46,7 @@ module Wumpus.Core.PictureLanguage
   , bottomright
 
   -- * Composition
+  , ( -@- )
   , ( ->- )
   , ( -<- )
   , ( -//- )
@@ -47,7 +55,6 @@ module Wumpus.Core.PictureLanguage
   , stackOnto
   , hcat 
   , vcat
-  , ( -@- )
   , stackOntoCenter
 
   , hspace
@@ -77,10 +84,11 @@ import Data.List ( foldl' )
 
 -- Alignment
 
-
+-- | Horizontal alignment - align to the top, center or bottom.
 data HAlign = HTop | HCenter | HBottom
   deriving (Eq,Show)
 
+-- | Vertical alignment - align to the left, center or bottom.
 data VAlign = VLeft | VCenter | VRight
   deriving (Eq,Show)
 
@@ -91,33 +99,54 @@ data VAlign = VLeft | VCenter | VRight
 -- Type family and classes
 
 
--- The unit type of /points/ within a Picture.
+-- | The type of /points/ within a Picture.
 type family PUnit a
 
 
-class Horizontal a where
-  moveH      :: PUnit a -> a -> a
-  leftBound  :: a -> PUnit a
-  rightBound :: a -> PUnit a
-
-class Vertical a where
-  moveV       :: PUnit a -> a -> a
-  topBound    :: a -> PUnit a
-  bottomBound :: a -> PUnit a
-
+-- | > a `over` b
+-- 
+-- Place \'picture\' a over b. The idea of @over@ here is the same
+-- as z-ordering in 2D design programs. Implementations of this 
+-- class should \'draw\' picture a over b but move neither.
+-- 
+-- Similarly @beneath@ should \'draw\' the first picture behind 
+-- the second but move neither.
+--
+-- Beneath has a default definition:
+--
+-- > beneath = flip over
+--
 class Composite a where
   over    :: a -> a -> a
   beneath :: a -> a -> a
 
   beneath = flip over
+
+
+-- | Create a /picture/ that has no content but occupies space 
+-- (i.e. it has a bounding box).
+class Blank a where
+  blank :: PUnit a -> PUnit a -> a
+
+
+-- | Move horizontally.
+class Horizontal a where
+  moveH      :: PUnit a -> a -> a
+  leftBound  :: a -> PUnit a
+  rightBound :: a -> PUnit a
+
+-- | Move vertically.
+class Vertical a where
+  moveV       :: PUnit a -> a -> a
+  topBound    :: a -> PUnit a
+  bottomBound :: a -> PUnit a
+
+
   
--- Move in 2D
+-- | Move in both the horizontal and vertical.
 class Move a where
   move :: PUnit a -> PUnit a -> a -> a
 
-
-class Blank a where
-  blank :: PUnit a -> PUnit a -> a
 
 
 
@@ -125,24 +154,34 @@ class Blank a where
 
 -- Operations on bounds
 
+-- $boundsdoc
+-- Corresponding operations are available on bounding boxes - the 
+-- definitions here have different type class obligations.
+
 -- | The center of a picture.
 center :: (Horizontal a, Vertical a, Fractional u, u ~ PUnit a) => a -> Point2 u
 center a = P2 hcenter vcenter where  
     hcenter = leftBound a   + 0.5 * (rightBound a - leftBound a)
     vcenter = bottomBound a + 0.5 * (topBound a   - bottomBound a)
 
+-- | Extract the top-left corner.
 topleft       :: (Horizontal a, Vertical a, u ~ PUnit a) => a -> Point2 u
 topleft a     = P2 (leftBound a)  (topBound a)
 
+-- | Extract the top-right corner.
 topright      :: (Horizontal a, Vertical a, u ~ PUnit a) => a -> Point2 u
 topright a    = P2 (rightBound a) (topBound a)
 
+-- | Extract the bottom-left corner.
 bottomleft    :: (Horizontal a, Vertical a, u ~ PUnit a) => a -> Point2 u
 bottomleft a  = P2 (leftBound a)  (bottomBound a)
 
+-- | Extract the bottom-right corner.
 bottomright   :: (Horizontal a, Vertical a, u ~ PUnit a) => a -> Point2 u
 bottomright a = P2 (rightBound a) (bottomBound a)
 
+--------------------------------------------------------------------------------
+-- Internal helpers
 
 leftmid       :: (Fractional u, Horizontal a, Vertical a, u ~ PUnit a) 
               => a -> Point2 u
@@ -172,11 +211,15 @@ infixr 5 -//-
 infixr 6 ->-, -@-
 
 
--- | Center the pic1 on top of pic2.
+-- | > a -@- b
+-- 
+-- Center @a@ on top of @b@, @a@ is potentially moved and drawn 
+-- 'over' @b@.
+--
 (-@-) :: (Horizontal a, Vertical a, Composite a, Move a, Fractional u, 
              u ~ PUnit a)
          => a -> a -> a
-p1 -@- p2 = p1 `over` (move x y p2) where V2 x y = center p1 .-. center p2
+p1 -@- p2 = (move x y p1) `over` p2 where V2 x y = center p2 .-. center p1
 
 
 -- | Horizontal composition - place @b@ at the right of @a@.

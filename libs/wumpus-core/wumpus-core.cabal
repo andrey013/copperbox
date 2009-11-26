@@ -75,8 +75,13 @@ description:
   * MatrixMult type class simplified
   .
   * Dash Pattern made a list of on-off pairs rather than just a 
-  list 
-
+    list 
+  .
+  * The modules - Wumpus.Core.PictureInternal, Wumpus.Core.PostScript,
+    & Wumpus.Core.SVG - are no longer exposed.
+  .
+  * (-@-) changed in "Wumpus.Core.PictureLanguage"
+  .
 build-type:         Simple
 stability:          highly unstable
 cabal-version:      >= 1.2
@@ -104,14 +109,14 @@ library
     Wumpus.Core.OutputPostScript,
     Wumpus.Core.OutputSVG,
     Wumpus.Core.Picture,
-    Wumpus.Core.PictureInternal,
     Wumpus.Core.PictureLanguage,
-    Wumpus.Core.PostScript,
-    Wumpus.Core.SVG,
     Wumpus.Core.TextEncoding,
     Wumpus.Core.TextLatin1,
     Wumpus.Core.Utils
   other-modules:
+    Wumpus.Core.PictureInternal,
+    Wumpus.Core.PostScript,
+    Wumpus.Core.SVG
     
   extensions:
     

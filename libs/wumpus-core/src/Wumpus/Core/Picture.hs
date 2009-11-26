@@ -312,8 +312,8 @@ default_font :: FontAttr
 default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 12
 
 -- | Create a text label. The string should not contain newline
--- characters. Use 'multilabel' to create text with multiple 
--- lines.
+-- or tab characters. Use 'multilabel' to create text with 
+-- multiple lines.
 -- 
 -- @textlabel@ is overloaded to make attributing the label more 
 -- convenient.
@@ -354,8 +354,12 @@ ztextlabel :: Point2 u -> String -> Primitive u
 ztextlabel = mkTextLabel psBlack default_font
 
 
-
--- (The implementation of this function needs attention).
+-- | Create multiple lines of text...
+--
+-- WARNING
+--
+-- This function is currently not well defined, both the 
+-- signature and implementation of this function need attention.
 --
 multilabel :: (Fractional u, Ord u) 
            => [Label u] -> LabelProps -> BoundingBox u -> Picture u
@@ -377,11 +381,22 @@ ellipseDefault :: EllipseProps
 ellipseDefault = (psBlack, EFill)
 
 
--- | Instances will create a filled ellipse unless the supplied 
--- element /implies/ a stoked ellipse, e.g.:
+-- | Create an ellipse, the ellipse will be filled unless the 
+-- supplied attributes /imply/ a stoked ellipse, e.g.:
 --
 -- > ellipse (LineWidth 4) zeroPt 40 40 
--- > ellipse EFill zeroPt 40 40  
+--
+-- Note - within Wumpus, ellipses are considered an unfortunate
+-- but useful /optimization/. Drawing good cicles with Beziers 
+-- needs at least eight curves, but drawing them with 
+-- PostScript\'s @arc@ command is a single operation.  For 
+-- drawings with many dots (e.g. scatter plots) it seems sensible
+-- to employ this optimaztion.
+--
+-- A deficiency of Wumpus\'s ellipse is that (non-uniformly)
+-- scaling a stroked ellipse also (non-uniformly) scales the pen 
+-- it is drawn with. Where the ellipse is wider, the pen stroke 
+-- will be wider too. 
 --
 class Ellipse t where
   ellipse :: Fractional u => t -> Point2 u -> u -> u -> Primitive u

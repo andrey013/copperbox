@@ -343,12 +343,12 @@ attr_stroke_none = unqualAttr "stroke" "none"
 
 -- | @ stroke-width=\"...\" @
 attr_stroke_width :: PSUnit u => u -> Attr
-attr_stroke_width = unqualAttr "stoke-width" . dtrunc
+attr_stroke_width = unqualAttr "stroke-width" . dtrunc
 
 
 -- | @ stroke-miterlimit=\"...\" @
 attr_stroke_miterlimit :: PSUnit u => u -> Attr
-attr_stroke_miterlimit = unqualAttr "stoke-miterlimit" . dtrunc
+attr_stroke_miterlimit = unqualAttr "stroke-miterlimit" . dtrunc
 
 -- | @ stroke-linejoin=\"...\" @
 attr_stroke_linejoin :: LineJoin -> Attr

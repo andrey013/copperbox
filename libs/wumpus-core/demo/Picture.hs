@@ -126,8 +126,34 @@ demo10 = do
  
 
 
+-- Stroked ellipe problem under scaling...
+demo11 :: IO ()
+demo11 = do 
+    writeEPS_latin1 "./out/picture11.eps" pic
+    writeSVG_latin1 "./out/picture11.svg" pic
+  where
+    pic :: Picture Double
+    pic = p1 -//- p2
+    p1 = scale 6 12 $ frame $ ellipse (plum, LineWidth 2) zeroPt 4 6
+    p2 = scale 6 12 $ frame $ ellipse (peru, LineWidth 2) zeroPt 6 6
+
+
+-- Note the movement of the plum square won't be regarded by 
+-- Firefox as it crops whitespace automatically.
+demo12 :: IO ()
+demo12 = do 
+    writeEPS_latin1 "./out/picture12.eps" pic
+    writeSVG_latin1 "./out/picture12.svg" pic
+  where
+    pic :: Picture Double
+    pic = p1 -@- p2
+    p1 = move 0 0 $ mkFilledSquare peru
+    p2 = uniformScale 1.5 $ move 100 50 $ mkFilledSquare plum
+
+
 main :: IO ()
 main = sequence_
   [ demo01, demo02, demo03, demo04, demo05
   , demo06, demo07, demo08, demo09, demo10
+  , demo11, demo12
   ]
