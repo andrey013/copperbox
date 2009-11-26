@@ -627,18 +627,18 @@ radian_epsilon :: Double
 radian_epsilon = 0.0001
 
 -- | Equality on radians, this is the operation used for (==) in
--- the Eq instance for Radian.
+-- Radian\'s Eq instance.
 req :: Radian -> Radian -> Bool
 req a b = (fromRadian $ abs (a-b)) < radian_epsilon
 
 
 
--- | Convert to a radian.
+-- | Convert to radians.
 toRadian :: Real a => a -> Radian 
 toRadian = Radian . realToFrac
 
 
--- | Convert from a Radian.
+-- | Convert from radians.
 fromRadian :: Fractional a => Radian -> a
 fromRadian = realToFrac . getRadian
 

@@ -10,13 +10,15 @@
 -- Stability   :  unstable
 -- Portability :  GHC with TypeFamilies and more
 --
+-- Output PostScript - either PostScript (PS) files or 
+-- EPS (Encapusulated PostScript) files can be generated. 
+--
 --
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.OutputPostScript 
   ( 
   -- * Output PostScript
-  -- $fontdoc
     writePS
   , writeEPS
   
@@ -44,45 +46,22 @@ import Control.Monad ( mapM_, zipWithM_ )
 
 
 
-
-
--- $fontdoc
---
--- The following fonts are expected to exist on most platforms:
---
--- > Times-Roman  Times-Italic  Times-Bold  Times-Bolditalic
--- > Helvetica  Helvetica-Oblique  Helvetica-Bold  Helvetica-Bold-Oblique
--- > Courier  Courier-Oblique  Courier-Bold  Courier-Bold-Oblique
--- > Symbol
---
--- See the PostScript Language Reference Manual.
-
--- type FontSpec = (String,Int)
-
-
-
 --------------------------------------------------------------------------------
 -- Render to PostScript
 
--- | Write a series of pictures to a Postscript file. Each 
+-- | Output a series of pictures to a Postscript file. Each 
 -- picture will be printed on a separate page. 
 --
--- If the picture contains text labels, you should provide a 
--- FontSpec to transmit @findfont@, @scalefont@ etc. commands 
--- to PostScript.    
 writePS :: (Fractional u, Ord u, PSUnit u) 
         => FilePath -> TextEncoder -> [Picture u] -> IO ()
 writePS filepath enc pic = do 
     timestamp <- mkTimeStamp
     writeFile filepath $ psDraw timestamp enc pic
 
--- | Write a picture to an EPS (Encapsulated PostScript) file. 
+-- | Output a picture to an EPS (Encapsulated PostScript) file. 
 -- The .eps file can then be imported or embedded in another 
 -- document.
 --
--- If the picture contains text labels, you should provide a 
--- FontSpec to transmit @findfont@, @scalefont@ etc. commands 
--- to PostScript.    
 writeEPS :: (Fractional u, Ord u, PSUnit u)  
          => FilePath -> TextEncoder -> Picture u -> IO ()
 writeEPS filepath enc pic = do
@@ -102,10 +81,8 @@ writeEPS_latin1 filepath = writeEPS filepath latin1Encoder
 
 
 
-
-
-
-
+--------------------------------------------------------------------------------
+-- Internals
 
 
 -- | Draw a picture, generating PostScript output.
@@ -134,9 +111,9 @@ psDrawPage (lbl,ordinal) pic = do
   
 
 
--- Note the bounding box may have negative components - if it 
--- does it will need translating.
-
+-- | Note the bounding box may /below the origin/ - if it is, it 
+-- will need translating.
+--
 epsDraw :: (Fractional u, Ord u, PSUnit u) 
         => String -> TextEncoder -> Picture u -> PostScript
 epsDraw timestamp enc pic = runWumpus enc $ do 
@@ -350,7 +327,6 @@ outputLabel :: PSUnit u => Label u -> WumpusM ()
 outputLabel (Label (P2 x y) entxt) = do
     ps_moveto x y
     outputEncodedText entxt
---    ps_show str
 
 outputEncodedText :: EncodedText -> WumpusM () 
 outputEncodedText = mapM_ outputTextChunk . getEncodedText

@@ -66,10 +66,12 @@ coordChange = scale 1 (-1)
 
 --------------------------------------------------------------------------------
 
+-- | Output a picture to a SVG file. 
 writeSVG :: (Ord u, PSUnit u) => FilePath -> TextEncoder -> Picture u -> IO ()
 writeSVG filepath enc pic = 
     writeFile filepath $ unlines $ map ppContent $ svgDraw enc pic 
 
+-- | Version of 'writeSVG' - using Latin1 encoding. 
 writeSVG_latin1 :: (Ord u, PSUnit u) => FilePath -> Picture u -> IO ()
 writeSVG_latin1 filepath = writeSVG filepath latin1Encoder 
 
@@ -253,8 +255,8 @@ strokeAttributes = foldr fn [] where
     dash Solid       = (:) (attr_stroke_dasharray_none)
     dash (Dash _ []) = (:) (attr_stroke_dasharray_none)
     dash (Dash i xs) = (:) (attr_stroke_dashoffset i) . 
-                       (:) (attr_stroke_dasharray xs)
-   
+                       (:) (attr_stroke_dasharray $ conv xs)
+    conv = foldr (\(x,y) a -> x:y:a) []  
 
 
 svgPath :: PSUnit u => DrawPath -> Path u -> SvgPath

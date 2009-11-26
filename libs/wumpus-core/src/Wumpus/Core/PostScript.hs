@@ -332,8 +332,10 @@ ps_setmiterlimit = command "setmiterlimit" . return . dtrunc
 
 -- | @ [... ...] ... setdash @
 ps_setdash :: DashPattern -> WumpusM ()
-ps_setdash Solid        = command "setdash" ["[]", "0"]
-ps_setdash (Dash n arr) = command "setdash" [showArray shows arr, show n]
+ps_setdash Solid          = command "setdash" ["[]", "0"]
+ps_setdash (Dash n pairs) = command "setdash" [showArray shows arr, show n]
+  where
+    arr = foldr (\(x,y) a -> x:y:a) [] pairs
 
 -- | @ ... setgray @
 ps_setgray :: PSUnit u => u -> WumpusM ()

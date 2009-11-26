@@ -11,7 +11,8 @@
 -- Stability   :  unstable
 -- Portability :  GHC with TypeFamilies and more
 --
---
+-- Construction of pictures, paths and text labels.
+-- 
 --------------------------------------------------------------------------------
 
 module Wumpus.Core.Picture 
@@ -80,25 +81,20 @@ psBlack = RGB3 0 0 0
 stdFrame :: Num u => Frame2 u 
 stdFrame = ortho zeroPt
 
---------------------------------------------------------------------------------
--- OneList helper
-
-
--- | This module (Wumpus.Core.Picture) should be the only 
--- interface to the /outside world/ for creating 
 
 --------------------------------------------------------------------------------
 -- Construction
 
 
 
--- | Create a blank picture sized to the supplied bounding box.
+-- | Create a blank 'Picture' sized to the supplied bounding box.
 -- This is useful for spacing rows or columns of pictures.
+--
 blankPicture :: Num u => BoundingBox u -> Picture u
 blankPicture bb = PicBlank (stdFrame, bb)
 
 
--- | Lift a Primitive to a Picture, located in the standard frame.
+-- | Lift a 'Primitive' to a 'Picture', located in the standard frame.
 frame :: (Fractional u, Ord u) => Primitive u -> Picture u
 frame p = Single (stdFrame, boundary p) p 
 
@@ -123,17 +119,20 @@ frameWithin p              bb = Single (stdFrame,bb `append` boundary p) p
 
 
 
--- | Lift a list of Primitives to a composite Picture, all 
--- Primitives will be located within the standard frame.
--- The list of Primitives must be non-empty.
+-- | Lift a list of primitives to a composite picture, all 
+-- primitives will be located within the standard frame.
+--
+-- This function throws an error when supplied the empty list.
 --
 frameMulti :: (Fractional u, Ord u) => [Primitive u] -> Picture u
 frameMulti [] = error "Wumpus.Core.Picture.frameMulti - empty list"
 frameMulti xs = multi $ map frame xs
 
 
--- | Place multiple pictures within the same affine frame
+-- | Place multiple pictures within the same affine frame.
+--
 -- This function throws an error when supplied the empty list.
+--
 multi :: (Fractional u, Ord u) => [Picture u] -> Picture u
 multi ps = Picture (stdFrame, sconcat $ map boundary ps) ones
   where 
@@ -146,7 +145,8 @@ multi ps = Picture (stdFrame, sconcat $ map boundary ps) ones
 
 
 
--- | Create a Path from the start point and alist of PathSegments.
+-- | Create a Path from a start point and a list of 
+-- PathSegments.
 path :: Point2 u -> [PathSegment u] -> Path u
 path = Path 
 
@@ -166,8 +166,6 @@ vertexPath []     = error "Picture.vertexPath - empty point list"
 vertexPath (x:xs) = Path x (map PLine xs)
 
 
--- Not a paramorphism as you want to consume3 rather than 
--- look-ahead3...
 
 -- | Convert a list of vertices to a path of curve segments.
 -- The first point in the list makes the start point, each curve 
@@ -196,6 +194,12 @@ cstrokePath :: (Num u, Ord u)
             => PSRgb -> [StrokeAttr] -> Path u -> Primitive u
 cstrokePath c attrs p = PPath (c, CStroke attrs) p
 
+-- | Create a open, stroked path (@ostroke@) or a closed, stroked
+-- path (@cstroke@).
+--
+-- @ostroke@ and @cstroke@ are overloaded to make attributing 
+-- the path more convenient.
+-- 
 class Stroke t where
   ostroke :: (Num u, Ord u) => t -> Path u -> Primitive u
   cstroke :: (Num u, Ord u) => t -> Path u -> Primitive u
@@ -263,14 +267,18 @@ zcstroke = cstrokePath psBlack []
 
 
 
--- fills only have one property - colour
--- Having a fill class seems uniform as we have a stroke class 
 
 
 
 fillPath :: (Num u, Ord u) => PSRgb -> Path u -> Primitive u
 fillPath c p = PPath (c,CFill) p
 
+-- | Create a filled path (@fill@). Fills only have one 
+-- property - colour. But there are various representations of 
+-- colour.
+--
+-- @ fill () @ will fill with the default colour - black.
+-- 
 class Fill t where
   fill :: (Num u, Ord u) => t -> Path u -> Primitive u
  
@@ -287,6 +295,7 @@ zfill = fillPath psBlack
 --------------------------------------------------------------------------------
 -- Clipping 
 
+-- | Clip a picture with respect to the supplied path.
 clip :: (Num u, Ord u) => Path u -> Picture u -> Picture u
 clip cp p = Clip (ortho zeroPt, boundary cp) cp p
 
@@ -302,6 +311,16 @@ mkTextLabel c attr pt txt = PLabel (c,attr) (Label pt $ lexLabel txt)
 default_font :: FontAttr
 default_font = FontAttr "Courier" "Courier New" SVG_REGULAR 12
 
+-- | Create a text label. The string should not contain newline
+-- characters. Use 'multilabel' to create text with multiple 
+-- lines.
+-- 
+-- @textlabel@ is overloaded to make attributing the label more 
+-- convenient.
+--
+-- Unless a 'FontAttr' is specified, the label will use 12pt 
+-- Courier.
+--
 class TextLabel t where 
   textlabel :: t -> Point2 u -> String -> Primitive u
 

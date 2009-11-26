@@ -12,8 +12,34 @@
 -- Stability   :  unstable
 -- Portability :  GHC with TypeFamilies and more
 --
--- Data types modelling the Graphics state
+-- Data types for stroke and label attributes and type classes 
+-- for conversion to PostScript\'s colour and matrix 
+-- representations. 
+-- 
+-- Wumpus represents pictures as trees - a leaf represents a 
+-- path or text label. All attributes of a path or text label 
+-- (colour, stroke width, font, ...) are stored in the leaf. So
+-- a picture is a leaf labelled tree.
+-- 
+-- By contrast, PostScript maintains a /graphics state/. A 
+-- PostScript program is free to modify the graphics state 
+-- anywhere in the program. Stroke width is a general property  
+-- shared by all elements (initially it has the default value 1).
+-- Only stroked paths actually regard stroke width, fonts and 
+-- filled and clipping paths ignore it. PostScript allows more 
+-- control over the graphics state by allowing the current state
+-- to be saved and restored with the @gsave@ and @grestore@. 
+-- This is useful for modularity but is a comparatively expensive
+-- procedure.
 --
+-- When Wumpus renders Pictures as PostScript it maintains a 
+-- limited graphics state with just current colour and current 
+-- font. This is so Wumpus can avoid repeating @setrgbcolor@ and
+-- @findfont@ operations in the generated PostScript if 
+-- subsequent elements share the same values.
+-- 
+-- 
+--   
 --------------------------------------------------------------------------------
 
 
@@ -51,7 +77,12 @@ import Wumpus.Core.Utils
 
 -- Graphics state datatypes
 
-
+-- | Stroke attributes are an algebriac type rather than a 
+-- record type. This is for convenience when attributing paths -
+-- paths can be attibuted with just the differences from the 
+-- default settings, rather than all the settings whether or not
+-- they are important.
+--
 data StrokeAttr = LineWidth   Double
                 | MiterLimit  Double
                 | LineCap     LineCap
@@ -59,19 +90,36 @@ data StrokeAttr = LineWidth   Double
                 | DashPattern DashPattern 
   deriving (Eq,Show)
 
+
+-- | Line cap - default in output is butt.
 data LineCap = CapButt | CapRound | CapSquare
   deriving (Enum,Eq,Show)
 
+-- | Line join - default in output is miter.
 data LineJoin = JoinMiter | JoinRound | JoinBevel
   deriving (Enum,Eq,Show)
 
-data DashPattern = Solid | Dash Int [Int]
+-- | Dash pattern - either a solid line or a list of on-off pairs
+-- together with an /offset/ into the dashes.
+data DashPattern = Solid | Dash Int [(Int,Int)]
   deriving (Eq,Show)
 
 
--- PostScript (or at least GhostScript) seems to require both
--- attributes (name & size) are set at the same time.
-
+-- | Font name and size. Equivalent fonts have different names
+-- in PostScript and SVG. A PostScript font name includes the 
+-- font style (e.g. @Times-BoldItalic@) whereas an SVG font has 
+-- a name (the @font-family@ attribute) and a style.
+--
+-- For PostScript, the following fonts are expected to exist on 
+-- most platforms:
+--
+-- > Times-Roman  Times-Italic  Times-Bold  Times-BoldOtalic
+-- > Helvetica  Helvetica-Oblique  Helvetica-Bold  Helvetica-Bold-Oblique
+-- > Courier  Courier-Oblique  Courier-Bold  Courier-Bold-Oblique
+-- > Symbol
+--
+-- See the PostScript Language Reference Manual.
+--
 data FontAttr = FontAttr { 
                     font_name       :: String,        -- for PostScript
                     svg_font_family :: String,        -- for SVG
@@ -80,6 +128,8 @@ data FontAttr = FontAttr {
                   }
   deriving (Eq,Show)
 
+-- | SVG font styles - potentially a style may generate both
+-- @font-weight@ and @font-style@ attributes in the SVG output.
 data SVGFontStyle = SVG_REGULAR | SVG_BOLD | SVG_ITALIC | SVG_BOLD_ITALIC
                   | SVG_OBLIQUE | SVG_BOLD_OBLIQUE
   deriving (Eq,Show)
@@ -140,7 +190,10 @@ type instance DUnit (CTM u) = u
 --------------------------------------------------------------------------------
 -- Conversion to CTM
 
-
+-- | Convert to the CTM. Wumpus offshores affine transformations 
+-- to PostScript as @concat@ commands. So frames and matrices 
+-- must support being represented as the CTM.
+--
 class ToCTM a where 
   toCTM :: u ~ DUnit a => a -> CTM u
 
@@ -159,6 +212,7 @@ instance ToCTM (Matrix3'3 a) where
 --------------------------------------------------------------------------------
 -- Conversion to PSColour
 
+-- | Convert to RGB [0,1] for PostScript rendering.
 class PSColour a where psColour :: a -> RGB3 Double
 
 instance PSColour (RGB3 Double) where
