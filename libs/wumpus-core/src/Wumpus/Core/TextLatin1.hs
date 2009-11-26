@@ -10,7 +10,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC with TypeFamilies and more
 --
--- Extended character handling...
+-- A TextEncoder record instance for Latin1 characters.
 -- 
 --------------------------------------------------------------------------------
 
@@ -32,6 +32,7 @@ import qualified Data.Map as Map
 type Latin1Name = String
 type Latin1ISOCode = Int
 
+-- | Latin1 TextEncoder instance.
 latin1Encoder :: TextEncoder
 latin1Encoder = TextEncoder {
     ps_lookup         = Map.lookup `flip` codeToName,
@@ -47,6 +48,7 @@ codeToName :: Map.Map Int String
 codeToName = foldr fn Map.empty latin1All where
   fn (s,i) a = Map.insert i s a 
 
+-- | A lookup list of Latin 1 names to their octal code.
 latin1All :: [(Latin1Name, Latin1ISOCode)]
 latin1All = [ ("A",                     0o101)
             , ("AE",                    0o306)
