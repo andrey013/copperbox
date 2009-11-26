@@ -33,7 +33,8 @@ import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PostScript
-import Wumpus.Core.TextEncoding
+import Wumpus.Core.TextEncoder
+import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 

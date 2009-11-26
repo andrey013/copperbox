@@ -41,8 +41,8 @@
 -- "Wumpus.Core.Colour" to avoid collisions with modules that
 -- define colour sets (e.g. all the SVG colours). 
 --
--- Some data types are exported "Wumpus.Core.PictureInternal" but
--- are made opaque. 
+-- Some data types are exported from 
+-- "Wumpus.Core.PictureInternal" but are made opaque. 
 -- 
 --------------------------------------------------------------------------------
 
@@ -59,7 +59,7 @@ module Wumpus.Core
   , module Wumpus.Core.OutputSVG
   , module Wumpus.Core.Picture
   , module Wumpus.Core.PictureLanguage
-  , module Wumpus.Core.TextEncoding
+  , module Wumpus.Core.TextEncoder
 
   -- Export from Picture Internal
   , Picture
@@ -92,7 +92,7 @@ import Wumpus.Core.OutputSVG
 import Wumpus.Core.Picture
 import Wumpus.Core.PictureInternal
 import Wumpus.Core.PictureLanguage
-import Wumpus.Core.TextEncoding
+import Wumpus.Core.TextEncoder
 
 
 

@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Core.TextEncoding
+-- Module      :  Wumpus.Core.TextEncodingInternal
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,15 +14,10 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Core.TextEncoding
+module Wumpus.Core.TextEncodingInternal
   ( 
-    GlyphName
-  , CharCode
-  , PostScriptLookup
-  , SVGLookup
-  , TextEncoder(..)
 
-  , EncodedText(..)    
+    EncodedText(..)    
   , TextChunk(..)
 
   , textLength
@@ -33,25 +28,11 @@ module Wumpus.Core.TextEncoding
 
   ) where
 
+import Wumpus.Core.TextEncoder
+
 import Text.PrettyPrint.Leijen hiding ( SText )
 
 import Data.Char
-
-type GlyphName = String
-type CharCode  = Int 
-
-type PostScriptLookup = CharCode -> Maybe GlyphName
-type SVGLookup        = GlyphName -> Maybe CharCode
-
-data TextEncoder = TextEncoder  {
-                       ps_lookup         :: PostScriptLookup,
-                       svg_lookup        :: SVGLookup,
-                       svg_encoding_name :: String,
-                       ps_fallback       :: GlyphName,
-                       svg_fallback      :: CharCode
-                     }
-                     
-
 
 newtype EncodedText = EncodedText { getEncodedText :: [TextChunk] }
   deriving (Eq,Show)

@@ -25,7 +25,7 @@ module Wumpus.Core.TextLatin1
 
   ) where
 
-import Wumpus.Core.TextEncoding
+import Wumpus.Core.TextEncoder
 
 import qualified Data.Map as Map
 

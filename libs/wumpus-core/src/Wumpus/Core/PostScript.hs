@@ -89,7 +89,7 @@ module Wumpus.Core.PostScript
 
 import Wumpus.Core.Colour
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.TextEncoding
+import Wumpus.Core.TextEncoder
 import Wumpus.Core.Utils ( PSUnit(..), roundup, parens, hsep )
 
 import Data.Aviary

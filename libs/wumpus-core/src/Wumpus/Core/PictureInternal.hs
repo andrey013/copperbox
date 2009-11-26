@@ -55,7 +55,7 @@ import Wumpus.Core.FontSize
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureLanguage hiding ( hcat, vcat, hsep, vsep )
-import Wumpus.Core.TextEncoding
+import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.Utils
 
 import Data.Aviary

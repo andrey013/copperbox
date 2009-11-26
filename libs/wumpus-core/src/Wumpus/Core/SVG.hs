@@ -103,7 +103,7 @@ module Wumpus.Core.SVG
 
 import Wumpus.Core.Colour
 import Wumpus.Core.GraphicsState
-import Wumpus.Core.TextEncoding
+import Wumpus.Core.TextEncoder
 import Wumpus.Core.Utils
 
 import Data.Aviary

@@ -62,7 +62,7 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
-import Wumpus.Core.TextEncoding
+import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.Utils
 
 import Data.Semigroup

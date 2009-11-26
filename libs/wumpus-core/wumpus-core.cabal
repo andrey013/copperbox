@@ -33,20 +33,17 @@ description:
   but it is too unstable for Hackage. Preview releases can be
   found at <http://code.google.com/p/copperbox/> though.
   .
-  Wumpus-core should be fairly stable from now on, except for
-  the fact that more modules are exposed than strictly necessary
-  this is so their Haddock docs are available. Client\'s should 
-  only import the @Wumpus.Core@ module. There may be some name 
-  changes etc. that will change interfaces, but Wumpus has 
-  been carefully implemented. Some of the design decisions are
-  not sophisticated (e.g. how attributes like colour are handled, 
-  and the bounding boxes of text labels are calculated), so
-  Wumpus might be limited compared to other systems. However its 
-  design permits a simple implementation - which is a priority. 
-  Text encoding an exception, I\'m not sure how reasonable the 
-  design is. The current implementation appears okay for Latin 1 
-  but I\'m not sure about other character sets, and I may have 
-  to revise it significantly.
+  Wumpus-core should be fairly stable from now on. There may be 
+  some name changes etc. that will change interfaces, but Wumpus 
+  has been carefully implemented. Some of the design decisions 
+  are not sophisticated (e.g. how attributes like colour are 
+  handled, and the bounding boxes of text labels are calculated), 
+  so Wumpus might be limited compared to other systems. However 
+  its design permits a simple implementation - which is a 
+  priority. Text encoding an exception, I\'m not sure how 
+  reasonable the design is. The current implementation appears 
+  okay for Latin 1 but I\'m not sure about other character sets, 
+  and I may have to revise it significantly.
   .
   /There is no documentation/ - the graphics model used by 
   Wumpus is different to PostScript or SVG, and Wumpus really 
@@ -78,9 +75,12 @@ description:
     list 
   .
   * The modules - Wumpus.Core.PictureInternal, Wumpus.Core.PostScript,
-    & Wumpus.Core.SVG - are no longer exposed.
+    Wumpus.Core.SVG & Wumpus.Core.Utils - are no longer exposed.
   .
-  * (-@-) changed in "Wumpus.Core.PictureLanguage"
+  * Various operators in "Wumpus.Core.PictureLanguage" changed.
+  .
+  * Wumpus.Core.TextEncoding split into internal an public 
+    modules
   .
 build-type:         Simple
 stability:          highly unstable
@@ -110,13 +110,15 @@ library
     Wumpus.Core.OutputSVG,
     Wumpus.Core.Picture,
     Wumpus.Core.PictureLanguage,
-    Wumpus.Core.TextEncoding,
-    Wumpus.Core.TextLatin1,
-    Wumpus.Core.Utils
+    Wumpus.Core.TextEncoder,
+    Wumpus.Core.TextLatin1
+
   other-modules:
     Wumpus.Core.PictureInternal,
     Wumpus.Core.PostScript,
-    Wumpus.Core.SVG
+    Wumpus.Core.SVG,
+    Wumpus.Core.TextEncodingInternal,
+    Wumpus.Core.Utils
     
   extensions:
     

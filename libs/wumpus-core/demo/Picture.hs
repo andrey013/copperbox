@@ -97,9 +97,9 @@ demo08 = do
   where
     p1 = hspace 20 square square
 
-mkFilledSquare :: (PSColour c, Fill c) => c -> DPicture 
-mkFilledSquare col = frame $ fill col $ vertexPath
-  [ P2 0 0, P2 40 0, P2 40 40, P2 0 40 ]
+mkFilledSquare :: (PSColour c, Fill c) => c -> Double -> DPicture 
+mkFilledSquare col n = frame $ fill col $ vertexPath
+  [ P2 0 0, P2 n 0, P2 n n, P2 0 n ]
 
 
 demo09 :: IO ()
@@ -108,9 +108,9 @@ demo09 = do
     writeSVG_latin1 "./out/picture09.svg" p1
   where
     p1 = (alignH HTop s1 s2) `op` s3
-    s1 = uniformScale 1.5  $ mkFilledSquare plum 
-    s2 = uniformScale 1.75 $ mkFilledSquare peru
-    s3 = scale 3 1.5       $ mkFilledSquare black
+    s1 = uniformScale 1.5  $ mkFilledSquare plum 40
+    s2 = uniformScale 1.75 $ mkFilledSquare peru 40
+    s3 = scale 3 1.5       $ mkFilledSquare black 40
     op = alignH HBottom
  
 
@@ -120,9 +120,9 @@ demo10 = do
     writeSVG_latin1 "./out/picture10.svg" p1
   where
     p1 = vsepA VRight 5 s1 [s2,s3]
-    s1 = uniformScale 1.5  $ mkFilledSquare plum 
-    s2 = uniformScale 1.75 $ mkFilledSquare peru
-    s3 = scale 3 1.5       $ mkFilledSquare black
+    s1 = uniformScale 1.5  $ mkFilledSquare plum 40
+    s2 = uniformScale 1.75 $ mkFilledSquare peru 40
+    s3 = scale 3 1.5       $ mkFilledSquare black 40
  
 
 
@@ -146,14 +146,59 @@ demo12 = do
     writeSVG_latin1 "./out/picture12.svg" pic
   where
     pic :: Picture Double
-    pic = p1 -@- p2
-    p1 = move 0 0 $ mkFilledSquare peru
-    p2 = uniformScale 1.5 $ move 100 50 $ mkFilledSquare plum
+    pic = p1 -//- p2 -//- p3 -//- p4
+    p1 = small_black -@- large_plum     -- moves black
+    p2 = large_plum  -@- small_black    -- moves plum
+    p3 = small_black ->- large_plum     -- moves plum
+    p4 = small_black -<- large_plum     -- moves black
+
+    small_black = mkFilledSquare black 10 `at` P2 30 0
+    large_plum  = mkFilledSquare plum  40 `at` P2 100 0
+
+
+demo13 :: IO ()
+demo13 = do 
+    writeEPS_latin1 "./out/picture13.eps" pic
+    writeSVG_latin1 "./out/picture13.svg" pic
+  where
+    pic :: Picture Double
+    pic = (p1 `at` P2 20 20) ->- (p2 `at` P2 60 20) 
+
+    p1 = small_black `below` small_peru   -- moves small black
+    p2 = small_black `above` small_plum   -- moves small black
+
+    small_black = mkFilledSquare black 10 `at` P2 50 0
+    small_plum  = mkFilledSquare plum  10 `at` P2 50 0
+    small_peru  = mkFilledSquare peru  10 `at` P2 50 0
+
+demo14 :: IO ()
+demo14 = do 
+    writeEPS_latin1 "./out/picture14.eps" pic
+    writeSVG_latin1 "./out/picture14.svg" pic
+  where
+    pic :: Picture Double
+    pic = hsep 40 p1 [p2,p3,p4,p5,p6]
+
+    p1 = alignH HTop    small_black mid_peru
+    p2 = alignH HBottom small_black mid_plum
+    p3 = alignH HCenter small_black mid_peru
+
+    p4 = alignV VLeft   mid_black small_peru
+    p5 = alignV VRight  mid_black small_plum
+    p6 = alignV VCenter mid_black small_peru
+
+    small_black = mkFilledSquare black 10 `at` P2 10 0
+    mid_plum    = mkFilledSquare plum  25 `at` P2 50 0
+    mid_peru    = mkFilledSquare peru  25 `at` P2 50 0
+
+    mid_black   = mkFilledSquare black 25 `at` P2 10 10
+    small_plum  = mkFilledSquare plum  10 `at` P2 10 50
+    small_peru  = mkFilledSquare peru  10 `at` P2 10 50
 
 
 main :: IO ()
 main = sequence_
   [ demo01, demo02, demo03, demo04, demo05
   , demo06, demo07, demo08, demo09, demo10
-  , demo11, demo12
+  , demo11, demo12, demo13, demo14
   ]

@@ -50,7 +50,8 @@ module Wumpus.Core.PictureLanguage
   , ( ->- )
   , ( -<- )
   , ( -//- )
-  , ( -\\- )
+  , above
+  , below
   , at
   , stackOnto
   , hcat 
@@ -72,7 +73,7 @@ module Wumpus.Core.PictureLanguage
 
   ) where
 
-import Wumpus.Core.Geometry ( Point2(..), Vec2(..) )
+import Wumpus.Core.Geometry
 
 import Data.AffineSpace
 
@@ -207,7 +208,7 @@ midpt a b = a + 0.5*(b-a)
 --------------------------------------------------------------------------------
 -- Composition
 
-infixr 5 -//-
+infixr 5 -//-, `above`, `below`
 infixr 6 ->-, -@-
 
 
@@ -222,21 +223,46 @@ infixr 6 ->-, -@-
 p1 -@- p2 = (move x y p1) `over` p2 where V2 x y = center p2 .-. center p1
 
 
--- | Horizontal composition - place @b@ at the right of @a@.
+-- | > a ->- b
+-- 
+-- Horizontal composition - move @b@, placing it to the right 
+-- of @a@.
+-- 
 (->-) :: (Horizontal a, Composite a, Num u, u ~ PUnit a) => a -> a -> a
-a ->- b = over a (moveH disp b) where disp = rightBound a - leftBound b 
+a ->- b = a `over` (moveH disp b) where disp = rightBound a - leftBound b 
 
--- | Horizontal composition - place @a@ at the left of @b@.
+-- | > a -<- b
+-- 
+-- Horizontal composition - move @a@, placing it to the left 
+-- of @b@.
+--
 (-<-) :: (Horizontal a, Composite a, Num u, u ~ PUnit a) => a -> a -> a
-(-<-) = flip (->-)   -- TO TEST...
+a -<- b = (moveH disp a) `over` b where disp = leftBound b - rightBound a
 
--- | Vertical composition - place @b@ below @a@.
+
+-- | > a -//- b
+--
+-- Vertical composition - move @b@, placing it below @a@.
+--
 (-//-) :: (Vertical a, Composite a, Num u, u ~ PUnit a) => a -> a -> a
-a -//- b = over a (moveV disp b) where disp = bottomBound a - topBound b 
+a -//- b = a `over` (moveV disp b) where disp = bottomBound a - topBound b 
 
--- | Vertical composition - place @a@ above @b@.
-(-\\-) :: (Vertical a, Composite a, Num u, u ~ PUnit a) => a -> a -> a
-(-\\-) = flip (-//-)
+
+-- | > a `below` b
+-- 
+-- Vertical composition - move @a@, placing it below @b@
+--
+below :: (Vertical a, Composite a, Num u, u ~ PUnit a) => a -> a -> a
+a `below` b = (moveV disp a) `over` b where disp = bottomBound a - topBound b
+
+
+
+-- | > a `above` b
+-- 
+-- Vertical composition - move @a@, placing it above @b@.
+--
+above :: (Vertical a, Composite a, Num u, u ~ PUnit a) => a -> a -> a
+a `above` b = (moveV disp a) `over` b where disp = topBound b - bottomBound a 
 
 
 -- | Place the picture at the supplied point.
@@ -244,20 +270,31 @@ at :: (Move a, u ~ PUnit a) => a -> Point2 u  -> a
 p `at` (P2 x y) = move x y p
 
 
--- stackOnto :: [a] -> a -> a
--- This would obviate the need for pempty without needing a 
--- non-empty list
 
--- | Stack the pictures using 'over' - the first picture in the 
--- list is drawn at the top, last picture is on drawn at the 
--- bottom.
+-- | > xs `stackOnto` a
+-- 
+-- Stack the list of pictures @xs@ 'over' @a@.
+--
+-- Note, the first picture in the list is drawn at the top, the
+-- last picture is draw 'over' @a@.
+--
 stackOnto :: (Composite a) => [a] -> a -> a
 stackOnto = flip (foldr over)
 
+-- | > x ->- xs
+-- 
+-- Concatenate the list pictures @xs@ horizontally with @(->-)@ 
+-- starting at @x@.
+-- 
 hcat :: (Horizontal a, Composite a, Num u, u ~ PUnit a)
      => a -> [a] -> a
 hcat = foldl' (->-)
 
+-- | > x -//- xs
+-- 
+-- Concatenate the list of pictures @xs@ vertically with @(-\/\/-)@ 
+-- starting at @x@.
+--
 vcat :: (Vertical a, Composite a, Num u, u ~ PUnit a)
      => a -> [a] -> a
 vcat = foldl' (-//-)
@@ -277,7 +314,7 @@ stackOntoCenter = flip $ foldr (-@-)
 
 --------------------------------------------------------------------------------
 
-
+-- Helpers
 blankH  :: (Num u, Blank a, u ~ PUnit a) => u -> a
 blankH = blank `flip` 0
 
@@ -285,8 +322,8 @@ blankV  :: (Num u, Blank a, u ~ PUnit a) => u -> a
 blankV = blank 0
 
 
-
--- | The following simple definition of hspace is invalid:
+-- NOTE
+-- The following simple definition of hspace is invalid:
 --
 -- > hspace n a b = a ->- (moveH n b)
 -- 
@@ -296,18 +333,46 @@ blankV = blank 0
 -- The almost as simple definition below, seems to justify 
 -- including Blank as a Picture constructor.
 --
+
+
+-- | > hspace n a b
+--
+-- Concatenate the pictures @a@ and @b@ with @(->-)@ - injecting 
+-- a space of @n@ units to separate the pictures.
+--
 hspace :: (Num u, Composite a, Horizontal a, Blank a, u ~ PUnit a) 
        => u -> a -> a -> a
-hspace n a b = a ->- blankH n ->-  b
+hspace n a b = a ->- blankH n ->- b
 
+-- | > vspace n a b
+--
+-- Concatenate the pictures @a@ and @b@ with @(-\/\/-)@ - injecting 
+-- a space of @n@ units to separate the pictures.
+--
 vspace :: (Num u, Composite a, Vertical a, Blank a, u ~ PUnit a) 
        => u -> a -> a -> a
 vspace n a b = a -//- blankV n -//-  b
 
+
+
+-- | > hsep n x xs
+--
+-- Concatenate the list of pictures @xs@ horizontally with 
+-- @hspace@ starting at @x@. The pictures are interspersed with 
+-- spaces of @n@ units.
+--
 hsep :: (Num u, Composite a, Horizontal a, Blank a, u ~ PUnit a) 
        => u -> a -> [a] -> a
 hsep n = foldl' (hspace n)
 
+
+
+-- | > vsep n x xs
+--
+-- Concatenate the list of pictures @xs@ vertically with 
+-- @vspace@ starting at @x@. The pictures are interspersed with 
+-- spaces of @n@ units.
+--
 vsep :: (Num u, Composite a, Vertical a, Blank a, u ~ PUnit a) 
        => u -> a -> [a] -> a
 vsep n = foldl' (vspace n)
@@ -317,45 +382,85 @@ vsep n = foldl' (vspace n)
 -- Aligning pictures
 
 
-vecMove :: (Composite a, Move a, u ~ PUnit a) => a -> a -> (Vec2 u) -> a 
-vecMove a b (V2 x y) = a `over` (move x y) b 
-
+-- | > alignH z a b
+--
+-- Move picture @b@ up or down to be horizontally aligned along a 
+-- line from the top, center or bottom of picture @a@
+-- 
 alignH :: ( Fractional u, Composite a, Horizontal a, Vertical a, Move a
           , u ~ PUnit a ) 
        => HAlign -> a -> a -> a
-alignH HTop    p1 p2 = vecMove p1 p2 (topright p1    .-. topleft p2)
-alignH HCenter p1 p2 = vecMove p1 p2 (rightmid p1    .-. leftmid p2)
-alignH HBottom p1 p2 = vecMove p1 p2 (bottomright p1 .-. bottomleft p2)
+alignH HTop    p1 p2 = vecMove p1 p2 (vvec $ topBound p1 - topBound p2)
+alignH HBottom p1 p2 = vecMove p1 p2 (vvec $ bottomBound p1 - bottomBound p2)
+alignH HCenter p1 p2 = vecMove p1 p2 (vvec v)
+  where V2 _ v = rightmid p1    .-. leftmid p2
 
+
+-- | > alignV z a b
+--
+-- Move picture @b@ left or right to be vertically aligned along a 
+-- line from the left side, center or right side of picture @a@
+-- 
 alignV :: ( Fractional u, Composite a, Horizontal a, Vertical a, Move a
           , u ~ PUnit a ) 
        => VAlign -> a -> a -> a
-alignV VLeft   p1 p2 = vecMove p1 p2 (bottomleft p1  .-. topleft p2)
-alignV VCenter p1 p2 = vecMove p1 p2 (bottommid p1   .-. topmid p2)
-alignV VRight  p1 p2 = vecMove p1 p2 (bottomright p1 .-. topright p2)
+alignV VLeft   p1 p2 = vecMove p1 p2 (hvec $ leftBound p1 - leftBound p2) 
+alignV VRight  p1 p2 = vecMove p1 p2 (hvec $ rightBound p1 - rightBound p2)
+alignV VCenter p1 p2 = vecMove p1 p2 (hvec h) 
+  where V2 h _ = bottommid p1   .-. topmid p2
 
 
+-- Helpers
+
+vecMove :: (Composite a, Move a, u ~ PUnit a) => a -> a -> (Vec2 u) -> a 
+vecMove a b (V2 x y) = a `over` (move x y) b 
+
+-- Unlike alignH this function \"moves and concatenates\".
+moveAlignH :: ( Fractional u, Composite a, Horizontal a, Vertical a, Move a
+          , u ~ PUnit a ) 
+       => HAlign -> a -> a -> a
+moveAlignH HTop    p1 p2 = vecMove p1 p2 (topright p1    .-. topleft p2)
+moveAlignH HCenter p1 p2 = vecMove p1 p2 (rightmid p1    .-. leftmid p2)
+moveAlignH HBottom p1 p2 = vecMove p1 p2 (bottomright p1 .-. bottomleft p2)
+
+
+-- Unlike alignV this function \"moves and concatenates\".
+moveAlignV :: ( Fractional u, Composite a, Horizontal a, Vertical a, Move a
+          , u ~ PUnit a ) 
+       => VAlign -> a -> a -> a
+moveAlignV VLeft   p1 p2 = vecMove p1 p2 (bottomleft p1  .-. topleft p2)
+moveAlignV VCenter p1 p2 = vecMove p1 p2 (bottommid p1   .-. topmid p2)
+moveAlignV VRight  p1 p2 = vecMove p1 p2 (bottomright p1 .-. topright p2)
+
+
+-- | Variant of 'hcat' that aligns the pictures as well as
+-- concatenating them.
 hcatA :: ( Fractional u, Horizontal a, Vertical a
          , Composite a, Move a, u ~ PUnit a)
      => HAlign -> a -> [a] -> a
-hcatA ha = foldl' (alignH ha)
+hcatA ha = foldl' (moveAlignH ha)
 
+-- | Variant of 'vcat' that aligns the pictures as well as
+-- concatenating them.
 vcatA :: ( Fractional u, Horizontal a, Vertical a
          , Composite a, Move a, u ~ PUnit a)
      => VAlign -> a -> [a] -> a
-vcatA va = foldl' (alignV va)
+vcatA va = foldl' (moveAlignV va)
 
 
-
+-- | Variant of @hsep@ that aligns the pictures as well as
+-- concatenating and spacing them.
 hsepA :: ( Fractional u, Horizontal a, Vertical a
          , Composite a, Move a, Blank a, u ~ PUnit a)
      => HAlign -> u -> a -> [a] -> a
 hsepA ha n = foldl' op where 
-   a `op` b = alignH ha (alignH ha a (blankH n)) b 
+   a `op` b = moveAlignH ha (moveAlignH ha a (blankH n)) b 
 
+-- | Variant of @vsep@ that aligns the pictures as well as
+-- concatenating and spacing them.
 vsepA :: ( Fractional u, Horizontal a, Vertical a
          , Composite a, Move a, Blank a, u ~ PUnit a)
      => VAlign -> u -> a -> [a] -> a
 vsepA va n = foldl' op where 
-   a `op` b = alignV va (alignV va a (blankV n)) b 
+   a `op` b = moveAlignV va (moveAlignV va a (blankV n)) b 
 

@@ -127,7 +127,7 @@ demo09 = do
     writeEPS_latin1 "./out/label09.eps" p1
     writeSVG_latin1 "./out/label09.svg" p1
   where
-    p1 = (bigA -//- bigB) ->- (bigA -\\- bigB) 
+    p1 = (bigA `above` bigB) ->- (bigA `below` bigB) 
     
 demo10 :: IO ()
 demo10 = do 
