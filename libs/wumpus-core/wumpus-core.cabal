@@ -13,8 +13,8 @@ description:
   Wumpus is a library for generating 2D vector pictures, its 
   salient feature is portability due to no FFI dependencies. 
   It can generate PostScript (EPS) files and SVG files. The 
-  generated PostScript code is quite efficient (no unnecessary 
-  stack operations) and plain [1].
+  generated PostScript code is plain [1] and quite efficient 
+  (no unnecessary stack operations).
   .
   Pictures in Wumpus are made from /paths/ and text /labels/. 
   Paths themselves are made from points. The usual affine 
@@ -54,7 +54,7 @@ description:
   email me and I will try to help.
   .
   \[1\] Because the output is simple, straight-line PostScript 
-  code it is possible to use GraphicsMagick or similar tools to 
+  code, it is possible to use GraphicsMagick or a similar tool to 
   convert Wumpus'\s EPS files to many other formats (bitmaps). 
   .
   Changelog:
@@ -65,7 +65,8 @@ description:
   .
   * @lowerLeftUpperRight@ removed from "Wumpus.Core.BoundingBox".
   .
-  * Added range checking and Ord obligation to @bbox@.
+  * Added range checking and Ord obligation to the @bbox@ 
+    \'smart\' constructor.
   .
   * Numeric instances for "Wumpus.Core.Colour" improved.
   .
@@ -79,8 +80,10 @@ description:
   .
   * Various operators in "Wumpus.Core.PictureLanguage" changed.
   .
-  * Wumpus.Core.TextEncoding split into internal an public 
-    modules
+  * Wumpus.Core.TextEncoding split into an internal and a public 
+    module (internal - Wumpus.Core.TextEncodingInternal, public - 
+    Wumpus.Core.TextEncoder).
+
   .
 build-type:         Simple
 stability:          highly unstable

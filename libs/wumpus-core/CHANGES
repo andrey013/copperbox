@@ -6,7 +6,8 @@
 
   * @lowerLeftUpperRight@ removed from "Wumpus.Core.BoundingBox".
 
-  * Added range checking and Ord obligation to @bbox@.
+  * Added range checking and Ord obligation t to the @bbox@ 
+    \'smart\' constructor.
 
   * Numeric instances for "Wumpus.Core.Colour" improved.
 
@@ -20,6 +21,6 @@
 
   * Various operators in "Wumpus.Core.PictureLanguage" changed.
 
-  * Wumpus.Core.TextEncoding split into internal an public 
-    modules
-
+  * Wumpus.Core.TextEncoding split into an internal and a public 
+    module (internal - Wumpus.Core.TextEncodingInternal, public - 
+    Wumpus.Core.TextEncoder).
