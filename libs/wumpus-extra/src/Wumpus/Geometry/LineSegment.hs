@@ -65,8 +65,7 @@ instance Functor LineSegment where
 
 
 
-instance Num u => MatrixMult Matrix3'3 (LineSegment u) where
-  type MatrixParam (LineSegment u) = u
+instance Num u => MatrixMult (LineSegment u) where
   (*#) m3'3 (LS2 p0 p1) = LS2 (m3'3 *# p0) (m3'3 *# p1)
 
 

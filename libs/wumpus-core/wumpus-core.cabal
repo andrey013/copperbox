@@ -87,6 +87,8 @@ stability:          highly unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
+  CHANGES,
+  LICENSE,
   demo/LabelPic.hs,
   demo/Picture.hs
 

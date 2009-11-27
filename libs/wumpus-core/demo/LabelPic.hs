@@ -137,9 +137,20 @@ demo10 = do
     p1 :: Picture Double
     p1 = frame $ textlabel () zeroPt "myst&#egrave;re"
 
+demo11 :: IO ()
+demo11 = do
+    writeEPS_latin1 "./out/label11.eps" pic
+    writeSVG_latin1 "./out/label11.svg" pic
+  where
+    pic :: Picture Double
+    pic = p1 `over` p2
+    p1  = multilabel plum 3 VLeft (P2 50 50) ["Hello", "from", "Wumpus"]
+    p2  = bigA `at` P2 50 50
+
 
 main :: IO ()
 main = sequence_
   [ demo01, demo02, demo03, demo04, demo05
   , demo06, demo07, demo08, demo09, demo10
+  , demo11
   ]  

@@ -62,6 +62,7 @@ import Wumpus.Core.Colour
 import Wumpus.Core.Geometry
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.PictureInternal
+import Wumpus.Core.PictureLanguage
 import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.Utils
 
@@ -354,21 +355,25 @@ ztextlabel :: Point2 u -> String -> Primitive u
 ztextlabel = mkTextLabel psBlack default_font
 
 
--- | Create multiple lines of text...
+-- | Create multiple lines of text.
 --
--- WARNING
+-- The dimension argument is the linespacing, measured as the
+-- distance between the upper lines descender and the lower 
+-- lines ascender.
 --
--- This function is currently not well defined, both the 
--- signature and implementation of this function need attention.
---
-multilabel :: (Fractional u, Ord u) 
-           => [Label u] -> LabelProps -> BoundingBox u -> Picture u
-multilabel ps props bb = 
-    Picture (stdFrame, bb) $ fromListErr err_msg 
-                           $ map frame
-                           $ zipWith PLabel (repeat props) ps 
-  where 
-    err_msg = "Wumpus.Core.Picture.multilabel - empty list."
+-- An error is throw if the list of strings is empty
+-- 
+multilabel :: (Fractional u, Ord u, TextLabel t) 
+           => t -> u -> VAlign -> Point2 u -> [String]-> Picture u
+multilabel _    _ _  _  []     = error $ 
+    "Wumpus.Core.Picture.multilabel - empty list."
+multilabel attr n va pt (x:xs) = 
+    moveAll $ vsepA va n line1 (map mkPic xs)
+  where
+    line1     = mkPic x
+    mkPic     = frame . textlabel attr zeroPt
+    vdelta p  = boundaryHeight (boundary p) - boundaryHeight (boundary line1)
+    moveAll p = moveV (vdelta p) $ p `at` pt
 
 --------------------------------------------------------------------------------
 
