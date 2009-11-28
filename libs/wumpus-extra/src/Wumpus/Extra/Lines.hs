@@ -4,10 +4,11 @@
 -- |
 -- Module      :  Wumpus.Extra.Lines
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (see LICENSE)
--- Maintainer  :  stephen.tetley@gmail.com
--- Stability   :  experimental
--- Portability :  GHC only
+-- License     :  BSD3
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  GHC with TypeFamilies and more
 --
 -- Line drawing from vertex lists as-per OpenGL...
 -- 

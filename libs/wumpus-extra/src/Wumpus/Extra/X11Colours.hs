@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  GHC
+-- Portability :  GHC with TypeFamilies and more
 --
 -- The X11 \'named colours\', but as rgb [0,1] values 
 --

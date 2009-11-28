@@ -8,7 +8,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  GHC
+-- Portability :  GHC with TypeFamilies and more
 --
 -- Additions due to be added to Wumpus.Core
 --

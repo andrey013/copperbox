@@ -11,7 +11,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
--- Portability :  GHC
+-- Portability :  GHC with TypeFamilies and more
 --
 -- Lines in equational form, i.e. @Ax + By + C = 0@.
 --
