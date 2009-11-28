@@ -96,7 +96,7 @@ module Wumpus.Core.SVG
   , val_translate
   , path_m
   , path_l
-  , path_s
+  , path_c
 
 
   ) where
@@ -431,7 +431,7 @@ path_l x y  = hsep $ "L" : map dtrunc [x,y]
 -- | @ S ... ... ... ... ... ... @
 -- 
 -- c.f. PostScript's @curveto@.
-path_s :: PSUnit u => u -> u -> u -> u -> u -> u -> String
-path_s x1 y1 x2 y2 x3 y3 =  hsep $ "S" : map dtrunc [x1,y1,x2,y2,x3,y3]
+path_c :: PSUnit u => u -> u -> u -> u -> u -> u -> String
+path_c x1 y1 x2 y2 x3 y3 =  hsep $ "C" : map dtrunc [x1,y1,x2,y2,x3,y3]
 
 

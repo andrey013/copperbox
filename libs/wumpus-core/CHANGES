@@ -1,5 +1,11 @@
 
 
+0.13.0 to 0.13.1:
+
+  * Wumpus.Core.SVG changed path_s to path_c - \'S\' was the 
+    wrongSVG command to match PostScript\'s @curveto@.
+
+
 0.12.0 to 0.13.0:
 
   * More Haddock documenting. 

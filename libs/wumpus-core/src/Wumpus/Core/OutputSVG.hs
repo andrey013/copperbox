@@ -270,7 +270,7 @@ pathInstructions (Path (P2 x y) xs) = path_m x y : map pathSegment xs
 pathSegment :: PSUnit u => PathSegment u -> String
 pathSegment (PLine (P2 x1 y1))                        = path_l x1 y1
 pathSegment (PCurve (P2 x1 y1) (P2 x2 y2) (P2 x3 y3)) = 
-    path_s x1 y1 x2 y2 x3 y3
+    path_c x1 y1 x2 y2 x3 y3
 
 
 

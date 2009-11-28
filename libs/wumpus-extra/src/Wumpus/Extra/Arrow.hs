@@ -10,6 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC with TypeFamilies and more
 --
+-- Arrowheads...
 --
 --------------------------------------------------------------------------------
 
@@ -21,9 +22,57 @@ import Wumpus.Core
 import Data.AffineSpace
 import Data.Aviary
 
+
+-- Still don't know what to do about line width...
+type LineW u = u
+
+-- Notes in TikZ - arrowheads must be able to 'shorten lines' 
+-- (vis open triangle arrow heads - the line must be retracted).
+
+tripoints :: Floating u
+          => Radian -> u -> u -> Point2 u -> (Point2 u, Point2 u)
+tripoints ang dist halfbase tip = (back .+^ v, back .-^ v)
+  where
+    back = tip .-^ (avec ang dist)
+    v    = avec (ang + pi/2) halfbase
+
+
+
+
+arrowTri' :: (Floating u, Real u) => Point2 u -> Point2 u -> Picture u
+arrowTri' p1 p2 = frameMulti [thead, aline]
+  where
+    lwidth = 1.0
+    ang    = langle p1 p2
+    thead  = ahFilledTriRetro () lwidth ang p2
+    aline  = ostroke () $ path p1 [lineTo $ p2 .-^ avec ang lwidth]
+  
+
+ahFilledTriangle :: (Floating u, Real u, Fill t)
+                 => t -> LineW u -> Radian -> Point2 u -> Primitive u
+ahFilledTriangle attr lw ang pt = fill attr $ vertexPath [pt,u,v]
+  where
+    (u,v) = tripoints ang (lw*10) (lw*5) pt
+
+ahFilledTriRetro :: (Floating u, Real u, Fill t)
+                 => t -> LineW u -> Radian -> Point2 u -> Primitive u
+ahFilledTriRetro attr lw ang pt = fill attr $ vertexPath [pt,u,retro,v]
+  where
+    (u,v) = tripoints ang (lw*10) (lw*5) pt
+    retro = pt .-^ avec ang (lw*5)
+
+-- Old...
+
+
+
+
+
 newtype Arrow u = Arrow { arrowPaths :: [Primitive u] }
 
 type DArrow = Arrow Double
+
+
+
 
 picArrow :: (Fractional u, Ord u) => Arrow u -> Picture u
 picArrow (Arrow xs) = multi $ map frame xs

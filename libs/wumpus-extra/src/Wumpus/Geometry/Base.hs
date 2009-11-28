@@ -76,6 +76,14 @@ class ObjectLength a where
 class Midpoint a where
   midpoint :: a -> Point2 (DUnit a)
 
+--------------------------------------------------------------------------------
+-- Instances for Wumpus core
+
+instance Converse Radian where
+  converse = norm . (+pi)
+    where norm = id -- to do
+         
+
 
 
 --------------------------------------------------------------------------------

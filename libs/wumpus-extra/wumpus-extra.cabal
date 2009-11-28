@@ -1,5 +1,5 @@
 name:             wumpus-extra
-version:          0.6.0
+version:          0.6.1
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -27,7 +27,7 @@ library
                       wl-pprint, vector-space, 
                       monadLib, xml, dlist,
                       data-aviary > 0.1.0,
-                      wumpus-core == 0.13.0
+                      wumpus-core >= 0.13.0
 
   
   exposed-modules:

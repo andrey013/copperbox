@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.13.0
+version:          0.13.1
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -37,13 +37,13 @@ description:
   some name changes etc. that will change interfaces, but Wumpus 
   has been carefully implemented. Some of the design decisions 
   are not sophisticated (e.g. how attributes like colour are 
-  handled, and the bounding boxes of text labels are calculated), 
-  so Wumpus might be limited compared to other systems. However 
-  its design permits a simple implementation - which is a 
-  priority. Text encoding an exception, I\'m not sure how 
-  reasonable the design is. The current implementation appears 
-  okay for Latin 1 but I\'m not sure about other character sets, 
-  and I may have to revise it significantly.
+  handled, and how the bounding boxes of text labels are 
+  calculated), so Wumpus might be limited compared to other 
+  systems. However its design permits a simple implementation - 
+  which is a priority. Text encoding an exception, I\'m not sure 
+  how reasonable the design is. The current implementation 
+  appears okay for Latin 1 but I\'m not sure about other 
+  character sets, and I may have to revise it significantly.
   .
   /There is no documentation/ - the graphics model used by 
   Wumpus is different to PostScript or SVG, and Wumpus really 
@@ -59,31 +59,10 @@ description:
   .
   Changelog:
   .
-  0.12.0 to 0.13.0:
+  0.13.0 to 0.13.1:
   .
-  * More Haddock documenting. 
-  .
-  * @lowerLeftUpperRight@ removed from "Wumpus.Core.BoundingBox".
-  .
-  * Added range checking and Ord obligation to the @bbox@ 
-    \'smart\' constructor.
-  .
-  * Numeric instances for "Wumpus.Core.Colour" improved.
-  .
-  * MatrixMult type class simplified
-  .
-  * Dash Pattern made a list of on-off pairs rather than just a 
-    list 
-  .
-  * The modules - Wumpus.Core.PictureInternal, Wumpus.Core.PostScript,
-    Wumpus.Core.SVG & Wumpus.Core.Utils - are no longer exposed.
-  .
-  * Various operators in "Wumpus.Core.PictureLanguage" changed.
-  .
-  * Wumpus.Core.TextEncoding split into an internal and a public 
-    module (internal - Wumpus.Core.TextEncodingInternal, public - 
-    Wumpus.Core.TextEncoder).
-
+  * Wumpus.Core.SVG changed path_s to path_c - \'S\' was the 
+    wrongSVG command to match PostScript\'s @curveto@.
   .
 build-type:         Simple
 stability:          highly unstable

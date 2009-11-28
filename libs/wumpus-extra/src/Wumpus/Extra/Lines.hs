@@ -1,3 +1,6 @@
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -28,12 +31,18 @@ module Wumpus.Extra.Lines
   , quads
   , quadStrip 
 
+  -- 
+  , bend
+
+
   ) where
 
 
 
 import Wumpus.Core
 
+import Data.AffineSpace
+import Data.VectorSpace
 dots :: (Fractional u, Ord u) 
      => (Point2 u -> Picture u) -> [Point2 u] -> Picture u
 dots f = multi . map f
@@ -96,3 +105,16 @@ quadStrip t = frameMulti . step where
   
   -- Note flipping d & c when creating vertex path,
   -- and only requeuing c & d
+
+
+--------------------------------------------------------------------------------
+
+bend :: (Floating u, AffineSpace (Point2 u), InnerSpace vec,
+          vec ~ Diff (Point2 u), Scalar vec ~ u)
+     => Radian -> Radian -> Point2 u -> Point2 u -> Path u
+bend oang iang u v = path u [curveTo a b v]
+  where
+    half_dist = 0.5 * distance u v 
+    a         = u .+^ avec oang half_dist 
+    b         = v .-^ avec iang (-half_dist)
+
