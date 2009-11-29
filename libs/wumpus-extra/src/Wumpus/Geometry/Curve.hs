@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -22,6 +23,9 @@ module Wumpus.Geometry.Curve
     CubicBezier(..)
   , DCubicBezier
 
+  -- * Constructor
+  , cubicBezier
+
   -- * Operations
   , bezierArc
   , bezierCircle
@@ -36,6 +40,7 @@ import Wumpus.Core
 import Wumpus.Geometry.Base
 
 import Data.AffineSpace
+
 
 data CubicBezier u = CubicBezier (Point2 u) (Point2 u) (Point2 u) (Point2 u)
   deriving (Eq,Show)
@@ -63,12 +68,35 @@ instance Pointwise (CubicBezier u) where
 instance Converse (CubicBezier u) where
   converse (CubicBezier p0 p1 p2 p3) = CubicBezier p3 p2 p1 p0
 
+
+-- Affine
+
+type instance DUnit (CubicBezier u) = u
+
+instance (Floating u, Real u) => Rotate (CubicBezier u) where
+  rotate ang = pointwise (rotate ang) 
+
+instance (Floating u, Real u) => RotateAbout (CubicBezier u) where
+  rotateAbout r pt = pointwise (rotateAbout r pt) 
+
+instance (Floating u, Real u) => Scale (CubicBezier u) where
+  scale x y = pointwise (scale x y) 
+
+instance (Floating u, Real u) => Translate (CubicBezier u) where
+  translate x y = pointwise (translate x y) 
+
+
 --------------------------------------------------------------------------------
 -- affine transformations
 
 
 --------------------------------------------------------------------------------
 -- construction
+
+-- TODO - any 'smart' for this constructor?
+
+cubicBezier :: Point2 u -> Point2 u -> Point2 u -> Point2 u -> CubicBezier u
+cubicBezier = CubicBezier 
 
 
 -- | Create an arc - this construction is the analogue of 
@@ -108,3 +136,6 @@ curvesToPath []                     = error $ "curvesToPath - empty list"
 curvesToPath (CubicBezier p0 p1 p2 p3:cs) = 
    path p0 (curveTo p1 p2 p3 : map fn cs) where 
       fn (CubicBezier _ u v w) = curveTo u v w
+
+--------------------------------------------------------------------------------
+

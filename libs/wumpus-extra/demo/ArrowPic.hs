@@ -10,14 +10,17 @@ main :: IO ()
 main = sequence_ 
   [ demo01 ]
 
+point2 :: Point2 Double
+point2 = P2 100 10
+
 arr1 :: Arrow Double
-arr1 = arrow zeroPt (P2 100 0)
+arr1 = arrow zeroPt point2
 
 arr2 :: Arrow Double
-arr2 = arrowPerp zeroPt (P2 100 0)
+arr2 = arrowPerp zeroPt point2
 
 arr3 :: Arrow Double
-arr3 = arrowTri zeroPt (P2 100 0)
+arr3 = arrowTri zeroPt point2
 
 -- mkPic = overlays . map picPath
 
@@ -27,8 +30,10 @@ demo01 = do
     writeSVG_latin1 "./out/arrow01.svg" pic
   where 
     pic :: Picture Double
-    pic = vsepA VLeft 10 p1 (ps1 ++ [pb])
+    pic = vsepA VLeft 10 p1 (ps1 ++ [ph])
 
-    p1  = arrowTri' zeroPt (P2 100 0)
+    p1  = arrowTri' zeroPt point2
     ps1 = (map picArrow [arr1, arr2, arr3 ])
-    pb  = frame $ ostroke () $ bend (pi/3) (pi/3) zeroPt (P2 100 0)  
+    ph  = arrowHook' zeroPt point2
+
+

@@ -81,13 +81,11 @@ instance Pointwise (LineSegment u) where
 instance (Floating u, Real u) => Rotate (LineSegment u) where
   rotate ang = pointwise (rotate ang) 
 
-
 instance (Floating u, Real u) => RotateAbout (LineSegment u) where
   rotateAbout r pt = pointwise (rotateAbout r pt) 
 
 instance (Floating u, Real u) => Scale (LineSegment u) where
   scale x y = pointwise (scale x y) 
-
 
 instance (Floating u, Real u) => Translate (LineSegment u) where
   translate x y = pointwise (translate x y) 

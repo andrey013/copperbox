@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -16,11 +17,15 @@
 
 module Wumpus.Extra.Arrow where
 
+import Wumpus.Extra.Lines
+import Wumpus.Geometry
 import Wumpus.Core
 
+import Data.Aviary
 
 import Data.AffineSpace
-import Data.Aviary
+import Data.VectorSpace
+
 
 
 -- Still don't know what to do about line width...
@@ -40,12 +45,12 @@ tripoints ang dist halfbase tip = (back .+^ v, back .-^ v)
 
 
 arrowTri' :: (Floating u, Real u) => Point2 u -> Point2 u -> Picture u
-arrowTri' p1 p2 = frameMulti [thead, aline]
+arrowTri' p1 p2 = frameMulti [thead, arrln]
   where
     lwidth = 1.0
     ang    = langle p1 p2
     thead  = ahFilledTriRetro () lwidth ang p2
-    aline  = ostroke () $ path p1 [lineTo $ p2 .-^ avec ang lwidth]
+    arrln  = ostroke () $ path p1 [lineTo $ p2 .-^ avec ang lwidth]
   
 
 ahFilledTriangle :: (Floating u, Real u, Fill t)
@@ -60,6 +65,22 @@ ahFilledTriRetro attr lw ang pt = fill attr $ vertexPath [pt,u,retro,v]
   where
     (u,v) = tripoints ang (lw*10) (lw*5) pt
     retro = pt .-^ avec ang (lw*5)
+
+arrowHook' :: (Floating u, Real u, Ord u, InnerSpace (Vec2 u)) 
+           => Point2 u -> Point2 u -> Picture u
+arrowHook' p1 p2 = frameMulti [hhead,arrln]
+  where
+    lwidth = 1.0
+    ang    = langle p1 p2
+    arrln  = ostroke () $ path p1 [lineTo p2]
+    hhead  = ahHook () lwidth ang p2 
+
+ahHook :: (Floating u, Real u, Ord u, Stroke t, InnerSpace (Vec2 u)) 
+       => t -> u -> Radian -> Point2 u -> Primitive u
+ahHook attr lw ang pt = ostroke attr $ curvesToPath [c,c']
+  where
+    c  = rotateAbout (-pi/2) pt $ bend (pi/3) (pi/3) (pt .+^ avec ang (lw*5)) pt
+    c' = rotateAbout (-pi/2) pt $ bend (pi/3) (pi/3) pt (pt .-^ avec ang (lw*5))
 
 -- Old...
 

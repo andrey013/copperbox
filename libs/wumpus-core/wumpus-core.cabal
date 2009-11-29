@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.13.1
+version:          0.13.2
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -65,7 +65,7 @@ description:
     wrongSVG command to match PostScript\'s @curveto@.
   .
 build-type:         Simple
-stability:          highly unstable
+stability:          unstable
 cabal-version:      >= 1.2
 
 extra-source-files:

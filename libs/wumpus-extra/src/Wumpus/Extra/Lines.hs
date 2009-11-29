@@ -33,16 +33,26 @@ module Wumpus.Extra.Lines
 
   -- 
   , bend
-
-
+  , tildeCurve
+  , strline
+  , strlineMidpt
   ) where
 
 
+import Wumpus.Geometry
 
 import Wumpus.Core
 
 import Data.AffineSpace
 import Data.VectorSpace
+
+
+
+
+
+
+
+
 dots :: (Fractional u, Ord u) 
      => (Point2 u -> Picture u) -> [Point2 u] -> Picture u
 dots f = multi . map f
@@ -109,12 +119,33 @@ quadStrip t = frameMulti . step where
 
 --------------------------------------------------------------------------------
 
-bend :: (Floating u, AffineSpace (Point2 u), InnerSpace vec,
-          vec ~ Diff (Point2 u), Scalar vec ~ u)
-     => Radian -> Radian -> Point2 u -> Point2 u -> Path u
-bend oang iang u v = path u [curveTo a b v]
+bend :: (Floating u, InnerSpace (Vec2 u))
+     => Radian -> Radian -> Point2 u -> Point2 u -> CubicBezier u
+bend oang iang u v = cubicBezier u a b v
   where
     half_dist = 0.5 * distance u v 
     a         = u .+^ avec oang half_dist 
-    b         = v .-^ avec iang (-half_dist)
+    b         = v .+^ avec (pi-iang) half_dist
 
+
+
+-- | Create a tilde (sinusodial) curve about the horizontal plane.
+-- 
+-- This one is rather simplistic - single one phase curve with no
+-- subdivision...
+-- 
+-- There are better ways to plot things
+--
+tildeCurve :: (Floating u, AffineSpace (pt u), Converse (Vec2 u)) 
+           => u -> Point2 u -> CubicBezier u
+tildeCurve w = \pt -> let endpt = pt .+^ hvec w
+                      in cubicBezier pt (pt .+^ v) (endpt .+^ converse v) endpt
+  where 
+    v = avec (pi/4) (w/2)
+
+
+strline :: Num u => Point2 u -> Vec2 u -> u -> Point2 u
+strline pt u t = pt .+^ (t *^ u)
+
+strlineMidpt :: Floating u => Point2 u -> Vec2 u -> Point2 u
+strlineMidpt pt u = strline pt u 0.5
