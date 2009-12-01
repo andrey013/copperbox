@@ -21,7 +21,7 @@
 
 module Wumpus.Extra
   ( 
-    module Wumpus.Extra.Arrow
+    module Wumpus.Extra.Arrows
   , module Wumpus.Extra.Dots
   , module Wumpus.Extra.Drawing
   , module Wumpus.Extra.Grid
@@ -31,7 +31,7 @@ module Wumpus.Extra
   , module Wumpus.Extra.Text
   ) where
 
-import Wumpus.Extra.Arrow
+import Wumpus.Extra.Arrows
 import Wumpus.Extra.Dots
 import Wumpus.Extra.Drawing
 import Wumpus.Extra.Grid

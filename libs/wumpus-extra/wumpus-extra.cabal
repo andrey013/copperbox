@@ -32,7 +32,8 @@ library
   
   exposed-modules:
     Wumpus.Extra,
-    Wumpus.Extra.Arrow,
+    Wumpus.Extra.Arrows,
+    Wumpus.Extra.Arrowheads,
     Wumpus.Extra.Dots,
     Wumpus.Extra.Drawing,
     Wumpus.Extra.Grid,
