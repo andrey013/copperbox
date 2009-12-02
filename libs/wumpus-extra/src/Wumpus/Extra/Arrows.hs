@@ -18,12 +18,10 @@
 module Wumpus.Extra.Arrows where
 
 import Wumpus.Extra.Arrowheads
--- import Wumpus.Geometry
 import Wumpus.Geometry.CoreAdditions
 
 import Wumpus.Core
 
-import Data.Aviary
 
 import Data.AffineSpace
 import Data.VectorSpace
@@ -32,7 +30,6 @@ import Data.VectorSpace
 
 
 -- Still don't know what to do about line width...
-type LineW u = u
 
 -- Notes in TikZ - arrowheads must be able to 'shorten lines' 
 -- (vis open triangle arrow heads - the line must be retracted).
@@ -58,6 +55,19 @@ arrowPerp' :: (Floating u, Real u)
            => Point2 u -> Point2 u -> Picture u
 arrowPerp' = strokedArrow () straightPerp
 
+
+arrowBracket' :: (Floating u, Real u) 
+              => Point2 u -> Point2 u -> Picture u
+arrowBracket' = strokedArrow () bracketTip
+
+
+arrowOutBracket' :: (Floating u, Real u) 
+              => Point2 u -> Point2 u -> Picture u
+arrowOutBracket' = strokedArrow () outwardBracketTip
+
+arrowStrokedCurved' :: (Floating u, Real u, InnerSpace (Vec2 u)) 
+                    => Point2 u -> Point2 u -> Picture u
+arrowStrokedCurved' = strokedArrow () strokedCurvedTip
 
 -- dashes to go at some point...
 strokedArrow :: (Floating u, Real u, Stroke t)

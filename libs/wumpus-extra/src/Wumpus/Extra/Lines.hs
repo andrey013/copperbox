@@ -33,6 +33,7 @@ module Wumpus.Extra.Lines
 
   -- 
   , bend
+  , tighten
   , tildeCurve
   , strline
   , strlineMidpt
@@ -119,14 +120,22 @@ quadStrip t = frameMulti . step where
 
 --------------------------------------------------------------------------------
 
-bend :: (Floating u, InnerSpace (Vec2 u))
+-- @bend@ seems most intuitive for \'humps\' - maybe it should 
+-- only take one angle...
+
+bend :: (Floating u, Real u, InnerSpace (Vec2 u))
      => Radian -> Radian -> Point2 u -> Point2 u -> CubicBezier u
 bend oang iang u v = cubicBezier u a b v
   where
     half_dist = 0.5 * distance u v 
-    a         = u .+^ avec oang half_dist 
-    b         = v .+^ avec (pi-iang) half_dist
+    theta     = langle u v
+    a         = u .+^ avec (theta + oang) half_dist 
+    b         = v .+^ avec (theta + iang) half_dist
 
+
+tighten :: Num u => Vec2 u -> Vec2 u -> CubicBezier u -> CubicBezier u
+tighten u v (CubicBezier p0 p1 p2 p3) = CubicBezier p0 (p1 .+^ u) (p2 .+^ v) p3
+  -- ang = langle p0 p4
 
 
 -- | Create a tilde (sinusodial) curve about the horizontal plane.
