@@ -4,6 +4,7 @@ module ArrowPic where
 
 import Wumpus.Core
 import Wumpus.Extra
+import Wumpus.Extra.SVGColours
 import Wumpus.Geometry
 
 main :: IO ()
@@ -20,7 +21,8 @@ demo01 = do
     writeSVG_latin1 "./out/arrow01.svg" pic
   where 
     pic :: Picture Double
-    pic = vsepA VLeft 10 p1 [p2,p3,p4,p5,p6] -//- frameMulti [bend1, bend2]
+    pic = backgroundGrid (cornflowerBlue, [LineWidth 0.5])  10 $ 
+            vsepA VLeft 10 p1 [p2,p3,p4,p5,p6] -//- frameMulti [bend1, bend2]
 
     p1  = arrowTri' zeroPt pt2
     p2  = arrowHook' zeroPt pt2
