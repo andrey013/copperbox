@@ -33,11 +33,14 @@ module Wumpus.Geometry.Curve
   , curveToPath
   , curvesToPath
 
+  , circlePath 
+
   ) where
 
 import Wumpus.Core
-
 import Wumpus.Geometry.Base
+
+import Data.Aviary
 
 import Data.AffineSpace
 
@@ -102,8 +105,9 @@ cubicBezier = CubicBezier
 -- | Create an arc - this construction is the analogue of 
 -- PostScript\'s @arc@ command, but the arc is created as a 
 -- Bezier curve so it should span less than 90deg.
-bezierArc :: Floating u => Point2 u -> u -> Radian -> Radian -> CubicBezier u
-bezierArc pt r ang1 ang2 = CubicBezier p0 p1 p2 p3 where
+bezierArc :: Floating u 
+          => u -> Radian -> Radian -> Point2 u -> CubicBezier u
+bezierArc r ang1 ang2 pt = CubicBezier p0 p1 p2 p3 where
   theta = ang2 - ang1
   e     = r * fromRadian ((2 * sin (theta/2)) / (1+ 2* cos (theta/2))) 
   p0    = pt .+^ avec ang1 r
@@ -116,9 +120,9 @@ bezierArc pt r ang1 ang2 = CubicBezier p0 p1 p2 p3 where
 -- | Make a circle from Bezier curves - @n@ is the number of 
 -- subdivsions per quadrant.
 bezierCircle :: (Fractional u, Floating u) 
-             => Int -> Point2 u -> u -> [CubicBezier u]
-bezierCircle n pt r = para phi [] $ subdivisions (n*4) (2*pi) where
-   phi a (b:_,acc) = bezierArc pt r a b : acc
+             => Int -> u -> Point2 u -> [CubicBezier u]
+bezierCircle n r pt = para phi [] $ subdivisions (n*4) (2*pi) where
+   phi a (b:_,acc) = bezierArc r a b pt : acc
    phi _ (_,acc)   = acc 
 
   
@@ -139,3 +143,6 @@ curvesToPath (CubicBezier p0 p1 p2 p3:cs) =
 
 --------------------------------------------------------------------------------
 
+circlePath :: (Fractional u, Floating u) 
+           => Int -> u -> Point2 u -> Path u
+circlePath = curvesToPath `ooo` bezierCircle

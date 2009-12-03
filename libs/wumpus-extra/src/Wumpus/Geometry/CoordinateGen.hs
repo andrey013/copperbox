@@ -49,7 +49,7 @@ import Data.List
 -- centered at the origin. The points proceed counter-clockwise 
 -- from the the initial point on the x-axis.
 circular :: (Floating u , Real u) => Int -> u -> [Point2 u]
-circular = circularAbout zeroPt
+circular n r = circularAbout n r zeroPt
 
 
 -- | @ circularAbout pt n r ...@
@@ -58,8 +58,8 @@ circular = circularAbout zeroPt
 -- from the the initial point on the x-axis.
 --
 circularAbout :: (Floating u , Real u) 
-              => Point2 u -> Int -> u -> [Point2 u]
-circularAbout pt n r = take n $ iterate (rotateAbout ang pt) px
+              => Int -> u -> Point2 u -> [Point2 u]
+circularAbout n r pt = take n $ iterate (rotateAbout ang pt) px
   where
     ang  = let n'::Double = fromIntegral n in toRadian $  2*pi/ n'
     px   = pt .+^ V2 0 r

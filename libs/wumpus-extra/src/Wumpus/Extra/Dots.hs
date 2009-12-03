@@ -18,12 +18,20 @@ module Wumpus.Extra.Dots
   ( 
 
   -- * Dots
-    dotX
+    dotHLine
+  , dotVLine
+
+  , dotX
   , dotPlus
   , dotCross
   , dotDiamond
   , dotDisk
   , dotSquare
+  , dotCircle
+  , dotStar
+  , dotAsterisk
+  , dotOPlus
+  , dotOCross
 
   -- * Alternative
   , LineWidth
@@ -62,41 +70,107 @@ import Data.AffineSpace
 -- Shapes seem pleasing enough where the size (height or width) 
 -- is 4x the line width.
 --
+-- ------- -------
+-- 
+-- Dots should probably have their own Attribute typeclass
+-- like Stroke Fill with a restricted set of options
+-- (to prevent stroked dots for example).
+--
+
+
+
+dotHLine :: (Fractional u, Ord u, Stroke t)
+         => t -> u -> Point2 u -> Picture u 
+dotHLine attr lw pt = frame $ ostroke attr $ vertexPath [p1,p2]
+  where
+    p1 = pt .-^ hvec (lw*5)
+    p2 = pt .+^ hvec (lw*5)
+
+
+dotVLine :: (Fractional u, Ord u, Stroke t)
+         => t -> u -> Point2 u -> Picture u 
+dotVLine attr lw pt = frame $ ostroke attr $ vertexPath [p1,p2]
+  where
+    p1 = pt .-^ vvec (lw*5)
+    p2 = pt .+^ vvec (lw*5)
 
 
 dotX :: (Ord u, Floating u, Real u, Fractional u, Stroke t) 
-     => t -> Point2 u -> Picture u
-dotX t pt = frameMulti $ map mkStroke [ls1, ls2]
+     => t -> u -> Point2 u -> Picture u
+dotX attr lw pt = frameMulti $ map mkStroke [ls1, ls2]
   where
-    mkStroke = ostroke t . lineSegmentToPath 
-    ls1      = rotateAbout (pi/6) pt $ vlineSegmentBisect 2 pt
+    mkStroke = ostroke attr . lineSegmentToPath 
+    ls1      = rotateAbout (pi/6) pt $ vlineSegmentBisect (lw*5) pt
     ls2      = reflectYPlane pt ls1  -- wrong
 
 
 dotPlus :: (Ord u, Floating u, Real u, Fractional u, Stroke t) 
-        => t -> Point2 u -> Picture u
-dotPlus t pt = frameMulti $ map mkStroke [ls1, ls2]
+        => t -> u -> Point2 u -> Picture u
+dotPlus attr lw pt = frameMulti $ map mkStroke [ls1, ls2]
   where
-    mkStroke = ostroke t . lineSegmentToPath 
-    ls1   = vlineSegmentBisect 2 pt
-    ls2   = hlineSegmentBisect 2 pt
+    mkStroke = ostroke attr . lineSegmentToPath 
+    ls1   = vlineSegmentBisect (lw*5) pt
+    ls2   = hlineSegmentBisect (lw*5) pt
 
 dotCross :: (Ord u, Floating u, Real u, Fractional u, Stroke t) 
-         => t -> Point2 u -> Picture u
-dotCross t pt = rotate45About pt $ dotPlus t pt
+         => t -> u -> Point2 u -> Picture u
+dotCross attr lw pt = rotate45About pt $ dotPlus attr lw pt
 
 
-dotDiamond :: (Floating u, Real u, Fractional u, Fill t) 
-           => t -> Point2 u -> Picture u
-dotDiamond t pt = frame $ fillPolygon t $ regularPolygon 4 2 pt
+-- needs horizontal pinch...
+dotDiamond :: (Floating u, Real u, Fractional u, Stroke t) 
+           => t -> u -> Point2 u -> Picture u
+dotDiamond attr lw pt = frame $ cstroke attr $ vertexPath [p1,p2,p3,p4]
+  where
+    hv = hvec $ lw*4
+    vv = vvec $ lw*5
+    p1 = pt .-^ vv
+    p2 = pt .+^ hv
+    p3 = pt .+^ vv
+    p4 = pt .-^ hv 
+
+
 
 dotDisk :: (Fractional u, Ord u, Ellipse t) => t -> Point2 u -> Picture u
-dotDisk t pt = frame $ ellipse t pt 2 2
+dotDisk attr pt = frame $ ellipse attr pt 2 2
 
 
-dotSquare :: (Fractional u, Ord u, Fill t) 
-          => t -> Point2 u -> Picture u
-dotSquare t p = frame $ fillPolygon t $ square 4 (p .-^ (V2 2 2))
+dotSquare :: (Fractional u, Ord u, Stroke t) 
+          => t -> u -> Point2 u -> Picture u
+dotSquare attr lw pt = 
+    frame $ strokePolygon attr $ square (lw*10) (pt .-^ V2 (lw*5) (lw*5))
+
+
+dotCircle :: (Floating u, Ord u, Stroke t)
+          => t -> u -> Point2 u -> Picture u
+dotCircle attr lw pt = frame $ cstroke attr $ circlePath 1 (lw*5) pt
+
+-- | Five points
+dotStar :: (Floating u, Real u, Ord u, Stroke t) 
+          => t -> u -> Point2 u -> Picture u
+dotStar attr lw pt = frameMulti $ map (ostroke attr . vertexPath . line2) xs
+  where
+    line2 p = [pt,p]
+    xs      = circularAbout 5 (lw*5) pt
+
+-- | Six points
+dotAsterisk :: (Floating u, Real u, Stroke t)
+            => t -> u -> Point2 u -> Picture u
+dotAsterisk attr lw pt = 
+    frameMulti $ map (ostroke attr . lineSegmentToPath) [ls1,ls2,ls3]
+  where
+    ls1 = vlineSegmentBisect (lw*5) pt
+    ls2 = rotateAbout (pi/3) pt ls1
+    ls3 = rotateAbout (pi/3) pt ls2
+
+dotOPlus :: (Floating u, Real u, Ord u, Stroke t)
+         => t -> u -> Point2 u -> Picture u
+dotOPlus attr lw pt = multi [dotCircle attr lw pt, dotPlus attr lw pt]
+
+
+dotOCross :: (Floating u, Real u, Ord u, Stroke t)
+          => t -> u -> Point2 u -> Picture u
+dotOCross attr lw pt = multi [dotCircle attr lw pt, dotCross attr lw pt]
 
 --------------------------------------------------------------------------------
 -- Alternative

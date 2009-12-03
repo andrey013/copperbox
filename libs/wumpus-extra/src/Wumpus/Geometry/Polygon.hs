@@ -92,7 +92,7 @@ rectangle w h bl = Polygon $ sequence [id,v1,v2,v3] bl where
 -- centered at the supplied point.
 regularPolygon :: (Floating u, Real u)
                => Int -> u -> Point2 u -> Polygon u
-regularPolygon n r pt = Polygon $ circularAbout pt n r
+regularPolygon = Polygon `ooo` circularAbout
 
 
 
