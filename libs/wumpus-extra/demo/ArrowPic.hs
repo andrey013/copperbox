@@ -23,7 +23,7 @@ demo01 = do
     pic :: Picture Double
     pic = backgroundGrid (cornflowerBlue, [LineWidth 0.5])  10 $ 
             vsepA VLeft 10 p1 [p2,p3,p4,p5,p6] -//- frameMulti [bend1, bend2]
-
+               -//- strokedCrossedRect () () 40 20
     p1  = arrowTri' zeroPt pt2
     p2  = arrowHook' zeroPt pt2
     p3  = arrowPerp' zeroPt pt2

@@ -19,6 +19,7 @@ module Wumpus.Geometry
   ( 
     module Wumpus.Geometry.Base
   , module Wumpus.Geometry.Curve
+  , module Wumpus.Geometry.CoordinateGen
   , module Wumpus.Geometry.LineEquation
   , module Wumpus.Geometry.LineSegment
   , module Wumpus.Geometry.Polygon
@@ -27,6 +28,7 @@ module Wumpus.Geometry
 
 import Wumpus.Geometry.Base
 import Wumpus.Geometry.Curve
+import Wumpus.Geometry.CoordinateGen
 import Wumpus.Geometry.LineEquation
 import Wumpus.Geometry.LineSegment
 import Wumpus.Geometry.Polygon

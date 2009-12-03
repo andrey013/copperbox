@@ -36,6 +36,7 @@ module Wumpus.Geometry.Polygon
 
 import Wumpus.Core
 import Wumpus.Geometry.Base
+import Wumpus.Geometry.CoordinateGen
 
 import Data.Aviary
 import Data.AffineSpace

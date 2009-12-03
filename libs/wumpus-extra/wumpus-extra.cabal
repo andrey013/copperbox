@@ -49,6 +49,7 @@ library
     Wumpus.Geometry.Base,
     Wumpus.Geometry.CoreAdditions,
     Wumpus.Geometry.Curve,
+    Wumpus.Geometry.CoordinateGen,
     Wumpus.Geometry.LineEquation,
     Wumpus.Geometry.LineSegment,
     Wumpus.Geometry.Polygon

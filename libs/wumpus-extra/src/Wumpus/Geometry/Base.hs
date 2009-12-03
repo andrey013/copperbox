@@ -1,6 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -31,16 +30,6 @@ module Wumpus.Geometry.Base
   , subdivisions
   , midpointBetween
   , para
-  , circular
-  , circularAbout
-
-  , ixDownLeftRight
-  , ixLeftRightDown
-  , ixLeftRightUp
-  , ixUpLeftRight
-
-  , countup
-  , countdown
 
   ) where
 
@@ -110,73 +99,4 @@ para :: (a -> ([a], b) -> b) -> b -> [a] -> b
 para phi b = step
   where step []     = b
         step (x:xs) = phi x (xs, step xs)
-
---------------------------------------------------------------------------------
--- Generating points
-
--- | @ circle n r @ 
--- Trace @n@ equally spaced points around a circle of radius @r@
--- centered at the origin. The points proceed counter-clockwise 
--- from the the initial point on the x-axis.
-circular :: (Floating u , Real u) => Int -> u -> [Point2 u]
-circular = circularAbout zeroPt
-
-
--- | @ circularAbout pt n r ...@
--- Trace @n@ equally spaced points around a circle of radius @r@
--- centered at @pt@. The points proceed counter-clockwise 
--- from the the initial point on the x-axis.
---
-circularAbout :: (Floating u , Real u) 
-              => Point2 u -> Int -> u -> [Point2 u]
-circularAbout pt n r = take n $ iterate (rotateAbout ang pt) px
-  where
-    ang  = let n'::Double = fromIntegral n in toRadian $  2*pi/ n'
-    px   = pt .+^ V2 0 r
-
-
--- Urgh, should these definitions flip x and y args ? ...
--- maybe we should work on number of rows and cols 
--- and let the f function change the index if necessary...
--- Also the names don't highlight Left-Right or Up-Down.
-
-ixDownLeftRight :: (Num u, Ord u) 
-              => Int -> Int -> (Point2 u -> Point2 u) -> [Point2 u]
-ixDownLeftRight row_count col_count fn = 
-    [fn $ P2 x y | x <- countup   (row_count - 1)
-                 , y <- countdown (col_count - 1) ]
-
-
-ixLeftRightDown :: (Num u, Ord u)
-              => Int -> Int -> (Point2 u -> Point2 u) -> [Point2 u]
-ixLeftRightDown row_count col_count fn = 
-    [fn $ P2 x y | y <- countdown (col_count - 1)
-                 , x <- countup   (row_count - 1) ]
-
-
-
-ixLeftRightUp :: (Num u, Ord u)
-              => Int -> Int -> (Point2 u -> Point2 u) -> [Point2 u]
-ixLeftRightUp row_count col_count fn = 
-    [fn $ P2 x y | y <- countup (col_count - 1)
-                 , x <- countup (row_count - 1) ]
-
-ixUpLeftRight :: (Num u, Ord u)
-              => Int -> Int -> (Point2 u -> Point2 u) -> [Point2 u]
-ixUpLeftRight row_count col_count fn = 
-    [fn $ P2 x y | x <- countup (row_count - 1)
-                 , y <- countup (col_count - 1) ]
-                 
-
-
-countdown :: Num u => Int -> [u]
-countdown = unfoldr phi where
-   phi i | i < 0 = Nothing
-   phi i         = Just (fromIntegral i,i-1)
-
-
-countup :: Num u => Int -> [u]
-countup n = unfoldr phi 0 where
-   phi i | i > n = Nothing
-   phi i         = Just (fromIntegral i,i+1)
 

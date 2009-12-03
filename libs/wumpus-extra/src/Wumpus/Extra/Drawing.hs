@@ -19,6 +19,8 @@ module Wumpus.Extra.Drawing
   ( 
   -- * Blank (coloured) pictures
     backgroundRect
+  , strokedCrossedRect
+
 
   -- * Picture transformers
   , backgroundFill
@@ -33,9 +35,10 @@ module Wumpus.Extra.Drawing
   ) where
 
 
-
+import Wumpus.Geometry
 import Wumpus.Core
 
+import Data.Aviary
 
 import Data.AffineSpace
 
@@ -50,9 +53,18 @@ import Data.List ( unfoldr )
 -- | Coloured but otherwise blank picture, bottom left at the 
 -- origin.
 backgroundRect :: (Fractional u, Ord u, PSColour c) 
-           => c -> u -> u -> Picture u
+               => c -> u -> u -> Picture u
 backgroundRect c w h = 
-  frame $ fill (psColour c) $ vertexPath $ corners $ bbox zeroPt (P2 w h)
+  frame $ fillPolygon (psColour c) $ rectangle w h zeroPt
+
+
+strokedCrossedRect :: (Fractional u, Ord u, Stroke t) 
+                   => t -> t -> u -> u -> Picture u
+strokedCrossedRect attr_border attr_cross w h = border `over` cross 
+  where 
+    border = frame $ strokePolygon attr_border $ rectangle w h zeroPt
+    cross  = frameMulti [fn zeroPt (P2 w h), fn (P2 0 h) (P2 w 0)]
+    fn     = ostroke attr_cross `oo` appro path id (return . lineTo)
 
 --------------------------------------------------------------------------------
 -- Picture transformers
