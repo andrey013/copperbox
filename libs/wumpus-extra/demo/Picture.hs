@@ -26,13 +26,14 @@ demo01 = do
     pic1 = uniformScale 5 $ stackOnto [d1,d2,d3,d4,d5,d6]
                           $ colouredSquare cornsilk 100
     d1,d2,d3,d4,d5,d6 :: Picture Double                      
-    d1   = dotX         black   1.0 $ P2 10 10
-    d2   = dotPlus      black   1.0 $ P2 20 20
-    d3   = dotDiamond   black   1.0 $ P2 40 20 
-    d4   = dotDisk      black   1.0 $ P2 20 30
-    d5   = dotSquare    black   1.0 $ P2 30 20
-    d6   = dotCross     black   1.0 $ P2 40 30
+    d1   = dotX         std_attr $ P2 10 10
+    d2   = dotPlus      std_attr $ P2 20 20
+    d3   = dotDiamond   std_attr $ P2 40 20 
+    d4   = dotDisk      std_attr $ P2 20 30
+    d5   = dotSquare    std_attr $ P2 30 20
+    d6   = dotCross     std_attr $ P2 40 30
 
+    std_attr = (black, 1.0::Double)
 
 demo02 :: IO ()
 demo02 = do 
@@ -101,5 +102,5 @@ scanlikePic []     = error "scanlikePic - empty"
 scanlikePic (x:xs) = multi $ ls : start : rest 
   where
     ls     = frame $ ostroke () $ vertexPath (x:xs)
-    start  = dotDisk red 1.0 x
-    rest   = map (dotDisk black 1.0) xs
+    start  = dotDisk (red, 1.0::Double) x
+    rest   = map (dotDisk (black, 1.0::Double)) xs

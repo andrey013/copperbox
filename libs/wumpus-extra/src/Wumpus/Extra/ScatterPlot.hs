@@ -27,6 +27,7 @@ module Wumpus.Extra.ScatterPlot
   ) where
 
 import Wumpus.Extra.Dots
+import Wumpus.Extra.Marks
 import Wumpus.Core
 
 -- import Data.Aviary
@@ -37,9 +38,9 @@ class PlotPoint a where
 instance Real a => PlotPoint (Point2 a) where
   plotPoint = fmap realToFrac
 
-scatterPlot :: (PlotPoint a, Ellipse t) 
+scatterPlot :: (PlotPoint a, Mark t) 
              => Double -> Double -> t -> [a] -> Picture Double
-scatterPlot sx sy attr xs = multi $ map (dotDisk attr 1.0) points
+scatterPlot sx sy attr xs = multi $ map (dotDisk attr) points
   where
     points          = map (movePt . plotPoint) xs
     movePt (P2 x y) = P2 (x*sx) (y*sy)

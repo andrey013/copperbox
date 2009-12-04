@@ -8,6 +8,9 @@ import Wumpus.Extra.SVGColours
 import Wumpus.Geometry
 import Wumpus.Geometry.CoreAdditions
 
+import Wumpus.Extra.Marks
+
+
 main :: IO ()
 main = sequence_ 
   [ demo01 ]
@@ -26,19 +29,21 @@ demo01 = do
           uniformScale 2       $ 
             vsepA VLeft 10 p1 [p2,p3,p4,p5,p6,p7,p8,p9,p10,p11]
     
-    p1  = makeDotPic (dotHLine () 1.0) points
-    p2  = makeDotPic (dotVLine () 1.0) points
-    p3  = makeDotPic (dotCircle () 1.0) points
-    p4  = makeDotPic (dotAsterisk () 1.0) points   
-    p5  = makeDotPic (dotStar () 1.0) points
-    p6  = makeDotPic (dotOPlus () 1.0) points
-    p7  = makeDotPic (dotOCross () 1.0) points
-    p8  = makeDotPic (dotX () 1.0) points
-    p9  = makeDotPic (dotPlus () 1.0) points
-    p10 = makeDotPic (dotDiamond () 1.0) points
-    p11 = makeDotPic (dotSquare () 1.0) points
+    p1  = makeDotPic (dotHLine std_attr) points
+    p2  = makeDotPic (dotVLine std_attr) points
+    p3  = makeDotPic (dotCircle std_attr) points
+    p4  = makeDotPic (dotAsterisk std_attr) points   
+    p5  = makeDotPic (dotStar std_attr) points
+    p6  = makeDotPic (dotOPlus std_attr) points
+    p7  = makeDotPic (dotOCross std_attr) points
+    p8  = makeDotPic (dotX std_attr) points
+    p9  = makeDotPic (dotPlus std_attr) points
+    p10 = makeDotPic (dotDiamond std_attr) points
+    p11 = makeDotPic (dotSquare std_attr) points
 
 
+std_attr :: (RGB3 Double,Double)
+std_attr = (black,1.0)
 
 points :: [Point2 Double]
 points = [P2 0 0, P2 32 10, P2 64 0, P2 96 10]

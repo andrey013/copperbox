@@ -38,6 +38,7 @@ library
     Wumpus.Extra.Drawing,
     Wumpus.Extra.Grid,
     Wumpus.Extra.Lines,
+    Wumpus.Extra.Marks,
     Wumpus.Extra.SafeFonts,
     Wumpus.Extra.ScatterPlot,
     Wumpus.Extra.SVGColourChart,

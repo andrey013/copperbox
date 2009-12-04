@@ -31,8 +31,8 @@ module Wumpus.Geometry.LineSegment
   , hlineSegment
   , vlineSegment
   , alineSegment
-  , hlineSegmentBisect
-  , vlineSegmentBisect
+  , hlineSegmentMid
+  , vlineSegmentMid
 
   , expandLineSegment
   , lineSegmentToPath
@@ -140,13 +140,14 @@ alineSegment theta a = lineSegmentV (avec theta a)
 
 
 
--- | Horizontal line of length 2x@a@ centered at point @p@.
-hlineSegmentBisect :: Num u => u -> Point2 u -> LineSegment u
-hlineSegmentBisect hl (P2 x y) = LS2 (P2 (x-hl) y) (P2 (x+hl) y)
+-- | Horizontal line of length @a@ centered at point @p@.
+hlineSegmentMid :: Fractional u => u -> Point2 u -> LineSegment u
+hlineSegmentMid n (P2 x y) = hlineSegment n  (P2 (x-0.5*n) y)
 
--- | Vertical line of length 2x@a@ centered at point @p@.
-vlineSegmentBisect :: Num u => u -> Point2 u -> LineSegment u
-vlineSegmentBisect hl (P2 x y) = LS2 (P2 x (y-hl)) (P2 x (y+hl))
+
+-- | Vertical line of length @a@ centered at point @p@.
+vlineSegmentMid :: Fractional u => u -> Point2 u -> LineSegment u
+vlineSegmentMid n (P2 x y) = vlineSegment n (P2 x (y-0.5*n))
 
 
 
