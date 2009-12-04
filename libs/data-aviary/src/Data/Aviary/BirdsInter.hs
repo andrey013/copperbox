@@ -125,15 +125,9 @@ applicator = cardinal (bluebird bluebird idiot) idiot
 
 -- | Psi combinator - psi bird (?) - Haskell 'on'.  
 psi :: (b -> b -> c) -> (a -> b) -> a -> a -> c
-psi = c (b s (b (b c) (b (b (b b)) (c (b b (b b i)) (c (b b i) i))))) (c (b b i) i)
-  where
-    c = cardinal
-    b = bluebird
-    s = starling
-    i = idiot
+psi = cardinal (bluebird starling (bluebird cardinalstar dovekie)) applicator
 
-  -- TODO - This definition was built with a combinator calculator
-  -- For sanity it ought to be reduced 
+
 
 --------------------------------------------------------------------------------
 -- Other birds

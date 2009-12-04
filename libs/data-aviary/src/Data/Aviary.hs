@@ -30,11 +30,17 @@ module Data.Aviary
   , subst
   , bigphi
   , appro
+  , dup
 
   -- * Specs
   , oo
   , ooo
   , oooo
+
+  -- * Combiners
+  , combfi
+  , combfii
+  , combfiii
 
   ) where
 
@@ -103,8 +109,15 @@ bigphi f g h x = f (g x) (h x)
 -- > on = (appro comb f f)
 --
 appro :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
-appro f g h x y = f (g x) (h y) 
+appro comb f g x y = comb (f x) (g y) 
 
+
+-- | dup - duplicator aka the W combinator aka Warbler. 
+-- 
+-- > dup f x = f x x
+--
+dup :: (a -> a -> b) -> a -> b
+dup f x = f x x
 
 
 
@@ -138,3 +151,44 @@ ooo f g = ((f .) .) . g
 -- | Compose an arity 1 function with an arity 4 function.
 oooo :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
 oooo f g = (((f .) .) .) . g  
+
+--------------------------------------------------------------------------------
+-- Combiners
+
+
+-- | Combiners - similar to the cardinal\' combinator. 
+--
+-- Mnemonically - @comb@(ine) after applying @f@ to @x@ and a 
+-- single identity: @y@. 
+--
+-- > combfi comb f x y = comb (f x) y
+--
+-- Equivalently:
+--
+-- > combfi comb f = appro comb f id
+-- 
+-- But combfi is a useful introduction to the (somewhat manic, 
+-- but sometimes useful) higher arity versions.
+-- 
+combfi :: (c -> b -> d) -> (a -> c) -> a -> b -> d
+combfi comb f x y = comb (f x) y 
+ 
+-- | Extrapolation of 'combfi' with another identity.
+--
+-- Mnemonically - comb(ine) after applying @f@ to @x@ and two 
+-- identities: @y@ and @z@.
+--
+-- > combfii comb f x y z = comb (f x) y z
+--
+combfii :: (d -> b -> c -> e) -> (a -> d) -> a -> b -> c -> e
+combfii comb f x y z = comb (f x) y z  
+
+-- | Extrapolation of 'combfii' with a further identity.
+--
+-- Mnemonically - comb(ine) after applying @f@ to @s@ and three
+-- identities: @t@ and @u@ and @v@.
+--
+-- > combfii comb f s t u v = comb (f s) t u v
+--
+combfiii :: (e -> b -> c -> d -> f) -> (a -> e) -> a -> b -> c -> d -> f
+combfiii comb f s t u v = comb (f s) t u v  

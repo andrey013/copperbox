@@ -37,3 +37,45 @@ on' f g = \x y -> f (g x) (g y)
 
 psi' :: (b -> b -> c) -> (a -> b) -> a -> a -> c
 psi' = \x y z w -> x (y z) (y w)
+
+
+--- 
+appro_combfi :: (c -> b -> d) -> (a -> c) -> a -> b -> d
+appro_combfi comb f = appro comb f id
+
+
+psi_inter :: (b -> b -> c) -> (a -> b) -> a -> a -> c
+psi_inter c f x y = dovekie c f x f y
+
+fn = bluebird bluebird idiot
+
+f2 = cardinal bluebird idiot
+
+f3 :: (a -> b -> d -> e) -> a -> b -> (c -> d) -> c -> e
+f3 = bluebird bluebird'
+
+f4 :: (b -> c) -> (a-> b) -> a -> c
+f4 = cardinal blackbird applicator
+
+f5 :: (a -> c -> b -> d) -> a -> b -> c -> d
+f5 = bluebird cardinal
+
+f6 :: (b -> d -> e) -> (a -> b) -> a -> (c -> d) -> c -> e
+f6 = dovekie
+-- f6 = bluebird dickcissel bluebird
+
+f7 :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
+f7 = appro
+-- f7 = dovekie
+
+f8 = bluebird starling appro
+
+
+psi_inter' :: (b -> b -> c) -> (a -> b) -> a -> a -> c
+psi_inter' = cardinal (bluebird starling (bluebird cardinalstar dovekie)) applicator
+  where
+    b = bluebird
+    s = starling
+  
+
+ 
