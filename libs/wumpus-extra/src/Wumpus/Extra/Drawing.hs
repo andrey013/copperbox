@@ -29,8 +29,11 @@ module Wumpus.Extra.Drawing
   , clipPicture
   , clipToBoundary
 
-  , nonuniformBackgroundGrid
+  , rectBackgroundGrid
   , backgroundGrid
+
+  , rectGridPicture
+  , gridPicture
  
   ) where
 
@@ -107,26 +110,65 @@ clipToBoundary p = clip (vertexPath $ corners $ boundary p) p
 gencoords :: (Num a, Ord a) 
           => (a -> b -> c) -> a -> b -> a -> a -> [c]  
 gencoords fn a bconst step amax = unfoldr phi a where 
-    phi n | n < amax  = Just (fn n bconst,n+step)
+    phi n | n <= amax = Just (fn n bconst,n+step)
           | otherwise = Nothing
 
+mkGrid :: (Fractional u, Ord u, Stroke t) 
+       => t -> u -> u -> u -> u -> u -> u -> Picture u
+mkGrid attr x y w h xstep ystep = frameMulti vlines `over` frameMulti hlines
+  where
+      hpoints = gencoords P2 x y xstep (x+w)
+      vpoints = gencoords (flip P2) y x ystep (y+h)
+      hlines  = map (liftA2 mkline id (.+^ vvec h)) hpoints
+      vlines  = map (liftA2 mkline id (.+^ hvec w)) vpoints
 
-nonuniformBackgroundGrid :: (Fractional u, Ord u, Stroke t) 
-                         => t -> u -> u -> Picture u -> Picture u
-nonuniformBackgroundGrid attr xstep ystep = backgroundTrafo fn where
-  fn bb@(BBox (P2 x0 y0) (P2 x1 y1)) = 
-      frameMulti vlines `over` frameMulti hlines
+      mkline p1 p2 = ostroke attr $ vertexPath [p1,p2]
+ 
+
+-- | Draw a background grid of rectangles (width and height need
+-- not be the same).
+--
+-- The grid is drawn to the picture area so the top and right 
+-- edges of the grid may be trucated and not show complete
+-- squares.
+--
+rectBackgroundGrid :: (Fractional u, Ord u, Stroke t) 
+                   => t -> u -> u -> Picture u -> Picture u
+rectBackgroundGrid attr xstep ystep = backgroundTrafo fn where
+  fn bb@(BBox (P2 x0 y0) _) = mkGrid attr x0 y0 width height xstep ystep 
     where
       width   = boundaryWidth  bb
       height  = boundaryHeight bb  
-      hpoints = gencoords P2 x0 y0 xstep x1
-      vpoints = gencoords (flip P2) y0 x0 ystep y1 
-      hlines  = map (liftA2 mkline id (.+^ vvec height)) hpoints
-      vlines  = map (liftA2 mkline id (.+^ hvec width )) vpoints
+                                      
 
-      mkline p1 p2 = ostroke attr $ vertexPath [p1,p2]
-
-
+-- | Draw a background grid.
+--
+-- The grid is drawn to the picture area so the top and right 
+-- edges of the grid may be trucated and not show complete
+-- squares.
+--
 backgroundGrid :: (Fractional u, Ord u, Stroke t) 
                => t -> u -> Picture u -> Picture u
-backgroundGrid attr step = nonuniformBackgroundGrid attr step step
+backgroundGrid attr step = rectBackgroundGrid attr step step
+
+
+-- | Grid (no truncation). ...
+rectGridPicture :: (Fractional u, Ord u, Stroke t) 
+                 => t -> Int -> Int -> u -> u -> Picture u
+rectGridPicture attr row_count col_count xstep ystep = 
+    mkGrid attr 0 0 width height xstep ystep 
+  where
+    width  = xstep * fromIntegral col_count
+    height = ystep * fromIntegral row_count
+
+-- | Grid (no truncation). ...
+gridPicture :: (Fractional u, Ord u, Stroke t) 
+                 => t -> Int -> Int -> u -> Picture u
+gridPicture attr row_count col_count step = 
+    rectGridPicture attr row_count col_count step step 
+
+
+    
+
+
+

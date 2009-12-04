@@ -131,8 +131,8 @@ dotDiamond attr lw pt = frame $ cstroke attr $ vertexPath [p1,p2,p3,p4]
 
 
 
-dotDisk :: (Fractional u, Ord u, Ellipse t) => t -> Point2 u -> Picture u
-dotDisk attr pt = frame $ ellipse attr pt 2 2
+dotDisk :: (Fractional u, Ord u, Ellipse t) => t -> u -> Point2 u -> Picture u
+dotDisk attr lw pt = frame $ ellipse attr pt (lw*5) (lw*5)
 
 
 dotSquare :: (Fractional u, Ord u, Stroke t) 

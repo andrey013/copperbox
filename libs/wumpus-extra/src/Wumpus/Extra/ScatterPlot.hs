@@ -39,7 +39,7 @@ instance Real a => PlotPoint (Point2 a) where
 
 scatterPlot :: (PlotPoint a, Ellipse t) 
              => Double -> Double -> t -> [a] -> Picture Double
-scatterPlot sx sy attr xs = multi $ map (dotDisk attr) points
+scatterPlot sx sy attr xs = multi $ map (dotDisk attr 1.0) points
   where
     points          = map (movePt . plotPoint) xs
     movePt (P2 x y) = P2 (x*sx) (y*sy)

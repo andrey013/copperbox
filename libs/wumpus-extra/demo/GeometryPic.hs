@@ -28,7 +28,7 @@ demo01 = do
     writeSVG_latin1 "./out/geometry01.svg" p1
   where
     p1 :: Picture Double
-    p1 = frame $ cstroke () $ curvesToPath $ bezierCircle 4 (P2 10 10) 40
+    p1 = frame $ cstroke () $ curvesToPath $ bezierCircle 4 40 (P2 10 10)
 
 
 demo02 = do

@@ -23,15 +23,15 @@ demo01 = do
     writeSVG_latin1 "./out/picture01.svg" pic1 
   where
     pic1 :: Picture Double
-    pic1 = uniformScale 5 $ stackOnto [d1,d2,d3,d4,d5,d6 1.0,d7]
+    pic1 = uniformScale 5 $ stackOnto [d1,d2,d3,d4,d5,d6]
                           $ colouredSquare cornsilk 100
-    d1   = dotX         black   $ P2 10 10
-    d2   = dotPlus      black   $ P2 20 20
-    d3   = dotDiamond   black   $ P2 40 20 
-    d4   = dotDisk      black   $ P2 20 30
-    d5   = dotSquare    black   $ P2 30 20
-    d6   = squareDot    black   $ P2 30 30 
-    d7   = dotCross     black   $ P2 40 30
+    d1,d2,d3,d4,d5,d6 :: Picture Double                      
+    d1   = dotX         black   1.0 $ P2 10 10
+    d2   = dotPlus      black   1.0 $ P2 20 20
+    d3   = dotDiamond   black   1.0 $ P2 40 20 
+    d4   = dotDisk      black   1.0 $ P2 20 30
+    d5   = dotSquare    black   1.0 $ P2 30 20
+    d6   = dotCross     black   1.0 $ P2 40 30
 
 
 demo02 :: IO ()
@@ -67,7 +67,7 @@ demo03 = do
     pts5 = mix [P2 10 40, P2 24 40, P2 34 42, P2 50 38]
                [P2 8  10, P2 26 8,  P2 36 12, P2 50 10]
 
-    bkg = (`over` background cornflowerBlue 70 70)
+    bkg = (`over` backgroundRect cornflowerBlue 70 70)
 
     p_lines         = bkg $ linesUnconnected () pts
     p_strip         = bkg $ lineStrip () pts
@@ -101,5 +101,5 @@ scanlikePic []     = error "scanlikePic - empty"
 scanlikePic (x:xs) = multi $ ls : start : rest 
   where
     ls     = frame $ ostroke () $ vertexPath (x:xs)
-    start  = dotDisk red x
-    rest   = map (dotDisk black) xs
+    start  = dotDisk red 1.0 x
+    rest   = map (dotDisk black 1.0) xs
