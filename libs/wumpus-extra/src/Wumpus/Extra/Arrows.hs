@@ -18,6 +18,8 @@
 module Wumpus.Extra.Arrows where
 
 import Wumpus.Extra.Arrowheads
+import Wumpus.Extra.Marks
+
 import Wumpus.Geometry.CoreAdditions
 
 import Wumpus.Core
@@ -29,7 +31,6 @@ import Data.VectorSpace
 
 
 
--- Still don't know what to do about line width...
 
 -- Notes in TikZ - arrowheads must be able to 'shorten lines' 
 -- (vis open triangle arrow heads - the line must be retracted).
@@ -38,48 +39,49 @@ import Data.VectorSpace
 -- vis TikZ.
 
 
-arrowTri' :: (Floating u, Real u) => Point2 u -> Point2 u -> Picture u
-arrowTri' p1 p2 = frameMulti [thead, arrln]
+
+arrowTri' :: (Floating u, Real u, Mark t) 
+          => t -> Point2 u -> Point2 u -> Picture u
+arrowTri' attr p1 p2 = frameMulti [thead, arrln]
   where
     lwidth = 1.0
     ang    = langle p1 p2
-    thead  = filledStraightTriangle () lwidth ang p2
+    thead  = filledStraightTriangle attr ang p2
     arrln  = ostroke () $ path p1 [lineTo $ p2 .-^ avec ang lwidth]
   
 
-arrowHook' :: (Floating u, Real u, Ord u, InnerSpace (Vec2 u)) 
-           => Point2 u -> Point2 u -> Picture u
-arrowHook' = strokedArrow () doubleHook
+arrowHook' :: (Floating u, Real u, Ord u, InnerSpace (Vec2 u), Mark t) 
+           => t -> Point2 u -> Point2 u -> Picture u
+arrowHook' = strokedArrow doubleHook
 
-arrowPerp' :: (Floating u, Real u) 
-           => Point2 u -> Point2 u -> Picture u
-arrowPerp' = strokedArrow () straightPerp
-
-
-arrowBracket' :: (Floating u, Real u) 
-              => Point2 u -> Point2 u -> Picture u
-arrowBracket' = strokedArrow () bracketTip
+arrowPerp' :: (Floating u, Real u, Mark t) 
+           => t -> Point2 u -> Point2 u -> Picture u
+arrowPerp' = strokedArrow straightPerp
 
 
-arrowOutBracket' :: (Floating u, Real u) 
-              => Point2 u -> Point2 u -> Picture u
-arrowOutBracket' = strokedArrow () outwardBracketTip
+arrowBracket' :: (Floating u, Real u, Mark t) 
+              => t -> Point2 u -> Point2 u -> Picture u
+arrowBracket' = strokedArrow bracketTip
 
-arrowStrokedCurved' :: (Floating u, Real u, InnerSpace (Vec2 u)) 
-                    => Point2 u -> Point2 u -> Picture u
-arrowStrokedCurved' = strokedArrow () strokedCurvedTip
+
+arrowOutBracket' :: (Floating u, Real u, Mark t) 
+              => t -> Point2 u -> Point2 u -> Picture u
+arrowOutBracket' = strokedArrow outwardBracketTip
+
+arrowStrokedCurved' :: (Floating u, Real u, InnerSpace (Vec2 u), Mark t) 
+                    => t -> Point2 u -> Point2 u -> Picture u
+arrowStrokedCurved' = strokedArrow strokedCurvedTip
 
 -- dashes to go at some point...
-strokedArrow :: (Floating u, Real u, Stroke t)
-             => t 
-             -> (t -> u -> Radian -> Point2 u -> Primitive u) 
+strokedArrow :: (Floating u, Real u, Mark t)
+             => (t -> Radian -> Point2 u -> Primitive u) 
+             -> t
              -> Point2 u -> Point2 u
              -> Picture u
-strokedArrow attr fn p1 p2 = frameMulti [connector, arrhead]
+strokedArrow fn attr p1 p2 = frameMulti [connector, arrhead]
   where
-    lwidth    = 1.0
     ang       = langle p1 p2
     connector = ostroke (DashPattern $ evenDashes 1) $ path p1 [lineTo p2]
-    arrhead   = fn attr lwidth ang p2 
+    arrhead   = fn attr ang p2 
      
 --------------------------------------------------------------------------------
