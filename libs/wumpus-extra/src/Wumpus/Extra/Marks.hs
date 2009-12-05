@@ -45,6 +45,8 @@ import Wumpus.Geometry
 import Wumpus.Core
 import Wumpus.Core.Colour ( black )
 
+import Data.Aviary
+
 import Control.Applicative
 
 data MarkAttr = MarkAttr { 
@@ -158,16 +160,7 @@ mstrokePolygon =  strokePolygon `combfi` prodStroke
 
 -- | Always filled!
 -- 
--- ellispe in wumpus.Core has bad argument order
 mellipse :: (Fractional u, Mark t) 
          => t -> u -> u -> Point2 u -> Primitive u
-mellipse t wr hr pt = ellipse (fillColour t) pt wr hr 
+mellipse = ellipse `combfi` fillColour 
 
--- For Data.Aviary, better name?
-combfi :: (c -> b -> d) -> (a -> c) -> a -> b -> d
-combfi comb f x y = comb (f x) y 
- 
-
--- For Data.Aviary
-dup :: (a -> a -> b) -> a -> b
-dup f x = f x x

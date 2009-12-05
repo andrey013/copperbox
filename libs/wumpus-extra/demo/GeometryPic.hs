@@ -36,6 +36,6 @@ demo02 = do
     writeSVG_latin1 "./out/geometry02.svg" p1
   where
     p1 :: Picture Double
-    p1 = (frame $ ellipse () zeroPt 80 40) ->- (frame $ ellipse () zeroPt 10 10)
+    p1 = (frame $ ellipse () 80 40 zeroPt) ->- (frame $ ellipse () 10 10 zeroPt)
 
 
