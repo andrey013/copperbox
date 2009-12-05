@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.13.2
+version:          0.13.90
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -59,10 +59,10 @@ description:
   .
   Changelog:
   .
-  0.13.0 to 0.13.1:
+  0.13.1 to 0.13.99:
   .
-  * Wumpus.Core.SVG changed path_s to path_c - \'S\' was the 
-    wrongSVG command to match PostScript\'s @curveto@.
+  * Argument order changed for @ellipse@ and @zellispe@ in
+    Wumpus.Core.Picture.
   .
 build-type:         Simple
 stability:          unstable
@@ -80,7 +80,7 @@ library
   build-depends:      base < 5, containers, old-time,
                       wl-pprint, vector-space, 
                       monadLib, xml, dlist, algebra, 
-                      data-aviary > 0.1.0
+                      data-aviary > 0.2.0
                         
   exposed-modules:
     Wumpus.Core,

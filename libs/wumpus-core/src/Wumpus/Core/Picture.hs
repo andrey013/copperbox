@@ -378,8 +378,8 @@ multilabel attr n va pt (x:xs) =
 --------------------------------------------------------------------------------
 
 mkEllipse :: Num u 
-          => PSRgb -> DrawEllipse -> Point2 u -> u -> u -> Primitive u
-mkEllipse c dp pt hw hh = PEllipse (c,dp) pt hw hh
+          => PSRgb -> DrawEllipse -> u -> u -> Point2 u -> Primitive u
+mkEllipse c dp hw hh pt = PEllipse (c,dp) pt hw hh
 
 
 ellipseDefault :: EllipseProps
@@ -404,7 +404,7 @@ ellipseDefault = (psBlack, EFill)
 -- will be wider too. 
 --
 class Ellipse t where
-  ellipse :: Fractional u => t -> Point2 u -> u -> u -> Primitive u
+  ellipse :: Fractional u => t -> u -> u -> Point2 u -> Primitive u
 
 instance Ellipse ()             where ellipse () = zellipse
 instance Ellipse DrawEllipse    where ellipse dp = mkEllipse psBlack dp
@@ -455,7 +455,7 @@ instance Ellipse (Gray Double,[StrokeAttr]) where
 
 
 -- | Create a black, filled ellipse. 
-zellipse :: Num u => Point2 u -> u -> u -> Primitive u
+zellipse :: Num u => u -> u -> Point2 u -> Primitive u
 zellipse = uncurry mkEllipse ellipseDefault
 
 

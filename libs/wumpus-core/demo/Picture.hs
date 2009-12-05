@@ -134,8 +134,8 @@ demo11 = do
   where
     pic :: Picture Double
     pic = p1 -//- p2
-    p1 = scale 6 12 $ frame $ ellipse (plum, LineWidth 2) zeroPt 4 6
-    p2 = scale 6 12 $ frame $ ellipse (peru, LineWidth 2) zeroPt 6 6
+    p1 = scale 6 12 $ frame $ ellipse (plum, LineWidth 2) 4 6 zeroPt
+    p2 = scale 6 12 $ frame $ ellipse (peru, LineWidth 2) 6 6 zeroPt
 
 
 -- Note the movement of the plum square won't be regarded by 
