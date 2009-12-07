@@ -43,7 +43,7 @@ readDLL name = do
 dllFile :: Parser Image
 dllFile = do
     dosH    <- imageDOSHeader
-    toNewExeHeader (dos_new_exe_header_addr dosH)
+    toNewExeHeader (idh_new_exe_header_addr dosH)
     sig    <- signature
     coffH  <- imageCOFFHeader
     optH   <- imageOptionalHeader
@@ -159,3 +159,18 @@ imageDataDirectory :: Parser ImageDataDirectory
 imageDataDirectory = ImageDataDirectory <$>
         getWord32le
     <*> getWord32le
+
+
+sectionHeader :: Parser SectionHeader
+sectionHeader = SectionHeader <$>
+        count 8 getChar8bit
+    <*> getWord32le
+    <*> getWord32le
+    <*> getWord32le
+    <*> getWord32le
+    <*> getWord32le
+    <*> getWord32le
+    <*> getWord16le
+    <*> getWord16le
+    <*> getWord32le
+    

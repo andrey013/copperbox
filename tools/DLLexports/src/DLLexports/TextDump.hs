@@ -37,33 +37,33 @@ ppImage a =
 
 ppImageDOSHeader :: ImageDOSHeader -> Doc
 ppImageDOSHeader a = 
-        text "IMAGE_DOS_HEADER"          
+        tableHeader "IMAGE_DOS_HEADER"
     $+$ columnHeadings 24 6
     $+$ columnSep
     $+$ vcat (sequence fields a) 
   where
     ppf    = ppField 4 24   
     fields = 
-       [ ppf 2  "magic"                 (ppHex 4 . dos_magic_number)
-       , ppf 2  "bytes last page"       (ppHex 4 . dos_magic_number)
-       , ppf 2  "pages in file"         (ppHex 4 . dos_pages_in_file)
-       , ppf 2  "relocations"           (ppHex 4 . dos_relocations)
-       , ppf 2  "header para size"      (ppHex 4 . dos_size_header_paras)
-       , ppf 2  "min extra paragraphs"  (ppHex 4 . dos_min_extra_paras)
-       , ppf 2  "max extra paragraphs"  (ppHex 4 . dos_max_extra_paras)
-       , ppf 2  "initial SS value"      (ppHex 4 . dos_initial_relative_ss)
-       , ppf 2  "initial SP value"      (ppHex 4 . dos_initial_sp)
-       , ppf 2  "checksum"              (ppHex 4 . dos_header_checksum)
+       [ ppf 2  "magic"                 (ppHex 4 . idh_magic_number)
+       , ppf 2  "bytes last page"       (ppHex 4 . idh_magic_number)
+       , ppf 2  "pages in file"         (ppHex 4 . idh_pages_in_file)
+       , ppf 2  "relocations"           (ppHex 4 . idh_relocations)
+       , ppf 2  "header para size"      (ppHex 4 . idh_size_header_paras)
+       , ppf 2  "min extra paragraphs"  (ppHex 4 . idh_min_extra_paras)
+       , ppf 2  "max extra paragraphs"  (ppHex 4 . idh_max_extra_paras)
+       , ppf 2  "initial SS value"      (ppHex 4 . idh_initial_relative_ss)
+       , ppf 2  "initial SP value"      (ppHex 4 . idh_initial_sp)
+       , ppf 2  "checksum"              (ppHex 4 . idh_header_checksum)
 
-       , ppf 2  "initial IP value"      (ppHex 4 . dos_initial_ip)
-       , ppf 2  "initial CS value"      (ppHex 4 . dos_initial_relative_cs)
-       , ppf 2  "relocation table addr" (ppHex 4 . dos_reltable_file_addr)
-       , ppf 2  "overlay number"        (ppHex 4 . dos_overlay_number)
-       , ppf 8 "reserved 1"             (tup4    . dos_reserved_words)
-       , ppf 2  "oem identifier"        (ppHex 4 . dos_oem_identifier)
-       , ppf 2  "oem info"              (ppHex 4 . dos_oem_info)
-       , ppf 20 "reserved 2"            (text . show . dos_reserved_words_two)
-       , ppf 4  "new exe header addr"   (ppHex 8 . dos_new_exe_header_addr)
+       , ppf 2  "initial IP value"      (ppHex 4 . idh_initial_ip)
+       , ppf 2  "initial CS value"      (ppHex 4 . idh_initial_relative_cs)
+       , ppf 2  "relocation table addr" (ppHex 4 . idh_reltable_file_addr)
+       , ppf 2  "overlay number"        (ppHex 4 . idh_overlay_number)
+       , ppf 8 "reserved 1"             (tup4    . idh_reserved_words)
+       , ppf 2  "oem identifier"        (ppHex 4 . idh_oem_identifier)
+       , ppf 2  "oem info"              (ppHex 4 . idh_oem_info)
+       , ppf 20 "reserved 2"            (text . show . idh_reserved_words_two)
+       , ppf 4  "new exe header addr"   (ppHex 8 . idh_new_exe_header_addr)
        ]
 
     tup4 (s,t,u,v) = text $ show [s,t,u,v]
@@ -74,86 +74,121 @@ ppSignature (s,t,u,v) =
 
 ppImageCOFFHeader :: ImageCOFFHeader -> Doc
 ppImageCOFFHeader a = 
-        columnHeadings 24 6
+        tableHeader "IMAGE COFF HEADER"
+    $+$ columnHeadings 24 6
     $+$ columnSep
     $+$ vcat (sequence fields a) 
   where
     ppf    = ppField 4 24   
     fields = 
-       [ ppf 2  "machine"               (ppHex 4 . imgf_machine)
-       , ppf 2  "num sections"          (ppHex 4 . imgf_num_sections)
-       , ppf 4  "timedatestamp"         (ppHex 8 . imgf_timedate_stamp)
-       , ppf 4  "ptr to sym table"      (ppHex 8 . imgf_sym_table_ptr)
-       , ppf 4  "num symbols"           (ppHex 8 . imgf_num_symbols)
-       , ppf 2  "size optional header"  (ppHex 4 . imgf_opt_header_size)
-       , ppf 2  "characteristics"       (ppHex 4 . imgf_characteristics)
+       [ ppf 2  "machine"               (ppHex 4 . ich_machine)
+       , ppf 2  "num sections"          (ppHex 4 . ich_num_sections)
+       , ppf 4  "timedatestamp"         (ppHex 8 . ich_timedate_stamp)
+       , ppf 4  "ptr to sym table"      (ppHex 8 . ich_sym_table_ptr)
+       , ppf 4  "num symbols"           (ppHex 8 . ich_num_symbols)
+       , ppf 2  "size optional header"  (ppHex 4 . ich_opt_header_size)
+       , ppf 2  "characteristics"       (ppHex 4 . ich_characteristics)
        ]
 
 
 ppImageOptionalHeader :: ImageOptionalHeader -> Doc
 ppImageOptionalHeader a = 
-        ppImageOptionalStandard   (iopt_header_std_fields a)
-    $+$ ppImageOptionalNTSpecific (iopt_nt_specific_fields a)
-    $+$ (vcat $ map ppImageDataDirectory $ iopt_data_directory a)
+        ppImageOptionalStandard   (ioh_header_std_fields a)
+    $+$ ppImageOptionalNTSpecific (ioh_nt_specific_fields a)
+    $+$ (vcat $ map ppImageDataDirectory $ ioh_data_directory a)
 
 
 
 ppImageOptionalStandard :: ImageOptionalStandard -> Doc
-ppImageOptionalStandard a = vcat (sequence fields a)
+ppImageOptionalStandard a =
+        tableHeader "IMAGE OPTIONAL HEADER STANDARD"
+    $+$ columnHeadings 24 6
+    $+$ columnSep
+    $+$ vcat (sequence fields a) 
   where
     ppf    = ppField 4 24
     fields = 
-       [ ppf 2  "magic"                 (ppHex 4 . iopt_magic)
-       , ppf 1  "major linker ver."     (ppHex 2 . iopt_major_linker_version)
-       , ppf 1  "minor linker ver."     (ppHex 2 . iopt_minor_linker_version)
-       , ppf 4  "size of code"          (ppHex 8 . iopt_size_of_code)
-       , ppf 4  "size of init. data"    (ppHex 8 . iopt_size_of_inited_data)
-       , ppf 4  "size of uninit. data"  (ppHex 8 . iopt_size_of_uninited_data)
-       , ppf 4  "entry ptr addr"        (ppHex 8 . iopt_entry_point_addr)
-       , ppf 4  "base of code"          (ppHex 8 . iopt_base_of_code)
-       , ppf 4  "base of data"          (ppHex 8 . iopt_base_of_data)
+       [ ppf 2  "magic"                 (ppHex 4 . ios_magic)
+       , ppf 1  "major linker ver."     (ppHex 2 . ios_major_linker_version)
+       , ppf 1  "minor linker ver."     (ppHex 2 . ios_minor_linker_version)
+       , ppf 4  "size of code"          (ppHex 8 . ios_size_of_code)
+       , ppf 4  "size of init. data"    (ppHex 8 . ios_size_of_inited_data)
+       , ppf 4  "size of uninit. data"  (ppHex 8 . ios_size_of_uninited_data)
+       , ppf 4  "entry ptr addr"        (ppHex 8 . ios_entry_point_addr)
+       , ppf 4  "base of code"          (ppHex 8 . ios_base_of_code)
+       , ppf 4  "base of data"          (ppHex 8 . ios_base_of_data)
        ]
 
 
 ppImageOptionalNTSpecific :: ImageOptionalNTSpecific -> Doc
-ppImageOptionalNTSpecific a = vcat (sequence fields a)
+ppImageOptionalNTSpecific a =
+        tableHeader "IMAGE OPTIONAL HEADER NT SPECIFIC"
+    $+$ columnHeadings 24 6
+    $+$ columnSep
+    $+$ vcat (sequence fields a) 
   where
     ppf    = ppField 4 24
     fields = 
-       [ ppf 4  "image base"            (ppHex 8 . iopy_image_base)
-       , ppf 4  "section alignment"     (ppHex 8 . iopt_section_alignment)
-       , ppf 4  "file alignment"        (ppHex 8 . iopt_file_alignment)
-       , ppf 2  "major os version"      (ppHex 4 . iopt_major_os_version)
-       , ppf 2  "minor os version"      (ppHex 4 . iopt_minor_os_version)
-       , ppf 2  "major image version"   (ppHex 4 . iopt_major_image_version)
-       , ppf 2  "minor image version"   (ppHex 4 . iopt_minor_image_version)
-       , ppf 2  "major subsys version"  (ppHex 4 . iopt_major_subsys_version)
-       , ppf 2  "minor subsys version"  (ppHex 4 . iopt_minor_subsys_version)
-       , ppf 4  "win32 version"         (ppHex 8 . iopt_win32_version)
-       , ppf 4  "size of image"         (ppHex 8 . iopt_size_of_image)
-       , ppf 4  "size of headers"       (ppHex 8 . iopt_size_of_headers)
-       , ppf 4  "checksum"              (ppHex 8 . iopt_checksum)
-       , ppf 2  "subsystem"             (ppHex 4 . iopt_subsystem)
-       , ppf 2  "dll characteristics"   (ppHex 4 . iopt_dll_characteristics)
-       , ppf 4  "size of stack reserve" (ppHex 8 . iopt_size_stack_reserve)
-       , ppf 4  "size of stack commit"  (ppHex 8 . iopt_size_stack_commit)
-       , ppf 4  "size of heap reserve"  (ppHex 8 . iopt_size_heap_reserve)
-       , ppf 4  "size of heap commit"   (ppHex 8 . iopt_size_heap_commit)
-       , ppf 4  "loader flags"          (ppHex 8 . iopt_loader_flags)
-       , ppf 4  "rva num and sizes"     (ppHex 8 . iopt_rva_num_and_sizes)
+       [ ppf 4  "image base"            (ppHex 8 . iont_image_base)
+       , ppf 4  "section alignment"     (ppHex 8 . iont_section_alignment)
+       , ppf 4  "file alignment"        (ppHex 8 . iont_file_alignment)
+       , ppf 2  "major os version"      (ppHex 4 . iont_major_os_version)
+       , ppf 2  "minor os version"      (ppHex 4 . iont_minor_os_version)
+       , ppf 2  "major image version"   (ppHex 4 . iont_major_image_version)
+       , ppf 2  "minor image version"   (ppHex 4 . iont_minor_image_version)
+       , ppf 2  "major subsys version"  (ppHex 4 . iont_major_subsys_version)
+       , ppf 2  "minor subsys version"  (ppHex 4 . iont_minor_subsys_version)
+       , ppf 4  "win32 version"         (ppHex 8 . iont_win32_version)
+       , ppf 4  "size of image"         (ppHex 8 . iont_size_of_image)
+       , ppf 4  "size of headers"       (ppHex 8 . iont_size_of_headers)
+       , ppf 4  "checksum"              (ppHex 8 . iont_checksum)
+       , ppf 2  "subsystem"             (ppHex 4 . iont_subsystem)
+       , ppf 2  "dll characteristics"   (ppHex 4 . iont_dll_characteristics)
+       , ppf 4  "size of stack reserve" (ppHex 8 . iont_size_stack_reserve)
+       , ppf 4  "size of stack commit"  (ppHex 8 . iont_size_stack_commit)
+       , ppf 4  "size of heap reserve"  (ppHex 8 . iont_size_heap_reserve)
+       , ppf 4  "size of heap commit"   (ppHex 8 . iont_size_heap_commit)
+       , ppf 4  "loader flags"          (ppHex 8 . iont_loader_flags)
+       , ppf 4  "rva num and sizes"     (ppHex 8 . iont_rva_num_and_sizes)
        ]
 
 ppImageDataDirectory :: ImageDataDirectory -> Doc
-ppImageDataDirectory a = vcat (sequence fields a)
+ppImageDataDirectory a =
+        tableHeader "IMAGE DATA DIRECTORIES"
+    $+$ columnHeadings 24 6
+    $+$ columnSep
+    $+$ vcat (sequence fields a) 
   where
     ppf    = ppField 4 24
     fields = 
-       [ ppf 4  "virtual address"       (ppHex 8 . dd_virtual_addr)
-       , ppf 4  "size"                  (ppHex 8 . dd_size)
+       [ ppf 4  "virtual address"       (ppHex 8 . idd_virtual_addr)
+       , ppf 4  "size"                  (ppHex 8 . idd_size)
        ]
+
+
+ppSectionHeader :: SectionHeader -> Doc
+ppSectionHeader a = vcat (sequence fields a)
+  where
+    ppf    = ppField 4 24
+    fields = 
+       [ ppf 8  "name"                  (text    . sh_name)
+       , ppf 4  "virtual size"          (ppHex 8 . sh_virtual_size)
+       , ppf 4  "virtual addr"          (ppHex 8 . sh_virtual_addr)
+       , ppf 4  "size of raw data"      (ppHex 8 . sh_size_raw_data)
+       , ppf 4  "ptr to raw data"       (ppHex 8 . sh_ptr_raw_data)
+       , ppf 4  "ptr to relocations"    (ppHex 8 . sh_ptr_relocations)
+       , ppf 4  "ptr to line numbers"   (ppHex 8 . sh_ptr_linenums)
+       , ppf 2  "num of relocations"    (ppHex 4 . sh_num_relocations)
+       , ppf 2  "num of line numbers"   (ppHex 4 . sh_num_linenums)
+       , ppf 4  "characteristics"       (ppHex 8 . sh_characteristics)
+       ]
+
 
 --------------------------------------------------------------------------------
 -- Helpers
+
+tableHeader :: String -> Doc
+tableHeader s = columnSep $+$ text s $+$ columnSep
 
 columnHeadings :: Int -> Int -> Doc
 columnHeadings fsz vsz = 
