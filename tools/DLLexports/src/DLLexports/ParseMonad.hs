@@ -20,32 +20,39 @@ module DLLexports.ParseMonad where
 
 import Control.Applicative
 import Control.Monad
+import Data.Array.IO
 import Data.Bits
-import qualified Data.ByteString.Lazy as B
 import Data.Char
 import Data.Int
 import Data.Word
-
+import System.IO
 
 type ParseErr = String
-  
-data ParseState = PSt { remaining :: B.ByteString,
-                        pos       :: Int }
 
-newtype Parser a = Parser { getParser :: ParseState -> (ParseState,Either ParseErr a) }
+type ImageData = IOUArray Int Word8   -- Is Int big enough for index?
+  
+data ParseState = PSt { imagearr  :: ImageData 
+                      , pos       :: Int 
+                      }
+
+newtype Parser a = Parser { getParser :: ParseState -> IO (ParseState,Either ParseErr a) }
           
 instance Functor Parser where
-    fmap f (Parser x) = Parser $ \st -> let (st',a) = x st in (st',fmap f a)
+    fmap f (Parser x) = Parser $ \st ->  x st `bindIO` \(st',a) -> return (st',fmap f a)
+
+bindIO :: IO a -> (a -> IO b) -> IO b
+bindIO = (>>=)
+
+returnIO :: a -> IO a
+returnIO = return
 
 
 instance Monad Parser where
-  return a = Parser $ \st -> (st,Right a)
-  (Parser x) >>= f = Parser $ \st -> let (st',ans) = x st
-                                     in case ans of 
-                                        Left err -> (st',Left err)
+  return a = Parser $ \st -> returnIO (st,Right a)
+  (Parser x) >>= f = Parser $ \st -> x st `bindIO` \(st',ans) ->
+                                     case ans of 
+                                        Left err -> returnIO (st',Left err)
                                         Right a  -> getParser (f a) st'
-
-
 
 
 
@@ -55,34 +62,39 @@ instance Applicative Parser where
 
 
 getSt :: Parser ParseState
-getSt = Parser $ \st -> (st, Right st)
+getSt = Parser $ \st -> return (st, Right st)
 
 getSt_ :: (ParseState -> a) -> Parser a
-getSt_ f = Parser $ \st -> (st, Right $ f st)
+getSt_ f = Parser $ \st -> return (st, Right $ f st)
 
 putSt :: ParseState -> Parser ()
-putSt st = Parser $ \_ -> (st, Right ())
+putSt st = Parser $ \_ -> return (st, Right ())
 
 modifySt :: (ParseState -> ParseState) -> Parser ()
-modifySt f = Parser $ \st -> (f st, Right ())
+modifySt f = Parser $ \st -> return (f st, Right ())
 
 
 throwErr :: String -> Parser a
-throwErr msg = Parser $ \st -> (st,Left msg)
+throwErr msg = Parser $ \st -> return (st,Left msg)
+
+liftIOAction :: IO a -> Parser a
+liftIOAction ma = Parser $ \st -> ma >>= \a -> return (st,Right a) 
 
 
-
-
-runParser :: Parser a -> B.ByteString  -> Either ParseErr a   
-runParser parser bs0 = case runP parser bs0 of
-    (_st, Left err) -> Left $ errorstring err ""
-    (_, Right a)    -> Right a  
+runParser :: Parser a -> FilePath -> IO (Either ParseErr a)
+runParser p filename = withBinaryFile filename ReadMode $ \ handle -> do 
+    sz'     <- hFileSize handle
+    let sz = fromIntegral sz'
+    arr     <- newArray_ (0,sz-1)
+    _rsz    <- hGetArray handle arr  (fromIntegral sz)
+    (_,ans) <- runP p arr
+    return ans   
   where 
-    runP :: Parser a -> B.ByteString  -> (ParseState, Either ParseErr a) 
+    runP :: Parser a -> ImageData -> IO (ParseState, Either ParseErr a) 
     -- should we use runState and check input is exhausted? 
-    runP (Parser x) bs = x (initState bs)
+    runP (Parser x) arr = x (initState arr)
     
-    initState bs = PSt { remaining = bs, pos = 0 }
+    initState arr = PSt { imagearr = arr, pos = 0 }
     
     errorstring err ss = err ++ "\n\nParse result upto error...\n" ++ ss 
     
@@ -92,8 +104,20 @@ runParser parser bs0 = case runP parser bs0 of
 -- 
 
 
+   
+getWord8 :: Parser Word8
+getWord8 = do
+    PSt ar ix  <- getSt
+    a <- liftIOAction $ readArray ar ix
+    putSt (PSt ar (ix+1))
+    return a
+
+
 --------------------------------------------------------------------------------
 -- helpers
+
+
+
 
 
 reportFail :: String -> Parser a
@@ -106,19 +130,14 @@ reportFail s = do
 
 eof :: Parser Bool
 eof = do
-     bs <- getSt_ remaining
-     return $ B.null bs 
+     PSt ar ix  <- getSt
+     (_,up)  <- liftIOAction $ getBounds ar
+     return $ (ix>=up) 
 
 
-   
-getWord8 :: Parser Word8
-getWord8 = do
-    bs <- getSt_ remaining
-    case B.uncons bs of
-        Nothing    -> throwErr "Unexpected eof" 
-        Just (a,b) -> do { i <- getSt_ pos 
-                         ; modifySt (\s -> s { remaining=b, pos=i+1 } )
-                         ; return a } 
+
+getBytes :: Integral a => a -> Parser [Word8]
+getBytes i = count (fromIntegral i) getWord8
 
 getChar8bit :: Parser Char
 getChar8bit = (chr . fromIntegral) <$> getWord8 
@@ -192,55 +211,6 @@ w32le a b c d = let a' = fromIntegral a
 iShiftL :: (Bits b, Integral a, Integral b) => a -> Int -> b
 a `iShiftL` x = (fromIntegral a) `shiftL` x      
 
-
-
-assertWord8 :: Word8 -> Parser Word8
-assertWord8 i = getWord8 >>= fn
-  where fn j | j == i    = return i
-             | otherwise = throwErr $ "assertWord8 failed"
-             
-assertLength :: Integral a => a -> Parser Word32
-assertLength i  = getWord32be >>= fn
-  where 
-    fn n | n == fromIntegral i  = return n
-         | otherwise            = throwErr $
-              "assertLength " ++ show i ++ " /= " ++ show n
-
-assertString :: String -> Parser String
-assertString s  = getChars (length s) >>= fn
-  where 
-    fn ss | ss == s   = return s
-          | otherwise = throwErr $ 
-               "assertString " ++ (showString s []) ++ " /= " ++ (showString ss [])
-                                     
-
-getChars :: Integral a => a -> Parser [Char]  
-getChars i = map (chr . fromIntegral) <$> count (fromIntegral i) getWord8 
-
-getBytes :: Integral a => a -> Parser [Word8]
-getBytes i = count (fromIntegral i) getWord8
-
-getVarlenText :: Parser (Word32,String)  
-getVarlenText = getVarlen     >>= \i  -> 
-                getChars i    >>= \cs -> return (i,cs)
-
-getVarlenBytes :: Parser (Word32,[Word8]) 
-getVarlenBytes = getVarlen    >>= \i  ->  
-                 getBytes i   >>= \bs -> return (i,bs)
-                 
-getVarlen :: Parser Word32
-getVarlen = recVarlen 0            
-  where
-    recVarlen acc = do
-        i <- getWord8
-        if (varBitHigh i == False)
-          then (return $ merge acc i)
-          else (recVarlen $ merge acc i)
-    
-    varBitHigh i = i `testBit` 7
-        
-    merge acc i = (acc `shiftL` 7) + ((fromIntegral i) .&. 0x7F)
-    
 
 
 

@@ -30,22 +30,23 @@ imageText = renderStyle (Style PageMode 80 1.5) . ppImage
 
 ppImage :: Image -> Doc
 ppImage a = 
-        ppImageDOSHeader   (image_dos_header a)
-    $+$ ppSignature        (image_signature a)
-    $+$ ppImageCOFFHeader  (image_coff_header a)
+        ppImageDOSHeader      (image_dos_header a)
+    $+$ columnSep
+    $+$ ppSignature           (image_signature a)
+    $+$ ppImageCOFFHeader     (image_coff_header a)
     $+$ ppImageOptionalHeader (image_opt_header a)
+    $+$ (vcat $ map ppSectionHeader $ image_section_headers a)
+    $+$ ppExportData          (image_export_data a)
+
 
 ppImageDOSHeader :: ImageDOSHeader -> Doc
 ppImageDOSHeader a = 
-        tableHeader "IMAGE_DOS_HEADER"
-    $+$ columnHeadings 24 6
-    $+$ columnSep
-    $+$ vcat (sequence fields a) 
+    tableProlog "IMAGE_DOS_HEADER" (24,6) (sequence fields a) 
   where
     ppf    = ppField 4 24   
     fields = 
        [ ppf 2  "magic"                 (ppHex 4 . idh_magic_number)
-       , ppf 2  "bytes last page"       (ppHex 4 . idh_magic_number)
+       , ppf 2  "bytes last page"       (ppHex 4 . idh_bytes_last_page)
        , ppf 2  "pages in file"         (ppHex 4 . idh_pages_in_file)
        , ppf 2  "relocations"           (ppHex 4 . idh_relocations)
        , ppf 2  "header para size"      (ppHex 4 . idh_size_header_paras)
@@ -74,10 +75,7 @@ ppSignature (s,t,u,v) =
 
 ppImageCOFFHeader :: ImageCOFFHeader -> Doc
 ppImageCOFFHeader a = 
-        tableHeader "IMAGE COFF HEADER"
-    $+$ columnHeadings 24 6
-    $+$ columnSep
-    $+$ vcat (sequence fields a) 
+    tableProlog "IMAGE COFF HEADER" (24,6) (sequence fields a) 
   where
     ppf    = ppField 4 24   
     fields = 
@@ -95,16 +93,29 @@ ppImageOptionalHeader :: ImageOptionalHeader -> Doc
 ppImageOptionalHeader a = 
         ppImageOptionalStandard   (ioh_header_std_fields a)
     $+$ ppImageOptionalNTSpecific (ioh_nt_specific_fields a)
-    $+$ (vcat $ map ppImageDataDirectory $ ioh_data_directory a)
-
-
+    $+$ (vcat $ zipWith ppImageDataDirectory names (ioh_data_directory a))
+  where
+    names = [ ".edata"
+            , ".idata"
+            , ".rsrc"
+            , ".pdata"
+            , "attribute certificate table"
+            , ".reloc"
+            , ".debug"
+            , "architecture"
+            , "global ptr"
+            , ".tls"
+            , "load config"
+            , "bound impact"
+            , "import address table"
+            , "delay import descriptor"
+            , ".cormeta"
+            , "reserved"
+            ]
 
 ppImageOptionalStandard :: ImageOptionalStandard -> Doc
 ppImageOptionalStandard a =
-        tableHeader "IMAGE OPTIONAL HEADER STANDARD"
-    $+$ columnHeadings 24 6
-    $+$ columnSep
-    $+$ vcat (sequence fields a) 
+    tableProlog "IMAGE OPTIONAL HEADER STANDARD" (24,6) (sequence fields a) 
   where
     ppf    = ppField 4 24
     fields = 
@@ -122,10 +133,7 @@ ppImageOptionalStandard a =
 
 ppImageOptionalNTSpecific :: ImageOptionalNTSpecific -> Doc
 ppImageOptionalNTSpecific a =
-        tableHeader "IMAGE OPTIONAL HEADER NT SPECIFIC"
-    $+$ columnHeadings 24 6
-    $+$ columnSep
-    $+$ vcat (sequence fields a) 
+    tableProlog "IMAGE OPTIONAL HEADER NT SPECIFIC" (24,6) (sequence fields a)
   where
     ppf    = ppField 4 24
     fields = 
@@ -152,12 +160,9 @@ ppImageOptionalNTSpecific a =
        , ppf 4  "rva num and sizes"     (ppHex 8 . iont_rva_num_and_sizes)
        ]
 
-ppImageDataDirectory :: ImageDataDirectory -> Doc
-ppImageDataDirectory a =
-        tableHeader "IMAGE DATA DIRECTORIES"
-    $+$ columnHeadings 24 6
-    $+$ columnSep
-    $+$ vcat (sequence fields a) 
+ppImageDataDirectory :: String -> ImageDataDirectory -> Doc
+ppImageDataDirectory s a =
+    tableProlog s (24,6) (sequence fields a) 
   where
     ppf    = ppField 4 24
     fields = 
@@ -167,7 +172,8 @@ ppImageDataDirectory a =
 
 
 ppSectionHeader :: SectionHeader -> Doc
-ppSectionHeader a = vcat (sequence fields a)
+ppSectionHeader a = 
+    tableProlog "SECTION HEADER" (24,6) (sequence fields a)
   where
     ppf    = ppField 4 24
     fields = 
@@ -183,16 +189,43 @@ ppSectionHeader a = vcat (sequence fields a)
        , ppf 4  "characteristics"       (ppHex 8 . sh_characteristics)
        ]
 
+ppExportData :: ExportData -> Doc
+ppExportData a = 
+      ppExportDirectoryTable (ed_directory_table a)
+
+ppExportDirectoryTable :: ExportDirectoryTable -> Doc
+ppExportDirectoryTable a = 
+    tableProlog ".edata (Export directory table)" (24,6) (sequence fields a)
+  where
+    ppf    = ppField 4 24
+    fields = 
+       [ ppf 8  "export flags"          (ppHex 8 . edt_export_flags)
+       , ppf 8  "timedate stamp"        (ppHex 8 . edt_timedate_stamp)
+       , ppf 4  "major version"         (ppHex 4 . edt_major_version)
+       , ppf 4  "minor version"         (ppHex 4 . edt_minor_version)
+       , ppf 8  "name rva"              (ppHex 8 . edt_name_rva)
+       , ppf 8  "oridinal base"         (ppHex 8 . edt_ordinal_base)
+       , ppf 8  "addr table entries"    (ppHex 8 . edt_addr_table_entries)
+       , ppf 8  "num name ptrs"         (ppHex 8 . edt_num_name_ptrs)
+       , ppf 8  "export addr table rva" (ppHex 8 . edt_export_addr_table_rva)
+       , ppf 8  "name ptr rva"          (ppHex 8 . edt_name_pointer_rva)
+       , ppf 8  "ordinal table rva"     (ppHex 8 . edt_ordinal_table_rva)
+       ]
 
 --------------------------------------------------------------------------------
 -- Helpers
 
-tableHeader :: String -> Doc
-tableHeader s = columnSep $+$ text s $+$ columnSep
-
-columnHeadings :: Int -> Int -> Doc
-columnHeadings fsz vsz = 
-    text "size" <+> text (pad fsz ' ' "field") <+> text (pad vsz ' ' "value")
+tableProlog :: String -> (Int,Int) -> [Doc] -> Doc
+tableProlog s (m,n) ds =
+        columnSep 
+    $+$ text s 
+    $+$ columnSep
+    $+$ columnHeadings m n
+    $+$ columnSep
+    $+$ vcat ds
+  where
+    columnHeadings fsz vsz = 
+      text "size" <+> text (pad fsz ' ' "field") <+> text (pad vsz ' ' "value")
 
 
 columnSep :: Doc

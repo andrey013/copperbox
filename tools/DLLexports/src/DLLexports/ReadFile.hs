@@ -20,19 +20,16 @@ import DLLexports.Datatypes
 import DLLexports.ParseMonad
 
 import Control.Applicative
-import qualified Data.ByteString.Lazy as B
 import Data.Word
 import System.IO
 
 
 readDLL :: FilePath -> IO Image
-readDLL name = do 
-    h <- openBinaryFile name ReadMode
-    bs <- B.hGetContents h
-    let ans = runParser dllFile bs    
+readDLL filename = do 
+    ans <- runParser dllFile filename
     case ans of 
-      Left err -> hClose h >> putStrLn err >> error "readDLL failed"
-      Right mf -> hClose h >> return mf
+      Left err -> putStrLn err >> error "readDLL failed"
+      Right mf -> return mf
 
     
 
@@ -47,10 +44,14 @@ dllFile = do
     sig    <- signature
     coffH  <- imageCOFFHeader
     optH   <- imageOptionalHeader
-    return $ Image { image_dos_header   = dosH
-                   , image_signature    = sig
-                   , image_coff_header  = coffH
-                   , image_opt_header   = optH
+    secHs  <- count (fromIntegral $ ich_num_sections coffH) sectionHeader
+    expD   <- exportData
+    return $ Image { image_dos_header       = dosH
+                   , image_signature        = sig
+                   , image_coff_header      = coffH
+                   , image_opt_header       = optH
+                   , image_section_headers  = secHs
+                   , image_export_data      = expD
                    }
 
 
@@ -173,4 +174,27 @@ sectionHeader = SectionHeader <$>
     <*> getWord16le
     <*> getWord16le
     <*> getWord32le
-    
+
+
+exportData :: Parser ExportData
+exportData = ExportData <$>
+        exportDirectoryTable
+    <*> pure []
+    <*> pure []
+    <*> pure []
+    <*> pure []     
+
+exportDirectoryTable :: Parser ExportDirectoryTable
+exportDirectoryTable = ExportDirectoryTable <$>
+        getWord32le
+    <*> getWord32le
+    <*> getWord16le
+    <*> getWord16le
+    <*> getWord32le
+    <*> getWord32le
+    <*> getWord32le
+    <*> getWord32le
+    <*> getWord32le
+    <*> getWord32le
+    <*> getWord32le
+      

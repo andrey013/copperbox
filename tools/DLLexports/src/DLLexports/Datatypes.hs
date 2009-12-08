@@ -23,6 +23,8 @@ data Image = Image
       , image_signature             :: (Char,Char,Char,Char)
       , image_coff_header           :: ImageCOFFHeader
       , image_opt_header            :: ImageOptionalHeader
+      , image_section_headers       :: [SectionHeader]
+      , image_export_data           :: ExportData
       }
   deriving Show
 
@@ -148,7 +150,15 @@ data SectionHeader = SectionHeader
       }
   deriving Show
 
-
+-- | \'.edata\'
+data ExportData = ExportData
+      { ed_directory_table          :: ExportDirectoryTable
+      , ed_address_table            :: [Word32]
+      , ed_pointer_table            :: [Word32]
+      , ed_ordinal_table            :: [Word32]
+      , ed_name_table               :: [String]
+      }
+  deriving Show
 
 data ExportDirectoryTable = ExportDirectoryTable
       { edt_export_flags            :: Word32
