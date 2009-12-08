@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -12,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- A MIDI file parser. 
+-- Random access parse monad 
 --
 --------------------------------------------------------------------------------
 
@@ -30,15 +28,17 @@ import System.IO
 type ParseErr = String
 
 type ImageData = IOUArray Int Word8   -- Is Int big enough for index?
-  
-data ParseState = PSt { imagearr  :: ImageData 
-                      , pos       :: Int 
-                      }
 
-newtype Parser a = Parser { getParser :: ParseState -> IO (ParseState,Either ParseErr a) }
+type St    = Int            -- 'file' position
+type Env   = ImageData
+  
+
+newtype Parser a = Parser { 
+          getParser :: Env -> St -> IO (St,Either ParseErr a) }
           
 instance Functor Parser where
-    fmap f (Parser x) = Parser $ \st ->  x st `bindIO` \(st',a) -> return (st',fmap f a)
+    fmap f (Parser x) = Parser $ 
+         \env st  ->  x env st `bindIO` \(st',a) -> return (st',fmap f a)
 
 bindIO :: IO a -> (a -> IO b) -> IO b
 bindIO = (>>=)
@@ -48,11 +48,12 @@ returnIO = return
 
 
 instance Monad Parser where
-  return a = Parser $ \st -> returnIO (st,Right a)
-  (Parser x) >>= f = Parser $ \st -> x st `bindIO` \(st',ans) ->
+  return a = Parser $ \_ st -> returnIO (st,Right a)
+  (Parser x) >>= f = Parser $ 
+     \env st -> x env st `bindIO` \(st',ans) ->
                                      case ans of 
                                         Left err -> returnIO (st',Left err)
-                                        Right a  -> getParser (f a) st'
+                                        Right a  -> getParser (f a) env st'
 
 
 
@@ -61,24 +62,24 @@ instance Applicative Parser where
   (<*>) = ap
 
 
-getSt :: Parser ParseState
-getSt = Parser $ \st -> return (st, Right st)
+getSt :: Parser St
+getSt = Parser $ \_ st -> return (st, Right st)
 
-getSt_ :: (ParseState -> a) -> Parser a
-getSt_ f = Parser $ \st -> return (st, Right $ f st)
+putSt :: St -> Parser ()
+putSt st = Parser $ \_ _ -> return (st, Right ())
 
-putSt :: ParseState -> Parser ()
-putSt st = Parser $ \_ -> return (st, Right ())
+modifySt :: (St -> St) -> Parser ()
+modifySt f = Parser $ \_ st -> return (f st, Right ())
 
-modifySt :: (ParseState -> ParseState) -> Parser ()
-modifySt f = Parser $ \st -> return (f st, Right ())
+askEnv :: Parser Env
+askEnv = Parser $ \env st -> return (st, Right env)
 
 
 throwErr :: String -> Parser a
-throwErr msg = Parser $ \st -> return (st,Left msg)
+throwErr msg = Parser $ \_ st -> return (st,Left msg)
 
 liftIOAction :: IO a -> Parser a
-liftIOAction ma = Parser $ \st -> ma >>= \a -> return (st,Right a) 
+liftIOAction ma = Parser $ \_ st -> ma >>= \a -> return (st,Right a) 
 
 
 runParser :: Parser a -> FilePath -> IO (Either ParseErr a)
@@ -90,14 +91,8 @@ runParser p filename = withBinaryFile filename ReadMode $ \ handle -> do
     (_,ans) <- runP p arr
     return ans   
   where 
-    runP :: Parser a -> ImageData -> IO (ParseState, Either ParseErr a) 
-    -- should we use runState and check input is exhausted? 
-    runP (Parser x) arr = x (initState arr)
-    
-    initState arr = PSt { imagearr = arr, pos = 0 }
-    
-    errorstring err ss = err ++ "\n\nParse result upto error...\n" ++ ss 
-    
+    runP :: Parser a -> ImageData -> IO (St, Either ParseErr a) 
+    runP (Parser x) arr = x arr 0
 
 
 --------------------------------------------------------------------------------
@@ -107,9 +102,10 @@ runParser p filename = withBinaryFile filename ReadMode $ \ handle -> do
    
 getWord8 :: Parser Word8
 getWord8 = do
-    PSt ar ix  <- getSt
-    a <- liftIOAction $ readArray ar ix
-    putSt (PSt ar (ix+1))
+    ix   <- getSt
+    arr  <- askEnv
+    a    <- liftIOAction $ readArray arr ix
+    putSt $ ix+1
     return a
 
 
@@ -122,7 +118,7 @@ getWord8 = do
 
 reportFail :: String -> Parser a
 reportFail s = do 
-    posn <- getSt_ pos
+    posn <- getSt
     throwErr $ s ++ posStr posn
   where
     posStr p = " position " ++ show p   
@@ -130,8 +126,9 @@ reportFail s = do
 
 eof :: Parser Bool
 eof = do
-     PSt ar ix  <- getSt
-     (_,up)  <- liftIOAction $ getBounds ar
+     ix  <- getSt
+     arr <- askEnv
+     (_,up)  <- liftIOAction $ getBounds arr
      return $ (ix>=up) 
 
 
@@ -143,7 +140,7 @@ getChar8bit :: Parser Char
 getChar8bit = (chr . fromIntegral) <$> getWord8 
 
 filePosition :: Parser Int
-filePosition = getSt_ pos
+filePosition = getSt
 
 
 count :: Int -> Parser a -> Parser [a]
@@ -172,45 +169,33 @@ getWord16le   = w16le     <$> getWord8 <*> getWord8
 getWord32le   :: Parser Word32
 getWord32le   = w32le     <$> getWord8 <*> getWord8 <*> getWord8 <*> getWord8
 
-getWord24be   :: Parser Word32
-getWord24be   = w32be 0   <$> getWord8 <*> getWord8 <*> getWord8
-
-
-getWord8split :: Parser (Word8,Word8) 
-getWord8split = f <$> getWord8 
-  where
-    f i = ((i .&. 0xF0) `shiftR` 4, i .&. 0x0F)
-
   
 
 w16be :: Word8 -> Word8 -> Word16
-w16be a b = let a' = a `iShiftL` 8
-                b' = fromIntegral b 
-            in a' + b'  
+w16be a b = (shiftL8 a) + fromIntegral b
+     
             
 w32be :: Word8 -> Word8 -> Word8 -> Word8 -> Word32
-w32be a b c d = let a' = a `iShiftL` 24
-                    b' = b `iShiftL` 16
-                    c' = c `iShiftL` 8
-                    d' = fromIntegral d
-            in a' + b' + c' + d'      
+w32be a b c d = (shiftL24 a) + (shiftL16 b) + (shiftL8 c) + fromIntegral d
+
 
 w16le :: Word8 -> Word8 -> Word16
-w16le a b = let a' = fromIntegral a 
-                b'  = b `iShiftL` 8
-            in a' + b'  
+w16le a b = fromIntegral a + (shiftL8 b)
 
 w32le :: Word8 -> Word8 -> Word8 -> Word8 -> Word32
-w32le a b c d = let a' = fromIntegral a
-                    b' = b `iShiftL` 8
-                    c' = c `iShiftL` 16
-                    d' = d `iShiftL` 24
-            in a' + b' + c' + d'      
+w32le a b c d = fromIntegral a + (shiftL8 b) + (shiftL16 c) + (shiftL24 d)      
 
 
-iShiftL :: (Bits b, Integral a, Integral b) => a -> Int -> b
-a `iShiftL` x = (fromIntegral a) `shiftL` x      
+
+shiftL8 :: (Bits b, Integral b) => Word8 -> b
+shiftL8 = (`shiftL` 8) . fromIntegral
 
 
+shiftL16 :: (Bits b, Integral b) => Word8 -> b
+shiftL16 = (`shiftL` 16) . fromIntegral
+
+
+shiftL24 :: (Bits b, Integral b) => Word8 -> b
+shiftL24 = (`shiftL` 24) . fromIntegral
 
 
