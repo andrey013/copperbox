@@ -45,7 +45,9 @@ dllFile = do
     coffH  <- imageCOFFHeader
     optH   <- imageOptionalHeader
     secHs  <- count (fromIntegral $ ich_num_sections coffH) sectionHeader
-    expD   <- exportData
+    expH   <- exportSectionHeader secHs
+    jumpto (fromIntegral $ sh_ptr_raw_data expH)
+    expD   <- exportData expH
     return $ Image { image_dos_header       = dosH
                    , image_signature        = sig
                    , image_coff_header      = coffH
@@ -53,6 +55,11 @@ dllFile = do
                    , image_section_headers  = secHs
                    , image_export_data      = expD
                    }
+
+-- bit crummy...
+exportSectionHeader :: [SectionHeader] -> Parser SectionHeader
+exportSectionHeader (_:_:_:_:edata:_) = return $ edata
+exportSectionHeader _                 = reportFail "no .edata" 
 
 
 toNewExeHeader :: Word32 -> Parser ()
@@ -176,13 +183,34 @@ sectionHeader = SectionHeader <$>
     <*> getWord32le
 
 
-exportData :: Parser ExportData
-exportData = ExportData <$>
-        exportDirectoryTable
-    <*> pure []
-    <*> pure []
-    <*> pure []
-    <*> pure []     
+exportData :: SectionHeader -> Parser ExportData
+exportData section = do
+    edt        <- exportDirectoryTable
+    let eac    = fromIntegral $ edt_num_addr_table_entries edt
+    let ea_rva = fromIntegral $ 
+                   rvaToOffset (edt_export_addr_table_rva edt) section
+    jumpto ea_rva
+    ats        <- count eac exportAddress
+
+    let enc    = fromIntegral $ edt_num_name_ptrs edt
+    let en_rva = fromIntegral $ 
+                   rvaToOffset (edt_name_ptr_table_rva edt) section
+    jumpto en_rva
+    nptrs      <- count enc getWord32le
+
+    let eo_rva = fromIntegral $ 
+                   rvaToOffset (edt_ordinal_table_rva edt) section
+    jumpto eo_rva
+    ords      <- count enc getWord16le
+
+    names <- exportNames section nptrs
+
+    return $ ExportData { ed_directory_table      = edt
+                        , ed_export_address_table = ats
+                        , ed_name_ptr_table       = nptrs
+                        , ed_ordinal_table        = ords
+                        , ed_name_table           = names
+                        }
 
 exportDirectoryTable :: Parser ExportDirectoryTable
 exportDirectoryTable = ExportDirectoryTable <$>
@@ -197,4 +225,19 @@ exportDirectoryTable = ExportDirectoryTable <$>
     <*> getWord32le
     <*> getWord32le
     <*> getWord32le
-      
+
+-- WRONG (for now) 
+exportAddress :: Parser ExportAddress
+exportAddress = EA_Export_RVA <$>
+        getWord32le
+
+exportNames :: SectionHeader -> [Word32] -> Parser [String]
+exportNames _       []     = return []
+exportNames section (x:xs) = mf <:> exportNames section xs
+  where
+    mf = jumpto (fromIntegral $ rvaToOffset x section) >> cstring
+
+
+rvaToOffset :: Word32 -> SectionHeader -> Word32
+rvaToOffset rva section = 
+    rva - (sh_virtual_addr section - sh_ptr_raw_data section)

@@ -151,11 +151,12 @@ data SectionHeader = SectionHeader
   deriving Show
 
 -- | \'.edata\'
+-- name_ptrs and ordinals should be zipped...
 data ExportData = ExportData
       { ed_directory_table          :: ExportDirectoryTable
-      , ed_address_table            :: [Word32]
-      , ed_pointer_table            :: [Word32]
-      , ed_ordinal_table            :: [Word32]
+      , ed_export_address_table     :: [ExportAddress]
+      , ed_name_ptr_table           :: [Word32]
+      , ed_ordinal_table            :: [Word16]
       , ed_name_table               :: [String]
       }
   deriving Show
@@ -167,10 +168,15 @@ data ExportDirectoryTable = ExportDirectoryTable
       , edt_minor_version           :: Word16
       , edt_name_rva                :: Word32
       , edt_ordinal_base            :: Word32
-      , edt_addr_table_entries      :: Word32
+      , edt_num_addr_table_entries  :: Word32
       , edt_num_name_ptrs           :: Word32
       , edt_export_addr_table_rva   :: Word32
-      , edt_name_pointer_rva        :: Word32
+      , edt_name_ptr_table_rva      :: Word32
       , edt_ordinal_table_rva       :: Word32
       }
+  deriving Show
+
+ 
+data ExportAddress = EA_Export_RVA     Word32
+                   | EA_Forwarder_RVA  Word32    
   deriving Show

@@ -13,7 +13,7 @@ main :: IO ()
 main = demo
 
 demo = do 
-  img  <- readDLL "dll/openvg32.dll"
+  img  <- readDLL "dll/SDL.dll"
   printImage img
   putStrLn ""  
 

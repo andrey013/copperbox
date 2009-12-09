@@ -112,8 +112,13 @@ getWord8 = do
 --------------------------------------------------------------------------------
 -- helpers
 
+-- | applicative cons
+(<:>) :: Applicative f => f a -> f [a] -> f [a]
+(<:>) p1 p2 = (:) <$> p1 <*> p2
 
 
+jumpto :: Int -> Parser ()
+jumpto = putSt
 
 
 reportFail :: String -> Parser a
@@ -123,6 +128,29 @@ reportFail s = do
   where
     posStr p = " position " ++ show p   
 
+satisfy :: (Word8 -> Bool) -> Parser Word8
+satisfy p = getWord8 >>= 
+    (\x -> if p x then return x else reportFail $ "satisfy...")
+
+try :: Parser a -> Parser a
+try p = Parser $ \env st -> (getParser p) env st >>= \ ans -> 
+                    case ans of
+                      (_,Left err) -> return (st,Left err)
+                      okay         -> return okay
+
+opt :: Parser a -> Parser (Maybe a)
+opt p = Parser $ \env st -> (getParser p) env st >>= \ ans -> 
+                    case ans of
+                      (_,   Left _)  -> return (st, Right Nothing)
+                      (st', Right a) -> return (st', Right $ Just a)
+
+manyTill :: Parser a -> Parser b -> Parser [a]
+manyTill p end = do 
+   ans <- opt end
+   case ans of
+     Just _ -> return []
+     Nothing -> p <:> manyTill p end 
+
 
 eof :: Parser Bool
 eof = do
@@ -131,10 +159,19 @@ eof = do
      (_,up)  <- liftIOAction $ getBounds arr
      return $ (ix>=up) 
 
+-- | Read a null-terminated string
+cstring :: Parser String
+cstring = manyTill char w8Zero
 
+
+w8Zero :: Parser Word8
+w8Zero = satisfy (==0)
 
 getBytes :: Integral a => a -> Parser [Word8]
 getBytes i = count (fromIntegral i) getWord8
+
+char :: Parser Char
+char = (chr . fromIntegral) <$> getWord8 
 
 getChar8bit :: Parser Char
 getChar8bit = (chr . fromIntegral) <$> getWord8 

@@ -18,6 +18,7 @@ module DLLexports.TextDump where
 
 import DLLexports.Datatypes
 
+import Data.Word
 import Numeric
 import Text.PrettyPrint.HughesPJ
 
@@ -191,7 +192,11 @@ ppSectionHeader a =
 
 ppExportData :: ExportData -> Doc
 ppExportData a = 
-      ppExportDirectoryTable (ed_directory_table a)
+        ppExportDirectoryTable (ed_directory_table a)
+    $+$ ppExportAddressTable   (ed_export_address_table a)
+    $+$ ppExportNamePtrTable   (ed_name_ptr_table a)
+    $+$ ppExportOrdinalTable   (ed_ordinal_table a)
+    $+$ ppExportNames          (ed_name_table a)
 
 ppExportDirectoryTable :: ExportDirectoryTable -> Doc
 ppExportDirectoryTable a = 
@@ -205,12 +210,44 @@ ppExportDirectoryTable a =
        , ppf 4  "minor version"         (ppHex 4 . edt_minor_version)
        , ppf 8  "name rva"              (ppHex 8 . edt_name_rva)
        , ppf 8  "oridinal base"         (ppHex 8 . edt_ordinal_base)
-       , ppf 8  "addr table entries"    (ppHex 8 . edt_addr_table_entries)
+       , ppf 8  "addr table entries"    (ppHex 8 . edt_num_addr_table_entries)
        , ppf 8  "num name ptrs"         (ppHex 8 . edt_num_name_ptrs)
        , ppf 8  "export addr table rva" (ppHex 8 . edt_export_addr_table_rva)
-       , ppf 8  "name ptr rva"          (ppHex 8 . edt_name_pointer_rva)
+       , ppf 8  "name ptr rva"          (ppHex 8 . edt_name_ptr_table_rva)
        , ppf 8  "ordinal table rva"     (ppHex 8 . edt_ordinal_table_rva)
        ]
+
+ppExportAddressTable :: [ExportAddress] -> Doc
+ppExportAddressTable a = 
+    tableProlog "Export address" (24,6) (map field a)
+  where
+    ppf    = ppField 4 24
+    field (EA_Export_RVA w32)    = ppf 8 "export RVA"    (ppHex 8) w32
+    field (EA_Forwarder_RVA w32) = ppf 8 "forwarder RVA" (ppHex 8) w32
+      
+
+ppExportNamePtrTable :: [Word32] -> Doc
+ppExportNamePtrTable a = 
+    tableProlog "Export name pointers" (24,6) (map field a)
+  where
+    ppf    = ppField 4 24
+    field  = ppf 8 "name ptr"  (ppHex 8)
+
+ppExportOrdinalTable :: [Word16] -> Doc
+ppExportOrdinalTable a = 
+    tableProlog "Export ordinals" (24,6) (map field a)
+  where
+    ppf    = ppField 4 24
+    field  = ppf 4 "ordinal"    (ppHex 4) 
+
+ppExportNames :: [String] -> Doc
+ppExportNames a = 
+    tableProlog "Export names" (24,6) (map field a)
+  where
+    ppf    = ppField 4 24
+    field  = ppf 4 "export name" text 
+
+
 
 --------------------------------------------------------------------------------
 -- Helpers
