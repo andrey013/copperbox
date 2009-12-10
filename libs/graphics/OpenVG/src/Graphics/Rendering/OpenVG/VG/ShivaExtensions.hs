@@ -25,7 +25,7 @@ module Graphics.Rendering.OpenVG.VG.ShivaExtensions (
   destroyContextSH
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( vg_TRUE )
+import Graphics.Rendering.OpenVG.VG.BasicTypes ( vg_TRUE, unSize )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
         vgCreateContextSH, vgResizeSurfaceSH, vgDestroyContextSH ) 
 
@@ -44,14 +44,14 @@ withContextSH sz action failureAction = do
 
 -- | Create an OpenVG context on top of an already created OpenGL context.   
 createContextSH :: Size -> IO Bool
-createContextSH (Size w h) = do 
+createContextSH sz = let (w,h) = unSize sz in do 
     vgbool <- vgCreateContextSH w h
     if vgbool == vg_TRUE then return True else return False
 
 -- | @resizeSurfaceSH@ should be called whenever the size of the 
 -- surface changes.    
 resizeSurfaceSH :: Size -> IO ()
-resizeSurfaceSH (Size w h) = vgResizeSurfaceSH w h
+resizeSurfaceSH sz = let (w,h) = unSize sz in vgResizeSurfaceSH w h
 
 -- | Destroy the OpenVG context.
 destroyContextSH :: IO ()

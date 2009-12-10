@@ -70,12 +70,12 @@ import Graphics.Rendering.OpenVG.VG.Paths (
     PaintMode(..) )
 import Graphics.Rendering.OpenVG.VG.Utils ( 
     Marshal(..), Unmarshal(..), enumValue, unmarshalIntegral, bitwiseOr )
+import Graphics.Rendering.OpenGL.GL.VertexSpec ( Color4(..) )
 
-import Graphics.Rendering.OpenGL.GL.StateVar (
+import Data.StateVar (
     StateVar(), makeStateVar,
     SettableStateVar, makeSettableStateVar,
     GettableStateVar, makeGettableStateVar )
-import Graphics.Rendering.OpenGL.GL.VertexSpec ( Color4(..) )
 
 --------------------------------------------------------------------------------
 -- Creating and destroying paint objects 

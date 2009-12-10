@@ -27,7 +27,7 @@ import Graphics.Rendering.OpenVG.VG.CFunDecls ( vgGetString )
 import Graphics.Rendering.OpenVG.VG.Constants (
     vg_VENDOR, vg_RENDERER, vg_VERSION, vg_EXTENSIONS ) 
 
-import Graphics.Rendering.OpenGL.GL.StateVar (
+import Data.StateVar (
    GettableStateVar, makeGettableStateVar )
    
 import Foreign.C.String ( peekCString )

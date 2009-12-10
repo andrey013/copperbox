@@ -33,18 +33,19 @@ module Graphics.Rendering.OpenVG.VG.Scissoring (
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGint, VGfloat, marshalBool )
+    VGint, VGfloat, marshalBool, unSize )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( vgClear )
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
     ParamType ( Scissoring, ScissorRects, MaxScissorRects, 
                 Masking, ClearColor ),   
     seti, geti, setiv, setfv )
-import Graphics.Rendering.OpenGL.GL.StateVar (
-    SettableStateVar, makeSettableStateVar,
-    GettableStateVar, makeGettableStateVar ) 
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Position(..), Size(..) )
 import Graphics.Rendering.OpenGL.GL.VertexSpec ( Color4(..) )
+
+import Data.StateVar (
+    SettableStateVar, makeSettableStateVar,
+    GettableStateVar, makeGettableStateVar ) 
 
 
 --------------------------------------------------------------------------------
@@ -66,7 +67,7 @@ maxScissorRects = makeGettableStateVar $ geti MaxScissorRects
 scissorRects :: SettableStateVar [ScissorRect]
 scissorRects = makeSettableStateVar $ \ss ->
     setiv ScissorRects (foldr f [] ss) where 
-        f ((Position mx my), (Size w h)) a = mx:my:w:h:a 
+        f ((Position mx my), sz) a = let (w,h) = unSize sz in mx:my:w:h:a 
 
 --------------------------------------------------------------------------------
 -- Alpha masking
@@ -97,7 +98,7 @@ clearColor = makeSettableStateVar $
 
 -- | @clear@ corresponds to the OpenVG function @vgClear@.
 clear :: Position -> Size -> IO ()
-clear (Position x y) (Size w h) = vgClear x y w h
+clear (Position x y) sz = let (w,h) = unSize sz in vgClear x y w h
 
 
 --------------------------------------------------------------------------------

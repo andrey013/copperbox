@@ -1,9 +1,11 @@
-These instructions assume you have Haskell and OpenGL working 
-(probably via the Haskell Plaform) and have MinGW/msys installed
-and are comfortable with them.
+*** NOT CURRENTLY WORKING ***
+
+These instructions assume you have Haskell and OpenGL with the 
+split packages working and have MinGW/msys installed and are 
+comfortable with them.
 
 ------------------------------------------------------------------
-Step 1.
+Part 1. The C library.
 
 Download the ShivaVG C library from Sourceforge (version 0.2.1):
 http://sourceforge.net/projects/shivavg/
@@ -49,7 +51,7 @@ C:\MinGW\include\vg
 You should now be able to build the Haskell binding to Shiva.
 
 ------------------------------------------------------------------
-
+Part 2. The bindings.
 
 I dropped the archive into my home directory
 C:\msys\1.0\home\stephen

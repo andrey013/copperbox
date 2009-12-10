@@ -31,7 +31,7 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
     seti, ParamType ( BlendMode ) )
 import Graphics.Rendering.OpenVG.VG.Utils ( Marshal(..), enumValue )
 
-import Graphics.Rendering.OpenGL.GL.StateVar (
+import Data.StateVar (
    SettableStateVar, makeSettableStateVar ) 
 
 

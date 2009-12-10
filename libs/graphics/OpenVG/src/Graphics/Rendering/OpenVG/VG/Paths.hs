@@ -127,7 +127,7 @@ import Graphics.Rendering.OpenVG.VG.Utils (
     Marshal(..), Unmarshal(..), unmarshalIntegral, enumValue, 
     bitwiseOr, unbits )
 
-import Graphics.Rendering.OpenGL.GL.StateVar (
+import Data.StateVar (
     SettableStateVar, makeSettableStateVar,
     GettableStateVar, makeGettableStateVar,
     ( $= ) ) 

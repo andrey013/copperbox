@@ -63,7 +63,7 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
 import Graphics.Rendering.OpenVG.VG.Utils ( 
     Marshal(..), Unmarshal(..), enumValue, unmarshalIntegral )
 
-import Graphics.Rendering.OpenGL.GL.StateVar (
+import Data.StateVar (
     StateVar(), makeStateVar, SettableStateVar, makeSettableStateVar )   
 
 import Foreign.Ptr ( Ptr )   

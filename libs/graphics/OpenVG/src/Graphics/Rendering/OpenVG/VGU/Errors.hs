@@ -23,7 +23,7 @@ module Graphics.Rendering.OpenVG.VGU.Errors (
 import Graphics.Rendering.OpenVG.VGU.ErrorsInternal (
    Error(..), ErrorCategory(..), getErrors )
    
-import Graphics.Rendering.OpenGL.GL.StateVar (
+import Data.StateVar (
    GettableStateVar, makeGettableStateVar )
 
 
