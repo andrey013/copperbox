@@ -17,7 +17,8 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.Utils (
-  bitwiseOr, unbits 
+  bitwiseOr, unbits,
+  unSize, unSizeF, unSizeM
 
   ) where
 
@@ -25,32 +26,15 @@ module Graphics.Rendering.OpenVG.VG.Utils (
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
         VGint, VGenum, VGbitfield, 
         marshalBool )
+
+import Graphics.Rendering.OpenGL.GL.CoordTrans ( Size(..) )
+
+
 import Data.Bits
 
-{-
-class Marshal a where marshal :: a -> VGenum
-class Unmarshal a where unmarshal :: VGenum -> a 
--}
 
-{-
-marshalVGint :: VGint -> VGenum
-marshalVGint = fromIntegral 
--}
 
-{-
-instance Marshal VGint where marshal = fromIntegral
-instance Marshal Bool where marshal = fromIntegral . marshalBool
--}
 
-{-
-enumValue :: Marshal a => a -> VGint
-enumValue = fromIntegral . marshal
--}
-
-{-
-unmarshalIntegral :: (Integral a, Unmarshal b)  => a -> b
-unmarshalIntegral = unmarshal . fromIntegral
--}
 
 
 bitwiseOr :: (a -> VGenum) ->  [a] -> VGbitfield
@@ -64,5 +48,16 @@ unbits fn field = map fn $ step field 0 1 where
     step a i j | a `testBit` i  = j : step (a - fromIntegral j) (i+1) (j*2)
                | otherwise      = step a (i+1) (j*2) 
 
+
+-- Helper - unwrap Size
+
+unSize :: Size -> (VGint,VGint)
+unSize (Size w h) = (fromIntegral w, fromIntegral h)
+
+unSizeF :: (VGint -> VGint -> a) -> Size -> a
+unSizeF f (Size w h) = f (fromIntegral w) (fromIntegral h)
+
+unSizeM :: Monad m => (VGint -> VGint -> m a) -> Size -> m a
+unSizeM f (Size w h) = f (fromIntegral w) (fromIntegral h)
 
 

@@ -91,43 +91,37 @@ data ParamType =
    deriving ( Eq, Ord, Show )
 
 setf :: ParamType -> VGfloat -> IO ()
-setf typ val = vgSetf (marshalParamType typ) val
+setf typ = vgSetf $ marshalParamType typ
 
 seti :: ParamType -> VGint -> IO ()
-seti typ val = vgSeti (marshalParamType typ) val
+seti typ = vgSeti $ marshalParamType typ
 
 -- vgSetfv :: VGenum -> VGint -> Ptr VGfloat -> IO ()
 -- TODO - Lists or arrays?
 setfv :: ParamType -> [VGfloat] -> IO ()
-setfv typ vals = do
-    a <- newArray vals
-    vgSetfv (marshalParamType typ) (fromIntegral $ length vals) a
+setfv typ vals = newArray vals >>= 
+                 vgSetfv (marshalParamType typ) (fromIntegral $ length vals)
     
 setiv :: ParamType -> [VGint] -> IO ()
-setiv typ vals = do
-    a <- newArray vals
-    vgSetiv (marshalParamType typ) (fromIntegral $ length vals) a
+setiv typ vals = newArray vals >>= 
+                 vgSetiv (marshalParamType typ) (fromIntegral $ length vals)
 
         
 getf :: ParamType -> IO VGfloat
-getf typ = vgGetf (marshalParamType typ)
+getf = vgGetf . marshalParamType
 
 geti :: ParamType -> IO VGint
-geti typ = vgGeti (marshalParamType typ)
+geti = vgGeti . marshalParamType
 
 
 getVectorSize :: ParamType -> IO VGint
-getVectorSize typ = vgGetVectorSize (marshalParamType typ)
+getVectorSize typ = vgGetVectorSize $ marshalParamType typ
 
 getfv :: ParamType -> VGint -> IO [VGfloat]
-getfv typ i = do
-    ptr <- vgGetfv (marshalParamType typ) i 
-    peekArray (fromIntegral i) ptr
+getfv typ i = vgGetfv (marshalParamType typ) i >>= peekArray (fromIntegral i)
     
 getiv :: ParamType -> VGint -> IO [VGint]
-getiv typ i = do
-    ptr <- vgGetiv (marshalParamType typ) i 
-    peekArray (fromIntegral i) ptr
+getiv typ i = vgGetiv (marshalParamType typ) i >>= peekArray (fromIntegral i)
 
 
 setParameterf :: VGHandle -> VGenum -> VGfloat -> IO ()
@@ -137,14 +131,12 @@ setParameteri :: VGHandle -> VGenum -> VGint -> IO ()
 setParameteri = vgSetParameteri
 
 setParameterfv :: VGHandle -> VGenum -> [VGfloat] -> IO ()
-setParameterfv h typ vals = do
-    a <- newArray vals
-    vgSetParameterfv h typ (fromIntegral $ length vals) a
+setParameterfv h typ vals = 
+    newArray vals >>= vgSetParameterfv h typ (fromIntegral $ length vals)
 
 setParameteriv :: VGHandle -> VGenum -> [VGint] -> IO ()
-setParameteriv h typ vals = do
-    a <- newArray vals
-    vgSetParameteriv h typ (fromIntegral $ length vals) a
+setParameteriv h typ vals =
+    newArray vals >>= vgSetParameteriv h typ (fromIntegral $ length vals)
 
 getParameterf :: VGHandle -> VGenum -> IO VGfloat
 getParameterf = vgGetParameterf
@@ -157,54 +149,52 @@ getParameterVectorSize :: VGHandle -> VGenum -> IO VGint
 getParameterVectorSize = vgGetParameterVectorSize
 
 getParameterfv :: VGHandle -> VGenum -> VGint -> IO [VGfloat]
-getParameterfv h typ i = do
-    ptr <- vgGetParameterfv h typ i 
-    peekArray (fromIntegral i) ptr
+getParameterfv h typ i = 
+    vgGetParameterfv h typ i >>= peekArray (fromIntegral i)
 
 getParameteriv :: VGHandle -> VGenum -> VGint -> IO [VGint]
-getParameteriv h typ i = do
-    ptr <- vgGetParameteriv h typ i 
-    peekArray (fromIntegral i) ptr
+getParameteriv h typ i =
+    vgGetParameteriv h typ i >>= peekArray (fromIntegral i)
                 
 --------------------------------------------------------------------------------    
     
 marshalParamType :: ParamType -> VGenum
 marshalParamType x = case x of
-    MatrixMode -> vg_MATRIX_MODE 
-    FillRule -> vg_FILL_RULE
-    ImageQuality -> vg_IMAGE_QUALITY
-    RenderingQuality -> vg_RENDERING_QUALITY
-    BlendMode -> vg_BLEND_MODE
-    ImageMode -> vg_IMAGE_MODE
-    ScissorRects -> vg_SCISSOR_RECTS
-    StrokeLineWidth -> vg_STROKE_LINE_WIDTH
-    StrokeCapStyle -> vg_STROKE_CAP_STYLE
-    StrokeJoinStyle -> vg_STROKE_JOIN_STYLE
-    StrokeMiterLimit -> vg_STROKE_MITER_LIMIT
-    StrokeDashPattern -> vg_STROKE_DASH_PATTERN
-    StrokeDashPhase -> vg_STROKE_DASH_PHASE 
-    StrokeDashPhaseReset -> vg_STROKE_DASH_PHASE_RESET
-    TileFillColor -> vg_TILE_FILL_COLOR 
-    ClearColor -> vg_CLEAR_COLOR 
-    -- ParamGlyphOrigin -> vg_GLYPH_ORIGIN         {- Not in shiva-vg -}
-    Masking -> vg_MASKING
-    Scissoring -> vg_SCISSORING 
-    PixelLayout -> vg_PIXEL_LAYOUT
-    ScreenLayout -> vg_SCREEN_LAYOUT 
-    FilterFormatLinear -> vg_FILTER_FORMAT_LINEAR
+    MatrixMode                -> vg_MATRIX_MODE 
+    FillRule                  -> vg_FILL_RULE
+    ImageQuality              -> vg_IMAGE_QUALITY
+    RenderingQuality          -> vg_RENDERING_QUALITY
+    BlendMode                 -> vg_BLEND_MODE
+    ImageMode                 -> vg_IMAGE_MODE
+    ScissorRects              -> vg_SCISSOR_RECTS
+    StrokeLineWidth           -> vg_STROKE_LINE_WIDTH
+    StrokeCapStyle            -> vg_STROKE_CAP_STYLE
+    StrokeJoinStyle           -> vg_STROKE_JOIN_STYLE
+    StrokeMiterLimit          -> vg_STROKE_MITER_LIMIT
+    StrokeDashPattern         -> vg_STROKE_DASH_PATTERN
+    StrokeDashPhase           -> vg_STROKE_DASH_PHASE 
+    StrokeDashPhaseReset      -> vg_STROKE_DASH_PHASE_RESET
+    TileFillColor             -> vg_TILE_FILL_COLOR 
+    ClearColor                -> vg_CLEAR_COLOR 
+    -- ParamGlyphOrigin       -> vg_GLYPH_ORIGIN         {- Not in shiva-vg -}
+    Masking                   -> vg_MASKING
+    Scissoring                -> vg_SCISSORING 
+    PixelLayout               -> vg_PIXEL_LAYOUT
+    ScreenLayout              -> vg_SCREEN_LAYOUT 
+    FilterFormatLinear        -> vg_FILTER_FORMAT_LINEAR
     FilterFormatPremultiplied -> vg_FILTER_FORMAT_PREMULTIPLIED
-    FilterChannelMask -> vg_FILTER_CHANNEL_MASK 
-    MaxScissorRects -> vg_MAX_SCISSOR_RECTS 
-    MaxDashCount -> vg_MAX_DASH_COUNT
-    MaxKernelSize -> vg_MAX_KERNEL_SIZE
-    MaxSaparableKernelSize -> vg_MAX_SEPARABLE_KERNEL_SIZE
-    MaxColorRampStops -> vg_MAX_COLOR_RAMP_STOPS
-    MaxImageWidth -> vg_MAX_IMAGE_WIDTH
-    MaxImageHeight -> vg_MAX_IMAGE_HEIGHT
-    MaxImagePixels -> vg_MAX_IMAGE_PIXELS
-    MaxImageBytes -> vg_MAX_IMAGE_BYTES
-    MaxFloat -> vg_MAX_FLOAT
-    MaxGaussianStdDeviation -> vg_MAX_GAUSSIAN_STD_DEVIATION 
+    FilterChannelMask         -> vg_FILTER_CHANNEL_MASK 
+    MaxScissorRects           -> vg_MAX_SCISSOR_RECTS 
+    MaxDashCount              -> vg_MAX_DASH_COUNT
+    MaxKernelSize             -> vg_MAX_KERNEL_SIZE
+    MaxSaparableKernelSize    -> vg_MAX_SEPARABLE_KERNEL_SIZE
+    MaxColorRampStops         -> vg_MAX_COLOR_RAMP_STOPS
+    MaxImageWidth             -> vg_MAX_IMAGE_WIDTH
+    MaxImageHeight            -> vg_MAX_IMAGE_HEIGHT
+    MaxImagePixels            -> vg_MAX_IMAGE_PIXELS
+    MaxImageBytes             -> vg_MAX_IMAGE_BYTES
+    MaxFloat                  -> vg_MAX_FLOAT
+    MaxGaussianStdDeviation   -> vg_MAX_GAUSSIAN_STD_DEVIATION 
 
 --------------------------------------------------------------------------------
 

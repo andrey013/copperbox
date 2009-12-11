@@ -58,7 +58,7 @@ module Graphics.Rendering.OpenVG.VG.Images (
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGint, VGImage, marshalBool, unSize )
+    VGenum, VGint, VGImage, marshalBool )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
     vgCreateImage, vgDestroyImage, vgClearImage,
     vgImageSubData, vgGetImageSubData, 
@@ -88,6 +88,8 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
                 MaxImageWidth, MaxImageHeight, 
                 MaxImagePixels, MaxImageBytes ) )
 
+import Graphics.Rendering.OpenVG.VG.Utils ( bitwiseOr, unSizeM,     unSize )
+
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Position(..), Size (..) )  
 
@@ -116,8 +118,8 @@ data ImageQuality =
 -- > vgSeti(VG_IMAGE_QUALITY, quality);
 -- 
 imageQuality :: SettableStateVar ImageQuality  
-imageQuality = makeSettableStateVar $ \mode -> 
-    seti ImageQuality (fromIntegral $ marshalImageQuality mode)  
+imageQuality = makeSettableStateVar $ 
+    seti ImageQuality . fromIntegral . marshalImageQuality
     
     
 --------------------------------------------------------------------------------
@@ -222,11 +224,13 @@ withImage fmt sz qual action = do
     
 -- | @createImage@ corresponds to the OpenVG function @vgCreateImage@.             
 createImage :: ImageFormat -> Size -> [ImageQuality] -> IO VGImage 
-createImage SRGBA8888 sz qs = let (w,h) = unSize sz in
-    vgCreateImage (marshalImageFormat SRGBA8888) w h (bitwiseOr qs) 
-createImage _         _  _  = error $ "unsupported image format"
+createImage SRGBA8888 sz qs = 
+    unSizeM (\w h -> vgCreateImage (marshalImageFormat SRGBA8888)
+                                   w 
+                                   h 
+                                   (bitwiseOr marshalImageQuality qs)) sz
 
-bitwiseOr [] = undefined
+createImage _         _  _  = error $ "unsupported image format"
 
 -- | @destroyImage@ corresponds to the OpenVG function @vgDestroyImage@. 
 destroyImage :: VGImage -> IO () 
@@ -238,17 +242,17 @@ destroyImage = vgDestroyImage
  
 -- | Get the ImageFormat used to defined the image.
 imageFormat :: VGImage -> GettableStateVar ImageFormat
-imageFormat h = makeGettableStateVar $ do 
-    a <- getParameteri h vg_IMAGE_FORMAT
-    return $ unmarshalImageFormat $ fromIntegral a 
+imageFormat h = makeGettableStateVar $ 
+   getParameteri h vg_IMAGE_FORMAT >>= 
+   return . unmarshalImageFormat . fromIntegral
 
 -- | Get the width used to defined the image.
 imageWidth :: VGImage -> GettableStateVar VGint
-imageWidth h = makeGettableStateVar $ getParameteri h vg_IMAGE_WIDTH
+imageWidth = makeGettableStateVar . flip getParameteri vg_IMAGE_WIDTH
 
 -- | Get the height used to defined the image.
 imageHeight :: VGImage -> GettableStateVar VGint
-imageHeight h = makeGettableStateVar $ getParameteri h vg_IMAGE_HEIGHT
+imageHeight = makeGettableStateVar . flip getParameteri vg_IMAGE_HEIGHT
  
 
 --------------------------------------------------------------------------------
@@ -257,27 +261,23 @@ imageHeight h = makeGettableStateVar $ getParameteri h vg_IMAGE_HEIGHT
 -- | Fill the given rectangle inside the image with the current color setting
 -- from the @StateVar@ 'clearColor'.
 clearImage :: VGImage -> Position -> Size -> IO () 
-clearImage handle (Position x y) sz = 
-   let (w,h) = unSize sz in vgClearImage handle x y w h
+clearImage handle (Position x y) = unSizeM $ vgClearImage handle x y
             
             
 -- | @imageSubData@ corresponds to the OpenVG function @vgImageSubData@. 
 imageSubData :: VGImage -> Ptr a -> VGint -> ImageFormat
                   -> Position -> Size -> IO ()
-imageSubData image imgdata stride fmt (Position x y) sz =
-    vgImageSubData image imgdata stride (marshalImageFormat fmt) x y w h  
-  where
-    (w,h) = unSize sz
-   
+imageSubData image imgdata stride fmt (Position x y) =
+    unSizeM $ vgImageSubData image imgdata stride (marshalImageFormat fmt) x y
+
+
 -- | @getImageSubData@ corresponds to the OpenVG function 
 -- @vgGetImageSubData@. 
 --
 getImageSubData :: VGImage -> Ptr a -> VGint -> ImageFormat
                     -> Position -> Size -> IO ()
-getImageSubData image imgdata stride fmt (Position x y) sz = 
-     vgGetImageSubData image imgdata stride (marshalImageFormat fmt) x y w h 
-  where
-    (w,h) = unSize sz
+getImageSubData image imgdata stride fmt (Position x y) = 
+    unSizeM $ vgGetImageSubData image imgdata stride (marshalImageFormat fmt) x y
    
 --------------------------------------------------------------------------------
 
@@ -291,9 +291,7 @@ getImageSubData image imgdata stride fmt (Position x y) sz =
 copyImage :: VGImage -> Position -> VGImage -> Position
                 -> Size -> Bool -> IO ()
 copyImage dst (Position dx dy) src (Position sx sy) sz dither = 
-    vgCopyImage dst dx dy src sx sy w h (marshalBool dither)
-  where
-     (w,h) = unSize sz
+    unSizeM (\w h -> vgCopyImage dst dx dy src sx sy w h (marshalBool dither)) sz
 
 --------------------------------------------------------------------------------
 -- Drawing iamges to the drawing surface
@@ -312,8 +310,8 @@ data ImageMode =
 --
 -- @ vgSeti(VG_IMAGE_MODE, drawImageMode); @
 drawImageMode :: SettableStateVar ImageMode  
-drawImageMode = makeSettableStateVar $ \mode -> 
-    seti ImageMode (fromIntegral $ marshalImageMode mode)  
+drawImageMode = makeSettableStateVar $
+    seti ImageMode . fromIntegral . marshalImageMode
 
 -- | @drawImage@ corresponds to the OpenVG function @vgDrawImage@. 
 drawImage :: VGImage -> IO ()
@@ -325,31 +323,31 @@ drawImage = vgDrawImage
 
 -- | @setPixels@ corresponds to the OpenVG function @vgSetPixels@. 
 setPixels :: Position -> VGImage -> Position -> Size -> IO ()
-setPixels (Position dx dy) src (Position sx sy) sz = let (w,h) = unSize sz in 
-    vgSetPixels dx dy src sx sy w h
+setPixels (Position dx dy) src (Position sx sy) =
+    unSizeM $ vgSetPixels dx dy src sx sy
 
 -- | @writePixels@ corresponds to the OpenVG function @vgWritePixels@. 
 writePixels :: Ptr a -> VGint -> ImageFormat -> Position -> Size -> IO ()
-writePixels pixeldata stride fmt (Position dx dy) sz = let (w,h) = unSize sz in 
-    vgWritePixels pixeldata stride (marshalImageFormat fmt) dx dy w h
+writePixels pixeldata stride fmt (Position dx dy) =  
+    unSizeM $ vgWritePixels pixeldata stride (marshalImageFormat fmt) dx dy
 
 -- | @getPixels@ corresponds to the OpenVG function @vgGetPixels@. 
 getPixels :: VGImage  -> Position -> Position -> Size -> IO ()
-getPixels dst (Position dx dy) (Position sx sy) sz = let (w,h) = unSize sz in 
-    vgGetPixels dst dx dy sx sy w h
+getPixels dst (Position dx dy) (Position sx sy) =  
+    unSizeM $ vgGetPixels dst dx dy sx sy
 
 -- | @readPixels@ corresponds to the OpenVG function @vgReadPixels@.
 readPixels :: Ptr a -> VGint -> ImageFormat -> Position -> Size -> IO ()
-readPixels pixeldata stride fmt (Position sx sy) sz = let (w,h) = unSize sz in 
-    vgReadPixels pixeldata stride (marshalImageFormat fmt) sx sy w h
+readPixels pixeldata stride fmt (Position sx sy) = unSizeM $
+    vgReadPixels pixeldata stride (marshalImageFormat fmt) sx sy
 
 --------------------------------------------------------------------------------
 -- Copying portions of the drawing surface
 
 -- | @copyPixels@ corresponds to the OpenVG function @vgCopyPixels@.
 copyPixels :: Position -> Position -> Size -> IO ()
-copyPixels (Position dx dy) (Position sx sy) sz = 
-    let (w,h) = unSize sz in vgCopyPixels dx dy sx sy w h
+copyPixels (Position dx dy) (Position sx sy) = 
+    unSizeM $ vgCopyPixels dx dy sx sy
 
 
                                   

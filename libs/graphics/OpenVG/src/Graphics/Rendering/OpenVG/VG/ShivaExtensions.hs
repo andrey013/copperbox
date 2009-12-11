@@ -25,15 +25,23 @@ module Graphics.Rendering.OpenVG.VG.ShivaExtensions (
   destroyContextSH
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( vg_TRUE, unSize )
+import Graphics.Rendering.OpenVG.VG.BasicTypes ( vg_TRUE, unmarshalBool )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
         vgCreateContextSH, vgResizeSurfaceSH, vgDestroyContextSH ) 
 
+import Graphics.Rendering.OpenVG.VG.Utils ( unSize, unSizeM )
+
+
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Size(..) )
 
--- | Create an OpenVG context, if the creation is successful run the 
--- action (destroying the context afterwards). If the creation fails
--- run the failureAction. 
+import Control.Applicative
+import Control.Monad ( ap )
+
+
+-- | Create an OpenVG context, if the creation is successful run 
+-- the action (destroying the context afterwards). If the 
+-- creation fails run the failureAction. 
+-- 
 withContextSH :: Size -> (IO a) -> (IO a) -> IO a
 withContextSH sz action failureAction = do
     okb <- createContextSH sz
@@ -42,16 +50,17 @@ withContextSH sz action failureAction = do
  
 
 
--- | Create an OpenVG context on top of an already created OpenGL context.   
+-- | Create an OpenVG context on top of an already created 
+-- OpenGL context.
+--
 createContextSH :: Size -> IO Bool
-createContextSH sz = let (w,h) = unSize sz in do 
-    vgbool <- vgCreateContextSH w h
-    if vgbool == vg_TRUE then return True else return False
+createContextSH = unSizeM $ \w h -> unmarshalBool <$> vgCreateContextSH w h
 
--- | @resizeSurfaceSH@ should be called whenever the size of the 
+-- | 'resizeSurfaceSH' should be called whenever the size of the 
 -- surface changes.    
+--
 resizeSurfaceSH :: Size -> IO ()
-resizeSurfaceSH sz = let (w,h) = unSize sz in vgResizeSurfaceSH w h
+resizeSurfaceSH = unSizeM vgResizeSurfaceSH
 
 -- | Destroy the OpenVG context.
 destroyContextSH :: IO ()

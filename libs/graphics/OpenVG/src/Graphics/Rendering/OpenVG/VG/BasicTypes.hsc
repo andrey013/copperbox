@@ -34,15 +34,12 @@ module Graphics.Rendering.OpenVG.VG.BasicTypes (
   
   -- * Points
   Point,
-  
-  -- * Size conversion
-  unSize  
+
 ) where
 
 #include <vg/openvg.h>
 
 import Graphics.Rendering.OpenGL.Raw.Core31
-import Graphics.Rendering.OpenGL.GL.CoordTrans ( Size(..) )
 
 import Foreign.Ptr
 
@@ -92,12 +89,5 @@ type VGPaint = VGHandle
 
 -- | Point (VGfloat,VGfloat) 
 type Point = (VGfloat, VGfloat)
-
-
--- Helper - unwrap Size
-
-unSize :: Size -> (VGint,VGint)
-unSize (Size w h) = (fromIntegral w, fromIntegral h)
-
 
 

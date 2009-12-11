@@ -33,12 +33,14 @@ module Graphics.Rendering.OpenVG.VG.Scissoring (
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGint, VGfloat, marshalBool, unSize )
+    VGint, VGfloat, marshalBool )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( vgClear )
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
     ParamType ( Scissoring, ScissorRects, MaxScissorRects, 
                 Masking, ClearColor ),   
     seti, geti, setiv, setfv )
+
+import Graphics.Rendering.OpenVG.VG.Utils ( unSize, unSizeM )
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Position(..), Size(..) )
 import Graphics.Rendering.OpenGL.GL.VertexSpec ( Color4(..) )
@@ -53,8 +55,8 @@ import Data.StateVar (
 
 -- | Enable or disable scissoring.
 scissoring :: SettableStateVar Bool  
-scissoring = makeSettableStateVar $ \a -> 
-    seti Scissoring (fromIntegral $ marshalBool a) 
+scissoring = makeSettableStateVar $ 
+    seti Scissoring . fromIntegral . marshalBool
 
 type ScissorRect = (Position, Size) 
     
@@ -84,7 +86,7 @@ data MaskOperation =
 
 -- | Enable or disable alpha masking.   
 alphaMasking :: SettableStateVar Bool
-alphaMasking = makeSettableStateVar $ \a -> seti Masking (marshalBool a)  
+alphaMasking = makeSettableStateVar $ seti Masking . marshalBool
 
 -- vgMask not implemented in shiva-vg
 
@@ -98,7 +100,7 @@ clearColor = makeSettableStateVar $
 
 -- | @clear@ corresponds to the OpenVG function @vgClear@.
 clear :: Position -> Size -> IO ()
-clear (Position x y) sz = let (w,h) = unSize sz in vgClear x y w h
+clear (Position x y) = unSizeM $ vgClear x y
 
 
 --------------------------------------------------------------------------------

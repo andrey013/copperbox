@@ -131,6 +131,8 @@ import Data.StateVar (
     GettableStateVar, makeGettableStateVar,
     ( $= ) ) 
 
+import Control.Applicative
+import Control.Monad
 import Data.Int ( Int8, Int16, Int32 )
 import Foreign.Marshal.Array ( newArray )
 import Foreign.Storable ( Storable )
@@ -248,7 +250,7 @@ createPath typ scl bi sch cch cs =
  
 -- | @clearPath@ corresponds to the OpenVG function @vgClearPath@.         
 clearPath :: VGPath -> [PathCapabilities] -> IO ()
-clearPath h cs = vgClearPath h (bitwiseOr marshalPathCapabilities cs)
+clearPath h = vgClearPath h . bitwiseOr marshalPathCapabilities
 
 -- | @destroyPath@ corresponds to the OpenVG function @vgDestroyPath@. 
 destroyPath :: VGPath -> IO ()
@@ -260,34 +262,28 @@ destroyPath = vgDestroyPath
 -- | @format@ - get the path format. Currently the only supported 
 -- format is @VG_PATH_FORMAT_STANDARD@ - 0. 
 format :: VGPath -> GettableStateVar VGint
-format h = makeGettableStateVar $
-    getParameteri h vg_PATH_FORMAT
+format = makeGettableStateVar . flip getParameteri vg_PATH_FORMAT
 
 -- | @datatype@ - get the PathDatatype.
 datatype :: VGPath -> GettableStateVar PathDatatype
-datatype h = makeGettableStateVar $ do
-    a <- getParameteri h vg_PATH_DATATYPE
-    return $ unmarshalPathDatatype $ fromIntegral a
+datatype = makeGettableStateVar . liftM (unmarshalPathDatatype . fromIntegral)  
+                                . (getParameteri `flip` vg_PATH_DATATYPE)
 
 -- | @pathScale@ - get the scaling factor of the path.    
 pathScale :: VGPath -> GettableStateVar VGfloat
-pathScale h = makeGettableStateVar $
-    getParameterf h vg_PATH_SCALE
+pathScale = makeGettableStateVar . flip getParameterf vg_PATH_SCALE
 
 -- | @bias@ - get the bias factor of the path. 
 bias :: VGPath -> GettableStateVar VGfloat
-bias h = makeGettableStateVar $
-    getParameterf h vg_PATH_BIAS
+bias = makeGettableStateVar . flip getParameterf vg_PATH_BIAS
 
 -- | @numSegments@ - get the number of segments stored in the path.     
 numSegments :: VGPath -> GettableStateVar VGint 
-numSegments h = makeGettableStateVar $
-    getParameteri h vg_PATH_NUM_SEGMENTS
+numSegments = makeGettableStateVar . flip getParameteri vg_PATH_NUM_SEGMENTS
 
 -- | @numSegments@ - get the total number of coordinates stored in the path. 
 numCoords :: VGPath -> GettableStateVar VGint 
-numCoords h = makeGettableStateVar $
-    getParameteri h vg_PATH_NUM_COORDS
+numCoords = makeGettableStateVar . flip getParameteri vg_PATH_NUM_COORDS
 
    
 --------------------------------------------------------------------------------
@@ -296,15 +292,14 @@ numCoords h = makeGettableStateVar $
 -- | @getPathCapabilities@ corresponds to the OpenVG 
 -- function @vgGetPathCapabilities@. 
 getPathCapabilities :: VGPath -> IO [PathCapabilities]
-getPathCapabilities h = do 
-    b <- vgGetPathCapabilities h
-    return $ unbits unmarshalPathCapabilities b
+getPathCapabilities h = 
+    unbits unmarshalPathCapabilities <$> vgGetPathCapabilities h
     
 -- | @removePathCapabilities@ corresponds to the OpenVG 
 -- function @vgRemovePathCapabilities@.  
 removePathCapabilities :: VGPath -> [PathCapabilities] -> IO ()
-removePathCapabilities h cs =
-     vgRemovePathCapabilities h (bitwiseOr marshalPathCapabilities cs)
+removePathCapabilities h =
+     vgRemovePathCapabilities h . bitwiseOr marshalPathCapabilities
 
 --------------------------------------------------------------------------------
 -- Copying data between paths
@@ -339,9 +334,8 @@ appendPathData h cs ds = do
 -- | @modifyPathCoords@ corresponds to the OpenVG 
 -- function @vgModifyPathCoords@. 
 modifyPathCoords :: StorablePathData a => VGPath -> VGint -> [a] -> IO ()
-modifyPathCoords h start ds = do
-    d_arr   <- newArray ds
-    vgModifyPathCoords h start (fromIntegral $ length ds) d_arr
+modifyPathCoords h start ds = 
+    newArray ds >>= vgModifyPathCoords h start (fromIntegral $ length ds) 
     
 --------------------------------------------------------------------------------
 -- Transforming a path
@@ -360,9 +354,8 @@ transformPath = vgTransformPath
 --------------------------------------------------------------------------------
 -- Interpolating between paths
 interpolatePath :: VGPath -> VGPath -> VGPath -> VGfloat -> IO Bool
-interpolatePath dst start end amount = do 
-    a <- vgInterpolatePath dst start end amount
-    return $ unmarshalBool a
+interpolatePath dst start end amount =
+    unmarshalBool <$> vgInterpolatePath dst start end amount
   
         
 --------------------------------------------------------------------------------
@@ -370,8 +363,7 @@ interpolatePath dst start end amount = do
 
 -- | Set the line width.
 lineWidth :: SettableStateVar VGfloat
-lineWidth = makeSettableStateVar $ \a -> 
-    setf StrokeLineWidth a
+lineWidth = makeSettableStateVar $ setf StrokeLineWidth
 
 -- | @CapStyle@ corresponds to the OpenVG enumeration @VGCapStyle@.   
 data CapStyle = 
@@ -383,8 +375,8 @@ data CapStyle =
    
 -- | Set the end cap style.
 capStyle :: SettableStateVar CapStyle
-capStyle = makeSettableStateVar $ \a -> 
-    seti StrokeCapStyle (fromIntegral $ marshalCapStyle a)
+capStyle = makeSettableStateVar $
+    seti StrokeCapStyle . fromIntegral . marshalCapStyle
 
 -- | @JoinStyle@ corresponds to the OpenVG enumeration @VGJoinStyle@.  
 data JoinStyle = 
@@ -395,21 +387,20 @@ data JoinStyle =
    
 -- | Set the join style.    
 joinStyle :: SettableStateVar JoinStyle
-joinStyle = makeSettableStateVar $ \a -> 
-    seti StrokeJoinStyle (fromIntegral $ marshalJoinStyle a)
+joinStyle = makeSettableStateVar $  
+    seti StrokeJoinStyle . fromIntegral . marshalJoinStyle
 
 -- | Set the miter limit. 
 miterLimit :: SettableStateVar VGfloat
-miterLimit = makeSettableStateVar $ \a -> setf StrokeMiterLimit a
+miterLimit = makeSettableStateVar $ setf StrokeMiterLimit
 
 -- | Get the maximum dash count supported by the implementation.
 maxDashCount :: GettableStateVar VGint 
-maxDashCount = makeGettableStateVar $
-    geti MaxDashCount
+maxDashCount = makeGettableStateVar $ geti MaxDashCount
 
 -- | Set the dash pattern.
 dashPattern :: SettableStateVar [VGfloat]
-dashPattern = makeSettableStateVar $ \a -> setfv StrokeDashPattern a
+dashPattern = makeSettableStateVar $ setfv StrokeDashPattern
 
 -- | Disable the dash pattern.
 disableDashPattern :: IO ()
@@ -417,13 +408,12 @@ disableDashPattern = dashPattern $= []
 
 -- | Set the dash phase.
 dashPhase :: SettableStateVar VGfloat
-dashPhase = makeSettableStateVar $ \a -> 
-    setf StrokeDashPhase a
+dashPhase = makeSettableStateVar $ setf StrokeDashPhase
 
 -- | Reset the dash phase.    
 dashPhaseReset :: SettableStateVar Bool
-dashPhaseReset = makeSettableStateVar $ \a -> 
-    seti StrokeDashPhaseReset (marshalBool a)
+dashPhaseReset = 
+    makeSettableStateVar $ seti StrokeDashPhaseReset . marshalBool
 
 --------------------------------------------------------------------------------    
 -- Filling or stroking a path
@@ -436,8 +426,7 @@ data FillRule =
 
 -- | Set the fill rule.   
 fillRule :: SettableStateVar FillRule
-fillRule = makeSettableStateVar $ \a -> 
-    seti FillRule (fromIntegral $ marshalFillRule a)
+fillRule = makeSettableStateVar $ seti FillRule . fromIntegral . marshalFillRule
 
 -- | @PaintMode@ corresponds to the OpenVG enumeration @VGPaintMode@. 
 data PaintMode =
@@ -483,48 +472,48 @@ unmarshalPathDatatype x
 
 marshalPathCommand :: PathCommand -> VGenum
 marshalPathCommand x = case x of
-    ClosePath -> vg_CLOSE_PATH
-    MoveToAbs -> vg_MOVE_TO_ABS
-    MoveToRel -> vg_MOVE_TO_REL
-    LineToAbs -> vg_LINE_TO_ABS
-    LineToRel -> vg_LINE_TO_REL
-    HLineToAbs -> vg_HLINE_TO_ABS
-    HLineToRel -> vg_HLINE_TO_REL
-    VLineToAbs -> vg_VLINE_TO_ABS
-    VLineToRel -> vg_VLINE_TO_REL
-    QuadToAbs -> vg_QUAD_TO_ABS
-    QuadToRel -> vg_QUAD_TO_REL
-    CubicToAbs -> vg_CUBIC_TO_ABS
-    CubicToRel -> vg_CUBIC_TO_REL
-    SQuadToAbs -> vg_SQUAD_TO_ABS
-    SQuadToRel -> vg_SQUAD_TO_REL
-    SCubicToAbs -> vg_SCUBIC_TO_ABS
-    SCubicToRel -> vg_SCUBIC_TO_REL
+    ClosePath    -> vg_CLOSE_PATH
+    MoveToAbs    -> vg_MOVE_TO_ABS
+    MoveToRel    -> vg_MOVE_TO_REL
+    LineToAbs    -> vg_LINE_TO_ABS
+    LineToRel    -> vg_LINE_TO_REL
+    HLineToAbs   -> vg_HLINE_TO_ABS
+    HLineToRel   -> vg_HLINE_TO_REL
+    VLineToAbs   -> vg_VLINE_TO_ABS
+    VLineToRel   -> vg_VLINE_TO_REL
+    QuadToAbs    -> vg_QUAD_TO_ABS
+    QuadToRel    -> vg_QUAD_TO_REL
+    CubicToAbs   -> vg_CUBIC_TO_ABS
+    CubicToRel   -> vg_CUBIC_TO_REL
+    SQuadToAbs   -> vg_SQUAD_TO_ABS
+    SQuadToRel   -> vg_SQUAD_TO_REL
+    SCubicToAbs  -> vg_SCUBIC_TO_ABS
+    SCubicToRel  -> vg_SCUBIC_TO_REL
     SCCWArcToAbs -> vg_SCCWARC_TO_ABS
     SCCWArcToRel -> vg_SCCWARC_TO_REL
-    SCWArcToAbs -> vg_SCWARC_TO_ABS
-    SCWArcToRel -> vg_SCWARC_TO_REL
+    SCWArcToAbs  -> vg_SCWARC_TO_ABS
+    SCWArcToRel  -> vg_SCWARC_TO_REL
     LCCWArcToAbs -> vg_LCCWARC_TO_ABS
     LCCWArcToRel -> vg_LCCWARC_TO_REL
-    LCWArcToAbs -> vg_LCWARC_TO_ABS
-    LCWArcToRel -> vg_LCWARC_TO_REL
+    LCWArcToAbs  -> vg_LCWARC_TO_ABS
+    LCWArcToRel  -> vg_LCWARC_TO_REL
 
       
 marshalPathCapabilities :: PathCapabilities -> VGenum
 marshalPathCapabilities x = case x of 
-    AppendFrom -> vg_PATH_CAPABILITY_APPEND_FROM
-    AppendTo -> vg_PATH_CAPABILITY_APPEND_TO
-    Modify -> vg_PATH_CAPABILITY_MODIFY
-    TransformFrom -> vg_PATH_CAPABILITY_TRANSFORM_FROM
-    TransformTo -> vg_PATH_CAPABILITY_TRANSFORM_TO
-    InterpolateFrom -> vg_PATH_CAPABILITY_INTERPOLATE_FROM
-    InterpolateTo -> vg_PATH_CAPABILITY_INTERPOLATE_TO
-    PathLength -> vg_PATH_CAPABILITY_PATH_LENGTH
-    PointAlongPath -> vg_PATH_CAPABILITY_POINT_ALONG_PATH
-    TangentAlongPath -> vg_PATH_CAPABILITY_TANGENT_ALONG_PATH
-    PathBounds -> vg_PATH_CAPABILITY_PATH_BOUNDS
+    AppendFrom           -> vg_PATH_CAPABILITY_APPEND_FROM
+    AppendTo             -> vg_PATH_CAPABILITY_APPEND_TO
+    Modify               -> vg_PATH_CAPABILITY_MODIFY
+    TransformFrom        -> vg_PATH_CAPABILITY_TRANSFORM_FROM
+    TransformTo          -> vg_PATH_CAPABILITY_TRANSFORM_TO
+    InterpolateFrom      -> vg_PATH_CAPABILITY_INTERPOLATE_FROM
+    InterpolateTo        -> vg_PATH_CAPABILITY_INTERPOLATE_TO
+    PathLength           -> vg_PATH_CAPABILITY_PATH_LENGTH
+    PointAlongPath       -> vg_PATH_CAPABILITY_POINT_ALONG_PATH
+    TangentAlongPath     -> vg_PATH_CAPABILITY_TANGENT_ALONG_PATH
+    PathBounds           -> vg_PATH_CAPABILITY_PATH_BOUNDS
     PathTransfomedBounds -> vg_PATH_CAPABILITY_PATH_TRANSFORMED_BOUNDS
-    CapabilityAll -> vg_PATH_CAPABILITY_ALL
+    CapabilityAll        -> vg_PATH_CAPABILITY_ALL
 
 
 unmarshalPathCapabilities :: VGenum -> PathCapabilities 
@@ -547,8 +536,8 @@ unmarshalPathCapabilities x
  
 marshalCapStyle :: CapStyle -> VGenum
 marshalCapStyle x = case x of
-    CButt -> vg_CAP_BUTT
-    CRound -> vg_CAP_ROUND
+    CButt   -> vg_CAP_BUTT
+    CRound  -> vg_CAP_ROUND
     CSquare -> vg_CAP_SQUARE
 
     
@@ -567,7 +556,7 @@ marshalFillRule x = case x of
 marshalPaintMode :: PaintMode -> VGenum     
 marshalPaintMode x = case x of 
     StrokePath -> vg_STROKE_PATH
-    FillPath -> vg_FILL_PATH
+    FillPath   -> vg_FILL_PATH
     
 unmarshalPaintMode :: VGenum -> PaintMode 
 unmarshalPaintMode x

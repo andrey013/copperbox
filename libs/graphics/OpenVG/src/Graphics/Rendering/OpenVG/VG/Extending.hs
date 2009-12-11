@@ -58,8 +58,8 @@ stringId sid = makeGettableStateVar $ do
    
 marshalStringID :: StringID -> VGenum
 marshalStringID x = case x of 
-    Vendor -> vg_VENDOR
-    Renderer -> vg_RENDERER
-    Version -> vg_VERSION
+    Vendor     -> vg_VENDOR
+    Renderer   -> vg_RENDERER
+    Version    -> vg_VERSION
     Extensions -> vg_EXTENSIONS
    

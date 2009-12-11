@@ -64,16 +64,16 @@ blendMode = makeSettableStateVar $
 
 marshalBlendMode :: BlendMode -> VGenum
 marshalBlendMode x = case x of
-    Src -> vg_BLEND_SRC
-    SrcOver -> vg_BLEND_SRC_OVER
-    DstOver -> vg_BLEND_DST_OVER
-    SrcIn -> vg_BLEND_SRC_IN
-    DstIn -> vg_BLEND_DST_IN
+    Src       -> vg_BLEND_SRC
+    SrcOver   -> vg_BLEND_SRC_OVER
+    DstOver   -> vg_BLEND_DST_OVER
+    SrcIn     -> vg_BLEND_SRC_IN
+    DstIn     -> vg_BLEND_DST_IN
     Multiply' -> vg_BLEND_MULTIPLY
-    Screen -> vg_BLEND_SCREEN
-    Darken -> vg_BLEND_DARKEN
-    Lighten -> vg_BLEND_LIGHTEN
-    Additive -> vg_BLEND_ADDITIVE
+    Screen    -> vg_BLEND_SCREEN
+    Darken    -> vg_BLEND_DARKEN
+    Lighten   -> vg_BLEND_LIGHTEN
+    Additive  -> vg_BLEND_ADDITIVE
     
 
 

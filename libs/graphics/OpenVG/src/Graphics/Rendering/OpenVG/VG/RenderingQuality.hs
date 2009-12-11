@@ -64,6 +64,8 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
 import Data.StateVar (
     StateVar(), makeStateVar, SettableStateVar, makeSettableStateVar )   
 
+import Control.Applicative
+import Control.Monad ( liftM )
 import Foreign.Ptr ( Ptr )   
 
 
@@ -80,8 +82,8 @@ data RenderingQuality =
 
 -- | Set the rendering quality - the default is /Better/.
 renderingQuality :: SettableStateVar RenderingQuality  
-renderingQuality = makeSettableStateVar $ \mode -> 
-    seti RenderingQuality (fromIntegral $ marshalRenderingQuality mode) 
+renderingQuality = makeSettableStateVar $
+    seti RenderingQuality . fromIntegral . marshalRenderingQuality
     
 --------------------------------------------------------------------------------
 -- Additional quality settings 
@@ -100,8 +102,7 @@ pixelLayout :: StateVar PixelLayout
 pixelLayout = makeStateVar getPixelLayout setPixelLayout
   where
     getPixelLayout :: IO PixelLayout
-    getPixelLayout = geti ScreenLayout >>= 
-                     return . unmarshalPixelLayout . fromIntegral
+    getPixelLayout = unmarshalPixelLayout . fromIntegral <$> geti ScreenLayout
         
     setPixelLayout :: PixelLayout -> IO ()  
     setPixelLayout = seti ScreenLayout . fromIntegral . marshalPixelLayout
@@ -160,15 +161,15 @@ rotate = vgRotate
 marshalRenderingQuality :: RenderingQuality -> VGenum
 marshalRenderingQuality x = case x of
     Nonantialiased' -> vg_RENDERING_QUALITY_NONANTIALIASED  
-    Faster' -> vg_RENDERING_QUALITY_FASTER
-    Better' -> vg_RENDERING_QUALITY_BETTER
+    Faster'         -> vg_RENDERING_QUALITY_FASTER
+    Better'         -> vg_RENDERING_QUALITY_BETTER
 
 
 marshalPixelLayout :: PixelLayout -> VGenum
 marshalPixelLayout x = case x of
-    Unknown -> vg_PIXEL_LAYOUT_UNKNOWN
-    RgbVertical -> vg_PIXEL_LAYOUT_RGB_VERTICAL
-    BgrVertical -> vg_PIXEL_LAYOUT_BGR_VERTICAL
+    Unknown       -> vg_PIXEL_LAYOUT_UNKNOWN
+    RgbVertical   -> vg_PIXEL_LAYOUT_RGB_VERTICAL
+    BgrVertical   -> vg_PIXEL_LAYOUT_BGR_VERTICAL
     RgbHorizontal -> vg_PIXEL_LAYOUT_RGB_HORIZONTAL
     BgrHorizontal -> vg_PIXEL_LAYOUT_BGR_HORIZONTAL
 
@@ -186,9 +187,9 @@ unmarshalPixelLayout x
     
 marshalMatrixMode :: MatrixMode -> VGenum
 marshalMatrixMode x = case x of 
-    PathUserToSurface -> vg_MATRIX_PATH_USER_TO_SURFACE
+    PathUserToSurface  -> vg_MATRIX_PATH_USER_TO_SURFACE
     ImageUserToSurface -> vg_MATRIX_IMAGE_USER_TO_SURFACE
-    FillPaintToUser -> vg_MATRIX_FILL_PAINT_TO_USER
-    StrokePaintToUser -> vg_MATRIX_STROKE_PAINT_TO_USER
+    FillPaintToUser    -> vg_MATRIX_FILL_PAINT_TO_USER
+    StrokePaintToUser  -> vg_MATRIX_STROKE_PAINT_TO_USER
     
 
