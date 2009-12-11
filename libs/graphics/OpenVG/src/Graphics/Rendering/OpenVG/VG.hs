@@ -7,13 +7,10 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Stability   :  unstable
 -- Portability :  GHC
 --
--- A Haskell binding for the OpenVG vector and raster graphics API 
--- (version 1.0.1).
--- The implementation targets the Shiva-VG implementation which is not 
--- complete. Image Filters and Querying Hardware are not implemented. 
+-- Import (convenience) module for the VG library modules.
 --
 --------------------------------------------------------------------------------
 

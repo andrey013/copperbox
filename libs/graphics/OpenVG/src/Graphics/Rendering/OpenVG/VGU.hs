@@ -7,10 +7,10 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Stability   :  unstable
 -- Portability :  GHC
 --
--- A Haskell binding for the OpenVG vector and raster graphics API.
+-- Import (convenience) module for the VGU utility library modules.
 --
 --------------------------------------------------------------------------------
 

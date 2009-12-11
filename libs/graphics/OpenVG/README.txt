@@ -3,7 +3,10 @@ Haskell bindings to ShivaVG (OpenVG implementation).
 Haskell OpenVG 0.1 binds to ShivaVG-0.2.0
 Haskell OpenVG 0.2 binds to ShivaVG-0.2.1
 Haskell OpenVG 0.2.1 binds to ShivaVG-0.2.1
-Haskell OpenVG 0.3.0 binds to ShiaVG-0.2.1
+Haskell OpenVG 0.3.0 binds to ShiaVG-0.2.1 
+(thanks to Stefan Kirsten for the patches).
+
+
 
 I've tested the bindings on both Windows XP (MinGW/Msys) 
 and MacOSX Leopard.

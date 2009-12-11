@@ -9,7 +9,7 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Stability   :  unstable
 -- Portability :  GHC
 --
 -- This module corresponds to section 8 (Paths) 

@@ -7,11 +7,17 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Stability   :  deprecated
 -- Portability :  GHC
 --
--- Colour definitions named with the SVG \'named colours\', but
--- defining OpenGL colours. 
+-- \*\* This module is deprecated \*\*
+-- 
+-- Colour definitions named with the SVG \'named colours\'.
+-- 
+-- If this module is /useful/ it is still be better off
+-- outside the OpenVG bindings package and presented in some 
+-- /higher-level/ package.
+--
 --
 --------------------------------------------------------------------------------
 

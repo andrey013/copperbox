@@ -7,7 +7,7 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Stability   :  unstable
 -- Portability :  GHC
 --
 -- This module corresponds to section 4.3 (Forcing Drawing to Complete) 
@@ -29,11 +29,21 @@ import Graphics.Rendering.OpenVG.VG.CFunDecls (
 --------------------------------------------------------------------------------
 --  Forcing drawing to complete
 
--- | @flush@ - corresponds directly to the OpenVG call @vgFlush@.
+-- | 'flush' ensures all the outstanding drawing requests on the 
+-- current context are completed. The call may return before the 
+-- actual drawing takes place.
+--
+-- 'flush' corresponds to the OpenVG call @vgFlush@.
+-- 
 flush :: IO ()
 flush = vgFlush
 
--- | @finish@ - corresponds directly to the OpenVG call @vgFinish@.
+-- | 'finish' forces all the outstanding drawing requests on the 
+-- current context are performed. The call returns when drawing is
+-- completed.
+--
+-- 'finish' corresponds to the OpenVG call @vgFinish@.
+--
 finish :: IO ()
 finish = vgFinish
 

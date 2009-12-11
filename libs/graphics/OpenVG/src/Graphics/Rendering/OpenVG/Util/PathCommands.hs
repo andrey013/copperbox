@@ -7,11 +7,20 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Stability   :  deprecated
 -- Portability :  GHC
 --
--- Path Segment commands corresponding to section 8.5.2
 --
+-- \*\* This module is deprecated \*\*
+--
+-- Path Segment shorthand commands patterned after section 8.5.2.
+--
+-- This module is needs more thought - currently it is a sketch 
+-- to help create paths. If it becomes useful in the future it 
+-- is still be better off outside the OpenVG bindings package 
+-- and presented in some /higher-level/ package.
+--
+
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.Util.PathCommands (

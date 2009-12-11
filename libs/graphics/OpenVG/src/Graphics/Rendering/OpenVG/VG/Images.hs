@@ -7,7 +7,7 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Stability   :  unstable
 -- Portability :  GHC
 --
 -- This module corresponds to section 10 (Images) 
@@ -103,6 +103,7 @@ import Foreign.Ptr ( Ptr )
 --------------------------------------------------------------------------------
 -- Image quality
 
+-- | Resampling quality to be used when drawing images.
 data ImageQuality = 
      Nonantialiased
    | Faster
@@ -113,9 +114,8 @@ data ImageQuality =
 -- | Set the image quality - @imageQuality@ is typed wrapper
 -- over this equivalent OpenVG code:
 --
--- @ VGImageQuality quality; @
---
--- @ vgSeti(VG_IMAGE_QUALITY, quality); @
+-- > vgSeti(VG_IMAGE_QUALITY, quality);
+-- 
 imageQuality :: SettableStateVar ImageQuality  
 imageQuality = makeSettableStateVar $ \mode -> 
     seti ImageQuality (fromIntegral $ marshalImageQuality mode)  
@@ -124,8 +124,12 @@ imageQuality = makeSettableStateVar $ \mode ->
 --------------------------------------------------------------------------------
 --  Image formats
 
--- | ImageFormat enumerates /all/ the image formats supported by OpenVG.
--- ShivaVG currently only supports @sRGBA_8888@.
+-- | Image formats and colur spaces supported by OpenVG. 
+--
+-- \*\* NOTE - ImageFormat enumerates /all/ the image formats 
+-- supported by OpenVG. ShivaVG currently only supports 
+-- @sRGBA_8888@. \*\*
+--
 data ImageFormat = 
      -- RGB{A,X} channel ordering
      SRGBX8888
@@ -251,7 +255,7 @@ imageHeight h = makeGettableStateVar $ getParameteri h vg_IMAGE_HEIGHT
 -- Reading and writing image pixels
 
 -- | Fill the given rectangle inside the image with the current color setting
--- from the @StateVar@ 'clearColor'
+-- from the @StateVar@ 'clearColor'.
 clearImage :: VGImage -> Position -> Size -> IO () 
 clearImage handle (Position x y) sz = 
    let (w,h) = unSize sz in vgClearImage handle x y w h
@@ -265,7 +269,9 @@ imageSubData image imgdata stride fmt (Position x y) sz =
   where
     (w,h) = unSize sz
    
--- | @getImageSubData@ corresponds to the OpenVG function @vgGetImageSubData@.                   
+-- | @getImageSubData@ corresponds to the OpenVG function 
+-- @vgGetImageSubData@. 
+--
 getImageSubData :: VGImage -> Ptr a -> VGint -> ImageFormat
                     -> Position -> Size -> IO ()
 getImageSubData image imgdata stride fmt (Position x y) sz = 

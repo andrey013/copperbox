@@ -7,7 +7,7 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Stability   :  unstable
 -- Portability :  GHC
 --
 -- This module corresponds to section 14 (Extending the API) 
@@ -45,11 +45,14 @@ data StringID =
 
 
 -- | Query the OpenVG implementation.   
+-- 
 stringId :: StringID -> GettableStateVar String
 stringId sid = makeGettableStateVar $ do 
     cstr <- vgGetString (marshalStringID sid)
     ans  <- peekCString cstr
     return ans
+
+
 
 --------------------------------------------------------------------------------
    

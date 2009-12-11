@@ -7,7 +7,7 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Stability   :  unstable
 -- Portability :  GHC
 --
 -- This module corresponds to section 16 (The VGU Utility Library) 
@@ -33,7 +33,7 @@ import Graphics.Rendering.OpenVG.VGU.CInternals
 import Graphics.Rendering.OpenVG.VGU.ErrorsInternal ( recordErrorCode )
 import Foreign.Marshal.Array ( newArray )
 
-    
+-- | 'line'    
 line :: VGPath -> VGfloat -> VGfloat -> VGfloat -> VGfloat -> IO ()
 line path x0 y0 x1 y1 = withErrorCode $ vguLine path x0 y0 x1 y1 
 
@@ -43,11 +43,14 @@ polygon path pts closed = do
     pts' <- newArray pts 
     withErrorCode $ vguPolygon path pts' (fromIntegral $ length pts) 
                                          (marshalBool closed)
-            
+           
+-- | 'rect' 
 rect :: VGPath -> VGfloat -> VGfloat -> VGfloat -> VGfloat
                -> IO ()
 rect path x y w h = withErrorCode $ vguRect path x y w h
 
+
+-- | 'roundRect'
 roundRect :: VGPath -> VGfloat -> VGfloat -> VGfloat -> VGfloat
                     -> VGfloat -> VGfloat 
                     -> IO ()
@@ -64,6 +67,7 @@ data ArcType =
   | ArcPie
    deriving ( Eq, Ord, Show )
 
+-- | 'arc'
 arc :: VGPath -> VGfloat -> VGfloat -> VGfloat -> VGfloat
            -> VGfloat -> VGfloat -> ArcType 
            -> IO ()  

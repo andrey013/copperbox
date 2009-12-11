@@ -7,7 +7,7 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Stability   :  unstable
 -- Portability :  GHC
 --
 -- This module corresponds to section 9 (Paint) 
@@ -42,7 +42,7 @@ module Graphics.Rendering.OpenVG.VG.Paint (
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGint, VGfloat, VGImage, VGPaint, Point )
+    VGenum, VGint, VGfloat, VGImage, VGPaint )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
     vgCreatePaint, vgDestroyPaint, 
     vgSetPaint,
@@ -61,15 +61,16 @@ import Graphics.Rendering.OpenVG.VG.Constants (
     vg_COLOR_RAMP_SPREAD_REFLECT,
             
     vg_TILE_FILL, vg_TILE_PAD, vg_TILE_REPEAT, vg_TILE_REFLECT )
+
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
     ParamType( MaxColorRampStops ),
     geti, getParameteri, 
     setParameteri, setParameterfv ) 
     
-import Graphics.Rendering.OpenVG.VG.Paths (
-    PaintMode(..) )
+import Graphics.Rendering.OpenVG.VG.Paths ( PaintMode(..) )
 import Graphics.Rendering.OpenVG.VG.Utils ( 
     Marshal(..), Unmarshal(..), enumValue, unmarshalIntegral, bitwiseOr )
+
 import Graphics.Rendering.OpenGL.GL.VertexSpec ( Color4(..) )
 
 import Data.StateVar (
@@ -77,12 +78,15 @@ import Data.StateVar (
     SettableStateVar, makeSettableStateVar,
     GettableStateVar, makeGettableStateVar )
 
+import Data.Tensor ( Vector4(..) )
+
 --------------------------------------------------------------------------------
 -- Creating and destroying paint objects 
 
 
--- | @withPaint@ - create a paint object, run an action on it, destroy the 
--- paint object.
+-- | @withPaint@ - create a paint object, run an action on it, 
+-- destroy the paint object.
+--
 withPaint :: (VGPaint -> IO a) -> IO a
 withPaint action = do
     img   <- createPaint
@@ -91,25 +95,33 @@ withPaint action = do
     return ans
     
     
--- | @createPaint@ corresponds to the OpenVG function @vgCreatePaint@.
+-- | @createPaint@ - create a paint object and return a handle 
+-- to it.
+--
 createPaint :: IO VGPaint  
 createPaint = vgCreatePaint
 
--- | @destroyPaint@ corresponds to the OpenVG function @vgDestroyPaint@.
+-- | @destroyPaint@ - destroy the resources associted with the 
+-- paint object.
+--
 destroyPaint :: VGPaint -> IO ()
 destroyPaint = vgDestroyPaint
 
 --------------------------------------------------------------------------------
 -- Setting the current paint 
 
--- | Set the paint mode on the supplied handle.
+-- | Set the paint mode of the supplied paint handle.
+--
 setPaint :: VGPaint -> SettableStateVar [PaintMode]
 setPaint h = makeSettableStateVar $ \ms -> vgSetPaint h (bitwiseOr ms)
     
 
--- | Get the paint object currently set for the supplied paint mode. 
--- Note currently @vgGetPaint@ is not working and will throw a runtime error 
--- if called.
+-- | Get the paint object currently set for the supplied paint 
+-- mode.
+-- 
+-- \*\* Note -- currently @vgGetPaint@ is implemented by ShivaVG,
+-- and this stub function will throw a runtime error if called. \*\*
+--
 getPaint :: PaintMode -> GettableStateVar VGPaint
 getPaint paint_mode = makeGettableStateVar $ vgGetPaint (marshal paint_mode)
   where
@@ -120,6 +132,7 @@ getPaint paint_mode = makeGettableStateVar $ vgGetPaint (marshal paint_mode)
 -- Setting paint parameters 
 
 -- | PaintType determines the type of paint to be applied.
+--
 data PaintType = 
      Color
    | LinearGradient
@@ -127,8 +140,9 @@ data PaintType =
    | Pattern
    deriving ( Eq, Ord, Show )
 
--- Control the PaintType of the supplied handle, the default value is
--- @Color@.
+-- | Control the PaintType of the supplied handle, the default 
+-- value of 'paintType' is 'Color'.
+--
 paintType :: VGPaint -> StateVar PaintType
 paintType handle = makeStateVar (getPaintType handle) (setPaintType handle) 
   where
@@ -142,8 +156,10 @@ paintType handle = makeStateVar (getPaintType handle) (setPaintType handle)
         setParameteri h vg_PAINT_TYPE (enumValue v)
 
         
--- Control the color of the supplied handle, the default value is
--- @red=0.0f, green=0.0f, blue=0.0f, alpha=1.0f@      
+-- Control the color of the supplied handle, the default value 
+-- of 'paintColor' is black - @red=0.0f, green=0.0f, blue=0.0f, 
+-- alpha=1.0f@.
+--
 paintColor :: VGPaint -> SettableStateVar (Color4 VGfloat)
 paintColor h = makeSettableStateVar $ 
     \(Color4 r g b a) -> setParameterfv h vg_PAINT_COLOR [r,g,b,a]
@@ -179,17 +195,17 @@ colorRampPremultiplied :: VGPaint -> SettableStateVar Bool
 colorRampPremultiplied h = makeSettableStateVar $ 
     \a -> setParameteri h vg_PAINT_COLOR_RAMP_PREMULTIPLIED (enumValue a)
 
-type LinearGradient = (Point,Point)
+type LinearGradient = Vector4 VGfloat
 
 linearGradient :: VGPaint -> SettableStateVar LinearGradient
-linearGradient h = makeSettableStateVar $ \((x0,y0),(x1,y1)) -> do
+linearGradient h = makeSettableStateVar $ \(Vector4 x0 y0 x1 y1) -> do
     setParameteri  h vg_PAINT_TYPE (fromIntegral vg_PAINT_LINEAR_GRADIENT)
     setParameterfv h vg_PAINT_LINEAR_GRADIENT [x0,y0,x1,y1]
 
-type RadialGradient = (Point,Point,VGfloat)
+type RadialGradient = (Vector4 VGfloat, VGfloat)
 
 radialGradient :: VGPaint -> SettableStateVar RadialGradient
-radialGradient h = makeSettableStateVar $ \((x0,y0),(x1,y1),r) -> do
+radialGradient h = makeSettableStateVar $ \((Vector4 x0 y0 x1 y1),r) -> do
     setParameteri  h vg_PAINT_TYPE (fromIntegral vg_PAINT_RADIAL_GRADIENT)
     setParameterfv h vg_PAINT_RADIAL_GRADIENT [x0,y0,x1,y1,r]
 

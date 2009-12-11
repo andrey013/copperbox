@@ -7,7 +7,7 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  highly unstable
+-- Stability   :  unstable
 -- Portability :  GHC
 --
 -- This module corresponds to section 12 (Blending) 
@@ -38,7 +38,7 @@ import Data.StateVar (
 --------------------------------------------------------------------------------
 -- Setting the blend mode
    
--- | BlendMode defines the possible blend modes.        
+-- | 'BlendMode' defines the possible blend modes.        
 data BlendMode = 
      Src
    | SrcOver
@@ -52,12 +52,11 @@ data BlendMode =
    | Additive
    deriving ( Eq, Ord, Show )
 
--- | Set the blend mode - @blendMode@ is typed wrapper
+-- | Set the blend mode - 'blendMode' is typed wrapper
 -- over this equivalent OpenVG code:
 --
--- @ VGBlendMode mode; @
+-- > vgSeti(VG_BLEND_MODE, mode);
 --
--- @ vgSeti(VG_BLEND_MODE, mode); @
 blendMode :: SettableStateVar BlendMode
 blendMode = makeSettableStateVar $ \mode -> seti BlendMode (enumValue mode)
 
