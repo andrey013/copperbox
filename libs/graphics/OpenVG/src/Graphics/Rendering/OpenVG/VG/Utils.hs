@@ -17,9 +17,9 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.Utils (
-  Marshal(..), Unmarshal(..), enumValue, unmarshalIntegral, 
   bitwiseOr, unbits 
-) where
+
+  ) where
 
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
@@ -27,27 +27,38 @@ import Graphics.Rendering.OpenVG.VG.BasicTypes (
         marshalBool )
 import Data.Bits
 
+{-
 class Marshal a where marshal :: a -> VGenum
 class Unmarshal a where unmarshal :: VGenum -> a 
+-}
 
+{-
+marshalVGint :: VGint -> VGenum
+marshalVGint = fromIntegral 
+-}
+
+{-
 instance Marshal VGint where marshal = fromIntegral
 instance Marshal Bool where marshal = fromIntegral . marshalBool
+-}
 
+{-
 enumValue :: Marshal a => a -> VGint
 enumValue = fromIntegral . marshal
+-}
 
-
+{-
 unmarshalIntegral :: (Integral a, Unmarshal b)  => a -> b
 unmarshalIntegral = unmarshal . fromIntegral
+-}
 
 
-bitwiseOr :: Marshal a => [a] -> VGbitfield
-bitwiseOr = sum . map (fromIntegral . marshal)
-
+bitwiseOr :: (a -> VGenum) ->  [a] -> VGbitfield
+bitwiseOr fn = sum . map (fromIntegral . fn)
 
 -- not the world's best formulation...
-unbits :: Unmarshal a => VGbitfield -> [a]
-unbits bf = map unmarshal $ step bf 0 1 where
+unbits :: (VGenum -> a) -> VGbitfield -> [a]
+unbits fn field = map fn $ step field 0 1 where
     step _ i _ | i > 32         = error $ "bomb"
     step a _ _ | a <= 0         = []
     step a i j | a `testBit` i  = j : step (a - fromIntegral j) (i+1) (j*2)

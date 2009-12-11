@@ -19,6 +19,7 @@ description:
   .
   0.3.0 to 0.4.0 LinearGradient type changed to be Vector4 VGfloat.
   RadialGradient changed to (Vector4 VGfloat, VGfloat).
+  Removed Marshal and Unmarshal type classes.
   Tweaked Haddock docs.
   .
   0.2.1 to 0.3.0 Changes to use the split OpenGL packages, added type 

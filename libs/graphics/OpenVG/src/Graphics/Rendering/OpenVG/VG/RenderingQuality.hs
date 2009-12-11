@@ -60,8 +60,6 @@ import Graphics.Rendering.OpenVG.VG.Constants (
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
     ParamType ( MatrixMode, RenderingQuality, ScreenLayout ), 
     seti, geti  )
-import Graphics.Rendering.OpenVG.VG.Utils ( 
-    Marshal(..), Unmarshal(..), enumValue, unmarshalIntegral )
 
 import Data.StateVar (
     StateVar(), makeStateVar, SettableStateVar, makeSettableStateVar )   
@@ -83,7 +81,7 @@ data RenderingQuality =
 -- | Set the rendering quality - the default is /Better/.
 renderingQuality :: SettableStateVar RenderingQuality  
 renderingQuality = makeSettableStateVar $ \mode -> 
-    seti RenderingQuality (enumValue mode) 
+    seti RenderingQuality (fromIntegral $ marshalRenderingQuality mode) 
     
 --------------------------------------------------------------------------------
 -- Additional quality settings 
@@ -102,12 +100,11 @@ pixelLayout :: StateVar PixelLayout
 pixelLayout = makeStateVar getPixelLayout setPixelLayout
   where
     getPixelLayout :: IO PixelLayout
-    getPixelLayout = do
-        a <- geti ScreenLayout 
-        return $ unmarshalIntegral a
+    getPixelLayout = geti ScreenLayout >>= 
+                     return . unmarshalPixelLayout . fromIntegral
         
     setPixelLayout :: PixelLayout -> IO ()  
-    setPixelLayout a = seti ScreenLayout (enumValue a)  
+    setPixelLayout = seti ScreenLayout . fromIntegral . marshalPixelLayout
     
 --------------------------------------------------------------------------------
 -- Matrix manipulation
@@ -122,8 +119,8 @@ data MatrixMode =
 
 -- | Set the matrix mode.
 matrixMode :: SettableStateVar MatrixMode  
-matrixMode = makeSettableStateVar $ \mode -> 
-    seti MatrixMode (enumValue mode) 
+matrixMode = makeSettableStateVar $  
+    seti MatrixMode . fromIntegral . marshalMatrixMode
 
 -- | @loadIdentity@ corresponds to the OpenVG function @vgLoadIdentity@. 
 loadIdentity :: IO ()
@@ -166,7 +163,6 @@ marshalRenderingQuality x = case x of
     Faster' -> vg_RENDERING_QUALITY_FASTER
     Better' -> vg_RENDERING_QUALITY_BETTER
 
-instance Marshal RenderingQuality where marshal = marshalRenderingQuality
 
 marshalPixelLayout :: PixelLayout -> VGenum
 marshalPixelLayout x = case x of
@@ -176,7 +172,6 @@ marshalPixelLayout x = case x of
     RgbHorizontal -> vg_PIXEL_LAYOUT_RGB_HORIZONTAL
     BgrHorizontal -> vg_PIXEL_LAYOUT_BGR_HORIZONTAL
 
-instance Marshal PixelLayout where marshal = marshalPixelLayout
 
 
 unmarshalPixelLayout :: VGenum -> PixelLayout 
@@ -188,7 +183,6 @@ unmarshalPixelLayout x
     | x == vg_PIXEL_LAYOUT_BGR_HORIZONTAL = BgrHorizontal 
     | otherwise = error ("unmarshalPixelLayout: illegal value " ++ show x)
     
-instance Unmarshal PixelLayout where unmarshal = unmarshalPixelLayout
     
 marshalMatrixMode :: MatrixMode -> VGenum
 marshalMatrixMode x = case x of 
@@ -197,5 +191,4 @@ marshalMatrixMode x = case x of
     FillPaintToUser -> vg_MATRIX_FILL_PAINT_TO_USER
     StrokePaintToUser -> vg_MATRIX_STROKE_PAINT_TO_USER
     
-instance Marshal MatrixMode where marshal = marshalMatrixMode
 

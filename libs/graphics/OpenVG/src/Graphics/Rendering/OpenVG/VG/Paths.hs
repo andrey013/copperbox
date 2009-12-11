@@ -124,7 +124,6 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
     getParameteri, getParameterf, seti, setf, setfv, geti )     
     
 import Graphics.Rendering.OpenVG.VG.Utils ( 
-    Marshal(..), Unmarshal(..), unmarshalIntegral, enumValue, 
     bitwiseOr, unbits )
 
 import Data.StateVar (
@@ -212,9 +211,14 @@ data PathCapabilities =
 
 
 -- | @withPath@ - create a path, run an action on it, destroy the path.
-withPath :: PathDatatype -> VGfloat -> VGfloat
-                 -> VGint -> VGint -> [PathCapabilities]
-                 -> (VGPath -> IO a) -> IO a
+withPath :: PathDatatype 
+         -> VGfloat 
+         -> VGfloat
+         -> VGint 
+         -> VGint 
+         -> [PathCapabilities]
+         -> (VGPath -> IO a) 
+         -> IO a
 withPath typ scl bi sch cch cs action = do
     path  <- createPath typ scl bi sch cch cs
     ans   <- action path
@@ -225,19 +229,26 @@ withPath typ scl bi sch cch cs action = do
 -- | @createPath@ - corresponds to the OpenVG function @vgCreatePath@.
 -- @createPath@ can only create paths in the standard format 
 -- (VG_PATH_FORMAT_STANDARD), extensions are not supported.   
-createPath :: PathDatatype -> VGfloat -> VGfloat
-                 -> VGint -> VGint -> [PathCapabilities] -> IO VGPath
+createPath :: PathDatatype 
+           -> VGfloat 
+           -> VGfloat
+           -> VGint 
+           -> VGint 
+           -> [PathCapabilities] 
+           -> IO VGPath
 createPath typ scl bi sch cch cs = 
-    vgCreatePath fmt (marshal typ) scl bi sch cch (bitwiseOr cs)
+    vgCreatePath fmt (marshalPathDatatype typ) scl bi sch cch caps
   where
     -- Other paths formats maybe defined as extensions, for the present
     -- restrict the format to just VG_PATH_FORMAT_STANDARD 
-    fmt :: VGint
-    fmt = vg_PATH_FORMAT_STANDARD
+    fmt   :: VGint
+    fmt   = vg_PATH_FORMAT_STANDARD
+    caps  = bitwiseOr marshalPathCapabilities cs
 
+ 
 -- | @clearPath@ corresponds to the OpenVG function @vgClearPath@.         
 clearPath :: VGPath -> [PathCapabilities] -> IO ()
-clearPath h cs = vgClearPath h (bitwiseOr cs)
+clearPath h cs = vgClearPath h (bitwiseOr marshalPathCapabilities cs)
 
 -- | @destroyPath@ corresponds to the OpenVG function @vgDestroyPath@. 
 destroyPath :: VGPath -> IO ()
@@ -256,7 +267,7 @@ format h = makeGettableStateVar $
 datatype :: VGPath -> GettableStateVar PathDatatype
 datatype h = makeGettableStateVar $ do
     a <- getParameteri h vg_PATH_DATATYPE
-    return $ unmarshalIntegral a
+    return $ unmarshalPathDatatype $ fromIntegral a
 
 -- | @pathScale@ - get the scaling factor of the path.    
 pathScale :: VGPath -> GettableStateVar VGfloat
@@ -287,12 +298,13 @@ numCoords h = makeGettableStateVar $
 getPathCapabilities :: VGPath -> IO [PathCapabilities]
 getPathCapabilities h = do 
     b <- vgGetPathCapabilities h
-    return $ unbits b
+    return $ unbits unmarshalPathCapabilities b
     
 -- | @removePathCapabilities@ corresponds to the OpenVG 
 -- function @vgRemovePathCapabilities@.  
 removePathCapabilities :: VGPath -> [PathCapabilities] -> IO ()
-removePathCapabilities h cs = vgRemovePathCapabilities h (bitwiseOr cs)
+removePathCapabilities h cs =
+     vgRemovePathCapabilities h (bitwiseOr marshalPathCapabilities cs)
 
 --------------------------------------------------------------------------------
 -- Copying data between paths
@@ -316,7 +328,7 @@ instance StorablePathData VGfloat
 -- | @appendPathData@ - TODO is this implementation valid?
 appendPathData :: StorablePathData a => VGPath -> [PathCommand] -> [a] -> IO ()
 appendPathData h cs ds = do 
-    cmd_arr <- newArray (map (fromIntegral . marshal) cs)
+    cmd_arr <- newArray (map (fromIntegral . marshalPathCommand) cs)
     d_arr   <- newArray ds
     vgAppendPathData h (fromIntegral $ length cs) cmd_arr d_arr
 
@@ -372,7 +384,7 @@ data CapStyle =
 -- | Set the end cap style.
 capStyle :: SettableStateVar CapStyle
 capStyle = makeSettableStateVar $ \a -> 
-    seti StrokeCapStyle (enumValue a)
+    seti StrokeCapStyle (fromIntegral $ marshalCapStyle a)
 
 -- | @JoinStyle@ corresponds to the OpenVG enumeration @VGJoinStyle@.  
 data JoinStyle = 
@@ -384,7 +396,7 @@ data JoinStyle =
 -- | Set the join style.    
 joinStyle :: SettableStateVar JoinStyle
 joinStyle = makeSettableStateVar $ \a -> 
-    seti StrokeJoinStyle (enumValue a)
+    seti StrokeJoinStyle (fromIntegral $ marshalJoinStyle a)
 
 -- | Set the miter limit. 
 miterLimit :: SettableStateVar VGfloat
@@ -435,30 +447,29 @@ data PaintMode =
 
 -- | @drawPath@ corresponds to the OpenVG function @vgDrawPath@.    
 drawPath :: VGPath -> [PaintMode] -> IO ()
-drawPath h ps = vgDrawPath h (bitwiseOr ps)
+drawPath h = vgDrawPath h . bitwiseOr marshalPaintMode
 
 -- | Fill a path.
 fillPath :: VGPath -> IO ()
-fillPath h = drawPath h [FillPath]
+fillPath = drawPath `flip` [FillPath]
 
 -- | Stroke a path.
 strokePath :: VGPath -> IO ()
-strokePath h = drawPath h [StrokePath]
+strokePath = drawPath `flip` [StrokePath]
 
 -- | Fill and stroke a path.
 fillStrokePath :: VGPath -> IO ()
-fillStrokePath h = drawPath h [FillPath, StrokePath]
+fillStrokePath = drawPath `flip` [FillPath, StrokePath]
  
 --------------------------------------------------------------------------------
 
 marshalPathDatatype :: PathDatatype -> VGenum
 marshalPathDatatype x = case x of
-    Int8 -> vg_PATH_DATATYPE_S_8
+    Int8  -> vg_PATH_DATATYPE_S_8
     Int16 -> vg_PATH_DATATYPE_S_16
     Int32 -> vg_PATH_DATATYPE_S_32
     Float -> vg_PATH_DATATYPE_F
 
-instance Marshal PathDatatype where marshal = marshalPathDatatype
 
 unmarshalPathDatatype :: VGenum -> PathDatatype  
 unmarshalPathDatatype x
@@ -467,8 +478,6 @@ unmarshalPathDatatype x
     | x == vg_PATH_DATATYPE_S_32  = Int32
     | x == vg_PATH_DATATYPE_F     = Float     
     | otherwise = error ("unmarshalPathDatatype: illegal value " ++ show x)
-
-instance Unmarshal PathDatatype where unmarshal = unmarshalPathDatatype
 
 
 
@@ -500,7 +509,6 @@ marshalPathCommand x = case x of
     LCWArcToAbs -> vg_LCWARC_TO_ABS
     LCWArcToRel -> vg_LCWARC_TO_REL
 
-instance Marshal PathCommand where marshal = marshalPathCommand
       
 marshalPathCapabilities :: PathCapabilities -> VGenum
 marshalPathCapabilities x = case x of 
@@ -518,7 +526,6 @@ marshalPathCapabilities x = case x of
     PathTransfomedBounds -> vg_PATH_CAPABILITY_PATH_TRANSFORMED_BOUNDS
     CapabilityAll -> vg_PATH_CAPABILITY_ALL
 
-instance Marshal PathCapabilities where marshal = marshalPathCapabilities     
 
 unmarshalPathCapabilities :: VGenum -> PathCapabilities 
 unmarshalPathCapabilities x
@@ -537,7 +544,6 @@ unmarshalPathCapabilities x
     | x == vg_PATH_CAPABILITY_ALL                     = CapabilityAll 
     | otherwise = error ("unmarshalPathCapabilities: illegal value " ++ show x)
         
-instance Unmarshal PathCapabilities where unmarshal = unmarshalPathCapabilities
  
 marshalCapStyle :: CapStyle -> VGenum
 marshalCapStyle x = case x of
@@ -545,7 +551,6 @@ marshalCapStyle x = case x of
     CRound -> vg_CAP_ROUND
     CSquare -> vg_CAP_SQUARE
 
-instance Marshal CapStyle where marshal = marshalCapStyle
     
 marshalJoinStyle :: JoinStyle -> VGenum
 marshalJoinStyle x = case x of
@@ -553,7 +558,6 @@ marshalJoinStyle x = case x of
     JRound -> vg_JOIN_ROUND 
     JBevel -> vg_JOIN_BEVEL
 
-instance Marshal JoinStyle where marshal = marshalJoinStyle
 
 marshalFillRule :: FillRule -> VGenum
 marshalFillRule x = case x of 
@@ -571,6 +575,4 @@ unmarshalPaintMode x
     | x == vg_FILL_PATH           = FillPath 
     | otherwise = error ("unmarshalPaintMode: illegal value " ++ show x)
 
-instance Marshal PaintMode where marshal = marshalPaintMode
-instance Unmarshal PaintMode where unmarshal = unmarshalPaintMode
 

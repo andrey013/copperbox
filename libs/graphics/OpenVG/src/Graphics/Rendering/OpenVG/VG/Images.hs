@@ -87,8 +87,7 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
     ParamType ( ImageQuality, ImageMode,
                 MaxImageWidth, MaxImageHeight, 
                 MaxImagePixels, MaxImageBytes ) )
-import Graphics.Rendering.OpenVG.VG.Utils ( 
-    Marshal(..), Unmarshal(..), enumValue, unmarshalIntegral, bitwiseOr )
+
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Position(..), Size (..) )  
 
@@ -224,9 +223,10 @@ withImage fmt sz qual action = do
 -- | @createImage@ corresponds to the OpenVG function @vgCreateImage@.             
 createImage :: ImageFormat -> Size -> [ImageQuality] -> IO VGImage 
 createImage SRGBA8888 sz qs = let (w,h) = unSize sz in
-    vgCreateImage (marshal SRGBA8888) w h (bitwiseOr qs) 
-createImage _         _          _  = error $ "unsupported image format"
+    vgCreateImage (marshalImageFormat SRGBA8888) w h (bitwiseOr qs) 
+createImage _         _  _  = error $ "unsupported image format"
 
+bitwiseOr [] = undefined
 
 -- | @destroyImage@ corresponds to the OpenVG function @vgDestroyImage@. 
 destroyImage :: VGImage -> IO () 
@@ -240,7 +240,7 @@ destroyImage = vgDestroyImage
 imageFormat :: VGImage -> GettableStateVar ImageFormat
 imageFormat h = makeGettableStateVar $ do 
     a <- getParameteri h vg_IMAGE_FORMAT
-    return $ unmarshalIntegral a 
+    return $ unmarshalImageFormat $ fromIntegral a 
 
 -- | Get the width used to defined the image.
 imageWidth :: VGImage -> GettableStateVar VGint
@@ -313,7 +313,7 @@ data ImageMode =
 -- @ vgSeti(VG_IMAGE_MODE, drawImageMode); @
 drawImageMode :: SettableStateVar ImageMode  
 drawImageMode = makeSettableStateVar $ \mode -> 
-    seti ImageMode (enumValue mode)  
+    seti ImageMode (fromIntegral $ marshalImageMode mode)  
 
 -- | @drawImage@ corresponds to the OpenVG function @vgDrawImage@. 
 drawImage :: VGImage -> IO ()
@@ -331,7 +331,7 @@ setPixels (Position dx dy) src (Position sx sy) sz = let (w,h) = unSize sz in
 -- | @writePixels@ corresponds to the OpenVG function @vgWritePixels@. 
 writePixels :: Ptr a -> VGint -> ImageFormat -> Position -> Size -> IO ()
 writePixels pixeldata stride fmt (Position dx dy) sz = let (w,h) = unSize sz in 
-    vgWritePixels pixeldata stride (marshal fmt) dx dy w h
+    vgWritePixels pixeldata stride (marshalImageFormat fmt) dx dy w h
 
 -- | @getPixels@ corresponds to the OpenVG function @vgGetPixels@. 
 getPixels :: VGImage  -> Position -> Position -> Size -> IO ()
@@ -341,7 +341,7 @@ getPixels dst (Position dx dy) (Position sx sy) sz = let (w,h) = unSize sz in
 -- | @readPixels@ corresponds to the OpenVG function @vgReadPixels@.
 readPixels :: Ptr a -> VGint -> ImageFormat -> Position -> Size -> IO ()
 readPixels pixeldata stride fmt (Position sx sy) sz = let (w,h) = unSize sz in 
-    vgReadPixels pixeldata stride (marshal fmt) sx sy w h
+    vgReadPixels pixeldata stride (marshalImageFormat fmt) sx sy w h
 
 --------------------------------------------------------------------------------
 -- Copying portions of the drawing surface
@@ -400,7 +400,6 @@ marshalImageFormat x = case x of
     LABGR8888 -> vg_lABGR_8888
     LABGR8888Pre -> vg_lABGR_8888_PRE
 
-instance Marshal ImageFormat where marshal = marshalImageFormat
 
 unmarshalImageFormat :: VGenum -> ImageFormat
 unmarshalImageFormat x
@@ -446,7 +445,6 @@ unmarshalImageFormat x
     | x == vg_lABGR_8888_PRE    = LABGR8888Pre  
     | otherwise = error ("unmarshalImageFormat: illegal value " ++ show x)
 
-instance Unmarshal ImageFormat where unmarshal = unmarshalImageFormat
    
 marshalImageQuality :: ImageQuality -> VGenum
 marshalImageQuality x = case x of
@@ -454,8 +452,6 @@ marshalImageQuality x = case x of
     Faster -> vg_IMAGE_QUALITY_FASTER
     Better -> vg_IMAGE_QUALITY_BETTER
 
-instance Marshal ImageQuality where marshal = marshalImageQuality   
-    
 
      
 marshalImageMode :: ImageMode -> VGenum
@@ -463,6 +459,3 @@ marshalImageMode x = case x of
     Normal -> vg_DRAW_IMAGE_NORMAL
     Multiply -> vg_DRAW_IMAGE_MULTIPLY
     Stencil -> vg_DRAW_IMAGE_STENCIL
-
-instance Marshal ImageMode where marshal = marshalImageMode  
-

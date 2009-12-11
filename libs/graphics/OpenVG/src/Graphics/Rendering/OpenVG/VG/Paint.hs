@@ -42,7 +42,7 @@ module Graphics.Rendering.OpenVG.VG.Paint (
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGint, VGfloat, VGImage, VGPaint )
+    VGenum, VGint, VGfloat, VGImage, VGPaint, marshalBool )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
     vgCreatePaint, vgDestroyPaint, 
     vgSetPaint,
@@ -67,9 +67,8 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
     geti, getParameteri, 
     setParameteri, setParameterfv ) 
     
-import Graphics.Rendering.OpenVG.VG.Paths ( PaintMode(..) )
-import Graphics.Rendering.OpenVG.VG.Utils ( 
-    Marshal(..), Unmarshal(..), enumValue, unmarshalIntegral, bitwiseOr )
+import Graphics.Rendering.OpenVG.VG.Paths ( PaintMode(..), marshalPaintMode )
+import Graphics.Rendering.OpenVG.VG.Utils ( bitwiseOr )
 
 import Graphics.Rendering.OpenGL.GL.VertexSpec ( Color4(..) )
 
@@ -113,7 +112,8 @@ destroyPaint = vgDestroyPaint
 -- | Set the paint mode of the supplied paint handle.
 --
 setPaint :: VGPaint -> SettableStateVar [PaintMode]
-setPaint h = makeSettableStateVar $ \ms -> vgSetPaint h (bitwiseOr ms)
+setPaint h = makeSettableStateVar $ \ms -> 
+    vgSetPaint h (bitwiseOr marshalPaintMode ms)
     
 
 -- | Get the paint object currently set for the supplied paint 
@@ -123,7 +123,7 @@ setPaint h = makeSettableStateVar $ \ms -> vgSetPaint h (bitwiseOr ms)
 -- and this stub function will throw a runtime error if called. \*\*
 --
 getPaint :: PaintMode -> GettableStateVar VGPaint
-getPaint paint_mode = makeGettableStateVar $ vgGetPaint (marshal paint_mode)
+getPaint = makeGettableStateVar . vgGetPaint . marshalPaintMode
   where
     vgGetPaint :: VGenum -> IO VGPaint     
     vgGetPaint = error "vgGetPaint - error"
@@ -149,11 +149,11 @@ paintType handle = makeStateVar (getPaintType handle) (setPaintType handle)
     getPaintType :: VGPaint -> IO PaintType
     getPaintType h = do 
         a <- getParameteri h vg_PAINT_TYPE
-        return $ unmarshalIntegral a 
+        return $ unmarshalPaintType $ fromIntegral a 
     
     setPaintType :: VGPaint -> PaintType -> IO ()
     setPaintType h v = 
-        setParameteri h vg_PAINT_TYPE (enumValue v)
+        setParameteri h vg_PAINT_TYPE (fromIntegral $ marshalPaintType v)
 
         
 -- Control the color of the supplied handle, the default value 
@@ -175,8 +175,10 @@ data ColorRampSpreadMode =
 -- | Control the @ColorRampSpreadMode@ of the supplied handle, 
 -- the default value is @CPad@ aka VG_COLOR_RAMP_SPREAD_PAD. 
 colorRampSpreadMode :: VGPaint -> SettableStateVar ColorRampSpreadMode
-colorRampSpreadMode h = makeSettableStateVar $ 
-    \a -> setParameteri h vg_PAINT_COLOR_RAMP_SPREAD_MODE (enumValue a)
+colorRampSpreadMode h = makeSettableStateVar $ \a -> 
+    setParameteri h vg_PAINT_COLOR_RAMP_SPREAD_MODE (conv a)
+  where
+    conv = fromIntegral . marshalColorRampSpreadMode
                             
     
 -- paintColorRampStops - is [VGfloat] good enough, or should it be 
@@ -192,8 +194,10 @@ colorRampStops h = makeSettableStateVar $
 -- | Control the color ramp stops of the supplied handle, 
 -- the default value is @[]@. 
 colorRampPremultiplied :: VGPaint -> SettableStateVar Bool
-colorRampPremultiplied h = makeSettableStateVar $ 
-    \a -> setParameteri h vg_PAINT_COLOR_RAMP_PREMULTIPLIED (enumValue a)
+colorRampPremultiplied h = makeSettableStateVar $ \a -> 
+    setParameteri h vg_PAINT_COLOR_RAMP_PREMULTIPLIED (conv a)
+  where
+    conv = fromIntegral . marshalBool
 
 type LinearGradient = Vector4 VGfloat
 
@@ -219,8 +223,10 @@ data TilingMode =
 -- | Control the @TilingMode@ of the supplied handle, 
 -- the default value is @TFill@ aka VG_TILE_FILL.
 tilingMode :: VGPaint -> SettableStateVar TilingMode
-tilingMode h = makeSettableStateVar $ 
-    \a -> setParameteri h vg_PAINT_PATTERN_TILING_MODE (enumValue a)
+tilingMode h = makeSettableStateVar $ \a -> 
+    setParameteri h vg_PAINT_PATTERN_TILING_MODE (conv a)
+  where
+    conv = fromIntegral . marshalTilingMode
     
     
 -- | Get the maximum number of ramp stops supported by the implementation.
@@ -246,8 +252,6 @@ marshalPaintType x = case x of
     RadialGradient -> vg_PAINT_TYPE_RADIAL_GRADIENT
     Pattern -> vg_PAINT_TYPE_PATTERN
 
-instance Marshal PaintType where marshal = marshalPaintType
-
 
 unmarshalPaintType :: VGenum -> PaintType
 unmarshalPaintType x
@@ -257,15 +261,11 @@ unmarshalPaintType x
     | x == vg_PAINT_TYPE_PATTERN            = Pattern
     | otherwise = error ("unmarshalPaintType: illegal value " ++ show x)
 
-instance Unmarshal PaintType where unmarshal = unmarshalPaintType
-
 marshalColorRampSpreadMode :: ColorRampSpreadMode -> VGenum
 marshalColorRampSpreadMode x = case x of 
     CPad -> vg_COLOR_RAMP_SPREAD_PAD
     CRepeat -> vg_COLOR_RAMP_SPREAD_REPEAT
     CReflect -> vg_COLOR_RAMP_SPREAD_REFLECT
-
-instance Marshal ColorRampSpreadMode where marshal = marshalColorRampSpreadMode
 
 marshalTilingMode :: TilingMode -> VGenum
 marshalTilingMode x = case x of
@@ -273,6 +273,4 @@ marshalTilingMode x = case x of
     TPad -> vg_TILE_PAD
     TRepeat -> vg_TILE_REPEAT
     TReflect -> vg_TILE_REFLECT
-   
-instance Marshal TilingMode where marshal = marshalTilingMode
 
