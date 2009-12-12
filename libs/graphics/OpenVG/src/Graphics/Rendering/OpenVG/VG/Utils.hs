@@ -17,6 +17,7 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.Utils (
+  marshalBool, unmarshalBool,
   bitwiseOr, unbits,
   unSize, unSizeF, unSizeM
 
@@ -24,8 +25,7 @@ module Graphics.Rendering.OpenVG.VG.Utils (
 
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-        VGint, VGenum, VGbitfield, 
-        marshalBool )
+        VGint, VGenum, VGbitfield, VGboolean, vg_TRUE, vg_FALSE )
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Size(..) )
 
@@ -34,6 +34,18 @@ import Data.Bits
 
 
 
+
+marshalBool :: Bool -> VGboolean
+marshalBool x = case x of
+  True -> vg_TRUE
+  False -> vg_FALSE
+
+unmarshalBool :: VGboolean -> Bool
+unmarshalBool x
+    | x == vg_TRUE  = True
+    | x == vg_FALSE = False
+    | otherwise = error ("unmarshalBool: illegal value " ++ show x)
+  
 
 
 

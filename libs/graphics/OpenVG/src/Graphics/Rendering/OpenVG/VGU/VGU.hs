@@ -27,10 +27,13 @@ module Graphics.Rendering.OpenVG.VGU.VGU (
 ) where
 
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGfloat, VGenum, VGPath, marshalBool )
+import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGfloat, VGenum, VGPath )
+import Graphics.Rendering.OpenVG.VG.Utils ( marshalBool )
 import Graphics.Rendering.OpenVG.VGU.CInternals
 import Graphics.Rendering.OpenVG.VGU.ErrorsInternal ( recordErrorCode )
+
+
+
 import Foreign.Marshal.Array ( newArray )
 
 -- | 'line'    

@@ -27,9 +27,9 @@ module Graphics.Rendering.OpenVG.VG.Images (
   -- * Creating and destroying images
   maxImageWidth, maxImageHeight, maxImagePixels, maxImageBytes,
   
-  withImage,
   createImage, 
   destroyImage, 
+  withImage,
   
   
   -- * Querying images
@@ -58,7 +58,7 @@ module Graphics.Rendering.OpenVG.VG.Images (
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGint, VGImage, marshalBool )
+    VGenum, VGint, VGImage )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
     vgCreateImage, vgDestroyImage, vgClearImage,
     vgImageSubData, vgGetImageSubData, 
@@ -88,7 +88,7 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
                 MaxImageWidth, MaxImageHeight, 
                 MaxImagePixels, MaxImageBytes ) )
 
-import Graphics.Rendering.OpenVG.VG.Utils ( bitwiseOr, unSizeM,     unSize )
+import Graphics.Rendering.OpenVG.VG.Utils ( bitwiseOr, unSizeM, marshalBool )
 
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Position(..), Size (..) )  
@@ -112,8 +112,10 @@ data ImageQuality =
    deriving ( Eq, Ord, Show )
    
    
--- | Set the image quality - @imageQuality@ is typed wrapper
--- over this equivalent OpenVG code:
+-- | Set the image quality.
+--
+-- 'imageQuality' provides access to the OpenVG state variable
+-- @VG_IMAGE_QUALITY@:
 --
 -- > vgSeti(VG_IMAGE_QUALITY, quality);
 -- 
@@ -183,46 +185,54 @@ data ImageFormat =
 -- Creating and destroying images
 
 -- | Get the maximum available width for the 'createImage' function.
--- @maxImageWidth@ is equivalent to this OpenVG code:
+-- 
+-- 'maxImageWidth' provides access to the OpenVG state variable
+-- @VG_MAX_IMAGE_WIDTH@:
 --
--- @ VGint imageMaxWidth = vgGeti(VG_MAX_IMAGE_WIDTH); @
+-- > VGint imageMaxWidth = vgGeti(VG_MAX_IMAGE_WIDTH);
+--
 maxImageWidth :: GettableStateVar VGint
 maxImageWidth = makeGettableStateVar $ geti MaxImageWidth 
 
 -- | Get the maximum available width for the 'createImage' function.
--- @maxImageWidth@ is equivalent to this OpenVG code:
 --
--- @ VGint imageMaxWidth = vgGeti(VG_MAX_IMAGE_WIDTH); @
+-- 'maxImageWidth' provides access to the OpenVG state variable
+-- @VG_MAX_IMAGE_HEIGHT@:
+--
+-- > VGint imageMaxWidth = vgGeti(VG_MAX_IMAGE_WIDTH);
+--
 maxImageHeight :: GettableStateVar VGint
 maxImageHeight = makeGettableStateVar $ geti MaxImageHeight
 
--- | Get the largest available value of the product of the @width@ and 
--- @height@ passed to the 'createImage' function.
--- @maxImagePixels@ is equivalent to this OpenVG code:
+
+-- | Get the largest number of pixels that may make up an image 
+-- supported by OpenVG implementation.
 --
--- @ VGint imageMaxPixels = vgGeti(VG_MAX_IMAGE_PIXELS); @
+-- 'maxImagePixels' is equivalent to following OpenVG code:
+--
+-- > VGint imageMaxPixels = vgGeti(VG_MAX_IMAGE_PIXELS);
+--
 maxImagePixels :: GettableStateVar VGint
 maxImagePixels = makeGettableStateVar $ geti MaxImagePixels
 
--- | Get the largest available number of bytes that may make up the image data
--- passed to the 'createImage' function.
--- @maxImageBytes@ is equivalent to this OpenVG code:
+
+-- | Get the largest number of bytes that may make up an image 
+-- supported by OpenVG implementation.
 --
--- @ VGint imageMaxBytes = vgGeti(VG_MAX_IMAGE_BYTES); @
+-- 'maxImageBytes' is equivalent to the following OpenVG code:
+--
+-- > VGint imageMaxBytes = vgGeti(VG_MAX_IMAGE_BYTES);
+--
 maxImageBytes :: GettableStateVar VGint
 maxImageBytes = makeGettableStateVar $ geti MaxImageBytes
 
-
--- | @withImage@ - create an image, run an action on it, destroy the image.
-withImage :: ImageFormat -> Size -> [ImageQuality] -> (VGImage -> IO a) -> IO a
-withImage fmt sz qual action = do
-    img   <- createImage fmt sz qual
-    ans   <- action img
-    destroyImage img
-    return ans
     
     
--- | @createImage@ corresponds to the OpenVG function @vgCreateImage@.             
+-- | Create an image and return a handle to it.
+--
+-- 'createImage' corresponds to the OpenVG function 
+-- @vgCreateImage@.
+--
 createImage :: ImageFormat -> Size -> [ImageQuality] -> IO VGImage 
 createImage SRGBA8888 sz qs = 
     unSizeM (\w h -> vgCreateImage (marshalImageFormat SRGBA8888)
@@ -232,25 +242,62 @@ createImage SRGBA8888 sz qs =
 
 createImage _         _  _  = error $ "unsupported image format"
 
--- | @destroyImage@ corresponds to the OpenVG function @vgDestroyImage@. 
+-- | Destroy the image and the resources assciated with it. 
+-- 
+-- 'destroyImage' corresponds to the OpenVG function 
+-- @vgDestroyImage@. 
+--
 destroyImage :: VGImage -> IO () 
 destroyImage = vgDestroyImage
+
+
+-- | Create an image, run an action on it, destroy the image.
+-- 
+-- 'withImage' is a convenience function defined within the 
+-- Haskell binding it does not have a corresponding OpenVG 
+-- function.
+--
+withImage :: ImageFormat -> Size -> [ImageQuality] -> (VGImage -> IO a) -> IO a
+withImage fmt sz qual action = do
+    img   <- createImage fmt sz qual
+    ans   <- action img
+    destroyImage img
+    return ans
 
 
 --------------------------------------------------------------------------------
 -- Querying images
  
--- | Get the ImageFormat used to defined the image.
+-- | Get the image format.
+--
+-- 'imageFormat' provides access to the OpenVG state variable
+-- @VG_IMAGE_FORMAT@:
+--
+-- > VGImageFormat imageFormat = 
+-- >      (VGImageFormat)vgGetParameteri(image, VG_IMAGE_FORMAT);
+-- 
 imageFormat :: VGImage -> GettableStateVar ImageFormat
 imageFormat h = makeGettableStateVar $ 
    getParameteri h vg_IMAGE_FORMAT >>= 
    return . unmarshalImageFormat . fromIntegral
 
--- | Get the width used to defined the image.
+-- | Get the image width.
+--
+-- 'imageWidth' provides access to the OpenVG state variable
+-- @VG_IMAGE_WIDTH@:
+--
+-- > VGint imageWidth = vgGetParameteri(image, VG_IMAGE_WIDTH);
+-- 
 imageWidth :: VGImage -> GettableStateVar VGint
 imageWidth = makeGettableStateVar . flip getParameteri vg_IMAGE_WIDTH
 
--- | Get the height used to defined the image.
+-- | Get the image height.
+--
+-- 'imageHeight' provides access to the OpenVG state variable
+-- @VG_IMAGE_HEIGHT@:
+--
+-- > VGint imageHeight = vgGetParameteri(image, VG_IMAGE_HEIGHT);
+-- 
 imageHeight :: VGImage -> GettableStateVar VGint
 imageHeight = makeGettableStateVar . flip getParameteri vg_IMAGE_HEIGHT
  
@@ -258,20 +305,32 @@ imageHeight = makeGettableStateVar . flip getParameteri vg_IMAGE_HEIGHT
 --------------------------------------------------------------------------------
 -- Reading and writing image pixels
 
--- | Fill the given rectangle inside the image with the current color setting
--- from the @StateVar@ 'clearColor'.
+-- | Fill the given rectangle inside the image with the current 
+-- color setting from the @StateVar@ 'clearColor'.
+--
+-- 'clearImage' corresponds to the OpenVG function @vgClearImage@.
+--
 clearImage :: VGImage -> Position -> Size -> IO () 
 clearImage handle (Position x y) = unSizeM $ vgClearImage handle x y
             
             
--- | @imageSubData@ corresponds to the OpenVG function @vgImageSubData@. 
+-- | Read the pixel values from memory and store the results in 
+-- a rectagular portion of an image.
+--
+-- 'imageSubData' corresponds to the OpenVG function 
+-- @vgImageSubData@. 
+--
 imageSubData :: VGImage -> Ptr a -> VGint -> ImageFormat
                   -> Position -> Size -> IO ()
 imageSubData image imgdata stride fmt (Position x y) =
     unSizeM $ vgImageSubData image imgdata stride (marshalImageFormat fmt) x y
 
 
--- | @getImageSubData@ corresponds to the OpenVG function 
+
+-- | Read the pixel values from a image and store the results in 
+-- memory.
+--
+-- 'getImageSubData' corresponds to the OpenVG function 
 -- @vgGetImageSubData@. 
 --
 getImageSubData :: VGImage -> Ptr a -> VGint -> ImageFormat
@@ -287,7 +346,10 @@ getImageSubData image imgdata stride fmt (Position x y) =
 --------------------------------------------------------------------------------
 -- Copying pixels between images
 
--- | @copyImage@ corresponds to the OpenVG function @vgCopyImage@.
+-- | Copy pixels between images.
+--
+-- 'copyImage' corresponds to the OpenVG function @vgCopyImage@.
+--
 copyImage :: VGImage -> Position -> VGImage -> Position
                 -> Size -> Bool -> IO ()
 copyImage dst (Position dx dy) src (Position sx sy) sz dither = 
@@ -302,13 +364,16 @@ data ImageMode =
    | Multiply
    | Stencil
    deriving ( Eq, Ord, Show )
-   
--- | Set the image drawing mode - @drawImageMode@ is typed wrapper
--- over this equivalent OpenVG code:
+
+
+
+-- | Set the draw image mode.
 --
--- @ VGImageMode drawImageMode; @
+-- 'drawImageFormat' provides access to the OpenVG state variable
+-- @VG_IMAGE_FORMAT@:
 --
--- @ vgSeti(VG_IMAGE_MODE, drawImageMode); @
+-- > vgSeti(VG_IMAGE_FORMAT, quality);
+--    
 drawImageMode :: SettableStateVar ImageMode  
 drawImageMode = makeSettableStateVar $
     seti ImageMode . fromIntegral . marshalImageMode

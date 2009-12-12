@@ -24,7 +24,7 @@ module Graphics.Rendering.OpenVG.VG.BasicTypes (
   VGboolean, VGfloat,
   VGenum,
   
-  vg_FALSE, vg_TRUE, marshalBool, unmarshalBool,
+  vg_FALSE, vg_TRUE,
   
   -- * Handle-based Types
   VGHandle,
@@ -55,25 +55,12 @@ type VGenum     = GLenum
 
 
 
--- | The type of data that can be displayed.
 type VGboolean = GLint
 
 #{enum VGboolean,
   , vg_FALSE    = VG_FALSE
   , vg_TRUE     = VG_TRUE
   }
-
-marshalBool :: Bool -> VGboolean
-marshalBool x = case x of
-  True -> vg_TRUE
-  False -> vg_FALSE
-
-unmarshalBool :: VGboolean -> Bool
-unmarshalBool x
-    | x == vg_TRUE  = True
-    | x == vg_FALSE = False
-    | otherwise = error ("unmarshalBool: illegal value " ++ show x)
-  
     
 newtype VGHandle = VGHandle (Ptr ())
 
@@ -87,7 +74,6 @@ type VGImage = VGHandle
 type VGPaint = VGHandle
 
 
--- | Point (VGfloat,VGfloat) 
 type Point = (VGfloat, VGfloat)
 
 

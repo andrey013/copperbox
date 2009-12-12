@@ -74,7 +74,7 @@ module Graphics.Rendering.OpenVG.VG.Paths (
 
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGint, VGfloat, VGPath, marshalBool, unmarshalBool )
+    VGenum, VGint, VGfloat, VGPath )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
     vgCreatePath, vgClearPath, vgDestroyPath, 
     vgRemovePathCapabilities, vgGetPathCapabilities, 
@@ -124,7 +124,7 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
     getParameteri, getParameterf, seti, setf, setfv, geti )     
     
 import Graphics.Rendering.OpenVG.VG.Utils ( 
-    bitwiseOr, unbits )
+    bitwiseOr, unbits, marshalBool, unmarshalBool )
 
 import Data.StateVar (
     SettableStateVar, makeSettableStateVar,

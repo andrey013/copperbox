@@ -42,7 +42,7 @@ module Graphics.Rendering.OpenVG.VG.Paint (
 ) where
 
 import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGint, VGfloat, VGImage, VGPaint, marshalBool )
+    VGenum, VGint, VGfloat, VGImage, VGPaint )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
     vgCreatePaint, vgDestroyPaint, 
     vgSetPaint,
@@ -68,7 +68,7 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
     setParameteri, setParameterfv ) 
     
 import Graphics.Rendering.OpenVG.VG.Paths ( PaintMode(..), marshalPaintMode )
-import Graphics.Rendering.OpenVG.VG.Utils ( bitwiseOr )
+import Graphics.Rendering.OpenVG.VG.Utils ( bitwiseOr, marshalBool )
 
 import Graphics.Rendering.OpenGL.GL.VertexSpec ( Color4(..) )
 

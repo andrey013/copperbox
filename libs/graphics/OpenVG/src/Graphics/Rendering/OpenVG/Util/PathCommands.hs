@@ -18,7 +18,7 @@
 -- This module is needs more thought - currently it is a sketch 
 -- to help create paths. If it becomes useful in the future it 
 -- is still be better off outside the OpenVG bindings package 
--- and presented in some /higher-level/ package.
+-- and presented in some higher-level package.
 --
 
 --------------------------------------------------------------------------------

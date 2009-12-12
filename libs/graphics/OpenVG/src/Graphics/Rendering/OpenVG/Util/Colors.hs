@@ -14,9 +14,9 @@
 -- 
 -- Colour definitions named with the SVG \'named colours\'.
 -- 
--- If this module is /useful/ it is still be better off
--- outside the OpenVG bindings package and presented in some 
--- /higher-level/ package.
+-- If this module is /useful/ it would be better off outside the 
+-- OpenVG bindings package and presented in some /higher-level/ 
+-- package.
 --
 --
 --------------------------------------------------------------------------------

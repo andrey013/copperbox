@@ -46,6 +46,10 @@ data StringID =
 
 -- | Query the OpenVG implementation.   
 -- 
+-- 'stringId' wraps the OpenVG function vgGetString:
+--
+-- > const VGubyte * vgGetString(VGStringID name)
+--
 stringId :: StringID -> GettableStateVar String
 stringId sid = makeGettableStateVar $ do 
     cstr <- vgGetString (marshalStringID sid)

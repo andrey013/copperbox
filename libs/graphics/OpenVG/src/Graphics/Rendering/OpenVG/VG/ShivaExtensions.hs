@@ -25,11 +25,11 @@ module Graphics.Rendering.OpenVG.VG.ShivaExtensions (
   destroyContextSH
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( vg_TRUE, unmarshalBool )
+import Graphics.Rendering.OpenVG.VG.BasicTypes ( vg_TRUE )
 import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
         vgCreateContextSH, vgResizeSurfaceSH, vgDestroyContextSH ) 
 
-import Graphics.Rendering.OpenVG.VG.Utils ( unSize, unSizeM )
+import Graphics.Rendering.OpenVG.VG.Utils ( unSize, unSizeM, unmarshalBool )
 
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Size(..) )
