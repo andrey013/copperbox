@@ -37,7 +37,7 @@ import Data.StateVar (
 --------------------------------------------------------------------------------
 -- Setting the blend mode
    
--- | 'BlendMode' defines the possible blend modes.        
+-- | 'BlendMode' enumerates the possible blend modes.        
 data BlendMode = 
      Src
    | SrcOver
@@ -51,9 +51,12 @@ data BlendMode =
    | Additive
    deriving ( Eq, Ord, Show )
 
--- | Set the blend mode - 'blendMode' is typed wrapper
--- over this equivalent OpenVG code:
+
+-- | Set the blend mode.
 --
+-- 'blendMode' is a write-only state variable corresponding to
+-- @VG_BLEND_MODE@:
+--    
 -- > vgSeti(VG_BLEND_MODE, mode);
 --
 blendMode :: SettableStateVar BlendMode

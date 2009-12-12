@@ -114,7 +114,7 @@ data ImageQuality =
    
 -- | Set the image quality.
 --
--- 'imageQuality' provides access to the OpenVG state variable
+-- 'imageQuality' is a write-only state variable corresponding to
 -- @VG_IMAGE_QUALITY@:
 --
 -- > vgSeti(VG_IMAGE_QUALITY, quality);
@@ -186,7 +186,7 @@ data ImageFormat =
 
 -- | Get the maximum available width for the 'createImage' function.
 -- 
--- 'maxImageWidth' provides access to the OpenVG state variable
+-- 'maxImageWidth' is a read-only state variable corresponding to
 -- @VG_MAX_IMAGE_WIDTH@:
 --
 -- > VGint imageMaxWidth = vgGeti(VG_MAX_IMAGE_WIDTH);
@@ -196,7 +196,7 @@ maxImageWidth = makeGettableStateVar $ geti MaxImageWidth
 
 -- | Get the maximum available width for the 'createImage' function.
 --
--- 'maxImageWidth' provides access to the OpenVG state variable
+-- 'maxImageWidth' is a read-only state variable corresponding to
 -- @VG_MAX_IMAGE_HEIGHT@:
 --
 -- > VGint imageMaxWidth = vgGeti(VG_MAX_IMAGE_WIDTH);
@@ -208,7 +208,8 @@ maxImageHeight = makeGettableStateVar $ geti MaxImageHeight
 -- | Get the largest number of pixels that may make up an image 
 -- supported by OpenVG implementation.
 --
--- 'maxImagePixels' is equivalent to following OpenVG code:
+-- 'maxImagePixels' is a read-only state variable corresponding to
+-- @VG_MAX_IMAGE_PIXELS@:
 --
 -- > VGint imageMaxPixels = vgGeti(VG_MAX_IMAGE_PIXELS);
 --
@@ -219,7 +220,8 @@ maxImagePixels = makeGettableStateVar $ geti MaxImagePixels
 -- | Get the largest number of bytes that may make up an image 
 -- supported by OpenVG implementation.
 --
--- 'maxImageBytes' is equivalent to the following OpenVG code:
+-- 'maxImageBytes' is a read-only state variable corresponding to
+-- @VG_MAX_IMAGE_BYTES@:
 --
 -- > VGint imageMaxBytes = vgGeti(VG_MAX_IMAGE_BYTES);
 --
@@ -283,7 +285,7 @@ imageFormat h = makeGettableStateVar $
 
 -- | Get the image width.
 --
--- 'imageWidth' provides access to the OpenVG state variable
+-- 'imageWidth' is a read-only state variable corresponding to
 -- @VG_IMAGE_WIDTH@:
 --
 -- > VGint imageWidth = vgGetParameteri(image, VG_IMAGE_WIDTH);
@@ -293,7 +295,7 @@ imageWidth = makeGettableStateVar . flip getParameteri vg_IMAGE_WIDTH
 
 -- | Get the image height.
 --
--- 'imageHeight' provides access to the OpenVG state variable
+-- 'imageHeight' is a read-only state variable corresponding to
 -- @VG_IMAGE_HEIGHT@:
 --
 -- > VGint imageHeight = vgGetParameteri(image, VG_IMAGE_HEIGHT);
@@ -369,7 +371,7 @@ data ImageMode =
 
 -- | Set the draw image mode.
 --
--- 'drawImageMode' provides access to the OpenVG state variable
+-- 'drawImageMode' is a write-only state variable corresponding to
 -- @VG_IMAGE_MODE@:
 --
 -- > vgSeti(VG_IMAGE_MODE, quality);
@@ -443,45 +445,45 @@ copyPixels (Position dx dy) (Position sx sy) =
 
 marshalImageFormat :: ImageFormat -> VGenum
 marshalImageFormat x = case x of 
-    SRGBX8888 -> vg_sRGBX_8888
-    SRGBA8888 -> vg_sRGBA_8888
+    SRGBX8888    -> vg_sRGBX_8888
+    SRGBA8888    -> vg_sRGBA_8888
     SRGBA8888Pre -> vg_sRGBA_8888_PRE
-    SRGB565 -> vg_sRGB_565
-    SRGBA5551 -> vg_sRGBA_5551
-    SRGBA4444 -> vg_sRGBA_4444
-    SL8 -> vg_sL_8
-    LRGBX8888 -> vg_lRGBX_8888
-    LRGBA8888 -> vg_lRGBA_8888
+    SRGB565      -> vg_sRGB_565
+    SRGBA5551    -> vg_sRGBA_5551
+    SRGBA4444    -> vg_sRGBA_4444
+    SL8          -> vg_sL_8
+    LRGBX8888    -> vg_lRGBX_8888
+    LRGBA8888    -> vg_lRGBA_8888
     LRGBA8888Pre -> vg_lRGBA_8888_PRE
-    LL8 -> vg_lL_8
-    A8 -> vg_A_8
-    BW1 -> vg_BW_1
-    -- FormatA1 ->      (not supported in shiva-vg)
-    -- FormatA4 ->      (not supported in shiva-vg)
-    SXRGB8888 -> vg_sXRGB_8888
-    SARGB8888 -> vg_sARGB_8888
+    LL8          -> vg_lL_8
+    A8           -> vg_A_8
+    BW1          -> vg_BW_1
+    -- FormatA1    ->      (not supported in shiva-vg)
+    -- FormatA4    ->      (not supported in shiva-vg)
+    SXRGB8888    -> vg_sXRGB_8888
+    SARGB8888    -> vg_sARGB_8888
     SARGB8888Pre -> vg_sARGB_8888_PRE
-    SARGB1555 -> vg_sARGB_1555
-    SARGB4444 -> vg_sARGB_4444
-    LXRGB8888 -> vg_lXRGB_8888
-    LARGB8888 -> vg_lARGB_8888
+    SARGB1555    -> vg_sARGB_1555
+    SARGB4444    -> vg_sARGB_4444
+    LXRGB8888    -> vg_lXRGB_8888
+    LARGB8888    -> vg_lARGB_8888
     LARGB8888Pre -> vg_lARGB_8888_PRE
-    SBGRX8888 -> vg_sBGRX_8888
-    SBGRA8888 -> vg_sBGRA_8888
+    SBGRX8888    -> vg_sBGRX_8888
+    SBGRA8888    -> vg_sBGRA_8888
     SBGRA8888Pre -> vg_sBGRA_8888_PRE
-    SBGR565 -> vg_sBGR_565
-    SBGRA5551 -> vg_sBGRA_5551
-    SBGRA4444 -> vg_sBGRA_4444
-    LBGRX8888 -> vg_lBGRX_8888
-    LBGRA8888 -> vg_lBGRA_8888
+    SBGR565      -> vg_sBGR_565
+    SBGRA5551    -> vg_sBGRA_5551
+    SBGRA4444    -> vg_sBGRA_4444
+    LBGRX8888    -> vg_lBGRX_8888
+    LBGRA8888    -> vg_lBGRA_8888
     LBGRA8888Pre -> vg_lBGRA_8888_PRE
-    SXBGR8888 -> vg_sXBGR_8888
-    SABGR8888 -> vg_sABGR_8888
+    SXBGR8888    -> vg_sXBGR_8888
+    SABGR8888    -> vg_sABGR_8888
     SABGR8888Pre -> vg_sABGR_8888_PRE
-    SABGR1555 -> vg_sABGR_1555
-    SABGR4444 -> vg_sABGR_4444
-    LXBGR8888 -> vg_lXBGR_8888
-    LABGR8888 -> vg_lABGR_8888
+    SABGR1555    -> vg_sABGR_1555
+    SABGR4444    -> vg_sABGR_4444
+    LXBGR8888    -> vg_lXBGR_8888
+    LABGR8888    -> vg_lABGR_8888
     LABGR8888Pre -> vg_lABGR_8888_PRE
 
 
@@ -533,13 +535,13 @@ unmarshalImageFormat x
 marshalImageQuality :: ImageQuality -> VGenum
 marshalImageQuality x = case x of
     Nonantialiased -> vg_IMAGE_QUALITY_NONANTIALIASED
-    Faster -> vg_IMAGE_QUALITY_FASTER
-    Better -> vg_IMAGE_QUALITY_BETTER
+    Faster         -> vg_IMAGE_QUALITY_FASTER
+    Better         -> vg_IMAGE_QUALITY_BETTER
 
 
      
 marshalImageMode :: ImageMode -> VGenum
 marshalImageMode x = case x of
-    Normal -> vg_DRAW_IMAGE_NORMAL
+    Normal   -> vg_DRAW_IMAGE_NORMAL
     Multiply -> vg_DRAW_IMAGE_MULTIPLY
-    Stencil -> vg_DRAW_IMAGE_STENCIL
+    Stencil  -> vg_DRAW_IMAGE_STENCIL

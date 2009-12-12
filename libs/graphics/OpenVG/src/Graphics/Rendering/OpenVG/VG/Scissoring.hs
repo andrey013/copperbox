@@ -53,6 +53,10 @@ import Data.StateVar (
 -- Scissoring
 
 -- | Enable or disable scissoring.
+--
+-- 'scissoring' is a write-only state variable corresponding to
+-- @VG_SCISSORING@.
+--
 scissoring :: SettableStateVar Bool  
 scissoring = makeSettableStateVar $ 
     seti Scissoring . fromIntegral . marshalBool
@@ -60,11 +64,19 @@ scissoring = makeSettableStateVar $
 type ScissorRect = (Position, Size) 
     
 -- | Get the maximum number of scissoring rectangles.
+--
+-- 'maxScissorRects' is a read-only state variable corresponding 
+-- to @VG_MAX_SCISSOR_RECTS@ 
+--
 maxScissorRects :: GettableStateVar VGint
 maxScissorRects = makeGettableStateVar $ geti MaxScissorRects
 
 
 -- | Specify the scissoring rectangles.
+--
+-- 'scissorRects' is a write-only state variable corresponding to 
+-- @VG_SCISSOR_RECTS@.
+--
 scissorRects :: SettableStateVar [ScissorRect]
 scissorRects = makeSettableStateVar $ \ss ->
     setiv ScissorRects (foldr f [] ss) where 
@@ -73,7 +85,7 @@ scissorRects = makeSettableStateVar $ \ss ->
 --------------------------------------------------------------------------------
 -- Alpha masking
 
--- | @MaskOperation@ corresponds to the OpenVG enumeration @VGMaskOperation@.    
+-- | 'MaskOperation' enumerations the possible mask operations.    
 data MaskOperation =
      ClearMask
    | FillMask
@@ -84,6 +96,9 @@ data MaskOperation =
    deriving ( Eq, Ord, Show )
 
 -- | Enable or disable alpha masking.   
+--
+-- 'alphaMasking' is a write-only state variable.
+--
 alphaMasking :: SettableStateVar Bool
 alphaMasking = makeSettableStateVar $ seti Masking . marshalBool
 
@@ -93,11 +108,19 @@ alphaMasking = makeSettableStateVar $ seti Masking . marshalBool
 -- Fast clearing
 
 -- | Set the color for clearing.
+--
+-- 'clearColor' is a write-only state variable corresponding to
+-- @VG_CLEAR_COLOR@
+--
 clearColor :: SettableStateVar (Color4 VGfloat)
 clearColor = makeSettableStateVar $ 
     \(Color4 r g b a) -> setfv ClearColor [r,g,b,a]
 
--- | @clear@ corresponds to the OpenVG function @vgClear@.
+-- | Fill the specified portion of the drawing surface with the
+-- current clear color.
+-- 
+-- 'clear' corresponds to the OpenVG function @vgClear@.
+--
 clear :: Position -> Size -> IO ()
 clear (Position x y) = unSizeM $ vgClear x y
 

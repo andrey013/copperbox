@@ -51,7 +51,9 @@ import Graphics.Rendering.OpenVG.VG.Constants (
 
 import Foreign.Marshal.Array ( newArray, peekArray ) 
 
-
+-- | The parameter type of variables accessible with @vgSet@ 
+-- or @vgGet@.
+-- 
 data ParamType = 
      MatrixMode
    | FillRule
@@ -69,7 +71,6 @@ data ParamType =
    | StrokeDashPhaseReset
    | TileFillColor
    | ClearColor
-   -- | GlyphOrigin        {- Not in shiva-vg -} 
    | Masking
    | Scissoring
    | PixelLayout
@@ -129,52 +130,173 @@ setiv :: ParamType -> [VGint] -> IO ()
 setiv typ vals = newArray vals >>= 
                  vgSetiv (marshalParamType typ) (fromIntegral $ length vals)
 
-        
+
+
+
+-- | Get a value of type 'VGfloat' from the current context.
+--
+-- 'getf' corresponds to the OpenVG function @vgGetf@.
+--
+-- > VGfloat vgGetf (VGParamType paramType);
+--        
 getf :: ParamType -> IO VGfloat
 getf = vgGetf . marshalParamType
 
+-- | Get a value of type 'VGint' from the current context.
+--
+-- 'geti' corresponds to the OpenVG function @vgGeti@.
+--
+-- > VGint vgGeti (VGParamType paramType);
+-- 
 geti :: ParamType -> IO VGint
 geti = vgGeti . marshalParamType
 
 
+-- | Get the maximum number of values that the respective 'getfv'
+-- or 'getiv' call would return for the given 'ParamType'.
+--
+-- 'getVectorSize' corresponds to the OpenVG function 
+-- @vgGetVectorSize@.
+--
+-- > VGint vgGetVectorSize(VGParamType paramType);
+-- 
 getVectorSize :: ParamType -> IO VGint
 getVectorSize typ = vgGetVectorSize $ marshalParamType typ
 
+
+-- | Get a list of value of type 'VGfloat' from the current 
+-- context.
+--
+-- 'getfv' corresponds to the OpenVG function @vgGetfv@.
+--
+-- > void vgGetfv(VGParamType paramType, VGint count, VGfloat * values);
+-- 
 getfv :: ParamType -> VGint -> IO [VGfloat]
 getfv typ i = vgGetfv (marshalParamType typ) i >>= peekArray (fromIntegral i)
     
+-- | Get a list of value of type 'VGint' from the current 
+-- context.
+--
+-- 'getiv' corresponds to the OpenVG function @vgGetiv@.
+--
+-- > void vgGetiv(VGParamType paramType, VGint count, VGint * values);
+-- 
 getiv :: ParamType -> VGint -> IO [VGint]
 getiv typ i = vgGetiv (marshalParamType typ) i >>= peekArray (fromIntegral i)
 
 
+-- | Set the supplied parameter of the handle to a value of type
+-- 'VGfloat'.
+--
+-- 'setParameterf' corresponds to the OpenVG function 
+-- @vgSetParameterf@.
+--
+-- > void vgSetParameterf (VGHandle object, VGint paramType, VGfloat value);
+--
 setParameterf :: VGHandle -> VGenum -> VGfloat -> IO ()
 setParameterf = vgSetParameterf
-                                 
+
+
+-- | Set the supplied parameter of the handle to a value of type
+-- 'VGint'.
+--
+-- 'setParameteri' corresponds to the OpenVG function 
+-- @vgSetParameteri@.
+--
+-- > void vgSetParameteri (VGHandle object, VGint paramType, VGint value);
+--                                 
 setParameteri :: VGHandle -> VGenum -> VGint -> IO ()
 setParameteri = vgSetParameteri
 
+
+-- | Set the supplied parameter of the handle to the list of 
+-- supplied 'VGfloat' values.
+--
+-- 'setParameterfv' corresponds to the OpenVG function 
+-- @vgSetParameterfv@.
+--
+-- > void vgSetParameterfv(VGHandle object, VGint paramType, 
+-- >                       VGint count, const VGfloat * values);
+--
 setParameterfv :: VGHandle -> VGenum -> [VGfloat] -> IO ()
 setParameterfv h typ vals = 
     newArray vals >>= vgSetParameterfv h typ (fromIntegral $ length vals)
 
+
+-- | Set the supplied parameter of the handle to the list of 
+-- supplied 'VGint' values.
+--
+-- 'setParameteriv' corresponds to the OpenVG function 
+-- @vgSetParameteriv@.
+--
+-- > void vgSetParameteriv(VGHandle object, VGint paramType, 
+-- >                       VGint count, const VGint * values);
+--
 setParameteriv :: VGHandle -> VGenum -> [VGint] -> IO ()
 setParameteriv h typ vals =
     newArray vals >>= vgSetParameteriv h typ (fromIntegral $ length vals)
 
+
+
+-- | Get the 'VGfloat' value of the parameter on the supplied 
+-- handle.
+--
+-- 'getParameterf' corresponds to the OpenVG function 
+-- @vgGetParameterf@.
+--
+-- > VGfloat vgGetParameterf (VGHandle object, VGint paramType);
+--
 getParameterf :: VGHandle -> VGenum -> IO VGfloat
 getParameterf = vgGetParameterf
 
+-- | Get the 'VGint' value of the parameter on the supplied 
+-- handle.
+--
+-- 'getParameteri' corresponds to the OpenVG function 
+-- @vgGetParameteri@.
+--
+-- > VGint vgGetParameteri (VGHandle object, VGint paramType);
+--
 getParameteri :: VGHandle -> VGenum -> IO VGint
 getParameteri = vgGetParameteri
 
-
+-- | Get the maximum number of values that the respective 
+-- 'getParameterfv' or 'getParameteriv' call on the supplied 
+-- handle would return for the given 'ParamType'.
+--
+-- 'getParameterVectorSize' corresponds to the OpenVG function 
+-- @vgGetParameterVectorSize@.
+--
+-- > VGint vgGetParameterVectorSize (VGHandle object, VGint paramType);
+-- 
 getParameterVectorSize :: VGHandle -> VGenum -> IO VGint
 getParameterVectorSize = vgGetParameterVectorSize
 
+-- | Get the list of 'VGfloat' values for the parameter on the 
+-- supplied handle.
+--
+-- 'getParameterfv' corresponds to the OpenVG function 
+-- @vgGetParameterfv@.
+--
+-- > void vgGetParameterfv(VGHandle object, 
+-- >                       VGint paramType, 
+-- >                       VGint count, VGfloat * values)
+--
 getParameterfv :: VGHandle -> VGenum -> VGint -> IO [VGfloat]
 getParameterfv h typ i = 
     vgGetParameterfv h typ i >>= peekArray (fromIntegral i)
 
+
+-- | Get the list of 'VGint' values for the parameter on the 
+-- supplied handle.
+--
+-- 'getParameteriv' corresponds to the OpenVG function 
+-- @vgGetParameteriv@.
+--
+-- > void vgGetParameteriv(VGHandle object, 
+-- >                       VGint paramType, 
+-- >                       VGint count, VGint * values)
+--
 getParameteriv :: VGHandle -> VGenum -> VGint -> IO [VGint]
 getParameteriv h typ i =
     vgGetParameteriv h typ i >>= peekArray (fromIntegral i)

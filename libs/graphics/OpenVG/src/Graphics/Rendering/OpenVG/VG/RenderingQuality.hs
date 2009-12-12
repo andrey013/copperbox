@@ -72,15 +72,22 @@ import Foreign.Ptr ( Ptr )
 --------------------------------------------------------------------------------
 -- Rendering quality
                      
--- | @RenderingQuality@ corresponds to the OpenVG 
--- enumeration @VGRenderingQuality@. 
+-- | 'RenderingQuality' enumerates the settings available for
+-- rendering quality. 
+-- 
 data RenderingQuality = 
      Nonantialiased'
    | Faster'
    | Better'
    deriving ( Eq, Ord, Show )
 
--- | Set the rendering quality - the default is /Better/.
+-- | Set the rendering quality.
+--
+-- 'renderingQuality' is a write-only state variable corresponding to
+-- @VG_RENDERING_QUALITY@:
+--
+-- The default value for 'renderingQuality' is @Better\'@.
+--
 renderingQuality :: SettableStateVar RenderingQuality  
 renderingQuality = makeSettableStateVar $
     seti RenderingQuality . fromIntegral . marshalRenderingQuality
@@ -88,7 +95,9 @@ renderingQuality = makeSettableStateVar $
 --------------------------------------------------------------------------------
 -- Additional quality settings 
 
--- | @PixelLayout@ corresponds to the OpenVG enumeration @VGPixelLayout@.  
+-- | 'PixelLayout' enumerates the possible geometric layouts of 
+-- color emissions within pixel elements.
+--
 data PixelLayout = 
      Unknown
    | RgbVertical
@@ -97,7 +106,11 @@ data PixelLayout =
    | BgrHorizontal
    deriving ( Eq, Ord, Show )
 
--- | @pixelLayout@ - a @StateVar@ to get and set the pixel layout.
+-- | Set and query the pixel layout.
+--
+-- 'pixelLayout' is a read-write state variable corresponding to
+-- @VG_PIXEL_LAYOUT@.
+--
 pixelLayout :: StateVar PixelLayout
 pixelLayout = makeStateVar getPixelLayout setPixelLayout
   where
@@ -110,7 +123,7 @@ pixelLayout = makeStateVar getPixelLayout setPixelLayout
 --------------------------------------------------------------------------------
 -- Matrix manipulation
 
--- | @MatrixMode@ corresponds to the OpenVG  enumeration @VGMatrixMode@.  
+-- | 'MatrixMode' enumerates the manipulable matrices.  
 data MatrixMode =
      PathUserToSurface
    | ImageUserToSurface
@@ -119,39 +132,77 @@ data MatrixMode =
    deriving ( Eq, Ord, Show )   
 
 -- | Set the matrix mode.
+--
+-- 'matrixMode' is a write-only state variable corresponding to
+-- @VG_MATRIX_MODE@:
+--
 matrixMode :: SettableStateVar MatrixMode  
 matrixMode = makeSettableStateVar $  
     seti MatrixMode . fromIntegral . marshalMatrixMode
 
--- | @loadIdentity@ corresponds to the OpenVG function @vgLoadIdentity@. 
+-- | Set the current matrix to the identity matrix.
+--
+-- 'loadIdentity' corresponds to the OpenVG function 
+-- @vgLoadIdentity@. 
+--
 loadIdentity :: IO ()
 loadIdentity = vgLoadIdentity
 
--- | @loadMatrix@ corresponds to the OpenVG function @vgLoadMatrix@. 
+-- | Set the current matrix to the supplied matrix.
+--
+-- 'loadMatrix' corresponds to the OpenVG function @vgLoadMatrix@.
+-- 
+-- \*\* Note - this function has an unfortunate type and should
+-- be wrapped. \*\* 
+--
 loadMatrix :: Ptr VGfloat -> IO ()
 loadMatrix = vgLoadMatrix
 
--- | @getMatrix@ - TODO.
+-- | Get the current matrix.
+--
+-- 'getMatrix' corresponds to the OpenVG function @vgGetMatrix@.
+-- 
+-- \*\* Note - this function has an unfortunate type and should
+-- be wrapped. \*\* 
+--
 getMatrix :: IO (Ptr VGfloat)
 getMatrix = vgGetMatrix
 
--- | @multMatrix@ - TODO.
+-- | Multiply the current matrix by the supplied matrix.
+-- 
+-- 'multMatrix' corresponds to the OpenVG function @vgMultMatrix@.
+-- 
+-- \*\* Note - this function has an unfortunate type and should
+-- be wrapped. \*\* 
+--
 multMatrix :: Ptr VGfloat -> IO ()
 multMatrix = vgMultMatrix
 
--- | @translate@ corresponds to the OpenVG function @vgTranslate@. 
+-- | Apply a translation to the current matrix.
+--
+-- 'translate' corresponds to the OpenVG function @vgTranslate@. 
+--
 translate :: VGfloat -> VGfloat -> IO ()
 translate = vgTranslate
 
--- | @scale@ corresponds to the OpenVG function @vgScale@. 
+-- | Apply a scaling to the current matrix.
+--
+-- 'scale' corresponds to the OpenVG function @vgScale@. 
+--
 scale :: VGfloat -> VGfloat -> IO ()
 scale = vgScale
 
--- | @shear@ corresponds to the OpenVG function @vgShear@.     
+-- | Apply a shear to the current matrix.
+--
+-- 'shear' corresponds to the OpenVG function @vgShear@.
+--
 shear :: VGfloat -> VGfloat -> IO ()
 shear = vgShear
 
--- | @rotate@ corresponds to the OpenVG function @vgRotate@.     
+-- | Apply a rotation to the current matrix.
+--
+-- 'rotate' corresponds to the OpenVG function @vgRotate@.
+--
 rotate :: VGfloat -> IO ()
 rotate = vgRotate    
     

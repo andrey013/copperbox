@@ -21,7 +21,7 @@
 module Graphics.Rendering.OpenVG.VG.Paths (
   -- * Datatypes
   PathDatatype(..),
-  PathType(..),
+  PathAbsRel(..),
   PathCommand(..),
   
   
@@ -140,8 +140,9 @@ import Foreign.Storable ( Storable )
 --------------------------------------------------------------------------------
 -- Datatypes
 
--- | @PathDatatype@ defines the permissible numeric types for path 
--- coordinate data.     
+-- | 'PathDatatype' enumerates the available numeric types for 
+-- path coordinate data.     
+--
 data PathDatatype =
      Int8
    | Int16
@@ -149,16 +150,17 @@ data PathDatatype =
    | Float
    deriving ( Eq, Ord, Show )
 
--- | @PathType@ corresponds to the OpenVG enumeration @VGPathAbsRel@. 
-data PathType = 
-      Absolute
+-- | 'PathAbsRel' enumerates the path addressing types, 
+-- @absolute@ or @relative@. 
+data PathAbsRel = 
+     Absolute
    | Relative
    deriving ( Eq, Ord, Show )
 
 -- There is no Haskell equivalent to @VGPathSegment@. 
 -- It is subsumed by PathCommand 
 
--- | @PathCommand@ corresponds to the OpenVG enumeration @VGPathCommand@,
+-- | 'PathCommand' corresponds to the OpenVG enumeration @VGPathCommand@,
 -- but includes ClosePath aka @VG_CLOSE_PATH@.      
 data PathCommand = 
      ClosePath

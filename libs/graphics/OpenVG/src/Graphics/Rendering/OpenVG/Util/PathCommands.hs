@@ -49,18 +49,18 @@ import Graphics.Rendering.OpenVG.VG.Paths
 
 data SegmentCommand a = 
      CLOSE_PATH
-   | MOVE_TO    PathType a a
-   | LINE_TO    PathType a a
-   | HLINE_TO   PathType a
-   | VLINE_TO   PathType a
-   | QUAD_TO    PathType a a a a
-   | CUBIC_TO   PathType a a a a a a
-   | SQUAD_TO   PathType a a
-   | SCUBIC_TO  PathType a a a a
-   | SCCWARC_TO PathType a a a a a
-   | SCWARC_TO  PathType a a a a a
-   | LCCWARC_TO PathType a a a a a
-   | LCWARC_TO  PathType a a a a a
+   | MOVE_TO    PathAbsRel a a
+   | LINE_TO    PathAbsRel a a
+   | HLINE_TO   PathAbsRel a
+   | VLINE_TO   PathAbsRel a
+   | QUAD_TO    PathAbsRel a a a a
+   | CUBIC_TO   PathAbsRel a a a a a a
+   | SQUAD_TO   PathAbsRel a a
+   | SCUBIC_TO  PathAbsRel a a a a
+   | SCCWARC_TO PathAbsRel a a a a a
+   | SCWARC_TO  PathAbsRel a a a a a
+   | LCCWARC_TO PathAbsRel a a a a a
+   | LCWARC_TO  PathAbsRel a a a a a
    deriving ( Eq, Show )
 
 pathData :: StorablePathData a => [SegmentCommand a] -> ([PathCommand], [a])
