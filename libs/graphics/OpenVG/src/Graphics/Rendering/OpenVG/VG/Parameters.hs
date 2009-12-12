@@ -90,18 +90,41 @@ data ParamType =
    | MaxGaussianStdDeviation
    deriving ( Eq, Ord, Show )
 
+-- | Set a value of type 'VGfloat' within the current context.
+--
+-- 'setf' corresponds to the OpenVG function @vgSetf@.
+--
+-- > void vgSetf (VGParamType paramType, VGfloat value);
+--
 setf :: ParamType -> VGfloat -> IO ()
 setf typ = vgSetf $ marshalParamType typ
 
+-- | Set a value of type 'VGint' within the current context.
+--
+-- 'seti' corresponds to the OpenVG function @vgSeti@.
+--
+-- > void vgSeti (VGParamType paramType, VGint value);
+--
 seti :: ParamType -> VGint -> IO ()
 seti typ = vgSeti $ marshalParamType typ
 
--- vgSetfv :: VGenum -> VGint -> Ptr VGfloat -> IO ()
--- TODO - Lists or arrays?
+-- | Set a list of 'VGfloat' values within the current context.
+--
+-- 'setfv' corresponds to the OpenVG function @vgSetfv@.
+--
+-- > void vgSetfv(VGParamType paramType, VGint count, const VGfloat * values);
+--
 setfv :: ParamType -> [VGfloat] -> IO ()
 setfv typ vals = newArray vals >>= 
                  vgSetfv (marshalParamType typ) (fromIntegral $ length vals)
     
+
+-- | Set a list of 'VGint' values within the current context.
+--
+-- 'setiv' corresponds to the OpenVG function @vgSetiv@.
+--
+-- > void vgSetiv(VGParamType paramType, VGint count, const VGint * values);
+--
 setiv :: ParamType -> [VGint] -> IO ()
 setiv typ vals = newArray vals >>= 
                  vgSetiv (marshalParamType typ) (fromIntegral $ length vals)

@@ -369,16 +369,19 @@ data ImageMode =
 
 -- | Set the draw image mode.
 --
--- 'drawImageFormat' provides access to the OpenVG state variable
--- @VG_IMAGE_FORMAT@:
+-- 'drawImageMode' provides access to the OpenVG state variable
+-- @VG_IMAGE_MODE@:
 --
--- > vgSeti(VG_IMAGE_FORMAT, quality);
+-- > vgSeti(VG_IMAGE_MODE, quality);
 --    
 drawImageMode :: SettableStateVar ImageMode  
 drawImageMode = makeSettableStateVar $
     seti ImageMode . fromIntegral . marshalImageMode
 
--- | @drawImage@ corresponds to the OpenVG function @vgDrawImage@. 
+-- | Draw the image on the current drawing surface.
+--
+-- 'drawImage' corresponds to the OpenVG function @vgDrawImage@.
+--
 drawImage :: VGImage -> IO ()
 drawImage = vgDrawImage
 
@@ -386,22 +389,36 @@ drawImage = vgDrawImage
 --------------------------------------------------------------------------------
 -- Reading and writing drawing surface pixels
 
--- | @setPixels@ corresponds to the OpenVG function @vgSetPixels@. 
+-- | Copy pixel data from the image to the drawing surface.
+--
+-- 'setPixels' corresponds to the OpenVG function @vgSetPixels@. 
+--
 setPixels :: Position -> VGImage -> Position -> Size -> IO ()
 setPixels (Position dx dy) src (Position sx sy) =
     unSizeM $ vgSetPixels dx dy src sx sy
 
--- | @writePixels@ corresponds to the OpenVG function @vgWritePixels@. 
+-- | Copy pixels to the drawing surface without first creating an
+-- image.
+--
+-- 'writePixels' corresponds to the OpenVG function @vgWritePixels@.
+--
 writePixels :: Ptr a -> VGint -> ImageFormat -> Position -> Size -> IO ()
 writePixels pixeldata stride fmt (Position dx dy) =  
     unSizeM $ vgWritePixels pixeldata stride (marshalImageFormat fmt) dx dy
 
--- | @getPixels@ corresponds to the OpenVG function @vgGetPixels@. 
+-- | Retrieve pixel information from the drawing surface. 
+-- 
+-- 'getPixels' corresponds to the OpenVG function @vgGetPixels@.
+--
 getPixels :: VGImage  -> Position -> Position -> Size -> IO ()
 getPixels dst (Position dx dy) (Position sx sy) =  
     unSizeM $ vgGetPixels dst dx dy sx sy
 
--- | @readPixels@ corresponds to the OpenVG function @vgReadPixels@.
+-- | Copy data from the drawing surface without creating an
+-- image first. 
+-- 
+-- 'readPixels' corresponds to the OpenVG function @vgReadPixels@.
+--
 readPixels :: Ptr a -> VGint -> ImageFormat -> Position -> Size -> IO ()
 readPixels pixeldata stride fmt (Position sx sy) = unSizeM $
     vgReadPixels pixeldata stride (marshalImageFormat fmt) sx sy
@@ -409,7 +426,11 @@ readPixels pixeldata stride fmt (Position sx sy) = unSizeM $
 --------------------------------------------------------------------------------
 -- Copying portions of the drawing surface
 
--- | @copyPixels@ corresponds to the OpenVG function @vgCopyPixels@.
+-- | Copy pixels from one region of the drawing surface to 
+-- another.
+--
+-- 'copyPixels' corresponds to the OpenVG function @vgCopyPixels@.
+--
 copyPixels :: Position -> Position -> Size -> IO ()
 copyPixels (Position dx dy) (Position sx sy) = 
     unSizeM $ vgCopyPixels dx dy sx sy

@@ -21,6 +21,8 @@ description:
   RadialGradient changed to (Vector4 VGfloat, VGfloat).
   Removed Marshal and Unmarshal type classes, marshallBool and 
   unmarshalBool move out of the BasicTypes module.
+  Type change for colorRampStops.
+  Name change - maxStops changed to maxColorRampStops.
   Tweaked Haddock docs.
   .
   0.2.1 to 0.3.0 Changes to use the split OpenGL packages, added type 
