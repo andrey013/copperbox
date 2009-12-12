@@ -65,7 +65,6 @@ import Data.StateVar (
     StateVar(), makeStateVar, SettableStateVar, makeSettableStateVar )   
 
 import Control.Applicative
-import Control.Monad ( liftM )
 import Foreign.Ptr ( Ptr )   
 
 

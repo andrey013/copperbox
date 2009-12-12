@@ -559,11 +559,13 @@ marshalPaintMode :: PaintMode -> VGenum
 marshalPaintMode x = case x of 
     StrokePath -> vg_STROKE_PATH
     FillPath   -> vg_FILL_PATH
+
+{-
     
 unmarshalPaintMode :: VGenum -> PaintMode 
 unmarshalPaintMode x
     | x == vg_STROKE_PATH         = StrokePath 
     | x == vg_FILL_PATH           = FillPath 
     | otherwise = error ("unmarshalPaintMode: illegal value " ++ show x)
-
+-}
 

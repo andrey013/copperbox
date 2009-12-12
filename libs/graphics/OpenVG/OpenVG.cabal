@@ -23,8 +23,9 @@ description:
   unmarshalBool move out of the BasicTypes module.
   Type change for colorRampStops.
   Name change - maxStops changed to maxColorRampStops.
-  PathType(..) changed to PathAbsRel(..)
+  PathType(..) changed to PathAbsRel(..).
   Tweaked Haddock docs.
+  ErrorCodes changed in VGU.  
   .
   0.2.1 to 0.3.0 Changes to use the split OpenGL packages, added type 
   coercions to the Size data type (these might not be ideal).
@@ -70,8 +71,7 @@ library
     Graphics.Rendering.OpenVG.VG.RenderingQuality,
     Graphics.Rendering.OpenVG.VG.Scissoring,
     Graphics.Rendering.OpenVG.VG.ShivaExtensions,
-    Graphics.Rendering.OpenVG.VGU.VGU,
-    Graphics.Rendering.OpenVG.VGU.Errors
+    Graphics.Rendering.OpenVG.VGU.VGU
   
   other-modules:
     Graphics.Rendering.OpenVG.VG.Constants,

@@ -10,14 +10,12 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Import (convenience) module for the VGU utility library modules.
+-- Import (convenience) module for the VGU utility library module.
 --
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VGU (
-  module Graphics.Rendering.OpenVG.VGU.Errors,
   module Graphics.Rendering.OpenVG.VGU.VGU
 ) where
 
-import Graphics.Rendering.OpenVG.VGU.Errors
 import Graphics.Rendering.OpenVG.VGU.VGU
