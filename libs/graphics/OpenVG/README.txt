@@ -5,7 +5,7 @@ Haskell OpenVG 0.2 binds to ShivaVG-0.2.1
 Haskell OpenVG 0.2.1 binds to ShivaVG-0.2.1
 Haskell OpenVG 0.3.0 binds to ShiaVG-0.2.1 
 (thanks to Stefan Kirsten for the patches).
-
+Haskell OpenVG 0.4.0 binds to ShivaVG-0.2.1
 
 
 I've tested the bindings on both Windows XP (MinGW/Msys) 
@@ -14,8 +14,9 @@ and MacOSX Leopard.
 On MacOSX both the 0.2 and 0.1 bindings seem work on 
 their respective libraries.
 
-On Windows I've not been able to get the 0.3.0 bindings to 
-work (yet), 0.2.1 is preferred...
+On Windows the version 0.4.0 bindings now work, though please 
+make sure your Haskell OpenGL binding works first before trying 
+the OpenVG binding.
 
 
 

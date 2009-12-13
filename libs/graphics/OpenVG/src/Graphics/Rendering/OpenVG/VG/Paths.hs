@@ -9,11 +9,18 @@
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
--- Stability   :  unstable
+-- Stability   :  HIGHLY UNSTABLE
 -- Portability :  GHC
 --
 -- This module corresponds to section 8 (Paths) 
 -- of the OpenVG 1.0.1 specs.
+--
+-- \*\* WARNING - this module is due to be changed significantly 
+-- in the next revision so that it is closer to the original 
+-- OpenVG API.
+--
+-- This is unfortunate as the module defines the most significant 
+-- data types for vectors - the @Paths@. \*\*
 --
 --
 --------------------------------------------------------------------------------

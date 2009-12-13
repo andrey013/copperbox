@@ -6,40 +6,53 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Graphics
-synopsis:         OpenVG (shivag-0.2.1) binding
+synopsis:         OpenVG (ShivaVG-0.2.1) binding
 description:
-  A Haskell binding for the OpenVG vector graphics API version 1.0.1
-  specifically the ShivaVG-0.2.1 implementation.
+  A Haskell binding for the OpenVG vector graphics API version 
+  1.0.1, specifically the ShivaVG-0.2.1 implementation.
   .
   This version (0.4.0) is NOT compatible with the Haskell Platform 
   (2009.2.0.2) - it uses the split OpenGL packages (RAW, StateVar, 
   etc.).
   .
+  \*\* WARNING - the module @Graphics.Rendering.OpenVG.VG.Paths@ 
+  seems flawed in hindsight, as it ammalgamates the OpenVG 
+  @VGPathSegment@ and @VGPathCommand@ data types into one Haskell 
+  type. The binding is thus likely to change in the next major 
+  revision in what is perhaps the worst place. \*\*.
+  .
   Changelog
   .
-  0.3.0 to 0.4.0 LinearGradient type changed to be Vector4 VGfloat.
-  RadialGradient changed to (Vector4 VGfloat, VGfloat).
-  Removed Marshal and Unmarshal type classes, marshallBool and 
-  unmarshalBool move out of the BasicTypes module.
-  Type change for colorRampStops.
-  Name change - maxStops changed to maxColorRampStops.
-  PathType(..) changed to PathAbsRel(..).
-  Tweaked Haddock docs.
-  ErrorCodes changed in VGU.  
+  0.3.0 to 0.4.0 
   .
-  0.2.1 to 0.3.0 Changes to use the split OpenGL packages, added type 
-  coercions to the Size data type (these might not be ideal).
+  * LinearGradient type changed to be Vector4 VGfloat.
   . 
-  0.2 to 0.2.1 .cabal file upper bounds for OpenGL and GLUT, and
-  Windows installation instructions updated.
+  * RadialGradient changed to (Vector4 VGfloat, VGfloat).
+  .
+  * Removed Marshal and Unmarshal type classes, marshallBool and 
+    unmarshalBool moved out of the BasicTypes module.
+  .
+  * Type change for colorRampStops.
+  .
+  * Name change - maxStops changed to maxColorRampStops.
+  .
+  * PathType(..) changed to PathAbsRel(..).
+  . 
+  * Substantial changes to Haddock docs.
+  .
+  * Error handling in VGU redone - the original code in 
+    ErrorsInternal was taken wholesale from Sven Panne\'s 
+    OpenGL binding to help me bootstrap the OpenVG binding. 
+    Regrettably I forgot to replace it or attribute it -
+    I've now replaced it. Sincere apologies to Sven Panne.
  
 build-type:         Simple
-stability:          unstable
+stability:          experimental
 cabal-version:      >= 1.2
 
 extra-source-files:
   InstallWindows.txt,
-  NEWS,
+  Changes,
   README.txt,
   examples/TestUtils.hs,
   examples/TestVgu.hs

@@ -1,0 +1,58 @@
+
+version 0.4.0 (13 Dec 2009):
+  * LinearGradient type changed to be Vector4 VGfloat.
+ 
+  * RadialGradient changed to (Vector4 VGfloat, VGfloat).
+
+  * Removed Marshal and Unmarshal type classes, marshallBool and 
+    unmarshalBool moved out of the BasicTypes module.
+
+  * Type change for colorRampStops.
+
+  * Name change - maxStops changed to maxColorRampStops.
+
+  * PathType(..) changed to PathAbsRel(..).
+
+  * Substantial changes to Haddock docs.
+
+  * Error handling in VGU redone - the original code in 
+    ErrorsInternal was taken wholesale from Sven Panne\'s 
+    OpenGL binding to help me bootstrap OpenVG binding. 
+    Regrettably I forgot to replace it or attribute it -
+    I've now replaced it. Sincere apologies to Sven Panne.
+
+version 0.3.0 (10 Dec 2009):
+  * Changes to use the split OpenGL packages 
+
+  * Added type coercions for the Size data type (these might not be ideal).
+
+
+version 0.2.1 (10 Dec 2009):
+  * .cabal file upper bounds for OpenGL and GLUT
+
+  * Windows installation instructions updated.
+
+
+version 0.2 (07 Jul 2009):
+  * Updated to support ShivaVG version 0.2.1
+
+  * ShivaVG 0.2.1 add support for
+    - vgHardwareQuery 
+
+  * ShivaVG 0.2.1 stubbed a number of functions that were previously missing
+    - vgMask
+    - vgChildImage
+    - vgGetParent
+    - vgColorMatrix
+    - vgConvolve
+    - vgSeparableConvolve
+    - vgGaussianBlur
+    - vgLookup
+    - vgLookupSingle
+
+    - vguComputeWarpQuadToSquare
+    - vguComputeWarpSquareToQuad
+    - vguComputeWarpQuadToQuad
+ 
+version 0.1 (02 Feb 2009):
+  * Support for ShivaVG version 0.2.0 
