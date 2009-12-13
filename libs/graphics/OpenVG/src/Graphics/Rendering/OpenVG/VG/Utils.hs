@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,7 +17,7 @@
 
 module Graphics.Rendering.OpenVG.VG.Utils (
   marshalBool, unmarshalBool,
-  bitwiseOr, unbits,
+  bitwiseOr, unbits32,
   unSize, unSizeF, unSizeM
 
   ) where
@@ -52,13 +51,14 @@ unmarshalBool x
 bitwiseOr :: (a -> VGenum) ->  [a] -> VGbitfield
 bitwiseOr fn = sum . map (fromIntegral . fn)
 
--- not the world's best formulation...
-unbits :: (VGenum -> a) -> VGbitfield -> [a]
-unbits fn field = map fn $ step field 0 1 where
-    step _ i _ | i > 32         = error $ "bomb"
-    step a _ _ | a <= 0         = []
-    step a i j | a `testBit` i  = j : step (a - fromIntegral j) (i+1) (j*2)
-               | otherwise      = step a (i+1) (j*2) 
+-- unbits is not productive at every step so cannot be an unfold.
+
+unbits32 :: (VGenum -> a) -> VGbitfield -> [a]
+unbits32 fn field = step field (0::Int) where
+    step a i | i >= 32        = []      -- should be unreachable anyway
+             | a <= 0         = []
+             | a `testBit` i  = (fn $ 2 ^ i) : step (a `clearBit` i) (i+1) 
+             | otherwise      = step a (i+1)
 
 
 -- Helper - unwrap Size

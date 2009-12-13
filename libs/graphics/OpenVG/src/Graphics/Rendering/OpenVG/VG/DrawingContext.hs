@@ -10,8 +10,8 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- This module corresponds to section 4.3 (Forcing Drawing to Complete) 
--- of the OpenVG 1.0.1 specs.
+-- This module corresponds to sections 4.1 (Errors) and 4.3 
+-- (Forcing Drawing to Complete) of the OpenVG 1.0.1 specs.
 --
 --------------------------------------------------------------------------------
 

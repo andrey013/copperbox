@@ -124,7 +124,7 @@ import Graphics.Rendering.OpenVG.VG.Parameters (
     getParameteri, getParameterf, seti, setf, setfv, geti )     
     
 import Graphics.Rendering.OpenVG.VG.Utils ( 
-    bitwiseOr, unbits, marshalBool, unmarshalBool )
+    bitwiseOr, unbits32, marshalBool, unmarshalBool )
 
 import Data.StateVar (
     SettableStateVar, makeSettableStateVar,
@@ -295,7 +295,7 @@ numCoords = makeGettableStateVar . flip getParameteri vg_PATH_NUM_COORDS
 -- function @vgGetPathCapabilities@. 
 getPathCapabilities :: VGPath -> IO [PathCapabilities]
 getPathCapabilities h = 
-    unbits unmarshalPathCapabilities <$> vgGetPathCapabilities h
+    unbits32 unmarshalPathCapabilities <$> vgGetPathCapabilities h
     
 -- | @removePathCapabilities@ corresponds to the OpenVG 
 -- function @vgRemovePathCapabilities@.  
