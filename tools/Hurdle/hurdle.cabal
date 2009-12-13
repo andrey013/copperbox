@@ -5,7 +5,7 @@ license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
-category:         Graphics
+category:         System
 synopsis:         Extract function names from Windows DLLs. 
 description:
   Hurdle - (H)askell (U)tilty (R)egarding (DL)l (E)xports.
