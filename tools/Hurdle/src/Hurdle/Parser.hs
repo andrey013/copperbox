@@ -183,6 +183,8 @@ sectionHeader = SectionHeader <$>
     <*> getWord32le
 
 
+-- At some point... I'll tidy this up.
+
 exportData :: SectionHeader -> Parser ExportData
 exportData section = do
     edt        <- exportDirectoryTable
@@ -203,12 +205,19 @@ exportData section = do
     jumpto eo_rva
     ords      <- count enc getWord16le
 
-    names <- exportNames section nptrs
+    names     <- exportNames section nptrs
+    
+    let nm_rva = fromIntegral $ 
+                   rvaToOffset (edt_name_rva edt) section
+
+    jumpto nm_rva
+    dllname   <- cstring
 
     return $ ExportData { ed_directory_table      = edt
                         , ed_export_address_table = ats
                         , ed_name_ptr_table       = nptrs
                         , ed_ordinal_table        = ords
+                        , ed_dll_name             = dllname
                         , ed_name_table           = names
                         }
 

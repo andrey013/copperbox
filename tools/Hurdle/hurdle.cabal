@@ -8,17 +8,18 @@ homepage:         http://code.google.com/p/copperbox/
 category:         Graphics
 synopsis:         Extract function names from Windows DLLs. 
 description:
-  Hurdle - (H)askell (U)tilty (R)egarding (DL)l (E)xtraction. 
+  Hurdle - (H)askell (U)tilty (R)egarding (DL)l (E)xports.
   .
   Extract function names from Windows DLLs a-la pexports.
   . 
   Hurdle has minimal dependencies: base, array and pretty.
   .
-  Currently it also has minimal utility - please consider 
-  pexports instead, afterall Hurdle was a Sunday afternoon
-  hack that took a wee bit longer. But... if anyone has a 
-  compelling use case that would benefit the community, I'm 
-  willing to look at extending Hurdle.
+  Currently Hurdle also has minimal utility - please consider 
+  pexports instead as Hurdle doesn't yet print ordinals 
+  etcetera (Hurdle was a Sunday afternoon hack that took a wee 
+  bit longer). But... if anyone has a compelling use case that 
+  would benefit the community, I'm willing to look at extending 
+  Hurdle.
   .
 build-type:         Simple
 stability:          unstable
@@ -31,7 +32,12 @@ Executable hurdle
 
   Main-Is:        Hurdle.hs
   Hs-Source-Dirs: src
-
+  Other-Modules:  Hurdle.Datatypes,
+                  Hurdle.DefOutput,
+                  Hurdle.ParseMonad,
+                  Hurdle.Parser,
+                  Hurdle.TextDump
+                  
 
 
 

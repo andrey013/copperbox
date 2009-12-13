@@ -157,6 +157,7 @@ data ExportData = ExportData
       , ed_export_address_table     :: [ExportAddress]
       , ed_name_ptr_table           :: [Word32]
       , ed_ordinal_table            :: [Word16]
+      , ed_dll_name                 :: String
       , ed_name_table               :: [String]
       }
   deriving Show

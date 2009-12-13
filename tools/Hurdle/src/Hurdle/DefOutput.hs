@@ -28,7 +28,7 @@ defText = renderStyle (Style PageMode 80 1.5) . defs
 
 
 defs :: Image -> Doc
-defs a =     text "LIBRARY"
+defs a =     text "LIBRARY" <+> text (ed_dll_name $ image_export_data a)
          $+$ text "EXPORTS"
          $+$ outputExports ( image_export_data a)
 
