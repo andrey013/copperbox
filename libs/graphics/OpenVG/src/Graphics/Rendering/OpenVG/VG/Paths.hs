@@ -29,6 +29,7 @@ module Graphics.Rendering.OpenVG.VG.Paths (
   -- * Datatypes
   PathDatatype(..),
   PathAbsRel(..),
+  PathSegment(..),
   PathCommand(..),
   
   
@@ -88,39 +89,9 @@ import Graphics.Rendering.OpenVG.VG.CFunDecls (
     vgAppendPath, vgAppendPathData, vgModifyPathCoords,
     vgTransformPath, vgInterpolatePath,    
     vgDrawPath )
-import Graphics.Rendering.OpenVG.VG.Constants ( 
-    vg_PATH_DATATYPE_S_8, vg_PATH_DATATYPE_S_16,
-    vg_PATH_DATATYPE_S_32, vg_PATH_DATATYPE_F,
-    vg_PATH_FORMAT_STANDARD,
-    
-    vg_CLOSE_PATH, 
-    vg_MOVE_TO_ABS, vg_MOVE_TO_REL,
-    vg_LINE_TO_ABS, vg_LINE_TO_REL,
-    vg_HLINE_TO_ABS, vg_HLINE_TO_REL,
-    vg_VLINE_TO_ABS, vg_VLINE_TO_REL,
-    vg_QUAD_TO_ABS, vg_QUAD_TO_REL,
-    vg_CUBIC_TO_ABS, vg_CUBIC_TO_REL,
-    vg_SQUAD_TO_ABS, vg_SQUAD_TO_REL,
-    vg_SCUBIC_TO_ABS, vg_SCUBIC_TO_REL,
-    vg_SCCWARC_TO_ABS, vg_SCCWARC_TO_REL,
-    vg_SCWARC_TO_ABS, vg_SCWARC_TO_REL,
-    vg_LCCWARC_TO_ABS, vg_LCCWARC_TO_REL,
-    vg_LCWARC_TO_ABS, vg_LCWARC_TO_REL,
-    
-    vg_PATH_CAPABILITY_APPEND_FROM, vg_PATH_CAPABILITY_APPEND_TO,
-    vg_PATH_CAPABILITY_MODIFY, vg_PATH_CAPABILITY_TRANSFORM_FROM,
-    vg_PATH_CAPABILITY_TRANSFORM_TO, vg_PATH_CAPABILITY_INTERPOLATE_FROM, 
-    vg_PATH_CAPABILITY_INTERPOLATE_TO, vg_PATH_CAPABILITY_PATH_LENGTH, 
-    vg_PATH_CAPABILITY_POINT_ALONG_PATH, vg_PATH_CAPABILITY_TANGENT_ALONG_PATH, 
-    vg_PATH_CAPABILITY_PATH_BOUNDS, vg_PATH_CAPABILITY_PATH_TRANSFORMED_BOUNDS,
-    vg_PATH_CAPABILITY_ALL, 
-    
-    vg_PATH_FORMAT, vg_PATH_DATATYPE, vg_PATH_SCALE, vg_PATH_BIAS, 
-    vg_PATH_NUM_SEGMENTS, vg_PATH_NUM_COORDS,
-    vg_CAP_BUTT, vg_CAP_ROUND, vg_CAP_SQUARE,
-    vg_JOIN_MITER, vg_JOIN_ROUND, vg_JOIN_BEVEL,
-    vg_EVEN_ODD, vg_NON_ZERO,
-    vg_STROKE_PATH, vg_FILL_PATH  )
+
+import Graphics.Rendering.OpenVG.VG.Constants
+
 import Graphics.Rendering.OpenVG.VG.Parameters ( 
     ParamType ( FillRule, 
                 StrokeLineWidth, StrokeCapStyle,
@@ -166,12 +137,26 @@ data PathAbsRel =
 
 -- There is no Haskell equivalent to @VGPathSegment@. 
 -- It is subsumed by PathCommand 
+data PathSegment = 
+     ClosePath
+   | MoveTo 
+   | LineTo 
+   | HLineTo 
+   | VLineTo
+   | QuadTo 
+   | CubicTo 
+   | SQuadTo 
+   | SCubicTo 
+   | SCCWArcTo 
+   | SCWArcTo 
+   | LCCWArcTo 
+   | LCWArcTo
+   deriving ( Eq, Ord, Show )
 
 -- | 'PathCommand' corresponds to the OpenVG enumeration @VGPathCommand@,
 -- but includes ClosePath aka @VG_CLOSE_PATH@.      
 data PathCommand = 
-     ClosePath
-   | MoveToAbs
+     MoveToAbs
    | MoveToRel
    | LineToAbs
    | LineToRel
@@ -478,10 +463,26 @@ unmarshalPathDatatype x
     | otherwise = error ("unmarshalPathDatatype: illegal value " ++ show x)
 
 
+marshalPathSegment :: PathSegment -> VGenum
+marshalPathSegment x = case x of
+    ClosePath -> vg_CLOSE_PATH
+    MoveTo    -> vg_MOVE_TO
+    LineTo    -> vg_LINE_TO
+    HLineTo   -> vg_HLINE_TO
+    VLineTo   -> vg_VLINE_TO
+    QuadTo    -> vg_QUAD_TO
+    CubicTo   -> vg_CUBIC_TO
+    SQuadTo   -> vg_SQUAD_TO
+    SCubicTo  -> vg_SCUBIC_TO
+    SCCWArcTo -> vg_SCCWARC_TO
+    SCWArcTo  -> vg_SCWARC_TO
+    LCCWArcTo -> vg_LCCWARC_TO
+    LCWArcTo  -> vg_LCWARC_TO
+ 
+
 
 marshalPathCommand :: PathCommand -> VGenum
 marshalPathCommand x = case x of
-    ClosePath    -> vg_CLOSE_PATH
     MoveToAbs    -> vg_MOVE_TO_ABS
     MoveToRel    -> vg_MOVE_TO_REL
     LineToAbs    -> vg_LINE_TO_ABS

@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.OpenVG.Util.PathCommands
+-- Module      :  PathCommands
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -23,7 +23,7 @@
 
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.OpenVG.Util.PathCommands (
+module PathCommands (
   -- * Translate Path Commands
   pathData,
   

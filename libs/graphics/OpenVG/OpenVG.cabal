@@ -1,5 +1,5 @@
 name:             OpenVG
-version:          0.4.0
+version:          0.5.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -11,7 +11,7 @@ description:
   A Haskell binding for the OpenVG vector graphics API version 
   1.0.1, specifically the ShivaVG-0.2.1 implementation.
   .
-  This version (0.4.0) is NOT compatible with the Haskell Platform 
+  This version (0.5.0) is NOT compatible with the Haskell Platform 
   (2009.2.0.2) - it uses the split OpenGL packages (RAW, StateVar, 
   etc.).
   .
@@ -22,6 +22,13 @@ description:
   revision in what is perhaps the worst place. \*\*.
   .
   Changelog
+  0.4.0 to 0.5.0
+  .
+  * Re-moved the Util.PathCommands and Util.Colors modules.
+  . 
+  * Added a PathSegment data type to VG.Paths, changed PathCommand
+    in VG.Paths.
+  .
   .
   0.3.0 to 0.4.0 
   .
@@ -56,6 +63,8 @@ extra-source-files:
   README.txt,
   examples/TestUtils.hs,
   examples/TestVgu.hs
+  examples/Colors.hs
+  examples/PathCommands.hs
 
 library
   hs-source-dirs:     src
@@ -69,8 +78,6 @@ library
   
   exposed-modules:
     Graphics.Rendering.OpenVG,
-    Graphics.Rendering.OpenVG.Util.Colors,
-    Graphics.Rendering.OpenVG.Util.PathCommands,
     Graphics.Rendering.OpenVG.VG,
     Graphics.Rendering.OpenVG.VGU,
     Graphics.Rendering.OpenVG.VG.BasicTypes,

@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.OpenVG.Util.Colors
+-- Module      :  Colors
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -21,7 +21,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Graphics.Rendering.OpenVG.Util.Colors (
+module Colors (
     -- * Named colours
     aliceblue, 
     antiquewhite,
