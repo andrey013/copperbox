@@ -47,7 +47,7 @@ readMidi filename = either error return =<< runParser midiFile filename
 midiFile :: Parser MidiFile  
 midiFile = do
     h  <- header
-    se <- iters (trackCount h) track
+    se <- countS (trackCount h) track
     return $ MidiFile h se
   where
     trackCount :: Header -> Int 
@@ -57,12 +57,12 @@ header :: Parser Header
 header = Header <$> (assertString "MThd"  *> assertLength (6::Int) *> format)
                 <*> getWord16be          <*> timeDivision 
 
-
-iters :: Int -> Parser a -> Parser (Seq a)
-iters i p = step S.empty i
+countS :: Int -> Parser a -> Parser (Seq a)
+countS i p = step S.empty i
   where 
     step se n   | n <= 0      = return se
                 | otherwise   = p >>= \a -> step (se |> a) (n-1)
+
 
 track :: Parser Track
 track = Track <$> 
@@ -174,7 +174,7 @@ textEvent ty = (TextEvent ty . snd) <$> getVarlenText
 -- helpers
 
 getWord24be   :: Parser Word32
-getWord24be   = w32be 0   <$> getWord8 <*> getWord8 <*> getWord8
+getWord24be   = w32be 0 <$> getWord8 <*> getWord8 <*> getWord8
 
 
 getWord8split :: Parser (Word8,Word8) 

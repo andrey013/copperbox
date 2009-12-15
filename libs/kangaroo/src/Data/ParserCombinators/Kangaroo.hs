@@ -17,6 +17,8 @@
 module Data.ParserCombinators.Kangaroo 
   (
     module Data.ParserCombinators.Kangaroo.ParseMonad
+  , module Data.ParserCombinators.Kangaroo.Prim
   ) where
 
 import Data.ParserCombinators.Kangaroo.ParseMonad
+import Data.ParserCombinators.Kangaroo.Prim
