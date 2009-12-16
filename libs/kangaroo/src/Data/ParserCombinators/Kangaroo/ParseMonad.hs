@@ -14,7 +14,33 @@
 --
 --------------------------------------------------------------------------------
 
-module Data.ParserCombinators.Kangaroo.ParseMonad where
+module Data.ParserCombinators.Kangaroo.ParseMonad 
+  (
+    GenKangaroo
+  , ParseErr
+  
+  , getSt
+  , putSt
+  , modifySt
+  
+  , getUserSt
+  , putUserSt
+  , modifyUserSt
+
+  , askEnv
+  , throwErr
+  , runGenKangaroo
+
+  , reportError
+  , word8
+  , opt 
+  , position
+  , atEnd
+  , lengthRemaining
+  , withinRegion
+
+   
+  ) where
 
 import Control.Applicative
 import Control.Monad
@@ -130,7 +156,6 @@ runGenKangaroo p user_state filename =
     withBinaryFile filename ReadMode $ \ handle -> 
       do { sz          <- hFileSize handle
          ; arr         <- newArray_ (0,fromIntegral $ sz-1)
-         -- Next line necessary, even though the result is not needed...
          ; rsz         <- hGetArray handle arr  (fromIntegral sz)
          ; (ans,_,ust) <- runP p rsz arr
          ; return (ans,ust)   
@@ -144,6 +169,13 @@ runGenKangaroo p user_state filename =
 -- 
 
 
+reportError :: ParseErr -> GenKangaroo ust a
+reportError s = do 
+    posn <- getSt
+    throwErr $ s ++ posStr posn
+  where
+    posStr p = " position " ++ show p   
+
    
 word8 :: GenKangaroo ust Word8
 word8 = do
@@ -154,16 +186,56 @@ word8 = do
     return a
 
 
+-- no 'try' in Kangaroo... 
+-- opt is the nearest to it
+opt :: GenKangaroo ust a -> GenKangaroo ust (Maybe a)
+opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans -> 
+    case ans of
+      (Left _, st', ust')  -> return (Right Nothing, st', ust')
+      (Right a, st', ust') -> return (Right $ Just a, st', ust')
+
+position :: GenKangaroo ust Int
+position = liftM arr_ix_ptr  getSt
+
 atEnd :: GenKangaroo ust Bool
 atEnd = getSt >>= \(ArrIx ix end) -> return $ ix >= end
 
+lengthRemaining :: GenKangaroo ust Int
+lengthRemaining = getSt >>= \(ArrIx ix end) -> 
+   let rest = end - ix in if rest < 0 then return 0 else return rest
 
-reportError :: ParseErr -> GenKangaroo ust a
-reportError s = do 
-    posn <- getSt
-    throwErr $ s ++ posStr posn
+
+
+--------------------------------------------------------------------------------
+-- The important one...
+
+
+withinRegion :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+withinRegion start end p = do { st    <- getSt 
+                              ; forward st     
+                              ; shorter st 
+                              ; ans   <- p
+                              ; putSt st
+                              ; return ans
+                              }
   where
-    posStr p = " position " ++ show p   
+    forward st | start >= arr_ix_ptr st = return ()
+               | otherwise              = reportError $ 
+                                            backtrackErr start (arr_ix_ptr st)
 
+    shorter st | end <= arr_ix_end st = return ()
+               | otherwise            = reportError $ 
+                                          tooFarErr end (arr_ix_end st)
 
+backtrackErr :: Int -> Int -> String  
+backtrackErr new_pos old_pos =
+    "Kangaroo.ParserMonad.withinRegion - cannot backtrack with withinRegion, " 
+           ++ show new_pos ++ " is before current position " 
+           ++ show old_pos
 
+tooFarErr :: Int -> Int -> String
+tooFarErr new_end old_end = 
+    "Kangaroo.ParseMonad.withinRegion - new end point " 
+       ++ show new_end ++ " extends beyond the end of the current region "
+       ++ show old_end
+ 

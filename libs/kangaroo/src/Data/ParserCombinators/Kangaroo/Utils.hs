@@ -23,10 +23,38 @@ module Data.ParserCombinators.Kangaroo.Utils
   , ooo
   , oooo
 
+  -- * numbers from Word8 
+  , w16be
+  , w32be
+
+  , w16le
+  , w32le
+  , w64be
+
+  , i16be
+  , i32be
+
+  , i16le
+  , i32le
+  
+  , shiftL8
+  , shiftL16
+  , shiftL24
+  , shiftL32
+  , shiftL40
+  , shiftL48
+  , shiftL56
+
   ) where
 
 
 import Control.Applicative
+
+import Data.Bits
+-- import Data.Char
+import Data.Int
+import Data.Word
+
 
 infixr 5 <:>
 
@@ -51,3 +79,75 @@ ooo f g = ((f .) .) . g
 -- | Compose an arity 1 function with an arity 4 function.
 oooo :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
 oooo f g = (((f .) .) .) . g  
+
+
+
+--------------------------------------------------------------------------------
+
+
+
+w16le :: Word8 -> Word8 -> Word16
+w16le a b = fromIntegral a + (shiftL8 b)
+
+w32le :: Word8 -> Word8 -> Word8 -> Word8 -> Word32
+w32le a b c d = fromIntegral a + (shiftL8 b) + (shiftL16 c) + (shiftL24 d)      
+
+
+-- Woah! The integer ones don't look right - what about the sign?
+
+i16le :: Word8 -> Word8 -> Int16
+i16le a b = fromIntegral $ w16le a b
+              
+i32le :: Word8 -> Word8 -> Word8 -> Word8 -> Int32
+i32le a b c d  = fromIntegral $ w32le a b c d                
+
+
+i16be :: Word8 -> Word8 -> Int16
+i16be a b = fromIntegral $ w16be a b
+                            
+i32be :: Word8 -> Word8 -> Word8 -> Word8 -> Int32
+i32be a b c d = fromIntegral $ w32be a b c d
+
+
+w16be :: Word8 -> Word8 -> Word16
+w16be a b = (shiftL8 a) + fromIntegral b
+     
+            
+w32be :: Word8 -> Word8 -> Word8 -> Word8 -> Word32
+w32be a b c d = (shiftL24 a) + (shiftL16 b) + (shiftL8 c) + fromIntegral d
+
+-- To do...
+w64be :: Word8 -> Word8 -> Word8 -> Word8 -> 
+           Word8 -> Word8 -> Word8 -> Word8 -> Word64
+w64be a b c d e f g h = a' + b' + c' + d' + e' + f' + g' + h' where
+    a' = (fromIntegral a) `shiftL` 56
+    b' = (fromIntegral b) `shiftL` 48
+    c' = (fromIntegral c) `shiftL` 40
+    d' = (fromIntegral d) `shiftL` 32
+    e' = (fromIntegral e) `shiftL` 24
+    f' = (fromIntegral f) `shiftL` 16
+    g' = (fromIntegral g) `shiftL` 8
+    h' = (fromIntegral h) 
+
+
+shiftL8 :: (Bits b, Integral b) => Word8 -> b
+shiftL8 = (`shiftL` 8) . fromIntegral
+
+shiftL16 :: (Bits b, Integral b) => Word8 -> b
+shiftL16 = (`shiftL` 16) . fromIntegral
+
+shiftL24 :: (Bits b, Integral b) => Word8 -> b
+shiftL24 = (`shiftL` 24) . fromIntegral
+
+shiftL32 :: (Bits b, Integral b) => Word8 -> b
+shiftL32 = (`shiftL` 32) . fromIntegral
+
+shiftL40 :: (Bits b, Integral b) => Word8 -> b
+shiftL40 = (`shiftL` 40) . fromIntegral
+
+shiftL48 :: (Bits b, Integral b) => Word8 -> b
+shiftL48 = (`shiftL` 48) . fromIntegral
+
+shiftL56 :: (Bits b, Integral b) => Word8 -> b
+shiftL56 = (`shiftL` 56) . fromIntegral
+
