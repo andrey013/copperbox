@@ -70,7 +70,7 @@ getMessages :: Kangaroo (Seq Message)
 getMessages = rec S.empty
   where
     rec acc = do
-        end <- eof
+        end <- atEnd
         if end then reportError $ "no end-of-track message before end of input"
                else do step1 acc
     

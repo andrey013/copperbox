@@ -26,7 +26,10 @@ type ParseErr = String
 
 type ImageData = IOUArray Int Word8   -- Is Int big enough for index?
 
-type St    = Int            -- 'file' position
+data ArrIx = ArrIx { arr_ix_ptr :: !Int, arr_ix_end :: !Int }
+  deriving (Eq,Show) 
+
+type St    = ArrIx
 type Env   = ImageData
   
 
@@ -80,7 +83,11 @@ instance Applicative (GenKangaroo ust) where
   pure = return
   (<*>) = ap
 
-
+-- I don't think Kangaroo has natural implementations of 
+-- Alternative or MonadPlus.
+-- My 'proposition' is that the sort of parsing that Kangaroo 
+-- intends to provide you always now want you want hence there 
+-- is no inbuilt backtracking or support for list-of-successes.
 
 
 getSt :: GenKangaroo ust St
@@ -121,15 +128,15 @@ liftIOAction ma = GenKangaroo $ \_ st ust ->
 runGenKangaroo :: GenKangaroo ust a -> ust -> FilePath -> IO (Either ParseErr a,ust)
 runGenKangaroo p user_state filename = 
     withBinaryFile filename ReadMode $ \ handle -> 
-      do { sz'         <- hFileSize handle
-         ; let sz = fromIntegral sz'
-         ; arr         <- newArray_ (0,sz-1)
-         ; (ans,_,ust) <- runP p arr
+      do { sz          <- hFileSize handle
+         ; arr         <- newArray_ (0,fromIntegral $ sz-1)
+         -- Next line necessary, even though the result is not needed...
+         ; rsz         <- hGetArray handle arr  (fromIntegral sz)
+         ; (ans,_,ust) <- runP p rsz arr
          ; return (ans,ust)   
          }
   where 
---    runP :: GenKangaroo ust a -> ImageData -> IO (Either ParseErr a,St,ust) 
-    runP (GenKangaroo x) arr = x arr 0 user_state
+    runP (GenKangaroo x) upper arr = x arr (ArrIx 0 (upper-1)) user_state
 
 
 
@@ -140,19 +147,15 @@ runGenKangaroo p user_state filename =
    
 word8 :: GenKangaroo ust Word8
 word8 = do
-    ix   <- getSt
-    arr  <- askEnv
-    a    <- liftIOAction $ readArray arr ix
-    putSt $ ix+1
+    (ArrIx ix end)   <- getSt
+    arr              <- askEnv
+    a                <- liftIOAction $ readArray arr ix
+    putSt $ ArrIx (ix+1) end
     return a
 
 
-eof :: GenKangaroo ust Bool
-eof = do
-     ix  <- getSt
-     arr <- askEnv
-     (_,up)  <- liftIOAction $ getBounds arr
-     return $ (ix>=up) 
+atEnd :: GenKangaroo ust Bool
+atEnd = getSt >>= \(ArrIx ix end) -> return $ ix >= end
 
 
 reportError :: ParseErr -> GenKangaroo ust a

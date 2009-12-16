@@ -16,13 +16,23 @@
 
 module Data.ParserCombinators.Kangaroo.Utils 
   ( 
-
+    (<:>)
+  
   -- * Specs
-    oo
+  ,  oo
   , ooo
   , oooo
 
   ) where
+
+
+import Control.Applicative
+
+infixr 5 <:>
+
+-- | applicative cons
+(<:>) :: Applicative f => f a -> f [a] -> f [a]
+(<:>) p1 p2 = (:) <$> p1 <*> p2
 
 
 -- specs - defined in my package data-aviary but defined here to 

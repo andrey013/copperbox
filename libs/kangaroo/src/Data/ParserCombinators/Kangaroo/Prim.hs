@@ -33,13 +33,16 @@ import Data.Word
 (<:>) :: Applicative f => f a -> f [a] -> f [a]
 (<:>) p1 p2 = (:) <$> p1 <*> p2
 
+-- Wrong type should return a number...
+inputRemaining :: GenKangaroo ust Int
+inputRemaining = getSt >>= \(ArrIx ix end) -> 
+   let rest = end - ix in if rest < 0 then return 0 else return rest
 
-inputRemaining :: GenKangaroo ust Bool
-inputRemaining = liftM not eof
-
+{-
 jumpto :: Int -> GenKangaroo ust ()
-jumpto = putSt
-
+jumpto n = getSt >>= \(ArrIx ix end) -> 
+  let ix' 
+-}
 
 satisfy :: (Word8 -> Bool) -> GenKangaroo ust Word8
 satisfy p = word8 >>= 
@@ -64,8 +67,8 @@ manyTill p end = do
 
 
 runOn :: GenKangaroo ust a -> GenKangaroo ust [a]
-runOn p = do inp <- inputRemaining
-             if inp then p <:> runOn p else return []
+runOn p = do at_end <- atEnd
+             if at_end then return [] else  p <:> runOn p
 
 
 -- | Read a null-terminated string
@@ -89,7 +92,7 @@ getChar8bit :: GenKangaroo ust Char
 getChar8bit = (chr . fromIntegral) <$> word8 
 
 filePosition :: GenKangaroo ust Int
-filePosition = getSt
+filePosition = liftM arr_ix_ptr  getSt
 
 
 count :: Int -> GenKangaroo ust a -> GenKangaroo ust [a]
