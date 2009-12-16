@@ -16,35 +16,22 @@
 
 module Graphics.SFont.ParseFont where
 
-import Graphics.SFont.Decode
 import Graphics.SFont.ExtraSyntax
 import Graphics.SFont.GlyphDecoder
-import Graphics.SFont.Parse
+import Graphics.SFont.KangarooAliases
 import Graphics.SFont.PrimitiveDatatypes
 import Graphics.SFont.Syntax
 import Graphics.SFont.Utils
 
+import Data.ParserCombinators.KangarooState
+
+
 import Control.Applicative
-import Control.Monad.State
-import Data.Array.IO ( IOUArray, hGetArray, newArray_, freeze )
 import Data.Maybe ( catMaybes )
-import Data.Word
-import System.IO ( IOMode(..), withBinaryFile, hFileSize ) 
-
--- FontLoader is a State Monad transformed by ParserT   
-type TtffParser r a = ParserT r (State TtffParseState) a
+import Data.Monoid
 
 
--- To parse a ttf or otf file we need to see a lot of intermediate information
--- which isn't reflected in the final /parse tree/. We build this information
--- as we parse with the state monad. It doesn't seem very elegant to have 
--- all of the initial state fields undefined, but...   
-data TtffParseState = TtffParseState 
-        { table_count     :: Int
-        , table_locs      :: TableLocs
-        , glyph_locs      :: [Region]
-        }
-  deriving (Show)
+
 
 evalParseTTFF :: FilePath -> IO (Either String TTFF)
 evalParseTTFF path = fst <$> runParseTTFF path
@@ -53,40 +40,21 @@ evalParseTTFF path = fst <$> runParseTTFF path
 -- for debugging its handy to be able to view the state
 
 runParseTTFF :: FilePath -> IO (Either String TTFF, TtffParseState)
-runParseTTFF path = withBinaryFile path ReadMode $ \h -> do
-    sz_i    <- hFileSize h
-    marr    <- newArray_ (mkBounds sz_i) 
-    sz_r    <- hGetArray h marr (fromIntegral sz_i)
-    arr     <- freezeByteSequence marr
-    if sz_r == (fromIntegral sz_i) 
-        then return $ sk arr
-        else return $ (Left "parseTTFF - Problem with hGetArray",st0) 
-
-  where
-    mkBounds :: Integral a => a -> (Int,Int)
-    mkBounds i = (0, fromIntegral $ i - 1)
-    
-    freezeByteSequence :: IOUArray Int Word8 -> IO ByteSequence
-    freezeByteSequence = freeze
-    
-    sk :: ByteSequence -> (Either String TTFF, TtffParseState)
-    sk arr = case runState `flip` st0 $ runParserT readTTFF arr of
-                    (Left (ParseError s),st) -> (Left s, st)
-                    (Right a,st)             -> (Right a,st)  
-                    
+runParseTTFF = runKangaroo readTTFF st0
+  where                    
     st0 :: TtffParseState
-    st0 =  TtffParseState undefined undefined undefined
+    st0 =  TtffParseState 0 mempty []
     
     
 -- Hmmm, if all the /logic/ is in this monolithic function, do we need a 
 -- state monad?
-readTTFF :: TtffParser r TTFF
+readTTFF :: FontParser TTFF
 readTTFF = do 
     (v,nt)  <- readOffsetSubtable
-    lift $ modify $ (\s -> s {table_count=nt})
+    modify $ (\s -> s {table_count=nt})
     
     td      <- readTableDirectory nt
-    lift $ modify $ (\s -> s {table_locs=td})
+    modify $ (\s -> s {table_locs=td})
     
     -- all reads from now on are tableJumps
     hdr     <- tableJump "head" readHeadTable
@@ -96,7 +64,7 @@ readTTFF = do
     (_,ge)  <- tableRegion "glyf" 
     
     glocs   <- tableJump "loca" (readLocaTable loc_fmt ng ge)
-    lift $ modify $ (\s -> s {glyph_locs=glocs})
+    modify $ (\s -> s {glyph_locs=glocs})
     
 
     nrecs   <- tableJump "name" readNameRecords
@@ -106,17 +74,17 @@ readTTFF = do
 
 
 
-tableJump :: String -> TtffParser r a -> TtffParser r a
+tableJump :: String -> FontParser a -> FontParser a
 tableJump name p = do
-    m   <- lift $ gets table_locs 
+    m   <- gets table_locs 
     maybe fk sk $ tableLocation name m
   where
     fk = reportError $ "parsing failed, missing table '" ++ name ++ "'"    
-    sk (offset,len) = withinRange offset len p 
+    sk (offset,len) = withinRegionRel offset len p 
     
-tableRegion :: String -> TtffParser r Region
+tableRegion :: String -> FontParser Region
 tableRegion name = do
-    m   <- lift $ gets table_locs 
+    m   <- gets table_locs 
     maybe fk return $ tableLocation name m
   where
     fk = reportError $ "parsing failed, missing table '" ++ name ++ "'"    
@@ -126,12 +94,12 @@ tableRegion name = do
 -- Offset subtable
 
 -- For the moment the only value we extract is sfnt version and numTables
-readOffsetSubtable :: Monad m => ParserT r m (SfntVersion,Int) 
+readOffsetSubtable :: FontParser (SfntVersion,Int) 
 readOffsetSubtable = (\v nt _ _ _ -> (v, fromIntegral nt)) <$>
     sfntVersion <*> ushort <*> ushort <*> ushort <*> ushort
 
 
-sfntVersion :: Monad m => ParserT r m SfntVersion
+sfntVersion :: FontParser SfntVersion
 sfntVersion = count 4 char >>= fn where 
     fn s | s == ['\0','\1','\0','\0'] = return Sfnt_1_0
          | s == "OTTO"                = return OTTO
@@ -146,13 +114,13 @@ sfntVersion = count 4 char >>= fn where
 --------------------------------------------------------------------------------
 -- Table directory
 
-readTableDirectory :: Monad m => Int -> ParserT r m TableLocs 
+readTableDirectory :: Int -> FontParser TableLocs 
 readTableDirectory num_tables = do
     ts <- count num_tables tableDescriptor
     return $ buildMap table_name table_location ts
     
     
-tableDescriptor :: Monad m => ParserT r m TableDescriptor 
+tableDescriptor :: FontParser TableDescriptor 
 tableDescriptor = 
     (\tag _ s o -> TableDescriptor tag (fromIntegral s, fromIntegral o)) 
         <$> text 4 <*> word32be <*> word32be <*> word32be
@@ -160,7 +128,7 @@ tableDescriptor =
 --------------------------------------------------------------------------------
 -- Head table
 
-readHeadTable :: Monad m => ParserT r m FontHeader 
+readHeadTable :: FontParser FontHeader 
 readHeadTable = FontHeader <$>
           fixed 
       <*> fixed 
@@ -182,7 +150,7 @@ readHeadTable = FontHeader <$>
 
 -- Just extract the number of glyphs
  
-maxpNumGlyphs :: Monad m => ParserT r m Int 
+maxpNumGlyphs :: FontParser Int 
 maxpNumGlyphs = fromIntegral <$> (fixed *> ushort)
 
 --------------------------------------------------------------------------------
@@ -190,7 +158,7 @@ maxpNumGlyphs = fromIntegral <$> (fixed *> ushort)
 
 
 
-readNameRecords :: Monad m => ParserT r m [NameRecord]
+readNameRecords :: FontParser [NameRecord]
 readNameRecords = do
     start   <- position
     _fmt    <- ushort
@@ -200,7 +168,7 @@ readNameRecords = do
     return recs
 
 
-readNameRecord :: Monad m => Int -> ParserT r m NameRecord 
+readNameRecord :: Int -> FontParser NameRecord 
 readNameRecord abs_data_offset = do
     pid     <- platformId  
     enc     <- encodingId 
@@ -208,12 +176,12 @@ readNameRecord abs_data_offset = do
     nid     <- nameId
     len     <- ushort
     pos     <- ushort
-    str     <- withinRange (abs_data_offset + fromIntegral pos) 
-                           (fromIntegral len)
-                           (runOnL char)
+    str     <- withinRegion (abs_data_offset + fromIntegral pos) 
+                            (fromIntegral len)
+                            (runOn char)
     return $ NameRecord pid enc lang nid str
     
-nameId :: Monad m => ParserT r m NameId
+nameId :: FontParser NameId
 nameId = toEnum . fromIntegral <$> ushort
 
 
@@ -222,26 +190,26 @@ nameId = toEnum . fromIntegral <$> ushort
 
 --------------------------------------------------------------------------------
 -- Glyf table
-readGlyphs :: Monad m => [Region] -> ParserT r m [Glyph]
+readGlyphs :: [Region] -> FontParser [Glyph]
 readGlyphs xs = catMaybes <$> readGlyphs' xs
 
-readGlyphs' :: Monad m => [Region] -> ParserT r m [Maybe Glyph]
+readGlyphs' :: [Region] -> FontParser [Maybe Glyph]
 readGlyphs' ((o,l):rs) = readGlyf o l <:> readGlyphs' rs
 readGlyphs' []         = return [] 
 
 
-readGlyf :: Monad m => Int -> Int -> ParserT r m (Maybe Glyph)
+readGlyf :: Int -> Int -> FontParser (Maybe Glyph)
 readGlyf _      0   = return Nothing
-readGlyf offset len = withinRangeRel offset len $ do 
+readGlyf offset len = withinRegionRel offset len $ do 
     nc  <- short 
     bb  <- readBoundingBox
     if nc >= 0 
       then do 
         end_pts       <- count (fromIntegral nc) ushort
         let csize     = 1 + fromIntegral (foldr max 0 end_pts)
-        _insts        <- countPrefixedList ushort byte
+        _insts        <- countPrefixed ushort byte
         flags         <- count csize byte
-        xy_data       <- runOnL byte
+        xy_data       <- runOn byte
         let outlines  = simpleGlyphContours end_pts flags xy_data
         return $ Just $ SimpleGlyph "" bb outlines
         -- don't know the glyph_name at this point
@@ -261,9 +229,8 @@ readGlyf offset len = withinRangeRel offset len $ do
 -- glyph_table_length is is a synthetic dependency rather
 -- than a necessary one, because I interpret the Loca table as I parse it
 -- to get the regions of the glyphs in the glyf table 
-
-readLocaTable :: Monad m => 
-    Short -> Int -> Int -> ParserT r m [Region]
+--
+readLocaTable :: Short -> Int -> Int -> FontParser [Region]
 readLocaTable head_idx_to_loc_fmt maxp_num_glyphs glyf_table_length = do    
         ls    <- glyfLocsFromLocaTable head_idx_to_loc_fmt maxp_num_glyphs
         return $ glyfLocations glyf_table_length ls 
@@ -271,8 +238,8 @@ readLocaTable head_idx_to_loc_fmt maxp_num_glyphs glyf_table_length = do
 -- Loca table has two formats - one where the data is stored as ushorts
 -- the other as ulongs. @indexToLocFormat@ from the @head@ table says 
 -- which is used.
-glyfLocsFromLocaTable :: Monad m => 
-      Short -> Int -> ParserT r m [GlyfStartLoca]
+--
+glyfLocsFromLocaTable :: Short -> Int -> FontParser [GlyfStartLoca]
 glyfLocsFromLocaTable head_idx_to_loc_fmt maxp_num_glyphs
     | head_idx_to_loc_fmt == 0  = count num_locs primShortFmt
     | otherwise                 = count num_locs primLongFmt
@@ -282,7 +249,7 @@ glyfLocsFromLocaTable head_idx_to_loc_fmt maxp_num_glyphs
     num_locs :: Int
     num_locs        = maxp_num_glyphs + 1 
     
-    primLongFmt, primShortFmt :: Monad m => ParserT r m GlyfStartLoca
+    primLongFmt, primShortFmt :: FontParser GlyfStartLoca
     primLongFmt     = fromIntegral <$> ulong
      -- short format stores local offset divided by two
     primShortFmt    = (2 *) . fromIntegral <$> ushort
@@ -292,14 +259,26 @@ glyfLocsFromLocaTable head_idx_to_loc_fmt maxp_num_glyphs
 --------------------------------------------------------------------------------
 -- Common elements
 
-platformId :: Monad m => ParserT r m PlatformId 
+
+
+-- The /last/ region only has a start position, so we supply the end loc 
+-- of the glyf table (glyf_table_length). This nicely works backwards hence 
+-- the right fold.  
+glyfLocations :: Int -> [GlyfStartLoca] -> [Region]
+glyfLocations glyf_table_length = snd . foldr fn (glyf_table_length,[]) 
+  where
+    fn i (j,rs) = let i' = fromIntegral i in (i',(i',j-i'):rs)
+    
+
+
+platformId :: FontParser PlatformId 
 platformId = toEnum . fromIntegral <$> ushort 
       
-encodingId :: Monad m => ParserT r m EncodingId 
+encodingId :: FontParser EncodingId 
 encodingId = toEnum . fromIntegral <$> ushort 
 
 
-readBoundingBox :: Monad m => ParserT r m BoundingBox
+readBoundingBox :: FontParser BoundingBox
 readBoundingBox = BoundingBox <$>
     short <*> short <*> short <*> short
        

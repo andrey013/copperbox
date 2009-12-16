@@ -20,9 +20,11 @@ module Graphics.SFont.GlyphDecoder (
 ) where
 
 
-import Graphics.SFont.Parse
+import Graphics.SFont.KangarooAliases
 import Graphics.SFont.PrimitiveDatatypes
 import Graphics.SFont.Syntax
+
+import Data.ParserCombinators.KangarooState
 
 import Control.Applicative
 import Data.Bits
@@ -104,7 +106,7 @@ decodeXCoords = step (0,[])
     step (_,cca) []                 ws        = (reverse cca,ws)
     
     -- 2 = int16 -- take two from the word-stream
-    step (u,cca) (Inst c 2 y:xs)    (w:w':ws) = let x = u + mkI16be w w'
+    step (u,cca) (Inst c 2 y:xs)    (w:w':ws) = let x = u + i16be w w'
                                                     i = Inst c x y
                                                 in step (x,i:cca) xs ws
                                             
@@ -140,7 +142,7 @@ decodeYCoords = step 0
     step _ []                 _ws       = []
     
     -- 2 = int16 -- take two from the word-stream
-    step u (Inst c x 2:ys)    (w:w':ws) = let y   = u + mkI16be w w'
+    step u (Inst c x 2:ys)    (w:w':ws) = let y   = u + i16be w w'
                                               pt  = mkPoint c x y
                                           in pt : step y ys ws
                                            
@@ -180,13 +182,13 @@ endSegment (i:ix)  xs = let (l,r) = splitAt (1 + fromIntegral i) xs
 
 -- This one is easier in the parse monad...
 
-compositeElements :: Monad m => ParserT r m [CompositeElement]
+compositeElements :: FontParser [CompositeElement]
 compositeElements = do 
     (a,more)  <- compositeElt
     if not more then return [a] else (return a) <:> compositeElements
             
             
-compositeElt :: Monad m => ParserT r m (CompositeElement,Bool)  
+compositeElt :: FontParser (CompositeElement,Bool)  
 compositeElt = do 
     flag  <- ushort
     gidx  <- (fromIntegral <$> ushort)
@@ -206,7 +208,7 @@ compositeElt = do
     argmaker True (x,y) = OffsetArgs x y  
     argmaker _    (x,y) = PointNumbers x y 
     
-    twoByTwo :: Monad m => ParserT r m CompositeTrans
+    twoByTwo :: FontParser CompositeTrans
     twoByTwo = TwoByTwo <$> f2dot14 <*> f2dot14 <*> f2dot14 <*> f2dot14
     
 cond3 :: Monad m => Bool -> m a -> Bool -> m a -> Bool -> m a -> a -> m a

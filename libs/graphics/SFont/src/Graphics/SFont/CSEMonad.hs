@@ -19,11 +19,11 @@
 module Graphics.SFont.CSEMonad where
 
 import Control.Applicative
-import Control.Monad.Cont
-import Control.Monad.Error
-import Control.Monad.Reader
-import Control.Monad.State
-import Control.Monad.Trans
+-- import Control.Monad.Cont
+-- import Control.Monad.Error
+-- import Control.Monad.Reader
+-- import Control.Monad.State
+-- import Control.Monad.Trans
 
 
 newtype ContStateEnvT st env r m a = ContStateEnvT { 

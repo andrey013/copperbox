@@ -16,7 +16,8 @@
 
 module Data.ParserCombinators.KangarooState
   (
-    module Data.ParserCombinators.Kangaroo.ParseMonad
+    module Data.ParserCombinators.Kangaroo.Combinators
+  , module Data.ParserCombinators.Kangaroo.ParseMonad
   , module Data.ParserCombinators.Kangaroo.Prim
   , module Data.ParserCombinators.Kangaroo.Utils
   , Kangaroo
@@ -31,9 +32,10 @@ module Data.ParserCombinators.KangarooState
 
   ) where
 
+import Data.ParserCombinators.Kangaroo.Combinators
 import Data.ParserCombinators.Kangaroo.ParseMonad
 import Data.ParserCombinators.Kangaroo.Prim
-import Data.ParserCombinators.Kangaroo.Utils hiding ( oo, ooo, oooo )
+import Data.ParserCombinators.Kangaroo.Utils hiding ( (<:>), oo, ooo, oooo )
 import qualified Data.ParserCombinators.Kangaroo.Utils as Specs
 
 import Control.Monad

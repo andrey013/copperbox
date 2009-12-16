@@ -24,7 +24,6 @@ import Graphics.SFont.ExtraSyntax
 import Data.Bits
 import qualified Data.ByteString as BS
 import Data.Char ( isPrint )
-import Data.Int
 import Data.List ( foldl' ) 
 import qualified Data.IntMap as IntMap
 import qualified Data.Map as Map

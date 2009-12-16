@@ -41,6 +41,7 @@ library
   exposed-modules:
     Data.ParserCombinators.Kangaroo,
     Data.ParserCombinators.KangarooState,
+    Data.ParserCombinators.Kangaroo.Combinators,
     Data.ParserCombinators.Kangaroo.ParseMonad,
     Data.ParserCombinators.Kangaroo.Prim,
     Data.ParserCombinators.Kangaroo.Utils

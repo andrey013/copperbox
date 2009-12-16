@@ -25,11 +25,11 @@ import Graphics.SFont.PrimitiveDatatypes ( Region, ByteSequence )
 import Graphics.SFont.CSEMonad
 
 import Control.Applicative
-import Control.Monad.Cont
-import Control.Monad.Error
-import Control.Monad.Reader
-import Control.Monad.State
-import Control.Monad.Trans
+-- import Control.Monad.Cont
+-- import Control.Monad.Error
+-- import Control.Monad.Reader
+-- import Control.Monad.State
+-- import Control.Monad.Trans
 import Data.Array.Unboxed
 import Data.Word
 

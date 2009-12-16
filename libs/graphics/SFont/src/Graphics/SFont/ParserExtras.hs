@@ -18,8 +18,8 @@
 module Graphics.SFont.ParserExtras where
 
 import Graphics.SFont.PrimitiveDatatypes
-import Graphics.SFont.ParseMonad
-import Graphics.SFont.ParserCombinators 
+-- import Graphics.SFont.ParseMonad
+-- import Graphics.SFont.ParserCombinators 
 import Graphics.SFont.Utils
 
 import Control.Applicative

@@ -22,7 +22,7 @@ module Graphics.SFont.ParserCombinators where
 import Graphics.SFont.ParseMonad
 
 import Control.Applicative
-import Control.Monad.Error
+-- import Control.Monad.Error
 
 
 import Data.Bits

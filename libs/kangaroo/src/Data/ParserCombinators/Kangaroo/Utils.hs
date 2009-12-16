@@ -19,7 +19,7 @@ module Data.ParserCombinators.Kangaroo.Utils
     (<:>)
   
   -- * Specs
-  ,  oo
+  , oo
   , ooo
   , oooo
 
@@ -51,7 +51,6 @@ module Data.ParserCombinators.Kangaroo.Utils
 import Control.Applicative
 
 import Data.Bits
--- import Data.Char
 import Data.Int
 import Data.Word
 

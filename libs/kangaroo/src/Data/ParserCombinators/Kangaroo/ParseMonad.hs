@@ -38,7 +38,8 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , atEnd
   , lengthRemaining
   , withinRegion
-
+  , withinRegionRel
+  , advance
    
   ) where
 
@@ -52,7 +53,7 @@ type ParseErr = String
 
 type ImageData = IOUArray Int Word8   -- Is Int big enough for index?
 
-data ArrIx = ArrIx { arr_ix_ptr :: !Int, arr_ix_end :: !Int }
+data ArrIx = ArrIx { _arr_ix_ptr :: !Int, _arr_ix_end :: !Int }
   deriving (Eq,Show) 
 
 type St    = ArrIx
@@ -195,7 +196,7 @@ opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans ->
       (Right a, st', ust') -> return (Right $ Just a, st', ust')
 
 position :: GenKangaroo ust Int
-position = liftM arr_ix_ptr  getSt
+position = liftM _arr_ix_ptr getSt
 
 atEnd :: GenKangaroo ust Bool
 atEnd = getSt >>= \(ArrIx ix end) -> return $ ix >= end
@@ -209,33 +210,61 @@ lengthRemaining = getSt >>= \(ArrIx ix end) ->
 --------------------------------------------------------------------------------
 -- The important one...
 
+within :: String -> Int -> Int -> GenKangaroo ust ()
+within fun_name start end = getSt >>= \(ArrIx pos endpos) -> step pos endpos 
+  where
+    step pos endpos | start < pos   = reportError $ 
+                                        backtrackErr start pos fun_name
+                    | end >= endpos = reportError $ 
+                                        tooFarErr end endpos fun_name
+                    | otherwise     = return ()
+
+
+backtrackErr :: Int -> Int -> String -> String  
+backtrackErr new_pos old_pos fun_name = concat
+    [ "Kangaroo.ParseMonad."
+    , fun_name
+    , " - cannot backtrack, " 
+    , show new_pos 
+    , " is before current position " 
+    , show old_pos
+    ]
+
+tooFarErr :: Int -> Int -> String -> String
+tooFarErr new_end old_end fun_name = concat
+    [ "Kangaroo.ParseMonad."
+    , fun_name 
+    , " - new end point " 
+    , show new_end 
+    , " extends beyond the end of the current region "
+    , show old_end
+    ]
+
+withinParse :: String -> Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+withinParse fun_name start end p = do
+    st <- getSt 
+    within fun_name start end
+    ans   <- p
+    putSt st
+    return ans
+    
+
+
 
 withinRegion :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
-withinRegion start end p = do { st    <- getSt 
-                              ; forward st     
-                              ; shorter st 
-                              ; ans   <- p
-                              ; putSt st
-                              ; return ans
-                              }
-  where
-    forward st | start >= arr_ix_ptr st = return ()
-               | otherwise              = reportError $ 
-                                            backtrackErr start (arr_ix_ptr st)
+withinRegion = withinParse "withinRegion"
 
-    shorter st | end <= arr_ix_end st = return ()
-               | otherwise            = reportError $ 
-                                          tooFarErr end (arr_ix_end st)
 
-backtrackErr :: Int -> Int -> String  
-backtrackErr new_pos old_pos =
-    "Kangaroo.ParserMonad.withinRegion - cannot backtrack with withinRegion, " 
-           ++ show new_pos ++ " is before current position " 
-           ++ show old_pos
+withinRegionRel :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+withinRegionRel dist len p = getSt >>= \(ArrIx pos _) ->
+    withinParse "withinRegionRel" (pos+dist) (pos+dist+len) p
 
-tooFarErr :: Int -> Int -> String
-tooFarErr new_end old_end = 
-    "Kangaroo.ParseMonad.withinRegion - new end point " 
-       ++ show new_end ++ " extends beyond the end of the current region "
-       ++ show old_end
  
+-- | Advance the current position by the supplied distance.
+advance :: Int -> GenKangaroo ust p -> GenKangaroo ust p
+advance i p = getSt >>= \(ArrIx pos end) -> 
+    withinParse "advance" (pos+i) end p
+
+
+
+
