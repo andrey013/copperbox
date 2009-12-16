@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Parser combiantors with random access
+-- Parser combinators with random access
 --
 --------------------------------------------------------------------------------
 
@@ -18,7 +18,22 @@ module Data.ParserCombinators.Kangaroo
   (
     module Data.ParserCombinators.Kangaroo.ParseMonad
   , module Data.ParserCombinators.Kangaroo.Prim
+  , Kangaroo
+  , runKangaroo
+  , parse
   ) where
 
 import Data.ParserCombinators.Kangaroo.ParseMonad
 import Data.ParserCombinators.Kangaroo.Prim
+
+
+
+type Kangaroo a = GenKangaroo () a
+
+runKangaroo :: Kangaroo a -> FilePath -> IO (Either ParseErr a)
+runKangaroo p filename = runGenKangaroo p () filename >>= \(a,_) -> return a
+
+-- jsut runKangaroo here
+parse :: Kangaroo a -> FilePath -> IO (Either ParseErr a)
+parse = runKangaroo 
+

@@ -27,7 +27,6 @@ module MidiText (
 import MidiDatatypes
 
 import qualified Data.Foldable as F
-import Data.Tuple
 import Numeric
 import Text.PrettyPrint.HughesPJ
 

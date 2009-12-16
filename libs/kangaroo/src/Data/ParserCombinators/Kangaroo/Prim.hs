@@ -20,6 +20,7 @@ import Data.ParserCombinators.Kangaroo.ParseMonad
 
 
 import Control.Applicative
+import Control.Monad
 import Data.Bits
 import Data.Char
 import Data.Int
@@ -33,25 +34,28 @@ import Data.Word
 (<:>) p1 p2 = (:) <$> p1 <*> p2
 
 
-jumpto :: Int -> Kangaroo ust ()
+inputRemaining :: GenKangaroo ust Bool
+inputRemaining = liftM not eof
+
+jumpto :: Int -> GenKangaroo ust ()
 jumpto = putSt
 
 
-satisfy :: (Word8 -> Bool) -> Kangaroo ust Word8
+satisfy :: (Word8 -> Bool) -> GenKangaroo ust Word8
 satisfy p = word8 >>= 
-    (\x -> if p x then return x else reportFail $ "satisfy...")
+    (\x -> if p x then return x else reportError $ "satisfy...")
 
 
 
 -- definable without peeking into the Kanagroo newtype?
 
-opt :: Kangaroo ust a -> Kangaroo ust (Maybe a)
-opt p = Kangaroo $ \env st ust -> (getKangaroo p) env st ust >>= \ ans -> 
+opt :: GenKangaroo ust a -> GenKangaroo ust (Maybe a)
+opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans -> 
     case ans of
       (Left _, st', ust')  -> return (Right Nothing, st', ust')
       (Right a, st', ust') -> return (Right $ Just a, st', ust')
 
-manyTill :: Kangaroo ust a -> Kangaroo ust b -> Kangaroo ust [a]
+manyTill :: GenKangaroo ust a -> GenKangaroo ust b -> GenKangaroo ust [a]
 manyTill p end = do 
    ans <- opt end
    case ans of
@@ -59,68 +63,81 @@ manyTill p end = do
      Nothing -> p <:> manyTill p end 
 
 
+runOn :: GenKangaroo ust a -> GenKangaroo ust [a]
+runOn p = do inp <- inputRemaining
+             if inp then p <:> runOn p else return []
+
+
 -- | Read a null-terminated string
-cstring :: Kangaroo ust String
+cstring :: GenKangaroo ust String
 cstring = manyTill char w8Zero
 
 
-w8Zero :: Kangaroo ust Word8
+w8Zero :: GenKangaroo ust Word8
 w8Zero = satisfy (==0)
 
-getBytes :: Integral a => a -> Kangaroo ust [Word8]
+getBytes :: Integral a => a -> GenKangaroo ust [Word8]
 getBytes i = count (fromIntegral i) word8
 
-char :: Kangaroo ust Char
+char :: GenKangaroo ust Char
 char = (chr . fromIntegral) <$> word8 
 
-getChar8bit :: Kangaroo ust Char
+text :: Int -> GenKangaroo ust String
+text i = count i char
+
+getChar8bit :: GenKangaroo ust Char
 getChar8bit = (chr . fromIntegral) <$> word8 
 
-filePosition :: Kangaroo ust Int
+filePosition :: GenKangaroo ust Int
 filePosition = getSt
 
 
-count :: Int -> Kangaroo ust a -> Kangaroo ust [a]
+count :: Int -> GenKangaroo ust a -> GenKangaroo ust [a]
 count i p = step i [] where
   step n xs  | n <= 0     = return (reverse xs)
              | otherwise  = p >>= \a -> step (n-1) (a:xs)
              
 
 
-int8 :: Kangaroo ust Int8
+countPrefixed :: Integral i 
+              => GenKangaroo ust i -> GenKangaroo ust a -> GenKangaroo ust [a] 
+countPrefixed plen p = plen >>= \i -> count (fromIntegral i) p
+
+
+int8 :: GenKangaroo ust Int8
 int8 = (fromIntegral . unwrap) <$> word8
   where
     unwrap :: Word8 -> Int
     unwrap i | i > 128   = (fromIntegral i) - 256
              | otherwise = fromIntegral i
 
-word16be   :: Kangaroo ust Word16
+word16be   :: GenKangaroo ust Word16
 word16be   = w16be     <$> word8 <*> word8  
 
-word32be   :: Kangaroo ust Word32
+word32be   :: GenKangaroo ust Word32
 word32be   = w32be     <$> word8 <*> word8 <*> word8 <*> word8
 
-word64be   :: Kangaroo ust Word64
+word64be   :: GenKangaroo ust Word64
 word64be   = w64be <$> word8 <*> word8 <*> word8 <*> word8
                    <*> word8 <*> word8 <*> word8 <*> word8
 
-word16le   :: Kangaroo ust Word16
+word16le   :: GenKangaroo ust Word16
 word16le   = w16le     <$> word8 <*> word8  
 
-word32le   :: Kangaroo ust Word32
+word32le   :: GenKangaroo ust Word32
 word32le   = w32le     <$> word8 <*> word8 <*> word8 <*> word8
 
   
-int32be   :: Kangaroo ust Int32
+int32be   :: GenKangaroo ust Int32
 int32be   = i32be <$> word8 <*> word8 <*> word8 <*> word8
                          
-int32le   :: Kangaroo ust Int32
+int32le   :: GenKangaroo ust Int32
 int32le   = i32le <$> word8 <*> word8 <*> word8 <*> word8
 
-int16be   :: Kangaroo ust Int16
+int16be   :: GenKangaroo ust Int16
 int16be   = i16be <$> word8 <*> word8
                          
-int16le   :: Kangaroo ust Int16
+int16le   :: GenKangaroo ust Int16
 int16le   = i16le <$> word8 <*> word8
 
 --------------------------------------------------------------------------------
