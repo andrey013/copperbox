@@ -30,69 +30,107 @@ type St    = Int            -- 'file' position
 type Env   = ImageData
   
 
-newtype Kangaroo a = Kangaroo { 
-          getKangaroo :: Env -> St -> IO (St,Either ParseErr a) }
+-- Kangaroo is not a transformer as IO is always at the 
+-- \'bottom\' of the effect stack. Like the original Parsec it is
+-- parametric on user state (refered to as ust).
+--
+newtype Kangaroo ust a = Kangaroo { 
+          getKangaroo :: Env -> St -> ust -> IO (Either ParseErr a, St, ust) }
           
-instance Functor Kangaroo where
-    fmap f (Kangaroo x) = Kangaroo $ 
-         \env st  ->  x env st `bindIO` \(st',a) -> return (st',fmap f a)
+
+fmapKang :: (a -> b) -> Kangaroo ust a -> Kangaroo ust b
+fmapKang f (Kangaroo x) = Kangaroo $ \env st ust -> 
+    x env st ust `bindIO` \(a,st',ust') -> return (fmap f a, st', ust')
 
 
+instance Functor (Kangaroo ust) where
+    fmap = fmapKang
 
 
-bindIO :: IO a -> (a -> IO b) -> IO b
-bindIO = (>>=)
 
 returnIO :: a -> IO a
 returnIO = return
 
+infixl 1 `bindIO`
 
-instance Monad Kangaroo where
-  return a = Kangaroo $ \_ st -> returnIO (st,Right a)
-  (Kangaroo x) >>= f = Kangaroo $ 
-     \env st -> x env st `bindIO` \(st',ans) ->
-                                     case ans of 
-                                        Left err -> returnIO (st',Left err)
-                                        Right a  -> getKangaroo (f a) env st'
+bindIO :: IO a -> (a -> IO b) -> IO b
+bindIO = (>>=)
 
 
+returnKang :: a -> Kangaroo st a
+returnKang a = Kangaroo $ \_ st ust -> returnIO (Right a, st, ust)
 
-instance Applicative Kangaroo where
+infixl 1 `bindKang`
+
+bindKang :: Kangaroo ust a -> (a -> Kangaroo ust b) -> Kangaroo ust b
+(Kangaroo x) `bindKang` f = Kangaroo $ \env st ust -> 
+    x env st ust `bindIO` \(ans, st', ust') ->
+        case ans of Left err -> returnIO (Left err,st',ust')
+                    Right a  -> getKangaroo (f a) env st' ust'
+ 
+
+
+
+instance Monad (Kangaroo ust) where
+  return = returnKang
+  (>>=)  = bindKang
+
+
+instance Applicative (Kangaroo ust) where
   pure = return
   (<*>) = ap
 
 
-getSt :: Kangaroo St
-getSt = Kangaroo $ \_ st -> return (st, Right st)
-
-putSt :: St -> Kangaroo ()
-putSt st = Kangaroo $ \_ _ -> return (st, Right ())
-
-modifySt :: (St -> St) -> Kangaroo ()
-modifySt f = Kangaroo $ \_ st -> return (f st, Right ())
-
-askEnv :: Kangaroo Env
-askEnv = Kangaroo $ \env st -> return (st, Right env)
 
 
-throwErr :: String -> Kangaroo a
-throwErr msg = Kangaroo $ \_ st -> return (st,Left msg)
+getSt :: Kangaroo ust St
+getSt = Kangaroo $ \_ st ust -> return (Right st, st, ust)
 
-liftIOAction :: IO a -> Kangaroo a
-liftIOAction ma = Kangaroo $ \_ st -> ma >>= \a -> return (st,Right a) 
+putSt :: St -> Kangaroo ust ()
+putSt st = Kangaroo $ \_ _ ust -> return (Right (), st, ust)
+
+modifySt :: (St -> St) -> Kangaroo ust ()
+modifySt f = Kangaroo $ \_ st ust -> return (Right (), f st, ust)
 
 
-runKangaroo :: Kangaroo a -> FilePath -> IO (Either ParseErr a)
-runKangaroo p filename = withBinaryFile filename ReadMode $ \ handle -> do 
-    sz'     <- hFileSize handle
-    let sz = fromIntegral sz'
-    arr     <- newArray_ (0,sz-1)
-    _rsz    <- hGetArray handle arr  (fromIntegral sz)
-    (_,ans) <- runP p arr
-    return ans   
+getUserSt :: Kangaroo ust ust
+getUserSt = Kangaroo $ \_ st ust -> return (Right ust, st, ust)
+
+putUserSt :: ust -> Kangaroo ust ()
+putUserSt ust = Kangaroo $ \_ st _ -> return (Right (), st, ust)
+
+modifyUserSt :: (ust -> ust) -> Kangaroo ust ()
+modifyUserSt f = Kangaroo $ \_ st ust -> return (Right (), st, f ust)
+
+
+
+askEnv :: Kangaroo ust Env
+askEnv = Kangaroo $ \env st ust -> return (Right env, st, ust)
+
+
+throwErr :: String -> Kangaroo ust a
+throwErr msg = Kangaroo $ \_ st ust -> return (Left msg, st, ust)
+
+liftIOAction :: IO a -> Kangaroo ust a
+liftIOAction ma = Kangaroo $ \_ st ust -> 
+    ma >>= \a -> return (Right a, st, ust) 
+
+
+
+
+runKangaroo :: Kangaroo ust a -> ust -> FilePath -> IO (Either ParseErr a,ust)
+runKangaroo p user_state filename = 
+    withBinaryFile filename ReadMode $ \ handle -> 
+      do { sz'         <- hFileSize handle
+         ; let sz = fromIntegral sz'
+         ; arr         <- newArray_ (0,sz-1)
+         ; (ans,_,ust) <- runP p arr
+         ; return (ans,ust)   
+         }
   where 
-    runP :: Kangaroo a -> ImageData -> IO (St, Either ParseErr a) 
-    runP (Kangaroo x) arr = x arr 0
+--    runP :: Kangaroo ust a -> ImageData -> IO (Either ParseErr a,St,ust) 
+    runP (Kangaroo x) arr = x arr 0 user_state
+
 
 
 --------------------------------------------------------------------------------
@@ -100,7 +138,7 @@ runKangaroo p filename = withBinaryFile filename ReadMode $ \ handle -> do
 
 
    
-word8 :: Kangaroo Word8
+word8 :: Kangaroo ust Word8
 word8 = do
     ix   <- getSt
     arr  <- askEnv
@@ -109,7 +147,7 @@ word8 = do
     return a
 
 
-eof :: Kangaroo Bool
+eof :: Kangaroo ust Bool
 eof = do
      ix  <- getSt
      arr <- askEnv
@@ -117,7 +155,7 @@ eof = do
      return $ (ix>=up) 
 
 
-reportFail :: String -> Kangaroo a
+reportFail :: String -> Kangaroo ust a
 reportFail s = do 
     posn <- getSt
     throwErr $ s ++ posStr posn
