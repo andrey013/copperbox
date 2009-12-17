@@ -23,7 +23,7 @@ import Graphics.SFont.PrimitiveDatatypes
 import Graphics.SFont.Syntax
 import Graphics.SFont.Utils
 
-import Data.ParserCombinators.KangarooState
+import Data.ParserCombinators.KangarooRWS
 
 
 import Control.Applicative
@@ -34,13 +34,15 @@ import Data.Monoid
 
 
 evalParseTTFF :: FilePath -> IO (Either String TTFF)
-evalParseTTFF path = fst <$> runParseTTFF path
+evalParseTTFF path = fst3 <$> runParseTTFF path 
+  where fst3 (a,_,_) = a
+  
 
 
 -- for debugging its handy to be able to view the state
 
-runParseTTFF :: FilePath -> IO (Either String TTFF, TtffParseState)
-runParseTTFF = runKangaroo (readTTFF `substError` "READ_FAIL") st0
+runParseTTFF :: FilePath -> IO (Either String TTFF, Log, TtffParseState)
+runParseTTFF = runKangaroo (readTTFF `substError` "READ_FAIL") () st0
   where                    
     st0 =  TtffParseState 0 mempty []
     
