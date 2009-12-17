@@ -38,8 +38,13 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , position
   , atEnd
   , lengthRemaining
-  , withinRegion
-  , withinRegionRel
+
+  -- * names need more thought...
+  , withinRegionVerso
+  , withinRegionRelVerso
+  , withinRegionRecto
+  , withinRegionRelRecto
+
   , advance
    
   ) where
@@ -249,8 +254,10 @@ tooFarErr new_end old_end fun_name = concat
     , show old_end
     ]
 
-withinParse :: String -> Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
-withinParse fun_name start end p = do
+withinParseVerso :: String -> Int -> Int 
+                 -> GenKangaroo ust a 
+                 -> GenKangaroo ust a
+withinParseVerso fun_name start end p = do
     st <- getSt 
     within fun_name start end
     ans   <- p
@@ -259,20 +266,42 @@ withinParse fun_name start end p = do
     
 
 
+-- | return to the start position 
+withinRegionVerso :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+withinRegionVerso = withinParseVerso "withinRegionVerso"
 
-withinRegion :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
-withinRegion = withinParse "withinRegion"
+
+-- | return to the start position
+withinRegionRelVerso :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+withinRegionRelVerso dist len p = getSt >>= \(ArrIx pos _) ->
+    withinParseVerso "withinRegionRelVerso" (pos+dist) (pos+dist+len) p
 
 
-withinRegionRel :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
-withinRegionRel dist len p = getSt >>= \(ArrIx pos _) ->
-    withinParse "withinRegionRel" (pos+dist) (pos+dist+len) p
+withinParseRecto :: String -> Int -> Int 
+                 -> GenKangaroo ust a 
+                 -> GenKangaroo ust a
+withinParseRecto fun_name start end p = do
+    ArrIx _ prev_end <- getSt 
+    within fun_name start end
+    ans   <- p
+    putSt $ ArrIx end prev_end 
+    return ans
+
+
+-- | finish at the right of the region
+withinRegionRecto :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+withinRegionRecto = withinParseVerso "withinRegionRecto"
+
+-- | finish at the right of the region
+withinRegionRelRecto :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+withinRegionRelRecto dist len p = getSt >>= \(ArrIx pos _) ->
+    withinParseRecto "withinRegionRelRecto" (pos+dist) (pos+dist+len) p
 
  
 -- | Advance the current position by the supplied distance.
 advance :: Int -> GenKangaroo ust p -> GenKangaroo ust p
 advance i p = getSt >>= \(ArrIx pos end) -> 
-    withinParse "advance" (pos+i) end p
+    withinParseRecto "advance" (pos+i) end p
 
 
 

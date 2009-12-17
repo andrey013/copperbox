@@ -27,7 +27,7 @@ import Data.ParserCombinators.Kangaroo
 import Control.Applicative
 
 import Data.Bits
-import Data.Sequence ( Seq , (|>) )
+import Data.Sequence ( Seq , (<|), (|>) )
 import qualified Data.Sequence as S
 import Data.Word
 
@@ -51,23 +51,25 @@ midiFile = do
     trackCount (Header _ n _) = fromIntegral n
 
 header :: Kangaroo Header  
-header = Header <$> (assertString "MThd"  *> assertLength (6::Int) *> format)
-                <*> word16be          <*> timeDivision 
+header = Header <$> (assertString "MThd"  *> assertWord32 (6::Int) *> format)
+                <*> word16be             <*> timeDivision 
 
 countS :: Int -> Kangaroo a -> Kangaroo (Seq a)
-countS i p = step S.empty i
-  where 
-    step se n   | n <= 0      = return se
-                | otherwise   = p >>= \a -> step (se |> a) (n-1)
+countS = genericCount (<|) S.empty 
 
 
 track :: Kangaroo Track
-track = Track <$> 
-    (assertString "MTrk" *> word32be *> getMessages) 
-    
+track = Track <$> (assertString "MTrk" *> (word32be >>= getMessages))
+--    `substError` "track"
 
-getMessages :: Kangaroo (Seq Message)
-getMessages = rec S.empty
+getMessages :: Word32 -> Kangaroo (Seq Message)
+{-
+getMessages i = withinRegionRelRecto 0 (fromIntegral i) messages
+  where    
+    messages = genericRunOn (<|) S.empty message
+
+-}
+getMessages _ = rec S.empty
   where
     rec acc = do
         end <- atEnd
@@ -76,11 +78,13 @@ getMessages = rec S.empty
     
     step1 acc = do
         msg <- message
-        if eot msg then return $ acc |> msg
-                   else rec (acc |> msg)
+        if isEOT msg then return $ acc |> msg
+                     else rec (acc |> msg)
 
-    eot (_, (MetaEvent EndOfTrack)) = True
-    eot _                           = False
+
+
+isEOT (_, (MetaEvent EndOfTrack)) = True
+isEOT _                           = False
 
 
 message :: Kangaroo Message
@@ -170,37 +174,41 @@ textEvent ty = (TextEvent ty . snd) <$> getVarlenText
 --------------------------------------------------------------------------------
 -- helpers
 
+{-
+-- enumerate doesn't really seem worth it for scale etc... 
+enumerate :: Integral a => [ans] -> a -> String -> Kangaroo ans
+enumerate []     _ msg = reportError msg
+enumerate (x:xs) i msg | i == 0    = return x
+                       | otherwise = enumerate xs (i-1) msg
+
+-}
+
+
 word24be   :: Kangaroo Word32
 word24be   = w32be 0 <$> word8 <*> word8 <*> word8
 
 
 word8split :: Kangaroo (Word8,Word8) 
-word8split = f <$> word8 
+word8split = split <$> word8 
   where
-    f i = ((i .&. 0xF0) `shiftR` 4, i .&. 0x0F)
+    split i = ((i .&. 0xF0) `shiftR` 4, i .&. 0x0F)
 
-  
-
-
+ 
 assertWord8 :: Word8 -> Kangaroo Word8
-assertWord8 i = word8 >>= fn
-  where fn j | j == i    = return i
-             | otherwise = reportError $ "assertWord8 failed"
-             
-assertLength :: Integral a => a -> Kangaroo Word32
-assertLength i  = word32be >>= fn
+assertWord8 i = postCheck word8 (==i) msg
   where 
-    fn n | n == fromIntegral i  = return n
-         | otherwise            = reportError $
-              "assertLength " ++ show i ++ " /= " ++ show n
+    msg = "assertWord8 - input did not match " ++ show i
+             
+assertWord32 :: Integral a => a -> Kangaroo Word32
+assertWord32 i = postCheck word32be ((==i) . fromIntegral) msg
+  where
+    msg = "assertWord32 - input did not match " ++ show i
 
 assertString :: String -> Kangaroo String
-assertString s  = text (length s) >>= fn
-  where 
-    fn ss | ss == s   = return s
-          | otherwise = reportError $ 
-               "assertString " ++ (showString s []) ++ " /= " ++ (showString ss [])
-                                     
+assertString s = postCheck (text $ length s) (==s) msg
+  where
+    msg = "assertString - input did not match " ++ s
+
 
 getVarlenText :: Kangaroo (Word32,String)  
 getVarlenText = countPrefixed getVarlen char
@@ -210,9 +218,8 @@ getVarlenBytes = countPrefixed getVarlen word8
 
 
 getVarlen :: Kangaroo Word32
-getVarlen = buildWhile varBitHigh merge merge 0 word8
+getVarlen = buildWhile (`testBit` 7) merge merge 0 word8
   where
-    varBitHigh  = (`testBit` 7)
     merge i acc = (acc `shiftL` 7) + ((fromIntegral i) .&. 0x7F)
    
 

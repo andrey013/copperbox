@@ -18,10 +18,16 @@ module Data.ParserCombinators.Kangaroo.Combinators
   ( 
     satisfy
   , manyTill
+  , genericManyTill
+  , manyTillPC
+  , genericManyTillPC
   , count
   , countPrefixed
+  , genericCount
   , runOn
+  , genericRunOn
   , buildWhile
+  , postCheck
 
   ) where
 
@@ -37,17 +43,42 @@ satisfy p = word8 >>= \x ->
 
 
 manyTill :: GenKangaroo ust a -> GenKangaroo ust b -> GenKangaroo ust [a]
-manyTill p end = opt end >>= \ans ->
+manyTill = genericManyTill (:) [] 
+
+genericManyTill :: (a -> c -> c) -> c 
+                -> GenKangaroo ust a 
+                -> GenKangaroo ust b
+                -> GenKangaroo ust c
+genericManyTill op initial p end = opt end >>= \ans ->
     case ans of 
-      Nothing -> return []
-      Just _  -> p <:> manyTill p end
+      Nothing -> return initial
+      Just _  -> op <$> p <*> genericManyTill op initial p end
 
 
+manyTillPC :: GenKangaroo ust a -> (a -> Bool) -> GenKangaroo ust ([a],a)
+manyTillPC = genericManyTillPC (:) []
+
+genericManyTillPC :: (a -> b -> b) -> b 
+                  -> GenKangaroo ust a 
+                  -> (a -> Bool) 
+                  -> GenKangaroo ust (b,a)
+genericManyTillPC op initial p check =  p >>= \ans ->
+  if check ans then do { (acc,end) <- genericManyTillPC op initial p check
+                       ; return (ans `op` acc,end)
+                       }
+               else return (initial,ans) 
    
 count :: Int -> GenKangaroo ust a -> GenKangaroo ust [a]
-count i p | i <= 0    = pure []
-          | otherwise = p <:> count (i-1) p 
+count = genericCount (:) []
 
+
+-- Generalized version of count (like a fold)
+genericCount :: (a -> b -> b) -> b -> Int 
+             -> GenKangaroo ust a 
+             -> GenKangaroo ust b
+genericCount op initial i p 
+    | i <= 0    = pure initial
+    | otherwise = op <$> p <*> genericCount op initial (i-1) p
 
 countPrefixed :: Integral i 
               => GenKangaroo ust i -> GenKangaroo ust a -> GenKangaroo ust (i,[a]) 
@@ -57,6 +88,11 @@ countPrefixed plen p = plen >>= \i ->
 
 runOn :: GenKangaroo ust a -> GenKangaroo ust [a]
 runOn p = atEnd >>= \end -> if end then return [] else  p <:> runOn p
+
+
+genericRunOn :: (a -> b -> b) -> b -> GenKangaroo ust a -> GenKangaroo ust b
+genericRunOn op initial p = atEnd >>= \ end -> 
+   if end then return initial else op <$> p <*> genericRunOn op initial p
 
 -- | Build a value by while the test holds. When the test fails 
 -- the position is not backtracked, instead we use the \"failing\"
@@ -73,6 +109,13 @@ buildWhile test op lastOp initial p = step where
     step = p >>= \ans -> 
       if test ans then (step >>= \acc -> return $ ans `op` acc)
                   else (return $ ans `lastOp` initial)
+
+
+-- | Apply parse then apply the check, if the check fails report
+-- the error message. 
+postCheck :: GenKangaroo ust a -> (a -> Bool) -> String -> GenKangaroo ust a
+postCheck p check msg = p >>= \ans -> 
+    if check ans then return ans else reportError msg
 
 
 
