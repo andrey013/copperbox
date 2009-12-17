@@ -21,6 +21,7 @@ module Data.ParserCombinators.Kangaroo.Combinators
   , count
   , countPrefixed
   , runOn
+  , buildWhile
 
   ) where
 
@@ -48,16 +49,30 @@ count i p | i <= 0    = pure []
           | otherwise = p <:> count (i-1) p 
 
 
-
 countPrefixed :: Integral i 
-              => GenKangaroo ust i -> GenKangaroo ust a -> GenKangaroo ust [a] 
-countPrefixed plen p = plen >>= \i -> count (fromIntegral i) p
-
+              => GenKangaroo ust i -> GenKangaroo ust a -> GenKangaroo ust (i,[a]) 
+countPrefixed plen p = plen >>= \i -> 
+    count (fromIntegral i) p >>= \ans -> return (i,ans)
 
 
 runOn :: GenKangaroo ust a -> GenKangaroo ust [a]
 runOn p = atEnd >>= \end -> if end then return [] else  p <:> runOn p
 
+-- | Build a value by while the test holds. When the test fails 
+-- the position is not backtracked, instead we use the \"failing\"
+-- element with @lastOp@ potentially still building the value 
+-- with it.
+-- 
+buildWhile :: (a -> Bool) 
+           -> (a -> b -> b) 
+           -> (a -> b -> b) 
+           -> b 
+           -> GenKangaroo ust a 
+           -> GenKangaroo ust b
+buildWhile test op lastOp initial p = step where
+    step = p >>= \ans -> 
+      if test ans then (step >>= \acc -> return $ ans `op` acc)
+                  else (return $ ans `lastOp` initial)
 
 
 

@@ -32,9 +32,12 @@ module Data.ParserCombinators.Kangaroo.Prim
   , int16le
   , int32le
 
+  , ieeeFloatSP
+
   ) where
 
 import Data.ParserCombinators.Kangaroo.Combinators
+import Data.ParserCombinators.Kangaroo.IEEEFloat
 import Data.ParserCombinators.Kangaroo.ParseMonad
 import Data.ParserCombinators.Kangaroo.Utils
 
@@ -58,8 +61,10 @@ getBytes i = count (fromIntegral i) word8
 char :: GenKangaroo ust Char
 char = (chr . fromIntegral) <$> word8 
 
+
+
 text :: Int -> GenKangaroo ust String
-text i = count i char
+text = count `flip` char
 
 
 
@@ -99,6 +104,10 @@ int16le   = i16le <$> word8 <*> word8
                          
 int32le   :: GenKangaroo ust Int32
 int32le   = i32le <$> word8 <*> word8 <*> word8 <*> word8
+
+
+ieeeFloatSP :: Fractional a => GenKangaroo ust a
+ieeeFloatSP = unpackIEEESingle <$> word8 <*> word8 <*> word8 <*> word8
 
 
 

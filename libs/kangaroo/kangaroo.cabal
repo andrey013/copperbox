@@ -43,6 +43,7 @@ library
     Data.ParserCombinators.KangarooState,
     Data.ParserCombinators.KangarooRWS,
     Data.ParserCombinators.Kangaroo.Combinators,
+    Data.ParserCombinators.Kangaroo.IEEEFloat,
     Data.ParserCombinators.Kangaroo.ParseMonad,
     Data.ParserCombinators.Kangaroo.Prim,
     Data.ParserCombinators.Kangaroo.Utils

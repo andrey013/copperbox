@@ -195,34 +195,25 @@ assertLength i  = word32be >>= fn
               "assertLength " ++ show i ++ " /= " ++ show n
 
 assertString :: String -> Kangaroo String
-assertString s  = getChars (length s) >>= fn
+assertString s  = text (length s) >>= fn
   where 
     fn ss | ss == s   = return s
           | otherwise = reportError $ 
                "assertString " ++ (showString s []) ++ " /= " ++ (showString ss [])
                                      
 
-getChars :: Int -> Kangaroo String
-getChars = count `flip` char
-
 getVarlenText :: Kangaroo (Word32,String)  
-getVarlenText = getVarlen                 >>= \i  -> 
-                getChars (fromIntegral i) >>= \cs -> return (i,cs)
+getVarlenText = countPrefixed getVarlen char
 
 getVarlenBytes :: Kangaroo (Word32,[Word8]) 
-getVarlenBytes = getVarlen    >>= \i  ->  
-                 getBytes i   >>= \bs -> return (i,bs)
-                 
+getVarlenBytes = countPrefixed getVarlen word8
+
+
 getVarlen :: Kangaroo Word32
-getVarlen = recVarlen 0            
+getVarlen = buildWhile varBitHigh merge merge 0 word8
   where
-    recVarlen acc = do
-        i <- word8
-        if (varBitHigh i == False)
-          then (return $ merge acc i)
-          else (recVarlen $ merge acc i)
-    
-    varBitHigh i = i `testBit` 7
-        
-    merge acc i = (acc `shiftL` 7) + ((fromIntegral i) .&. 0x7F)
-    
+    varBitHigh  = (`testBit` 7)
+    merge i acc = (acc `shiftL` 7) + ((fromIntegral i) .&. 0x7F)
+   
+
+

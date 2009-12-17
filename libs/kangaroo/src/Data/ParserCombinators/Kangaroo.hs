@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Parser combinators with random access
+-- Binary parser combinators with random access
 --
 --------------------------------------------------------------------------------
 
@@ -27,7 +27,7 @@ module Data.ParserCombinators.Kangaroo
 
 import Data.ParserCombinators.Kangaroo.Combinators
 import Data.ParserCombinators.Kangaroo.ParseMonad hiding (
-    getSt, putSt, modifySt ) - TO SORT...
+    getSt, putSt, modifySt ) -- TO SORT...
 import Data.ParserCombinators.Kangaroo.Prim
 import Data.ParserCombinators.Kangaroo.Utils hiding ( (<:>), oo, ooo, oooo )
 
