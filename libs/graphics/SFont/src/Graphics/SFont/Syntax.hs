@@ -31,9 +31,7 @@ data TTFF = TTFF
       }
   deriving (Eq,Show)
 
-data SfntVersion = 
-        Sfnt_1_0
-      | OTTO  
+data SfntVersion = SFNT_1_0 | OTTO  
   deriving (Enum,Eq,Ord,Show) 
 
 --------------------------------------------------------------------------------

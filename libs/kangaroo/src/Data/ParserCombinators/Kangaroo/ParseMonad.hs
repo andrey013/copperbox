@@ -32,6 +32,7 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , runGenKangaroo
 
   , reportError
+  , substError
   , word8
   , opt 
   , position
@@ -176,6 +177,14 @@ reportError s = do
     throwErr $ s ++ posStr posn
   where
     posStr p = " position " ++ show p   
+
+
+substError :: GenKangaroo ust a -> ParseErr -> GenKangaroo ust a
+substError p msg = GenKangaroo $ \env st ust -> 
+    (getGenKangaroo p) env st ust >>= \ ans -> 
+      case ans of
+        (Left _, st', ust')  -> return (Left msg, st', ust')
+        okay                 -> return okay
 
    
 word8 :: GenKangaroo ust Word8

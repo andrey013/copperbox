@@ -43,7 +43,7 @@ manyTill p end = opt end >>= \ans ->
 
 
    
-count :: Applicative f => Int -> f a -> f [a]
+count :: Int -> GenKangaroo ust a -> GenKangaroo ust [a]
 count i p | i <= 0    = pure []
           | otherwise = p <:> count (i-1) p 
 

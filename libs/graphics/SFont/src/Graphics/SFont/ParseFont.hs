@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Interface to the /jumping/ position parser combinators  
+-- Parse TrueType fonts
 -- 
 --------------------------------------------------------------------------------
 
@@ -40,9 +40,8 @@ evalParseTTFF path = fst <$> runParseTTFF path
 -- for debugging its handy to be able to view the state
 
 runParseTTFF :: FilePath -> IO (Either String TTFF, TtffParseState)
-runParseTTFF = runKangaroo readTTFF st0
+runParseTTFF = runKangaroo (readTTFF `substError` "READ_FAIL") st0
   where                    
-    st0 :: TtffParseState
     st0 =  TtffParseState 0 mempty []
     
     
@@ -101,7 +100,7 @@ readOffsetSubtable = (\v nt _ _ _ -> (v, fromIntegral nt)) <$>
 
 sfntVersion :: FontParser SfntVersion
 sfntVersion = count 4 char >>= fn where 
-    fn s | s == ['\0','\1','\0','\0'] = return Sfnt_1_0
+    fn s | s == ['\0','\1','\0','\0'] = return SFNT_1_0
          | s == "OTTO"                = return OTTO
          | otherwise                  = err s
         

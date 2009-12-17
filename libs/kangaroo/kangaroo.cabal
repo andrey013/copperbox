@@ -11,8 +11,8 @@ description:
   Binary parsing with random access. The target file to be 
   parsed is loaded into memory at the start (represented as
   an IOUArray Int Word8). Parsing proceeds by moving a cursor
-  around, the array is left intact. This allows \'jumping\' 
-  around inside the file and constrasts with other parser 
+  around, the array is left intact. This allows _jumping_
+  inside the file and contrasts with other parser 
   combinators that progress via comsumping input.
   .
   Caveat - the above of course means that the target file is 

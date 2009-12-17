@@ -26,7 +26,8 @@ module Data.ParserCombinators.Kangaroo
   ) where
 
 import Data.ParserCombinators.Kangaroo.Combinators
-import Data.ParserCombinators.Kangaroo.ParseMonad
+import Data.ParserCombinators.Kangaroo.ParseMonad hiding (
+    getSt, putSt, modifySt ) - TO SORT...
 import Data.ParserCombinators.Kangaroo.Prim
 import Data.ParserCombinators.Kangaroo.Utils hiding ( (<:>), oo, ooo, oooo )
 
