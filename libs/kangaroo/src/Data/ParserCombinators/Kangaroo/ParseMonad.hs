@@ -37,6 +37,7 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , checkWord8
   , opt 
   , position
+  , upperBound
   , atEnd
   , lengthRemaining
 
@@ -61,7 +62,7 @@ type ParseErr = String
 
 type ImageData = IOUArray Int Word8   -- Is Int big enough for index?
 
-data ArrIx = ArrIx { _arr_ix_ptr :: !Int, _arr_ix_end :: !Int }
+data ArrIx = ArrIx { arr_ix_ptr :: !Int, arr_ix_end :: !Int }
   deriving (Eq,Show) 
 
 type St    = ArrIx
@@ -230,7 +231,12 @@ opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans ->
       (Right a, st', ust') -> return (Right $ Just a, st', ust')
 
 position :: GenKangaroo ust Int
-position = liftM _arr_ix_ptr getSt
+position = liftM arr_ix_ptr getSt
+
+upperBound :: GenKangaroo ust Int
+upperBound = liftM arr_ix_end getSt
+
+
 
 atEnd :: GenKangaroo ust Bool
 atEnd = getSt >>= \(ArrIx ix end) -> return $ ix >= end
@@ -244,12 +250,13 @@ lengthRemaining = getSt >>= \(ArrIx ix end) ->
 --------------------------------------------------------------------------------
 -- The important one...
 
-within :: String -> Int -> Int -> GenKangaroo ust ()
-within fun_name start end = getSt >>= \(ArrIx pos endpos) -> step pos endpos 
+assertSubsetRegion :: String -> Int -> Int -> GenKangaroo ust ()
+assertSubsetRegion fun_name start end = 
+    getSt >>= \(ArrIx pos endpos) -> step pos endpos 
   where
     step pos endpos | start < pos   = reportError $ 
                                         backtrackErr start pos fun_name
-                    | end >= endpos = reportError $ 
+                    | end > endpos  = reportError $ 
                                         tooFarErr end endpos fun_name
                     | otherwise     = return ()
 
@@ -279,8 +286,9 @@ withinParseVerso :: String -> Int -> Int
                  -> GenKangaroo ust a
 withinParseVerso fun_name start end p = do
     st <- getSt 
-    within fun_name start end
-    ans   <- p
+    assertSubsetRegion fun_name start end
+    putSt $ ArrIx start end
+    ans <- p
     putSt st
     return ans
     
@@ -302,9 +310,10 @@ withinParseRecto :: String -> Int -> Int
                  -> GenKangaroo ust a
 withinParseRecto fun_name start end p = do
     ArrIx _ prev_end <- getSt 
-    within fun_name start end
-    ans   <- p
-    putSt $ ArrIx end prev_end 
+    assertSubsetRegion fun_name start end
+    putSt $ ArrIx start end
+    ans <- p
+    putSt $ ArrIx (end+1) prev_end 
     return ans
 
 

@@ -25,7 +25,7 @@ import MidiDatatypes
 import Data.ParserCombinators.KangarooWriter
 
 import Control.Applicative
-
+import Control.Monad
 import Data.Bits
 import Data.Sequence ( Seq , (<|), (|>) )
 import qualified Data.Sequence as S
@@ -53,6 +53,13 @@ logPos s p = do
   p2 <- position
   logMsg $ unwords [show p1, s, show p2]
   return ans
+
+logBound :: String -> MidiParser a -> MidiParser a
+logBound s p = do 
+  b <- upperBound
+  logMsg $ unwords [ s, "region boundary", show b ]
+  p
+
 --------------------------------------------------------------------------------
 -- 
     
@@ -77,28 +84,16 @@ countS = genericCount (<|) S.empty
 
 
 track :: MidiParser Track
-track = logline "track" $ Track <$> (assertString "MTrk" *> (word32be >>= getMessages))
+track = logPos "--track--" $ liftM Track (trackHeader >>= getMessages)
 
+trackHeader :: MidiParser Word32
+trackHeader = logPos "trackHeader" $ assertString "MTrk" >> word32be
 
 getMessages :: Word32 -> MidiParser (Seq Message)
-{-
+
 getMessages i = withinRegionRelRecto 0 (fromIntegral i) messages
   where    
-    messages = genericRunOn (<|) S.empty message
-
--}
-getMessages _ = rec S.empty
-  where
-    rec acc = do
-        end <- atEnd
-        if end then reportError $ "no end-of-track message before end of input"
-               else do step1 acc
-    
-    step1 acc = do
-        msg <- message
-        if isEOT msg then return $ acc |> msg
-                     else rec (acc |> msg)
-
+    messages = genericRunOn (<|) S.empty (logBound "msg" message)
 
 isEOT (_, (MetaEvent EndOfTrack)) = True
 isEOT _                           = False
