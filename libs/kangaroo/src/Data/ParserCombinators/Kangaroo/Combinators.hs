@@ -26,8 +26,9 @@ module Data.ParserCombinators.Kangaroo.Combinators
   , genericCount
   , runOn
   , genericRunOn
-  , buildWhile
   , postCheck
+  , buildWhile
+  , buildPrimitive
 
   ) where
 
@@ -87,12 +88,21 @@ countPrefixed plen p = plen >>= \i ->
 
 
 runOn :: GenKangaroo ust a -> GenKangaroo ust [a]
-runOn p = atEnd >>= \end -> if end then return [] else  p <:> runOn p
+runOn p = atEnd >>= \end -> if end then return [] else p <:> runOn p
 
 
 genericRunOn :: (a -> b -> b) -> b -> GenKangaroo ust a -> GenKangaroo ust b
-genericRunOn op initial p = atEnd >>= \ end -> 
+genericRunOn op initial p = atEnd >>= \end -> 
    if end then return initial else op <$> p <*> genericRunOn op initial p
+
+
+
+-- | Apply parse then apply the check, if the check fails report
+-- the error message. 
+postCheck :: GenKangaroo ust a -> (a -> Bool) -> String -> GenKangaroo ust a
+postCheck p check msg = p >>= \ans -> 
+    if check ans then return ans else reportError msg
+
 
 -- | Build a value by while the test holds. When the test fails 
 -- the position is not backtracked, instead we use the \"failing\"
@@ -110,14 +120,22 @@ buildWhile test op lastOp initial p = step where
       if test ans then (step >>= \acc -> return $ ans `op` acc)
                   else (return $ ans `lastOp` initial)
 
+-- building on Word8\'s, progress is checked - only elements that 
+-- match the check are consumed up the the max count.
+buildPrimitive :: Int 
+               -> (Word8 -> Bool) 
+               -> (Word8 -> b -> b) 
+               -> b 
+               -> GenKangaroo ust b
+buildPrimitive maxc check op initial | maxc <= 0 = return initial
+                                     | otherwise = step 0 initial
+  where
+    step i a | i >= maxc = return a
+             | otherwise = checkWord8 check >>= \ans -> case ans of 
+                             Nothing -> return a 
+                             Just x  -> step (i+1) (x `op` a)
 
--- | Apply parse then apply the check, if the check fails report
--- the error message. 
-postCheck :: GenKangaroo ust a -> (a -> Bool) -> String -> GenKangaroo ust a
-postCheck p check msg = p >>= \ans -> 
-    if check ans then return ans else reportError msg
-
-
+ 
 
 -- Can't rely on Alternative as Kangaroo doesn't support it.
 {-

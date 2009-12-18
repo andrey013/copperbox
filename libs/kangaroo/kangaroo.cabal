@@ -42,6 +42,7 @@ library
     Data.ParserCombinators.Kangaroo,
     Data.ParserCombinators.KangarooState,
     Data.ParserCombinators.KangarooRWS,
+    Data.ParserCombinators.KangarooWriter,
     Data.ParserCombinators.Kangaroo.Combinators,
     Data.ParserCombinators.Kangaroo.IEEEFloat,
     Data.ParserCombinators.Kangaroo.ParseMonad,

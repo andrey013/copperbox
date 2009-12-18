@@ -44,6 +44,9 @@ module Data.ParserCombinators.Kangaroo.Utils
   , shiftL40
   , shiftL48
   , shiftL56
+  
+  -- * Hex printing
+  , hex2
 
   ) where
 
@@ -53,7 +56,7 @@ import Control.Applicative
 import Data.Bits
 import Data.Int
 import Data.Word
-
+import Numeric
 
 infixr 5 <:>
 
@@ -150,3 +153,10 @@ shiftL48 = (`shiftL` 48) . fromIntegral
 shiftL56 :: (Bits b, Integral b) => Word8 -> b
 shiftL56 = (`shiftL` 56) . fromIntegral
 
+
+
+
+hex2 :: Integral a => a -> ShowS
+hex2 a | a < 0      = showString "-ve"
+       | a < 10     = showString "0x0" . showHex a
+       | otherwise  = showString "0x" . showHex a 

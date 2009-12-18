@@ -34,6 +34,7 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , reportError
   , substError
   , word8
+  , checkWord8
   , opt 
   , position
   , atEnd
@@ -53,6 +54,7 @@ import Control.Applicative
 import Control.Monad
 import Data.Array.IO
 import Data.Word
+import Numeric
 import System.IO
 
 type ParseErr = String
@@ -173,6 +175,12 @@ runGenKangaroo p user_state filename =
 
 
 --------------------------------------------------------------------------------
+-- Helpers
+
+modifyIx :: (Int -> Int) -> GenKangaroo ust ()
+modifyIx f = modifySt $ \(ArrIx ix end) -> ArrIx (f ix) end
+
+--------------------------------------------------------------------------------
 -- 
 
 
@@ -181,7 +189,13 @@ reportError s = do
     posn <- getSt
     throwErr $ s ++ posStr posn
   where
-    posStr p = " position " ++ show p   
+    posStr (ArrIx pos end) = concat [ " absolute position "
+                                    , show pos
+                                    , " (0x" 
+                                    , showHex pos []
+                                    , "), region length "
+                                    , show end
+                                    ]
 
 
 substError :: GenKangaroo ust a -> ParseErr -> GenKangaroo ust a
@@ -195,11 +209,17 @@ substError p msg = GenKangaroo $ \env st ust ->
 word8 :: GenKangaroo ust Word8
 word8 = do
     (ArrIx ix end)   <- getSt
+    when (ix>end)    (reportError "word8")   -- test emphatically is (>) !
     arr              <- askEnv
     a                <- liftIOAction $ readArray arr ix
     putSt $ ArrIx (ix+1) end
     return a
 
+
+checkWord8 :: (Word8 -> Bool) -> GenKangaroo ust (Maybe Word8)
+checkWord8 check = word8 >>= \ans ->
+    if check ans then return $ Just ans
+                 else modifyIx (subtract 1) >> return Nothing
 
 -- no 'try' in Kangaroo... 
 -- opt is the nearest to it
@@ -274,7 +294,7 @@ withinRegionVerso = withinParseVerso "withinRegionVerso"
 -- | return to the start position
 withinRegionRelVerso :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
 withinRegionRelVerso dist len p = getSt >>= \(ArrIx pos _) ->
-    withinParseVerso "withinRegionRelVerso" (pos+dist) (pos+dist+len) p
+    withinParseVerso "withinRegionRelVerso" (pos+dist) (pos+dist+len-1) p
 
 
 withinParseRecto :: String -> Int -> Int 
@@ -295,7 +315,7 @@ withinRegionRecto = withinParseVerso "withinRegionRecto"
 -- | finish at the right of the region
 withinRegionRelRecto :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
 withinRegionRelRecto dist len p = getSt >>= \(ArrIx pos _) ->
-    withinParseRecto "withinRegionRelRecto" (pos+dist) (pos+dist+len) p
+    withinParseRecto "withinRegionRelRecto" (pos+dist) (pos+dist+len-1) p
 
  
 -- | Advance the current position by the supplied distance.
