@@ -98,95 +98,16 @@ data Region = Region !Int !Int
 
 
 -- | a TT or OT font file
-data TTFF = TTFF 
-        { offset_table      :: OffsetTable
-        , font_header       :: FontHeader
-      
-        , name_recs         :: [NameRecord]
-        , glyphs            :: [Glyph] 
+data FontFile = FontFile 
+        { ff_offset_table       :: OffsetTable
+        , ff_head_table         :: HeadTable
+        , ff_maxp_table         :: MaxpTable
+        , ff_loca_table         :: LocaTable
+        , ff_name_table         :: NameTable
         }
   deriving (Eq,Show)
 
 
-
---------------------------------------------------------------------------------
--- Offset table
-
-data OffsetTable = OffsetTable 
-        { sfnt_version            :: SfntVersion
-        , number_of_tables        :: Int
-        , search_range            :: Int
-        , entry_selector          :: Int
-        , range_shift             :: Int
-        }
-  deriving (Eq,Show)
-
-data SfntVersion = SFNT_1_0 | OTTO  
-  deriving (Enum,Eq,Ord,Show) 
-
---------------------------------------------------------------------------------
--- head table 
-
-data FontHeader = FontHeader
-        { table_version_num       :: Fixed
-        , font_revision           :: Fixed
-        , check_sum_adjust        :: ULong
-        , magic_number            :: ULong
-        , head_flags              :: [HeadFlag]
-        , units_per_em            :: UShort
-        , created_timestamp       :: DateTime
-        , modified_timestamp      :: DateTime
-        , max_bb                  :: BoundingBox
-        , mac_style               :: [MacStyle]
-        , smallest_readable_size  :: UShort
-        , font_direction_hint     :: Short      -- this could be a type...
-        , index_to_loc_format     :: LocaFormat
-        , glyph_data_format       :: Short
-        }
-  deriving (Eq,Show)
-
-data LocaFormat = LocaShort | LocaLong
-  deriving (Eq,Show)
-  
-data HeadFlag = 
-      H0_Baseline_at_y
-    | H1_Left_sidebearing_at_x
-    | H2_Depends_pt_size
-    | H3_Force_ppem_int
-    | H4_Alter_adv_width
-    | H5_Undefined
-    | H6_Undefined
-    | H7_Undefined
-    | H8_Undefined
-    | H9_Undefined 
-    | H10_Undefined    
-    | H11_Lossless_compression
-    | H12_Converted
-    | H13_ClearType_optimised
-    | H14_Reserved
-    | H15_Reserved  
-  deriving (Enum,Eq,Ord,Show)
-  
-    
-data MacStyle = 
-      S0_Bold
-    | S1_Italic  
-    | S2_Underline
-    | S3_Outline
-    | S4_Shadow
-    | S5_Condensed
-    | S6_Extended
-    | S7_Reserved
-    | S8_Reserved
-    | S9_Reserved
-    | S10_Reserved
-    | S11_Reserved
-    | S12_Reserved
-    | S13_Reserved
-    | S14_Reserved
-    | S15_Reserved
-  deriving (Enum,Eq,Ord,Show)
-  
 --------------------------------------------------------------------------------
 -- glyf table 
 
@@ -242,16 +163,108 @@ data CompositeTrans =
     | NoTrans
   deriving (Eq,Show)
 
+
 --------------------------------------------------------------------------------
--- Name table
+-- head table 
+
+data HeadTable = HeadTable
+        { ht_table_version_num        :: Fixed
+        , ht_font_revision            :: Fixed
+        , ht_check_sum_adjust         :: ULong
+        , ht_magic_number             :: ULong
+        , ht_head_flags               :: [HeadFlag]
+        , ht_units_per_em             :: UShort
+        , ht_created_timestamp        :: DateTime
+        , ht_modified_timestamp       :: DateTime
+        , ht_max_bb                   :: BoundingBox
+        , ht_mac_style                :: [MacStyle]
+        , ht_smallest_readable_size   :: UShort
+        , ht_font_direction_hint      :: Short      -- this could be a type...
+        , ht_index_to_loc_format      :: LocaFormat
+        , ht_glyph_data_format        :: Short
+        }
+  deriving (Eq,Show)
+
+data LocaFormat = LocaShort | LocaLong
+  deriving (Eq,Show)
+  
+data HeadFlag = 
+      H0_Baseline_at_y
+    | H1_Left_sidebearing_at_x
+    | H2_Depends_pt_size
+    | H3_Force_ppem_int
+    | H4_Alter_adv_width
+    | H5_Undefined
+    | H6_Undefined
+    | H7_Undefined
+    | H8_Undefined
+    | H9_Undefined 
+    | H10_Undefined    
+    | H11_Lossless_compression
+    | H12_Converted
+    | H13_ClearType_optimised
+    | H14_Reserved
+    | H15_Reserved  
+  deriving (Enum,Eq,Ord,Show)
+  
+    
+data MacStyle = 
+      S0_Bold
+    | S1_Italic  
+    | S2_Underline
+    | S3_Outline
+    | S4_Shadow
+    | S5_Condensed
+    | S6_Extended
+    | S7_Reserved
+    | S8_Reserved
+    | S9_Reserved
+    | S10_Reserved
+    | S11_Reserved
+    | S12_Reserved
+    | S13_Reserved
+    | S14_Reserved
+    | S15_Reserved
+  deriving (Enum,Eq,Ord,Show)
+  
+
+--------------------------------------------------------------------------------
+-- loca table
+
+newtype LocaTable = LocaTable { loca_offsets :: [ULong] }
+  deriving (Eq,Show)
+
+
+--------------------------------------------------------------------------------
+-- maxp table
+
+data MaxpTable = MaxpTable 
+        { maxp_version_number   :: Fixed
+        , maxp_num_glyphs       :: UShort
+        }
+  deriving (Eq,Show)
+
+
+--------------------------------------------------------------------------------
+-- name table
+
+data NameTable = NameTable
+        { nt_format             :: UShort 
+        , nt_count              :: UShort
+        , nt_string_offset      :: UShort
+        , nt_name_records       :: [NameRecord]
+        }
+  deriving (Eq,Show)
 
 data NameRecord = NameRecord 
-      { platform_id     :: PlatformId
-      , encoding_id     :: EncodingId
-      , language_id     :: UShort
-      , name_id         :: NameId
-      , name_text       :: String
-    }
+        { nr_platform_id     :: PlatformId
+        , nr_encoding_id     :: EncodingId
+        , nr_language_id     :: UShort
+        , nr_name_id         :: NameId
+        , nr_length          :: UShort
+        , nr_offset          :: UShort
+        , nr_name_text       :: String
+        }
   deriving (Eq,Show)
   
 data NameId = 
@@ -326,6 +339,21 @@ instance Enum NameId where
    toEnum 19 = Sample_text
    toEnum 20 = PostScipt_CID
    toEnum  i = Reserved_name i 
+
+--------------------------------------------------------------------------------
+-- offset table
+
+data OffsetTable = OffsetTable 
+        { ot_sfnt_version            :: SfntVersion
+        , ot_number_of_tables        :: UShort
+        , ot_search_range            :: UShort
+        , ot_entry_selector          :: UShort
+        , ot_range_shift             :: UShort
+        }
+  deriving (Eq,Show)
+
+data SfntVersion = SFNT_1_0 | OTTO  
+  deriving (Enum,Eq,Ord,Show) 
    
 --------------------------------------------------------------------------------
 -- Common data types

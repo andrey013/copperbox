@@ -294,15 +294,15 @@ interversoP fun_name start end p = do
     
 
 
--- | return to the start position 
+-- | return to the start position - start x length
 interverso :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
 interverso = interversoP "interverso"
 
 
--- | return to the start position
+-- | return to the start position - displacement x length
 interversoRel :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
-interversoRel dist len p = getSt >>= \(ArrIx pos _) ->
-    interversoP "interversoRel" (pos+dist) (pos+dist+len-1) p
+interversoRel disp len p = getSt >>= \(ArrIx pos _) ->
+    interversoP "interversoRel" (pos+disp) (pos+disp+len-1) p
 
 
 interrectoP :: String -> Int -> Int 
@@ -317,14 +317,14 @@ interrectoP fun_name start end p = do
     return ans
 
 
--- | finish at the right of the region
+-- | finish at the right of the region - start x end
 interrecto :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
 interrecto = interrectoP "interrecto"
 
--- | finish at the right of the region
+-- | finish at the right of the region - displacement x length
 interrectoRel :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
-interrectoRel dist len p = getSt >>= \(ArrIx pos _) ->
-    interrectoP "interrectoRel" (pos+dist) (pos+dist+len-1) p
+interrectoRel disp len p = getSt >>= \(ArrIx pos _) ->
+    interrectoP "interrectoRel" (pos+disp) (pos+disp+len-1) p
 
  
 -- | Advance the current position by the supplied distance.

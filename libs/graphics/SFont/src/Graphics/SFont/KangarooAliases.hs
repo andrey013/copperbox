@@ -40,19 +40,17 @@ infixr 5 <:>
 
 type Parser a = Kangaroo Log a
 
-
--- To parse a ttf or otf file we need to see a lot of intermediate information
--- which isn't reflected in the final /parse tree/. We build this information
--- as we parse with the state monad. It doesn't seem very elegant to have 
--- all of the initial state fields undefined, but...   
-data TtffParseState = TtffParseState 
-        { table_count     :: Int
-        , table_locs      :: TableLocs
-        , glyph_locs      :: [Region]
-        }
-  deriving (Show)
+logPos :: String -> Parser a -> Parser a
+logPos msg p = do 
+  p1 <- position 
+  a  <- p 
+  p2 <- position
+  tell $ unwords ["\n", show p1, "--", msg, "--", show p2]
+  return a
 
 
+logline :: String -> Parser ()
+logline = tell . ("\n" ++)
 
 ushort :: Parser Word16
 ushort = word16be

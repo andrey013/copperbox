@@ -27,29 +27,25 @@ import Data.ParserCombinators.KangarooWriter
 import Control.Applicative
 import Control.Monad
 import Data.List 
+import qualified Data.Map as Map 
 import Data.Maybe ( catMaybes )
 
 
 
-evalParseTTFF :: FilePath -> IO (Either String TTFF)
-evalParseTTFF path = fst <$> runParseTTFF path 
+evalParseFont :: FilePath -> IO (Either String FontFile)
+evalParseFont path = fst <$> runParseFont path 
   
 
 
 -- for debugging its handy to be able to view the state
 
-runParseTTFF :: FilePath -> IO (Either String TTFF, Log)
-runParseTTFF = runKangaroo (readTTFF `substError` "READ_FAIL") 
+runParseFont :: FilePath -> IO (Either String FontFile, Log)
+runParseFont = runKangaroo (fontFile `substError` "READ_FAIL") 
     
 
-parseWithState :: Parser a -> FilePath -> IO (Either String a, Log)
-parseWithState p file_name = runKangaroo p file_name
+parseWith :: Parser a -> FilePath -> IO (Either String a, Log)
+parseWith p file_name = runKangaroo p file_name
     
-    
--- Hmmm, if all the /logic/ is in this monolithic function, do we need a 
--- state monad?
-readTTFF :: Parser TTFF
-readTTFF = undefined
 
 {-
 readTTFF = do 
@@ -75,27 +71,38 @@ readTTFF = do
     glyfs   <- tableJump "glyf" (readGlyphs glocs)
     return $ TTFF v nt hdr nrecs glyfs
 
-
-
-tableJump :: String -> Parser a -> Parser a
-tableJump name p = do
-    m   <- gets table_locs 
-    maybe fk sk $ tableLocation name m
-  where
-    fk = reportError $ "parsing failed, missing table '" ++ name ++ "'"    
-    sk (offset,len) = interversoRel offset len p 
-    
-tableRegion :: String -> Parser Region
-tableRegion name = do
-    m   <- gets table_locs 
-    maybe fk return $ tableLocation name m
-  where
-    fk = reportError $ "parsing failed, missing table '" ++ name ++ "'"    
 -}    
 
-prolog :: Parser (OffsetTable,TableLocs)
-prolog = mprogress (,) number_of_tables offsetTable tableDirectory
+fontFile :: Parser FontFile
+fontFile = do
+    (offs_tbl,locs) <- prolog
+    logline $ show locs
+    head_tbl        <- parseTable locs "head" headTable
+    maxp_tbl        <- parseTable locs "maxp" maxpTable
+    loca_tbl        <- parseTable locs "loca" $ 
+                         locaTable (ht_index_to_loc_format head_tbl)
+                                   (fromIntegral $ maxp_num_glyphs maxp_tbl)
+    name_tbl        <- parseTable locs "name" nameTable
+    return $ FontFile 
+               { ff_offset_table      = offs_tbl
+               , ff_head_table        = head_tbl
+               , ff_maxp_table        = maxp_tbl
+               , ff_loca_table        = loca_tbl
+               , ff_name_table        = name_tbl
+               }
 
+
+prolog :: Parser (OffsetTable,TableLocs)
+prolog = mprogress (,) fn offsetTable tableDirectory
+  where
+    fn = fromIntegral . ot_number_of_tables
+
+parseTable :: TableLocs -> String -> Parser a -> Parser a
+parseTable mp name p = 
+    getRegion >>= \(Region start len) -> interverso start (start+len) p
+  where
+    getRegion = maybe errk return $ Map.lookup name mp
+    errk      = reportError $ "missing table " ++ name
 
         
 --------------------------------------------------------------------------------
@@ -104,10 +111,8 @@ prolog = mprogress (,) number_of_tables offsetTable tableDirectory
 -- For the moment the only value we extract is sfnt version and numTables
 --
 offsetTable :: Parser OffsetTable
-offsetTable = OffsetTable <$> sfntVersion <*> ushorti 
-                          <*> ushorti     <*> ushorti <*> ushorti
-  where
-    ushorti = liftM fromIntegral ushort
+offsetTable = OffsetTable <$> sfntVersion <*> ushort
+                          <*> ushort      <*> ushort <*> ushort
 
 sfntVersion :: Parser SfntVersion
 sfntVersion = count 4 char >>= fn where 
@@ -131,15 +136,14 @@ tableDirectory i = liftM build $ count i tableDescriptor
     
     
 tableDescriptor :: Parser TableDescriptor 
-tableDescriptor = 
-    (\tag _ s o -> TableDescriptor tag (Region (fromIntegral s) (fromIntegral o)) )
-        <$> text 4 <*> word32be <*> word32be <*> word32be
+tableDescriptor = (\tag _ r -> TableDescriptor tag r)
+    <$> text 4 <*> word32be <*> region
         
 --------------------------------------------------------------------------------
--- Head table
+-- head table
 
-headTable :: Parser FontHeader 
-headTable = FontHeader <$>
+headTable :: Parser HeadTable
+headTable = HeadTable <$>
           fixed 
       <*> fixed 
       <*> ulong 
@@ -163,40 +167,67 @@ enumLoca 1 = return LocaLong
 enumLoca z = reportError $ "invalid loca format, should be 0 or 1, " ++ show z
 
 --------------------------------------------------------------------------------
--- Maxp table
+-- loca table
+
+
+locaTable :: LocaFormat -> Int -> Parser LocaTable
+locaTable LocaShort n = LocaTable <$> locaShort n
+locaTable LocaLong  n = LocaTable <$> locaLong  n
+
+locaShort :: Int -> Parser [ULong]
+locaShort i = count i $ liftM ((2*) . fromIntegral) ushort  
+
+locaLong :: Int -> Parser [ULong]
+locaLong = count `flip` ulong
+
+--------------------------------------------------------------------------------
+-- maxp table
 
 -- Just extract the number of glyphs
  
-maxpNumGlyphs :: Parser Int 
-maxpNumGlyphs = fromIntegral <$> (fixed *> ushort)
+maxpTable :: Parser MaxpTable 
+maxpTable = MaxpTable <$> fixed <*> ushort
 
 --------------------------------------------------------------------------------
 -- name table
 
+nameTable :: Parser NameTable
+nameTable = do 
+    pos         <- position
+    fmt         <- ushort
+    tot         <- ushort
+    str_off     <- ushort
+    let str_loc = pos + fromIntegral str_off
+    names       <- count (fromIntegral tot) (nameRecord str_loc)
+    return $ NameTable 
+                { nt_format         = fmt
+                , nt_count          = tot
+                , nt_string_offset  = str_off
+                , nt_name_records   = names
+                }
 
 
-readNameRecords :: Parser [NameRecord]
-readNameRecords = do
-    start   <- position
-    _fmt    <- ushort
-    n       <- ushort
-    off     <- ushort
-    recs    <- count (fromIntegral n) (readNameRecord $ start + fromIntegral off)
-    return recs
-
-
-readNameRecord :: Int -> Parser NameRecord 
-readNameRecord abs_data_offset = do
+nameRecord :: Int -> Parser NameRecord 
+nameRecord str_data_offset = do
     pid     <- platformId  
     enc     <- encodingId 
     lang    <- ushort
     nid     <- nameId
     len     <- ushort
     pos     <- ushort
-    str     <- interrecto (abs_data_offset + fromIntegral pos) 
-                          (fromIntegral len)
-                          (runOn char)
-    return $ NameRecord pid enc lang nid str
+    logline $ show (str_data_offset,len,pos)
+    let str_loc = str_data_offset + fromIntegral pos
+    str     <- interverso str_loc (str_loc + fromIntegral len) (runOn char)
+    return $ NameRecord 
+                { nr_platform_id    = pid
+                , nr_encoding_id    = enc
+                , nr_language_id    = lang
+                , nr_name_id        = nid
+                , nr_length         = len
+                , nr_offset         = pos
+                , nr_name_text      = str
+                }
+
     
 nameId :: Parser NameId
 nameId = toEnum . fromIntegral <$> ushort
@@ -236,52 +267,6 @@ readGlyf offset len = interrectoRel offset len $ do
           
 
 --------------------------------------------------------------------------------
--- Loca table
-
--- External deps 
--- @head@ - idx_to_loc_fmt
--- @maxp@ - num_glyphs
--- table directory - glyph table length & Loca start and length 
-
--- glyph_table_length is is a synthetic dependency rather
--- than a necessary one, because I interpret the Loca table as I parse it
--- to get the regions of the glyphs in the glyf table 
---
-readLocaTable :: Short -> Int -> Int -> Parser [Region]
-readLocaTable head_idx_to_loc_fmt maxp_num_glyphs glyf_table_length = do    
-        ls    <- glyfLocsFromLocaTable head_idx_to_loc_fmt maxp_num_glyphs
-        return $ glyfLocations glyf_table_length ls 
-
--- Loca table has two formats - one where the data is stored as ushorts
--- the other as ulongs. @indexToLocFormat@ from the @head@ table says 
--- which is used.
---
-glyfLocsFromLocaTable :: Short -> Int -> Parser [ULong]
-glyfLocsFromLocaTable head_idx_to_loc_fmt maxp_num_glyphs
-    | head_idx_to_loc_fmt == 0  = count num_locs primShortFmt
-    | otherwise                 = count num_locs primLongFmt
-  where
-    -- the Loca table includes an index  for the /.notAccess/ glyph
-    -- the is not accounted for in the count from the maxp table
-    num_locs :: Int
-    num_locs        = maxp_num_glyphs + 1 
-    
-    primLongFmt, primShortFmt :: Parser ULong
-    primLongFmt     = fromIntegral <$> ulong
-     -- short format stores local offset divided by two
-    primShortFmt    = (2 *) . fromIntegral <$> ushort
-
-locaTable :: LocaFormat -> Int -> Parser [ULong]
-locaTable LocaShort = locaShort
-locaTable LocaLong  = locaLong 
-
-locaShort :: Int -> Parser [ULong]
-locaShort i = count i $ liftM ((2*) . fromIntegral) ushort  
-
-locaLong :: Int -> Parser [ULong]
-locaLong = count `flip` ulong
-
---------------------------------------------------------------------------------
 -- Common elements
 
 
@@ -305,4 +290,6 @@ encodingId = toEnum . fromIntegral <$> ushort
 boundingBox :: Parser BoundingBox
 boundingBox = BoundingBox <$> short <*> short <*> short <*> short
        
-                             
+region :: Parser Region 
+region = Region <$> w32i <*> w32i
+  where w32i = liftM fromIntegral word32be
