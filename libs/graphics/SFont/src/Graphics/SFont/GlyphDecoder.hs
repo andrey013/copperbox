@@ -21,10 +21,9 @@ module Graphics.SFont.GlyphDecoder (
 
 
 import Graphics.SFont.KangarooAliases
-import Graphics.SFont.PrimitiveDatatypes
 import Graphics.SFont.Syntax
 
-import Data.ParserCombinators.KangarooState
+import Data.ParserCombinators.KangarooWriter
 
 import Control.Applicative
 import Data.Bits
@@ -182,13 +181,13 @@ endSegment (i:ix)  xs = let (l,r) = splitAt (1 + fromIntegral i) xs
 
 -- This one is easier in the parse monad...
 
-compositeElements :: FontParser [CompositeElement]
+compositeElements :: Parser [CompositeElement]
 compositeElements = do 
     (a,more)  <- compositeElt
     if not more then return [a] else (return a) <:> compositeElements
             
             
-compositeElt :: FontParser (CompositeElement,Bool)  
+compositeElt :: Parser (CompositeElement,Bool)  
 compositeElt = do 
     flag  <- ushort
     gidx  <- (fromIntegral <$> ushort)
@@ -208,7 +207,7 @@ compositeElt = do
     argmaker True (x,y) = OffsetArgs x y  
     argmaker _    (x,y) = PointNumbers x y 
     
-    twoByTwo :: FontParser CompositeTrans
+    twoByTwo :: Parser CompositeTrans
     twoByTwo = TwoByTwo <$> f2dot14 <*> f2dot14 <*> f2dot14 <*> f2dot14
     
 cond3 :: Monad m => Bool -> m a -> Bool -> m a -> Bool -> m a -> a -> m a

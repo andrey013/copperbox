@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -10,25 +11,114 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Font file structured as a hierarchical syntax tree, rather than a 
--- graph of tables.
+-- AST for font files.
 --
 --------------------------------------------------------------------------------
 
 
 module Graphics.SFont.Syntax where
 
-import Graphics.SFont.PrimitiveDatatypes
+import Data.Int
+import qualified Data.Map as Map
+import Data.Word
+
+
+type Byte   = Word8
+
+-- This is a @Char@ in terms of the OFF, naturally we use something else
+type SByte  = Int8 
+
+type UShort = Word16
+type Short  = Int16 
+    
+type ULong  = Word32
+type Long   = Int32
+
+type Offset = Word16
+
+
+--------------------------------------------------------------------------------
+-- Numbers - these will all need sorting out at some point
+
+-- 16.16 float
+newtype Fixed = Fixed { unFixed :: Double }
+  deriving (Eq,Ord,Num, Fractional)
+
+instance Show Fixed where 
+  show = show . unFixed
+    
+instance Read Fixed where
+  readsPrec i s = map (\(d,r) -> (Fixed d,r)) $ readsPrec i s      
+
+
+newtype FWord = FWord { unFWord :: Int16 }
+  deriving (Eq,Ord,Num)
+
+instance Show FWord where 
+  show = show . unFWord
+    
+instance Read FWord where
+  readsPrec i s = map (\(d,r) -> (FWord d,r)) $ readsPrec i s   
+
+
+newtype UFWord = UFWord { unUFWord :: Word16 }
+  deriving (Eq,Ord,Num)
+
+instance Show UFWord where 
+  show = show . unUFWord
+    
+instance Read UFWord where
+  readsPrec i s = map (\(d,r) -> (UFWord d,r)) $ readsPrec i s  
+
+newtype F2Dot14 = F2Dot14 { unF2Dot14 :: Double }
+  deriving (Eq,Ord,Num,Show)
+
+instance Read F2Dot14 where
+  readsPrec i s = map (\(d,r) -> (F2Dot14 d,r)) $ readsPrec i s 
+  
+    
+--------------------------------------------------------------------------------
+-- DateTime - needs sorting out at some point
+
+data DateTime = DateTime Word64 ()
+
+instance Show DateTime where
+  show (DateTime i _) = show i
+  
+instance Eq DateTime where
+  DateTime i _ == DateTime j _ = i == j
+
+--------------------------------------------------------------------------------
+
+-- A region within the font file which is loaded as an array of 
+-- bytes: position x length.
+--
+data Region = Region !Int !Int
+  deriving (Eq,Show)
+
 
 -- | a TT or OT font file
 data TTFF = TTFF 
-      { sfnt_version      :: SfntVersion
-      , number_of_tables  :: Int
-      , font_header       :: FontHeader
+        { offset_table      :: OffsetTable
+        , font_header       :: FontHeader
       
-      , name_recs         :: [NameRecord]
-      , glyphs            :: [Glyph] 
-      }
+        , name_recs         :: [NameRecord]
+        , glyphs            :: [Glyph] 
+        }
+  deriving (Eq,Show)
+
+
+
+--------------------------------------------------------------------------------
+-- Offset table
+
+data OffsetTable = OffsetTable 
+        { sfnt_version            :: SfntVersion
+        , number_of_tables        :: Int
+        , search_range            :: Int
+        , entry_selector          :: Int
+        , range_shift             :: Int
+        }
   deriving (Eq,Show)
 
 data SfntVersion = SFNT_1_0 | OTTO  
@@ -50,11 +140,13 @@ data FontHeader = FontHeader
         , mac_style               :: [MacStyle]
         , smallest_readable_size  :: UShort
         , font_direction_hint     :: Short      -- this could be a type...
-        , index_to_loc_format     :: Short
+        , index_to_loc_format     :: LocaFormat
         , glyph_data_format       :: Short
         }
   deriving (Eq,Show)
 
+data LocaFormat = LocaShort | LocaLong
+  deriving (Eq,Show)
   
 data HeadFlag = 
       H0_Baseline_at_y
@@ -124,7 +216,7 @@ data CompositeElement = CompositeElement
       
 data CompositeArgs = 
       OffsetArgs 
-        { x_offset     :: Int 
+        { x_offset    :: Int 
         , y_offset    :: Int 
         }
     | PointNumbers 
@@ -304,3 +396,21 @@ data BoundingBox = BoundingBox
         , y_max   :: Short
         }
   deriving (Eq,Show)     
+
+--------------------------------------------------------------------------------
+
+-- Table locations map table names to there position in the font 
+-- source file (where position is a Region - start, length) 
+--
+type TableLocs = Map.Map String Region 
+
+
+-- The table directory contains a list of all tables and their offset (start) 
+-- and length. Here they are called TableDescriptors. 
+-- TableDescriptor (table_name,table_location  
+data TableDescriptor = TableDescriptor 
+        { table_name        :: String 
+        , table_location    :: Region 
+        }
+  deriving (Eq,Show)
+

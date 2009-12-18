@@ -4,7 +4,7 @@
 -- |
 -- Module      :  Graphics.SFont.ParseFont
 -- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
@@ -16,55 +16,57 @@
 
 module Graphics.SFont.ParseFont where
 
-import Graphics.SFont.ExtraSyntax
 import Graphics.SFont.GlyphDecoder
 import Graphics.SFont.KangarooAliases
-import Graphics.SFont.PrimitiveDatatypes
 import Graphics.SFont.Syntax
 import Graphics.SFont.Utils
 
-import Data.ParserCombinators.KangarooRWS
+import Data.ParserCombinators.KangarooWriter
 
 
 import Control.Applicative
+import Control.Monad
+import Data.List 
 import Data.Maybe ( catMaybes )
-import Data.Monoid
-
 
 
 
 evalParseTTFF :: FilePath -> IO (Either String TTFF)
-evalParseTTFF path = fst3 <$> runParseTTFF path 
-  where fst3 (a,_,_) = a
+evalParseTTFF path = fst <$> runParseTTFF path 
   
 
 
 -- for debugging its handy to be able to view the state
 
-runParseTTFF :: FilePath -> IO (Either String TTFF, Log, TtffParseState)
-runParseTTFF = runKangaroo (readTTFF `substError` "READ_FAIL") () st0
-  where                    
-    st0 =  TtffParseState 0 mempty []
+runParseTTFF :: FilePath -> IO (Either String TTFF, Log)
+runParseTTFF = runKangaroo (readTTFF `substError` "READ_FAIL") 
+    
+
+parseWithState :: Parser a -> FilePath -> IO (Either String a, Log)
+parseWithState p file_name = runKangaroo p file_name
     
     
 -- Hmmm, if all the /logic/ is in this monolithic function, do we need a 
 -- state monad?
-readTTFF :: FontParser TTFF
+readTTFF :: Parser TTFF
+readTTFF = undefined
+
+{-
 readTTFF = do 
-    (v,nt)  <- readOffsetSubtable
+    (v,nt)  <- offsetTable
     modify $ (\s -> s {table_count=nt})
     
     td      <- readTableDirectory nt
     modify $ (\s -> s {table_locs=td})
     
     -- all reads from now on are tableJumps
-    hdr     <- tableJump "head" readHeadTable
+    hdr     <- tableJump "head" headTable
     let loc_fmt = index_to_loc_format hdr
     
     ng      <- tableJump "maxp" maxpNumGlyphs
     (_,ge)  <- tableRegion "glyf" 
     
-    glocs   <- tableJump "loca" (readLocaTable loc_fmt ng ge)
+    glocs   <- undefined -- tableJump "loca" (locaTable loc_fmt ng)
     modify $ (\s -> s {glyph_locs=glocs})
     
 
@@ -75,32 +77,39 @@ readTTFF = do
 
 
 
-tableJump :: String -> FontParser a -> FontParser a
+tableJump :: String -> Parser a -> Parser a
 tableJump name p = do
     m   <- gets table_locs 
     maybe fk sk $ tableLocation name m
   where
     fk = reportError $ "parsing failed, missing table '" ++ name ++ "'"    
-    sk (offset,len) = withinRegionRel offset len p 
+    sk (offset,len) = interversoRel offset len p 
     
-tableRegion :: String -> FontParser Region
+tableRegion :: String -> Parser Region
 tableRegion name = do
     m   <- gets table_locs 
     maybe fk return $ tableLocation name m
   where
     fk = reportError $ "parsing failed, missing table '" ++ name ++ "'"    
-    
+-}    
+
+prolog :: Parser (OffsetTable,TableLocs)
+prolog = mprogress (,) number_of_tables offsetTable tableDirectory
+
+
         
 --------------------------------------------------------------------------------
 -- Offset subtable
 
 -- For the moment the only value we extract is sfnt version and numTables
-readOffsetSubtable :: FontParser (SfntVersion,Int) 
-readOffsetSubtable = (\v nt _ _ _ -> (v, fromIntegral nt)) <$>
-    sfntVersion <*> ushort <*> ushort <*> ushort <*> ushort
+--
+offsetTable :: Parser OffsetTable
+offsetTable = OffsetTable <$> sfntVersion <*> ushorti 
+                          <*> ushorti     <*> ushorti <*> ushorti
+  where
+    ushorti = liftM fromIntegral ushort
 
-
-sfntVersion :: FontParser SfntVersion
+sfntVersion :: Parser SfntVersion
 sfntVersion = count 4 char >>= fn where 
     fn s | s == ['\0','\1','\0','\0'] = return SFNT_1_0
          | s == "OTTO"                = return OTTO
@@ -115,22 +124,22 @@ sfntVersion = count 4 char >>= fn where
 --------------------------------------------------------------------------------
 -- Table directory
 
-readTableDirectory :: Int -> FontParser TableLocs 
-readTableDirectory num_tables = do
-    ts <- count num_tables tableDescriptor
-    return $ buildMap table_name table_location ts
+tableDirectory :: Int -> Parser TableLocs 
+tableDirectory i = liftM build $ count i tableDescriptor
+  where 
+    build = buildMap table_name table_location
     
     
-tableDescriptor :: FontParser TableDescriptor 
+tableDescriptor :: Parser TableDescriptor 
 tableDescriptor = 
-    (\tag _ s o -> TableDescriptor tag (fromIntegral s, fromIntegral o)) 
+    (\tag _ s o -> TableDescriptor tag (Region (fromIntegral s) (fromIntegral o)) )
         <$> text 4 <*> word32be <*> word32be <*> word32be
         
 --------------------------------------------------------------------------------
 -- Head table
 
-readHeadTable :: FontParser FontHeader 
-readHeadTable = FontHeader <$>
+headTable :: Parser FontHeader 
+headTable = FontHeader <$>
           fixed 
       <*> fixed 
       <*> ulong 
@@ -139,19 +148,26 @@ readHeadTable = FontHeader <$>
       <*> ushort  
       <*> longDateTime
       <*> longDateTime
-      <*> readBoundingBox
+      <*> boundingBox
       <*> bitfield ushort       -- mac_style
       <*> ushort
       <*> short
+      <*> locaFormat
       <*> short
-      <*> short
+  where
+    locaFormat = short >>= enumLoca
+
+enumLoca :: Short -> Parser LocaFormat
+enumLoca 0 = return LocaShort
+enumLoca 1 = return LocaLong
+enumLoca z = reportError $ "invalid loca format, should be 0 or 1, " ++ show z
 
 --------------------------------------------------------------------------------
 -- Maxp table
 
 -- Just extract the number of glyphs
  
-maxpNumGlyphs :: FontParser Int 
+maxpNumGlyphs :: Parser Int 
 maxpNumGlyphs = fromIntegral <$> (fixed *> ushort)
 
 --------------------------------------------------------------------------------
@@ -159,7 +175,7 @@ maxpNumGlyphs = fromIntegral <$> (fixed *> ushort)
 
 
 
-readNameRecords :: FontParser [NameRecord]
+readNameRecords :: Parser [NameRecord]
 readNameRecords = do
     start   <- position
     _fmt    <- ushort
@@ -169,7 +185,7 @@ readNameRecords = do
     return recs
 
 
-readNameRecord :: Int -> FontParser NameRecord 
+readNameRecord :: Int -> Parser NameRecord 
 readNameRecord abs_data_offset = do
     pid     <- platformId  
     enc     <- encodingId 
@@ -177,12 +193,12 @@ readNameRecord abs_data_offset = do
     nid     <- nameId
     len     <- ushort
     pos     <- ushort
-    str     <- withinRegion (abs_data_offset + fromIntegral pos) 
-                            (fromIntegral len)
-                            (runOn char)
+    str     <- interrecto (abs_data_offset + fromIntegral pos) 
+                          (fromIntegral len)
+                          (runOn char)
     return $ NameRecord pid enc lang nid str
     
-nameId :: FontParser NameId
+nameId :: Parser NameId
 nameId = toEnum . fromIntegral <$> ushort
 
 
@@ -191,19 +207,19 @@ nameId = toEnum . fromIntegral <$> ushort
 
 --------------------------------------------------------------------------------
 -- Glyf table
-readGlyphs :: [Region] -> FontParser [Glyph]
+readGlyphs :: [Region] -> Parser [Glyph]
 readGlyphs xs = catMaybes <$> readGlyphs' xs
 
-readGlyphs' :: [Region] -> FontParser [Maybe Glyph]
-readGlyphs' ((o,l):rs) = readGlyf o l <:> readGlyphs' rs
-readGlyphs' []         = return [] 
+readGlyphs' :: [Region] -> Parser [Maybe Glyph]
+readGlyphs' (Region o l:rs) = readGlyf o l <:> readGlyphs' rs
+readGlyphs' []              = return [] 
 
 
-readGlyf :: Int -> Int -> FontParser (Maybe Glyph)
+readGlyf :: Int -> Int -> Parser (Maybe Glyph)
 readGlyf _      0   = return Nothing
-readGlyf offset len = withinRegionRel offset len $ do 
+readGlyf offset len = interrectoRel offset len $ do 
     nc  <- short 
-    bb  <- readBoundingBox
+    bb  <- boundingBox
     if nc >= 0 
       then do 
         end_pts       <- count (fromIntegral nc) ushort
@@ -231,7 +247,7 @@ readGlyf offset len = withinRegionRel offset len $ do
 -- than a necessary one, because I interpret the Loca table as I parse it
 -- to get the regions of the glyphs in the glyf table 
 --
-readLocaTable :: Short -> Int -> Int -> FontParser [Region]
+readLocaTable :: Short -> Int -> Int -> Parser [Region]
 readLocaTable head_idx_to_loc_fmt maxp_num_glyphs glyf_table_length = do    
         ls    <- glyfLocsFromLocaTable head_idx_to_loc_fmt maxp_num_glyphs
         return $ glyfLocations glyf_table_length ls 
@@ -240,7 +256,7 @@ readLocaTable head_idx_to_loc_fmt maxp_num_glyphs glyf_table_length = do
 -- the other as ulongs. @indexToLocFormat@ from the @head@ table says 
 -- which is used.
 --
-glyfLocsFromLocaTable :: Short -> Int -> FontParser [GlyfStartLoca]
+glyfLocsFromLocaTable :: Short -> Int -> Parser [ULong]
 glyfLocsFromLocaTable head_idx_to_loc_fmt maxp_num_glyphs
     | head_idx_to_loc_fmt == 0  = count num_locs primShortFmt
     | otherwise                 = count num_locs primLongFmt
@@ -250,12 +266,20 @@ glyfLocsFromLocaTable head_idx_to_loc_fmt maxp_num_glyphs
     num_locs :: Int
     num_locs        = maxp_num_glyphs + 1 
     
-    primLongFmt, primShortFmt :: FontParser GlyfStartLoca
+    primLongFmt, primShortFmt :: Parser ULong
     primLongFmt     = fromIntegral <$> ulong
      -- short format stores local offset divided by two
     primShortFmt    = (2 *) . fromIntegral <$> ushort
 
+locaTable :: LocaFormat -> Int -> Parser [ULong]
+locaTable LocaShort = locaShort
+locaTable LocaLong  = locaLong 
 
+locaShort :: Int -> Parser [ULong]
+locaShort i = count i $ liftM ((2*) . fromIntegral) ushort  
+
+locaLong :: Int -> Parser [ULong]
+locaLong = count `flip` ulong
 
 --------------------------------------------------------------------------------
 -- Common elements
@@ -265,22 +289,20 @@ glyfLocsFromLocaTable head_idx_to_loc_fmt maxp_num_glyphs
 -- The /last/ region only has a start position, so we supply the end loc 
 -- of the glyf table (glyf_table_length). This nicely works backwards hence 
 -- the right fold.  
-glyfLocations :: Int -> [GlyfStartLoca] -> [Region]
-glyfLocations glyf_table_length = snd . foldr fn (glyf_table_length,[]) 
-  where
-    fn i (j,rs) = let i' = fromIntegral i in (i',(i',j-i'):rs)
-    
+--
+glyfLocations :: Int -> [ULong] -> [Region]
+glyfLocations = snd `oo` mapAccumR fn where
+    fn acc x = (x', Region x' (acc-x')) where x' = fromIntegral x
 
 
-platformId :: FontParser PlatformId 
+platformId :: Parser PlatformId 
 platformId = toEnum . fromIntegral <$> ushort 
       
-encodingId :: FontParser EncodingId 
+encodingId :: Parser EncodingId 
 encodingId = toEnum . fromIntegral <$> ushort 
 
 
-readBoundingBox :: FontParser BoundingBox
-readBoundingBox = BoundingBox <$>
-    short <*> short <*> short <*> short
+boundingBox :: Parser BoundingBox
+boundingBox = BoundingBox <$> short <*> short <*> short <*> short
        
                              

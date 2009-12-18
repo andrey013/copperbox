@@ -17,8 +17,7 @@
 
 module Graphics.SFont.Utils where
 
-import Graphics.SFont.PrimitiveDatatypes
-import Graphics.SFont.ExtraSyntax
+import Graphics.SFont.Syntax
 
 
 import Data.Bits
@@ -82,7 +81,7 @@ segment (i:ix)  xs = let (l,r) = splitAt i xs in l : segment ix r
 
 -- regionBetween extracts the region between 2 locations 
 regionBetween :: Int -> Int -> Region
-regionBetween start end = (start, end - start)
+regionBetween start end = Region start (end - start)
 
 putStrLnSafe :: String -> IO ()
 putStrLnSafe = putStrLn . map replaceUnprint where
@@ -104,6 +103,22 @@ tableLocation :: String -> TableLocs -> Maybe Region
 tableLocation = Map.lookup
 
 
+-- specs - defined in my package data-aviary but defined here to 
+-- avoid a dependency
+
+-- | Compose an arity 1 function with an arity 2 function.
+-- B1 - blackbird
+oo :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+oo f g = (f .) . g
+
+-- | Compose an arity 1 function with an arity 3 function.
+-- B2 - bunting
+ooo :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
+ooo f g = ((f .) .) . g
+
+-- | Compose an arity 1 function with an arity 4 function.
+oooo :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
+oooo f g = (((f .) .) .) . g  
  
   
                    

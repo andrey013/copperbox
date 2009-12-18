@@ -17,7 +17,9 @@
 module Data.ParserCombinators.Kangaroo.Utils 
   ( 
     (<:>)
-  
+  , pairA
+  , mprogress
+
   -- * Specs
   , oo
   , ooo
@@ -47,6 +49,9 @@ module Data.ParserCombinators.Kangaroo.Utils
   
   -- * Hex printing
   , hex2
+  , hex4
+  , hex8
+  
 
   ) where
 
@@ -64,6 +69,15 @@ infixr 5 <:>
 (<:>) :: Applicative f => f a -> f [a] -> f [a]
 (<:>) p1 p2 = (:) <$> p1 <*> p2
 
+
+    
+
+pairA :: Applicative f => f a -> f b -> f (a,b)
+pairA fa fb = (,) <$> fa <*> fb
+
+-- needs renaming...
+mprogress :: Monad m => (a -> c -> d) -> (a -> b) -> m a -> (b -> m c) -> m d
+mprogress comb f ma mb = ma >>= \a -> mb (f a) >>= \b -> return $ comb a b
 
 -- specs - defined in my package data-aviary but defined here to 
 -- avoid a dependency
@@ -158,5 +172,24 @@ shiftL56 = (`shiftL` 56) . fromIntegral
 
 hex2 :: Integral a => a -> ShowS
 hex2 a | a < 0      = showString "-ve"
-       | a < 10     = showString "0x0" . showHex a
-       | otherwise  = showString "0x" . showHex a 
+       | a < 0x10   = showString "0x0" . showHex a
+       | otherwise  = showString "0x"  . showHex a 
+
+
+hex4 :: Integral a => a -> ShowS
+hex4 a | a < 0      = showString "-ve"
+       | a < 0x10   = showString "0x000" . showHex a
+       | a < 0x100  = showString "0x00"  . showHex a 
+       | a < 0x1000 = showString "0x0"   . showHex a 
+       | otherwise  = showString "0x"    . showHex a 
+
+hex8 :: Integral a => a -> ShowS
+hex8 a | a < 0          = showString "-ve"
+       | a < 0x10       = showString "0x0000000" . showHex a
+       | a < 0x100      = showString "0x000000"  . showHex a 
+       | a < 0x1000     = showString "0x00000"   . showHex a 
+       | a < 0x10000    = showString "0x0000"    . showHex a 
+       | a < 0x100000   = showString "0x000"     . showHex a 
+       | a < 0x1000000  = showString "0x00"      . showHex a 
+       | a < 0x10000000 = showString "0x0"       . showHex a 
+       | otherwise      = showString "0x"        . showHex a 

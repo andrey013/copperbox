@@ -27,7 +27,7 @@ import Data.ParserCombinators.KangarooWriter
 import Control.Applicative
 import Control.Monad
 import Data.Bits
-import Data.Sequence ( Seq , (<|), (|>) )
+import Data.Sequence ( Seq , (<|) )
 import qualified Data.Sequence as S
 import Data.Word
 
@@ -40,11 +40,10 @@ readMidi filename = do
    putStrLn w
    either error return a
     
+{-
 
 logMsg :: String -> MidiParser ()
 logMsg = tell . ("\n" ++)
-
-logline s p = tell s >> p
 
 logPos :: String -> MidiParser a -> MidiParser a
 logPos s p = do 
@@ -60,17 +59,15 @@ logBound s p = do
   logMsg $ unwords [ s, "region boundary", show b ]
   p
 
+-}
+
 --------------------------------------------------------------------------------
 -- 
-    
+
+
     
 midiFile :: MidiParser MidiFile  
-midiFile = do
---    a <- logPos "temp" $ checkWord8 (== 0x4d)     
---    error $ show a
-    h  <- header
-    se <- countS (trackCount h) track
-    return $ MidiFile h se
+midiFile = mprogress MidiFile trackCount header (countS `flip` track)
   where
     trackCount :: Header -> Int 
     trackCount (Header _ n _) = fromIntegral n
@@ -84,28 +81,19 @@ countS = genericCount (<|) S.empty
 
 
 track :: MidiParser Track
-track = logPos "--track--" $ liftM Track (trackHeader >>= getMessages)
+track = liftM Track (trackHeader >>= getMessages)
 
 trackHeader :: MidiParser Word32
-trackHeader = logPos "trackHeader" $ assertString "MTrk" >> word32be
+trackHeader = assertString "MTrk" >> word32be
 
 getMessages :: Word32 -> MidiParser (Seq Message)
 
-getMessages i = withinRegionRelRecto 0 (fromIntegral i) messages
+getMessages i = interrectoRel 0 (fromIntegral i) messages
   where    
-    messages = genericRunOn (<|) S.empty (logBound "msg" message)
-
-isEOT (_, (MetaEvent EndOfTrack)) = True
-isEOT _                           = False
-
+    messages = genericRunOn (<|) S.empty message
 
 message :: MidiParser Message
-message = do 
-    dt          <- deltaTime 
-    (code,chan) <- word8split         
-    evt         <- next code chan 
-    logMsg $ show (dt,code,chan,evt)
-    return $ (dt,evt)
+message = pairA deltaTime (uncurry next =<< word8split)
   where  
     next code chan  
         | code == 0xF && chan == 0xF  = MetaEvent   <$> (word8 >>= metaEvent)         
@@ -123,7 +111,7 @@ message = do
 
 
 deltaTime :: MidiParser Word32
-deltaTime = logPos "deltaTime" getVarlen
+deltaTime = getVarlen
    
 voiceEvent :: Word8 -> Word8 -> MidiParser VoiceEvent
 voiceEvent 0x8 ch = (NoteOff ch)        <$> word8 <*> word8
@@ -165,7 +153,7 @@ systemEvent = (uncurry SysEx) <$> getVarlenBytes
                       
                           
 format :: MidiParser HFormat
-format = word16be >>= fn
+format = word16be >>= fn 
   where 
     fn 0 = return MF0
     fn 1 = return MF1
@@ -180,7 +168,7 @@ timeDivision = division <$> word16be
 
 
 scale :: MidiParser ScaleType
-scale = word8 >>= fn
+scale = word8 >>= fn 
   where
     fn 0 = return MAJOR
     fn 1 = return MINOR
