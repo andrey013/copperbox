@@ -52,6 +52,29 @@ logPos msg p = do
 logline :: String -> Parser ()
 logline = tell . ("\n" ++)
 
+
+uint8 :: Parser Word8
+uint8 = word8
+
+uint16 :: Parser Word16
+uint16 = word16be
+
+uint32 :: Parser Word32
+uint32 = word32be
+
+int16 :: Parser Int16
+int16 = int16be
+
+int32 :: Parser Int32
+int32 = int32be
+
+-- 16 bit signed integer
+fword :: Parser FWord 
+fword = FWord <$> int16be 
+
+
+
+-- old...
 ushort :: Parser Word16
 ushort = word16be
 
@@ -69,10 +92,10 @@ fixed :: Parser Fixed
 fixed = mk <$> word16be <*> word16be where
     mk a b = Fixed $ (fromIntegral a) + ((fromIntegral b) / 10000)
 
--- TODO
-fword :: Parser FWord 
-fword = FWord <$> int16be 
 
+
+
+-- TODO
 ufword :: Parser UFWord 
 ufword = UFWord <$> word16be 
 
@@ -86,16 +109,4 @@ bitfield p = unbits <$> p
 
 longDateTime :: Parser DateTime
 longDateTime = (\w -> DateTime w undefined) <$> word64be
-
-
-{-
-usequence :: (IArray UArray a) => Int -> Parser a -> Parser (USequence a)
-usequence i p = mkArr <$> count (fromIntegral i) p where
-    mkArr xs = listArray (0,i-1) xs
-    
-bxsequence :: (IArray Array a, Monad m) => 
-              Int -> ParserT r m a -> ParserT r m (BxSequence a)
-bxsequence i p = mkArr <$> count i p where
-    mkArr xs = listArray (0,i-1) xs
--}
 

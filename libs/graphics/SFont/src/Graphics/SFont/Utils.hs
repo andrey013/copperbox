@@ -102,6 +102,24 @@ buildMap g h = foldr fn Map.empty where
 tableLocation :: String -> TableLocs -> Maybe Region
 tableLocation = Map.lookup
 
+--------------------------------------------------------------------------------
+
+-- | A variant of the @D2@ or dovekie combinator - the argument
+-- order has been changed to be more satisfying for Haskellers:
+--
+-- > (appro comb f g) x y
+--
+-- > (f x) `comb` (g y)
+-- 
+-- @on@ from Data.Function is similar but less general, where 
+-- the two intermediate results are formed by applying the same 
+-- function to the supplied arguments:
+--
+-- > on = (appro comb f f)
+--
+appro :: (c -> d -> e) -> (a -> c) -> (b -> d) -> a -> b -> e
+appro comb f g x y = comb (f x) (g y) 
+
 
 -- specs - defined in my package data-aviary but defined here to 
 -- avoid a dependency

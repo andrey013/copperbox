@@ -23,6 +23,13 @@ import qualified Data.Map as Map
 import Data.Word
 
 
+
+type Uint8   = Word8
+type Uint16  = Word16
+type Uint32  = Word32
+
+
+
 type Byte   = Word8
 
 -- This is a @Char@ in terms of the OFF, naturally we use something else
@@ -50,7 +57,7 @@ instance Show Fixed where
 instance Read Fixed where
   readsPrec i s = map (\(d,r) -> (Fixed d,r)) $ readsPrec i s      
 
-
+-- 16bit signed integer
 newtype FWord = FWord { unFWord :: Int16 }
   deriving (Eq,Ord,Num)
 
@@ -97,6 +104,8 @@ data Region = Region !Int !Int
   deriving (Eq,Show)
 
 
+
+
 -- | a TT or OT font file
 data FontFile = FontFile 
         { ff_offset_table       :: OffsetTable
@@ -104,6 +113,7 @@ data FontFile = FontFile
         , ff_maxp_table         :: MaxpTable
         , ff_loca_table         :: LocaTable
         , ff_name_table         :: NameTable
+        , ff_glyf_table         :: GlyfTable
         }
   deriving (Eq,Show)
 
@@ -111,29 +121,49 @@ data FontFile = FontFile
 --------------------------------------------------------------------------------
 -- glyf table 
 
-type GlyphName = String 
+newtype GlyfTable = GlyfTable { glyfs :: [Glyf] }
+  deriving (Eq,Show)
 
-data Glyph = 
-      SimpleGlyph     GlyphName BoundingBox [Contour]
-    | CompositeGlyph  GlyphName BoundingBox [CompositeElement]
+data Glyf = Glyf 
+        { glyf_header           :: GlyfHeader
+        , glyf_description      :: GlyfDescription
+        }
+  deriving (Eq,Show)
+
+data GlyfHeader = GlyfHeader 
+        { glyf_num_contours     :: Int16
+        , glyf_bounding_rect    :: FWordBBox
+        } 
+  deriving (Eq,Show)
+ 
+
+data GlyfDescription = 
+      DescSimple     SimpleGlyf 
+    | DescComposite  CompositeGlyf
   deriving (Eq,Show)    
 
-             
-newtype Contour = Contour { getContour :: [OutlinePoint] }
+data SimpleGlyf = SimpleGlyf
+        { sglyf_end_points      :: [Uint16]
+        , sglyf_instr_len       :: Uint16
+        , sglyf_instructions    :: [Uint8]
+        , sglyf_flags           :: [Uint8]
+        , sglyf_outline_pts     :: [OutlinePoint]
+        }
   deriving (Eq,Show)
 
 data OutlinePoint = OnCurvePt  Short Short
                   | OffCurvePt Short Short
   deriving (Eq,Ord,Show)
 
-type GylphIndex = Int
+data CompositeGlyf = CompositeGlyf
+        { cglyf_flags           :: UShort
+        , cglyf_index           :: UShort
+        , cglyf_args            :: CompositeArgs
+        , cglyf_trans           :: CompositeTrans
 
-data CompositeElement = CompositeElement 
-      { gylph_index     :: Int
-      , composite_args  :: CompositeArgs
-      , composite_trans :: CompositeTrans
-      }
-  deriving (Eq,Show)
+        }
+   deriving (Eq,Show)
+
       
 data CompositeArgs = 
       OffsetArgs 
@@ -176,7 +206,7 @@ data HeadTable = HeadTable
         , ht_units_per_em             :: UShort
         , ht_created_timestamp        :: DateTime
         , ht_modified_timestamp       :: DateTime
-        , ht_max_bb                   :: BoundingBox
+        , ht_max_bb                   :: BBox
         , ht_mac_style                :: [MacStyle]
         , ht_smallest_readable_size   :: UShort
         , ht_font_direction_hint      :: Short      -- this could be a type...
@@ -417,11 +447,15 @@ instance Enum EncodingId where
 -- @head@ - does
 -- @glyf@ - does
  
-data BoundingBox = BoundingBox 
-        { x_min   :: Short
-        , y_min   :: Short
-        , x_max   :: Short
-        , y_max   :: Short
+type BBox = BoundingBox Short
+
+type FWordBBox = BoundingBox FWord
+
+data BoundingBox a = BoundingBox 
+        { x_min   :: !a
+        , y_min   :: !a
+        , x_max   :: !a
+        , y_max   :: !a
         }
   deriving (Eq,Show)     
 

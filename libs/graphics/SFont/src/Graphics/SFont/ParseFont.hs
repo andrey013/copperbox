@@ -16,7 +16,7 @@
 
 module Graphics.SFont.ParseFont where
 
-import Graphics.SFont.GlyphDecoder
+-- import Graphics.SFont.GlyphDecoder
 import Graphics.SFont.KangarooAliases
 import Graphics.SFont.Syntax
 import Graphics.SFont.Utils
@@ -26,6 +26,7 @@ import Data.ParserCombinators.KangarooWriter
 
 import Control.Applicative
 import Control.Monad
+import Data.Bits
 import Data.List 
 import qualified Data.Map as Map 
 import Data.Maybe ( catMaybes )
@@ -83,12 +84,14 @@ fontFile = do
                          locaTable (ht_index_to_loc_format head_tbl)
                                    (fromIntegral $ maxp_num_glyphs maxp_tbl)
     name_tbl        <- parseTable locs "name" nameTable
+    glyf_tbl        <- parseTable locs "glyf" glyfTable
     return $ FontFile 
                { ff_offset_table      = offs_tbl
                , ff_head_table        = head_tbl
                , ff_maxp_table        = maxp_tbl
                , ff_loca_table        = loca_tbl
                , ff_name_table        = name_tbl
+               , ff_glyf_table        = glyf_tbl
                }
 
 
@@ -138,6 +141,145 @@ tableDirectory i = liftM build $ count i tableDescriptor
 tableDescriptor :: Parser TableDescriptor 
 tableDescriptor = (\tag _ r -> TableDescriptor tag r)
     <$> text 4 <*> word32be <*> region
+
+
+
+
+--------------------------------------------------------------------------------
+-- glyf table
+
+glyfTable :: Parser GlyfTable
+glyfTable = GlyfTable <$> count 1 glyf
+
+glyf :: Parser Glyf
+glyf = do 
+    hdr  <- glyfHeader
+    desc <- glyfDescr $ fromIntegral $ glyf_num_contours hdr
+    return $ Glyf hdr desc  
+
+
+glyfHeader :: Parser GlyfHeader
+glyfHeader = GlyfHeader <$> int16 <*> fwordBBox
+
+glyfDescr :: Int -> Parser GlyfDescription
+glyfDescr i | i > 0     = DescSimple <$> simpleGlyf i
+            | otherwise = compositeGlyf
+
+simpleGlyf :: Int -> Parser SimpleGlyf
+simpleGlyf n = do 
+   end_pts   <- count n uint16
+   instr_len <- uint16
+   return $ SimpleGlyf
+              { sglyf_end_points      = end_pts
+              , sglyf_instr_len       = instr_len
+              , sglyf_instructions    = []
+              , sglyf_flags           = []
+              }
+
+   
+
+compositeGlyf :: Parser GlyfDescription
+compositeGlyf = do
+    flags   <- uint16
+    idex    <- uint16
+    error $ "composite"
+
+
+{-
+
+compositeElements :: Parser [CompositeElement]
+compositeElements = do 
+    (a,more)  <- compositeElt
+    if not more then return [a] else (return a) <:> compositeElements
+            
+            
+compositeElt :: Parser (CompositeElement,Bool)  
+compositeElt = do 
+    flag  <- ushort
+    gidx  <- (fromIntegral <$> ushort)
+    args  <- extractArgs (argsAreWords flag) (argmaker $ argsAreXYVals flag) 
+    op    <- cond3 (haveScale flag)     (Scale   <$> f2dot14) 
+                   (haveXYScale flag)   (XyScale <$> f2dot14 <*> f2dot14) 
+                   (have2x2 flag)       twoByTwo
+                   NoTrans
+    return (CompositeElement gidx args op, moreComponents flag)                   
+  where
+    extractArgs True f = (\a b -> f (fromIntegral a, fromIntegral b)) <$>
+                            short <*> short
+                          
+    extractArgs _    f = (\a b -> f (fromIntegral a, fromIntegral b)) <$>
+                            byte <*> byte                          
+    
+    argmaker True (x,y) = OffsetArgs x y  
+    argmaker _    (x,y) = PointNumbers x y 
+    
+    twoByTwo :: Parser CompositeTrans
+    twoByTwo = TwoByTwo <$> f2dot14 <*> f2dot14 <*> f2dot14 <*> f2dot14
+
+
+extractWordArgs :: Parser (Int,Int)
+extractWordArgs = appro (,) fromIntegral fromIntegral <$> short <*> short
+
+extractByteArgs :: Parser (Int,Int)
+extractByteArgs = appro (,) fromIntegral fromIntegral <$> byte <*> byte
+
+    
+cond3 :: Monad m => Bool -> m a -> Bool -> m a -> Bool -> m a -> a -> m a
+cond3 pred1 f1 pred2 f2 pred3 f3 deft
+    | pred1     = f1
+    | pred2     = f2
+    | pred3     = f3
+    | otherwise = return deft
+  
+    
+
+argsAreWords      :: UShort -> Bool
+argsAreWords      = testBit `flip` 0
+
+argsAreXYVals     :: UShort -> Bool
+argsAreXYVals     = testBit `flip` 1
+
+haveScale         :: UShort -> Bool
+haveScale         = testBit `flip` 3
+
+moreComponents    :: UShort -> Bool
+moreComponents    = testBit `flip` 5
+
+haveXYScale       :: UShort -> Bool
+haveXYScale       = testBit `flip` 6
+
+have2x2           :: UShort -> Bool
+have2x2           = testBit `flip` 7
+-}
+
+{-
+readGlyphs :: [Region] -> Parser [Glyph]
+readGlyphs xs = catMaybes <$> readGlyphs' xs
+
+readGlyphs' :: [Region] -> Parser [Maybe Glyph]
+readGlyphs' (Region o l:rs) = readGlyf o l <:> readGlyphs' rs
+readGlyphs' []              = return [] 
+
+
+readGlyf :: Int -> Int -> Parser (Maybe Glyph)
+readGlyf _      0   = return Nothing
+readGlyf offset len = interrectoRel offset len $ do 
+    nc  <- short 
+    bb  <- boundingBox
+    if nc >= 0 
+      then do 
+        end_pts       <- count (fromIntegral nc) ushort
+        let csize     = 1 + fromIntegral (foldr max 0 end_pts)
+        _insts        <- countPrefixed ushort byte
+        flags         <- count csize byte
+        xy_data       <- runOn byte
+        let outlines  = simpleGlyphContours end_pts flags xy_data
+        return $ Just $ SimpleGlyph "" bb outlines
+        -- don't know the glyph_name at this point
+      else do
+          elts        <- compositeElements
+          return $ Just $ CompositeGlyph "" bb elts
+-}          
         
 --------------------------------------------------------------------------------
 -- head table
@@ -237,36 +379,6 @@ nameId = toEnum . fromIntegral <$> ushort
 
 
 --------------------------------------------------------------------------------
--- Glyf table
-readGlyphs :: [Region] -> Parser [Glyph]
-readGlyphs xs = catMaybes <$> readGlyphs' xs
-
-readGlyphs' :: [Region] -> Parser [Maybe Glyph]
-readGlyphs' (Region o l:rs) = readGlyf o l <:> readGlyphs' rs
-readGlyphs' []              = return [] 
-
-
-readGlyf :: Int -> Int -> Parser (Maybe Glyph)
-readGlyf _      0   = return Nothing
-readGlyf offset len = interrectoRel offset len $ do 
-    nc  <- short 
-    bb  <- boundingBox
-    if nc >= 0 
-      then do 
-        end_pts       <- count (fromIntegral nc) ushort
-        let csize     = 1 + fromIntegral (foldr max 0 end_pts)
-        _insts        <- countPrefixed ushort byte
-        flags         <- count csize byte
-        xy_data       <- runOn byte
-        let outlines  = simpleGlyphContours end_pts flags xy_data
-        return $ Just $ SimpleGlyph "" bb outlines
-        -- don't know the glyph_name at this point
-      else do
-          elts        <- compositeElements
-          return $ Just $ CompositeGlyph "" bb elts
-          
-
---------------------------------------------------------------------------------
 -- Common elements
 
 
@@ -287,8 +399,11 @@ encodingId :: Parser EncodingId
 encodingId = toEnum . fromIntegral <$> ushort 
 
 
-boundingBox :: Parser BoundingBox
+boundingBox :: Parser BBox
 boundingBox = BoundingBox <$> short <*> short <*> short <*> short
+
+fwordBBox :: Parser FWordBBox
+fwordBBox = BoundingBox <$> fword <*> fword <*> fword <*> fword
        
 region :: Parser Region 
 region = Region <$> w32i <*> w32i
