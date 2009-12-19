@@ -53,6 +53,14 @@ logline :: String -> Parser ()
 logline = tell . ("\n" ++)
 
 
+-- give 'position' a visually distinct alias
+currentParsePosition :: Parser Int
+currentParsePosition = position
+
+
+--------------------------------------------------------------------------------
+
+
 uint8 :: Parser Word8
 uint8 = word8
 
@@ -73,21 +81,6 @@ fword :: Parser FWord
 fword = FWord <$> int16be 
 
 
-
--- old...
-ushort :: Parser Word16
-ushort = word16be
-
-ulong :: Parser Word32
-ulong = word32be
-
-byte :: Parser Word8
-byte = word8 
-
-
-short :: Parser Int16
-short = int16be 
-
 fixed :: Parser Fixed 
 fixed = mk <$> word16be <*> word16be where
     mk a b = Fixed $ (fromIntegral a) + ((fromIntegral b) / 10000)
@@ -99,14 +92,11 @@ fixed = mk <$> word16be <*> word16be where
 ufword :: Parser UFWord 
 ufword = UFWord <$> word16be 
 
-
+-- TODO 
 f2dot14 :: Parser F2Dot14
 f2dot14 = F2Dot14 . fromIntegral <$> int16be
 
-
-bitfield :: (Bits a, Ord a, Enum b) => Parser a -> Parser [b]
-bitfield p = unbits <$> p 
-
+-- TODO
 longDateTime :: Parser DateTime
-longDateTime = (\w -> DateTime w undefined) <$> word64be
+longDateTime = DateTime <$> word64be
 

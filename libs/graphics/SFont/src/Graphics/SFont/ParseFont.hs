@@ -27,6 +27,7 @@ import Data.ParserCombinators.KangarooWriter
 import Control.Applicative
 import Control.Monad
 import Data.Bits
+import Data.Int
 import Data.List 
 import qualified Data.Map as Map 
 import Data.Maybe ( catMaybes )
@@ -47,32 +48,6 @@ runParseFont = runKangaroo (fontFile `substError` "READ_FAIL")
 parseWith :: Parser a -> FilePath -> IO (Either String a, Log)
 parseWith p file_name = runKangaroo p file_name
     
-
-{-
-readTTFF = do 
-    (v,nt)  <- offsetTable
-    modify $ (\s -> s {table_count=nt})
-    
-    td      <- readTableDirectory nt
-    modify $ (\s -> s {table_locs=td})
-    
-    -- all reads from now on are tableJumps
-    hdr     <- tableJump "head" headTable
-    let loc_fmt = index_to_loc_format hdr
-    
-    ng      <- tableJump "maxp" maxpNumGlyphs
-    (_,ge)  <- tableRegion "glyf" 
-    
-    glocs   <- undefined -- tableJump "loca" (locaTable loc_fmt ng)
-    modify $ (\s -> s {glyph_locs=glocs})
-    
-
-    nrecs   <- tableJump "name" readNameRecords
-
-    glyfs   <- tableJump "glyf" (readGlyphs glocs)
-    return $ TTFF v nt hdr nrecs glyfs
-
--}    
 
 fontFile :: Parser FontFile
 fontFile = do
@@ -114,8 +89,8 @@ parseTable mp name p =
 -- For the moment the only value we extract is sfnt version and numTables
 --
 offsetTable :: Parser OffsetTable
-offsetTable = OffsetTable <$> sfntVersion <*> ushort
-                          <*> ushort      <*> ushort <*> ushort
+offsetTable = OffsetTable <$> sfntVersion <*> uint16
+                          <*> uint16      <*> uint16 <*> uint16
 
 sfntVersion :: Parser SfntVersion
 sfntVersion = count 4 char >>= fn where 
@@ -125,11 +100,6 @@ sfntVersion = count 4 char >>= fn where
         
     err s = reportError $ "unrecognized sfnt string '" ++ s ++ "'"
    
-
-
-
-
---------------------------------------------------------------------------------
 -- Table directory
 
 tableDirectory :: Int -> Parser TableLocs 
@@ -141,8 +111,6 @@ tableDirectory i = liftM build $ count i tableDescriptor
 tableDescriptor :: Parser TableDescriptor 
 tableDescriptor = (\tag _ r -> TableDescriptor tag r)
     <$> text 4 <*> word32be <*> region
-
-
 
 
 --------------------------------------------------------------------------------
@@ -174,6 +142,7 @@ simpleGlyf n = do
               , sglyf_instr_len       = instr_len
               , sglyf_instructions    = []
               , sglyf_flags           = []
+              , sglyf_outline_pts     = []
               }
 
    
@@ -288,22 +257,22 @@ headTable :: Parser HeadTable
 headTable = HeadTable <$>
           fixed 
       <*> fixed 
-      <*> ulong 
-      <*> ulong
-      <*> bitfield ushort       -- head_flags 
-      <*> ushort  
+      <*> uint32
+      <*> uint32
+      <*> uint16
+      <*> uint16  
       <*> longDateTime
       <*> longDateTime
-      <*> boundingBox
-      <*> bitfield ushort       -- mac_style
-      <*> ushort
-      <*> short
+      <*> fwordBBox
+      <*> uint16
+      <*> uint16
+      <*> int16
       <*> locaFormat
-      <*> short
+      <*> int16
   where
-    locaFormat = short >>= enumLoca
+    locaFormat = int16 >>= enumLoca
 
-enumLoca :: Short -> Parser LocaFormat
+enumLoca :: Int16 -> Parser LocaFormat
 enumLoca 0 = return LocaShort
 enumLoca 1 = return LocaLong
 enumLoca z = reportError $ "invalid loca format, should be 0 or 1, " ++ show z
@@ -316,11 +285,11 @@ locaTable :: LocaFormat -> Int -> Parser LocaTable
 locaTable LocaShort n = LocaTable <$> locaShort n
 locaTable LocaLong  n = LocaTable <$> locaLong  n
 
-locaShort :: Int -> Parser [ULong]
-locaShort i = count i $ liftM ((2*) . fromIntegral) ushort  
+locaShort :: Int -> Parser [Uint32]
+locaShort i = count i $ liftM ((2*) . fromIntegral) uint16
 
-locaLong :: Int -> Parser [ULong]
-locaLong = count `flip` ulong
+locaLong :: Int -> Parser [Uint32]
+locaLong = count `flip` uint32
 
 --------------------------------------------------------------------------------
 -- maxp table
@@ -328,17 +297,17 @@ locaLong = count `flip` ulong
 -- Just extract the number of glyphs
  
 maxpTable :: Parser MaxpTable 
-maxpTable = MaxpTable <$> fixed <*> ushort
+maxpTable = MaxpTable <$> fixed <*> uint16
 
 --------------------------------------------------------------------------------
 -- name table
 
 nameTable :: Parser NameTable
 nameTable = do 
-    pos         <- position
-    fmt         <- ushort
-    tot         <- ushort
-    str_off     <- ushort
+    pos         <- currentParsePosition
+    fmt         <- uint16
+    tot         <- uint16
+    str_off     <- uint16
     let str_loc = pos + fromIntegral str_off
     names       <- count (fromIntegral tot) (nameRecord str_loc)
     return $ NameTable 
@@ -351,12 +320,12 @@ nameTable = do
 
 nameRecord :: Int -> Parser NameRecord 
 nameRecord str_data_offset = do
-    pid     <- platformId  
-    enc     <- encodingId 
-    lang    <- ushort
-    nid     <- nameId
-    len     <- ushort
-    pos     <- ushort
+    pid     <- uint16  
+    enc     <- uint16
+    lang    <- uint16
+    nid     <- uint16
+    len     <- uint16
+    pos     <- uint16
     logline $ show (str_data_offset,len,pos)
     let str_loc = str_data_offset + fromIntegral pos
     str     <- interverso str_loc (str_loc + fromIntegral len) (runOn char)
@@ -370,12 +339,6 @@ nameRecord str_data_offset = do
                 , nr_name_text      = str
                 }
 
-    
-nameId :: Parser NameId
-nameId = toEnum . fromIntegral <$> ushort
-
-
-
 
 
 --------------------------------------------------------------------------------
@@ -387,20 +350,11 @@ nameId = toEnum . fromIntegral <$> ushort
 -- of the glyf table (glyf_table_length). This nicely works backwards hence 
 -- the right fold.  
 --
-glyfLocations :: Int -> [ULong] -> [Region]
+glyfLocations :: Int -> [Uint32] -> [Region]
 glyfLocations = snd `oo` mapAccumR fn where
     fn acc x = (x', Region x' (acc-x')) where x' = fromIntegral x
 
 
-platformId :: Parser PlatformId 
-platformId = toEnum . fromIntegral <$> ushort 
-      
-encodingId :: Parser EncodingId 
-encodingId = toEnum . fromIntegral <$> ushort 
-
-
-boundingBox :: Parser BBox
-boundingBox = BoundingBox <$> short <*> short <*> short <*> short
 
 fwordBBox :: Parser FWordBBox
 fwordBBox = BoundingBox <$> fword <*> fword <*> fword <*> fword
