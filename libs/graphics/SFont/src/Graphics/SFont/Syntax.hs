@@ -40,6 +40,8 @@ newtype ShortFrac = ShortFrac { unShortFrac :: Double }
 newtype Fixed = Fixed { unFixed :: Double }
   deriving (Eq,Ord,Num, Fractional)
 
+
+
 -- 16 bit signed integer
 newtype FWord = FWord { unFWord :: Int16 }
   deriving (Eq,Ord,Num)
@@ -71,6 +73,8 @@ instance Show Fixed where
     
 instance Read Fixed where
   readsPrec i s = map (\(d,r) -> (Fixed d,r)) $ readsPrec i s      
+
+
 
 -- 
 
@@ -120,6 +124,7 @@ data Region = Region !Int !Int
 data FontFile = FontFile 
         { ff_offset_table       :: OffsetTable
         , ff_head_table         :: HeadTable
+        , ff_cmap_table         :: CmapTable
         , ff_maxp_table         :: MaxpTable
         , ff_loca_table         :: LocaTable
         , ff_name_table         :: NameTable
@@ -142,6 +147,139 @@ data OffsetTable = OffsetTable
 data SfntVersion = SFNT_1_0 | OTTO  
   deriving (Enum,Eq,Ord,Show) 
 
+
+--------------------------------------------------------------------------------
+-- cmap table
+
+data CmapTable = CmapTable
+        { cmap_index            :: CmapIndex
+        , cmap_subtables        :: [CmapSubtable]
+        }
+  deriving (Eq,Show)
+
+data CmapIndex = CmapIndex
+        { cmap_version          :: Uint16
+        , cmap_num_subtables    :: Uint16
+        }
+  deriving (Eq,Show)
+
+data CmapSubtable = CmapSubtable
+        { cmap_subtable_header  :: CmapSubtableHeader
+        , cmap_subtable_body    :: CmapSubtableBody
+        }
+  deriving (Eq,Show)
+
+data CmapSubtableHeader = CmapSubtableHeader
+        { cmap_platform_id      :: Uint16
+        , cmap_platfrom_spec_id :: Uint16
+        , cmap_offset           :: Uint32
+        }
+  deriving (Eq,Show)
+
+
+
+-- cmap subtables 
+
+data CmapSubtableBody = CmapFmt0  CmapFormat0
+                      | CmapFmt2  CmapFormat2
+                      | CmapFmt4  CmapFormat4
+                      | CmapFmt6  CmapFormat6
+                      | CmapFmt8  CmapFormat8
+                      | CmapFmt10 CmapFormat10
+                      | CmapFmt12 CmapFormat12
+  deriving (Eq,Show)
+
+data CmapFormat0 = CmapFormat0
+        { fmt0_length           :: Uint16       -- should be 262
+        , fmt0_lang_code        :: Uint16
+        , fmt0_glyf_idxs        :: [Uint8]      -- TODO should be an array
+        }
+  deriving (Eq,Show)
+
+
+data CmapFormat2 = CmapFormat2
+        { fmt2_length           :: Uint16
+        , fmt2_lang_code        :: Uint16
+        , fmt2_subheader_keys   :: [Uint16]      -- TODO should be an array
+        , fmt2_subheaders       :: [Format2_Subheader]
+        , fmt2_glyf_idxs        :: [Uint8]
+        }
+  deriving (Eq,Show)
+
+
+data Format2_Subheader = Format2_SubHeader
+        { fmt2_first_code       :: Uint16
+        , fmt2_entry_count      :: Uint16
+        , fmt2_id_delta         :: Int16
+        , fmt2_id_range_offset  :: Uint16
+        }
+  deriving (Eq,Show)
+
+
+-- Not sure this is correct...
+data CmapFormat4 = CmapFormat4
+        { fmt4_length           :: Uint16
+        , fmt4_lang_code        :: Uint16
+        , fmt4_segcount_x2      :: Uint16
+        , fmt4_search_range     :: Uint16
+        , fmt4_entry_selector   :: Uint16
+        , fmt4_range_shift      :: Uint16
+        , fmt4_end_code         :: [Uint16]
+        , fmt4_reserved_pad     :: Uint16
+        , fmt4_start_code       :: [Uint16]
+        , fmt4_id_delta         :: [Uint16]
+        , fmt4_id_range_offset  :: [Uint16]
+        , fmt4_glyf_idxs        :: [Uint16]
+        }
+  deriving (Eq,Show)
+
+
+data CmapFormat6 = CmapFormat6
+        { fmt6_length           :: Uint16
+        , fmt6_lang_code        :: Uint16
+        , fmt6_first_code       :: Uint16
+        , fmt6_entry_count      :: Uint16
+        , fmt6_glyf_idxs        :: [Uint8]
+        }
+  deriving (Eq,Show)
+
+
+data CmapFormat8 = CmapFormat8
+        { fmt8_length           :: Uint32
+        , fmt8_lang_code        :: Uint32
+        , fmt8_is_32            :: ()
+        , fmt8_num_groups       :: Uint32
+        , fmt8_groups           :: [CmapGroup]
+        }
+  deriving (Eq,Show)
+
+
+data CmapFormat10 = CmapFormat10
+        { fmt10_length          :: Uint32
+        , fmt10_lang_code       :: Uint32
+        , fmt10_start_char_code :: Uint32
+        , fmt10_num_chars       :: Uint32
+        , fmt10_glf_idxs        :: [Uint16]
+        }
+  deriving (Eq,Show)
+
+
+data CmapFormat12 = CmapFormat12
+        { fmt12_length          :: Uint32
+        , fmt12_lang_code       :: Uint32
+        , fmt12_num_groups      :: Uint32
+        , fmt12_groups          :: [CmapGroup]
+        }
+  deriving (Eq,Show)
+
+
+
+data CmapGroup = CmapGroup
+        { cgrp_start_char_code  :: Uint32
+        , cgrp_end_char_code    :: Uint32
+        , cgrp_start_glyph_code :: Uint32
+        }
+  deriving (Eq,Show)
 
 --------------------------------------------------------------------------------
 -- glyf table 

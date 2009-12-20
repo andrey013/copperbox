@@ -16,7 +16,6 @@
 
 module Graphics.SFont.ParseFont where
 
--- import Graphics.SFont.GlyphDecoder
 import Graphics.SFont.KangarooAliases
 import Graphics.SFont.Syntax
 import Graphics.SFont.Utils
@@ -38,10 +37,9 @@ evalParseFont path = fst <$> runParseFont path
   
 
 
--- for debugging its handy to be able to view the state
 
 runParseFont :: FilePath -> IO (Either String FontFile, Log)
-runParseFont = runKangaroo (fontFile `substError` "READ_FAIL") 
+runParseFont = runKangaroo fontFile
     
 
 parseWith :: Parser a -> FilePath -> IO (Either String a, Log)
@@ -53,6 +51,7 @@ fontFile = do
     (offs_tbl,locs) <- prolog
     logline $ show locs
     head_tbl        <- parseTable locs "head" headTable
+    cmap_tbl        <- parseTable locs "cmap" cmapTable
     maxp_tbl        <- parseTable locs "maxp" maxpTable
     loca_tbl        <- parseTable locs "loca" $ 
                          locaTable (ht_index_to_loc_format head_tbl)
@@ -62,6 +61,7 @@ fontFile = do
     return $ FontFile 
                { ff_offset_table      = offs_tbl
                , ff_head_table        = head_tbl
+               , ff_cmap_table        = cmap_tbl
                , ff_maxp_table        = maxp_tbl
                , ff_loca_table        = loca_tbl
                , ff_name_table        = name_tbl
@@ -110,6 +110,86 @@ tableDirectory i = liftM build $ count i tableDescriptor
 tableDescriptor :: Parser TableDescriptor 
 tableDescriptor = (\tag _ r -> TableDescriptor tag r)
     <$> text 4 <*> word32be <*> region
+
+
+--------------------------------------------------------------------------------
+-- cmap table
+
+cmapTable :: Parser CmapTable
+cmapTable = do 
+    ix        <- cmapIndex
+    subs      <- count (fromIntegral $ cmap_num_subtables ix) cmapSubtable
+    return $ CmapTable 
+              { cmap_index          = ix
+              , cmap_subtables      = subs
+              }
+ 
+
+cmapIndex :: Parser CmapIndex
+cmapIndex = CmapIndex <$> uint16 <*> uint16
+
+cmapSubtable :: Parser CmapSubtable
+cmapSubtable = do 
+    hdr  <- cmapSubtableHeader
+    let offset = fromIntegral $ cmap_offset hdr - (4+4+8)
+    body <- advance offset cmapSubtableBody
+    return $ CmapSubtable
+              { cmap_subtable_header  = hdr
+              , cmap_subtable_body    = body
+              }
+
+cmapSubtableHeader :: Parser CmapSubtableHeader
+cmapSubtableHeader = CmapSubtableHeader <$> uint16 <*> uint16 <*> uint32
+
+cmapSubtableBody :: Parser CmapSubtableBody
+cmapSubtableBody = uint16 >>= subtable where
+    subtable 0  = CmapFmt0  <$> cmapFormat0
+    subtable 2  = CmapFmt2  <$> cmapFormat2
+    subtable 4  = CmapFmt4  <$> cmapFormat4
+    subtable 6  = CmapFmt6  <$> cmapFormat6
+    subtable 8  = CmapFmt8  <$> (uint16 *> cmapFormat8)
+    subtable 10 = CmapFmt10 <$> (uint16 *> cmapFormat10)
+    subtable 12 = CmapFmt12 <$> (uint16 *> cmapFormat12)
+
+    subtable n  = reportError $ "unrecognized cmap subtable " ++ show n
+
+cmapFormat0 :: Parser CmapFormat0
+cmapFormat0 = CmapFormat0 <$> uint16 <*> uint16 <*> count 256 uint8
+
+
+cmapFormat2 :: Parser CmapFormat2
+cmapFormat2 = reportError "cmap format2 subtables not supported"
+
+format2_Subheader :: Parser Format2_Subheader
+format2_Subheader = Format2_SubHeader <$> uint16 <*> uint16 
+                                      <*> int16  <*> uint16
+
+
+cmapFormat4 :: Parser CmapFormat4
+cmapFormat4 = reportError "cmap format4 subtables not supported"
+
+cmapFormat6 :: Parser CmapFormat6
+cmapFormat6 = reportError "cmap format6 subtables not supported"
+
+cmapFormat8 :: Parser CmapFormat8
+cmapFormat8 = reportError "cmap format8 subtables not supported"
+
+cmapFormat10 :: Parser CmapFormat10
+cmapFormat10 = reportError "cmap format10 subtables not supported"
+
+cmapFormat12 :: Parser CmapFormat12
+cmapFormat12 = do 
+    len   <- uint32
+    lang  <- uint32
+    (n,grps)  <- countPrefixed uint32 cmapGroup
+    return $ CmapFormat12
+              { fmt12_length        = len
+              , fmt12_lang_code     = lang
+              , fmt12_num_groups    = n
+              , fmt12_groups        = grps
+              }
+cmapGroup :: Parser CmapGroup
+cmapGroup = CmapGroup <$> uint32 <*> uint32 <*> uint32
 
 
 --------------------------------------------------------------------------------
