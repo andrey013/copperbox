@@ -17,80 +17,9 @@
 
 module Graphics.SFont.Utils where
 
-import Graphics.SFont.Syntax
 
-
-import Data.Bits
-import qualified Data.ByteString as BS
-import Data.Char ( isPrint )
-import Data.List ( foldl' ) 
-import qualified Data.IntMap as IntMap
+import Control.Applicative
 import qualified Data.Map as Map
-import Data.Word
-
-
-
-class Meaning a where meaning :: a -> String
-
-
--- Model C land booleans...
-
-class IntegralBool a where
-    boolValue :: a -> Bool
-    
-    isTrue  :: a -> Bool
-    isTrue = boolValue
-    
-    isFalse :: a -> Bool       
-    isFalse = not . boolValue
-    
-instance IntegralBool Word32 where
-    boolValue 0 = True
-    boolValue _ = False
-    
-
-
-section :: Int -> Int -> BS.ByteString -> BS.ByteString 
-section start len inp
-    | start + len <= BS.length inp  = BS.take len $ BS.drop start inp 
-    | otherwise                     = error $ 
-          "section - out-of-bounds, from " ++ show start ++ " for"
-                                           ++ show len ++ " on length " 
-                                           ++ show (BS.length inp) 
-
-
--- Should unbits have a stronger marshalling constraint than Enum?
--- It used to have a dedicated type class /Unmarshal/.
-
-unbits :: (Bits a, Ord a, Enum b) => a -> [b]
-unbits v = step v (szmax - 1) where
-    step a i | a <= 0     = []
-             | i <  0     = []  -- unreachable?
-             | otherwise  = let c = a `clearBit` i in
-                            if c == a then step c (i-1) 
-                                      else (toEnum i) : step c (i-1) 
-    szmax = bitSize v 
-    
-
-
-segment :: [Int] -> [a] -> [[a]]
-segment []      xs = [xs]
-segment [i]     xs = let (l,r) = splitAt (1 + fromIntegral i) xs in 
-                     if null r then [l] else l:[r] 
-segment (i:ix)  xs = let (l,r) = splitAt i xs in l : segment ix r  
-
--- regionBetween extracts the region between 2 locations 
-regionBetween :: Int -> Int -> Region
-regionBetween start end = Region start (end - start)
-
-putStrLnSafe :: String -> IO ()
-putStrLnSafe = putStrLn . map replaceUnprint where
-    replaceUnprint ch | isPrint ch  = ch
-                      | otherwise   = '.'
-
-zeroBasedIntMap :: [a] -> IntMap.IntMap a 
-zeroBasedIntMap = snd . foldl' fn (0,IntMap.empty) where
-  fn (i,m) e = (i+1,IntMap.insert i e m)
 
   
 buildMap :: Ord k => (a -> k) -> (a -> v) -> [a] -> Map.Map k v
@@ -99,10 +28,18 @@ buildMap g h = foldr fn Map.empty where
   
 
 
-tableLocation :: String -> TableLocs -> Maybe Region
-tableLocation = Map.lookup
 
 --------------------------------------------------------------------------------
+
+
+
+infixr 5 <:>
+
+-- | applicative cons
+(<:>) :: Applicative f => f a -> f [a] -> f [a]
+(<:>) p1 p2 = (:) <$> p1 <*> p2
+
+
 
 -- | A variant of the @D2@ or dovekie combinator - the argument
 -- order has been changed to be more satisfying for Haskellers:

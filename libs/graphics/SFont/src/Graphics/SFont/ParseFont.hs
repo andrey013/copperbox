@@ -30,7 +30,6 @@ import Data.Bits
 import Data.Int
 import Data.List 
 import qualified Data.Map as Map 
-import Data.Maybe ( catMaybes )
 
 
 
@@ -136,21 +135,82 @@ glyfDescr i | i > 0     = DescSimple <$> simpleGlyf i
 simpleGlyf :: Int -> Parser SimpleGlyf
 simpleGlyf n = do 
    end_pts   <- count n uint16
+   fc        <- calcFlagCount end_pts  
    instr_len <- uint16
+   instrs    <- count (fromIntegral instr_len) uint8
+   flags     <- count fc uint8
+   (xs,ys)   <- simpleGlyfCoordinates flags
    return $ SimpleGlyf
               { sglyf_end_points      = end_pts
               , sglyf_instr_len       = instr_len
-              , sglyf_instructions    = []
-              , sglyf_flags           = []
-              , sglyf_outline_pts     = []
+              , sglyf_instructions    = instrs
+              , sglyf_flags           = flags
+              , sglyf_x_coordinates   = xs
+              , sglyf_y_coordinates   = ys
               }
 
-   
+
+-- | The number of flags appears to be the last contour point (+1)
+-- I don\'t know the derivation of this fact - the specs seem to 
+-- ellide it, but the clearest font parsing codes found by a
+-- Google code search seem to do this.  
+calcFlagCount :: [Uint16] -> Parser Int
+calcFlagCount [] = reportError "simpleGlyf unreachable!"
+calcFlagCount xs = return $ fromIntegral $ 1 + last xs
+
+simpleGlyfCoordinates :: [Uint8] -> Parser ([OutlinePoint],[OutlinePoint])
+simpleGlyfCoordinates flags = let (pxs,pys) = buildCoordParser flags in
+    sequence pxs >>= \xs -> sequence pys >>= \ys -> return (xs,ys)
+
+-- This is not a fold. If the repeat bit is set the next /flag/ is 
+-- actually the number of repeats, so the speed is not one-at-once.
+--
+buildCoordParser :: [Uint8] -> ([Parser OutlinePoint],[Parser OutlinePoint])
+buildCoordParser = step ([],[]) where
+    step (xs,ys) []      = (xs,ys)
+    step (xs,ys) (f1:fs) = let (repeats,x,y) = interpFlags f1 in
+        case repeats of
+          False -> step (x:xs,y:ys) fs
+          True  -> let (n,fs') = reps fs in
+                   step (replicate n x ++ xs, replicate n y ++ ys) fs'
+
+    reps :: [Uint8] -> (Int,[Uint8])
+    reps []     = (0,[])
+    reps (z:zs) = (fromIntegral z,zs)
+
+-- 0 is LSB
+interpFlags :: Uint8 -> (Bool,Parser OutlinePoint,Parser OutlinePoint)
+interpFlags u8 = (rep,crM pX,crM pY)
+  where
+    rep = u8 `testBit` 3 
+    pX  = coordType (u8 `testBit` 1) (u8 `testBit` 4)
+    pY  = coordType (u8 `testBit` 2) (u8 `testBit` 5)
+    crM = if u8 `testBit` 0 then liftM OnCurve else liftM OffCurve
+    
+coordType :: Bool -> Bool -> Parser DeltaInt16
+coordType True  False  = coordUint8 negate
+coordType True  True   = coordUint8 id
+coordType False True   = coordSame
+coordType False False  = coordInt16
+
+
+-- Consume nothing
+coordSame :: Parser DeltaInt16
+coordSame = return Same
+
+-- Parse an uint8, promoting it to a (Delta) Int16 
+coordUint8 :: (Int16 -> Int16) -> Parser DeltaInt16 
+coordUint8 fn = liftM (DInt16 . fn . fromIntegral) uint8
+
+-- Parse an Int16
+coordInt16 :: Parser DeltaInt16
+coordInt16 = liftM DInt16 int16
+
 
 compositeGlyf :: Parser GlyfDescription
 compositeGlyf = do
-    flags   <- uint16
-    idex    <- uint16
+    _flags   <- uint16
+    _idex    <- uint16
     error $ "composite"
 
 
@@ -294,10 +354,12 @@ locaLong = count `flip` uint32
 --------------------------------------------------------------------------------
 -- maxp table
 
--- Just extract the number of glyphs
  
 maxpTable :: Parser MaxpTable 
-maxpTable = MaxpTable <$> fixed <*> uint16
+maxpTable = MaxpTable <$> fixed  <*> uint16 <*> uint16 <*> uint16
+                      <*> uint16 <*> uint16 <*> uint16 <*> uint16
+                      <*> uint16 <*> uint16 <*> uint16 <*> uint16
+                      <*> uint16 <*> uint16 <*> uint16
 
 --------------------------------------------------------------------------------
 -- name table

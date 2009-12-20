@@ -172,13 +172,19 @@ data SimpleGlyf = SimpleGlyf
         , sglyf_instr_len       :: Uint16
         , sglyf_instructions    :: [Uint8]
         , sglyf_flags           :: [Uint8]
-        , sglyf_outline_pts     :: [OutlinePoint]
+        , sglyf_x_coordinates   :: [OutlinePoint]
+        , sglyf_y_coordinates   :: [OutlinePoint] 
         }
   deriving (Eq,Show)
 
-data OutlinePoint = OnCurvePt  Int16 Int16
-                  | OffCurvePt Int16 Int16
+
+data OutlinePoint = OnCurve  DeltaInt16
+                  | OffCurve DeltaInt16
   deriving (Eq,Ord,Show)
+
+data DeltaInt16 = Same | DInt16 Int16
+  deriving (Eq,Ord,Show)
+
 
 data CompositeGlyf = CompositeGlyf
         { cglyf_flags           :: Uint16
@@ -257,7 +263,19 @@ newtype LocaTable = LocaTable { loca_offsets :: [Uint32] }
 data MaxpTable = MaxpTable 
         { maxp_version_number   :: Fixed
         , maxp_num_glyphs       :: Uint16
-                                             -- .... missing
+        , maxp_max_points       :: Uint16
+        , maxp_max_contours     :: Uint16
+        , maxp_max_comp_parts   :: Uint16
+        , maxp_max_comp_ctours  :: Uint16
+        , maxp_max_zones        :: Uint16
+        , maxp_max_twilight_pts :: Uint16
+        , maxp_max_storage      :: Uint16
+        , maxp_max_fun_defs     :: Uint16
+        , maxp_max_instr_defs   :: Uint16
+        , maxp_max_stack_elems  :: Uint16
+        , maxp_max_size_instrs  :: Uint16
+        , maxp_max_comp_elems   :: Uint16
+        , maxp_max_comp_depth   :: Uint16
         }
   deriving (Eq,Show)
 

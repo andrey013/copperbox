@@ -20,23 +20,14 @@ module Graphics.SFont.KangarooAliases where
 
 
 import Graphics.SFont.Syntax
-import Graphics.SFont.Utils
 
 import Data.ParserCombinators.KangarooWriter
 
 import Control.Applicative
-import Data.Bits
 import Data.Int
 import Data.Word
 
 type Log = String
-
-infixr 5 <:>
-
--- | applicative cons
-(<:>) :: Applicative f => f a -> f [a] -> f [a]
-(<:>) p1 p2 = (:) <$> p1 <*> p2
-
 
 type Parser a = Kangaroo Log a
 
