@@ -129,8 +129,8 @@ glyfHeader :: Parser GlyfHeader
 glyfHeader = GlyfHeader <$> int16 <*> fwordBBox
 
 glyfDescr :: Int -> Parser GlyfDescription
-glyfDescr i | i > 0     = DescSimple <$> simpleGlyf i
-            | otherwise = compositeGlyf
+glyfDescr i | i > 0     = DescSimple   <$> simpleGlyf i
+            | otherwise = DescCompound <$> compoundGlyf
 
 simpleGlyf :: Int -> Parser SimpleGlyf
 simpleGlyf n = do 
@@ -207,11 +207,108 @@ coordInt16 :: Parser DeltaInt16
 coordInt16 = liftM DInt16 int16
 
 
-compositeGlyf :: Parser GlyfDescription
-compositeGlyf = do
-    _flags   <- uint16
-    _idex    <- uint16
-    error $ "composite"
+-- Compound glyfs
+
+
+compoundGlyf :: Parser CompoundGlyf
+compoundGlyf = do 
+    (cs,has_instr) <- componentGlyfs
+    instrs         <- if has_instr then compoundGlyfInstrs else return [] 
+    return $ CompoundGlyf
+              { cglyf_components    = cs
+              , cglyf_instructions  = instrs
+              }
+
+componentGlyfs :: Parser ([ComponentGlyf],Bool)
+componentGlyfs = 
+    liftM finish $ genericManyTillPC comb ([],Nothing) componentGlyf check
+  where
+    comb a (xs,Nothing) = (a:xs, Just $ (`testBit` 8) $ cglyf_flags a)
+    comb a (xs,z)       = (a:xs,z)
+    
+    check               = (`testBit` 5) . cglyf_flags
+
+    finish ((xs,z),x)   = (xs++[x], maybe False id z)
+
+componentGlyf :: Parser ComponentGlyf
+componentGlyf = do 
+    flags       <- uint16
+    idx         <- uint16
+    (arg1,arg2) <- offsetsOrIndexes (arg_1_and_2_are_words flags)
+                                    (args_are_xy_values    flags)
+    mtrx        <- linearMatrix (we_have_a_scale      flags)
+                                (we_have_an_xy_scale  flags)
+                                (we_have_a_two_by_two flags)  
+    return $ ComponentGlyf 
+              { cglyf_flags         = flags
+              , cglyf_index         = idx
+              , cglyf_argument1     = arg1
+              , cglyf_argument2     = arg2
+              , cglyf_trans         = mtrx
+              }
+
+arg_1_and_2_are_words   :: Uint16 -> Bool
+arg_1_and_2_are_words   = testBit `flip` 0
+
+args_are_xy_values      :: Uint16 -> Bool
+args_are_xy_values      = testBit `flip` 1
+
+we_have_a_scale         :: Uint16 -> Bool
+we_have_a_scale         = testBit `flip` 3
+
+we_have_an_xy_scale     :: Uint16 -> Bool
+we_have_an_xy_scale     = testBit `flip` 6
+
+we_have_a_two_by_two    :: Uint16 -> Bool
+we_have_a_two_by_two    = testBit `flip` 3
+
+
+
+compoundGlyfInstrs :: Parser [Uint8]
+compoundGlyfInstrs = liftM snd $ countPrefixed uint16 uint8
+
+offsetsOrIndexes :: Bool -> Bool -> Parser (OffsetOrIndex, OffsetOrIndex)
+offsetsOrIndexes True  True  = (,) <$> shortValue <*> shortValue
+offsetsOrIndexes False True  = (,) <$> byteValue  <*> byteValue
+offsetsOrIndexes True  False = (,) <$> shortIndex <*> shortIndex
+offsetsOrIndexes False False = (,) <$> byteIndex  <*> byteIndex
+
+shortValue :: Parser OffsetOrIndex
+shortValue = CG_Offset <$> int16 
+
+byteValue :: Parser OffsetOrIndex
+byteValue = CG_Offset . fromIntegral <$> uint8
+
+shortIndex :: Parser OffsetOrIndex
+shortIndex = CG_Index <$> int16
+
+byteIndex :: Parser OffsetOrIndex
+byteIndex = CG_Index . fromIntegral <$> int16
+
+
+linearMatrix :: Bool -> Bool -> Bool -> Parser Matrix4
+
+linearMatrix False False False =        -- No transform
+    Matrix4 <$> c1Dot14 1.0 <*> c1Dot14 0.0 <*> c1Dot14 0.0 <*> c1Dot14 1.0
+
+linearMatrix True  False False =        -- Uniform scale
+    (\a b ->  Matrix4 a b b a) <$> s1Dot14 <*> c1Dot14 0.0
+                                         
+linearMatrix False True  False =        -- scale
+    Matrix4 <$> s1Dot14 <*> c1Dot14 0.0 <*> c1Dot14 0.0 <*> s1Dot14
+
+linearMatrix False False True  =        -- TWO_BY_TWO
+    Matrix4 <$> s1Dot14 <*> s1Dot14 <*> s1Dot14 <*> s1Dot14
+
+linearMatrix x     y     z     =
+    reportError $ "composite glyph - invalid trafo flags " ++ show (x,y,z)
+
+
+c1Dot14 :: Double -> Parser OneDot14 
+c1Dot14 = return . OneDot14_Const 
+
+s1Dot14 :: Parser OneDot14
+s1Dot14 = liftM OneDot14_Int16 int16
 
 
 {-

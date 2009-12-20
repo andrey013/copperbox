@@ -164,7 +164,7 @@ data GlyfHeader = GlyfHeader
 
 data GlyfDescription = 
       DescSimple     SimpleGlyf 
-    | DescComposite  CompositeGlyf
+    | DescCompound   CompoundGlyf
   deriving (Eq,Show)    
 
 data SimpleGlyf = SimpleGlyf
@@ -186,16 +186,35 @@ data DeltaInt16 = Same | DInt16 Int16
   deriving (Eq,Ord,Show)
 
 
-data CompositeGlyf = CompositeGlyf
-        { cglyf_flags           :: Uint16
-        , cglyf_index           :: Uint16
-        , cglyf_args            :: CompositeArgs
-        , cglyf_trans           :: CompositeTrans
-
+data CompoundGlyf = CompoundGlyf
+        { cglyf_components      :: [ComponentGlyf]
+        , cglyf_instructions    :: [Word8] 
         }
    deriving (Eq,Show)
 
+data ComponentGlyf = ComponentGlyf 
+        { cglyf_flags           :: Uint16
+        , cglyf_index           :: Uint16
+        , cglyf_argument1       :: OffsetOrIndex
+        , cglyf_argument2       :: OffsetOrIndex
+        , cglyf_trans           :: Matrix4
+        }
+  deriving (Eq,Show)
+
+-- Offset or index is either a byte or an int16 in the file - if 
+-- it is a byte it gets scaled up to be an int16.
+--
+data OffsetOrIndex = CG_Offset Int16 | CG_Index Int16
+  deriving (Eq,Ord,Show)
       
+data Matrix4 = Matrix4 OneDot14 OneDot14 OneDot14 OneDot14
+  deriving (Eq,Show)
+
+-- | Matrix elements are not transformed on parsing
+--
+data OneDot14 = OneDot14_Const Double | OneDot14_Int16 Int16
+  deriving (Eq,Ord,Show)
+
 data CompositeArgs = 
       OffsetArgs 
         { x_offset    :: Int 
