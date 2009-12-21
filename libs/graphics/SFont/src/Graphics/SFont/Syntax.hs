@@ -169,6 +169,10 @@ data CmapSubtable = CmapSubtable
         }
   deriving (Eq,Show)
 
+
+-- Format and length are /promoted/ out of subtables and are 
+-- considered part of the header. This is because we want 
+-- both for making decisions regarding parsing.
 data CmapSubtableHeader = CmapSubtableHeader
         { cmap_platform_id      :: Uint16
         , cmap_platfrom_spec_id :: Uint16
@@ -198,8 +202,7 @@ data CmapFormat0 = CmapFormat0
 
 
 data CmapFormat2 = CmapFormat2
-        { fmt2_length           :: Uint16
-        , fmt2_lang_code        :: Uint16
+        { fmt2_lang_code        :: Uint16
         , fmt2_subheader_keys   :: [Uint16]      -- TODO should be an array
         , fmt2_subheaders       :: [Format2_Subheader]
         , fmt2_glyf_idxs        :: [Uint8]

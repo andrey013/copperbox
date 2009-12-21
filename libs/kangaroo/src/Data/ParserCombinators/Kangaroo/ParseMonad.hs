@@ -48,6 +48,8 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , interrectoRel
 
   , advance
+  , advanceAbs
+  , restrict
    
   ) where
 
@@ -332,6 +334,15 @@ advance :: Int -> GenKangaroo ust p -> GenKangaroo ust p
 advance i p = getSt >>= \(ArrIx pos end) -> 
     interrectoP "advance" (pos+i) end p
 
+-- | Advance the current position by the supplied distance.
+advanceAbs :: Int -> GenKangaroo ust p -> GenKangaroo ust p
+advanceAbs i p = getSt >>= \(ArrIx _ end) -> 
+    interrectoP "advanceAbs" i end p
 
+restrict :: Int -> GenKangaroo ust p -> GenKangaroo ust p
+restrict dist_to_end p = getSt >>= \(ArrIx pos _) -> 
+    interrectoP "restrict" pos (pos + dist_to_end) p
+    
 
-
+-- is there a need for a 'remote' combinator that doesn't 
+-- work 'inter'?

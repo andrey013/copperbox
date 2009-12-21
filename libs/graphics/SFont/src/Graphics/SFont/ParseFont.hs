@@ -117,8 +117,10 @@ tableDescriptor = (\tag _ r -> TableDescriptor tag r)
 
 cmapTable :: Parser CmapTable
 cmapTable = do 
+    start_pos <- currentParsePosition
     ix        <- cmapIndex
-    subs      <- count (fromIntegral $ cmap_num_subtables ix) cmapSubtable
+    subs      <- count 1 {- (fromIntegral $ cmap_num_subtables ix) -}
+                       (cmapSubtable start_pos)
     return $ CmapTable 
               { cmap_index          = ix
               , cmap_subtables      = subs
@@ -128,11 +130,12 @@ cmapTable = do
 cmapIndex :: Parser CmapIndex
 cmapIndex = CmapIndex <$> uint16 <*> uint16
 
-cmapSubtable :: Parser CmapSubtable
-cmapSubtable = do 
+cmapSubtable :: Int -> Parser CmapSubtable
+cmapSubtable cmap_start  = do 
     hdr  <- cmapSubtableHeader
-    let offset = fromIntegral $ cmap_offset hdr - (4+4+8)
-    body <- advance offset cmapSubtableBody
+    let offset = cmap_start + (fromIntegral $ cmap_offset hdr)
+    logline $ "cmap header " ++ show hdr
+    body <- advanceAbs offset cmapSubtableBody
     return $ CmapSubtable
               { cmap_subtable_header  = hdr
               , cmap_subtable_body    = body
@@ -142,7 +145,8 @@ cmapSubtableHeader :: Parser CmapSubtableHeader
 cmapSubtableHeader = CmapSubtableHeader <$> uint16 <*> uint16 <*> uint32
 
 cmapSubtableBody :: Parser CmapSubtableBody
-cmapSubtableBody = uint16 >>= subtable where
+cmapSubtableBody = uint16 >>= subtable
+  where
     subtable 0  = CmapFmt0  <$> cmapFormat0
     subtable 2  = CmapFmt2  <$> cmapFormat2
     subtable 4  = CmapFmt4  <$> cmapFormat4
@@ -150,7 +154,6 @@ cmapSubtableBody = uint16 >>= subtable where
     subtable 8  = CmapFmt8  <$> (uint16 *> cmapFormat8)
     subtable 10 = CmapFmt10 <$> (uint16 *> cmapFormat10)
     subtable 12 = CmapFmt12 <$> (uint16 *> cmapFormat12)
-
     subtable n  = reportError $ "unrecognized cmap subtable " ++ show n
 
 cmapFormat0 :: Parser CmapFormat0
@@ -164,10 +167,41 @@ format2_Subheader :: Parser Format2_Subheader
 format2_Subheader = Format2_SubHeader <$> uint16 <*> uint16 
                                       <*> int16  <*> uint16
 
+subtableRestrict :: Int -> Uint16 -> Parser a -> Parser a
+subtableRestrict fmt n = restrict (fromIntegral $ n - subheader_len) 
+  where
+    subheader_len = if elem fmt [8,10,12] then fmt_resv_len else fmt_plus_len
+    fmt_plus_len  = 4
+    fmt_resv_len  = 6
 
 cmapFormat4 :: Parser CmapFormat4
-cmapFormat4 = reportError "cmap format4 subtables not supported"
-
+cmapFormat4 = uint16 >>= \len -> subtableRestrict 4 len $ do
+    lang            <- uint16
+    seg_count_x2    <- uint16
+    let seg_count   = fromIntegral $ seg_count_x2 `div` 2
+    search_range    <- uint16
+    entry_sel       <- uint16
+    range_shift     <- uint16 
+    end_codes       <- count seg_count uint16
+    resv_pad        <- uint16
+    start_codes     <- count seg_count uint16
+    id_deltas       <- count seg_count uint16
+    id_ranges       <- count seg_count uint16
+    glyf_indexes    <- runOn uint16
+    return $ CmapFormat4
+              { fmt4_length           = len
+              , fmt4_lang_code        = lang
+              , fmt4_segcount_x2      = seg_count_x2
+              , fmt4_search_range     = search_range
+              , fmt4_entry_selector   = entry_sel
+              , fmt4_range_shift      = range_shift
+              , fmt4_end_code         = end_codes
+              , fmt4_reserved_pad     = resv_pad
+              , fmt4_start_code       = start_codes
+              , fmt4_id_delta         = id_deltas
+              , fmt4_id_range_offset  = id_ranges
+              , fmt4_glyf_idxs        = glyf_indexes
+              }
 cmapFormat6 :: Parser CmapFormat6
 cmapFormat6 = reportError "cmap format6 subtables not supported"
 
