@@ -37,19 +37,23 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , checkWord8
   , opt 
   , position
-  , upperBound
+  , regionEnd
   , atEnd
   , lengthRemaining
 
   -- * Parse within a /region/.
-  , interverso
-  , interversoRel
-  , interrecto
-  , interrectoRel
+  , dalpunto
+  , dalpuntoRelative
 
-  , advance
-  , advanceAbs
-  , restrict
+  , alfine
+  , alfineRelative
+  , restrictAlfine
+
+  , alfermata
+  , alfermataRelative
+  , advanceAlfermata
+  , advanceAlfermataAbsolute
+ 
    
   ) where
 
@@ -235,8 +239,8 @@ opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans ->
 position :: GenKangaroo ust Int
 position = liftM arr_ix_ptr getSt
 
-upperBound :: GenKangaroo ust Int
-upperBound = liftM arr_ix_end getSt
+regionEnd :: GenKangaroo ust Int
+regionEnd = liftM arr_ix_end getSt
 
 
 
@@ -250,7 +254,17 @@ lengthRemaining = getSt >>= \(ArrIx ix end) ->
 
 
 --------------------------------------------------------------------------------
--- The important one...
+-- The important ones...
+
+-- Three useful final positions 
+--
+-- 1. dalpunto  - 'from the point' - back to where you came from
+-- 2. alfine    - 'to the end'     - at the right-end of the bounds
+-- 3. alfermata - 'to the stop'    - wherever the parsing finished
+--
+
+-- advanceBy advanceTo
+
 
 assertSubsetRegion :: String -> Int -> Int -> GenKangaroo ust ()
 assertSubsetRegion fun_name start end = 
@@ -283,10 +297,14 @@ tooFarErr new_end old_end fun_name = concat
     , show old_end
     ]
 
-interversoP :: String -> Int -> Int 
+
+-- Parser inside the supplied region, afterwards restore the
+-- end of the /outer/ region and return to the initial position.
+--
+dalpuntoP :: String -> Int -> Int 
                  -> GenKangaroo ust a 
                  -> GenKangaroo ust a
-interversoP fun_name start end p = do
+dalpuntoP fun_name start end p = do
     st <- getSt 
     assertSubsetRegion fun_name start end
     putSt $ ArrIx start end
@@ -297,52 +315,81 @@ interversoP fun_name start end p = do
 
 
 -- | return to the start position - start x length
-interverso :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
-interverso = interversoP "interverso"
+dalpunto :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+dalpunto = dalpuntoP "dalpunto"
 
 
 -- | return to the start position - displacement x length
-interversoRel :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
-interversoRel disp len p = getSt >>= \(ArrIx pos _) ->
-    interversoP "interversoRel" (pos+disp) (pos+disp+len-1) p
+dalpuntoRelative :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+dalpuntoRelative disp len p = getSt >>= \(ArrIx pos _) ->
+    dalpuntoP "dalpuntoRelative" (pos+disp) (pos+disp+len-1) p
 
 
-interrectoP :: String -> Int -> Int 
-                 -> GenKangaroo ust a 
-                 -> GenKangaroo ust a
-interrectoP fun_name start end p = do
+
+-- Parse inside the supplied region, afterwards go to the end of
+-- the supplied region and restore the end of the /outer/ region.
+--
+alfineP :: String -> Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+alfineP fun_name start end p = do
     ArrIx _ prev_end <- getSt 
     assertSubsetRegion fun_name start end
     putSt $ ArrIx start end
     ans <- p
-    putSt $ ArrIx (end+1) prev_end 
+    putSt $ ArrIx (end+1) prev_end
     return ans
 
 
--- | finish at the right of the region - start x end
-interrecto :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
-interrecto = interrectoP "interrecto"
+-- | alfine - parse to the end
+alfine :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+alfine = alfineP "alfine"
 
 -- | finish at the right of the region - displacement x length
-interrectoRel :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
-interrectoRel disp len p = getSt >>= \(ArrIx pos _) ->
-    interrectoP "interrectoRel" (pos+disp) (pos+disp+len-1) p
+alfineRelative :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+alfineRelative disp len p = getSt >>= \(ArrIx pos _) ->
+    alfineP "alfineRelative" (pos+disp) (pos+disp+len-1) p
 
- 
--- | Advance the current position by the supplied distance.
-advance :: Int -> GenKangaroo ust p -> GenKangaroo ust p
-advance i p = getSt >>= \(ArrIx pos end) -> 
-    interrectoP "advance" (pos+i) end p
 
--- | Advance the current position by the supplied distance.
-advanceAbs :: Int -> GenKangaroo ust p -> GenKangaroo ust p
-advanceAbs i p = getSt >>= \(ArrIx _ end) -> 
-    interrectoP "advanceAbs" i end p
-
-restrict :: Int -> GenKangaroo ust p -> GenKangaroo ust p
-restrict dist_to_end p = getSt >>= \(ArrIx pos _) -> 
-    interrectoP "restrict" pos (pos + dist_to_end) p
+restrictAlfine :: Int -> GenKangaroo ust p -> GenKangaroo ust p
+restrictAlfine dist_to_end p = getSt >>= \(ArrIx pos _) -> 
+    alfineP "restrictAlfine" pos (pos + dist_to_end) p
     
 
--- is there a need for a 'remote' combinator that doesn't 
--- work 'inter'?
+
+-- Parser inside the supplied region, afterwards restore the end 
+-- of the /outer/region but keep the cursor in at the current 
+-- position.
+--
+alfermataP :: String -> Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+alfermataP fun_name start end p = do
+    ArrIx _ prev_end    <- getSt 
+    assertSubsetRegion fun_name start end
+    putSt $ ArrIx start end
+    ans <- p
+    ArrIx curr_pos _    <- getSt
+    putSt $ ArrIx curr_pos prev_end 
+    return ans
+ 
+-- | alfermata - parse to the /sign/ i.e. wherever the supplied 
+-- parser stops within the supplied region. At the end of the
+-- parse restore the outer region.
+--
+alfermata :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+alfermata = alfermataP "alfermata"
+
+
+alfermataRelative :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
+alfermataRelative disp len p = getSt >>= \(ArrIx pos _) ->
+    alfermataP "alfermataRel" (pos+disp) (pos+disp+len-1) p
+
+
+-- | Advance the current position by the supplied distance.
+advanceAlfermata :: Int -> GenKangaroo ust p -> GenKangaroo ust p
+advanceAlfermata i p = getSt >>= \(ArrIx pos end) -> 
+    alfermataP "advanceAlfermata" (pos+i) end p
+
+-- | Advance the current position to the supplied (absolute) 
+-- position.
+advanceAlfermataAbsolute :: Int -> GenKangaroo ust p -> GenKangaroo ust p
+advanceAlfermataAbsolute i p = getSt >>= \(ArrIx _ end) -> 
+    alfermataP "advanceAlfermataAbsolute" i end p
+

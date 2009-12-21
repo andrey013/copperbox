@@ -88,7 +88,7 @@ trackHeader = assertString "MTrk" >> word32be
 
 getMessages :: Word32 -> MidiParser (Seq Message)
 
-getMessages i = interrectoRel 0 (fromIntegral i) messages
+getMessages i = alfineRelative 0 (fromIntegral i) messages
   where    
     messages = genericRunOn (<|) S.empty message
 
