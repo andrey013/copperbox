@@ -44,6 +44,12 @@ logline :: String -> Parser ()
 logline = tell . ("\n" ++)
 
 
+tellPos :: String -> Parser ()
+tellPos str = do 
+  p <- position 
+  e <- regionEnd
+  tell $ "\n" ++ str ++ ", position " ++ show p ++ ", region end " ++ show e
+
 -- give 'position' a visually distinct alias
 currentParsePosition :: Parser Int
 currentParsePosition = position

@@ -153,7 +153,8 @@ data SfntVersion = SFNT_1_0 | OTTO
 
 data CmapTable = CmapTable
         { cmap_index            :: CmapIndex
-        , cmap_subtables        :: [CmapSubtable]
+        , cmap_subt_headers     :: [CmapSubtableHeader]
+        , cmap_subt_bodies      :: [CmapSubtableBody]
         }
   deriving (Eq,Show)
 
@@ -163,12 +164,13 @@ data CmapIndex = CmapIndex
         }
   deriving (Eq,Show)
 
+{-
 data CmapSubtable = CmapSubtable
         { cmap_subtable_header  :: CmapSubtableHeader
         , cmap_subtable_body    :: CmapSubtableBody
         }
   deriving (Eq,Show)
-
+-}
 
 -- Format and length are /promoted/ out of subtables and are 
 -- considered part of the header. This is because we want 

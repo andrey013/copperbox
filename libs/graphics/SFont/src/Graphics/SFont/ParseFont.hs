@@ -74,9 +74,12 @@ prolog = mprogress (,) fn offsetTable tableDirectory
   where
     fn = fromIntegral . ot_number_of_tables
 
+
+-- Note this one shouldn't matter where the parsing finishes
+--
 parseTable :: TableLocs -> String -> Parser a -> Parser a
 parseTable mp name p = 
-    getRegion >>= \(Region start len) -> interverso start (start+len) p
+    getRegion >>= \(Region start len) -> dalpunto start (start+len) p
   where
     getRegion = maybe errk return $ Map.lookup name mp
     errk      = reportError $ "missing table " ++ name
@@ -117,29 +120,25 @@ tableDescriptor = (\tag _ r -> TableDescriptor tag r)
 
 cmapTable :: Parser CmapTable
 cmapTable = do 
-    start_pos <- currentParsePosition
-    ix        <- cmapIndex
-    subs      <- count 1 {- (fromIntegral $ cmap_num_subtables ix) -}
-                       (cmapSubtable start_pos)
+    start_pos   <- currentParsePosition
+    ix          <- cmapIndex
+    sub_headers <- count (fromIntegral $ cmap_num_subtables ix) 
+                         cmapSubtableHeader
+    sub_bodies  <- mapM (fn start_pos . cmap_offset) sub_headers
     return $ CmapTable 
               { cmap_index          = ix
-              , cmap_subtables      = subs
+              , cmap_subt_headers   = sub_headers
+              , cmap_subt_bodies    = sub_bodies
               }
+  where
+    fn :: Int -> Uint32 -> Parser CmapSubtableBody
+    fn table_start offset = let pos = table_start + fromIntegral offset in
+        advanceAlfermataAbsolute pos cmapSubtableBody
  
 
 cmapIndex :: Parser CmapIndex
 cmapIndex = CmapIndex <$> uint16 <*> uint16
 
-cmapSubtable :: Int -> Parser CmapSubtable
-cmapSubtable cmap_start  = do 
-    hdr  <- cmapSubtableHeader
-    let offset = cmap_start + (fromIntegral $ cmap_offset hdr)
-    logline $ "cmap header " ++ show hdr
-    body <- advanceAbs offset cmapSubtableBody
-    return $ CmapSubtable
-              { cmap_subtable_header  = hdr
-              , cmap_subtable_body    = body
-              }
 
 cmapSubtableHeader :: Parser CmapSubtableHeader
 cmapSubtableHeader = CmapSubtableHeader <$> uint16 <*> uint16 <*> uint32
@@ -168,7 +167,7 @@ format2_Subheader = Format2_SubHeader <$> uint16 <*> uint16
                                       <*> int16  <*> uint16
 
 subtableRestrict :: Int -> Uint16 -> Parser a -> Parser a
-subtableRestrict fmt n = restrict (fromIntegral $ n - subheader_len) 
+subtableRestrict fmt n = restrictAlfermata (fromIntegral $ n - subheader_len) 
   where
     subheader_len = if elem fmt [8,10,12] then fmt_resv_len else fmt_plus_len
     fmt_plus_len  = 4
@@ -176,6 +175,7 @@ subtableRestrict fmt n = restrict (fromIntegral $ n - subheader_len)
 
 cmapFormat4 :: Parser CmapFormat4
 cmapFormat4 = uint16 >>= \len -> subtableRestrict 4 len $ do
+    tellPos "cmapFormat4" 
     lang            <- uint16
     seg_count_x2    <- uint16
     let seg_count   = fromIntegral $ seg_count_x2 `div` 2
@@ -601,7 +601,7 @@ nameRecord str_data_offset = do
     pos     <- uint16
     logline $ show (str_data_offset,len,pos)
     let str_loc = str_data_offset + fromIntegral pos
-    str     <- interverso str_loc (str_loc + fromIntegral len) (runOn char)
+    str     <- dalpunto str_loc (str_loc + fromIntegral len) (runOn char)
     return $ NameRecord 
                 { nr_platform_id    = pid
                 , nr_encoding_id    = enc

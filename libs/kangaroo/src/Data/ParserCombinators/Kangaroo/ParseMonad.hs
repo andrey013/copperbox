@@ -53,7 +53,7 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , alfermataRelative
   , advanceAlfermata
   , advanceAlfermataAbsolute
- 
+  , restrictAlfermata 
    
   ) where
 
@@ -254,16 +254,24 @@ lengthRemaining = getSt >>= \(ArrIx ix end) ->
 
 
 --------------------------------------------------------------------------------
--- The important ones...
+-- The important ones parsing within a /region/ ...
 
 -- Three useful final positions 
 --
--- 1. dalpunto  - 'from the point' - back to where you came from
--- 2. alfine    - 'to the end'     - at the right-end of the bounds
--- 3. alfermata - 'to the stop'    - wherever the parsing finished
+-- 1. dalpunto  - 'from the point'      
+-- - Run the parser within a region and return to where you came
+--   from.
+--
+-- 2. alfine    - 'to the end'     
+-- - Run the parser within a region and jump to the right-end of 
+--   the region after the parse.
+--
+-- 3. alfermata - 'to the stop'    
+-- - Run the parser within a region, the cursor remains wherever 
+--   the parse finished.
 --
 
--- advanceBy advanceTo
+
 
 
 assertSubsetRegion :: String -> Int -> Int -> GenKangaroo ust ()
@@ -393,3 +401,6 @@ advanceAlfermataAbsolute :: Int -> GenKangaroo ust p -> GenKangaroo ust p
 advanceAlfermataAbsolute i p = getSt >>= \(ArrIx _ end) -> 
     alfermataP "advanceAlfermataAbsolute" i end p
 
+restrictAlfermata :: Int -> GenKangaroo ust p -> GenKangaroo ust p
+restrictAlfermata dist_to_end p = getSt >>= \(ArrIx pos _) ->
+    alfermataP "restrictAlfermata" pos (pos + dist_to_end) p
