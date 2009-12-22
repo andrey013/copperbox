@@ -17,8 +17,7 @@
 module Hurdle.Parser where
 
 import Hurdle.Datatypes
-
-import Data.ParserCombinators.Kangaroo
+import Hurdle.Utils
 
 import Control.Applicative
 import Data.Word
@@ -26,12 +25,11 @@ import Data.Word
 
 readDLL :: FilePath -> IO Image
 readDLL filename = do
-    ans <- runKangaroo dllFile filename
+    (ans,w) <- runKangaroo dllFile filename
     case ans of 
-      Left err -> putStrLn err >> error "readDLL failed"
+      Left err -> (putStrLn $ toList w) >> error err
       Right mf -> return mf
 
-type Parser a = Kangaroo a    
 
 
 
@@ -56,6 +54,7 @@ dllFile = do
     secHs  <- count (fromIntegral $ ich_num_sections coffH) sectionHeader
     expH   <- exportSectionHeader secHs
     let raw_data = fromIntegral $ sh_ptr_raw_data expH
+    logline $ "raw_data is " ++ show raw_data
     expD   <- advanceAlfermataAbsolute raw_data (exportData expH)
     return $ Image { image_dos_header       = dosH
                    , image_signature        = sig
@@ -193,13 +192,15 @@ sectionHeader = SectionHeader <$>
 
 
 jumpto :: Int -> Parser a -> Parser a
-jumpto = advanceAlfermataAbsolute
+jumpto = advanceDalpuntoAbsolute
 
 -- At some point... I'll tidy this up.
 
 exportData :: SectionHeader -> Parser ExportData
 exportData section = do
+    logPosition "starting exportData..."
     edt        <- exportDirectoryTable
+    
     let eac    = fromIntegral $ edt_num_addr_table_entries edt
     let ea_rva = fromIntegral $ 
                    rvaToOffset (edt_export_addr_table_rva edt) section
@@ -248,6 +249,7 @@ exportAddress :: Parser ExportAddress
 exportAddress = EA_Export_RVA <$>
         word32le
 
+-- Not working...
 exportNames :: SectionHeader -> [Word32] -> Parser [String]
 exportNames _       []     = return []
 exportNames section (x:xs) = mf <:> exportNames section xs

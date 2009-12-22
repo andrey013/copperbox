@@ -37,8 +37,8 @@ Executable hurdle
   Other-Modules:  Hurdle.Datatypes,
                   Hurdle.DefOutput,
                   Hurdle.Parser,
-                  Hurdle.TextDump
-                  
+                  Hurdle.TextDump,
+                  Hurdle.Utils                  
 
 
 

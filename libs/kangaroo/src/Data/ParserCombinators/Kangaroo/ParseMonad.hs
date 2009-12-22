@@ -44,6 +44,8 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   -- * Parse within a /region/.
   , dalpunto
   , dalpuntoRelative
+  , advanceDalpunto
+  , advanceDalpuntoAbsolute
 
   , alfine
   , alfineRelative
@@ -332,6 +334,16 @@ dalpuntoRelative :: Int -> Int -> GenKangaroo ust a -> GenKangaroo ust a
 dalpuntoRelative disp len p = getSt >>= \(ArrIx pos _) ->
     dalpuntoP "dalpuntoRelative" (pos+disp) (pos+disp+len-1) p
 
+-- | Advance the current position by the supplied distance.
+advanceDalpunto :: Int -> GenKangaroo ust p -> GenKangaroo ust p
+advanceDalpunto i p = getSt >>= \(ArrIx pos end) -> 
+    dalpuntoP "advanceDalpunto" (pos+i) end p
+
+-- | Advance the current position to the supplied (absolute) 
+-- position.
+advanceDalpuntoAbsolute :: Int -> GenKangaroo ust p -> GenKangaroo ust p
+advanceDalpuntoAbsolute i p = getSt >>= \(ArrIx _ end) -> 
+    dalpuntoP "advanceDalpuntoAbsolute" i end p
 
 
 -- Parse inside the supplied region, afterwards go to the end of

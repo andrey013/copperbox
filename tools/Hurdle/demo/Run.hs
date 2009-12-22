@@ -12,7 +12,7 @@ main :: IO ()
 main = demo
 
 demo = do 
-  img  <- readDLL "dll/libportaudio.dll"
+  img  <- readDLL "dll/openvg32.dll"
   printImage img
   putStrLn ""  
 
