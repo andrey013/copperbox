@@ -12,7 +12,8 @@ description:
   .
   Extract function names from Windows DLLs a-la pexports.
   . 
-  Hurdle has minimal dependencies: base, array and pretty.
+  Hurdle has minimal dependencies: base, pretty and kangaroo.
+  (kangaroo just needs base and array)
   .
   Currently Hurdle also has minimal utility - please consider 
   pexports instead as Hurdle doesn't yet print ordinals 
@@ -27,14 +28,14 @@ cabal-version:      >= 1.2
 
 Executable hurdle
   Build-Depends:  base < 5, 
-                  array >= 0.2.0.0 && < 0.3,
-                  pretty 
+                  array >= 0.2.0.0 && < 0.4,
+                  pretty,
+                  kangaroo >= 0.1.0 && < 0.2 
 
   Main-Is:        Hurdle.hs
   Hs-Source-Dirs: src
   Other-Modules:  Hurdle.Datatypes,
                   Hurdle.DefOutput,
-                  Hurdle.ParseMonad,
                   Hurdle.Parser,
                   Hurdle.TextDump
                   

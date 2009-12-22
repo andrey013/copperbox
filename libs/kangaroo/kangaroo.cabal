@@ -40,8 +40,9 @@ library
   
   exposed-modules:
     Data.ParserCombinators.Kangaroo,
-    Data.ParserCombinators.KangarooState,
+    Data.ParserCombinators.KangarooReader
     Data.ParserCombinators.KangarooRWS,
+    Data.ParserCombinators.KangarooState,
     Data.ParserCombinators.KangarooWriter,
     Data.ParserCombinators.Kangaroo.Combinators,
     Data.ParserCombinators.Kangaroo.IEEEFloat,

@@ -17,21 +17,30 @@
 module Hurdle.Parser where
 
 import Hurdle.Datatypes
-import Hurdle.ParseMonad
+
+import Data.ParserCombinators.Kangaroo
 
 import Control.Applicative
 import Data.Word
-import System.IO
 
 
 readDLL :: FilePath -> IO Image
-readDLL filename = do 
-    ans <- runParser dllFile filename
+readDLL filename = do
+    ans <- runKangaroo dllFile filename
     case ans of 
       Left err -> putStrLn err >> error "readDLL failed"
       Right mf -> return mf
 
-    
+type Parser a = Kangaroo a    
+
+
+
+infixr 5 <:>
+
+-- | applicative cons
+(<:>) :: Applicative f => f a -> f [a] -> f [a]
+(<:>) p1 p2 = (:) <$> p1 <*> p2
+
 
 --------------------------------------------------------------------------------
 -- 
@@ -46,8 +55,8 @@ dllFile = do
     optH   <- imageOptionalHeader
     secHs  <- count (fromIntegral $ ich_num_sections coffH) sectionHeader
     expH   <- exportSectionHeader secHs
-    jumpto (fromIntegral $ sh_ptr_raw_data expH)
-    expD   <- exportData expH
+    let raw_data = fromIntegral $ sh_ptr_raw_data expH
+    expD   <- advanceAlfermataAbsolute raw_data (exportData expH)
     return $ Image { image_dos_header       = dosH
                    , image_signature        = sig
                    , image_coff_header      = coffH
@@ -59,12 +68,12 @@ dllFile = do
 -- bit crummy...
 exportSectionHeader :: [SectionHeader] -> Parser SectionHeader
 exportSectionHeader (_:_:_:_:edata:_) = return $ edata
-exportSectionHeader _                 = reportFail "no .edata" 
+exportSectionHeader _                 = reportError "no .edata" 
 
 
 toNewExeHeader :: Word32 -> Parser ()
 toNewExeHeader n = do 
-    getBytes (n - dosHSize)
+    _anon <- getBytes (n - dosHSize)
     return ()  
   where
     dosHSize = 0x0040
@@ -72,51 +81,51 @@ toNewExeHeader n = do
 imageDOSHeader :: Parser ImageDOSHeader
 imageDOSHeader = ImageDOSHeader <$> 
         magic 
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
     <*> reserved1
-    <*> getWord16le
-    <*> getWord16le
+    <*> word16le
+    <*> word16le
     <*> reserved2
-    <*> getWord32le
+    <*> word32le
   where
     -- | Magic number 0x5a4d
 
     magic :: Parser Word16
-    magic = getWord16le
+    magic = word16le
   
     reserved1 :: Parser (Word16,Word16,Word16,Word16)
-    reserved1 = (,,,) <$> getWord16le <*> getWord16le 
-                      <*> getWord16le <*> getWord16le
+    reserved1 = (,,,) <$> word16le <*> word16le 
+                      <*> word16le <*> word16le
 
     reserved2 :: Parser [Word16]
-    reserved2 = count 10 getWord16le
+    reserved2 = count 10 word16le
 
 
 signature :: Parser (Char,Char,Char,Char) 
-signature = (,,,) <$> getChar8bit <*> getChar8bit 
-                  <*> getChar8bit <*> getChar8bit
+signature = (,,,) <$> char <*> char 
+                  <*> char <*> char
 
 imageCOFFHeader :: Parser ImageCOFFHeader
 imageCOFFHeader = ImageCOFFHeader <$> 
-        getWord16le
-    <*> getWord16le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord16le
-    <*> getWord16le
+        word16le
+    <*> word16le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word16le
+    <*> word16le
       
 
 imageOptionalHeader :: Parser ImageOptionalHeader
@@ -128,60 +137,63 @@ imageOptionalHeader = ImageOptionalHeader <$>
 
 imageOptionalStandard :: Parser ImageOptionalStandard
 imageOptionalStandard = ImageOptionalStandard <$>
-        getWord16le
-    <*> getWord8
-    <*> getWord8
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
+        word16le
+    <*> word8
+    <*> word8
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
 
 imageOptionalNTSpecific :: Parser ImageOptionalNTSpecific
 imageOptionalNTSpecific = ImageOptionalNTSpecific <$>
-        getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
+        word32le
+    <*> word32le
+    <*> word32le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word16le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word16le
+    <*> word16le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
 
 
 imageDataDirectory :: Parser ImageDataDirectory
 imageDataDirectory = ImageDataDirectory <$>
-        getWord32le
-    <*> getWord32le
+        word32le
+    <*> word32le
 
 
 sectionHeader :: Parser SectionHeader
 sectionHeader = SectionHeader <$>
-        count 8 getChar8bit
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord32le
+        count 8 char
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word16le
+    <*> word16le
+    <*> word32le
 
+
+jumpto :: Int -> Parser a -> Parser a
+jumpto = advanceAlfermataAbsolute
 
 -- At some point... I'll tidy this up.
 
@@ -191,27 +203,23 @@ exportData section = do
     let eac    = fromIntegral $ edt_num_addr_table_entries edt
     let ea_rva = fromIntegral $ 
                    rvaToOffset (edt_export_addr_table_rva edt) section
-    jumpto ea_rva
-    ats        <- count eac exportAddress
+    ats        <- jumpto ea_rva (count eac exportAddress)
 
     let enc    = fromIntegral $ edt_num_name_ptrs edt
     let en_rva = fromIntegral $ 
                    rvaToOffset (edt_name_ptr_table_rva edt) section
-    jumpto en_rva
-    nptrs      <- count enc getWord32le
+    nptrs      <- jumpto en_rva (count enc word32le)
 
     let eo_rva = fromIntegral $ 
                    rvaToOffset (edt_ordinal_table_rva edt) section
-    jumpto eo_rva
-    ords      <- count enc getWord16le
+    ords      <- jumpto eo_rva (count enc word16le)
 
     names     <- exportNames section nptrs
     
     let nm_rva = fromIntegral $ 
                    rvaToOffset (edt_name_rva edt) section
 
-    jumpto nm_rva
-    dllname   <- cstring
+    dllname   <- jumpto nm_rva cstring
 
     return $ ExportData { ed_directory_table      = edt
                         , ed_export_address_table = ats
@@ -223,28 +231,28 @@ exportData section = do
 
 exportDirectoryTable :: Parser ExportDirectoryTable
 exportDirectoryTable = ExportDirectoryTable <$>
-        getWord32le
-    <*> getWord32le
-    <*> getWord16le
-    <*> getWord16le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
-    <*> getWord32le
+        word32le
+    <*> word32le
+    <*> word16le
+    <*> word16le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
+    <*> word32le
 
 -- WRONG (for now) 
 exportAddress :: Parser ExportAddress
 exportAddress = EA_Export_RVA <$>
-        getWord32le
+        word32le
 
 exportNames :: SectionHeader -> [Word32] -> Parser [String]
 exportNames _       []     = return []
 exportNames section (x:xs) = mf <:> exportNames section xs
   where
-    mf = jumpto (fromIntegral $ rvaToOffset x section) >> cstring
+    mf = jumpto (fromIntegral $ rvaToOffset x section) cstring
 
 
 rvaToOffset :: Word32 -> SectionHeader -> Word32
