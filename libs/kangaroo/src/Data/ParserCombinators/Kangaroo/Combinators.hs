@@ -46,14 +46,16 @@ satisfy p = word8 >>= \x ->
 manyTill :: GenKangaroo ust a -> GenKangaroo ust b -> GenKangaroo ust [a]
 manyTill = genericManyTill (:) [] 
 
+
+
 genericManyTill :: (a -> c -> c) -> c 
                 -> GenKangaroo ust a 
                 -> GenKangaroo ust b
                 -> GenKangaroo ust c
 genericManyTill op initial p end = opt end >>= \ans ->
     case ans of 
-      Nothing -> return initial
-      Just _  -> op <$> p <*> genericManyTill op initial p end
+      Just _  -> return initial
+      Nothing -> op <$> p <*> genericManyTill op initial p end
 
 
 manyTillPC :: GenKangaroo ust a -> (a -> Bool) -> GenKangaroo ust ([a],a)

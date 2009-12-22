@@ -31,6 +31,8 @@ extra-source-files:
   demo/MidiRead.hs
   demo/MidiText.hs
   demo/PrintMidi.hs
+  test/Picklers.hs
+
 
 library
   hs-source-dirs:     src
@@ -51,7 +53,7 @@ library
     Data.ParserCombinators.Kangaroo.Utils
 
   other-modules:
-    
+      
   extensions:
     
 

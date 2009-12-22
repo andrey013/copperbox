@@ -230,12 +230,14 @@ checkWord8 check = word8 >>= \ans ->
     if check ans then return $ Just ans
                  else modifyIx (subtract 1) >> return Nothing
 
+
+
 -- no 'try' in Kangaroo... 
--- opt is the nearest to it
+-- opt is the nearest to it, opt backtracks the cursor onm failure.
 opt :: GenKangaroo ust a -> GenKangaroo ust (Maybe a)
 opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans -> 
     case ans of
-      (Left _, st', ust')  -> return (Right Nothing, st', ust')
+      (Left _, _, ust')    -> return (Right Nothing, st, ust')
       (Right a, st', ust') -> return (Right $ Just a, st', ust')
 
 position :: GenKangaroo ust Int
@@ -252,8 +254,6 @@ atEnd = getSt >>= \(ArrIx ix end) -> return $ ix >= end
 lengthRemaining :: GenKangaroo ust Int
 lengthRemaining = getSt >>= \(ArrIx ix end) -> 
    let rest = end - ix in if rest < 0 then return 0 else return rest
-
-
 
 --------------------------------------------------------------------------------
 -- The important ones parsing within a /region/ ...

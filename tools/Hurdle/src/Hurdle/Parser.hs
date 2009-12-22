@@ -249,14 +249,14 @@ exportAddress :: Parser ExportAddress
 exportAddress = EA_Export_RVA <$>
         word32le
 
--- Not working...
+
 exportNames :: SectionHeader -> [Word32] -> Parser [String]
 exportNames _       []     = return []
 exportNames section (x:xs) = mf <:> exportNames section xs
   where
     mf = jumpto (fromIntegral $ rvaToOffset x section) cstring
 
-
+         
 rvaToOffset :: Word32 -> SectionHeader -> Word32
 rvaToOffset rva section = 
     rva - (sh_virtual_addr section - sh_ptr_raw_data section)
