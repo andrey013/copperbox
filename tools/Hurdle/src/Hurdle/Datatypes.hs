@@ -16,6 +16,7 @@
 
 module Hurdle.Datatypes where
 
+import Data.Map ( Map )
 import Data.Word
 
 data Image = Image 
@@ -23,8 +24,8 @@ data Image = Image
       , image_signature             :: (Char,Char,Char,Char)
       , image_coff_header           :: ImageCOFFHeader
       , image_opt_header            :: ImageOptionalHeader
-      , image_section_headers       :: [SectionHeader]
-      , image_export_data           :: ExportData
+      , image_section_headers       :: SectionHeaders
+      , image_export_data           :: Maybe ExportData
       }
   deriving Show
 
@@ -136,6 +137,9 @@ data ImageDataDirectory = ImageDataDirectory
       }
   deriving Show
 
+
+type SectionHeaders = Map String SectionHeader
+
 data SectionHeader = SectionHeader 
       { sh_name                     :: String  -- 8 bytes
       , sh_virtual_size             :: Word32
@@ -154,7 +158,7 @@ data SectionHeader = SectionHeader
 -- name_ptrs and ordinals should be zipped...
 data ExportData = ExportData
       { ed_directory_table          :: ExportDirectoryTable
-      , ed_export_address_table     :: [ExportAddress]
+      , ed_export_address_table     :: ExportAddressTable
       , ed_name_ptr_table           :: [Word32]
       , ed_ordinal_table            :: [Word16]
       , ed_dll_name                 :: String
@@ -177,7 +181,16 @@ data ExportDirectoryTable = ExportDirectoryTable
       }
   deriving Show
 
- 
+newtype ExportAddressTable = ExportAddressTable 
+          { getExportAddressTable :: [ExportAddress] }
+   deriving Show
+
+
 data ExportAddress = EA_Export_RVA     Word32
                    | EA_Forwarder_RVA  Word32    
   deriving Show
+
+
+
+
+

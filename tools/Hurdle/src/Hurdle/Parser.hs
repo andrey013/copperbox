@@ -20,6 +20,8 @@ import Hurdle.Datatypes
 import Hurdle.Utils
 
 import Control.Applicative
+import Control.Monad
+import qualified Data.Map as Map
 import Data.Word
 
 
@@ -51,23 +53,37 @@ dllFile = do
     sig    <- signature
     coffH  <- imageCOFFHeader
     optH   <- imageOptionalHeader
-    secHs  <- count (fromIntegral $ ich_num_sections coffH) sectionHeader
+    secHs  <- sectionHeaders (fromIntegral $ ich_num_sections coffH)
+{-
     expH   <- exportSectionHeader secHs
+    logline $ "secHs" ++ show secHs
     let raw_data = fromIntegral $ sh_ptr_raw_data expH
     logline $ "raw_data is " ++ show raw_data
     expD   <- advanceAlfermataAbsolute raw_data (exportData expH)
+-}  
+    opt_expos <- optExportData secHs
     return $ Image { image_dos_header       = dosH
                    , image_signature        = sig
                    , image_coff_header      = coffH
                    , image_opt_header       = optH
                    , image_section_headers  = secHs
-                   , image_export_data      = expD
+                   , image_export_data      = opt_expos
                    }
 
--- bit crummy...
-exportSectionHeader :: [SectionHeader] -> Parser SectionHeader
+-- bit crummy... section headers should be a Map
+
+optExportData :: SectionHeaders -> Parser (Maybe ExportData)
+optExportData = maybe (return Nothing) sk . Map.lookup ".edata" 
+  where
+    sk a = let raw_data = fromIntegral $ sh_ptr_raw_data a in
+           liftM Just $ advanceAlfermataAbsolute raw_data (exportData a)
+
+
+
 exportSectionHeader (_:_:_:_:edata:_) = return $ edata
 exportSectionHeader _                 = reportError "no .edata" 
+
+
 
 
 toNewExeHeader :: Word32 -> Parser ()
@@ -177,9 +193,17 @@ imageDataDirectory = ImageDataDirectory <$>
     <*> word32le
 
 
+-- should be a Map then 
+
+sectionHeaders :: Int -> Parser SectionHeaders
+sectionHeaders n = build <$> count n sectionHeader
+  where
+    build = foldr (\e a -> Map.insert (sh_name e) e a) Map.empty
+
+
 sectionHeader :: Parser SectionHeader
 sectionHeader = SectionHeader <$>
-        count 8 char
+        liftM stringTruncate (count 8 char)  -- this should be a combinator
     <*> word32le
     <*> word32le
     <*> word32le
@@ -194,33 +218,42 @@ sectionHeader = SectionHeader <$>
 jumpto :: Int -> Parser a -> Parser a
 jumpto = advanceDalpuntoAbsolute
 
+forwardParse :: (ExportDirectoryTable -> Word32)
+             -> ExportDirectoryTable
+             -> SectionHeader
+             -> Parser a
+             -> Parser a
+forwardParse f edt section p = advanceDalpuntoAbsolute pos p
+  where
+    pos = fromIntegral $ rvaToOffset (f edt) section
+    
+
 -- At some point... I'll tidy this up.
 
 exportData :: SectionHeader -> Parser ExportData
 exportData section = do
     logPosition "starting exportData..."
-    edt        <- exportDirectoryTable
-    
-    let eac    = fromIntegral $ edt_num_addr_table_entries edt
-    let ea_rva = fromIntegral $ 
-                   rvaToOffset (edt_export_addr_table_rva edt) section
-    ats        <- jumpto ea_rva (count eac exportAddress)
+    edt       <- exportDirectoryTable
+    logline   $ show edt
 
-    let enc    = fromIntegral $ edt_num_name_ptrs edt
-    let en_rva = fromIntegral $ 
-                   rvaToOffset (edt_name_ptr_table_rva edt) section
-    nptrs      <- jumpto en_rva (count enc word32le)
+    logPosition "export addr table"
+    let eac   = fromIntegral $ edt_num_addr_table_entries edt
+    logline   $ "num entries in export address table " ++ show eac
 
-    let eo_rva = fromIntegral $ 
-                   rvaToOffset (edt_ordinal_table_rva edt) section
-    ords      <- jumpto eo_rva (count enc word16le)
+    ats       <- forwardParse edt_export_addr_table_rva edt section
+                              (exportAddressTable eac)
+
+    logPosition "ptr_table"
+    let enc   = fromIntegral $ edt_num_name_ptrs edt
+    nptrs     <- forwardParse edt_name_ptr_table_rva edt section
+                              (count enc word32le)
+
+    ords      <- forwardParse edt_ordinal_table_rva edt section
+                               (count enc word16le)
 
     names     <- exportNames section nptrs
     
-    let nm_rva = fromIntegral $ 
-                   rvaToOffset (edt_name_rva edt) section
-
-    dllname   <- jumpto nm_rva cstring
+    dllname   <- forwardParse edt_name_rva edt section cstring
 
     return $ ExportData { ed_directory_table      = edt
                         , ed_export_address_table = ats
@@ -243,11 +276,15 @@ exportDirectoryTable = ExportDirectoryTable <$>
     <*> word32le
     <*> word32le
     <*> word32le
+    `substError` "error - export directory table"
+
+
+exportAddressTable :: Int -> Parser ExportAddressTable
+exportAddressTable n = ExportAddressTable <$> count n exportAddress 
 
 -- WRONG (for now) 
 exportAddress :: Parser ExportAddress
-exportAddress = EA_Export_RVA <$>
-        word32le
+exportAddress = EA_Export_RVA <$> word32le
 
 
 exportNames :: SectionHeader -> [Word32] -> Parser [String]
@@ -255,6 +292,7 @@ exportNames _       []     = return []
 exportNames section (x:xs) = mf <:> exportNames section xs
   where
     mf = jumpto (fromIntegral $ rvaToOffset x section) cstring
+         `substError` "export name..."
 
          
 rvaToOffset :: Word32 -> SectionHeader -> Word32

@@ -18,6 +18,7 @@ module Hurdle.TextDump where
 
 import Hurdle.Datatypes
 
+import qualified Data.Map as Map
 import Data.Word
 import Numeric
 import Text.PrettyPrint.HughesPJ
@@ -43,8 +44,8 @@ ppImage a =
     $+$ ppSignature           (image_signature a)
     $+$ ppImageCOFFHeader     (image_coff_header a)
     $+$ ppImageOptionalHeader (image_opt_header a)
-    $+$ (vcat $ map ppSectionHeader $ image_section_headers a)
-    $+$ ppExportData          (image_export_data a)
+    $+$ (vcat $ map ppSectionHeader $ Map.elems $ image_section_headers a)
+    $+$ maybe empty ppExportData          (image_export_data a)
 
 
 ppImageDOSHeader :: ImageDOSHeader -> Doc
@@ -224,9 +225,9 @@ ppExportDirectoryTable a =
        , ppf 8  "ordinal table rva"     (ppHex 8 . edt_ordinal_table_rva)
        ]
 
-ppExportAddressTable :: [ExportAddress] -> Doc
+ppExportAddressTable :: ExportAddressTable -> Doc
 ppExportAddressTable a = 
-    tableProlog "Export address" (24,6) (map field a)
+    tableProlog "Export address" (24,6) (map field $ getExportAddressTable a)
   where
     ppf    = ppField 4 24
     field (EA_Export_RVA w32)    = ppf 8 "export RVA"    (ppHex 8) w32

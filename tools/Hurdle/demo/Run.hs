@@ -9,10 +9,17 @@ import Hurdle.TextDump
 
 
 main :: IO ()
-main = demo
+main = demo2
 
-demo = do 
+
+demo1 = do 
   img  <- readDLL "dll/openvg32.dll"
+  printImage img
+  putStrLn ""  
+
+
+demo2 = do 
+  img  <- readDLL "dll/libportaudio.dll"
   printImage img
   putStrLn ""  
 
