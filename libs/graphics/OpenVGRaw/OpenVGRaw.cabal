@@ -1,0 +1,47 @@
+name:             OpenVGRaw
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Graphics
+synopsis:         Raw binding to OpenVG (ShivaVG-0.2.1 implementation).
+description:
+  A raw Haskell binding to OpenVG vector graphics API version 
+  1.0.1, specifically the ShivaVG-0.2.1 implementation.
+  .
+  Folowing Sven Panne\'s OpenGL model this is essentially a 1:1
+  mapping from Haskell to the OpenVG C API.
+  ,
+build-type:         Simple
+stability:          experimental
+cabal-version:      >= 1.2
+
+extra-source-files:
+  Changes
+
+library
+  hs-source-dirs:     src
+  build-depends:      base < 5,
+                      OpenGLRaw >= 1.1.0.1 && < 2
+
+  exposed-modules:
+    Graphics.Rendering.OpenVG.Raw.VG.Core101,
+    Graphics.Rendering.OpenVG.Raw.VGU.VGU
+
+  other-modules:
+    Graphics.Rendering.OpenVG.Raw.VG.BasicTypes,
+    Graphics.Rendering.OpenVG.Raw.VG.Constants,
+    Graphics.Rendering.OpenVG.Raw.VG.CFunDecls,
+    Graphics.Rendering.OpenVG.Raw.VGU.CInternals
+  
+  extensions:
+    ForeignFunctionInterface, CPP
+
+  ghc-options:  -Wall 
+  
+
+  
+  
+  
