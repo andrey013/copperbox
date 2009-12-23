@@ -28,9 +28,18 @@ defText = renderStyle (Style PageMode 80 1.5) . defs
 
 
 defs :: Image -> Doc
-defs a =     text "LIBRARY" <+> text (ed_dll_name $ image_export_data a)
-         $+$ text "EXPORTS"
-         $+$ outputExports ( image_export_data a)
+defs = maybe failureMessage exportData . image_export_data
 
-outputExports :: ExportData -> Doc
-outputExports = vcat . map text . ed_name_table
+
+exportData :: ExportData -> Doc
+exportData a = 
+        text "LIBRARY" <+> text (ed_dll_name a)
+    $+$ text "EXPORTS"
+    $+$ (vcat $ map text $ ed_name_table a)
+
+
+failureMessage :: Doc
+failureMessage = 
+        text "--- ERROR - .edata section not found in file ---"
+    $+$ text "--- please use pexports for this file...     ---"           
+

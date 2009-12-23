@@ -54,13 +54,6 @@ dllFile = do
     coffH  <- imageCOFFHeader
     optH   <- imageOptionalHeader
     secHs  <- sectionHeaders (fromIntegral $ ich_num_sections coffH)
-{-
-    expH   <- exportSectionHeader secHs
-    logline $ "secHs" ++ show secHs
-    let raw_data = fromIntegral $ sh_ptr_raw_data expH
-    logline $ "raw_data is " ++ show raw_data
-    expD   <- advanceAlfermataAbsolute raw_data (exportData expH)
--}  
     opt_expos <- optExportData secHs
     return $ Image { image_dos_header       = dosH
                    , image_signature        = sig
@@ -70,18 +63,11 @@ dllFile = do
                    , image_export_data      = opt_expos
                    }
 
--- bit crummy... section headers should be a Map
-
 optExportData :: SectionHeaders -> Parser (Maybe ExportData)
 optExportData = maybe (return Nothing) sk . Map.lookup ".edata" 
   where
     sk a = let raw_data = fromIntegral $ sh_ptr_raw_data a in
            liftM Just $ advanceAlfermataAbsolute raw_data (exportData a)
-
-
-
-exportSectionHeader (_:_:_:_:edata:_) = return $ edata
-exportSectionHeader _                 = reportError "no .edata" 
 
 
 

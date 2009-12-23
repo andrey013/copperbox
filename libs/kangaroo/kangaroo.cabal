@@ -13,17 +13,23 @@ description:
   an IOUArray Int Word8). Parsing proceeds by moving a cursor
   around, the array is left intact. This allows _jumping_
   inside the file and contrasts with other parser 
-  combinators that progress via comsumping input.
+  combinators that progress via consuming input.
   .
-  Caveat - the above of course means that the target file is 
-  obliged to be small enough to fit into memory. 
+  \* Caveat \* - the above of course means that the target file 
+  is obliged to be small enough to fit into memory. 
+  .
+  \*\* MAJOR CAVEAT \*\* - kangaroo is somewhat half-baked at the
+  moment - the parsing machinery seems good but the combinators
+  and primitive parsers need more work. I\'ve only released it on 
+  Hackage because I'm now using it with Hurdle which was already 
+  on Hackage.
   .
   Changelog:
   . 
   0.1.0 First version
   
 build-type:         Simple
-stability:          volatile
+stability:          half baked
 cabal-version:      >= 1.2
 
 extra-source-files:
