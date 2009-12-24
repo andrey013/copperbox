@@ -272,6 +272,7 @@ foreign import ccall unsafe "vg/openvg.h vgPaintPattern"
 
 -- | Images
 
+
 foreign import ccall unsafe "vg/openvg.h vgCreateImage"
     vgCreateImage :: VGImageFormat'
                   -> VGint
