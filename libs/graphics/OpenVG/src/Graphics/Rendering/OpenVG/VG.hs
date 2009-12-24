@@ -15,7 +15,6 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG (
-  module Graphics.Rendering.OpenVG.VG.BasicTypes,  
   module Graphics.Rendering.OpenVG.VG.Blending,
   module Graphics.Rendering.OpenVG.VG.DrawingContext,
   module Graphics.Rendering.OpenVG.VG.Extending,
@@ -28,7 +27,6 @@ module Graphics.Rendering.OpenVG.VG (
   module Graphics.Rendering.OpenVG.VG.ShivaExtensions
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes
 import Graphics.Rendering.OpenVG.VG.Blending
 import Graphics.Rendering.OpenVG.VG.DrawingContext
 import Graphics.Rendering.OpenVG.VG.Extending

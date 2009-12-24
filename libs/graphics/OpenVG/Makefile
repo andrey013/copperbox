@@ -4,6 +4,7 @@
 
 RUNHASK = c:/ghc/HP/2009.2.0.2/bin/runhaskell.exe
 GHC = c:/ghc/HP/2009.2.0.2/bin/ghc.exe
+GHC_PKG = c:/ghc/HP/2009.2.0.2/bin/ghc-pkg.exe
 
 haddock: 
 	$(RUNHASK) Setup.hs configure
@@ -29,8 +30,11 @@ install:
 unregister: 
 	$(RUNHASK) Setup.hs unregister
 
+pkglist:
+	$(GHC_PKG) list 
+
 # seems to hang msys...
 test:
-	$(RUNHASK) -i./demo -lopenvg32 demo/TestVgu.hs
+	$(RUNHASK) -i./demo -lopenvg32 demo/TestVgu.hs &
 
 

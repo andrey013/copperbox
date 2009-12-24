@@ -35,11 +35,14 @@ module Main where
 
 import VguUtils
 
-import Graphics.Rendering.OpenVG ( 
-        VGPath, VGfloat, 
+import Graphics.Rendering.OpenVG (  
         ArcType(..), line, polygon, roundRect, ellipse, arc,
         destroyContextSH )
 import qualified Graphics.Rendering.OpenVG as VG        
+
+
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGfloat, VGPath )
+
 import Graphics.UI.GLUT
 
 import Control.Monad ( zipWithM_ )

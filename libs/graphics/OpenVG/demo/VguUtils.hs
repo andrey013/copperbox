@@ -28,8 +28,10 @@ import Graphics.Rendering.OpenVG hiding (
         loadIdentity, lineWidth, scale, translate, matrixMode )
 import qualified Graphics.Rendering.OpenVG as VG
 
-import qualified Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGHandle )
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGPath )
+
 import Graphics.UI.GLUT 
+
 
 testCreatePath :: IO VGPath
 testCreatePath = createPath VG.Float 1.0 0.0 0 0 [CapabilityAll]

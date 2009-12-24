@@ -37,7 +37,9 @@ module Graphics.Rendering.OpenVG.VG.Paths (
   -- * Creating and destroying paths
   PathCapabilities(..),
   withPath,
-  createPath, clearPath, destroyPath,
+  createPath, 
+  clearPath, 
+  destroyPath,
 
   -- * Path queries
   format, datatype, pathScale, bias, numSegments, numCoords,
@@ -84,7 +86,9 @@ module Graphics.Rendering.OpenVG.VG.Paths (
 import Graphics.Rendering.OpenVG.VG.Parameters
 import Graphics.Rendering.OpenVG.VG.Utils ( 
     bitwiseOr, unbits32, unmarshalBool, marshalBool )
-import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGenum, VGint, VGfloat )
+
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( 
+    VGenum, VGint, VGfloat, VGPath )
 import Graphics.Rendering.OpenVG.Raw.VG.Paths
 
 import Data.StateVar (
