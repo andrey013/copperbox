@@ -27,21 +27,14 @@ import Graphics.Rendering.OpenVG.Raw.VG.BasicTypes
 import Foreign.Ptr ( Ptr )
 import Foreign.C.String ( CString )
 
--- 'suffix indicates a marshalled enum type.
-type VGErrorCode'           = VGenum
-type VGHardwareQueryResult' = VGenum
-type VGHardwareQueryType'   = VGenum
-type VGImageChannel'        = VGenum
-type VGImageFormat'         = VGenum
-type VGMaskOperation'       = VGenum
-type VGPaintMode'           = VGenum
-type VGPathDatatype'        = VGenum
-type VGStringID'            = VGenum
-type VGTilingMode'          = VGenum
+
+--------------------------------------------------------------------------------
+--
+-- Section 4 - Drawing Context
 
 
 foreign import ccall unsafe "vg/openvg.h vgGetError"
-    vgGetError :: IO VGErrorCode'
+    vgGetError :: IO VGenum
 
 
 
@@ -51,8 +44,10 @@ foreign import ccall unsafe "vg/openvg.h vgFlush"
 foreign import ccall unsafe "vg/openvg.h vgFinish"
     vgFinish ::  IO ()
 
+--------------------------------------------------------------------------------
+--
+-- Section 5 - Setting API Parameters
 
--- getters and setters
 foreign import ccall unsafe "vg/openvg.h vgSeti"
     vgSeti :: VGenum -> VGint -> IO ()
 
@@ -107,9 +102,9 @@ foreign import ccall unsafe "vg/openvg.h vgGetParameterfv"
 foreign import ccall unsafe "vg/openvg.h vgGetParameteriv"
     vgGetParameteriv :: VGHandle -> VGenum -> VGint -> IO (Ptr VGint)
 
+--------------------------------------------------------------------------------
+-- Section 6 - Rendering Quality
 
--- | Matrix Manipulation
--- set the current matrix to the identity matrix
 foreign import ccall unsafe "vg/openvg.h vgLoadIdentity"
     vgLoadIdentity :: IO ()
 
@@ -119,10 +114,8 @@ foreign import ccall unsafe "vg/openvg.h vgLoadMatrix"
 foreign import ccall unsafe "vg/openvg.h vgGetMatrix"
     vgGetMatrix :: IO (Ptr VGfloat)
 
--- multiple the current matrix by the given matrix
 foreign import ccall unsafe "vg/openvg.h vgMultMatrix"
     vgMultMatrix :: Ptr VGfloat -> IO ()
-
 
 foreign import ccall unsafe "vg/openvg.h vgTranslate"
     vgTranslate :: VGfloat -> VGfloat -> IO ()
@@ -136,31 +129,25 @@ foreign import ccall unsafe "vg/openvg.h vgShear"
 foreign import ccall unsafe "vg/openvg.h vgRotate"
     vgRotate :: VGfloat -> IO ()
 
--- | Masking and Clearing
+--------------------------------------------------------------------------------
+-- Section 7 - Scissoring
 
 -- Stubbed in shivaVG 0.2.1 (not implemented)
 foreign import ccall unsafe "vg/openvg.h vgMask"
-    vgMask :: VGImage -> VGMaskOperation' ->
-                  VGint -> VGint -> VGint -> VGint -> IO ()
+    vgMask :: VGImage -> VGenum -> VGint -> VGint -> VGint -> VGint -> IO ()
 
 
 foreign import ccall unsafe "vg/openvg.h vgClear"
     vgClear :: VGint -> VGint -> VGint -> VGint -> IO ()
 
 
+--------------------------------------------------------------------------------
+-- Section 8 - Paths
 
--- | Paths
 foreign import ccall unsafe "vg/openvg.h vgCreatePath"
-    vgCreatePath :: VGint
-                 -> VGPathDatatype'
-                 -> VGfloat
-                 -> VGfloat
-                 -> VGint
-                 -> VGint
+    vgCreatePath :: VGint -> VGenum -> VGfloat -> VGfloat -> VGint -> VGint
                  -> VGbitfield
                  -> IO VGPath
-
-
 
 foreign import ccall unsafe "vg/openvg.h vgClearPath"
     vgClearPath :: VGPath -> VGbitfield -> IO ()
@@ -177,25 +164,17 @@ foreign import ccall unsafe "vg/openvg.h vgGetPathCapabilities"
 foreign import ccall unsafe "vg/openvg.h vgAppendPath"
     vgAppendPath :: VGPath -> VGPath -> IO ()
 
--- append the data in /Ptr a/ to the path handle /VGPath/.
 foreign import ccall unsafe "vg/openvg.h vgAppendPathData"
     vgAppendPathData :: VGPath -> VGint -> Ptr VGubyte -> Ptr a -> IO ()
-
 
 foreign import ccall unsafe "vg/openvg.h vgModifyPathCoords"
     vgModifyPathCoords :: VGPath -> VGint -> VGint -> Ptr a -> IO ()
 
-
 foreign import ccall unsafe "vg/openvg.h vgTransformPath"
     vgTransformPath :: VGPath -> VGPath -> IO ()
 
-
 foreign import ccall unsafe "vg/openvg.h vgInterpolatePath"
-    vgInterpolatePath :: VGPath
-                      -> VGPath
-                      -> VGPath
-                      -> VGfloat
-                      -> IO VGboolean
+    vgInterpolatePath :: VGPath -> VGPath -> VGPath -> VGfloat -> IO VGboolean
 
 -- Stubbed in shivaVG 0.2.1 (not implemented)
 foreign import ccall unsafe "vg/openvg.h vgPathLength"
@@ -205,40 +184,32 @@ foreign import ccall unsafe "vg/openvg.h vgPathLength"
 
 -- Stubbed in shivaVG 0.2.1 (not implemented)
 foreign import ccall unsafe "vg/openvg.h vgPointAlongPath"
-    vgPointAlongPath :: VGPath
-                     -> VGint
-                     -> VGint
-                     -> VGfloat
-                     -> Ptr VGfloat
-                     -> Ptr VGfloat
-                     -> Ptr VGfloat
-                     -> Ptr VGfloat
+    vgPointAlongPath :: VGPath -> VGint -> VGint -> VGfloat
+                     -> Ptr VGfloat -> Ptr VGfloat
+                     -> Ptr VGfloat -> Ptr VGfloat
                      -> IO ()
 
 
 foreign import ccall unsafe "vg/openvg.h vgPathBounds"
-    vgPathBounds :: VGPath
-                 -> Ptr VGfloat
-                 -> Ptr VGfloat
-                 -> Ptr VGfloat
-                 -> Ptr VGfloat
+    vgPathBounds :: VGPath 
+                 -> Ptr VGfloat -> Ptr VGfloat 
+                 -> Ptr VGfloat -> Ptr VGfloat
                  -> IO ()
 
 
 foreign import ccall unsafe "vg/openvg.h vgPathTransformedBounds"
     vgPathTransformedBounds :: VGPath
-                            -> Ptr VGfloat
-                            -> Ptr VGfloat
-                            -> Ptr VGfloat
-                            -> Ptr VGfloat
+                            -> Ptr VGfloat -> Ptr VGfloat
+                            -> Ptr VGfloat -> Ptr VGfloat
                             -> IO ()
 
 foreign import ccall unsafe "vg/openvg.h vgDrawPath"
     vgDrawPath :: VGPath -> VGbitfield -> IO ()
 
 
+--------------------------------------------------------------------------------
+-- Section 9 - Paint
 
--- | Paint
 foreign import ccall unsafe "vg/openvg.h vgCreatePaint"
     vgCreatePaint :: IO VGPaint
 
@@ -248,38 +219,33 @@ foreign import ccall unsafe "vg/openvg.h vgDestroyPaint"
 foreign import ccall unsafe "vg/openvg.h vgSetPaint"
     vgSetPaint :: VGPaint -> VGbitfield -> IO ()
 
-{-
--- TODO vgGetPaint seems to be missing in the dll... ?
-foreign import ccall unsafe "vg/openvg.h vgGetPaint"
-    vgGetPaint :: VGPaintMode' -> IO VGPaint
--}
 
-{-
--- TODO vgSetColor seems to be missing in the dll... ?
-foreign import ccall unsafe "vg/openvg.h vgSetColor"
-    vgSetColor :: VGPaint -> VGuint -> IO ()
--}
+-- vgGetPaint - NOT IMPLEMENTED BY SHIVA-VG
+-- foreign import ccall unsafe "vg/openvg.h vgGetPaint"
+--     vgGetPaint :: VGenum -> IO VGPaint
 
-{-
--- TODO vgGetColor seems to be missing in the dll... ?
-foreign import ccall unsafe "vg/openvg.h vgGetColor"
-    vgGetColor :: VGPaint -> IO VGuint
--}
+
+
+-- vgSetColor - NOT IMPLEMENTED BY SHIVA-VG
+-- foreign import ccall unsafe "vg/openvg.h vgSetColor"
+--     vgSetColor :: VGPaint -> VGuint -> IO ()
+
+
+
+-- vgGetColor - NOT IMPLEMENTED BY SHIVA-VG
+-- foreign import ccall unsafe "vg/openvg.h vgGetColor"
+--     vgGetColor :: VGPaint -> IO VGuint
+
 
 foreign import ccall unsafe "vg/openvg.h vgPaintPattern"
     vgPaintPattern :: VGPaint -> VGImage -> IO ()
 
-
--- | Images
+--------------------------------------------------------------------------------
+-- Section 10 - Images
 
 
 foreign import ccall unsafe "vg/openvg.h vgCreateImage"
-    vgCreateImage :: VGImageFormat'
-                  -> VGint
-                  -> VGint
-                  -> VGbitfield
-                  -> IO VGImage
-
+    vgCreateImage :: VGenum -> VGint -> VGint -> VGbitfield -> IO VGImage
 
 foreign import ccall unsafe "vg/openvg.h vgDestroyImage"
     vgDestroyImage :: VGImage -> IO ()
@@ -288,26 +254,14 @@ foreign import ccall unsafe "vg/openvg.h vgClearImage"
     vgClearImage :: VGImage -> VGint -> VGint -> VGint -> VGint -> IO ()
 
 foreign import ccall unsafe "vg/openvg.h vgImageSubData"
-    vgImageSubData :: VGImage
-                   -> Ptr a
-                   -> VGint
-                   -> VGImageFormat'
-                   -> VGint
-                   -> VGint
-                   -> VGint
-                   -> VGint
+    vgImageSubData :: VGImage -> Ptr a -> VGint -> VGenum
+                   -> VGint -> VGint -> VGint -> VGint
                    -> IO ()
 
 
 foreign import ccall unsafe "vg/openvg.h vgGetImageSubData"
-    vgGetImageSubData :: VGImage
-                      -> Ptr a
-                      -> VGint
-                      -> VGImageFormat'
-                      -> VGint
-                      -> VGint
-                      -> VGint
-                      -> VGint
+    vgGetImageSubData :: VGImage -> Ptr a -> VGint -> VGenum
+                      -> VGint -> VGint -> VGint -> VGint
                       -> IO ()
 
 -- Stubbed in shivaVG 0.2.1 (not implemented)
@@ -333,58 +287,34 @@ foreign import ccall unsafe "vg/openvg.h vgDrawImage"
     vgDrawImage :: VGImage -> IO ()
 
 foreign import ccall unsafe "vg/openvg.h vgSetPixels"
-    vgSetPixels :: VGint
-                -> VGint
-                -> VGImage
-                -> VGint
-                -> VGint
-                -> VGint
-                -> VGint
+    vgSetPixels :: VGint -> VGint -> VGImage
+                -> VGint -> VGint -> VGint -> VGint
                 -> IO ()
 
 foreign import ccall unsafe "vg/openvg.h vgWritePixels"
-    vgWritePixels :: Ptr a
-                  -> VGint
-                  -> VGImageFormat'
-                  -> VGint
-                  -> VGint
-                  -> VGint
-                  -> VGint
+    vgWritePixels :: Ptr a -> VGint -> VGenum
+                  -> VGint -> VGint -> VGint -> VGint
                   -> IO ()
 
 
 foreign import ccall unsafe "vg/openvg.h vgGetPixels"
-    vgGetPixels :: VGImage
-                -> VGint
-                -> VGint
-                -> VGint
-                -> VGint
-                -> VGint
-                -> VGint
+    vgGetPixels :: VGImage -> VGint -> VGint
+                -> VGint -> VGint -> VGint -> VGint
                 -> IO ()
 
 foreign import ccall unsafe "vg/openvg.h vgReadPixels"
-    vgReadPixels :: Ptr a
-                 -> VGint
-                 -> VGImageFormat'
-                 -> VGint
-                 -> VGint
-                 -> VGint
-                 -> VGint
+    vgReadPixels :: Ptr a -> VGint -> VGenum 
+                 -> VGint -> VGint -> VGint -> VGint
                  -> IO ()
 
 
 foreign import ccall unsafe "vg/openvg.h vgCopyPixels"
-    vgCopyPixels :: VGint
-                 -> VGint
-                 -> VGint
-                 -> VGint
-                 -> VGint
-                 -> VGint
+    vgCopyPixels :: VGint -> VGint
+                 -> VGint -> VGint -> VGint -> VGint
                  -> IO ()
 
-
--- | Image Filters
+--------------------------------------------------------------------------------
+-- Section 11 - Image Filters
 
 
 -- Stubbed in shivaVG 0.2.1 (not implemented)
@@ -394,84 +324,59 @@ foreign import ccall unsafe "vg/openvg.h vgColorMatrix"
 
 -- Stubbed in shivaVG 0.2.1 (not implemented)
 foreign import ccall unsafe "vg/openvg.h vgConvolve"
-    vgConvolve :: VGImage
-               -> VGImage
-               -> VGint
-               -> VGint
-               -> VGint
-               -> VGint
-               -> Ptr VGshort
-               -> VGfloat
-               -> VGfloat
-               -> VGTilingMode'
+    vgConvolve :: VGImage -> VGImage
+               -> VGint -> VGint -> VGint -> VGint
+               -> Ptr VGshort 
+               -> VGfloat -> VGfloat
+               -> VGenum
                -> IO ()
 
 -- Stubbed in shivaVG 0.2.1 (not implemented)
 foreign import ccall unsafe "vg/openvg.h vgSeparableConvolve"
-    vgSeparableConvolve :: VGImage
-                        -> VGImage
-                        -> VGint
-                        -> VGint
-                        -> VGint
-                        -> VGint
-                        -> Ptr VGshort
-                        -> Ptr VGshort
-                        -> VGfloat
-                        -> VGfloat
-                        -> VGTilingMode'
+    vgSeparableConvolve :: VGImage -> VGImage
+                        -> VGint -> VGint -> VGint -> VGint
+                        -> Ptr VGshort -> Ptr VGshort
+                        -> VGfloat -> VGfloat
+                        -> VGenum
                         -> IO ()
 
 
 -- Stubbed in shivaVG 0.2.1 (not implemented)
 foreign import ccall unsafe "vg/openvg.h vgGaussianBlur"
-    vgGaussianBlur :: VGImage
-                   -> VGImage
-                   -> VGfloat
-                   -> VGfloat
-                   -> VGTilingMode'
+    vgGaussianBlur :: VGImage -> VGImage -> VGfloat
+                   -> VGfloat -> VGenum
                    -> IO ()
 
 
 -- Stubbed in shivaVG 0.2.1 (not implemented)
 foreign import ccall unsafe "vg/openvg.h vgLookup"
-    vgLookup :: VGImage
-             -> VGImage
-             -> Ptr VGubyte
-             -> Ptr VGubyte
-             -> Ptr VGubyte
-             -> Ptr VGubyte
-             -> VGboolean
-             -> VGboolean
+    vgLookup :: VGImage -> VGImage 
+             -> Ptr VGubyte -> Ptr VGubyte 
+             -> Ptr VGubyte -> Ptr VGubyte
+             -> VGboolean -> VGboolean
              -> IO ()
 
 
 -- Stubbed in shivaVG 0.2.1 (not implemented)
 foreign import ccall unsafe "vg/openvg.h vgLookupSingle"
-    vgLookupSingle :: VGImage
-                   -> VGImage
+    vgLookupSingle :: VGImage -> VGImage
                    -> Ptr VGuint
-                   -> VGImageChannel'
-                   -> VGboolean
-                   -> VGboolean
+                   -> VGenum
+                   -> VGboolean -> VGboolean
                    -> IO ()
 
+--------------------------------------------------------------------------------
+-- Section 13 - Querying Hardware
 
--- | Hardware Queries
-
--- | Query hardware capabilites
-
--- Implemented in shivaVG 0.2.1
 foreign import ccall unsafe "vg/openvg.h vgHardwareQuery"
-    vgHardwareQuery :: VGHardwareQueryType'
-                    -> VGint
-                    -> IO VGHardwareQueryResult'
+    vgHardwareQuery :: VGenum -> VGint -> IO VGenum
 
--- | Renderer and Extension Information
 foreign import ccall unsafe "vg/openvg.h vgGetString"
-    vgGetString :: VGStringID' -> IO CString
+    vgGetString :: VGenum -> IO CString
 
--- | Shiva-VG Extensions
--- See the README in the shiva archive.
+--------------------------------------------------------------------------------
+-- Shiva-VG Extensions - see the README in the shiva archive.
+
 foreign import ccall unsafe "vg/openvg.h vgCreateContextSH"
     vgCreateContextSH :: VGint -> VGint -> IO VGboolean
 

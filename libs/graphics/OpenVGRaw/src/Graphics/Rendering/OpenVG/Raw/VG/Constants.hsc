@@ -23,6 +23,9 @@ module Graphics.Rendering.OpenVG.Raw.VG.Constants where
 
 import Graphics.Rendering.OpenVG.Raw.VG.BasicTypes
 
+vg_OPENVG_VERSION_1_0_1 :: VGint
+vg_OPENVG_VERSION_1_0_1 = #const OPENVG_VERSION_1_0_1
+
 vg_PATH_FORMAT_STANDARD :: VGint
 vg_PATH_FORMAT_STANDARD = #const VG_PATH_FORMAT_STANDARD
 
@@ -32,9 +35,7 @@ vg_MAXSHORT = #const VG_MAXSHORT
 vg_MAXINT :: VGint
 vg_MAXINT = #const VG_MAXINT
 
--- shiva-vg has no VG_MAXFLOAT
--- vg_MAXFLOAT :: VGfloat
--- vg_MAXFLOAT = #const VG_MAXFLOAT
+-- VG_MAX_FLOAT is part of the VGParamType enumeration
 
 
 -- | Enumerations

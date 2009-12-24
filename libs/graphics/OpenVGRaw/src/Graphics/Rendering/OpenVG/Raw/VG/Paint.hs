@@ -35,10 +35,9 @@ module Graphics.Rendering.OpenVG.Raw.VG.Paint (
   vgCreatePaint, 
   vgDestroyPaint, 
   vgSetPaint, 
--- Missing in ShivaVG?
---  vgGetPaint,  
---  vgSetColor,
---  vgGetColor,
+--  vgGetPaint,         NOT IMPLEMENTED BY SHIVA-VG  
+--  vgSetColor,         NOT IMPLEMENTED BY SHIVA-VG  
+--  vgGetColor,         NOT IMPLEMENTED BY SHIVA-VG  
   vgPaintPattern
   
 ) where

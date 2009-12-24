@@ -27,26 +27,29 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   VGbitfield, 
   VGboolean, 
   VGfloat,
-  VGenum,
   
-  vg_FALSE, 
-  vg_TRUE,
+  VGenum,
   
   -- * Handle-based Types
   VGHandle,
-  vg_INVALID_HANDLE,
   
   VGPath, 
   VGImage, 
   VGPaint,
 
   -- Constants.hsc
-  vg_PATH_FORMAT_STANDARD,
+  -- Section 3 - Constants
+  vg_OPENVG_VERSION_1_0_1,
+  
+  vg_FALSE, 
+  vg_TRUE,
+  
   vg_MAXSHORT,
   vg_MAXINT,
+ 
+  vg_INVALID_HANDLE,
 
-
-
+  -- Section 4 - Drawing Context
   vg_NO_ERROR,
   vg_BAD_HANDLE_ERROR,
   vg_ILLEGAL_ARGUMENT_ERROR,
@@ -57,6 +60,8 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vg_IMAGE_IN_USE_ERROR,
   vg_NO_CONTEXT_ERROR,
 
+
+  -- Section 5 - Setting API Parameters
   vg_MATRIX_MODE,
   vg_FILL_RULE,
   vg_IMAGE_QUALITY,
@@ -101,6 +106,7 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vg_MAX_FLOAT,
   vg_MAX_GAUSSIAN_STD_DEVIATION,
 
+  -- Section 6 - Rendering Quality and Antialiasing
   vg_RENDERING_QUALITY_NONANTIALIASED,
   vg_RENDERING_QUALITY_FASTER,
   vg_RENDERING_QUALITY_BETTER,
@@ -117,7 +123,7 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vg_MATRIX_FILL_PAINT_TO_USER,
   vg_MATRIX_STROKE_PAINT_TO_USER,
 
-
+  -- Section 7 - Scissoring
   vg_CLEAR_MASK,
   vg_FILL_MASK,
   vg_SET_MASK,
@@ -125,6 +131,8 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vg_INTERSECT_MASK,
   vg_SUBTRACT_MASK,
     
+  -- Section 8 - Paths
+  vg_PATH_FORMAT_STANDARD,
     
   vg_PATH_DATATYPE_S_8,
   vg_PATH_DATATYPE_S_16,
@@ -133,7 +141,6 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
 
   vg_ABSOLUTE,
   vg_RELATIVE,
-
 
   vg_CLOSE_PATH,
   vg_MOVE_TO,
@@ -190,33 +197,28 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vg_PATH_CAPABILITY_PATH_TRANSFORMED_BOUNDS,
   vg_PATH_CAPABILITY_ALL,
 
-
   vg_PATH_FORMAT,
   vg_PATH_DATATYPE,
   vg_PATH_SCALE,
   vg_PATH_BIAS,
   vg_PATH_NUM_SEGMENTS,
   vg_PATH_NUM_COORDS,
- 
-  
+   
   vg_CAP_BUTT,
   vg_CAP_ROUND,
   vg_CAP_SQUARE,
  
-
   vg_JOIN_MITER,
   vg_JOIN_ROUND,
   vg_JOIN_BEVEL,
-
-  
+ 
   vg_EVEN_ODD,
   vg_NON_ZERO,
-
 
   vg_STROKE_PATH,
   vg_FILL_PATH,
 
-
+  -- Section 9 - Paint
   vg_PAINT_TYPE,
   vg_PAINT_COLOR,
   vg_PAINT_COLOR_RAMP_SPREAD_MODE,
@@ -246,7 +248,7 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vg_TILE_REPEAT,
   vg_TILE_REFLECT,
 
-
+  -- Section 10 - Images
   vg_sRGBX_8888,
   vg_sRGBA_8888,
   vg_sRGBA_8888_PRE,
@@ -302,11 +304,13 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vg_DRAW_IMAGE_MULTIPLY,
   vg_DRAW_IMAGE_STENCIL,
  
+  -- Section 11 - Image Filters
   vg_RED,
   vg_GREEN,
   vg_BLUE,
   vg_ALPHA,
 
+  -- Section 12 - Blending
   vg_BLEND_SRC,
   vg_BLEND_SRC_OVER,
   vg_BLEND_DST_OVER,
@@ -322,12 +326,14 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vg_BLEND_SRC_ATOP_SH,
   vg_BLEND_DST_ATOP_SH,
   
+  -- Section 13 - Querying Hardware Capabilities
   vg_IMAGE_FORMAT_QUERY,
   vg_PATH_DATATYPE_QUERY,
   
   vg_HARDWARE_ACCELERATED,
   vg_HARDWARE_UNACCELERATED,
  
+  -- Section 14 - Extending the API
   vg_VENDOR,
   vg_RENDERER,
   vg_VERSION,
@@ -335,12 +341,15 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
 
   -- CFunDecls.hsc
   -- * Functions
+  -- Section 4 - Drawing Context
   vgGetError,
   vgFlush,
   vgFinish,
+  
+  -- Section 5 - Setting API parameters
   vgSeti,
   vgSetf,
-  -- vgSetfv  MISSING?
+  vgSetfv,
   vgSetiv,
   vgGetf,
   vgGeti,
@@ -356,6 +365,8 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vgGetParameterVectorSize,
   vgGetParameterfv,
   vgGetParameteriv,
+  
+  -- Section 6 - Rendering Quality
   vgLoadIdentity,
   vgLoadMatrix,
   vgGetMatrix,
@@ -364,8 +375,12 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vgScale,
   vgShear,
   vgRotate,
+  
+  -- Section 7 - Scissoring
   vgMask,
   vgClear,
+  
+  -- Section 8 - Paths
   vgCreatePath,
   vgClearPath,
   vgDestroyPath,
@@ -381,10 +396,15 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vgPathBounds,
   vgPathTransformedBounds,
   vgDrawPath,
+  
+  -- Section 9 - Paint
   vgCreatePaint,
   vgDestroyPaint,
   vgSetPaint,
+--  vgGetPaint,         NOT IMPLEMENTED BY SHIVA-VG
   vgPaintPattern,
+  
+  -- Section 10 - Images
   vgCreateImage,
   vgDestroyImage,
   vgClearImage,
@@ -399,14 +419,20 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vgGetPixels,
   vgReadPixels,
   vgCopyPixels,
+  
+  -- Section 11 - Image Filters
   vgColorMatrix,
   vgConvolve,
   vgSeparableConvolve,
   vgGaussianBlur,
   vgLookup,
   vgLookupSingle,
+  
+  -- Section 13 - Querying Harware
   vgHardwareQuery,
   vgGetString,
+  
+  -- ShivaVG extensions
   vgCreateContextSH,
   vgResizeSurfaceSH,
   vgDestroyContextSH

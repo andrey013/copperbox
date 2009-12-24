@@ -64,7 +64,7 @@ module Graphics.Rendering.OpenVG.Raw.VG.Parameters (
   -- * Functions
   vgSetf, 
   vgSeti, 
---  vgSetfv, MISSING?
+  vgSetfv,
   vgSetiv,
   
   vgGetf, 
