@@ -19,17 +19,26 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
 
   -- BasicTypes.hsc
   -- * Primitive Types
-  VGbyte, VGubyte, VGshort, VGint, VGuint, VGbitfield, 
-  VGboolean, VGfloat,
+  VGbyte, 
+  VGubyte, 
+  VGshort, 
+  VGint, 
+  VGuint, 
+  VGbitfield, 
+  VGboolean, 
+  VGfloat,
   VGenum,
   
-  vg_FALSE, vg_TRUE,
+  vg_FALSE, 
+  vg_TRUE,
   
   -- * Handle-based Types
   VGHandle,
   vg_INVALID_HANDLE,
   
-  VGPath, VGImage, VGPaint,
+  VGPath, 
+  VGImage, 
+  VGPaint,
 
   -- Constants.hsc
   vg_PATH_FORMAT_STANDARD,
@@ -331,6 +340,7 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vgFinish,
   vgSeti,
   vgSetf,
+  -- vgSetfv  MISSING?
   vgSetiv,
   vgGetf,
   vgGeti,
@@ -359,8 +369,8 @@ module Graphics.Rendering.OpenVG.Raw.VG.Core101 (
   vgCreatePath,
   vgClearPath,
   vgDestroyPath,
-  vgRemovePathCapabilities,
   vgGetPathCapabilities,
+  vgRemovePathCapabilities,
   vgAppendPath,
   vgAppendPathData,
   vgModifyPathCoords,

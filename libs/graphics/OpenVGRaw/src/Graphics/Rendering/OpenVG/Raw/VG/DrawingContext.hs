@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.OpenVG.Raw.VG.ShivaExtensions
+-- Module      :  Graphics.Rendering.OpenVG.Raw.VG.DrawingContext
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --

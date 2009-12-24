@@ -12,7 +12,7 @@ description:
   1.0.1, specifically the ShivaVG-0.2.1 implementation.
   .
   Following Sven Panne\'s OpenGL model this is essentially a 1:1
-  mapping from Haskell to the OpenVG C API.
+  mapping between the OpenVG C API and Haskell.
   .
 build-type:         Simple
 stability:          experimental
@@ -33,6 +33,11 @@ library
     Graphics.Rendering.OpenVG.Raw.VG.Extending,
     Graphics.Rendering.OpenVG.Raw.VG.Images,
     Graphics.Rendering.OpenVG.Raw.VG.Paint,
+    Graphics.Rendering.OpenVG.Raw.VG.Parameters,
+    Graphics.Rendering.OpenVG.Raw.VG.Paths,
+    Graphics.Rendering.OpenVG.Raw.VG.RenderingQuality,
+    Graphics.Rendering.OpenVG.Raw.VG.Scissoring,
+    Graphics.Rendering.OpenVG.Raw.VG.ShivaExtensions,
     Graphics.Rendering.OpenVG.Raw.VGU.VGU
 
   other-modules:
