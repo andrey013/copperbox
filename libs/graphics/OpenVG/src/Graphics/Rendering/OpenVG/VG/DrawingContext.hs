@@ -27,20 +27,9 @@ module Graphics.Rendering.OpenVG.VG.DrawingContext (
 
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
-        vgGetError, vgFlush, vgFinish ) 
 
-import Graphics.Rendering.OpenVG.VG.Constants (
-      vg_NO_ERROR, 
-      vg_BAD_HANDLE_ERROR, 
-      vg_ILLEGAL_ARGUMENT_ERROR,
-      vg_OUT_OF_MEMORY_ERROR, 
-      vg_PATH_CAPABILITY_ERROR,
-      vg_UNSUPPORTED_IMAGE_FORMAT_ERROR, 
-      vg_UNSUPPORTED_PATH_FORMAT_ERROR,
-      vg_IMAGE_IN_USE_ERROR,
-      vg_NO_CONTEXT_ERROR ) 
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGenum )
+import Graphics.Rendering.OpenVG.Raw.VG.DrawingContext
 
 import Control.Monad ( liftM )
 

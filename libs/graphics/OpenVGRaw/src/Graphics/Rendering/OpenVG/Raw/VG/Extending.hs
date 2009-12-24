@@ -17,6 +17,12 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.Raw.VG.Extending (
+  -- * Tokens
+  vg_VENDOR,
+  vg_RENDERER,
+  vg_VERSION,
+  vg_EXTENSIONS,
+ 
   -- * Functions
   vgGetString
 ) where

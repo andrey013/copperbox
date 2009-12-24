@@ -25,6 +25,7 @@
 --
 --------------------------------------------------------------------------------
 
+
 module Graphics.Rendering.OpenVG.VG.Paths (
   -- * Datatypes
   PathDatatype(..),
@@ -80,29 +81,11 @@ module Graphics.Rendering.OpenVG.VG.Paths (
   fillStrokePath
 ) where
 
-
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGint, VGfloat, VGPath )
-import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
-    vgCreatePath, vgClearPath, vgDestroyPath, 
-    vgRemovePathCapabilities, vgGetPathCapabilities, 
-    vgAppendPath, vgAppendPathData, vgModifyPathCoords,
-    vgTransformPath, vgInterpolatePath,    
-    vgDrawPath )
-
-import Graphics.Rendering.OpenVG.VG.Constants
-
-import Graphics.Rendering.OpenVG.VG.Parameters ( 
-    ParamType ( FillRule, 
-                StrokeLineWidth, StrokeCapStyle,
-                StrokeJoinStyle, StrokeMiterLimit, 
-                StrokeDashPattern, 
-                StrokeDashPhase, StrokeDashPhaseReset,
-                MaxDashCount ),
-    getParameteri, getParameterf, seti, setf, setfv, geti )     
-    
+import Graphics.Rendering.OpenVG.VG.Parameters
 import Graphics.Rendering.OpenVG.VG.Utils ( 
-    bitwiseOr, unbits32, marshalBool, unmarshalBool )
+    bitwiseOr, unbits32, unmarshalBool, marshalBool )
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGenum, VGint, VGfloat )
+import Graphics.Rendering.OpenVG.Raw.VG.Paths
 
 import Data.StateVar (
     SettableStateVar, makeSettableStateVar,
@@ -313,7 +296,21 @@ instance StorablePathData Int8
 instance StorablePathData Int16
 instance StorablePathData Int32
 instance StorablePathData VGfloat
-    
+
+data PathData = S_8     Int8
+              | S_16    Int16
+              | S_32    Int32
+              | F_float Float
+  deriving (Eq,Ord,Show)
+
+{-
+-- final ptr is @const void * pathData@ 
+
+appendPathData :: VGPath -> VGint -> Ptr VGubyte -> Ptr a -> IO ()
+appendPathData = vgAppendPathData
+-}
+
+
 -- | @appendPathData@ - TODO is this implementation valid?
 appendPathData :: StorablePathData a => VGPath -> [PathCommand] -> [a] -> IO ()
 appendPathData h cs ds = do 

@@ -40,26 +40,10 @@ module Graphics.Rendering.OpenVG.VG.RenderingQuality (
   rotate
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGfloat, VGenum )
-import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
-    vgLoadIdentity, vgLoadMatrix, vgGetMatrix, vgMultMatrix, 
-    vgTranslate, vgScale, vgShear, vgRotate
-    )
-import Graphics.Rendering.OpenVG.VG.Constants (
-    vg_RENDERING_QUALITY_NONANTIALIASED, vg_RENDERING_QUALITY_FASTER,
-    vg_RENDERING_QUALITY_BETTER,
-    --
-    vg_PIXEL_LAYOUT_UNKNOWN, 
-    vg_PIXEL_LAYOUT_RGB_VERTICAL, vg_PIXEL_LAYOUT_BGR_VERTICAL,
-    vg_PIXEL_LAYOUT_RGB_HORIZONTAL, vg_PIXEL_LAYOUT_BGR_HORIZONTAL,
-    --
-    vg_MATRIX_PATH_USER_TO_SURFACE, vg_MATRIX_IMAGE_USER_TO_SURFACE, 
-    vg_MATRIX_FILL_PAINT_TO_USER, vg_MATRIX_STROKE_PAINT_TO_USER, 
-    )  
-import Graphics.Rendering.OpenVG.VG.Parameters ( 
-    ParamType ( MatrixMode, RenderingQuality, ScreenLayout ), 
-    seti, geti  )
+import Graphics.Rendering.OpenVG.VG.Parameters
+
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGenum, VGfloat )
+import Graphics.Rendering.OpenVG.Raw.VG.RenderingQuality
 
 import Data.StateVar (
     StateVar(), makeStateVar, SettableStateVar, makeSettableStateVar )   

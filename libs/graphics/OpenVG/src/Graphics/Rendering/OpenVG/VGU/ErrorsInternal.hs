@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Graphics.Rendering.OpenVG.VG.Errors
+-- Module      :  Graphics.Rendering.OpenVG.VG.ErrorsInternal
 -- Copyright   :  (c) Stephen Tetley 2008, 2009
 -- License     :  BSD3
 --
@@ -12,7 +12,6 @@
 --
 -- VGU error codes.
 --
--- Portions of code have been copied from 
 -- 
 --------------------------------------------------------------------------------
 
@@ -22,8 +21,8 @@ module Graphics.Rendering.OpenVG.VGU.ErrorsInternal (
    unmarshalErrorCode
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.VGU.CInternals
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGenum )
+import Graphics.Rendering.OpenVG.Raw.VGU.VGU
 
 import Control.Monad ( liftM )
 

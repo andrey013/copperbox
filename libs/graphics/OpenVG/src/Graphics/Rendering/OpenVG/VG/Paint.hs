@@ -44,34 +44,16 @@ module Graphics.Rendering.OpenVG.VG.Paint (
   
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGint, VGfloat, VGImage, VGPaint )
-import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
-    vgCreatePaint, vgDestroyPaint, 
-    vgSetPaint,
-    vgPaintPattern )
-    
-import Graphics.Rendering.OpenVG.VG.Constants (
-    vg_PAINT_TYPE, vg_PAINT_COLOR, vg_PAINT_COLOR_RAMP_SPREAD_MODE, 
-    vg_PAINT_COLOR_RAMP_STOPS, vg_PAINT_COLOR_RAMP_PREMULTIPLIED, 
-    vg_PAINT_LINEAR_GRADIENT, vg_PAINT_RADIAL_GRADIENT, 
-    vg_PAINT_PATTERN_TILING_MODE,
 
-    vg_PAINT_TYPE_COLOR, vg_PAINT_TYPE_LINEAR_GRADIENT, 
-    vg_PAINT_TYPE_RADIAL_GRADIENT, vg_PAINT_TYPE_PATTERN,
 
-    vg_COLOR_RAMP_SPREAD_PAD, vg_COLOR_RAMP_SPREAD_REPEAT, 
-    vg_COLOR_RAMP_SPREAD_REFLECT,
-            
-    vg_TILE_FILL, vg_TILE_PAD, vg_TILE_REPEAT, vg_TILE_REFLECT )
 
-import Graphics.Rendering.OpenVG.VG.Parameters ( 
-    ParamType( MaxColorRampStops ),
-    geti, getParameteri, 
-    setParameteri, setParameterfv ) 
-    
-import Graphics.Rendering.OpenVG.VG.Paths ( PaintMode(..), marshalPaintMode )
+import Graphics.Rendering.OpenVG.VG.Parameters
+import Graphics.Rendering.OpenVG.VG.Paths ( PaintMode, marshalPaintMode )
 import Graphics.Rendering.OpenVG.VG.Utils ( bitwiseOr, marshalBool )
+
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( 
+    VGenum, VGint, VGfloat, VGImage, VGPaint )
+import Graphics.Rendering.OpenVG.Raw.VG.Paint
 
 import Graphics.Rendering.OpenGL.GL.VertexSpec ( Color4(..) )
 

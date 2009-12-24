@@ -33,7 +33,7 @@
 
 module Main where
 
-import TestUtils
+import VguUtils
 
 import Graphics.Rendering.OpenVG ( 
         VGPath, VGfloat, 
@@ -124,4 +124,3 @@ main = do
 
 -- testDisplay :: IO ()
 
-        

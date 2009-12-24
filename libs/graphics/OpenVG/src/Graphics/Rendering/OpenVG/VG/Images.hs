@@ -57,39 +57,12 @@ module Graphics.Rendering.OpenVG.VG.Images (
      
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGint, VGImage )
-import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
-    vgCreateImage, vgDestroyImage, vgClearImage,
-    vgImageSubData, vgGetImageSubData, 
-    vgCopyImage, vgDrawImage, 
-    vgSetPixels, vgWritePixels, vgGetPixels, vgReadPixels, vgCopyPixels )
-import Graphics.Rendering.OpenVG.VG.Constants (
-    vg_sRGBX_8888, vg_sRGBA_8888, vg_sRGBA_8888_PRE, vg_sRGB_565,
-    vg_sRGBA_5551, vg_sRGBA_4444, vg_sL_8, vg_lRGBX_8888,
-    vg_lRGBA_8888, vg_lRGBA_8888_PRE, vg_lL_8, vg_A_8, vg_BW_1,
 
-    vg_sXRGB_8888, vg_sARGB_8888, vg_sARGB_8888_PRE, vg_sARGB_1555,
-    vg_sARGB_4444, vg_lXRGB_8888, vg_lARGB_8888, vg_lARGB_8888_PRE,
-    vg_sBGRX_8888, vg_sBGRA_8888, vg_sBGRA_8888_PRE, vg_sBGR_565,
-    vg_sBGRA_5551, vg_sBGRA_4444, vg_lBGRX_8888, vg_lBGRA_8888,
-    vg_lBGRA_8888_PRE, vg_sXBGR_8888, vg_sABGR_8888,
-    vg_sABGR_8888_PRE, vg_sABGR_1555, vg_sABGR_4444, vg_lXBGR_8888,
-    vg_lABGR_8888, vg_lABGR_8888_PRE,
-    
-    vg_IMAGE_QUALITY_NONANTIALIASED, vg_IMAGE_QUALITY_FASTER, 
-    vg_IMAGE_QUALITY_BETTER, 
-    vg_IMAGE_FORMAT, vg_IMAGE_WIDTH, vg_IMAGE_HEIGHT,
-    vg_DRAW_IMAGE_NORMAL, vg_DRAW_IMAGE_MULTIPLY, vg_DRAW_IMAGE_STENCIL )
+import Graphics.Rendering.OpenVG.VG.Parameters
+import Graphics.Rendering.OpenVG.VG.Utils ( bitwiseOr, marshalBool, unSizeM )
 
-import Graphics.Rendering.OpenVG.VG.Parameters ( 
-    seti, geti, getParameteri, 
-    ParamType ( ImageQuality, ImageMode,
-                MaxImageWidth, MaxImageHeight, 
-                MaxImagePixels, MaxImageBytes ) )
-
-import Graphics.Rendering.OpenVG.VG.Utils ( bitwiseOr, unSizeM, marshalBool )
-
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGenum, VGint, VGImage )
+import Graphics.Rendering.OpenVG.Raw.VG.Images
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Position(..), Size (..) )  
 

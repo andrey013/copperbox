@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  TestUtils
+-- Module      :  VguUtils
 -- Copyright   :  (c) Stephen Tetley 2008
 -- License     :  LGPL - this is a direct translation of Ivan Leben's code
 --                (test.c) so its LGPL.
@@ -16,7 +16,7 @@
 --------------------------------------------------------------------------------
 
 
-module TestUtils (
+module VguUtils (
   testCreatePath,
   testDestoryPaths,
   
@@ -27,6 +27,8 @@ module TestUtils (
 import Graphics.Rendering.OpenVG hiding ( 
         loadIdentity, lineWidth, scale, translate, matrixMode )
 import qualified Graphics.Rendering.OpenVG as VG
+
+import qualified Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGHandle )
 import Graphics.UI.GLUT 
 
 testCreatePath :: IO VGPath

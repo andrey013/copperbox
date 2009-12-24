@@ -115,10 +115,10 @@ module Graphics.Rendering.OpenVG.Raw.VG.Paths (
   vgModifyPathCoords,
   vgTransformPath, 
   vgInterpolatePath,    
---  vgPathLength,               MISSING?
---  vgPointAlongPath,           MISSING?
---  vgPathBounds,               MISSING?
---  vgPathTRansformedBounds,    MISSING?
+  vgPathLength,                 -- returns 0.0
+  vgPointAlongPath,             
+  vgPathBounds,               
+  vgPathTransformedBounds,  
   vgDrawPath
 
 ) where

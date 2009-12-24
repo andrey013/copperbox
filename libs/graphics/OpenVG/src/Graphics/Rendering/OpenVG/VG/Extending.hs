@@ -22,10 +22,9 @@ module Graphics.Rendering.OpenVG.VG.Extending (
   stringId,
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.VG.CFunDecls ( vgGetString ) 
-import Graphics.Rendering.OpenVG.VG.Constants (
-    vg_VENDOR, vg_RENDERER, vg_VERSION, vg_EXTENSIONS ) 
+
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGenum )
+import Graphics.Rendering.OpenVG.Raw.VG.Extending
 
 import Data.StateVar (
    GettableStateVar, makeGettableStateVar )

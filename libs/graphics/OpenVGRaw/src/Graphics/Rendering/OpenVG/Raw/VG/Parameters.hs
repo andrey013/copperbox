@@ -60,6 +60,8 @@ module Graphics.Rendering.OpenVG.Raw.VG.Parameters (
   vg_MAX_IMAGE_PIXELS, 
   vg_MAX_IMAGE_BYTES, 
   vg_MAX_FLOAT,
+  vg_MAX_GAUSSIAN_STD_DEVIATION,
+
 
   -- * Functions
   vgSetf, 

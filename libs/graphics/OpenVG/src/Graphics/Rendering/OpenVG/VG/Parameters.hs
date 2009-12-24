@@ -26,28 +26,11 @@ module Graphics.Rendering.OpenVG.VG.Parameters (
     getParameterfv, getParameteriv
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-    VGenum, VGfloat, VGint, VGHandle )
-import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
-    vgSetf, vgSeti, vgSetfv, vgSetiv,
-    vgGetf, vgGeti, vgGetVectorSize, vgGetfv, vgGetiv,
-     
-    vgSetParameterf, vgSetParameteri, vgSetParameterfv, vgSetParameteriv, 
-    vgGetParameterf, vgGetParameteri, vgGetParameterVectorSize,
-    vgGetParameterfv, vgGetParameteriv )
-    
-import Graphics.Rendering.OpenVG.VG.Constants (
-    vg_MATRIX_MODE, vg_FILL_RULE, vg_IMAGE_QUALITY, vg_RENDERING_QUALITY,
-    vg_BLEND_MODE, vg_IMAGE_MODE, vg_SCISSOR_RECTS, vg_STROKE_LINE_WIDTH,
-    vg_STROKE_CAP_STYLE, vg_STROKE_JOIN_STYLE, vg_STROKE_MITER_LIMIT,
-    vg_STROKE_DASH_PATTERN, vg_STROKE_DASH_PHASE, vg_STROKE_DASH_PHASE_RESET,
-    vg_TILE_FILL_COLOR, vg_CLEAR_COLOR, vg_MASKING,
-    vg_SCISSORING, vg_PIXEL_LAYOUT, vg_SCREEN_LAYOUT, vg_FILTER_FORMAT_LINEAR,
-    vg_FILTER_FORMAT_PREMULTIPLIED, vg_FILTER_CHANNEL_MASK, 
-    vg_MAX_SCISSOR_RECTS, vg_MAX_DASH_COUNT, vg_MAX_KERNEL_SIZE,
-    vg_MAX_SEPARABLE_KERNEL_SIZE, vg_MAX_COLOR_RAMP_STOPS,
-    vg_MAX_IMAGE_WIDTH, vg_MAX_IMAGE_HEIGHT, vg_MAX_IMAGE_PIXELS,
-    vg_MAX_IMAGE_BYTES, vg_MAX_FLOAT, vg_MAX_GAUSSIAN_STD_DEVIATION )
+
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( 
+    VGint, VGfloat, VGenum, VGHandle )
+import Graphics.Rendering.OpenVG.Raw.VG.Parameters
+
 
 import Foreign.Marshal.Array ( newArray, peekArray ) 
 

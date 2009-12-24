@@ -21,14 +21,10 @@ module Graphics.Rendering.OpenVG.VG.Blending (
   blendMode
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGenum )
-import Graphics.Rendering.OpenVG.VG.Constants (
-    vg_BLEND_SRC, vg_BLEND_SRC_OVER, vg_BLEND_DST_OVER, 
-    vg_BLEND_SRC_IN, vg_BLEND_DST_IN, vg_BLEND_MULTIPLY, 
-    vg_BLEND_SCREEN, vg_BLEND_DARKEN, vg_BLEND_LIGHTEN, 
-    vg_BLEND_ADDITIVE ) 
-import Graphics.Rendering.OpenVG.VG.Parameters ( 
-    seti, ParamType ( BlendMode ) )
+import Graphics.Rendering.OpenVG.VG.Parameters
+
+import Graphics.Rendering.OpenVG.Raw.VG.Blending
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGenum ) 
 
 import Data.StateVar (
    SettableStateVar, makeSettableStateVar ) 

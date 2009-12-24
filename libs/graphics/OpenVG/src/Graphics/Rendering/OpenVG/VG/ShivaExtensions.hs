@@ -25,11 +25,9 @@ module Graphics.Rendering.OpenVG.VG.ShivaExtensions (
 
 ) where
 
-import Graphics.Rendering.OpenVG.VG.CFunDecls ( 
-        vgCreateContextSH, vgResizeSurfaceSH, vgDestroyContextSH ) 
+import Graphics.Rendering.OpenVG.VG.Utils ( unmarshalBool, unSizeM )
 
-import Graphics.Rendering.OpenVG.VG.Utils ( unSizeM, unmarshalBool )
-
+import Graphics.Rendering.OpenVG.Raw.VG.ShivaExtensions
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Size(..) )
 

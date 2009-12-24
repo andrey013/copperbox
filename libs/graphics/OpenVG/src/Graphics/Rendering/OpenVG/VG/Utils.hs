@@ -22,16 +22,14 @@ module Graphics.Rendering.OpenVG.VG.Utils (
 
   ) where
 
-
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( 
-        VGint, VGenum, VGbitfield, VGboolean, vg_TRUE, vg_FALSE )
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( 
+    VGboolean, VGenum, VGint, VGbitfield, 
+    vg_TRUE, vg_FALSE )
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Size(..) )
 
 
 import Data.Bits
-
-
 
 
 marshalBool :: Bool -> VGboolean

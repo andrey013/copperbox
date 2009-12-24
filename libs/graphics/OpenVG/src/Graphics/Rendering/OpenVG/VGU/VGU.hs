@@ -26,10 +26,13 @@ module Graphics.Rendering.OpenVG.VGU.VGU (
   arc
 ) where
 
-
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGfloat, VGenum, VGPath )
 import Graphics.Rendering.OpenVG.VG.Utils ( marshalBool )
-import Graphics.Rendering.OpenVG.VGU.CInternals
+
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 (
+    VGenum, VGfloat, VGPath )
+
+import Graphics.Rendering.OpenVG.Raw.VGU.VGU
+
 import Graphics.Rendering.OpenVG.VGU.ErrorsInternal ( 
         VGU_ErrorCode, withErrorCode )
 

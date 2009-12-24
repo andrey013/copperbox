@@ -3,10 +3,14 @@
 
 
 RUNHASK = c:/ghc/HP/2009.2.0.2/bin/runhaskell.exe
+GHC = c:/ghc/HP/2009.2.0.2/bin/ghc.exe
 
 haddock: 
 	$(RUNHASK) Setup.hs configure
-	$(RUNHASK) Setup.hs haddock
+	$(RUNHASK) Setup.hs haddock --hyperlink-source
+
+configure:
+	$(RUNHASK) Setup.hs configure
 
 clean: 
 	$(RUNHASK) Setup.hs clean
@@ -25,5 +29,8 @@ install:
 unregister: 
 	$(RUNHASK) Setup.hs unregister
 
+# seems to hang msys...
 test:
-	$(RUNHASK) -i./examples -lopenvg32 examples/TestVgu.hs
+	$(RUNHASK) -i./demo -lopenvg32 demo/TestVgu.hs
+
+

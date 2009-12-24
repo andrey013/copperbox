@@ -32,14 +32,12 @@ module Graphics.Rendering.OpenVG.VG.Scissoring (
   clear  
 ) where
 
-import Graphics.Rendering.OpenVG.VG.BasicTypes ( VGint, VGfloat )
-import Graphics.Rendering.OpenVG.VG.CFunDecls ( vgClear )
-import Graphics.Rendering.OpenVG.VG.Parameters ( 
-    ParamType ( Scissoring, ScissorRects, MaxScissorRects, 
-                Masking, ClearColor ),   
-    seti, geti, setiv, setfv )
 
-import Graphics.Rendering.OpenVG.VG.Utils ( unSize, unSizeM, marshalBool )
+import Graphics.Rendering.OpenVG.VG.Parameters
+import Graphics.Rendering.OpenVG.VG.Utils ( marshalBool, unSize, unSizeM )
+
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGint, VGfloat )
+import Graphics.Rendering.OpenVG.Raw.VG.Scissoring
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Position(..), Size(..) )
 import Graphics.Rendering.OpenGL.GL.VertexSpec ( Color4(..) )
