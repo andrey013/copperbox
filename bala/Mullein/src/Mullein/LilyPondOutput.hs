@@ -52,7 +52,6 @@ import MonadLib.Monads
 
 import Text.PrettyPrint.Leijen
 
-import Control.Monad
 import qualified Data.Traversable as T
 
 

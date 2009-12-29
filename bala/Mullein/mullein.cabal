@@ -24,8 +24,10 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base < 5, wl-pprint, containers, dlist, QuickCheck,
-                      monadLib, groupoid
+  build-depends:      base < 5, wl-pprint, containers, dlist, 
+                      QuickCheck >= 2.1,
+                      algebra,
+                      monadLib
 
   
   exposed-modules:

@@ -55,14 +55,13 @@ import Mullein.Duration
 import Mullein.Pitch
 import Mullein.Utils
 
-import Data.Groupoid    -- package: groupoid
+import Data.Semigroup   -- package: algebra
 
 import Text.PrettyPrint.Leijen ( Doc )
 
 import Control.Applicative
 import Data.Foldable
 import Data.Traversable hiding ( mapM )
-import Data.Ratio
 
 
 
@@ -167,11 +166,11 @@ instance Traversable Pulse where
   traverse f (BeamedL es) = BeamedL <$> traverse f es
 
 -- Groupoid 
-instance Groupoid (Bar e) where
-  (Bar x)       `gappend` (Bar y)       = OverlayL [x,y]
-  (Bar x)       `gappend` (OverlayL ys) = OverlayL $ x:ys
-  (OverlayL xs) `gappend` (Bar y)       = OverlayL $ xs ++ [y]
-  (OverlayL xs) `gappend` (OverlayL ys) = OverlayL $ xs ++ ys
+instance Semigroup (Bar e) where
+  (Bar x)       `append` (Bar y)       = OverlayL [x,y]
+  (Bar x)       `append` (OverlayL ys) = OverlayL $ x:ys
+  (OverlayL xs) `append` (Bar y)       = OverlayL $ xs ++ [y]
+  (OverlayL xs) `append` (OverlayL ys) = OverlayL $ xs ++ ys
 
 -------
 

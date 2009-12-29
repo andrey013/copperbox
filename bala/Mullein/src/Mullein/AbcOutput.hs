@@ -45,7 +45,6 @@ import Mullein.Utils ( optDoc )
 
 import Text.PrettyPrint.Leijen
 
-import Data.Ratio
 
 
 

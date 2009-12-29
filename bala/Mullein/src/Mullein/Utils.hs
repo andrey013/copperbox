@@ -54,7 +54,7 @@ module Mullein.Utils
 
   ) where
 
-import Data.Groupoid    -- package: groupoid
+import Data.Semigroup    -- package: algebra
 
 import Data.Ratio
 
@@ -63,10 +63,10 @@ import qualified Text.PrettyPrint.Leijen as PP
 
 
 
-longZip :: Groupoid a => [a] -> [a] -> [a]
+longZip :: Semigroup a => [a] -> [a] -> [a]
 longZip []     ys     = ys
 longZip xs     []     = xs
-longZip (x:xs) (y:ys) = x `gappend` y : longZip xs ys
+longZip (x:xs) (y:ys) = x `append` y : longZip xs ys
 
 
 --------------------------------------------------------------------------------
