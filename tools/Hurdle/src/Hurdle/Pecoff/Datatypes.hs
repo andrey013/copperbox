@@ -22,7 +22,7 @@ import Data.Word
 data Image = Image 
       { image_dos_header            :: ImageDOSHeader
       , image_signature             :: (Char,Char,Char,Char)
-      , image_coff_header           :: ImageCOFFHeader
+      , image_coff_header           :: COFFHeader
       , image_opt_header            :: ImageOptionalHeader
       , image_section_headers       :: SectionHeaders
       , image_export_data           :: Maybe ExportData
@@ -60,14 +60,14 @@ data ImageDOSHeader = ImageDOSHeader
 image_COFF_HEADER_size :: Int
 image_COFF_HEADER_size = 20
 
-data ImageCOFFHeader = ImageCOFFHeader 
-      { ich_machine                 :: Word16
-      , ich_num_sections            :: Word16
-      , ich_timedate_stamp          :: Word32
-      , ich_sym_table_ptr           :: Word32
-      , ich_num_symbols             :: Word32
-      , ich_opt_header_size         :: Word16
-      , ich_characteristics         :: Word16
+data COFFHeader = COFFHeader 
+      { ch_machine                  :: Word16
+      , ch_num_sections             :: Word16
+      , ch_timedate_stamp           :: Word32
+      , ch_sym_table_ptr            :: Word32
+      , ch_num_symbols              :: Word32
+      , ch_opt_header_size          :: Word16
+      , ch_characteristics          :: Word16
       }
    deriving Show
 

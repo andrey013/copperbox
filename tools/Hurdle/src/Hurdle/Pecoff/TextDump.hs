@@ -31,12 +31,18 @@ printImage = putStr . imageText
 imageText :: Image -> String
 imageText = renderStyle (Style PageMode 80 1.5) . ppImage
 
+printCOFF :: COFFHeader -> IO ()
+printCOFF = putStr . coff
+
+coff :: COFFHeader -> String
+coff = renderStyle (Style PageMode 80 1.5) . ppCOFFHeader
+
 ppImage :: Image -> Doc
 ppImage a = 
         ppImageDOSHeader      (image_dos_header a)
     $+$ columnSep
     $+$ ppSignature           (image_signature a)
-    $+$ ppImageCOFFHeader     (image_coff_header a)
+    $+$ ppCOFFHeader          (image_coff_header a)
     $+$ ppImageOptionalHeader (image_opt_header a)
     $+$ (vcat $ map ppSectionHeader $ Map.elems $ image_section_headers a)
     $+$ maybe empty ppExportData          (image_export_data a)
@@ -63,7 +69,7 @@ ppImageDOSHeader a =
        , ppf 2  "initial CS value"      (ppHex 4 . idh_initial_relative_cs)
        , ppf 2  "relocation table addr" (ppHex 4 . idh_reltable_file_addr)
        , ppf 2  "overlay number"        (ppHex 4 . idh_overlay_number)
-       , ppf 8 "reserved 1"             (tup4    . idh_reserved_words)
+       , ppf 8  "reserved 1"            (tup4    . idh_reserved_words)
        , ppf 2  "oem identifier"        (ppHex 4 . idh_oem_identifier)
        , ppf 2  "oem info"              (ppHex 4 . idh_oem_info)
        , ppf 20 "reserved 2"            (text . show . idh_reserved_words_two)
@@ -76,19 +82,19 @@ ppSignature :: (Char,Char,Char,Char) -> Doc
 ppSignature (s,t,u,v) = 
     text "Signature:" <+> (listDoc $ map (text . show) [s,t,u,v])
 
-ppImageCOFFHeader :: ImageCOFFHeader -> Doc
-ppImageCOFFHeader a = 
-    tableProlog "IMAGE COFF HEADER" (24,6) (applyfs fields a) 
+ppCOFFHeader :: COFFHeader -> Doc
+ppCOFFHeader a = 
+    tableProlog "COFF HEADER" (24,6) (applyfs fields a) 
   where
     ppf    = ppField 4 24   
     fields = 
-       [ ppf 2  "machine"               (ppHex 4 . ich_machine)
-       , ppf 2  "num sections"          (ppHex 4 . ich_num_sections)
-       , ppf 4  "timedatestamp"         (ppHex 8 . ich_timedate_stamp)
-       , ppf 4  "ptr to sym table"      (ppHex 8 . ich_sym_table_ptr)
-       , ppf 4  "num symbols"           (ppHex 8 . ich_num_symbols)
-       , ppf 2  "size optional header"  (ppHex 4 . ich_opt_header_size)
-       , ppf 2  "characteristics"       (ppHex 4 . ich_characteristics)
+       [ ppf 2  "machine"               (ppHex 4 . ch_machine)
+       , ppf 2  "num sections"          (ppHex 4 . ch_num_sections)
+       , ppf 4  "timedatestamp"         (ppHex 8 . ch_timedate_stamp)
+       , ppf 4  "ptr to sym table"      (ppHex 8 . ch_sym_table_ptr)
+       , ppf 4  "num symbols"           (ppHex 8 . ch_num_symbols)
+       , ppf 2  "size optional header"  (ppHex 4 . ch_opt_header_size)
+       , ppf 2  "characteristics"       (ppHex 4 . ch_characteristics)
        ]
 
 

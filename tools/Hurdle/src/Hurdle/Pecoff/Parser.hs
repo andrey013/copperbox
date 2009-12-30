@@ -33,6 +33,12 @@ readDLL filename = do
       Right mf -> return mf
 
 
+readCOFF :: FilePath -> IO COFFHeader
+readCOFF filename = do
+    (ans,w) <- runKangaroo coffHeader filename
+    case ans of 
+      Left err -> (putStrLn $ toList w) >> error err
+      Right mf -> return mf
 
 
 
@@ -45,9 +51,9 @@ dllFile = do
     dosH    <- imageDOSHeader
     toNewExeHeader (idh_new_exe_header_addr dosH)
     sig    <- signature
-    coffH  <- imageCOFFHeader
+    coffH  <- coffHeader
     optH   <- imageOptionalHeader
-    secHs  <- sectionHeaders (fromIntegral $ ich_num_sections coffH)
+    secHs  <- sectionHeaders (fromIntegral $ ch_num_sections coffH)
     opt_expos <- optExportData secHs
     return $ Image { image_dos_header       = dosH
                    , image_signature        = sig
@@ -112,8 +118,8 @@ signature :: Parser (Char,Char,Char,Char)
 signature = (,,,) <$> char <*> char 
                   <*> char <*> char
 
-imageCOFFHeader :: Parser ImageCOFFHeader
-imageCOFFHeader = ImageCOFFHeader <$> 
+coffHeader :: Parser COFFHeader
+coffHeader = COFFHeader <$> 
         word16le
     <*> word16le
     <*> word32le
