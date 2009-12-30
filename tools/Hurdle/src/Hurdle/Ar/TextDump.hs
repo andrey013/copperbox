@@ -33,9 +33,12 @@ archiveText = renderStyle (Style PageMode 80 1.5) . ppArchive
 ppArchive :: ArArchive -> Doc
 ppArchive a = 
         text              (ar_magic a)
-    $+$ ppArHeader        (ar_header a)
-    $+$ ppArSymbolTable   (ar_symbol_table a)
+    $+$ (vcat $ map ppArchiveObject $ ar_objects a)
 
+
+
+ppArchiveObject :: ArchiveObject -> Doc
+ppArchiveObject = ppArHeader . ar_header
 
 ppArHeader :: ArHeader -> Doc
 ppArHeader a = 
@@ -45,26 +48,15 @@ ppArHeader a =
     fields = 
        [ ppf 16 "name"                  (text . arh_name)
        , ppf 12 "date"                  (text . arh_date)
-       , ppf 6  "user id"               (text . arh_user_id)
-       , ppf 6  "group id"              (text . arh_group_id)
+       , ppf 6  "user id"               (int  . arh_user_id)
+       , ppf 6  "group id"              (int  . arh_group_id)
        , ppf 8  "mode"                  (text . arh_mode)
-       , ppf 10 "size"                  (text . arh_size)
+       , ppf 10 "size"                  (int . arh_size)
        , ppf 2  "trailer"               (tup2 . arh_trailer)
        ]
     tup2 (x:y:xs) = ppHex 2 (ord x) <+> ppHex 2 (ord y) <+> text xs
     tup2 xs       = text xs
 
-
-
-ppArSymbolTable :: ArSymbolTable -> Doc
-ppArSymbolTable a = 
-    tableProlog "Symbol Table" (24,6) (applyfs fields a) 
-  where
-    ppf    = ppField 4 24   
-    fields = 
-       [ ppf 2  "number of elements"    (ppHex 4 . symb_number_elements)
---       , ppf 2  "date length"           (ppHex 4 . symb_data_length)
-       ]
 
 
 

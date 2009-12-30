@@ -19,7 +19,8 @@ module Hurdle.Ar.Parser where
 import Hurdle.Ar.Datatypes
 import Hurdle.Base.Utils
 
-
+import Control.Monad
+import Data.Char
 
 readAr :: FilePath -> IO ArArchive
 readAr filename = do
@@ -39,12 +40,10 @@ readAr filename = do
 arArchive :: Parser ArArchive
 arArchive = do
     magic    <- arMagicString
-    header   <- arHeader
-    symbols  <- arSymbolTable
+    objects  <- runOn archiveObject
     return $ ArArchive 
                 { ar_magic        = magic
-                , ar_header       = header
-                , ar_symbol_table = symbols
+                , ar_objects      = objects
                 }
 
 
@@ -52,15 +51,32 @@ arMagicString :: Parser String
 arMagicString = text 8 
 
 
+archiveObject :: Parser ArchiveObject
+archiveObject = do 
+    header  <- arHeader
+    let sz  = arh_size header
+    body    <- count sz char
+    pos     <- position
+    when (pos `mod` 2 /= 0) (char >> return ())   -- should be a newline 
+    return $ ArchiveObject 
+                { ar_header         = header
+                , ar_body           = body
+                }
+
+paddedNumber :: (Read a, Integral a) => Int -> Parser a
+paddedNumber i = liftM fn $ count i char
+  where
+    fn = read . takeWhile isDigit
+
 
 arHeader :: Parser ArHeader
 arHeader = do 
     name    <- text 16
     date    <- text 12
-    uid     <- text 6
-    gid     <- text 6
+    uid     <- paddedNumber 6
+    gid     <- paddedNumber 6
     mode    <- text 8
-    size    <- text 10
+    size    <- paddedNumber 10
     trailer <- text 2
     return $ ArHeader 
                 { arh_name            = name
@@ -72,13 +88,3 @@ arHeader = do
                 , arh_trailer         = trailer
                 }  
 
-
-arSymbolTable :: Parser ArSymbolTable
-arSymbolTable = do 
-    num_syms    <- word32be
-    table_len   <- word32be
-    return $ ArSymbolTable
-                { symb_number_elements  = num_syms
-                -- , symb_data_length      = table_len
-                -- , symb
-                }

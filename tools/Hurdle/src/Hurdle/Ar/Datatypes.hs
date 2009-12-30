@@ -20,30 +20,30 @@ import Data.Word
 
 data ArArchive = ArArchive 
       { ar_magic                    :: String
-      , ar_header                   :: ArHeader
-      , ar_symbol_table             :: ArSymbolTable
+      , ar_objects                  :: [ArchiveObject]
       }
   deriving Show
 
+data ArchiveObject = ArchiveObject
+     { ar_header                    :: ArHeader
+     , ar_body                      :: [Char]
+     }
 
 data ArHeader = ArHeader 
       { arh_name                    :: String
       , arh_date                    :: String
-      , arh_user_id                 :: String
-      , arh_group_id                :: String
+      , arh_user_id                 :: Int
+      , arh_group_id                :: Int
       , arh_mode                    :: String
-      , arh_size                    :: String
+      , arh_size                    :: Int
       , arh_trailer                 :: String
       }  
   deriving Show
 
 
 
-data ArSymbolTable = ArSymbolTable 
-      { symb_number_elements        :: Word32
-    --  , symb_data_length            :: Word32
-      }
-   deriving Show
+instance Show ArchiveObject where
+  show (ArchiveObject h _) = "ArchiveObject " ++ show h
 
 
 
