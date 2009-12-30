@@ -48,10 +48,10 @@ Executable hurdle
                   Hurdle.Ar.Parser,
                   Hurdle.Ar.TextDump,
                   Hurdle.Base.Utils,
-                  Hurdle.Pecoff.Datatypes,
-                  Hurdle.Pecoff.DefOutput,
-                  Hurdle.Pecoff.Parser,
-                  Hurdle.Pecoff.TextDump
+                  Hurdle.Coff.Datatypes,
+                  Hurdle.Coff.DefOutput,
+                  Hurdle.Coff.Parser,
+                  Hurdle.Coff.TextDump
                   
 
 

@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Hurdle.Pecoff.Datatypes
+-- Module      :  Hurdle.Coff.Datatypes
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Hurdle.Pecoff.Datatypes where
+module Hurdle.Coff.Datatypes where
 
 import Data.Map ( Map )
 import Data.Word

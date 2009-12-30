@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Hurdle.Pecoff.Parser
+-- Module      :  Hurdle.Coff.Parser
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -10,11 +10,11 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Read a DLL...
+-- Read a DLL or an .o in COFF format...
 --
 --------------------------------------------------------------------------------
 
-module Hurdle.Pecoff.Parser where
+module Hurdle.Coff.Parser where
 
 import Hurdle.Pecoff.Datatypes
 import Hurdle.Base.Utils

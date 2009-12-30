@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Hurdle.Pecoff.TextDump
+-- Module      :  Hurdle.Coff.TextDump
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,10 +14,10 @@
 --
 --------------------------------------------------------------------------------
 
-module Hurdle.Pecoff.TextDump where
+module Hurdle.Coff.TextDump where
 
 import Hurdle.Base.Utils ( applyfs )
-import Hurdle.Pecoff.Datatypes
+import Hurdle.Coff.Datatypes
 
 import qualified Data.Map as Map
 import Data.Word
