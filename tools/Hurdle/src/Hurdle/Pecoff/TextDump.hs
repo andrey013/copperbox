@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Hurdle.TextDump
+-- Module      :  Hurdle.Pecoff.TextDump
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,22 +14,16 @@
 --
 --------------------------------------------------------------------------------
 
-module Hurdle.TextDump where
+module Hurdle.Pecoff.TextDump where
 
-import Hurdle.Datatypes
+import Hurdle.Base.Utils ( applyfs )
+import Hurdle.Pecoff.Datatypes
 
 import qualified Data.Map as Map
 import Data.Word
 import Numeric
 import Text.PrettyPrint.HughesPJ
 
-
--- applyfs is 'sequence' from Control.Monad but I don't to drag in
--- Control.Monad.Instances
---
-applyfs :: [(a -> b)] -> a -> [b]
-applyfs []     _ = [] 
-applyfs (f:fs) a = f a : applyfs fs a
 
 printImage :: Image -> IO ()
 printImage = putStr . imageText

@@ -1,5 +1,5 @@
 name:             hurdle
-version:          0.2.0
+version:          0.3.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -44,11 +44,15 @@ Executable hurdle
 
   Main-Is:        Hurdle.hs
   Hs-Source-Dirs: src
-  Other-Modules:  Hurdle.Datatypes,
-                  Hurdle.DefOutput,
-                  Hurdle.Parser,
-                  Hurdle.TextDump,
-                  Hurdle.Utils                  
+  Other-Modules:  Hurdle.Ar.Datatype,
+                  Hurdle.Ar.Parser,
+                  Hurdle.Ar.TextDump,
+                  Hurdle.Base.Utils,
+                  Hurdle.Pecoff.Datatypes,
+                  Hurdle.Pecoff.DefOutput,
+                  Hurdle.Pecoff.Parser,
+                  Hurdle.Pecoff.TextDump
+                  
 
 
 

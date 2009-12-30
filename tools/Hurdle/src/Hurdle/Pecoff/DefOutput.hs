@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Hurdle.DefOutput
+-- Module      :  Hurdle.Pecoff.DefOutput
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,9 +14,9 @@
 --
 --------------------------------------------------------------------------------
 
-module Hurdle.DefOutput where
+module Hurdle.Pecoff.DefOutput where
 
-import Hurdle.Datatypes
+import Hurdle.Pecoff.Datatypes
 
 import Text.PrettyPrint.HughesPJ
 

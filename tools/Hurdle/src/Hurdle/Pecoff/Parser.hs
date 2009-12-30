@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Hurdle.Parser
+-- Module      :  Hurdle.Pecoff.Parser
 -- Copyright   :  (c) Stephen Tetley 2009
 -- License     :  BSD3
 --
@@ -14,10 +14,10 @@
 --
 --------------------------------------------------------------------------------
 
-module Hurdle.Parser where
+module Hurdle.Pecoff.Parser where
 
-import Hurdle.Datatypes
-import Hurdle.Utils
+import Hurdle.Pecoff.Datatypes
+import Hurdle.Base.Utils
 
 import Control.Applicative
 import Control.Monad
@@ -34,12 +34,6 @@ readDLL filename = do
 
 
 
-
-infixr 5 <:>
-
--- | applicative cons
-(<:>) :: Applicative f => f a -> f [a] -> f [a]
-(<:>) p1 p2 = (:) <$> p1 <*> p2
 
 
 --------------------------------------------------------------------------------

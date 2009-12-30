@@ -16,10 +16,10 @@
 
 module Main where
 
-import Hurdle.Datatypes
-import Hurdle.DefOutput
-import Hurdle.Parser
-import Hurdle.TextDump
+import Hurdle.Pecoff.Datatypes
+import Hurdle.Pecoff.DefOutput
+import Hurdle.Pecoff.Parser
+import Hurdle.Pecoff.TextDump
 
 import System.Console.GetOpt
 import System.Environment
