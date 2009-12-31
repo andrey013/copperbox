@@ -39,7 +39,7 @@ coff = renderStyle (Style PageMode 80 1.5) . ppCOFFHeader
 
 ppImage :: Image -> Doc
 ppImage a = 
-        ppImageDOSHeader      (image_dos_header a)
+        ppDOSHeader           (image_dos_header a)
     $+$ columnSep
     $+$ ppSignature           (image_signature a)
     $+$ ppCOFFHeader          (image_coff_header a)
@@ -48,32 +48,32 @@ ppImage a =
     $+$ maybe empty ppExportData          (image_export_data a)
 
 
-ppImageDOSHeader :: ImageDOSHeader -> Doc
-ppImageDOSHeader a = 
+ppDOSHeader :: DOSHeader -> Doc
+ppDOSHeader a = 
     tableProlog "IMAGE_DOS_HEADER" (24,6) (applyfs fields a) 
   where
     ppf    = ppField 4 24   
     fields = 
-       [ ppf 2  "magic"                 (ppHex 4 . idh_magic_number)
-       , ppf 2  "bytes last page"       (ppHex 4 . idh_bytes_last_page)
-       , ppf 2  "pages in file"         (ppHex 4 . idh_pages_in_file)
-       , ppf 2  "relocations"           (ppHex 4 . idh_relocations)
-       , ppf 2  "header para size"      (ppHex 4 . idh_size_header_paras)
-       , ppf 2  "min extra paragraphs"  (ppHex 4 . idh_min_extra_paras)
-       , ppf 2  "max extra paragraphs"  (ppHex 4 . idh_max_extra_paras)
-       , ppf 2  "initial SS value"      (ppHex 4 . idh_initial_relative_ss)
-       , ppf 2  "initial SP value"      (ppHex 4 . idh_initial_sp)
-       , ppf 2  "checksum"              (ppHex 4 . idh_header_checksum)
+       [ ppf 2  "magic"                 (ppHex 4 . dh_magic_number)
+       , ppf 2  "bytes last page"       (ppHex 4 . dh_bytes_on_last_page)
+       , ppf 2  "pages in file"         (ppHex 4 . dh_pages_in_file)
+       , ppf 2  "relocations"           (ppHex 4 . dh_relocations)
+       , ppf 2  "header para size"      (ppHex 4 . dh_header_paras_size)
+       , ppf 2  "min extra paragraphs"  (ppHex 4 . dh_min_extra_paras)
+       , ppf 2  "max extra paragraphs"  (ppHex 4 . dh_max_extra_paras)
+       , ppf 2  "initial SS value"      (ppHex 4 . dh_initial_relative_ss)
+       , ppf 2  "initial SP value"      (ppHex 4 . dh_initial_sp)
+       , ppf 2  "checksum"              (ppHex 4 . dh_header_checksum)
 
-       , ppf 2  "initial IP value"      (ppHex 4 . idh_initial_ip)
-       , ppf 2  "initial CS value"      (ppHex 4 . idh_initial_relative_cs)
-       , ppf 2  "relocation table addr" (ppHex 4 . idh_reltable_file_addr)
-       , ppf 2  "overlay number"        (ppHex 4 . idh_overlay_number)
-       , ppf 8  "reserved 1"            (tup4    . idh_reserved_words)
-       , ppf 2  "oem identifier"        (ppHex 4 . idh_oem_identifier)
-       , ppf 2  "oem info"              (ppHex 4 . idh_oem_info)
-       , ppf 20 "reserved 2"            (text . show . idh_reserved_words_two)
-       , ppf 4  "new exe header addr"   (ppHex 8 . idh_new_exe_header_addr)
+       , ppf 2  "initial IP value"      (ppHex 4 . dh_initial_ip)
+       , ppf 2  "initial CS value"      (ppHex 4 . dh_initial_relative_cs)
+       , ppf 2  "relocation table addr" (ppHex 4 . dh_reltable_file_addr)
+       , ppf 2  "overlay number"        (ppHex 4 . dh_overlay_number)
+       , ppf 8  "reserved 1"            (tup4    . dh_reserved_words)
+       , ppf 2  "oem identifier"        (ppHex 4 . dh_oem_identifier)
+       , ppf 2  "oem info"              (ppHex 4 . dh_oem_info)
+       , ppf 20 "reserved 2"            (text . show . dh_reserved_words_two)
+       , ppf 4  "new exe header addr"   (ppHex 8 . dh_new_exe_addr)
        ]
 
     tup4 (s,t,u,v) = text $ show [s,t,u,v]

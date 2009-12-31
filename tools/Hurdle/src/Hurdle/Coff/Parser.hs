@@ -16,7 +16,7 @@
 
 module Hurdle.Coff.Parser where
 
-import Hurdle.Pecoff.Datatypes
+import Hurdle.Coff.Datatypes
 import Hurdle.Base.Utils
 
 import Control.Applicative
@@ -48,8 +48,8 @@ readCOFF filename = do
     
 dllFile :: Parser Image
 dllFile = do
-    dosH    <- imageDOSHeader
-    toNewExeHeader (idh_new_exe_header_addr dosH)
+    dosH    <- dosHeader
+    toNewExeHeader (dh_new_exe_addr dosH)
     sig    <- signature
     coffH  <- coffHeader
     optH   <- imageOptionalHeader
@@ -79,32 +79,53 @@ toNewExeHeader n = do
   where
     dosHSize = 0x0040
 
-imageDOSHeader :: Parser ImageDOSHeader
-imageDOSHeader = ImageDOSHeader <$> 
-        magic 
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> reserved1
-    <*> word16le
-    <*> word16le
-    <*> reserved2
-    <*> word32le
+dosHeader :: Parser DOSHeader
+dosHeader = do  
+    magic               <- magicNumber
+    bytes_on_last_page  <- word16le
+    pages_in_file       <- word16le
+    relocations         <- word16le
+    header_paras_size   <- word16le
+    min_extra_paras     <- word16le
+    max_extra_paras     <- word16le
+    initial_ss_value    <- word16le
+    initial_sp_value    <- word16le
+    checksum            <- word16le
+    initial_ip_value    <- word16le
+    initial_cs_value    <- word16le
+    reloc_table_addr    <- word16le
+    overlay_number      <- word16le
+    reserved_1          <- reserved1
+    oem_id              <- word16le
+    oem_info            <- word16le
+    reserved_2          <- reserved2
+    new_exe_addr        <- word32le
+    return $ DOSHeader 
+                { dh_magic_number           = magic
+                , dh_bytes_on_last_page     = bytes_on_last_page
+                , dh_pages_in_file          = pages_in_file
+                , dh_relocations            = relocations
+                , dh_header_paras_size      = header_paras_size
+                , dh_min_extra_paras        = min_extra_paras
+                , dh_max_extra_paras        = max_extra_paras
+                , dh_initial_relative_ss    = initial_ss_value
+                , dh_initial_sp             = initial_sp_value
+                , dh_header_checksum        = checksum
+                , dh_initial_ip             = initial_ip_value
+                , dh_initial_relative_cs    = initial_cs_value
+                , dh_reltable_file_addr     = reloc_table_addr
+                , dh_overlay_number         = overlay_number
+                , dh_reserved_words         = reserved_1
+                , dh_oem_identifier         = oem_id
+                , dh_oem_info               = oem_info
+                , dh_reserved_words_two     = reserved_2
+                , dh_new_exe_addr           = new_exe_addr
+                }
   where
     -- | Magic number 0x5a4d
 
-    magic :: Parser Word16
-    magic = word16le
+    magicNumber :: Parser Word16
+    magicNumber = word16le
   
     reserved1 :: Parser (Word16,Word16,Word16,Word16)
     reserved1 = (,,,) <$> word16le <*> word16le 
@@ -118,66 +139,117 @@ signature :: Parser (Char,Char,Char,Char)
 signature = (,,,) <$> char <*> char 
                   <*> char <*> char
 
+
+
 coffHeader :: Parser COFFHeader
-coffHeader = COFFHeader <$> 
-        word16le
-    <*> word16le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word16le
-    <*> word16le
-      
+coffHeader = do
+    machine             <- word16le
+    num_sections        <- word16le
+    timestamp           <- word32le
+    symtab_ptr          <- word32le
+    num_symbols         <- word32le
+    opt_header_size     <- word16le
+    characteristics     <- word16le
+    return $ COFFHeader 
+                { ch_machine            = machine
+                , ch_num_sections       = num_sections
+                , ch_timedate_stamp     = timestamp
+                , ch_sym_table_ptr      = symtab_ptr
+                , ch_num_symbols        = num_symbols
+                , ch_opt_header_size    = opt_header_size
+                , ch_characteristics    = characteristics
+                }      
 
 imageOptionalHeader :: Parser ImageOptionalHeader
-imageOptionalHeader = ImageOptionalHeader <$> 
-        imageOptionalStandard
-    <*> imageOptionalNTSpecific
-    <*> count 16 imageDataDirectory
-    
+imageOptionalHeader = do  
+    standard_fields     <- imageOptionalStandard
+    nt_specific_fields  <- imageOptionalNTSpecific
+    data_directory      <- count 16 imageDataDirectory
+    return $ ImageOptionalHeader
+                { ioh_header_std_fields       = standard_fields
+                , ioh_nt_specific_fields      = nt_specific_fields
+                , ioh_data_directory          = data_directory
+                }    
 
 imageOptionalStandard :: Parser ImageOptionalStandard
-imageOptionalStandard = ImageOptionalStandard <$>
-        word16le
-    <*> word8
-    <*> word8
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
+imageOptionalStandard = do
+    magic               <- word16le
+    major_linker_number <- word8
+    minor_linker_number <- word8
+    code_size           <- word32le
+    initialized_dsize   <- word32le
+    uninitialized_dsize <- word32le
+    entry_point_addr    <- word32le
+    base_of_code        <- word32le
+    base_of_data        <- word32le
+    return $ ImageOptionalStandard
+                { ios_magic                   = magic
+                , ios_major_linker_version    = major_linker_number
+                , ios_minor_linker_version    = minor_linker_number
+                , ios_size_of_code            = code_size
+                , ios_size_of_inited_data     = initialized_dsize
+                , ios_size_of_uninited_data   = uninitialized_dsize
+                , ios_entry_point_addr        = entry_point_addr
+                , ios_base_of_code            = base_of_code
+                , ios_base_of_data            = base_of_data
+                }
 
 imageOptionalNTSpecific :: Parser ImageOptionalNTSpecific
-imageOptionalNTSpecific = ImageOptionalNTSpecific <$>
-        word32le
-    <*> word32le
-    <*> word32le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word16le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word16le
-    <*> word16le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
+imageOptionalNTSpecific = do
+    image_base          <- word32le
+    section_alignment   <- word32le
+    file_alignment      <- word32le
+    major_os_version    <- word16le
+    minor_os_version    <- word16le
+    major_image_version <- word16le
+    minor_image_version <- word16le
+    major_subsys        <- word16le
+    minor_subsys        <- word16le
+    win32_version       <- word32le
+    image_size          <- word32le
+    headers_size        <- word32le
+    checksum            <- word32le
+    subsystem           <- word16le
+    characteristics     <- word16le
+    reserve_stack_size  <- word32le
+    commit_stack_size   <- word32le
+    reserve_heap_size   <- word32le
+    commit_heap_size    <- word32le
+    loader_flags        <- word32le
+    rva_num_and_sizes   <- word32le
+    return $ ImageOptionalNTSpecific
+                { iont_image_base             = image_base
+                , iont_section_alignment      = section_alignment
+                , iont_file_alignment         = file_alignment
+                , iont_major_os_version       = major_os_version
+                , iont_minor_os_version       = minor_os_version
+                , iont_major_image_version    = major_image_version
+                , iont_minor_image_version    = minor_image_version
+                , iont_major_subsys_version   = major_subsys
+                , iont_minor_subsys_version   = minor_subsys
+                , iont_win32_version          = win32_version
+                , iont_size_of_image          = image_size
+                , iont_size_of_headers        = headers_size
+                , iont_checksum               = checksum
+                , iont_subsystem              = subsystem
+                , iont_dll_characteristics    = characteristics
+                , iont_size_stack_reserve     = reserve_stack_size
+                , iont_size_stack_commit      = commit_stack_size
+                , iont_size_heap_reserve      = reserve_heap_size
+                , iont_size_heap_commit       = commit_heap_size
+                , iont_loader_flags           = loader_flags
+                , iont_rva_num_and_sizes      = rva_num_and_sizes
+                } 
 
 
 imageDataDirectory :: Parser ImageDataDirectory
-imageDataDirectory = ImageDataDirectory <$>
-        word32le
-    <*> word32le
-
+imageDataDirectory = do
+    virtual_addr        <- word32le
+    size                <- word32le
+    return $ ImageDataDirectory
+                { idd_virtual_addr      = virtual_addr
+                , idd_size              = size
+                }
 
 -- should be a Map then 
 
@@ -188,17 +260,31 @@ sectionHeaders n = build <$> count n sectionHeader
 
 
 sectionHeader :: Parser SectionHeader
-sectionHeader = SectionHeader <$>
-        liftM stringTruncate (count 8 char)  -- this should be a combinator
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word16le
-    <*> word16le
-    <*> word32le
+sectionHeader = do
+    name                <- liftM stringTruncate (count 8 char)  
+                                 -- this should be a combinator
+
+    virtual_size        <- word32le
+    virtual_addr        <- word32le
+    raw_data_size       <- word32le
+    raw_data_ptr        <- word32le
+    relocations_ptr     <- word32le
+    line_nums_ptr       <- word32le
+    relocations_count   <- word16le
+    line_nums_count     <- word16le
+    characteristics     <- word32le
+    return $ SectionHeader
+                { sh_name               = name
+                , sh_virtual_size       = virtual_size
+                , sh_virtual_addr       = virtual_addr
+                , sh_size_raw_data      = raw_data_size
+                , sh_ptr_raw_data       = raw_data_ptr
+                , sh_ptr_relocations    = relocations_ptr
+                , sh_ptr_linenums       = line_nums_ptr
+                , sh_num_relocations    = relocations_count
+                , sh_num_linenums       = line_nums_count
+                , sh_characteristics    = characteristics
+                }
 
 
 jumpto :: Int -> Parser a -> Parser a
@@ -241,36 +327,53 @@ exportData section = do
     
     dllname   <- forwardParse edt_name_rva edt section cstring
 
-    return $ ExportData { ed_directory_table      = edt
-                        , ed_export_address_table = ats
-                        , ed_name_ptr_table       = nptrs
-                        , ed_ordinal_table        = ords
-                        , ed_dll_name             = dllname
-                        , ed_name_table           = names
-                        }
+    return $ ExportData 
+                { ed_directory_table      = edt
+                , ed_export_address_table = ats
+                , ed_name_ptr_table       = nptrs
+                , ed_ordinal_table        = ords
+                , ed_dll_name             = dllname
+                , ed_name_table           = names
+                }
 
 exportDirectoryTable :: Parser ExportDirectoryTable
-exportDirectoryTable = ExportDirectoryTable <$>
-        word32le
-    <*> word32le
-    <*> word16le
-    <*> word16le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    <*> word32le
-    `substError` "error - export directory table"
+exportDirectoryTable = do
+    export_flags        <- word32le
+    timestamp           <- word32le
+    major_version       <- word16le
+    minor_version       <- word16le
+    name_rva            <- word32le
+    ordinal_base        <- word32le
+    addr_table_count    <- word32le
+    name_ptrs_count     <- word32le
+    export_table_rva    <- word32le
+    name_table_rva      <- word32le
+    ordinal_table_rva   <- word32le
+    return $ ExportDirectoryTable      
+                { edt_export_flags            = export_flags
+                , edt_timedate_stamp          = timestamp
+                , edt_major_version           = major_version
+                , edt_minor_version           = minor_version
+                , edt_name_rva                = name_rva
+                , edt_ordinal_base            = ordinal_base
+                , edt_num_addr_table_entries  = addr_table_count
+                , edt_num_name_ptrs           = name_ptrs_count
+                , edt_export_addr_table_rva   = export_table_rva
+                , edt_name_ptr_table_rva      = name_table_rva
+                , edt_ordinal_table_rva       = ordinal_table_rva
+                }
+
+
+
+--    `substError` "error - export directory table"
 
 
 exportAddressTable :: Int -> Parser ExportAddressTable
-exportAddressTable n = ExportAddressTable <$> count n exportAddress 
+exportAddressTable n = liftM ExportAddressTable $ count n exportAddress 
 
 -- WRONG (for now) 
 exportAddress :: Parser ExportAddress
-exportAddress = EA_Export_RVA <$> word32le
+exportAddress = liftM EA_Export_RVA word32le
 
 
 exportNames :: SectionHeader -> [Word32] -> Parser [String]

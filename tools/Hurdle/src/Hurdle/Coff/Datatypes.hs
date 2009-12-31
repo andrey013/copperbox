@@ -20,7 +20,7 @@ import Data.Map ( Map )
 import Data.Word
 
 data Image = Image 
-      { image_dos_header            :: ImageDOSHeader
+      { image_dos_header            :: DOSHeader
       , image_signature             :: (Char,Char,Char,Char)
       , image_coff_header           :: COFFHeader
       , image_opt_header            :: ImageOptionalHeader
@@ -32,26 +32,26 @@ data Image = Image
 image_DOS_HEADER_size :: Int
 image_DOS_HEADER_size = 64
 
-data ImageDOSHeader = ImageDOSHeader 
-      { idh_magic_number            :: Word16
-      , idh_bytes_last_page         :: Word16
-      , idh_pages_in_file           :: Word16
-      , idh_relocations             :: Word16
-      , idh_size_header_paras       :: Word16
-      , idh_min_extra_paras         :: Word16
-      , idh_max_extra_paras         :: Word16
-      , idh_initial_relative_ss     :: Word16
-      , idh_initial_sp              :: Word16
-      , idh_header_checksum         :: Word16
-      , idh_initial_ip              :: Word16   
-      , idh_initial_relative_cs     :: Word16
-      , idh_reltable_file_addr      :: Word16
-      , idh_overlay_number          :: Word16
-      , idh_reserved_words          :: (Word16,Word16,Word16,Word16)
-      , idh_oem_identifier          :: Word16
-      , idh_oem_info                :: Word16
-      , idh_reserved_words_two      :: [Word16]   -- length 10
-      , idh_new_exe_header_addr     :: Word32
+data DOSHeader = DOSHeader 
+      { dh_magic_number            :: Word16
+      , dh_bytes_on_last_page      :: Word16
+      , dh_pages_in_file           :: Word16
+      , dh_relocations             :: Word16
+      , dh_header_paras_size       :: Word16
+      , dh_min_extra_paras         :: Word16
+      , dh_max_extra_paras         :: Word16
+      , dh_initial_relative_ss     :: Word16
+      , dh_initial_sp              :: Word16
+      , dh_header_checksum         :: Word16
+      , dh_initial_ip              :: Word16   
+      , dh_initial_relative_cs     :: Word16
+      , dh_reltable_file_addr      :: Word16
+      , dh_overlay_number          :: Word16
+      , dh_reserved_words          :: (Word16,Word16,Word16,Word16)
+      , dh_oem_identifier          :: Word16
+      , dh_oem_info                :: Word16
+      , dh_reserved_words_two      :: [Word16]   -- length 10
+      , dh_new_exe_addr            :: Word32
       }  
   deriving Show
 
