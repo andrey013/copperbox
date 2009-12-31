@@ -100,9 +100,9 @@ ppCOFFHeader a =
 
 ppImageOptionalHeader :: ImageOptionalHeader -> Doc
 ppImageOptionalHeader a = 
-        ppImageOptionalStandard   (ioh_header_std_fields a)
-    $+$ ppImageOptionalNTSpecific (ioh_nt_specific_fields a)
-    $+$ (vcat $ zipWith ppImageDataDirectory names (ioh_data_directory a))
+        ppOptionalStandardHeader   (ioh_header_std_fields a)
+    $+$ ppOptionalWindowsHeader   (ioh_nt_specific_fields a)
+    $+$ (vcat $ zipWith ppHeaderDataDirectory names (ioh_data_directory a))
   where
     names = [ ".edata"
             , ".idata"
@@ -122,61 +122,61 @@ ppImageOptionalHeader a =
             , "reserved"
             ]
 
-ppImageOptionalStandard :: ImageOptionalStandard -> Doc
-ppImageOptionalStandard a =
+ppOptionalStandardHeader :: OptionalStandardHeader -> Doc
+ppOptionalStandardHeader a =
     tableProlog "IMAGE OPTIONAL HEADER STANDARD" (24,6) (applyfs fields a) 
   where
     ppf    = ppField 4 24
     fields = 
-       [ ppf 2  "magic"                 (ppHex 4 . ios_magic)
-       , ppf 1  "major linker ver."     (ppHex 2 . ios_major_linker_version)
-       , ppf 1  "minor linker ver."     (ppHex 2 . ios_minor_linker_version)
-       , ppf 4  "size of code"          (ppHex 8 . ios_size_of_code)
-       , ppf 4  "size of init. data"    (ppHex 8 . ios_size_of_inited_data)
-       , ppf 4  "size of uninit. data"  (ppHex 8 . ios_size_of_uninited_data)
-       , ppf 4  "entry ptr addr"        (ppHex 8 . ios_entry_point_addr)
-       , ppf 4  "base of code"          (ppHex 8 . ios_base_of_code)
-       , ppf 4  "base of data"          (ppHex 8 . ios_base_of_data)
+       [ ppf 2  "magic"                 (ppHex 4 . osh_magic)
+       , ppf 1  "major linker ver."     (ppHex 2 . osh_major_linker_version)
+       , ppf 1  "minor linker ver."     (ppHex 2 . osh_minor_linker_version)
+       , ppf 4  "size of code"          (ppHex 8 . osh_size_of_code)
+       , ppf 4  "size of init. data"    (ppHex 8 . osh_size_of_inited_data)
+       , ppf 4  "size of uninit. data"  (ppHex 8 . osh_size_of_uninited_data)
+       , ppf 4  "entry ptr addr"        (ppHex 8 . osh_entry_point_addr)
+       , ppf 4  "base of code"          (ppHex 8 . osh_base_of_code)
+       , ppf 4  "base of data"          (ppHex 8 . osh_base_of_data)
        ]
 
 
-ppImageOptionalNTSpecific :: ImageOptionalNTSpecific -> Doc
-ppImageOptionalNTSpecific a =
+ppOptionalWindowsHeader :: OptionalWindowsHeader -> Doc
+ppOptionalWindowsHeader a =
     tableProlog "IMAGE OPTIONAL HEADER NT SPECIFIC" (24,6) (applyfs fields a)
   where
     ppf    = ppField 4 24
     fields = 
-       [ ppf 4  "image base"            (ppHex 8 . iont_image_base)
-       , ppf 4  "section alignment"     (ppHex 8 . iont_section_alignment)
-       , ppf 4  "file alignment"        (ppHex 8 . iont_file_alignment)
-       , ppf 2  "major os version"      (ppHex 4 . iont_major_os_version)
-       , ppf 2  "minor os version"      (ppHex 4 . iont_minor_os_version)
-       , ppf 2  "major image version"   (ppHex 4 . iont_major_image_version)
-       , ppf 2  "minor image version"   (ppHex 4 . iont_minor_image_version)
-       , ppf 2  "major subsys version"  (ppHex 4 . iont_major_subsys_version)
-       , ppf 2  "minor subsys version"  (ppHex 4 . iont_minor_subsys_version)
-       , ppf 4  "win32 version"         (ppHex 8 . iont_win32_version)
-       , ppf 4  "size of image"         (ppHex 8 . iont_size_of_image)
-       , ppf 4  "size of headers"       (ppHex 8 . iont_size_of_headers)
-       , ppf 4  "checksum"              (ppHex 8 . iont_checksum)
-       , ppf 2  "subsystem"             (ppHex 4 . iont_subsystem)
-       , ppf 2  "dll characteristics"   (ppHex 4 . iont_dll_characteristics)
-       , ppf 4  "size of stack reserve" (ppHex 8 . iont_size_stack_reserve)
-       , ppf 4  "size of stack commit"  (ppHex 8 . iont_size_stack_commit)
-       , ppf 4  "size of heap reserve"  (ppHex 8 . iont_size_heap_reserve)
-       , ppf 4  "size of heap commit"   (ppHex 8 . iont_size_heap_commit)
-       , ppf 4  "loader flags"          (ppHex 8 . iont_loader_flags)
-       , ppf 4  "rva num and sizes"     (ppHex 8 . iont_rva_num_and_sizes)
+       [ ppf 4  "image base"            (ppHex 8 . owh_image_base)
+       , ppf 4  "section alignment"     (ppHex 8 . owh_section_alignment)
+       , ppf 4  "file alignment"        (ppHex 8 . owh_file_alignment)
+       , ppf 2  "major os version"      (ppHex 4 . owh_major_os_version)
+       , ppf 2  "minor os version"      (ppHex 4 . owh_minor_os_version)
+       , ppf 2  "major image version"   (ppHex 4 . owh_major_image_version)
+       , ppf 2  "minor image version"   (ppHex 4 . owh_minor_image_version)
+       , ppf 2  "major subsys version"  (ppHex 4 . owh_major_subsys_version)
+       , ppf 2  "minor subsys version"  (ppHex 4 . owh_minor_subsys_version)
+       , ppf 4  "win32 version"         (ppHex 8 . owh_win32_version)
+       , ppf 4  "size of image"         (ppHex 8 . owh_size_of_image)
+       , ppf 4  "size of headers"       (ppHex 8 . owh_size_of_headers)
+       , ppf 4  "checksum"              (ppHex 8 . owh_checksum)
+       , ppf 2  "subsystem"             (ppHex 4 . owh_subsystem)
+       , ppf 2  "dll characteristics"   (ppHex 4 . owh_dll_characteristics)
+       , ppf 4  "size of stack reserve" (ppHex 8 . owh_size_stack_reserve)
+       , ppf 4  "size of stack commit"  (ppHex 8 . owh_size_stack_commit)
+       , ppf 4  "size of heap reserve"  (ppHex 8 . owh_size_heap_reserve)
+       , ppf 4  "size of heap commit"   (ppHex 8 . owh_size_heap_commit)
+       , ppf 4  "loader flags"          (ppHex 8 . owh_loader_flags)
+       , ppf 4  "rva num and sizes"     (ppHex 8 . owh_rva_num_and_sizes)
        ]
 
-ppImageDataDirectory :: String -> ImageDataDirectory -> Doc
-ppImageDataDirectory s a =
+ppHeaderDataDirectory :: String -> HeaderDataDirectory -> Doc
+ppHeaderDataDirectory s a =
     tableProlog s (24,6) (applyfs fields a) 
   where
     ppf    = ppField 4 24
     fields = 
-       [ ppf 4  "virtual address"       (ppHex 8 . idd_virtual_addr)
-       , ppf 4  "size"                  (ppHex 8 . idd_size)
+       [ ppf 4  "virtual address"       (ppHex 8 . hdd_virtual_addr)
+       , ppf 4  "size"                  (ppHex 8 . hdd_size)
        ]
 
 

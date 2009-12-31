@@ -48,19 +48,20 @@ readCOFF filename = do
     
 dllFile :: Parser Image
 dllFile = do
-    dosH    <- dosHeader
-    toNewExeHeader (dh_new_exe_addr dosH)
-    sig    <- signature
-    coffH  <- coffHeader
-    optH   <- imageOptionalHeader
-    secHs  <- sectionHeaders (fromIntegral $ ch_num_sections coffH)
-    opt_expos <- optExportData secHs
-    return $ Image { image_dos_header       = dosH
-                   , image_signature        = sig
-                   , image_coff_header      = coffH
-                   , image_opt_header       = optH
-                   , image_section_headers  = secHs
-                   , image_export_data      = opt_expos
+    dos_header          <- dosHeader
+    advanceToNewExeHeader (dh_new_exe_addr dos_header)
+    signature           <- pecoffSignature
+    coff_header         <- coffHeader
+    optional_header     <- imageOptionalHeader
+    section_headers     <- sectionHeaders 
+                             (fromIntegral $ ch_num_sections coff_header)
+    mb_export_data      <- optExportData section_headers
+    return $ Image { image_dos_header       = dos_header
+                   , image_signature        = signature
+                   , image_coff_header      = coff_header
+                   , image_opt_header       = optional_header
+                   , image_section_headers  = section_headers
+                   , image_export_data      = mb_export_data
                    }
 
 optExportData :: SectionHeaders -> Parser (Maybe ExportData)
@@ -72,8 +73,8 @@ optExportData = maybe (return Nothing) sk . Map.lookup ".edata"
 
 
 
-toNewExeHeader :: Word32 -> Parser ()
-toNewExeHeader n = do 
+advanceToNewExeHeader :: Word32 -> Parser ()
+advanceToNewExeHeader n = do 
     _anon <- getBytes (n - dosHSize)
     return ()  
   where
@@ -135,8 +136,8 @@ dosHeader = do
     reserved2 = count 10 word16le
 
 
-signature :: Parser (Char,Char,Char,Char) 
-signature = (,,,) <$> char <*> char 
+pecoffSignature :: Parser (Char,Char,Char,Char) 
+pecoffSignature = (,,,) <$> char <*> char 
                   <*> char <*> char
 
 
@@ -162,17 +163,17 @@ coffHeader = do
 
 imageOptionalHeader :: Parser ImageOptionalHeader
 imageOptionalHeader = do  
-    standard_fields     <- imageOptionalStandard
-    nt_specific_fields  <- imageOptionalNTSpecific
-    data_directory      <- count 16 imageDataDirectory
+    standard_fields     <- optionalStandardHeader
+    nt_specific_fields  <- optionalWindowsHeader
+    data_directory      <- count 16 headerDataDirectory
     return $ ImageOptionalHeader
                 { ioh_header_std_fields       = standard_fields
                 , ioh_nt_specific_fields      = nt_specific_fields
                 , ioh_data_directory          = data_directory
                 }    
 
-imageOptionalStandard :: Parser ImageOptionalStandard
-imageOptionalStandard = do
+optionalStandardHeader :: Parser OptionalStandardHeader
+optionalStandardHeader = do
     magic               <- word16le
     major_linker_number <- word8
     minor_linker_number <- word8
@@ -182,20 +183,20 @@ imageOptionalStandard = do
     entry_point_addr    <- word32le
     base_of_code        <- word32le
     base_of_data        <- word32le
-    return $ ImageOptionalStandard
-                { ios_magic                   = magic
-                , ios_major_linker_version    = major_linker_number
-                , ios_minor_linker_version    = minor_linker_number
-                , ios_size_of_code            = code_size
-                , ios_size_of_inited_data     = initialized_dsize
-                , ios_size_of_uninited_data   = uninitialized_dsize
-                , ios_entry_point_addr        = entry_point_addr
-                , ios_base_of_code            = base_of_code
-                , ios_base_of_data            = base_of_data
+    return $ OptionalStandardHeader
+                { osh_magic                   = magic
+                , osh_major_linker_version    = major_linker_number
+                , osh_minor_linker_version    = minor_linker_number
+                , osh_size_of_code            = code_size
+                , osh_size_of_inited_data     = initialized_dsize
+                , osh_size_of_uninited_data   = uninitialized_dsize
+                , osh_entry_point_addr        = entry_point_addr
+                , osh_base_of_code            = base_of_code
+                , osh_base_of_data            = base_of_data
                 }
 
-imageOptionalNTSpecific :: Parser ImageOptionalNTSpecific
-imageOptionalNTSpecific = do
+optionalWindowsHeader :: Parser OptionalWindowsHeader
+optionalWindowsHeader = do
     image_base          <- word32le
     section_alignment   <- word32le
     file_alignment      <- word32le
@@ -217,38 +218,38 @@ imageOptionalNTSpecific = do
     commit_heap_size    <- word32le
     loader_flags        <- word32le
     rva_num_and_sizes   <- word32le
-    return $ ImageOptionalNTSpecific
-                { iont_image_base             = image_base
-                , iont_section_alignment      = section_alignment
-                , iont_file_alignment         = file_alignment
-                , iont_major_os_version       = major_os_version
-                , iont_minor_os_version       = minor_os_version
-                , iont_major_image_version    = major_image_version
-                , iont_minor_image_version    = minor_image_version
-                , iont_major_subsys_version   = major_subsys
-                , iont_minor_subsys_version   = minor_subsys
-                , iont_win32_version          = win32_version
-                , iont_size_of_image          = image_size
-                , iont_size_of_headers        = headers_size
-                , iont_checksum               = checksum
-                , iont_subsystem              = subsystem
-                , iont_dll_characteristics    = characteristics
-                , iont_size_stack_reserve     = reserve_stack_size
-                , iont_size_stack_commit      = commit_stack_size
-                , iont_size_heap_reserve      = reserve_heap_size
-                , iont_size_heap_commit       = commit_heap_size
-                , iont_loader_flags           = loader_flags
-                , iont_rva_num_and_sizes      = rva_num_and_sizes
+    return $ OptionalWindowsHeader
+                { owh_image_base              = image_base
+                , owh_section_alignment       = section_alignment
+                , owh_file_alignment          = file_alignment
+                , owh_major_os_version        = major_os_version
+                , owh_minor_os_version        = minor_os_version
+                , owh_major_image_version     = major_image_version
+                , owh_minor_image_version     = minor_image_version
+                , owh_major_subsys_version    = major_subsys
+                , owh_minor_subsys_version    = minor_subsys
+                , owh_win32_version           = win32_version
+                , owh_size_of_image           = image_size
+                , owh_size_of_headers         = headers_size
+                , owh_checksum                = checksum
+                , owh_subsystem               = subsystem
+                , owh_dll_characteristics     = characteristics
+                , owh_size_stack_reserve      = reserve_stack_size
+                , owh_size_stack_commit       = commit_stack_size
+                , owh_size_heap_reserve       = reserve_heap_size
+                , owh_size_heap_commit        = commit_heap_size
+                , owh_loader_flags            = loader_flags
+                , owh_rva_num_and_sizes       = rva_num_and_sizes
                 } 
 
 
-imageDataDirectory :: Parser ImageDataDirectory
-imageDataDirectory = do
+headerDataDirectory :: Parser HeaderDataDirectory
+headerDataDirectory = do
     virtual_addr        <- word32le
     size                <- word32le
-    return $ ImageDataDirectory
-                { idd_virtual_addr      = virtual_addr
-                , idd_size              = size
+    return $ HeaderDataDirectory
+                { hdd_virtual_addr      = virtual_addr
+                , hdd_size              = size
                 }
 
 -- should be a Map then 

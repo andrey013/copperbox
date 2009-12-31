@@ -71,69 +71,59 @@ data COFFHeader = COFFHeader
       }
    deriving Show
 
-image_OPTIONAL_HEADER_size :: Int
-image_OPTIONAL_HEADER_size = 
-    image_OPTIONAL_STANDARD_size + image_OPTIONAL_NT_SPECIFIC_size
-       + 16*image_DATA_DIRECTORY_size
 
 data ImageOptionalHeader = ImageOptionalHeader
-      { ioh_header_std_fields       :: ImageOptionalStandard
-      , ioh_nt_specific_fields      :: ImageOptionalNTSpecific
-      , ioh_data_directory          :: [ImageDataDirectory]
+      { ioh_header_std_fields       :: OptionalStandardHeader
+      , ioh_nt_specific_fields      :: OptionalWindowsHeader
+      , ioh_data_directory          :: [HeaderDataDirectory]
       }
   deriving Show
  
 
-image_OPTIONAL_STANDARD_size :: Int
-image_OPTIONAL_STANDARD_size = 28
-
-data ImageOptionalStandard = ImageOptionalStandard
-      { ios_magic                   :: Word16
-      , ios_major_linker_version    :: Word8
-      , ios_minor_linker_version    :: Word8
-      , ios_size_of_code            :: Word32
-      , ios_size_of_inited_data     :: Word32
-      , ios_size_of_uninited_data   :: Word32
-      , ios_entry_point_addr        :: Word32
-      , ios_base_of_code            :: Word32
-      , ios_base_of_data            :: Word32
+data OptionalStandardHeader = OptionalStandardHeader
+      { osh_magic                   :: Word16
+      , osh_major_linker_version    :: Word8
+      , osh_minor_linker_version    :: Word8
+      , osh_size_of_code            :: Word32
+      , osh_size_of_inited_data     :: Word32
+      , osh_size_of_uninited_data   :: Word32
+      , osh_entry_point_addr        :: Word32
+      , osh_base_of_code            :: Word32
+      , osh_base_of_data            :: Word32
       }
    deriving Show
 
-image_OPTIONAL_NT_SPECIFIC_size :: Int
-image_OPTIONAL_NT_SPECIFIC_size = 68
-
-data ImageOptionalNTSpecific = ImageOptionalNTSpecific
-      { iont_image_base             :: Word32
-      , iont_section_alignment      :: Word32
-      , iont_file_alignment         :: Word32
-      , iont_major_os_version       :: Word16
-      , iont_minor_os_version       :: Word16
-      , iont_major_image_version    :: Word16
-      , iont_minor_image_version    :: Word16
-      , iont_major_subsys_version   :: Word16
-      , iont_minor_subsys_version   :: Word16
-      , iont_win32_version          :: Word32
-      , iont_size_of_image          :: Word32
-      , iont_size_of_headers        :: Word32
-      , iont_checksum               :: Word32
-      , iont_subsystem              :: Word16
-      , iont_dll_characteristics    :: Word16
-      , iont_size_stack_reserve     :: Word32
-      , iont_size_stack_commit      :: Word32
-      , iont_size_heap_reserve      :: Word32
-      , iont_size_heap_commit       :: Word32
-      , iont_loader_flags           :: Word32
-      , iont_rva_num_and_sizes      :: Word32
+data OptionalWindowsHeader = OptionalWindowsHeader
+      { owh_image_base              :: Word32
+      , owh_section_alignment       :: Word32
+      , owh_file_alignment          :: Word32
+      , owh_major_os_version        :: Word16
+      , owh_minor_os_version        :: Word16
+      , owh_major_image_version     :: Word16
+      , owh_minor_image_version     :: Word16
+      , owh_major_subsys_version    :: Word16
+      , owh_minor_subsys_version    :: Word16
+      , owh_win32_version           :: Word32
+      , owh_size_of_image           :: Word32
+      , owh_size_of_headers         :: Word32
+      , owh_checksum                :: Word32
+      , owh_subsystem               :: Word16
+      , owh_dll_characteristics     :: Word16
+      , owh_size_stack_reserve      :: Word32
+      , owh_size_stack_commit       :: Word32
+      , owh_size_heap_reserve       :: Word32
+      , owh_size_heap_commit        :: Word32
+      , owh_loader_flags            :: Word32
+      , owh_rva_num_and_sizes       :: Word32
       } 
   deriving Show
 
 image_DATA_DIRECTORY_size :: Int
 image_DATA_DIRECTORY_size = 4
 
-data ImageDataDirectory = ImageDataDirectory
-      { idd_virtual_addr            :: Word32
-      , idd_size                    :: Word32
+data HeaderDataDirectory = HeaderDataDirectory
+      { hdd_virtual_addr            :: Word32
+      , hdd_size                    :: Word32
       }
   deriving Show
 
