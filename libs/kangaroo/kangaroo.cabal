@@ -1,5 +1,5 @@
 name:             kangaroo
-version:          0.1.0
+version:          0.2.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -25,9 +25,12 @@ description:
   on Hackage.
   .
   Changelog:
+  .
+  0.2.0 Changes to ParseMonad - parsing within a region simplified
   . 
   0.1.0 First version
-  
+  .
+
 build-type:         Simple
 stability:          half baked
 cabal-version:      >= 1.2
