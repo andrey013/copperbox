@@ -19,6 +19,8 @@ module Data.ParserCombinators.Kangaroo.Utils
     (<:>)
   , pairA
   , mprogress
+  , unfoldrM 
+
 
   -- * Specs
   , oo
@@ -57,7 +59,7 @@ module Data.ParserCombinators.Kangaroo.Utils
 
 
 import Control.Applicative
-
+import Control.Monad 
 import Data.Bits
 import Data.Int
 import Data.Word
@@ -78,6 +80,13 @@ pairA fa fb = (,) <$> fa <*> fb
 -- needs renaming...
 mprogress :: Monad m => (a -> c -> d) -> (a -> b) -> m a -> (b -> m c) -> m d
 mprogress comb f ma mb = ma >>= \a -> mb (f a) >>= \b -> return $ comb a b
+
+
+unfoldrM      :: Monad m => (b -> m (Maybe (a, b))) -> b -> m [a]
+unfoldrM mf b  = mf b >>= maybe (return []) sk
+  where
+    sk (a,st)  = liftM (a:) $ unfoldrM mf st
+
 
 -- specs - defined in my package data-aviary but defined here to 
 -- avoid a dependency

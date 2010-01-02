@@ -25,10 +25,11 @@ module MidiText (
 
 
 import MidiDatatypes
+import Text.PrettyPrint.JoinPrint
+
 
 import qualified Data.Foldable as F
 import Numeric
-import Text.PrettyPrint.HughesPJ
 
 
 printMidi :: MidiFile -> IO ()
@@ -54,14 +55,14 @@ ppHex i = text $ showHex i []
 
 
 ppMidiFile :: MidiFile -> Doc
-ppMidiFile (MidiFile header tracks)  = ppHeader header $$ tdoc $$ empty
+ppMidiFile (MidiFile header tracks)  = ppHeader header <$> tdoc <$> empty
   where
     tdoc = fst $ F.foldl fn (empty,0) tracks
-    fn (d,i) t = (d $$ prettyTrack t i, i+1)
+    fn (d,i) t = (d <$> prettyTrack t i, i+1)
       
 ppHeader :: Header -> Doc
 ppHeader (Header hformat ntrks td) = 
-    text "[Header]" <+> ppHFormat hformat 
+    (text "[Header]" <+> ppHFormat hformat)
                     `hyph` (integral ntrks <+> text "tracks") 
                     `hyph` ppTimeDivision td
   
@@ -76,10 +77,10 @@ ppTimeDivision (TPB i)   = text "ticks" <+> integral i
 
 prettyTrack :: Track -> Int -> Doc
 prettyTrack (Track se) i = 
-    brackets (text "Track" <+> int i) $$ (snd $ F.foldl fn (0,empty) se)
+    brackets (text "Track" <+> int i) <$> (snd $ F.foldl fn (0,empty) se)
   where
     fn (gt,doc) msg@(dt,_)  = 
-      (gt+dt, doc $$ (padshow 8 (gt+dt) `hyph` ppMessage msg))    
+      (gt+dt, doc <$> (padshow 8 (gt+dt) `hyph` ppMessage msg))    
 
 
 ppMessage :: Message -> Doc
@@ -129,11 +130,12 @@ ppSystemEvent (SysEx _ _)    = text "sysex"   -- system exclusive event - length
 ppSystemEvent (DataEvent i)  = text "data" <+> ppHex i
 
 ppMetaEvent :: MetaEvent -> Doc
-ppMetaEvent (TextEvent ty s)     = ppTextType ty `hyph` doubleQuotes (text s)
+ppMetaEvent (TextEvent ty s)     = ppTextType ty `hyph` dquotes (text s)
 ppMetaEvent (SequenceNumber i)   = text "sequence-number" `hyph` integral i
 ppMetaEvent (ChannelPrefix ch)   = text "channel-prefix"  `hyph` integral ch
 ppMetaEvent (EndOfTrack)         = text "end-of-track"
-ppMetaEvent (SetTempo mspqn)     = text "set-tempo" `hyph` integral mspqn  -- microseconds per quarter-note
+ppMetaEvent (SetTempo mspqn)     = text "set-tempo" `hyph` integral mspqn  
+                                        -- microseconds per quarter-note
 ppMetaEvent (SMPTEOffset h m s f sf) = 
     text "smpte" `hyph` fli h `hyph` fli m `hyph` fli s `hyph` fli f `hyph` fli sf
     
@@ -143,7 +145,7 @@ ppMetaEvent (TimeSignature n d m ns) =
 ppMetaEvent (KeySignature i sc)  = 
     text "key-sig" `hyph` integral i `hyph` ppScaleType sc
        
-ppMetaEvent (SSME i _)           = text "ssme" `hyph` ppHex i <+> text "..."
+ppMetaEvent (SSME i _)           = text "ssme" `hyph` (ppHex i <+> text "...")
 
 ppScaleType :: ScaleType -> Doc
 ppScaleType MAJOR  = text "major"

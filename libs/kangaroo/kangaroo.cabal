@@ -59,7 +59,9 @@ library
     Data.ParserCombinators.Kangaroo.IEEEFloat,
     Data.ParserCombinators.Kangaroo.ParseMonad,
     Data.ParserCombinators.Kangaroo.Prim,
-    Data.ParserCombinators.Kangaroo.Utils
+    Data.ParserCombinators.Kangaroo.Utils,
+    Text.PrettyPrint.JoinPrint.JoinString,
+    Text.PrettyPrint.JoinPrint
 
   other-modules:
       

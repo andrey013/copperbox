@@ -9,6 +9,8 @@
 
 module Main where
 
+-- import Data.ParserCombinators.Kangaroo.Debug
+
 import MidiRead
 import MidiText
 
