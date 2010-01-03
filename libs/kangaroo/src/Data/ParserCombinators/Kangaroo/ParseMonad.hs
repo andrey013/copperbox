@@ -29,6 +29,7 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
 
   , askEnv
   , throwErr
+  , withSuccess
   , runGenKangaroo
 
   , reportError
@@ -151,13 +152,14 @@ askEnv :: GenKangaroo ust Env
 askEnv = GenKangaroo $ \env st ust -> return (Right env, st, ust)
 
 
-throwErr :: String -> GenKangaroo ust a
+throwErr :: ParseErr -> GenKangaroo ust a
 throwErr msg = GenKangaroo $ \_ st ust -> return (Left msg, st, ust)
+
+
 
 liftIOAction :: IO a -> GenKangaroo ust a
 liftIOAction ma = GenKangaroo $ \_ st ust -> 
     ma >>= \a -> return (Right a, st, ust) 
-
 
 
 
@@ -206,6 +208,12 @@ substError p msg = GenKangaroo $ \env st ust ->
         (Left _, st', ust')  -> return (Left msg, st', ust')
         okay                 -> return okay
 
+
+withSuccess :: Bool -> ParseErr -> GenKangaroo ust a -> GenKangaroo ust a
+withSuccess False msg _  = throwErr msg
+withSuccess True  _   mf = mf
+
+
    
 word8 :: GenKangaroo ust Word8
 word8 = do
@@ -250,11 +258,7 @@ lengthRemaining = getSt >>= \(ArrIx ix end) ->
 --------------------------------------------------------------------------------
 -- The important ones parsing within a /region/ ...
 
-
-data RegionCoda = Dalpunto | Alfermata | Alfine
-  deriving (Enum,Eq,Show)
-
--- Three useful final positions 
+-- | 'RegionCoda' - three useful final positions:
 --
 -- 1. dalpunto  - 'from the point'      
 -- - Run the parser within a region and return to where you came
@@ -268,6 +272,9 @@ data RegionCoda = Dalpunto | Alfermata | Alfine
 -- - Run the parser within a region and jump to the right-end of 
 --   the region after the parse.
 --
+data RegionCoda = Dalpunto | Alfermata | Alfine
+  deriving (Enum,Eq,Show)
+
 
 -- | 'intraparse' - coda x abs_start x length x parser
 --
@@ -275,7 +282,7 @@ intraparse :: RegionCoda -> Int -> Int
            -> GenKangaroo ust a 
            -> GenKangaroo ust a
 intraparse coda intra_start len p = 
-    withLoc intra_start len $ \old_start old_end -> 
+    withLoc "intraparse" intra_start len $ \old_start old_end -> 
       p >>= \ans -> 
       case coda of
         Dalpunto  -> putSt (ArrIx old_start old_end) >> return ans
@@ -285,19 +292,21 @@ intraparse coda intra_start len p =
      
              
   
--- The conditions in here need tidying - essentially we can go 
--- 1+ the old end which represents cursor at the end of file...
+-- Essentially we can go 1+ the old end, this represents the 
+-- cursor at the end of file...
 --
-withLoc :: Int -> Int -> (Int -> Int -> GenKangaroo ust a) -> GenKangaroo ust a
-withLoc new_start len mf = getSt >>= \(ArrIx pos end) -> 
-    case (new_start >= pos, (new_start + len) <= (end+1)) of
-      (True,True)  -> putSt (ArrIx new_start (new_start+len)) >> mf pos end
-      (False,_)    -> reportError $ backtrackErr new_start pos ""
-      (_,False)    -> reportError $ tooFarErr (new_start+len) end ""
+withLoc :: String -> Int -> Int 
+        -> (Int -> Int -> GenKangaroo ust a) 
+        -> GenKangaroo ust a
+withLoc fun_name new_start len mf = let new_end = new_start + len in
+    getSt >>= \(ArrIx pos end) ->
+        withSuccess (pos <= new_start) (backwardsError new_start pos fun_name) $
+            withSuccess (new_end <= end+1) (forwardsError new_end end fun_name) $ 
+                putSt (ArrIx new_start new_end) >> mf pos end
 
 
-backtrackErr :: Int -> Int -> String -> String  
-backtrackErr new_pos old_pos fun_name = concat
+backwardsError :: Int -> Int -> String -> String  
+backwardsError new_pos old_pos fun_name = concat
     [ "Kangaroo.ParseMonad."
     , fun_name
     , " - cannot backtrack, " 
@@ -306,8 +315,8 @@ backtrackErr new_pos old_pos fun_name = concat
     , show old_pos
     ]
 
-tooFarErr :: Int -> Int -> String -> String
-tooFarErr new_end old_end fun_name = concat
+forwardsError :: Int -> Int -> String -> String
+forwardsError new_end old_end fun_name = concat
     [ "Kangaroo.ParseMonad."
     , fun_name 
     , " - new end point " 
