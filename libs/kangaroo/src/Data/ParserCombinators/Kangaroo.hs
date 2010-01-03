@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Data.ParserCombinators.Kangaroo
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009, 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -26,8 +26,7 @@ module Data.ParserCombinators.Kangaroo
   ) where
 
 import Data.ParserCombinators.Kangaroo.Combinators
-import Data.ParserCombinators.Kangaroo.ParseMonad hiding (
-    getSt, putSt, modifySt ) -- TO SORT...
+import Data.ParserCombinators.Kangaroo.ParseMonad
 import Data.ParserCombinators.Kangaroo.Prim
 import Data.ParserCombinators.Kangaroo.Utils hiding ( (<:>), oo, ooo, oooo )
 

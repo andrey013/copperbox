@@ -51,6 +51,8 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
 
 import Data.ParserCombinators.Kangaroo.Utils 
 
+import Text.PrettyPrint.JoinPrint
+
 import Control.Applicative
 import Control.Monad
 import Data.Array.IO
@@ -153,12 +155,15 @@ getArrIx :: GenKangaroo ust ArrIx
 getArrIx = GenKangaroo $ \_ st ust -> return (Right $ fst st, st, ust)
 
 putArrIx :: ArrIx -> GenKangaroo ust ()
-putArrIx ix = GenKangaroo $ \_ (_,stk) ust -> return (Right (), (ix,stk), ust)
+putArrIx ix@(ArrIx s e)  = GenKangaroo $ \_ (_,stk) ust -> 
+    if s <= e then return (Right (), (ix,stk), ust)
+              else return (Left $ "Bad index " ++ show (s,e), (ix,stk), ust)
 
+   
 
-modifyArrIx :: (Int -> Int) -> GenKangaroo ust ()
-modifyArrIx f = GenKangaroo $ \_ (ArrIx ix end,stk) ust -> 
-    return (Right (), (ArrIx (f ix) end, stk), ust)
+-- modifyArrIx :: (Int -> Int) -> GenKangaroo ust ()
+-- modifyArrIx f = GenKangaroo $ \_ (ArrIx ix end,stk) ust -> 
+--    return (Right (), (ArrIx (f ix) end, stk), ust)
 
 
 
@@ -202,17 +207,31 @@ liftIOAction ma = GenKangaroo $ \_ st ust ->
 runGenKangaroo :: GenKangaroo ust a -> ust -> FilePath -> IO (Either ParseErr a,ust)
 runGenKangaroo p user_state filename = 
     withBinaryFile filename ReadMode $ \ handle -> 
-      do { sz          <- hFileSize handle
-         ; arr         <- newArray_ (0,fromIntegral $ sz-1)
-         ; rsz         <- hGetArray handle arr  (fromIntegral sz)
-         ; (ans,_,ust) <- runP p rsz arr
-         ; return (ans,ust)   
+      do { sz                 <- hFileSize handle
+         ; arr                <- newArray_ (0,fromIntegral $ sz-1)
+         ; rsz                <- hGetArray handle arr  (fromIntegral sz)
+         ; (ans,(_,stk),ust)  <- runP p rsz arr
+         ; return (mergeStk ans stk,ust)   
          }
   where 
     runP (GenKangaroo x) upper arr = x arr st0 user_state  where 
-        st0 = (ArrIx 0 (upper-1), [("-file-",Alfine,0,upper-1)]) 
+        st0 = (ArrIx 0 (upper-1), [(" -- file -- ",Alfine,0,upper-1)]) 
     
+    mergeStk (Left err)  stk = Left $ err ++ ('\n':'\n':printRegionStack stk)
+    mergeStk (Right ans) _   = Right ans
 
+printRegionStack :: RegionStack -> String
+printRegionStack stk = render $ vcat $ map fn stk
+  where
+    (w1,w4)                 = onSnd (length . show) $ foldr phi (0,0) stk
+    phi (name,_,_,i) (a,b)  = (max a (length name), max b i)
+    onSnd f (a,b)            = (a, f b)
+
+    fn                      :: RegionInfo -> Doc
+    fn (name,_,st,end)   =     alignPad AlignLeft w1 ' ' (text name)
+                           <+> alignPad AlignLeft w4 ' ' (int st)
+                           <+> alignPad AlignLeft w4 ' ' (int end)
+    
 
 
 --------------------------------------------------------------------------------
@@ -261,9 +280,9 @@ word8 = do
 
 
 checkWord8 :: (Word8 -> Bool) -> GenKangaroo ust (Maybe Word8)
-checkWord8 check = word8 >>= \ans ->
+checkWord8 check = getArrIx >>= \ix -> word8 >>= \ans ->
     if check ans then return $ Just ans
-                 else modifyArrIx (subtract 1) >> return Nothing
+                 else putArrIx ix >> return Nothing
 
 
 
@@ -319,9 +338,7 @@ intraparse name coda intra_start len p =
                             }
      
              
-  
--- Essentially we can go 1+ the old end, this represents the 
--- cursor at the end of file...
+
 --
 withLoc :: String -> Int -> Int 
         -> (Int -> Int -> GenKangaroo ust a) 
@@ -329,7 +346,7 @@ withLoc :: String -> Int -> Int
 withLoc fun_name new_start len mf = let new_end = new_start + len in
     getArrIx >>= \(ArrIx pos end) ->
         withSuccess (pos <= new_start) (backwardsError new_start pos fun_name) $
-            withSuccess (new_end <= end+1) (forwardsError new_end end fun_name) $ 
+            withSuccess (new_end <= end) (forwardsError new_end end fun_name) $ 
                 putArrIx (ArrIx new_start new_end) >> mf pos end
 
 
@@ -337,7 +354,7 @@ backwardsError :: Int -> Int -> String -> String
 backwardsError new_pos old_pos fun_name = concat
     [ "Kangaroo.ParseMonad."
     , fun_name
-    , " - cannot backtrack, " 
+    , "\n*** Cannot backtrack, " 
     , show new_pos 
     , " is before current position " 
     , show old_pos
@@ -347,7 +364,7 @@ forwardsError :: Int -> Int -> String -> String
 forwardsError new_end old_end fun_name = concat
     [ "Kangaroo.ParseMonad."
     , fun_name 
-    , " - new end point " 
+    , "\n*** New end point " 
     , show new_end 
     , " extends beyond the end of the current region "
     , show old_end
@@ -356,29 +373,29 @@ forwardsError new_end old_end fun_name = concat
 advance :: RegionName -> RegionCoda -> Int 
         -> GenKangaroo ust a 
         -> GenKangaroo ust a
-advance name coda intra_start p = 
-    getArrIx >>= \(ArrIx _ end) -> intraparse name coda intra_start end p
+advance name coda intra_start p = getArrIx >>= \(ArrIx _ end) -> 
+    intraparse name coda intra_start (end - intra_start) p
 
 advanceRelative :: RegionName -> RegionCoda -> Int
                 -> GenKangaroo ust a 
                 -> GenKangaroo ust a
-advanceRelative name coda dist p = 
-    getArrIx >>= \(ArrIx pos end) -> intraparse name coda (pos+dist) end p
+advanceRelative name coda dist p = getArrIx >>= \(ArrIx pos _) -> 
+    intraparse name coda (pos+dist) dist p
 
 
 
 restrict :: RegionName -> RegionCoda -> Int 
          -> GenKangaroo ust a 
          -> GenKangaroo ust a
-restrict name coda len p = 
-    getArrIx >>= \(ArrIx pos _) -> intraparse name coda pos len p
+restrict name coda len p = getArrIx >>= \(ArrIx pos _) -> 
+    intraparse name coda pos len p
 
 
 restrictToPos :: RegionName -> RegionCoda -> Int 
               -> GenKangaroo ust a 
               -> GenKangaroo ust a
-restrictToPos name coda abs_pos p = 
-    getArrIx >>= \(ArrIx pos _) -> intraparse name coda pos (abs_pos-pos) p
+restrictToPos name coda abs_pos p = getArrIx >>= \(ArrIx pos _) -> 
+    intraparse name coda pos (abs_pos-pos) p
 
 
 --------------------------------------------------------------------------------

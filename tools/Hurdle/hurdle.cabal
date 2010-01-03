@@ -39,8 +39,7 @@ Executable hurdle
   Build-Depends:  base < 5, 
                   array >= 0.2.0.0 && < 0.4,
                   containers, 
-                  pretty,
-                  kangaroo >= 0.1.0 && < 0.2 
+                  kangaroo >= 0.2.0 && < 0.3 
 
   Main-Is:        Hurdle.hs
   Hs-Source-Dirs: src

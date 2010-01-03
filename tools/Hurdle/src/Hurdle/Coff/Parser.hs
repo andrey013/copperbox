@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Hurdle.Coff.Parser
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009, 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -40,7 +40,11 @@ readCOFF filename = do
       Left err -> (putStrLn $ toList w) >> error err
       Right mf -> return mf
 
-
+{-
+logAdvance :: RegionCoda -> Int -> Parser a -> Parser a
+logAdvance coda dist p = 
+    logPosition ("advance ("  ++ show dist ++ ") ") >> advance coda dist p
+-}    
 
 --------------------------------------------------------------------------------
 -- 
@@ -55,6 +59,7 @@ dllFile = do
     optional_header     <- imageOptionalHeader
     section_headers     <- sectionHeaders 
                              (fromIntegral $ ch_num_sections coff_header)
+    logline "just before export data"
     mb_export_data      <- optExportData section_headers
     return $ Image { image_dos_header       = dos_header
                    , image_signature        = signature
@@ -68,8 +73,7 @@ optExportData :: SectionHeaders -> Parser (Maybe ExportData)
 optExportData = maybe (return Nothing) sk . Map.lookup ".edata" 
   where
     sk a = let raw_data = fromIntegral $ sh_ptr_raw_data a in
-           liftM Just $ advanceAlfermataAbsolute raw_data (exportData a)
-
+           liftM Just $ advance "export data" Alfermata raw_data (exportData a) 
 
 
 
@@ -138,7 +142,7 @@ dosHeader = do
 
 pecoffSignature :: Parser (Char,Char,Char,Char) 
 pecoffSignature = (,,,) <$> char <*> char 
-                  <*> char <*> char
+                        <*> char <*> char
 
 
 
@@ -288,15 +292,13 @@ sectionHeader = do
                 }
 
 
-jumpto :: Int -> Parser a -> Parser a
-jumpto = advanceDalpuntoAbsolute
-
-forwardParse :: (ExportDirectoryTable -> Word32)
+forwardParse :: RegionName 
+             -> (ExportDirectoryTable -> Word32)
              -> ExportDirectoryTable
              -> SectionHeader
              -> Parser a
              -> Parser a
-forwardParse f edt section p = advanceDalpuntoAbsolute pos p
+forwardParse name f edt section p = advance name Dalpunto pos p
   where
     pos = fromIntegral $ rvaToOffset (f edt) section
     
@@ -308,25 +310,28 @@ exportData section = do
     logPosition "starting exportData..."
     edt       <- exportDirectoryTable
     logline   $ show edt
-
     logPosition "export addr table"
     let eac   = fromIntegral $ edt_num_addr_table_entries edt
     logline   $ "num entries in export address table " ++ show eac
 
-    ats       <- forwardParse edt_export_addr_table_rva edt section
+    ats       <- forwardParse "address table" 
+                              edt_export_addr_table_rva edt section
                               (exportAddressTable eac)
 
     logPosition "ptr_table"
     let enc   = fromIntegral $ edt_num_name_ptrs edt
-    nptrs     <- forwardParse edt_name_ptr_table_rva edt section
+    nptrs     <- forwardParse "name pointers"
+                              edt_name_ptr_table_rva edt section
                               (count enc word32le)
 
-    ords      <- forwardParse edt_ordinal_table_rva edt section
+    ords      <- forwardParse "ordinals"
+                              edt_ordinal_table_rva edt section
                                (count enc word16le)
 
     names     <- exportNames section nptrs
     
-    dllname   <- forwardParse edt_name_rva edt section cstring
+    dllname   <- forwardParse "dll name"
+                              edt_name_rva edt section cstring
 
     return $ ExportData 
                 { ed_directory_table      = edt
@@ -383,6 +388,11 @@ exportNames section (x:xs) = mf <:> exportNames section xs
   where
     mf = jumpto (fromIntegral $ rvaToOffset x section) cstring
          `substError` "export name..."
+
+
+jumpto :: Int -> Parser a -> Parser a
+jumpto i p = 
+    logline ("jumpto " ++ show i) >> advance "export name" Dalpunto i p
 
          
 rvaToOffset :: Word32 -> SectionHeader -> Word32

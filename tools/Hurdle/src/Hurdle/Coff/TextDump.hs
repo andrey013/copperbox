@@ -22,30 +22,31 @@ import Hurdle.Coff.Datatypes
 import qualified Data.Map as Map
 import Data.Word
 import Numeric
-import Text.PrettyPrint.HughesPJ
+import Text.PrettyPrint.JoinPrint
+
 
 
 printImage :: Image -> IO ()
 printImage = putStr . imageText
 
 imageText :: Image -> String
-imageText = renderStyle (Style PageMode 80 1.5) . ppImage
+imageText = render . ppImage
 
 printCOFF :: COFFHeader -> IO ()
 printCOFF = putStr . coff
 
 coff :: COFFHeader -> String
-coff = renderStyle (Style PageMode 80 1.5) . ppCOFFHeader
+coff = render . ppCOFFHeader
 
 ppImage :: Image -> Doc
 ppImage a = 
         ppDOSHeader           (image_dos_header a)
-    $+$ columnSep
-    $+$ ppSignature           (image_signature a)
-    $+$ ppCOFFHeader          (image_coff_header a)
-    $+$ ppImageOptionalHeader (image_opt_header a)
-    $+$ (vcat $ map ppSectionHeader $ Map.elems $ image_section_headers a)
-    $+$ maybe empty ppExportData          (image_export_data a)
+    <%> columnSep
+    <%> ppSignature           (image_signature a)
+    <%> ppCOFFHeader          (image_coff_header a)
+    <%> ppImageOptionalHeader (image_opt_header a)
+    <%> (vcat $ map ppSectionHeader $ Map.elems $ image_section_headers a)
+    <%> maybe empty ppExportData          (image_export_data a)
 
 
 ppDOSHeader :: DOSHeader -> Doc
@@ -101,8 +102,8 @@ ppCOFFHeader a =
 ppImageOptionalHeader :: ImageOptionalHeader -> Doc
 ppImageOptionalHeader a = 
         ppOptionalStandardHeader   (ioh_header_std_fields a)
-    $+$ ppOptionalWindowsHeader   (ioh_nt_specific_fields a)
-    $+$ (vcat $ zipWith ppHeaderDataDirectory names (ioh_data_directory a))
+    <%> ppOptionalWindowsHeader   (ioh_nt_specific_fields a)
+    <%> (vcat $ zipWith ppHeaderDataDirectory names (ioh_data_directory a))
   where
     names = [ ".edata"
             , ".idata"
@@ -201,10 +202,10 @@ ppSectionHeader a =
 ppExportData :: ExportData -> Doc
 ppExportData a = 
         ppExportDirectoryTable (ed_directory_table a)
-    $+$ ppExportAddressTable   (ed_export_address_table a)
-    $+$ ppExportNamePtrTable   (ed_name_ptr_table a)
-    $+$ ppExportOrdinalTable   (ed_ordinal_table a)
-    $+$ ppExportNames          (ed_name_table a)
+    <%> ppExportAddressTable   (ed_export_address_table a)
+    <%> ppExportNamePtrTable   (ed_name_ptr_table a)
+    <%> ppExportOrdinalTable   (ed_ordinal_table a)
+    <%> ppExportNames          (ed_name_table a)
 
 ppExportDirectoryTable :: ExportDirectoryTable -> Doc
 ppExportDirectoryTable a = 
@@ -263,11 +264,11 @@ ppExportNames a =
 tableProlog :: String -> (Int,Int) -> [Doc] -> Doc
 tableProlog s (m,n) ds =
         columnSep 
-    $+$ text s 
-    $+$ columnSep
-    $+$ columnHeadings m n
-    $+$ columnSep
-    $+$ vcat ds
+    <%> text s 
+    <%> columnSep
+    <%> columnHeadings m n
+    <%> columnSep
+    <%> vcat ds
   where
     columnHeadings fsz vsz = 
       text "size" <+> text (pad fsz ' ' "field") <+> text (pad vsz ' ' "value")
@@ -292,5 +293,5 @@ pad n ch s | length s < n = replicate (n - length s) ch ++ s
            | otherwise    = s
 
 listDoc :: [Doc] -> Doc
-listDoc = brackets . hcat . punctuate comma
+listDoc = brackets . punctuate comma
 

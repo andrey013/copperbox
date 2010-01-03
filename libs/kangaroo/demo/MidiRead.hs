@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  MidiRead
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009, 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -40,26 +40,6 @@ readMidi filename = do
    putStrLn w
    either error return a
     
-{-
-
-logMsg :: String -> MidiParser ()
-logMsg = tell . ("\n" ++)
-
-logPos :: String -> MidiParser a -> MidiParser a
-logPos s p = do 
-  p1 <- position
-  ans <- p
-  p2 <- position
-  logMsg $ unwords [show p1, s, show p2]
-  return ans
-
-logBound :: String -> MidiParser a -> MidiParser a
-logBound s p = do 
-  b <- upperBound
-  logMsg $ unwords [ s, "region boundary", show b ]
-  p
-
--}
 
 --------------------------------------------------------------------------------
 -- 
@@ -88,7 +68,7 @@ trackHeader = assertString "MTrk" >> word32be
 
 getMessages :: Word32 -> MidiParser (Seq Message)
 
-getMessages i = restrict Alfine (fromIntegral i) messages
+getMessages i = restrict "messages" Alfine (fromIntegral i) messages
   where    
     messages = genericRunOn (<|) S.empty message
 

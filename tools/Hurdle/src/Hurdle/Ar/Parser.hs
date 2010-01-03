@@ -27,7 +27,7 @@ readAr filename = do
     (ans,w) <- runKangaroo arArchive filename
     case ans of 
       Left err -> (putStrLn $ toList w) >> error err
-      Right mf -> return mf
+      Right a -> return a
 
 
 

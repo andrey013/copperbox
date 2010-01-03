@@ -21,19 +21,20 @@ import Hurdle.Ar.Datatypes
 
 import Data.Char
 import Numeric
-import Text.PrettyPrint.HughesPJ
+import Text.PrettyPrint.JoinPrint
+
 
 
 printArchive :: ArArchive -> IO ()
 printArchive = putStr . archiveText
 
 archiveText :: ArArchive -> String
-archiveText = renderStyle (Style PageMode 80 1.5) . ppArchive
+archiveText = render . ppArchive
 
 ppArchive :: ArArchive -> Doc
 ppArchive a = 
         text              (ar_magic a)
-    $+$ (vcat $ map ppArchiveObject $ ar_objects a)
+    <%> (vcat $ map ppArchiveObject $ ar_objects a)
 
 
 
@@ -66,11 +67,11 @@ ppArHeader a =
 tableProlog :: String -> (Int,Int) -> [Doc] -> Doc
 tableProlog s (m,n) ds =
         columnSep 
-    $+$ text s 
-    $+$ columnSep
-    $+$ columnHeadings m n
-    $+$ columnSep
-    $+$ vcat ds
+    <%> text s 
+    <%> columnSep
+    <%> columnHeadings m n
+    <%> columnSep
+    <%> vcat ds
   where
     columnHeadings fsz vsz = 
       text "size" <+> text (pad fsz ' ' "field") <+> text (pad vsz ' ' "value")
@@ -95,5 +96,5 @@ pad n ch s | length s < n = replicate (n - length s) ch ++ s
            | otherwise    = s
 
 listDoc :: [Doc] -> Doc
-listDoc = brackets . hcat . punctuate comma
+listDoc = brackets . punctuate comma
 

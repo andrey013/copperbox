@@ -82,8 +82,9 @@ logline s = tell $ stringH s `append` charH '\n'
 
 
 logPosition :: String -> Parser ()
-logPosition s = position >>= \pos -> 
-    logline $ s ++ ", position " ++ show pos
+logPosition s = position >>= \pos -> regionEnd >>= \end ->
+    logline $ s ++ ", current position " ++ show pos 
+                ++ " & region-end " ++ show end
 
 
 --------------------------------------------------------------------------------
