@@ -9,7 +9,8 @@
 
 module Main where
 
--- import Data.ParserCombinators.Kangaroo.Debug
+-- TEMP
+import Text.PrettyPrint.JoinPrint
 
 import MidiRead
 import MidiText
