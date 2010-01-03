@@ -9,8 +9,6 @@
 
 module Main where
 
--- TEMP
-import Text.PrettyPrint.JoinPrint
 
 import MidiRead
 import MidiText

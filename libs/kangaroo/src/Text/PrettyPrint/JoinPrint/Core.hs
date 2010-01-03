@@ -21,7 +21,7 @@ module Text.PrettyPrint.JoinPrint.Core
   , null
   , (<>)
   , (<+>)
-  , (<$>)
+  , (<%>)
   , vcat
   , hcat
   , hsep
@@ -33,6 +33,9 @@ module Text.PrettyPrint.JoinPrint.Core
 
   , sglspace
   , dblspace
+  , comma
+  , semicolon
+
 
   , punctuate
   , enclose
@@ -81,7 +84,7 @@ import Prelude hiding ( (++), null, length )
 
 newtype Doc = Doc { getDoc :: JoinString }
         
-infixr 5 <$>
+infixr 5 <%>
 infixr 6 <>, <+>
 
 
@@ -101,11 +104,11 @@ Doc a <> Doc b = Doc $ a ++ b
 (<+>) :: Doc -> Doc -> Doc
 Doc a <+> Doc b = Doc (a ++ JS.cons1 ' ' b)
 
-(<$>) :: Doc -> Doc -> Doc
-Doc a <$> Doc b = Doc (a ++ JS.cons1 '\n' b)
+(<%>) :: Doc -> Doc -> Doc
+Doc a <%> Doc b = Doc (a ++ JS.cons1 '\n' b)
 
 vcat :: [Doc] -> Doc
-vcat = foldr (<$>) empty
+vcat = foldr (<%>) empty
 
 hcat :: [Doc] -> Doc
 hcat = foldr (<>) empty
@@ -133,6 +136,12 @@ sglspace = char ' '
 
 dblspace :: Doc
 dblspace = text "  "
+
+comma :: Doc
+comma = char ','
+
+semicolon :: Doc
+semicolon = char ';'
 
 
 --------------------------------------------------------------------------------

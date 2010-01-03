@@ -55,10 +55,10 @@ ppHex i = text $ showHex i []
 
 
 ppMidiFile :: MidiFile -> Doc
-ppMidiFile (MidiFile header tracks)  = ppHeader header <$> tdoc <$> empty
+ppMidiFile (MidiFile header tracks)  = ppHeader header <%> tdoc <%> empty
   where
     tdoc = fst $ F.foldl fn (empty,0) tracks
-    fn (d,i) t = (d <$> prettyTrack t i, i+1)
+    fn (d,i) t = (d <%> prettyTrack t i, i+1)
       
 ppHeader :: Header -> Doc
 ppHeader (Header hformat ntrks td) = 
@@ -77,10 +77,10 @@ ppTimeDivision (TPB i)   = text "ticks" <+> integral i
 
 prettyTrack :: Track -> Int -> Doc
 prettyTrack (Track se) i = 
-    brackets (text "Track" <+> int i) <$> (snd $ F.foldl fn (0,empty) se)
+    brackets (text "Track" <+> int i) <%> (snd $ F.foldl fn (0,empty) se)
   where
     fn (gt,doc) msg@(dt,_)  = 
-      (gt+dt, doc <$> (padshow 8 (gt+dt) `hyph` ppMessage msg))    
+      (gt+dt, doc <%> (padshow 8 (gt+dt) `hyph` ppMessage msg))    
 
 
 ppMessage :: Message -> Doc

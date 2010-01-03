@@ -19,6 +19,9 @@ module Data.ParserCombinators.Kangaroo.Utils
     (<:>)
   , pairA
   , mprogress
+  , bracketM
+  , bracketM_
+
   , unfoldrM 
 
 
@@ -80,6 +83,19 @@ pairA fa fb = (,) <$> fa <*> fb
 -- needs renaming...
 mprogress :: Monad m => (a -> c -> d) -> (a -> b) -> m a -> (b -> m c) -> m d
 mprogress comb f ma mb = ma >>= \a -> mb (f a) >>= \b -> return $ comb a b
+
+
+
+bracketM :: Monad m => m a -> (a -> m b) -> (a -> m c) -> m c
+bracketM pre post mf = do 
+    a   <- pre
+    ans <- mf a
+    _   <- post a
+    return ans
+
+bracketM_ :: Monad m => m a -> m b -> m c -> m c
+bracketM_ pre post mf = pre >> mf >>= \ans -> post >> return ans
+
 
 
 unfoldrM      :: Monad m => (b -> m (Maybe (a, b))) -> b -> m [a]
