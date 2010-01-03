@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Text.PrettyPrint.Core
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009, 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -138,8 +138,8 @@ dblspace = text "  "
 --------------------------------------------------------------------------------
 
 punctuate :: Doc -> [Doc] -> Doc
-punctuate s []     = empty
-punctuate s [x]    = x
+punctuate _ []     = empty
+punctuate _ [x]    = x
 punctuate s (x:xs) = x <> s <> punctuate s xs
 
 
