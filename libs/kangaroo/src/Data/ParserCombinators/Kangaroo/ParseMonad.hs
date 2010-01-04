@@ -36,7 +36,6 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , checkWord8
   , opt 
   , position
-  , regionStart
   , regionEnd
   , atEnd
   , lengthRemaining
@@ -48,10 +47,6 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , advanceRelative
   , restrict
   , restrictToPos
-
-  -- * /Optimised/ combinators.
-  , word8ByteString
-  , char8ByteString
    
   ) where
 
@@ -61,10 +56,7 @@ import Text.PrettyPrint.JoinPrint
 
 import Control.Applicative
 import Control.Monad
-import qualified Data.ByteString as BSW8
-import qualified Data.ByteString.Char8 as BSC8
 import Data.Array.IO
-import Data.Char ( chr )
 import Data.Word
 import Numeric
 import System.IO
@@ -73,11 +65,7 @@ type ParseErr = String
 
 type ImageData = IOUArray Int Word8   -- Is Int big enough for index?
 
-data ArrIx = ArrIx { 
-      arr_ix_start  :: !Int, 
-      arr_ix_ptr    :: !Int, 
-      arr_ix_end    :: !Int 
-    }
+data ArrIx = ArrIx { arr_ix_ptr :: !Int, arr_ix_end :: !Int }
   deriving (Eq,Show) 
 
 -- | 'RegionCoda' - three useful final positions:
@@ -171,9 +159,10 @@ getArrIx = GenKangaroo $ \_ st ust -> return (Right $ fst st, st, ust)
 -- end is valid, allowing the 'atEnd' opertaion to work.
 --
 putArrIx :: ArrIx -> GenKangaroo ust ()
-putArrIx ix = GenKangaroo $ \_ (_,stk) ust -> 
-    return (Right (), (ix,stk), ust)
-    
+putArrIx ix@(ArrIx s e)  = GenKangaroo $ \_ (_,stk) ust -> 
+    if s <= e then return (Right (), (ix,stk), ust)
+              else return (Left $ "Bad index " ++ show (s,e), (ix,stk), ust)
+
    
 
 -- modifyArrIx :: (Int -> Int) -> GenKangaroo ust ()
@@ -230,7 +219,7 @@ runGenKangaroo p user_state filename =
          }
   where 
     runP (GenKangaroo x) upper arr = x arr st0 user_state  where 
-        st0 = (ArrIx 0 0 (upper-1), [(" -- file -- ",Alfine,0,upper-1)]) 
+        st0 = (ArrIx 0 (upper-1), [(" -- file -- ",Alfine,0,upper-1)]) 
     
     mergeStk (Left err)  stk = Left $ err ++ ('\n':'\n':printRegionStack stk)
     mergeStk (Right ans) _   = Right ans
@@ -261,13 +250,13 @@ reportError s = do
     posn <- getArrIx
     throwErr $ s ++ posStr posn
   where
-    posStr (ArrIx _ pos end) = concat [ " absolute position "
-                                      , show pos
-                                      , " (0x" 
-                                      , showHex pos []
-                                      , "), region length "
-                                      , show end
-                                      ]
+    posStr (ArrIx pos end) = concat [ " absolute position "
+                                    , show pos
+                                    , " (0x" 
+                                    , showHex pos []
+                                    , "), region length "
+                                    , show end
+                                    ]
 
 
 substError :: GenKangaroo ust a -> ParseErr -> GenKangaroo ust a
@@ -286,11 +275,11 @@ withSuccess True  _   mf = mf
    
 word8 :: GenKangaroo ust Word8
 word8 = do
-    (ArrIx start ix end)  <- getArrIx
-    when (ix>end)         (reportError "word8")   -- test emphatically is (>) !
-    arr                   <- askEnv
-    a                     <- liftIOAction $ readArray arr ix
-    putArrIx $ ArrIx start (ix+1) end
+    (ArrIx ix end)   <- getArrIx
+    when (ix>end)    (reportError "word8")   -- test emphatically is (>) !
+    arr              <- askEnv
+    a                <- liftIOAction $ readArray arr ix
+    putArrIx $ ArrIx (ix+1) end
     return a
 
 
@@ -315,19 +304,16 @@ opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans ->
 position :: GenKangaroo ust Int
 position = liftM arr_ix_ptr getArrIx
 
-
-regionStart :: GenKangaroo ust Int
-regionStart = liftM arr_ix_start getArrIx
-
 regionEnd :: GenKangaroo ust Int
 regionEnd = liftM arr_ix_end getArrIx
 
 
+
 atEnd :: GenKangaroo ust Bool
-atEnd = getArrIx >>= \(ArrIx _ ix end) -> return $ ix >= end
+atEnd = getArrIx >>= \(ArrIx ix end) -> return $ ix >= end
 
 lengthRemaining :: GenKangaroo ust Int
-lengthRemaining = getArrIx >>= \(ArrIx _ ix end) -> 
+lengthRemaining = getArrIx >>= \(ArrIx ix end) -> 
    let rest = end - ix in if rest < 0 then return 0 else return rest
 
 --------------------------------------------------------------------------------
@@ -344,31 +330,33 @@ intraparse :: RegionName -> RegionCoda -> Int -> Int
            -> GenKangaroo ust a
 intraparse name coda intra_start len p = 
     bracketRegionInfo (name,coda,intra_start, intra_start+len) $ 
-      withLoc "intraparse" intra_start len $ \old_start old_pos old_end -> 
+      withLoc "intraparse" intra_start len $ \old_start old_end -> 
         p >>= \ans ->
           case coda of
-            Dalpunto  -> do { putArrIx (ArrIx old_start old_pos old_end)
+            Dalpunto  -> do { putArrIx (ArrIx old_start old_end)
                             ; return ans 
                             }
             Alfermata -> do { pos <- position
-                            ; putArrIx (ArrIx old_start pos old_end)
+                            ; putArrIx (ArrIx pos old_end)
                             ; return ans
                             }
-            Alfine    -> do { putArrIx (ArrIx old_start (intra_start+len) old_end)
+            Alfine    -> do { putArrIx (ArrIx (intra_start+len) old_end)
                             ; return ans
                             }
      
              
 
---
+-- withLoc doesn't represent /end-of-parse/ usefully.
+-- It needs more thought.
+
 withLoc :: String -> Int -> Int 
-        -> (Int -> Int -> Int -> GenKangaroo ust a) 
+        -> (Int -> Int -> GenKangaroo ust a) 
         -> GenKangaroo ust a
 withLoc fun_name new_start len mf = let new_end = new_start + len in
-    getArrIx >>= \(ArrIx start pos end) ->
+    getArrIx >>= \(ArrIx pos end) ->
         withSuccess (pos <= new_start) (backwardsError new_start pos fun_name) $
             withSuccess (new_end <= end) (forwardsError new_end end fun_name) $ 
-                putArrIx (ArrIx new_start new_start new_end) >> mf start pos end
+                putArrIx (ArrIx new_start new_end) >> mf pos end
 
 
 backwardsError :: Int -> Int -> String -> String  
@@ -394,13 +382,13 @@ forwardsError new_end old_end fun_name = concat
 advance :: RegionName -> RegionCoda -> Int 
         -> GenKangaroo ust a 
         -> GenKangaroo ust a
-advance name coda intra_start p = getArrIx >>= \(ArrIx _ _ end) -> 
+advance name coda intra_start p = getArrIx >>= \(ArrIx _ end) -> 
     intraparse name coda intra_start (end - intra_start) p
 
 advanceRelative :: RegionName -> RegionCoda -> Int
                 -> GenKangaroo ust a 
                 -> GenKangaroo ust a
-advanceRelative name coda dist p = getArrIx >>= \(ArrIx _ pos _) -> 
+advanceRelative name coda dist p = getArrIx >>= \(ArrIx pos _) -> 
     intraparse name coda (pos+dist) dist p
 
 
@@ -408,59 +396,19 @@ advanceRelative name coda dist p = getArrIx >>= \(ArrIx _ pos _) ->
 restrict :: RegionName -> RegionCoda -> Int 
          -> GenKangaroo ust a 
          -> GenKangaroo ust a
-restrict name coda len p = getArrIx >>= \(ArrIx _ pos _) -> 
+restrict name coda len p = getArrIx >>= \(ArrIx pos _) -> 
     intraparse name coda pos len p
 
 
 restrictToPos :: RegionName -> RegionCoda -> Int 
               -> GenKangaroo ust a 
               -> GenKangaroo ust a
-restrictToPos name coda abs_pos p = getArrIx >>= \(ArrIx _ pos _) -> 
+restrictToPos name coda abs_pos p = getArrIx >>= \(ArrIx pos _) -> 
     intraparse name coda pos (abs_pos-pos) p
 
 
 --------------------------------------------------------------------------------
 -- 
 
--- These are "optimized" but still aren't very good...
--- Maybe some strictness wouldn't go amiss.
-   
-revWord8 :: GenKangaroo ust Word8
-revWord8 = do
-    (ArrIx start ix end)  <- getArrIx
-    when (ix<start)       (reportError "word8")
-    arr                   <- askEnv
-    a                     <- liftIOAction $ readArray arr ix
-    putArrIx $ ArrIx start (ix-1) end
-    return a
+
                 
-revChar :: GenKangaroo ust Char
-revChar = liftM (chr . fromIntegral) revWord8
-
--- These two need a bit of tidying up...
-
-word8ByteString :: Int -> GenKangaroo ust BSW8.ByteString
-word8ByteString i = do 
-    (ArrIx start pos end) <- getArrIx
-    let seq_end = pos + i
-    putArrIx $ ArrIx start (seq_end - 1) end    -- (-1) so the end char is read
-    ans                   <- reversingStep i BSW8.empty
-    putArrIx $ ArrIx start seq_end end
-    return ans
-  where
-    reversingStep 0 bs = return bs
-    reversingStep n bs = revWord8 >>= \b -> reversingStep (n-1) (BSW8.cons b bs)
-
-
-char8ByteString :: Int -> GenKangaroo ust BSC8.ByteString
-char8ByteString i = do 
-    (ArrIx start pos end) <- getArrIx
-    let seq_end = pos + i
-    putArrIx $ ArrIx start (seq_end - 1) end    -- (-1) so the end char is read
-    ans                   <- reversingStep i BSC8.empty
-    putArrIx $ ArrIx start seq_end end
-    return ans
-  where
-    reversingStep 0 bs = return bs
-    reversingStep n bs = revChar >>= \b -> reversingStep (n-1) (BSC8.cons b bs)
-    

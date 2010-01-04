@@ -23,6 +23,8 @@ module MidiRead (
 import MidiDatatypes
 
 import Data.ParserCombinators.KangarooWriter
+import Data.ParserCombinators.Kangaroo.Utils
+
 
 import Control.Applicative
 import Control.Monad
@@ -67,8 +69,7 @@ trackHeader :: MidiParser Word32
 trackHeader = assertString "MTrk" >> word32be
 
 getMessages :: Word32 -> MidiParser (Seq Message)
-
-getMessages i = restrict "messages" Alfine (fromIntegral i) messages
+getMessages i = restrict "messages" Alfermata (fromIntegral i) messages
   where    
     messages = genericRunOn (<|) S.empty message
 

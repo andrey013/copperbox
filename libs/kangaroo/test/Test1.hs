@@ -79,15 +79,3 @@ test03 = do
       end <- char
       return ((ch,str),end)
 
-
-test04 :: IO ()
-test04 = do 
-    P.writePickle "test04.bin" (P.cstring "12345678901234567890*....")
-    runKangaroo p1 "test04.bin" >>= print
-  where
-    p1 = do 
-     a <- word8ByteString 20  
-     b <- char
-     return (a,b)
-
-   
