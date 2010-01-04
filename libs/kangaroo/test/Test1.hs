@@ -70,11 +70,24 @@ test03 = do
 --    runKangaroo pAlfine "test03.bin" >>= print
   where
     pDalpunto  = intraP Dalpunto
-    pAlfermata = intraP Alfermata
-    pAlfine    = intraP Alfine
+--    pAlfermata = intraP Alfermata
+--    pAlfine    = intraP Alfine
 
     intraP coda =  do 
       ch  <- char
       str <- advance "region1" coda 2 (count 3 char)
       end <- char
       return ((ch,str),end)
+
+
+test04 :: IO ()
+test04 = do 
+    P.writePickle "test04.bin" (P.cstring "12345678901234567890*....")
+    runKangaroo p1 "test04.bin" >>= print
+  where
+    p1 = do 
+     a <- word8ByteString 20  
+     b <- char
+     return (a,b)
+
+   

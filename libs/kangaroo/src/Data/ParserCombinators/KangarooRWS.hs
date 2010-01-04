@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Data.ParserCombinators.KangarooRWS
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009, 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -19,7 +19,6 @@ module Data.ParserCombinators.KangarooRWS
     module Data.ParserCombinators.Kangaroo.Combinators
   , module Data.ParserCombinators.Kangaroo.ParseMonad
   , module Data.ParserCombinators.Kangaroo.Prim
-  , module Data.ParserCombinators.Kangaroo.Utils
   , Kangaroo
   , parse
   , runKangaroo
@@ -37,8 +36,7 @@ module Data.ParserCombinators.KangarooRWS
 import Data.ParserCombinators.Kangaroo.Combinators
 import Data.ParserCombinators.Kangaroo.ParseMonad
 import Data.ParserCombinators.Kangaroo.Prim
-import Data.ParserCombinators.Kangaroo.Utils hiding ( (<:>), oo, ooo, oooo )
-import qualified Data.ParserCombinators.Kangaroo.Utils as Specs
+import Data.ParserCombinators.Kangaroo.Utils
 
 import Control.Monad
 import Data.Monoid
@@ -62,7 +60,7 @@ parse :: Monoid w
       -> st 
       -> FilePath 
       -> IO (Either ParseErr a)
-parse = liftM fst `Specs.oooo` evalKangaroo 
+parse = liftM fst `oooo` evalKangaroo 
 
 runKangaroo :: Monoid w 
             => Kangaroo r w st a 
@@ -80,7 +78,7 @@ evalKangaroo :: Monoid w
              -> st 
              -> FilePath 
              -> IO (Either ParseErr a,w)
-evalKangaroo = liftM fn `Specs.oooo` runKangaroo where
+evalKangaroo = liftM fn `oooo` runKangaroo where
     fn (a,w,_) = (a,w)
 
 -- state, no answer
@@ -90,7 +88,7 @@ execKangaroo :: Monoid w
              -> st 
              -> FilePath 
              -> IO st
-execKangaroo = liftM state3 `Specs.oooo` runKangaroo 
+execKangaroo = liftM state3 `oooo` runKangaroo 
  
 
 put :: st -> Kangaroo r w st ()

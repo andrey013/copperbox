@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Data.ParserCombinators.KangarooState
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009, 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -19,7 +19,6 @@ module Data.ParserCombinators.KangarooState
     module Data.ParserCombinators.Kangaroo.Combinators
   , module Data.ParserCombinators.Kangaroo.ParseMonad
   , module Data.ParserCombinators.Kangaroo.Prim
-  , module Data.ParserCombinators.Kangaroo.Utils
   , Kangaroo
   , parse
   , runKangaroo
@@ -35,8 +34,7 @@ module Data.ParserCombinators.KangarooState
 import Data.ParserCombinators.Kangaroo.Combinators
 import Data.ParserCombinators.Kangaroo.ParseMonad
 import Data.ParserCombinators.Kangaroo.Prim
-import Data.ParserCombinators.Kangaroo.Utils hiding ( (<:>), oo, ooo, oooo )
-import qualified Data.ParserCombinators.Kangaroo.Utils as Specs
+import Data.ParserCombinators.Kangaroo.Utils
 
 import Control.Monad
 
@@ -50,11 +48,11 @@ runKangaroo p st filename = runGenKangaroo p st filename
 
 -- answer, no state
 evalKangaroo :: Kangaroo st a -> st -> FilePath -> IO (Either ParseErr a)
-evalKangaroo = liftM fst `Specs.ooo` runKangaroo
+evalKangaroo = liftM fst `ooo` runKangaroo
 
 -- state, no answer
 execKangaroo :: Kangaroo st a -> st -> FilePath -> IO st
-execKangaroo = liftM snd `Specs.ooo` runKangaroo
+execKangaroo = liftM snd `ooo` runKangaroo
 
 
 put :: st -> Kangaroo st ()
