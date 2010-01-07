@@ -1,0 +1,44 @@
+name:             zparse
+version:          0.1
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Data
+synopsis:         Two-continuation parser combinators. 
+description:
+  Two continuation parser combinators
+
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Demo1
+
+library
+  hs-source-dirs:     src
+  build-depends:      base, mtl
+
+  
+  exposed-modules:
+    Text.ParserCombinators.ZParse,
+    Text.ParserCombinators.ZParse.Combinators,
+    Text.ParserCombinators.ZParse.ParseMonad,
+    Text.ParserCombinators.ZParse.SrcPos,
+    Text.ParserCombinators.ZParse.TokenParsers,
+    Text.ParserCombinators.ZParse.Utils
+
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
