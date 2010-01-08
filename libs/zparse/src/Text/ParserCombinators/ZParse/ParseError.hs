@@ -32,7 +32,10 @@ import Control.Applicative
 
 
 newtype ParseFailure = ParseFailure { getParseFailure :: String }
-  deriving (Eq,Show)
+
+instance Show ParseFailure where
+  show = getParseFailure
+
 
 newtype ErrMsg = ErrMsg { getErrMsg :: String }
   deriving (Eq,Show)
@@ -58,6 +61,6 @@ location = liftA2 (\l c -> show l ++ ':' : show c)
                          src_column
 
 errorStack :: ErrorStack -> String
-errorStack = unlines . map show
+errorStack = unlines . map getErrMsg
 
 

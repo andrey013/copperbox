@@ -29,7 +29,6 @@ library
     Text.ParserCombinators.ZParse.ParseMonad,
     Text.ParserCombinators.ZParse.ParseError,
     Text.ParserCombinators.ZParse.SourcePosition,
-    Text.ParserCombinators.ZParse.TokenParsers,
     Text.ParserCombinators.ZParse.Utils
 
   other-modules:

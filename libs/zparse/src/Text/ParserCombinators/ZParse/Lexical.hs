@@ -19,13 +19,39 @@ module Text.ParserCombinators.ZParse.Lexical
   ( 
     CharParserT
   , runCharParserT
+
+  -- Character parsers
+  , satisfy
   , anyChar
-  , token
+  , char
+  , string
+  , oneOf
+  , noneOf
+
+  -- Character classification (vis Data.Char)
+  , control
+  , space
+  , lower
+  , upper
+  , alpha
+  , alphaNum
+  , printable
+  , digit
+  , octDigit
+  , hexDigit
+
+  , newline
+  , tab
+  , spaces
+
   ) where
 
 import Text.ParserCombinators.ZParse.ParseMonad
 import Text.ParserCombinators.ZParse.ParseError
 import Text.ParserCombinators.ZParse.SourcePosition
+
+import Control.Applicative
+import Data.Char
 
 
 type CharParserT m a = ParserT LexicalState m a
@@ -71,6 +97,14 @@ runCharParserT ma str =
   where
     state_0 = initialLexicalState Nothing str
 
+--------------------------------------------------------------------------------
+-- char parsers
+
+satisfy :: (Char -> Bool) -> CharParserT m Char
+satisfy test = ParserT $ \sk fk st -> 
+    case getInput st of
+      (x:xs) | test x -> sk x fk (setInput xs st)
+      _               -> fk st
 
 anyChar :: CharParserT m Char
 anyChar = ParserT $ \sk fk st -> 
@@ -79,8 +113,9 @@ anyChar = ParserT $ \sk fk st ->
       []     -> fk st
 
 
-token :: String -> CharParserT m String
-token sym = ParserT $ \sk fk st -> 
+
+string :: String -> CharParserT m String
+string sym = ParserT $ \sk fk st -> 
     case stripPrefix sym (getInput st) of
       Just rest -> sk sym fk (setInput rest st)
       Nothing   -> fk st
@@ -90,9 +125,59 @@ token sym = ParserT $ \sk fk st ->
     stripPrefix _      _             = Nothing
 
 
+char            :: Char -> CharParserT m Char
+char c          = satisfy (==c)
 
+oneOf           :: [Char] -> CharParserT m Char
+oneOf cs        = satisfy (`elem` cs)
 
+noneOf          :: [Char] -> CharParserT m Char
+noneOf cs       = satisfy (liftA not (`elem` cs))
 
+--------------------------------------------------------------------------------
+-- vis-a-vis Data.Char
+
+control         :: CharParserT m Char
+control         = satisfy isControl
+
+space           :: CharParserT m Char
+space           = satisfy isSpace
+
+lower           :: CharParserT m Char
+lower           = satisfy isLower
+
+upper           :: CharParserT m Char
+upper           = satisfy isUpper
+
+alpha           :: CharParserT m Char
+alpha           = satisfy isAlpha
+
+alphaNum        :: CharParserT m Char
+alphaNum        = satisfy isAlphaNum
+
+-- vis isPrint 
+-- (name altered to avoid clash with the Prelude) 
+--
+printable      :: CharParserT m Char
+printable      = satisfy isPrint
+
+digit          :: CharParserT m Char
+digit          = satisfy isDigit
+
+octDigit       :: CharParserT m Char
+octDigit       = satisfy isOctDigit
+
+hexDigit       :: CharParserT m Char
+hexDigit       = satisfy isHexDigit
+
+newline        :: CharParserT m Char
+newline        = satisfy (=='\n')
+
+tab            :: CharParserT m Char
+tab            = satisfy (=='\t')
+
+spaces         :: CharParserT m ()
+spaces         = many space >> return ()
 
 
   
