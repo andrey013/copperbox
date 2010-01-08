@@ -19,12 +19,9 @@
 
 module Text.ParserCombinators.ZParse.TokenParsers where
 
-import Text.ParserCombinators.ZParse.Combinators
 import Text.ParserCombinators.ZParse.ParseMonad
 
 import Control.Applicative
-import Control.Monad.State
-import Data.Monoid
 
 
 -- @yield@ is similar to an /apomorphism/ the state yields a stream of 

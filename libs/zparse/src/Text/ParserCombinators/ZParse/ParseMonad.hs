@@ -1,6 +1,7 @@
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,7 +19,17 @@
 --------------------------------------------------------------------------------
 
 
-module Text.ParserCombinators.ZParse.ParseMonad where
+module Text.ParserCombinators.ZParse.ParseMonad 
+  ( 
+    ParserT(..)
+  , Parser
+  , HasInput(..)
+  , runParserT
+  , lookahead
+  , satisfies
+
+  ) where
+ 
 
 import Control.Applicative
 import Control.Monad
@@ -26,11 +37,23 @@ import Control.Monad.Trans ()
 import Control.Monad.State  
 
 type Fk st r = st -> r
-type Sk st a r = a -> Fk st r -> st -> r
-type Parser st m a r = Sk st a (m r) -> Fk st (m r) -> st -> m r
+type Sk st a r = a -> Fk st r -> st ->  r
+type Parser st m a r = Sk st a (m r) -> Fk st (m r) -> st ->  m r
 
 newtype ParserT st m a = ParserT { 
           unParserT :: forall r. Sk st a (m r) -> Fk st (m r) -> st -> m r }
+
+
+
+
+class HasInput st where
+  type InputStream st :: *
+  getInput :: st -> InputStream st
+  setInput :: InputStream st -> st -> st 
+
+
+runParserT :: ParserT st m a -> Parser st m a r
+runParserT = unParserT
 
 
 -- the return of Monad
@@ -86,6 +109,7 @@ instance MonadState st (ParserT st m) where
   put = putT
   
 
+
 --------------------------------------------------------------------------------
 -- Low level combinators
 
@@ -93,6 +117,10 @@ lookahead :: ParserT st m a -> (a -> ParserT st m b) -> ParserT st m b
 lookahead p f  = 
     ParserT $ \sk fk -> unParserT p (\x fc -> unParserT (f x) sk fc) fk
 
+
+-- | @satisfies@ needs /bind/ so its monadic and not applicative.
+satisfies :: MonadPlus m => m a -> (a -> Bool) -> m a
+satisfies p f = p >>= (\x -> if f x then return x else mzero)
 
 
     

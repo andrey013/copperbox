@@ -1,5 +1,5 @@
 name:             zparse
-version:          0.1
+version:          0.1.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -15,7 +15,7 @@ stability:          highly unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
-  demo/Demo1
+  
 
 library
   hs-source-dirs:     src
@@ -25,8 +25,10 @@ library
   exposed-modules:
     Text.ParserCombinators.ZParse,
     Text.ParserCombinators.ZParse.Combinators,
+    Text.ParserCombinators.ZParse.Lexical,
     Text.ParserCombinators.ZParse.ParseMonad,
-    Text.ParserCombinators.ZParse.SrcPos,
+    Text.ParserCombinators.ZParse.ParseError,
+    Text.ParserCombinators.ZParse.SourcePosition,
     Text.ParserCombinators.ZParse.TokenParsers,
     Text.ParserCombinators.ZParse.Utils
 
