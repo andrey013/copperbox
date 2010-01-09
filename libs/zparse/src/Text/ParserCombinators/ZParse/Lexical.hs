@@ -86,16 +86,20 @@ instance HasErrorStack LexicalState where
   getErrorStack =  ls_err_stk
   setErrorStack err s = s { ls_err_stk = err }
 
-
-
+-- Return rest-of-input together with parse success so we can run 
+-- different parsers successively on a file.
+--
 runCharParserT :: Monad m 
-               => ParserT LexicalState m r -> String -> m (Either ParseFailure r)
-runCharParserT ma str = 
-   runParserT ma (\sk _ _ -> return $ Right sk)
-                 (\st     -> return $ Left $ failureMessage st)
+               => ParserT LexicalState m r 
+               -> Maybe String 
+               -> String
+               -> m (Either ParseFailure (r,String))
+runCharParserT mf opt_filename input = 
+   runParserT mf (\ans _ st -> return $ Right (ans, ls_input st) )
+                 (\st       -> return $ Left $ failureMessage st)
                  state_0
   where
-    state_0 = initialLexicalState Nothing str
+    state_0 = initialLexicalState opt_filename input
 
 --------------------------------------------------------------------------------
 -- char parsers
@@ -176,8 +180,8 @@ newline        = satisfy (=='\n')
 tab            :: CharParserT m Char
 tab            = satisfy (=='\t')
 
-spaces         :: CharParserT m ()
-spaces         = many space >> return ()
+spaces         :: CharParserT m String
+spaces         = many space
 
 
   

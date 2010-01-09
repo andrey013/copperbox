@@ -8,9 +8,9 @@ import Control.Applicative
 
 
 runSimple :: Monad m => CharParserT m a -> String -> m a
-runSimple ma str = do 
-  ans <- runCharParserT ma str
-  either (error . show) return ans
+runSimple p input = do 
+  ans <- runCharParserT p Nothing input
+  either (error . show) (return . fst) ans
 
 
 demo01 :: IO [Char]
@@ -56,3 +56,7 @@ demo08 = runSimple (dot) "... hello"
 demo09 :: IO [Char]
 demo09 = runSimple (manyTill (oneOf "abc") (oneOf "de")) "abcde"
 
+demo10 :: IO String
+demo10 = runSimple p "aaaaz..."
+  where p = manyTill anyChar (char 'z')   
+  -- not working anyChar and char 'z' are not mutallay exclusive

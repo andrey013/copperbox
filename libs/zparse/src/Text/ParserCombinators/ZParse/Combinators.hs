@@ -33,6 +33,7 @@ module Text.ParserCombinators.ZParse.Combinators
  , sepEndBy
  , sepEndBy1
  , manyTill
+ , manyTill1
 
  ) where
 
@@ -97,7 +98,11 @@ sepEndBy1 p sep = (p <* sep) <:> step where
     
 manyTill :: Alternative f => f a -> f b -> f [a]
 manyTill p end = step <|> pure [] where
-    step = p <:> (step <|> (pure [] <$> end))
+    step = p <:> ((end <$$> pure[]) <|> step)
+
+manyTill1 :: Alternative f => f a -> f b -> f [a]
+manyTill1 p end = p <:> step where
+    step = (end <$$> pure []) <|> (p <:> step)
     
 
 
