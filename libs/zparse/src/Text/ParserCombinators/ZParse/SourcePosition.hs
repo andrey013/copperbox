@@ -25,13 +25,15 @@ module Text.ParserCombinators.ZParse.SourcePosition
   , incrCol
   , incrTab
   , incrLine
-  , nextPos
+  , nextPosChar
+  , nextPosString
  
   ) where
 
 
 import Text.ParserCombinators.ZParse.Utils
 
+import Data.List ( foldl' )
 
 type TabStop = Int -> Int
 
@@ -80,11 +82,13 @@ incrLine = subst (\s i -> s { src_line =i+1, src_column=1 }) src_line
 
 
 
-nextPos :: Char -> SrcPos -> SrcPos
-nextPos '\t'  = incrTab
-nextPos '\CR' = incrLine
-nextPos '\LF' = incrLine
-nextPos '\FF' = incrLine
+nextPosChar :: Char -> SrcPos -> SrcPos
+nextPosChar '\t'  = incrTab
+nextPosChar '\CR' = incrLine
+nextPosChar '\LF' = incrLine
+nextPosChar '\FF' = incrLine
 -- nextPos '\n'  = incrLine
-nextPos _     = incrCol
+nextPosChar _     = incrCol
 
+nextPosString :: [Char] -> SrcPos -> SrcPos
+nextPosString xs pos = foldl' (flip nextPosChar) pos xs

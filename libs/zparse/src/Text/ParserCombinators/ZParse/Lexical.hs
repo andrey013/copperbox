@@ -19,6 +19,8 @@ module Text.ParserCombinators.ZParse.Lexical
   ( 
     CharParserT
   , runCharParserT
+  
+  , withinLine 
 
   -- Character parsers
   , satisfy
@@ -49,9 +51,12 @@ module Text.ParserCombinators.ZParse.Lexical
 import Text.ParserCombinators.ZParse.ParseMonad
 import Text.ParserCombinators.ZParse.ParseError
 import Text.ParserCombinators.ZParse.SourcePosition
+import Text.ParserCombinators.ZParse.Utils
 
 import Control.Applicative
 import Data.Char
+
+type LexicalInput = [Char]
 
 
 type CharParserT m a = ParserT LexicalState m a
@@ -60,7 +65,7 @@ data LexicalState = LexicalState {
         ls_file_name :: Maybe String,
         ls_src_pos   :: SrcPos,
         ls_err_stk   :: ErrorStack,                   
-        ls_input     :: String
+        ls_input     :: LexicalInput
       }
   deriving (Show)
 
@@ -94,12 +99,32 @@ runCharParserT :: Monad m
                -> Maybe String 
                -> String
                -> m (Either ParseFailure (r,String))
-runCharParserT mf opt_filename input = 
-   runParserT mf (\ans _ st -> return $ Right (ans, ls_input st) )
-                 (\st       -> return $ Left $ failureMessage st)
-                 state_0
-  where
-    state_0 = initialLexicalState opt_filename input
+runCharParserT p opt_filename input = runParserT p successK failureK state_0
+  where state_0 = initialLexicalState opt_filename input
+ 
+
+successK :: Monad m => Sk LexicalState (m (Either ParseFailure (a, String))) a
+successK = \ans _ st -> return $ Right (ans, ls_input st)
+
+failureK :: Monad m => Fk LexicalState (m (Either ParseFailure (r,String)))
+failureK st = return $ Left $ failureMessage st
+
+
+nextState :: (SrcPos -> SrcPos) -> LexicalInput -> LexicalState -> LexicalState
+nextState f xs = subst (\s i -> s { ls_input = xs, ls_src_pos = f i }) 
+                       ls_src_pos
+
+
+--------------------------------------------------------------------------------
+-- control parsers
+
+
+withinLine :: Monad m => CharParserT m a -> CharParserT m a
+withinLine p = ParserT $ \sk fk st -> 
+    let (line,rest) = break (=='\n') (ls_input st) in
+    runParserT p successK failureK (st { ls_input=line }) >>=
+      either (\_msg    -> fk st)                        -- ?? What to do with msg?
+             (\(ans,_) -> sk ans fk (nextState incrLine rest st))
 
 --------------------------------------------------------------------------------
 -- char parsers
@@ -113,7 +138,7 @@ satisfy test = ParserT $ \sk fk st ->
 anyChar :: CharParserT m Char
 anyChar = ParserT $ \sk fk st -> 
     case getInput st of
-      (x:xs) -> sk x fk (setInput xs st)
+      (x:xs) -> sk x fk (nextState (nextPosChar x) xs st)
       []     -> fk st
 
 
@@ -121,7 +146,7 @@ anyChar = ParserT $ \sk fk st ->
 string :: String -> CharParserT m String
 string sym = ParserT $ \sk fk st -> 
     case stripPrefix sym (getInput st) of
-      Just rest -> sk sym fk (setInput rest st)
+      Just rest -> sk sym fk (nextState (nextPosString sym) rest st)
       Nothing   -> fk st
   where
     stripPrefix []     xs            = Just xs

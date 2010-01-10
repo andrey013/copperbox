@@ -59,4 +59,3 @@ demo09 = runSimple (manyTill (oneOf "abc") (oneOf "de")) "abcde"
 demo10 :: IO String
 demo10 = runSimple p "aaaaz..."
   where p = manyTill anyChar (char 'z')   
-  -- not working anyChar and char 'z' are not mutallay exclusive

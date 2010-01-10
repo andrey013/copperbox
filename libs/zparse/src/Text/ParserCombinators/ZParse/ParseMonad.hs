@@ -22,7 +22,8 @@
 module Text.ParserCombinators.ZParse.ParseMonad 
   ( 
     ParserT(..)
-  , Parser
+  , Fk 
+  , Sk
   , HasInput(..)
   , runParserT
   , lookahead
@@ -32,7 +33,6 @@ module Text.ParserCombinators.ZParse.ParseMonad
   ) where
  
 
-import Text.ParserCombinators.ZParse.Utils
 
 import Control.Applicative
 import Control.Monad
@@ -41,12 +41,11 @@ import Control.Monad.State
 
 
 
-type Fk st r = st -> r
-type Sk st a r = a -> Fk st r -> st ->  r
-type Parser st m a r = Sk st a (m r) -> Fk st (m r) -> st ->  m r
+type Fk st ans   = st -> ans
+type Sk st ans a = a -> Fk st ans -> st -> ans
 
 newtype ParserT st m a = ParserT { 
-          getParserT :: forall r. Sk st a (m r) -> Fk st (m r) -> st -> m r }
+          getParserT :: forall ans. Sk st (m ans) a -> Fk st (m ans) -> st -> m ans }
 
 
 
@@ -57,7 +56,7 @@ class HasInput st where
   setInput :: InputStream st -> st -> st 
 
 
-runParserT :: ParserT st m a -> Parser st m a r
+runParserT :: ParserT st m a -> (Sk st (m ans) a -> Fk st (m ans) -> st ->  m ans)
 runParserT = getParserT
 
 
