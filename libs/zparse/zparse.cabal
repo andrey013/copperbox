@@ -28,6 +28,7 @@ library
     Text.ParserCombinators.ZParse.Lexical,
     Text.ParserCombinators.ZParse.ParseMonad,
     Text.ParserCombinators.ZParse.ParseError,
+    Text.ParserCombinators.ZParse.Perm,
     Text.ParserCombinators.ZParse.SourcePosition,
     Text.ParserCombinators.ZParse.Utils
 

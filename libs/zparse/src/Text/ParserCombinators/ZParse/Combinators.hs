@@ -10,7 +10,8 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- Combinators - ...
+-- Applicative and monadic combinators that only need the 
+-- standard classes (Applicative, Alernative, MonadPlus...).
 --
 --------------------------------------------------------------------------------
 
@@ -18,7 +19,6 @@
 module Text.ParserCombinators.ZParse.Combinators  
   ( 
    (<:>)
- , (<$$>)
  , choice
  , count
  , between
@@ -35,17 +35,22 @@ module Text.ParserCombinators.ZParse.Combinators
  , manyTill
  , manyTill1
 
+ , chainl1
+ , chainr1
+ , chainl
+ , chainr
+
  ) where
 
 import Control.Applicative
-
+import Control.Monad
 
 (<:>) :: Applicative f => f a -> f [a] -> f [a]
 (<:>) p1 p2 = (:) <$> p1 <*> p2
 
 -- | flipped 'fmap'  (\<\@)
-(<$$>) :: Functor f => f a -> (a -> b) -> f b
-(<$$>) = flip fmap
+(<$@>) :: Functor f => f a -> (a -> b) -> f b
+(<$@>) = flip fmap
 
 
 choice :: Alternative f => [f a] -> f a
@@ -98,12 +103,32 @@ sepEndBy1 p sep = (p <* sep) <:> step where
     
 manyTill :: Alternative f => f a -> f b -> f [a]
 manyTill p end = step <|> pure [] where
-    step = p <:> ((end <$$> pure[]) <|> step)
+    step = p <:> ((end <$@> pure[]) <|> step)
 
 manyTill1 :: Alternative f => f a -> f b -> f [a]
 manyTill1 p end = p <:> step where
-    step = (end <$$> pure []) <|> (p <:> step)
+    step = (end <$@> pure []) <|> (p <:> step)
     
 
+-- The chain parsers need @bind@ so they have to be monadic 
+-- rather than applicative
+--
 
-    
+
+chainl1 :: MonadPlus m => m a -> m (a -> a -> a) -> m a
+chainl1 p op = p >>= rest 
+  where rest x = mplus (op >>= \f -> p >>= \a -> rest (f x a)) (return x) 
+               
+chainr1 :: MonadPlus m => m a -> m (a -> a -> a) -> m a
+chainr1 p op = scan 
+   where 
+     scan   = p >>= rest 
+     rest x = mplus (op >>= \f -> scan >>= \a -> rest (f x a)) (return x) 
+
+chainl :: MonadPlus m => m a -> m (a -> a -> a) -> a -> m a
+chainl p op v = mplus (chainl1 p op) (return v)
+
+chainr :: MonadPlus m => m a -> m (a -> a -> a) -> a -> m a
+chainr p op v = mplus (chainr1 p op) (return v)
+
+

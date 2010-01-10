@@ -19,6 +19,7 @@ module Text.ParserCombinators.ZParse (
     module Text.ParserCombinators.ZParse.Lexical,
     module Text.ParserCombinators.ZParse.ParseError,
     module Text.ParserCombinators.ZParse.ParseMonad,
+    module Text.ParserCombinators.ZParse.Perm,
     module Text.ParserCombinators.ZParse.SourcePosition,
   ) where
 
@@ -26,5 +27,6 @@ import Text.ParserCombinators.ZParse.Combinators
 import Text.ParserCombinators.ZParse.Lexical
 import Text.ParserCombinators.ZParse.ParseError
 import Text.ParserCombinators.ZParse.ParseMonad
+import Text.ParserCombinators.ZParse.Perm
 import Text.ParserCombinators.ZParse.SourcePosition
  
