@@ -40,23 +40,24 @@ import Control.Monad.Trans ()
 import Control.Monad.State  
 
 
-
 type Fk st ans   = st -> ans
 type Sk st ans a = a -> Fk st ans -> st -> ans
 
+-- Parser monad transformer - standard two-continuation (success 
+-- and fail) monad with added state.
+--
 newtype ParserT st m a = ParserT { 
-          getParserT :: forall ans. Sk st (m ans) a -> Fk st (m ans) -> st -> m ans }
-
-
+    getParserT :: forall ans. Sk st (m ans) a -> Fk st (m ans) -> st -> m ans }
 
 
 class HasInput st where
   type InputStream st :: *
   getInput :: st -> InputStream st
   setInput :: InputStream st -> st -> st 
+  
 
-
-runParserT :: ParserT st m a -> (Sk st (m ans) a -> Fk st (m ans) -> st ->  m ans)
+runParserT :: ParserT st m a 
+           -> (Sk st (m ans) a -> Fk st (m ans) -> st -> m ans)
 runParserT = getParserT
 
 

@@ -95,18 +95,18 @@ instance HasErrorStack LexicalState where
 -- different parsers successively on a file.
 --
 runCharParserT :: Monad m 
-               => ParserT LexicalState m r 
+               => CharParserT m a
                -> Maybe String 
                -> String
-               -> m (Either ParseFailure (r,String))
+               -> m (Either ParseFailure a)
 runCharParserT p opt_filename input = runParserT p successK failureK state_0
   where state_0 = initialLexicalState opt_filename input
  
 
-successK :: Monad m => Sk LexicalState (m (Either ParseFailure (a, String))) a
-successK = \ans _ st -> return $ Right (ans, ls_input st)
+successK :: Monad m => Sk LexicalState (m (Either ParseFailure a)) a
+successK = \ans _fk _st -> return $ Right ans
 
-failureK :: Monad m => Fk LexicalState (m (Either ParseFailure (r,String)))
+failureK :: Monad m => Fk LexicalState (m (Either ParseFailure a))
 failureK st = return $ Left $ failureMessage st
 
 
@@ -115,16 +115,26 @@ nextState f xs = subst (\s i -> s { ls_input = xs, ls_src_pos = f i })
                        ls_src_pos
 
 
+pushError :: ParseFailure -> LexicalState -> LexicalState
+pushError err = subst (\s stk -> s { ls_err_stk = putFailure err stk }) 
+                      ls_err_stk
+
 --------------------------------------------------------------------------------
 -- control parsers
 
 
-withinLine :: Monad m => CharParserT m a -> CharParserT m a
+withinLine :: Monad m => CharParserT m String -> CharParserT m String
 withinLine p = ParserT $ \sk fk st -> 
-    let (line,rest) = break (=='\n') (ls_input st) in
+    let (line,rest) = break1 (=='\n') (ls_input st) in
     runParserT p successK failureK (st { ls_input=line }) >>=
-      either (\_msg    -> fk st)                        -- ?? What to do with msg?
-             (\(ans,_) -> sk ans fk (nextState incrLine rest st))
+      either (\msg -> fk (pushError msg st))
+             (\ans -> sk ans fk (nextState incrLine rest st))
+  where 
+    break1 c cs = let (xs,rest) = break c cs in 
+                  case rest of
+                    (_:ys) -> (xs,ys)
+                    []     -> (xs,[])
+                    
 
 --------------------------------------------------------------------------------
 -- char parsers

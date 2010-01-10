@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -22,9 +23,11 @@ module Text.ParserCombinators.ZParse.ParseError
   , HasErrorStack(..)
 
   , failureMessage
+  , putFailure
  
   ) where
 
+import Text.ParserCombinators.ZParse.ParseMonad
 import Text.ParserCombinators.ZParse.SourcePosition
 import Text.ParserCombinators.ZParse.Utils
 
@@ -49,14 +52,18 @@ class HasErrorStack st where
   setErrorStack :: ErrorStack -> st -> st
 
 
-failureMessage :: (HasSrcPos st, HasErrorStack st) => st -> ParseFailure
-failureMessage = liftA2 (ParseFailure `oo` fn) getSrcPos getErrorStack where
-  fn pos estk = "*** Parse Error: " ++ location pos ++ "\n" ++ errorStack estk
-                
+failureMessage :: (HasSrcPos st, HasErrorStack st, 
+                   HasInput st, Show (InputStream st)) 
+               => st -> ParseFailure
+failureMessage = liftA3 (ParseFailure `ooo` fn) getSrcPos getErrorStack getInput
+  where
+    fn pos estk inp =  "*** Parse Error: " ++ location pos ++ "\n" 
+                    ++ errorStack estk
+                    ++ "\n" ++ take 60 (show inp)
 
 
 location :: SrcPos -> String
-location = liftA2 (\l c -> show l ++ ':' : show c) 
+location = liftA2 (\l c -> "line " ++ show l ++ ", column " ++ show c) 
                          src_line
                          src_column
 
@@ -64,3 +71,5 @@ errorStack :: ErrorStack -> String
 errorStack = unlines . map getErrMsg
 
 
+putFailure :: ParseFailure -> ErrorStack -> ErrorStack
+putFailure err stk = (ErrMsg $ getParseFailure err) :stk

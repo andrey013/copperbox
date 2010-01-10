@@ -10,7 +10,7 @@ import Control.Applicative
 runSimple :: Monad m => CharParserT m a -> String -> m a
 runSimple p input = do 
   ans <- runCharParserT p Nothing input
-  either (error . show) (return . fst) ans
+  either (error . show) return ans
 
 
 demo01 :: IO [Char]
