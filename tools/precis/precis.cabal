@@ -22,6 +22,7 @@ library
   Exposed-Modules:  
     Precis.CabalData,
     Precis.CabalExtract,
+    Precis.ParsecExtras,
     Text.ParserCombinators.ParsecScreener     
   
   

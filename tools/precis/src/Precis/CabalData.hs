@@ -18,6 +18,7 @@
 module Precis.CabalData
   (
     CabalInfo(..)
+  , CabalField(..)
 
   ) where
 
@@ -25,8 +26,10 @@ module Precis.CabalData
 data CabalInfo = CabalInfo {
         cab_package_name        :: String,
         cab_version_number      :: String,
-        cab_decription          :: String
+        cab_decription          :: Maybe String
       }
   deriving (Eq,Show)
       
 
+data CabalField = CabalField { field_name :: String, field_data :: String }
+  deriving (Eq,Show)

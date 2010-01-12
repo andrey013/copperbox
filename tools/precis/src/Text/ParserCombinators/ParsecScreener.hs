@@ -43,11 +43,13 @@ withinLine = genWithin lineSplit movePosOneLine
 withinLines :: Int -> GenParser Char st a -> GenParser Char st a
 withinLines i = genWithin (lineSplitN i)  movePosOneLine
 
-   
--- withIndent uses the indent level of the next line as the measure
+
+-- Indent level works with the column position before the parse.
+-- 
 --
 withIndent :: GenParser Char st a -> GenParser Char st a
-withIndent = genWithin (threeJoin . threeSplit) movePosOneLine
+withIndent p = liftM sourceColumn getPosition >>= \i -> 
+   genWithin (indentSplit i) movePosOneLine p
 
 
 
@@ -85,25 +87,17 @@ lineSplitN i str = unPair $ apo phi (i,str) where
   unPair (chops,(_,rest)) = (unlines chops,rest)
 
 
-threeSplit :: String -> (String, Maybe (String,String)) 
-threeSplit ss = let (front,rest) = lineSplit ss in
-    case rest of 
-      []  -> (front, Nothing)
-      ss' -> (front, Just $ lineSplit ss')
-
-threeJoin :: (String, Maybe (String,String)) -> (String,String)
-threeJoin (front, Nothing)              = (front,"")
-threeJoin (front, Just (line_two,rest)) = (unlines $ front:indents,final)
+indentSplit :: Int -> String -> (String,String)
+indentSplit col str = let (front,rest) = lineSplit str 
+                          (xss,ys)      = apo phi rest
+                      in (unlines $ front:xss, ys)
   where
-    width           = indentLevel line_two
-    (indents,final) = apo phi (unlines [line_two,rest])
- 
-    phi []          = Nothing
-    phi str         = let (l,ls) = lineSplit str 
-                          w      = indentLevel l
-                      in if (blankLine l) || (w >= width)
-                           then Just (l,ls)
-                           else Nothing 
+    phi []  = Nothing 
+    phi ss  = let (l, ls) = lineSplit ss in
+              if blankLine l || indentLevel l >= col
+                then Just (l,ls) 
+                else Nothing
+
 
 
 indentLevel :: String -> Int

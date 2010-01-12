@@ -20,42 +20,88 @@
 module Precis.CabalExtract
   (
     onelineField 
-  , multilineField
+  , field
+  , cabalField
+  , header
   , cabalInfo
 
   ) where
 
 import Precis.CabalData
+import Precis.ParsecExtras
 
 import Text.ParserCombinators.ParsecScreener
 
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
-import Text.ParserCombinators.Parsec.Language (emptyDef)
+import Text.ParserCombinators.Parsec.Language 
 
-import Control.Applicative hiding ( many )
+import Control.Applicative hiding ( many, (<|>) )
 import Control.Monad
-
-instance Applicative (GenParser tok st) where
-  pure = return
-  (<*>) = ap
-
+import Data.Maybe
 
 
 onelineField :: String -> Parser String
-onelineField name = symbol name >> symbol ":" >> withinLine (many anyChar)
+onelineField name = withinLine $ 
+    symbolci name >> symbol ":" >> many anyChar
 
-multilineField :: String -> Parser String
-multilineField name = symbol name >> symbol ":" >> withIndent (many anyChar)
+
+field :: String -> Parser String
+field name = withIndent $ symbolci name >> symbol ":" >> many anyChar
+
+cabalField :: String -> Parser CabalField
+cabalField name = withError ("cabal field - unrecognized " ++ name) $ 
+    withIndent $ do { _   <- symbolci name
+                    ; _   <- symbol ":" 
+                    ; xs  <- many anyChar
+                    ; return $ CabalField name xs
+                    }
+     
+ 
+    
+ 
+waterField :: Parser CabalField
+waterField = withIndent $ do { name <- identifier 
+                             ; _    <- symbol ":" 
+                             ; body <- many anyChar
+                             ; return $ CabalField name body
+                             }
+    
+
+header :: [String] -> Parser [CabalField]
+header xs = catMaybes <$> manyTill (islandWater fields waterField) (try $ symbol "library")
+  where
+    fields :: Parser CabalField
+    fields = choice $ map cabalField xs
+
 
 
 cabalInfo :: Parser CabalInfo 
 cabalInfo = CabalInfo <$> onelineField "name" <*> onelineField "version"
-                      <*> (advanceLines 7 $ multilineField "description")
+                      <*> (advanceLines 7 $ liftM Just $ field "description")
 
 -- Lexical analysis
-baseLex           :: P.TokenParser st
-baseLex           = P.makeTokenParser emptyDef
+cabalLexDef :: LanguageDef st
+cabalLexDef = emptyDef 
+    { commentLine   = "--"
+    , identStart    = letter
+    , identLetter   = letter <|> oneOf "-_"  
+    }
 
-symbol            :: String -> CharParser st String
-symbol            = P.symbol baseLex
+
+cabalLexer          :: P.TokenParser st
+cabalLexer          = P.makeTokenParser cabalLexDef
+
+symbol              :: String -> CharParser st String
+symbol              = P.symbol cabalLexer
+
+lexeme              :: CharParser st a -> CharParser st a 
+lexeme              = P.lexeme cabalLexer
+
+symbolci            :: String -> CharParser st String
+symbolci            = lexeme . try . stringci
+
+identifier          :: CharParser st String
+identifier          = P.identifier cabalLexer
+
+
