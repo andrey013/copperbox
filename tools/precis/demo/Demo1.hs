@@ -30,9 +30,10 @@ test_file = "../samples/data-obscura.cabal"
 
 
 
-demo1 = parseFromFile cabalInfo test_file
+demo1 = parseFromFile header test_file
 
-demo2 = parseFromFile (header ["name","version", "description"]) test_file
+demo2 = parseFromFile (do { h <- header; l <- library ; return (h,l) })
+                      test_file
 
 
 

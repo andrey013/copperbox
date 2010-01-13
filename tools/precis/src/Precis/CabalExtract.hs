@@ -19,11 +19,15 @@
 
 module Precis.CabalExtract
   (
-    onelineField 
-  , field
+  
+    header_fields
+  , library_fields
+  , executable_fields
+
   , cabalField
   , header
-  , cabalInfo
+  , library
+  , executable
 
   ) where
 
@@ -36,21 +40,62 @@ import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language 
 
-import Control.Applicative hiding ( many, (<|>) )
 import Control.Monad
 import Data.Maybe
 
 
-onelineField :: String -> Parser String
-onelineField name = withinLine $ 
-    symbolci name >> symbol ":" >> many anyChar
+--------------------------------------------------------------------------------
+-- fields extracted...
+
+type FieldName = String
+
+header_fields           :: [FieldName]
+header_fields           = [ "name"
+                          , "version"
+                          , "description"
+                          , "extra-source-files"
+                          ]
 
 
-field :: String -> Parser String
-field name = withIndent $ symbolci name >> symbol ":" >> many anyChar
+library_fields          :: [FieldName]
+library_fields          = [ "exposed-modules"
+                          , "other-modules"
+                          ]
+
+executable_fields       :: [FieldName]
+executable_fields       = [ "main-is"
+                          , "other-modules"
+                          ]
+
+
+--------------------------------------------------------------------------------
+-- delimiters
+
+type Delimiter = ()
+
+delimiter :: Parser a -> Parser Delimiter 
+delimiter = liftM (const ())
+
+library_tok         :: Parser String
+library_tok         = assertColumn1 $ symbolci "library"
+
+executable_tok      :: Parser String
+executable_tok      = assertColumn1 $ symbolci "executable"
+
+
+header_delim        :: Parser Delimiter 
+header_delim        = delimiter (library_tok <|> executable_tok)
+
+executable_delim    :: Parser Delimiter
+executable_delim    = choice [ eof, delimiter library_tok, 
+                                    delimiter executable_tok ]
+
+library_delim       :: Parser Delimiter
+library_delim       = choice [ eof, delimiter library_tok, 
+                                    delimiter executable_tok ]
 
 cabalField :: String -> Parser CabalField
-cabalField name = withError ("cabal field - unrecognized " ++ name) $ 
+cabalField name = withError "cabalField" $ 
     withIndent $ do { _   <- symbolci name
                     ; _   <- symbol ":" 
                     ; xs  <- many anyChar
@@ -68,19 +113,33 @@ waterField = withIndent $ do { name <- identifier
                              }
     
 
-header :: [String] -> Parser [CabalField]
-header xs = catMaybes <$> manyTill (islandWater fields waterField) (try $ symbol "library")
+delimitedIW :: Parser a -> Parser b -> Parser Delimiter -> Parser [a]
+delimitedIW island water delim = 
+  liftM catMaybes $ manyUpto (islandWater island water) delim
+
+
+header :: Parser [CabalField]
+header = delimitedFields header_fields header_delim
+
+library :: Parser [CabalField]
+library = library_tok >> delimitedFields library_fields library_delim
+
+executable :: Parser [CabalField]
+executable = executable_tok >> identifier >> 
+    delimitedFields executable_fields executable_delim
+
+
+delimitedFields :: [FieldName] -> Parser Delimiter -> Parser [CabalField]
+delimitedFields xs delim = delimitedIW islandField waterField delim
   where
-    fields :: Parser CabalField
-    fields = choice $ map cabalField xs
+    islandField :: Parser CabalField
+    islandField = choice $ map cabalField xs
 
 
 
-cabalInfo :: Parser CabalInfo 
-cabalInfo = CabalInfo <$> onelineField "name" <*> onelineField "version"
-                      <*> (advanceLines 7 $ liftM Just $ field "description")
-
+--------------------------------------------------------------------------------
 -- Lexical analysis
+
 cabalLexDef :: LanguageDef st
 cabalLexDef = emptyDef 
     { commentLine   = "--"
