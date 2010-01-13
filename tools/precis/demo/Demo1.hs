@@ -11,7 +11,7 @@ import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language (emptyDef)
 
-import Control.Applicative
+import Control.Applicative hiding ( (<|>), many )
 import Control.Monad
 
 import Data.Char
@@ -32,9 +32,17 @@ test_file = "../samples/data-obscura.cabal"
 
 demo1 = parseFromFile header test_file
 
-demo2 = parseFromFile (do { h <- header; l <- library ; return (h,l) })
+demo2 = parseFromFile (do { h <- header; l <- library ; return l })
                       test_file
 
+
+
+demo3 = parseFromFile (do { h  <- headerRegion (many1 anyChar)
+                          ; xs <- libraryRegion (many1 anyChar) 
+                          ; return xs
+                          })
+
+                       test_file
 
 
 test1 = parse (symbolci "camelcase") "" "camelCase"

@@ -20,7 +20,14 @@ module Precis.ParsecExtras
      assertColumn1
    , manyUpto
    , islandWater
+
+   , stringUpto
+   , prefixStringUpto
+   , prefixStringUptoci
+
+   , charci
    , stringci
+
    , withError  
   ) where
 
@@ -38,6 +45,23 @@ import Data.Char
 manyUpto :: GenParser tok st a -> GenParser tok st b -> GenParser tok st [a]
 manyUpto pa end = manyTill pa (try $ dontConsume end)
 
+
+
+stringUpto :: GenParser Char st a -> GenParser Char st String
+stringUpto delim = manyUpto anyChar delim
+
+
+prefixStringUpto :: String -> GenParser Char st a -> GenParser Char st String
+prefixStringUpto []     delim = stringUpto delim
+prefixStringUpto (c:cs) delim = liftM2 (:) (char c) (prefixStringUpto cs delim)
+
+
+prefixStringUptoci :: String -> GenParser Char st a -> GenParser Char st String
+prefixStringUptoci []     delim = stringUpto delim
+prefixStringUptoci (c:cs) delim = liftM2 (:) (charci c) 
+                                             (prefixStringUptoci cs delim)
+
+
 dontConsume :: GenParser tok st a -> GenParser tok st a
 dontConsume p = do { pos <- getPosition
                    ; inp <- getInput
@@ -51,7 +75,7 @@ assertColumn1 :: GenParser tok st a -> GenParser tok st a
 assertColumn1 p = getPosition >>= checkCol >> p
   where
     checkCol pos | sourceColumn pos == 1 = return ()
-                 | otherwise             = fail "leftSide - not at column 1" 
+                 | otherwise = fail "assertColumn1 - not at column 1" 
 
 islandWater :: GenParser tok st a 
             -> GenParser tok st b 
@@ -61,10 +85,11 @@ islandWater a b = liftM Just a <|> liftM (const Nothing) b
 
 stringci :: String -> GenParser Char st String
 stringci []     = return []
-stringci (x:xs) = anyChar >>= \c ->
-                  if x `equalCI` c then liftM (x:) (stringci xs)
-                                   else unexpected [c]   
+stringci (x:xs) = liftM2 (:) (charci x) (stringci xs)
                   
+charci :: Char -> GenParser Char st Char
+charci x = anyChar >>= \c ->
+    if x `equalCI` c then return c else unexpected [c]                      
 
 
 withError :: String -> GenParser tok st a -> GenParser tok st a

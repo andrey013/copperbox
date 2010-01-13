@@ -29,6 +29,12 @@ module Precis.CabalExtract
   , library
   , executable
 
+  -- TEMP
+
+  , headerRegion
+  , libraryRegion
+  , executableRegion
+
   ) where
 
 import Precis.CabalData
@@ -43,6 +49,7 @@ import Text.ParserCombinators.Parsec.Language
 import Control.Monad
 import Data.Maybe
 
+-- Need to run the delimiter by itself...
 
 --------------------------------------------------------------------------------
 -- fields extracted...
@@ -58,7 +65,8 @@ header_fields           = [ "name"
 
 
 library_fields          :: [FieldName]
-library_fields          = [ "exposed-modules"
+library_fields          = [  {- "hs-source-dirs"
+                          , -}  "exposed-modules"
                           , "other-modules"
                           ]
 
@@ -86,16 +94,35 @@ executable_tok      = assertColumn1 $ symbolci "executable"
 header_delim        :: Parser Delimiter 
 header_delim        = delimiter (library_tok <|> executable_tok)
 
+-- This isn't right - Cabal can have more then one executable 
+-- description in a file
 executable_delim    :: Parser Delimiter
-executable_delim    = choice [ eof, delimiter library_tok, 
+executable_delim    = choice [ eof, delimiter library_tok,
                                     delimiter executable_tok ]
 
 library_delim       :: Parser Delimiter
 library_delim       = choice [ eof, delimiter library_tok, 
                                     delimiter executable_tok ]
 
+
+
+delim_end :: Parser ()
+delim_end = eof
+
+
+headerRegion :: Parser a -> Parser a
+headerRegion = (`withinRegion` stringUpto header_delim)
+
+libraryRegion :: Parser a -> Parser a
+libraryRegion = (`withinRegion` prefixStringUptoci "library" library_delim)
+
+executableRegion :: Parser a -> Parser a
+executableRegion = (`withinRegion` prefixStringUptoci "executable" executable_delim)
+
+
+
 cabalField :: String -> Parser CabalField
-cabalField name = withError "cabalField" $ 
+cabalField name =  withError "cabalField" $
     withIndent $ do { _   <- symbolci name
                     ; _   <- symbol ":" 
                     ; xs  <- many anyChar
@@ -106,11 +133,12 @@ cabalField name = withError "cabalField" $
     
  
 waterField :: Parser CabalField
-waterField = withIndent $ do { name <- identifier 
-                             ; _    <- symbol ":" 
-                             ; body <- many anyChar
-                             ; return $ CabalField name body
-                             }
+waterField = withError "waterField" $ 
+    withIndent $ do { name <- identifier 
+                    ; _    <- symbol ":" 
+                    ; body <- many anyChar
+                    ; return $ CabalField name body
+                    }
     
 
 delimitedIW :: Parser a -> Parser b -> Parser Delimiter -> Parser [a]
@@ -119,10 +147,12 @@ delimitedIW island water delim =
 
 
 header :: Parser [CabalField]
-header = delimitedFields header_fields header_delim
+header = headerRegion (delimitedFields header_fields delim_end)
+
 
 library :: Parser [CabalField]
-library = library_tok >> delimitedFields library_fields library_delim
+library = withError "library" $ libraryRegion $ 
+    library_tok >> (withIndent $ delimitedFields library_fields library_delim)
 
 executable :: Parser [CabalField]
 executable = executable_tok >> identifier >> 
@@ -163,4 +193,8 @@ symbolci            = lexeme . try . stringci
 identifier          :: CharParser st String
 identifier          = P.identifier cabalLexer
 
+{-
+spacesTabs          :: CharParser st String
+spacesTabs          = many (oneOf " \t")
 
+-}

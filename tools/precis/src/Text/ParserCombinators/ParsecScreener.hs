@@ -24,13 +24,15 @@ module Text.ParserCombinators.ParsecScreener
   , withIndent
   , advanceLines
 
+  , withinRegion
+
   ) where
 
 import Text.ParserCombinators.Parsec
--- import Text.ParserCombinators.Parsec.Pos
 
 import Control.Monad
 import Data.Char
+
 
 
 withinLine :: GenParser Char st a -> GenParser Char st a
@@ -62,6 +64,23 @@ advanceLines i p = liftM (lineSplitN i) getInput >>= \(_,rest) ->
 
      -- Setting the input to "" will cause the parse to fail,
      -- but it will generate the user codes error message
+
+
+--------------------------------------------------------------------------------
+
+withinRegion :: GenParser Char st a 
+             -> GenParser Char st String 
+             -> GenParser Char st a
+withinRegion p get_region = do 
+    pos <- getPosition 
+    st  <- getState
+    str <- get_region
+    either fk sk $ runParser (setPosition pos >> p) st (sourceName pos) str
+  where
+    fk msg = fail $ "withinRegion failed:  " ++ show msg
+    sk = return     
+
+
 
 --------------------------------------------------------------------------------
 
