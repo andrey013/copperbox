@@ -65,8 +65,8 @@ header_fields           = [ "name"
 
 
 library_fields          :: [FieldName]
-library_fields          = [  {- "hs-source-dirs"
-                          , -}  "exposed-modules"
+library_fields          = [ "hs-source-dirs"
+                          , "exposed-modules"
                           , "other-modules"
                           ]
 
@@ -111,13 +111,14 @@ delim_end = eof
 
 
 headerRegion :: Parser a -> Parser a
-headerRegion = (`withinRegion` stringUpto header_delim)
+headerRegion = withinRegion "header" `flip` stringUpto header_delim
 
 libraryRegion :: Parser a -> Parser a
-libraryRegion = (`withinRegion` prefixStringUptoci "library" library_delim)
+libraryRegion = withinRegion "library" `flip` prefixStringUptoci "library" library_delim
 
 executableRegion :: Parser a -> Parser a
-executableRegion = (`withinRegion` prefixStringUptoci "executable" executable_delim)
+executableRegion = 
+  withinRegion "executable" `flip`  prefixStringUptoci "executable" executable_delim
 
 
 
@@ -141,10 +142,6 @@ waterField = withError "waterField" $
                     }
     
 
-delimitedIW :: Parser a -> Parser b -> Parser Delimiter -> Parser [a]
-delimitedIW island water delim = 
-  liftM catMaybes $ manyUpto (islandWater island water) delim
-
 
 header :: Parser [CabalField]
 header = headerRegion (delimitedFields header_fields delim_end)
@@ -152,7 +149,11 @@ header = headerRegion (delimitedFields header_fields delim_end)
 
 library :: Parser [CabalField]
 library = withError "library" $ libraryRegion $ 
-    library_tok >> (withIndent $ delimitedFields library_fields library_delim)
+    (lexeme library_tok) >> cabalField "hs-source-dirs" 
+                         >> cabalField "build-depends" >>= return . return
+
+
+                             -- delimitedFields library_fields delim_end
 
 executable :: Parser [CabalField]
 executable = executable_tok >> identifier >> 
@@ -164,6 +165,11 @@ delimitedFields xs delim = delimitedIW islandField waterField delim
   where
     islandField :: Parser CabalField
     islandField = choice $ map cabalField xs
+
+
+delimitedIW :: Parser a -> Parser b -> Parser Delimiter -> Parser [a]
+delimitedIW island water delim = 
+  liftM catMaybes $ manyUpto (islandWater island water) delim
 
 
 

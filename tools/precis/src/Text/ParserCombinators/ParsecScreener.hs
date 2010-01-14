@@ -68,16 +68,19 @@ advanceLines i p = liftM (lineSplitN i) getInput >>= \(_,rest) ->
 
 --------------------------------------------------------------------------------
 
-withinRegion :: GenParser Char st a 
+withinRegion :: String 
+             -> GenParser Char st a 
              -> GenParser Char st String 
              -> GenParser Char st a
-withinRegion p get_region = do 
+withinRegion name p get_region = do 
     pos <- getPosition 
     st  <- getState
     str <- get_region
-    either fk sk $ runParser (setPosition pos >> p) st (sourceName pos) str
+    either (fk pos str) sk $ 
+        runParser (setPosition pos >> p) st (sourceName pos) str
   where
-    fk msg = fail $ "withinRegion failed:  " ++ show msg
+    fk pos str _msg = fail $ "--- withinRegion '" ++ name ++ 
+                             "' starting at "     ++ show pos ++ ":\n" ++ str
     sk = return     
 
 
