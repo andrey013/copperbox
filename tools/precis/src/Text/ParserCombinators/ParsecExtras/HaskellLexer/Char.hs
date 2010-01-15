@@ -20,6 +20,9 @@ module Text.ParserCombinators.ParsecExtras.HaskellLexer.Char
   (
     reservedid_h98
   , reservedop_h98
+
+  , literal
+
   , dashes
 
   , integer
@@ -37,6 +40,7 @@ import Prelude hiding ( exponent )
 
 
 --------------------------------------------------------------------------------
+-- token sets
 
 reservedid_h98  :: [String]
 reservedid_h98  = [ "case",         "class",        "data"
@@ -56,6 +60,14 @@ reservedop_h98  = [ "..", ":", "::", "=", "\\"
 special_char    :: [Char]
 special_char    = [ '(', ')', ',', ';', '[', ']', '`', '{', '}' ]
 
+
+--------------------------------------------------------------------------------
+-- tokenizers
+
+
+literal         ::  CharParser st Token
+literal         =  integer              ===> IntLit
+               <|> float                ===> FloatLit 
 
 newline         :: CharParser st String
 newline         = schar '\n'
@@ -129,18 +141,18 @@ hexadecimal     = many1 hexDigit
 
 
 
-integer     :: CharParser st Token
-integer     =  decimal                                      ===> IntLit
-           <|> choose ["0o", "0O"] & octal                  ===> IntLit
-           <|> choose ["0x", "0X"] & hexadecimal            ===> IntLit
+integer         :: CharParser st String
+integer         =  decimal
+               <|> choose ["0o", "0O"] & octal
+               <|> choose ["0x", "0X"] & hexadecimal
 
 
-float       :: CharParser st Token
-float       =  decimal & schar '.' & decimal &? exponent    ===> FloatLit        
-           <|> decimal & exponent                           ===> FloatLit
+float           :: CharParser st String
+float           =  decimal & schar '.' & decimal &? exponent
+               <|> decimal & exponent
 
-exponent    :: CharParser st String
-exponent    = soneOf "eE" & zeroOrOne "-+" & decimal
+exponent        :: CharParser st String
+exponent        = oneOf "eE" &: zeroOrOne "-+" & decimal
 
 --------------------------------------------------------------------------------
 
@@ -156,11 +168,19 @@ schar = liftM return . char
 soneOf :: [Char] -> CharParser st String
 soneOf = liftM return  . oneOf
 
+infixr 5 ===>
+
 (===>) :: CharParser st String -> Lexeme -> CharParser st Token
 p ===> l = getPosition >>= \pos -> p >>= \str -> return (pos,l,str)
 
+
 (&) :: CharParser st String -> CharParser st String -> CharParser st String
 p & q = liftM2 (++) p q
+
+
+(&:) :: CharParser st Char -> CharParser st String -> CharParser st String
+p &: q = liftM2 (:) p q
+
 
 (&?) :: CharParser st String -> CharParser st String -> CharParser st String
 p &? q = p >>= \s -> liftM (mbConcat s) (optionMaybe q)
