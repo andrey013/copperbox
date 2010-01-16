@@ -1,5 +1,5 @@
 name:             OpenVG
-version:          0.5.0
+version:          0.6.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -11,7 +11,7 @@ description:
   A Haskell binding for the OpenVG vector graphics API version 
   1.0.1, specifically the ShivaVG-0.2.1 implementation.
   .
-  This version (0.5.0) is NOT compatible with the Haskell Platform 
+  This version (0.6.0) is NOT compatible with the Haskell Platform 
   (2009.2.0.2) - it uses the split OpenGL packages (RAW, StateVar, 
   etc.).
   .
@@ -19,6 +19,12 @@ description:
   significant changes likely in next revision. \*\*.
   .
   Changelog
+  0.5.0 to 0.6.0
+  .
+  * Added matrix functions to RenderingQuality. 
+    Acknowledgement - this were derived from the Matrix class
+    in HOpenGL.
+  .
   0.4.0 to 0.5.0
   . 
   * Significantly reworked. Changed to use OpenVGRaw. 

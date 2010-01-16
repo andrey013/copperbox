@@ -3,16 +3,18 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.OpenVG.VG.RenderingQuality
--- Copyright   :  (c) Stephen Tetley 2008, 2009
+-- Copyright   :  (c) Stephen Tetley 2008-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- This module corresponds to section 6 (Rendering Quality and Antialiasing) 
--- of the OpenVG 1.0.1 specs.
+-- This module corresponds to section 6 (Rendering Quality and 
+-- Antialiasing) of the OpenVG 1.0.1 specs.
 --
+-- Acknowledgement - the matrix code is derived from Sven 
+-- Panne\'s HOpenGL.
 --
 --------------------------------------------------------------------------------
 
@@ -27,6 +29,12 @@ module Graphics.Rendering.OpenVG.VG.RenderingQuality (
   pixelLayout,
   
   -- * Matrix manipulation
+  VGmatrix,
+  withNewMatrix,
+  withMatrix,
+  newMatrix,
+  getMatrixComponents,
+
   MatrixMode(..),
   matrixMode, 
   
@@ -50,6 +58,9 @@ import Data.StateVar (
     StateVar(), makeStateVar, SettableStateVar, makeSettableStateVar )   
 
 import Control.Applicative
+import Foreign.ForeignPtr ( 
+    ForeignPtr, withForeignPtr, mallocForeignPtrArray )
+import Foreign.Marshal.Array ( peekArray, pokeArray )
 import Foreign.Ptr ( Ptr )   
 
 
@@ -107,6 +118,55 @@ pixelLayout = makeStateVar getPixelLayout setPixelLayout
 --------------------------------------------------------------------------------
 -- Matrix manipulation
 
+-- NOTE - VGmatrix is simpler than the corresponding GLmatrix.
+-- Firstly VGmatrix only needs to store Floats (GLmatrix has to 
+-- store Floats or Doubles). Secondly VG matrices are always 
+-- stored in the same order (GL matrices can be row-major or
+-- column-major).
+
+
+-- Represent a 3x3 matrix.
+--
+-- > { sx, shy, w0, shx, sy, w1, tx, ty, w2 }
+--
+-- > | sx  shx tx  |
+-- > | shy sy  ty  |
+-- > | w0  w1  w2  |
+--
+newtype VGmatrix = VGmatrix (ForeignPtr VGfloat)
+  deriving (Eq,Ord,Show)
+
+-- |  Create a new matrix (containing undefined elements)
+-- and call the action to fill it with 3x3 elements.
+--
+-- (See HOpenGL\'s @withNewMatrix@).
+--
+withNewMatrix :: (Ptr VGfloat -> IO ()) -> IO VGmatrix
+withNewMatrix f = do
+    fp <- mallocForeignPtrArray 9
+    withForeignPtr fp f
+    return $ VGmatrix fp
+
+-- | Call the action with the given matrix. 
+-- /Note:/ The action is /not/ allowed to modify the matrix 
+-- elements!
+-- 
+-- (See HOpenGL\'s @withMatrix@).
+--
+withMatrix :: VGmatrix -> (Ptr VGfloat -> IO a) -> IO a
+withMatrix (VGmatrix fp) f = withForeignPtr fp f
+
+
+newMatrix :: [VGfloat] -> IO VGmatrix
+newMatrix components = withNewMatrix $ flip pokeArray (take 9 components)
+
+
+getMatrixComponents :: VGmatrix -> IO [VGfloat]
+getMatrixComponents mat = withMatrix mat $ \p -> peekArray 9 p
+
+
+
+
 -- | 'MatrixMode' enumerates the manipulable matrices.  
 data MatrixMode =
      PathUserToSurface
@@ -123,6 +183,7 @@ data MatrixMode =
 matrixMode :: SettableStateVar MatrixMode  
 matrixMode = makeSettableStateVar $  
     seti MatrixMode . fromIntegral . marshalMatrixMode
+
 
 -- | Set the current matrix to the identity matrix.
 --
