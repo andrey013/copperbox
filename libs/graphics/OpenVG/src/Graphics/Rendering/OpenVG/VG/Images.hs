@@ -25,7 +25,10 @@ module Graphics.Rendering.OpenVG.VG.Images (
   ImageFormat(..),
   
   -- * Creating and destroying images
-  maxImageWidth, maxImageHeight, maxImagePixels, maxImageBytes,
+  maxImageWidth, 
+  maxImageHeight, 
+  maxImagePixels, 
+  maxImageBytes,
   
   createImage, 
   destroyImage, 
@@ -33,12 +36,15 @@ module Graphics.Rendering.OpenVG.VG.Images (
   
   
   -- * Querying images
-  imageFormat, imageWidth, imageHeight,
+  imageFormat, 
+  imageWidth, 
+  imageHeight,
   
   -- * Reading and writing image pixels
   clearImage,
    
-  imageSubData, getImageSubData,
+  imageSubData, 
+  getImageSubData,
   
   -- * Copying pixels between images
   copyImage, 
@@ -49,11 +55,13 @@ module Graphics.Rendering.OpenVG.VG.Images (
   drawImage,
   
   -- * Reading and writing drawing surface pixels
-  setPixels, writePixels, getPixels, readPixels, 
+  setPixels, 
+  writePixels, 
+  getPixels, 
+  readPixels, 
   
   -- * Copying portions of the drawing surface
-  copyPixels,
-  
+  copyPixels
      
 ) where
 

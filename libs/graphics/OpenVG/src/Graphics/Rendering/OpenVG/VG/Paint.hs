@@ -18,11 +18,13 @@
 
 module Graphics.Rendering.OpenVG.VG.Paint (
   -- * Creating and destroying paint objects 
-  createPaint, destroyPaint, 
+  createPaint, 
+  destroyPaint, 
   withPaint,
   
   -- * Setting the current paint 
-  setPaint, getPaint,
+  setPaint, 
+  getPaint,
   
   -- * Setting paint parameters
   PaintType(..), 

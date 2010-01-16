@@ -5,7 +5,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.OpenVG.VG.Paths
--- Copyright   :  (c) Stephen Tetley 2008, 2009
+-- Copyright   :  (c) Stephen Tetley 2008, 2009, 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -15,9 +15,7 @@
 -- This module corresponds to section 8 (Paths) 
 -- of the OpenVG 1.0.1 specs.
 --
--- \*\* WARNING - this module is due to be changed significantly 
--- in the next revision so that it is closer to the original 
--- OpenVG API.
+-- \*\* WARNING - this module is due to be changed significantly.
 --
 -- This is unfortunate as the module defines the most significant 
 -- data types for vectors - the @Paths@. \*\*
@@ -42,7 +40,12 @@ module Graphics.Rendering.OpenVG.VG.Paths (
   destroyPath,
 
   -- * Path queries
-  format, datatype, pathScale, bias, numSegments, numCoords,
+  format, 
+  datatype, 
+  pathScale, 
+  bias, 
+  numSegments, 
+  numCoords,
 
   -- * Querying and modifying path capabilities
   getPathCapabilities, 
@@ -66,21 +69,27 @@ module Graphics.Rendering.OpenVG.VG.Paths (
   
   -- * Setting stroke parameters
   lineWidth,
-  CapStyle(..), capStyle,
-  JoinStyle(..), joinStyle,
+  CapStyle(..), 
+  capStyle,
+  JoinStyle(..), 
+  joinStyle,
   miterLimit,
   maxDashCount, 
-  dashPattern, disableDashPattern,
+  dashPattern, 
+  disableDashPattern,
   dashPhase,
   dashPhaseReset,
   
   -- * Filling or stroking a path
-  FillRule(..),  fillRule,
-  PaintMode(..), marshalPaintMode,
+  FillRule(..),
+  fillRule,
+  PaintMode(..),
+  marshalPaintMode,
   drawPath,
   fillPath,
   strokePath,
   fillStrokePath
+
 ) where
 
 import Graphics.Rendering.OpenVG.VG.Parameters
@@ -117,13 +126,12 @@ data PathDatatype =
 
 -- | 'PathAbsRel' enumerates the path addressing types, 
 -- @absolute@ or @relative@. 
+--
 data PathAbsRel = 
      Absolute
    | Relative
    deriving ( Eq, Ord, Show )
 
--- There is no Haskell equivalent to @VGPathSegment@. 
--- It is subsumed by PathCommand 
 data PathSegment = 
      ClosePath
    | MoveTo 
@@ -542,7 +550,8 @@ unmarshalPathCapabilities x
     | x == vg_PATH_CAPABILITY_PATH_BOUNDS             = PathBounds 
     | x == vg_PATH_CAPABILITY_PATH_TRANSFORMED_BOUNDS = PathTransfomedBounds 
     | x == vg_PATH_CAPABILITY_ALL                     = CapabilityAll 
-    | otherwise = error ("unmarshalPathCapabilities: illegal value " ++ show x)
+    | otherwise                                       = error $ 
+          "unmarshalPathCapabilities: illegal value " ++ show x
         
  
 marshalCapStyle :: CapStyle -> VGenum

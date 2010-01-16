@@ -31,7 +31,7 @@ import Graphics.Rendering.OpenVG.Raw.VG.ShivaExtensions
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Size(..) )
 
-import Control.Applicative
+import Control.Monad ( liftM )
 
 
 
@@ -39,7 +39,8 @@ import Control.Applicative
 -- OpenGL context.
 --
 createContextSH :: Size -> IO Bool
-createContextSH = unSizeM $ \w h -> unmarshalBool <$> vgCreateContextSH w h
+createContextSH = unSizeM $ \w h -> 
+    liftM unmarshalBool $ vgCreateContextSH w h
 
 -- | 'resizeSurfaceSH' should be called whenever the size of the 
 -- surface changes.    

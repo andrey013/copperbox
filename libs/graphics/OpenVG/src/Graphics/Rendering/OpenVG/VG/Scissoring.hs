@@ -26,17 +26,20 @@ module Graphics.Rendering.OpenVG.VG.Scissoring (
   -- * Alpha masking
   MaskOperation(..),
   alphaMasking,
+  mask,
   
   -- * Fast clearing
   clearColor,
   clear  
+
 ) where
 
 
 import Graphics.Rendering.OpenVG.VG.Parameters
 import Graphics.Rendering.OpenVG.VG.Utils ( marshalBool, unSize, unSizeM )
 
-import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( VGint, VGfloat )
+import Graphics.Rendering.OpenVG.Raw.VG.Core101 ( 
+    VGint, VGfloat, VGenum, VGImage )
 import Graphics.Rendering.OpenVG.Raw.VG.Scissoring
 
 import Graphics.Rendering.OpenGL.GL.CoordTrans ( Position(..), Size(..) )
@@ -100,7 +103,12 @@ data MaskOperation =
 alphaMasking :: SettableStateVar Bool
 alphaMasking = makeSettableStateVar $ seti Masking . marshalBool
 
--- vgMask not implemented in shiva-vg
+-- | Modify the alpha mask values according to the supplied
+-- 'MaskOperation'.
+--
+mask :: VGImage -> MaskOperation -> Position -> Size -> IO ()
+mask img mop (Position x y) = 
+    unSizeM $ vgMask img (marshalMaskOperation mop) x y
 
 --------------------------------------------------------------------------------
 -- Fast clearing
@@ -125,16 +133,15 @@ clear (Position x y) = unSizeM $ vgClear x y
 
 --------------------------------------------------------------------------------
 
-{-
--- Defined but not (YET) used: marshalMaskOperation
+
 marshalMaskOperation :: MaskOperation -> VGenum
 marshalMaskOperation x = case x of
-    ClearMask -> vg_CLEAR_MASK
-    FillMask -> vg_FILL_MASK
-    SetMask -> vg_SET_MASK
-    UnionMask -> vg_UNION_MASK
+    ClearMask     -> vg_CLEAR_MASK
+    FillMask      -> vg_FILL_MASK
+    SetMask       -> vg_SET_MASK
+    UnionMask     -> vg_UNION_MASK
     IntersectMask -> vg_INTERSECT_MASK
-    SubtractMask -> vg_SUBTRACT_MASK
--}
+    SubtractMask  -> vg_SUBTRACT_MASK
+
 
 

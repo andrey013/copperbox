@@ -1,3 +1,5 @@
+## OpenVG
+
 # Makefile is for my use only, so I can invoke the correct 
 # GHC/runhaskell on my Windows machine. 
 
@@ -33,8 +35,18 @@ unregister:
 pkglist:
 	$(GHC_PKG) list 
 
-# seems to hang msys...
 test:
-	$(RUNHASK) -i./demo -lopenvg32 demo/TestVgu.hs &
+	$(RUNHASK) -i./demo -lopenvg32 -L./demo demo/TestVgu.hs &
+
+testexe:
+	$(GHC) --make -i./demo -lopenvg32 -L./demo demo/TestVgu.hs
+	./demo/TestVgu.exe &
+
+# unregister first...
+testsrc:
+	$(RUNHASK) -i./demo:./src -lopenvg32 -L./demo demo/TestVgu.hs &
+
+
+
 
 

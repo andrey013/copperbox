@@ -18,12 +18,31 @@
 --------------------------------------------------------------------------------
 
 module Graphics.Rendering.OpenVG.VG.Parameters (    
-    ParamType(..), marshalParamType,
-    setf, seti, setfv, setiv,
-    getf, geti, getVectorSize, getfv, getiv,
-    setParameterf, setParameteri, setParameterfv, setParameteriv,
-    getParameterf, getParameteri, getParameterVectorSize,
-    getParameterfv, getParameteriv
+  ParamType(..), 
+  marshalParamType,
+
+  -- * Setting and querying context parameter values
+  setf, 
+  seti, 
+  setfv, 
+  setiv,
+  getf, 
+  geti, 
+  getVectorSize, 
+  getfv, 
+  getiv,
+
+  -- * Setting and querying object parameters
+  setParameterf, 
+  setParameteri, 
+  setParameterfv, 
+  setParameteriv,
+  getParameterf, 
+  getParameteri, 
+  getParameterVectorSize,
+  getParameterfv, 
+  getParameteriv
+
 ) where
 
 

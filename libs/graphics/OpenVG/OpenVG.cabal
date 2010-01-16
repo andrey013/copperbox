@@ -15,7 +15,8 @@ description:
   (2009.2.0.2) - it uses the split OpenGL packages (RAW, StateVar, 
   etc.).
   .
-  \*\* WARNING - major changes to previous version. \*\*.
+  \*\* WARNING - major changes to previous version. Also 
+  significant changes likely in next revision. \*\*.
   .
   Changelog
   0.4.0 to 0.5.0

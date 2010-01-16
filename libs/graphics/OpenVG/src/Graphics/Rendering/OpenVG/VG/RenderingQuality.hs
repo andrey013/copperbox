@@ -38,6 +38,7 @@ module Graphics.Rendering.OpenVG.VG.RenderingQuality (
   scale, 
   shear, 
   rotate
+
 ) where
 
 import Graphics.Rendering.OpenVG.VG.Parameters
@@ -131,6 +132,10 @@ matrixMode = makeSettableStateVar $
 loadIdentity :: IO ()
 loadIdentity = vgLoadIdentity
 
+-- NOTE
+-- See Graphics.Rendering.OpenGL.GL.CoordTrans
+
+
 -- | Set the current matrix to the supplied matrix.
 --
 -- 'loadMatrix' corresponds to the OpenVG function @vgLoadMatrix@.
@@ -216,7 +221,8 @@ unmarshalPixelLayout x
     | x == vg_PIXEL_LAYOUT_BGR_VERTICAL   = BgrVertical 
     | x == vg_PIXEL_LAYOUT_RGB_HORIZONTAL = RgbHorizontal 
     | x == vg_PIXEL_LAYOUT_BGR_HORIZONTAL = BgrHorizontal 
-    | otherwise = error ("unmarshalPixelLayout: illegal value " ++ show x)
+    | otherwise                           = error  $ 
+          "unmarshalPixelLayout: illegal value " ++ show x
     
     
 marshalMatrixMode :: MatrixMode -> VGenum
