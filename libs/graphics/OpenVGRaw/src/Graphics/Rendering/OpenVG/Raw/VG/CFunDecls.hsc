@@ -112,7 +112,7 @@ foreign import ccall unsafe "vg/openvg.h vgLoadMatrix"
     vgLoadMatrix :: Ptr VGfloat -> IO ()
 
 foreign import ccall unsafe "vg/openvg.h vgGetMatrix"
-    vgGetMatrix :: IO (Ptr VGfloat)
+    vgGetMatrix :: Ptr VGfloat -> IO ()
 
 foreign import ccall unsafe "vg/openvg.h vgMultMatrix"
     vgMultMatrix :: Ptr VGfloat -> IO ()

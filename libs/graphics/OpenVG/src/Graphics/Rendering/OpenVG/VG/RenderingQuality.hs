@@ -39,8 +39,7 @@ module Graphics.Rendering.OpenVG.VG.RenderingQuality (
   matrixMode, 
   
   loadIdentity,
-  loadMatrix,
-  getMatrix,
+  matrix,
   multMatrix,
   translate, 
   scale, 
@@ -156,11 +155,18 @@ withNewMatrix f = do
 withMatrix :: VGmatrix -> (Ptr VGfloat -> IO a) -> IO a
 withMatrix (VGmatrix fp) f = withForeignPtr fp f
 
-
+-- | Create a new matrix (as a foreign pointer) from the supplied
+-- list of components. The list should have 9 elements and be in
+-- the form:
+--
+-- > [ sx, shy, w0, shx, sy, w1, tx, ty, w2 ]
+--
 newMatrix :: [VGfloat] -> IO VGmatrix
 newMatrix components = withNewMatrix $ flip pokeArray (take 9 components)
 
 
+-- | Extract the components from a matrix.
+--
 getMatrixComponents :: VGmatrix -> IO [VGfloat]
 getMatrixComponents mat = withMatrix mat $ \p -> peekArray 9 p
 
@@ -193,39 +199,37 @@ matrixMode = makeSettableStateVar $
 loadIdentity :: IO ()
 loadIdentity = vgLoadIdentity
 
--- NOTE
--- See Graphics.Rendering.OpenGL.GL.CoordTrans
+-- | Query and set the current matrix.
+-- 
+-- 'matrix' is a read-write state variable corresponding to 
+-- OpenVG operations @vgGetMatrix@ (query) and vgLoadMatrix (set). 
+--
+matrix :: StateVar VGmatrix
+matrix = makeStateVar getMatrix loadMatrix
+
+
 
 
 -- | Set the current matrix to the supplied matrix.
 --
 -- 'loadMatrix' corresponds to the OpenVG function @vgLoadMatrix@.
 -- 
--- \*\* Note - this function has an unfortunate type and should
--- be wrapped. \*\* 
---
-loadMatrix :: Ptr VGfloat -> IO ()
-loadMatrix = vgLoadMatrix
+loadMatrix :: VGmatrix -> IO ()
+loadMatrix mat = withMatrix mat vgLoadMatrix
 
 -- | Get the current matrix.
 --
 -- 'getMatrix' corresponds to the OpenVG function @vgGetMatrix@.
--- 
--- \*\* Note - this function has an unfortunate type and should
--- be wrapped. \*\* 
 --
-getMatrix :: IO (Ptr VGfloat)
-getMatrix = vgGetMatrix
+getMatrix :: IO VGmatrix
+getMatrix = withNewMatrix vgGetMatrix
 
 -- | Multiply the current matrix by the supplied matrix.
 -- 
 -- 'multMatrix' corresponds to the OpenVG function @vgMultMatrix@.
--- 
--- \*\* Note - this function has an unfortunate type and should
--- be wrapped. \*\* 
 --
-multMatrix :: Ptr VGfloat -> IO ()
-multMatrix = vgMultMatrix
+multMatrix :: VGmatrix -> IO ()
+multMatrix mat = withMatrix mat vgMultMatrix
 
 -- | Apply a translation to the current matrix.
 --
