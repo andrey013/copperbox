@@ -3,7 +3,9 @@ version 0.6.0 (?? ??  2010):
   * Revised the RenderingQuality module to use an opaque matrix
     type rather than a raw pointer. Acknowledgement - the code 
     and interface is derived from the Matrix class in HOpenGL.
-    
+  
+  * Revised Image module - PixelData is now an opaque type rather
+    than a raw pointer.
 
 version 0.5.0 (16 Jan 2010):
   * Split into 2 packages OpenVG (this package) and OpenVGRaw.

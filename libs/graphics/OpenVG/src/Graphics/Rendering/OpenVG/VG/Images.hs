@@ -23,7 +23,12 @@ module Graphics.Rendering.OpenVG.VG.Images (
   
   -- * Image formats
   ImageFormat(..),
-  
+
+  -- * Pixel data
+  Stride,
+  PixelData,   
+
+
   -- * Creating and destroying images
   maxImageWidth, 
   maxImageHeight, 
@@ -80,6 +85,9 @@ import Data.StateVar (
 
 
 import Foreign.Ptr ( Ptr )
+
+
+
 
 
 --------------------------------------------------------------------------------
@@ -160,6 +168,26 @@ data ImageFormat =
    deriving ( Eq, Ord, Show )
   
 
+--------------------------------------------------------------------------------
+-- Pixel data
+
+
+-- Derived from HOpenGL
+-- NOTES - How do you create PixelData ?
+
+type Stride = VGint
+
+-- Opaque handle to pixel data. 
+--
+-- \*\* NOTE - ShivaVG currently only supports @sRGBA_8888@. \*\*
+--
+data PixelData a = PixelData ImageFormat Stride (Ptr a)
+   deriving ( Eq, Ord, Show )
+
+withPixelData :: PixelData a -> (VGenum -> Stride -> Ptr a -> b) -> b
+withPixelData (PixelData image_format stride ptr) f = 
+    f (marshalImageFormat image_format) stride ptr
+
     
 
 --------------------------------------------------------------------------------
@@ -215,6 +243,9 @@ maxImageBytes = makeGettableStateVar $ geti MaxImageBytes
 --
 -- 'createImage' corresponds to the OpenVG function 
 -- @vgCreateImage@.
+--
+-- \*\* NOTE - ShivaVG currently only supports @sRGBA_8888@ - 
+-- this function throws a runtime error for other formats. \*\*
 --
 createImage :: ImageFormat -> Size -> [ImageQuality] -> IO VGImage 
 createImage SRGBA8888 sz qs = 
@@ -303,10 +334,10 @@ clearImage handle (Position x y) = unSizeM $ vgClearImage handle x y
 -- 'imageSubData' corresponds to the OpenVG function 
 -- @vgImageSubData@. 
 --
-imageSubData :: VGImage -> Ptr a -> VGint -> ImageFormat
-                  -> Position -> Size -> IO ()
-imageSubData image imgdata stride fmt (Position x y) =
-    unSizeM $ vgImageSubData image imgdata stride (marshalImageFormat fmt) x y
+imageSubData :: VGImage -> PixelData a -> Position -> Size -> IO ()
+imageSubData image pd (Position x y) =
+    unSizeM $ withPixelData pd $ \format_enum stride pixel_data -> 
+                vgImageSubData image pixel_data stride format_enum x y
 
 
 
@@ -316,10 +347,10 @@ imageSubData image imgdata stride fmt (Position x y) =
 -- 'getImageSubData' corresponds to the OpenVG function 
 -- @vgGetImageSubData@. 
 --
-getImageSubData :: VGImage -> Ptr a -> VGint -> ImageFormat
-                    -> Position -> Size -> IO ()
-getImageSubData image imgdata stride fmt (Position x y) = 
-    unSizeM $ vgGetImageSubData image imgdata stride (marshalImageFormat fmt) x y
+getImageSubData :: VGImage -> PixelData a -> Position -> Size -> IO ()
+getImageSubData image pd (Position x y) = 
+    unSizeM $ withPixelData pd $ \format_enum stride pixel_data ->
+                vgGetImageSubData image pixel_data stride format_enum x y
    
 --------------------------------------------------------------------------------
 
@@ -333,13 +364,13 @@ getImageSubData image imgdata stride fmt (Position x y) =
 --
 -- 'copyImage' corresponds to the OpenVG function @vgCopyImage@.
 --
-copyImage :: VGImage -> Position -> VGImage -> Position
-                -> Size -> Bool -> IO ()
+copyImage :: VGImage -> Position -> VGImage -> Position -> Size -> Bool -> IO ()
 copyImage dst (Position dx dy) src (Position sx sy) sz dither = 
-    unSizeM (\w h -> vgCopyImage dst dx dy src sx sy w h (marshalBool dither)) sz
+    unSizeM $ \w h -> 
+        vgCopyImage dst dx dy src sx sy w h (marshalBool dither)) sz
 
 --------------------------------------------------------------------------------
--- Drawing iamges to the drawing surface
+-- Drawing images to the drawing surface
 
 -- | Styles of image drawing   
 data ImageMode = 
@@ -372,6 +403,7 @@ drawImage = vgDrawImage
 --------------------------------------------------------------------------------
 -- Reading and writing drawing surface pixels
 
+
 -- | Copy pixel data from the image to the drawing surface.
 --
 -- 'setPixels' corresponds to the OpenVG function @vgSetPixels@. 
@@ -385,15 +417,17 @@ setPixels (Position dx dy) src (Position sx sy) =
 --
 -- 'writePixels' corresponds to the OpenVG function @vgWritePixels@.
 --
-writePixels :: Ptr a -> VGint -> ImageFormat -> Position -> Size -> IO ()
-writePixels pixeldata stride fmt (Position dx dy) =  
-    unSizeM $ vgWritePixels pixeldata stride (marshalImageFormat fmt) dx dy
+writePixels :: PixelData a -> Position -> Size -> IO ()
+writePixels pd (Position dx dy) = 
+    unSizeM $ withPixelData pd $ \format_enum stride pixel_data ->
+                vgWritePixels pixel_data stride format_enum dx dy
+
 
 -- | Retrieve pixel information from the drawing surface. 
 -- 
 -- 'getPixels' corresponds to the OpenVG function @vgGetPixels@.
 --
-getPixels :: VGImage  -> Position -> Position -> Size -> IO ()
+getPixels :: VGImage -> Position -> Position -> Size -> IO ()
 getPixels dst (Position dx dy) (Position sx sy) =  
     unSizeM $ vgGetPixels dst dx dy sx sy
 
@@ -402,9 +436,12 @@ getPixels dst (Position dx dy) (Position sx sy) =
 -- 
 -- 'readPixels' corresponds to the OpenVG function @vgReadPixels@.
 --
-readPixels :: Ptr a -> VGint -> ImageFormat -> Position -> Size -> IO ()
-readPixels pixeldata stride fmt (Position sx sy) = unSizeM $
-    vgReadPixels pixeldata stride (marshalImageFormat fmt) sx sy
+readPixels :: PixelData a -> Position -> Size -> IO ()
+readPixels pd (Position sx sy)  = 
+    unSizeM $ withPixelData pd $ \format_enum stride pixel_data -> 
+                vgReadPixels pixel_data stride format_enum sx sy 
+
+
 
 --------------------------------------------------------------------------------
 -- Copying portions of the drawing surface
