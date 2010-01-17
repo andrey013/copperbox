@@ -1,11 +1,10 @@
-{-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.OpenVG.VG.Paths
--- Copyright   :  (c) Stephen Tetley 2008, 2009, 2010
+-- Copyright   :  (c) Stephen Tetley 2008-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -14,11 +13,6 @@
 --
 -- This module corresponds to section 8 (Paths) 
 -- of the OpenVG 1.0.1 specs.
---
--- \*\* WARNING - this module is due to be changed significantly.
---
--- This is unfortunate as the module defines the most significant 
--- data types for vectors - the @Paths@. \*\*
 --
 --
 --------------------------------------------------------------------------------
@@ -34,16 +28,19 @@ module Graphics.Rendering.OpenVG.VG.Paths (
   
   -- * Creating and destroying paths
   PathCapabilities(..),
+  PathProperties(..),
+
   withPath,
   createPath, 
   clearPath, 
   destroyPath,
 
   -- * Path queries
-  format, 
-  datatype, 
+  pathFormat, 
+  pathDatatype, 
   pathScale, 
-  bias, 
+  pathBias, 
+
   numSegments, 
   numCoords,
 
@@ -63,6 +60,11 @@ module Graphics.Rendering.OpenVG.VG.Paths (
   
   -- * Transforming a path
   transformPath,
+  
+  -- * Querying the bounds of a path 
+  BoundingBox(..),
+  pathBounds, 
+  pathTransformedBounds,
   
   -- * Interpolating between paths
   interpolatePath,
@@ -88,7 +90,9 @@ module Graphics.Rendering.OpenVG.VG.Paths (
   drawPath,
   fillPath,
   strokePath,
-  fillStrokePath
+  fillStrokePath,
+
+  marshalPathSegment
 
 ) where
 
@@ -105,11 +109,13 @@ import Data.StateVar (
     GettableStateVar, makeGettableStateVar,
     ( $= ) ) 
 
-import Control.Applicative
 import Control.Monad
 import Data.Int ( Int8, Int16, Int32 )
+
+import Foreign.Marshal.Alloc ( alloca )
 import Foreign.Marshal.Array ( newArray )
-import Foreign.Storable ( Storable )
+import Foreign.Ptr ( Ptr )
+import Foreign.Storable ( Storable, peek )
 
 --------------------------------------------------------------------------------
 -- Datatypes
@@ -132,6 +138,9 @@ data PathAbsRel =
    | Relative
    deriving ( Eq, Ord, Show )
 
+-- | 'PathSegment' corresponds to the OpenVG enumeration 
+-- @VGPathSegment@.     
+--
 data PathSegment = 
      ClosePath
    | MoveTo 
@@ -148,8 +157,9 @@ data PathSegment =
    | LCWArcTo
    deriving ( Eq, Ord, Show )
 
--- | 'PathCommand' corresponds to the OpenVG enumeration @VGPathCommand@,
--- but includes ClosePath aka @VG_CLOSE_PATH@.      
+-- | 'PathCommand' corresponds to the OpenVG enumeration 
+-- @VGPathCommand@.     
+--
 data PathCommand = 
      MoveToAbs
    | MoveToRel
@@ -200,18 +210,15 @@ data PathCapabilities =
    | CapabilityAll
    deriving ( Eq, Ord, Show )
 
+data PathProperties 
+     = PathProperties PathDatatype VGfloat VGfloat VGint VGint [PathCapabilities]
+  deriving (Eq,Ord) 
+
 
 -- | @withPath@ - create a path, run an action on it, destroy the path.
-withPath :: PathDatatype 
-         -> VGfloat 
-         -> VGfloat
-         -> VGint 
-         -> VGint 
-         -> [PathCapabilities]
-         -> (VGPath -> IO a) 
-         -> IO a
-withPath typ scl bi sch cch cs action = do
-    path  <- createPath typ scl bi sch cch cs
+withPath :: PathProperties -> (VGPath -> IO a) -> IO a
+withPath props action = do
+    path  <- createPath props
     ans   <- action path
     destroyPath path
     return ans
@@ -220,14 +227,9 @@ withPath typ scl bi sch cch cs action = do
 -- | @createPath@ - corresponds to the OpenVG function @vgCreatePath@.
 -- @createPath@ can only create paths in the standard format 
 -- (VG_PATH_FORMAT_STANDARD), extensions are not supported.   
-createPath :: PathDatatype 
-           -> VGfloat 
-           -> VGfloat
-           -> VGint 
-           -> VGint 
-           -> [PathCapabilities] 
-           -> IO VGPath
-createPath typ scl bi sch cch cs = 
+--
+createPath :: PathProperties -> IO VGPath
+createPath (PathProperties typ scl bi sch cch cs) = 
     vgCreatePath fmt (marshalPathDatatype typ) scl bi sch cch caps
   where
     -- Other paths formats maybe defined as extensions, for the present
@@ -248,23 +250,27 @@ destroyPath = vgDestroyPath
 --------------------------------------------------------------------------------
 --  Path queries
   
--- | @format@ - get the path format. Currently the only supported 
--- format is @VG_PATH_FORMAT_STANDARD@ - 0. 
-format :: VGPath -> GettableStateVar VGint
-format = makeGettableStateVar . flip getParameteri vg_PATH_FORMAT
+-- | @pathFormat@ - get the path format. Currently the only supported 
+-- format is @VG_PATH_FORMAT_STANDARD@ - 0.
+--
+pathFormat :: VGPath -> GettableStateVar VGint
+pathFormat = makeGettableStateVar . flip getParameteri vg_PATH_FORMAT
 
--- | @datatype@ - get the PathDatatype.
-datatype :: VGPath -> GettableStateVar PathDatatype
-datatype = makeGettableStateVar . liftM (unmarshalPathDatatype . fromIntegral)  
-                                . (getParameteri `flip` vg_PATH_DATATYPE)
+-- | @pathDatatype@ - get the PathDatatype.
+--
+pathDatatype :: VGPath -> GettableStateVar PathDatatype
+pathDatatype = makeGettableStateVar . liftM (unmarshalPathDatatype . fromIntegral)  
+                                    . (getParameteri `flip` vg_PATH_DATATYPE)
 
 -- | @pathScale@ - get the scaling factor of the path.    
+--
 pathScale :: VGPath -> GettableStateVar VGfloat
 pathScale = makeGettableStateVar . flip getParameterf vg_PATH_SCALE
 
--- | @bias@ - get the bias factor of the path. 
-bias :: VGPath -> GettableStateVar VGfloat
-bias = makeGettableStateVar . flip getParameterf vg_PATH_BIAS
+-- | @pathBias@ - get the bias factor of the path. 
+--
+pathBias :: VGPath -> GettableStateVar VGfloat
+pathBias = makeGettableStateVar . flip getParameterf vg_PATH_BIAS
 
 -- | @numSegments@ - get the number of segments stored in the path.     
 numSegments :: VGPath -> GettableStateVar VGint 
@@ -281,8 +287,8 @@ numCoords = makeGettableStateVar . flip getParameteri vg_PATH_NUM_COORDS
 -- | @getPathCapabilities@ corresponds to the OpenVG 
 -- function @vgGetPathCapabilities@. 
 getPathCapabilities :: VGPath -> IO [PathCapabilities]
-getPathCapabilities h = 
-    unbits32 unmarshalPathCapabilities <$> vgGetPathCapabilities h
+getPathCapabilities = 
+    liftM (unbits32 unmarshalPathCapabilities) . vgGetPathCapabilities
     
 -- | @removePathCapabilities@ corresponds to the OpenVG 
 -- function @vgRemovePathCapabilities@.  
@@ -309,21 +315,9 @@ instance StorablePathData Int16
 instance StorablePathData Int32
 instance StorablePathData VGfloat
 
-data PathData = S_8     Int8
-              | S_16    Int16
-              | S_32    Int32
-              | F_float Float
-  deriving (Eq,Ord,Show)
+-- TODO is this implementation valid?
 
-{-
--- final ptr is @const void * pathData@ 
-
-appendPathData :: VGPath -> VGint -> Ptr VGubyte -> Ptr a -> IO ()
-appendPathData = vgAppendPathData
--}
-
-
--- | @appendPathData@ - TODO is this implementation valid?
+-- | @appendPathData@ 
 appendPathData :: StorablePathData a => VGPath -> [PathCommand] -> [a] -> IO ()
 appendPathData h cs ds = do 
     cmd_arr <- newArray (map (fromIntegral . marshalPathCommand) cs)
@@ -350,15 +344,49 @@ transformPath = vgTransformPath
 --------------------------------------------------------------------------------
 -- Querying the bounding box of a path
 
--- pathBounds __ TODO 
-                 
--- pathTransformedBounds __ TODO 
+data BoundingBox = 
+      BoundingBox { 
+          min_x     :: VGfloat, 
+          min_y     :: VGfloat,
+          width_bb  :: VGfloat,
+          height_bb :: VGfloat
+        }
+  deriving (Eq,Ord,Show)
+
+
+alloca4 :: Storable a => (Ptr a -> Ptr a -> Ptr a -> Ptr a -> IO b) -> IO b
+alloca4 f = alloca $ \ca ->
+              alloca $ \cb -> 
+                alloca $ \cc ->
+                  alloca $ \cd -> f ca cb cc cd
+
+
+
+pathBounds :: VGPath -> IO BoundingBox
+pathBounds path = alloca4 $ \px py pw ph -> do
+    vgPathBounds path px py pw ph
+    x <- peek px
+    y <- peek py
+    w <- peek pw
+    h <- peek ph
+    return $ BoundingBox x y w h      
+
+
+pathTransformedBounds :: VGPath -> IO BoundingBox
+pathTransformedBounds path = alloca4 $ \px py pw ph -> do
+    vgPathTransformedBounds path px py pw ph
+    x <- peek px
+    y <- peek py
+    w <- peek pw
+    h <- peek ph
+    return $ BoundingBox x y w h      
+
 
 --------------------------------------------------------------------------------
 -- Interpolating between paths
 interpolatePath :: VGPath -> VGPath -> VGPath -> VGfloat -> IO Bool
 interpolatePath dst start end amount =
-    unmarshalBool <$> vgInterpolatePath dst start end amount
+    liftM unmarshalBool $ vgInterpolatePath dst start end amount
   
         
 --------------------------------------------------------------------------------

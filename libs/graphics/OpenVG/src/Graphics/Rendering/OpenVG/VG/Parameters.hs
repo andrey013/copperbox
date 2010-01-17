@@ -1,10 +1,9 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.OpenVG.VG.Parameters
--- Copyright   :  (c) Stephen Tetley 2008, 2009
+-- Copyright   :  (c) Stephen Tetley 2008-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>

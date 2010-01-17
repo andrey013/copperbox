@@ -34,7 +34,8 @@ import Graphics.UI.GLUT
 
 
 testCreatePath :: IO VGPath
-testCreatePath = createPath VG.Float 1.0 0.0 0 0 [CapabilityAll]
+testCreatePath = 
+    createPath (PathProperties VG.Float 1.0 0.0 0 0 [CapabilityAll])
 
 testDestoryPaths :: [VGPath] -> IO ()
 testDestoryPaths = mapM_ destroyPath

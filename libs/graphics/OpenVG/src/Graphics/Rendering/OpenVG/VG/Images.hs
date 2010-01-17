@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.Rendering.OpenVG.VG.Images
--- Copyright   :  (c) Stephen Tetley 2008, 2009
+-- Copyright   :  (c) Stephen Tetley 2008-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -54,7 +54,7 @@ module Graphics.Rendering.OpenVG.VG.Images (
   -- * Copying pixels between images
   copyImage, 
   
-  -- * Drawing iamges to the drawing surface
+  -- * Drawing images to the drawing surface
   ImageMode(..),
   drawImageMode, 
   drawImage,
@@ -85,9 +85,6 @@ import Data.StateVar (
 
 
 import Foreign.Ptr ( Ptr )
-
-
-
 
 
 --------------------------------------------------------------------------------
@@ -366,8 +363,8 @@ getImageSubData image pd (Position x y) =
 --
 copyImage :: VGImage -> Position -> VGImage -> Position -> Size -> Bool -> IO ()
 copyImage dst (Position dx dy) src (Position sx sy) sz dither = 
-    unSizeM $ \w h -> 
-        vgCopyImage dst dx dy src sx sy w h (marshalBool dither)) sz
+    (unSizeM `flip` sz) $ \w h -> 
+        vgCopyImage dst dx dy src sx sy w h (marshalBool dither)
 
 --------------------------------------------------------------------------------
 -- Drawing images to the drawing surface

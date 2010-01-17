@@ -56,7 +56,7 @@ import Graphics.Rendering.OpenVG.Raw.VG.RenderingQuality
 import Data.StateVar (
     StateVar(), makeStateVar, SettableStateVar, makeSettableStateVar )   
 
-import Control.Applicative
+import Control.Monad
 import Foreign.ForeignPtr ( 
     ForeignPtr, withForeignPtr, mallocForeignPtrArray )
 import Foreign.Marshal.Array ( peekArray, pokeArray )
@@ -109,7 +109,8 @@ pixelLayout :: StateVar PixelLayout
 pixelLayout = makeStateVar getPixelLayout setPixelLayout
   where
     getPixelLayout :: IO PixelLayout
-    getPixelLayout = unmarshalPixelLayout . fromIntegral <$> geti ScreenLayout
+    getPixelLayout = liftM (unmarshalPixelLayout . fromIntegral) 
+                           (geti ScreenLayout)
         
     setPixelLayout :: PixelLayout -> IO ()  
     setPixelLayout = seti ScreenLayout . fromIntegral . marshalPixelLayout
