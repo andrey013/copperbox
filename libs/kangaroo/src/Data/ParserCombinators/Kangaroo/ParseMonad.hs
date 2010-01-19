@@ -18,7 +18,8 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   (
     GenKangaroo
   , ParseErr
-  , RegionName
+  , RegionCoda(..)      -- re-export
+  , RegionName          -- re-export
     
   , getUserSt
   , putUserSt
@@ -36,12 +37,10 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , checkWord8
   , opt 
   , position
-  , regionEnd
   , atEnd
   , lengthRemaining
 
   -- * Parse within a /region/.
-  , RegionCoda(..)
   , intraparse
   , advance
   , advanceRelative
@@ -50,9 +49,8 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
    
   ) where
 
-import Data.ParserCombinators.Kangaroo.Utils 
-
-import Text.PrettyPrint.JoinPrint
+import Data.ParserCombinators.Kangaroo.Region
+import Data.ParserCombinators.Kangaroo.Utils
 
 import Control.Applicative
 import Control.Monad
@@ -65,35 +63,10 @@ type ParseErr = String
 
 type ImageData = IOUArray Int Word8   -- Is Int big enough for index?
 
-data ArrIx = ArrIx { arr_ix_ptr :: !Int, arr_ix_end :: !Int }
-  deriving (Eq,Show) 
 
--- | 'RegionCoda' - three useful final positions:
---
--- 1. dalpunto  - 'from the point'      
--- - Run the parser within a region and return to where you came
---   from.
---
--- 2. alfermata - 'to the stop'    
--- - Run the parser within a region, the cursor remains wherever 
---   the parse finished.
---
--- 3. alfine    - 'to the end'     
--- - Run the parser within a region and jump to the right-end of 
---   the region after the parse.
---
-data RegionCoda = Dalpunto | Alfermata | Alfine
-  deriving (Enum,Eq,Show)
+type St    = ParseStack
+type Env   = ImageData    
 
--- For debugging, track regions...
-type RegionName  = String
-type RegionInfo  = (RegionName,RegionCoda,Int,Int)
-type RegionStack = [RegionInfo]
-
-
-type St    = (ArrIx,RegionStack)
-type Env   = ImageData
-  
 
 -- Kangaroo is not a transformer as IO is always at the 
 -- \'bottom\' of the effect stack. Like the original Parsec it is
@@ -152,35 +125,46 @@ instance Applicative (GenKangaroo ust) where
 -- is no inbuilt backtracking or support for list-of-successes.
 
 
-getArrIx :: GenKangaroo ust ArrIx
-getArrIx = GenKangaroo $ \_ st ust -> return (Right $ fst st, st, ust)
-
--- Note putArrIx does not validate - moving the cursor past the 
--- end is valid, allowing the 'atEnd' opertaion to work.
---
-putArrIx :: ArrIx -> GenKangaroo ust ()
-putArrIx ix@(ArrIx s e)  = GenKangaroo $ \_ (_,stk) ust -> 
-    if s <= e then return (Right (), (ix,stk), ust)
-              else return (Left $ "Bad index " ++ show (s,e), (ix,stk), ust)
-
-   
-
--- modifyArrIx :: (Int -> Int) -> GenKangaroo ust ()
--- modifyArrIx f = GenKangaroo $ \_ (ArrIx ix end,stk) ust -> 
---    return (Right (), (ArrIx (f ix) end, stk), ust)
 
 
-
-bracketRegionInfo :: RegionInfo -> GenKangaroo ust a -> GenKangaroo ust a
-bracketRegionInfo i = bracketM_ (push i) pop 
+runGenKangaroo :: GenKangaroo ust a -> ust -> FilePath -> IO (Either ParseErr a,ust)
+runGenKangaroo p user_state filename = 
+    withBinaryFile filename ReadMode $ \ handle -> 
+      do { sz                 <- hFileSize handle
+         ; arr                <- newArray_ (0,fromIntegral $ sz-1)
+         ; rsz                <- hGetArray handle arr  (fromIntegral sz)
+         ; (ans,stk,ust)      <- runP p rsz arr
+         ; return (answer ans stk,ust)   
+         }
   where 
-    push s      = GenKangaroo $ \_ (ix,stk) ust -> 
-                    return (Right (), (ix,s:stk), ust)
-    pop         = GenKangaroo $ \_ (ix,stk) ust -> 
-                    return (Right (), (ix,popp stk), ust)
-    popp (_:xs) = xs
-    popp []     = [] -- should be unreachable
+    runP (GenKangaroo x) upper arr = x arr st0 user_state  
+      where 
+        st0 = newStack 0 (upper-1) Alfine " -- file -- "
 
+    answer (Left err)  stk        = Left $ err 
+                                          ++ ('\n':'\n':printParseStack stk)
+    answer (Right ans) _              = Right ans
+
+
+
+throwErr  :: ParseErr -> GenKangaroo ust a
+throwErr msg = GenKangaroo $ \_ st ust -> return (Left msg, st, ust)
+
+askEnv    :: GenKangaroo ust Env
+askEnv    = GenKangaroo $ \env st ust -> return (Right env, st, ust)
+
+getSt     :: GenKangaroo ust St
+getSt     = GenKangaroo $ \_ st ust -> return (Right st, st, ust)
+
+putSt     :: St -> GenKangaroo ust ()
+putSt st  = GenKangaroo $ \_ _ ust -> return (Right (), st, ust)
+
+
+getPos    :: GenKangaroo ust Pos
+getPos    = liftM location getSt
+
+getEnd    :: GenKangaroo ust RegionEnd
+getEnd    = liftM regionEnd  getSt
 
 getUserSt :: GenKangaroo ust ust
 getUserSt = GenKangaroo $ \_ st ust -> return (Right ust, st, ust)
@@ -192,50 +176,31 @@ modifyUserSt :: (ust -> ust) -> GenKangaroo ust ()
 modifyUserSt f = GenKangaroo $ \_ st ust -> return (Right (), st, f ust)
 
 
+modifyPos1 :: GenKangaroo ust ()
+modifyPos1 = modifyPos (+1) 
 
-askEnv :: GenKangaroo ust Env
-askEnv = GenKangaroo $ \env st ust -> return (Right env, st, ust)
+modifyPos :: (Pos -> Pos) -> GenKangaroo ust ()
+modifyPos f = GenKangaroo $ \_ st ust -> 
+    case move f st of
+       Left _   -> return (Left $ "Bad index ... todo", st, ust)
+       Right stk  -> return (Right (), stk, ust)
 
 
-throwErr :: ParseErr -> GenKangaroo ust a
-throwErr msg = GenKangaroo $ \_ st ust -> return (Left msg, st, ust)
 
+bracketRegion :: RegionInfo -> GenKangaroo ust a -> GenKangaroo ust a
+bracketRegion i = bracketM_ pushM popM 
+  where 
+    pushM       = getSt >>= \st -> case push i st of
+                     Left _ -> throwErr "bracketRegionInfo"
+                     Right stk -> putSt stk
+
+    popM         = getSt >>= \st -> putSt (pop st)
 
 
 liftIOAction :: IO a -> GenKangaroo ust a
 liftIOAction ma = GenKangaroo $ \_ st ust -> 
     ma >>= \a -> return (Right a, st, ust) 
 
-
-
-runGenKangaroo :: GenKangaroo ust a -> ust -> FilePath -> IO (Either ParseErr a,ust)
-runGenKangaroo p user_state filename = 
-    withBinaryFile filename ReadMode $ \ handle -> 
-      do { sz                 <- hFileSize handle
-         ; arr                <- newArray_ (0,fromIntegral $ sz-1)
-         ; rsz                <- hGetArray handle arr  (fromIntegral sz)
-         ; (ans,(_,stk),ust)  <- runP p rsz arr
-         ; return (mergeStk ans stk,ust)   
-         }
-  where 
-    runP (GenKangaroo x) upper arr = x arr st0 user_state  where 
-        st0 = (ArrIx 0 (upper-1), [(" -- file -- ",Alfine,0,upper-1)]) 
-    
-    mergeStk (Left err)  stk = Left $ err ++ ('\n':'\n':printRegionStack stk)
-    mergeStk (Right ans) _   = Right ans
-
-printRegionStack :: RegionStack -> String
-printRegionStack stk = render $ vcat $ map fn stk
-  where
-    (w1,w4)                 = onSnd (length . show) $ foldr phi (0,0) stk
-    phi (name,_,_,i) (a,b)  = (max a (length name), max b i)
-    onSnd f (a,b)            = (a, f b)
-
-    fn                      :: RegionInfo -> Doc
-    fn (name,_,st,end)   =     alignPad AlignLeft w1 ' ' (text name)
-                           <+> alignPad AlignLeft w4 ' ' (int st)
-                           <+> alignPad AlignLeft w4 ' ' (int end)
-    
 
 
 --------------------------------------------------------------------------------
@@ -247,16 +212,16 @@ printRegionStack stk = render $ vcat $ map fn stk
 
 reportError :: ParseErr -> GenKangaroo ust a
 reportError s = do 
-    posn <- getArrIx
+    posn <- getPos
     throwErr $ s ++ posStr posn
   where
-    posStr (ArrIx pos end) = concat [ " absolute position "
-                                    , show pos
-                                    , " (0x" 
-                                    , showHex pos []
-                                    , "), region length "
-                                    , show end
-                                    ]
+    posStr pos  = concat [ " absolute position "
+                         , show pos
+                         , " (0x" 
+                         , showHex pos []
+                         , ")"
+                         ]
+
 
 
 substError :: GenKangaroo ust a -> ParseErr -> GenKangaroo ust a
@@ -275,46 +240,49 @@ withSuccess True  _   mf = mf
    
 word8 :: GenKangaroo ust Word8
 word8 = do
-    (ArrIx ix end)   <- getArrIx
+    ix               <- getPos
+    end              <- getEnd
     when (ix>end)    (reportError "word8")   -- test emphatically is (>) !
     arr              <- askEnv
     a                <- liftIOAction $ readArray arr ix
-    putArrIx $ ArrIx (ix+1) end
+    modifyPos1
     return a
 
 
 checkWord8 :: (Word8 -> Bool) -> GenKangaroo ust (Maybe Word8)
-checkWord8 check = getArrIx >>= \ix -> word8 >>= \ans ->
+checkWord8 check = word8 >>= \ans ->
     if check ans then return $ Just ans
-                 else putArrIx ix >> return Nothing
+                 else modifyPos (`subtract` 1) >> return Nothing
+
+
 
 
 
 -- no 'try' in Kangaroo... 
--- opt is the nearest to it, opt backtracks the cursor onm failure.
+-- opt is the nearest to it, opt backtracks the cursor on failure.
 opt :: GenKangaroo ust a -> GenKangaroo ust (Maybe a)
 opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans -> 
     case ans of
       (Left _, _, ust')    -> return (Right Nothing, st, ust')
       (Right a, st', ust') -> return (Right $ Just a, st', ust')
 
+
 --------------------------------------------------------------------------------
 -- Querying position
 
 position :: GenKangaroo ust Int
-position = liftM arr_ix_ptr getArrIx
-
-regionEnd :: GenKangaroo ust Int
-regionEnd = liftM arr_ix_end getArrIx
-
+position = getPos
 
 
 atEnd :: GenKangaroo ust Bool
-atEnd = getArrIx >>= \(ArrIx ix end) -> return $ ix >= end
+atEnd = liftM2 (>=) getPos getEnd
+
 
 lengthRemaining :: GenKangaroo ust Int
-lengthRemaining = getArrIx >>= \(ArrIx ix end) -> 
-   let rest = end - ix in if rest < 0 then return 0 else return rest
+lengthRemaining = liftM2 fn getEnd getPos 
+  where  
+    fn a b | a <= b    = 0
+           | otherwise = a - b
 
 --------------------------------------------------------------------------------
 -- The important ones parsing within a /region/ ...
@@ -325,27 +293,13 @@ lengthRemaining = getArrIx >>= \(ArrIx ix end) ->
 --
 -- Note abs_pos must be within the current region.
 --
-intraparse :: RegionName -> RegionCoda -> Int -> Int 
+intraparse :: RegionName -> RegionCoda -> RegionStart -> Int 
            -> GenKangaroo ust a 
            -> GenKangaroo ust a
 intraparse name coda intra_start len p = 
-    bracketRegionInfo (name,coda,intra_start, intra_start+len) $ 
-      withLoc "intraparse" intra_start len $ \old_start old_end -> 
-        p >>= \ans ->
-          case coda of
-            Dalpunto  -> do { putArrIx (ArrIx old_start old_end)
-                            ; return ans 
-                            }
-            Alfermata -> do { pos <- position
-                            ; putArrIx (ArrIx pos old_end)
-                            ; return ans
-                            }
-            Alfine    -> do { putArrIx (ArrIx (intra_start+len) old_end)
-                            ; return ans
-                            }
-     
+    bracketRegion (newRegion intra_start len coda name) p
              
-
+{-
 -- withLoc doesn't represent /end-of-parse/ usefully.
 -- It needs more thought.
 
@@ -378,17 +332,19 @@ forwardsError new_end old_end fun_name = concat
     , " extends beyond the end of the current region "
     , show old_end
     ]
+-}
+
 
 advance :: RegionName -> RegionCoda -> Int 
         -> GenKangaroo ust a 
         -> GenKangaroo ust a
-advance name coda intra_start p = getArrIx >>= \(ArrIx _ end) -> 
+advance name coda intra_start p = getEnd >>= \end -> 
     intraparse name coda intra_start (end - intra_start) p
 
 advanceRelative :: RegionName -> RegionCoda -> Int
                 -> GenKangaroo ust a 
                 -> GenKangaroo ust a
-advanceRelative name coda dist p = getArrIx >>= \(ArrIx pos _) -> 
+advanceRelative name coda dist p = getPos >>= \pos -> 
     intraparse name coda (pos+dist) dist p
 
 
@@ -396,15 +352,16 @@ advanceRelative name coda dist p = getArrIx >>= \(ArrIx pos _) ->
 restrict :: RegionName -> RegionCoda -> Int 
          -> GenKangaroo ust a 
          -> GenKangaroo ust a
-restrict name coda len p = getArrIx >>= \(ArrIx pos _) -> 
+restrict name coda len p = getPos >>= \pos -> 
     intraparse name coda pos len p
 
 
 restrictToPos :: RegionName -> RegionCoda -> Int 
               -> GenKangaroo ust a 
               -> GenKangaroo ust a
-restrictToPos name coda abs_pos p = getArrIx >>= \(ArrIx pos _) -> 
+restrictToPos name coda abs_pos p = getPos >>= \pos -> 
     intraparse name coda pos (abs_pos-pos) p
+
 
 
 --------------------------------------------------------------------------------

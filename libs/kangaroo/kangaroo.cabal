@@ -64,6 +64,7 @@ library
     Data.ParserCombinators.Kangaroo.IEEEFloat,
     Data.ParserCombinators.Kangaroo.ParseMonad,
     Data.ParserCombinators.Kangaroo.Prim,
+    Data.ParserCombinators.Kangaroo.Region,
     Data.ParserCombinators.Kangaroo.Utils,
     Text.PrettyPrint.JoinPrint.Core,
     Text.PrettyPrint.JoinPrint.HexDump,

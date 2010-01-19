@@ -1,0 +1,176 @@
+{-# OPTIONS -Wall #-}
+
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.ParserCombinators.Kangaroo.Region
+-- Copyright   :  (c) Stephen Tetley 2009, 2010
+-- License     :  BSD3
+--
+-- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
+-- Stability   :  highly unstable
+-- Portability :  to be determined.
+--
+-- Data types to manage parse regions
+--
+--------------------------------------------------------------------------------
+
+module Data.ParserCombinators.Kangaroo.Region
+  (
+  -- * Types
+    RegionCoda(..)
+  , RegionStart
+  , RegionEnd
+  , RegionName
+  , Pos
+  , RegionInfo
+  , ParseStack
+
+  -- * Operations
+  , newStack
+  , newRegion
+
+  , regionStart
+  , regionEnd
+  , push
+  , pop
+  , move1
+  , move
+  , location
+
+  , printParseStack
+  
+  ) where
+
+
+import Text.PrettyPrint.JoinPrint
+
+
+-- | 'RegionCoda' - three useful final positions:
+--
+-- 1. dalpunto  - 'from the point'      
+-- - Run the parser within a region and return to where you came
+--   from.
+--
+-- 2. alfermata - 'to the stop'    
+-- - Run the parser within a region, the cursor remains wherever 
+--   the parse finished.
+--
+-- 3. alfine    - 'to the end'     
+-- - Run the parser within a region and jump to the right-end of 
+--   the region after the parse.
+--
+data RegionCoda = Dalpunto | Alfermata | Alfine
+  deriving (Enum,Eq,Show)
+
+
+type RegionStart = Int
+type RegionEnd   = Int
+type RegionName  = String
+
+type Pos         = Int
+
+-- | 'RegionInfo' contains the bounds of a region and the 
+-- \'coda action\' to take after parsing has finished.
+--
+
+data RegionInfo  = RegionInfo 
+        { region_start  :: !RegionStart
+        , region_end    :: !RegionEnd
+        , region_coda   :: !RegionCoda
+        , region_name   :: !String
+        }
+  deriving (Eq,Show)
+
+
+
+-- | 'ParseStack' is a non empty list of RegionInfo structures.
+--
+data ParseStack = P0 Pos RegionInfo | Pn Pos RegionInfo ParseStack
+  deriving (Eq,Show)
+
+-- This might change...
+
+data RegionError = RegionError String
+
+type BoundError = ()
+
+
+mapTop :: (RegionInfo -> a) -> ParseStack -> a
+mapTop f (P0 _ info)   = f info
+mapTop f (Pn _ info _) = f info
+
+modifyPos :: (Pos -> Pos) -> ParseStack -> ParseStack
+modifyPos f (P0 p info)     = P0 (f p) info
+modifyPos f (Pn p info stk) = Pn (f p) info stk
+
+validBounds :: RegionStart -> RegionEnd -> ParseStack -> Bool
+validBounds s e stk = s >= regionStart stk && e <= regionEnd stk
+
+validPos :: Pos -> ParseStack -> Bool
+validPos p stk = p >= regionStart stk && p <=regionEnd stk
+
+infos :: ParseStack -> [RegionInfo]
+infos (P0 _ info)     = [info]
+infos (Pn _ info stk) = info : infos stk
+
+
+--------------------------------------------------------------------------------
+-- Exported operations
+
+regionStart     :: ParseStack -> Int
+regionStart     = mapTop region_start
+
+regionEnd       :: ParseStack -> Int
+regionEnd       = mapTop region_end
+
+
+newStack :: RegionStart -> RegionEnd -> RegionCoda -> RegionName -> ParseStack
+newStack s e coda name = P0 0 (RegionInfo s e coda name)
+
+newRegion :: RegionStart -> Int -> RegionCoda -> RegionName -> RegionInfo
+newRegion s len coda name = RegionInfo s (s+len) coda name
+
+
+push :: RegionInfo -> ParseStack -> Either RegionError ParseStack
+push info@(RegionInfo s e _ _)  stk 
+    | validBounds s e stk = Right $ Pn s info stk
+    | otherwise           = Left  $ RegionError "push" 
+
+
+pop :: ParseStack -> ParseStack
+pop (P0 p info)      = P0 p info
+pop (Pn p info stk)  = case region_coda info of
+                         Dalpunto  -> stk
+                         Alfermata -> modifyPos (const p) stk
+                         Alfine    -> modifyPos (const $ region_end info) stk
+                         
+move1 :: ParseStack -> Either BoundError ParseStack
+move1 stk 
+    | location stk + 1 <= regionEnd stk = Right $ modifyPos (+1) stk
+    | otherwise                         = Left ()
+
+move :: (Pos -> Pos) -> ParseStack -> Either BoundError ParseStack
+move f stk = step $ modifyPos f stk
+  where
+    step st | validPos (location st) st = Right st
+            | otherwise                 = Left ()
+
+location :: ParseStack -> Int
+location (P0 p _)   = p
+location (Pn p _ _) = p
+
+
+printParseStack :: ParseStack -> String
+printParseStack pstack = render $ vcat $ map fn stk
+  where
+    stk                     = infos pstack
+    (w1,w4)                 = onSnd (length . show) $ foldr phi (0,0) stk
+    phi info (a,b)          = (max a (length $ region_name info), max b $ region_end info)
+    onSnd f (a,b)           = (a, f b)
+
+    fn                      :: RegionInfo -> Doc
+    fn rgn                  =  alignPad AlignLeft w1 ' ' (text $ region_name rgn)
+                           <+> alignPad AlignLeft w4 ' ' (int  $ region_start rgn)
+                           <+> alignPad AlignLeft w4 ' ' (int  $ region_end rgn)
+    
+
