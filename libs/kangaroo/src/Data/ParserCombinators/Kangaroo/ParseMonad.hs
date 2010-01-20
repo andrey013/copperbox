@@ -25,7 +25,6 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , putUserSt
   , modifyUserSt
 
-  , askEnv
   , throwErr
   , liftIOAction
   , withSuccess
@@ -39,6 +38,7 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , position
   , atEnd
   , lengthRemaining
+  , regionSize
 
   -- * Parse within a /region/.
   , intraparse
@@ -166,6 +166,9 @@ getPos    = liftM location getSt
 getEnd    :: GenKangaroo ust RegionEnd
 getEnd    = liftM regionEnd  getSt
 
+getStart  :: GenKangaroo ust RegionStart
+getStart  = liftM regionStart getSt
+
 getUserSt :: GenKangaroo ust ust
 getUserSt = GenKangaroo $ \_ st ust -> return (Right ust, st, ust)
 
@@ -182,7 +185,7 @@ modifyPos1 = modifyPos (+1)
 modifyPos :: (Pos -> Pos) -> GenKangaroo ust ()
 modifyPos f = GenKangaroo $ \_ st ust -> 
     case move f st of
-       Left _   -> return (Left $ "Bad index ... todo", st, ust)
+       Left err   -> return (Left $ getPositionError err , st, ust)
        Right stk  -> return (Right (), stk, ust)
 
 
@@ -191,7 +194,7 @@ bracketRegion :: RegionInfo -> GenKangaroo ust a -> GenKangaroo ust a
 bracketRegion i = bracketM_ pushM popM 
   where 
     pushM       = getSt >>= \st -> case push i st of
-                     Left _ -> throwErr "bracketRegionInfo"
+                     Left err -> throwErr $ getRegionError err
                      Right stk -> putSt stk
 
     popM         = getSt >>= \st -> putSt (pop st)
@@ -284,6 +287,11 @@ lengthRemaining = liftM2 fn getEnd getPos
     fn a b | a <= b    = 0
            | otherwise = a - b
 
+
+regionSize :: GenKangaroo ust Int
+regionSize = liftM2 (-) getEnd getStart
+
+
 --------------------------------------------------------------------------------
 -- The important ones parsing within a /region/ ...
 
@@ -299,40 +307,6 @@ intraparse :: RegionName -> RegionCoda -> RegionStart -> Int
 intraparse name coda intra_start len p = 
     bracketRegion (newRegion intra_start len coda name) p
              
-{-
--- withLoc doesn't represent /end-of-parse/ usefully.
--- It needs more thought.
-
-withLoc :: String -> Int -> Int 
-        -> (Int -> Int -> GenKangaroo ust a) 
-        -> GenKangaroo ust a
-withLoc fun_name new_start len mf = let new_end = new_start + len in
-    getArrIx >>= \(ArrIx pos end) ->
-        withSuccess (pos <= new_start) (backwardsError new_start pos fun_name) $
-            withSuccess (new_end <= end) (forwardsError new_end end fun_name) $ 
-                putArrIx (ArrIx new_start new_end) >> mf pos end
-
-
-backwardsError :: Int -> Int -> String -> String  
-backwardsError new_pos old_pos fun_name = concat
-    [ "Kangaroo.ParseMonad."
-    , fun_name
-    , "\n*** Cannot backtrack, " 
-    , show new_pos 
-    , " is before current position " 
-    , show old_pos
-    ]
-
-forwardsError :: Int -> Int -> String -> String
-forwardsError new_end old_end fun_name = concat
-    [ "Kangaroo.ParseMonad."
-    , fun_name 
-    , "\n*** New end point " 
-    , show new_end 
-    , " extends beyond the end of the current region "
-    , show old_end
-    ]
--}
 
 
 advance :: RegionName -> RegionCoda -> Int 

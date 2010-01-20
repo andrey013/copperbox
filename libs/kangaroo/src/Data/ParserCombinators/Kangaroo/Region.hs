@@ -24,6 +24,8 @@ module Data.ParserCombinators.Kangaroo.Region
   , Pos
   , RegionInfo
   , ParseStack
+  , RegionError(..)
+  , PositionError(..)
 
   -- * Operations
   , newStack
@@ -88,12 +90,17 @@ data RegionInfo  = RegionInfo
 data ParseStack = P0 Pos RegionInfo | Pn Pos RegionInfo ParseStack
   deriving (Eq,Show)
 
--- This might change...
+-- These two might change...
 
-data RegionError = RegionError String
+newtype RegionError = RegionError { getRegionError :: String }
+  deriving (Eq,Show)
 
-type BoundError = ()
 
+newtype PositionError = PositionError { getPositionError :: String }
+  deriving (Eq,Show)
+
+
+--------------------------------------------------------------------------------
 
 mapTop :: (RegionInfo -> a) -> ParseStack -> a
 mapTop f (P0 _ info)   = f info
@@ -113,6 +120,33 @@ infos :: ParseStack -> [RegionInfo]
 infos (P0 _ info)     = [info]
 infos (Pn _ info stk) = info : infos stk
 
+regionError :: RegionName -> RegionStart -> RegionEnd -> ParseStack 
+            -> RegionError
+regionError nm s e stk = step (regionStart stk) (regionEnd stk) 
+  where
+    step rs re | s < rs && e > re = mkMsg nm "past the bounds" (s,e) (rs,re)
+               | s < rs           = mkMsg nm "past the left"   (s,e) (rs,re)
+               | e > re           = mkMsg nm "past the right"  (s,e) (rs,re)
+               | otherwise        = RegionError $ 
+                                      "regionError called on invalid data."
+
+mkMsg :: RegionName -> String -> (Int,Int) -> (Int,Int) -> RegionError
+mkMsg name descr new old  = RegionError $ 
+    unwords [ "The new region"
+            , ('\'' : name ++ "'")
+            , show new
+            , "extends"
+            , descr
+            , "of the old region"
+            , show old
+            ]
+
+positionError :: Pos -> PositionError
+positionError pos = PositionError $ 
+    unwords [ "The current position"
+            , show pos 
+            , "extends beyond the current region."
+            ]
 
 --------------------------------------------------------------------------------
 -- Exported operations
@@ -132,9 +166,9 @@ newRegion s len coda name = RegionInfo s (s+len) coda name
 
 
 push :: RegionInfo -> ParseStack -> Either RegionError ParseStack
-push info@(RegionInfo s e _ _)  stk 
+push info@(RegionInfo s e _ name) stk 
     | validBounds s e stk = Right $ Pn s info stk
-    | otherwise           = Left  $ RegionError "push" 
+    | otherwise           = Left  $ regionError name s e stk
 
 
 pop :: ParseStack -> ParseStack
@@ -144,16 +178,16 @@ pop (Pn p info stk)  = case region_coda info of
                          Alfermata -> modifyPos (const p) stk
                          Alfine    -> modifyPos (const $ region_end info) stk
                          
-move1 :: ParseStack -> Either BoundError ParseStack
-move1 stk 
-    | location stk + 1 <= regionEnd stk = Right $ modifyPos (+1) stk
-    | otherwise                         = Left ()
+move1 :: ParseStack -> Either PositionError ParseStack
+move1 stk = step (1+location stk) where
+    step n | n <= regionEnd stk = Right $ modifyPos (+1) stk
+           | otherwise          = Left $ positionError n 
 
-move :: (Pos -> Pos) -> ParseStack -> Either BoundError ParseStack
+move :: (Pos -> Pos) -> ParseStack -> Either PositionError ParseStack
 move f stk = step $ modifyPos f stk
   where
     step st | validPos (location st) st = Right st
-            | otherwise                 = Left ()
+            | otherwise                 = Left $ positionError (location st)
 
 location :: ParseStack -> Int
 location (P0 p _)   = p
