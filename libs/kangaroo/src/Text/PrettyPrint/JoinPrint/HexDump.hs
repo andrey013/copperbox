@@ -26,17 +26,22 @@ module Text.PrettyPrint.JoinPrint.HexDump
 
   , hexdump
 
+-- TEMP
+  , lineNumbers
 
   ) where
 
 
 import Text.PrettyPrint.JoinPrint.Core
-import Text.PrettyPrint.JoinPrint.Tabular
 
 import Data.Char
 import Data.List ( unfoldr )
 import Data.Word
 import Numeric
+
+import Prelude hiding ( length )
+import qualified Prelude as Pre
+
 
 -- no zero padding
 hex :: Integral a => a -> Doc
@@ -68,45 +73,57 @@ printable = fn . chr . fromIntegral where
   fn c | isPrint c = c
        | otherwise = '.'
 
--- Whoa - this is BAD...
+-- This would be better if it didn't need a list in the first 
+-- place (i.e. it could use an array directly)...
 
 hexdump :: Int -> Int -> [Word8] -> Doc
 hexdump start end bs = 
-    columns3  col_attrs1 col_attrs2 col_attrs3 dblspace col1 col2 col3
+    vcat $ aZipWith (hexLine True c1_width, hexLine False c1_width) 
+                    index_nums
+                    segs
   where
-    startm    = start `mod` 16 
-    segs      = segment16 (16-startm) bs
-    end_width = length $ showHex end ""
+    segs       = segment16 (16 - (start `mod` 16)) bs
+    c1_width   = 2 +  (Pre.length $ showHex end "")
+    index_nums = lineNumbers start end
 
-    col_attrs1 = (end_width+2, AlignRight)
-    col_attrs2 = (16*3, AlignCenter)
-    col_attrs3 = (16, AlignLeft)
+aZipWith :: (a -> b -> c, a -> b -> c) -> [a] -> [b] -> [c]
+aZipWith (f,g) (x:xs) (y:ys) = f x y : zipWith g xs ys
+aZipWith _     _      _      = []
 
-    col1       = map  (padl end_width ' ') $ index_nums
-    col2       = map1 (padl (3*16) ' ')    $ map (hsep . map hex2) segs
-    col3       = map1 (padl 16 ' ')        $ map (text . map printable) segs
-    
-    index_nums = unfoldr phi $ 0 -- start - (16-startm) -- wrong
-    phi x  | x > end   = Nothing
-           | otherwise = Just (hex x,x+16)
 
-{-
+
+--------------------------------------------------------------------------------
+
 type Width   = Int
 type LineNum = Int 
 
-hexLine :: Width -> Int -> [Word8] -> Doc 
-hexLine w n xs = c1 <+> c2 <+> c3
+hexLine :: Bool -> Width -> LineNum -> [Word8] -> Doc 
+hexLine is_initial c1_max n xs = c1 <+> empty <+> c2 <+> c3
   where
-    c1  = padl w (hex n)
-    c2  = hsep $ map hex2 xs    -- no accounting for first or last line yet
-    c3  = 
--}
+    c1  = padl c1_max ' ' (hex n)
+    c2  = columnPad is_initial (16*3)   $ hsep $ map hex2 xs
+    c3  = columnPad is_initial 16       $ text $ map printable xs
+
+
+-- Default is to pad to the right...
+--
+columnPad :: Bool -> Width -> Doc -> Doc
+columnPad pad_left w d = step $ length d where
+    step l | l < w = if pad_left then padl w ' ' d else padr w ' ' d
+    step _         = d       
+                   
+
+lineNumbers :: Int -> Int -> [Int]
+lineNumbers s e = unfoldr phi $ s `div` 16 where
+   phi n | n > e     = Nothing
+         | otherwise = Just (n,n+16) 
+
 
 
 -- Show 16 bytes per line...
 segment16 :: Int -> [a] -> [[a]]
-segment16 ana ls = let (top,rest) = splitAt ana ls
-                   in top : unfoldr phi rest
+segment16 initial ls = let (top,rest) = splitAt initial ls
+                       in top : unfoldr phi rest
   where
     phi [] = Nothing
     phi cs = let (xs,rest) = splitAt 16 cs in Just (xs,rest)

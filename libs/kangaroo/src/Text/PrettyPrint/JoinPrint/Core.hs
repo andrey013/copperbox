@@ -19,6 +19,8 @@ module Text.PrettyPrint.JoinPrint.Core
     Doc
   , empty
   , null
+  , length
+
   , (<>)
   , (<+>)
   , (<%>)
@@ -83,6 +85,9 @@ import qualified Text.PrettyPrint.JoinPrint.JoinString as JS
 import Prelude hiding ( (++), null, length )
 
 newtype Doc = Doc { getDoc :: JoinString }
+
+instance Show Doc where
+  show = render
         
 infixr 5 <%>
 infixr 6 <>, <+>
@@ -94,6 +99,8 @@ empty = Doc $ JS.empty
 null :: Doc -> Bool
 null = JS.null . getDoc 
 
+
+-- | length on a Doc is O(1).
 length :: Doc -> Int
 length = JS.length . getDoc
 
@@ -211,13 +218,13 @@ spacer = replicateChar `flip` ' '
 
 
 padl :: Int -> Char -> Doc -> Doc
-padl i c d = fn (length d) where
-  fn dl | dl >= i   = d
+padl i c d = step (length d) where
+  step dl | dl >= i   = d
         | otherwise = replicateChar (i-dl) c <> d 
 
 padr :: Int -> Char -> Doc -> Doc
-padr i c d = fn (length d) where
-  fn dl | dl >= i   = d
+padr i c d = step (length d) where
+  step dl | dl >= i   = d
         | otherwise = d <> replicateChar (i-dl) c
 
 -- | column

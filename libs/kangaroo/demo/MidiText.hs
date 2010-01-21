@@ -25,7 +25,7 @@ module MidiText (
 
 
 import MidiDatatypes
-import Text.PrettyPrint.JoinPrint
+import Text.PrettyPrint.JoinPrint hiding ( length )
 
 
 import qualified Data.Foldable as F

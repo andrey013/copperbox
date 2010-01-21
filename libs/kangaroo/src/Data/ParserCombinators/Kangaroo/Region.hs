@@ -43,7 +43,7 @@ module Data.ParserCombinators.Kangaroo.Region
   ) where
 
 
-import Text.PrettyPrint.JoinPrint
+import Text.PrettyPrint.JoinPrint  hiding ( length )
 
 
 -- | 'RegionCoda' - three useful final positions:
