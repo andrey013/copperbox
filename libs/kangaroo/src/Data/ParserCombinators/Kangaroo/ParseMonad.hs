@@ -47,8 +47,12 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , restrict
   , restrictToPos
    
+  -- * Debug
+  , showHexAll
+
   ) where
 
+import Data.ParserCombinators.Kangaroo.Debug
 import Data.ParserCombinators.Kangaroo.Region
 import Data.ParserCombinators.Kangaroo.Utils
 
@@ -338,7 +342,10 @@ restrictToPos name coda abs_pos p = getPos >>= \pos ->
 
 
 --------------------------------------------------------------------------------
--- 
+-- Debug
+
+showHexAll :: GenKangaroo ust ()
+showHexAll = askEnv >>= liftIOAction . slowHexAll
 
 
                 

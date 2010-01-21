@@ -49,7 +49,7 @@ readMidi filename = do
 
     
 midiFile :: MidiParser MidiFile  
-midiFile = mprogress MidiFile trackCount header (countS `flip` track)
+midiFile = showHexAll >> mprogress MidiFile trackCount header (countS `flip` track)
   where
     trackCount :: Header -> Int 
     trackCount (Header _ n _) = fromIntegral n

@@ -61,6 +61,7 @@ library
     Data.ParserCombinators.KangarooState,
     Data.ParserCombinators.KangarooWriter,
     Data.ParserCombinators.Kangaroo.Combinators,
+    Data.ParserCombinators.Kangaroo.Debug,
     Data.ParserCombinators.Kangaroo.IEEEFloat,
     Data.ParserCombinators.Kangaroo.ParseMonad,
     Data.ParserCombinators.Kangaroo.Prim,

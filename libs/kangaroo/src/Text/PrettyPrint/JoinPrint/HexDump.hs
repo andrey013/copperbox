@@ -68,6 +68,7 @@ printable = fn . chr . fromIntegral where
   fn c | isPrint c = c
        | otherwise = '.'
 
+-- Whoa - this is BAD...
 
 hexdump :: Int -> Int -> [Word8] -> Doc
 hexdump start end bs = 
@@ -82,12 +83,24 @@ hexdump start end bs =
     col_attrs3 = (16, AlignLeft)
 
     col1       = map  (padl end_width ' ') $ index_nums
-    col2       = map1 (padl 16 ' ')        $ map (text . map printable) segs
-    col3       = map1 (padl (3*16) ' ')    $ map (hsep . map hex2) segs
+    col2       = map1 (padl (3*16) ' ')    $ map (hsep . map hex2) segs
+    col3       = map1 (padl 16 ' ')        $ map (text . map printable) segs
     
-    index_nums = unfoldr phi $ start - (16-startm)
+    index_nums = unfoldr phi $ 0 -- start - (16-startm) -- wrong
     phi x  | x > end   = Nothing
            | otherwise = Just (hex x,x+16)
+
+{-
+type Width   = Int
+type LineNum = Int 
+
+hexLine :: Width -> Int -> [Word8] -> Doc 
+hexLine w n xs = c1 <+> c2 <+> c3
+  where
+    c1  = padl w (hex n)
+    c2  = hsep $ map hex2 xs    -- no accounting for first or last line yet
+    c3  = 
+-}
 
 
 -- Show 16 bytes per line...
