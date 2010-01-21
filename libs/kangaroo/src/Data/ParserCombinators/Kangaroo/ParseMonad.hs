@@ -179,14 +179,14 @@ modifyUserSt :: (ust -> ust) -> GenKangaroo ust ()
 modifyUserSt f = GenKangaroo $ \_ st ust -> return (Right (), st, f ust)
 
 
-modifyPos1 :: GenKangaroo ust ()
-modifyPos1 = modifyPos (+1) 
+-- Modifying the position lets the parser go beyond the 
+-- end-of-file.
+
+advancePos1 :: GenKangaroo ust ()
+advancePos1 = modifyPos (+1) 
 
 modifyPos :: (Pos -> Pos) -> GenKangaroo ust ()
-modifyPos f = GenKangaroo $ \_ st ust -> 
-    case move f st of
-       Left err   -> return (Left $ getPositionError err , st, ust)
-       Right stk  -> return (Right (), stk, ust)
+modifyPos f = GenKangaroo $ \_ st ust -> return (Right (), move f st, ust)
 
 
 
@@ -248,9 +248,8 @@ word8 = do
     when (ix>end)    (reportError "word8")   -- test emphatically is (>) !
     arr              <- askEnv
     a                <- liftIOAction $ readArray arr ix
-    modifyPos1
+    advancePos1
     return a
-
 
 checkWord8 :: (Word8 -> Bool) -> GenKangaroo ust (Maybe Word8)
 checkWord8 check = word8 >>= \ans ->

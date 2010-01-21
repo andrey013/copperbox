@@ -25,7 +25,6 @@ module Data.ParserCombinators.Kangaroo.Region
   , RegionInfo
   , ParseStack
   , RegionError(..)
-  , PositionError(..)
 
   -- * Operations
   , newStack
@@ -96,9 +95,6 @@ newtype RegionError = RegionError { getRegionError :: String }
   deriving (Eq,Show)
 
 
-newtype PositionError = PositionError { getPositionError :: String }
-  deriving (Eq,Show)
-
 
 --------------------------------------------------------------------------------
 
@@ -112,9 +108,6 @@ modifyPos f (Pn p info stk) = Pn (f p) info stk
 
 validBounds :: RegionStart -> RegionEnd -> ParseStack -> Bool
 validBounds s e stk = s >= regionStart stk && e <= regionEnd stk
-
-validPos :: Pos -> ParseStack -> Bool
-validPos p stk = p >= regionStart stk && p <=regionEnd stk
 
 infos :: ParseStack -> [RegionInfo]
 infos (P0 _ info)     = [info]
@@ -139,13 +132,6 @@ mkMsg name descr new old  = RegionError $
             , descr
             , "of the old region"
             , show old
-            ]
-
-positionError :: Pos -> PositionError
-positionError pos = PositionError $ 
-    unwords [ "The current position"
-            , show pos 
-            , "extends beyond the current region."
             ]
 
 --------------------------------------------------------------------------------
@@ -177,22 +163,19 @@ pop (Pn p info stk)  = case region_coda info of
                          Dalpunto  -> stk
                          Alfermata -> modifyPos (const p) stk
                          Alfine    -> modifyPos (const $ region_end info) stk
-                         
-move1 :: ParseStack -> Either PositionError ParseStack
-move1 stk = step (1+location stk) where
-    step n | n <= regionEnd stk = Right $ modifyPos (+1) stk
-           | otherwise          = Left $ positionError n 
 
-move :: (Pos -> Pos) -> ParseStack -> Either PositionError ParseStack
-move f stk = step $ modifyPos f stk
-  where
-    step st | validPos (location st) st = Right st
-            | otherwise                 = Left $ positionError (location st)
+-- Moving will always succeed, so it is possible to move beyond 
+-- the end-of-file.
+                         
+move1 :: ParseStack -> ParseStack
+move1 = modifyPos (+1)
+
+move :: (Pos -> Pos) -> ParseStack -> ParseStack
+move = modifyPos
 
 location :: ParseStack -> Int
 location (P0 p _)   = p
 location (Pn p _ _) = p
-
 
 printParseStack :: ParseStack -> String
 printParseStack pstack = render $ vcat $ map fn stk
