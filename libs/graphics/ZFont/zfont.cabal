@@ -1,0 +1,39 @@
+name:             zfont
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Graphics
+synopsis:         Font file parsing
+description:
+  Font file parsing
+
+build-type:         Simple
+stability:          experimental
+cabal-version:      >= 1.2
+
+extra-source-files:
+
+library
+  hs-source-dirs:     src
+  build-depends:      base < 5, kangaroo 
+
+  
+  exposed-modules:
+    Graphics.ZFont.KangarooAliases,
+    Graphics.ZFont.ParseFont,
+    Graphics.ZFont.Syntax,
+    Graphics.ZFont.Utils,
+
+  other-modules:
+  
+  extensions:
+
+  ghc-options:  -Wall 
+  
+
+  
+  
+  
