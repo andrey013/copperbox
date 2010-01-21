@@ -21,7 +21,7 @@ import Hurdle.Ar.Datatypes
 
 import Data.Char
 import Numeric
-import Text.PrettyPrint.JoinPrint
+import Text.PrettyPrint.JoinPrint hiding ( length )
 
 
 

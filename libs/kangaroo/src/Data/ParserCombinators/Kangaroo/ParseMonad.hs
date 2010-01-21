@@ -36,6 +36,7 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , checkWord8
   , opt 
   , position
+  , region
   , atEnd
   , lengthRemaining
   , regionSize
@@ -278,6 +279,9 @@ opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans ->
 
 position :: GenKangaroo ust Int
 position = getPos
+
+region   :: GenKangaroo ust (Int,Int,Int)
+region   = liftM3 (,,) getStart getPos getEnd
 
 -- region limits are inclusive so cursor is at the end 
 -- if the position is greater that the end location.

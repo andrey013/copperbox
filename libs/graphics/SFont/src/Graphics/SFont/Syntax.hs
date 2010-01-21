@@ -129,6 +129,7 @@ data FontFile = FontFile
         , ff_loca_table         :: LocaTable
         , ff_name_table         :: NameTable
         , ff_glyf_table         :: GlyfTable
+        , ff_post_table         :: PostTable
         }
   deriving (Eq,Show)
 
@@ -164,13 +165,6 @@ data CmapIndex = CmapIndex
         }
   deriving (Eq,Show)
 
-{-
-data CmapSubtable = CmapSubtable
-        { cmap_subtable_header  :: CmapSubtableHeader
-        , cmap_subtable_body    :: CmapSubtableBody
-        }
-  deriving (Eq,Show)
--}
 
 -- Format and length are /promoted/ out of subtables and are 
 -- considered part of the header. This is because we want 
@@ -454,15 +448,26 @@ data NameTable = NameTable
   deriving (Eq,Show)
 
 data NameRecord = NameRecord 
-        { nr_platform_id     :: Uint16
-        , nr_encoding_id     :: Uint16
-        , nr_language_id     :: Uint16
-        , nr_name_id         :: Uint16
-        , nr_length          :: Uint16
-        , nr_offset          :: Uint16
-        , nr_name_text       :: String  -- This is deduced during parsing
+        { nr_platform_id        :: Uint16
+        , nr_encoding_id        :: Uint16
+        , nr_language_id        :: Uint16
+        , nr_name_id            :: Uint16
+        , nr_length             :: Uint16
+        , nr_offset             :: Uint16
+        , nr_name_text          :: String  -- This is deduced during parsing
         }
   deriving (Eq,Show)
+
+
+--------------------------------------------------------------------------------
+-- post table
+
+data PostTable = PostTable
+        { post_format           :: Fixed
+        , post_italic_angle     :: Fixed
+        }
+  deriving (Eq,Show)
+
    
 --------------------------------------------------------------------------------
 -- Common data types

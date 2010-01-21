@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Hurdle.Ar.Datatypes
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009, 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -16,6 +16,7 @@
 
 module Hurdle.Ar.Datatypes where
 
+import qualified Data.ByteString as BSW8
 import Data.Word
 
 data ArArchive = ArArchive 
@@ -24,9 +25,10 @@ data ArArchive = ArArchive
       }
   deriving Show
 
+
 data ArchiveObject = ArchiveObject
      { ar_header                    :: ArHeader
-     , ar_body                      :: [Char]
+     , ar_body                      :: [Word8]  -- needs thought... shouldn't be a list
      }
 
 data ArHeader = ArHeader 

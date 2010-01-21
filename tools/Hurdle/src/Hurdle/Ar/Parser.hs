@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Hurdle.Ar.Parser
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009, 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -32,7 +32,6 @@ readAr filename = do
 
 
 
-
 --------------------------------------------------------------------------------
 -- 
     
@@ -53,9 +52,11 @@ arMagicString = text 8
 
 archiveObject :: Parser ArchiveObject
 archiveObject = do 
+    liftIOAction $ putStrLn "ao"
     header  <- arHeader
     let sz  = arh_size header
-    body    <- count sz char
+    liftIOAction $ putStrLn ("size " ++ show sz)
+    body    <- count sz word8
     pos     <- position
     when (pos `mod` 2 /= 0) (char >> return ())   -- should be a newline 
     return $ ArchiveObject 

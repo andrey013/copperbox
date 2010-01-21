@@ -128,6 +128,3 @@ segment16 initial ls = let (top,rest) = splitAt initial ls
     phi [] = Nothing
     phi cs = let (xs,rest) = splitAt 16 cs in Just (xs,rest)
 
-map1 :: (a -> a) -> [a] -> [a] 
-map1 f (a:xs) = f a : xs
-map1 _ []     = []

@@ -49,7 +49,6 @@ parseWith p file_name = runKangaroo p file_name
 fontFile :: Parser FontFile
 fontFile = do
     (offs_tbl,locs) <- prolog
-    logline $ show locs
     head_tbl        <- parseTable locs "head" headTable
     cmap_tbl        <- parseTable locs "cmap" cmapTable
     maxp_tbl        <- parseTable locs "maxp" maxpTable
@@ -58,6 +57,7 @@ fontFile = do
                                    (fromIntegral $ maxp_num_glyphs maxp_tbl)
     name_tbl        <- parseTable locs "name" nameTable
     glyf_tbl        <- parseTable locs "glyf" glyfTable
+    post_tbl        <- parseTable locs "post" postTable
     return $ FontFile 
                { ff_offset_table      = offs_tbl
                , ff_head_table        = head_tbl
@@ -66,6 +66,7 @@ fontFile = do
                , ff_loca_table        = loca_tbl
                , ff_name_table        = name_tbl
                , ff_glyf_table        = glyf_tbl
+               , ff_post_table        = post_tbl
                }
 
 
@@ -74,12 +75,15 @@ prolog = mprogress (,) fn offsetTable tableDirectory
   where
     fn = fromIntegral . ot_number_of_tables
 
+-- needs renaming...
+mprogress :: Monad m => (a -> c -> d) -> (a -> b) -> m a -> (b -> m c) -> m d
+mprogress comb f ma mb = ma >>= \a -> mb (f a) >>= \b -> return $ comb a b
 
 -- Note this one shouldn't matter where the parsing finishes
 --
 parseTable :: TableLocs -> String -> Parser a -> Parser a
 parseTable mp name p = 
-    getRegion >>= \(Region start len) -> dalpunto start (start+len) p
+    getRegion >>= \(Region start len) -> intraparse name Dalpunto start len p
   where
     getRegion = maybe errk return $ Map.lookup name mp
     errk      = reportError $ "missing table " ++ name
@@ -112,7 +116,7 @@ tableDirectory i = liftM build $ count i tableDescriptor
     
 tableDescriptor :: Parser TableDescriptor 
 tableDescriptor = (\tag _ r -> TableDescriptor tag r)
-    <$> text 4 <*> word32be <*> region
+    <$> text 4 <*> word32be <*> tableregion
 
 
 --------------------------------------------------------------------------------
@@ -133,7 +137,7 @@ cmapTable = do
   where
     fn :: Int -> Uint32 -> Parser CmapSubtableBody
     fn table_start offset = let pos = table_start + fromIntegral offset in
-        advanceAlfermataAbsolute pos cmapSubtableBody
+        advance "cmap-subtable" Alfermata pos cmapSubtableBody
  
 
 cmapIndex :: Parser CmapIndex
@@ -167,7 +171,8 @@ format2_Subheader = Format2_SubHeader <$> uint16 <*> uint16
                                       <*> int16  <*> uint16
 
 subtableRestrict :: Int -> Uint16 -> Parser a -> Parser a
-subtableRestrict fmt n = restrictAlfermata (fromIntegral $ n - subheader_len) 
+subtableRestrict fmt n = 
+    restrict "cmap-subtable" Alfermata (fromIntegral $ n - subheader_len) 
   where
     subheader_len = if elem fmt [8,10,12] then fmt_resv_len else fmt_plus_len
     fmt_plus_len  = 4
@@ -175,7 +180,6 @@ subtableRestrict fmt n = restrictAlfermata (fromIntegral $ n - subheader_len)
 
 cmapFormat4 :: Parser CmapFormat4
 cmapFormat4 = uint16 >>= \len -> subtableRestrict 4 len $ do
-    tellPos "cmapFormat4" 
     lang            <- uint16
     seg_count_x2    <- uint16
     let seg_count   = fromIntegral $ seg_count_x2 `div` 2
@@ -234,9 +238,9 @@ glyfTable = GlyfTable <$> count 1 glyf
 
 glyf :: Parser Glyf
 glyf = do 
-    hdr  <- glyfHeader
-    desc <- glyfDescr $ fromIntegral $ glyf_num_contours hdr
-    return $ Glyf hdr desc  
+    header  <- glyfHeader
+    desc    <- glyfDescr $ fromIntegral $ glyf_num_contours header
+    return $ Glyf header desc  
 
 
 glyfHeader :: Parser GlyfHeader
@@ -425,101 +429,6 @@ s1Dot14 :: Parser OneDot14
 s1Dot14 = liftM OneDot14_Int16 int16
 
 
-{-
-
-compositeElements :: Parser [CompositeElement]
-compositeElements = do 
-    (a,more)  <- compositeElt
-    if not more then return [a] else (return a) <:> compositeElements
-            
-            
-compositeElt :: Parser (CompositeElement,Bool)  
-compositeElt = do 
-    flag  <- ushort
-    gidx  <- (fromIntegral <$> ushort)
-    args  <- extractArgs (argsAreWords flag) (argmaker $ argsAreXYVals flag) 
-    op    <- cond3 (haveScale flag)     (Scale   <$> f2dot14) 
-                   (haveXYScale flag)   (XyScale <$> f2dot14 <*> f2dot14) 
-                   (have2x2 flag)       twoByTwo
-                   NoTrans
-    return (CompositeElement gidx args op, moreComponents flag)                   
-  where
-    extractArgs True f = (\a b -> f (fromIntegral a, fromIntegral b)) <$>
-                            short <*> short
-                          
-    extractArgs _    f = (\a b -> f (fromIntegral a, fromIntegral b)) <$>
-                            byte <*> byte                          
-    
-    argmaker True (x,y) = OffsetArgs x y  
-    argmaker _    (x,y) = PointNumbers x y 
-    
-    twoByTwo :: Parser CompositeTrans
-    twoByTwo = TwoByTwo <$> f2dot14 <*> f2dot14 <*> f2dot14 <*> f2dot14
-
-
-extractWordArgs :: Parser (Int,Int)
-extractWordArgs = appro (,) fromIntegral fromIntegral <$> short <*> short
-
-extractByteArgs :: Parser (Int,Int)
-extractByteArgs = appro (,) fromIntegral fromIntegral <$> byte <*> byte
-
-    
-cond3 :: Monad m => Bool -> m a -> Bool -> m a -> Bool -> m a -> a -> m a
-cond3 pred1 f1 pred2 f2 pred3 f3 deft
-    | pred1     = f1
-    | pred2     = f2
-    | pred3     = f3
-    | otherwise = return deft
-  
-    
-
-argsAreWords      :: UShort -> Bool
-argsAreWords      = testBit `flip` 0
-
-argsAreXYVals     :: UShort -> Bool
-argsAreXYVals     = testBit `flip` 1
-
-haveScale         :: UShort -> Bool
-haveScale         = testBit `flip` 3
-
-moreComponents    :: UShort -> Bool
-moreComponents    = testBit `flip` 5
-
-haveXYScale       :: UShort -> Bool
-haveXYScale       = testBit `flip` 6
-
-have2x2           :: UShort -> Bool
-have2x2           = testBit `flip` 7
--}
-
-{-
-readGlyphs :: [Region] -> Parser [Glyph]
-readGlyphs xs = catMaybes <$> readGlyphs' xs
-
-readGlyphs' :: [Region] -> Parser [Maybe Glyph]
-readGlyphs' (Region o l:rs) = readGlyf o l <:> readGlyphs' rs
-readGlyphs' []              = return [] 
-
-
-readGlyf :: Int -> Int -> Parser (Maybe Glyph)
-readGlyf _      0   = return Nothing
-readGlyf offset len = interrectoRel offset len $ do 
-    nc  <- short 
-    bb  <- boundingBox
-    if nc >= 0 
-      then do 
-        end_pts       <- count (fromIntegral nc) ushort
-        let csize     = 1 + fromIntegral (foldr max 0 end_pts)
-        _insts        <- countPrefixed ushort byte
-        flags         <- count csize byte
-        xy_data       <- runOn byte
-        let outlines  = simpleGlyphContours end_pts flags xy_data
-        return $ Just $ SimpleGlyph "" bb outlines
-        -- don't know the glyph_name at this point
-      else do
-          elts        <- compositeElements
-          return $ Just $ CompositeGlyph "" bb elts
--}          
         
 --------------------------------------------------------------------------------
 -- head table
@@ -599,9 +508,9 @@ nameRecord str_data_offset = do
     nid     <- uint16
     len     <- uint16
     pos     <- uint16
-    logline $ show (str_data_offset,len,pos)
     let str_loc = str_data_offset + fromIntegral pos
-    str     <- dalpunto str_loc (str_loc + fromIntegral len) (runOn char)
+    str     <- intraparse "name-record" Dalpunto           str_loc 
+                                        (fromIntegral len) (runOn char)
     return $ NameRecord 
                 { nr_platform_id    = pid
                 , nr_encoding_id    = enc
@@ -611,6 +520,12 @@ nameRecord str_data_offset = do
                 , nr_offset         = pos
                 , nr_name_text      = str
                 }
+
+--------------------------------------------------------------------------------
+-- post table
+
+postTable :: Parser PostTable
+postTable = PostTable <$> fixed <*> fixed
 
 
 
@@ -632,6 +547,8 @@ glyfLocations = snd `oo` mapAccumR fn where
 fwordBBox :: Parser FWordBBox
 fwordBBox = BoundingBox <$> fword <*> fword <*> fword <*> fword
        
-region :: Parser Region 
-region = Region <$> w32i <*> w32i
+tableregion :: Parser Region 
+tableregion = Region <$> w32i <*> w32i
   where w32i = liftM fromIntegral word32be
+
+

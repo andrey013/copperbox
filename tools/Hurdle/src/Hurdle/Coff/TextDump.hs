@@ -22,7 +22,7 @@ import Hurdle.Coff.Datatypes
 import qualified Data.Map as Map
 import Data.Word
 import Numeric
-import Text.PrettyPrint.JoinPrint
+import Text.PrettyPrint.JoinPrint hiding ( length )
 
 
 

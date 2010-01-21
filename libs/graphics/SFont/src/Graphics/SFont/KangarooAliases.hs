@@ -45,9 +45,7 @@ logline = tell . ("\n" ++)
 
 
 tellPos :: String -> Parser ()
-tellPos str = do 
-  p <- position 
-  e <- regionEnd
+tellPos str = region >>= \(_,p,e) ->
   tell $ "\n" ++ str ++ ", position " ++ show p ++ ", region end " ++ show e
 
 -- give 'position' a visually distinct alias
