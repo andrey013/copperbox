@@ -51,3 +51,7 @@ putChar8 ch = cons (fromIntegral $ ord ch)
 -- TODO 
 cstring :: String -> Pickle
 cstring = putCString `flip` empty 
+
+
+string :: String -> Pickle
+string = foldl' (flip putChar8) empty

@@ -70,15 +70,15 @@ type RegionName  = String
 
 type Pos         = Int
 
--- | 'RegionInfo' contains the bounds of a region and the 
--- \'coda action\' to take after parsing has finished.
+-- | 'RegionInfo' contains the (inclusive) bounds of a region 
+-- and the \'coda action\' to take after parsing has finished.
 --
 
 data RegionInfo  = RegionInfo 
-        { region_start  :: !RegionStart
-        , region_end    :: !RegionEnd
-        , region_coda   :: !RegionCoda
-        , region_name   :: !String
+        { region_start_incl   :: !RegionStart
+        , region_end_incl     :: !RegionEnd
+        , region_coda         :: !RegionCoda
+        , region_name         :: !String
         }
   deriving (Eq,Show)
 
@@ -138,17 +138,17 @@ mkMsg name descr new old  = RegionError $
 -- Exported operations
 
 regionStart     :: ParseStack -> Int
-regionStart     = mapTop region_start
+regionStart     = mapTop region_start_incl
 
 regionEnd       :: ParseStack -> Int
-regionEnd       = mapTop region_end
+regionEnd       = mapTop region_end_incl
 
 
 newStack :: RegionStart -> RegionEnd -> RegionCoda -> RegionName -> ParseStack
 newStack s e coda name = P0 0 (RegionInfo s e coda name)
 
 newRegion :: RegionStart -> Int -> RegionCoda -> RegionName -> RegionInfo
-newRegion s len coda name = RegionInfo s (s+len) coda name
+newRegion s len coda name = RegionInfo s (s+len-1) coda name
 
 
 push :: RegionInfo -> ParseStack -> Either RegionError ParseStack
@@ -160,9 +160,9 @@ push info@(RegionInfo s e _ name) stk
 pop :: ParseStack -> ParseStack
 pop (P0 p info)      = P0 p info
 pop (Pn p info stk)  = case region_coda info of
-                         Dalpunto  -> stk
-                         Alfermata -> modifyPos (const p) stk
-                         Alfine    -> modifyPos (const $ region_end info) stk
+    Dalpunto  -> stk
+    Alfermata -> modifyPos (const p) stk
+    Alfine    -> modifyPos (const $ region_end_incl info) stk
 
 -- Moving will always succeed, so it is possible to move beyond 
 -- the end-of-file.
@@ -180,14 +180,14 @@ location (Pn p _ _) = p
 printParseStack :: ParseStack -> String
 printParseStack pstack = render $ vcat $ map fn stk
   where
-    stk                     = infos pstack
-    (w1,w4)                 = onSnd (length . show) $ foldr phi (0,0) stk
-    phi info (a,b)          = (max a (length $ region_name info), max b $ region_end info)
-    onSnd f (a,b)           = (a, f b)
+    stk             = infos pstack
+    (w1,w4)         = onSnd (length . show) $ foldr phi (0,0) stk
+    phi info (a,b)  = (max a (length $ region_name info), max b $ region_end_incl info)
+    onSnd f (a,b)   = (a, f b)
 
-    fn                      :: RegionInfo -> Doc
-    fn rgn                  =  alignPad AlignLeft w1 ' ' (text $ region_name rgn)
-                           <+> alignPad AlignLeft w4 ' ' (int  $ region_start rgn)
-                           <+> alignPad AlignLeft w4 ' ' (int  $ region_end rgn)
+    fn        :: RegionInfo -> Doc
+    fn rgn    =  alignPad AlignLeft w1 ' ' (text $ region_name rgn)
+             <+> alignPad AlignLeft w4 ' ' (int  $ region_start_incl rgn)
+             <+> alignPad AlignLeft w4 ' ' (int  $ region_end_incl rgn)
     
 

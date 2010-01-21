@@ -147,7 +147,7 @@ runGenKangaroo p user_state filename =
 
     answer (Left err)  stk        = Left $ err 
                                           ++ ('\n':'\n':printParseStack stk)
-    answer (Right ans) _              = Right ans
+    answer (Right ans) _          = Right ans
 
 
 
@@ -279,9 +279,11 @@ opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans ->
 position :: GenKangaroo ust Int
 position = getPos
 
+-- region limits are inclusive so cursor is at the end 
+-- if the position is greater that the end location.
 
 atEnd :: GenKangaroo ust Bool
-atEnd = liftM2 (>=) getPos getEnd
+atEnd = liftM2 (>) getPos getEnd
 
 
 lengthRemaining :: GenKangaroo ust Int

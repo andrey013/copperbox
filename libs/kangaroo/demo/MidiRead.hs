@@ -69,7 +69,11 @@ trackHeader :: MidiParser Word32
 trackHeader = assertString "MTrk" >> word32be
 
 getMessages :: Word32 -> MidiParser (Seq Message)
-getMessages i = restrict "messages" Alfermata (fromIntegral i) messages
+getMessages i = do 
+    loc <- position
+    liftIOAction $ putStrLn $ "location " ++ show loc
+    liftIOAction $ putStrLn $ "messages length " ++ show i
+    restrict "messages" Alfermata (fromIntegral i) messages
   where    
     messages = genericRunOn (<|) S.empty message
 

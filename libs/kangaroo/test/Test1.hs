@@ -56,26 +56,12 @@ test02 = do
 
 test03 :: IO ()
 test03 = do 
-    P.writePickle "test03.bin" (P.cstring "A.....abcde")
+    P.writePickle "test03.bin" (P.string "ABCDEabcde")
     --
-    putStrLn "Dalpunto - should see '.' "
-    runKangaroo pDalpunto "test03.bin" >>= (putStr . show)
-
--- These should cause an error...
-    -- 
---    putStrLn "Alfermata - should see 'd' "
---    runKangaroo pAlfermata "test03.bin" >>= print
-    -- 
---    putStrLn "Alfine - should see 'B' "
---    runKangaroo pAlfine "test03.bin" >>= print
+    runKangaroo pRestrict2  "test03.bin" >>= (putStr . show)
   where
-    pDalpunto  = intraP Dalpunto
---    pAlfermata = intraP Alfermata
---    pAlfine    = intraP Alfine
-
-    intraP coda =  do 
-      ch  <- char
-      str <- advance "region1" coda 2 (count 3 char)
-      end <- char
-      return ((ch,str),end)
-
+    pRestrict2  = do 
+      showHexAll
+      one <- restrict "upper" Alfine 5 $ runOn char
+      two <- restrict "lower" Alfine 5 $ runOn char
+      return (one,two)
