@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  MidiRead
--- Copyright   :  (c) Stephen Tetley 2009, 2010
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -45,18 +45,21 @@ readMidi filename = do
 
 --------------------------------------------------------------------------------
 -- 
-
-
+(-*-) :: MidiParser a -> String -> MidiParser a
+(-*-) = substError
     
 midiFile :: MidiParser MidiFile  
-midiFile = showHexAll >> mprogress MidiFile trackCount header (countS `flip` track)
+midiFile = printHexAll >> mprogress MidiFile trackCount header (countS `flip` track)
   where
     trackCount :: Header -> Int 
     trackCount (Header _ n _) = fromIntegral n
 
 header :: MidiParser Header  
-header = Header <$> (assertString "MThd"  *> assertWord32 (6::Int) *> format)
-                <*> word16be             <*> timeDivision 
+header = Header <$> (assertString "MThd"                -*- "header"
+                 *> assertWord32 (6::Int)               -*- "length"
+                 *> format                              -*- "format")
+                <*> word16be                            -*- "num tracks"
+                <*> timeDivision                        -*- "time division"
 
 countS :: Int -> MidiParser a -> MidiParser (Seq a)
 countS = genericCount (<|) S.empty 
@@ -69,11 +72,7 @@ trackHeader :: MidiParser Word32
 trackHeader = assertString "MTrk" >> word32be
 
 getMessages :: Word32 -> MidiParser (Seq Message)
-getMessages i = do 
-    loc <- position
-    liftIOAction $ putStrLn $ "location " ++ show loc
-    liftIOAction $ putStrLn $ "messages length " ++ show i
-    restrict "messages" Alfermata (fromIntegral i) messages
+getMessages i = restrict "messages" Alfermata (fromIntegral i) messages
   where    
     messages = genericRunOn (<|) S.empty message
 

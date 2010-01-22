@@ -70,7 +70,6 @@ library
     Text.PrettyPrint.JoinPrint.Core,
     Text.PrettyPrint.JoinPrint.HexDump,
     Text.PrettyPrint.JoinPrint.JoinString,
-    Text.PrettyPrint.JoinPrint.Tabular,
     Text.PrettyPrint.JoinPrint
 
   other-modules:

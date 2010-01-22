@@ -2,8 +2,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Text.PrettyPrint.HexDump
--- Copyright   :  (c) Stephen Tetley 2009, 2010
+-- Module      :  Text.PrettyPrint.JoinPrint.HexDump
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -20,14 +20,14 @@ module Text.PrettyPrint.JoinPrint.HexDump
   , hex2
   , hex4
   , hex8
+  
+  , oxhex
   , oxhex2
   , oxhex4
   , oxhex8
 
   , hexdump
 
--- TEMP
-  , lineNumbers
 
   ) where
 
@@ -43,19 +43,45 @@ import Prelude hiding ( length )
 import qualified Prelude as Pre
 
 
--- no zero padding
+asterix :: String -> Doc
+asterix = text . map (const '*')
+
+
+
+
+-- | 'hex' : @i -> Doc@
+-- 
+-- Print @i@ as hexadecimal, no zero padding. 
+--
+-- Negative numbers are printed as a string of asterisks.
+-- 
 hex :: Integral a => a -> Doc
-hex = text . (showHex `flip` "")
+hex i | i >= 0    = text $ showHex i []
+      | otherwise = asterix $ showHex (abs i) []
+
+
+
 
 hex2 :: Word8 -> Doc
-hex2 = padl 2 '0' . text . ($ "") . showHex
+hex2 = padl 2 '0' . text . ($ []) . showHex
 
 hex4 :: Word16 -> Doc
-hex4 = padl 4 '0' . text . ($ "") . showHex
+hex4 = padl 4 '0' . text . ($ []) . showHex
 
 hex8 :: Word32 -> Doc
-hex8 = padl 8 '0' . text . ($ "") . showHex
+hex8 = padl 8 '0' . text . ($ []) . showHex
 
+-- | 'oxhex' : @pad-length * i -> Doc@
+--
+-- Print @i@ in hexadecimal, padding with \'0\' to the supplied 
+-- @pad-length@ and prefixing with \"0x\".
+--
+-- Negative numbers are printed as a string of asterisks.
+-- 
+oxhex  :: Integral a => Int -> a -> Doc
+oxhex plen i 
+    | i >= 0    = text "0x" <> padl plen '0' (text $ showHex i [])
+    | otherwise = text "0x" <> padl plen '*' (asterix $ showHex (abs i) [])
 
 oxhex2 :: Word8 -> Doc
 oxhex2 = (text "0x" <>) . hex2
@@ -66,12 +92,7 @@ oxhex4 = (text "0x" <>) . hex4
 oxhex8 :: Word32 -> Doc
 oxhex8 = (text "0x" <>) . hex8
 
-
-
-printable :: Word8 -> Char
-printable = fn . chr . fromIntegral where 
-  fn c | isPrint c = c
-       | otherwise = '.'
+--------------------------------------------------------------------------------
 
 -- This would be better if it didn't need a list in the first 
 -- place (i.e. it could use an array directly)...
@@ -128,3 +149,8 @@ segment16 initial ls = let (top,rest) = splitAt initial ls
     phi [] = Nothing
     phi cs = let (xs,rest) = splitAt 16 cs in Just (xs,rest)
 
+
+printable :: Word8 -> Char
+printable = fn . chr . fromIntegral where 
+  fn c | isPrint c = c
+       | otherwise = '.'

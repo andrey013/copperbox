@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Data.ParserCombinators.Kangaroo.ParseMonad
--- Copyright   :  (c) Stephen Tetley 2009, 2010
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -41,7 +41,7 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , lengthRemaining
   , regionSize
 
-  -- * Parse within a /region/.
+  -- * Parse within a region
   , intraparse
   , advance
   , advanceRelative
@@ -49,7 +49,8 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , restrictToPos
    
   -- * Debug
-  , showHexAll
+  , printHexAll
+  , printRegionStack 
 
   ) where
 
@@ -245,6 +246,9 @@ withSuccess False msg _  = throwErr msg
 withSuccess True  _   mf = mf
 
 
+--------------------------------------------------------------------------------
+-- Primitive parsers
+
    
 word8 :: GenKangaroo ust Word8
 word8 = do
@@ -277,19 +281,35 @@ opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans ->
 --------------------------------------------------------------------------------
 -- Querying position
 
+-- | 'position' : @-> cursor-position@
+--
+-- Return the current cursor position
+--
 position :: GenKangaroo ust Int
 position = getPos
 
+
+-- | 'region' : @-> (region-start, cursor-position, region-end)@
+--
+-- Return the current parse region and the current position of 
+-- the cursor within it.
+-- 
 region   :: GenKangaroo ust (Int,Int,Int)
 region   = liftM3 (,,) getStart getPos getEnd
 
 -- region limits are inclusive so cursor is at the end 
 -- if the position is greater that the end location.
 
+-- | 'atEnd' - is the cursor at the end of the current region?
+--
 atEnd :: GenKangaroo ust Bool
 atEnd = liftM2 (>) getPos getEnd
 
-
+-- | 'lengthRemaining' : @-> distance-to-region-end@
+--
+-- Distance from the current cursor position to the end of the
+-- current region
+--
 lengthRemaining :: GenKangaroo ust Int
 lengthRemaining = liftM2 fn getEnd getPos 
   where  
@@ -297,6 +317,10 @@ lengthRemaining = liftM2 fn getEnd getPos
            | otherwise = a - b
 
 
+-- | 'regionSize' : @-> region-length@
+--
+-- Size of the current region.
+--
 regionSize :: GenKangaroo ust Int
 regionSize = liftM2 (-) getEnd getStart
 
@@ -306,10 +330,20 @@ regionSize = liftM2 (-) getEnd getStart
 
 
 
--- | 'intraparse' - coda x abs_pos x length x parser
+-- | 'intraparse' : @name * coda * abs_region_start * region_length * parser -> parser@
 --
--- Note abs_pos must be within the current region.
+-- Create a new region within the current one and run the 
+-- supplied parser. The cursor position is moved to the start 
+-- of the new region. The value of @coda@ determines where the 
+-- cursor is positioned after a successful parse. 
 --
+-- 'intraparse' throws a parse error if the supplied 
+-- absolute-region-start is not located within the current region,
+-- or if the right-boundary of the new region 
+-- (@abs_region_start + region_length@) extends beyond the 
+-- right-boundary of the current region.
+--
+
 intraparse :: RegionName -> RegionCoda -> RegionStart -> Int 
            -> GenKangaroo ust a 
            -> GenKangaroo ust a
@@ -317,12 +351,26 @@ intraparse name coda intra_start len p =
     bracketRegion (newRegion intra_start len coda name) p
              
 
-
+-- | 'advance' : @name * coda * abs_region_start * parser -> parser@
+-- 
+-- A variation of 'intraparse' - the new region starts at the 
+-- supplied @abs_region_start@ and continues to the end of the 
+-- current region.
+--
+ 
 advance :: RegionName -> RegionCoda -> Int 
         -> GenKangaroo ust a 
         -> GenKangaroo ust a
 advance name coda intra_start p = getEnd >>= \end -> 
     intraparse name coda intra_start (end - intra_start) p
+
+
+-- | 'advanceRelative' : @name * coda * distance * parser -> parser@
+--
+-- A variation of 'advance' - the start of the new region is
+-- calculated from the @current-cursor-position@ + the supplied
+-- @distance@.
+--
 
 advanceRelative :: RegionName -> RegionCoda -> Int
                 -> GenKangaroo ust a 
@@ -331,7 +379,12 @@ advanceRelative name coda dist p = getPos >>= \pos ->
     intraparse name coda (pos+dist) dist p
 
 
-
+-- | 'restrict' : @ name * coda * distance * parser -> parser@
+-- 
+-- A variation of 'intraparse' - the new region starts at the 
+-- current coursor position, the right-boundary is restricted to
+-- the @current-cursor-position@ + the supplied @distance@.
+--
 restrict :: RegionName -> RegionCoda -> Int 
          -> GenKangaroo ust a 
          -> GenKangaroo ust a
@@ -339,6 +392,16 @@ restrict name coda len p = getPos >>= \pos ->
     intraparse name coda pos len p
 
 
+-- | 'restrictToPos' : @region-name * coda * abs-end-pos * parser -> parser@
+--
+-- Create a new region as a restriction of the current one and 
+-- run the supplied parser. The new region takes the current 
+-- cursor position for the left-boundary and the supplied 
+-- absolute-end-position (@abs-end-pos@) as the right-boundary. 
+--
+-- 'restrictToPos' throws a parse error if the @abs-end-pos@ 
+-- extends beyond the right-boundary of the current region. 
+--
 restrictToPos :: RegionName -> RegionCoda -> Int 
               -> GenKangaroo ust a 
               -> GenKangaroo ust a
@@ -350,8 +413,10 @@ restrictToPos name coda abs_pos p = getPos >>= \pos ->
 --------------------------------------------------------------------------------
 -- Debug
 
-showHexAll :: GenKangaroo ust ()
-showHexAll = askEnv >>= liftIOAction . slowHexAll
+printHexAll         :: GenKangaroo ust ()
+printHexAll         = askEnv >>= liftIOAction . slowHexAll
 
+printRegionStack    :: GenKangaroo ust ()
+printRegionStack    = getSt >>= liftIOAction . putStrLn . printParseStack
 
                 

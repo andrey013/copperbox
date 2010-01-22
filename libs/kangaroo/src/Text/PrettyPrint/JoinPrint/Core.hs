@@ -2,8 +2,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Text.PrettyPrint.Core
--- Copyright   :  (c) Stephen Tetley 2009, 2010
+-- Module      :  Text.PrettyPrint.JoinPrint.Core
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -220,12 +220,12 @@ spacer = replicateChar `flip` ' '
 padl :: Int -> Char -> Doc -> Doc
 padl i c d = step (length d) where
   step dl | dl >= i   = d
-        | otherwise = replicateChar (i-dl) c <> d 
+          | otherwise = replicateChar (i-dl) c <> d 
 
 padr :: Int -> Char -> Doc -> Doc
 padr i c d = step (length d) where
   step dl | dl >= i   = d
-        | otherwise = d <> replicateChar (i-dl) c
+          | otherwise = d <> replicateChar (i-dl) c
 
 -- | column
 column :: Int -> Char -> Doc -> Doc

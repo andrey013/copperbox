@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Data.ParserCombinators.Kangaroo.Region
--- Copyright   :  (c) Stephen Tetley 2009, 2010
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -178,7 +178,7 @@ location (P0 p _)   = p
 location (Pn p _ _) = p
 
 printParseStack :: ParseStack -> String
-printParseStack pstack = render $ vcat $ map fn stk
+printParseStack pstack = unlines $ map (render . fn) stk
   where
     stk             = infos pstack
     (w1,w4)         = onSnd (length . show) $ foldr phi (0,0) stk
@@ -186,8 +186,8 @@ printParseStack pstack = render $ vcat $ map fn stk
     onSnd f (a,b)   = (a, f b)
 
     fn        :: RegionInfo -> Doc
-    fn rgn    =  alignPad AlignLeft w1 ' ' (text $ region_name rgn)
-             <+> alignPad AlignLeft w4 ' ' (int  $ region_start_incl rgn)
-             <+> alignPad AlignLeft w4 ' ' (int  $ region_end_incl rgn)
+    fn rgn    =  padl w1 ' ' (text $ region_name rgn)
+             <+> padl w4 ' ' (int  $ region_start_incl rgn)
+             <+> padl w4 ' ' (int  $ region_end_incl rgn)
     
 

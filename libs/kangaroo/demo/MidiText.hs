@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  MidiText
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -29,7 +29,6 @@ import Text.PrettyPrint.JoinPrint hiding ( length )
 
 
 import qualified Data.Foldable as F
-import Numeric
 
 
 printMidi :: MidiFile -> IO ()
@@ -48,9 +47,6 @@ x `hyph` y         = x <> text " - " <> y
 
 dblhyph :: Doc -> Doc -> Doc
 x `dblhyph` y         = x <> text " -- " <> y
-
-ppHex :: Integral a => a -> Doc
-ppHex i = text $ showHex i []
 
 
 
@@ -106,7 +102,7 @@ ppVoiceEvent (NoteOff ch nt vel)        =
     text "note-off" `hyph` fli ch `hyph` fli nt `hyph` fli vel
  
 ppVoiceEvent (NoteOn ch nt vel)         =
-    text "note-on " `hyph` fli ch `hyph` fli nt `hyph` fli vel
+    text "note-on" `hyph` fli ch `hyph` fli nt `hyph` fli vel
     
 ppVoiceEvent (NoteAftertouch ch nt val) = 
     text "note-after-touch" `hyph` fli ch `hyph` fli nt `hyph` fli val
@@ -127,7 +123,7 @@ ppVoiceEvent (PitchBend ch val)         =
 
 ppSystemEvent :: SystemEvent -> Doc
 ppSystemEvent (SysEx _ _)    = text "sysex"   -- system exclusive event - length x data
-ppSystemEvent (DataEvent i)  = text "data" <+> ppHex i
+ppSystemEvent (DataEvent i)  = text "data" <+> oxhex2 i
 
 ppMetaEvent :: MetaEvent -> Doc
 ppMetaEvent (TextEvent ty s)     = ppTextType ty `hyph` dquotes (text s)
@@ -145,7 +141,7 @@ ppMetaEvent (TimeSignature n d m ns) =
 ppMetaEvent (KeySignature i sc)  = 
     text "key-sig" `hyph` integral i `hyph` ppScaleType sc
        
-ppMetaEvent (SSME i _)           = text "ssme" `hyph` (ppHex i <+> text "...")
+ppMetaEvent (SSME i _)           = text "ssme" `hyph` (oxhex8 i <+> text "...")
 
 ppScaleType :: ScaleType -> Doc
 ppScaleType MAJOR  = text "major"
