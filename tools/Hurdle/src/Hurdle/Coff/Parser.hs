@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Hurdle.Coff.Parser
--- Copyright   :  (c) Stephen Tetley 2009, 2010
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -40,11 +40,6 @@ readCOFF filename = do
       Left err -> (putStrLn $ toList w) >> error err
       Right mf -> return mf
 
-{-
-logAdvance :: RegionCoda -> Int -> Parser a -> Parser a
-logAdvance coda dist p = 
-    logPosition ("advance ("  ++ show dist ++ ") ") >> advance coda dist p
--}    
 
 --------------------------------------------------------------------------------
 -- 
@@ -133,16 +128,14 @@ dosHeader = do
     magicNumber = word16le
   
     reserved1 :: Parser (Word16,Word16,Word16,Word16)
-    reserved1 = (,,,) <$> word16le <*> word16le 
-                      <*> word16le <*> word16le
+    reserved1 = liftM4 (,,,) word16le word16le word16le word16le
 
     reserved2 :: Parser [Word16]
     reserved2 = count 10 word16le
 
 
 pecoffSignature :: Parser (Char,Char,Char,Char) 
-pecoffSignature = (,,,) <$> char <*> char 
-                        <*> char <*> char
+pecoffSignature = liftM4 (,,,) char char char char
 
 
 
@@ -368,10 +361,6 @@ exportDirectoryTable = do
                 , edt_name_ptr_table_rva      = name_table_rva
                 , edt_ordinal_table_rva       = ordinal_table_rva
                 }
-
-
-
---    `substError` "error - export directory table"
 
 
 exportAddressTable :: Int -> Parser ExportAddressTable

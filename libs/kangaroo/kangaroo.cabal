@@ -60,6 +60,9 @@ library
     Data.ParserCombinators.KangarooRWS,
     Data.ParserCombinators.KangarooState,
     Data.ParserCombinators.KangarooWriter,
+    Text.PrettyPrint.JoinPrint
+
+  other-modules:
     Data.ParserCombinators.Kangaroo.Combinators,
     Data.ParserCombinators.Kangaroo.Debug,
     Data.ParserCombinators.Kangaroo.IEEEFloat,
@@ -69,10 +72,7 @@ library
     Data.ParserCombinators.Kangaroo.Utils,
     Text.PrettyPrint.JoinPrint.Core,
     Text.PrettyPrint.JoinPrint.HexDump,
-    Text.PrettyPrint.JoinPrint.JoinString,
-    Text.PrettyPrint.JoinPrint
-
-  other-modules:
+    Text.PrettyPrint.JoinPrint.JoinString
       
   extensions:
     

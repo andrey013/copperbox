@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  
 --
--- Pretty print as text...
+-- Pretty print as text... This is horrible and needs rethinking...
 --
 --------------------------------------------------------------------------------
 

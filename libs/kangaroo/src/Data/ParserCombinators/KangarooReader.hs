@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Data.ParserCombinators.KangarooReader
--- Copyright   :  (c) Stephen Tetley 2009, 2010
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -29,7 +29,6 @@ module Data.ParserCombinators.KangarooReader
 import Data.ParserCombinators.Kangaroo.Combinators
 import Data.ParserCombinators.Kangaroo.ParseMonad
 import Data.ParserCombinators.Kangaroo.Prim
-import Data.ParserCombinators.Kangaroo.Utils
 
 import Control.Monad ( liftM )
 
