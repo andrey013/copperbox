@@ -32,6 +32,7 @@ module Text.PrettyPrint.JoinPrint.Core
   , char
   , int
   , integer
+  , integral
 
   , sglspace
   , dblspace
@@ -64,17 +65,11 @@ module Text.PrettyPrint.JoinPrint.Core
 
   , padl
   , padr
-  , column
-  , column_truncr_padl
-  , column_truncr_padr
-  , column_truncl_padl
-  , column_truncl_padr
-  
-  , center
-  , center_truncr
-  , center_truncl
+  , truncl 
+  , truncr
   
   , render
+  , renderIO
   
   ) where
 
@@ -137,6 +132,8 @@ int  = text . show
 integer :: Integer -> Doc
 integer = text . show
 
+integral :: Integral a => a -> Doc
+integral = integer . fromIntegral
 
 sglspace :: Doc
 sglspace = char ' '
@@ -227,62 +224,16 @@ padr i c d = step (length d) where
   step dl | dl >= i   = d
           | otherwise = d <> replicateChar (i-dl) c
 
--- | column
-column :: Int -> Char -> Doc -> Doc
-column = column_truncr_padl
 
+truncl :: Int -> Doc -> Doc
+truncl i d = step (length d) where
+    step dl | dl > i    = Doc $ JS.dropLeft i (getDoc d)
+            | otherwise = d
 
-column_truncr_padl :: Int -> Char -> Doc -> Doc
-column_truncr_padl i c d = fn (length d) where
-  fn dl | dl >  i   = Doc $ JS.takeLeft i (getDoc d)
-        | dl < i    = replicateChar (i-dl) c <> d
-        | otherwise = d
-
-column_truncr_padr :: Int -> Char -> Doc -> Doc
-column_truncr_padr i c d = fn (length d) where
-  fn dl | dl >  i   = Doc $ JS.takeLeft i (getDoc d)
-        | dl < i    = d <> replicateChar (i-dl) c
-        | otherwise = d
-
-
-
-column_truncl_padl :: Int -> Char -> Doc -> Doc
-column_truncl_padl i c d = fn (length d) where
-  fn dl | dl >  i   = Doc $ JS.takeRight i (getDoc d)
-        | dl < i    = replicateChar (i-dl) c <> d
-        | otherwise = d
-
-column_truncl_padr :: Int -> Char -> Doc -> Doc
-column_truncl_padr i c d = fn (length d) where
-  fn dl | dl >  i   = Doc $ JS.takeRight i (getDoc d)
-        | dl < i    = d <> replicateChar (i-dl) c
-        | otherwise = d
-
-center :: Int -> Char -> Doc -> Doc
-center = center_truncr
-
-
-center_truncr :: Int -> Char -> Doc -> Doc
-center_truncr i c d = fn (length d) where
-  fn dl | dl >  i   = Doc $ JS.takeLeft i (getDoc d)
-        | dl < i    = let (spl,spr) = centerSpacings (i-dl) c in
-                      spl <> d <> spr
-        | otherwise = d
-
-center_truncl :: Int -> Char -> Doc -> Doc
-center_truncl i c d = fn (length d) where
-  fn dl | dl >  i   = Doc $ JS.takeRight i (getDoc d)
-        | dl < i    = let (spl,spr) = centerSpacings (i-dl) c in
-                      spl <> d <> spr
-        | otherwise = d
-
-
-centerSpacings :: Int -> Char -> (Doc,Doc)
-centerSpacings i c = let (d,m) = i `divMod` 2 in
-                     if m == 0 then dup $ replicateChar d c
-                               else (replicateChar d c, replicateChar (d+1) c)
-  where
-    dup a = (a,a)
+truncr :: Int -> Doc -> Doc
+truncr i d = step (length d) where
+    step dl | dl > i    = Doc $ JS.dropRight i (getDoc d)
+            | otherwise = d
 
 
 -- | Rendering is simple because there is no notion of fitting.
@@ -292,3 +243,5 @@ render = JS.toString . getDoc
 
 
 
+renderIO :: Doc -> IO ()
+renderIO = putStrLn . JS.toString . getDoc

@@ -46,7 +46,7 @@ module Data.ParserCombinators.Kangaroo.Region
 import Text.PrettyPrint.JoinPrint  hiding ( length )
 
 
--- | 'RegionCoda' - three useful final positions:
+-- | 'RegionCoda' - represents three useful final positions:
 --
 -- 1. dalpunto  - 'from the point'      
 -- - Run the parser within a region and return to where you came

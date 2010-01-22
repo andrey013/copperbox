@@ -31,6 +31,8 @@ module Text.PrettyPrint.JoinPrint.JoinString
   , foldl
   , takeLeft  
   , takeRight
+  , dropLeft
+  , dropRight
 
   ) where
 
@@ -120,7 +122,7 @@ foldl f e (Tree _ t u)  = foldl f (foldl f e u) t
 -- | 'takeLeft'  flattens the join-string.
 --
 takeLeft :: Int -> JoinString -> JoinString
-takeLeft a = build . step a where
+takeLeft = build `oo` step where
     build (i,xs) | i <= 0           = Empty
                  | otherwise        = Leaf i xs
 
@@ -136,7 +138,7 @@ takeLeft a = build . step a where
 -- | 'takeRight'  flattens the join-string.
 --
 takeRight :: Int -> JoinString -> JoinString
-takeRight a = build . step a where
+takeRight = build `oo` step where
     build (i,xs) | i <= 0           = Empty
                  | otherwise        = Leaf i xs
 
@@ -158,3 +160,36 @@ ltr n = ($ []) . snd . Pre.foldr fn (0,id) where
              | otherwise  = (i,f)
 
 
+
+dropLeft :: Int -> JoinString -> JoinString
+dropLeft = snd `oo` step where
+    step n Empty                    = (n,Empty)
+    step n (Leaf a xs)  | n >= a    = (n-a,Empty)       -- drop all
+                        | otherwise = (0,Leaf (a-n) (drop n xs))
+    step n (Tree a t u) | n >= a    = (n-a,Empty)
+                        | otherwise = let (n',t') = step n t in 
+                                      if n' > 0 then step n' u
+                                                else (0,mkTree (a-n) t' u)
+    mkTree _ Empty u    = u
+    mkTree n t     u    = Tree n t u
+
+
+dropRight :: Int -> JoinString -> JoinString 
+dropRight = snd `oo` step where
+    step n Empty                    = (n,Empty)
+    step n (Leaf a xs)  | n >= a    = (n-a,Empty)       -- drop all
+                        | otherwise = (0,Leaf (a-n) (take (a-n) xs))
+    step n (Tree a t u) | n >= a    = (n-a,Empty)
+                        | otherwise = let (n',u') = step n u in
+                                      if n' > 0 then step n' t
+                                                else (0, mkTree (a-n) t u')
+    
+    mkTree _ t Empty    = t
+    mkTree n t u        = Tree n t u 
+
+
+--------------------------------------------------------------------------------
+-- 
+
+oo :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+oo f g r s = f (g r s)

@@ -32,9 +32,13 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
 
   , reportError
   , substError
+
+  -- * Primitive parsers
   , word8
   , checkWord8
   , opt 
+
+  -- * Query the cursor position
   , position
   , region
   , atEnd
@@ -357,6 +361,9 @@ intraparse name coda intra_start len p =
 -- supplied @abs_region_start@ and continues to the end of the 
 -- current region.
 --
+-- 'advance' throws a parse error if the new start position is 
+-- not within the current region.
+--
  
 advance :: RegionName -> RegionCoda -> Int 
         -> GenKangaroo ust a 
@@ -371,6 +378,9 @@ advance name coda intra_start p = getEnd >>= \end ->
 -- calculated from the @current-cursor-position@ + the supplied
 -- @distance@.
 --
+-- 'advanceRelative' throws a parse error if the new start 
+-- position is not within the current region.
+--
 
 advanceRelative :: RegionName -> RegionCoda -> Int
                 -> GenKangaroo ust a 
@@ -381,9 +391,14 @@ advanceRelative name coda dist p = getPos >>= \pos ->
 
 -- | 'restrict' : @ name * coda * distance * parser -> parser@
 -- 
--- A variation of 'intraparse' - the new region starts at the 
--- current coursor position, the right-boundary is restricted to
--- the @current-cursor-position@ + the supplied @distance@.
+-- A variation of 'intraparse' - create a new region as a 
+-- restriction of the current one and run the supplied parser. 
+-- The new region starts at the current coursor position, the 
+-- right-boundary is restricted to the @current-cursor-position@ 
+-- + the supplied @distance@.
+--
+-- 'restrict' throws a parse error if the right-boundary of the 
+-- new region extends beyond the current region.
 --
 restrict :: RegionName -> RegionCoda -> Int 
          -> GenKangaroo ust a 
@@ -394,8 +409,7 @@ restrict name coda len p = getPos >>= \pos ->
 
 -- | 'restrictToPos' : @region-name * coda * abs-end-pos * parser -> parser@
 --
--- Create a new region as a restriction of the current one and 
--- run the supplied parser. The new region takes the current 
+-- A variantion of 'restrict' - the new region takes the current 
 -- cursor position for the left-boundary and the supplied 
 -- absolute-end-position (@abs-end-pos@) as the right-boundary. 
 --

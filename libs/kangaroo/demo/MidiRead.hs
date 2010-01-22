@@ -45,6 +45,8 @@ readMidi filename = do
 
 --------------------------------------------------------------------------------
 -- 
+
+-- Not sure about this ... 
 (-*-) :: MidiParser a -> String -> MidiParser a
 (-*-) = substError
     
