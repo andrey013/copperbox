@@ -1,0 +1,42 @@
+name:             arity-lib
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Combinators
+synopsis:         Functions and functors of extravagent arity.
+description:
+  Families of standard combinators of increasing arities. 
+build-type:         Simple
+stability:          unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+
+library
+  hs-source-dirs:     src
+  build-depends:      base<5
+
+  
+  exposed-modules:
+    Data.Arity.Functions,
+    Data.Arity.Functors,
+    Data.Arity.Functions.Duplicate,
+    Data.Arity.Functions.PStar,
+    Data.Arity.Functions.Specs,
+    Data.Arity.Functors.Specs
+
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
