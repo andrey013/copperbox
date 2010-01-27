@@ -5,7 +5,7 @@ module ImportAll where
 import Data.Aviary
 import Data.Aviary.Birds
 import qualified Data.Aviary.BirdsInter as Inter
-
+import qualified Data.Aviary.BirdsVersion as Version
 
 -- curried prod
 cprod :: (a -> c) -> (b -> d) -> a -> b -> (c,d)

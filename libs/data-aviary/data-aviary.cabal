@@ -1,5 +1,5 @@
 name:             data-aviary
-version:          0.2.2
+version:          0.2.3
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -8,10 +8,10 @@ homepage:         http://code.google.com/p/copperbox/
 category:         Combinators
 synopsis:         Combinator birds.
 description:
-  A catalogue of the combinator birds (Data.Aviary.Birds) - this 
-  module is intended more for illustration than utility.
+  A catalogue of the combinator birds (Data.Aviary.Birds etc.) - 
+  these modules are intended more for illustration than utility.
   .
-  (Data.Aviary.Functional) operations from Applicative, Monad 
+  Data.Aviary.Functional - operations from Applicative, Monad 
   etc. with their types specialized to the function type. This 
   might be usefulfor /bird-watching/ i.e. spotting instances 
   where an Applicative, Monad or whatever operation corresponds 
@@ -24,6 +24,10 @@ description:
   personal favourites.
   .
   Changelog:
+  .
+  0.2.3 added Data.Aviary.BirdsVersion - same as the original 
+        Birds module, but with type signatures following a 
+        revised naming scheme. 
   .
   0.2.2 added Data.Aviary.Functional - Applicative, Monad etc.
         signatures specialized to the function type. 
@@ -46,7 +50,8 @@ library
   exposed-modules:
     Data.Aviary,
     Data.Aviary.Birds,
-    Data.Aviary.BirdsInter
+    Data.Aviary.BirdsInter,
+    Data.Aviary.BirdsVersion,
     Data.Aviary.Functional    
 
   other-modules:

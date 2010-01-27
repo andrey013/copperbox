@@ -44,7 +44,6 @@ module Data.Aviary
 
   ) where
 
-import Data.Function
 
 --------------------------------------------------------------------------------
 -- Combinators
