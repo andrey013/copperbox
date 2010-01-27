@@ -25,7 +25,7 @@ module M2.Syntax
   , Glyph(..)
   , Note(..)
   , Tie
-
+  , ChordPitch(..)
 
   , StdNote
   , StdChordPitch
@@ -56,8 +56,8 @@ type VoiceUnit anno pch dur = OneList (CExpr anno pch dur)
 -- | Contextual expression. This is a sequence of one or more 
 -- notes together with some context to be communicated to the 
 -- pretty printer - the context being either that the notes 
--- should be within a beam group or they are n-plets (duplets, 
--- triplets, ...) so the metrical calculation is changed. 
+-- should be beamed or that they are n-plets (duplets, triplets, 
+-- ...). 
 --
 -- Note this formulation permits beam groups within beam groups.
 -- Ideally this would be disallowed, but beam groups may contain
@@ -85,19 +85,17 @@ data AExpr anno pch dur = Glyph (Glyph anno pch dur)
 
 
 
-data Glyph anno pch dur = GlyNote  (Note anno pch dur)
+data Glyph anno pch dur = GlyNote  (Note anno pch dur) !Tie
                         | Rest     !dur
                         | Spacer   !dur
-                        | Chord    [ChordPitch anno pch] !dur
+                        | Chord    [ChordPitch anno pch] !dur !Tie
   deriving (Eq,Show)
 
 
-data Note anno pch dur = Note !anno !pch !dur !Tie
+data Note anno pch dur = Note !anno !pch !dur
   deriving (Eq,Show) 
 
-
 type Tie = Bool
-
 
 data ChordPitch anno pch = ChordPitch !anno !pch
   deriving (Eq,Show)

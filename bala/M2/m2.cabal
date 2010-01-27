@@ -1,0 +1,53 @@
+name:             m2
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         A library for generating LilyPond and ABC scores. 
+description:
+  ?? is a library for generating ABC and LilyPond scores. 
+  It aims to generate /good/ quality scores - that's to say the 
+  output should resemble hand-written scores. 
+  .
+  (c) 2010 Stephen Tetley
+
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Examples.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base < 5, containers, wl-pprint,
+                      algebra,
+                      monadLib
+
+  
+  exposed-modules:
+    M2.Datatypes,
+    M2.Doc,
+    M2.Duration,
+    M2.LilyPondDoc,
+    M2.OneList,
+    M2.Pitch,
+    M2.Syntax,
+    M2.Utils
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:  -Wall 
+  
+  includes: 
+  
+
+  
+  
+  
