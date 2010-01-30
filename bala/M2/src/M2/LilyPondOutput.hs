@@ -20,14 +20,18 @@ module M2.LilyPondOutput where
 import M2.Doc
 import M2.Duration
 import M2.LilyPondDoc
+import M2.OneList
 import M2.Pitch
 import M2.Syntax
+
+
 
 import MonadLib.Monads
 
 import Text.PrettyPrint.Leijen
 
-import qualified Data.Traversable as T
+import qualified Data.Foldable          as F
+import qualified Data.Traversable       as T
 
 
 
@@ -69,8 +73,8 @@ oLyGlyph f (Chord ps d t)   = chordForm (oChordPitches f ps) d <> optDoc t tie
 oNote :: (pch -> Doc) -> Note anno pch (Maybe Duration) -> Doc
 oNote f (Note _ p d)        =  f p <> maybe empty duration d
 
-oChordPitches :: (pch -> Doc) -> [ChordPitch anno pch] -> [Doc]
-oChordPitches f = map (\(ChordPitch _ p) -> f p)
+oChordPitches :: (pch -> Doc) -> OneList (ChordPitch anno pch dur) -> [Doc]
+oChordPitches f = map (\(ChordPitch _ p) -> f p) . F.toList
 
 
 

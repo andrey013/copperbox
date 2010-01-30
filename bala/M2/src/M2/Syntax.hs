@@ -16,7 +16,7 @@
 
 module M2.Syntax
   (
-    Phrase
+    Phrase(..)
   , Bar(..)
   , VoiceUnit
   , CExpr(..)   
@@ -41,7 +41,7 @@ import M2.Pitch
 
 
 
-type Phrase anno pch dur = [Bar anno pch dur]
+newtype Phrase anno pch dur = Phrase { getPhrase :: [Bar anno pch dur] }
 
 
 data Bar anno pch dur = Bar      (VoiceUnit anno pch dur)
@@ -80,7 +80,7 @@ data N_PletDescr = N_PletDescr Int Int
 -- its own duration.
  
 data AExpr anno pch dur = Glyph (Glyph anno pch dur)
-                        | Grace [Note anno pch dur]
+                        | Grace (OneList (Note anno pch dur))
    deriving (Eq,Show) 
 
 
@@ -88,7 +88,7 @@ data AExpr anno pch dur = Glyph (Glyph anno pch dur)
 data Glyph anno pch dur = GlyNote  (Note anno pch dur) !Tie
                         | Rest     !dur
                         | Spacer   !dur
-                        | Chord    [ChordPitch anno pch] !dur !Tie
+                        | Chord    (OneList (ChordPitch anno pch dur)) !dur !Tie
   deriving (Eq,Show)
 
 
@@ -97,13 +97,14 @@ data Note anno pch dur = Note !anno !pch !dur
 
 type Tie = Bool
 
-data ChordPitch anno pch = ChordPitch !anno !pch
+-- Note dur is not used... 
+data ChordPitch anno pch dur = ChordPitch !anno !pch
   deriving (Eq,Show)
 
 
 
 type StdGlyph      = Glyph      ()  Pitch  Duration 
 type StdNote       = Note       ()  Pitch  Duration
-type StdChordPitch = ChordPitch ()  Pitch 
+type StdChordPitch = ChordPitch ()  Pitch  Duration
 
 

@@ -26,7 +26,8 @@ library
   hs-source-dirs:     src
   build-depends:      base < 5, containers, wl-pprint,
                       algebra,
-                      monadLib
+                      monadLib,
+                      kure == 0.3.1
 
   
   exposed-modules:
@@ -37,6 +38,7 @@ library
     M2.OneList,
     M2.Pitch,
     M2.Syntax,
+    M2.SyntaxKURE,
     M2.Utils
   other-modules:
     
