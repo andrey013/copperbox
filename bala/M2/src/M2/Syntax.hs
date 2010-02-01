@@ -16,41 +16,81 @@
 
 module M2.Syntax
   (
+  -- * Phrases and bars
     Phrase(..)
   , Bar(..)
-  , VoiceUnit
-  , CExpr(..)   
+
+  , LyPhrase
+  , LyBar
+  , AbcPhrase
+  , AbcBar
+
+  , StaffPhrase
+  , StaffBar
+
+  , NonStdPhrase
+  , NonStdBar
+
+  -- * Staff expressions
+  , BarUnit
+  , CExpr(..)
   , N_PletDescr(..)
   , AExpr(..)
+
+
+  -- * Staff glyphs
   , Glyph(..)
   , Note(..)
   , Tie
   , ChordPitch(..)
 
-  , StdNote
-  , StdChordPitch
-  , StdGlyph
+  -- * Skip expressions
+  , SimpleBarUnit
+
+  -- * Skip glyphs
+  , SkipGlyph(..)  
 
   ) where
 
 
-import M2.Duration
 import M2.OneList
-import M2.Pitch
+
+import Text.PrettyPrint.Leijen          -- package : wl-print
 
 
+--------------------------------------------------------------------------------
+-- Phrases and bars 
+
+-- (Phrases and bars are composable with pretty-print operations...)
+
+newtype Phrase a = Phrase { getPhrase :: [Bar a] }
+newtype Bar    a = Bar    { getBar    :: a } 
 
 
-newtype Phrase anno pch dur = Phrase { getPhrase :: [Bar anno pch dur] }
+type LyPhrase   = Phrase Doc
+type LyBar      = Bar    Doc
+
+type AbcPhrase  = Phrase Doc
+type AbcBar     = Bar    Doc
+
+type StaffPhrase anno pch dur = Phrase (BarUnit anno pch dur)
+type StaffBar    anno pch dur = Bar    (BarUnit anno pch dur) 
 
 
-data Bar anno pch dur = Bar      (VoiceUnit anno pch dur)
-                      | Overlays (OneList (VoiceUnit anno pch dur))
-  deriving (Eq,Show)
+type NonStdPhrase glyph dur   = Phrase (SimpleBarUnit glyph dur)
+type NonStdBar    glyph dur   = Bar    (SimpleBarUnit glyph dur)
 
 
-type VoiceUnit anno pch dur = OneList (CExpr anno pch dur)
+--------------------------------------------------------------------------------
+-- Staff \Expressions\
 
+-- Note - AExprs (atomic expressions) make a distinction between 
+-- glyphs (notes, chords, rests) and grace notes ([note]), so 
+-- they are fixed to Staff glyphs rather than parametric on some 
+-- \glyph\.
+
+
+type BarUnit anno pch dur = OneList (CExpr anno pch dur)
 
 
 -- | Contextual expression. This is a sequence of one or more 
@@ -84,6 +124,9 @@ data AExpr anno pch dur = Glyph (Glyph anno pch dur)
    deriving (Eq,Show) 
 
 
+--------------------------------------------------------------------------------
+-- Staff Glyphs
+
 
 data Glyph anno pch dur = GlyNote  (Note anno pch dur) !Tie
                         | Rest     !dur
@@ -102,9 +145,27 @@ data ChordPitch anno pch dur = ChordPitch !anno !pch
   deriving (Eq,Show)
 
 
+--------------------------------------------------------------------------------
+-- Simple Expressions
 
-type StdGlyph      = Glyph      ()  Pitch  Duration 
-type StdNote       = Note       ()  Pitch  Duration
-type StdChordPitch = ChordPitch ()  Pitch  Duration
+-- These are used to print non-standard glyphs 
+-- (e.g chord diagrams) above the staff.
+
+type SimpleBarUnit glyph dur = OneList (SkipGlyph glyph dur)
+
+
+
+--------------------------------------------------------------------------------
+-- \Skip Glyphs\
+
+-- For LilyPond...
+
+data SkipGlyph glyph dur = SGlyph   glyph
+                         | Skip     !dur
+  deriving (Eq,Show)
+
+
+
+
 
 

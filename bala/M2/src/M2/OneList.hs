@@ -35,33 +35,33 @@ import Data.Traversable
 import qualified Data.Traversable   as T
 
 
-infixr 5 :+
+infixr 5 :<
 
-data OneList a = One a | a :+ OneList a
+data OneList a = One a | a :< OneList a
   deriving (Eq)
 
 instance Show a => Show (OneList a) where
   show = ('{':) . ($ []) . step where
      step (One a)   = shows a . showChar '}'
-     step (a :+ xs) = shows a . showChar ',' . step xs
+     step (a :< xs) = shows a . showChar ',' . step xs
 
 
 instance Functor OneList where
   fmap f (One a)        = One $ f a
-  fmap f (a :+ as)      = f a :+ fmap f as
+  fmap f (a :< as)      = f a :< fmap f as
 
 instance Foldable OneList where
   foldMap f (One a)     = f a
-  foldMap f (a :+ as)   = f a `mappend` foldMap f as
+  foldMap f (a :< as)   = f a `mappend` foldMap f as
 
 instance Traversable OneList where
   traverse f (One a)    = One  <$> f a
-  traverse f (a :+ as)  = (:+) <$> f a <*> traverse f as
+  traverse f (a :< as)  = (:<) <$> f a <*> traverse f as
 
 
 instance Semigroup (OneList e) where
-  (One x)   `append` ys  = x :+ ys
-  (x :+ xs) `append` ys  = x :+ (xs `append` ys)
+  (One x)   `append` ys  = x :< ys
+  (x :< xs) `append` ys  = x :< (xs `append` ys)
 
 
 
