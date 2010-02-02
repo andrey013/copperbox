@@ -131,7 +131,7 @@ data AExpr anno pch dur = Glyph (Glyph anno pch dur)
 data Glyph anno pch dur = GlyNote  (Note anno pch dur) !Tie
                         | Rest     !dur
                         | Spacer   !dur
-                        | Chord    (OneList (ChordPitch anno pch dur)) !dur !Tie
+                        | Chord    (OneList (ChordPitch anno pch)) !dur !Tie
   deriving (Eq,Show)
 
 
@@ -141,7 +141,7 @@ data Note anno pch dur = Note !anno !pch !dur
 type Tie = Bool
 
 -- Note dur is not used... 
-data ChordPitch anno pch dur = ChordPitch !anno !pch
+data ChordPitch anno pch = ChordPitch !anno !pch
   deriving (Eq,Show)
 
 

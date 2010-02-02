@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -36,44 +38,43 @@ import qualified Data.Traversable       as T
 
 
 
-
 --------------------------------------------------------------------------------
 -- Render
 
-{-
--- | Render a phrase. This function returns a 'DPhrase' which is 
--- a list of list of Doc. To generate output, it must be 
--- post-processed. One such post-processor is 'simpleOutput'...
-renderPhrase :: (e -> Doc) -> Phrase e -> PhraseDoc
-renderPhrase f = map (renderBarOverlay f)
+-- ignore annotations at the moment...
+
+oStaffPhrase :: (pch -> Doc) 
+             -> StaffPhrase anno pch (Maybe Duration) -> LyPhrase
+oStaffPhrase f            = Phrase . map (oStaffBar f) . getPhrase
+
+oStaffBar :: (pch -> Doc) -> StaffBar anno pch (Maybe Duration) -> LyBar
+oStaffBar f               = Bar . oBarUnit f . getBar
+
+oBarUnit :: (pch -> Doc) -> BarUnit anno pch (Maybe Duration) -> Doc
+oBarUnit f os             = hsep $ toListF (oCExpr f) os
+
+oCExpr :: (pch -> Doc) -> CExpr anno pch (Maybe Duration) -> Doc
+oCExpr f (Atomic os)      = hsep $ toListF (oAExpr f) os 
+oCExpr _ (N_Plet _ _)     = error $ "oCExpr - N_Plet to do"
+oCExpr f (Beamed e)       = beamForm [oCExpr f e]
 
 
-renderBarOverlay :: (e -> Doc) -> Bar e -> BarDoc
-renderBarOverlay f (Bar xs)       = [fillSep $ map (renderBeam f) xs]
-renderBarOverlay f (OverlayL xss) = map (fillSep . map (renderBeam f)) xss
+oAExpr :: (pch -> Doc) -> AExpr anno pch (Maybe Duration) -> Doc
+oAExpr f (Glyph e)        = oGlyph f e
+oAExpr f (Grace os)       = graceForm $ toListF (oNote f) os
 
 
-renderBeam :: (e -> Doc) -> Pulse e -> Doc
-renderBeam f (Pulse e)    = f e
-renderBeam f (BeamedL es) = beamForm $ map f es
-
-
-lyGlyph :: Glyph anno Pitch (Maybe Duration) -> Doc
-lyGlyph = oLyGlyph pitch
-
--}
-
-oLyGlyph :: (pch -> Doc) -> Glyph anno pch (Maybe Duration) -> Doc
-oLyGlyph f (GlyNote n t)    = oNote f n <> optDoc t tie
-oLyGlyph _ (Rest d)         = rest d
-oLyGlyph _ (Spacer d)       = spacer d
-oLyGlyph f (Chord ps d t)   = chordForm (oChordPitches f ps) d <> optDoc t tie
+oGlyph :: (pch -> Doc) -> Glyph anno pch (Maybe Duration) -> Doc
+oGlyph f (GlyNote n t)    = oNote f n <> optDoc t tie
+oGlyph _ (Rest d)         = rest d
+oGlyph _ (Spacer d)       = spacer d
+oGlyph f (Chord ps d t)   = chordForm (oChordPitches f ps) d <> optDoc t tie
 
 
 oNote :: (pch -> Doc) -> Note anno pch (Maybe Duration) -> Doc
-oNote f (Note _ p d)        =  f p <> maybe empty duration d
+oNote f (Note _ p d)      =  f p <> maybe empty duration d
 
-oChordPitches :: (pch -> Doc) -> OneList (ChordPitch anno pch dur) -> [Doc]
+oChordPitches :: (pch -> Doc) -> OneList (ChordPitch anno pch) -> [Doc]
 oChordPitches f = map (\(ChordPitch _ p) -> f p) . F.toList
 
 
@@ -92,6 +93,34 @@ simpleOverlay = step . getBarDoc where
     step []  = empty
     step [a] = getOverlayDoc a
     step xs  = overlay $ map getOverlayDoc xs
+
+
+
+
+--------------------------------------------------------------------------------
+-- Rewrite Duration
+
+
+doptGlyph :: Glyph anno pch Duration 
+          -> Duration 
+          -> (Glyph anno pch (Maybe Duration), Duration)
+doptGlyph g d0 = step g where
+  step (GlyNote n t)  = let (n',st) = doptNote n d0 in (GlyNote n' t, st)
+  step (Rest d)       = let (d',st) = doptD d d0 in (Rest d',st)
+  step (Spacer d)     = let (d',st) = doptD d d0 in (Spacer d',st)
+  step (Chord os d t) = let (d',st) = doptD d d0 in (Chord os d' t, st)
+
+
+doptNote :: Note anno pch Duration 
+         -> Duration 
+         -> (Note anno pch (Maybe Duration), Duration)
+doptNote (Note a p d) d0 = let (d',st) = doptD d d0 in (Note a p d', st)
+
+
+doptD :: Duration -> Duration -> (Maybe Duration, Duration)
+doptD d st | d == st && not (isDotted d) = (Nothing,st)
+           | otherwise                   = (Just d,d) 
+
 
 
 {-
@@ -148,7 +177,7 @@ alterDuration d0 d | d0 == d && not (isDotted d) = Nothing
                    | otherwise                   = Just d 
 
     
-
+--------------------------------------------------------------------------------
 -- Relative Pitch
 
 class ChangePitchLyRel t where
@@ -223,13 +252,14 @@ changeOctave p p' = setOctave (lyOctaveDist p p') p'
 -- from the octave designator.
 --
 -- TODO - find out why this is the case.
+-}
 
-
+type OctaveLy = Int
 
 class ChangePitchLyAbs t where
-  changePitchLyAbs :: HasPitch pch => Int -> t pch drn -> t pch drn
+  changePitchLyAbs :: HasPitch pch => OctaveLy -> t pch drn -> t pch drn
 
- 
+{- 
 rewritePitchAbs :: (HasPitch pch, ChangePitchLyAbs t)
                 => Int -> Phrase (t pch drn) -> Phrase (t pch drn)
 rewritePitchAbs i = fmap (fmap (changePitchLyAbs i)) 

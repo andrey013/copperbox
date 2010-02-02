@@ -18,14 +18,12 @@ module M2.OneList
   (
     OneList
 
-  , oneListR
-  , oneListU
+  , toListF
    
   ) where
 
 
 import Data.Semigroup           -- package: algebra
-import Language.KURE            -- package: kure
 
 import Control.Applicative
 import Control.Monad
@@ -65,17 +63,7 @@ instance Semigroup (OneList e) where
 
 
 
-
-oneListR    :: (Monoid dec, Monad m) 
-            => Rewrite m dec a 
-            -> Rewrite m dec (OneList a)
-oneListR rr = transparently $ rewrite $ T.mapM (apply rr)
-
-oneListU    :: (Monoid dec, Monad m, Monoid r) 
-            => Translate m dec a r 
-            -> Translate m dec (OneList a) r
-oneListU rr = translate $ liftM leftMerge . T.mapM (apply rr) 
-
-    
-leftMerge :: (Foldable f, Monoid a) => f a -> a
-leftMerge = foldl' mappend mempty
+toListF :: (a -> b) -> OneList a -> [b]
+toListF f = step where
+  step (One x) = [f x]
+  step (x :< xs) = f x : step xs
