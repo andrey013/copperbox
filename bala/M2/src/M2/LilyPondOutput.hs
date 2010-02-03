@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -27,13 +25,9 @@ import M2.Pitch
 import M2.Syntax
 
 
-
-import MonadLib.Monads
-
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen          -- package: wl-print
 
 import qualified Data.Foldable          as F
-import qualified Data.Traversable       as T
 
 
 
@@ -221,112 +215,51 @@ abspNote i (Note a p d) = Note a (displaceOctave i p) d
 abspChordPitch :: Int -> ChordPitch anno Pitch -> ChordPitch anno Pitch
 abspChordPitch i (ChordPitch a p) = ChordPitch a (displaceOctave i p)
 
-{-
-
---------------------------------------------------------------------------------
--- rewriting
-    
 --------------------------------------------------------------------------------
 -- Relative Pitch
 
-class ChangePitchLyRel t where
-  changePitchLyRel :: HasPitch pch => Pitch -> t pch drn -> (t pch drn, Pitch)
-
- 
-rewritePitch :: (ChangePitchLyRel t, HasPitch pch) 
-             => Pitch -> Phrase (t pch drn) -> Phrase (t pch drn)
-rewritePitch rp bars = fst $ runState rp (mapM (T.mapM fn) bars)
-  where
-    fn gly = inside (changePitchLyRel `flip` gly)    
-
-inside :: (s -> (a,s)) -> State s a
-inside f = get >>= \s -> let (a,s') = f s in set s' >> return a
-
-instance ChangePitchLyRel (Glyph anno) where
-  changePitchLyRel p0 (Note a p d t)   = (Note a p' d t, getPitch p)
-                                         where p' = alterPitch p0 p
-  changePitchLyRel p0 (Rest d)         = (Rest d, p0)
-  changePitchLyRel p0 (Spacer d)       = (Spacer d, p0)
-  changePitchLyRel p0 (Chord ps d t)   = (Chord ps' d t,p') 
-                                         where (ps',p') = changeChordP p0 ps
-  changePitchLyRel p0 (GraceNotes xs)  = (GraceNotes xs',p')
-                                         where (xs',p') = changeGraceP p0 xs
 
 
-
--- /Relative Pitch/ - all notes inside a grace expression change 
--- relative pitch. Only the first note of a chord changes relative 
--- pitch.
-
-
-changeGraceP :: HasPitch pch 
-             => Pitch -> [GraceNote anno pch d] -> ([GraceNote anno pch d],Pitch)
-changeGraceP p0 xs = anaMap fn p0 xs where
-  fn (GraceNote anno pch d) p = Just (GraceNote anno pch' d, getPitch pch)
-                                where pch' = alterPitch p pch
-
--- return changed pitches, plus first pitch of the /original/ chord
-changeChordP :: HasPitch pch => Pitch -> [(anno,pch)] -> ([(anno,pch)],Pitch)
-changeChordP p0 []            = ([],p0)
-changeChordP p0 xs@((_,p):_)  = (fst $ anaMap fn p0 xs, getPitch p) where
-  fn (anno,pch) st = Just ((anno,alterPitch st pch), getPitch pch)
+relpBarUnit :: BarUnit anno Pitch dur 
+            -> Pitch 
+            -> (BarUnit anno Pitch dur, Pitch)
+relpBarUnit = accumMapL relpCExpr 
 
 
-alterPitch :: HasPitch pch => Pitch -> pch -> pch
-alterPitch p0 pch = setPitch p1 pch
-  where
-    p  = getPitch pch
-    p1 = changeOctave p0 p 
+relpCExpr  :: CExpr anno Pitch dur 
+           -> Pitch
+           -> (CExpr anno Pitch dur, Pitch)
+relpCExpr (Atomic os)   p0 = let (os',p) = accumMapL relpAExpr os p0 in
+                             (Atomic os', p)
+relpCExpr (N_Plet np e) p0 = let (e',p) = relpCExpr e p0 in (N_Plet np e', p)
+relpCExpr (Beamed e)    p0 = let (e',p) = relpCExpr e p0 in (Beamed e', p)
 
 
+relpAExpr :: AExpr anno Pitch dur 
+          -> Pitch
+          -> (AExpr anno Pitch dur, Pitch)
+relpAExpr (Glyph e)  p0    = let (e',p) = relpGlyph e p0 in (Glyph e', p)
+relpAExpr (Grace os) p0    = let (os',p) = accumMapL relpNote os p0 in
+                             (Grace os', p)
 
-changeOctave :: Pitch -> Pitch -> Pitch
-changeOctave p p' = setOctave (lyOctaveDist p p') p'
-
---------------------------------------------------------------------------------
--- Absolute pitch transformation
-    
--- LilyPond Absolute pitch (4 octaves lower than Mullein)
---
--- Middle C in Mullein is C-octave 5.
--- Middle C in LilyPond is c' - in Mullein terms, after the 
--- absolute pitch transformation, this is C-octave 1, the 
--- octave designator is reduced by 4 to represent the number
--- of apostrophes to print (a negative number represents the 
--- number of commas to print, after taking the @abs@ of the 
--- value).
--- 
--- HOWEVER, printing guitar tablature in absolute mode seems to 
--- take middle c as C (C-octave 0), so 5 has to be subtracted 
--- from the octave designator.
---
--- TODO - find out why this is the case.
--}
-
-type OctaveLy = Int
-
-class ChangePitchLyAbs t where
-  changePitchLyAbs :: HasPitch pch => OctaveLy -> t pch drn -> t pch drn
-
-{- 
-rewritePitchAbs :: (HasPitch pch, ChangePitchLyAbs t)
-                => Int -> Phrase (t pch drn) -> Phrase (t pch drn)
-rewritePitchAbs i = fmap (fmap (changePitchLyAbs i)) 
+relpGlyph :: Glyph anno Pitch dur 
+          -> Pitch
+          -> (Glyph anno Pitch dur, Pitch)
+relpGlyph g p0 = step g where
+  step (GlyNote n t)  = let (n',p) = relpNote n p0 in (GlyNote n' t,p)
+  step (Rest d)       = (Rest d, p0)
+  step (Spacer d)     = (Spacer d, p0)
+  step (Chord os d t) = let (os', p) = accumMapL relpChordPitch os p0 
+                        in (Chord os' d t, p)
 
 
-instance ChangePitchLyAbs (Glyph anno) where
-  changePitchLyAbs i (Note a p d t)   = Note a (displaceOctave i p) d t
-  changePitchLyAbs _ (Rest d)         = Rest d
-  changePitchLyAbs _ (Spacer d)       = Spacer d
-  changePitchLyAbs i (Chord ps d t)   = Chord (map fn ps) d t 
-                                        where fn (a,p) = (a,displaceOctave i p)
-  changePitchLyAbs i (GraceNotes xs)  = GraceNotes (fmap (changePitchLyAbs i) xs)
+relpNote :: Note anno Pitch dur -> Pitch -> (Note anno Pitch dur,Pitch)
+relpNote (Note a p d) p0 = let p' = relpP p0 p in (Note a p' d, p')
 
-instance ChangePitchLyAbs (GraceNote anno) where
-  changePitchLyAbs i (GraceNote a p d)  = GraceNote a (displaceOctave i p) d
-
--}
+relpChordPitch :: ChordPitch anno Pitch -> Pitch -> (ChordPitch anno Pitch, Pitch)
+relpChordPitch (ChordPitch a p) p0 = let p' = relpP p0 p in (ChordPitch a p', p')
 
 
-
+relpP :: Pitch -> Pitch -> Pitch
+relpP p0 p = setOctave (lyOctaveDist p0 p) p
 
