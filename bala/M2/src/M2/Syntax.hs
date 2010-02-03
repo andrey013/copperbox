@@ -160,7 +160,7 @@ type SimpleBarUnit glyph dur = OneList (SkipGlyph glyph dur)
 
 -- For LilyPond...
 
-data SkipGlyph glyph dur = SGlyph   glyph
+data SkipGlyph glyph dur = SGlyph   glyph   !dur
                          | Skip     !dur
   deriving (Eq,Show)
 

@@ -19,6 +19,7 @@ module M2.OneList
     OneList
 
   , toListF
+  , accumMapL
    
   ) where
 
@@ -26,11 +27,9 @@ module M2.OneList
 import Data.Semigroup           -- package: algebra
 
 import Control.Applicative
-import Control.Monad
 import Data.Foldable
 import Data.Monoid
 import Data.Traversable
-import qualified Data.Traversable   as T
 
 
 infixr 5 :<
@@ -52,6 +51,15 @@ instance Foldable OneList where
   foldMap f (One a)     = f a
   foldMap f (a :< as)   = f a `mappend` foldMap f as
 
+  foldr f b0 = step b0 where
+    step b (One a)   = f a b
+    step b (a :< as) = f a (step b as)
+
+  foldl f b0 = step b0 where
+    step b (One a)   = f b a
+    step b (a :< as) = step (f b a) as
+
+
 instance Traversable OneList where
   traverse f (One a)    = One  <$> f a
   traverse f (a :< as)  = (:<) <$> f a <*> traverse f as
@@ -67,3 +75,11 @@ toListF :: (a -> b) -> OneList a -> [b]
 toListF f = step where
   step (One x) = [f x]
   step (x :< xs) = f x : step xs
+
+
+accumMapL :: (x -> st -> (y,st)) -> OneList x -> st -> (OneList y,st)
+accumMapL f (One x)   st = let (y,st') = f x st in (One y,st')
+accumMapL f (x :< xs) st = (y :< ys,st'')
+                           where (y, st')  = f x st
+                                 (ys,st'') = accumMapL f xs st'
+

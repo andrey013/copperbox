@@ -100,6 +100,41 @@ simpleOverlay = step . getBarDoc where
 --------------------------------------------------------------------------------
 -- Rewrite Duration
 
+-- LilyPond has a shorthand notation thats a variation on 
+-- run-length-encoding - successive equal durations are elided.
+--
+-- For (post-)composabilty the first note in a bar should be  
+-- printed with a duration regardless of the duration of its
+-- predecessor.
+--
+-- Also it doesn't seem useful to 'compact' dotted durations.
+-- (explanation needed! [Currently, I've forgetten why...])
+--
+
+
+doptBarUnit :: BarUnit anno pch Duration
+           -> Duration
+           -> (BarUnit anno pch (Maybe Duration), Duration)
+doptBarUnit = accumMapL doptCExpr
+
+doptCExpr  :: CExpr anno pch Duration
+           -> Duration
+           -> (CExpr anno pch (Maybe Duration), Duration)
+doptCExpr ce d0 = step ce where
+  step (Atomic os)      = let (os',st)  = accumMapL doptAExpr os d0
+                          in (Atomic os', st)
+  step (N_Plet np expr) = let (expr',st) = doptCExpr expr d0 in (N_Plet np expr', st)
+  step (Beamed expr)    = let (expr',st) = doptCExpr expr d0 in (Beamed expr', st)
+  
+
+doptAExpr :: AExpr anno pch Duration
+          -> Duration
+          -> (AExpr anno pch (Maybe Duration), Duration)
+doptAExpr ae d0 = step ae where
+  step (Glyph e)        = let (e',st) = doptGlyph e d0 in (Glyph e', st)
+  step (Grace os)       = let (os',st) = accumMapL doptNote os d0
+                          in (Grace os',st)
+
 
 doptGlyph :: Glyph anno pch Duration 
           -> Duration 
@@ -122,60 +157,74 @@ doptD d st | d == st && not (isDotted d) = (Nothing,st)
            | otherwise                   = (Just d,d) 
 
 
+doptSimpleBarUnit :: SimpleBarUnit glyph Duration
+                  -> Duration
+                  -> (SimpleBarUnit glyph (Maybe Duration), Duration)
+doptSimpleBarUnit = accumMapL doptSkipGlyph
+
+
+doptSkipGlyph :: SkipGlyph glyph Duration
+              -> Duration
+              -> (SkipGlyph glyph (Maybe Duration), Duration)
+doptSkipGlyph gly d0 = step gly  where
+  step (SGlyph g d) = let (d',st) = doptD d d0 in (SGlyph g d',st)
+  step (Skip d)     = let (d',st) = doptD d d0 in (Skip d',st)
+
+--------------------------------------------------------------------------------
+-- Rewrite Pitch
+
+-- Absolute 
+
+-- LilyPond Absolute pitch (4 octaves lower than Mullein)
+-- TODO is Mullein same as Haskore??
+--
+-- Middle C in Mullein is C-octave 5.
+-- Middle C in LilyPond is c' - in Mullein terms, after the 
+-- absolute pitch transformation, this is C-octave 1, the 
+-- octave designator is reduced by 4 to represent the number
+-- of apostrophes to print (a negative number represents the 
+-- number of commas to print, after taking the @abs@ of the 
+-- value).
+-- 
+-- HOWEVER, printing guitar tablature in absolute mode seems to 
+-- take middle c as C (C-octave 0), so 5 has to be subtracted 
+-- from the octave designator.
+--
+-- TODO - find out why this is the case.
+
+
+abspBarUnit :: Int -> BarUnit anno Pitch dur -> BarUnit anno Pitch dur
+abspBarUnit i = fmap (abspCExpr i)
+
+
+abspCExpr  :: Int -> CExpr anno Pitch dur -> CExpr anno Pitch dur
+abspCExpr i (Atomic os)      = Atomic $ fmap (abspAExpr i) os
+abspCExpr i (N_Plet np expr) = N_Plet np $ abspCExpr i expr
+abspCExpr i (Beamed expr)    = Beamed $ abspCExpr i expr
+
+
+abspAExpr :: Int -> AExpr anno Pitch dur -> AExpr anno Pitch dur
+abspAExpr i (Glyph e)      = Glyph $ abspGlyph i e
+abspAExpr i (Grace os)     = Grace $ fmap (abspNote i) os
+
+
+abspGlyph :: Int -> Glyph anno Pitch dur -> Glyph anno Pitch dur
+abspGlyph i (GlyNote n t)  = GlyNote (abspNote i n) t
+abspGlyph _ (Rest d)       = Rest d
+abspGlyph _ (Spacer d)     = Spacer d
+abspGlyph i (Chord os d t) = Chord (fmap (abspChordPitch i) os) d t
+
+
+abspNote :: Int -> Note anno Pitch dur -> Note anno Pitch dur
+abspNote i (Note a p d) = Note a (displaceOctave i p) d
+
+abspChordPitch :: Int -> ChordPitch anno Pitch -> ChordPitch anno Pitch
+abspChordPitch i (ChordPitch a p) = ChordPitch a (displaceOctave i p)
 
 {-
 
 --------------------------------------------------------------------------------
 -- rewriting
-
--- Duration
-
-
--- The duration change for LilyPond is stateful (it is relative 
--- to the previous duration), so we have to pass the state around 
--- c.f. unfoldr or the State monad. 
---
--- Having a simple ChangeDuration class is not useful here. Such 
--- a class might be something like:
---
--- @ class ChangeDuration t where
--- @   changeDuration :: d -> t Duration -> t d
---
-
-class ChangeDurationLyRel t where
-  changeDurationLyRel :: Duration -> t Duration -> (t (Maybe Duration), Duration)
-
- 
-rewriteDuration :: ChangeDurationLyRel t
-                => Phrase (t Duration) -> Phrase (t (Maybe Duration))
-rewriteDuration bars = fst $ runState dZero (mapM (T.mapM fn) bars)
-  where
-    fn gly = inside $ (changeDurationLyRel `flip`  gly)    
-
-
-instance ChangeDurationLyRel (Glyph anno pch) where
-  changeDurationLyRel d0 (Note anno p d t) = (Note anno p (alterDuration d0 d) t, d)
-  changeDurationLyRel d0 (Rest d)          = (Rest (alterDuration d0 d), d)
-  changeDurationLyRel d0 (Spacer d)        = (Spacer (alterDuration d0 d), d)
-  changeDurationLyRel d0 (Chord ps d t)    = (Chord ps (alterDuration d0 d) t, d)
-  changeDurationLyRel d0 (GraceNotes xs)   = (GraceNotes xs',d')
-                                             where (xs',d') = changeGraceD d0 xs
-
-
-
-
-
-changeGraceD :: Duration 
-             -> [GraceNote anno note Duration] 
-             -> ([GraceNote anno note (Maybe Duration)],Duration)
-changeGraceD d0 xs = anaMap fn d0 xs where
-  fn (GraceNote a p drn) d = Just (GraceNote a p (alterDuration d drn),d)
-
-
-alterDuration :: Duration -> Duration -> Maybe Duration
-alterDuration d0 d | d0 == d && not (isDotted d) = Nothing
-                   | otherwise                   = Just d 
-
     
 --------------------------------------------------------------------------------
 -- Relative Pitch
