@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -18,8 +19,10 @@
 
 module M2.Duration 
   (
-  -- * Duration type
+  -- * Duration types
     Duration
+  
+  , DurationMeasure
   
   -- * Classes
   , HasDuration(..)
@@ -74,6 +77,9 @@ data Numeral = N128  | N64   | N32   | N16
 data Duration = DZero
               | D1 { _dNumeral :: Numeral, _dotCount :: Int }
   deriving Eq
+
+-- | R(ational) Duration supports summation.
+type DurationMeasure = Ratio Int
 
 --------------------------------------------------------------------------------
 -- Classes
