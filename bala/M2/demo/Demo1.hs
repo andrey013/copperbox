@@ -19,17 +19,19 @@ import M2.Unfold
 import Data.Ratio
 
 instance NumMeasured Int where
-  type Measurement Int = Int
-  nmeasure i = i
+  type Measurement Int = DurationMeasure
+  nmeasure i = (fromIntegral i)%1
 
-demo1 = segStep [2,2::Int,3] (4::Int) 
+demo1 = segStep [2,2,3::Int] (4::DurationMeasure) 
 
+
+sdemo1 = beam1 (4%1) [2,1,1,4,4::Int]
 
 demo2 :: [[Int]]
-demo2 = segment [2,2,4,2,1,3] [4,4,4,4,4,4]
+demo2 = segment [2,2,2,4,2,1,3] [4,4,4,4,4,4::DurationMeasure]
 
-demo2' :: ([Int], (CB Int,[Int]))
-demo2' = segStep [4,2,1,3] 4 -- [4,4,4,4,4,4,4,4]
+-- demo2' :: ([Int], (CB Int,[Int]))
+demo2' = segStep [4,2,1,3::Int] (4::DurationMeasure) -- [4,4,4,4,4,4,4,4]
 
 demo3 :: [[Int]]
 demo3 = segment [1,2,3,4,5,6] [4,4,4,4,4,4]
@@ -38,7 +40,7 @@ demo3 = segment [1,2,3,4,5,6] [4,4,4,4,4,4]
 
 
 asplitAt :: Int -> [a] -> ([a],[a])
-asplitAt i xs = post $ aunfoldr phi (i,xs) where
+asplitAt i xs = post $ aUnfoldr phi (i,xs) where
   phi (i,a:as) | i > 0  = AYield a (i-1,as)
   phi s                 = ADone s   
 
@@ -47,7 +49,7 @@ asplitAt i xs = post $ aunfoldr phi (i,xs) where
 demoU1 = asplitAt 4 [1..10]
 
 asplitAt2 :: Int -> [a] -> ([a],[a])
-asplitAt2 i xs = post $ aunfoldMap phi i xs where
+asplitAt2 i xs = post $ aUnfoldMap phi i xs where
   phi a i | i > 0     = AYield a (i-1)
           | otherwise = ADone 0
 
@@ -64,3 +66,24 @@ asplitAt3 = apoUnfoldMap phi where
 
 demoU3 = asplitAt3 4 [1..10]
 
+
+filterU1 :: (a -> Bool) -> [a] -> [a]
+filterU1 p = skipUnfoldr phi where
+  phi []                 = SDone
+  phi (a:as) | p a       = SYield a as
+             | otherwise = SSkip as
+
+
+demoF1 = filterU1 even [1..20]
+
+ 
+-- Don't need the state for this one 
+filterU2 :: (a -> Bool) -> [a] -> [a]
+filterU2 p = fst . skipUnfoldMap phi ()  where
+  phi a st  | p a       = SYield a st
+            | otherwise = SSkip st
+
+
+demoF2 = filterU2 even [1..20]
+
+ 

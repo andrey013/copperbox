@@ -19,6 +19,11 @@ module M2.OneList
   (
     OneMany
   , OneList
+
+  , one
+  , cons
+  , fromList
+
   , toListF
   , accumMapL
   , isOne
@@ -39,6 +44,9 @@ type OneMany a = OneList a
 
 data OneList a = One a | Many a (OneList a)
   deriving (Eq)
+
+--------------------------------------------------------------------------------
+-- Instances
 
 instance Show a => Show (OneList a) where
   show = ('{':) . ($ []) . step where
@@ -72,6 +80,23 @@ instance Semigroup (OneList e) where
   (One a)     `append` bs  = Many a bs
   (Many a as) `append` bs  = Many a (as `append` bs)
 
+--------------------------------------------------------------------------------
+-- | Construct One.
+one :: a -> OneMany a
+one = One
+
+
+-- | Prepend an element. Obviously this transforms a One to a Many.
+cons :: a -> OneMany a -> OneMany a
+cons x xs   = Many x xs
+
+
+-- | Construct Many. Not this function throws a error if the list has
+-- zero or one elements
+fromList :: [a] -> OneMany a
+fromList []   = error "OneList.fromList: cannot build Many from empty list"
+fromList [a]  = One a
+fromList (a:as) = Many a (fromList as)
 
 
 toListF :: (a -> b) -> OneList a -> [b]

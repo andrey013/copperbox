@@ -21,9 +21,12 @@ module M2.Unfold
   , apoUnfoldMap
   
   , AStep(..)
-  , aunfoldr
-  , aunfoldMap
+  , aUnfoldr
+  , aUnfoldMap
 
+  , SStep(..)
+  , skipUnfoldr
+  , skipUnfoldMap
 
   ) where
 
@@ -59,16 +62,14 @@ data AStep a st = AYield a !st
   deriving (Eq,Show)
 
 
-aunfoldr :: (st -> AStep a st) -> st -> ([a],st)
-aunfoldr phi s0 = step $ phi s0 where
+aUnfoldr :: (st -> AStep a st) -> st -> ([a],st)
+aUnfoldr phi s0 = step $ phi s0 where
   step (AYield a st) = (a:as,st') where (as,st') = step (phi st)
   step (ADone st)    = ([],st)
 
 
--- | @anaMap@ is the unfold analogue of accumMapL.
--- We can signal exhaustion early by the Maybe type.                
-aunfoldMap  :: (a -> st -> AStep b st) -> st -> [a] -> ([b],[a],st) 
-aunfoldMap f s0 xs0    = step s0 xs0 where
+aUnfoldMap  :: (a -> st -> AStep b st) -> st -> [a] -> ([b],[a],st) 
+aUnfoldMap f s0 xs0    = step s0 xs0 where
    step st []     = ([],[],st)
    step st (x:xs) = case f x st of
                       ADone st'     -> ([],(x:xs),st')
@@ -76,3 +77,27 @@ aunfoldMap f s0 xs0    = step s0 xs0 where
                                           where (as,ys,st'') = step st' xs  
    
 
+
+--------------------------------------------------------------------------------
+-- Unfold with Skip as per StreamFusion
+
+data SStep a st = SYield a !st
+                | SSkip !st
+                | SDone
+  deriving (Eq,Show)
+
+
+skipUnfoldr      :: (st -> SStep a st) -> st -> [a]
+skipUnfoldr f b0  = step (f b0) where
+   step (SYield a st) = a : step (f st)
+   step (SSkip st)    = step (f st)
+   step SDone         = []
+
+skipUnfoldMap  :: (a -> st -> SStep b st) -> st -> [a] -> ([b],st) 
+skipUnfoldMap f s0 xs0    = step s0 xs0 where
+   step st []     = ([],st)
+   step st (x:xs) = case f x st of
+                      SDone         -> ([],st)
+                      SSkip st'     -> step st' xs 
+                      SYield a st'  -> (a:as,st'') 
+                                          where (as,st'') = step st' xs  

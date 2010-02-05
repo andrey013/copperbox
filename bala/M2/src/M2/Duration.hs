@@ -79,7 +79,7 @@ data Duration = DZero
   deriving Eq
 
 -- | R(ational) Duration supports summation.
-type DurationMeasure = Ratio Int
+type DurationMeasure = Rational
 
 --------------------------------------------------------------------------------
 -- Classes
