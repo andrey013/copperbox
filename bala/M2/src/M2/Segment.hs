@@ -24,7 +24,6 @@ module M2.Segment where
 import M2.Datatypes
 import M2.Duration
 import M2.OneList
-import M2.Unfold
 
 import Data.Ratio
 
@@ -84,21 +83,13 @@ segStep (x:xs) v  = step $ nmeasure x where
           | xd == v   = ([x], (Carry 0, xs))
           | otherwise = (x:xs', ans) where (xs',ans) = segStep xs (v-xd)
 
--- 
-{-
-newSegment :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-           => MeterPattern -> [a] -> ([[OneMany a]],[a],DurationMeasure)
-newSegment ms input = post $ aUnfoldMap phi (0,input) ms where
-  post (ans,_,(cb,rest))    = (ans,rest,cb)
-  phi mp (carry_borrow,inp) = undefined 
--}
 
 
-carryBorrow :: DurationMeasure -> MeterPattern 
+carryBorrow1 :: DurationMeasure -> MeterPattern 
             -> Either MeterPattern DurationMeasure
-carryBorrow dx mp | dx == 0   = Left $ mp
-                  | carry dx  = Left $ dx:mp
-                  | otherwise = step (abs dx) mp 
+carryBorrow1 dx mp | dx == 0   = Left $ mp
+                   | carry dx  = Left $ dx:mp
+                   | otherwise = step (abs dx) mp 
    where
      post []                     = Right 0
      post xs                     = Left xs
@@ -116,12 +107,6 @@ borrow :: DurationMeasure -> Bool
 borrow = (<0)
 
 
-segmentBeam :: [DurationMeasure] -> [a] -> ([[OneMany a]],[a])
-segmentBeam meter_pats xs = interlockAUnfold phi state meter_pats xs 
-  where
-    phi dur x _ = undefined
-    state     = 0
-
 beam1 :: (Measurement a ~ DurationMeasure, NumMeasured a) 
       => DurationMeasure -> [a] -> ([OneMany a],[a],DurationMeasure) 
 beam1 dur = bufferUnfold fromBuffer beamSegStep1 dur where
@@ -129,9 +114,35 @@ beam1 dur = bufferUnfold fromBuffer beamSegStep1 dur where
   fromBuffer xs = Just $ fromList xs
 
 
--- produces notes or beam groups
--- ... the beam groups may not be properly formed as there isn't 
--- an obvious way to handle extremities in this function
+
+beamSegment :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+            => [DurationMeasure] -> [a] -> ([OneMany a],[a])
+beamSegment meter_pats xs = 
+    beamingAUnfold bufferReduce carryBorrow beamSegStep1 meter_pats 0 xs
+
+
+bufferReduce :: [a] -> Maybe (OneMany a)
+bufferReduce [] = Nothing
+bufferReduce xs = Just $ fromList xs
+
+
+carryBorrow :: MeterPattern
+            -> DurationMeasure 
+            -> Maybe (MeterPattern,DurationMeasure)
+carryBorrow mp dx | dx == 0   = post mp
+                  | carry dx  = post $ dx:mp
+                  | otherwise = post $ step (abs dx) mp 
+   where
+     post []                     = Nothing 
+     post (x:xs)                 = Just (xs,x)
+     
+     step _   []                 = []
+     step bor (x:xs) | x >  bor  = (x-bor):xs
+                     | x == bor  = xs
+                     | otherwise = step (bor-x) xs
+ 
+
+
 beamSegStep1 :: (Measurement a ~ DurationMeasure, NumMeasured a) 
              => a -> DurationMeasure -> BStep a (OneMany a) DurationMeasure
 beamSegStep1 _ v | v <= 0 = BDone v
@@ -150,36 +161,34 @@ data BStep interim ans st = BYield ans      !st
                           | BDone           !st
   deriving (Eq,Show)
 
+-- outer is more a state than a list as borrow_carry doesn't
+-- necessary consume it linearly.
 
-
-beamingAUnfold :: forall outer inner interim st ans. Num st =>
+beamingAUnfold :: forall outer_state inner_state a interim ans.
                   ([interim] -> Maybe ans) 
-               -> (st -> [outer] -> [outer])
-               -> (outer -> inner -> st -> BStep interim ans st) 
-               -> st -> [outer] -> [inner] -> ([ans],[inner])
-beamingAUnfold buf_reduce borrow_carry phi st0 outs inns = outer outs inns st0 
+               -> (outer_state -> inner_state -> Maybe (outer_state,inner_state))
+               -> (a -> inner_state -> BStep interim ans inner_state) 
+               -> outer_state -> inner_state -> [a] -> ([ans],[a])
+beamingAUnfold buf_reduce next_state phi outer_st inner_st xs0 = 
+    outer outer_st inner_st xs0
   where
-    outer :: [outer] -> [inner] -> st -> ([ans],[inner])
-    outer []  ys  _    = ([],ys)
-    outer _   []  _    = ([],[])
-    outer os  ys  st   = case borrow_carry st os of
-                           []     -> ([],ys)
-                           (x:xs) -> inner xs (phi x) fifoEmpty ys 0
+    outer :: outer_state -> inner_state -> [a] -> ([ans],[a])
+    outer _   _   []  = ([],[])
+    outer out inn xs  = case next_state out inn of
+        Nothing          -> ([],xs)
+        Just (out',inn') -> inner out' inn' fifoEmpty xs
 
-    inner :: [outer] -> (inner -> st -> BStep interim ans st) 
-                     -> FIFO interim -> [inner] -> st -> ([ans],[inner])
-    inner _    _  stk []     _   = (terminate stk,[])
-    inner next fn stk (y:ys) st  = case fn y st of
-        BYield a st' -> (mbCons pref (a:as'), ys') 
-                        where 
-                          pref      = buf_reduce $ unFIFO stk
-                          (as',ys') = inner next fn fifoEmpty ys st'
-        BPush  b st' -> inner next fn (fifoSnoc stk b) ys st'
-        BDone    st' -> (mbCons pref as', ys') 
-                        where 
-                          pref      = buf_reduce $ unFIFO stk
-                          (as',ys') = inner next fn fifoEmpty ys st'
-        
+    inner :: outer_state -> inner_state -> FIFO interim -> [a] -> ([ans],[a])
+    inner _   _   stk []     = (terminate stk,[])
+    inner out inn stk (x:xs) = case phi x inn of
+        BYield a st' -> (mbCons pref (a:as'), xs') 
+                        where pref      = buf_reduce $ unFIFO stk
+                              (as',xs') = inner out st' fifoEmpty xs
+        BPush  b st' -> inner out st' (fifoSnoc stk b) xs
+        BDone    st' -> (mbCons pref as', xs') 
+                        where pref      = buf_reduce $ unFIFO stk
+                              (as',xs') = outer out st' (x:xs)
+
     terminate :: FIFO interim -> [ans]
     terminate stk       = maybe [] return $ buf_reduce (unFIFO stk)
 
