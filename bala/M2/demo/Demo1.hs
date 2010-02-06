@@ -86,4 +86,20 @@ filterU2 p = fst . skipUnfoldMap phi ()  where
 
 demoF2 = filterU2 even [1..20]
 
- 
+
+--------------------------------------------------------------------------------
+
+
+demoMul = multiUnfold [f1,f2] 0 where
+   f1 n | n == 5     = Done
+        | otherwise = Yield 'a' (n+1)
+
+   f2 n | n == 10    = Done
+        | otherwise = Yield 'b' (n+1)
+
+
+demoInt01 :: [Int]
+demoInt01 = interlockUnfold phi [2,4,10] 0 where
+  phi n i | i == n    = Done     -- Done with st might be better so (allowing reset)
+          | otherwise = Yield i (i+1)
+

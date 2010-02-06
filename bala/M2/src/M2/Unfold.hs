@@ -19,7 +19,9 @@ module M2.Unfold
   ( 
     unfoldMap
   , apoUnfoldMap
-  
+  , Step(..)
+  , multiUnfold
+  , interlockUnfold
   , AStep(..)
   , aUnfoldr
   , aUnfoldMap
@@ -27,10 +29,13 @@ module M2.Unfold
   , SStep(..)
   , skipUnfoldr
   , skipUnfoldMap
-
+  , interlockAUnfold
   ) where
 
 
+-- Signatures for mapAccumL and mapAccumR...
+-- mapAccumL :: (acc -> x -> (acc, y)) -> acc -> [x] -> (acc, [y])
+-- mapAccumR :: (acc -> x -> (acc, y)) -> acc -> [x] -> (acc, [y])
 
 -- | @unfoldMap@ is the unfold analogue of accumMapL.
 -- We can signal exhaustion early by the Maybe type.                
@@ -51,6 +56,30 @@ apoUnfoldMap f s0 xs0    = step s0 xs0 where
                       Nothing       -> ([],(x:xs))
                       Just (a,st')  -> (a:as,ys) 
                                           where (as,ys) = step st' xs  
+
+
+
+data Step a st = Yield a !st
+               | Done 
+  deriving (Eq,Show)
+ 
+
+multiUnfold :: [(st -> Step a st)] -> st -> [a]
+multiUnfold phis st0 = step phis st0 where
+  step []     _  = []
+  step (f:fs) st = case f st of
+                     Yield a st' -> a : step (f:fs) st'
+                     Done        -> step fs st
+
+
+interlockUnfold :: (inp -> st -> Step a st) -> [inp] -> st -> [a]
+interlockUnfold phi inp0 st0 = outer inp0 st0 where
+  outer []     _    = []
+  outer (x:xs) st   = inner xs (phi x) st
+
+  inner next fn st  = case fn st of
+                        Yield a st' -> a : inner next fn st' 
+                        Done        -> outer next st
 
 
 --------------------------------------------------------------------------------
@@ -101,3 +130,21 @@ skipUnfoldMap f s0 xs0    = step s0 xs0 where
                       SSkip st'     -> step st' xs 
                       SYield a st'  -> (a:as,st'') 
                                           where (as,st'') = step st' xs  
+
+
+
+
+
+interlockAUnfold :: (outer -> inner -> st -> AStep a st) 
+                 -> st -> [outer] -> [inner] -> ([a],[inner])
+interlockAUnfold phi st0 outs inns = outer outs inns st0 where
+  outer []     ys  _    = ([],ys)
+  outer _      []  _    = ([],[])
+  outer (x:xs) ys  st   = inner xs (phi x) ys st
+
+  inner _    _  []     _   = ([],[])
+  inner next fn (y:ys) st  = case fn y st of
+                               AYield a st' -> (a:as,ys') where
+                                               (as,ys') = inner next fn ys st' 
+                               ADone st'    -> outer next ys st'
+

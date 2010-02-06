@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -84,12 +85,13 @@ segStep (x:xs) v  = step $ nmeasure x where
           | otherwise = (x:xs', ans) where (xs',ans) = segStep xs (v-xd)
 
 -- 
+{-
 newSegment :: (Measurement a ~ DurationMeasure, NumMeasured a) 
            => MeterPattern -> [a] -> ([[OneMany a]],[a],DurationMeasure)
 newSegment ms input = post $ aUnfoldMap phi (0,input) ms where
   post (ans,_,(cb,rest))    = (ans,rest,cb)
   phi mp (carry_borrow,inp) = undefined 
-
+-}
 
 
 carryBorrow :: DurationMeasure -> MeterPattern 
@@ -114,6 +116,11 @@ borrow :: DurationMeasure -> Bool
 borrow = (<0)
 
 
+segmentBeam :: [DurationMeasure] -> [a] -> ([[OneMany a]],[a])
+segmentBeam meter_pats xs = interlockAUnfold phi state meter_pats xs 
+  where
+    phi dur x _ = undefined
+    state     = 0
 
 beam1 :: (Measurement a ~ DurationMeasure, NumMeasured a) 
       => DurationMeasure -> [a] -> ([OneMany a],[a],DurationMeasure) 
@@ -137,10 +144,46 @@ beamSegStep1 x v          = step $ nmeasure x where
 
 --------------------------------------------------------------------------------
 
+
 data BStep interim ans st = BYield ans      !st
                           | BPush  interim  !st 
                           | BDone           !st
   deriving (Eq,Show)
+
+
+
+beamingAUnfold :: forall outer inner interim st ans. Num st =>
+                  ([interim] -> Maybe ans) 
+               -> (st -> [outer] -> [outer])
+               -> (outer -> inner -> st -> BStep interim ans st) 
+               -> st -> [outer] -> [inner] -> ([ans],[inner])
+beamingAUnfold buf_reduce borrow_carry phi st0 outs inns = outer outs inns st0 
+  where
+    outer :: [outer] -> [inner] -> st -> ([ans],[inner])
+    outer []  ys  _    = ([],ys)
+    outer _   []  _    = ([],[])
+    outer os  ys  st   = case borrow_carry st os of
+                           []     -> ([],ys)
+                           (x:xs) -> inner xs (phi x) fifoEmpty ys 0
+
+    inner :: [outer] -> (inner -> st -> BStep interim ans st) 
+                     -> FIFO interim -> [inner] -> st -> ([ans],[inner])
+    inner _    _  stk []     _   = (terminate stk,[])
+    inner next fn stk (y:ys) st  = case fn y st of
+        BYield a st' -> (mbCons pref (a:as'), ys') 
+                        where 
+                          pref      = buf_reduce $ unFIFO stk
+                          (as',ys') = inner next fn fifoEmpty ys st'
+        BPush  b st' -> inner next fn (fifoSnoc stk b) ys st'
+        BDone    st' -> (mbCons pref as', ys') 
+                        where 
+                          pref      = buf_reduce $ unFIFO stk
+                          (as',ys') = inner next fn fifoEmpty ys st'
+        
+    terminate :: FIFO interim -> [ans]
+    terminate stk       = maybe [] return $ buf_reduce (unFIFO stk)
+
+
 
 bufferUnfold :: ([interim] -> Maybe ans) 
              -> (a -> st -> BStep interim ans st) 
