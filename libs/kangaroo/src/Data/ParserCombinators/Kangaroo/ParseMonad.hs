@@ -16,25 +16,34 @@
 
 module Data.ParserCombinators.Kangaroo.ParseMonad 
   (
-    GenKangaroo
+
+  -- * Parser types
+    GenKangaroo         -- don't export outside the package
   , ParseErr
-  , RegionCoda(..)      -- re-export
-  , RegionName          -- re-export
-    
-  , getUserSt
-  , putUserSt
-  , modifyUserSt
 
-  , throwErr
+  -- * Region types
+  , RegionCoda(..)
+  , RegionName    
+
+  -- * Monadic run function
+  , runGenKangaroo      -- don't export outside the package
+
+  -- * Lift IO actions
   , liftIOAction
-  , withSuccess
-  , runGenKangaroo
 
+  -- * Non proper morphisms    
+  , throwErr            -- don't export outside the package
+  , getUserSt           -- don't export outside the package
+  , putUserSt           -- don't export outside the package
+  , modifyUserSt        -- don't export outside the package
+
+  -- * Error reporting and exception handling
   , reportError
   , substError
 
   -- * Primitive parsers
   , word8
+  , satisfy
   , checkWord8
   , opt 
 
@@ -78,13 +87,17 @@ type St    = ParseStack
 type Env   = ImageData    
 
 
--- Kangaroo is not a transformer as IO is always at the 
+-- | Kangaroo is not a transformer as IO is always at the 
 -- \'bottom\' of the effect stack. Like the original Parsec it is
 -- parametric on user state (refered to as ust).
 --
 newtype GenKangaroo ust a = GenKangaroo { 
           getGenKangaroo :: Env -> St -> ust -> IO (Either ParseErr a, St, ust) }
           
+
+--------------------------------------------------------------------------------
+-- Instances and helpers
+
 
 fmapKang :: (a -> b) -> GenKangaroo ust a -> GenKangaroo ust b
 fmapKang f (GenKangaroo x) = GenKangaroo $ \env st ust -> 
@@ -130,14 +143,21 @@ instance Applicative (GenKangaroo ust) where
 
 -- I don't think Kangaroo has natural implementations of 
 -- Alternative or MonadPlus.
--- My 'proposition' is that the sort of parsing that Kangaroo 
+--
+-- My proposition is that the sort of parsing that Kangaroo 
 -- intends to provide you always now want you want hence there 
 -- is no inbuilt backtracking or support for list-of-successes.
 
+--------------------------------------------------------------------------------
+-- Run...
 
-
-
-runGenKangaroo :: GenKangaroo ust a -> ust -> FilePath -> IO (Either ParseErr a,ust)
+-- | Primitive monadic run function - other modules should export
+-- type specific specializations of this function...
+--
+runGenKangaroo :: GenKangaroo ust a 
+               -> ust 
+               -> FilePath 
+               -> IO (Either ParseErr a,ust)
 runGenKangaroo p user_state filename = 
     withBinaryFile filename ReadMode $ \ handle -> 
       do { sz                 <- hFileSize handle
@@ -156,6 +176,8 @@ runGenKangaroo p user_state filename =
     answer (Right ans) _          = Right ans
 
 
+--------------------------------------------------------------------------------
+-- Non proper morphisms 
 
 throwErr  :: ParseErr -> GenKangaroo ust a
 throwErr msg = GenKangaroo $ \_ st ust -> return (Left msg, st, ust)
@@ -210,8 +232,13 @@ bracketRegion i = bracketM_ pushM popM
     popM         = getSt >>= \st -> putSt (pop st)
 
 
+--------------------------------------------------------------------------------
+-- Lift IO actions - we are in the IO 
+
+-- | Lift an IO action into the Kangaroo monad.
+--
 liftIOAction :: IO a -> GenKangaroo ust a
-liftIOAction ma = GenKangaroo $ \_ st ust -> 
+liftIOAction ma = GenKangaroo $ \ _env st ust -> 
     ma >>= \a -> return (Right a, st, ust) 
 
 
@@ -220,9 +247,12 @@ liftIOAction ma = GenKangaroo $ \_ st ust ->
 -- Helpers
 
 --------------------------------------------------------------------------------
--- 
+-- Error reporting 
 
-
+-- | Report a parse error.
+--
+-- Source position is appended to the supplied error message
+--
 reportError :: ParseErr -> GenKangaroo ust a
 reportError s = do 
     posn <- getPos
@@ -236,18 +266,20 @@ reportError s = do
                          ]
 
 
-
+-- | 'substError' : @ parser * error_msg -> parser@
+--
+-- 'substError' is equivalent to Parsec\'s @\<?\>@ combinator.
+--
+-- Run the supplied parser, if the parse succeeds return the 
+-- result, otherwise override the original error message with
+-- the supplied @error_msg@.
+--
 substError :: GenKangaroo ust a -> ParseErr -> GenKangaroo ust a
 substError p msg = GenKangaroo $ \env st ust -> 
     (getGenKangaroo p) env st ust >>= \ ans -> 
       case ans of
         (Left _, st', ust')  -> return (Left msg, st', ust')
         okay                 -> return okay
-
-
-withSuccess :: Bool -> ParseErr -> GenKangaroo ust a -> GenKangaroo ust a
-withSuccess False msg _  = throwErr msg
-withSuccess True  _   mf = mf
 
 
 --------------------------------------------------------------------------------
@@ -268,8 +300,24 @@ word8 = do
     advancePos1
     return a
 
+-- | 'satisfy' : @ predicate -> parser @
+--
+-- Parse a single byte and apply the predicate to it. On @True@ 
+-- return the parsed byte, on @False@ throw a parse-error with 
+-- 'reportError'.
+--
+satisfy :: (Word8 -> Bool) -> GenKangaroo ust Word8
+satisfy p = word8 >>= \x -> if p x then return x else reportError $ "satisfy"
 
--- | Parse 
+
+-- | 'checkWord8' : @ predicate -> opt parser @
+--
+-- Byte parser with backtracking when the match fails.
+-- 
+-- Parse a single byte and apply the predicate to the result. On
+-- success return @(Just answer)@, on failure move the cursor 
+-- position back one and return @Nothing@.
+--
 checkWord8 :: (Word8 -> Bool) -> GenKangaroo ust (Maybe Word8)
 checkWord8 check = word8 >>= \ans ->
     if check ans then return $ Just ans
@@ -278,14 +326,20 @@ checkWord8 check = word8 >>= \ans ->
 
 
 
-
--- no 'try' in Kangaroo... 
--- opt is the nearest to it, opt backtracks the cursor on failure.
+-- | Backtracking parser similar to Parsec\'s @try@.
+--
+-- Try the supplied parser, if the parse succeeds with no
+-- parse-errors  return @(Just answer)@. If a parse-error is 
+-- generated, discard the parse-error, return the cursor to the
+-- initial position and return @Nothing@.
+--
 opt :: GenKangaroo ust a -> GenKangaroo ust (Maybe a)
 opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans -> 
     case ans of
       (Left _, _, ust')    -> return (Right Nothing, st, ust')
       (Right a, st', ust') -> return (Right $ Just a, st', ust')
+
+
 
 
 --------------------------------------------------------------------------------

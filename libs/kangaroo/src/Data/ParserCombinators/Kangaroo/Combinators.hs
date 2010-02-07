@@ -16,8 +16,7 @@
 
 module Data.ParserCombinators.Kangaroo.Combinators 
   ( 
-    satisfy
-  , manyTill
+    manyTill
   , genericManyTill
   , manyTillPC
   , genericManyTillPC
@@ -37,13 +36,6 @@ import Data.ParserCombinators.Kangaroo.Utils
 
 import Control.Applicative
 import Data.Word
-
--- | Parse a single byte and apply the predicate to it.
--- On @True@ return the parsed byte, on @False@ throw a 
--- parse-error with 'reportError'.
-satisfy :: (Word8 -> Bool) -> GenKangaroo ust Word8
-satisfy p = word8 >>= \x -> 
-    if p x then return x else reportError $ "satisfy"
 
 
 manyTill :: GenKangaroo ust a -> GenKangaroo ust b -> GenKangaroo ust [a]

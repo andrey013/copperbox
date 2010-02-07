@@ -16,36 +16,40 @@
 
 module Data.ParserCombinators.Kangaroo.Prim 
   (
+  -- * Char and String parsers
     char
   , anyChar
   , text
   , string
   , cstring
+  
+  -- * Byte parsers
   , w8Zero
   , getBytes
 
-  -- * Word - big endian 
+  -- * Number parsers
+  , int8
+
+  -- ** Word - big endian 
   , word16be
   , word24be
   , word32be
   , word64be
   
-  -- * Word - little endian  
+  -- ** Word - little endian  
   , word16le
   , word24le
   , word32le
 
-  -- * Int 
-  , int8
-
-  -- * Int - big endian
+  -- ** Int - big endian
   , int16be
   , int32be
 
-  -- * Int - little endian  
+  -- ** Int - little endian  
   , int16le
   , int32le
 
+  -- ** IEEE754 single precision float
   , ieeeFloatSP
 
   ) where
@@ -105,6 +109,10 @@ string = (substError `flip` "string" ) . mapM char
 cstring :: GenKangaroo ust String
 cstring = manyTill anyChar w8Zero
 
+--------------------------------------------------------------------------------
+-- Byte parsers
+
+
 -- | Parse the literal @0x00@.
 --
 w8Zero :: GenKangaroo ust Word8
@@ -119,6 +127,32 @@ getBytes :: Integral a => a -> GenKangaroo ust [Word8]
 getBytes i | i < 0     = return []
            | otherwise = count (fromIntegral i) word8
 
+
+--------------------------------------------------------------------------------
+-- Numbers
+
+
+-- | Parse a single byte, returning it as an Int8.
+-- 
+-- The conversion from a byte (0-255) to an Int8 uses the Prelude 
+-- function 'fromIntegral'. 
+-- 
+-- The conversion is summarized as:
+--
+-- > 0..127   = 0..127
+-- > 128      = -128
+-- > 129      = -127
+-- > 130      = -126
+-- > ...
+-- > 254      = -2
+-- > 255      = -1   
+-- >
+-- > wtoi :: Word8 -> Int8
+-- > wtoi i | i < 128   = i
+-- >        | otherwise = -128 + (clearBit i 7)
+--
+int8 :: GenKangaroo ust Int8
+int8 = fromIntegral <$> word8
 
 --------------------------------------------------------------------------------
 -- Data.Word 
@@ -169,27 +203,6 @@ word32le   = w32le     <$> word8 <*> word8 <*> word8 <*> word8
 --------------------------------------------------------------------------------
 -- Data.Int
 
--- | Parse a single byte, returning it as an Int8.
--- 
--- The conversion from a byte (0-255) to an Int8 uses the Prelude 
--- function 'fromIntegral'. 
--- 
--- The conversion is summarized as:
---
--- > 0..127   = 0..127
--- > 128      = -128
--- > 129      = -127
--- > 130      = -126
--- > ...
--- > 254      = -2
--- > 255      = -1   
--- >
--- > wtoi :: Word8 -> Int8
--- > wtoi i | i < 128   = i
--- >        | otherwise = -128 + (clearBit i 7)
---
-int8 :: GenKangaroo ust Int8
-int8 = fromIntegral <$> word8
 
 
 -- | Parse an Int16 in big endian form.

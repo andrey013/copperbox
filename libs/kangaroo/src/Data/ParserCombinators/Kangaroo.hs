@@ -16,27 +16,68 @@
 
 module Data.ParserCombinators.Kangaroo 
   (
-    module Data.ParserCombinators.Kangaroo.Combinators
-  , module Data.ParserCombinators.Kangaroo.ParseMonad
-  , module Data.ParserCombinators.Kangaroo.Prim
-  , Kangaroo
+    Kangaroo
   , runKangaroo
   , parse
+
+  -- Re-exports from ParseMonad
+  -- * Parser types
+  , ParseErr
+
+  -- * Region types
+  , RegionCoda(..)
+  , RegionName    
+
+
+  -- * Lift IO actions
+  , liftIOAction
+
+  -- * Error reporting and exception handling
+  , reportError
+  , substError
+
+  -- * Primitive parsers
+  , word8
+  , satisfy
+  , checkWord8
+  , opt 
+
+  -- * Query the cursor position
+  , position
+  , region
+  , atEnd
+  , lengthRemaining
+  , regionSize
+
+  -- * Parse within a region
+  , intraparse
+  , advance
+  , advanceRelative
+  , restrict
+  , restrictToPos
+   
+  -- * Debug
+  , printHexAll
+  , printRegionStack 
+
+  , module Data.ParserCombinators.Kangaroo.Combinators
+  , module Data.ParserCombinators.Kangaroo.Prim
+
+
   ) where
 
 import Data.ParserCombinators.Kangaroo.Combinators
-import Data.ParserCombinators.Kangaroo.ParseMonad hiding 
-    ( GenKangaroo, getUserSt, putUserSt, modifyUserSt )
-import qualified Data.ParserCombinators.Kangaroo.ParseMonad as PM
+import Data.ParserCombinators.Kangaroo.ParseMonad
 import Data.ParserCombinators.Kangaroo.Prim
 
 
-type Kangaroo a = PM.GenKangaroo () a
+type Kangaroo a = GenKangaroo () a
 
 runKangaroo :: Kangaroo a -> FilePath -> IO (Either ParseErr a)
 runKangaroo p filename = runGenKangaroo p () filename >>= \(a,_) -> return a
 
--- jsut runKangaroo here
+-- just runKangaroo here
+
 parse :: Kangaroo a -> FilePath -> IO (Either ParseErr a)
 parse = runKangaroo 
 

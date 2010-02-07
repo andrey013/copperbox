@@ -31,7 +31,8 @@ description:
   Changelog:
   .
   0.3.0 Documented the primitive parsers. @char@ renamed @anyChar@
-  to match Parsec\'s convention.
+  to match Parsec\'s convention. Rationalized exports from 
+  ParseMonad module.
   .
   0.2.0 Changes to ParseMonad - parsing within a region simplified, 
   temporarily added JoinPrint.

@@ -16,25 +16,65 @@
 
 module Data.ParserCombinators.KangarooWriter
   (
-    module Data.ParserCombinators.Kangaroo.Combinators
-  , module Data.ParserCombinators.Kangaroo.ParseMonad
-  , module Data.ParserCombinators.Kangaroo.Prim
-  , Kangaroo
+
+    Kangaroo
   , parse
   , runKangaroo
   , tell
 
+  -- Re-exports from ParseMonad
+  -- * Parser types
+  , ParseErr
+
+  -- * Region types
+  , RegionCoda(..)
+  , RegionName    
+
+
+  -- * Lift IO actions
+  , liftIOAction
+
+  -- * Error reporting and exception handling
+  , reportError
+  , substError
+
+  -- * Primitive parsers
+  , word8
+  , satisfy
+  , checkWord8
+  , opt 
+
+  -- * Query the cursor position
+  , position
+  , region
+  , atEnd
+  , lengthRemaining
+  , regionSize
+
+  -- * Parse within a region
+  , intraparse
+  , advance
+  , advanceRelative
+  , restrict
+  , restrictToPos
+   
+  -- * Debug
+  , printHexAll
+  , printRegionStack 
+
+  , module Data.ParserCombinators.Kangaroo.Combinators
+  , module Data.ParserCombinators.Kangaroo.Prim
+
+
   ) where
 
 import Data.ParserCombinators.Kangaroo.Combinators
-import Data.ParserCombinators.Kangaroo.ParseMonad hiding 
-    ( GenKangaroo, getUserSt, putUserSt, modifyUserSt )
-import qualified Data.ParserCombinators.Kangaroo.ParseMonad as PM
+import Data.ParserCombinators.Kangaroo.ParseMonad 
 import Data.ParserCombinators.Kangaroo.Prim
 
 import Data.Monoid
 
-type Kangaroo r a = PM.GenKangaroo r a
+type Kangaroo r a = GenKangaroo r a
 
 
 parse :: Monoid w 
@@ -50,4 +90,4 @@ runKangaroo :: Monoid w
 runKangaroo p filename = runGenKangaroo p mempty filename
 
 tell :: Monoid w => w -> Kangaroo w ()
-tell s = PM.getUserSt >>= \w -> PM.putUserSt $ w `mappend` s
+tell s = getUserSt >>= \w -> putUserSt $ w `mappend` s
