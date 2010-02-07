@@ -16,43 +16,12 @@
 
 
 module ZMidi.Utils (
-    w16le
-  , w32le
-  , w16be
-  , w32be
-  , hex2
+    hex2
   , hex4
   , hex8
   ) where
 
-import Data.Bits
-import Data.Word
 import Numeric
-
-w16le :: Word8 -> Word8 -> Word16
-w16le a b = fromIntegral a + (shiftL8 b)
-
-w32le :: Word8 -> Word8 -> Word8 -> Word8 -> Word32
-w32le a b c d = fromIntegral a + (shiftL8 b) + (shiftL16 c) + (shiftL24 d)      
-
-w16be :: Word8 -> Word8 -> Word16
-w16be a b = (shiftL8 a) + fromIntegral b
-     
-            
-w32be :: Word8 -> Word8 -> Word8 -> Word8 -> Word32
-w32be a b c d = (shiftL24 a) + (shiftL16 b) + (shiftL8 c) + fromIntegral d
-
-shiftL8 :: (Bits b, Integral b) => Word8 -> b
-shiftL8 = (`shiftL` 8) . fromIntegral
-
-shiftL16 :: (Bits b, Integral b) => Word8 -> b
-shiftL16 = (`shiftL` 16) . fromIntegral
-
-shiftL24 :: (Bits b, Integral b) => Word8 -> b
-shiftL24 = (`shiftL` 24) . fromIntegral
-
-shiftL32 :: (Bits b, Integral b) => Word8 -> b
-shiftL32 = (`shiftL` 32) . fromIntegral
 
 
 --------------------------------------------------------------------------------

@@ -57,7 +57,10 @@ import Numeric (showHex)
 
 
 
-data MidiFile = MidiFile Header (Seq Track)
+data MidiFile = MidiFile { 
+      mf_header         :: Header,
+      mf_tracks         :: Seq Track
+    }
   deriving (Eq,Show)
 
 -- | @'Header' fmt nt td@ 
@@ -67,13 +70,19 @@ data MidiFile = MidiFile Header (Seq Track)
 -- @td@  - @'TimeDivision'@, often 384 or 480 ticks per beat.
 -- The header is the start of a MIDI file, it is indicated by the 
 -- marker \'@MThd@\'.   
-data Header = Header HFormat Word16 TimeDivision
+--
+data Header = Header { 
+      hdr_format        :: HFormat,
+      num_tracks        :: Word16,
+      time_division     :: TimeDivision
+    }
   deriving (Eq,Show)
 
 -- | @'Track' xs@ 
 --
 -- @xs@ - list of @'Message'@. In MIDI files, the start of a track is
 -- indicated by the marker \'@MTrk@\'.  
+--
 newtype Track = Track { getTrack :: Seq Message }
   deriving (Eq,Show)
 
@@ -93,6 +102,7 @@ data HFormat
 -- | @'TimeDivision'@ 
 --
 -- Defines the default unit of time in the MIDI file.
+--
 data TimeDivision 
     -- | frames per second.
     = FPS Word16
@@ -204,7 +214,7 @@ data MetaEvent
     | SequenceNumber      Word16
     -- | @ChannelPrefix chan@ - relay all meta and sysex events to the 
     -- given channel.
-    | ChannelPrefix       Word8
+    | ChannelPrefix       Word8 Word8   -- first w8==1
     -- | @EndOfTrack@ - indicated end of track. 
     | EndOfTrack
     -- | @SetTempo mspqn@ - microseconds per quarter-note.
@@ -226,6 +236,7 @@ data MetaEvent
     
     -- | @SSME length data@ - sequencer specific meta-event.
     | SSME                Word32 [Word8]
+
   deriving (Eq,Show,Ord)
 
 -- | @'ScaleType'@ 

@@ -95,7 +95,7 @@ putMetaEvent (TextEvent ty ss)                =
   
 putMetaEvent (SequenceNumber n)               = out3 0xFF 0x00 2 . outW16 n
   
-putMetaEvent (ChannelPrefix ch)               = out3 0xFF 0x20 1 . out1 ch
+putMetaEvent (ChannelPrefix i ch)             = out3 0xFF 0x20 i . out1 ch
   
 putMetaEvent (EndOfTrack)                     = out3 0xFF 0x2F 0
   

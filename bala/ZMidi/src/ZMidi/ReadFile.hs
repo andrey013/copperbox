@@ -110,6 +110,7 @@ voiceEvent 0xA ch = (NoteAftertouch ch) <$> word8 <*> word8
 voiceEvent 0xB ch = (Controller ch)     <$> word8 <*> word8
 voiceEvent 0xC ch = (ProgramChange ch)  <$> word8 
 voiceEvent 0xD ch = (ChanAftertouch ch) <$> word8 
+voiceEvent 0xE ch = (PitchBend ch)      <$> word16be
 voiceEvent z   _  = reportError $ "voiceEvent " ++ hexStr z 
 
 
@@ -124,6 +125,7 @@ metaEvent 0x04 = textEvent INSTRUMENT_NAME
 metaEvent 0x05 = textEvent LYRICS
 metaEvent 0x06 = textEvent MARKER
 metaEvent 0x07 = textEvent CUE_POINT
+metaEvent 0x20 = ChannelPrefix    <$> word8             <*> word8
 metaEvent 0x2F = EndOfTrack       <$   assertWord8 0  
 metaEvent 0x51 = SetTempo         <$> (assertWord8 3     *> word24be)
 metaEvent 0x54 = SMPTEOffset      <$> (assertWord8 5     *> word8) 
@@ -181,10 +183,6 @@ enumerate (x:xs) i msg | i == 0    = return x
 -}
 
 
-word24be   :: MidiParser Word32
-word24be   = w32be 0 <$> word8 <*> word8 <*> word8
-
-
 word8split :: MidiParser (Word8,Word8) 
 word8split = split <$> word8 
   where
@@ -208,7 +206,7 @@ assertString s = postCheck (text $ length s) (==s) msg
 
 
 getVarlenText :: MidiParser (Word32,String)  
-getVarlenText = countPrefixed getVarlen char
+getVarlenText = countPrefixed getVarlen anyChar
 
 getVarlenBytes :: MidiParser (Word32,[Word8]) 
 getVarlenBytes = countPrefixed getVarlen word8

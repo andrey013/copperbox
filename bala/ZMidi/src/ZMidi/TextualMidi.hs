@@ -3,8 +3,8 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  ZMidi.TextualMidi
--- Copyright   :  (c) Stephen Tetley 2008
--- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+-- Copyright   :  (c) Stephen Tetley 2010
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
@@ -17,54 +17,34 @@
 
 module ZMidi.TextualMidi (
     -- * Print a readable text representation
-    printMidi, ppMidiFile,
-    
-    ppHeader, ppMessage,
+    printMidi 
   
   ) where
 
 
 import ZMidi.Datatypes
+import Text.PrettyPrint.JoinPrint hiding ( length )
+
 
 import qualified Data.Foldable as F
-import Data.Tuple
-import Numeric
-import Text.PrettyPrint.HughesPJ
+import Data.Word
+
+void :: Monad m => m a -> m ()
+void mf = mf >> return ()
 
 
 printMidi :: MidiFile -> IO ()
-printMidi = putStrLn . render . ppMidiFile 
+printMidi (MidiFile hdr tracks)  = do 
+   header hdr 
+   void $ F.foldlM (\i t -> track i t >> return (i+1)) 0 tracks
 
 
-
-
-integral :: Integral a => a -> Doc
-integral = integer . fromIntegral
-
-infixl 6 `hyph`, `dblhyph`
-
-hyph :: Doc -> Doc -> Doc
-x `hyph` y         = x <> text " - " <> y
-
-dblhyph :: Doc -> Doc -> Doc
-x `dblhyph` y         = x <> text " -- " <> y
-
-ppHex :: Integral a => a -> Doc
-ppHex i = text $ showHex i []
-
-
-
-ppMidiFile :: MidiFile -> Doc
-ppMidiFile (MidiFile header tracks)  = ppHeader header $$ tdoc $$ empty
-  where
-    tdoc = fst $ F.foldl fn (empty,0) tracks
-    fn (d,i) t = (d $$ prettyTrack t i, i+1)
-      
-ppHeader :: Header -> Doc
-ppHeader (Header hformat ntrks td) = 
-    text "[Header]" <+> ppHFormat hformat 
-                    `hyph` (integral ntrks <+> text "tracks") 
-                    `hyph` ppTimeDivision td
+header :: Header -> IO () 
+header (Header hformat ntrks td) = renderIO $ 
+    punctuate (text " - ") [ text "[Header]" <+> ppHFormat hformat
+                           , integral ntrks <+> text "tracks"
+                           , ppTimeDivision td
+                           ]
   
 ppHFormat :: HFormat -> Doc
 ppHFormat MF0  = text "Type 0"
@@ -75,87 +55,84 @@ ppTimeDivision :: TimeDivision -> Doc
 ppTimeDivision (FPS i)   = text "fps"   <+> integral i
 ppTimeDivision (TPB i)   = text "ticks" <+> integral i
 
-prettyTrack :: Track -> Int -> Doc
-prettyTrack (Track se) i = 
-    brackets (text "Track" <+> int i) $$ (snd $ F.foldl fn (0,empty) se)
+track :: Int -> Track -> IO ()
+track i (Track se) = do 
+    renderIO $ brackets (text "Track" <+> int i) 
+    void $ F.foldlM fn 0 se
   where
-    fn (gt,doc) msg@(dt,_)  = 
-      (gt+dt, doc $$ (padshow 8 (gt+dt) `hyph` ppMessage msg))    
+    fn gt (dt,evt)  = let (name,d) =  event evt in
+                      do { renderIO $ mkEvent gt dt name d 
+                         ; return (gt+dt)
+                         }
 
 
-ppMessage :: Message -> Doc
-ppMessage (dt,evt) = padshow 5 dt `hyph` ppEvent evt      
+mkEvent :: Word32 -> DeltaTime -> String -> Doc -> Doc
+mkEvent ot dt name rest = let s = text " - " in
+    punctuate s [ padl 10 ' ' (integral ot)
+                , padl 6  ' ' (integral dt)
+                , padr 20 ' ' (text name)
+                , rest]
+
+type EventDescr = (String,Doc)
 
 
-ppEvent :: Event -> Doc
-ppEvent (VoiceEvent e)   = ppVoiceEvent e
-ppEvent (SystemEvent e)  = text "sys"  `dblhyph` ppSystemEvent e
-ppEvent (MetaEvent e)    = text "meta" `dblhyph` ppMetaEvent e
-
-padshow :: Show a => Int -> a -> Doc
-padshow pad a = let s = show a ; dif = pad - length s in
-    text $ replicate dif ' ' ++ s 
-                  
+event :: Event -> EventDescr
+event (VoiceEvent e)   = voiceEvent e
+event (SystemEvent e)  = let (s,d) = systemEvent e in ("sys " ++s, d)
+event (MetaEvent e)    = let (s,d) = metaEvent e in ("meta " ++ s, d)
 
 
 fli :: (Integral a, Show a) => a -> Doc
-fli = padshow 3
+fli = padl 3 ' ' . integral
 
-ppVoiceEvent :: VoiceEvent -> Doc
-ppVoiceEvent (NoteOff ch nt vel)        = 
-    text "note-off" `hyph` fli ch `hyph` fli nt `hyph` fli vel
- 
-ppVoiceEvent (NoteOn ch nt vel)         =
-    text "note-on " `hyph` fli ch `hyph` fli nt `hyph` fli vel
-    
-ppVoiceEvent (NoteAftertouch ch nt val) = 
-    text "note-after-touch" `hyph` fli ch `hyph` fli nt `hyph` fli val
-    
-ppVoiceEvent (Controller ch ty val)     = 
-    text "ctlr" `hyph` fli ch `hyph` fli ty `hyph` fli val
-    
-ppVoiceEvent (ProgramChange ch num)     = 
-    text "pc" `hyph` fli ch `hyph` fli num
-    
-ppVoiceEvent (ChanAftertouch ch val)    = 
-    text "chan-after-touch" `hyph` fli ch `hyph` fli val
-      
-ppVoiceEvent (PitchBend ch val)         = 
-    text "pitch-bend" `hyph` fli ch `hyph` fli val
+voiceEvent :: VoiceEvent -> EventDescr
+voiceEvent (NoteOff ch nt vel)        = ("note-off",    dashInts [ch,nt,vel])
+voiceEvent (NoteOn ch nt vel)         = ("note-on",     dashInts [ch,nt,vel])
+voiceEvent (NoteAftertouch ch nt val) = ("note-after-touch", dashInts [ch,nt,val])
+voiceEvent (Controller ch ty val)     = ("ctlr",        dashInts [ch,ty,val])
+voiceEvent (ProgramChange ch num)     = ("pc",          dashInts [ch,num])
+voiceEvent (ChanAftertouch ch val)    = ("chan-after-touch", dashInts [ch,val])
+voiceEvent (PitchBend ch val)         = ("pitch-bend",  dashInts [fromIntegral ch,val])
 
   
 
-ppSystemEvent :: SystemEvent -> Doc
-ppSystemEvent (SysEx _ _)    = text "sysex"   -- system exclusive event - length x data
-ppSystemEvent (DataEvent i)  = text "data" <+> ppHex i
+systemEvent :: SystemEvent -> EventDescr
+systemEvent (SysEx _ _)    = ("sysex", empty)   
+systemEvent (DataEvent i)  = ("data",  oxhex2 i)
 
-ppMetaEvent :: MetaEvent -> Doc
-ppMetaEvent (TextEvent ty s)     = ppTextType ty `hyph` doubleQuotes (text s)
-ppMetaEvent (SequenceNumber i)   = text "sequence-number" `hyph` integral i
-ppMetaEvent (ChannelPrefix ch)   = text "channel-prefix"  `hyph` integral ch
-ppMetaEvent (EndOfTrack)         = text "end-of-track"
-ppMetaEvent (SetTempo mspqn)     = text "set-tempo" `hyph` integral mspqn  -- microseconds per quarter-note
-ppMetaEvent (SMPTEOffset h m s f sf) = 
-    text "smpte" `hyph` fli h `hyph` fli m `hyph` fli s `hyph` fli f `hyph` fli sf
-    
-ppMetaEvent (TimeSignature n d m ns) = 
-    text "time-sig" `hyph` fli n `hyph` fli d `hyph` fli m `hyph` fli ns
-    
-ppMetaEvent (KeySignature i sc)  = 
-    text "key-sig" `hyph` integral i `hyph` ppScaleType sc
-       
-ppMetaEvent (SSME i _)           = text "ssme" `hyph` ppHex i <+> text "..."
+metaEvent :: MetaEvent -> EventDescr
+metaEvent (TextEvent ty s)          = (textType ty, dquotes $ text s)
+metaEvent (SequenceNumber i)        = ("sequence-number", integral i)
+metaEvent (ChannelPrefix i ch)      = ("channel-prefix",  dashInts [i,ch])
+metaEvent (EndOfTrack)              = ("end-of-track", empty)
+metaEvent (SetTempo mspqn)          = ("set-tempo", integral mspqn)
+metaEvent (SMPTEOffset h m s f sf)  = ("smpte",     dashInts [h,m,s,f,sf])
+metaEvent (TimeSignature n d m ns)  = ("time-sig",  dashInts [n,d,m,ns])
+metaEvent (KeySignature i sc)       = ("key-sig", integral i `hyph` st) 
+     where st = text $ scaleType sc
+metaEvent (SSME i _)                = ("ssme",    oxhex8 i <+> text "...")
 
-ppScaleType :: ScaleType -> Doc
-ppScaleType MAJOR  = text "major"
-ppScaleType MINOR  = text "minor"
+dashInts :: Integral a => [a] -> Doc
+dashInts = punctuate (text " - ") . map fli
+
+
+scaleType :: ScaleType -> String
+scaleType MAJOR  = "major"
+scaleType MINOR  = "minor"
   
-ppTextType :: TextType -> Doc
-ppTextType GENERIC_TEXT         = text "generic-text" 
-ppTextType COPYRIGHT_NOTICE     = text "copyright-notice"  
-ppTextType SEQUENCE_NAME        = text "sequence-name"
-ppTextType INSTRUMENT_NAME      = text "instrument-name"
-ppTextType LYRICS               = text "lyrics"
-ppTextType MARKER               = text "marker"
-ppTextType CUE_POINT            = text "cue-point"
+textType :: TextType -> String
+textType GENERIC_TEXT         =  "generic-text" 
+textType COPYRIGHT_NOTICE     =  "copyright-notice"  
+textType SEQUENCE_NAME        =  "sequence-name"
+textType INSTRUMENT_NAME      =  "instrument-name"
+textType LYRICS               =  "lyrics"
+textType MARKER               =  "marker"
+textType CUE_POINT            =  "cue-point"
   
+
+infixl 6 `hyph`
+
+hyph :: Doc -> Doc -> Doc
+x `hyph` y         = x <> text " - " <> y
+
+
