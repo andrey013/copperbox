@@ -253,7 +253,11 @@ withSuccess True  _   mf = mf
 --------------------------------------------------------------------------------
 -- Primitive parsers
 
-   
+-- | Parse a single byte.
+--
+-- If the cursor is beyond the end of the current region a 
+-- parse-error is thrown with 'reportError'.
+--
 word8 :: GenKangaroo ust Word8
 word8 = do
     ix               <- getPos
@@ -264,6 +268,8 @@ word8 = do
     advancePos1
     return a
 
+
+-- | Parse 
 checkWord8 :: (Word8 -> Bool) -> GenKangaroo ust (Maybe Word8)
 checkWord8 check = word8 >>= \ans ->
     if check ans then return $ Just ans

@@ -177,9 +177,6 @@ enumerate (x:xs) i msg | i == 0    = return x
 -}
 
 
-word24be   :: MidiParser Word32
-word24be   = w32be 0 <$> word8 <*> word8 <*> word8
-
 
 word8split :: MidiParser (Word8,Word8) 
 word8split = split <$> word8 
@@ -204,7 +201,7 @@ assertString s = postCheck (text $ length s) (==s) msg
 
 
 getVarlenText :: MidiParser (Word32,String)  
-getVarlenText = countPrefixed getVarlen char
+getVarlenText = countPrefixed getVarlen anyChar
 
 getVarlenBytes :: MidiParser (Word32,[Word8]) 
 getVarlenBytes = countPrefixed getVarlen word8

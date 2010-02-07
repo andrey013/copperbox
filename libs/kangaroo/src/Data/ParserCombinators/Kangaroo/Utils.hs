@@ -33,10 +33,11 @@ module Data.ParserCombinators.Kangaroo.Utils
   -- * numbers from Word8 
   , w16be
   , w32be
+  , w64be
 
   , w16le
+  , w24le
   , w32le
-  , w64be
 
   , i16be
   , i32be
@@ -125,10 +126,26 @@ oooo f g = (((f .) .) .) . g
 
 --------------------------------------------------------------------------------
 
+-- fromIntegral on Word8
+-- 0..127   = 0..127
+-- 128      = -128
+-- 129      = -127
+-- 130      = -126
+-- ....
+-- 254      = -2
+-- 255      = -1   
+
+
+-- conviw :: Word8 -> Int8
+-- conviw i | i < 128   = i
+--          | otherwise = -128 + (clearBit i 7)
 
 
 w16le :: Word8 -> Word8 -> Word16
 w16le a b = fromIntegral a + (shiftL8 b)
+
+w24le :: Word8 -> Word8 -> Word8 -> Word32
+w24le a b c = fromIntegral a + (shiftL8 b) + (shiftL16 c)      
 
 w32le :: Word8 -> Word8 -> Word8 -> Word8 -> Word32
 w32le a b c d = fromIntegral a + (shiftL8 b) + (shiftL16 c) + (shiftL24 d)      

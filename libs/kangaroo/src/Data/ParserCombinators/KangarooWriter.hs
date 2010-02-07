@@ -27,12 +27,14 @@ module Data.ParserCombinators.KangarooWriter
   ) where
 
 import Data.ParserCombinators.Kangaroo.Combinators
-import Data.ParserCombinators.Kangaroo.ParseMonad
+import Data.ParserCombinators.Kangaroo.ParseMonad hiding 
+    ( GenKangaroo, getUserSt, putUserSt, modifyUserSt )
+import qualified Data.ParserCombinators.Kangaroo.ParseMonad as PM
 import Data.ParserCombinators.Kangaroo.Prim
 
 import Data.Monoid
 
-type Kangaroo r a = GenKangaroo r a
+type Kangaroo r a = PM.GenKangaroo r a
 
 
 parse :: Monoid w 
@@ -48,4 +50,4 @@ runKangaroo :: Monoid w
 runKangaroo p filename = runGenKangaroo p mempty filename
 
 tell :: Monoid w => w -> Kangaroo w ()
-tell s = getUserSt >>= \w -> putUserSt $ w `mappend` s
+tell s = PM.getUserSt >>= \w -> PM.putUserSt $ w `mappend` s

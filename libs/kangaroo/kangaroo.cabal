@@ -1,5 +1,5 @@
 name:             kangaroo
-version:          0.2.0
+version:          0.3.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -29,6 +29,9 @@ description:
   own package
   .
   Changelog:
+  .
+  0.3.0 Documented the primitive parsers. @char@ renamed @anyChar@
+  to match Parsec\'s convention.
   .
   0.2.0 Changes to ParseMonad - parsing within a region simplified, 
   temporarily added JoinPrint.
