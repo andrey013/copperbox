@@ -58,14 +58,14 @@ archiveObject = do
     liftIOAction $ putStrLn ("size " ++ show sz)
     body    <- count sz word8
     pos     <- position
-    when (pos `mod` 2 /= 0) (char >> return ())   -- should be a newline 
+    when (pos `mod` 2 /= 0) (anyChar >> return ())   -- should be a newline 
     return $ ArchiveObject 
                 { ar_header         = header
                 , ar_body           = body
                 }
 
 paddedNumber :: (Read a, Integral a) => Int -> Parser a
-paddedNumber i = liftM fn $ count i char
+paddedNumber i = liftM fn $ count i anyChar
   where
     fn = read . takeWhile isDigit
 

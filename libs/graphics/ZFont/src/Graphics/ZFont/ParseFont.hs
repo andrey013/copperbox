@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.ZFont.ParseFont
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -99,7 +99,7 @@ offsetTable = OffsetTable <$> sfntVersion <*> uint16
                           <*> uint16      <*> uint16 <*> uint16
 
 sfntVersion :: Parser SfntVersion
-sfntVersion = count 4 char >>= fn where 
+sfntVersion = count 4 anyChar >>= fn where 
     fn s | s == ['\0','\1','\0','\0'] = return SFNT_1_0
          | s == "OTTO"                = return OTTO
          | otherwise                  = err s
@@ -150,13 +150,13 @@ cmapSubtableHeader = CmapSubtableHeader <$> uint16 <*> uint16 <*> uint32
 cmapSubtableBody :: Parser CmapSubtableBody
 cmapSubtableBody = uint16 >>= subtable
   where
-    subtable 0  = CmapFmt0  <$> cmapFormat0
-    subtable 2  = CmapFmt2  <$> cmapFormat2
-    subtable 4  = CmapFmt4  <$> cmapFormat4
-    subtable 6  = CmapFmt6  <$> cmapFormat6
-    subtable 8  = CmapFmt8  <$> (uint16 *> cmapFormat8)
-    subtable 10 = CmapFmt10 <$> (uint16 *> cmapFormat10)
-    subtable 12 = CmapFmt12 <$> (uint16 *> cmapFormat12)
+    subtable 0  = liftM CmapFmt0  cmapFormat0
+    subtable 2  = liftM CmapFmt2  cmapFormat2
+    subtable 4  = liftM CmapFmt4  cmapFormat4
+    subtable 6  = liftM CmapFmt6  cmapFormat6
+    subtable 8  = liftM CmapFmt8  (uint16 >> cmapFormat8)
+    subtable 10 = liftM CmapFmt10 (uint16 >> cmapFormat10)
+    subtable 12 = liftM CmapFmt12 (uint16 >> cmapFormat12)
     subtable n  = reportError $ "unrecognized cmap subtable " ++ show n
 
 cmapFormat0 :: Parser CmapFormat0
@@ -171,8 +171,9 @@ format2_Subheader = Format2_SubHeader <$> uint16 <*> uint16
                                       <*> int16  <*> uint16
 
 subtableRestrict :: Int -> Uint16 -> Parser a -> Parser a
-subtableRestrict fmt n = 
-    restrict "cmap-subtable" Alfermata (fromIntegral $ n - subheader_len) 
+subtableRestrict fmt n p = do
+    liftIOAction $ putStrLn $  "subtableRestrict " ++ show (n - subheader_len)
+    restrict "cmap-subtable rest" Alfermata (fromIntegral $ n - subheader_len) p
   where
     subheader_len = if elem fmt [8,10,12] then fmt_resv_len else fmt_plus_len
     fmt_plus_len  = 4
@@ -510,7 +511,7 @@ nameRecord str_data_offset = do
     pos     <- uint16
     let str_loc = str_data_offset + fromIntegral pos
     str     <- intraparse "name-record" Dalpunto           str_loc 
-                                        (fromIntegral len) (runOn char)
+                                        (fromIntegral len) (runOn anyChar)
     return $ NameRecord 
                 { nr_platform_id    = pid
                 , nr_encoding_id    = enc

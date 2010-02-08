@@ -13,7 +13,7 @@ main = demo
 demo = do 
     (ans,log) <- runParseFont "./data/GenBasR.ttf"
     putStrLn log
-    either print tablesPrint ans
+    either putStrLn tablesPrint ans
   where
     tablesPrint font = do { print $ ff_head_table font
                        --   ; print $ ff_name_table font

@@ -135,7 +135,7 @@ dosHeader = do
 
 
 pecoffSignature :: Parser (Char,Char,Char,Char) 
-pecoffSignature = liftM4 (,,,) char char char char
+pecoffSignature = liftM4 (,,,) anyChar anyChar anyChar anyChar
 
 
 
@@ -259,7 +259,7 @@ sectionHeaders n = build <$> count n sectionHeader
 
 sectionHeader :: Parser SectionHeader
 sectionHeader = do
-    name                <- liftM stringTruncate (count 8 char)  
+    name                <- liftM stringTruncate (count 8 anyChar)  
                                  -- this should be a combinator
 
     virtual_size        <- word32le

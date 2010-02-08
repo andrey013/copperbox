@@ -3,8 +3,8 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Graphics.ZFont.Utils
--- Copyright   :  (c) Stephen Tetley 2009
--- License     :  BSD-style (as per the Haskell Hierarchical Libraries)
+-- Copyright   :  (c) Stephen Tetley 2009-2010
+-- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable

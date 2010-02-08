@@ -18,14 +18,16 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base < 5, kangaroo 
+  build-depends:      base < 5, 
+                      containers,
+                      kangaroo >= 0.3.0 && < 0.4
 
   
   exposed-modules:
     Graphics.ZFont.KangarooAliases,
     Graphics.ZFont.ParseFont,
     Graphics.ZFont.Syntax,
-    Graphics.ZFont.Utils,
+    Graphics.ZFont.Utils
 
   other-modules:
   
