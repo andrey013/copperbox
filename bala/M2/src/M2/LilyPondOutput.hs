@@ -44,10 +44,10 @@ oStaffPhrase f            = Phrase . map (oStaffBar f) . getPhrase
 oStaffBar :: (pch -> Doc) -> StaffBar anno pch (Maybe Duration) -> LyBar
 oStaffBar f               = Bar . oBarUnit f . getBar
 
-oBarUnit :: (pch -> Doc) -> BarUnit anno pch (Maybe Duration) -> Doc
+oBarUnit :: (pch -> Doc) -> StaffBarUnit anno pch (Maybe Duration) -> Doc
 oBarUnit f os             = hsep $ toListF (oCExpr f) os
 
-oCExpr :: (pch -> Doc) -> CExpr anno pch (Maybe Duration) -> Doc
+oCExpr :: (pch -> Doc) -> StaffCExpr anno pch (Maybe Duration) -> Doc
 oCExpr f (Atomic os)      = hsep $ toListF (oAExpr f) os 
 oCExpr _ (N_Plet _ _)     = error $ "oCExpr - N_Plet to do"
 oCExpr f (Beamed e)       = beamForm [oCExpr f e]
@@ -102,18 +102,18 @@ simpleOverlay = step . getBarDoc where
 -- predecessor.
 --
 -- Also it doesn't seem useful to 'compact' dotted durations.
--- (explanation needed! [Currently, I've forgetten why...])
+-- (explanation needed! [Currently, I've forgotten why...])
 --
 
 
-doptBarUnit :: BarUnit anno pch Duration
+doptBarUnit :: StaffBarUnit anno pch Duration
            -> Duration
-           -> (BarUnit anno pch (Maybe Duration), Duration)
+           -> (StaffBarUnit anno pch (Maybe Duration), Duration)
 doptBarUnit = accumMapL doptCExpr
 
-doptCExpr  :: CExpr anno pch Duration
+doptCExpr  :: StaffCExpr anno pch Duration
            -> Duration
-           -> (CExpr anno pch (Maybe Duration), Duration)
+           -> (StaffCExpr anno pch (Maybe Duration), Duration)
 doptCExpr ce d0 = step ce where
   step (Atomic os)      = let (os',st)  = accumMapL doptAExpr os d0
                           in (Atomic os', st)
@@ -187,11 +187,11 @@ doptSkipGlyph gly d0 = step gly  where
 -- TODO - find out why this is the case.
 
 
-abspBarUnit :: Int -> BarUnit anno Pitch dur -> BarUnit anno Pitch dur
+abspBarUnit :: Int -> StaffBarUnit anno Pitch dur -> StaffBarUnit anno Pitch dur
 abspBarUnit i = fmap (abspCExpr i)
 
 
-abspCExpr  :: Int -> CExpr anno Pitch dur -> CExpr anno Pitch dur
+abspCExpr  :: Int -> StaffCExpr anno Pitch dur -> StaffCExpr anno Pitch dur
 abspCExpr i (Atomic os)      = Atomic $ fmap (abspAExpr i) os
 abspCExpr i (N_Plet np expr) = N_Plet np $ abspCExpr i expr
 abspCExpr i (Beamed expr)    = Beamed $ abspCExpr i expr
@@ -220,15 +220,15 @@ abspChordPitch i (ChordPitch a p) = ChordPitch a (displaceOctave i p)
 
 
 
-relpBarUnit :: BarUnit anno Pitch dur 
+relpBarUnit :: StaffBarUnit anno Pitch dur 
             -> Pitch 
-            -> (BarUnit anno Pitch dur, Pitch)
+            -> (StaffBarUnit anno Pitch dur, Pitch)
 relpBarUnit = accumMapL relpCExpr 
 
 
-relpCExpr  :: CExpr anno Pitch dur 
+relpCExpr  :: StaffCExpr anno Pitch dur 
            -> Pitch
-           -> (CExpr anno Pitch dur, Pitch)
+           -> (StaffCExpr anno Pitch dur, Pitch)
 relpCExpr (Atomic os)   p0 = let (os',p) = accumMapL relpAExpr os p0 in
                              (Atomic os', p)
 relpCExpr (N_Plet np e) p0 = let (e',p) = relpCExpr e p0 in (N_Plet np e', p)

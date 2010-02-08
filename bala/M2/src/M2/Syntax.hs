@@ -27,6 +27,8 @@ module M2.Syntax
 
   , StaffPhrase
   , StaffBar
+  , StaffBarUnit
+  , StaffCExpr
 
   , NonStdPhrase
   , NonStdBar
@@ -73,9 +75,10 @@ type LyBar      = Bar    Doc
 type AbcPhrase  = Phrase Doc
 type AbcBar     = Bar    Doc
 
-type StaffPhrase anno pch dur = Phrase (BarUnit anno pch dur)
-type StaffBar    anno pch dur = Bar    (BarUnit anno pch dur) 
-
+type StaffPhrase  anno pch dur = Phrase (BarUnit (AExpr anno pch dur))
+type StaffBar     anno pch dur = Bar    (BarUnit (AExpr anno pch dur))
+type StaffBarUnit anno pch dur = BarUnit (AExpr anno pch dur) 
+type StaffCExpr   anno pch dur = CExpr   (AExpr anno pch dur)
 
 type NonStdPhrase glyph dur   = Phrase (SimpleBarUnit glyph dur)
 type NonStdBar    glyph dur   = Bar    (SimpleBarUnit glyph dur)
@@ -90,7 +93,7 @@ type NonStdBar    glyph dur   = Bar    (SimpleBarUnit glyph dur)
 -- \glyph\.
 
 
-type BarUnit anno pch dur = OneList (CExpr anno pch dur)
+type BarUnit a = OneList (CExpr a)
 
 
 -- | Contextual expression. This is a sequence of one or more 
@@ -104,13 +107,14 @@ type BarUnit anno pch dur = OneList (CExpr anno pch dur)
 -- n-plets (and n-plets must be recursive).
 --
 
-data CExpr anno pch dur = Atomic  (OneList (AExpr anno pch dur)) 
-                        | N_Plet  N_PletDescr  (CExpr anno pch dur)
-                        | Beamed  (CExpr anno pch dur)
+data CExpr a = Atomic               (OneList a) 
+             | N_Plet  N_PletDescr  (CExpr a)
+             | Beamed               (CExpr a)
   deriving (Eq,Show)
 
 data N_PletDescr = N_PletDescr Int Int
   deriving (Eq,Show) 
+
 
 
 -- Atomic expression - considered to have a single duration.
@@ -120,12 +124,14 @@ data N_PletDescr = N_PletDescr Int Int
 -- its own duration.
  
 data AExpr anno pch dur = Glyph (Glyph anno pch dur)
-                        | Grace (OneList (Note anno pch dur))
+                        | Grace (OneList (Note anno pch dur)) 
    deriving (Eq,Show) 
+
 
 
 --------------------------------------------------------------------------------
 -- Staff Glyphs
+
 
 
 data Glyph anno pch dur = GlyNote  (Note anno pch dur) !Tie
