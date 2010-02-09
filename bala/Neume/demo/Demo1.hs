@@ -18,14 +18,6 @@ import Neume.SyntaxDoc
 import Neume.SyntaxMarkup
 import Neume.SyntaxStaff
 
-{-
-import M2.Bracket
-import M2.Duration
-import M2.LilyPondDoc
-import M2.LilyPondOutput
-import M2.Pitch
-import M2.Syntax
-
 import Data.Ratio
 
 instance NumMeasured Int where
@@ -43,7 +35,9 @@ test03 = beamSegment [4,4,4] [2,2,4,4]
 
 test04 :: ([OneMany Int], [Int])
 test04 = beamSegment [4,4,4,4] [2,2,4,4,2,2]
--}
+
+
+
 
 
 

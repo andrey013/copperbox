@@ -22,6 +22,7 @@ import Neume.Duration
 import Neume.LilyPondDoc
 import Neume.OneList
 import Neume.Pitch
+import Neume.StateMap
 import Neume.SyntaxDoc
 import Neume.SyntaxMarkup
 import Neume.SyntaxStaff
@@ -102,22 +103,22 @@ simpleOverlay = step . getBarDoc where
 -- (explanation needed! [Currently, I've forgotten why...])
 --
 
-{-
+-- Note - seed each bar with the default duration.
+-- This makes scores clearer.
+--
+doptStaffPhrase :: StaffPhrase (Glyph anno pch Duration)
+                -> StaffPhrase (Glyph anno pch (Maybe Duration))
+doptStaffPhrase (StaffPhrase bars) = 
+    StaffPhrase $ map (\x -> fst $ doptBarUnit x default_duration) bars
+  where
+    default_duration = qn 
+
+
 doptBarUnit :: StaffBar (Glyph anno pch Duration)
            -> Duration
            -> (StaffBar (Glyph anno pch (Maybe Duration)), Duration)
-doptBarUnit = fmap (accumMapL doptCExpr)
--}
+doptBarUnit = stmap doptGlyph
 
-doptCExpr  :: CExpr (Glyph anno pch Duration)
-           -> Duration
-           -> (CExpr (Glyph anno pch (Maybe Duration)), Duration)
-doptCExpr ce d0 = step ce where
-  step (Atomic os)      = let (os',st)  = accumMapL doptGlyph os d0
-                          in (Atomic os', st)
-  step (N_Plet np expr) = let (expr',st) = doptCExpr expr d0 in (N_Plet np expr', st)
-  step (Beamed expr)    = let (expr',st) = doptCExpr expr d0 in (Beamed expr', st)
-  
 
 doptGlyph :: Glyph anno pch Duration 
           -> Duration 
@@ -141,12 +142,14 @@ doptD :: Duration -> Duration -> (Maybe Duration, Duration)
 doptD d st | d == st && not (isDotted d) = (Nothing,st)
            | otherwise                   = (Just d,d) 
 
-{-
-doptSimpleBarUnit :: MarkupBar (SkipGlyph gly Duration)
-                  -> Duration
-                  -> (MarkupBar (SkipGlyph gly (Maybe Duration)), Duration)
-doptSimpleBarUnit = fmap (accumMapL doptSkipGlyph)
--}
+
+doptMarkupBar :: MarkupBar (SkipGlyph gly Duration)
+              -> Duration
+              -> (MarkupBar (SkipGlyph gly (Maybe Duration)), Duration)
+doptMarkupBar (MarkupBar os) d0 = (MarkupBar os', d) where 
+    (os',d) = accumMapL doptSkipGlyph os d0
+             
+
 
 doptSkipGlyph :: SkipGlyph glyph Duration
               -> Duration
@@ -177,12 +180,12 @@ doptSkipGlyph gly d0 = step gly  where
 --
 -- TODO - find out why this is the case.
 
-{-
-abspBarUnit :: Int 
-            -> StaffBar (Glyph anno Pitch dur) 
-            -> StaffBar (Glyph anno Pitch dur)
-abspBarUnit i = fmap (abspCExpr i) 
--}
+
+abspStaffBar :: Int 
+             -> StaffBar (Glyph anno Pitch dur) 
+             -> StaffBar (Glyph anno Pitch dur)
+abspStaffBar i (StaffBar os) = StaffBar $ fmap (abspCExpr i) os
+
 
 abspCExpr  :: Int 
            -> CExpr (Glyph anno Pitch dur) 
@@ -210,21 +213,12 @@ abspChordPitch i (ChordPitch a p) = ChordPitch a (displaceOctave i p)
 --------------------------------------------------------------------------------
 -- Relative Pitch
 
+relpStaffPhrase :: StaffBar (Glyph anno Pitch dur)
+                -> Pitch 
+                -> (StaffBar (Glyph anno Pitch dur), Pitch)
+relpStaffPhrase = stmap relpGlyph
 
-{-
-relpBarUnit :: StaffBar (Glyph anno Pitch dur)
-            -> Pitch 
-            -> (StaffBar (Glyph anno Pitch dur), Pitch)
-relpBarUnit bar p = fmap (accumMapL (relpCExpr p)) bar
--}
-
-relpCExpr  :: CExpr (Glyph anno Pitch dur)
-           -> Pitch
-           -> (CExpr (Glyph anno Pitch dur), Pitch)
-relpCExpr (Atomic os)   p0 = let (os',p) = accumMapL relpGlyph os p0 in
-                             (Atomic os', p)
-relpCExpr (N_Plet np e) p0 = let (e',p) = relpCExpr e p0 in (N_Plet np e', p)
-relpCExpr (Beamed e)    p0 = let (e',p) = relpCExpr e p0 in (Beamed e', p)
+                               
 
 
 relpGlyph :: Glyph anno Pitch dur 

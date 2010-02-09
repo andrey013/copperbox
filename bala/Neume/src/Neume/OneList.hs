@@ -19,9 +19,12 @@ module Neume.OneList
   (
     OneMany
   , OneList
+  , ViewOL(..)
 
   , one
   , cons
+  , viewl
+
   , fromList
 
   , toListF
@@ -43,6 +46,9 @@ import Data.Traversable
 type OneMany a = OneList a
 
 data OneList a = One a | Many a (OneList a)
+  deriving (Eq)
+
+data ViewOL a = OneL a | a :<< (OneList a)
   deriving (Eq)
 
 --------------------------------------------------------------------------------
@@ -88,8 +94,12 @@ one = One
 
 -- | Prepend an element. Obviously this transforms a One to a Many.
 cons :: a -> OneMany a -> OneMany a
-cons x xs   = Many x xs
+cons a as   = Many a as
 
+
+viewl :: OneList a -> ViewOL a
+viewl (One a)     = OneL a
+viewl (Many a as) = a :<< as
 
 -- | Construct Many. Not this function throws a error if the list has
 -- zero or one elements

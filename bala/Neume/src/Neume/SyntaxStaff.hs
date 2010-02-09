@@ -36,7 +36,7 @@ module Neume.SyntaxStaff
 
 
 import Neume.OneList
-
+import Neume.StateMap
 
 
 --------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ data ChordPitch anno pch = ChordPitch !anno !pch
 -- Instances
 
 instance Functor StaffPhrase where
-  fmap f (StaffPhrase xs) = StaffPhrase $ map (fmap f) xs
+  fmap f (StaffPhrase xs) = StaffPhrase $ fmap (fmap f) xs
 
 instance Functor StaffBar where
   fmap f (StaffBar os)    = StaffBar $ fmap (fmap f) os
@@ -117,3 +117,17 @@ instance Functor CExpr where
   fmap f (N_Plet d cexpr) = N_Plet d (fmap f cexpr) 
   fmap f (Beamed cexpr)   = Beamed $ fmap f cexpr
 
+
+
+-- StateMap
+instance StateMap StaffPhrase where
+  stmap f (StaffPhrase xs) st = (StaffPhrase xs',st') 
+                                where (xs',st') = stmap (stmap f) xs st
+
+instance StateMap StaffBar where
+  stmap f (StaffBar os) st = (StaffBar os',st') where (os',st') = stmap (stmap f) os st
+
+instance StateMap CExpr where
+  stmap f (Atomic os)   st = (Atomic os',st')   where (os',st') = stmap f os st
+  stmap f (N_Plet d ce) st = (N_Plet d ce',st') where (ce',st') = stmap f ce st
+  stmap f (Beamed ce)   st = (Beamed ce',st')   where (ce',st') = stmap f ce st
