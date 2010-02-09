@@ -1,0 +1,60 @@
+name:             neume
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         A library for generating LilyPond and ABC scores. 
+description:
+  Neume is a library for generating ABC and LilyPond scores. 
+  It aims to generate /good/ quality scores - that's to say the 
+  output should resemble hand-written scores. 
+  .
+  (c) 2010 Stephen Tetley
+
+build-type:         Simple
+stability:          highly unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Demo1.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base < 5, 
+                      containers, 
+                      wl-pprint,
+                      algebra,
+                      monadLib
+                     
+  
+  exposed-modules:
+    Neume.Bracket,
+    Neume.Datatypes,
+    Neume.Doc,
+    Neume.Duration,
+    Neume.LilyPondDoc,
+    Neume.LilyPondOutput,
+    Neume.OneList,
+    Neume.Pitch,
+    Neume.SyntaxDoc,
+    Neume.SyntaxMarkup,
+    Neume.SyntaxStaff,
+    Neume.Utils
+
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:  -Wall 
+  
+  includes: 
+  
+
+  
+  
+  
