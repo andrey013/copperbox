@@ -32,10 +32,16 @@ module Neume.SyntaxStaff
   , ChordPitch(..)
 
 
+  -- * Synonyms
+  , StdGlyph
+  , AnnoGlyph
+
   ) where
 
 
+import Neume.Duration
 import Neume.OneList
+import Neume.Pitch
 import Neume.StateMap
 
 
@@ -102,6 +108,11 @@ type Tie = Bool
 data ChordPitch anno pch = ChordPitch !anno !pch
   deriving (Eq,Show)
 
+
+-- Synonyms
+
+type StdGlyph           = Glyph ()   Pitch Duration
+type AnnoGlyph anno     = Glyph anno Pitch Duration
 
 --------------------------------------------------------------------------------
 -- Instances

@@ -21,6 +21,7 @@ module Neume.Datatypes
   , compoundMeter
   , simpleMeter
   , TimeSignature(..)
+  , MetricalSpec(..)
    
   ) where
 
@@ -67,3 +68,11 @@ data TimeSignature = TimeSignature { ts_meter :: Int , ts_pulse :: Int }
   deriving (Eq,Show)
 
 
+--------------------------------------------------------------------------------
+-- Metrical specification
+
+data MetricalSpec = MetricalSpec { 
+        timeSignature :: TimeSignature,
+        meterPattern  :: MeterPattern
+      }
+  deriving (Eq,Show)

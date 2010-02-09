@@ -106,10 +106,10 @@ simpleOverlay = step . getBarDoc where
 -- Note - seed each bar with the default duration.
 -- This makes scores clearer.
 --
-doptStaffPhrase :: StaffPhrase (Glyph anno pch Duration)
-                -> StaffPhrase (Glyph anno pch (Maybe Duration))
-doptStaffPhrase (StaffPhrase bars) = 
-    StaffPhrase $ map (\x -> fst $ doptBarUnit x default_duration) bars
+rewriteDurationOpt :: StaffPhrase (Glyph anno pch Duration)
+                   -> StaffPhrase (Glyph anno pch (Maybe Duration))
+rewriteDurationOpt (StaffPhrase bars) = 
+    StaffPhrase $ map (fst . (stmap doptGlyph `flip` default_duration)) bars
   where
     default_duration = qn 
 
@@ -142,10 +142,11 @@ doptD :: Duration -> Duration -> (Maybe Duration, Duration)
 doptD d st | d == st && not (isDotted d) = (Nothing,st)
            | otherwise                   = (Just d,d) 
 
-
+--
 doptMarkupBar :: MarkupBar (SkipGlyph gly Duration)
               -> Duration
               -> (MarkupBar (SkipGlyph gly (Maybe Duration)), Duration)
+
 doptMarkupBar (MarkupBar os) d0 = (MarkupBar os', d) where 
     (os',d) = accumMapL doptSkipGlyph os d0
              
@@ -180,19 +181,10 @@ doptSkipGlyph gly d0 = step gly  where
 --
 -- TODO - find out why this is the case.
 
-
-abspStaffBar :: Int 
-             -> StaffBar (Glyph anno Pitch dur) 
-             -> StaffBar (Glyph anno Pitch dur)
-abspStaffBar i (StaffBar os) = StaffBar $ fmap (abspCExpr i) os
-
-
-abspCExpr  :: Int 
-           -> CExpr (Glyph anno Pitch dur) 
-           -> CExpr (Glyph anno Pitch dur)
-abspCExpr i (Atomic os)      = Atomic $ fmap (abspGlyph i) os
-abspCExpr i (N_Plet np expr) = N_Plet np $ abspCExpr i expr
-abspCExpr i (Beamed expr)    = Beamed $ abspCExpr i expr
+rewritePitchAbs :: Int 
+                -> StaffPhrase (Glyph anno Pitch dur) 
+                -> StaffPhrase (Glyph anno Pitch dur)
+rewritePitchAbs i = fmap (abspGlyph i)
 
 
 
@@ -213,9 +205,15 @@ abspChordPitch i (ChordPitch a p) = ChordPitch a (displaceOctave i p)
 --------------------------------------------------------------------------------
 -- Relative Pitch
 
-relpStaffPhrase :: StaffBar (Glyph anno Pitch dur)
+rewritePitchRel :: Pitch
+                -> StaffPhrase (Glyph anno Pitch dur) 
+                -> StaffPhrase (Glyph anno Pitch dur)
+rewritePitchRel p phrase = fst $ stmap relpGlyph phrase p 
+
+
+relpStaffPhrase :: StaffPhrase (Glyph anno Pitch dur)
                 -> Pitch 
-                -> (StaffBar (Glyph anno Pitch dur), Pitch)
+                -> (StaffPhrase (Glyph anno Pitch dur), Pitch)
 relpStaffPhrase = stmap relpGlyph
 
                                

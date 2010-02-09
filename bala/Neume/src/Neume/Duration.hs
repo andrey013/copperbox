@@ -25,6 +25,8 @@ module Neume.Duration
   
   -- * Classes
   , HasDuration(..)
+  , MakeRest(..)
+  , MakeSpacer(..)
   
   -- * Operations
   , isZero
@@ -87,8 +89,15 @@ type DurationMeasure = Rational
 class HasDuration t where
   getDuration  :: t Duration -> Duration
 
+class MakeSpacer e where
+  makeSpacer :: Duration -> e
 
--- Std instances
+class MakeSpacer e => MakeRest e where
+  makeRest :: Duration -> e 
+
+
+--------------------------------------------------------------------------------
+-- Instances
 
 instance Ord Duration where
   compare d1 d2 = extent d1 `compare` extent d2
