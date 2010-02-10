@@ -19,79 +19,76 @@
 module Neume.AbcOutput where
 
 import Neume.AbcDoc
+import Neume.Doc
 import Neume.Duration
 import Neume.FunctorN
+import Neume.OneList
 import Neume.Pitch hiding ( octave )
+import Neume.SyntaxDoc
 import Neume.SyntaxStaff
 
 
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen hiding ( sep )     -- package: wl-print
+
+import qualified Data.Foldable as F
 
 -- No annos for Abc...
 
 type AbcGlyph = Glyph () Pitch AbcMultiplier
-
+type AbcNote  = Note  () Pitch AbcMultiplier
 
 --------------------------------------------------------------------------------
 
 
--- | Render a phrase. This function returns a 'DPhrase' which is 
--- a list of list of Doc. To generate output, it must be 
--- post-processed. One such post-processor is 'simpleOutput'...
+oStaffPhrase :: StaffPhrase AbcGlyph -> AbcPhrase
+oStaffPhrase                = AbcPhrase . map oStaffBar . getStaffPhrase
 
-{-
-renderPhrase :: (e -> Doc) -> Phrase e -> AbcPhrase
-renderPhrase f = map (renderBarOverlay f)
 
-renderBarOverlay :: (e -> Doc) -> Bar e -> DBar
-renderBarOverlay f (Bar xs)       = [hsep $ map (renderBeam f) xs]
-renderBarOverlay f (OverlayL xss) = map (hsep . map (renderBeam f)) xss
+oStaffBar :: StaffBar AbcGlyph -> AbcBar
+oStaffBar                   = AbcBar . oBarUnit . getStaffBar
 
-renderBeam :: (e -> Doc) -> Pulse e -> Doc
-renderBeam f (Pulse e)    = f e
-renderBeam f (BeamedL es) = hcat $ map f es
+oBarUnit :: OneList (CExpr AbcGlyph) -> Doc
+oBarUnit os                 = hsep $ toListF (oCExpr hsep) os
 
-abcGlyph :: PDGlyphAbc -> Doc
-abcGlyph (Note _ p dm t)  = note p dm <> optDoc t tie
-abcGlyph (Rest dm)        = rest dm
-abcGlyph (Spacer dm)      = spacer dm
-abcGlyph (Chord ps dm t)  = (chordForm $ map ((note `flip` dm) . snd) ps) 
+
+-- This one needs 'context' - beamed notes are no whitespace
+-- between them.
+--
+oCExpr :: ([Doc] -> Doc) -> CExpr AbcGlyph -> Doc
+oCExpr sep (Atomic os)      = sep $ toListF oGlyph os 
+oCExpr _   (N_Plet _ _)     = error $ "oCExpr - N_Plet to do"
+oCExpr _   (Beamed e)       = oCExpr hcat e
+
+
+oGlyph :: AbcGlyph -> Doc
+oGlyph (GlyNote n t)        = oNote n <> optDoc t tie
+oGlyph (Rest dm)            = rest dm
+oGlyph (Spacer dm)          = spacer dm
+oGlyph (Chord ps dm t)      = (chordForm $ oChordPitches dm ps) 
                               <> optDoc t tie
-abcGlyph (GraceNotes xs)  = graceForm $ map abcGrace xs
+oGlyph (Graces xs)          = graceForm $ toListF oNote xs
 
 
-abcGrace :: GraceNote () Pitch AbcMultiplier -> Doc
-abcGrace (GraceNote _ p dm) = note p dm
--}
+oNote :: AbcNote -> Doc
+oNote (Note _ p dm) = note p dm
+
+
+-- print each note with the same multiplier
+--
+-- > [C8E8G8]
+--
+oChordPitches :: AbcMultiplier -> OneList (ChordPitch anno Pitch) -> [Doc]
+oChordPitches dm = map (\(ChordPitch _ p) -> note p dm) . F.toList
+
 
 --------------------------------------------------------------------------------
 -- Rewrite duration
 
+rewriteDuration :: Rational 
+                -> StaffPhrase (Glyph anno pch Duration) 
+                -> StaffPhrase (Glyph anno pch AbcMultiplier)
+rewriteDuration r = fmap (fmap3c (abcMultiplier r))
 
--- Change Duration to a multiplier
-{-
-
-class ChangeDurationAbc t where
-  changeDurationAbc :: Rational -> t Duration -> t AbcMultiplier
-
- 
-rewriteDuration :: ChangeDurationAbc t 
-                => Rational 
-                -> Phrase (t Duration) 
-                -> Phrase (t AbcMultiplier)
-rewriteDuration r bars = map (fmap (changeDurationAbc r)) bars
-
-instance ChangeDurationAbc (Glyph anno pch) where
-  changeDurationAbc r (Note a p d t)   = Note a p (abcMultiplier r d) t
-  changeDurationAbc r (Rest d)         = Rest $ abcMultiplier r d
-  changeDurationAbc r (Spacer d)       = Spacer $ abcMultiplier r d
-  changeDurationAbc r (Chord ps d t)   = Chord ps (abcMultiplier r d) t
-  changeDurationAbc r (GraceNotes xs)  = GraceNotes $ 
-                                           map (changeDurationAbc r) xs
-
-instance ChangeDurationAbc (GraceNote anno pch) where
-  changeDurationAbc r (GraceNote a p d) = GraceNote a p (abcMultiplier r d)
--}
 
 --------------------------------------------------------------------------------
 -- Rewrite Pitch
@@ -103,36 +100,15 @@ rewritePitch :: SpellingMap
              -> StaffPhrase (Glyph anno Pitch dur)
 rewritePitch sm = fmap (fmap3b (spell sm))
 
-{-
 
-fst $ stmap relpGlyph phrase p 
+--------------------------------------------------------------------------------
+-- Rewrite Anno
 
-class ChangePitchAbc t where
-  changePitchAbc :: HasPitch pch => SpellingMap -> t pch drn -> t pch drn
+-- Drop annotations
 
- 
-rewritePitch :: (HasPitch pch, ChangePitchAbc t)
-             => SpellingMap 
-             -> Phrase (t pch drn) 
-             -> Phrase (t pch drn)
-rewritePitch smap bars = map (fmap (changePitchAbc smap)) bars
-
-
-instance ChangePitchAbc (Glyph anno) where
-  changePitchAbc sm (Note a p d t)   = Note a (innerSpell sm p) d t
-  changePitchAbc _  (Rest d)         = Rest d
-  changePitchAbc _  (Spacer d)       = Spacer d
-  changePitchAbc sm (Chord ps d t)   = Chord (map fn ps) d t
-                                       where fn (a,p) = (a,innerSpell sm p)
-  changePitchAbc sm (Graces xs)  = GraceNotes (map (changePitchAbc sm) xs)
-
-innerSpell :: HasPitch p => SpellingMap -> p -> p
-innerSpell sm p  = setPitch p' p where 
-    p' = spell sm $ getPitch p
-
-instance ChangePitchAbc (GraceNote anno) where
-  changePitchAbc sm (GraceNote a p d) = GraceNote a (innerSpell sm p) d
--}
+rewriteAnno :: StaffPhrase (Glyph anno pch dur) 
+            -> StaffPhrase (Glyph ()   pch dur)
+rewriteAnno = fmap (fmap3a (const ()))
 
 
 --------------------------------------------------------------------------------
