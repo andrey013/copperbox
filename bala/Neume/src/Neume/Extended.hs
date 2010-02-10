@@ -58,7 +58,7 @@ module Neume.Extended
 
   ) where
 
-import Neume.Doc ( optDoc, mbDoc )
+import Neume.Doc ( mbDoc )
 import Neume.Duration
 import Neume.LilyPondDoc
 import Neume.LilyPondOutput
@@ -69,8 +69,8 @@ import Text.PrettyPrint.Leijen
 
 
 
-printGlyph ::(anno -> Doc) -> Glyph anno Pitch (Maybe Duration) -> Doc
-printGlyph f _ = error "Extended.printGlyph TODO"
+printGlyph :: (anno -> Doc) -> Glyph anno Pitch (Maybe Duration) -> Doc
+printGlyph _f _gly = error "Extended.printGlyph TODO"
 
 {-
 printGlyph f (GlyNote (Note a p d) t)  = pitch p <> mbDoc duration d 

@@ -32,38 +32,35 @@ import Text.PrettyPrint.Leijen          -- package: wl-print
 
 import qualified Data.Foldable          as F
 
-
-
-
 --------------------------------------------------------------------------------
 -- Render
 
 -- ignore annotations at the moment...
 
 oStaffPhrase :: (pch -> Doc) 
-             -> StaffPhrase (Glyph anno pch (Maybe Duration)) -> LyPhrase
+             -> StaffPhrase (GlyphRelDur anno pch) -> LyPhrase
 oStaffPhrase f            = LyPhrase . map (oStaffBar f) . getStaffPhrase
 
-oStaffBar :: (pch -> Doc) -> StaffBar (Glyph anno pch (Maybe Duration)) -> LyBar
+oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> LyBar
 oStaffBar f               = LyBar . oBarUnit f . getStaffBar
 
-oBarUnit :: (pch -> Doc) -> OneList (CExpr (Glyph anno pch (Maybe Duration))) -> Doc
+oBarUnit :: (pch -> Doc) -> OneList (CExpr (GlyphRelDur anno pch)) -> Doc
 oBarUnit f os             = hsep $ toListF (oCExpr f) os
 
-oCExpr :: (pch -> Doc) -> CExpr (Glyph anno pch (Maybe Duration)) -> Doc
+oCExpr :: (pch -> Doc) -> CExpr (GlyphRelDur anno pch) -> Doc
 oCExpr f (Atomic os)      = hsep $ toListF (oGlyph f) os 
 oCExpr _ (N_Plet _ _)     = error $ "oCExpr - N_Plet to do"
 oCExpr f (Beamed e)       = beamForm [oCExpr f e]
 
-oGlyph :: (pch -> Doc) -> Glyph anno pch (Maybe Duration) -> Doc
+oGlyph :: (pch -> Doc) -> GlyphRelDur anno pch -> Doc
 oGlyph f (GlyNote n t)    = oNote f n <> optDoc t tie
 oGlyph _ (Rest d)         = rest d
 oGlyph _ (Spacer d)       = spacer d
 oGlyph f (Chord ps d t)   = chordForm (oChordPitches f ps) d <> optDoc t tie
-oGlyph f (Grace os)       = graceForm $ toListF (oNote f) os
+oGlyph f (Graces os)      = graceForm $ toListF (oNote f) os
 
 
-oNote :: (pch -> Doc) -> Note anno pch (Maybe Duration) -> Doc
+oNote :: (pch -> Doc) -> NoteRelDur anno pch -> Doc
 oNote f (Note _ p d)      =  f p <> maybe empty duration d
 
 oChordPitches :: (pch -> Doc) -> OneList (ChordPitch anno pch) -> [Doc]
@@ -128,8 +125,8 @@ doptGlyph g d0 = step g where
   step (Rest d)       = let (d',st) = doptD d d0 in (Rest d',st)
   step (Spacer d)     = let (d',st) = doptD d d0 in (Spacer d',st)
   step (Chord os d t) = let (d',st) = doptD d d0 in (Chord os d' t, st)
-  step (Grace os)     = let (os',st) = accumMapL doptNote os d0
-                        in (Grace os',st)
+  step (Graces os)    = let (os',st) = accumMapL doptNote os d0
+                        in (Graces os',st)
 
 
 doptNote :: Note anno pch Duration 
@@ -193,7 +190,7 @@ abspGlyph i (GlyNote n t)  = GlyNote (abspNote i n) t
 abspGlyph _ (Rest d)       = Rest d
 abspGlyph _ (Spacer d)     = Spacer d
 abspGlyph i (Chord os d t) = Chord (fmap (abspChordPitch i) os) d t
-abspGlyph i (Grace os)     = Grace $ fmap (abspNote i) os
+abspGlyph i (Graces os)    = Graces $ fmap (abspNote i) os
 
 
 abspNote :: Int -> Note anno Pitch dur -> Note anno Pitch dur
@@ -228,8 +225,8 @@ relpGlyph g p0 = step g where
   step (Spacer d)     = (Spacer d, p0)
   step (Chord os d t) = let (os', p) = accumMapL relpChordPitch os p0 
                         in (Chord os' d t, p)
-  step (Grace os)     = let (os',p) = accumMapL relpNote os p0 
-                        in  (Grace os', p)
+  step (Graces os)    = let (os',p) = accumMapL relpNote os p0 
+                        in  (Graces os', p)
 
 
 relpNote :: Note anno Pitch dur -> Pitch -> (Note anno Pitch dur,Pitch)

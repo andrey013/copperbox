@@ -32,11 +32,14 @@ library
                      
   
   exposed-modules:
+    Neume.AbcDoc,
+    Neume.AbcOutput,
     Neume.Bracket,
     Neume.Datatypes,
     Neume.Doc,
     Neume.Duration,
     Neume.Extended,
+    Neume.FunctorN,
     Neume.LilyPondDoc,
     Neume.LilyPondOutput,
     Neume.NamedElements,

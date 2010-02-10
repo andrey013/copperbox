@@ -33,6 +33,13 @@ module Neume.SyntaxStaff
 
 
   -- * Synonyms
+
+  , GlyphDur
+  , NoteDur
+
+  , GlyphRelDur
+  , NoteRelDur
+
   , StdGlyph
   , AnnoGlyph
 
@@ -40,6 +47,7 @@ module Neume.SyntaxStaff
 
 
 import Neume.Duration
+import Neume.FunctorN
 import Neume.OneList
 import Neume.Pitch
 import Neume.StateMap
@@ -95,7 +103,7 @@ data Glyph anno pch dur = GlyNote  (Note anno pch dur) !Tie
                         | Rest     !dur
                         | Spacer   !dur
                         | Chord    (OneList (ChordPitch anno pch)) !dur !Tie
-                        | Grace    (OneList (Note anno pch dur)) 
+                        | Graces   (OneList (Note anno pch dur)) 
   deriving (Eq,Show)
 
 
@@ -111,8 +119,22 @@ data ChordPitch anno pch = ChordPitch !anno !pch
 
 -- Synonyms
 
+
+type GlyphDur    anno pch   = Glyph anno pch Duration
+type NoteDur     anno pch   = Note  anno pch Duration
+
+
+-- | LilyPond shorthand...
+type GlyphRelDur anno pch   = Glyph anno pch (Maybe Duration)
+type NoteRelDur  anno pch   = Note  anno pch (Maybe Duration)
+
+
+
 type StdGlyph           = Glyph ()   Pitch Duration
 type AnnoGlyph anno     = Glyph anno Pitch Duration
+
+
+
 
 --------------------------------------------------------------------------------
 -- Instances
@@ -129,6 +151,23 @@ instance Functor CExpr where
   fmap f (Beamed cexpr)   = Beamed $ fmap f cexpr
 
 
+-- FMap2 
+
+instance FMap2 ChordPitch where
+  fmap2 f g (ChordPitch a p) = ChordPitch (f a) (g p)
+
+-- FMap3
+instance FMap3 Note where
+  fmap3 f1 f2 f3 (Note a p d) = Note (f1 a) (f2 p) (f3 d)
+
+
+instance FMap3 Glyph where
+  fmap3 f1 f2 f3 (GlyNote n t)  = GlyNote (fmap3 f1 f2 f3 n) t
+  fmap3 _  _  f3 (Rest d)       = Rest (f3 d)
+  fmap3 _  _  f3 (Spacer d)     = Spacer (f3 d)
+  fmap3 f1 f2 f3 (Chord os d t) = Chord (fmap (fmap2 f1 f2) os) (f3 d) t
+  fmap3 f1 f2 f3 (Graces os)    = Graces (fmap (fmap3 f1 f2 f3) os)
+
 
 -- StateMap
 instance StateMap StaffPhrase where
@@ -142,3 +181,11 @@ instance StateMap CExpr where
   stmap f (Atomic os)   st = (Atomic os',st')   where (os',st') = stmap f os st
   stmap f (N_Plet d ce) st = (N_Plet d ce',st') where (ce',st') = stmap f ce st
   stmap f (Beamed ce)   st = (Beamed ce',st')   where (ce',st') = stmap f ce st
+
+
+-- StateMap2 
+
+instance StateMap2 ChordPitch where
+  stmap2 f g (ChordPitch a p) st = (ChordPitch a' p',st'') 
+                                   where (a',st')  = f a st
+                                         (p',st'') = g p st'

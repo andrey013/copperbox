@@ -22,13 +22,27 @@ module Neume.StateMap
   ( 
   -- * Stateful map
     StateMap(..)
+  , StateMap2(..)
+  , StateMap3(..)
 
   ) where 
 
 import Neume.OneList
 
+
 class StateMap f where
   stmap :: (a -> st -> (b,st)) -> f a -> st -> (f b,st)
+
+
+-- Bifunctor...
+class StateMap2 f where
+  stmap2 :: (a -> st -> (u,st)) -> (b -> st -> (v,st)) -> f a b -> st -> (f u v, st)
+ 
+class StateMap3 f where
+  stmap3 :: (a -> st -> (u,st)) -> (b -> st -> (v,st)) -> (c -> st -> (w,st)) 
+         -> f a b c -> st -> (f u v w, st)
+
+
 
 instance StateMap [] where
   stmap _ []     st = ([],st)
