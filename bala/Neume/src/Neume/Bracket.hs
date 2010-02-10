@@ -22,6 +22,8 @@ module Neume.Bracket
   ( 
     NumMeasured(..)
   , BeamExtremity(..)
+
+  , phrase
   , beamSegment
 
   ) where
@@ -29,6 +31,8 @@ module Neume.Bracket
 import Neume.Datatypes
 import Neume.Duration
 import Neume.OneList
+import Neume.SyntaxStaff
+
 
 import Data.Ratio
 
@@ -48,7 +52,12 @@ class BeamExtremity a where
 
 
 
--- cexpression :: BeamExtremity a => [OneMany a] -> CExpr a
+phrase :: MeterPattern -> [t Duration] -> StaffPhrase (t Duration)
+phrase _mp _xs = undefined
+
+cexpressions :: BeamExtremity a => [OneMany a] -> [CExpr a]
+cexpressions []     = []
+cexpressions (x:xs) | isOne x = (Atomic x) : cexpressions xs
 
 beamSegment :: (Measurement a ~ DurationMeasure, NumMeasured a) 
             => [DurationMeasure] -> [a] -> ([OneMany a],[a])

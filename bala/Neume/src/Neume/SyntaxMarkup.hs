@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -29,7 +30,7 @@ module Neume.SyntaxMarkup
 
   ) where
 
-
+import Neume.Duration
 import Neume.OneList
 import Neume.StateMap
 
@@ -73,3 +74,9 @@ instance StateMap2 SkipGlyph where
                                        (d',st'')   = g d st'
 
   stmap2 _ g (Skip d)       st = (Skip d',st') where (d',st') = g d st
+
+--------------------------------------------------------------------------------
+-- Spacer
+
+instance MakeSpacer (SkipGlyph gly Duration) where
+  makeSpacer d = Skip d

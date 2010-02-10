@@ -23,6 +23,7 @@ module Neume.OneList
 
   , one
   , cons
+  , head
   , viewl
 
   , fromList
@@ -42,6 +43,7 @@ import Data.Foldable
 import Data.Monoid
 import Data.Traversable
 
+import Prelude hiding ( head )
 
 type OneMany a = OneList a
 
@@ -96,6 +98,10 @@ one = One
 cons :: a -> OneMany a -> OneMany a
 cons a as   = Many a as
 
+-- | 'head' is total of course.
+head :: OneList a -> a
+head (One a)    = a
+head (Many a _) = a
 
 viewl :: OneList a -> ViewOL a
 viewl (One a)     = OneL a

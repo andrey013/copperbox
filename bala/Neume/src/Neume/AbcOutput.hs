@@ -39,13 +39,12 @@ type AbcNote  = Note  () Pitch AbcMultiplier
 
 --------------------------------------------------------------------------------
 
-
-oStaffPhrase :: StaffPhrase AbcGlyph -> AbcPhrase
-oStaffPhrase                = AbcPhrase . map oStaffBar . getStaffPhrase
-
+renderPhrase:: StaffPhrase AbcGlyph -> AbcPhrase
+renderPhrase                = AbcPhrase . map oStaffBar . getStaffPhrase
 
 oStaffBar :: StaffBar AbcGlyph -> AbcBar
 oStaffBar                   = AbcBar . oBarUnit . getStaffBar
+
 
 oBarUnit :: OneList (CExpr AbcGlyph) -> Doc
 oBarUnit os                 = hsep $ toListF (oCExpr hsep) os
@@ -112,15 +111,14 @@ rewriteAnno = fmap (fmap3a (const ()))
 
 
 --------------------------------------------------------------------------------
-{-
+
 
 -- | Output ABC, four bars printed on each line. 
-simpleOutput :: DPhrase -> Doc
-simpleOutput = four . map ((<+> singleBar) . overlay)
+simpleOutput :: AbcPhrase -> Doc
+simpleOutput = four . map ((<+> singleBar) . getAbcBar) . getAbcPhrase
 
 
 four :: [Doc] -> Doc
 four (a:b:c:d:xs) = vsep (map (<> lineCont) [a,b,c]) <$> d <$> four xs
 four xs           = hsep xs
 
--}

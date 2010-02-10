@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -212,3 +213,11 @@ instance StateMap3 Glyph where
                                       where (os',st') = stmap (stmap3 f1 f2 f3) os st
 
 
+--------------------------------------------------------------------------------
+
+instance MakeSpacer (Glyph anno pch Duration) where
+  makeSpacer d = Spacer d
+
+instance MakeRest (Glyph anno pch Duration) where
+  makeRest d = Rest d
+ 

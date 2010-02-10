@@ -36,9 +36,11 @@ import qualified Data.Foldable          as F
 -- Render
 
 -- ignore annotations at the moment...
+renderPhrase :: StaffPhrase (GlyphRelDur anno Pitch) -> LyPhrase
+renderPhrase = oStaffPhrase pitch
 
-oStaffPhrase :: (pch -> Doc) 
-             -> StaffPhrase (GlyphRelDur anno pch) -> LyPhrase
+
+oStaffPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> LyPhrase
 oStaffPhrase f            = LyPhrase . map (oStaffBar f) . getStaffPhrase
 
 oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> LyBar
@@ -72,18 +74,18 @@ oChordPitches f = map (\(ChordPitch _ p) -> f p) . F.toList
 -- Doc helpers
 
 
+
+simpleOutput :: LyPhrase -> Doc
+simpleOutput = vsep . map ((<+> singleBar) . getLyBar) . getLyPhrase
+
 {-
-simpleOutput :: PhraseDoc -> Doc
-simpleOutput = vsep . map ((<+> singleBar) . simpleOverlay) . getPhraseDoc
-
-
 simpleOverlay :: BarDoc -> Doc
 simpleOverlay = step . getBarDoc where
     step []  = empty
     step [a] = getOverlayDoc a
     step xs  = overlay $ map getOverlayDoc xs
-
 -}
+
 
 
 --------------------------------------------------------------------------------

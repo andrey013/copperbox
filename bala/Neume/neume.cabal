@@ -2,7 +2,7 @@ name:             neume
 version:          0.1.0
 license:          BSD3
 license-file:     LICENSE
-copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+copyright:        Stephen Tetley 2010
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Music
@@ -19,7 +19,7 @@ stability:          highly unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
-  demo/Demo1.hs
+  demo/B6.hs
 
 
 library
