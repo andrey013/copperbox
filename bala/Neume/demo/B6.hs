@@ -9,6 +9,7 @@ import Neume.Duration
 import Neume.LilyPondOutput
 import Neume.NamedElements
 import Neume.Pitch
+import Neume.SyntaxStaff
 import Neume.Utils
 
 import Text.PrettyPrint.Leijen
@@ -36,7 +37,7 @@ twoFourTime = makeMeterPattern 2 4
 
 
 
-bars1'4 :: [PDGlyph]
+bars1'4 :: [AnnoGlyph ()]
 bars1'4 =  
   [ a 4 () sn, b 4 () sn, cs 5 () sn, cs 5 () sn, cs 5 () sn, a 4 () sn, 
                cs 5 () sn, cs 5 () sn

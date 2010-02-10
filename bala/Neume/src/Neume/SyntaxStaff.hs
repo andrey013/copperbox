@@ -189,3 +189,26 @@ instance StateMap2 ChordPitch where
   stmap2 f g (ChordPitch a p) st = (ChordPitch a' p',st'') 
                                    where (a',st')  = f a st
                                          (p',st'') = g p st'
+
+
+-- StateMap3 
+
+instance StateMap3 Note where
+  stmap3 f1 f2 f3 (Note a p d) st = (Note a' p' d', st''')
+                                    where (a',st')   = f1 a st
+                                          (p',st'')  = f2 p st'
+                                          (d',st''') = f3 d st''
+
+instance StateMap3 Glyph where
+  stmap3 f1 f2 f3 (GlyNote n t)  st = (GlyNote n' t, st') 
+                                      where (n',st') = stmap3 f1 f2 f3 n st
+
+  stmap3 _  _  f3 (Rest d)       st = (Rest d', st')   where (d',st') = f3 d st
+  stmap3 _  _  f3 (Spacer d)     st = (Spacer d', st') where (d',st') = f3 d st
+  stmap3 f1 f2 f3 (Chord os d t) st = (Chord os' d' t, st'')
+                                      where (os',st') = stmap (stmap2 f1 f2) os st
+                                            (d',st'') = f3 d st'
+  stmap3 f1 f2 f3 (Graces os)    st = (Graces os', st')
+                                      where (os',st') = stmap (stmap3 f1 f2 f3) os st
+
+

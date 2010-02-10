@@ -120,19 +120,8 @@ doptBarUnit = stmap doptGlyph
 doptGlyph :: Glyph anno pch Duration 
           -> Duration 
           -> (Glyph anno pch (Maybe Duration), Duration)
-doptGlyph g d0 = step g where
-  step (GlyNote n t)  = let (n',st) = doptNote n d0 in (GlyNote n' t, st)
-  step (Rest d)       = let (d',st) = doptD d d0 in (Rest d',st)
-  step (Spacer d)     = let (d',st) = doptD d d0 in (Spacer d',st)
-  step (Chord os d t) = let (d',st) = doptD d d0 in (Chord os d' t, st)
-  step (Graces os)    = let (os',st) = accumMapL doptNote os d0
-                        in (Graces os',st)
+doptGlyph = stmap3c doptD
 
-
-doptNote :: Note anno pch Duration 
-         -> Duration 
-         -> (Note anno pch (Maybe Duration), Duration)
-doptNote (Note a p d) d0 = let (d',st) = doptD d d0 in (Note a p d', st)
 
 
 doptD :: Duration -> Duration -> (Maybe Duration, Duration)
@@ -143,18 +132,14 @@ doptD d st | d == st && not (isDotted d) = (Nothing,st)
 doptMarkupBar :: MarkupBar (SkipGlyph gly Duration)
               -> Duration
               -> (MarkupBar (SkipGlyph gly (Maybe Duration)), Duration)
-
-doptMarkupBar (MarkupBar os) d0 = (MarkupBar os', d) where 
-    (os',d) = accumMapL doptSkipGlyph os d0
-             
+doptMarkupBar = stmap (stmap2b doptD)
 
 
 doptSkipGlyph :: SkipGlyph glyph Duration
               -> Duration
               -> (SkipGlyph glyph (Maybe Duration), Duration)
-doptSkipGlyph gly d0 = step gly  where
-  step (SGlyph g d) = let (d',st) = doptD d d0 in (SGlyph g d',st)
-  step (Skip d)     = let (d',st) = doptD d d0 in (Skip d',st)
+doptSkipGlyph = stmap2b doptD
+
 
 --------------------------------------------------------------------------------
 -- Rewrite Pitch
@@ -219,23 +204,8 @@ relpStaffPhrase = stmap relpGlyph
 relpGlyph :: Glyph anno Pitch dur 
           -> Pitch
           -> (Glyph anno Pitch dur, Pitch)
-relpGlyph g p0 = step g where
-  step (GlyNote n t)  = let (n',p) = relpNote n p0 in (GlyNote n' t,p)
-  step (Rest d)       = (Rest d, p0)
-  step (Spacer d)     = (Spacer d, p0)
-  step (Chord os d t) = let (os', p) = accumMapL relpChordPitch os p0 
-                        in (Chord os' d t, p)
-  step (Graces os)    = let (os',p) = accumMapL relpNote os p0 
-                        in  (Graces os', p)
+relpGlyph = stmap3b relpP
 
-
-relpNote :: Note anno Pitch dur -> Pitch -> (Note anno Pitch dur,Pitch)
-relpNote (Note a p d) p0 = let p' = relpP p0 p in (Note a p' d, p')
-
-relpChordPitch :: ChordPitch anno Pitch -> Pitch -> (ChordPitch anno Pitch, Pitch)
-relpChordPitch (ChordPitch a p) p0 = let p' = relpP p0 p in (ChordPitch a p', p')
-
-
-relpP :: Pitch -> Pitch -> Pitch
-relpP p0 p = setOctave (lyOctaveDist p0 p) p
+relpP :: Pitch -> Pitch -> (Pitch,Pitch)
+relpP p0 p = (setOctave (lyOctaveDist p0 p) p,p)
 
