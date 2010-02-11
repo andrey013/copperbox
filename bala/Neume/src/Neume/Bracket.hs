@@ -31,9 +31,11 @@ module Neume.Bracket
 import Neume.Datatypes
 import Neume.Duration
 import Neume.OneList
+import Neume.OneTwo
 import Neume.SyntaxStaff
 
-
+import qualified Data.Foldable          as F
+import Data.List ( unfoldr )
 import Data.Ratio
 
 
@@ -52,12 +54,71 @@ class BeamExtremity a where
 
 
 
-phrase :: MeterPattern -> [t Duration] -> StaffPhrase (t Duration)
-phrase _mp _xs = undefined
+--------------------------------------------------------------------------------
+-- Extracting extremities...
 
+-- | leftExtremity peels at most 1 left element from the list, if
+-- it is an \'inner only\' regardless of whether the next element 
+-- is \'inner only\' as well.
+--
+leftExtremity :: BeamExtremity a => OneMany a -> OneTwo (OneMany a) a
+leftExtremity os = step $ viewl os where
+  step (x :<< xs)  | innerOnly x = Two xs x     -- atleast 1 left extremity
+  step _                         = One os       -- no left extremity
+
+-- | 'rightExtremity' is unfortunately more complicated than 
+-- 'leftExtremity'.
+-- 
+-- It produces a beam group, if there is one, and a possibly 
+-- empty list of elements from the right of the list that 
+-- cannot be the extremity of a beam group (rests, spaces...)
+--
+rightExtremity :: BeamExtremity a => OneMany a -> (Maybe (OneMany a), [a])
+rightExtremity = post . F.foldr unwind ([],[]) where
+  unwind a ([], ys) | innerOnly a = ([],a:ys)
+  unwind a (xs, ys)               = (a:xs,ys)
+  post ([],ys)  = (Nothing, ys)             -- all extremities
+  post ([a],ys) = (Nothing, a:ys)           -- don't yield singleton beamgroup
+  post (xs,ys)  = (Just $ fromList xs, ys)  -- beamgroup, zero-or-more exts
+
+--------------------------------------------------------------------------------
+
+phrase :: MetricalSpec -> [gly] -> StaffPhrase gly
+phrase (MetricalSpec time_sig meter_patts) notes = undefined
+
+{-
+-- No! - remove extremities in one step...
+-- (Putting into CExprs should be done when grouping for bars)
 cexpressions :: BeamExtremity a => [OneMany a] -> [CExpr a]
 cexpressions []     = []
-cexpressions (x:xs) | isOne x = (Atomic x) : cexpressions xs
+cexpressions (x:xs) | isOne x = (Atoms x) : cexpressions xs
+-}
+
+segmentAll :: (BeamExtremity a, Measurement a ~ DurationMeasure, NumMeasured a)
+           => [DurationMeasure] -> [a] -> [OneMany a]
+segmentAll meter_patts notes = moveExtremities xs ++ map one ys
+  where
+    (xs,ys) = beamSegment meter_patts notes
+              
+
+
+-- | Beam groups cannot start or end with rests or spacers...
+--
+moveExtremities :: forall a. BeamExtremity a => [OneMany a] -> [OneMany a]
+moveExtremities = unfoldr phi where
+  phi []      = Nothing
+  phi (x:xs)  = case leftExtremity x of
+      Two os a  -> Just (one a, os:xs) 
+      One os    -> case rightExtremity os of
+          (Nothing, y:ys) -> Just (one y, prepend ys xs) 
+          (Nothing, _)    -> error "moveExtremities unreachable"
+          (Just bg, ys)   -> Just (bg, prepend ys xs)
+
+
+  prepend :: [a] -> [OneMany a] -> [OneMany a]
+  prepend []     xs = xs
+  prepend (a:as) xs = one a : prepend as xs
+
 
 beamSegment :: (Measurement a ~ DurationMeasure, NumMeasured a) 
             => [DurationMeasure] -> [a] -> ([OneMany a],[a])

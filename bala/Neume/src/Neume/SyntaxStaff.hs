@@ -84,7 +84,7 @@ newtype StaffBar    gly = StaffBar    { getStaffBar    :: OneList (CExpr gly) }
 -- n-plets (and n-plets must be recursive).
 --
 
-data CExpr gly = Atomic               (OneList gly) 
+data CExpr gly = Atoms                (OneList gly) 
                | N_Plet  N_PletDescr  (CExpr   gly)
                | Beamed               (CExpr   gly)
   deriving (Eq,Show)
@@ -147,7 +147,7 @@ instance Functor StaffBar where
   fmap f (StaffBar os)    = StaffBar $ fmap (fmap f) os
 
 instance Functor CExpr where
-  fmap f (Atomic os)      = Atomic $ fmap f os
+  fmap f (Atoms os)       = Atoms $ fmap f os
   fmap f (N_Plet d cexpr) = N_Plet d (fmap f cexpr) 
   fmap f (Beamed cexpr)   = Beamed $ fmap f cexpr
 
@@ -179,7 +179,7 @@ instance StateMap StaffBar where
   stmap f (StaffBar os) st = (StaffBar os',st') where (os',st') = stmap (stmap f) os st
 
 instance StateMap CExpr where
-  stmap f (Atomic os)   st = (Atomic os',st')   where (os',st') = stmap f os st
+  stmap f (Atoms os)    st = (Atoms os',st')    where (os',st') = stmap f os st
   stmap f (N_Plet d ce) st = (N_Plet d ce',st') where (ce',st') = stmap f ce st
   stmap f (Beamed ce)   st = (Beamed ce',st')   where (ce',st') = stmap f ce st
 

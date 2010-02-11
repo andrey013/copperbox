@@ -54,7 +54,7 @@ oBarUnit os                 = hsep $ toListF (oCExpr hsep) os
 -- between them.
 --
 oCExpr :: ([Doc] -> Doc) -> CExpr AbcGlyph -> Doc
-oCExpr sep (Atomic os)      = sep $ toListF oGlyph os 
+oCExpr sep (Atoms os)       = sep $ toListF oGlyph os 
 oCExpr _   (N_Plet _ _)     = error $ "oCExpr - N_Plet to do"
 oCExpr _   (Beamed e)       = oCExpr hcat e
 

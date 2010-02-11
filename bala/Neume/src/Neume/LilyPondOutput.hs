@@ -50,7 +50,7 @@ oBarUnit :: (pch -> Doc) -> OneList (CExpr (GlyphRelDur anno pch)) -> Doc
 oBarUnit f os             = hsep $ toListF (oCExpr f) os
 
 oCExpr :: (pch -> Doc) -> CExpr (GlyphRelDur anno pch) -> Doc
-oCExpr f (Atomic os)      = hsep $ toListF (oGlyph f) os 
+oCExpr f (Atoms os)       = hsep $ toListF (oGlyph f) os 
 oCExpr _ (N_Plet _ _)     = error $ "oCExpr - N_Plet to do"
 oCExpr f (Beamed e)       = beamForm [oCExpr f e]
 

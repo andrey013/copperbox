@@ -32,8 +32,8 @@ demo2 = ABC.simpleOutput $ ABC.renderPhrase
 
 
 
-twoFourTime :: MeterPattern
-twoFourTime = makeMeterPattern 2 4
+twoFourTime :: MetricalSpec
+twoFourTime = MetricalSpec (TimeSignature 2 4) (makeMeterPattern 2 4)
 
 
 
