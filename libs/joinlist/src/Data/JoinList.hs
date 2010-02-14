@@ -3,21 +3,21 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Data.JoinList
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2009-2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- A Join List datatype and operations. 
+-- A \"join list\" datatype and operations. 
 --
--- Join Lists are symmetric lists where joining two lists 
--- (catenation, aka (++)) is a cheap operation. This constrasts 
--- with the regular list datatype which is a cons list: while 
--- consing on a regular list (building a list by adding an 
--- elementary prefix) is by nature cheap, joining (++) is 
--- expensive. 
+-- A join list is implemented a binary tree, so joining two 
+-- lists (catenation, aka (++)) is a cheap operation. 
+--
+-- This constrasts with the regular list datatype which is a 
+-- cons list: while consing on a regular list is by nature cheap, 
+-- joining (++) is expensive. 
 --
 --------------------------------------------------------------------------------
 
@@ -26,6 +26,10 @@ module Data.JoinList
   ( 
   -- * Join list datatype, opaque.
     JoinList
+
+  -- * Views as per Data.Sequence  
+  , ViewL(..)
+  , ViewR(..)
 
   -- * Conversion between join lists and regular lists
   , fromList
@@ -40,23 +44,39 @@ module Data.JoinList
   , join
 
   -- * Basic functions  
+  , head
+  , last
+  , tail
+  , init
   , null
   , concat
   , length
   , map
+  , reverse
+
 
   -- * Building join lists
   , replicate
   , repeated
 
-  -- * Generalized fold
+  -- * Folds and unfolds
   , gfold
   , foldr
   , foldl
   , unfoldl
   , unfoldr
 
-  -- * Zipping
+  -- * Views
+  , viewl
+  , viewr
+
+  -- * Sublists
+  , takeLeft
+  , takeRight
+  , dropLeft
+  , dropRight 
+
+  -- * Zipping (deprecated)
   , xzip
   , xzipWith
 
@@ -71,18 +91,28 @@ import qualified Data.Foldable as F
 import Data.Monoid
 import Data.Traversable ( Traversable(..) )
 
-import Prelude hiding ( (++), concat, foldl, foldr, length
-                      , map, null, replicate )
+import Prelude hiding ( (++), concat, foldl, foldr, head, 
+                        init, last, length,
+                        map, null, replicate, reverse,
+                        tail )
 
 
 data JoinList a = Empty 
                 | Single a 
                 | JoinList a :++: JoinList a
+  deriving (Eq)
+
+data ViewL a = EmptyL | a :< (JoinList a)
+  deriving (Eq,Show)
+
+data ViewR a = EmptyR | (JoinList a) :> a
   deriving (Eq,Show)
 
 
-
 --------------------------------------------------------------------------------
+
+instance Show a => Show (JoinList a) where
+  showsPrec _ xs = showString "fromList " . shows (toList xs) 
 
 instance Monoid (JoinList a) where
   mempty  = Empty
@@ -110,6 +140,16 @@ instance Traversable JoinList where
   traverse _ Empty      = pure Empty
   traverse f (Single a) = Single <$> f a
   traverse f (t :++: u) = (:++:) <$> traverse f t <*> traverse f u
+
+-- Views
+
+instance Functor ViewL where
+  fmap _ EmptyL         = EmptyL
+  fmap f (a :< as)      = f a :< fmap f as
+
+instance Functor ViewR where
+  fmap _ EmptyR         = EmptyR
+  fmap f (as :> a)      = fmap f as :> f a
 
 --------------------------------------------------------------------------------
 -- Conversion
@@ -167,12 +207,56 @@ join = (++)
 --------------------------------------------------------------------------------
 -- Basic functions
 
+-- | Extract the first element of a join list - i.e. the leftmost
+-- element of the left spine. An error is thrown if the list is 
+-- empty. 
+-- 
+-- This function performs a traversal down the left spine, so 
+-- unlike @head@ on regular lists this function is not performed 
+-- in constant time.
+head :: JoinList a -> a
+head Empty      = error "Data.JoinList.head: empty list"
+head (Single a) = a
+head (t :++: _) = head t
+
+
+
+-- | Extract the last element of a join list - i.e. the rightmost
+-- element of the right spine. An error is thrown if the list is 
+-- empty.
+last :: JoinList a -> a
+last Empty      = error "Data.JoinList.head: empty list"
+last (Single a) = a
+last (_ :++: u) = last u
+
+-- | Extract the elements after the head of a list. An error is thrown
+-- if the list is empty.
+tail :: JoinList a -> JoinList a
+tail Empty             = error "Data.JoinList.tail: empty list"
+tail (Single _)        = Empty
+tail (Single _ :++: u) = u
+tail (t        :++: u) = tail t :++: u
+
+
+-- | Extract all the elements except the last one. An error is thrown
+-- if the list is empty.
+init :: JoinList a -> JoinList a
+init Empty             = error "Data.JoinList.init: empty list"
+init (Single _)        = Empty
+init (t :++: Single _) = t
+init (t :++: u)        = t :++: init u
+
+
+
 -- | Test whether a join list is empty.
 null :: JoinList a -> Bool
 null Empty = True
 null _     = False
 
--- | Concatenate a (join) list of (join) lists. 
+
+
+
+-- | Concatenate a join list of join lists. 
 concat :: JoinList (JoinList a) -> JoinList a
 concat = foldl mappend mempty 
 
@@ -185,6 +269,12 @@ map :: (a -> b) -> JoinList a -> JoinList b
 map _ Empty      = Empty
 map f (Single a) = Single (f a)
 map f (a :++: b) = (map f a) :++: (map f b) 
+
+reverse :: JoinList a -> JoinList a
+reverse l = step l Empty where
+  step Empty      acc = acc
+  step (Single a) acc = acc `snoc` a
+  step (t :++: u) acc = step t (step u acc)
 
 
 --------------------------------------------------------------------------------
@@ -246,25 +336,112 @@ unfoldr f = step where
               Nothing -> Empty
               Just (a,st') -> a `cons` step st'
 
+--------------------------------------------------------------------------------
+-- Views
 
-{-
-para :: (a -> (JoinList a, b) -> b) -> b -> JoinList a -> b
-para f b = step
-  where step Empty      = b
-        step (Single a) = f a (Empty,b) 
-        step (t :++: u) = f (step t) (u, step u)
--}
+-- | Access the left end of a sequence.
+--
+-- Unlike the corresponing operation on Data.Sequence this is 
+-- not a cheap operation, the joinlist must be traversed down 
+-- the left spine to find the leftmost node.
+--
+-- Also the traversal may involve changing the shape of the 
+-- underlying binary tree.
+--
+viewl :: JoinList a -> ViewL a
+viewl Empty      = EmptyL
+viewl (Single a) = a :< Empty
+viewl (t :++: u) = step t u where
+   step Empty        r = viewl r
+   step (Single a)   r = a :< r
+   step (t' :++: u') r = step t' (u' :++: r)
+
+
+-- | Access the rightt end of a sequence.
+--
+-- Unlike the corresponing operation on Data.Sequence this is 
+-- not a cheap operation, the joinlist must be traversed down 
+-- the right spine to find the rightmost node.
+--
+-- Also the traversal may involve changing the shape of the 
+-- underlying binary tree.
+--
+viewr :: JoinList a -> ViewR a
+viewr Empty      = EmptyR
+viewr (Single a) = Empty :> a
+viewr (t :++: u) = step t u where
+   step l Empty        = viewr l
+   step l (Single a)   = l :> a
+   step l (t' :++: u') = step (l :++: t') u' 
+
+--------------------------------------------------------------------------------
+-- take etc
+
+-- | Take the left @n@ elements of the list.
+-- 
+-- Implemented with 'viewl' hence the same performance caveats
+-- apply.
+--
+takeLeft :: Int -> JoinList a -> JoinList a
+takeLeft i _  | i <= 0 = Empty
+takeLeft i xs          = case viewl xs of
+                           EmptyL -> Empty
+                           a :< t -> a `cons` takeLeft (i-1) t
+
+-- | Take the right @n@ elements of the list.
+-- 
+-- Implemented with 'viewr' hence the same performance caveats
+-- apply.
+--
+takeRight :: Int -> JoinList a -> JoinList a
+takeRight i _  | i <= 0 = Empty
+takeRight i xs          = case viewr xs of
+                            EmptyR -> Empty 
+                            t :> a -> takeRight (i-1) t `snoc` a 
+
+
+-- | Drop the left @n@ elements of the list.
+-- 
+-- Implemented with 'viewl' hence the same performance caveats
+-- apply.
+--
+dropLeft :: Int -> JoinList a -> JoinList a
+dropLeft i xs  | i <= 0 = xs
+dropLeft i xs           = case viewl xs of
+                            EmptyL -> Empty
+                            _ :< t -> dropLeft (i-1) t
+                          
+
+
+-- | Drop the right @n@ elements of the list.
+-- 
+-- Implemented with 'viewr' hence the same performance caveats
+-- apply.
+--
+dropRight :: Int -> JoinList a -> JoinList a
+dropRight i xs | i <= 0 = xs
+dropRight i xs          = case viewr xs of
+                            EmptyR -> Empty
+                            t :> _ -> dropRight (i-1) t
+
+
 
 --------------------------------------------------------------------------------
 -- Zipping
 
--- | /cross zip/ - zip a join list against a regular list, 
+-- | This function should be considered deprecated.
+--
+-- /cross zip/ - zip a join list against a regular list, 
 -- maintaining the shape of the join list provided the lengths 
 -- of the lists match.
+--
 xzip :: JoinList a -> [b] -> JoinList (a,b)
 xzip = xzipWith (,)
 
--- | Generalized cross zip - c.f. zipWith on regular lists.
+-- | This function should be considered deprecated.
+--
+-- Generalized cross zip - c.f. zipWith on regular lists.
+--
 xzipWith :: (a -> b -> c) -> JoinList a -> [b] -> JoinList c
 xzipWith fn xs0 ys0       = fst $ step xs0 ys0
   where 
