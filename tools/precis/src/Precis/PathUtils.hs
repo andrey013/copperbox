@@ -16,20 +16,58 @@
 
 module Precis.PathUtils
   (
-    moduleLongPath
-  , moduleFind
+    exeModuleName
+  , resolveModules
 
   ) where
 
-import Precis.Utils
+import Precis.Datatypes
 
+import Distribution.ModuleName
+
+import Data.List ( intersperse )
+import Data.Monoid
 import System.Directory
 import System.FilePath
 
-moduleLongPath :: FilePath -> FilePath -> FilePath
+
+-- should have \".hs\" or \".lhs\" extension
+exeModuleName :: FilePath -> ModuleName
+exeModuleName = fromString . dropExtension
+
+resolveModules :: [FilePath] 
+               -> [ModuleName] 
+               -> [String]
+               -> IO [SourceModule]
+resolveModules src_dirs mod_names exts = 
+    let cp_paths = map fn $ longCrossProduct src_dirs mod_names in
+    mapM resolve cp_paths 
+  where
+    fn (path,modu) = (mname modu, moduleLongPath path modu)
+
+    resolve (mod_name,path) = do { ans <- findByExtension path exts
+                                 ; case ans of
+                                     Nothing ->         
+                                         return $ UnresolvedModule $ mod_name
+                                     Just path' -> 
+                                         return $ SourceModule mod_name path'
+                                 }
+findByExtension :: FilePath -> [String] -> IO (Maybe FilePath)
+findByExtension _    []     = return Nothing
+findByExtension path (e:es) = let full = addExtension path e in 
+    doesFileExist full >>= \ans -> if ans then return (Just full) 
+                                          else findByExtension path es
+
+
+moduleLongPath :: FilePath -> ModuleName -> FilePath
 moduleLongPath src_dir mod_name = 
-    joinPath $ splitPath src_dir ++ splitPath mod_name 
+    joinPath $ splitPath src_dir ++ components mod_name 
 
 
-moduleFind :: FilePath -> String -> IO (Maybe FilePath)
-moduleFind path ext = predMaybeM doesFileExist (path `addExtension` ext)
+longCrossProduct :: Monoid a => [a] -> [b] -> [(a,b)]
+longCrossProduct [] ys = map (\b -> (mempty,b)) ys
+longCrossProduct xs ys = [(a,b) | a <- xs , b <- ys ]
+
+
+mname :: ModuleName -> String 
+mname = concat . intersperse "." . components

@@ -19,6 +19,7 @@ module Precis.Utils
   (
     para
   , mbCons
+  , mbEither
 
   , predMaybe
   , predMaybeM
@@ -30,8 +31,14 @@ para :: (a -> ([a], b) -> b) -> b -> [a] -> b
 para _   b []     = b
 para phi b (x:xs) = phi x (xs, para phi b xs)
 
+
+
 mbCons :: Maybe a -> [a] -> [a]
 mbCons oa xs = maybe xs (:xs) $ oa
+
+mbEither :: b -> Maybe a -> Either b a
+mbEither b = maybe (Left b) Right
+
 
 predMaybe :: (a -> Bool) -> a -> Maybe a
 predMaybe p a | p a       = Just a

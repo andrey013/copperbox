@@ -14,19 +14,10 @@
 --------------------------------------------------------------------------------
 
 
-module Precis.CabalPackage
-  (
-    CabalPrecis(..)
-  , LibraryPrecis(..)
- 
-  , getCabalPrecis
+module Precis.CabalPackage where
 
-  , readPackageDescr
-  , readGenPackageDescr
-
-  ) where
-
-import Precis.Utils
+import Precis.Datatypes
+import Precis.PathUtils
 
 import Distribution.ModuleName
 import Distribution.Package
@@ -36,77 +27,103 @@ import Distribution.Verbosity
 import Distribution.Version
 
 import Control.Monad
+import Data.List (intersperse)
 
-data CabalPrecis = CabalPrecis {
-        pkg_name                :: String,
-        pkg_version             :: String,
-        pkg_libraries           :: [LibraryPrecis]
-      }
-  deriving (Eq,Show)
+type CabalErr = String
 
+extractPrecis :: FilePath -> [String] -> IO (Either CabalErr CabalPrecis)
+extractPrecis path_to_cabal exts = do 
+   gen_pkg  <- readPackageDescription normal path_to_cabal
+   (expos,privs) <- getModules gen_pkg exts
+   return $ Right $ CabalPrecis 
+                      { pkg_name              = getName gen_pkg
+                      , pkg_version           = getVersion gen_pkg
+                      , pkg_exposed_modules   = expos
+                      , pkg_internal_modules  = privs
+                      }
 
-data LibraryPrecis = LibraryPrecis {
-        lib_hs_source_dirs      :: [FilePath],
-        lib_exposed_modules     :: [FilePath],
-        lib_hidden_modules      :: [FilePath]
-      }
-  deriving (Eq,Show)
-
-
-readPackageDescr :: FilePath -> IO PackageDescription
-readPackageDescr = liftM packageDescription . readPackageDescription normal
-
-readGenPackageDescr :: FilePath -> IO GenericPackageDescription
-readGenPackageDescr = readPackageDescription normal
-
-
-getCabalPrecis :: FilePath -> IO CabalPrecis
-getCabalPrecis = liftM extractPrecis . readPackageDescription normal 
-
-extractPrecis :: GenericPackageDescription -> CabalPrecis
-extractPrecis gp = 
-    CabalPrecis 
-      { pkg_name            = name
-      , pkg_version         = version
-      , pkg_libraries       = opt_expo_mod `mbCons` cond_expo_mods
-      }
-  where
-    pkg             = packageDescription gp
-    name            = extrPackageName             $ packageName gp
-    version         = extrPackageVersion          $ packageVersion gp
-    opt_expo_mod    = fmap extrLibraryPrecis      $ library pkg
-    cond_expo_mods  = maybe [] sk $ condLibrary gp
-    sk              = map extrLibraryPrecis . extrCondLibraries
-
-extrLibraryPrecis :: Library -> LibraryPrecis
-extrLibraryPrecis lib = 
-    LibraryPrecis
-      { lib_hs_source_dirs  = src_dirs
-      , lib_exposed_modules = extrExposedModules lib
-      , lib_hidden_modules  = hidden_mods
-      }
-  where
-    src_dirs        = hsSourceDirs $ libBuildInfo lib
-    hidden_mods     = map toFilePath $ otherModules $ libBuildInfo lib
 
 --------------------------------------------------------------------------------
+-- Extract from Package description
 
-extrPackageName :: PackageName -> String
-extrPackageName (PackageName str) = str
+getName    :: GenericPackageDescription -> String
+getName    = extrNameText    . package . packageDescription 
+
+getVersion :: GenericPackageDescription -> String
+getVersion = extrVersionText . package . packageDescription 
+                                  
+
+extrNameText :: PackageIdentifier  -> String
+extrNameText = fn . pkgName
+  where fn (PackageName str) = str 
+
+extrVersionText :: PackageIdentifier -> String
+extrVersionText = fn . versionBranch . pkgVersion
+  where fn = concat . intersperse "." . map show
 
 
-extrPackageVersion :: Version -> String
-extrPackageVersion = para phi "" . versionBranch 
+
+-- extract modules
+
+getModules :: GenericPackageDescription 
+           -> [String] 
+           -> IO ([SourceModule], [SourceModule])
+getModules pkg_desc exts = do 
+    lib_mods <- mapM (resolveLibrary    `flip` exts) $ allLibraries pkg_desc
+    exe_mods <- mapM (resolveExecutable `flip` exts) $ allExecutables pkg_desc
+    let (lib_expos, lib_privs) = foldr fn ([],[]) lib_mods 
+    return (lib_expos, lib_privs ++ concat exe_mods)
+  where 
+    fn (a,b) (xs,ys) = (a++xs,b++ys)                                 
+
+
+allLibraries :: GenericPackageDescription -> [Library]
+allLibraries = maybe [] fn . condLibrary 
   where
-    phi x ([],acc) = show x ++ acc
-    phi x (_,acc)  = show x ++ ('.':acc)
+   fn :: CondTree ConfVar [Dependency] Library -> [Library]
+   fn = ctfold (:) []
 
-extrExposedModules :: Library -> [FilePath]
-extrExposedModules = map toFilePath . exposedModules 
+ 
+allExecutables :: GenericPackageDescription -> [Executable]
+allExecutables = concat . map (ctfold (:) [] . snd) . condExecutables
 
-extrCondLibraries :: CondTree ConfVar [Dependency] Library -> [Library]
-extrCondLibraries = ctfold (:) [] where
 
+resolveLibrary :: Library -> [String] -> IO ([SourceModule], [SourceModule])
+resolveLibrary lib exts = liftM2 (,) (fn expos) (fn others)
+  where
+    fn mods                    = resolveModules src_paths mods exts
+    (src_paths, expos, others) = libraryContents lib  
+
+libraryContents :: Library -> ([FilePath], [ModuleName], [ModuleName])
+libraryContents lib = (src_paths, expo_modules, other_modules)
+  where
+    src_paths       = hsSourceDirs   $ libBuildInfo lib
+    expo_modules    = exposedModules lib
+    other_modules   = otherModules   $ libBuildInfo lib
+
+resolveExecutable :: Executable -> [String] -> IO [SourceModule]
+resolveExecutable exe exts = resolveModules src_paths mods exts
+  where
+    (src_paths, mods) = executableModules exe
+
+
+executableContents :: Executable -> ([FilePath], FilePath, [ModuleName])
+executableContents exe = (src_paths, exe_main_module, other_modules)
+  where
+    src_paths       = hsSourceDirs   $ buildInfo exe
+    exe_main_module = modulePath exe
+    other_modules   = otherModules   $ buildInfo exe
+
+
+-- All executable modules considered internal...
+
+executableModules :: Executable -> ([FilePath], [ModuleName])
+executableModules = fn . executableContents 
+  where
+    fn (as,exe,cs) = (as, exeModuleName exe : cs)
+
+
+-- General helper
 
 ctfold :: (a -> b -> b) -> b -> (CondTree v c a) -> b
 ctfold op initial node = foldr compfold x (condTreeComponents node)

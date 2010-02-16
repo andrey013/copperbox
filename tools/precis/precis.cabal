@@ -16,13 +16,18 @@ stability:          unstable
 cabal-version:      >= 1.2
 
 library
-  Build-Depends:  base < 5, 
-                  parsec 
+  Build-Depends:  base < 5,
+                  Cabal     == 1.8.0.2,
+                  filepath  >= 1.1 && < 2.0,
+                  directory >= 1.0 && < 2.0,
+                  wl-pprint                  
+                  
   Hs-Source-Dirs: src
-  Exposed-Modules:  
-    Precis.CabalData,
-    Precis.CabalExtract,
-    Precis.ParsecExtras,
-    Text.ParserCombinators.ParsecScreener     
+
+  Exposed-Modules: 
+    Precis.CabalPackage,
+    Precis.Datatypes,
+    Precis.PathUtils,
+    Precis.Utils
   
   
