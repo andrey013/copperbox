@@ -28,20 +28,22 @@ import Distribution.Version
 
 import Control.Monad
 import Data.List (intersperse)
+import System.FilePath
 
 type CabalErr = String
 
 extractPrecis :: FilePath -> [String] -> IO (Either CabalErr CabalPrecis)
-extractPrecis path_to_cabal exts = do 
-   gen_pkg  <- readPackageDescription normal path_to_cabal
-   (expos,privs) <- getModules gen_pkg exts
-   return $ Right $ CabalPrecis 
+extractPrecis cabal_file_path exts = do 
+    gen_pkg  <- readPackageDescription normal cabal_file_path
+    (expos,privs) <- getModules gen_pkg path_to_cabal exts
+    return $ Right $ CabalPrecis 
                       { pkg_name              = getName gen_pkg
                       , pkg_version           = getVersion gen_pkg
                       , pkg_exposed_modules   = expos
                       , pkg_internal_modules  = privs
                       }
-
+  where
+    path_to_cabal = dropFileName cabal_file_path  
 
 --------------------------------------------------------------------------------
 -- Extract from Package description
@@ -66,11 +68,12 @@ extrVersionText = fn . versionBranch . pkgVersion
 -- extract modules
 
 getModules :: GenericPackageDescription 
+           -> FilePath
            -> [String] 
            -> IO ([SourceModule], [SourceModule])
-getModules pkg_desc exts = do 
-    lib_mods <- mapM (resolveLibrary    `flip` exts) $ allLibraries pkg_desc
-    exe_mods <- mapM (resolveExecutable `flip` exts) $ allExecutables pkg_desc
+getModules pkg_desc root exts = do 
+    lib_mods <- mapM (resolveLibrary root exts) $ allLibraries pkg_desc
+    exe_mods <- mapM (resolveExecutable root exts) $ allExecutables pkg_desc
     let (lib_expos, lib_privs) = foldr fn ([],[]) lib_mods 
     return (lib_expos, lib_privs ++ concat exe_mods)
   where 
@@ -88,10 +91,10 @@ allExecutables :: GenericPackageDescription -> [Executable]
 allExecutables = concat . map (ctfold (:) [] . snd) . condExecutables
 
 
-resolveLibrary :: Library -> [String] -> IO ([SourceModule], [SourceModule])
-resolveLibrary lib exts = liftM2 (,) (fn expos) (fn others)
+resolveLibrary :: FilePath -> [String] -> Library -> IO ([SourceModule], [SourceModule])
+resolveLibrary root exts lib = liftM2 (,) (fn expos) (fn others)
   where
-    fn mods                    = resolveModules src_paths mods exts
+    fn mods                    = resolveModules root src_paths mods exts
     (src_paths, expos, others) = libraryContents lib  
 
 libraryContents :: Library -> ([FilePath], [ModuleName], [ModuleName])
@@ -101,8 +104,8 @@ libraryContents lib = (src_paths, expo_modules, other_modules)
     expo_modules    = exposedModules lib
     other_modules   = otherModules   $ libBuildInfo lib
 
-resolveExecutable :: Executable -> [String] -> IO [SourceModule]
-resolveExecutable exe exts = resolveModules src_paths mods exts
+resolveExecutable :: FilePath -> [String] -> Executable -> IO [SourceModule]
+resolveExecutable root exts exe = resolveModules root src_paths mods exts
   where
     (src_paths, mods) = executableModules exe
 

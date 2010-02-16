@@ -35,15 +35,16 @@ import System.FilePath
 exeModuleName :: FilePath -> ModuleName
 exeModuleName = fromString . dropExtension
 
-resolveModules :: [FilePath] 
+resolveModules :: FilePath 
+               -> [FilePath] 
                -> [ModuleName] 
                -> [String]
                -> IO [SourceModule]
-resolveModules src_dirs mod_names exts = 
+resolveModules path_root src_dirs mod_names exts = 
     let cp_paths = map fn $ longCrossProduct src_dirs mod_names in
     mapM resolve cp_paths 
   where
-    fn (path,modu) = (mname modu, moduleLongPath path modu)
+    fn (path,modu) = (mname modu, moduleLongPath path_root path modu)
 
     resolve (mod_name,path) = do { ans <- findByExtension path exts
                                  ; case ans of
@@ -59,9 +60,9 @@ findByExtension path (e:es) = let full = addExtension path e in
                                           else findByExtension path es
 
 
-moduleLongPath :: FilePath -> ModuleName -> FilePath
-moduleLongPath src_dir mod_name = 
-    joinPath $ splitPath src_dir ++ components mod_name 
+moduleLongPath :: FilePath -> FilePath -> ModuleName -> FilePath
+moduleLongPath root src_dir mod_name = 
+    joinPath $ splitPath root ++ splitPath src_dir ++ components mod_name 
 
 
 longCrossProduct :: Monoid a => [a] -> [b] -> [(a,b)]
