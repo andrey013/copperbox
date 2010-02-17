@@ -14,7 +14,11 @@
 --------------------------------------------------------------------------------
 
 
-module Precis.CabalPackage where
+module Precis.CabalPackage 
+  ( 
+    CabalErr
+  , extractPrecis
+  ) where
 
 import Precis.Datatypes
 import Precis.PathUtils

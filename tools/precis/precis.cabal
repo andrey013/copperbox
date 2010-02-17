@@ -16,17 +16,20 @@ stability:          unstable
 cabal-version:      >= 1.2
 
 library
-  Build-Depends:  base < 5,
-                  Cabal     == 1.8.0.2,
-                  filepath  >= 1.1 && < 2.0,
-                  directory >= 1.0 && < 2.0,
+  build-depends:  base               <  5,
+                  Cabal              == 1.8.0.2,
+                  filepath           >= 1.1 && < 2.0,
+                  directory          >= 1.0 && < 2.0,
+                  haskell-src-exts   >= 1.8 && < 1.9,
                   wl-pprint                  
                   
-  Hs-Source-Dirs: src
+  hs-source-dirs: src
 
-  Exposed-Modules: 
+  exposed-modules: 
     Precis.CabalPackage,
     Precis.Datatypes,
+    Precis.HsSrcUtils,
+    Precis.ModuleExports,
     Precis.PathUtils,
     Precis.Utils
   

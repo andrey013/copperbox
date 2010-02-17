@@ -18,10 +18,18 @@ module Precis.Datatypes
   (
     CabalPrecis(..)
   , SourceModule(..)
- 
+  , sourceModule 
+  , ExportPrecis(..) 
+  , DCDecl(..)
+  , DCExportType(..)
   ) where
 
-import Text.PrettyPrint.Leijen
+import Precis.Utils
+
+import Text.PrettyPrint.Leijen                    -- package: wl-pprint
+
+import System.FilePath
+
 
 data CabalPrecis = CabalPrecis {
         pkg_name                :: String,
@@ -36,6 +44,26 @@ data SourceModule
       = SourceModule     { src_module_name          :: String,
                            src_module_path_to       :: FilePath }
       | UnresolvedModule { unresolved_module_name   :: String }  
+  deriving (Eq,Show)
+
+
+-- smart constructor
+
+sourceModule :: String -> FilePath -> SourceModule
+sourceModule name path = SourceModule name (normalise path)
+
+data ExportPrecis = ExportPrecis {
+        expo_base_module        :: String,
+        expo_exported_modules   :: [String],
+        expo_dcdecls            :: [DCDecl],
+        expo_simple_decls       :: [String]
+      }
+  deriving (Eq,Show)
+
+data DCDecl = DCDecl String DCExportType
+  deriving (Eq,Show)
+
+data DCExportType = DC_Abs | DC_Restricted | DC_Full 
   deriving (Eq,Show)
 
 
@@ -59,10 +87,23 @@ instance Pretty SourceModule where
       name_exp = expr "name" (text name)
       path_exp = expr "path" (text path_to) 
       
--- helpers
-expr :: String -> Doc -> Doc
-expr field body = text field <+> equals <+> (dquotes body) <> semi
 
-lineBraces :: Doc -> Doc
-lineBraces body = lbrace <> line <> indent 2 body <> line <> rbrace
- 
+instance Pretty ExportPrecis where
+  pretty (ExportPrecis name mexpos dcdecls fundecls) = 
+      text "module" <+> dquotes (text name) <+> lineBraces body
+    where
+      body  = mods <$> dcs <+> funs
+      mods  = namedBlock "module exports"          (vsep $ map dqsemi mexpos)
+      dcs   = namedBlock "data class declarations" (vsep $ map dcdecl dcdecls)
+      funs  = namedBlock "simple declarations"     (vsep $ map dqsemi fundecls)
+
+dqsemi :: String -> Doc
+dqsemi  = suffixSemi . dquotes . text
+
+dcdecl :: DCDecl -> Doc
+dcdecl (DCDecl name typ) = pp typ <+> (dquotes $ text name) <> semi
+  where
+    pp DC_Abs         = text "opaque"
+    pp DC_Restricted  = text "partial"
+    pp DC_Full        = text "fully exported"
+

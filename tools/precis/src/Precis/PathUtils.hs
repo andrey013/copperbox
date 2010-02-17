@@ -51,7 +51,7 @@ resolveModules path_root src_dirs mod_names exts =
                                      Nothing ->         
                                          return $ UnresolvedModule $ mod_name
                                      Just path' -> 
-                                         return $ SourceModule mod_name path'
+                                         return $ sourceModule mod_name path'
                                  }
 findByExtension :: FilePath -> [String] -> IO (Maybe FilePath)
 findByExtension _    []     = return Nothing

@@ -24,7 +24,17 @@ module Precis.Utils
   , predMaybe
   , predMaybeM
 
+  -- * Pretty print
+  , putDoc80
+  , expr
+  , lineBraces
+  , suffixSemi 
+  , namedBlock
+
   ) where
+
+import Text.PrettyPrint.Leijen          -- package: wl-pprint
+
 
 -- paramorphism (generalizes catamorphism (fold))
 para :: (a -> ([a], b) -> b) -> b -> [a] -> b
@@ -46,3 +56,25 @@ predMaybe p a | p a       = Just a
 
 predMaybeM :: Monad m => (a -> m Bool) -> a -> m (Maybe a)
 predMaybeM mp a = mp a >>= \v -> if v then return (Just a) else return Nothing
+
+
+
+--------------------------------------------------------------------------------
+-- Pretty print
+
+putDoc80 :: Doc -> IO ()
+putDoc80 doc = putStr $ displayS (renderPretty 0.8 80 doc) ""
+
+
+expr :: String -> Doc -> Doc
+expr field body = text field <+> equals <+> (dquotes body) <> semi
+
+lineBraces :: Doc -> Doc
+lineBraces body = lbrace <> line <> indent 2 body <> line <> rbrace <> line
+
+
+suffixSemi :: Doc -> Doc
+suffixSemi = (<> semi)
+
+namedBlock :: String -> Doc -> Doc
+namedBlock s d = text s <+> lineBraces d
