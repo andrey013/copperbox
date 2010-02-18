@@ -23,6 +23,7 @@ module Precis.Utils
 
   , predMaybe
   , predMaybeM
+  , condM
 
   -- * Pretty print
   , putDoc80
@@ -35,6 +36,7 @@ module Precis.Utils
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
+import Control.Monad
 
 -- paramorphism (generalizes catamorphism (fold))
 para :: (a -> ([a], b) -> b) -> b -> [a] -> b
@@ -58,6 +60,9 @@ predMaybeM :: Monad m => (a -> m Bool) -> a -> m (Maybe a)
 predMaybeM mp a = mp a >>= \v -> if v then return (Just a) else return Nothing
 
 
+condM :: Monad m => m Bool -> m b -> m a -> m (Either a b)
+condM mtest sk fk = mtest >>= \ans -> 
+                    if ans then liftM Right sk  else liftM Left fk
 
 --------------------------------------------------------------------------------
 -- Pretty print
@@ -70,7 +75,7 @@ expr :: String -> Doc -> Doc
 expr field body = text field <+> equals <+> (dquotes body) <> semi
 
 lineBraces :: Doc -> Doc
-lineBraces body = lbrace <> line <> indent 2 body <> line <> rbrace <> line
+lineBraces body = lbrace <> line <> indent 2 body <> line <> rbrace
 
 
 suffixSemi :: Doc -> Doc

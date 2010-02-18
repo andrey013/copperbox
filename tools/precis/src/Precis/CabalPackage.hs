@@ -22,6 +22,7 @@ module Precis.CabalPackage
 
 import Precis.Datatypes
 import Precis.PathUtils
+import Precis.Utils
 
 import Distribution.ModuleName
 import Distribution.Package
@@ -31,21 +32,32 @@ import Distribution.Verbosity
 import Distribution.Version
 
 import Control.Monad
-import Data.List (intersperse)
+import Data.List ( intersperse, nub )
+import System.Directory
 import System.FilePath
 
 type CabalErr = String
 
+
 extractPrecis :: FilePath -> [String] -> IO (Either CabalErr CabalPrecis)
-extractPrecis cabal_file_path exts = do 
+extractPrecis cabal_file exts = 
+    condM (doesFileExist cabal_file) (liftM post $ extractP cabal_file exts)
+                                     (return "Missing cabal file")
+  where
+    post = rewriteModulePaths . nubSourceModules
+
+
+extractP :: FilePath -> [String] -> IO CabalPrecis
+extractP cabal_file_path exts = do 
     gen_pkg  <- readPackageDescription normal cabal_file_path
     (expos,privs) <- getModules gen_pkg path_to_cabal exts
-    return $ Right $ CabalPrecis 
-                      { pkg_name              = getName gen_pkg
-                      , pkg_version           = getVersion gen_pkg
-                      , pkg_exposed_modules   = expos
-                      , pkg_internal_modules  = privs
-                      }
+    return $ CabalPrecis 
+               { cp_name               = getName gen_pkg
+               , cp_version            = getVersion gen_pkg
+               , cp_cabal_file         = cabal_file_path
+               , cp_exposed_modules    = expos
+               , cp_internal_modules   = privs
+               }
   where
     path_to_cabal = dropFileName cabal_file_path  
 
@@ -129,7 +141,33 @@ executableModules = fn . executableContents
   where
     fn (as,exe,cs) = (as, exeModuleName exe : cs)
 
+--------------------------------------------------------------------------------
+-- reconcile modules
 
+-- Initially a precis may have dublicates (via Cabal\'s 
+-- conditional mechanism).
+--
+nubSourceModules :: CabalPrecis -> CabalPrecis
+nubSourceModules cp@(CabalPrecis _ _ _ exs ins) = 
+    cp { cp_exposed_modules = exs', cp_internal_modules = ins' }
+  where
+    exs'  = nub exs
+    ins'  = filter (not . (`elem` exs')) $ nub ins 
+
+rewriteModulePaths :: CabalPrecis -> CabalPrecis
+rewriteModulePaths cp@(CabalPrecis _ _ root exs ins) = 
+    cp { cp_exposed_modules = exs', cp_internal_modules = ins' }
+  where
+    exs'  = map (relativeModulePath root) exs
+    ins'  = map (relativeModulePath root) ins
+
+relativeModulePath :: FilePath -> SourceModule -> SourceModule
+relativeModulePath path_to_cabal (SourceModule name path) = 
+    SourceModule name (removePrefix (dropFileName path_to_cabal) path)
+relativeModulePath _             modu                     = modu
+
+
+--------------------------------------------------------------------------------
 -- General helper
 
 ctfold :: (a -> b -> b) -> b -> (CondTree v c a) -> b

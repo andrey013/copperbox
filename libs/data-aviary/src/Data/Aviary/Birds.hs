@@ -309,7 +309,7 @@ starling' f g h x = f (g x) (h x)
 thrush :: a -> (a -> b) -> b
 thrush x f = f x
 
--- | V combinator - vireo.
+-- | V combinator - vireo (pairing).
 vireo :: a -> b -> (a -> b -> c) -> c
 vireo x y f = f x y
 

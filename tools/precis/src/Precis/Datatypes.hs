@@ -32,10 +32,11 @@ import System.FilePath
 
 
 data CabalPrecis = CabalPrecis {
-        pkg_name                :: String,
-        pkg_version             :: String,
-        pkg_exposed_modules     :: [SourceModule],
-        pkg_internal_modules    :: [SourceModule]
+        cp_name                 :: String,
+        cp_version              :: String,
+        cp_cabal_file           :: FilePath,
+        cp_exposed_modules      :: [SourceModule],
+        cp_internal_modules     :: [SourceModule]
       }
   deriving (Eq,Show)
 
@@ -53,10 +54,10 @@ sourceModule :: String -> FilePath -> SourceModule
 sourceModule name path = SourceModule name (normalise path)
 
 data ExportPrecis = ExportPrecis {
-        expo_base_module        :: String,
-        expo_exported_modules   :: [String],
-        expo_dcdecls            :: [DCDecl],
-        expo_simple_decls       :: [String]
+        ep_base_module          :: String,
+        ep_exported_modules     :: [String],
+        ep_dcdecls              :: [DCDecl],
+        ep_simple_decls         :: [String]
       }
   deriving (Eq,Show)
 
@@ -73,10 +74,11 @@ data DCExportType = DC_Abs | DC_Restricted | DC_Full
 instance Pretty CabalPrecis where
   pretty a = text "precis" <+> lineBraces body
     where
-      body =  expr "name"     (text $ pkg_name a)    
-          <$> expr "version"  (text $ pkg_version a)  
-          <$> text "exposed modules"  <+> (modsbody $ pkg_exposed_modules  a)
-          <$> text "internal modules" <+> (modsbody $ pkg_internal_modules a)
+      body =  expr "name"     (text $ cp_name a)    
+          <$> expr "version"  (text $ cp_version a)  
+          <$> expr "location" (text $ cp_cabal_file a)
+          <$> text "exposed modules"  <+> (modsbody $ cp_exposed_modules  a)
+          <$> text "internal modules" <+> (modsbody $ cp_internal_modules a)
       modsbody = lineBraces . vsep . map pretty 
              
 instance Pretty SourceModule where
@@ -92,7 +94,7 @@ instance Pretty ExportPrecis where
   pretty (ExportPrecis name mexpos dcdecls fundecls) = 
       text "module" <+> dquotes (text name) <+> lineBraces body
     where
-      body  = mods <$> dcs <+> funs
+      body  = vsep [mods, dcs, funs]
       mods  = namedBlock "module exports"          (vsep $ map dqsemi mexpos)
       dcs   = namedBlock "data class declarations" (vsep $ map dcdecl dcdecls)
       funs  = namedBlock "simple declarations"     (vsep $ map dqsemi fundecls)

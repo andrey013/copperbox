@@ -44,12 +44,10 @@ extractName (Ident name)  = name
 extractName (Symbol name) = name
 
 extractSpecialCon :: SpecialCon -> String
-extractSpecialCon UnitCon	= "()"
+extractSpecialCon UnitCon           = "()"
+extractSpecialCon ListCon           = "[]"
+extractSpecialCon FunCon            = "->"
+extractSpecialCon (TupleCon _ _)    = "(,)"
+extractSpecialCon Cons              = "(:)"
+extractSpecialCon UnboxedSingleCon  = "(# #)"
 
-{-
-ListCon	list type constructor []
-FunCon	function type constructor ->
-TupleCon Boxed Int	n-ary tuple type and data constructors (,) etc, possibly boxed (#,#)
-Cons	list data constructor (:)
-UnboxedSingleCon	unboxed singleton tuple constructor (# #)
--}

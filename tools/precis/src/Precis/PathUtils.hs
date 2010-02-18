@@ -18,6 +18,7 @@ module Precis.PathUtils
   (
     exeModuleName
   , resolveModules
+  , removePrefix
 
   ) where
 
@@ -53,6 +54,8 @@ resolveModules path_root src_dirs mod_names exts =
                                      Just path' -> 
                                          return $ sourceModule mod_name path'
                                  }
+
+
 findByExtension :: FilePath -> [String] -> IO (Maybe FilePath)
 findByExtension _    []     = return Nothing
 findByExtension path (e:es) = let full = addExtension path e in 
@@ -72,3 +75,11 @@ longCrossProduct xs ys = [(a,b) | a <- xs , b <- ys ]
 
 mname :: ModuleName -> String 
 mname = concat . intersperse "." . components
+
+
+removePrefix :: FilePath -> FilePath -> FilePath
+removePrefix pre path = joinPath $ step (fn pre) (fn path) 
+  where
+    fn                          = splitPath . normalise
+    step (x:xs) (y:ys) | x == y = step xs ys 
+    step _      ys              = ys
