@@ -28,5 +28,5 @@ import Data.Word
 
 slowHexAll :: IOUArray Int Word8 -> IO ()
 slowHexAll arr = getElems arr  >>= \xs    -> 
-                 getBounds arr >>= \(s,e) -> putStrLn $ render $ hexdump s e xs
+                 getBounds arr >>= \(s,e) -> putStrLn $ show $ hexdump s e xs
 

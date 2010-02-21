@@ -17,16 +17,19 @@
 module Text.PrettyPrint.JoinPrint.Core
   ( 
     Doc
+  , VDoc
   , empty
   , null
   , length
 
   , (<>)
   , (<+>)
-  , (<%>)
-  , vcat
   , hcat
   , hsep
+
+  , vcat
+  , vcons
+  , vsnoc
 
   , text
   , char
@@ -77,46 +80,81 @@ module Text.PrettyPrint.JoinPrint.Core
 import Text.PrettyPrint.JoinPrint.JoinString ( JoinString, (++) )
 import qualified Text.PrettyPrint.JoinPrint.JoinString as JS
 
+import Data.List ( foldl' )
 import Prelude hiding ( (++), null, length )
 
 newtype Doc = Doc { getDoc :: JoinString }
 
+
+newtype VDoc = VDoc { getVDoc :: ShowS }
+
 instance Show Doc where
   show = render
+
+instance Show VDoc where
+  show = renderV
         
-infixr 5 <%>
 infixr 6 <>, <+>
 
-
+-- | Create an empty, zero length document.
+--
 empty :: Doc
 empty = Doc $ JS.empty
 
+-- | Test if the doc is empty.
+--
 null :: Doc -> Bool
 null = JS.null . getDoc 
 
 
--- | length on a Doc is O(1).
+-- | Get the length of the Doc. 
+-- 
+-- Length is cached in the document\'s  data type so this 
+-- operation is O(1).
+--
 length :: Doc -> Int
 length = JS.length . getDoc
 
-
+-- | Horizontally concatenate two documents with no space 
+-- between them.
+-- 
 (<>) :: Doc -> Doc -> Doc
 Doc a <> Doc b = Doc $ a ++ b
 
+-- | Horizontally concatenate two documents with a single space 
+-- between them.
+-- 
 (<+>) :: Doc -> Doc -> Doc
 Doc a <+> Doc b = Doc (a ++ JS.cons1 ' ' b)
 
-(<%>) :: Doc -> Doc -> Doc
-Doc a <%> Doc b = Doc (a ++ JS.cons1 '\n' b)
-
-vcat :: [Doc] -> Doc
-vcat = foldr (<%>) empty
 
 hcat :: [Doc] -> Doc
 hcat = foldr (<>) empty
 
 hsep :: [Doc] -> Doc
 hsep = foldr (<+>) empty
+
+
+-- Vertically concatenation is different to PPrint or Hughes-PJ.
+-- Because the Doc type tracks (horizontal) length, vertically
+-- concat cannot use the same type as there is no reasonable
+-- horizontal length (max length, length of first, length of 
+-- last?)
+--
+
+vsnocS :: ShowS -> Doc -> ShowS
+vsnocS f a = f . showChar '\n' . renderS a
+
+vcons :: Doc -> VDoc -> VDoc
+vcons d (VDoc f) = VDoc (renderS d . showChar '\n' . f)
+
+vsnoc :: VDoc -> Doc -> VDoc
+vsnoc (VDoc f) d = VDoc (vsnocS f d)
+
+vcat :: [Doc] -> VDoc
+vcat []     = VDoc id
+vcat [a]    = VDoc (renderS a)
+vcat (a:as) = VDoc $ foldl' vsnocS (renderS a) as
 
 
 
@@ -242,6 +280,11 @@ render :: Doc -> String
 render = JS.toString . getDoc
 
 
+renderS :: Doc -> ShowS
+renderS = showString . render
+
+renderV :: VDoc -> String
+renderV = ($ "") . getVDoc
 
 renderIO :: Doc -> IO ()
 renderIO = putStrLn . JS.toString . getDoc

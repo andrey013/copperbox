@@ -150,12 +150,13 @@ printArchive = putStr . archiveText
 
 
 archiveText :: ArArchive -> String
-archiveText = PP.render . ppArchive
+archiveText = show . ppArchive
 
-ppArchive :: ArArchive -> PP.Doc
-ppArchive a = 
-        PP.text              (ar_magic a)
-    PP.<%> (PP.vcat $ map ppArchiveObject $ ar_objects a)
+ppArchive :: ArArchive -> PP.VDoc
+ppArchive a = mgc `PP.vcons` body
+  where
+    mgc  = PP.text $ ar_magic a
+    body = PP.vcat $ map ppArchiveObject $ ar_objects a
 
 
 
@@ -172,8 +173,8 @@ ppArHeader a = PP.hcat $ sequence fields a
        , ppf 6  "user id"               (PP.int  . arh_user_id)
        , ppf 6  "group id"              (PP.int  . arh_group_id)
        , ppf 8  "mode"                  (PP.text . arh_mode)
-       , ppf 10 "size"                  (PP.int . arh_size)
-       , ppf 2  "trailer"               (tup2 . arh_trailer)
+       , ppf 10 "size"                  (PP.int  . arh_size)
+       , ppf 2  "trailer"               (tup2    . arh_trailer)
        ]
     tup2 (x:y:xs) = PP.hsep [ hexpp x, hexpp y, PP.text xs]
     tup2 xs       = PP.text xs

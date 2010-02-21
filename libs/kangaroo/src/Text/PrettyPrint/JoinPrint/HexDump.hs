@@ -61,13 +61,18 @@ hex i | i >= 0    = text $ showHex i []
 
 
 
-
+-- | Print a Word8 as a 2-digit hex number.
+--
 hex2 :: Word8 -> Doc
 hex2 = padl 2 '0' . text . ($ []) . showHex
 
+-- | Print a Word16 as a 4-digit hex number.
+--
 hex4 :: Word16 -> Doc
 hex4 = padl 4 '0' . text . ($ []) . showHex
 
+-- | Print a Word32 as a 8-digit hex number.
+--
 hex8 :: Word32 -> Doc
 hex8 = padl 8 '0' . text . ($ []) . showHex
 
@@ -83,12 +88,18 @@ oxhex plen i
     | i >= 0    = text "0x" <> padl plen '0' (text $ showHex i [])
     | otherwise = text "0x" <> padl plen '*' (asterix $ showHex (abs i) [])
 
+-- | Print a Word8 as a 2-digit hex number prefixed with \"0x\".
+--
 oxhex2 :: Word8 -> Doc
 oxhex2 = (text "0x" <>) . hex2
 
+-- | Print a Word16 as a 4-digit hex number prefixed with \"0x\".
+--
 oxhex4 :: Word16 -> Doc
 oxhex4 = (text "0x" <>) . hex4
 
+-- | Print a Word32 as a 8-digit hex number prefixed with \"0x\".
+--
 oxhex8 :: Word32 -> Doc
 oxhex8 = (text "0x" <>) . hex8
 
@@ -97,7 +108,7 @@ oxhex8 = (text "0x" <>) . hex8
 -- This would be better if it didn't need a list in the first 
 -- place (i.e. it could use an array directly)...
 
-hexdump :: Int -> Int -> [Word8] -> Doc
+hexdump :: Int -> Int -> [Word8] -> VDoc
 hexdump start end bs = 
     vcat $ aZipWith (hexLine True c1_width, hexLine False c1_width) 
                     index_nums

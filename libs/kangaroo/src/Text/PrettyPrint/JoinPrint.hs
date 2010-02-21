@@ -12,6 +12,11 @@
 --
 -- Printing with /join-strings/.
 --
+-- Note - JoinPrint is just a formatter and not a \'pretty printer\'. 
+-- No line fitting takes place - lines are printed exactly as 
+-- they are specified. 
+--
+--
 --------------------------------------------------------------------------------
 
 module Text.PrettyPrint.JoinPrint

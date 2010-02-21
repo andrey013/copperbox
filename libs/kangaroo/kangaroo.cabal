@@ -1,5 +1,5 @@
 name:             kangaroo
-version:          0.3.0
+version:          0.4.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -25,10 +25,14 @@ description:
   on Hackage.
   .
   Currently kangaroo is twinned with its own library of formatting
-  combinators, at some point this is likely to be put into its 
-  own package
+  combinators (JoinPrint), at some point this is may be put into 
+  its own package.
   .
   Changelog:
+  .
+  0.4.0 Changed JoinPrint to have distinct types for single-line
+  documents (Doc) and multi-line documents (VDoc). This is 
+  because single-line docs track their horizontal length.
   .
   0.3.0 Documented the primitive parsers. @char@ renamed @anyChar@
   to match Parsec\'s convention. Rationalized exports from 
@@ -45,11 +49,7 @@ stability:          half baked
 cabal-version:      >= 1.2
 
 extra-source-files:
-  demo/MidiDatatypes.hs
-  demo/MidiRead.hs
-  demo/MidiText.hs
-  demo/PrintMidi.hs
-  test/Picklers.hs
+  demo/AR.hs
 
 
 library
