@@ -25,8 +25,8 @@ description:
   on Hackage.
   .
   Currently kangaroo is twinned with its own library of formatting
-  combinators (JoinPrint), at some point this is may be put into 
-  its own package.
+  combinators (JoinPrint), at some point this is may go in its a 
+  separate package.
   .
   Changelog:
   .
