@@ -107,13 +107,27 @@ oxhex8 = (text "0x" <>) . hex8
 --------------------------------------------------------------------------------
 
 hexdumpA :: Int -> Int -> IOUArray Int Word8 -> IO VDoc 
-hexdumpA start end arr = do 
-    (s,e)      <- getBounds arr
-    let start' = max s start
-    let end'   = min e end
-    segs       <- segment16Arr start' end' arr
-    return $ hexdump2 start' end' segs
+hexdumpA start end arr = getBounds arr >>= next 
+  where
+    next (s,e) = lineSpans c1_width (segment16Ixs (max s start) (min e end)) arr
+    c1_width   = 2 +  sizeHexStr end
 
+lineSpans :: Int -> [(Int,Int)] -> IOUArray Int Word8 -> IO VDoc 
+lineSpans _        []     _   = return $ vcat []
+lineSpans c1_width (x:xs) arr = do 
+    w8s <- spanArr x arr
+    let vdoc = vcat [firstLine (lineStart $ fst x) w8s]
+    docTail xs vdoc
+  where
+    docTail []             vdoc = return vdoc
+    docTail (ix@(s,_):ixs) vdoc = do { w8s <- spanArr ix arr
+                                     ; let d = tailLine (lineStart s) w8s
+                                     ; docTail ixs (vdoc `vsnoc` d) }
+
+    firstLine                   = hexLine True  c1_width
+    tailLine                    = hexLine False c1_width
+                                     
+        
 
 
 -- This would be better if it didn't need a list in the first 
@@ -165,10 +179,22 @@ columnPad pad_left w d = step $ length d where
                    
 
 lineNumbers :: Int -> Int -> [Int]
-lineNumbers s e = unfoldr phi $ s `div` 16 where
+lineNumbers s e = unfoldr phi $ lineStart s where
    phi n | n > e     = Nothing
          | otherwise = Just (n,n+16) 
 
+lineEnd :: Int -> Int
+lineEnd l = (l `div` 16) * 16 + 15
+
+
+lineStart :: Int -> Int
+lineStart l = (l `div` 16) * 16
+
+
+segment16Ixs :: Int -> Int -> [(Int,Int)]
+segment16Ixs start end = unfoldr phi start where
+  phi i | i > end    = Nothing
+        | otherwise  = let e1 = lineEnd i in Just ((i, min end e1), e1+1)
 
 
 -- Show 16 bytes per line...
@@ -180,29 +206,8 @@ segment16 initial ls = let (top,rest) = splitAt initial ls
     phi cs = let (xs,rest) = splitAt 16 cs in Just (xs,rest)
 
 
-segment16Arr :: Int -> Int -> IOUArray Int Word8 -> IO [[Word8]]
-segment16Arr l u arr = do 
-   line1 <- spanArr l line1_end arr
-   rest  <- if u > line1_end then spanArrArr (line1_end+1) u arr 
-                             else return []
-
-   return $ line1:rest
-  where 
-    line1_end = min u $ (l `div` 16) * 16 + 15
-
-spanArrArr :: Int -> Int -> IOUArray Int Word8 -> IO [[Word8]]
-spanArrArr l u arr = rstep (last_line_start,u) []
-  where
-    rstep (i,e) acc 
-        | e < l     = return acc
-        | i < l     = do { xs <- spanArr l e arr; return (xs:acc) }
-        | otherwise = do { xs <- spanArr i e arr; rstep (i-16,e-16) (xs:acc) }
-    
-    last_line_start = 0
-
-
-spanArr :: Int -> Int -> IOUArray Int Word8 -> IO [Word8]
-spanArr l u arr = rstep u [] where
+spanArr :: (Int,Int) -> IOUArray Int Word8 -> IO [Word8]
+spanArr (l,u) arr = rstep u [] where
   rstep i acc | i < l = return acc
   rstep i acc         = do { e <- readArray arr i ; rstep (i-1) (e:acc ) }
 

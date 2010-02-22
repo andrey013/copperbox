@@ -16,10 +16,7 @@
 
 module Data.ParserCombinators.KangarooState
   (
-    module Data.ParserCombinators.Kangaroo.Combinators
-  , module Data.ParserCombinators.Kangaroo.ParseMonad
-  , module Data.ParserCombinators.Kangaroo.Prim
-  , Kangaroo
+    Kangaroo
   , parse
   , runKangaroo
   , evalKangaroo
@@ -28,6 +25,49 @@ module Data.ParserCombinators.KangarooState
   , get
   , modify
   , gets
+  -- Re-exports from ParseMonad
+  -- * Parser types
+  , ParseErr
+
+  -- * Region types
+  , RegionCoda(..)
+  , RegionName    
+
+
+  -- * Lift IO actions
+  , liftIOAction
+
+  -- * Error reporting and exception handling
+  , reportError
+  , substError
+
+  -- * Primitive parsers
+  , word8
+  , satisfy
+  , checkWord8
+  , opt 
+  , moveForward
+
+  -- * Query the cursor position
+  , position
+  , region
+  , atEnd
+  , lengthRemaining
+  , regionSize
+
+  -- * Parse within a region
+  , intraparse
+  , advance
+  , advanceRelative
+  , restrict
+  , restrictToPos
+   
+  -- * Debug
+  , printHexAll
+  , printRegionStack 
+
+  , module Data.ParserCombinators.Kangaroo.Combinators
+  , module Data.ParserCombinators.Kangaroo.Prim
 
   ) where
 

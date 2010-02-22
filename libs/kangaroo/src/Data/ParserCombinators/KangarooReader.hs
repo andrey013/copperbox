@@ -45,6 +45,7 @@ module Data.ParserCombinators.KangarooReader
   , satisfy
   , checkWord8
   , opt 
+  , moveForward
 
   -- * Query the cursor position
   , position
@@ -52,7 +53,7 @@ module Data.ParserCombinators.KangarooReader
   , atEnd
   , lengthRemaining
   , regionSize
-
+ 
   -- * Parse within a region
   , intraparse
   , advance

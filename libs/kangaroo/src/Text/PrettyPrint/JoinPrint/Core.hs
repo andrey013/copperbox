@@ -84,6 +84,7 @@ import Text.PrettyPrint.JoinPrint.JoinString ( JoinString, (++) )
 import qualified Text.PrettyPrint.JoinPrint.JoinString as JS
 
 import Data.List ( foldl' )
+import Data.Monoid
 import Prelude hiding ( (++), null, length )
 
 
@@ -108,11 +109,26 @@ newtype Doc = Doc { getDoc :: JoinString }
 --
 newtype VDoc = VDoc { getVDoc :: ShowS }
 
+--------------------------------------------------------------------------------
+
 instance Show Doc where
   show = render
 
 instance Show VDoc where
   show = renderV
+
+
+instance Monoid Doc where
+  mempty = empty
+  mappend = (<>)
+
+instance Monoid VDoc where
+  mempty                      = VDoc id
+  (VDoc f) `mappend` (VDoc g) = VDoc (f . showChar '\n' . g)
+
+
+
+--------------------------------------------------------------------------------
         
 infixr 6 <>, <+>
 

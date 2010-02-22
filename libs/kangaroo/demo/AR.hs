@@ -23,12 +23,15 @@ import qualified Text.PrettyPrint.JoinPrint as PP
 import Control.Exception
 import Control.Monad
 import Data.Char ( ord, isDigit )
-import Data.Word
+import Data.Monoid
 import Prelude hiding ( catch )
 import System.Environment
 import System.Exit
 
+
 type Parser a = Kangaroo String a    
+
+
 
 main :: IO ()
 main = do 
@@ -62,7 +65,7 @@ data ArArchive = ArArchive
 
 data ArchiveObject = ArchiveObject
      { ar_header                    :: ArHeader
-     , ar_body                      :: [Word8]  -- needs thought... shouldn't be a list
+     , ar_body                      :: (Int,Int)
      }
 
 data ArHeader = ArHeader 
@@ -103,16 +106,15 @@ arMagicString = text 8
 
 archiveObject :: Parser ArchiveObject
 archiveObject = do 
-    liftIOAction $ putStrLn "ao"
     header  <- arHeader
     let sz  = arh_size header
-    liftIOAction $ putStrLn ("size " ++ show sz)
-    body    <- count sz word8
     pos     <- position
-    when (pos `mod` 2 /= 0) (anyChar >> return ())   -- should be a newline 
+    moveForward sz
+    end_pos     <- position
+    when (end_pos `mod` 2 /= 0) (anyChar >> return ())   -- should be a newline 
     return $ ArchiveObject 
                 { ar_header         = header
-                , ar_body           = body
+                , ar_body           = (pos,sz)
                 }
 
 paddedNumber :: (Read a, Integral a) => Int -> Parser a
@@ -156,15 +158,15 @@ ppArchive :: ArArchive -> PP.VDoc
 ppArchive a = mgc `PP.vcons` body
   where
     mgc  = PP.text $ ar_magic a
-    body = PP.vcat $ map ppArchiveObject $ ar_objects a
+    body = mconcat $ map ppArchiveObject $ ar_objects a
 
 
 
-ppArchiveObject :: ArchiveObject -> PP.Doc
+ppArchiveObject :: ArchiveObject -> PP.VDoc
 ppArchiveObject = ppArHeader . ar_header
 
-ppArHeader :: ArHeader -> PP.Doc
-ppArHeader a = PP.hcat $ sequence fields a
+ppArHeader :: ArHeader -> PP.VDoc
+ppArHeader a = PP.vcat $ sequence fields a
   where
     ppf    = ppField 4 24   
     fields = 
