@@ -27,13 +27,14 @@ module Text.PrettyPrint.JoinPrint.HexDump
   , oxhex8
 
   , hexdump
-
+  , hexdumpA
 
   ) where
 
 
 import Text.PrettyPrint.JoinPrint.Core
 
+import Data.Array.IO
 import Data.Char
 import Data.List ( unfoldr )
 import Data.Word
@@ -105,23 +106,41 @@ oxhex8 = (text "0x" <>) . hex8
 
 --------------------------------------------------------------------------------
 
+hexdumpA :: Int -> Int -> IOUArray Int Word8 -> IO VDoc 
+hexdumpA start end arr = do 
+    (s,e)      <- getBounds arr
+    let start' = max s start
+    let end'   = min e end
+    segs       <- segment16Arr start' end' arr
+    return $ hexdump2 start' end' segs
+
+
+
 -- This would be better if it didn't need a list in the first 
 -- place (i.e. it could use an array directly)...
 
 hexdump :: Int -> Int -> [Word8] -> VDoc
-hexdump start end bs = 
+hexdump start end bs = hexdump2 start end segs  where
+    segs = segment16 (16 - (start `mod` 16)) bs
+
+hexdump2 :: Int -> Int -> [[Word8]] -> VDoc
+hexdump2 start end segs = 
     vcat $ aZipWith (hexLine True c1_width, hexLine False c1_width) 
                     index_nums
                     segs
   where
-    segs       = segment16 (16 - (start `mod` 16)) bs
-    c1_width   = 2 +  (Pre.length $ showHex end "")
+    c1_width   = 2 +  sizeHexStr end
     index_nums = lineNumbers start end
 
+
+sizeHexStr :: Int -> Int
+sizeHexStr n = Pre.length $ showHex (abs n) []
+
+-- zipWith an \anacrusis\ on the first element.
+--
 aZipWith :: (a -> b -> c, a -> b -> c) -> [a] -> [b] -> [c]
 aZipWith (f,g) (x:xs) (y:ys) = f x y : zipWith g xs ys
 aZipWith _     _      _      = []
-
 
 
 --------------------------------------------------------------------------------
@@ -160,6 +179,32 @@ segment16 initial ls = let (top,rest) = splitAt initial ls
     phi [] = Nothing
     phi cs = let (xs,rest) = splitAt 16 cs in Just (xs,rest)
 
+
+segment16Arr :: Int -> Int -> IOUArray Int Word8 -> IO [[Word8]]
+segment16Arr l u arr = do 
+   line1 <- spanArr l line1_end arr
+   rest  <- if u > line1_end then spanArrArr (line1_end+1) u arr 
+                             else return []
+
+   return $ line1:rest
+  where 
+    line1_end = min u $ (l `div` 16) * 16 + 15
+
+spanArrArr :: Int -> Int -> IOUArray Int Word8 -> IO [[Word8]]
+spanArrArr l u arr = rstep (last_line_start,u) []
+  where
+    rstep (i,e) acc 
+        | e < l     = return acc
+        | i < l     = do { xs <- spanArr l e arr; return (xs:acc) }
+        | otherwise = do { xs <- spanArr i e arr; rstep (i-16,e-16) (xs:acc) }
+    
+    last_line_start = 0
+
+
+spanArr :: Int -> Int -> IOUArray Int Word8 -> IO [Word8]
+spanArr l u arr = rstep u [] where
+  rstep i acc | i < l = return acc
+  rstep i acc         = do { e <- readArray arr i ; rstep (i-1) (e:acc ) }
 
 printable :: Word8 -> Char
 printable = fn . chr . fromIntegral where 
