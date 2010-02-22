@@ -213,5 +213,6 @@ spanArr (l,u) arr = rstep u [] where
 
 printable :: Word8 -> Char
 printable = fn . chr . fromIntegral where 
-  fn c | isPrint c = c
-       | otherwise = '.'
+  fn c | ord c >= 160  = '.'            -- GHC 6.12.1 Windows bug?
+       | isPrint c     = c
+       | otherwise     = '.'

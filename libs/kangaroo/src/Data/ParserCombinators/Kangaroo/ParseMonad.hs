@@ -65,6 +65,7 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   -- * Debug
   , printHexAll
   , printRegionStack 
+  , printHexRange
 
   ) where
 
@@ -500,7 +501,10 @@ restrictToPos name coda abs_pos p = getPos >>= \pos ->
 -- Debug
 
 printHexAll         :: GenKangaroo ust ()
-printHexAll         = askEnv >>= liftIOAction . slowHexAll
+printHexAll         = askEnv >>= liftIOAction . debugHexAll
+
+printHexRange       :: (Int,Int) -> GenKangaroo ust ()
+printHexRange rng   = askEnv >>= liftIOAction . (debugHexRange rng)
 
 printRegionStack    :: GenKangaroo ust ()
 printRegionStack    = getSt >>= liftIOAction . putStrLn . printParseStack

@@ -16,8 +16,9 @@
 
 module Data.ParserCombinators.Kangaroo.Debug
   (
-    slowHexAll
-  
+    debugHexAll
+  , debugHexRange
+
   ) where
 
 
@@ -26,7 +27,10 @@ import Text.PrettyPrint.JoinPrint
 import Data.Array.IO
 import Data.Word
 
-slowHexAll :: IOUArray Int Word8 -> IO ()
-slowHexAll arr = getElems arr  >>= \xs    -> 
-                 getBounds arr >>= \(s,e) -> putStrLn $ show $ hexdump s e xs
+debugHexAll :: IOUArray Int Word8 -> IO ()
+debugHexAll arr = getBounds arr    >>= \(s,e) -> 
+                 hexdumpA s e arr >>= (putStrLn . show)
 
+
+debugHexRange :: (Int,Int) -> IOUArray Int Word8 -> IO ()
+debugHexRange (s,e) arr = hexdumpA s e arr >>= (putStrLn . show)

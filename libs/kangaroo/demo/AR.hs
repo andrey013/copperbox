@@ -22,16 +22,13 @@ import qualified Text.PrettyPrint.JoinPrint as PP
 
 import Control.Exception
 import Control.Monad
-import Data.Char ( ord, isDigit )
-import Data.Monoid
+import Data.Char
 import Prelude hiding ( catch )
 import System.Environment
 import System.Exit
 
 
 type Parser a = Kangaroo String a    
-
-
 
 main :: IO ()
 main = do 
@@ -112,10 +109,19 @@ archiveObject = do
     moveForward sz
     end_pos     <- position
     when (end_pos `mod` 2 /= 0) (anyChar >> return ())   -- should be a newline 
+    
+    -- ... silly debug (show off hexdump)
+    printHexRange $ limit (pos,pos+sz)
+    liftIOAction  $ putStrLn ""
+    -- ... end silly
+
     return $ ArchiveObject 
                 { ar_header         = header
                 , ar_body           = (pos,sz)
                 }
+  where
+    limit (x,y) = (x, min y (x+200))
+
 
 paddedNumber :: (Read a, Integral a) => Int -> Parser a
 paddedNumber i = liftM fn $ count i anyChar
@@ -158,7 +164,7 @@ ppArchive :: ArArchive -> PP.VDoc
 ppArchive a = mgc `PP.vcons` body
   where
     mgc  = PP.text $ ar_magic a
-    body = mconcat $ map ppArchiveObject $ ar_objects a
+    body = PP.vconcatSep $ map ppArchiveObject $ ar_objects a
 
 
 
@@ -166,9 +172,9 @@ ppArchiveObject :: ArchiveObject -> PP.VDoc
 ppArchiveObject = ppArHeader . ar_header
 
 ppArHeader :: ArHeader -> PP.VDoc
-ppArHeader a = PP.vcat $ sequence fields a
+ppArHeader a = PP.vcat $ column_headings : column_sep : sequence fields a
   where
-    ppf    = ppField 4 24   
+    ppf    = ppField 4 14
     fields = 
        [ ppf 16 "name"                  (PP.text . arh_name)
        , ppf 12 "date"                  (PP.text . arh_date)
@@ -178,12 +184,17 @@ ppArHeader a = PP.vcat $ sequence fields a
        , ppf 10 "size"                  (PP.int  . arh_size)
        , ppf 2  "trailer"               (tup2    . arh_trailer)
        ]
-    tup2 (x:y:xs) = PP.hsep [ hexpp x, hexpp y, PP.text xs]
-    tup2 xs       = PP.text xs
+    tup2 (x:y:xs)   = PP.hsep [ hexpp x, hexpp y, PP.text xs]
+    tup2 xs         = PP.text xs
 
-    hexpp         = PP.hex2 . fromIntegral . ord
+    hexpp           = PP.hex2 . fromIntegral . ord
 
+    column_headings = PP.hsep [ PP.text "size"
+                              , PP.padl 14 ' ' (PP.text "field") 
+                              , PP.padr 16 ' ' (PP.text "value")
+                              ]
 
+    column_sep      = PP.replicateChar 60 '-' 
 
 --------------------------------------------------------------------------------
 -- Helpers
@@ -195,42 +206,3 @@ ppField n1 n2 sz field_name f a = PP.hsep [sz', field_name', f a]
     field_name' = PP.padl n2 ' ' (PP.text field_name)
 
 
-{-
-
-
-ppField :: Int -> Int -> Int -> String -> (a -> Doc) -> a -> Doc
-ppField n1 n2 sz field_name f a = text sz'  <+> text field_name' <+> f a
-  where
-    sz'         = pad n1 ' ' (show sz)
-    field_name' = pad n2 ' ' field_name
-
-tableProlog :: String -> (Int,Int) -> [Doc] -> Doc
-tableProlog s (m,n) ds =
-        columnSep 
-    <%> text s 
-    <%> columnSep
-    <%> columnHeadings m n
-    <%> columnSep
-    <%> vcat ds
-  where
-    columnHeadings fsz vsz = 
-      text "size" <+> text (pad fsz ' ' "field") <+> text (pad vsz ' ' "value")
-
-
-columnSep :: Doc
-columnSep = text $ replicate 60 '-' 
-
-
-
-ppHex :: Integral a => Int -> a -> Doc
-ppHex n i = text "0x" <> (text $ pad n '0' $ showHex i "")
-  
-
-pad :: Int -> Char -> String -> String
-pad n ch s | length s < n = replicate (n - length s) ch ++ s
-           | otherwise    = s
-
-listDoc :: [Doc] -> Doc
-listDoc = brackets . punctuate comma
-
--}

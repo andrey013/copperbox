@@ -59,8 +59,9 @@ module Data.ParserCombinators.Kangaroo
    
   -- * Debug
   , printHexAll
+  , printHexRange
   , printRegionStack 
-
+  
   , module Data.ParserCombinators.Kangaroo.Combinators
   , module Data.ParserCombinators.Kangaroo.Prim
 

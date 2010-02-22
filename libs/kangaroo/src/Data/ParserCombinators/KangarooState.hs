@@ -25,6 +25,7 @@ module Data.ParserCombinators.KangarooState
   , get
   , modify
   , gets
+
   -- Re-exports from ParseMonad
   -- * Parser types
   , ParseErr
@@ -64,6 +65,7 @@ module Data.ParserCombinators.KangarooState
    
   -- * Debug
   , printHexAll
+  , printHexRange
   , printRegionStack 
 
   , module Data.ParserCombinators.Kangaroo.Combinators

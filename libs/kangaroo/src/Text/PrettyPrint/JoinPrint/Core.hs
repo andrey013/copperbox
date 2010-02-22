@@ -22,16 +22,21 @@ module Text.PrettyPrint.JoinPrint.Core
   , null
   , length
 
+  -- * Compose Docs
   , (<>)
   , (<+>)
   , hcat
   , hsep
 
+  -- * Compose VDocs
   , vcat
   , vsep
   , vcons
   , vsnoc
+  , vconcat
+  , vconcatSep
 
+  -- * Primitive Docs
   , text
   , char
   , int
@@ -68,12 +73,13 @@ module Text.PrettyPrint.JoinPrint.Core
   , replicateChar
   , spacer
 
-
+  -- * Padding and truncation
   , padl
   , padr
   , truncl 
   , truncr
   
+  -- * Output
   , render
   , renderIO
   
@@ -214,6 +220,23 @@ vcons d (VDoc f) = VDoc (renderS d . showChar '\n' . f)
 --
 vsnoc :: VDoc -> Doc -> VDoc
 vsnoc (VDoc f) d = VDoc (f . showChar '\n' . renderS d)
+
+
+
+-- | Concatenate a list of 'VDoc'.
+--
+vconcat :: [VDoc] -> VDoc
+vconcat []          = VDoc id
+vconcat [a]         = a
+vconcat (VDoc a:as) = VDoc (a . showChar '\n' . getVDoc (vconcat as))
+
+-- | Concatenate a list of 'VDoc' with a blank line separating 
+-- them.
+--
+vconcatSep :: [VDoc] -> VDoc
+vconcatSep []          = VDoc id
+vconcatSep [a]         = a
+vconcatSep (VDoc a:as) = VDoc (a . showString "\n\n" . getVDoc (vconcatSep as))
 
 
 -- | Create a document from a literal string.

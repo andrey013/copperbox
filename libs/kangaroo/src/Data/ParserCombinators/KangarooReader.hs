@@ -63,6 +63,7 @@ module Data.ParserCombinators.KangarooReader
    
   -- * Debug
   , printHexAll
+  , printHexRange
   , printRegionStack 
 
 
