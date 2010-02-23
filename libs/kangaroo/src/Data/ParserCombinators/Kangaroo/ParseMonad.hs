@@ -46,7 +46,7 @@ module Data.ParserCombinators.Kangaroo.ParseMonad
   , satisfy
   , checkWord8
   , opt 
-  , moveForward
+  , skip
 
   -- * Query the cursor position
   , position
@@ -341,18 +341,18 @@ opt p = GenKangaroo $ \env st ust -> (getGenKangaroo p) env st ust >>= \ ans ->
       (Left _, _, ust')    -> return (Right Nothing, st, ust')
       (Right a, st', ust') -> return (Right $ Just a, st', ust')
 
--- | 'moveForward' : @ distance -> () @
+-- | 'skip' : @ num_bytes -> () @
 --
 -- Move the cursor forward by the supplied distance. The distance
 -- must be positive, negative distances are ignored.
 --
--- 'moveForward' performs no range checking. If the cursor is 
+-- 'skip' performs no range checking. If the cursor is 
 -- moved beyond the region boundary then the next parse will 
 -- fail.
 --
-moveForward :: Int -> GenKangaroo ust ()
-moveForward n | n <= 0 = return ()
-moveForward n          = modifyPos (n+)
+skip :: Int -> GenKangaroo ust ()
+skip n | n <= 0 = return ()
+skip n          = modifyPos (n+)
 
 
 --------------------------------------------------------------------------------

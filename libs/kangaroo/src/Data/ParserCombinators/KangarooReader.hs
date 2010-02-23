@@ -23,6 +23,8 @@ module Data.ParserCombinators.KangarooReader
   , parse
   , runKangaroo
   , ask
+  , asks
+  , local
 
   -- Re-exports from ParseMonad
   -- * Parser types
@@ -45,7 +47,7 @@ module Data.ParserCombinators.KangarooReader
   , satisfy
   , checkWord8
   , opt 
-  , moveForward
+  , skip
 
   -- * Query the cursor position
   , position
@@ -78,20 +80,36 @@ import Data.ParserCombinators.Kangaroo.Prim
 
 import Control.Monad ( liftM )
 
-type Kangaroo e a = GenKangaroo e a
+type Kangaroo r a = GenKangaroo r a
 
 
-parse :: Kangaroo e a  
-      -> e
+parse :: Kangaroo r a
+      -> r
       -> FilePath 
       -> IO (Either ParseErr a)
 parse = runKangaroo 
 
-runKangaroo :: Kangaroo e a
-            -> e
+runKangaroo :: Kangaroo r a
+            -> r
             -> FilePath 
             -> IO (Either ParseErr a)
 runKangaroo p env filename = liftM fst (runGenKangaroo p env filename)
 
-ask :: Kangaroo e e
+-- | Retrieve the environment.
+--
+ask :: Kangaroo r r
 ask = getUserSt
+
+asks :: (r -> a) -> Kangaroo r a
+asks f = liftM f getUserSt
+
+-- | Execute a computation in a modified environment.
+--
+local :: (r -> r) -> Kangaroo r a -> Kangaroo r a
+local f ma = do 
+    e  <- getUserSt 
+    putUserSt (f e)
+    ans <- ma
+    putUserSt e
+    return ans
+

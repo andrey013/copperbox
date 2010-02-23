@@ -41,7 +41,7 @@ module Data.ParserCombinators.Kangaroo
   , satisfy
   , checkWord8
   , opt 
-  , moveForward
+  , skip
 
   -- * Query the cursor position
   , position

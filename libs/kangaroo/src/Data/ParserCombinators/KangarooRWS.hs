@@ -27,6 +27,8 @@ module Data.ParserCombinators.KangarooRWS
   , gets
   , tell
   , ask
+  , asks
+  , local
 
   -- Re-exports from ParseMonad
   -- * Parser types
@@ -49,7 +51,7 @@ module Data.ParserCombinators.KangarooRWS
   , satisfy
   , checkWord8
   , opt 
-  , moveForward
+  , skip
 
   -- * Query the cursor position
   , position
@@ -148,5 +150,24 @@ gets f = liftM f get
 tell :: Monoid w => w -> Kangaroo r w st ()
 tell s = getUserSt >>= \(r,w,st) -> putUserSt (r,w `mappend` s,st)
 
+-- | Retrieve the environment.
+--
 ask :: Kangaroo r w st r
 ask = liftM env3 getUserSt
+
+asks :: (r -> a) -> Kangaroo r w st a
+asks f = liftM (f . env3) getUserSt
+
+
+
+-- | Execute a computation in a modified environment.
+--
+local :: (r -> r) -> Kangaroo r w st a -> Kangaroo r w st a
+local upd ma = do 
+    st@(e,_,_)  <- getUserSt 
+    putUserSt $ fmap3a upd st
+    ans <- ma
+    putUserSt $ fmap3a (const e) st
+    return ans
+  where
+    fmap3a f (a,b,c) = (f a,b,c)

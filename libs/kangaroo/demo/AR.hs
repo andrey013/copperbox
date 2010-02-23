@@ -106,7 +106,7 @@ archiveObject = do
     header  <- arHeader
     let sz  = arh_size header
     pos     <- position
-    moveForward sz
+    skip sz
     end_pos     <- position
     when (end_pos `mod` 2 /= 0) (anyChar >> return ())   -- should be a newline 
     
