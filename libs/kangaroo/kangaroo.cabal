@@ -18,11 +18,12 @@ description:
   \* Caveat \* - the above of course means that the target file 
   is obliged to be small enough to fit into memory. 
   .
-  \*\* MAJOR CAVEAT \*\* - kangaroo is somewhat half-baked at the
-  moment - the parsing machinery seems good but the combinators
-  and primitive parsers need more work. I\'ve only released it on 
-  Hackage because I'm now using it with Hurdle which was already 
-  on Hackage.
+  \*\* MAJOR CAVEAT \*\* - kangaroo is somewhat half-baked (maybe 
+  now two thirds baked). The parsing machinery seems good but the 
+  combinators need more work. It\'s on Hackage because I'm using 
+  it with Hurdle which was already on Hackage and the techinique
+  of moving a cursor rather than consuming input seems at least 
+  interesting.
   .
   Currently kangaroo is twinned with its own library of formatting
   combinators (JoinPrint), at some point this is may go in its a 
@@ -33,6 +34,9 @@ description:
   0.4.0 Changed JoinPrint to have distinct types for single-line
   documents (Doc) and multi-line documents (VDoc). This is 
   because single-line docs track their horizontal length.
+  .
+  Added a 'skip' primitive to the Parse Monad. Added 'local' and
+  'asks' to the Reader top-level modules.
   .
   0.3.0 Documented the primitive parsers. @char@ renamed @anyChar@
   to match Parsec\'s convention. Rationalized exports from 
