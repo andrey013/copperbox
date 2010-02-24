@@ -14,7 +14,17 @@
 --
 --------------------------------------------------------------------------------
 
-module Hurdle.Base.Table  where
+module Hurdle.Base.Table 
+  (
+    FieldWidth
+  , Rowf
+  , row
+  , endrow
+  , alignLeft
+  , alignRight
+  , alignCenter
+
+  ) where
 
 
 import Text.PrettyPrint.JoinPrint    -- package: kangaroo
@@ -36,29 +46,29 @@ type Sep = Either Doc Doc
 
 
 
-newtype Tablef t = Tablef { tablefApp :: Sep -> Doc -> t }
+newtype Rowf t = Rowf { rowfApp :: Sep -> Doc -> t }
 
-field :: FieldProp -> Tablef t -> Tablef (Doc -> t)
-field prop k = Tablef $ \rator acc d -> case rator of
-     Left  sep -> tablefApp k (Right sep) (format1 prop d)
-     Right sep -> tablefApp k (Right sep) (acc <> sep <> (format1 prop d))
-
-
-eot :: Tablef Doc
-eot = Tablef $ \_ acc -> acc
+field :: FieldProp -> Rowf t -> Rowf (Doc -> t)
+field prop k = Rowf $ \rator acc d -> case rator of
+     Left  sep -> rowfApp k (Right sep) (format1 prop d)
+     Right sep -> rowfApp k (Right sep) (acc <> sep <> (format1 prop d))
 
 
-table :: Doc -> Tablef t -> t
-table sep p = (tablefApp p) (Left sep) empty
+endrow :: Rowf Doc
+endrow = Rowf $ \_ acc -> acc
 
 
-alignLeft       :: FieldWidth -> Tablef t -> Tablef (Doc -> t)
+row :: Doc -> Rowf t -> t
+row sep p = (rowfApp p) (Left sep) empty
+
+
+alignLeft       :: FieldWidth -> Rowf t -> Rowf (Doc -> t)
 alignLeft w     = field (w,ALeft)
 
-alignRight      :: FieldWidth -> Tablef t -> Tablef (Doc -> t)
+alignRight      :: FieldWidth -> Rowf t -> Rowf (Doc -> t)
 alignRight w    = field (w,ARight)
 
-alignCenter     :: FieldWidth -> Tablef t -> Tablef (Doc -> t)
+alignCenter     :: FieldWidth -> Rowf t -> Rowf (Doc -> t)
 alignCenter w   = field (w,ACenter)
 
 

@@ -16,11 +16,10 @@
 
 module Hurdle.Ar.TextDump where
 
-import Hurdle.Base.Utils ( applyfs )
+import Hurdle.Base.Table
 import Hurdle.Ar.Datatypes
 
 import Data.Char
-import Numeric
 import Text.PrettyPrint.JoinPrint hiding ( length )
 
 
@@ -29,33 +28,31 @@ printArchive :: ArArchive -> IO ()
 printArchive = putStr . archiveText
 
 archiveText :: ArArchive -> String
-archiveText = render . ppArchive
+archiveText = show . ppArchive
 
-ppArchive :: ArArchive -> Doc
-ppArchive a = 
-        text              (ar_magic a)
-    <%> (vcat $ map ppArchiveObject $ ar_objects a)
+ppArchive :: ArArchive -> VDoc
+ppArchive a = vconcat $
+    [ vdoc    $ text                $ ar_magic a
+    , vconcat $ map ppArchiveObject $ ar_objects a
+    ]
 
 
-
-ppArchiveObject :: ArchiveObject -> Doc
+ppArchiveObject :: ArchiveObject -> VDoc
 ppArchiveObject = ppArHeader . ar_header
 
-ppArHeader :: ArHeader -> Doc
-ppArHeader a = 
-    tableProlog "Header" (24,6) (applyfs fields a) 
+ppArHeader :: ArHeader -> VDoc
+ppArHeader = mkTable "Header" . vcat . sequence fields
   where
-    ppf    = ppField 4 24   
     fields = 
-       [ ppf 16 "name"                  (text . arh_name)
-       , ppf 12 "date"                  (text . arh_date)
-       , ppf 6  "user id"               (int  . arh_user_id)
-       , ppf 6  "group id"              (int  . arh_group_id)
-       , ppf 8  "mode"                  (text . arh_mode)
-       , ppf 10 "size"                  (int . arh_size)
-       , ppf 2  "trailer"               (tup2 . arh_trailer)
+       [ recRow 16 "name"               . text . arh_name
+       , recRow 12 "date"               . text . arh_date
+       , recRow 6  "user id"            . int  . arh_user_id
+       , recRow 6  "group id"           . int  . arh_group_id
+       , recRow 8  "mode"               . text . arh_mode
+       , recRow 10 "size"               . int  . arh_size
+       , recRow 2  "trailer"            . tup2 . arh_trailer
        ]
-    tup2 (x:y:xs) = ppHex 2 (ord x) <+> ppHex 2 (ord y) <+> text xs
+    tup2 (x:y:xs) = oxhex 2 (ord x) <+> oxhex 2 (ord y) <+> text xs
     tup2 xs       = text xs
 
 
@@ -64,37 +61,37 @@ ppArHeader a =
 --------------------------------------------------------------------------------
 -- Helpers
 
-tableProlog :: String -> (Int,Int) -> [Doc] -> Doc
-tableProlog s (m,n) ds =
-        columnSep 
-    <%> text s 
-    <%> columnSep
-    <%> columnHeadings m n
-    <%> columnSep
-    <%> vcat ds
+-- 4r-24r-24l
+
+colHeadings :: VDoc 
+colHeadings = vdoc $ row3 (text "size") (text "field") (text "value") 
+
+row3 :: Doc -> Doc -> Doc -> Doc
+row3 = row dblspace (alignRight 4 $ alignRight 24 $ alignLeft 24 $ endrow) 
+
+recRow :: Int -> String -> Doc -> Doc
+recRow fsize name doc = row3 (int fsize) (text name) doc
+
+type TableName = String
+
+mkTable :: TableName -> VDoc -> VDoc
+mkTable tname rows = title `vcons` (block1 `vappend` rows)
   where
-    columnHeadings fsz vsz = 
-      text "size" <+> text (pad fsz ' ' "field") <+> text (pad vsz ' ' "value")
+    title  = text tname
+    block1 = vconcat [rowSep, colHeadings, rowSep] 
 
 
-columnSep :: Doc
-columnSep = text $ replicate 60 '-' 
+rowSep :: VDoc
+rowSep = vdoc $ replicateChar 60 '-' 
 
 
-ppField :: Int -> Int -> Int -> String -> (a -> Doc) -> a -> Doc
-ppField n1 n2 sz field_name f a = text sz'  <+> text field_name' <+> f a
-  where
-    sz'         = pad n1 ' ' (show sz)
-    field_name' = pad n2 ' ' field_name
+-- TO ADD TO JoinPrint
+list :: [Doc] -> Doc
+list = brackets . punctuate comma
 
-ppHex :: Integral a => Int -> a -> Doc
-ppHex n i = text "0x" <> (text $ pad n '0' $ showHex i "")
-  
+vdoc :: Doc -> VDoc
+vdoc = vcat . return
 
-pad :: Int -> Char -> String -> String
-pad n ch s | length s < n = replicate (n - length s) ch ++ s
-           | otherwise    = s
-
-listDoc :: [Doc] -> Doc
-listDoc = brackets . punctuate comma
+vappend :: VDoc -> VDoc -> VDoc
+vappend a b = vconcat [a,b]
 

@@ -56,12 +56,13 @@ archiveObject = do
     header  <- arHeader
     let sz  = arh_size header
     liftIOAction $ putStrLn ("size " ++ show sz)
-    body    <- count sz word8
     pos     <- position
-    when (pos `mod` 2 /= 0) (anyChar >> return ())   -- should be a newline 
+    body    <- count sz word8
+    end_pos <- position
+    when (end_pos `mod` 2 /= 0) (anyChar >> return ())   -- should be a newline 
     return $ ArchiveObject 
                 { ar_header         = header
-                , ar_body           = body
+                , ar_body           = (pos,sz)
                 }
 
 paddedNumber :: (Read a, Integral a) => Int -> Parser a

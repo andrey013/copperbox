@@ -16,8 +16,6 @@
 
 module Hurdle.Ar.Datatypes where
 
-import qualified Data.ByteString as BSW8
-import Data.Word
 
 data ArArchive = ArArchive 
       { ar_magic                    :: String
@@ -28,7 +26,7 @@ data ArArchive = ArArchive
 
 data ArchiveObject = ArchiveObject
      { ar_header                    :: ArHeader
-     , ar_body                      :: [Word8]  -- needs thought... shouldn't be a list
+     , ar_body                      :: (Int,Int)
      }
 
 data ArHeader = ArHeader 
