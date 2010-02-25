@@ -23,8 +23,10 @@ module Text.PrettyPrint.JoinPrint
   ( 
     module Text.PrettyPrint.JoinPrint.Core
   , module Text.PrettyPrint.JoinPrint.HexDump  
+  , module Text.PrettyPrint.JoinPrint.Row
+
   ) where
 
 import Text.PrettyPrint.JoinPrint.Core
 import Text.PrettyPrint.JoinPrint.HexDump
-
+import Text.PrettyPrint.JoinPrint.Row

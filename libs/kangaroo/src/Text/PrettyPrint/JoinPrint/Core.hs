@@ -29,6 +29,8 @@ module Text.PrettyPrint.JoinPrint.Core
   , hsep
 
   -- * Compose VDocs
+  , vdoc
+  , vappend
   , vcat
   , vsep
   , vcons
@@ -69,6 +71,9 @@ module Text.PrettyPrint.JoinPrint.Core
   , langle
   , rangle
 
+  , list 
+  , tupled
+  , semiBraces
 
   , replicateChar
   , spacer
@@ -187,6 +192,18 @@ hsep = foldr (<+>) empty
 -- last?)
 --
 
+newline :: ShowS
+newline = showChar '\n'
+
+-- | Make a 'VDoc' from a 'Doc'.
+--
+vdoc :: Doc -> VDoc
+vdoc = VDoc . renderS
+
+
+vappend :: VDoc -> VDoc -> VDoc
+vappend (VDoc f) (VDoc g) = VDoc (f . newline . g)
+
 -- | Vertically concatenate a list of documents, one doc per 
 -- line.
 --
@@ -197,7 +214,7 @@ vcat []     = VDoc id
 vcat [a]    = VDoc (renderS a)
 vcat (a:as) = VDoc $ foldl' fn (renderS a) as
   where
-    fn f d = f . showChar '\n' . renderS d
+    fn f d = f . newline . renderS d
 
 -- | Vertically concatenate a list of documents, one doc per 
 -- line with a blank line inbetween.
@@ -209,17 +226,17 @@ vsep []     = VDoc id
 vsep [a]    = VDoc (renderS a)
 vsep (a:as) = VDoc $ foldl' fn (renderS a) as
   where
-    fn f d = f . showString "\n\n" . renderS d
+    fn f d = f . newline . newline . renderS d
 
 -- | Prefix the 'Doc' to the start of the 'VDoc'. 
 --
 vcons :: Doc -> VDoc -> VDoc
-vcons d (VDoc f) = VDoc (renderS d . showChar '\n' . f)
+vcons d (VDoc f) = VDoc (renderS d . newline . f)
 
 -- | Suffix the 'VDoc' with the 'Doc'. 
 --
 vsnoc :: VDoc -> Doc -> VDoc
-vsnoc (VDoc f) d = VDoc (f . showChar '\n' . renderS d)
+vsnoc (VDoc f) d = VDoc (f . newline . renderS d)
 
 
 
@@ -228,7 +245,7 @@ vsnoc (VDoc f) d = VDoc (f . showChar '\n' . renderS d)
 vconcat :: [VDoc] -> VDoc
 vconcat []          = VDoc id
 vconcat [a]         = a
-vconcat (VDoc a:as) = VDoc (a . showChar '\n' . getVDoc (vconcat as))
+vconcat (VDoc a:as) = VDoc (a . newline . getVDoc (vconcat as))
 
 -- | Concatenate a list of 'VDoc' with a blank line separating 
 -- them.
@@ -236,7 +253,7 @@ vconcat (VDoc a:as) = VDoc (a . showChar '\n' . getVDoc (vconcat as))
 vconcatSep :: [VDoc] -> VDoc
 vconcatSep []          = VDoc id
 vconcatSep [a]         = a
-vconcatSep (VDoc a:as) = VDoc (a . showString "\n\n" . getVDoc (vconcatSep as))
+vconcatSep (VDoc a:as) = VDoc (a . newline . newline . getVDoc (vconcatSep as))
 
 
 -- | Create a document from a literal string.
@@ -400,6 +417,23 @@ langle = char '<'
 --
 rangle :: Doc
 rangle = char '>'
+
+-- | Comma separate the list of documents and enclose in square
+-- brackets.
+--
+list :: [Doc] -> Doc
+list = brackets . punctuate comma
+
+-- | Comma separate the list of documents and enclose in parens.
+--
+tupled :: [Doc] -> Doc
+tupled = parens . punctuate comma
+
+-- | Separate the list with a semicolon and enclose in curly 
+-- braces.
+--
+semiBraces :: [Doc] -> Doc
+semiBraces = braces . punctuate semicolon
 
 
 --------------------------------------------------------------------------------

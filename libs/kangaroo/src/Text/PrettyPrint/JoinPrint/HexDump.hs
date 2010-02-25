@@ -116,13 +116,13 @@ lineSpans :: Int -> [(Int,Int)] -> IOUArray Int Word8 -> IO VDoc
 lineSpans _        []     _   = return $ vcat []
 lineSpans c1_width (x:xs) arr = do 
     w8s <- spanArr x arr
-    let vdoc = vcat [firstLine (lineStart $ fst x) w8s]
-    docTail xs vdoc
+    let doc1 = vdoc $ firstLine (lineStart $ fst x) w8s
+    docTail xs doc1
   where
-    docTail []             vdoc = return vdoc
-    docTail (ix@(s,_):ixs) vdoc = do { w8s <- spanArr ix arr
+    docTail []             dacc = return dacc
+    docTail (ix@(s,_):ixs) dacc = do { w8s <- spanArr ix arr
                                      ; let d = tailLine (lineStart s) w8s
-                                     ; docTail ixs (vdoc `vsnoc` d) }
+                                     ; docTail ixs (dacc `vsnoc` d) }
 
     firstLine                   = hexLine True  c1_width
     tailLine                    = hexLine False c1_width
@@ -130,8 +130,6 @@ lineSpans c1_width (x:xs) arr = do
         
 
 
--- This would be better if it didn't need a list in the first 
--- place (i.e. it could use an array directly)...
 
 hexdump :: Int -> Int -> [Word8] -> VDoc
 hexdump start end bs = hexdump2 start end segs  where

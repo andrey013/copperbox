@@ -1,5 +1,5 @@
 name:             kangaroo
-version:          0.4.0
+version:          0.5.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -30,6 +30,8 @@ description:
   separate package.
   .
   Changelog:
+  .
+  0.5.0 Added printf style row formatter to JoinPrint.
   .
   0.4.0 Changed JoinPrint to have distinct types for single-line
   documents (Doc) and multi-line documents (VDoc). This is 
@@ -80,8 +82,9 @@ library
     Data.ParserCombinators.Kangaroo.Utils,
     Text.PrettyPrint.JoinPrint.Core,
     Text.PrettyPrint.JoinPrint.HexDump,
-    Text.PrettyPrint.JoinPrint.JoinString
-      
+    Text.PrettyPrint.JoinPrint.JoinString,
+    Text.PrettyPrint.JoinPrint.Row
+          
   extensions:
     
 
