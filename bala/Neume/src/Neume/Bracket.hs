@@ -18,24 +18,19 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.Bracket 
-  ( 
-    NumMeasured(..)
-  , BeamExtremity(..)
-
-  , phrase
-  , beamSegment
-
-  ) where
+module Neume.Bracket where
 
 import Neume.Datatypes
 import Neume.Duration
 import Neume.OneList
-import Neume.OneTwo
+-- import Neume.OneTwo
 import Neume.SyntaxStaff
+import Neume.Utils
 
 import qualified Data.Foldable          as F
 import Data.List ( unfoldr )
+import Data.Sequence ( Seq )
+import qualified Data.Sequence          as S
 import Data.Ratio
 
 
@@ -55,7 +50,71 @@ class BeamExtremity a where
 
 
 --------------------------------------------------------------------------------
+-- Cycle the MetricalSpec / MeterPattern
+
+-- | 'cyclePattern' : anacrusis * meter_pattern -> meter_pattern
+--
+-- Cycle the MeterPattern producing an infinite list.
+
+cyclePattern :: Rational -> MeterPattern -> MeterPattern
+cyclePattern ana mp = ana `sminus` cycle mp
+
+
+
+
+type SegmentedList a = [Segment a]
+
+data Segment a = One a
+               | Many (Seq a)
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- Stack (meter pattern) addition and subtraction
+
+-- | sminus subtracts from the top of stack.
+--
+-- If the number to be subtracted is greater than the top of the
+-- stack the top of the stack is popped and the remainder is 
+-- subtracted from the new stack top (the stack will never 
+-- contain negative numbers).
+-- 
+--
+
+sminus :: (Num a, Ord a) => a -> [a] -> [a]
+sminus a       xs     | a < 0   = splus (abs a) xs
+sminus a       []               = []
+sminus a       (x:xs)           = step (x-a) xs where
+  step r ys      | r > 0     = r:ys
+  step r (y:ys)  | r < 0     = step (y - abs r) ys
+  step _ ys                  = ys                   -- empty stack or r==0
+  
+
+-- | splus always conses the scalar (unless it is negative, which 
+-- is treated as stack-minus).
+--    
+splus :: (Num a, Ord a) => a -> [a] -> [a]
+splus a xs | a > 0     = a:xs
+           | a < 0     = sminus (abs a) xs
+           | otherwise = xs
+
+--------------------------------------------------------------------------------
+-- tuplet stack
+
+type TStack = [Ratio Int]
+
+scaleFactor :: TStack -> Ratio Int
+scaleFactor []     = (1%1)
+scaleFactor (x:xs) = x * scaleFactor xs
+
+
+--------------------------------------------------------------------------------
 -- Extracting extremities...
+
+{-
 
 -- | leftExtremity peels at most 1 left element from the list, if
 -- it is an \'inner only\' regardless of whether the next element 
@@ -81,6 +140,7 @@ rightExtremity = post . F.foldr unwind ([],[]) where
   post ([a],ys) = (Nothing, a:ys)           -- don't yield singleton beamgroup
   post (xs,ys)  = (Just $ fromList xs, ys)  -- beamgroup, zero-or-more exts
 
+-}
 --------------------------------------------------------------------------------
 
 phrase :: MetricalSpec -> [gly] -> StaffPhrase gly
@@ -94,6 +154,9 @@ cexpressions []     = []
 cexpressions (x:xs) | isOne x = (Atoms x) : cexpressions xs
 -}
 
+
+
+{-
 segmentAll :: (BeamExtremity a, Measurement a ~ DurationMeasure, NumMeasured a)
            => [DurationMeasure] -> [a] -> [OneMany a]
 segmentAll meter_patts notes = moveExtremities xs ++ map one ys
@@ -118,7 +181,7 @@ moveExtremities = unfoldr phi where
   prepend :: [a] -> [OneMany a] -> [OneMany a]
   prepend []     xs = xs
   prepend (a:as) xs = one a : prepend as xs
-
+-}
 
 beamSegment :: (Measurement a ~ DurationMeasure, NumMeasured a) 
             => [DurationMeasure] -> [a] -> ([OneMany a],[a])
@@ -155,23 +218,48 @@ carry = (>=0)
 
 
 beamSegStep1 :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-             => a -> DurationMeasure -> BStep a (OneMany a) DurationMeasure
-beamSegStep1 _ v | v <= 0 = BDone v
+             => a -> DurationMeasure -> BIStep a (OneMany a) DurationMeasure
+beamSegStep1 _ v | v <= 0 = BIDone v
 beamSegStep1 x v          = step $ nmeasure x where
-  step dx | dx >= 1%4 = BYield (one x) (v-dx)
-          | otherwise = BPush  x       (v-dx)
+  step dx | dx >= 1%4 = BIYield (one x) (v-dx)
+          | otherwise = BIPush  x       (v-dx)
 
 
 
 
 --------------------------------------------------------------------------------
+-- Bar unfold - fairly complex...
 
-
-data BStep interim ans st = BYield ans      !st
-                          | BPush  interim  !st 
-                          | BDone           !st
+-- Buffered
+data BStep a st = BYield   !st
+                | BPush  a !st
+                | BDone
   deriving (Eq,Show)
 
+bufferedUnfold :: forall a interim ans st. 
+                  (interim -> ans) 
+               -> (interim -> Bool)  
+               -> interim
+               -> (interim -> a -> interim) 
+               -> (st -> BStep a st) 
+               -> st 
+               -> [ans]
+bufferedUnfold out is_zero zero snoc phi st0 = step zero (phi st0) where
+  step :: interim -> BStep a st -> [ans]
+  step buf (BYield   st') = out buf : step zero (phi st')
+  step buf (BPush  a st') = step (snoc buf a) (phi st')
+  step buf BDone          | is_zero buf = []
+                          | otherwise   = [out buf]
+
+
+
+--------------------------------------------------------------------------------
+-- Beaming unfold - highly complex!
+
+data BIStep interim ans st = BIYield ans      !st
+                           | BIPush  interim  !st 
+                           | BIDone           !st
+  deriving (Eq,Show)
 
 
 -- FIFO - Hughes representation of stacks/lists for efficient 
@@ -179,10 +267,13 @@ data BStep interim ans st = BYield ans      !st
 
 type FIFO a = [a] -> [a]       
 
+-- The \'unfold\' for beaming is not exactly \"general\"...
+-- And at some point it would be nice to see, if it can be 
+-- \"composed from smaller parts\".
 beamingAUnfold :: forall outer_state inner_state a interim ans.
                   ([interim] -> Maybe ans) 
                -> (outer_state -> inner_state -> Maybe (outer_state,inner_state))
-               -> (a -> inner_state -> BStep interim ans inner_state) 
+               -> (a -> inner_state -> BIStep interim ans inner_state) 
                -> outer_state -> inner_state -> [a] -> ([ans],[a])
 beamingAUnfold buf_reduce next_state phi outer_st inner_st xs0 = 
     outer outer_st inner_st xs0
@@ -196,13 +287,13 @@ beamingAUnfold buf_reduce next_state phi outer_st inner_st xs0 =
     inner :: outer_state -> inner_state -> FIFO interim -> [a] -> ([ans],[a])
     inner _   _   stk []     = (terminate stk,[])
     inner out inn stk (x:xs) = case phi x inn of
-        BYield a st' -> (mbCons pref (a:as'), xs') 
-                        where pref      = buf_reduce $ unFIFO stk
-                              (as',xs') = inner out st' fifoEmpty xs
-        BPush  b st' -> inner out st' (fifoSnoc stk b) xs
-        BDone    st' -> (mbCons pref as', xs') 
-                        where pref      = buf_reduce $ unFIFO stk
-                              (as',xs') = outer out st' (x:xs)
+        BIYield a st' -> (mbCons pref (a:as'), xs') 
+                         where pref      = buf_reduce $ unFIFO stk
+                               (as',xs') = inner out st' fifoEmpty xs
+        BIPush  b st' -> inner out st' (fifoSnoc stk b) xs
+        BIDone    st' -> (mbCons pref as', xs') 
+                         where pref      = buf_reduce $ unFIFO stk
+                               (as',xs') = outer out st' (x:xs)
 
     terminate :: FIFO interim -> [ans]
     terminate stk       = maybe [] return $ buf_reduce (unFIFO stk)
