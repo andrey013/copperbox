@@ -20,6 +20,7 @@ module Neume.Utils
   , ftrunc
   , dtrunc
   , divModR
+  , modR
 
   -- * Specs!  
   , oo
@@ -63,10 +64,11 @@ dtrunc d | abs d < 0.0001  = "0.0"
 
 -- prop_mod_postive a b = let (_,md) = a `divModR` b in signum md == 1
 
-divModR :: (Integral b) => Ratio b -> Ratio b -> (b, Ratio b)
+divModR :: Integral a => Ratio a -> Ratio a -> (a, Ratio a)
 divModR a b = let a1 = a / b; a2 = floor a1 in (a2, a-((a2%1)*b))
 
-
+modR :: Integral a => Ratio a -> Ratio a -> Ratio a
+modR = snd `oo` divModR
 
 --------------------------------------------------------------------------------
 -- 'specs'

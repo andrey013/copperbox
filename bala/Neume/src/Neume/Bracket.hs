@@ -72,9 +72,15 @@ data MetricUnit a = MUnit (NoteList a)
 -- | 'cyclePattern' : anacrusis * meter_pattern -> meter_pattern
 --
 -- Cycle the MeterPattern producing an infinite list.
-
+-- 
+-- The anacrusis is the length of the prefix - negative values 
+-- are ignored.
+--
 cyclePattern :: Rational -> MeterPattern -> MeterPattern
-cyclePattern ana mp = ana `sminus` cycle mp
+cyclePattern ana mp | ana <= 0  = cycle mp
+                    | otherwise = let len = sum mp
+                                      a2  = len - (ana `modR` len)
+                                  in sminus a2 (cycle mp)
 
 
 
@@ -127,18 +133,30 @@ tempty :: TStack
 tempty = []
 
 pushT :: Int -> Int -> TStack -> TStack
-pushT p q stk = (fromIntegral p % fromIntegral q) : stk
+pushT p q stk = s : stk where
+  s = (fromIntegral q) % (fromIntegral p)   -- note - q%p 
 
 -- | The measure of a \single\ or a \plet tree\ - plet trees are
 -- considered indivisable so it is not a problem to sum them.
-
+--
 umeasure :: (Measurement a ~ DurationMeasure, NumMeasured a) 
              => PletTree a -> DurationMeasure
 umeasure = snd . pletFold  phi chi (tempty,0) where
   phi a      (stk,acc) = (stk, acc + sf stk * nmeasure a)
   chi p q    (stk,acc) = (pushT p q stk,acc) 
 
-
+-- | The number of items in a PletTree 
+--
+-- NOTE - need the pred to test e.g. grace notes, which 
+-- shouldn\'t be counted.
+--
+-- Is this a suitable case for another Type Class?
+--
+ucount :: (a -> Bool) -> PletTree a -> Int
+ucount test = pletFold phi chi 0 where
+  phi a   n  | test a    = n+1
+             | otherwise = n
+  chi _ _ n              = n
 
 pletFold :: (a -> b -> b) -> (Int -> Int -> b -> b) -> b -> PletTree a -> b
 pletFold f _ b (S a)         = f a b
@@ -149,212 +167,43 @@ pletFold f g b (Plet p q xs) = foldl' (pletFold f g) (g p q b) $ getNoteList xs
 
 divisions :: (Measurement a ~ DurationMeasure, NumMeasured a) 
           => Rational -> MeterPattern -> NoteList a -> [MetricUnit a]
-divisions ana mp xs = []
-  where
-    cy_cmp = cyclePattern ana mp
-
-
-
---------------------------------------------------------------------------------
--- Extracting extremities...
-
-{-
-
--- | leftExtremity peels at most 1 left element from the list, if
--- it is an \'inner only\' regardless of whether the next element 
--- is \'inner only\' as well.
---
-leftExtremity :: BeamExtremity a => OneMany a -> OneTwo (OneMany a) a
-leftExtremity os = step $ viewl os where
-  step (x :<< xs)  | innerOnly x = Two xs x     -- atleast 1 left extremity
-  step _                         = One os       -- no left extremity
-
--- | 'rightExtremity' is unfortunately more complicated than 
--- 'leftExtremity'.
--- 
--- It produces a beam group, if there is one, and a possibly 
--- empty list of elements from the right of the list that 
--- cannot be the extremity of a beam group (rests, spaces...)
---
-rightExtremity :: BeamExtremity a => OneMany a -> (Maybe (OneMany a), [a])
-rightExtremity = post . F.foldr unwind ([],[]) where
-  unwind a ([], ys) | innerOnly a = ([],a:ys)
-  unwind a (xs, ys)               = (a:xs,ys)
-  post ([],ys)  = (Nothing, ys)             -- all extremities
-  post ([a],ys) = (Nothing, a:ys)           -- don't yield singleton beamgroup
-  post (xs,ys)  = (Just $ fromList xs, ys)  -- beamgroup, zero-or-more exts
-
--}
---------------------------------------------------------------------------------
-
-phrase :: MetricalSpec -> [gly] -> StaffPhrase gly
-phrase (MetricalSpec time_sig meter_patts) notes = undefined
-
-{-
--- No! - remove extremities in one step...
--- (Putting into CExprs should be done when grouping for bars)
-cexpressions :: BeamExtremity a => [OneMany a] -> [CExpr a]
-cexpressions []     = []
-cexpressions (x:xs) | isOne x = (Atoms x) : cexpressions xs
--}
-
-
-
-{-
-segmentAll :: (BeamExtremity a, Measurement a ~ DurationMeasure, NumMeasured a)
-           => [DurationMeasure] -> [a] -> [OneMany a]
-segmentAll meter_patts notes = moveExtremities xs ++ map one ys
-  where
-    (xs,ys) = beamSegment meter_patts notes
-              
-
-
--- | Beam groups cannot start or end with rests or spacers...
---
-moveExtremities :: forall a. BeamExtremity a => [OneMany a] -> [OneMany a]
-moveExtremities = unfoldr phi where
-  phi []      = Nothing
-  phi (x:xs)  = case leftExtremity x of
-      Two os a  -> Just (one a, os:xs) 
-      One os    -> case rightExtremity os of
-          (Nothing, y:ys) -> Just (one y, prepend ys xs) 
-          (Nothing, _)    -> error "moveExtremities unreachable"
-          (Just bg, ys)   -> Just (bg, prepend ys xs)
-
-
-  prepend :: [a] -> [OneMany a] -> [OneMany a]
-  prepend []     xs = xs
-  prepend (a:as) xs = one a : prepend as xs
--}
-
-beamSegment :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-            => [DurationMeasure] -> [a] -> ([OneMany a],[a])
-beamSegment meter_pats xs = 
-    beamingAUnfold bufferReduce carryBorrow beamSegStep1 meter_pats 0 xs
-
-
-bufferReduce :: [a] -> Maybe (OneMany a)
-bufferReduce [] = Nothing
-bufferReduce xs = Just $ fromList xs
-
-
-carryBorrow :: MeterPattern
-            -> DurationMeasure 
-            -> Maybe (MeterPattern,DurationMeasure)
-carryBorrow mp dx | dx == 0   = post mp
-                  | carry dx  = post $ dx:mp
-                  | otherwise = post $ step (abs dx) mp 
-   where
-     post []                     = Nothing 
-     post (x:xs)                 = Just (xs,x)
-     
-     step _   []                 = []
-     step bor (x:xs) | x >  bor  = (x-bor):xs
-                     | x == bor  = xs
-                     | otherwise = step (bor-x) xs
+divisions ana mp notes = step 0 (cyclePattern ana mp) (getNoteList notes) where
+  
+  -- borrow greater than next mertical unit => produce a BZero
+  step borrow (d:ds) xs   | borrow >= d = BZero : step (borrow-d) ds xs
  
+   -- input exhausted => produce empty list
+  step _      _      []   = []
+ 
+  step borrow (d:ds) xs   = let (one,borrow',rest) = division1 (d-borrow) xs
+                            in one : step borrow' ds rest
 
-carry :: DurationMeasure -> Bool
-carry = (>=0)
+-- | Extract one MeticUnit from the input list, return the unit, 
+-- the carry, and the rest-of-input.
+--
+division1 :: (Measurement a ~ DurationMeasure, NumMeasured a)  
+          => DurationMeasure
+          -> [PletTree a] 
+          -> (MetricUnit a, DurationMeasure, [PletTree a])
+division1 runit = post . unwind phi runit where
+  phi r a | r > 0     = AYield a (r - umeasure a)
+          | otherwise = ADone    
 
--- borrow :: DurationMeasure -> Bool
--- borrow = (<0)
-
-
-beamSegStep1 :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-             => a -> DurationMeasure -> BIStep a (OneMany a) DurationMeasure
-beamSegStep1 _ v | v <= 0 = BIDone v
-beamSegStep1 x v          = step $ nmeasure x where
-  step dx | dx >= 1%4 = BIYield (one x) (v-dx)
-          | otherwise = BIPush  x       (v-dx)
-
+  post (xs,borrow,rest)   = (MUnit $ NoteList xs, abs borrow, rest)
 
 
+-- | unfold against a list, presenting the rest-of-list and the 
+-- state at the end
 
---------------------------------------------------------------------------------
--- Bar unfold - fairly complex...
-
--- Buffered
-data BStep a st = BYield   !st
-                | BPush  a !st
-                | BDone
+data AStep a st = AYield a  !st
+                | ADone     
   deriving (Eq,Show)
 
-bufferedUnfold :: forall a interim ans st. 
-                  (interim -> ans) 
-               -> (interim -> Bool)  
-               -> interim
-               -> (interim -> a -> interim) 
-               -> (st -> BStep a st) 
-               -> st 
-               -> [ans]
-bufferedUnfold out is_zero zero snoc phi st0 = step zero (phi st0) where
-  step :: interim -> BStep a st -> [ans]
-  step buf (BYield   st') = out buf : step zero (phi st')
-  step buf (BPush  a st') = step (snoc buf a) (phi st')
-  step buf BDone          | is_zero buf = []
-                          | otherwise   = [out buf]
-
-
-
---------------------------------------------------------------------------------
--- Beaming unfold - highly complex!
-
-data BIStep interim ans st = BIYield ans      !st
-                           | BIPush  interim  !st 
-                           | BIDone           !st
-  deriving (Eq,Show)
-
-
--- FIFO - Hughes representation of stacks/lists for efficient 
--- snoc-ing
-
-type FIFO a = [a] -> [a]       
-
--- The \'unfold\' for beaming is not exactly \"general\"...
--- And at some point it would be nice to see, if it can be 
--- \"composed from smaller parts\".
-beamingAUnfold :: forall outer_state inner_state a interim ans.
-                  ([interim] -> Maybe ans) 
-               -> (outer_state -> inner_state -> Maybe (outer_state,inner_state))
-               -> (a -> inner_state -> BIStep interim ans inner_state) 
-               -> outer_state -> inner_state -> [a] -> ([ans],[a])
-beamingAUnfold buf_reduce next_state phi outer_st inner_st xs0 = 
-    outer outer_st inner_st xs0
-  where
-    outer :: outer_state -> inner_state -> [a] -> ([ans],[a])
-    outer _   _   []  = ([],[])
-    outer out inn xs  = case next_state out inn of
-        Nothing          -> ([],xs)
-        Just (out',inn') -> inner out' inn' fifoEmpty xs
-
-    inner :: outer_state -> inner_state -> FIFO interim -> [a] -> ([ans],[a])
-    inner _   _   stk []     = (terminate stk,[])
-    inner out inn stk (x:xs) = case phi x inn of
-        BIYield a st' -> (mbCons pref (a:as'), xs') 
-                         where pref      = buf_reduce $ unFIFO stk
-                               (as',xs') = inner out st' fifoEmpty xs
-        BIPush  b st' -> inner out st' (fifoSnoc stk b) xs
-        BIDone    st' -> (mbCons pref as', xs') 
-                         where pref      = buf_reduce $ unFIFO stk
-                               (as',xs') = outer out st' (x:xs)
-
-    terminate :: FIFO interim -> [ans]
-    terminate stk       = maybe [] return $ buf_reduce (unFIFO stk)
-
-
-fifoEmpty           :: FIFO a
-fifoEmpty           = id 
-
-fifoSnoc            :: FIFO a -> a -> FIFO a
-fifoSnoc f a        = f . (a:)           
-
-
-unFIFO              :: FIFO a -> [a]
-unFIFO              = ($ [])
-
-mbCons :: Maybe a -> [a] -> [a]
-mbCons Nothing  = id
-mbCons (Just a) = (a:)
+unwind :: (st -> a -> AStep b st) -> st -> [a] -> ([b],st,[a])
+unwind phi s0 = step id s0 where
+  step k st (x:xs) = case phi st x of
+                       AYield a st' -> step (k . (a:)) st' xs
+                       ADone        -> (k [],st,x:xs)
+  step k st []     = (k [],st,[])  
 
 
