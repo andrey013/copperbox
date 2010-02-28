@@ -134,7 +134,7 @@ components DZero        = (0,0)
 components (D1 n dc) = (toRat n,dc)
 
 -- | @extent@ is the sum of all symbolic components of a duration.
-extent :: Duration -> Rational
+extent :: Duration -> DurationMeasure
 extent DZero                 = 0 
 extent (D1 n dc) | dc <= 0   = toRat n
                  | otherwise = let r = toRat n in step r (r/2) dc

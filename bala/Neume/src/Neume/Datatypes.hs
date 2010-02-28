@@ -18,12 +18,12 @@ module Neume.Datatypes
   (
 
   -- * Notelists
-    NoteGroup(..)
+    NoteList(..)
   , PletTree(..)
   , plet
   , duplet
   , triplet
-  , simpleNoteGroup
+  , simpleNoteList
 
   -- * Meter patterns and time signatures
   , MeterPattern
@@ -38,7 +38,8 @@ module Neume.Datatypes
 import Neume.Utils
 
 
--- | A 'NoteGroup' is a list of notes (or more properly glyphs).
+-- | A 'NoteList' is a list of notes (or more properly glyphs as
+-- it may contain rests etc.).
 -- 
 -- This is the initial data structure representing musical 
 -- fragments. A NoteGroup is processed by Neume (split into bars
@@ -48,7 +49,7 @@ import Neume.Utils
 -- To handle n-ary tuplets a NoteGroup is unfortunately somewhat 
 -- more complicated than a simple (linear) list.
 --
-newtype NoteGroup a = NoteGroup { getNoteGroup :: [PletTree a] }
+newtype NoteList a = NoteList { getNoteList :: [PletTree a] }
   deriving (Eq)
 
 -- | A \PletTree\ represents an element in a 'NoteGroup'. A 
@@ -57,15 +58,15 @@ newtype NoteGroup a = NoteGroup { getNoteGroup :: [PletTree a] }
 -- tuplets can contain tuplets.
 --
 data PletTree a = S a                           -- Single \"note\"
-                | Plet Int Int (NoteGroup a)
+                | Plet Int Int (NoteList a)
   deriving (Eq,Show)
 
 
-instance Show a => Show (NoteGroup a) where
-  showsPrec i (NoteGroup xs) = showsPrec i xs
+instance Show a => Show (NoteList a) where
+  showsPrec i (NoteList xs) = showsPrec i xs
 
-instance Functor NoteGroup where
-  fmap f = NoteGroup . map (fmap f) . getNoteGroup
+instance Functor NoteList where
+  fmap f = NoteList . map (fmap f) . getNoteList
 
 instance Functor PletTree where
   fmap f (S a) = S (f a)
@@ -75,7 +76,7 @@ instance Functor PletTree where
 -- | Short-hand constructor for n-ary plets.
 --
 plet :: Int -> Int -> [PletTree a] -> PletTree a
-plet p q xs = Plet p q (NoteGroup xs) 
+plet p q xs = Plet p q (NoteList xs) 
 
 -- | Create a duplet - two notes in the time of three.
 --
@@ -88,11 +89,11 @@ triplet :: a -> a -> a -> PletTree a
 triplet a b c = plet 3 2 [S a,S b,S c]
 
 
--- | Convert a list of notes / glyphs (i.e no tuplets or duplets) 
--- into a 'NoteGroup'.
+-- | Convert a linear list of notes / glyphs (i.e no tuplets 
+-- or duplets) into a 'NoteList'.
 --
-simpleNoteGroup :: [a] -> NoteGroup a
-simpleNoteGroup = NoteGroup . map S
+simpleNoteList :: [a] -> NoteList a
+simpleNoteList = NoteList . map S
 
 
 --------------------------------------------------------------------------------

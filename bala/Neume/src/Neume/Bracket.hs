@@ -28,7 +28,7 @@ import Neume.SyntaxStaff
 import Neume.Utils
 
 import qualified Data.Foldable          as F
-import Data.List ( unfoldr )
+import Data.List ( foldl', unfoldr )
 import Data.Sequence ( Seq )
 import qualified Data.Sequence          as S
 import Data.Ratio
@@ -49,6 +49,23 @@ class BeamExtremity a where
 
 
 
+-- | A Metric unit represents a division of a NoteList according
+-- to the sizes of a 'MeterPattern'.
+--
+-- Where there is not an exact fit, the splitting algorithm will
+-- borrow from the input list an extra note. This potentially 
+-- means the next metrical unit might have been 'all borrowed', 
+-- example a whole note in 4/4 time with meter pattern [2,2] 
+-- gives:
+-- 
+-- > [ MUnit "wholenote", BZero ]
+--
+--
+data MetricUnit a = MUnit (NoteList a)
+                  | BZero                  -- Borrowed zero
+ deriving (Eq,Show)
+
+
 --------------------------------------------------------------------------------
 -- Cycle the MetricalSpec / MeterPattern
 
@@ -60,12 +77,6 @@ cyclePattern :: Rational -> MeterPattern -> MeterPattern
 cyclePattern ana mp = ana `sminus` cycle mp
 
 
-
-
-type SegmentedList a = [Segment a]
-
-data Segment a = One a
-               | Many (Seq a)
 
 
 
@@ -102,13 +113,46 @@ splus a xs | a > 0     = a:xs
            | otherwise = xs
 
 --------------------------------------------------------------------------------
--- tuplet stack
+-- Measuring the plet-tree, and tuplet stack
 
-type TStack = [Ratio Int]
 
-scaleFactor :: TStack -> Ratio Int
-scaleFactor []     = (1%1)
-scaleFactor (x:xs) = x * scaleFactor xs
+type TStack = [Rational]
+
+-- scale factor
+sf :: TStack -> Rational
+sf []     = (1%1)
+sf (x:xs) = x * sf xs
+
+tempty :: TStack
+tempty = []
+
+pushT :: Int -> Int -> TStack -> TStack
+pushT p q stk = (fromIntegral p % fromIntegral q) : stk
+
+-- | The measure of a \single\ or a \plet tree\ - plet trees are
+-- considered indivisable so it is not a problem to sum them.
+
+umeasure :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+             => PletTree a -> DurationMeasure
+umeasure = snd . pletFold  phi chi (tempty,0) where
+  phi a      (stk,acc) = (stk, acc + sf stk * nmeasure a)
+  chi p q    (stk,acc) = (pushT p q stk,acc) 
+
+
+
+pletFold :: (a -> b -> b) -> (Int -> Int -> b -> b) -> b -> PletTree a -> b
+pletFold f _ b (S a)         = f a b
+pletFold f g b (Plet p q xs) = foldl' (pletFold f g) (g p q b) $ getNoteList xs
+
+--------------------------------------------------------------------------------
+-- Divide the NoteList
+
+divisions :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+          => Rational -> MeterPattern -> NoteList a -> [MetricUnit a]
+divisions ana mp xs = []
+  where
+    cy_cmp = cyclePattern ana mp
+
 
 
 --------------------------------------------------------------------------------
