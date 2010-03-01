@@ -47,6 +47,9 @@ module Neume.Pitch
 
  ) where
 
+import Neume.Doc
+
+import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 import Data.Char ( toLower )
 import qualified Data.Map as Map
@@ -265,8 +268,28 @@ nflats n = map flat $ take n [B,E,A,D,G,C,F] where
   flat l = PitchLabel l (Just Flat)
 
 
-    
-    
+--------------------------------------------------------------------------------
+-- Pretty print instances
+
+-- Pitch letters are upper case - then e.g. Bb is decipherable.
+
+instance Pretty Pitch where
+  pretty (Pitch p oa i) = pretty p <> (mbDoc pretty oa) <> int i
+
+instance Pretty PitchLetter where
+  pretty  = text . show
+
+
+instance Pretty Accidental where
+  pretty DoubleFlat   = text "bb"
+  pretty Flat         = char 'b'
+  pretty Nat          = empty
+  pretty Sharp        = char '#'
+  pretty DoubleSharp  = text "##"
+
+instance Pretty PitchLabel where
+  pretty (PitchLabel p oa) = pretty p <> (maybe empty pretty oa)
+
 
 
 

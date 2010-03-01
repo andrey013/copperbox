@@ -22,15 +22,9 @@ module Neume.Bracket where
 
 import Neume.Datatypes
 import Neume.Duration
-import Neume.OneList
--- import Neume.OneTwo
-import Neume.SyntaxStaff
 import Neume.Utils
 
-import qualified Data.Foldable          as F
-import Data.List ( foldl', unfoldr )
-import Data.Sequence ( Seq )
-import qualified Data.Sequence          as S
+import Data.List ( foldl' )
 import Data.Ratio
 
 
@@ -103,7 +97,7 @@ cyclePattern ana mp | ana <= 0  = cycle mp
 
 sminus :: (Num a, Ord a) => a -> [a] -> [a]
 sminus a       xs     | a < 0   = splus (abs a) xs
-sminus a       []               = []
+sminus _       []               = []
 sminus a       (x:xs)           = step (x-a) xs where
   step r ys      | r > 0     = r:ys
   step r (y:ys)  | r < 0     = step (y - abs r) ys
@@ -175,9 +169,14 @@ divisions ana mp notes = step 0 (cyclePattern ana mp) (getNoteList notes) where
    -- input exhausted => produce empty list
   step _      _      []   = []
  
+  -- 'normal' operation => use division1 to produce a MUnit
   step borrow (d:ds) xs   = let (one,borrow',rest) = division1 (d-borrow) xs
                             in one : step borrow' ds rest
 
+  -- unreachable as meter patterns have been cycled
+  step _       []     _    = error "Bracket.divisions - unreachable"
+
+                            
 -- | Extract one MeticUnit from the input list, return the unit, 
 -- the carry, and the rest-of-input.
 --
@@ -186,10 +185,10 @@ division1 :: (Measurement a ~ DurationMeasure, NumMeasured a)
           -> [PletTree a] 
           -> (MetricUnit a, DurationMeasure, [PletTree a])
 division1 runit = post . unwind phi runit where
-  phi r a | r > 0     = AYield a (r - umeasure a)
-          | otherwise = ADone    
+  phi r a | r > 0       = AYield a (r - umeasure a)
+          | otherwise   = ADone    
 
-  post (xs,borrow,rest)   = (MUnit $ NoteList xs, abs borrow, rest)
+  post (xs,borrow,rest) = (MUnit $ NoteList xs, abs borrow, rest)
 
 
 -- | unfold against a list, presenting the rest-of-list and the 

@@ -53,6 +53,7 @@ import Neume.OneList
 import Neume.Pitch
 import Neume.StateMap
 
+import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 --------------------------------------------------------------------------------
 -- Phrases and bars 
@@ -221,3 +222,32 @@ instance MakeSpacer (Glyph anno pch Duration) where
 instance MakeRest (Glyph anno pch Duration) where
   makeRest d = Rest d
  
+
+--------------------------------------------------------------------------------
+-- Pretty instances
+
+snocDur :: Pretty a => Doc -> a -> Doc
+snocDur d drn = d <> char '\'' <> pretty drn
+
+snocTie :: Doc -> Bool -> Doc
+snocTie d True = d <> char '~'
+snocTie d _    = d
+
+
+instance (Pretty pch, Pretty dur) => Pretty (Glyph anno pch dur) where
+  pretty (GlyNote n t)  = pretty n `snocTie` t
+  pretty (Rest    d)    = char 'r' `snocDur` d
+  pretty (Spacer  d)    = char 's' `snocDur` d
+  pretty (Chord os d t) = (angles $ hsep $ toListF pretty os) `snocDur` d 
+                                                              `snocTie` t
+
+  pretty (Graces os)    = braces $ hsep $ toListF pretty os
+
+
+instance (Pretty pch, Pretty dur) => Pretty (Note anno pch dur) where
+  pretty (Note _ p d) = pretty p `snocDur` d
+
+
+instance (Pretty pch) => Pretty (ChordPitch anno pch) where
+  pretty (ChordPitch _ p) = pretty p
+

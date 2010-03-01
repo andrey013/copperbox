@@ -35,7 +35,10 @@ module Neume.Datatypes
    
   ) where
 
+import Neume.Doc
 import Neume.Utils
+
+import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 
 -- | A 'NoteList' is a list of notes (or more properly glyphs as
@@ -144,3 +147,22 @@ data MetricalSpec = MetricalSpec {
         meterPattern  :: MeterPattern
       }
   deriving (Eq,Show)
+
+
+--------------------------------------------------------------------------------
+-- Pretty instances
+
+instance Pretty a => Pretty (PletTree a) where 
+  pretty (S a)            = pretty a
+  pretty (Plet p q notes) = braces (int p <> colon <> int q <+> pretty notes)
+
+instance Pretty a => Pretty (NoteList a) where
+  pretty (NoteList xs) = sep (map pretty xs)
+
+
+ppTimeSig :: Int -> Int -> Doc
+ppTimeSig m p = ppCommand "time" <+> int m <> char '/' <> int p
+
+instance Pretty TimeSignature where
+  pretty (TimeSignature m p) = ppTimeSig m p
+

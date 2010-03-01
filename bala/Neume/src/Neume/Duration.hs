@@ -64,9 +64,9 @@ module Neume.Duration
   
   ) where
 
+import Text.PrettyPrint.Leijen hiding ( dot )     -- package: wl-pprint 
 
 import Data.Ratio
-
 
 data Numeral = N128  | N64   | N32   | N16
              | N8    | N4    | N2    | N1
@@ -228,6 +228,27 @@ abcMultiplier unl nd = (fn . fork numerator denominator) $ (extent nd) / unl
     fn (1,dn)  = Div dn
     fn (nm,1)  = Mult nm
     fn (nm,dn) = Frac nm dn
+
+
+--------------------------------------------------------------------------------
+-- Pretty instances
+
+instance Pretty Duration where
+  pretty DZero                 = empty
+  pretty (D1 n dc) | dc <= 0   = pretty n
+                   | otherwise = pretty n <> (text $ replicate dc '.')
+
+instance Pretty Numeral where
+  pretty N128  = int 128
+  pretty N64   = int 64
+  pretty N32   = int 32
+  pretty N16   = int 16
+  pretty N8    = int 8 
+  pretty N4    = int 4
+  pretty N2    = int 2
+  pretty N1    = empty
+  pretty Breve = text "breve"
+  pretty Longa = text "longa"
 
 --------------------------------------------------------------------------------
 -- Named durations

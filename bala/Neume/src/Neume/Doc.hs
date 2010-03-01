@@ -27,6 +27,7 @@ module Neume.Doc
   , spaceBraces
   , optDoc
   , mbDoc   
+  , ppCommand 
 
   , writeDoc
   , renderDocEighty
@@ -35,7 +36,7 @@ module Neume.Doc
 
 import Neume.Utils
 
-import Text.PrettyPrint.Leijen          -- package: wl-print
+import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 
 
@@ -80,6 +81,10 @@ optDoc b doc = if b then doc else empty
 
 mbDoc ::  (a -> Doc) -> Maybe a -> Doc
 mbDoc f o = maybe empty f o 
+
+ppCommand :: String -> Doc
+ppCommand = (char '\\' <>) . text 
+
 
 writeDoc :: FilePath -> Doc -> IO ()
 writeDoc filepath = writeFile filepath . renderDocEighty
