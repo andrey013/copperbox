@@ -24,6 +24,7 @@ module Neume.SyntaxStaff
 
 
   -- * Staff expressions
+  , CExprList(..)
   , CExpr(..)
   , N_PletDescr(..)
 
@@ -63,7 +64,7 @@ import Text.PrettyPrint.Leijen          -- package: wl-pprint
 -- type. They can use alternatives to the Glyph type. 
 
 newtype StaffPhrase gly = StaffPhrase { getStaffPhrase :: [StaffBar gly] }
-newtype StaffBar    gly = StaffBar    { getStaffBar    :: OneList (CExpr gly) } 
+newtype StaffBar    gly = StaffBar    { getStaffBar    :: CExprList gly  } 
 
 
 
@@ -72,7 +73,8 @@ newtype StaffBar    gly = StaffBar    { getStaffBar    :: OneList (CExpr gly) }
 -- Staff \Expressions\
 
 
-
+newtype CExprList a = CExprList { getCExprList :: [CExpr a] }
+  deriving (Eq,Show)
 
 
 -- | Contextual expression. This is a sequence of one or more 
@@ -86,15 +88,13 @@ newtype StaffBar    gly = StaffBar    { getStaffBar    :: OneList (CExpr gly) }
 -- n-plets (and n-plets must be recursive).
 --
 
-data CExpr gly = Atoms                (OneList gly) 
-               | N_Plet  N_PletDescr  (CExpr   gly)
-               | Beamed               (CExpr   gly)
+data CExpr gly = Atom                 gly 
+               | N_Plet  N_PletDescr  (CExprList gly)
+               | Beamed               (CExprList gly)
   deriving (Eq,Show)
 
 data N_PletDescr = N_PletDescr Int Int
   deriving (Eq,Show) 
-
-
 
 
 --------------------------------------------------------------------------------
@@ -146,10 +146,13 @@ instance Functor StaffPhrase where
   fmap f (StaffPhrase xs) = StaffPhrase $ fmap (fmap f) xs
 
 instance Functor StaffBar where
-  fmap f (StaffBar os)    = StaffBar $ fmap (fmap f) os
+  fmap f (StaffBar os)    = StaffBar $ fmap f os
+
+instance Functor CExprList where
+  fmap f (CExprList xs) = CExprList $ fmap (fmap f) xs
 
 instance Functor CExpr where
-  fmap f (Atoms os)       = Atoms $ fmap f os
+  fmap f (Atom e)         = Atom $ f e
   fmap f (N_Plet d cexpr) = N_Plet d (fmap f cexpr) 
   fmap f (Beamed cexpr)   = Beamed $ fmap f cexpr
 
@@ -178,10 +181,13 @@ instance StateMap StaffPhrase where
                                 where (xs',st') = stmap (stmap f) xs st
 
 instance StateMap StaffBar where
-  stmap f (StaffBar os) st = (StaffBar os',st') where (os',st') = stmap (stmap f) os st
+  stmap f (StaffBar os) st = (StaffBar os',st') where (os',st') = stmap f os st
+
+instance StateMap CExprList where
+  stmap f (CExprList xs) st = (CExprList xs',st') where (xs',st') = stmap (stmap f) xs st
 
 instance StateMap CExpr where
-  stmap f (Atoms os)    st = (Atoms os',st')    where (os',st') = stmap f os st
+  stmap f (Atom  e)     st = (Atom e',st')      where (e',st') = f e st
   stmap f (N_Plet d ce) st = (N_Plet d ce',st') where (ce',st') = stmap f ce st
   stmap f (Beamed ce)   st = (Beamed ce',st')   where (ce',st') = stmap f ce st
 

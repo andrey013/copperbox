@@ -20,14 +20,16 @@ module Neume.Bracket where
 
 import Neume.Datatypes
 import Neume.Duration
+import Neume.SyntaxStaff
 import Neume.Utils
 
-import Text.PrettyPrint.Leijen                  -- package: wl-pprint
+import Text.PrettyPrint.Leijen hiding ( empty )   -- package: wl-pprint
 
+import Data.Foldable ( toList )
 import Data.List ( foldl' )
 import Data.Ratio
-
-
+import Data.Sequence hiding ( splitAt, length )
+import Prelude hiding ( null )
 
 -- | A Metric unit represents a division of a NoteList according
 -- to the sizes of a 'MeterPattern'.
@@ -143,6 +145,34 @@ pletFold f _ b (S a)         = f a b
 pletFold f g b (Plet p q xs) = foldl' (pletFold f g) (g p q b) $ getNoteList xs
 
 --------------------------------------------------------------------------------
+-- 
+
+phrase :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+       => MeterPattern -> NoteList a -> StaffPhrase a
+phrase mp notes = StaffPhrase $ barsFromDivisions (length mp) $ divisions 0 mp notes
+
+
+barsFromDivisions :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+                  => Int -> [MetricUnit a] -> [StaffBar a]
+barsFromDivisions i = step . splitAt i
+  where
+    step (xs,[]) = [unitsToBar xs]
+    step (xs,ys) = (unitsToBar xs) : step (splitAt i ys)
+
+    fromUnit BZero         = CExprList []
+    fromUnit (MUnit notes) = beam notes
+
+    unitsToBar = StaffBar . catExprLists . map fromUnit
+
+catExprLists :: [CExprList a] -> CExprList a
+catExprLists = CExprList . step where
+  step []     = []
+  step (x:xs) = case getCExprList x of 
+                  [] -> step xs 
+                  e  -> e ++ step xs
+
+
+--------------------------------------------------------------------------------
 -- Divide the NoteList
 
 divisions :: (Measurement a ~ DurationMeasure, NumMeasured a) 
@@ -190,6 +220,82 @@ unwind phi s0 = step id s0 where
                        AYield a st' -> step (k . (a:)) st' xs
                        ADone        -> (k [],st,x:xs)
   step k st []     = (k [],st,[])  
+
+
+--------------------------------------------------------------------------------
+
+
+beam :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+     => NoteList a -> CExprList a
+beam = CExprList . beamNotes . getNoteList 
+
+beamNotes :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+     => [PletTree a] -> [CExpr a]
+beamNotes = alternateUnwind out inn unbuffer
+  where
+    out a@(S e) 
+       | umeasure a < quarter_note && rendersToNote e = Nothing
+    out a@(Plet _ _ _) 
+       | pletAll ((<quarter_note) . nmeasure) a       = Nothing
+    out pt                                            = Just (conv pt)
+    
+       
+    inn a | pletAll ((<quarter_note) . nmeasure) a    = Just (conv a)
+          | otherwise                                 = Nothing
+
+
+
+rendersToNote :: a -> Bool
+rendersToNote _ = True
+
+rendersToRest :: a -> Bool
+rendersToRest = not . rendersToNote
+
+pletAll :: (a -> Bool) -> PletTree a -> Bool
+pletAll test (S a)            = test a
+pletAll test (Plet _ _ notes) = step (getNoteList notes) where
+   step []                      = True
+   step (p:ps) | pletAll test p = step ps
+   step _                       = False
+
+conv :: PletTree a -> CExpr a
+conv (S a)            = Atom a
+conv (Plet p q notes) = N_Plet desc (CExprList $ map conv $ getNoteList notes)
+  where desc = N_PletDescr p q
+
+
+
+unbuffer :: Seq (CExpr a) -> [CExpr a]
+unbuffer = step [] . viewr 
+  where
+    step acc EmptyR     = acc
+    step acc (se :> Atom a)  
+        | rendersToNote a && null se = Atom a : acc
+        | rendersToNote a            = (mkbeam $ toList $ se |> Atom a) : acc
+        | otherwise                  = step (Atom a : acc) (viewr se)  
+
+    -- if the right edge is a n_plet always beam
+    step acc (se :> bt)              = (mkbeam $ toList $ se |> bt) : acc
+
+    mkbeam = Beamed . CExprList
+
+
+alternateUnwind :: (a -> Maybe b) 
+                -> (a -> Maybe interim) 
+                -> (Seq interim -> [b]) 
+                -> [a] -> [b]
+alternateUnwind outside inside flush_buffer inp = outstep inp 
+  where
+    outstep []        = []
+    outstep (x:xs)    = case outside x of
+                         Just a -> a : outstep xs
+                         Nothing  -> instep empty (x:xs)
+    
+    instep buf []     = flush_buffer buf
+    instep buf (x:xs) = case inside x of
+                          Just a -> instep (buf |> a) xs
+                          Nothing -> flush_buffer buf ++ outstep (x:xs)
+
 
 
 --------------------------------------------------------------------------------

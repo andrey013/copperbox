@@ -43,20 +43,19 @@ renderPhrase:: StaffPhrase AbcGlyph -> AbcPhrase
 renderPhrase                = AbcPhrase . map oStaffBar . getStaffPhrase
 
 oStaffBar :: StaffBar AbcGlyph -> AbcBar
-oStaffBar                   = AbcBar . oBarUnit . getStaffBar
+oStaffBar                   = AbcBar . oCExprList (<+>) . getStaffBar
 
 
-oBarUnit :: OneList (CExpr AbcGlyph) -> Doc
-oBarUnit os                 = hsep $ toListF (oCExpr hsep) os
-
+oCExprList :: (Doc -> Doc -> Doc) -> CExprList AbcGlyph -> Doc
+oCExprList sep (CExprList xs) = sepList sep $ map (oCExpr sep) xs
 
 -- This one needs 'context' - beamed notes are no whitespace
 -- between them.
 --
-oCExpr :: ([Doc] -> Doc) -> CExpr AbcGlyph -> Doc
-oCExpr sep (Atoms os)       = sep $ toListF oGlyph os 
-oCExpr _   (N_Plet _ _)     = error $ "oCExpr - N_Plet to do"
-oCExpr _   (Beamed e)       = oCExpr hcat e
+oCExpr :: (Doc -> Doc -> Doc) -> CExpr AbcGlyph -> Doc
+oCExpr _   (Atom e)         = oGlyph e
+oCExpr _op (N_Plet _ _)     = error $ "oCExpr - N_Plet to do"
+oCExpr _   (Beamed notes)   = oCExprList (<>) notes
 
 
 oGlyph :: AbcGlyph -> Doc

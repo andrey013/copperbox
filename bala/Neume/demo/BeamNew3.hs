@@ -135,6 +135,8 @@ ppList op (Notes xs) = step xs where
   step [x]    = ppBT op x
   step (x:xs) = (ppBT op x) `op` step xs
 
+
+
 instance Pretty a => Pretty (Notes a) where
   pretty = ppList (<+>)
 

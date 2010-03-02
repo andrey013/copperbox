@@ -44,15 +44,18 @@ oStaffPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> LyPhrase
 oStaffPhrase f            = LyPhrase . map (oStaffBar f) . getStaffPhrase
 
 oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> LyBar
-oStaffBar f               = LyBar . oBarUnit f . getStaffBar
+oStaffBar f               = LyBar . hsep . oCExprList f . getStaffBar
 
-oBarUnit :: (pch -> Doc) -> OneList (CExpr (GlyphRelDur anno pch)) -> Doc
-oBarUnit f os             = hsep $ toListF (oCExpr f) os
+-- oBarUnit :: (pch -> Doc) -> OneList (CExpr (GlyphRelDur anno pch)) -> Doc
+-- oBarUnit f os             = hsep $ toListF (oCExpr f) os
+
+oCExprList ::  (pch -> Doc) -> CExprList (GlyphRelDur anno pch) -> [Doc]
+oCExprList f (CExprList xs) = map (oCExpr f) xs
 
 oCExpr :: (pch -> Doc) -> CExpr (GlyphRelDur anno pch) -> Doc
-oCExpr f (Atoms os)       = hsep $ toListF (oGlyph f) os 
+oCExpr f (Atom e)         = oGlyph f e 
 oCExpr _ (N_Plet _ _)     = error $ "oCExpr - N_Plet to do"
-oCExpr f (Beamed e)       = beamForm [oCExpr f e]
+oCExpr f (Beamed notes)   = beamForm $ oCExprList f notes
 
 oGlyph :: (pch -> Doc) -> GlyphRelDur anno pch -> Doc
 oGlyph f (GlyNote n t)    = oNote f n <> optDoc t tie

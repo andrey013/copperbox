@@ -21,19 +21,19 @@ demo1 = simpleOutput $ renderPhrase
                      $ rewritePitchRel    middle_c 
                      $ rewriteDurationOpt xs
   where
-    xs = phrase twoFourTime $ bars1'4
+    xs = phrase twoFourTime $ simpleNoteList bars1'4
 
 demo2 = ABC.simpleOutput $ ABC.renderPhrase     
                          $ ABC.rewritePitch     amaj 
                          $ ABC.rewriteDuration  (1%16) xs 
   where
-    xs   = phrase twoFourTime bars1'4
+    xs   = phrase twoFourTime $ simpleNoteList bars1'4
     amaj = makeSpellingMap 3
 
 
 
-twoFourTime :: MetricalSpec
-twoFourTime = MetricalSpec (TimeSignature 2 4) (makeMeterPattern 2 4)
+twoFourTime :: MeterPattern
+twoFourTime = makeMeterPattern 2 4
 
 
 

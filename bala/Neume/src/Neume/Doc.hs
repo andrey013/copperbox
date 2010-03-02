@@ -19,6 +19,7 @@ module Neume.Doc
 
   -- * Extra pretty printers
     doclines
+  , sepList
   , dblangles
   , nextLine
   , sglLine
@@ -53,6 +54,14 @@ doclines = vsep `oo` step where
     step _      []  = []
     step []     ds  = [hsep ds]
     step (n:ns) ds  = hsep ls : step ns rs where (ls,rs) = splitAt n ds
+
+
+sepList :: (Doc -> Doc -> Doc) -> [Doc] -> Doc
+sepList op = step where
+  step []     = empty
+  step [x]    = x
+  step (x:xs) = x `op` step xs
+
 
 dblangles :: Doc -> Doc 
 dblangles = enclose (text "<< ") (text " >>")
