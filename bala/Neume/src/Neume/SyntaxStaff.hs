@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
@@ -215,6 +216,14 @@ instance StateMap3 Glyph where
 
 
 --------------------------------------------------------------------------------
+
+instance NumMeasured (Glyph anno pch Duration) where
+  type Measurement (Glyph anno pch Duration) = DurationMeasure
+  nmeasure (GlyNote  (Note _ _ d) _) = extent d
+  nmeasure (Rest     d)              = extent d
+  nmeasure (Spacer   d)              = extent d
+  nmeasure (Chord _ d _)             = extent d
+  nmeasure (Graces _)                = 0
 
 instance MakeSpacer (Glyph anno pch Duration) where
   makeSpacer d = Spacer d

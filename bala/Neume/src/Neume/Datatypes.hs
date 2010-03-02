@@ -160,9 +160,6 @@ instance Pretty a => Pretty (NoteList a) where
   pretty (NoteList xs) = sep (map pretty xs)
 
 
-ppTimeSig :: Int -> Int -> Doc
-ppTimeSig m p = ppCommand "time" <+> int m <> char '/' <> int p
-
 instance Pretty TimeSignature where
-  pretty (TimeSignature m p) = ppTimeSig m p
+  pretty (TimeSignature m p) = ppCommand "time" <+> int m <> char '/' <> int p
 

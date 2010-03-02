@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -24,6 +26,7 @@ module Neume.Duration
   , DurationMeasure
   
   -- * Classes
+  , NumMeasured(..)
   , HasDuration(..)
   , MakeRest(..)
   , MakeSpacer(..)
@@ -61,6 +64,10 @@ module Neume.Duration
   , dqn
   , den
   , dsn
+
+  , whole_note
+  , half_note 
+  , quarter_note
   
   ) where
 
@@ -86,6 +93,14 @@ type DurationMeasure = Rational
 -- Classes
 
 
+-- This is the Measured class from the FingerTree paper and 
+-- library but with Num for the superclass rather than Monoid
+
+class Num (Measurement a) => NumMeasured a where
+  type Measurement a
+  nmeasure :: a -> Measurement a
+
+-- is this one still useful... ?
 class HasDuration t where
   getDuration  :: t Duration -> Duration
 
@@ -262,24 +277,24 @@ makeDuration :: Numeral -> Duration
 makeDuration nm = D1 nm 0
 
 
-longa :: Duration
-breve :: Duration
-wn    :: Duration
-hn    :: Duration
-qn    :: Duration
-en    :: Duration
-sn    :: Duration
-tn    :: Duration
+longa           :: Duration
+breve           :: Duration
+wn              :: Duration
+hn              :: Duration
+qn              :: Duration
+en              :: Duration
+sn              :: Duration
+tn              :: Duration
 
 
-longa = makeDuration Longa
-breve = makeDuration Breve
-wn    = makeDuration N1
-hn    = makeDuration N2
-qn    = makeDuration N4
-en    = makeDuration N8
-sn    = makeDuration N16
-tn    = makeDuration N32
+longa           = makeDuration Longa
+breve           = makeDuration Breve
+wn              = makeDuration N1
+hn              = makeDuration N2
+qn              = makeDuration N4
+en              = makeDuration N8
+sn              = makeDuration N16
+tn              = makeDuration N32
 
 dhn   :: Duration
 dqn   :: Duration
@@ -293,3 +308,9 @@ dsn   = dot sn
 
 
 
+whole_note      :: DurationMeasure
+half_note       :: DurationMeasure
+quarter_note    :: DurationMeasure
+whole_note      = 1%1
+half_note       = 1%2
+quarter_note    = 1%4 

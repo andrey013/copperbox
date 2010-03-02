@@ -1,6 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -24,22 +22,10 @@ import Neume.Datatypes
 import Neume.Duration
 import Neume.Utils
 
+import Text.PrettyPrint.Leijen                  -- package: wl-pprint
+
 import Data.List ( foldl' )
 import Data.Ratio
-
-
--- This is the Measured class from the FingerTree paper and 
--- library but with Num for the superclass rather than Monoid
-
-class Num (Measurement a) => NumMeasured a where
-  type Measurement a
-  nmeasure :: a -> Measurement a
-
-class BeamExtremity a where 
-   outerElement :: a -> Bool
-   innerOnly    :: a -> Bool
-   
-   innerOnly    = not . outerElement
 
 
 
@@ -204,5 +190,13 @@ unwind phi s0 = step id s0 where
                        AYield a st' -> step (k . (a:)) st' xs
                        ADone        -> (k [],st,x:xs)
   step k st []     = (k [],st,[])  
+
+
+--------------------------------------------------------------------------------
+-- Pretty instances
+
+instance Pretty a => Pretty (MetricUnit a) where
+  pretty (MUnit notes) = angles $ pretty notes
+  pretty BZero         = text "___" 
 
 

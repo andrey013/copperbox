@@ -125,7 +125,7 @@ import Neume.Duration
 import Neume.Pitch
 import Neume.Utils
 
-import Text.PrettyPrint.Leijen
+import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
 import Data.Char ( isAlpha )
 
