@@ -2,10 +2,13 @@
 
 module B6 where
 
-import qualified Neume.AbcOutput as ABC
+import qualified Neume.AbcDoc           as ABC
+import qualified Neume.AbcOutput        as ABC
 import Neume.Bracket
 import Neume.Datatypes
+import Neume.Doc
 import Neume.Duration
+import Neume.LilyPondDoc
 import Neume.LilyPondOutput
 import Neume.NamedElements
 import Neume.Pitch
@@ -16,17 +19,35 @@ import Text.PrettyPrint.Leijen
 
 import Data.Ratio
 
+main :: IO ()
+main = do 
+  writeDoc "bulgarian6.ly"      ly_score
+  writeDoc "bulgarian6_abc.abc" abc_score
 
-demo1 = simpleOutput $ renderPhrase       
-                     $ rewritePitchRel    middle_c 
-                     $ rewriteDurationOpt xs
-  where
-    xs = phrase twoFourTime $ simpleNoteList bars1'4
 
-demo2 = ABC.simpleOutput $ ABC.renderPhrase     
-                         $ ABC.rewritePitch     amaj 
-                         $ ABC.rewriteDuration  (1%16) xs 
+ly_score :: Doc
+ly_score =  version "2.12.2" 
+        <$> scoreExpr (relative middle_c $ key a_nat "major" 
+        <$> (time $ timeSignature two_four_time)
+        <$> tune)
   where
+    tune =  simpleOutput $ renderPhrase       
+                         $ rewritePitchRel    middle_c 
+                         $ rewriteDurationOpt xs
+
+    xs   = phrase twoFourTime $ simpleNoteList bars1'4
+
+abc_score :: Doc
+abc_score =  ABC.tunenum   1 
+         <$> ABC.title     "Bulgarian 6"
+         <$> ABC.meter     "2/4"
+         <$> ABC.key       "Amaj"
+         <$> tune
+  where
+    tune = ABC.simpleOutput $ ABC.renderPhrase     
+                            $ ABC.rewritePitch     amaj 
+                            $ ABC.rewriteDuration  (1%16) xs 
+
     xs   = phrase twoFourTime $ simpleNoteList bars1'4
     amaj = makeSpellingMap 3
 

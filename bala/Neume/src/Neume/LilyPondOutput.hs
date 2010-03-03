@@ -211,6 +211,10 @@ relpGlyph :: Glyph anno Pitch dur
           -> (Glyph anno Pitch dur, Pitch)
 relpGlyph = stmap3b relpP
 
+
+-- | Need to return the \original\ pitch as the state, not the
+-- octave modified new value.
+--
 relpP :: Pitch -> Pitch -> (Pitch,Pitch)
-relpP p0 p = (setOctave (lyOctaveDist p0 p) p,p)
+relpP p prev = let p' = setOctave (lyOctaveDist prev p) p in (p',p)
 
