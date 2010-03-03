@@ -137,8 +137,6 @@ type StdGlyph           = Glyph ()   Pitch Duration
 type AnnoGlyph anno     = Glyph anno Pitch Duration
 
 
-
-
 --------------------------------------------------------------------------------
 -- Instances
 
@@ -181,10 +179,12 @@ instance StateMap StaffPhrase where
                                 where (xs',st') = stmap (stmap f) xs st
 
 instance StateMap StaffBar where
-  stmap f (StaffBar os) st = (StaffBar os',st') where (os',st') = stmap f os st
+  stmap f (StaffBar os) st = (StaffBar os',st') 
+    where (os',st') = stmap f os st
 
 instance StateMap CExprList where
-  stmap f (CExprList xs) st = (CExprList xs',st') where (xs',st') = stmap (stmap f) xs st
+  stmap f (CExprList xs) st = (CExprList xs',st') 
+    where (xs',st') = stmap (stmap f) xs st
 
 instance StateMap CExpr where
   stmap f (Atom  e)     st = (Atom e',st')      where (e',st') = f e st
@@ -210,15 +210,16 @@ instance StateMap3 Note where
 
 instance StateMap3 Glyph where
   stmap3 f1 f2 f3 (GlyNote n t)  st = (GlyNote n' t, st') 
-                                      where (n',st') = stmap3 f1 f2 f3 n st
+    where (n',st') = stmap3 f1 f2 f3 n st
 
   stmap3 _  _  f3 (Rest d)       st = (Rest d', st')   where (d',st') = f3 d st
   stmap3 _  _  f3 (Spacer d)     st = (Spacer d', st') where (d',st') = f3 d st
   stmap3 f1 f2 f3 (Chord os d t) st = (Chord os' d' t, st'')
-                                      where (os',st') = stmap (stmap2 f1 f2) os st
-                                            (d',st'') = f3 d st'
+    where (os',st') = stmap (stmap2 f1 f2) os st
+          (d',st'') = f3 d st'
+  
   stmap3 f1 f2 f3 (Graces os)    st = (Graces os', st')
-                                      where (os',st') = stmap (stmap3 f1 f2 f3) os st
+    where (os',st') = stmap (stmap3 f1 f2 f3) os st
 
 
 --------------------------------------------------------------------------------

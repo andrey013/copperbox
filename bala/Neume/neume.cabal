@@ -44,12 +44,12 @@ library
     Neume.LilyPondOutput,
     Neume.NamedElements,
     Neume.OneList,
-    Neume.OneTwo,
     Neume.Pitch,
     Neume.StateMap,
     Neume.SyntaxDoc,
     Neume.SyntaxMarkup,
     Neume.SyntaxStaff,
+    Neume.TreeOps,
     Neume.Utils
 
   other-modules:

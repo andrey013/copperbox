@@ -16,17 +16,21 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.Bracket where
+module Neume.Bracket 
+  ( 
+    phrase
+
+  ) where
 
 import Neume.Datatypes
 import Neume.Duration
 import Neume.SyntaxStaff
+import Neume.TreeOps
 import Neume.Utils
 
 import Text.PrettyPrint.Leijen hiding ( empty )   -- package: wl-pprint
 
 import Data.Foldable ( toList )
-import Data.List ( foldl' )
 import Data.Ratio
 import Data.Sequence hiding ( splitAt, length )
 import Prelude hiding ( null )
@@ -47,6 +51,35 @@ data MetricUnit a = MUnit (NoteList a)
                   | BZero                  -- Borrowed zero
  deriving (Eq,Show)
 
+
+
+
+--------------------------------------------------------------------------------
+-- 
+
+phrase :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+       => MeterPattern -> NoteList a -> StaffPhrase a
+phrase mp notes = StaffPhrase $ barsFromDivisions (length mp) $ divisions 0 mp notes
+
+
+barsFromDivisions :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+                  => Int -> [MetricUnit a] -> [StaffBar a]
+barsFromDivisions i = step . splitAt i
+  where
+    step (xs,[]) = [unitsToBar xs]
+    step (xs,ys) = (unitsToBar xs) : step (splitAt i ys)
+
+    fromUnit BZero         = CExprList []
+    fromUnit (MUnit notes) = beam notes
+
+    unitsToBar = StaffBar . catExprLists . map fromUnit
+
+catExprLists :: [CExprList a] -> CExprList a
+catExprLists = CExprList . step where
+  step []     = []
+  step (x:xs) = case getCExprList x of 
+                  [] -> step xs 
+                  e  -> e ++ step xs
 
 --------------------------------------------------------------------------------
 -- Cycle the MetricalSpec / MeterPattern
@@ -100,77 +133,6 @@ splus a xs | a > 0     = a:xs
            | a < 0     = sminus (abs a) xs
            | otherwise = xs
 
---------------------------------------------------------------------------------
--- Measuring the plet-tree, and tuplet stack
-
-
-type TStack = [Rational]
-
--- scale factor
-sf :: TStack -> Rational
-sf []     = (1%1)
-sf (x:xs) = x * sf xs
-
-tempty :: TStack
-tempty = []
-
-pushT :: Int -> Int -> TStack -> TStack
-pushT p q stk = s : stk where
-  s = (fromIntegral q) % (fromIntegral p)   -- note - q%p 
-
--- | The measure of a \single\ or a \plet tree\ - plet trees are
--- considered indivisable so it is not a problem to sum them.
---
-umeasure :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-             => PletTree a -> DurationMeasure
-umeasure = snd . pletFold  phi chi (tempty,0) where
-  phi a      (stk,acc) = (stk, acc + sf stk * nmeasure a)
-  chi p q    (stk,acc) = (pushT p q stk,acc) 
-
--- | The number of items in a PletTree 
---
--- NOTE - need the pred to test e.g. grace notes, which 
--- shouldn\'t be counted.
---
--- Is this a suitable case for another Type Class?
---
-ucount :: (a -> Bool) -> PletTree a -> Int
-ucount test = pletFold phi chi 0 where
-  phi a   n  | test a    = n+1
-             | otherwise = n
-  chi _ _ n              = n
-
-pletFold :: (a -> b -> b) -> (Int -> Int -> b -> b) -> b -> PletTree a -> b
-pletFold f _ b (S a)         = f a b
-pletFold f g b (Plet p q xs) = foldl' (pletFold f g) (g p q b) $ getNoteList xs
-
---------------------------------------------------------------------------------
--- 
-
-phrase :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-       => MeterPattern -> NoteList a -> StaffPhrase a
-phrase mp notes = StaffPhrase $ barsFromDivisions (length mp) $ divisions 0 mp notes
-
-
-barsFromDivisions :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-                  => Int -> [MetricUnit a] -> [StaffBar a]
-barsFromDivisions i = step . splitAt i
-  where
-    step (xs,[]) = [unitsToBar xs]
-    step (xs,ys) = (unitsToBar xs) : step (splitAt i ys)
-
-    fromUnit BZero         = CExprList []
-    fromUnit (MUnit notes) = beam notes
-
-    unitsToBar = StaffBar . catExprLists . map fromUnit
-
-catExprLists :: [CExprList a] -> CExprList a
-catExprLists = CExprList . step where
-  step []     = []
-  step (x:xs) = case getCExprList x of 
-                  [] -> step xs 
-                  e  -> e ++ step xs
-
 
 --------------------------------------------------------------------------------
 -- Divide the NoteList
@@ -201,8 +163,8 @@ division1 :: (Measurement a ~ DurationMeasure, NumMeasured a)
           -> [PletTree a] 
           -> (MetricUnit a, DurationMeasure, [PletTree a])
 division1 runit = post . unwind phi runit where
-  phi r a | r > 0       = AYield a (r - umeasure a)
-          | otherwise   = ADone    
+  phi r a | r > 0       = Yield a (r - pletMeasure a)
+          | otherwise   = Done    
 
   post (xs,borrow,rest) = (MUnit $ NoteList xs, abs borrow, rest)
 
@@ -210,15 +172,17 @@ division1 runit = post . unwind phi runit where
 -- | unfold against a list, presenting the rest-of-list and the 
 -- state at the end
 
-data AStep a st = AYield a  !st
-                | ADone     
+-- Strict version of Maybe for unfolding...
+
+data Step a st = Yield a  !st
+               | Done     
   deriving (Eq,Show)
 
-unwind :: (st -> a -> AStep b st) -> st -> [a] -> ([b],st,[a])
+unwind :: (st -> a -> Step b st) -> st -> [a] -> ([b],st,[a])
 unwind phi s0 = step id s0 where
   step k st (x:xs) = case phi st x of
-                       AYield a st' -> step (k . (a:)) st' xs
-                       ADone        -> (k [],st,x:xs)
+                       Yield a st' -> step (k . (a:)) st' xs
+                       Done        -> (k [],st,x:xs)
   step k st []     = (k [],st,[])  
 
 
@@ -234,29 +198,20 @@ beamNotes :: (Measurement a ~ DurationMeasure, NumMeasured a)
 beamNotes = alternateUnwind out inn unbuffer
   where
     out a@(S e) 
-       | umeasure a < quarter_note && rendersToNote e = Nothing
+       | pletMeasure a < quarter_note && rendersToNote e  = Nothing
     out a@(Plet _ _ _) 
-       | pletAll ((<quarter_note) . nmeasure) a       = Nothing
-    out pt                                            = Just (conv pt)
+       | pletAll ((<quarter_note) . nmeasure) a           = Nothing
+    out pt                                                = Just (conv pt)
     
        
-    inn a | pletAll ((<quarter_note) . nmeasure) a    = Just (conv a)
-          | otherwise                                 = Nothing
+    inn a | pletAll ((<quarter_note) . nmeasure) a        = Just (conv a)
+          | otherwise                                     = Nothing
 
 
 
 rendersToNote :: a -> Bool
 rendersToNote _ = True
 
-rendersToRest :: a -> Bool
-rendersToRest = not . rendersToNote
-
-pletAll :: (a -> Bool) -> PletTree a -> Bool
-pletAll test (S a)            = test a
-pletAll test (Plet _ _ notes) = step (getNoteList notes) where
-   step []                      = True
-   step (p:ps) | pletAll test p = step ps
-   step _                       = False
 
 conv :: PletTree a -> CExpr a
 conv (S a)            = Atom a
@@ -288,12 +243,12 @@ alternateUnwind outside inside flush_buffer inp = outstep inp
   where
     outstep []        = []
     outstep (x:xs)    = case outside x of
-                         Just a -> a : outstep xs
-                         Nothing  -> instep empty (x:xs)
+                         Just a  -> a : outstep xs
+                         Nothing -> instep empty (x:xs)
     
     instep buf []     = flush_buffer buf
     instep buf (x:xs) = case inside x of
-                          Just a -> instep (buf |> a) xs
+                          Just a  -> instep (buf |> a) xs
                           Nothing -> flush_buffer buf ++ outstep (x:xs)
 
 
