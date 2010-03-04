@@ -75,6 +75,7 @@ module Neume.LilyPondDoc
   , contextVoice
   , contextTabVoice
   , new
+  , with
   , newStaff
   , newStaffGroup
   , newTabStaff
@@ -109,6 +110,7 @@ module Neume.LilyPondDoc
   , variableUse
   , schemeDef
   , override
+  , definition
 
   -- ** Midi directives
   , midi
@@ -119,7 +121,6 @@ module Neume.LilyPondDoc
   ) where
 
 
-import Neume.Datatypes
 import Neume.Doc
 import Neume.Duration
 import Neume.Pitch
@@ -255,8 +256,8 @@ comment s = text "%{" <+> string s  <+> text "%}"
 -- Time and key signatures
 
 -- | @\\time .../... @ - time signature.
-time :: TimeSignature -> Doc
-time (TimeSignature n d) = command "time" <+> int n <> char '/' <> int d
+time :: Int -> Int -> Doc
+time n d = command "time" <+> int n <> char '/' <> int d
 
 
 -- | @\\key ... ... @ - key pitch mode. Typical values of mode are
@@ -372,6 +373,11 @@ contextTabVoice s e   = context <+> (text "TabVoice")
 -- | @\\new ... ... @ - e.g. @Staff@, @Voice@ then expression.
 new                   :: String -> Doc -> Doc
 new ss e              = command "new" <+> text ss <+> e
+
+
+-- | @\\with { \\n ... \\n } ... @ - e.g. @Staff@, @Voice@ then expression.
+with                   :: Doc -> Doc -> Doc
+with e1 e2              = command "with" <+> nestBraces e1 <$> e2
 
 
 -- | @\\new Staff ... @.
@@ -528,6 +534,12 @@ override :: String -> String -> Doc -> Doc
 override obj prop d = command "override" <+> text obj  <+> text "#'" 
                                          <>  text prop <+> equals 
                                          <+> char '#'  <> d
+
+
+-- | @name = val@ - primitive combinator for building definitions. 
+definition :: String -> Doc -> Doc
+definition name val = text name <+> equals <+> val
+
 
 --------------------------------------------------------------------------------
 -- Midi directives

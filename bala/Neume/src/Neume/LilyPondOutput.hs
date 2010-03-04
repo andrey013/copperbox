@@ -35,6 +35,10 @@ import qualified Data.Foldable          as F
 --------------------------------------------------------------------------------
 -- Render
 
+-- Note for lilypond percussion we might want either the long or 
+-- short name printing, so renderPhrase isn't a good candidate 
+-- for a Type Class.
+
 -- ignore annotations at the moment...
 renderPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> LyPhrase
 renderPhrase f = oStaffPhrase f

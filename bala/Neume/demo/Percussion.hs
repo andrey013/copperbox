@@ -10,6 +10,7 @@ import Neume.Extended
 import Neume.LilyPondDoc
 import Neume.LilyPondOutput
 import Neume.NamedElements
+import Neume.OneList ( fromList )
 import Neume.Pitch
 import Neume.SyntaxStaff
 import Neume.Utils
@@ -39,18 +40,39 @@ demo2 = simpleOutput $ renderPhrase $ rewriteDuration xs
 
 ly_score :: Doc
 ly_score =  version "2.12.2" 
-        <$> new "DrumStaff" (drummode tune)
+        <$> drumtune
+        <$> scoreExpr (new "DrumStaff" 
+                        (with dstyle (simultaneous [variableUse "drumtune"])))
+  where
+    dstyle = definition "drumStyleTable" (text "#drums-style")
+
+
+drumtune :: Doc
+drumtune = variableDef "drumtune" $ drummode (time 4 4 <$> stemUp <$> tune )
   where
     tune =  simpleOutput $ renderPhrase (text . drumShortName)      
                          $ rewriteDurationOpt xs
 
     xs   :: StaffPhrase DrumGlyph
-    xs   = phrase (meterPattern four_four_time) $ simpleNoteList drum_tune
+    xs   = phrase [1%2, 1%2] $ simpleNoteList drum_tune
 
 drum :: DrumPitch -> Duration -> DrumGlyph
 drum p drn = GlyNote (Note () p drn) False
 
+dchord :: [DrumPitch] -> Duration -> DrumGlyph
+dchord ps drn = Chord (fromList $ map (ChordPitch ()) ps) drn False
+
+
 drum_tune :: [DrumGlyph]
-drum_tune = [drum snare qn, drum hihat qn, drum snare qn, drum hihat qn]
+drum_tune = [ dchord [handclap, ridecymbal] en
+            , drum pedalhihat en
+            , dchord [handclap, ridecymbal] en
+            , dchord [bassdrum, ridecymbal] en
+            -- 
+            , dchord [handclap, ridecymbal] en
+            , drum pedalhihat en
+            , dchord [bassdrum, handclap, ridecymbal] en
+            , drum ridecymbal en
+            ]
 
 
