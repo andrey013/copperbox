@@ -18,11 +18,14 @@ import Neume.Utils
 import Text.PrettyPrint.Leijen
 
 import Data.Ratio
+import System.Cmd
 
 main :: IO ()
 main = do 
   writeDoc "bulgarian6.ly"      ly_score
   writeDoc "bulgarian6_abc.abc" abc_score
+  system   "lilypond bulgarian6.ly"
+  return ()
 
 
 ly_score :: Doc
@@ -31,7 +34,7 @@ ly_score =  version "2.12.2"
         <$> (time $ timeSignature two_four_time)
         <$> tune)
   where
-    tune =  simpleOutput $ renderPhrase       
+    tune =  simpleOutput $ renderPhrase pitch      
                          $ rewritePitchRel    middle_c 
                          $ rewriteDurationOpt xs
 

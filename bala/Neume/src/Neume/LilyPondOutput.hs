@@ -36,8 +36,9 @@ import qualified Data.Foldable          as F
 -- Render
 
 -- ignore annotations at the moment...
-renderPhrase :: StaffPhrase (GlyphRelDur anno Pitch) -> LyPhrase
-renderPhrase = oStaffPhrase pitch
+renderPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> LyPhrase
+renderPhrase f = oStaffPhrase f
+
 
 
 oStaffPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> LyPhrase
@@ -45,9 +46,6 @@ oStaffPhrase f            = LyPhrase . map (oStaffBar f) . getStaffPhrase
 
 oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> LyBar
 oStaffBar f               = LyBar . hsep . oCExprList f . getStaffBar
-
--- oBarUnit :: (pch -> Doc) -> OneList (CExpr (GlyphRelDur anno pch)) -> Doc
--- oBarUnit f os             = hsep $ toListF (oCExpr f) os
 
 oCExprList ::  (pch -> Doc) -> CExprList (GlyphRelDur anno pch) -> [Doc]
 oCExprList f (CExprList xs) = map (oCExpr f) xs
@@ -108,6 +106,7 @@ simpleOverlay = step . getBarDoc where
 -- Note - seed each bar with the default duration.
 -- This makes scores clearer.
 --
+
 rewriteDurationOpt :: StaffPhrase (Glyph anno pch Duration)
                    -> StaffPhrase (Glyph anno pch (Maybe Duration))
 rewriteDurationOpt (StaffPhrase bars) = 

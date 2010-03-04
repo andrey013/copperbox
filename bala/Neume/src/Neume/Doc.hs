@@ -31,6 +31,7 @@ module Neume.Doc
   , ppCommand 
 
   , writeDoc
+  , printDoc
   , renderDocEighty
 
   ) where
@@ -98,5 +99,9 @@ ppCommand = (char '\\' <>) . text
 writeDoc :: FilePath -> Doc -> IO ()
 writeDoc filepath = writeFile filepath . renderDocEighty
 
+printDoc :: Doc -> IO ()
+printDoc = putStrLn . renderDocEighty
+
 renderDocEighty :: Doc -> String
 renderDocEighty = (displayS `flip` []) . renderPretty 0.8 80
+
