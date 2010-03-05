@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -26,7 +24,6 @@ module Neume.Duration
   , DurationMeasure
   
   -- * Classes
-  , NumMeasured(..)
   , HasDuration(..)
   , MakeRest(..)
   , MakeSpacer(..)
@@ -93,12 +90,6 @@ type DurationMeasure = Rational
 -- Classes
 
 
--- This is the Measured class from the FingerTree paper and 
--- library but with Num for the superclass rather than Monoid
-
-class Num (Measurement a) => NumMeasured a where
-  type Measurement a
-  nmeasure :: a -> Measurement a
 
 -- is this one still useful... ?
 class HasDuration t where

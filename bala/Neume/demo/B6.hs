@@ -31,7 +31,7 @@ main = do
 ly_score :: Doc
 ly_score =  version "2.12.2" 
         <$> scoreExpr (relative middle_c $ key a_nat "major" 
-        <$> (time $ timeSignature two_four_time)
+        <$> (time 2 4)
         <$> tune)
   where
     tune =  simpleOutput $ renderPhrase pitch      

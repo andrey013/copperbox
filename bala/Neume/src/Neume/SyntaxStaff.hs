@@ -49,6 +49,7 @@ module Neume.SyntaxStaff
   ) where
 
 
+import Neume.BeamExtremity
 import Neume.Duration
 import Neume.FunctorN
 import Neume.OneList
@@ -237,6 +238,14 @@ instance MakeSpacer (Glyph anno pch Duration) where
 
 instance MakeRest (Glyph anno pch Duration) where
   makeRest d = Rest d
+
+--------------------------------------------------------------------------------
+instance BeamExtremity (Glyph anno pch dur) where
+  rendersToNote (GlyNote _ _) = True
+  rendersToNote (Rest _)      = False
+  rendersToNote (Spacer _)    = False
+  rendersToNote (Chord _ _ _) = True
+  rendersToNote (Graces _)    = False
  
 
 --------------------------------------------------------------------------------

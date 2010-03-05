@@ -26,7 +26,7 @@ module Neume.TreeOps
 
   ) where
 
-
+import Neume.BeamExtremity
 import Neume.Datatypes
 import Neume.Duration
 

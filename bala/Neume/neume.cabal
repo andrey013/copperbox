@@ -34,6 +34,7 @@ library
   exposed-modules:
     Neume.AbcDoc,
     Neume.AbcOutput,
+    Neume.BeamExtremity,
     Neume.Bracket,
     Neume.Datatypes,
     Neume.Doc,

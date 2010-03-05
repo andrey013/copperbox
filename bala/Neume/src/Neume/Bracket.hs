@@ -22,6 +22,7 @@ module Neume.Bracket
 
   ) where
 
+import Neume.BeamExtremity
 import Neume.Datatypes
 import Neume.Duration
 import Neume.SyntaxStaff
@@ -34,6 +35,10 @@ import Data.Foldable ( toList )
 import Data.Ratio
 import Data.Sequence hiding ( splitAt, length )
 import Prelude hiding ( null )
+
+
+   
+
 
 -- | A Metric unit represents a division of a NoteList according
 -- to the sizes of a 'MeterPattern'.
@@ -57,12 +62,13 @@ data MetricUnit a = MUnit (NoteList a)
 --------------------------------------------------------------------------------
 -- 
 
-phrase :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+phrase :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
        => MeterPattern -> NoteList a -> StaffPhrase a
 phrase mp notes = StaffPhrase $ barsFromDivisions (length mp) $ divisions 0 mp notes
 
 
-barsFromDivisions :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+barsFromDivisions :: ( Measurement a ~ DurationMeasure
+                     , NumMeasured a, BeamExtremity a) 
                   => Int -> [MetricUnit a] -> [StaffBar a]
 barsFromDivisions i = step . splitAt i
   where
@@ -189,11 +195,11 @@ unwind phi s0 = step id s0 where
 --------------------------------------------------------------------------------
 
 
-beam :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+beam :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
      => NoteList a -> CExprList a
 beam = CExprList . beamNotes . getNoteList 
 
-beamNotes :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+beamNotes :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
      => [PletTree a] -> [CExpr a]
 beamNotes = alternateUnwind out inn unbuffer
   where
@@ -209,9 +215,6 @@ beamNotes = alternateUnwind out inn unbuffer
 
 
 
-rendersToNote :: a -> Bool
-rendersToNote _ = True
-
 
 conv :: PletTree a -> CExpr a
 conv (S a)            = Atom a
@@ -220,7 +223,7 @@ conv (Plet p q notes) = N_Plet desc (CExprList $ map conv $ getNoteList notes)
 
 
 
-unbuffer :: Seq (CExpr a) -> [CExpr a]
+unbuffer :: BeamExtremity a => Seq (CExpr a) -> [CExpr a]
 unbuffer = step [] . viewr 
   where
     step acc EmptyR     = acc
