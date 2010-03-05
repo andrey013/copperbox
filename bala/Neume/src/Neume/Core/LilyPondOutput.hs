@@ -17,15 +17,15 @@
 
 module Neume.Core.LilyPondOutput where 
 
-import Neume.Core.Doc
 import Neume.Core.Duration
-import Neume.Core.LilyPondDoc
-import Neume.Core.OneList
+import Neume.Core.LilyPondBasic
 import Neume.Core.Pitch
-import Neume.Core.StateMap
 import Neume.Core.SyntaxDoc
 import Neume.Core.SyntaxMarkup
 import Neume.Core.SyntaxStaff
+import Neume.Core.Utils.OneList
+import Neume.Core.Utils.Pretty
+import Neume.Core.Utils.StateMap
 
 
 import Text.PrettyPrint.Leijen          -- package: wl-print
@@ -79,9 +79,6 @@ oChordPitches f = map (\(ChordPitch _ p) -> f p) . F.toList
 -- Doc helpers
 
 
-
-simpleOutput :: LyPhrase -> Doc
-simpleOutput = vsep . map ((<+> singleBar) . getLyBar) . getLyPhrase
 
 {-
 simpleOverlay :: BarDoc -> Doc

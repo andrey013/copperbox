@@ -18,14 +18,14 @@
 
 module Neume.Core.AbcOutput where
 
-import Neume.Core.AbcDoc
-import Neume.Core.Doc
+import Neume.Core.AbcBasic
 import Neume.Core.Duration
-import Neume.Core.FunctorN
-import Neume.Core.OneList
 import Neume.Core.Pitch hiding ( octave )
 import Neume.Core.SyntaxDoc
 import Neume.Core.SyntaxStaff
+import Neume.Core.Utils.FunctorN
+import Neume.Core.Utils.OneList
+import Neume.Core.Utils.Pretty
 
 
 import Text.PrettyPrint.Leijen hiding ( sep )     -- package: wl-print
@@ -111,13 +111,4 @@ rewriteAnno = fmap (fmap3a (const ()))
 
 --------------------------------------------------------------------------------
 
-
--- | Output ABC, four bars printed on each line. 
-simpleOutput :: AbcPhrase -> Doc
-simpleOutput = four . map ((<+> singleBar) . getAbcBar) . getAbcPhrase
-
-
-four :: [Doc] -> Doc
-four (a:b:c:d:xs) = vsep (map (<> lineCont) [a,b,c]) <$> d <$> four xs
-four xs           = hsep xs
 

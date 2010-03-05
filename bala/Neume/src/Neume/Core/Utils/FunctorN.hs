@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Core.FunctorN
+-- Module      :  Neume.Core.Utils.FunctorN
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --------------------------------------------------------------------------------
 
 
-module Neume.Core.FunctorN
+module Neume.Core.Utils.FunctorN
   ( 
   -- * Bifunctors, ternary functors
     FMap2(..)

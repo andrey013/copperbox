@@ -31,8 +31,8 @@ module Neume.Core.SyntaxMarkup
   ) where
 
 import Neume.Core.Duration
-import Neume.Core.OneList
-import Neume.Core.StateMap
+import Neume.Core.Utils.OneList
+import Neume.Core.Utils.StateMap
 
 --------------------------------------------------------------------------------
 -- Phrases and bars 

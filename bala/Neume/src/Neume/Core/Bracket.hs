@@ -27,7 +27,7 @@ import Neume.Core.Datatypes
 import Neume.Core.Duration
 import Neume.Core.SyntaxStaff
 import Neume.Core.TreeOps
-import Neume.Core.Utils
+import Neume.Core.Utils.Common
 
 import Text.PrettyPrint.Leijen hiding ( empty )   -- package: wl-pprint
 

@@ -32,26 +32,31 @@ library
                      
   
   exposed-modules:
-    Neume.Core.AbcDoc,
+    Neume.Core.AbcBasic,
     Neume.Core.AbcOutput,
     Neume.Core.BeamExtremity,
     Neume.Core.Bracket,
     Neume.Core.Datatypes,
     Neume.Core.Doc,
     Neume.Core.Duration,
-    Neume.Core.FunctorN,
-    Neume.Core.LilyPondDoc,
+    Neume.Core.LilyPondBasic,
     Neume.Core.LilyPondOutput,
-    Neume.Core.OneList,
     Neume.Core.Pitch,
-    Neume.Core.StateMap,
     Neume.Core.SyntaxDoc,
     Neume.Core.SyntaxMarkup,
     Neume.Core.SyntaxStaff,
     Neume.Core.TreeOps,
-    Neume.Core.Utils
+
+    Neume.Core.Utils.Common,
+    Neume.Core.Utils.FunctorN,
+    Neume.Core.Utils.OneList,
+    Neume.Core.Utils.Pretty,
+    Neume.Core.Utils.StateMap,
+
+    Neume.Extra.AbcDoc,
     Neume.Extra.Extended,
-    Neume.Extra.NamedElements,
+    Neume.Extra.LilyPondDoc,
+    Neume.Extra.NamedElements
 
   other-modules:
     

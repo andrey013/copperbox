@@ -35,8 +35,8 @@ module Neume.Core.Datatypes
    
   ) where
 
-import Neume.Core.Doc
-import Neume.Core.Utils
+import Neume.Core.Utils.Common
+import Neume.Core.Utils.Pretty
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 

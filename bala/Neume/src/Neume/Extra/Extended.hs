@@ -58,12 +58,13 @@ module Neume.Extra.Extended
 
   ) where
 
-import Neume.Core.Doc ( mbDoc )
 import Neume.Core.Duration
-import Neume.Core.LilyPondDoc
+import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
 import Neume.Core.SyntaxStaff
+import Neume.Core.Utils.Pretty ( mbDoc )
+import Neume.Extra.LilyPondDoc
 
 import Text.PrettyPrint.Leijen
 

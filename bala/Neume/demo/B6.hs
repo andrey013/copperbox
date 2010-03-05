@@ -2,18 +2,19 @@
 
 module B6 where
 
-import qualified Neume.Core.AbcDoc           as ABC
 import qualified Neume.Core.AbcOutput        as ABC
 import Neume.Core.Bracket
 import Neume.Core.Datatypes
-import Neume.Core.Doc
 import Neume.Core.Duration
-import Neume.Core.LilyPondDoc
+import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
 import Neume.Core.SyntaxStaff
-import Neume.Core.Utils
+import Neume.Core.Utils.Common
+import Neume.Core.Utils.Pretty
 
+import qualified Neume.Extra.AbcDoc          as ABC
+import Neume.Extra.LilyPondDoc
 import Neume.Extra.NamedElements
 
 import Text.PrettyPrint.Leijen

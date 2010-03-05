@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Core.StateMap
+-- Module      :  Neume.Core.Utils.StateMap
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -18,7 +18,7 @@
 --------------------------------------------------------------------------------
 
 
-module Neume.Core.StateMap 
+module Neume.Core.Utils.StateMap 
   ( 
   -- * Stateful map
     StateMap(..)
@@ -34,7 +34,7 @@ module Neume.Core.StateMap
 
   ) where 
 
-import Neume.Core.OneList
+import Neume.Core.Utils.OneList
 
 
 class StateMap f where

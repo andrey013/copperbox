@@ -51,10 +51,10 @@ module Neume.Core.SyntaxStaff
 
 import Neume.Core.BeamExtremity
 import Neume.Core.Duration
-import Neume.Core.FunctorN
-import Neume.Core.OneList
 import Neume.Core.Pitch
-import Neume.Core.StateMap
+import Neume.Core.Utils.FunctorN
+import Neume.Core.Utils.OneList
+import Neume.Core.Utils.StateMap
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
