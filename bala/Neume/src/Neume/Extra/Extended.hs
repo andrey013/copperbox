@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Extended
+-- Module      :  Neume.Extra.Extended
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -17,7 +17,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.Extended 
+module Neume.Extra.Extended 
   (
     printGlyph
 
@@ -58,12 +58,12 @@ module Neume.Extended
 
   ) where
 
-import Neume.Doc ( mbDoc )
-import Neume.Duration
-import Neume.LilyPondDoc
-import Neume.LilyPondOutput
-import Neume.Pitch
-import Neume.SyntaxStaff
+import Neume.Core.Doc ( mbDoc )
+import Neume.Core.Duration
+import Neume.Core.LilyPondDoc
+import Neume.Core.LilyPondOutput
+import Neume.Core.Pitch
+import Neume.Core.SyntaxStaff
 
 import Text.PrettyPrint.Leijen
 

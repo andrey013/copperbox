@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.BeamExtremity
+-- Module      :  Neume.Core.BeamExtremity
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -19,7 +19,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.BeamExtremity 
+module Neume.Core.BeamExtremity 
   ( 
     BeamExtremity(..)
   , NumMeasured(..)

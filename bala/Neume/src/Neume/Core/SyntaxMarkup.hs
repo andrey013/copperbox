@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.SyntaxMarkup
+-- Module      :  Neume.Core.SyntaxMarkup
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -19,7 +19,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.SyntaxMarkup
+module Neume.Core.SyntaxMarkup
   (
   -- * Phrases and bars
     MarkupPhrase(..)
@@ -30,9 +30,9 @@ module Neume.SyntaxMarkup
 
   ) where
 
-import Neume.Duration
-import Neume.OneList
-import Neume.StateMap
+import Neume.Core.Duration
+import Neume.Core.OneList
+import Neume.Core.StateMap
 
 --------------------------------------------------------------------------------
 -- Phrases and bars 

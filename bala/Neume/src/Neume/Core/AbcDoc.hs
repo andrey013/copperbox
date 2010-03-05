@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.AbcDoc
+-- Module      :  Neume.Core.AbcDoc
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --------------------------------------------------------------------------------
 
 
-module Neume.AbcDoc
+module Neume.Core.AbcDoc
   (
   -- * Printing glyphs
     note
@@ -49,8 +49,8 @@ module Neume.AbcDoc
   ) where
 
 
-import Neume.Duration
-import Neume.Pitch
+import Neume.Core.Duration
+import Neume.Core.Pitch
 
 import Text.PrettyPrint.Leijen
 

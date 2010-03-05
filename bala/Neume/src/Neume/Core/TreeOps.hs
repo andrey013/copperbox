@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.TreeOps
+-- Module      :  Neume.Core.TreeOps
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.TreeOps
+module Neume.Core.TreeOps
   (
   -- * Operations
     pletFold
@@ -26,9 +26,9 @@ module Neume.TreeOps
 
   ) where
 
-import Neume.BeamExtremity
-import Neume.Datatypes
-import Neume.Duration
+import Neume.Core.BeamExtremity
+import Neume.Core.Datatypes
+import Neume.Core.Duration
 
 import Data.List ( foldl' )
 import Data.Ratio

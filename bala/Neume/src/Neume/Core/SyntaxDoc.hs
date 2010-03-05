@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.SyntaxDoc
+-- Module      :  Neume.Core.SyntaxDoc
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -19,7 +19,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.SyntaxDoc
+module Neume.Core.SyntaxDoc
   (
   -- * Phrases and bars
     LyPhrase(..)

@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Datatypes
+-- Module      :  Neume.Core.Datatypes
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.Datatypes
+module Neume.Core.Datatypes
   (
 
   -- * Notelists
@@ -35,8 +35,8 @@ module Neume.Datatypes
    
   ) where
 
-import Neume.Doc
-import Neume.Utils
+import Neume.Core.Doc
+import Neume.Core.Utils
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 

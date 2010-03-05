@@ -2,18 +2,19 @@
 
 module Percussion where
 
-import Neume.Bracket
-import Neume.Datatypes
-import Neume.Doc
-import Neume.Duration
-import Neume.Extended
-import Neume.LilyPondDoc
-import Neume.LilyPondOutput
-import Neume.NamedElements
-import Neume.OneList ( fromList )
-import Neume.Pitch
-import Neume.SyntaxStaff
-import Neume.Utils
+import Neume.Core.Bracket
+import Neume.Core.Datatypes
+import Neume.Core.Doc
+import Neume.Core.Duration
+import Neume.Core.LilyPondDoc
+import Neume.Core.LilyPondOutput
+import Neume.Core.OneList ( fromList )
+import Neume.Core.Pitch
+import Neume.Core.SyntaxStaff
+import Neume.Core.Utils
+
+import Neume.Extra.Extended
+import Neume.Extra.NamedElements
 
 import Text.PrettyPrint.Leijen
 

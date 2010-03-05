@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.NamedElements
+-- Module      :  Neume.Extra.NamedElements
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.NamedElements 
+module Neume.Extra.NamedElements 
   (
   
   -- * Metrical specs
@@ -142,11 +142,12 @@ module Neume.NamedElements
  ) where
 
 
-import Neume.Datatypes
-import Neume.Duration
-import Neume.Extended
-import Neume.Pitch
-import Neume.SyntaxStaff
+import Neume.Core.Datatypes
+import Neume.Core.Duration
+import Neume.Core.Pitch
+import Neume.Core.SyntaxStaff
+
+import Neume.Extra.Extended
 
 
 -- Helpers

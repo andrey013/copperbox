@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.SyntaxStaff
+-- Module      :  Neume.Core.SyntaxStaff
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.SyntaxStaff
+module Neume.Core.SyntaxStaff
   (
   -- * Phrases and bars
     StaffPhrase(..)
@@ -49,12 +49,12 @@ module Neume.SyntaxStaff
   ) where
 
 
-import Neume.BeamExtremity
-import Neume.Duration
-import Neume.FunctorN
-import Neume.OneList
-import Neume.Pitch
-import Neume.StateMap
+import Neume.Core.BeamExtremity
+import Neume.Core.Duration
+import Neume.Core.FunctorN
+import Neume.Core.OneList
+import Neume.Core.Pitch
+import Neume.Core.StateMap
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 

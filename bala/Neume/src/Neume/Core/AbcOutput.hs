@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.AbcOutput
+-- Module      :  Neume.Core.AbcOutput
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -16,16 +16,16 @@
 --------------------------------------------------------------------------------
 
 
-module Neume.AbcOutput where
+module Neume.Core.AbcOutput where
 
-import Neume.AbcDoc
-import Neume.Doc
-import Neume.Duration
-import Neume.FunctorN
-import Neume.OneList
-import Neume.Pitch hiding ( octave )
-import Neume.SyntaxDoc
-import Neume.SyntaxStaff
+import Neume.Core.AbcDoc
+import Neume.Core.Doc
+import Neume.Core.Duration
+import Neume.Core.FunctorN
+import Neume.Core.OneList
+import Neume.Core.Pitch hiding ( octave )
+import Neume.Core.SyntaxDoc
+import Neume.Core.SyntaxStaff
 
 
 import Text.PrettyPrint.Leijen hiding ( sep )     -- package: wl-print

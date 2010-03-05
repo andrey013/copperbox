@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Duration
+-- Module      :  Neume.Core.Duration
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 
 
 
-module Neume.Duration 
+module Neume.Core.Duration 
   (
   -- * Duration types
     Duration

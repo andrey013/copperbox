@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Bracket
+-- Module      :  Neume.Core.Bracket
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -16,18 +16,18 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.Bracket 
+module Neume.Core.Bracket 
   ( 
     phrase
 
   ) where
 
-import Neume.BeamExtremity
-import Neume.Datatypes
-import Neume.Duration
-import Neume.SyntaxStaff
-import Neume.TreeOps
-import Neume.Utils
+import Neume.Core.BeamExtremity
+import Neume.Core.Datatypes
+import Neume.Core.Duration
+import Neume.Core.SyntaxStaff
+import Neume.Core.TreeOps
+import Neume.Core.Utils
 
 import Text.PrettyPrint.Leijen hiding ( empty )   -- package: wl-pprint
 

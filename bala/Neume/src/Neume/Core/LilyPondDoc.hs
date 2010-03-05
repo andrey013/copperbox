@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.LilyPondDoc
+-- Module      :  Neume.Core.LilyPondDoc
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --------------------------------------------------------------------------------
 
 
-module Neume.LilyPondDoc
+module Neume.Core.LilyPondDoc
   (
   -- * Printing glyphs
     note
@@ -121,10 +121,10 @@ module Neume.LilyPondDoc
   ) where
 
 
-import Neume.Doc
-import Neume.Duration
-import Neume.Pitch
-import Neume.Utils
+import Neume.Core.Doc
+import Neume.Core.Duration
+import Neume.Core.Pitch
+import Neume.Core.Utils
 
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 

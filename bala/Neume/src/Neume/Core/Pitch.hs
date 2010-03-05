@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Pitch
+-- Module      :  Neume.Core.Pitch
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.Pitch 
+module Neume.Core.Pitch 
  ( 
  -- * Pitch types 
    Pitch(..)
@@ -47,7 +47,7 @@ module Neume.Pitch
 
  ) where
 
-import Neume.Doc
+import Neume.Core.Doc
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 

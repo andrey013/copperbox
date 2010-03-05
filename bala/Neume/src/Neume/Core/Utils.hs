@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Utils
+-- Module      :  Neume.Core.Utils
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.Utils 
+module Neume.Core.Utils 
   ( 
     makeRational
   , ftrunc

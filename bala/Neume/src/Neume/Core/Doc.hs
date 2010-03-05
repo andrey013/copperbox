@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Doc
+-- Module      :  Neume.Core.Doc
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.Doc
+module Neume.Core.Doc
   ( 
 
   -- * Extra pretty printers
@@ -36,7 +36,7 @@ module Neume.Doc
 
   ) where
 
-import Neume.Utils
+import Neume.Core.Utils
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 

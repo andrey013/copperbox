@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.OneList
+-- Module      :  Neume.Core.OneList
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.OneList
+module Neume.Core.OneList
   (
     OneMany
   , OneList

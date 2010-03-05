@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.LilyPondOutput
+-- Module      :  Neume.Core.LilyPondOutput
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -15,17 +15,17 @@
 --------------------------------------------------------------------------------
 
 
-module Neume.LilyPondOutput where 
+module Neume.Core.LilyPondOutput where 
 
-import Neume.Doc
-import Neume.Duration
-import Neume.LilyPondDoc
-import Neume.OneList
-import Neume.Pitch
-import Neume.StateMap
-import Neume.SyntaxDoc
-import Neume.SyntaxMarkup
-import Neume.SyntaxStaff
+import Neume.Core.Doc
+import Neume.Core.Duration
+import Neume.Core.LilyPondDoc
+import Neume.Core.OneList
+import Neume.Core.Pitch
+import Neume.Core.StateMap
+import Neume.Core.SyntaxDoc
+import Neume.Core.SyntaxMarkup
+import Neume.Core.SyntaxStaff
 
 
 import Text.PrettyPrint.Leijen          -- package: wl-print
