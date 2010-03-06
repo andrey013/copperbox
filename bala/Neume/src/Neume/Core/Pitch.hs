@@ -13,6 +13,8 @@
 --
 -- Pitch representation.
 --
+-- Middle C is C4!
+--
 --------------------------------------------------------------------------------
 
 module Neume.Core.Pitch 

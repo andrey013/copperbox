@@ -18,10 +18,8 @@
 module Neume.Extra.AbcDoc
   (
 
-    simpleOutput
-
   -- * ABC literals and syntax
-  , singleBar
+    singleBar
   , overlay
   , lineCont
   
@@ -38,20 +36,8 @@ module Neume.Extra.AbcDoc
 
   ) where
 
-import Neume.Core.SyntaxDoc
-
 import Text.PrettyPrint.Leijen
 
--- TEMPORARY LOCATION
-
--- | Output ABC, four bars printed on each line. 
-simpleOutput :: AbcPhrase -> Doc
-simpleOutput = four . map ((<+> singleBar) . getAbcBar) . getAbcPhrase
-
-
-four :: [Doc] -> Doc
-four (a:b:c:d:xs) = vsep (map (<> lineCont) [a,b,c]) <$> d <$> four xs
-four xs           = hsep xs
 
 
 --------------------------------------------------------------------------------

@@ -36,12 +36,10 @@ module Neume.Core.LilyPondBasic
 
 import Neume.Core.Duration
 import Neume.Core.Pitch
-import Neume.Core.Utils.Common
 import Neume.Core.Utils.Pretty
 
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
-import Data.Char ( isAlpha )
 
 
 

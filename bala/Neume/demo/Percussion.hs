@@ -15,6 +15,7 @@ import Neume.Core.Utils.Pretty
 
 import Neume.Extra.Extended
 import Neume.Extra.LilyPondDoc
+import Neume.Extra.LilyPondFormat
 import Neume.Extra.NamedElements
 
 import Text.PrettyPrint.Leijen

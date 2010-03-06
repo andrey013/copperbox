@@ -14,7 +14,9 @@ import Neume.Core.Utils.Common
 import Neume.Core.Utils.Pretty
 
 import qualified Neume.Extra.AbcDoc          as ABC
+import qualified Neume.Extra.AbcFormat       as ABC
 import Neume.Extra.LilyPondDoc
+import Neume.Extra.LilyPondFormat
 import Neume.Extra.NamedElements
 
 import Text.PrettyPrint.Leijen
@@ -42,6 +44,14 @@ ly_score =  version "2.12.2"
                          $ rewriteDurationOpt xs
 
     xs   = phrase two_four_time' $ simpleNoteList bars1'4
+
+renderToLy :: [StdGlyph] -> Doc
+renderToLy = simpleOutput . renderPhrase pitch 
+                          . rewritePitchRel middle_c
+                          . rewriteDurationOpt
+                          . phrase two_four_time'
+                          . simpleNoteList
+
 
 abc_score :: Doc
 abc_score =  ABC.tunenum   1 

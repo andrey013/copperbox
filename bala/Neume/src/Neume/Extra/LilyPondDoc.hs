@@ -18,9 +18,7 @@
 module Neume.Extra.LilyPondDoc
   (
   
-    simpleOutput
-
-  , (**^)
+    (**^)
   , (**-)
   , (**\)
 
@@ -113,18 +111,12 @@ module Neume.Extra.LilyPondDoc
 
 import Neume.Core.LilyPondBasic
 import Neume.Core.Pitch
-import Neume.Core.SyntaxDoc
 import Neume.Core.Utils.Common
 import Neume.Core.Utils.Pretty
 
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
 import Data.Char ( isAlpha )
-
-
--- TEMPORARILY HERE...
-simpleOutput :: LyPhrase -> Doc
-simpleOutput = vsep . map ((<+> singleBar) . getLyBar) . getLyPhrase
 
 
 

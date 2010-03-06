@@ -37,7 +37,6 @@ library
     Neume.Core.BeamExtremity,
     Neume.Core.Bracket,
     Neume.Core.Datatypes,
-    Neume.Core.Doc,
     Neume.Core.Duration,
     Neume.Core.LilyPondBasic,
     Neume.Core.LilyPondOutput,
@@ -54,8 +53,10 @@ library
     Neume.Core.Utils.StateMap,
 
     Neume.Extra.AbcDoc,
+    Neume.Extra.AbcFormat,
     Neume.Extra.Extended,
     Neume.Extra.LilyPondDoc,
+    Neume.Extra.LilyPondFormat,
     Neume.Extra.NamedElements
 
   other-modules:
