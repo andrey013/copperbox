@@ -56,13 +56,13 @@ data PitchChar = UPPER | LOWER
 -- higher octaves uses lower case letters. 
 pitch :: Pitch -> Doc
 pitch (Pitch l a o) 
-    | o > 5     = pitchLabel' (PitchLabel l a) LOWER <> ove o 
+    | o > 4     = pitchLabel' (PitchLabel l a) LOWER <> ove o 
     | otherwise = pitchLabel' (PitchLabel l a) UPPER <> ove o 
   where
     ove :: Int -> Doc
-    ove i  | i > 6       = text (replicate (i-6) '\'') 
-              | i < 5       = text (replicate (5-i) ',')
-              | otherwise   = empty
+    ove i  | i > 5       = text (replicate (i-5) '\'') 
+           | i < 4       = text (replicate (4-i) ',')
+           | otherwise   = empty
 
 
 -- | Print a 'PitchLabel' - the pitch letter will be printed in 

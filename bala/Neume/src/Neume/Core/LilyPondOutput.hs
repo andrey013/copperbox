@@ -151,22 +151,30 @@ doptSkipGlyph = stmap2b doptD
 
 -- Absolute 
 
--- LilyPond Absolute pitch (4 octaves lower than Mullein)
--- TODO is Mullein same as Haskore??
+-- Middle C in Neume is C-octave 4.
 --
--- Middle C in Mullein is C-octave 5.
 -- Middle C in LilyPond is c' - in Mullein terms, after the 
 -- absolute pitch transformation, this is C-octave 1, the 
--- octave designator is reduced by 4 to represent the number
+-- octave designator has 3 subtracted to represent the number
 -- of apostrophes to print (a negative number represents the 
 -- number of commas to print, after taking the @abs@ of the 
 -- value).
 -- 
 -- HOWEVER, printing guitar tablature in absolute mode seems to 
--- take middle c as C (C-octave 0), so 5 has to be subtracted 
+-- take middle c as C (C-octave 0), so 4 has to be subtracted 
 -- from the octave designator.
 --
 -- TODO - find out why this is the case.
+
+rewritePitchAbs_treble :: StaffPhrase (Glyph anno Pitch dur) 
+                       -> StaffPhrase (Glyph anno Pitch dur)
+rewritePitchAbs_treble = rewritePitchAbs (-3)
+
+rewritePitchAbs_tab :: StaffPhrase (Glyph anno Pitch dur) 
+                       -> StaffPhrase (Glyph anno Pitch dur)
+rewritePitchAbs_tab = rewritePitchAbs (-4)
+
+
 
 rewritePitchAbs :: Int 
                 -> StaffPhrase (Glyph anno Pitch dur) 

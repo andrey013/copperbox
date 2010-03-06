@@ -40,8 +40,6 @@ module Neume.Extra.NamedElements
   , d_flat, e_flat, g_flat, a_flat, b_flat
 
 
-  , middle_c
-        
   , c5, d5, e5, f5, g5, a5, b5
   , cs5, df5, ds5, ef5, fs5, gf5, gs5, af5, as5, bf5
 
@@ -341,9 +339,6 @@ pchSharp n o  = Pitch n (Just Sharp) o
 
 pchFlat :: PitchLetter -> Int -> Pitch
 pchFlat n o   = Pitch n (Just Flat) o
-
-middle_c :: Pitch
-middle_c = pchNat C 5
 
 -- octave 5
 c5        :: Pitch

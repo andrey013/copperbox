@@ -29,6 +29,9 @@ module Neume.Core.Pitch
  -- * Classes
  , HasPitch(..)
 
+ -- * Constants
+ , middle_c
+
  -- * Operations
  , label
  , octave
@@ -130,6 +133,13 @@ instance Ord PitchLabel where
 
 
 --------------------------------------------------------------------------------
+
+
+-- | Middle c is C4 - as per ANSI pitch notation.
+--
+middle_c :: Pitch
+middle_c = Pitch C Nothing 4
+
 
 -- | Extract the @PitchLabel@ from a @Pitch@.
 label :: Pitch -> PitchLabel
