@@ -33,13 +33,6 @@ main = do
   return ()
 
 
-{- 
-demo2 :: Doc
-demo2 = simpleOutput $ renderPhrase $ rewriteDuration xs
-  where
-    xs = phrase (meterPattern four_four_time) drums1
--}
-
 
 ly_score :: Doc
 ly_score =  version "2.12.2" 

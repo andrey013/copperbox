@@ -11,14 +11,16 @@
 -- Portability :  GHC
 --
 -- Data type for non-empty lists.
--- Data type for one or many.
+-- 
+-- Structurally the same as OneMany - but used for a different
+-- purpose.
 --
 --------------------------------------------------------------------------------
 
 module Neume.Core.Utils.OneList
   (
-    OneMany
-  , OneList
+   -- OneMany
+    OneList
   , ViewOL(..)
 
   , one
@@ -45,7 +47,7 @@ import Data.Traversable
 
 import Prelude hiding ( head )
 
-type OneMany a = OneList a
+-- type OneMany a = OneList a
 
 data OneList a = One a | Many a (OneList a)
   deriving (Eq)
@@ -90,12 +92,12 @@ instance Semigroup (OneList e) where
 
 --------------------------------------------------------------------------------
 -- | Construct One.
-one :: a -> OneMany a
+one :: a -> OneList a
 one = One
 
 
 -- | Prepend an element. Obviously this transforms a One to a Many.
-cons :: a -> OneMany a -> OneMany a
+cons :: a -> OneList a -> OneList a
 cons a as   = Many a as
 
 -- | 'head' is total of course.
@@ -109,9 +111,9 @@ viewl (Many a as) = a :<< as
 
 -- | Construct Many. Not this function throws a error if the list has
 -- zero or one elements
-fromList :: [a] -> OneMany a
-fromList []   = error "OneList.fromList: cannot build Many from empty list"
-fromList [a]  = One a
+fromList :: [a] -> OneList a
+fromList []     = error "OneList.fromList: cannot build Many from empty list"
+fromList [a]    = One a
 fromList (a:as) = Many a (fromList as)
 
 
