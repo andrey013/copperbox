@@ -30,13 +30,16 @@ module Neume.Extra.AbcDoc
   , title
   , book 
   , composer
+  , unitDuration
+  , key
   , meter
   , tempo
-  , key
 
   ) where
 
-import Text.PrettyPrint.Leijen
+import Neume.Core.Duration
+
+import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 
 
@@ -96,6 +99,25 @@ book = field 'B' . text
 composer :: String -> Doc
 composer = field 'C' . text
 
+-- | @K field@ - key.
+-- Note - the key parameter should correspond to the key used to 
+-- generate the ABC tune.
+--
+key :: String -> Doc
+key = field 'K' . text  
+
+
+-- | @L field@ - unit note length.
+-- Note - the unit note length parameter should correspond to the 
+-- duration used by the 'durationRewrite' step when generating 
+-- the ABC tune.
+--
+unitDuration :: Duration -> Doc
+unitDuration drn = field 'L' frac where
+  frac = let (n,d) = extentComponents drn in int n <> char '/' <> int d  
+
+
+
 -- | @M field@ - meter.
 -- Note - the meter parameter should correspond to the meter 
 -- component of the @MetricalSpec@ used to generate the ABC tune. 
@@ -111,12 +133,6 @@ meter = field 'M' . text
 -- (e.g. Andante) make sure they are double-quote first.
 tempo :: String -> Doc
 tempo = field 'Q' . text
-
--- | @K field@ - key.
--- Note - the key parameter should correspond to the key used to 
--- generate the ABC tune.
-key :: String -> Doc
-key = field 'K' . text  
 
 
 

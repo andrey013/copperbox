@@ -19,11 +19,13 @@ module Neume.Extra.AbcFormat
   (
 
     simpleOutput
+  , tempOutput
+
+  , overlayPhrases
 
   ) where
 
 import Neume.Core.SyntaxDoc
-import Neume.Core.Utils.Common
 import Neume.Extra.AbcDoc
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
@@ -35,9 +37,15 @@ simpleOutput :: AbcPhrase -> Doc
 simpleOutput = four . map ((<+> singleBar) . getAbcBar) . getAbcPhrase
 
 
+tempOutput :: [OverlayBar] -> Doc
+tempOutput = four . map ((<+> singleBar) . getOverlayBar) 
+
+
 four :: [Doc] -> Doc
 four (a:b:c:d:xs) = vsep (map (<> lineCont) [a,b,c]) <$> d <$> four xs
 four xs           = hsep xs
+
+
 
 
 
@@ -58,4 +66,4 @@ overlay1 :: AbcPhrase -> [OverlayBar]
 overlay1 = map (OverlayBar . getAbcBar) . getAbcPhrase
 
 overlayAbc :: OverlayBar -> Doc -> OverlayBar
-overlayAbc (OverlayBar v1) v2 = OverlayBar $ v1 <+> overlay <+> lineCont <$> v2 
+overlayAbc (OverlayBar v1) v2 = OverlayBar $ v1 <+> overlay <> lineCont <$> v2 

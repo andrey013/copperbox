@@ -34,6 +34,7 @@ module Neume.Core.Duration
   , dot
   , components
   , extent
+  , extentComponents
 
   , ConversionError(..)
   , rationalToDuration
@@ -139,7 +140,9 @@ components :: Duration -> (Rational,Int)
 components DZero        = (0,0)
 components (D1 n dc) = (toRat n,dc)
 
--- | @extent@ is the sum of all symbolic components of a duration.
+-- | 'extent' - get the size of a Duration as a Rational 
+-- (DurationMeasure).
+--
 extent :: Duration -> DurationMeasure
 extent DZero                 = 0 
 extent (D1 n dc) | dc <= 0   = toRat n
@@ -148,7 +151,12 @@ extent (D1 n dc) | dc <= 0   = toRat n
     step acc _ 0 = acc
     step acc h i = step (acc + h) (h/2) (i-1)
 
-
+-- | 'extentComponents' - get the numerator and denominator of 
+-- the duration expressed as a rational.
+-- 
+extentComponents :: Duration -> (Int,Int)
+extentComponents drn = let e = extent drn in 
+    (fromIntegral $ numerator e, fromIntegral $ denominator e)
 
 toRat :: Numeral -> Rational
 toRat N128  = 1%128
