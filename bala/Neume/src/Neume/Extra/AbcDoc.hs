@@ -47,8 +47,8 @@ import Text.PrettyPrint.Leijen
 singleBar :: Doc
 singleBar = char '|'
 
-overlay :: [Doc] -> Doc
-overlay = vsep . punctuate (text " & ")    
+overlay :: Doc
+overlay = char '&'
 
 
 -- | Lines (newlines) are significant in ABC files. The number of

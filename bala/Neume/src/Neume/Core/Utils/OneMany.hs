@@ -20,6 +20,7 @@
 module Neume.Core.Utils.OneMany
   (
     OneMany
+  , OneManyL
     
   , one
 
@@ -29,7 +30,11 @@ module Neume.Core.Utils.OneMany
   , accumMapL
   , isOne
   , isMany
-   
+
+  , intersperse
+  , interinter                  -- not sure about this one ...   
+  , gfoldOneManyL
+
   ) where
 
 
@@ -37,9 +42,10 @@ import Data.Semigroup           -- package: algebra
 
 import Control.Applicative
 import Data.Foldable hiding ( toList )
+import qualified Data.List as List
 import Data.Traversable
 
-import Prelude hiding ( head )
+import Prelude hiding ( head, foldl, foldr )
 import qualified Prelude as Pre
 
 -- For convienence I use a list for Many, but don't expose the 
@@ -57,12 +63,22 @@ import qualified Prelude as Pre
 data OneMany a = One a | Many [a]
   deriving (Eq,Show)
 
+
+newtype OneManyL a = OneManyL { getOneManyL :: [OneMany a] }
+  deriving (Eq,Show)
+
 --------------------------------------------------------------------------------
 -- Instances
+
 
 instance Functor OneMany where
   fmap f (One a)        = One $ f a
   fmap f (Many as)      = Many $ fmap f as
+
+instance Functor OneManyL where
+  fmap f = OneManyL . map (fmap f) . getOneManyL 
+
+
 
 instance Foldable OneMany where
   foldMap f (One a)     = f a
@@ -75,9 +91,21 @@ instance Foldable OneMany where
   foldl f b (Many as)   = Pre.foldl f b as
 
 
+instance Foldable OneManyL where
+  foldMap f = foldMap (foldMap f) . getOneManyL
+
+  foldr f b = List.foldr (flip (foldr f)) b . getOneManyL
+
+  foldl f b = List.foldl (foldl f) b . getOneManyL
+
+
 instance Traversable OneMany where
   traverse f (One a)    = One  <$> f a
   traverse f (Many as)  = Many <$> traverse f as
+
+
+instance Traversable OneManyL where
+  traverse f (OneManyL xs) = OneManyL <$> traverse (traverse f) xs
 
 
 instance Semigroup (OneMany e) where
@@ -110,6 +138,17 @@ accumMapL :: (x -> st -> (y,st)) -> OneMany x -> st -> (OneMany y,st)
 accumMapL f (One x)   st = let (y,st') = f x st in (One y,st')
 accumMapL f (Many xs) st = (Many ys,st')
                              where (ys,st') = accumMapList f xs st
+
+
+-- helper - I prefer accumMapL to mapAccumL 
+-- (different arg placements)
+
+accumMapList :: (x -> st -> (y,st)) -> [x] -> st -> ([y],st)
+accumMapList f xs st0 = step xs st0 where
+  step []     st = ([],st)
+  step (a:as) st = (b:bs,st'') 
+                   where (b,st')   = f a st
+                         (bs,st'') = step as st' 
                                    
 isMany :: OneMany a -> Bool
 isMany (Many _) = True
@@ -122,12 +161,22 @@ isOne _         = False
 
 
 --------------------------------------------------------------------------------
--- helper - I prefer accumMapL to mapAccumL 
--- (different arg placements)
 
-accumMapList :: (x -> st -> (y,st)) -> [x] -> st -> ([y],st)
-accumMapList f xs st0 = step xs st0 where
-  step []     st = ([],st)
-  step (a:as) st = (b:bs,st'') 
-                   where (b,st') = f a st
-                         (bs,st'') = step as st' 
+intersperse :: a -> OneMany a -> OneMany a
+intersperse _   (One x)   = One x
+intersperse sep (Many xs) = Many (List.intersperse sep xs)
+
+
+-- for Doc this might be better as a reduction...
+
+interinter :: a -> a -> OneManyL a -> OneManyL a
+interinter sepo sepi (OneManyL xs) = 
+  OneManyL $ List.intersperse (one sepo) $ map (intersperse sepi) xs  
+
+gfoldOneManyL :: (a -> b -> b) -> ([a] -> b -> b) -> b -> OneManyL a -> b
+gfoldOneManyL f g b0 (OneManyL xs) = step b0 xs where
+  step b []             = b
+  step b (One a:rest)   = step (f a b)  rest
+  step b (Many as:rest) = step (g as b) rest
+
+--------------------------------------------------------------------------------

@@ -44,7 +44,6 @@ newtype MarkupPhrase gly = MarkupPhrase { getMarkupPhrase :: [MarkupBar gly] }
 newtype MarkupBar    gly = MarkupBar    { getMarkupBar    :: OneList gly } 
 
 
-
 --------------------------------------------------------------------------------
 -- \Skip Glyphs\
 
