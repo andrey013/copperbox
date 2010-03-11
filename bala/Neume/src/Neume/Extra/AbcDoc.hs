@@ -35,6 +35,10 @@ module Neume.Extra.AbcDoc
   , meter
   , tempo
 
+  , lrepeat
+  , rrepeat
+  , alternative
+
   ) where
 
 import Neume.Core.Duration
@@ -136,4 +140,14 @@ tempo = field 'Q' . text
 
 
 
+--------------------------------------------------------------------------------
+-- repeats
 
+lrepeat                 :: Doc
+lrepeat                 = text "|:"
+
+rrepeat                 :: Doc 
+rrepeat                 = text ":|"
+
+alternative             :: Int -> Doc
+alternative i           = char '[' <> int i

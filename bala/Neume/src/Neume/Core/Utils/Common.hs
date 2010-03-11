@@ -21,6 +21,10 @@ module Neume.Core.Utils.Common
   , dtrunc
   , divModR
   , modR
+  , strip
+
+  , para
+  , paraM
 
   -- * Specs!  
   , oo
@@ -69,6 +73,23 @@ divModR a b = let a1 = a / b; a2 = floor a1 in (a2, a-((a2%1)*b))
 
 modR :: Integral a => Ratio a -> Ratio a -> Ratio a
 modR = snd `oo` divModR
+
+-- | strip - dual of const
+--
+strip :: a -> b -> b
+strip _ b = b
+
+
+para :: (a -> ([a], b) -> b) -> b -> [a] -> b
+para phi b = step
+  where step []     = b
+        step (x:xs) = phi x (xs, step xs)
+
+
+paraM :: Monad m => (a -> ([a], b) -> m b) -> b -> [a] -> m b
+paraM phi b = step
+  where step []     = return b
+        step (x:xs) = step xs >>= \ans -> phi x (xs, ans)
 
 --------------------------------------------------------------------------------
 -- 'specs'

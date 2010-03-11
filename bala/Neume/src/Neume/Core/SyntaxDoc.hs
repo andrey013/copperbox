@@ -54,9 +54,9 @@ newtype AbcBar      = AbcBar    { getAbcBar    :: Doc }         deriving Show
 
 newtype Score bar   = Score { getBars :: [Section bar] }        deriving Show
 
-data Section bar = Straight      [bar]
-                 | Repeated      [bar]
-                 | RepeatedVolta [bar] [[bar]]
+data Section bar = Straight [bar]
+                 | Repeated [bar]
+                 | RepVolta [bar] [[bar]]
   deriving Show
 
 newtype OverlayBar = OverlayBar { getOverlayBar :: Doc }        deriving Show
