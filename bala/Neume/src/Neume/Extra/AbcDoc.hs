@@ -18,14 +18,9 @@
 module Neume.Extra.AbcDoc
   (
 
-  -- * ABC literals and syntax
-    singleBar
-  , overlay
-  , lineCont
   
-  -- *** Fields
-
-  , field
+  -- * Fields
+    field
   , tunenum  
   , title
   , book 
@@ -35,6 +30,11 @@ module Neume.Extra.AbcDoc
   , meter
   , tempo
 
+  -- * ABC literals and syntax
+  , singleBar
+  , doubleBar
+  , overlay
+  , lineCont
   , lrepeat
   , rrepeat
   , alternative
@@ -47,39 +47,6 @@ import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 
 
---------------------------------------------------------------------------------
--- ABC literals and syntax
-
-
-singleBar :: Doc
-singleBar = char '|'
-
-overlay :: Doc
-overlay = char '&'
-
-
--- | Lines (newlines) are significant in ABC files. The number of
--- bars printed on a staff line /is/ the number of bars dictated 
--- in the score. E.g. this is fragment prints four bars on one 
--- line:
---
--- @
---  C D E F| G A B c| d e f g| a b c' d'|
--- @
--- 
--- Clearly this could result in very long columns when a score file 
--- has elaborate content (chords, overlays etc.), so lines can be 
--- split lexically and continued with a slash @\\@.
---
--- @
---  C D E F|\\ 
---  G A B c|\\ 
---  d e f g|\\
---  a b c' d'|
--- @
---
-lineCont :: Doc
-lineCont = char '\\'
 
 -- ** Fields
 
@@ -140,8 +107,43 @@ tempo = field 'Q' . text
 
 
 
+
 --------------------------------------------------------------------------------
--- repeats
+-- ABC literals and syntax
+
+
+singleBar :: Doc
+singleBar = char '|'
+
+doubleBar :: Doc
+doubleBar = text "||"
+
+overlay :: Doc
+overlay = char '&'
+
+-- | Lines (newlines) are significant in ABC files. The number of
+-- bars printed on a staff line /is/ the number of bars dictated 
+-- in the score. E.g. this is fragment prints four bars on one 
+-- line:
+--
+-- @
+--  C D E F| G A B c| d e f g| a b c' d'|
+-- @
+-- 
+-- Clearly this could result in very long columns when a score file 
+-- has elaborate content (chords, overlays etc.), so lines can be 
+-- split lexically and continued with a slash @\\@.
+--
+-- @
+--  C D E F|\\ 
+--  G A B c|\\ 
+--  d e f g|\\
+--  a b c' d'|
+-- @
+--
+lineCont :: Doc
+lineCont = char '\\'
+
 
 lrepeat                 :: Doc
 lrepeat                 = text "|:"
