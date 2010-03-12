@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -24,11 +23,12 @@ module Neume.Extra.AbcFormat
 
   , overlayPhrases
 
-  , hyphen
+  , sABC
 
   ) where
 
 import Neume.Core.SyntaxDoc
+import Neume.Core.Utils.Common
 import Neume.Core.Utils.StateMap
 import Neume.Extra.AbcDoc
 
@@ -49,6 +49,8 @@ four :: [Doc] -> Doc
 four (a:b:c:d:xs) = vsep (map (<> lineCont) [a,b,c]) <$> d <$> four xs
 four xs           = hsep xs
 
+
+type DocS = Doc -> Doc
 
 -- | ABC does not automatically decide how many bars-per-line to 
 -- print.
@@ -84,130 +86,156 @@ type LineStk = [Int]
 -- 3. Don't print LINE_CONT on last bar
 --
 
+-- User-prefix function has to be a (Doc -> Doc) because 
+-- their is no null predicate on Docs.
 
 
-data SeparatedDoc = SDoc { user_prefix :: Doc -> Doc   
-                         , sdoc_body   :: Doc
-                         , end_hyphen  :: Hyph
-                         }
+data FourList a b c d = Cons a b c d (FourList a b c d)
+                      | Nil
+
+data StartSymbol = START_NONE           -- Straight section
+                 | START_REP            -- Both repeat or alt_repeat
+  deriving (Eq,Show)
+
+data EndSymbol   = END_SGL              -- Straight section
+                 | END_REP              -- Repeat
+                 | END_DBL              -- Alt_repeat
+  deriving (Eq,Show)
 
 
-sconcat :: Doc -> SeparatedDoc -> SeparatedDoc -> SeparatedDoc
-sconcat barsym (SDoc pf b hy) (SDoc pf' b' hy') = SDoc pf body hy'
-  where
-    body    = b <+> barsym <> (fn hy) <$> (pf' b)
-    fn CONT = lineCont
-    fn _    = empty
+type AbcList = FourList DocS StartSymbol Doc (EndSymbol,Hyph)
 
 
-sglconcat :: SeparatedDoc -> SeparatedDoc -> SeparatedDoc
-sglconcat = sconcat singleBar
+-- Inside the section: (user-prefix, body, hyphen)
+--
+type IntraSection = ( DocS, Doc, Hyph )
+
 
 type BarNum  = Int
 type HyphenSpec = (BarNum,Hyph)
 
 
--- Turn this one into an ENUM - less work pattern matching
-
-type FlatSection = (SectionForm,SeparatedDoc)
-
-data SectionForm = STRAIGHT | REPEATED | REP_VOLTA
-  deriving (Eq,Show)
-
 data Hyph = CONT | LINE_BREAK
   deriving (Eq,Show)
 
 
--- Still can't add end - for last SDoc we might need to change | to || 
-initialSD :: SectionForm -> SeparatedDoc -> (Doc,Hyph)
-initialSD _ (SDoc pf body hy) = (pf body,hy)
-
-bodySD :: SectionForm -> SeparatedDoc -> (Doc,Hyph)
-bodySD _ (SDoc pf body hy) = (pf (lrepeat <+> body), hy)
-
--- NO - final can also be first....
-finalDoc :: SectionForm -> SeparatedDoc -> Doc
-finalDoc STRAIGHT (SDoc pf body _) = pf body <+> doubleBar
-finalDoc REPEATED (SDoc pf body _) = pf (lrepeat <+> body <+> rrepeat)
-finalDoc _        _                = undefined
-
-{-
-flatDoc :: [FlatSection] -> Doc
-flatDoc []     = empty
-flatDoc (x:xs) = start x xs where
-  start (_,d,h) xs = body d h xs
-
-  body d c [a] = final d c a
-  body d c (
-  
-  final d c a = undefined
--}
+sABC :: (Int -> DocS) -> LineStk -> [Section Doc] -> Doc
+sABC = flatDoc `ooo` flatten
 
 
-flatten :: (Int -> Doc -> Doc) -> LineStk -> [Section Doc] -> [FlatSection]
-flatten pre stk xs = fst $ stmap (flatSection pre) xs (hyphen stk)
+flatDoc :: AbcList -> Doc
+flatDoc = initial where
+
+  -- don't print the start_symbol
+  initial Nil                       = empty
+  initial (Cons upf _ doc end Nil)  = upf (doc <+> terminal end)
+  initial (Cons upf _ doc end xs)   = d1 <$> middle xs
+                                      where 
+                                         d1 = upf (doc <+> intrasep end)
+                                      
+         
+  middle Nil                        = empty      -- unreachable???
+  middle (Cons upf st doc end Nil)  = upf (doc' <+> terminal end) 
+                                       where 
+                                        doc' = st `prefix` doc
+                              
+  middle (Cons upf st doc end xs)   = d1 <$> middle xs 
+                                      where 
+                                        doc' = st `prefix` doc
+                                        d1   = upf (doc' <+> intrasep end)
+                                      
+  prefix START_NONE d               = d
+  prefix START_REP  d               = lrepeat <+> d
 
 
--- Note don't want to hyphenate last bar in case it is the final 
--- one...
+-- | Both Straights and alt_repeats are promoted to "||"
+-- and the hyphenation has no bearing.
+--
+terminal :: (EndSymbol,Hyph) -> Doc
+terminal (END_REP,_) = rrepeat
+terminal _           = doubleBar
+
+intrasep :: (EndSymbol,Hyph) -> Doc
+intrasep = step where
+   step (END_SGL,hy) = singleBar `suffix` hy
+   step (END_REP,hy) = rrepeat   `suffix` hy
+   step (END_DBL,hy) = doubleBar `suffix` hy
+
+   suffix d CONT = d <> lineCont
+   suffix d _    = d
 
 
-flatSection :: (Int -> Doc -> Doc) 
-          -> Section Doc 
-          -> [HyphenSpec] 
-          -> (FlatSection,[HyphenSpec])
-flatSection pre sec hys = step sec where
-   step (Straight xs)     = ansk STRAIGHT $ interspersedBars pre xs hys
-   step (Repeated xs)     = ansk REPEATED $ interspersedBars pre xs hys
-   step (RepVolta xs yss) = let (body,rest)   = interspersedBars pre xs hys
-                                (alts,rest')  = alternatives pre yss rest
-                            in ((REP_VOLTA, body `sglconcat` alts), rest')
-   ansk en (sdoc,rest) = ((en,sdoc), rest) 
+
+flatten :: (Int -> DocS) -> LineStk -> [Section Doc] -> AbcList
+flatten pre stk xs = step xs (hyphen stk) where
+  step []              _  = Nil
+
+  step (Straight a:as)    hs = Cons upf START_NONE doc (END_SGL,hy) ls_rest
+    where 
+      ((upf,doc,hy),rest) = intraBars pre a hs
+      ls_rest             =  step as rest
+
+  step (Repeated a:as)    hs = Cons upf START_REP doc (END_REP,hy) ls_rest
+    where 
+      ((upf,doc,hy),rest) = intraBars pre a hs
+      ls_rest             = step as rest                  
 
 
+  step (AltRepeat a b:as) hs = Cons upf START_REP doc (END_DBL,hy) ls_rest
+    where
+      (isec1,hs')  = intraBars pre a hs
+      (isec2,rest) = alternatives pre b hs'
+      (upf,doc,hy) = isec1 `sglconcat` isec2
+      ls_rest      = step as rest
 
-alternatives :: (Int -> Doc -> Doc) -> [[Doc]] -> [HyphenSpec] 
-             -> (SeparatedDoc,[HyphenSpec])
+
+alternatives :: (Int -> DocS) 
+             -> [[Doc]] 
+             -> [HyphenSpec] 
+             -> (IntraSection,[HyphenSpec])
 alternatives pre alts hys = post $ stmap phi (zip [0..] alts) hys
   where
-    phi (n,alt) hs = interspersedBars (prex n) alt hs
+    phi (n,alt) hs = intraBars (prex n) alt hs
 
     post (xs,rest) = step xs where
       step [a]     = (a,rest)
       step (d:ds)  = let (dbody,rest') = step ds
-                     in (d `sglconcat` dbody,rest')
-      step []      = (noDoc,rest)  
+                     in (intraConcat rrepeat d  dbody,rest')
+      step []      = (no_intra,rest)  
   
     prex n         = \x -> pre x . (alternative n <+>)
 
 
 
-interspersedBars :: (Int -> Doc -> Doc) 
-                 -> [Doc] 
-                 -> [HyphenSpec] 
-                 -> (SeparatedDoc,[HyphenSpec])
-interspersedBars pre = step where
-  step [b]    (h:hs)  = (separatedDoc pre h b,hs)
-  step (b:bs) (h:hs)  = let sbar              = separatedDoc pre h b
+intraBars :: (Int -> DocS) 
+          -> [Doc] 
+          -> [HyphenSpec] 
+          -> (IntraSection,[HyphenSpec])
+intraBars pre = step where
+  step [b]    (h:hs)  = (section1 pre h b,hs)
+  step (b:bs) (h:hs)  = let sbar          = section1 pre h b
                             (sbody,srest) = step bs hs
                         in (sbar `sglconcat` sbody, srest)
-  step _      hs      = (noDoc, hs)
+  step _      hs      = (no_intra, hs)
 
-noDoc :: SeparatedDoc
-noDoc = SDoc id empty LINE_BREAK
+no_intra :: IntraSection 
+no_intra = (id, empty, LINE_BREAK)
 
-separatedDoc :: (Int -> Doc -> Doc) -> HyphenSpec -> Doc -> SeparatedDoc
-separatedDoc pre (n,c)  d = SDoc (pre n) d c 
 
-bookend :: (Int -> Doc -> Doc) -> HyphenSpec -> Doc -> Doc
-bookend pre (n,CONT)       d = pre n d <+> singleBar <> lineCont
-bookend pre (n,LINE_BREAK) d = pre n d <+> singleBar
+section1 :: (Int -> DocS) -> HyphenSpec -> Doc -> IntraSection
+section1 pre (n,c)  d = (pre n, d, c )
 
-barCont :: Doc -> Hyph -> Doc
-barCont d CONT       = d <+> singleBar <> lineCont
-barCont d LINE_BREAK = d <+> singleBar
- 
 
+intraConcat :: Doc -> IntraSection -> IntraSection -> IntraSection
+intraConcat barsym (pf,b,hy) (pf',b',hy') = (pf,body,hy')
+  where
+    body    = b <+> barsym <> (fn hy) <$> (pf' b')
+    fn CONT = lineCont
+    fn _    = empty
+
+
+sglconcat :: IntraSection -> IntraSection -> IntraSection
+sglconcat = intraConcat singleBar
 
 
 hyphen :: LineStk -> [(Int,Hyph)]
