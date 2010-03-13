@@ -49,7 +49,6 @@ library
     Neume.Core.Utils.Common,
     Neume.Core.Utils.FunctorN,
     Neume.Core.Utils.OneList,
-    Neume.Core.Utils.OneMany,
     Neume.Core.Utils.Pretty,
     Neume.Core.Utils.StateMap,
 

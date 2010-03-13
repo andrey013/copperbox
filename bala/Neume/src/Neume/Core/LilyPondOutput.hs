@@ -40,16 +40,16 @@ import qualified Data.Foldable          as F
 -- for a Type Class.
 
 -- ignore annotations at the moment...
-renderPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> LyPhrase
+renderPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> Phrase LY
 renderPhrase f = oStaffPhrase f
 
 
 
-oStaffPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> LyPhrase
-oStaffPhrase f            = LyPhrase . map (oStaffBar f) . getStaffPhrase
+oStaffPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> Phrase LY
+oStaffPhrase f            = Phrase . map (oStaffBar f) . getStaffPhrase
 
-oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> LyBar
-oStaffBar f               = LyBar . hsep . oCExprList f . getStaffBar
+oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> BarImage
+oStaffBar f               = hsep . oCExprList f . getStaffBar
 
 oCExprList ::  (pch -> Doc) -> CExprList (GlyphRelDur anno pch) -> [Doc]
 oCExprList f (CExprList xs) = map (oCExpr f) xs
@@ -74,19 +74,6 @@ oChordPitches :: (pch -> Doc) -> OneList (ChordPitch anno pch) -> [Doc]
 oChordPitches f = map (\(ChordPitch _ p) -> f p) . F.toList
 
 
-
---------------------------------------------------------------------------------
--- Doc helpers
-
-
-
-{-
-simpleOverlay :: BarDoc -> Doc
-simpleOverlay = step . getBarDoc where
-    step []  = empty
-    step [a] = getOverlayDoc a
-    step xs  = overlay $ map getOverlayDoc xs
--}
 
 
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE EmptyDataDecls             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -21,16 +22,15 @@
 
 module Neume.Core.SyntaxDoc
   (
-  -- * Phrases and bars
-    LyPhrase(..)
-  , LyBar(..)
-  , AbcPhrase(..)
-  , AbcBar(..)
-
   -- * Score ( assembled from phrases / overlays )
+    BarImage
   , Score(..)
   , Section(..)
+  , Phrase(..)
   , OverlayBar(..)
+
+  , ABC
+  , LY
 
   ) where
 
@@ -45,19 +45,19 @@ import Text.PrettyPrint.Leijen          -- package : wl-print
 -- Phrases and bars are composable with pretty-print operations...
 -- No type-change operation, so not functors... 
 
-newtype LyPhrase   = LyPhrase   { getLyPhrase  :: [LyBar] }     deriving Show
-newtype LyBar      = LyBar      { getLyBar     :: Doc }         deriving Show
+type BarImage = Doc
 
-newtype AbcPhrase   = AbcPhrase { getAbcPhrase :: [AbcBar] }    deriving Show
-newtype AbcBar      = AbcBar    { getAbcBar    :: Doc }         deriving Show
+newtype Score a   = Score { getSections :: [Section a] }        deriving Show
 
-
-newtype Score bar   = Score { getBars :: [Section bar] }        deriving Show
-
-data Section bar = Straight  [bar]
-                 | Repeated  [bar]
-                 | AltRepeat [bar] [[bar]]
+data Section a = Straight  (Phrase a)
+               | Repeated  (Phrase a)
+               | AltRepeat (Phrase a) [Phrase a]
   deriving Show
 
-newtype OverlayBar = OverlayBar { getOverlayBar :: Doc }        deriving Show
+newtype Phrase a  = Phrase  { getPhrase  :: [BarImage] }   deriving Show
 
+
+newtype OverlayBar = OverlayBar { getOverlayBar :: BarImage }   deriving Show
+
+data ABC
+data LY

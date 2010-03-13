@@ -19,7 +19,6 @@ module Neume.Extra.AbcFormat
   (
 
     simpleOutput
-  , tempOutput
 
   , overlayPhrases
 
@@ -37,12 +36,12 @@ import Text.PrettyPrint.Leijen          -- package: wl-pprint
 import Data.List ( foldl', unfoldr )
 
 -- | Output ABC, four bars printed on each line. 
-simpleOutput :: AbcPhrase -> Doc
-simpleOutput = four . map ((<+> singleBar) . getAbcBar) . getAbcPhrase
+simpleOutput :: Phrase ABC -> Doc
+simpleOutput = four . map (<+> singleBar) . getPhrase
 
 
-tempOutput :: [OverlayBar] -> Doc
-tempOutput = four . map ((<+> singleBar) . getOverlayBar) 
+-- tempOutput :: [OverlayBar] -> Doc
+-- tempOutput = four . map ((<+> singleBar) . getOverlayBar) 
 
 
 four :: [Doc] -> Doc
@@ -172,19 +171,19 @@ flatten pre stk xs = step xs (hyphen stk) where
 
   step (Straight a:as)    hs = Cons upf START_NONE doc (END_SGL,hy) ls_rest
     where 
-      ((upf,doc,hy),rest) = intraBars pre a hs
+      ((upf,doc,hy),rest) = intraBars pre (getPhrase a) hs
       ls_rest             =  step as rest
 
   step (Repeated a:as)    hs = Cons upf START_REP doc (END_REP,hy) ls_rest
     where 
-      ((upf,doc,hy),rest) = intraBars pre a hs
+      ((upf,doc,hy),rest) = intraBars pre (getPhrase a) hs
       ls_rest             = step as rest                  
 
 
   step (AltRepeat a b:as) hs = Cons upf START_REP doc (END_DBL,hy) ls_rest
     where
-      (isec1,hs')  = intraBars pre a hs
-      (isec2,rest) = alternatives pre b hs'
+      (isec1,hs')  = intraBars pre (getPhrase a) hs
+      (isec2,rest) = alternatives pre (map getPhrase b) hs'
       (upf,doc,hy) = isec1 `sglconcat` isec2
       ls_rest      = step as rest
 
@@ -247,19 +246,19 @@ hyphen stk = unfoldr phi (1,stk) where
 
 -- Handily overlays are 'context free' 
 
-overlayPhrases :: [AbcPhrase] -> [OverlayBar]
+overlayPhrases :: [Phrase ABC] -> [OverlayBar]
 overlayPhrases []     = []
 overlayPhrases (x:xs) = foldl' overlay2 (overlay1 x) xs
 
 
-overlay2  :: [OverlayBar] -> AbcPhrase -> [OverlayBar]
-overlay2 bs1 (AbcPhrase bs2) = step bs1 bs2 where
-  step (x:xs) (y:ys) = overlayAbc x (getAbcBar y) : step xs ys
+overlay2  :: [OverlayBar] -> Phrase ABC -> [OverlayBar]
+overlay2 bs1 (Phrase bs2) = step bs1 bs2 where
+  step (x:xs) (y:ys) = overlayAbc x y : step xs ys
   step xs     []     = xs 
-  step []     ys     = map (OverlayBar . getAbcBar) ys 
+  step []     ys     = map OverlayBar ys 
 
-overlay1 :: AbcPhrase -> [OverlayBar]
-overlay1 = map (OverlayBar . getAbcBar) . getAbcPhrase
+overlay1 :: Phrase ABC -> [OverlayBar]
+overlay1 = map OverlayBar . getPhrase
 
 overlayAbc :: OverlayBar -> Doc -> OverlayBar
 overlayAbc (OverlayBar v1) v2 = OverlayBar $ v1 <+> overlay <> lineCont <$> v2 

@@ -28,7 +28,7 @@ import System.Cmd
 main :: IO ()
 main = do 
   writeDoc "overlay1.ly"      ly_score
-  writeDoc "overlay1_abc.abc" abc_score
+--  writeDoc "overlay1_abc.abc" abc_score
   system   "lilypond overlay1.ly"
   system   "abcm2ps overlay1_abc.abc -O overlay1_abc.ps" 
   return ()
@@ -44,16 +44,16 @@ ly_score =  version "2.12.2"
                          $ rewritePitchRel    middle_c 
                          $ rewriteDurationOpt xs
 
-    xs   = phrase four_four_time' $ simpleNoteList ubars1'4
+    xs   = phrase four_four_time $ simpleNoteList ubars1'4
 
 renderToLy :: [StdGlyph] -> Doc
 renderToLy = simpleOutput . renderPhrase pitch 
                           . rewritePitchRel middle_c
                           . rewriteDurationOpt
-                          . phrase four_four_time'
+                          . phrase four_four_time
                           . simpleNoteList
 
-
+{-
 abc_score :: Doc
 abc_score =  ABC.tunenum        1 
          <$> ABC.title          "Overlays"
@@ -63,17 +63,18 @@ abc_score =  ABC.tunenum        1
          <$> ABC.tempOutput tune1_abc 
   where
     tune1 = renderToABC ubars1'4
+-}
       
 renderToABC :: [StdGlyph] -> Doc
 renderToABC  = 
-  ABC.simpleOutput . makeSimplePhraseAbc c_major (1%8) four_four_time'
+  ABC.simpleOutput . makeSimplePhraseAbc c_major (1%8) four_four_time
    
 
 
 tune1_abc :: [OverlayBar]
 tune1_abc = ABC.overlayPhrases [upper_abc,lower_abc]
   where
-    mk        = makeSimplePhraseAbc c_major (1%8) four_four_time'
+    mk        = makeSimplePhraseAbc c_major (1%8) four_four_time
     upper_abc = mk ubars1'4
     lower_abc = mk lbars1'4
 
@@ -85,17 +86,12 @@ makeSimplePhraseAbc :: SpellingMap
                     -> DurationMeasure 
                     -> MeterPattern 
                     -> [StdGlyph]
-                    -> AbcPhrase
+                    -> Phrase ABC
 makeSimplePhraseAbc spelling unit_drn meter_pattern = 
    ABC.renderPhrase . ABC.rewritePitch    spelling
                     . ABC.rewriteDuration unit_drn
                     . phrase              meter_pattern
                     . simpleNoteList
-
-
-four_four_time' :: MeterPattern
-four_four_time' = makeMeterPattern 4 4
-
 
 
 ubars1'4 :: [StdGlyph]

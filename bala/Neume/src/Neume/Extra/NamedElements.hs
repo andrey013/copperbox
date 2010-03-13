@@ -159,12 +159,12 @@ makeNote pch anno dur = GlyNote (Note anno pch dur) False
 -- Metrical specs
 
 -- | 4/4 time.
-four_four_time :: MetricalSpec
-four_four_time = MetricalSpec (TimeSignature 4 4) (makeMeterPattern 4 4)
+four_four_time  :: MeterPattern
+four_four_time  = makeMeterPattern 4 4
 
 -- | 2/4 time.
-two_four_time :: MetricalSpec
-two_four_time = MetricalSpec (TimeSignature 2 4) (makeMeterPattern 2 4)
+two_four_time   :: MeterPattern
+two_four_time   = makeMeterPattern 2 4
 
 
 

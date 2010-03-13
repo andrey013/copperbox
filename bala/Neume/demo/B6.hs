@@ -43,13 +43,13 @@ ly_score =  version "2.12.2"
                          $ rewritePitchRel    middle_c 
                          $ rewriteDurationOpt xs
 
-    xs   = phrase two_four_time' $ simpleNoteList bars1'4
+    xs   = phrase two_four_time $ simpleNoteList bars1'4
 
 renderToLy :: [StdGlyph] -> Doc
 renderToLy = simpleOutput . renderPhrase pitch 
                           . rewritePitchRel middle_c
                           . rewriteDurationOpt
-                          . phrase two_four_time'
+                          . phrase two_four_time
                           . simpleNoteList
 
 
@@ -67,16 +67,11 @@ renderToABC :: [StdGlyph] -> Doc
 renderToABC  = ABC.simpleOutput . ABC.renderPhrase 
                                 . ABC.rewritePitch amaj
                                 . ABC.rewriteDuration (1%16)
-                                . phrase two_four_time'
+                                . phrase two_four_time
                                 . simpleNoteList
   where
     amaj :: SpellingMap
     amaj = makeSpellingMap 3
-
-
-two_four_time' :: MeterPattern
-two_four_time' = makeMeterPattern 2 4
-
 
 
 bars1'4 :: [StdGlyph]
