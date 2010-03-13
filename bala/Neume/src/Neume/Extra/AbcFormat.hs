@@ -22,12 +22,11 @@ module Neume.Extra.AbcFormat
 
   , overlayPhrases
 
-  , sABC
+  , abcScore
 
   ) where
 
 import Neume.Core.SyntaxDoc
-import Neume.Core.Utils.Common
 import Neume.Core.Utils.StateMap
 import Neume.Extra.AbcDoc
 
@@ -118,8 +117,8 @@ data Hyph = CONT | LINE_BREAK
   deriving (Eq,Show)
 
 
-sABC :: (Int -> DocS) -> LineStk -> [Section Doc] -> Doc
-sABC = flatDoc `ooo` flatten
+abcScore :: (Int -> DocS) -> LineStk -> Score ABC -> Doc
+abcScore upf stk = flatDoc . flatten upf stk . getSections
 
 
 flatDoc :: AbcList -> Doc
@@ -165,7 +164,7 @@ intrasep = step where
 
 
 
-flatten :: (Int -> DocS) -> LineStk -> [Section Doc] -> AbcList
+flatten :: (Int -> DocS) -> LineStk -> [Section ABC] -> AbcList
 flatten pre stk xs = step xs (hyphen stk) where
   step []              _  = Nil
 
