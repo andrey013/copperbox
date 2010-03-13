@@ -18,7 +18,8 @@ module Neume.Core.Utils.Pretty
   ( 
 
   -- * Extra pretty printers
-    doclines
+    DocS
+  , doclines
   , sepList
   , dblangles
   , nextLine
@@ -45,6 +46,11 @@ import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 ---------------------------------------------------------------------------------
 -- PPrint extras 
+
+
+
+type DocS = Doc -> Doc
+
 
 -- This function is primarily for Abc bar printing, where the number
 -- of bars on a line in the input score is reflected by the number of

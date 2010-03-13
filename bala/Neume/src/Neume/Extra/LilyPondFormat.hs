@@ -22,11 +22,16 @@ module Neume.Extra.LilyPondFormat
 
   , parallelPhrases
 
+  , lilypondScore
+
   ) where
 
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic ( spacer )
 import Neume.Core.SyntaxDoc
+import Neume.Core.Utils.FunctorN
+import Neume.Core.Utils.Pretty
+import Neume.Core.Utils.StateMap
 
 import Neume.Extra.LilyPondDoc
 
@@ -75,16 +80,24 @@ parallelLy (OverlayBar v1) v2 = OverlayBar $ v1 <+> singleBar <$> v2
 
 
 
+lilypondScore :: (Int -> DocS) -> Score LY -> Doc
+lilypondScore upf sc = vsep . fst $ stmap (section upf) (getSections sc) 1 
 
--- Are you going to need an amalgamate monad?
--- if so it can e.g put "||" at the end of a passage if the end 
--- isn\'t a repeat.
 
--- repeated :: Phrase -> [Bar] -> Doc
+section :: (Int -> DocS) -> Section LY -> Int -> (Doc,Int)
+section upf (Straight a)    n = phrase upf a n
+section upf (Repeated a)    n = fmap2a (repeatvolta 2) $ phrase upf a n
+section upf (AltRepeat a b) n = (body <$> alts, n'') 
+  where
+    (body,n')  = fmap2a (repeatvolta 2) $ phrase upf a n
+    (alts,n'') = alternatives upf b n'
 
--- Check \parallelMusic ...  page 118 (pdf page 128)
--- notes are relative to the previous note in the voice - not 
--- the previous note in the input
+alternatives :: (Int -> DocS) -> [Phrase LY] -> Int -> (Doc,Int)
+alternatives upf xs n = fmap2a alternative $ stmap (phrase upf) xs n
 
--- accounting for overlays / parallel music takes the list-of Bars
--- to a forest of one-or-many Bars - [(OneMany Bar)]
+
+phrase :: (Int -> DocS) -> Phrase LY -> Int -> (Doc,Int)
+phrase upf ph n = post $ stmap phi (getPhrase ph) n
+  where
+    phi d i      = (upf n d,i+1)
+    post (xs,st) = (vsep $ xs,st)

@@ -27,6 +27,7 @@ module Neume.Extra.AbcFormat
   ) where
 
 import Neume.Core.SyntaxDoc
+import Neume.Core.Utils.Pretty
 import Neume.Core.Utils.StateMap
 import Neume.Extra.AbcDoc
 
@@ -47,8 +48,6 @@ four :: [Doc] -> Doc
 four (a:b:c:d:xs) = vsep (map (<> lineCont) [a,b,c]) <$> d <$> four xs
 four xs           = hsep xs
 
-
-type DocS = Doc -> Doc
 
 -- | ABC does not automatically decide how many bars-per-line to 
 -- print.

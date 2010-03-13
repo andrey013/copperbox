@@ -76,6 +76,8 @@ module Neume.Extra.LilyPondDoc
   , layout
   , layoutExpr
   , relative
+  , repeatvolta
+  , alternative
   , drummode
   
   -- ** Fret diagrams
@@ -341,6 +343,17 @@ relative :: Pitch -> Doc -> Doc
 relative p expr = command "relative" <+> pitch p' <+> nestBraces expr
   where
     p' = setOctave ((octave p) - 3) p  -- Lilypond is 3 octaves below Neume
+
+-- | @\\repeat volta n {\\n ... \\n}@ - print a repeated block.
+--
+repeatvolta :: Int -> Doc -> Doc 
+repeatvolta i expr = 
+    command "repeat" <+> text "volta" <+> int i <+> nestBraces expr
+
+-- | @\\alternative { \\n { ... } \\n { ... } ... }@
+--
+alternative :: [Doc] -> Doc
+alternative = nestBraces . vsep . map braces 
 
 -- | @\\drummode {\\n ...\\n }@.
 drummode            :: Doc -> Doc

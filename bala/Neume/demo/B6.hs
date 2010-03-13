@@ -9,6 +9,7 @@ import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
+import Neume.Core.SyntaxDoc
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils.Common
 import Neume.Core.Utils.Pretty
@@ -36,21 +37,20 @@ main = do
 ly_score :: Doc
 ly_score =  version "2.12.2" 
         <$> scoreExpr (relative middle_c $ key a_nat "major" 
-        <$> (time 2 4)
-        <$> tune)
+                       <$> (time 2 4)
+                       <$> tune1)
   where
-    tune =  simpleOutput $ renderPhrase pitch      
-                         $ rewritePitchRel    middle_c 
-                         $ rewriteDurationOpt xs
+    tune1 = lilypondScore strip $ makeBulgarian6 lyPhrase
 
-    xs   = phrase two_four_time $ simpleNoteList bars1'4
 
-renderToLy :: [StdGlyph] -> Doc
-renderToLy = simpleOutput . renderPhrase pitch 
-                          . rewritePitchRel middle_c
-                          . rewriteDurationOpt
-                          . phrase two_four_time
-                          . simpleNoteList
+-- Note - this is not correct (yet) - relative pitch transformation
+-- is in the wrong place...
+--
+lyPhrase :: [StdGlyph] -> Phrase LY
+lyPhrase = renderPhrase pitch . rewritePitchRel middle_c
+                              . rewriteDurationOpt
+                              . phrase two_four_time
+                              . simpleNoteList
 
 
 abc_score :: Doc
@@ -58,20 +58,32 @@ abc_score =  ABC.tunenum   1
          <$> ABC.title     "Bulgarian 6"
          <$> ABC.meter     "2/4"
          <$> ABC.key       "Amaj"
-         <$> (tune1 <> tune2) 
+         <$> tune1
   where
-    tune1 = renderToABC bars1'4
-    tune2 = renderToABC bars5'8
-      
-renderToABC :: [StdGlyph] -> Doc
-renderToABC  = ABC.simpleOutput . ABC.renderPhrase 
-                                . ABC.rewritePitch amaj
-                                . ABC.rewriteDuration (1%16)
-                                . phrase two_four_time
-                                . simpleNoteList
-  where
-    amaj :: SpellingMap
-    amaj = makeSpellingMap 3
+    tune1 = ABC.abcScore strip [4,4,4,4] $ makeBulgarian6 abcPhrase 
+
+
+makeBulgarian6 :: ([StdGlyph] -> Phrase a) -> Score a
+makeBulgarian6 fn = mkScore [ repeated $ fn bars1'4 
+                            , repeated $ fn bars5'8
+                            ]
+
+
+abcPhrase :: [StdGlyph] -> Phrase ABC
+abcPhrase = ABC.renderPhrase . ABC.rewritePitch a_major
+                             . ABC.rewriteDuration (1%16)
+                             . phrase two_four_time
+                             . simpleNoteList
+ 
+
+a_major     :: SpellingMap
+a_major     = makeSpellingMap 3
+
+mkScore :: [Section a] -> Score a
+mkScore = Score
+
+repeated :: Phrase a -> Section a
+repeated = Repeated
 
 
 bars1'4 :: [StdGlyph]
@@ -92,12 +104,25 @@ bars1'4 =
   , a 4 () en, enr
   ]
 
+
 bars5'8 :: [StdGlyph]
 bars5'8 = 
   [ cs 5 () en, b 4 () sn, a 4 () sn
   , b 4  () en, a 4 () sn, gs 4 () sn
 
   -- bar 6
+  , fs 4 () sn, e 4 () sn, fs 4 () sn, gs 4 () sn
+  , a 4 () en, b 4 () en
+
+  -- bar 7
+  , cs 5 () en, b 4 () sn, a 4 () sn
+  , b 4 () en, a 4 () sn, gs 4 () sn
+
+  -- bar 8
+  , fs 4 () sn, e 4 () sn, fs 4 () en
+  , fs 4 () en, enr
+ 
   ]
+
 
 
