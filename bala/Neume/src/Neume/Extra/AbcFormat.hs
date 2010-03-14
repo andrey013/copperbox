@@ -28,8 +28,8 @@ module Neume.Extra.AbcFormat
   ) where
 
 import Neume.Core.SyntaxDoc
-import Neume.Core.Utils.Pretty
-import Neume.Core.Utils.StateMap
+import Neume.Core.Utils
+
 import Neume.Extra.AbcDoc
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint

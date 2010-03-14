@@ -113,8 +113,7 @@ module Neume.Extra.LilyPondDoc
 
 import Neume.Core.LilyPondBasic
 import Neume.Core.Pitch
-import Neume.Core.Utils.Common
-import Neume.Core.Utils.Pretty
+import Neume.Core.Utils
 
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 

@@ -33,9 +33,7 @@ import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
 import Neume.Core.SyntaxDoc
 import Neume.Core.SyntaxStaff
-import Neume.Core.Utils.FunctorN
-import Neume.Core.Utils.Pretty
-import Neume.Core.Utils.StateMap
+import Neume.Core.Utils
 
 import Neume.Extra.LilyPondDoc
 

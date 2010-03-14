@@ -9,9 +9,7 @@ import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
 import Neume.Core.SyntaxStaff
-import Neume.Core.Utils.Common
-import Neume.Core.Utils.OneList ( fromList )
-import Neume.Core.Utils.Pretty
+import Neume.Core.Utils
 
 import Neume.Extra.Extended
 import Neume.Extra.LilyPondDoc
