@@ -31,6 +31,8 @@ module Neume.Core.SyntaxDoc
 
   , ABC
   , LY
+  , ABC_overlay
+  , LY_overlay
 
   ) where
 
@@ -61,3 +63,6 @@ newtype OverlayBar = OverlayBar { getOverlayBar :: BarImage }   deriving Show
 
 data ABC
 data LY
+
+data ABC_overlay
+data LY_overlay

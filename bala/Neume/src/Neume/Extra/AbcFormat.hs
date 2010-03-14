@@ -19,6 +19,7 @@ module Neume.Extra.AbcFormat
   (
 
     simpleOutput
+  , barNumber
 
   , overlayPhrases
 
@@ -47,6 +48,12 @@ simpleOutput = four . map (<+> singleBar) . getPhrase
 four :: [Doc] -> Doc
 four (a:b:c:d:xs) = vsep (map (<> lineCont) [a,b,c]) <$> d <$> four xs
 four xs           = hsep xs
+
+
+
+barNumber :: Int -> DocS
+barNumber i = (comment ("Bar " ++ show i) <$>)
+
 
 
 -- | ABC does not automatically decide how many bars-per-line to 

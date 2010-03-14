@@ -15,13 +15,25 @@
 --------------------------------------------------------------------------------
 
 
-module Neume.Core.LilyPondOutput where 
+module Neume.Core.LilyPondOutput 
+  (
+    renderPhrase
+  , oGlyph
+
+  -- * rewriting
+  , rewriteDurationOpt
+  , rewritePitchAbs
+  , rewritePitchAbs_treble
+  , rewritePitchAbs_tab
+  , rewritePitchRel
+
+  ) where 
 
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
 import Neume.Core.Pitch
 import Neume.Core.SyntaxDoc
-import Neume.Core.SyntaxMarkup
+import Neume.Core.SyntaxMarkup () -- TODO trasform and print markup
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils.OneList
 import Neume.Core.Utils.Pretty
@@ -103,11 +115,6 @@ rewriteDurationOpt (StaffPhrase bars) =
     default_duration = qn 
 
 
-doptBarUnit :: StaffBar (Glyph anno pch Duration)
-           -> Duration
-           -> (StaffBar (Glyph anno pch (Maybe Duration)), Duration)
-doptBarUnit = stmap doptGlyph
-
 
 doptGlyph :: Glyph anno pch Duration 
           -> Duration 
@@ -121,6 +128,11 @@ doptD d st | d == st && not (isDotted d) = (Nothing,st)
            | otherwise                   = (Just d,d) 
 
 --
+
+{-
+
+-- TO DO - these will be needed for Markup...
+
 doptMarkupBar :: MarkupBar (SkipGlyph gly Duration)
               -> Duration
               -> (MarkupBar (SkipGlyph gly (Maybe Duration)), Duration)
@@ -131,7 +143,7 @@ doptSkipGlyph :: SkipGlyph glyph Duration
               -> Duration
               -> (SkipGlyph glyph (Maybe Duration), Duration)
 doptSkipGlyph = stmap2b doptD
-
+-}
 
 --------------------------------------------------------------------------------
 -- Rewrite Pitch
@@ -153,6 +165,15 @@ doptSkipGlyph = stmap2b doptD
 --
 -- TODO - find out why this is the case.
 
+
+
+
+rewritePitchAbs :: Int 
+                -> StaffPhrase (Glyph anno Pitch dur) 
+                -> StaffPhrase (Glyph anno Pitch dur)
+rewritePitchAbs i = fmap (abspGlyph i)
+
+
 rewritePitchAbs_treble :: StaffPhrase (Glyph anno Pitch dur) 
                        -> StaffPhrase (Glyph anno Pitch dur)
 rewritePitchAbs_treble = rewritePitchAbs (-3)
@@ -161,12 +182,6 @@ rewritePitchAbs_tab :: StaffPhrase (Glyph anno Pitch dur)
                        -> StaffPhrase (Glyph anno Pitch dur)
 rewritePitchAbs_tab = rewritePitchAbs (-4)
 
-
-
-rewritePitchAbs :: Int 
-                -> StaffPhrase (Glyph anno Pitch dur) 
-                -> StaffPhrase (Glyph anno Pitch dur)
-rewritePitchAbs i = fmap (abspGlyph i)
 
 
 
@@ -189,16 +204,8 @@ abspChordPitch i (ChordPitch a p) = ChordPitch a (displaceOctave i p)
 
 rewritePitchRel :: Pitch
                 -> StaffPhrase (Glyph anno Pitch dur) 
-                -> StaffPhrase (Glyph anno Pitch dur)
-rewritePitchRel p phrase = fst $ stmap relpGlyph phrase p 
-
-
-relpStaffPhrase :: StaffPhrase (Glyph anno Pitch dur)
-                -> Pitch 
-                -> (StaffPhrase (Glyph anno Pitch dur), Pitch)
-relpStaffPhrase = stmap relpGlyph
-
-                               
+                -> (StaffPhrase (Glyph anno Pitch dur),Pitch)
+rewritePitchRel p phrase = stmap relpGlyph phrase p 
 
 
 relpGlyph :: Glyph anno Pitch dur 

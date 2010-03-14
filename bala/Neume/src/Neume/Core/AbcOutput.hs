@@ -16,7 +16,16 @@
 --------------------------------------------------------------------------------
 
 
-module Neume.Core.AbcOutput where
+module Neume.Core.AbcOutput 
+  (
+    renderPhrase
+
+  -- * rewriting
+  , rewritePitch
+  , rewriteDuration
+  , rewriteAnno
+
+  ) where
 
 import Neume.Core.AbcBasic
 import Neume.Core.Duration
@@ -39,11 +48,11 @@ type AbcNote  = Note  () Pitch AbcMultiplier
 
 --------------------------------------------------------------------------------
 
-renderPhrase:: StaffPhrase AbcGlyph -> Phrase ABC
-renderPhrase                = Phrase . map oStaffBar . getStaffPhrase
+renderPhrase :: StaffPhrase AbcGlyph -> Phrase ABC
+renderPhrase = Phrase . map oStaffBar . getStaffPhrase
 
 oStaffBar :: StaffBar AbcGlyph -> BarImage
-oStaffBar                   = oCExprList (<+>) . getStaffBar
+oStaffBar = oCExprList (<+>) . getStaffBar
 
 
 oCExprList :: (Doc -> Doc -> Doc) -> CExprList AbcGlyph -> Doc

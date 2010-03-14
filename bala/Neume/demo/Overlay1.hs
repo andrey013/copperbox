@@ -12,6 +12,7 @@ import Neume.Core.Pitch
 import Neume.Core.SyntaxDoc
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils.Common
+import Neume.Core.Utils.FunctorN
 import Neume.Core.Utils.Pretty
 
 import qualified Neume.Extra.AbcDoc          as ABC
@@ -40,18 +41,18 @@ ly_score =  version "2.12.2"
         <$> (time 2 4)
         <$> tune)
   where
-    tune =  simpleOutput $ renderPhrase pitch      
-                         $ rewritePitchRel    middle_c 
+    tune =  simpleOutput $ renderPhrase pitch 
+                         $ fst $ rewritePitchRel    middle_c 
                          $ rewriteDurationOpt xs
 
     xs   = phrase four_four_time $ simpleNoteList ubars1'4
 
-renderToLy :: [StdGlyph] -> Doc
-renderToLy = simpleOutput . renderPhrase pitch 
-                          . rewritePitchRel middle_c
-                          . rewriteDurationOpt
-                          . phrase four_four_time
-                          . simpleNoteList
+renderToLy :: [StdGlyph] -> (Doc,Pitch)
+renderToLy = fmap2a (simpleOutput . renderPhrase pitch)
+                                 . rewritePitchRel middle_c
+                                 . rewriteDurationOpt
+                                 . phrase four_four_time
+                                 . simpleNoteList
 
 {-
 abc_score :: Doc

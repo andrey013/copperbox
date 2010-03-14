@@ -31,6 +31,7 @@ module Neume.Extra.AbcDoc
   , tempo
 
   -- * ABC literals and syntax
+  , comment
   , singleBar
   , doubleBar
   , overlay
@@ -110,6 +111,9 @@ tempo = field 'Q' . text
 
 --------------------------------------------------------------------------------
 -- ABC literals and syntax
+
+comment :: String -> Doc
+comment = text . ("%% " ++)
 
 
 singleBar :: Doc

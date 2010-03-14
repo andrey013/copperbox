@@ -60,7 +60,7 @@ abc_score =  ABC.tunenum   1
          <$> ABC.key       "Amaj"
          <$> tune1
   where
-    tune1 = ABC.abcScore strip [4,4,4,4] $ makeBulgarian6 abcPhrase 
+    tune1 = ABC.abcScore ABC.barNumber [4,4,4,4] $ makeBulgarian6 abcPhrase 
 
 
 makeBulgarian6 :: ([StdGlyph] -> Phrase a) -> Score a

@@ -26,9 +26,13 @@ module Neume.Extra.LilyPondFormat
 
   ) where
 
+import Neume.Core.Datatypes
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic ( spacer )
+import Neume.Core.LilyPondOutput
+import Neume.Core.Pitch
 import Neume.Core.SyntaxDoc
+import Neume.Core.SyntaxStaff
 import Neume.Core.Utils.FunctorN
 import Neume.Core.Utils.Pretty
 import Neume.Core.Utils.StateMap
@@ -43,6 +47,14 @@ simpleOutput :: Phrase LY -> Doc
 simpleOutput = vsep . map (<+> singleBar) . getPhrase
 
 
+{-
+lyPhrase :: (Pitch -> Doc) -> Pitch -> MeterPattern -> [StdGlyph] -> (Phrase LY,Pitch)
+lyPhrase pf base_pitch mp = 
+   fmap2a (renderPhrase pf) . rewritePitchRel base_pitch
+                            . rewriteDurationOpt
+                            . phrase mp
+                            . simpleNoteList
+-}
 
 
 
