@@ -54,6 +54,7 @@ library
 
     Neume.Extra.AbcDoc,
     Neume.Extra.AbcFormat,
+    Neume.Extra.DrumPitches,
     Neume.Extra.Extended,
     Neume.Extra.LilyPondDoc,
     Neume.Extra.LilyPondFormat,

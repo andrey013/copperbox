@@ -37,7 +37,7 @@ import Text.PrettyPrint.Leijen          -- package: wl-pprint
 import Data.List ( foldl', unfoldr )
 
 -- | Output ABC, four bars printed on each line. 
-simpleOutput :: Phrase ABC -> Doc
+simpleOutput :: Phrase -> Doc
 simpleOutput = four . map (<+> singleBar) . getPhrase
 
 
@@ -123,7 +123,7 @@ data Hyph = CONT | LINE_BREAK
   deriving (Eq,Show)
 
 
-abcScore :: (Int -> DocS) -> LineStk -> Score ABC -> Doc
+abcScore :: (Int -> DocS) -> LineStk -> TermScore Phrase -> Doc
 abcScore upf stk = flatDoc . flatten upf stk . getSections
 
 
@@ -170,7 +170,7 @@ intrasep = step where
 
 
 
-flatten :: (Int -> DocS) -> LineStk -> [Section ABC] -> AbcList
+flatten :: (Int -> DocS) -> LineStk -> [Section] -> AbcList
 flatten pre stk xs = step xs (hyphen stk) where
   step []              _  = Nil
 
@@ -251,18 +251,18 @@ hyphen stk = unfoldr phi (1,stk) where
 
 -- Handily overlays are 'context free' 
 
-overlayPhrases :: [Phrase ABC] -> [OverlayBar]
+overlayPhrases :: [Phrase] -> [OverlayBar]
 overlayPhrases []     = []
 overlayPhrases (x:xs) = foldl' overlay2 (overlay1 x) xs
 
 
-overlay2  :: [OverlayBar] -> Phrase ABC -> [OverlayBar]
+overlay2  :: [OverlayBar] -> Phrase -> [OverlayBar]
 overlay2 bs1 (Phrase bs2) = step bs1 bs2 where
   step (x:xs) (y:ys) = overlayAbc x y : step xs ys
   step xs     []     = xs 
   step []     ys     = map OverlayBar ys 
 
-overlay1 :: Phrase ABC -> [OverlayBar]
+overlay1 :: Phrase -> [OverlayBar]
 overlay1 = map OverlayBar . getPhrase
 
 overlayAbc :: OverlayBar -> Doc -> OverlayBar

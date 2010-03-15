@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE EmptyDataDecls             #-}
 {-# OPTIONS -Wall #-}
 
@@ -25,6 +27,7 @@ module Neume.Core.SyntaxDoc
   -- * Score ( assembled from phrases / overlays )
     BarImage
   , Score(..)
+  , TermScore(..)
   , Section(..)
   , Phrase(..)
   , OverlayBar(..)
@@ -49,14 +52,31 @@ import Text.PrettyPrint.Leijen          -- package : wl-print
 
 type BarImage = Doc
 
-newtype Score a   = Score { getSections :: [Section a] }        deriving Show
+class Score repr a where
+  straight  :: a -> repr a
+  repeated  :: a -> repr a
+  altRepeat :: a -> [a] -> repr a  
+  caten     :: repr a -> repr a -> repr a
 
-data Section a = Straight  (Phrase a)
-               | Repeated  (Phrase a)
-               | AltRepeat (Phrase a) [Phrase a]
+instance Score TermScore Phrase where
+  straight a       = Score [Straight a]
+  repeated a       = Score [Repeated a]
+  altRepeat a alts = Score [AltRepeat a alts]
+  caten a b        = Score (a'++b') 
+                     where 
+                       a' = getSections a
+                       b' = getSections b
+
+-- only the top of the syntax tree needs a type parameter...
+
+newtype TermScore a = Score { getSections :: [Section] }        deriving Show
+
+data Section = Straight  Phrase
+             | Repeated  Phrase
+             | AltRepeat Phrase [Phrase]
   deriving Show
 
-newtype Phrase a  = Phrase  { getPhrase  :: [BarImage] }   deriving Show
+newtype Phrase = Phrase  { getPhrase  :: [BarImage] }   deriving Show
 
 
 newtype OverlayBar = OverlayBar { getOverlayBar :: BarImage }   deriving Show
@@ -66,3 +86,4 @@ data LY
 
 data ABC_overlay
 data LY_overlay
+

@@ -88,11 +88,13 @@ parallel1 = map OverlayBar . getPhrase
 parallelLy :: OverlayBar -> Doc -> OverlayBar
 parallelLy (OverlayBar v1) v2 = OverlayBar $ v1 <+> singleBar <$> v2 
 
+lilypondScore :: (Int -> DocS) -> a -> Doc
+lilypondScore _ _ = undefined
 
-
+{-
 lilypondScore :: (Int -> DocS) -> Score LY -> Doc
 lilypondScore upf sc = vsep . fst $ stmap (section upf) (getSections sc) 1 
-
+-}
 
 section :: (Int -> DocS) -> Section LY -> Int -> (Doc,Int)
 section upf (Straight a)    n = phrase upf a n

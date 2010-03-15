@@ -32,9 +32,7 @@ import Neume.Core.Duration
 import Neume.Core.Pitch hiding ( octave )
 import Neume.Core.SyntaxDoc
 import Neume.Core.SyntaxStaff
-import Neume.Core.Utils.FunctorN
-import Neume.Core.Utils.OneList
-import Neume.Core.Utils.Pretty
+import Neume.Core.Utils
 
 
 import Text.PrettyPrint.Leijen hiding ( sep )     -- package: wl-print
@@ -48,7 +46,7 @@ type AbcNote  = Note  () Pitch AbcMultiplier
 
 --------------------------------------------------------------------------------
 
-renderPhrase :: StaffPhrase AbcGlyph -> Phrase ABC
+renderPhrase :: StaffPhrase AbcGlyph -> Phrase
 renderPhrase = Phrase . map oStaffBar . getStaffPhrase
 
 oStaffBar :: StaffBar AbcGlyph -> BarImage

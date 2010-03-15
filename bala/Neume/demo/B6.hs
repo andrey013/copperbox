@@ -36,7 +36,7 @@ main = do
 ly_score :: Doc
 ly_score =  version "2.12.2" 
         <$> scoreExpr (relative middle_c $ key a_nat "major" 
-                       <$> (time 2 4)
+                       <$> time 2 4
                        <$> tune1)
   where
     tune1 = lilypondScore strip $ makeBulgarian6 lyPhrase
@@ -46,10 +46,10 @@ ly_score =  version "2.12.2"
 -- is in the wrong place...
 --
 lyPhrase :: [StdGlyph] -> Phrase LY
-lyPhrase = renderPhrase pitch . rewritePitchRel middle_c
-                              . rewriteDurationOpt
-                              . phrase two_four_time
-                              . simpleNoteList
+lyPhrase = fst . fmap2a (renderPhrase pitch) . rewritePitchRel middle_c
+                                             . rewriteDurationOpt
+                                             . phrase two_four_time
+                                             . simpleNoteList
 
 
 abc_score :: Doc
@@ -62,10 +62,9 @@ abc_score =  ABC.tunenum   1
     tune1 = ABC.abcScore ABC.barNumber [4,4,4,4] $ makeBulgarian6 abcPhrase 
 
 
-makeBulgarian6 :: ([StdGlyph] -> Phrase a) -> Score a
-makeBulgarian6 fn = mkScore [ repeated $ fn bars1'4 
-                            , repeated $ fn bars5'8
-                            ]
+-- makeBulgarian6 :: ([StdGlyph] -> Phrase a) -> Score a
+makeBulgarian6 fn = repeated (fn bars1'4) `caten` repeated (fn bars5'8)
+                            
 
 
 abcPhrase :: [StdGlyph] -> Phrase ABC
@@ -78,12 +77,13 @@ abcPhrase = ABC.renderPhrase . ABC.rewritePitch a_major
 a_major     :: SpellingMap
 a_major     = makeSpellingMap 3
 
+{-
 mkScore :: [Section a] -> Score a
 mkScore = Score
 
 repeated :: Phrase a -> Section a
 repeated = Repeated
-
+-}
 
 bars1'4 :: [StdGlyph]
 bars1'4 =  

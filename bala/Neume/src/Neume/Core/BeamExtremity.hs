@@ -14,7 +14,7 @@
 -- Portability :  GHC
 --
 -- Beam extremity...
--- Probably this will be renamed. Printable bema groups should
+-- Probably this will be renamed. Printable beam groups should
 -- only begin and end on (notes, chords) and not rests. 
 --
 --------------------------------------------------------------------------------
