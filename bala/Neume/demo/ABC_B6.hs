@@ -40,9 +40,12 @@ abc_score =  ABC.tunenum   1
 
 
 
-bulgarian_6 :: Score repr Phrase => repr Phrase
+bulgarian_6 :: Score repr PhraseImage => repr PhraseImage
 bulgarian_6 = repeated (abcPhrase bars1'4) `caten` repeated (abcPhrase bars5'8)
 
+
+b6_score :: Score repr [StdGlyph] => repr [StdGlyph]
+b6_score = repeated bars1'4 `caten` repeated bars5'8
       
 renderToABC :: [StdGlyph] -> Doc
 renderToABC  = ABC.simpleOutput . ABC.renderPhrase 
@@ -56,7 +59,7 @@ a_major     = makeSpellingMap 3
 
 
 
-abcPhrase :: [StdGlyph] -> Phrase
+abcPhrase :: [StdGlyph] -> PhraseImage
 abcPhrase = ABC.renderPhrase . ABC.rewritePitch a_major
                              . ABC.rewriteDuration (1%16)
                              . phrase two_four_time

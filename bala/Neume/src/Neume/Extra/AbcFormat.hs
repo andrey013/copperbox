@@ -37,8 +37,8 @@ import Text.PrettyPrint.Leijen          -- package: wl-pprint
 import Data.List ( foldl', unfoldr )
 
 -- | Output ABC, four bars printed on each line. 
-simpleOutput :: Phrase -> Doc
-simpleOutput = four . map (<+> singleBar) . getPhrase
+simpleOutput :: PhraseImage -> Doc
+simpleOutput = four . map (<+> singleBar) . getPhraseImage
 
 
 -- tempOutput :: [OverlayBar] -> Doc
@@ -123,8 +123,8 @@ data Hyph = CONT | LINE_BREAK
   deriving (Eq,Show)
 
 
-abcScore :: (Int -> DocS) -> LineStk -> TermScore Phrase -> Doc
-abcScore upf stk = flatDoc . flatten upf stk . getSections
+abcScore :: (Int -> DocS) -> LineStk -> ScoreImage a -> Doc
+abcScore upf stk = flatDoc . flatten upf stk . getScoreImage
 
 
 flatDoc :: AbcList -> Doc
@@ -170,25 +170,25 @@ intrasep = step where
 
 
 
-flatten :: (Int -> DocS) -> LineStk -> [Section] -> AbcList
+flatten :: (Int -> DocS) -> LineStk -> [SectionImage] -> AbcList
 flatten pre stk xs = step xs (hyphen stk) where
   step []              _  = Nil
 
   step (Straight a:as)    hs = Cons upf START_NONE doc (END_SGL,hy) ls_rest
     where 
-      ((upf,doc,hy),rest) = intraBars pre (getPhrase a) hs
-      ls_rest             =  step as rest
+      ((upf,doc,hy),rest) = intraBars pre (getPhraseImage a) hs
+      ls_rest             = step as rest
 
   step (Repeated a:as)    hs = Cons upf START_REP doc (END_REP,hy) ls_rest
     where 
-      ((upf,doc,hy),rest) = intraBars pre (getPhrase a) hs
+      ((upf,doc,hy),rest) = intraBars pre (getPhraseImage a) hs
       ls_rest             = step as rest                  
 
 
   step (AltRepeat a b:as) hs = Cons upf START_REP doc (END_DBL,hy) ls_rest
     where
-      (isec1,hs')  = intraBars pre (getPhrase a) hs
-      (isec2,rest) = alternatives pre (map getPhrase b) hs'
+      (isec1,hs')  = intraBars pre (getPhraseImage a) hs
+      (isec2,rest) = alternatives pre (map getPhraseImage b) hs'
       (upf,doc,hy) = isec1 `sglconcat` isec2
       ls_rest      = step as rest
 
@@ -251,19 +251,19 @@ hyphen stk = unfoldr phi (1,stk) where
 
 -- Handily overlays are 'context free' 
 
-overlayPhrases :: [Phrase] -> [OverlayBar]
+overlayPhrases :: [PhraseImage] -> [OverlayBar]
 overlayPhrases []     = []
 overlayPhrases (x:xs) = foldl' overlay2 (overlay1 x) xs
 
 
-overlay2  :: [OverlayBar] -> Phrase -> [OverlayBar]
-overlay2 bs1 (Phrase bs2) = step bs1 bs2 where
+overlay2  :: [OverlayBar] -> PhraseImage -> [OverlayBar]
+overlay2 bs1 (PhraseImage bs2) = step bs1 bs2 where
   step (x:xs) (y:ys) = overlayAbc x y : step xs ys
   step xs     []     = xs 
   step []     ys     = map OverlayBar ys 
 
-overlay1 :: Phrase -> [OverlayBar]
-overlay1 = map OverlayBar . getPhrase
+overlay1 :: PhraseImage -> [OverlayBar]
+overlay1 = map OverlayBar . getPhraseImage
 
 overlayAbc :: OverlayBar -> Doc -> OverlayBar
 overlayAbc (OverlayBar v1) v2 = OverlayBar $ v1 <+> overlay <> lineCont <$> v2 

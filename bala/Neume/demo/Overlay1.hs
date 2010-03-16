@@ -85,7 +85,7 @@ makeSimplePhraseAbc :: SpellingMap
                     -> DurationMeasure 
                     -> MeterPattern 
                     -> [StdGlyph]
-                    -> Phrase
+                    -> PhraseImage
 makeSimplePhraseAbc spelling unit_drn meter_pattern = 
    ABC.renderPhrase . ABC.rewritePitch    spelling
                     . ABC.rewriteDuration unit_drn

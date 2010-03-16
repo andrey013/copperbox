@@ -44,7 +44,7 @@ ly_score =  version "2.12.2"
 -- Note - this is not correct (yet) - relative pitch transformation
 -- is in the wrong place...
 --
-lyPhrase :: [StdGlyph] -> Phrase
+lyPhrase :: [StdGlyph] -> PhraseImage
 lyPhrase = fst . fmap2a (renderPhrase pitch) . rewritePitchRel middle_c
                                              . rewriteDurationOpt
                                              . phrase two_four_time
@@ -66,7 +66,7 @@ makeBulgarian6 fn = repeated (fn bars1'4) `caten` repeated (fn bars5'8)
                             
 
 
-abcPhrase :: [StdGlyph] -> Phrase
+abcPhrase :: [StdGlyph] -> PhraseImage
 abcPhrase = ABC.renderPhrase . ABC.rewritePitch a_major
                              . ABC.rewriteDuration (1%16)
                              . phrase two_four_time

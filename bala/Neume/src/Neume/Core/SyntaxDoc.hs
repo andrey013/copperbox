@@ -27,15 +27,11 @@ module Neume.Core.SyntaxDoc
   -- * Score ( assembled from phrases / overlays )
     BarImage
   , Score(..)
-  , TermScore(..)
-  , Section(..)
-  , Phrase(..)
+  , ScoreImage(..)
+  , SectionImage(..)
+  , PhraseImage(..)
   , OverlayBar(..)
 
-  , ABC
-  , LY
-  , ABC_overlay
-  , LY_overlay
 
   ) where
 
@@ -58,32 +54,28 @@ class Score repr a where
   altRepeat :: a -> [a] -> repr a  
   caten     :: repr a -> repr a -> repr a
 
-instance Score TermScore Phrase where
-  straight a       = Score [Straight a]
-  repeated a       = Score [Repeated a]
-  altRepeat a alts = Score [AltRepeat a alts]
-  caten a b        = Score (a'++b') 
+instance Score ScoreImage PhraseImage where
+  straight a       = ScoreImage [Straight a]
+  repeated a       = ScoreImage [Repeated a]
+  altRepeat a alts = ScoreImage [AltRepeat a alts]
+  caten a b        = ScoreImage (a'++b') 
                      where 
-                       a' = getSections a
-                       b' = getSections b
+                       a' = getScoreImage a
+                       b' = getScoreImage b
 
 -- only the top of the syntax tree needs a type parameter...
 
-newtype TermScore a = Score { getSections :: [Section] }        deriving Show
-
-data Section = Straight  Phrase
-             | Repeated  Phrase
-             | AltRepeat Phrase [Phrase]
+newtype ScoreImage a = ScoreImage { getScoreImage :: [SectionImage] }
   deriving Show
 
-newtype Phrase = Phrase  { getPhrase  :: [BarImage] }   deriving Show
+data SectionImage = Straight  PhraseImage
+                  | Repeated  PhraseImage
+                  | AltRepeat PhraseImage [PhraseImage]
+  deriving Show
+
+newtype PhraseImage = PhraseImage  { getPhraseImage  :: [BarImage] }
+  deriving Show
 
 
 newtype OverlayBar = OverlayBar { getOverlayBar :: BarImage }   deriving Show
-
-data ABC
-data LY
-
-data ABC_overlay
-data LY_overlay
 

@@ -37,8 +37,8 @@ import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
 import Data.List ( foldl' )
 
-simpleOutput :: Phrase -> Doc
-simpleOutput = vsep . map (<+> singleBar) . getPhrase
+simpleOutput :: PhraseImage -> Doc
+simpleOutput = vsep . map (<+> singleBar) . getPhraseImage
 
 
 {-
@@ -58,18 +58,19 @@ lyPhrase pf base_pitch mp =
 -- to be a proper matrix.
 --
 
-parallelPhrases :: Duration -> [Phrase] -> [OverlayBar]
+parallelPhrases :: Duration -> [PhraseImage] -> [OverlayBar]
 parallelPhrases _       []     = []
 parallelPhrases bar_len (x:xs) = snd $ foldl' (parallel2 bar_len) (1,parallel1 x) xs
 
 type Depth = Int
 
-parallel2  :: Duration -> (Int,[OverlayBar]) -> Phrase -> (Int,[OverlayBar])
-parallel2 bar_len (depth,bs1) (Phrase bs2) = (depth+1, step bs1 bs2) where
-  step (x:xs) (y:ys) = parallelLy x y : step xs ys
-  step (x:xs) []     = parallelLy x (spacer $ Just bar_len) : step xs [] 
-  step []     (y:ys) = parallelLy (blank depth bar_len) y : step [] ys 
-  step []     []     = []
+parallel2  :: Duration -> (Int,[OverlayBar]) -> PhraseImage -> (Int,[OverlayBar])
+parallel2 bar_len (depth,bs1) (PhraseImage bs2) = (depth+1, step bs1 bs2) 
+  where
+    step (x:xs) (y:ys) = parallelLy x y : step xs ys
+    step (x:xs) []     = parallelLy x (spacer $ Just bar_len) : step xs [] 
+    step []     (y:ys) = parallelLy (blank depth bar_len) y : step [] ys 
+    step []     []     = []
 
 blank :: Depth -> Duration -> OverlayBar
 blank n d = step (OverlayBar sbar) (n-1) where
@@ -78,18 +79,18 @@ blank n d = step (OverlayBar sbar) (n-1) where
 
   sbar       = spacer $ Just d
 
-parallel1 :: Phrase -> [OverlayBar]
-parallel1 = map OverlayBar . getPhrase
+parallel1 :: PhraseImage -> [OverlayBar]
+parallel1 = map OverlayBar . getPhraseImage
 
 parallelLy :: OverlayBar -> Doc -> OverlayBar
 parallelLy (OverlayBar v1) v2 = OverlayBar $ v1 <+> singleBar <$> v2 
 
 
-lilypondScore :: (Int -> DocS) -> TermScore Phrase -> Doc
-lilypondScore upf sc = vsep . fst $ stmap (section upf) (getSections sc) 1 
+lilypondScore :: (Int -> DocS) -> ScoreImage a -> Doc
+lilypondScore upf sc = vsep . fst $ stmap (section upf) (getScoreImage sc) 1 
 
 
-section :: (Int -> DocS) -> Section -> Int -> (Doc,Int)
+section :: (Int -> DocS) -> SectionImage -> Int -> (Doc,Int)
 section upf (Straight a)    n = phrase upf a n
 section upf (Repeated a)    n = fmap2a (repeatvolta 2) $ phrase upf a n
 section upf (AltRepeat a b) n = (body <$> alts, n'') 
@@ -97,12 +98,12 @@ section upf (AltRepeat a b) n = (body <$> alts, n'')
     (body,n')  = fmap2a (repeatvolta 2) $ phrase upf a n
     (alts,n'') = alternatives upf b n'
 
-alternatives :: (Int -> DocS) -> [Phrase] -> Int -> (Doc,Int)
+alternatives :: (Int -> DocS) -> [PhraseImage] -> Int -> (Doc,Int)
 alternatives upf xs n = fmap2a alternative $ stmap (phrase upf) xs n
 
 
-phrase :: (Int -> DocS) -> Phrase -> Int -> (Doc,Int)
-phrase upf ph n = post $ stmap phi (getPhrase ph) n
+phrase :: (Int -> DocS) -> PhraseImage -> Int -> (Doc,Int)
+phrase upf ph n = post $ stmap phi (getPhraseImage ph) n
   where
     phi d i      = (upf n d,i+1)
     post (xs,st) = (vsep $ xs,st)
