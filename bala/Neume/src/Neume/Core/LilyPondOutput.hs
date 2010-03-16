@@ -52,12 +52,12 @@ import qualified Data.Foldable          as F
 -- for a Type Class.
 
 -- ignore annotations at the moment...
-renderPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> Phrase LY
+renderPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> Phrase
 renderPhrase f = oStaffPhrase f
 
 
 
-oStaffPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> Phrase LY
+oStaffPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> Phrase
 oStaffPhrase f            = Phrase . map (oStaffBar f) . getStaffPhrase
 
 oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> BarImage

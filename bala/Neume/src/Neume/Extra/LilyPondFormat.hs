@@ -26,13 +26,9 @@ module Neume.Extra.LilyPondFormat
 
   ) where
 
-import Neume.Core.Datatypes
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic ( spacer )
-import Neume.Core.LilyPondOutput
-import Neume.Core.Pitch
 import Neume.Core.SyntaxDoc
-import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
 import Neume.Extra.LilyPondDoc
@@ -41,7 +37,7 @@ import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
 import Data.List ( foldl' )
 
-simpleOutput :: Phrase LY -> Doc
+simpleOutput :: Phrase -> Doc
 simpleOutput = vsep . map (<+> singleBar) . getPhrase
 
 
@@ -62,13 +58,13 @@ lyPhrase pf base_pitch mp =
 -- to be a proper matrix.
 --
 
-parallelPhrases :: Duration -> [Phrase LY] -> [OverlayBar]
+parallelPhrases :: Duration -> [Phrase] -> [OverlayBar]
 parallelPhrases _       []     = []
 parallelPhrases bar_len (x:xs) = snd $ foldl' (parallel2 bar_len) (1,parallel1 x) xs
 
 type Depth = Int
 
-parallel2  :: Duration -> (Int,[OverlayBar]) -> Phrase LY -> (Int,[OverlayBar])
+parallel2  :: Duration -> (Int,[OverlayBar]) -> Phrase -> (Int,[OverlayBar])
 parallel2 bar_len (depth,bs1) (Phrase bs2) = (depth+1, step bs1 bs2) where
   step (x:xs) (y:ys) = parallelLy x y : step xs ys
   step (x:xs) []     = parallelLy x (spacer $ Just bar_len) : step xs [] 
@@ -82,21 +78,18 @@ blank n d = step (OverlayBar sbar) (n-1) where
 
   sbar       = spacer $ Just d
 
-parallel1 :: Phrase LY -> [OverlayBar]
+parallel1 :: Phrase -> [OverlayBar]
 parallel1 = map OverlayBar . getPhrase
 
 parallelLy :: OverlayBar -> Doc -> OverlayBar
 parallelLy (OverlayBar v1) v2 = OverlayBar $ v1 <+> singleBar <$> v2 
 
-lilypondScore :: (Int -> DocS) -> a -> Doc
-lilypondScore _ _ = undefined
 
-{-
-lilypondScore :: (Int -> DocS) -> Score LY -> Doc
+lilypondScore :: (Int -> DocS) -> TermScore Phrase -> Doc
 lilypondScore upf sc = vsep . fst $ stmap (section upf) (getSections sc) 1 
--}
 
-section :: (Int -> DocS) -> Section LY -> Int -> (Doc,Int)
+
+section :: (Int -> DocS) -> Section -> Int -> (Doc,Int)
 section upf (Straight a)    n = phrase upf a n
 section upf (Repeated a)    n = fmap2a (repeatvolta 2) $ phrase upf a n
 section upf (AltRepeat a b) n = (body <$> alts, n'') 
@@ -104,11 +97,11 @@ section upf (AltRepeat a b) n = (body <$> alts, n'')
     (body,n')  = fmap2a (repeatvolta 2) $ phrase upf a n
     (alts,n'') = alternatives upf b n'
 
-alternatives :: (Int -> DocS) -> [Phrase LY] -> Int -> (Doc,Int)
+alternatives :: (Int -> DocS) -> [Phrase] -> Int -> (Doc,Int)
 alternatives upf xs n = fmap2a alternative $ stmap (phrase upf) xs n
 
 
-phrase :: (Int -> DocS) -> Phrase LY -> Int -> (Doc,Int)
+phrase :: (Int -> DocS) -> Phrase -> Int -> (Doc,Int)
 phrase upf ph n = post $ stmap phi (getPhrase ph) n
   where
     phi d i      = (upf n d,i+1)

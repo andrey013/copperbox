@@ -11,6 +11,7 @@ import Neume.Core.Pitch
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
+import Neume.Extra.DrumPitches
 import Neume.Extra.Extended
 import Neume.Extra.LilyPondDoc
 import Neume.Extra.LilyPondFormat
