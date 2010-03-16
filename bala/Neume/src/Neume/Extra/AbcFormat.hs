@@ -28,9 +28,11 @@ module Neume.Extra.AbcFormat
   ) where
 
 import Neume.Core.SyntaxDoc
-import Neume.Core.Utils
+import Neume.Core.Utils hiding ( viewl ) 
 
 import Neume.Extra.AbcDoc
+
+import Data.JoinList ( JoinList, viewl, ViewL(..) )     -- package: joinlist
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
@@ -170,27 +172,27 @@ intrasep = step where
 
 
 
-flatten :: (Int -> DocS) -> LineStk -> [SectionImage] -> AbcList
-flatten pre stk xs = step xs (hyphen stk) where
-  step []              _  = Nil
+flatten :: (Int -> DocS) -> LineStk -> JoinList SectionImage -> AbcList
+flatten pre stk xs = step (viewl xs) (hyphen stk) where
+  step EmptyL                    _  = Nil
 
-  step (Straight a:as)    hs = Cons upf START_NONE doc (END_SGL,hy) ls_rest
+  step (Straight a :< as)    hs = Cons upf START_NONE doc (END_SGL,hy) ls_rest
     where 
       ((upf,doc,hy),rest) = intraBars pre (getPhraseImage a) hs
-      ls_rest             = step as rest
+      ls_rest             = step (viewl as) rest
 
-  step (Repeated a:as)    hs = Cons upf START_REP doc (END_REP,hy) ls_rest
+  step (Repeated a :< as)    hs = Cons upf START_REP doc (END_REP,hy) ls_rest
     where 
       ((upf,doc,hy),rest) = intraBars pre (getPhraseImage a) hs
-      ls_rest             = step as rest                  
+      ls_rest             = step (viewl as) rest                  
 
 
-  step (AltRepeat a b:as) hs = Cons upf START_REP doc (END_DBL,hy) ls_rest
+  step (AltRepeat a b :< as) hs = Cons upf START_REP doc (END_DBL,hy) ls_rest
     where
       (isec1,hs')  = intraBars pre (getPhraseImage a) hs
       (isec2,rest) = alternatives pre (map getPhraseImage b) hs'
       (upf,doc,hy) = isec1 `sglconcat` isec2
-      ls_rest      = step as rest
+      ls_rest      = step (viewl as) rest
 
 
 alternatives :: (Int -> DocS) 

@@ -33,6 +33,8 @@ import Neume.Core.Utils
 
 import Neume.Extra.LilyPondDoc
 
+import Data.JoinList ( toList )                 -- package: joinlist
+
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
 import Data.List ( foldl' )
@@ -87,7 +89,8 @@ parallelLy (OverlayBar v1) v2 = OverlayBar $ v1 <+> singleBar <$> v2
 
 
 lilypondScore :: (Int -> DocS) -> ScoreImage a -> Doc
-lilypondScore upf sc = vsep . fst $ stmap (section upf) (getScoreImage sc) 1 
+lilypondScore upf sc = 
+    vsep . fst $ stmap (section upf) (toList $ getScoreImage sc) 1 
 
 
 section :: (Int -> DocS) -> SectionImage -> Int -> (Doc,Int)

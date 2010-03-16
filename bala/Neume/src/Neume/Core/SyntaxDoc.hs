@@ -36,8 +36,9 @@ module Neume.Core.SyntaxDoc
   ) where
 
 
+import Data.JoinList                    -- package: joinlist
 
-import Text.PrettyPrint.Leijen          -- package : wl-print
+import Text.PrettyPrint.Leijen          -- package: wl-print
 
 
 --------------------------------------------------------------------------------
@@ -55,17 +56,15 @@ class Score repr a where
   caten     :: repr a -> repr a -> repr a
 
 instance Score ScoreImage PhraseImage where
-  straight a       = ScoreImage [Straight a]
-  repeated a       = ScoreImage [Repeated a]
-  altRepeat a alts = ScoreImage [AltRepeat a alts]
-  caten a b        = ScoreImage (a'++b') 
-                     where 
-                       a' = getScoreImage a
-                       b' = getScoreImage b
+  straight a       = ScoreImage $ singleton $ Straight a
+  repeated a       = ScoreImage $ singleton $ Repeated a
+  altRepeat a alts = ScoreImage $ singleton $ AltRepeat a alts
+  caten a b        = ScoreImage $ getScoreImage a `join` getScoreImage b
+
 
 -- only the top of the syntax tree needs a type parameter...
 
-newtype ScoreImage a = ScoreImage { getScoreImage :: [SectionImage] }
+newtype ScoreImage a = ScoreImage { getScoreImage :: JoinList SectionImage }
   deriving Show
 
 data SectionImage = Straight  PhraseImage

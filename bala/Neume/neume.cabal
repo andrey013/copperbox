@@ -28,7 +28,8 @@ library
                       containers, 
                       wl-pprint,
                       algebra,
-                      monadLib
+                      monadLib,
+                      joinlist >= 0.3.0
                      
   
   exposed-modules:
