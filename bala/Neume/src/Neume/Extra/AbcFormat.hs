@@ -1,3 +1,6 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -24,19 +27,24 @@ module Neume.Extra.AbcFormat
   , overlayPhrases
 
   , abcScore
+  , abcScore'
 
   ) where
 
 import Neume.Core.SyntaxDoc
+import Neume.Core.SyntaxStaff
 import Neume.Core.Utils hiding ( viewl ) 
 
 import Neume.Extra.AbcDoc
 
-import Data.JoinList ( JoinList, viewl, ViewL(..) )     -- package: joinlist
+-- package: joinlist
+import Data.JoinList ( JoinList, singleton, join, null, viewl, ViewL(..) )
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 import Data.List ( foldl', unfoldr )
+import Prelude hiding ( null )
+
 
 -- | Output ABC, four bars printed on each line. 
 simpleOutput :: PhraseImage -> Doc
@@ -111,6 +119,9 @@ data EndSymbol   = END_SGL              -- Straight section
 
 type AbcList = FourList DocS StartSymbol Doc (EndSymbol,Hyph)
 
+type FlatElt = (DocS, StartSymbol, Doc, EndSymbol, Hyph)
+type FlatRep = JoinList FlatElt
+
 
 -- Inside the section: (user-prefix, body, hyphen)
 --
@@ -124,7 +135,53 @@ type HyphenSpec = (BarNum,Hyph)
 data Hyph = CONT | LINE_BREAK
   deriving (Eq,Show)
 
+-- b6_score :: Score repr [StdGlyph] => repr [StdGlyph]
 
+abcScore' :: (a -> PhraseImage) 
+          -> (Int -> DocS) 
+          -> LineStk 
+          -> (() -> FlatInterp a) 
+          -> Doc
+abcScore' rf upf ls score = 
+  flatRep $ fst $ unFlatRep (score ()) rf upf (hyphen ls)
+
+
+-- Should this be an 'interpretation' function instead?
+
+-- newtype P_Env a = P_Env { unP_Env :: Int -> Doc }
+
+-- needs to be stateful...
+
+-- newtype AbcStd a = AbcStd { unAbcStd :: (Int -> DocS) -> LineStk -> (Doc,LineStk) } 
+
+newtype FlatInterp a = FlatInterp { 
+          unFlatRep :: (a -> PhraseImage) -> (Int -> DocS) 
+                    -> [HyphenSpec] -> (FlatRep,[HyphenSpec]) } 
+
+
+instance Score FlatInterp [StdGlyph] where
+  straight a    = FlatInterp $ \rf upf ls -> 
+                    let bars = getPhraseImage $ rf a
+                    in fmap2a singleton $ flatStraight upf bars ls
+
+  repeated a    = FlatInterp $ \rf upf ls -> 
+                    let bars = getPhraseImage $ rf a
+                    in fmap2a singleton $ flatRepeated upf bars ls
+
+  altRepeat a b = FlatInterp $ \rf upf ls ->
+                    let body = getPhraseImage $ rf a 
+                        alts = map (getPhraseImage . rf) b 
+                    in fmap2a singleton $ flatAltRepeat upf body alts ls
+
+  caten ra rb   = FlatInterp $ \rf upf ls ->
+                    let (d1,ls')  = (unFlatRep ra) rf upf ls 
+                        (d2,ls'') = (unFlatRep rb) rf upf ls'
+                    in (d1 `join` d2, ls'')
+
+-- This is the wrong type - it satisfies preprocessing the
+-- leaves (then building the score) rather than interpreting the
+-- score...  
+--
 abcScore :: (Int -> DocS) -> LineStk -> ScoreImage a -> Doc
 abcScore upf stk = flatDoc . flatten upf stk . getScoreImage
 
@@ -152,6 +209,51 @@ flatDoc = initial where
                                       
   prefix START_NONE d               = d
   prefix START_REP  d               = lrepeat <+> d
+
+
+flatRep :: FlatRep -> Doc
+flatRep = initial . viewl  where
+
+  -- don't print the start_symbol
+  initial EmptyL                      = empty
+  initial ((upf,_,doc,end,hy) :< xs)
+      | null xs                       = upf (doc <+> terminal2 end hy)
+      | otherwise                     = d1 <$> middle (viewl xs)
+    where 
+      d1 = upf (doc <+> intrasep2 end hy)
+                                      
+         
+  middle EmptyL                       = empty      -- unreachable???
+  middle ((upf,st,doc,end,hy) :< xs)
+      | null xs                       = upf (doc' <+> terminal2 end hy) 
+      | otherwise                     = d1 <$> middle (viewl xs) 
+    where 
+      doc' = st `prefix` doc
+      d1   = upf (doc' <+> intrasep2 end hy)
+                                      
+  prefix START_NONE d               = d
+  prefix START_REP  d               = lrepeat <+> d
+
+
+
+
+-- | Both Straights and alt_repeats are promoted to "||"
+-- and the hyphenation has no bearing.
+--
+terminal2 :: EndSymbol -> Hyph -> Doc
+terminal2 END_REP _ = rrepeat
+terminal2 _       _ = doubleBar
+
+
+intrasep2 :: EndSymbol -> Hyph -> Doc
+intrasep2 end hy = step end where
+   step END_SGL = singleBar `suffix` hy
+   step END_REP = rrepeat   `suffix` hy
+   step END_DBL = doubleBar `suffix` hy
+
+   suffix d CONT = d <> lineCont
+   suffix d _    = d
+
 
 
 -- | Both Straights and alt_repeats are promoted to "||"
@@ -195,6 +297,34 @@ flatten pre stk xs = step (viewl xs) (hyphen stk) where
       ls_rest      = step (viewl as) rest
 
 
+flatStraight :: (Int -> DocS) 
+             -> [BarImage] 
+             -> [HyphenSpec] 
+             -> (FlatElt,[HyphenSpec])
+flatStraight df bars hys = ((upf,START_NONE,doc,END_SGL,hy),rest)
+  where
+    ((upf,doc,hy),rest) = intraBars df bars hys
+
+flatRepeated :: (Int -> DocS) 
+             -> [BarImage] 
+             -> [HyphenSpec] 
+             -> (FlatElt,[HyphenSpec])
+flatRepeated df bars hys = ((upf,START_REP,doc,END_REP,hy),rest)
+  where
+    ((upf,doc,hy),rest) = intraBars df bars hys
+
+
+flatAltRepeat :: (Int -> DocS) 
+              -> [BarImage] 
+              -> [[BarImage]]
+              -> [HyphenSpec] 
+              -> (FlatElt,[HyphenSpec])
+flatAltRepeat df bars alts hys = ((upf,START_REP,doc,END_REP,hy),rest)
+  where
+    (body,hys')  = intraBars df bars hys
+    (ends,rest)  = alternatives df alts hys'
+    (upf,doc,hy) = body `sglconcat` ends
+ 
 alternatives :: (Int -> DocS) 
              -> [[Doc]] 
              -> [HyphenSpec] 

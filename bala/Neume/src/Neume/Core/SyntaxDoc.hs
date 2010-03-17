@@ -24,9 +24,11 @@
 
 module Neume.Core.SyntaxDoc
   (
-  -- * Score ( assembled from phrases / overlays )
-    BarImage
-  , Score(..)
+  -- * Score ( assembled from repeats and /straights/ )
+    Score(..)
+
+
+  , BarImage
   , ScoreImage(..)
   , SectionImage(..)
   , PhraseImage(..)
@@ -40,6 +42,15 @@ import Data.JoinList                    -- package: joinlist
 
 import Text.PrettyPrint.Leijen          -- package: wl-print
 
+-- Scores are implemented in the TypeCase / Tagless / EMGM style.
+--
+
+class Score repr a where
+  straight  :: a -> repr a
+  repeated  :: a -> repr a
+  altRepeat :: a -> [a] -> repr a  
+  caten     :: repr a -> repr a -> repr a
+
 
 --------------------------------------------------------------------------------
 -- Phrases and bars 
@@ -47,13 +58,11 @@ import Text.PrettyPrint.Leijen          -- package: wl-print
 -- Phrases and bars are composable with pretty-print operations...
 -- No type-change operation, so not functors... 
 
+
+
 type BarImage = Doc
 
-class Score repr a where
-  straight  :: a -> repr a
-  repeated  :: a -> repr a
-  altRepeat :: a -> [a] -> repr a  
-  caten     :: repr a -> repr a -> repr a
+
 
 instance Score ScoreImage PhraseImage where
   straight a       = ScoreImage $ singleton $ Straight a

@@ -35,17 +35,12 @@ abc_score =  ABC.tunenum   1
          <$> ABC.key       "Amaj"
          <$> tune1
   where
-    tune1 = ABC.abcScore strip [4,4,4,4] bulgarian_6
+    tune1 = ABC.abcScore' abcPhrase strip [4,4,4,4] b6_score
     
 
 
-
-bulgarian_6 :: Score repr PhraseImage => repr PhraseImage
-bulgarian_6 = repeated (abcPhrase bars1'4) `caten` repeated (abcPhrase bars5'8)
-
-
-b6_score :: Score repr [StdGlyph] => repr [StdGlyph]
-b6_score = repeated bars1'4 `caten` repeated bars5'8
+b6_score :: Score repr [StdGlyph] => () -> repr [StdGlyph]
+b6_score () = repeated bars1'4 `caten` repeated bars5'8
       
 renderToABC :: [StdGlyph] -> Doc
 renderToABC  = ABC.simpleOutput . ABC.renderPhrase 
