@@ -39,15 +39,8 @@ ly_score =  version "2.12.2"
                        <$> time 2 4
                        <$> tune1)
   where
-    tune1 = lilypondScore lyPhrase strip middle_c b6_score
-
-
-lyPhrase :: [StdGlyph] -> Pitch -> (PhraseImage,Pitch)
-lyPhrase xs pch = 
-    fmap2a (renderPhrase pitch) $ rewritePitchRel pch
-                                $ rewriteDurationOpt
-                                $ phrase two_four_time
-                                $ simpleNoteList xs
+    tune1    = lilypondScore mkPhrase strip middle_c b6_score
+    mkPhrase = lyPhraseRelative two_four_time
 
 
 abc_score :: Doc

@@ -22,21 +22,29 @@ module Neume.Extra.LilyPondFormat
 
   
     simpleOutput
+  , lyPhraseRelative
+  , lyPhraseAbsolute
+  , lyPhraseDrums
 
   , lilypondScore
+  , lilypondDrumScore
 
   , parallelPhrases
 
 
   ) where
 
+import Neume.Core.Bracket
+import Neume.Core.Datatypes
 import Neume.Core.Duration
-import Neume.Core.LilyPondBasic ( spacer )
+import Neume.Core.LilyPondBasic ( pitch, spacer )
+import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
 import Neume.Core.SyntaxDoc
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
+import Neume.Extra.Extended
 import Neume.Extra.LilyPondDoc hiding ( score )
 
 -- import Data.JoinList ( toList )                 -- package: joinlist
@@ -50,16 +58,36 @@ simpleOutput = vsep . map (<+> singleBar) . getPhraseImage
 
 
 
+-- The internal argument to renderPhrase should be extracted 
+-- from these and made a prarameter...
+--
+-- Like wise they need to handle an anacrusis 
+--
 
-{-
-lyPhrase :: (Pitch -> Doc) -> Pitch -> MeterPattern -> [StdGlyph] -> (Phrase LY,Pitch)
-lyPhrase pf base_pitch mp = 
-   fmap2a (renderPhrase pf) . rewritePitchRel base_pitch
-                            . rewriteDurationOpt
-                            . phrase mp
-                            . simpleNoteList
--}
+lyPhraseRelative :: MeterPattern -> [StdGlyph] -> Pitch -> (PhraseImage,Pitch)
+lyPhraseRelative mp xs pch = 
+    fmap2a (renderPhrase pitch) $ rewritePitchRel pch
+                                $ rewriteDurationOpt
+                                $ phrase mp
+                                $ simpleNoteList xs
 
+
+lyPhraseAbsolute :: MeterPattern -> [StdGlyph] -> Int -> PhraseImage
+lyPhraseAbsolute mp xs n = 
+    renderPhrase pitch $ rewritePitchAbs n
+                       $ rewriteDurationOpt
+                       $ phrase mp
+                       $ simpleNoteList xs
+
+lyPhraseDrums :: MeterPattern -> [DrumGlyph] -> PhraseImage
+lyPhraseDrums mp xs = 
+    renderPhrase (text . drumShortName) $ rewriteDurationOpt
+                                        $ phrase mp
+                                        $ simpleNoteList xs
+
+
+
+--------------------------------------------------------------------------------
 
 
 newtype LyStdRel a = LyStdRel { 
@@ -100,12 +128,51 @@ instance Score LyStdRel [StdGlyph] where
                     in (d1 <$> d2, st)
 
 
+--------------------------------------------------------------------------------
+
+
+newtype LyDrum a = LyDrum { 
+          unLyDrum :: (a -> PhraseImage) 
+                   -> (BarNum -> DocS) 
+                   -> BarNum -> (Doc,BarNum) }
+
+
+lilypondDrumScore :: (a -> PhraseImage)
+                  -> (Int -> DocS) 
+                  -> (() -> LyDrum a) 
+                  -> Doc
+lilypondDrumScore rf upf score = fst $ unLyDrum (score ()) rf upf 1
+
+
+instance Score LyDrum [DrumGlyph] where
+  straight a = LyDrum $ \rf upf bn ->
+                 let bars = getPhraseImage $ rf a
+                 in flatStraight upf bars bn
+
+
+  repeated a = LyDrum $ \rf upf bn ->
+                 let bars = getPhraseImage $ rf a
+                 in flatRepeated upf bars bn
+                 
+  altRepeat a b = LyDrum $ \rf upf bn ->
+                    let bars  = getPhraseImage $ rf a
+                        alts  = map getPhraseImage $ map rf b
+                    in flatAltRepeat upf bars alts bn
+
+  caten ra rb   = LyDrum $ \rf upf bn ->
+                    let (d1,bn')  = (unLyDrum ra) rf upf bn 
+                        (d2,bn'') = (unLyDrum rb) rf upf bn'
+                    in (d1 <$> d2, bn'')
+
+
+
+--------------------------------------------------------------------------------
 
 flatStraight :: (BarNum -> DocS) -> [BarImage] -> BarNum -> (Doc,BarNum)
-flatStraight = phrase
+flatStraight = flatBars
 
 flatRepeated :: (BarNum -> DocS) -> [BarImage] -> BarNum -> (Doc,BarNum)
-flatRepeated = fmap2a (repeatvolta 2) `ooo` phrase
+flatRepeated = fmap2a (repeatvolta 2) `ooo` flatBars
 
 flatAltRepeat :: (BarNum -> DocS) 
               -> [BarImage] 
@@ -114,15 +181,15 @@ flatAltRepeat :: (BarNum -> DocS)
               -> (Doc,BarNum)
 flatAltRepeat upf xs xss n = (body <$> alts, n'') 
   where
-    (body,n')  = fmap2a (repeatvolta $ length xss) $ phrase upf xs n
+    (body,n')  = fmap2a (repeatvolta $ length xss) $ flatBars upf xs n
     (alts,n'') = alternatives upf xss n'
 
 
 alternatives :: (Int -> DocS) -> [[BarImage]] -> Int -> (Doc,Int)
-alternatives upf = fmap2a alternative `oo` stmap (phrase upf)
+alternatives upf = fmap2a alternative `oo` stmap (flatBars upf)
 
-phrase :: (Int -> DocS) -> [BarImage] -> BarNum -> (Doc,BarNum)
-phrase upf = fmap2a vsep `oo` stmap phi
+flatBars :: (Int -> DocS) -> [BarImage] -> BarNum -> (Doc,BarNum)
+flatBars upf = fmap2a vsep `oo` stmap phi
   where
     phi d i      = (upf i $ d <+> singleBar,i+1)
 
