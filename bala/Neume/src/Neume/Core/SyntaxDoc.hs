@@ -29,16 +29,16 @@ module Neume.Core.SyntaxDoc
 
   , BarNum
   , BarImage
-  , ScoreImage(..)
-  , SectionImage(..)
+
   , PhraseImage(..)
   , OverlayBar(..)
 
+  , renderToBars
+  , renderToBars_st
 
   ) where
 
-
-import Data.JoinList                    -- package: joinlist
+import Neume.Core.Utils
 
 import Text.PrettyPrint.Leijen          -- package: wl-print
 
@@ -56,32 +56,15 @@ class Score repr a where
 -- Phrases and bars 
 
 -- Phrases and bars are composable with pretty-print operations...
--- No type-change operation, so not functors... 
 
 
 
 type BarImage = Doc
 
-type BarNum  = Int
+type BarNum   = Int
 
 
 
-instance Score ScoreImage PhraseImage where
-  straight a       = ScoreImage $ singleton $ Straight a
-  repeated a       = ScoreImage $ singleton $ Repeated a
-  altRepeat a alts = ScoreImage $ singleton $ AltRepeat a alts
-  caten a b        = ScoreImage $ getScoreImage a `join` getScoreImage b
-
-
--- only the top of the syntax tree needs a type parameter...
-
-newtype ScoreImage a = ScoreImage { getScoreImage :: JoinList SectionImage }
-  deriving Show
-
-data SectionImage = Straight  PhraseImage
-                  | Repeated  PhraseImage
-                  | AltRepeat PhraseImage [PhraseImage]
-  deriving Show
 
 newtype PhraseImage = PhraseImage  { getPhraseImage  :: [BarImage] }
   deriving Show
@@ -89,3 +72,9 @@ newtype PhraseImage = PhraseImage  { getPhraseImage  :: [BarImage] }
 
 newtype OverlayBar = OverlayBar { getOverlayBar :: BarImage }   deriving Show
 
+
+renderToBars :: (a -> PhraseImage) -> a -> [BarImage]
+renderToBars f = getPhraseImage . f
+
+renderToBars_st :: (a -> st -> (PhraseImage,st)) -> a -> st -> ([BarImage],st)
+renderToBars_st f = fmap2a getPhraseImage `oo` f

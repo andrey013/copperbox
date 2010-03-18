@@ -23,6 +23,8 @@ module Neume.Core.Utils.Common
   , modR
   , strip
 
+  , psimap
+
   , para
   , paraM
 
@@ -78,6 +80,13 @@ modR = snd `oo` divModR
 --
 strip :: a -> b -> b
 strip _ b = b
+
+
+
+-- Rather like on (aka psi) from Data.Function 
+psimap :: (a -> b) -> a -> [a] -> (b,[b])
+psimap f x xs = (f x, map f xs)
+
 
 
 para :: (a -> ([a], b) -> b) -> b -> [a] -> b

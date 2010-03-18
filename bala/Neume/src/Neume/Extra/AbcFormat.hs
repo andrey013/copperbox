@@ -123,26 +123,22 @@ newtype AbcFlat a = AbcFlat {
 
 
 
-
 instance Score AbcFlat [StdGlyph] where
   straight a    = AbcFlat $ \rf upf ls -> 
-                    let bars = getPhraseImage $ rf a
+                    let bars = renderToBars rf a
                     in fmap2a singleton $ flatStraight upf bars ls
 
   repeated a    = AbcFlat $ \rf upf ls -> 
-                    let bars = getPhraseImage $ rf a
+                    let bars = renderToBars rf a
                     in fmap2a singleton $ flatRepeated upf bars ls
 
   altRepeat a b = AbcFlat $ \rf upf ls ->
-                    let body = getPhraseImage $ rf a 
-                        alts = map (getPhraseImage . rf) b 
+                    let (body,alts) = psimap (renderToBars rf) a b 
                     in fmap2a singleton $ flatAltRepeat upf body alts ls
 
   caten ra rb   = AbcFlat $ \rf upf ls ->
-                    let (d1,ls')  = (unAbcFlat ra) rf upf ls 
-                        (d2,ls'') = (unAbcFlat rb) rf upf ls'
-                    in (d1 `join` d2, ls'')
-
+                    let f a = (unAbcFlat a) rf upf
+                    in stcombWith join (f ra) (f rb) ls
 
 
 abcScore :: (a -> PhraseImage) 

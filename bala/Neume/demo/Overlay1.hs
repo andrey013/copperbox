@@ -45,6 +45,18 @@ ly_score =  version "2.12.2"
 
     xs   = phrase four_four_time $ simpleNoteList ubars1'4
 
+--
+-- Not satisfactory - no way to respect shape of the overlays...
+--
+-- overlay [ repeat a1 `caten` straight a2
+--         , repeat b1 `caten` straight b2
+--         ]
+--
+-- Has to be:
+--
+-- repeat ((repeat $ overlay [a1,b1]) `caten` (straight $ overlay [a2,b2])) 
+--
+
 renderToLy :: [StdGlyph] -> (Doc,Pitch)
 renderToLy = fmap2a (simpleOutput . renderPhrase pitch)
                                  . rewritePitchRel middle_c

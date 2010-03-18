@@ -20,8 +20,12 @@
 
 module Neume.Core.Utils.StateMap 
   ( 
+    stcomb
+  , stcombWith
+  , psimap_st
+
   -- * Stateful map
-    StateMap(..)
+  , StateMap(..)
   , StateMap2(..)
   , StateMap3(..)
 
@@ -37,6 +41,26 @@ module Neume.Core.Utils.StateMap
 import Neume.Core.Utils.OneList
 
 
+
+stcomb :: (st -> (a,st)) -> (st -> (b,st)) -> st -> ((a,b),st)
+stcomb f g st = ((a,b),st'') where
+    (a,st')  = f st
+    (b,st'') = g st'
+
+stcombWith :: (a -> b -> c) -> (st -> (a,st)) -> (st -> (b,st)) -> st -> (c,st)
+stcombWith op f g st = (a `op` b,st'') where
+    (a,st')  = f st
+    (b,st'') = g st'
+
+
+-- Rather like on (aka psi) from Data.Function 
+psimap_st :: (a -> st -> (b,st)) -> a -> [a] -> st -> ((b,[b]),st)
+psimap_st f x xs st = ((b,bs),st'') where
+   (b,st')   = f x st
+   (bs,st'') = stmap f xs st'
+
+
+
 class StateMap f where
   stmap :: (a -> st -> (b,st)) -> f a -> st -> (f b,st)
 
@@ -48,6 +72,7 @@ class StateMap2 f where
 class StateMap3 f where
   stmap3 :: (a -> st -> (u,st)) -> (b -> st -> (v,st)) -> (c -> st -> (w,st)) 
          -> f a b c -> st -> (f u v w, st)
+
 
 stmap2a :: StateMap2 f => (a -> st -> (u,st)) -> f a b -> st -> (f u b, st)
 stmap2a f = stmap2 f (,)

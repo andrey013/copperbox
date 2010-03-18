@@ -47,7 +47,6 @@ import Neume.Core.Utils
 import Neume.Extra.Extended
 import Neume.Extra.LilyPondDoc hiding ( score )
 
--- import Data.JoinList ( toList )                 -- package: joinlist
 
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
@@ -107,25 +106,23 @@ lilypondScore rf upf pch score = fst $ unLyStdRel (score ()) rf upf pch 1
 
 instance Score LyStdRel [StdGlyph] where
   straight a = LyStdRel $ \rf upf pch bn ->
-                 let (bars,pch') = fmap2a getPhraseImage $ rf a pch
+                 let (bars,pch') = renderToBars_st rf a pch
                      (out,bn')   = flatStraight upf bars bn
                  in (out,(pch',bn'))
 
   repeated a = LyStdRel $ \rf upf pch bn ->
-                 let (bars,pch') = fmap2a getPhraseImage $ rf a pch
+                 let (bars,pch') = renderToBars_st rf a pch
                      (out,bn')   = flatRepeated upf bars bn
                  in (out,(pch',bn'))
                  
   altRepeat a b = LyStdRel $ \rf upf pch bn ->
-                    let (bars,pch')  = fmap2a getPhraseImage $ rf a pch
-                        (alts,pch'') = fmap2a (map getPhraseImage) $ stmap rf b pch'
-                        (out,bn')    = flatAltRepeat upf bars alts bn
-                    in (out,(pch'',bn'))
+                    let ((bars,alts),pch') = psimap_st (renderToBars_st rf) a b pch
+                        (out,bn')          = flatAltRepeat upf bars alts bn
+                    in (out,(pch',bn'))
 
   caten ra rb   = LyStdRel $ \rf upf pch bn ->
-                    let (d1,(pch',bn'))  = (unLyStdRel ra) rf upf pch  bn 
-                        (d2,st)          = (unLyStdRel rb) rf upf pch' bn'
-                    in (d1 <$> d2, st)
+                    let f a (p,n) = (unLyStdRel a) rf upf p n
+                    in stcombWith (<$>) (f ra) (f rb) (pch,bn)
 
 
 --------------------------------------------------------------------------------
@@ -146,26 +143,23 @@ lilypondDrumScore rf upf score = fst $ unLyDrum (score ()) rf upf 1
 
 instance Score LyDrum [DrumGlyph] where
   straight a = LyDrum $ \rf upf bn ->
-                 let bars = getPhraseImage $ rf a
+                 let bars = renderToBars rf a
                  in flatStraight upf bars bn
 
 
   repeated a = LyDrum $ \rf upf bn ->
-                 let bars = getPhraseImage $ rf a
+                 let bars = renderToBars rf a
                  in flatRepeated upf bars bn
                  
   altRepeat a b = LyDrum $ \rf upf bn ->
-                    let bars  = getPhraseImage $ rf a
-                        alts  = map getPhraseImage $ map rf b
+                    let (bars,alts)  = psimap (renderToBars rf) a b
                     in flatAltRepeat upf bars alts bn
 
-  caten ra rb   = LyDrum $ \rf upf bn ->
-                    let (d1,bn')  = (unLyDrum ra) rf upf bn 
-                        (d2,bn'') = (unLyDrum rb) rf upf bn'
-                    in (d1 <$> d2, bn'')
+  caten ra rb   = LyDrum $ \rf upf bn ->  
+                    let f a = (unLyDrum a) rf upf
+                    in stcombWith (<$>) (f ra) (f rb) bn 
 
-
-
+    
 --------------------------------------------------------------------------------
 
 flatStraight :: (BarNum -> DocS) -> [BarImage] -> BarNum -> (Doc,BarNum)
