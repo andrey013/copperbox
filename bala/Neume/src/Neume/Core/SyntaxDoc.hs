@@ -27,7 +27,7 @@ module Neume.Core.SyntaxDoc
   -- * Score ( assembled from repeats and /straights/ )
     Score(..)
 
-
+  , BarNum
   , BarImage
   , ScoreImage(..)
   , SectionImage(..)
@@ -61,6 +61,8 @@ class Score repr a where
 
 
 type BarImage = Doc
+
+type BarNum  = Int
 
 
 

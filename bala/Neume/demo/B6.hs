@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts           #-}
 
 module B6 where
 
@@ -38,17 +39,15 @@ ly_score =  version "2.12.2"
                        <$> time 2 4
                        <$> tune1)
   where
-    tune1 = lilypondScore strip $ makeBulgarian6 lyPhrase
+    tune1 = lilypondScore lyPhrase strip middle_c b6_score
 
 
--- Note - this is not correct (yet) - relative pitch transformation
--- is in the wrong place...
---
-lyPhrase :: [StdGlyph] -> PhraseImage
-lyPhrase = fst . fmap2a (renderPhrase pitch) . rewritePitchRel middle_c
-                                             . rewriteDurationOpt
-                                             . phrase two_four_time
-                                             . simpleNoteList
+lyPhrase :: [StdGlyph] -> Pitch -> (PhraseImage,Pitch)
+lyPhrase xs pch = 
+    fmap2a (renderPhrase pitch) $ rewritePitchRel pch
+                                $ rewriteDurationOpt
+                                $ phrase two_four_time
+                                $ simpleNoteList xs
 
 
 abc_score :: Doc
@@ -58,12 +57,14 @@ abc_score =  ABC.tunenum   1
          <$> ABC.key       "Amaj"
          <$> tune1
   where
-    tune1 = ABC.abcScore ABC.barNumber [4,4,4,4] $ makeBulgarian6 abcPhrase 
+    tune1 = ABC.abcScore abcPhrase strip [4,4,4,4] b6_score
 
 
--- makeBulgarian6 :: ([StdGlyph] -> Phrase a) -> Score a
-makeBulgarian6 fn = repeated (fn bars1'4) `caten` repeated (fn bars5'8)
-                            
+
+
+b6_score :: Score repr [StdGlyph] => () -> repr [StdGlyph]
+b6_score () = repeated bars1'4 `caten` repeated bars5'8
+
 
 
 abcPhrase :: [StdGlyph] -> PhraseImage
@@ -76,13 +77,7 @@ abcPhrase = ABC.renderPhrase . ABC.rewritePitch a_major
 a_major     :: SpellingMap
 a_major     = makeSpellingMap 3
 
-{-
-mkScore :: [Section a] -> Score a
-mkScore = Score
 
-repeated :: Phrase a -> Section a
-repeated = Repeated
--}
 
 bars1'4 :: [StdGlyph]
 bars1'4 =  

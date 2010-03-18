@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -17,23 +19,27 @@
 
 module Neume.Extra.LilyPondFormat
   (
+
   
     simpleOutput
 
+  , lilypondScore
+
   , parallelPhrases
 
-  , lilypondScore
 
   ) where
 
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic ( spacer )
+import Neume.Core.Pitch
 import Neume.Core.SyntaxDoc
+import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
-import Neume.Extra.LilyPondDoc
+import Neume.Extra.LilyPondDoc hiding ( score )
 
-import Data.JoinList ( toList )                 -- package: joinlist
+-- import Data.JoinList ( toList )                 -- package: joinlist
 
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
@@ -41,6 +47,8 @@ import Data.List ( foldl' )
 
 simpleOutput :: PhraseImage -> Doc
 simpleOutput = vsep . map (<+> singleBar) . getPhraseImage
+
+
 
 
 {-
@@ -52,6 +60,76 @@ lyPhrase pf base_pitch mp =
                             . simpleNoteList
 -}
 
+
+
+newtype LyStdRel a = LyStdRel { 
+          unLyStdRel :: (a -> Pitch -> (PhraseImage,Pitch)) 
+                     -> (BarNum -> DocS) 
+                     -> Pitch -> BarNum -> (Doc,(Pitch,BarNum)) }
+
+
+
+lilypondScore :: (a -> Pitch -> (PhraseImage,Pitch)) 
+              -> (Int -> DocS) 
+              -> Pitch
+              -> (() -> LyStdRel a) 
+              -> Doc
+lilypondScore rf upf pch score = fst $ unLyStdRel (score ()) rf upf pch 1
+
+
+instance Score LyStdRel [StdGlyph] where
+  straight a = LyStdRel $ \rf upf pch bn ->
+                 let (bars,pch') = fmap2a getPhraseImage $ rf a pch
+                     (out,bn')   = flatStraight upf bars bn
+                 in (out,(pch',bn'))
+
+  repeated a = LyStdRel $ \rf upf pch bn ->
+                 let (bars,pch') = fmap2a getPhraseImage $ rf a pch
+                     (out,bn')   = flatRepeated upf bars bn
+                 in (out,(pch',bn'))
+                 
+  altRepeat a b = LyStdRel $ \rf upf pch bn ->
+                    let (bars,pch')  = fmap2a getPhraseImage $ rf a pch
+                        (alts,pch'') = fmap2a (map getPhraseImage) $ stmap rf b pch'
+                        (out,bn')    = flatAltRepeat upf bars alts bn
+                    in (out,(pch'',bn'))
+
+  caten ra rb   = LyStdRel $ \rf upf pch bn ->
+                    let (d1,(pch',bn'))  = (unLyStdRel ra) rf upf pch  bn 
+                        (d2,st)          = (unLyStdRel rb) rf upf pch' bn'
+                    in (d1 <$> d2, st)
+
+
+
+flatStraight :: (BarNum -> DocS) -> [BarImage] -> BarNum -> (Doc,BarNum)
+flatStraight = phrase
+
+flatRepeated :: (BarNum -> DocS) -> [BarImage] -> BarNum -> (Doc,BarNum)
+flatRepeated = fmap2a (repeatvolta 2) `ooo` phrase
+
+flatAltRepeat :: (BarNum -> DocS) 
+              -> [BarImage] 
+              -> [[BarImage]] 
+              -> BarNum 
+              -> (Doc,BarNum)
+flatAltRepeat upf xs xss n = (body <$> alts, n'') 
+  where
+    (body,n')  = fmap2a (repeatvolta $ length xss) $ phrase upf xs n
+    (alts,n'') = alternatives upf xss n'
+
+
+alternatives :: (Int -> DocS) -> [[BarImage]] -> Int -> (Doc,Int)
+alternatives upf = fmap2a alternative `oo` stmap (phrase upf)
+
+phrase :: (Int -> DocS) -> [BarImage] -> BarNum -> (Doc,BarNum)
+phrase upf = fmap2a vsep `oo` stmap phi
+  where
+    phi d i      = (upf i $ d <+> singleBar,i+1)
+
+
+
+--------------------------------------------------------------------------------
+-- parallel...
 
 
 -- Handily parallel overlays are 'context free' 
@@ -86,27 +164,3 @@ parallel1 = map OverlayBar . getPhraseImage
 
 parallelLy :: OverlayBar -> Doc -> OverlayBar
 parallelLy (OverlayBar v1) v2 = OverlayBar $ v1 <+> singleBar <$> v2 
-
-
-lilypondScore :: (Int -> DocS) -> ScoreImage a -> Doc
-lilypondScore upf sc = 
-    vsep . fst $ stmap (section upf) (toList $ getScoreImage sc) 1 
-
-
-section :: (Int -> DocS) -> SectionImage -> Int -> (Doc,Int)
-section upf (Straight a)    n = phrase upf a n
-section upf (Repeated a)    n = fmap2a (repeatvolta 2) $ phrase upf a n
-section upf (AltRepeat a b) n = (body <$> alts, n'') 
-  where
-    (body,n')  = fmap2a (repeatvolta 2) $ phrase upf a n
-    (alts,n'') = alternatives upf b n'
-
-alternatives :: (Int -> DocS) -> [PhraseImage] -> Int -> (Doc,Int)
-alternatives upf xs n = fmap2a alternative $ stmap (phrase upf) xs n
-
-
-phrase :: (Int -> DocS) -> PhraseImage -> Int -> (Doc,Int)
-phrase upf ph n = post $ stmap phi (getPhraseImage ph) n
-  where
-    phi d i      = (upf n d,i+1)
-    post (xs,st) = (vsep $ xs,st)
