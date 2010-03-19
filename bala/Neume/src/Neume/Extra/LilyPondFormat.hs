@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
@@ -104,7 +105,8 @@ lilypondScore :: (a -> Pitch -> (PhraseImage,Pitch))
 lilypondScore rf upf pch score = fst $ unLyStdRel (score ()) rf upf pch 1
 
 
-instance Score LyStdRel [StdGlyph] where
+instance Score (LyStdRel [StdGlyph]) where
+  type ScoreBase (LyStdRel [StdGlyph]) = [StdGlyph]
   straight a = LyStdRel $ \rf upf pch bn ->
                  let (bars,pch') = renderToBars_st rf a pch
                      (out,bn')   = flatStraight upf bars bn
@@ -141,7 +143,8 @@ lilypondDrumScore :: (a -> PhraseImage)
 lilypondDrumScore rf upf score = fst $ unLyDrum (score ()) rf upf 1
 
 
-instance Score LyDrum [DrumGlyph] where
+instance Score (LyDrum [DrumGlyph]) where
+  type ScoreBase (LyDrum [DrumGlyph]) = [DrumGlyph]
   straight a = LyDrum $ \rf upf bn ->
                  let bars = renderToBars rf a
                  in flatStraight upf bars bn

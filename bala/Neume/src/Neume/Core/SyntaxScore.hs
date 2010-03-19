@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE EmptyDataDecls             #-}
@@ -44,14 +45,15 @@ import Neume.Core.Utils
 
 import Text.PrettyPrint.Leijen          -- package: wl-print
 
--- Scores are implemented in the TypeCase / Tagless / EMGM style.
+-- Scores are implemented in a TypeCase / Tagless / EMGM style.
 --
 
-class Score repr a where
-  straight  :: a -> repr a
-  repeated  :: a -> repr a
-  altRepeat :: a -> [a] -> repr a  
-  caten     :: repr a -> repr a -> repr a
+class Score repr where
+  type ScoreBase repr :: *
+  straight  :: (a ~ ScoreBase repr) => a -> repr
+  repeated  :: (a ~ ScoreBase repr) => a -> repr
+  altRepeat :: (a ~ ScoreBase repr) => a -> [a] -> repr  
+  caten     :: repr -> repr -> repr
 
 
 --------------------------------------------------------------------------------

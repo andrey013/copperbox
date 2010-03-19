@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
@@ -61,7 +62,8 @@ newtype AbcFlat a = AbcFlat {
 
 
 
-instance Score AbcFlat [StdGlyph] where
+instance Score (AbcFlat [StdGlyph]) where
+  type ScoreBase (AbcFlat [StdGlyph]) = [StdGlyph]
   straight a    = AbcFlat $ \rf upf ls -> 
                     let bars = renderToBars rf a
                     in fmap2a singleton $ flatStraight upf bars ls

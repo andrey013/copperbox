@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 
 module B6 where
@@ -55,7 +56,7 @@ abc_score =  ABC.tunenum   1
 
 
 
-b6_score :: Score repr [StdGlyph] => () -> repr [StdGlyph]
+b6_score :: (Score repr, [StdGlyph] ~ ScoreBase repr) => () -> repr
 b6_score () = repeated bars1'4 `caten` repeated bars5'8
 
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleContexts           #-}
 
 module Percussion where
@@ -49,7 +50,7 @@ drumtune = variableDef "drumtune" $ drummode (time 4 4 <$> stemUp <$> tune1 )
     tune1    = lilypondDrumScore mkPhrase strip drum_score
     mkPhrase = lyPhraseDrums [1%2, 1%2]
 
-drum_score :: Score repr [DrumGlyph] => () -> repr [DrumGlyph]
+drum_score :: (Score repr, [DrumGlyph] ~ ScoreBase repr) => () -> repr
 drum_score () = repeated drum_notes
 
 
