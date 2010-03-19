@@ -29,7 +29,7 @@ module Neume.Extra.AbcFormat
 
   ) where
 
-import Neume.Core.SyntaxDoc
+import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils hiding ( viewl ) 
 
@@ -52,6 +52,85 @@ barNumber i = (comment ("Bar " ++ show i) <$>)
 -- | ABC does not automatically decide how many bars-per-line to 
 -- print.
 type LineStk = [Int] 
+
+--------------------------------------------------------------------------------
+
+newtype AbcFlat a = AbcFlat { 
+          unAbcFlat :: (a -> PhraseImage) -> (BarNum -> DocS) 
+                    -> [HyphenSpec] -> (FlatRep,[HyphenSpec]) } 
+
+
+
+instance Score AbcFlat [StdGlyph] where
+  straight a    = AbcFlat $ \rf upf ls -> 
+                    let bars = renderToBars rf a
+                    in fmap2a singleton $ flatStraight upf bars ls
+
+  repeated a    = AbcFlat $ \rf upf ls -> 
+                    let bars = renderToBars rf a
+                    in fmap2a singleton $ flatRepeated upf bars ls
+
+  altRepeat a b = AbcFlat $ \rf upf ls ->
+                    let (body,alts) = psimap (renderToBars rf) a b 
+                    in fmap2a singleton $ flatAltRepeat upf body alts ls
+
+  caten ra rb   = AbcFlat $ \rf upf ls ->
+                    let f a = (unAbcFlat a) rf upf
+                    in stcombWith join (f ra) (f rb) ls
+
+
+abcScore :: (a -> PhraseImage) 
+         -> (Int -> DocS) 
+         -> LineStk 
+         -> (() -> AbcFlat a) 
+         -> Doc
+abcScore rf upf ls score = 
+  flatRep $ fst $ unAbcFlat (score ()) rf upf (hyphen ls)
+
+
+{-
+
+-- No - (Overlay a) is at the wrong type...
+--
+-- Probably need to work out a sandbox case for this.
+--
+
+newtype AbcOverlay a = AbcOverlay { 
+          unAbcOverlay :: (a -> PhraseImage) -> (BarNum -> DocS) 
+                       -> [HyphenSpec] -> (FlatRep,[HyphenSpec]) } 
+
+
+
+
+-- Overlay instance 
+instance Score AbcOverlay [StdGlyph] where
+  straight a    = AbcOverlay $ \rf upf ls -> 
+                    let ov_bars = map getOverlayBar $ overlayPhrases 
+                                                    $ map rf $ getOverlay a
+                    in fmap2a singleton $ flatStraight upf ov_bars ls
+
+-}
+{-
+  repeated a    = AbcFlat $ \rf upf ls -> 
+                    let bars = renderToBars rf a
+                    in fmap2a singleton $ flatRepeated upf bars ls
+
+  altRepeat a b = AbcFlat $ \rf upf ls ->
+                    let (body,alts) = psimap (renderToBars rf) a b 
+                    in fmap2a singleton $ flatAltRepeat upf body alts ls
+
+  caten ra rb   = AbcFlat $ \rf upf ls ->
+                    let f a = (unAbcFlat a) rf upf
+                    in stcombWith join (f ra) (f rb) ls
+
+-}
+
+
+
+
+
+
+--------------------------------------------------------------------------------
 
 
 -- Interspersing bars:
@@ -114,40 +193,6 @@ type HyphenSpec = (BarNum,Hyph)
 data Hyph = CONT | LINE_BREAK
   deriving (Eq,Show)
 
-
-
-
-newtype AbcFlat a = AbcFlat { 
-          unAbcFlat :: (a -> PhraseImage) -> (BarNum -> DocS) 
-                    -> [HyphenSpec] -> (FlatRep,[HyphenSpec]) } 
-
-
-
-instance Score AbcFlat [StdGlyph] where
-  straight a    = AbcFlat $ \rf upf ls -> 
-                    let bars = renderToBars rf a
-                    in fmap2a singleton $ flatStraight upf bars ls
-
-  repeated a    = AbcFlat $ \rf upf ls -> 
-                    let bars = renderToBars rf a
-                    in fmap2a singleton $ flatRepeated upf bars ls
-
-  altRepeat a b = AbcFlat $ \rf upf ls ->
-                    let (body,alts) = psimap (renderToBars rf) a b 
-                    in fmap2a singleton $ flatAltRepeat upf body alts ls
-
-  caten ra rb   = AbcFlat $ \rf upf ls ->
-                    let f a = (unAbcFlat a) rf upf
-                    in stcombWith join (f ra) (f rb) ls
-
-
-abcScore :: (a -> PhraseImage) 
-         -> (Int -> DocS) 
-         -> LineStk 
-         -> (() -> AbcFlat a) 
-         -> Doc
-abcScore rf upf ls score = 
-  flatRep $ fst $ unAbcFlat (score ()) rf upf (hyphen ls)
 
 
 flatRep :: FlatRep -> Doc
@@ -278,6 +323,13 @@ hyphen stk = unfoldr phi (1,stk) where
   phi (b,(x:xs)) | x > 1     = Just ((b,CONT),       (b+1,x-1:xs))
                  | otherwise = Just ((b,LINE_BREAK), (b+1,xs))
   phi (b,_)                  = Just ((b,LINE_BREAK), (b+1,[]))
+
+
+
+--------------------------------------------------------------------------------
+-- Overlays...
+
+
 
 
 -- Handily overlays are 'context free' 

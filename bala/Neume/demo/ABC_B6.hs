@@ -7,7 +7,7 @@ import Neume.Core.Bracket
 import Neume.Core.Datatypes
 import Neume.Core.Duration
 import Neume.Core.Pitch
-import Neume.Core.SyntaxDoc
+import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils.Common
 import Neume.Core.Utils.Pretty

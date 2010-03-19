@@ -40,7 +40,7 @@ import Neume.Core.Duration
 import Neume.Core.LilyPondBasic ( pitch, spacer )
 import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
-import Neume.Core.SyntaxDoc
+import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 

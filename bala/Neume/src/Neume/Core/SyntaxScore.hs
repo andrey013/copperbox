@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Core.SyntaxDoc
+-- Module      :  Neume.Core.SyntaxScore
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -22,13 +22,15 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.Core.SyntaxDoc
+module Neume.Core.SyntaxScore
   (
   -- * Score ( assembled from repeats and /straights/ )
     Score(..)
 
   , BarNum
   , BarImage
+
+  , Overlay(..)
 
   , PhraseImage(..)
   , OverlayBar(..)
@@ -64,6 +66,7 @@ type BarImage = Doc
 type BarNum   = Int
 
 
+newtype Overlay a = Overlay { getOverlay :: [a] } deriving Show
 
 
 newtype PhraseImage = PhraseImage  { getPhraseImage  :: [BarImage] }

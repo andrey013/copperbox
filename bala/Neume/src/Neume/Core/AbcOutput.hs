@@ -30,7 +30,7 @@ module Neume.Core.AbcOutput
 import Neume.Core.AbcBasic
 import Neume.Core.Duration
 import Neume.Core.Pitch hiding ( octave )
-import Neume.Core.SyntaxDoc
+import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
