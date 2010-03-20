@@ -90,8 +90,8 @@ oChordPitches dm = map (\(ChordPitch _ p) -> note p dm) . F.toList
 -- Rewrite duration
 
 rewriteDuration :: Rational 
-                -> StaffPhrase (Glyph anno pch Duration) 
-                -> StaffPhrase (Glyph anno pch AbcMultiplier)
+                -> FreeRewrite (Glyph anno pch Duration) 
+                               (Glyph anno pch AbcMultiplier)
 rewriteDuration r = fmap (fmap3c (abcMultiplier r))
 
 
@@ -100,9 +100,8 @@ rewriteDuration r = fmap (fmap3c (abcMultiplier r))
 
 -- Pitch spelling
 
-rewritePitch :: SpellingMap
-             -> StaffPhrase (Glyph anno Pitch dur) 
-             -> StaffPhrase (Glyph anno Pitch dur)
+rewritePitch :: SpellingMap 
+             -> FreeRewrite (Glyph anno Pitch dur) (Glyph anno Pitch dur)
 rewritePitch sm = fmap (fmap3b (spell sm))
 
 
@@ -111,8 +110,7 @@ rewritePitch sm = fmap (fmap3b (spell sm))
 
 -- Drop annotations
 
-rewriteAnno :: StaffPhrase (Glyph anno pch dur) 
-            -> StaffPhrase (Glyph ()   pch dur)
+rewriteAnno :: FreeRewrite (Glyph anno pch dur) (Glyph ()   pch dur)
 rewriteAnno = fmap (fmap3a (const ()))
 
 

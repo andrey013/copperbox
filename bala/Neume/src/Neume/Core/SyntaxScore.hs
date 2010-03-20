@@ -34,7 +34,7 @@ module Neume.Core.SyntaxScore
   , Overlay(..)
 
   , PhraseImage(..)
-  , OverlayBar(..)
+  , OverlayImage(..)
 
   , renderToBars
   , renderToBars_st
@@ -68,18 +68,19 @@ type BarImage = Doc
 type BarNum   = Int
 
 
-newtype Overlay a = Overlay { getOverlay :: [a] } deriving Show
+newtype Overlay a = Overlay { getOverlays :: [[a]] } deriving Show
 
 
 newtype PhraseImage = PhraseImage  { getPhraseImage  :: [BarImage] }
   deriving Show
 
 
-newtype OverlayBar = OverlayBar { getOverlayBar :: BarImage }   deriving Show
+newtype OverlayImage = OverlayImage { getOverlayImage :: BarImage }   
+  deriving Show
 
 
 renderToBars :: (a -> PhraseImage) -> a -> [BarImage]
 renderToBars f = getPhraseImage . f
 
-renderToBars_st :: (a -> st -> (PhraseImage,st)) -> a -> st -> ([BarImage],st)
+renderToBars_st :: (st -> a -> (PhraseImage,st)) -> st -> a -> ([BarImage],st)
 renderToBars_st f = fmap2a getPhraseImage `oo` f

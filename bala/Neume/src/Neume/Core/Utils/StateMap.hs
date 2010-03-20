@@ -54,72 +54,73 @@ stcombWith op f g st = (a `op` b,st'') where
 
 
 -- Rather like on (aka psi) from Data.Function 
-psimap_st :: (a -> st -> (b,st)) -> a -> [a] -> st -> ((b,[b]),st)
-psimap_st f x xs st = ((b,bs),st'') where
-   (b,st')   = f x st
-   (bs,st'') = stmap f xs st'
+psimap_st :: (st -> a -> (b,st)) -> st -> a -> [a] -> ((b,[b]),st)
+psimap_st f st x xs = ((b,bs),st'') where
+   (b,st')   = f st x 
+   (bs,st'') = stmap f st' xs
 
 
 
 class StateMap f where
-  stmap :: (a -> st -> (b,st)) -> f a -> st -> (f b,st)
+  stmap :: (st -> a -> (b,st)) -> st -> f a -> (f b,st)
 
 
 -- Bifunctor...
 class StateMap2 f where
-  stmap2 :: (a -> st -> (u,st)) -> (b -> st -> (v,st)) -> f a b -> st -> (f u v, st)
+  stmap2 :: (st -> a -> (u,st)) -> (st -> b -> (v,st)) -> st -> f a b -> (f u v, st)
  
 class StateMap3 f where
-  stmap3 :: (a -> st -> (u,st)) -> (b -> st -> (v,st)) -> (c -> st -> (w,st)) 
-         -> f a b c -> st -> (f u v w, st)
+  stmap3 :: (st -> a -> (u,st)) -> (st -> b -> (v,st)) -> (st -> c -> (w,st)) 
+         -> st -> f a b c -> (f u v w, st)
 
 
-stmap2a :: StateMap2 f => (a -> st -> (u,st)) -> f a b -> st -> (f u b, st)
-stmap2a f = stmap2 f (,)
+stmap2a :: StateMap2 f => (st -> a -> (u,st)) -> st -> f a b -> (f u b, st)
+stmap2a f = stmap2 f revpair
 
-stmap2b :: StateMap2 f => (b -> st -> (v,st)) -> f a b -> st -> (f a v, st)
-stmap2b g = stmap2 (,) g
+stmap2b :: StateMap2 f => (st -> b -> (v,st)) -> st -> f a b -> (f a v, st)
+stmap2b g = stmap2 revpair g
 
 
-stmap3a :: StateMap3 f => (a -> st -> (u,st)) -> f a b c -> st -> (f u b c, st)
-stmap3a f1 = stmap3 f1 (,) (,)
+stmap3a :: StateMap3 f => (st -> a -> (u,st)) -> st -> f a b c -> (f u b c, st)
+stmap3a f1 = stmap3 f1 revpair revpair
 
-stmap3b :: StateMap3 f => (b -> st -> (v,st)) -> f a b c -> st -> (f a v c, st)
-stmap3b f2 = stmap3 (,) f2 (,)
+stmap3b :: StateMap3 f => (st -> b -> (v,st)) -> st -> f a b c -> (f a v c, st)
+stmap3b f2 = stmap3 revpair f2 revpair
 
-stmap3c :: StateMap3 f => (c -> st -> (w,st)) -> f a b c -> st -> (f a b w, st)
-stmap3c f3 = stmap3 (,) (,) f3
+stmap3c :: StateMap3 f => (st -> c -> (w,st)) -> st -> f a b c -> (f a b w, st)
+stmap3c f3 = stmap3 revpair revpair f3
+
+revpair :: a -> b -> (b,a) 
+revpair = flip (,)
 
 --------------------------------------------------------------------------------
 -- Instances
 
 instance StateMap [] where
-  stmap _ []     st = ([],st)
-  stmap f (x:xs) st = (b:bs,st'') where (b,st')   = f x st  
-                                        (bs,st'') = stmap f xs st'
+  stmap _ st []     = ([],st)
+  stmap f st (x:xs) = (b:bs,st'') where (b,st')   = f st x
+                                        (bs,st'') = stmap f st' xs
 
 instance StateMap Maybe where
-  stmap _ Nothing  st = (Nothing,st)
-  stmap f (Just a) st = (Just a',st') where (a',st') = f a st
+  stmap _ st Nothing  = (Nothing,st)
+  stmap f st (Just a) = (Just a',st') where (a',st') = f st a
 
-instance StateMap ((,) a) where
-  stmap f (x,y) st   = ((x,y'),st') where (y',st') = f y st
 
 instance StateMap OneList where
-  stmap f os s0 = step (viewl os) s0 where
-    step (OneL a)   st = (one a', st')     where (a',st')  = f a st
-    step (a :<< as) st = (cons b bs,st'')  where (b,st')   = f a st  
-                                                 (bs,st'') = step (viewl as) st'
+  stmap f s0 os = step s0 (viewl os) where
+    step st (OneL a)   = (one a', st')     where (a',st')  = f st a
+    step st (a :<< as) = (cons b bs,st'')  where (b,st')   = f st a 
+                                                 (bs,st'') = step st' (viewl as)
 
 
 -- StateMap2
 
 instance StateMap2 (,) where 
-  stmap2 f g (x,y) st   = ((x',y'),st'') where (x',st')  = f x st
-                                               (y',st'') = g y st'
+  stmap2 f g st (x,y)   = ((x',y'),st'') where (x',st')  = f st x 
+                                               (y',st'') = g st' y
 
 instance StateMap2 Either where
-  stmap2 f _ (Left x)  st   = (Left x',st')  where (x',st') = f x st
-  stmap2 _ g (Right y) st   = (Right y',st') where (y',st') = g y st
+  stmap2 f _ st (Left x)    = (Left x',st')  where (x',st') = f st x
+  stmap2 _ g st (Right y)   = (Right y',st') where (y',st') = g st y
 
 

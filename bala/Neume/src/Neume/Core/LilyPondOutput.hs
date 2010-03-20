@@ -107,24 +107,24 @@ oChordPitches f = map (\(ChordPitch _ p) -> f p) . F.toList
 -- This makes scores clearer.
 --
 
-rewriteDurationOpt :: StaffPhrase (Glyph anno pch Duration)
-                   -> StaffPhrase (Glyph anno pch (Maybe Duration))
+rewriteDurationOpt :: FreeRewrite (Glyph anno pch Duration)
+                                  (Glyph anno pch (Maybe Duration))
 rewriteDurationOpt (StaffPhrase bars) = 
-    StaffPhrase $ map (fst . (stmap doptGlyph `flip` default_duration)) bars
+    StaffPhrase $ map (fst . (stmap doptGlyph default_duration)) bars
   where
     default_duration = qn 
 
 
 
-doptGlyph :: Glyph anno pch Duration 
-          -> Duration 
+doptGlyph :: Duration 
+          -> Glyph anno pch Duration 
           -> (Glyph anno pch (Maybe Duration), Duration)
 doptGlyph = stmap3c doptD
 
 
 
 doptD :: Duration -> Duration -> (Maybe Duration, Duration)
-doptD d st | d == st && not (isDotted d) = (Nothing,st)
+doptD st d | d == st && not (isDotted d) = (Nothing,st)
            | otherwise                   = (Just d,d) 
 
 --
@@ -170,17 +170,15 @@ doptSkipGlyph = stmap2b doptD
 
 
 rewritePitchAbs :: Int 
-                -> StaffPhrase (Glyph anno Pitch dur) 
-                -> StaffPhrase (Glyph anno Pitch dur)
+                -> FreeRewrite (Glyph anno Pitch dur) (Glyph anno Pitch dur)
 rewritePitchAbs i = fmap (abspGlyph i)
 
 
-rewritePitchAbs_treble :: StaffPhrase (Glyph anno Pitch dur) 
-                       -> StaffPhrase (Glyph anno Pitch dur)
+rewritePitchAbs_treble :: FreeRewrite (Glyph anno Pitch dur) 
+                                      (Glyph anno Pitch dur)
 rewritePitchAbs_treble = rewritePitchAbs (-3)
 
-rewritePitchAbs_tab :: StaffPhrase (Glyph anno Pitch dur) 
-                       -> StaffPhrase (Glyph anno Pitch dur)
+rewritePitchAbs_tab :: FreeRewrite (Glyph anno Pitch dur) (Glyph anno Pitch dur)
 rewritePitchAbs_tab = rewritePitchAbs (-4)
 
 
@@ -203,15 +201,11 @@ abspChordPitch i (ChordPitch a p) = ChordPitch a (displaceOctave i p)
 --------------------------------------------------------------------------------
 -- Relative Pitch
 
-rewritePitchRel :: Pitch
-                -> StaffPhrase (Glyph anno Pitch dur) 
-                -> (StaffPhrase (Glyph anno Pitch dur),Pitch)
-rewritePitchRel p phrase = stmap relpGlyph phrase p 
+rewritePitchRel :: CtxRewrite Pitch (Glyph anno Pitch dur) (Glyph anno Pitch dur)
+rewritePitchRel pch phrase = stmap relpGlyph pch phrase
 
 
-relpGlyph :: Glyph anno Pitch dur 
-          -> Pitch
-          -> (Glyph anno Pitch dur, Pitch)
+relpGlyph :: Pitch -> Glyph anno Pitch dur -> (Glyph anno Pitch dur,Pitch)
 relpGlyph = stmap3b relpP
 
 
@@ -219,5 +213,5 @@ relpGlyph = stmap3b relpP
 -- octave modified new value.
 --
 relpP :: Pitch -> Pitch -> (Pitch,Pitch)
-relpP p prev = let p' = setOctave (lyOctaveDist prev p) p in (p',p)
+relpP prev p = let p' = setOctave (lyOctaveDist prev p) p in (p,p')
 

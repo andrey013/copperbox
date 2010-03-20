@@ -82,7 +82,7 @@ renderToABC  =
    
 
 
-tune1_abc :: [OverlayBar]
+tune1_abc :: [OverlayImage]
 tune1_abc = ABC.overlayPhrases [upper_abc,lower_abc]
   where
     mk        = makeSimplePhraseAbc c_major (1%8) four_four_time

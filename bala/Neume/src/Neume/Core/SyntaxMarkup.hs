@@ -58,21 +58,21 @@ data SkipGlyph glyph dur = SGlyph   glyph   !dur
 -- StateMap
 
 instance StateMap MarkupPhrase where
-  stmap f (MarkupPhrase xs) st = (MarkupPhrase xs',st') 
-                                 where (xs',st') = stmap (stmap f) xs st
+  stmap f st (MarkupPhrase xs) = (MarkupPhrase xs',st') 
+                                 where (xs',st') = stmap (stmap f) st xs
 
 instance StateMap MarkupBar where
-  stmap f (MarkupBar os) st = (MarkupBar os',st') 
-                              where (os',st') = stmap f os st
+  stmap f st (MarkupBar os) = (MarkupBar os',st') 
+                              where (os',st') = stmap f st os
 
 -- StateMap2
 
 instance StateMap2 SkipGlyph where
-  stmap2 f g (SGlyph gly d) st = (SGlyph gly' d',st'') 
-                                 where (gly',st')  = f gly st
-                                       (d',st'')   = g d st'
+  stmap2 f g st (SGlyph gly d) = (SGlyph gly' d',st'') 
+                                 where (gly',st')  = f st gly
+                                       (d',st'')   = g st' d
 
-  stmap2 _ g (Skip d)       st = (Skip d',st') where (d',st') = g d st
+  stmap2 _ g st (Skip d)       = (Skip d',st') where (d',st') = g st d
 
 --------------------------------------------------------------------------------
 -- Spacer

@@ -46,6 +46,10 @@ module Neume.Core.SyntaxStaff
   , StdGlyph
   , AnnoGlyph
 
+  -- * Rewriting types
+  , CtxRewrite
+  , FreeRewrite
+
   ) where
 
 
@@ -139,6 +143,13 @@ type AnnoGlyph anno     = Glyph anno Pitch Duration
 
 
 --------------------------------------------------------------------------------
+-- rewrites
+
+type CtxRewrite  st gly gly' = st -> StaffPhrase gly -> (StaffPhrase gly',st)
+type FreeRewrite    gly gly' = StaffPhrase gly -> StaffPhrase gly'
+
+
+--------------------------------------------------------------------------------
 -- Instances
 
 instance Functor StaffPhrase where
@@ -176,51 +187,51 @@ instance FMap3 Glyph where
 
 -- StateMap
 instance StateMap StaffPhrase where
-  stmap f (StaffPhrase xs) st = (StaffPhrase xs',st') 
-                                where (xs',st') = stmap (stmap f) xs st
+  stmap f st (StaffPhrase xs) = (StaffPhrase xs',st') 
+                                where (xs',st') = stmap (stmap f) st xs
 
 instance StateMap StaffBar where
-  stmap f (StaffBar os) st = (StaffBar os',st') 
-    where (os',st') = stmap f os st
+  stmap f st (StaffBar os) = (StaffBar os',st') 
+    where (os',st') = stmap f st os
 
 instance StateMap CExprList where
-  stmap f (CExprList xs) st = (CExprList xs',st') 
-    where (xs',st') = stmap (stmap f) xs st
+  stmap f st (CExprList xs) = (CExprList xs',st') 
+    where (xs',st') = stmap (stmap f) st xs
 
 instance StateMap CExpr where
-  stmap f (Atom  e)     st = (Atom e',st')      where (e',st') = f e st
-  stmap f (N_Plet d ce) st = (N_Plet d ce',st') where (ce',st') = stmap f ce st
-  stmap f (Beamed ce)   st = (Beamed ce',st')   where (ce',st') = stmap f ce st
+  stmap f st (Atom  e)     = (Atom e',st')      where (e',st') = f st e
+  stmap f st (N_Plet d ce) = (N_Plet d ce',st') where (ce',st') = stmap f st ce
+  stmap f st (Beamed ce)   = (Beamed ce',st')   where (ce',st') = stmap f st ce
 
 
 -- StateMap2 
 
 instance StateMap2 ChordPitch where
-  stmap2 f g (ChordPitch a p) st = (ChordPitch a' p',st'') 
-                                   where (a',st')  = f a st
-                                         (p',st'') = g p st'
+  stmap2 f g st (ChordPitch a p) = (ChordPitch a' p',st'') 
+                                   where (a',st')  = f st a
+                                         (p',st'') = g st' p
 
 
 -- StateMap3 
 
 instance StateMap3 Note where
-  stmap3 f1 f2 f3 (Note a p d) st = (Note a' p' d', st''')
-                                    where (a',st')   = f1 a st
-                                          (p',st'')  = f2 p st'
-                                          (d',st''') = f3 d st''
+  stmap3 f1 f2 f3 st (Note a p d) = (Note a' p' d', st''')
+                                    where (a',st')   = f1 st a
+                                          (p',st'')  = f2 st' p
+                                          (d',st''') = f3 st'' d
 
 instance StateMap3 Glyph where
-  stmap3 f1 f2 f3 (GlyNote n t)  st = (GlyNote n' t, st') 
-    where (n',st') = stmap3 f1 f2 f3 n st
+  stmap3 f1 f2 f3 st (GlyNote n t)  = (GlyNote n' t, st') 
+    where (n',st') = stmap3 f1 f2 f3 st n
 
-  stmap3 _  _  f3 (Rest d)       st = (Rest d', st')   where (d',st') = f3 d st
-  stmap3 _  _  f3 (Spacer d)     st = (Spacer d', st') where (d',st') = f3 d st
-  stmap3 f1 f2 f3 (Chord os d t) st = (Chord os' d' t, st'')
-    where (os',st') = stmap (stmap2 f1 f2) os st
-          (d',st'') = f3 d st'
+  stmap3 _  _  f3 st (Rest d)       = (Rest d', st')   where (d',st') = f3 st d
+  stmap3 _  _  f3 st (Spacer d)     = (Spacer d', st') where (d',st') = f3 st d
+  stmap3 f1 f2 f3 st (Chord os d t) = (Chord os' d' t, st'')
+    where (os',st') = stmap (stmap2 f1 f2) st os
+          (d',st'') = f3 st' d
   
-  stmap3 f1 f2 f3 (Graces os)    st = (Graces os', st')
-    where (os',st') = stmap (stmap3 f1 f2 f3) os st
+  stmap3 f1 f2 f3 st (Graces os)    = (Graces os', st')
+    where (os',st') = stmap (stmap3 f1 f2 f3) st os
 
 
 --------------------------------------------------------------------------------

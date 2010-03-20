@@ -24,7 +24,7 @@ module Neume.Extra.AbcFormat
 
     barNumber
 
-  , overlayPhrases
+ , overlayPhrases
 
   , abcScore
 
@@ -275,9 +275,9 @@ alternatives :: (Int -> DocS)
              -> [[Doc]] 
              -> [HyphenSpec] 
              -> (IntraSection,[HyphenSpec])
-alternatives pre alts hys = post $ stmap phi (zip [0..] alts) hys
+alternatives pre alts hys = post $ stmap phi hys (zip [0..] alts)
   where
-    phi (n,alt) hs = intraBars (prex n) alt hs
+    phi hs (n,alt) = intraBars (prex n) alt hs
 
     post (xs,rest) = step xs where
       step [a]     = (a,rest)
@@ -336,19 +336,20 @@ hyphen stk = unfoldr phi (1,stk) where
 
 -- Handily overlays are 'context free' 
 
-overlayPhrases :: [PhraseImage] -> [OverlayBar]
+overlayPhrases :: [PhraseImage] -> [OverlayImage]
 overlayPhrases []     = []
 overlayPhrases (x:xs) = foldl' overlay2 (overlay1 x) xs
 
 
-overlay2  :: [OverlayBar] -> PhraseImage -> [OverlayBar]
+overlay2  :: [OverlayImage] -> PhraseImage -> [OverlayImage]
 overlay2 bs1 (PhraseImage bs2) = step bs1 bs2 where
   step (x:xs) (y:ys) = overlayAbc x y : step xs ys
   step xs     []     = xs 
-  step []     ys     = map OverlayBar ys 
+  step []     ys     = map OverlayImage ys 
 
-overlay1 :: PhraseImage -> [OverlayBar]
-overlay1 = map OverlayBar . getPhraseImage
+overlay1 :: PhraseImage -> [OverlayImage]
+overlay1 = map OverlayImage . getPhraseImage
 
-overlayAbc :: OverlayBar -> Doc -> OverlayBar
-overlayAbc (OverlayBar v1) v2 = OverlayBar $ v1 <+> overlay <> lineCont <$> v2 
+overlayAbc :: OverlayImage -> Doc -> OverlayImage
+overlayAbc (OverlayImage v1) v2 = OverlayImage $ v1 <+> overlay <> lineCont <$> v2 
+
