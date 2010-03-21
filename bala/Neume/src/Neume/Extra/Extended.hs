@@ -191,9 +191,9 @@ lySpacerGlyph :: SpacerGlyph' -> Doc
 lySpacerGlyph (SpacerMark Nothing md)        = spacer md
 lySpacerGlyph (SpacerMark (Just (a,doc)) md) = fn a (spacer md) doc
     where
-       fn Above  = (**^)
-       fn Below  = (**\)
-       fn Center = (**-) 
+       fn Above  = annoAbove
+       fn Below  = annoBelow
+       fn Center = annoCenter
 
 -- Should not need an ExtBeam instance as SpacerGlyphs should be 
 -- partitioned to bars with @phraseNoPulses@.

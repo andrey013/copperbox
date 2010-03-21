@@ -18,9 +18,9 @@
 module Neume.Extra.LilyPondDoc
   (
   
-    (**^)
-  , (**-)
-  , (**\)
+    annoAbove
+  , annoCenter
+  , annoBelow
 
   , lyTrue
   , lyFalse
@@ -80,8 +80,6 @@ module Neume.Extra.LilyPondDoc
   , alternative
   , drummode
   
-  -- ** Fret diagrams
-  , fretDiagram
 
   -- ** Titles
   , header
@@ -99,6 +97,7 @@ module Neume.Extra.LilyPondDoc
   , variableDef
   , variableUse
   , schemeDef
+  , schemeStringLiteral
   , override
   , definition
 
@@ -121,16 +120,16 @@ import Data.Char ( isAlpha )
 
 
 
-infixr 6 **^, **-, **\
+infixr 6 `annoAbove`, `annoCenter`, `annoBelow`
 
-(**^) :: Doc -> Doc -> Doc
-a **^ b = a <> char '^' <> b
+annoAbove           :: Doc -> Doc -> Doc
+a `annoAbove` b     = a <> char '^' <> b
 
-(**-) :: Doc -> Doc -> Doc
-a **- b = a <> char '-' <> b
+annoCenter          :: Doc -> Doc -> Doc
+a `annoCenter` b    = a <> char '-' <> b
 
-(**\) :: Doc -> Doc -> Doc
-a **\ b = a <> char '_' <> b
+annoBelow           :: Doc -> Doc -> Doc
+a `annoBelow` b     = a <> char '_' <> b
 
 -- | @ #t @
 lyTrue :: Doc
@@ -359,12 +358,6 @@ drummode            :: Doc -> Doc
 drummode e          = command "drummode" <+> nestBraces e
 
 
--- | @\\fret-diagram #\"...\"@.  
-fretDiagram           :: String -> Doc
-fretDiagram s         = command "fret-diagram" <+> char '#' 
-                          <> (dquotes $ text s)
-
-
 --------------------------------------------------------------------------------
 -- Titles
 
@@ -441,6 +434,9 @@ schemeDef ss d
   | all isAlpha ss    = text ss <+> equals <+> char '#' <> d
   | otherwise         = error $ "LilyPondDoc.schemeDef - " ++ ss ++ 
                                 " - should only contain alphabetic characters."
+
+schemeStringLiteral :: String -> Doc
+schemeStringLiteral ss = char '#' <> dquotes (text ss)
 
 -- | @\\override ... #'... = #...@
 override :: String -> String -> Doc -> Doc

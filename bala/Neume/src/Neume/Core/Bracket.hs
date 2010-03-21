@@ -19,12 +19,14 @@
 module Neume.Core.Bracket 
   ( 
     phrase
+  , phraseMarkup
 
   ) where
 
 import Neume.Core.BeamExtremity
 import Neume.Core.Datatypes
 import Neume.Core.Duration
+import Neume.Core.SyntaxMarkup
 import Neume.Core.SyntaxStaff
 import Neume.Core.TreeOps
 import Neume.Core.Utils.Common
@@ -86,6 +88,11 @@ catExprLists = CExprList . step . unlist1 extractExprs where
   step (Just ([],xs)) = step $ unlist1 extractExprs xs
   step (Just (es,xs)) = es ++ (step $ unlist1 extractExprs xs)
 
+
+
+phraseMarkup :: MeterPattern -> [SkipGlyph gly Duration] 
+             -> MarkupPhrase (SkipGlyph gly Duration)
+phraseMarkup mp glys = undefined
 
 --------------------------------------------------------------------------------
 -- Cycle the MetricalSpec / MeterPattern

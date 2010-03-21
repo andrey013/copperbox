@@ -29,6 +29,7 @@ module Neume.Core.SyntaxScore
     Score(..)
 
   , BarNum
+  , ScoreImage
   , BarImage
 
   , Overlay(..)
@@ -62,8 +63,8 @@ class Score repr where
 -- Phrases and bars are composable with pretty-print operations...
 
 
-
-type BarImage = Doc
+type ScoreImage = Doc
+type BarImage   = Doc
 
 type BarNum   = Int
 

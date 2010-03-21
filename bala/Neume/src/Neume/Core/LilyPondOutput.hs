@@ -20,8 +20,12 @@ module Neume.Core.LilyPondOutput
     renderPhrase
   , oGlyph
 
+  , renderMarkupPhrase
+  , oSkipGlyph
+
   -- * rewriting
   , rewriteDurationOpt
+  , rewriteDurationOpt_         -- needs renaming
   , rewritePitchAbs
   , rewritePitchAbs_treble
   , rewritePitchAbs_tab
@@ -33,7 +37,7 @@ import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
 import Neume.Core.Pitch
 import Neume.Core.SyntaxScore
-import Neume.Core.SyntaxMarkup () -- TODO trasform and print markup
+import Neume.Core.SyntaxMarkup
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils.OneList
 import Neume.Core.Utils.Pretty
@@ -53,15 +57,15 @@ import qualified Data.Foldable          as F
 
 -- ignore annotations at the moment...
 renderPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> PhraseImage
-renderPhrase f = oStaffPhrase f
+renderPhrase = oStaffPhrase
 
 
 
 oStaffPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> PhraseImage
-oStaffPhrase f            = PhraseImage . map (oStaffBar f) . extractBars
+oStaffPhrase f = PhraseImage . map (oStaffBar f) . extractBars
 
 oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> BarImage
-oStaffBar f               = hsep . oCExprList f . extractNotes
+oStaffBar f = hsep . oCExprList f . extractNotes
 
 oCExprList ::  (pch -> Doc) -> CExprList (GlyphRelDur anno pch) -> [Doc]
 oCExprList f (CExprList xs) = map (oCExpr f) xs
@@ -86,7 +90,31 @@ oChordPitches :: (pch -> Doc) -> OneList (ChordPitch anno pch) -> [Doc]
 oChordPitches f = map (\(ChordPitch _ p) -> f p) . F.toList
 
 
+--------------------------------------------------------------------------------
+-- Render markup 
 
+-- ignore annotations at the moment...
+renderMarkupPhrase :: (gly -> Maybe Duration -> Doc) 
+                   -> MarkupPhrase (SkipGlyph gly (Maybe Duration))
+                   -> PhraseImage
+renderMarkupPhrase = oMarkupPhrase
+
+oMarkupPhrase :: (gly -> Maybe Duration -> Doc) 
+              -> MarkupPhrase (SkipGlyph gly (Maybe Duration))
+              -> PhraseImage
+oMarkupPhrase f = PhraseImage . map (oMarkupBar f) . extractMarkupBars
+
+oMarkupBar :: (gly -> Maybe Duration -> Doc) 
+           -> MarkupBar (SkipGlyph gly (Maybe Duration))
+           -> BarImage
+oMarkupBar f = hsep . toListF (oSkipGlyph f) . extractMarkupNotes
+
+
+oSkipGlyph :: (gly -> Maybe Duration -> Doc) 
+           -> SkipGlyph gly (Maybe Duration) 
+           -> Doc
+oSkipGlyph f (SGlyph g d) = f g d
+oSkipGlyph _ (Skip d)     = spacer d 
 
 
 --------------------------------------------------------------------------------
@@ -107,12 +135,13 @@ oChordPitches f = map (\(ChordPitch _ p) -> f p) . F.toList
 -- This makes scores clearer.
 --
 
+default_duration :: Duration
+default_duration = qn
+
 rewriteDurationOpt :: FreeRewrite (Glyph anno pch Duration)
                                   (Glyph anno pch (Maybe Duration))
 rewriteDurationOpt  = 
     StaffPhrase . map (fst . (stmap doptGlyph default_duration)) . extractBars
-  where
-    default_duration = qn 
 
 
 
@@ -130,21 +159,24 @@ doptD st d | d == st && not (isDotted d) = (Nothing,st)
 --
 
 
-{-
+
+rewriteDurationOpt_ :: MarkupPhrase (SkipGlyph gly Duration)
+                    -> MarkupPhrase (SkipGlyph gly (Maybe Duration))
+rewriteDurationOpt_ = MarkupPhrase . map doptMarkupBar . extractMarkupBars
+
 
 -- TO DO - these will be needed for Markup...
 
 doptMarkupBar :: MarkupBar (SkipGlyph gly Duration)
-              -> Duration
-              -> (MarkupBar (SkipGlyph gly (Maybe Duration)), Duration)
-doptMarkupBar = stmap (stmap2b doptD)
+              -> MarkupBar (SkipGlyph gly (Maybe Duration))
+doptMarkupBar = fst . stmap doptSkipGlyph default_duration
 
 
-doptSkipGlyph :: SkipGlyph glyph Duration
-              -> Duration
+doptSkipGlyph :: Duration
+              -> SkipGlyph glyph Duration
               -> (SkipGlyph glyph (Maybe Duration), Duration)
 doptSkipGlyph = stmap2b doptD
--}
+
 
 --------------------------------------------------------------------------------
 -- Rewrite Pitch

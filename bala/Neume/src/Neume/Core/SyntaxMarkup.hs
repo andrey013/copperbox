@@ -40,8 +40,8 @@ import Neume.Core.Utils.StateMap
 -- Note - phrases and bars are polymorphic on the glyph type. 
 -- They can use alternatives to the SkipGlyph type. 
 
-newtype MarkupPhrase gly = MarkupPhrase { getMarkupPhrase :: [MarkupBar gly] }
-newtype MarkupBar    gly = MarkupBar    { getMarkupBar    :: OneList gly } 
+newtype MarkupPhrase gly = MarkupPhrase { extractMarkupBars  :: [MarkupBar gly] }
+newtype MarkupBar    gly = MarkupBar    { extractMarkupNotes :: OneList gly } 
 
 
 --------------------------------------------------------------------------------
