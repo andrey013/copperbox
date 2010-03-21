@@ -47,10 +47,10 @@ type AbcNote  = Note  () Pitch AbcMultiplier
 --------------------------------------------------------------------------------
 
 renderPhrase :: StaffPhrase AbcGlyph -> PhraseImage
-renderPhrase = PhraseImage . map oStaffBar . getStaffPhrase
+renderPhrase = PhraseImage . map oStaffBar . extractBars
 
 oStaffBar :: StaffBar AbcGlyph -> BarImage
-oStaffBar = oCExprList (<+>) . getStaffBar
+oStaffBar = oCExprList (<+>) . extractNotes
 
 
 oCExprList :: (Doc -> Doc -> Doc) -> CExprList AbcGlyph -> Doc

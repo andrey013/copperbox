@@ -68,8 +68,8 @@ import Text.PrettyPrint.Leijen          -- package: wl-pprint
 -- Note - phrases, bars and CExprs are polymorphic on the glyph
 -- type. They can use alternatives to the Glyph type. 
 
-newtype StaffPhrase gly = StaffPhrase { getStaffPhrase :: [StaffBar gly] }
-newtype StaffBar    gly = StaffBar    { getStaffBar    :: CExprList gly  } 
+newtype StaffPhrase gly = StaffPhrase { extractBars   :: [StaffBar gly] }
+newtype StaffBar    gly = StaffBar    { extractNotes  :: CExprList gly  } 
 
 
 
@@ -78,7 +78,7 @@ newtype StaffBar    gly = StaffBar    { getStaffBar    :: CExprList gly  }
 -- Staff \Expressions\
 
 
-newtype CExprList a = CExprList { getCExprList :: [CExpr a] }
+newtype CExprList a = CExprList { extractExprs :: [CExpr a] }
   deriving (Eq,Show)
 
 

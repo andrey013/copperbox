@@ -58,10 +58,10 @@ renderPhrase f = oStaffPhrase f
 
 
 oStaffPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> PhraseImage
-oStaffPhrase f            = PhraseImage . map (oStaffBar f) . getStaffPhrase
+oStaffPhrase f            = PhraseImage . map (oStaffBar f) . extractBars
 
 oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> BarImage
-oStaffBar f               = hsep . oCExprList f . getStaffBar
+oStaffBar f               = hsep . oCExprList f . extractNotes
 
 oCExprList ::  (pch -> Doc) -> CExprList (GlyphRelDur anno pch) -> [Doc]
 oCExprList f (CExprList xs) = map (oCExpr f) xs
@@ -109,8 +109,8 @@ oChordPitches f = map (\(ChordPitch _ p) -> f p) . F.toList
 
 rewriteDurationOpt :: FreeRewrite (Glyph anno pch Duration)
                                   (Glyph anno pch (Maybe Duration))
-rewriteDurationOpt (StaffPhrase bars) = 
-    StaffPhrase $ map (fst . (stmap doptGlyph default_duration)) bars
+rewriteDurationOpt  = 
+    StaffPhrase . map (fst . (stmap doptGlyph default_duration)) . extractBars
   where
     default_duration = qn 
 

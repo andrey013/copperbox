@@ -81,11 +81,11 @@ barsFromDivisions i = step . splitAt i
     unitsToBar = StaffBar . catExprLists . map fromUnit
 
 catExprLists :: [CExprList a] -> CExprList a
-catExprLists = CExprList . step where
-  step []     = []
-  step (x:xs) = case getCExprList x of 
-                  [] -> step xs 
-                  e  -> e ++ step xs
+catExprLists = CExprList . step . unlist1 extractExprs where
+  step Nothing        = []
+  step (Just ([],xs)) = step $ unlist1 extractExprs xs
+  step (Just (es,xs)) = es ++ (step $ unlist1 extractExprs xs)
+
 
 --------------------------------------------------------------------------------
 -- Cycle the MetricalSpec / MeterPattern

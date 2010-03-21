@@ -24,6 +24,7 @@ module Neume.Core.Utils.Common
   , strip
 
   , psimap
+  , unlist1
 
   , para
   , paraM
@@ -87,6 +88,11 @@ strip _ b = b
 psimap :: (a -> b) -> a -> [a] -> (b,[b])
 psimap f x xs = (f x, map f xs)
 
+
+
+unlist1 :: (a -> b) -> [a] -> Maybe (b,[a])
+unlist1 _ []     = Nothing
+unlist1 f (a:as) = Just (f a, as)
 
 
 para :: (a -> ([a], b) -> b) -> b -> [a] -> b
