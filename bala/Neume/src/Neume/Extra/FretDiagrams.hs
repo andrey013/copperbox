@@ -30,6 +30,7 @@ module Neume.Extra.FretDiagrams
   ) where
 
 import Neume.Core.Bracket
+import Neume.Core.BracketMarkup
 import Neume.Core.Datatypes
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic

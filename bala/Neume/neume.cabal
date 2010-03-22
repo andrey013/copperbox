@@ -37,6 +37,7 @@ library
     Neume.Core.AbcOutput,
     Neume.Core.BeamExtremity,
     Neume.Core.Bracket,
+    Neume.Core.BracketMarkup,
     Neume.Core.Datatypes,
     Neume.Core.Duration,
     Neume.Core.LilyPondBasic,

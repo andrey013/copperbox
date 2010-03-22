@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
@@ -30,6 +31,7 @@ module Neume.Core.SyntaxMarkup
 
   ) where
 
+import Neume.Core.BeamExtremity
 import Neume.Core.Duration
 import Neume.Core.Utils.OneList
 import Neume.Core.Utils.StateMap
@@ -79,3 +81,12 @@ instance StateMap2 SkipGlyph where
 
 instance MakeSpacer (SkipGlyph gly Duration) where
   makeSpacer d = Skip d
+
+--------------------------------------------------------------------------------
+-- NumMeasured
+
+instance NumMeasured (SkipGlyph gly Duration) where
+  type Measurement (SkipGlyph gly Duration) = DurationMeasure
+  nmeasure (SGlyph _ d) = extent d
+  nmeasure (Skip     d) = extent d
+
