@@ -43,7 +43,7 @@ import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
-import Neume.Core.Utils hiding ( head )
+import Neume.Core.Utils
 
 import Neume.Extra.Extended
 import Neume.Extra.LilyPondDoc hiding ( score )

@@ -24,7 +24,7 @@ module Neume.Extra.AbcFormat
 
     barNumber
 
- , overlayPhrases
+  , overlayPhrases
 
   , abcScore
 
@@ -32,7 +32,7 @@ module Neume.Extra.AbcFormat
 
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
-import Neume.Core.Utils hiding ( viewl ) 
+import Neume.Core.Utils
 
 import Neume.Extra.AbcDoc
 

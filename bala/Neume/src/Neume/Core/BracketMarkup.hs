@@ -26,7 +26,7 @@ import Neume.Core.BeamExtremity
 import Neume.Core.Datatypes
 import Neume.Core.Duration
 import Neume.Core.SyntaxMarkup
-import Neume.Core.Utils ( fromList )
+import Neume.Core.Utils.OneList ( fromList )
 
 -- Buffered
 data Step a st = Yield   !st

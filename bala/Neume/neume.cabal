@@ -52,6 +52,7 @@ library
     Neume.Core.Utils.FunctorN,
     Neume.Core.Utils.OneList,
     Neume.Core.Utils.Pretty,
+    Neume.Core.Utils.TaggedStream,
     Neume.Core.Utils.StateMap,
 
     Neume.Extra.AbcDoc,

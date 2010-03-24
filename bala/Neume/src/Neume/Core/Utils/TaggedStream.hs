@@ -19,7 +19,7 @@
 module Neume.Core.Utils.TaggedStream
   (
     TStream(..)
-  , PrintTag(..)
+  , TagShowS(..)
   , nil 
   , cons
   , start
@@ -50,9 +50,9 @@ data Node tag leaf = Elem     leaf
   deriving (Eq,Show)
 
 
-class PrintTag t where
-  startShowS :: t -> ShowS
-  endShowS   :: t -> ShowS
+class TagShowS t where
+  startS :: t -> ShowS
+  endS   :: t -> ShowS
 
 
 nil :: TStream tag leaf

@@ -18,7 +18,6 @@ module Neume.Core.Utils
   ( 
     module Neume.Core.Utils.Common
   , module Neume.Core.Utils.FunctorN
-  , module Neume.Core.Utils.OneList
   , module Neume.Core.Utils.Pretty
   , module Neume.Core.Utils.StateMap
 
@@ -26,6 +25,9 @@ module Neume.Core.Utils
 
 import Neume.Core.Utils.Common
 import Neume.Core.Utils.FunctorN
-import Neume.Core.Utils.OneList
 import Neume.Core.Utils.Pretty
 import Neume.Core.Utils.StateMap
+
+
+-- Don't auto export the data structures thus avoiding name 
+-- conflicts.

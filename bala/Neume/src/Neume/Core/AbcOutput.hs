@@ -33,7 +33,7 @@ import Neume.Core.Pitch hiding ( octave )
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
-
+import Neume.Core.Utils.OneList ( OneList, toListF )
 
 import Text.PrettyPrint.Leijen hiding ( sep )     -- package: wl-print
 

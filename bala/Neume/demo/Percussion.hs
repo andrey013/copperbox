@@ -12,6 +12,7 @@ import Neume.Core.Pitch
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
+import Neume.Core.Utils.OneList ( fromList )
 
 import Neume.Extra.DrumPitches
 import Neume.Extra.Extended

@@ -26,10 +26,11 @@ module Neume.Extra.FretDiagrams
   , lyPhraseFretDiagrams
   , lilypondFretDiagScore
   , fretNum
+  , diagDefinition
   
   ) where
 
-import Neume.Core.Bracket
+-- import Neume.Core.Bracket
 import Neume.Core.BracketMarkup
 import Neume.Core.Datatypes
 import Neume.Core.Duration
@@ -37,7 +38,7 @@ import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.SyntaxMarkup
 import Neume.Core.SyntaxScore
-import Neume.Core.Utils hiding ( head )
+import Neume.Core.Utils
 
 import Neume.Extra.LilyPondDoc
 
