@@ -22,6 +22,8 @@ module Neume.Core.Utils.TaggedStream
   , PrintTag(..)
   , nil 
   , cons
+  , start
+  , end
   , Element(..)
   , linearfold
  
@@ -30,17 +32,21 @@ module Neume.Core.Utils.TaggedStream
 import Neume.Core.Utils.FunctorN
 import Neume.Core.Utils.StateMap
 
-import Control.Applicative
+-- package: joinlist
+import Data.JoinList      hiding ( empty, cons, map )
+import qualified Data.JoinList as JL
+
+import Control.Applicative hiding ( empty )
 import Data.Foldable
 import Data.Monoid
 import Data.Traversable
 
+data TStream tag leaf =  TStream { getTStream :: JoinList (Node tag leaf) }
+  deriving (Eq,Show)
 
-
-data TStream tag leaf = TNil 
-                      | TLeaf  leaf (TStream tag leaf)
-                      | TStart tag  (TStream tag leaf)
-                      | TEnd        (TStream tag leaf)
+data Node tag leaf = Elem     leaf
+                   | StartTag tag
+                   | EndTag
   deriving (Eq,Show)
 
 
@@ -50,10 +56,17 @@ class PrintTag t where
 
 
 nil :: TStream tag leaf
-nil = TNil
+nil = TStream JL.empty
 
 cons :: leaf -> TStream tag leaf -> TStream tag leaf
-cons a = TLeaf a 
+cons a = TStream . JL.cons (Elem a) . getTStream 
+
+start :: tag -> TStream tag leaf -> TStream tag leaf
+start a = TStream . JL.cons (StartTag a) . getTStream
+
+end   :: TStream tag leaf -> TStream tag leaf
+end   = TStream . JL.cons EndTag . getTStream
+
 
 
 data Element tag leaf = Start tag
@@ -62,78 +75,77 @@ data Element tag leaf = Start tag
   deriving (Eq,Show)
 
 linearfold :: (b -> Element tag leaf -> b) -> b -> TStream tag leaf -> b
-linearfold f = step [] where
-  step _       b TNil          = b
-  step stk     b (TLeaf a rs)  = step stk (f b $ Leaf a) rs
-  step stk     b (TStart t rs) = step (t:stk) (f b $ Start t) rs
-  step (t:stk) b (TEnd rs)     = step stk (f b $ End t) rs 
-  step []      _ _             = error "linearfold - malformed tree"
+linearfold f b0 = step [] b0 . viewl . getTStream where
+  step _       b EmptyL             = b
+  step stk     b (Elem a     :< rs) = step stk     (f b $ Leaf a)  (viewl rs)
+  step stk     b (StartTag t :< rs) = step (t:stk) (f b $ Start t) (viewl rs)
+  step (t:stk) b (EndTag     :< rs) = step stk     (f b $ End t)   (viewl rs) 
+  step []      _ _                  = error "linearfold - malformed tree"
+
 
 
 --------------------------------------------------------------------------------
 -- Functor instance
 
+-- Functor does not touch tag... (needs bifunctor)
+
 instance Functor (TStream tag) where
-  fmap _ TNil            = TNil
-  fmap f (TLeaf a rest)  = TLeaf (f a) $ fmap f rest
-  fmap f (TStart t rest) = TStart t $ fmap f rest
-  fmap f (TEnd rest)     = TEnd $ fmap f rest
+  fmap f (TStream xs) = TStream $ fmap (fmap f) xs
 
-
--- Note, Foldable oblivious to tags...
+instance Functor (Node tag) where
+  fmap _ (StartTag t) = StartTag t
+  fmap f (Elem a)     = Elem (f a)
+  fmap _ EndTag       = EndTag
 
 instance Foldable (TStream tag) where
-  foldMap _ TNil            = mempty
-  foldMap f (TLeaf a rest)  = f a `mappend` foldMap f rest
-  foldMap f (TStart _ rest) = foldMap f rest
-  foldMap f (TEnd rest)     = foldMap f rest
+  foldMap f (TStream xs) = foldMap (foldMap f) xs 
 
-
-  foldr f b0 = step b0 where
-    step b TNil             = b
-    step b (TLeaf a rest)   = f a (step b rest)
-    step b (TStart _ rest)  = step b rest
-    step b (TEnd rest)      = step b rest
-
-  foldl f b0 = step b0 where
-    step b TNil             = b
-    step b (TLeaf a rest)   = step (f b a) rest
-    step b (TStart _ rest)  = step b rest
-    step b (TEnd rest)      = step b rest
+instance Foldable (Node tag) where
+  foldMap _ (StartTag _) = mempty
+  foldMap f (Elem a)     = f a
+  foldMap _ EndTag       = mempty
 
 
 
 instance Traversable (TStream tag) where
-  traverse _ TNil            = pure TNil
-  traverse f (TLeaf a rest)  = TLeaf    <$> f a <*> traverse f rest
-  traverse f (TStart t rest) = TStart t <$> traverse f rest
-  traverse f (TEnd rest)     = TEnd     <$> traverse f rest
+  traverse f (TStream xs)    = TStream <$> traverse (traverse f) xs
 
+instance Traversable (Node tag) where
+  traverse f (Elem a)        = Elem <$> f a
+  traverse _ (StartTag t)    = pure  $  StartTag t 
+  traverse _ EndTag          = pure  $  EndTag
 
 -- Fmap2
 
 instance FMap2 TStream where
-  fmap2 _ _ TNil            = TNil
-  fmap2 f g (TLeaf a rest)  = TLeaf (g a) $ fmap2 f g rest
-  fmap2 f g (TStart t rest) = TStart (f t) $ fmap2 f g rest
-  fmap2 f g (TEnd rest)     = TEnd $ fmap2 f g rest
+  fmap2 f g (TStream xs)    = TStream $ fmap (fmap2 f g) xs
+
+instance FMap2 Node where
+  fmap2 _ g (Elem a)        = Elem $ g a
+  fmap2 f _ (StartTag t)    = StartTag $ f t
+  fmap2 _ _ EndTag          = EndTag 
+
+
+
+
 
 
 -- Note stmap does not account for TEnd so it is not suitable
 -- for traversals that need the tree shape
 
 instance StateMap2 TStream where
-  stmap2 _ _ st TNil            = (TNil,st)
-  stmap2 f g st (TLeaf a rest)  = (TLeaf a' rest', st'') 
-                                  where
-                                    (a',st')     = g st a
-                                    (rest',st'') = stmap2 f g st' rest
+  stmap2 f g st (TStream xs)  = (TStream xs', st')
+                                where
+                                  (xs',st') = stmap (stmap2 f g) st xs
 
-  stmap2 f g st (TStart t rest) = (TStart t' rest', st'') 
-                                  where
-                                    (t',st')     = f st t
-                                    (rest',st'') = stmap2 f g st' rest
 
-  stmap2 f g st (TEnd rest)     = (TEnd rest', st') 
-                                  where
-                                    (rest',st') = stmap2 f g st rest
+instance StateMap2 Node where
+  stmap2 _ g st (Elem a)      = (Elem a', st') 
+                                where
+                                  (a',st')     = g st a
+
+  stmap2 f _ st (StartTag t)  = (StartTag t', st') 
+                                where
+                                  (t',st')     = f st t
+
+  stmap2 _ _ st EndTag        = (EndTag, st) 
