@@ -53,8 +53,8 @@ oStaffBar :: StaffBar AbcGlyph -> BarImage
 oStaffBar = oCExprList (<+>) . extractNotes
 
 
-oCExprList :: (Doc -> Doc -> Doc) -> CExprList AbcGlyph -> Doc
-oCExprList sep (CExprList xs) = sepList sep $ map (oCExpr sep) xs
+oCExprList :: (Doc -> Doc -> Doc) -> [CExpr AbcGlyph] -> Doc
+oCExprList sep xs = sepList sep $ map (oCExpr sep) xs
 
 -- This one needs 'context' - beamed notes are no whitespace
 -- between them.

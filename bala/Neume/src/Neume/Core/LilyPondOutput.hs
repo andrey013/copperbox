@@ -67,8 +67,8 @@ oStaffPhrase f = PhraseImage . map (oStaffBar f) . extractBars
 oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> BarImage
 oStaffBar f = hsep . oCExprList f . extractNotes
 
-oCExprList ::  (pch -> Doc) -> CExprList (GlyphRelDur anno pch) -> [Doc]
-oCExprList f (CExprList xs) = map (oCExpr f) xs
+oCExprList ::  (pch -> Doc) -> [CExpr (GlyphRelDur anno pch)] -> [Doc]
+oCExprList f  = map (oCExpr f) 
 
 oCExpr :: (pch -> Doc) -> CExpr (GlyphRelDur anno pch) -> Doc
 oCExpr f (Atom e)         = oGlyph f e 

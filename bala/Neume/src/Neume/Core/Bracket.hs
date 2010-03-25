@@ -75,16 +75,16 @@ barsFromDivisions i = step . splitAt i
     step (xs,[]) = [unitsToBar xs]
     step (xs,ys) = (unitsToBar xs) : step (splitAt i ys)
 
-    fromUnit BZero         = CExprList []
+    fromUnit BZero         = []
     fromUnit (MUnit notes) = beam notes
 
     unitsToBar = StaffBar . catExprLists . map fromUnit
 
-catExprLists :: [CExprList a] -> CExprList a
-catExprLists = CExprList . step . unlist1 extractExprs where
+catExprLists :: [[CExpr a]] -> [CExpr a]
+catExprLists = step . unlist1 id where
   step Nothing        = []
-  step (Just ([],xs)) = step $ unlist1 extractExprs xs
-  step (Just (es,xs)) = es ++ (step $ unlist1 extractExprs xs)
+  step (Just ([],xs)) = step $ unlist1 id xs
+  step (Just (es,xs)) = es ++ (step $ unlist1 id xs)
 
 
 --------------------------------------------------------------------------------
@@ -196,8 +196,8 @@ unwind phi s0 = step id s0 where
 
 
 beam :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
-     => NoteList a -> CExprList a
-beam = CExprList . beamNotes . getNoteList 
+     => NoteList a -> [CExpr a]
+beam = beamNotes . getNoteList 
 
 beamNotes :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
      => [PletTree a] -> [CExpr a]
@@ -218,8 +218,7 @@ beamNotes = alternateUnwind out inn unbuffer
 
 conv :: PletTree a -> CExpr a
 conv (S a)            = Atom a
-conv (Plet p q notes) = N_Plet desc (CExprList $ map conv $ getNoteList notes)
-  where desc = N_PletDescr p q
+conv (Plet p q notes) = N_Plet (p,q) (map conv $ getNoteList notes)
 
 
 
@@ -229,13 +228,13 @@ unbuffer = step [] . viewr
     step acc EmptyR     = acc
     step acc (se :> Atom a)  
         | rendersToNote a && null se = Atom a : acc
-        | rendersToNote a            = (mkbeam $ toList $ se |> Atom a) : acc
+        | rendersToNote a            = (Beamed $ toList $ se |> Atom a) : acc
         | otherwise                  = step (Atom a : acc) (viewr se)  
 
     -- if the right edge is a n_plet always beam
-    step acc (se :> bt)              = (mkbeam $ toList $ se |> bt) : acc
+    step acc (se :> bt)              = (Beamed $ toList $ se |> bt) : acc
 
-    mkbeam = Beamed . CExprList
+   
 
 
 alternateUnwind :: (a -> Maybe b) 
