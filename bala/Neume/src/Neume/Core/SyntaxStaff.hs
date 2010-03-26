@@ -25,7 +25,6 @@ module Neume.Core.SyntaxStaff
 
   -- * Staff expressions
   , CExpr(..)
-  , PletMult
 
   -- * Staff glyphs
   , Glyph(..)
@@ -52,8 +51,8 @@ module Neume.Core.SyntaxStaff
   ) where
 
 
-import Neume.Core.BeamExtremity
 import Neume.Core.Duration
+import Neume.Core.Metrical
 import Neume.Core.Pitch
 import Neume.Core.Utils.FunctorN
 import Neume.Core.Utils.OneList
@@ -94,7 +93,6 @@ data CExpr gly = Atom               gly
                | Beamed             [CExpr gly]
   deriving (Eq,Show)
 
-type PletMult = (Int,Int)
 
 
 --------------------------------------------------------------------------------

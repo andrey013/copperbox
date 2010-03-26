@@ -35,6 +35,7 @@ module Neume.Core.Datatypes
    
   ) where
 
+import Neume.Core.Metrical
 import Neume.Core.Utils.Common
 import Neume.Core.Utils.Pretty
 
@@ -61,7 +62,7 @@ newtype NoteList a = NoteList { getNoteList :: [PletTree a] }
 -- tuplets can contain tuplets.
 --
 data PletTree a = S a                           -- Single \"note\"
-                | Plet Int Int (NoteList a)
+                | Plet PletMult (NoteList a)
   deriving (Eq,Show)
 
 
@@ -72,14 +73,14 @@ instance Functor NoteList where
   fmap f = NoteList . map (fmap f) . getNoteList
 
 instance Functor PletTree where
-  fmap f (S a) = S (f a)
-  fmap f (Plet n d ng) = Plet n d (fmap f ng)
+  fmap f (S a)        = S (f a)
+  fmap f (Plet pm xs) = Plet pm (fmap f xs)
 
 
 -- | Short-hand constructor for n-ary plets.
 --
 plet :: Int -> Int -> [PletTree a] -> PletTree a
-plet p q xs = Plet p q (NoteList xs) 
+plet p q xs = Plet (p,q) (NoteList xs) 
 
 -- | Create a duplet - two notes in the time of three.
 --
@@ -153,8 +154,8 @@ data MetricalSpec = MetricalSpec {
 -- Pretty instances
 
 instance Pretty a => Pretty (PletTree a) where 
-  pretty (S a)            = pretty a
-  pretty (Plet p q notes) = braces (int p <> colon <> int q <+> pretty notes)
+  pretty (S a)              = pretty a
+  pretty (Plet (p,q) notes) = braces (int p <> colon <> int q <+> pretty notes)
 
 instance Pretty a => Pretty (NoteList a) where
   pretty (NoteList xs) = sep (map pretty xs)

@@ -31,8 +31,8 @@ module Neume.Core.SyntaxMarkup
 
   ) where
 
-import Neume.Core.BeamExtremity
 import Neume.Core.Duration
+import Neume.Core.Metrical
 import Neume.Core.Utils.OneList
 import Neume.Core.Utils.StateMap
 

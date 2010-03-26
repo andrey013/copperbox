@@ -22,9 +22,9 @@ module Neume.Core.BracketMarkup
 
   ) where
 
-import Neume.Core.BeamExtremity
 import Neume.Core.Datatypes
 import Neume.Core.Duration
+import Neume.Core.Metrical
 import Neume.Core.SyntaxMarkup
 import Neume.Core.Utils.OneList ( fromList )
 

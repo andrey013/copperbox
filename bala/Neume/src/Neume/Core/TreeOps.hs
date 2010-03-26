@@ -26,8 +26,8 @@ module Neume.Core.TreeOps
 
   ) where
 
-import Neume.Core.BeamExtremity
 import Neume.Core.Datatypes
+import Neume.Core.Metrical
 import Neume.Core.Duration
 
 import Data.List ( foldl' )
@@ -35,13 +35,13 @@ import Data.Ratio
 
 
 pletFold :: (a -> b -> b) -> (Int -> Int -> b -> b) -> b -> PletTree a -> b
-pletFold f _ b (S a)         = f a b
-pletFold f g b (Plet p q xs) = foldl' (pletFold f g) (g p q b) $ getNoteList xs
+pletFold f _ b (S a)           = f a b
+pletFold f g b (Plet (p,q) xs) = foldl' (pletFold f g) (g p q b) $ getNoteList xs
 
 
 pletAll :: (a -> Bool) -> PletTree a -> Bool
-pletAll test (S a)            = test a
-pletAll test (Plet _ _ notes) = step (getNoteList notes) where
+pletAll test (S a)          = test a
+pletAll test (Plet _ notes) = step (getNoteList notes) where
    step []                      = True
    step (p:ps) | pletAll test p = step ps
    step _                       = False

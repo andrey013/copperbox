@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Core.BeamExtremity
+-- Module      :  Neume.Core.Metrical
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -13,20 +13,22 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Beam extremity...
--- Probably this will be renamed. Printable beam groups should
--- only begin and end on (notes, chords) and not rests. 
+-- Beaming and metrical types and utilities.
+--
+-- Extremities - printable beam groups should only begin and end 
+-- on (notes, chords) and not rests. 
 --
 --------------------------------------------------------------------------------
 
-module Neume.Core.BeamExtremity 
+module Neume.Core.Metrical
   ( 
-    BeamExtremity(..)
+    PletMult
+  , BeamExtremity(..)
   , NumMeasured(..)
 
   ) where
 
-
+type PletMult = (Int,Int)
 
 class BeamExtremity a where 
    rendersToNote :: a -> Bool

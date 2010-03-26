@@ -22,9 +22,9 @@ module Neume.Core.Bracket
 
   ) where
 
-import Neume.Core.BeamExtremity
 import Neume.Core.Datatypes
 import Neume.Core.Duration
+import Neume.Core.Metrical
 import Neume.Core.SyntaxStaff
 import Neume.Core.TreeOps
 import Neume.Core.Utils.Common
@@ -205,7 +205,7 @@ beamNotes = alternateUnwind out inn unbuffer
   where
     out a@(S e) 
        | pletMeasure a < quarter_note && rendersToNote e  = Nothing
-    out a@(Plet _ _ _) 
+    out a@(Plet _ _) 
        | pletAll ((<quarter_note) . nmeasure) a           = Nothing
     out pt                                                = Just (conv pt)
     
@@ -218,7 +218,7 @@ beamNotes = alternateUnwind out inn unbuffer
 
 conv :: PletTree a -> CExpr a
 conv (S a)            = Atom a
-conv (Plet p q notes) = N_Plet (p,q) (map conv $ getNoteList notes)
+conv (Plet pm notes) = N_Plet pm (map conv $ getNoteList notes)
 
 
 
