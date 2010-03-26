@@ -65,8 +65,8 @@ module Neume.Extra.NamedElements
  ) where
 
 
-import Neume.Core.Datatypes
 import Neume.Core.Duration
+import Neume.Core.Metrical
 import Neume.Core.Pitch
 import Neume.Core.SyntaxStaff
 

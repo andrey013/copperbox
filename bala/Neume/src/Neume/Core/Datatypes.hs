@@ -25,18 +25,13 @@ module Neume.Core.Datatypes
   , triplet
   , simpleNoteList
 
-  -- * Meter patterns and time signatures
-  , MeterPattern
-  , makeMeterPattern
-  , compoundMeter
-  , simpleMeter
+  -- * Time signatures ( now unneccessary ? )
   , TimeSignature(..)
   , MetricalSpec(..)
    
   ) where
 
 import Neume.Core.Metrical
-import Neume.Core.Utils.Common
 import Neume.Core.Utils.Pretty
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
@@ -98,40 +93,6 @@ triplet a b c = plet 3 2 [S a,S b,S c]
 --
 simpleNoteList :: [a] -> NoteList a
 simpleNoteList = NoteList . map S
-
-
---------------------------------------------------------------------------------
--- Meter patterns
-
-
--- Implementation note - MeterPatterns must support arithmetic
--- so are lists of Rationals rather that the lists of Duration.
-
-
-type MeterPattern = [Rational] 
-     
-
-makeMeterPattern :: Int -> Int -> MeterPattern
-makeMeterPattern n d 
-      | compoundMeter  n d  = replicate 3 $ (makeRational n d) / 3
-      | simpleMeter n d     = replicate n $ makeRational 1 d
-      | otherwise           = error $ err_msg
-  where
-    err_msg = "meterPattern - can't generate a meter pattern for a "
-           ++ "meter that is neither simple or compound."
-
--- Note compoundMeter and simpleMeter overlap
-
-compoundMeter :: Integral a => a -> a -> Bool
-compoundMeter n d = log2whole d && (n `mod` 3 == 0)
-         
-simpleMeter :: Integral a => a -> a -> Bool
-simpleMeter _ d = log2whole d
-
-log2whole :: Integral a => a -> Bool
-log2whole = (==0) . snd . pf . logBase 2 . fromIntegral where
-    pf :: Double -> (Int, Double)
-    pf = properFraction
 
 -------------------------------------------------------------------------------
 -- Time signatures

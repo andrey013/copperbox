@@ -106,40 +106,6 @@ cyclePattern ana mp | ana <= 0  = cycle mp
 
 
 
-
-
-
-
---------------------------------------------------------------------------------
--- Stack (meter pattern) addition and subtraction
-
--- | sminus subtracts from the top of stack.
---
--- If the number to be subtracted is greater than the top of the
--- stack the top of the stack is popped and the remainder is 
--- subtracted from the new stack top (the stack will never 
--- contain negative numbers).
--- 
---
-
-sminus :: (Num a, Ord a) => a -> [a] -> [a]
-sminus a       xs     | a < 0   = splus (abs a) xs
-sminus _       []               = []
-sminus a       (x:xs)           = step (x-a) xs where
-  step r ys      | r > 0     = r:ys
-  step r (y:ys)  | r < 0     = step (y - abs r) ys
-  step _ ys                  = ys                   -- empty stack or r==0
-  
-
--- | splus always conses the scalar (unless it is negative, which 
--- is treated as stack-minus).
---    
-splus :: (Num a, Ord a) => a -> [a] -> [a]
-splus a xs | a > 0     = a:xs
-           | a < 0     = sminus (abs a) xs
-           | otherwise = xs
-
-
 --------------------------------------------------------------------------------
 -- Divide the NoteList
 
