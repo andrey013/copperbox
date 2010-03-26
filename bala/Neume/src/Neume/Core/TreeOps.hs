@@ -31,12 +31,11 @@ import Neume.Core.Metrical
 import Neume.Core.Duration
 
 import Data.List ( foldl' )
-import Data.Ratio
 
 
-pletFold :: (a -> b -> b) -> (Int -> Int -> b -> b) -> b -> PletTree a -> b
-pletFold f _ b (S a)           = f a b
-pletFold f g b (Plet (p,q) xs) = foldl' (pletFold f g) (g p q b) $ getNoteList xs
+pletFold :: (a -> b -> b) -> (PletMult -> b -> b) -> b -> PletTree a -> b
+pletFold f _ b (S a)        = f a b
+pletFold f g b (Plet pm xs) = foldl' (pletFold f g) (g pm b) $ getNoteList xs
 
 
 pletAll :: (a -> Bool) -> PletTree a -> Bool
@@ -56,25 +55,11 @@ pletAll test (Plet _ notes) = step (getNoteList notes) where
 --
 pletMeasure :: (Measurement a ~ DurationMeasure, NumMeasured a) 
             => PletTree a -> DurationMeasure
-pletMeasure = snd . pletFold  phi chi (tempty,0) where
-  phi a      (stk,acc) = (stk, acc + sf stk * nmeasure a)
-  chi p q    (stk,acc) = (pushT p q stk,acc) 
+pletMeasure = snd . pletFold  phi chi (mult_stack_zero,0) where
+  phi a  (stk,acc) = (stk, acc + nmeasureCtx stk a)
+  chi pm (stk,acc) = (pushPM pm stk,acc) 
 
 
-type TStack = [Rational]
-
-
--- scale factor
-sf :: TStack -> Rational
-sf []     = (1%1)
-sf (x:xs) = x * sf xs
-
-tempty :: TStack
-tempty = []
-
-pushT :: Int -> Int -> TStack -> TStack
-pushT p q stk = s : stk where
-  s = (fromIntegral q) % (fromIntegral p)   -- note - q%p 
 
 --------------------------------------------------------------------------------
 
@@ -87,7 +72,7 @@ pushT p q stk = s : stk where
 --
 pletCount :: (a -> Bool) -> PletTree a -> Int
 pletCount test = pletFold phi chi 0 where
-  phi a   n  | test a    = n+1
-             | otherwise = n
-  chi _ _ n              = n
+  phi a n  | test a    = n+1
+           | otherwise = n
+  chi _ n              = n
 

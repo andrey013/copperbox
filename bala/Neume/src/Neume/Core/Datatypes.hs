@@ -79,7 +79,7 @@ instance Functor PletTree where
 
 -- | Short-hand constructor for n-ary plets.
 --
-plet :: Int -> Int -> [PletTree a] -> PletTree a
+plet :: Integer -> Integer -> [PletTree a] -> PletTree a
 plet p q xs = Plet (p,q) (NoteList xs) 
 
 -- | Create a duplet - two notes in the time of three.
@@ -155,7 +155,9 @@ data MetricalSpec = MetricalSpec {
 
 instance Pretty a => Pretty (PletTree a) where 
   pretty (S a)              = pretty a
-  pretty (Plet (p,q) notes) = braces (int p <> colon <> int q <+> pretty notes)
+  pretty (Plet (p,q) notes) = braces (pletm p q <+> pretty notes)
+    where
+      pletm n d = integer n <> colon <> integer d
 
 instance Pretty a => Pretty (NoteList a) where
   pretty (NoteList xs) = sep (map pretty xs)

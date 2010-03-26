@@ -23,12 +23,51 @@
 module Neume.Core.Metrical
   ( 
     PletMult
+  , MultiplierStack
+  , mult_stack_zero
+  , pushPM
+  , scaleFactor
+  , nmeasureCtx
+
   , BeamExtremity(..)
   , NumMeasured(..)
 
   ) where
 
-type PletMult = (Int,Int)
+import Neume.Core.Duration
+
+import Data.Ratio
+
+-- Store plet-multipliers as pairs of integers rather than a 
+-- Rational as a Rational normalizes the fraction.
+--
+type PletMult = (Integer,Integer)
+
+type MultiplierStack = [Rational]
+
+mult_stack_zero :: MultiplierStack
+mult_stack_zero = []
+
+
+-- TODO - ensure that plet multiplier is used correctly with ABC
+-- which may want the numerator / denominator in the other order
+--
+pushPM :: PletMult -> MultiplierStack -> MultiplierStack
+pushPM (p,q) stk = (p%q) : stk
+
+scaleFactor :: MultiplierStack -> DurationMeasure
+scaleFactor []     = (1%1)
+scaleFactor (x:xs) = x * scaleFactor xs
+
+
+nmeasureCtx :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+            => MultiplierStack -> a -> DurationMeasure
+nmeasureCtx stk a = nmeasure a * (scaleFactor stk)
+
+
+--------------------------------------------------------------------------------
+
+
 
 class BeamExtremity a where 
    rendersToNote :: a -> Bool
