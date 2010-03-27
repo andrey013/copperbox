@@ -22,11 +22,10 @@ module Neume.Core.Bracket
 
   ) where
 
-import Neume.Core.Datatypes
 import Neume.Core.Duration
 import Neume.Core.Metrical
+import Neume.Core.NoteList
 import Neume.Core.SyntaxStaff
-import Neume.Core.TreeOps
 import Neume.Core.Utils.Common
 
 import Text.PrettyPrint.Leijen hiding ( empty )   -- package: wl-pprint

@@ -34,12 +34,13 @@ module Neume.Extra.LilyPondFormat
 
 
   ) where
+
 import Neume.Core.Bracket
-import Neume.Core.Datatypes
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic ( pitch, spacer )
 import Neume.Core.LilyPondOutput
 import Neume.Core.Metrical
+import Neume.Core.NoteList ( simpleNoteList )
 import Neume.Core.Pitch
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff

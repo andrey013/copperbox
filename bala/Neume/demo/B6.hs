@@ -5,10 +5,10 @@ module B6 where
 
 import qualified Neume.Core.AbcOutput        as ABC
 import Neume.Core.Bracket
-import Neume.Core.Datatypes
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
+import Neume.Core.NoteList
 import Neume.Core.Pitch
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
