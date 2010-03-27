@@ -18,21 +18,17 @@ module Neume.Core.Datatypes
   (
 
   -- * Notelists
-    NoteList(..)
+    NoteList
   , PletTree(..)
   , plet
   , duplet
   , triplet
   , simpleNoteList
 
-  -- * Time signatures ( now unneccessary ? )
-  , TimeSignature(..)
-  , MetricalSpec(..)
    
   ) where
 
 import Neume.Core.Metrical
-import Neume.Core.Utils.Pretty
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
@@ -48,8 +44,8 @@ import Text.PrettyPrint.Leijen          -- package: wl-pprint
 -- To handle n-ary tuplets a NoteGroup is unfortunately somewhat 
 -- more complicated than a simple (linear) list.
 --
-newtype NoteList a = NoteList { getNoteList :: [PletTree a] }
-  deriving (Eq)
+type NoteList a = [PletTree a]
+
 
 -- | A \PletTree\ represents an element in a 'NoteGroup'. A 
 -- element may be either a single note (constructor S) or an 
@@ -57,25 +53,19 @@ newtype NoteList a = NoteList { getNoteList :: [PletTree a] }
 -- tuplets can contain tuplets.
 --
 data PletTree a = S a                           -- Single \"note\"
-                | Plet PletMult (NoteList a)
+                | Plet PletMult [PletTree a]
   deriving (Eq,Show)
 
 
-instance Show a => Show (NoteList a) where
-  showsPrec i (NoteList xs) = showsPrec i xs
-
-instance Functor NoteList where
-  fmap f = NoteList . map (fmap f) . getNoteList
-
 instance Functor PletTree where
   fmap f (S a)        = S (f a)
-  fmap f (Plet pm xs) = Plet pm (fmap f xs)
+  fmap f (Plet pm xs) = Plet pm (map (fmap f) xs)
 
 
 -- | Short-hand constructor for n-ary plets.
 --
 plet :: Integer -> Integer -> [PletTree a] -> PletTree a
-plet p q xs = Plet (p,q) (NoteList xs) 
+plet p q xs = Plet (p,q) xs 
 
 -- | Create a duplet - two notes in the time of three.
 --
@@ -92,23 +82,7 @@ triplet a b c = plet 3 2 [S a,S b,S c]
 -- or duplets) into a 'NoteList'.
 --
 simpleNoteList :: [a] -> NoteList a
-simpleNoteList = NoteList . map S
-
--------------------------------------------------------------------------------
--- Time signatures
-
-data TimeSignature = TimeSignature { ts_meter :: Int , ts_pulse :: Int }
-  deriving (Eq,Show)
-
-
---------------------------------------------------------------------------------
--- Metrical specification
-
-data MetricalSpec = MetricalSpec { 
-        timeSignature :: TimeSignature,
-        meterPattern  :: MeterPattern
-      }
-  deriving (Eq,Show)
+simpleNoteList = map S
 
 
 --------------------------------------------------------------------------------
@@ -120,10 +94,4 @@ instance Pretty a => Pretty (PletTree a) where
     where
       pletm n d = integer n <> colon <> integer d
 
-instance Pretty a => Pretty (NoteList a) where
-  pretty (NoteList xs) = sep (map pretty xs)
-
-
-instance Pretty TimeSignature where
-  pretty (TimeSignature m p) = ppCommand "time" <+> int m <> char '/' <> int p
 

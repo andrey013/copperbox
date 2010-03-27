@@ -111,7 +111,7 @@ cyclePattern ana mp | ana <= 0  = cycle mp
 
 divisions :: (Measurement a ~ DurationMeasure, NumMeasured a) 
           => Rational -> MeterPattern -> NoteList a -> [MetricUnit a]
-divisions ana mp notes = step 0 (cyclePattern ana mp) (getNoteList notes) where
+divisions ana mp notes = step 0 (cyclePattern ana mp) notes where
   
   -- borrow greater than next mertical unit => produce a BZero
   step borrow (d:ds) xs   | borrow >= d = BZero : step (borrow-d) ds xs
@@ -138,7 +138,7 @@ division1 runit = post . unwind phi runit where
   phi r a | r > 0       = Yield a (r - pletMeasure a)
           | otherwise   = Done    
 
-  post (xs,borrow,rest) = (MUnit $ NoteList xs, abs borrow, rest)
+  post (xs,borrow,rest) = (MUnit xs, abs borrow, rest)
 
 
 -- | unfold against a list, presenting the rest-of-list and the 
@@ -163,7 +163,7 @@ unwind phi s0 = step id s0 where
 
 beam :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
      => NoteList a -> [CExpr a]
-beam = beamNotes . getNoteList 
+beam = beamNotes
 
 beamNotes :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
      => [PletTree a] -> [CExpr a]
@@ -183,8 +183,8 @@ beamNotes = alternateUnwind out inn unbuffer
 
 
 conv :: PletTree a -> CExpr a
-conv (S a)            = Atom a
-conv (Plet pm notes) = N_Plet pm (map conv $ getNoteList notes)
+conv (S a)           = Atom a
+conv (Plet pm notes) = N_Plet pm (map conv notes)
 
 
 

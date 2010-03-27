@@ -30,12 +30,12 @@ module Neume.Extra.FretDiagrams
   
   ) where
 
--- import Neume.Core.Bracket
 import Neume.Core.BracketMarkup
 import Neume.Core.Datatypes
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
+import Neume.Core.Metrical
 import Neume.Core.SyntaxMarkup
 import Neume.Core.SyntaxScore
 import Neume.Core.Utils
@@ -52,7 +52,7 @@ type FretDiagramGlyph = SkipGlyph FretDiagram Duration
 data FretDiagram = FretDiagram { 
         chord_name  :: String,
         chord_alias :: String,
-        fret_descr :: [FretNum]
+        fret_descr  :: [FretNum]
       }
   deriving (Show)
 

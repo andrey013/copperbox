@@ -35,12 +35,12 @@ import Data.List ( foldl' )
 
 pletFold :: (a -> b -> b) -> (PletMult -> b -> b) -> b -> PletTree a -> b
 pletFold f _ b (S a)        = f a b
-pletFold f g b (Plet pm xs) = foldl' (pletFold f g) (g pm b) $ getNoteList xs
+pletFold f g b (Plet pm xs) = foldl' (pletFold f g) (g pm b) xs
 
 
 pletAll :: (a -> Bool) -> PletTree a -> Bool
 pletAll test (S a)          = test a
-pletAll test (Plet _ notes) = step (getNoteList notes) where
+pletAll test (Plet _ notes) = step notes where
    step []                      = True
    step (p:ps) | pletAll test p = step ps
    step _                       = False
