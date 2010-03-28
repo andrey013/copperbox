@@ -44,11 +44,13 @@ module Neume.Core.Metrical
   , sminus
   , splus
 
+  -- * Anacrusis
+  , anacrusis
 
   ) where
 
 import Neume.Core.Duration
-import Neume.Core.Utils.Common ( makeRational )
+import Neume.Core.Utils.Common ( makeRational, modR )
 
 import Data.Ratio
 
@@ -161,4 +163,22 @@ splus :: (Num a, Ord a) => a -> [a] -> [a]
 splus a xs | a > 0     = a:xs
            | a < 0     = sminus (abs a) xs
            | otherwise = xs
+
+--------------------------------------------------------------------------------
+-- Anacrusis
+
+
+
+-- | Shorten a meter pattern to represent an anacrusis of a note 
+-- or notes before the first bar. Figuratively the anacrusis 
+-- /counts from the right/. 
+--
+-- Negative durations result in a runtime error.
+--
+anacrusis :: DurationMeasure -> MeterPattern -> MeterPattern
+anacrusis d0 mp  | d0 == 0   = mp
+                 | d0 <  0   = error "anacrusis - negative duration"
+                 | otherwise = let len = sum mp in step (d0 `modR` len) len
+  where
+    step d len = sminus (len - d) mp 
 

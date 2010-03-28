@@ -25,6 +25,7 @@ import Text.PrettyPrint.Leijen
 import Data.Ratio
 import System.Cmd
 
+
 main :: IO ()
 main = do 
   writeDoc "bulgarian6.ly"      ly_score

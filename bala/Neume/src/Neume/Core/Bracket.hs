@@ -28,6 +28,8 @@ import Neume.Core.NoteList
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils.Common
 
+-- import Data.JoinList                    -- package: joinlist
+
 import Text.PrettyPrint.Leijen hiding ( empty )   -- package: wl-pprint
 
 import Data.Foldable ( toList )
@@ -56,7 +58,11 @@ data MetricUnit a = MUnit (NoteList a)
  deriving (Eq,Show)
 
 
+type Bar a = Seq (NoteList a)
 
+mbSnoc :: Seq a -> Maybe a -> Seq a
+mbSnoc se Nothing  = se
+mbSnoc se (Just a) = se |> a
 
 --------------------------------------------------------------------------------
 -- 
@@ -119,21 +125,76 @@ divisions ana mp notes = step 0 (cyclePattern ana mp) notes where
   step _      _      []   = []
  
   -- 'normal' operation => use division1 to produce a MUnit
-  step borrow (d:ds) xs   = let ((one,borrow'),rest) = nextMUnit (d-borrow) xs
+  step borrow (d:ds) xs   = let (one,(borrow',rest)) = nextMUnit d (borrow,xs)
                             in one : step borrow' ds rest
 
   -- unreachable as meter patterns have been cycled
   step _       []     _    = error "Bracket.divisions - unreachable"
 
 
--- Potentially consume more than the required duration (as notes 
--- cannot be split).
+--------------------------------------------------------------------------------
+-- new version with snoc-able accumulator...
+
+
+type SegmentState a = (DurationMeasure, NoteList a)
+
+splitToBars :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+            => MeterPattern -> NoteList a -> Seq (Bar a)
+splitToBars mp notes = workerSplit mp empty (0,notes) where
+
+anaSplitToBars :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+               => DurationMeasure -> MeterPattern -> NoteList a -> Seq (Bar a)
+anaSplitToBars ana mp notes = workerSplit mp (singleton bar0) state0
+  where
+    (bar0,state0) = firstAna ana mp notes
+
+
+workerSplit :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+            => MeterPattern -> Seq (Bar a) -> (SegmentState a) -> Seq (Bar a)
+workerSplit mp acc st = step acc st where
+  step acc (_,[]) = acc
+  step acc st     = let (bar,st') = nextBar mp st in step (acc |> bar) st'
+  
+
+
+firstAna :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+         => DurationMeasure -> MeterPattern -> NoteList a 
+         -> (Bar a, SegmentState a)
+firstAna ana mp0 notes = nextBar (anacrusis ana mp0) (0,notes)
+
+
+nextBar ::  (Measurement a ~ DurationMeasure, NumMeasured a) 
+        => MeterPattern -> SegmentState a -> (Bar a, SegmentState a)
+nextBar mp = step empty mp where
+  step acc []     st = (acc,st)
+  step acc (d:ds) st = let (a,st') = nextUnit d st in step (acc `mbSnoc` a) ds st 
+
+
+nextUnit  :: (Measurement a ~ DurationMeasure, NumMeasured a)  
+          => DurationMeasure
+          -> (DurationMeasure, NoteList a)
+          -> (Maybe (NoteList a), (DurationMeasure,NoteList a))
+nextUnit d (borrow,notes) | borrow >= d = (Nothing, (borrow-d,notes))
+                          | otherwise   = post $ nextMUnit1 (d-borrow) notes
+  where
+    post (MUnit a,st) = (Just a, st)
+    post (BZero , st) = (Nothing, st)
 
 nextMUnit :: (Measurement a ~ DurationMeasure, NumMeasured a)  
           => DurationMeasure
-          -> NoteList a
-          -> ((MetricUnit a,DurationMeasure), NoteList a)
-nextMUnit dunit = post . step dunit where
+          -> SegmentState a
+          -> (MetricUnit a, SegmentState a)
+nextMUnit d (borrow,notes) | borrow >= d = (BZero, (borrow-d,notes))
+                           | otherwise   = nextMUnit1 (d-borrow) notes
+
+-- Potentially consume more than the required duration (as notes 
+-- cannot be split).
+
+nextMUnit1 :: (Measurement a ~ DurationMeasure, NumMeasured a)  
+           => DurationMeasure
+           -> NoteList a
+           -> (MetricUnit a, SegmentState a)
+nextMUnit1 = post `oo` step where
   step d xs       | d <= 0 = (([],abs d),xs)
   step d []                = (([],abs d),[])
   step d (x:xs)            = body d x xs
@@ -145,7 +206,7 @@ nextMUnit dunit = post . step dunit where
     where ((ys,d'),rest) = step (d - pletMeasure plet_tree) xs
 
 
-  post ((xs,d),rest)  = ((MUnit xs,d),rest)
+  post ((xs,d),rest)  = (MUnit xs,(d,rest))
 
 --------------------------------------------------------------------------------
 
