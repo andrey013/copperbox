@@ -38,6 +38,7 @@ import Neume.Core.Utils.OneList ( OneList, toListF )
 import Text.PrettyPrint.Leijen hiding ( sep )     -- package: wl-print
 
 import qualified Data.Foldable as F
+import Data.Sequence ( Seq )
 
 -- No annos for Abc...
 
@@ -47,10 +48,13 @@ type AbcNote  = Note  () Pitch AbcMultiplier
 --------------------------------------------------------------------------------
 
 renderPhrase :: StaffPhrase AbcGlyph -> PhraseImage
-renderPhrase = PhraseImage . map oStaffBar . extractBars
+renderPhrase = PhraseImage . mapInto oStaffBar . extractBars
 
 oStaffBar :: StaffBar AbcGlyph -> BarImage
-oStaffBar = oCExprList (<+>) . extractNotes
+oStaffBar = oCExprSeq (<+>)
+
+oCExprSeq :: (Doc -> Doc -> Doc) -> Seq (CExpr AbcGlyph) -> Doc
+oCExprSeq sep se = sepList sep $ mapInto (oCExpr sep) se
 
 
 oCExprList :: (Doc -> Doc -> Doc) -> [CExpr AbcGlyph] -> Doc

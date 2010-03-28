@@ -32,7 +32,7 @@ import Neume.Core.Utils
 
 
 import qualified Data.Foldable as F 
-import Data.Sequence hiding ( splitAt, length )
+import Data.Sequence 
 import Prelude hiding ( null )
 
 
@@ -42,8 +42,6 @@ import Prelude hiding ( null )
 -- | A Metric unit represents a division of a NoteList according
 -- to the sizes of a 'MeterPattern'.
 --
---
--- nop - note or plet
 --
 
 type MetricUnit   a = Seq (PletTree a) 
@@ -61,14 +59,14 @@ mbSnoc se (Just a) = se |> a
 
 phrase :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
        => MeterPattern -> NoteList a -> StaffPhrase a
-phrase mp notes = StaffPhrase $ F.toList $ fmap (StaffBar . beamBar) 
-                                         $ splitToBars mp notes
+phrase mp notes = StaffPhrase $ fmap beamBar
+                              $ splitToBars mp notes
 
 
 phraseAna :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
        => DurationMeasure -> MeterPattern -> NoteList a -> StaffPhrase a
-phraseAna ana mp notes = StaffPhrase $ F.toList $ fmap (StaffBar . beamBar) 
-                                                $ anaSplitToBars ana mp notes
+phraseAna ana mp notes = StaffPhrase $ fmap beamBar
+                                     $ anaSplitToBars ana mp notes
  
 
 
@@ -135,72 +133,58 @@ nextMUnit1 = step empty where
 
 --------------------------------------------------------------------------------
 
--- This is rather horrible...
+-- Reconstitute the beam groups
 
 beamBar :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
-        => BarMU a -> [CExpr a]
-beamBar = F.foldr (++) [] . fmap beamMU
+        => BarMU a -> Seq (CExpr a)
+beamBar = F.foldl (><) empty . fmap beamMU
 
 beamMU :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
-       => MetricUnit a -> [CExpr a]
+       => MetricUnit a -> Seq (CExpr a)
 beamMU = step1 . forward where
-  step1 (f,se) | null se   = f []
-               | otherwise = f (step2 $ backward se)
+  step1 (acc,rest) | null rest = acc
+                   | otherwise = acc >< step2 (backward rest)
 
-  step2 (se,g) | null se   = g []
-               | otherwise = mkBeamed se : g [] 
-
--- known to be not null...
-mkBeamed :: Seq (PletTree a) -> CExpr a
-mkBeamed se = step $ viewl se where
-  step (e :< rest) | null rest = conv e
-  step _                       = Beamed $ F.toList $ fmap conv se 
-
-
-type H a = [a] -> [a]
-
-atom :: H (CExpr a) -> a -> H (CExpr a)
-atom f a = f . (Atom a :)
-
-nplet :: H (CExpr a) -> PletTree a -> H (CExpr a)
-nplet f a = f . (conv a :)
-
-
-atomR :: a -> H (CExpr a) -> H (CExpr a)
-atomR a f = (Atom a :) . f
-
-npletR :: PletTree a -> H (CExpr a) -> H (CExpr a)
-npletR a f =  (conv a :) . f
-
-
-conv :: PletTree a -> CExpr a
-conv (S a)           = Atom a
-conv (Plet pm notes) = N_Plet pm (map conv notes)
+  step2 (acc,rest)             = mkBeamed acc >< rest
 
 
 forward :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
-        => Seq (PletTree a) -> (H (CExpr a), Seq (PletTree a))
-forward = step id . viewl where
-  step f EmptyL                           = (f, empty)
+        => Seq (PletTree a) -> (Seq (CExpr a), Seq (PletTree a))
+forward = step empty . viewl where
+  step acc EmptyL                           = (acc, empty)
 
-  step f ((S a) :< se)  | startsBeam a    = (f, S a <| se)
-                        | otherwise       = step (f `atom` a) (viewl se)
+  step acc ((S a) :< se)  | startsBeam a    = (acc, S a <| se)
+                          | otherwise       = step (acc |> Atom a) (viewl se)
 
-  step f (p_tree :< se) | allSmall p_tree = (f, p_tree <| se)
-                        | otherwise       = step (f `nplet` p_tree) (viewl se)
+  step acc (p_tree :< se) | allSmall p_tree = (acc, p_tree <| se)
+                          | otherwise       = step (acc |> convert1 p_tree) 
+                                                   (viewl se)
 
 
 backward :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
-         => Seq (PletTree a) -> (Seq (PletTree a), H (CExpr a))
-backward = step id . viewr where
-  step f EmptyR                           = (empty,f)
+         => Seq (PletTree a) -> (Seq (PletTree a), Seq (CExpr a))
+backward = step empty . viewr where
+  step acc EmptyR                           = (empty,acc)
 
-  step f (se :> (S a))  | startsBeam a    = (se |> S a, f)
-                        | otherwise       = step (a `atomR` f) (viewr se)
+  step acc (se :> (S a))  | startsBeam a    = (se |> S a, acc)
+                          | otherwise       = step (Atom a <| acc) (viewr se)
 
-  step f (se :> p_tree) | allSmall p_tree = (se |> p_tree , f)
-                        | otherwise       = step (p_tree `npletR` f) (viewr se)
+  step acc (se :> p_tree) | allSmall p_tree = (se |> p_tree , acc)
+                          | otherwise       = step (convert1 p_tree <| acc) 
+                                                   (viewr se)
 
+
+
+
+convert1 :: PletTree a -> CExpr a
+convert1 (S a)           = Atom a
+convert1 (Plet pm notes) = N_Plet pm (map convert1 notes)
+
+mkBeamed :: Seq (PletTree a) -> Seq (CExpr a)
+mkBeamed se = step $ viewl se where
+  step EmptyL                  = empty
+  step (e :< rest) | null rest = singleton $ convert1 e
+  step _                       = singleton $ Beamed $ mapInto convert1 se 
 
 
 startsBeam :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 

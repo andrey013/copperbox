@@ -24,6 +24,7 @@ module Neume.Core.Utils.Common
   , strip
 
   , psimap
+  , mapInto
   , unlist1
 
   , para
@@ -38,7 +39,7 @@ module Neume.Core.Utils.Common
   ) where
 
 import Data.Ratio
-
+import Data.Sequence
 
  
 makeRational :: Integral a => a -> a -> Rational
@@ -88,6 +89,11 @@ strip _ b = b
 psimap :: (a -> b) -> a -> [a] -> (b,[b])
 psimap f x xs = (f x, map f xs)
 
+
+mapInto :: (a -> b) -> Seq a -> [b]
+mapInto f = step [] . viewr where
+  step acc (sa :> a) = step (f a : acc) (viewr sa)
+  step acc _         = acc
 
 
 unlist1 :: (a -> b) -> [a] -> Maybe (b,[a])

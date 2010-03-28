@@ -39,15 +39,14 @@ import Neume.Core.Pitch
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxMarkup
 import Neume.Core.SyntaxStaff
+import Neume.Core.Utils
 import Neume.Core.Utils.OneList
-import Neume.Core.Utils.Pretty
-import Neume.Core.Utils.StateMap
 
 
 import Text.PrettyPrint.Leijen          -- package: wl-print
 
 import qualified Data.Foldable          as F
-
+import Data.Sequence ( Seq )
 --------------------------------------------------------------------------------
 -- Render
 
@@ -59,13 +58,14 @@ import qualified Data.Foldable          as F
 renderPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> PhraseImage
 renderPhrase = oStaffPhrase
 
-
-
 oStaffPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> PhraseImage
-oStaffPhrase f = PhraseImage . map (oStaffBar f) . extractBars
+oStaffPhrase f = PhraseImage . mapInto (oStaffBar f) . extractBars
 
 oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> BarImage
-oStaffBar f = hsep . oCExprList f . extractNotes
+oStaffBar f = hsep . oCExprSeq f 
+
+oCExprSeq ::  (pch -> Doc) -> Seq (CExpr (GlyphRelDur anno pch)) -> [Doc]
+oCExprSeq f  = mapInto (oCExpr f) 
 
 oCExprList ::  (pch -> Doc) -> [CExpr (GlyphRelDur anno pch)] -> [Doc]
 oCExprList f  = map (oCExpr f) 
@@ -140,8 +140,7 @@ default_duration = qn
 
 rewriteDurationOpt :: FreeRewrite (Glyph anno pch Duration)
                                   (Glyph anno pch (Maybe Duration))
-rewriteDurationOpt  = 
-    StaffPhrase . map (fst . (stmap doptGlyph default_duration)) . extractBars
+rewriteDurationOpt = mapBar (fst . (stmap doptGlyph default_duration))
 
 
 

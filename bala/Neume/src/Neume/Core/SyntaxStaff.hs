@@ -20,7 +20,7 @@ module Neume.Core.SyntaxStaff
   (
   -- * Phrases and bars
     StaffPhrase(..)
-  , StaffBar(..)
+  , StaffBar
 
 
   -- * Staff expressions
@@ -48,17 +48,20 @@ module Neume.Core.SyntaxStaff
   , CtxRewrite
   , FreeRewrite
 
+  , mapBar
+
   ) where
 
 
 import Neume.Core.Duration
 import Neume.Core.Metrical
 import Neume.Core.Pitch
-import Neume.Core.Utils.FunctorN
+import Neume.Core.Utils
 import Neume.Core.Utils.OneList
-import Neume.Core.Utils.StateMap
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
+
+import Data.Sequence 
 
 --------------------------------------------------------------------------------
 -- Phrases and bars 
@@ -66,8 +69,8 @@ import Text.PrettyPrint.Leijen          -- package: wl-pprint
 -- Note - phrases, bars and CExprs are polymorphic on the glyph
 -- type. They can use alternatives to the Glyph type. 
 
-newtype StaffPhrase gly = StaffPhrase { extractBars   :: [StaffBar gly] }
-newtype StaffBar    gly = StaffBar    { extractNotes  :: [CExpr gly]  } 
+newtype StaffPhrase gly = StaffPhrase { extractBars   :: Seq (StaffBar gly) }
+type    StaffBar    gly = Seq (CExpr gly)
 
 
 
@@ -143,13 +146,17 @@ type FreeRewrite    gly gly' = StaffPhrase gly -> StaffPhrase gly'
 
 
 --------------------------------------------------------------------------------
+-- 
+
+mapBar :: (CExpr gly -> CExpr gly') -> StaffPhrase gly -> StaffPhrase gly'
+mapBar f (StaffPhrase se) = StaffPhrase $ fmap (fmap f) se
+
+--------------------------------------------------------------------------------
 -- Instances
 
 instance Functor StaffPhrase where
-  fmap f (StaffPhrase xs) = StaffPhrase $ fmap (fmap f) xs
+  fmap f (StaffPhrase xs) = StaffPhrase $ fmap (fmap (fmap f)) xs
 
-instance Functor StaffBar where
-  fmap f (StaffBar os)    = StaffBar $ map (fmap f) os
 
 
 instance Functor CExpr where
@@ -179,11 +186,7 @@ instance FMap3 Glyph where
 -- StateMap
 instance StateMap StaffPhrase where
   stmap f st (StaffPhrase xs) = (StaffPhrase xs',st') 
-                                where (xs',st') = stmap (stmap f) st xs
-
-instance StateMap StaffBar where
-  stmap f st (StaffBar os) = (StaffBar os',st') 
-    where (os',st') = stmap (stmap f) st os
+    where (xs',st') = stmap (stmap (stmap f)) st xs
 
 
 instance StateMap CExpr where
