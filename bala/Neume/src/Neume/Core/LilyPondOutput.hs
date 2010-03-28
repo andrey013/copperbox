@@ -245,5 +245,5 @@ relpGlyph = stmap3b relpP
 -- octave modified new value.
 --
 relpP :: Pitch -> Pitch -> (Pitch,Pitch)
-relpP prev p = let p' = setOctave (lyOctaveDist prev p) p in (p,p')
+relpP prev p = let p' = setOctave (lyOctaveDist prev p) p in (p',p)
 

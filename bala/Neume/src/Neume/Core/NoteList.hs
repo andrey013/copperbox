@@ -27,6 +27,8 @@ module Neume.Core.NoteList
   , triplet
   , simpleNoteList
 
+  , LevelViewL(..)
+  , destructLevel
   , pletFold
   , pletAll
   , pletMeasure
@@ -95,12 +97,18 @@ simpleNoteList = map S
 
 
 
+--------------------------------------------------------------------------------
 
-
-data LevelViewL a = EmptyPletTree
-                  | Elementary a            (PletTree a)
-                  | Level      (PletTree a) (PletTree a)
+data LevelViewL a = EmptyNoteList
+                  | Elementary a                     (NoteList a)
+                  | Level      (PletMult,NoteList a) (NoteList a)
   deriving (Eq,Show)
+
+destructLevel :: NoteList a -> LevelViewL a
+destructLevel []                = EmptyNoteList
+destructLevel (S a : xs)        = Elementary a xs
+destructLevel (Plet pm ts : xs) = Level (pm,ts) xs
+
 
 pletFold :: (a -> b -> b) -> (PletMult -> b -> b) -> b -> PletTree a -> b
 pletFold f _ b (S a)        = f a b

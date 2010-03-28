@@ -119,43 +119,33 @@ divisions ana mp notes = step 0 (cyclePattern ana mp) notes where
   step _      _      []   = []
  
   -- 'normal' operation => use division1 to produce a MUnit
-  step borrow (d:ds) xs   = let (one,borrow',rest) = division1 (d-borrow) xs
+  step borrow (d:ds) xs   = let ((one,borrow'),rest) = nextMUnit (d-borrow) xs
                             in one : step borrow' ds rest
 
   -- unreachable as meter patterns have been cycled
   step _       []     _    = error "Bracket.divisions - unreachable"
 
-                            
--- | Extract one MeticUnit from the input list, return the unit, 
--- the carry, and the rest-of-input.
---
-division1 :: (Measurement a ~ DurationMeasure, NumMeasured a)  
+
+-- Potentially consume more than the required duration (as notes 
+-- cannot be split).
+
+nextMUnit :: (Measurement a ~ DurationMeasure, NumMeasured a)  
           => DurationMeasure
-          -> [PletTree a] 
-          -> (MetricUnit a, DurationMeasure, [PletTree a])
-division1 runit = post . unwind phi runit where
-  phi r a | r > 0       = Yield a (r - pletMeasure a)
-          | otherwise   = Done    
+          -> NoteList a
+          -> ((MetricUnit a,DurationMeasure), NoteList a)
+nextMUnit dunit = post . step dunit where
+  step d xs       | d <= 0 = (([],abs d),xs)
+  step d []                = (([],abs d),[])
+  step d (x:xs)            = body d x xs
 
-  post (xs,borrow,rest) = (MUnit xs, abs borrow, rest)
+  body d (S a)      xs = ((S a:ys,d'),rest) 
+    where ((ys,d'),rest) = step (d - nmeasure a) xs
+  
+  body d plet_tree  xs = ((plet_tree:ys,d'),rest) 
+    where ((ys,d'),rest) = step (d - pletMeasure plet_tree) xs
 
 
--- | unfold against a list, presenting the rest-of-list and the 
--- state at the end
-
--- Strict version of Maybe for unfolding...
-
-data Step a st = Yield a  !st
-               | Done     
-  deriving (Eq,Show)
-
-unwind :: (st -> a -> Step b st) -> st -> [a] -> ([b],st,[a])
-unwind phi s0 = step id s0 where
-  step k st (x:xs) = case phi st x of
-                       Yield a st' -> step (k . (a:)) st' xs
-                       Done        -> (k [],st,x:xs)
-  step k st []     = (k [],st,[])  
-
+  post ((xs,d),rest)  = ((MUnit xs,d),rest)
 
 --------------------------------------------------------------------------------
 
