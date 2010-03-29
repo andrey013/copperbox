@@ -29,6 +29,7 @@ module Neume.Core.AbcOutput
 
 import Neume.Core.AbcBasic
 import Neume.Core.Duration
+import Neume.Core.Metrical
 import Neume.Core.Pitch hiding ( octave )
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
@@ -64,10 +65,13 @@ oCExprList sep xs = sepList sep $ map (oCExpr sep) xs
 -- between them.
 --
 oCExpr :: (Doc -> Doc -> Doc) -> CExpr AbcGlyph -> Doc
-oCExpr _   (Atom e)         = oGlyph e
-oCExpr _op (N_Plet _ _)     = error $ "oCExpr - N_Plet to do"
-oCExpr _   (Beamed notes)   = oCExprList (<>) notes
+oCExpr _  (Atom e)        = oGlyph e
+oCExpr op (N_Plet pm xs)  = pletContext (pletStats pm (length xs))
+                         <+> oCExprList op xs
+oCExpr _  (Beamed notes)  = oCExprList (<>) notes
 
+pletStats :: PletMult -> Int -> (Int,Int,Int)
+pletStats (n,d) len = (fromIntegral d, fromIntegral n,len)
 
 oGlyph :: AbcGlyph -> Doc
 oGlyph (GlyNote n t)        = oNote n <> optDoc t tie

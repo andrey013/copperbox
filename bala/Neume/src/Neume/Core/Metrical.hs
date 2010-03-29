@@ -74,6 +74,8 @@ class Num (Measurement a) => NumMeasured a where
 
 -- Store plet-multipliers as pairs of integers rather than a 
 -- Rational as a Rational normalizes the fraction.
+-- 
+-- > PletMult = (numerator, denominator)
 --
 type PletMult = (Integer,Integer)
 

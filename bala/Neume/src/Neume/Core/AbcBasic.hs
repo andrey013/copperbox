@@ -28,7 +28,7 @@ module Neume.Core.AbcBasic
   , tie
   , chordForm
   , graceForm
-
+  , pletContext
 
   ) where
 
@@ -130,5 +130,9 @@ chordForm = brackets . hcat
 graceForm :: [Doc] -> Doc
 graceForm = braces . hcat
 
-
-
+-- | @(p:q:r@
+--
+-- @p@ notes in the time of @r@ for the next @q@ notes.
+--
+pletContext :: (Int,Int,Int) -> Doc
+pletContext (p,q,r) = lparen <> int p <> colon <> int q <> colon <> int r

@@ -142,10 +142,10 @@ beamBar = F.foldl (><) empty . fmap beamMU
 beamMU :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
        => MetricUnit a -> Seq (CExpr a)
 beamMU = step1 . forward where
-  step1 (acc,rest) | null rest = acc
-                   | otherwise = acc >< step2 (backward rest)
+  step1 (left,rest) | null rest = left
+                    | otherwise = left >< step2 (backward rest)
 
-  step2 (acc,rest)             = mkBeamed acc >< rest
+  step2 (middle,right)          = mkBeamed middle >< right
 
 
 forward :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 

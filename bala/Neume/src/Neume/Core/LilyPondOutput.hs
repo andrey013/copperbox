@@ -71,9 +71,9 @@ oCExprList ::  (pch -> Doc) -> [CExpr (GlyphRelDur anno pch)] -> [Doc]
 oCExprList f  = map (oCExpr f) 
 
 oCExpr :: (pch -> Doc) -> CExpr (GlyphRelDur anno pch) -> Doc
-oCExpr f (Atom e)         = oGlyph f e 
-oCExpr _ (N_Plet _ _)     = error $ "oCExpr - N_Plet to do"
-oCExpr f (Beamed notes)   = beamForm $ oCExprList f notes
+oCExpr f (Atom e)          = oGlyph f e 
+oCExpr f (N_Plet mp xs)    = pletForm mp (oCExprList f xs)
+oCExpr f (Beamed notes)    = beamForm $ oCExprList f notes
 
 oGlyph :: (pch -> Doc) -> GlyphRelDur anno pch -> Doc
 oGlyph f (GlyNote n t)    = oNote f n <> optDoc t tie

@@ -29,12 +29,13 @@ module Neume.Core.LilyPondBasic
   , chordForm
   , graceForm
   , beamForm
-
+  , pletForm
 
   ) where
 
 
 import Neume.Core.Duration
+import Neume.Core.Metrical
 import Neume.Core.Pitch
 import Neume.Core.Utils.Pretty
 
@@ -131,3 +132,14 @@ beamForm (x:xs) = x <> char '[' <+> hsep xs <> char ']'
 beamForm []     = emptyDoc
 
 
+
+-- | N-ary plets - @\\times ../..@ command then expression 
+-- inside braces,
+-- e.g:
+--
+-- @ 
+--  \\times 3/5 { c8[ c c c c] }
+-- @ 
+pletForm :: PletMult -> [Doc] -> Doc
+pletForm (n,d) xs = ppCommand "times" <+> integer n <> char '/' <> integer d
+                                      <+> braces (hsep xs)
