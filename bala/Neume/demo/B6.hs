@@ -52,7 +52,7 @@ abc_score =  ABC.tunenum   1
          <$> ABC.key       "Amaj"
          <$> tune1
   where
-    tune1 = ABC.abcScore abcPhrase strip [4,4,4,4] b6_score
+    tune1 = ABC.abcScore abcPhrase ABC.barNumber [4,4,4,4] b6_score
 
 
 

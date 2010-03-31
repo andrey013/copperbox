@@ -17,7 +17,14 @@
 
 module Neume.Core.LilyPondOutput 
   (
-    renderPhrase
+
+    LyStdGlyph
+  , LyStdNote
+  , OctaveDisplacement
+  , Ly_Std_Rewrite_Config 
+  , lyRewrite
+
+  , renderPhrase
   , oGlyph
 
   , renderMarkupPhrase
@@ -47,6 +54,32 @@ import Text.PrettyPrint.Leijen          -- package: wl-print
 
 import qualified Data.Foldable          as F
 import Data.Sequence ( Seq )
+
+
+type LyStdGlyph anno = Glyph anno Pitch (Maybe Duration)
+type LyStdNote  anno = Note  anno Pitch (Maybe Duration)
+
+type OctaveDisplacement = Int
+
+data Ly_Std_Rewrite_Config = Ly_Rewrite_Relative Pitch
+                           | Ly_Rewrite_Absolute OctaveDisplacement
+
+
+
+
+-- This isn\'t right - relative pitch transform needs to return
+-- the final pitch so the trasformation can be \'stacked\' for 
+-- successive phrases.
+
+
+lyRewrite :: Ly_Std_Rewrite_Config 
+          -> StaffPhrase (Glyph anno Pitch Duration)
+          -> StaffPhrase (Glyph anno Pitch (Maybe Duration))
+lyRewrite (Ly_Rewrite_Relative _pch) = undefined 
+                                      -- rewriteDurationOpt . rewritePitchRel pch
+lyRewrite (Ly_Rewrite_Absolute i)   = rewriteDurationOpt . rewritePitchAbs i
+
+
 --------------------------------------------------------------------------------
 -- Render
 
@@ -71,9 +104,9 @@ oCExprList ::  (pch -> Doc) -> [CExpr (GlyphRelDur anno pch)] -> [Doc]
 oCExprList f  = map (oCExpr f) 
 
 oCExpr :: (pch -> Doc) -> CExpr (GlyphRelDur anno pch) -> Doc
-oCExpr f (Atom e)          = oGlyph f e 
-oCExpr f (N_Plet mp xs)    = pletForm mp (oCExprList f xs)
-oCExpr f (Beamed notes)    = beamForm $ oCExprList f notes
+oCExpr f (Atom e)         = oGlyph f e 
+oCExpr f (N_Plet mp xs)   = pletForm mp (oCExprList f xs)
+oCExpr f (Beamed notes)   = beamForm $ oCExprList f notes
 
 oGlyph :: (pch -> Doc) -> GlyphRelDur anno pch -> Doc
 oGlyph f (GlyNote n t)    = oNote f n <> optDoc t tie
@@ -233,7 +266,7 @@ abspChordPitch i (ChordPitch a p) = ChordPitch a (displaceOctave i p)
 -- Relative Pitch
 
 rewritePitchRel :: CtxRewrite Pitch (Glyph anno Pitch dur) (Glyph anno Pitch dur)
-rewritePitchRel pch phrase = stmap relpGlyph pch phrase
+rewritePitchRel pch = stmap relpGlyph pch
 
 
 relpGlyph :: Pitch -> Glyph anno Pitch dur -> (Glyph anno Pitch dur,Pitch)

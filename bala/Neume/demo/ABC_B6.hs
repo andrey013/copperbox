@@ -36,13 +36,17 @@ abc_score =  ABC.tunenum   1
          <$> ABC.key       "Amaj"
          <$> tune1
   where
-    tune1 = ABC.abcScore abcPhrase strip [4,4,4,4] b6_score
+    tune1 = ABC.abcScore abcPhrase ABC.barNumber [4,4,4,4] b6_score
     
 
 
 b6_score :: (Score repr, [StdGlyph] ~ ScoreBase repr) => () -> repr
 b6_score () = repeated bars1'4 `caten` repeated bars5'8
-      
+ 
+b6_score_alt :: [ABC.Section [PletTree StdGlyph]]
+b6_score_alt = [ ABC.Repeated $ simpleNoteList bars1'4
+               , ABC.Repeated $ simpleNoteList bars5'8
+               ]
 
 a_major     :: SpellingMap
 a_major     = makeSpellingMap 3
@@ -55,7 +59,6 @@ abcPhrase = ABC.renderPhrase . ABC.rewritePitch a_major
                              . phrase two_four_time
                              . simpleNoteList
  
-
 
 
 bars1'4 :: [StdGlyph]

@@ -18,7 +18,13 @@
 
 module Neume.Core.AbcOutput 
   (
-    renderPhrase
+
+    AbcGlyph
+  , AbcNote
+  , ABC_Std_Rewrite_Config(..)
+  , abcRewrite
+
+  , renderPhrase
 
   -- * rewriting
   , rewritePitch
@@ -45,6 +51,20 @@ import Data.Sequence ( Seq )
 
 type AbcGlyph = Glyph () Pitch AbcMultiplier
 type AbcNote  = Note  () Pitch AbcMultiplier
+
+
+data ABC_Std_Rewrite_Config = ABC_Std_Rewrite_Config 
+    { spelling_map    :: SpellingMap
+    , unit_duration   :: DurationMeasure 
+    }
+
+abcRewrite :: ABC_Std_Rewrite_Config 
+           -> StaffPhrase (Glyph anno Pitch Duration)
+           -> StaffPhrase AbcGlyph
+abcRewrite cfg = rewriteDuration (unit_duration cfg) 
+               . rewritePitch    (spelling_map cfg) 
+               . rewriteAnno 
+
 
 --------------------------------------------------------------------------------
 
