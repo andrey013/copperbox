@@ -24,10 +24,8 @@ module Neume.Extra.LilyPondFormat
   
     Ly_Std_Format_Config(..)
   , renderLyRelative
+  , renderLyDrums
 
-
---  , lilypondScore
---  , lilypondDrumScore
 
   , parallelPhrases
 
@@ -45,7 +43,7 @@ import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
--- import Neume.Extra.Extended
+import Neume.Extra.Extended
 import Neume.Extra.LilyPondDoc hiding ( score )
 
 
@@ -61,11 +59,17 @@ data Ly_Std_Format_Config = Ly_Std_Format_Config
 renderLyRelative :: Ly_Std_Format_Config
                  -> Ly_Relative_Rewrite_Config
                  -> MeterPattern 
-                 -> [Section [PletTree StdGlyph]] -> Doc
+                 -> [Section [PletTree StdGlyph]] 
+                 -> Doc
 renderLyRelative (Ly_Std_Format_Config func) (Ly_Relative_Rewrite_Config pch) mp = 
     concatDocSections func . fst . stmap (renderSectionRel mp) pch
 
-
+renderLyDrums :: Ly_Std_Format_Config
+              -> MeterPattern 
+              -> [Section [PletTree DrumGlyph]] 
+              -> Doc
+renderLyDrums (Ly_Std_Format_Config func) mp = 
+    concatDocSections func . map (renderSectionDrums mp) 
 
 
 
@@ -77,6 +81,15 @@ renderSectionRel mp = stmap fn
   where
     fn :: Pitch -> [PletTree StdGlyph] -> (PhraseImage,Pitch)
     fn pch = fmap2a (renderPhrase pitch) . lyRelativeRewrite pch . phrase mp
+
+renderSectionDrums :: MeterPattern 
+                   -> Section [PletTree DrumGlyph] 
+                   -> Section PhraseImage
+renderSectionDrums mp = fmap fn
+  where
+    fn :: [PletTree DrumGlyph] -> PhraseImage
+    fn = renderPhrase (text . drumShortName) . rewriteDurationOpt . phrase mp
+
 
 concatDocSections :: (BarNum -> DocS) -> [Section PhraseImage] -> Doc
 concatDocSections fn = vsep . fst . stmap section1 1  

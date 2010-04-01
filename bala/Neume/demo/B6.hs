@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
 
 module B6 where
 
@@ -59,7 +57,7 @@ abc_score =  ABC.tunenum   1
     rwspec  = ABC.ABC_Std_Rewrite_Config a_major   (1%16)  
 
 
-b6_score :: [Section [PletTree StdGlyph]]
+b6_score :: Score [PletTree StdGlyph]
 b6_score = map (fmap simpleNoteList) $ [ Repeated bars1'4
                                        , Repeated bars5'8
                                        ]

@@ -48,11 +48,13 @@ ly_score =  version "2.12.2"
 drumtune :: Doc
 drumtune = variableDef "drumtune" $ drummode (time 4 4 <$> stemUp <$> tune1 )
   where
-    tune1    = lilypondDrumScore mkPhrase strip drum_score
-    mkPhrase = lyPhraseDrums [1%2, 1%2]
+    tune1    = renderLyDrums ofmt [1%2, 1%2] drum_score
+    
+    ofmt     = Ly_Std_Format_Config       strip
 
-drum_score :: (Score repr, [DrumGlyph] ~ ScoreBase repr) => () -> repr
-drum_score () = repeated drum_notes
+
+drum_score :: Score [PletTree DrumGlyph]
+drum_score = map (fmap simpleNoteList) $ [ Repeated drum_notes ]
 
 
 drum :: DrumPitch -> Duration -> DrumGlyph
