@@ -69,7 +69,7 @@ abcRewrite cfg = rewriteDuration (unit_duration cfg)
 --------------------------------------------------------------------------------
 
 renderPhrase :: StaffPhrase AbcGlyph -> PhraseImage
-renderPhrase = PhraseImage . mapInto oStaffBar . extractBars
+renderPhrase = mapInto oStaffBar . extractBars
 
 oStaffBar :: StaffBar AbcGlyph -> BarImage
 oStaffBar = oCExprSeq (<+>)

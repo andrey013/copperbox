@@ -55,7 +55,7 @@ import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 import Data.List ( foldl' )
 
 simpleOutput :: PhraseImage -> Doc
-simpleOutput = vsep . map (<+> singleBar) . getPhraseImage
+simpleOutput = vsep . map (<+> singleBar)
 
 
 
@@ -123,17 +123,17 @@ lilypondScore rf upf pch score = fst $ unLyStdRel (score ()) rf upf pch 1
 instance Score (LyStdRel [StdGlyph]) where
   type ScoreBase (LyStdRel [StdGlyph]) = [StdGlyph]
   straight a = LyStdRel $ \rf upf pch bn ->
-                 let (bars,pch') = renderToBars_st rf pch a
+                 let (bars,pch') = rf pch a
                      (out,bn')   = flatStraight upf bn bars
                  in (out,(pch',bn'))
 
   repeated a = LyStdRel $ \rf upf pch bn ->
-                 let (bars,pch') = renderToBars_st rf pch a 
+                 let (bars,pch') = rf pch a 
                      (out,bn')   = flatRepeated upf bn bars
                  in (out,(pch',bn'))
                  
   altRepeat a b = LyStdRel $ \rf upf pch bn ->
-                    let ((bars,alts),pch') = psimap_st (renderToBars_st rf) pch a b
+                    let ((bars,alts),pch') = psimap_st rf pch a b
                         (out,bn')          = flatAltRepeat upf bn bars alts
                     in (out,(pch',bn'))
 
@@ -166,16 +166,16 @@ lilypondDrumScore rf upf score = fst $ unLyDrum (score ()) rf upf 1
 instance Score (LyDrum [DrumGlyph]) where
   type ScoreBase (LyDrum [DrumGlyph]) = [DrumGlyph]
   straight a = LyDrum $ \rf upf bn ->
-                 let bars = renderToBars rf a
+                 let bars = rf a
                  in flatStraight upf bn bars
 
 
   repeated a = LyDrum $ \rf upf bn ->
-                 let bars = renderToBars rf a
+                 let bars = rf a
                  in flatRepeated upf bn bars
                  
   altRepeat a b = LyDrum $ \rf upf bn ->
-                    let (bars,alts)  = psimap (renderToBars rf) a b
+                    let (bars,alts)  = psimap rf a b
                     in flatAltRepeat upf bn bars alts
 
   caten ra rb   = LyDrum $ \rf upf bn ->  
@@ -229,7 +229,7 @@ parallelPhrases bar_len (x:xs) = snd $ foldl' (parallel2 bar_len) (1,parallel1 x
 type Depth = Int
 
 parallel2  :: Duration -> (Int,[OverlayImage]) -> PhraseImage -> (Int,[OverlayImage])
-parallel2 bar_len (depth,bs1) (PhraseImage bs2) = (depth+1, step bs1 bs2) 
+parallel2 bar_len (depth,bs1) bs2 = (depth+1, step bs1 bs2) 
   where
     step (x:xs) (y:ys) = parallelLy x y : step xs ys
     step (x:xs) []     = parallelLy x (spacer $ Just bar_len) : step xs [] 
@@ -244,7 +244,7 @@ blank n d = step (OverlayImage sbar) (n-1) where
   sbar       = spacer $ Just d
 
 parallel1 :: PhraseImage -> [OverlayImage]
-parallel1 = map OverlayImage . getPhraseImage
+parallel1 = map OverlayImage
 
 parallelLy :: OverlayImage -> Doc -> OverlayImage
 parallelLy (OverlayImage v1) v2 = OverlayImage $ v1 <+> singleBar <$> v2 

@@ -34,15 +34,12 @@ module Neume.Core.SyntaxScore
 
   , Overlay(..)
 
-  , PhraseImage(..)
+  , PhraseImage
   , OverlayImage(..)
 
-  , renderToBars
-  , renderToBars_st
 
   ) where
 
-import Neume.Core.Utils
 
 import Text.PrettyPrint.Leijen          -- package: wl-print
 
@@ -72,16 +69,9 @@ type BarNum   = Int
 newtype Overlay a = Overlay { getOverlays :: [[a]] } deriving Show
 
 
-newtype PhraseImage = PhraseImage  { getPhraseImage  :: [BarImage] }
-  deriving Show
+type PhraseImage = [BarImage]
 
 
 newtype OverlayImage = OverlayImage { getOverlayImage :: BarImage }   
   deriving Show
 
-
-renderToBars :: (a -> PhraseImage) -> a -> [BarImage]
-renderToBars f = getPhraseImage . f
-
-renderToBars_st :: (st -> a -> (PhraseImage,st)) -> st -> a -> ([BarImage],st)
-renderToBars_st f = fmap2a getPhraseImage `oo` f

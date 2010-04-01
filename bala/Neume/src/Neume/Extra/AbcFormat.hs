@@ -33,6 +33,9 @@ module Neume.Extra.AbcFormat
 
   ) where
 
+import Neume.Core.AbcOutput
+import Neume.Core.Bracket
+import Neume.Core.Metrical
 import Neume.Core.NoteList
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
@@ -48,6 +51,7 @@ import Data.Semigroup                   -- package: algebra
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 import Data.List ( foldl' )
+import Data.Sequence ( Seq )
 import Prelude hiding ( null )
 
 
@@ -90,15 +94,15 @@ newtype AbcFlat a = AbcFlat {
 instance Score (AbcFlat [StdGlyph]) where
   type ScoreBase (AbcFlat [StdGlyph]) = [StdGlyph]
   straight a    = AbcFlat $ \rf upf ls -> 
-                    let bars = renderToBars rf a
+                    let bars = rf a
                     in fmap2a singleton $ flatStraight upf bars ls
 
   repeated a    = AbcFlat $ \rf upf ls -> 
-                    let bars = renderToBars rf a
+                    let bars = rf a
                     in fmap2a singleton $ flatRepeated upf bars ls
 
   altRepeat a b = AbcFlat $ \rf upf ls ->
-                    let (body,alts) = psimap (renderToBars rf) a b 
+                    let (body,alts) = psimap rf a b 
                     in fmap2a singleton $ flatAltRepeat upf body alts ls
 
   caten ra rb   = AbcFlat $ \rf upf ls ->
@@ -128,8 +132,14 @@ data Section a = Straight a
 renderABC :: [Section [PletTree StdGlyph]] -> Doc
 renderABC _xs = undefined
 
--- renderSection :: Section [PletTree StdGlyph] -> Doc
--- renderSection (Straight xs) 
+renderSection :: ABC_Std_Rewrite_Config 
+              -> MeterPattern
+              -> Section [PletTree StdGlyph] 
+              -> Section PhraseImage
+renderSection rw_cfg mp (Straight xs) = 
+    Straight $ renderPhrase $ abcRewrite rw_cfg $ phrase mp xs
+
+
 
 concatDocSections :: (BarNum -> DocS) -> LineStk -> [Section [BarImage]] -> Doc
 concatDocSections _  _   []     = empty
@@ -183,144 +193,6 @@ concatDocSections fn stk (x:xs) = let (d1,hy) = section1 (infHyphenSpec stk) x
 -- their is no null predicate on Docs.
 
 
-
-
-
-
-type FlatElt = (DocS, StartSymbol, Doc, EndSymbol, Hyphen)
-type FlatRep = JoinList FlatElt
-
-
--- Inside the section: (user-prefix, body, hyphen)
---
-type IntraSection = ( DocS, Doc, Hyphen )
-
-
-
-
-
-flatRep :: FlatRep -> Doc
-flatRep = initial . viewl  where
-
-  -- don't print the start_symbol
-  initial EmptyL                      = empty
-  initial ((upf,_,doc,end,hy) :< xs)
-      | null xs                       = upf (doc <+> terminal end hy)
-      | otherwise                     = d1 <$> middle (viewl xs)
-    where 
-      d1 = upf (doc <+> intrasep end hy)
-                                      
-         
-  middle EmptyL                       = empty      -- unreachable???
-  middle ((upf,st,doc,end,hy) :< xs)
-      | null xs                       = upf (doc' <+> terminal end hy) 
-      | otherwise                     = d1 <$> middle (viewl xs) 
-    where 
-      doc' = st `prefix` doc
-      d1   = upf (doc' <+> intrasep end hy)
-                                      
-  prefix START_NONE    d              = d
-  prefix START_REP     d              = lrepeat <+> d
-  prefix (START_ALT n) d              = lrepeat <> int n <+> d
-
-
-
--- | Both Straights and alt_repeats are promoted to "||"
--- and the hyphenation has no bearing.
---
-terminal :: EndSymbol -> Hyphen -> Doc
-terminal END_REP _ = rrepeat
-terminal _       _ = doubleBar
-
-
-intrasep :: EndSymbol -> Hyphen -> Doc
-intrasep end hy = step end where
-   step END_SGL = singleBar `suffix` hy
-   step END_REP = rrepeat   `suffix` hy
-   step END_DBL = doubleBar `suffix` hy
-
-   suffix d CONT = d <> lineCont
-   suffix d _    = d
-
-
-
-
-flatStraight :: (Int -> DocS) 
-             -> [BarImage] 
-             -> HyphenSpec 
-             -> (FlatElt,HyphenSpec)
-flatStraight df bars hys = ((upf,START_NONE,doc,END_SGL,hy),rest)
-  where
-    ((upf,doc,hy),rest) = intraBars df bars hys
-
-flatRepeated :: (Int -> DocS) 
-             -> [BarImage] 
-             -> HyphenSpec 
-             -> (FlatElt,HyphenSpec)
-flatRepeated df bars hys = ((upf,START_REP,doc,END_REP,hy),rest)
-  where
-    ((upf,doc,hy),rest) = intraBars df bars hys
-
-
-flatAltRepeat :: (Int -> DocS) 
-              -> [BarImage] 
-              -> [[BarImage]]
-              -> HyphenSpec
-              -> (FlatElt,HyphenSpec)
-flatAltRepeat df bars alts hys = ((upf,START_REP,doc,END_REP,hy),rest)
-  where
-    (body,hys')  = intraBars df bars hys
-    (ends,rest)  = alternatives df alts hys'
-    (upf,doc,hy) = body `sglconcat` ends
- 
-alternatives :: (Int -> DocS) 
-             -> [[Doc]] 
-             -> HyphenSpec 
-             -> (IntraSection,HyphenSpec)
-alternatives pre alts hys = post $ stmap phi hys (zip [0..] alts)
-  where
-    phi hs (n,alt) = intraBars (prex n) alt hs
-
-    post (xs,rest) = step xs where
-      step [a]     = (a,rest)
-      step (d:ds)  = let (dbody,rest') = step ds
-                     in (intraConcat rrepeat d  dbody,rest')
-      step []      = (no_intra,rest)  
-  
-    prex n         = \x -> pre x . (alternative n <+>)
-
---
-
-
-intraBars :: (Int -> DocS) 
-          -> [Doc] 
-          -> HyphenSpec 
-          -> (IntraSection,HyphenSpec)
-intraBars pre = step where
-  step [b]    (h:hs)  = (section1 pre h b,hs)
-  step (b:bs) (h:hs)  = (sbar `sglconcat` sbody, srest)
-                        where sbar          = section1 pre h b
-                              (sbody,srest) = step bs hs
-                  
-  step _      hs      = (no_intra, hs)
-
-no_intra :: IntraSection 
-no_intra = (id, empty, LINE_BREAK)
-
-
-section1 :: (Int -> DocS) -> (BarNum,Hyphen) -> Doc -> IntraSection
-section1 pre (n,c)  d = (pre n, d, c)
-
-
-sglconcat :: IntraSection -> IntraSection -> IntraSection
-sglconcat = intraConcat singleBar
-
-intraConcat :: Doc -> IntraSection -> IntraSection -> IntraSection
-intraConcat barsym (pf,b,hy) (pf',b',hy') = (pf,body,hy')
-  where
-    body    = b <+> barsym <> (fn hy) <$> (pf' b')
-    fn CONT = lineCont
-    fn _    = empty
 
 
 
@@ -461,14 +333,157 @@ overlayPhrases (x:xs) = foldl' overlay2 (overlay1 x) xs
 
 
 overlay2  :: [OverlayImage] -> PhraseImage -> [OverlayImage]
-overlay2 bs1 (PhraseImage bs2) = step bs1 bs2 where
+overlay2 bs1 bs2 = step bs1 bs2 where
   step (x:xs) (y:ys) = overlayAbc x y : step xs ys
   step xs     []     = xs 
   step []     ys     = map OverlayImage ys 
 
 overlay1 :: PhraseImage -> [OverlayImage]
-overlay1 = map OverlayImage . getPhraseImage
+overlay1 = map OverlayImage
 
 overlayAbc :: OverlayImage -> Doc -> OverlayImage
-overlayAbc (OverlayImage v1) v2 = OverlayImage $ v1 <+> overlay <> lineCont <$> v2 
+overlayAbc (OverlayImage v1) v2 = 
+    OverlayImage $ v1 <+> overlay <> lineCont <$> v2 
+
+--------------------------------------------------------------------------------
+
+-- old
+
+
+type FlatElt = (DocS, StartSymbol, Doc, EndSymbol, Hyphen)
+type FlatRep = JoinList FlatElt
+
+
+-- Inside the section: (user-prefix, body, hyphen)
+--
+type IntraSection = ( DocS, Doc, Hyphen )
+
+
+
+
+
+flatRep :: FlatRep -> Doc
+flatRep = initial . viewl  where
+
+  -- don't print the start_symbol
+  initial EmptyL                      = empty
+  initial ((upf,_,doc,end,hy) :< xs)
+      | null xs                       = upf (doc <+> terminal end hy)
+      | otherwise                     = d1 <$> middle (viewl xs)
+    where 
+      d1 = upf (doc <+> intrasep end hy)
+                                      
+         
+  middle EmptyL                       = empty      -- unreachable???
+  middle ((upf,st,doc,end,hy) :< xs)
+      | null xs                       = upf (doc' <+> terminal end hy) 
+      | otherwise                     = d1 <$> middle (viewl xs) 
+    where 
+      doc' = st `prefix` doc
+      d1   = upf (doc' <+> intrasep end hy)
+                                      
+  prefix START_NONE    d              = d
+  prefix START_REP     d              = lrepeat <+> d
+  prefix (START_ALT n) d              = lrepeat <> int n <+> d
+
+
+
+-- | Both Straights and alt_repeats are promoted to "||"
+-- and the hyphenation has no bearing.
+--
+terminal :: EndSymbol -> Hyphen -> Doc
+terminal END_REP _ = rrepeat
+terminal _       _ = doubleBar
+
+
+intrasep :: EndSymbol -> Hyphen -> Doc
+intrasep end hy = step end where
+   step END_SGL = singleBar `suffix` hy
+   step END_REP = rrepeat   `suffix` hy
+   step END_DBL = doubleBar `suffix` hy
+
+   suffix d CONT = d <> lineCont
+   suffix d _    = d
+
+
+
+
+flatStraight :: (Int -> DocS) 
+             -> [BarImage] 
+             -> HyphenSpec 
+             -> (FlatElt,HyphenSpec)
+flatStraight df bars hys = ((upf,START_NONE,doc,END_SGL,hy),rest)
+  where
+    ((upf,doc,hy),rest) = intraBars df bars hys
+
+flatRepeated :: (Int -> DocS) 
+             -> [BarImage] 
+             -> HyphenSpec 
+             -> (FlatElt,HyphenSpec)
+flatRepeated df bars hys = ((upf,START_REP,doc,END_REP,hy),rest)
+  where
+    ((upf,doc,hy),rest) = intraBars df bars hys
+
+
+flatAltRepeat :: (Int -> DocS) 
+              -> [BarImage] 
+              -> [[BarImage]]
+              -> HyphenSpec
+              -> (FlatElt,HyphenSpec)
+flatAltRepeat df bars alts hys = ((upf,START_REP,doc,END_REP,hy),rest)
+  where
+    (body,hys')  = intraBars df bars hys
+    (ends,rest)  = alternatives df alts hys'
+    (upf,doc,hy) = body `sglconcat` ends
+ 
+alternatives :: (Int -> DocS) 
+             -> [[Doc]] 
+             -> HyphenSpec 
+             -> (IntraSection,HyphenSpec)
+alternatives pre alts hys = post $ stmap phi hys (zip [0..] alts)
+  where
+    phi hs (n,alt) = intraBars (prex n) alt hs
+
+    post (xs,rest) = step xs where
+      step [a]     = (a,rest)
+      step (d:ds)  = let (dbody,rest') = step ds
+                     in (intraConcat rrepeat d  dbody,rest')
+      step []      = (no_intra,rest)  
+  
+    prex n         = \x -> pre x . (alternative n <+>)
+
+--
+
+
+intraBars :: (Int -> DocS) 
+          -> [Doc] 
+          -> HyphenSpec 
+          -> (IntraSection,HyphenSpec)
+intraBars pre = step where
+  step [b]    (h:hs)  = (section1 pre h b,hs)
+  step (b:bs) (h:hs)  = (sbar `sglconcat` sbody, srest)
+                        where sbar          = section1 pre h b
+                              (sbody,srest) = step bs hs
+                  
+  step _      hs      = (no_intra, hs)
+
+no_intra :: IntraSection 
+no_intra = (id, empty, LINE_BREAK)
+
+
+section1 :: (Int -> DocS) -> (BarNum,Hyphen) -> Doc -> IntraSection
+section1 pre (n,c)  d = (pre n, d, c)
+
+
+sglconcat :: IntraSection -> IntraSection -> IntraSection
+sglconcat = intraConcat singleBar
+
+intraConcat :: Doc -> IntraSection -> IntraSection -> IntraSection
+intraConcat barsym (pf,b,hy) (pf',b',hy') = (pf,body,hy')
+  where
+    body    = b <+> barsym <> (fn hy) <$> (pf' b')
+    fn CONT = lineCont
+    fn _    = empty
+
+
 
