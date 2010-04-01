@@ -25,13 +25,9 @@ module Neume.Extra.LilyPondFormat
     Ly_Std_Format_Config(..)
   , renderLyRelative
 
-  , simpleOutput
-  , lyPhraseRelative
-  , lyPhraseAbsolute
-  , lyPhraseDrums
 
-  , lilypondScore
-  , lilypondDrumScore
+--  , lilypondScore
+--  , lilypondDrumScore
 
   , parallelPhrases
 
@@ -49,7 +45,7 @@ import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
-import Neume.Extra.Extended
+-- import Neume.Extra.Extended
 import Neume.Extra.LilyPondDoc hiding ( score )
 
 
@@ -91,17 +87,7 @@ concatDocSections fn = vsep . fst . stmap section1 1
     section1 n (AltRepeat a alts) = flatAltRepeat fn n a alts
 
 --------------------------------------------------------------------------------
--- Old 
-
-simpleOutput :: PhraseImage -> Doc
-simpleOutput = vsep . map (<+> singleBar)
-
-
-
-
-
-
-
+ 
 
 -- The internal argument to renderPhrase should be extracted 
 -- from these and made a prarameter...
@@ -109,14 +95,7 @@ simpleOutput = vsep . map (<+> singleBar)
 -- Like wise they need to handle an anacrusis 
 --
 
-lyPhraseRelative :: MeterPattern -> Pitch -> [StdGlyph] -> (PhraseImage,Pitch)
-lyPhraseRelative mp pch xs = 
-    fmap2a (renderPhrase pitch) $ rewritePitchRel pch
-                                $ rewriteDurationOpt
-                                $ phrase mp
-                                $ simpleNoteList xs
-
-
+{-
 lyPhraseAbsolute :: MeterPattern -> [StdGlyph] -> Int -> PhraseImage
 lyPhraseAbsolute mp xs n = 
     renderPhrase pitch $ rewritePitchAbs n
@@ -129,91 +108,7 @@ lyPhraseDrums mp xs =
     renderPhrase (text . drumShortName) $ rewriteDurationOpt
                                         $ phrase mp
                                         $ simpleNoteList xs
-
-
--- 
-
-
---------------------------------------------------------------------------------
-
-
-newtype LyStdRel a = LyStdRel { 
-          unLyStdRel :: (Pitch -> a -> (PhraseImage,Pitch)) 
-                     -> (BarNum -> DocS) 
-                     -> Pitch -> BarNum -> (Doc,(Pitch,BarNum)) }
-
-
-
-lilypondScore :: (Pitch -> a -> (PhraseImage,Pitch)) 
-              -> (BarNum -> DocS) 
-              -> Pitch
-              -> (() -> LyStdRel a) 
-              -> Doc
-lilypondScore rf upf pch score = fst $ unLyStdRel (score ()) rf upf pch 1
-
-
-instance Score (LyStdRel [StdGlyph]) where
-  type ScoreBase (LyStdRel [StdGlyph]) = [StdGlyph]
-  straight a = LyStdRel $ \rf upf pch bn ->
-                 let (bars,pch') = rf pch a
-                     (out,bn')   = flatStraight upf bn bars
-                 in (out,(pch',bn'))
-
-  repeated a = LyStdRel $ \rf upf pch bn ->
-                 let (bars,pch') = rf pch a 
-                     (out,bn')   = flatRepeated upf bn bars
-                 in (out,(pch',bn'))
-                 
-  altRepeat a b = LyStdRel $ \rf upf pch bn ->
-                    let ((bars,alts),pch') = psimap_st rf pch a b
-                        (out,bn')          = flatAltRepeat upf bn bars alts
-                    in (out,(pch',bn'))
-
-  caten ra rb   = LyStdRel $ \rf upf pch bn ->
-                    let f a (p,n) = (unLyStdRel a) rf upf p n
-                    in stcombWith (<$>) (f ra) (f rb) (pch,bn)
-
-
-
---------------------------------------------------------------------------------
-
-
-
---------------------------------------------------------------------------------
-
-
-newtype LyDrum a = LyDrum { 
-          unLyDrum :: (a -> PhraseImage) 
-                   -> (BarNum -> DocS) 
-                   -> BarNum -> (Doc,BarNum) }
-
-
-lilypondDrumScore :: (a -> PhraseImage)
-                  -> (Int -> DocS) 
-                  -> (() -> LyDrum a) 
-                  -> Doc
-lilypondDrumScore rf upf score = fst $ unLyDrum (score ()) rf upf 1
-
-
-instance Score (LyDrum [DrumGlyph]) where
-  type ScoreBase (LyDrum [DrumGlyph]) = [DrumGlyph]
-  straight a = LyDrum $ \rf upf bn ->
-                 let bars = rf a
-                 in flatStraight upf bn bars
-
-
-  repeated a = LyDrum $ \rf upf bn ->
-                 let bars = rf a
-                 in flatRepeated upf bn bars
-                 
-  altRepeat a b = LyDrum $ \rf upf bn ->
-                    let (bars,alts)  = psimap rf a b
-                    in flatAltRepeat upf bn bars alts
-
-  caten ra rb   = LyDrum $ \rf upf bn ->  
-                    let f a = (unLyDrum a) rf upf
-                    in stcombWith (<$>) (f ra) (f rb) bn 
-
+-}
     
 --------------------------------------------------------------------------------
 

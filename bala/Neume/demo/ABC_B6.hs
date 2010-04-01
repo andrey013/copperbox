@@ -41,8 +41,8 @@ abc_score =  ABC.tunenum   1
 
  
 b6_score :: [Section [PletTree StdGlyph]]
-b6_score = map (fmap simpleNoteList) $ [ ABC.Repeated bars1'4
-                                       , ABC.Repeated bars5'8
+b6_score = map (fmap simpleNoteList) $ [ Repeated bars1'4
+                                       , Repeated bars5'8
                                        ]
 
 a_major     :: SpellingMap
