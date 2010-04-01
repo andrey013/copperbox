@@ -14,6 +14,9 @@ description:
 build-type:         Simple
 stability:          unstable
 cabal-version:      >= 1.2
+extra-source-files:
+  LICENSE,
+  demo/CabalDemo.hs
 
 library
   build-depends:  base               <  5,
