@@ -41,19 +41,28 @@ ly_score =  version "2.12.2"
                        <$> time 2 4
                        <$> tune1)
   where
-    tune1    = lilypondScore mkPhrase strip middle_c b6_score
-    mkPhrase = lyPhraseRelative two_four_time
-
+    tune1    = renderLyRelative ofmt rwspec two_four_time b6_score_alt
+    
+    ofmt     = Ly_Std_Format_Config       strip
+    rwspec   = Ly_Relative_Rewrite_Config middle_c
 
 abc_score :: Doc
 abc_score =  ABC.tunenum   1 
-         <$> ABC.title     "Bulgarian 6"
+         <$> ABC.title     "Bulgarian 6 (ABC)" 
          <$> ABC.meter     "2/4"
          <$> ABC.key       "Amaj"
          <$> tune1
   where
-    tune1 = ABC.abcScore abcPhrase ABC.barNumber [4,4,4,4] b6_score
+    tune1   = ABC.renderABC ofmt rwspec two_four_time b6_score_alt
 
+    ofmt    = ABC.ABC_Std_Format_Config  [4,4,4,4] ABC.barNumber
+    rwspec  = ABC.ABC_Std_Rewrite_Config a_major   (1%16)  
+
+
+b6_score_alt :: [Section [PletTree StdGlyph]]
+b6_score_alt = map (fmap simpleNoteList) $ [ ABC.Repeated bars1'4
+                                           , ABC.Repeated bars5'8
+                                           ]
 
 
 
@@ -61,13 +70,6 @@ b6_score :: (Score repr, [StdGlyph] ~ ScoreBase repr) => () -> repr
 b6_score () = repeated bars1'4 `caten` repeated bars5'8
 
 
-
-abcPhrase :: [StdGlyph] -> PhraseImage
-abcPhrase = ABC.renderPhrase . ABC.rewritePitch a_major
-                             . ABC.rewriteDuration (1%16)
-                             . phrase two_four_time
-                             . simpleNoteList
- 
 
 a_major     :: SpellingMap
 a_major     = makeSpellingMap 3

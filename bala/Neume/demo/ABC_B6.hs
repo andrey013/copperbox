@@ -40,7 +40,7 @@ abc_score =  ABC.tunenum   1
     rwspec  = ABC.ABC_Std_Rewrite_Config a_major   (1%16)  
 
  
-b6_score :: [ABC.Section [PletTree StdGlyph]]
+b6_score :: [Section [PletTree StdGlyph]]
 b6_score = map (fmap simpleNoteList) $ [ ABC.Repeated bars1'4
                                        , ABC.Repeated bars5'8
                                        ]

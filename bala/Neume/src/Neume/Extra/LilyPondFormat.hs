@@ -22,7 +22,10 @@ module Neume.Extra.LilyPondFormat
   (
 
   
-    simpleOutput
+    Ly_Std_Format_Config(..)
+  , renderLyRelative
+
+  , simpleOutput
   , lyPhraseRelative
   , lyPhraseAbsolute
   , lyPhraseDrums
@@ -40,7 +43,7 @@ import Neume.Core.Duration
 import Neume.Core.LilyPondBasic ( pitch, spacer )
 import Neume.Core.LilyPondOutput
 import Neume.Core.Metrical
-import Neume.Core.NoteList ( simpleNoteList )
+import Neume.Core.NoteList
 import Neume.Core.Pitch
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
@@ -54,8 +57,49 @@ import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
 import Data.List ( foldl' )
 
+data Ly_Std_Format_Config = Ly_Std_Format_Config
+    { bar_numbering_func   :: BarNum -> DocS }
+
+
+
+renderLyRelative :: Ly_Std_Format_Config
+                 -> Ly_Relative_Rewrite_Config
+                 -> MeterPattern 
+                 -> [Section [PletTree StdGlyph]] -> Doc
+renderLyRelative (Ly_Std_Format_Config func) (Ly_Relative_Rewrite_Config pch) mp = 
+    concatDocSections func . fst . stmap (renderSectionRel mp) pch
+
+
+
+
+
+renderSectionRel :: MeterPattern
+                 -> Pitch
+                 -> Section [PletTree StdGlyph] 
+                 -> (Section PhraseImage,Pitch)
+renderSectionRel mp = stmap fn 
+  where
+    fn :: Pitch -> [PletTree StdGlyph] -> (PhraseImage,Pitch)
+    fn pch = fmap2a (renderPhrase pitch) . lyRelativeRewrite pch . phrase mp
+
+concatDocSections :: (BarNum -> DocS) -> [Section PhraseImage] -> Doc
+concatDocSections fn = vsep . fst . stmap section1 1  
+  where
+    section1 :: BarNum -> Section PhraseImage -> (Doc,BarNum)
+    section1 n (Straight a)       = flatStraight  fn n a
+    section1 n (Repeated a)       = flatRepeated  fn n a 
+    section1 n (AltRepeat a alts) = flatAltRepeat fn n a alts
+
+--------------------------------------------------------------------------------
+-- Old 
+
 simpleOutput :: PhraseImage -> Doc
 simpleOutput = vsep . map (<+> singleBar)
+
+
+
+
+
 
 
 
@@ -88,18 +132,6 @@ lyPhraseDrums mp xs =
 
 
 -- 
-{-
--- NO!
-lyOverlayRelative :: MeterPattern -> Overlay StdGlyph -> Pitch -> (PhraseImage,Pitch)
-lyOverlayRelative mp (Overlay xss) pch = 
-    fmap2a (parallelPhrases  ) stmap fn xss 
-  where
-    fn = fmap2a (renderPhrase pitch) . rewritePitchRel pch
-                                     . rewriteDurationOpt
-                                     . phrase mp
-                                     . simpleNoteList
-
--}
 
 
 --------------------------------------------------------------------------------

@@ -26,7 +26,8 @@
 module Neume.Core.SyntaxScore
   (
   -- * Score ( assembled from repeats and /straights/ )
-    Score(..)
+    Section(..) -- to become Score once the typeclass Score has gone...
+  , Score(..)
 
   , BarNum
   , ScoreImage
@@ -41,8 +42,34 @@ module Neume.Core.SyntaxScore
   ) where
 
 
+import Neume.Core.Utils
+
 import Text.PrettyPrint.Leijen          -- package: wl-print
 
+
+
+
+data Section a = Straight a 
+               | Repeated a
+               | AltRepeat a [a]
+  deriving (Eq,Show)
+
+
+instance Functor Section where
+  fmap f (Straight a)       = Straight $ f a
+  fmap f (Repeated a)       = Repeated $ f a
+  fmap f (AltRepeat a alts) = AltRepeat (f a) (map f alts)
+
+instance StateMap Section where
+  stmap f st (Straight a)       = (Straight a',st') where (a',st') = f st a
+  stmap f st (Repeated a)       = (Repeated a',st') where (a',st') = f st a
+  stmap f st (AltRepeat a alts) = (AltRepeat a' alts',st'') 
+    where 
+      (a',st')     = f st a
+      (alts',st'') = stmap f st' alts
+
+
+-- OLD...
 -- Scores are implemented in a TypeCase / Tagless / EMGM style.
 --
 

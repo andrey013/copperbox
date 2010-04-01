@@ -93,18 +93,6 @@ data ABC_Std_Format_Config = ABC_Std_Format_Config
 
 --------------------------------------------------------------------------------
 
-data Section a = Straight a 
-               | Repeated a
-               | AltRepeat a [a]
-  deriving (Eq,Show)
-
-
-instance Functor Section where
-  fmap f (Straight a)       = Straight $ f a
-  fmap f (Repeated a)       = Repeated $ f a
-  fmap f (AltRepeat a alts) = AltRepeat (f a) (map f alts)
-
-
 renderABC :: ABC_Std_Format_Config
           -> ABC_Std_Rewrite_Config
           -> MeterPattern 

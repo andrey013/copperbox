@@ -21,8 +21,11 @@ module Neume.Core.LilyPondOutput
     LyStdGlyph
   , LyStdNote
   , OctaveDisplacement
-  , Ly_Std_Rewrite_Config 
-  , lyRewrite
+  , Ly_Relative_Rewrite_Config(..)
+  , Ly_Absolute_Rewrite_Config(..)
+
+  , lyRelativeRewrite
+  , lyAbsoluteRewrite
 
   , renderPhrase
   , oGlyph
@@ -61,9 +64,12 @@ type LyStdNote  anno = Note  anno Pitch (Maybe Duration)
 
 type OctaveDisplacement = Int
 
-data Ly_Std_Rewrite_Config = Ly_Rewrite_Relative Pitch
-                           | Ly_Rewrite_Absolute OctaveDisplacement
 
+data Ly_Relative_Rewrite_Config = Ly_Relative_Rewrite_Config
+    { base_pitch :: Pitch }
+
+data Ly_Absolute_Rewrite_Config = Ly_Absolute_Rewrite_Config
+    { octave_displacement :: OctaveDisplacement }
 
 
 
@@ -71,13 +77,20 @@ data Ly_Std_Rewrite_Config = Ly_Rewrite_Relative Pitch
 -- the final pitch so the trasformation can be \'stacked\' for 
 -- successive phrases.
 
+-- Chaining doesn't work well if we use 
+-- Ly_Relative_Rewrite_Config...
 
-lyRewrite :: Ly_Std_Rewrite_Config 
-          -> StaffPhrase (Glyph anno Pitch Duration)
-          -> StaffPhrase (Glyph anno Pitch (Maybe Duration))
-lyRewrite (Ly_Rewrite_Relative _pch) = undefined 
-                                      -- rewriteDurationOpt . rewritePitchRel pch
-lyRewrite (Ly_Rewrite_Absolute i)   = rewriteDurationOpt . rewritePitchAbs i
+lyRelativeRewrite :: Pitch
+                  -> StaffPhrase (Glyph anno Pitch Duration)
+                  -> (StaffPhrase (Glyph anno Pitch (Maybe Duration)), Pitch)
+lyRelativeRewrite pch = fmap2a rewriteDurationOpt . rewritePitchRel pch
+
+
+lyAbsoluteRewrite :: Ly_Absolute_Rewrite_Config 
+                  -> StaffPhrase (Glyph anno Pitch Duration)
+                  -> StaffPhrase (Glyph anno Pitch (Maybe Duration))
+lyAbsoluteRewrite (Ly_Absolute_Rewrite_Config i) = 
+    rewriteDurationOpt . rewritePitchAbs i
 
 
 --------------------------------------------------------------------------------
