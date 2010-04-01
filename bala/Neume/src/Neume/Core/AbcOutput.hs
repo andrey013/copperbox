@@ -21,7 +21,6 @@ module Neume.Core.AbcOutput
 
     AbcGlyph
   , AbcNote
-  , ABC_Std_Rewrite_Config(..)
   , abcRewrite
 
   , renderPhrase
@@ -53,17 +52,13 @@ type AbcGlyph = Glyph () Pitch AbcMultiplier
 type AbcNote  = Note  () Pitch AbcMultiplier
 
 
-data ABC_Std_Rewrite_Config = ABC_Std_Rewrite_Config 
-    { spelling_map    :: SpellingMap
-    , unit_duration   :: DurationMeasure 
-    }
-
-abcRewrite :: ABC_Std_Rewrite_Config 
+abcRewrite :: SpellingMap
+           -> DurationMeasure 
            -> StaffPhrase (Glyph anno Pitch Duration)
            -> StaffPhrase AbcGlyph
-abcRewrite cfg = rewriteDuration (unit_duration cfg) 
-               . rewritePitch    (spelling_map cfg) 
-               . rewriteAnno 
+abcRewrite spellmap unit_drn = rewriteDuration unit_drn 
+                             . rewritePitch    spellmap
+                             . rewriteAnno 
 
 
 --------------------------------------------------------------------------------
@@ -118,8 +113,8 @@ oChordPitches dm = map (\(ChordPitch _ p) -> note p dm) . F.toList
 -- Rewrite duration
 
 rewriteDuration :: Rational 
-                -> FreeRewrite (Glyph anno pch Duration) 
-                               (Glyph anno pch AbcMultiplier)
+                -> StaffPhrase (Glyph anno pch Duration) 
+                -> StaffPhrase (Glyph anno pch AbcMultiplier)
 rewriteDuration r = fmap (fmap3c (abcMultiplier r))
 
 
@@ -129,7 +124,8 @@ rewriteDuration r = fmap (fmap3c (abcMultiplier r))
 -- Pitch spelling
 
 rewritePitch :: SpellingMap 
-             -> FreeRewrite (Glyph anno Pitch dur) (Glyph anno Pitch dur)
+             -> StaffPhrase (Glyph anno Pitch dur) 
+             -> StaffPhrase (Glyph anno Pitch dur)
 rewritePitch sm = fmap (fmap3b (spell sm))
 
 
@@ -138,7 +134,8 @@ rewritePitch sm = fmap (fmap3b (spell sm))
 
 -- Drop annotations
 
-rewriteAnno :: FreeRewrite (Glyph anno pch dur) (Glyph ()   pch dur)
+rewriteAnno :: StaffPhrase (Glyph anno pch dur) 
+            -> StaffPhrase (Glyph ()   pch dur)
 rewriteAnno = fmap (fmap3a (const ()))
 
 

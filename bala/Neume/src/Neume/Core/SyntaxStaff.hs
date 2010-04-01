@@ -44,9 +44,6 @@ module Neume.Core.SyntaxStaff
   , StdGlyph
   , AnnoGlyph
 
-  -- * Rewriting types
-  , CtxRewrite
-  , FreeRewrite
 
   , mapBar
 
@@ -137,12 +134,6 @@ type NoteRelDur  anno pch   = Note  anno pch (Maybe Duration)
 type StdGlyph           = Glyph ()   Pitch Duration
 type AnnoGlyph anno     = Glyph anno Pitch Duration
 
-
---------------------------------------------------------------------------------
--- rewrites
-
-type CtxRewrite  st gly gly' = st -> StaffPhrase gly -> (StaffPhrase gly',st)
-type FreeRewrite    gly gly' = StaffPhrase gly -> StaffPhrase gly'
 
 
 --------------------------------------------------------------------------------

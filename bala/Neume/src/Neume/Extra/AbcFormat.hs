@@ -27,6 +27,7 @@ module Neume.Extra.AbcFormat
 
   , renderABC 
   , ABC_Std_Format_Config(..)
+  , ABC_Std_Rewrite_Config(..)
 
   , overlayPhrases
 
@@ -34,9 +35,11 @@ module Neume.Extra.AbcFormat
   ) where
 
 import Neume.Core.AbcOutput
+import Neume.Core.Duration
 import Neume.Core.Bracket
 import Neume.Core.Metrical
 import Neume.Core.NoteList
+import Neume.Core.Pitch
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
@@ -80,9 +83,17 @@ data EndSymbol   = END_SGL              -- Straight section
                  | END_DBL              -- Alt_repeat
   deriving (Eq,Show)
 
+
+
 data ABC_Std_Format_Config = ABC_Std_Format_Config
     { line_widths          :: LineStk
     , bar_numbering_func   :: BarNum -> DocS
+    }
+
+
+data ABC_Std_Rewrite_Config = ABC_Std_Rewrite_Config 
+    { spelling_map    :: SpellingMap
+    , unit_duration   :: DurationMeasure 
     }
 
 
@@ -99,7 +110,8 @@ renderSection :: ABC_Std_Rewrite_Config
               -> MeterPattern
               -> Section [PletTree StdGlyph] 
               -> Section PhraseImage
-renderSection rw_cfg mp = fmap (renderPhrase . abcRewrite rw_cfg . phrase mp)
+renderSection (ABC_Std_Rewrite_Config spellmap unit_drn) mp = 
+    fmap (renderPhrase . abcRewrite spellmap unit_drn . phrase mp)
 
 
 
