@@ -25,6 +25,9 @@ module Neume.Extra.AbcFormat
     barNumber
   , anaBarNumber
 
+  , renderABC 
+  , ABC_Std_Format_Config(..)
+
   , overlayPhrases
 
   , abcScore
@@ -51,7 +54,6 @@ import Data.Semigroup                   -- package: algebra
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 import Data.List ( foldl' )
-import Data.Sequence ( Seq )
 import Prelude hiding ( null )
 
 
@@ -83,41 +85,10 @@ data EndSymbol   = END_SGL              -- Straight section
                  | END_DBL              -- Alt_repeat
   deriving (Eq,Show)
 
---------------------------------------------------------------------------------
-
-newtype AbcFlat a = AbcFlat { 
-          unAbcFlat :: (a -> PhraseImage) -> (BarNum -> DocS) 
-                    -> HyphenSpec -> (FlatRep,HyphenSpec) } 
-
-
-
-instance Score (AbcFlat [StdGlyph]) where
-  type ScoreBase (AbcFlat [StdGlyph]) = [StdGlyph]
-  straight a    = AbcFlat $ \rf upf ls -> 
-                    let bars = rf a
-                    in fmap2a singleton $ flatStraight upf bars ls
-
-  repeated a    = AbcFlat $ \rf upf ls -> 
-                    let bars = rf a
-                    in fmap2a singleton $ flatRepeated upf bars ls
-
-  altRepeat a b = AbcFlat $ \rf upf ls ->
-                    let (body,alts) = psimap rf a b 
-                    in fmap2a singleton $ flatAltRepeat upf body alts ls
-
-  caten ra rb   = AbcFlat $ \rf upf ls ->
-                    let f a = (unAbcFlat a) rf upf
-                    in stcombWith join (f ra) (f rb) ls
-
-
-abcScore :: (a -> PhraseImage) 
-         -> (Int -> DocS) 
-         -> LineStk 
-         -> (() -> AbcFlat a) 
-         -> Doc
-abcScore rf upf ls score = 
-  flatRep $ fst $ unAbcFlat (score ()) rf upf (infHyphenSpec ls)
-
+data ABC_Std_Format_Config = ABC_Std_Format_Config
+    { line_widths          :: LineStk
+    , bar_numbering_func   :: BarNum -> DocS
+    }
 
 
 --------------------------------------------------------------------------------
@@ -128,20 +99,28 @@ data Section a = Straight a
   deriving (Eq,Show)
 
 
+instance Functor Section where
+  fmap f (Straight a)       = Straight $ f a
+  fmap f (Repeated a)       = Repeated $ f a
+  fmap f (AltRepeat a alts) = AltRepeat (f a) (map f alts)
 
-renderABC :: [Section [PletTree StdGlyph]] -> Doc
-renderABC _xs = undefined
+
+renderABC :: ABC_Std_Format_Config
+          -> ABC_Std_Rewrite_Config
+          -> MeterPattern 
+          -> [Section [PletTree StdGlyph]] -> Doc
+renderABC (ABC_Std_Format_Config line_stk func) rw_cfg mp = 
+    concatDocSections func line_stk . map (renderSection rw_cfg mp)
 
 renderSection :: ABC_Std_Rewrite_Config 
               -> MeterPattern
               -> Section [PletTree StdGlyph] 
               -> Section PhraseImage
-renderSection rw_cfg mp (Straight xs) = 
-    Straight $ renderPhrase $ abcRewrite rw_cfg $ phrase mp xs
+renderSection rw_cfg mp = fmap (renderPhrase . abcRewrite rw_cfg . phrase mp)
 
 
 
-concatDocSections :: (BarNum -> DocS) -> LineStk -> [Section [BarImage]] -> Doc
+concatDocSections :: (BarNum -> DocS) -> LineStk -> [Section PhraseImage] -> Doc
 concatDocSections _  _   []     = empty
 concatDocSections fn stk (x:xs) = let (d1,hy) = section1 (infHyphenSpec stk) x
                                   in finalFromInterim $ step d1 hy xs
@@ -210,9 +189,9 @@ infHyphenSpec stk = step (1,stk) where
 type InterimPrefix = (DocS,StartSymbol)
 type InterimSuffix = (EndSymbol,Hyphen)
 
-data InterimDoc = InterimDoc { iprefix    :: InterimPrefix
-                             , interbody  :: Doc
-                             , isuffix    :: InterimSuffix
+data InterimDoc = InterimDoc { _iprefix    :: InterimPrefix
+                             , _interbody  :: Doc
+                             , _isuffix    :: InterimSuffix
                              }
 
 instance Semigroup InterimDoc where
@@ -350,6 +329,41 @@ overlayAbc (OverlayImage v1) v2 =
 -- old
 
 
+newtype AbcFlat a = AbcFlat { 
+          unAbcFlat :: (a -> PhraseImage) -> (BarNum -> DocS) 
+                    -> HyphenSpec -> (FlatRep,HyphenSpec) } 
+
+
+
+instance Score (AbcFlat [StdGlyph]) where
+  type ScoreBase (AbcFlat [StdGlyph]) = [StdGlyph]
+  straight a    = AbcFlat $ \rf upf ls -> 
+                    let bars = rf a
+                    in fmap2a singleton $ flatStraight upf bars ls
+
+  repeated a    = AbcFlat $ \rf upf ls -> 
+                    let bars = rf a
+                    in fmap2a singleton $ flatRepeated upf bars ls
+
+  altRepeat a b = AbcFlat $ \rf upf ls ->
+                    let (body,alts) = psimap rf a b 
+                    in fmap2a singleton $ flatAltRepeat upf body alts ls
+
+  caten ra rb   = AbcFlat $ \rf upf ls ->
+                    let f a = (unAbcFlat a) rf upf
+                    in stcombWith join (f ra) (f rb) ls
+
+
+abcScore :: (a -> PhraseImage) 
+         -> (Int -> DocS) 
+         -> LineStk 
+         -> (() -> AbcFlat a) 
+         -> Doc
+abcScore rf upf ls score = 
+  flatRep $ fst $ unAbcFlat (score ()) rf upf (infHyphenSpec ls)
+
+
+
 type FlatElt = (DocS, StartSymbol, Doc, EndSymbol, Hyphen)
 type FlatRep = JoinList FlatElt
 
@@ -359,6 +373,8 @@ type FlatRep = JoinList FlatElt
 type IntraSection = ( DocS, Doc, Hyphen )
 
 
+
+--------------------------------------------------------------------------------
 
 
 
@@ -460,9 +476,9 @@ intraBars :: (Int -> DocS)
           -> HyphenSpec 
           -> (IntraSection,HyphenSpec)
 intraBars pre = step where
-  step [b]    (h:hs)  = (section1 pre h b,hs)
+  step [b]    (h:hs)  = (sectionOne pre h b,hs)
   step (b:bs) (h:hs)  = (sbar `sglconcat` sbody, srest)
-                        where sbar          = section1 pre h b
+                        where sbar          = sectionOne pre h b
                               (sbody,srest) = step bs hs
                   
   step _      hs      = (no_intra, hs)
@@ -471,8 +487,8 @@ no_intra :: IntraSection
 no_intra = (id, empty, LINE_BREAK)
 
 
-section1 :: (Int -> DocS) -> (BarNum,Hyphen) -> Doc -> IntraSection
-section1 pre (n,c)  d = (pre n, d, c)
+sectionOne :: (Int -> DocS) -> (BarNum,Hyphen) -> Doc -> IntraSection
+sectionOne pre (n,c)  d = (pre n, d, c)
 
 
 sglconcat :: IntraSection -> IntraSection -> IntraSection
