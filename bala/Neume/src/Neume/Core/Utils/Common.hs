@@ -22,6 +22,7 @@ module Neume.Core.Utils.Common
   , divModR
   , modR
   , strip
+  , both
 
   , psimap
   , mapInto
@@ -83,6 +84,9 @@ modR = snd `oo` divModR
 strip :: a -> b -> b
 strip _ b = b
 
+
+both :: (a -> b) -> (a,a) -> (b,b)
+both f (a,b) = (f a, f b)
 
 
 -- Rather like on (aka psi) from Data.Function 

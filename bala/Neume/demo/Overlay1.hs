@@ -4,10 +4,10 @@ module Overlay1 where
 
 import qualified Neume.Core.AbcOutput        as ABC
 import Neume.Core.Bracket
-import Neume.Core.Datatypes
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
+import Neume.Core.NoteList
 import Neume.Core.Pitch
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
@@ -24,15 +24,17 @@ import Text.PrettyPrint.Leijen
 import Data.Ratio
 import System.Cmd
 
+
 main :: IO ()
 main = do 
-  writeDoc "overlay1.ly"      ly_score
---  writeDoc "overlay1_abc.abc" abc_score
-  system   "lilypond overlay1.ly"
+--  writeDoc "overlay1.ly"      ly_score
+  writeDoc "overlay1_abc.abc" abc_score
+--  system   "lilypond overlay1.ly"
   system   "abcm2ps overlay1_abc.abc -O overlay1_abc.ps" 
   return ()
 
 
+{-
 ly_score :: Doc
 ly_score =  version "2.12.2" 
         <$> scoreExpr (relative middle_c $ key c_nat "major" 
@@ -44,6 +46,7 @@ ly_score =  version "2.12.2"
                          $ rewriteDurationOpt xs
 
     xs   = phrase four_four_time $ simpleNoteList ubars1'4
+-}
 
 --
 -- Not satisfactory - no way to respect shape of the overlays...
@@ -56,53 +59,37 @@ ly_score =  version "2.12.2"
 --
 -- repeat ((repeat $ overlay [a1,b1]) `caten` (straight $ overlay [a2,b2])) 
 --
-
+{-
 renderToLy :: [StdGlyph] -> (Doc,Pitch)
 renderToLy = fmap2a (simpleOutput . renderPhrase pitch)
                                  . rewritePitchRel middle_c
                                  . rewriteDurationOpt
                                  . phrase four_four_time
                                  . simpleNoteList
+-}
 
-{-
+
 abc_score :: Doc
 abc_score =  ABC.tunenum        1 
          <$> ABC.title          "Overlays"
          <$> ABC.meter          "4/4"
          <$> ABC.key            "Cmaj"
          <$> ABC.unitDuration   en
-         <$> ABC.tempOutput tune1_abc 
+         <$> tune1
   where
-    tune1 = renderToABC ubars1'4
--}
-      
-renderToABC :: [StdGlyph] -> Doc
-renderToABC  = 
-  ABC.simpleOutput . makeSimplePhraseAbc c_major (1%8) four_four_time
-   
+    tune1   = ABC.renderABC_overlay2 ofmt rwspec rwspec ov_score
+    
+    ofmt    = ABC.ABC_Std_Format_Config  [4,4,4,4] ABC.barNumber
+    rwspec  = ABC.ABC_Std_Rewrite_Config c_major (1%8) four_four_time
 
 
-tune1_abc :: [OverlayImage]
-tune1_abc = ABC.overlayPhrases [upper_abc,lower_abc]
-  where
-    mk        = makeSimplePhraseAbc c_major (1%8) four_four_time
-    upper_abc = mk ubars1'4
-    lower_abc = mk lbars1'4
+
+ov_score :: Score ([PletTree StdGlyph],[PletTree StdGlyph])
+ov_score = map (fmap (both simpleNoteList)) $ [ Repeated (ubars1'4, lbars1'4) ]
 
 
-c_major :: SpellingMap
-c_major = makeSpellingMap 0
-
-makeSimplePhraseAbc :: SpellingMap 
-                    -> DurationMeasure 
-                    -> MeterPattern 
-                    -> [StdGlyph]
-                    -> PhraseImage
-makeSimplePhraseAbc spelling unit_drn meter_pattern = 
-   ABC.renderPhrase . ABC.rewritePitch    spelling
-                    . ABC.rewriteDuration unit_drn
-                    . phrase              meter_pattern
-                    . simpleNoteList
+c_major   :: SpellingMap
+c_major   = makeSpellingMap 0
 
 
 ubars1'4 :: [StdGlyph]

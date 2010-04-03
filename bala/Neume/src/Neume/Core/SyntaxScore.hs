@@ -29,15 +29,16 @@ module Neume.Core.SyntaxScore
     Section(..) -- to become Score once the typeclass Score has gone...
   , Score
 
-  , BarNum
+
   , ScoreImage
+  , PhraseImage
   , BarImage
 
-  , Overlay(..)
+  , PhraseOverlayImage
+  , BarOverlayImage
 
-  , PhraseImage
-  , OverlayImage(..)
 
+  , BarNum
 
   ) where
 
@@ -75,18 +76,15 @@ instance StateMap Section where
 -- Phrases and bars are composable with pretty-print operations...
 
 
-type ScoreImage = Doc
-type BarImage   = Doc
+type ScoreImage         = Doc
+type PhraseImage        = [BarImage]
+type BarImage           = Doc
+
+type PhraseOverlayImage = [BarOverlayImage]
+type BarOverlayImage    = Doc
+
 
 type BarNum   = Int
 
 
-newtype Overlay a = Overlay { getOverlays :: [[a]] } deriving Show
-
-
-type PhraseImage = [BarImage]
-
-
-newtype OverlayImage = OverlayImage { getOverlayImage :: BarImage }   
-  deriving Show
 

@@ -26,6 +26,8 @@ module Neume.Extra.AbcFormat
   , anaBarNumber
 
   , renderABC 
+  , renderABC_overlay2
+
   , ABC_Std_Format_Config(..)
   , ABC_Std_Rewrite_Config(..)
 
@@ -94,6 +96,7 @@ data ABC_Std_Format_Config = ABC_Std_Format_Config
 data ABC_Std_Rewrite_Config = ABC_Std_Rewrite_Config 
     { spelling_map    :: SpellingMap
     , unit_duration   :: DurationMeasure 
+    , meter_pattern   :: MeterPattern
     }
 
 
@@ -101,19 +104,50 @@ data ABC_Std_Rewrite_Config = ABC_Std_Rewrite_Config
 
 renderABC :: ABC_Std_Format_Config
           -> ABC_Std_Rewrite_Config
-          -> MeterPattern 
-          -> [Section [PletTree StdGlyph]] -> Doc
-renderABC (ABC_Std_Format_Config line_stk func) rw_cfg mp = 
-    concatDocSections func line_stk . map (renderSection rw_cfg mp)
+          -> [Section [PletTree StdGlyph]] 
+          -> Doc
+renderABC (ABC_Std_Format_Config line_stk func) rw = 
+    concatDocSections func line_stk . map (renderSection rw)
+
+
+renderABC_overlay2 :: ABC_Std_Format_Config
+         -> ABC_Std_Rewrite_Config
+         -> ABC_Std_Rewrite_Config
+         -> [Section ([PletTree StdGlyph],[PletTree StdGlyph])]
+         -> Doc
+renderABC_overlay2 (ABC_Std_Format_Config line_stk func) rw1 rw2 =
+    concatDocSections func line_stk . map (merge2 . renderSection2 rw1 rw2)
+
 
 renderSection :: ABC_Std_Rewrite_Config 
-              -> MeterPattern
               -> Section [PletTree StdGlyph] 
               -> Section PhraseImage
-renderSection (ABC_Std_Rewrite_Config spellmap unit_drn) mp = 
-    fmap (renderPhrase . abcRewrite spellmap unit_drn . phrase mp)
+renderSection cfg = fmap (phraseImage cfg)
 
 
+
+renderSection2 :: ABC_Std_Rewrite_Config
+               -> ABC_Std_Rewrite_Config
+               -> Section ([PletTree StdGlyph], [PletTree StdGlyph])
+               -> Section (PhraseImage, PhraseImage)
+renderSection2 cfg1 cfg2 = 
+    fmap (prod (phraseImage cfg1) (phraseImage cfg2))
+
+
+merge2 :: Section (PhraseImage, PhraseImage) -> Section PhraseOverlayImage
+merge2 = fmap (\(x,y) -> overlayPhrases [x,y])
+
+phraseImage :: ABC_Std_Rewrite_Config
+            -> NoteList (Glyph anno Pitch Duration)
+            -> PhraseImage
+phraseImage cfg = renderPhrase . abcRewrite spellmap unit_drn . phrase mp 
+  where 
+    spellmap = spelling_map  cfg
+    unit_drn = unit_duration cfg
+    mp       = meter_pattern cfg
+
+prod :: (a -> s) -> (b -> t) -> (a,b) -> (s,t)
+prod f g (a,b) = (f a, g b)
 
 concatDocSections :: (BarNum -> DocS) -> LineStk -> [Section PhraseImage] -> Doc
 concatDocSections _  _   []     = empty
@@ -121,7 +155,7 @@ concatDocSections fn stk (x:xs) = let (d1,hy) = section1 (infHyphenSpec stk) x
                                   in finalFromInterim $ step d1 hy xs
   where
     step :: InterimDoc -> HyphenSpec -> [Section [BarImage]] -> InterimDoc 
-    step _   _  []          = error "unreachable - concatDocSections"
+    step acc _  []          = acc
     step acc hy [a]         = acc `append` (fst $ section1 hy a)
     step acc hy (a:as)      = let (a',hy') = section1 hy a 
                               in step (acc `append` a') hy' as
@@ -131,7 +165,16 @@ concatDocSections fn stk (x:xs) = let (d1,hy) = section1 (infHyphenSpec stk) x
     section1 hy (Repeated ds)       = interRepeated fn hy ds
     section1 hy (AltRepeat ds alts) = interAltRepeat fn hy ds alts
 
+
+
+
 --------------------------------------------------------------------------------
+
+infHyphenSpec :: LineStk -> HyphenSpec
+infHyphenSpec stk = step (1,stk) where
+  step (n,[])               = (n,LINE_BREAK) : step (n+1,[])
+  step (n,x:xs) | x > 1     = (n,CONT)       : step (n+1,x-1:xs)
+                | otherwise = (n,LINE_BREAK) : step (n+1,xs)
 
 
 -- Interspersing bars:
@@ -167,18 +210,6 @@ concatDocSections fn stk (x:xs) = let (d1,hy) = section1 (infHyphenSpec stk) x
 -- their is no null predicate on Docs.
 
 
-
-
-
-infHyphenSpec :: LineStk -> HyphenSpec
-infHyphenSpec stk = step (1,stk) where
-  step (n,[])               = (n,LINE_BREAK) : step (n+1,[])
-  step (n,x:xs) | x>1       = (n,CONT)       : step (n+1,x-1:xs)
-                | otherwise = (n,LINE_BREAK) : step (n+1,xs)
-
-
---------------------------------------------------------------------------------
--- new algorithm...
 
 
 type InterimPrefix = (DocS,StartSymbol)
@@ -301,20 +332,17 @@ snocInterimDoc fn (InterimDoc p d (end_sym,hyph)) (n,hy) d' =
 
 -- Handily overlays are 'context free' 
 
-overlayPhrases :: [PhraseImage] -> [OverlayImage]
+overlayPhrases :: [PhraseImage] -> PhraseOverlayImage
 overlayPhrases []     = []
-overlayPhrases (x:xs) = foldl' overlay2 (overlay1 x) xs
+overlayPhrases (x:xs) = foldl' overlayMerge x xs
 
 
-overlay2  :: [OverlayImage] -> PhraseImage -> [OverlayImage]
-overlay2 bs1 bs2 = step bs1 bs2 where
+overlayMerge  :: [BarOverlayImage] -> PhraseImage -> [BarOverlayImage]
+overlayMerge bs1 bs2 = step bs1 bs2 where
   step (x:xs) (y:ys) = overlayAbc x y : step xs ys
   step xs     []     = xs 
-  step []     ys     = map OverlayImage ys 
+  step []     ys     = ys 
 
-overlay1 :: PhraseImage -> [OverlayImage]
-overlay1 = map OverlayImage
 
-overlayAbc :: OverlayImage -> Doc -> OverlayImage
-overlayAbc (OverlayImage v1) v2 = 
-    OverlayImage $ v1 <+> overlay <> lineCont <$> v2 
+overlayAbc :: BarOverlayImage -> BarOverlayImage -> BarOverlayImage
+overlayAbc v1 v2 = v1 <+> overlay <> lineCont <$> v2 

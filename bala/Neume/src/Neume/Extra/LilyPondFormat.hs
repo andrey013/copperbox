@@ -162,13 +162,17 @@ flatBars upf = fmap2a vsep `oo` stmap phi
 -- to be a proper matrix.
 --
 
-parallelPhrases :: Duration -> [PhraseImage] -> [OverlayImage]
-parallelPhrases _       []     = []
-parallelPhrases bar_len (x:xs) = snd $ foldl' (parallel2 bar_len) (1,parallel1 x) xs
-
 type Depth = Int
 
-parallel2  :: Duration -> (Int,[OverlayImage]) -> PhraseImage -> (Int,[OverlayImage])
+
+parallelPhrases :: Duration -> [PhraseImage] -> [BarOverlayImage]
+parallelPhrases _       []     = []
+parallelPhrases bar_len (x:xs) = snd $ foldl' (parallel2 bar_len) (1,x) xs
+
+parallel2  :: Duration 
+           -> (Int,[BarOverlayImage]) 
+           -> PhraseImage 
+           -> (Int,[BarOverlayImage])
 parallel2 bar_len (depth,bs1) bs2 = (depth+1, step bs1 bs2) 
   where
     step (x:xs) (y:ys) = parallelLy x y : step xs ys
@@ -176,15 +180,13 @@ parallel2 bar_len (depth,bs1) bs2 = (depth+1, step bs1 bs2)
     step []     (y:ys) = parallelLy (blank depth bar_len) y : step [] ys 
     step []     []     = []
 
-blank :: Depth -> Duration -> OverlayImage
-blank n d = step (OverlayImage sbar) (n-1) where
+blank :: Depth -> Duration -> BarOverlayImage
+blank n d = step sbar (n-1) where
   step bar i | i <= 0    = bar
              | otherwise = step (parallelLy bar sbar) (i-1)
 
   sbar       = spacer $ Just d
 
-parallel1 :: PhraseImage -> [OverlayImage]
-parallel1 = map OverlayImage
 
-parallelLy :: OverlayImage -> Doc -> OverlayImage
-parallelLy (OverlayImage v1) v2 = OverlayImage $ v1 <+> singleBar <$> v2 
+parallelLy :: BarOverlayImage -> BarImage -> BarOverlayImage
+parallelLy ov b = ov <+> singleBar <$> b

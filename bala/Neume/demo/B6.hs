@@ -51,10 +51,10 @@ abc_score =  ABC.tunenum   1
          <$> ABC.key       "Amaj"
          <$> tune1
   where
-    tune1   = ABC.renderABC ofmt rwspec two_four_time b6_score
+    tune1   = ABC.renderABC ofmt rwspec b6_score
 
     ofmt    = ABC.ABC_Std_Format_Config  [4,4,4,4] ABC.barNumber
-    rwspec  = ABC.ABC_Std_Rewrite_Config a_major   (1%16)  
+    rwspec  = ABC.ABC_Std_Rewrite_Config a_major (1%16) two_four_time 
 
 
 b6_score :: Score [PletTree StdGlyph]
