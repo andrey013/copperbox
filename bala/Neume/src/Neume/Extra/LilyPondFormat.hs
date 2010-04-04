@@ -23,6 +23,9 @@ module Neume.Extra.LilyPondFormat
 
   
     Ly_Std_Format_Config(..)
+  , Ly_Relative_Rewrite_Config(..)
+  , Ly_Absolute_Rewrite_Config(..)
+
   , renderLyRelative
   , renderLyDrums
 
@@ -55,14 +58,67 @@ data Ly_Std_Format_Config = Ly_Std_Format_Config
     { bar_numbering_func   :: BarNum -> DocS }
 
 
+type OctaveDisplacement = Int
+
+
+data Ly_Relative_Rewrite_Config = Ly_Relative_Rewrite_Config
+    { base_pitch                :: Pitch
+    , meter_pattern_rel         :: MeterPattern 
+    }
+
+data Ly_Absolute_Rewrite_Config = Ly_Absolute_Rewrite_Config
+    { octave_displacement       :: OctaveDisplacement
+    , meter_pattern_abs         :: MeterPattern 
+    }
+
 
 renderLyRelative :: Ly_Std_Format_Config
                  -> Ly_Relative_Rewrite_Config
-                 -> MeterPattern 
                  -> [Section [PletTree StdGlyph]] 
                  -> Doc
-renderLyRelative (Ly_Std_Format_Config func) (Ly_Relative_Rewrite_Config pch) mp = 
-    concatDocSections func . fst . stmap (renderSectionRel mp) pch
+renderLyRelative (Ly_Std_Format_Config func) rw1 = 
+    concatDocSections func . fst . stmap renderSectionRel rw1
+
+
+renderSectionRel :: Ly_Relative_Rewrite_Config
+                 -> Section [PletTree StdGlyph] 
+                 -> (Section PhraseImage, Ly_Relative_Rewrite_Config)
+renderSectionRel cfg = stmap_extr extr (phraseImageRel mp) cfg
+  where
+    extr = Extractable base_pitch (\p c -> c {base_pitch = p}) 
+    mp   = meter_pattern_rel cfg
+
+
+
+{-
+renderSectionRel2 :: (MeterPattern,Pitch)
+                  -> (MeterPattern,Pitch)
+                  -> Section ([PletTree StdGlyph], [PletTree StdGlyph])
+                  -> (Section (PhraseImage, PhraseImage), (Pitch,Pitch))
+renderSectionRel2 (mp1,pch1) (mp2,pch2) = 
+    stmap_tup2 (phraseImageRel mp1) (phraseImageRel mp2) (pch1,pch2)
+
+stmap_tup2 :: StateMap f 
+          => (st1 -> a -> (r1,st1))
+          -> (st2 -> b -> (r2,st2))
+          -> (st1,st2) 
+          -> f (a,b) 
+          -> (f (r1,r2), (st1,st2))
+stmap_tup2 f g = stmap fn where
+   fn (s1,s2) (a,b) = ((a',b'),(s1',s2'))
+                      where (a',s1') = f s1 a
+                            (b',s2') = g s2 b
+-}
+
+
+
+phraseImageRel :: MeterPattern
+               -> Pitch
+               -> NoteList (Glyph anno Pitch Duration)
+               -> (PhraseImage,Pitch)
+phraseImageRel mp pch = 
+    fmap2a (renderPhrase pitch) . lyRelativeRewrite pch . phrase mp
+
 
 renderLyDrums :: Ly_Std_Format_Config
               -> MeterPattern 
@@ -72,23 +128,19 @@ renderLyDrums (Ly_Std_Format_Config func) mp =
     concatDocSections func . map (renderSectionDrums mp) 
 
 
-
-renderSectionRel :: MeterPattern
-                 -> Pitch
-                 -> Section [PletTree StdGlyph] 
-                 -> (Section PhraseImage,Pitch)
-renderSectionRel mp = stmap fn 
-  where
-    fn :: Pitch -> [PletTree StdGlyph] -> (PhraseImage,Pitch)
-    fn pch = fmap2a (renderPhrase pitch) . lyRelativeRewrite pch . phrase mp
-
 renderSectionDrums :: MeterPattern 
                    -> Section [PletTree DrumGlyph] 
                    -> Section PhraseImage
-renderSectionDrums mp = fmap fn
-  where
-    fn :: [PletTree DrumGlyph] -> PhraseImage
-    fn = renderPhrase (text . drumShortName) . rewriteDurationOpt . phrase mp
+renderSectionDrums mp = fmap (phraseImageDrums mp)
+
+
+phraseImageDrums :: MeterPattern
+                 -> NoteList DrumGlyph
+                 -> PhraseImage
+phraseImageDrums mp = 
+    renderPhrase (text . drumShortName) . rewriteDurationOpt . phrase mp
+
+
 
 
 concatDocSections :: (BarNum -> DocS) -> [Section PhraseImage] -> Doc

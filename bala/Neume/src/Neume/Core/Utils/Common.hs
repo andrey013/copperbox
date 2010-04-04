@@ -23,6 +23,8 @@ module Neume.Core.Utils.Common
   , modR
   , strip
   , both
+  , prod
+
 
   , psimap
   , mapInto
@@ -31,13 +33,12 @@ module Neume.Core.Utils.Common
   , para
   , paraM
 
-  -- * Specs!  
-  , oo
-  , ooo 
-  , oooo
 
 
   ) where
+
+
+import Neume.Core.Utils.Arity
 
 import Data.Ratio
 import Data.Sequence
@@ -76,6 +77,7 @@ dtrunc d | abs d < 0.0001  = "0.0"
 divModR :: Integral a => Ratio a -> Ratio a -> (a, Ratio a)
 divModR a b = let a1 = a / b; a2 = floor a1 in (a2, a-((a2%1)*b))
 
+
 modR :: Integral a => Ratio a -> Ratio a -> Ratio a
 modR = snd `oo` divModR
 
@@ -85,9 +87,17 @@ strip :: a -> b -> b
 strip _ b = b
 
 
+-- Pairs
+
 both :: (a -> b) -> (a,a) -> (b,b)
 both f (a,b) = (f a, f b)
 
+
+prod :: (a -> s) -> (b -> t) -> (a,b) -> (s,t)
+prod f g (a,b) = (f a, g b)
+
+
+----
 
 -- Rather like on (aka psi) from Data.Function 
 psimap :: (a -> b) -> a -> [a] -> (b,[b])
@@ -115,23 +125,4 @@ paraM :: Monad m => (a -> ([a], b) -> m b) -> b -> [a] -> m b
 paraM phi b = step
   where step []     = return b
         step (x:xs) = step xs >>= \ans -> phi x (xs, ans)
-
---------------------------------------------------------------------------------
--- 'specs'
-
-
--- | Compose an arity 1 function with an arity 2 function.
--- B1 - blackbird
-oo :: (a -> ans) -> (r1 -> r2 -> a) -> r1 -> r2 -> ans
-oo f g x y = f (g x y)
-
--- | Compose an arity 1 function with an arity 3 function.
--- B2 - bunting
-ooo :: (a -> ans) -> (r1 -> r2 -> r3 -> a) -> r1 -> r2 -> r3 -> ans
-ooo f g x y z = f (g x y z)
-
--- | Compose an arity 1 function with an arity 4 function.
-oooo :: (a -> ans) -> (r1 -> r2 -> r3 -> r4 -> a) -> r1 -> r2 -> r3 -> r4 -> ans
-oooo f g x y z1 z2 = f (g x y z1 z2)
-
 

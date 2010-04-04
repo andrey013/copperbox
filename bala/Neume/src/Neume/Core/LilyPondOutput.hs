@@ -17,12 +17,8 @@
 
 module Neume.Core.LilyPondOutput 
   (
-
     LyStdGlyph
   , LyStdNote
-  , OctaveDisplacement
-  , Ly_Relative_Rewrite_Config(..)
-  , Ly_Absolute_Rewrite_Config(..)
 
   , lyRelativeRewrite
   , lyAbsoluteRewrite
@@ -62,15 +58,6 @@ import Data.Sequence ( Seq )
 type LyStdGlyph anno = Glyph anno Pitch (Maybe Duration)
 type LyStdNote  anno = Note  anno Pitch (Maybe Duration)
 
-type OctaveDisplacement = Int
-
-
-data Ly_Relative_Rewrite_Config = Ly_Relative_Rewrite_Config
-    { base_pitch :: Pitch }
-
-data Ly_Absolute_Rewrite_Config = Ly_Absolute_Rewrite_Config
-    { octave_displacement :: OctaveDisplacement }
-
 
 
 -- This isn\'t right - relative pitch transform needs to return
@@ -86,11 +73,10 @@ lyRelativeRewrite :: Pitch
 lyRelativeRewrite pch = fmap2a rewriteDurationOpt . rewritePitchRel pch
 
 
-lyAbsoluteRewrite :: Ly_Absolute_Rewrite_Config 
+lyAbsoluteRewrite :: Int 
                   -> StaffPhrase (Glyph anno Pitch Duration)
                   -> StaffPhrase (Glyph anno Pitch (Maybe Duration))
-lyAbsoluteRewrite (Ly_Absolute_Rewrite_Config i) = 
-    rewriteDurationOpt . rewritePitchAbs i
+lyAbsoluteRewrite i = rewriteDurationOpt . rewritePitchAbs i
 
 
 --------------------------------------------------------------------------------

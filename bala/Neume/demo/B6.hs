@@ -39,10 +39,10 @@ ly_score =  version "2.12.2"
                        <$> time 2 4
                        <$> tune1)
   where
-    tune1    = renderLyRelative ofmt rwspec two_four_time b6_score
+    tune1    = renderLyRelative ofmt rwspec b6_score
     
     ofmt     = Ly_Std_Format_Config       strip
-    rwspec   = Ly_Relative_Rewrite_Config middle_c
+    rwspec   = Ly_Relative_Rewrite_Config middle_c two_four_time
 
 abc_score :: Doc
 abc_score =  ABC.tunenum   1 

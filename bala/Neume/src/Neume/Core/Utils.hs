@@ -16,14 +16,18 @@
 
 module Neume.Core.Utils
   ( 
-    module Neume.Core.Utils.Common
+    module Neume.Core.Utils.Arity
+  , module Neume.Core.Utils.Common
+  , module Neume.Core.Utils.Extractable
   , module Neume.Core.Utils.FunctorN
   , module Neume.Core.Utils.Pretty
   , module Neume.Core.Utils.StateMap
 
   ) where
 
+import Neume.Core.Utils.Arity
 import Neume.Core.Utils.Common
+import Neume.Core.Utils.Extractable
 import Neume.Core.Utils.FunctorN
 import Neume.Core.Utils.Pretty
 import Neume.Core.Utils.StateMap

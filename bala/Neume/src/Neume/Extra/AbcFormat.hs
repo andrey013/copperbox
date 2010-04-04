@@ -146,9 +146,6 @@ phraseImage cfg = renderPhrase . abcRewrite spellmap unit_drn . phrase mp
     unit_drn = unit_duration cfg
     mp       = meter_pattern cfg
 
-prod :: (a -> s) -> (b -> t) -> (a,b) -> (s,t)
-prod f g (a,b) = (f a, g b)
-
 concatDocSections :: (BarNum -> DocS) -> LineStk -> [Section PhraseImage] -> Doc
 concatDocSections _  _   []     = empty
 concatDocSections fn stk (x:xs) = let (d1,hy) = section1 (infHyphenSpec stk) x

@@ -37,7 +37,7 @@ module Neume.Core.Utils.Pretty
 
   ) where
 
-import Neume.Core.Utils.Common
+import Neume.Core.Utils.Arity
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
