@@ -21,6 +21,7 @@ module Neume.Core.Utils.Extractable
   , into
   , outof
   , stmap_extr
+  , stmap_extr2
 
   ) where 
 
@@ -42,3 +43,21 @@ stmap_extr extr f = stmap (\st a -> let (a',stx) = f (extract st) a
   where
    extract  = outof extr
    putback  = into  extr
+
+stmap_extr2 :: StateMap f 
+            => Extractable st stx 
+            -> Extractable st sty
+            -> (stx -> a -> (r1,stx)) 
+            -> (sty -> b -> (r2,sty))
+            -> st 
+            -> f (a,b) 
+            -> (f (r1,r2),st)
+stmap_extr2 extrA extrB f g = 
+    stmap (\st (a,b) -> let (a',stx) = f (extractA st) a
+                            (b',sty) = g (extractB $ putbackA stx st) b
+                        in  ((a',b'), putbackB sty st)) 
+  where
+   extractA = outof extrA
+   putbackA = into  extrA
+   extractB = outof extrB
+   putbackB = into  extrB

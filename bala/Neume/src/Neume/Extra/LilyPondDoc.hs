@@ -29,7 +29,7 @@ module Neume.Extra.LilyPondDoc
   -- ** Commands and comments
   , command
   , comment
-
+  , lineComment
 
   -- ** Time and key signatures
   , time
@@ -152,7 +152,14 @@ command = (char '\\' <>) . text
 
 -- | @{% ... %}@ - print a comment, comments can be multi-line.
 comment :: String -> Doc
-comment s = text "%{" <+> string s  <+> text "%}"
+comment s = text "%{" <+> string s <+> text "%}"
+
+
+-- | @%% ... @ - print a comment, comments must be a single line.
+lineComment :: String -> Doc
+lineComment s = text "%%" <+> string s
+
+
 
 -- Time and key signatures
 

@@ -26,7 +26,10 @@ module Neume.Extra.LilyPondFormat
   , Ly_Relative_Rewrite_Config(..)
   , Ly_Absolute_Rewrite_Config(..)
 
+  , barNumber
+
   , renderLyRelative
+  , renderLyRelative_overlay2  -- ugly prototype
   , renderLyDrums
 
 
@@ -72,6 +75,11 @@ data Ly_Absolute_Rewrite_Config = Ly_Absolute_Rewrite_Config
     }
 
 
+
+barNumber :: BarNum -> DocS
+barNumber i = (lineComment ("Bar " ++ show i) <$>)
+
+
 renderLyRelative :: Ly_Std_Format_Config
                  -> Ly_Relative_Rewrite_Config
                  -> [Section [PletTree StdGlyph]] 
@@ -89,26 +97,30 @@ renderSectionRel cfg = stmap_extr extr (phraseImageRel mp) cfg
     mp   = meter_pattern_rel cfg
 
 
+renderLyRelative_overlay2 :: Duration 
+                          -> Ly_Std_Format_Config
+                          -> Ly_Relative_Rewrite_Config
+                          -> Ly_Relative_Rewrite_Config
+                          -> [Section (PletForest StdGlyph, PletForest StdGlyph)] 
+                          -> Doc
+renderLyRelative_overlay2 bar_len (Ly_Std_Format_Config func) rw1 rw2 = 
+    concatDocSections func . map (merge2 bar_len) 
+                           . fst . stmap renderSectionRel2 (rw1,rw2)
 
-{-
-renderSectionRel2 :: (MeterPattern,Pitch)
-                  -> (MeterPattern,Pitch)
+merge2 :: Duration -> Section (PhraseImage, PhraseImage) -> Section PhraseOverlayImage
+merge2 bar_len = fmap (\(x,y) -> parallelPhrases bar_len [x,y])
+
+renderSectionRel2 :: (Ly_Relative_Rewrite_Config,Ly_Relative_Rewrite_Config)
                   -> Section ([PletTree StdGlyph], [PletTree StdGlyph])
-                  -> (Section (PhraseImage, PhraseImage), (Pitch,Pitch))
-renderSectionRel2 (mp1,pch1) (mp2,pch2) = 
-    stmap_tup2 (phraseImageRel mp1) (phraseImageRel mp2) (pch1,pch2)
-
-stmap_tup2 :: StateMap f 
-          => (st1 -> a -> (r1,st1))
-          -> (st2 -> b -> (r2,st2))
-          -> (st1,st2) 
-          -> f (a,b) 
-          -> (f (r1,r2), (st1,st2))
-stmap_tup2 f g = stmap fn where
-   fn (s1,s2) (a,b) = ((a',b'),(s1',s2'))
-                      where (a',s1') = f s1 a
-                            (b',s2') = g s2 b
--}
+                  -> (Section (PhraseImage, PhraseImage), 
+                      (Ly_Relative_Rewrite_Config,Ly_Relative_Rewrite_Config))
+renderSectionRel2 (cfg1,cfg2) = 
+    stmap_extr2 extrA extrB (phraseImageRel mpA) (phraseImageRel mpB) (cfg1,cfg2)
+  where
+    extrA = Extractable (base_pitch . fst) (\p (c,d) -> (c {base_pitch = p}, d)) 
+    mpA   = meter_pattern_rel cfg1
+    extrB = Extractable (base_pitch . snd) (\p (c,d) -> (c, d {base_pitch = p})) 
+    mpB   = meter_pattern_rel cfg2
 
 
 

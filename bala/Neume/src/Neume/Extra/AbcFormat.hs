@@ -104,17 +104,17 @@ data ABC_Std_Rewrite_Config = ABC_Std_Rewrite_Config
 
 renderABC :: ABC_Std_Format_Config
           -> ABC_Std_Rewrite_Config
-          -> [Section [PletTree StdGlyph]] 
+          -> [Section (NoteList StdGlyph)] 
           -> Doc
 renderABC (ABC_Std_Format_Config line_stk func) rw = 
     concatDocSections func line_stk . map (renderSection rw)
 
 
 renderABC_overlay2 :: ABC_Std_Format_Config
-         -> ABC_Std_Rewrite_Config
-         -> ABC_Std_Rewrite_Config
-         -> [Section ([PletTree StdGlyph],[PletTree StdGlyph])]
-         -> Doc
+                   -> ABC_Std_Rewrite_Config
+                   -> ABC_Std_Rewrite_Config
+                   -> [Section (NoteList StdGlyph, NoteList StdGlyph)]
+                   -> Doc
 renderABC_overlay2 (ABC_Std_Format_Config line_stk func) rw1 rw2 =
     concatDocSections func line_stk . map (merge2 . renderSection2 rw1 rw2)
 
@@ -128,7 +128,7 @@ renderSection cfg = fmap (phraseImage cfg)
 
 renderSection2 :: ABC_Std_Rewrite_Config
                -> ABC_Std_Rewrite_Config
-               -> Section ([PletTree StdGlyph], [PletTree StdGlyph])
+               -> Section (NoteList StdGlyph, NoteList StdGlyph)
                -> Section (PhraseImage, PhraseImage)
 renderSection2 cfg1 cfg2 = 
     fmap (prod (phraseImage cfg1) (phraseImage cfg2))

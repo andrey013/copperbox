@@ -27,46 +27,24 @@ import System.Cmd
 
 main :: IO ()
 main = do 
---  writeDoc "overlay1.ly"      ly_score
+  writeDoc "overlay1.ly"      ly_score
   writeDoc "overlay1_abc.abc" abc_score
---  system   "lilypond overlay1.ly"
+  system   "lilypond overlay1.ly"
   system   "abcm2ps overlay1_abc.abc -O overlay1_abc.ps" 
   return ()
 
 
-{-
+
 ly_score :: Doc
 ly_score =  version "2.12.2" 
         <$> scoreExpr (relative middle_c $ key c_nat "major" 
-        <$> (time 2 4)
-        <$> tune)
+                        <$> (time 4 4)
+                        <$> tune1)
   where
-    tune =  simpleOutput $ renderPhrase pitch 
-                         $ fst $ rewritePitchRel    middle_c 
-                         $ rewriteDurationOpt xs
-
-    xs   = phrase four_four_time $ simpleNoteList ubars1'4
--}
-
---
--- Not satisfactory - no way to respect shape of the overlays...
---
--- overlay [ repeat a1 `caten` straight a2
---         , repeat b1 `caten` straight b2
---         ]
---
--- Has to be:
---
--- repeat ((repeat $ overlay [a1,b1]) `caten` (straight $ overlay [a2,b2])) 
---
-{-
-renderToLy :: [StdGlyph] -> (Doc,Pitch)
-renderToLy = fmap2a (simpleOutput . renderPhrase pitch)
-                                 . rewritePitchRel middle_c
-                                 . rewriteDurationOpt
-                                 . phrase four_four_time
-                                 . simpleNoteList
--}
+    tune1   = renderLyRelative_overlay2 wn ofmt rwspec rwspec ov_score
+    
+    ofmt    = Ly_Std_Format_Config barNumber
+    rwspec  = Ly_Relative_Rewrite_Config middle_c four_four_time
 
 
 abc_score :: Doc

@@ -21,6 +21,7 @@ module Neume.Core.NoteList
 
   -- * Notelists
     NoteList
+  , PletForest
   , PletTree(..)
   , plet
   , duplet
@@ -55,8 +56,9 @@ import Data.List ( foldl' )
 -- To handle n-ary tuplets a NoteGroup is unfortunately somewhat 
 -- more complicated than a simple (linear) list.
 --
-type NoteList a = [PletTree a]
+type NoteList a = PletForest a
 
+type PletForest a = [PletTree a]
 
 -- | A \PletTree\ represents an element in a 'NoteGroup'. A 
 -- element may be either a single note (constructor S) or an 
