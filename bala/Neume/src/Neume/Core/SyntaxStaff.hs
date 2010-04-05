@@ -67,6 +67,8 @@ import Data.Sequence
 -- type. They can use alternatives to the Glyph type. 
 
 newtype StaffPhrase gly = StaffPhrase { extractBars   :: Seq (StaffBar gly) }
+  deriving (Show)
+
 type    StaffBar    gly = Seq (CExpr gly)
 
 
@@ -109,7 +111,7 @@ data Glyph anno pch dur = GlyNote  (Note anno pch dur) !Tie
 
 
 data Note anno pch dur = Note !anno !pch !dur
-  deriving (Eq,Show) 
+  deriving (Eq)
 
 type Tie = Bool
 
@@ -245,6 +247,11 @@ instance BeamExtremity (Glyph anno pch dur) where
  
 
 --------------------------------------------------------------------------------
+-- Show instances
+
+instance (Show pch, ShowsDuration dur) => Show (Note anno pch dur) where
+  showsPrec _ (Note _ pch dur) = shows pch . showsDur dur
+
 -- Pretty instances
 
 snocDur :: Pretty a => Doc -> a -> Doc

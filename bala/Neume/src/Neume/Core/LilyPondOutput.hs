@@ -31,7 +31,6 @@ module Neume.Core.LilyPondOutput
 
   -- * rewriting
   , rewriteDurationOpt
-  , rewriteDurationOpt_         -- needs renaming
   , rewritePitchAbs
   , rewritePitchAbs_treble
   , rewritePitchAbs_tab
@@ -172,25 +171,28 @@ default_duration = qn
 
 rewriteDurationOpt :: StaffPhrase (Glyph anno pch Duration)
                    -> StaffPhrase (Glyph anno pch (Maybe Duration))
-rewriteDurationOpt = mapBar (fst . (stmap doptGlyph default_duration))
+rewriteDurationOpt = StaffPhrase . fmap fn . extractBars
+  where
+    fn bar = fst $ stmap (stmap doptGlyph) (default_duration,True) bar
 
 
-
-doptGlyph :: Duration 
+doptGlyph :: (Duration,Bool) 
           -> Glyph anno pch Duration 
-          -> (Glyph anno pch (Maybe Duration), Duration)
+          -> (Glyph anno pch (Maybe Duration), (Duration,Bool))
 doptGlyph = stmap3c doptD
 
 
-
-doptD :: Duration -> Duration -> (Maybe Duration, Duration)
-doptD st d | d == st && not (isDotted d) = (Nothing,st)
-           | otherwise                   = (Just d,d) 
-
---
-
+doptD :: (Duration,Bool) -> Duration -> (Maybe Duration, (Duration,Bool))
+doptD st@(old,is_fst) d 
+    | is_fst                       = (Just d, (d,False))
+    | d == old && not (isDotted d) = (Nothing,st)
+    | otherwise                    = (Just d, (d,False)) 
 
 
+
+{-
+
+-- Old...
 rewriteDurationOpt_ :: MarkupPhrase (SkipGlyph gly Duration)
                     -> MarkupPhrase (SkipGlyph gly (Maybe Duration))
 rewriteDurationOpt_ = MarkupPhrase . map doptMarkupBar . extractMarkupBars
@@ -207,7 +209,7 @@ doptSkipGlyph :: Duration
               -> SkipGlyph glyph Duration
               -> (SkipGlyph glyph (Maybe Duration), Duration)
 doptSkipGlyph = stmap2b doptD
-
+-}
 
 --------------------------------------------------------------------------------
 -- Rewrite Pitch

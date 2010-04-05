@@ -39,6 +39,7 @@ module Neume.Core.NoteList
 
 import Neume.Core.Duration
 import Neume.Core.Metrical
+import Neume.Core.Utils.StateMap
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
@@ -74,6 +75,10 @@ instance Functor PletTree where
   fmap f (S a)        = S (f a)
   fmap f (Plet pm xs) = Plet pm (map (fmap f) xs)
 
+instance StateMap PletTree where
+  stmap f st (S a)        = (S a',st') where (a',st') = f st a
+  stmap f st (Plet pm xs) = (Plet pm xs',st') 
+                            where (xs',st') = stmap (stmap f) st xs
 
 -- | Short-hand constructor for n-ary plets.
 --

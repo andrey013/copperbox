@@ -71,7 +71,7 @@ fretDiagram name alias ns = FretDiagram name alias (map fretNum ns)
 
 lyPhraseFretDiagrams :: MeterPattern -> [FretDiagramGlyph] -> PhraseImage
 lyPhraseFretDiagrams mp xs =
-    renderMarkupPhrase diagOut $ rewriteDurationOpt_
+    renderMarkupPhrase diagOut $ undefined {- rewriteDurationOpt_ -}
                                $ phraseMarkup mp xs
 
 lilypondFretDiagScore :: (a -> PhraseImage) 

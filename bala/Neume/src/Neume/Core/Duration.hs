@@ -24,6 +24,7 @@ module Neume.Core.Duration
   , DurationMeasure
   
   -- * Classes
+  , ShowsDuration(..)
   , HasDuration(..)
   , MakeRest(..)
   , MakeSpacer(..)
@@ -90,7 +91,8 @@ type DurationMeasure = Rational
 --------------------------------------------------------------------------------
 -- Classes
 
-
+class ShowsDuration a where
+  showsDur :: a -> ShowS
 
 -- is this one still useful... ?
 class HasDuration t where
@@ -111,7 +113,15 @@ instance Ord Duration where
 
 
 instance Show Duration where
-  show = ('#' :) . show . extent
+  showsPrec _ drn = showChar '-' . shows n . showChar '%' . shows d
+                    where (n,d) = extentComponents drn
+
+
+instance ShowsDuration Duration where
+  showsDur = shows
+
+instance Show a => ShowsDuration (Maybe a) where
+  showsDur = maybe id shows
 
 --------------------------------------------------------------------------------
 

@@ -62,7 +62,7 @@ abc_score =  ABC.tunenum        1
 
 
 
-ov_score :: Score ([PletTree StdGlyph],[PletTree StdGlyph])
+ov_score :: Score (NoteList StdGlyph, NoteList StdGlyph)
 ov_score = map (fmap (both simpleNoteList)) $ [ Repeated (ubars1'4, lbars1'4) ]
 
 

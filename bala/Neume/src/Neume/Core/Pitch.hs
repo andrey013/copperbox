@@ -65,18 +65,18 @@ import qualified Data.Map as Map
 -- no-accidental. Hence the Maybe onAccidental.
 
 data Pitch = Pitch PitchLetter (Maybe Accidental) Octave
-  deriving (Eq,Show)
+  deriving (Eq)
 
 data PitchLetter = C | D | E | F | G | A | B
   deriving (Bounded,Enum,Eq,Ord,Show)
 
 data Accidental = DoubleFlat | Flat | Nat | Sharp  | DoubleSharp 
-  deriving (Bounded,Enum,Eq,Ord,Show)
+  deriving (Bounded,Enum,Eq,Ord)
 
 type Octave  = Int
 
 data PitchLabel = PitchLabel PitchLetter (Maybe Accidental)
-  deriving (Eq,Show)
+  deriving (Eq)
 
 --------------------------------------------------------------------------------
 -- Classes
@@ -281,6 +281,22 @@ nflats n = map flat $ take n [B,E,A,D,G,C,F] where
 
 
 --------------------------------------------------------------------------------
+-- Show instances
+instance Show Pitch where
+  showsPrec _ (Pitch l mba i) = shows l . maybe id shows mba  . shows i
+
+
+instance Show PitchLabel where
+  showsPrec _ (PitchLabel l mba) = shows l . maybe id shows mba
+
+instance Show Accidental where
+  showsPrec _ DoubleFlat   = showString "bb"
+  showsPrec _ Flat         = showChar 'b'
+  showsPrec _ Nat          = id
+  showsPrec _ Sharp        = showChar '#'
+  showsPrec _ DoubleSharp  = showString "##"
+
+
 -- Pretty print instances
 
 -- Pitch letters are upper case - then e.g. Bb is decipherable.
