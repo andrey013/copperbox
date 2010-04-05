@@ -79,7 +79,7 @@ module Neume.Extra.LilyPondDoc
   , repeatvolta
   , alternative
   , drummode
-  
+  , parallelMusic  
 
   -- ** Titles
   , header
@@ -363,6 +363,13 @@ alternative = nestBraces . vsep . map braces
 -- | @\\drummode {\\n ...\\n }@.
 drummode            :: Doc -> Doc
 drummode e          = command "drummode" <+> nestBraces e
+
+-- | @\\parallelMusic #'( ... ) {\\n ...\\n }@.
+parallelMusic       :: [String] -> Doc -> Doc
+parallelMusic xs e  = 
+    command "parallelMusic" <+> text "#'" <> parens names <+> nestBraces e
+  where
+    names = hsep $ map text xs
 
 
 --------------------------------------------------------------------------------

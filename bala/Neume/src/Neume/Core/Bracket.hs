@@ -45,7 +45,7 @@ import Prelude hiding ( null )
 --
 
 type MetricUnit   a = Seq (PletTree a) 
-type SegmentState a = (DurationMeasure, NoteList a)
+type SegmentState a = (DurationMeasure, PletForest a)
 type BarMU        a = Seq (MetricUnit a)
 
 mbSnoc :: Seq a -> Maybe a -> Seq a
@@ -59,14 +59,14 @@ mbSnoc se (Just a) = se |> a
 
 phrase :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
        => MeterPattern -> NoteList a -> StaffPhrase a
-phrase mp notes = StaffPhrase $ fmap beamBar
-                              $ splitToBars mp notes
+phrase mp (NoteList name notes) = 
+    StaffPhrase name $ fmap beamBar $ splitToBars mp notes
 
 
 phraseAna :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
        => DurationMeasure -> MeterPattern -> NoteList a -> StaffPhrase a
-phraseAna ana mp notes = StaffPhrase $ fmap beamBar
-                                     $ anaSplitToBars ana mp notes
+phraseAna ana mp (NoteList name notes) = 
+    StaffPhrase name $ fmap beamBar $ anaSplitToBars ana mp notes
  
 
 
@@ -76,11 +76,11 @@ phraseAna ana mp notes = StaffPhrase $ fmap beamBar
 
 
 splitToBars :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-            => MeterPattern -> NoteList a -> Seq (BarMU a)
+            => MeterPattern -> PletForest a -> Seq (BarMU a)
 splitToBars mp notes = workerSplit mp empty (0,notes) where
 
 anaSplitToBars :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-               => DurationMeasure -> MeterPattern -> NoteList a -> Seq (BarMU a)
+               => DurationMeasure -> MeterPattern -> PletForest a -> Seq (BarMU a)
 anaSplitToBars ana mp notes = workerSplit mp (singleton bar0) state0
   where
     (bar0,state0) = firstAna ana mp notes
@@ -95,7 +95,7 @@ workerSplit mp = step where
 
 
 firstAna :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-         => DurationMeasure -> MeterPattern -> NoteList a 
+         => DurationMeasure -> MeterPattern -> PletForest a 
          -> (BarMU a, SegmentState a)
 firstAna ana mp0 notes = nextBar (anacrusis ana mp0) (0,notes)
 
@@ -120,7 +120,7 @@ nextMUnit d (borrow,notes) | borrow >= d = (Nothing, (borrow-d,notes))
 
 nextMUnit1 :: (Measurement a ~ DurationMeasure, NumMeasured a)
            => DurationMeasure
-           -> NoteList a
+           -> PletForest a
            -> (MetricUnit a, SegmentState a)
 nextMUnit1 = step empty where
   step acc d xs       | d <= 0 = (acc,(abs d,xs))

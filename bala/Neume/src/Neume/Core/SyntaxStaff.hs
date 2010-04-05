@@ -66,7 +66,10 @@ import Data.Sequence
 -- Note - phrases, bars and CExprs are polymorphic on the glyph
 -- type. They can use alternatives to the Glyph type. 
 
-newtype StaffPhrase gly = StaffPhrase { extractBars   :: Seq (StaffBar gly) }
+data StaffPhrase gly = StaffPhrase 
+      { phraseName    :: String
+      , extractBars   :: Seq (StaffBar gly) 
+      }
   deriving (Show)
 
 type    StaffBar    gly = Seq (CExpr gly)
@@ -142,13 +145,13 @@ type AnnoGlyph anno     = Glyph anno Pitch Duration
 -- 
 
 mapBar :: (CExpr gly -> CExpr gly') -> StaffPhrase gly -> StaffPhrase gly'
-mapBar f (StaffPhrase se) = StaffPhrase $ fmap (fmap f) se
+mapBar f (StaffPhrase name se) = StaffPhrase name $ fmap (fmap f) se
 
 --------------------------------------------------------------------------------
 -- Instances
 
 instance Functor StaffPhrase where
-  fmap f (StaffPhrase xs) = StaffPhrase $ fmap (fmap (fmap f)) xs
+  fmap f (StaffPhrase name xs) = StaffPhrase name $ fmap (fmap (fmap f)) xs
 
 
 
@@ -178,7 +181,7 @@ instance FMap3 Glyph where
 
 -- StateMap
 instance StateMap StaffPhrase where
-  stmap f st (StaffPhrase xs) = (StaffPhrase xs',st') 
+  stmap f st (StaffPhrase name xs) = (StaffPhrase name xs',st') 
     where (xs',st') = stmap (stmap (stmap f)) st xs
 
 

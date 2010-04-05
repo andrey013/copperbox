@@ -20,7 +20,7 @@ module Neume.Core.NoteList
   (
 
   -- * Notelists
-    NoteList
+    NoteList(..)
   , PletForest
   , PletTree(..)
   , plet
@@ -28,8 +28,6 @@ module Neume.Core.NoteList
   , triplet
   , simpleNoteList
 
-  , LevelViewL(..)
-  , destructLevel
   , pletFold
   , pletAll
   , pletMeasure
@@ -46,18 +44,17 @@ import Text.PrettyPrint.Leijen          -- package: wl-pprint
 import Data.List ( foldl' )
 
 
--- | A 'NoteList' is a list of notes (or more properly glyphs as
--- it may contain rests etc.).
+-- | A 'NoteList' is a named list of notes, or more properly 
+-- glyphs as it may contain rests etc. Furthermore it is 
+-- actually a tree - so it can handle n-ary tuplets. 
 -- 
 -- This is the initial data structure representing musical 
 -- fragments. A NoteGroup is processed by Neume (split into bars
 -- and beamed according to a 'MeterPattern'), then rendered to
 -- ABC or LilyPond.
---
--- To handle n-ary tuplets a NoteGroup is unfortunately somewhat 
--- more complicated than a simple (linear) list.
---
-type NoteList a = PletForest a
+
+data NoteList a = NoteList String (PletForest a)
+  deriving  (Eq,Show)
 
 type PletForest a = [PletTree a]
 
@@ -99,23 +96,12 @@ triplet a b c = plet 3 2 [S a,S b,S c]
 -- | Convert a linear list of notes / glyphs (i.e no tuplets 
 -- or duplets) into a 'NoteList'.
 --
-simpleNoteList :: [a] -> NoteList a
-simpleNoteList = map S
+simpleNoteList :: (String,[a]) -> NoteList a
+simpleNoteList (name,xs) = NoteList name (map S xs)
 
 
 
 --------------------------------------------------------------------------------
-
-data LevelViewL a = EmptyNoteList
-                  | Elementary a                     (NoteList a)
-                  | Level      (PletMult,NoteList a) (NoteList a)
-  deriving (Eq,Show)
-
-destructLevel :: NoteList a -> LevelViewL a
-destructLevel []                = EmptyNoteList
-destructLevel (S a : xs)        = Elementary a xs
-destructLevel (Plet pm ts : xs) = Level (pm,ts) xs
-
 
 pletFold :: (a -> b -> b) -> (PletMult -> b -> b) -> b -> PletTree a -> b
 pletFold f _ b (S a)        = f a b

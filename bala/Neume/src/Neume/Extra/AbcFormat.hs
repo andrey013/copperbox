@@ -120,7 +120,7 @@ renderABC_overlay2 (ABC_Std_Format_Config line_stk func) rw1 rw2 =
 
 
 renderSection :: ABC_Std_Rewrite_Config 
-              -> Section [PletTree StdGlyph] 
+              -> Section (NoteList StdGlyph)
               -> Section PhraseImage
 renderSection cfg = fmap (phraseImage cfg)
 

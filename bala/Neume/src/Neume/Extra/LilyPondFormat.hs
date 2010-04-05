@@ -82,14 +82,14 @@ barNumber i = (lineComment ("Bar " ++ show i) <$>)
 
 renderLyRelative :: Ly_Std_Format_Config
                  -> Ly_Relative_Rewrite_Config
-                 -> [Section [PletTree StdGlyph]] 
+                 -> [Section (NoteList StdGlyph)] 
                  -> Doc
 renderLyRelative (Ly_Std_Format_Config func) rw1 = 
     concatDocSections func . fst . stmap renderSectionRel rw1
 
 
 renderSectionRel :: Ly_Relative_Rewrite_Config
-                 -> Section [PletTree StdGlyph] 
+                 -> Section (NoteList StdGlyph) 
                  -> (Section PhraseImage, Ly_Relative_Rewrite_Config)
 renderSectionRel cfg = stmap_extr extr (phraseImageRel mp) cfg
   where
@@ -101,7 +101,7 @@ renderLyRelative_overlay2 :: Duration
                           -> Ly_Std_Format_Config
                           -> Ly_Relative_Rewrite_Config
                           -> Ly_Relative_Rewrite_Config
-                          -> [Section (PletForest StdGlyph, PletForest StdGlyph)] 
+                          -> [Section (NoteList StdGlyph, NoteList StdGlyph)] 
                           -> Doc
 renderLyRelative_overlay2 bar_len (Ly_Std_Format_Config func) rw1 rw2 = 
     concatDocSections func . map (merge2 bar_len) 
@@ -111,7 +111,7 @@ merge2 :: Duration -> Section (PhraseImage, PhraseImage) -> Section PhraseOverla
 merge2 bar_len = fmap (\(x,y) -> parallelPhrases bar_len [x,y])
 
 renderSectionRel2 :: (Ly_Relative_Rewrite_Config,Ly_Relative_Rewrite_Config)
-                  -> Section ([PletTree StdGlyph], [PletTree StdGlyph])
+                  -> Section (NoteList StdGlyph, NoteList StdGlyph)
                   -> (Section (PhraseImage, PhraseImage), 
                       (Ly_Relative_Rewrite_Config,Ly_Relative_Rewrite_Config))
 renderSectionRel2 (cfg1,cfg2) = 
@@ -134,16 +134,16 @@ phraseImageRel mp pch =
 
 renderLyDrums :: Ly_Std_Format_Config
               -> MeterPattern 
-              -> [Section [PletTree DrumGlyph]] 
+              -> [Section (NoteList DrumGlyph)] 
               -> Doc
 renderLyDrums (Ly_Std_Format_Config func) mp = 
     concatDocSections func . map (renderSectionDrums mp) 
 
 
 renderSectionDrums :: MeterPattern 
-                   -> Section [PletTree DrumGlyph] 
+                   -> Section (NoteList DrumGlyph)
                    -> Section PhraseImage
-renderSectionDrums mp = fmap (phraseImageDrums mp)
+renderSectionDrums mp = fmap (phraseImageDrums mp) 
 
 
 phraseImageDrums :: MeterPattern

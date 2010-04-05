@@ -53,8 +53,8 @@ drumtune = variableDef "drumtune" $ drummode (time 4 4 <$> stemUp <$> tune1 )
     ofmt     = Ly_Std_Format_Config       strip
 
 
-drum_score :: Score [PletTree DrumGlyph]
-drum_score = map (fmap simpleNoteList) $ [ Repeated drum_notes ]
+drum_score :: Score (NoteList DrumGlyph)
+drum_score = map (fmap simpleNoteList) $ [ Repeated ("a",drum_notes) ]
 
 
 drum :: DrumPitch -> Duration -> DrumGlyph

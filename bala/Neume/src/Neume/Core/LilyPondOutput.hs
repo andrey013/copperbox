@@ -171,7 +171,8 @@ default_duration = qn
 
 rewriteDurationOpt :: StaffPhrase (Glyph anno pch Duration)
                    -> StaffPhrase (Glyph anno pch (Maybe Duration))
-rewriteDurationOpt = StaffPhrase . fmap fn . extractBars
+rewriteDurationOpt (StaffPhrase name bars) = 
+    StaffPhrase name $ fmap fn bars
   where
     fn bar = fst $ stmap (stmap doptGlyph) (default_duration,True) bar
 

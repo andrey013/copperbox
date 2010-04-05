@@ -63,7 +63,8 @@ abc_score =  ABC.tunenum        1
 
 
 ov_score :: Score (NoteList StdGlyph, NoteList StdGlyph)
-ov_score = map (fmap (both simpleNoteList)) $ [ Repeated (ubars1'4, lbars1'4) ]
+ov_score = map (fmap (both simpleNoteList)) $ 
+    [ Repeated (("aU", ubars1'4), ("aL", lbars1'4)) ]
 
 
 c_major   :: SpellingMap
