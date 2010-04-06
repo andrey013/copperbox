@@ -29,7 +29,7 @@ module Neume.Extra.LilyPondFormat
   , barNumber
 
   , renderLyRelative
-  , renderLyRelative_overlay2  -- ugly prototype
+  , renderLyRelative_parallel2  -- ugly prototype
   , renderLyDrums
 
 
@@ -97,18 +97,23 @@ renderSectionRel cfg = stmap_extr extr (phraseImageRel mp) cfg
     mp   = meter_pattern_rel cfg
 
 
-renderLyRelative_overlay2 :: Duration 
+renderLyRelative_parallel2 :: Duration 
                           -> Ly_Std_Format_Config
                           -> Ly_Relative_Rewrite_Config
                           -> Ly_Relative_Rewrite_Config
                           -> [Section (NoteList StdGlyph, NoteList StdGlyph)] 
                           -> Doc
-renderLyRelative_overlay2 bar_len (Ly_Std_Format_Config func) rw1 rw2 = 
-    concatDocSections func . map (merge2 bar_len) 
+renderLyRelative_parallel2 bar_len (Ly_Std_Format_Config func) rw1 rw2 = 
+    undefined
+{-
+    parallelDefs func . map (merge2 bar_len) 
                            . fst . stmap renderSectionRel2 (rw1,rw2)
+-}
 
 merge2 :: Duration -> Section (PhraseImage, PhraseImage) -> Section PhraseOverlayImage
-merge2 bar_len = fmap (\(x,y) -> parallelPhrases bar_len [x,y])
+merge2 bar_len = undefined --  fmap (\(x,y) -> parallelPhrases bar_len [x,y])
+                            
+
 
 renderSectionRel2 :: (Ly_Relative_Rewrite_Config,Ly_Relative_Rewrite_Config)
                   -> Section (NoteList StdGlyph, NoteList StdGlyph)
@@ -159,9 +164,27 @@ concatDocSections :: (BarNum -> DocS) -> [Section PhraseImage] -> Doc
 concatDocSections fn = vsep . fst . stmap section1 1  
   where
     section1 :: BarNum -> Section PhraseImage -> (Doc,BarNum)
+    section1 n (Straight a)       = flatStraight  fn n (phrase_image_bars a)
+    section1 n (Repeated a)       = flatRepeated  fn n (phrase_image_bars a) 
+    section1 n (AltRepeat a alts) = flatAltRepeat fn n a' alts'
+      where
+        a'    = phrase_image_bars a
+        alts' = map phrase_image_bars alts 
+
+
+--- ...
+parallelDefs :: (BarNum -> DocS) -> [Section PhraseImage] -> Doc
+parallelDefs _ _ = undefined
+{-
+parallelDefs fn = vsep . fst . stmap section1 1  
+  where
+    section1 :: BarNum -> Section PhraseImage -> (Doc,BarNum)
     section1 n (Straight a)       = flatStraight  fn n a
     section1 n (Repeated a)       = flatRepeated  fn n a 
     section1 n (AltRepeat a alts) = flatAltRepeat fn n a alts
+-}
+
+
 
 --------------------------------------------------------------------------------
  
@@ -230,14 +253,15 @@ type Depth = Int
 
 
 parallelPhrases :: Duration -> [PhraseImage] -> [BarOverlayImage]
-parallelPhrases _       []     = []
-parallelPhrases bar_len (x:xs) = snd $ foldl' (parallel2 bar_len) (1,x) xs
+parallelPhrases _       []                      = []
+parallelPhrases bar_len ((PhraseImage _ im):xs) = 
+    snd $ foldl' (parallel2 bar_len) (1,im) xs
 
 parallel2  :: Duration 
            -> (Int,[BarOverlayImage]) 
            -> PhraseImage 
            -> (Int,[BarOverlayImage])
-parallel2 bar_len (depth,bs1) bs2 = (depth+1, step bs1 bs2) 
+parallel2 bar_len (depth,bs1) (PhraseImage _ bs2) = (depth+1, step bs1 bs2) 
   where
     step (x:xs) (y:ys) = parallelLy x y : step xs ys
     step (x:xs) []     = parallelLy x (spacer $ Just bar_len) : step xs [] 

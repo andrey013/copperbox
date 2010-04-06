@@ -116,7 +116,8 @@ renderABC_overlay2 :: ABC_Std_Format_Config
                    -> [Section (NoteList StdGlyph, NoteList StdGlyph)]
                    -> Doc
 renderABC_overlay2 (ABC_Std_Format_Config line_stk func) rw1 rw2 =
-    concatDocSections func line_stk . map (merge2 . renderSection2 rw1 rw2)
+    undefined 
+   -- concatDocSections func line_stk . map (merge2 . renderSection2 rw1 rw2)
 
 
 renderSection :: ABC_Std_Rewrite_Config 
@@ -146,21 +147,28 @@ phraseImage cfg = renderPhrase . abcRewrite spellmap unit_drn . phrase mp
     unit_drn = unit_duration cfg
     mp       = meter_pattern cfg
 
+
+-- Note this should be made polymorphic, so it can handle 
+-- PhraseOverlayImages as well
+
 concatDocSections :: (BarNum -> DocS) -> LineStk -> [Section PhraseImage] -> Doc
 concatDocSections _  _   []     = empty
 concatDocSections fn stk (x:xs) = let (d1,hy) = section1 (infHyphenSpec stk) x
                                   in finalFromInterim $ step d1 hy xs
   where
-    step :: InterimDoc -> HyphenSpec -> [Section [BarImage]] -> InterimDoc 
+    step :: InterimDoc -> HyphenSpec -> [Section PhraseImage] -> InterimDoc 
     step acc _  []          = acc
     step acc hy [a]         = acc `append` (fst $ section1 hy a)
     step acc hy (a:as)      = let (a',hy') = section1 hy a 
                               in step (acc `append` a') hy' as
  
-    section1 :: HyphenSpec -> Section [BarImage] -> (InterimDoc,HyphenSpec)
-    section1 hy (Straight ds)       = interStraight fn hy ds
-    section1 hy (Repeated ds)       = interRepeated fn hy ds
-    section1 hy (AltRepeat ds alts) = interAltRepeat fn hy ds alts
+    section1 :: HyphenSpec -> Section PhraseImage -> (InterimDoc,HyphenSpec)
+    section1 hy (Straight ds)       = interStraight fn hy (phrase_image_bars ds)
+    section1 hy (Repeated ds)       = interRepeated fn hy (phrase_image_bars ds)
+    section1 hy (AltRepeat ds alts) = interAltRepeat fn hy ds' alts'
+      where
+        ds'   = phrase_image_bars ds
+        alts' = map phrase_image_bars alts
 
 
 
@@ -330,12 +338,13 @@ snocInterimDoc fn (InterimDoc p d (end_sym,hyph)) (n,hy) d' =
 -- Handily overlays are 'context free' 
 
 overlayPhrases :: [PhraseImage] -> PhraseOverlayImage
-overlayPhrases []     = []
-overlayPhrases (x:xs) = foldl' overlayMerge x xs
+overlayPhrases []                        = PhraseOverlayImage []
+overlayPhrases ((PhraseImage _ bars):xs) = 
+    PhraseOverlayImage $ foldl' overlayMerge bars xs
 
 
 overlayMerge  :: [BarOverlayImage] -> PhraseImage -> [BarOverlayImage]
-overlayMerge bs1 bs2 = step bs1 bs2 where
+overlayMerge bs1 (PhraseImage _ bs2) = step bs1 bs2 where
   step (x:xs) (y:ys) = overlayAbc x y : step xs ys
   step xs     []     = xs 
   step []     ys     = ys 

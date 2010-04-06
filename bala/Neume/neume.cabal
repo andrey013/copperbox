@@ -27,11 +27,8 @@ library
   build-depends:      base < 5, 
                       containers, 
                       wl-pprint,
-                      algebra,
-                      monadLib,
-                      joinlist >= 0.3.0
-                     
-  
+                      algebra
+
   exposed-modules:
     Neume.Core.AbcBasic,
     Neume.Core.AbcOutput,

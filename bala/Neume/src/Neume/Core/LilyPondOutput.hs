@@ -90,7 +90,8 @@ renderPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> PhraseImag
 renderPhrase = oStaffPhrase
 
 oStaffPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> PhraseImage
-oStaffPhrase f = mapInto (oStaffBar f) . extractBars
+oStaffPhrase f (StaffPhrase name bars) = 
+    PhraseImage name $ mapInto (oStaffBar f) bars
 
 oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> BarImage
 oStaffBar f = hsep . oCExprSeq f 
@@ -133,7 +134,8 @@ renderMarkupPhrase = oMarkupPhrase
 oMarkupPhrase :: (gly -> Maybe Duration -> Doc) 
               -> MarkupPhrase (SkipGlyph gly (Maybe Duration))
               -> PhraseImage
-oMarkupPhrase f = map (oMarkupBar f) . extractMarkupBars
+oMarkupPhrase f = 
+    PhraseImage "TODO_markup" . map (oMarkupBar f) . extractMarkupBars
 
 oMarkupBar :: (gly -> Maybe Duration -> Doc) 
            -> MarkupBar (SkipGlyph gly (Maybe Duration))

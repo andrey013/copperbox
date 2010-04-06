@@ -31,10 +31,10 @@ module Neume.Core.SyntaxScore
 
 
   , ScoreImage
-  , PhraseImage
+  , PhraseImage(..)
   , BarImage
 
-  , PhraseOverlayImage
+  , PhraseOverlayImage(..)
   , BarOverlayImage
 
 
@@ -77,10 +77,23 @@ instance StateMap Section where
 
 
 type ScoreImage         = Doc
-type PhraseImage        = [BarImage]
+
+data PhraseImage = PhraseImage 
+      { phrase_image_name   :: String
+      , phrase_image_bars   :: [BarImage]
+      }
+  deriving (Show)
+
 type BarImage           = Doc
 
-type PhraseOverlayImage = [BarOverlayImage]
+
+-- This is formed from merging 2 or more PhraseImages so it loses
+-- the names (no way to synthesize a compund name).
+-- 
+newtype PhraseOverlayImage = PhraseOverlayImage
+      { phrase_overlay_image_bars  :: [BarOverlayImage] }
+  deriving (Show)
+
 type BarOverlayImage    = Doc
 
 

@@ -67,10 +67,11 @@ import Data.Sequence
 -- type. They can use alternatives to the Glyph type. 
 
 data StaffPhrase gly = StaffPhrase 
-      { phraseName    :: String
-      , extractBars   :: Seq (StaffBar gly) 
+      { phrase_name     :: String
+      , phrase_bars     :: Seq (StaffBar gly) 
       }
   deriving (Show)
+
 
 type    StaffBar    gly = Seq (CExpr gly)
 

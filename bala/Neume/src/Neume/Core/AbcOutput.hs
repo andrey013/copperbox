@@ -64,7 +64,8 @@ abcRewrite spellmap unit_drn = rewriteDuration unit_drn
 --------------------------------------------------------------------------------
 
 renderPhrase :: StaffPhrase AbcGlyph -> PhraseImage
-renderPhrase = mapInto oStaffBar . extractBars
+renderPhrase (StaffPhrase name bars) = 
+    PhraseImage name $ mapInto oStaffBar bars
 
 oStaffBar :: StaffBar AbcGlyph -> BarImage
 oStaffBar = oCExprSeq (<+>)

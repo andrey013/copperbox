@@ -37,14 +37,15 @@ main = do
 
 ly_score :: Doc
 ly_score =  version "2.12.2" 
+        <$> para_defs
         <$> scoreExpr (relative middle_c $ key c_nat "major" 
                         <$> (time 4 4)
-                        <$> tune1)
+                        )
   where
-    tune1   = renderLyRelative_overlay2 wn ofmt rwspec rwspec ov_score
+    para_defs = renderLyRelative_parallel2 wn ofmt rwspec rwspec ov_score
     
-    ofmt    = Ly_Std_Format_Config barNumber
-    rwspec  = Ly_Relative_Rewrite_Config middle_c four_four_time
+    ofmt      = Ly_Std_Format_Config barNumber
+    rwspec    = Ly_Relative_Rewrite_Config middle_c four_four_time
 
 
 abc_score :: Doc

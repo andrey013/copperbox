@@ -40,8 +40,6 @@ module Neume.Core.Utils.StateMap
 
 import Neume.Core.Utils.OneList
 
-import qualified Data.JoinList as JL            -- package: joinlist
-
 import qualified Data.Sequence as S
 
 
@@ -115,13 +113,6 @@ instance StateMap OneList where
     step st (OneL a)   = (one a', st')     where (a',st')  = f st a
     step st (a :<< as) = (cons b bs,st'')  where (b,st')   = f st a 
                                                  (bs,st'') = step st' (viewl as)
-
-instance StateMap JL.JoinList where
-  stmap f s0 xs = step s0 (JL.viewl xs) where
-    step st JL.EmptyL    = (JL.empty,st)
-    step st (a JL.:< as) = (JL.cons b bs,st'')  
-                           where (b,st')   = f st a 
-                                 (bs,st'') = step st' (JL.viewl as)
 
 
 instance StateMap S.Seq where
