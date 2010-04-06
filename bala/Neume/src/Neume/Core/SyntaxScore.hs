@@ -30,7 +30,7 @@ module Neume.Core.SyntaxScore
   , Score
 
 
-  , ScoreImage
+  , Image
   , PhraseImage(..)
   , BarImage
 
@@ -39,6 +39,7 @@ module Neume.Core.SyntaxScore
 
 
   , BarNum
+  , ExtractBarImages(..)
 
   ) where
 
@@ -75,8 +76,7 @@ instance StateMap Section where
 
 -- Phrases and bars are composable with pretty-print operations...
 
-
-type ScoreImage         = Doc
+type Image    = Doc
 
 data PhraseImage = PhraseImage 
       { phrase_image_name   :: String
@@ -84,7 +84,7 @@ data PhraseImage = PhraseImage
       }
   deriving (Show)
 
-type BarImage           = Doc
+type BarImage           = Image
 
 
 -- This is formed from merging 2 or more PhraseImages so it loses
@@ -94,10 +94,16 @@ newtype PhraseOverlayImage = PhraseOverlayImage
       { phrase_overlay_image_bars  :: [BarOverlayImage] }
   deriving (Show)
 
-type BarOverlayImage    = Doc
+type BarOverlayImage    = Image
+
+type BarNum             = Int
 
 
-type BarNum   = Int
+class ExtractBarImages a where
+   extractBarImages :: a -> [Image]
 
+instance ExtractBarImages PhraseImage where
+  extractBarImages = phrase_image_bars
 
-
+instance ExtractBarImages PhraseOverlayImage where
+  extractBarImages = phrase_overlay_image_bars

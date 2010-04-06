@@ -116,8 +116,7 @@ renderABC_overlay2 :: ABC_Std_Format_Config
                    -> [Section (NoteList StdGlyph, NoteList StdGlyph)]
                    -> Doc
 renderABC_overlay2 (ABC_Std_Format_Config line_stk func) rw1 rw2 =
-    undefined 
-   -- concatDocSections func line_stk . map (merge2 . renderSection2 rw1 rw2)
+    concatDocSections func line_stk . map (merge2 . renderSection2 rw1 rw2)
 
 
 renderSection :: ABC_Std_Rewrite_Config 
@@ -151,24 +150,27 @@ phraseImage cfg = renderPhrase . abcRewrite spellmap unit_drn . phrase mp
 -- Note this should be made polymorphic, so it can handle 
 -- PhraseOverlayImages as well
 
-concatDocSections :: (BarNum -> DocS) -> LineStk -> [Section PhraseImage] -> Doc
+concatDocSections :: ExtractBarImages phrase 
+                  => (BarNum -> DocS) -> LineStk -> [Section phrase] -> Doc
 concatDocSections _  _   []     = empty
 concatDocSections fn stk (x:xs) = let (d1,hy) = section1 (infHyphenSpec stk) x
                                   in finalFromInterim $ step d1 hy xs
   where
-    step :: InterimDoc -> HyphenSpec -> [Section PhraseImage] -> InterimDoc 
+    step :: ExtractBarImages phrase
+         => InterimDoc -> HyphenSpec -> [Section phrase] -> InterimDoc 
     step acc _  []          = acc
     step acc hy [a]         = acc `append` (fst $ section1 hy a)
     step acc hy (a:as)      = let (a',hy') = section1 hy a 
                               in step (acc `append` a') hy' as
  
-    section1 :: HyphenSpec -> Section PhraseImage -> (InterimDoc,HyphenSpec)
-    section1 hy (Straight ds)       = interStraight fn hy (phrase_image_bars ds)
-    section1 hy (Repeated ds)       = interRepeated fn hy (phrase_image_bars ds)
+    section1 :: ExtractBarImages phrase
+             => HyphenSpec -> Section phrase -> (InterimDoc,HyphenSpec)
+    section1 hy (Straight ds)       = interStraight fn hy (extractBarImages ds)
+    section1 hy (Repeated ds)       = interRepeated fn hy (extractBarImages ds)
     section1 hy (AltRepeat ds alts) = interAltRepeat fn hy ds' alts'
       where
-        ds'   = phrase_image_bars ds
-        alts' = map phrase_image_bars alts
+        ds'   = extractBarImages ds
+        alts' = map extractBarImages alts
 
 
 

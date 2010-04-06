@@ -111,7 +111,7 @@ renderLyRelative_parallel2 bar_len (Ly_Std_Format_Config func) rw1 rw2 =
 -}
 
 merge2 :: Duration -> Section (PhraseImage, PhraseImage) -> Section PhraseOverlayImage
-merge2 bar_len = undefined --  fmap (\(x,y) -> parallelPhrases bar_len [x,y])
+merge2 bar_len = undefined -- fmap (\(x,y) -> parallelPhrases bar_len [x,y])
                             
 
 
