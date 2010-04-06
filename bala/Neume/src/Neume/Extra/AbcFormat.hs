@@ -252,7 +252,7 @@ interimSuffix (end_mark,hy) = step end_mark where
 withInterimPrefix :: InterimPrefix -> Doc -> Doc
 withInterimPrefix (fn,START_NONE)  d = fn d
 withInterimPrefix (fn,START_REP)   d = fn $ lrepeat <+> d
-withInterimPrefix (fn,START_ALT n) d = fn $ lrepeat <> int n <+> d
+withInterimPrefix (fn,START_ALT n) d = fn $ alternative n <+> d
 
 
 interStraight :: (Int -> DocS) 
@@ -267,6 +267,10 @@ interRepeated :: (Int -> DocS)
               -> (InterimDoc,HyphenSpec)
 interRepeated df = interimBars df (START_REP,END_REP)
 
+
+-- This doesn't account that the last END_REP 
+-- should produce a double bar rather than :|
+--
 interAltRepeat :: (Int -> DocS) 
                -> HyphenSpec 
                -> [BarImage] 
@@ -275,9 +279,10 @@ interAltRepeat :: (Int -> DocS)
 interAltRepeat df hy bs bss = (oneconcat body alts, hy'') 
   where
     (body,hy')          = interimBars df (START_NONE,END_SGL) hy bs
-    (alts,hy'')         = stmap stfun hy' (zip [1..] bss)
+    (alts,hy'')         = caboose_stmap stf stfinal hy' (zip [1..] bss)
 
-    stfun h (n,alt)     =  interimBars df (START_ALT n, END_REP) h alt
+    stf     h (n,alt)   = interimBars df (START_ALT n, END_REP) h alt
+    stfinal h (n,alt)   = interimBars df (START_ALT n, END_DBL) h alt
 
     oneconcat d []      = d
     oneconcat d (a:as)  = oneconcat (d `append` a) as 
@@ -340,10 +345,11 @@ snocInterimDoc fn (InterimDoc p d (end_sym,hyph)) (n,hy) d' =
 -- Handily overlays are 'context free' 
 
 overlayPhrases :: [PhraseImage] -> PhraseOverlayImage
-overlayPhrases []                        = PhraseOverlayImage []
-overlayPhrases ((PhraseImage _ bars):xs) = 
-    PhraseOverlayImage $ foldl' overlayMerge bars xs
-
+overlayPhrases []                        = PhraseOverlayImage [] []
+overlayPhrases ((PhraseImage n1 bars):xs) = 
+    PhraseOverlayImage (n1:ns) $ foldl' overlayMerge bars xs
+  where
+    ns = map phrase_image_name xs
 
 overlayMerge  :: [BarOverlayImage] -> PhraseImage -> [BarOverlayImage]
 overlayMerge bs1 (PhraseImage _ bs2) = step bs1 bs2 where

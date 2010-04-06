@@ -58,22 +58,25 @@ abc_score =  ABC.tunenum        1
   where
     tune1   = ABC.renderABC_overlay2 ofmt rwspec rwspec ov_score
     
-    ofmt    = ABC.ABC_Std_Format_Config  [4,4,4,4] ABC.barNumber
+    ofmt    = ABC.ABC_Std_Format_Config  [5,4,4,4] ABC.barNumber
     rwspec  = ABC.ABC_Std_Rewrite_Config c_major (1%8) four_four_time
 
 
 
 ov_score :: Score (NoteList StdGlyph, NoteList StdGlyph)
 ov_score = map (fmap (both simpleNoteList)) $ 
-    [ Repeated (("aU", ubars1'4), ("aL", lbars1'4)) ]
-
+    [ AltRepeat   (("aU", ubars1'3), ("aL", lbars1'3)) 
+                [ (("aUA", ubar4A), ("aLA", lbar4A))
+                , (("aUB", ubar5B), ("aLB", lbar5B))
+                ]
+    ]
 
 c_major   :: SpellingMap
 c_major   = makeSpellingMap 0
 
 
-ubars1'4 :: [StdGlyph]
-ubars1'4 =  
+ubars1'3 :: [StdGlyph]
+ubars1'3 =  
   [ a 4 () en, c 5 () en, c 5 () en, a 4 () en
   , c 5 () qn, a 4 () qn
   
@@ -84,15 +87,22 @@ ubars1'4 =
   -- bar 3
   , a 4 () en, c 5 () en, c 5 () en, a 4 () en
   , c 5 () qn, a 4 () qn
-  
-  -- bar 4
-  , a 4 () en, c 5 () en, c 5 () en, a 4 () en
-  , a 4 () hn
-
   ]
 
-lbars1'4 :: [StdGlyph]
-lbars1'4 =  
+ubar4A :: [StdGlyph]
+ubar4A =
+  [ a 4 () en, c 5 () en, c 5 () en, a 4 () en
+  , a 4 () hn
+  ]
+
+
+ubar5B :: [StdGlyph]
+ubar5B =
+  [ a 4 () wn ]
+
+
+lbars1'3 :: [StdGlyph]
+lbars1'3 =  
   [ c 4 () hn, c 4 () hn
   
   -- bar 2
@@ -100,12 +110,14 @@ lbars1'4 =
   
   -- bar 3
   , c 4 () hn, c 4 () hn
-
-  
-  -- bar 4
-  , c 4 () qn, c 4 () qn, c 4 () hn
-
   ]
 
+lbar4A :: [StdGlyph]
+lbar4A = 
+  [ c 4 () qn, c 4 () qn, c 4 () hn ]
+
+lbar5B :: [StdGlyph]
+lbar5B = 
+  [ c 4 () wn ]
 
 

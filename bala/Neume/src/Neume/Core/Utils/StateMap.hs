@@ -23,6 +23,7 @@ module Neume.Core.Utils.StateMap
     stcomb
   , stcombWith
   , psimap_st
+  , caboose_stmap
 
   -- * Stateful map
   , StateMap(..)
@@ -61,6 +62,14 @@ psimap_st f st x xs = ((b,bs),st'') where
    (b,st')   = f st x 
    (bs,st'') = stmap f st' xs
 
+-- just on lists...
+caboose_stmap :: (st -> a -> (b,st)) -> (st -> a -> (b,st)) -> st -> [a] -> ([b],st)
+caboose_stmap _ _ s0 []     = ([],s0)
+caboose_stmap f g s0 (a:as) = step s0 a as where
+  step st x []           = ([z],st') where (z,st') = g st x
+  step st x (y:ys)       = (z:zs,st'') 
+                            where (z,st')   = f st x 
+                                  (zs,st'') = step st' y ys
 
 
 class StateMap f where

@@ -39,6 +39,7 @@ module Neume.Core.SyntaxScore
 
 
   , BarNum
+  , PhraseName
   , ExtractBarImages(..)
 
   ) where
@@ -76,10 +77,11 @@ instance StateMap Section where
 
 -- Phrases and bars are composable with pretty-print operations...
 
-type Image    = Doc
+type PhraseName     = String
+type Image          = Doc
 
 data PhraseImage = PhraseImage 
-      { phrase_image_name   :: String
+      { phrase_image_name   :: PhraseName
       , phrase_image_bars   :: [BarImage]
       }
   deriving (Show)
@@ -87,11 +89,13 @@ data PhraseImage = PhraseImage
 type BarImage           = Image
 
 
--- This is formed from merging 2 or more PhraseImages so it loses
--- the names (no way to synthesize a compund name).
--- 
-newtype PhraseOverlayImage = PhraseOverlayImage
-      { phrase_overlay_image_bars  :: [BarOverlayImage] }
+-- This is formed from merging 2 or more PhraseImages so it has
+-- a list of phrase names
+--
+data PhraseOverlayImage = PhraseOverlayImage
+      { phrase_overlay_img_names :: [PhraseName]
+      , phrase_overlay_img_bars  :: [BarOverlayImage] 
+      }
   deriving (Show)
 
 type BarOverlayImage    = Image
@@ -100,10 +104,10 @@ type BarNum             = Int
 
 
 class ExtractBarImages a where
-   extractBarImages :: a -> [Image]
+  extractBarImages :: a -> [Image]
 
 instance ExtractBarImages PhraseImage where
   extractBarImages = phrase_image_bars
 
 instance ExtractBarImages PhraseOverlayImage where
-  extractBarImages = phrase_overlay_image_bars
+  extractBarImages = phrase_overlay_img_bars

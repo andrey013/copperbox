@@ -74,10 +74,11 @@ lyPhraseFretDiagrams mp xs =
     renderMarkupPhrase diagOut $ undefined {- rewriteDurationOpt_ -}
                                $ phraseMarkup mp xs
 
+
 lilypondFretDiagScore :: (a -> PhraseImage) 
                    -> (BarNum -> DocS) 
                    -> (() -> LyChordSc a) 
-                   -> ScoreImage
+                   -> Doc
 lilypondFretDiagScore _ _ _ = undefined
 
 newtype LyChordSc a = LyChordSc ()

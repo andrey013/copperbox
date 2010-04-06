@@ -173,15 +173,26 @@ concatDocSections fn = vsep . fst . stmap section1 1
 
 
 --- ...
-parallelDefs :: (BarNum -> DocS) -> [Section PhraseImage] -> Doc
+parallelDefs :: (BarNum -> DocS) -> [([PhraseName], Section PhraseImage)] -> Doc
 parallelDefs _ _ = undefined
 {-
 parallelDefs fn = vsep . fst . stmap section1 1  
   where
-    section1 :: BarNum -> Section PhraseImage -> (Doc,BarNum)
-    section1 n (Straight a)       = flatStraight  fn n a
-    section1 n (Repeated a)       = flatRepeated  fn n a 
-    section1 n (AltRepeat a alts) = flatAltRepeat fn n a alts
+-}
+
+{-
+parallelSection :: BarNum 
+                -> [PhraseName] 
+                -> Section PhraseOverlayImage 
+                -> (Doc,BarNum)
+parallelSection fn i ns (Straight a)       = parallelMusic ns $ flatStraight fn i a
+parallelSection fn i ns (Repeated a)       = parallelMusic ns $ flatStraight fn i a 
+
+parallelSection fn i ns (AltRepeat a alts) = (body <$> vsep alt_defs,i'')
+  where
+    (body,i')       = parallelMusic ns $ flatStraight fn i a
+--    alt_names       = map (map 
+    (alt_defs,i'')  = stmap (
 -}
 
 
