@@ -104,14 +104,28 @@ renderLyRelative_parallel2 :: Duration
                           -> [Section (NoteList StdGlyph, NoteList StdGlyph)] 
                           -> Doc
 renderLyRelative_parallel2 bar_len (Ly_Std_Format_Config func) rw1 rw2 = 
-    undefined
-{-
     parallelDefs func . map (merge2 bar_len) 
-                           . fst . stmap renderSectionRel2 (rw1,rw2)
+                      . fst . stmap renderSectionRel2 (rw1,rw2)
+
+{-
+scoreLy_parallel2 :: [Section (NoteList StdGlyph, NoteList StdGlyph)] 
+                  -> (Doc,Doc)
+scoreLy_parallel2 = vsep $ map 
+
+
+scoreAsNamed :: [Section (NoteList StdGlyph, NoteList StdGlyph)] 
+             -> [Section (PhraseName,PhraseName)]
+scoreAsNamed = map fn where
+  fn (Straight  ((NoteList n1 _), (NoteList n2 _)))      = Straight (n1,n2)
+  fn (Repeated  ((NoteList n1 _), (NoteList n2 _)))      = Repeated (n1,n2)
+  fn (AltRepeat ((NoteList n1 _), (NoteList n2 _)) alts) = AltRepeat (n1,n2) alts'
+    where
+      alts' = map (\((NoteList x1 _), (NoteList x2 _)) -> (x1,x2)) alts
+
 -}
 
 merge2 :: Duration -> Section (PhraseImage, PhraseImage) -> Section PhraseOverlayImage
-merge2 bar_len = undefined -- fmap (\(x,y) -> parallelPhrases bar_len [x,y])
+merge2 bar_len = fmap (\(x,y) -> parallelPhrases bar_len [x,y])
                             
 
 
@@ -172,28 +186,26 @@ concatDocSections fn = vsep . fst . stmap section1 1
         alts' = map phrase_image_bars alts 
 
 
---- ...
-parallelDefs :: (BarNum -> DocS) -> [([PhraseName], Section PhraseImage)] -> Doc
-parallelDefs _ _ = undefined
-{-
+
+parallelDefs :: (BarNum -> DocS) -> [Section PhraseOverlayImage] -> Doc
 parallelDefs fn = vsep . fst . stmap section1 1  
   where
--}
+    section1 :: BarNum -> Section PhraseOverlayImage -> (Doc,BarNum)
+    section1 n (Straight a)       = parallelSection fn n a
+    section1 n (Repeated a)       = parallelSection fn n a
+    section1 n (AltRepeat a alts) = (a_doc <$> (vsep alts_doc), n'') 
+      where
+        (a_doc,n')     = parallelSection fn n a
+        (alts_doc,n'') = stmap (parallelSection fn) n' alts 
 
-{-
-parallelSection :: BarNum 
-                -> [PhraseName] 
-                -> Section PhraseOverlayImage 
+
+parallelSection :: (BarNum -> DocS)
+                -> BarNum
+                -> PhraseOverlayImage 
                 -> (Doc,BarNum)
-parallelSection fn i ns (Straight a)       = parallelMusic ns $ flatStraight fn i a
-parallelSection fn i ns (Repeated a)       = parallelMusic ns $ flatStraight fn i a 
+parallelSection fn i (PhraseOverlayImage ns bars) = 
+    fmap2a (parallelMusic ns) $ flatStraight fn i bars
 
-parallelSection fn i ns (AltRepeat a alts) = (body <$> vsep alt_defs,i'')
-  where
-    (body,i')       = parallelMusic ns $ flatStraight fn i a
---    alt_names       = map (map 
-    (alt_defs,i'')  = stmap (
--}
 
 
 
@@ -263,15 +275,17 @@ flatBars upf = fmap2a vsep `oo` stmap phi
 type Depth = Int
 
 
-parallelPhrases :: Duration -> [PhraseImage] -> [BarOverlayImage]
-parallelPhrases _       []                      = []
-parallelPhrases bar_len ((PhraseImage _ im):xs) = 
-    snd $ foldl' (parallel2 bar_len) (1,im) xs
+parallelPhrases :: Duration -> [PhraseImage] -> PhraseOverlayImage
+parallelPhrases _       []                      = PhraseOverlayImage [] []
+parallelPhrases bar_len ((PhraseImage n1 im):xs) = 
+    PhraseOverlayImage (n1:ns) $ snd $ foldl' (parallel2 bar_len) (1,im) xs
+  where
+    ns = map phrase_image_name xs
 
 parallel2  :: Duration 
-           -> (Int,[BarOverlayImage]) 
+           -> (Depth,[BarOverlayImage]) 
            -> PhraseImage 
-           -> (Int,[BarOverlayImage])
+           -> (Depth,[BarOverlayImage])
 parallel2 bar_len (depth,bs1) (PhraseImage _ bs2) = (depth+1, step bs1 bs2) 
   where
     step (x:xs) (y:ys) = parallelLy x y : step xs ys

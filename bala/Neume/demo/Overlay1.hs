@@ -27,9 +27,9 @@ import System.Cmd
 
 main :: IO ()
 main = do 
---  writeDoc "overlay1.ly"      ly_score
+  writeDoc "overlay1.ly"      ly_score
   writeDoc "overlay1_abc.abc" abc_score
---  system   "lilypond overlay1.ly"
+  system   "lilypond overlay1.ly"
   system   "abcm2ps overlay1_abc.abc -O overlay1_abc.ps" 
   return ()
 
