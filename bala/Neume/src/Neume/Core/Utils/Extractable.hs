@@ -54,8 +54,9 @@ stmap_extr2 :: StateMap f
             -> (f (r1,r2),st)
 stmap_extr2 extrA extrB f g = 
     stmap (\st (a,b) -> let (a',stx) = f (extractA st) a
-                            (b',sty) = g (extractB $ putbackA stx st) b
-                        in  ((a',b'), putbackB sty st)) 
+                            st'      = putbackA stx st
+                            (b',sty) = g (extractB st') b
+                        in  ((a',b'), putbackB sty st'))
   where
    extractA = outof extrA
    putbackA = into  extrA
