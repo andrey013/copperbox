@@ -38,14 +38,19 @@ main = do
 ly_score :: Doc
 ly_score =  version "2.12.2" 
         <$> para_defs
-        <$> scoreExpr (relative middle_c $ key c_nat "major" 
-                        <$> (time 4 4)
-                        )
+        <$> global_def
+        <$> book (scoreExpr (newStaffGroup (overlay [music]) <$> layout))
+                       
   where
-    para_defs = renderLyRelative_parallel2 wn ofmt rwspec rwspec ov_score
+    global_def   = variableDef "global" (nestBraces $ key c_nat "major" <$> time 4 4)
+    music        = newStaff (variableUse "global" <$> overlay [voice1,voice2])
+    voice1       = relative middle_c (stemUp   <$> v1)
+    voice2       = relative middle_c (stemDown <$> v2)
+    (v1,v2)      = scoreLy_parallel2 ov_score
+    para_defs    = renderLyRelative_parallel2 wn ofmt rwspec rwspec ov_score
     
-    ofmt      = Ly_Std_Format_Config barNumber
-    rwspec    = Ly_Relative_Rewrite_Config middle_c four_four_time
+    ofmt         = Ly_Std_Format_Config barNumber
+    rwspec       = Ly_Relative_Rewrite_Config middle_c four_four_time
 
 
 abc_score :: Doc

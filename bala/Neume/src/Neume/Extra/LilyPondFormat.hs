@@ -30,6 +30,8 @@ module Neume.Extra.LilyPondFormat
 
   , renderLyRelative
   , renderLyRelative_parallel2  -- ugly prototype
+  , scoreLy_parallel2           -- ditto
+
   , renderLyDrums
 
 
@@ -98,20 +100,25 @@ renderSectionRel cfg = stmap_extr extr (phraseImageRel mp) cfg
 
 
 renderLyRelative_parallel2 :: Duration 
-                          -> Ly_Std_Format_Config
-                          -> Ly_Relative_Rewrite_Config
-                          -> Ly_Relative_Rewrite_Config
-                          -> [Section (NoteList StdGlyph, NoteList StdGlyph)] 
-                          -> Doc
+                           -> Ly_Std_Format_Config
+                           -> Ly_Relative_Rewrite_Config
+                           -> Ly_Relative_Rewrite_Config
+                           -> [Section (NoteList StdGlyph, NoteList StdGlyph)] 
+                           -> Doc
 renderLyRelative_parallel2 bar_len (Ly_Std_Format_Config func) rw1 rw2 = 
     parallelDefs func . map (merge2 bar_len) 
                       . fst . stmap renderSectionRel2 (rw1,rw2)
 
-{-
+
 scoreLy_parallel2 :: [Section (NoteList StdGlyph, NoteList StdGlyph)] 
                   -> (Doc,Doc)
-scoreLy_parallel2 = vsep $ map 
-
+scoreLy_parallel2 score = (vsep $ map (fn fst) named, vsep $ map (fn snd) named)
+  where
+    named = scoreAsNamed score
+    fn f (Straight a)     = variableUse (f a)
+    fn f (Repeated a)     = repeatvolta 2 (variableUse $ f a)
+    fn f (AltRepeat a as) =  repeatvolta (length as) (variableUse $ f a)
+                         <$> alternative (map (variableUse . f) as) 
 
 scoreAsNamed :: [Section (NoteList StdGlyph, NoteList StdGlyph)] 
              -> [Section (PhraseName,PhraseName)]
@@ -122,7 +129,7 @@ scoreAsNamed = map fn where
     where
       alts' = map (\((NoteList x1 _), (NoteList x2 _)) -> (x1,x2)) alts
 
--}
+
 
 merge2 :: Duration -> Section (PhraseImage, PhraseImage) -> Section PhraseOverlayImage
 merge2 bar_len = fmap (\(x,y) -> parallelPhrases bar_len [x,y])
