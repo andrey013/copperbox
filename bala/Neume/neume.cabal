@@ -19,7 +19,9 @@ stability:          highly unstable
 cabal-version:      >= 1.2
 
 extra-source-files:
-  demo/B6.hs
+  demo/B6.hs, 
+  demo/Percussion.hs,
+  demo/Overlay1.hs
 
 
 library
