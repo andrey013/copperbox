@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -31,7 +32,6 @@ module Neume.Extra.AbcFormat
   , ABC_Std_Format_Config(..)
   , ABC_Std_Rewrite_Config(..)
 
-  , overlayPhrases
 
 
   ) where
@@ -42,6 +42,7 @@ import Neume.Core.Bracket
 import Neume.Core.Metrical
 import Neume.Core.NoteList
 import Neume.Core.Pitch
+import Neume.Core.SyntaxImage
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
@@ -49,11 +50,10 @@ import Neume.Core.Utils
 import Neume.Extra.AbcDoc
 
 
-import Data.Semigroup                   -- package: algebra
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
-import Data.List ( foldl' )
+import Data.Monoid
 import Prelude hiding ( null )
 
 
@@ -102,40 +102,33 @@ data ABC_Std_Rewrite_Config = ABC_Std_Rewrite_Config
 
 --------------------------------------------------------------------------------
 
+
+
 renderABC :: ABC_Std_Format_Config
           -> ABC_Std_Rewrite_Config
-          -> [Section (NoteList StdGlyph)] 
+          -> Score sh (NoteList StdGlyph)
           -> Doc
 renderABC (ABC_Std_Format_Config line_stk func) rw = 
-    concatDocSections func line_stk . map (renderSection rw)
+    concatDocSections func line_stk . renderScore rw
 
 
+
+renderScore :: ABC_Std_Rewrite_Config 
+            -> Score sh (NoteList StdGlyph)
+            -> Score sh PhraseImage
+renderScore cfg = fmap (phraseImage cfg)
+
+-- not the final form...
 renderABC_overlay2 :: ABC_Std_Format_Config
                    -> ABC_Std_Rewrite_Config
                    -> ABC_Std_Rewrite_Config
-                   -> [Section (NoteList StdGlyph, NoteList StdGlyph)]
+                   -> Score sh (NoteList StdGlyph)
+                   -> Score sh (NoteList StdGlyph)
                    -> Doc
-renderABC_overlay2 (ABC_Std_Format_Config line_stk func) rw1 rw2 =
-    concatDocSections func line_stk . map (merge2 . renderSection2 rw1 rw2)
+renderABC_overlay2 (ABC_Std_Format_Config line_stk func) rw1 rw2 sc1 sc2 = 
+    concatDocSections func line_stk $ 
+      merge2 (renderScore rw1 sc1) (renderScore rw2 sc2)
 
-
-renderSection :: ABC_Std_Rewrite_Config 
-              -> Section (NoteList StdGlyph)
-              -> Section PhraseImage
-renderSection cfg = fmap (phraseImage cfg)
-
-
-
-renderSection2 :: ABC_Std_Rewrite_Config
-               -> ABC_Std_Rewrite_Config
-               -> Section (NoteList StdGlyph, NoteList StdGlyph)
-               -> Section (PhraseImage, PhraseImage)
-renderSection2 cfg1 cfg2 = 
-    fmap (prod (phraseImage cfg1) (phraseImage cfg2))
-
-
-merge2 :: Section (PhraseImage, PhraseImage) -> Section PhraseOverlayImage
-merge2 = fmap (\(x,y) -> overlayPhrases [x,y])
 
 phraseImage :: ABC_Std_Rewrite_Config
             -> NoteList (Glyph anno Pitch Duration)
@@ -146,32 +139,33 @@ phraseImage cfg = renderPhrase . abcRewrite spellmap unit_drn . phrase mp
     unit_drn = unit_duration cfg
     mp       = meter_pattern cfg
 
+merge2 :: Score sh PhraseImage 
+       -> Score sh PhraseImage 
+       -> Score sh PhraseOverlayImage
+merge2 = scoreZipWith overlaySymmetric
 
--- Note this should be made polymorphic, so it can handle 
--- PhraseOverlayImages as well
+
+-- Note - this is polymorphic on phrase, so it can handle both
+-- PhraseImages and PhraseOverlayImages
 
 concatDocSections :: ExtractBarImages phrase 
-                  => (BarNum -> DocS) -> LineStk -> [Section phrase] -> Doc
-concatDocSections _  _   []     = empty
-concatDocSections fn stk (x:xs) = let (d1,hy) = section1 (infHyphenSpec stk) x
-                                  in finalFromInterim $ step d1 hy xs
+                  => (BarNum -> DocS) -> LineStk -> Score sh phrase -> Doc
+concatDocSections fn stk score = 
+    finalFromInterim $ step (infHyphenSpec stk) score
   where
-    step :: ExtractBarImages phrase
-         => InterimDoc -> HyphenSpec -> [Section phrase] -> InterimDoc 
-    step acc _  []          = acc
-    step acc hy [a]         = acc `append` (fst $ section1 hy a)
-    step acc hy (a:as)      = let (a',hy') = section1 hy a 
-                              in step (acc `append` a') hy' as
- 
-    section1 :: ExtractBarImages phrase
-             => HyphenSpec -> Section phrase -> (InterimDoc,HyphenSpec)
-    section1 hy (Straight ds)       = interStraight fn hy (extractBarImages ds)
-    section1 hy (Repeated ds)       = interRepeated fn hy (extractBarImages ds)
-    section1 hy (AltRepeat ds alts) = interAltRepeat fn hy ds' alts'
-      where
-        ds'   = extractBarImages ds
-        alts' = map extractBarImages alts
+    step :: ExtractBarImages phrase 
+         => HyphenSpec -> Score sh phrase -> InterimDoc 
+    step _  Nil              = mempty
 
+    step hy (Linear e xs)    = d `mappend` step hy' xs
+      where (d,hy') = interLinear fn hy (extractBarImages e)
+
+    step hy (Repeat e xs)    = d `mappend` step hy' xs
+      where (d,hy') = interRepeat fn hy (extractBarImages e)
+
+    step hy (RepAlt e es xs) = d `mappend` step hy' xs
+      where (d,hy') = interAltRep fn hy (extractBarImages e) 
+                                        (map extractBarImages es)
 
 
 
@@ -226,15 +220,19 @@ data InterimDoc = InterimDoc { _iprefix    :: InterimPrefix
                              , _interbody  :: Doc
                              , _isuffix    :: InterimSuffix
                              }
+                | DocEmpty
 
-instance Semigroup InterimDoc where
-  (InterimDoc p d s) `append` (InterimDoc p' d' s') = InterimDoc p doc_body s'
-    where
-      doc_body = d <+> interimSuffix s <$> withInterimPrefix p' d'
 
+instance Monoid InterimDoc where
+  mempty = DocEmpty 
+  DocEmpty         `mappend` d                   = d
+  d                `mappend` DocEmpty            = d
+  InterimDoc p d s `mappend` InterimDoc p' d' s' = InterimDoc p body s'
+    where  body = d <+> interimSuffix s <$> withInterimPrefix p' d'
 
 
 finalFromInterim :: InterimDoc -> Doc
+finalFromInterim DocEmpty                      = empty
 finalFromInterim (InterimDoc (fn,_) doc (e,_)) = fn $ doc <> finalMark e
   where
     finalMark END_REP    = rrepeat 
@@ -255,28 +253,28 @@ withInterimPrefix (fn,START_REP)   d = fn $ lrepeat <+> d
 withInterimPrefix (fn,START_ALT n) d = fn $ alternative n <+> d
 
 
-interStraight :: (Int -> DocS) 
-              -> HyphenSpec 
-              -> [BarImage] 
-              -> (InterimDoc,HyphenSpec)
-interStraight df = interimBars df (START_NONE,END_SGL)
+interLinear :: (Int -> DocS) 
+            -> HyphenSpec 
+            -> [BarImage] 
+            -> (InterimDoc,HyphenSpec)
+interLinear df = interimBars df (START_NONE,END_SGL)
 
-interRepeated :: (Int -> DocS) 
-              -> HyphenSpec 
-              -> [BarImage] 
-              -> (InterimDoc,HyphenSpec)
-interRepeated df = interimBars df (START_REP,END_REP)
+interRepeat :: (Int -> DocS) 
+            -> HyphenSpec 
+            -> [BarImage] 
+            -> (InterimDoc,HyphenSpec)
+interRepeat df = interimBars df (START_REP,END_REP)
 
 
 -- This doesn't account that the last END_REP 
 -- should produce a double bar rather than :|
 --
-interAltRepeat :: (Int -> DocS) 
-               -> HyphenSpec 
-               -> [BarImage] 
-               -> [[BarImage]]
-               -> (InterimDoc,HyphenSpec)
-interAltRepeat df hy bs bss = (oneconcat body alts, hy'') 
+interAltRep :: (Int -> DocS) 
+            -> HyphenSpec 
+            -> [BarImage] 
+            -> [[BarImage]]
+            -> (InterimDoc,HyphenSpec)
+interAltRep df hy bs bss = (oneconcat body alts, hy'') 
   where
     (body,hy')          = interimBars df (START_NONE,END_SGL) hy bs
     (alts,hy'')         = caboose_stmap stf stfinal hy' (zip [1..] bss)
@@ -285,7 +283,7 @@ interAltRepeat df hy bs bss = (oneconcat body alts, hy'')
     stfinal h (n,alt)   = interimBars df (START_ALT n, END_DBL) h alt
 
     oneconcat d []      = d
-    oneconcat d (a:as)  = oneconcat (d `append` a) as 
+    oneconcat d (a:as)  = oneconcat (d `mappend` a) as 
 
 
 
@@ -327,12 +325,12 @@ snocInterimDoc :: (BarNum -> DocS)
                -> (BarNum,Hyphen) 
                -> BarImage
                -> InterimDoc
-snocInterimDoc fn (InterimDoc p d (end_sym,hyph)) (n,hy) d' =
-    InterimDoc p doc_body (end_sym,hy)
+snocInterimDoc fn idoc (n,hy) d' = case idoc of
+    DocEmpty                      -> error "snocIterimDoc - unreachable"
+    InterimDoc p d (end_sym,hyph) -> InterimDoc p (mkBody d hyph) (end_sym,hy)
   where
-    doc_body = d <+> singleBar <> lc hyph <$> fn n d'
-    lc CONT  = lineCont
-    lc _     = empty
+    mkBody base CONT = base <+> singleBar <> lineCont <$> fn n d'
+    mkBody base _    = base <+> singleBar <> fn n d'
 
  
 
@@ -343,20 +341,22 @@ snocInterimDoc fn (InterimDoc p d (end_sym,hyph)) (n,hy) d' =
 
 
 -- Handily overlays are 'context free' 
+overlaySymmetric :: PhraseImage -> PhraseImage -> PhraseOverlayImage
+overlaySymmetric (PhraseImage n1 bs1) (PhraseImage n2 bs2) =
+    PhraseOverlayImage [n1,n2] $ longZipWith overlayAbc bs1 bs2
 
-overlayPhrases :: [PhraseImage] -> PhraseOverlayImage
-overlayPhrases []                        = PhraseOverlayImage [] []
-overlayPhrases ((PhraseImage n1 bars):xs) = 
-    PhraseOverlayImage (n1:ns) $ foldl' overlayMerge bars xs
-  where
-    ns = map phrase_image_name xs
+{-
+overlayImage :: PhraseOverlayImage -> PhraseImage -> PhraseOverlayImage
+overlayImage (PhraseOverlayImage ns bs1) (PhraseImage n bs2) =
+    PhraseOverlayImage (ns++[n]) $ longZipWith overlayAbc bs1 bs2
+-}
 
-overlayMerge  :: [BarOverlayImage] -> PhraseImage -> [BarOverlayImage]
-overlayMerge bs1 (PhraseImage _ bs2) = step bs1 bs2 where
-  step (x:xs) (y:ys) = overlayAbc x y : step xs ys
+overlayAbc :: Doc -> Doc -> BarOverlayImage
+overlayAbc v1 v2 = v1 <+> overlay <> lineCont <$> v2 
+
+
+longZipWith :: (a -> a -> a) -> [a] -> [a] -> [a]
+longZipWith f = step where
+  step (x:xs) (y:ys) = f x y : step xs ys
   step xs     []     = xs 
   step []     ys     = ys 
-
-
-overlayAbc :: BarOverlayImage -> BarOverlayImage -> BarOverlayImage
-overlayAbc v1 v2 = v1 <+> overlay <> lineCont <$> v2 

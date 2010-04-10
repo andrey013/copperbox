@@ -1,3 +1,6 @@
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE EmptyDataDecls             #-}
+{-# LANGUAGE TypeOperators              #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -22,88 +25,117 @@
 module Neume.Core.SyntaxScore
   (
   -- * Score ( assembled from repeats and /straights/ )
-    Section(..) -- to become Score once the typeclass Score has gone...
-  , Score
+    
+    Score(..)
 
+  , Z
+  , (:.)
+  , TLinear
+  , TRepeat
+  , TRepAlt
 
-  , Image
-  , PhraseImage(..)
-  , BarImage
-
-  , PhraseOverlayImage(..)
-  , BarOverlayImage
-
-
-  , BarNum
-  , PhraseName
-  , ExtractBarImages(..)
+  , scoreZipWith
 
   ) where
 
 
-import Neume.Core.Utils
+import Neume.Core.Utils.StateMap
 
-import Text.PrettyPrint.Leijen          -- package: wl-print
+import Control.Applicative
+import Data.Foldable
+import Data.Monoid
+import Data.Traversable
 
-
-type Score a = [Section a]
-
-data Section a = Straight a 
-               | Repeated a
-               | AltRepeat a [a]
-  deriving (Eq,Show)
-
-
-instance Functor Section where
-  fmap f (Straight a)       = Straight $ f a
-  fmap f (Repeated a)       = Repeated $ f a
-  fmap f (AltRepeat a alts) = AltRepeat (f a) (map f alts)
-
-instance StateMap Section where
-  stmap f st (Straight a)       = (Straight a',st') where (a',st') = f st a
-  stmap f st (Repeated a)       = (Repeated a',st') where (a',st') = f st a
-  stmap f st (AltRepeat a alts) = (AltRepeat a' alts',st'') 
-    where 
-      (a',st')     = f st a
-      (alts',st'') = stmap f st' alts
-
-
---------------------------------------------------------------------------------
--- Phrases and bars 
-
--- Phrases and bars are composable with pretty-print operations...
-
-type PhraseName     = String
-type Image          = Doc
-
-data PhraseImage = PhraseImage 
-      { phrase_image_name   :: PhraseName
-      , phrase_image_bars   :: [BarImage]
-      }
-  deriving (Show)
-
-type BarImage           = Image
-
-
--- This is formed from merging 2 or more PhraseImages so it has
--- a list of phrase names
+-- Type level list - empty Z, cons (:.)
 --
-data PhraseOverlayImage = PhraseOverlayImage
-      { phrase_overlay_img_names :: [PhraseName]
-      , phrase_overlay_img_bars  :: [BarOverlayImage] 
-      }
-  deriving (Show)
+data Z
+data x :. xs
 
-type BarOverlayImage    = Image
+data TLinear    
+data TRepeat    
+data TRepAlt
 
-type BarNum             = Int
+infixr 5 :.
+
+data Score shape e where
+  Nil     ::                              Score Z e
+  Linear  :: e        -> Score shape e -> Score (TLinear :. shape) e
+  Repeat  :: e        -> Score shape e -> Score (TRepeat :. shape) e
+  RepAlt  :: e -> [e] -> Score shape e -> Score (TRepAlt :. shape) e
 
 
-class ExtractBarImages a where
-  extractBarImages :: a -> [Image]
+scoreZipWith :: (a -> b -> c) -> Score sh a -> Score sh b -> Score sh c
+scoreZipWith _ Nil              Nil                = Nil
 
-instance ExtractBarImages PhraseImage where
-  extractBarImages = phrase_image_bars
+scoreZipWith f (Linear a xs)    (Linear b ys)    = 
+    Linear (f a b) $ scoreZipWith f xs ys
 
-instance ExtractBarImages PhraseOverlayImage where
-  extractBarImages = phrase_overlay_img_bars
+scoreZipWith f (Repeat a xs)    (Repeat b ys)    = 
+    Repeat (f a b) $ scoreZipWith f xs ys
+
+scoreZipWith f (RepAlt a as xs) (RepAlt b bs ys) = 
+    RepAlt (f a b) (zipWith f as bs) $ scoreZipWith f xs ys
+
+scoreZipWith _ _                _                = 
+    error $ "scoreZipWith - unreachable in theory..."
+
+-- instances
+
+instance Functor (Score shape) where
+  fmap _ Nil              = Nil
+  fmap f (Linear e xs)    = Linear (f e)            (fmap f xs)
+  fmap f (Repeat e xs)    = Repeat (f e)            (fmap f xs)
+  fmap f (RepAlt e es xs) = RepAlt (f e) (map f es) (fmap f xs)
+
+instance Foldable (Score shape) where
+  foldMap _ Nil              = mempty
+  foldMap f (Linear e xs)    = f e `mappend` foldMap f xs
+  foldMap f (Repeat e xs)    = f e `mappend` foldMap f xs
+  foldMap f (RepAlt e es xs) = f e `mappend` foldMap f es `mappend` foldMap f xs
+
+instance Traversable (Score shape) where
+  traverse _ Nil              = pure Nil
+  traverse f (Linear e xs)    = Linear <$> f e <*> traverse f xs
+  traverse f (Repeat e xs)    = Repeat <$> f e <*> traverse f xs
+  traverse f (RepAlt e es xs) = RepAlt <$> f e <*> traverse f es <*> traverse f xs
+
+
+instance StateMap (Score shape) where
+  stmap _ st Nil              = (Nil,st)
+  stmap f st (Linear e xs)    = (Linear e' xs',st'') 
+    where  (e', st')    = f st e
+           (xs',st'')   = stmap f st' xs
+
+  stmap f st (Repeat e xs)    = (Repeat e' xs', st'')
+    where  (e', st')    = f st e
+           (xs',st'')   = stmap f st' xs
+
+  stmap f st (RepAlt e es xs) = (RepAlt e' es' xs', st''')
+    where  (e', st')   = f st e
+           (es',st'')  = stmap f st' es
+           (xs',st''') = stmap f st'' xs
+
+
+
+
+instance Show e => Show (Score shape e) where
+  showsPrec _ Nil               = showString "Nil"
+
+  showsPrec _ (Linear e xs)     = 
+    showString "Linear" . spS . shows e . spS . appS . spS . shows xs
+
+  showsPrec _ (Repeat e xs)     = 
+    showString "Repeat" . spS . shows e . spS . appS . spS . shows xs
+
+  showsPrec _ (RepAlt e es xs)  = 
+    showString "RepAlt" . spS . shows e . spS . showList es . spS
+                        . appS . spS . shows xs
+
+
+spS :: ShowS
+spS = showChar ' ' 
+
+appS :: ShowS
+appS = showChar '$'
+
+

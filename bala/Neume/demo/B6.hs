@@ -9,14 +9,14 @@ import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.NoteList
 import Neume.Core.Pitch
-import Neume.Core.Score2
+import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
 import qualified Neume.Extra.AbcDoc          as ABC
-import qualified Neume.Extra.AbcFmt2         as ABC
+import qualified Neume.Extra.AbcFormat       as ABC
 import Neume.Extra.LilyPondDoc
-import Neume.Extra.LilyPondFmt2
+import Neume.Extra.LilyPondFormat
 import Neume.Extra.NamedElements
 
 import Text.PrettyPrint.Leijen

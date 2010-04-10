@@ -41,7 +41,7 @@ module Neume.Core.LilyPondOutput
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
 import Neume.Core.Pitch
-import Neume.Core.SyntaxScore
+import Neume.Core.SyntaxImage
 import Neume.Core.SyntaxMarkup
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils

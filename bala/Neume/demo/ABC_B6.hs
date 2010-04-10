@@ -7,13 +7,13 @@ import Neume.Core.Bracket
 import Neume.Core.Duration
 import Neume.Core.NoteList
 import Neume.Core.Pitch
-import Neume.Core.Score2
+import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils.Common
 import Neume.Core.Utils.Pretty
 
 import qualified Neume.Extra.AbcDoc          as ABC
-import qualified Neume.Extra.AbcFmt2         as ABC
+import qualified Neume.Extra.AbcFormat       as ABC
 import Neume.Extra.NamedElements
 
 import Text.PrettyPrint.Leijen

@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -28,14 +29,13 @@ module Neume.Extra.LilyPondFormat
 
   , barNumber
 
+
   , renderLyRelative
+
   , renderLyRelative_parallel2  -- ugly prototype
   , scoreLy_parallel2           -- ditto
 
   , renderLyDrums
-
-
-  , parallelPhrases
 
 
   ) where
@@ -47,6 +47,7 @@ import Neume.Core.LilyPondOutput
 import Neume.Core.Metrical
 import Neume.Core.NoteList
 import Neume.Core.Pitch
+import Neume.Core.SyntaxImage
 import Neume.Core.SyntaxScore
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
@@ -82,20 +83,20 @@ barNumber :: BarNum -> DocS
 barNumber i = (lineComment ("Bar " ++ show i) <$>)
 
 
+
 renderLyRelative :: Ly_Std_Format_Config
                  -> Ly_Relative_Rewrite_Config
-                 -> [Section (NoteList StdGlyph)] 
+                 -> Score sh (NoteList StdGlyph)
                  -> Doc
 renderLyRelative (Ly_Std_Format_Config func) rw1 = 
-    concatDocSections func . fst . stmap renderSectionRel rw1
+    concatDocSections func . renderSectionRel rw1
 
 
 renderSectionRel :: Ly_Relative_Rewrite_Config
-                 -> Section (NoteList StdGlyph) 
-                 -> (Section PhraseImage, Ly_Relative_Rewrite_Config)
-renderSectionRel cfg = stmap_extr extr (phraseImageRel mp) cfg
+                 -> Score sh (NoteList StdGlyph) 
+                 -> Score sh PhraseImage
+renderSectionRel cfg = fst . stmap (phraseImageRel mp) (base_pitch cfg)
   where
-    extr = Extractable base_pitch (\p c -> c {base_pitch = p}) 
     mp   = meter_pattern_rel cfg
 
 
@@ -103,39 +104,45 @@ renderLyRelative_parallel2 :: Duration
                            -> Ly_Std_Format_Config
                            -> Ly_Relative_Rewrite_Config
                            -> Ly_Relative_Rewrite_Config
-                           -> [Section (NoteList StdGlyph, NoteList StdGlyph)] 
+                           -> Score sh (NoteList StdGlyph)
+                           -> Score sh (NoteList StdGlyph) 
                            -> Doc
-renderLyRelative_parallel2 bar_len (Ly_Std_Format_Config func) rw1 rw2 = 
-    parallelDefs func . map (merge2 bar_len) 
-                      . fst . stmap renderSectionRel2 (rw1,rw2)
+renderLyRelative_parallel2 bar_len (Ly_Std_Format_Config func) rw1 rw2 sc1 sc2 = 
+    parallelDefs func $ merge2 bar_len sc1' sc2'
+  where 
+    sc1' = renderSectionRel rw1 sc1
+    sc2' = renderSectionRel rw2 sc2
 
 
-scoreLy_parallel2 :: [Section (NoteList StdGlyph, NoteList StdGlyph)] 
-                  -> (Doc,Doc)
-scoreLy_parallel2 score = (vsep $ map (fn fst) named, vsep $ map (fn snd) named)
+scoreLy_parallel2 :: Score sh (NoteList StdGlyph) -> Doc
+scoreLy_parallel2 = vsep . step . scoreAsNamed 
   where
-    named = scoreAsNamed score
-    fn f (Straight a)     = variableUse (f a)
-    fn f (Repeated a)     = repeatvolta 2 (variableUse $ f a)
-    fn f (AltRepeat a as) =  repeatvolta (length as) (variableUse $ f a)
-                         <$> alternative (map (variableUse . f) as) 
-
-scoreAsNamed :: [Section (NoteList StdGlyph, NoteList StdGlyph)] 
-             -> [Section (PhraseName,PhraseName)]
-scoreAsNamed = map fn where
-  fn (Straight  ((NoteList n1 _), (NoteList n2 _)))      = Straight (n1,n2)
-  fn (Repeated  ((NoteList n1 _), (NoteList n2 _)))      = Repeated (n1,n2)
-  fn (AltRepeat ((NoteList n1 _), (NoteList n2 _)) alts) = AltRepeat (n1,n2) alts'
-    where
-      alts' = map (\((NoteList x1 _), (NoteList x2 _)) -> (x1,x2)) alts
+    step :: Score sh PhraseName -> [Doc]
+    step Nil               = []
+    step (Linear e xs)     = variableUse e : step xs
+    step (Repeat e xs)     = repeatvolta 2 (variableUse e) : step xs
+    step (RepAlt e es xs)  = doc : step xs 
+      where doc = repeatvolta (length es) (variableUse e)
+              <$> alternative (map variableUse es) 
 
 
+scoreAsNamed :: Score sh (NoteList StdGlyph) 
+             -> Score sh PhraseName
+scoreAsNamed Nil                           = Nil
+scoreAsNamed (Linear (NoteList n _) xs)    = Linear n $ scoreAsNamed xs
+scoreAsNamed (Repeat (NoteList n _) xs)    = Repeat n $ scoreAsNamed xs
+scoreAsNamed (RepAlt (NoteList n _) es xs) = RepAlt n es' $ scoreAsNamed xs
+  where es' = map (\(NoteList s _) -> s) es 
 
-merge2 :: Duration -> Section (PhraseImage, PhraseImage) -> Section PhraseOverlayImage
-merge2 bar_len = fmap (\(x,y) -> parallelPhrases bar_len [x,y])
+
+merge2 :: Duration 
+       -> Score sh PhraseImage
+       -> Score sh PhraseImage 
+       -> Score sh PhraseOverlayImage
+merge2 bar_len = scoreZipWith (\x y -> parallelPhrases bar_len [x,y])
                             
 
-
+{-
 renderSectionRel2 :: (Ly_Relative_Rewrite_Config,Ly_Relative_Rewrite_Config)
                   -> Section (NoteList StdGlyph, NoteList StdGlyph)
                   -> (Section (PhraseImage, PhraseImage), 
@@ -148,7 +155,7 @@ renderSectionRel2 (cfg1,cfg2) =
     extrB = Extractable (base_pitch . snd) (\p (c,d) -> (c, d {base_pitch = p})) 
     mpB   = meter_pattern_rel cfg2
 
-
+-}
 
 phraseImageRel :: MeterPattern
                -> Pitch
@@ -158,18 +165,19 @@ phraseImageRel mp pch =
     fmap2a (renderPhrase pitch) . lyRelativeRewrite pch . phrase mp
 
 
+
 renderLyDrums :: Ly_Std_Format_Config
               -> MeterPattern 
-              -> [Section (NoteList DrumGlyph)] 
+              -> Score sh (NoteList DrumGlyph)
               -> Doc
 renderLyDrums (Ly_Std_Format_Config func) mp = 
-    concatDocSections func . map (renderSectionDrums mp) 
+    concatDocSections func . renderScoreDrums mp
 
 
-renderSectionDrums :: MeterPattern 
-                   -> Section (NoteList DrumGlyph)
-                   -> Section PhraseImage
-renderSectionDrums mp = fmap (phraseImageDrums mp) 
+renderScoreDrums :: MeterPattern 
+                 -> Score sh (NoteList DrumGlyph)
+                 -> Score sh PhraseImage
+renderScoreDrums mp = fmap (phraseImageDrums mp) 
 
 
 phraseImageDrums :: MeterPattern
@@ -181,29 +189,41 @@ phraseImageDrums mp =
 
 
 
-concatDocSections :: (BarNum -> DocS) -> [Section PhraseImage] -> Doc
-concatDocSections fn = vsep . fst . stmap section1 1  
+concatDocSections :: (BarNum -> DocS) -> Score sh PhraseImage -> Doc
+concatDocSections fn = vsep . step 1  
   where
-    section1 :: BarNum -> Section PhraseImage -> (Doc,BarNum)
-    section1 n (Straight a)       = flatStraight  fn n (phrase_image_bars a)
-    section1 n (Repeated a)       = flatRepeated  fn n (phrase_image_bars a) 
-    section1 n (AltRepeat a alts) = flatAltRepeat fn n a' alts'
-      where
-        a'    = phrase_image_bars a
-        alts' = map phrase_image_bars alts 
+    step :: BarNum -> Score sh PhraseImage -> [Doc]
+    step _ Nil              = []
+
+    step n (Linear e xs)    = d : step n' xs
+      where (d,n') = flatLinear fn n (extractBarImages e)
+
+    step n (Repeat e xs)    = d : step n' xs
+      where (d,n') = flatRepeat fn n (extractBarImages e) 
+
+    step n (RepAlt e es xs) = d : step n' xs
+      where 
+        (d,n') = flatRepAlt fn n (extractBarImages e) es'
+        es'   =  map extractBarImages es
 
 
 
-parallelDefs :: (BarNum -> DocS) -> [Section PhraseOverlayImage] -> Doc
-parallelDefs fn = vsep . fst . stmap section1 1  
+parallelDefs :: (BarNum -> DocS) -> Score sh PhraseOverlayImage -> Doc
+parallelDefs fn = vsep . step 1  
   where
-    section1 :: BarNum -> Section PhraseOverlayImage -> (Doc,BarNum)
-    section1 n (Straight a)       = parallelSection fn n a
-    section1 n (Repeated a)       = parallelSection fn n a
-    section1 n (AltRepeat a alts) = (a_doc <$> (vsep alts_doc), n'') 
+    step :: BarNum -> Score sh PhraseOverlayImage -> [Doc]
+    step _ Nil              = []
+
+    step n (Linear e xs)    = d : step n' xs
+      where (d,n') = parallelSection fn n e
+
+    step n (Repeat e xs)    = d : step n' xs
+      where (d,n') = parallelSection fn n e
+
+    step n (RepAlt e es xs) = (d:ds) ++ step n'' xs  
       where
-        (a_doc,n')     = parallelSection fn n a
-        (alts_doc,n'') = stmap (parallelSection fn) n' alts 
+        (d,n')     = parallelSection fn n e
+        (ds,n'')   = stmap (parallelSection fn) n' es
 
 
 parallelSection :: (BarNum -> DocS)
@@ -211,9 +231,7 @@ parallelSection :: (BarNum -> DocS)
                 -> PhraseOverlayImage 
                 -> (Doc,BarNum)
 parallelSection fn i (PhraseOverlayImage ns bars) = 
-    fmap2a (parallelMusic ns) $ flatStraight fn i bars
-
-
+    fmap2a (parallelMusic ns) $ flatLinear fn i bars
 
 
 --------------------------------------------------------------------------------
@@ -242,18 +260,18 @@ lyPhraseDrums mp xs =
     
 --------------------------------------------------------------------------------
 
-flatStraight :: (BarNum -> DocS) -> BarNum -> [BarImage] -> (Doc,BarNum)
-flatStraight = flatBars
+flatLinear :: (BarNum -> DocS) -> BarNum -> [BarImage] -> (Doc,BarNum)
+flatLinear = flatBars
 
-flatRepeated :: (BarNum -> DocS) -> BarNum -> [BarImage] -> (Doc,BarNum)
-flatRepeated = fmap2a (repeatvolta 2) `ooo` flatBars
+flatRepeat :: (BarNum -> DocS) -> BarNum -> [BarImage] -> (Doc,BarNum)
+flatRepeat = fmap2a (repeatvolta 2) `ooo` flatBars
 
-flatAltRepeat :: (BarNum -> DocS) 
-              -> BarNum
-              -> [BarImage] 
-              -> [[BarImage]] 
-              -> (Doc,BarNum)
-flatAltRepeat upf n xs xss = (body <$> alts, n'') 
+flatRepAlt :: (BarNum -> DocS) 
+           -> BarNum
+           -> [BarImage] 
+           -> [[BarImage]] 
+           -> (Doc,BarNum)
+flatRepAlt upf n xs xss = (body <$> alts, n'') 
   where
     (body,n')  = fmap2a (repeatvolta $ length xss) $ flatBars upf n xs
     (alts,n'') = alternatives upf n' xss
