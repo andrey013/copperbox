@@ -36,7 +36,7 @@ import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.Metrical
 import Neume.Core.SyntaxMarkup
-import Neume.Core.SyntaxScore
+import Neume.Core.SyntaxImage
 import Neume.Core.Utils
 
 import Neume.Extra.LilyPondDoc

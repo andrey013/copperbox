@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Core.NoteList
+-- Module      :  Neume.Core.SyntaxNoteList
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.Core.NoteList
+module Neume.Core.SyntaxNoteList
   (
 
   -- * Notelists

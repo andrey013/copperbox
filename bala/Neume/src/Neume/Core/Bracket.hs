@@ -25,7 +25,7 @@ module Neume.Core.Bracket
 
 import Neume.Core.Duration
 import Neume.Core.Metrical
-import Neume.Core.NoteList
+import Neume.Core.SyntaxNoteList
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
