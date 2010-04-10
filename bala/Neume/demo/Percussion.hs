@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 
 module Percussion where
@@ -9,7 +9,7 @@ import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.NoteList
 import Neume.Core.Pitch
-import Neume.Core.SyntaxScore
+import Neume.Core.Score2
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 import Neume.Core.Utils.OneList ( fromList )
@@ -17,7 +17,7 @@ import Neume.Core.Utils.OneList ( fromList )
 import Neume.Extra.DrumPitches
 import Neume.Extra.Extended
 import Neume.Extra.LilyPondDoc
-import Neume.Extra.LilyPondFormat
+import Neume.Extra.LilyPondFmt2
 import Neume.Extra.NamedElements
 
 import Text.PrettyPrint.Leijen
@@ -53,8 +53,9 @@ drumtune = variableDef "drumtune" $ drummode (time 4 4 <$> stemUp <$> tune1 )
     ofmt     = Ly_Std_Format_Config       strip
 
 
-drum_score :: Score (NoteList DrumGlyph)
-drum_score = map (fmap simpleNoteList) $ [ Repeated ("a",drum_notes) ]
+drum_score :: Score (TRepeat :. Z) (NoteList DrumGlyph)
+drum_score = fmap simpleNoteList $
+    Repeat ("a",drum_notes) $ Nil
 
 
 drum :: DrumPitch -> Duration -> DrumGlyph

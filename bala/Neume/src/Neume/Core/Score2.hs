@@ -32,7 +32,9 @@ module Neume.Core.Score2
   , (:.)
   , TLinear
   , TRepeat
-  , TAltRep
+  , TRepAlt
+
+  , scoreZipWith
 
   ) where
 
@@ -51,7 +53,7 @@ data x :. xs
 
 data TLinear    
 data TRepeat    
-data TAltRep
+data TRepAlt
 
 infixr 5 :.
 
@@ -59,8 +61,23 @@ data Score shape e where
   Nil     ::                              Score Z e
   Linear  :: e        -> Score shape e -> Score (TLinear :. shape) e
   Repeat  :: e        -> Score shape e -> Score (TRepeat :. shape) e
-  AltRep  :: e -> [e] -> Score shape e -> Score (TAltRep :. shape) e
+  RepAlt  :: e -> [e] -> Score shape e -> Score (TRepAlt :. shape) e
 
+
+scoreZipWith :: (a -> b -> c) -> Score sh a -> Score sh b -> Score sh c
+scoreZipWith _ Nil              Nil                = Nil
+
+scoreZipWith f (Linear a xs)    (Linear b ys)    = 
+    Linear (f a b) $ scoreZipWith f xs ys
+
+scoreZipWith f (Repeat a xs)    (Repeat b ys)    = 
+    Repeat (f a b) $ scoreZipWith f xs ys
+
+scoreZipWith f (RepAlt a as xs) (RepAlt b bs ys) = 
+    RepAlt (f a b) (zipWith f as bs) $ scoreZipWith f xs ys
+
+scoreZipWith _ _                _                = 
+    error $ "scoreZipWith - unreachable in theory..."
 
 -- instances
 
@@ -68,19 +85,19 @@ instance Functor (Score shape) where
   fmap _ Nil              = Nil
   fmap f (Linear e xs)    = Linear (f e)            (fmap f xs)
   fmap f (Repeat e xs)    = Repeat (f e)            (fmap f xs)
-  fmap f (AltRep e es xs) = AltRep (f e) (map f es) (fmap f xs)
+  fmap f (RepAlt e es xs) = RepAlt (f e) (map f es) (fmap f xs)
 
 instance Foldable (Score shape) where
   foldMap _ Nil              = mempty
   foldMap f (Linear e xs)    = f e `mappend` foldMap f xs
   foldMap f (Repeat e xs)    = f e `mappend` foldMap f xs
-  foldMap f (AltRep e es xs) = f e `mappend` foldMap f es `mappend` foldMap f xs
+  foldMap f (RepAlt e es xs) = f e `mappend` foldMap f es `mappend` foldMap f xs
 
 instance Traversable (Score shape) where
   traverse _ Nil              = pure Nil
   traverse f (Linear e xs)    = Linear <$> f e <*> traverse f xs
   traverse f (Repeat e xs)    = Repeat <$> f e <*> traverse f xs
-  traverse f (AltRep e es xs) = AltRep <$> f e <*> traverse f es <*> traverse f xs
+  traverse f (RepAlt e es xs) = RepAlt <$> f e <*> traverse f es <*> traverse f xs
 
 
 instance StateMap (Score shape) where
@@ -93,7 +110,7 @@ instance StateMap (Score shape) where
     where  (e', st')    = f st e
            (xs',st'')   = stmap f st' xs
 
-  stmap f st (AltRep e es xs) = (AltRep e' es' xs', st''')
+  stmap f st (RepAlt e es xs) = (RepAlt e' es' xs', st''')
     where  (e', st')   = f st e
            (es',st'')  = stmap f st' es
            (xs',st''') = stmap f st'' xs
@@ -110,8 +127,8 @@ instance Show e => Show (Score shape e) where
   showsPrec _ (Repeat e xs)     = 
     showString "Repeat" . spS . shows e . spS . appS . spS . shows xs
 
-  showsPrec _ (AltRep e es xs)  = 
-    showString "AltRep" . spS . shows e . spS . showList es . spS
+  showsPrec _ (RepAlt e es xs)  = 
+    showString "RepAlt" . spS . shows e . spS . showList es . spS
                         . appS . spS . shows xs
 
 

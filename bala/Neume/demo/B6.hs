@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeOperators              #-}
 
 module B6 where
 
@@ -8,14 +9,14 @@ import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.NoteList
 import Neume.Core.Pitch
-import Neume.Core.SyntaxScore
+import Neume.Core.Score2
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
 import qualified Neume.Extra.AbcDoc          as ABC
-import qualified Neume.Extra.AbcFormat       as ABC
+import qualified Neume.Extra.AbcFmt2         as ABC
 import Neume.Extra.LilyPondDoc
-import Neume.Extra.LilyPondFormat
+import Neume.Extra.LilyPondFmt2
 import Neume.Extra.NamedElements
 
 import Text.PrettyPrint.Leijen
@@ -57,10 +58,9 @@ abc_score =  ABC.tunenum   1
     rwspec  = ABC.ABC_Std_Rewrite_Config a_major (1%16) two_four_time 
 
 
-b6_score :: Score (NoteList StdGlyph)
-b6_score = map (fmap simpleNoteList) $ [ Repeated ("a", bars1'4)
-                                       , Repeated ("b", bars5'8)
-                                       ]
+b6_score :: Score (TRepeat :. TRepeat :. Z) (NoteList StdGlyph)
+b6_score = fmap simpleNoteList $ 
+    Repeat ("a", bars1'4) $ Repeat ("b", bars5'8) $ Nil
 
 
 

@@ -1,4 +1,4 @@
-
+{-# LANGUAGE TypeOperators              #-}
 
 module Overlay1 where
 
@@ -9,14 +9,14 @@ import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.NoteList
 import Neume.Core.Pitch
-import Neume.Core.SyntaxScore
+import Neume.Core.Score2
 import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
 import qualified Neume.Extra.AbcDoc          as ABC
-import qualified Neume.Extra.AbcFormat       as ABC
+import qualified Neume.Extra.AbcFmt2         as ABC
 import Neume.Extra.LilyPondDoc
-import Neume.Extra.LilyPondFormat
+import Neume.Extra.LilyPondFmt2
 import Neume.Extra.NamedElements
 
 import Text.PrettyPrint.Leijen
@@ -46,8 +46,9 @@ ly_score =  version "2.12.2"
     music        = newStaff (variableUse "global" <$> overlay [voice1,voice2])
     voice1       = relative middle_c (stemUp   <$> v1)
     voice2       = relative middle_c (stemDown <$> v2)
-    (v1,v2)      = scoreLy_parallel2 ov_score
-    para_defs    = renderLyRelative_parallel2 wn ofmt rwspec rwspec ov_score
+    v1           = scoreLy_parallel2 upper_score
+    v2           = scoreLy_parallel2 lower_score
+    para_defs    = renderLyRelative_parallel2 wn ofmt rwspec rwspec upper_score lower_score
     
     ofmt         = Ly_Std_Format_Config barNumber
     rwspec       = Ly_Relative_Rewrite_Config middle_c four_four_time
@@ -61,20 +62,21 @@ abc_score =  ABC.tunenum        1
          <$> ABC.unitDuration   en
          <$> tune1
   where
-    tune1   = ABC.renderABC_overlay2 ofmt rwspec rwspec ov_score
+    tune1   = ABC.renderABC_overlay2 ofmt rwspec rwspec upper_score lower_score
     
     ofmt    = ABC.ABC_Std_Format_Config  [5,4,4,4] ABC.barNumber
     rwspec  = ABC.ABC_Std_Rewrite_Config c_major (1%8) four_four_time
 
 
 
-ov_score :: Score (NoteList StdGlyph, NoteList StdGlyph)
-ov_score = map (fmap (both simpleNoteList)) $ 
-    [ AltRepeat   (("aU", ubars1'3), ("aL", lbars1'3)) 
-                [ (("aUA", ubar4A), ("aLA", lbar4A))
-                , (("aUB", ubar5B), ("aLB", lbar5B))
-                ]
-    ]
+upper_score :: Score (TRepAlt :. Z) (NoteList StdGlyph)
+upper_score = fmap simpleNoteList $ 
+    RepAlt ("aU", ubars1'3) [ ("aUA", ubar4A), ("aUB", ubar5B) ] $ Nil
+
+lower_score :: Score (TRepAlt :. Z) (NoteList StdGlyph)
+lower_score = fmap simpleNoteList $ 
+    RepAlt ("aL", lbars1'3) [ ("aLA", lbar4A), ("aLB", lbar5B) ] $ Nil
+
 
 c_major   :: SpellingMap
 c_major   = makeSpellingMap 0

@@ -27,11 +27,11 @@ module Neume.Extra.AbcFmt2
   , anaBarNumber
 
   , renderABC 
+  , renderABC_overlay2
 
   , ABC_Std_Format_Config(..)
   , ABC_Std_Rewrite_Config(..)
 
-  , overlayPhrases
 
 
   ) where
@@ -53,7 +53,6 @@ import Neume.Extra.AbcDoc
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
-import Data.List ( foldl' )
 import Data.Monoid
 import Prelude hiding ( null )
 
@@ -115,10 +114,20 @@ renderABC (ABC_Std_Format_Config line_stk func) rw =
 
 
 renderScore :: ABC_Std_Rewrite_Config 
-              -> Score sh (NoteList StdGlyph)
-              -> Score sh PhraseImage
+            -> Score sh (NoteList StdGlyph)
+            -> Score sh PhraseImage
 renderScore cfg = fmap (phraseImage cfg)
 
+-- not the final form...
+renderABC_overlay2 :: ABC_Std_Format_Config
+                   -> ABC_Std_Rewrite_Config
+                   -> ABC_Std_Rewrite_Config
+                   -> Score sh (NoteList StdGlyph)
+                   -> Score sh (NoteList StdGlyph)
+                   -> Doc
+renderABC_overlay2 (ABC_Std_Format_Config line_stk func) rw1 rw2 sc1 sc2 = 
+    concatDocSections func line_stk $ 
+      merge2 (renderScore rw1 sc1) (renderScore rw2 sc2)
 
 
 phraseImage :: ABC_Std_Rewrite_Config
@@ -130,12 +139,14 @@ phraseImage cfg = renderPhrase . abcRewrite spellmap unit_drn . phrase mp
     unit_drn = unit_duration cfg
     mp       = meter_pattern cfg
 
+merge2 :: Score sh PhraseImage 
+       -> Score sh PhraseImage 
+       -> Score sh PhraseOverlayImage
+merge2 = scoreZipWith overlaySymmetric
 
 
-
-
--- Note this is polymorphic on phrase, so it can handle 
--- PhraseOverlayImages as well
+-- Note - this is polymorphic on phrase, so it can handle both
+-- PhraseImages and PhraseOverlayImages
 
 concatDocSections :: ExtractBarImages phrase 
                   => (BarNum -> DocS) -> LineStk -> Score sh phrase -> Doc
@@ -152,7 +163,7 @@ concatDocSections fn stk score =
     step hy (Repeat e xs)    = d `mappend` step hy' xs
       where (d,hy') = interRepeat fn hy (extractBarImages e)
 
-    step hy (AltRep e es xs) = d `mappend` step hy' xs
+    step hy (RepAlt e es xs) = d `mappend` step hy' xs
       where (d,hy') = interAltRep fn hy (extractBarImages e) 
                                         (map extractBarImages es)
 
@@ -314,12 +325,12 @@ snocInterimDoc :: (BarNum -> DocS)
                -> (BarNum,Hyphen) 
                -> BarImage
                -> InterimDoc
-snocInterimDoc fn (InterimDoc p d (end_sym,hyph)) (n,hy) d' =
-    InterimDoc p doc_body (end_sym,hy)
+snocInterimDoc fn idoc (n,hy) d' = case idoc of
+    DocEmpty                      -> error "snocIterimDoc - unreachable"
+    InterimDoc p d (end_sym,hyph) -> InterimDoc p (mkBody d hyph) (end_sym,hy)
   where
-    doc_body = d <+> singleBar <> lc hyph <$> fn n d'
-    lc CONT  = lineCont
-    lc _     = empty
+    mkBody base CONT = base <+> singleBar <> lineCont <$> fn n d'
+    mkBody base _    = base <+> singleBar <> fn n d'
 
  
 
@@ -330,20 +341,21 @@ snocInterimDoc fn (InterimDoc p d (end_sym,hyph)) (n,hy) d' =
 
 
 -- Handily overlays are 'context free' 
+overlaySymmetric :: PhraseImage -> PhraseImage -> PhraseOverlayImage
+overlaySymmetric (PhraseImage n1 bs1) (PhraseImage n2 bs2) =
+    PhraseOverlayImage [n1,n2] $ longZipWith overlayAbc bs1 bs2
 
-overlayPhrases :: [PhraseImage] -> PhraseOverlayImage
-overlayPhrases []                        = PhraseOverlayImage [] []
-overlayPhrases ((PhraseImage n1 bars):xs) = 
-    PhraseOverlayImage (n1:ns) $ foldl' overlayMerge bars xs
-  where
-    ns = map phrase_image_name xs
+overlayImage :: PhraseOverlayImage -> PhraseImage -> PhraseOverlayImage
+overlayImage (PhraseOverlayImage ns bs1) (PhraseImage n bs2) =
+    PhraseOverlayImage (ns++[n]) $ longZipWith overlayAbc bs1 bs2
 
-overlayMerge  :: [BarOverlayImage] -> PhraseImage -> [BarOverlayImage]
-overlayMerge bs1 (PhraseImage _ bs2) = step bs1 bs2 where
-  step (x:xs) (y:ys) = overlayAbc x y : step xs ys
+
+overlayAbc :: Doc -> Doc -> BarOverlayImage
+overlayAbc v1 v2 = v1 <+> overlay <> lineCont <$> v2 
+
+
+longZipWith :: (a -> a -> a) -> [a] -> [a] -> [a]
+longZipWith f = step where
+  step (x:xs) (y:ys) = f x y : step xs ys
   step xs     []     = xs 
   step []     ys     = ys 
-
-
-overlayAbc :: BarOverlayImage -> BarOverlayImage -> BarOverlayImage
-overlayAbc v1 v2 = v1 <+> overlay <> lineCont <$> v2 
