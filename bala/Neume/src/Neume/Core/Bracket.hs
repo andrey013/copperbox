@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -57,13 +56,13 @@ mbSnoc se (Just a) = se |> a
 --------------------------------------------------------------------------------
 -- 
 
-phrase :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
+phrase :: (DMeasure a, BeamExtremity a) 
        => MeterPattern -> NoteList a -> StaffPhrase a
 phrase mp (NoteList name notes) = 
     StaffPhrase name $ fmap beamBar $ splitToBars mp notes
 
 
-phraseAna :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
+phraseAna :: (DMeasure a, BeamExtremity a) 
        => DurationMeasure -> MeterPattern -> NoteList a -> StaffPhrase a
 phraseAna ana mp (NoteList name notes) = 
     StaffPhrase name $ fmap beamBar $ anaSplitToBars ana mp notes
@@ -75,18 +74,17 @@ phraseAna ana mp (NoteList name notes) =
 
 
 
-splitToBars :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-            => MeterPattern -> PletForest a -> Seq (BarMU a)
+splitToBars :: DMeasure a => MeterPattern -> PletForest a -> Seq (BarMU a)
 splitToBars mp notes = workerSplit mp empty (0,notes) where
 
-anaSplitToBars :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+anaSplitToBars :: DMeasure a
                => DurationMeasure -> MeterPattern -> PletForest a -> Seq (BarMU a)
 anaSplitToBars ana mp notes = workerSplit mp (singleton bar0) state0
   where
     (bar0,state0) = firstAna ana mp notes
 
 
-workerSplit :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+workerSplit :: DMeasure a 
             => MeterPattern -> Seq (BarMU a) -> (SegmentState a) -> Seq (BarMU a)
 workerSplit mp = step where
   step acc (_,[]) = acc
@@ -94,13 +92,13 @@ workerSplit mp = step where
   
 
 
-firstAna :: (Measurement a ~ DurationMeasure, NumMeasured a) 
+firstAna :: DMeasure a  
          => DurationMeasure -> MeterPattern -> PletForest a 
          -> (BarMU a, SegmentState a)
 firstAna ana mp0 notes = nextBar (anacrusis ana mp0) (0,notes)
 
 
-nextBar ::  (Measurement a ~ DurationMeasure, NumMeasured a) 
+nextBar :: DMeasure a
         => MeterPattern -> SegmentState a -> (BarMU a, SegmentState a)
 nextBar mp = step empty mp where
   step acc []     st = (acc,st)
@@ -108,7 +106,7 @@ nextBar mp = step empty mp where
                        where (a,st') = nextMUnit d st
 
 
-nextMUnit :: (Measurement a ~ DurationMeasure, NumMeasured a)  
+nextMUnit :: DMeasure a
           => DurationMeasure
           -> SegmentState a
           -> (Maybe (MetricUnit a), SegmentState a)
@@ -118,7 +116,7 @@ nextMUnit d (borrow,notes) | borrow >= d = (Nothing, (borrow-d,notes))
 -- Potentially consume more than the required duration (as notes 
 -- cannot be split).
 
-nextMUnit1 :: (Measurement a ~ DurationMeasure, NumMeasured a)
+nextMUnit1 :: DMeasure a
            => DurationMeasure
            -> PletForest a
            -> (MetricUnit a, SegmentState a)
@@ -127,20 +125,25 @@ nextMUnit1 = step empty where
   step acc d []                = (acc,(abs d,[]))
   step acc d (x:xs)            = body acc d x xs
 
-  body acc d (S a)  xs  = step (acc |> S a)    (d - nmeasure a) xs
+  body acc d (S a)  xs  = step (acc |> S a)    (d - dmeasure a) xs
   body acc d p_tree xs  = step (acc |> p_tree) (d - pletMeasure p_tree) xs
 
+{-
+measureSpan :: DMeasured a
+            => DurationMeasure
+            -> PletForest a
+            -> (MetricUnit a, SegmentState a)
+nextMUnit1  
+-}
 
 --------------------------------------------------------------------------------
 
 -- Reconstitute the beam groups
 
-beamBar :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
-        => BarMU a -> Seq (CExpr a)
+beamBar :: (DMeasure a, BeamExtremity a) => BarMU a -> Seq (CExpr a)
 beamBar = F.foldl (><) empty . fmap beamMU
 
-beamMU :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
-       => MetricUnit a -> Seq (CExpr a)
+beamMU :: (DMeasure a, BeamExtremity a) => MetricUnit a -> Seq (CExpr a)
 beamMU = step1 . forward where
   step1 (left,rest) | null rest = left
                     | otherwise = left >< step2 (backward rest)
@@ -148,7 +151,7 @@ beamMU = step1 . forward where
   step2 (middle,right)          = mkBeamed middle >< right
 
 
-forward :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
+forward :: (DMeasure a, BeamExtremity a) 
         => Seq (PletTree a) -> (Seq (CExpr a), Seq (PletTree a))
 forward = step empty . viewl where
   step acc EmptyL                           = (acc, empty)
@@ -161,7 +164,7 @@ forward = step empty . viewl where
                                                    (viewl se)
 
 
-backward :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
+backward :: (DMeasure a, BeamExtremity a) 
          => Seq (PletTree a) -> (Seq (PletTree a), Seq (CExpr a))
 backward = step empty . viewr where
   step acc EmptyR                           = (empty,acc)
@@ -187,11 +190,10 @@ mkBeamed se = step $ viewl se where
   step _                       = singleton $ Beamed $ mapInto convert1 se 
 
 
-startsBeam :: (Measurement a ~ DurationMeasure, NumMeasured a, BeamExtremity a) 
+startsBeam :: (DMeasure a, BeamExtremity a) 
            => a -> Bool
-startsBeam a = (nmeasure a) < quarter_note && rendersToNote a
+startsBeam a = (dmeasure a) < quarter_note && rendersToNote a
 
-allSmall :: (Measurement a ~ DurationMeasure, NumMeasured a)
-         => PletTree a -> Bool
-allSmall = pletAll (\x -> nmeasure x < quarter_note)
+allSmall :: DMeasure a => PletTree a -> Bool
+allSmall = pletAll (\x -> dmeasure x < quarter_note)
 

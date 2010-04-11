@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -17,7 +18,9 @@
 
 module Neume.Core.LilyPondOutput 
   (
-    LyStdGlyph
+    LyOptionalDuration(..)
+
+  , LyStdGlyph
   , LyStdNote
 
   , lyRelativeRewrite
@@ -52,6 +55,15 @@ import Text.PrettyPrint.Leijen          -- package: wl-print
 
 import qualified Data.Foldable          as F
 import Data.Sequence ( Seq )
+
+-- Type changing operation ...
+--
+class LyOptionalDuration gly where
+  type LyOptDuration gly :: *
+  lyExtractDuration :: gly -> Duration
+  tcOptDuration     :: Maybe Duration -> gly -> LyOptDuration gly
+
+ 
 
 
 type LyStdGlyph anno = Glyph anno Pitch (Maybe Duration)
@@ -183,6 +195,33 @@ doptGlyph :: (Duration,Bool)
           -> Glyph anno pch Duration 
           -> (Glyph anno pch (Maybe Duration), (Duration,Bool))
 doptGlyph = stmap3c doptD
+
+
+{-
+doptBar :: (LyOptionalDuration gly, gly' ~ LyOptDuration gly)
+        => StaffBar gly -> StaffBar gly'
+doptBar = fst . firstSpecialBar_st doptGlyph1 doptGlyphN default_duration
+-}
+
+-- Never replace the duration of the first note in a bar.
+--
+doptGlyph1 :: (LyOptionalDuration gly, gly' ~ LyOptDuration gly)
+           => Duration -> gly -> (gly',Duration)
+doptGlyph1 _ gly = (gly',d) 
+  where
+    d    = lyExtractDuration gly
+    gly' = tcOptDuration (Just d) gly
+
+-- Never replace the duration of the first note in a bar.
+--
+doptGlyphN :: (LyOptionalDuration gly, gly' ~ LyOptDuration gly)
+           => Duration -> gly -> (gly',Duration)
+doptGlyphN old gly = (gly',d) 
+  where
+    d    = lyExtractDuration gly
+    gly' = if (d==old && notDotted d) 
+             then tcOptDuration Nothing  gly
+             else tcOptDuration (Just d) gly
 
 
 doptD :: (Duration,Bool) -> Duration -> (Maybe Duration, (Duration,Bool))

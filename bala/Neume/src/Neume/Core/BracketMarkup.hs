@@ -46,7 +46,7 @@ phraseMarkup mp =
     mkBar xs = MarkupBar $ fromList xs
 
     phi n gly | n <= 0    = Yield     (bar_len - abs n)
-              | otherwise = Push  gly (n - nmeasure gly) 
+              | otherwise = Push  gly (n - dmeasure gly) 
 
 bufferedUnfold :: (st -> a -> Step a st) -> st -> [a] -> [[a]]
 bufferedUnfold phi = step id where

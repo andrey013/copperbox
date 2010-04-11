@@ -202,9 +202,6 @@ lySpacerGlyph (SpacerMark (Just (a,doc)) md) = fn a (spacer md) doc
 --   outerElement (SpacerMark _ _)   = False
 
 
-instance HasDuration SpacerMark where
-  getDuration (SpacerMark _ d) = d
-
 
 --------------------------------------------------------------------------------
 -- Tab Glyphs with string number

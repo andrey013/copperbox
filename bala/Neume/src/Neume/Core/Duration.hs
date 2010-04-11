@@ -25,13 +25,13 @@ module Neume.Core.Duration
   
   -- * Classes
   , ShowsDuration(..)
-  , HasDuration(..)
   , MakeRest(..)
   , MakeSpacer(..)
   
   -- * Operations
   , isZero
   , isDotted
+  , notDotted
   , dot
   , components
   , extent
@@ -94,9 +94,6 @@ type DurationMeasure = Rational
 class ShowsDuration a where
   showsDur :: a -> ShowS
 
--- is this one still useful... ?
-class HasDuration t where
-  getDuration  :: t Duration -> Duration
 
 class MakeSpacer e where
   makeSpacer :: Duration -> e
@@ -137,6 +134,9 @@ isDotted :: Duration -> Bool
 isDotted DZero     = False 
 isDotted (D1 _ dc) = dc>0
 
+-- more convenient to have this one...
+notDotted :: Duration -> Bool
+notDotted = not . isDotted
        
 -- | Dot a duration. 
 -- Note, if the duration represents a concatenation of two or more 

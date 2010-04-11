@@ -24,7 +24,7 @@ module Neume.Core.Metrical
   ( 
 
     BeamExtremity(..)
-  , NumMeasured(..)
+  , DMeasure(..)
 
   -- * Plet multiplier
   , PletMult
@@ -64,12 +64,12 @@ import Data.Ratio
 class BeamExtremity a where 
    rendersToNote :: a -> Bool
    
--- This is the Measured class from the FingerTree paper and 
--- library but with Num for the superclass rather than Monoid
 
-class Num (Measurement a) => NumMeasured a where
-  type Measurement a
-  nmeasure :: a -> Measurement a
+class DMeasure a where
+  dmeasure :: a -> DurationMeasure
+
+instance DMeasure Duration where
+  dmeasure = extent
 
 
 -- Store plet-multipliers as pairs of integers rather than a 
@@ -96,9 +96,8 @@ scaleFactor []     = (1%1)
 scaleFactor (x:xs) = x * scaleFactor xs
 
 
-nmeasureCtx :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-            => MultiplierStack -> a -> DurationMeasure
-nmeasureCtx stk a = nmeasure a * (scaleFactor stk)
+nmeasureCtx :: DMeasure a => MultiplierStack -> a -> DurationMeasure
+nmeasureCtx stk a = dmeasure a * (scaleFactor stk)
 
 
 

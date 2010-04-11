@@ -21,7 +21,7 @@ module Neume.Core.SyntaxStaff
   -- * Phrases and bars
     StaffPhrase(..)
   , StaffBar
-
+  , Phrase(..)
 
   -- * Staff expressions
   , CExpr(..)
@@ -75,7 +75,11 @@ data StaffPhrase gly = StaffPhrase
 
 type    StaffBar    gly = Seq (CExpr gly)
 
-
+data Phrase bar = Phrase 
+      { phrase_name_z   :: String
+      , pahrase_bars_z  :: [bar]
+      }
+  deriving (Show)
 
 
 --------------------------------------------------------------------------------
@@ -227,13 +231,12 @@ instance StateMap3 Glyph where
 
 --------------------------------------------------------------------------------
 
-instance NumMeasured (Glyph anno pch Duration) where
-  type Measurement (Glyph anno pch Duration) = DurationMeasure
-  nmeasure (GlyNote  (Note _ _ d) _) = extent d
-  nmeasure (Rest     d)              = extent d
-  nmeasure (Spacer   d)              = extent d
-  nmeasure (Chord _ d _)             = extent d
-  nmeasure (Graces _)                = 0
+instance DMeasure (Glyph anno pch Duration) where
+  dmeasure (GlyNote  (Note _ _ d) _) = dmeasure d
+  dmeasure (Rest     d)              = dmeasure d
+  dmeasure (Spacer   d)              = dmeasure d
+  dmeasure (Chord _ d _)             = dmeasure d
+  dmeasure (Graces _)                = 0
 
 instance MakeSpacer (Glyph anno pch Duration) where
   makeSpacer d = Spacer d

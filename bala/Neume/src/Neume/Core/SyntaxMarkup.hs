@@ -85,8 +85,7 @@ instance MakeSpacer (SkipGlyph gly Duration) where
 --------------------------------------------------------------------------------
 -- NumMeasured
 
-instance NumMeasured (SkipGlyph gly Duration) where
-  type Measurement (SkipGlyph gly Duration) = DurationMeasure
-  nmeasure (SGlyph _ d) = extent d
-  nmeasure (Skip     d) = extent d
+instance DMeasure (SkipGlyph gly Duration) where
+  dmeasure (SGlyph _ d) = dmeasure d
+  dmeasure (Skip     d) = dmeasure d
 

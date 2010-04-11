@@ -24,6 +24,7 @@ module Neume.Core.Utils.StateMap
   , stcombWith
   , psimap_st
   , caboose_stmap
+  , anacrusis_stmap
 
   -- * Stateful map
   , StateMap(..)
@@ -71,6 +72,17 @@ caboose_stmap f g s0 (a:as) = step s0 a as where
                             where (z,st')   = f st x 
                                   (zs,st'') = step st' y ys
 
+anacrusis_stmap :: (st -> a -> (b,st)) -> (st -> a -> (b,st)) -> st -> [a] -> ([b],st)
+anacrusis_stmap _ _ s0 []     = ([],s0)
+anacrusis_stmap f g s0 (a:as) = (x:xs,st'') 
+  where
+    (x,st')   = f s0 a
+    (xs,st'') = stmap g st' as
+
+
+
+
+--------------------------------------------------------------------------------
 
 class StateMap f where
   stmap :: (st -> a -> (b,st)) -> st -> f a -> (f b,st)

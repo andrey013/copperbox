@@ -28,8 +28,6 @@ module Neume.Core.Utils.Common
 
   , psimap
   , mapInto
-  , anacrusisMap
-  , cabooseMap
 
   , unlist1
 
@@ -114,16 +112,6 @@ mapInto f = step [] . viewr where
 
 
 
-
-anacrusisMap :: (a -> b) -> (a -> b) -> [a] -> [b]
-anacrusisMap _ _ []     = []
-anacrusisMap f g (a:as) = f a : map g as
-
-cabooseMap :: (a -> b) -> (a -> b) -> [a] -> [b]
-cabooseMap _ _ []     = []  
-cabooseMap f g (a:as) = step a as where
-  step x []           = [g x]
-  step x (y:ys)       = f x : step y ys
 
 
 unlist1 :: (a -> b) -> [a] -> Maybe (b,[a])

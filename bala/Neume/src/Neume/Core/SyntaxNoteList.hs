@@ -70,6 +70,8 @@ data PletTree gly = S gly                         -- Single \"note\"
                   | Plet PletMult [PletTree gly]
   deriving (Eq,Show)
 
+--------------------------------------------------------------------------------
+-- instances
 
 instance Functor PletTree where
   fmap f (S a)        = S (f a)
@@ -79,6 +81,18 @@ instance StateMap PletTree where
   stmap f st (S a)        = (S a',st') where (a',st') = f st a
   stmap f st (Plet pm xs) = (Plet pm xs',st') 
                             where (xs',st') = stmap (stmap f) st xs
+
+
+{-
+instance (NumMeasured gly, Measurement gly ~ DurationMeasure) => 
+    NumMeasured (PletTree gly) where
+  type Measurement (PletTree gly) = DurationMeasure
+  nmeasure (S gly) = nmeasure gly
+  nmeasure pt      = pletMeasure pt
+-}
+
+
+--------------------------------------------------------------------------------
 
 -- | Short-hand constructor for n-ary plets.
 --
@@ -126,8 +140,8 @@ pletAll test (Plet _ notes) = step notes where
 -- | The measure of a \single\ or a \plet tree\ - plet trees are
 -- considered indivisable so it is not a problem to sum them.
 --
-pletMeasure :: (Measurement gly ~ DurationMeasure, NumMeasured gly) 
-            => PletTree gly -> DurationMeasure
+
+pletMeasure :: DMeasure gly => PletTree gly -> DurationMeasure 
 pletMeasure = snd . pletFold  phi chi (mult_stack_zero,0) where
   phi a  (stk,acc) = (stk, acc + nmeasureCtx stk a)
   chi pm (stk,acc) = (pushPM pm stk,acc) 
