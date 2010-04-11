@@ -23,20 +23,22 @@ module Neume.Extra.FretDiagrams
   , fretDiagram
   , x_none
 
-  , lyPhraseFretDiagrams
-  , lilypondFretDiagScore
+  , Ly_Fret_Diag_Config(..)
+  , scoreImageFretDiag
   , fretNum
   , diagDefinition
   
   ) where
 
-import Neume.Core.BracketMarkup
+import Neume.Core.Bracket
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.Metrical
 import Neume.Core.SyntaxMarkup
 import Neume.Core.SyntaxImage
+import Neume.Core.SyntaxNoteList
+import Neume.Core.SyntaxScore
 import Neume.Core.Utils
 
 import Neume.Extra.LilyPondDoc
@@ -69,19 +71,33 @@ x_none = -1
 fretDiagram :: String -> String -> [Int] -> FretDiagram
 fretDiagram name alias ns = FretDiagram name alias (map fretNum ns)
 
-lyPhraseFretDiagrams :: MeterPattern -> [FretDiagramGlyph] -> PhraseImage
-lyPhraseFretDiagrams mp xs =
-    renderMarkupPhrase diagOut $ undefined {- rewriteDurationOpt_ -}
-                               $ phraseMarkup mp xs
+
+data Ly_Fret_Diag_Config = Ly_Fret_Diag_Config
+    { meter_pattern_fret_diag         :: MeterPattern }
+
+scoreImageFretDiag :: Ly_Fret_Diag_Config
+                   -> Score sh (NoteList FretDiagramGlyph) 
+                   -> Score sh PhraseImage
+scoreImageFretDiag _ _ = undefined
 
 
-lilypondFretDiagScore :: (a -> PhraseImage) 
-                   -> (BarNum -> DocS) 
-                   -> (() -> LyChordSc a) 
-                   -> Doc
-lilypondFretDiagScore _ _ _ = undefined
 
-newtype LyChordSc a = LyChordSc ()
+-- error -rewriteDurationOpt- expects a StdGlyph...
+-- also renderPhrase is hardwired to StdGlyphs...
+
+phraseImageFretDiag :: MeterPattern
+                    -> NoteList FretDiagramGlyph
+                    -> PhraseImage
+phraseImageFretDiag _mp _ = undefined
+{-
+phraseImageFretDiag mp = 
+    fmap (renderPhrase drawDiagGlyph) . id {- rewriteDurationOpt -} . phrase mp
+-}
+
+
+drawDiagGlyph :: SkipGlyph FretDiagram (Maybe Duration) -> Doc
+drawDiagGlyph (SGlyph fd od) = diagOut fd od
+drawDiagGlyph (Skip od)      = spacer od
 
 diagOut :: FretDiagram -> Maybe Duration -> Doc
 diagOut (FretDiagram _ alias _) od = spacer od `annoAbove` variableUse alias

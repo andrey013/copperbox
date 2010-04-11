@@ -89,13 +89,13 @@ renderLyRelative :: Ly_Std_Format_Config
                  -> Score sh (NoteList StdGlyph)
                  -> Doc
 renderLyRelative (Ly_Std_Format_Config func) rw1 = 
-    concatDocSections func . renderSectionRel rw1
+    concatDocSections func . scoreImageRel rw1
 
 
-renderSectionRel :: Ly_Relative_Rewrite_Config
-                 -> Score sh (NoteList StdGlyph) 
-                 -> Score sh PhraseImage
-renderSectionRel cfg = fst . stmap (phraseImageRel mp) (base_pitch cfg)
+scoreImageRel :: Ly_Relative_Rewrite_Config
+              -> Score sh (NoteList StdGlyph) 
+              -> Score sh PhraseImage
+scoreImageRel cfg = fst . stmap (phraseImageRel mp) (base_pitch cfg)
   where
     mp   = meter_pattern_rel cfg
 
@@ -110,8 +110,8 @@ renderLyRelative_parallel2 :: Duration
 renderLyRelative_parallel2 bar_len (Ly_Std_Format_Config func) rw1 rw2 sc1 sc2 = 
     parallelDefs func $ merge2 bar_len sc1' sc2'
   where 
-    sc1' = renderSectionRel rw1 sc1
-    sc2' = renderSectionRel rw2 sc2
+    sc1' = scoreImageRel rw1 sc1
+    sc2' = scoreImageRel rw2 sc2
 
 
 scoreLy_parallel2 :: Score sh (NoteList StdGlyph) -> Doc
@@ -132,7 +132,7 @@ scoreAsNamed Nil                           = Nil
 scoreAsNamed (Linear (NoteList n _) xs)    = Linear n $ scoreAsNamed xs
 scoreAsNamed (Repeat (NoteList n _) xs)    = Repeat n $ scoreAsNamed xs
 scoreAsNamed (RepAlt (NoteList n _) es xs) = RepAlt n es' $ scoreAsNamed xs
-  where es' = map (\(NoteList s _) -> s) es 
+  where es' = map note_list_name es 
 
 
 merge2 :: Duration 
@@ -141,21 +141,6 @@ merge2 :: Duration
        -> Score sh PhraseOverlayImage
 merge2 bar_len = scoreZipWith (\x y -> parallelPhrases bar_len [x,y])
                             
-
-{-
-renderSectionRel2 :: (Ly_Relative_Rewrite_Config,Ly_Relative_Rewrite_Config)
-                  -> Section (NoteList StdGlyph, NoteList StdGlyph)
-                  -> (Section (PhraseImage, PhraseImage), 
-                      (Ly_Relative_Rewrite_Config,Ly_Relative_Rewrite_Config))
-renderSectionRel2 (cfg1,cfg2) = 
-    stmap_extr2 extrA extrB (phraseImageRel mpA) (phraseImageRel mpB) (cfg1,cfg2)
-  where
-    extrA = Extractable (base_pitch . fst) (\p (c,d) -> (c {base_pitch = p}, d)) 
-    mpA   = meter_pattern_rel cfg1
-    extrB = Extractable (base_pitch . snd) (\p (c,d) -> (c, d {base_pitch = p})) 
-    mpB   = meter_pattern_rel cfg2
-
--}
 
 phraseImageRel :: MeterPattern
                -> Pitch

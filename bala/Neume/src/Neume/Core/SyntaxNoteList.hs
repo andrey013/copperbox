@@ -53,18 +53,21 @@ import Data.List ( foldl' )
 -- and beamed according to a 'MeterPattern'), then rendered to
 -- ABC or LilyPond.
 
-data NoteList a = NoteList String (PletForest a)
+data NoteList gly = NoteList 
+      { note_list_name        :: String
+      , note_list_notes       :: (PletForest gly)
+      }
   deriving  (Eq,Show)
 
-type PletForest a = [PletTree a]
+type PletForest gly = [PletTree gly]
 
 -- | A \PletTree\ represents an element in a 'NoteGroup'. A 
 -- element may be either a single note (constructor S) or an 
 -- n-ary tuplet (constructor Plet) which is recursive, so that 
 -- tuplets can contain tuplets.
 --
-data PletTree a = S a                           -- Single \"note\"
-                | Plet PletMult [PletTree a]
+data PletTree gly = S gly                         -- Single \"note\"
+                  | Plet PletMult [PletTree gly]
   deriving (Eq,Show)
 
 
@@ -79,36 +82,36 @@ instance StateMap PletTree where
 
 -- | Short-hand constructor for n-ary plets.
 --
-plet :: Integer -> Integer -> [PletTree a] -> PletTree a
+plet :: Integer -> Integer -> [PletTree gly] -> PletTree gly
 plet p q xs = Plet (p,q) xs 
 
 -- | Create a duplet - two notes in the time of three.
 --
-duplet :: a -> a -> PletTree a 
+duplet :: gly -> gly -> PletTree gly
 duplet a b = plet 2 3 [S a,S b]
 
 -- | Create a triplet - three notes in the time of two.
 --
-triplet :: a -> a -> a -> PletTree a 
+triplet :: gly -> gly -> gly -> PletTree gly
 triplet a b c = plet 3 2 [S a,S b,S c]
 
 
 -- | Convert a linear list of notes / glyphs (i.e no tuplets 
 -- or duplets) into a 'NoteList'.
 --
-simpleNoteList :: (String,[a]) -> NoteList a
+simpleNoteList :: (String,[gly]) -> NoteList gly
 simpleNoteList (name,xs) = NoteList name (map S xs)
 
 
 
 --------------------------------------------------------------------------------
 
-pletFold :: (a -> b -> b) -> (PletMult -> b -> b) -> b -> PletTree a -> b
+pletFold :: (gly -> b -> b) -> (PletMult -> b -> b) -> b -> PletTree gly -> b
 pletFold f _ b (S a)        = f a b
 pletFold f g b (Plet pm xs) = foldl' (pletFold f g) (g pm b) xs
 
 
-pletAll :: (a -> Bool) -> PletTree a -> Bool
+pletAll :: (gly -> Bool) -> PletTree gly -> Bool
 pletAll test (S a)          = test a
 pletAll test (Plet _ notes) = step notes where
    step []                      = True
@@ -123,8 +126,8 @@ pletAll test (Plet _ notes) = step notes where
 -- | The measure of a \single\ or a \plet tree\ - plet trees are
 -- considered indivisable so it is not a problem to sum them.
 --
-pletMeasure :: (Measurement a ~ DurationMeasure, NumMeasured a) 
-            => PletTree a -> DurationMeasure
+pletMeasure :: (Measurement gly ~ DurationMeasure, NumMeasured gly) 
+            => PletTree gly -> DurationMeasure
 pletMeasure = snd . pletFold  phi chi (mult_stack_zero,0) where
   phi a  (stk,acc) = (stk, acc + nmeasureCtx stk a)
   chi pm (stk,acc) = (pushPM pm stk,acc) 
@@ -140,7 +143,7 @@ pletMeasure = snd . pletFold  phi chi (mult_stack_zero,0) where
 --
 -- Is this a suitable case for another Type Class?
 --
-pletCount :: (a -> Bool) -> PletTree a -> Int
+pletCount :: (gly -> Bool) -> PletTree gly -> Int
 pletCount test = pletFold phi chi 0 where
   phi a n  | test a    = n+1
            | otherwise = n
@@ -150,7 +153,7 @@ pletCount test = pletFold phi chi 0 where
 --------------------------------------------------------------------------------
 -- Pretty instances
 
-instance Pretty a => Pretty (PletTree a) where 
+instance Pretty gly => Pretty (PletTree gly) where 
   pretty (S a)              = pretty a
   pretty (Plet (p,q) notes) = braces (pletm p q <+> pretty notes)
     where
