@@ -68,7 +68,7 @@ module Neume.Extra.NamedElements
 import Neume.Core.Duration
 import Neume.Core.Metrical
 import Neume.Core.Pitch
-import Neume.Core.SyntaxStaff
+import Neume.Core.SyntaxGlyph
 
 
 -- Helpers

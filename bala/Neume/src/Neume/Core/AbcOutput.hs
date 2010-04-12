@@ -36,8 +36,8 @@ import Neume.Core.AbcBasic
 import Neume.Core.Duration
 import Neume.Core.Metrical
 import Neume.Core.Pitch hiding ( octave )
-import Neume.Core.SyntaxImage
-import Neume.Core.SyntaxStaff
+import Neume.Core.SyntaxGlyph
+import Neume.Core.SyntaxInterim
 import Neume.Core.Utils
 import Neume.Core.Utils.OneList ( OneList, toListF )
 

@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Core.SyntaxStaff
+-- Module      :  Neume.Core.SyntaxGlyph
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -16,22 +16,17 @@
 --
 --------------------------------------------------------------------------------
 
-module Neume.Core.SyntaxStaff
+module Neume.Core.SyntaxGlyph
   (
-  -- * Phrases and bars
-    StaffPhrase(..)
-  , StaffBar
-  , Phrase(..)
-
-  -- * Staff expressions
-  , CExpr(..)
 
   -- * Staff glyphs
-  , Glyph(..)
+    Glyph(..)
   , Note(..)
   , Tie
   , ChordPitch(..)
-
+  
+  -- * Markup glyphs for fret diags etc.
+  , MarkupGlyph(..)
 
   -- * Synonyms
 
@@ -44,9 +39,6 @@ module Neume.Core.SyntaxStaff
   , StdGlyph
   , AnnoGlyph
 
-
-  , mapBar
-
   ) where
 
 
@@ -57,53 +49,6 @@ import Neume.Core.Utils
 import Neume.Core.Utils.OneList
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
-
-import Data.Sequence 
-
---------------------------------------------------------------------------------
--- Phrases and bars 
-
--- Note - phrases, bars and CExprs are polymorphic on the glyph
--- type. They can use alternatives to the Glyph type. 
-
-data StaffPhrase gly = StaffPhrase 
-      { phrase_name     :: String
-      , phrase_bars     :: Seq (StaffBar gly) 
-      }
-  deriving (Show)
-
-
-type    StaffBar    gly = Seq (CExpr gly)
-
-data Phrase bar = Phrase 
-      { phrase_name_z   :: String
-      , pahrase_bars_z  :: [bar]
-      }
-  deriving (Show)
-
-
---------------------------------------------------------------------------------
--- Staff \Expressions\
-
-
-
--- | Contextual expression. This is a sequence of one or more 
--- notes together with some context to be communicated to the 
--- pretty printer - the context being either that the notes 
--- should be beamed or that they are n-plets (duplets, triplets, 
--- ...). 
---
--- Note this formulation permits beam groups within beam groups.
--- Ideally this would be disallowed, but beam groups may contain
--- n-plets (and n-plets must be recursive).
---
-
-data CExpr gly = Atom               gly 
-               | N_Plet  PletMult   [CExpr gly]
-               | Beamed             [CExpr gly]
-  deriving (Eq,Show)
-
-
 
 --------------------------------------------------------------------------------
 -- Staff Glyphs
@@ -128,6 +73,20 @@ data ChordPitch anno pch = ChordPitch !anno !pch
   deriving (Eq,Show)
 
 
+
+
+--------------------------------------------------------------------------------
+-- \Skip Glyphs\
+
+-- For LilyPond...
+
+data MarkupGlyph glyph dur = MGlyph   glyph   !dur
+                           | Skip     !dur
+  deriving (Eq,Show)
+
+
+--------------------------------------------------------------------------------
+
 -- Synonyms
 
 
@@ -146,26 +105,6 @@ type AnnoGlyph anno     = Glyph anno Pitch Duration
 
 
 
---------------------------------------------------------------------------------
--- 
-
-mapBar :: (CExpr gly -> CExpr gly') -> StaffPhrase gly -> StaffPhrase gly'
-mapBar f (StaffPhrase name se) = StaffPhrase name $ fmap (fmap f) se
-
---------------------------------------------------------------------------------
--- Instances
-
-instance Functor StaffPhrase where
-  fmap f (StaffPhrase name xs) = StaffPhrase name $ fmap (fmap (fmap f)) xs
-
-
-
-instance Functor CExpr where
-  fmap f (Atom e)         = Atom $ f e
-  fmap f (N_Plet d cexpr) = N_Plet d $ map (fmap f) cexpr
-  fmap f (Beamed cexpr)   = Beamed $ map (fmap f) cexpr
-
-
 -- FMap2 
 
 instance FMap2 ChordPitch where
@@ -182,21 +121,6 @@ instance FMap3 Glyph where
   fmap3 _  _  f3 (Spacer d)     = Spacer (f3 d)
   fmap3 f1 f2 f3 (Chord os d t) = Chord (fmap (fmap2 f1 f2) os) (f3 d) t
   fmap3 f1 f2 f3 (Graces os)    = Graces (fmap (fmap3 f1 f2 f3) os)
-
-
--- StateMap
-instance StateMap StaffPhrase where
-  stmap f st (StaffPhrase name xs) = (StaffPhrase name xs',st') 
-    where (xs',st') = stmap (stmap (stmap f)) st xs
-
-
-instance StateMap CExpr where
-  stmap f st (Atom  e)     = (Atom e',st')      where (e',st') = f st e
-  stmap f st (N_Plet d ce) = (N_Plet d ce',st') 
-                             where (ce',st') = stmap (stmap f) st ce
-
-  stmap f st (Beamed ce)   = (Beamed ce',st')   
-                             where (ce',st') = stmap (stmap f) st ce
 
 
 -- StateMap2 
@@ -243,6 +167,22 @@ instance MakeSpacer (Glyph anno pch Duration) where
 
 instance MakeRest (Glyph anno pch Duration) where
   makeRest d = Rest d
+
+
+--------------------------------------------------------------------------------
+-- Spacer
+
+instance MakeSpacer (MarkupGlyph gly Duration) where
+  makeSpacer d = Skip d
+
+--------------------------------------------------------------------------------
+-- NumMeasured
+
+instance DMeasure (MarkupGlyph gly Duration) where
+  dmeasure (MGlyph _ d) = dmeasure d
+  dmeasure (Skip     d) = dmeasure d
+
+
 
 --------------------------------------------------------------------------------
 instance BeamExtremity (Glyph anno pch dur) where

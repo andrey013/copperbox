@@ -35,8 +35,8 @@ import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.Metrical
-import Neume.Core.SyntaxMarkup
-import Neume.Core.SyntaxImage
+import Neume.Core.SyntaxGlyph
+import Neume.Core.SyntaxInterim
 import Neume.Core.SyntaxNoteList
 import Neume.Core.SyntaxScore
 import Neume.Core.Utils
@@ -48,7 +48,7 @@ import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 data FretNum = X | FN Int
   deriving (Eq,Show)
 
-type FretDiagramGlyph = SkipGlyph FretDiagram Duration
+type FretDiagramGlyph = MarkupGlyph FretDiagram Duration
 
 data FretDiagram = FretDiagram { 
         chord_name  :: String,
@@ -95,8 +95,8 @@ phraseImageFretDiag mp =
 -}
 
 
-drawDiagGlyph :: SkipGlyph FretDiagram (Maybe Duration) -> Doc
-drawDiagGlyph (SGlyph fd od) = diagOut fd od
+drawDiagGlyph :: MarkupGlyph FretDiagram (Maybe Duration) -> Doc
+drawDiagGlyph (MGlyph fd od) = diagOut fd od
 drawDiagGlyph (Skip od)      = spacer od
 
 diagOut :: FretDiagram -> Maybe Duration -> Doc

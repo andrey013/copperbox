@@ -46,10 +46,10 @@ import Neume.Core.LilyPondBasic ( pitch, spacer )
 import Neume.Core.LilyPondOutput
 import Neume.Core.Metrical
 import Neume.Core.Pitch
-import Neume.Core.SyntaxImage
+import Neume.Core.SyntaxInterim
+import Neume.Core.SyntaxGlyph
 import Neume.Core.SyntaxNoteList
 import Neume.Core.SyntaxScore
-import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
 import Neume.Extra.Extended

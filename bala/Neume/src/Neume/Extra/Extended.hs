@@ -62,7 +62,7 @@ import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
-import Neume.Core.SyntaxStaff
+import Neume.Core.SyntaxGlyph
 import Neume.Core.Utils.Pretty ( mbDoc )
 import Neume.Extra.LilyPondDoc
 

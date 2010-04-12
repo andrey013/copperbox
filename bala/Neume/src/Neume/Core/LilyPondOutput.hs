@@ -29,8 +29,8 @@ module Neume.Core.LilyPondOutput
   , renderPhrase
   , oGlyph
 
-  , renderMarkupPhrase
-  , oSkipGlyph
+--  , renderMarkupPhrase
+--  , oSkipGlyph
 
   -- * rewriting
   , rewriteDurationOpt
@@ -44,9 +44,8 @@ module Neume.Core.LilyPondOutput
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
 import Neume.Core.Pitch
-import Neume.Core.SyntaxImage
-import Neume.Core.SyntaxMarkup
-import Neume.Core.SyntaxStaff
+import Neume.Core.SyntaxInterim
+import Neume.Core.SyntaxGlyph
 import Neume.Core.Utils
 import Neume.Core.Utils.OneList
 
@@ -137,6 +136,10 @@ oChordPitches f = map (\(ChordPitch _ p) -> f p) . F.toList
 --------------------------------------------------------------------------------
 -- Render markup 
 
+-- TODO - this will probably share the code above...
+
+{-
+
 -- ignore annotations at the moment...
 renderMarkupPhrase :: (gly -> Maybe Duration -> Doc) 
                    -> MarkupPhrase (SkipGlyph gly (Maybe Duration))
@@ -161,6 +164,7 @@ oSkipGlyph :: (gly -> Maybe Duration -> Doc)
 oSkipGlyph f (SGlyph g d) = f g d
 oSkipGlyph _ (Skip d)     = spacer d 
 
+-}
 
 --------------------------------------------------------------------------------
 -- Rewrite Duration

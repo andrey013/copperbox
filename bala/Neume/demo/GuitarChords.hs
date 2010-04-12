@@ -7,10 +7,9 @@ import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
-import Neume.Core.SyntaxMarkup
+import Neume.Core.SyntaxGlyph
 import Neume.Core.SyntaxNoteList
 import Neume.Core.SyntaxScore
-import Neume.Core.SyntaxStaff
 import Neume.Core.Utils
 
 
@@ -53,7 +52,7 @@ chord_score = fmap simpleNoteList $
 
 
 diag :: FretDiagram -> Duration -> FretDiagramGlyph
-diag = SGlyph 
+diag = MGlyph 
 
 
 
