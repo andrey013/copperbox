@@ -53,7 +53,9 @@ import Neume.Core.Utils.OneList
 import Text.PrettyPrint.Leijen          -- package: wl-print
 
 import qualified Data.Foldable          as F
-import Data.Sequence ( Seq )
+
+
+
 
 -- Type changing operation ...
 --
@@ -78,14 +80,14 @@ type LyStdNote  anno = Note  anno Pitch (Maybe Duration)
 -- Ly_Relative_Rewrite_Config...
 
 lyRelativeRewrite :: Pitch
-                  -> StaffPhrase (Glyph anno Pitch Duration)
-                  -> (StaffPhrase (Glyph anno Pitch (Maybe Duration)), Pitch)
+                  -> Phrase (Bar (CExpr (Glyph anno Pitch Duration)))
+                  -> (Phrase (Bar (CExpr (Glyph anno Pitch (Maybe Duration)))), Pitch)
 lyRelativeRewrite pch = fmap2a rewriteDurationOpt . rewritePitchRel pch
 
 
 lyAbsoluteRewrite :: Int 
-                  -> StaffPhrase (Glyph anno Pitch Duration)
-                  -> StaffPhrase (Glyph anno Pitch (Maybe Duration))
+                  -> Phrase (Bar (CExpr (Glyph anno Pitch Duration)))
+                  -> Phrase (Bar (CExpr (Glyph anno Pitch (Maybe Duration))))
 lyAbsoluteRewrite i = rewriteDurationOpt . rewritePitchAbs i
 
 
@@ -97,18 +99,16 @@ lyAbsoluteRewrite i = rewriteDurationOpt . rewritePitchAbs i
 -- for a Type Class.
 
 -- ignore annotations at the moment...
-renderPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> PhraseImage
-renderPhrase = oStaffPhrase
+renderPhrase :: (pch -> Doc) -> Phrase (Bar (CExpr (GlyphRelDur anno pch))) -> PhraseImage
+renderPhrase = oPhrase
 
-oStaffPhrase :: (pch -> Doc) -> StaffPhrase (GlyphRelDur anno pch) -> PhraseImage
-oStaffPhrase f (StaffPhrase name bars) = 
-    PhraseImage name $ mapInto (oStaffBar f) bars
+oPhrase :: (pch -> Doc) -> Phrase (Bar (CExpr (GlyphRelDur anno pch))) -> PhraseImage
+oPhrase f (Phrase name bars) = 
+    PhraseImage name $ map (oBar f) bars
 
-oStaffBar :: (pch -> Doc) -> StaffBar (GlyphRelDur anno pch) -> BarImage
-oStaffBar f = hsep . oCExprSeq f 
+oBar :: (pch -> Doc) -> Bar (CExpr (GlyphRelDur anno pch)) -> BarImage
+oBar f = hsep . oCExprList f 
 
-oCExprSeq ::  (pch -> Doc) -> Seq (CExpr (GlyphRelDur anno pch)) -> [Doc]
-oCExprSeq f  = mapInto (oCExpr f) 
 
 oCExprList ::  (pch -> Doc) -> [CExpr (GlyphRelDur anno pch)] -> [Doc]
 oCExprList f  = map (oCExpr f) 
@@ -133,30 +133,7 @@ oChordPitches :: (pch -> Doc) -> OneList (ChordPitch anno pch) -> [Doc]
 oChordPitches f = map (\(ChordPitch _ p) -> f p) . F.toList
 
 
---------------------------------------------------------------------------------
--- Render markup 
-
--- TODO - this will probably share the code above...
-
 {-
-
--- ignore annotations at the moment...
-renderMarkupPhrase :: (gly -> Maybe Duration -> Doc) 
-                   -> MarkupPhrase (SkipGlyph gly (Maybe Duration))
-                   -> PhraseImage
-renderMarkupPhrase = oMarkupPhrase
-
-oMarkupPhrase :: (gly -> Maybe Duration -> Doc) 
-              -> MarkupPhrase (SkipGlyph gly (Maybe Duration))
-              -> PhraseImage
-oMarkupPhrase f = 
-    PhraseImage "TODO_markup" . map (oMarkupBar f) . extractMarkupBars
-
-oMarkupBar :: (gly -> Maybe Duration -> Doc) 
-           -> MarkupBar (SkipGlyph gly (Maybe Duration))
-           -> BarImage
-oMarkupBar f = hsep . toListF (oSkipGlyph f) . extractMarkupNotes
-
 
 oSkipGlyph :: (gly -> Maybe Duration -> Doc) 
            -> SkipGlyph gly (Maybe Duration) 
@@ -187,10 +164,10 @@ oSkipGlyph _ (Skip d)     = spacer d
 default_duration :: Duration
 default_duration = qn
 
-rewriteDurationOpt :: StaffPhrase (Glyph anno pch Duration)
-                   -> StaffPhrase (Glyph anno pch (Maybe Duration))
-rewriteDurationOpt (StaffPhrase name bars) = 
-    StaffPhrase name $ fmap fn bars
+rewriteDurationOpt :: Phrase (Bar (CExpr (Glyph anno pch Duration)))
+                   -> Phrase (Bar (CExpr (Glyph anno pch (Maybe Duration))))
+rewriteDurationOpt (Phrase name bars) = 
+    Phrase name $ fmap fn bars
   where
     fn bar = fst $ stmap (stmap doptGlyph) (default_duration,True) bar
 
@@ -281,17 +258,17 @@ doptSkipGlyph = stmap2b doptD
 
 
 rewritePitchAbs :: Int 
-                -> StaffPhrase (Glyph anno Pitch dur) 
-                -> StaffPhrase (Glyph anno Pitch dur)
-rewritePitchAbs i = fmap (abspGlyph i)
+                -> Phrase (Bar (CExpr (Glyph anno Pitch dur) ))
+                -> Phrase (Bar (CExpr (Glyph anno Pitch dur)))
+rewritePitchAbs i = fmap (map (fmap (abspGlyph i)))
 
 
-rewritePitchAbs_treble :: StaffPhrase (Glyph anno Pitch dur) 
-                       -> StaffPhrase (Glyph anno Pitch dur)
+rewritePitchAbs_treble :: Phrase (Bar (CExpr (Glyph anno Pitch dur)))
+                       -> Phrase (Bar (CExpr (Glyph anno Pitch dur)))
 rewritePitchAbs_treble = rewritePitchAbs (-3)
 
-rewritePitchAbs_tab :: StaffPhrase (Glyph anno Pitch dur)
-                    -> StaffPhrase (Glyph anno Pitch dur)
+rewritePitchAbs_tab :: Phrase (Bar (CExpr (Glyph anno Pitch dur)))
+                    -> Phrase (Bar (CExpr (Glyph anno Pitch dur)))
 rewritePitchAbs_tab = rewritePitchAbs (-4)
 
 
@@ -315,9 +292,9 @@ abspChordPitch i (ChordPitch a p) = ChordPitch a (displaceOctave i p)
 -- Relative Pitch
 
 rewritePitchRel :: Pitch 
-                -> StaffPhrase (Glyph anno Pitch dur) 
-                -> (StaffPhrase (Glyph anno Pitch dur), Pitch)
-rewritePitchRel pch = stmap relpGlyph pch
+                -> Phrase (Bar (CExpr (Glyph anno Pitch dur)))
+                -> (Phrase (Bar (CExpr (Glyph anno Pitch dur))), Pitch)
+rewritePitchRel pch = stmap (stmap (stmap relpGlyph)) pch
 
 
 relpGlyph :: Pitch -> Glyph anno Pitch dur -> (Glyph anno Pitch dur,Pitch)

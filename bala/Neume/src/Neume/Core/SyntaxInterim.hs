@@ -21,9 +21,7 @@ module Neume.Core.SyntaxInterim
 
 
   -- * Phrases and bars
-    StaffPhrase(..)
-  , StaffBar
-  , Phrase(..)
+    Phrase(..)
   , Bar 
 
   -- * Staff expressions
@@ -49,22 +47,12 @@ import Neume.Core.Utils
 
 import Text.PrettyPrint.Leijen          -- package: wl-print
 
-import Data.Sequence 
-
 --------------------------------------------------------------------------------
 -- Phrases and bars 
 
 -- Note - phrases, bars and CExprs are polymorphic on the glyph
 -- type. They can use alternatives to the Glyph type. 
 
-data StaffPhrase gly = StaffPhrase 
-      { phrase_name     :: String
-      , phrase_bars     :: Seq (StaffBar gly) 
-      }
-  deriving (Show)
-
-
-type    StaffBar    gly = Seq (CExpr gly)
 
 data Phrase bar = Phrase 
       { phrase_name_z   :: String
@@ -167,10 +155,6 @@ instance ExtractBarImages PhraseOverlayImage where
 instance Functor Phrase where
   fmap f (Phrase name bars) = Phrase name $ map f bars
 
-instance Functor StaffPhrase where
-  fmap f (StaffPhrase name xs) = StaffPhrase name $ fmap (fmap (fmap f)) xs
-
-
 
 instance Functor CExpr where
   fmap f (Atom e)         = Atom $ f e
@@ -180,10 +164,10 @@ instance Functor CExpr where
 
 
 -- StateMap
-instance StateMap StaffPhrase where
-  stmap f st (StaffPhrase name xs) = (StaffPhrase name xs',st') 
-    where (xs',st') = stmap (stmap (stmap f)) st xs
 
+instance StateMap Phrase where
+  stmap f st (Phrase name xs) = (Phrase name xs',st') 
+    where (xs',st') = stmap f st xs
 
 instance StateMap CExpr where
   stmap f st (Atom  e)     = (Atom e',st')      where (e',st') = f st e
