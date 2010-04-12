@@ -133,7 +133,7 @@ renderABC_overlay2 (ABC_Std_Format_Config line_stk func) rw1 rw2 sc1 sc2 =
 phraseImage :: ABC_Std_Rewrite_Config
             -> NoteList (Glyph anno Pitch Duration)
             -> PhraseImage
-phraseImage cfg = renderPhrase . abcRewrite spellmap unit_drn . phrase mp 
+phraseImage cfg = renderPhrase . abcRewrite spellmap unit_drn . phrase_new mp 
   where 
     spellmap = spelling_map  cfg
     unit_drn = unit_duration cfg

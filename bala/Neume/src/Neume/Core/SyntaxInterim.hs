@@ -24,6 +24,7 @@ module Neume.Core.SyntaxInterim
     StaffPhrase(..)
   , StaffBar
   , Phrase(..)
+  , Bar 
 
   -- * Staff expressions
   , CExpr(..)
@@ -43,13 +44,14 @@ module Neume.Core.SyntaxInterim
 
   ) where
 
-
+import Neume.Core.Duration
 import Neume.Core.Metrical
+-- import Neume.Core.SyntaxGlyph
 import Neume.Core.Utils
 
 import Text.PrettyPrint.Leijen          -- package: wl-print
 
-
+import Data.List ( foldl' )
 import Data.Sequence 
 
 --------------------------------------------------------------------------------
@@ -72,6 +74,8 @@ data Phrase bar = Phrase
       , pahrase_bars_z  :: [bar]
       }
   deriving (Show)
+
+type Bar elt = [elt]
 
 
 --------------------------------------------------------------------------------
@@ -96,11 +100,25 @@ data CExpr gly = Atom               gly
   deriving (Eq,Show)
 
 
+cexprFold :: (gly -> b -> b) -> (PletMult -> b -> b) -> (b -> b) 
+          -> b -> CExpr gly -> b
+cexprFold f _ _ b (Atom a)       = f a b
+cexprFold f g h b (N_Plet pm xs) = foldl' (cexprFold f g h) (g pm b) xs
+cexprFold f g h b (Beamed xs)    = foldl' (cexprFold f g h) (h b)    xs
+
+
+cexprMeasure :: DMeasure gly => CExpr gly -> DurationMeasure 
+cexprMeasure = snd . cexprFold  phi chi rho (mult_stack_zero,0) where
+  phi a  (stk,acc) = (stk, acc + nmeasureCtx stk a)
+  chi pm (stk,acc) = (pushPM pm stk,acc) 
+  rho    st        = st
+
 
 --------------------------------------------------------------------------------
 -- Phrases and bars 
 
 -- Phrases and bars are composable with pretty-print operations...
+
 
 type PhraseName     = String
 type Image          = Doc
@@ -153,6 +171,9 @@ mapBar f (StaffPhrase name se) = StaffPhrase name $ fmap (fmap f) se
 --------------------------------------------------------------------------------
 -- Instances
 
+instance Functor Phrase where
+  fmap f (Phrase name bars) = Phrase name $ map f bars
+
 instance Functor StaffPhrase where
   fmap f (StaffPhrase name xs) = StaffPhrase name $ fmap (fmap (fmap f)) xs
 
@@ -179,3 +200,14 @@ instance StateMap CExpr where
   stmap f st (Beamed ce)   = (Beamed ce',st')   
                              where (ce',st') = stmap (stmap f) st ce
 
+---
+
+instance DMeasure gly => DMeasure (CExpr gly) where
+  dmeasure = cexprMeasure
+
+
+-- TODO..........................................
+-- whoa -- this is circular...
+instance BeamExtremity gly => BeamExtremity (CExpr gly) where
+  rendersToNote (Atom a) = rendersToNote a
+  rendersToNote _        = True

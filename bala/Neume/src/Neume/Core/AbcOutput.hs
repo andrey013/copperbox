@@ -44,7 +44,6 @@ import Neume.Core.Utils.OneList ( OneList, toListF )
 import Text.PrettyPrint.Leijen hiding ( sep )     -- package: wl-print
 
 import qualified Data.Foldable as F
-import Data.Sequence ( Seq )
 
 -- No annos for Abc...
 
@@ -54,8 +53,8 @@ type AbcNote  = Note  () Pitch AbcMultiplier
 
 abcRewrite :: SpellingMap
            -> DurationMeasure 
-           -> StaffPhrase (Glyph anno Pitch Duration)
-           -> StaffPhrase AbcGlyph
+           -> Phrase (Bar (CExpr (Glyph anno Pitch Duration)))
+           -> Phrase (Bar (CExpr AbcGlyph))
 abcRewrite spellmap unit_drn = rewriteDuration unit_drn 
                              . rewritePitch    spellmap
                              . rewriteAnno 
@@ -63,15 +62,12 @@ abcRewrite spellmap unit_drn = rewriteDuration unit_drn
 
 --------------------------------------------------------------------------------
 
-renderPhrase :: StaffPhrase AbcGlyph -> PhraseImage
-renderPhrase (StaffPhrase name bars) = 
-    PhraseImage name $ mapInto oStaffBar bars
+renderPhrase :: Phrase (Bar (CExpr AbcGlyph)) -> PhraseImage
+renderPhrase (Phrase name bars) = 
+    PhraseImage name $ map oStaffBar bars
 
-oStaffBar :: StaffBar AbcGlyph -> BarImage
-oStaffBar = oCExprSeq (<+>)
-
-oCExprSeq :: (Doc -> Doc -> Doc) -> Seq (CExpr AbcGlyph) -> Doc
-oCExprSeq sep se = sepList sep $ mapInto (oCExpr sep) se
+oStaffBar :: Bar (CExpr AbcGlyph) -> BarImage
+oStaffBar = oCExprList (<+>)
 
 
 oCExprList :: (Doc -> Doc -> Doc) -> [CExpr AbcGlyph] -> Doc
@@ -113,10 +109,12 @@ oChordPitches dm = map (\(ChordPitch _ p) -> note p dm) . F.toList
 --------------------------------------------------------------------------------
 -- Rewrite duration
 
+-- rewrites are now horrible!
+
 rewriteDuration :: Rational 
-                -> StaffPhrase (Glyph anno pch Duration) 
-                -> StaffPhrase (Glyph anno pch AbcMultiplier)
-rewriteDuration r = fmap (fmap3c (abcMultiplier r))
+                -> Phrase (Bar (CExpr (Glyph anno pch Duration)))
+                -> Phrase (Bar (CExpr (Glyph anno pch AbcMultiplier)))
+rewriteDuration r = fmap (map (fmap (fmap3c (abcMultiplier r))))
 
 
 --------------------------------------------------------------------------------
@@ -125,9 +123,9 @@ rewriteDuration r = fmap (fmap3c (abcMultiplier r))
 -- Pitch spelling
 
 rewritePitch :: SpellingMap 
-             -> StaffPhrase (Glyph anno Pitch dur) 
-             -> StaffPhrase (Glyph anno Pitch dur)
-rewritePitch sm = fmap (fmap3b (spell sm))
+             -> Phrase (Bar (CExpr (Glyph anno Pitch dur)))
+             -> Phrase (Bar (CExpr (Glyph anno Pitch dur)))
+rewritePitch sm = fmap (map (fmap (fmap3b (spell sm))))
 
 
 --------------------------------------------------------------------------------
@@ -135,9 +133,9 @@ rewritePitch sm = fmap (fmap3b (spell sm))
 
 -- Drop annotations
 
-rewriteAnno :: StaffPhrase (Glyph anno pch dur) 
-            -> StaffPhrase (Glyph ()   pch dur)
-rewriteAnno = fmap (fmap3a (const ()))
+rewriteAnno :: Phrase (Bar (CExpr (Glyph anno pch dur)))
+            -> Phrase (Bar (CExpr (Glyph ()   pch dur)))
+rewriteAnno = fmap (map (fmap (fmap3a (const ()))))
 
 
 --------------------------------------------------------------------------------

@@ -26,19 +26,17 @@ module Neume.Core.Utils.SpecialTraversals
   -- * Pinpoint schemes
   , PinpointScheme(..)
   , PinpointSchemeSt(..)
+
+  , foldl_st'
+
   ) where 
 
+import Neume.Core.Utils.HList
 import qualified Neume.Core.Utils.OneList as O
 
 import qualified Data.Sequence as S
 
 --------------------------------------------------------------------------------
-
-type H a = [a] -> [a]
-
-infixr 2 `snoc`
-snoc :: H b -> b -> H b
-snoc accf a = accf . (a:)
 
 -- Note to self - when using ScopedTypeVariables you have to 
 -- add forall for the appropriate variables as well.
@@ -150,3 +148,16 @@ class PinpointSchemeSt t where
   
   lastSpecial_st  ::
       (st -> a -> (b,st)) -> (st -> a -> (b,st)) -> st -> t a -> (t b,st)
+
+
+--------------------------------------------------------------------------------
+-- foldl_st
+
+-- this could be done as a foldl with a bit of pairing of course...
+
+-- data SP a b = SP !a !b
+
+foldl_st' :: (st -> b -> a -> (b,st)) -> st -> b -> [a] -> (b,st) 
+foldl_st' f st0 b0 lzt = step st0 b0 lzt where
+    step st b []     = (b,st)
+    step st b (x:xs) = let (b',st') = f st b x in b' `seq` st' `seq` step st' b' xs  

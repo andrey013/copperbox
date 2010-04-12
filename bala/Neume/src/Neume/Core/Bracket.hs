@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -17,8 +19,10 @@
 
 module Neume.Core.Bracket 
   ( 
+
     phrase
   , phraseAna
+  , phrase_new
 
   ) where
 
@@ -27,34 +31,117 @@ import Neume.Core.Metrical
 import Neume.Core.SyntaxNoteList
 import Neume.Core.SyntaxInterim
 import Neume.Core.Utils
-
+import Neume.Core.Utils.HList
 
 
 import qualified Data.Foldable as F 
-import Data.Sequence 
+import Data.List ( unfoldr )
+import Data.Ratio
+import Data.Sequence  hiding ( unfoldr )
 import Prelude hiding ( null )
 
 
    
+type Borrow = DurationMeasure
 
 
--- | A Metric unit represents a division of a NoteList according
--- to the sizes of a 'MeterPattern'.
+-- | A /Metrical Unit/ represents a division of a NoteList 
+-- according to the sizes of a 'MeterPattern'.
 --
 --
 
-type MetricUnit   a = Seq (PletTree a) 
-type SegmentState a = (DurationMeasure, PletForest a)
-type BarMU        a = Seq (MetricUnit a)
+type InterimBar pt = [[pt]]
+type InterimMetricalUnit pt = [pt]
 
-mbSnoc :: Seq a -> Maybe a -> Seq a
-mbSnoc se Nothing  = se
-mbSnoc se (Just a) = se |> a
+
+eighth_note :: DurationMeasure 
+eighth_note = (1%8)
+
 
 
 
 --------------------------------------------------------------------------------
 -- 
+
+phrase_new :: (DMeasure (CExpr a), BeamExtremity (CExpr a))
+           => MeterPattern -> NoteList a -> Phrase [CExpr a]
+phrase_new mp (NoteList name notes) = 
+    Phrase name $ map (reconstituteBar . map changeInteriorMU)
+                $ partitionToInterimBars mp (0,c_notes)
+  where
+    c_notes = map pletTreeToCExpr notes
+
+
+reconstituteBar :: InterimBar (CExpr pt) -> [CExpr pt]
+reconstituteBar = foldr fn [] where
+  fn mu acc = step mu acc 
+    where
+      step (x:xs) ys = x : step xs ys
+      step []     ys = ys
+
+
+changeInteriorMU :: (DMeasure (CExpr gly), BeamExtremity (CExpr gly))
+                 => InterimMetricalUnit (CExpr gly) -> [CExpr gly]
+changeInteriorMU = interior leftTest (insideAlways, insideSpeculative) mkBeam
+  where
+    leftTest e          = dmeasure e >  eighth_note || not (rendersToNote e)
+    insideAlways e      = dmeasure e <= eighth_note && rendersToNote e   
+    insideSpeculative e = dmeasure e <= eighth_note
+    
+    mkBeam              = Beamed
+
+
+
+pletTreeToCExpr :: PletTree gly -> CExpr gly
+pletTreeToCExpr (S gly)      = Atom gly
+pletTreeToCExpr (Plet pm xs) = N_Plet pm (map pletTreeToCExpr xs)
+
+
+--------------------------------------------------------------------------------
+-- partition
+
+partitionToInterimBars :: DMeasure pt 
+                       => MeterPattern -> (Borrow,[pt]) -> [InterimBar pt]
+partitionToInterimBars mp st0 = unfoldr phi st0 where
+  phi (_,[]) = Nothing
+  phi st     = Just $ nextBar mp st
+
+
+firstAna :: DMeasure pt
+         => DurationMeasure -> MeterPattern -> [pt] 
+         -> (InterimBar pt, (Borrow,[pt]))
+firstAna ana mp0 notes = nextBar (anacrusis ana mp0) (0,notes)
+
+
+nextBar :: forall pt. DMeasure pt
+        => MeterPattern -> (Borrow,[pt]) -> (InterimBar pt, (Borrow,[pt]))
+nextBar mp (borrow,xs) = post $ foldl_st' fn (borrow,xs) id mp 
+  where
+    fn :: (Borrow,[pt]) -> H [pt] -> DurationMeasure -> (H [pt], (Borrow,[pt]))
+    fn st accf d = let (a,st') = nextMetricalUnit d st in (accf `snoc` a,st')
+
+    post :: (H [pt], (Borrow,[pt])) -> ([[pt]], (Borrow,[pt]))
+    post (accf,st) = (accf [], st)
+
+nextMetricalUnit :: DMeasure pt
+                 => DurationMeasure
+                 -> (Borrow,[pt])
+                 -> ([pt], (Borrow,[pt]))
+nextMetricalUnit d (borrow,xs) | borrow >= d = ([],(borrow - d,xs))
+                               | otherwise   = measureSpan (d - borrow) xs
+
+measureSpan :: DMeasure pt
+            => DurationMeasure -> [pt] -> ([pt], (Borrow,[pt]))
+measureSpan = step id where
+  step accf d xs      | d <= 0 = (accf [], (abs d,xs))
+  step accf d []               = (accf [], (abs d,[]))
+  step accf d (x:xs)           = step (accf `snoc` x) (d - dmeasure x) xs
+
+
+--------------------------------------------------------------------------------
+-- old version with snoc-able accumulator...
+
+
 
 phrase :: (DMeasure a, BeamExtremity a) 
        => MeterPattern -> NoteList a -> StaffPhrase a
@@ -69,38 +156,33 @@ phraseAna ana mp (NoteList name notes) =
  
 
 
---------------------------------------------------------------------------------
--- new version with snoc-able accumulator...
-
-
-
 splitToBars :: DMeasure a => MeterPattern -> PletForest a -> Seq (BarMU a)
-splitToBars mp notes = workerSplit mp empty (0,notes) where
+splitToBars mp notes = workerSplit_old mp empty (0,notes) where
 
 anaSplitToBars :: DMeasure a
                => DurationMeasure -> MeterPattern -> PletForest a -> Seq (BarMU a)
-anaSplitToBars ana mp notes = workerSplit mp (singleton bar0) state0
+anaSplitToBars ana mp notes = workerSplit_old mp (singleton bar0) state0
   where
-    (bar0,state0) = firstAna ana mp notes
+    (bar0,state0) = firstAna_old ana mp notes
 
 
-workerSplit :: DMeasure a 
+workerSplit_old :: DMeasure a 
             => MeterPattern -> Seq (BarMU a) -> (SegmentState a) -> Seq (BarMU a)
-workerSplit mp = step where
+workerSplit_old mp = step where
   step acc (_,[]) = acc
-  step acc st     = let (bar,st') = nextBar mp st in step (acc |> bar) st'
+  step acc st     = let (bar,st') = nextBar_old mp st in step (acc |> bar) st'
   
 
 
-firstAna :: DMeasure a  
+firstAna_old :: DMeasure a  
          => DurationMeasure -> MeterPattern -> PletForest a 
          -> (BarMU a, SegmentState a)
-firstAna ana mp0 notes = nextBar (anacrusis ana mp0) (0,notes)
+firstAna_old ana mp0 notes = nextBar_old (anacrusis ana mp0) (0,notes)
 
 
-nextBar :: DMeasure a
+nextBar_old :: DMeasure a
         => MeterPattern -> SegmentState a -> (BarMU a, SegmentState a)
-nextBar mp = step empty mp where
+nextBar_old mp = step empty mp where
   step acc []     st = (acc,st)
   step acc (d:ds) st = step (acc `mbSnoc` a) ds st'
                        where (a,st') = nextMUnit d st
@@ -128,15 +210,20 @@ nextMUnit1 = step empty where
   body acc d (S a)  xs  = step (acc |> S a)    (d - dmeasure a) xs
   body acc d p_tree xs  = step (acc |> p_tree) (d - pletMeasure p_tree) xs
 
-{-
-measureSpan :: DMeasured a
-            => DurationMeasure
-            -> PletForest a
-            -> (MetricUnit a, SegmentState a)
-nextMUnit1  
--}
+--------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
+
+
+
+type MetricUnit   a = Seq (PletTree a) 
+type SegmentState a = (DurationMeasure, PletForest a)
+type BarMU        a = Seq (MetricUnit a)
+
+mbSnoc :: Seq a -> Maybe a -> Seq a
+mbSnoc se Nothing  = se
+mbSnoc se (Just a) = se |> a
+
 
 -- Reconstitute the beam groups
 

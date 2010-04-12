@@ -48,6 +48,7 @@ library
     Neume.Core.Utils.Arity,
     Neume.Core.Utils.Common,
     Neume.Core.Utils.FunctorN,
+    Neume.Core.Utils.HList,
     Neume.Core.Utils.OneList,
     Neume.Core.Utils.Pretty,
     Neume.Core.Utils.SpecialTraversals,
