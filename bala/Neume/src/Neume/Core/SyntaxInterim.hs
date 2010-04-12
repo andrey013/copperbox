@@ -44,14 +44,11 @@ module Neume.Core.SyntaxInterim
 
   ) where
 
-import Neume.Core.Duration
 import Neume.Core.Metrical
--- import Neume.Core.SyntaxGlyph
 import Neume.Core.Utils
 
 import Text.PrettyPrint.Leijen          -- package: wl-print
 
-import Data.List ( foldl' )
 import Data.Sequence 
 
 --------------------------------------------------------------------------------
@@ -99,7 +96,10 @@ data CExpr gly = Atom               gly
                | Beamed             [CExpr gly]
   deriving (Eq,Show)
 
-
+{-
+-- probably obsolete...
+-- Don't want a DMeasure instance for (CExpr gly)
+--
 cexprFold :: (gly -> b -> b) -> (PletMult -> b -> b) -> (b -> b) 
           -> b -> CExpr gly -> b
 cexprFold f _ _ b (Atom a)       = f a b
@@ -112,6 +112,7 @@ cexprMeasure = snd . cexprFold  phi chi rho (mult_stack_zero,0) where
   phi a  (stk,acc) = (stk, acc + nmeasureCtx stk a)
   chi pm (stk,acc) = (pushPM pm stk,acc) 
   rho    st        = st
+-}
 
 
 --------------------------------------------------------------------------------
@@ -160,14 +161,6 @@ instance ExtractBarImages PhraseOverlayImage where
 --------------------------------------------------------------------------------
 -- 
 
-{-
-
--- Now defunct?
-
-mapBar :: (CExpr gly -> CExpr gly') -> StaffPhrase gly -> StaffPhrase gly'
-mapBar f (StaffPhrase name se) = StaffPhrase name $ fmap (fmap f) se
-
--}
 --------------------------------------------------------------------------------
 -- Instances
 
@@ -200,14 +193,3 @@ instance StateMap CExpr where
   stmap f st (Beamed ce)   = (Beamed ce',st')   
                              where (ce',st') = stmap (stmap f) st ce
 
----
-
-instance DMeasure gly => DMeasure (CExpr gly) where
-  dmeasure = cexprMeasure
-
-
--- TODO..........................................
--- whoa -- this is circular...
-instance BeamExtremity gly => BeamExtremity (CExpr gly) where
-  rendersToNote (Atom a) = rendersToNote a
-  rendersToNote _        = True

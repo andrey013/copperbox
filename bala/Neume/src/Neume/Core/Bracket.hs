@@ -63,13 +63,11 @@ eighth_note = (1%8)
 --------------------------------------------------------------------------------
 -- 
 
-phrase_new :: (DMeasure (CExpr a), BeamExtremity (CExpr a))
+phrase_new :: (DMeasure (PletTree a), BeamExtremity (PletTree a))
            => MeterPattern -> NoteList a -> Phrase [CExpr a]
 phrase_new mp (NoteList name notes) = 
     Phrase name $ map (reconstituteBar . map changeInteriorMU)
-                $ partitionToInterimBars mp (0,c_notes)
-  where
-    c_notes = map pletTreeToCExpr notes
+                $ partitionToInterimBars mp (0,notes)
 
 
 reconstituteBar :: InterimBar (CExpr pt) -> [CExpr pt]
@@ -80,15 +78,17 @@ reconstituteBar = foldr fn [] where
       step []     ys = ys
 
 
-changeInteriorMU :: (DMeasure (CExpr gly), BeamExtremity (CExpr gly))
-                 => InterimMetricalUnit (CExpr gly) -> [CExpr gly]
-changeInteriorMU = interior leftTest (insideAlways, insideSpeculative) mkBeam
+changeInteriorMU :: (DMeasure (PletTree gly), BeamExtremity (PletTree gly))
+                 => InterimMetricalUnit (PletTree gly) -> [CExpr gly]
+changeInteriorMU = 
+    interior leftTest (insideAlways, insideSpeculative) mkBeam pletTreeToCExpr
   where
     leftTest e          = dmeasure e >  eighth_note || not (rendersToNote e)
     insideAlways e      = dmeasure e <= eighth_note && rendersToNote e   
-    insideSpeculative e = dmeasure e <= eighth_note
+    insideSpeculative e = dmeasure e <= eighth_note && not (rendersToNote e)
     
-    mkBeam              = Beamed
+    mkBeam [a]          = a 
+    mkBeam xs           = Beamed xs
 
 
 

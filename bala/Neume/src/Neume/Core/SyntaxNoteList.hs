@@ -83,14 +83,14 @@ instance StateMap PletTree where
                             where (xs',st') = stmap (stmap f) st xs
 
 
-{-
-instance (NumMeasured gly, Measurement gly ~ DurationMeasure) => 
-    NumMeasured (PletTree gly) where
-  type Measurement (PletTree gly) = DurationMeasure
-  nmeasure (S gly) = nmeasure gly
-  nmeasure pt      = pletMeasure pt
--}
 
+instance DMeasure gly => DMeasure (PletTree gly) where
+  dmeasure = pletMeasure
+
+instance BeamExtremity gly => BeamExtremity (PletTree gly) where
+  rendersToNote (S a)          = rendersToNote a
+  rendersToNote (Plet _ (x:_)) = rendersToNote x
+  rendersToNote _              = False 
 
 --------------------------------------------------------------------------------
 

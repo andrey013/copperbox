@@ -20,8 +20,7 @@ module Neume.Core.Utils.SpecialTraversals
   ( 
     
   -- * Segmenting
-    segmentToSize
-  , interior
+    interior
 
   -- * Pinpoint schemes
   , PinpointScheme(..)
@@ -42,33 +41,6 @@ import qualified Data.Sequence as S
 -- add forall for the appropriate variables as well.
 --
 
-
--- | @segmentToSize@ splits a list into segments of a particular 
--- length.
--- 
--- For Neume's purpose we allow an anacrusis of a different 
--- length and include a type changing function to be mapped 
--- along the list at the same time
---
-segmentToSize :: forall a b . Int -> Int -> (a -> b) -> [a] -> [[b]]
-segmentToSize ana_len seg_len fn lzt = anastep lzt
-  where
-    anastep :: [a] -> [[b]]
-    anastep xs = a:as 
-      where (a,rest) = step1 id ana_len xs 
-            as       = segstep rest 
-            
-    segstep :: [a] -> [[b]]
-    segstep [] = []
-    segstep xs = a : segstep rest 
-      where (a,rest) = step1 id seg_len xs
-    
-    step1 :: H b -> Int -> [a] -> ([b],[a])
-    step1 accf n xs     | n <= 0 = (accf [], xs)  
-    step1 accf _ []              = (accf [], [])
-    step1 accf n (x:xs)          = step1 (accf `snoc` fn x) (n-1) xs
-
-
 --------------------------------------------------------------------------------
 
 -- | @interior@ models grouping notes within a metrical unit 
@@ -83,22 +55,23 @@ segmentToSize ana_len seg_len fn lzt = anastep lzt
 -- until we reach the end of the bar of a note longer than an
 -- eighth.
 --
-interior :: forall a. 
-            (a -> Bool) -> (a -> Bool, a -> Bool) -> ([a] -> a) -> [a] -> [a]
-interior outLeft (insideAlways, insideSpeculative) incrush lzt = leftside id lzt
+interior :: forall a b. 
+  (a -> Bool) -> (a -> Bool, a -> Bool) -> ([b] -> b) -> (a -> b) -> [a] -> [b]
+interior outLeft (insideAlways, insideSpeculative) incrush fn lzt = 
+    leftside id lzt
   where
-    leftside :: H a -> [a] -> [a]
+    leftside :: H b -> [a] -> [b]
     leftside accf []                 = accf []  -- all left, no interior
-    leftside accf (x:xs) | outLeft x = leftside (accf `snoc` x) xs
-                         | otherwise = accf $ inside (x:) id xs
+    leftside accf (x:xs) | outLeft x = leftside (accf `snoc` fn x) xs
+                         | otherwise = accf $ inside (fn x:) id xs
 
     -- specf is a /speculative/ buffer...
-    inside :: H a -> H a -> [a] -> [a]
-    inside alwaysf specf []          = (incrush $ alwaysf []) : specf []
+    inside :: H b -> H b -> [a] -> [b]
+    inside alwaysf specf []     = (incrush $ alwaysf []) : specf []
     inside alwaysf specf (x:xs) 
-      | insideSpeculative x          = inside alwaysf (specf `snoc` x) xs
-      | insideAlways x               = inside (alwaysf . specf `snoc` x) id xs
-      | otherwise                    = (incrush $ alwaysf []) : specf (x:xs)
+      | insideSpeculative x     = inside alwaysf (specf `snoc` fn x) xs
+      | insideAlways x          = inside (alwaysf . specf `snoc` fn x) id xs
+      | otherwise               = (incrush $ alwaysf []) : specf (map fn (x:xs))
 
 
 --------------------------------------------------------------------------------
