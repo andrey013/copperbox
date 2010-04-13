@@ -80,14 +80,14 @@ type LyStdNote  anno = Note  anno Pitch (Maybe Duration)
 -- Ly_Relative_Rewrite_Config...
 
 lyRelativeRewrite :: Pitch
-                  -> Phrase (Bar (CExpr (Glyph anno Pitch Duration)))
-                  -> (Phrase (Bar (CExpr (Glyph anno Pitch (Maybe Duration)))), Pitch)
+                  -> CPhrase (Glyph anno Pitch Duration)
+                  -> (CPhrase (Glyph anno Pitch (Maybe Duration)), Pitch)
 lyRelativeRewrite pch = fmap2a rewriteDurationOpt . rewritePitchRel pch
 
 
 lyAbsoluteRewrite :: Int 
-                  -> Phrase (Bar (CExpr (Glyph anno Pitch Duration)))
-                  -> Phrase (Bar (CExpr (Glyph anno Pitch (Maybe Duration))))
+                  -> CPhrase (Glyph anno Pitch Duration)
+                  -> CPhrase (Glyph anno Pitch (Maybe Duration))
 lyAbsoluteRewrite i = rewriteDurationOpt . rewritePitchAbs i
 
 
@@ -99,14 +99,14 @@ lyAbsoluteRewrite i = rewriteDurationOpt . rewritePitchAbs i
 -- for a Type Class.
 
 -- ignore annotations at the moment...
-renderPhrase :: (pch -> Doc) -> Phrase (Bar (CExpr (GlyphRelDur anno pch))) -> PhraseImage
+renderPhrase :: (pch -> Doc) -> CPhrase (GlyphRelDur anno pch) -> PhraseImage
 renderPhrase = oPhrase
 
-oPhrase :: (pch -> Doc) -> Phrase (Bar (CExpr (GlyphRelDur anno pch))) -> PhraseImage
+oPhrase :: (pch -> Doc) -> CPhrase (GlyphRelDur anno pch) -> PhraseImage
 oPhrase f (Phrase name bars) = 
     PhraseImage name $ map (oBar f) bars
 
-oBar :: (pch -> Doc) -> Bar (CExpr (GlyphRelDur anno pch)) -> BarImage
+oBar :: (pch -> Doc) -> CBar (GlyphRelDur anno pch) -> BarImage
 oBar f = hsep . oCExprList f 
 
 
@@ -164,8 +164,8 @@ oSkipGlyph _ (Skip d)     = spacer d
 default_duration :: Duration
 default_duration = qn
 
-rewriteDurationOpt :: Phrase (Bar (CExpr (Glyph anno pch Duration)))
-                   -> Phrase (Bar (CExpr (Glyph anno pch (Maybe Duration))))
+rewriteDurationOpt :: CPhrase (Glyph anno pch Duration)
+                   -> CPhrase (Glyph anno pch (Maybe Duration))
 rewriteDurationOpt (Phrase name bars) = 
     Phrase name $ fmap fn bars
   where
@@ -221,27 +221,6 @@ doptD st@(old,is_fst) d
 
 
 
-{-
-
--- Old...
-rewriteDurationOpt_ :: MarkupPhrase (SkipGlyph gly Duration)
-                    -> MarkupPhrase (SkipGlyph gly (Maybe Duration))
-rewriteDurationOpt_ = MarkupPhrase . map doptMarkupBar . extractMarkupBars
-
-
--- TO DO - these will be needed for Markup...
-
-doptMarkupBar :: MarkupBar (SkipGlyph gly Duration)
-              -> MarkupBar (SkipGlyph gly (Maybe Duration))
-doptMarkupBar = fst . stmap doptSkipGlyph default_duration
-
-
-doptSkipGlyph :: Duration
-              -> SkipGlyph glyph Duration
-              -> (SkipGlyph glyph (Maybe Duration), Duration)
-doptSkipGlyph = stmap2b doptD
--}
-
 --------------------------------------------------------------------------------
 -- Rewrite Pitch
 
@@ -266,17 +245,17 @@ doptSkipGlyph = stmap2b doptD
 
 
 rewritePitchAbs :: Int 
-                -> Phrase (Bar (CExpr (Glyph anno Pitch dur) ))
-                -> Phrase (Bar (CExpr (Glyph anno Pitch dur)))
+                -> CPhrase (Glyph anno Pitch dur)
+                -> CPhrase (Glyph anno Pitch dur)
 rewritePitchAbs i = fmap (map (fmap (abspGlyph i)))
 
 
-rewritePitchAbs_treble :: Phrase (Bar (CExpr (Glyph anno Pitch dur)))
-                       -> Phrase (Bar (CExpr (Glyph anno Pitch dur)))
+rewritePitchAbs_treble :: CPhrase (Glyph anno Pitch dur)
+                       -> CPhrase (Glyph anno Pitch dur)
 rewritePitchAbs_treble = rewritePitchAbs (-3)
 
-rewritePitchAbs_tab :: Phrase (Bar (CExpr (Glyph anno Pitch dur)))
-                    -> Phrase (Bar (CExpr (Glyph anno Pitch dur)))
+rewritePitchAbs_tab :: CPhrase (Glyph anno Pitch dur)
+                    -> CPhrase (Glyph anno Pitch dur)
 rewritePitchAbs_tab = rewritePitchAbs (-4)
 
 
@@ -300,8 +279,8 @@ abspChordPitch i (ChordPitch a p) = ChordPitch a (displaceOctave i p)
 -- Relative Pitch
 
 rewritePitchRel :: Pitch 
-                -> Phrase (Bar (CExpr (Glyph anno Pitch dur)))
-                -> (Phrase (Bar (CExpr (Glyph anno Pitch dur))), Pitch)
+                -> CPhrase (Glyph anno Pitch dur)
+                -> (CPhrase (Glyph anno Pitch dur), Pitch)
 rewritePitchRel pch = stmap (stmap (stmap relpGlyph)) pch
 
 

@@ -126,31 +126,26 @@ instance FMap3 Glyph where
 -- StateMap2 
 
 instance StateMap2 ChordPitch where
-  stmap2 f g st (ChordPitch a p) = (ChordPitch a' p',st'') 
-                                   where (a',st')  = f st a
-                                         (p',st'') = g st' p
+  stmap2 f g st (ChordPitch a p) = stBinary ChordPitch f g st a p
 
 
 -- StateMap3 
 
 instance StateMap3 Note where
-  stmap3 f1 f2 f3 st (Note a p d) = (Note a' p' d', st''')
-                                    where (a',st')   = f1 st a
-                                          (p',st'')  = f2 st' p
-                                          (d',st''') = f3 st'' d
+  stmap3 f1 f2 f3 st (Note a p d) = stTernary Note f1 f2 f3 st a p d
+
 
 instance StateMap3 Glyph where
-  stmap3 f1 f2 f3 st (GlyNote n t)  = (GlyNote n' t, st') 
-    where (n',st') = stmap3 f1 f2 f3 st n
+  stmap3 f1 f2 f3 st (GlyNote n t)  = 
+    fmap2a (\nt -> GlyNote nt t) $ stmap3 f1 f2 f3 st n
 
-  stmap3 _  _  f3 st (Rest d)       = (Rest d', st')   where (d',st') = f3 st d
-  stmap3 _  _  f3 st (Spacer d)     = (Spacer d', st') where (d',st') = f3 st d
-  stmap3 f1 f2 f3 st (Chord os d t) = (Chord os' d' t, st'')
-    where (os',st') = stmap (stmap2 f1 f2) st os
-          (d',st'') = f3 st' d
+  stmap3 _  _  f3 st (Rest d)       = fmap2a Rest  $ f3 st d
+  stmap3 _  _  f3 st (Spacer d)     = fmap2a Spacer $ f3 st d
+  stmap3 f1 f2 f3 st (Chord os d t) = 
+    stBinary (\xs drn -> Chord xs drn t) (stmap (stmap2 f1 f2)) f3 st os d 
   
-  stmap3 f1 f2 f3 st (Graces os)    = (Graces os', st')
-    where (os',st') = stmap (stmap3 f1 f2 f3) st os
+  stmap3 f1 f2 f3 st (Graces os)    = 
+    fmap2a Graces $ stmap (stmap3 f1 f2 f3) st os
 
 
 --------------------------------------------------------------------------------

@@ -102,19 +102,10 @@ instance Traversable (Score shape) where
 
 instance StateMap (Score shape) where
   stmap _ st Nil              = (Nil,st)
-  stmap f st (Linear e xs)    = (Linear e' xs',st'') 
-    where  (e', st')    = f st e
-           (xs',st'')   = stmap f st' xs
-
-  stmap f st (Repeat e xs)    = (Repeat e' xs', st'')
-    where  (e', st')    = f st e
-           (xs',st'')   = stmap f st' xs
-
-  stmap f st (RepAlt e es xs) = (RepAlt e' es' xs', st''')
-    where  (e', st')   = f st e
-           (es',st'')  = stmap f st' es
-           (xs',st''') = stmap f st'' xs
-
+  stmap f st (Linear e xs)    = stBinary Linear f (stmap f) st e xs
+  stmap f st (Repeat e xs)    = stBinary Repeat f (stmap f) st e xs
+  stmap f st (RepAlt e es xs) = 
+    stTernary RepAlt f (stmap f) (stmap f) st e es xs
 
 
 

@@ -53,8 +53,8 @@ type AbcNote  = Note  () Pitch AbcMultiplier
 
 abcRewrite :: SpellingMap
            -> DurationMeasure 
-           -> Phrase (Bar (CExpr (Glyph anno Pitch Duration)))
-           -> Phrase (Bar (CExpr AbcGlyph))
+           -> CPhrase (Glyph anno Pitch Duration)
+           -> CPhrase AbcGlyph
 abcRewrite spellmap unit_drn = rewriteDuration unit_drn 
                              . rewritePitch    spellmap
                              . rewriteAnno 
@@ -62,11 +62,11 @@ abcRewrite spellmap unit_drn = rewriteDuration unit_drn
 
 --------------------------------------------------------------------------------
 
-renderPhrase :: Phrase (Bar (CExpr AbcGlyph)) -> PhraseImage
+renderPhrase :: CPhrase AbcGlyph -> PhraseImage
 renderPhrase (Phrase name bars) = 
     PhraseImage name $ map oStaffBar bars
 
-oStaffBar :: Bar (CExpr AbcGlyph) -> BarImage
+oStaffBar :: CBar AbcGlyph -> BarImage
 oStaffBar = oCExprList (<+>)
 
 
@@ -112,8 +112,8 @@ oChordPitches dm = map (\(ChordPitch _ p) -> note p dm) . F.toList
 -- rewrites are now horrible!
 
 rewriteDuration :: Rational 
-                -> Phrase (Bar (CExpr (Glyph anno pch Duration)))
-                -> Phrase (Bar (CExpr (Glyph anno pch AbcMultiplier)))
+                -> CPhrase (Glyph anno pch Duration)
+                -> CPhrase (Glyph anno pch AbcMultiplier)
 rewriteDuration r = fmap (map (fmap (fmap3c (abcMultiplier r))))
 
 
@@ -123,8 +123,8 @@ rewriteDuration r = fmap (map (fmap (fmap3c (abcMultiplier r))))
 -- Pitch spelling
 
 rewritePitch :: SpellingMap 
-             -> Phrase (Bar (CExpr (Glyph anno Pitch dur)))
-             -> Phrase (Bar (CExpr (Glyph anno Pitch dur)))
+             -> CPhrase (Glyph anno Pitch dur)
+             -> CPhrase (Glyph anno Pitch dur)
 rewritePitch sm = fmap (map (fmap (fmap3b (spell sm))))
 
 
@@ -133,8 +133,8 @@ rewritePitch sm = fmap (map (fmap (fmap3b (spell sm))))
 
 -- Drop annotations
 
-rewriteAnno :: Phrase (Bar (CExpr (Glyph anno pch dur)))
-            -> Phrase (Bar (CExpr (Glyph ()   pch dur)))
+rewriteAnno :: CPhrase (Glyph anno pch dur)
+            -> CPhrase (Glyph ()   pch dur)
 rewriteAnno = fmap (map (fmap (fmap3a (const ()))))
 
 

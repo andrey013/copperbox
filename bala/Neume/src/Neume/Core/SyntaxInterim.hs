@@ -29,7 +29,8 @@ module Neume.Core.SyntaxInterim
 
   -- * Staff expressions
   , CExpr(..)
-
+  , CPhrase
+  , CBar 
 
   , Image
   , PhraseImage(..)
@@ -89,12 +90,18 @@ data CExpr gly = Atom               gly
   deriving (Eq,Show)
 
 
+type CPhrase gly = Phrase (CBar gly)
+type CBar    gly = Bar    (CExpr gly)
+ 
 
 --------------------------------------------------------------------------------
 -- Phrases and bars 
 
 -- Phrases and bars are composable with pretty-print operations...
-
+--
+-- All notes, chords etc. within a a bar have already been 
+-- rendered to a Doc.
+--
 
 type Image          = Doc
 
@@ -106,6 +113,9 @@ data PhraseImage = PhraseImage
 
 type BarImage           = Image
 
+
+--------------------------------------------------------------------------------
+-- 
 
 -- This is formed from merging 2 or more PhraseImages so it has
 -- a list of phrase names
@@ -132,9 +142,6 @@ instance ExtractBarImages PhraseOverlayImage where
 
 
 --------------------------------------------------------------------------------
--- 
-
---------------------------------------------------------------------------------
 -- Instances
 
 instance Functor Phrase where
@@ -151,14 +158,11 @@ instance Functor CExpr where
 -- StateMap
 
 instance StateMap Phrase where
-  stmap f st (Phrase name xs) = (Phrase name xs',st') 
-    where (xs',st') = stmap f st xs
+  stmap f st (Phrase name xs) = fmap2a (Phrase name) $ stmap f st xs
 
 instance StateMap CExpr where
-  stmap f st (Atom  e)     = (Atom e',st')      where (e',st') = f st e
-  stmap f st (N_Plet d ce) = (N_Plet d ce',st') 
-                             where (ce',st') = stmap (stmap f) st ce
+  stmap f st (Atom  e)     = fmap2a Atom $ f st e  
+  stmap f st (N_Plet d ce) = fmap2a (N_Plet d) $ stmap (stmap f) st ce
+  stmap f st (Beamed ce)   = fmap2a Beamed $ stmap (stmap f) st ce
 
-  stmap f st (Beamed ce)   = (Beamed ce',st')   
-                             where (ce',st') = stmap (stmap f) st ce
 

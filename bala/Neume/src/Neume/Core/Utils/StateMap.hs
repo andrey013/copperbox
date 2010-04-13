@@ -20,9 +20,9 @@
 
 module Neume.Core.Utils.StateMap 
   ( 
-    stcomb
-  , stcombWith
-  , psimap_st
+
+    stBinary
+  , stTernary
   , caboose_stmap
   , anacrusis_stmap
 
@@ -40,43 +40,53 @@ module Neume.Core.Utils.StateMap
 
   ) where 
 
+import Neume.Core.Utils.FunctorN
 import Neume.Core.Utils.OneList
 
+wrap :: a -> [a]
+wrap = return
 
 
-stcomb :: (st -> (a,st)) -> (st -> (b,st)) -> st -> ((a,b),st)
-stcomb f g st = ((a,b),st'') where
-    (a,st')  = f st
-    (b,st'') = g st'
 
-stcombWith :: (a -> b -> c) -> (st -> (a,st)) -> (st -> (b,st)) -> st -> (c,st)
-stcombWith op f g st = (a `op` b,st'') where
-    (a,st')  = f st
-    (b,st'') = g st'
+stBinary :: (x -> y -> ans) 
+         -> (st -> a -> (x,st)) 
+         -> (st -> b -> (y,st)) 
+         -> st -> a -> b 
+         -> (ans,st)
+stBinary op fa fb st a b = (x `op` y, st'') 
+  where
+    (x,st')  = fa st  a
+    (y,st'') = fb st' b
 
 
--- Rather like on (aka psi) from Data.Function 
-psimap_st :: (st -> a -> (b,st)) -> st -> a -> [a] -> ((b,[b]),st)
-psimap_st f st x xs = ((b,bs),st'') where
-   (b,st')   = f st x 
-   (bs,st'') = stmap f st' xs
+stTernary :: (x -> y -> z -> ans) 
+         -> (st -> a -> (x,st)) 
+         -> (st -> b -> (y,st)) 
+         -> (st -> c -> (z,st)) 
+         -> st -> a -> b -> c
+         -> (ans,st)
+stTernary op3 fa fb fc st a b c = (op3 x y z, st''') 
+  where
+    (x,st')   = fa st   a
+    (y,st'')  = fb st'  b
+    (z,st''') = fc st'' c 
+
 
 -- just on lists...
+--
+-- The implemenation is a bit tricky as it uses a worker-wrapper
+-- style list split to avoid a pattern match
+--
 caboose_stmap :: (st -> a -> (b,st)) -> (st -> a -> (b,st)) -> st -> [a] -> ([b],st)
 caboose_stmap _ _ s0 []     = ([],s0)
 caboose_stmap f g s0 (a:as) = step s0 a as where
-  step st x []           = ([z],st') where (z,st') = g st x
-  step st x (y:ys)       = (z:zs,st'') 
-                            where (z,st')   = f st x 
-                                  (zs,st'') = step st' y ys
+  step st x []           = fmap2a wrap $ g st x
+  step st x (y:ys)       = stBinary (:) f (\s' -> step s' y) st x ys
+
 
 anacrusis_stmap :: (st -> a -> (b,st)) -> (st -> a -> (b,st)) -> st -> [a] -> ([b],st)
-anacrusis_stmap _ _ s0 []     = ([],s0)
-anacrusis_stmap f g s0 (a:as) = (x:xs,st'') 
-  where
-    (x,st')   = f s0 a
-    (xs,st'') = stmap g st' as
-
+anacrusis_stmap _ _ st []     = ([],st)
+anacrusis_stmap f g st (a:as) = stBinary (:) f (stmap g) st a as
 
 
 
@@ -119,28 +129,29 @@ revpair = flip (,)
 
 instance StateMap [] where
   stmap _ st []     = ([],st)
-  stmap f st (x:xs) = (b:bs,st'') where (b,st')   = f st x
-                                        (bs,st'') = stmap f st' xs
+  stmap f st (x:xs) = stBinary (:) f (stmap f) st x xs
+
 
 instance StateMap Maybe where
   stmap _ st Nothing  = (Nothing,st)
-  stmap f st (Just a) = (Just a',st') where (a',st') = f st a
+  stmap f st (Just a) = fmap2a Just $ f st a
 
 
 instance StateMap OneList where
   stmap f s0 os = step s0 (viewl os) where
-    step st (OneL a)   = (one a', st')     where (a',st')  = f st a
-    step st (a :<< as) = (cons b bs,st'')  where (b,st')   = f st a 
-                                                 (bs,st'') = step st' (viewl as)
+    step st (OneL a)   = fmap2a one $ f st a
+    step st (a :<< as) = stBinary cons f step st a (viewl as)
+
 
 -- StateMap2
 
-instance StateMap2 (,) where 
-  stmap2 f g st (x,y)   = ((x',y'),st'') where (x',st')  = f st x 
-                                               (y',st'') = g st' y
+instance StateMap2 (,) where
+  stmap2 f g st (x,y) = stBinary (,) f g st x y
+
 
 instance StateMap2 Either where
-  stmap2 f _ st (Left x)    = (Left x',st')  where (x',st') = f st x
-  stmap2 _ g st (Right y)   = (Right y',st') where (y',st') = g st y
+  stmap2 f _ st (Left x)    = fmap2a Left  $ f st x
+  stmap2 _ g st (Right y)   = fmap2a Right $ g st y
+
 
 

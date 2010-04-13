@@ -30,6 +30,7 @@ module Neume.Core.Utils.SpecialTraversals
 
   ) where 
 
+import Neume.Core.Utils.FunctorN
 import Neume.Core.Utils.HList
 import qualified Neume.Core.Utils.OneList as O
 import Neume.Core.Utils.StateMap
@@ -118,16 +119,16 @@ class PinpointSchemeSt t where
 
 instance PinpointSchemeSt [] where
   firstSpecial_st _ _ st []     = ([],st)
-  firstSpecial_st f g st (a:as) = (a':as',st'') 
-    where (a',st')   = f st a 
-          (as',st'') = stmap g st' as
+  firstSpecial_st f g st (a:as) = stBinary (:) f (stmap g) st a as
+
+  -- Slightly complicated using a work-wrapper trick to separate
+  -- the list during the recursion...
 
   lastSpecial_st _ _ st []     = ([],st)
   lastSpecial_st f g st (a:as) = step st a as where
-    step s x []           = let (z,st') = g s x in ([z],st')
-    step s x (y:ys)       = let (z,st') = f s x 
-                                (zs,st'') = step st' y ys
-                            in (z:zs,st'')
+    step s x []           = fmap2a return $ g s x
+    step s x (y:ys)       = stBinary (:) f (\s' -> step s' y) s x ys 
+
 
 --------------------------------------------------------------------------------
 -- foldl_st
