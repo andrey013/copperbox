@@ -23,6 +23,9 @@ module Neume.Core.SyntaxInterim
   -- * Phrases and bars
     Phrase(..)
   , Bar 
+  , PhraseName
+  , BarNum
+
 
   -- * Staff expressions
   , CExpr(..)
@@ -36,8 +39,6 @@ module Neume.Core.SyntaxInterim
   , BarOverlayImage
 
 
-  , BarNum
-  , PhraseName
   , ExtractBarImages(..)
 
   ) where
@@ -50,18 +51,21 @@ import Text.PrettyPrint.Leijen          -- package: wl-print
 --------------------------------------------------------------------------------
 -- Phrases and bars 
 
--- Note - phrases, bars and CExprs are polymorphic on the glyph
--- type. They can use alternatives to the Glyph type. 
+-- Note - phrases are polymorphic on bar so they can handle 
+-- images (all notes concatenated into a Doc) or interim note 
+-- lists of (CExpr gly).
 
 
 data Phrase bar = Phrase 
-      { phrase_name_z   :: String
-      , pahrase_bars_z  :: [bar]
+      { phrase_name   :: PhraseName
+      , pahrase_bars  :: [bar]
       }
   deriving (Show)
 
 type Bar elt = [elt]
 
+type PhraseName     = String
+type BarNum         = Int
 
 --------------------------------------------------------------------------------
 -- Staff \Expressions\
@@ -84,23 +88,6 @@ data CExpr gly = Atom               gly
                | Beamed             [CExpr gly]
   deriving (Eq,Show)
 
-{-
--- probably obsolete...
--- Don't want a DMeasure instance for (CExpr gly)
---
-cexprFold :: (gly -> b -> b) -> (PletMult -> b -> b) -> (b -> b) 
-          -> b -> CExpr gly -> b
-cexprFold f _ _ b (Atom a)       = f a b
-cexprFold f g h b (N_Plet pm xs) = foldl' (cexprFold f g h) (g pm b) xs
-cexprFold f g h b (Beamed xs)    = foldl' (cexprFold f g h) (h b)    xs
-
-
-cexprMeasure :: DMeasure gly => CExpr gly -> DurationMeasure 
-cexprMeasure = snd . cexprFold  phi chi rho (mult_stack_zero,0) where
-  phi a  (stk,acc) = (stk, acc + nmeasureCtx stk a)
-  chi pm (stk,acc) = (pushPM pm stk,acc) 
-  rho    st        = st
--}
 
 
 --------------------------------------------------------------------------------
@@ -109,7 +96,6 @@ cexprMeasure = snd . cexprFold  phi chi rho (mult_stack_zero,0) where
 -- Phrases and bars are composable with pretty-print operations...
 
 
-type PhraseName     = String
 type Image          = Doc
 
 data PhraseImage = PhraseImage 
@@ -132,7 +118,6 @@ data PhraseOverlayImage = PhraseOverlayImage
 
 type BarOverlayImage    = Image
 
-type BarNum             = Int
 
 
 class ExtractBarImages a where

@@ -21,7 +21,7 @@ module Neume.Core.Bracket
   ( 
 
     phrase
---  , phraseAna
+  , phraseAna
 
   ) where
 
@@ -46,7 +46,7 @@ type Borrow = DurationMeasure
 --
 --
 
-type InterimBar pt = [[pt]]
+type InterimBar pt = [InterimMetricalUnit pt]
 type InterimMetricalUnit pt = [pt]
 
 
@@ -60,11 +60,17 @@ eighth_note = (1%8)
 -- 
 
 phrase :: (DMeasure (PletTree a), BeamExtremity (PletTree a))
-           => MeterPattern -> NoteList a -> Phrase [CExpr a]
+       => MeterPattern -> NoteList a -> Phrase [CExpr a]
 phrase mp (NoteList name notes) = 
     Phrase name $ map (reconstituteBar . map changeInteriorMU)
                 $ partitionToInterimBars mp (0,notes)
 
+
+phraseAna :: (DMeasure (PletTree a), BeamExtremity (PletTree a))
+          => DurationMeasure -> MeterPattern -> NoteList a -> Phrase [CExpr a]
+phraseAna ana mp (NoteList name notes) = undefined
+    Phrase name $ map (reconstituteBar . map changeInteriorMU)
+                $ partitionWithAna ana mp notes
 
 reconstituteBar :: InterimBar (CExpr pt) -> [CExpr pt]
 reconstituteBar = foldr fn [] where
@@ -95,6 +101,15 @@ pletTreeToCExpr (Plet pm xs) = N_Plet pm (map pletTreeToCExpr xs)
 
 --------------------------------------------------------------------------------
 -- partition
+
+
+
+partitionWithAna :: DMeasure pt 
+                 => DurationMeasure -> MeterPattern -> [pt] -> [InterimBar pt]
+partitionWithAna ana mp xs = bar1:bars where
+  (bar1,st) = firstAna ana mp xs
+  bars      = partitionToInterimBars mp st
+
 
 partitionToInterimBars :: DMeasure pt 
                        => MeterPattern -> (Borrow,[pt]) -> [InterimBar pt]
