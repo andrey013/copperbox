@@ -109,12 +109,11 @@ oChordPitches dm = map (\(ChordPitch _ p) -> note p dm) . F.toList
 --------------------------------------------------------------------------------
 -- Rewrite duration
 
--- rewrites are now horrible!
 
 rewriteDuration :: Rational 
                 -> CPhrase (Glyph anno pch Duration)
                 -> CPhrase (Glyph anno pch AbcMultiplier)
-rewriteDuration r = fmap (map (fmap (fmap3c (abcMultiplier r))))
+rewriteDuration r = mapCPhrase (fmap3c (abcMultiplier r))
 
 
 --------------------------------------------------------------------------------
@@ -125,7 +124,7 @@ rewriteDuration r = fmap (map (fmap (fmap3c (abcMultiplier r))))
 rewritePitch :: SpellingMap 
              -> CPhrase (Glyph anno Pitch dur)
              -> CPhrase (Glyph anno Pitch dur)
-rewritePitch sm = fmap (map (fmap (fmap3b (spell sm))))
+rewritePitch sm = mapCPhrase (fmap3b (spell sm))
 
 
 --------------------------------------------------------------------------------
@@ -135,7 +134,7 @@ rewritePitch sm = fmap (map (fmap (fmap3b (spell sm))))
 
 rewriteAnno :: CPhrase (Glyph anno pch dur)
             -> CPhrase (Glyph ()   pch dur)
-rewriteAnno = fmap (map (fmap (fmap3a (const ()))))
+rewriteAnno = mapCPhrase (fmap3a (const ()))
 
 
 --------------------------------------------------------------------------------

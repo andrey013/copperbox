@@ -32,6 +32,12 @@ module Neume.Core.SyntaxInterim
   , CPhrase
   , CBar 
 
+  , mapCPhrase
+  , mapCBar
+  , mapCExpr
+  , stmapCPhrase
+  , stmapBarInitialGlyph
+
   , Image
   , PhraseImage(..)
   , BarImage
@@ -92,7 +98,45 @@ data CExpr gly = Atom               gly
 
 type CPhrase gly = Phrase (CBar gly)
 type CBar    gly = Bar    (CExpr gly)
- 
+
+mapCPhrase :: (gly -> gly') -> CPhrase gly -> CPhrase gly'
+mapCPhrase f = fmap (mapCBar f) 
+
+mapCBar :: (gly -> gly') -> CBar gly -> CBar gly'
+mapCBar f = map (mapCExpr f) 
+
+mapCExpr :: (gly -> gly') -> CExpr gly -> CExpr  gly'
+mapCExpr = fmap
+
+
+stmapCPhrase :: (st -> gly -> (gly',st)) 
+             -> st 
+             -> CPhrase gly 
+             -> (CPhrase gly', st)
+stmapCPhrase f = stmap (stmap (stmap f))
+
+
+-- This one models the traversal for LilyPond duration changes.
+-- 
+-- Note - it doesn't keep the final state as the same initial 
+-- state is seeded at each bar.
+--
+
+stmapBarInitialGlyph :: (st -> gly -> (gly',st)) 
+                     -> (st -> gly -> (gly',st)) 
+                     -> st 
+                     -> CPhrase gly 
+                     -> CPhrase gly'
+stmapBarInitialGlyph f g st0 = fmap barfun where
+  barfun xs = fst $ stmapIx cexprIx st0 xs
+
+  cexprIx i st x  | i == 0    = stmapIx glyphIx st x
+                  | otherwise = stmap g st x
+
+  glyphIx i st x  | i == 0    = f st x
+                  | otherwise = g st x
+  
+
 
 --------------------------------------------------------------------------------
 -- Phrases and bars 

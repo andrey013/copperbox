@@ -23,6 +23,7 @@ module Neume.Core.Utils.StateMap
 
     stBinary
   , stTernary
+  , stmapIx
   , caboose_stmap
   , anacrusis_stmap
 
@@ -70,6 +71,16 @@ stTernary op3 fa fb fc st a b c = (op3 x y z, st''')
     (x,st')   = fa st   a
     (y,st'')  = fb st'  b
     (z,st''') = fc st'' c 
+
+-- Not worth defining...
+--
+-- mapSt :: StateMap f => (st -> a -> (b,st)) -> st -> [f a] -> ([f b],st)
+-- mapSt f = stmap (stmap f)
+
+stmapIx :: StateMap f => (Int -> st -> a -> (b,st)) -> st -> f a -> (f b, st)
+stmapIx f st = fmap2b snd . stmap fidx (0,st)
+  where
+    fidx (i,s) a = fmap2b (\ss -> (i+1,ss)) $ f i s a
 
 
 -- just on lists...

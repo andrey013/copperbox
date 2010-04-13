@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -62,9 +63,26 @@ import qualified Data.Foldable          as F
 class LyOptionalDuration gly where
   type LyOptDuration gly :: *
   lyExtractDuration :: gly -> Duration
-  tcOptDuration     :: Maybe Duration -> gly -> LyOptDuration gly
+  toOptDuration     :: Maybe Duration -> gly -> LyOptDuration gly
 
- 
+
+
+-- Note graces are always written with their duration...
+--
+instance LyOptionalDuration (Glyph anno pch Duration) where
+  type LyOptDuration (Glyph anno pch Duration) = Glyph anno pch (Maybe Duration)
+  
+  lyExtractDuration (GlyNote  (Note _ _ d) _) = d
+  lyExtractDuration (Rest     d)              = d
+  lyExtractDuration (Spacer   d)              = d
+  lyExtractDuration (Chord _ d _)             = d
+  lyExtractDuration (Graces _)                = dZero
+
+  toOptDuration od (GlyNote  (Note a p _) t) = GlyNote (Note a p od) t 
+  toOptDuration od (Rest     _)              = Rest od
+  toOptDuration od (Spacer   _)              = Spacer od
+  toOptDuration od (Chord xs _ t)            = Chord xs od t
+  toOptDuration _  (Graces xs)               = Graces (fmap (fmap3c Just) xs)
 
 
 type LyStdGlyph anno = Glyph anno Pitch (Maybe Duration)
@@ -164,20 +182,6 @@ oSkipGlyph _ (Skip d)     = spacer d
 default_duration :: Duration
 default_duration = qn
 
-rewriteDurationOpt :: CPhrase (Glyph anno pch Duration)
-                   -> CPhrase (Glyph anno pch (Maybe Duration))
-rewriteDurationOpt (Phrase name bars) = 
-    Phrase name $ fmap fn bars
-  where
-    fn bar = fst $ stmap (stmap doptGlyph) (default_duration,True) bar
-
-
-doptGlyph :: (Duration,Bool) 
-          -> Glyph anno pch Duration 
-          -> (Glyph anno pch (Maybe Duration), (Duration,Bool))
-doptGlyph = stmap3c doptD
-
-
 
 -- This one is more complicated than expected...
 -- It has to look at the first 'note' of a bar - the first note
@@ -186,11 +190,13 @@ doptGlyph = stmap3c doptD
 --
 -- Suggests bringing back shape/contents traversals... ?
 -- 
-{-
-doptBar :: (LyOptionalDuration gly, gly' ~ LyOptDuration gly)
-        => Bar (CExpr gly) -> Bar (CExpr gly')
-doptBar = fst . firstSpecial_st doptGlyph1 doptGlyphN default_duration
--}
+
+rewriteDurationOpt :: (LyOptionalDuration gly, gly' ~ LyOptDuration gly)
+                   => CPhrase gly -> CPhrase gly'
+rewriteDurationOpt = 
+    stmapBarInitialGlyph doptGlyph1 doptGlyphN default_duration
+
+
 
 -- Never replace the duration of the first note in a bar.
 --
@@ -199,7 +205,7 @@ doptGlyph1 :: (LyOptionalDuration gly, gly' ~ LyOptDuration gly)
 doptGlyph1 _ gly = (gly',d) 
   where
     d    = lyExtractDuration gly
-    gly' = tcOptDuration (Just d) gly
+    gly' = toOptDuration (Just d) gly
 
 -- Never replace the duration of the first note in a bar.
 --
@@ -209,15 +215,8 @@ doptGlyphN old gly = (gly',d)
   where
     d    = lyExtractDuration gly
     gly' = if (d==old && notDotted d) 
-             then tcOptDuration Nothing  gly
-             else tcOptDuration (Just d) gly
-
-
-doptD :: (Duration,Bool) -> Duration -> (Maybe Duration, (Duration,Bool))
-doptD st@(old,is_fst) d 
-    | is_fst                       = (Just d, (d,False))
-    | d == old && not (isDotted d) = (Nothing,st)
-    | otherwise                    = (Just d, (d,False)) 
+             then toOptDuration Nothing  gly
+             else toOptDuration (Just d) gly
 
 
 
@@ -247,7 +246,7 @@ doptD st@(old,is_fst) d
 rewritePitchAbs :: Int 
                 -> CPhrase (Glyph anno Pitch dur)
                 -> CPhrase (Glyph anno Pitch dur)
-rewritePitchAbs i = fmap (map (fmap (abspGlyph i)))
+rewritePitchAbs i = mapCPhrase (abspGlyph i)
 
 
 rewritePitchAbs_treble :: CPhrase (Glyph anno Pitch dur)
@@ -281,7 +280,7 @@ abspChordPitch i (ChordPitch a p) = ChordPitch a (displaceOctave i p)
 rewritePitchRel :: Pitch 
                 -> CPhrase (Glyph anno Pitch dur)
                 -> (CPhrase (Glyph anno Pitch dur), Pitch)
-rewritePitchRel pch = stmap (stmap (stmap relpGlyph)) pch
+rewritePitchRel pch = stmapCPhrase relpGlyph pch
 
 
 relpGlyph :: Pitch -> Glyph anno Pitch dur -> (Glyph anno Pitch dur,Pitch)
