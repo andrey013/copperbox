@@ -178,10 +178,18 @@ doptGlyph :: (Duration,Bool)
 doptGlyph = stmap3c doptD
 
 
+
+-- This one is more complicated than expected...
+-- It has to look at the first 'note' of a bar - the first note
+-- may be the first note inside a Tuplet or beam group
+-- so it is not a standard map (nor a firstSpecial_st either).
+--
+-- Suggests bringing back shape/contents traversals... ?
+-- 
 {-
 doptBar :: (LyOptionalDuration gly, gly' ~ LyOptDuration gly)
-        => StaffBar gly -> StaffBar gly'
-doptBar = fst . firstSpecialBar_st doptGlyph1 doptGlyphN default_duration
+        => Bar (CExpr gly) -> Bar (CExpr gly')
+doptBar = fst . firstSpecial_st doptGlyph1 doptGlyphN default_duration
 -}
 
 -- Never replace the duration of the first note in a bar.

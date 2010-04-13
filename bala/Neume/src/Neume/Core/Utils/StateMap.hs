@@ -42,8 +42,6 @@ module Neume.Core.Utils.StateMap
 
 import Neume.Core.Utils.OneList
 
-import qualified Data.Sequence as S
-
 
 
 stcomb :: (st -> (a,st)) -> (st -> (b,st)) -> st -> ((a,b),st)
@@ -134,15 +132,6 @@ instance StateMap OneList where
     step st (OneL a)   = (one a', st')     where (a',st')  = f st a
     step st (a :<< as) = (cons b bs,st'')  where (b,st')   = f st a 
                                                  (bs,st'') = step st' (viewl as)
-
-
-instance StateMap S.Seq where
-  stmap f s0 os = step s0 (S.viewl os) where
-    step st S.EmptyL    = (S.empty, st) 
-    step st (a S.:< as) = (b S.<| bs,st'')  
-      where 
-        (b,st')   = f st a 
-        (bs,st'') = step st' (S.viewl as)
 
 -- StateMap2
 

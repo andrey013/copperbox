@@ -25,16 +25,8 @@ module Neume.Core.Utils.Common
   , both
   , prod
 
-
-  , psimap
-  , mapInto
-
-  , unlist1
-
   , para
   , paraM
-
-
 
   ) where
 
@@ -42,8 +34,6 @@ module Neume.Core.Utils.Common
 import Neume.Core.Utils.Arity
 
 import Data.Ratio
-import Data.Sequence
-
  
 makeRational :: Integral a => a -> a -> Rational
 makeRational a b = fromIntegral a % fromIntegral b
@@ -99,25 +89,6 @@ prod f g (a,b) = (f a, g b)
 
 
 ----
-
--- Rather like on (aka psi) from Data.Function 
-psimap :: (a -> b) -> a -> [a] -> (b,[b])
-psimap f x xs = (f x, map f xs)
-
-
-mapInto :: (a -> b) -> Seq a -> [b]
-mapInto f = step [] . viewr where
-  step acc (sa :> a) = step (f a : acc) (viewr sa)
-  step acc _         = acc
-
-
-
-
-
-unlist1 :: (a -> b) -> [a] -> Maybe (b,[a])
-unlist1 _ []     = Nothing
-unlist1 f (a:as) = Just (f a, as)
-
 
 para :: (a -> ([a], b) -> b) -> b -> [a] -> b
 para phi b = step

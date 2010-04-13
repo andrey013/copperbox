@@ -32,8 +32,7 @@ module Neume.Core.Utils.SpecialTraversals
 
 import Neume.Core.Utils.HList
 import qualified Neume.Core.Utils.OneList as O
-
-import qualified Data.Sequence as S
+import Neume.Core.Utils.StateMap
 
 --------------------------------------------------------------------------------
 
@@ -84,6 +83,8 @@ class PinpointScheme t where
   lastSpecial  :: (a -> b) -> (a -> b) -> t a -> t b
 
 
+-- instances
+
 instance PinpointScheme [] where
   firstSpecial _ _ []     = []
   firstSpecial f g (a:as) = f a : map g as
@@ -92,15 +93,6 @@ instance PinpointScheme [] where
   lastSpecial f g (a:as) = step a as where
     step x []           = [g x]
     step x (y:ys)       = f x : step y ys
-
-instance PinpointScheme S.Seq where
-  firstSpecial f g s = case S.viewl s of
-    S.EmptyL   -> S.empty
-    e S.:< se  -> f e S.<| fmap g se
-
-  lastSpecial f g s  = case S.viewr s of
-    S.EmptyR   -> S.empty
-    se S.:> e  -> fmap f se S.|> g e
    
     
 instance PinpointScheme O.OneList where
@@ -112,7 +104,7 @@ instance PinpointScheme O.OneList where
     step (O.OneL x)   = O.one (g x)
     step (e O.:<< xs) = f e `O.cons` step (O.viewl xs)
 
-
+--------------------------------------------------------------------------------
 
 
 class PinpointSchemeSt t where
@@ -122,6 +114,20 @@ class PinpointSchemeSt t where
   lastSpecial_st  ::
       (st -> a -> (b,st)) -> (st -> a -> (b,st)) -> st -> t a -> (t b,st)
 
+
+
+instance PinpointSchemeSt [] where
+  firstSpecial_st _ _ st []     = ([],st)
+  firstSpecial_st f g st (a:as) = (a':as',st'') 
+    where (a',st')   = f st a 
+          (as',st'') = stmap g st' as
+
+  lastSpecial_st _ _ st []     = ([],st)
+  lastSpecial_st f g st (a:as) = step st a as where
+    step s x []           = let (z,st') = g s x in ([z],st')
+    step s x (y:ys)       = let (z,st') = f s x 
+                                (zs,st'') = step st' y ys
+                            in (z:zs,st'')
 
 --------------------------------------------------------------------------------
 -- foldl_st
