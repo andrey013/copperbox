@@ -116,8 +116,8 @@ diagDefinition (FretDiagram name alias xs) =
 diagram :: [FretNum] -> Doc
 diagram xs = command "fret-diagram" <+> (schemeStringLiteral diag_text)
   where
-    diag_text = show $ hcat $ punctuate semi (pre : body)
-    pre       = char 'w' <> int (length xs)
+    diag_text = show $ encloseSep empty semi semi (pre : body)
+    pre       = char 'w' <> colon <> int (length xs)
     body      = fst $ foldr fn ([],1) xs
 
     fn X      (acc,i) = (int i <> text "-x" : acc,         i+1)

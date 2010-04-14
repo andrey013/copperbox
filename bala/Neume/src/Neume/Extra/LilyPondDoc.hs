@@ -67,6 +67,7 @@ module Neume.Extra.LilyPondDoc
   , newStaff
   , newStaffGroup
   , newTabStaff
+  , newVoice
   , voiceOne
   , voiceTwo
   , markup
@@ -300,6 +301,10 @@ newStaffGroup         = new "StaffGroup"
 -- | @\\new TabStaff ... @.
 newTabStaff           :: Doc -> Doc
 newTabStaff           = new "TabStaff" 
+
+-- | @\\new Voice { ... } @.
+newVoice              :: Doc -> Doc
+newVoice e            = command "new" <+> text "Voice" <+> braces e
 
 
 -- | @\\voiceOne @.

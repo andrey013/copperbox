@@ -36,12 +36,15 @@ main = do
 
 ly_score :: Doc
 ly_score =  version "2.12.2" 
-        <$> chordtune
+        <$> chord_defs
+        <$> chord_tune
+        <$> book (scoreExpr (newVoice (time 2 4 <$> variableUse "chordTune")))
 
+chord_defs :: Doc
+chord_defs = diagDefinition chord_C6_over_9
 
-
-chordtune :: Doc
-chordtune = variableDef "chordTune" $ nestBraces tune1
+chord_tune :: Doc
+chord_tune = variableDef "chordTune" $ nestBraces tune1
   where
     tune1    = renderFretDiag ofmt rwcfg chord_score
     ofmt     = Ly_Std_Format_Config       strip
