@@ -304,7 +304,7 @@ newTabStaff           = new "TabStaff"
 
 -- | @\\new Voice { ... } @.
 newVoice              :: Doc -> Doc
-newVoice e            = command "new" <+> text "Voice" <+> braces e
+newVoice e            = command "new" <+> text "Voice" <+> e
 
 
 -- | @\\voiceOne @.

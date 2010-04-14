@@ -26,7 +26,9 @@ module Neume.Extra.FretDiagrams
   , Ly_Fret_Diag_Config(..)
   , renderFretDiag
   , fretNum
-  , diagDefinition
+
+  , diagDef
+  , diagDefsList
   
   ) where
 
@@ -109,19 +111,24 @@ diagOut :: FretDiagram -> Maybe Duration -> Doc
 diagOut (FretDiagram _ alias _) od = spacer od `annoAbove` variableUse alias
 
 
-diagDefinition :: FretDiagram -> Doc
-diagDefinition (FretDiagram name alias xs) = 
-  comment name <$> variableDef alias (markup $ diagram xs)
+diagDef :: FretDiagram -> Doc
+diagDef (FretDiagram name alias xs) = 
+  lineComment name <$> variableDef alias (markup $ diagram xs)
+
+diagDefsList :: [FretDiagram] -> Doc
+diagDefsList xs = lineComment "Fret diagrams ..."
+               <$> vcat (map diagDef xs) 
+
 
 diagram :: [FretNum] -> Doc
 diagram xs = command "fret-diagram" <+> (schemeStringLiteral diag_text)
   where
-    diag_text = show $ encloseSep empty semi semi (pre : body)
-    pre       = char 'w' <> colon <> int (length xs)
-    body      = fst $ foldr fn ([],1) xs
+    diag_text = show $ pre <> body
+    pre       = char 'w' <> colon <> int (length xs) <> semi
+    body      = fst $ foldr fn (empty,1) xs
 
-    fn X      (acc,i) = (int i <> text "-x" : acc,         i+1)
-    fn (FN 0) (acc,i) = (int i <> text "-o" : acc,         i+1)
-    fn (FN n) (acc,i) = (int i <> char '-' <> int n : acc, i+1)
+    fn X      (acc,i) = (int i <> text "-x;" <> acc,                  i+1)
+    fn (FN 0) (acc,i) = (int i <> text "-o;" <> acc,                  i+1)
+    fn (FN n) (acc,i) = (int i <> char '-'   <> int n <> semi <> acc, i+1)
 
 
