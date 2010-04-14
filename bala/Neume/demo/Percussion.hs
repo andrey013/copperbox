@@ -49,7 +49,7 @@ drumtune :: Doc
 drumtune = variableDef "drumtune" $ drummode (time 4 4 <$> stemUp <$> tune1 )
   where
     tune1    = renderLyDrums ofmt [1%2, 1%2] drum_score
-    
+        
     ofmt     = Ly_Std_Format_Config       strip
 
 

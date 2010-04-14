@@ -15,6 +15,8 @@
 --
 -- Extended music representation datatypes (e.g. pitch with fingering)
 --
+-- Much of this is obosolete...
+--
 --------------------------------------------------------------------------------
 
 module Neume.Extra.Extended 
@@ -144,7 +146,7 @@ type DrumGlyph' = Glyph () DrumPitch (Maybe Duration)
 
 
 lyDrumGlyph :: DrumGlyph' -> Doc
-lyDrumGlyph = oGlyph (text . drumShortName)
+lyDrumGlyph = renderGlyph (text . drumShortName)
 
 
 --------------------------------------------------------------------------------

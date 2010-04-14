@@ -149,6 +149,7 @@ instance StateMap3 Glyph where
 
 
 --------------------------------------------------------------------------------
+-- DMeasure
 
 instance DMeasure (Glyph anno pch Duration) where
   dmeasure (GlyNote  (Note _ _ d) _) = dmeasure d
@@ -157,22 +158,6 @@ instance DMeasure (Glyph anno pch Duration) where
   dmeasure (Chord _ d _)             = dmeasure d
   dmeasure (Graces _)                = 0
 
-instance MakeSpacer (Glyph anno pch Duration) where
-  makeSpacer d = Spacer d
-
-instance MakeRest (Glyph anno pch Duration) where
-  makeRest d = Rest d
-
-
---------------------------------------------------------------------------------
--- Spacer
-
-instance MakeSpacer (MarkupGlyph gly Duration) where
-  makeSpacer d = Skip d
-
---------------------------------------------------------------------------------
--- NumMeasured
-
 instance DMeasure (MarkupGlyph gly Duration) where
   dmeasure (MGlyph _ d) = dmeasure d
   dmeasure (Skip     d) = dmeasure d
@@ -180,12 +165,32 @@ instance DMeasure (MarkupGlyph gly Duration) where
 
 
 --------------------------------------------------------------------------------
+-- Spacer
+
+
+instance MakeSpacer (Glyph anno pch Duration) where
+  makeSpacer d = Spacer d
+
+instance MakeRest (Glyph anno pch Duration) where
+  makeRest d = Rest d
+
+instance MakeSpacer (MarkupGlyph gly Duration) where
+  makeSpacer d = Skip d
+
+--------------------------------------------------------------------------------
+-- Beam Extremity
+
+
 instance BeamExtremity (Glyph anno pch dur) where
   rendersToNote (GlyNote _ _) = True
   rendersToNote (Rest _)      = False
   rendersToNote (Spacer _)    = False
   rendersToNote (Chord _ _ _) = True
   rendersToNote (Graces _)    = False
+
+instance BeamExtremity (MarkupGlyph gly dur) where
+  rendersToNote (MGlyph _ _)  = True
+  rendersToNote (Skip _)      = False
  
 
 --------------------------------------------------------------------------------

@@ -24,7 +24,7 @@ module Neume.Extra.FretDiagrams
   , x_none
 
   , Ly_Fret_Diag_Config(..)
-  , scoreImageFretDiag
+  , renderFretDiag
   , fretNum
   , diagDefinition
   
@@ -39,9 +39,9 @@ import Neume.Core.SyntaxGlyph
 import Neume.Core.SyntaxInterim
 import Neume.Core.SyntaxNoteList
 import Neume.Core.SyntaxScore
-import Neume.Core.Utils
 
 import Neume.Extra.LilyPondDoc
+import Neume.Extra.LilyPondFormat
 
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
@@ -75,24 +75,30 @@ fretDiagram name alias ns = FretDiagram name alias (map fretNum ns)
 data Ly_Fret_Diag_Config = Ly_Fret_Diag_Config
     { meter_pattern_fret_diag         :: MeterPattern }
 
+renderFretDiag :: Ly_Std_Format_Config
+               -> Ly_Fret_Diag_Config
+               -> Score sh (NoteList FretDiagramGlyph)
+               -> Doc
+renderFretDiag (Ly_Std_Format_Config func) rw1 = 
+    concatDocSections func . scoreImageFretDiag rw1
+
+
 scoreImageFretDiag :: Ly_Fret_Diag_Config
                    -> Score sh (NoteList FretDiagramGlyph) 
                    -> Score sh PhraseImage
-scoreImageFretDiag _ _ = undefined
+scoreImageFretDiag cfg = fmap (phraseImageFretDiag mp)
+  where
+    mp = meter_pattern_fret_diag cfg
 
 
 
--- error -rewriteDurationOpt- expects a StdGlyph...
--- also renderPhrase is hardwired to StdGlyphs...
 
 phraseImageFretDiag :: MeterPattern
                     -> NoteList FretDiagramGlyph
                     -> PhraseImage
-phraseImageFretDiag _mp _ = undefined
-{-
 phraseImageFretDiag mp = 
-    fmap (renderPhrase drawDiagGlyph) . id {- rewriteDurationOpt -} . phrase mp
--}
+  renderPhrase drawDiagGlyph . rewriteDurationOpt . phrase mp
+
 
 
 drawDiagGlyph :: MarkupGlyph FretDiagram (Maybe Duration) -> Doc

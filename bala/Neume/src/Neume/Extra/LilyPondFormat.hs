@@ -37,6 +37,7 @@ module Neume.Extra.LilyPondFormat
 
   , renderLyDrums
 
+  , concatDocSections           -- needs exposing for Fret Diags etc.
 
   ) where
 
@@ -147,8 +148,8 @@ phraseImageRel :: MeterPattern
                -> NoteList (Glyph anno Pitch Duration)
                -> (PhraseImage,Pitch)
 phraseImageRel mp pch = 
-    fmap2a (renderPhrase pitch) . lyRelativeRewrite pch . phrase mp
-
+    fmap2a (renderPhrase (renderGlyph pitch)) . lyRelativeRewrite pch . phrase mp
+  
 
 
 renderLyDrums :: Ly_Std_Format_Config
@@ -169,7 +170,7 @@ phraseImageDrums :: MeterPattern
                  -> NoteList DrumGlyph
                  -> PhraseImage
 phraseImageDrums mp = 
-    renderPhrase (text . drumShortName) . rewriteDurationOpt . phrase mp
+    renderPhrase (renderGlyph (text . drumShortName)) . rewriteDurationOpt . phrase mp
 
 
 

@@ -24,7 +24,7 @@ import Text.PrettyPrint.Leijen
 import Data.Ratio
 import System.Cmd
 
-{-
+
 
 main :: IO ()
 main = do 
@@ -39,12 +39,15 @@ ly_score =  version "2.12.2"
         <$> chordtune
 
 
+
 chordtune :: Doc
 chordtune = variableDef "chordTune" $ nestBraces tune1
   where
-    tune1    = lilypondFretDiagScore mkPhrase strip chord_score
-    mkPhrase = lyPhraseFretDiagrams [1%2, 1%2]
--}
+    tune1    = renderFretDiag ofmt rwcfg chord_score
+    ofmt     = Ly_Std_Format_Config       strip
+    rwcfg    = Ly_Fret_Diag_Config [1%2, 1%2]
+
+
 
 chord_score :: Score (TRepeat :. Z) (NoteList FretDiagramGlyph)
 chord_score = fmap simpleNoteList $

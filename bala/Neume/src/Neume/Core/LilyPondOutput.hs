@@ -28,10 +28,8 @@ module Neume.Core.LilyPondOutput
   , lyAbsoluteRewrite
 
   , renderPhrase
-  , oGlyph
+  , renderGlyph
 
---  , renderMarkupPhrase
---  , oSkipGlyph
 
   -- * rewriting
   , rewriteDurationOpt
@@ -85,6 +83,17 @@ instance LyOptionalDuration (Glyph anno pch Duration) where
   toOptDuration _  (Graces xs)               = Graces (fmap (fmap3c Just) xs)
 
 
+instance LyOptionalDuration (MarkupGlyph gly Duration) where
+  type LyOptDuration (MarkupGlyph gly Duration) = MarkupGlyph gly (Maybe Duration)
+
+  lyExtractDuration (MGlyph _ d) = d
+  lyExtractDuration (Skip d)     = d
+
+  toOptDuration od (MGlyph gly _) = MGlyph gly od
+  toOptDuration od (Skip _)       = Skip od
+
+
+
 type LyStdGlyph anno = Glyph anno Pitch (Maybe Duration)
 type LyStdNote  anno = Note  anno Pitch (Maybe Duration)
 
@@ -117,24 +126,33 @@ lyAbsoluteRewrite i = rewriteDurationOpt . rewritePitchAbs i
 -- for a Type Class.
 
 -- ignore annotations at the moment...
-renderPhrase :: (pch -> Doc) -> CPhrase (GlyphRelDur anno pch) -> PhraseImage
+
+-- renderPhrase show be parameterized with a function :: (gly -> Doc)...
+
+
+renderPhrase :: (gly -> Doc) -> CPhrase gly -> PhraseImage
 renderPhrase = oPhrase
 
-oPhrase :: (pch -> Doc) -> CPhrase (GlyphRelDur anno pch) -> PhraseImage
+oPhrase :: (gly -> Doc) -> CPhrase gly -> PhraseImage
 oPhrase f (Phrase name bars) = 
     PhraseImage name $ map (oBar f) bars
 
-oBar :: (pch -> Doc) -> CBar (GlyphRelDur anno pch) -> BarImage
+oBar :: (gly -> Doc) -> CBar gly -> BarImage
 oBar f = hsep . oCExprList f 
 
 
-oCExprList ::  (pch -> Doc) -> [CExpr (GlyphRelDur anno pch)] -> [Doc]
+oCExprList ::  (gly -> Doc) -> [CExpr gly] -> [Doc]
 oCExprList f  = map (oCExpr f) 
 
-oCExpr :: (pch -> Doc) -> CExpr (GlyphRelDur anno pch) -> Doc
-oCExpr f (Atom e)         = oGlyph f e 
+oCExpr :: (gly -> Doc) -> CExpr gly -> Doc
+oCExpr f (Atom e)         = f e 
 oCExpr f (N_Plet mp xs)   = pletForm mp (oCExprList f xs)
 oCExpr f (Beamed notes)   = beamForm $ oCExprList f notes
+
+-- annos gerally printed _after_ duration...
+
+renderGlyph :: (pch -> Doc) -> Glyph anno pch (Maybe Duration) -> Doc
+renderGlyph = oGlyph
 
 oGlyph :: (pch -> Doc) -> GlyphRelDur anno pch -> Doc
 oGlyph f (GlyNote n t)    = oNote f n <> optDoc t tie
