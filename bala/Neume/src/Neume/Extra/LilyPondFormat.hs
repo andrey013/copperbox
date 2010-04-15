@@ -87,14 +87,14 @@ barNumber i = (lineComment ("Bar " ++ show i) <$>)
 
 renderLyRelative :: Ly_Std_Format_Config
                  -> Ly_Relative_Rewrite_Config
-                 -> Score sh (NoteList StdGlyph)
+                 -> Score sh (NoteList (Glyph anno Pitch Duration))
                  -> Doc
 renderLyRelative (Ly_Std_Format_Config func) rw1 = 
     concatDocSections func . scoreImageRel rw1
 
 
 scoreImageRel :: Ly_Relative_Rewrite_Config
-              -> Score sh (NoteList StdGlyph) 
+              -> Score sh (NoteList (Glyph anno Pitch Duration)) 
               -> Score sh PhraseImage
 scoreImageRel cfg = fst . stmap (phraseImageRel mp) (base_pitch cfg)
   where
@@ -105,8 +105,8 @@ renderLyRelative_parallel2 :: Duration
                            -> Ly_Std_Format_Config
                            -> Ly_Relative_Rewrite_Config
                            -> Ly_Relative_Rewrite_Config
-                           -> Score sh (NoteList StdGlyph)
-                           -> Score sh (NoteList StdGlyph) 
+                           -> Score sh (NoteList (Glyph anno Pitch Duration))
+                           -> Score sh (NoteList (Glyph anno Pitch Duration)) 
                            -> Doc
 renderLyRelative_parallel2 bar_len (Ly_Std_Format_Config func) rw1 rw2 sc1 sc2 = 
     parallelDefs func $ merge2 bar_len sc1' sc2'
@@ -115,7 +115,7 @@ renderLyRelative_parallel2 bar_len (Ly_Std_Format_Config func) rw1 rw2 sc1 sc2 =
     sc2' = scoreImageRel rw2 sc2
 
 
-scoreLy_parallel2 :: Score sh (NoteList StdGlyph) -> Doc
+scoreLy_parallel2 :: Score sh (NoteList (Glyph anno Pitch Duration)) -> Doc
 scoreLy_parallel2 = vsep . step . scoreAsNamed 
   where
     step :: Score sh PhraseName -> [Doc]
@@ -127,7 +127,7 @@ scoreLy_parallel2 = vsep . step . scoreAsNamed
               <$> alternative (map variableUse es) 
 
 
-scoreAsNamed :: Score sh (NoteList StdGlyph) 
+scoreAsNamed :: Score sh (NoteList (Glyph anno Pitch Duration)) 
              -> Score sh PhraseName
 scoreAsNamed Nil                           = Nil
 scoreAsNamed (Linear (NoteList n _) xs)    = Linear n $ scoreAsNamed xs

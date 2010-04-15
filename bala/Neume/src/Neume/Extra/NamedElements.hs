@@ -10,7 +10,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Named musical elements e.g. notes, rests, LilyPond drum pitches...
+-- Short hand constructors for notes, rests...
 --
 --------------------------------------------------------------------------------
 
