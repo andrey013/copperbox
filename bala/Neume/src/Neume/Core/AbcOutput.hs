@@ -48,7 +48,7 @@ import qualified Data.Foldable as F
 -- No annos for Abc...
 
 type AbcGlyph = Glyph () Pitch AbcMultiplier
-type AbcNote  = Note  () Pitch AbcMultiplier
+type AbcNote  = Note  () Pitch
 
 
 abcRewrite :: SpellingMap
@@ -86,24 +86,27 @@ pletStats :: PletMult -> Int -> (Int,Int,Int)
 pletStats (n,d) len = (fromIntegral d, fromIntegral n,len)
 
 oGlyph :: AbcGlyph -> Doc
-oGlyph (GlyNote n t)        = oNote n <> optDoc t tie
+oGlyph (GlyNote n d t)      = oNote n d <> optDoc t tie
 oGlyph (Rest dm)            = rest dm
 oGlyph (Spacer dm)          = spacer dm
 oGlyph (Chord ps dm t)      = (chordForm $ oChordPitches dm ps) 
                               <> optDoc t tie
-oGlyph (Graces xs)          = graceForm $ toListF oNote xs
+oGlyph (Graces xs)          = graceForm $ toListF oGraceNote xs
 
 
-oNote :: AbcNote -> Doc
-oNote (Note _ p dm) = note p dm
+oNote :: AbcNote -> AbcMultiplier -> Doc
+oNote (Note _ p) dm = note p dm
+
+oGraceNote :: GraceNote anno Pitch AbcMultiplier -> Doc
+oGraceNote (GraceNote _ p dm) = note p dm
 
 
 -- print each note with the same multiplier
 --
 -- > [C8E8G8]
 --
-oChordPitches :: AbcMultiplier -> OneList (ChordPitch anno Pitch) -> [Doc]
-oChordPitches dm = map (\(ChordPitch _ p) -> note p dm) . F.toList
+oChordPitches :: AbcMultiplier -> OneList (Note anno Pitch) -> [Doc]
+oChordPitches dm = map (\(Note _ p) -> note p dm) . F.toList
 
 
 --------------------------------------------------------------------------------

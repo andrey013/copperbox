@@ -70,17 +70,17 @@ class LyOptionalDuration gly where
 instance LyOptionalDuration (Glyph anno pch Duration) where
   type LyOptDuration (Glyph anno pch Duration) = Glyph anno pch (Maybe Duration)
   
-  lyExtractDuration (GlyNote  (Note _ _ d) _) = d
-  lyExtractDuration (Rest     d)              = d
-  lyExtractDuration (Spacer   d)              = d
-  lyExtractDuration (Chord _ d _)             = d
-  lyExtractDuration (Graces _)                = dZero
+  lyExtractDuration (GlyNote _ d _) = d
+  lyExtractDuration (Rest      d)   = d
+  lyExtractDuration (Spacer    d)   = d
+  lyExtractDuration (Chord _ d _)   = d
+  lyExtractDuration (Graces _)      = dZero
 
-  toOptDuration od (GlyNote  (Note a p _) t) = GlyNote (Note a p od) t 
-  toOptDuration od (Rest     _)              = Rest od
-  toOptDuration od (Spacer   _)              = Spacer od
-  toOptDuration od (Chord xs _ t)            = Chord xs od t
-  toOptDuration _  (Graces xs)               = Graces (fmap (fmap3c Just) xs)
+  toOptDuration od (GlyNote  n _ t) = GlyNote n od t 
+  toOptDuration od (Rest     _)     = Rest od
+  toOptDuration od (Spacer   _)     = Spacer od
+  toOptDuration od (Chord xs _ t)   = Chord xs od t
+  toOptDuration _  (Graces xs)      = Graces (fmap (fmap3c Just) xs)
 
 
 instance LyOptionalDuration (MarkupGlyph gly Duration) where
@@ -95,7 +95,7 @@ instance LyOptionalDuration (MarkupGlyph gly Duration) where
 
 
 type LyStdGlyph anno = Glyph anno Pitch (Maybe Duration)
-type LyStdNote  anno = Note  anno Pitch (Maybe Duration)
+type LyStdNote  anno = Note  anno Pitch
 
 
 
@@ -155,18 +155,21 @@ renderGlyph :: (pch -> Doc) -> Glyph anno pch (Maybe Duration) -> Doc
 renderGlyph = oGlyph
 
 oGlyph :: (pch -> Doc) -> GlyphRelDur anno pch -> Doc
-oGlyph f (GlyNote n t)    = oNote f n <> optDoc t tie
+oGlyph f (GlyNote n d t)  = oNote f n <> maybe empty duration d <> optDoc t tie
 oGlyph _ (Rest d)         = rest d
 oGlyph _ (Spacer d)       = spacer d
-oGlyph f (Chord ps d t)   = chordForm (oChordPitches f ps) d <> optDoc t tie
-oGlyph f (Graces os)      = graceForm $ toListF (oNote f) os
+oGlyph f (Chord ps d t)   = chordForm (toListF (oNote f) ps) d <> optDoc t tie
+oGlyph f (Graces os)      = graceForm $ oGraceNotes f os
 
 
-oNote :: (pch -> Doc) -> NoteRelDur anno pch -> Doc
-oNote f (Note _ p d)      =  f p <> maybe empty duration d
+oNote :: (pch -> Doc) -> Note anno pch -> Doc
+oNote f (Note _ p)       =  f p 
 
-oChordPitches :: (pch -> Doc) -> OneList (ChordPitch anno pch) -> [Doc]
-oChordPitches f = map (\(ChordPitch _ p) -> f p) . F.toList
+oGraceNotes :: (pch -> Doc) 
+            -> OneList (GraceNote anno pch (Maybe Duration)) 
+            -> [Doc]
+oGraceNotes f = map gf . F.toList where
+  gf (GraceNote _ p d) = f p <> maybe empty duration d
 
 
 {-
@@ -279,18 +282,18 @@ rewritePitchAbs_tab = rewritePitchAbs (-4)
 
 
 abspGlyph :: Int -> Glyph anno Pitch dur -> Glyph anno Pitch dur
-abspGlyph i (GlyNote n t)  = GlyNote (abspNote i n) t
-abspGlyph _ (Rest d)       = Rest d
-abspGlyph _ (Spacer d)     = Spacer d
-abspGlyph i (Chord os d t) = Chord (fmap (abspChordPitch i) os) d t
-abspGlyph i (Graces os)    = Graces $ fmap (abspNote i) os
+abspGlyph i (GlyNote n d t) = GlyNote (abspNote i n) d t
+abspGlyph _ (Rest d)        = Rest d
+abspGlyph _ (Spacer d)      = Spacer d
+abspGlyph i (Chord os d t)  = Chord (fmap (abspNote i) os) d t
+abspGlyph i (Graces os)     = Graces $ fmap (abspGraceNote i) os
 
 
-abspNote :: Int -> Note anno Pitch dur -> Note anno Pitch dur
-abspNote i (Note a p d) = Note a (displaceOctave i p) d
+abspNote :: Int -> Note anno Pitch -> Note anno Pitch
+abspNote i (Note a p) = Note a (displaceOctave i p)
 
-abspChordPitch :: Int -> ChordPitch anno Pitch -> ChordPitch anno Pitch
-abspChordPitch i (ChordPitch a p) = ChordPitch a (displaceOctave i p)
+abspGraceNote :: Int -> GraceNote anno Pitch dur -> GraceNote anno Pitch dur
+abspGraceNote i (GraceNote a p d) = GraceNote a (displaceOctave i p) d
 
 --------------------------------------------------------------------------------
 -- Relative Pitch

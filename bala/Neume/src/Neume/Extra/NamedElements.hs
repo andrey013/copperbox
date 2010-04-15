@@ -74,7 +74,7 @@ import Neume.Core.SyntaxGlyph
 -- Helpers
 
 makeNote  :: Pitch -> Duration -> StdGlyph
-makeNote pch dur = GlyNote (Note () pch dur) False
+makeNote pch dur = GlyNote (Note () pch) dur False
 
 
 

@@ -59,10 +59,10 @@ drum_score = fmap simpleNoteList $
 
 
 drum :: DrumPitch -> Duration -> DrumGlyph
-drum p drn = GlyNote (Note () p drn) False
+drum p drn = GlyNote (Note () p) drn False
 
 dchord :: [DrumPitch] -> Duration -> DrumGlyph
-dchord ps drn = Chord (fromList $ map (ChordPitch ()) ps) drn False
+dchord ps drn = Chord (fromList $ map (Note ()) ps) drn False
 
 
 drum_notes :: [DrumGlyph]

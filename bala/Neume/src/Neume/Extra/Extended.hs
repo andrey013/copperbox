@@ -219,7 +219,7 @@ lySpacerGlyph (SpacerMark (Just (a,doc)) md) = fn a (spacer md) doc
 -- Notes are annotated with string number
 
 newtype StringNumber = StringNumber Int
-  deriving (Eq,Ord,Num)
+  deriving (Eq,Ord)
 
 instance Show StringNumber where
   showsPrec p (StringNumber i) = showsPrec p i
@@ -238,7 +238,7 @@ lyTabGlyph = printGlyph (stringNumber . getStringNumber)
 stringNumber :: StringNumber -> Doc
 stringNumber (StringNumber i) = char '\\' <> int i
 
-
+ 
 
 -- NOTE - these types/instances are due for removal.
 
