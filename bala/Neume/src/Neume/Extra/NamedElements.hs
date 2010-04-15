@@ -73,8 +73,8 @@ import Neume.Core.SyntaxGlyph
 
 -- Helpers
 
-makeNote  :: Pitch -> anno -> Duration -> AnnoGlyph anno
-makeNote pch anno dur = GlyNote (Note anno pch dur) False
+makeNote  :: Pitch -> Duration -> StdGlyph
+makeNote pch dur = GlyNote (Note () pch dur) False
 
 
 
@@ -95,67 +95,67 @@ two_four_time   = makeMeterPattern 2 4
 --------------------------------------------------------------------------------
 -- notes
 
-cf        :: Octave -> anno -> Duration -> AnnoGlyph anno
+cf        :: Octave -> Duration -> StdGlyph
 cf        = makeNote . Pitch C (Just Flat)
 
-c         :: Octave -> anno -> Duration -> AnnoGlyph anno
+c         :: Octave -> Duration -> StdGlyph
 c         = makeNote . Pitch C Nothing
 
-cs        :: Octave -> anno -> Duration -> AnnoGlyph anno
+cs        :: Octave -> Duration -> StdGlyph
 cs        = makeNote . Pitch C (Just Sharp)
 
-df        :: Octave -> anno -> Duration -> AnnoGlyph anno
+df        :: Octave -> Duration -> StdGlyph
 df        = makeNote . Pitch D (Just Flat)
 
-d         :: Octave -> anno -> Duration -> AnnoGlyph anno
+d         :: Octave -> Duration -> StdGlyph
 d         = makeNote . Pitch D Nothing
 
-ds        :: Octave -> anno -> Duration -> AnnoGlyph anno
+ds        :: Octave -> Duration -> StdGlyph
 ds        = makeNote . Pitch D (Just Sharp)
 
-ef        :: Octave -> anno -> Duration -> AnnoGlyph anno
+ef        :: Octave -> Duration -> StdGlyph
 ef        = makeNote . Pitch E (Just Flat)
 
-e         :: Octave -> anno -> Duration -> AnnoGlyph anno
+e         :: Octave -> Duration -> StdGlyph
 e         = makeNote . Pitch E Nothing 
 
-es        :: Octave -> anno -> Duration -> AnnoGlyph anno
+es        :: Octave -> Duration -> StdGlyph
 es        = makeNote . Pitch E (Just Sharp)
 
-ff        :: Octave -> anno -> Duration -> AnnoGlyph anno
+ff        :: Octave -> Duration -> StdGlyph
 ff        = makeNote . Pitch F (Just Flat)
 
-f         :: Octave -> anno -> Duration -> AnnoGlyph anno
+f         :: Octave -> Duration -> StdGlyph
 f         = makeNote . Pitch F Nothing
 
-fs        :: Octave -> anno -> Duration -> AnnoGlyph anno
+fs        :: Octave -> Duration -> StdGlyph
 fs        = makeNote . Pitch F (Just Sharp)
 
-gf        :: Octave -> anno -> Duration -> AnnoGlyph anno
+gf        :: Octave -> Duration -> StdGlyph
 gf        = makeNote . Pitch G (Just Flat)
 
-g         :: Octave -> anno -> Duration -> AnnoGlyph anno
+g         :: Octave -> Duration -> StdGlyph
 g         = makeNote . Pitch G Nothing
 
-gs        :: Octave -> anno -> Duration -> AnnoGlyph anno
+gs        :: Octave -> Duration -> StdGlyph
 gs        = makeNote . Pitch G (Just Sharp)
 
-af        :: Octave -> anno -> Duration -> AnnoGlyph anno
+af        :: Octave -> Duration -> StdGlyph
 af        = makeNote . Pitch A (Just Flat)
 
-a         :: Octave -> anno -> Duration -> AnnoGlyph anno
+a         :: Octave -> Duration -> StdGlyph
 a         = makeNote . Pitch A Nothing
 
-as        :: Octave -> anno -> Duration -> AnnoGlyph anno
+as        :: Octave -> Duration -> StdGlyph
 as        = makeNote . Pitch A (Just Sharp)
 
-bf        :: Octave -> anno -> Duration -> AnnoGlyph anno
+bf        :: Octave -> Duration -> StdGlyph
 bf        = makeNote . Pitch B (Just Flat)
 
-b         :: Octave -> anno -> Duration -> AnnoGlyph anno
+b         :: Octave -> Duration -> StdGlyph
 b         = makeNote . Pitch B Nothing
 
-bs        :: Octave -> anno -> Duration -> AnnoGlyph anno
+bs        :: Octave -> Duration -> StdGlyph
 bs        = makeNote . Pitch B (Just Sharp)
 
 

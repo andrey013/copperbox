@@ -84,47 +84,47 @@ c_major   = makeSpellingMap 0
 
 ubars1'3 :: [StdGlyph]
 ubars1'3 =  
-  [ a 4 () en, c 5 () en, c 5 () en, a 4 () en
-  , c 5 () qn, a 4 () qn
+  [ a 4 en, c 5 en, c 5 en, a 4 en
+  , c 5 qn, a 4 qn
   
   -- bar 2
-  , c 5 () en, a 4 () en, c 5 () en, a 4 () en
-  , c 5 () qn, a 4 () qn
+  , c 5 en, a 4 en, c 5 en, a 4 en
+  , c 5 qn, a 4 qn
   
   -- bar 3
-  , a 4 () en, c 5 () en, c 5 () en, a 4 () en
-  , c 5 () qn, a 4 () qn
+  , a 4 en, c 5 en, c 5 en, a 4 en
+  , c 5 qn, a 4 qn
   ]
 
 ubar4A :: [StdGlyph]
 ubar4A =
-  [ a 4 () en, c 5 () en, c 5 () en, a 4 () en
-  , a 4 () hn
+  [ a 4 en, c 5 en, c 5 en, a 4 en
+  , a 4 hn
   ]
 
 
 ubar5B :: [StdGlyph]
 ubar5B =
-  [ a 4 () wn ]
+  [ a 4 wn ]
 
 
 lbars1'3 :: [StdGlyph]
 lbars1'3 =  
-  [ c 4 () hn, c 4 () hn
+  [ c 4 hn, c 4 hn
   
   -- bar 2
-  , c 4 () hn, c 4 () hn
+  , c 4 hn, c 4 hn
   
   -- bar 3
-  , c 4 () hn, c 4 () hn
+  , c 4 hn, c 4 hn
   ]
 
 lbar4A :: [StdGlyph]
 lbar4A = 
-  [ c 4 () qn, c 4 () qn, c 4 () hn ]
+  [ c 4 qn, c 4 qn, c 4 hn ]
 
 lbar5B :: [StdGlyph]
 lbar5B = 
-  [ c 4 () wn ]
+  [ c 4 wn ]
 
 

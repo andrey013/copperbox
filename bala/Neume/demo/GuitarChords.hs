@@ -105,11 +105,11 @@ chord_G   = fretDiagram "G"  "chG"      [ x_none, x_none, 5,4,3, x_none ]
 
 arp_notes :: [StdGlyph]
 arp_notes =  
-  [ g 4 () qn,  b 4 () en, e 5 () en
-  , c 4 () qn,  e 4 () en, c 5 () en
+  [ g 4 qn,  b 4 en, e 5 en
+  , c 4 qn,  e 4 en, c 5 en
   
   -- bar 2
-  , d 4 () en, fs 4 () en, c 5 () en, d 5 () en 
-  , g 4 () qn, b 4 () en,  d 5 () en
+  , d 4 en, fs 4 en, c 5 en, d 5 en 
+  , g 4 qn, b  4 en, d 5 en
 
   ]
