@@ -17,6 +17,7 @@
 module Neume.Core.Utils.Common 
   ( 
     makeRational
+  , rap
   , ftrunc
   , dtrunc
   , divModR
@@ -38,6 +39,14 @@ import Data.Ratio
 makeRational :: Integral a => a -> a -> Rational
 makeRational a b = fromIntegral a % fromIntegral b
 
+
+
+
+-- ($) reveresed - aka T - aka (#)
+--
+infixl 1 `rap`
+rap :: a -> (a -> b) -> b
+rap a f = f a
 
 
 --------------------------------------------------------------------------------

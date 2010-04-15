@@ -48,7 +48,8 @@ ly_score =  version "2.12.2"
     voice2       = relative middle_c (stemDown <$> v2)
     v1           = scoreLy_parallel2 upper_score
     v2           = scoreLy_parallel2 lower_score
-    para_defs    = renderLyRelative_parallel2 wn ofmt rwspec rwspec upper_score lower_score
+    para_defs    = renderLyRelative_parallel2 dWhole ofmt 
+                                              rwspec rwspec upper_score lower_score
     
     ofmt         = Ly_Std_Format_Config barNumber
     rwspec       = Ly_Relative_Rewrite_Config middle_c four_four_time
@@ -59,7 +60,7 @@ abc_score =  ABC.tunenum        1
          <$> ABC.title          "Overlays"
          <$> ABC.meter          "4/4"
          <$> ABC.key            "Cmaj"
-         <$> ABC.unitDuration   en
+         <$> ABC.unitDuration   dEighth
          <$> tune1
   where
     tune1   = ABC.renderABC_overlay2 ofmt rwspec rwspec upper_score lower_score
@@ -84,47 +85,47 @@ c_major   = makeSpellingMap 0
 
 ubars1'3 :: [StdGlyph]
 ubars1'3 =  
-  [ a 4 en, c 5 en, c 5 en, a 4 en
-  , c 5 qn, a 4 qn
+  [ a_ 4 `rap` en, c_ 5 `rap` en, c_ 5 `rap` en, a_ 4 `rap` en
+  , c_ 5 `rap` qn, a_ 4 `rap` qn
   
   -- bar 2
-  , c 5 en, a 4 en, c 5 en, a 4 en
-  , c 5 qn, a 4 qn
+  , c_ 5 `rap` en, a_ 4 `rap` en, c_ 5 `rap` en, a_ 4 `rap` en
+  , c_ 5 `rap` qn, a_ 4 `rap` qn
   
   -- bar 3
-  , a 4 en, c 5 en, c 5 en, a 4 en
-  , c 5 qn, a 4 qn
+  , a_ 4 `rap` en, c_ 5 `rap` en, c_ 5 `rap` en, a_ 4 `rap` en
+  , c_ 5 `rap` qn, a_ 4 `rap` qn
   ]
 
 ubar4A :: [StdGlyph]
 ubar4A =
-  [ a 4 en, c 5 en, c 5 en, a 4 en
-  , a 4 hn
+  [ a_ 4 `rap` en, c_ 5 `rap` en, c_ 5 `rap` en, a_ 4 `rap` en
+  , a_ 4 `rap` hn
   ]
 
 
 ubar5B :: [StdGlyph]
 ubar5B =
-  [ a 4 wn ]
+  [ a_ 4 `rap` wn ]
 
 
 lbars1'3 :: [StdGlyph]
 lbars1'3 =  
-  [ c 4 hn, c 4 hn
+  [ c_ 4 `rap` hn, c_ 4 `rap` hn
   
   -- bar 2
-  , c 4 hn, c 4 hn
+  , c_ 4 `rap` hn, c_ 4 `rap` hn
   
   -- bar 3
-  , c 4 hn, c 4 hn
+  , c_ 4 `rap` hn, c_ 4 `rap` hn
   ]
 
 lbar4A :: [StdGlyph]
 lbar4A = 
-  [ c 4 qn, c 4 qn, c 4 hn ]
+  [ c_ 4 `rap` qn, c_ 4 `rap` qn, c_ 4 `rap` hn ]
 
 lbar5B :: [StdGlyph]
 lbar5B = 
-  [ c 4 wn ]
+  [ c_ 4 `rap` wn ]
 
 

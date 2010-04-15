@@ -54,39 +54,42 @@ a_major     = makeSpellingMap 3
 
 bars1'4 :: [StdGlyph]
 bars1'4 =  
-  [ a  4 sn, b 4 sn, cs 5 sn, cs 5 sn
-  , cs 5 sn, a 4 sn, cs 5 sn, cs 5 sn
+  [ a_  4 `rap` sn, b_ 4 `rap` sn, cs_ 5 `rap` sn, cs_ 5 `rap` sn
+  , cs_ 5 `rap` sn, a_ 4 `rap` sn, cs_ 5 `rap` sn, cs_ 5 `rap` sn
   
   -- bar 2
-  , cs 5 sn, a 4 sn, b 4 sn, cs 5 sn 
-  , b  4 sn, a 4 sn, a 4 sn, snr
+  , cs_ 5 `rap` sn, a_ 4 `rap` sn, b_ 4 `rap` sn, cs_ 5 `rap` sn 
+  , b_  4 `rap` sn, a_ 4 `rap` sn, a_ 4 `rap` sn, snr
   
   -- bar 3
-  , e  5 sn, d 5 sn, cs 5 sn, b  4 sn
-  , cs 5 sn, a 4 sn, b  4 sn, cs 5 sn
+  , e_  5 `rap` sn, d_ 5 `rap` sn, cs_ 5 `rap` sn, b_  4 `rap` sn
+  , cs_ 5 `rap` sn, a_ 4 `rap` sn, b_  4 `rap` sn, cs_ 5 `rap` sn
 
   -- bar 4
-  , a 4 sn, b 4 sn, b 4 sn, a 4 sn
-  , a 4 en, enr
+  , a_ 4 `rap` sn, b_ 4 `rap` sn, b_ 4 `rap` sn, a_ 4 `rap` sn
+  , a_ 4 `rap` en, enr
   ]
+
 
 bars5'8 :: [StdGlyph]
 bars5'8 = 
-  [ cs 5 en, b 4 sn, a  4 sn
-  , b  4 en, a 4 sn, gs 4 sn
+  [ cs_ 5 `rap` en, b_ 4 `rap` sn, a_  4 `rap` sn
+  , b_  4 `rap` en, a_ 4 `rap` sn, gs_ 4 `rap` sn
 
   -- bar 6
-  , fs 4 sn, e 4 sn, fs 4 sn, gs 4 sn
-  , a  4 en, b 4 en
+  , fs_ 4 `rap` sn, e_ 4 `rap` sn, fs_ 4 `rap` sn, gs_ 4 `rap` sn
+  , a_  4 `rap` en, b_ 4 `rap` en
 
   -- bar 7
-  , cs 5 en, b 4 sn, a  4 sn
-  , b  4 en, a 4 sn, gs 4 sn
+  , cs_ 5 `rap` en, b_ 4 `rap` sn, a_  4 `rap` sn
+  , b_  4 `rap` en, a_ 4 `rap` sn, gs_ 4 `rap` sn
 
   -- bar 8
-  , fs 4 sn, e 4 sn, fs 4 en
-  , fs 4 en, enr
+  , fs_ 4 `rap` sn, e_ 4 `rap` sn, fs_ 4 `rap` en
+  , fs_ 4 `rap` en, enr
  
   ]
+
+
 
 

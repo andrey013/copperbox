@@ -86,8 +86,8 @@ diag = MGlyph
 
 
 chord_list :: [FretDiagramGlyph]
-chord_list = [ diag chord_G6 hn, diag chord_C hn
-              , diag chord_D7 hn, diag chord_G hn ]
+chord_list = [ diag chord_G6 dHalf, diag chord_C dHalf
+              , diag chord_D7 dHalf, diag chord_G dHalf ]
 
 
 chord_G6  :: FretDiagram
@@ -105,11 +105,11 @@ chord_G   = fretDiagram "G"  "chG"      [ x_none, x_none, 5,4,3, x_none ]
 
 arp_notes :: [StdGlyph]
 arp_notes =  
-  [ g 4 qn,  b 4 en, e 5 en
-  , c 4 qn,  e 4 en, c 5 en
+  [ g_ 4 `rap` qn,  b_ 4 `rap` en, e_ 5 `rap` en
+  , c_ 4 `rap` qn,  e_ 4 `rap` en, c_ 5 `rap` en
   
   -- bar 2
-  , d 4 en, fs 4 en, c 5 en, d 5 en 
-  , g 4 qn, b  4 en, d 5 en
+  , d_ 4 `rap` en, fs_ 4 `rap` en, c_ 5 `rap` en, d_ 5 `rap` en 
+  , g_ 4 `rap` qn, b_  4 `rap` en, d_ 5 `rap` en
 
   ]

@@ -200,8 +200,9 @@ oSkipGlyph _ (Skip d)     = spacer d
 -- This makes scores clearer.
 --
 
+-- | A quarter note
 default_duration :: Duration
-default_duration = qn
+default_duration = dQuarter
 
 
 -- This one is more complicated than expected...

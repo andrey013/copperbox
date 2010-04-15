@@ -57,6 +57,8 @@ module Neume.Extra.Extended
   , TabGlyph
   , TabGlyph'
   , StringNumber
+  , stringNumber
+
 
   ) where
 
@@ -221,6 +223,9 @@ lySpacerGlyph (SpacerMark (Just (a,doc)) md) = fn a (spacer md) doc
 newtype StringNumber = StringNumber Int
   deriving (Eq,Ord)
 
+stringNumber :: Int -> StringNumber
+stringNumber = StringNumber . abs
+
 instance Show StringNumber where
   showsPrec p (StringNumber i) = showsPrec p i
 
@@ -233,10 +238,10 @@ instance HasStringNumber StringNumber where
   setStringNumber = const
 
 lyTabGlyph :: HasStringNumber anno => Glyph anno Pitch (Maybe Duration) -> Doc
-lyTabGlyph = printGlyph (stringNumber . getStringNumber)
+lyTabGlyph = printGlyph (ppStringNumber . getStringNumber)
 
-stringNumber :: StringNumber -> Doc
-stringNumber (StringNumber i) = char '\\' <> int i
+ppStringNumber :: StringNumber -> Doc
+ppStringNumber (StringNumber i) = char '\\' <> int i
 
  
 

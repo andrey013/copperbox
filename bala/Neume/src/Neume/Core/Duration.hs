@@ -51,22 +51,18 @@ module Neume.Core.Duration
 
   -- * Named durations
   , dZero
-  , longa
-  , breve
-  , wn
-  , hn
-  , qn
-  , en
-  , sn
-  , tn
-  , dhn
-  , dqn
-  , den
-  , dsn
+  , dLonga
+  , dBreve
+  , dWhole
+  , dHalf
+  , dQuarter
+  , dEighth
+  , dSixteenth
+  , dThirtySecondth
 
-  , whole_note
-  , half_note 
-  , quarter_note
+  , dmWhole
+  , dmHalf 
+  , dmQuarter
   
   ) where
 
@@ -286,40 +282,38 @@ makeDuration :: Numeral -> Duration
 makeDuration nm = D1 nm 0
 
 
-longa           :: Duration
-breve           :: Duration
-wn              :: Duration
-hn              :: Duration
-qn              :: Duration
-en              :: Duration
-sn              :: Duration
-tn              :: Duration
+dLonga          :: Duration
+dLonga          = makeDuration Longa
 
+dBreve          :: Duration
+dBreve          = makeDuration Breve
 
-longa           = makeDuration Longa
-breve           = makeDuration Breve
-wn              = makeDuration N1
-hn              = makeDuration N2
-qn              = makeDuration N4
-en              = makeDuration N8
-sn              = makeDuration N16
-tn              = makeDuration N32
+dWhole          :: Duration
+dWhole          = makeDuration N1
 
-dhn   :: Duration
-dqn   :: Duration
-den   :: Duration
-dsn   :: Duration
+dHalf           :: Duration
+dHalf           = makeDuration N2
 
-dhn   = dot hn
-dqn   = dot qn 
-den   = dot en 
-dsn   = dot sn
+dQuarter        :: Duration
+dQuarter        = makeDuration N4
+
+dEighth         :: Duration
+dEighth         = makeDuration N8
+
+dSixteenth      :: Duration
+dSixteenth      = makeDuration N16
+
+dThirtySecondth :: Duration
+dThirtySecondth = makeDuration N32
 
 
 
-whole_note      :: DurationMeasure
-half_note       :: DurationMeasure
-quarter_note    :: DurationMeasure
-whole_note      = 1%1
-half_note       = 1%2
-quarter_note    = 1%4 
+
+dmWhole     :: DurationMeasure
+dmWhole     = 1%1
+
+dmHalf      :: DurationMeasure
+dmHalf      = 1%2
+
+dmQuarter   :: DurationMeasure
+dmQuarter   = 1%4 

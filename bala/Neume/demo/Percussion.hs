@@ -66,15 +66,15 @@ dchord ps drn = Chord (fromList $ map (Note ()) ps) drn False
 
 
 drum_notes :: [DrumGlyph]
-drum_notes = [ dchord [handclap, ridecymbal] en
-             , drum pedalhihat en
-             , dchord [handclap, ridecymbal] en
-             , dchord [bassdrum, ridecymbal] en
+drum_notes = [ dchord [handclap, ridecymbal] dEighth
+             , drum pedalhihat dEighth
+             , dchord [handclap, ridecymbal] dEighth
+             , dchord [bassdrum, ridecymbal] dEighth
              -- 
-             , dchord [handclap, ridecymbal] en
-             , drum pedalhihat en
-             , dchord [bassdrum, handclap, ridecymbal] en
-             , drum ridecymbal en
+             , dchord [handclap, ridecymbal] dEighth
+             , drum pedalhihat dEighth
+             , dchord [bassdrum, handclap, ridecymbal] dEighth
+             , drum ridecymbal dEighth
              ]
 
 
