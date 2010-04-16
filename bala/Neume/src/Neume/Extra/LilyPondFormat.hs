@@ -32,6 +32,7 @@ module Neume.Extra.LilyPondFormat
 
 
   , renderLyRelative
+  , renderLyAbsolute
 
   , renderLyRelative_parallel2  -- ugly prototype
   , scoreLy_parallel2           -- ditto
@@ -75,9 +76,10 @@ data Ly_relative_rewrite_config anno = Ly_relative_rewrite_config
     , anno_printer_rel          :: anno -> DocS
     }
 
-data Ly_absolute_rewrite_config = Ly_absolute_rewrite_config
+data Ly_absolute_rewrite_config anno = Ly_absolute_rewrite_config
     { octave_displacement       :: OctaveDisplacement
     , meter_pattern_abs         :: MeterPattern 
+    , anno_printer_abs          :: anno -> DocS
     }
 
 data Ly_drums_rewrite_config anno = Ly_drums_rewrite_config
@@ -181,6 +183,37 @@ phraseImageDrums mp annof =
     renderf = renderGlyph (text . drumShortName) annof
 
 
+-- 
+
+renderLyAbsolute :: Ly_std_format_config
+                 -> Ly_absolute_rewrite_config anno
+                 -> Score sh (NoteList (Glyph anno Pitch Duration))
+                 -> Doc
+renderLyAbsolute (Ly_std_format_config func) rw1 = 
+    concatDocSections func . scoreImageAbs rw1
+
+
+
+scoreImageAbs :: Ly_absolute_rewrite_config anno
+              -> Score sh (NoteList (Glyph anno Pitch Duration)) 
+              -> Score sh PhraseImage
+scoreImageAbs cfg = fmap (phraseImageAbs mp annof octd) 
+  where
+    mp    = meter_pattern_abs cfg
+    annof = anno_printer_abs cfg
+    octd  = octave_displacement cfg
+
+phraseImageAbs :: MeterPattern
+               -> (anno -> DocS)
+               -> Int
+               -> NoteList (Glyph anno Pitch Duration)
+               -> PhraseImage
+phraseImageAbs mp annof octd = 
+    renderPhrase renderf . lyAbsoluteRewrite octd . phrase mp
+  where
+    renderf = renderGlyph pitch annof
+
+--------------------------------------------------------------------------------
 
 concatDocSections :: (BarNum -> DocS) -> Score sh PhraseImage -> Doc
 concatDocSections fn = vsep . step 1  

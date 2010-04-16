@@ -59,6 +59,7 @@ module Neume.Extra.Extended
   , StringNumber
   , stringNumber
 
+  , ppStringNumber
 
   ) where
 
