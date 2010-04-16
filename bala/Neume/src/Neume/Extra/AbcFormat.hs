@@ -29,8 +29,8 @@ module Neume.Extra.AbcFormat
   , renderABC 
   , renderABC_overlay2
 
-  , ABC_Std_Format_Config(..)
-  , ABC_Std_Rewrite_Config(..)
+  , ABC_std_format_config(..)
+  , ABC_std_rewrite_config(..)
 
 
 
@@ -87,13 +87,13 @@ data EndSymbol   = END_SGL              -- Straight section
 
 
 
-data ABC_Std_Format_Config = ABC_Std_Format_Config
+data ABC_std_format_config = ABC_std_format_config
     { line_widths          :: LineStk
     , bar_numbering_func   :: BarNum -> DocS
     }
 
 
-data ABC_Std_Rewrite_Config = ABC_Std_Rewrite_Config 
+data ABC_std_rewrite_config = ABC_std_rewrite_config 
     { spelling_map    :: SpellingMap
     , unit_duration   :: DurationMeasure 
     , meter_pattern   :: MeterPattern
@@ -104,33 +104,33 @@ data ABC_Std_Rewrite_Config = ABC_Std_Rewrite_Config
 
 
 
-renderABC :: ABC_Std_Format_Config
-          -> ABC_Std_Rewrite_Config
+renderABC :: ABC_std_format_config
+          -> ABC_std_rewrite_config
           -> Score sh (NoteList StdGlyph)
           -> Doc
-renderABC (ABC_Std_Format_Config line_stk func) rw = 
+renderABC (ABC_std_format_config line_stk func) rw = 
     concatDocSections func line_stk . renderScore rw
 
 
 
-renderScore :: ABC_Std_Rewrite_Config 
+renderScore :: ABC_std_rewrite_config 
             -> Score sh (NoteList StdGlyph)
             -> Score sh PhraseImage
 renderScore cfg = fmap (phraseImage cfg)
 
 -- not the final form...
-renderABC_overlay2 :: ABC_Std_Format_Config
-                   -> ABC_Std_Rewrite_Config
-                   -> ABC_Std_Rewrite_Config
+renderABC_overlay2 :: ABC_std_format_config
+                   -> ABC_std_rewrite_config
+                   -> ABC_std_rewrite_config
                    -> Score sh (NoteList StdGlyph)
                    -> Score sh (NoteList StdGlyph)
                    -> Doc
-renderABC_overlay2 (ABC_Std_Format_Config line_stk func) rw1 rw2 sc1 sc2 = 
+renderABC_overlay2 (ABC_std_format_config line_stk func) rw1 rw2 sc1 sc2 = 
     concatDocSections func line_stk $ 
       merge2 (renderScore rw1 sc1) (renderScore rw2 sc2)
 
 
-phraseImage :: ABC_Std_Rewrite_Config
+phraseImage :: ABC_std_rewrite_config
             -> NoteList (Glyph anno Pitch Duration)
             -> PhraseImage
 phraseImage cfg = renderPhrase . abcRewrite spellmap unit_drn . phrase mp 

@@ -67,7 +67,7 @@ import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
 import Neume.Core.SyntaxGlyph
-import Neume.Core.Utils.Pretty ( mbDoc )
+import Neume.Core.Utils
 import Neume.Extra.LilyPondDoc
 
 import Text.PrettyPrint.Leijen
@@ -143,12 +143,12 @@ data DrumPitch = DrumPitch {
   deriving (Eq,Show)
 
 
-type DrumGlyph  = Glyph () DrumPitch Duration
-type DrumGlyph' = Glyph () DrumPitch (Maybe Duration) 
+type DrumGlyph  anno = Glyph anno DrumPitch Duration
+type DrumGlyph' anno = Glyph anno DrumPitch (Maybe Duration) 
 
 
-lyDrumGlyph :: DrumGlyph' -> Doc
-lyDrumGlyph = renderGlyph (text . drumShortName)
+lyDrumGlyph :: DrumGlyph' anno -> Doc
+lyDrumGlyph = renderGlyph (text . drumShortName) strip
 
 
 --------------------------------------------------------------------------------

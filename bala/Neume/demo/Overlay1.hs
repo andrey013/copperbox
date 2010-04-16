@@ -51,8 +51,8 @@ ly_score =  version "2.12.2"
     para_defs    = renderLyRelative_parallel2 dWhole ofmt 
                                               rwspec rwspec upper_score lower_score
     
-    ofmt         = Ly_Std_Format_Config barNumber
-    rwspec       = Ly_Relative_Rewrite_Config middle_c four_four_time
+    ofmt         = Ly_std_format_config barNumber
+    rwspec       = Ly_relative_rewrite_config middle_c four_four_time strip
 
 
 abc_score :: Doc
@@ -65,8 +65,8 @@ abc_score =  ABC.tunenum        1
   where
     tune1   = ABC.renderABC_overlay2 ofmt rwspec rwspec upper_score lower_score
     
-    ofmt    = ABC.ABC_Std_Format_Config  [5,4,4,4] ABC.barNumber
-    rwspec  = ABC.ABC_Std_Rewrite_Config c_major (1%8) four_four_time
+    ofmt    = ABC.ABC_std_format_config  [5,4,4,4] ABC.barNumber
+    rwspec  = ABC.ABC_std_rewrite_config c_major (1%8) four_four_time
 
 
 

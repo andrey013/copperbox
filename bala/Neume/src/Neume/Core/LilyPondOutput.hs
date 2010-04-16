@@ -29,7 +29,7 @@ module Neume.Core.LilyPondOutput
 
   , renderPhrase
   , renderGlyph
-
+  , renderMarkupGlyph
 
   -- * rewriting
   , rewriteDurationOpt
@@ -151,36 +151,39 @@ oCExpr f (Beamed notes)   = beamForm $ oCExprList f notes
 
 -- annos gerally printed _after_ duration...
 
-renderGlyph :: (pch -> Doc) -> Glyph anno pch (Maybe Duration) -> Doc
+renderGlyph :: (pch -> Doc) -> (anno -> DocS) 
+            -> Glyph anno pch (Maybe Duration) 
+            -> Doc
 renderGlyph = oGlyph
 
-oGlyph :: (pch -> Doc) -> GlyphRelDur anno pch -> Doc
-oGlyph f (GlyNote n d t)  = oNote f n <> maybe empty duration d <> optDoc t tie
-oGlyph _ (Rest d)         = rest d
-oGlyph _ (Spacer d)       = spacer d
-oGlyph f (Chord ps d t)   = chordForm (toListF (oNote f) ps) d <> optDoc t tie
-oGlyph f (Graces os)      = graceForm $ oGraceNotes f os
+oGlyph :: (pch -> Doc) -> (anno -> DocS) -> GlyphRelDur anno pch -> Doc
+oGlyph f g (GlyNote n d t)  = oNote f g n <> maybe empty duration d <> optDoc t tie
+oGlyph _ _ (Rest d)         = rest d
+oGlyph _ _ (Spacer d)       = spacer d
+oGlyph f g (Chord ps d t)   = chordForm (toListF (oNote f g) ps) d <> optDoc t tie
+oGlyph f g (Graces os)      = graceForm $ oGraceNotes f g os
 
 
-oNote :: (pch -> Doc) -> Note anno pch -> Doc
-oNote f (Note _ p)       =  f p 
+oNote :: (pch -> Doc) -> (anno -> DocS) -> Note anno pch -> Doc
+oNote f g (Note a p) = g a (f p) 
 
 oGraceNotes :: (pch -> Doc) 
+            -> (anno -> DocS)
             -> OneList (GraceNote anno pch (Maybe Duration)) 
             -> [Doc]
-oGraceNotes f = map gf . F.toList where
-  gf (GraceNote _ p d) = f p <> maybe empty duration d
+oGraceNotes f g = map gf . F.toList where
+  gf (GraceNote a p d) = g a (f p <> maybe empty duration d)
 
 
-{-
 
-oSkipGlyph :: (gly -> Maybe Duration -> Doc) 
-           -> SkipGlyph gly (Maybe Duration) 
+
+renderMarkupGlyph :: (gly -> Maybe Duration -> Doc) 
+           -> MarkupGlyph gly (Maybe Duration) 
            -> Doc
-oSkipGlyph f (SGlyph g d) = f g d
-oSkipGlyph _ (Skip d)     = spacer d 
+renderMarkupGlyph f (MGlyph g d) = f g d
+renderMarkupGlyph _ (Skip d)     = spacer d 
 
--}
+
 
 --------------------------------------------------------------------------------
 -- Rewrite Duration

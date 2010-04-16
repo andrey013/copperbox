@@ -23,9 +23,10 @@ module Neume.Extra.LilyPondFormat
   (
 
   
-    Ly_Std_Format_Config(..)
-  , Ly_Relative_Rewrite_Config(..)
-  , Ly_Absolute_Rewrite_Config(..)
+    Ly_std_format_config(..)
+  , Ly_relative_rewrite_config(..)
+  , Ly_absolute_rewrite_config(..)
+  , Ly_drums_rewrite_config(..)
 
   , barNumber
 
@@ -61,54 +62,64 @@ import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
 import Data.List ( foldl' )
 
-data Ly_Std_Format_Config = Ly_Std_Format_Config
+data Ly_std_format_config = Ly_std_format_config
     { bar_numbering_func   :: BarNum -> DocS }
 
 
 type OctaveDisplacement = Int
 
 
-data Ly_Relative_Rewrite_Config = Ly_Relative_Rewrite_Config
+data Ly_relative_rewrite_config anno = Ly_relative_rewrite_config
     { base_pitch                :: Pitch
     , meter_pattern_rel         :: MeterPattern 
+    , anno_printer_rel          :: anno -> DocS
     }
 
-data Ly_Absolute_Rewrite_Config = Ly_Absolute_Rewrite_Config
+data Ly_absolute_rewrite_config = Ly_absolute_rewrite_config
     { octave_displacement       :: OctaveDisplacement
     , meter_pattern_abs         :: MeterPattern 
     }
 
+data Ly_drums_rewrite_config anno = Ly_drums_rewrite_config
+    { meter_pattern_drums       :: MeterPattern 
+    , anno_printer_drums        :: anno -> DocS
+    } 
 
-
+-- | Default bar numbering function.
+--
 barNumber :: BarNum -> DocS
 barNumber i = (lineComment ("Bar " ++ show i) <$>)
 
+--------------------------------------------------------------------------------
 
-
-renderLyRelative :: Ly_Std_Format_Config
-                 -> Ly_Relative_Rewrite_Config
+renderLyRelative :: Ly_std_format_config
+                 -> Ly_relative_rewrite_config anno
                  -> Score sh (NoteList (Glyph anno Pitch Duration))
                  -> Doc
-renderLyRelative (Ly_Std_Format_Config func) rw1 = 
+renderLyRelative (Ly_std_format_config func) rw1 = 
     concatDocSections func . scoreImageRel rw1
 
 
-scoreImageRel :: Ly_Relative_Rewrite_Config
+scoreImageRel :: Ly_relative_rewrite_config anno
               -> Score sh (NoteList (Glyph anno Pitch Duration)) 
               -> Score sh PhraseImage
-scoreImageRel cfg = fst . stmap (phraseImageRel mp) (base_pitch cfg)
+scoreImageRel cfg = fst . stmap (phraseImageRel mp annof) (base_pitch cfg)
   where
-    mp   = meter_pattern_rel cfg
+    mp    = meter_pattern_rel cfg
+    annof = anno_printer_rel cfg
 
+-- Note ABC style overlays are used in the 
+-- baerenreiter-sarabande example from LilyPond.org
+--
 
 renderLyRelative_parallel2 :: Duration 
-                           -> Ly_Std_Format_Config
-                           -> Ly_Relative_Rewrite_Config
-                           -> Ly_Relative_Rewrite_Config
+                           -> Ly_std_format_config 
+                           -> Ly_relative_rewrite_config anno
+                           -> Ly_relative_rewrite_config anno'
                            -> Score sh (NoteList (Glyph anno Pitch Duration))
-                           -> Score sh (NoteList (Glyph anno Pitch Duration)) 
+                           -> Score sh (NoteList (Glyph anno' Pitch Duration)) 
                            -> Doc
-renderLyRelative_parallel2 bar_len (Ly_Std_Format_Config func) rw1 rw2 sc1 sc2 = 
+renderLyRelative_parallel2 bar_len (Ly_std_format_config func) rw1 rw2 sc1 sc2 = 
     parallelDefs func $ merge2 bar_len sc1' sc2'
   where 
     sc1' = scoreImageRel rw1 sc1
@@ -127,15 +138,6 @@ scoreLy_parallel2 = vsep . step . scoreAsNamed
               <$> alternative (map variableUse es) 
 
 
-scoreAsNamed :: Score sh (NoteList (Glyph anno Pitch Duration)) 
-             -> Score sh PhraseName
-scoreAsNamed Nil                           = Nil
-scoreAsNamed (Linear (NoteList n _) xs)    = Linear n $ scoreAsNamed xs
-scoreAsNamed (Repeat (NoteList n _) xs)    = Repeat n $ scoreAsNamed xs
-scoreAsNamed (RepAlt (NoteList n _) es xs) = RepAlt n es' $ scoreAsNamed xs
-  where es' = map note_list_name es 
-
-
 merge2 :: Duration 
        -> Score sh PhraseImage
        -> Score sh PhraseImage 
@@ -144,34 +146,39 @@ merge2 bar_len = scoreZipWith (\x y -> parallelPhrases bar_len [x,y])
                             
 
 phraseImageRel :: MeterPattern
+               -> (anno -> DocS)
                -> Pitch
                -> NoteList (Glyph anno Pitch Duration)
                -> (PhraseImage,Pitch)
-phraseImageRel mp pch = 
-    fmap2a (renderPhrase (renderGlyph pitch)) . lyRelativeRewrite pch . phrase mp
-  
+phraseImageRel mp annof pch = 
+    fmap2a (renderPhrase renderf) . lyRelativeRewrite pch . phrase mp
+  where
+    renderf = renderGlyph pitch annof
 
 
-renderLyDrums :: Ly_Std_Format_Config
-              -> MeterPattern 
-              -> Score sh (NoteList DrumGlyph)
+renderLyDrums :: Ly_std_format_config
+              -> Ly_drums_rewrite_config anno
+              -> Score sh (NoteList (DrumGlyph anno))
               -> Doc
-renderLyDrums (Ly_Std_Format_Config func) mp = 
-    concatDocSections func . renderScoreDrums mp
+renderLyDrums (Ly_std_format_config func) (Ly_drums_rewrite_config mp annof) = 
+    concatDocSections func . renderScoreDrums mp annof
 
 
 renderScoreDrums :: MeterPattern 
-                 -> Score sh (NoteList DrumGlyph)
+                 -> (anno -> DocS)
+                 -> Score sh (NoteList (DrumGlyph anno))
                  -> Score sh PhraseImage
-renderScoreDrums mp = fmap (phraseImageDrums mp) 
+renderScoreDrums mp annof = fmap (phraseImageDrums mp annof) 
 
 
 phraseImageDrums :: MeterPattern
-                 -> NoteList DrumGlyph
+                 -> (anno -> DocS)
+                 -> NoteList (DrumGlyph anno)
                  -> PhraseImage
-phraseImageDrums mp = 
-    renderPhrase (renderGlyph (text . drumShortName)) . rewriteDurationOpt . phrase mp
-
+phraseImageDrums mp annof = 
+    renderPhrase renderf . rewriteDurationOpt . phrase mp
+  where
+    renderf = renderGlyph (text . drumShortName) annof
 
 
 
@@ -221,10 +228,27 @@ parallelSection fn i (PhraseOverlayImage ns bars) =
 
 
 --------------------------------------------------------------------------------
+-- Score transformations
+
+-- Replace note lists in a score with the names of the note list.
+--
+-- This transformation is appears necessary when using 
+-- parallelMusic with repeated sections
+--
+scoreAsNamed :: Score sh (NoteList gly) 
+             -> Score sh PhraseName
+scoreAsNamed Nil                           = Nil
+scoreAsNamed (Linear (NoteList n _) xs)    = Linear n $ scoreAsNamed xs
+scoreAsNamed (Repeat (NoteList n _) xs)    = Repeat n $ scoreAsNamed xs
+scoreAsNamed (RepAlt (NoteList n _) es xs) = RepAlt n es' $ scoreAsNamed xs
+  where es' = map note_list_name es 
+
+
+--------------------------------------------------------------------------------
  
 
 -- The internal argument to renderPhrase should be extracted 
--- from these and made a prarameter...
+-- from these and made a parameter...
 --
 -- Like wise they need to handle an anacrusis 
 --
@@ -237,11 +261,6 @@ lyPhraseAbsolute mp xs n =
                        $ phrase mp
                        $ simpleNoteList xs
 
-lyPhraseDrums :: MeterPattern -> [DrumGlyph] -> PhraseImage
-lyPhraseDrums mp xs = 
-    renderPhrase (text . drumShortName) $ rewriteDurationOpt
-                                        $ phrase mp
-                                        $ simpleNoteList xs
 -}
     
 --------------------------------------------------------------------------------

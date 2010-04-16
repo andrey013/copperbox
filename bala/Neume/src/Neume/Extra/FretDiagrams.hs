@@ -23,7 +23,7 @@ module Neume.Extra.FretDiagrams
   , fretDiagram
   , x_none
 
-  , Ly_Fret_Diag_Config(..)
+  , Ly_fret_diag_config(..)
   , renderFretDiag
   , fretNum
 
@@ -74,18 +74,18 @@ fretDiagram :: String -> String -> [Int] -> FretDiagram
 fretDiagram name alias ns = FretDiagram name alias (map fretNum ns)
 
 
-data Ly_Fret_Diag_Config = Ly_Fret_Diag_Config
+data Ly_fret_diag_config = Ly_fret_diag_config
     { meter_pattern_fret_diag         :: MeterPattern }
 
-renderFretDiag :: Ly_Std_Format_Config
-               -> Ly_Fret_Diag_Config
+renderFretDiag :: Ly_std_format_config
+               -> Ly_fret_diag_config
                -> Score sh (NoteList FretDiagramGlyph)
                -> Doc
-renderFretDiag (Ly_Std_Format_Config func) rw1 = 
+renderFretDiag (Ly_std_format_config func) rw1 = 
     concatDocSections func . scoreImageFretDiag rw1
 
 
-scoreImageFretDiag :: Ly_Fret_Diag_Config
+scoreImageFretDiag :: Ly_fret_diag_config
                    -> Score sh (NoteList FretDiagramGlyph) 
                    -> Score sh PhraseImage
 scoreImageFretDiag cfg = fmap (phraseImageFretDiag mp)
@@ -99,13 +99,8 @@ phraseImageFretDiag :: MeterPattern
                     -> NoteList FretDiagramGlyph
                     -> PhraseImage
 phraseImageFretDiag mp = 
-  renderPhrase drawDiagGlyph . rewriteDurationOpt . phrase mp
+  renderPhrase (renderMarkupGlyph diagOut) . rewriteDurationOpt . phrase mp
 
-
-
-drawDiagGlyph :: MarkupGlyph FretDiagram (Maybe Duration) -> Doc
-drawDiagGlyph (MGlyph fd od) = diagOut fd od
-drawDiagGlyph (Skip od)      = spacer od
 
 diagOut :: FretDiagram -> Maybe Duration -> Doc
 diagOut (FretDiagram _ alias _) od = spacer od `annoAbove` variableUse alias

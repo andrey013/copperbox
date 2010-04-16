@@ -42,8 +42,8 @@ ly_score =  version "2.12.2"
   where
     tune1    = renderLyRelative ofmt rwspec b6_score
     
-    ofmt     = Ly_Std_Format_Config       strip
-    rwspec   = Ly_Relative_Rewrite_Config middle_c two_four_time
+    ofmt     = Ly_std_format_config       strip
+    rwspec   = Ly_relative_rewrite_config middle_c two_four_time strip
 
 abc_score :: Doc
 abc_score =  ABC.tunenum   1 
@@ -54,8 +54,8 @@ abc_score =  ABC.tunenum   1
   where
     tune1   = ABC.renderABC ofmt rwspec b6_score
 
-    ofmt    = ABC.ABC_Std_Format_Config  [4,4,4,4] ABC.barNumber
-    rwspec  = ABC.ABC_Std_Rewrite_Config a_major (1%16) two_four_time 
+    ofmt    = ABC.ABC_std_format_config  [4,4,4,4] ABC.barNumber
+    rwspec  = ABC.ABC_std_rewrite_config a_major (1%16) two_four_time 
 
 
 b6_score :: Score (TRepeat :. TRepeat :. Z) (NoteList StdGlyph)

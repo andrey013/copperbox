@@ -57,8 +57,8 @@ chord_tune :: Doc
 chord_tune = variableDef "chordTune" $ nestBraces (time 4 4 <$> tune1)
   where
     tune1    = renderFretDiag ofmt rwcfg chord_score
-    ofmt     = Ly_Std_Format_Config barNumber
-    rwcfg    = Ly_Fret_Diag_Config  [1%2, 1%2]
+    ofmt     = Ly_std_format_config barNumber
+    rwcfg    = Ly_fret_diag_config  [1%2, 1%2]
 
 
 note_tune :: Doc
@@ -68,8 +68,8 @@ note_tune = variableDef "noteTune"
   where
     tune1    = renderLyRelative ofmt rwspec note_score
     
-    ofmt     = Ly_Std_Format_Config       barNumber
-    rwspec   = Ly_Relative_Rewrite_Config middle_c [1%2, 1%2]
+    ofmt     = Ly_std_format_config       barNumber
+    rwspec   = Ly_relative_rewrite_config middle_c [1%2, 1%2] strip
 
 
 chord_score :: Score (TLinear :. Z) (NoteList FretDiagramGlyph)
