@@ -36,9 +36,6 @@ module Neume.Core.Duration
   , components
   , extent
   , extentComponents
-
-  , ConversionError(..)
-  , rationalToDuration
   
   -- * LilyPond representation
   , LyNumeral(..)
@@ -65,6 +62,7 @@ module Neume.Core.Duration
   , dmQuarter
   
   ) where
+
 
 import Text.PrettyPrint.Leijen hiding ( dot )     -- package: wl-pprint 
 
@@ -175,38 +173,6 @@ toRat N2    = 1%2
 toRat N1    = 1
 toRat Breve = 2
 toRat Longa = 4
-
-newtype ConversionError = ConversionError { getBadRational :: Rational }
-
-instance Show ConversionError where
-  showsPrec p = showsPrec p . getBadRational
-
--- | Convert a rational to a duration - dotting and double dotting
--- is supported.
-rationalToDuration :: Rational -> Either ConversionError Duration
-rationalToDuration r | r == 4%1   = Right $ D1 Longa 0
-                     | r == 2%1   = Right $ D1 Breve 0
-                     | r == 0     = Right DZero
-                     | r >  1     = cvErr r   -- stops nonsense eg. (7%4)
-                     | otherwise  = let (n,d) = (numerator r,denominator r)
-                                    in either Left (dotfun n) $ fn d 
-  where
-    dotfun i sym | i == 1    = Right $ D1 sym 0
-                 | i == 3    = Right $ D1 (succ sym) 1
-                 | i == 7    = Right $ D1 (succ $ succ sym) 2
-                 | otherwise = cvErr r
-    fn 1   = Right N1
-    fn 2   = Right N2
-    fn 4   = Right N4
-    fn 8   = Right N8
-    fn 16  = Right N16
-    fn 32  = Right N32
-    fn 64  = Right N64
-    fn 128 = Right N128
-    fn _   = cvErr r
-    
-    cvErr  = Left . ConversionError
- 
 
 --------------------------------------------------------------------------------
 -- LilyPond representation

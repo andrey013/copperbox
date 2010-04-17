@@ -36,6 +36,7 @@ import Neume.Core.AbcBasic
 import Neume.Core.Duration
 import Neume.Core.Metrical
 import Neume.Core.Pitch hiding ( octave )
+import Neume.Core.SpellingMap
 import Neume.Core.SyntaxGlyph
 import Neume.Core.SyntaxInterim
 import Neume.Core.Utils

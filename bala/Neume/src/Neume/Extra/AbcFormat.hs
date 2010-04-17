@@ -41,6 +41,7 @@ import Neume.Core.Duration
 import Neume.Core.Bracket
 import Neume.Core.Metrical
 import Neume.Core.Pitch
+import Neume.Core.SpellingMap
 import Neume.Core.SyntaxGlyph
 import Neume.Core.SyntaxInterim
 import Neume.Core.SyntaxNoteList

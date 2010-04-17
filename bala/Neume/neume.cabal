@@ -1,5 +1,5 @@
 name:             neume
-version:          0.2.0
+version:          0.3.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley 2010
@@ -42,6 +42,7 @@ library
     Neume.Core.LilyPondOutput,
     Neume.Core.Metrical,
     Neume.Core.Pitch,
+    Neume.Core.SpellingMap,
     Neume.Core.SyntaxGlyph,
     Neume.Core.SyntaxInterim,
     Neume.Core.SyntaxNoteList,

@@ -6,6 +6,7 @@ import qualified Neume.Core.AbcOutput        as ABC
 import Neume.Core.Bracket
 import Neume.Core.Duration
 import Neume.Core.Pitch
+import Neume.Core.SpellingMap
 import Neume.Core.SyntaxGlyph
 import Neume.Core.SyntaxNoteList
 import Neume.Core.SyntaxScore

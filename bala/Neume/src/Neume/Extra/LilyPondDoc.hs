@@ -352,7 +352,7 @@ layoutExpr e          = command "layout" <+> nestBraces e
 relative :: Pitch -> Doc -> Doc 
 relative p expr = command "relative" <+> pitch p' <+> nestBraces expr
   where
-    p' = setOctave ((octave p) - 3) p  -- Lilypond is 3 octaves below Neume
+    p' = setOctave (octave p - 3) p  -- Lilypond is 3 octaves below Neume
 
 -- | @\\repeat volta n {\\n ... \\n}@ - print a repeated block.
 --
