@@ -38,12 +38,17 @@ ly_score =  version "2.12.2"
         <$> empty
         <$> note_tune
         <$> tab_tune
---        <$> book (scoreExpr empty)
+        <$> scoreExpr (simultaneous [tune_staff, tab_staff ])
+  where
+    tune_staff = newStaff $ 
+                   nestBraces (clef "treble" <$> variableUse "noteTune")
+
+    tab_staff  = newTabStaff $
+                   nestBraces (stemDown <$> variableUse "tabTune")
 
 tab_tune :: Doc
 tab_tune = variableDef "tabTune"  
-              $ relative middle_c $ (key g_nat "major"
-                                      <$> time 4 4 <$> tune1)
+              $ nestBraces (key g_nat "major" <$> time 4 4 <$> tune1)
   where
     tune1    = renderLyAbsolute ofmt rwspec note_score
     
@@ -88,7 +93,7 @@ gmajor_notes =
   , d_  5 `rap` onstring 3 `rap` en 
   , e_  5 `rap` onstring 2 `rap` en
   , fs_ 5 `rap` onstring 2 `rap` en
-  , g_  5 `rap` onstring 2 `rap` hn
+  , g_  5 `rap` onstring 2 `rap` qn
 
   ]
 

@@ -159,15 +159,15 @@ renderGlyph = oGlyph
 
 -- this is a hack to get anno as a suffix - needs improving ...
 oGlyph :: (pch -> Doc) -> (anno -> DocS) -> GlyphRelDur anno pch -> Doc
-oGlyph f g (GlyNote n d t)  = oNote f g (maybe empty duration d) n <> optDoc t tie
+oGlyph f g (GlyNote n d t)  = oNote f g d n <> optDoc t tie
 oGlyph _ _ (Rest d)         = rest d
 oGlyph _ _ (Spacer d)       = spacer d
-oGlyph f g (Chord ps d t)   = chordForm (toListF (oNote f g empty) ps) d <> optDoc t tie
+oGlyph f g (Chord ps d t)   = chordForm (toListF (oNote f g Nothing) ps) d <> optDoc t tie
 oGlyph f g (Graces os)      = graceForm $ oGraceNotes f g os
 
 
-oNote :: (pch -> Doc) -> (anno -> DocS) -> Doc -> Note anno pch -> Doc
-oNote f g drn_doc (Note a p) = g a (f p <> drn_doc) 
+oNote :: (pch -> Doc) -> (anno -> DocS) -> Maybe Duration -> Note anno pch -> Doc
+oNote f g od (Note a p) = g a (f p <> maybe empty duration od) 
 
 oGraceNotes :: (pch -> Doc) 
             -> (anno -> DocS)

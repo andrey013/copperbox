@@ -20,6 +20,8 @@ cabal-version:      >= 1.2
 
 extra-source-files:
   demo/B6.hs, 
+  demo/GuitarChords.hs,
+  demo/GuitarTab.hs,
   demo/Percussion.hs,
   demo/Overlay1.hs
 
