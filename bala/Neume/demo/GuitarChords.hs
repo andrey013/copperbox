@@ -1,12 +1,11 @@
 {-# LANGUAGE TypeOperators              #-}
+{-# OPTIONS -Wall #-}
+
 
 module GuitarChords where
 
-import Neume.Core.Bracket
 import Neume.Core.Duration
-import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondFormat
-import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
 import Neume.Core.SyntaxGlyph
 import Neume.Core.SyntaxNoteList
@@ -14,7 +13,6 @@ import Neume.Core.SyntaxScore
 import Neume.Core.Utils
 
 
-import Neume.Extra.Extended
 import Neume.Extra.FretDiagrams
 import Neume.Extra.LilyPondDoc
 import Neume.Extra.NamedElements
@@ -27,9 +25,9 @@ import System.Cmd
 
 
 main :: IO ()
-main = do 
-  writeDoc "guitar_chords.ly"      ly_score
-  system   "lilypond guitar_chords.ly"
+main = 
+  writeDoc "guitar_chords.ly"      ly_score     >>
+  system   "lilypond guitar_chords.ly"          >>
   return ()
 
 

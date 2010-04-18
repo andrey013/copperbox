@@ -1,12 +1,9 @@
 {-# LANGUAGE TypeOperators              #-}
+{-# OPTIONS -Wall #-}
 
 module ABC_B6 where
 
-import qualified Neume.Core.AbcOutput       as ABC
 import qualified Neume.Core.AbcFormat       as ABC
-import Neume.Core.Bracket
-import Neume.Core.Duration
-import Neume.Core.Pitch
 import Neume.Core.SpellingMap
 import Neume.Core.SyntaxGlyph
 import Neume.Core.SyntaxNoteList
@@ -23,9 +20,9 @@ import Data.Ratio
 import System.Cmd
 
 main :: IO ()
-main = do 
-  writeDoc "bulgarian6_abc.abc" abc_score
-  system   "abcm2ps bulgarian6_abc.abc -O bulgarian6_abc.ps" 
+main = 
+  writeDoc "bulgarian6_abc.abc" abc_score                       >>
+  system   "abcm2ps bulgarian6_abc.abc -O bulgarian6_abc.ps"    >>
   return ()
 
 

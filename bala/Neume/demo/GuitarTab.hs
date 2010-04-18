@@ -1,23 +1,19 @@
 {-# LANGUAGE TypeOperators              #-}
+{-# OPTIONS -Wall #-}
+
 
 module GuitarTab where
 
-import Neume.Core.Bracket
-import Neume.Core.Duration
-import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondFormat
-import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
 import Neume.Core.SyntaxGlyph
 import Neume.Core.SyntaxNoteList
 import Neume.Core.SyntaxScore
 import Neume.Core.Utils
 
-
-import Neume.Extra.Extended
-import Neume.Extra.FretDiagrams
 import Neume.Extra.LilyPondDoc
 import Neume.Extra.NamedElements
+import Neume.Extra.Tab
 
 import Text.PrettyPrint.Leijen
 
@@ -26,9 +22,9 @@ import System.Cmd
 
 
 main :: IO ()
-main = do 
-  writeDoc "guitar_tab.ly"      ly_score
-  system   "lilypond guitar_tab.ly"
+main =  
+  writeDoc "guitar_tab.ly"      ly_score        >>
+  system   "lilypond guitar_tab.ly"             >>
   return ()
 
 
@@ -99,11 +95,4 @@ gmajor_notes =
 
 onstring :: Int -> (Note a pch) -> Note StringNumber pch
 onstring i (Note _ p) = Note (stringNumber i) p
-
--- oC :: Octave -> Duration 
--- oC oct d fn = fn C oct d
- 
-vtrf :: (a -> b) -> (b -> c) -> a -> c
-vtrf t f x = f (t x)
-
 

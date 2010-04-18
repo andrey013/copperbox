@@ -1,14 +1,11 @@
 {-# LANGUAGE TypeOperators              #-}
+{-# OPTIONS -Wall #-}
 
 module Overlay1 where
 
-import qualified Neume.Core.AbcOutput        as ABC
 import qualified Neume.Core.AbcFormat        as ABC
-import Neume.Core.Bracket
 import Neume.Core.Duration
-import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondFormat
-import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
 import Neume.Core.SpellingMap
 import Neume.Core.SyntaxGlyph
@@ -27,11 +24,11 @@ import System.Cmd
 
 
 main :: IO ()
-main = do 
-  writeDoc "overlay1.ly"      ly_score
-  writeDoc "overlay1_abc.abc" abc_score
-  system   "lilypond overlay1.ly"
-  system   "abcm2ps overlay1_abc.abc -O overlay1_abc.ps" 
+main =
+  writeDoc "overlay1.ly"      ly_score                          >>
+  writeDoc "overlay1_abc.abc" abc_score                         >>
+  system   "lilypond overlay1.ly"                               >>
+  system   "abcm2ps overlay1_abc.abc -O overlay1_abc.ps"        >>
   return ()
 
 

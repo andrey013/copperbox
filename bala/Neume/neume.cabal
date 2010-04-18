@@ -61,11 +61,11 @@ library
 
     Neume.Extra.AbcDoc,
     Neume.Extra.DrumPitches,
-    Neume.Extra.Extended,
     Neume.Extra.FretDiagrams,
     Neume.Extra.LilyPondDoc,
     Neume.Extra.NamedElements,
-    Neume.Extra.Percussion
+    Neume.Extra.Percussion,
+    Neume.Extra.Tab
 
   other-modules:
     

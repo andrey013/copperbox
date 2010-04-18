@@ -1,14 +1,11 @@
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# OPTIONS -Wall #-}
 
 module Percussion where
 
-import Neume.Core.Bracket
 import Neume.Core.Duration
-import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondFormat
-import Neume.Core.LilyPondOutput
-import Neume.Core.Pitch
 import Neume.Core.SyntaxGlyph
 import Neume.Core.SyntaxNoteList
 import Neume.Core.SyntaxScore
@@ -16,9 +13,7 @@ import Neume.Core.Utils
 import Neume.Core.Utils.OneList ( fromList )
 
 import Neume.Extra.DrumPitches
-import Neume.Extra.Extended
 import Neume.Extra.LilyPondDoc
-import Neume.Extra.NamedElements
 import Neume.Extra.Percussion
 
 import Text.PrettyPrint.Leijen
@@ -27,12 +22,11 @@ import Data.Ratio
 import System.Cmd
 
 
-demo1 = printDoc ly_score
 
 main :: IO ()
-main = do 
-  writeDoc "percussion.ly"      ly_score
-  system   "lilypond percussion.ly"
+main =
+  writeDoc "percussion.ly"      ly_score        >>
+  system   "lilypond percussion.ly"             >>
   return ()
 
 
