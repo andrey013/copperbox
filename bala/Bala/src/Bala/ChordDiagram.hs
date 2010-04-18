@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Bala.ChordDiagram
--- Copyright   :  (c) Stephen Tetley 2008
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -34,9 +34,9 @@ module Bala.ChordDiagram
 
   ) where
 
-import Bala.Interval
-import Bala.NamedPitches ( e4 )
-import Bala.Pitch
+import Bala.Core.Interval
+import Bala.Core.NamedPitches ( e4 )
+import Bala.Core.Pitch
 
 import Data.AffineSpace
 

@@ -1,4 +1,4 @@
-name:             bala
+name:             bala-core
 version:          0.1.0
 license:          BSD3
 license-file:     LICENSE
@@ -21,27 +21,24 @@ extra-source-files:
 library
   hs-source-dirs:     src
   build-depends:      base < 5, process, filepath, 
-                      wl-pprint, containers, vector-space, 
-                      QuickCheck < 2, mullein > 0.4, joinlist >= 0.1.0
+                      wl-pprint, containers, vector-space
 
   
   exposed-modules:
-    Bala.BeatPattern,
-    Bala.Chord,
-    Bala.ChordDiagram,
-    Bala.Duration,
-    Bala.Interval,
-    Bala.Invert,
-    Bala.Modulo,
-    Bala.Mullein,
-    Bala.Mullein.Abc,
-    Bala.Mullein.LilyPond,
-    Bala.NamedPitches,
-    Bala.Pitch,
-    Bala.PitchClass,
-    Bala.Scale,
-    Bala.Structural,
-    Bala.Utils
+    Bala.Core.Chord,
+    Bala.Core.Duration,
+    Bala.Core.Interval,
+    Bala.Core.Invert,
+    Bala.Core.Modulo,
+    Bala.Core.NamedIntervals,
+    Bala.Core.NamedPitches,
+    Bala.Core.Pitch,
+    Bala.Core.PitchClass,
+    Bala.Core.Scale,
+    Bala.Core.Utils,
+
+    Bala.ChordDiagram
+
   other-modules:
     
   extensions:

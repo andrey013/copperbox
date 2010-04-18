@@ -2,8 +2,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Utils
--- Copyright   :  (c) Stephen Tetley 2008
+-- Module      :  Bala.Core.Utils
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Utils
+module Bala.Core.Utils
   ( 
   -- * Various functions
 

@@ -2,8 +2,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Scale
--- Copyright   :  (c) Stephen Tetley 2008
+-- Module      :  Bala.Core.Scale
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Scale 
+module Bala.Core.Scale 
   ( 
   -- * Datatypes
     Scale
@@ -37,8 +37,9 @@ module Bala.Scale
 
   ) where
 
-import Bala.Interval
-import Bala.Pitch
+import Bala.Core.Interval
+import Bala.Core.NamedIntervals
+import Bala.Core.Pitch
 
 import Data.AffineSpace
 

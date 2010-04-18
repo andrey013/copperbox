@@ -2,8 +2,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Chord
--- Copyright   :  (c) Stephen Tetley 2008
+-- Module      :  Bala.Core.Chord
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Chord 
+module Bala.Core.Chord 
   (
   -- * Datatypes
     Chord
@@ -66,8 +66,9 @@ module Bala.Chord
 
   ) where
 
-import Bala.Interval
-import Bala.Pitch
+import Bala.Core.Interval
+import Bala.Core.NamedIntervals
+import Bala.Core.Pitch
 
 import Data.AffineSpace
 

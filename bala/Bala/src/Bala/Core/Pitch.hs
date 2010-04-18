@@ -3,8 +3,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.Pitch
--- Copyright   :  (c) Stephen Tetley 2008
+-- Module      :  Bala.Core.Pitch
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -15,7 +15,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.Pitch 
+module Bala.Core.Pitch 
   (
   -- * Datatypes
     Pitch(..)
@@ -33,13 +33,12 @@ module Bala.Pitch
 
   ) where
 
-import Bala.Interval
-import Bala.Modulo
-import Bala.Utils
+import Bala.Core.Interval
+import Bala.Core.Modulo
+import Bala.Core.Utils
 
 import Data.AffineSpace
 
-import Test.QuickCheck
 
 --------------------------------------------------------------------------------
 -- Datatypes
@@ -121,19 +120,6 @@ instance Show Pitch where
 
 instance Ord Pitch where
   compare a b = compare (toSemitones a) (toSemitones b)
-
-
-instance Arbitrary PitchLetter where
-  arbitrary = elements [C,D,E,F,G,A,B]
-  coarbitrary = variant . fromEnum
-
-
--- Note - arbitrary does note generate a very /wide/ set of 
--- candidates (i.e. notes with unusual accidentals). 
-instance Arbitrary Pitch where
-  arbitrary = fmap fromSemitones $ choose (12,107)
-  coarbitrary (Pitch l a o) = coarbitrary l . coarbitrary a . coarbitrary o
-
 
 
 

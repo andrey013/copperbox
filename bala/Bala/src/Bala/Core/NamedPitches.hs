@@ -2,8 +2,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.NamedPitches
--- Copyright   :  (c) Stephen Tetley 2008
+-- Module      :  Bala.Core.NamedPitches
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.NamedPitches
+module Bala.Core.NamedPitches
   ( 
     c5, d5, e5, f5, g5, a5, b5
   , cs5, df5, ds5, ef5, fs5, gf5, gs5, af5, as5, bf5
@@ -44,7 +44,7 @@ module Bala.NamedPitches
   ) where
 
 
-import Bala.Pitch 
+import Bala.Core.Pitch 
 
 
 c5        :: Pitch

@@ -2,8 +2,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Bala.PitchClass
--- Copyright   :  (c) Stephen Tetley 2008
+-- Module      :  Bala.Core.PitchClass
+-- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Bala.PitchClass 
+module Bala.Core.PitchClass 
   ( 
   -- * Datatypes
     PitchClass
@@ -27,8 +27,8 @@ module Bala.PitchClass
 
   ) where
 
-import Bala.Invert
-import Bala.Modulo
+import Bala.Core.Invert
+import Bala.Core.Modulo
 
 import Data.Set hiding ( map )
 import qualified Data.Set as Set
