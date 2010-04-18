@@ -2,7 +2,8 @@
 
 module ABC_B6 where
 
-import qualified Neume.Core.AbcOutput        as ABC
+import qualified Neume.Core.AbcOutput       as ABC
+import qualified Neume.Core.AbcFormat       as ABC
 import Neume.Core.Bracket
 import Neume.Core.Duration
 import Neume.Core.Pitch
@@ -14,7 +15,6 @@ import Neume.Core.Utils.Common
 import Neume.Core.Utils.Pretty
 
 import qualified Neume.Extra.AbcDoc          as ABC
-import qualified Neume.Extra.AbcFormat       as ABC
 import Neume.Extra.NamedElements
 
 import Text.PrettyPrint.Leijen

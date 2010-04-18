@@ -31,6 +31,15 @@ module Neume.Core.LilyPondBasic
   , beamForm
   , pletForm
 
+  -- * Pretty printers
+  , doubleBar 
+  , singleBar
+
+  , repeatvolta
+  , alternative
+
+  , parallelMusic
+
   ) where
 
 
@@ -41,6 +50,8 @@ import Neume.Core.Utils.Pretty
 
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 
+lyCommand :: String -> Doc
+lyCommand = (char '\\' <>) . text 
 
 
 
@@ -76,7 +87,7 @@ pitchLabel (PitchLabel l ma) =
 duration :: Duration -> Doc
 duration = maybe empty df . lyRepresentation
   where
-    df (LyCmd ss,dc) = dots dc $ ppCommand ss 
+    df (LyCmd ss,dc) = dots dc $ lyCommand ss 
     df (LyNum i,dc)  = dots dc $ int i
 
     dots :: Int -> (Doc -> Doc)
@@ -119,8 +130,8 @@ chordForm xs md = angles (hsep xs) <> maybe empty duration md
 --  \\grace { f32[ e] }
 -- @ 
 graceForm :: [Doc] -> Doc
-graceForm [x] = ppCommand "grace" <+> braces x where
-graceForm xs  = ppCommand "grace" <+> braces (beamForm xs)
+graceForm [x] = lyCommand "grace" <+> braces x where
+graceForm xs  = lyCommand "grace" <+> braces (beamForm xs)
 
   
 -- | Beams - first element printed outside the square brackets, e.g.:
@@ -141,5 +152,45 @@ beamForm []     = emptyDoc
 --  \\times 3/5 { c8[ c c c c] }
 -- @ 
 pletForm :: PletMult -> [Doc] -> Doc
-pletForm (n,d) xs = ppCommand "times" <+> integer n <> char '/' <> integer d
+pletForm (n,d) xs = lyCommand "times" <+> integer n <> char '/' <> integer d
                                       <+> braces (hsep xs)
+
+
+
+
+--------------------------------------------------------------------------------
+
+
+
+-- Bar lines
+
+-- | Print a double bar line @||@.
+doubleBar :: Doc 
+doubleBar = lyCommand "bar" <+> dquotes (text "||")
+
+-- | Print a single bar line @|@.
+singleBar :: Doc
+singleBar = text "|"
+
+
+-- Repeats
+
+-- | @\\repeat volta n {\\n ... \\n}@ - print a repeated block.
+--
+repeatvolta :: Int -> Doc -> Doc 
+repeatvolta i expr = 
+    lyCommand "repeat" <+> text "volta" <+> int i <+> nestBraces expr
+
+-- | @\\alternative { \\n { ... } \\n { ... } ... }@
+--
+alternative :: [Doc] -> Doc
+alternative = (lyCommand "alternative" <+>) . nestBraces . vsep . map braces 
+
+
+
+-- | @\\parallelMusic #'( ... ) {\\n ...\\n }@.
+parallelMusic       :: [String] -> Doc -> Doc
+parallelMusic xs e  = 
+    lyCommand "parallelMusic" <+> text "#'" <> parens names <+> nestBraces e
+  where
+    names = hsep $ map text xs

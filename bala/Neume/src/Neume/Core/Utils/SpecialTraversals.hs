@@ -22,18 +22,11 @@ module Neume.Core.Utils.SpecialTraversals
   -- * Segmenting
     interior
 
-  -- * Pinpoint schemes
-  , PinpointScheme(..)
-  , PinpointSchemeSt(..)
-
   , foldl_st'
 
   ) where 
 
-import Neume.Core.Utils.FunctorN
 import Neume.Core.Utils.HList
-import qualified Neume.Core.Utils.OneList as O
-import Neume.Core.Utils.StateMap
 
 --------------------------------------------------------------------------------
 
@@ -72,62 +65,6 @@ interior outLeft (insideAlways, insideSpeculative) incrush fn lzt =
       | insideSpeculative x     = inside alwaysf (specf `snoc` fn x) xs
       | insideAlways x          = inside (alwaysf . specf `snoc` fn x) id xs
       | otherwise               = (incrush $ alwaysf []) : specf (map fn (x:xs))
-
-
---------------------------------------------------------------------------------
-
--- | pinpoint 
--- Variations on map where the first or last element is special
---
-class PinpointScheme t where
-  firstSpecial :: (a -> b) -> (a -> b) -> t a -> t b
-  lastSpecial  :: (a -> b) -> (a -> b) -> t a -> t b
-
-
--- instances
-
-instance PinpointScheme [] where
-  firstSpecial _ _ []     = []
-  firstSpecial f g (a:as) = f a : map g as
-
-  lastSpecial _ _ []     = []   
-  lastSpecial f g (a:as) = step a as where
-    step x []           = [g x]
-    step x (y:ys)       = f x : step y ys
-   
-    
-instance PinpointScheme O.OneList where
-  firstSpecial f g s = case O.viewl s of
-    O.OneL x    -> O.one (f x) 
-    x O.:<< xs  -> f x `O.cons` fmap g xs
-
-  lastSpecial f g s  = step (O.viewl s) where
-    step (O.OneL x)   = O.one (g x)
-    step (e O.:<< xs) = f e `O.cons` step (O.viewl xs)
-
---------------------------------------------------------------------------------
-
-
-class PinpointSchemeSt t where
-  firstSpecial_st :: 
-      (st -> a -> (b,st)) -> (st -> a -> (b,st)) -> st -> t a -> (t b,st)
-  
-  lastSpecial_st  ::
-      (st -> a -> (b,st)) -> (st -> a -> (b,st)) -> st -> t a -> (t b,st)
-
-
-
-instance PinpointSchemeSt [] where
-  firstSpecial_st _ _ st []     = ([],st)
-  firstSpecial_st f g st (a:as) = stBinary (:) f (stmap g) st a as
-
-  -- Slightly complicated using a work-wrapper trick to separate
-  -- the list during the recursion...
-
-  lastSpecial_st _ _ st []     = ([],st)
-  lastSpecial_st f g st (a:as) = step st a as where
-    step s x []           = fmap2a return $ g s x
-    step s x (y:ys)       = stBinary (:) f (\s' -> step s' y) s x ys 
 
 
 --------------------------------------------------------------------------------

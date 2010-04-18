@@ -5,6 +5,7 @@ module GuitarChords where
 import Neume.Core.Bracket
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
+import Neume.Core.LilyPondFormat
 import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
 import Neume.Core.SyntaxGlyph
@@ -16,7 +17,6 @@ import Neume.Core.Utils
 import Neume.Extra.Extended
 import Neume.Extra.FretDiagrams
 import Neume.Extra.LilyPondDoc
-import Neume.Extra.LilyPondFormat
 import Neume.Extra.NamedElements
 
 import Text.PrettyPrint.Leijen

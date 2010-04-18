@@ -30,6 +30,18 @@ module Neume.Core.AbcBasic
   , graceForm
   , pletContext
 
+
+  -- * ABC literals and syntax
+  , abcComment
+  , singleBar
+  , doubleBar
+  , overlay
+  , lineCont
+  , lrepeat
+  , rrepeat
+  , alternative
+
+
   ) where
 
 
@@ -136,3 +148,54 @@ graceForm = braces . hcat
 --
 pletContext :: (Int,Int,Int) -> Doc
 pletContext (p,q,r) = lparen <> int p <> colon <> int q <> colon <> int r
+
+
+--------------------------------------------------------------------------------
+-- Pretty printers necessary for rendering...
+
+abcComment :: String -> Doc
+abcComment = text . ("%% " ++)
+
+
+singleBar :: Doc
+singleBar = char '|'
+
+doubleBar :: Doc
+doubleBar = text "||"
+
+overlay :: Doc
+overlay = char '&'
+
+-- | Lines (newlines) are significant in ABC files. The number of
+-- bars printed on a staff line /is/ the number of bars dictated 
+-- in the score. E.g. this is fragment prints four bars on one 
+-- line:
+--
+-- @
+--  C D E F| G A B c| d e f g| a b c' d'|
+-- @
+-- 
+-- Clearly this could result in very long columns when a score file 
+-- has elaborate content (chords, overlays etc.), so lines can be 
+-- split lexically and continued with a slash @\\@.
+--
+-- @
+--  C D E F|\\ 
+--  G A B c|\\ 
+--  d e f g|\\
+--  a b c' d'|
+-- @
+--
+lineCont :: Doc
+lineCont = char '\\'
+
+
+lrepeat                 :: Doc
+lrepeat                 = text "|:"
+
+rrepeat                 :: Doc 
+rrepeat                 = text ":|"
+
+alternative             :: Int -> Doc
+alternative i           = char '[' <> int i
+

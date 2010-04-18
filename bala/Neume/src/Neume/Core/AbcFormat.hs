@@ -7,7 +7,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Extra.AbcFormat
+-- Module      :  Neume.Core.AbcFormat
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -20,7 +20,7 @@
 --------------------------------------------------------------------------------
 
 
-module Neume.Extra.AbcFormat
+module Neume.Core.AbcFormat
   (
 
     barNumber
@@ -36,6 +36,7 @@ module Neume.Extra.AbcFormat
 
   ) where
 
+import Neume.Core.AbcBasic
 import Neume.Core.AbcOutput
 import Neume.Core.Duration
 import Neume.Core.Bracket
@@ -48,8 +49,6 @@ import Neume.Core.SyntaxNoteList
 import Neume.Core.SyntaxScore
 import Neume.Core.Utils
 
-import Neume.Extra.AbcDoc
-
 
 
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
@@ -59,7 +58,7 @@ import Prelude hiding ( null )
 
 
 barNumber :: BarNum -> DocS
-barNumber i = (comment ("Bar " ++ show i) <$>)
+barNumber i = (abcComment ("Bar " ++ show i) <$>)
 
 anaBarNumber :: BarNum -> DocS
 anaBarNumber i | i <= 1    = id

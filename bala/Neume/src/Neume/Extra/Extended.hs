@@ -31,12 +31,6 @@ module Neume.Extra.Extended
   , FingeredGlyph
   , FingeredGlyph'
   , lyFingeredGlyph
-  
-  -- * LilyPond drum pitches
-  , DrumPitch(..)
-  , DrumGlyph
-  , DrumGlyph'
-  , lyDrumGlyph
 
 
   -- * LilyPond /spacer marks/
@@ -65,7 +59,6 @@ module Neume.Extra.Extended
 
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
-import Neume.Core.LilyPondOutput
 import Neume.Core.Pitch
 import Neume.Core.SyntaxGlyph
 import Neume.Core.Utils
@@ -133,23 +126,6 @@ fingerNumber :: FingerNumber -> Doc
 fingerNumber (FingerNumber i) = char '-' <> int i
 
 
-
---------------------------------------------------------------------------------
--- LilyPond drum pitches 
-
-data DrumPitch = DrumPitch { 
-      drumLongName   :: String, 
-      drumShortName  :: String 
-    }
-  deriving (Eq,Show)
-
-
-type DrumGlyph  anno = Glyph anno DrumPitch Duration
-type DrumGlyph' anno = Glyph anno DrumPitch (Maybe Duration) 
-
-
-lyDrumGlyph :: DrumGlyph' anno -> Doc
-lyDrumGlyph = renderGlyph (text . drumShortName) strip
 
 
 --------------------------------------------------------------------------------

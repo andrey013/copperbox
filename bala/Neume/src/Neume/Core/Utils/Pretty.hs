@@ -27,6 +27,7 @@ module Neume.Core.Utils.Pretty
   , doubleQuote
   , emptyDoc
   , spaceBraces
+  , nestBraces
   , optDoc
   , mbDoc   
   , ppCommand 
@@ -91,6 +92,16 @@ emptyDoc = empty
 
 spaceBraces :: Doc -> Doc
 spaceBraces = enclose (text "{ ") (text " }")
+
+
+-- | Enclose expression within braces @{ ... }@. The open brace
+-- is printed on the current line, then a line break, then the  
+-- expression is printed with indent level two. The closing brace
+-- is printed on a new line.
+nestBraces :: Doc -> Doc
+nestBraces e = lbrace <$> indent 2 e <$> rbrace 
+
+
 
 optDoc :: Bool -> Doc -> Doc
 optDoc b doc = if b then doc else empty

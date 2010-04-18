@@ -77,8 +77,6 @@ module Neume.Extra.LilyPondDoc
   , layout
   , layoutExpr
   , relative
-  , repeatvolta
-  , alternative
   , drummode
   , parallelMusic  
 
@@ -175,16 +173,6 @@ key :: PitchLabel -> String -> Doc
 key lbl mode = command "key" <+> pitchLabel lbl <+> command mode
 
 
--- Bar lines
-
--- | Print a double bar line @||@.
-doubleBar :: Doc 
-doubleBar = command "bar" <+> dquotes (text "||")
-
--- | Print a single bar line @|@.
-singleBar :: Doc
-singleBar = text "|"
-
 
 -- stems
 
@@ -225,12 +213,6 @@ cadenzaOff    = command "cadenzaOff"
 --------------------------------------------------------------------------------
 -- Score structure
 
--- | Enclose expression within braces @{ ... }@. The open brace
--- is printed on the current line, then a line break, then the  
--- expression is printed with indent level two. The closing brace
--- is printed on a new line.
-nestBraces :: Doc -> Doc
-nestBraces e = lbrace <$> indent 2 e <$> rbrace 
 
 
 -- | @\<\< \\n... \\n... \\n \>\>@ - print a list of expressions 
@@ -354,27 +336,11 @@ relative p expr = command "relative" <+> pitch p' <+> nestBraces expr
   where
     p' = setOctave (octave p - 3) p  -- Lilypond is 3 octaves below Neume
 
--- | @\\repeat volta n {\\n ... \\n}@ - print a repeated block.
---
-repeatvolta :: Int -> Doc -> Doc 
-repeatvolta i expr = 
-    command "repeat" <+> text "volta" <+> int i <+> nestBraces expr
-
--- | @\\alternative { \\n { ... } \\n { ... } ... }@
---
-alternative :: [Doc] -> Doc
-alternative = (command "alternative" <+>) . nestBraces . vsep . map braces 
 
 -- | @\\drummode {\\n ...\\n }@.
 drummode            :: Doc -> Doc
 drummode e          = command "drummode" <+> nestBraces e
 
--- | @\\parallelMusic #'( ... ) {\\n ...\\n }@.
-parallelMusic       :: [String] -> Doc -> Doc
-parallelMusic xs e  = 
-    command "parallelMusic" <+> text "#'" <> parens names <+> nestBraces e
-  where
-    names = hsep $ map text xs
 
 
 --------------------------------------------------------------------------------

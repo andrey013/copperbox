@@ -35,10 +35,12 @@ library
 
   exposed-modules:
     Neume.Core.AbcBasic,
+    Neume.Core.AbcFormat,
     Neume.Core.AbcOutput,
     Neume.Core.Bracket,
     Neume.Core.Duration,
     Neume.Core.LilyPondBasic,
+    Neume.Core.LilyPondFormat,
     Neume.Core.LilyPondOutput,
     Neume.Core.Metrical,
     Neume.Core.Pitch,
@@ -58,13 +60,12 @@ library
     Neume.Core.Utils.StateMap,
 
     Neume.Extra.AbcDoc,
-    Neume.Extra.AbcFormat,
     Neume.Extra.DrumPitches,
     Neume.Extra.Extended,
     Neume.Extra.FretDiagrams,
     Neume.Extra.LilyPondDoc,
-    Neume.Extra.LilyPondFormat,
-    Neume.Extra.NamedElements
+    Neume.Extra.NamedElements,
+    Neume.Extra.Percussion
 
   other-modules:
     

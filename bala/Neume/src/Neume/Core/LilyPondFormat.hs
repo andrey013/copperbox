@@ -6,7 +6,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Neume.Extra.LilyPondFormat
+-- Module      :  Neume.Core.LilyPondFormat
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -19,14 +19,13 @@
 --------------------------------------------------------------------------------
 
 
-module Neume.Extra.LilyPondFormat
+module Neume.Core.LilyPondFormat
   (
 
   
     Ly_std_format_config(..)
   , Ly_relative_rewrite_config(..)
   , Ly_absolute_rewrite_config(..)
-  , Ly_drums_rewrite_config(..)
 
   , barNumber
 
@@ -37,7 +36,6 @@ module Neume.Extra.LilyPondFormat
   , renderLyRelative_parallel2  -- ugly prototype
   , scoreLy_parallel2           -- ditto
 
-  , renderLyDrums
 
   , concatDocSections           -- needs exposing for Fret Diags etc.
 
@@ -45,7 +43,7 @@ module Neume.Extra.LilyPondFormat
 
 import Neume.Core.Bracket
 import Neume.Core.Duration
-import Neume.Core.LilyPondBasic ( pitch, spacer )
+import Neume.Core.LilyPondBasic
 import Neume.Core.LilyPondOutput
 import Neume.Core.Metrical
 import Neume.Core.Pitch
@@ -55,8 +53,8 @@ import Neume.Core.SyntaxNoteList
 import Neume.Core.SyntaxScore
 import Neume.Core.Utils
 
-import Neume.Extra.Extended
-import Neume.Extra.LilyPondDoc hiding ( score )
+-- import Neume.Extra.Extended
+-- import Neume.Extra.LilyPondDoc hiding ( score )
 
 
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint
@@ -82,15 +80,19 @@ data Ly_absolute_rewrite_config anno = Ly_absolute_rewrite_config
     , anno_printer_abs          :: anno -> DocS
     }
 
-data Ly_drums_rewrite_config anno = Ly_drums_rewrite_config
-    { meter_pattern_drums       :: MeterPattern 
-    , anno_printer_drums        :: anno -> DocS
-    } 
 
 -- | Default bar numbering function.
 --
 barNumber :: BarNum -> DocS
-barNumber i = (lineComment ("Bar " ++ show i) <$>)
+barNumber i = ((text $ "%% Bar " ++ show i) <$>)
+
+
+
+-- | @\\varName@ - the variable name should only contain 
+-- alphabetic characters.
+varUse           :: String -> Doc
+varUse           = ppCommand 
+
 
 --------------------------------------------------------------------------------
 
@@ -133,11 +135,11 @@ scoreLy_parallel2 = vsep . step . scoreAsNamed
   where
     step :: Score sh PhraseName -> [Doc]
     step Nil               = []
-    step (Linear e xs)     = variableUse e : step xs
-    step (Repeat e xs)     = repeatvolta 2 (variableUse e) : step xs
+    step (Linear e xs)     = varUse e : step xs
+    step (Repeat e xs)     = repeatvolta 2 (varUse e) : step xs
     step (RepAlt e es xs)  = doc : step xs 
-      where doc = repeatvolta (length es) (variableUse e)
-              <$> alternative (map variableUse es) 
+      where doc = repeatvolta (length es) (varUse e)
+              <$> alternative (map varUse es) 
 
 
 merge2 :: Duration 
@@ -156,31 +158,6 @@ phraseImageRel mp annof pch =
     fmap2a (renderPhrase renderf) . lyRelativeRewrite pch . phrase mp
   where
     renderf = renderGlyph pitch annof
-
-
-renderLyDrums :: Ly_std_format_config
-              -> Ly_drums_rewrite_config anno
-              -> Score sh (NoteList (DrumGlyph anno))
-              -> Doc
-renderLyDrums (Ly_std_format_config func) (Ly_drums_rewrite_config mp annof) = 
-    concatDocSections func . renderScoreDrums mp annof
-
-
-renderScoreDrums :: MeterPattern 
-                 -> (anno -> DocS)
-                 -> Score sh (NoteList (DrumGlyph anno))
-                 -> Score sh PhraseImage
-renderScoreDrums mp annof = fmap (phraseImageDrums mp annof) 
-
-
-phraseImageDrums :: MeterPattern
-                 -> (anno -> DocS)
-                 -> NoteList (DrumGlyph anno)
-                 -> PhraseImage
-phraseImageDrums mp annof = 
-    renderPhrase renderf . rewriteDurationOpt . phrase mp
-  where
-    renderf = renderGlyph (text . drumShortName) annof
 
 
 -- 

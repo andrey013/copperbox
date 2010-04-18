@@ -96,7 +96,7 @@ module Neume.Extra.DrumPitches
  ) where
 
 
-import Neume.Extra.Extended
+import Neume.Extra.Percussion
 
 --------------------------------------------------------------------------------
 -- Drum pitches

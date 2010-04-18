@@ -35,6 +35,7 @@ module Neume.Extra.FretDiagrams
 import Neume.Core.Bracket
 import Neume.Core.Duration
 import Neume.Core.LilyPondBasic
+import Neume.Core.LilyPondFormat
 import Neume.Core.LilyPondOutput
 import Neume.Core.Metrical
 import Neume.Core.SyntaxGlyph
@@ -43,7 +44,6 @@ import Neume.Core.SyntaxNoteList
 import Neume.Core.SyntaxScore
 
 import Neume.Extra.LilyPondDoc
-import Neume.Extra.LilyPondFormat
 
 import Text.PrettyPrint.Leijen                  -- package: wl-pprint
 

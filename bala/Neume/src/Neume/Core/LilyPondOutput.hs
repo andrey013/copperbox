@@ -267,6 +267,8 @@ doptGlyphN old gly = (gly',d)
 --
 -- TODO - find out why this is the case.
 
+-- TODO - should these move to a type class / family like
+-- duration? Are there other pitched glyph types...  
 
 
 
