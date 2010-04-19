@@ -58,10 +58,11 @@ import Wumpus.Core.PictureLanguage hiding ( hcat, vcat, hsep, vsep )
 import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.Utils
 
-import Data.Aviary
 
 import Data.AffineSpace
 import Data.Semigroup
+
+import Control.Applicative ( liftA2 )
 
 import Text.PrettyPrint.Leijen
 
@@ -291,7 +292,7 @@ instance (Num u, Ord u) => Translate (Picture u) where
 -- Helpers for the affine transformations
 
 rotatePicture :: (Real u, Floating u) => Radian -> Picture u -> Picture u
-rotatePicture = bigphi transformPicture rotate rotate
+rotatePicture = liftA2 transformPicture rotate rotate
 
 
 rotatePictureAbout :: (Real u, Floating u) 

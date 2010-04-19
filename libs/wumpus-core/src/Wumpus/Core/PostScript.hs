@@ -90,9 +90,8 @@ module Wumpus.Core.PostScript
 import Wumpus.Core.Colour
 import Wumpus.Core.GraphicsState
 import Wumpus.Core.TextEncoder
-import Wumpus.Core.Utils ( PSUnit(..), roundup, parens, hsep )
+import Wumpus.Core.Utils
 
-import Data.Aviary
 
 import qualified Data.DList as DL
 import MonadLib

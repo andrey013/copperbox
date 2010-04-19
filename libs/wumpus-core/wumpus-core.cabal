@@ -1,5 +1,5 @@
 name:             wumpus-core
-version:          0.13.90
+version:          0.14.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -59,10 +59,10 @@ description:
   .
   Changelog:
   .
-  0.13.1 to 0.13.99:
+  0.13.1 to 0.14.0:
   .
   * Argument order changed for @ellipse@ and @zellispe@ in
-    Wumpus.Core.Picture.
+    Wumpus.Core.Picture. Removed dependency on Data.Aviary.
   .
 build-type:         Simple
 stability:          unstable
@@ -79,8 +79,7 @@ library
   hs-source-dirs:     src
   build-depends:      base < 5, containers, old-time,
                       wl-pprint, vector-space, 
-                      monadLib, xml, dlist, algebra, 
-                      data-aviary > 0.2.0
+                      monadLib, xml, dlist, algebra
                         
   exposed-modules:
     Wumpus.Core,

@@ -50,7 +50,6 @@ import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
-import Data.Aviary ( (#) )
 
 import MonadLib hiding ( Label )
 
@@ -127,7 +126,7 @@ primitive c (PEllipse props mid hw hh) = clipAttrib c $
 clipPath :: PSUnit u => Path u -> SvgM Element
 clipPath p = do
     name <- newClipLabel
-    return $ element_clippath ps # add_attr (attr_id name)
+    return $ element_clippath ps `rap` add_attr (attr_id name)
   where
     ps = closePath $ pathInstructions p
 
@@ -146,7 +145,7 @@ clipAttrib True  melt = do
 
 path :: PSUnit u => PathProps -> Path u -> SvgM Element
 path (c,dp) p = 
-    return $ element_path ps # add_attrs (fill_a : stroke_a : opts)
+    return $ element_path ps `rap` add_attrs (fill_a : stroke_a : opts)
   where
     (fill_a,stroke_a,opts) = drawProperties c dp
     ps                     = svgPath dp p 
@@ -162,9 +161,9 @@ path (c,dp) p =
 label :: (Ord u, PSUnit u) => LabelProps -> Label u -> SvgM Element
 label (c,FontAttr _ fam style sz) (Label pt entxt) = do 
      str <- encodedText entxt
-     let tspan_elt = element_tspan str # add_attrs [ attr_fill c ]
-     return $ element_text tspan_elt # add_attrs text_xs 
-                                     # add_attrs (fontStyle style)
+     let tspan_elt = element_tspan str `rap` add_attrs [ attr_fill c ]
+     return $ element_text tspan_elt `rap` add_attrs text_xs 
+                                     `rap` add_attrs (fontStyle style)
   where
     P2 x y    = coordChange pt
     text_xs   = [ attr_x x
@@ -214,9 +213,9 @@ fontStyle SVG_BOLD_OBLIQUE =
 ellipse :: PSUnit u => EllipseProps -> Point2 u -> u -> u -> SvgM Element
 ellipse (c,dp) (P2 x y) w h 
     | w == h    = return $ element_circle  
-                         # add_attrs (circle_attrs  ++ style_attrs)
+                         `rap` add_attrs (circle_attrs  ++ style_attrs)
     | otherwise = return $ element_ellipse 
-                         # add_attrs (ellipse_attrs ++ style_attrs)
+                         `rap` add_attrs (ellipse_attrs ++ style_attrs)
   where
     circle_attrs  = [attr_cx x, attr_cy y, attr_r w]
     ellipse_attrs = [attr_cx x, attr_cy y, attr_rx w, attr_ry h]

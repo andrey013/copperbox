@@ -87,9 +87,8 @@ module Wumpus.Core.Geometry
 
   ) where
 
-import Wumpus.Core.Utils ( CMinMax(..), PSUnit(..) )
+import Wumpus.Core.Utils ( CMinMax(..), PSUnit(..), oo )
 
-import Data.Aviary
 
 import Data.AffineSpace
 import Data.VectorSpace
@@ -392,7 +391,7 @@ instance Num a => MatrixMult (Vec2 a) where
   (M3'3 a b c d e f _ _ _) *# (V2 m n) = V2 (a*m+b*n+c*0) (d*m+e*n+f*0)
 
 
-instance Num a => MatrixMult(Point2 a) where
+instance Num a => MatrixMult (Point2 a) where
   (M3'3 a b c d e f _ _ _) *# (P2 m n) = P2 (a*m+b*n+c*1) (d*m+e*n+f*1)
 
 --------------------------------------------------------------------------------

@@ -106,7 +106,6 @@ import Wumpus.Core.GraphicsState
 import Wumpus.Core.TextEncoder
 import Wumpus.Core.Utils
 
-import Data.Aviary
 
 import MonadLib hiding ( version )
 import Text.XML.Light

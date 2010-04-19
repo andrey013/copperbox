@@ -1,5 +1,10 @@
 
 
+0.13.1 to 0.14.0
+  * Argument order changed for @ellipse@ and @zellispe@ in
+    Wumpus.Core.Picture. Removed dependency on Data.Aviary.
+
+
 0.13.0 to 0.13.1:
 
   * Wumpus.Core.SVG changed path_s to path_c - \'S\' was the 

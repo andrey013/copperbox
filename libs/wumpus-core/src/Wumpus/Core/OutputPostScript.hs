@@ -38,7 +38,6 @@ import Wumpus.Core.TextEncodingInternal
 import Wumpus.Core.TextLatin1
 import Wumpus.Core.Utils
 
-import Data.Aviary ( appro )
 
 import MonadLib hiding ( Label )
 
