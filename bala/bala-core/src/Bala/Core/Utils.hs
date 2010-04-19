@@ -18,7 +18,7 @@ module Bala.Core.Utils
   ( 
   -- * Various functions
 
-    ( # )
+    rap
   , iter
   
   , mapAfter
@@ -49,14 +49,14 @@ module Bala.Core.Utils
 
 import Text.PrettyPrint.Leijen
 
-import Data.List ( splitAt, foldl' )
+import Data.List ( foldl' )
 
--- Reverse application
 
-infixl 7 #
+infixl 1 `rap`
 
-( # ) :: a -> (a -> b) -> b 
-x # f = f x
+-- | Reverse application
+rap :: a -> (a -> b) -> b 
+x `rap` f = f x
 
 
 -- | Apply the @f@ @n@ times to @a@. When @n<=0@ return a. 
