@@ -24,6 +24,8 @@ import Data.AdditiveGroup
 import Data.AffineSpace
 
 
+--------------------------------------------------------------------------------
+-- Pitch letter
 
 data PitchLetter = C | D | E | F | G | A | B
   deriving (Bounded,Enum,Eq,Ord,Show)
@@ -61,7 +63,7 @@ plSemitones A = 9
 plSemitones B = 11
 
 --------------------------------------------------------------------------------
--- Datatypes
+-- Pitch
 
 
 data Pitch = Pitch 
@@ -102,12 +104,18 @@ instance Show Pitch where
 
                    
 
+--------------------------------------------------------------------------------
+-- Interval
 
 data Interval = Interval 
        { arithmetic_distance  :: Int
        , semitone_count       :: Int 
        }
   deriving (Eq,Ord)
+
+
+instance Show Interval where
+  showsPrec p (Interval ad sc) = showsPrec p (ad,sc)
 
 
 instance AdditiveGroup Interval where
