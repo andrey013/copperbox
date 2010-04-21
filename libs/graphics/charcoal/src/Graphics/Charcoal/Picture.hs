@@ -39,6 +39,7 @@ module Graphics.Charcoal.Picture
   , draw
   , drawIO
 
+
   ) where
 
 import Data.List ( unfoldr )
@@ -91,34 +92,42 @@ fill grey = \ _pt -> grey
 --------------------------------------------------------------------------------
 -- Finally, rendering...
 
+
 draw :: Picture -> String
-draw picf = unlines $ map (drawLine `flip` picf) [0..39]
+draw picf = unlines $ map (\cy -> drawLine cy ixs picf) ixs
+  where
+    ixs = coords 40 
 
 drawIO :: Picture -> IO ()
-drawIO picf = mapM_ (putStrLn . (drawLine `flip` picf)) [0..39]
-
-
-drawLine :: Int -> Picture -> String
-drawLine ln picf = unfoldr phi 0 
+drawIO picf =  mapM_ (\cy -> putStrLn $ drawLine cy ixs picf) ixs
   where
-    phi :: Int -> Maybe (Char,Int)
-    phi x | x > 79 = Nothing
-    phi x          = Just (greyscale $ picf (P2 (fromIntegral x) y), x+1 )
+    ixs = coords 40 
 
-    y = fromIntegral ln
+drawLine :: Double -> [Double] -> Picture -> String
+drawLine cy ixs picf = foldr fn "" ixs
+  where
+    fn cx ss = greyscale (picf (P2 cx cy)) : ss
+
+coords :: Int -> [Double]
+coords steps = take steps $ iterate (+x) (-1.0)
+  where
+    x = 2.0 / fromIntegral (steps-1)
+
 
 greyscale :: Greyscale -> Char
-greyscale = fn . floor . (*16.0) where
-  fn  0 = '@'
-  fn  1 = '#'
-  fn  2 = '$'
-  fn  3 = '%'
-  fn  4 = '&'
-  fn  5 = '!'
-  fn  6 = '+' 
-  fn  7 = '-'
-  fn  8 = '^'
-  fn  9 = ','
-  fn 10 = '.' 
-  fn 11 = '`'
-  fn _  = ' '
+greyscale = fn . floor . (*16.0) 
+  where
+    fn :: Int -> Char
+    fn  0 = '@'
+    fn  1 = '#'
+    fn  2 = '$'
+    fn  3 = '%'
+    fn  4 = '&'
+    fn  5 = '!'
+    fn  6 = '+' 
+    fn  7 = '-'
+    fn  8 = '^'
+    fn  9 = ','
+    fn 10 = '.' 
+    fn 11 = '`'
+    fn _  = ' '

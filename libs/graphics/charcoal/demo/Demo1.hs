@@ -11,7 +11,7 @@ import Graphics.Charcoal.Picture
 demo1 = drawIO $ fill 0
 
 
--- demo2 = drawIO $ unitdisk (V2 0 10)
+demo2 = drawIO $ nearest white black . sscaled 0.8 unitdisk
 
 
 

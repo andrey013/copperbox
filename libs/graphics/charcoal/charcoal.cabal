@@ -23,6 +23,7 @@ library
 
   
   exposed-modules:
+    Graphics.Charcoal.Extra,
     Graphics.Charcoal.Picture
 
   other-modules:
