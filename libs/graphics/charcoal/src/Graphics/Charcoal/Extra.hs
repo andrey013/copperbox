@@ -19,6 +19,8 @@
 module Graphics.Charcoal.Extra where 
 
 import Graphics.Charcoal.Picture
+import Data.Bits ( (.|.) )
+
 
 class Norm2 a where
   norm2 :: a -> Double
@@ -46,6 +48,7 @@ unitdisk :: Point -> Double
 unitdisk p = step (1 - norm2 p)
 
 
+
 nearest :: (Floating b, Ord b) => a -> a -> b -> a 
 nearest a b t = if t <= 0.5 then a else b
 
@@ -65,3 +68,52 @@ polygon k (P2 x y)
 
 dpi :: Double
 dpi = 2.0*pi
+
+vstrip :: Region
+vstrip (P2 x y) = abs x <= 0.5
+
+checker :: Region
+checker (P2 x y) = even (floor x + floor y)
+
+altRings :: Region
+altRings p = even $ floor $ distO p
+
+
+distO (P2 x y) = sqrt (x*x + y*y)
+
+gasket :: Region
+gasket (P2 x y) = floor x .|. floor y == ((floor x)::Int)
+
+
+regionToPicture :: Greyscale -> Greyscale -> Region -> Picture
+regionToPicture exter inter regf = \pt -> if (regf pt) then inter else exter 
+
+
+unitcircle :: Region
+unitcircle (P2 x y) = x*x + y*y <= 1.0
+
+circle :: Double -> Region 
+circle r = \(P2 x y) -> x*x + y*y <= r*r
+
+
+vhalfplane :: Region
+vhalfplane (P2 x _) = x >= 0
+
+hhalfplane :: Region
+hhalfplane (P2 _ y) = y >= 0
+
+
+(/\) :: Region -> Region -> Region
+(/\) r1 r2 = \pt -> r1 pt && r2 pt
+
+(\/) :: Region -> Region -> Region
+(\/) r1 r2 = \pt -> r1 pt || r2 pt
+
+outside :: Region -> Region
+outside = (not .)
+
+
+annulus :: Double -> Double -> Region 
+annulus r1 r2 = outside (circle r1) /\ circle r2
+
+

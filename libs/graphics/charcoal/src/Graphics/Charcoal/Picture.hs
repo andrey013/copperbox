@@ -20,11 +20,14 @@ module Graphics.Charcoal.Picture
   , Point(..)
   , Vector(..)
   , Picture
+  , Image
+  , Region
   , Transform
 
   -- * Trasformations
   , scale
   , rotate
+  , applyTrafo
 
   -- * Colours
   , black
@@ -42,7 +45,6 @@ module Graphics.Charcoal.Picture
 
   ) where
 
-import Data.List ( unfoldr )
 
 
 type Greyscale = Double
@@ -53,13 +55,24 @@ data Point = P2 !Double !Double
 data Vector = V2 !Double !Double 
   deriving (Eq,Show)
 
-type Picture = Point -> Greyscale 
+type Image a = Point -> a
+
+type Picture = Image Greyscale
+
+type Region  = Image Bool
 
 type Transform = Point -> Point 
 
 
 --------------------------------------------------------------------------------
 -- Transformations
+
+-- Note, Haven tuples a transformation with its inverse.
+-- Pan applies the inverse function to input sample points
+-- /before/ it applies the image function.
+-- 
+-- So this needs more thought...
+--
 
 scale :: Vector -> Transform
 scale (V2 sx sy) = \(P2 x y) -> P2 (x * sx) (y * sy)
@@ -70,6 +83,8 @@ rotate ang = \(P2 x y) -> P2 (ca * x + sa * y) (ca * y + sa * x)
     ca = cos ang
     sa = sin ang
 
+applyTrafo :: Transform -> Image a -> Image a
+applyTrafo = flip (.)
 
 --------------------------------------------------------------------------------
 -- Colours
@@ -93,23 +108,26 @@ fill grey = \ _pt -> grey
 -- Finally, rendering...
 
 
+-- pictures are drawn from -1..1 on both x- and y- axes
+--
+
 draw :: Picture -> String
 draw picf = unlines $ map (\cy -> drawLine cy ixs picf) ixs
   where
-    ixs = coords 40 
+    ixs = countsteps 40 
 
 drawIO :: Picture -> IO ()
 drawIO picf =  mapM_ (\cy -> putStrLn $ drawLine cy ixs picf) ixs
   where
-    ixs = coords 40 
+    ixs = countsteps 40 
 
 drawLine :: Double -> [Double] -> Picture -> String
 drawLine cy ixs picf = foldr fn "" ixs
   where
     fn cx ss = greyscale (picf (P2 cx cy)) : ss
 
-coords :: Int -> [Double]
-coords steps = take steps $ iterate (+x) (-1.0)
+countsteps :: Int -> [Double]
+countsteps steps = take steps $ iterate (+x) (-1.0)
   where
     x = 2.0 / fromIntegral (steps-1)
 
