@@ -29,3 +29,21 @@ melodicMinor = makeScale (asc ++ desc)
 cmaj = majorScale c5
 
 cmminor = melodicMinor c5
+
+
+--------------------------------------------------------------------------------
+
+type Note = (Char, Int) 
+
+
+-- retro grade 
+
+retrograde :: [Note] -> [Note]
+retrograde notes = zipWith newp notes rs 
+  where 
+    rs = ($ []) $ foldr (\(a,_) f -> f . (a:)) id notes
+    newp (_,d) p = (p,d) 
+
+
+demo1 :: [Note]
+demo1 = retrograde [ ('C',4), ('D',4), ('E', 2) ]
