@@ -16,7 +16,8 @@
 
 module Precis.Datatypes
   (
-    CabalPrecis(..)
+    StrName
+  , CabalPrecis(..)
   , SourceModule(..)
   , sourceModule 
   , ExportPrecis(..) 
@@ -31,6 +32,13 @@ import Text.PrettyPrint.Leijen                    -- package: wl-pprint
 import System.FilePath
 
 
+-- Don\'t use the Name type from haskell-src-exts.
+-- Precis doesn\'t need its distinction between identifiers
+-- and symbols.
+--
+
+type StrName = String
+
 data CabalPrecis = CabalPrecis {
         cp_name                 :: String,
         cp_version              :: String,
@@ -42,10 +50,10 @@ data CabalPrecis = CabalPrecis {
 
 
 data SourceModule 
-      = SourceModule     { src_module_name          :: String,
+      = SourceModule     { src_module_name          :: StrName,
                            src_module_path_to       :: FilePath }
-      | UnresolvedModule { unresolved_module_name   :: String }  
-  deriving (Eq,Show)
+      | UnresolvedModule { unresolved_module_name   :: StrName }  
+  deriving (Eq,Ord,Show)
 
 
 -- smart constructor
@@ -54,10 +62,10 @@ sourceModule :: String -> FilePath -> SourceModule
 sourceModule name path = SourceModule name (normalise path)
 
 data ExportPrecis = ExportPrecis {
-        ep_base_module          :: String,
+        ep_base_module          :: StrName,
         ep_exported_modules     :: [String],
         ep_dcdecls              :: [DCDecl],
-        ep_simple_decls         :: [String]
+        ep_simple_decls         :: [StrName]
       }
   deriving (Eq,Show)
 

@@ -26,23 +26,40 @@ import Precis.HsSrcUtils
 
 import Language.Haskell.Exts hiding (name)        -- package: haskell-src-exts
 
+import qualified Data.Map as Map
+
+type DeclMap = Map.Map StrName Decl
+
+
+
 type ExportsErr = String
 
-extractExports :: SourceModule -> IO (Either ExportsErr ExportPrecis)
-extractExports modu = do
+extractExports :: SourceModule -> IO (Either ExportsErr (ExportPrecis,DeclMap))
+extractExports src_mod = bracketSourceModule src_mod  (pk mkPrecis mkExports)
+  where
+    mkPrecis  = precisExports (src_module_name src_mod) . maybe [] id . mbExports
+
+    mkExports p ast = exportedDecls (ep_simple_decls p) (decls ast)
+
+    pk f g a = let x = f a in (x, g x a)
+
+
+bracketSourceModule :: SourceModule 
+                    -> (Module -> a) 
+                    -> IO (Either ExportsErr a)
+bracketSourceModule modu sk = do 
     ans <- parseFileWithExts knownExtensions (src_module_path_to modu)
     case ans of
       ParseFailed _ msg -> return $ Left msg
       ParseOk a         -> return $ Right $ sk a
-  where
-    sk = precisExports (src_module_name modu) . maybe [] id . mbExports
-
 
 
 -- Helpers
 mbExports :: Module -> Maybe [ExportSpec]
 mbExports (Module _srcloc _name _prags _warn mb_expos _imps _decls) = mb_expos
 
+decls :: Module -> [Decl]
+decls (Module _srcloc _name _prags _warn _mb_expos _imps decls) = decls
 
 precisExports :: String -> [ExportSpec] -> ExportPrecis
 precisExports modu_name xs = ExportPrecis modu_name expo_mods dcdecls simples
@@ -63,4 +80,17 @@ precisExports modu_name xs = ExportPrecis modu_name expo_mods dcdecls simples
 
     fn (EThingWith name _)    (mods,dcs,simps) = 
         let x1 = DCDecl (extractQName name) DC_Restricted in (mods,x1:dcs,simps)
+
+
+exportedDecls :: [StrName] -> [Decl] -> DeclMap
+exportedDecls names decls = foldr fn Map.empty names
+  where
+    all_decls = makeDeclsMap decls
+    fn a acc  = maybe acc (\v -> Map.insert a v acc) $ Map.lookup a all_decls
+
+
+makeDeclsMap :: [Decl] -> Map.Map StrName Decl
+makeDeclsMap = foldr fn Map.empty 
+  where
+    fn d fm = foldr (\(k,v) acc -> Map.insert k v acc) fm $ namedDecls d
 

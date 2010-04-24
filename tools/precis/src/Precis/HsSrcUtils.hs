@@ -22,6 +22,8 @@ module Precis.HsSrcUtils
   , extractName
   , extractSpecialCon
 
+  , namedDecls
+
   ) where
 
 import Language.Haskell.Exts hiding ( name )
@@ -44,10 +46,31 @@ extractName (Ident name)  = name
 extractName (Symbol name) = name
 
 extractSpecialCon :: SpecialCon -> String
+extractSpecialCon = prettyPrint
+
+{-
 extractSpecialCon UnitCon           = "()"
 extractSpecialCon ListCon           = "[]"
 extractSpecialCon FunCon            = "->"
 extractSpecialCon (TupleCon _ _)    = "(,)"
 extractSpecialCon Cons              = "(:)"
 extractSpecialCon UnboxedSingleCon  = "(# #)"
+-}
 
+
+--------------------------------------------------------------------------------
+
+--
+namedDecls :: Decl -> [(String,Decl)]
+namedDecls t@(TypeDecl    _ n _ _)                     = [(extractName n,t)]
+namedDecls t@(TypeFamDecl _ n _ _)                     = [(extractName n,t)]
+namedDecls t@(DataDecl    _ _ _ n _ _ _)               = [(extractName n,t)]
+namedDecls t@(GDataDecl   _ _ _ n _ _ _ _)             = [(extractName n,t)]
+namedDecls t@(DataFamDecl _ _ n _ _)                   = [(extractName n,t)]
+namedDecls t@(ClassDecl   _ _ n _ _ _)                 = [(extractName n,t)]
+namedDecls t@(InstDecl    _ _ q _ _)                   = [(extractQName q,t)]
+namedDecls t@(DerivDecl   _ _ q _)                     = [(extractQName q,t)]
+namedDecls t@(TypeSig     _ ns _)                      = map fn ns
+   where fn n = (extractName n, t)
+
+namedDecls _                                           = []
