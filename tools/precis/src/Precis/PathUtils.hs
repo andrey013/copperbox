@@ -17,9 +17,9 @@
 module Precis.PathUtils
   (
     exeModuleName
-  , resolveModules
+  , resolveFiles
   , removePrefix
-
+  , resolveToCabalFileLoc
   ) where
 
 import Precis.Datatypes
@@ -36,12 +36,12 @@ import System.FilePath
 exeModuleName :: FilePath -> ModuleName
 exeModuleName = fromString . dropExtension
 
-resolveModules :: FilePath 
-               -> [FilePath] 
-               -> [ModuleName] 
-               -> [String]
-               -> IO [SourceModule]
-resolveModules path_root src_dirs mod_names exts = 
+resolveFiles :: FilePath 
+             -> [FilePath] 
+             -> [ModuleName] 
+             -> [String]
+             -> IO [SourceFile]
+resolveFiles path_root src_dirs mod_names exts = 
     let cp_paths = map fn $ longCrossProduct src_dirs mod_names in
     mapM resolve cp_paths 
   where
@@ -50,9 +50,9 @@ resolveModules path_root src_dirs mod_names exts =
     resolve (mod_name,path) = do { ans <- findByExtension path exts
                                  ; case ans of
                                      Nothing ->         
-                                         return $ UnresolvedModule $ mod_name
+                                         return $ UnresolvedFile $ mod_name
                                      Just path' -> 
-                                         return $ sourceModule mod_name path'
+                                         return $ sourceFile mod_name path'
                                  }
 
 
@@ -76,6 +76,7 @@ longCrossProduct xs ys = [(a,b) | a <- xs , b <- ys ]
 mname :: ModuleName -> String 
 mname = concat . intersperse "." . components
 
+--------------------------------------------------------------------------------
 
 removePrefix :: FilePath -> FilePath -> FilePath
 removePrefix pre path = joinPath $ step (fn pre) (fn path) 
@@ -83,3 +84,9 @@ removePrefix pre path = joinPath $ step (fn pre) (fn path)
     fn                          = splitPath . normalise
     step (x:xs) (y:ys) | x == y = step xs ys 
     step _      ys              = ys
+
+--------------------------------------------------------------------------------
+
+resolveToCabalFileLoc :: FilePath -> FilePath -> FilePath
+resolveToCabalFileLoc cabal_file src_file = 
+    (dropFileName cabal_file) `combine` src_file 

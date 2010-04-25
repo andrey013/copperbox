@@ -44,13 +44,13 @@ extractPrecis cabal_file exts =
     condM (doesFileExist cabal_file) (liftM post $ extractP cabal_file exts)
                                      (return "Missing cabal file")
   where
-    post = rewriteModulePaths . nubSourceModules
+    post = rewriteModulePaths . nubSourceFiles
 
 
 extractP :: FilePath -> [String] -> IO CabalPrecis
 extractP cabal_file_path exts = do 
     gen_pkg  <- readPackageDescription normal cabal_file_path
-    (expos,privs) <- getModules gen_pkg path_to_cabal exts
+    (expos,privs) <- getSourceFiles gen_pkg path_to_cabal exts
     return $ CabalPrecis 
                { cp_name               = getName gen_pkg
                , cp_version            = getVersion gen_pkg
@@ -81,13 +81,13 @@ extrVersionText = fn . versionBranch . pkgVersion
 
 
 
--- extract modules
+-- extract source files
 
-getModules :: GenericPackageDescription 
+getSourceFiles :: GenericPackageDescription 
            -> FilePath
            -> [String] 
-           -> IO ([SourceModule], [SourceModule])
-getModules pkg_desc root exts = do 
+           -> IO ([SourceFile], [SourceFile])
+getSourceFiles pkg_desc root exts = do 
     lib_mods <- mapM (resolveLibrary root exts) $ allLibraries pkg_desc
     exe_mods <- mapM (resolveExecutable root exts) $ allExecutables pkg_desc
     let (lib_expos, lib_privs) = foldr fn ([],[]) lib_mods 
@@ -107,10 +107,10 @@ allExecutables :: GenericPackageDescription -> [Executable]
 allExecutables = concat . map (ctfold (:) [] . snd) . condExecutables
 
 
-resolveLibrary :: FilePath -> [String] -> Library -> IO ([SourceModule], [SourceModule])
+resolveLibrary :: FilePath -> [String] -> Library -> IO ([SourceFile], [SourceFile])
 resolveLibrary root exts lib = liftM2 (,) (fn expos) (fn others)
   where
-    fn mods                    = resolveModules root src_paths mods exts
+    fn mods                    = resolveFiles root src_paths mods exts
     (src_paths, expos, others) = libraryContents lib  
 
 libraryContents :: Library -> ([FilePath], [ModuleName], [ModuleName])
@@ -120,8 +120,8 @@ libraryContents lib = (src_paths, expo_modules, other_modules)
     expo_modules    = exposedModules lib
     other_modules   = otherModules   $ libBuildInfo lib
 
-resolveExecutable :: FilePath -> [String] -> Executable -> IO [SourceModule]
-resolveExecutable root exts exe = resolveModules root src_paths mods exts
+resolveExecutable :: FilePath -> [String] -> Executable -> IO [SourceFile]
+resolveExecutable root exts exe = resolveFiles root src_paths mods exts
   where
     (src_paths, mods) = executableModules exe
 
@@ -147,8 +147,8 @@ executableModules = fn . executableContents
 -- Initially a precis may have dublicates (via Cabal\'s 
 -- conditional mechanism).
 --
-nubSourceModules :: CabalPrecis -> CabalPrecis
-nubSourceModules cp@(CabalPrecis _ _ _ exs ins) = 
+nubSourceFiles :: CabalPrecis -> CabalPrecis
+nubSourceFiles cp@(CabalPrecis _ _ _ exs ins) = 
     cp { cp_exposed_modules = exs', cp_internal_modules = ins' }
   where
     exs'  = nub exs
@@ -161,9 +161,9 @@ rewriteModulePaths cp@(CabalPrecis _ _ root exs ins) =
     exs'  = map (relativeModulePath root) exs
     ins'  = map (relativeModulePath root) ins
 
-relativeModulePath :: FilePath -> SourceModule -> SourceModule
-relativeModulePath path_to_cabal (SourceModule name path) = 
-    SourceModule name (removePrefix (dropFileName path_to_cabal) path)
+relativeModulePath :: FilePath -> SourceFile -> SourceFile
+relativeModulePath path_to_cabal (SourceFile name path) = 
+    SourceFile name (removePrefix (dropFileName path_to_cabal) path)
 relativeModulePath _             modu                     = modu
 
 

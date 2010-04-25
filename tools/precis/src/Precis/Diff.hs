@@ -37,7 +37,7 @@ instance Functor Diff where
   fmap f (InR    a) = InR    (f a)
 
 
-compareModules :: [SourceModule] -> [SourceModule] -> [Diff SourceModule]
+compareModules :: [SourceFile] -> [SourceFile] -> [Diff SourceFile]
 compareModules xs ys = elems $ foldr insR `flip` ys $ foldr insL Map.empty xs
   where
     insL a s = insert a (InL a) s

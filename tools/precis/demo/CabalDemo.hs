@@ -9,7 +9,6 @@ import Precis.ModuleExports
 import Precis.PathUtils
 import Precis.Utils
 
-import Language.Haskell.Exts.Pretty ( prettyPrint )
 
 import Data.Map
 import Text.PrettyPrint.Leijen
@@ -26,23 +25,29 @@ runExtract path = do
  
 
 demo1 :: IO ()
-demo1 = runExtract "../samples/mtl.cabal" >>= print
+demo1 = runExtract "../samples/mtl.cabal" >>= putDoc . pretty
 
 demo2 :: IO ()
-demo2 = runExtract "../../hurdle/hurdle.cabal" >>= print
+demo2 = do 
+--  cp <- runExtract "../../hurdle/hurdle.cabal"
+  cp <- runExtract "../samples/mtl.cabal"
+  putDoc $ pretty cp
+  mods <- exposedModules cp
+  either print (mapM_ (putDoc . pretty)) mods
 
 
 
 
-headModule :: CabalPrecis -> SourceModule
+headModule :: CabalPrecis -> SourceFile
 headModule = head . cp_exposed_modules
 
 demo3 :: IO ()
 demo3 = do 
-  ans <- extractExports (sourceModule "State.Strict" 
-                                      "../samples/Control/Monad/State/Strict.hs")
+  ans <- readModule "../samples/Control/Monad/Cont/Class.hs" "State.Strict" 
+                    
   case ans of
-    Right (exps,fm) -> putDoc80 (pretty exps) >> mapM_ (putStrLn . prettyPrint) (elems fm)
+    Right (ModulePrecis exps fm) -> putDoc80 (pretty exps) >> 
+                                    mapM_ (putStrLn) (elems fm)
     Left err       -> error err
 
 
