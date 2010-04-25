@@ -42,7 +42,7 @@ type CabalErr = String
 extractPrecis :: FilePath -> [String] -> IO (Either CabalErr CabalPrecis)
 extractPrecis cabal_file exts = 
     condM (doesFileExist cabal_file) (liftM post $ extractP cabal_file exts)
-                                     (return "Missing cabal file")
+                                     (return $ "Missing cabal file - " ++ cabal_file)
   where
     post = rewriteModulePaths . nubSourceFiles
 

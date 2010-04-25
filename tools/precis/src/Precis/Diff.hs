@@ -46,7 +46,7 @@ compareModules xs ys = elems $ foldr insR `flip` ys $ foldr insL Map.empty xs
 
 -- Note Eq on Haskell-src-ext type will not work as Eq includes SrcLoc
 
+-- data Conflict a 
 
-
--- compareExports :: ModulePrecis -> ModulePrecis -> ()
--- compareExports _ _ = ()
+compareExports :: ModulePrecis -> ModulePrecis -> ()
+compareExports _ _ = ()

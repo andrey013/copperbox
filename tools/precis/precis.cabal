@@ -38,4 +38,18 @@ library
     Precis.PathUtils,
     Precis.Utils
   
-  
+executable precis
+  main-is: Main.hs
+
+  hs-source-dirs: src
+
+  other-modules:   
+    Precis.CabalPackage,
+    Precis.Datatypes,
+    Precis.Diff,
+    Precis.HsSrcUtils,
+    Precis.ModuleExports,
+    Precis.PathUtils,
+    Precis.Utils
+
+

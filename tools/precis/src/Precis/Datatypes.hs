@@ -26,8 +26,7 @@ module Precis.Datatypes
   , ModulePrecis(..)
   , ModuleExportPrecis(..) 
   , ExportItem(..)
-  , DcDecl(..)
-  , DcExportType(..)
+
   ) where
 
 import Precis.Utils
@@ -91,13 +90,6 @@ data ModuleExportPrecis = ModuleExportPrecis
 data ExportItem = ModuleExport StrName
                 | DataOrClass  StrName TextRep
                 | Variable     StrName 
-  deriving (Eq,Show)
-
-
-data DcDecl = DcDecl StrName DcExportType
-  deriving (Eq,Show)
-
-data DcExportType = DC_Abs | DC_Restricted | DC_Full 
   deriving (Eq,Show)
 
 
