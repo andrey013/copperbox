@@ -16,8 +16,7 @@
 
 module Precis.ModuleExports 
   (
-    ExportsErr
-  , exposedModules
+    exposedModules
   , readModule
 
   ) where
@@ -28,27 +27,27 @@ import Precis.PathUtils
 
 import Language.Haskell.Exts hiding (name)        -- package: haskell-src-exts
 
+import Data.Map ( insert )
 import qualified Data.Map as Map
 
 
 
-
-type ExportsErr = String
-
-
-exposedModules :: CabalPrecis -> IO (Either ExportsErr [ModulePrecis])
-exposedModules (CabalPrecis _ _ loc xs _) = step id xs
+exposedModules :: CabalPrecis -> IO ModuleDict
+exposedModules (CabalPrecis _ _ loc xs _) = step xs Map.empty
   where
-    step f []     = return (Right $ f [])
-    step f (n:ns) = readModule (mkPath n) (src_file_name n) >>= \ans -> 
-                    case ans of 
-                      Left err -> return (Left err)
-                      Right a  -> step (f . (a:)) ns 
+    step []     acc = return acc
+    step (n:ns) acc = readModule (mkPath n) (src_module_name n) >>= \ans -> 
+                        case ans of 
+                          Left err -> step ns (updateErr n err acc)
+                          Right a  -> step ns (updateOk  n a acc)
 
-    mkPath n      = resolveToCabalFileLoc loc (src_file_path_to n)
+    mkPath n        = resolveToCabalFileLoc loc (src_file_path_to n)
+
+    updateErr n msg acc = insert (src_module_name n) (Left msg) acc
+    updateOk  n mp  acc = insert (src_module_name n) (Right mp) acc 
 
 
-readModule :: FilePath -> StrName -> IO (Either ExportsErr ModulePrecis)
+readModule :: FilePath -> StrName -> IO (Either ModuleParseErr ModulePrecis)
 readModule src_file modu_name = 
     bracketSourceFile src_file (pk mkPrecis mkExports)
   where
@@ -60,7 +59,7 @@ readModule src_file modu_name =
 
 bracketSourceFile :: FilePath
                   -> (Module -> a) 
-                  -> IO (Either ExportsErr a)
+                  -> IO (Either ModuleParseErr a)
 bracketSourceFile src_file sk = do 
     ans <- parseFileWithExts knownExtensions src_file
     case ans of

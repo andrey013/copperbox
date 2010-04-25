@@ -22,6 +22,8 @@ module Precis.Datatypes
   , SourceFile(..)
   , sourceFile 
 
+  , ModuleDict
+  , ModuleParseErr
   , DeclMap
   , ModulePrecis(..)
   , ModuleExportPrecis(..) 
@@ -57,7 +59,7 @@ data CabalPrecis = CabalPrecis
 
 
 data SourceFile
-      = SourceFile     { src_file_name          :: StrName,
+      = SourceFile     { src_module_name        :: StrName,
                          src_file_path_to       :: FilePath }
       | UnresolvedFile { unresolved_file_name   :: StrName }  
   deriving (Eq,Ord,Show)
@@ -70,6 +72,12 @@ sourceFile name path = SourceFile name (normalise path)
 
 --------------------------------------------------------------------------------
 -- Precis for individual source files
+
+
+
+type ModuleDict = Map.Map StrName (Either ModuleParseErr ModulePrecis)
+
+type ModuleParseErr = String
 
 type DeclMap = Map.Map StrName TextRep
 
@@ -137,17 +145,3 @@ instance Pretty ExportItem where
   pretty (DataOrClass _ rep) = text rep
   pretty (Variable name)     = text name
 
-
-{-
-
-dqsemi :: String -> Doc
-dqsemi  = suffixSemi . dquotes . text
-
-dcdecl :: DcDecl -> Doc
-dcdecl (DcDecl name typ) = pp typ <+> (dquotes $ text name) <> semi
-  where
-    pp DC_Abs         = text "opaque"
-    pp DC_Restricted  = text "partial"
-    pp DC_Full        = text "fully exported"
-
--}

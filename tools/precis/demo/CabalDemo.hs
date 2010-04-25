@@ -32,7 +32,7 @@ demo2 = do
   cp <- runExtract "../../_sample_data/mtl.cabal"
   putDoc $ pretty cp
   mods <- exposedModules cp
-  either print (mapM_ (putDoc . pretty)) mods
+  mapM_ (either print (putDoc . pretty)) $ elems mods
 
 
 

@@ -20,7 +20,11 @@ module Main where
 import Precis.CabalPackage
 import Precis.Datatypes
 import Precis.Diff
+import Precis.ModuleExports
 
+import Text.PrettyPrint.Leijen                    -- package: wl-pprint
+
+import System.IO ( stdout )
 import System.Environment
 import System.Console.GetOpt
 
@@ -55,14 +59,22 @@ runCompare :: FilePath -> FilePath -> IO ()
 runCompare new_cabal_file old_cabal_file = do 
    new_cp <- runExtract new_cabal_file
    old_cp <- runExtract old_cabal_file
-   let diffs = compareModules (cp_exposed_modules new_cp) (cp_exposed_modules old_cp)
-   mapM_ print diffs
+   let docTL = summarizeTopLevelChanges new_cp old_cp
+   putDoc66 docTL
+   -- module diffs
+   new_mods <- exposedModules new_cp
+   old_mods <- exposedModules old_cp
+   let docMods = summarizeModuleDiffs new_mods old_mods
+   putDoc66 docMods
+
 
 runExtract :: FilePath -> IO CabalPrecis
 runExtract path = do
     ans <- extractPrecis path ["hs", "lhs"]
     case ans of
-      Left err -> error $ err
+      Left  err -> error $ err
       Right cfg -> return cfg
 
 
+putDoc66 :: Doc -> IO ()
+putDoc66 doc = displayIO stdout (renderPretty 0.8 66 doc) >> putStrLn ""
