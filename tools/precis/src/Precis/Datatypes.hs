@@ -25,6 +25,7 @@ module Precis.Datatypes
   , DeclMap
   , ModulePrecis(..)
   , ModuleExportPrecis(..) 
+  , ExportItem(..)
   , DcDecl(..)
   , DcExportType(..)
   ) where
@@ -83,11 +84,15 @@ data ModulePrecis = ModulePrecis
 
 data ModuleExportPrecis = ModuleExportPrecis 
       { mep_base_module         :: StrName
-      , mep_exported_modules    :: [String]
-      , mep_dcdecls             :: [DcDecl]
-      , mep_simple_decls        :: [StrName]
+      , mep_exports             :: [ExportItem]
       }
   deriving (Eq,Show)
+
+data ExportItem = ModuleExport StrName
+                | DataOrClass  StrName TextRep
+                | Variable     StrName 
+  deriving (Eq,Show)
+
 
 data DcDecl = DcDecl StrName DcExportType
   deriving (Eq,Show)
@@ -130,13 +135,18 @@ instance Pretty ModulePrecis where
 
  
 instance Pretty ModuleExportPrecis where
-  pretty (ModuleExportPrecis name mexpos dcdecls fundecls) = 
+  pretty (ModuleExportPrecis name expos) = 
       text "module" <+> dquotes (text name) <+> lineBraces body
     where
-      body  = vsep [mods, dcs, funs]
-      mods  = namedBlock "module exports"          (vsep $ map dqsemi mexpos)
-      dcs   = namedBlock "data class declarations" (vsep $ map dcdecl dcdecls)
-      funs  = namedBlock "simple declarations"     (vsep $ map dqsemi fundecls)
+      body  = vsep (map pretty expos)
+
+instance Pretty ExportItem where
+  pretty (ModuleExport name) = text "module:" <+> text name
+  pretty (DataOrClass _ rep) = text rep
+  pretty (Variable name)     = text name
+
+
+{-
 
 dqsemi :: String -> Doc
 dqsemi  = suffixSemi . dquotes . text
@@ -148,3 +158,4 @@ dcdecl (DcDecl name typ) = pp typ <+> (dquotes $ text name) <> semi
     pp DC_Restricted  = text "partial"
     pp DC_Full        = text "fully exported"
 
+-}

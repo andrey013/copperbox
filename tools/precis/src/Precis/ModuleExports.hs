@@ -54,10 +54,7 @@ readModule src_file modu_name =
   where
     mkPrecis  = precisExports modu_name . moduleExports
 
-    mkExports p ast = exportedDecls (mep_dcdecls p)
-                                    (mep_simple_decls p) 
-                                    (moduleDecls ast)
-
+    mkExports p ast = exportedDecls (mep_exports p) (moduleDecls ast) 
     pk f g a = let x = f a in ModulePrecis  x (g x a)
 
 
@@ -80,33 +77,32 @@ moduleDecls (Module _srcloc _name _prags _warn _mb_expos _imps ds) = ds
 
 precisExports :: String -> [ExportSpec] -> ModuleExportPrecis
 precisExports modu_name xs = 
-    ModuleExportPrecis modu_name expo_mods dcdecls simples
+    ModuleExportPrecis modu_name (foldr fn [] xs)
   where
-    (expo_mods, dcdecls, simples) = foldr fn ([],[],[]) xs
-
-    fn (EModuleContents name) (mods,dcs,simps) = 
-        let m1 = extractModuleName name in (m1:mods, dcs, simps)
-
-    fn (EVar name)            (mods,dcs,simps) = 
-        let s1 = extractQName name in (mods, dcs, s1:simps)
-
-    fn (EAbs name)            (mods,dcs,simps) = 
-        let x1 = DcDecl (extractQName name) DC_Abs in (mods,x1:dcs,simps)
-
-    fn (EThingAll name)       (mods,dcs,simps) = 
-        let x1 = DcDecl (extractQName name) DC_Full in (mods,x1:dcs,simps)
-
-    fn (EThingWith name _)    (mods,dcs,simps) = 
-        let x1 = DcDecl (extractQName name) DC_Restricted in (mods,x1:dcs,simps)
+    fn a acc = makeExportItem a : acc
 
 
-exportedDecls :: [DcDecl] -> [StrName] -> [Decl] -> DeclMap
-exportedDecls dcls names decls = foldr fn Map.empty (names ++ map extr dcls)
+makeExportItem :: ExportSpec -> ExportItem
+makeExportItem (EModuleContents name) = ModuleExport $ extractModuleName name 
+makeExportItem (EVar name)            = Variable $ extractQName name
+makeExportItem s@(EAbs name)          = 
+    DataOrClass (extractQName name) (prettyPrint s)
+makeExportItem s@(EThingAll name)     = 
+    DataOrClass (extractQName name) (prettyPrint s)
+makeExportItem s@(EThingWith name _)  = 
+    DataOrClass (extractQName name) (prettyPrint s)
+
+
+
+exportedDecls :: [ExportItem] -> [Decl] -> DeclMap
+exportedDecls exps decls = foldr fn Map.empty exps
   where
     all_decls = makeDeclsMap decls
-    extr (DcDecl n _) = n
-    fn a acc  = maybe acc (\v -> Map.insert a v acc) $ Map.lookup a all_decls
-
+    fn (ModuleExport _)     acc = acc
+    fn (Variable name)      acc = 
+      maybe acc (\v -> Map.insert name v acc) $ Map.lookup name all_decls
+    fn (DataOrClass name _) acc = 
+      maybe acc (\v -> Map.insert name v acc) $ Map.lookup name all_decls
 
 makeDeclsMap :: [Decl] -> DeclMap
 makeDeclsMap = foldr fn Map.empty 

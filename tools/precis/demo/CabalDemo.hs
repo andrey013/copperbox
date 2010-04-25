@@ -25,12 +25,11 @@ runExtract path = do
  
 
 demo1 :: IO ()
-demo1 = runExtract "../samples/mtl.cabal" >>= putDoc . pretty
+demo1 = runExtract "../../_sample_data/mtl.cabal" >>= putDoc . pretty
 
 demo2 :: IO ()
 demo2 = do 
---  cp <- runExtract "../../hurdle/hurdle.cabal"
-  cp <- runExtract "../samples/mtl.cabal"
+  cp <- runExtract "../../_sample_data/mtl.cabal"
   putDoc $ pretty cp
   mods <- exposedModules cp
   either print (mapM_ (putDoc . pretty)) mods
@@ -43,7 +42,7 @@ headModule = head . cp_exposed_modules
 
 demo3 :: IO ()
 demo3 = do 
-  ans <- readModule "../samples/Control/Monad/Cont/Class.hs" "State.Strict" 
+  ans <- readModule "../../_sample_data/Control/Monad/Cont/Class.hs" "State.Strict" 
                     
   case ans of
     Right (ModulePrecis exps fm) -> putDoc80 (pretty exps) >> 
