@@ -22,6 +22,8 @@ module Precis.Diff
   , summarizeTopLevelChanges
   , summarizeModuleDiffs
 
+  , moduleDiffLists
+
   , compareModules
   , statsSourceFiles
 
@@ -34,26 +36,36 @@ import Text.PrettyPrint.Leijen                    -- package: wl-pprint
 import Data.Map ( insert, insertWith, elems )
 import qualified Data.Map as Map
 
-data Diff a = InL a | InBoth a | InR a
+data Diff a = InL a | InBoth a a | InR a
   deriving (Eq,Ord,Show)
 
-instance Functor Diff where
-  fmap f (InL    a) = InL    (f a)
-  fmap f (InBoth a) = InBoth (f a)
-  fmap f (InR    a) = InR    (f a)
+
 
 summarizeTopLevelChanges :: CabalPrecis -> CabalPrecis -> Doc 
 summarizeTopLevelChanges new_cp old_cp = 
-   statsSourceFiles $ compareModules (cp_exposed_modules new_cp) 
-                                     (cp_exposed_modules old_cp)
+   statsSourceFiles $ compareModules (exposed_modules new_cp) 
+                                     (exposed_modules old_cp)
 
 
+moduleDiffLists :: CabalPrecis 
+                -> CabalPrecis 
+                -> ([Diff SourceFile],[Diff SourceFile])
+moduleDiffLists new_cp old_cp = (expos,privs)
+  where
+    expos = compareModules (exposed_modules  new_cp) (exposed_modules  old_cp)
+    privs = compareModules (internal_modules new_cp) (internal_modules old_cp)
+
+
+-- note - (==) on source file name, not the whole datatype
+--
 compareModules :: [SourceFile] -> [SourceFile] -> [Diff SourceFile]
 compareModules xs ys = elems $ foldr insR `flip` ys $ foldr insL Map.empty xs
   where
-    insL a s = insert a (InL a) s
-    insR a s = insertWith (\_ _ -> InBoth a) a (InR a) s
+    insL a s = insert (module_name a) (InL a) s
+    insR b s = insertWith merge (module_name b) (InR b) s
 
+    merge (InR a) (InL b) = InBoth a b
+    merge _       _       = error "compareModules - (not) unreachable?"
 
 statsSourceFiles :: [Diff SourceFile] -> Doc
 statsSourceFiles diffs = 
@@ -67,8 +79,8 @@ statsSourceFiles diffs =
     fn (InR a) (xs,ys) = (xs,a:ys)
     fn _       acc     = acc
 
-    ppAdded x          = char '+' <> text (src_module_name x)
-    ppRemoved x        = char '-' <> text (src_module_name x)
+    ppAdded x          = char '+' <> text (module_name x)
+    ppRemoved x        = char '-' <> text (module_name x)
 
    
 msgFileCount :: Int -> Doc

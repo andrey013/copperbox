@@ -44,22 +44,22 @@ extractPrecis cabal_file exts =
     condM (doesFileExist cabal_file) (liftM post $ extractP cabal_file exts)
                                      (return $ "Missing cabal file - " ++ cabal_file)
   where
-    post = rewriteModulePaths . nubSourceFiles
+    post = nubSourceFiles
 
 
 extractP :: FilePath -> [String] -> IO CabalPrecis
 extractP cabal_file_path exts = do 
     gen_pkg  <- readPackageDescription normal cabal_file_path
-    (expos,privs) <- getSourceFiles gen_pkg path_to_cabal exts
+    (expos,privs) <- getSourceFiles gen_pkg root_to_cabal exts
     return $ CabalPrecis 
-               { cp_name               = getName gen_pkg
-               , cp_version            = getVersion gen_pkg
-               , cp_cabal_file         = cabal_file_path
-               , cp_exposed_modules    = expos
-               , cp_internal_modules   = privs
+               { package_name          = getName gen_pkg
+               , package_version       = getVersion gen_pkg
+               , path_to_cabal_file    = cabal_file_path
+               , exposed_modules       = expos
+               , internal_modules      = privs
                }
   where
-    path_to_cabal = dropFileName cabal_file_path  
+    root_to_cabal = dropFileName cabal_file_path  
 
 --------------------------------------------------------------------------------
 -- Extract from Package description
@@ -88,7 +88,7 @@ getSourceFiles :: GenericPackageDescription
            -> [String] 
            -> IO ([SourceFile], [SourceFile])
 getSourceFiles pkg_desc root exts = do 
-    lib_mods <- mapM (resolveLibrary root exts) $ allLibraries pkg_desc
+    lib_mods <- mapM (resolveLibrary root exts)    $ allLibraries   pkg_desc
     exe_mods <- mapM (resolveExecutable root exts) $ allExecutables pkg_desc
     let (lib_expos, lib_privs) = foldr fn ([],[]) lib_mods 
     return (lib_expos, lib_privs ++ concat exe_mods)
@@ -149,23 +149,10 @@ executableModules = fn . executableContents
 --
 nubSourceFiles :: CabalPrecis -> CabalPrecis
 nubSourceFiles cp@(CabalPrecis _ _ _ exs ins) = 
-    cp { cp_exposed_modules = exs', cp_internal_modules = ins' }
+    cp { exposed_modules = exs', internal_modules = ins' }
   where
     exs'  = nub exs
     ins'  = filter (not . (`elem` exs')) $ nub ins 
-
-rewriteModulePaths :: CabalPrecis -> CabalPrecis
-rewriteModulePaths cp@(CabalPrecis _ _ root exs ins) = 
-    cp { cp_exposed_modules = exs', cp_internal_modules = ins' }
-  where
-    exs'  = map (relativeModulePath root) exs
-    ins'  = map (relativeModulePath root) ins
-
-relativeModulePath :: FilePath -> SourceFile -> SourceFile
-relativeModulePath path_to_cabal (SourceFile name path) = 
-    SourceFile name (removePrefix (dropFileName path_to_cabal) path)
-relativeModulePath _             modu                     = modu
-
 
 --------------------------------------------------------------------------------
 -- General helper

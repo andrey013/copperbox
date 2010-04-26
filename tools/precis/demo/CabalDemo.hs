@@ -38,11 +38,6 @@ demo2 = do
   mapM_ (either print (putDoc . pretty)) $ elems mods
 
 
-
-
-headModule :: CabalPrecis -> SourceFile
-headModule = head . cp_exposed_modules
-
 demo3 :: IO ()
 demo3 = do 
   ans <- readModule "../../_sample_data/Control/Monad/Cont/Class.hs" "State.Strict" 
@@ -66,7 +61,7 @@ demo5 :: IO ()
 demo5 = do 
    c1 <- runExtract "../../../../source/monadLib-3.6.1/monadLib.cabal"
    c2 <- runExtract "../../../../source/monadLib-3.5.2/monadLib.cabal"
-   let diffs = compareModules (cp_exposed_modules c1) (cp_exposed_modules c2)
+   let diffs = compareModules (exposed_modules c1) (exposed_modules c2)
    mapM_ print diffs
 
 demo6 :: IO ()

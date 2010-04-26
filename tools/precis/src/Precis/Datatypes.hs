@@ -49,18 +49,21 @@ type StrName = String
 type TextRep = String
 
 data CabalPrecis = CabalPrecis
-      { cp_name                 :: StrName
-      , cp_version              :: String
-      , cp_cabal_file           :: FilePath
-      , cp_exposed_modules      :: [SourceFile]
-      , cp_internal_modules     :: [SourceFile]
+      { package_name            :: StrName
+      , package_version         :: String
+      , path_to_cabal_file      :: FilePath
+      , exposed_modules         :: [SourceFile]
+      , internal_modules        :: [SourceFile]
       }
   deriving (Eq,Show)
 
 
+
+-- 
 data SourceFile
-      = SourceFile     { src_module_name        :: StrName,
-                         src_file_path_to       :: FilePath }
+      = SourceFile     { module_name            :: StrName
+                       , full_path_to           :: FilePath 
+                       }
       | UnresolvedFile { unresolved_file_name   :: StrName }  
   deriving (Eq,Ord,Show)
 
@@ -110,20 +113,20 @@ data ExportItem = ModuleExport StrName
 instance Pretty CabalPrecis where
   pretty a = text "precis" <+> lineBraces body
     where
-      body =  expr "name"     (text $ cp_name a)    
-          <$> expr "version"  (text $ cp_version a)  
-          <$> expr "location" (text $ cp_cabal_file a)
-          <$> text "exposed modules"  <+> (modsbody $ cp_exposed_modules  a)
-          <$> text "internal modules" <+> (modsbody $ cp_internal_modules a)
+      body =  expr "name"     (text $ package_name a)
+          <$> expr "version"  (text $ package_version a)  
+          <$> expr "location" (text $ path_to_cabal_file a)
+          <$> text "exposed modules"  <+> (modsbody $ exposed_modules  a)
+          <$> text "internal modules" <+> (modsbody $ internal_modules a)
       modsbody = lineBraces . vsep . map pretty 
              
 instance Pretty SourceFile where
   pretty (UnresolvedFile name)     = expr "unresolved file" (text name)
-  pretty (SourceFile name path_to) = 
+  pretty (SourceFile name path) = 
       text "module" <+> lineBraces (name_exp <$> path_exp)
     where
       name_exp = expr "name" (text name)
-      path_exp = expr "path" (text path_to) 
+      path_exp = expr "path" (text path) 
       
 
 instance Pretty ModulePrecis where
