@@ -16,38 +16,23 @@
 
 module Precis.ModuleExports 
   (
-    exposedModules
-  , readModule
+    readModule
 
   ) where
 
-import Precis.CPP
 import Precis.Datatypes
 import Precis.HsSrcUtils
 
 import Language.Haskell.Exts hiding (name)        -- package: haskell-src-exts
 
-import Data.Map ( insert )
 import qualified Data.Map as Map
 
 
-
-exposedModules :: CabalPrecis -> IO ModuleDict
-exposedModules (CabalPrecis _ _ _ xs _) = step xs Map.empty
-  where
-    step []     acc = return acc
-    step (n:ns) acc = readModule (full_path_to n) (module_name n) >>= \ans ->
-                        case ans of 
-                          Left err -> step ns (updateErr n err acc)
-                          Right a  -> step ns (updateOk  n a acc)
-
-    updateErr n msg acc = insert (module_name n) (Left msg) acc
-    updateOk  n mp  acc = insert (module_name n) (Right mp) acc 
-
-
-readModule :: FilePath -> StrName -> IO (Either ModuleParseErr ModulePrecis)
-readModule src_file modu_name = 
-    bracketSourceFile src_file (pk mkPrecis mkExports)
+readModule :: StrName 
+           -> MacroExpandedSrcFile 
+           -> Either ModuleParseErr ModulePrecis
+readModule modu_name mx_src = 
+    bracketSourceFile mx_src (pk mkPrecis mkExports)
   where
     mkPrecis  = precisExports modu_name . moduleExports
 
@@ -55,15 +40,13 @@ readModule src_file modu_name =
     pk f g a = let x = f a in ModulePrecis  x (g x a)
 
 
-bracketSourceFile :: FilePath
+bracketSourceFile :: MacroExpandedSrcFile
                   -> (Module -> a) 
-                  -> IO (Either ModuleParseErr a)
-bracketSourceFile src_file sk = do 
-    src_txt  <- preprocessFile precisCpphsOptions src_file               
-    let ans  = parseModuleWithExts knownExtensions src_file src_txt
-    case ans of
-      ParseFailed _ msg -> return $ Left msg
-      ParseOk a         -> return $ Right $ sk a
+                  -> Either ModuleParseErr a
+bracketSourceFile (MacroExpandedSrcFile filename txt) sk =
+    case parseModuleWithExts knownExtensions filename txt of
+      ParseFailed _ msg -> Left msg
+      ParseOk a         -> Right $ sk a
 
 
 -- Helpers

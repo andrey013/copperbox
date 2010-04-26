@@ -6,12 +6,11 @@ import Precis.CPP
 import Precis.CabalPackage
 import Precis.Datatypes
 import Precis.Diff
-import Precis.HsSrcUtils
 import Precis.ModuleExports
 import Precis.PathUtils
 import Precis.Utils
 
-import Language.Haskell.Exts hiding ( name )
+-- import Language.Haskell.Exts hiding ( name )
 
 import Data.Map
 import Text.PrettyPrint.Leijen
@@ -25,7 +24,13 @@ runExtract path = do
     case ans of
       Left err -> error $ err
       Right cfg -> return cfg
- 
+
+fullParseModule :: SourceFile -> IO (Either ModuleParseErr ModulePrecis)
+fullParseModule (UnresolvedFile name) = return (Left $ "FileErr " ++ name)
+fullParseModule (SourceFile modu_name file_name) = do
+  mx_src <- preprocessFile precisCpphsOptions file_name
+  return $ readModule modu_name mx_src
+
 
 demo1 :: IO ()
 demo1 = runExtract "../../_sample_data/mtl.cabal" >>= putDoc . pretty
@@ -34,13 +39,12 @@ demo2 :: IO ()
 demo2 = do 
   cp <- runExtract "../../_sample_data/mtl.cabal"
   putDoc $ pretty cp
-  mods <- exposedModules cp
-  mapM_ (either print (putDoc . pretty)) $ elems mods
 
 
 demo3 :: IO ()
 demo3 = do 
-  ans <- readModule "../../_sample_data/Control/Monad/Cont/Class.hs" "State.Strict" 
+  ans <- fullParseModule (SourceFile "State.Strict"
+                                     "../../_sample_data/Control/Monad/Cont/Class.hs")
                     
   case ans of
     Right (ModulePrecis exps fm) -> putDoc80 (pretty exps) >> 
@@ -64,6 +68,8 @@ demo5 = do
    let diffs = compareModules (exposed_modules c1) (exposed_modules c2)
    mapM_ print diffs
 
+{-
+
 demo6 :: IO ()
 demo6 = do
     txt <- preproUseless fname
@@ -73,6 +79,7 @@ demo6 = do
       ParseFailed loc err -> putStrLn txt >> putStrLn (show (loc,err))
   where
     fname = "../../../../source/monadLib-3.6.1/src/MonadLib.hs"
+
 
 demo7 :: IO ()
 demo7 = print =<< preproTest "#line 3 \"..\" \n\n"
@@ -88,3 +95,4 @@ demo8 = let ans = parseModuleWithExts knownExtensions "" txt in
                  , "main = print 4"
                  , ""
                  ]
+-}

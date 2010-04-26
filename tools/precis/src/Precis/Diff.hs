@@ -20,10 +20,11 @@ module Precis.Diff
     Diff(..)
 
   , summarizeTopLevelChanges
-  , summarizeModuleDiffs
+--   , summarizeModuleDiffs
 
   , moduleDiffLists
 
+  , moduleDifferences
   , compareModules
   , statsSourceFiles
 
@@ -93,6 +94,7 @@ msgFileCount n = int n <+> text "files"
 
 -- Note Eq on Haskell-src-ext type will not work as Eq includes SrcLoc
 
+{-
 summarizeModuleDiffs :: ModuleDict -> ModuleDict -> Doc
 summarizeModuleDiffs new_dict old_dict = vsep $ map fn $ Map.toAscList new_dict
   where
@@ -105,17 +107,13 @@ findModule :: StrName -> ModuleDict -> (Either ModuleParseErr ModulePrecis)
 findModule name dict = case Map.lookup name dict of
                          Nothing -> Left $ "missing conterpart - " ++ name
                          Just a  -> a
+-}
 
 moduleDifferences :: StrName 
                   -> ModulePrecis 
-                  -> Either ModuleParseErr ModulePrecis
-                  -> Doc
-moduleDifferences name _      (Left err)     = 
-    text "*** ERROR -" <+> text name                                    <$> 
-    text "*** Problem with corresponding module in old cabal file"      <$>
-    text "***" <+> text err 
-    
-moduleDifferences name new_mp (Right old_mp) = 
+                  -> ModulePrecis
+                  -> Doc    
+moduleDifferences name new_mp old_mp = 
     text "Comparing" <+> text name <$> vsep (map fn exp_items) 
   where
     exp_items = mep_exports $ mp_export_precis new_mp

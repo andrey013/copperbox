@@ -17,14 +17,16 @@
 
 module Main where
 
+import Precis.CPP
 import Precis.CabalPackage
 import Precis.Datatypes
 import Precis.Diff
 import Precis.ModuleExports
+import Precis.Utils
 
-import Text.PrettyPrint.Leijen                    -- package: wl-pprint
+-- import Text.PrettyPrint.Leijen                    -- package: wl-pprint
 
-import System.IO ( stdout )
+-- import System.IO ( stdout )
 import System.Environment
 import System.Console.GetOpt
 
@@ -60,12 +62,37 @@ runCompare new_cabal_file old_cabal_file = do
    new_cp <- runExtract new_cabal_file
    old_cp <- runExtract old_cabal_file
    let docTL = summarizeTopLevelChanges new_cp old_cp
-   putDoc66 docTL
+   putDoc80 docTL
    -- module diffs
-   new_mods <- exposedModules new_cp
-   old_mods <- exposedModules old_cp
-   let docMods = summarizeModuleDiffs new_mods old_mods
-   putDoc66 docMods
+   let (expos,_) = moduleDiffLists new_cp old_cp
+   mapM_ compareModuleDiff expos
+
+compareModuleDiff :: Diff SourceFile -> IO ()
+compareModuleDiff (InL a)      = either putStrLn stat1 =<< fullParseModule a
+compareModuleDiff (InR a)      = putStrLn $ (module_name a) ++ " only in old"
+compareModuleDiff (InBoth n o) = do 
+  ans1 <- fullParseModule n
+  ans2 <- fullParseModule o
+  case (ans1,ans2) of 
+    (Right new,Right old) -> 
+        let result = moduleDifferences (module_name n) new old
+        in putDoc80 result
+    (Left err, _) -> putStrLn err
+    (_, Left err) -> putStrLn err
+
+
+-- | macro-expand and parse
+--
+fullParseModule :: SourceFile -> IO (Either ModuleParseErr ModulePrecis)
+fullParseModule (UnresolvedFile name) = return (Left $ "FileErr " ++ name)
+fullParseModule (SourceFile modu_name file_name) = do
+  mx_src <- preprocessFile precisCpphsOptions file_name
+  return $ readModule modu_name mx_src
+
+
+
+stat1 :: ModulePrecis -> IO ()
+stat1 (ModulePrecis ep _) = putStrLn $ (mep_base_module ep) ++ " only in new"
 
 
 runExtract :: FilePath -> IO CabalPrecis
@@ -75,6 +102,3 @@ runExtract path = do
       Left  err -> error $ err
       Right cfg -> return cfg
 
-
-putDoc66 :: Doc -> IO ()
-putDoc66 doc = displayIO stdout (renderPretty 0.8 66 doc) >> putStrLn ""

@@ -22,7 +22,8 @@ module Precis.Datatypes
   , SourceFile(..)
   , sourceFile 
 
-  , ModuleDict
+
+  , MacroExpandedSrcFile(..)
   , ModuleParseErr
   , DeclMap
   , ModulePrecis(..)
@@ -76,9 +77,13 @@ sourceFile name path = SourceFile name (normalise path)
 --------------------------------------------------------------------------------
 -- Precis for individual source files
 
+data MacroExpandedSrcFile = MacroExpandedSrcFile
+      { source_file_name    :: String
+      , expanded_source     :: String
+      }
 
 
-type ModuleDict = Map.Map StrName (Either ModuleParseErr ModulePrecis)
+
 
 type ModuleParseErr = String
 
@@ -102,6 +107,8 @@ data ExportItem = ModuleExport StrName
                 | DataOrClass  StrName TextRep
                 | Variable     StrName 
   deriving (Eq,Show)
+
+
 
 
 
