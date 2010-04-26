@@ -16,7 +16,9 @@
 
 module Precis.HsSrcUtils
   (
-    extractQName
+
+    parseModuleWithExts
+  , extractQName
   , extractCName
   , extractModuleName
   , extractName
@@ -29,6 +31,15 @@ module Precis.HsSrcUtils
 import Precis.Datatypes ( StrName, TextRep )
 
 import Language.Haskell.Exts hiding ( name )
+
+
+
+parseModuleWithExts :: [Extension] -> FilePath -> String -> ParseResult Module
+parseModuleWithExts exts file_name txt = parseModuleWithMode pmode txt
+  where
+    pmode = defaultParseMode { extensions            = exts
+                             , parseFilename         = file_name
+                             , ignoreLinePragmas     = True      }
 
 
 extractQName :: QName -> String

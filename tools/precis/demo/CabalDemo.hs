@@ -2,13 +2,16 @@
 
 module CabalDemo where
 
+import Precis.CPP
+import Precis.CabalPackage
 import Precis.Datatypes
 import Precis.Diff
-import Precis.CabalPackage
+import Precis.HsSrcUtils
 import Precis.ModuleExports
 import Precis.PathUtils
 import Precis.Utils
 
+import Language.Haskell.Exts hiding ( name )
 
 import Data.Map
 import Text.PrettyPrint.Leijen
@@ -65,3 +68,13 @@ demo5 = do
    c2 <- runExtract "../../../../source/monadLib-3.5.2/monadLib.cabal"
    let diffs = compareModules (cp_exposed_modules c1) (cp_exposed_modules c2)
    mapM_ print diffs
+
+demo6 :: IO ()
+demo6 = do
+    txt <- preproUseless fname
+    let ans = parseModuleWithExts knownExtensions fname txt
+    case ans of 
+      ParseOk a -> putStr $  prettyPrint a
+      ParseFailed loc err -> putStrLn txt >> putStrLn (show (loc,err))
+  where
+    fname = "../../../../source/monadLib-3.6.1/src/MonadLib.hs"
