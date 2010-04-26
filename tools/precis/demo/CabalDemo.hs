@@ -78,3 +78,18 @@ demo6 = do
       ParseFailed loc err -> putStrLn txt >> putStrLn (show (loc,err))
   where
     fname = "../../../../source/monadLib-3.6.1/src/MonadLib.hs"
+
+demo7 :: IO ()
+demo7 = print =<< preproTest "#line 3 \"..\" \n\n"
+
+demo8 :: IO ()
+demo8 = let ans = parseModuleWithExts knownExtensions "" txt in
+    case ans of 
+      ParseOk a -> putStr $  prettyPrint a
+      ParseFailed loc err -> putStrLn txt >> putStrLn (show (loc,err))
+ where
+   txt = unlines [ "#line 1 \"f.hs\""
+                 , "module Main where"
+                 , "main = print 4"
+                 , ""
+                 ]

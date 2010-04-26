@@ -39,7 +39,7 @@ parseModuleWithExts exts file_name txt = parseModuleWithMode pmode txt
   where
     pmode = defaultParseMode { extensions            = exts
                              , parseFilename         = file_name
-                             , ignoreLinePragmas     = True      }
+                             , ignoreLinePragmas     = False      }
 
 
 extractQName :: QName -> String

@@ -21,6 +21,7 @@ module Precis.ModuleExports
 
   ) where
 
+import Precis.CPP
 import Precis.Datatypes
 import Precis.HsSrcUtils
 import Precis.PathUtils
@@ -61,7 +62,8 @@ bracketSourceFile :: FilePath
                   -> (Module -> a) 
                   -> IO (Either ModuleParseErr a)
 bracketSourceFile src_file sk = do 
-    ans <- parseFileWithExts knownExtensions src_file
+    src_txt  <- preprocessFile precisCpphsOptions src_file               
+    let ans  = parseModuleWithExts knownExtensions src_file src_txt
     case ans of
       ParseFailed _ msg -> return $ Left msg
       ParseOk a         -> return $ Right $ sk a

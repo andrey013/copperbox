@@ -10,6 +10,8 @@ synopsis:         Summarize Cabal packages.
 description:
   Summarize Cabal pacakages.
   .
+  BSD3 + GPL executable apropos CppHs
+  .
   
 build-type:         Simple
 stability:          unstable
@@ -21,16 +23,18 @@ extra-source-files:
 library
   build-depends:  base               <  5,
                   containers         <  0.5,
-                  Cabal              >= 1.8 && < 2.0,
-                  filepath           >= 1.1 && < 2.0,
-                  directory          >= 1.0 && < 2.0,
-                  haskell-src-exts   >= 1.8 && < 1.9,
-                  wl-pprint                  
+                  Cabal              >= 1.8  && < 2.0,
+                  filepath           >= 1.1  && < 2.0,
+                  directory          >= 1.0  && < 2.0,
+                  haskell-src-exts   >= 1.8  && < 2.0,
+                  cpphs              >= 1.11 && < 2.0,
+                  wl-pprint          >= 1.0  && < 2.0        
                   
   hs-source-dirs: src
 
   exposed-modules: 
     Precis.CabalPackage,
+    Precis.CPP,
     Precis.Datatypes,
     Precis.Diff,
     Precis.HsSrcUtils,

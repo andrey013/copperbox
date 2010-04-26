@@ -21,14 +21,25 @@ import Language.Preprocessor.Cpphs
 
 
 preproUseless :: FilePath -> IO String
-preproUseless = preprocessFile defaultCpphsOptions
+preproUseless = preprocessFile precisCpphsOptions
 
+precisCpphsOptions :: CpphsOptions
+precisCpphsOptions = updBoolOpts (\s -> s {hashline = False}) defaultCpphsOptions
+
+preproTest :: String -> IO String
+preproTest = runCpphs precisCpphsOptions ""
+
+    
+updBoolOpts :: (BoolOptions -> BoolOptions) -> CpphsOptions -> CpphsOptions
+updBoolOpts f b = let opts = boolopts b in b { boolopts = f opts }
 
 preprocessFile :: CpphsOptions -> FilePath -> IO String
 preprocessFile opts file_name = do
   input  <- readFile file_name
   output <- runCpphs opts file_name input
   return output
+
+
 
   
 
