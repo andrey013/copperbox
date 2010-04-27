@@ -22,6 +22,7 @@ import Precis.CabalPackage
 import Precis.Datatypes
 import Precis.Diff
 import Precis.ModuleExports
+import Precis.ModuleMetrics
 import Precis.Utils
 
 -- import Text.PrettyPrint.Leijen                    -- package: wl-pprint

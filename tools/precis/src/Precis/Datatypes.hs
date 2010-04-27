@@ -74,7 +74,6 @@ sourceFile :: String -> FilePath -> SourceFile
 sourceFile name path = SourceFile name (normalise path)
 
 
-
 data CabalFileError = ERR_CABAL_FILE_MISSING
                     | ERR_CABAL_FILE_PARSE   String
   deriving (Eq,Show)

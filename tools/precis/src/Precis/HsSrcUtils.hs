@@ -30,7 +30,7 @@ module Precis.HsSrcUtils
 
 import Precis.Datatypes ( StrName, TextRep )
 
-import Language.Haskell.Exts hiding ( name )
+import Language.Haskell.Exts hiding ( name )      -- package: haskell-src-exts
 
 
 

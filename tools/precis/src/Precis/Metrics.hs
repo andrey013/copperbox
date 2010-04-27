@@ -17,7 +17,7 @@
 
 module Precis.Metrics
   (
-    Metric
+    Metric(..)
   , diffMetric
 
   ) where
