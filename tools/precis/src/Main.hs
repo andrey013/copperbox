@@ -32,6 +32,8 @@ import System.Environment
 import System.Console.GetOpt
 
 
+
+
 header :: String
 header = "Usage: precis <new_cabal_file> <old_cabal_file>"
 
@@ -67,6 +69,11 @@ runCompare new_cabal_file old_cabal_file = do
    -- module diffs
    let (expos,_) = moduleDiffLists new_cp old_cp
    mapM_ compareModuleDiff expos
+   -- 
+   -- temporary...
+   let pm1 = packageModulesMetric new_cp
+   let pm2 = packageModulesMetric old_cp
+   print $ diffModulesMetrics pm1 pm2
 
 compareModuleDiff :: Diff SourceFile -> IO ()
 compareModuleDiff (InL a)      = either print stat1 =<< fullParseModule a

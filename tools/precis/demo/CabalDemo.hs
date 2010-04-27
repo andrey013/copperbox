@@ -6,13 +6,15 @@ import Precis.CPP
 import Precis.CabalPackage
 import Precis.Datatypes
 import Precis.Diff
+import Precis.Metrics
 import Precis.ModuleExports
 import Precis.PathUtils
 import Precis.Utils
 
 -- import Language.Haskell.Exts hiding ( name )
 
-import Data.Map
+import Data.Char
+import Data.Map hiding ( difference )
 import Text.PrettyPrint.Leijen
 import System.FilePath
 
@@ -22,14 +24,15 @@ runExtract :: FilePath -> IO CabalPrecis
 runExtract path = do
     ans <- extractPrecis path ["hs", "lhs"]
     case ans of
-      Left err -> error $ err
+      Left err -> error $ show err
       Right cfg -> return cfg
 
-fullParseModule :: SourceFile -> IO (Either ModuleParseErr ModulePrecis)
-fullParseModule (UnresolvedFile name) = return (Left $ "FileErr " ++ name)
+fullParseModule :: SourceFile -> IO (Either ModuleParseError ModulePrecis)
+fullParseModule (UnresolvedFile name) = 
+    return $ Left $ ERR_MODULE_FILE_MISSING name
 fullParseModule (SourceFile modu_name file_name) = do
-  mx_src <- preprocessFile precisCpphsOptions file_name
-  return $ readModule modu_name mx_src
+    mx_src <- preprocessFile precisCpphsOptions file_name
+    return $ readModule modu_name mx_src
 
 
 demo1 :: IO ()
@@ -49,7 +52,7 @@ demo3 = do
   case ans of
     Right (ModulePrecis exps fm) -> putDoc80 (pretty exps) >> 
                                     mapM_ (putStrLn) (elems fm)
-    Left err       -> error err
+    Left err       -> error $ show err
 
 
 demo4 :: IO ()
@@ -67,6 +70,14 @@ demo5 = do
    c2 <- runExtract "../../../../source/monadLib-3.5.2/monadLib.cabal"
    let diffs = compareModules (exposed_modules c1) (exposed_modules c2)
    mapM_ print diffs
+
+
+demo6 :: [Edit Char]
+demo6 = difference match conflict "ABCDEF" "feCba"
+  where
+    match a b = toLower a == toLower b
+    conflict = (/=)
+
 
 {-
 

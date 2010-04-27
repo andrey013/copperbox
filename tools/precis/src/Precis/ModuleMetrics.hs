@@ -21,6 +21,7 @@ module Precis.ModuleMetrics
     PackageModulesMetric
   , packageModulesMetric
   , ModulesList(..)
+  , diffModulesMetrics
 
   --
   , ExportsMetric
@@ -44,6 +45,7 @@ data ModulesList = ModulesList
       { public_modules  :: [StrName]
       , private_modules :: [StrName]
       }
+  deriving (Eq,Show)
 
 makePackageModulesMetric :: ModulesList -> PackageModulesMetric
 makePackageModulesMetric  = Metric name descr 
@@ -64,6 +66,17 @@ modulesList cp = ModulesList expos privs
 sourceFileName :: SourceFile -> StrName
 sourceFileName (SourceFile n _)   = n
 sourceFileName (UnresolvedFile n) = n 
+
+diffModulesMetrics :: PackageModulesMetric 
+                   -> PackageModulesMetric 
+                   -> ([Edit StrName],[Edit StrName])
+diffModulesMetrics = diffMetric cmp
+  where
+    cmp :: ModulesList -> ModulesList -> ([Edit StrName],[Edit StrName])
+    cmp (ModulesList expos privs) (ModulesList expos' privs') = (xs,ys)
+       where
+         xs = difference (==) (/=) expos expos'         
+         ys = difference (==) (/=) privs privs'
 
 --------------------------------------------------------------------------------
 

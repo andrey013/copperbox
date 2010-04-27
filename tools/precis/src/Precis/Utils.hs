@@ -17,7 +17,12 @@
 
 module Precis.Utils
   (
-    para
+
+    H 
+  , snocH
+  , toListH
+ 
+  , para
   , mbCons
   , mbEither
 
@@ -41,6 +46,20 @@ module Precis.Utils
 import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 import Control.Monad
+
+
+
+-- Hughes lists
+
+type H a = [a] -> [a]
+
+snocH :: H a -> a -> H a
+snocH f a = f . (a:)
+
+toListH :: H a -> [a]
+toListH = ($ [])
+
+
 
 -- paramorphism (generalizes catamorphism (fold))
 para :: (a -> ([a], b) -> b) -> b -> [a] -> b
