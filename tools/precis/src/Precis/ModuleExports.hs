@@ -30,7 +30,7 @@ import qualified Data.Map as Map
 
 readModule :: StrName 
            -> MacroExpandedSrcFile 
-           -> Either ModuleParseErr ModulePrecis
+           -> Either ModuleParseError ModulePrecis
 readModule modu_name mx_src = 
     bracketSourceFile mx_src (pk mkPrecis mkExports)
   where
@@ -42,10 +42,10 @@ readModule modu_name mx_src =
 
 bracketSourceFile :: MacroExpandedSrcFile
                   -> (Module -> a) 
-                  -> Either ModuleParseErr a
+                  -> Either ModuleParseError a
 bracketSourceFile (MacroExpandedSrcFile filename txt) sk =
     case parseModuleWithExts knownExtensions filename txt of
-      ParseFailed _ msg -> Left msg
+      ParseFailed _ msg -> Left (ERR_MODULE_FILE_PARSE msg)
       ParseOk a         -> Right $ sk a
 
 

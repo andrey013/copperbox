@@ -68,7 +68,7 @@ runCompare new_cabal_file old_cabal_file = do
    mapM_ compareModuleDiff expos
 
 compareModuleDiff :: Diff SourceFile -> IO ()
-compareModuleDiff (InL a)      = either putStrLn stat1 =<< fullParseModule a
+compareModuleDiff (InL a)      = either print stat1 =<< fullParseModule a
 compareModuleDiff (InR a)      = putStrLn $ (module_name a) ++ " only in old"
 compareModuleDiff (InBoth n o) = do 
   ans1 <- fullParseModule n
@@ -77,17 +77,18 @@ compareModuleDiff (InBoth n o) = do
     (Right new,Right old) -> 
         let result = moduleDifferences (module_name n) new old
         in putDoc80 result
-    (Left err, _) -> putStrLn err
-    (_, Left err) -> putStrLn err
+    (Left err, _) -> putStrLn $ show err
+    (_, Left err) -> putStrLn $ show err
 
 
 -- | macro-expand and parse
 --
-fullParseModule :: SourceFile -> IO (Either ModuleParseErr ModulePrecis)
-fullParseModule (UnresolvedFile name) = return (Left $ "FileErr " ++ name)
+fullParseModule :: SourceFile -> IO (Either ModuleParseError ModulePrecis)
+fullParseModule (UnresolvedFile name) = 
+    return $ Left $ ERR_MODULE_FILE_MISSING name
 fullParseModule (SourceFile modu_name file_name) = do
-  mx_src <- preprocessFile precisCpphsOptions file_name
-  return $ readModule modu_name mx_src
+    mx_src <- preprocessFile precisCpphsOptions file_name
+    return $ readModule modu_name mx_src
 
 
 

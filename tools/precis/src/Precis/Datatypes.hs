@@ -24,6 +24,7 @@ module Precis.Datatypes
   , CabalFileError(..)
 
   , MacroExpandedSrcFile(..)
+  , ModuleParseError(..)
   , ModuleParseErr
   , DeclMap
   , ModulePrecis(..)
@@ -88,7 +89,12 @@ data MacroExpandedSrcFile = MacroExpandedSrcFile
       }
 
 
-
+-- | Module file names are derived from the cabal file.
+-- So the name is tracked if it is missing...
+--
+data ModuleParseError = ERR_MODULE_FILE_MISSING String
+                      | ERR_MODULE_FILE_PARSE   String
+  deriving (Eq,Show)
 
 type ModuleParseErr = String
 
