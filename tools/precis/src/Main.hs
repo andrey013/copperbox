@@ -99,6 +99,9 @@ runExtract :: FilePath -> IO CabalPrecis
 runExtract path = do
     ans <- extractPrecis path ["hs", "lhs"]
     case ans of
-      Left  err -> error $ err
+      Left  err -> error $ (fmt err)
       Right cfg -> return cfg
+  where
+    fmt ERR_CABAL_FILE_MISSING     = "*** Missing cabal file " ++ path
+    fmt (ERR_CABAL_FILE_PARSE msg) = "*** Parse error: " ++ msg 
 

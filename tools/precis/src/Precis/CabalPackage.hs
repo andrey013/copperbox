@@ -39,27 +39,36 @@ import System.FilePath
 type CabalErr = String
 
 
-extractPrecis :: FilePath -> [String] -> IO (Either CabalErr CabalPrecis)
-extractPrecis cabal_file exts = 
-    condM (doesFileExist cabal_file) (liftM post $ extractP cabal_file exts)
-                                     (return $ "Missing cabal file - " ++ cabal_file)
+extractPrecis :: FilePath -> [String] -> IO (Either CabalFileError CabalPrecis)
+extractPrecis cabal_file exts = do
+    exists <- doesFileExist cabal_file
+    if exists then extractP cabal_file exts `onSuccessM` post
+              else return $ Left ERR_CABAL_FILE_MISSING
   where
-    post = nubSourceFiles
+    post = return . nubSourceFiles
 
 
-extractP :: FilePath -> [String] -> IO CabalPrecis
-extractP cabal_file_path exts = do 
-    gen_pkg  <- readPackageDescription normal cabal_file_path
-    (expos,privs) <- getSourceFiles gen_pkg root_to_cabal exts
-    return $ CabalPrecis 
-               { package_name          = getName gen_pkg
-               , package_version       = getVersion gen_pkg
-               , path_to_cabal_file    = cabal_file_path
-               , exposed_modules       = expos
-               , internal_modules      = privs
-               }
+extractP :: FilePath -> [String] -> IO (Either CabalFileError CabalPrecis)
+extractP cabal_file_path exts =
+    safeReadPackageDescription normal cabal_file_path `onSuccessM` sk
   where
     root_to_cabal = dropFileName cabal_file_path  
+    sk gen_pkg = do { (expos,privs) <- getSourceFiles gen_pkg root_to_cabal exts
+                    ; return $ CabalPrecis 
+                                 { package_name          = getName gen_pkg
+                                 , package_version       = getVersion gen_pkg
+                                 , path_to_cabal_file    = cabal_file_path
+                                 , exposed_modules       = expos
+                                 , internal_modules      = privs
+                                 }
+                    }
+
+type SafeGPD = Either CabalFileError GenericPackageDescription
+
+safeReadPackageDescription :: Verbosity -> FilePath -> IO SafeGPD
+safeReadPackageDescription verbo path = 
+  catch (liftM Right $ readPackageDescription verbo path)
+        (\e -> return $ Left $ ERR_CABAL_FILE_PARSE $ show e)
 
 --------------------------------------------------------------------------------
 -- Extract from Package description

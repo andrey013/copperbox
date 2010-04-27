@@ -21,7 +21,7 @@ module Precis.Datatypes
   , CabalPrecis(..)
   , SourceFile(..)
   , sourceFile 
-
+  , CabalFileError(..)
 
   , MacroExpandedSrcFile(..)
   , ModuleParseErr
@@ -58,8 +58,6 @@ data CabalPrecis = CabalPrecis
       }
   deriving (Eq,Show)
 
-
-
 -- 
 data SourceFile
       = SourceFile     { module_name            :: StrName
@@ -73,6 +71,13 @@ data SourceFile
 
 sourceFile :: String -> FilePath -> SourceFile
 sourceFile name path = SourceFile name (normalise path)
+
+
+
+data CabalFileError = ERR_CABAL_FILE_MISSING
+                    | ERR_CABAL_FILE_PARSE   String
+  deriving (Eq,Show)
+
 
 --------------------------------------------------------------------------------
 -- Precis for individual source files

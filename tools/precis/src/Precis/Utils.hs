@@ -21,7 +21,11 @@ module Precis.Utils
   , mbCons
   , mbEither
 
+
   , predMaybe
+  , onSuccess
+  , onSuccessM
+
   , predMaybeM
   , condM
 
@@ -55,6 +59,21 @@ mbEither b = maybe (Left b) Right
 predMaybe :: (a -> Bool) -> a -> Maybe a
 predMaybe p a | p a       = Just a
               | otherwise = Nothing
+
+
+
+  
+onSuccess :: Monad m => Either a b -> (b -> m c) -> m (Either a c)
+onSuccess (Left a)  _  = return (Left a)
+onSuccess (Right b) mf = liftM Right $ mf b 
+
+  
+onSuccessM :: Monad m => m (Either a b) -> (b -> m c) -> m (Either a c)
+onSuccessM ma msk = ma >>= step 
+  where
+    step (Left a)  = return (Left a)
+    step (Right b) = liftM Right $ msk b 
+
 
 predMaybeM :: Monad m => (a -> m Bool) -> a -> m (Maybe a)
 predMaybeM mp a = mp a >>= \v -> if v then return (Just a) else return Nothing
