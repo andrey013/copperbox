@@ -17,12 +17,17 @@
 
 module Precis.Properties
   (
+  -- * Property type
     Property(..)
   
+  -- * Edit type
   , Edit(..)
+
+  -- * Edit operations
   , difference
   , diffProperty
   , addedRemoved
+  , summarizeAddedRemoved
 
   ) where
 
@@ -74,13 +79,21 @@ addedRemoved = foldr fn ([],[])
     fn (Removed a) (as,rs) = (as,a:rs)
     fn _           acc     = acc
 
-summarizeAddedRemoved :: String -> String -> (a -> String) -> [Edit a] -> String
+summarizeAddedRemoved :: String -> String -> (a -> String) -> [Edit a] -> ShowS
 summarizeAddedRemoved single plural str xs = 
-    undefined
+           added_msg <> comma <+> removed_msg 
+    `line` vsep (map added1   as)
+    `line` vsep (map removed1 rs)
   where
-    (as,rs) = addedRemoved xs
+    (as,rs)     = addedRemoved xs
+    (alen,rlen) = (length as, length rs)
+    msgFiles    = msgCount single plural
 
-
+    added_msg   = msgFiles alen <+> text "added (+)"
+    removed_msg = msgFiles rlen <+> text "removed (-)"
+ 
+    added1 a     = char '+' <+> (text $ str a)
+    removed1 a   = char '-' <+> (text $ str a)
 
 msgCount :: String -> String -> Int -> ShowS
 msgCount single _      1 = int 1 <+> text single

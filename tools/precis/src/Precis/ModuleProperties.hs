@@ -20,8 +20,13 @@ module Precis.ModuleProperties
    
     PackageModulesProp
   , packageModulesProp
-  , ModulesList(..)
-  , diffModulesProps
+  , PackageModulesList(..)
+  , diffPackageModulesProps
+
+  , ExposedModulesProp
+  , exposedModulesProp
+  , ExposedModulesList
+  , diffExposedModulesProps
 
   --
   , ExportsProp
@@ -37,27 +42,27 @@ module Precis.ModuleProperties
 import Precis.Datatypes
 import Precis.Properties
 
-import Language.Haskell.Exts hiding ( name )      -- package: haskell-src-exts
+import Language.Haskell.Exts hiding ( name, op )    -- package: haskell-src-exts
 
-type PackageModulesProp = Property ModulesList
+type PackageModulesProp = Property PackageModulesList
 
-data ModulesList = ModulesList
+data PackageModulesList = PackageModulesList
       { public_modules  :: [StrName]
       , private_modules :: [StrName]
       }
   deriving (Eq,Show)
 
-makePackageModulesProp :: ModulesList -> PackageModulesProp
+makePackageModulesProp :: PackageModulesList -> PackageModulesProp
 makePackageModulesProp  = Property name descr 
   where
     name  = "Modules list"
     descr = "Lists of exposed and internal modules in a package."
 
 packageModulesProp :: CabalPrecis -> PackageModulesProp
-packageModulesProp = makePackageModulesProp . modulesList
+packageModulesProp = makePackageModulesProp . packageModulesList
 
-modulesList :: CabalPrecis -> ModulesList
-modulesList cp = ModulesList expos privs
+packageModulesList :: CabalPrecis -> PackageModulesList
+packageModulesList cp = PackageModulesList expos privs
   where
     expos = map sourceFileName $ exposed_modules  cp
     privs = map sourceFileName $ internal_modules cp
@@ -67,16 +72,47 @@ sourceFileName :: SourceFile -> StrName
 sourceFileName (SourceFile n _)   = n
 sourceFileName (UnresolvedFile n) = n 
 
-diffModulesProps :: PackageModulesProp 
-                   -> PackageModulesProp 
-                   -> ([Edit StrName],[Edit StrName])
-diffModulesProps = diffProperty cmp
+
+diffPackageModulesProps :: PackageModulesProp 
+                        -> PackageModulesProp 
+                        -> ([Edit StrName],[Edit StrName])
+diffPackageModulesProps = diffProperty cmp
   where
-    cmp :: ModulesList -> ModulesList -> ([Edit StrName],[Edit StrName])
-    cmp (ModulesList expos privs) (ModulesList expos' privs') = (xs,ys)
+    cmp :: PackageModulesList -> PackageModulesList 
+                              -> ([Edit StrName],[Edit StrName])
+    cmp (PackageModulesList expos privs) (PackageModulesList expos' privs') = 
+        (xs,ys)
        where
          xs = difference (==) (/=) expos expos'         
          ys = difference (==) (/=) privs privs'
+
+--------------------------------------------------------------------------------
+
+type ExposedModulesProp = Property ExposedModulesList
+
+type ExposedModulesList = [SourceFile]
+
+makeExposedModulesProp :: ExposedModulesList -> ExposedModulesProp
+makeExposedModulesProp  = Property name descr 
+  where
+    name  = "Exposed modules"
+    descr = "Exposed modules (with paths) in a package."
+
+exposedModulesProp :: CabalPrecis -> ExposedModulesProp
+exposedModulesProp = makeExposedModulesProp . exposed_modules
+
+
+diffExposedModulesProps :: ExposedModulesProp 
+                        -> ExposedModulesProp 
+                        -> [Edit SourceFile]
+diffExposedModulesProps = diffProperty cmp
+  where
+    cmp :: ExposedModulesList -> ExposedModulesList -> [Edit SourceFile]
+    cmp es1 es2 = difference (lift2a (==)) (/=) es1 es2         
+        
+
+    lift2a :: (StrName -> StrName -> b) -> SourceFile -> SourceFile -> b
+    lift2a op s1 s2 = sourceFileName s1 `op` sourceFileName s2
 
 --------------------------------------------------------------------------------
 
@@ -98,7 +134,7 @@ data ExportsPrecis = ExportsPrecis
        }
   deriving (Eq,Show)
 
-
+  
 type ModuleExport = StrName
 type VarExport    = StrName
 
@@ -117,4 +153,4 @@ exportsProp modu = makeExportsProp (exportsPrecis modu)
 
 
 exportsPrecis :: Module -> ExportsPrecis
-exportsPrecis _modu = error "exportsPrecis TODO"
+exportsPrecis _modu = error "exportsPrecis TODO" 

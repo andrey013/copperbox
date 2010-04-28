@@ -19,6 +19,8 @@ module Precis.PPShowS
   (
 
     toString
+  , putShowS
+  , putShowSLine
 
   , punctuate
   , encloseSep
@@ -63,19 +65,26 @@ module Precis.PPShowS
   , newline
   , bar
 
-
+  , empty
   , text 
   , char
   , int
 
+  , repeatChar
+
   ) where
 
-
+infixr 5 `line`
 infixr 6 <>,<+>
 
 toString :: ShowS -> String
 toString = ($ [])
 
+putShowS :: ShowS -> IO ()
+putShowS = putStr . toString
+
+putShowSLine :: ShowS -> IO ()
+putShowSLine = putStrLn . toString
 
 
 punctuate :: ShowS -> [ShowS] -> [ShowS]
@@ -115,7 +124,7 @@ vsep            = fold line
 
 
 fold :: (ShowS -> ShowS -> ShowS) -> [ShowS] -> ShowS
-fold f []      = id
+fold _ []      = id
 fold f xs      = foldr1 f xs
 
 sep             :: ShowS -> ShowS -> ShowS
@@ -205,6 +214,8 @@ bar             :: ShowS
 bar             = showChar '|'
 
 
+empty           :: ShowS
+empty           = id
 
 text            :: String -> ShowS
 text            = showString
@@ -214,3 +225,7 @@ char            = showChar
 
 int             :: Int -> ShowS
 int             = shows
+
+
+repeatChar      :: Int -> Char -> ShowS
+repeatChar i    = showString . replicate i

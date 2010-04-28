@@ -5,17 +5,14 @@ module CabalDemo where
 import Precis.CPP
 import Precis.CabalPackage
 import Precis.Datatypes
-import Precis.Diff
 import Precis.Properties
 import Precis.ModuleExports
 import Precis.PathUtils
-import Precis.Utils
 
 -- import Language.Haskell.Exts hiding ( name )
 
 import Data.Char
 import Data.Map hiding ( difference )
-import Text.PrettyPrint.Leijen
 import System.FilePath
 
 
@@ -36,12 +33,12 @@ fullParseModule (SourceFile modu_name file_name) = do
 
 
 demo1 :: IO ()
-demo1 = runExtract "../../_sample_data/mtl.cabal" >>= putDoc . pretty
+demo1 = runExtract "../../_sample_data/mtl.cabal" >>= print
 
 demo2 :: IO ()
 demo2 = do 
   cp <- runExtract "../../_sample_data/mtl.cabal"
-  putDoc $ pretty cp
+  print cp
 
 
 demo3 :: IO ()
@@ -50,7 +47,7 @@ demo3 = do
                                      "../../_sample_data/Control/Monad/Cont/Class.hs")
                     
   case ans of
-    Right (ModulePrecis exps fm) -> putDoc80 (pretty exps) >> 
+    Right (ModulePrecis exps fm) -> print exps >> 
                                     mapM_ (putStrLn) (elems fm)
     Left err       -> error $ show err
 
@@ -64,20 +61,21 @@ demo4 = do
   print $ removePrefix "../samples/one.hs" "..\\samples\\two.hs"
 
 
+demo5 :: [Edit Char]
+demo5 = difference match conflict "ABCDEF" "feCba"
+  where
+    match a b = toLower a == toLower b
+    conflict  = (/=)
+
+
+{-
 demo5 :: IO ()
 demo5 = do 
    c1 <- runExtract "../../../../source/monadLib-3.6.1/monadLib.cabal"
    c2 <- runExtract "../../../../source/monadLib-3.5.2/monadLib.cabal"
    let diffs = compareModules (exposed_modules c1) (exposed_modules c2)
    mapM_ print diffs
-
-
-demo6 :: [Edit Char]
-demo6 = difference match conflict "ABCDEF" "feCba"
-  where
-    match a b = toLower a == toLower b
-    conflict = (/=)
-
+-}
 
 {-
 

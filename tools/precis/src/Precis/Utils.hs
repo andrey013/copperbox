@@ -37,7 +37,6 @@ module Precis.Utils
 
   ) where
 
-import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 import Control.Monad
 

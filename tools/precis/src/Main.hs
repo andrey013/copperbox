@@ -20,14 +20,11 @@ module Main where
 import Precis.CPP
 import Precis.CabalPackage
 import Precis.Datatypes
-import Precis.Diff
 import Precis.ModuleExports
 import Precis.ModuleProperties
+import Precis.PPShowS
+import Precis.Properties
 
--- TEMP
-import Text.PrettyPrint.Leijen          -- package: wl-pprint
-
--- import System.IO ( stdout )
 import System.Environment
 import System.Console.GetOpt
 
@@ -64,16 +61,56 @@ runCompare :: FilePath -> FilePath -> IO ()
 runCompare new_cabal_file old_cabal_file = do 
    new_cp <- runExtract new_cabal_file
    old_cp <- runExtract old_cabal_file
-   let docTL = summarizeTopLevelChanges new_cp old_cp
-   putDoc80 docTL
-   -- module diffs
-   let (expos,_) = moduleDiffLists new_cp old_cp
-   mapM_ compareModuleDiff expos
-   -- 
-   -- temporary...
-   let pm1 = packageModulesProp new_cp
-   let pm2 = packageModulesProp old_cp
-   print $ diffModulesProps pm1 pm2
+
+   printPackageNameAndVersions new_cp old_cp
+
+   printModuleCountSummary new_cp old_cp
+
+   compareExposedModules (exposedModulesProp new_cp) (exposedModulesProp old_cp)
+
+
+printPackageNameAndVersions :: CabalPrecis -> CabalPrecis -> IO ()
+printPackageNameAndVersions new_cp old_cp = putShowSLine $ vsep
+    [ repeatChar 50 '-'
+    , packageNames    (package_name new_cp)    (package_name old_cp) 
+    , repeatChar 50 '-'
+    , packageVersions (package_version new_cp) (package_version old_cp)
+    , newline
+    ]
+  where
+    packageNames a b | a == b    = text a
+                     | otherwise = text a <+> text "*** Warning: comparing to " 
+                                          <+> text b
+    packageVersions a b = text "Version:" <+> text a 
+                       <+> text "compared to Version:" 
+                       <+> text b
+
+printModuleCountSummary :: CabalPrecis -> CabalPrecis -> IO ()
+printModuleCountSummary new_cp old_cp = putShowSLine $ vsep
+    [ text "Exposed modules:"
+    , summarizeAddedRemoved "file" "files" id expos
+    , text "Internal modules:"
+    , summarizeAddedRemoved "file" "files" id privs
+    , newline
+    ]
+  where
+    pm_new        = packageModulesProp new_cp
+    pm_old        = packageModulesProp old_cp
+    (expos,privs) = diffPackageModulesProps pm_new pm_old
+                                  
+
+compareExposedModules :: ExposedModulesProp -> ExposedModulesProp -> IO ()
+compareExposedModules new_expos old_expos = 
+   mapM_ compareExpoModule1 $ diffExposedModulesProps new_expos old_expos  
+
+compareExpoModule1 :: Edit SourceFile -> IO ()
+compareExpoModule1 (Added _)      = return ()
+compareExpoModule1 (Removed _)    = return ()
+compareExpoModule1 (Conflict a b) = putShowSLine $ text "conflict"
+compareExpoModule1 (Same a)       = putShowSLine $ text "same"
+
+
+{-
 
 compareModuleDiff :: Diff SourceFile -> IO ()
 compareModuleDiff (InL a)      = either print stat1 =<< fullParseModule a
@@ -87,7 +124,7 @@ compareModuleDiff (InBoth n o) = do
         in putDoc80 result
     (Left err, _) -> putStrLn $ show err
     (_, Left err) -> putStrLn $ show err
-
+-}
 
 -- | macro-expand and parse
 --
@@ -114,7 +151,3 @@ runExtract path = do
     fmt ERR_CABAL_FILE_MISSING     = "*** Missing cabal file " ++ path
     fmt (ERR_CABAL_FILE_PARSE msg) = "*** Parse error: " ++ msg 
 
-
--- TEMP
-putDoc80 :: Doc -> IO ()
-putDoc80 doc = putStr $ displayS (renderPretty 0.8 80 doc) ""
