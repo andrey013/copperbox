@@ -33,9 +33,6 @@ module Precis.Datatypes
 
   ) where
 
-import Precis.Utils
-
-import Text.PrettyPrint.Leijen                    -- package: wl-pprint
 
 import qualified Data.Map as Map
 
@@ -127,6 +124,8 @@ data ExportItem = ModuleExport StrName
 --------------------------------------------------------------------------------
 -- instances
 
+{-
+
 instance Pretty CabalPrecis where
   pretty a = text "precis" <+> lineBraces body
     where
@@ -165,3 +164,5 @@ instance Pretty ExportItem where
   pretty (DataOrClass _ rep) = text rep
   pretty (Variable name)     = text name
 
+
+-}

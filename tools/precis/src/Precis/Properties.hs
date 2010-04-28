@@ -22,10 +22,11 @@ module Precis.Properties
   , Edit(..)
   , difference
   , diffProperty
+  , addedRemoved
 
   ) where
 
-
+import Precis.PPShowS
 import Precis.Utils
 
 import Data.List ( find )
@@ -38,6 +39,8 @@ data Property n = Property
       }
   deriving (Eq,Ord,Show)
 
+
+--------------------------------------------------------------------------------
 
 data Edit a = Added a | Conflict a a | Same a | Removed a
   deriving (Eq,Show)
@@ -62,3 +65,23 @@ difference matches conflict as bs = toListH $ checkShort bs (checkLong as id)
 
 diffProperty :: (n -> n -> b) -> Property n -> Property n -> b
 diffProperty cmp (Property _ _ a) (Property _ _ b) = cmp a b
+
+
+addedRemoved :: [Edit a] -> ([a],[a])
+addedRemoved = foldr fn ([],[])
+  where
+    fn (Added a)   (as,rs) = (a:as,rs)
+    fn (Removed a) (as,rs) = (as,a:rs)
+    fn _           acc     = acc
+
+summarizeAddedRemoved :: String -> String -> (a -> String) -> [Edit a] -> String
+summarizeAddedRemoved single plural str xs = 
+    undefined
+  where
+    (as,rs) = addedRemoved xs
+
+
+
+msgCount :: String -> String -> Int -> ShowS
+msgCount single _      1 = int 1 <+> text single
+msgCount _      plural n = int n <+> text plural

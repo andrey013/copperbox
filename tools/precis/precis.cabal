@@ -41,6 +41,7 @@ library
     Precis.ModuleExports,
     Precis.ModuleProperties,
     Precis.PathUtils,
+    Precis.PPShowS,
     Precis.Properties,
     Precis.Utils
   
@@ -58,6 +59,7 @@ executable precis
     Precis.ModuleExports,
     Precis.ModuleProperties,
     Precis.PathUtils,
+    Precis.PPShowS,
     Precis.Properties,
     Precis.Utils
 

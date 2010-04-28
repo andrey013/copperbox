@@ -34,12 +34,6 @@ module Precis.Utils
   , predMaybeM
   , condM
 
-  -- * Pretty print
-  , putDoc80
-  , expr
-  , lineBraces
-  , suffixSemi 
-  , namedBlock
 
   ) where
 
@@ -102,22 +96,3 @@ condM :: Monad m => m Bool -> m b -> m a -> m (Either a b)
 condM mtest sk fk = mtest >>= \ans -> 
                     if ans then liftM Right sk  else liftM Left fk
 
---------------------------------------------------------------------------------
--- Pretty print
-
-putDoc80 :: Doc -> IO ()
-putDoc80 doc = putStr $ displayS (renderPretty 0.8 80 doc) ""
-
-
-expr :: String -> Doc -> Doc
-expr field body = text field <+> equals <+> (dquotes body) <> semi
-
-lineBraces :: Doc -> Doc
-lineBraces body = lbrace <> line <> indent 2 body <> line <> rbrace
-
-
-suffixSemi :: Doc -> Doc
-suffixSemi = (<> semi)
-
-namedBlock :: String -> Doc -> Doc
-namedBlock s d = text s <+> lineBraces d

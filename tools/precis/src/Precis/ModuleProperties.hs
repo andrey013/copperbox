@@ -117,4 +117,4 @@ exportsProp modu = makeExportsProp (exportsPrecis modu)
 
 
 exportsPrecis :: Module -> ExportsPrecis
-exportsPrecis _modu = undefined
+exportsPrecis _modu = error "exportsPrecis TODO"

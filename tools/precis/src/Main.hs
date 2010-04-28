@@ -23,9 +23,9 @@ import Precis.Datatypes
 import Precis.Diff
 import Precis.ModuleExports
 import Precis.ModuleProperties
-import Precis.Utils
 
--- import Text.PrettyPrint.Leijen                    -- package: wl-pprint
+-- TEMP
+import Text.PrettyPrint.Leijen          -- package: wl-pprint
 
 -- import System.IO ( stdout )
 import System.Environment
@@ -114,3 +114,7 @@ runExtract path = do
     fmt ERR_CABAL_FILE_MISSING     = "*** Missing cabal file " ++ path
     fmt (ERR_CABAL_FILE_PARSE msg) = "*** Parse error: " ++ msg 
 
+
+-- TEMP
+putDoc80 :: Doc -> IO ()
+putDoc80 doc = putStr $ displayS (renderPretty 0.8 80 doc) ""
