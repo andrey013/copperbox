@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Precis.Metrics
+-- Module      :  Precis.Properties
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -15,13 +15,13 @@
 --------------------------------------------------------------------------------
 
 
-module Precis.Metrics
+module Precis.Properties
   (
-    Metric(..)
-  , diffMetric
+    Property(..)
   
   , Edit(..)
   , difference
+  , diffProperty
 
   ) where
 
@@ -31,10 +31,10 @@ import Precis.Utils
 import Data.List ( find )
 
 
-data Metric n = Metric 
-      { metric_name         :: String
-      , metric_description  :: String 
-      , metric_value        :: n
+data Property n = Property 
+      { property_name         :: String
+      , property_description  :: String 
+      , property_value        :: n
       }
   deriving (Eq,Ord,Show)
 
@@ -60,5 +60,5 @@ difference matches conflict as bs = toListH $ checkShort bs (checkLong as id)
 
 
 
-diffMetric :: (n -> n -> b) -> Metric n -> Metric n -> b
-diffMetric cmp (Metric _ _ a) (Metric _ _ b) = cmp a b
+diffProperty :: (n -> n -> b) -> Property n -> Property n -> b
+diffProperty cmp (Property _ _ a) (Property _ _ b) = cmp a b

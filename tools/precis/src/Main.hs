@@ -22,7 +22,7 @@ import Precis.CabalPackage
 import Precis.Datatypes
 import Precis.Diff
 import Precis.ModuleExports
-import Precis.ModuleMetrics
+import Precis.ModuleProperties
 import Precis.Utils
 
 -- import Text.PrettyPrint.Leijen                    -- package: wl-pprint
@@ -71,9 +71,9 @@ runCompare new_cabal_file old_cabal_file = do
    mapM_ compareModuleDiff expos
    -- 
    -- temporary...
-   let pm1 = packageModulesMetric new_cp
-   let pm2 = packageModulesMetric old_cp
-   print $ diffModulesMetrics pm1 pm2
+   let pm1 = packageModulesProp new_cp
+   let pm2 = packageModulesProp old_cp
+   print $ diffModulesProps pm1 pm2
 
 compareModuleDiff :: Diff SourceFile -> IO ()
 compareModuleDiff (InL a)      = either print stat1 =<< fullParseModule a

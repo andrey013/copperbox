@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Precis.ModuleMetrics
+-- Module      :  Precis.ModuleProperties
 -- Copyright   :  (c) Stephen Tetley 2010
 -- License     :  BSD3
 --
@@ -15,17 +15,17 @@
 --------------------------------------------------------------------------------
 
 
-module Precis.ModuleMetrics
+module Precis.ModuleProperties
   (
    
-    PackageModulesMetric
-  , packageModulesMetric
+    PackageModulesProp
+  , packageModulesProp
   , ModulesList(..)
-  , diffModulesMetrics
+  , diffModulesProps
 
   --
-  , ExportsMetric
-  , exportsMetric
+  , ExportsProp
+  , exportsProp
   , ExportsPrecis(..)
   , ModuleExport
   , ClassExport(..)
@@ -35,11 +35,11 @@ module Precis.ModuleMetrics
   ) where
 
 import Precis.Datatypes
-import Precis.Metrics
+import Precis.Properties
 
 import Language.Haskell.Exts hiding ( name )      -- package: haskell-src-exts
 
-type PackageModulesMetric = Metric ModulesList
+type PackageModulesProp = Property ModulesList
 
 data ModulesList = ModulesList
       { public_modules  :: [StrName]
@@ -47,14 +47,14 @@ data ModulesList = ModulesList
       }
   deriving (Eq,Show)
 
-makePackageModulesMetric :: ModulesList -> PackageModulesMetric
-makePackageModulesMetric  = Metric name descr 
+makePackageModulesProp :: ModulesList -> PackageModulesProp
+makePackageModulesProp  = Property name descr 
   where
     name  = "Modules list"
     descr = "Lists of exposed and internal modules in a package."
 
-packageModulesMetric :: CabalPrecis -> PackageModulesMetric
-packageModulesMetric = makePackageModulesMetric . modulesList
+packageModulesProp :: CabalPrecis -> PackageModulesProp
+packageModulesProp = makePackageModulesProp . modulesList
 
 modulesList :: CabalPrecis -> ModulesList
 modulesList cp = ModulesList expos privs
@@ -67,10 +67,10 @@ sourceFileName :: SourceFile -> StrName
 sourceFileName (SourceFile n _)   = n
 sourceFileName (UnresolvedFile n) = n 
 
-diffModulesMetrics :: PackageModulesMetric 
-                   -> PackageModulesMetric 
+diffModulesProps :: PackageModulesProp 
+                   -> PackageModulesProp 
                    -> ([Edit StrName],[Edit StrName])
-diffModulesMetrics = diffMetric cmp
+diffModulesProps = diffProperty cmp
   where
     cmp :: ModulesList -> ModulesList -> ([Edit StrName],[Edit StrName])
     cmp (ModulesList expos privs) (ModulesList expos' privs') = (xs,ys)
@@ -80,10 +80,10 @@ diffModulesMetrics = diffMetric cmp
 
 --------------------------------------------------------------------------------
 
-type ExportsMetric = Metric ExportsPrecis
+type ExportsProp = Property ExportsPrecis
 
-makeExportsMetric :: ExportsPrecis -> ExportsMetric
-makeExportsMetric  = Metric name descr 
+makeExportsProp :: ExportsPrecis -> ExportsProp
+makeExportsProp  = Property name descr 
   where
     name  = "Module exports"
     descr = "Explicit exports from a module (class instances not counted)."
@@ -112,8 +112,8 @@ data DataExport   = DataExport StrName TextRep
 data ClassExport  = ClassExport StrName TextRep
   deriving (Eq,Show)
 
-exportsMetric :: Module -> ExportsMetric
-exportsMetric modu = makeExportsMetric (exportsPrecis modu)
+exportsProp :: Module -> ExportsProp
+exportsProp modu = makeExportsProp (exportsPrecis modu)
 
 
 exportsPrecis :: Module -> ExportsPrecis

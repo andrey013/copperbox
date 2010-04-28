@@ -38,10 +38,10 @@ library
     Precis.Datatypes,
     Precis.Diff,
     Precis.HsSrcUtils,
-    Precis.Metrics,
     Precis.ModuleExports,
-    Precis.ModuleMetrics,
+    Precis.ModuleProperties,
     Precis.PathUtils,
+    Precis.Properties,
     Precis.Utils
   
 executable precis
@@ -55,10 +55,10 @@ executable precis
     Precis.Datatypes,
     Precis.Diff,
     Precis.HsSrcUtils,
-    Precis.Metrics,
     Precis.ModuleExports,
-    Precis.ModuleMetrics,
+    Precis.ModuleProperties,
     Precis.PathUtils,
+    Precis.Properties,
     Precis.Utils
 
 

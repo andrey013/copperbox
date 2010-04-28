@@ -6,7 +6,7 @@ import Precis.CPP
 import Precis.CabalPackage
 import Precis.Datatypes
 import Precis.Diff
-import Precis.Metrics
+import Precis.Properties
 import Precis.ModuleExports
 import Precis.PathUtils
 import Precis.Utils
