@@ -17,7 +17,8 @@
 module Precis.HsSrcUtils
   (
 
-    parseModuleWithExts
+    readModule 
+  , parseModuleWithExts
   , extractQName
   , extractCName
   , extractModuleName
@@ -28,10 +29,16 @@ module Precis.HsSrcUtils
 
   ) where
 
-import Precis.Datatypes ( StrName, TextRep )
+import Precis.Datatypes
 
 import Language.Haskell.Exts hiding ( name )      -- package: haskell-src-exts
 
+
+readModule :: MacroExpandedSrcFile -> Either ModuleParseError Module
+readModule (MacroExpandedSrcFile filename mx_src) = 
+    case parseModuleWithExts knownExtensions filename mx_src of
+      ParseFailed _ msg -> Left (ERR_MODULE_FILE_PARSE msg)
+      ParseOk a         -> Right $ a
 
 
 parseModuleWithExts :: [Extension] -> FilePath -> String -> ParseResult Module
@@ -61,14 +68,6 @@ extractName (Symbol name) = name
 extractSpecialCon :: SpecialCon -> String
 extractSpecialCon = prettyPrint
 
-{-
-extractSpecialCon UnitCon           = "()"
-extractSpecialCon ListCon           = "[]"
-extractSpecialCon FunCon            = "->"
-extractSpecialCon (TupleCon _ _)    = "(,)"
-extractSpecialCon Cons              = "(:)"
-extractSpecialCon UnboxedSingleCon  = "(# #)"
--}
 
 
 --------------------------------------------------------------------------------

@@ -5,14 +5,13 @@ module CabalDemo where
 import Precis.CPP
 import Precis.CabalPackage
 import Precis.Datatypes
+import Precis.HsSrcUtils
 import Precis.Properties
-import Precis.ModuleExports
 import Precis.PathUtils
 
--- import Language.Haskell.Exts hiding ( name )
+import Language.Haskell.Exts ( Module, prettyPrint )
 
 import Data.Char
-import Data.Map hiding ( difference )
 import System.FilePath
 
 
@@ -24,12 +23,12 @@ runExtract path = do
       Left err -> error $ show err
       Right cfg -> return cfg
 
-fullParseModule :: SourceFile -> IO (Either ModuleParseError ModulePrecis)
+fullParseModule :: SourceFile -> IO (Either ModuleParseError Module)
 fullParseModule (UnresolvedFile name) = 
     return $ Left $ ERR_MODULE_FILE_MISSING name
-fullParseModule (SourceFile modu_name file_name) = do
+fullParseModule (SourceFile _ file_name) = do
     mx_src <- preprocessFile precisCpphsOptions file_name
-    return $ readModule modu_name mx_src
+    return $ readModule mx_src
 
 
 demo1 :: IO ()
@@ -47,8 +46,7 @@ demo3 = do
                                      "../../_sample_data/Control/Monad/Cont/Class.hs")
                     
   case ans of
-    Right (ModulePrecis exps fm) -> print exps >> 
-                                    mapM_ (putStrLn) (elems fm)
+    Right modu -> putStrLn $ prettyPrint modu
     Left err       -> error $ show err
 
 

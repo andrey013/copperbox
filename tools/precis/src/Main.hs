@@ -20,10 +20,13 @@ module Main where
 import Precis.CPP
 import Precis.CabalPackage
 import Precis.Datatypes
-import Precis.ModuleExports
+import Precis.HsSrcUtils
 import Precis.ModuleProperties
 import Precis.PPShowS
 import Precis.Properties
+
+import Language.Haskell.Exts ( Module )         -- package: haskell-src-exts
+
 
 import System.Environment
 import System.Console.GetOpt
@@ -101,53 +104,56 @@ printModuleCountSummary new_cp old_cp = putShowSLine $ vsep
 
 compareExposedModules :: ExposedModulesProp -> ExposedModulesProp -> IO ()
 compareExposedModules new_expos old_expos = 
-   mapM_ compareExpoModule1 $ diffExposedModulesProps new_expos old_expos  
+   mapM_ compareSrcFileEdit $ diffExposedModulesProps new_expos old_expos  
 
-compareExpoModule1 :: Edit SourceFile -> IO ()
-compareExpoModule1 (Added _)      = return ()
-compareExpoModule1 (Removed _)    = return ()
-compareExpoModule1 (Conflict a b) = putShowSLine $ text "conflict"
-compareExpoModule1 (Same a)       = putShowSLine $ text "same"
+compareSrcFileEdit :: Edit SourceFile -> IO ()
+compareSrcFileEdit (Conflict a b) = compareSourceFiles a b
+compareSrcFileEdit _              = return ()
 
 
-{-
+compareSourceFiles :: SourceFile -> SourceFile -> IO ()
+compareSourceFiles new_sf old_sf = do 
+  new_ans <- fullParseModule new_sf
+  old_ans <- fullParseModule old_sf
+  case (new_ans, old_ans) of 
+    (Right new_modu, Right old_modu) -> compareModules new_modu old_modu
+    (Left err,_)                     -> putStrLn $ show err
+    (_, Left err)                    -> putStrLn $ show err
 
-compareModuleDiff :: Diff SourceFile -> IO ()
-compareModuleDiff (InL a)      = either print stat1 =<< fullParseModule a
-compareModuleDiff (InR a)      = putStrLn $ (module_name a) ++ " only in old"
-compareModuleDiff (InBoth n o) = do 
-  ans1 <- fullParseModule n
-  ans2 <- fullParseModule o
-  case (ans1,ans2) of 
-    (Right new,Right old) -> 
-        let result = moduleDifferences (module_name n) new old
-        in putDoc80 result
-    (Left err, _) -> putStrLn $ show err
-    (_, Left err) -> putStrLn $ show err
--}
+
+compareModules :: Module -> Module -> IO ()
+compareModules new_modu old_modu = do 
+    -- temp
+    putStrLn $ show new_expos
+    putStrLn $ show old_expos
+  where
+    new_expos = exportsProp new_modu
+    old_expos = exportsProp old_modu
+
+
+  
 
 -- | macro-expand and parse
 --
-fullParseModule :: SourceFile -> IO (Either ModuleParseError ModulePrecis)
+fullParseModule :: SourceFile -> IO (Either ModuleParseError Module)
 fullParseModule (UnresolvedFile name) = 
     return $ Left $ ERR_MODULE_FILE_MISSING name
-fullParseModule (SourceFile modu_name file_name) = do
+fullParseModule (SourceFile _ file_name) = do
     mx_src <- preprocessFile precisCpphsOptions file_name
-    return $ readModule modu_name mx_src
+    return $ readModule mx_src
 
 
-
-stat1 :: ModulePrecis -> IO ()
-stat1 (ModulePrecis ep _) = putStrLn $ (mep_base_module ep) ++ " only in new"
 
 
 runExtract :: FilePath -> IO CabalPrecis
 runExtract path = do
-    ans <- extractPrecis path ["hs", "lhs"]
+    ans <- extractPrecis path known_extensions
     case ans of
       Left  err -> error $ (fmt err)
       Right cfg -> return cfg
   where
     fmt ERR_CABAL_FILE_MISSING     = "*** Missing cabal file " ++ path
     fmt (ERR_CABAL_FILE_PARSE msg) = "*** Parse error: " ++ msg 
+
+
 

@@ -16,8 +16,10 @@
 
 module Precis.CabalPackage 
   ( 
-    CabalErr
+    Extension
   , extractPrecis
+  , known_extensions
+
   ) where
 
 import Precis.Datatypes
@@ -36,10 +38,10 @@ import Data.List ( intersperse, nub )
 import System.Directory
 import System.FilePath
 
-type CabalErr = String
+type Extension = String
 
 
-extractPrecis :: FilePath -> [String] -> IO (Either CabalFileError CabalPrecis)
+extractPrecis :: FilePath -> [Extension] -> IO (Either CabalFileError CabalPrecis)
 extractPrecis cabal_file exts = do
     exists <- doesFileExist cabal_file
     if exists then extractP cabal_file exts `onSuccessM` post
@@ -47,6 +49,9 @@ extractPrecis cabal_file exts = do
   where
     post = return . nubSourceFiles
 
+
+known_extensions :: [Extension]
+known_extensions = ["hs", "lhs"]
 
 extractP :: FilePath -> [String] -> IO (Either CabalFileError CabalPrecis)
 extractP cabal_file_path exts =
