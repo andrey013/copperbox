@@ -33,6 +33,11 @@ module Precis.ModuleProperties
   , exportsProp
   , diffExportsProps
 
+  --
+  , InstancesProp
+  , instancesProp
+  , diffInstancesProps
+
   ) where
 
 import Precis.Datatypes
@@ -40,6 +45,8 @@ import Precis.HsSrcUtils
 import Precis.Properties
 
 import Language.Haskell.Exts hiding ( name, op )    -- package: haskell-src-exts
+
+import Data.Maybe ( catMaybes )
 
 type PackageModulesProp = Property PackageModulesList
 
@@ -147,6 +154,50 @@ diffExportsProps = diffProperty cmp
     cmp :: ExportsList -> ExportsList -> [Edit ExportItem]
     cmp es1 es2 = difference (lift2a (==)) (/=) es1 es2         
         
-
     lift2a :: (StrName -> StrName -> b) -> ExportItem -> ExportItem -> b
     lift2a op s1 s2 = exportItemName s1 `op` exportItemName s2
+
+
+--------------------------------------------------------------------------------
+
+type InstancesProp = Property InstancesList
+
+makeInstancesProp :: InstancesList -> InstancesProp
+makeInstancesProp  = Property name descr 
+  where
+    name  = "Instance declarations"
+    descr = "Instance declarations defined in the module."
+
+
+type InstancesList = [InstanceDecl]
+
+
+instancesProp :: Module -> InstancesProp
+instancesProp modu = makeInstancesProp (instancesList modu)
+
+
+instancesList :: Module -> InstancesList
+instancesList (Module _ _ _ _ _  _ ds) = catMaybes $ map makeInstanceDecl ds
+
+makeInstanceDecl :: Decl -> Maybe InstanceDecl
+makeInstanceDecl dc@(InstDecl _ _ name typs _) = 
+    Just $ InstanceDecl (extractQName name) (hsppList typs) (prettyPrint dc)
+makeInstanceDecl _                          = Nothing
+
+
+-- compare instances on class name and text rep of type
+--
+type InstanceKey = (StrName,TextRep)  
+
+instanceKey :: InstanceDecl -> InstanceKey
+instanceKey (InstanceDecl s k _) = (s,k)
+
+diffInstancesProps :: InstancesProp -> InstancesProp -> [Edit InstanceDecl]
+diffInstancesProps = diffProperty cmp
+  where
+    cmp :: InstancesList -> InstancesList -> [Edit InstanceDecl]
+    cmp xs1 xs2 = difference (lift2a (==)) (/=) xs1 xs2
+        
+    lift2a :: (InstanceKey -> InstanceKey -> b) 
+           -> InstanceDecl -> InstanceDecl -> b
+    lift2a op s1 s2 = instanceKey s1 `op` instanceKey s2

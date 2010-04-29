@@ -29,6 +29,8 @@ module Precis.HsSrcUtils
 
   , namedDecls
 
+  , hsppList
+
   ) where
 
 import Precis.Datatypes
@@ -96,3 +98,7 @@ namedDecls t@(TypeSig     _ ns _)             = map fn ns
    where fn n = (extractName n, prettyPrint t)
 
 namedDecls _                                  = []
+
+
+hsppList :: Pretty a => [a] -> String
+hsppList = unwords . map prettyPrint

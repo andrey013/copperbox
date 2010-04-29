@@ -33,6 +33,9 @@ module Precis.Datatypes
   , ExportItem(..)
   , exportItemName
 
+  , InstanceDecl(..)
+  , instanceDeclName
+
   ) where
 
 
@@ -53,10 +56,8 @@ data CabalFileError = ERR_CABAL_FILE_MISSING FilePath
 
 
 cabalFileErrorMsg :: CabalFileError -> String
-cabalFileErrorMsg (ERR_CABAL_FILE_MISSING s) = 
-    "*** Error: missing file - " ++ s
-cabalFileErrorMsg (ERR_CABAL_FILE_PARSE   s) = 
-    "*** Error: parse error - " ++ s
+cabalFileErrorMsg (ERR_CABAL_FILE_MISSING s) = "*** Error: missing file - " ++ s
+cabalFileErrorMsg (ERR_CABAL_FILE_PARSE   s) = "*** Error: parse error - " ++ s
 
 
 data CabalPrecis = CabalPrecis
@@ -123,3 +124,14 @@ exportItemName :: ExportItem -> StrName
 exportItemName (ModuleExport s)   = s
 exportItemName (DataOrClass  s _) = s
 exportItemName (Variable     s)   = s 
+
+
+data InstanceDecl = InstanceDecl 
+       { class_name :: StrName
+       , type_rep   :: TextRep
+       , full_rep   :: TextRep
+       }
+  deriving (Eq,Show)
+
+instanceDeclName :: InstanceDecl -> StrName
+instanceDeclName (InstanceDecl s _ _) = s

@@ -10,10 +10,8 @@
 -- Stability   :  highly unstable
 -- Portability :  to be determined.
 --
--- 
 --
 --------------------------------------------------------------------------------
-
 
 module Main where
 
@@ -27,22 +25,32 @@ import Precis.Properties
 
 import Language.Haskell.Exts ( Module )         -- package: haskell-src-exts
 
-
 import System.Environment
+import System.Exit
 import System.Console.GetOpt
 
-
-
+-- | REMEMBER TO CHANGE THIS!
+-- *****************************************************************************
+version_number :: String
+version_number = "0.3.0"
 
 header :: String
 header = "Usage: precis <new_cabal_file> <old_cabal_file>"
 
+help_message :: String
+help_message = unlines $  
+    [ "Summarize the API differences between two revisions of a" 
+    , "Cabal package."
+    ]
+
 data Flag = Usage
+          | Version
   deriving (Eq, Show)
 
 options :: [OptDescr Flag]
 options =
-    [ Option ['h'] ["help"]     (NoArg Usage)        "no help yet"
+    [ Option ['h'] ["help"]     (NoArg Usage)        help_message
+    , Option ['v'] ["version"]  (NoArg Version)      "show version"
     ]
 
 main :: IO ()
@@ -52,24 +60,38 @@ main = do { args <- getArgs
           }
   
 main2 :: [Flag] -> [FilePath] -> [String] -> IO ()
-main2 opts [new_cabal,old_cabal] [] 
-  | Usage       `elem` opts = putStrLn $ usageInfo header options
-  | otherwise               = runCompare new_cabal old_cabal
-  
-main2  _ _ errors = putStrLn (concat errors ++ usageInfo header options)
+main2 opts _           _ 
+  | Usage       `elem` opts = precisExit $ usageInfo header options
+  | Version     `elem` opts = precisExit $ 
+                                "precis version " ++ version_number
 
+main2 _    [newc,oldc] []   = runCompare newc oldc
+main2 _    _           errs = 
+    precisExitFail 1 (concat errs ++ usageInfo header options)
+
+precisExit :: String -> IO ()
+precisExit s = putStrLn s >> exitWith ExitSuccess
+
+precisExitFail :: Int -> String -> IO ()
+precisExitFail i s = putStrLn s >> exitWith (ExitFailure i)
 
 
 runCompare :: FilePath -> FilePath -> IO ()
 runCompare new_cabal_file old_cabal_file = do 
-   new_cp <- runExtract new_cabal_file
-   old_cp <- runExtract old_cabal_file
+    ans1 <- extractPrecis new_cabal_file known_extensions
+    ans2 <- extractPrecis old_cabal_file known_extensions
 
-   printPackageNameAndVersions new_cp old_cp
-
-   printModuleCountSummary new_cp old_cp
-
-   compareExposedModules (exposedModulesProp new_cp) (exposedModulesProp old_cp)
+    case (ans1,ans2) of
+      (Right new_cp, Right old_cp) -> sk new_cp old_cp
+      (Left err, _)                -> precisExitFail 2 $ cabalFileErrorMsg err
+      (_, Left err)                -> precisExitFail 2 $ cabalFileErrorMsg err
+  where
+   sk new_cp old_cp = do 
+      { printPackageNameAndVersions new_cp old_cp
+      ; printModuleCountSummary new_cp old_cp
+      ; compareExposedModules (exposedModulesProp new_cp) 
+                              (exposedModulesProp old_cp)
+      }
 
 
 printPackageNameAndVersions :: CabalPrecis -> CabalPrecis -> IO ()
@@ -123,8 +145,14 @@ compareSourceFiles new_sf old_sf = do
 
 
 compareModules :: Module -> Module -> IO ()
-compareModules new_modu old_modu = putShowSLine $ vsep
-    [ text "exports:"
+compareModules new_modu old_modu =
+    compareExports   new_modu old_modu          >>
+    compareInstances new_modu old_modu
+
+
+compareExports :: Module -> Module -> IO ()
+compareExports new_modu old_modu = putShowSLine $ vsep
+    [ text "Explicit exports:"
     , summarizeAddedConflictRemoved "export" "exports" txt expos
     ]
   where
@@ -136,6 +164,19 @@ compareModules new_modu old_modu = putShowSLine $ vsep
     txt (DataOrClass  _ r) = r
     txt (Variable     s)   = s 
 
+compareInstances :: Module -> Module -> IO ()
+compareInstances new_modu old_modu = putShowSLine $ vsep
+    [ text "Instances:"
+    , summarizeAddedConflictRemoved "instance" "instances" txt expos
+    ]
+  where
+    new_insts = instancesProp new_modu
+    old_insts = instancesProp old_modu
+    expos     = diffInstancesProps new_insts old_insts
+
+    txt (InstanceDecl _ _ r)   = r
+
+
 -- | macro-expand and parse
 --
 fullParseModule :: SourceFile -> IO (Either ModuleParseError Module)
@@ -144,17 +185,5 @@ fullParseModule (UnresolvedFile name) =
 fullParseModule (SourceFile _ file_name) = do
     mx_src <- preprocessFile precisCpphsOptions file_name
     return $ readModule mx_src
-
-
-
--- Note this one throws a (fatal) error...
---
-runExtract :: FilePath -> IO CabalPrecis
-runExtract path = do
-    ans <- extractPrecis path known_extensions
-    case ans of
-      Left  err -> error $ cabalFileErrorMsg err
-      Right cfg -> return cfg
-
 
 

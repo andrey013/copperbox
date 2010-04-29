@@ -22,8 +22,6 @@ module Precis.Utils
   , snocH
   , toListH
  
-
-
   , onSuccess
   , onSuccessM
 
@@ -43,8 +41,6 @@ snocH f a = f . (a:)
 
 toListH :: H a -> [a]
 toListH = ($ [])
-
-
 
   
 onSuccess :: Monad m => Either a b -> (b -> m c) -> m (Either a c)
