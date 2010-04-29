@@ -72,6 +72,7 @@ module Precis.PPShowS
 
   , repeatChar
   , prefixLines
+  , nextLine
 
   ) where
 
@@ -234,3 +235,12 @@ repeatChar i    = showString . replicate i
 
 prefixLines     :: ShowS -> String -> ShowS
 prefixLines pre xs = vsep $ map ((pre <>) . text) $ lines xs
+
+-- | Note - this function evaluates the second arg and uses (++) 
+-- via 'showString'.
+--
+nextLine :: ShowS -> ShowS -> ShowS
+nextLine f g = step $ toString g 
+  where
+    step str | null str = f
+             | otherwise = f `line` (showString str)

@@ -29,6 +29,7 @@ module Precis.Properties
   , addedRemoved
   , summarizeAddedRemoved
   , summarizeConflictRemoved
+  , summarizeAddedConflictRemoved
 
   ) where
 
@@ -77,50 +78,86 @@ addedRemoved :: [Edit a] -> ([a],[a])
 addedRemoved = foldr fn ([],[])
   where
     fn (Added a)   (as,rs) = (a:as,rs)
-    fn (Removed a) (as,rs) = (as,a:rs)
+    fn (Removed r) (as,rs) = (as,r:rs)
     fn _           acc     = acc
+
+addedConflictRemoved :: [Edit a] -> ([a],[(a,a)],[a])
+addedConflictRemoved = foldr fn ([],[],[])
+  where
+    fn (Added a)      (as,cs,rs) = (a:as,cs,rs)
+    fn (Conflict a b) (as,cs,rs) = (as,(a,b):cs,rs)
+    fn (Removed r)    (as,cs,rs) = (as,cs,r:rs)
+    fn _              acc        = acc
+
 
 conflictRemoved :: [Edit a] -> ([(a,a)],[a])
 conflictRemoved = foldr fn ([],[])
   where
     fn (Conflict a b)   (cs,rs) = ((a,b):cs,rs)
-    fn (Removed  a)     (cs,rs) = (cs,a:rs)
+    fn (Removed  r)     (cs,rs) = (cs,r:rs)
     fn _                acc     = acc
 
 
 summarizeAddedRemoved :: String -> String -> (a -> String) -> [Edit a] -> ShowS
-summarizeAddedRemoved single plural str xs = 
+summarizeAddedRemoved single plural sf xs = 
            added_msg <> comma <+> removed_msg 
-    `line` vsep (map added1   as)
-    `line` vsep (map removed1 rs)
+    `nextLine` vsep (map (addedLine sf)   as)
+    `nextLine` vsep (map (removedLine sf) rs)
   where
-    (as,rs)     = addedRemoved xs
-    (alen,rlen) = (length as, length rs)
-    countfun    = msgCount single plural
+    (as,rs)       = addedRemoved xs
+    added_msg     = addedMsg    single plural (length as)
+    removed_msg   = removedMsg  single plural (length rs)
 
-    added_msg   = countfun alen <+> text "added (+)"
-    removed_msg = countfun rlen <+> text "removed (-)"
- 
-    added1 a     = char '+' <+> (text $ str a)
-    removed1 a   = char '-' <+> (text $ str a)
+
+summarizeConflictRemoved :: String -> String -> (a -> String) -> [Edit a] -> ShowS
+summarizeConflictRemoved single plural sf xs = 
+           conflict_msg <> comma <+> removed_msg 
+    `nextLine` vsep (map (conflictLine sf) cs)
+    `nextLine` vsep (map (removedLine sf)  rs)
+  where
+    (cs,rs)       = conflictRemoved xs
+    conflict_msg  = conflictMsg single plural (length cs)
+    removed_msg   = removedMsg  single plural (length rs)
+
+
+summarizeAddedConflictRemoved :: String 
+                              -> String 
+                              -> (a -> String) -> [Edit a] -> ShowS
+summarizeAddedConflictRemoved single plural sf xs = 
+           added_msg <> comma <+> conflict_msg <> comma <+> removed_msg 
+    `nextLine` vsep (map (addedLine sf)    as)
+    `nextLine` vsep (map (conflictLine sf) cs)
+    `nextLine` vsep (map (removedLine sf)  rs)
+  where
+    (as,cs,rs)    = addedConflictRemoved xs
+    added_msg     = addedMsg    single plural (length as)
+    conflict_msg  = conflictMsg single plural (length cs)
+    removed_msg   = removedMsg  single plural (length rs)
+
+
+-- 
 
 msgCount :: String -> String -> Int -> ShowS
 msgCount single _      1 = int 1 <+> text single
 msgCount _      plural n = int n <+> text plural
 
-summarizeConflictRemoved :: String -> String -> (a -> String) -> [Edit a] -> ShowS
-summarizeConflictRemoved single plural str xs = 
-           conflict_msg <> comma <+> removed_msg 
-    `line` vsep (map conflict1 cs)
-    `line` vsep (map removed1  rs)
-  where
-    (cs,rs)       = conflictRemoved xs
-    (clen,rlen)   = (length cs, length rs)
-    countfun      = msgCount single plural
 
-    conflict_msg  = countfun clen <+> text "conflict (*)"
-    removed_msg   = countfun rlen <+> text "removed (-)"
- 
-    conflict1 (a,b) = prefixLines (text "< ") (str a) `line`
-                      prefixLines (text "> ") (str b) <> newline
-    removed1 a      = char '-' <+> (text $ str a)
+addedMsg :: String -> String -> Int -> ShowS
+addedMsg single plural i = msgCount single plural i <+> text "added (+)"
+
+conflictMsg :: String -> String -> Int -> ShowS
+conflictMsg single plural i = msgCount single plural i <+> text "conflict (*)"
+
+removedMsg :: String -> String -> Int -> ShowS
+removedMsg single plural i = msgCount single plural i <+> text "removed (-)"
+
+
+addedLine :: (a -> String) -> a -> ShowS
+addedLine f a = char '+' <+> (text $ f a)
+
+conflictLine :: (a -> String) -> (a,a) -> ShowS
+conflictLine f (a,b) = prefixLines (text "< ") (f a) `line`
+                       prefixLines (text "> ") (f b) <> newline
+
+removedLine :: (a -> String) -> a -> ShowS
+removedLine f a      = char '-' <+> (text $ f a)

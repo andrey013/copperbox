@@ -113,6 +113,7 @@ compareSrcFileEdit _              = return ()
 
 compareSourceFiles :: SourceFile -> SourceFile -> IO ()
 compareSourceFiles new_sf old_sf = do 
+  putShowSLine $ newline <> text (module_name new_sf) 
   new_ans <- fullParseModule new_sf
   old_ans <- fullParseModule old_sf
   case (new_ans, old_ans) of 
@@ -123,8 +124,8 @@ compareSourceFiles new_sf old_sf = do
 
 compareModules :: Module -> Module -> IO ()
 compareModules new_modu old_modu = putShowSLine $ vsep
-    [ text $ modu_name ++ " exports:"
-    , summarizeConflictRemoved "export" "exports" txt expos
+    [ text "exports:"
+    , summarizeAddedConflictRemoved "export" "exports" txt expos
     ]
   where
     new_expos = exportsProp new_modu
@@ -134,9 +135,6 @@ compareModules new_modu old_modu = putShowSLine $ vsep
     txt (ModuleExport s)   = s
     txt (DataOrClass  _ r) = r
     txt (Variable     s)   = s 
-
-    modu_name = extractModuleName (getModuleName new_modu)
-
 
 -- | macro-expand and parse
 --
