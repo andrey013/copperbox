@@ -146,8 +146,10 @@ compareSourceFiles new_sf old_sf = do
 
 compareModules :: Module -> Module -> IO ()
 compareModules new_modu old_modu =
-    compareExports   new_modu old_modu          >>
-    compareInstances new_modu old_modu
+    compareExports   new_modu old_modu  >>
+    compareDataDecls new_modu old_modu  >>
+    compareTypeSigs  new_modu old_modu  >>
+    compareInstances new_modu old_modu          
 
 
 compareExports :: Module -> Module -> IO ()
@@ -176,6 +178,30 @@ compareInstances new_modu old_modu = putShowSLine $ vsep
 
     txt (InstanceDecl _ _ r)   = r
 
+
+compareDataDecls :: Module -> Module -> IO ()
+compareDataDecls new_modu old_modu = putShowSLine $ vsep
+    [ text "Exported data type decls:"
+    , summarizeAddedConflictRemoved "data type" "data types" datatype_rep ddecls
+    ]
+  where
+    new_ddecls = dataDeclsProp new_modu
+    old_ddecls = dataDeclsProp old_modu
+    ddecls     = diffDataDeclsProps new_ddecls old_ddecls
+
+
+compareTypeSigs :: Module -> Module -> IO ()
+compareTypeSigs new_modu old_modu = putShowSLine $ vsep
+    [ text "Exported type sigs:"
+    , summarizeAddedConflictRemoved "type signature" 
+                                    "type signatures" ppty tysigs
+    ]
+  where
+    new_tysigs = typeSigsProp new_modu
+    old_tysigs = typeSigsProp old_modu
+    tysigs     = diffTypeSigsProps new_tysigs old_tysigs
+
+    ppty (TypeSigDecl n r) = n ++ " :: " ++ r
 
 -- | macro-expand and parse
 --

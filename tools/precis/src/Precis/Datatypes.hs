@@ -36,6 +36,12 @@ module Precis.Datatypes
   , InstanceDecl(..)
   , instanceDeclName
 
+  , DatatypeDecl(..)
+  , datatypeDeclName
+
+  , TypeSigDecl(..)
+  , typeSigDeclName
+
   ) where
 
 
@@ -134,4 +140,24 @@ data InstanceDecl = InstanceDecl
   deriving (Eq,Show)
 
 instanceDeclName :: InstanceDecl -> StrName
-instanceDeclName (InstanceDecl s _ _) = s
+instanceDeclName = class_name
+
+
+data DatatypeDecl = DatatypeDecl
+      { datatype_name :: StrName
+      , datatype_rep  :: TextRep
+      }
+  deriving (Eq,Show)
+
+datatypeDeclName :: DatatypeDecl -> StrName
+datatypeDeclName = datatype_name
+
+
+data TypeSigDecl = TypeSigDecl
+      { type_decl_name  :: StrName
+      , type_signature  :: TextRep
+      }
+  deriving (Eq,Show)
+
+typeSigDeclName :: TypeSigDecl -> StrName
+typeSigDeclName = type_decl_name

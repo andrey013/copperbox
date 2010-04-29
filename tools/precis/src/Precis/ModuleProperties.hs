@@ -38,6 +38,15 @@ module Precis.ModuleProperties
   , instancesProp
   , diffInstancesProps
 
+  -- 
+  , DataDeclsProp
+  , dataDeclsProp
+  , diffDataDeclsProps
+
+  , TypeSigsProp
+  , typeSigsProp
+  , diffTypeSigsProps
+
   ) where
 
 import Precis.Datatypes
@@ -47,6 +56,11 @@ import Precis.Properties
 import Language.Haskell.Exts hiding ( name, op )    -- package: haskell-src-exts
 
 import Data.Maybe ( catMaybes )
+
+
+
+--------------------------------------------------------------------------------
+-- all modules (exposed and internal) in a cabal file
 
 type PackageModulesProp = Property PackageModulesList
 
@@ -87,6 +101,7 @@ diffPackageModulesProps = diffProperty cmp
          ys = difference (==) (/=) privs privs'
 
 --------------------------------------------------------------------------------
+-- exposed modules in cabal file
 
 type ExposedModulesProp = Property ExposedModulesList
 
@@ -115,6 +130,8 @@ diffExposedModulesProps = diffProperty cmp
     lift2a op s1 s2 = sourceFileName s1 `op` sourceFileName s2
 
 --------------------------------------------------------------------------------
+-- export lists
+
 
 type ExportsProp = Property ExportsList
 
@@ -159,6 +176,7 @@ diffExportsProps = diffProperty cmp
 
 
 --------------------------------------------------------------------------------
+-- class instances
 
 type InstancesProp = Property InstancesList
 
@@ -171,17 +189,15 @@ makeInstancesProp  = Property name descr
 
 type InstancesList = [InstanceDecl]
 
-
 instancesProp :: Module -> InstancesProp
 instancesProp modu = makeInstancesProp (instancesList modu)
 
-
 instancesList :: Module -> InstancesList
-instancesList (Module _ _ _ _ _  _ ds) = catMaybes $ map makeInstanceDecl ds
+instancesList (Module _ _ _ _ _ _ ds) = catMaybes $ map makeInstanceDecl ds
 
 makeInstanceDecl :: Decl -> Maybe InstanceDecl
-makeInstanceDecl dc@(InstDecl _ _ name typs _) = 
-    Just $ InstanceDecl (extractQName name) (hsppList typs) (prettyPrint dc)
+makeInstanceDecl d@(InstDecl _ _ name typs _) = 
+    Just $ InstanceDecl (extractQName name) (hsppList typs) (prettyPrint d)
 makeInstanceDecl _                          = Nothing
 
 
@@ -201,3 +217,104 @@ diffInstancesProps = diffProperty cmp
     lift2a :: (InstanceKey -> InstanceKey -> b) 
            -> InstanceDecl -> InstanceDecl -> b
     lift2a op s1 s2 = instanceKey s1 `op` instanceKey s2
+
+
+
+--------------------------------------------------------------------------------
+-- exported data types (regular and GADTS)
+
+type DataDeclsProp = Property DataDeclsList
+
+makeDataDeclsProp :: DataDeclsList -> DataDeclsProp
+makeDataDeclsProp = Property name descr 
+  where
+    name  = "Exported data declarations"
+    descr = "Data declarations exported from exposed modules."
+
+type DataDeclsList = [DatatypeDecl]
+
+dataDeclsProp :: Module -> DataDeclsProp
+dataDeclsProp modu = makeDataDeclsProp (dataDeclsList modu)
+
+dataDeclsList :: Module -> DataDeclsList
+dataDeclsList (Module _ _ _ _ mb_expo _ ds) = filterDatatypes mb_expo all_datas
+  where  
+    all_datas = catMaybes $ map makeDatatypeDecl ds
+
+makeDatatypeDecl :: Decl -> Maybe DatatypeDecl
+makeDatatypeDecl d@(DataDecl _ _ _ name _ _ _)    = 
+    Just $ DatatypeDecl (extractName name) (prettyPrint d)
+makeDatatypeDecl d@(GDataDecl _ _ _ name _ _ _ _) = 
+    Just $ DatatypeDecl (extractName name) (prettyPrint d)
+makeDatatypeDecl _                          = Nothing
+
+filterDatatypes :: Maybe [ExportSpec] -> [DatatypeDecl] -> [DatatypeDecl]
+filterDatatypes Nothing      xs = xs
+filterDatatypes (Just expos) xs = filter fn xs
+  where
+    fn (DatatypeDecl n _)    = n `elem` expo_vars
+    expo_vars                = catMaybes $ map mkExpoT expos
+
+    mkExpoT (EAbs n)         = Just $ extractQName n
+    mkExpoT (EThingAll n)    = Just $ extractQName n
+    mkExpoT (EThingWith n _) = Just $ extractQName n
+    mkExpoT _                = Nothing
+
+
+diffDataDeclsProps :: DataDeclsProp -> DataDeclsProp -> [Edit DatatypeDecl]
+diffDataDeclsProps = diffProperty cmp
+  where
+    cmp :: DataDeclsList -> DataDeclsList -> [Edit DatatypeDecl]
+    cmp xs1 xs2 = difference (lift2a (==)) (/=) xs1 xs2
+        
+    lift2a :: (StrName -> StrName -> b) -> DatatypeDecl -> DatatypeDecl -> b
+    lift2a op s1 s2 = datatypeDeclName s1 `op` datatypeDeclName s2
+
+
+--------------------------------------------------------------------------------
+-- exported type sigs
+
+type TypeSigsProp = Property TypeSigsList
+
+makeTypeSigsProp :: TypeSigsList -> TypeSigsProp
+makeTypeSigsProp = Property name descr 
+  where
+    name  = "Exported type signatures"
+    descr = unwords [ "Type signatures of functions, constants... exported"
+                    , "from exposed modules."]
+
+type TypeSigsList = [TypeSigDecl]
+
+typeSigsProp :: Module -> TypeSigsProp
+typeSigsProp modu = makeTypeSigsProp (typeSigsList modu)
+
+typeSigsList :: Module -> TypeSigsList
+typeSigsList (Module _ _ _ _ mb_expo _ ds) = filterTypeSigs mb_expo all_typesigs
+  where  
+    all_typesigs = concat $ map makeTypeSigDecl ds
+
+makeTypeSigDecl :: Decl -> [TypeSigDecl]
+makeTypeSigDecl (TypeSig _ ns t)    = map fn ns
+  where 
+    fn n = TypeSigDecl (extractName n) (prettyPrint t)
+makeTypeSigDecl _                    = []
+
+filterTypeSigs :: Maybe [ExportSpec] -> [TypeSigDecl] -> [TypeSigDecl]
+filterTypeSigs Nothing      xs = xs
+filterTypeSigs (Just expos) xs = filter fn xs
+  where
+    fn (TypeSigDecl n _)     = n `elem` expo_vars
+    expo_vars                = catMaybes $ map mkExpoT expos
+
+    mkExpoT (EVar n)         = Just $ extractQName n
+    mkExpoT _                = Nothing
+
+
+diffTypeSigsProps :: TypeSigsProp -> TypeSigsProp -> [Edit TypeSigDecl]
+diffTypeSigsProps = diffProperty cmp
+  where
+    cmp :: TypeSigsList -> TypeSigsList -> [Edit TypeSigDecl]
+    cmp xs1 xs2 = difference (lift2a (==)) (/=) xs1 xs2
+        
+    lift2a :: (StrName -> StrName -> b) -> TypeSigDecl -> TypeSigDecl -> b
+    lift2a op s1 s2 = typeSigDeclName s1 `op` typeSigDeclName s2

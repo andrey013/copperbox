@@ -13,10 +13,6 @@ description:
   Note Precis library is BSD3, Precis executable is LGPL apropos 
   the dependency on CppHs.
   .
-  Status 0.3.0 - probably not readily useful. Currently Precis 
-  only diffs the exports list of exposed mdoules and instance
-  declarations. It doesn\'t diff e.g. type signatures of 
-  exported functions, exported data declarations, ...
   .
 
 build-type:         Simple
